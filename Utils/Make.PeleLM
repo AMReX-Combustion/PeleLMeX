@@ -1,0 +1,75 @@
+PELELM_HOME ?= /path/to/PeleLM
+AMREX_HOME ?= /path/to/AMREX
+PELE_PHYSICS_HOME ?= /path/to/PELE_PHYSICS_HOME
+
+# AMReX definitions
+include $(AMREX_HOME)/Tools/GNUMake/Make.defs
+
+EBASE := PeleLM
+all: $(executable)
+	$(SILENT) $(RM) AMReX_buildInfo.cpp
+	@echo SUCCESS
+
+#---------------
+# PeleLM sources
+#---------------
+LMdirs := Source
+Bpack += $(foreach dir, $(LMdirs), $(PELELM_HOME)/$(dir)/Make.package)
+Blocs += $(foreach dir, $(LMdirs), $(PELELM_HOME)/$(dir))
+
+#---------------
+# PelePhysics sources
+#---------------
+ChemDir  = Support/Fuego/Mechanism/Models/$(Chemistry_Model)
+ReacDir  = Reactions/$(strip $(Reactions_dir))
+EosDir   = Eos/$(strip $(Eos_dir))
+TranDir  = Transport/$(strip $(Transport_dir))
+
+PPdirs  := Utility $(ChemDir) $(ReacDir) $(EosDir) $(TranDir)
+PPHdirs := Support/Fuego/Evaluation
+Bpack += $(foreach dir, $(PPdirs), $(PELE_PHYSICS_HOME)/$(dir)/Make.package)
+Blocs += $(foreach dir, $(PPdirs), $(PELE_PHYSICS_HOME)/$(dir))
+Blocs += $(foreach dir, $(PPHdirs), $(PELE_PHYSICS_HOME)/$(dir))
+
+#---------------
+# AMReX sources
+#---------------
+Pdirs := Base Boundary AmrCore LinearSolvers/MLMG
+Bpack += $(foreach dir, $(Pdirs), $(AMREX_HOME)/Src/$(dir)/Make.package)
+
+#---------------
+# Includes
+#---------------
+include $(Bpack)
+
+INCLUDE_LOCATIONS += $(Blocs)
+VPATH_LOCATIONS   += $(Blocs)
+
+#---------------
+# job_info support
+#---------------
+CEXE_sources += AMReX_buildInfo.cpp
+CEXE_headers += $(AMREX_HOME)/Tools/C_scripts/AMReX_buildInfo.H
+INCLUDE_LOCATIONS +=  $(AMREX_HOME)/Tools/C_scripts
+
+#---------------
+# Build
+#---------------
+AMReX_buildInfo.cpp:
+	$(AMREX_HOME)/Tools/C_scripts/makebuildinfo_C.py \
+      --amrex_home "$(AMREX_HOME)" \
+      --COMP "$(COMP)" --COMP_VERSION "$(COMP_VERSION)" \
+      --FCOMP "$(FCOMP)" --FCOMP_VERSION "$(FCOMP_VERSION)" \
+      --GIT "$(PELELM_HOME) $(AMREX_HOME) $(PELE_PHYSICS_HOME)"
+
+#---------------
+# Rules
+#---------------
+include $(AMREX_HOME)/Tools/GNUMake/Make.rules
+
+clean::
+	$(SILENT) $(RM) AMReX_buildInfo.cpp
+
+print-%::
+	@echo "$* is $($*)"
+	@$(RM) AMReX_buildInfo.cpp
