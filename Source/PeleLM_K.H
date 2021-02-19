@@ -58,4 +58,262 @@ getTransportCoeff(int i, int j, int k,
    mu(i,j,k) = mu_cgs * 1.0e-1_rt;
 }
 
+AMREX_GPU_DEVICE
+AMREX_FORCE_INLINE
+void
+getPGivenRTY(int i, int j, int k,
+             amrex::Array4<const amrex::Real> const& rho,
+             amrex::Array4<const amrex::Real> const& rhoY,
+             amrex::Array4<const amrex::Real> const& T,
+             amrex::Array4<      amrex::Real> const& P) noexcept
+{
+   using namespace amrex::literals;
+
+   amrex::Real rhoinv  = 1.0_rt / rho(i,j,k);
+   amrex::Real rho_cgs = rho(i,j,k) * 0.001_rt;
+
+   amrex::Real y[NUM_SPECIES] = {0.0_rt};
+   for (int n = 0; n < NUM_SPECIES; n++) {
+      y[n] = rhoY(i,j,k,n) * rhoinv;
+   }   
+
+   EOS::RTY2P(rho_cgs, T(i,j,k), y, P(i,j,k));
+   P(i,j,k) = P(i,j,k) * 0.1_rt;                         // CGS -> MKS conversion
+}
+
+AMREX_GPU_DEVICE
+AMREX_FORCE_INLINE
+void
+compute_divu(int i, int j, int k,
+             amrex::Array4<const amrex::Real> const& rhoY,
+             amrex::Array4<const amrex::Real> const& T,
+             amrex::Array4<const amrex::Real> const& specDiff,
+             amrex::Array4<const amrex::Real> const& tempDiff,
+             amrex::Array4<const amrex::Real> const& specEnthDiff,
+             //amrex::Array4<const amrex::Real> const& rhoYdot,
+             amrex::Array4<      amrex::Real> const& divu) noexcept
+{
+   using namespace amrex::literals;
+
+   amrex::Real mwtinv[NUM_SPECIES] = {0.0};
+   EOS::inv_molecular_weight(mwtinv);
+
+   // Get rho & Y from rhoY
+   amrex::Real rho = 0.0_rt;
+   for (int n = 0; n < NUM_SPECIES; n++) {
+      rho += rhoY(i,j,k,n);
+   }   
+   amrex::Real rhoinv = 1.0_rt / rho;
+   amrex::Real y[NUM_SPECIES] = {0.0};
+   for (int n = 0; n < NUM_SPECIES; n++) {
+      y[n] = rhoY(i,j,k,n) * rhoinv;
+   }
+
+   amrex::Real cpmix = 0.0_rt;
+   EOS::TY2Cp(T(i,j,k), y, cpmix);
+   amrex::Real Wbar = 0.0_rt;
+   EOS::Y2WBAR(y, Wbar);
+   amrex::Real hi[NUM_SPECIES] = {0.0};
+   EOS::T2Hi(T(i,j,k), hi);
+   cpmix *= 1.0e-4_rt;                                // CGS -> MKS conversion
+   for (int n = 0; n < NUM_SPECIES; n++) {
+      hi[n] *= 1.0e-4_rt;                             // CGS -> MKS conversion
+   }
+
+   amrex::Real denominv = 1.0_rt / ( rho * cpmix * T(i,j,k) );
+   divu(i,j,k) = ( specEnthDiff(i,j,k) + tempDiff(i,j,k) ) * denominv;
+   for (int n = 0; n < NUM_SPECIES; n++) {
+      //divu(i,j,k) +=  ( viscTermY(i,j,k,n) + rhoYdot(i,j,k,n) )
+      divu(i,j,k) +=  ( specDiff(i,j,k,n) )
+                    * ( mwtinv[n] * Wbar * rhoinv - hi[n] * denominv );
+   }                
+}
+
+AMREX_GPU_DEVICE
+AMREX_FORCE_INLINE
+void
+fluxDivergence_K(int i, int j, int k,
+                 int ncomp,
+                 AMREX_D_DECL(amrex::Array4<const amrex::Real> const& fluxX,
+                              amrex::Array4<const amrex::Real> const& fluxY,
+                              amrex::Array4<const amrex::Real> const& fluxZ),
+                 amrex::Array4<const amrex::Real>              const& vol,
+                 const amrex::Real                                  & scaling,
+                 amrex::Array4<      amrex::Real>              const& div) noexcept
+{
+   using namespace amrex::literals;
+
+   amrex::Real factor = scaling / vol(i,j,k);
+
+   for (int n = 0; n < ncomp; n++) {
+      div(i,j,k,n) = AMREX_D_TERM (  ( fluxX(i+1,j,k,n) - fluxX(i,j,k,n) ),
+                                   + ( fluxY(i,j+1,k,n) - fluxY(i,j,k,n) ),
+                                   + ( fluxZ(i,j,k+1,n) - fluxZ(i,j,k,n) )); 
+      div(i,j,k,n) *= factor;
+   }   
+}
+
+AMREX_GPU_DEVICE
+AMREX_FORCE_INLINE
+void
+getMwmixGivenRY(int i, int j, int k,
+                amrex::Array4<const amrex::Real> const& rho,
+                amrex::Array4<const amrex::Real> const& rhoY,
+                amrex::Array4<      amrex::Real> const& Mwmix) noexcept
+{
+   using namespace amrex::literals;
+
+   amrex::Real rhoinv  = 1.0_rt / rho(i,j,k);
+   amrex::Real y[NUM_SPECIES] = {0.0_rt};
+   for (int n = 0; n < NUM_SPECIES; n++) {
+      y[n] = rhoY(i,j,k,n) * rhoinv;
+   }   
+
+   EOS::Y2WBAR(y, Mwmix(i,j,k));
+   Mwmix(i,j,k) = Mwmix(i,j,k) * 0.001_rt;            // CGS -> MKS conversion
+}
+
+
+AMREX_GPU_DEVICE
+AMREX_FORCE_INLINE
+void
+cen2edg_cpp(int i, int j, int k,
+            int dir,
+            int ncomp,
+            const bool                       do_harmonic,
+            const bool                       on_lo,
+            const bool                       on_hi,
+            amrex::Array4<const amrex::Real> const& cfab,
+            amrex::Array4<      amrex::Real> const& efab) noexcept
+{
+   using namespace amrex::literals;
+
+   // Default behavior: id_l -1 in dir
+   // Handle the BCs
+   // Need -1 in id_l and id_h in dir on low Dirichlet BC
+   // Need nothing on high Dirichlet BC
+   int  id_l[3] = {i,j,k};
+   int  id_h[3] = {i,j,k};
+   if (!on_lo ) { 
+      if ( !on_hi ) { 
+         id_l[dir] -= 1;
+      }   
+   } else {
+      id_l[dir] -= 1;
+      id_h[dir] -= 1;
+   }   
+   if (do_harmonic) {
+      for (int n = 0; n < ncomp; n++) {
+         if ( ( cfab(id_l[0],id_l[1],id_l[2],n) * cfab(id_h[0],id_h[1],id_h[2],n) ) > 0.0_rt ) { 
+            efab(i,j,k,n) = 2.0_rt * ( cfab(id_l[0],id_l[1],id_l[2],n) * cfab(id_h[0],id_h[1],id_h[2],n) )
+                                   / ( cfab(id_l[0],id_l[1],id_l[2],n) + cfab(id_h[0],id_h[1],id_h[2],n) );
+         } else {
+            efab(i,j,k,n) = 0.0_rt;
+         }
+      }
+   } else {
+      for (int n = 0; n < ncomp; n++) {
+         efab(i,j,k,n) = 0.5_rt*(cfab(id_l[0],id_l[1],id_l[2],n) + cfab(id_h[0],id_h[1],id_h[2],n));
+      }
+   }
+}
+
+AMREX_GPU_DEVICE
+AMREX_FORCE_INLINE
+void
+repair_flux(int i, int j, int k,
+            int dir,
+            const bool                       on_lo,
+            const bool                       on_hi,
+            amrex::Array4<const amrex::Real> const& rhoY,
+            amrex::Array4<      amrex::Real> const& flux ) noexcept
+{
+   using namespace amrex::literals;
+
+   // Handle the BCs : need a -1 on id_l in dir away from the BC
+   // Need -1 in id_l and id_h in dir on low Dirichlet BC
+   // Need nothing on high Dirichlet BC
+   int  id_l[3] = {i,j,k};
+   int  id_h[3] = {i,j,k};
+   if ( !on_lo ) {
+      if ( !on_hi ) {
+        id_l[dir] -= 1;
+      }
+   } else {
+      id_l[dir] -= 1;
+      id_h[dir] -= 1;
+   }
+
+   amrex::Real sumFlux = 0.0_rt;
+   amrex::Real sumRhoYe = 0.0_rt;
+   amrex::Real RhoYe[NUM_SPECIES] = {0.0};
+   for (int n = 0; n < NUM_SPECIES; n++) {
+      sumFlux += flux(i,j,k,n);
+      RhoYe[n] = 0.5_rt * (rhoY(id_l[0],id_l[1],id_l[2],n) + rhoY(id_h[0],id_h[1],id_h[2],n));
+      sumRhoYe += RhoYe[n];
+   }
+   sumRhoYe = 1.0_rt / sumRhoYe;
+   for (int n = 0; n < NUM_SPECIES; n++) {
+      flux(i,j,k,n) -= sumFlux * RhoYe[n] * sumRhoYe;
+   }
+
+}
+
+AMREX_GPU_DEVICE
+AMREX_FORCE_INLINE
+void
+repair_flux_eb(int i, int j, int k,
+               int dir,
+               const bool                       on_lo,
+               const bool                       on_hi,
+               amrex::Array4<const amrex::Real> const& rhoY,
+               amrex::Array4<const amrex::Real> const& rhoYed,
+               amrex::Array4<const amrex::Real> const& areafrac,
+               amrex::Array4<      amrex::Real> const& flux ) noexcept
+{
+   using namespace amrex::literals;
+
+   // Handle the BCs : need a -1 on id_l in dir on Dirichlet BC
+   int  id_l[3] = {i,j,k};
+   id_l[dir] -= 1;
+   if ( areafrac(i,j,k) > 0.0_rt ) {
+      amrex::Real sumFlux = 0.0_rt;
+      amrex::Real sumRhoYe = 0.0_rt;
+      amrex::Real RhoYe[NUM_SPECIES] = {0.0};
+      for (int n = 0; n < NUM_SPECIES; n++) {
+         sumFlux += flux(i,j,k,n);
+         RhoYe[n] = rhoYed(i,j,k,n);
+         if ( on_lo ) RhoYe[n] = rhoY(id_l[0],id_l[1],id_l[2],n);
+         if ( on_hi ) RhoYe[n] = rhoY(i,j,k,n);
+         sumRhoYe += RhoYe[n];
+      }
+      sumRhoYe = 1.0_rt / sumRhoYe;
+      for (int n = 0; n < NUM_SPECIES; n++) {
+         flux(i,j,k,n) -= sumFlux * RhoYe[n] * sumRhoYe;
+      }
+   } else {
+      for (int n = 0; n < NUM_SPECIES; n++) {
+         flux(i,j,k,n) = 0.0_rt;
+      }
+   }
+
+}
+
+AMREX_GPU_DEVICE
+AMREX_FORCE_INLINE
+void
+getHGivenT(int i, int j, int k,
+           amrex::Array4<const amrex::Real> const& T,
+           amrex::Array4<      amrex::Real> const& Hi) noexcept
+{
+   using namespace amrex::literals;
+
+   amrex::Real hi_spec[NUM_SPECIES] = {0.0_rt};
+   EOS::T2Hi(T(i,j,k), hi_spec);
+   for (int n = 0; n < NUM_SPECIES; n++) {
+      Hi(i,j,k,n) = hi_spec[n] * 0.0001_rt;            // CGS -> MKS conversion
+   }   
+   
+}
+
 #endif

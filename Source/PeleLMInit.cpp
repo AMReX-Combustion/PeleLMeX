@@ -9,6 +9,7 @@ void PeleLM::Init() {
 
    // Initialize data
    initData();
+
 }
 
 void PeleLM::MakeNewLevelFromScratch( int lev,
@@ -35,13 +36,21 @@ void PeleLM::MakeNewLevelFromScratch( int lev,
 #endif
 
    // Initialize the LevelData
-   m_leveldata_old[lev].reset(new LevelData(grids[lev], dmap[lev], *m_factory[lev], m_nAux, m_nGrowState, m_nGrowMAC));
-   m_leveldata_new[lev].reset(new LevelData(grids[lev], dmap[lev], *m_factory[lev], m_nAux, m_nGrowState, m_nGrowMAC));
+   m_leveldata_old[lev].reset(new LevelData(grids[lev], dmap[lev], *m_factory[lev],
+                                            m_incompressible, m_has_divu,    
+                                            m_nAux, m_nGrowState, m_nGrowMAC));
+   m_leveldata_new[lev].reset(new LevelData(grids[lev], dmap[lev], *m_factory[lev],
+                                            m_incompressible, m_has_divu,    
+                                            m_nAux, m_nGrowState, m_nGrowMAC));
 
    // Fill the initial solution (if not restarting)
    if (m_restart_file.empty()) {
       initLevelData(lev);
    }
+
+   // Times
+   m_t_new[lev] = time;
+   m_t_old[lev] = time - 1.0e200;
 
 }
 
@@ -54,8 +63,21 @@ void PeleLM::initData() {
       // with MakeNewLevelFromScratch.
       InitFromScratch(m_cur_time);
 
+      if (m_has_divu) {
+         int is_initialization = 1;
+         calcDivU(is_initialization,AmrNewTime);
+      }
+
       if (m_do_init_proj) {
-         calcDiffusivity(AmrNewTime);
+         initialProjection();
+      }
+
+      initialIterations();
+
+      m_nstep = 0;
+
+      if (m_plot_int > 0 ) {
+         WritePlotFile();
       }
 
    } else {
@@ -88,7 +110,7 @@ void PeleLM::initLevelData(int lev) {
       auto  vel_arr   = ldata.velocity.array(mfi);
       auto  rho_arr   = ldata.density.array(mfi);
       auto  rhoY_arr  = ldata.species.array(mfi);
-      auto  rhoH_arr  = ldata.rhoH.array(mfi);
+      auto  rhoH_arr  = ldata.rhoh.array(mfi);
       auto  temp_arr  = ldata.temp.array(mfi);
       auto  aux_arr   = (m_nAux > 0) ? ldata.auxiliaries.array(mfi) : ldata.density.array(mfi);
 
@@ -99,4 +121,11 @@ void PeleLM::initLevelData(int lev) {
                          geomdata, *lprobparm, lpmfdata);
       });
    }
+
+   // Initialize thermodynamic pressure
+   setThermoPress(lev, AmrNewTime);
+}
+
+void PeleLM::initialIterations() {
+   BL_PROFILE_VAR("PeleLM::initialIterations()", initialIterations);
 }

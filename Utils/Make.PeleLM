@@ -34,7 +34,7 @@ Blocs += $(foreach dir, $(PPHdirs), $(PELE_PHYSICS_HOME)/$(dir))
 #---------------
 # AMReX sources
 #---------------
-Pdirs := Base Boundary AmrCore LinearSolvers/MLMG
+Pdirs := Base Boundary AmrCore LinearSolvers/MLMG LinearSolvers/Projections
 Bpack += $(foreach dir, $(Pdirs), $(AMREX_HOME)/Src/$(dir)/Make.package)
 
 #---------------

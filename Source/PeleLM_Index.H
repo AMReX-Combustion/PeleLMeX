@@ -8,7 +8,9 @@
 #define FIRSTSPEC DENSITY + 1
 #define RHOH FIRSTSPEC + NUM_SPECIES
 #define TEMP RHOH + 1
-#define FIRSTAUX TEMP + 1 
-#define NVAR FIRSTAUX + m_nAux
+#define RHORT TEMP + 1
+#define FIRSTAUX RHORT + 1 
+#define NVAR FIRSTAUX + 0
+//TODO: handle NAUX
 
 #endif

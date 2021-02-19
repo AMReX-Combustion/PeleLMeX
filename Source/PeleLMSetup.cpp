@@ -9,13 +9,16 @@ void PeleLM::Setup() {
    BL_PROFILE_VAR("PeleLM::Setup()", Setup);
 
    // Read PeleLM parameters
-   ReadParameters();
+   readParameters();
 
    // Setup the state variables
-   VariablesSetup();
+   variablesSetup();
 
    // Initialize Level Hierarchy data
-   ResizeArray();
+   resizeArray();
+
+   // Initiliaze BCs
+   setBoundaryConditions();
  
    // Initialize EOS and others
    amrex::Print() << " Initialization of EOS ... \n";
@@ -28,15 +31,16 @@ void PeleLM::Setup() {
 
 }
 
-void PeleLM::ReadParameters() {
-   BL_PROFILE_VAR("PeleLM::ReadParameters()", ReadParameters);
+void PeleLM::readParameters() {
+   BL_PROFILE_VAR("PeleLM::readParameters()", readParameters);
+
+   readIOParameters();
 
    ParmParse pp("peleLM");
 
    // -----------------------------------------
    // Misc
    // -----------------------------------------
-
    pp.query("v", m_verbose);
 
    // -----------------------------------------
@@ -93,14 +97,24 @@ void PeleLM::ReadParameters() {
       }
    }
 
-   //for (int i = 0; i < AMREX_SPACEDIM; i++) {
-   //   phys_bc.setLo(i,lo_bc[i]);
-   //   phys_bc.setHi(i,hi_bc[i]);
-   //}
+   // Store BCs in m_phys_bc.
+   for (int i = 0; i < AMREX_SPACEDIM; i++) {
+      m_phys_bc.setLo(i,lo_bc[i]);
+      m_phys_bc.setHi(i,hi_bc[i]);
+   }
 }
 
-void PeleLM::VariablesSetup() {
-   BL_PROFILE_VAR("PeleLM::VariablesSetup()", ReadParameters);
+void PeleLM::readIOParameters() {
+   BL_PROFILE_VAR("PeleLM::readIOParameters()", readIOParameters);
+
+   ParmParse pp("amr");
+
+   pp.query("plot_file", m_plot_file);
+   pp.query("plot_int" , m_plot_int);
+}
+
+void PeleLM::variablesSetup() {
+   BL_PROFILE_VAR("PeleLM::variablesSetup()", variablesSetup);
 
    if (m_verbose<1) return;
 
@@ -125,18 +139,21 @@ void PeleLM::VariablesSetup() {
    Print() << " First species: " << FIRSTSPEC << "\n";
    Print() << " Enthalpy: " << RHOH << "\n";
    Print() << " Temperature: " << TEMP << "\n";
+   Print() << " thermo. pressure: " << RHORT << "\n";
    if (m_nAux > 0) {
       Print() << " First passive scalar: " << FIRSTAUX << "\n";
    }
 
    Print() << " => Total number of state variables: " << NVAR << "\n";
+   Print() << PrettyLine;
+   Print() << "\n";
 
 }
 
-void PeleLM::ResizeArray() {
+void PeleLM::resizeArray() {
 
    if (m_verbose) {
-      Print() << " Initializing data on " << max_level+1 << " levels \n";
+      Print() << " Initializing data for " << max_level+1 << " levels \n";
    }
 
    // State data
@@ -146,30 +163,41 @@ void PeleLM::ResizeArray() {
    // Factory
    m_factory.resize(max_level+1);
 
+   // Time
+   m_t_old.resize(max_level+1);
+   m_t_new.resize(max_level+1);
+
 }
 
 PeleLM::LevelData::LevelData(amrex::BoxArray const& ba,
                              amrex::DistributionMapping const& dm,
                              amrex::FabFactory<FArrayBox> const& factory,
-                             int nAux, int nGrowState, int nGrowMAC) :
-   velocity(ba, dm, AMREX_SPACEDIM, nGrowState, MFInfo(), factory),
-   density (ba, dm, 1             , nGrowState, MFInfo(), factory),
-   species (ba, dm, NUM_SPECIES   , nGrowState, MFInfo(), factory),
-   rhoH    (ba, dm, 1             , nGrowState, MFInfo(), factory),
-   temp    (ba, dm, 1             , nGrowState, MFInfo(), factory),
-   gp      (ba, dm, AMREX_SPACEDIM, 0         , MFInfo(), factory),
+                             int a_incompressible, int a_has_divu, 
+                             int a_nAux, int a_nGrowState, int a_nGrowMAC) :
+   velocity(ba, dm, AMREX_SPACEDIM, a_nGrowState, MFInfo(), factory),
+   gp      (ba, dm, AMREX_SPACEDIM, 0           , MFInfo(), factory),
    press   (amrex::convert(ba,IntVect::TheNodeVector()), 
-                dm, 1             , 1         , MFInfo(), factory),   
-   diff_cc (ba, dm, NUM_SPECIES+2 , 1    , MFInfo(), factory)
+                dm, 1             , 1           , MFInfo(), factory)
 {
-   if ( nAux > 0 ) {
-      auxiliaries.define(ba, dm, nAux, nGrowState, MFInfo(), factory);
+   if (! a_incompressible ) {
+      density.define(ba, dm, 1             , a_nGrowState, MFInfo(), factory);
+      species.define(ba, dm, NUM_SPECIES   , a_nGrowState, MFInfo(), factory);
+      rhoh.define   (ba, dm, 1             , a_nGrowState, MFInfo(), factory);
+      rhoRT.define  (ba, dm, 1             , a_nGrowState, MFInfo(), factory);
+      temp.define   (ba, dm, 1             , a_nGrowState, MFInfo(), factory);
+      if (a_has_divu) {   
+         divu.define(ba, dm, 1             , 1           , MFInfo(), factory);
+      }
+      diff_cc.define(ba, dm, NUM_SPECIES+2 , 1           , MFInfo(), factory);
+   }
+   if ( a_nAux > 0 ) {
+      auxiliaries.define(ba, dm, a_nAux, a_nGrowState, MFInfo(), factory);
    }
 
    velocity_mac = new MultiFab[AMREX_SPACEDIM];
    for (int dir = 0; dir < AMREX_SPACEDIM; ++dir) {
       const BoxArray& faceba = amrex::convert(ba,IntVect::TheDimensionVector(dir));
-      velocity_mac[dir].define(faceba,dm, 1, nGrowMAC, MFInfo(), factory);
+      velocity_mac[dir].define(faceba,dm, 1, a_nGrowMAC, MFInfo(), factory);
    }
 
 }

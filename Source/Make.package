@@ -2,15 +2,24 @@
 CEXE_headers += PeleLM.H
 CEXE_headers += PeleLM_Index.H
 CEXE_headers += PeleLM_K.H
+CEXE_headers += PeleLMBCfill.H
+CEXE_headers += DiffusionOp.H
 
 ## Sources
 CEXE_sources += main.cpp
 CEXE_sources += Utils.cpp
 CEXE_sources += PeleLM.cpp
+CEXE_sources += PeleLMUtils.cpp
 CEXE_sources += PeleLMInit.cpp
 CEXE_sources += PeleLMRegrid.cpp
 CEXE_sources += PeleLMTagging.cpp
 CEXE_sources += PeleLMSetup.cpp
+CEXE_sources += PeleLMBC.cpp
+CEXE_sources += PeleLMPlot.cpp
 CEXE_sources += PeleLMAdvance.cpp
 CEXE_sources += PeleLMEvaluate.cpp
 CEXE_sources += PeleLMTransportProp.cpp
+CEXE_sources += DiffusionOp.cpp
+CEXE_sources += PeleLMDiffusion.cpp
+CEXE_sources += PeleLMProjection.cpp
+CEXE_sources += PeleLMEos.cpp
