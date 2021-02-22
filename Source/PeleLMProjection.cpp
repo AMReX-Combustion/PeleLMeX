@@ -46,6 +46,7 @@ void PeleLM::initialProjection()
    Vector<MultiFab*> vel;
    for (int lev = 0; lev <= finest_level; ++lev) {
       vel.push_back(&(m_leveldata_new[lev]->velocity));
+      vel[lev]->setBndry(0.0);
       setPhysBoundaryVel(*vel[lev],lev,AmrNewTime);
    }
 
