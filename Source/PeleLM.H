@@ -6,10 +6,12 @@
 #include <AMReX_BC_TYPES.H>
 #include <AMReX_MacProjector.H>
 #include <AMReX_NodalProjector.H>
+#include <AMReX_ErrorList.H>
 #include <AMReX_VisMF.H>
 
 #include <mechanism.h>
 #include <PeleLM_Index.H>
+#include <PeleLMDerive.H>
 #include <pelelm_prob_parm.H>
 #include <DiffusionOp.H>
 
@@ -45,9 +47,9 @@ class PeleLM : public amrex::AmrCore {
                                          const amrex::DistributionMapping& dm) override;
 
    virtual void ErrorEst( int lev, 
-                         amrex::TagBoxArray& tags,
-                         amrex::Real time,
-                         int ng) override;
+                          amrex::TagBoxArray& tags,
+                          amrex::Real time,
+                          int ng) override;
 
    virtual void MakeNewLevelFromCoarse( int lev, 
                                               amrex::Real time,
@@ -73,6 +75,12 @@ class PeleLM : public amrex::AmrCore {
 
    // VariablesSetup
    void variablesSetup();
+
+   // DerivedSetup
+   void derivedSetup();
+
+   // TaggingSetup
+   void taggingSetup();
 
    // ResizeArray
    void resizeArray();
@@ -162,13 +170,22 @@ class PeleLM : public amrex::AmrCore {
    // Convert PhysBC into field BCs
    void setBoundaryConditions();
 
-   // FillPatch the entire state
+   // FillPatch the entire class state
    void fillPatchState(int lev, PeleLM::TimeStamp a_time);
+
+   // FillPatch and return a state MF
+   std::unique_ptr<amrex::MultiFab>
+   fillPatchState(int lev, amrex::Real a_time, int nGrow);
 
    // FillPatch state components
    void fillpatch_velocity(int lev, amrex::Real a_time, amrex::MultiFab& a_vel, int nGhost);
    void fillpatch_mass(int lev, amrex::Real a_time, amrex::MultiFab& a_rho, amrex::MultiFab& a_rhoY, int nGhost);
    void fillpatch_energy(int lev, amrex::Real a_time, amrex::MultiFab& a_rhoh, amrex::MultiFab& a_temp, int nGhost);
+
+   // FillCoarsePatch state components
+   void fillcoarsepatch_velocity(int lev, amrex::Real a_time, amrex::MultiFab& a_vel, int nGhost);
+   void fillcoarsepatch_mass(int lev, amrex::Real a_time, amrex::MultiFab& a_rho, amrex::MultiFab& a_rhoY, int nGhost);
+   void fillcoarsepatch_energy(int lev, amrex::Real a_time, amrex::MultiFab& a_rhoh, amrex::MultiFab& a_temp, int nGhost);
 
    // Fill physical boundaries
    void setPhysBoundaryVel (amrex::MultiFab &a_vel, int lev, PeleLM::TimeStamp a_time);
@@ -192,6 +209,14 @@ class PeleLM : public amrex::AmrCore {
                             int flux_comp,
                             int ncomp,
                             amrex::Real scale);
+
+   // Derived variable evaluation
+   std::unique_ptr<amrex::MultiFab> derive(const std::string &a_name, 
+                                           amrex::Real a_time, int lev, int nGrow);
+
+   // Lightweight state description access
+   bool isStateVariable(const std::string &a_name);
+   int stateVariableIndex(const std::string &a_name);
    //-----------------------------------------------------------------------------
 
    //-----------------------------------------------------------------------------
@@ -263,8 +288,10 @@ class PeleLM : public amrex::AmrCore {
    //-----------------------------------------------------------------------------
 
    //protected:
+   // Brief state descriptor
+   std::list<std::tuple<int,std::string>> stateComponents;
 
-   // Class data
+   // Class level data
    amrex::Vector<std::unique_ptr<LevelData> > m_leveldata_old;
    amrex::Vector<std::unique_ptr<LevelData> > m_leveldata_new;
 
@@ -278,6 +305,12 @@ class PeleLM : public amrex::AmrCore {
    // Boundary Conditions
    amrex::BCRec  m_phys_bc;                      // Store physical BC from input
    amrex::Vector<amrex::BCRec> m_bcrec_state;
+
+   // Derived quantities
+   PeleLMDeriveList     derive_lst;
+
+   // Tagging
+   amrex::Vector<amrex::AMRErrorTag> errTags;
 
    // Problem parameters
    std::unique_ptr<ProbParm> prob_parm;
@@ -328,6 +361,11 @@ class PeleLM : public amrex::AmrCore {
 
    // Init proj flag
    int m_do_init_proj = 1;
+
+#ifdef AMREX_USE_EB
+   int m_refine_cutcells = 1
+#endif
+   int m_refine_cutcells = 1;
    //-----------------------------------------------------------------------------
 
    //-----------------------------------------------------------------------------
