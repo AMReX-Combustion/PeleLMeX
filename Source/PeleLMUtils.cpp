@@ -106,3 +106,75 @@ void PeleLM::fluxDivergenceLevel(int lev,
 #endif
 
 }
+
+std::unique_ptr<MultiFab>
+PeleLM::derive(const std::string &a_name,
+               Real               a_time,
+               int                lev,
+               int                nGrow)
+{
+   AMREX_ASSERT(nGrow >= 0);
+   
+   std::unique_ptr<MultiFab> mf;
+
+   bool itexists = derive_lst.canDerive(a_name) || isStateVariable(a_name);
+
+   if ( !itexists ) {
+      amrex::Error("PeleLM::derive(): unknown variable: "+a_name);
+   }
+
+   const PeleLMDeriveRec* rec = derive_lst.get(a_name);
+
+   if (rec) {        // This is a derived variable
+      mf.reset(new MultiFab(grids[lev], dmap[lev], rec->numDerive(), nGrow));
+      std::unique_ptr<MultiFab> statemf = fillPatchState(lev, a_time, nGrow);
+      auto stateBCs = fetchBCRecArray(VELX,NVAR);
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+      for (MFIter mfi(*mf,TilingIfNotGPU()); mfi.isValid(); ++mfi)
+      {
+          const Box& bx = mfi.growntilebox(nGrow);
+          FArrayBox& derfab = (*mf)[mfi];
+          FArrayBox const& statefab = (*statemf)[mfi];
+          rec->derFunc()(bx, derfab, 0, rec->numDerive(), statefab, geom[lev], a_time, stateBCs, lev);
+      }
+   } else {          // This is a state variable
+      mf.reset(new MultiFab(grids[lev], dmap[lev], 1, nGrow));
+      int idx = stateVariableIndex(a_name);
+      std::unique_ptr<MultiFab> statemf = fillPatchState(lev, a_time, nGrow);
+      MultiFab::Copy(*mf,*statemf,idx,0,1,nGrow);
+   }
+
+   return mf;
+}
+
+bool
+PeleLM::isStateVariable(const std::string &a_name)
+{
+   for (std::list<std::tuple<int,std::string>>::const_iterator li = stateComponents.begin(),
+        End = stateComponents.end(); li != End; ++li)
+   {
+      if (std::get<1>(*li) == a_name) {
+         return true;
+      }
+   }
+   return false;
+}
+
+int
+PeleLM::stateVariableIndex(const std::string &a_name)
+{
+   int idx = -1;
+   if (!isStateVariable(a_name)) {
+      amrex::Error("PeleLM::stateVariableIndex(): unknown State variable: "+a_name);
+   }
+   for (std::list<std::tuple<int,std::string>>::const_iterator li = stateComponents.begin(),
+        End = stateComponents.end(); li != End; ++li)
+   {
+      if (std::get<1>(*li) == a_name) {
+         idx = std::get<0>(*li);
+      }
+   }
+   return idx;
+}
