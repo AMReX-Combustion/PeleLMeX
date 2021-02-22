@@ -13,7 +13,7 @@ DiffusionOp::DiffusionOp (PeleLM* a_pelelm)
                         : m_pelelm(a_pelelm)
 {
    readParameters();
-   
+
    // Solve LPInfo
    LPInfo info_solve;
    info_solve.setMaxCoarseningLevel(m_mg_max_coarsening_level);
@@ -23,7 +23,7 @@ DiffusionOp::DiffusionOp (PeleLM* a_pelelm)
    info_apply.setMaxCoarseningLevel(0);
 
    // Scalar apply op.
-   m_scal_apply_op.reset(new MLABecLaplacian(m_pelelm->Geom(0,m_pelelm->finestLevel()), 
+   m_scal_apply_op.reset(new MLABecLaplacian(m_pelelm->Geom(0,m_pelelm->finestLevel()),
                                              m_pelelm->boxArray(0,m_pelelm->finestLevel()),
                                              m_pelelm->DistributionMap(0,m_pelelm->finestLevel()),
                                              info_apply));
@@ -39,12 +39,12 @@ DiffusionOp::DiffusionOp (PeleLM* a_pelelm)
    for (int lev = 0; lev <= m_pelelm->finestLevel(); ++lev) {
       m_gradient_op->setBCoeffs(lev,1.0);
    }
-   
+
 }
 
 void DiffusionOp::computeDiffLap(Vector<MultiFab*> const& a_laps,
                                  Vector<MultiFab const*> const& a_phi,
-                                 Vector<MultiFab const*> const& a_density, 
+                                 Vector<MultiFab const*> const& a_density,
                                  Vector<MultiFab const*> const& a_eta)
 {
 
@@ -56,7 +56,7 @@ void DiffusionOp::computeDiffFluxes(Vector<Array<MultiFab*,AMREX_SPACEDIM>> cons
                                     int flux_comp,
                                     Vector<MultiFab const*> const& a_phi,
                                     int phi_comp,
-                                    Vector<MultiFab const*> const& a_density, 
+                                    Vector<MultiFab const*> const& a_density,
                                     Vector<MultiFab const*> const& a_beta,
                                     int beta_comp,
                                     Vector<BCRec> a_bcrec,
@@ -100,7 +100,7 @@ void DiffusionOp::computeDiffFluxes(Vector<Array<MultiFab*,AMREX_SPACEDIM>> cons
       }
    }
 
-   // LinOp is \alpha A \phi - \beta \nabla \cdot B \nabla \phi 
+   // LinOp is \alpha A \phi - \beta \nabla \cdot B \nabla \phi
    // => \alpha = 0, A doesn't matter
    // => \beta = -1.0, B face centered diffusivity a_beta
 
@@ -111,8 +111,9 @@ void DiffusionOp::computeDiffFluxes(Vector<Array<MultiFab*,AMREX_SPACEDIM>> cons
    for (int comp = 0; comp < ncomp; ++comp) {
 
       // Component based vector of data
-      Vector<Array<MultiFab* ,AMREX_SPACEDIM>> fluxes(finest_level+1);
+      Vector<Array<MultiFab*,AMREX_SPACEDIM>> fluxes(finest_level+1);
       Vector<MultiFab> component;
+      Vector<MultiFab> laps;
 
       // Allow for component specific LinOp BC
       m_scal_apply_op->setDomainBC(m_pelelm->getDiffusionLinOpBC(Orientation::low,a_bcrec[comp]),
@@ -124,13 +125,16 @@ void DiffusionOp::computeDiffFluxes(Vector<Array<MultiFab*,AMREX_SPACEDIM>> cons
          }
          component.emplace_back(phi[lev],amrex::make_alias,comp,1);
          Array<MultiFab,AMREX_SPACEDIM> beta_ec = m_pelelm->getDiffusivity(lev, beta_comp, 1, {a_bcrec[comp]}, *a_beta[lev]);
+         laps.emplace_back(a_phi[lev]->boxArray(), a_phi[lev]->DistributionMap(),
+                           1, 1, MFInfo(), a_phi[lev]->Factory());
 
          m_scal_apply_op->setBCoeffs(lev, GetArrOfConstPtrs(beta_ec));
          m_scal_apply_op->setLevelBC(lev, &component[lev]);
       }
 
       MLMG mlmg(*m_scal_apply_op);
-      mlmg.getFluxes(fluxes, GetVecOfPtrs(component));
+      mlmg.apply(GetVecOfPtrs(laps), GetVecOfPtrs(component));
+      mlmg.getFluxes(fluxes, GetVecOfPtrs(component),MLMG::Location::FaceCenter);
       scaleExtensiveFluxes(fluxes,-1.0*scale);
    }
 }
@@ -155,14 +159,18 @@ DiffusionOp::computeGradient(const Vector<Array<MultiFab*,AMREX_SPACEDIM>> &a_gr
    // Duplicate phi since it is modified by the LinOp
    // and setup level BCs
    Vector<MultiFab> phi(finest_level+1);
+   Vector<MultiFab> laps;
    for (int lev = 0; lev <= finest_level; ++lev) {
       phi[lev].define(a_phi[lev]->boxArray(),a_phi[lev]->DistributionMap(),
                       1, 1, MFInfo(), a_phi[lev]->Factory());
       MultiFab::Copy(phi[lev], *a_phi[lev], 0, 0, 1, 1);
       m_gradient_op->setLevelBC(lev, &phi[lev]);
+      laps.emplace_back(a_phi[lev]->boxArray(), a_phi[lev]->DistributionMap(),
+                        1, 1, MFInfo(), a_phi[lev]->Factory());
    }
 
    MLMG mlmg(*m_gradient_op);
+   mlmg.apply(GetVecOfPtrs(laps), GetVecOfPtrs(phi));
    mlmg.getFluxes(a_grad, GetVecOfPtrs(phi));
    scaleExtensiveFluxes(a_grad, -1.0);
 }
