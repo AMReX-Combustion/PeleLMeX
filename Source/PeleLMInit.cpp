@@ -31,6 +31,7 @@ void PeleLM::MakeNewLevelFromScratch( int lev,
 
    // Define the FAB Factory
 #ifdef AMREX_USE_EB
+   //TODO
 #else
    m_factory[lev].reset(new FArrayBoxFactory());
 #endif
@@ -104,26 +105,30 @@ void PeleLM::initLevelData(int lev) {
 #ifdef _OPENMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
-   for (MFIter mfi(ldata.density,TilingIfNotGPU()); mfi.isValid(); ++mfi)
+   for (MFIter mfi(ldata.velocity,TilingIfNotGPU()); mfi.isValid(); ++mfi)
    {
       const Box& box = mfi.validbox();
       auto  vel_arr   = ldata.velocity.array(mfi);
-      auto  rho_arr   = ldata.density.array(mfi);
-      auto  rhoY_arr  = ldata.species.array(mfi);
-      auto  rhoH_arr  = ldata.rhoh.array(mfi);
-      auto  temp_arr  = ldata.temp.array(mfi);
-      auto  aux_arr   = (m_nAux > 0) ? ldata.auxiliaries.array(mfi) : ldata.density.array(mfi);
+      Array4<Real> dummy;
+      auto  rho_arr   = (m_incompressible) ? dummy : ldata.density.array(mfi);
+      auto  rhoY_arr  = (m_incompressible) ? dummy : ldata.species.array(mfi);
+      auto  rhoH_arr  = (m_incompressible) ? dummy : ldata.rhoh.array(mfi);
+      auto  temp_arr  = (m_incompressible) ? dummy : ldata.temp.array(mfi);
+      auto  aux_arr   = (m_nAux > 0) ? ldata.auxiliaries.array(mfi) : dummy;
 
-      amrex::ParallelFor(box,
-      [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+      amrex::ParallelFor(box, [=,m_incompressible=m_incompressible]
+      AMREX_GPU_DEVICE (int i, int j, int k) noexcept
       {
-         pelelm_initdata(i, j, k, vel_arr, rho_arr, rhoY_arr, rhoH_arr, temp_arr, aux_arr,
+         pelelm_initdata(i, j, k, m_incompressible, vel_arr, rho_arr, 
+                         rhoY_arr, rhoH_arr, temp_arr, aux_arr,
                          geomdata, *lprobparm, lpmfdata);
       });
    }
 
-   // Initialize thermodynamic pressure
-   setThermoPress(lev, AmrNewTime);
+   if (!m_incompressible) {
+      // Initialize thermodynamic pressure
+      setThermoPress(lev, AmrNewTime);
+   }
 }
 
 void PeleLM::initialIterations() {
