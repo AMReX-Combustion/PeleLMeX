@@ -13,6 +13,7 @@
 AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
 void pelelm_initdata(int i, int j, int k,
+                     int is_incompressible,
                      amrex::Array4<amrex::Real> const& vel,
                      amrex::Array4<amrex::Real> const& rho,
                      amrex::Array4<amrex::Real> const& rhoY,
@@ -48,6 +49,8 @@ void pelelm_initdata(int i, int j, int k,
     AMREX_D_TERM(vel(i,j,k,0) = 0.0;,
                  vel(i,j,k,1) = 0.0;,
                  vel(i,j,k,2) = 0.0);
+    
+    if (is_incompressible) return;
 
     amrex::Real massfrac[NUM_SPECIES] = {0.0};
     massfrac[O2_ID] = 0.233;
