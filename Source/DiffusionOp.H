@@ -6,8 +6,10 @@
 
 #ifdef AMREX_USE_EB
 #include <AMReX_MLEBABecLap.H>
+#include <AMReX_MLEBTensorOp.H>
 #endif
 #include <AMReX_MLABecLaplacian.H>
+#include <AMReX_MLTensorOp.H>
 
 class PeleLM;
 
@@ -33,14 +35,22 @@ class DiffusionOp
                            int beta_comp,
                            amrex::Vector<amrex::BCRec> a_bcrec,
                            int ncomp,
-                           amrex::Real scale);
+                           amrex::Real scale,
+                           int do_avgDown);
 
    void computeGradient(const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> &a_grad,
                         const amrex::Vector<amrex::MultiFab const*> &a_phi,
-                        const amrex::BCRec &a_bcrec);
+                        const amrex::BCRec &a_bcrec,
+                        int do_avgDown);
 
    void scaleExtensiveFluxes(amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> const& a_fluxes,
+                             int flux_comp,
+                             int ncomp,
                              amrex::Real fac);
+
+   void avgDownFluxes(amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> const& a_fluxes,
+                      int flux_comp,
+                      int ncomp);
 
    void readParameters ();
 
@@ -72,6 +82,49 @@ class DiffusionOp
 
    std::string m_mg_bottom_solver = "bicgstab";
 
+};
+
+class DiffusionTensorOp
+{
+public:
+
+   DiffusionTensorOp (PeleLM* a_pelelm);
+
+   void compute_divtau (amrex::Vector<amrex::MultiFab*> const& a_divtau,
+                        amrex::Vector<amrex::MultiFab const*> const& a_vel,
+                        amrex::Vector<amrex::MultiFab const*> const& a_density,
+                        amrex::Vector<amrex::MultiFab const*> const& a_beta,
+                        const amrex::BCRec &a_bcrec,
+                        amrex::Real scale);
+
+private:
+
+   void readParameters ();
+
+   // Data and parameters
+   PeleLM* m_pelelm; 
+
+   // Apply operator
+   std::unique_ptr<amrex::MLTensorOp> m_apply_op;
+
+   int m_verbose = 0;
+
+   // Options to control MLMG behavior
+   int m_mg_verbose = 0;
+   int m_mg_bottom_verbose = 0;
+   int m_mg_max_iter = 100;
+   int m_mg_bottom_maxiter = 100;
+   int m_mg_max_fmg_iter = 0;
+   int m_mg_max_coarsening_level = 100;
+   int m_mg_maxorder = 2;
+
+   int m_num_pre_smooth = 2;
+   int m_num_post_smooth = 2;
+
+   amrex::Real m_mg_rtol = 1.0e-11;
+   amrex::Real m_mg_atol = 1.0e-14;
+
+   std::string m_mg_bottom_solver = "bicgstab";
 };
 
 #endif

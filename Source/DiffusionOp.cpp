@@ -9,6 +9,9 @@
 
 using namespace amrex;
 
+//---------------------------------------------------------------------------------------
+// Diffusion Operator
+
 DiffusionOp::DiffusionOp (PeleLM* a_pelelm)
                         : m_pelelm(a_pelelm)
 {
@@ -61,7 +64,8 @@ void DiffusionOp::computeDiffFluxes(Vector<Array<MultiFab*,AMREX_SPACEDIM>> cons
                                     int beta_comp,
                                     Vector<BCRec> a_bcrec,
                                     int ncomp,
-                                    Real scale)
+                                    Real scale,
+                                    int do_avgDown)
 {
    BL_PROFILE_VAR("DiffusionOp::computeDiffFluxes()", computeDiffFluxes);
 
@@ -134,15 +138,23 @@ void DiffusionOp::computeDiffFluxes(Vector<Array<MultiFab*,AMREX_SPACEDIM>> cons
 
       MLMG mlmg(*m_scal_apply_op);
       mlmg.apply(GetVecOfPtrs(laps), GetVecOfPtrs(component));
+#ifdef AMREX_USE_EB
+      mlmg.getFluxes(fluxes, GetVecOfPtrs(component),MLMG::Location::FaceCentroid);
+#else
       mlmg.getFluxes(fluxes, GetVecOfPtrs(component),MLMG::Location::FaceCenter);
-      scaleExtensiveFluxes(fluxes,-1.0*scale);
+#endif
    }
+
+   // Scale the
+   scaleExtensiveFluxes(a_flux,flux_comp,ncomp,-1.0*scale);
+   if (do_avgDown) avgDownFluxes(a_flux,flux_comp,ncomp);
 }
 
 void
 DiffusionOp::computeGradient(const Vector<Array<MultiFab*,AMREX_SPACEDIM>> &a_grad,
                              const Vector<MultiFab const*> &a_phi,
-                             const BCRec &a_bcrec)
+                             const BCRec &a_bcrec,
+                             int do_avgDown)
 {
    BL_PROFILE_VAR("DiffusionOp::computeGradient()", computeGradient);
 
@@ -171,12 +183,19 @@ DiffusionOp::computeGradient(const Vector<Array<MultiFab*,AMREX_SPACEDIM>> &a_gr
 
    MLMG mlmg(*m_gradient_op);
    mlmg.apply(GetVecOfPtrs(laps), GetVecOfPtrs(phi));
-   mlmg.getFluxes(a_grad, GetVecOfPtrs(phi));
-   scaleExtensiveFluxes(a_grad, -1.0);
+#ifdef AMREX_USE_EB
+   mlmg.getFluxes(a_grad, GetVecOfPtrs(phi),MLMG::Location::FaceCentroid);
+#else
+   mlmg.getFluxes(a_grad, GetVecOfPtrs(phi),MLMG::Location::FaceCenter);
+#endif
+   scaleExtensiveFluxes(a_grad, 0, 1, -1.0);
+   if (do_avgDown) avgDownFluxes(a_grad, 0, 1);
 }
 
 void
 DiffusionOp::scaleExtensiveFluxes(const Vector<Array<MultiFab*,AMREX_SPACEDIM>> &a_fluxes,
+                                  int flux_comp,
+                                  int ncomp,
                                   Real fac)
 {
 
@@ -209,9 +228,9 @@ DiffusionOp::scaleExtensiveFluxes(const Vector<Array<MultiFab*,AMREX_SPACEDIM>> 
 #endif
       for (MFIter mfi(dummy, mfi_info); mfi.isValid(); ++mfi)
       {
-         AMREX_D_TERM(const auto& fx = a_fluxes[lev][0]->array(mfi);,
-                      const auto& fy = a_fluxes[lev][1]->array(mfi);,
-                      const auto& fz = a_fluxes[lev][2]->array(mfi););
+         AMREX_D_TERM(const auto& fx = a_fluxes[lev][0]->array(mfi,flux_comp);,
+                      const auto& fy = a_fluxes[lev][1]->array(mfi,flux_comp);,
+                      const auto& fz = a_fluxes[lev][2]->array(mfi,flux_comp););
 
          AMREX_D_TERM(const Box ubx = mfi.nodaltilebox(0);,
                       const Box vbx = mfi.nodaltilebox(1);,
@@ -228,25 +247,53 @@ DiffusionOp::scaleExtensiveFluxes(const Vector<Array<MultiFab*,AMREX_SPACEDIM>> 
             // For now, set to very large num so we know if you accidentally use it
             // MLMG will set covered fluxes to zero
             //
-            AMREX_D_TERM(AMREX_PARALLEL_FOR_3D(ubx, i, j, k, n, {fx(i,j,k) = COVERED_VAL;});,
-                         AMREX_PARALLEL_FOR_3D(vbx, i, j, k, n, {fy(i,j,k) = COVERED_VAL;});,
-                         AMREX_PARALLEL_FOR_3D(wbx, i, j, k, n, {fz(i,j,k) = COVERED_VAL;}););
+            AMREX_D_TERM(AMREX_PARALLEL_FOR_4D(ubx, i, j, k, n, {fx(i,j,k,n) = COVERED_VAL;});,
+                         AMREX_PARALLEL_FOR_4D(vbx, i, j, k, n, {fy(i,j,k,n) = COVERED_VAL;});,
+                         AMREX_PARALLEL_FOR_4D(wbx, i, j, k, n, {fz(i,j,k,n) = COVERED_VAL;}););
          } else if ( flags.getType(amrex::grow(bx,0)) != FabType::regular ) {
             AMREX_D_TERM( const auto& afrac_x = areafrac[0]->array(mfi);,
                           const auto& afrac_y = areafrac[1]->array(mfi);,
                           const auto& afrac_z = areafrac[2]->array(mfi););
 
-            AMREX_D_TERM(AMREX_PARALLEL_FOR_3D(ubx, i, j, k, n, {fx(i,j,k) *= fac*areax*afrac_x(i,j,k);});,
-                         AMREX_PARALLEL_FOR_3D(vbx, i, j, k, n, {fy(i,j,k) *= fac*areay*afrac_y(i,j,k);});,
-                         AMREX_PARALLEL_FOR_3D(wbx, i, j, k, n, {fz(i,j,k) *= fac*areaz*afrac_z(i,j,k);}););
+            AMREX_D_TERM(AMREX_PARALLEL_FOR_4D(ubx, ncomp, i, j, k, n, {fx(i,j,k,n) *= fac*areax*afrac_x(i,j,k);});,
+                         AMREX_PARALLEL_FOR_4D(vbx, ncomp, i, j, k, n, {fy(i,j,k,n) *= fac*areay*afrac_y(i,j,k);});,
+                         AMREX_PARALLEL_FOR_4D(wbx, ncomp, i, j, k, n, {fz(i,j,k,n) *= fac*areaz*afrac_z(i,j,k);}););
          } else
 #endif
          {
-            AMREX_D_TERM(AMREX_PARALLEL_FOR_3D(ubx, i, j, k, {fx(i,j,k) *= fac*areax;});,
-                         AMREX_PARALLEL_FOR_3D(vbx, i, j, k, {fy(i,j,k) *= fac*areay;});,
-                         AMREX_PARALLEL_FOR_3D(wbx, i, j, k, {fz(i,j,k) *= fac*areaz;}););
+            AMREX_D_TERM(AMREX_PARALLEL_FOR_4D(ubx, ncomp, i, j, k, n, {fx(i,j,k,n) *= fac*areax;});,
+                         AMREX_PARALLEL_FOR_4D(vbx, ncomp, i, j, k, n, {fy(i,j,k,n) *= fac*areay;});,
+                         AMREX_PARALLEL_FOR_4D(wbx, ncomp, i, j, k, n, {fz(i,j,k,n) *= fac*areaz;}););
          }
       }
+   }
+}
+
+void
+DiffusionOp::avgDownFluxes(const Vector<Array<MultiFab*,AMREX_SPACEDIM>> &a_fluxes,
+                           int flux_comp,
+                           int ncomp)
+{
+
+   int finest_level = m_pelelm->finestLevel();
+
+   for (int lev = finest_level; lev > 0; --lev) {
+      // Get the requested components only
+      Array<MultiFab*,AMREX_SPACEDIM> flux_fine;
+      Array<MultiFab*,AMREX_SPACEDIM> flux_crse;
+      for (int idim = 0; idim < AMREX_SPACEDIM; idim++ ) {
+         flux_fine[idim] = new MultiFab(*a_fluxes[lev][idim],amrex::make_alias,flux_comp,ncomp);
+         flux_crse[idim] = new MultiFab(*a_fluxes[lev-1][idim],amrex::make_alias,flux_comp,ncomp);
+      }
+#ifdef AMREX_USE_EB
+      EB_average_down_faces(GetArrOfConstPtrs(flux_fine),
+                            flux_crse,
+                            m_pelelm->refRatio(lev-1),flux_crse[0]->nGrow());
+#else
+      average_down_faces(GetArrOfConstPtrs(flux_fine),
+                         flux_crse,
+                         m_pelelm->refRatio(lev-1),flux_crse[0]->nGrow());
+#endif
    }
 }
 
@@ -258,3 +305,101 @@ DiffusionOp::readParameters ()
    pp.query("verbose", m_verbose);
    // TODO: add all the user-defined options
 }
+
+//---------------------------------------------------------------------------------------
+// Tensor Operator
+
+DiffusionTensorOp::DiffusionTensorOp (PeleLM* a_pelelm)
+   : m_pelelm(a_pelelm)
+{
+
+   readParameters();
+   
+   int finest_level = m_pelelm->finestLevel();
+
+   // Solve LPInfo
+   LPInfo info_solve;
+   info_solve.setMaxCoarseningLevel(m_mg_max_coarsening_level);
+
+   // Apply LPInfo (no coarsening)
+   LPInfo info_apply;
+   info_apply.setMaxCoarseningLevel(0);
+
+   m_apply_op.reset(new MLTensorOp(m_pelelm->Geom(0,finest_level),
+                                   m_pelelm->boxArray(0,finest_level),
+                                   m_pelelm->DistributionMap(0,finest_level),
+                                   info_apply));
+   m_apply_op->setMaxOrder(m_mg_maxorder);
+   auto bcRecVel = m_pelelm->fetchBCRecArray(VELX,AMREX_SPACEDIM);  
+   m_apply_op->setDomainBC(m_pelelm->getDiffusionTensorOpBC(Orientation::low,bcRecVel),
+                           m_pelelm->getDiffusionTensorOpBC(Orientation::high,bcRecVel));
+
+}
+
+void DiffusionTensorOp::compute_divtau (Vector<MultiFab*> const& a_divtau,
+                                        Vector<MultiFab const*> const& a_vel,
+                                        Vector<MultiFab const*> const& a_density,
+                                        Vector<MultiFab const*> const& a_beta,
+                                        const BCRec &a_bcrec,
+                                        Real scale)
+{
+   int finest_level = m_pelelm->finestLevel();
+
+   int have_density = (a_density.empty()) ? 0 : 1;  
+
+   // Duplicate vel since it is modified by the TensorOp
+   Vector<MultiFab> vel(finest_level+1);
+   for (int lev = 0; lev <= finest_level; ++lev) {
+      vel[lev].define(a_vel[lev]->boxArray(), a_vel[lev]->DistributionMap(),
+                     AMREX_SPACEDIM, 1, MFInfo(), a_vel[lev]->Factory());
+      MultiFab::Copy(vel[lev], *a_vel[lev], 0, 0, AMREX_SPACEDIM, 1);
+   }
+
+   //TODO EB
+
+   m_apply_op->setScalars(0.0, -scale);
+   for (int lev = 0; lev <= finest_level; ++lev) {
+       if (have_density) { // alpha being zero, not sure that this does anything.
+          m_apply_op->setACoeffs(lev, *a_density[lev]);  
+       }
+       Array<MultiFab,AMREX_SPACEDIM> beta_ec = m_pelelm->getDiffusivity(lev, 0, 1, {a_bcrec}, *a_beta[lev]);
+       m_apply_op->setShearViscosity(lev, GetArrOfConstPtrs(beta_ec));
+       m_apply_op->setLevelBC(lev, &vel[lev]);
+   }
+
+   MLMG mlmg(*m_apply_op);
+   mlmg.apply(a_divtau, GetVecOfPtrs(vel));
+
+   if (have_density) {
+      for (int lev = 0; lev <= finest_level; ++lev) {
+#ifdef _OPENMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+         for (MFIter mfi(*a_divtau[lev],TilingIfNotGPU()); mfi.isValid(); ++mfi) {
+            Box const& bx = mfi.tilebox();
+            auto const& divtau_arr = a_divtau[lev]->array(mfi);
+            auto const& rho_arr = a_density[lev]->const_array(mfi);
+            amrex::ParallelFor(bx,
+            [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+            {
+                Real rhoinv = 1.0/rho_arr(i,j,k);
+                AMREX_D_TERM(divtau_arr(i,j,k,0) *= rhoinv;,
+                             divtau_arr(i,j,k,1) *= rhoinv;,
+                             divtau_arr(i,j,k,2) *= rhoinv;);
+            });
+         }
+      }
+   }
+}
+
+
+
+void
+DiffusionTensorOp::readParameters ()
+{
+   ParmParse pp("tensor_diffusion");
+
+   pp.query("verbose", m_verbose);
+   // TODO: add all the user-defined options
+}
+
