@@ -3,14 +3,54 @@
 
 using namespace amrex;
 
-void PeleLM::calcDiffusivity(TimeStamp time) {
+void PeleLM::calcViscosity(const TimeStamp &a_time) {
+   BL_PROFILE_VAR("PeleLM::calcViscosity()", calcViscosity);
+
+   for (int lev = 0; lev <= finest_level; ++lev) {
+
+      auto ldata_p = getLevelDataPtr(lev,a_time);
+
+      if (m_incompressible) {
+         ldata_p->visc_cc.setVal(m_mu);
+      } else {
+
+         if ( a_time != AmrOldTime ) {
+            fillPatchState(lev,a_time);
+         }
+
+         // Transport data pointer
+         TransParm const* ltransparm = trans_parm_g;
+
+#ifdef _OPENMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+         for (MFIter mfi(ldata_p->visc_cc, TilingIfNotGPU()); mfi.isValid(); ++mfi)
+         {
+            const Box& gbx     = mfi.growntilebox();
+            auto const& rhoY   = ldata_p->species.const_array(mfi);
+            auto const& T      = ldata_p->temp.array(mfi);
+            auto const& mu     = ldata_p->visc_cc.array(mfi,0);
+
+            amrex::ParallelFor(gbx, [rhoY, T, mu, ltransparm]
+            AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+            {
+               getVelViscosity( i, j, k, rhoY, T, mu, ltransparm);
+            });
+         }
+      }
+   }
+}
+
+void PeleLM::calcDiffusivity(const TimeStamp &a_time) {
    BL_PROFILE_VAR("PeleLM::calcDiffusivity()", calcDiffusivity);
 
    for (int lev = 0; lev <= finest_level; ++lev) {
-  
-      fillPatchState(lev,time);   
-   
-      auto ldata_p = getLevelDataPtr(lev,time); 
+
+      if ( a_time != AmrOldTime ) {
+         fillPatchState(lev,a_time);
+      }
+
+      auto ldata_p = getLevelDataPtr(lev,a_time);
 
       // Transport data pointer
       TransParm const* ltransparm = trans_parm_g;
@@ -18,7 +58,7 @@ void PeleLM::calcDiffusivity(TimeStamp time) {
 #ifdef _OPENMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
-      for (MFIter mfi(ldata_p->density, TilingIfNotGPU()); mfi.isValid(); ++mfi)
+      for (MFIter mfi(ldata_p->diff_cc, TilingIfNotGPU()); mfi.isValid(); ++mfi)
       {
          const Box& gbx     = mfi.growntilebox();
          auto const& rhoY   = ldata_p->species.const_array(mfi);
@@ -41,14 +81,13 @@ void PeleLM::calcDiffusivity(TimeStamp time) {
 
 Array<MultiFab,AMREX_SPACEDIM>
 PeleLM::getDiffusivity(int lev, int beta_comp, int ncomp,
-                       Vector<BCRec> bcrec, 
+                       Vector<BCRec> bcrec,
                        MultiFab const& beta_cc)
 {
    BL_PROFILE_VAR("PeleLM::getDiffusivity()", getDiffusivity);
 
    AMREX_ASSERT(bcrec.size() >= ncomp);
    AMREX_ASSERT(beta_cc.nComp() >= beta_comp+ncomp);
-   
 
    const auto& ba = beta_cc.boxArray();
    const auto& dm = beta_cc.DistributionMap();
@@ -60,7 +99,7 @@ PeleLM::getDiffusivity(int lev, int beta_comp, int ncomp,
                                                        MultiFab(amrex::convert(ba,IntVect::TheDimensionVector(2)),
                                                                 dm, ncomp, 0, MFInfo(), factory))};
 
-#ifdef AMREX_USE_EB   
+#ifdef AMREX_USE_EB
    // EB : use EB CCentroid -> FCentroid
    EB_interp_CellCentroid_to_FaceCentroid(beta_cc, GetArrOfPtrs(beta_ec), beta_comp, 0, ncomp, geom[lev], bcrec);
    EB_set_covered_faces(GetArrOfPtrs(beta_ec),0.0);
@@ -84,13 +123,13 @@ PeleLM::getDiffusivity(int lev, int beta_comp, int ncomp,
          const auto bc_hi = bcrec[0].hi(idim);
          amrex::ParallelFor(ebx, [idim, ncomp, bc_lo, bc_hi, use_harmonic_avg, diff_c, diff_ec, edomain]
          AMREX_GPU_DEVICE (int i, int j, int k) noexcept
-         {    
+         {
             int idx[3] = {i,j,k};
-            bool on_lo = ( ( bc_lo == amrex::BCType::ext_dir ) && ( idx[idim] <= edomain.smallEnd(idim) ) ); 
-            bool on_hi = ( ( bc_hi == amrex::BCType::ext_dir ) && ( idx[idim] >= edomain.bigEnd(idim) ) ); 
+            bool on_lo = ( ( bc_lo == amrex::BCType::ext_dir ) && ( idx[idim] <= edomain.smallEnd(idim) ) );
+            bool on_hi = ( ( bc_hi == amrex::BCType::ext_dir ) && ( idx[idim] >= edomain.bigEnd(idim) ) );
             cen2edg_cpp( i, j, k, idim, ncomp, use_harmonic_avg, on_lo, on_hi, diff_c, diff_ec);
-         });  
-      }    
+         });
+      }
    }
 #endif
 
