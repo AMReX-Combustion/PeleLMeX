@@ -26,4 +26,4 @@ Reactions_dir	 = Null
 Eos_dir			 = Fuego
 Transport_dir   = Constant
 
-include $(PELELM_HOME)/Utils/Make.PeleLMeX
+include $(PELELMEX_HOME)/Utils/Make.PeleLMeX
