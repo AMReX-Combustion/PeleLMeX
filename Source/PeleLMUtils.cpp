@@ -128,6 +128,8 @@ PeleLM::derive(const std::string &a_name,
    if (rec) {        // This is a derived variable
       mf.reset(new MultiFab(grids[lev], dmap[lev], rec->numDerive(), nGrow));
       std::unique_ptr<MultiFab> statemf = fillPatchState(lev, a_time, nGrow);
+      // Get pressure: TODO no fillpatch for pressure just yet, simply get new state
+      auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
       auto stateBCs = fetchBCRecArray(VELX,NVAR);
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -137,7 +139,8 @@ PeleLM::derive(const std::string &a_name,
           const Box& bx = mfi.growntilebox(nGrow);
           FArrayBox& derfab = (*mf)[mfi];
           FArrayBox const& statefab = (*statemf)[mfi];
-          rec->derFunc()(bx, derfab, 0, rec->numDerive(), statefab, geom[lev], a_time, stateBCs, lev);
+          FArrayBox const& pressfab = ldata_p->press[mfi];
+          rec->derFunc()(bx, derfab, 0, rec->numDerive(), statefab, pressfab, geom[lev], a_time, stateBCs, lev);
       }
    } else {          // This is a state variable
       mf.reset(new MultiFab(grids[lev], dmap[lev], 1, nGrow));
@@ -177,4 +180,24 @@ PeleLM::stateVariableIndex(const std::string &a_name)
       }
    }
    return idx;
+}
+
+Vector<int>
+PeleLM::fetchAdvTypeArray(int scomp, int ncomp)
+{
+   Vector<int> types(ncomp);
+   for (int comp = 0; comp < ncomp; comp++) {
+      types[comp] = m_AdvTypeState[scomp+comp];
+   }
+   return types;
+}
+
+Vector<int>
+PeleLM::fetchDiffTypeArray(int scomp, int ncomp)
+{
+   Vector<int> types(ncomp);
+   for (int comp = 0; comp < ncomp; comp++) {
+      types[comp] = m_DiffTypeState[scomp+comp];
+   }
+   return types;
 }
