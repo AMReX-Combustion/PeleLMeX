@@ -169,6 +169,27 @@ namespace godunov {
                                     amrex::Geometry& geom,
                                     bool is_velocity = false);
 
+    void compute_godunov_advection (amrex::Box const& bx, int ncomp,
+                                    amrex::Array4<amrex::Real> const& dqdt,
+                                    amrex::Array4<amrex::Real const> const& q,
+                                    AMREX_D_DECL(amrex::Array4<amrex::Real const> const& umac,
+                                                 amrex::Array4<amrex::Real const> const& vmac,
+                                                 amrex::Array4<amrex::Real const> const& wmac),
+                                    amrex::Array4<amrex::Real const> const& fq,
+                                    amrex::Array4<amrex::Real const> const& divu,
+                                    AMREX_D_DECL(amrex::Array4<amrex::Real> const& qx,
+                                                 amrex::Array4<amrex::Real> const& qy,
+                                                 amrex::Array4<amrex::Real> const& qz),
+                                    bool knownEdgeState,
+                                    amrex::Real dt,
+                                    amrex::BCRec const* d_bcrec, 
+                                    int const* iconserv,
+                                    amrex::Real* p, 
+                                    bool use_ppm, 
+                                    bool use_forces_in_trans,
+                                    amrex::Geometry& geom,
+                                    bool is_velocity = false);
+
 } // namespace godunov
 
 #endif /* Godunov_H */
