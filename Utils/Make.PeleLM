@@ -13,7 +13,7 @@ all: $(executable)
 #---------------
 # PeleLM sources
 #---------------
-LMdirs := Source
+LMdirs := Source Source/Godunov
 Bpack += $(foreach dir, $(LMdirs), $(PELELM_HOME)/$(dir)/Make.package)
 Blocs += $(foreach dir, $(LMdirs), $(PELELM_HOME)/$(dir))
 
