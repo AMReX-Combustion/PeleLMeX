@@ -88,3 +88,40 @@ void PeleLM::calcDivU(int is_init, int do_avgDown, TimeStamp a_time) {
    if ( do_avgDown ) {
    }
 }
+
+void PeleLM::setTemperature(TimeStamp a_time) {
+   BL_PROFILE_VAR("PeleLM::setTemperature()", setTemperature);
+
+   AMREX_ASSERT(a_time == AmrOldTime || a_time == AmrNewTime);
+
+   for (int lev = 0; lev <= finest_level; ++lev) {
+      setTemperature(lev, a_time);
+   }
+}
+
+void PeleLM::setTemperature(int lev, TimeStamp a_time) {
+
+   AMREX_ASSERT(a_time == AmrOldTime || a_time == AmrNewTime);
+ 
+   auto ldata_p = getLevelDataPtr(lev,a_time);
+
+#ifdef _OPENMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+   {
+      for (MFIter mfi(ldata_p->temp,TilingIfNotGPU()); mfi.isValid(); ++mfi)
+      {    
+         const Box& bx = mfi.tilebox();
+         auto const& rho     = ldata_p->density.const_array(mfi);
+         auto const& rhoY    = ldata_p->species.const_array(mfi);
+         auto const& rhoh    = ldata_p->rhoh.const_array(mfi);
+         auto const& T       = ldata_p->temp.array(mfi);
+
+         amrex::ParallelFor(bx, [rho, rhoY, rhoh, T]
+         AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+         {    
+            getTfromHY( i, j, k, rho, rhoY, rhoh, T);
+         });  
+      }    
+   }
+}

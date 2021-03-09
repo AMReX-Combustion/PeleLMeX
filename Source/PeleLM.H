@@ -144,10 +144,12 @@ class PeleLM : public amrex::AmrCore {
                       const amrex::Vector<amrex::DistributionMapping> &dm,
                       const amrex::Vector<std::unique_ptr<amrex::FabFactory<amrex::FArrayBox>>> &factory,
                       int a_incompressible,
-                      int a_nGrowAdv);
+                      int a_nGrowAdv,
+                      int a_nGrowMAC);
       amrex::Vector<amrex::Array<amrex::MultiFab,AMREX_SPACEDIM>> umac;        // MAC face velocity
       amrex::Vector<amrex::MultiFab>  AofS;        // Scalar advection term at t^(n+1/2)
       amrex::Vector<amrex::MultiFab>  chi;         // Thermodynamic contraint
+      amrex::Vector<amrex::MultiFab>  Forcing;     // Scalar forcing for both advection and diffusion
    };
    //-----------------------------------------------------------------------------
 
@@ -300,6 +302,10 @@ class PeleLM : public amrex::AmrCore {
    void setThermoPress(PeleLM::TimeStamp a_time);
    void setThermoPress(int lev, PeleLM::TimeStamp a_time);
 
+   // update Temperature from rhoY and rhoH
+   void setTemperature(PeleLM::TimeStamp a_time);
+   void setTemperature(int lev, PeleLM::TimeStamp a_time);
+
    // Divergence constraint
    void calcDivU(int is_init, int do_avgDown, PeleLM::TimeStamp a_time);
    //-----------------------------------------------------------------------------
@@ -318,6 +324,9 @@ class PeleLM : public amrex::AmrCore {
    // FillPatch the entire class state
    void fillPatchState(const PeleLM::TimeStamp &a_time);
    void fillPatchState(int lev, const PeleLM::TimeStamp &a_time);
+
+   // FillPatch the class density
+   void fillPatchDensity(const PeleLM::TimeStamp &a_time);
 
    // FillPatch and return a state MF
    std::unique_ptr<amrex::MultiFab>
@@ -387,6 +396,10 @@ class PeleLM : public amrex::AmrCore {
    void computeVelocityAdvTerm(std::unique_ptr<AdvanceAdvData> &advData);
    void updateVelocity(int is_initIter, std::unique_ptr<AdvanceAdvData> &advData);
    void updateVelocityDiffusion(std::unique_ptr<AdvanceDiffData> &diffData);
+
+   void getScalarAdvForce(std::unique_ptr<AdvanceAdvData> &advData);
+   void computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData);
+   void updateDensity(std::unique_ptr<AdvanceAdvData> &advData);
    //-----------------------------------------------------------------------------
 
    //-----------------------------------------------------------------------------
