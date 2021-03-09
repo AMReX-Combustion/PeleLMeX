@@ -14,7 +14,7 @@ getTransportCoeff(int i, int j, int k,
                   amrex::Array4<const amrex::Real> const& T,
                   amrex::Array4<      amrex::Real> const& rhoDi,
                   amrex::Array4<      amrex::Real> const& lambda,
-                  amrex::Array4<      amrex::Real> const& mu, 
+                  amrex::Array4<      amrex::Real> const& mu,
                   TransParm const* trans_parm) noexcept
 {
    using namespace amrex::literals;
@@ -26,12 +26,12 @@ getTransportCoeff(int i, int j, int k,
    amrex::Real rho = 0.0_rt;
    for (int n = 0; n < NUM_SPECIES; n++) {
       rho += rhoY(i,j,k,n);
-   }   
+   }
    amrex::Real rhoinv = 1.0_rt / rho;
    amrex::Real y[NUM_SPECIES] = {0.0};
    for (int n = 0; n < NUM_SPECIES; n++) {
       y[n] = rhoY(i,j,k,n) * rhoinv;
-   }   
+   }
 
    amrex::Real Wbar = 0.0_rt;
    EOS::Y2WBAR(y, Wbar);
@@ -61,6 +61,45 @@ getTransportCoeff(int i, int j, int k,
 AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
 void
+getVelViscosity(int i, int j, int k,
+                amrex::Array4<const amrex::Real> const& rhoY,
+                amrex::Array4<      amrex::Real> const& T,
+                amrex::Array4<      amrex::Real> const& mu,
+                TransParm const* trans_parm) noexcept
+{
+   using namespace amrex::literals;
+
+   // Get rho & Y from rhoY
+   amrex::Real rho = 0.0_rt;
+   for (int n = 0; n < NUM_SPECIES; n++) {
+      rho += rhoY(i,j,k,n);
+   }
+   amrex::Real rhoinv = 1.0_rt / rho;
+   amrex::Real y[NUM_SPECIES] = {0.0};
+   for (int n = 0; n < NUM_SPECIES; n++) {
+      y[n] = rhoY(i,j,k,n) * rhoinv;
+   }
+
+   rho *= 1.0e-3_rt;                          // MKS -> CGS conversion
+   amrex::Real dummy_rhoDi[NUM_SPECIES] = {0.0};
+   amrex::Real dummy_lambda = 0.0_rt;
+   amrex::Real mu_cgs = 0.0_rt;
+   amrex::Real dummy_xi = 0.0_rt;
+
+   bool get_xi = false;
+   bool get_mu = true;
+   bool get_lam = false;
+   bool get_Ddiag = false;
+   transport(get_xi, get_mu, get_lam, get_Ddiag, T(i,j,k),
+             rho, y, dummy_rhoDi, mu_cgs, dummy_xi, dummy_lambda, trans_parm);
+
+   // Do CGS -> MKS conversions
+   mu(i,j,k) = mu_cgs * 1.0e-1_rt;
+}
+
+AMREX_GPU_DEVICE
+AMREX_FORCE_INLINE
+void
 getPGivenRTY(int i, int j, int k,
              amrex::Array4<const amrex::Real> const& rho,
              amrex::Array4<const amrex::Real> const& rhoY,
@@ -75,7 +114,7 @@ getPGivenRTY(int i, int j, int k,
    amrex::Real y[NUM_SPECIES] = {0.0_rt};
    for (int n = 0; n < NUM_SPECIES; n++) {
       y[n] = rhoY(i,j,k,n) * rhoinv;
-   }   
+   }
 
    EOS::RTY2P(rho_cgs, T(i,j,k), y, P(i,j,k));
    P(i,j,k) = P(i,j,k) * 0.1_rt;                         // CGS -> MKS conversion
@@ -102,7 +141,7 @@ compute_divu(int i, int j, int k,
    amrex::Real rho = 0.0_rt;
    for (int n = 0; n < NUM_SPECIES; n++) {
       rho += rhoY(i,j,k,n);
-   }   
+   }
    amrex::Real rhoinv = 1.0_rt / rho;
    amrex::Real y[NUM_SPECIES] = {0.0};
    for (int n = 0; n < NUM_SPECIES; n++) {
@@ -126,7 +165,7 @@ compute_divu(int i, int j, int k,
       //divu(i,j,k) +=  ( viscTermY(i,j,k,n) + rhoYdot(i,j,k,n) )
       divu(i,j,k) +=  ( specDiff(i,j,k,n) )
                     * ( mwtinv[n] * Wbar * rhoinv - hi[n] * denominv );
-   }                
+   }
 }
 
 AMREX_GPU_DEVICE
@@ -148,9 +187,9 @@ fluxDivergence_K(int i, int j, int k,
    for (int n = 0; n < ncomp; n++) {
       div(i,j,k,n) = AMREX_D_TERM (  ( fluxX(i+1,j,k,n) - fluxX(i,j,k,n) ),
                                    + ( fluxY(i,j+1,k,n) - fluxY(i,j,k,n) ),
-                                   + ( fluxZ(i,j,k+1,n) - fluxZ(i,j,k,n) )); 
+                                   + ( fluxZ(i,j,k+1,n) - fluxZ(i,j,k,n) ));
       div(i,j,k,n) *= factor;
-   }   
+   }
 }
 
 AMREX_GPU_DEVICE
@@ -167,7 +206,7 @@ getMwmixGivenRY(int i, int j, int k,
    amrex::Real y[NUM_SPECIES] = {0.0_rt};
    for (int n = 0; n < NUM_SPECIES; n++) {
       y[n] = rhoY(i,j,k,n) * rhoinv;
-   }   
+   }
 
    EOS::Y2WBAR(y, Mwmix(i,j,k));
    Mwmix(i,j,k) = Mwmix(i,j,k) * 0.001_rt;            // CGS -> MKS conversion
@@ -194,17 +233,17 @@ cen2edg_cpp(int i, int j, int k,
    // Need nothing on high Dirichlet BC
    int  id_l[3] = {i,j,k};
    int  id_h[3] = {i,j,k};
-   if (!on_lo ) { 
-      if ( !on_hi ) { 
+   if (!on_lo ) {
+      if ( !on_hi ) {
          id_l[dir] -= 1;
-      }   
+      }
    } else {
       id_l[dir] -= 1;
       id_h[dir] -= 1;
-   }   
+   }
    if (do_harmonic) {
       for (int n = 0; n < ncomp; n++) {
-         if ( ( cfab(id_l[0],id_l[1],id_l[2],n) * cfab(id_h[0],id_h[1],id_h[2],n) ) > 0.0_rt ) { 
+         if ( ( cfab(id_l[0],id_l[1],id_l[2],n) * cfab(id_h[0],id_h[1],id_h[2],n) ) > 0.0_rt ) {
             efab(i,j,k,n) = 2.0_rt * ( cfab(id_l[0],id_l[1],id_l[2],n) * cfab(id_h[0],id_h[1],id_h[2],n) )
                                    / ( cfab(id_l[0],id_l[1],id_l[2],n) + cfab(id_h[0],id_h[1],id_h[2],n) );
          } else {
@@ -312,8 +351,55 @@ getHGivenT(int i, int j, int k,
    EOS::T2Hi(T(i,j,k), hi_spec);
    for (int n = 0; n < NUM_SPECIES; n++) {
       Hi(i,j,k,n) = hi_spec[n] * 0.0001_rt;            // CGS -> MKS conversion
-   }   
+   }
    
 }
 
+AMREX_GPU_DEVICE
+AMREX_FORCE_INLINE
+void
+makeVelForce(int i, int j, int k,
+             int                                     is_incomp,
+             const amrex::Real                     & rho_incomp,
+             int                                     pseudo_gravity,
+             const amrex::Real                     & /*time*/,
+             const amrex::Real                     & gravity,
+             const amrex::Real                     & dV_control,
+             amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const /*dx*/,
+             amrex::Array4<const amrex::Real> const& /*vel*/,
+             amrex::Array4<const amrex::Real> const& rho,
+             amrex::Array4<const amrex::Real> const& /*rhoY*/,
+             amrex::Array4<const amrex::Real> const& /*rhoh*/,
+             amrex::Array4<const amrex::Real> const& /*temp*/,
+             amrex::Array4<      amrex::Real> const& force) noexcept
+{
+   using namespace amrex::literals;
+
+   // Switch between incompressible/low-Mach rhos
+   amrex::Real rho_lcl = 0.0;
+   if ( is_incomp ) {
+      rho_lcl = rho_incomp;
+   } else {
+      rho_lcl = rho(i,j,k);
+   }
+
+   if ( std::abs(gravity) > 0.0001_rt ) {
+      force(i,j,k,0) = 0.0_rt;
+#if ( AMREX_SPACEDIM == 2 )
+      force(i,j,k,1) = gravity*rho_lcl;
+#elif ( AMREX_SPACEDIM == 3 )
+      force(i,j,k,1) = 0.0_rt;
+      force(i,j,k,2) = gravity*rho_lcl;
+#endif
+   } else {
+      for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+         force(i,j,k,idim) = 0.0_rt;
+      }
+   }
+
+   // TODO direction of pseudo grav should be runtime params
+   if (pseudo_gravity) {
+      force(i,j,k,AMREX_SPACEDIM-1) += dV_control * rho_lcl;
+   }
+}
 #endif
