@@ -1,12 +1,12 @@
 TOP = ../../../..
 AMREX_HOME         ?= ${TOP}/amrex
-PELELM_HOME        ?= ${TOP}/PeleLM
+PELELMEX_HOME      ?= ${TOP}/PeleLMeX
 PELE_PHYSICS_HOME  ?= ${TOP}/PelePhysics
 
 
 # AMReX
 DIM             = 2
-DEBUG           = TRUE
+DEBUG           = FALSE
 PRECISION       = DOUBLE
 VERBOSE         = FALSE
 TINY_PROFILE    = FALSE
@@ -18,12 +18,12 @@ USE_OMP         = FALSE
 USE_CUDA        = FALSE
 USE_HIP         = FALSE
 
-# PeleLM
+# PeleLMeX
 
 # PelePhysics
 Chemistry_Model = air
 Reactions_dir	 = Null
 Eos_dir			 = Fuego
-Transport_dir   = Simple
+Transport_dir   = Constant
 
-include $(PELELM_HOME)/Utils/Make.PeleLM
+include $(PELELM_HOME)/Utils/Make.PeleLMeX
