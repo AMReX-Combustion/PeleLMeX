@@ -3,8 +3,17 @@
 
 using namespace amrex;
 
-void PeleLM::setThermoPress(int lev, TimeStamp a_time) {
+void PeleLM::setThermoPress(TimeStamp a_time) {
    BL_PROFILE_VAR("PeleLM::setThermoPress()", setThermoPress);
+
+   AMREX_ASSERT(a_time == AmrOldTime || a_time == AmrNewTime);
+
+   for (int lev = 0; lev <= finest_level; ++lev) {
+      setThermoPress(lev, a_time);
+   }
+}
+
+void PeleLM::setThermoPress(int lev, TimeStamp a_time) {
 
    AMREX_ASSERT(a_time == AmrOldTime || a_time == AmrNewTime);
  
@@ -31,7 +40,7 @@ void PeleLM::setThermoPress(int lev, TimeStamp a_time) {
    }
 }
 
-void PeleLM::calcDivU(int is_init, TimeStamp a_time) {
+void PeleLM::calcDivU(int is_init, int do_avgDown, TimeStamp a_time) {
    BL_PROFILE_VAR("PeleLM::calcDivU()", calcDivU);
 
    AMREX_ASSERT(a_time == AmrOldTime || a_time == AmrNewTime);
@@ -73,5 +82,9 @@ void PeleLM::calcDivU(int is_init, TimeStamp a_time) {
             compute_divu( i, j, k, rhoY, T, SpecD, Fourier, DiffD, divu );
          });
       }
+   }
+
+   // TODO: Average down divU
+   if ( do_avgDown ) {
    }
 }
