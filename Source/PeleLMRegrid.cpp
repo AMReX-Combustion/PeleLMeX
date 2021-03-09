@@ -45,6 +45,11 @@ void PeleLM::MakeNewLevelFromCoarse( int lev,
    m_diffusion_op.reset();
 
    //TODO: MacProj
+#ifdef AMREX_USE_EB
+   //TODO
+#else
+   macproj.reset(new MacProjector(Geom(0,finest_level)));
+#endif
 }
 
 void PeleLM::RemakeLevel( int lev,
@@ -75,8 +80,8 @@ void PeleLM::RemakeLevel( int lev,
 
    // Fill the new leveldata_new
    fillpatch_velocity(lev, time, n_leveldata_new->velocity, 0);
-   fillpatch_mass(lev, time, n_leveldata_new->density,
-                  n_leveldata_new->species, 0);
+   fillpatch_density(lev, time, n_leveldata_new->density, 0);
+   fillpatch_species(lev, time, n_leveldata_new->species, 0);
    fillpatch_energy(lev, time, n_leveldata_new->rhoh,
                     n_leveldata_new->temp, 0);
    n_leveldata_new->press.setVal(0.0);
@@ -90,6 +95,11 @@ void PeleLM::RemakeLevel( int lev,
    m_diffusion_op.reset();
 
    //TODO: MacProj
+#ifdef AMREX_USE_EB
+   //TODO
+#else
+   macproj.reset(new MacProjector(Geom(0,finest_level)));
+#endif
 }
 
 void PeleLM::ClearLevel(int lev) {
@@ -99,5 +109,5 @@ void PeleLM::ClearLevel(int lev) {
    m_leveldata_new[lev].reset();
    m_factory[lev].reset();
    m_diffusion_op.reset();
-   //TODO: macproj.reset();
+   macproj.reset();
 }
