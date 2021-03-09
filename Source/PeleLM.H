@@ -417,7 +417,7 @@ class PeleLM : public amrex::AmrCore {
       AMREX_ASSERT(a_time==AmrOldTime || a_time==AmrNewTime || a_time==AmrHalfTime);
       if ( a_time == AmrOldTime ) {
          return m_t_old[lev];
-      } else if ( a_time == AmrOldTime ) {
+      } else if ( a_time == AmrNewTime ) {
          return m_t_new[lev];
       } else {
          return 0.5 * ( m_t_old[lev] + m_t_new[lev] );
