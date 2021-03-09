@@ -41,36 +41,50 @@ void pelelm_initdata(int i, int j, int k,
                  const amrex::Real y_c = prob_lo[1] + 0.5*Ly;,
                  const amrex::Real z_c = prob_lo[2] + 0.5*Lz); 
 
-    //amrex::Real rad = std::sqrt(AMREX_D_TERM(  (x-x_c) * (x-x_c),
-    //                                         + (y-y_c) * (y-y_c),
-    //                                         + (z-z_c) * (z-z_c)));
-
     constexpr amrex::Real Pi = 3.14159265358979323846264338327950288;
 
-    const amrex::Real deltax = x - prob_parm.xvort;
-    const amrex::Real deltay = y - prob_parm.yvort;
-    const amrex::Real d_sq = deltax*deltax + deltay*deltay;
-    const amrex::Real r_sq = prob_parm.rvort * prob_parm.rvort;
-    const amrex::Real u_vort = -prob_parm.forcevort*deltay/r_sq * exp(-d_sq/r_sq/2.);
-    const amrex::Real v_vort = prob_parm.forcevort*deltax/r_sq * exp(-d_sq/r_sq/2.);
-    const amrex::Real w_vort = 0.; 
-
-    AMREX_D_TERM(vel(i,j,k,0) = prob_parm.meanFlowMag + u_vort;,
-                 vel(i,j,k,1) = v_vort;,
-                 vel(i,j,k,2) = 0.0);
-    
-    if (is_incompressible) return;
-
-    //amrex::Print() << "Shound'tbe there\n";
     amrex::Real massfrac[NUM_SPECIES] = {0.0};
     massfrac[O2_ID] = 0.233;
     massfrac[N2_ID] = 0.767;
 
-    //amrex::Real Gwidth = (AMREX_D_TERM(Lx,+Ly,+Lz))/(AMREX_SPACEDIM)/10.0;
-    //amrex::Real Gampl = 0.0;
+    if ( prob_parm.probType == 0 ) { // CoVo
+       const amrex::Real deltax = x - prob_parm.xvort;
+       const amrex::Real deltay = y - prob_parm.yvort;
+       const amrex::Real d_sq = deltax*deltax + deltay*deltay;
+       const amrex::Real r_sq = prob_parm.rvort * prob_parm.rvort;
+       const amrex::Real u_vort = -prob_parm.forcevort*deltay/r_sq * exp(-d_sq/r_sq/2.);
+       const amrex::Real v_vort = prob_parm.forcevort*deltax/r_sq * exp(-d_sq/r_sq/2.);
+       const amrex::Real w_vort = 0.; 
 
-    temp(i,j,k) = prob_parm.T_mean;
-    //temp(i,j,k) += Gampl * std::exp(-rad*rad/(2*Gwidth*Gwidth));
+       AMREX_D_TERM(vel(i,j,k,0) = prob_parm.meanFlowMag + u_vort;,
+                    vel(i,j,k,1) = v_vort;,
+                    vel(i,j,k,2) = 0.0);
+    
+       if (is_incompressible) return;
+
+       temp(i,j,k) = prob_parm.T_mean;
+    } else if ( prob_parm.probType == 1 ) { // CoGau
+
+       AMREX_D_TERM(vel(i,j,k,0) = prob_parm.meanFlowMag;,
+                    vel(i,j,k,1) = 0.0;,
+                    vel(i,j,k,2) = 0.0);
+
+       if (is_incompressible) return;
+
+       temp(i,j,k) = prob_parm.T_mean;
+       const amrex::Real deltax = x - prob_parm.xgauss;
+       const amrex::Real deltay = y - prob_parm.ygauss;
+       const amrex::Real d_sq = deltax*deltax + deltay*deltay;
+       const amrex::Real r_sq = prob_parm.rgauss * prob_parm.rgauss;
+       if ( prob_parm.gauss_type == 0 ) { // Spec
+          massfrac[O2_ID] += massfrac[O2_ID] * prob_parm.ampgauss * std::exp(-d_sq/r_sq);
+          massfrac[N2_ID] = 1.0 - massfrac[O2_ID];
+       } else if ( prob_parm.gauss_type == 1 ) { // Temp
+          temp(i,j,k) = prob_parm.T_mean * ( 1.0 + prob_parm.ampgauss * std::exp(-d_sq/r_sq) );
+       } else {
+          amrex::Abort("Unknown gauss_type: should be either Temp or Spec");
+       }
+    }
 
     amrex::Real P_cgs = prob_parm.P_mean * 10.0;
 
