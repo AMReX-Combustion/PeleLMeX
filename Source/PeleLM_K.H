@@ -402,4 +402,49 @@ makeVelForce(int i, int j, int k,
       force(i,j,k,AMREX_SPACEDIM-1) += dV_control * rho_lcl;
    }
 }
+
+// This kernel returns directly rhoHmix
+AMREX_GPU_DEVICE
+AMREX_FORCE_INLINE
+void
+getRHmixGivenTY(int i, int j, int k,
+                amrex::Array4<const amrex::Real> const& rho,
+                amrex::Array4<const amrex::Real> const& rhoY,
+                amrex::Array4<const amrex::Real> const& T,
+                amrex::Array4<      amrex::Real> const& Hmix) noexcept
+{
+   using namespace amrex::literals;
+
+   amrex::Real rhoinv  = 1.0_rt / rho(i,j,k);
+   amrex::Real y[NUM_SPECIES] = {0.0_rt};
+   for (int n = 0; n < NUM_SPECIES; n++) {
+      y[n] = rhoY(i,j,k,n) * rhoinv;
+   }
+
+   EOS::TY2H(T(i,j,k), y, Hmix(i,j,k));
+   Hmix(i,j,k) = Hmix(i,j,k) * 1.0e-4_rt * rho(i,j,k);   // CGS -> MKS conversion
+}
+
+AMREX_GPU_DEVICE
+AMREX_FORCE_INLINE
+void
+getTfromHY(int i, int j, int k,
+           amrex::Array4<const amrex::Real> const& rho,
+           amrex::Array4<const amrex::Real> const& rhoY,
+           amrex::Array4<const amrex::Real> const& rhoH,
+           amrex::Array4<      amrex::Real> const& T) noexcept
+{
+   using namespace amrex::literals;
+
+   amrex::Real rhoinv = 1.0_rt / rho(i,j,k);
+   amrex::Real y[NUM_SPECIES] = {0.0};
+   for (int n = 0; n < NUM_SPECIES; n++) {
+      y[n] = rhoY(i,j,k,n) * rhoinv;
+   }
+   amrex::Real h_cgs = rhoH(i,j,k) * rhoinv * 1.0e4_rt;
+   amrex::Real T_loc = T(i,j,k);
+   EOS::HY2T(h_cgs, y, T_loc);
+   T(i,j,k) = T_loc;
+}
+
 #endif
