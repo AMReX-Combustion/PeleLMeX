@@ -312,3 +312,27 @@ struct PeleLMCCFillExtDirTemp
       }
    }
 };
+
+struct PeleLMCCFillExtDirDummy
+{
+
+   ProbParm const* lprobparm;
+   const int m_nAux;
+
+   AMREX_GPU_HOST
+   constexpr PeleLMCCFillExtDirDummy(ProbParm const* a_prob_parm, int a_nAux)
+                                     : lprobparm(a_prob_parm), m_nAux(a_nAux) {}
+
+   AMREX_GPU_DEVICE
+   void operator()(
+      const amrex::IntVect& /*iv*/,
+      amrex::Array4<amrex::Real> const& /*dummy*/,
+      const int /*dcomp*/,
+      const int /*numcomp*/,
+      amrex::GeometryData const& /*geom*/,
+      const amrex::Real /*time*/,
+      const amrex::BCRec* /*bcr*/,
+      const int /*bcomp*/,
+      const int /*orig_comp*/) const
+   { }
+};
