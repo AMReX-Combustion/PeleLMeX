@@ -2,6 +2,7 @@
 #define PELELM_PROB_H_
 
 #include <AMReX_Geometry.H>
+#include <AMReX_FArrayBox.H>
 #include <AMReX_SPACE.H>
 
 #include <PeleLM_Index.H>
@@ -22,7 +23,7 @@ void pelelm_initdata(int i, int j, int k,
                      amrex::Array4<amrex::Real> const& aux,
                      amrex::GeometryData const& geomdata,
                      ProbParm const& prob_parm,
-                     PmfData const *pmf_data)
+                     PmfData const * /*pmf_data*/)
 {
     const amrex::Real* prob_lo = geomdata.ProbLo();
     const amrex::Real* prob_hi = geomdata.ProbHi();
@@ -40,27 +41,36 @@ void pelelm_initdata(int i, int j, int k,
                  const amrex::Real y_c = prob_lo[1] + 0.5*Ly;,
                  const amrex::Real z_c = prob_lo[2] + 0.5*Lz); 
 
-    amrex::Real rad = std::sqrt(AMREX_D_TERM(  (x-x_c) * (x-x_c),
-                                             + (y-y_c) * (y-y_c),
-                                             + (z-z_c) * (z-z_c)));
+    //amrex::Real rad = std::sqrt(AMREX_D_TERM(  (x-x_c) * (x-x_c),
+    //                                         + (y-y_c) * (y-y_c),
+    //                                         + (z-z_c) * (z-z_c)));
 
     constexpr amrex::Real Pi = 3.14159265358979323846264338327950288;
 
-    AMREX_D_TERM(vel(i,j,k,0) = 0.0;,
-                 vel(i,j,k,1) = 0.0;,
+    const amrex::Real deltax = x - prob_parm.xvort;
+    const amrex::Real deltay = y - prob_parm.yvort;
+    const amrex::Real d_sq = deltax*deltax + deltay*deltay;
+    const amrex::Real r_sq = prob_parm.rvort * prob_parm.rvort;
+    const amrex::Real u_vort = -prob_parm.forcevort*deltay/r_sq * exp(-d_sq/r_sq/2.);
+    const amrex::Real v_vort = prob_parm.forcevort*deltax/r_sq * exp(-d_sq/r_sq/2.);
+    const amrex::Real w_vort = 0.; 
+
+    AMREX_D_TERM(vel(i,j,k,0) = prob_parm.meanFlowMag + u_vort;,
+                 vel(i,j,k,1) = v_vort;,
                  vel(i,j,k,2) = 0.0);
     
     if (is_incompressible) return;
 
+    //amrex::Print() << "Shound'tbe there\n";
     amrex::Real massfrac[NUM_SPECIES] = {0.0};
     massfrac[O2_ID] = 0.233;
     massfrac[N2_ID] = 0.767;
 
-    amrex::Real Gwidth = (AMREX_D_TERM(Lx,+Ly,+Lz))/(AMREX_SPACEDIM)/10.0;
-    amrex::Real Gampl = 10.0;
+    //amrex::Real Gwidth = (AMREX_D_TERM(Lx,+Ly,+Lz))/(AMREX_SPACEDIM)/10.0;
+    //amrex::Real Gampl = 0.0;
 
     temp(i,j,k) = prob_parm.T_mean;
-    temp(i,j,k) += Gampl * std::exp(-rad*rad/(2*Gwidth*Gwidth));
+    //temp(i,j,k) += Gampl * std::exp(-rad*rad/(2*Gwidth*Gwidth));
 
     amrex::Real P_cgs = prob_parm.P_mean * 10.0;
 
@@ -70,8 +80,9 @@ void pelelm_initdata(int i, int j, int k,
     rho(i,j,k) = rho_cgs * 1.0e3;
 
     // Enthalpy
-    EOS::TY2H(temp(i,j,k), massfrac, rhoH(i,j,k));
-    rhoH(i,j,k) *= 1.0e-4 * rho(i,j,k);
+    amrex::Real h_cgs = 0.0;
+    EOS::TY2H(temp(i,j,k), massfrac, h_cgs);
+    rhoH(i,j,k) = h_cgs * 1.0e-4 * rho(i,j,k);
 
     // Species mass
     for (int n = 0; n < NUM_SPECIES; n++) {  
@@ -102,7 +113,7 @@ bcnormal(
 
     s_ext[VELX] = 0.0;
 #if ( AMREX_SPACEDIM > 1 )
-    s_ext[VELY] = 2.0;
+    s_ext[VELY] = 0.0;
 #if ( AMREX_SPACEDIM > 2)
     s_ext[VELZ] = 0.0;
 #endif
