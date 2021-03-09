@@ -60,6 +60,7 @@ PeleLM::AdvanceAdvData::AdvanceAdvData(int a_finestLevel,
                                        const amrex::Vector<amrex::DistributionMapping> &dm, 
                                        const amrex::Vector<std::unique_ptr<amrex::FabFactory<FArrayBox>>> &factory,
                                        int a_incompressible,
+                                       int nGrowAdv,
                                        int nGrowMAC)
 {
    // Resize Vectors
@@ -67,6 +68,7 @@ PeleLM::AdvanceAdvData::AdvanceAdvData(int a_finestLevel,
    AofS.resize(a_finestLevel+1);
    if ( !a_incompressible ) {
       chi.resize(a_finestLevel+1);
+      Forcing.resize(a_finestLevel+1);
    }
 
    // Define MFs
@@ -75,9 +77,12 @@ PeleLM::AdvanceAdvData::AdvanceAdvData(int a_finestLevel,
          const BoxArray& faceba = amrex::convert(ba[lev],IntVect::TheDimensionVector(idim));
          umac[lev][idim].define(faceba,dm[lev], 1, nGrowMAC, MFInfo(), *factory[lev]);
       }
-      AofS[lev].define(ba[lev], dm[lev], NVAR , 0, MFInfo(), *factory[lev]);
-      if ( !a_incompressible ) {
+      if ( a_incompressible ) {
+         AofS[lev].define(ba[lev], dm[lev], AMREX_SPACEDIM , 0, MFInfo(), *factory[lev]);
+      } else {
+         AofS[lev].define(ba[lev], dm[lev], NVAR , 0, MFInfo(), *factory[lev]);
          chi[lev].define(ba[lev], dm[lev], 1, 1, MFInfo(), *factory[lev]);
+         Forcing[lev].define(ba[lev], dm[lev], NUM_SPECIES+1, nGrowAdv, MFInfo(), *factory[lev]); // Species + RHOH
       }
    }
 }
