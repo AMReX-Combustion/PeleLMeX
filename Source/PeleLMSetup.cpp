@@ -40,6 +40,8 @@ void PeleLM::Setup() {
    // Problem parameters
    prob_parm.reset(new ProbParm{});
 
+   // Problem parameters
+   readProbParm();
 }
 
 void PeleLM::readParameters() {
@@ -120,6 +122,8 @@ void PeleLM::readParameters() {
    pp.query("use_divu", m_has_divu);
    pp.query("incompressible", m_incompressible);
    if (m_incompressible) m_has_divu = 0;
+   pp.query("rho", m_rho);
+   pp.query("mu", m_mu);
 }
 
 void PeleLM::readIOParameters() {
@@ -129,17 +133,32 @@ void PeleLM::readIOParameters() {
 
    pp.query("plot_file", m_plot_file);
    pp.query("plot_int" , m_plot_int);
+   m_derivePlotVarCount = (pp.countval("derive_plot_vars"));
+   if (m_derivePlotVarCount != 0) {
+      m_derivePlotVars.resize(m_derivePlotVarCount);
+      for (int ivar = 0; ivar < m_derivePlotVarCount; ivar++) {
+         pp.get("derive_plot_vars", m_derivePlotVars[ivar],ivar);
+      }
+   }
+
+   pp.query("max_step", m_max_step);
+   pp.query("stop_time", m_stop_time);
+   pp.query("fixed_dt", m_fixed_dt);
+   pp.query("cfl", m_cfl);
+   pp.query("dt_shrink", m_dtshrink);
+   pp.query("dt_change_max", m_dtChangeMax);
+
 }
 
 void PeleLM::variablesSetup() {
    BL_PROFILE_VAR("PeleLM::variablesSetup()", variablesSetup);
 
-   if (m_verbose<1) return;
-
    std::string PrettyLine = std::string(78, '=') + "\n";
 
-   // Variables ordering is defined through macro in PeleLM_Index.H 
-   // Simply print on screen the state layout
+   //----------------------------------------------------------------
+   // Variables ordering is defined through compiler macro in PeleLM_Index.H 
+   // Simply print on screen the state layout and append to the stateComponents list
+   Print() << "\n";
    Print() << PrettyLine;
    Print() << " State components \n";
    Print() << PrettyLine;
@@ -184,6 +203,35 @@ void PeleLM::variablesSetup() {
    Print() << PrettyLine;
    Print() << "\n";
 
+   //----------------------------------------------------------------
+   // Set advection/diffusion types
+   m_AdvTypeState.resize(NVAR);
+   m_DiffTypeState.resize(NVAR);
+
+   // Velocity - follow incflo
+   for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
+#ifdef AMREX_USE_EB
+      m_AdvTypeState[VELX+idim] = 1;   // Conservative
+#else
+      m_AdvTypeState[VELX+idim] = 0;   // NonConservative
+#endif
+      m_DiffTypeState[VELX+idim] = 1;  // Diffusive
+   }
+
+   if (! m_incompressible) {
+      m_AdvTypeState[DENSITY] = 1;
+      m_DiffTypeState[DENSITY] = 0;
+      for (int n = 0; n < NUM_SPECIES; ++n) {
+         m_AdvTypeState[FIRSTSPEC+n] = 1;
+         m_DiffTypeState[FIRSTSPEC+n] = 1;
+      }
+      m_AdvTypeState[RHOH] = 1;
+      m_DiffTypeState[RHOH] = 1;
+      m_AdvTypeState[TEMP] = 0;
+      m_DiffTypeState[TEMP] = 0;
+      m_AdvTypeState[RHORT] = 0;
+      m_DiffTypeState[RHORT] = 0;
+   }
 }
 
 void PeleLM::derivedSetup()
@@ -205,6 +253,10 @@ void PeleLM::derivedSetup()
                      var_names_massfrac,pelelm_dermassfrac,the_same_box);
 
    }
+
+   // Cell average pressure
+   derive_lst.add("avg_pressure",IndexType::TheCellType(),1,pelelm_deravgpress,the_same_box);
+
 }
 
 void PeleLM::taggingSetup()
@@ -300,38 +352,5 @@ void PeleLM::resizeArray() {
    // Time
    m_t_old.resize(max_level+1);
    m_t_new.resize(max_level+1);
-
-}
-
-PeleLM::LevelData::LevelData(amrex::BoxArray const& ba,
-                             amrex::DistributionMapping const& dm,
-                             amrex::FabFactory<FArrayBox> const& factory,
-                             int a_incompressible, int a_has_divu, 
-                             int a_nAux, int a_nGrowState, int a_nGrowMAC) :
-   velocity(ba, dm, AMREX_SPACEDIM, a_nGrowState, MFInfo(), factory),
-   gp      (ba, dm, AMREX_SPACEDIM, 0           , MFInfo(), factory),
-   press   (amrex::convert(ba,IntVect::TheNodeVector()), 
-                dm, 1             , 1           , MFInfo(), factory)
-{
-   if (! a_incompressible ) {
-      density.define(ba, dm, 1             , a_nGrowState, MFInfo(), factory);
-      species.define(ba, dm, NUM_SPECIES   , a_nGrowState, MFInfo(), factory);
-      rhoh.define   (ba, dm, 1             , a_nGrowState, MFInfo(), factory);
-      rhoRT.define  (ba, dm, 1             , a_nGrowState, MFInfo(), factory);
-      temp.define   (ba, dm, 1             , a_nGrowState, MFInfo(), factory);
-      if (a_has_divu) {   
-         divu.define(ba, dm, 1             , 1           , MFInfo(), factory);
-      }
-      diff_cc.define(ba, dm, NUM_SPECIES+2 , 1           , MFInfo(), factory);
-   }
-   if ( a_nAux > 0 ) {
-      auxiliaries.define(ba, dm, a_nAux, a_nGrowState, MFInfo(), factory);
-   }
-
-   velocity_mac = new MultiFab[AMREX_SPACEDIM];
-   for (int dir = 0; dir < AMREX_SPACEDIM; ++dir) {
-      const BoxArray& faceba = amrex::convert(ba,IntVect::TheDimensionVector(dir));
-      velocity_mac[dir].define(faceba,dm, 1, a_nGrowMAC, MFInfo(), factory);
-   }
 
 }
