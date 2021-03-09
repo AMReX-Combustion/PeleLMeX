@@ -21,6 +21,7 @@ CEXE_sources += PeleLMSetup.cpp
 CEXE_sources += PeleLMBC.cpp
 CEXE_sources += PeleLMPlot.cpp
 CEXE_sources += PeleLMAdvance.cpp
+CEXE_sources += PeleLMAdvection.cpp
 CEXE_sources += PeleLMEvolve.cpp
 CEXE_sources += PeleLMEvaluate.cpp
 CEXE_sources += PeleLMTransportProp.cpp
