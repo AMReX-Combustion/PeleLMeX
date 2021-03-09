@@ -9,7 +9,8 @@
 // Mimic AMReX Derive behavior but without StateDescriptor
 
 typedef void (*PeleLMDeriveFunc) (const amrex::Box& bx, amrex::FArrayBox& derfab, int dcomp, int ncomp,
-                                  const amrex::FArrayBox& statefab, const amrex::Geometry& geomdata,
+                                  const amrex::FArrayBox& statefab, const amrex::FArrayBox& pressfab,
+                                  const amrex::Geometry& geomdata,
                                   amrex::Real time, const amrex::Vector<amrex::BCRec> &bcrec, int level);
 
 class PeleLMDeriveRec
