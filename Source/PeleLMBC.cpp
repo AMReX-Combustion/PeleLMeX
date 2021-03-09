@@ -146,6 +146,16 @@ void PeleLM::fillPatchState(int lev, const TimeStamp &a_time) {
    //TODO Aux
 }
 
+// Fill the entire class state at once
+void PeleLM::fillPatchDensity(const TimeStamp &a_time) {
+   BL_PROFILE_VAR("PeleLM::fillPatchDensity()", fillPatchDensity);
+   for (int lev = 0; lev <= finest_level; lev++) {
+      auto ldata_p = getLevelDataPtr(lev,a_time);
+      Real time = getTime(lev, a_time);
+      fillpatch_density(lev, time, ldata_p->density, m_nGrowState);
+   }
+}
+
 // Fill the entire state at once
 std::unique_ptr<MultiFab>
 PeleLM::fillPatchState(int lev, Real a_time, int nGrow) {
