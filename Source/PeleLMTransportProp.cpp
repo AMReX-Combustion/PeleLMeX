@@ -14,10 +14,6 @@ void PeleLM::calcViscosity(const TimeStamp &a_time) {
          ldata_p->visc_cc.setVal(m_mu);
       } else {
 
-         if ( a_time != AmrOldTime ) {
-            fillPatchState(lev,a_time);
-         }
-
          // Transport data pointer
          TransParm const* ltransparm = trans_parm_g;
 
@@ -45,10 +41,6 @@ void PeleLM::calcDiffusivity(const TimeStamp &a_time) {
    BL_PROFILE_VAR("PeleLM::calcDiffusivity()", calcDiffusivity);
 
    for (int lev = 0; lev <= finest_level; ++lev) {
-
-      if ( a_time != AmrOldTime ) {
-         fillPatchState(lev,a_time);
-      }
 
       auto ldata_p = getLevelDataPtr(lev,a_time);
 
