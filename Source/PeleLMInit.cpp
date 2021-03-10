@@ -70,6 +70,9 @@ void PeleLM::initData() {
       // with MakeNewLevelFromScratch.
       InitFromScratch(m_cur_time);
 
+      // FillPatch the NewState
+      fillPatchState(AmrNewTime);
+
       // Initial velocity projection iterations
       if (m_do_init_proj) {
          for (int iter = 0; iter < m_numDivuIter; iter++) {
