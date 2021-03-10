@@ -13,6 +13,8 @@ void PeleLM::WritePlotFile() {
       amrex::Print() << " Dumping plotfile: " << plotfilename << "\n";
    }
 
+   //----------------------------------------------------------------
+   // Number of components
    int ncomp = 0;
    if (m_incompressible) {
       ncomp = 2*AMREX_SPACEDIM + m_derivePlotVarCount;
@@ -23,12 +25,15 @@ void PeleLM::WritePlotFile() {
       }
    }
 
-   // Plot MF  
+   //----------------------------------------------------------------
+   // Plot MultiFabs
    Vector<MultiFab> mf_plt(finest_level + 1);
    for (int lev = 0; lev <= finest_level; ++lev) {
       mf_plt[lev].define(grids[lev], dmap[lev], ncomp, 0, MFInfo(), Factory(lev));
    }
 
+   //----------------------------------------------------------------
+   // Components names
    Vector<std::string> names;
    EOS::speciesNames(names);
 
@@ -60,9 +65,14 @@ void PeleLM::WritePlotFile() {
    plt_VarsName.push_back("gradp_z");
 #endif
 #endif
+   for (int ivar = 0; ivar < m_derivePlotVarCount; ivar++ ) {
+      plt_VarsName.push_back(m_derivePlotVars[ivar]);
+   }
    
-   int cnt = 0;
+   //----------------------------------------------------------------
+   // Fill the plot MultiFabs
    for (int lev = 0; lev <= finest_level; ++lev) {
+      int cnt = 0;
       MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->velocity, 0, cnt, AMREX_SPACEDIM, 0);
       cnt += AMREX_SPACEDIM;
       if (!m_incompressible) {
@@ -85,7 +95,6 @@ void PeleLM::WritePlotFile() {
       cnt += AMREX_SPACEDIM;
 
       for (int ivar = 0; ivar < m_derivePlotVarCount; ivar++ ) {
-         plt_VarsName.push_back(m_derivePlotVars[ivar]);
          std::unique_ptr<MultiFab> mf;
          mf = derive(m_derivePlotVars[ivar], m_cur_time, lev, 0);
          MultiFab::Copy(mf_plt[lev], *mf, 0, cnt, 1, 0);
