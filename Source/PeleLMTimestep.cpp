@@ -22,7 +22,7 @@ PeleLM::computeDt(int is_init) {
       }
    }
 
-   if (is_init) {
+   if (is_init || m_nstep == 0) {
       estdt *= m_dtshrink;
    } else {
       estdt = std::min(estdt,m_prev_dt*m_dtChangeMax);
