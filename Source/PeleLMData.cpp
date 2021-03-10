@@ -97,6 +97,7 @@ PeleLM::copyStateNewToOld(int nGhost) {
          MultiFab::Copy(m_leveldata_old[lev]->rhoh,m_leveldata_new[lev]->rhoh,0,0,1,nGhost);
          MultiFab::Copy(m_leveldata_old[lev]->temp,m_leveldata_new[lev]->temp,0,0,1,nGhost);
          MultiFab::Copy(m_leveldata_old[lev]->rhoRT,m_leveldata_new[lev]->rhoRT,0,0,1,nGhost);
+         MultiFab::Copy(m_leveldata_old[lev]->divu,m_leveldata_new[lev]->divu,0,0,1,nGhost);
       }
    }
 }
@@ -119,6 +120,7 @@ PeleLM::copyStateOldToNew(int nGhost) {
          MultiFab::Copy(m_leveldata_new[lev]->rhoh,m_leveldata_old[lev]->rhoh,0,0,1,nGhost);
          MultiFab::Copy(m_leveldata_new[lev]->temp,m_leveldata_old[lev]->temp,0,0,1,nGhost);
          MultiFab::Copy(m_leveldata_new[lev]->rhoRT,m_leveldata_old[lev]->rhoRT,0,0,1,nGhost);
+         MultiFab::Copy(m_leveldata_new[lev]->divu,m_leveldata_old[lev]->divu,0,0,1,nGhost);
       }
    }
 }
