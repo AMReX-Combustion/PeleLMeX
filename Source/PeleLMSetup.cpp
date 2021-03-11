@@ -306,8 +306,8 @@ void PeleLM::taggingSetup()
       }
 
       if (ppr.countval("max_level") > 0) {
-         int max_level; ppr.get("max_level",max_level);
-         info.SetMaxLevel(max_level);
+         int tag_max_level; ppr.get("max_level",tag_max_level);
+         info.SetMaxLevel(tag_max_level);
       }
 
       bool itexists = false;
