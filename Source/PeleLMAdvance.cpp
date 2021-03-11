@@ -11,6 +11,12 @@ void PeleLM::Advance(int is_initIter) {
    Real strt_time = ParallelDescriptor::second();
 
    //----------------------------------------------------------------
+   // Copy old <- new state
+   copyStateNewToOld();
+   copyPressNewToOld();
+   //----------------------------------------------------------------
+
+   //----------------------------------------------------------------
    // TIME
    // Compute time-step size
    m_dt = computeDt(is_initIter);
