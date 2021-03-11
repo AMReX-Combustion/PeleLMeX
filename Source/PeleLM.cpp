@@ -7,7 +7,7 @@ PeleLM::PeleLM() = default;
 PeleLM::~PeleLM() = default;
 
 PeleLM::LevelData*
-PeleLM::getLevelDataPtr(int lev, const PeleLM::TimeStamp &a_time) {
+PeleLM::getLevelDataPtr(int lev, const PeleLM::TimeStamp &a_time, int useUMac) {
    AMREX_ASSERT(a_time==AmrOldTime || a_time==AmrNewTime || a_time==AmrHalfTime);
    if ( a_time == AmrOldTime ) { 
       return m_leveldata_old[lev].get();
@@ -18,7 +18,14 @@ PeleLM::getLevelDataPtr(int lev, const PeleLM::TimeStamp &a_time) {
                                  m_incompressible, m_has_divu,
                                  m_nAux, m_nGrowState, m_nGrowMAC);
       Real time = getTime(lev,a_time);
-      fillpatch_velocity(lev, time, ldata->velocity, m_nGrowState);
+      if (useUMac) {
+         // TODO: find a way to get U^{n+1/2} from Umac
+         // For now get old time
+         Real oldtime = getTime(lev,AmrOldTime);
+         fillpatch_velocity(lev, oldtime, ldata->velocity, m_nGrowState);
+      } else {
+         fillpatch_velocity(lev, time, ldata->velocity, m_nGrowState);
+      }
       if (!m_incompressible) {
          fillpatch_density(lev, time, ldata->density, m_nGrowState);
          fillpatch_species(lev, time, ldata->species, m_nGrowState);
