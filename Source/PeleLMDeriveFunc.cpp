@@ -77,3 +77,48 @@ void pelelm_deravgpress (const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
                                 );  
     }); 
 }
+
+//
+// Compute vorticity magnitude
+//
+void pelelm_dermgvort (const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
+                       const FArrayBox& statefab, const FArrayBox& /*pressfab*/,
+                       const Geometry& geomdata,
+                       Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
+
+{
+
+    AMREX_D_TERM(const amrex::Real idx = geomdata.InvCellSize(0);,
+                 const amrex::Real idy = geomdata.InvCellSize(1);,
+                 const amrex::Real idz = geomdata.InvCellSize(2););
+
+    auto const& dat_arr = statefab.const_array();
+    auto const&vort_arr = derfab.array();
+
+    // TODO : EB
+    // TODO : BCs
+
+    {
+        amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+        {
+#if ( AMREX_SPACEDIM == 2 )
+            amrex::Real vx = 0.5 * (dat_arr(i+1,j,k,1) - dat_arr(i-1,j,k,1)) * idx;
+            amrex::Real uy = 0.5 * (dat_arr(i,j+1,k,0) - dat_arr(i,j-1,k,0)) * idy;
+            vort_arr(i,j,k) = vx-uy;
+
+#elif ( AMREX_SPACEDIM == 3 )
+            amrex::Real vx = 0.5 * (dat_arr(i+1,j,k,1) - dat_arr(i-1,j,k,1)) * idx;
+            amrex::Real wx = 0.5 * (dat_arr(i+1,j,k,2) - dat_arr(i-1,j,k,2)) * idx;
+
+            amrex::Real uy = 0.5 * (dat_arr(i,j+1,k,0) - dat_arr(i,j-1,k,0)) * idy;
+            amrex::Real wy = 0.5 * (dat_arr(i,j+1,k,2) - dat_arr(i,j-1,k,2)) * idy;
+
+            amrex::Real uz = 0.5 * (dat_arr(i,j,k+1,0) - dat_arr(i,j,k-1,0)) * idz;
+            amrex::Real vz = 0.5 * (dat_arr(i,j,k+1,1) - dat_arr(i,j,k-1,1)) * idz;
+
+            vort_arr(i,j,k) = std::sqrt((wy-vz)*(wy-vz) + (uz-wx)*(uz-wx) + (vx-uy)*(vx-uy));
+#endif
+        });
+    }
+
+}
