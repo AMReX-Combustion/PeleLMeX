@@ -35,8 +35,13 @@ void PeleLM::getVelForces(const TimeStamp &a_time,
                           int add_gradP)
 {
 
-   auto ldata_p = getLevelDataPtr(lev,a_time);
+   // Get level data
+   // TODO: the 1 here bypass getting halftime vel and return oldtime vel
+   auto ldata_p = getLevelDataPtr(lev,a_time,1);
+
+   // Get old gradp
    auto ldataOld_p = getLevelDataPtr(lev,AmrOldTime);
+
    Real time = getTime(lev, a_time);
 
    int has_divTau = (a_divTau != nullptr);
