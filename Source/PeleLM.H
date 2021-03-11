@@ -264,7 +264,7 @@ class PeleLM : public amrex::AmrCore {
    // Time step size
 
    amrex::Real computeDt(int is_init);
-   amrex::Real estConvectiveDt();
+   amrex::Real estConvectiveDt(const PeleLM::TimeStamp &a_time);
    amrex::Real estDivUDt();
    //-----------------------------------------------------------------------------
 
@@ -338,12 +338,14 @@ class PeleLM : public amrex::AmrCore {
    void fillpatch_species(int lev, amrex::Real a_time, amrex::MultiFab& a_rhoY, int nGhost);
    void fillpatch_energy(int lev, amrex::Real a_time, amrex::MultiFab& a_rhoh, amrex::MultiFab& a_temp, int nGhost);
    void fillpatch_divu(int lev, amrex::Real a_time, amrex::MultiFab& a_divu, int nGhost);
+   void fillpatch_gradp(int lev, amrex::Real a_time, amrex::MultiFab& a_gp, int nGhost);
    void fillpatch_forces(amrex::Real a_time, amrex::Vector<amrex::MultiFab*> const &a_velForces, int nGrowForce);
 
    // FillCoarsePatch state components
    void fillcoarsepatch_velocity(int lev, amrex::Real a_time, amrex::MultiFab& a_vel, int nGhost);
    void fillcoarsepatch_mass(int lev, amrex::Real a_time, amrex::MultiFab& a_rho, amrex::MultiFab& a_rhoY, int nGhost);
    void fillcoarsepatch_energy(int lev, amrex::Real a_time, amrex::MultiFab& a_rhoh, amrex::MultiFab& a_temp, int nGhost);
+   void fillcoarsepatch_gradp(int lev, amrex::Real a_time, amrex::MultiFab& a_gp, int nGhost);
 
    // Fill physical boundaries
    void setPhysBoundaryVel (amrex::MultiFab &a_vel, int lev, PeleLM::TimeStamp a_time);
@@ -371,6 +373,9 @@ class PeleLM : public amrex::AmrCore {
    // Derived variable evaluation
    std::unique_ptr<amrex::MultiFab> derive(const std::string &a_name, 
                                            amrex::Real a_time, int lev, int nGrow);
+   std::unique_ptr<amrex::MultiFab> deriveComp(const std::string &a_name, 
+                                               amrex::Real a_time, int lev, int nGrow);
+
 
    // Lightweight state description access
    bool isStateVariable(const std::string &a_name);
@@ -411,7 +416,7 @@ class PeleLM : public amrex::AmrCore {
    amrex::FabFactory<amrex::FArrayBox> const&
    Factory (int lev) const noexcept { return *m_factory[lev]; }
 
-   LevelData* getLevelDataPtr(int lev, const PeleLM::TimeStamp &a_time);
+   LevelData* getLevelDataPtr(int lev, const PeleLM::TimeStamp &a_time, int useUmac = 0);
 
    amrex::Real getTime(int lev, const PeleLM::TimeStamp &a_time) const {
       AMREX_ASSERT(a_time==AmrOldTime || a_time==AmrNewTime || a_time==AmrHalfTime);
@@ -457,6 +462,7 @@ class PeleLM : public amrex::AmrCore {
    amrex::BCRec  m_phys_bc;                      // Store physical BC from input
    amrex::Vector<amrex::BCRec> m_bcrec_state;
    amrex::BCRec                m_bcrec_divu;
+   amrex::Vector<amrex::BCRec> m_bcrec_gp;
 
    // Advection/Diffusion types
    amrex::Vector<int> m_AdvTypeState;            // Tag Conservative/NonConservative state components
@@ -499,6 +505,8 @@ class PeleLM : public amrex::AmrCore {
    amrex::Real m_stop_time    = -1.0;
    int m_nstep = -1; 
    int m_max_step = -1;
+
+   int m_regrid_int = -1;
 
    // Switch Evolve/Evaluate
    std::string m_run_mode = "normal";
