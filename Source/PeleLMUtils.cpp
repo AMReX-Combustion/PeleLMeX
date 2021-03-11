@@ -127,7 +127,7 @@ PeleLM::derive(const std::string &a_name,
 
    if (rec) {        // This is a derived variable
       mf.reset(new MultiFab(grids[lev], dmap[lev], rec->numDerive(), nGrow));
-      std::unique_ptr<MultiFab> statemf = fillPatchState(lev, a_time, nGrow);
+      std::unique_ptr<MultiFab> statemf = fillPatchState(lev, a_time, m_nGrowState);
       // Get pressure: TODO no fillpatch for pressure just yet, simply get new state
       auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
       auto stateBCs = fetchBCRecArray(VELX,NVAR);
