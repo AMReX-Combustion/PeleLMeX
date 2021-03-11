@@ -6,7 +6,9 @@
 
 using namespace amrex;
 
-static Box the_same_box (const Box& b)    { return b;                 }
+static Box the_same_box (const Box& b)    { return b;                }
+static Box grow_box_by_one (const Box& b) { return amrex::grow(b,1); }
+static Box grow_box_by_two (const Box& b) { return amrex::grow(b,2); }
 
 void PeleLM::Setup() {
    BL_PROFILE_VAR("PeleLM::Setup()", Setup);
@@ -148,6 +150,8 @@ void PeleLM::readIOParameters() {
    pp.query("dt_shrink", m_dtshrink);
    pp.query("dt_change_max", m_dtChangeMax);
 
+   pp.query("regrid_int", m_regrid_int);
+
 }
 
 void PeleLM::variablesSetup() {
@@ -256,6 +260,9 @@ void PeleLM::derivedSetup()
 
    // Cell average pressure
    derive_lst.add("avg_pressure",IndexType::TheCellType(),1,pelelm_deravgpress,the_same_box);
+
+   // Vorticity magnitude
+   derive_lst.add("mag_vort",IndexType::TheCellType(),1,pelelm_dermgvort,grow_box_by_two);
 
 }
 
