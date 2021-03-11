@@ -18,6 +18,11 @@ void PeleLM::Evolve() {
          amrex::Print() << "\n ====================   NEW TIME STEP   ==================== \n";
       }
 
+      if ( (m_regrid_int > 0) && (m_nstep > 0) && (m_nstep%m_regrid_int == 0) ) {
+         if (m_verbose > 0) amrex::Print() << " Regridding...\n";
+         regrid(0, m_cur_time);
+      }
+
       int is_init = 0;
       Advance(is_init);
       m_nstep++;
@@ -35,13 +40,6 @@ void PeleLM::Evolve() {
       // Check for the end of the simulation
       do_not_evolve = ( (m_max_step >= 0 && m_nstep >= m_max_step) ||
                         (m_stop_time >= 0.0 && m_cur_time >= m_stop_time - 1.0e-12 * m_dt) );
-
-      // Move new -> old
-      if (!do_not_evolve) {
-         for (int lev = 0; lev <= finest_level; ++lev) {
-            std::swap(m_leveldata_old[lev],m_leveldata_new[lev]);
-         }
-      }
 
    }
 
