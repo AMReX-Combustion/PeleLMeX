@@ -95,6 +95,8 @@ PeleLM::estConvectiveDt(const TimeStamp &a_time) {
       estdt = std::min(estdt,estdt_lev* m_cfl);
    }
 
+   ParallelDescriptor::ReduceRealMin(estdt);
+
    return estdt;
 }
 
