@@ -16,14 +16,24 @@ void PeleLM::WritePlotFile() {
    //----------------------------------------------------------------
    // Number of components
    int ncomp = 0;
+
+   // State
    if (m_incompressible) {
-      ncomp = 2*AMREX_SPACEDIM + m_derivePlotVarCount;
+      ncomp = 2*AMREX_SPACEDIM;
    } else {
-      ncomp = NVAR + AMREX_SPACEDIM + m_derivePlotVarCount;
+      ncomp = NVAR + AMREX_SPACEDIM;
       if (m_has_divu) {
          ncomp += 1;
       }
    }
+
+   // Derive
+   int deriveEntryCount = 0;
+   for (int ivar = 0; ivar < m_derivePlotVarCount; ivar++ ) {
+      const PeleLMDeriveRec* rec = derive_lst.get(m_derivePlotVars[ivar]);
+      deriveEntryCount += rec->numDerive();
+   }
+   ncomp += deriveEntryCount;
 
    //----------------------------------------------------------------
    // Plot MultiFabs
@@ -66,9 +76,12 @@ void PeleLM::WritePlotFile() {
 #endif
 #endif
    for (int ivar = 0; ivar < m_derivePlotVarCount; ivar++ ) {
-      plt_VarsName.push_back(m_derivePlotVars[ivar]);
+      const PeleLMDeriveRec* rec = derive_lst.get(m_derivePlotVars[ivar]);
+      for (int dvar = 0; dvar < rec->numDerive(); dvar++ ) {
+         plt_VarsName.push_back(rec->variableName(dvar));
+      }
    }
-   
+
    //----------------------------------------------------------------
    // Fill the plot MultiFabs
    for (int lev = 0; lev <= finest_level; ++lev) {
@@ -97,8 +110,8 @@ void PeleLM::WritePlotFile() {
       for (int ivar = 0; ivar < m_derivePlotVarCount; ivar++ ) {
          std::unique_ptr<MultiFab> mf;
          mf = derive(m_derivePlotVars[ivar], m_cur_time, lev, 0);
-         MultiFab::Copy(mf_plt[lev], *mf, 0, cnt, 1, 0);
-         cnt += 1;
+         MultiFab::Copy(mf_plt[lev], *mf, 0, cnt, mf->nComp(), 0);
+         cnt += mf->nComp();
       }
    }
 
