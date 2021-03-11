@@ -152,10 +152,6 @@ void PeleLM::initialIterations() {
       amrex::Print() << " Doing initial pressure iteration(s) \n";
    }
 
-   // Pass state from initialization New to Old
-   copyStateNewToOld();
-   copyPressNewToOld();
-
    for (int lev = 0; lev <= finest_level; ++lev) {
       m_t_old[lev] = m_t_new[lev];
    }
@@ -164,7 +160,7 @@ void PeleLM::initialIterations() {
    for (int iter = 0; iter < m_init_iter; iter++) {
 
       if (m_verbose > 0) {
-         amrex::Print() << "\n ================   INITIAL TIME STEP ["<<iter<<"]   ================ \n";
+         amrex::Print() << "\n ================   INITIAL INTERATION ["<<iter<<"]   ================ \n";
       }
       int is_init = 1;
       Advance(is_init);
@@ -175,7 +171,4 @@ void PeleLM::initialIterations() {
       // Copy back old state
       copyStateOldToNew();
    }
-
-   int is_init = 1;
-   m_dt = computeDt(is_init);
 }
