@@ -21,7 +21,7 @@ PeleLM::ErrorEst( int lev,
    for (int n = 0; n < errTags.size(); ++n) {
       std::unique_ptr<MultiFab> mf;
       if (errTags[n].Field() != std::string()) {
-         mf = derive(errTags[n].Field(), time, lev, errTags[n].NGrow());
+         mf = deriveComp(errTags[n].Field(), time, lev, errTags[n].NGrow());
       }
       errTags[n](tags,mf.get(),TagBox::CLEAR,TagBox::SET,time,lev,geom[lev]);
    }

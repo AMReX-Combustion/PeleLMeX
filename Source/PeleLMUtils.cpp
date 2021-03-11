@@ -107,6 +107,7 @@ void PeleLM::fluxDivergenceLevel(int lev,
 
 }
 
+// Return a unique_ptr with the entire derive
 std::unique_ptr<MultiFab>
 PeleLM::derive(const std::string &a_name,
                Real               a_time,
@@ -114,7 +115,7 @@ PeleLM::derive(const std::string &a_name,
                int                nGrow)
 {
    AMREX_ASSERT(nGrow >= 0);
-   
+
    std::unique_ptr<MultiFab> mf;
 
    bool itexists = derive_lst.canDerive(a_name) || isStateVariable(a_name);
@@ -142,6 +143,61 @@ PeleLM::derive(const std::string &a_name,
           FArrayBox const& pressfab = ldata_p->press[mfi];
           rec->derFunc()(bx, derfab, 0, rec->numDerive(), statefab, pressfab, geom[lev], a_time, stateBCs, lev);
       }
+   } else {          // This is a state variable
+      mf.reset(new MultiFab(grids[lev], dmap[lev], 1, nGrow));
+      int idx = stateVariableIndex(a_name);
+      std::unique_ptr<MultiFab> statemf = fillPatchState(lev, a_time, nGrow);
+      MultiFab::Copy(*mf,*statemf,idx,0,1,nGrow);
+   }
+
+   return mf;
+}
+
+// Return a unique_ptr with only the required component of a derive
+std::unique_ptr<MultiFab>
+PeleLM::deriveComp(const std::string &a_name,
+                   Real               a_time,
+                   int                lev,
+                   int                nGrow)
+{
+   AMREX_ASSERT(nGrow >= 0);
+
+   std::unique_ptr<MultiFab> mf;
+
+   bool itexists = derive_lst.canDerive(a_name) || isStateVariable(a_name);
+
+   if ( !itexists ) {
+      amrex::Error("PeleLM::derive(): unknown variable: "+a_name);
+   }
+
+   const PeleLMDeriveRec* rec = derive_lst.get(a_name);
+
+   if (rec) {        // This is a derived variable
+      mf.reset(new MultiFab(grids[lev], dmap[lev], 1, nGrow));
+      std::unique_ptr<MultiFab> statemf = fillPatchState(lev, a_time, m_nGrowState);
+      // Get pressure: TODO no fillpatch for pressure just yet, simply get new state
+      auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
+      auto stateBCs = fetchBCRecArray(VELX,NVAR);
+
+      // Temp MF for all the derive components
+      MultiFab derTemp(grids[lev], dmap[lev], rec->numDerive(), nGrow);
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+      for (MFIter mfi(*mf,TilingIfNotGPU()); mfi.isValid(); ++mfi)
+      {
+          const Box& bx = mfi.growntilebox(nGrow);
+          FArrayBox& derfab = derTemp[mfi];
+          FArrayBox const& statefab = (*statemf)[mfi];
+          FArrayBox const& pressfab = ldata_p->press[mfi];
+          rec->derFunc()(bx, derfab, 0, rec->numDerive(), statefab, pressfab, geom[lev], a_time, stateBCs, lev);
+      }
+      // Copy into outgoing unique_ptr
+      int derComp = rec->variableComp(a_name);
+      if ( derComp < 0 ) {
+         amrex::Error("PeleLM::deriveComp(): unknown derive component: " + a_name + " of " + rec->variableName(1000));
+      }
+      MultiFab::Copy(*mf,derTemp,derComp,0,1,nGrow);
    } else {          // This is a state variable
       mf.reset(new MultiFab(grids[lev], dmap[lev], 1, nGrow));
       int idx = stateVariableIndex(a_name);
