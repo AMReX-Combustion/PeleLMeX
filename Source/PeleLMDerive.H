@@ -21,7 +21,7 @@ public:
 
    typedef amrex::Box (*DeriveBoxMap)(const amrex::Box&);
    amrex::Box TheSameBox (const amrex::Box& box) noexcept;
-   amrex::Box GrowBoxByOne (const amrex::Box& box) noexcept;   
+   amrex::Box GrowBoxByOne (const amrex::Box& box) noexcept;
 
    /**
    * \brief The destructor.
@@ -32,13 +32,20 @@ public:
    * \brief The name of the derived type.
    */
    const std::string& name () const noexcept;
-   
+
    /**
    * \brief The names of components
    *
    * \param comp
    */
    const std::string& variableName (int comp) const noexcept;
+
+   /**
+   * \brief The index of a variable
+   *
+   * \param name
+   */
+   int variableComp (const std::string& variableName) const noexcept;
 
    /**
    * \brief The IndexType of the derived type.
@@ -95,7 +102,7 @@ protected:
    PeleLMDeriveRec (const std::string&         name,
                     amrex::IndexType           result_type,
                     int                        nvar_derive,
-	                 amrex::Vector<std::string> &var_names,
+                    amrex::Vector<std::string> &var_names,
                     PeleLMDeriveFunc           der_func,
                     DeriveBoxMap               box_map,
                     amrex::Interpolater*       interp = &amrex::pc_interp);
