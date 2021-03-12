@@ -345,6 +345,7 @@ class PeleLM : public amrex::AmrCore {
    void fillcoarsepatch_velocity(int lev, amrex::Real a_time, amrex::MultiFab& a_vel, int nGhost);
    void fillcoarsepatch_mass(int lev, amrex::Real a_time, amrex::MultiFab& a_rho, amrex::MultiFab& a_rhoY, int nGhost);
    void fillcoarsepatch_energy(int lev, amrex::Real a_time, amrex::MultiFab& a_rhoh, amrex::MultiFab& a_temp, int nGhost);
+   void fillcoarsepatch_divu(int lev, amrex::Real a_time, amrex::MultiFab& a_divu, int nGhost);
    void fillcoarsepatch_gradp(int lev, amrex::Real a_time, amrex::MultiFab& a_gp, int nGhost);
 
    // Fill physical boundaries
