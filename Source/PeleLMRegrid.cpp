@@ -10,6 +10,9 @@ void PeleLM::MakeNewLevelFromCoarse( int lev,
 
    if (m_verbose > 0) {
       Print() << " Making new level " << lev << " from coarse\n";
+      if (m_verbose > 2) {
+         amrex::Print() << " with BoxArray " << ba << std::endl;
+      }
    }
 
    // New level factory
@@ -38,6 +41,9 @@ void PeleLM::MakeNewLevelFromCoarse( int lev,
                            n_leveldata_new->species, 0);
       fillcoarsepatch_energy(lev, time, n_leveldata_new->rhoh,
                              n_leveldata_new->temp, 0);
+      if (m_has_divu) {
+         fillcoarsepatch_divu(lev, time, n_leveldata_new->divu,0);
+      }
    }
 
    // Move std::unique_ptr into the PeleLM vector
@@ -67,6 +73,9 @@ void PeleLM::RemakeLevel( int lev,
 
    if (m_verbose > 0) {
       Print() << " Remaking level " << lev << "\n";
+      if (m_verbose > 2) {
+         amrex::Print() << " with BoxArray " << ba << std::endl;
+      }
    }
 
    // New level factory
@@ -95,6 +104,9 @@ void PeleLM::RemakeLevel( int lev,
       fillpatch_species(lev, time, n_leveldata_new->species, 0);
       fillpatch_energy(lev, time, n_leveldata_new->rhoh,
                        n_leveldata_new->temp, 0);
+      if (m_has_divu) {
+         fillpatch_divu(lev, time, n_leveldata_new->divu, 0);
+      }
    }
 
    // Move std::unique_ptr into the PeleLM vector
