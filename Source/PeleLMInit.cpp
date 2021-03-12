@@ -21,7 +21,7 @@ void PeleLM::MakeNewLevelFromScratch( int lev,
    if (m_verbose > 0) {
       amrex::Print() << " Making new level " << lev << " from scratch" << std::endl;
       if (m_verbose > 2) {
-         amrex::Print() << "with BoxArray " << ba << std::endl;
+         amrex::Print() << " with BoxArray " << ba << std::endl;
       }
    }
 

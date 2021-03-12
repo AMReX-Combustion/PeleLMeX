@@ -84,6 +84,7 @@ void PeleLM::Advance(int is_initIter) {
          oneSDC(sdc_iter,advData,diffData);
       }
       // Post SDC
+      fillPatchState(AmrNewTime);
       calcDiffusivity(AmrNewTime);
       setThermoPress(AmrNewTime);
       if (m_has_divu) {
