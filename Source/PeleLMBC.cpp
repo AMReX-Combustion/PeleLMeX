@@ -422,18 +422,18 @@ void PeleLM::fillpatch_forces(Real a_time,
 {
    const int nComp = a_velForce[0]->nComp();
    ProbParm const* lprobparm = prob_parm.get();
-   
+
    int lev = 0;
    {
-      PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy> > bndry_func(geom[lev], {m_bcrec_divu},
+      PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy> > bndry_func(geom[lev], {m_bcrec_gp},
                                                                         PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
       FillPatchSingleLevel(*a_velForce[lev],IntVect(nGrowForce),a_time,{a_velForce[lev]},{a_time},
                            0,0,nComp,geom[lev],bndry_func,0);
    }
    for (lev = 1; lev <= finest_level; ++lev) {
-      PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy> > crse_bndry_func(geom[lev-1], {m_bcrec_divu},
+      PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy> > crse_bndry_func(geom[lev-1], {m_bcrec_gp},
                                                                              PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
-      PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy> > fine_bndry_func(geom[lev], {m_bcrec_divu},
+      PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy> > fine_bndry_func(geom[lev], {m_bcrec_gp},
                                                                              PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
       Interpolater* mapper = &pc_interp;
       FillPatchTwoLevels(*a_velForce[lev],IntVect(nGrowForce),a_time,
@@ -441,7 +441,7 @@ void PeleLM::fillpatch_forces(Real a_time,
                          {a_velForce[lev]},{a_time},
                          0,0,nComp,geom[lev-1], geom[lev],
                          crse_bndry_func,0,fine_bndry_func,0,
-                         refRatio(lev-1), mapper, {m_bcrec_divu}, 0);
+                         refRatio(lev-1), mapper, {m_bcrec_gp}, 0);
    }
 }
 
@@ -614,6 +614,32 @@ void PeleLM::fillcoarsepatch_gradp(int lev,
                          refRatio(lev-1), mapper, {m_bcrec_gp}, 0);
 }
 
+// Fill the divu
+void PeleLM::fillcoarsepatch_divu(int lev,
+                                  const amrex::Real a_time,
+                                  amrex::MultiFab &a_divu,
+                                  int nGhost) {
+   ProbParm const* lprobparm = prob_parm.get();
+
+   // Interpolator
+#ifdef AMREX_USE_EB
+   Interpolater* mapper = (EBFactory(0).isAllRegular()) ?
+                          (Interpolater*)(&cell_cons_interp) : (Interpolater*)(&eb_cell_cons_interp);
+#else
+   Interpolater* mapper = &cell_cons_interp;
+#endif
+
+   PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> crse_bndry_func(geom[lev-1], {m_bcrec_divu},
+                                                                       PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
+   PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> fine_bndry_func(geom[lev], {m_bcrec_divu},
+                                                                       PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
+   InterpFromCoarseLevel(a_divu, IntVect(nGhost), a_time,
+                         m_leveldata_new[lev-1]->divu, 0, 0, 1,
+                         geom[lev-1], geom[lev],
+                         crse_bndry_func,0,fine_bndry_func,0,
+                         refRatio(lev-1), mapper, {m_bcrec_divu}, 0);
+}
+
 // Fill the physical boundary of a velocity MF
 void PeleLM::setPhysBoundaryVel(MultiFab &a_vel,
                                 int lev,
@@ -631,4 +657,3 @@ void PeleLM::setPhysBoundaryVel(MultiFab &a_vel,
 
    bndry_func(a_vel,0,AMREX_SPACEDIM,a_vel.nGrowVect(), time, 0);
 }
-
