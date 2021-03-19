@@ -21,6 +21,20 @@ class DiffusionOp
 
    DiffusionOp (PeleLM* a_pelelm);
 
+   void diffuse_scalar (amrex::Vector<amrex::MultiFab*> const& a_phi,
+                        int phi_comp,
+                        amrex::Vector<amrex::MultiFab const*> const& a_rhs,
+                        int rhs_comp,
+                        amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> const& a_fluxes,
+                        int flux_comp,
+                        amrex::Vector<amrex::MultiFab const*> const& a_acoeff,
+                        amrex::Vector<amrex::MultiFab const*> const& a_density,
+                        amrex::Vector<amrex::MultiFab const*> const& a_bcoeff,
+                        int bcoeff_comp,
+                        amrex::Vector<amrex::BCRec> a_bcrec,
+                        int ncomp,
+                        amrex::Real dt);
+
    void computeDiffLap (amrex::Vector<amrex::MultiFab*> const& laps,
                         amrex::Vector<amrex::MultiFab const*> const& phi,
                         amrex::Vector<amrex::MultiFab const*> const& density,
@@ -31,8 +45,8 @@ class DiffusionOp
                            amrex::Vector<amrex::MultiFab const*> const& a_phi,
                            int phi_comp,
                            amrex::Vector<amrex::MultiFab const*> const& a_density,
-                           amrex::Vector<amrex::MultiFab const*> const& a_beta,
-                           int beta_comp,
+                           amrex::Vector<amrex::MultiFab const*> const& a_bcoeff,
+                           int bcoeff_comp,
                            amrex::Vector<amrex::BCRec> a_bcrec,
                            int ncomp,
                            amrex::Real scale,
@@ -55,12 +69,15 @@ class DiffusionOp
    void readParameters ();
 
    // Data and parameters
-   PeleLM* m_pelelm; 
+   PeleLM* m_pelelm;
 
    // Scalar diffusion apply operator
    std::unique_ptr<amrex::MLABecLaplacian> m_scal_apply_op;
 
-   // Poisson-like operator
+   // Scalar diffusion solve operator
+   std::unique_ptr<amrex::MLABecLaplacian> m_scal_solve_op;
+
+   // Poisson-like operator for gradients
    std::unique_ptr<amrex::MLABecLaplacian> m_gradient_op;
 
    int m_verbose = 0;
@@ -97,15 +114,22 @@ public:
                         const amrex::BCRec &a_bcrec,
                         amrex::Real scale);
 
+   void diffuse_velocity(amrex::Vector<amrex::MultiFab*> const& a_vel,
+                         amrex::Vector<amrex::MultiFab const*> const& a_density,
+                         amrex::Vector<amrex::MultiFab const*> const& a_beta,
+                         const amrex::BCRec &a_bcrec,
+                         amrex::Real dt);
+
 private:
 
    void readParameters ();
 
    // Data and parameters
-   PeleLM* m_pelelm; 
+   PeleLM* m_pelelm;
 
    // Apply operator
    std::unique_ptr<amrex::MLTensorOp> m_apply_op;
+   std::unique_ptr<amrex::MLTensorOp> m_solve_op;
 
    int m_verbose = 0;
 
