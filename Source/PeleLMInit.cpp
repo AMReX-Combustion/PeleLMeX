@@ -38,10 +38,10 @@ void PeleLM::MakeNewLevelFromScratch( int lev,
 
    // Initialize the LevelData
    m_leveldata_old[lev].reset(new LevelData(grids[lev], dmap[lev], *m_factory[lev],
-                                            m_incompressible, m_has_divu,    
+                                            m_incompressible, m_has_divu,
                                             m_nAux, m_nGrowState, m_nGrowMAC));
    m_leveldata_new[lev].reset(new LevelData(grids[lev], dmap[lev], *m_factory[lev],
-                                            m_incompressible, m_has_divu,    
+                                            m_incompressible, m_has_divu,
                                             m_nAux, m_nGrowState, m_nGrowMAC));
 
    // Fill the initial solution (if not restarting)
@@ -66,20 +66,30 @@ void PeleLM::initData() {
 
    if (m_restart_file.empty()) {
 
+      //----------------------------------------------------------------
       // This is an AmrCore member function which recursively makes new levels
       // with MakeNewLevelFromScratch.
       InitFromScratch(m_cur_time);
 
+      //----------------------------------------------------------------
       // FillPatch the NewState
       fillPatchState(AmrNewTime);
 
+      //----------------------------------------------------------------
       // Initial velocity projection iterations
       if (m_do_init_proj) {
          for (int iter = 0; iter < m_numDivuIter; iter++) {
             if (m_has_divu) {
-               int is_initialization = 1;
-               int do_avgDown = 1;
-               calcDivU(is_initialization,do_avgDown,AmrNewTime);
+
+               int is_initialization = 1;             // Yes we are
+               int computeDiffusionTerm = 1;          // Needed here
+               int do_avgDown = 1;                    // Always
+
+               // Light version of the diffusion data container
+               std::unique_ptr<AdvanceDiffData> diffData;
+               diffData.reset(new AdvanceDiffData(finest_level, grids, dmap, m_factory,
+                              m_nGrowAdv, m_use_wbar, is_initialization));
+               calcDivU(is_initialization,computeDiffusionTerm,do_avgDown,AmrNewTime,diffData);
             }
             // TODO: closed_chamber correction
 
@@ -87,6 +97,7 @@ void PeleLM::initData() {
          }
       }
 
+      //----------------------------------------------------------------
       // Initial pressure iterations
       initialIterations();
 
@@ -97,6 +108,7 @@ void PeleLM::initData() {
       }
 
    } else {
+      //----------------------------------------------------------------
       // TODO Restart from checkpoint file
    }
 
@@ -133,7 +145,7 @@ void PeleLM::initLevelData(int lev) {
       amrex::ParallelFor(bx, [=,m_incompressible=m_incompressible]
       AMREX_GPU_DEVICE (int i, int j, int k) noexcept
       {
-         pelelm_initdata(i, j, k, m_incompressible, vel_arr, rho_arr, 
+         pelelm_initdata(i, j, k, m_incompressible, vel_arr, rho_arr,
                          rhoY_arr, rhoH_arr, temp_arr, aux_arr,
                          geomdata, *lprobparm, lpmfdata);
       });
@@ -156,11 +168,12 @@ void PeleLM::initialIterations() {
       m_t_old[lev] = m_t_new[lev];
    }
 
+   //----------------------------------------------------------------
    // Initial pressure iterations
    for (int iter = 0; iter < m_init_iter; iter++) {
 
       if (m_verbose > 0) {
-         amrex::Print() << "\n ================   INITIAL INTERATION ["<<iter<<"]   ================ \n";
+         amrex::Print() << "\n ================   INITIAL ITERATION ["<<iter<<"]   ================ \n";
       }
       int is_init = 1;
       Advance(is_init);
