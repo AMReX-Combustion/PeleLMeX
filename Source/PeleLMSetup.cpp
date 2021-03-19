@@ -44,6 +44,10 @@ void PeleLM::Setup() {
 
    // Problem parameters
    readProbParm();
+
+   // Initialize ambient pressure
+   m_pOld = prob_parm->P_mean;
+   m_pNew = prob_parm->P_mean;
 }
 
 void PeleLM::readParameters() {
@@ -121,11 +125,52 @@ void PeleLM::readParameters() {
    // -----------------------------------------
    // Algorithm
    // -----------------------------------------
+
+   // -----------------------------------------
+   // incompressible vs. low Mach
    pp.query("use_divu", m_has_divu);
    pp.query("incompressible", m_incompressible);
    if (m_incompressible) m_has_divu = 0;
    pp.query("rho", m_rho);
    pp.query("mu", m_mu);
+
+   // -----------------------------------------
+   // diffusion
+   pp.query("use_wbar",m_use_wbar);
+   pp.query("deltaT_verbose",m_deltaT_verbose);
+   pp.query("deltaT_iterMax",m_deltaTIterMax);
+   pp.query("deltaT_tol",m_deltaT_norm_max);
+
+   // -----------------------------------------
+   // initialization
+   pp.query("num_divu_iter",m_numDivuIter);
+   pp.query("do_init_proj",m_do_init_proj);
+   pp.query("num_init_iter",m_init_iter);
+
+   pp.query("sdc_iterMax",m_nSDCmax);
+
+   // -----------------------------------------
+   // Advection
+   // -----------------------------------------
+   ParmParse ppg("godunov");
+   ppg.query("use_ppm",m_Godunov_ppm);
+   ppg.query("use_forceInTrans", m_Godunov_ForceInTrans);
+
+   // -----------------------------------------
+   // Time stepping control
+   // -----------------------------------------
+   ParmParse ppa("amr");
+   ppa.query("max_step", m_max_step);
+   ppa.query("stop_time", m_stop_time);
+   ppa.query("fixed_dt", m_fixed_dt);
+   ppa.query("cfl", m_cfl);
+   ppa.query("dt_shrink", m_dtshrink);
+   ppa.query("dt_change_max", m_dtChangeMax);
+
+   if ( max_level > 0 ) {
+      ppa.query("regrid_int", m_regrid_int);
+   }
+
 }
 
 void PeleLM::readIOParameters() {
@@ -142,15 +187,6 @@ void PeleLM::readIOParameters() {
          pp.get("derive_plot_vars", m_derivePlotVars[ivar],ivar);
       }
    }
-
-   pp.query("max_step", m_max_step);
-   pp.query("stop_time", m_stop_time);
-   pp.query("fixed_dt", m_fixed_dt);
-   pp.query("cfl", m_cfl);
-   pp.query("dt_shrink", m_dtshrink);
-   pp.query("dt_change_max", m_dtChangeMax);
-
-   pp.query("regrid_int", m_regrid_int);
 
 }
 
