@@ -131,11 +131,14 @@ class PeleLM : public amrex::AmrCore {
                        const amrex::Vector<amrex::DistributionMapping> &dm,
                        const amrex::Vector<std::unique_ptr<amrex::FabFactory<amrex::FArrayBox>>> &factory,
                        int a_nGrowAdv,
-                       int a_use_wbar);
+                       int a_use_wbar,
+                       int is_init = 0);
       amrex::Vector<amrex::MultiFab> Dn;           // Diffusion term t^n
       amrex::Vector<amrex::MultiFab> Dnp1;         // Diffusion term t^(n+1,k)
       amrex::Vector<amrex::MultiFab> Dhat;         // Diffusion term t^(n+1,k+1)
+
       amrex::Vector<amrex::MultiFab> Dwbar;        // Diffusion term of Wbar
+      amrex::Vector<amrex::Array<amrex::MultiFab,AMREX_SPACEDIM>> wbar_fluxes;     // Wbar flux correction
    };
    struct AdvanceAdvData {
       AdvanceAdvData () = default;
@@ -150,6 +153,7 @@ class PeleLM : public amrex::AmrCore {
       amrex::Vector<amrex::MultiFab>  AofS;        // Scalar advection term at t^(n+1/2)
       amrex::Vector<amrex::MultiFab>  chi;         // Thermodynamic contraint
       amrex::Vector<amrex::MultiFab>  Forcing;     // Scalar forcing for both advection and diffusion
+      amrex::Vector<amrex::MultiFab>  mac_divu;    // divu used in MAC projection
    };
    //-----------------------------------------------------------------------------
 
@@ -193,8 +197,13 @@ class PeleLM : public amrex::AmrCore {
    void predictVelocity(std::unique_ptr<AdvanceAdvData> &advData,
                         std::unique_ptr<AdvanceDiffData> &diffData);
 
-   // Assemble the MAC projection RHS
-   void createMACRHS();
+   // Create the MAC projection RHS
+   void createMACRHS(std::unique_ptr<AdvanceAdvData> &advData);
+
+   // Append the chi increment
+   void addChiIncrement(int a_sdcIter,
+                        const PeleLM::TimeStamp &a_time,
+                        std::unique_ptr<AdvanceAdvData> &advData);
 
    // Project face velocity
    void macProject(const PeleLM::TimeStamp &a_time,
@@ -221,14 +230,17 @@ class PeleLM : public amrex::AmrCore {
 
    // get species/enthalpy differential diffusion fluxes
    void computeDifferentialDiffusionFluxes(const PeleLM::TimeStamp &a_time,
-                                           const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> &a_fluxes);
+                                           const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> &a_fluxes,
+                                           const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> &a_wbarfluxes);
 
    // get species/enthalpy differential diffusion terms
    void computeDifferentialDiffusionTerms(const PeleLM::TimeStamp &a_time,
-                                          amrex::Vector<amrex::MultiFab> &a_viscTerm);
+                                          std::unique_ptr<AdvanceDiffData> &diffData,
+                                          int is_init = 0);
 
    // add wbar term to the species fluxes
    void addWbarTerm(const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> &a_fluxes,
+                    const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> &a_wbarfluxes, 
                     amrex::Vector<amrex::MultiFab const*> const &a_spec,
                     amrex::Vector<amrex::MultiFab const*> const &a_rho,
                     amrex::Vector<amrex::MultiFab const*> const &a_beta);
@@ -241,13 +253,29 @@ class PeleLM : public amrex::AmrCore {
    void computeSpeciesEnthalpyFlux(const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> &a_fluxes,
                                    amrex::Vector<amrex::MultiFab const*> const &a_temp);
                     
+   void differentialDiffusionUpdate(std::unique_ptr<AdvanceAdvData> &advData,
+                                    std::unique_ptr<AdvanceDiffData> &diffData);
+
+   void deltaTIter_prepare(const amrex::Vector<amrex::MultiFab*> &a_rhs,
+                           const amrex::Vector<amrex::MultiFab*> &a_Tsave,
+                           const amrex::Vector<amrex::MultiFab*> &a_rhoCp,
+                           std::unique_ptr<AdvanceAdvData> &advData,
+                           std::unique_ptr<AdvanceDiffData> &diffData);
+
+   void deltaTIter_update(int a_dtiter,
+                          const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> &a_fluxes,
+                          const amrex::Vector<amrex::MultiFab const*> &a_Tsave,
+                          std::unique_ptr<AdvanceDiffData> &diffData,
+                          amrex::Real &a_deltaT_norm);
+
+
    // Viscous forces
    void computeDivTau(const PeleLM::TimeStamp &a_time,
                       const amrex::Vector<amrex::MultiFab*> &a_divtau,
                       int use_density, amrex::Real scale = 1.0);
 
    // Diffuse velocity
-   void diffuseVelocity(const PeleLM::TimeStamp &a_time);
+   void diffuseVelocity();
 
    // diffusion Linear operator BC
    amrex::Array<amrex::LinOpBCType,AMREX_SPACEDIM>
@@ -299,15 +327,25 @@ class PeleLM : public amrex::AmrCore {
    // EOS
 
    // Thermodynamic pressure
-   void setThermoPress(PeleLM::TimeStamp a_time);
-   void setThermoPress(int lev, PeleLM::TimeStamp a_time);
+   void setThermoPress(const PeleLM::TimeStamp &a_time);
+   void setThermoPress(int lev, const PeleLM::TimeStamp &a_time);
 
    // update Temperature from rhoY and rhoH
-   void setTemperature(PeleLM::TimeStamp a_time);
-   void setTemperature(int lev, PeleLM::TimeStamp a_time);
+   void setTemperature(const PeleLM::TimeStamp &a_time);
+   void setTemperature(int lev, const PeleLM::TimeStamp &a_time);
 
    // Divergence constraint
-   void calcDivU(int is_init, int do_avgDown, PeleLM::TimeStamp a_time);
+   void calcDivU(int is_init,
+                 int computeDiff,
+                 int do_avgDown,
+                 const PeleLM::TimeStamp &a_time,
+                 std::unique_ptr<AdvanceDiffData> &diffData);
+
+   // Pressure drift
+   void calc_dPdt(const PeleLM::TimeStamp &a_time,
+                  const amrex::Vector<amrex::MultiFab*> &a_dPdt);
+   void calc_dPdt(int lev, const PeleLM::TimeStamp &a_time,
+                  amrex::MultiFab* a_dPdt);
    //-----------------------------------------------------------------------------
 
    //-----------------------------------------------------------------------------
@@ -325,8 +363,10 @@ class PeleLM : public amrex::AmrCore {
    void fillPatchState(const PeleLM::TimeStamp &a_time);
    void fillPatchState(int lev, const PeleLM::TimeStamp &a_time);
 
-   // FillPatch the class density
+   // FillPatch the various state components
    void fillPatchDensity(const PeleLM::TimeStamp &a_time);
+   void fillPatchSpecies(const PeleLM::TimeStamp &a_time);
+   void fillPatchTemp(const PeleLM::TimeStamp &a_time);
 
    // FillPatch and return a state MF
    std::unique_ptr<amrex::MultiFab>
@@ -401,11 +441,14 @@ class PeleLM : public amrex::AmrCore {
 
    void computeVelocityAdvTerm(std::unique_ptr<AdvanceAdvData> &advData);
    void updateVelocity(int is_initIter, std::unique_ptr<AdvanceAdvData> &advData);
-   void updateVelocityDiffusion(std::unique_ptr<AdvanceDiffData> &diffData);
 
-   void getScalarAdvForce(std::unique_ptr<AdvanceAdvData> &advData);
+   void getScalarAdvForce(std::unique_ptr<AdvanceAdvData> &advData,
+                          std::unique_ptr<AdvanceDiffData> &diffData);
    void computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData);
    void updateDensity(std::unique_ptr<AdvanceAdvData> &advData);
+
+   void getScalarDiffForce(std::unique_ptr<AdvanceAdvData> &advData,
+                           std::unique_ptr<AdvanceDiffData> &diffData);
    //-----------------------------------------------------------------------------
 
    //-----------------------------------------------------------------------------
@@ -463,7 +506,7 @@ class PeleLM : public amrex::AmrCore {
    amrex::BCRec  m_phys_bc;                      // Store physical BC from input
    amrex::Vector<amrex::BCRec> m_bcrec_state;
    amrex::BCRec                m_bcrec_divu;
-   amrex::Vector<amrex::BCRec> m_bcrec_gp;
+   amrex::Vector<amrex::BCRec> m_bcrec_force;
 
    // Advection/Diffusion types
    amrex::Vector<int> m_AdvTypeState;            // Tag Conservative/NonConservative state components
@@ -534,6 +577,17 @@ class PeleLM : public amrex::AmrCore {
 
    // SDC
    int m_nSDCmax = 1;
+
+   // DeltaT iterations
+   int m_deltaT_verbose = 0;
+   int m_deltaTIterMax = 10;
+   amrex::Real m_deltaT_norm_max = 1.0e-10;
+
+   // Pressure
+   amrex::Real m_dpdtFactor = 1.0;
+   amrex::Real m_pOld = -1.0;
+   amrex::Real m_pNew = -1.0;
+   int m_closed_chamber = 0;
 
    // Godunov
    int m_Godunov_ppm = 1;
