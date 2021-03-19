@@ -49,21 +49,23 @@ void PeleLM::initialProjection()
       setPhysBoundaryVel(*vel[lev],lev,AmrNewTime);
    }
 
-   // Get RHS cc
+   // Get RHS cc: - divU
    Vector<MultiFab*> rhs_cc;
    if (!m_incompressible && m_has_divu ) {
       for (int lev = 0; lev <= finest_level; ++lev) {
          rhs_cc.push_back(&(m_leveldata_new[lev]->divu));
+         rhs_cc[lev]->mult(-1.0,0,1,rhs_cc[lev]->nGrow());
       }
    }
 
    doNodalProject(vel, amrex::GetVecOfPtrs(sigma), rhs_cc, {}, incremental, dummy_dt);
 
-   // Set back press and gpress to zero
+   // Set back press and gpress to zero and invert divu sign
    for (int lev = 0; lev <= finest_level; lev++) {
       auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
       ldata_p->press.setVal(0.0);
       ldata_p->gp.setVal(0.0);
+      m_leveldata_new[lev]->divu.mult(-1.0,0,1,rhs_cc[lev]->nGrow());
    }
 
    // TODO Average down velocity
@@ -125,11 +127,11 @@ void PeleLM::velocityProjection(int is_initIter,
             auto const& gp_arr  = ldataOld_p->gp.const_array(mfi);
             auto const& rho_arr = (m_incompressible) ? Array4<Real const>() : rhoHalf[lev]->const_array(mfi);
             amrex::ParallelFor(bx, [vel_arr,gp_arr,rho_arr,a_dt,
-                                    m_incompressible=m_incompressible,m_rho=m_rho]
+                                    incompressible=m_incompressible,rho=m_rho]
             AMREX_GPU_DEVICE (int i, int j, int k) noexcept
             {
-               Real soverrho = (m_incompressible) ? a_dt / m_rho
-                                                  : a_dt / rho_arr(i,j,k);
+               Real soverrho = (incompressible) ? a_dt / rho
+                                                : a_dt / rho_arr(i,j,k);
                AMREX_D_TERM(vel_arr(i,j,k,0) += gp_arr(i,j,k,0) * soverrho;,
                             vel_arr(i,j,k,1) += gp_arr(i,j,k,1) * soverrho;,
                             vel_arr(i,j,k,2) += gp_arr(i,j,k,2) * soverrho);
@@ -160,15 +162,39 @@ void PeleLM::velocityProjection(int is_initIter,
    }
 
    // Get RHS cc
-   Vector<MultiFab*> rhs_cc;
+   Vector<MultiFab> rhs_cc;
    if (!m_incompressible && m_has_divu ) {
+      rhs_cc.resize(finest_level+1);
       for (int lev = 0; lev <= finest_level; ++lev) {
-         auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
-         rhs_cc.push_back(&(ldata_p->divu));
+         if (!incremental) {
+            auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
+            rhs_cc[lev].define(grids[lev],dmap[lev],1,ldata_p->divu.nGrow(), MFInfo(), *m_factory[lev]);
+            MultiFab::Copy(rhs_cc[lev],ldata_p->divu,0,0,1,ldata_p->divu.nGrow());
+            rhs_cc[lev].mult(-1.0,0,1,ldata_p->divu.nGrow());
+         } else {
+            auto ldataOld_p = getLevelDataPtr(lev,AmrOldTime);
+            auto ldataNew_p = getLevelDataPtr(lev,AmrNewTime);
+            rhs_cc[lev].define(grids[lev],dmap[lev],1,ldataOld_p->divu.nGrow(), MFInfo(), *m_factory[lev]);
+#ifdef _OPENMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+            for (MFIter mfi(rhs_cc[lev],TilingIfNotGPU()); mfi.isValid(); ++mfi)
+            {
+               const Box& gbx       = mfi.growntilebox();
+               const auto& divu_o   = ldataOld_p->divu.const_array(mfi);
+               const auto& divu_n   = ldataNew_p->divu.const_array(mfi);
+               const auto& rhs      = rhs_cc[lev].array(mfi);
+               amrex::ParallelFor(gbx, [divu_o,divu_n,rhs]
+               AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+               {
+                  rhs(i,j,k) = - (divu_n(i,j,k) - divu_o(i,j,k));
+               });
+            }
+         }
       }
    }
 
-   doNodalProject(vel, amrex::GetVecOfPtrs(sigma), rhs_cc, {}, incremental, a_dt);
+   doNodalProject(vel, GetVecOfPtrs(sigma), GetVecOfPtrs(rhs_cc), {}, incremental, a_dt);
 
    // If incremental
    // define back to be U^{np1} by adding U^{n}
