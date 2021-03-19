@@ -12,11 +12,11 @@ void PeleLM::predictVelocity(std::unique_ptr<AdvanceAdvData>  &advData,
    // set umac boundaries to zero 
    if ( advData->umac[0][0].nGrow() > 0 ) {
       for (int lev=0; lev <= finest_level; ++lev)
-      {   
+      {
           AMREX_D_TERM(advData->umac[lev][0].setBndry(0.0);,
                        advData->umac[lev][1].setBndry(0.0);,
                        advData->umac[lev][2].setBndry(0.0););
-      }   
+      }
    }
 
    //----------------------------------------------------------------
@@ -61,9 +61,58 @@ void PeleLM::predictVelocity(std::unique_ptr<AdvanceAdvData>  &advData,
    }
 }
 
-void PeleLM::createMACRHS()
+void PeleLM::createMACRHS(std::unique_ptr<AdvanceAdvData>  &advData)
 {
    BL_PROFILE_VAR("PeleLM::createMACRHS()", createMACRHS);
+
+   for (int lev = 0; lev <= finest_level; ++lev) {
+      Real halftime = 0.5 * (m_t_old[lev] + m_t_new[lev]);
+      fillpatch_divu(lev,halftime,advData->mac_divu[lev],m_nGrowAdv);
+   }
+}
+
+void PeleLM::addChiIncrement(int a_sdcIter,
+                             const TimeStamp &a_time,
+                             std::unique_ptr<AdvanceAdvData>  &advData)
+{
+   BL_PROFILE_VAR("PeleLM::addChiIncrement()", addChiIncrement);
+
+   int nGrow = m_nGrowAdv;
+   Vector<MultiFab> chiIncr(finest_level+1);
+   for (int lev = 0; lev <= finest_level; ++lev) {
+      chiIncr[lev].define(grids[lev], dmap[lev], 1, nGrow, MFInfo(), Factory(lev));
+   }
+
+   // Update the thermodynamic pressure
+   setThermoPress(a_time);
+
+   // Compute the pressure drift term
+   calc_dPdt(a_time,GetVecOfPtrs(chiIncr));
+
+   // Add chiIncr to chi and add chi to mac_divu
+   // Both mac_divu and chiIncr have properly filled ghost cells -> work on grownbox
+   for (int lev = 0; lev <= finest_level; ++lev) {
+#ifdef _OPENMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+      for (MFIter mfi(advData->chi[lev],TilingIfNotGPU()); mfi.isValid(); ++mfi)
+      {
+         const Box& gbx = mfi.growntilebox();
+         auto const& chiInc_ar   = chiIncr[lev].const_array(mfi);
+         auto const& chi_ar      = advData->chi[lev].array(mfi);
+         auto const& mac_divu_ar = advData->mac_divu[lev].array(mfi);
+         amrex::ParallelFor(gbx, [chi_ar, chiInc_ar, mac_divu_ar, a_sdcIter]
+         AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+         {
+            if ( a_sdcIter == 1 ) {
+               chi_ar(i,j,k) = chiInc_ar(i,j,k);
+            } else {
+               chi_ar(i,j,k) += chiInc_ar(i,j,k);
+            }
+            mac_divu_ar(i,j,k) += chi_ar(i,j,k);
+         });
+      }
+   }
 }
 
 void PeleLM::macProject(const TimeStamp &a_time,
@@ -73,12 +122,12 @@ void PeleLM::macProject(const TimeStamp &a_time,
    BL_PROFILE_VAR("PeleLM::macProject()", macProject);
 
    int has_divu = (!a_divu.empty());
-   
+
    // Get face rho inv
    auto bcRec = fetchBCRecArray(DENSITY,1);
    Vector<Array<MultiFab,AMREX_SPACEDIM>> rho_inv(finest_level+1);
    for (int lev = 0; lev <= finest_level; ++lev)
-   {   
+   {
       if (m_incompressible) {
          Real rhoInv = 1.0/m_rho;
          for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
@@ -90,15 +139,17 @@ void PeleLM::macProject(const TimeStamp &a_time,
          auto ldata_p = getLevelDataPtr(lev,a_time);
          rho_inv[lev] = getDiffusivity(lev,0,1,{bcRec},ldata_p->density);
          for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
-            rho_inv[lev][idim].invert(1.0,0);
+            rho_inv[lev][idim].invert(m_dt/2.0,0);
+            rho_inv[lev][idim].FillBoundary(geom[lev].periodicity());
          }
+
       }
    }
 
    if (macproj->needInitialization()) {
       LPInfo lpInfo;
       lpInfo.setMaxCoarseningLevel(m_mac_mg_max_coarsening_level);
-      macproj->initProjector(lpInfo, GetVecOfArrOfConstPtrs(rho_inv));  
+      macproj->initProjector(lpInfo, GetVecOfArrOfConstPtrs(rho_inv));
       macproj->setDomainBC(getMACProjectionBC(Orientation::low),
                            getMACProjectionBC(Orientation::high));
    } else {
