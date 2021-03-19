@@ -447,4 +447,90 @@ getTfromHY(int i, int j, int k,
    T(i,j,k) = T_loc;
 }
 
+AMREX_GPU_DEVICE
+AMREX_FORCE_INLINE
+void
+getCpmixGivenRYT(int i, int j, int k,
+                 amrex::Array4<const amrex::Real> const& rho,
+                 amrex::Array4<const amrex::Real> const& rhoY,
+                 amrex::Array4<const amrex::Real> const& T,
+                 amrex::Array4<      amrex::Real> const& cpmix) noexcept
+{
+   using namespace amrex::literals;
+
+   amrex::Real rhoinv  = 1.0_rt / rho(i,j,k);
+   amrex::Real y[NUM_SPECIES] = {0.0};
+   for (int n = 0; n < NUM_SPECIES; n++) {
+      y[n] = rhoY(i,j,k,n) * rhoinv;
+   }
+
+   EOS::TY2Cp(T(i,j,k), y, cpmix(i,j,k));
+   cpmix(i,j,k) *= 0.0001_rt;                         // CGS -> MKS conversion
+}
+
+AMREX_GPU_DEVICE
+AMREX_FORCE_INLINE
+void
+buildAdvectionForcing(int i, int j, int k,
+                      amrex::Array4<const amrex::Real> const& rho,
+                      amrex::Array4<const amrex::Real> const& rhoY,
+                      amrex::Array4<const amrex::Real> const& T,
+                      amrex::Array4<const amrex::Real> const& dn,
+                      amrex::Array4<const amrex::Real> const& ddn,
+                      amrex::Array4<const amrex::Real> const& r,
+                      amrex::Real                      const& dp0dt,
+                      int                              const& closed_chamber,
+                      amrex::Array4<      amrex::Real> const& forceY,
+                      amrex::Array4<      amrex::Real> const& forceT) noexcept
+{
+   using namespace amrex::literals;
+
+   // Get species enthalpy
+   amrex::Real hi_spec[NUM_SPECIES] = {0.0};
+   EOS::T2Hi(T(i,j,k), hi_spec);
+
+   // For species mass fractions
+   amrex::Real rhoinv = 1.0_rt / rho(i,j,k);
+   amrex::Real y[NUM_SPECIES] = {0.0};
+
+   forceT(i,j,k) = dn(i,j,k,NUM_SPECIES) + ddn(i,j,k);
+   for (int n = 0; n < NUM_SPECIES; n++) {
+      y[n] = rhoY(i,j,k,n) * rhoinv;                                 // get y
+      forceY(i,j,k,n) = /* TODO r(i,j,k,n)*/ + dn(i,j,k,n);                    // forceY = Rk + Dnk
+      forceT(i,j,k) -= forceY(i,j,k,n) * hi_spec[n] * 0.0001_rt;     // forceT -= Sum{ hk. (Rk + Dnk) } with CGS -> MKS conversion of hk
+   }
+
+   if ( closed_chamber == 1 ) forceT(i,j,k) += dp0dt;                // Add dp0/dt
+
+   amrex::Real cpmix = 0.0_rt;
+   EOS::TY2Cp(T(i,j,k), y, cpmix);
+   amrex::Real cpmixinv = 1.0_rt / cpmix * 1.0e4_rt;                 // CGS -> MKS conversion
+   forceT(i,j,k) *= rhoinv * cpmixinv;
+}
+
+AMREX_GPU_DEVICE
+AMREX_FORCE_INLINE
+void
+buildDiffusionForcing(int i, int j, int k,
+                      amrex::Array4<const amrex::Real> const& dn,
+                      amrex::Array4<const amrex::Real> const& ddn,
+                      amrex::Array4<const amrex::Real> const& dnp1k,
+                      amrex::Array4<const amrex::Real> const& ddnp1k,
+                      amrex::Array4<const amrex::Real> const& r,
+                      amrex::Array4<const amrex::Real> const& a,
+                      amrex::Real                      const& dp0dt,
+                      int                              const& closed_chamber,
+                      amrex::Array4<      amrex::Real> const& forceY,
+                      amrex::Array4<      amrex::Real> const& forceT) noexcept
+{
+   using namespace amrex::literals;
+
+   for (int n = 0; n < NUM_SPECIES; n++) {
+      forceY(i,j,k,n) = a(i,j,k,n) + 0.5_rt * ( dn(i,j,k,n) - dnp1k(i,j,k,n) ) /* TODO + r(i,j,k,n)*/;
+   }
+   forceT(i,j,k) = a(i,j,k,NUM_SPECIES) + 0.5_rt * (  dn(i,j,k,NUM_SPECIES) + ddn(i,j,k)
+                             - dnp1k(i,j,k,NUM_SPECIES) - ddnp1k(i,j,k) );
+
+   if ( closed_chamber == 1 ) forceT(i,j,k) += dp0dt;
+}
 #endif
