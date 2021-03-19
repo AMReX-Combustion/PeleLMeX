@@ -34,23 +34,39 @@ PeleLM::AdvanceDiffData::AdvanceDiffData(int a_finestLevel,
                                          const amrex::Vector<amrex::DistributionMapping> &dm, 
                                          const amrex::Vector<std::unique_ptr<amrex::FabFactory<FArrayBox>>> &factory,
                                          int nGrowAdv,
-                                         int a_use_wbar)
+                                         int a_use_wbar,
+                                         int is_init)
 {
-   // Resize Vectors
-   Dn.resize(a_finestLevel+1);
-   Dnp1.resize(a_finestLevel+1);
-   Dhat.resize(a_finestLevel+1);
-   if ( a_use_wbar ) {
-      Dwbar.resize(a_finestLevel+1);
-   }
+   if (is_init) {                   // All I need is a container for a single diffusion term
+      // Resize Vectors
+      Dnp1.resize(a_finestLevel+1);
 
-   // Define MFs
-   for (int n = 0; n <= a_finestLevel; n++ ) {
-      Dn[n].define(ba[n], dm[n], NUM_SPECIES+2 , nGrowAdv, MFInfo(), *factory[n]);
-      Dnp1[n].define(ba[n], dm[n], NUM_SPECIES+2 , nGrowAdv, MFInfo(), *factory[n]);
-      Dhat[n].define(ba[n], dm[n], NUM_SPECIES+2 , nGrowAdv, MFInfo(), *factory[n]);
+      // Define MFs
+      for (int lev = 0; lev <= a_finestLevel; lev++ ) {
+         Dnp1[lev].define(ba[lev], dm[lev], NUM_SPECIES+2 , nGrowAdv, MFInfo(), *factory[lev]);
+      }
+   } else {
+      // Resize Vectors
+      Dn.resize(a_finestLevel+1);
+      Dnp1.resize(a_finestLevel+1);
+      Dhat.resize(a_finestLevel+1);
       if ( a_use_wbar ) {
-         Dwbar[n].define(ba[n], dm[n], NUM_SPECIES, nGrowAdv, MFInfo(), *factory[n]);
+         Dwbar.resize(a_finestLevel+1);
+         wbar_fluxes.resize(a_finestLevel+1);
+      }
+
+      // Define MFs
+      for (int lev = 0; lev <= a_finestLevel; lev++ ) {
+         Dn[lev].define(ba[lev], dm[lev], NUM_SPECIES+2 , nGrowAdv, MFInfo(), *factory[lev]);
+         Dnp1[lev].define(ba[lev], dm[lev], NUM_SPECIES+2 , nGrowAdv, MFInfo(), *factory[lev]);
+         Dhat[lev].define(ba[lev], dm[lev], NUM_SPECIES+2 , nGrowAdv, MFInfo(), *factory[lev]);
+         if ( a_use_wbar ) {
+            Dwbar[lev].define(ba[lev], dm[lev], NUM_SPECIES, nGrowAdv, MFInfo(), *factory[lev]);
+            for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
+               const BoxArray& faceba = amrex::convert(ba[lev],IntVect::TheDimensionVector(idim));
+               wbar_fluxes[lev][idim].define(faceba,dm[lev], NUM_SPECIES, 0, MFInfo(), *factory[lev]);
+            }
+         }
       }
    }
 }
@@ -69,6 +85,7 @@ PeleLM::AdvanceAdvData::AdvanceAdvData(int a_finestLevel,
    if ( !a_incompressible ) {
       chi.resize(a_finestLevel+1);
       Forcing.resize(a_finestLevel+1);
+      mac_divu.resize(a_finestLevel+1);
    }
 
    // Define MFs
@@ -82,7 +99,8 @@ PeleLM::AdvanceAdvData::AdvanceAdvData(int a_finestLevel,
       } else {
          AofS[lev].define(ba[lev], dm[lev], NVAR , 0, MFInfo(), *factory[lev]);
          chi[lev].define(ba[lev], dm[lev], 1, 1, MFInfo(), *factory[lev]);
-         Forcing[lev].define(ba[lev], dm[lev], NUM_SPECIES+1, nGrowAdv, MFInfo(), *factory[lev]); // Species + RHOH
+         Forcing[lev].define(ba[lev], dm[lev], NUM_SPECIES+1, nGrowAdv, MFInfo(), *factory[lev]); // Species + TEMP
+         mac_divu[lev].define(ba[lev], dm[lev], 1, nGrowAdv, MFInfo(), *factory[lev]);
       }
    }
 }
@@ -97,7 +115,9 @@ PeleLM::copyStateNewToOld(int nGhost) {
          MultiFab::Copy(m_leveldata_old[lev]->rhoh,m_leveldata_new[lev]->rhoh,0,0,1,nGhost);
          MultiFab::Copy(m_leveldata_old[lev]->temp,m_leveldata_new[lev]->temp,0,0,1,nGhost);
          MultiFab::Copy(m_leveldata_old[lev]->rhoRT,m_leveldata_new[lev]->rhoRT,0,0,1,nGhost);
-         MultiFab::Copy(m_leveldata_old[lev]->divu,m_leveldata_new[lev]->divu,0,0,1,nGhost);
+         if ( m_has_divu ) {
+            MultiFab::Copy(m_leveldata_old[lev]->divu,m_leveldata_new[lev]->divu,0,0,1,nGhost);
+         }
       }
    }
 }
@@ -120,7 +140,9 @@ PeleLM::copyStateOldToNew(int nGhost) {
          MultiFab::Copy(m_leveldata_new[lev]->rhoh,m_leveldata_old[lev]->rhoh,0,0,1,nGhost);
          MultiFab::Copy(m_leveldata_new[lev]->temp,m_leveldata_old[lev]->temp,0,0,1,nGhost);
          MultiFab::Copy(m_leveldata_new[lev]->rhoRT,m_leveldata_old[lev]->rhoRT,0,0,1,nGhost);
-         MultiFab::Copy(m_leveldata_new[lev]->divu,m_leveldata_old[lev]->divu,0,0,1,nGhost);
+         if ( m_has_divu ) {
+            MultiFab::Copy(m_leveldata_new[lev]->divu,m_leveldata_old[lev]->divu,0,0,1,nGhost);
+         }
       }
    }
 }
