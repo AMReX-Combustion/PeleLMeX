@@ -31,15 +31,15 @@ void pelelm_initdata(int i, int j, int k,
 
     AMREX_D_TERM(const amrex::Real x = prob_lo[0] + (i+0.5)*dx[0];,
                  const amrex::Real y = prob_lo[1] + (j+0.5)*dx[1];,
-                 const amrex::Real z = prob_lo[2] + (k+0.5)*dx[2];); 
+                 const amrex::Real z = prob_lo[2] + (k+0.5)*dx[2];);
 
     AMREX_D_TERM(const amrex::Real Lx = prob_hi[0] - prob_lo[0];,
                  const amrex::Real Ly = prob_hi[1] - prob_lo[1];,
-                 const amrex::Real Lz = prob_hi[2] - prob_lo[2]); 
+                 const amrex::Real Lz = prob_hi[2] - prob_lo[2]);
 
     AMREX_D_TERM(const amrex::Real x_c = prob_lo[0] + 0.5*Lx;,
                  const amrex::Real y_c = prob_lo[1] + 0.5*Ly;,
-                 const amrex::Real z_c = prob_lo[2] + 0.5*Lz); 
+                 const amrex::Real z_c = prob_lo[2] + 0.5*Lz);
 
     constexpr amrex::Real Pi = 3.14159265358979323846264338327950288;
 
@@ -54,12 +54,12 @@ void pelelm_initdata(int i, int j, int k,
        const amrex::Real r_sq = prob_parm.rvort * prob_parm.rvort;
        const amrex::Real u_vort = -prob_parm.forcevort*deltay/r_sq * exp(-d_sq/r_sq/2.);
        const amrex::Real v_vort = prob_parm.forcevort*deltax/r_sq * exp(-d_sq/r_sq/2.);
-       const amrex::Real w_vort = 0.; 
+       const amrex::Real w_vort = 0.;
 
        AMREX_D_TERM(vel(i,j,k,0) = prob_parm.meanFlowMag + u_vort;,
                     vel(i,j,k,1) = v_vort;,
                     vel(i,j,k,2) = 0.0);
-    
+
        if (is_incompressible) return;
 
        temp(i,j,k) = prob_parm.T_mean;
@@ -84,6 +84,27 @@ void pelelm_initdata(int i, int j, int k,
        } else {
           amrex::Abort("Unknown gauss_type: should be either Temp or Spec");
        }
+    } else if ( prob_parm.probType == 2 ) { // DifGau
+
+       AMREX_D_TERM(vel(i,j,k,0) = 0.0;,
+                    vel(i,j,k,1) = 0.0;,
+                    vel(i,j,k,2) = 0.0);
+
+       if (is_incompressible) return;
+
+       temp(i,j,k) = prob_parm.T_mean;
+       const amrex::Real deltax = x - prob_parm.xgauss;
+       const amrex::Real deltay = y - prob_parm.ygauss;
+       const amrex::Real d_sq = deltax*deltax + deltay*deltay;
+       const amrex::Real r_sq = prob_parm.rgauss * prob_parm.rgauss;
+       if ( prob_parm.gauss_type == 0 ) { // Spec
+          massfrac[O2_ID] += massfrac[O2_ID] * prob_parm.ampgauss * std::exp(-d_sq/r_sq);
+          massfrac[N2_ID] = 1.0 - massfrac[O2_ID];
+       } else if ( prob_parm.gauss_type == 1 ) { //Temp
+          temp(i,j,k) = prob_parm.T_mean * ( 1.0 + prob_parm.ampgauss * std::exp(-d_sq/r_sq) );
+       } else {
+          amrex::Abort("Unknown gauss_type: should be either Temp or Spec");
+       }
     }
 
     amrex::Real P_cgs = prob_parm.P_mean * 10.0;
@@ -99,7 +120,7 @@ void pelelm_initdata(int i, int j, int k,
     rhoH(i,j,k) = h_cgs * 1.0e-4 * rho(i,j,k);
 
     // Species mass
-    for (int n = 0; n < NUM_SPECIES; n++) {  
+    for (int n = 0; n < NUM_SPECIES; n++) {
        rhoY(i,j,k,n) = massfrac[n] * rho(i,j,k);
     }
 
