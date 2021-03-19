@@ -135,11 +135,42 @@ void PeleLM::updateVelocity(int is_init,
    }
 }
 
-void PeleLM::getScalarAdvForce(std::unique_ptr<AdvanceAdvData> &advData)
+void PeleLM::getScalarAdvForce(std::unique_ptr<AdvanceAdvData> &advData,
+                               std::unique_ptr<AdvanceDiffData> &diffData)
 {
-   // TODO: forcing for advection
-   for (int lev = 0; lev <= finest_level; ++lev) {   
-      advData->Forcing[lev].setVal(0.0);
+   for (int lev = 0; lev <= finest_level; ++lev) {
+
+      // Get t^{n} data pointer
+      auto ldata_p = getLevelDataPtr(lev,AmrOldTime);
+
+#ifdef _OPENMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+      for (MFIter mfi(advData->Forcing[lev],TilingIfNotGPU()); mfi.isValid(); ++mfi)
+      {
+         const Box& bx = mfi.tilebox();
+         auto const& rho     = ldata_p->density.const_array(mfi);
+         auto const& rhoY    = ldata_p->species.const_array(mfi);
+         auto const& T       = ldata_p->temp.const_array(mfi);
+         auto const& dn      = diffData->Dn[lev].const_array(mfi,0);
+         auto const& ddn     = diffData->Dn[lev].const_array(mfi,NUM_SPECIES+1);
+         auto const& r       = ldata_p->temp.const_array(mfi); // TODO get_new_data(RhoYdot_Type).array(mfi,0);
+         auto const& fY      = advData->Forcing[lev].array(mfi,0);
+         auto const& fT      = advData->Forcing[lev].array(mfi,NUM_SPECIES);
+         Real        dp0dt_d = 0.0; // TODO dp0dt;
+         int     closed_ch_d = 0;   // TODO closed_chamber;
+
+         amrex::ParallelFor(bx, [rho, rhoY, T, dn, ddn, r, fY, fT, dp0dt_d, closed_ch_d]
+         AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+         {
+            buildAdvectionForcing( i, j, k, rho, rhoY, T, dn, ddn, r, dp0dt_d, closed_ch_d, fY, fT );
+         });
+      }
+   }
+
+   // Fill forcing ghost cells
+   if ( advData->Forcing[0].nGrow() > 0 ) {
+      fillpatch_forces(m_cur_time, GetVecOfPtrs(advData->Forcing), advData->Forcing[0].nGrow());
    }
 }
 
@@ -175,14 +206,13 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
 
       //----------------------------------------------------------------
       // Get divU
-      int nGrow_divu = 4;  // Why incflo use 4 ?
+      int nGrow_divu = 1;  // Why incflo use 4 ?
       MultiFab divu(grids[lev],dmap[lev],1,nGrow_divu,MFInfo(),Factory(lev));
       if (m_incompressible) {
          divu.setVal(0.0);
       } else {
-         // TODO: this should be mac_divu
-         Real time  = getTime(lev,AmrOldTime);
-         fillpatch_divu(lev,time,divu,nGrow_divu);
+         // TODO: check the number of ghost cells
+         MultiFab::Copy(divu,advData->mac_divu[lev],0,0,1,nGrow_divu);
       }
 
       // Get the species edge state and advection term
@@ -274,7 +304,7 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
                       auto const& edgez = edgeState[2].array(mfi,NUM_SPECIES+2);)
          auto const& divu_arr  = divu.const_array(mfi);
          auto const& temp_arr  = ldata_p->temp.const_array(mfi);
-         auto const& force_arr = advData->Forcing[lev].const_array(mfi,NUM_SPECIES-1);
+         auto const& force_arr = advData->Forcing[lev].const_array(mfi,NUM_SPECIES);
          auto const& aofs      = advData->AofS[lev].array(mfi,TEMP);
          // Temporary fab used in Godunov. TODO ngrow should be > 1 for EB.
          int n_tmp_fac = (AMREX_SPACEDIM == 2) ? 10 : 14;   
@@ -319,6 +349,7 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
       }
 
       // Finally get the RhoH advection term
+      // Pass the Temp forces again here, but they aren't used.
 #ifdef _OPENMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
