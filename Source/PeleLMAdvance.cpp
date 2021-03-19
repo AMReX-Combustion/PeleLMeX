@@ -23,10 +23,10 @@ void PeleLM::Advance(int is_initIter) {
 
    // Update time vectors
    for(int lev = 0; lev <= finest_level; lev++)
-   {   
+   {
        m_t_old[lev] = m_cur_time;
        m_t_new[lev] = m_cur_time + m_dt;
-   } 
+   }
    //----------------------------------------------------------------
 
    if ( m_verbose ) {
@@ -38,7 +38,7 @@ void PeleLM::Advance(int is_initIter) {
    std::unique_ptr<AdvanceDiffData> diffData;
    diffData.reset(new AdvanceDiffData(finest_level, grids, dmap, m_factory, m_nGrowAdv, m_use_wbar));
    std::unique_ptr<AdvanceAdvData> advData;
-   advData.reset(new AdvanceAdvData(finest_level, grids, dmap, m_factory, m_incompressible, 
+   advData.reset(new AdvanceAdvData(finest_level, grids, dmap, m_factory, m_incompressible,
                                     m_nGrowAdv, m_nGrowMAC));
    //----------------------------------------------------------------
 
@@ -46,8 +46,8 @@ void PeleLM::Advance(int is_initIter) {
    // Advance setup
    // fillpatch the t^{n} data
    fillPatchState(AmrOldTime);
-   
-   // compute t^n data 
+
+   // compute t^{n} data
    calcViscosity(AmrOldTime);
    if (! m_incompressible ) {
       calcDiffusivity(AmrOldTime);
@@ -58,9 +58,10 @@ void PeleLM::Advance(int is_initIter) {
 
    if (! m_incompressible ) {
       setThermoPress(AmrOldTime);
-      computeDifferentialDiffusionTerms(AmrOldTime,diffData->Dn);
+      computeDifferentialDiffusionTerms(AmrOldTime,diffData);
    }
 
+   // Initialize terms t^{np1,k} from t^{n}
    copyTransportOldToNew();
    if (! m_incompressible ) {
       copyDiffusionOldToNew(diffData);
@@ -68,30 +69,35 @@ void PeleLM::Advance(int is_initIter) {
 
    // TODO : handle reaction ghost cells
    //----------------------------------------------------------------
-   
+
    //----------------------------------------------------------------
    // Scalar advance
    if ( m_incompressible ) {
 
-      // Still need to get face velocities
+      // Still need to get face velocities ...
       predictVelocity(advData,diffData);
-      // MAC-project face velocities
+
+      // ... and MAC-project face velocities, but no divu
       macProject(AmrOldTime,advData,{});
+
    } else {
 
       // SDC iterations
       for (int sdc_iter = 1; sdc_iter <= m_nSDCmax; ++sdc_iter ) {
          oneSDC(sdc_iter,advData,diffData);
       }
+
       // Post SDC
       fillPatchState(AmrNewTime);
-      calcDiffusivity(AmrNewTime);
       setThermoPress(AmrNewTime);
       if (m_has_divu) {
-         int is_initialization = 0;
-         int do_avgDown = 1;
-         calcDivU(is_initialization,do_avgDown,AmrNewTime);
+         int is_initialization = 0;             // Not here
+         int computeDiffusionTerm = 1;          // Yes, re-evaluate the diffusion term after the last chemistry solve
+         int do_avgDown = 1;                    // Always
+         calcDivU(is_initialization,computeDiffusionTerm,do_avgDown,AmrNewTime,diffData);
       }
+      //VisMF::Write(m_leveldata_new[0]->divu,"divuPostSDC");
+      //VisMF::Write(m_leveldata_new[0]->rhoRT,"TPressPostSDC");
    }
    //----------------------------------------------------------------
 
@@ -102,18 +108,21 @@ void PeleLM::Advance(int is_initIter) {
 
    // Compute t^{n+1/2} velocity advection term
    computeVelocityAdvTerm(advData);
-   
+   //VisMF::Write(advData->AofS[0],"AofSVelBefProj");
+
    // Compute provisional new velocity for diffusion solve RHS
    // U^{np1**} = U^{n} - dt*AofS^{n+1/2} - dt/rho^{n+1/2} \nabla \pi^{n-1/2} + dt/rho^{n+1/2} * F^{n+1/2}
    updateVelocity(is_initIter,advData);
 
    // Semi-implicit CN diffusion solve to get U^{np1*}
-   // updateVelocityDiffusion(diffData);
+   diffuseVelocity();
+   //VisMF::Write(m_leveldata_old[0]->press,"PoldPreProj");
 
    // Nodal projection to get constrained U^{np1} and new pressure \pi^{n+1/2}
    const TimeStamp rhoTime = AmrHalfTime;
    velocityProjection(is_initIter,rhoTime,m_dt);
    //----------------------------------------------------------------
+   //VisMF::Write(m_leveldata_new[0]->press,"PnewAftProj");
 
    //----------------------------------------------------------------
    // Wrapup advance
@@ -134,13 +143,22 @@ void PeleLM::oneSDC(int sdcIter,
    //----------------------------------------------------------------
    // Update t^{n+1,k} transport/Dnp1/divU
    //----------------------------------------------------------------
-   // For the first SDC, we already copied old -> new
+   // At the first SDC, we already copied old -> new
    if (sdcIter > 1) {
+
+      // fillpatch the new state
+      fillPatchState(AmrNewTime);
+      
       calcDiffusivity(AmrNewTime);
-      computeDifferentialDiffusionTerms(AmrNewTime,diffData->Dnp1);
-      int is_initialization = 0;
-      int do_avgDown = 1;
-      calcDivU(is_initialization,do_avgDown,AmrNewTime);
+      computeDifferentialDiffusionTerms(AmrNewTime,diffData);
+      if (m_has_divu) {
+         int is_initialization = 0;                   // Not here 
+         int computeDiffusionTerm = 0;                // Nope, we just did that
+         int do_avgDown = 1;                          // Always
+         calcDivU(is_initialization,computeDiffusionTerm,do_avgDown,AmrNewTime,diffData);
+      }
+      //VisMF::Write(m_leveldata_new[0]->divu,"DivUNewNS_"+std::to_string(sdcIter));
+      //VisMF::Write(diffData->Dnp1[0],"DNewNS_"+std::to_string(sdcIter));
    }
    //----------------------------------------------------------------
 
@@ -149,26 +167,35 @@ void PeleLM::oneSDC(int sdcIter,
    //----------------------------------------------------------------
    // Predict face velocity with Godunov
    predictVelocity(advData,diffData);
+   //VisMF::Write(advData->umac[0][0],"UmacXPredictNS_"+std::to_string(sdcIter));
 
-   // Create S^{n+1/2} by averaging old and new
+   // Create S^{n+1/2} by fillpatching t^{n} and t^{np1,k}
+   createMACRHS(advData);
 
-   // Add chi_increment
+   // Re-evaluate thermo. pressure and add chi_increment
+   addChiIncrement(sdcIter, AmrNewTime,advData);
+   //VisMF::Write(advData->mac_divu[0],"MacdivUNS_"+std::to_string(sdcIter));
 
    // MAC projection
-   macProject(AmrOldTime,advData,{});
+   macProject(AmrOldTime,advData,GetVecOfPtrs(advData->mac_divu));
+   //VisMF::Write(advData->umac[0][0],"UmacXPostMACProjNS_"+std::to_string(sdcIter));
+   //VisMF::Write(advData->umac[0][1],"UmacYPostMACProjNS_"+std::to_string(sdcIter));
    //----------------------------------------------------------------
-   
+
    //----------------------------------------------------------------
    // Scalar advections
    //----------------------------------------------------------------
-   // Get advection SDC forcing
-   getScalarAdvForce(advData);
+   // Get scalar advection SDC forcing
+   getScalarAdvForce(advData,diffData);
+   //VisMF::Write(advData->Forcing[0],"AdvForcingNS_"+std::to_string(sdcIter));
 
-   // Get AofS (\nabla \cdot (\rho Y Umac))^{n+1/2}
-   // and density = \sum_k AofS_k
+   // Get AofS: (\nabla \cdot (\rho Y Umac))^{n+1/2,k}
+   // and for density = \sum_k AofS_k
    computeScalarAdvTerms(advData);
-   
-   // Compute \rho^{np1,k} and fillpatch new density
+   //VisMF::Write(advData->AofS[0],"AdvTermNS_"+std::to_string(sdcIter));
+   //advData->AofS[0].setVal(0.0);
+
+   // Compute \rho^{np1,k+1} and fillpatch new density
    updateDensity(advData);
    fillPatchDensity(AmrNewTime);
    //----------------------------------------------------------------
@@ -176,12 +203,20 @@ void PeleLM::oneSDC(int sdcIter,
    //----------------------------------------------------------------
    // Scalar diffusion
    //----------------------------------------------------------------
+   // Get scalar diffusion SDC RHS (stored in Forcing)
+   getScalarDiffForce(advData,diffData);
+   //VisMF::Write(advData->Forcing[0],"DiffForcingNS_"+std::to_string(sdcIter));
+
+   // Diffuse scalars
+   differentialDiffusionUpdate(advData,diffData);
+   //VisMF::Write(diffData->Dhat[0],"DhatNS_"+std::to_string(sdcIter));
 
    //----------------------------------------------------------------
    // Reaction
    //----------------------------------------------------------------
    // TODO: right now just add Adv and Diff
-   for (int lev = 0; lev <= finest_level; ++lev) { 
+   /*
+   for (int lev = 0; lev <= finest_level; ++lev) {
 
       // Get level data ptr
       auto ldataOld_p = getLevelDataPtr(lev,AmrOldTime);
@@ -207,13 +242,17 @@ void PeleLM::oneSDC(int sdcIter,
          });
       }
    }
+   */
 
    //----------------------------------------------------------------
    // Wrap it up
    //----------------------------------------------------------------
    setTemperature(AmrNewTime);
-}
 
-void PeleLM::updateVelocityDiffusion(std::unique_ptr<AdvanceDiffData> &diffData)
-{
+   setThermoPress(AmrNewTime);
+
+   //VisMF::Write(m_leveldata_new[0]->species,"EndSDCSpecies_"+std::to_string(sdcIter));
+   //VisMF::Write(m_leveldata_new[0]->density,"EndSDCdensity_"+std::to_string(sdcIter));
+   //VisMF::Write(m_leveldata_new[0]->temp,"EndSDCtemp_"+std::to_string(sdcIter));
+   //VisMF::Write(m_leveldata_new[0]->rhoh,"EndSDCRhoH_"+std::to_string(sdcIter));
 }
