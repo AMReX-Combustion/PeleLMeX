@@ -53,7 +53,7 @@ divu_bc[] =
 
 // Following incflo rather than IAMR here
 int
-gp_bc[] =
+force_bc[] =
 {
   BCType::int_dir, BCType::foextrap, BCType::foextrap , BCType::foextrap, BCType::foextrap, BCType::foextrap,
   BCType::foextrap, BCType::foextrap
@@ -63,7 +63,8 @@ void PeleLM::setBoundaryConditions() {
 
    // Initialize the BCRecs
    m_bcrec_state.resize(NVAR);
-   m_bcrec_gp.resize(AMREX_SPACEDIM);
+   int sizeForceBC = std::max(AMREX_SPACEDIM,NUM_SPECIES+2);
+   m_bcrec_force.resize(sizeForceBC);
 
    // Convert m_phys_bc into field BCs
    // Get m_phys_bc
@@ -83,11 +84,11 @@ void PeleLM::setBoundaryConditions() {
       }
    }  
 
-   // grad P
-   for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
-      for (int idim2 = 0; idim2 < AMREX_SPACEDIM; idim2++) {
-         m_bcrec_gp[idim].setLo(idim2,gp_bc[lo_bc[idim2]]);
-         m_bcrec_gp[idim].setHi(idim2,gp_bc[hi_bc[idim2]]);
+   // General forces: use int_dir in interior and foextrap otherwise
+   for (int i = 0; i < sizeForceBC; i++) {
+      for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+         m_bcrec_force[i].setLo(idim,force_bc[lo_bc[idim]]);
+         m_bcrec_force[i].setHi(idim,force_bc[hi_bc[idim]]);
       }
    }
 
@@ -140,6 +141,10 @@ PeleLM::fetchBCRecArray(int scomp, int ncomp) {
    return bc;
 }
 
+
+//-----------------------------------------------------------------------------
+// The following work directly on the leveldata
+
 // Fill the entire class state at once
 void PeleLM::fillPatchState(const TimeStamp &a_time) {
    BL_PROFILE_VAR("PeleLM::fillPatchState()", fillPatchState);
@@ -148,6 +153,7 @@ void PeleLM::fillPatchState(const TimeStamp &a_time) {
    }
 }
 
+// Fill the a given level class state
 void PeleLM::fillPatchState(int lev, const TimeStamp &a_time) {
    BL_PROFILE_VAR("PeleLM::fillPatchStateLev()", fillPatchStateLev);
 
@@ -159,11 +165,14 @@ void PeleLM::fillPatchState(int lev, const TimeStamp &a_time) {
       fillpatch_density(lev, time, ldata_p->density, m_nGrowState);
       fillpatch_species(lev, time, ldata_p->species, m_nGrowState);
       fillpatch_energy(lev, time, ldata_p->rhoh, ldata_p->temp, m_nGrowState);
+      if (m_has_divu) {
+         fillpatch_divu(lev, time, ldata_p->divu, ldata_p->divu.nGrow());
+      }
    }
    //TODO Aux
 }
 
-// Fill the entire class state at once
+// Fill a state components
 void PeleLM::fillPatchDensity(const TimeStamp &a_time) {
    BL_PROFILE_VAR("PeleLM::fillPatchDensity()", fillPatchDensity);
    for (int lev = 0; lev <= finest_level; lev++) {
@@ -173,6 +182,27 @@ void PeleLM::fillPatchDensity(const TimeStamp &a_time) {
    }
 }
 
+void PeleLM::fillPatchSpecies(const TimeStamp &a_time) {
+   BL_PROFILE_VAR("PeleLM::fillPatchSpecies()", fillPatchSpecies);
+   for (int lev = 0; lev <= finest_level; lev++) {
+      auto ldata_p = getLevelDataPtr(lev,a_time);
+      Real time = getTime(lev, a_time);
+      fillpatch_species(lev, time, ldata_p->species, m_nGrowState);
+   }
+}
+
+void PeleLM::fillPatchTemp(const TimeStamp &a_time) {
+   BL_PROFILE_VAR("PeleLM::fillPatchTemp()", fillPatchTemp);
+   for (int lev = 0; lev <= finest_level; lev++) {
+      auto ldata_p = getLevelDataPtr(lev,a_time);
+      Real time = getTime(lev, a_time);
+      fillpatch_energy(lev, time, ldata_p->rhoh, ldata_p->temp, m_nGrowState);
+   }
+}
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// The following return a fillpatched MF ptr at a given level
 // Fill the entire state at once
 std::unique_ptr<MultiFab>
 PeleLM::fillPatchState(int lev, Real a_time, int nGrow) {
@@ -196,6 +226,7 @@ PeleLM::fillPatchState(int lev, Real a_time, int nGrow) {
 
    return mf;
 }
+//-----------------------------------------------------------------------------
 
 // Fill the velocity
 void PeleLM::fillpatch_velocity(int lev,
@@ -415,33 +446,35 @@ void PeleLM::fillpatch_divu(int lev,
    }
 }
 
-// Fillpatch the forces
+// Fillpatch a vector of forces:
+// -> actually only modifies the ghost cells : fillBoundary, C/F interp, foextrap on domain BCs
 void PeleLM::fillpatch_forces(Real a_time,
-                              Vector<MultiFab*> const &a_velForce,
+                              Vector<MultiFab*> const &a_force,
                               int nGrowForce)
 {
-   const int nComp = a_velForce[0]->nComp();
+   AMREX_ASSERT(a_force[0]->nComp() <= m_bcrec_force.size());
+   const int nComp = a_force[0]->nComp();
    ProbParm const* lprobparm = prob_parm.get();
 
    int lev = 0;
    {
-      PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy> > bndry_func(geom[lev], {m_bcrec_gp},
+      PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy> > bndry_func(geom[lev], {m_bcrec_force},
                                                                         PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
-      FillPatchSingleLevel(*a_velForce[lev],IntVect(nGrowForce),a_time,{a_velForce[lev]},{a_time},
+      FillPatchSingleLevel(*a_force[lev],IntVect(nGrowForce),a_time,{a_force[lev]},{a_time},
                            0,0,nComp,geom[lev],bndry_func,0);
    }
    for (lev = 1; lev <= finest_level; ++lev) {
-      PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy> > crse_bndry_func(geom[lev-1], {m_bcrec_gp},
+      PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy> > crse_bndry_func(geom[lev-1], {m_bcrec_force},
                                                                              PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
-      PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy> > fine_bndry_func(geom[lev], {m_bcrec_gp},
+      PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy> > fine_bndry_func(geom[lev], {m_bcrec_force},
                                                                              PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
       Interpolater* mapper = &pc_interp;
-      FillPatchTwoLevels(*a_velForce[lev],IntVect(nGrowForce),a_time,
-                         {a_velForce[lev-1]},{a_time},
-                         {a_velForce[lev]},{a_time},
+      FillPatchTwoLevels(*a_force[lev],IntVect(nGrowForce),a_time,
+                         {a_force[lev-1]},{a_time},
+                         {a_force[lev]},{a_time},
                          0,0,nComp,geom[lev-1], geom[lev],
                          crse_bndry_func,0,fine_bndry_func,0,
-                         refRatio(lev-1), mapper, {m_bcrec_gp}, 0);
+                         refRatio(lev-1), mapper, {m_bcrec_force}, 0);
    }
 }
 
@@ -452,7 +485,7 @@ void PeleLM::fillpatch_gradp(int lev,
                              int nGhost) {
    ProbParm const* lprobparm = prob_parm.get();
    if (lev == 0) {
-      PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> bndry_func(geom[lev], {m_bcrec_gp},
+      PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> bndry_func(geom[lev], {m_bcrec_force},
                                                                        PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
       FillPatchSingleLevel(a_gp, IntVect(nGhost), a_time,
                            {&(m_leveldata_old[lev]->gp),&(m_leveldata_new[lev]->gp)},
@@ -467,9 +500,9 @@ void PeleLM::fillpatch_gradp(int lev,
       Interpolater* mapper = &cell_cons_interp;
 #endif
 
-      PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> crse_bndry_func(geom[lev-1], {m_bcrec_gp},
+      PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> crse_bndry_func(geom[lev-1], {m_bcrec_force},
                                                                             PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
-      PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> fine_bndry_func(geom[lev], {m_bcrec_gp},
+      PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> fine_bndry_func(geom[lev], {m_bcrec_force},
                                                                             PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
       FillPatchTwoLevels(a_gp, IntVect(nGhost), a_time,
                          {&(m_leveldata_old[lev-1]->gp),&(m_leveldata_new[lev-1]->gp)},
@@ -478,7 +511,7 @@ void PeleLM::fillpatch_gradp(int lev,
                          {m_t_old[lev], m_t_new[lev]},
                          0, 0, AMREX_SPACEDIM, geom[lev-1], geom[lev],
                          crse_bndry_func,0,fine_bndry_func,0,
-                         refRatio(lev-1), mapper, {m_bcrec_gp}, 0);
+                         refRatio(lev-1), mapper, {m_bcrec_force}, 0);
    }
 }
 
@@ -603,15 +636,15 @@ void PeleLM::fillcoarsepatch_gradp(int lev,
    Interpolater* mapper = &cell_cons_interp;
 #endif
 
-   PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> crse_bndry_func(geom[lev-1], {m_bcrec_gp},
+   PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> crse_bndry_func(geom[lev-1], {m_bcrec_force},
                                                                        PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
-   PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> fine_bndry_func(geom[lev], {m_bcrec_gp},
+   PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> fine_bndry_func(geom[lev], {m_bcrec_force},
                                                                        PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
    InterpFromCoarseLevel(a_gp, IntVect(nGhost), a_time,
                          m_leveldata_new[lev-1]->gp, 0, 0, AMREX_SPACEDIM,
                          geom[lev-1], geom[lev],
                          crse_bndry_func,0,fine_bndry_func,0,
-                         refRatio(lev-1), mapper, {m_bcrec_gp}, 0);
+                         refRatio(lev-1), mapper, {m_bcrec_force}, 0);
 }
 
 // Fill the divu
