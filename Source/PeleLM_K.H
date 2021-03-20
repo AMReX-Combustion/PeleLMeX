@@ -171,14 +171,14 @@ compute_divu(int i, int j, int k,
 AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
 void
-fluxDivergence_K(int i, int j, int k,
-                 int ncomp,
-                 AMREX_D_DECL(amrex::Array4<const amrex::Real> const& fluxX,
-                              amrex::Array4<const amrex::Real> const& fluxY,
-                              amrex::Array4<const amrex::Real> const& fluxZ),
-                 amrex::Array4<const amrex::Real>              const& vol,
-                 const amrex::Real                                  & scaling,
-                 amrex::Array4<      amrex::Real>              const& div) noexcept
+extFluxDivergence_K(int i, int j, int k,
+                    int ncomp,
+                    AMREX_D_DECL(amrex::Array4<const amrex::Real> const& fluxX,
+                                 amrex::Array4<const amrex::Real> const& fluxY,
+                                 amrex::Array4<const amrex::Real> const& fluxZ),
+                    amrex::Array4<const amrex::Real>              const& vol,
+                    const amrex::Real                                  & scaling,
+                    amrex::Array4<      amrex::Real>              const& div) noexcept
 {
    using namespace amrex::literals;
 
@@ -188,6 +188,69 @@ fluxDivergence_K(int i, int j, int k,
       div(i,j,k,n) = AMREX_D_TERM (  ( fluxX(i+1,j,k,n) - fluxX(i,j,k,n) ),
                                    + ( fluxY(i,j+1,k,n) - fluxY(i,j,k,n) ),
                                    + ( fluxZ(i,j,k+1,n) - fluxZ(i,j,k,n) ));
+      div(i,j,k,n) *= factor;
+   }
+}
+
+AMREX_GPU_DEVICE
+AMREX_FORCE_INLINE
+void
+EB_intFluxDivergence_K(int i, int j, int k,
+                       int ncomp,
+                       AMREX_D_DECL(amrex::Array4<const amrex::Real> const& fluxX,
+                                    amrex::Array4<const amrex::Real> const& fluxY,
+                                    amrex::Array4<const amrex::Real> const& fluxZ),
+                       AMREX_D_DECL(amrex::Array4<const amrex::Real> const& afracX,
+                                    amrex::Array4<const amrex::Real> const& afracY,
+                                    amrex::Array4<const amrex::Real> const& afracZ),
+                       AMREX_D_DECL(amrex::Real areax,
+                                    amrex::Real areay,
+                                    amrex::Real areaz),
+                       amrex::Array4<const amrex::Real>              const& vol,
+                       const amrex::Real                                  & scaling,
+                       amrex::Array4<      amrex::Real>              const& div) noexcept
+{
+   using namespace amrex::literals;
+
+   amrex::Real factor = scaling / vol(i,j,k);
+
+   for (int n = 0; n < ncomp; n++) {
+      div(i,j,k,n) = AMREX_D_TERM (  (   areax * afracX(i+1,j,k) * fluxX(i+1,j,k,n)
+                                       - areax * afracX(i  ,j,k) * fluxX(i  ,j,k,n) ),
+                                   + (   areay * afracY(i,j+1,k) * fluxY(i,j+1,k,n)
+                                       - areay * afracY(i,j  ,k) * fluxY(i,j  ,k,n) ),
+                                   + (   areaz * afracZ(i,j,k+1) * fluxZ(i,j,k+1,n)
+                                       - areaz * afracZ(i,j,k  ) * fluxZ(i,j,k  ,n) ));
+      div(i,j,k,n) *= factor;
+   }
+}
+
+AMREX_GPU_DEVICE
+AMREX_FORCE_INLINE
+void
+intFluxDivergence_K(int i, int j, int k,
+                    int ncomp,
+                    AMREX_D_DECL(amrex::Array4<const amrex::Real> const& fluxX,
+                                 amrex::Array4<const amrex::Real> const& fluxY,
+                                 amrex::Array4<const amrex::Real> const& fluxZ),
+                    AMREX_D_DECL(amrex::Real areax,
+                                 amrex::Real areay,
+                                 amrex::Real areaz),
+                    amrex::Array4<const amrex::Real>              const& vol,
+                    const amrex::Real                                  & scaling,
+                    amrex::Array4<      amrex::Real>              const& div) noexcept
+{
+   using namespace amrex::literals;
+
+   amrex::Real factor = scaling / vol(i,j,k);
+
+   for (int n = 0; n < ncomp; n++) {
+      div(i,j,k,n) = AMREX_D_TERM (  (   areax * fluxX(i+1,j,k,n)
+                                       - areax * fluxX(i  ,j,k,n) ),
+                                   + (   areay * fluxY(i,j+1,k,n)
+                                       - areay * fluxY(i,j  ,k,n) ),
+                                   + (   areaz * fluxZ(i,j,k+1,n)
+                                       - areaz * fluxZ(i,j,k  ,n) ));
       div(i,j,k,n) *= factor;
    }
 }
