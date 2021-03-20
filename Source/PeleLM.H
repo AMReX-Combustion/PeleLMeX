@@ -401,15 +401,24 @@ class PeleLM : public amrex::AmrCore {
                        const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM> > &a_fluxes, 
                        int flux_comp,
                        int ncomp,
+                       int intensiveFluxes,
                        amrex::Real scale);
 
-   void fluxDivergenceLevel(int lev,
-                            amrex::MultiFab &a_divergence,
-                            int div_comp,
-                            const amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM> &a_fluxes,
-                            int flux_comp,
-                            int ncomp,
-                            amrex::Real scale);
+   void extFluxDivergenceLevel(int lev,
+                               amrex::MultiFab &a_divergence,
+                               int div_comp,
+                               const amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM> &a_fluxes,
+                               int flux_comp,
+                               int ncomp,
+                               amrex::Real scale);
+
+   void intFluxDivergenceLevel(int lev,
+                               amrex::MultiFab &a_divergence,
+                               int div_comp,
+                               const amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM> &a_fluxes,
+                               int flux_comp,
+                               int ncomp,
+                               amrex::Real scale);
 
    // Derived variable evaluation
    std::unique_ptr<amrex::MultiFab> derive(const std::string &a_name, 
