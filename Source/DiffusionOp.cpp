@@ -45,9 +45,9 @@ DiffusionOp::DiffusionOp (PeleLM* a_pelelm)
                                            m_pelelm->DistributionMap(0,m_pelelm->finestLevel()),
                                            info_apply));
    m_gradient_op->setMaxOrder(m_mg_maxorder);
-   m_gradient_op->setScalars(0.0,-1.0);
+   m_gradient_op->setScalars(0.0,1.0);
    for (int lev = 0; lev <= m_pelelm->finestLevel(); ++lev) {
-      m_gradient_op->setBCoeffs(lev,1.0);
+      m_gradient_op->setBCoeffs(lev,-1.0);
    }
 
 }
@@ -203,11 +203,6 @@ void DiffusionOp::diffuse_scalar(Vector<MultiFab*> const& a_phi, int phi_comp,
          });
       }
    }
-
-   //----------------------------------------------------------------
-   // Scale the fluxes
-   // TODO: check scaling here ...
-   scaleExtensiveFluxes(a_flux,flux_comp,ncomp,1.0);
 }
 
 void DiffusionOp::computeDiffLap(Vector<MultiFab*> const& a_laps,
@@ -312,9 +307,6 @@ void DiffusionOp::computeDiffFluxes(Vector<Array<MultiFab*,AMREX_SPACEDIM>> cons
 #endif
    }
 
-   // Scale the fluxes
-   scaleExtensiveFluxes(a_flux,flux_comp,ncomp,scale/beta);
-
    // Average down if requested
    if (do_avgDown) avgDownFluxes(a_flux,flux_comp,ncomp);
 }
@@ -357,7 +349,6 @@ DiffusionOp::computeGradient(const Vector<Array<MultiFab*,AMREX_SPACEDIM>> &a_gr
 #else
    mlmg.getFluxes(a_grad, GetVecOfPtrs(phi),MLMG::Location::FaceCenter);
 #endif
-   scaleExtensiveFluxes(a_grad, 0, 1, -1.0);
    if (do_avgDown) avgDownFluxes(a_grad, 0, 1);
 }
 
