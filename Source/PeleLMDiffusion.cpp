@@ -67,16 +67,15 @@ void PeleLM::computeDifferentialDiffusionTerms(const TimeStamp &a_time,
    // [NUM_SPECIES]     Temperature       : \nabla \cdot (-\lambda \nabla T)
    // [NUM_SPECIES+1]   Differential diff : \nabla \cdot \sum_k ( h_k * \Flux_k )
    if (a_time == AmrOldTime) {
-      fluxDivergence(diffData->Dn, 0, GetVecOfArrOfPtrs(fluxes), 0, NUM_SPECIES+2, -1.0);
+      fluxDivergence(diffData->Dn, 0, GetVecOfArrOfPtrs(fluxes), 0, NUM_SPECIES+2, 1, -1.0);
    } else {
-      fluxDivergence(diffData->Dnp1, 0, GetVecOfArrOfPtrs(fluxes), 0, NUM_SPECIES+2, -1.0);
+      fluxDivergence(diffData->Dnp1, 0, GetVecOfArrOfPtrs(fluxes), 0, NUM_SPECIES+2, 1, -1.0);
    }
 
    // Get the wbar term if appropriate
    if (!is_init && m_use_wbar) {
-      fluxDivergence(diffData->Dwbar, 0, GetVecOfArrOfPtrs(diffData->wbar_fluxes), 0, NUM_SPECIES, -1.0);
+      fluxDivergence(diffData->Dwbar, 0, GetVecOfArrOfPtrs(diffData->wbar_fluxes), 0, NUM_SPECIES, 1, -1.0);
    }
-
 }
 
 void PeleLM::computeDifferentialDiffusionFluxes(const TimeStamp &a_time,
@@ -145,8 +144,6 @@ void PeleLM::computeDifferentialDiffusionFluxes(const TimeStamp &a_time,
    // Get fluxes consistent accross levels by averaging down all components
    getDiffusionOp()->avgDownFluxes(a_fluxes,0,NUM_SPECIES+2);
    //----------------------------------------------------------------
-
-   //getDiffusionOp()->scaleExtensiveFluxes(a_fluxes,0,NUM_SPECIES+2,1.0);
 }
 
 void PeleLM::addWbarTerm(const Vector<Array<MultiFab*,AMREX_SPACEDIM> > &a_spfluxes,
@@ -464,15 +461,6 @@ void PeleLM::differentialDiffusionUpdate(std::unique_ptr<AdvanceAdvData> &advDat
       }
    }
 
-   /*
-   for (int lev = 0; lev <= finest_level; ++lev) {
-
-      auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
-      VisMF::Write(advData->Forcing[lev],"ForcingSpecBefSolve_"+std::to_string(lev));
-      VisMF::Write(diffData->Dn[lev],"Dn_"+std::to_string(lev));
-      diffData->Dhat[lev].setVal(0.0);
-   }
-   */
    //------------------------------------------------------------------------
    // Convert species forcing into actual solve RHS by *dt and adding rhoY^{n}
    // Could have do at the same time the forcing is built, but this is clearer
@@ -515,7 +503,6 @@ void PeleLM::differentialDiffusionUpdate(std::unique_ptr<AdvanceAdvData> &advDat
                                     GetVecOfConstPtrs(getDiffusivityVect(AmrNewTime)), 0, bcRecSpec,
                                     NUM_SPECIES, m_dt);
 
-   //VisMF::Write(fluxes[0][0],"FluxSpecX_BefWbarCorr");
    // Add lagged Wbar term
    // Computed in computeDifferentialDiffusionTerms at t^{n} if first SDC iteration, t^{np1,k} otherwise
 
@@ -544,41 +531,21 @@ void PeleLM::differentialDiffusionUpdate(std::unique_ptr<AdvanceAdvData> &advDat
       }
    }
 
-   //VisMF::Write(fluxes[0][0],"FluxSpecX_AftWbarBefCorr");
-   /*
-   for (int lev = 0; lev <= finest_level; ++lev) {
-
-      auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
-      VisMF::Write(ldata_p->species,"SpecAfterDiffSolve_"+std::to_string(lev));
-   }
-   */
-
    // FillPatch the new species before computing flux correction terms
    fillPatchSpecies(AmrNewTime);
 
-   //VisMF::Write(m_leveldata_new[0]->species,"StateForSpecFluxCorr");
    // Adjust species diffusion fluxes to ensure their sum is zero
    adjustSpeciesFluxes(GetVecOfArrOfPtrs(fluxes),
                        GetVecOfConstPtrs(getSpeciesVect(AmrNewTime)));
-   //VisMF::Write(fluxes[0][0],"FluxSpecX_AftAllCorr");
 
    // Average down fluxes^{np1,kp1}
    getDiffusionOp()->avgDownFluxes(GetVecOfArrOfPtrs(fluxes),0,NUM_SPECIES);
 
-   //getDiffusionOp()->scaleExtensiveFluxes(GetVecOfArrOfPtrs(fluxes),0,NUM_SPECIES,1.0);
-
    // Compute diffusion term D^{np1,kp1} (or Dhat)
-   fluxDivergence(diffData->Dhat, 0, GetVecOfArrOfPtrs(fluxes), 0, NUM_SPECIES, -1.0);
-   /*
-   for (int lev = 0; lev <= finest_level; ++lev) {
-
-      auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
-      VisMF::Write(diffData->Dhat[lev],"DhatSpecAfterCorr_"+std::to_string(lev));
-      VisMF::Write(advData->Forcing[lev],"ForcingSpec_"+std::to_string(lev));
-   }
-   */
+   fluxDivergence(diffData->Dhat, 0, GetVecOfArrOfPtrs(fluxes), 0, NUM_SPECIES, 1, -1.0);
 
    // Update species
+   // Remove the Wbar term because we included it in both the dhat and the forcing.
    for (int lev = 0; lev <= finest_level; ++lev) {
 
       auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
@@ -606,15 +573,6 @@ void PeleLM::differentialDiffusionUpdate(std::unique_ptr<AdvanceAdvData> &advDat
       }
    }
 
-   /*
-   for (int lev = 0; lev <= finest_level; ++lev) {
-      auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
-      VisMF::Write(ldata_p->species,"SpecAftRebuild_"+std::to_string(lev));
-      auto ldata_po = getLevelDataPtr(lev,AmrOldTime);
-      VisMF::Write(ldata_po->species,"SpecOldRebuild_"+std::to_string(lev));
-   }
-   */
-   
    // FillPatch species again before going into the enthalpy solve
    fillPatchSpecies(AmrNewTime);
    //------------------------------------------------------------------------
@@ -639,16 +597,9 @@ void PeleLM::differentialDiffusionUpdate(std::unique_ptr<AdvanceAdvData> &advDat
    // average_down enthalpy fluxes
    getDiffusionOp()->avgDownFluxes(GetVecOfArrOfPtrs(fluxes),NUM_SPECIES,2);
 
-   //getDiffusionOp()->scaleExtensiveFluxes(GetVecOfArrOfPtrs(fluxes),NUM_SPECIES,1,1.0);
-
    // Compute diffusion term D^{np1,kp1} of Fourier and DifferentialDiffusion
-   fluxDivergence(diffData->Dhat, NUM_SPECIES, GetVecOfArrOfPtrs(fluxes), NUM_SPECIES, 2, -1.0);
-   //VisMF::Write(diffData->Dhat[0],"Dnew_BefDeltaTsolve");
-   /*
-   for (int lev = 0; lev <= finest_level; ++lev) {
-      VisMF::Write(diffData->Dhat[lev],"DhatWithEnthalpyBefdeltaT_"+std::to_string(lev));
-   }
-   */
+   fluxDivergence(diffData->Dhat, NUM_SPECIES, GetVecOfArrOfPtrs(fluxes), NUM_SPECIES, 2, 1, -1.0);
+
    //------------------------------------------------------------------------
    // delta(T) iterations
    if (m_deltaT_verbose) {
@@ -680,11 +631,6 @@ void PeleLM::differentialDiffusionUpdate(std::unique_ptr<AdvanceAdvData> &advDat
                          GetVecOfPtrs(RhoCp),
                          advData, diffData);
 
-      //VisMF::Write(RhoCp[0],"RhoCp_iter"+std::to_string(dTiter));
-      //VisMF::Write(rhs[0],"rhs_iter"+std::to_string(dTiter));
-      //Vector<int> istep(finest_level + 1, m_nstep);
-      //amrex::WriteMultiLevelPlotfile("DebugTrhs_"+std::to_string(dTiter), finest_level + 1,GetVecOfConstPtrs(rhs), {"Trhs"}, Geom(), m_cur_time, istep, refRatio());
-
       // Diffuse deltaT
       getDiffusionOp()->diffuse_scalar(getTempVect(AmrNewTime), 0,
                                        GetVecOfConstPtrs(rhs), 0,
@@ -694,7 +640,6 @@ void PeleLM::differentialDiffusionUpdate(std::unique_ptr<AdvanceAdvData> &advDat
                                        GetVecOfConstPtrs(getDiffusivityVect(AmrNewTime)), NUM_SPECIES, bcRecTemp,
                                        1, m_dt);
 
-      //VisMF::Write(m_leveldata_new[0]->temp,"deltaT_iter"+std::to_string(dTiter));
       // Post deltaT iteration linear solve
       // -> evaluate deltaT_norm
       // -> add deltaT to T^{np1,kp1}
@@ -710,8 +655,6 @@ void PeleLM::differentialDiffusionUpdate(std::unique_ptr<AdvanceAdvData> &advDat
          Abort("deltaT_iters not converged !");
       }
    }
-   //VisMF::Write(m_leveldata_new[0]->rhoh,"rhoH_postdeltaTsolve");
-   //VisMF::Write(m_leveldata_new[0]->temp,"temp_postdeltaTsolve");
    //------------------------------------------------------------------------
 }
 
@@ -781,24 +724,8 @@ void PeleLM::deltaTIter_update(int a_dtiter,
    //------------------------------------------------------------------------
    // Evaluate deltaT norm and add Tsave back into the new LevelData
    a_deltaT_norm = -1.0e12;
-   /*
-   for (int lev = finest_level; lev > 0; --lev) {
-      auto ldataFine_p = getLevelDataPtr(lev,AmrNewTime);
-      auto ldataCrse_p = getLevelDataPtr(lev-1,AmrNewTime);
-#ifdef AMREX_USE_EB
-      EB_average_down(ldataFine_p->divu,
-                      ldataCrse_p->divu,
-                      0,1,refRatio(lev-1));
-#else
-      average_down(ldataFine_p->temp,
-                   ldataCrse_p->temp,
-                   0,1,refRatio(lev-1));
-#endif
-   }
-   */
    for (int lev = 0; lev <= finest_level; ++lev) {
       auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
-      //VisMF::Write(ldata_p->temp,"deltaT_Ite"+std::to_string(a_dtiter)+"_lev"+std::to_string(lev));   
       a_deltaT_norm = std::max(a_deltaT_norm,ldata_p->temp.norm0(0,0,false,true));
       MultiFab::Add(ldata_p->temp,*a_Tsave[lev],0,0,1,0);
    }
@@ -830,10 +757,8 @@ void PeleLM::deltaTIter_update(int a_dtiter,
    // average_down enthalpy fluxes
    getDiffusionOp()->avgDownFluxes(a_fluxes,NUM_SPECIES,2);
 
-   //getDiffusionOp()->scaleExtensiveFluxes(a_fluxes,NUM_SPECIES,1,1.0);
-
    // Compute diffusion term D^{np1,kp1} of Fourier and DifferentialDiffusion
-   fluxDivergence(diffData->Dhat, NUM_SPECIES, a_fluxes, NUM_SPECIES, 2, -1.0);
+   fluxDivergence(diffData->Dhat, NUM_SPECIES, a_fluxes, NUM_SPECIES, 2, 1, -1.0);
 
    //------------------------------------------------------------------------
    // Recompute RhoH
