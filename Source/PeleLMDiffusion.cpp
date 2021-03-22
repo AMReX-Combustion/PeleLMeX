@@ -860,10 +860,17 @@ void PeleLM::diffuseVelocity()
 
    // CrankNicholson 0.5 coeff
    Real dt_lcl = 0.5 * m_dt;
-   getDiffusionTensorOp()->diffuse_velocity(getVelocityVect(AmrNewTime),
-                                            GetVecOfConstPtrs(getDensityVect(AmrHalfTime)),
-                                            GetVecOfConstPtrs(getViscosityVect(AmrNewTime)),
-                                            bcRec[0], dt_lcl);
+   if (m_incompressible) {
+      getDiffusionTensorOp()->diffuse_velocity(getVelocityVect(AmrNewTime),
+                                               {},
+                                               GetVecOfConstPtrs(getViscosityVect(AmrNewTime)),
+                                               bcRec[0], dt_lcl);
+   } else {
+      getDiffusionTensorOp()->diffuse_velocity(getVelocityVect(AmrNewTime),
+                                               GetVecOfConstPtrs(getDensityVect(AmrHalfTime)),
+                                               GetVecOfConstPtrs(getViscosityVect(AmrNewTime)),
+                                               bcRec[0], dt_lcl);
+   }
 }
 
 Array<LinOpBCType,AMREX_SPACEDIM>

@@ -573,10 +573,18 @@ void DiffusionTensorOp::diffuse_velocity (Vector<MultiFab*> const& a_vel,
    const int finest_level = m_pelelm->finestLevel();
 
    // TODO EB
+   int have_density = (a_density.empty()) ? 0 : 1;
+
+   AMREX_ASSERT( (!m_pelelm->m_incompressible && have_density) ||
+                 (m_pelelm->m_incompressible && !have_density) );
 
    m_solve_op->setScalars(1.0, a_dt);
    for (int lev = 0; lev <= finest_level; ++lev) {
-       m_solve_op->setACoeffs(lev, *a_density[lev]);
+       if ( have_density ) {
+          m_solve_op->setACoeffs(lev, *a_density[lev]);
+       } else {
+          m_solve_op->setACoeffs(lev, m_pelelm->m_rho);
+       }
        Array<MultiFab,AMREX_SPACEDIM> beta_ec = m_pelelm->getDiffusivity(lev, 0, 1, {a_bcrec}, *a_beta[lev]);
        m_solve_op->setShearViscosity(lev, GetArrOfConstPtrs(beta_ec));
        m_solve_op->setLevelBC(lev, a_vel[lev]);
@@ -594,11 +602,17 @@ void DiffusionTensorOp::diffuse_velocity (Vector<MultiFab*> const& a_vel,
            Box const& bx = mfi.tilebox();
            auto const& rhs_a = rhs[lev].array(mfi);
            auto const& vel_a = a_vel[lev]->const_array(mfi);
-           auto const& rho_a = a_density[lev]->const_array(mfi);
-           amrex::ParallelFor(bx, AMREX_SPACEDIM,
-           [=] AMREX_GPU_DEVICE (int i, int j, int k, int n) noexcept
+           auto const& rho_a = (have_density) ? a_density[lev]->const_array(mfi)
+                                              : a_vel[lev]->const_array(mfi);          // Dummy unused Array4
+           amrex::ParallelFor(bx, AMREX_SPACEDIM, [=,rho_incomp=m_pelelm->m_rho,
+                                                     is_incomp=m_pelelm->m_incompressible]
+           AMREX_GPU_DEVICE (int i, int j, int k, int n) noexcept
            {
-               rhs_a(i,j,k,n) = rho_a(i,j,k) * vel_a(i,j,k,n);
+               if (is_incomp) {
+                  rhs_a(i,j,k,n) = rho_incomp * vel_a(i,j,k,n);
+               } else {
+                  rhs_a(i,j,k,n) = rho_a(i,j,k) * vel_a(i,j,k,n);
+               }
            });
        }
     }
