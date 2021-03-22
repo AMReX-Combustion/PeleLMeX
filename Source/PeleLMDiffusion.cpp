@@ -505,7 +505,6 @@ void PeleLM::differentialDiffusionUpdate(std::unique_ptr<AdvanceAdvData> &advDat
 
    // Add lagged Wbar term
    // Computed in computeDifferentialDiffusionTerms at t^{n} if first SDC iteration, t^{np1,k} otherwise
-
    if (m_use_wbar) {
       for (int lev = 0; lev <= finest_level; ++lev) {
 

@@ -192,6 +192,8 @@ class PeleLM : public amrex::AmrCore {
 
    //-----------------------------------------------------------------------------
    // MAC PROJECTION
+
+   void resetMacProjector();
    
    // Predict face velocity using Godunov
    void predictVelocity(std::unique_ptr<AdvanceAdvData> &advData,
@@ -286,6 +288,20 @@ class PeleLM : public amrex::AmrCore {
    amrex::Vector<amrex::Array<amrex::LinOpBCType,AMREX_SPACEDIM>>
    getDiffusionTensorOpBC(amrex::Orientation::Side a_side,
                           const amrex::Vector<amrex::BCRec> a_bc);
+   //-----------------------------------------------------------------------------
+
+   //-----------------------------------------------------------------------------
+   // REACTION
+
+   void advanceChemistry();
+
+   void computeInstantaneousReactionRate(const amrex::Vector<amrex::MultiFab*> &a_I_R,
+                                         const PeleLM::TimeStamp &a_time);
+
+   void computeInstantaneousReactionRate(int lev,
+                                         const PeleLM::TimeStamp &a_time,
+                                         const amrex::MultiFab &a_mask,
+                                         amrex::MultiFab* a_I_R);
    //-----------------------------------------------------------------------------
 
    //-----------------------------------------------------------------------------
@@ -534,6 +550,8 @@ class PeleLM : public amrex::AmrCore {
    std::unique_ptr<DiffusionOp> m_diffusion_op;
    std::unique_ptr<DiffusionTensorOp> m_diffusionTensor_op;
    std::unique_ptr<amrex::MacProjector> macproj;
+   int m_macProjNeedReset = 0;
+   int m_macProjOldSize = 0;
 
    int m_verbose = 0;
 

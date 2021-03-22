@@ -58,7 +58,7 @@ void PeleLM::MakeNewLevelFromScratch( int lev,
 #else
    macproj.reset(new MacProjector(Geom(0,finest_level)));
 #endif
-
+   m_macProjOldSize = finest_level+1;
 }
 
 void PeleLM::initData() {
@@ -154,6 +154,9 @@ void PeleLM::initLevelData(int lev) {
    if (!m_incompressible) {
       // Initialize thermodynamic pressure
       setThermoPress(lev, AmrNewTime);
+      if (m_has_divu) {
+         ldata_p->divu.setVal(0.0);
+      }
    }
 }
 

@@ -596,4 +596,50 @@ buildDiffusionForcing(int i, int j, int k,
 
    if ( closed_chamber == 1 ) forceT(i,j,k) += dp0dt;
 }
+
+AMREX_GPU_DEVICE
+AMREX_FORCE_INLINE
+void
+reactionRateRhoY(int i, int j, int k,
+                 amrex::Array4<const amrex::Real> const& rhoY,
+                 amrex::Array4<const amrex::Real> const& rhoH,
+                 amrex::Array4<const amrex::Real> const& T,
+                 amrex::Array4<const amrex::Real> const& mask,
+                 amrex::Array4<      amrex::Real> const& rhoYdot) noexcept
+{
+   using namespace amrex::literals;
+
+   // mask < 0 is EB covered cells: no reactions.
+   if ( mask(i,j,k) < 0 ) { 
+      for (int n = 0; n < NUM_SPECIES; n++) {
+         rhoYdot(i,j,k,n) = 0.0;
+      }   
+      return;
+   }   
+
+   // Get rho & Ys from rhoYs.
+   amrex::Real rho = 0.0_rt;
+   for (int n = 0; n < NUM_SPECIES; n++) {
+      rho += rhoY(i,j,k,n);
+   }   
+   amrex::Real rhoinv = 1.0_rt / rho;
+   amrex::Real y[NUM_SPECIES] = {0.0_rt};
+   for (int n = 0; n < NUM_SPECIES; n++) {
+      y[n] = rhoY(i,j,k,n) * rhoinv;
+   }   
+
+   // Get T from Y/H.
+   amrex::Real Tloc = T(i,j,k);
+   amrex::Real H = rhoH(i,j,k) * rhoinv * 1.0e4_rt;      // Include MKS -> CGS conversion
+   EOS::HY2T(H, y, Tloc);
+   
+   // Get wdot.
+   rho = rho * 0.001_rt;                                 // rho MKS -> CGS
+   amrex::Real wdot[NUM_SPECIES] = {0.0_rt};             
+   EOS::RTY2WDOT(rho, Tloc, y, wdot);
+   for (int n = 0; n < NUM_SPECIES; n++) {
+      rhoYdot(i,j,k,n) = wdot[n] * 1000.0_rt;            // CGS -> MKS conversion
+   }  
+}  
+
 #endif
