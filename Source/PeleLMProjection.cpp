@@ -65,7 +65,9 @@ void PeleLM::initialProjection()
       auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
       ldata_p->press.setVal(0.0);
       ldata_p->gp.setVal(0.0);
-      m_leveldata_new[lev]->divu.mult(-1.0,0,1,rhs_cc[lev]->nGrow());
+      if (!m_incompressible && m_has_divu ) {
+         m_leveldata_new[lev]->divu.mult(-1.0,0,1,rhs_cc[lev]->nGrow());
+      }
    }
 
    // TODO Average down velocity
