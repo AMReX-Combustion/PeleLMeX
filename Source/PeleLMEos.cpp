@@ -66,6 +66,7 @@ void PeleLM::calcDivU(int is_init,
    for (int lev = 0; lev <= finest_level; lev++ ) {
 
       auto ldata_p = getLevelDataPtr(lev,a_time);
+      auto ldataR_p = getLevelDataReactPtr(lev);
 
 #ifdef _OPENMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -81,12 +82,13 @@ void PeleLM::calcDivU(int is_init,
                                                          : diffData->Dnp1[lev].const_array(mfi,NUM_SPECIES);
          auto const& DiffDiff = ( a_time == AmrOldTime ) ? diffData->Dn[lev].const_array(mfi,NUM_SPECIES+1)
                                                          : diffData->Dnp1[lev].const_array(mfi,NUM_SPECIES+1);
-         auto const& divu    = ldata_p->divu.array(mfi);
-         // TODO reaction
-         amrex::ParallelFor(bx, [ rhoY, T, SpecD, Fourier, DiffDiff, divu]
+         auto const& r        = (m_do_react) ? ldataR_p->I_R.const_array(mfi)
+                                             : ldata_p->species.const_array(mfi);   // Dummy unused Array4
+         auto const& divu     = ldata_p->divu.array(mfi);
+         amrex::ParallelFor(bx, [ rhoY, T, SpecD, Fourier, DiffDiff, r, divu, do_react=m_do_react]
          AMREX_GPU_DEVICE (int i, int j, int k) noexcept
          {
-            compute_divu( i, j, k, rhoY, T, SpecD, Fourier, DiffDiff, divu );
+            compute_divu( i, j, k, rhoY, T, SpecD, Fourier, DiffDiff, r, divu, do_react );
          });
       }
    }
