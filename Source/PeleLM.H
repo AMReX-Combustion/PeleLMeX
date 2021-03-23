@@ -414,11 +414,20 @@ class PeleLM : public amrex::AmrCore {
    // flux divergence
    void fluxDivergence(amrex::Vector<amrex::MultiFab> &a_divergence,
                        int div_comp,
-                       const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM> > &a_fluxes, 
+                       const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM> > &a_fluxes,
                        int flux_comp,
                        int ncomp,
                        int intensiveFluxes,
                        amrex::Real scale);
+
+   void advFluxDivergence(amrex::Vector<amrex::MultiFab> &a_divergence,
+                          int div_comp,
+                          const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM> > &a_fluxes,
+                          int flux_comp,
+                          const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM> > &a_umac,
+                          int ncomp,
+                          int const* l_conserv_d,
+                          amrex::Real scale);
 
    void extFluxDivergenceLevel(int lev,
                                amrex::MultiFab &a_divergence,
@@ -436,10 +445,20 @@ class PeleLM : public amrex::AmrCore {
                                int ncomp,
                                amrex::Real scale);
 
+   void intAdvFluxDivergenceLevel(int lev,
+                                  amrex::MultiFab &a_divergence,
+                                  int div_comp,
+                                  const amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM> &a_fluxes,
+                                  int flux_comp,
+                                  const amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM> &a_umac,
+                                  int ncomp,
+                                  int const* l_conserv_d,
+                                  amrex::Real scale);
+
    // Derived variable evaluation
-   std::unique_ptr<amrex::MultiFab> derive(const std::string &a_name, 
+   std::unique_ptr<amrex::MultiFab> derive(const std::string &a_name,
                                            amrex::Real a_time, int lev, int nGrow);
-   std::unique_ptr<amrex::MultiFab> deriveComp(const std::string &a_name, 
+   std::unique_ptr<amrex::MultiFab> deriveComp(const std::string &a_name,
                                                amrex::Real a_time, int lev, int nGrow);
 
 
