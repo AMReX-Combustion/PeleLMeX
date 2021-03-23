@@ -25,7 +25,7 @@ ReacDir  = Reactions/$(strip $(Reactions_dir))
 EosDir   = Eos/$(strip $(Eos_dir))
 TranDir  = Transport/$(strip $(Transport_dir))
 
-PPdirs  := Utility $(ChemDir) $(ReacDir) $(EosDir) $(TranDir)
+PPdirs  := Utility Source $(ChemDir) $(ReacDir) $(EosDir) $(TranDir)
 PPHdirs := Support/Fuego/Evaluation
 Bpack += $(foreach dir, $(PPdirs), $(PELE_PHYSICS_HOME)/$(dir)/Make.package)
 Blocs += $(foreach dir, $(PPdirs), $(PELE_PHYSICS_HOME)/$(dir))
@@ -73,3 +73,21 @@ clean::
 print-%::
 	@echo "$* is $($*)"
 	@$(RM) AMReX_buildInfo.cpp
+
+#---------------
+# TPL
+#---------------
+ifeq ($(USE_SUNDIALS_PP),TRUE)
+  TPL:
+	cd $(PELE_PHYSICS_HOME)/ThirdParty; make AMREX_HOME=$(AMREX_HOME) USE_CUDA=$(USE_CUDA) USE_KLU=$(USE_KLU_PP) DEBUG=$(DEBUG) COMP=$(COMP) NVCC=$(COMP)
+
+  TPLclean:
+	cd $(PELE_PHYSICS_HOME)/ThirdParty; make AMREX_HOME=$(AMREX_HOME) USE_CUDA=$(USE_CUDA) USE_KLU=$(USE_KLU_PP) DEBUG=$(DEBUG) COMP=$(HOSTCC) NVCC=$(COMP) clean
+
+  TPLrealclean:
+	cd $(PELE_PHYSICS_HOME)/ThirdParty; make AMREX_HOME=$(AMREX_HOME) USE_CUDA=$(USE_CUDA) USE_KLU=$(USE_KLU_PP) DEBUG=$(DEBUG) COMP=$(HOSTCC) NVCC=$(COMP) realclean
+else
+  TPL:
+  TPLclean:
+  TPLrealclean:
+endif
