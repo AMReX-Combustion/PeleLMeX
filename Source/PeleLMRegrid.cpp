@@ -47,9 +47,15 @@ void PeleLM::MakeNewLevelFromCoarse( int lev,
    }
 
    // Move std::unique_ptr into the PeleLM vector
-   m_leveldata_old[lev] = std::move(n_leveldata_old);
-   m_leveldata_new[lev] = std::move(n_leveldata_new);
-   m_factory[lev]       = std::move(new_fact);
+   m_leveldata_old[lev]  = std::move(n_leveldata_old);
+   m_leveldata_new[lev]  = std::move(n_leveldata_new);
+   m_factory[lev]        = std::move(new_fact);
+
+   if (m_do_react) {
+      std::unique_ptr<LevelDataReact> n_leveldatareact( new LevelDataReact(ba, dm, *new_fact));
+      // TODO: fillpatch reaction data ?
+      m_leveldatareact[lev] = std::move(n_leveldatareact);
+   }
 
    // DiffusionOp will be recreated
    m_diffusion_op.reset();
@@ -104,9 +110,15 @@ void PeleLM::RemakeLevel( int lev,
    }
 
    // Move std::unique_ptr into the PeleLM vector
-   m_leveldata_old[lev] = std::move(n_leveldata_old);
-   m_leveldata_new[lev] = std::move(n_leveldata_new);
-   m_factory[lev]       = std::move(new_fact);
+   m_leveldata_old[lev]  = std::move(n_leveldata_old);
+   m_leveldata_new[lev]  = std::move(n_leveldata_new);
+   m_factory[lev]        = std::move(new_fact);
+
+   if (m_do_react) {
+      std::unique_ptr<LevelDataReact> n_leveldatareact( new LevelDataReact(ba, dm, *new_fact));
+      // TODO: fillpatch reaction data ?
+      m_leveldatareact[lev] = std::move(n_leveldatareact);
+   }
 
    // DiffusionOp will be recreated
    m_diffusion_op.reset();
@@ -121,6 +133,7 @@ void PeleLM::ClearLevel(int lev) {
 
    m_leveldata_old[lev].reset();
    m_leveldata_new[lev].reset();
+   if (m_do_react) m_leveldatareact[lev].reset();
    m_factory[lev].reset();
    m_diffusion_op.reset();
    m_diffusionTensor_op.reset();
