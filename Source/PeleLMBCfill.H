@@ -1,5 +1,6 @@
 #include <PeleLM_Index.H>
 #include <pelelm_prob.H>
+#include <pmf_data.H>
 #include <AMReX_PhysBCFunct.H>
 #include <AMReX_Geometry.H>
 
@@ -9,11 +10,12 @@ struct PeleLMCCFillExtDirVel
 {
 
    ProbParm const* lprobparm;
+   PmfData const* lpmfdata;
    const int m_nAux;
 
    AMREX_GPU_HOST
-   constexpr PeleLMCCFillExtDirVel(ProbParm const* a_prob_parm, int a_nAux)
-                                   : lprobparm(a_prob_parm), m_nAux(a_nAux) {}
+   constexpr PeleLMCCFillExtDirVel(ProbParm const* a_prob_parm, PmfData const* a_pmf_data, int a_nAux)
+                                   : lprobparm(a_prob_parm), lpmfdata(a_pmf_data), m_nAux(a_nAux) {}
 
    AMREX_GPU_DEVICE
    void operator()(
@@ -48,7 +50,7 @@ struct PeleLMCCFillExtDirVel
          if ((bc[idir] == amrex::BCType::ext_dir) and (iv[idir] < domlo[idir])) {
 
             // bcnormal() is defined in pelelm_prob.H in problem directory in /Exec
-            bcnormal(x, m_nAux, s_ext, idir, 1, time, geom, *lprobparm);
+            bcnormal(x, m_nAux, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
 
             for (int n = 0; n < AMREX_SPACEDIM; n++) {
                vel(iv,n) = s_ext[VELX+n];
@@ -58,7 +60,7 @@ struct PeleLMCCFillExtDirVel
          } else if ((bc[idir+AMREX_SPACEDIM] == amrex::BCType::ext_dir) and (iv[idir] < domhi[idir])) {
 
             // bcnormal() is defined in pelelm_prob.H in problem directory in /Exec
-            bcnormal(x, m_nAux, s_ext, idir, -1, time, geom, *lprobparm);
+            bcnormal(x, m_nAux, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
 
             for (int n = 0; n < AMREX_SPACEDIM; n++) {
                vel(iv,n) = s_ext[VELX+n];
@@ -73,11 +75,12 @@ struct PeleLMCCFillExtDirSpec
 {
 
    ProbParm const* lprobparm;
+   PmfData const* lpmfdata;
    const int m_nAux;
 
    AMREX_GPU_HOST
-   constexpr PeleLMCCFillExtDirSpec(ProbParm const* a_prob_parm, int a_nAux)
-                                   : lprobparm(a_prob_parm), m_nAux(a_nAux) {}
+   constexpr PeleLMCCFillExtDirSpec(ProbParm const* a_prob_parm, PmfData const* a_pmf_data, int a_nAux)
+                                   : lprobparm(a_prob_parm), lpmfdata(a_pmf_data), m_nAux(a_nAux) {}
 
    AMREX_GPU_DEVICE
    void operator()(
@@ -112,7 +115,7 @@ struct PeleLMCCFillExtDirSpec
          if ((bc[idir] == amrex::BCType::ext_dir) and (iv[idir] < domlo[idir])) {
 
             // bcnormal() is defined in pelelm_prob.H in problem directory in /Exec
-            bcnormal(x, m_nAux, s_ext, idir, 1, time, geom, *lprobparm);
+            bcnormal(x, m_nAux, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
 
             for (int n = 0; n < NUM_SPECIES; n++) {
                rhoY(iv,n) = s_ext[FIRSTSPEC+n];
@@ -122,7 +125,7 @@ struct PeleLMCCFillExtDirSpec
          } else if ((bc[idir+AMREX_SPACEDIM] == amrex::BCType::ext_dir) and (iv[idir] < domhi[idir])) {
 
             // bcnormal() is defined in pelelm_prob.H in problem directory in /Exec
-            bcnormal(x, m_nAux, s_ext, idir, -1, time, geom, *lprobparm);
+            bcnormal(x, m_nAux, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
 
             for (int n = 0; n < NUM_SPECIES; n++) {
                rhoY(iv,n) = s_ext[FIRSTSPEC+n];
@@ -137,11 +140,12 @@ struct PeleLMCCFillExtDirDens
 {
 
    ProbParm const* lprobparm;
+   PmfData const* lpmfdata;
    const int m_nAux;
 
    AMREX_GPU_HOST
-   constexpr PeleLMCCFillExtDirDens(ProbParm const* a_prob_parm, int a_nAux)
-                                   : lprobparm(a_prob_parm), m_nAux(a_nAux) {}
+   constexpr PeleLMCCFillExtDirDens(ProbParm const* a_prob_parm, PmfData const* a_pmf_data, int a_nAux)
+                                   : lprobparm(a_prob_parm), lpmfdata(a_pmf_data), m_nAux(a_nAux) {}
 
    AMREX_GPU_DEVICE
    void operator()(
@@ -176,7 +180,7 @@ struct PeleLMCCFillExtDirDens
          if ((bc[idir] == amrex::BCType::ext_dir) and (iv[idir] < domlo[idir])) {
 
             // bcnormal() is defined in pelelm_prob.H in problem directory in /Exec
-            bcnormal(x, m_nAux, s_ext, idir, 1, time, geom, *lprobparm);
+            bcnormal(x, m_nAux, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
 
             rho(iv) = s_ext[DENSITY];
 
@@ -184,7 +188,7 @@ struct PeleLMCCFillExtDirDens
          } else if ((bc[idir+AMREX_SPACEDIM] == amrex::BCType::ext_dir) and (iv[idir] < domhi[idir])) {
 
             // bcnormal() is defined in pelelm_prob.H in problem directory in /Exec
-            bcnormal(x, m_nAux, s_ext, idir, -1, time, geom, *lprobparm);
+            bcnormal(x, m_nAux, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
 
             rho(iv) = s_ext[DENSITY];
 
@@ -197,11 +201,12 @@ struct PeleLMCCFillExtDirRhoH
 {
 
    ProbParm const* lprobparm;
+   PmfData const* lpmfdata;
    const int m_nAux;
 
    AMREX_GPU_HOST
-   constexpr PeleLMCCFillExtDirRhoH(ProbParm const* a_prob_parm, int a_nAux)
-                                   : lprobparm(a_prob_parm), m_nAux(a_nAux) {}
+   constexpr PeleLMCCFillExtDirRhoH(ProbParm const* a_prob_parm, PmfData const* a_pmf_data, int a_nAux)
+                                   : lprobparm(a_prob_parm), lpmfdata(a_pmf_data), m_nAux(a_nAux) {}
 
    AMREX_GPU_DEVICE
    void operator()(
@@ -236,7 +241,7 @@ struct PeleLMCCFillExtDirRhoH
          if ((bc[idir] == amrex::BCType::ext_dir) and (iv[idir] < domlo[idir])) {
 
             // bcnormal() is defined in pelelm_prob.H in problem directory in /Exec
-            bcnormal(x, m_nAux, s_ext, idir, 1, time, geom, *lprobparm);
+            bcnormal(x, m_nAux, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
 
             rhoH(iv) = s_ext[RHOH];
 
@@ -244,7 +249,7 @@ struct PeleLMCCFillExtDirRhoH
          } else if ((bc[idir+AMREX_SPACEDIM] == amrex::BCType::ext_dir) and (iv[idir] < domhi[idir])) {
 
             // bcnormal() is defined in pelelm_prob.H in problem directory in /Exec
-            bcnormal(x, m_nAux, s_ext, idir, -1, time, geom, *lprobparm);
+            bcnormal(x, m_nAux, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
 
             rhoH(iv) = s_ext[RHOH];
 
@@ -257,11 +262,12 @@ struct PeleLMCCFillExtDirTemp
 {
 
    ProbParm const* lprobparm;
+   PmfData const* lpmfdata;
    const int m_nAux;
 
    AMREX_GPU_HOST
-   constexpr PeleLMCCFillExtDirTemp(ProbParm const* a_prob_parm, int a_nAux)
-                                   : lprobparm(a_prob_parm), m_nAux(a_nAux) {}
+   constexpr PeleLMCCFillExtDirTemp(ProbParm const* a_prob_parm, PmfData const* a_pmf_data, int a_nAux)
+                                   : lprobparm(a_prob_parm), lpmfdata(a_pmf_data), m_nAux(a_nAux) {}
 
    AMREX_GPU_DEVICE
    void operator()(
@@ -296,7 +302,7 @@ struct PeleLMCCFillExtDirTemp
          if ((bc[idir] == amrex::BCType::ext_dir) and (iv[idir] < domlo[idir])) {
 
             // bcnormal() is defined in pelelm_prob.H in problem directory in /Exec
-            bcnormal(x, m_nAux, s_ext, idir, 1, time, geom, *lprobparm);
+            bcnormal(x, m_nAux, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
 
             temp(iv) = s_ext[TEMP];
 
@@ -304,7 +310,7 @@ struct PeleLMCCFillExtDirTemp
          } else if ((bc[idir+AMREX_SPACEDIM] == amrex::BCType::ext_dir) and (iv[idir] < domhi[idir])) {
 
             // bcnormal() is defined in pelelm_prob.H in problem directory in /Exec
-            bcnormal(x, m_nAux, s_ext, idir, -1, time, geom, *lprobparm);
+            bcnormal(x, m_nAux, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
 
             temp(iv) = s_ext[TEMP];
 
