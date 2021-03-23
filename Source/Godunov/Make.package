@@ -1,11 +1,11 @@
 CEXE_headers += Godunov.H
 
-CEXE_sources += godunov_predict_$(DIM)D.cpp
-CEXE_sources += godunov_advection_$(DIM)D.cpp
-CEXE_sources += godunov_plm.cpp
-CEXE_sources += godunov_ppm.cpp
+CEXE_sources += incflo_godunov_predict_$(DIM)D.cpp
+CEXE_sources += incflo_godunov_fluxes_$(DIM)D.cpp
+CEXE_sources += incflo_godunov_plm.cpp
+CEXE_sources += incflo_godunov_ppm.cpp
 
-CEXE_headers += godunov_plm.H
-CEXE_headers += godunov_ppm.H
-CEXE_headers += godunov_corner_couple.H
-CEXE_headers += godunov_trans.H
+CEXE_headers += incflo_godunov_plm.H
+CEXE_headers += incflo_godunov_ppm.H
+CEXE_headers += incflo_godunov_corner_couple.H
+CEXE_headers += incflo_godunov_trans.H

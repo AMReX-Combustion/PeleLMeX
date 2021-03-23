@@ -1,24 +1,26 @@
-#include <godunov_plm.H>
-#include <godunov_ppm.H>
-#include <godunov_trans_bc.H>
+#include <incflo_godunov_plm.H>
+#include <incflo_godunov_ppm.H>
+#include <incflo_godunov_trans_bc.H>
+
 #include <Godunov.H>
 
 using namespace amrex;
 
 void
-godunov::compute_godunov_advection (Box const& bx, int ncomp,
-                                    Array4<Real> const& dqdt,
-                                    Array4<Real const> const& q,
-                                    Array4<Real const> const& umac,
-                                    Array4<Real const> const& vmac,
-                                    Array4<Real const> const& fq,
-                                    Array4<Real const> const& divu,
-                                    Real l_dt,
-                                    BCRec const* pbc, int const* iconserv,
-                                    Real* p, bool use_ppm, 
-                                    bool l_use_forces_in_trans,
-                                    Geometry& geom,
-                                    bool is_velocity )
+godunov::compute_godunov_fluxes (Box const& bx, int flux_comp, int ncomp,
+                                 Array4<Real      > const& fx,
+                                 Array4<Real      > const& fy,
+                                 Array4<Real const> const& q,
+                                 Array4<Real const> const& umac,
+                                 Array4<Real const> const& vmac,
+                                 Array4<Real const> const& fq,
+                                 Array4<Real const> const& divu,
+                                 Real l_dt,
+                                 BCRec const* pbc, int const* iconserv,
+                                 Real* p, bool use_ppm, 
+                                 bool l_use_forces_in_trans,
+                                 Geometry& geom,
+                                 bool is_velocity )
 {
     Box const& xbx = amrex::surroundingNodes(bx,0);
     Box const& ybx = amrex::surroundingNodes(bx,1);
@@ -205,6 +207,11 @@ godunov::compute_godunov_advection (Box const& bx, int ncomp,
         Real temp = (umac(i,j,k) >= 0.) ? stl : sth; 
         temp = (amrex::Math::abs(umac(i,j,k)) < small_vel) ? 0.5*(stl + sth) : temp;
         qx(i,j,k,n) = temp;
+
+        if (iconserv[n])
+            fx(i,j,k,flux_comp+n) = umac(i,j,k) * qx(i,j,k,n);
+        else
+            fx(i,j,k,flux_comp+n) = qx(i,j,k,n);
     }); 
 
     //
@@ -269,43 +276,32 @@ godunov::compute_godunov_advection (Box const& bx, int ncomp,
         Real temp = (vmac(i,j,k) >= 0.) ? stl : sth; 
         temp = (amrex::Math::abs(vmac(i,j,k)) < small_vel) ? 0.5*(stl + sth) : temp; 
         qy(i,j,k,n) = temp;
-    });
 
-    amrex::ParallelFor(bx, ncomp,
-    [=] AMREX_GPU_DEVICE (int i, int j, int k, int n) noexcept
-    {
         if (iconserv[n])
-        {
-            dqdt(i,j,k,n) = dxinv[0]*( umac(i  ,j,k)*qx(i  ,j,k,n) -
-                                       umac(i+1,j,k)*qx(i+1,j,k,n) )
-                +           dxinv[1]*( vmac(i,j  ,k)*qy(i,j  ,k,n) -
-                                       vmac(i,j+1,k)*qy(i,j+1,k,n));
-        } else {
-            dqdt(i,j,k,n) = 0.5*dxinv[0]*(umac(i,j,k  ) + umac(i+1,j  ,k  ))
-                *                        (qx  (i,j,k,n) - qx  (i+1,j  ,k  ,n))
-                +           0.5*dxinv[1]*(vmac(i,j,k  ) + vmac(i  ,j+1,k  ))
-                *                        (qy  (i,j,k,n) - qy  (i  ,j+1,k  ,n));
-       }
+            fy(i,j,k,flux_comp+n) = vmac(i,j,k) * qy(i,j,k,n);
+        else
+            fy(i,j,k,flux_comp+n) = qy(i,j,k,n);
     });
 }
 
 void
-godunov::compute_godunov_advection (Box const& bx, int ncomp,
-                                    Array4<Real> const& dqdt,
-                                    Array4<Real const> const& q,
-                                    Array4<Real const> const& umac,
-                                    Array4<Real const> const& vmac,
-                                    Array4<Real const> const& fq,
-                                    Array4<Real const> const& divu,
-                                    Array4<Real> const& qx,
-                                    Array4<Real> const& qy,
-                                    bool knownEdgeState,
-                                    Real l_dt,
-                                    BCRec const* pbc, int const* iconserv,
-                                    Real* p, bool use_ppm, 
-                                    bool l_use_forces_in_trans,
-                                    Geometry& geom,
-                                    bool is_velocity )
+godunov::compute_godunov_fluxes (Box const& bx, int flux_comp, int ncomp,
+                                 Array4<Real      > const& fx,
+                                 Array4<Real      > const& fy,
+                                 Array4<Real const> const& q,
+                                 Array4<Real const> const& umac,
+                                 Array4<Real const> const& vmac,
+                                 Array4<Real const> const& fq,
+                                 Array4<Real const> const& divu,
+                                 Array4<Real      > const& qx,
+                                 Array4<Real      > const& qy,
+                                 bool knownEdgeState,
+                                 Real l_dt,
+                                 BCRec const* pbc, int const* iconserv,
+                                 Real* p, bool use_ppm, 
+                                 bool l_use_forces_in_trans,
+                                 Geometry& geom,
+                                 bool is_velocity )
 {
     Box const& xbx = amrex::surroundingNodes(bx,0);
     Box const& ybx = amrex::surroundingNodes(bx,1);
@@ -323,29 +319,28 @@ godunov::compute_godunov_advection (Box const& bx, int ncomp,
     const auto dhi = amrex::ubound(domain);
     const auto dxinv = geom.InvCellSizeArray();
 
-    // Compute scalar edge states if they're not already known
-    if ( !knownEdgeState ) {
-        Array4<Real> Imx = makeArray4(p, bxg1, ncomp);
-        p +=         Imx.size();
-        Array4<Real> Ipx = makeArray4(p, bxg1, ncomp);
-        p +=         Ipx.size();
-        Array4<Real> Imy = makeArray4(p, bxg1, ncomp);
-        p +=         Imy.size();
-        Array4<Real> Ipy = makeArray4(p, bxg1, ncomp);
-        p +=         Ipy.size();
-        Array4<Real> xlo = makeArray4(p, xebox, ncomp);
-        p +=         xlo.size();
-        Array4<Real> xhi = makeArray4(p, xebox, ncomp);
-        p +=         xhi.size();
-        Array4<Real> ylo = makeArray4(p, yebox, ncomp);
-        p +=         ylo.size();
-        Array4<Real> yhi = makeArray4(p, yebox, ncomp);
-        p +=         yhi.size();
-        Array4<Real> xyzlo = makeArray4(p, bxg1, ncomp);
-        p +=         xyzlo.size();
-        Array4<Real> xyzhi = makeArray4(p, bxg1, ncomp);
-        p +=         xyzhi.size();
+    Array4<Real> Imx = makeArray4(p, bxg1, ncomp);
+    p +=         Imx.size();
+    Array4<Real> Ipx = makeArray4(p, bxg1, ncomp);
+    p +=         Ipx.size();
+    Array4<Real> Imy = makeArray4(p, bxg1, ncomp);
+    p +=         Imy.size();
+    Array4<Real> Ipy = makeArray4(p, bxg1, ncomp);
+    p +=         Ipy.size();
+    Array4<Real> xlo = makeArray4(p, xebox, ncomp);
+    p +=         xlo.size();
+    Array4<Real> xhi = makeArray4(p, xebox, ncomp);
+    p +=         xhi.size();
+    Array4<Real> ylo = makeArray4(p, yebox, ncomp);
+    p +=         ylo.size();
+    Array4<Real> yhi = makeArray4(p, yebox, ncomp);
+    p +=         yhi.size();
+    Array4<Real> xyzlo = makeArray4(p, bxg1, ncomp);
+    p +=         xyzlo.size();
+    Array4<Real> xyzhi = makeArray4(p, bxg1, ncomp);
+    p +=         xyzhi.size();
 
+    if ( !knownEdgeState ) {
         // Use PPM to generate Im and Ip */
         if (use_ppm) {
             amrex::ParallelFor(bxg1, ncomp,
@@ -430,15 +425,17 @@ godunov::compute_godunov_advection (Box const& bx, int ncomp,
                 Real st = (vad >= 0.) ? lo : hi;
                 Real fuy = (amrex::Math::abs(vad) < small_vel)? 0. : 1.;
                 Imy(i,j,k,n) = fuy*st + (1. - fuy)*0.5*(hi + lo);
-            });
+            }
+        );
+    }
+    // We can reuse the space in Ipx, Ipy and Ipz.
 
-        // We can reuse the space in Ipx, Ipy and Ipz.
-
-        //
-        // x-direction
-        //
-        Box const& xbxtmp = amrex::grow(bx,0,1);
-        Array4<Real> yzlo = makeArray4(xyzlo.dataPtr(), amrex::surroundingNodes(xbxtmp,1), ncomp);
+    //
+    // x-direction
+    //
+    Box const& xbxtmp = amrex::grow(bx,0,1);
+    Array4<Real> yzlo = makeArray4(xyzlo.dataPtr(), amrex::surroundingNodes(xbxtmp,1), ncomp);
+    if ( !knownEdgeState ) {
         amrex::ParallelFor(
         Box(yzlo), ncomp,
         [=] AMREX_GPU_DEVICE (int i, int j, int k, int n) noexcept
@@ -456,9 +453,11 @@ godunov::compute_godunov_advection (Box const& bx, int ncomp,
             yzlo(i,j,k,n) = fu*st + (1.0 - fu) * 0.5 * (l_yzhi + l_yzlo);
         });
         //
-        amrex::ParallelFor(xbx, ncomp,
-        [=] AMREX_GPU_DEVICE (int i, int j, int k, int n) noexcept
-        {
+    }
+    amrex::ParallelFor(xbx, ncomp,
+    [=] AMREX_GPU_DEVICE (int i, int j, int k, int n) noexcept
+    {
+        if ( !knownEdgeState ) {  
             Real stl, sth;
 
             if (iconserv[n]) {
@@ -493,13 +492,20 @@ godunov::compute_godunov_advection (Box const& bx, int ncomp,
             Real temp = (umac(i,j,k) >= 0.) ? stl : sth; 
             temp = (amrex::Math::abs(umac(i,j,k)) < small_vel) ? 0.5*(stl + sth) : temp;
             qx(i,j,k,n) = temp;
-        }); 
+        } 
 
-        //
-        // y-direction
-        //
-        Box const& ybxtmp = amrex::grow(bx,1,1);
-        Array4<Real> xzlo = makeArray4(xyzlo.dataPtr(), amrex::surroundingNodes(ybxtmp,0), ncomp);
+        if (iconserv[n])
+            fx(i,j,k,flux_comp+n) = umac(i,j,k) * qx(i,j,k,n);
+        else
+            fx(i,j,k,flux_comp+n) = qx(i,j,k,n);
+    }); 
+
+    //
+    // y-direction
+    //
+    Box const& ybxtmp = amrex::grow(bx,1,1);
+    Array4<Real> xzlo = makeArray4(xyzlo.dataPtr(), amrex::surroundingNodes(ybxtmp,0), ncomp);
+    if ( !knownEdgeState ) {
         amrex::ParallelFor(
         Box(xzlo), ncomp,
         [=] AMREX_GPU_DEVICE (int i, int j, int k, int n) noexcept
@@ -518,10 +524,11 @@ godunov::compute_godunov_advection (Box const& bx, int ncomp,
             xzlo(i,j,k,n) = fu*st + (1.0 - fu) * 0.5 * (l_xzhi + l_xzlo);
         });
         //
-
-        amrex::ParallelFor(ybx, ncomp,
-        [=] AMREX_GPU_DEVICE (int i, int j, int k, int n) noexcept
-        {
+    }
+    amrex::ParallelFor(ybx, ncomp,
+    [=] AMREX_GPU_DEVICE (int i, int j, int k, int n) noexcept
+    {
+        if ( !knownEdgeState ) {  
             Real stl, sth;
 
             if (iconserv[n]){
@@ -556,23 +563,11 @@ godunov::compute_godunov_advection (Box const& bx, int ncomp,
             Real temp = (vmac(i,j,k) >= 0.) ? stl : sth; 
             temp = (amrex::Math::abs(vmac(i,j,k)) < small_vel) ? 0.5*(stl + sth) : temp; 
             qy(i,j,k,n) = temp;
-        });
-    }
+        } 
 
-    amrex::ParallelFor(bx, ncomp,
-    [=] AMREX_GPU_DEVICE (int i, int j, int k, int n) noexcept
-    {
         if (iconserv[n])
-        {
-            dqdt(i,j,k,n) = dxinv[0]*( umac(i  ,j,k)*qx(i  ,j,k,n) -
-                                       umac(i+1,j,k)*qx(i+1,j,k,n) )
-                +           dxinv[1]*( vmac(i,j  ,k)*qy(i,j  ,k,n) -
-                                       vmac(i,j+1,k)*qy(i,j+1,k,n));
-        } else {
-            dqdt(i,j,k,n) = 0.5*dxinv[0]*(umac(i,j,k  ) + umac(i+1,j  ,k  ))
-                *                        (qx  (i,j,k,n) - qx  (i+1,j  ,k  ,n))
-                +           0.5*dxinv[1]*(vmac(i,j,k  ) + vmac(i  ,j+1,k  ))
-                *                        (qy  (i,j,k,n) - qy  (i  ,j+1,k  ,n));
-       }
+            fy(i,j,k,flux_comp+n) = vmac(i,j,k) * qy(i,j,k,n);
+        else
+            fy(i,j,k,flux_comp+n) = qy(i,j,k,n);
     });
 }
