@@ -7,7 +7,8 @@ PeleLM::PeleLM() = default;
 PeleLM::~PeleLM() = default;
 
 PeleLM::LevelData*
-PeleLM::getLevelDataPtr(int lev, const PeleLM::TimeStamp &a_time, int useUMac) {
+PeleLM::getLevelDataPtr(int lev, const PeleLM::TimeStamp &a_time, int useUMac)
+{
    AMREX_ASSERT(a_time==AmrOldTime || a_time==AmrNewTime || a_time==AmrHalfTime);
    if ( a_time == AmrOldTime ) { 
       return m_leveldata_old[lev].get();
@@ -32,6 +33,17 @@ PeleLM::getLevelDataPtr(int lev, const PeleLM::TimeStamp &a_time, int useUMac) {
          fillpatch_energy(lev, time, ldata->rhoh, ldata->temp, m_nGrowState);
       }
       return ldata;
+   }
+}
+
+// TODO Does this leak memory ?
+PeleLM::LevelDataReact*
+PeleLM::getLevelDataReactPtr(int lev)
+{
+   if (m_do_react) {
+      return m_leveldatareact[lev].get();
+   } else {
+      return nullptr;
    }
 }
 
