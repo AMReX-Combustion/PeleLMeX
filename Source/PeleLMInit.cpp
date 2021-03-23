@@ -44,6 +44,11 @@ void PeleLM::MakeNewLevelFromScratch( int lev,
                                             m_incompressible, m_has_divu,
                                             m_nAux, m_nGrowState, m_nGrowMAC));
 
+   if (m_do_react) {
+      m_leveldatareact[lev].reset(new LevelDataReact(grids[lev], dmap[lev], *m_factory[lev]));
+   }
+   m_leveldatareact[lev]->functC.setVal(0.0);
+
    // Fill the initial solution (if not restarting)
    if (m_restart_file.empty()) {
       initLevelData(lev);
@@ -75,12 +80,30 @@ void PeleLM::initData() {
       // FillPatch the NewState
       fillPatchState(AmrNewTime);
 
+      // Post data Init time step estimate
+      int is_init = 1;
+      Real dtInit = computeDt(is_init,AmrNewTime);
+      Print() << " Initial dt: " << dtInit << "\n";
+
       //----------------------------------------------------------------
       // Initial velocity projection iterations
       if (m_do_init_proj) {
          for (int iter = 0; iter < m_numDivuIter; iter++) {
+            if (m_do_react) {
+               // The new level data has been filled above
+               // Copy new -> old since old used in advanceChemistry
+               copyStateNewToOld();
+               for (int lev = 0; lev <= finest_level; ++lev) {
+                  // Setup empty forcing
+                  MultiFab Forcing(grids[lev],dmap[lev],NUM_SPECIES+1,0);
+                  Forcing.setVal(0.0);
+                  // Call advanceChemistry
+                  advanceChemistry(lev, dtInit/2.0, Forcing);
+               }
+               // Copy back old -> new
+               copyStateOldToNew();
+            }
             if (m_has_divu) {
-
                int is_initialization = 1;             // Yes we are
                int computeDiffusionTerm = 1;          // Needed here
                int do_avgDown = 1;                    // Always
