@@ -29,6 +29,14 @@ PeleLM::LevelData::LevelData(amrex::BoxArray const& ba,
    }
 }
 
+PeleLM::LevelDataReact::LevelDataReact(const amrex::BoxArray &ba,
+                                       const amrex::DistributionMapping &dm, 
+                                       const amrex::FabFactory<FArrayBox> &factory)
+{
+   I_R.define(ba, dm, NUM_SPECIES+1, 0, MFInfo(), factory);
+   functC.define(ba, dm, 1, 0, MFInfo(), factory);
+}
+
 PeleLM::AdvanceDiffData::AdvanceDiffData(int a_finestLevel,
                                          const amrex::Vector<amrex::BoxArray> &ba,
                                          const amrex::Vector<amrex::DistributionMapping> &dm, 
@@ -107,6 +115,7 @@ PeleLM::AdvanceAdvData::AdvanceAdvData(int a_finestLevel,
 
 void
 PeleLM::copyStateNewToOld(int nGhost) {
+   AMREX_ASSERT(nGhost<=m_nGrowState);
    for (int lev = 0; lev <= finest_level; lev++ ) {
       MultiFab::Copy(m_leveldata_old[lev]->velocity,m_leveldata_new[lev]->velocity,0,0,AMREX_SPACEDIM,nGhost);
       if ( !m_incompressible ) {
@@ -116,7 +125,7 @@ PeleLM::copyStateNewToOld(int nGhost) {
          MultiFab::Copy(m_leveldata_old[lev]->temp,m_leveldata_new[lev]->temp,0,0,1,nGhost);
          MultiFab::Copy(m_leveldata_old[lev]->rhoRT,m_leveldata_new[lev]->rhoRT,0,0,1,nGhost);
          if ( m_has_divu ) {
-            MultiFab::Copy(m_leveldata_old[lev]->divu,m_leveldata_new[lev]->divu,0,0,1,nGhost);
+            MultiFab::Copy(m_leveldata_old[lev]->divu,m_leveldata_new[lev]->divu,0,0,1,std::min(nGhost,1));
          }
       }
    }
@@ -132,6 +141,7 @@ PeleLM::copyPressNewToOld() {
 
 void
 PeleLM::copyStateOldToNew(int nGhost) {
+   AMREX_ASSERT(nGhost<=m_nGrowState);
    for (int lev = 0; lev <= finest_level; lev++ ) {
       MultiFab::Copy(m_leveldata_new[lev]->velocity,m_leveldata_old[lev]->velocity,0,0,AMREX_SPACEDIM,nGhost);
       if ( !m_incompressible ) {
@@ -141,7 +151,7 @@ PeleLM::copyStateOldToNew(int nGhost) {
          MultiFab::Copy(m_leveldata_new[lev]->temp,m_leveldata_old[lev]->temp,0,0,1,nGhost);
          MultiFab::Copy(m_leveldata_new[lev]->rhoRT,m_leveldata_old[lev]->rhoRT,0,0,1,nGhost);
          if ( m_has_divu ) {
-            MultiFab::Copy(m_leveldata_new[lev]->divu,m_leveldata_old[lev]->divu,0,0,1,nGhost);
+            MultiFab::Copy(m_leveldata_new[lev]->divu,m_leveldata_old[lev]->divu,0,0,1,std::min(nGhost,1));
          }
       }
    }
