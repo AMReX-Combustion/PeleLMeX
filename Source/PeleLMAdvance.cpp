@@ -19,7 +19,7 @@ void PeleLM::Advance(int is_initIter) {
    //----------------------------------------------------------------
    // TIME
    // Compute time-step size
-   m_dt = computeDt(is_initIter);
+   m_dt = computeDt(is_initIter,AmrOldTime);
 
    // Update time vectors
    for(int lev = 0; lev <= finest_level; lev++)
@@ -34,7 +34,7 @@ void PeleLM::Advance(int is_initIter) {
    }
 
    //----------------------------------------------------------------
-   // Data for the advance
+   // Data for the advance, only live for the duration of the advance
    std::unique_ptr<AdvanceDiffData> diffData;
    diffData.reset(new AdvanceDiffData(finest_level, grids, dmap, m_factory, m_nGrowAdv, m_use_wbar));
    std::unique_ptr<AdvanceAdvData> advData;
@@ -96,8 +96,6 @@ void PeleLM::Advance(int is_initIter) {
          int do_avgDown = 1;                    // Always
          calcDivU(is_initialization,computeDiffusionTerm,do_avgDown,AmrNewTime,diffData);
       }
-      //VisMF::Write(m_leveldata_new[0]->divu,"divuPostSDC");
-      //VisMF::Write(m_leveldata_new[0]->rhoRT,"TPressPostSDC");
    }
    //----------------------------------------------------------------
 
@@ -108,7 +106,6 @@ void PeleLM::Advance(int is_initIter) {
 
    // Compute t^{n+1/2} velocity advection term
    computeVelocityAdvTerm(advData);
-   //VisMF::Write(advData->AofS[0],"AofSVelBefProj");
 
    // Compute provisional new velocity for diffusion solve RHS
    // U^{np1**} = U^{n} - dt*AofS^{n+1/2} - dt/rho^{n+1/2} \nabla \pi^{n-1/2} + dt/rho^{n+1/2} * F^{n+1/2}
@@ -116,13 +113,11 @@ void PeleLM::Advance(int is_initIter) {
 
    // Semi-implicit CN diffusion solve to get U^{np1*}
    diffuseVelocity();
-   //VisMF::Write(m_leveldata_old[0]->press,"PoldPreProj");
 
    // Nodal projection to get constrained U^{np1} and new pressure \pi^{n+1/2}
    const TimeStamp rhoTime = AmrHalfTime;
    velocityProjection(is_initIter,rhoTime,m_dt);
    //----------------------------------------------------------------
-   //VisMF::Write(m_leveldata_new[0]->press,"PnewAftProj");
 
    //----------------------------------------------------------------
    // Wrapup advance
@@ -157,8 +152,6 @@ void PeleLM::oneSDC(int sdcIter,
          int do_avgDown = 1;                          // Always
          calcDivU(is_initialization,computeDiffusionTerm,do_avgDown,AmrNewTime,diffData);
       }
-      //VisMF::Write(m_leveldata_new[0]->divu,"DivUNewNS_"+std::to_string(sdcIter));
-      //VisMF::Write(diffData->Dnp1[0],"DNewNS_"+std::to_string(sdcIter));
    }
    //----------------------------------------------------------------
 
@@ -167,19 +160,15 @@ void PeleLM::oneSDC(int sdcIter,
    //----------------------------------------------------------------
    // Predict face velocity with Godunov
    predictVelocity(advData,diffData);
-   //VisMF::Write(advData->umac[0][0],"UmacXPredictNS_"+std::to_string(sdcIter));
 
    // Create S^{n+1/2} by fillpatching t^{n} and t^{np1,k}
    createMACRHS(advData);
 
    // Re-evaluate thermo. pressure and add chi_increment
    addChiIncrement(sdcIter, AmrNewTime,advData);
-   //VisMF::Write(advData->mac_divu[0],"MacdivUNS_"+std::to_string(sdcIter));
 
    // MAC projection
    macProject(AmrOldTime,advData,GetVecOfPtrs(advData->mac_divu));
-   //VisMF::Write(advData->umac[0][0],"UmacXPostMACProjNS_"+std::to_string(sdcIter));
-   //VisMF::Write(advData->umac[0][1],"UmacYPostMACProjNS_"+std::to_string(sdcIter));
    //----------------------------------------------------------------
 
    //----------------------------------------------------------------
@@ -187,13 +176,10 @@ void PeleLM::oneSDC(int sdcIter,
    //----------------------------------------------------------------
    // Get scalar advection SDC forcing
    getScalarAdvForce(advData,diffData);
-   //VisMF::Write(advData->Forcing[0],"AdvForcingNS_"+std::to_string(sdcIter));
 
    // Get AofS: (\nabla \cdot (\rho Y Umac))^{n+1/2,k}
    // and for density = \sum_k AofS_k
    computeScalarAdvTerms(advData);
-   //VisMF::Write(advData->AofS[0],"AdvTermNS_"+std::to_string(sdcIter));
-   //advData->AofS[0].setVal(0.0);
 
    // Compute \rho^{np1,k+1} and fillpatch new density
    updateDensity(advData);
@@ -205,54 +191,23 @@ void PeleLM::oneSDC(int sdcIter,
    //----------------------------------------------------------------
    // Get scalar diffusion SDC RHS (stored in Forcing)
    getScalarDiffForce(advData,diffData);
-   //VisMF::Write(advData->Forcing[0],"DiffForcingNS_"+std::to_string(sdcIter));
 
    // Diffuse scalars
    differentialDiffusionUpdate(advData,diffData);
-   //VisMF::Write(diffData->Dhat[0],"DhatNS_"+std::to_string(sdcIter));
 
    //----------------------------------------------------------------
    // Reaction
    //----------------------------------------------------------------
-   // TODO: right now just add Adv and Diff
-   /*
-   for (int lev = 0; lev <= finest_level; ++lev) {
+   // Get external forcing for chemistry
+   getScalarReactForce(advData);
 
-      // Get level data ptr
-      auto ldataOld_p = getLevelDataPtr(lev,AmrOldTime);
-      auto ldataNew_p = getLevelDataPtr(lev,AmrNewTime);
-#ifdef _OPENMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
-      for (MFIter mfi(ldataNew_p->density,TilingIfNotGPU()); mfi.isValid(); ++mfi) {
-         Box const& bx = mfi.tilebox();
-         auto const& rhoYo_arr  = ldataOld_p->species.const_array(mfi);
-         auto const& rhoYn_arr  = ldataNew_p->species.array(mfi);
-         auto const& rhoHo_arr  = ldataOld_p->rhoh.const_array(mfi);
-         auto const& rhoHn_arr  = ldataNew_p->rhoh.array(mfi);
-         auto const& a_of_rhoY   = advData->AofS[lev].const_array(mfi,FIRSTSPEC);
-         auto const& a_of_rhoH   = advData->AofS[lev].const_array(mfi,RHOH);
-         amrex::ParallelFor(bx, [=,dt = m_dt]
-         AMREX_GPU_DEVICE (int i, int j, int k) noexcept
-         {
-            for (int n = 0; n < NUM_SPECIES; n++ ) {
-               rhoYn_arr(i,j,k,n) = rhoYo_arr(i,j,k,n) + dt * a_of_rhoY(i,j,k,n);
-            }
-            rhoHn_arr(i,j,k) = rhoHo_arr(i,j,k) + dt * a_of_rhoH(i,j,k);
-         });
-      }
-   }
-   */
+   // Integrate chemistry
+   advanceChemistry(advData);
 
    //----------------------------------------------------------------
    // Wrap it up
    //----------------------------------------------------------------
+   // Re-evaluate derived state entries
    setTemperature(AmrNewTime);
-
    setThermoPress(AmrNewTime);
-
-   //VisMF::Write(m_leveldata_new[0]->species,"EndSDCSpecies_"+std::to_string(sdcIter));
-   //VisMF::Write(m_leveldata_new[0]->density,"EndSDCdensity_"+std::to_string(sdcIter));
-   //VisMF::Write(m_leveldata_new[0]->temp,"EndSDCtemp_"+std::to_string(sdcIter));
-   //VisMF::Write(m_leveldata_new[0]->rhoh,"EndSDCRhoH_"+std::to_string(sdcIter));
 }
