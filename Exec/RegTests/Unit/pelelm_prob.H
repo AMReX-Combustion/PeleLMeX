@@ -9,7 +9,7 @@
 #include <pelelm_prob_parm.H>
 #include <pmf.H>
 #include <pmf_data.H>
-#include <EOS.H>
+#include <PelePhysics.H>
 
 AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
@@ -41,6 +41,7 @@ void pelelm_initdata(int i, int j, int k,
                  const amrex::Real y_c = prob_lo[1] + 0.5*Ly;,
                  const amrex::Real z_c = prob_lo[2] + 0.5*Lz);
 
+    auto eos = pele::physics::PhysicsType::eos();
     constexpr amrex::Real Pi = 3.14159265358979323846264338327950288;
 
     amrex::Real massfrac[NUM_SPECIES] = {0.0};
@@ -111,12 +112,12 @@ void pelelm_initdata(int i, int j, int k,
 
     // Density
     amrex::Real rho_cgs = 0.0;
-    EOS::PYT2R(P_cgs, massfrac, temp(i,j,k), rho_cgs);
+    eos.PYT2R(P_cgs, massfrac, temp(i,j,k), rho_cgs);
     rho(i,j,k) = rho_cgs * 1.0e3;
 
     // Enthalpy
     amrex::Real h_cgs = 0.0;
-    EOS::TY2H(temp(i,j,k), massfrac, h_cgs);
+    eos.TY2H(temp(i,j,k), massfrac, h_cgs);
     rhoH(i,j,k) = h_cgs * 1.0e-4 * rho(i,j,k);
 
     // Species mass
@@ -137,12 +138,14 @@ bcnormal(
   const int sgn,
   const amrex::Real time,
   amrex::GeometryData const& geomdata,
-  ProbParm const& prob_parm)
+  ProbParm const& prob_parm,
+  PmfData const * /*pmf_data*/)
 {
   const amrex::Real* prob_lo = geomdata.ProbLo();
   //amrex::GpuArray<amrex::Real, NUM_SPECIES + 4> pmf_vals = {0.0};
   amrex::Real massfrac[NUM_SPECIES] = {0.0};
 
+  auto eos = pele::physics::PhysicsType::eos();
   if (sgn == 1) {
     //PMF::pmf(pmf_data,prob_lo[idir], prob_lo[idir], pmf_vals);
 
@@ -162,10 +165,10 @@ bcnormal(
     amrex::Real rho_cgs, P_cgs, RhoH_temp;
     P_cgs = prob_parm.P_mean * 10.0;
 
-    EOS::PYT2R(P_cgs, massfrac, s_ext[TEMP], rho_cgs);
+    eos.PYT2R(P_cgs, massfrac, s_ext[TEMP], rho_cgs);
     s_ext[DENSITY] = rho_cgs * 1.0e3;
 
-    EOS::TY2H(s_ext[TEMP], massfrac, RhoH_temp);
+    eos.TY2H(s_ext[TEMP], massfrac, RhoH_temp);
     s_ext[RHOH] = RhoH_temp * 1.0e-4 * s_ext[DENSITY];   // CGS -> MKS conversion
 
     for (int n = 0; n < NUM_SPECIES; n++) {
