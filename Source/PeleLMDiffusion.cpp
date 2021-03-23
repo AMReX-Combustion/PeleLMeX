@@ -255,6 +255,7 @@ void PeleLM::addWbarTerm(const Vector<Array<MultiFab*,AMREX_SPACEDIM> > &a_spflu
                amrex::ParallelFor(ebx, [need_wbar_fluxes, gradWbar_ar, beta_ar, rhoY, spFlux_ar, spwbarFlux_ar]
                AMREX_GPU_DEVICE (int i, int j, int k) noexcept
                {
+                  auto eos = pele::physics::PhysicsType::eos();
                   // Get Wbar from rhoYs
                   amrex::Real rho = 0.0;
                   for (int n = 0; n < NUM_SPECIES; n++) {
@@ -266,7 +267,7 @@ void PeleLM::addWbarTerm(const Vector<Array<MultiFab*,AMREX_SPACEDIM> > &a_spflu
                      y[n] = rhoY(i,j,k,n) * rho_inv;
                   }
                   amrex::Real WBAR = 0.0;
-                  EOS::Y2WBAR(y, WBAR);
+                  eos.Y2WBAR(y, WBAR);
                   WBAR *= 0.001;
                   for (int n = 0; n < NUM_SPECIES; n++) {
                      spFlux_ar(i,j,k,n) -= y[n] / WBAR * beta_ar(i,j,k,n) * gradWbar_ar(i,j,k);
@@ -792,6 +793,8 @@ void PeleLM::getScalarDiffForce(std::unique_ptr<AdvanceAdvData> &advData,
 
       // Get t^{n} data pointer
       auto ldata_p = getLevelDataPtr(lev,AmrOldTime);
+      auto ldataR_p = getLevelDataReactPtr(lev);
+
 #ifdef _OPENMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
@@ -802,7 +805,7 @@ void PeleLM::getScalarDiffForce(std::unique_ptr<AdvanceAdvData> &advData,
          auto const& ddn     = diffData->Dn[lev].const_array(mfi,NUM_SPECIES+1);
          auto const& dnp1k   = diffData->Dnp1[lev].const_array(mfi,0);
          auto const& ddnp1k  = diffData->Dnp1[lev].const_array(mfi,NUM_SPECIES+1);
-         auto const& r       = ldata_p->temp.const_array(mfi); // TODO get_new_data(RhoYdot_Type).array(mfi,0);
+         auto const& r       = ldataR_p->I_R.const_array(mfi);
          auto const& a       = advData->AofS[lev].const_array(mfi,FIRSTSPEC);
          auto const& fY      = advData->Forcing[lev].array(mfi,0);
          auto const& fT      = advData->Forcing[lev].array(mfi,NUM_SPECIES);
@@ -810,11 +813,11 @@ void PeleLM::getScalarDiffForce(std::unique_ptr<AdvanceAdvData> &advData,
                                             : diffData->Dn[lev].const_array(mfi,0);          // Dummy unsed Array4
          Real        dp0dt_d = 0.0; // TODO dp0dt;
          int     closed_ch_d = 0;   // TODO closed_chamber;
-         amrex::ParallelFor(bx, [dn, ddn, dnp1k, ddnp1k, dwbar, use_wbar=m_use_wbar,
+         amrex::ParallelFor(bx, [dn, ddn, dnp1k, ddnp1k, dwbar, use_wbar=m_use_wbar,do_react=m_do_react,
                                  r, a, fY, fT, dp0dt_d, closed_ch_d]
          AMREX_GPU_DEVICE (int i, int j, int k) noexcept
          {
-            buildDiffusionForcing( i, j, k, dn, ddn, dnp1k, ddnp1k, r, a, dp0dt_d, closed_ch_d, fY, fT );
+            buildDiffusionForcing( i, j, k, dn, ddn, dnp1k, ddnp1k, r, a, dp0dt_d, closed_ch_d, do_react, fY, fT );
             if (use_wbar) {
                for (int n = 0; n < NUM_SPECIES; n++) {
                   fY(i,j,k,n) += dwbar(i,j,k,n);
