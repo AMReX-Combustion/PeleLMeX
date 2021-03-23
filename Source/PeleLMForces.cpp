@@ -39,8 +39,9 @@ void PeleLM::getVelForces(const TimeStamp &a_time,
    // TODO: the 1 here bypass getting halftime vel and return oldtime vel
    auto ldata_p = getLevelDataPtr(lev,a_time,1);
 
-   // Get old gradp
-   auto ldataOld_p = getLevelDataPtr(lev,AmrOldTime);
+   // Get gradp: if m_t_old < 0.0, we are during initialization -> only NewTime data initialized at this point
+   auto ldataGP_p = (m_t_old[lev] < 0.0 ) ? getLevelDataPtr(lev,AmrNewTime)
+                                          : getLevelDataPtr(lev,AmrOldTime);
 
    Real time = getTime(lev, a_time);
 
@@ -67,7 +68,7 @@ void PeleLM::getVelForces(const TimeStamp &a_time,
       int is_incomp = m_incompressible;
       Real incomp_rho_inv = 1.0 / m_rho;
       if ( add_gradP || has_divTau ) {
-         const auto& gp_arr     = (add_gradP)  ? ldataOld_p->gp.const_array(mfi) : DummyFab.array();
+         const auto& gp_arr     = (add_gradP)  ? ldataGP_p->gp.const_array(mfi) : DummyFab.array();
          const auto& divTau_arr = (has_divTau) ? a_divTau->const_array(mfi)   : DummyFab.array();
          amrex::ParallelFor(bx, [incomp_rho_inv, is_incomp, add_gradP, has_divTau, rho_arr, 
                                  gp_arr, divTau_arr, force_arr]
