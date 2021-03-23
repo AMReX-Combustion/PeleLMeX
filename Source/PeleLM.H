@@ -120,6 +120,14 @@ class PeleLM : public amrex::AmrCore {
       amrex::MultiFab visc_cc;         // Viscosity (dim:1)
       amrex::MultiFab diff_cc;         // Diffusivity (dim:NUM_SPECIES+2)
    };
+   struct LevelDataReact {
+      LevelDataReact () = default;
+      LevelDataReact (const amrex::BoxArray &ba,
+                      const amrex::DistributionMapping &dm,
+                      const amrex::FabFactory<amrex::FArrayBox> &factory);
+      amrex::MultiFab  I_R;            // Species reaction rates
+      amrex::MultiFab  functC;         // Implicit integrator function call count
+   };
    //-----------------------------------------------------------------------------
 
    //-----------------------------------------------------------------------------
@@ -293,7 +301,11 @@ class PeleLM : public amrex::AmrCore {
    //-----------------------------------------------------------------------------
    // REACTION
 
-   void advanceChemistry();
+   void advanceChemistry(std::unique_ptr<AdvanceAdvData> &advData);
+
+   void advanceChemistry(int lev,
+                         const amrex::Real &a_dt,
+                         amrex::MultiFab &a_extForcing);
 
    void computeInstantaneousReactionRate(const amrex::Vector<amrex::MultiFab*> &a_I_R,
                                          const PeleLM::TimeStamp &a_time);
@@ -307,7 +319,7 @@ class PeleLM : public amrex::AmrCore {
    //-----------------------------------------------------------------------------
    // Time step size
 
-   amrex::Real computeDt(int is_init);
+   amrex::Real computeDt(int is_init, const PeleLM::TimeStamp &a_time);
    amrex::Real estConvectiveDt(const PeleLM::TimeStamp &a_time);
    amrex::Real estDivUDt();
    //-----------------------------------------------------------------------------
@@ -493,6 +505,8 @@ class PeleLM : public amrex::AmrCore {
 
    void getScalarDiffForce(std::unique_ptr<AdvanceAdvData> &advData,
                            std::unique_ptr<AdvanceDiffData> &diffData);
+
+   void getScalarReactForce(std::unique_ptr<AdvanceAdvData> &advData);
    //-----------------------------------------------------------------------------
 
    //-----------------------------------------------------------------------------
@@ -505,6 +519,7 @@ class PeleLM : public amrex::AmrCore {
    Factory (int lev) const noexcept { return *m_factory[lev]; }
 
    LevelData* getLevelDataPtr(int lev, const PeleLM::TimeStamp &a_time, int useUmac = 0);
+   LevelDataReact* getLevelDataReactPtr(int lev);
 
    amrex::Real getTime(int lev, const PeleLM::TimeStamp &a_time) const {
       AMREX_ASSERT(a_time==AmrOldTime || a_time==AmrNewTime || a_time==AmrHalfTime);
@@ -538,6 +553,7 @@ class PeleLM : public amrex::AmrCore {
    // Class level data
    amrex::Vector<std::unique_ptr<LevelData> > m_leveldata_old;
    amrex::Vector<std::unique_ptr<LevelData> > m_leveldata_new;
+   amrex::Vector<std::unique_ptr<LevelDataReact> > m_leveldatareact;
 
    // FAB factory
    amrex::Vector<std::unique_ptr<amrex::FabFactory<amrex::FArrayBox> > > m_factory;
@@ -620,6 +636,11 @@ class PeleLM : public amrex::AmrCore {
 
    // wbar diffusion term
    int m_use_wbar = 1;
+
+   // switch on/off different processes
+   int m_do_react = 1;
+   int m_do_diff = 1;
+   int m_do_adv = 1;
 
    // SDC
    int m_nSDCmax = 1;
