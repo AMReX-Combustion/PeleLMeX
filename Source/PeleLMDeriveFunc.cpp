@@ -1,6 +1,6 @@
 #include <PeleLMDeriveFunc.H>
 #include <PeleLM_Index.H>
-#include <EOS.H>
+#include <PelePhysics.H>
 #include <mechanism.h>
 
 using namespace amrex;
