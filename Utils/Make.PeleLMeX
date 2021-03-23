@@ -30,6 +30,9 @@ PPHdirs := Support/Fuego/Evaluation
 Bpack += $(foreach dir, $(PPdirs), $(PELE_PHYSICS_HOME)/$(dir)/Make.package)
 Blocs += $(foreach dir, $(PPdirs), $(PELE_PHYSICS_HOME)/$(dir))
 Blocs += $(foreach dir, $(PPHdirs), $(PELE_PHYSICS_HOME)/$(dir))
+ifeq ($(USE_SUNDIALS_PP),TRUE)
+   include $(PELE_PHYSICS_HOME)/ThirdParty/Make.ThirdParty
+endif
 
 #---------------
 # AMReX sources
