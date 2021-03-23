@@ -1,6 +1,6 @@
 #include <PeleLM.H>
 #include <AMReX_PlotFileUtil.H>
-#include <EOS.H>
+#include "PelePhysics.H"
 
 using namespace amrex;
 
@@ -27,6 +27,12 @@ void PeleLM::WritePlotFile() {
       }
    }
 
+   // Reactions
+   if (m_do_react) {
+      // FunctCall
+      ncomp += 1;
+   }
+
    // Derive
    int deriveEntryCount = 0;
    for (int ivar = 0; ivar < m_derivePlotVarCount; ivar++ ) {
@@ -45,7 +51,7 @@ void PeleLM::WritePlotFile() {
    //----------------------------------------------------------------
    // Components names
    Vector<std::string> names;
-   EOS::speciesNames(names);
+   pele::physics::eos::speciesNames(names);
 
    Vector<std::string> plt_VarsName;
    plt_VarsName.push_back("x_velocity");
@@ -75,6 +81,11 @@ void PeleLM::WritePlotFile() {
    plt_VarsName.push_back("gradp_z");
 #endif
 #endif
+
+   if (m_do_react) {
+      plt_VarsName.push_back("FunctCall");
+   }
+
    for (int ivar = 0; ivar < m_derivePlotVarCount; ivar++ ) {
       const PeleLMDeriveRec* rec = derive_lst.get(m_derivePlotVars[ivar]);
       for (int dvar = 0; dvar < rec->numDerive(); dvar++ ) {
@@ -106,6 +117,9 @@ void PeleLM::WritePlotFile() {
       }
       MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->gp, 0, cnt,AMREX_SPACEDIM,0);
       cnt += AMREX_SPACEDIM;
+
+      MultiFab::Copy(mf_plt[lev], m_leveldatareact[lev]->functC, 0, cnt, 1, 0);
+      cnt += 1;
 
       for (int ivar = 0; ivar < m_derivePlotVarCount; ivar++ ) {
          std::unique_ptr<MultiFab> mf;
