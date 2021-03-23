@@ -3,7 +3,9 @@
 using namespace amrex;
 
 Real
-PeleLM::computeDt(int is_init) {
+PeleLM::computeDt(int is_init,
+                  const TimeStamp &a_time)
+{
    BL_PROFILE_VAR("PeleLM::computeDt()", computeDt);
 
    Real estdt = 1.0e200;
@@ -17,7 +19,7 @@ PeleLM::computeDt(int is_init) {
    if ( m_fixed_dt > 0.0 ) {
       estdt = m_fixed_dt;
    } else{
-      Real dtconv = estConvectiveDt(AmrOldTime);
+      Real dtconv = estConvectiveDt(a_time);
       estdt = std::min(estdt,dtconv);
       if (!m_incompressible && m_has_divu) {
          Real dtdivU = estDivUDt();
