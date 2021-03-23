@@ -1,8 +1,8 @@
 #include <PeleLM.H>
 #include <AMReX_ParmParse.H>
 #include <PeleLMDeriveFunc.H>
-#include <EOS.H>
-#include <Transport.H>
+#include "PelePhysics.H"
+#include <reactor.h>
 
 using namespace amrex;
 
@@ -33,10 +33,19 @@ void PeleLM::Setup() {
 
    // Initialize EOS and others
    if (!m_incompressible) {
-      amrex::Print() << " Initialization of EOS ... \n";
-      EOS::init();
       amrex::Print() << " Initialization of Transport ... \n";
-      transport_init();
+      pele::physics::transport::InitTransport<
+         pele::physics::PhysicsType::eos_type>()();
+      if (m_do_react) {
+         int reactor_type = 2;
+         int ncells_chem = 1;
+         amrex::Print() << " Initialization of reaction integrator ... \n";
+#ifdef AMREX_USE_GPU
+         reactor_info(reactor_type,ncells_chem);
+#else
+         reactor_init(reactor_type,ncells_chem);
+#endif
+      }
    }
 
    // Problem parameters
@@ -130,7 +139,10 @@ void PeleLM::readParameters() {
    // incompressible vs. low Mach
    pp.query("use_divu", m_has_divu);
    pp.query("incompressible", m_incompressible);
-   if (m_incompressible) m_has_divu = 0;
+   if (m_incompressible) {
+      m_has_divu = 0;
+      m_do_react = 0;
+   }
    pp.query("rho", m_rho);
    pp.query("mu", m_mu);
 
@@ -220,7 +232,7 @@ void PeleLM::variablesSetup() {
       stateComponents.emplace_back(DENSITY,"density");
       Print() << " First species: " << FIRSTSPEC << "\n";
       Vector<std::string> names;
-      EOS::speciesNames(names);
+      pele::physics::eos::speciesNames(names);
       for (int n = 0; n < NUM_SPECIES; n++ ) {
          stateComponents.emplace_back(FIRSTSPEC+n,"rho.Y("+names[n]+")");
       }
@@ -282,7 +294,7 @@ void PeleLM::derivedSetup()
 
       // Get species names
       Vector<std::string> spec_names;
-      EOS::speciesNames(spec_names);
+      pele::physics::eos::speciesNames(spec_names);
 
       // Set species mass fractions
       Vector<std::string> var_names_massfrac(NUM_SPECIES);
@@ -388,6 +400,7 @@ void PeleLM::resizeArray() {
    // State data
    m_leveldata_old.resize(max_level+1);
    m_leveldata_new.resize(max_level+1);
+   m_leveldatareact.resize(max_level+1);
 
    // Factory
    m_factory.resize(max_level+1);
