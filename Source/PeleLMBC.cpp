@@ -516,6 +516,41 @@ void PeleLM::fillpatch_gradp(int lev,
    }
 }
 
+// Fill the reaction data
+void PeleLM::fillpatch_reaction(int lev,
+                                const amrex::Real a_time,
+                                amrex::MultiFab &a_I_R,
+                                int nGhost) {
+   ProbParm const* lprobparm = prob_parm.get();
+   if (lev == 0) {
+      PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> bndry_func(geom[lev], {m_bcrec_force},
+                                                                     PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
+      FillPatchSingleLevel(a_I_R, IntVect(nGhost), a_time,
+                           {&(m_leveldatareact[lev]->I_R)},{a_time},
+                           0, 0, NUM_SPECIES, geom[lev], bndry_func, 0);
+   } else {
+
+      // Interpolator
+#ifdef AMREX_USE_EB
+      Interpolater* mapper = (EBFactory(0).isAllRegular()) ?
+                             (Interpolater*)(&cell_cons_interp) : (Interpolater*)(&eb_cell_cons_interp);
+#else
+      Interpolater* mapper = &cell_cons_interp;
+#endif
+
+      PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> crse_bndry_func(geom[lev-1], {m_bcrec_force},
+                                                                            PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
+      PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> fine_bndry_func(geom[lev], {m_bcrec_force},
+                                                                            PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
+      FillPatchTwoLevels(a_I_R, IntVect(nGhost), a_time,
+                         {&(m_leveldatareact[lev-1]->I_R)},{a_time},
+                         {&(m_leveldatareact[lev]->I_R)},{a_time},
+                         0, 0, NUM_SPECIES, geom[lev-1], geom[lev],
+                         crse_bndry_func,0,fine_bndry_func,0,
+                         refRatio(lev-1), mapper, {m_bcrec_force}, 0);
+   }
+}
+
 // Fill the velocity
 void PeleLM::fillcoarsepatch_velocity(int lev,
                                       const amrex::Real a_time,
@@ -672,6 +707,32 @@ void PeleLM::fillcoarsepatch_divu(int lev,
                          geom[lev-1], geom[lev],
                          crse_bndry_func,0,fine_bndry_func,0,
                          refRatio(lev-1), mapper, {m_bcrec_divu}, 0);
+}
+
+// Fill coarse patch of reaction
+void PeleLM::fillcoarsepatch_reaction(int lev,
+                                      const amrex::Real a_time,
+                                      amrex::MultiFab &a_I_R,
+                                      int nGhost) {
+   ProbParm const* lprobparm = prob_parm.get();
+
+   // Interpolator
+#ifdef AMREX_USE_EB
+   Interpolater* mapper = (EBFactory(0).isAllRegular()) ?
+                          (Interpolater*)(&cell_cons_interp) : (Interpolater*)(&eb_cell_cons_interp);
+#else
+   Interpolater* mapper = &cell_cons_interp;
+#endif
+
+   PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> crse_bndry_func(geom[lev-1], {m_bcrec_force},
+                                                                       PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
+   PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> fine_bndry_func(geom[lev], {m_bcrec_force},
+                                                                       PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
+   InterpFromCoarseLevel(a_I_R, IntVect(nGhost), a_time,
+                         m_leveldatareact[lev-1]->I_R, 0, 0, NUM_SPECIES,
+                         geom[lev-1], geom[lev],
+                         crse_bndry_func,0,fine_bndry_func,0,
+                         refRatio(lev-1), mapper, {m_bcrec_force}, 0);
 }
 
 // Fill the physical boundary of a velocity MF

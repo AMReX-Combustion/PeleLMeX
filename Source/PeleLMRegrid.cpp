@@ -52,8 +52,9 @@ void PeleLM::MakeNewLevelFromCoarse( int lev,
    m_factory[lev]        = std::move(new_fact);
 
    if (m_do_react) {
-      std::unique_ptr<LevelDataReact> n_leveldatareact( new LevelDataReact(ba, dm, *new_fact));
-      // TODO: fillpatch reaction data ?
+      std::unique_ptr<LevelDataReact> n_leveldatareact( new LevelDataReact(ba, dm, *m_factory[lev]));
+      fillcoarsepatch_reaction(lev, time, n_leveldatareact->I_R, 0);
+      n_leveldatareact->functC.setVal(0.0);
       m_leveldatareact[lev] = std::move(n_leveldatareact);
    }
 
@@ -115,8 +116,9 @@ void PeleLM::RemakeLevel( int lev,
    m_factory[lev]        = std::move(new_fact);
 
    if (m_do_react) {
-      std::unique_ptr<LevelDataReact> n_leveldatareact( new LevelDataReact(ba, dm, *new_fact));
-      // TODO: fillpatch reaction data ?
+      std::unique_ptr<LevelDataReact> n_leveldatareact( new LevelDataReact(ba, dm, *m_factory[lev]));
+      fillpatch_reaction(lev, time, n_leveldatareact->I_R, 0);
+      n_leveldatareact->functC.setVal(0.0);
       m_leveldatareact[lev] = std::move(n_leveldatareact);
    }
 
