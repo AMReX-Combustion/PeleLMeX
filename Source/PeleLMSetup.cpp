@@ -401,6 +401,7 @@ void PeleLM::resizeArray() {
    m_leveldata_old.resize(max_level+1);
    m_leveldata_new.resize(max_level+1);
    m_leveldatareact.resize(max_level+1);
+   m_halfTimeDensity.resize(max_level+1);
 
    // Factory
    m_factory.resize(max_level+1);

@@ -176,6 +176,12 @@ void DiffusionOp::diffuse_scalar(Vector<MultiFab*> const& a_phi, int phi_comp,
 #else
       mlmg.getFluxes(fluxes, MLMG::Location::FaceCenter);
 #endif
+
+      for (int lev = 0; lev <= finest_level; ++lev) {
+         for (int idim = 0; idim < AMREX_SPACEDIM; idim++ ) {
+            delete fluxes[lev][idim];
+         }
+      }
    }
 
    //----------------------------------------------------------------
@@ -305,6 +311,11 @@ void DiffusionOp::computeDiffFluxes(Vector<Array<MultiFab*,AMREX_SPACEDIM>> cons
 #else
       mlmg.getFluxes(fluxes, GetVecOfPtrs(component),MLMG::Location::FaceCenter);
 #endif
+      for (int lev = 0; lev <= finest_level; ++lev) {
+         for (int idim = 0; idim < AMREX_SPACEDIM; idim++ ) {
+            delete fluxes[lev][idim];
+         }
+      }
    }
 
    // Average down if requested
@@ -454,6 +465,10 @@ DiffusionOp::avgDownFluxes(const Vector<Array<MultiFab*,AMREX_SPACEDIM>> &a_flux
                          flux_crse,
                          m_pelelm->refRatio(lev-1),flux_crse[0]->nGrow());
 #endif
+      for (int idim = 0; idim < AMREX_SPACEDIM; idim++ ) {
+         delete flux_fine[idim];
+         delete flux_crse[idim];
+      }
    }
 }
 

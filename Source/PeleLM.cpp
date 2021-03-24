@@ -4,7 +4,13 @@ using namespace amrex;
 
 PeleLM::PeleLM() = default;
 
-PeleLM::~PeleLM() = default;
+PeleLM::~PeleLM()
+{
+   for (int lev = 0; lev <= finest_level; ++lev) {
+      ClearLevel(lev);
+   }
+   prob_parm.reset();
+}
 
 PeleLM::LevelData*
 PeleLM::getLevelDataPtr(int lev, const PeleLM::TimeStamp &a_time, int useUMac)
@@ -15,28 +21,27 @@ PeleLM::getLevelDataPtr(int lev, const PeleLM::TimeStamp &a_time, int useUMac)
    } else if ( a_time == AmrNewTime ) {
       return m_leveldata_new[lev].get();
    } else {
-      LevelData* ldata = new LevelData(grids[lev], dmap[lev], *m_factory[lev],
-                                 m_incompressible, m_has_divu,
-                                 m_nAux, m_nGrowState, m_nGrowMAC);
+      m_leveldata_floating.reset( new LevelData(grids[lev], dmap[lev], *m_factory[lev],
+                                  m_incompressible, m_has_divu,
+                                  m_nAux, m_nGrowState, m_nGrowMAC));
       Real time = getTime(lev,a_time);
       if (useUMac) {
          // TODO: find a way to get U^{n+1/2} from Umac
          // For now get old time
          Real oldtime = getTime(lev,AmrOldTime);
-         fillpatch_velocity(lev, oldtime, ldata->velocity, m_nGrowState);
+         fillpatch_velocity(lev, oldtime, m_leveldata_floating->velocity, m_nGrowState);
       } else {
-         fillpatch_velocity(lev, time, ldata->velocity, m_nGrowState);
+         fillpatch_velocity(lev, time, m_leveldata_floating->velocity, m_nGrowState);
       }
       if (!m_incompressible) {
-         fillpatch_density(lev, time, ldata->density, m_nGrowState);
-         fillpatch_species(lev, time, ldata->species, m_nGrowState);
-         fillpatch_energy(lev, time, ldata->rhoh, ldata->temp, m_nGrowState);
+         fillpatch_density(lev, time, m_leveldata_floating->density, m_nGrowState);
+         fillpatch_species(lev, time, m_leveldata_floating->species, m_nGrowState);
+         fillpatch_energy(lev, time, m_leveldata_floating->rhoh, m_leveldata_floating->temp, m_nGrowState);
       }
-      return ldata;
+      return m_leveldata_floating.get();
    }
 }
 
-// TODO Does this leak memory ?
 PeleLM::LevelDataReact*
 PeleLM::getLevelDataReactPtr(int lev)
 {
@@ -96,9 +101,9 @@ PeleLM::getDensityVect(const TimeStamp &a_time) {
    } else {
       for (int lev = 0; lev <= finest_level; ++lev) {
          Real time = getTime(lev,a_time);
-         MultiFab* density = new MultiFab(grids[lev],dmap[lev],1,m_nGrowState);
-         fillpatch_density(lev,time,*density,m_nGrowState);
-         r.push_back(density);
+         m_halfTimeDensity[lev].reset( new MultiFab(grids[lev], dmap[lev], 1, m_nGrowState) );
+         fillpatch_density(lev,time,*(m_halfTimeDensity[lev].get()),m_nGrowState);
+         r.push_back(m_halfTimeDensity[lev].get());
       }
    }
    return r;

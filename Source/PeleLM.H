@@ -557,6 +557,10 @@ class PeleLM : public amrex::AmrCore {
    amrex::Vector<std::unique_ptr<LevelData> > m_leveldata_new;
    amrex::Vector<std::unique_ptr<LevelDataReact> > m_leveldatareact;
 
+   // Temporary holders for halftime data
+   std::unique_ptr<LevelData> m_leveldata_floating;
+   amrex::Vector<std::unique_ptr<amrex::MultiFab> > m_halfTimeDensity;
+
    // FAB factory
    amrex::Vector<std::unique_ptr<amrex::FabFactory<amrex::FArrayBox> > > m_factory;
 
