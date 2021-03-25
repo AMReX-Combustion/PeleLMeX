@@ -57,16 +57,30 @@ void PeleLM::calcDivU(int is_init,
       computeDifferentialDiffusionTerms(a_time, diffData, is_init);
    }
 
-   // Compute reactions terms from top level to bottom
-   // TODO
-   if (is_init) {
-   }
-
    // Assemble divU on each level
    for (int lev = 0; lev <= finest_level; lev++ ) {
 
       auto ldata_p = getLevelDataPtr(lev,a_time);
-      auto ldataR_p = getLevelDataReactPtr(lev);
+
+      MultiFab RhoYdot;
+      if ( m_do_react ) {
+         if (is_init) {          // Either divU or press initial iterations
+            if ( m_dt < 0.0 ) {  // divU ite   -> use I_R
+               auto ldataR_p = getLevelDataReactPtr(lev);
+               RhoYdot.define(grids[lev],dmap[lev],NUM_SPECIES+1,0);
+               MultiFab::Copy(RhoYdot,ldataR_p->I_R,0,0,NUM_SPECIES+1,0);
+            } else {             // press ite  -> set to zero
+               RhoYdot.define(grids[lev],dmap[lev],NUM_SPECIES+1,0);
+               RhoYdot.setVal(0.0);
+            }
+         } else {                // Regular    -> use instantaneous RR
+            RhoYdot.define(grids[lev],dmap[lev],NUM_SPECIES+1,0);
+            // TODO Setup covered cells mask
+            MultiFab mask(grids[lev],dmap[lev],1,0);
+            mask.setVal(1.0);
+            computeInstantaneousReactionRate(lev, a_time, mask, &RhoYdot);
+         }
+      }
 
 #ifdef _OPENMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -82,7 +96,7 @@ void PeleLM::calcDivU(int is_init,
                                                          : diffData->Dnp1[lev].const_array(mfi,NUM_SPECIES);
          auto const& DiffDiff = ( a_time == AmrOldTime ) ? diffData->Dn[lev].const_array(mfi,NUM_SPECIES+1)
                                                          : diffData->Dnp1[lev].const_array(mfi,NUM_SPECIES+1);
-         auto const& r        = (m_do_react) ? ldataR_p->I_R.const_array(mfi)
+         auto const& r        = (m_do_react) ? RhoYdot.const_array(mfi)
                                              : ldata_p->species.const_array(mfi);   // Dummy unused Array4
          auto const& divu     = ldata_p->divu.array(mfi);
          amrex::ParallelFor(bx, [ rhoY, T, SpecD, Fourier, DiffDiff, r, divu, do_react=m_do_react]
