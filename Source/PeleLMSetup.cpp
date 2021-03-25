@@ -190,6 +190,9 @@ void PeleLM::readIOParameters() {
 
    ParmParse pp("amr");
 
+   pp.query("check_file", m_check_file);
+   pp.query("check_int" , m_check_int);
+   pp.query("restart" , m_restart_file);
    pp.query("plot_file", m_plot_file);
    pp.query("plot_int" , m_plot_int);
    m_derivePlotVarCount = (pp.countval("derive_plot_vars"));

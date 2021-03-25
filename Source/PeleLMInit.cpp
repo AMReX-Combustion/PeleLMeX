@@ -129,10 +129,15 @@ void PeleLM::initData() {
       if (m_plot_int > 0 ) {
          WritePlotFile();
       }
+      if (m_check_int > 0 ) {
+         WriteCheckPointFile();
+      }
 
    } else {
       //----------------------------------------------------------------
-      // TODO Restart from checkpoint file
+      // Read starting configuration from chk file.
+      ReadCheckPointFile();
+
    }
 
 }

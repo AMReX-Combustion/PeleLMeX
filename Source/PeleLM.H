@@ -380,6 +380,11 @@ class PeleLM : public amrex::AmrCore {
    // I/O
    void WritePlotFile();
    bool writePlotNow();
+   void WriteCheckPointFile();
+   void ReadCheckPointFile();
+   bool writeCheckNow();
+   void WriteJobInfo(const std::string &path) const;
+   void WriteHeader(const std::string &name, bool is_checkpoint) const;
    //-----------------------------------------------------------------------------
 
    //-----------------------------------------------------------------------------
@@ -599,9 +604,11 @@ class PeleLM : public amrex::AmrCore {
    // IO options
    std::string m_restart_file{""};
    std::string m_plot_file{"plt"};
+   std::string m_check_file{"chk"};
    int m_derivePlotVarCount = 0;
    amrex::Vector<std::string> m_derivePlotVars;
    int m_plot_int = 0;
+   int m_check_int = 0;
 
    //-----------------------------------------------------------------------------
    // ALGORITHM

@@ -9,10 +9,12 @@ void PeleLM::Evolve() {
                           ((m_stop_time >= 0.) && (m_cur_time > m_stop_time)) );
 
    int plt_justDidIt = 0;
+   int chk_justDidIt = 0;
    
    while(!do_not_evolve) {
 
       plt_justDidIt = 0;
+      chk_justDidIt = 0;
 
       if (m_verbose > 0) {
          amrex::Print() << "\n ====================   NEW TIME STEP   ==================== \n";
@@ -35,8 +37,10 @@ void PeleLM::Evolve() {
          plt_justDidIt = 1;
       }
 
-      // Check for checkpoint file
-      // TODO
+      if (writeCheckNow()) {
+         WriteCheckPointFile();
+         chk_justDidIt = 1;
+      }
 
       // Check for the end of the simulation
       do_not_evolve = ( (m_max_step >= 0 && m_nstep >= m_max_step) ||
@@ -50,6 +54,9 @@ void PeleLM::Evolve() {
    if ( m_plot_int > 0 && !plt_justDidIt ) {
       WritePlotFile();
    }
+   if ( m_check_int > 0 && !chk_justDidIt ) {
+      WriteCheckPointFile();
+   }
    
 }
 
@@ -61,6 +68,20 @@ PeleLM::writePlotNow()
    if ( m_plot_int > 0 && (m_nstep % m_plot_int == 0) ) {
       write_now = true;
    }
+   // TODO : time controled
+
+   return write_now;
+}
+
+bool
+PeleLM::writeCheckNow()
+{
+   bool write_now = false;
+
+   if ( m_check_int > 0 && (m_nstep % m_check_int == 0) ) {
+      write_now = true;
+   }
+   // TODO : time controled ?
 
    return write_now;
 }

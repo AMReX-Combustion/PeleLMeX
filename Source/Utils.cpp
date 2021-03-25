@@ -5,14 +5,13 @@ using namespace amrex;
 
 void writeBuildInfo ()
 {
-
    std::string PrettyLine = std::string(78, '=') + "\n";
    std::string OtherLine = std::string(78, '-') + "\n";
    std::string SkipSpace = std::string(8, ' ');
 
    // build information
    std::cout << PrettyLine;
-   std::cout << " PeleLM Build Information\n";
+   std::cout << " PeleLMeX Build Information\n";
    std::cout << PrettyLine;
 
    std::cout << "build date:    " << buildInfoGetBuildDate() << "\n";
@@ -48,7 +47,7 @@ void writeBuildInfo ()
    const char* githash3 = buildInfoGetGitHash(3);
 
    if (strlen(githash1) > 0) {
-      std::cout << "PeleLM       git describe: " << githash1 << "\n";
+      std::cout << "PeleLMeX     git describe: " << githash1 << "\n";
    }
    if (strlen(githash2) > 0) {
       std::cout << "AMReX        git describe: " << githash2 << "\n";
@@ -64,5 +63,4 @@ void writeBuildInfo ()
    }
 
    std::cout << "\n\n";
-
 }
