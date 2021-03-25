@@ -101,6 +101,10 @@ void PeleLM::Advance(int is_initIter) {
 
    //----------------------------------------------------------------
    // Velocity advance
+   Real VelAdvStart = 0.0;
+   if (m_verbose > 1) {
+      VelAdvStart = ParallelDescriptor::second();
+   }
    // Re-evaluate viscosity only if scalar updated
    if (!m_incompressible) calcViscosity(AmrNewTime);
 
@@ -117,6 +121,11 @@ void PeleLM::Advance(int is_initIter) {
    // Nodal projection to get constrained U^{np1} and new pressure \pi^{n+1/2}
    const TimeStamp rhoTime = AmrHalfTime;
    velocityProjection(is_initIter,rhoTime,m_dt);
+   if (m_verbose > 1) {
+      Real VelAdvEnd = ParallelDescriptor::second() - VelAdvStart;
+      ParallelDescriptor::ReduceRealMax(VelAdvEnd, ParallelDescriptor::IOProcessorNumber());
+      amrex::Print() << "   - Advance()::VelocityAdvance " << VelAdvEnd << "\n";
+   }
    //----------------------------------------------------------------
 
    //----------------------------------------------------------------
@@ -134,6 +143,10 @@ void PeleLM::oneSDC(int sdcIter,
                     std::unique_ptr<AdvanceAdvData> &advData,
                     std::unique_ptr<AdvanceDiffData> &diffData)
 {
+
+   if (m_verbose > 0) {
+      amrex::Print() << "   SDC iter [" << sdcIter << "] \n";
+   }
 
    //----------------------------------------------------------------
    // Update t^{n+1,k} transport/Dnp1/divU
@@ -158,6 +171,10 @@ void PeleLM::oneSDC(int sdcIter,
    //----------------------------------------------------------------
    // Get u MAC
    //----------------------------------------------------------------
+   Real MACStart = 0.0;
+   if (m_verbose > 1) {
+      MACStart = ParallelDescriptor::second();
+   }
    // Predict face velocity with Godunov
    predictVelocity(advData,diffData);
 
@@ -169,11 +186,20 @@ void PeleLM::oneSDC(int sdcIter,
 
    // MAC projection
    macProject(AmrOldTime,advData,GetVecOfPtrs(advData->mac_divu));
+   if (m_verbose > 1) {
+      Real MACEnd = ParallelDescriptor::second() - MACStart;
+      ParallelDescriptor::ReduceRealMax(MACEnd, ParallelDescriptor::IOProcessorNumber());
+      amrex::Print() << "   - oneSDC()::MACProjection() " << MACEnd << "\n";
+   }
    //----------------------------------------------------------------
 
    //----------------------------------------------------------------
    // Scalar advections
    //----------------------------------------------------------------
+   Real ScalAdvStart = 0.0;
+   if (m_verbose > 1) {
+      ScalAdvStart = ParallelDescriptor::second();
+   }
    // Get scalar advection SDC forcing
    getScalarAdvForce(advData,diffData);
 
@@ -184,25 +210,50 @@ void PeleLM::oneSDC(int sdcIter,
    // Compute \rho^{np1,k+1} and fillpatch new density
    updateDensity(advData);
    fillPatchDensity(AmrNewTime);
+   if (m_verbose > 1) {
+      Real ScalAdvEnd = ParallelDescriptor::second() - ScalAdvStart;
+      ParallelDescriptor::ReduceRealMax(ScalAdvEnd, ParallelDescriptor::IOProcessorNumber());
+      amrex::Print() << "   - oneSDC()::ScalarAdvection() " << ScalAdvEnd << "\n";
+   }
    //----------------------------------------------------------------
 
    //----------------------------------------------------------------
    // Scalar diffusion
    //----------------------------------------------------------------
+   Real ScalDiffStart = 0.0;
+   if (m_verbose > 1) {
+      ScalDiffStart = ParallelDescriptor::second();
+   }
    // Get scalar diffusion SDC RHS (stored in Forcing)
    getScalarDiffForce(advData,diffData);
 
    // Diffuse scalars
    differentialDiffusionUpdate(advData,diffData);
+   if (m_verbose > 1) {
+      Real ScalDiffEnd = ParallelDescriptor::second() - ScalDiffStart;
+      ParallelDescriptor::ReduceRealMax(ScalDiffEnd, ParallelDescriptor::IOProcessorNumber());
+      amrex::Print() << "   - oneSDC()::ScalarDiffusion() " << ScalDiffEnd << "\n";
+   }
+   //----------------------------------------------------------------
 
    //----------------------------------------------------------------
    // Reaction
    //----------------------------------------------------------------
+   Real ScalReacStart = 0.0;
+   if (m_verbose > 1) {
+      ScalReacStart = ParallelDescriptor::second();
+   }
    // Get external forcing for chemistry
    getScalarReactForce(advData);
 
    // Integrate chemistry
    advanceChemistry(advData);
+   if (m_verbose > 1) {
+      Real ScalReacEnd = ParallelDescriptor::second() - ScalReacStart;
+      ParallelDescriptor::ReduceRealMax(ScalReacEnd, ParallelDescriptor::IOProcessorNumber());
+      amrex::Print() << "   - oneSDC()::ScalarReaction() " << ScalReacEnd << "\n";
+   }
+   //----------------------------------------------------------------
 
    //----------------------------------------------------------------
    // Wrap it up
