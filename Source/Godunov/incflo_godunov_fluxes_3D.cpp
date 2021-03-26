@@ -698,13 +698,13 @@ godunov::compute_godunov_fluxes (Box const& bx, int flux_comp, int ncomp,
 
     // We can reuse the space in Ipx, Ipy and Ipz.
 
+    //
+    // x-direction
+    //
+    Box const& xbxtmp = amrex::grow(bx,0,1);
+    Array4<Real> yzlo = makeArray4(xyzlo.dataPtr(), amrex::surroundingNodes(xbxtmp,1), ncomp);
+    Array4<Real> zylo = makeArray4(xyzhi.dataPtr(), amrex::surroundingNodes(xbxtmp,2), ncomp);
     if ( !knownEdgeState ) {
-        //
-        // x-direction
-        //
-        Box const& xbxtmp = amrex::grow(bx,0,1);
-        Array4<Real> yzlo = makeArray4(xyzlo.dataPtr(), amrex::surroundingNodes(xbxtmp,1), ncomp);
-        Array4<Real> zylo = makeArray4(xyzhi.dataPtr(), amrex::surroundingNodes(xbxtmp,2), ncomp);
         amrex::ParallelFor(
         Box(zylo), ncomp,
         [=] AMREX_GPU_DEVICE (int i, int j, int k, int n) noexcept
@@ -798,13 +798,13 @@ godunov::compute_godunov_fluxes (Box const& bx, int flux_comp, int ncomp,
             fx(i,j,k,flux_comp+n) = qx(i,j,k,n);
     });
 
+    //
+    // y-direction
+    //
+    Box const& ybxtmp = amrex::grow(bx,1,1);
+    Array4<Real> xzlo = makeArray4(xyzlo.dataPtr(), amrex::surroundingNodes(ybxtmp,0), ncomp);
+    Array4<Real> zxlo = makeArray4(xyzhi.dataPtr(), amrex::surroundingNodes(ybxtmp,2), ncomp);
     if ( !knownEdgeState ) {
-        //
-        // y-direction
-        //
-        Box const& ybxtmp = amrex::grow(bx,1,1);
-        Array4<Real> xzlo = makeArray4(xyzlo.dataPtr(), amrex::surroundingNodes(ybxtmp,0), ncomp);
-        Array4<Real> zxlo = makeArray4(xyzhi.dataPtr(), amrex::surroundingNodes(ybxtmp,2), ncomp);
         amrex::ParallelFor(
         Box(xzlo), ncomp,
         [=] AMREX_GPU_DEVICE (int i, int j, int k, int n) noexcept
@@ -899,13 +899,13 @@ godunov::compute_godunov_fluxes (Box const& bx, int flux_comp, int ncomp,
             fy(i,j,k,flux_comp+n) = qy(i,j,k,n);
     });
 
+    //
+    // z-direcion
+    //
+    Box const& zbxtmp = amrex::grow(bx,2,1);
+    Array4<Real> xylo = makeArray4(xyzlo.dataPtr(), amrex::surroundingNodes(zbxtmp,0), ncomp);
+    Array4<Real> yxlo = makeArray4(xyzhi.dataPtr(), amrex::surroundingNodes(zbxtmp,1), ncomp);
     if ( !knownEdgeState ) {
-        //
-        // z-direcion
-        //
-        Box const& zbxtmp = amrex::grow(bx,2,1);
-        Array4<Real> xylo = makeArray4(xyzlo.dataPtr(), amrex::surroundingNodes(zbxtmp,0), ncomp);
-        Array4<Real> yxlo = makeArray4(xyzhi.dataPtr(), amrex::surroundingNodes(zbxtmp,1), ncomp);
         amrex::ParallelFor(
         Box(xylo), ncomp,
         [=] AMREX_GPU_DEVICE (int i, int j, int k, int n) noexcept
@@ -943,7 +943,6 @@ godunov::compute_godunov_fluxes (Box const& bx, int flux_comp, int ncomp,
         });
     }
     //
-    Array4<Real> qz = makeArray4(Ipz.dataPtr(), zbx, ncomp);
     amrex::ParallelFor(zbx, ncomp,
     [=] AMREX_GPU_DEVICE (int i, int j, int k, int n) noexcept
     {
