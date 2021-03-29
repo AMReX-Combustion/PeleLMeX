@@ -31,7 +31,11 @@ void PeleLM::MakeNewLevelFromScratch( int lev,
 
    // Define the FAB Factory
 #ifdef AMREX_USE_EB
-   //TODO
+   m_factory[lev] = makeEBFabFactory(geom[lev], grids[lev], dmap[lev],
+                                     {nghost_eb_basic(),
+                                      nghost_eb_volume(),
+                                      nghost_eb_full()},
+                                     EBSupport::full);
 #else
    m_factory[lev].reset(new FArrayBoxFactory());
 #endif
@@ -44,6 +48,10 @@ void PeleLM::MakeNewLevelFromScratch( int lev,
                                             m_incompressible, m_has_divu,
                                             m_nAux, m_nGrowState, m_nGrowMAC));
 
+   if (max_level > 0 && lev != max_level) {
+      m_coveredMask[lev].reset(new MultiFab(grids[lev], dmap[lev], 1, 0));
+      m_resetCoveredMask = 1;
+   }
    if (m_do_react) {
       m_leveldatareact[lev].reset(new LevelDataReact(grids[lev], dmap[lev], *m_factory[lev]));
    }
@@ -60,6 +68,10 @@ void PeleLM::MakeNewLevelFromScratch( int lev,
 
    // Mac projector
 #if AMREX_USE_EB
+   macproj.reset(new MacProjector(Geom(0,finest_level),
+                                  MLMG::Location::FaceCentroid,  // Location of mac velocity
+                                  MLMG::Location::FaceCentroid,  // Location of beta
+                                  MLMG::Location::CellCenter) ); // Location of solution variable phi
 #else
    macproj.reset(new MacProjector(Geom(0,finest_level)));
 #endif
@@ -75,6 +87,7 @@ void PeleLM::initData() {
       // This is an AmrCore member function which recursively makes new levels
       // with MakeNewLevelFromScratch.
       InitFromScratch(m_cur_time);
+      resetCoveredMask();
 
       //----------------------------------------------------------------
       // FillPatch the NewState
@@ -93,12 +106,34 @@ void PeleLM::initData() {
                // The new level data has been filled above
                // Copy new -> old since old used in advanceChemistry
                copyStateNewToOld();
-               for (int lev = 0; lev <= finest_level; ++lev) {
+
+               for (int lev = finest_level; lev >= 0; --lev) {
                   // Setup empty forcing
                   MultiFab Forcing(grids[lev],dmap[lev],NUM_SPECIES+1,0);
                   Forcing.setVal(0.0);
-                  // Call advanceChemistry
-                  advanceChemistry(lev, dtInit/2.0, Forcing);
+
+                  if (lev != finest_level) {
+                     // On all but the finest level, average down I_R
+                     // and use advanceChemistry with chem BoxArray
+                     std::unique_ptr<MultiFab> avgDownIR;
+                     avgDownIR.reset(new MultiFab(grids[lev],dmap[lev],NUM_SPECIES+1,0));
+                     avgDownIR->setVal(0.0);
+                     auto ldataRFine_p   = getLevelDataReactPtr(lev+1);
+#ifdef AMREX_USE_EB
+                     EB_average_down(ldataRFine_p->I_R,
+                                     *avgDownIR,
+                                     0,NUM_SPECIES+1,refRatio(lev));
+#else
+                     average_down(ldataRFine_p->I_R,
+                                  *avgDownIR,
+                                  0,NUM_SPECIES+1,refRatio(lev));
+#endif
+                     // Call advanceChemistry
+                     advanceChemistry(lev, dtInit/2.0, Forcing, avgDownIR.get());
+                  } else {
+                     // Call advanceChemistry
+                     advanceChemistry(lev, dtInit/2.0, Forcing);
+                  }
                }
                // Copy back old -> new
                copyStateOldToNew();
