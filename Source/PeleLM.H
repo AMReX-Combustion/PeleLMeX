@@ -307,6 +307,11 @@ class PeleLM : public amrex::AmrCore {
                          const amrex::Real &a_dt,
                          amrex::MultiFab &a_extForcing);
 
+   void advanceChemistry(int lev,
+                         const amrex::Real &a_dt,
+                         amrex::MultiFab &a_extForcing,
+                         amrex::MultiFab *avgDownIR);
+
    void computeInstantaneousReactionRate(const amrex::Vector<amrex::MultiFab*> &a_I_R,
                                          const PeleLM::TimeStamp &a_time);
 
@@ -474,6 +479,10 @@ class PeleLM : public amrex::AmrCore {
                                   int const* l_conserv_d,
                                   amrex::Real scale);
 
+   void floorSpecies(const PeleLM::TimeStamp &a_time);
+
+   void resetCoveredMask();
+
    // Derived variable evaluation
    std::unique_ptr<amrex::MultiFab> derive(const std::string &a_name,
                                            amrex::Real a_time, int lev, int nGrow);
@@ -569,6 +578,13 @@ class PeleLM : public amrex::AmrCore {
    // FAB factory
    amrex::Vector<std::unique_ptr<amrex::FabFactory<amrex::FArrayBox> > > m_factory;
 
+   // Covered cells mask
+   amrex::Vector<std::unique_ptr<amrex::MultiFab> > m_coveredMask;
+   amrex::Vector<std::unique_ptr<amrex::BoxArray> > m_baChem;
+   amrex::Vector<std::unique_ptr<amrex::DistributionMapping> > m_dmapChem;
+   amrex::Vector<amrex::Vector<int > > m_baChemFlag;
+   int m_resetCoveredMask;
+
    // Times
    amrex::Vector<amrex::Real> m_t_old;
    amrex::Vector<amrex::Real> m_t_new;
@@ -654,6 +670,9 @@ class PeleLM : public amrex::AmrCore {
    int m_do_react = 1;
    int m_do_diff = 1;
    int m_do_adv = 1;
+
+   // Misc.
+   int m_floor_species = 0;
 
    // SDC
    int m_nSDCmax = 1;
