@@ -17,7 +17,11 @@ void PeleLM::MakeNewLevelFromCoarse( int lev,
 
    // New level factory
 #ifdef AMREX_USE_EB
-   //TODO
+   std::unique_ptr<FabFactory<FArrayBox> > new_fact = makeEBFabFactory(geom[lev], ba, dm,
+                                                                       {nghost_eb_basic(),
+                                                                        nghost_eb_volume(),
+                                                                        nghost_eb_full()},
+                                                                       EBSupport::full);
 #else
    std::unique_ptr<FabFactory<FArrayBox> > new_fact(new FArrayBoxFactory());
 #endif
@@ -58,6 +62,11 @@ void PeleLM::MakeNewLevelFromCoarse( int lev,
       m_leveldatareact[lev] = std::move(n_leveldatareact);
    }
 
+   if (max_level > 0 && lev != max_level) {
+      m_coveredMask[lev].reset(new MultiFab(ba, dm, 1, 0));
+      m_resetCoveredMask = 1;
+   }
+
    // DiffusionOp will be recreated
    m_diffusion_op.reset();
    m_diffusionTensor_op.reset();
@@ -81,7 +90,11 @@ void PeleLM::RemakeLevel( int lev,
 
    // New level factory
 #ifdef AMREX_USE_EB
-   //TODO
+   std::unique_ptr<FabFactory<FArrayBox> > new_fact = makeEBFabFactory(geom[lev], ba, dm,
+                                                                       {nghost_eb_basic(),
+                                                                        nghost_eb_volume(),
+                                                                        nghost_eb_full()},
+                                                                       EBSupport::full);
 #else
    std::unique_ptr<FabFactory<FArrayBox> > new_fact(new FArrayBoxFactory());
 #endif
@@ -122,6 +135,11 @@ void PeleLM::RemakeLevel( int lev,
       m_leveldatareact[lev] = std::move(n_leveldatareact);
    }
 
+   if (max_level > 0 && lev != max_level) {
+      m_coveredMask[lev].reset(new MultiFab(ba, dm, 1, 0));
+      m_resetCoveredMask = 1;
+   }
+
    // DiffusionOp will be recreated
    m_diffusion_op.reset();
    m_diffusionTensor_op.reset();
@@ -136,6 +154,9 @@ void PeleLM::ClearLevel(int lev) {
    m_leveldata_old[lev].reset();
    m_leveldata_new[lev].reset();
    if (m_do_react) m_leveldatareact[lev].reset();
+   if (max_level > 0 && lev != max_level) m_coveredMask[lev].reset();
+   m_baChem[lev].reset();
+   m_dmapChem[lev].reset();
    m_factory[lev].reset();
    m_diffusion_op.reset();
    m_diffusionTensor_op.reset();
@@ -151,7 +172,10 @@ void PeleLM::resetMacProjector()
 
    // MacProj
 #ifdef AMREX_USE_EB
-   //TODO
+   macproj.reset(new MacProjector(Geom(0,finest_level),
+                                  MLMG::Location::FaceCentroid,  // Location of mac velocity
+                                  MLMG::Location::FaceCentroid,  // Location of beta
+                                  MLMG::Location::CellCenter) ); // Location of solution variable phi
 #else
    macproj.reset(new MacProjector(Geom(0,finest_level)));
 #endif
