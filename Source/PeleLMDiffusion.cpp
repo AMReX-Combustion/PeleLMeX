@@ -603,7 +603,7 @@ void PeleLM::differentialDiffusionUpdate(std::unique_ptr<AdvanceAdvData> &advDat
    //------------------------------------------------------------------------
    // delta(T) iterations
    if (m_deltaT_verbose) {
-      Print() << "Iterative solve for deltaT \n";
+      Print() << " Iterative solve for deltaT \n";
    }
 
    //------------------------------------------------------------------------
