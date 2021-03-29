@@ -24,6 +24,7 @@ void PeleLM::Evolve() {
          if (m_verbose > 0) amrex::Print() << " Regridding...\n";
          regrid(0, m_cur_time);
          resetMacProjector();
+         resetCoveredMask();
       }
 
       int is_init = 0;
