@@ -40,6 +40,8 @@ void PeleLM::WritePlotFile() {
 
    // Reactions
    if (m_do_react) {
+      // Cons Rate
+      ncomp += NUM_SPECIES;
       // FunctCall
       ncomp += 1;
    }
@@ -94,6 +96,9 @@ void PeleLM::WritePlotFile() {
 #endif
 
    if (m_do_react) {
+      for (int n = 0; n < NUM_SPECIES; n++) {
+         plt_VarsName.push_back("I_R("+names[n]+")");
+      }
       plt_VarsName.push_back("FunctCall");
    }
 
@@ -129,8 +134,13 @@ void PeleLM::WritePlotFile() {
       MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->gp, 0, cnt,AMREX_SPACEDIM,0);
       cnt += AMREX_SPACEDIM;
 
-      MultiFab::Copy(mf_plt[lev], m_leveldatareact[lev]->functC, 0, cnt, 1, 0);
-      cnt += 1;
+      if (m_do_react) {
+         MultiFab::Copy(mf_plt[lev], m_leveldatareact[lev]->I_R, 0, cnt, NUM_SPECIES, 0);
+         cnt += NUM_SPECIES;
+
+         MultiFab::Copy(mf_plt[lev], m_leveldatareact[lev]->functC, 0, cnt, 1, 0);
+         cnt += 1;
+      }
 
       for (int ivar = 0; ivar < m_derivePlotVarCount; ivar++ ) {
          std::unique_ptr<MultiFab> mf;
@@ -207,7 +217,7 @@ void PeleLM::WriteCheckPointFile()
    const std::string& checkpointname = amrex::Concatenate(m_check_file, m_nstep);
    
    if (m_verbose) {
-      amrex::Print() << "\n Writtinh checkpoint file: " << checkpointname << "\n";
+      amrex::Print() << "\n Writting checkpoint file: " << checkpointname << "\n";
    }
    
    amrex::PreBuildDirectorHierarchy(checkpointname, level_prefix, finest_level + 1, true);
