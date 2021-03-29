@@ -8,11 +8,36 @@ void PeleLM::advanceChemistry(std::unique_ptr<AdvanceAdvData> &advData)
 {
    BL_PROFILE_VAR("PeleLM::advanceChemistry()", advanceChemistry);
 
-   for (int lev = 0; lev <= finest_level; ++lev) {
-      advanceChemistry(lev, m_dt, advData->Forcing[lev]);
+   for (int lev = finest_level; lev >= 0; --lev) {
+
+      // On all but the finest level, average down I_R
+      if (lev != finest_level) {
+         std::unique_ptr<MultiFab> avgDownIR;
+         avgDownIR.reset( new MultiFab(grids[lev],dmap[lev],NUM_SPECIES+1,0));
+         avgDownIR->setVal(0.0);
+         auto ldataRFine_p   = getLevelDataReactPtr(lev+1);
+#ifdef AMREX_USE_EB
+         EB_average_down(ldataRFine_p->I_R,
+                         *avgDownIR,
+                         0,NUM_SPECIES+1,refRatio(lev));
+#else
+         average_down(ldataRFine_p->I_R,
+                      *avgDownIR,
+                      0,NUM_SPECIES+1,refRatio(lev));
+#endif
+         //VisMF::Write(*avgDownIR,"AvgDownIR_Level"+std::to_string(lev)+"_step"+std::to_string(m_nstep));
+         //VisMF::Write(advData->Forcing[lev],"ChemForcing_Level"+std::to_string(lev)+"_step"+std::to_string(m_nstep));
+         advanceChemistry(lev, m_dt, advData->Forcing[lev], avgDownIR.get());
+      } else {
+         advanceChemistry(lev, m_dt, advData->Forcing[lev]);
+      }
+      //VisMF::Write(m_leveldatareact[lev]->I_R,"FinalIR_Level"+std::to_string(lev)+"_step"+std::to_string(m_nstep));
    }
 }
 
+// This advanceChemistry is called on the finest level
+// It works with the AmrCore BoxArray and do not involve ParallelCopy and averaged down
+// version of I_R
 void PeleLM::advanceChemistry(int lev,
                               const Real &a_dt,
                               MultiFab &a_extForcing)
@@ -24,8 +49,6 @@ void PeleLM::advanceChemistry(int lev,
    // TODO Setup covered cells mask
    FabArray<BaseFab<int>> mask(grids[lev],dmap[lev],1,0);
    mask.setVal(1);
-
-   // TODO: try tricks to not do reaction on covered cells
 
 #ifdef _OPENMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -114,6 +137,155 @@ void PeleLM::advanceChemistry(int lev,
       AMREX_GPU_DEVICE (int i, int j, int k, int n) noexcept
       {
          rhoYdot(i,j,k,n) = - ( rhoY_o(i,j,k,n) - rhoY_n(i,j,k,n) ) * dt_inv - extF_rhoY(i,j,k,n);
+      });
+   }
+}
+
+// This advanceChemistry is called on all but the finest level
+// It works with BoxArrays built such that each box is either covered
+// or uncovered and chem. integrator is called only on uncovered boxes 
+// the averaged down version of I_R is linearly added to the forcing
+// to build the t^{np1} solution on covered boxes.
+void PeleLM::advanceChemistry(int lev,
+                              const Real &a_dt,
+                              MultiFab &a_extForcing,
+                              MultiFab *a_avgDownIR)
+{
+   AMREX_ASSERT(a_avgDownIR != nullptr);
+
+   auto ldataOld_p = getLevelDataPtr(lev,AmrOldTime);
+   auto ldataNew_p = getLevelDataPtr(lev,AmrNewTime);
+   auto ldataR_p   = getLevelDataReactPtr(lev);
+
+   // Get the entire old state
+   std::unique_ptr<MultiFab> statemf = fillPatchState(lev, getTime(lev,AmrOldTime), 0);
+
+   // Set chemistry MFs based on baChem and dmapChem
+   MultiFab chemState(*m_baChem[lev],*m_dmapChem[lev],NUM_SPECIES+3,0);
+   MultiFab chemForcing(*m_baChem[lev],*m_dmapChem[lev],NUM_SPECIES+1,0);
+   MultiFab chemAvgDownIR(*m_baChem[lev],*m_dmapChem[lev],NUM_SPECIES+1,0);
+   MultiFab functC(*m_baChem[lev],*m_dmapChem[lev],1,0);
+
+   // TODO Setup EB covered cells mask
+   FabArray<BaseFab<int>> mask(*m_baChem[lev],*m_dmapChem[lev],1,0);
+   mask.setVal(1);
+
+   // ParallelCopy into chem MFs
+   chemState.copy(*statemf,FIRSTSPEC,0,NUM_SPECIES+3);
+   chemForcing.copy(a_extForcing,0,0,NUM_SPECIES+1);
+   chemAvgDownIR.copy(*a_avgDownIR,0,0,NUM_SPECIES+1);
+   //VisMF::Write(chemAvgDownIR,"avgDownIRNewBA_Level"+std::to_string(lev)+"_step"+std::to_string(m_nstep));
+
+#ifdef _OPENMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+   for (MFIter mfi(chemState,amrex::TilingIfNotGPU()); mfi.isValid(); ++mfi)
+   {
+      const Box& bx          = mfi.tilebox();
+      auto const& rhoY_o     = chemState.array(mfi,0);
+      auto const& rhoH_o     = chemState.array(mfi,NUM_SPECIES);
+      auto const& temp_o     = chemState.array(mfi,NUM_SPECIES+1);
+      auto const& extF_rhoY  = chemForcing.array(mfi,0);
+      auto const& extF_rhoH  = chemForcing.array(mfi,NUM_SPECIES);
+      auto const& fcl        = functC.array(mfi);
+      auto const& avgIR      = chemAvgDownIR.array(mfi);
+      auto const& mask_arr   = mask.array(mfi);
+
+      // Convert MKS -> CGS
+      ParallelFor(bx, [rhoY_o, rhoH_o, extF_rhoY, extF_rhoH, avgIR]
+      AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+      {
+         for (int n = 0; n < NUM_SPECIES; n++) {
+            rhoY_o(i,j,k,n) *= 1.0e-3;
+            extF_rhoY(i,j,k,n) *= 1.0e-3;
+            avgIR(i,j,k,n) *= 1.0e-3;
+         }
+         rhoH_o(i,j,k) *= 10.0;
+         extF_rhoH(i,j,k) *= 10.0;
+      });
+
+      // Do reaction only on uncovered box
+      int do_reactionBox = m_baChemFlag[lev][mfi.index()];
+
+      if ( do_reactionBox ) {
+         // Do reaction as usual using PelePhysics chemistry integrator
+#ifdef AMREX_USE_GPU
+         int ncells           = bx.numPts();
+         const auto ec = Gpu::ExecutionConfig(ncells);
+#endif
+
+         Real dt_incr     = a_dt;
+         Real time_chem   = 0;
+#ifndef AMREX_USE_GPU
+         /* Solve */
+         int tmp_fctCn = 0;
+         tmp_fctCn = react(bx, rhoY_o, extF_rhoY, temp_o, rhoH_o, extF_rhoH, fcl, mask_arr,
+                           dt_incr, time_chem);
+         dt_incr   = a_dt;
+         time_chem = 0;
+#else
+         int reactor_type = 2;
+         int tmp_fctCn = 0;
+         tmp_fctCn = react(bx, rhoY_o, extF_rhoY, temp_o, rhoH_o, extF_rhoH, fcl, mask_arr, 
+                           dt_incr, time_chem, reactor_type, amrex::Gpu::gpuStream());
+         dt_incr = a_dt;
+         time_chem = 0;
+#endif
+      } else {
+         // Use forcing and averaged down IR to advance species/rhoH/temp
+         Real dt_incr     = a_dt;
+         linearChemForcing(bx, rhoY_o, extF_rhoY, temp_o, rhoH_o, extF_rhoH, fcl, avgIR, dt_incr);
+      }
+
+      // Convert CGS -> MKS
+      ParallelFor(bx, [rhoY_o, rhoH_o]
+      AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+      {
+         for (int n = 0; n < NUM_SPECIES; n++) {
+            rhoY_o(i,j,k,n) *= 1.0e3;
+         }
+         rhoH_o(i,j,k) *= 0.1;
+      });
+
+#ifdef AMREX_USE_GPU
+      Gpu::Device::streamSynchronize();
+#endif
+   }
+
+   // ParallelCopy into newstate MFs
+   // Get the entire new state
+   MultiFab StateTemp(grids[lev],dmap[lev],NUM_SPECIES+3,0);
+   StateTemp.copy(chemState,0,0,NUM_SPECIES+3);
+   ldataR_p->functC.copy(functC,0,0,1);
+
+   // Pass from temp state MF to leveldata and set reaction term
+#ifdef _OPENMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+   for (MFIter mfi(ldataNew_p->density,amrex::TilingIfNotGPU()); mfi.isValid(); ++mfi)
+   {
+      const Box& bx          = mfi.tilebox();
+      auto const& state_arr  = StateTemp.const_array(mfi);
+      auto const& rhoY_o     = ldataOld_p->species.const_array(mfi);
+      auto const& rhoY_n     = ldataNew_p->species.array(mfi);
+      auto const& rhoH_n     = ldataNew_p->rhoh.array(mfi);
+      auto const& temp_n     = ldataNew_p->temp.array(mfi);
+      auto const& extF_rhoY  = a_extForcing.const_array(mfi,0);
+      auto const& rhoYdot    = ldataR_p->I_R.array(mfi,0);
+      Real dt_inv = 1.0/a_dt;
+      ParallelFor(bx, [state_arr, rhoY_o, rhoY_n, rhoH_n, temp_n, extF_rhoY, rhoYdot, dt_inv]
+      AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+      {
+         // Pass into leveldata_new
+         for (int n = 0; n < NUM_SPECIES; n++) {
+            rhoY_n(i,j,k,n) = state_arr(i,j,k,n);
+         }
+         rhoH_n(i,j,k) = state_arr(i,j,k,NUM_SPECIES);
+         temp_n(i,j,k) = state_arr(i,j,k,NUM_SPECIES+1);
+         // Compute I_R
+         for (int n = 0; n < NUM_SPECIES; n++) {
+            rhoYdot(i,j,k,n) = - ( rhoY_o(i,j,k,n) - rhoY_n(i,j,k,n) ) * dt_inv - extF_rhoY(i,j,k,n);
+         }
       });
    }
 }
