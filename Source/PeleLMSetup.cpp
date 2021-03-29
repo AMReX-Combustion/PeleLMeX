@@ -160,6 +160,7 @@ void PeleLM::readParameters() {
    pp.query("num_init_iter",m_init_iter);
 
    pp.query("sdc_iterMax",m_nSDCmax);
+   pp.query("floor_species",m_floor_species);
 
    // -----------------------------------------
    // Advection
@@ -405,6 +406,10 @@ void PeleLM::resizeArray() {
    m_leveldata_new.resize(max_level+1);
    m_leveldatareact.resize(max_level+1);
    m_halfTimeDensity.resize(max_level+1);
+   if (max_level > 0) m_coveredMask.resize(max_level);
+   m_baChem.resize(max_level+1);
+   m_dmapChem.resize(max_level+1);
+   m_baChemFlag.resize(max_level+1);
 
    // Factory
    m_factory.resize(max_level+1);
