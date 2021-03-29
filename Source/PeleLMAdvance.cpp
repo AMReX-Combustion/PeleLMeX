@@ -57,6 +57,7 @@ void PeleLM::Advance(int is_initIter) {
    // TODO : floor_species
 
    if (! m_incompressible ) {
+      floorSpecies(AmrOldTime);
       setThermoPress(AmrOldTime);
       computeDifferentialDiffusionTerms(AmrOldTime,diffData);
    }
@@ -89,7 +90,6 @@ void PeleLM::Advance(int is_initIter) {
 
       // Post SDC
       fillPatchState(AmrNewTime);
-      setThermoPress(AmrNewTime);
       if (m_has_divu) {
          int is_initialization = 0;             // Not here
          int computeDiffusionTerm = 1;          // Yes, re-evaluate the diffusion term after the last chemistry solve
@@ -260,5 +260,6 @@ void PeleLM::oneSDC(int sdcIter,
    //----------------------------------------------------------------
    // Re-evaluate derived state entries
    setTemperature(AmrNewTime);
+   floorSpecies(AmrNewTime);
    setThermoPress(AmrNewTime);
 }
