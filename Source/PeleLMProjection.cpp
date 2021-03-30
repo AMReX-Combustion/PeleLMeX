@@ -71,17 +71,7 @@ void PeleLM::initialProjection()
    }
 
    // Average down velocity
-   for (int lev = finest_level-1; lev >= 0; --lev) {
-      auto ldataFine_p = getLevelDataPtr(lev+1,AmrNewTime);
-      auto ldataCrse_p = getLevelDataPtr(lev,AmrNewTime);
-#ifdef AMREX_USE_EB
-      amrex::EB_average_down(ldataFine_p->velocity, ldataCrse_p->velocity,
-                             0, AMREX_SPACEDIM, refRatio(lev));
-#else
-      amrex::average_down(ldataFine_p->velocity, ldataCrse_p->velocity,
-                          0, AMREX_SPACEDIM, refRatio(lev));
-#endif
-   }
+   averageDownVelocity(AmrNewTime);
 
    if (m_verbose) {
       amrex::Print() << " After initial velocity projection:\n";
@@ -206,6 +196,7 @@ void PeleLM::velocityProjection(int is_initIter,
          }
       }
    }
+
 
    doNodalProject(vel, GetVecOfPtrs(sigma), GetVecOfPtrs(rhs_cc), {}, incremental, a_dt);
 
