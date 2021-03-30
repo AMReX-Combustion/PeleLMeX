@@ -159,8 +159,16 @@ void PeleLM::readParameters() {
    pp.query("do_init_proj",m_do_init_proj);
    pp.query("num_init_iter",m_init_iter);
 
+   // -----------------------------------------
+   // advance
+   // -----------------------------------------
    pp.query("sdc_iterMax",m_nSDCmax);
    pp.query("floor_species",m_floor_species);
+
+   // -----------------------------------------
+   // Reaction
+   // -----------------------------------------
+   pp.query("do_react",m_do_react);
 
    // -----------------------------------------
    // Advection
