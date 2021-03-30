@@ -90,12 +90,25 @@ void PeleLM::initData() {
       resetCoveredMask();
 
       //----------------------------------------------------------------
-      // FillPatch the NewState
+      // AverageDown and FillPatch the NewState
+      averageDownState(AmrNewTime);
       fillPatchState(AmrNewTime);
 
       // Post data Init time step estimate
+      // TODO : this estimate is probably useless
       int is_init = 1;
       Real dtInit = computeDt(is_init,AmrNewTime);
+      Print() << " Initial dt: " << dtInit << "\n";
+
+      // Subcycling IAMR/PeleLM first does a projection without divU
+      // whch makes the dt for evaluating I_R better
+      int has_divu_save = m_has_divu;
+      m_has_divu = 0;
+      initialProjection();
+      m_has_divu = has_divu_save;
+
+      // Post data Init time step estimate
+      dtInit = computeDt(is_init,AmrNewTime);
       Print() << " Initial dt: " << dtInit << "\n";
 
       //----------------------------------------------------------------
