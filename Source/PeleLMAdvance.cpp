@@ -45,6 +45,7 @@ void PeleLM::Advance(int is_initIter) {
    //----------------------------------------------------------------
    // Advance setup
    // fillpatch the t^{n} data
+   averageDownState(AmrOldTime); // TODO: needed ?
    fillPatchState(AmrOldTime);
 
    // compute t^{n} data
@@ -89,6 +90,10 @@ void PeleLM::Advance(int is_initIter) {
       }
 
       // Post SDC
+      averageDownDensity(AmrNewTime); // Gather the following if needed TODO
+      averageDownSpecies(AmrNewTime);
+      averageDownEnthalpy(AmrNewTime);
+      averageDownTemp(AmrNewTime);
       fillPatchState(AmrNewTime);
       if (m_has_divu) {
          int is_initialization = 0;             // Not here
@@ -155,6 +160,10 @@ void PeleLM::oneSDC(int sdcIter,
    if (sdcIter > 1) {
 
       // fillpatch the new state
+      averageDownDensity(AmrNewTime); // Gather the following if needed TODO
+      averageDownSpecies(AmrNewTime);
+      averageDownEnthalpy(AmrNewTime);
+      averageDownTemp(AmrNewTime);
       fillPatchState(AmrNewTime);
       
       calcDiffusivity(AmrNewTime);

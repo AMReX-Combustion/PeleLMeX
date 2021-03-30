@@ -490,4 +490,5 @@ void PeleLM::updateDensity(std::unique_ptr<AdvanceAdvData> &advData)
          });
       }
    }
+   averageDownDensity(AmrNewTime);
 }
