@@ -430,6 +430,15 @@ class PeleLM : public amrex::AmrCore {
 
    // Fill physical boundaries
    void setPhysBoundaryVel (amrex::MultiFab &a_vel, int lev, PeleLM::TimeStamp a_time);
+
+   // Average down operations
+   void averageDownState(const PeleLM::TimeStamp &a_time);
+   void averageDownVelocity(const PeleLM::TimeStamp &a_time);
+   void averageDownDensity(const PeleLM::TimeStamp &a_time);
+   void averageDownSpecies(const PeleLM::TimeStamp &a_time);
+   void averageDownEnthalpy(const PeleLM::TimeStamp &a_time);
+   void averageDownTemp(const PeleLM::TimeStamp &a_time);
+   void averageDownRhoRT(const PeleLM::TimeStamp &a_time);
    //-----------------------------------------------------------------------------
 
    //-----------------------------------------------------------------------------
