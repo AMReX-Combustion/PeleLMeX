@@ -126,10 +126,67 @@ void PeleLM::readParameters() {
    }
 
    // Store BCs in m_phys_bc.
-   for (int i = 0; i < AMREX_SPACEDIM; i++) {
-      m_phys_bc.setLo(i,lo_bc[i]);
-      m_phys_bc.setHi(i,hi_bc[i]);
+   for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+      m_phys_bc.setLo(idim,lo_bc[idim]);
+      m_phys_bc.setHi(idim,hi_bc[idim]);
    }
+
+#ifdef PLM_USE_EFIELD
+   ParmParse ppef("ef");
+
+   // Get the phiV bc
+   ppef.getarr("phiV_lo_bc",lo_bc_char,0,AMREX_SPACEDIM);
+   ppef.getarr("phiV_hi_bc",hi_bc_char,0,AMREX_SPACEDIM);
+   for (int idim = 0; idim < AMREX_SPACEDIM; idim++) 
+   {
+      if (lo_bc_char[idim] == "Interior"){
+         m_phiV_bc.setLo(idim,0);
+      } else if (lo_bc_char[idim] == "Dirichlet") {
+         m_phiV_bc.setLo(idim,1);
+      } else if (lo_bc_char[idim] == "Neumann") {
+         m_phiV_bc.setLo(idim,2);
+      } else {
+         amrex::Abort("Wrong PhiV bc. Should be : Interior, Dirichlet or Neumann");
+      }    
+      if (hi_bc_char[idim] == "Interior"){
+         m_phiV_bc.setHi(idim,0);
+      } else if (hi_bc_char[idim] == "Dirichlet") {
+         m_phiV_bc.setHi(idim,1);
+      } else if (hi_bc_char[idim] == "Neumann") {
+         m_phiV_bc.setHi(idim,2);
+      } else {
+         amrex::Abort("Wrong PhiV bc. Should be : Interior, Dirichlet or Neumann");
+      }
+   }
+
+   // Get the polarity of BCs
+   ppef.getarr("phiV_polarity_lo",lo_bc_char,0,AMREX_SPACEDIM);
+   ppef.getarr("phiV_polarity_hi",hi_bc_char,0,AMREX_SPACEDIM);
+   for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+      if (lo_bc_char[idim] == "Neutral"){
+         m_phiV_bcpol.setLo(idim,0);
+      } else if (lo_bc_char[idim] == "Anode") {     // Pos. elec = 1
+         m_phiV_bcpol.setLo(idim,1);
+         BL_ASSERT(phiV_bc.lo(idim)==1);
+      } else if (lo_bc_char[idim]  == "Cathode") {   // Neg. elec = 2
+         m_phiV_bcpol.setLo(idim,2);
+         BL_ASSERT(phiV_bc.lo(idim)==1);
+      } else {
+         amrex::Abort("Wrong PhiV polarity. Should be : Neutral, Anode or Cathode");
+      }
+      if (hi_bc_char[idim] == "Neutral"){
+         m_phiV_bcpol.setHi(idim,0);
+      } else if (hi_bc_char[idim] == "Anode") {     // Pos. elec = 1
+         m_phiV_bcpol.setHi(idim,1);
+         BL_ASSERT(phiV_bc.hi(idim)==1);
+      } else if (hi_bc_char[idim] == "Cathode") {   // Neg. elec = 2
+         m_phiV_bcpol.setHi(idim,2);
+         BL_ASSERT(phiV_bc.hi(idim)==1);
+      } else {
+         amrex::Abort("Wrong PhiV polarity. Should be : Neutral, Anode or Cathode");
+      }
+   }
+#endif
 
    // -----------------------------------------
    // Algorithm
@@ -254,6 +311,12 @@ void PeleLM::variablesSetup() {
       stateComponents.emplace_back(TEMP,"temp");
       Print() << " thermo. pressure: " << RHORT << "\n";
       stateComponents.emplace_back(RHORT,"RhoRT");
+#ifdef PLM_USE_EFIELD
+      Print() << " nE: " << NE << "\n";
+      stateComponents.emplace_back(NE,"nE");
+      Print() << " PhiV: " << PHIV << "\n";
+      stateComponents.emplace_back(PHIV,"PhiV");
+#endif
    }
 
    if (m_nAux > 0) {
@@ -295,6 +358,12 @@ void PeleLM::variablesSetup() {
       m_DiffTypeState[TEMP] = 0;
       m_AdvTypeState[RHORT] = 0;
       m_DiffTypeState[RHORT] = 0;
+#ifdef PLM_USE_EFIELD
+      m_AdvTypeState[NE] = 0;
+      m_DiffTypeState[NE] = 0;
+      m_AdvTypeState[PHIV] = 0;
+      m_DiffTypeState[PHIV] = 0;
+#endif
    }
 }
 

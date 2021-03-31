@@ -103,22 +103,32 @@ class PeleLM : public amrex::AmrCore {
                  int a_nAux, int a_nGrowState, int a_nGrowMAC);
 
       // cell-centered state multifabs
-      amrex::MultiFab velocity;        // Velocity (dim:AMREX_SPACEDIM)   
+      amrex::MultiFab velocity;        // Velocity (dim:AMREX_SPACEDIM)
       amrex::MultiFab density;         // Density (dim:1)
       amrex::MultiFab species;         // Species mass fraction (dim:NUM_SPECIES)
       amrex::MultiFab rhoh;            // Rho * enthalpy (dim:1)
       amrex::MultiFab rhoRT;           // Thermodynamic pressure (dim:1)
-      amrex::MultiFab temp;            // Temperature (dim:1) 
-      amrex::MultiFab auxiliaries;     // Auxiliary variables (passive scalars and others) (dim:m_nAux) 
+      amrex::MultiFab temp;            // Temperature (dim:1)
+      amrex::MultiFab auxiliaries;     // Auxiliary variables (passive scalars and others) (dim:m_nAux)
       amrex::MultiFab gp;              // pressure gradient (dim:AMREX_SPACEDIM)
       amrex::MultiFab divu;            // Velocity divergence constraint
+
+#ifdef PLM_USE_EFIELD
+      amrex::MultiFab nE;              // ELectron number density (dim:1)
+      amrex::MultiFab phiV;            // Electro-static potential (dim:1)
+#endif
 
       // node-centered state multifabs
       amrex::MultiFab press;           // nodal pressure (dim:1)
 
-      // cell-centered advance multifabs
+      // cell-centered transport multifabs
       amrex::MultiFab visc_cc;         // Viscosity (dim:1)
       amrex::MultiFab diff_cc;         // Diffusivity (dim:NUM_SPECIES+2)
+#ifdef PLM_USE_EFIELD
+      amrex::MultiFab diffE_cc;        // Electron diffusivity (dim:1)
+      amrex::MultiFab mobE_cc;         // Electron mobility (dim:1)
+      amrex::MultiFab mob_cc;          // Species mobility (dim:NUM_SPECIES)
+#endif
    };
    struct LevelDataReact {
       LevelDataReact () = default;
@@ -419,6 +429,10 @@ class PeleLM : public amrex::AmrCore {
    void fillpatch_gradp(int lev, amrex::Real a_time, amrex::MultiFab& a_gp, int nGhost);
    void fillpatch_reaction(int lev, amrex::Real a_time, amrex::MultiFab& a_I_R, int nGhost);
    void fillpatch_forces(amrex::Real a_time, amrex::Vector<amrex::MultiFab*> const &a_velForces, int nGrowForce);
+#ifdef PLM_USE_EFIELD
+   void fillpatch_nE(int lev, amrex::Real a_time, amrex::MultiFab& a_nE, int nGhost);
+   void fillpatch_phiV(int lev, amrex::Real a_time, amrex::MultiFab& a_phiV, int nGhost);
+#endif
 
    // FillCoarsePatch state components
    void fillcoarsepatch_velocity(int lev, amrex::Real a_time, amrex::MultiFab& a_vel, int nGhost);
@@ -427,6 +441,10 @@ class PeleLM : public amrex::AmrCore {
    void fillcoarsepatch_divu(int lev, amrex::Real a_time, amrex::MultiFab& a_divu, int nGhost);
    void fillcoarsepatch_gradp(int lev, amrex::Real a_time, amrex::MultiFab& a_gp, int nGhost);
    void fillcoarsepatch_reaction(int lev, amrex::Real a_time, amrex::MultiFab& a_I_R, int nGhost);
+#ifdef PLM_USE_EFIELD
+   void fillcoarsepatch_nE(int lev, amrex::Real a_time, amrex::MultiFab& a_nE, int nGhost);
+   void fillcoarsepatch_phiV(int lev, amrex::Real a_time, amrex::MultiFab& a_phiV, int nGhost);
+#endif
 
    // Fill physical boundaries
    void setPhysBoundaryVel (amrex::MultiFab &a_vel, int lev, PeleLM::TimeStamp a_time);
@@ -439,6 +457,10 @@ class PeleLM : public amrex::AmrCore {
    void averageDownEnthalpy(const PeleLM::TimeStamp &a_time);
    void averageDownTemp(const PeleLM::TimeStamp &a_time);
    void averageDownRhoRT(const PeleLM::TimeStamp &a_time);
+#ifdef PLM_USE_EFIELD
+   void averageDownnE(const PeleLM::TimeStamp &a_time);
+   void averageDownPhiV(const PeleLM::TimeStamp &a_time);
+#endif
    //-----------------------------------------------------------------------------
 
    //-----------------------------------------------------------------------------
@@ -600,6 +622,10 @@ class PeleLM : public amrex::AmrCore {
 
    // Boundary Conditions
    amrex::BCRec  m_phys_bc;                      // Store physical BC from input
+#ifdef PLM_USE_EFIELD
+   amrex::BCRec  m_phiV_bc;                      // Store separate phiV BC from input
+   amrex::BCRec  m_phiV_bcpol;                   // Store separate phiV BC polarity from input
+#endif
    amrex::Vector<amrex::BCRec> m_bcrec_state;
    amrex::BCRec                m_bcrec_divu;
    amrex::Vector<amrex::BCRec> m_bcrec_force;

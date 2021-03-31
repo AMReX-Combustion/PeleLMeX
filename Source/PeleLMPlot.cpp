@@ -33,6 +33,9 @@ void PeleLM::WritePlotFile() {
       ncomp = 2*AMREX_SPACEDIM;
    } else {
       ncomp = NVAR + AMREX_SPACEDIM;
+#ifdef PLM_USE_EFIELD
+      ncomp += 2;
+#endif
       if (m_has_divu) {
          ncomp += 1;
       }
@@ -82,6 +85,10 @@ void PeleLM::WritePlotFile() {
       plt_VarsName.push_back("rhoh");
       plt_VarsName.push_back("temp");
       plt_VarsName.push_back("RhoRT");
+#ifdef PLM_USE_EFIELD
+      plt_VarsName.push_back("nE");
+      plt_VarsName.push_back("phiV");
+#endif
       if (m_has_divu) {
          plt_VarsName.push_back("divu");
       }
@@ -126,6 +133,12 @@ void PeleLM::WritePlotFile() {
          cnt += 1;
          MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->rhoRT, 0, cnt, 1, 0);
          cnt += 1;
+#ifdef PLM_USE_EFIELD
+         MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->nE, 0, cnt, 1, 0);
+         cnt += 1;
+         MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->phiV, 0, cnt, 1, 0);
+         cnt += 1;
+#endif
          if (m_has_divu) {
             MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->divu, 0, cnt, 1, 0);
             cnt += 1;

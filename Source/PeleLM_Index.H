@@ -9,7 +9,13 @@
 #define RHOH FIRSTSPEC + NUM_SPECIES
 #define TEMP RHOH + 1
 #define RHORT TEMP + 1
+#ifdef PLM_USE_EFIELD
+#define NE RHORT + 1
+#define PHIV NE + 1
+#define FIRSTAUX PHIV + 1 
+#else
 #define FIRSTAUX RHORT + 1 
+#endif
 #define NVAR FIRSTAUX + 0
 //TODO: handle NAUX
 

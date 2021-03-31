@@ -284,3 +284,41 @@ PeleLM::averageDownRhoRT(const PeleLM::TimeStamp &a_time)
 #endif
    }
 }
+
+#ifdef PLM_USE_EFIELD
+void
+PeleLM::averageDownnE(const PeleLM::TimeStamp &a_time)
+{
+   for (int lev = finest_level; lev > 0; --lev) {
+      auto ldataFine_p = getLevelDataPtr(lev,a_time);
+      auto ldataCrse_p = getLevelDataPtr(lev-1,a_time);
+#ifdef AMREX_USE_EB
+      EB_average_down(ldataFine_p->nE,
+                      ldataCrse_p->nE,
+                      0,1,refRatio(lev-1));
+#else
+      average_down(ldataFine_p->nE,
+                   ldataCrse_p->nE,
+                   0,1,refRatio(lev-1));
+#endif
+   }
+}
+
+void
+PeleLM::averageDownPhiV(const PeleLM::TimeStamp &a_time)
+{
+   for (int lev = finest_level; lev > 0; --lev) {
+      auto ldataFine_p = getLevelDataPtr(lev,a_time);
+      auto ldataCrse_p = getLevelDataPtr(lev-1,a_time);
+#ifdef AMREX_USE_EB
+      EB_average_down(ldataFine_p->phiV,
+                      ldataCrse_p->phiV,
+                      0,1,refRatio(lev-1));
+#else
+      average_down(ldataFine_p->phiV,
+                   ldataCrse_p->phiV,
+                   0,1,refRatio(lev-1));
+#endif
+   }
+}
+#endif

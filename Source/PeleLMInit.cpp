@@ -218,11 +218,18 @@ void PeleLM::initLevelData(int lev) {
       auto  const &rhoH_arr  = (m_incompressible) ? DummyFab.array() : ldata_p->rhoh.array(mfi);
       auto  const &temp_arr  = (m_incompressible) ? DummyFab.array() : ldata_p->temp.array(mfi);
       auto  const &aux_arr   = (m_nAux > 0) ? ldata_p->auxiliaries.array(mfi) : DummyFab.array();
+#ifdef PLM_USE_EFIELD
+      auto  const &ne_arr    = ldata_p->nE.array(mfi);
+      auto  const &phiV_arr  = ldata_p->phiV.array(mfi);
+#endif
       amrex::ParallelFor(bx, [=,m_incompressible=m_incompressible]
       AMREX_GPU_DEVICE (int i, int j, int k) noexcept
       {
          pelelm_initdata(i, j, k, m_incompressible, vel_arr, rho_arr,
                          rhoY_arr, rhoH_arr, temp_arr, aux_arr,
+#ifdef PLM_USE_EFIELD
+                         ne_arr, phiV_arr,  
+#endif
                          geomdata, *lprobparm, lpmfdata);
       });
    }
