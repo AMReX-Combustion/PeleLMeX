@@ -369,7 +369,7 @@ struct PeleLMCCFillExtDirnE
             nE(iv) = s_ext[NE];
 
          // High
-         } else if ((bc[idir+AMREX_SPACEDIM] == amrex::BCType::ext_dir) and (iv[idir] < domhi[idir])) {
+         } else if ((bc[idir+AMREX_SPACEDIM] == amrex::BCType::ext_dir) and (iv[idir] > domhi[idir])) {
 
             // bcnormal() is defined in pelelm_prob.H in problem directory in /Exec
             bcnormal(x, m_nAux, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
