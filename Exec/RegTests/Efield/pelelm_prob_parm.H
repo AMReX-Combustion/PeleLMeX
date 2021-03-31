@@ -11,5 +11,8 @@ struct ProbParm
    amrex::Real standoff = 0.0_rt;
    amrex::Real pertmag  = 0.0004_rt;
    int  meanFlowDir = 1;
+
+   amrex::Real phiV_loy = 0.0_rt;
+   amrex::Real phiV_hiy = 0.0_rt;
 };
 #endif

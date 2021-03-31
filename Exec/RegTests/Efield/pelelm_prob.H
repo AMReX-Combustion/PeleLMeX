@@ -146,10 +146,10 @@ bcnormal(
    if (idir == 1) {  // y-dir
       if ( sgn == 1 ) { // lo
          s_ext[NE] = 0.0;
-         s_ext[PHIV] = 0.0; //prob_parm.phiV_loy;
+         s_ext[PHIV] = prob_parm.phiV_loy;
       } else {          // hi
          s_ext[NE] = 0.0;
-         s_ext[PHIV] = 0.0; // prob_parm.phiV_hiy;
+         s_ext[PHIV] = prob_parm.phiV_hiy;
       }   
    }
 }
