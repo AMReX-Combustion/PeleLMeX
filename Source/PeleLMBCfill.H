@@ -334,7 +334,7 @@ struct PeleLMCCFillExtDirnE
    AMREX_GPU_DEVICE
    void operator()(
       const amrex::IntVect& iv,
-      amrex::Array4<amrex::Real> const& temp,
+      amrex::Array4<amrex::Real> const& nE,
       const int dcomp,
       const int /*numcomp*/,
       amrex::GeometryData const& geom,
@@ -366,7 +366,7 @@ struct PeleLMCCFillExtDirnE
             // bcnormal() is defined in pelelm_prob.H in problem directory in /Exec
             bcnormal(x, m_nAux, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
 
-            temp(iv) = s_ext[NE];
+            nE(iv) = s_ext[NE];
 
          // High
          } else if ((bc[idir+AMREX_SPACEDIM] == amrex::BCType::ext_dir) and (iv[idir] < domhi[idir])) {
@@ -374,7 +374,7 @@ struct PeleLMCCFillExtDirnE
             // bcnormal() is defined in pelelm_prob.H in problem directory in /Exec
             bcnormal(x, m_nAux, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
 
-            temp(iv) = s_ext[NE];
+            nE(iv) = s_ext[NE];
 
          }
       }
@@ -397,7 +397,7 @@ struct PeleLMCCFillExtDirPhiV
    AMREX_GPU_DEVICE
    void operator()(
       const amrex::IntVect& iv,
-      amrex::Array4<amrex::Real> const& temp,
+      amrex::Array4<amrex::Real> const& phiV,
       const int dcomp,
       const int /*numcomp*/,
       amrex::GeometryData const& geom,
@@ -407,6 +407,7 @@ struct PeleLMCCFillExtDirPhiV
       const int orig_comp) const
    {
 
+      Print() << "PeleLMCCFillExtDirPhiV \n";
       // Get geometry data
       const int* domlo = geom.Domain().loVect();
       const int* domhi = geom.Domain().hiVect();
@@ -429,15 +430,15 @@ struct PeleLMCCFillExtDirPhiV
             // bcnormal() is defined in pelelm_prob.H in problem directory in /Exec
             bcnormal(x, m_nAux, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
 
-            temp(iv) = s_ext[PHIV];
+            phiV(iv) = s_ext[PHIV];
 
          // High
-         } else if ((bc[idir+AMREX_SPACEDIM] == amrex::BCType::ext_dir) and (iv[idir] < domhi[idir])) {
+         } else if ((bc[idir+AMREX_SPACEDIM] == amrex::BCType::ext_dir) and (iv[idir] > domhi[idir])) {
 
             // bcnormal() is defined in pelelm_prob.H in problem directory in /Exec
             bcnormal(x, m_nAux, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
 
-            temp(iv) = s_ext[PHIV];
+            phiV(iv) = s_ext[PHIV];
 
          }
       }
