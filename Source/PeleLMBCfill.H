@@ -57,7 +57,7 @@ struct PeleLMCCFillExtDirVel
             }
 
          // High
-         } else if ((bc[idir+AMREX_SPACEDIM] == amrex::BCType::ext_dir) and (iv[idir] < domhi[idir])) {
+         } else if ((bc[idir+AMREX_SPACEDIM] == amrex::BCType::ext_dir) and (iv[idir] > domhi[idir])) {
 
             // bcnormal() is defined in pelelm_prob.H in problem directory in /Exec
             bcnormal(x, m_nAux, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
@@ -122,7 +122,7 @@ struct PeleLMCCFillExtDirSpec
             }
 
          // High
-         } else if ((bc[idir+AMREX_SPACEDIM] == amrex::BCType::ext_dir) and (iv[idir] < domhi[idir])) {
+         } else if ((bc[idir+AMREX_SPACEDIM] == amrex::BCType::ext_dir) and (iv[idir] > domhi[idir])) {
 
             // bcnormal() is defined in pelelm_prob.H in problem directory in /Exec
             bcnormal(x, m_nAux, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
@@ -185,7 +185,7 @@ struct PeleLMCCFillExtDirDens
             rho(iv) = s_ext[DENSITY];
 
          // High
-         } else if ((bc[idir+AMREX_SPACEDIM] == amrex::BCType::ext_dir) and (iv[idir] < domhi[idir])) {
+         } else if ((bc[idir+AMREX_SPACEDIM] == amrex::BCType::ext_dir) and (iv[idir] > domhi[idir])) {
 
             // bcnormal() is defined in pelelm_prob.H in problem directory in /Exec
             bcnormal(x, m_nAux, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
@@ -246,7 +246,7 @@ struct PeleLMCCFillExtDirRhoH
             rhoH(iv) = s_ext[RHOH];
 
          // High
-         } else if ((bc[idir+AMREX_SPACEDIM] == amrex::BCType::ext_dir) and (iv[idir] < domhi[idir])) {
+         } else if ((bc[idir+AMREX_SPACEDIM] == amrex::BCType::ext_dir) and (iv[idir] > domhi[idir])) {
 
             // bcnormal() is defined in pelelm_prob.H in problem directory in /Exec
             bcnormal(x, m_nAux, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
@@ -307,7 +307,7 @@ struct PeleLMCCFillExtDirTemp
             temp(iv) = s_ext[TEMP];
 
          // High
-         } else if ((bc[idir+AMREX_SPACEDIM] == amrex::BCType::ext_dir) and (iv[idir] < domhi[idir])) {
+         } else if ((bc[idir+AMREX_SPACEDIM] == amrex::BCType::ext_dir) and (iv[idir] > domhi[idir])) {
 
             // bcnormal() is defined in pelelm_prob.H in problem directory in /Exec
             bcnormal(x, m_nAux, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
