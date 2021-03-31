@@ -556,6 +556,15 @@ class PeleLM : public amrex::AmrCore {
    void getScalarReactForce(std::unique_ptr<AdvanceAdvData> &advData);
    //-----------------------------------------------------------------------------
 
+#ifdef PLM_USE_EFIELD
+   //-----------------------------------------------------------------------------
+   // EFIELD
+
+   void poissonSolveEF(const PeleLM::TimeStamp &a_time);
+   //-----------------------------------------------------------------------------
+#endif
+
+
    //-----------------------------------------------------------------------------
    // Accessors
    std::string runMode() {
@@ -585,6 +594,9 @@ class PeleLM : public amrex::AmrCore {
    amrex::Vector<amrex::MultiFab* > getTempVect(const PeleLM::TimeStamp &a_time);
    amrex::Vector<amrex::MultiFab* > getDiffusivityVect(const PeleLM::TimeStamp &a_time);
    amrex::Vector<amrex::MultiFab* > getViscosityVect(const PeleLM::TimeStamp &a_time);
+#ifdef PLM_USE_EFIELD
+   amrex::Vector<amrex::MultiFab* > getPhiVVect(const PeleLM::TimeStamp &a_time);
+#endif
 
    amrex::Vector<amrex::BCRec> fetchBCRecArray(int scomp, int ncomp);
    amrex::Vector<int>          fetchAdvTypeArray(int scomp, int ncomp);
