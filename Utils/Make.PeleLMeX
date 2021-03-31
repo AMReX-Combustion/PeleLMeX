@@ -6,6 +6,9 @@ PELE_PHYSICS_HOME ?= /path/to/PELE_PHYSICS_HOME
 include $(AMREX_HOME)/Tools/GNUMake/Make.defs
 
 EBASE := PeleLMeX
+ifeq ($(USE_EFIELD),TRUE)
+   USERSuffix += .EF
+endif
 all: $(executable)
 	$(SILENT) $(RM) AMReX_buildInfo.cpp
 	@echo SUCCESS
@@ -14,6 +17,11 @@ all: $(executable)
 # PeleLM sources
 #---------------
 LMdirs := Source Source/Godunov
+ifeq ($(USE_EFIELD),TRUE)
+   DEFINES += -DPLM_USE_EFIELD
+   LMdirs += Source/Efield
+endif
+
 Bpack += $(foreach dir, $(LMdirs), $(PELELMEX_HOME)/$(dir)/Make.package)
 Blocs += $(foreach dir, $(LMdirs), $(PELELMEX_HOME)/$(dir))
 
