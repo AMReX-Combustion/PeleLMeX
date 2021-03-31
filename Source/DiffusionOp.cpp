@@ -65,16 +65,25 @@ void DiffusionOp::diffuse_scalar(Vector<MultiFab*> const& a_phi, int phi_comp,
    BL_PROFILE_VAR("DiffusionOp::diffuse_scalar()", diffuse_scalar);
 
    //----------------------------------------------------------------
+   // What are we dealing with ?
+   int have_density = (a_density.empty()) ? 0 : 1;
+   int have_fluxes  = (a_flux.empty()) ? 0 : 1;
+   int have_acoeff  = (a_acoeff.empty()) ? 0 : 1;
+   int have_bcoeff  = (a_bcoeff.empty()) ? 0 : 1;
+
+   //----------------------------------------------------------------
    // Checks
    AMREX_ASSERT(a_phi[0]->nComp() >= phi_comp+ncomp);
    AMREX_ASSERT(a_rhs[0]->nComp() >= rhs_comp+ncomp);
-   AMREX_ASSERT(a_bcoeff[0]->nComp() >= bcoeff_comp+ncomp);
-   AMREX_ASSERT(a_flux[0][0]->nComp() >= flux_comp+ncomp);
-   AMREX_ASSERT(a_bcrec.size() >= ncomp);
+   if ( have_fluxes ) {
+      AMREX_ASSERT(a_flux[0][0]->nComp() >= flux_comp+ncomp);
+   }
+   if ( have_bcoeff ) {
+      AMREX_ASSERT(a_bcoeff[0]->nComp() >= bcoeff_comp+ncomp);
+      AMREX_ASSERT(a_bcrec.size() >= ncomp);
+   }
 
    int finest_level = m_pelelm->finestLevel();
-
-   int have_density = (a_density.empty()) ? 0 : 1;
 
    //----------------------------------------------------------------
    // Duplicate phi_old to include rho scaling
@@ -117,10 +126,10 @@ void DiffusionOp::diffuse_scalar(Vector<MultiFab*> const& a_phi, int phi_comp,
    Real beta  = a_dt;
    m_scal_solve_op->setScalars(alpha,beta);
    for (int lev = 0; lev <= finest_level; ++lev) {
-      if (a_acoeff.empty()) {
-         m_scal_solve_op->setACoeffs(lev, 1.0);
-      } else {
+      if (have_acoeff) {
          m_scal_solve_op->setACoeffs(lev, *a_acoeff[lev]);
+      } else {
+         m_scal_solve_op->setACoeffs(lev, 1.0);
       }
    }
 
@@ -139,16 +148,21 @@ void DiffusionOp::diffuse_scalar(Vector<MultiFab*> const& a_phi, int phi_comp,
 
       // Set aliases and bcoeff comp
       for (int lev = 0; lev <= finest_level; ++lev) {
-         for (int idim = 0; idim < AMREX_SPACEDIM; idim++ ) {
-            fluxes[lev][idim] = new MultiFab(*a_flux[lev][idim],amrex::make_alias,flux_comp+comp,1);
+         if (have_fluxes) {
+            for (int idim = 0; idim < AMREX_SPACEDIM; idim++ ) {
+               fluxes[lev][idim] = new MultiFab(*a_flux[lev][idim],amrex::make_alias,flux_comp+comp,1);
+            }
          }
 
-         Array<MultiFab,AMREX_SPACEDIM> bcoeff_ec = m_pelelm->getDiffusivity(lev, bcoeff_comp+comp, 1, {a_bcrec[comp]}, *a_bcoeff[lev]);
+         if (have_bcoeff) {
+            Array<MultiFab,AMREX_SPACEDIM> bcoeff_ec = m_pelelm->getDiffusivity(lev, bcoeff_comp+comp, 1, {a_bcrec[comp]}, *a_bcoeff[lev]);
+            m_scal_solve_op->setBCoeffs(lev, GetArrOfConstPtrs(bcoeff_ec));
+         } else {
+            m_scal_solve_op->setBCoeffs(lev, 1.0);
+         }
 
          component.emplace_back(phi[lev],amrex::make_alias,comp,1);
          rhs.emplace_back(*a_rhs[lev],amrex::make_alias,rhs_comp+comp,1);
-
-         m_scal_solve_op->setBCoeffs(lev, GetArrOfConstPtrs(bcoeff_ec));
          m_scal_solve_op->setLevelBC(lev, &component[lev]);
       }
 
@@ -171,15 +185,17 @@ void DiffusionOp::diffuse_scalar(Vector<MultiFab*> const& a_phi, int phi_comp,
       mlmg.solve(GetVecOfPtrs(component), GetVecOfConstPtrs(rhs), m_mg_rtol, m_mg_atol);
 
       // Need to get the {np1,kp1} fluxes
+      if ( have_fluxes ) {
 #ifdef AMREX_USE_EB
-      mlmg.getFluxes(fluxes, MLMG::Location::FaceCentroid);
+         mlmg.getFluxes(fluxes, MLMG::Location::FaceCentroid);
 #else
-      mlmg.getFluxes(fluxes, MLMG::Location::FaceCenter);
+         mlmg.getFluxes(fluxes, MLMG::Location::FaceCenter);
 #endif
 
-      for (int lev = 0; lev <= finest_level; ++lev) {
-         for (int idim = 0; idim < AMREX_SPACEDIM; idim++ ) {
-            delete fluxes[lev][idim];
+         for (int lev = 0; lev <= finest_level; ++lev) {
+            for (int idim = 0; idim < AMREX_SPACEDIM; idim++ ) {
+               delete fluxes[lev][idim];
+            }
          }
       }
    }
