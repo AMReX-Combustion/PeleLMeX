@@ -94,6 +94,10 @@ void PeleLM::initData() {
       averageDownState(AmrNewTime);
       fillPatchState(AmrNewTime);
 
+#ifdef PLM_USE_EFIELD
+      poissonSolveEF(AmrNewTime);
+#endif
+
       // Post data Init time step estimate
       // TODO : this estimate is probably useless
       int is_init = 1;
