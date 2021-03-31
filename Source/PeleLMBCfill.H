@@ -407,7 +407,6 @@ struct PeleLMCCFillExtDirPhiV
       const int orig_comp) const
    {
 
-      Print() << "PeleLMCCFillExtDirPhiV \n";
       // Get geometry data
       const int* domlo = geom.Domain().loVect();
       const int* domhi = geom.Domain().hiVect();
