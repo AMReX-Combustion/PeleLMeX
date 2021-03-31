@@ -258,9 +258,9 @@ PeleLM::fillPatchState(int lev, Real a_time, int nGrow) {
       fillpatch_energy(lev, a_time, rhoh, temp, nGrow);
 #ifdef PLM_USE_EFIELD
       MultiFab nE(*mf, amrex::make_alias, NE, 1);
-      fillpatch_nE(lev, a_time, nE, m_nGrowState);
+      fillpatch_nE(lev, a_time, nE, nGrow);
       MultiFab phiV(*mf, amrex::make_alias, PHIV, 1);
-      fillpatch_phiV(lev, a_time, phiV, m_nGrowState);
+      fillpatch_phiV(lev, a_time, phiV, nGrow);
 #endif
    }
    //TODO Aux
