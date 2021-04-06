@@ -33,9 +33,6 @@ void PeleLM::WritePlotFile() {
       ncomp = 2*AMREX_SPACEDIM;
    } else {
       ncomp = NVAR + AMREX_SPACEDIM;
-#ifdef PLM_USE_EFIELD
-      ncomp += 2;
-#endif
       if (m_has_divu) {
          ncomp += 1;
       }
