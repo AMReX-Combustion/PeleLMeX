@@ -44,6 +44,23 @@ PeleLM::LevelDataReact::LevelDataReact(const amrex::BoxArray &ba,
    functC.define(ba, dm, 1, 0, MFInfo(), factory);
 }
 
+#ifdef PLM_USE_EFIELD
+PeleLM::LevelDataNLSolve::LevelDataNLSolve(amrex::BoxArray const& ba,
+                                           amrex::DistributionMapping const& dm,
+                                           amrex::FabFactory<FArrayBox> const& factory,
+                                           int a_nGrow)
+{
+   nlState.define(ba, dm, 2, a_nGrow, MFInfo(), factory);
+   nlResid.define(ba, dm, 2, a_nGrow, MFInfo(), factory);
+   backgroundCharge.define(ba, dm, 1, 0, MFInfo(), factory);
+   for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
+      const BoxArray& faceba = amrex::convert(ba,IntVect::TheDimensionVector(idim));
+      gPhiVOld[idim].define(faceba, dm, 1, 0, MFInfo(), factory);
+      uEffnE[idim].define(faceba, dm, 1, 0, MFInfo(), factory);
+   }
+}
+#endif
+
 PeleLM::AdvanceDiffData::AdvanceDiffData(int a_finestLevel,
                                          const amrex::Vector<amrex::BoxArray> &ba,
                                          const amrex::Vector<amrex::DistributionMapping> &dm, 
