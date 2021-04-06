@@ -92,7 +92,8 @@ void pelelm_initdata(int i, int j, int k,
        rhoY(i,j,k,n) = massfrac[n] * rho(i,j,k);
     }
 
-    nE(i,j,k) = 0.0;
+    amrex::Real yc = 0.5 * (prob_hi[1] + prob_lo[1]);
+    nE(i,j,k) = 2.0e13 * std::exp(-(y-yc)*(y-yc)/(Ly*Ly/100.0));
     phiV(i,j,k) = 0.0;
 }
 
