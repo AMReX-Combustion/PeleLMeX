@@ -174,10 +174,10 @@ void PeleLM::readParameters() {
          m_phiV_bcpol.setLo(idim,0);
       } else if (lo_bc_char[idim] == "Anode") {     // Pos. elec = 1
          m_phiV_bcpol.setLo(idim,1);
-         BL_ASSERT(phiV_bc.lo(idim)==1);
+         AMREX_ASSERT(m_phiV_bc.lo(idim)==1);
       } else if (lo_bc_char[idim]  == "Cathode") {   // Neg. elec = 2
          m_phiV_bcpol.setLo(idim,2);
-         BL_ASSERT(phiV_bc.lo(idim)==1);
+         AMREX_ASSERT(m_phiV_bc.lo(idim)==1);
       } else {
          amrex::Abort("Wrong PhiV polarity. Should be : Neutral, Anode or Cathode");
       }
@@ -185,10 +185,10 @@ void PeleLM::readParameters() {
          m_phiV_bcpol.setHi(idim,0);
       } else if (hi_bc_char[idim] == "Anode") {     // Pos. elec = 1
          m_phiV_bcpol.setHi(idim,1);
-         BL_ASSERT(phiV_bc.hi(idim)==1);
+         AMREX_ASSERT(m_phiV_bc.hi(idim)==1);
       } else if (hi_bc_char[idim] == "Cathode") {   // Neg. elec = 2
          m_phiV_bcpol.setHi(idim,2);
-         BL_ASSERT(phiV_bc.hi(idim)==1);
+         AMREX_ASSERT(m_phiV_bc.hi(idim)==1);
       } else {
          amrex::Abort("Wrong PhiV polarity. Should be : Neutral, Anode or Cathode");
       }
