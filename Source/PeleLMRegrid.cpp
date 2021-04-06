@@ -67,6 +67,10 @@ void PeleLM::MakeNewLevelFromCoarse( int lev,
       m_resetCoveredMask = 1;
    }
 
+#ifdef PLM_USE_EFIELD
+   m_leveldatanlsolve[lev].reset(new LevelDataNLSolve(ba, dm, *m_factory[lev], 1));
+#endif
+
    // DiffusionOp will be recreated
    m_diffusion_op.reset();
    m_diffusionTensor_op.reset();
@@ -140,6 +144,10 @@ void PeleLM::RemakeLevel( int lev,
       m_resetCoveredMask = 1;
    }
 
+#ifdef PLM_USE_EFIELD
+   m_leveldatanlsolve[lev].reset(new LevelDataNLSolve(ba, dm, *m_factory[lev], 1));
+#endif
+
    // DiffusionOp will be recreated
    m_diffusion_op.reset();
    m_diffusionTensor_op.reset();
@@ -161,6 +169,9 @@ void PeleLM::ClearLevel(int lev) {
    m_diffusion_op.reset();
    m_diffusionTensor_op.reset();
    macproj.reset();
+#ifdef PLM_USE_EFIELD
+   m_leveldatanlsolve[lev].reset();
+#endif
 }
 
 void PeleLM::resetMacProjector()
