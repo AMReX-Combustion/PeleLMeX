@@ -1,5 +1,6 @@
 #include <PeleLM.H>
 #include <PeleLM_K.H>
+#include <PeleLMEF_Constants.H>
 #include <DiffusionOp.H>
 
 using namespace amrex;
@@ -16,7 +17,27 @@ void PeleLM::poissonSolveEF(const TimeStamp &a_time)
    Vector<std::unique_ptr<MultiFab>> rhsPoisson(finest_level+1);
    for (int lev = 0; lev <= finest_level; ++lev) {
       rhsPoisson[lev].reset(new MultiFab(grids[lev], dmap[lev], 1, nGhost, MFInfo(), *m_factory[lev]));
-      rhsPoisson[lev]->setVal(0.0); // TODO
+
+      auto ldata_p = getLevelDataPtr(lev,a_time);
+#ifdef _OPENMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+      for (MFIter mfi(*rhsPoisson[lev],TilingIfNotGPU()); mfi.isValid(); ++mfi)
+      {
+         const Box& bx = mfi.tilebox();
+         auto const& rhoY = ldata_p->species.const_array(mfi);
+         auto const& nE   = ldata_p->nE.const_array(mfi);
+         auto const& rhs  = rhsPoisson[lev]->array(mfi);
+         Real      factor = -1.0 / ( eps0  * epsr);
+         amrex::ParallelFor(bx, [rhs, rhoY, nE, factor,zk=zk]
+         AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+         {
+            rhs(i,j,k) = - nE(i,j,k) * elemCharge * factor;
+            for (int n = 0; n < NUM_SPECIES; n++) {
+               rhs(i,j,k) += zk[n] * rhoY(i,j,k,n) * factor;
+            }
+         });
+      }
    }
 
    // Solve for PhiV
