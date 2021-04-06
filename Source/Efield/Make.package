@@ -1,2 +1,7 @@
-CEXE_headers += 
+CEXE_headers += PeleLMEF.H
+CEXE_headers += PeleLMEF_K.H
+CEXE_headers += MLGMRES.H
 CEXE_sources += PeleLMEFPoisson.cpp
+CEXE_sources += PeleLMEFNLSolve.cpp
+CEXE_sources += PeleLMEFUtils.cpp
+CEXE_sources += MLGMRES.cpp

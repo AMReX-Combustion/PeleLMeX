@@ -1,0 +1,45 @@
+// included in the PeleLM.H
+
+   // Algorithm int/real data holder
+   int                         ef_verbose = 0;
+   int                         ef_substep = 1;     // number of sub time steps
+   amrex::Real                 dtsub;              // sub time step size
+   amrex::Real                 curtime;            // time of current substep
+   amrex::Real                 nl_stateNorm;       // norm of the non-linear state
+   amrex::Real                 nl_residNorm;       // norm of the non-linear residual
+
+   // Scaling of non-linear system
+   amrex::Real                 nE_scale;           // nE state scale
+   amrex::Real                 phiV_scale;         // phiV state scale
+   amrex::Real                 FnE_scale = 1.0;    // nE residual scale
+   amrex::Real                 FphiV_scale = 1.0;  // phiV residual scale
+
+   // Linear solve
+   int                         m_ef_GMRES_verbose    = 0; 
+   int                         m_ef_use_PETSC_direct = 0;
+   int                         m_ef_GMRES_size       = 10; 
+   int                         m_ef_GMRES_maxRst     = 3; 
+   amrex::Real                 m_ef_lambda_jfnk      = 1.0e-7;
+
+   // Species charge per unit mass
+   amrex::GpuArray<amrex::Real, NUM_SPECIES> zk;
+
+   // NLSolve level data container
+   struct LevelDataNLSolve {
+      LevelDataNLSolve () = default;
+      LevelDataNLSolve (amrex::BoxArray const& ba,
+                        amrex::DistributionMapping const& dm,
+                        amrex::FabFactory<amrex::FArrayBox> const& factory,
+                        int a_nGrow);
+      amrex::MultiFab nlState;                     // Non-linear state
+      amrex::MultiFab nlResid;                     // Non-linear residual
+      amrex::MultiFab backgroundCharge;            // Background charge from the ions
+      amrex::Array<amrex::MultiFab,AMREX_SPACEDIM> gPhiVOld;   // Gradient of old electro-static pot.
+      amrex::Array<amrex::MultiFab,AMREX_SPACEDIM> uEffnE;     // Effective velocity of the electrons
+   };
+
+   amrex::Vector<std::unique_ptr<LevelDataNLSolve> > m_leveldatanlsolve;
+   LevelDataNLSolve* getLevelDataNLSolvePtr(int lev) {return m_leveldatanlsolve[lev].get();};
+
+   amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM >> getNLgradPhiVVect();
+   amrex::Vector<amrex::MultiFab*> getNLresidVect();
