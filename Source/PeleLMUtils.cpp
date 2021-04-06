@@ -3,8 +3,6 @@
 
 using namespace amrex;
 
-const Real Real_MAX = DBL_MAX;
-
 void PeleLM::fluxDivergence(Vector<MultiFab> &a_divergence,
                             int div_comp,
                             const Vector<Array<MultiFab*,AMREX_SPACEDIM> > &a_fluxes,
@@ -406,7 +404,7 @@ PeleLM::floorSpecies(const TimeStamp &a_time)
          amrex::ParallelFor(bx, [rhoY]
          AMREX_GPU_DEVICE (int i, int j, int k) noexcept
          {
-            fabMinMax( i, j, k, NUM_SPECIES, 0.0, Real_MAX, rhoY);
+            fabMinMax( i, j, k, NUM_SPECIES, 0.0, AMREX_REAL_MAX, rhoY);
          });
       }
    }
@@ -569,6 +567,17 @@ PeleLM::deriveComp(const std::string &a_name,
    }
 
    return mf;
+}
+
+Real
+PeleLM::MLNorm0(Vector<const MultiFab*> a_MF)
+{
+   Real r = 0.0;
+   for (int lev = 0; lev <= a_MF.size(); ++lev) {
+      r = std::max(r, a_MF[lev]->norm0(0,0,true,true));
+   }
+   ParallelDescriptor::ReduceRealMax(r);
+   return r;
 }
 
 bool
