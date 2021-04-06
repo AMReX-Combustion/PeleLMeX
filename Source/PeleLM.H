@@ -511,6 +511,7 @@ class PeleLM : public amrex::AmrCore {
                                   amrex::Real scale);
 
    void floorSpecies(const PeleLM::TimeStamp &a_time);
+   amrex::Real MLNorm0(amrex::Vector<const amrex::MultiFab*> a_MF);
 
    void resetCoveredMask();
 
@@ -557,10 +558,31 @@ class PeleLM : public amrex::AmrCore {
    //-----------------------------------------------------------------------------
 
 #ifdef PLM_USE_EFIELD
+#include <PeleLMEF.H>
    //-----------------------------------------------------------------------------
    // EFIELD
 
    void poissonSolveEF(const PeleLM::TimeStamp &a_time);
+   void implicitNonLinearSolve(int sdcIter,
+                               const amrex::Real &a_dt,
+                               std::unique_ptr<AdvanceDiffData> &diffData,
+                               std::unique_ptr<AdvanceAdvData> &advData);
+   void computeBGcharge(const amrex::Real &a_time,
+                        std::unique_ptr<AdvanceDiffData> &diffData,
+                        std::unique_ptr<AdvanceAdvData> &advData);
+
+   void nonLinearResidual(const amrex::Real &a_dt,
+                          int updateScaling,
+                          int updatePrecond);
+
+   void nlSolveNorm(const amrex::Vector<amrex::MultiFab*> &a_MF,
+                    amrex::Real &norm);
+
+   void jTimesV(const amrex::Vector<amrex::MultiFab*> &a_x,
+                const amrex::Vector<amrex::MultiFab*> &a_Ax);
+
+   void applyPrecond(const amrex::Vector<amrex::MultiFab*> &a_v,
+                     const amrex::Vector<amrex::MultiFab*> &a_Pv);
    //-----------------------------------------------------------------------------
 #endif
 
@@ -596,6 +618,7 @@ class PeleLM : public amrex::AmrCore {
    amrex::Vector<amrex::MultiFab* > getViscosityVect(const PeleLM::TimeStamp &a_time);
 #ifdef PLM_USE_EFIELD
    amrex::Vector<amrex::MultiFab* > getPhiVVect(const PeleLM::TimeStamp &a_time);
+   amrex::Vector<amrex::MultiFab* > getnEVect(const PeleLM::TimeStamp &a_time);
 #endif
 
    amrex::Vector<amrex::BCRec> fetchBCRecArray(int scomp, int ncomp);
