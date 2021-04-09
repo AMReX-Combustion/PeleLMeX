@@ -1,7 +1,7 @@
 // included in the PeleLM.H
 
    // Algorithm int/real data holder
-   int                         ef_verbose = 0;
+   int                         ef_verbose = 1;
    int                         ef_substep = 1;     // number of sub time steps
    amrex::Real                 dtsub;              // sub time step size
    amrex::Real                 curtime;            // time of current substep
@@ -15,8 +15,9 @@
    amrex::Real                 FphiV_scale = 1.0;  // phiV residual scale
 
    // Linear solve
-   int                         m_ef_GMRES_verbose    = 0; 
+   int                         m_ef_maxNewtonIter    = 5; 
    int                         m_ef_use_PETSC_direct = 0;
+   int                         m_ef_GMRES_verbose    = 0; 
    int                         m_ef_GMRES_size       = 10; 
    int                         m_ef_GMRES_maxRst     = 3; 
    amrex::Real                 m_ef_lambda_jfnk      = 1.0e-7;
@@ -42,4 +43,6 @@
    LevelDataNLSolve* getLevelDataNLSolvePtr(int lev) {return m_leveldatanlsolve[lev].get();};
 
    amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM >> getNLgradPhiVVect();
+   amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM >> getUeffVect();
    amrex::Vector<amrex::MultiFab*> getNLresidVect();
+   amrex::Vector<amrex::MultiFab*> getNLstateVect();
