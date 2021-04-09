@@ -42,6 +42,9 @@ PeleLM::LevelDataReact::LevelDataReact(const amrex::BoxArray &ba,
 {
    I_R.define(ba, dm, NUM_SPECIES+1, 0, MFInfo(), factory);
    functC.define(ba, dm, 1, 0, MFInfo(), factory);
+#ifdef PLM_USE_EFIELD
+   I_RnE.define(ba, dm, 1, 0, MFInfo(), factory);
+#endif
 }
 
 #ifdef PLM_USE_EFIELD
