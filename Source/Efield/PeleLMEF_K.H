@@ -51,5 +51,43 @@ getDiffE(int i, int j, int k,
    De(i,j,k) = Ke(i,j,k) * T(i,j,k) * factor;
 }
 
+AMREX_GPU_HOST_DEVICE
+AMREX_FORCE_INLINE
+amrex::Real
+ef_edge_state_extdir(int i,int j,int k,
+                     int dir,
+                     const bool                       on_lo,
+                     const bool                       on_hi,
+                     amrex::Array4<amrex::Real const> const& state,
+                     amrex::Array4<amrex::Real const> const& effvel ) noexcept
+{
+   using namespace amrex::literals;
+
+   // Default behavior: id_l -1 in dir
+   // Handle the BCs
+   // Need -1 in id_l and id_h in dir on low Dirichlet BC
+   // Need nothing on high Dirichlet BC
+   int  id_l[3] = {i,j,k};
+   int  id_h[3] = {i,j,k};
+   if (!on_lo ) { 
+      if ( !on_hi ) { 
+         id_l[dir] -= 1;
+      }   
+   } else {
+      id_l[dir] -= 1;
+      id_h[dir] -= 1;
+   }   
+
+   amrex::Real state_ed;
+   if ( effvel(i,j,k) > smallVel) {
+      state_ed = state(id_l[0],id_l[1],id_l[2]);
+   } else if ( effvel(i,j,k) < -smallVel) {
+      state_ed = state(id_h[0],id_h[1],id_h[2]);
+   } else {
+      state_ed = 0.5_rt * ( state(id_l[0],id_l[1],id_l[2]) +
+                            state(id_h[0],id_h[1],id_h[2]) );
+   }
+   return state_ed;
+}
 
 #endif
