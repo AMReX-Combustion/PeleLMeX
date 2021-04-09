@@ -67,14 +67,14 @@ void PeleLM::computeDifferentialDiffusionTerms(const TimeStamp &a_time,
    // [NUM_SPECIES]     Temperature       : \nabla \cdot (-\lambda \nabla T)
    // [NUM_SPECIES+1]   Differential diff : \nabla \cdot \sum_k ( h_k * \Flux_k )
    if (a_time == AmrOldTime) {
-      fluxDivergence(diffData->Dn, 0, GetVecOfArrOfPtrs(fluxes), 0, NUM_SPECIES+2, 1, -1.0);
+      fluxDivergence(GetVecOfPtrs(diffData->Dn), 0, GetVecOfArrOfPtrs(fluxes), 0, NUM_SPECIES+2, 1, -1.0);
    } else {
-      fluxDivergence(diffData->Dnp1, 0, GetVecOfArrOfPtrs(fluxes), 0, NUM_SPECIES+2, 1, -1.0);
+      fluxDivergence(GetVecOfPtrs(diffData->Dnp1), 0, GetVecOfArrOfPtrs(fluxes), 0, NUM_SPECIES+2, 1, -1.0);
    }
 
    // Get the wbar term if appropriate
    if (!is_init && m_use_wbar) {
-      fluxDivergence(diffData->Dwbar, 0, GetVecOfArrOfPtrs(diffData->wbar_fluxes), 0, NUM_SPECIES, 1, -1.0);
+      fluxDivergence(GetVecOfPtrs(diffData->Dwbar), 0, GetVecOfArrOfPtrs(diffData->wbar_fluxes), 0, NUM_SPECIES, 1, -1.0);
    }
 }
 
@@ -200,6 +200,7 @@ void PeleLM::addWbarTerm(const Vector<Array<MultiFab*,AMREX_SPACEDIM> > &a_spflu
       }
    }
    getDiffusionOp()->computeGradient(GetVecOfArrOfPtrs(gradWbar),
+                                     {},        // Don't need the laplacian out
                                      GetVecOfConstPtrs(Wbar),
                                      bcRecSpec[0], do_avgDown);
 
@@ -542,7 +543,7 @@ void PeleLM::differentialDiffusionUpdate(std::unique_ptr<AdvanceAdvData> &advDat
    getDiffusionOp()->avgDownFluxes(GetVecOfArrOfPtrs(fluxes),0,NUM_SPECIES);
 
    // Compute diffusion term D^{np1,kp1} (or Dhat)
-   fluxDivergence(diffData->Dhat, 0, GetVecOfArrOfPtrs(fluxes), 0, NUM_SPECIES, 1, -1.0);
+   fluxDivergence(GetVecOfPtrs(diffData->Dhat), 0, GetVecOfArrOfPtrs(fluxes), 0, NUM_SPECIES, 1, -1.0);
 
    // Update species
    // Remove the Wbar term because we included it in both the dhat and the forcing.
@@ -598,7 +599,7 @@ void PeleLM::differentialDiffusionUpdate(std::unique_ptr<AdvanceAdvData> &advDat
    getDiffusionOp()->avgDownFluxes(GetVecOfArrOfPtrs(fluxes),NUM_SPECIES,2);
 
    // Compute diffusion term D^{np1,kp1} of Fourier and DifferentialDiffusion
-   fluxDivergence(diffData->Dhat, NUM_SPECIES, GetVecOfArrOfPtrs(fluxes), NUM_SPECIES, 2, 1, -1.0);
+   fluxDivergence(GetVecOfPtrs(diffData->Dhat), NUM_SPECIES, GetVecOfArrOfPtrs(fluxes), NUM_SPECIES, 2, 1, -1.0);
 
    //------------------------------------------------------------------------
    // delta(T) iterations
@@ -758,7 +759,7 @@ void PeleLM::deltaTIter_update(int a_dtiter,
    getDiffusionOp()->avgDownFluxes(a_fluxes,NUM_SPECIES,2);
 
    // Compute diffusion term D^{np1,kp1} of Fourier and DifferentialDiffusion
-   fluxDivergence(diffData->Dhat, NUM_SPECIES, a_fluxes, NUM_SPECIES, 2, 1, -1.0);
+   fluxDivergence(GetVecOfPtrs(diffData->Dhat), NUM_SPECIES, a_fluxes, NUM_SPECIES, 2, 1, -1.0);
 
    //------------------------------------------------------------------------
    // Recompute RhoH

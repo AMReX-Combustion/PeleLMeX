@@ -3,7 +3,7 @@
 
 using namespace amrex;
 
-void PeleLM::fluxDivergence(Vector<MultiFab> &a_divergence,
+void PeleLM::fluxDivergence(const Vector<MultiFab*> &a_divergence,
                             int div_comp,
                             const Vector<Array<MultiFab*,AMREX_SPACEDIM> > &a_fluxes,
                             int flux_comp,
@@ -14,12 +14,12 @@ void PeleLM::fluxDivergence(Vector<MultiFab> &a_divergence,
    BL_PROFILE_VAR("PeleLM::fluxDivergence()", fluxDivergence);
    if (intensiveFluxes) {        // Fluxes are intensive -> need area scaling in div
       for (int lev = 0; lev <= finest_level; ++lev) {
-         intFluxDivergenceLevel(lev,a_divergence[lev], div_comp, a_fluxes[lev], flux_comp,
+         intFluxDivergenceLevel(lev,*a_divergence[lev], div_comp, a_fluxes[lev], flux_comp,
                                 ncomp, scale);
       }
    } else {                      // Fluxes are extensive
       for (int lev = 0; lev <= finest_level; ++lev) {
-         extFluxDivergenceLevel(lev,a_divergence[lev], div_comp, a_fluxes[lev], flux_comp,
+         extFluxDivergenceLevel(lev,*a_divergence[lev], div_comp, a_fluxes[lev], flux_comp,
                                 ncomp, scale);
       }
    }
@@ -570,10 +570,10 @@ PeleLM::deriveComp(const std::string &a_name,
 }
 
 Real
-PeleLM::MLNorm0(Vector<const MultiFab*> a_MF)
+PeleLM::MLNorm0(const Vector<const MultiFab*> &a_MF)
 {
    Real r = 0.0;
-   for (int lev = 0; lev <= a_MF.size(); ++lev) {
+   for (int lev = 0; lev < a_MF.size(); ++lev) {
       r = std::max(r, a_MF[lev]->norm0(0,0,true,true));
    }
    ParallelDescriptor::ReduceRealMax(r);
