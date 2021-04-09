@@ -137,6 +137,9 @@ class PeleLM : public amrex::AmrCore {
                       const amrex::FabFactory<amrex::FArrayBox> &factory);
       amrex::MultiFab  I_R;            // Species reaction rates
       amrex::MultiFab  functC;         // Implicit integrator function call count
+#ifdef PLM_USE_EFIELD
+      amrex::MultiFab  I_RnE;          // Electron number density reaction term
+#endif
    };
    //-----------------------------------------------------------------------------
 
@@ -400,6 +403,8 @@ class PeleLM : public amrex::AmrCore {
    bool writeCheckNow();
    void WriteJobInfo(const std::string &path) const;
    void WriteHeader(const std::string &name, bool is_checkpoint) const;
+   void WriteDebugPlotFile(const amrex::Vector<const amrex::MultiFab*> &a_MF,
+                           const std::string &pltname);
    //-----------------------------------------------------------------------------
 
    //-----------------------------------------------------------------------------
@@ -467,7 +472,7 @@ class PeleLM : public amrex::AmrCore {
    // UTILS
 
    // flux divergence
-   void fluxDivergence(amrex::Vector<amrex::MultiFab> &a_divergence,
+   void fluxDivergence(const amrex::Vector<amrex::MultiFab*> &a_divergence,
                        int div_comp,
                        const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM> > &a_fluxes,
                        int flux_comp,
@@ -511,7 +516,7 @@ class PeleLM : public amrex::AmrCore {
                                   amrex::Real scale);
 
    void floorSpecies(const PeleLM::TimeStamp &a_time);
-   amrex::Real MLNorm0(amrex::Vector<const amrex::MultiFab*> a_MF);
+   amrex::Real MLNorm0(const amrex::Vector<const amrex::MultiFab*> &a_MF);
 
    void resetCoveredMask();
 
@@ -563,6 +568,9 @@ class PeleLM : public amrex::AmrCore {
    // EFIELD
 
    void poissonSolveEF(const PeleLM::TimeStamp &a_time);
+
+   void calcEFTransport(const PeleLM::TimeStamp &a_time);
+
    void implicitNonLinearSolve(int sdcIter,
                                const amrex::Real &a_dt,
                                std::unique_ptr<AdvanceDiffData> &diffData,
@@ -572,8 +580,20 @@ class PeleLM : public amrex::AmrCore {
                         std::unique_ptr<AdvanceAdvData> &advData);
 
    void nonLinearResidual(const amrex::Real &a_dt,
+                          const amrex::Vector<amrex::MultiFab *> &a_nlstate,
+                          const amrex::Vector<amrex::MultiFab *> &a_nlresid,
                           int updateScaling,
                           int updatePrecond);
+
+   void getAdvectionTerm(const amrex::Vector<const amrex::MultiFab*> &a_nE,
+                         const amrex::Vector<amrex::MultiFab*> &a_advTerm,
+                         const amrex::Vector<amrex::Array<const amrex::MultiFab*,AMREX_SPACEDIM>> &a_gPhiVCur);
+
+   void getAdvectionFluxes(int lev,
+                           const amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM> &a_fluxes,
+                           const amrex::MultiFab &a_nE,
+                           const amrex::Array<const amrex::MultiFab*,AMREX_SPACEDIM> &a_ueff,
+                           amrex::BCRec bcrec);
 
    void nlSolveNorm(const amrex::Vector<amrex::MultiFab*> &a_MF,
                     amrex::Real &norm);
@@ -619,6 +639,7 @@ class PeleLM : public amrex::AmrCore {
 #ifdef PLM_USE_EFIELD
    amrex::Vector<amrex::MultiFab* > getPhiVVect(const PeleLM::TimeStamp &a_time);
    amrex::Vector<amrex::MultiFab* > getnEVect(const PeleLM::TimeStamp &a_time);
+   amrex::Vector<amrex::MultiFab* > getnEDiffusivityVect(const PeleLM::TimeStamp &a_time);
 #endif
 
    amrex::Vector<amrex::BCRec> fetchBCRecArray(int scomp, int ncomp);

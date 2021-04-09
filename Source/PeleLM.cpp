@@ -355,4 +355,20 @@ PeleLM::getnEVect(const TimeStamp &a_time) {
    }
    return r;
 }
+
+Vector<MultiFab *>
+PeleLM::getnEDiffusivityVect(const TimeStamp &a_time) {
+   Vector<MultiFab*> r;
+   r.reserve(finest_level+1);
+   if ( a_time == AmrOldTime ) {
+      for (int lev = 0; lev <= finest_level; ++lev) {
+         r.push_back(&(m_leveldata_old[lev]->diffE_cc));
+      }
+   } else {
+      for (int lev = 0; lev <= finest_level; ++lev) {
+         r.push_back(&(m_leveldata_new[lev]->diffE_cc));
+      }
+   }
+   return r;
+}
 #endif
