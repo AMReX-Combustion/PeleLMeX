@@ -14,6 +14,18 @@ void GotoNextLine(std::istream& is)
            is.ignore(bl_ignore_max, '\n');
 }
 
+void PeleLM::WriteDebugPlotFile(const Vector<const MultiFab*> &a_MF,
+                                const std::string &pltname)
+{
+   int nComp = a_MF[0]->nComp();
+   Vector<std::string> names(nComp);
+   for (int n = 0; n < nComp; n++) {
+      names[n] = "comp"+std::to_string(n);
+   }
+   Vector<int> istep(finest_level + 1, m_nstep);
+   amrex::WriteMultiLevelPlotfile(pltname, finest_level + 1, a_MF,
+                                  names, Geom(), m_cur_time, istep, refRatio());
+}
 
 void PeleLM::WritePlotFile() {
    BL_PROFILE("PeleLM::WritePlotFile()");
