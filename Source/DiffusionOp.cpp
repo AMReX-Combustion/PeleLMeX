@@ -90,7 +90,7 @@ void DiffusionOp::diffuse_scalar(Vector<MultiFab*> const& a_phi, int phi_comp,
    // include 1 ghost cell to provide levelBC
    // NOTE: this is a bit weird for species: since we already updated the density after adv.,
    // when we divide by \rho, it is inconsistent. But it only matters if it screws
-   // up the ghost cell values 'cause interior is just an initial solution for the solve.
+   // up the ghost cell values 'cause interiors are just an initial solution for the solve.
    Vector<MultiFab> phi(finest_level+1);
    for (int lev = 0; lev <= finest_level; ++lev) {
       phi[lev].define(a_phi[lev]->boxArray(),a_phi[lev]->DistributionMap(),
@@ -227,14 +227,59 @@ void DiffusionOp::diffuse_scalar(Vector<MultiFab*> const& a_phi, int phi_comp,
    }
 }
 
-void DiffusionOp::computeDiffLap(Vector<MultiFab*> const& a_laps,
-                                 Vector<MultiFab const*> const& a_phi,
+void DiffusionOp::computeDiffLap(Vector<MultiFab*> const& a_laps, int lap_comp,
+                                 Vector<MultiFab const*> const& a_phi, int phi_comp,
                                  Vector<MultiFab const*> const& a_density,
-                                 Vector<MultiFab const*> const& a_eta)
+                                 Vector<MultiFab const*> const& a_bcoeff, int bcoeff_comp,
+                                 Vector<BCRec> a_bcrec,
+                                 int ncomp)
 {
+   BL_PROFILE_VAR("DiffusionOp::computeDiffLap()", computeDiffLap);
 
-   // TODO: EB version
+   //----------------------------------------------------------------
+   // Checks
+   AMREX_ASSERT(a_laps[0]->nComp() >= lap_comp+ncomp);
+   AMREX_ASSERT(a_phi[0]->nComp() >= phi_comp+ncomp);
+   AMREX_ASSERT(a_bcoeff[0]->nComp() >= bcoeff_comp+ncomp);
+   AMREX_ASSERT(a_bcrec.size() >= ncomp);
 
+   int finest_level = m_pelelm->finestLevel();
+
+   // Copy phi with 1 ghost cell
+   Vector<MultiFab> phi(finest_level+1);
+   for (int lev = 0; lev <= finest_level; ++lev) {
+      phi[lev].define(a_phi[lev]->boxArray(),a_phi[lev]->DistributionMap(),
+                      ncomp, 1, MFInfo(), a_phi[lev]->Factory());
+      MultiFab::Copy(phi[lev],*a_phi[lev],phi_comp,0,ncomp,1);
+   }
+
+   // LinOp is \alpha A \phi - \beta \nabla \cdot B \nabla \phi
+   // => \alpha = 0, A doesn't matter
+   // => \beta = -1.0, B face centered diffusivity a_bcoeff
+
+   // Set scalars \alpha & \beta
+   Real alpha = 0.0;
+   Real beta  = -1.0;
+   m_scal_apply_op->setScalars(alpha, beta);
+
+   for (int comp = 0; comp < ncomp; ++comp) {
+
+      // Component based vector of data
+      Vector<MultiFab> laps;
+      Vector<MultiFab> component;
+
+      for (int lev = 0; lev <= finest_level; ++lev) {
+          laps.emplace_back(*a_laps[lev],amrex::make_alias,lap_comp+comp,1);
+          component.emplace_back(phi[lev],amrex::make_alias,comp,1);
+          Array<MultiFab,AMREX_SPACEDIM> bcoeff_ec = m_pelelm->getDiffusivity(lev, bcoeff_comp+comp, 1, {a_bcrec[comp]}, *a_bcoeff[lev]);
+
+          m_scal_apply_op->setBCoeffs(lev, GetArrOfConstPtrs(bcoeff_ec));
+          m_scal_apply_op->setLevelBC(lev, &component[lev]);
+      }   
+
+      MLMG mlmg(*m_scal_apply_op);
+      mlmg.apply(GetVecOfPtrs(laps), GetVecOfPtrs(component));
+   }   
 }
 
 void DiffusionOp::computeDiffFluxes(Vector<Array<MultiFab*,AMREX_SPACEDIM>> const& a_flux, int flux_comp,
@@ -340,11 +385,15 @@ void DiffusionOp::computeDiffFluxes(Vector<Array<MultiFab*,AMREX_SPACEDIM>> cons
 
 void
 DiffusionOp::computeGradient(const Vector<Array<MultiFab*,AMREX_SPACEDIM>> &a_grad,
+                             const Vector<MultiFab*> &a_laps,
                              const Vector<MultiFab const*> &a_phi,
                              const BCRec &a_bcrec,
                              int do_avgDown)
 {
    BL_PROFILE_VAR("DiffusionOp::computeGradient()", computeGradient);
+
+   // Do I need the Laplacian out ?
+   int need_laplacian = (a_laps.empty()) ? 0 : 1;
 
    // Checks: one components only and 1 ghost cell at least
    AMREX_ASSERT(a_phi[0]->nComp() == 1);
@@ -365,8 +414,12 @@ DiffusionOp::computeGradient(const Vector<Array<MultiFab*,AMREX_SPACEDIM>> &a_gr
                       1, 1, MFInfo(), a_phi[lev]->Factory());
       MultiFab::Copy(phi[lev], *a_phi[lev], 0, 0, 1, 1);
       m_gradient_op->setLevelBC(lev, &phi[lev]);
-      laps.emplace_back(a_phi[lev]->boxArray(), a_phi[lev]->DistributionMap(),
-                        1, 1, MFInfo(), a_phi[lev]->Factory());
+      if (need_laplacian) {
+         laps.emplace_back(*a_laps[lev],amrex::make_alias,0,1);
+      } else {
+         laps.emplace_back(a_phi[lev]->boxArray(), a_phi[lev]->DistributionMap(),
+                           1, 1, MFInfo(), a_phi[lev]->Factory());
+      }
    }
 
    MLMG mlmg(*m_gradient_op);

@@ -35,10 +35,12 @@ class DiffusionOp
                         int ncomp,
                         amrex::Real dt);
 
-   void computeDiffLap (amrex::Vector<amrex::MultiFab*> const& laps,
-                        amrex::Vector<amrex::MultiFab const*> const& phi,
+   void computeDiffLap (amrex::Vector<amrex::MultiFab*> const& laps, int lap_comp,
+                        amrex::Vector<amrex::MultiFab const*> const& phi, int phi_comp,
                         amrex::Vector<amrex::MultiFab const*> const& density,
-                        amrex::Vector<amrex::MultiFab const*> const& beta);
+                        amrex::Vector<amrex::MultiFab const*> const& bcoeff, int bcoeff_comp,
+                        amrex::Vector<amrex::BCRec> a_bcrec,
+                        int ncomp);
 
    void computeDiffFluxes (amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> const& a_fluxes,
                            int flux_comp,
@@ -53,6 +55,7 @@ class DiffusionOp
                            int do_avgDown);
 
    void computeGradient(const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> &a_grad,
+                        const amrex::Vector<amrex::MultiFab *> &a_laps,
                         const amrex::Vector<amrex::MultiFab const*> &a_phi,
                         const amrex::BCRec &a_bcrec,
                         int do_avgDown);
