@@ -13,7 +13,7 @@ void PeleLM::advanceChemistry(std::unique_ptr<AdvanceAdvData> &advData)
       // On all but the finest level, average down I_R
       if (lev != finest_level) {
          std::unique_ptr<MultiFab> avgDownIR;
-         avgDownIR.reset( new MultiFab(grids[lev],dmap[lev],NUM_SPECIES+1,0));
+         avgDownIR.reset( new MultiFab(grids[lev],dmap[lev],NUM_SPECIES,0));
          avgDownIR->setVal(0.0);
          auto ldataRFine_p   = getLevelDataReactPtr(lev+1);
 #ifdef AMREX_USE_EB
@@ -87,19 +87,19 @@ void PeleLM::advanceChemistry(int lev,
 
       Real dt_incr     = a_dt;
       Real time_chem   = 0;
-#ifndef AMREX_USE_GPU
-      /* Solve */
-      int tmp_fctCn = 0;
-      tmp_fctCn = react(bx, rhoY_n, extF_rhoY, temp_n, rhoH_n, extF_rhoH, fcl, mask_arr,
-                        dt_incr, time_chem);
-      dt_incr   = a_dt;
-      time_chem = 0;
-#else
+#ifdef AMREX_USE_GPU
       int reactor_type = 2;
       int tmp_fctCn = 0;
       tmp_fctCn = react(bx, rhoY_n, extF_rhoY, temp_n, rhon, extF_rhoH, fcl, mask_arr, 
                         dt_incr, time_chem, reactor_type, amrex::Gpu::gpuStream());
       dt_incr = a_dt;
+      time_chem = 0;
+#else
+      /* Solve */
+      int tmp_fctCn = 0;
+      tmp_fctCn = react(bx, rhoY_n, extF_rhoY, temp_n, rhoH_n, extF_rhoH, fcl, mask_arr,
+                        dt_incr, time_chem);
+      dt_incr   = a_dt;
       time_chem = 0;
 #endif
 
@@ -163,7 +163,7 @@ void PeleLM::advanceChemistry(int lev,
    // Set chemistry MFs based on baChem and dmapChem
    MultiFab chemState(*m_baChem[lev],*m_dmapChem[lev],NUM_SPECIES+3,0);
    MultiFab chemForcing(*m_baChem[lev],*m_dmapChem[lev],NUM_SPECIES+1,0);
-   MultiFab chemAvgDownIR(*m_baChem[lev],*m_dmapChem[lev],NUM_SPECIES+1,0);
+   MultiFab chemAvgDownIR(*m_baChem[lev],*m_dmapChem[lev],NUM_SPECIES,0);
    MultiFab functC(*m_baChem[lev],*m_dmapChem[lev],1,0);
 
    // TODO Setup EB covered cells mask
@@ -173,7 +173,7 @@ void PeleLM::advanceChemistry(int lev,
    // ParallelCopy into chem MFs
    chemState.copy(*statemf,FIRSTSPEC,0,NUM_SPECIES+3);
    chemForcing.copy(a_extForcing,0,0,NUM_SPECIES+1);
-   chemAvgDownIR.copy(*a_avgDownIR,0,0,NUM_SPECIES+1);
+   chemAvgDownIR.copy(*a_avgDownIR,0,0,NUM_SPECIES);
    //VisMF::Write(chemAvgDownIR,"avgDownIRNewBA_Level"+std::to_string(lev)+"_step"+std::to_string(m_nstep));
 
 #ifdef _OPENMP
@@ -216,19 +216,19 @@ void PeleLM::advanceChemistry(int lev,
 
          Real dt_incr     = a_dt;
          Real time_chem   = 0;
-#ifndef AMREX_USE_GPU
-         /* Solve */
-         int tmp_fctCn = 0;
-         tmp_fctCn = react(bx, rhoY_o, extF_rhoY, temp_o, rhoH_o, extF_rhoH, fcl, mask_arr,
-                           dt_incr, time_chem);
-         dt_incr   = a_dt;
-         time_chem = 0;
-#else
+#ifdef AMREX_USE_GPU
          int reactor_type = 2;
          int tmp_fctCn = 0;
          tmp_fctCn = react(bx, rhoY_o, extF_rhoY, temp_o, rhoH_o, extF_rhoH, fcl, mask_arr, 
                            dt_incr, time_chem, reactor_type, amrex::Gpu::gpuStream());
          dt_incr = a_dt;
+         time_chem = 0;
+#else
+         /* Solve */
+         int tmp_fctCn = 0;
+         tmp_fctCn = react(bx, rhoY_o, extF_rhoY, temp_o, rhoH_o, extF_rhoH, fcl, mask_arr,
+                           dt_incr, time_chem);
+         dt_incr   = a_dt;
          time_chem = 0;
 #endif
       } else {
