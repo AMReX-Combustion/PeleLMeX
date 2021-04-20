@@ -6,6 +6,13 @@
 
 using namespace amrex;
 
+PrecondOp*
+PeleLM::getPrecondOp()
+{
+   if (!m_precond_op) m_precond_op.reset(new PrecondOp(this));
+   return m_precond_op.get();
+}
+
 void PeleLM::implicitNonLinearSolve(int sdcIter,
                                     const Real &a_dt,
                                     std::unique_ptr<AdvanceDiffData> &diffData,
@@ -44,6 +51,15 @@ void PeleLM::implicitNonLinearSolve(int sdcIter,
                                      GetVecOfConstPtrs(getPhiVVect(AmrOldTime)),
                                      bcRecPhiV[0], do_avgDown);
 
+   // Stash away a copy of umac
+   for (int lev = 0; lev <= finest_level; ++lev) {
+      // Get nl solve data pointer
+      auto ldataNLs_p = getLevelDataNLSolvePtr(lev);
+      for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+         MultiFab::Copy(ldataNLs_p->umac[idim],advData->umac[lev][idim],0,0,1,0);
+      }
+   }
+
    // Setup MLGMRES
    MLGMRESSolver gmres;
    int GMRES_tot_count = 0;
@@ -69,30 +85,39 @@ void PeleLM::implicitNonLinearSolve(int sdcIter,
       // -----------------
       // Pre-Newton
       // Set up the NL state scaling
-      nE_scale = MLNorm0(GetVecOfConstPtrs(getnEVect(AmrNewTime)));
+      getNLStateScaling(nE_scale, phiV_scale);
       nE_scale = (nE_scale > 1.0e-12) ? nE_scale : 1.0;
-      phiV_scale = MLNorm0(GetVecOfConstPtrs(getPhiVVect(AmrNewTime)));
       phiV_scale = (phiV_scale > 1.0e-12) ? phiV_scale : 1.0;
-      // TODO scale nl state vector
       if ( ef_verbose ) {
          amrex::Print() << "(" << sstep << ") ne scaling: " << nE_scale << "\n";
          amrex::Print() << "(" << sstep << ") phiV scaling: " << phiV_scale << "\n";
       }    
+      scaleNLState(nE_scale, phiV_scale);
 
       // Compute the background charge distribution at curtime
       computeBGcharge(curtime, diffData, advData);
 
       // Newton initial guess
-      // TODO
+      // TODO newton initial guess
+      nlSolveNorm(getNLstateVect(),nl_stateNorm);
 
       // Initial NL residual: update residual scaling and preconditioner
       int update_scaling = 1;
       int update_precond = 1;
       nonLinearResidual(dtsub, getNLstateVect(), getNLresidVect(), update_scaling, update_precond);
       nlSolveNorm(getNLresidVect(),nl_residNorm);
+      //WriteDebugPlotFile(GetVecOfConstPtrs(getNLresidVect()),"NLResInit");
 
       // Check for convergence
-      Real max_nlres = 0.0;
+      Real scaledResnE, scaledResphiV;
+      getNLResidScaling(scaledResnE, scaledResphiV);
+      Real max_nlres = std::max(scaledResnE, scaledResphiV);
+      if ( max_nlres <= m_ef_newtonTol ) {
+         if ( ef_verbose ) {
+            amrex::Print() << " No Newton iteration needed, exiting. \n";
+         }
+         return;
+      }
 
       // -----------------
       // Newton iteration
@@ -108,8 +133,28 @@ void PeleLM::implicitNonLinearSolve(int sdcIter,
          }
 
          // Solve for Newton direction
+         Vector<MultiFab> newtonDir(finest_level+1);
+         for (int lev = 0; lev <= finest_level; ++lev) {
+            newtonDir[lev].define(grids[lev],dmap[lev],2,1,MFInfo(),Factory(lev));
+            newtonDir[lev].setVal(0.0,0,2,1);
+         }
+         if ( !m_ef_use_PETSC_direct ) {
+            const Real S_tol     = m_ef_GMRES_reltol;
+            const Real S_tol_abs = max_nlres * m_ef_GMRES_reltol;
+            GMRES_tot_count += gmres.solve(GetVecOfPtrs(newtonDir),getNLresidVect(),S_tol_abs,S_tol);
+         } else {
+         }
+         //WriteDebugPlotFile(GetVecOfConstPtrs(newtonDir),"newtonDir"+std::to_string(NK_ite));
 
-         // Linesearch & update state
+         // Linesearch & update state TODO
+         updateNLState(GetVecOfPtrs(newtonDir));
+         nlSolveNorm(getNLstateVect(),nl_stateNorm);
+         update_scaling = 0;
+         update_precond = 1;
+         nonLinearResidual(dtsub, getNLstateVect(), getNLresidVect(), update_scaling, update_precond);
+         nlSolveNorm(getNLresidVect(),nl_residNorm);
+         getNLResidScaling(scaledResnE, scaledResphiV);
+         max_nlres = std::max(scaledResnE, scaledResphiV);
 
          // Exit condition
          exit_newton = (NK_ite > m_ef_maxNewtonIter);
@@ -124,8 +169,38 @@ void PeleLM::implicitNonLinearSolve(int sdcIter,
    }
 
    // Update the state
-   //
+
+   if (ef_verbose) {
+      Real run_time = ParallelDescriptor::second() - strt_time;
+      ParallelDescriptor::ReduceRealMax(run_time, ParallelDescriptor::IOProcessorNumber());
+      if ( !m_ef_use_PETSC_direct ) {
+         Real avgGMRES = (float)GMRES_tot_count/(float)NK_tot_count;
+         amrex::Print() << "  [" << sdcIter << "] dt: " << a_dt << " - Avg GMRES/Newton: " << avgGMRES << "\n";
+      }
+      amrex::Print() << "  >> PeleLM::implicitNLSolve() " << run_time << "\n";
+   }
+
    Abort();
+}
+
+void PeleLM::updateNLState(const Vector<MultiFab*> &a_update)
+{
+   // AverageDown the newton direction
+   for (int lev = finest_level; lev > 0; --lev) {
+#ifdef AMREX_USE_EB
+      EB_average_down(*a_update[lev],
+                      *a_update[lev-1],
+                      0,2,refRatio(lev-1));
+#else
+      average_down(*a_update[lev],
+                   *a_update[lev-1],
+                   0,2,refRatio(lev-1));
+#endif
+   }
+   for (int lev = 0; lev <= finest_level; ++lev) {
+      auto ldataNLs_p = getLevelDataNLSolvePtr(lev);   // NL data
+      ldataNLs_p->nlState.plus(*a_update[lev],0,2,0);
+   }
 }
 
 void PeleLM::computeBGcharge(const Real &a_time,
@@ -188,9 +263,9 @@ void PeleLM::nonLinearResidual(const Real &a_dt,
       nE[lev].define(grids[lev],dmap[lev],1,nGrowNLstate,MFInfo(),Factory(lev));
       phiV[lev].define(grids[lev],dmap[lev],1,nGrowNLstate,MFInfo(),Factory(lev));
       MultiFab::Copy(nE[lev],*a_nlstate[lev],0,0,1,nGrowNLstate);
-      // TODO nE[lev].mult(nE_scale,0,1,nGrowNLstate);
+      nE[lev].mult(nE_scale,0,1,nGrowNLstate);
       MultiFab::Copy(phiV[lev],*a_nlstate[lev],1,0,1,nGrowNLstate);
-      // TODO phiV[lev].mult(phiV_scale,0,1,nGrowNLstate);
+      phiV[lev].mult(phiV_scale,0,1,nGrowNLstate);
    }
 
    // Get L(phiV) and Grad(phiV)
@@ -210,9 +285,6 @@ void PeleLM::nonLinearResidual(const Real &a_dt,
                                      GetVecOfConstPtrs(phiV),
                                      bcRecPhiV[0], do_avgDown);
 
-   VisMF::Write(laplacian[0],"lapPhiV");
-   VisMF::Write(gradPhiVCur[0][1],"gradPhiVY");
-
    // Get nE diffusion term
    Vector<MultiFab> diffnE(finest_level+1);
    for (int lev = 0; lev <= finest_level; ++lev) {
@@ -225,8 +297,9 @@ void PeleLM::nonLinearResidual(const Real &a_dt,
                                     GetVecOfConstPtrs(getnEDiffusivityVect(AmrNewTime)), 0,
                                     bcRecnE, 1);
 
-   WriteDebugPlotFile(GetVecOfConstPtrs(diffnE),"diffnE");
-   WriteDebugPlotFile(GetVecOfConstPtrs(nE),"nEforadv");
+   //WriteDebugPlotFile(GetVecOfConstPtrs(diffnE),"diffnE");
+   //VisMF::Write(nE[0],"nEForDiffnlResid");
+   //VisMF::Write(diffnE[0],"diffnEnlResid");
 
    // Get nE advection term
    // TODO: at some point, switch to using Godunov/MOL
@@ -237,19 +310,21 @@ void PeleLM::nonLinearResidual(const Real &a_dt,
    getAdvectionTerm(GetVecOfConstPtrs(nE),
                     GetVecOfPtrs(advnE),
                     GetVecOfArrOfConstPtrs(gradPhiVCur));
-   WriteDebugPlotFile(GetVecOfConstPtrs(advnE),"advnE");
+   //WriteDebugPlotFile(GetVecOfConstPtrs(advnE),"advnE");
 
    // Assemble non-linear residual
    // res(ne(:)) = dt * ( diff(:) + conv(:) + I_R(:) ) - ( ne(:) - ne_old(:) )
    // res(phiv(:)) = \Sum z_k * \tilde Y_k / q_e - ne + Lapl_PhiV
    for (int lev = 0; lev <= finest_level; ++lev) {
 
-      auto ldataNew_p = getLevelDataPtr(lev,AmrNewTime);  // New time
       auto ldataOld_p = getLevelDataPtr(lev,AmrOldTime);  // Old time
       auto ldataR_p = getLevelDataReactPtr(lev);       // Reaction
 
       // Get nl solve data pointer
       auto ldataNLs_p = getLevelDataNLSolvePtr(lev);
+
+      // Init the ghostcells too
+      a_nlresid[lev]->setVal(0.0);
 
 #ifdef _OPENMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -272,12 +347,31 @@ void PeleLM::nonLinearResidual(const Real &a_dt,
          {
             res_nE(i,j,k) = ne_old(i,j,k) - ne_curr(i,j,k) + a_dt * ( ne_diff(i,j,k) + ne_adv(i,j,k) /* TODO + I_R_nE(i,j,k)*/ );
             res_phiV(i,j,k) = lapPhiV(i,j,k) * scalLap - ne_curr(i,j,k) + charge(i,j,k);
+            res_nE(i,j,k) *= -1.0;              // NLresidual is -RHS
+            res_phiV(i,j,k) *= -1.0;            // NLresidual is -RHS
          });
       }
    }
-   WriteDebugPlotFile(GetVecOfConstPtrs(a_nlresid),"nlResid");
+   //WriteDebugPlotFile(GetVecOfConstPtrs(a_nlresid),"UnscalednlResid");
 
-   Abort();
+   // Update the residual scale if necessary
+   if (updateScaling) {
+      getNLResidScaling(FnE_scale,FphiV_scale);
+      FnE_scale = (FnE_scale > 1.0e-12) ? FnE_scale : 1.0;
+      FphiV_scale = (FphiV_scale > 1.0e-12) ? FphiV_scale : 1.0;
+      if ( ef_verbose ) {
+         amrex::Print() << "    F(ne) scaling: " << FnE_scale << "\n";
+         amrex::Print() << "    F(PhiV) scaling: " << FphiV_scale << "\n";
+      }
+   }
+
+   // Apply scaling
+   scaleNLResid(a_nlresid,FnE_scale,FphiV_scale);
+
+   // Update the preconditioning LinOps
+   if (updatePrecond && !m_ef_use_PETSC_direct) {
+      setUpPrecond(a_dt, GetVecOfConstPtrs(nE));
+   }
 }
 
 void PeleLM::getAdvectionTerm(const Vector<const MultiFab*> &a_nE,
@@ -320,18 +414,18 @@ void PeleLM::getAdvectionTerm(const Vector<const MultiFab*> &a_nE,
          {
             const Box& bx = mfi.tilebox();
             auto const& ueff    = ldataNLs_p->uEffnE[idim].array(mfi);
+            auto const& umac    = ldataNLs_p->umac[idim].const_array(mfi);
             auto const& gphi_c  = a_gPhiVCur[lev][idim]->const_array(mfi);
             auto const& gphi_o  = ldataNLs_p->gPhiVOld[idim].const_array(mfi);
             auto const& kappa_e = mobE_ec[idim].const_array(mfi);
-            amrex::ParallelFor(bx, [ueff, gphi_c, gphi_o, kappa_e]
+            amrex::ParallelFor(bx, [umac, ueff, gphi_c, gphi_o, kappa_e]
             AMREX_GPU_DEVICE (int i, int j, int k) noexcept
             {
-               ueff(i,j,k) = /* TODO umac */ - kappa_e(i,j,k) * 0.5 * ( gphi_c(i,j,k) + gphi_o(i,j,k) );
+               ueff(i,j,k) = umac(i,j,k) - kappa_e(i,j,k) * -1.0 * 0.5 * ( gphi_c(i,j,k) + gphi_o(i,j,k) );
             });
          }
       }
    }
-   //WriteDebugPlotFile(GetVecOfConstPtrs(getUeffVect()),"Ueff");
 
    // Average down the Ueff
    /*
@@ -358,23 +452,26 @@ void PeleLM::getAdvectionTerm(const Vector<const MultiFab*> &a_nE,
    }
 
    // Average down the fluxes
+   // TODO: this generates kinks in the advTerm ... why ?
    /*
 	for (int lev = finest_level; lev > 0; --lev) {
 #ifdef AMREX_USE_EB
       EB_average_down_faces(GetArrOfConstPtrs(fluxes[lev]),
                             GetArrOfPtrs(fluxes[lev-1]),
                             refRatio(lev-1),geom[lev-1]);
+//                            refRatio(lev-1),nGrow);
 #else
       average_down_faces(GetArrOfConstPtrs(fluxes[lev]),
                          GetArrOfPtrs(fluxes[lev-1]),
                          refRatio(lev-1),geom[lev-1]);
+//                         refRatio(lev-1),nGrow);
 #endif
 	}
    */
 
    // Compute divergence
-   int intensiveFluxes = 0;
-	fluxDivergence(a_advTerm,0,GetVecOfArrOfPtrs(fluxes),0,1,intensiveFluxes,1.0);
+   int intensiveFluxes = 1;
+	fluxDivergence(a_advTerm,0,GetVecOfArrOfPtrs(fluxes),0,1,intensiveFluxes,-1.0);
 }
 
 void PeleLM::getAdvectionFluxes(int lev,
@@ -391,8 +488,6 @@ void PeleLM::getAdvectionFluxes(int lev,
    {
       FArrayBox edgstate[AMREX_SPACEDIM];
       for (MFIter mfi(a_nE,TilingIfNotGPU()); mfi.isValid(); ++mfi) {
-         const Box& bx  = mfi.tilebox();
-         const Box& gbx = mfi.growntilebox(1);
          AMREX_D_TERM( const Box& xbx = mfi.grownnodaltilebox(0,0);,
                        const Box& ybx = mfi.grownnodaltilebox(1,0);,
                        const Box& zbx = mfi.grownnodaltilebox(2,0));
@@ -490,6 +585,144 @@ void PeleLM::getAdvectionFluxes(int lev,
    }
 }
 
+void PeleLM::setUpPrecond(const Real &a_dt,
+                          const Vector<const MultiFab*> &a_nE)
+{
+   BL_PROFILE("PeleLM::setUpPrecond()");
+
+   // Udpate LinearOps defs if needed -> done internally by the getPrecondOp() func
+
+   // nE BCRec
+   auto bcRecnE = fetchBCRecArray(NE,1);
+   auto bcRecPhiV = fetchBCRecArray(PHIV,1);
+
+   //--------------------------------------------------------------------------
+   // Set diff/drift operator
+   getPrecondOp()->setDiffOpScalars(-nE_scale/FnE_scale,
+                                    -a_dt*nE_scale/FnE_scale,
+                                    a_dt*nE_scale/FnE_scale);
+   Real omega = 0.7;
+   getPrecondOp()->setDiffOpRelaxation(omega);
+   getPrecondOp()->setDiffOpBCs(bcRecnE[0]);
+
+   // Get and set coefficients on each level
+   for (int lev = 0; lev <= finest_level; ++lev) {
+
+      // Get level data pointer
+      auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
+
+      // Get nl solve data pointer
+      auto ldataNLs_p = getLevelDataNLSolvePtr(lev);
+
+      Array<MultiFab,AMREX_SPACEDIM> diffE_ec = getDiffusivity(lev, 0, 1, bcRecnE, ldata_p->diffE_cc);
+
+      getPrecondOp()->setDiffOpACoeff(lev, 1.0);
+      getPrecondOp()->setDiffOpBCoeff(lev, GetArrOfConstPtrs(diffE_ec));
+      getPrecondOp()->setDiffOpCCoeff(lev, GetArrOfConstPtrs(ldataNLs_p->uEffnE));
+   }
+
+   //--------------------------------------------------------------------------
+   // Set Stilda and drift operators
+   // Set scalars
+   getPrecondOp()->setDriftOpScalars(0.0,0.5*phiV_scale/FnE_scale*a_dt);
+   getPrecondOp()->setStildaOpScalars(0.0,-1.0);
+
+   // Set BCs
+   getPrecondOp()->setDriftOpBCs(bcRecPhiV[0]);
+   getPrecondOp()->setStildaOpBCs(bcRecPhiV[0]);
+
+   // Get and set coefficients on each level
+   for (int lev = 0; lev <= finest_level; ++lev) {
+
+      // Get nl solve data pointer
+      auto ldataNLs_p = getLevelDataNLSolvePtr(lev);
+
+      // CC neKe values
+      MultiFab nEKe(grids[lev],dmap[lev],1,1);
+#ifdef _OPENMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+      for (MFIter mfi(nEKe, TilingIfNotGPU()); mfi.isValid(); ++mfi)
+      {
+         const Box& gbx = mfi.growntilebox();
+         auto const& neke   = nEKe.array(mfi);
+         auto const& ne_arr = a_nE[lev]->const_array(mfi);
+         amrex::ParallelFor(gbx, [neke,ne_arr]
+         AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+         {
+            getKappaE(i,j,k,neke);
+            neke(i,j,k) *= ne_arr(i,j,k);
+         });
+      }
+
+      // Upwinded edge neKe values
+      Array<MultiFab,AMREX_SPACEDIM> neKe_ec = getUpwindedEdge(lev, 0, 1, bcRecnE,
+                                                               nEKe, GetArrOfConstPtrs(ldataNLs_p->uEffnE));
+
+      // Set Op coefficients
+      getPrecondOp()->setDriftOpBCoeff(lev, GetArrOfConstPtrs(neKe_ec));
+
+      // Add Stilda pieces
+      Real scalLap = eps0 * epsr / elemCharge;
+      for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+         neKe_ec[idim].mult(0.5*a_dt,0,1);
+         neKe_ec[idim].plus(scalLap,0,1);
+      }
+      getPrecondOp()->setStildaOpBCoeff(lev, GetArrOfConstPtrs(neKe_ec));
+   }
+}
+
+Array<MultiFab,AMREX_SPACEDIM>
+PeleLM::getUpwindedEdge(int lev, int edge_comp, int ncomp,
+                        Vector<BCRec> bcrec,
+                        const MultiFab &ccMF,
+                        const Array<const MultiFab*,AMREX_SPACEDIM> &ecVel)
+{
+   AMREX_ASSERT(bcrec.size() >= ncomp);
+   AMREX_ASSERT(ccMF.nComp() >= edge_comp+ncomp);
+   const auto& ba = ccMF.boxArray();
+   const auto& dm = ccMF.DistributionMap();
+   const auto& factory = ccMF.Factory();
+   Array<MultiFab,AMREX_SPACEDIM> ecMFs{AMREX_D_DECL(MultiFab(amrex::convert(ba,IntVect::TheDimensionVector(0)),
+                                                              dm, ncomp, 0, MFInfo(), factory),
+                                                     MultiFab(amrex::convert(ba,IntVect::TheDimensionVector(1)),
+                                                              dm, ncomp, 0, MFInfo(), factory),
+                                                     MultiFab(amrex::convert(ba,IntVect::TheDimensionVector(2)),
+                                                              dm, ncomp, 0, MFInfo(), factory))};
+
+#ifdef AMREX_USE_EB
+   // TODO cen2edg_upwind EB
+#else
+   const Box& domain = geom[lev].Domain();
+#ifdef _OPENMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+   for (MFIter mfi(ccMF,TilingIfNotGPU()); mfi.isValid();++mfi)
+   {
+      for (int idim = 0; idim < AMREX_SPACEDIM; idim++)
+      {    
+         const Box ebx = mfi.nodaltilebox(idim);
+         const Box& edomain = amrex::surroundingNodes(domain,idim);
+         const auto& ccVal  = ccMF.const_array(mfi,edge_comp);
+         const auto& ecUeff = ecVel[idim]->const_array(mfi);
+         const auto& ecVal  = ecMFs[idim].array(mfi);
+         const auto bc_lo = bcrec[0].lo(idim);
+         const auto bc_hi = bcrec[0].hi(idim);
+         amrex::ParallelFor(ebx, [idim, bc_lo, bc_hi, ccVal, ecUeff, ecVal, edomain]
+         AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+         {
+            int idx[3] = {i,j,k};
+            bool on_lo = ( ( bc_lo == amrex::BCType::ext_dir ) && ( idx[idim] <= edomain.smallEnd(idim) ) );
+            bool on_hi = ( ( bc_hi == amrex::BCType::ext_dir ) && ( idx[idim] >= edomain.bigEnd(idim) ) );
+            cen2edg_upwind(i, j, k, idim, 1, on_lo, on_hi, ecUeff, ccVal, ecVal);
+         });
+      }
+   }
+#endif
+
+   return ecMFs;
+}
+
 void PeleLM::jTimesV(const Vector<MultiFab*> &a_v,
                      const Vector<MultiFab*> &a_Jv)
 {
@@ -501,12 +734,31 @@ void PeleLM::jTimesV(const Vector<MultiFab*> &a_v,
       for (int lev = 0; lev <= finest_level; ++lev) {
          a_Jv[lev]->setVal(0.0);
       }
+      return;
    }
 
+   // TODO: only one-sided difference for now
    Real delta_pert = m_ef_lambda_jfnk * ( m_ef_lambda_jfnk + nl_stateNorm / vNorm );
    Vector<MultiFab> statePert(finest_level+1);
+   Vector<MultiFab> residPert(finest_level+1);
    for (int lev = 0; lev <= finest_level; ++lev) {
-      statePert[lev].define(grids[lev],dmap[lev],2,0,MFInfo(),Factory(lev));
+      auto ldataNLs_p = getLevelDataNLSolvePtr(lev);
+      statePert[lev].define(grids[lev],dmap[lev],2,1,MFInfo(),Factory(lev));
+      residPert[lev].define(grids[lev],dmap[lev],2,1,MFInfo(),Factory(lev));
+      MultiFab::Copy(statePert[lev],ldataNLs_p->nlState,0,0,2,1);
+      MultiFab::Saxpy(statePert[lev],delta_pert,*a_v[lev], 0, 0, 2 ,0);
+   }
+   //VisMF::Write(statePert[0],"StatePert");
+
+   int update_scaling = 0;
+   int update_precond = 0;
+   nonLinearResidual(dtsub, GetVecOfPtrs(statePert), GetVecOfPtrs(residPert), update_scaling, update_precond);
+   //VisMF::Write(residPert[0],"residPert");
+
+   for (int lev = 0; lev <= finest_level; ++lev) {
+      auto ldataNLs_p = getLevelDataNLSolvePtr(lev);
+      MultiFab::LinComb(*a_Jv[lev],1.0,residPert[lev],0,-1.0,ldataNLs_p->nlResid,0,0,2,0);
+      a_Jv[lev]->mult(-1.0/delta_pert);
    }
 
 }
@@ -514,6 +766,67 @@ void PeleLM::jTimesV(const Vector<MultiFab*> &a_v,
 void PeleLM::applyPrecond(const Vector<MultiFab*> &a_v,
                           const Vector<MultiFab*> &a_Pv)
 {
+   BL_PROFILE("PeleLM::applyPrecond()");
+
+   // Setup aliases and temps
+   Vector<MultiFab> nE_al;
+   Vector<MultiFab> phiV_al;
+   Vector<MultiFab> PnE_al;
+   Vector<MultiFab> PphiV_al;
+   Vector<std::unique_ptr<MultiFab>> temp(finest_level+1);
+   Vector<std::unique_ptr<MultiFab>> temp2(finest_level+1);
+   for (int lev = 0; lev <= finest_level; ++lev) {
+      // Aliases
+      nE_al.emplace_back(*a_v[lev], amrex::make_alias, 0, 1);
+      phiV_al.emplace_back(*a_v[lev], amrex::make_alias, 1, 1);
+      PnE_al.emplace_back(*a_Pv[lev], amrex::make_alias, 0, 1);
+      PphiV_al.emplace_back(*a_Pv[lev], amrex::make_alias, 1, 1);
+      PnE_al[lev].setVal(0.0,0,1,1);
+      PphiV_al[lev].setVal(0.0,0,1,1);
+
+      // Temporary data holder
+      temp[lev].reset(new MultiFab(grids[lev], dmap[lev], 1, nE_al[lev].nGrow(), MFInfo(), Factory(lev)));
+      temp[lev]->setVal(0.0);
+      temp2[lev].reset(new MultiFab(grids[lev], dmap[lev], 1, nE_al[lev].nGrow(), MFInfo(), Factory(lev)));
+      temp2[lev]->setVal(0.0);
+   }
+
+   // Set LinOps Level BCs
+   for (int lev = 0; lev <= finest_level; ++lev) {
+      getPrecondOp()->setDiffOpLevelBC(lev, &PnE_al[lev]);
+      getPrecondOp()->setDriftOpLevelBC(lev, &PphiV_al[lev]);
+      getPrecondOp()->setStildaOpLevelBC(lev, &PphiV_al[lev]);
+   }
+
+   // Most inner matrix
+   Real S_tol     = m_ef_PC_MG_Tol;
+   Real S_tol_abs = MLNorm0(GetVecOfConstPtrs(nE_al)) * m_ef_PC_MG_Tol;
+   getPrecondOp()->diffOpSolve(GetVecOfPtrs(PnE_al), GetVecOfConstPtrs(nE_al), S_tol, S_tol_abs);
+
+   // Pivot second matrix
+   for (int lev = 0; lev <= finest_level; ++lev) {
+      MultiFab::Saxpy(PphiV_al[lev],nE_scale/FphiV_scale,PnE_al[lev],0,0,1,0);
+   }
+
+   // PhiV estimate matrix
+   // First scale PphiV
+   for (int lev = 0; lev <= finest_level; ++lev) {
+      PphiV_al[lev].mult(FphiV_scale/phiV_scale);
+   }
+   S_tol_abs = MLNorm0(GetVecOfConstPtrs(PphiV_al)) * m_ef_PC_MG_Tol;
+   getPrecondOp()->StildaOpSolve(GetVecOfPtrs(temp), GetVecOfConstPtrs(PphiV_al), S_tol, S_tol_abs);
+   for (int lev = 0; lev <= finest_level; ++lev) {
+      MultiFab::Copy(PphiV_al[lev], *temp[lev], 0, 0, 1, 0);
+   }
+
+   // Final matrix
+   getPrecondOp()->driftOpApply(GetVecOfPtrs(temp), GetVecOfPtrs(PphiV_al));
+   S_tol_abs = MLNorm0(GetVecOfConstPtrs(temp)) * m_ef_PC_MG_Tol;
+   getPrecondOp()->diffOpSolve(GetVecOfPtrs(temp2), GetVecOfConstPtrs(temp), S_tol, S_tol_abs);
+   for (int lev = 0; lev <= finest_level; ++lev) {
+      MultiFab::Saxpy(PnE_al[lev],-1.0,*temp2[lev],0,0,1,0);
+   }
+
 }
 
 void PeleLM::nlSolveNorm(const Vector<MultiFab*> &a_MF, Real &r)
