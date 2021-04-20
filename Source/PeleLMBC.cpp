@@ -134,6 +134,12 @@ void PeleLM::setBoundaryConditions() {
          m_bcrec_state[TEMP].setHi(idim,temp_bc[hi_bc[idim]]);
       }
 
+      // rhoRT: reflect even on all but interior bndy
+      for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+         m_bcrec_state[RHORT].setLo(idim,divu_bc[lo_bc[idim]]);
+         m_bcrec_state[RHORT].setHi(idim,divu_bc[hi_bc[idim]]);
+      }
+
       // divU
       if (m_has_divu) {
          for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
@@ -196,6 +202,7 @@ void PeleLM::fillPatchState(int lev, const TimeStamp &a_time) {
       fillpatch_density(lev, time, ldata_p->density, m_nGrowState);
       fillpatch_species(lev, time, ldata_p->species, m_nGrowState);
       fillpatch_energy(lev, time, ldata_p->rhoh, ldata_p->temp, m_nGrowState);
+      fillpatch_thermoPress(lev, time, ldata_p->rhoRT, m_nGrowState);
       if (m_has_divu) {
          fillpatch_divu(lev, time, ldata_p->divu, ldata_p->divu.nGrow());
       }
@@ -256,6 +263,8 @@ PeleLM::fillPatchState(int lev, Real a_time, int nGrow) {
       MultiFab rhoh(*mf, amrex::make_alias, RHOH, 1);
       MultiFab temp(*mf, amrex::make_alias, TEMP, 1);
       fillpatch_energy(lev, a_time, rhoh, temp, nGrow);
+      MultiFab rhoRT(*mf, amrex::make_alias, RHORT, 1);
+      fillpatch_thermoPress(lev, a_time, rhoRT, nGrow);
 #ifdef PLM_USE_EFIELD
       MultiFab nE(*mf, amrex::make_alias, NE, 1);
       fillpatch_nE(lev, a_time, nE, nGrow);
@@ -447,6 +456,47 @@ void PeleLM::fillpatch_energy(int lev,
                          crse_bndry_func,0,fine_bndry_func,0,
                          refRatio(lev-1), mapper, fetchBCRecArray(TEMP,1), 0);
 
+   }
+}
+
+// Fill the thermodynamic pressure
+void PeleLM::fillpatch_thermoPress(int lev,
+                                   const amrex::Real a_time,
+                                   amrex::MultiFab &a_rhoRT,
+                                   int nGhost) {
+   ProbParm const* lprobparm = prob_parm.get();
+   if (lev == 0) {
+
+      // Density
+      PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> bndry_func_rhoRT(geom[lev], fetchBCRecArray(RHORT,1),
+                                                                             PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
+      FillPatchSingleLevel(a_rhoRT, IntVect(nGhost), a_time,
+                           {&(m_leveldata_old[lev]->rhoRT),&(m_leveldata_new[lev]->rhoRT)},
+                           {m_t_old[lev], m_t_new[lev]},0,0,1,geom[lev], bndry_func_rhoRT, 0);
+
+   } else {
+
+      // Interpolator
+#ifdef AMREX_USE_EB
+      Interpolater* mapper = (EBFactory(0).isAllRegular()) ?
+                             (Interpolater*)(&cell_cons_interp) : (Interpolater*)(&eb_cell_cons_interp);
+#else
+      Interpolater* mapper = &cell_cons_interp;
+#endif
+
+      // Density
+      PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> crse_bndry_func_rhoRT(geom[lev-1], fetchBCRecArray(RHORT,1), 
+                                                                                  PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
+      PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> fine_bndry_func_rhoRT(geom[lev], fetchBCRecArray(RHORT,1),
+                                                                                  PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
+      FillPatchTwoLevels(a_rhoRT, IntVect(nGhost), a_time,
+                         {&(m_leveldata_old[lev-1]->rhoRT),&(m_leveldata_new[lev-1]->rhoRT)},
+                         {m_t_old[lev-1], m_t_new[lev-1]},
+                         {&(m_leveldata_old[lev]->rhoRT),&(m_leveldata_new[lev]->rhoRT)},
+                         {m_t_old[lev], m_t_new[lev]},
+                         0, 0, 1, geom[lev-1], geom[lev],
+                         crse_bndry_func_rhoRT,0,fine_bndry_func_rhoRT,0,
+                         refRatio(lev-1), mapper, fetchBCRecArray(DENSITY,1), 0);
    }
 }
 
