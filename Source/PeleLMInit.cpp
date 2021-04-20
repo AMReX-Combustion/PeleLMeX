@@ -138,17 +138,17 @@ void PeleLM::initData() {
                      // On all but the finest level, average down I_R
                      // and use advanceChemistry with chem BoxArray
                      std::unique_ptr<MultiFab> avgDownIR;
-                     avgDownIR.reset(new MultiFab(grids[lev],dmap[lev],NUM_SPECIES+1,0));
+                     avgDownIR.reset(new MultiFab(grids[lev],dmap[lev],NUM_SPECIES,0));
                      avgDownIR->setVal(0.0);
                      auto ldataRFine_p   = getLevelDataReactPtr(lev+1);
 #ifdef AMREX_USE_EB
                      EB_average_down(ldataRFine_p->I_R,
                                      *avgDownIR,
-                                     0,NUM_SPECIES+1,refRatio(lev));
+                                     0,NUM_SPECIES,refRatio(lev));
 #else
                      average_down(ldataRFine_p->I_R,
                                   *avgDownIR,
-                                  0,NUM_SPECIES+1,refRatio(lev));
+                                  0,NUM_SPECIES,refRatio(lev));
 #endif
                      // Call advanceChemistry
                      advanceChemistry(lev, dtInit/2.0, Forcing, avgDownIR.get());
