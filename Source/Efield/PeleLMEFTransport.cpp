@@ -25,7 +25,6 @@ void PeleLM::calcEFTransport(const TimeStamp &a_time) {
          {
             getKappaE(i,j,k,mobE);
             getDiffE(i,j,k,factor,T,mobE,diffE);
-            //TODO species mobility
          });
       }
    }
