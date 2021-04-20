@@ -1,5 +1,8 @@
 #include <PeleLM.H>
 #include <PeleLM_K.H>
+#ifdef PLM_USE_EFIELD
+#include <PeleLMEF_K.H>
+#endif
 
 using namespace amrex;
 
@@ -68,6 +71,17 @@ void PeleLM::calcDiffusivity(const TimeStamp &a_time) {
          {
             getTransportCoeff( i, j, k, rhoY, T, rhoD, lambda, mu, ltransparm);
          });
+#ifdef PLM_USE_EFIELD
+         auto const& Ks   = ldata_p->mob_cc.array(mfi,0);
+         auto eos = pele::physics::PhysicsType::eos();
+         Real mwt[NUM_SPECIES] = {0.0};
+         eos.molecular_weight(mwt);
+         amrex::ParallelFor(gbx, [rhoY, rhoD, T, Ks, mwt, zk=zk]
+         AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+         {
+            getKappaSp( i, j, k, mwt, zk, rhoY, rhoD, T, Ks);
+         });
+#endif
       }
 
    }

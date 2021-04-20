@@ -21,7 +21,7 @@ void
 getKappaSp(int i, int j, int k,
            amrex::Real const mwt[NUM_SPECIES],
            amrex::GpuArray<amrex::Real, NUM_SPECIES> a_zk,
-           amrex::Array4<      amrex::Real> const& rhoY,
+           amrex::Array4<const amrex::Real> const& rhoY,
            amrex::Array4<      amrex::Real> const& rhoD,
            amrex::Array4<const amrex::Real> const& T,
            amrex::Array4<      amrex::Real> const& Ksp) noexcept
@@ -33,7 +33,7 @@ getKappaSp(int i, int j, int k,
    }
    for (int n = 0; n < NUM_SPECIES; n++) {
       Ksp(i,j,k,n) = rhoD(i,j,k,n) * mwt[n] * 0.001 * a_zk[n] / ( rho * PP_RU_MKS * T(i,j,k) );
-      // TODO if ( n == E_ID ) Ksp(i,j,k,n) = 0.0;         // Set the E species mobility to zero. Electron are treated separately.
+      if ( n == E_ID ) Ksp(i,j,k,n) = 0.0;         // Set the E species mobility to zero. Electron are treated separately.
    }
 }
 
