@@ -45,13 +45,16 @@ void PeleLM::Advance(int is_initIter) {
    //----------------------------------------------------------------
    // Advance setup
    // fillpatch the t^{n} data
-   averageDownState(AmrOldTime); // TODO: needed ?
+   averageDownState(AmrOldTime);
    fillPatchState(AmrOldTime);
 
    // compute t^{n} data
    calcViscosity(AmrOldTime);
    if (! m_incompressible ) {
       calcDiffusivity(AmrOldTime);
+#ifdef PLM_USE_EFIELD
+      poissonSolveEF(AmrOldTime);
+#endif
    }
    // TODO : typical values
    // TODO : check dt
