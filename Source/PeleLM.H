@@ -15,6 +15,10 @@
 #include <pelelm_prob_parm.H>
 #include <DiffusionOp.H>
 
+#ifdef PLM_USE_EFIELD
+#include <PrecondOp.H>
+#endif
+
 class PeleLM : public amrex::AmrCore {
 
    public:
@@ -430,6 +434,7 @@ class PeleLM : public amrex::AmrCore {
    void fillpatch_density(int lev, amrex::Real a_time, amrex::MultiFab& a_rho, int nGhost);
    void fillpatch_species(int lev, amrex::Real a_time, amrex::MultiFab& a_rhoY, int nGhost);
    void fillpatch_energy(int lev, amrex::Real a_time, amrex::MultiFab& a_rhoh, amrex::MultiFab& a_temp, int nGhost);
+   void fillpatch_thermoPress(int lev, amrex::Real a_time, amrex::MultiFab& a_rhoRT, int nGhost);
    void fillpatch_divu(int lev, amrex::Real a_time, amrex::MultiFab& a_divu, int nGhost);
    void fillpatch_gradp(int lev, amrex::Real a_time, amrex::MultiFab& a_gp, int nGhost);
    void fillpatch_reaction(int lev, amrex::Real a_time, amrex::MultiFab& a_I_R, int nGhost);
@@ -598,9 +603,27 @@ class PeleLM : public amrex::AmrCore {
    void nlSolveNorm(const amrex::Vector<amrex::MultiFab*> &a_MF,
                     amrex::Real &norm);
 
+   void updateNLState(const amrex::Vector<amrex::MultiFab*> &a_update);
+
+   void getNLStateScaling(amrex::Real &nEScale, amrex::Real &phiVScale);
+   void getNLResidScaling(amrex::Real &nEScale, amrex::Real &phiVScale);
+   void scaleNLState(const amrex::Real &nEScale, const amrex::Real &phiVScale);
+   void scaleNLResid(const amrex::Vector<amrex::MultiFab *> &a_resid, const amrex::Real &nEScale, const amrex::Real &phiVScale);
+
+   // get upwinded edge-centered MF from cc MF and ec Vel
+   amrex::Array<amrex::MultiFab,AMREX_SPACEDIM>
+   getUpwindedEdge(int lev, int edge_comp, int ncomp,
+                   amrex::Vector<amrex::BCRec> a_bcrec,
+                   const amrex::MultiFab &ccMF,
+                   const amrex::Array<const amrex::MultiFab*,AMREX_SPACEDIM> &ecVel);
+
    void jTimesV(const amrex::Vector<amrex::MultiFab*> &a_x,
                 const amrex::Vector<amrex::MultiFab*> &a_Ax);
 
+
+
+   void setUpPrecond(const amrex::Real &a_dt,
+                     const amrex::Vector<const amrex::MultiFab*> &a_nE);
    void applyPrecond(const amrex::Vector<amrex::MultiFab*> &a_v,
                      const amrex::Vector<amrex::MultiFab*> &a_Pv);
    //-----------------------------------------------------------------------------

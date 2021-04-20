@@ -21,6 +21,9 @@
    int                         m_ef_GMRES_size       = 10; 
    int                         m_ef_GMRES_maxRst     = 3; 
    amrex::Real                 m_ef_lambda_jfnk      = 1.0e-7;
+   amrex::Real                 m_ef_newtonTol        = std::pow(1.0e-13,2.0/3.0);
+   amrex::Real                 m_ef_GMRES_reltol     = 1.0e-6;
+   amrex::Real                 m_ef_PC_MG_Tol        = 1.0e-6;
 
    // Species charge per unit mass
    amrex::GpuArray<amrex::Real, NUM_SPECIES> zk;
@@ -37,7 +40,12 @@
       amrex::MultiFab backgroundCharge;            // Background charge from the ions
       amrex::Array<amrex::MultiFab,AMREX_SPACEDIM> gPhiVOld;   // Gradient of old electro-static pot.
       amrex::Array<amrex::MultiFab,AMREX_SPACEDIM> uEffnE;     // Effective velocity of the electrons
+      amrex::Array<amrex::MultiFab,AMREX_SPACEDIM> umac;       // Need a duplicate of umac ... TODO find better way
    };
+
+   // Preconditioner
+   std::unique_ptr<PrecondOp> m_precond_op;
+   PrecondOp* getPrecondOp();
 
    amrex::Vector<std::unique_ptr<LevelDataNLSolve> > m_leveldatanlsolve;
    LevelDataNLSolve* getLevelDataNLSolvePtr(int lev) {return m_leveldatanlsolve[lev].get();};
