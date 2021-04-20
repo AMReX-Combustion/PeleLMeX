@@ -108,37 +108,34 @@ MLGMRESSolver::solve(const Vector<MultiFab*> &a_sol,
 // Checks
    AMREX_ALWAYS_ASSERT(m_jtv != nullptr);
    AMREX_ALWAYS_ASSERT(a_sol[0]->nComp() == m_nComp && a_rhs[0]->nComp() == m_nComp);
-   if ( m_prec == nullptr ) Print() << "Using unpreconditioned GMRES ! Might take a while to converge ...\n";
+   if ( m_prec == nullptr ) Print() << "  Using unpreconditioned GMRES ! Might take a while to converge ...\n";
 
-
-   initResNorm = computeMLResidualNorm(a_sol,a_rhs);                      // Initial resisual norm
    Real rhsNorm  = computeMLNorm(a_rhs);                                  // RHS norm
-   targetResNorm = initResNorm * a_rel_tol;                             // Target relative tolerance
+   initResNorm = computeMLResidualNorm(a_sol,a_rhs);                      // Initial resisual norm
+   targetResNorm = initResNorm * a_rel_tol;                               // Target relative tolerance
 
    if ( m_verbose > 0 ) {
-      amrex::Print() << "GMRES: Initial rhs = " << rhsNorm << "\n";
-      amrex::Print() << "GMRES: Initial residual = " << initResNorm << "\n";
+      amrex::Print() << "  GMRES: Initial rhs = " << rhsNorm << "\n";
+      amrex::Print() << "  GMRES: Initial residual = " << initResNorm << "\n";
    }
    if ( initResNorm < a_abs_tol ) {
-      amrex::Print() << "GMRES: no need for iterations \n";
+      amrex::Print() << "  GMRES: no need for iterations \n";
       return 0;
    }
 
    iter_count = 0;
-   /*
    restart_count = 0;
    m_converged = false;
    do {
-//    Prepare for solve
+      // Prepare for solve
       prepareForSolve();
       one_restart(a_sol,a_rhs);
       restart_count++;
    } while( !m_converged && restart_count < m_restart );
 
-   Real finalResNorm = computeResidualNorm(a_sol,a_rhs);                // Final resisual norm
-   if ( m_verbose > 0 ) amrex::Print() << "GMRES: Final residual, resid/resid0 = " << finalResNorm << ", "
+   Real finalResNorm = computeMLResidualNorm(a_sol,a_rhs);                // Final resisual norm
+   if ( m_verbose > 0 ) amrex::Print() << "  GMRES: Final residual, resid/resid0 = " << finalResNorm << ", "
                                        << finalResNorm/initResNorm << "\n";
-   */
    return iter_count;
 }
 
@@ -160,14 +157,18 @@ MLGMRESSolver::prepareForSolve()
 void
 MLGMRESSolver::one_restart(const Vector<MultiFab*> &a_x, const Vector<MultiFab*> &a_rhs)
 {
+   int finest_level = m_pelelm->finestLevel();
+
    computeMLResidual(a_x,a_rhs,GetVecOfPtrs(res));
    Real resNorm_0 = computeMLNorm(GetVecOfPtrs(res));
    if ( m_verbose > 1 ) amrex::Print() << "     [Restart:"<< restart_count << "] initial relative res: " << resNorm_0/initResNorm << "\n";
 
    // Initialize KspBase with normalized residual
    g[0] = resNorm_0;
-   // TODO: funct scale Vector<MultiFab> res.mult(1.0/resNorm_0);
-   // TODO: funct Copy Vector<MultiFab> MultiFab::Copy(KspBase[0],res, 0 ,0, m_nComp, 0);
+   for (int lev = 0; lev <= finest_level; ++lev) {
+      res[lev].mult(1.0/resNorm_0);
+      MultiFab::Copy(KspBase[0][lev], res[lev], 0 ,0, m_nComp, 0);
+   }
 
    int k_end;
    Real resNorm = resNorm_0;
@@ -199,17 +200,7 @@ MLGMRESSolver::one_restart(const Vector<MultiFab*> &a_x, const Vector<MultiFab*>
    }
 
    // Compute solution update
-   // TODO: update function
-   /*
-   MultiFab update(m_grids,m_dmap,m_nComp,0);
-   update.setVal(0.0);
-   for ( int i = k_end; i >= 0; --i ) {
-      MultiFab::Saxpy(update,y[i],KspBase[i], 0, 0, m_nComp, 0);
-   }
-
-   // Update the solution MF
-   MultiFab::Add(a_x,update,0,0,m_nComp,0);
-   */
+   updateSolution(k_end,a_x);
 }
 
 void
@@ -217,47 +208,63 @@ MLGMRESSolver::one_iter(const int iter, Real &resNorm)
 {
    BL_PROFILE("MLGMRESSolver::one_iter()");
    if ( m_verbose > 1 ) amrex::Print() << "     [Iter:" << iter_count << "] residual norm: " << resNorm / initResNorm << "\n";
-   /*
    appendBasisVector(iter,KspBase);
    gramSchmidtOrtho(iter,KspBase);
-   */
    resNorm = givensRotation(iter);
 }
 
 void
-MLGMRESSolver::appendBasisVector(const int iter, Vector<MultiFab>& Base)
+MLGMRESSolver::updateSolution(int k_end, const Vector<MultiFab*> &a_x)
 {
-   /*
-   if ( m_prec == nullptr ) {
-      MEMBER_FUNC_PTR(*m_pelelm,m_jtv)(Base[iter],Base[iter+1]);
-   } else {
-      MEMBER_FUNC_PTR(*m_pelelm,m_jtv)(Base[iter],Ax);
-      MEMBER_FUNC_PTR(*m_pelelm,m_prec)(Ax,Base[iter+1]);
+   int finest_level = m_pelelm->finestLevel();
+   for (int lev = 0; lev <= finest_level; ++lev) {
+      MultiFab update(m_grids[lev],m_dmap[lev],m_nComp,0);
+      update.setVal(0.0);
+      for ( int i = k_end; i >= 0; --i ) {
+         MultiFab::Saxpy(update,y[i],KspBase[i][lev], 0, 0, m_nComp, 0);
+      }
+      MultiFab::Add(*a_x[lev],update,0,0,m_nComp,0);
    }
-   */
+
+   // TODO Do an average down ?
 }
 
 void
-MLGMRESSolver::gramSchmidtOrtho(const int iter, Vector<MultiFab>& Base)
+MLGMRESSolver::appendBasisVector(const int iter, Vector<Vector<MultiFab>>& Base)
 {
-   /*
+   if ( m_prec == nullptr ) {
+      MEMBER_FUNC_PTR(*m_pelelm,m_jtv)(GetVecOfPtrs(Base[iter]),GetVecOfPtrs(Base[iter+1]));
+   } else {
+      MEMBER_FUNC_PTR(*m_pelelm,m_jtv)(GetVecOfPtrs(Base[iter]),GetVecOfPtrs(Ax));
+      MEMBER_FUNC_PTR(*m_pelelm,m_prec)(GetVecOfPtrs(Ax),GetVecOfPtrs(Base[iter+1]));
+   }
+}
+
+void
+MLGMRESSolver::gramSchmidtOrtho(const int iter, Vector<Vector<MultiFab>>& Base)
+{
+   int finest_level = m_pelelm->finestLevel();
    for ( int row = 0; row <= iter; ++row ) {
-      H[row][iter] = MultiFab::Dot(Base[iter+1],0,Base[row],0,m_nComp,0);
+      //H[row][iter] = MultiFab::Dot(Base[iter+1],0,Base[row],0,m_nComp,0);
+      H[row][iter] = MFVecDot(GetVecOfConstPtrs(Base[iter+1]),0,GetVecOfConstPtrs(Base[row]),0,m_nComp,0);
       Real GS_corr = - H[row][iter];
-      MultiFab::Saxpy(Base[iter+1],GS_corr,Base[row],0,0,m_nComp,0);
+      MFVecSaxpy(GetVecOfPtrs(Base[iter+1]),GS_corr,GetVecOfConstPtrs(Base[row]),0,0,m_nComp,0);
       if ( check_GramSchmidtOrtho ) {
-         Real Hcorr = MultiFab::Dot(Base[iter+1],0,Base[row],0,m_nComp,0);
+         Real Hcorr = MFVecDot(GetVecOfConstPtrs(Base[iter+1]),0,GetVecOfConstPtrs(Base[row]),0,m_nComp,0);
          if ( std::fabs(Hcorr) > 1.0e-15 ) {
             H[row][iter] += Hcorr;
             GS_corr = - Hcorr;
-            MultiFab::Saxpy(Base[iter+1],GS_corr,Base[row],0,0,m_nComp,0);
+            MFVecSaxpy(GetVecOfPtrs(Base[iter+1]),GS_corr,GetVecOfConstPtrs(Base[row]),0,0,m_nComp,0);
          }
       }
    }
-   Real normNewVec = computeNorm(Base[iter+1]);
+   Real normNewVec = computeMLNorm(GetVecOfPtrs(Base[iter+1]));
    H[iter+1][iter] = normNewVec;
-   if ( normNewVec > 0 ) Base[iter+1].mult(1.0/normNewVec);
-   */
+   if ( normNewVec > 0 ) {
+      for (int lev = 0; lev <= finest_level; ++lev) {
+         Base[iter+1][lev].mult(1.0/normNewVec);
+      }
+   }
 }
 
 Real
@@ -292,31 +299,6 @@ MLGMRESSolver::computeMLResidualNorm(const Vector<MultiFab*> &a_x,
 }
 
 Real
-MLGMRESSolver::computeResidualNorm(const MultiFab& a_x, const MultiFab& a_rhs)
-{
-   //computeResidual(a_x,a_rhs,res);
-   //return computeNorm(res);
-   return 0.0;
-}
-
-Real
-MLGMRESSolver::computeNorm(const MultiFab& a_vec)
-{
-   Real norm = 0.0;
-   /*
-   if ( m_norm != nullptr ) {
-      MEMBER_FUNC_PTR(*m_pelelm,m_norm)(a_vec,norm);
-   } else {
-      for ( int comp = 0; comp < m_nComp; comp++ ) {
-         norm += MultiFab::Dot(a_vec,comp,a_vec,comp,1,0);
-      }
-      norm = std::sqrt(norm);
-   }
-   */
-   return norm;
-}
-
-Real
 MLGMRESSolver::computeMLNorm(const Vector<MultiFab*> &a_vec)
 {
    Real r = 0.0;
@@ -336,29 +318,44 @@ MLGMRESSolver::computeMLNorm(const Vector<MultiFab*> &a_vec)
 }
 
 void
-MLGMRESSolver::computeResidual(const MultiFab& a_x, const MultiFab& a_rhs, MultiFab& a_res)
-{
-   /*
-   BL_PROFILE("MLGMRESSolver::computeResidual()");
-   MEMBER_FUNC_PTR(*m_pelelm,m_jtv)(a_x,Ax);
-   if ( m_prec != nullptr ) {
-      MultiFab::Xpay(Ax, -1.0, a_rhs, 0, 0, m_nComp, 0);
-      MEMBER_FUNC_PTR(*m_pelelm,m_prec)(Ax,a_res);
-   } else {
-      MultiFab::LinComb(a_res,1.0,Ax,0,-1.0,a_rhs,0,0,m_nComp,0);
-   }
-   */
-}
-
-void
 MLGMRESSolver::computeMLResidual(const Vector<MultiFab*> &a_x, const Vector<MultiFab*> &a_rhs, const Vector<MultiFab*> &a_res)
 {
    BL_PROFILE("MLGMRESSolver::computeMLResidual()");
+   int finest_level = m_pelelm->finestLevel();
    MEMBER_FUNC_PTR(*m_pelelm,m_jtv)(a_x,GetVecOfPtrs(Ax));
    if ( m_prec != nullptr ) {
-      //MultiFab::Xpay(Ax, -1.0, a_rhs, 0, 0, m_nComp, 0);
+      for (int lev = 0; lev <= finest_level; ++lev) {
+         MultiFab::Xpay(Ax[lev], -1.0, *a_rhs[lev], 0, 0, m_nComp, 0);
+      }
       MEMBER_FUNC_PTR(*m_pelelm,m_prec)(GetVecOfPtrs(Ax),a_res);
    } else {
-      //MultiFab::LinComb(a_res,1.0,Ax,0,-1.0,a_rhs,0,0,m_nComp,0);
+      for (int lev = 0; lev <= finest_level; ++lev) {
+         MultiFab::LinComb(*a_res[lev],1.0,Ax[lev],0,-1.0,*a_rhs[lev],0,0,m_nComp,0);
+      }
+   }
+}
+
+Real
+MLGMRESSolver::MFVecDot(const Vector<const MultiFab*> &a_mf1, int mf1comp,
+                       const Vector<const MultiFab*> &a_mf2, int mf2comp,
+                       int nComp, int nGrow)
+{
+   int finest_level = m_pelelm->finestLevel();
+   Real r = 0.0;
+   for (int lev = 0; lev <= finest_level; ++lev) {
+      r += MultiFab::Dot(*a_mf1[lev],mf1comp,*a_mf2[lev],mf2comp,nComp,nGrow);
+   }
+   return r;
+}
+
+void
+MLGMRESSolver::MFVecSaxpy(const Vector<MultiFab *> &a_mfdest,
+                         Real a_a,
+                         const Vector<const MultiFab *> &a_mfsrc,
+                         int destComp, int srcComp, int nComp, int nGrow)
+{
+   int finest_level = m_pelelm->finestLevel();
+   for (int lev = 0; lev <= finest_level; ++lev) {
+      MultiFab::Saxpy(*a_mfdest[lev], a_a, *a_mfsrc[lev], destComp, srcComp, nComp, nGrow);
    }
 }

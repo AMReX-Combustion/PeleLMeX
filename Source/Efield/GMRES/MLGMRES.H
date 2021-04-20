@@ -8,9 +8,6 @@
 
 #define MEMBER_FUNC_PTR(object,ptrToMember)  ((object).*(ptrToMember))
 
-//typedef void (PeleLM::*JtimesVFunc) (const amrex::MultiFab& a_x, amrex::MultiFab& a_Ax);
-//typedef void (PeleLM::*PrecondFunc) (const amrex::MultiFab& v, amrex::MultiFab& Pv);
-//typedef void (PeleLM::*NormFunc)    (const amrex::MultiFab& MFin, amrex::Real& norm);
 typedef void (PeleLM::*MLJtimesVFunc) (const amrex::Vector<amrex::MultiFab*> &a_x, const amrex::Vector<amrex::MultiFab*> &a_Ax);
 typedef void (PeleLM::*MLPrecondFunc) (const amrex::Vector<amrex::MultiFab*> &v, const amrex::Vector<amrex::MultiFab*> &Pv);
 typedef void (PeleLM::*MLNormFunc)    (const amrex::Vector<amrex::MultiFab*> &MFin, amrex::Real& norm);
@@ -53,17 +50,13 @@ class MLGMRESSolver
 
      void one_iter(const int iter, amrex::Real &resNorm);
 
-     void appendBasisVector(const int iter, amrex::Vector<amrex::MultiFab>& Base);
+     void appendBasisVector(const int iter, amrex::Vector<amrex::Vector<amrex::MultiFab>>& Base);
 
-     void gramSchmidtOrtho(const int iter, amrex::Vector<amrex::MultiFab>& Base);
+     void gramSchmidtOrtho(const int iter, amrex::Vector<amrex::Vector<amrex::MultiFab>>& Base);
 
      amrex::Real givensRotation(const int iter);
 
      void prepareForSolve();
-
-     void computeResidual(const amrex::MultiFab& a_x,
-                          const amrex::MultiFab& a_rhs,
-                          amrex::MultiFab& a_res);
 
      void computeMLResidual(const amrex::Vector<amrex::MultiFab*> &a_x,
                             const amrex::Vector<amrex::MultiFab*> &a_rhs,
@@ -72,12 +65,22 @@ class MLGMRESSolver
      amrex::Real computeMLResidualNorm(const amrex::Vector<amrex::MultiFab*> &a_x,
                                        const amrex::Vector<amrex::MultiFab*> &a_rhs);
 
-     amrex::Real computeResidualNorm(const amrex::MultiFab& a_x,
-                                     const amrex::MultiFab& a_rhs);
-
      amrex::Real computeMLNorm(const amrex::Vector<amrex::MultiFab*> &a_vec);
 
-     amrex::Real computeNorm(const amrex::MultiFab& a_vec);
+     void updateSolution(int final_iter,
+                         const amrex::Vector<amrex::MultiFab*> &a_x);
+
+     amrex::Real
+     MFVecDot(const amrex::Vector<const amrex::MultiFab*> &a_mf1,
+              int mf1comp,
+              const amrex::Vector<const amrex::MultiFab*> &a_mf2,
+              int mf2comp,
+              int nComp, int nGrow);
+
+     void MFVecSaxpy(const amrex::Vector<amrex::MultiFab *> &a_mfdest,
+                     amrex::Real a_a,
+                     const amrex::Vector<const amrex::MultiFab*> &a_mfsrc,
+                     int destComp, int srcComp, int nComp, int nGrow);
 
      int m_verbose;
 
