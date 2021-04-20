@@ -33,6 +33,7 @@ class DiffusionOp
                         int bcoeff_comp,
                         amrex::Vector<amrex::BCRec> a_bcrec,
                         int ncomp,
+                        int isPoissonSolve,
                         amrex::Real dt);
 
    void computeDiffLap (amrex::Vector<amrex::MultiFab*> const& laps, int lap_comp,
