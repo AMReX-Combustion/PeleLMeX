@@ -503,7 +503,7 @@ void PeleLM::differentialDiffusionUpdate(std::unique_ptr<AdvanceAdvData> &advDat
                                     GetVecOfConstPtrs(getDensityVect(AmrNewTime)),        // this is the acoeff of LinOp
                                     GetVecOfConstPtrs(getDensityVect(AmrNewTime)),        // this triggers proper scaling by density
                                     GetVecOfConstPtrs(getDiffusivityVect(AmrNewTime)), 0, bcRecSpec,
-                                    NUM_SPECIES, m_dt);
+                                    NUM_SPECIES, 0, m_dt);
 
    // Add lagged Wbar term
    // Computed in computeDifferentialDiffusionTerms at t^{n} if first SDC iteration, t^{np1,k} otherwise
@@ -639,7 +639,7 @@ void PeleLM::differentialDiffusionUpdate(std::unique_ptr<AdvanceAdvData> &advDat
                                        GetVecOfConstPtrs(RhoCp),
                                        {},
                                        GetVecOfConstPtrs(getDiffusivityVect(AmrNewTime)), NUM_SPECIES, bcRecTemp,
-                                       1, m_dt);
+                                       1, 0, m_dt);
 
       // Post deltaT iteration linear solve
       // -> evaluate deltaT_norm

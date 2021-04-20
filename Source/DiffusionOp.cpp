@@ -60,6 +60,7 @@ void DiffusionOp::diffuse_scalar(Vector<MultiFab*> const& a_phi, int phi_comp,
                                  Vector<MultiFab const*> const& a_bcoeff, int bcoeff_comp,
                                  Vector<BCRec> a_bcrec,
                                  int ncomp,
+                                 int isPoissonSolve,
                                  Real a_dt)
 {
    BL_PROFILE_VAR("DiffusionOp::diffuse_scalar()", diffuse_scalar);
@@ -122,7 +123,7 @@ void DiffusionOp::diffuse_scalar(Vector<MultiFab*> const& a_phi, int phi_comp,
    // => \alpha = 1.0, A is a_acoeff if provided, 1.0 otherwise
    // => \beta = a_dt, B face centered diffusivity bcoeff^{np1,k}
 
-   Real alpha = 1.0;
+   Real alpha = (isPoissonSolve) ? 0.0 : 1.0;
    Real beta  = a_dt;
    m_scal_solve_op->setScalars(alpha,beta);
    for (int lev = 0; lev <= finest_level; ++lev) {
