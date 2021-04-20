@@ -19,7 +19,7 @@ all: $(executable)
 LMdirs := Source Source/Godunov
 ifeq ($(USE_EFIELD),TRUE)
    DEFINES += -DPLM_USE_EFIELD
-   LMdirs += Source/Efield
+   LMdirs += Source/Efield Source/Efield/GMRES Source/Efield/LinOps
 endif
 
 Bpack += $(foreach dir, $(LMdirs), $(PELELMEX_HOME)/$(dir)/Make.package)
