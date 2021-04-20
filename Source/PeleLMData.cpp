@@ -40,7 +40,7 @@ PeleLM::LevelDataReact::LevelDataReact(const amrex::BoxArray &ba,
                                        const amrex::DistributionMapping &dm, 
                                        const amrex::FabFactory<FArrayBox> &factory)
 {
-   I_R.define(ba, dm, NUM_SPECIES+1, 0, MFInfo(), factory);
+   I_R.define(ba, dm, NUM_SPECIES, 0, MFInfo(), factory);
    functC.define(ba, dm, 1, 0, MFInfo(), factory);
 #ifdef PLM_USE_EFIELD
    I_RnE.define(ba, dm, 1, 0, MFInfo(), factory);
@@ -60,6 +60,7 @@ PeleLM::LevelDataNLSolve::LevelDataNLSolve(amrex::BoxArray const& ba,
       const BoxArray& faceba = amrex::convert(ba,IntVect::TheDimensionVector(idim));
       gPhiVOld[idim].define(faceba, dm, 1, 0, MFInfo(), factory);
       uEffnE[idim].define(faceba, dm, 1, 0, MFInfo(), factory);
+      umac[idim].define(faceba, dm, 1, 0, MFInfo(), factory);
    }
 }
 #endif
