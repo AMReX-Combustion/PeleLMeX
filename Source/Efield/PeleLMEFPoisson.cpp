@@ -8,6 +8,9 @@ using namespace amrex;
 void PeleLM::poissonSolveEF(const TimeStamp &a_time)
 {
    BL_PROFILE_VAR("PeleLM::poissonSolveEF()", poissonSolveEF);
+   if (ef_verbose) {
+      Print() << " EF Poisson solve \n";
+   }
 
    // Get the phiV BCRec
    auto bcRecPhiV = fetchBCRecArray(PHIV,1);
@@ -46,5 +49,5 @@ void PeleLM::poissonSolveEF(const TimeStamp &a_time)
                                     {},0,
                                     {},
                                     {},
-                                    {},0,bcRecPhiV,1,1.0);
+                                    {},0,bcRecPhiV,1,1,-1.0);
 }
