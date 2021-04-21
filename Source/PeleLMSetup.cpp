@@ -2,6 +2,7 @@
 #include <AMReX_ParmParse.H>
 #include <PeleLMDeriveFunc.H>
 #include "PelePhysics.H"
+#include "EOS_Extension.H"
 #include <reactor.h>
 
 using namespace amrex;
@@ -48,9 +49,9 @@ void PeleLM::Setup() {
       }
 
 #ifdef PLM_USE_EFIELD
-      // TODO Get zk
+      pele::physics::eos::charge_mass(zk.arr);
       for (int n = 0; n < NUM_SPECIES; n++) {
-         zk[n] = 0.0;
+         zk[n] *= 1000.0;    // CGS->MKS
       }
 #endif
    }
