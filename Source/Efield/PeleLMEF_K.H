@@ -33,7 +33,7 @@ getKappaSp(int i, int j, int k,
    }
    int ionCnt = 0;
    for (int n = 0; n < NUM_SPECIES; n++) {
-      if ( a_zk[n] /= 0.0 ) {
+      if ( a_zk[n] != 0.0 ) {
          Ksp(i,j,k,ionCnt) = rhoD(i,j,k,n) * mwt[n] * 0.001 * a_zk[n] / ( rho * PP_RU_MKS * T(i,j,k) );
          if ( n == E_ID ) Ksp(i,j,k,ionCnt) = 0.0;         // Set the E species mobility to zero. Electron are treated separately.
          ionCnt += 1;
