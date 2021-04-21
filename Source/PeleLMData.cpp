@@ -123,6 +123,9 @@ PeleLM::AdvanceAdvData::AdvanceAdvData(int a_finestLevel,
       Forcing.resize(a_finestLevel+1);
       mac_divu.resize(a_finestLevel+1);
    }
+#ifdef PLM_USE_EFIELD
+   uDrift.resize(a_finestLevel+1);
+#endif
 
    // Define MFs
    for (int lev = 0; lev <= a_finestLevel; lev++ ) {
