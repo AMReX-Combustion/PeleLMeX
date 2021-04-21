@@ -31,7 +31,7 @@ void PeleLM::poissonSolveEF(const TimeStamp &a_time)
          auto const& rhoY = ldata_p->species.const_array(mfi);
          auto const& nE   = ldata_p->nE.const_array(mfi);
          auto const& rhs  = rhsPoisson[lev]->array(mfi);
-         Real      factor = -1.0 / ( eps0  * epsr);
+         Real      factor = -1.0;// / ( eps0  * epsr);
          amrex::ParallelFor(bx, [rhs, rhoY, nE, factor,zk=zk]
          AMREX_GPU_DEVICE (int i, int j, int k) noexcept
          {
@@ -49,5 +49,5 @@ void PeleLM::poissonSolveEF(const TimeStamp &a_time)
                                     {},0,
                                     {},
                                     {},
-                                    {},0,bcRecPhiV,1,1,-1.0);
+                                    {},0,bcRecPhiV,1,1,-eps0*epsr);
 }
