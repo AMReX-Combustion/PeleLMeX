@@ -606,6 +606,8 @@ class PeleLM : public amrex::AmrCore {
                            const amrex::Array<const amrex::MultiFab*,AMREX_SPACEDIM> &a_ueff,
                            amrex::BCRec bcrec);
 
+   void ionDriftVelocity(std::unique_ptr<AdvanceAdvData> &advData);
+
    void nlSolveNorm(const amrex::Vector<amrex::MultiFab*> &a_MF,
                     amrex::Real &norm);
 
