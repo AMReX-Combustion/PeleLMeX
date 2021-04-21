@@ -1,3 +1,4 @@
+CEXE_headers += EOS_Extension.H
 CEXE_headers += PeleLMEF.H
 CEXE_headers += PeleLMEF_K.H
 CEXE_sources += PeleLMEFPoisson.cpp
