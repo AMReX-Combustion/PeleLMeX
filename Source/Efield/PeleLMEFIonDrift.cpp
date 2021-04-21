@@ -76,7 +76,7 @@ void PeleLM::ionDriftVelocity(std::unique_ptr<AdvanceAdvData> &advData)
             amrex::ParallelFor(bx, NUM_IONS, [mob_h,gp_o,gp_n,Ud_Sp]
             AMREX_GPU_DEVICE (int i, int j, int k, int n) noexcept      
             {
-               Ud_Sp(i,j,k,n) = mob_h(i,j,k,n) * 0.5 * ( gp_o(i,j,k) + gp_n(i,j,k) );
+               Ud_Sp(i,j,k,n) = mob_h(i,j,k,n) * -0.5 * ( gp_o(i,j,k) + gp_n(i,j,k) );
             });
          }
       }
