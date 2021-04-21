@@ -580,6 +580,27 @@ PeleLM::MLNorm0(const Vector<const MultiFab*> &a_MF)
    return r;
 }
 
+Vector<Real>
+PeleLM::MLNorm0(const Vector<const MultiFab*> &a_MF,
+                int startcomp, int ncomp)
+{
+   AMREX_ASSERT(a_MF[0]->nComp() >= startcomp+ncomp);
+   Vector<Real> r(ncomp);
+   Vector<int> comps(ncomp);
+   for (int n = 0; n < ncomp; n++) {
+      r[n] = 0.0;
+      comps[n] = startcomp+n;
+   }
+   for (int lev = 0; lev < a_MF.size(); ++lev) {
+      Vector<Real> levMax = a_MF[lev]->norm0(comps,0,true,true);
+      for (int n = 0; n < ncomp; n++) {
+         r[n] = std::max(r[n], levMax[n]);
+      }
+   }
+   ParallelDescriptor::ReduceRealMax(r.data(),ncomp);
+   return r;
+}
+
 bool
 PeleLM::isStateVariable(const std::string &a_name)
 {

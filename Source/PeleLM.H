@@ -522,6 +522,9 @@ class PeleLM : public amrex::AmrCore {
 
    void floorSpecies(const PeleLM::TimeStamp &a_time);
    amrex::Real MLNorm0(const amrex::Vector<const amrex::MultiFab*> &a_MF);
+   amrex::Vector<amrex::Real>
+   MLNorm0(const amrex::Vector<const amrex::MultiFab*> &a_MF,
+           int startcomp, int ncomp);
 
    void resetCoveredMask();
 
