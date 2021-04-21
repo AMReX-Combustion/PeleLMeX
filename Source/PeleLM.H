@@ -131,7 +131,7 @@ class PeleLM : public amrex::AmrCore {
 #ifdef PLM_USE_EFIELD
       amrex::MultiFab diffE_cc;        // Electron diffusivity (dim:1)
       amrex::MultiFab mobE_cc;         // Electron mobility (dim:1)
-      amrex::MultiFab mob_cc;          // Species mobility (dim:NUM_SPECIES)
+      amrex::MultiFab mob_cc;          // Species mobility (dim:NUM_IONS)
 #endif
    };
    struct LevelDataReact {
@@ -179,6 +179,9 @@ class PeleLM : public amrex::AmrCore {
       amrex::Vector<amrex::MultiFab>  chi;         // Thermodynamic contraint
       amrex::Vector<amrex::MultiFab>  Forcing;     // Scalar forcing for both advection and diffusion
       amrex::Vector<amrex::MultiFab>  mac_divu;    // divu used in MAC projection
+#ifdef PLM_USE_EFIELD
+      amrex::Vector<amrex::Array<amrex::MultiFab,AMREX_SPACEDIM>> uDrift;        // ions drift face velocity
+#endif
    };
    //-----------------------------------------------------------------------------
 

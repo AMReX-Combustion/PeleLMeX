@@ -28,7 +28,7 @@ PeleLM::LevelData::LevelData(amrex::BoxArray const& ba,
       phiV.define    (ba, dm, 1             , a_nGrowState, MFInfo(), factory);
       diffE_cc.define(ba, dm, 1             , 1           , MFInfo(), factory);
       mobE_cc.define (ba, dm, 1             , 1           , MFInfo(), factory);
-      mob_cc.define  (ba, dm, NUM_SPECIES   , 1           , MFInfo(), factory);
+      mob_cc.define  (ba, dm, NUM_IONS      , 1           , MFInfo(), factory);
 #endif
    }
    if ( a_nAux > 0 ) {
@@ -129,6 +129,9 @@ PeleLM::AdvanceAdvData::AdvanceAdvData(int a_finestLevel,
       for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
          const BoxArray& faceba = amrex::convert(ba[lev],IntVect::TheDimensionVector(idim));
          umac[lev][idim].define(faceba,dm[lev], 1, nGrowMAC, MFInfo(), *factory[lev]);
+#ifdef PLM_USE_EFIELD
+         uDrift[lev][idim].define(faceba,dm[lev], NUM_IONS, nGrowMAC, MFInfo(), *factory[lev]);
+#endif
       }
       if ( a_incompressible ) {
          AofS[lev].define(ba[lev], dm[lev], AMREX_SPACEDIM , 0, MFInfo(), *factory[lev]);
@@ -203,7 +206,7 @@ PeleLM::copyTransportOldToNew() {
 #ifdef PLM_USE_EFIELD
          MultiFab::Copy(m_leveldata_new[lev]->diffE_cc,m_leveldata_old[lev]->diffE_cc,0,0,1,1);
          MultiFab::Copy(m_leveldata_new[lev]->mobE_cc,m_leveldata_old[lev]->mobE_cc,0,0,1,1);
-         MultiFab::Copy(m_leveldata_new[lev]->mob_cc,m_leveldata_old[lev]->mob_cc,0,0,NUM_SPECIES,1);
+         MultiFab::Copy(m_leveldata_new[lev]->mob_cc,m_leveldata_old[lev]->mob_cc,0,0,NUM_IONS,1);
 #endif
       }
    }
