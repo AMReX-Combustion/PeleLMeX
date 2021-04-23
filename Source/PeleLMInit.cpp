@@ -49,7 +49,7 @@ void PeleLM::MakeNewLevelFromScratch( int lev,
                                             m_nAux, m_nGrowState, m_nGrowMAC));
 
    if (max_level > 0 && lev != max_level) {
-      m_coveredMask[lev].reset(new MultiFab(grids[lev], dmap[lev], 1, 0));
+      m_coveredMask[lev].reset(new iMultiFab(grids[lev], dmap[lev], 1, 0));
       m_resetCoveredMask = 1;
    }
    if (m_do_react) {
