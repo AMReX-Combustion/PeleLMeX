@@ -6,6 +6,18 @@ using namespace amrex;
 
 void PeleLM::ionDriftVelocity(std::unique_ptr<AdvanceAdvData> &advData)
 {
+   //----------------------------------------------------------------
+   // set udrift boundaries to zero 
+   if ( advData->uDrift[0][0].nGrow() > 0 ) {
+      for (int lev=0; lev <= finest_level; ++lev)
+      {
+          AMREX_D_TERM(advData->uDrift[lev][0].setBndry(0.0);,
+                       advData->uDrift[lev][1].setBndry(0.0);,
+                       advData->uDrift[lev][2].setBndry(0.0););
+      }
+   }
+
+   //----------------------------------------------------------------
    // Get the gradient of Old and New phiV
    Vector<Array<MultiFab,AMREX_SPACEDIM> > gphiVOld(finest_level+1);
    Vector<Array<MultiFab,AMREX_SPACEDIM> > gphiVNew(finest_level+1);
@@ -32,6 +44,7 @@ void PeleLM::ionDriftVelocity(std::unique_ptr<AdvanceAdvData> &advData)
                                      GetVecOfConstPtrs(getPhiVVect(AmrNewTime)),
                                      bcRecPhiV[0], do_avgDown);
 
+   //----------------------------------------------------------------
    // TODO : this assumes that all the ions are grouped together at th end ...
    auto bcRecIons = fetchBCRecArray(FIRSTSPEC+NUM_SPECIES-NUM_IONS,NUM_IONS);
 
@@ -53,7 +66,7 @@ void PeleLM::ionDriftVelocity(std::unique_ptr<AdvanceAdvData> &advData)
          const auto& mob_h  = mobH_cc.array(mfi);
          amrex::ParallelFor(gbx, NUM_IONS, [mob_o,mob_n,mob_h]
          AMREX_GPU_DEVICE (int i, int j, int k, int n) noexcept
-         {    
+         {
             mob_h(i,j,k,n) = 0.5 * ( mob_o(i,j,k,n) + mob_n(i,j,k,n) );
          });
       }
@@ -74,7 +87,7 @@ void PeleLM::ionDriftVelocity(std::unique_ptr<AdvanceAdvData> &advData)
             const auto& gp_n  = gphiVNew[lev][idim].const_array(mfi);
             const auto& Ud_Sp = advData->uDrift[lev][idim].array(mfi);
             amrex::ParallelFor(bx, NUM_IONS, [mob_h,gp_o,gp_n,Ud_Sp]
-            AMREX_GPU_DEVICE (int i, int j, int k, int n) noexcept      
+            AMREX_GPU_DEVICE (int i, int j, int k, int n) noexcept
             {
                Ud_Sp(i,j,k,n) = mob_h(i,j,k,n) * -0.5 * ( gp_o(i,j,k) + gp_n(i,j,k) );
             });
@@ -82,5 +95,38 @@ void PeleLM::ionDriftVelocity(std::unique_ptr<AdvanceAdvData> &advData)
       }
    }
 
-   // TODO Average down faces ?
+   //----------------------------------------------------------------
+   // Average down faces
+   for (int lev = finest_level; lev > 0; --lev) {
+#ifdef AMREX_USE_EB
+      EB_average_down_faces(GetArrOfConstPtrs(advData->uDrift[lev]),
+                            GetArrOfPtrs(advData->uDrift[lev-1]),
+                            refRatio(lev-1),geom[lev-1]);
+#else
+      average_down_faces(GetArrOfConstPtrs(advData->uDrift[lev]),
+                         GetArrOfPtrs(advData->uDrift[lev-1]),
+                         refRatio(lev-1),geom[lev-1]);
+#endif
+   }
+}
+
+void PeleLM::ionDriftAddUmac(int lev, std::unique_ptr<AdvanceAdvData> &advData)
+{
+   // Add umac to the ions drift velocity to get the effective velocity
+   for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+#ifdef _OPENMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+      for (MFIter mfi(advData->umac[lev][idim],TilingIfNotGPU()); mfi.isValid();++mfi)
+      {
+         const Box gbx = mfi.growntilebox();
+         const auto& umac = advData->umac[lev][idim].const_array(mfi);
+         const auto& Ud_Sp = advData->uDrift[lev][idim].array(mfi);
+         amrex::ParallelFor(gbx, NUM_IONS, [umac,Ud_Sp]
+         AMREX_GPU_DEVICE (int i, int j, int k, int n) noexcept
+         {
+            Ud_Sp(i,j,k,n) += umac(i,j,k);
+         });
+      }
+   }
 }
