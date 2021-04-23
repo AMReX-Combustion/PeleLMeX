@@ -1,6 +1,9 @@
 #include <PeleLM.H>
 #include <PeleLM_K.H>
 #include <reactor.h>
+#ifdef PLM_USE_EFIELD
+#include <PeleLMEF_Constants.H>
+#endif
 
 using namespace amrex;
 
@@ -13,17 +16,17 @@ void PeleLM::advanceChemistry(std::unique_ptr<AdvanceAdvData> &advData)
       // On all but the finest level, average down I_R
       if (lev != finest_level) {
          std::unique_ptr<MultiFab> avgDownIR;
-         avgDownIR.reset( new MultiFab(grids[lev],dmap[lev],NUM_SPECIES,0));
+         avgDownIR.reset( new MultiFab(grids[lev],dmap[lev],nCompIR(),0));
          avgDownIR->setVal(0.0);
          auto ldataRFine_p   = getLevelDataReactPtr(lev+1);
 #ifdef AMREX_USE_EB
          EB_average_down(ldataRFine_p->I_R,
                          *avgDownIR,
-                         0,NUM_SPECIES+1,refRatio(lev));
+                         0,nCompIR(),refRatio(lev));
 #else
          average_down(ldataRFine_p->I_R,
                       *avgDownIR,
-                      0,NUM_SPECIES+1,refRatio(lev));
+                      0,nCompIR(),refRatio(lev));
 #endif
          //VisMF::Write(*avgDownIR,"AvgDownIR_Level"+std::to_string(lev)+"_step"+std::to_string(m_nstep));
          //VisMF::Write(advData->Forcing[lev],"ChemForcing_Level"+std::to_string(lev)+"_step"+std::to_string(m_nstep));
@@ -49,6 +52,17 @@ void PeleLM::advanceChemistry(int lev,
    // TODO Setup covered cells mask
    FabArray<BaseFab<int>> mask(grids[lev],dmap[lev],1,0);
    mask.setVal(1);
+
+#ifdef PLM_USE_EFIELD
+   // Pass nE -> rhoY_e & FnE -> FrhoY_e
+#ifdef _OPENMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+   for (MFIter mfi(ldataNew_p->species,amrex::TilingIfNotGPU()); mfi.isValid(); ++mfi)
+   {
+
+   }
+#endif
 
 #ifdef _OPENMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -79,6 +93,23 @@ void PeleLM::advanceChemistry(int lev,
          rhoH_n(i,j,k) = rhoH_o(i,j,k) * 10.0;
          extF_rhoH(i,j,k) *= 10.0;
       });
+
+#ifdef PLM_USE_EFIELD
+      // Pass nE -> rhoY_e & FnE -> FrhoY_e
+      auto const& nE_o    = ldataOld_p->nE.const_array(mfi);
+      auto const& FnE     = a_extForcing.array(mfi,NUM_SPECIES+1);
+      auto const& rhoYe_n = ldataNew_p->species.array(mfi,E_ID);
+      auto const& FrhoYe  = a_extForcing.array(mfi,E_ID);
+      auto eos = pele::physics::PhysicsType::eos();
+      Real mwt[NUM_SPECIES] = {0.0};
+      eos.molecular_weight(mwt);
+      ParallelFor(bx, [mwt,nE_o,FnE,rhoYe_n,FrhoYe]
+      AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+      {
+         rhoYe_n(i,j,k)  = nE_o(i,j,k) / Na * mwt[E_ID] * 1.0e-6;
+         FrhoYe(i,j,k) = FnE(i,j,k) / Na * mwt[E_ID] * 1.0e-6;
+      });
+#endif
 
 #ifdef AMREX_USE_GPU
       int ncells           = bx.numPts();
@@ -115,6 +146,19 @@ void PeleLM::advanceChemistry(int lev,
          extF_rhoH(i,j,k) *= 0.1;
       });
 
+#ifdef PLM_USE_EFIELD
+      // rhoY_e -> nE and set rhoY_e to zero
+      auto const& nE_n   = ldataNew_p->nE.array(mfi);
+      Real invmwt[NUM_SPECIES] = {0.0};
+      eos.inv_molecular_weight(invmwt);
+      ParallelFor(bx, [invmwt,nE_n,rhoYe_n]
+      AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+      {
+         nE_n(i,j,k) = rhoYe_n(i,j,k) * Na * invmwt[E_ID] * 1.0e3;
+         rhoYe_n(i,j,k) = 0.0;
+      });
+#endif
+
 #ifdef AMREX_USE_GPU
       Gpu::Device::streamSynchronize();
 #endif
@@ -138,6 +182,18 @@ void PeleLM::advanceChemistry(int lev,
       {
          rhoYdot(i,j,k,n) = - ( rhoY_o(i,j,k,n) - rhoY_n(i,j,k,n) ) * dt_inv - extF_rhoY(i,j,k,n);
       });
+
+#ifdef PLM_USE_EFIELD
+      auto const& nE_o   = ldataOld_p->nE.const_array(mfi);
+      auto const& nE_n   = ldataNew_p->nE.const_array(mfi);
+      auto const& FnE    = a_extForcing.const_array(mfi,NUM_SPECIES+1);
+      auto const& nEdot  = ldataR_p->I_R.array(mfi,NUM_SPECIES);
+      ParallelFor(bx, [nE_o, nE_n, FnE, nEdot, dt_inv]
+      AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+      {
+         nEdot(i,j,k) = - ( nE_o(i,j,k) - nE_n(i,j,k) ) * dt_inv - FnE(i,j,k);
+      });
+#endif
    }
 }
 
@@ -162,9 +218,12 @@ void PeleLM::advanceChemistry(int lev,
 
    // Set chemistry MFs based on baChem and dmapChem
    MultiFab chemState(*m_baChem[lev],*m_dmapChem[lev],NUM_SPECIES+3,0);
-   MultiFab chemForcing(*m_baChem[lev],*m_dmapChem[lev],NUM_SPECIES+1,0);
-   MultiFab chemAvgDownIR(*m_baChem[lev],*m_dmapChem[lev],NUM_SPECIES,0);
+   MultiFab chemForcing(*m_baChem[lev],*m_dmapChem[lev],nCompForcing(),0);
+   MultiFab chemAvgDownIR(*m_baChem[lev],*m_dmapChem[lev],nCompIR(),0);
    MultiFab functC(*m_baChem[lev],*m_dmapChem[lev],1,0);
+#ifdef PLM_USE_EFIELD
+   MultiFab chemnE(*m_baChem[lev],*m_dmapChem[lev],1,0);
+#endif
 
    // TODO Setup EB covered cells mask
    FabArray<BaseFab<int>> mask(*m_baChem[lev],*m_dmapChem[lev],1,0);
@@ -172,8 +231,11 @@ void PeleLM::advanceChemistry(int lev,
 
    // ParallelCopy into chem MFs
    chemState.copy(*statemf,FIRSTSPEC,0,NUM_SPECIES+3);
-   chemForcing.copy(a_extForcing,0,0,NUM_SPECIES+1);
-   chemAvgDownIR.copy(*a_avgDownIR,0,0,NUM_SPECIES);
+   chemForcing.copy(a_extForcing,0,0,nCompForcing());
+   chemAvgDownIR.copy(*a_avgDownIR,0,0,nCompIR());
+#ifdef PLM_USE_EFIELD
+   chemnE.copy(*statemf,NE,0,1);
+#endif
    //VisMF::Write(chemAvgDownIR,"avgDownIRNewBA_Level"+std::to_string(lev)+"_step"+std::to_string(m_nstep));
 
 #ifdef _OPENMP
@@ -203,6 +265,26 @@ void PeleLM::advanceChemistry(int lev,
          rhoH_o(i,j,k) *= 10.0;
          extF_rhoH(i,j,k) *= 10.0;
       });
+
+#ifdef PLM_USE_EFIELD
+      // Pass nE -> rhoY_e, FnE -> FrhoY_e & avgIRnE -> avgIRY_e
+      auto const& nE_o    = chemnE.array(mfi);
+      auto const& FnE     = chemForcing.array(mfi,NUM_SPECIES+1);
+      auto const& rhoYe_o = chemState.array(mfi,E_ID);
+      auto const& FrhoYe  = chemForcing.array(mfi,E_ID);
+      auto const& avgIRnE = chemAvgDownIR.array(mfi,NUM_SPECIES);
+      auto const& avgIRYe = chemAvgDownIR.array(mfi,E_ID);
+      auto eos = pele::physics::PhysicsType::eos();
+      Real mwt[NUM_SPECIES] = {0.0};
+      eos.molecular_weight(mwt);
+      ParallelFor(bx, [mwt,nE_o,FnE,rhoYe_o,FrhoYe,avgIRnE,avgIRYe]
+      AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+      {
+         rhoYe_o(i,j,k)  = nE_o(i,j,k) / Na * mwt[E_ID] * 1.0e-6;
+         FrhoYe(i,j,k) = FnE(i,j,k) / Na * mwt[E_ID] * 1.0e-6;
+         avgIRYe(i,j,k) = avgIRnE(i,j,k) / Na * mwt[E_ID] * 1.0e-6;
+      });
+#endif
 
       // Do reaction only on uncovered box
       int do_reactionBox = m_baChemFlag[lev][mfi.index()];
@@ -247,6 +329,18 @@ void PeleLM::advanceChemistry(int lev,
          rhoH_o(i,j,k) *= 0.1;
       });
 
+#ifdef PLM_USE_EFIELD
+      // rhoY_e -> nE and set rhoY_e to zero
+      Real invmwt[NUM_SPECIES] = {0.0};
+      eos.inv_molecular_weight(invmwt);
+      ParallelFor(bx, [invmwt,nE_o,rhoYe_o]
+      AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+      {
+         nE_o(i,j,k) = rhoYe_o(i,j,k) * Na * invmwt[E_ID] * 1.0e3;
+         rhoYe_o(i,j,k) = 0.0;
+      });
+#endif
+
 #ifdef AMREX_USE_GPU
       Gpu::Device::streamSynchronize();
 #endif
@@ -257,6 +351,10 @@ void PeleLM::advanceChemistry(int lev,
    MultiFab StateTemp(grids[lev],dmap[lev],NUM_SPECIES+3,0);
    StateTemp.copy(chemState,0,0,NUM_SPECIES+3);
    ldataR_p->functC.copy(functC,0,0,1);
+#ifdef PLM_USE_EFIELD
+   MultiFab nETemp(grids[lev],dmap[lev],1,0);
+   nETemp.copy(chemnE,0,0,1);
+#endif
 
    // Pass from temp state MF to leveldata and set reaction term
 #ifdef _OPENMP
@@ -287,6 +385,22 @@ void PeleLM::advanceChemistry(int lev,
             rhoYdot(i,j,k,n) = - ( rhoY_o(i,j,k,n) - rhoY_n(i,j,k,n) ) * dt_inv - extF_rhoY(i,j,k,n);
          }
       });
+
+#ifdef PLM_USE_EFIELD
+      auto const& nE_arr = nETemp.const_array(mfi);
+      auto const& nE_o   = ldataOld_p->nE.const_array(mfi);
+      auto const& nE_n   = ldataNew_p->nE.array(mfi);
+      auto const& FnE    = a_extForcing.const_array(mfi,NUM_SPECIES+1);
+      auto const& nEdot  = ldataR_p->I_R.array(mfi,NUM_SPECIES);
+      ParallelFor(bx, [nE_arr, nE_o, nE_n, FnE, nEdot, dt_inv]
+      AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+      {
+         // Pass into leveldata_new
+         nE_n(i,j,k) = nE_arr(i,j,k);
+         // Compute I_R
+         nEdot(i,j,k) = - ( nE_o(i,j,k) - nE_n(i,j,k) ) * dt_inv - FnE(i,j,k);
+      });
+#endif
    }
 }
 
