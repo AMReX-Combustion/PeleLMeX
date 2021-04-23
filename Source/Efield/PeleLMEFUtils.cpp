@@ -49,7 +49,13 @@ void PeleLM::getNLStateScaling(Real &nEScale, Real &phiVScale)
    Array<Real,2> r = {0.0,0.0};
    for (int comp = 0; comp < 2; comp++) {
       for (int lev = 0; lev <= finest_level; ++lev) {
-         r[comp] = std::max(r[comp], m_leveldatanlsolve[lev]->nlState.norm0(comp,0,true,true));
+         if (lev != finest_level) {
+            r[comp] = std::max(r[comp],
+                               m_leveldatanlsolve[lev]->nlState.norm0(*m_coveredMask[lev],comp,0,true));
+         } else {
+            r[comp] = std::max(r[comp],
+                               m_leveldatanlsolve[lev]->nlState.norm0(comp,0,true,true));
+         }
       }
       ParallelDescriptor::ReduceRealMax(r[comp]);
    }
@@ -62,7 +68,13 @@ void PeleLM::getNLResidScaling(Real &nEScale, Real &phiVScale)
    Array<Real,2> r = {0.0,0.0};
    for (int comp = 0; comp < 2; comp++) {
       for (int lev = 0; lev <= finest_level; ++lev) {
-         r[comp] = std::max(r[comp], m_leveldatanlsolve[lev]->nlResid.norm0(comp,0,true,true));
+         if (lev != finest_level) {
+            r[comp] = std::max(r[comp], 
+                               m_leveldatanlsolve[lev]->nlResid.norm0(*m_coveredMask[lev],comp,0,true));
+         } else {
+            r[comp] = std::max(r[comp], 
+                               m_leveldatanlsolve[lev]->nlResid.norm0(comp,0,true));
+         }
       }
       ParallelDescriptor::ReduceRealMax(r[comp]);
    }
