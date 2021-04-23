@@ -77,6 +77,7 @@ void PeleLM::implicitNonLinearSolve(int sdcIter,
 
    //------------------------------------------------------------------------
    // Outer subcycling loop
+   if (ef_substep > 1) Abort("Non-linear solve sub-stepping not re-implemented yet");
    int NK_tot_count = 0;
    for (int sstep = 0; sstep < ef_substep; sstep++) {
 
@@ -144,7 +145,7 @@ void PeleLM::implicitNonLinearSolve(int sdcIter,
             GMRES_tot_count += gmres.solve(GetVecOfPtrs(newtonDir),getNLresidVect(),S_tol_abs,S_tol);
          } else {
          }
-         //WriteDebugPlotFile(GetVecOfConstPtrs(newtonDir),"newtonDir"+std::to_string(NK_ite));
+         //WriteDebugPlotFile(GetVecOfConstPtrs(newtonDir),"newtonDir_"+std::to_string(NK_ite));
 
          // Linesearch & update state TODO
          updateNLState(GetVecOfPtrs(newtonDir));
@@ -155,9 +156,10 @@ void PeleLM::implicitNonLinearSolve(int sdcIter,
          nlSolveNorm(getNLresidVect(),nl_residNorm);
          getNLResidScaling(scaledResnE, scaledResphiV);
          max_nlres = std::max(scaledResnE, scaledResphiV);
+         //WriteDebugPlotFile(GetVecOfConstPtrs(getNLresidVect()),"NLRes_"+std::to_string(NK_ite));
 
          // Exit condition
-         exit_newton = (NK_ite > m_ef_maxNewtonIter);
+         exit_newton = testExitNewton(NK_ite, max_nlres);
 
       } while( !exit_newton );
       NK_tot_count += NK_ite;
@@ -165,10 +167,24 @@ void PeleLM::implicitNonLinearSolve(int sdcIter,
       // -----------------
       // Post-Newton
       // Increment the forcing term
+      incrementElectronForcing(sstep, advData);
       // Unscale nl_state and if not last subcycle update 'old' state
+      for (int lev = 0; lev <= finest_level; ++lev) {
+         m_leveldatanlsolve[lev]->nlState.mult(nE_scale,0,1,0);
+         m_leveldatanlsolve[lev]->nlState.mult(phiV_scale,1,1,0);
+      }
    }
 
    // Update the state
+   for (int lev = 0; lev <= finest_level; ++lev) {
+      // Get t^{n} data pointer
+      auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
+      // Get nl solve data pointer
+      auto ldataNLs_p = getLevelDataNLSolvePtr(lev);
+      int nGrowNL = 0;
+      MultiFab::Copy(ldata_p->nE,   ldataNLs_p->nlState, 0, 0, 1, nGrowNL);
+      MultiFab::Copy(ldata_p->phiV, ldataNLs_p->nlState, 1, 0, 1, nGrowNL);
+   }
 
    if (ef_verbose) {
       Real run_time = ParallelDescriptor::second() - strt_time;
@@ -180,12 +196,32 @@ void PeleLM::implicitNonLinearSolve(int sdcIter,
       amrex::Print() << "  >> PeleLM::implicitNLSolve() " << run_time << "\n";
    }
 
-   Abort();
+   //VisMF::Write(advData->Forcing[0],"ForcingNE");
+}
+
+int PeleLM::testExitNewton(int newtonIter,
+                           const Real &max_res){
+   int exit = 0;
+   if ( max_res <= m_ef_newtonTol ) {
+      exit = 1;
+      if ( ef_verbose ) {
+         amrex::Print() << " Newton iterations converged: \n";
+         amrex::Print() << " Final Newton L2**2 res norm : " << 0.5*nl_residNorm*nl_residNorm << "\n";
+         amrex::Print() << " Final Newton Linf res norm : " << max_res << "\n";
+      }
+   }
+
+   if ( newtonIter >= m_ef_maxNewtonIter && exit == 0 ) {
+      exit = 1;
+      amrex::Print() << " WARNING: Max Newton iteration reached without convergence !!! \n";
+   }
+   return exit;
 }
 
 void PeleLM::updateNLState(const Vector<MultiFab*> &a_update)
 {
    // AverageDown the newton direction
+   /*
    for (int lev = finest_level; lev > 0; --lev) {
 #ifdef AMREX_USE_EB
       EB_average_down(*a_update[lev],
@@ -197,9 +233,60 @@ void PeleLM::updateNLState(const Vector<MultiFab*> &a_update)
                    0,2,refRatio(lev-1));
 #endif
    }
+   */
    for (int lev = 0; lev <= finest_level; ++lev) {
       auto ldataNLs_p = getLevelDataNLSolvePtr(lev);   // NL data
       ldataNLs_p->nlState.plus(*a_update[lev],0,2,0);
+   }
+   // AverageDown the new state
+   /*
+   for (int lev = finest_level; lev > 0; --lev) {
+      auto ldataNLsFine_p = getLevelDataNLSolvePtr(lev);   // NL data
+      auto ldataNLsCrse_p = getLevelDataNLSolvePtr(lev-1);   // NL data
+#ifdef AMREX_USE_EB
+      EB_average_down(ldataNLsFine_p->nlState,
+                      ldataNLsCrse_p->nlState,
+                      0,2,refRatio(lev-1));
+#else
+      average_down(ldataNLsFine_p->nlState,
+                   ldataNLsCrse_p->nlState,
+                   0,2,refRatio(lev-1));
+#endif
+   }
+   */
+}
+
+void PeleLM::incrementElectronForcing(int a_sstep,
+                                      std::unique_ptr<AdvanceAdvData> &advData)
+{
+   for (int lev = 0; lev <= finest_level; ++lev) {
+
+      auto ldata_p = getLevelDataPtr(lev,AmrOldTime);  // Old time electron
+      auto ldataR_p = getLevelDataReactPtr(lev);       // Reaction
+      auto ldataNLs_p = getLevelDataNLSolvePtr(lev);   // NL data
+
+#ifdef _OPENMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+      for (MFIter mfi(ldata_p->nE,TilingIfNotGPU()); mfi.isValid(); ++mfi)
+      {
+         const Box& bx = mfi.tilebox();
+         auto const& nE_o   = ldata_p->nE.const_array(mfi); 
+         auto const& nE_n   = ldataNLs_p->nlState.const_array(mfi);
+         auto const& I_R_nE = ldataR_p->I_R.const_array(mfi,NUM_SPECIES);
+         auto const& FnE    = advData->Forcing[lev].array(mfi,NUM_SPECIES+1);
+         Real scaling       = nE_scale;
+         Real dtinv         = 1.0 / dtsub;
+         amrex::ParallelFor(bx, [nE_o, nE_n, I_R_nE, FnE, dtinv, scaling, a_sstep]
+         AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+         {
+            if ( a_sstep == 0 ) {
+               FnE(i,j,k) = ( nE_n(i,j,k) * scaling - nE_o(i,j,k) ) * dtinv - I_R_nE(i,j,k);
+            } else {
+               FnE(i,j,k) += ( nE_n(i,j,k) * scaling - nE_o(i,j,k) ) * dtinv - I_R_nE(i,j,k);
+            }
+         });
+      }
    }
 }
 
@@ -332,7 +419,7 @@ void PeleLM::nonLinearResidual(const Real &a_dt,
       for (MFIter mfi(ldataNLs_p->nlResid,TilingIfNotGPU()); mfi.isValid(); ++mfi)
       {
          const Box& bx = mfi.tilebox();
-         auto const& I_R_nE   = ldataR_p->I_RnE.const_array(mfi);
+         auto const& I_R_nE   = ldataR_p->I_R.const_array(mfi,NUM_SPECIES);
          auto const& lapPhiV  = laplacian[lev].const_array(mfi);
          auto const& ne_diff  = diffnE[lev].const_array(mfi);
          auto const& ne_adv   = advnE[lev].const_array(mfi);
@@ -345,7 +432,7 @@ void PeleLM::nonLinearResidual(const Real &a_dt,
          amrex::ParallelFor(bx, [ne_curr,ne_old,lapPhiV,I_R_nE,ne_diff,ne_adv,charge,res_nE,res_phiV,a_dt,scalLap]
          AMREX_GPU_DEVICE (int i, int j, int k) noexcept
          {
-            res_nE(i,j,k) = ne_old(i,j,k) - ne_curr(i,j,k) + a_dt * ( ne_diff(i,j,k) + ne_adv(i,j,k) /* TODO + I_R_nE(i,j,k)*/ );
+            res_nE(i,j,k) = ne_old(i,j,k) - ne_curr(i,j,k) + a_dt * ( ne_diff(i,j,k) + ne_adv(i,j,k) + I_R_nE(i,j,k) );
             res_phiV(i,j,k) = lapPhiV(i,j,k) * scalLap - ne_curr(i,j,k) + charge(i,j,k);
             res_nE(i,j,k) *= -1.0;              // NLresidual is -RHS
             res_phiV(i,j,k) *= -1.0;            // NLresidual is -RHS
@@ -429,7 +516,7 @@ void PeleLM::getAdvectionTerm(const Vector<const MultiFab*> &a_nE,
 
    // Average down the Ueff
    /*
-	for (int lev = finest_level; lev > 0; --lev) {
+   for (int lev = finest_level; lev > 0; --lev) {
       auto ldataNLFine_p = getLevelDataNLSolvePtr(lev);
       auto ldataNLCrse_p = getLevelDataNLSolvePtr(lev-1);
 #ifdef AMREX_USE_EB
@@ -441,7 +528,7 @@ void PeleLM::getAdvectionTerm(const Vector<const MultiFab*> &a_nE,
                          GetArrOfPtrs(ldataNLCrse_p->uEffnE),
                          refRatio(lev-1),nGrow);
 #endif
-	}
+   }
    */
 
    for (int lev = 0; lev <= finest_level; ++lev) {
@@ -453,8 +540,7 @@ void PeleLM::getAdvectionTerm(const Vector<const MultiFab*> &a_nE,
 
    // Average down the fluxes
    // TODO: this generates kinks in the advTerm ... why ?
-   /*
-	for (int lev = finest_level; lev > 0; --lev) {
+   for (int lev = finest_level; lev > 0; --lev) {
 #ifdef AMREX_USE_EB
       EB_average_down_faces(GetArrOfConstPtrs(fluxes[lev]),
                             GetArrOfPtrs(fluxes[lev-1]),
@@ -466,12 +552,11 @@ void PeleLM::getAdvectionTerm(const Vector<const MultiFab*> &a_nE,
                          refRatio(lev-1),geom[lev-1]);
 //                         refRatio(lev-1),nGrow);
 #endif
-	}
-   */
+   }
 
    // Compute divergence
    int intensiveFluxes = 1;
-	fluxDivergence(a_advTerm,0,GetVecOfArrOfPtrs(fluxes),0,1,intensiveFluxes,-1.0);
+   fluxDivergence(a_advTerm,0,GetVecOfArrOfPtrs(fluxes),0,1,intensiveFluxes,-1.0);
 }
 
 void PeleLM::getAdvectionFluxes(int lev,
@@ -564,21 +649,21 @@ void PeleLM::getAdvectionFluxes(int lev,
          // Computing fluxes
          amrex::ParallelFor(xbx, [u,xstate,xflux]
          AMREX_GPU_DEVICE (int i, int j, int k) noexcept
-         {    
+         {
             xflux(i,j,k) = u(i,j,k) * xstate(i,j,k);
-         });  
+         });
 #if (AMREX_SPACEDIM > 1)
          amrex::ParallelFor(ybx, [v,ystate,yflux]
          AMREX_GPU_DEVICE (int i, int j, int k) noexcept
-         {    
+         {
             yflux(i,j,k) = v(i,j,k) * ystate(i,j,k);
-         });  
+         });
 #if ( AMREX_SPACEDIM ==3 )
          amrex::ParallelFor(zbx, [w,zstate,zflux]
          AMREX_GPU_DEVICE (int i, int j, int k) noexcept
-         {    
+         {
             zflux(i,j,k) = w(i,j,k) * zstate(i,j,k);
-         });  
+         });
 #endif
 #endif
       }
@@ -748,12 +833,10 @@ void PeleLM::jTimesV(const Vector<MultiFab*> &a_v,
       MultiFab::Copy(statePert[lev],ldataNLs_p->nlState,0,0,2,1);
       MultiFab::Saxpy(statePert[lev],delta_pert,*a_v[lev], 0, 0, 2 ,0);
    }
-   //VisMF::Write(statePert[0],"StatePert");
 
    int update_scaling = 0;
    int update_precond = 0;
    nonLinearResidual(dtsub, GetVecOfPtrs(statePert), GetVecOfPtrs(residPert), update_scaling, update_precond);
-   //VisMF::Write(residPert[0],"residPert");
 
    for (int lev = 0; lev <= finest_level; ++lev) {
       auto ldataNLs_p = getLevelDataNLSolvePtr(lev);
@@ -802,6 +885,9 @@ void PeleLM::applyPrecond(const Vector<MultiFab*> &a_v,
    Real S_tol     = m_ef_PC_MG_Tol;
    Real S_tol_abs = MLNorm0(GetVecOfConstPtrs(nE_al)) * m_ef_PC_MG_Tol;
    getPrecondOp()->diffOpSolve(GetVecOfPtrs(PnE_al), GetVecOfConstPtrs(nE_al), S_tol, S_tol_abs);
+   for (int lev = 0; lev <= finest_level; ++lev) {
+      MultiFab::Copy(PphiV_al[lev],phiV_al[lev],0,0,1,0);
+   }
 
    // Pivot second matrix
    for (int lev = 0; lev <= finest_level; ++lev) {
