@@ -245,13 +245,12 @@ MLGMRESSolver::gramSchmidtOrtho(const int iter, Vector<Vector<MultiFab>>& Base)
 {
    int finest_level = m_pelelm->finestLevel();
    for ( int row = 0; row <= iter; ++row ) {
-      //H[row][iter] = MultiFab::Dot(Base[iter+1],0,Base[row],0,m_nComp,0);
       H[row][iter] = MFVecDot(GetVecOfConstPtrs(Base[iter+1]),0,GetVecOfConstPtrs(Base[row]),0,m_nComp,0);
       Real GS_corr = - H[row][iter];
       MFVecSaxpy(GetVecOfPtrs(Base[iter+1]),GS_corr,GetVecOfConstPtrs(Base[row]),0,0,m_nComp,0);
       if ( check_GramSchmidtOrtho ) {
          Real Hcorr = MFVecDot(GetVecOfConstPtrs(Base[iter+1]),0,GetVecOfConstPtrs(Base[row]),0,m_nComp,0);
-         if ( std::fabs(Hcorr) > 1.0e-15 ) {
+         if ( std::fabs(Hcorr) > 1.0e-14 ) {
             H[row][iter] += Hcorr;
             GS_corr = - Hcorr;
             MFVecSaxpy(GetVecOfPtrs(Base[iter+1]),GS_corr,GetVecOfConstPtrs(Base[row]),0,0,m_nComp,0);
@@ -343,7 +342,11 @@ MLGMRESSolver::MFVecDot(const Vector<const MultiFab*> &a_mf1, int mf1comp,
    int finest_level = m_pelelm->finestLevel();
    Real r = 0.0;
    for (int lev = 0; lev <= finest_level; ++lev) {
-      r += MultiFab::Dot(*a_mf1[lev],mf1comp,*a_mf2[lev],mf2comp,nComp,nGrow);
+      if (lev != finest_level) {
+         r += MultiFab::Dot(*(m_pelelm->m_coveredMask[lev]),*a_mf1[lev],mf1comp,*a_mf2[lev],mf2comp,nComp,nGrow);
+      } else {
+         r += MultiFab::Dot(*a_mf1[lev],mf1comp,*a_mf2[lev],mf2comp,nComp,nGrow);
+      }
    }
    return r;
 }
