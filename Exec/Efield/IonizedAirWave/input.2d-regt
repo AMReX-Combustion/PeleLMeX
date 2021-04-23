@@ -14,7 +14,7 @@ peleLM.hi_bc = Interior Outflow
 #-------------------------AMR CONTROL----------------------------
 amr.n_cell          = 32 128 32      # Level 0 number of cells in each direction   
 amr.v               = 1                # AMR verbose
-amr.max_level       = 0                # maximum level number allowed
+amr.max_level       = 1                # maximum level number allowed
 amr.ref_ratio       = 2 2 2 2          # refinement ratio
 amr.regrid_int      = 5                # how often to regrid
 amr.n_error_buf     = 1 1 2 2          # number of buffer cells in error est
@@ -27,8 +27,8 @@ amr.max_grid_size   = 128               # max box size
 prob.P_mean = 101325.0
 prob.standoff = -.023
 prob.pertmag = 0.0000
-prob.pmf_datafile = "drm19_pmf.dat"
-prob.PhiV_y_hi = 100.0
+prob.pmf_datafile = "IonAir_pmf.dat"
+prob.PhiV_y_hi = 10.0
 
 #-------------------------PeleLM CONTROL----------------------------
 peleLM.v = 1
@@ -57,6 +57,8 @@ ef.phiV_lo_bc = Interior Dirichlet
 ef.phiV_hi_bc = Interior Dirichlet
 ef.phiV_polarity_lo = Neutral Cathode
 ef.phiV_polarity_hi = Neutral Anode
+ef.GMRES_verbose  = 2
+ef.GMRES_rel_tol  = 1.0e-10
 
 #--------------------REFINEMENT CONTROL------------------------
 #amr.refinement_indicators = temp
@@ -69,11 +71,11 @@ ef.phiV_polarity_hi = Neutral Anode
 #amr.magVort.value_greater = 500.0
 #amr.magVort.field_name    = mag_vort
 
-amr.refinement_indicators = yH
-amr.yH.max_level     = 3
-amr.yH.value_greater = 1.0e-6
-amr.yH.field_name    = Y(H)
+amr.refinement_indicators = yE
+amr.yE.max_level     = 3
+amr.yE.value_greater = 1.0e12
+amr.yE.field_name    = nE
 
-#amrex.fpe_trap_invalid = 1
-#amrex.fpe_trap_zero = 1
-#amrex.fpe_trap_overflow = 1
+amrex.fpe_trap_invalid = 1
+amrex.fpe_trap_zero = 1
+amrex.fpe_trap_overflow = 1
