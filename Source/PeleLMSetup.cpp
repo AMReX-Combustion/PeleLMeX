@@ -264,10 +264,7 @@ void PeleLM::readParameters() {
    ppef.query("JFNK_newtonTol",m_ef_newtonTol);
    ppef.query("JFNK_maxNewton",m_ef_maxNewtonIter);
    ppef.query("JFNK_lambda",m_ef_lambda_jfnk);
-   ppef.query("GMRES_verbose",m_ef_GMRES_verbose);
-   ppef.query("GMRES_max_restart",m_ef_GMRES_maxRst);
    ppef.query("GMRES_rel_tol",m_ef_GMRES_reltol);
-
 #endif
 
 }
@@ -413,6 +410,28 @@ void PeleLM::derivedSetup()
 
    // Vorticity magnitude
    derive_lst.add("mag_vort",IndexType::TheCellType(),1,pelelm_dermgvort,grow_box_by_two);
+
+#ifdef PLM_USE_EFIELD
+   // Charge distribution
+   derive_lst.add("chargedistrib",IndexType::TheCellType(),1,pelelm_derchargedist,the_same_box);
+
+   // Electric field
+   derive_lst.add("efieldx",IndexType::TheCellType(),1,pelelm_derefx,grow_box_by_one);
+#if (AMREX_SPACEDIM > 1)
+   derive_lst.add("efieldy",IndexType::TheCellType(),1,pelelm_derefy,grow_box_by_one);
+#if (AMREX_SPACEDIM > 2)
+   derive_lst.add("efieldz",IndexType::TheCellType(),1,pelelm_derefz,grow_box_by_one);
+#endif
+#endif
+   // Lorentz forces
+   derive_lst.add("LorentzFx",IndexType::TheCellType(),1,pelelm_derLorentzx,grow_box_by_one);
+#if (AMREX_SPACEDIM > 1)
+   derive_lst.add("LorentzFy",IndexType::TheCellType(),1,pelelm_derLorentzy,grow_box_by_one);
+#if (AMREX_SPACEDIM > 2)
+   derive_lst.add("LorentzFz",IndexType::TheCellType(),1,pelelm_derLorentzz,grow_box_by_one);
+#endif
+#endif
+#endif
 
 }
 
