@@ -70,6 +70,9 @@ void PeleLM::Advance(int is_initIter) {
    copyTransportOldToNew();
    if (! m_incompressible ) {
       copyDiffusionOldToNew(diffData);
+#ifdef PLM_USE_EFIELD
+      ionDriftVelocity(advData);
+#endif
    }
 
    // TODO : handle reaction ghost cells
@@ -177,6 +180,9 @@ void PeleLM::oneSDC(int sdcIter,
          int do_avgDown = 1;                          // Always
          calcDivU(is_initialization,computeDiffusionTerm,do_avgDown,AmrNewTime,diffData);
       }
+#ifdef PLM_USE_EFIELD
+      ionDriftVelocity(advData);
+#endif
    }
    //----------------------------------------------------------------
 
