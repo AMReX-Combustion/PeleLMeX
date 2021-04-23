@@ -701,7 +701,7 @@ void PeleLM::fillpatch_reaction(int lev,
                                                                      PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
       FillPatchSingleLevel(a_I_R, IntVect(nGhost), a_time,
                            {&(m_leveldatareact[lev]->I_R)},{a_time},
-                           0, 0, NUM_SPECIES, geom[lev], bndry_func, 0);
+                           0, 0, nCompIR(), geom[lev], bndry_func, 0);
    } else {
 
       // Interpolator
@@ -719,7 +719,7 @@ void PeleLM::fillpatch_reaction(int lev,
       FillPatchTwoLevels(a_I_R, IntVect(nGhost), a_time,
                          {&(m_leveldatareact[lev-1]->I_R)},{a_time},
                          {&(m_leveldatareact[lev]->I_R)},{a_time},
-                         0, 0, NUM_SPECIES, geom[lev-1], geom[lev],
+                         0, 0, nCompIR(), geom[lev-1], geom[lev],
                          crse_bndry_func,0,fine_bndry_func,0,
                          refRatio(lev-1), mapper, {m_bcrec_force}, 0);
    }
@@ -899,11 +899,11 @@ void PeleLM::fillcoarsepatch_reaction(int lev,
 #endif
 
    PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> crse_bndry_func(geom[lev-1], {m_bcrec_force},
-                                                                       PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
+                                                                         PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
    PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> fine_bndry_func(geom[lev], {m_bcrec_force},
-                                                                       PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
+                                                                         PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
    InterpFromCoarseLevel(a_I_R, IntVect(nGhost), a_time,
-                         m_leveldatareact[lev-1]->I_R, 0, 0, NUM_SPECIES,
+                         m_leveldatareact[lev-1]->I_R, 0, 0, nCompIR(),
                          geom[lev-1], geom[lev],
                          crse_bndry_func,0,fine_bndry_func,0,
                          refRatio(lev-1), mapper, {m_bcrec_force}, 0);
