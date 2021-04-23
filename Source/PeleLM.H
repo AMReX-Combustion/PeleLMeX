@@ -720,7 +720,7 @@ class PeleLM : public amrex::AmrCore {
    amrex::Vector<std::unique_ptr<amrex::FabFactory<amrex::FArrayBox> > > m_factory;
 
    // Covered cells mask
-   amrex::Vector<std::unique_ptr<amrex::MultiFab> > m_coveredMask;
+   amrex::Vector<std::unique_ptr<amrex::iMultiFab> > m_coveredMask;
    amrex::Vector<std::unique_ptr<amrex::BoxArray> > m_baChem;
    amrex::Vector<std::unique_ptr<amrex::DistributionMapping> > m_dmapChem;
    amrex::Vector<amrex::Vector<int > > m_baChemFlag;

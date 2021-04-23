@@ -414,10 +414,12 @@ void PeleLM::resetCoveredMask()
 {
    if (!m_resetCoveredMask) return;
 
+   if (m_verbose) Print() << " Resetting covered cells mask \n";
+
    for (int lev = 0; lev < finest_level; ++lev) {
       BoxArray baf = grids[lev+1];
       baf.coarsen(ref_ratio[lev]);
-      m_coveredMask[lev]->setVal(1.0);
+      m_coveredMask[lev]->setVal(1);
 #ifdef _OPENMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
@@ -432,7 +434,7 @@ void PeleLM::resetCoveredMask()
                amrex::ParallelFor(is.second, [mask]
                AMREX_GPU_DEVICE (int i, int j, int k) noexcept
                {
-                  mask(i,j,k) = 0.0;
+                  mask(i,j,k) = 0;
                });
             }
          }
