@@ -221,7 +221,6 @@ int PeleLM::testExitNewton(int newtonIter,
 void PeleLM::updateNLState(const Vector<MultiFab*> &a_update)
 {
    // AverageDown the newton direction
-   /*
    for (int lev = finest_level; lev > 0; --lev) {
 #ifdef AMREX_USE_EB
       EB_average_down(*a_update[lev],
@@ -233,7 +232,6 @@ void PeleLM::updateNLState(const Vector<MultiFab*> &a_update)
                    0,2,refRatio(lev-1));
 #endif
    }
-   */
    for (int lev = 0; lev <= finest_level; ++lev) {
       auto ldataNLs_p = getLevelDataNLSolvePtr(lev);   // NL data
       ldataNLs_p->nlState.plus(*a_update[lev],0,2,0);
@@ -923,7 +921,11 @@ void PeleLM::nlSolveNorm(const Vector<MultiFab*> &a_MF, Real &r)
       Real norm = 0.0;
       for (int lev = 0; lev < a_MF.size(); ++lev) {
          // TODO : norm not weighted by cell size, should it ?
-         norm += MultiFab::Dot(*a_MF[lev],comp,*a_MF[lev],comp,1,0);
+         if ( lev != a_MF.size()-1) {
+            norm += MultiFab::Dot(*m_coveredMask[lev],*a_MF[lev],comp,*a_MF[lev],comp,1,0);
+         } else {
+            norm += MultiFab::Dot(*a_MF[lev],comp,*a_MF[lev],comp,1,0);
+         }
       }
       r += norm;
    }
