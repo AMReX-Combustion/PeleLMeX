@@ -263,6 +263,7 @@ void PeleLM::readParameters() {
    // -----------------------------------------
    ppef.query("JFNK_newtonTol",m_ef_newtonTol);
    ppef.query("JFNK_maxNewton",m_ef_maxNewtonIter);
+   ppef.query("JFNK_lambda",m_ef_lambda_jfnk);
    ppef.query("GMRES_verbose",m_ef_GMRES_verbose);
    ppef.query("GMRES_max_restart",m_ef_GMRES_maxRst);
    ppef.query("GMRES_rel_tol",m_ef_GMRES_reltol);
