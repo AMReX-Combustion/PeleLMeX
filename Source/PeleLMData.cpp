@@ -40,11 +40,12 @@ PeleLM::LevelDataReact::LevelDataReact(const amrex::BoxArray &ba,
                                        const amrex::DistributionMapping &dm, 
                                        const amrex::FabFactory<FArrayBox> &factory)
 {
-   I_R.define(ba, dm, NUM_SPECIES, 0, MFInfo(), factory);
-   functC.define(ba, dm, 1, 0, MFInfo(), factory);
+   int IRsize = NUM_SPECIES;
 #ifdef PLM_USE_EFIELD
-   I_RnE.define(ba, dm, 1, 0, MFInfo(), factory);
+   IRsize += 1;
 #endif
+   I_R.define(ba, dm, IRsize, 0, MFInfo(), factory);
+   functC.define(ba, dm, 1, 0, MFInfo(), factory);
 }
 
 #ifdef PLM_USE_EFIELD
@@ -141,7 +142,11 @@ PeleLM::AdvanceAdvData::AdvanceAdvData(int a_finestLevel,
       } else {
          AofS[lev].define(ba[lev], dm[lev], NVAR , 0, MFInfo(), *factory[lev]);
          chi[lev].define(ba[lev], dm[lev], 1, 1, MFInfo(), *factory[lev]);
+#ifdef PLM_USE_EFIELD
+         Forcing[lev].define(ba[lev], dm[lev], NUM_SPECIES+2, nGrowAdv, MFInfo(), *factory[lev]); // Species + TEMP + nE
+#else
          Forcing[lev].define(ba[lev], dm[lev], NUM_SPECIES+1, nGrowAdv, MFInfo(), *factory[lev]); // Species + TEMP
+#endif
          mac_divu[lev].define(ba[lev], dm[lev], 1, nGrowAdv, MFInfo(), *factory[lev]);
       }
    }
