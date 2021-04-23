@@ -607,11 +607,18 @@ class PeleLM : public amrex::AmrCore {
                            amrex::BCRec bcrec);
 
    void ionDriftVelocity(std::unique_ptr<AdvanceAdvData> &advData);
+   void ionDriftAddUmac(int lev, std::unique_ptr<AdvanceAdvData> &advData);
 
    void nlSolveNorm(const amrex::Vector<amrex::MultiFab*> &a_MF,
                     amrex::Real &norm);
 
+   int testExitNewton(int newtonIter,
+                      const amrex::Real &max_res); 
+
    void updateNLState(const amrex::Vector<amrex::MultiFab*> &a_update);
+
+   void incrementElectronForcing(int a_sstep,
+                                 std::unique_ptr<AdvanceAdvData> &advData);
 
    void getNLStateScaling(amrex::Real &nEScale, amrex::Real &phiVScale);
    void getNLResidScaling(amrex::Real &nEScale, amrex::Real &phiVScale);
@@ -642,6 +649,22 @@ class PeleLM : public amrex::AmrCore {
    // Accessors
    std::string runMode() {
       return m_run_mode;
+   }
+
+   int nCompIR() {
+#ifdef PLM_USE_EFIELD
+      return NUM_SPECIES+1;
+#else
+      return NUM_SPECIES;
+#endif
+   }
+
+   int nCompForcing() {
+#ifdef PLM_USE_EFIELD
+      return NUM_SPECIES+2;
+#else
+      return NUM_SPECIES+1;
+#endif
    }
 
    amrex::FabFactory<amrex::FArrayBox> const&
