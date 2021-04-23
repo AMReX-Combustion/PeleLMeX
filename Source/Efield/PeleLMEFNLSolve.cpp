@@ -64,15 +64,13 @@ void PeleLM::implicitNonLinearSolve(int sdcIter,
    MLGMRESSolver gmres;
    int GMRES_tot_count = 0;
    if ( !m_ef_use_PETSC_direct ) {
-      gmres.define(this,m_ef_GMRES_size,2,1);
+      gmres.define(this,2,1);
       MLJtimesVFunc jtv = &PeleLM::jTimesV;
       gmres.setJtimesV(jtv);
       MLNormFunc normF = &PeleLM::nlSolveNorm;
       gmres.setNorm(normF);
       MLPrecondFunc prec = &PeleLM::applyPrecond;
       gmres.setPrecond(prec);
-      gmres.setVerbose(m_ef_GMRES_verbose);
-      gmres.setMaxRestart(m_ef_GMRES_maxRst);
    }
 
    //------------------------------------------------------------------------
@@ -221,6 +219,7 @@ int PeleLM::testExitNewton(int newtonIter,
 void PeleLM::updateNLState(const Vector<MultiFab*> &a_update)
 {
    // AverageDown the newton direction
+   /*
    for (int lev = finest_level; lev > 0; --lev) {
 #ifdef AMREX_USE_EB
       EB_average_down(*a_update[lev],
@@ -232,12 +231,12 @@ void PeleLM::updateNLState(const Vector<MultiFab*> &a_update)
                    0,2,refRatio(lev-1));
 #endif
    }
+   */
    for (int lev = 0; lev <= finest_level; ++lev) {
       auto ldataNLs_p = getLevelDataNLSolvePtr(lev);   // NL data
       ldataNLs_p->nlState.plus(*a_update[lev],0,2,0);
    }
    // AverageDown the new state
-   /*
    for (int lev = finest_level; lev > 0; --lev) {
       auto ldataNLsFine_p = getLevelDataNLSolvePtr(lev);   // NL data
       auto ldataNLsCrse_p = getLevelDataNLSolvePtr(lev-1);   // NL data
@@ -251,7 +250,6 @@ void PeleLM::updateNLState(const Vector<MultiFab*> &a_update)
                    0,2,refRatio(lev-1));
 #endif
    }
-   */
 }
 
 void PeleLM::incrementElectronForcing(int a_sstep,
@@ -538,6 +536,7 @@ void PeleLM::getAdvectionTerm(const Vector<const MultiFab*> &a_nE,
 
    // Average down the fluxes
    // TODO: this generates kinks in the advTerm ... why ?
+   /*
    for (int lev = finest_level; lev > 0; --lev) {
 #ifdef AMREX_USE_EB
       EB_average_down_faces(GetArrOfConstPtrs(fluxes[lev]),
@@ -551,6 +550,7 @@ void PeleLM::getAdvectionTerm(const Vector<const MultiFab*> &a_nE,
 //                         refRatio(lev-1),nGrow);
 #endif
    }
+   */
 
    // Compute divergence
    int intensiveFluxes = 1;
