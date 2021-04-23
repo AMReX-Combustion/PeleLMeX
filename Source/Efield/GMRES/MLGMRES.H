@@ -22,8 +22,8 @@ class MLGMRESSolver
      MLGMRESSolver& operator= (const MLGMRESSolver&) = delete;
      MLGMRESSolver& operator= (MLGMRESSolver&&) = delete;
 
+     void readParameters();
      void define(PeleLM* a_level,
-                 const int a_KrylovSize,
                  const int a_nComp,
                  const int a_nGrow);
 
@@ -87,9 +87,9 @@ class MLGMRESSolver
 //   GMRES attributes
      int check_GramSchmidtOrtho = 1;
      bool m_converged;
-     int m_krylovSize;
-     int m_restart;
-     int m_nComp;
+     int m_krylovSize = 10;
+     int m_restart = 2;
+     int m_nComp = -1;
      amrex::Real initResNorm;
      amrex::Real targetResNorm;
      int iter_count;

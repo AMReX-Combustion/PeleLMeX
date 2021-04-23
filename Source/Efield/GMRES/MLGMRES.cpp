@@ -1,4 +1,5 @@
 #include <MLGMRES.H>
+#include <AMReX_ParmParse.H>
 
 using namespace amrex;
 
@@ -11,11 +12,12 @@ MLGMRESSolver::~MLGMRESSolver() {}
 
 void
 MLGMRESSolver::define(PeleLM* a_pelelm,
-                    const int a_KrylovSize, 
                     const int a_nComp,
                     const int a_nGrow)
 {
    BL_PROFILE("MLGMRESSolver::define()");
+
+   readParameters();
 
    m_pelelm = a_pelelm;
 
@@ -35,7 +37,6 @@ MLGMRESSolver::define(PeleLM* a_pelelm,
    // Internal GMRES size
    m_nComp = a_nComp;
    m_nGrow = a_nGrow;
-   m_krylovSize = a_KrylovSize;
 
    // Build krylov base memory and work MFs
    KspBase.resize(m_krylovSize+1);
@@ -133,9 +134,11 @@ MLGMRESSolver::solve(const Vector<MultiFab*> &a_sol,
       restart_count++;
    } while( !m_converged && restart_count < m_restart );
 
+   /*
    Real finalResNorm = computeMLResidualNorm(a_sol,a_rhs);                // Final resisual norm
    if ( m_verbose > 0 ) amrex::Print() << "  GMRES: Final residual, resid/resid0 = " << finalResNorm << ", "
                                        << finalResNorm/initResNorm << "\n";
+   */
    return iter_count;
 }
 
@@ -361,4 +364,15 @@ MLGMRESSolver::MFVecSaxpy(const Vector<MultiFab *> &a_mfdest,
    for (int lev = 0; lev <= finest_level; ++lev) {
       MultiFab::Saxpy(*a_mfdest[lev], a_a, *a_mfsrc[lev], destComp, srcComp, nComp, nGrow);
    }
+}
+
+void
+MLGMRESSolver::readParameters()
+{
+   ParmParse pp("gmres");
+
+   pp.query("krylovBasis_size", m_krylovSize);
+   pp.query("max_restart",m_restart);
+   pp.query("verbose",m_verbose);
+   pp.query("checkGSortho",check_GramSchmidtOrtho);
 }
