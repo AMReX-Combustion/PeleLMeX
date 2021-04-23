@@ -158,7 +158,7 @@ PrecondOp::diffOpSolve(const Vector<MultiFab*> &a_sol,
    mlmg.setVerbose(m_diff_verbose);
    if (m_fixed_mg_it > 0) mlmg.setFixedIter(m_fixed_mg_it);
    
-   mlmg.solve(a_sol, a_rhs, rtol, atol);
+   mlmg.solve(a_sol, a_rhs, m_mg_rtol, m_mg_atol);
 }
 
 void
@@ -171,7 +171,7 @@ PrecondOp::StildaOpSolve(const Vector<MultiFab*> &a_sol,
    mlmg.setVerbose(m_Stilda_verbose);
    if (m_fixed_mg_it > 0) mlmg.setFixedIter(m_fixed_mg_it);
    
-   mlmg.solve(a_sol, a_rhs, rtol, atol);
+   mlmg.solve(a_sol, a_rhs, m_mg_rtol, m_mg_atol);
 }
 
 void
