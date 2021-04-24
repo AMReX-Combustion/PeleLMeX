@@ -17,9 +17,6 @@
    // Linear solve
    int                         m_ef_maxNewtonIter    = 5; 
    int                         m_ef_use_PETSC_direct = 0;
-   int                         m_ef_GMRES_verbose    = 0; 
-   int                         m_ef_GMRES_size       = 10; 
-   int                         m_ef_GMRES_maxRst     = 3; 
    amrex::Real                 m_ef_lambda_jfnk      = 1.0e-7;
    amrex::Real                 m_ef_newtonTol        = std::pow(1.0e-13,2.0/3.0);
    amrex::Real                 m_ef_GMRES_reltol     = 1.0e-6;
