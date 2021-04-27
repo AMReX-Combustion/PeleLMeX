@@ -2,6 +2,7 @@
 #define PeleLMEF_K_H_
 
 #include <PeleLMEF_Constants.H>
+#include <PelePhysics.H>
 #include <mechanism.h>
 
 AMREX_GPU_HOST_DEVICE
@@ -134,4 +135,59 @@ cen2edg_upwind(int i, int j, int k,
    }
 }
 
+AMREX_GPU_HOST_DEVICE
+AMREX_FORCE_INLINE
+void
+reactionRateRhoY_EF(int i, int j, int k,
+                    amrex::Array4<const amrex::Real> const& rhoY,
+                    amrex::Array4<const amrex::Real> const& rhoH,
+                    amrex::Array4<const amrex::Real> const& T,
+                    amrex::Array4<const amrex::Real> const& nE,
+                    amrex::Array4<const amrex::Real> const& mask,
+                    amrex::Array4<      amrex::Real> const& rhoYdot,
+                    amrex::Array4<      amrex::Real> const& nEdot) noexcept
+{
+   using namespace amrex::literals;
+
+   // mask < 0 is EB covered cells: no reactions.
+   if ( mask(i,j,k) < 0.0 ) {
+      for (int n = 0; n < NUM_SPECIES; n++) {
+         rhoYdot(i,j,k,n) = 0.0;
+      }
+      nEdot(i,j,k) = 0.0;
+      return;
+   }
+
+   // Get rho from rhoY. Is there a better way ?
+   amrex::Real rho = 0.0_rt;
+   for (int n = 0; n < NUM_SPECIES; n++) {
+      rho += rhoY(i,j,k,n);
+   }
+   amrex::Real rhoinv = 1.0_rt / rho;
+   amrex::Real y[NUM_SPECIES] = {0.0};
+   for (int n = 0; n < NUM_SPECIES; n++) {
+      y[n] = rhoY(i,j,k,n) * rhoinv;
+   }
+
+   // Get Y[e] from nE
+   auto eos = pele::physics::PhysicsType::eos();
+   amrex::Real mw[NUM_SPECIES] = {0.0};
+   eos.molecular_weight(mw);
+   y[E_ID] = nE(i,j,k) / Na * mw[E_ID] * 0.001 * rhoinv;
+
+   // Get T from Y/H. Was done like that before.
+   amrex::Real Tloc = T(i,j,k);
+   amrex::Real H = rhoH(i,j,k) * rhoinv * 1.0e4_rt;      // Include MKS -> CGS conversion
+   eos.HY2T(H, y, Tloc);
+
+   // Get wdot. Don't like the temporary wdot there ...
+   rho = rho * 0.001_rt;                                 // rho MKS -> CGS
+   amrex::Real wdot[NUM_SPECIES] = {0.0};
+   eos.RTY2WDOT(rho, Tloc, y, wdot);
+   for (int n = 0; n < NUM_SPECIES; n++) {
+      rhoYdot(i,j,k,n) = wdot[n] * 1000.0_rt;            // CGS -> MKS conversion
+   }
+   nEdot(i,j,k) = wdot[E_ID] * Na * 1.0e6;
+   rhoYdot(i,j,k,E_ID) = 0.0;
+}
 #endif
