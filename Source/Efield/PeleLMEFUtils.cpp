@@ -97,3 +97,58 @@ void PeleLM::scaleNLResid(const Vector<MultiFab*> &a_resid, const Real &nEScale,
       a_resid[lev]->mult(1.0/FphiV_scale,1,1,1);
    }
 }
+
+BCRec
+PeleLM::hackBCChargedParticle(const Real &charge,
+                              const BCRec &bc_in) {
+
+   BCRec bc_hacked;
+
+   const int* lo_bc = bc_in.lo();
+   const int* hi_bc = bc_in.hi();
+
+   for (int idim = 0; idim < AMREX_SPACEDIM; idim++)
+   {
+
+      int lo = lo_bc[idim];
+      int hi = hi_bc[idim];
+      // Spec is In/Out and it's cathode (neg electrode)
+      if ( ( lo_bc[idim] == amrex::BCType::ext_dir ||
+             lo_bc[idim] == amrex::BCType::foextrap ) &&
+           ( m_phiV_bcpol.lo(idim) == 2 ) ) {
+         if ( charge > 0.0 ) { // Outflow for cation
+            lo = amrex::BCType::foextrap;
+         } else {            // Dirich = 0 for anion
+            lo = amrex::BCType::ext_dir;
+         }
+      } else if ( ( lo_bc[idim] == amrex::BCType::ext_dir ||
+                    lo_bc[idim] == amrex::BCType::foextrap ) &&
+                  ( m_phiV_bcpol.lo(idim) == 1 ) ) {
+         if ( charge > 0.0 ) { // Dirich = 0 for cation
+            lo = amrex::BCType::ext_dir;
+         } else {            // Outflow for anion
+            lo = amrex::BCType::foextrap;
+         }
+      }
+      if ( ( hi_bc[idim] == amrex::BCType::ext_dir ||
+             hi_bc[idim] == amrex::BCType::foextrap ) &&
+           ( m_phiV_bcpol.hi(idim) == 2 ) ) {
+         if ( charge > 0.0 ) { // Outflow for cation
+            hi = amrex::BCType::foextrap;
+         } else {            // Dirich = 0 for anion
+            hi = amrex::BCType::ext_dir;
+         }
+      } else if ( ( hi_bc[idim] == amrex::BCType::ext_dir ||
+                    hi_bc[idim] == amrex::BCType::foextrap ) &&
+                  ( m_phiV_bcpol.hi(idim) == 1 ) ) {
+         if ( charge > 0.0 ) { // Dirich = 0 for cation
+            hi = amrex::BCType::ext_dir;
+         } else {            // Outflow for anion
+            hi = amrex::BCType::foextrap;
+         }
+      }
+      bc_hacked.setLo(idim,lo);
+      bc_hacked.setHi(idim,hi);
+   }
+   return bc_hacked;
+}
