@@ -162,6 +162,20 @@ void PeleLM::setBoundaryConditions() {
          m_bcrec_state[PHIV].setLo(idim,phiV_bc[lo_phibc[idim]]);
          m_bcrec_state[PHIV].setHi(idim,phiV_bc[hi_phibc[idim]]);
       }
+
+      // Hack charged species BCs
+      int FIRSTION = FIRSTSPEC + NUM_SPECIES - NUM_IONS;
+      for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+         for ( int n = 0; n < NUM_IONS; n++) {
+            auto const bcIonSave = m_bcrec_state[FIRSTION+n];
+            m_bcrec_state[FIRSTION+n] = hackBCChargedParticle(zk[FIRSTION+n], bcIonSave);
+         }
+      }
+      // Need to hack nE too actually ...
+      for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+         auto const bcnESave = m_bcrec_state[NE];
+         m_bcrec_state[NE] = hackBCChargedParticle(-1.0, bcnESave);
+      }
 #endif
    }
 
@@ -239,6 +253,15 @@ void PeleLM::fillPatchTemp(const TimeStamp &a_time) {
       auto ldata_p = getLevelDataPtr(lev,a_time);
       Real time = getTime(lev, a_time);
       fillpatch_energy(lev, time, ldata_p->rhoh, ldata_p->temp, m_nGrowState);
+   }
+}
+
+void PeleLM::fillPatchPhiV(const TimeStamp &a_time) {
+   BL_PROFILE_VAR("PeleLM::fillPatchPhiV()", fillPatchPhiV);
+   for (int lev = 0; lev <= finest_level; lev++) {
+      auto ldata_p = getLevelDataPtr(lev,a_time);
+      Real time = getTime(lev, a_time);
+      fillpatch_phiV(lev, time, ldata_p->phiV, m_nGrowState);
    }
 }
 //-----------------------------------------------------------------------------
