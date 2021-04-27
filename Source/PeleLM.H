@@ -427,6 +427,9 @@ class PeleLM : public amrex::AmrCore {
    void fillPatchDensity(const PeleLM::TimeStamp &a_time);
    void fillPatchSpecies(const PeleLM::TimeStamp &a_time);
    void fillPatchTemp(const PeleLM::TimeStamp &a_time);
+#ifdef PLM_USE_EFIELD
+   void fillPatchPhiV(const PeleLM::TimeStamp &a_time);
+#endif
 
    // FillPatch and return a state MF
    std::unique_ptr<amrex::MultiFab>
@@ -608,6 +611,17 @@ class PeleLM : public amrex::AmrCore {
 
    void ionDriftVelocity(std::unique_ptr<AdvanceAdvData> &advData);
    void ionDriftAddUmac(int lev, std::unique_ptr<AdvanceAdvData> &advData);
+
+   void computeInstantaneousReactionRateEF(int lev,
+                                           const PeleLM::TimeStamp &a_time,
+                                           const amrex::MultiFab &a_mask,
+                                           amrex::MultiFab* a_I_R);
+
+   amrex::BCRec
+   hackBCChargedParticle(const amrex::Real &zk,
+                         const amrex::BCRec &bc_in);
+
+   amrex::Real estEFIonsDt(const PeleLM::TimeStamp &a_time);
 
    void nlSolveNorm(const amrex::Vector<amrex::MultiFab*> &a_MF,
                     amrex::Real &norm);
