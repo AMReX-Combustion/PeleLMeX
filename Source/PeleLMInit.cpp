@@ -101,6 +101,7 @@ void PeleLM::initData() {
 
 #ifdef PLM_USE_EFIELD
       poissonSolveEF(AmrNewTime);
+      fillPatchPhiV(AmrNewTime);
 #endif
 
       // Post data Init time step estimate
@@ -109,16 +110,24 @@ void PeleLM::initData() {
       Real dtInit = computeDt(is_init,AmrNewTime);
       Print() << " Initial dt: " << dtInit << "\n";
 
-      // Subcycling IAMR/PeleLM first does a projection without divU
-      // whch makes the dt for evaluating I_R better
-      int has_divu_save = m_has_divu;
-      m_has_divu = 0;
+      // Subcycling IAMR/PeleLM first does a projection with no reaction divU
+      // which can make the dt for evaluating I_R better
+      if (m_has_divu) {
+         int is_initialization = 1;             // Yes we are
+         int computeDiffusionTerm = 1;          // Needed here
+         int do_avgDown = 1;                    // Always
+
+         // Light version of the diffusion data container
+         std::unique_ptr<AdvanceDiffData> diffData;
+         diffData.reset(new AdvanceDiffData(finest_level, grids, dmap, m_factory,
+                        m_nGrowAdv, m_use_wbar, is_initialization));
+         calcDivU(is_initialization,computeDiffusionTerm,do_avgDown,AmrNewTime,diffData);
+      }
       initialProjection();
-      m_has_divu = has_divu_save;
 
       // Post data Init time step estimate
-      dtInit = computeDt(is_init,AmrNewTime);
-      Print() << " Initial dt: " << dtInit << "\n";
+      m_dt = computeDt(is_init,AmrNewTime);
+      Print() << " Initial dt: " << m_dt << "\n";
 
       //----------------------------------------------------------------
       // Initial velocity projection iterations
