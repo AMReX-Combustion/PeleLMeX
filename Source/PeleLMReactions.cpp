@@ -53,17 +53,6 @@ void PeleLM::advanceChemistry(int lev,
    FabArray<BaseFab<int>> mask(grids[lev],dmap[lev],1,0);
    mask.setVal(1);
 
-#ifdef PLM_USE_EFIELD
-   // Pass nE -> rhoY_e & FnE -> FrhoY_e
-#ifdef _OPENMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
-   for (MFIter mfi(ldataNew_p->species,amrex::TilingIfNotGPU()); mfi.isValid(); ++mfi)
-   {
-
-   }
-#endif
-
 #ifdef _OPENMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
@@ -151,11 +140,12 @@ void PeleLM::advanceChemistry(int lev,
       auto const& nE_n   = ldataNew_p->nE.array(mfi);
       Real invmwt[NUM_SPECIES] = {0.0};
       eos.inv_molecular_weight(invmwt);
-      ParallelFor(bx, [invmwt,nE_n,rhoYe_n]
+      ParallelFor(bx, [invmwt,nE_n,rhoYe_n,extF_rhoY]
       AMREX_GPU_DEVICE (int i, int j, int k) noexcept
       {
          nE_n(i,j,k) = rhoYe_n(i,j,k) * Na * invmwt[E_ID] * 1.0e3;
          rhoYe_n(i,j,k) = 0.0;
+         extF_rhoY(i,j,k,E_ID) = 0.0;
       });
 #endif
 
