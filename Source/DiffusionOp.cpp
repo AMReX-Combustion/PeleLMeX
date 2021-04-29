@@ -19,6 +19,9 @@ DiffusionOp::DiffusionOp (PeleLM* a_pelelm)
 
    // Solve LPInfo
    LPInfo info_solve;
+   info_solve.setAgglomeration(1);
+   info_solve.setConsolidation(1);
+   info_solve.setMetricTerm(false);
    info_solve.setMaxCoarseningLevel(m_mg_max_coarsening_level);
 
    // Apply LPInfo (no coarsening)
@@ -185,7 +188,7 @@ void DiffusionOp::diffuse_scalar(Vector<MultiFab*> const& a_phi, int phi_comp,
       // Solve
       mlmg.solve(GetVecOfPtrs(component), GetVecOfConstPtrs(rhs), m_mg_rtol, m_mg_atol);
 
-      // Need to get the {np1,kp1} fluxes
+      // Need to get the fluxes
       if ( have_fluxes ) {
 #ifdef AMREX_USE_EB
          mlmg.getFluxes(fluxes, MLMG::Location::FaceCentroid);
