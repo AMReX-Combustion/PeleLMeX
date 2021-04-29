@@ -134,11 +134,9 @@ MLGMRESSolver::solve(const Vector<MultiFab*> &a_sol,
       restart_count++;
    } while( !m_converged && restart_count < m_restart );
 
-   /*
    Real finalResNorm = computeMLResidualNorm(a_sol,a_rhs);                // Final resisual norm
    if ( m_verbose > 0 ) amrex::Print() << "  GMRES: Final residual, resid/resid0 = " << finalResNorm << ", "
                                        << finalResNorm/initResNorm << "\n";
-   */
    return iter_count;
 }
 
