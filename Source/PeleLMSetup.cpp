@@ -29,9 +29,6 @@ void PeleLM::Setup() {
    // Initialize Level Hierarchy data
    resizeArray();
 
-   // Initiliaze BCs
-   setBoundaryConditions();
-
    // Initialize EOS and others
    if (!m_incompressible) {
       amrex::Print() << " Initialization of Transport ... \n";
@@ -55,6 +52,9 @@ void PeleLM::Setup() {
       }
 #endif
    }
+
+   // Initiliaze BCs
+   setBoundaryConditions();
 
    // Problem parameters
    prob_parm.reset(new ProbParm{});
