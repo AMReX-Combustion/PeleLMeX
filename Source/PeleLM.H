@@ -623,6 +623,14 @@ class PeleLM : public amrex::AmrCore {
 
    amrex::Real estEFIonsDt(const PeleLM::TimeStamp &a_time);
 
+   void addLorentzVelForces(int lev,
+                            const amrex::Box &bx,
+                            const amrex::Real &a_time,
+                            amrex::Array4<amrex::Real> const& force,
+                            amrex::Array4<const amrex::Real> const& rhoY,
+                            amrex::Array4<const amrex::Real> const& phiV,
+                            amrex::Array4<const amrex::Real> const& nE);
+
    void nlSolveNorm(const amrex::Vector<amrex::MultiFab*> &a_MF,
                     amrex::Real &norm);
 
