@@ -190,4 +190,60 @@ reactionRateRhoY_EF(int i, int j, int k,
    nEdot(i,j,k) = wdot[E_ID] * Na * 1.0e6;
    rhoYdot(i,j,k,E_ID) = 0.0;
 }
+
+AMREX_GPU_HOST_DEVICE
+AMREX_FORCE_INLINE
+void
+addLorentzForce(int i, int j, int k,
+                amrex::GpuArray<int,3> const bxlo,
+                amrex::GpuArray<int,3> const bxhi,
+                const amrex::Real &time,
+                amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const dx,
+                amrex::GpuArray<amrex::Real, NUM_SPECIES> const a_zk,
+                amrex::Array4<const amrex::Real> const& rhoY,
+                amrex::Array4<const amrex::Real> const& ne,
+                amrex::Array4<const amrex::Real> const& phiV,
+                amrex::Array4<      amrex::Real> const& force) noexcept
+{
+   using namespace amrex::literals;
+   // Electric field. Use 1-sided stencil in the force ghost cells.
+   amrex::Real EFx;
+   if ( i == bxlo[0] ) {
+      EFx = - 1.0_rt / dx[0] * ( phiV(i+1,j,k) - phiV(i,j,k) );
+   } else if ( i == bxhi[0] ) {
+      EFx = - 1.0_rt / dx[0] * ( phiV(i,j,k) - phiV(i-1,j,k) );
+   } else {
+      EFx = - 0.5_rt / dx[0] * ( phiV(i+1,j,k) - phiV(i-1,j,k) );
+   }
+   amrex::Real EFy;
+   if ( j == bxlo[1] ) {
+      EFy = - 1.0_rt / dx[1] * ( phiV(i,j+1,k) - phiV(i,j,k) );
+   } else if ( j == bxhi[1] ) {
+      EFy = - 1.0_rt / dx[1] * ( phiV(i,j,k) - phiV(i,j-1,k) );
+   } else {
+      EFy = - 0.5_rt / dx[1] * ( phiV(i,j+1,k) - phiV(i,j-1,k) );
+   }
+#if ( AMREX_SPACEDIM == 3 )
+   amrex::Real EFz;
+   if ( k == bxlo[2] ) {
+      EFz = - 1.0_rt / dx[2] * ( phiV(i,j,k+1) - phiV(i,j,k) );
+   } else if ( k == bxhi[2] ) {
+      EFz = - 1.0_rt / dx[2] * ( phiV(i,j,k) - phiV(i,j,k-1) );
+   } else {
+      EFz = - 0.5_rt / dx[2] * ( phiV(i,j,k+1) - phiV(i,j,k-1) );
+   }
+#endif
+   for (int n = 0; n < NUM_SPECIES; n++) {
+      force(i,j,k,0) += a_zk[n] * rhoY(i,j,k,n) * EFx;
+      force(i,j,k,1) += a_zk[n] * rhoY(i,j,k,n) * EFy;
+#if ( AMREX_SPACEDIM == 3 )
+      force(i,j,k,2) += a_zk[n] * rhoY(i,j,k,n) * EFz;
+#endif
+   }
+   force(i,j,k,0) -= ne(i,j,k) * elemCharge * EFx;
+   force(i,j,k,1) -= ne(i,j,k) * elemCharge * EFy;
+#if ( AMREX_SPACEDIM == 3 )
+   force(i,j,k,2) -= ne(i,j,k) * elemCharge * EFz;
+#endif
+}
 #endif
