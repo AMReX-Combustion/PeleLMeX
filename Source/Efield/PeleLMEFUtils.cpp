@@ -152,3 +152,23 @@ PeleLM::hackBCChargedParticle(const Real &charge,
    }
    return bc_hacked;
 }
+
+
+void PeleLM::addLorentzVelForces(int lev,
+                                 const Box&       bx,
+                                 const Real&      a_time,
+                                 Array4<      Real> const& force,
+                                 Array4<const Real> const& rhoY,
+                                 Array4<const Real> const& phiV,
+                                 Array4<const Real> const& nE)
+{
+   const auto  dx       = geom[lev].CellSizeArray();
+   GpuArray<int,3> blo = bx.loVect3d();
+   GpuArray<int,3> bhi = bx.hiVect3d();
+
+   amrex::ParallelFor(bx, [force, rhoY, phiV, nE, a_time, dx, blo, bhi, zk=zk]
+   AMREX_GPU_DEVICE(int i, int j, int k) noexcept
+   {
+      addLorentzForce(i,j,k, blo, bhi, a_time, dx, zk, rhoY, nE, phiV, force);
+   });
+}
