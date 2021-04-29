@@ -21,13 +21,13 @@ struct PeleLMCCFillExtDirVel
    void operator()(
       const amrex::IntVect& iv,
       amrex::Array4<amrex::Real> const& vel,
-      const int dcomp,
+      const int /*dcomp*/,
       const int /*numcomp*/,
       amrex::GeometryData const& geom,
       const amrex::Real time,
       const amrex::BCRec* bcr,
       const int /*bcomp*/,
-      const int orig_comp) const
+      const int /*orig_comp*/) const
    {
 
       // Get geometry data
@@ -86,13 +86,13 @@ struct PeleLMCCFillExtDirSpec
    void operator()(
       const amrex::IntVect& iv,
       amrex::Array4<amrex::Real> const& rhoY,
-      const int dcomp,
+      const int /*dcomp*/,
       const int /*numcomp*/,
       amrex::GeometryData const& geom,
       const amrex::Real time,
       const amrex::BCRec* bcr,
       const int /*bcomp*/,
-      const int orig_comp) const
+      const int /*orig_comp*/) const
    {
 
       // Get geometry data
@@ -104,33 +104,31 @@ struct PeleLMCCFillExtDirSpec
                                                           prob_lo[1] + (iv[1] + 0.5) * dx[1],
                                                           prob_lo[2] + (iv[2] + 0.5) * dx[2])};
 
-      // Get the first species component BC
-      const int* bc = bcr->data();
+      for (int n = 0; n < NUM_SPECIES; n++) {
 
-      // bcnormal handles all the state components at once
-      amrex::Real s_ext[NVAR] = {0.0};
+         // Get the species component BC
+         const int* bc = bcr[n].data();
 
-      for (int idir = 0; idir < AMREX_SPACEDIM; idir++) {
-         // Low
-         if ((bc[idir] == amrex::BCType::ext_dir) and (iv[idir] < domlo[idir])) {
+         // bcnormal handles all the state components at once
+         amrex::Real s_ext[NVAR] = {0.0};
 
-            // bcnormal() is defined in pelelm_prob.H in problem directory in /Exec
-            bcnormal(x, m_nAux, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
+         for (int idir = 0; idir < AMREX_SPACEDIM; idir++) {
+            // Low
+            if ((bc[idir] == amrex::BCType::ext_dir) and (iv[idir] < domlo[idir])) {
 
-            for (int n = 0; n < NUM_SPECIES; n++) {
+               // bcnormal() is defined in pelelm_prob.H in problem directory in /Exec
+               bcnormal(x, m_nAux, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
+
+               rhoY(iv,n) = s_ext[FIRSTSPEC+n];
+
+            // High
+            } else if ((bc[idir+AMREX_SPACEDIM] == amrex::BCType::ext_dir) and (iv[idir] > domhi[idir])) {
+
+               // bcnormal() is defined in pelelm_prob.H in problem directory in /Exec
+               bcnormal(x, m_nAux, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
+
                rhoY(iv,n) = s_ext[FIRSTSPEC+n];
             }
-
-         // High
-         } else if ((bc[idir+AMREX_SPACEDIM] == amrex::BCType::ext_dir) and (iv[idir] > domhi[idir])) {
-
-            // bcnormal() is defined in pelelm_prob.H in problem directory in /Exec
-            bcnormal(x, m_nAux, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
-
-            for (int n = 0; n < NUM_SPECIES; n++) {
-               rhoY(iv,n) = s_ext[FIRSTSPEC+n];
-            }
-
          }
       }
    }
@@ -151,13 +149,13 @@ struct PeleLMCCFillExtDirDens
    void operator()(
       const amrex::IntVect& iv,
       amrex::Array4<amrex::Real> const& rho,
-      const int dcomp,
+      const int /*dcomp*/,
       const int /*numcomp*/,
       amrex::GeometryData const& geom,
       const amrex::Real time,
       const amrex::BCRec* bcr,
       const int /*bcomp*/,
-      const int orig_comp) const
+      const int /*orig_comp*/) const
    {
 
       // Get geometry data
@@ -212,13 +210,13 @@ struct PeleLMCCFillExtDirRhoH
    void operator()(
       const amrex::IntVect& iv,
       amrex::Array4<amrex::Real> const& rhoH,
-      const int dcomp,
+      const int /*dcomp*/,
       const int /*numcomp*/,
       amrex::GeometryData const& geom,
       const amrex::Real time,
       const amrex::BCRec* bcr,
       const int /*bcomp*/,
-      const int orig_comp) const
+      const int /*orig_comp*/) const
    {
 
       // Get geometry data
@@ -273,13 +271,13 @@ struct PeleLMCCFillExtDirTemp
    void operator()(
       const amrex::IntVect& iv,
       amrex::Array4<amrex::Real> const& temp,
-      const int dcomp,
+      const int /*dcomp*/,
       const int /*numcomp*/,
       amrex::GeometryData const& geom,
       const amrex::Real time,
       const amrex::BCRec* bcr,
       const int /*bcomp*/,
-      const int orig_comp) const
+      const int /*orig_comp*/) const
    {
 
       // Get geometry data
@@ -335,13 +333,13 @@ struct PeleLMCCFillExtDirnE
    void operator()(
       const amrex::IntVect& iv,
       amrex::Array4<amrex::Real> const& nE,
-      const int dcomp,
+      const int /*dcomp*/,
       const int /*numcomp*/,
       amrex::GeometryData const& geom,
       const amrex::Real time,
       const amrex::BCRec* bcr,
       const int /*bcomp*/,
-      const int orig_comp) const
+      const int /*orig_comp*/) const
    {
 
       // Get geometry data
@@ -398,13 +396,13 @@ struct PeleLMCCFillExtDirPhiV
    void operator()(
       const amrex::IntVect& iv,
       amrex::Array4<amrex::Real> const& phiV,
-      const int dcomp,
+      const int /*dcomp*/,
       const int /*numcomp*/,
       amrex::GeometryData const& geom,
       const amrex::Real time,
       const amrex::BCRec* bcr,
       const int /*bcomp*/,
-      const int orig_comp) const
+      const int /*orig_comp*/) const
    {
 
       // Get geometry data
