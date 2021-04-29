@@ -164,11 +164,12 @@ void PeleLM::setBoundaryConditions() {
       }
 
       // Hack charged species BCs
-      int FIRSTION = FIRSTSPEC + NUM_SPECIES - NUM_IONS;
+      int FIRSTIONinVar = FIRSTSPEC + NUM_SPECIES - NUM_IONS;
+      int FIRSTIONinSpec = NUM_SPECIES - NUM_IONS;
       for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
          for ( int n = 0; n < NUM_IONS; n++) {
-            auto const bcIonSave = m_bcrec_state[FIRSTION+n];
-            m_bcrec_state[FIRSTION+n] = hackBCChargedParticle(zk[FIRSTION+n], bcIonSave);
+            auto const bcIonSave = m_bcrec_state[FIRSTIONinVar+n];
+            m_bcrec_state[FIRSTIONinVar+n] = hackBCChargedParticle(zk[FIRSTIONinSpec+n], bcIonSave);
          }
       }
       // Need to hack nE too actually ...
