@@ -172,6 +172,12 @@ bcnormal(
          massfrac[n] = pmf_vals[3 + n];
       }
 
+      massfrac[N2_ID] += massfrac[E_ID] + massfrac[H3Op_ID] + massfrac[HCOp_ID] + massfrac[C2H3Op_ID];
+      massfrac[E_ID] = 0.0;
+      massfrac[H3Op_ID] = 0.0;
+      massfrac[HCOp_ID] = 0.0;
+      massfrac[C2H3Op_ID] = 0.0;
+
       amrex::Real rho_cgs, P_cgs, RhoH_temp;
       P_cgs = prob_parm.P_mean * 10.0;
 
@@ -183,6 +189,10 @@ bcnormal(
 
       for (int n = 0; n < NUM_SPECIES; n++) {
          s_ext[FIRSTSPEC+n] = massfrac[n] * s_ext[DENSITY];
+      }
+   } else { // Some charged species have inflow at the outlet
+      for (int n = 0; n < NUM_SPECIES; n++) {
+         s_ext[FIRSTSPEC+n] = 0.0;
       }
    }
 
