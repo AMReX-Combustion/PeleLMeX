@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+echo "Getting PeleLMeX dependencies - tests ... "
+export PELELM_HOME=${PWD}/..
+mkdir build
+git clone https://github.com/AMReX-Codes/amrex.git build/amrex
+export AMREX_HOME=${PWD}/build/amrex
+git clone -b development https://github.com/AMReX-Combustion/PelePhysics.git build/PelePhysics
+export PELE_PHYSICS_HOME=${PWD}/build/PelePhysics
