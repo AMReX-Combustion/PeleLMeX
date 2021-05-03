@@ -9,7 +9,12 @@ void PeleLM::initialProjection()
    Real time = 0.0;
 
    if (m_verbose) {
-      amrex::Print() << " Initial velocity projection: \n";
+      Vector<Real> velMax(AMREX_SPACEDIM);
+      velMax = MLNorm0(GetVecOfConstPtrs(getVelocityVect(AmrNewTime)),0,AMREX_SPACEDIM);
+      amrex::Print() << " Initial velocity projection: ";
+      amrex::Print() << AMREX_D_TERM( "  U: " << velMax[0] <<,
+                                      "  V: " << velMax[1] <<,
+                                      "  W: " << velMax[2] <<) "\n";
    }
 
    Real dummy_dt = 1.0;
@@ -74,7 +79,12 @@ void PeleLM::initialProjection()
    averageDownVelocity(AmrNewTime);
 
    if (m_verbose) {
-      amrex::Print() << " After initial velocity projection:\n";
+      Vector<Real> velMax(AMREX_SPACEDIM);
+      velMax = MLNorm0(GetVecOfConstPtrs(getVelocityVect(AmrNewTime)),0,AMREX_SPACEDIM);
+      amrex::Print() << " >> After initial velocity projection: ";
+      amrex::Print() << AMREX_D_TERM( "  U: " << velMax[0] <<,
+                                      "  V: " << velMax[1] <<,
+                                      "  W: " << velMax[2] <<) "\n";
    }
 
 }

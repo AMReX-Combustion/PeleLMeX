@@ -15,6 +15,10 @@
 #include <pelelm_prob_parm.H>
 #include <DiffusionOp.H>
 
+#ifdef PLM_USE_EFIELD
+#include <PrecondOp.H>
+#endif
+
 class PeleLM : public amrex::AmrCore {
 
    public:
@@ -103,22 +107,32 @@ class PeleLM : public amrex::AmrCore {
                  int a_nAux, int a_nGrowState, int a_nGrowMAC);
 
       // cell-centered state multifabs
-      amrex::MultiFab velocity;        // Velocity (dim:AMREX_SPACEDIM)   
+      amrex::MultiFab velocity;        // Velocity (dim:AMREX_SPACEDIM)
       amrex::MultiFab density;         // Density (dim:1)
       amrex::MultiFab species;         // Species mass fraction (dim:NUM_SPECIES)
       amrex::MultiFab rhoh;            // Rho * enthalpy (dim:1)
       amrex::MultiFab rhoRT;           // Thermodynamic pressure (dim:1)
-      amrex::MultiFab temp;            // Temperature (dim:1) 
-      amrex::MultiFab auxiliaries;     // Auxiliary variables (passive scalars and others) (dim:m_nAux) 
+      amrex::MultiFab temp;            // Temperature (dim:1)
+      amrex::MultiFab auxiliaries;     // Auxiliary variables (passive scalars and others) (dim:m_nAux)
       amrex::MultiFab gp;              // pressure gradient (dim:AMREX_SPACEDIM)
       amrex::MultiFab divu;            // Velocity divergence constraint
+
+#ifdef PLM_USE_EFIELD
+      amrex::MultiFab nE;              // ELectron number density (dim:1)
+      amrex::MultiFab phiV;            // Electro-static potential (dim:1)
+#endif
 
       // node-centered state multifabs
       amrex::MultiFab press;           // nodal pressure (dim:1)
 
-      // cell-centered advance multifabs
+      // cell-centered transport multifabs
       amrex::MultiFab visc_cc;         // Viscosity (dim:1)
       amrex::MultiFab diff_cc;         // Diffusivity (dim:NUM_SPECIES+2)
+#ifdef PLM_USE_EFIELD
+      amrex::MultiFab diffE_cc;        // Electron diffusivity (dim:1)
+      amrex::MultiFab mobE_cc;         // Electron mobility (dim:1)
+      amrex::MultiFab mob_cc;          // Species mobility (dim:NUM_IONS)
+#endif
    };
    struct LevelDataReact {
       LevelDataReact () = default;
@@ -127,6 +141,9 @@ class PeleLM : public amrex::AmrCore {
                       const amrex::FabFactory<amrex::FArrayBox> &factory);
       amrex::MultiFab  I_R;            // Species reaction rates
       amrex::MultiFab  functC;         // Implicit integrator function call count
+#ifdef PLM_USE_EFIELD
+      amrex::MultiFab  I_RnE;          // Electron number density reaction term
+#endif
    };
    //-----------------------------------------------------------------------------
 
@@ -162,6 +179,9 @@ class PeleLM : public amrex::AmrCore {
       amrex::Vector<amrex::MultiFab>  chi;         // Thermodynamic contraint
       amrex::Vector<amrex::MultiFab>  Forcing;     // Scalar forcing for both advection and diffusion
       amrex::Vector<amrex::MultiFab>  mac_divu;    // divu used in MAC projection
+#ifdef PLM_USE_EFIELD
+      amrex::Vector<amrex::Array<amrex::MultiFab,AMREX_SPACEDIM>> uDrift;        // ions drift face velocity
+#endif
    };
    //-----------------------------------------------------------------------------
 
@@ -326,7 +346,7 @@ class PeleLM : public amrex::AmrCore {
 
    amrex::Real computeDt(int is_init, const PeleLM::TimeStamp &a_time);
    amrex::Real estConvectiveDt(const PeleLM::TimeStamp &a_time);
-   amrex::Real estDivUDt();
+   amrex::Real estDivUDt(const PeleLM::TimeStamp &a_time);
    //-----------------------------------------------------------------------------
 
    //-----------------------------------------------------------------------------
@@ -390,6 +410,8 @@ class PeleLM : public amrex::AmrCore {
    bool writeCheckNow();
    void WriteJobInfo(const std::string &path) const;
    void WriteHeader(const std::string &name, bool is_checkpoint) const;
+   void WriteDebugPlotFile(const amrex::Vector<const amrex::MultiFab*> &a_MF,
+                           const std::string &pltname);
    //-----------------------------------------------------------------------------
 
    //-----------------------------------------------------------------------------
@@ -405,6 +427,9 @@ class PeleLM : public amrex::AmrCore {
    void fillPatchDensity(const PeleLM::TimeStamp &a_time);
    void fillPatchSpecies(const PeleLM::TimeStamp &a_time);
    void fillPatchTemp(const PeleLM::TimeStamp &a_time);
+#ifdef PLM_USE_EFIELD
+   void fillPatchPhiV(const PeleLM::TimeStamp &a_time);
+#endif
 
    // FillPatch and return a state MF
    std::unique_ptr<amrex::MultiFab>
@@ -415,10 +440,15 @@ class PeleLM : public amrex::AmrCore {
    void fillpatch_density(int lev, amrex::Real a_time, amrex::MultiFab& a_rho, int nGhost);
    void fillpatch_species(int lev, amrex::Real a_time, amrex::MultiFab& a_rhoY, int nGhost);
    void fillpatch_energy(int lev, amrex::Real a_time, amrex::MultiFab& a_rhoh, amrex::MultiFab& a_temp, int nGhost);
+   void fillpatch_thermoPress(int lev, amrex::Real a_time, amrex::MultiFab& a_rhoRT, int nGhost);
    void fillpatch_divu(int lev, amrex::Real a_time, amrex::MultiFab& a_divu, int nGhost);
    void fillpatch_gradp(int lev, amrex::Real a_time, amrex::MultiFab& a_gp, int nGhost);
    void fillpatch_reaction(int lev, amrex::Real a_time, amrex::MultiFab& a_I_R, int nGhost);
    void fillpatch_forces(amrex::Real a_time, amrex::Vector<amrex::MultiFab*> const &a_velForces, int nGrowForce);
+#ifdef PLM_USE_EFIELD
+   void fillpatch_nE(int lev, amrex::Real a_time, amrex::MultiFab& a_nE, int nGhost);
+   void fillpatch_phiV(int lev, amrex::Real a_time, amrex::MultiFab& a_phiV, int nGhost);
+#endif
 
    // FillCoarsePatch state components
    void fillcoarsepatch_velocity(int lev, amrex::Real a_time, amrex::MultiFab& a_vel, int nGhost);
@@ -427,6 +457,10 @@ class PeleLM : public amrex::AmrCore {
    void fillcoarsepatch_divu(int lev, amrex::Real a_time, amrex::MultiFab& a_divu, int nGhost);
    void fillcoarsepatch_gradp(int lev, amrex::Real a_time, amrex::MultiFab& a_gp, int nGhost);
    void fillcoarsepatch_reaction(int lev, amrex::Real a_time, amrex::MultiFab& a_I_R, int nGhost);
+#ifdef PLM_USE_EFIELD
+   void fillcoarsepatch_nE(int lev, amrex::Real a_time, amrex::MultiFab& a_nE, int nGhost);
+   void fillcoarsepatch_phiV(int lev, amrex::Real a_time, amrex::MultiFab& a_phiV, int nGhost);
+#endif
 
    // Fill physical boundaries
    void setPhysBoundaryVel (amrex::MultiFab &a_vel, int lev, PeleLM::TimeStamp a_time);
@@ -439,13 +473,17 @@ class PeleLM : public amrex::AmrCore {
    void averageDownEnthalpy(const PeleLM::TimeStamp &a_time);
    void averageDownTemp(const PeleLM::TimeStamp &a_time);
    void averageDownRhoRT(const PeleLM::TimeStamp &a_time);
+#ifdef PLM_USE_EFIELD
+   void averageDownnE(const PeleLM::TimeStamp &a_time);
+   void averageDownPhiV(const PeleLM::TimeStamp &a_time);
+#endif
    //-----------------------------------------------------------------------------
 
    //-----------------------------------------------------------------------------
    // UTILS
 
    // flux divergence
-   void fluxDivergence(amrex::Vector<amrex::MultiFab> &a_divergence,
+   void fluxDivergence(const amrex::Vector<amrex::MultiFab*> &a_divergence,
                        int div_comp,
                        const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM> > &a_fluxes,
                        int flux_comp,
@@ -489,6 +527,10 @@ class PeleLM : public amrex::AmrCore {
                                   amrex::Real scale);
 
    void floorSpecies(const PeleLM::TimeStamp &a_time);
+   amrex::Real MLNorm0(const amrex::Vector<const amrex::MultiFab*> &a_MF);
+   amrex::Vector<amrex::Real>
+   MLNorm0(const amrex::Vector<const amrex::MultiFab*> &a_MF,
+           int startcomp, int ncomp);
 
    void resetCoveredMask();
 
@@ -534,10 +576,117 @@ class PeleLM : public amrex::AmrCore {
    void getScalarReactForce(std::unique_ptr<AdvanceAdvData> &advData);
    //-----------------------------------------------------------------------------
 
+#ifdef PLM_USE_EFIELD
+#include <PeleLMEF.H>
+   //-----------------------------------------------------------------------------
+   // EFIELD
+
+   void poissonSolveEF(const PeleLM::TimeStamp &a_time);
+
+   void calcEFTransport(const PeleLM::TimeStamp &a_time);
+
+   void implicitNonLinearSolve(int sdcIter,
+                               const amrex::Real &a_dt,
+                               std::unique_ptr<AdvanceDiffData> &diffData,
+                               std::unique_ptr<AdvanceAdvData> &advData);
+   void computeBGcharge(const amrex::Real &a_time,
+                        std::unique_ptr<AdvanceDiffData> &diffData,
+                        std::unique_ptr<AdvanceAdvData> &advData);
+
+   void nonLinearResidual(const amrex::Real &a_dt,
+                          const amrex::Vector<amrex::MultiFab *> &a_nlstate,
+                          const amrex::Vector<amrex::MultiFab *> &a_nlresid,
+                          int updateScaling,
+                          int updatePrecond);
+
+   void getAdvectionTerm(const amrex::Vector<const amrex::MultiFab*> &a_nE,
+                         const amrex::Vector<amrex::MultiFab*> &a_advTerm,
+                         const amrex::Vector<amrex::Array<const amrex::MultiFab*,AMREX_SPACEDIM>> &a_gPhiVCur);
+
+   void getAdvectionFluxes(int lev,
+                           const amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM> &a_fluxes,
+                           const amrex::MultiFab &a_nE,
+                           const amrex::Array<const amrex::MultiFab*,AMREX_SPACEDIM> &a_ueff,
+                           amrex::BCRec bcrec);
+
+   void ionDriftVelocity(std::unique_ptr<AdvanceAdvData> &advData);
+   void ionDriftAddUmac(int lev, std::unique_ptr<AdvanceAdvData> &advData);
+
+   void computeInstantaneousReactionRateEF(int lev,
+                                           const PeleLM::TimeStamp &a_time,
+                                           const amrex::MultiFab &a_mask,
+                                           amrex::MultiFab* a_I_R);
+
+   amrex::BCRec
+   hackBCChargedParticle(const amrex::Real &zk,
+                         const amrex::BCRec &bc_in);
+
+   amrex::Real estEFIonsDt(const PeleLM::TimeStamp &a_time);
+
+   void addLorentzVelForces(int lev,
+                            const amrex::Box &bx,
+                            const amrex::Real &a_time,
+                            amrex::Array4<amrex::Real> const& force,
+                            amrex::Array4<const amrex::Real> const& rhoY,
+                            amrex::Array4<const amrex::Real> const& phiV,
+                            amrex::Array4<const amrex::Real> const& nE);
+
+   void nlSolveNorm(const amrex::Vector<amrex::MultiFab*> &a_MF,
+                    amrex::Real &norm);
+
+   int testExitNewton(int newtonIter,
+                      const amrex::Real &max_res); 
+
+   void updateNLState(const amrex::Vector<amrex::MultiFab*> &a_update);
+
+   void incrementElectronForcing(int a_sstep,
+                                 std::unique_ptr<AdvanceAdvData> &advData);
+
+   void getNLStateScaling(amrex::Real &nEScale, amrex::Real &phiVScale);
+   void getNLResidScaling(amrex::Real &nEScale, amrex::Real &phiVScale);
+   void scaleNLState(const amrex::Real &nEScale, const amrex::Real &phiVScale);
+   void scaleNLResid(const amrex::Vector<amrex::MultiFab *> &a_resid, const amrex::Real &nEScale, const amrex::Real &phiVScale);
+
+   // get upwinded edge-centered MF from cc MF and ec Vel
+   amrex::Array<amrex::MultiFab,AMREX_SPACEDIM>
+   getUpwindedEdge(int lev, int edge_comp, int ncomp,
+                   amrex::Vector<amrex::BCRec> a_bcrec,
+                   const amrex::MultiFab &ccMF,
+                   const amrex::Array<const amrex::MultiFab*,AMREX_SPACEDIM> &ecVel);
+
+   void jTimesV(const amrex::Vector<amrex::MultiFab*> &a_x,
+                const amrex::Vector<amrex::MultiFab*> &a_Ax);
+
+
+
+   void setUpPrecond(const amrex::Real &a_dt,
+                     const amrex::Vector<const amrex::MultiFab*> &a_nE);
+   void applyPrecond(const amrex::Vector<amrex::MultiFab*> &a_v,
+                     const amrex::Vector<amrex::MultiFab*> &a_Pv);
+   //-----------------------------------------------------------------------------
+#endif
+
+
    //-----------------------------------------------------------------------------
    // Accessors
    std::string runMode() {
       return m_run_mode;
+   }
+
+   int nCompIR() {
+#ifdef PLM_USE_EFIELD
+      return NUM_SPECIES+1;
+#else
+      return NUM_SPECIES;
+#endif
+   }
+
+   int nCompForcing() {
+#ifdef PLM_USE_EFIELD
+      return NUM_SPECIES+2;
+#else
+      return NUM_SPECIES+1;
+#endif
    }
 
    amrex::FabFactory<amrex::FArrayBox> const&
@@ -563,6 +712,11 @@ class PeleLM : public amrex::AmrCore {
    amrex::Vector<amrex::MultiFab* > getTempVect(const PeleLM::TimeStamp &a_time);
    amrex::Vector<amrex::MultiFab* > getDiffusivityVect(const PeleLM::TimeStamp &a_time);
    amrex::Vector<amrex::MultiFab* > getViscosityVect(const PeleLM::TimeStamp &a_time);
+#ifdef PLM_USE_EFIELD
+   amrex::Vector<amrex::MultiFab* > getPhiVVect(const PeleLM::TimeStamp &a_time);
+   amrex::Vector<amrex::MultiFab* > getnEVect(const PeleLM::TimeStamp &a_time);
+   amrex::Vector<amrex::MultiFab* > getnEDiffusivityVect(const PeleLM::TimeStamp &a_time);
+#endif
 
    amrex::Vector<amrex::BCRec> fetchBCRecArray(int scomp, int ncomp);
    amrex::Vector<int>          fetchAdvTypeArray(int scomp, int ncomp);
@@ -588,7 +742,7 @@ class PeleLM : public amrex::AmrCore {
    amrex::Vector<std::unique_ptr<amrex::FabFactory<amrex::FArrayBox> > > m_factory;
 
    // Covered cells mask
-   amrex::Vector<std::unique_ptr<amrex::MultiFab> > m_coveredMask;
+   amrex::Vector<std::unique_ptr<amrex::iMultiFab> > m_coveredMask;
    amrex::Vector<std::unique_ptr<amrex::BoxArray> > m_baChem;
    amrex::Vector<std::unique_ptr<amrex::DistributionMapping> > m_dmapChem;
    amrex::Vector<amrex::Vector<int > > m_baChemFlag;
@@ -600,6 +754,10 @@ class PeleLM : public amrex::AmrCore {
 
    // Boundary Conditions
    amrex::BCRec  m_phys_bc;                      // Store physical BC from input
+#ifdef PLM_USE_EFIELD
+   amrex::BCRec  m_phiV_bc;                      // Store separate phiV BC from input
+   amrex::BCRec  m_phiV_bcpol;                   // Store separate phiV BC polarity from input
+#endif
    amrex::Vector<amrex::BCRec> m_bcrec_state;
    amrex::BCRec                m_bcrec_divu;
    amrex::Vector<amrex::BCRec> m_bcrec_force;
@@ -662,6 +820,11 @@ class PeleLM : public amrex::AmrCore {
 
    // DivU ? default ON when not incompressible
    int m_has_divu = 1;
+
+   // DivU dt
+   int m_divu_checkFlag = 1;
+   amrex::Real m_divu_dtFactor = 0.5;
+   amrex::Real m_divu_rhoMin = 0.1;  
 
    // Number if passive scalars
    int m_nAux = 0;

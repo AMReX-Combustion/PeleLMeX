@@ -66,17 +66,17 @@ void PeleLM::calcDivU(int is_init,
 
       MultiFab RhoYdot;
       if ( m_do_react ) {
-         if (is_init) {          // Either divU or press initial iterations
-            if ( m_dt < 0.0 ) {  // divU ite   -> use I_R
+         if (is_init) {          // Either pre-divU, divU or press initial iterations
+            if ( m_dt > 0.0 ) {  // divU ite   -> use I_R
                auto ldataR_p = getLevelDataReactPtr(lev);
-               RhoYdot.define(grids[lev],dmap[lev],NUM_SPECIES+1,0);
-               MultiFab::Copy(RhoYdot,ldataR_p->I_R,0,0,NUM_SPECIES+1,0);
+               RhoYdot.define(grids[lev],dmap[lev],nCompIR(),0);
+               MultiFab::Copy(RhoYdot,ldataR_p->I_R,0,0,nCompIR(),0);
             } else {             // press ite  -> set to zero
-               RhoYdot.define(grids[lev],dmap[lev],NUM_SPECIES+1,0);
+               RhoYdot.define(grids[lev],dmap[lev],nCompIR(),0);
                RhoYdot.setVal(0.0);
             }
          } else {                // Regular    -> use instantaneous RR
-            RhoYdot.define(grids[lev],dmap[lev],NUM_SPECIES+1,0);
+            RhoYdot.define(grids[lev],dmap[lev],nCompIR(),0);
             // TODO Setup covered cells mask
             MultiFab mask(grids[lev],dmap[lev],1,0);
             mask.setVal(1.0);

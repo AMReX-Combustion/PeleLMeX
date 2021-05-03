@@ -766,4 +766,26 @@ linearChemForcing(const amrex::Box& bx,
       FC_in(i,j,k,0) = 0.0;
    });
 }
+
+// DivuCeiling type 1 est_divu_dt function
+AMREX_GPU_HOST_DEVICE
+AMREX_FORCE_INLINE
+amrex::Real
+est_divu_dt_1(int i, int j, int k,
+              amrex::Real                                  const& dtfactor,
+              amrex::Real                                  const& rhomin,
+              amrex::Array4<const amrex::Real>             const& rho,
+              amrex::Array4<const amrex::Real>             const& divu) noexcept
+{
+   using namespace amrex::literals;
+
+   amrex::Real dtcell = 1.0e20_rt;
+   bool rho_is_okay = (rho(i,j,k) > rhomin);
+
+   if ( divu(i,j,k) > 0.0_rt ) {
+      dtcell = (rho_is_okay) ? ( 1.0_rt - rhomin / rho(i,j,k) ) / divu(i,j,k) : 1.0_rt / divu(i,j,k);
+      dtcell *= dtfactor;
+   }
+   return dtcell;
+}
 #endif

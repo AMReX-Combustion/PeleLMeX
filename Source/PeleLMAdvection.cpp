@@ -246,6 +246,12 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
                                                dmap[lev], NUM_SPECIES+3, nGrow, MFInfo(), Factory(lev));
       }
 
+#ifdef PLM_USE_EFIELD
+      //----------------------------------------------------------------
+      // Assemble drift and mac velocities
+      ionDriftAddUmac(lev,advData);
+#endif
+
       //----------------------------------------------------------------
       // Get divU
       int nGrow_divu = 1;  // Why incflo use 4 ?
@@ -283,6 +289,50 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
 #ifdef AMREX_USE_EB
          //TODO
 #else
+#ifdef PLM_USE_EFIELD
+         // Uncharged species all at once
+         godunov::compute_godunov_fluxes(bx, 0, NUM_SPECIES-NUM_IONS,
+                                         AMREX_D_DECL(fx,fy,fz), rhoY_arr,
+                                         AMREX_D_DECL(umac, vmac, wmac),
+                                         force_arr, divu_arr,
+                                         AMREX_D_DECL(edgex, edgey, edgez), false,
+                                         m_dt,
+                                         bcRecSpec_d.dataPtr(),
+                                         AdvTypeSpec_d.dataPtr(),
+                                         tmpfab.dataPtr(),m_Godunov_ppm,
+                                         m_Godunov_ForceInTrans,
+                                         geom[lev]);
+
+         // Ions one by one
+         for ( int n = 0; n < NUM_IONS; n++) {
+            auto bcRecIons = fetchBCRecArray(FIRSTSPEC+NUM_SPECIES-NUM_IONS+n,1);
+            auto bcRecIons_d = convertToDeviceVector(bcRecIons);
+            auto AdvTypeIons = fetchAdvTypeArray(FIRSTSPEC+NUM_SPECIES-NUM_IONS+n,1);
+            auto AdvTypeIons_d = convertToDeviceVector(AdvTypeIons);
+            AMREX_D_TERM(auto const& udrift = advData->uDrift[lev][0].const_array(mfi,n);,
+                         auto const& vdrift = advData->uDrift[lev][1].const_array(mfi,n);,
+                         auto const& wdrift = advData->uDrift[lev][2].const_array(mfi,n);)
+            AMREX_D_TERM(auto const& fx_ions = fluxes[lev][0].array(mfi,NUM_SPECIES-NUM_IONS+n);,
+                         auto const& fy_ions = fluxes[lev][1].array(mfi,NUM_SPECIES-NUM_IONS+n);,
+                         auto const& fz_ions = fluxes[lev][2].array(mfi,NUM_SPECIES-NUM_IONS+n);)
+            AMREX_D_TERM(auto const& edgex_ions = edgeState[0].array(mfi,1+NUM_SPECIES-NUM_IONS+n);,
+                         auto const& edgey_ions = edgeState[1].array(mfi,1+NUM_SPECIES-NUM_IONS+n);,
+                         auto const& edgez_ions = edgeState[2].array(mfi,1+NUM_SPECIES-NUM_IONS+n);)
+            auto const& rhoYions_arr  = ldata_p->species.const_array(mfi,NUM_SPECIES-NUM_IONS+n);
+            auto const& forceions_arr = advData->Forcing[lev].const_array(mfi,NUM_SPECIES-NUM_IONS+n);
+            godunov::compute_godunov_fluxes(bx, 0, 1,
+                                            AMREX_D_DECL(fx_ions,fy_ions,fz_ions), rhoYions_arr,
+                                            AMREX_D_DECL(udrift, vdrift, wdrift),
+                                            forceions_arr, divu_arr,
+                                            AMREX_D_DECL(edgex_ions, edgey_ions, edgez_ions), false,
+                                            m_dt,
+                                            bcRecIons_d.dataPtr(),
+                                            AdvTypeIons_d.dataPtr(),
+                                            tmpfab.dataPtr(),m_Godunov_ppm,
+                                            m_Godunov_ForceInTrans,
+                                            geom[lev]);
+         }
+#else
          godunov::compute_godunov_fluxes(bx, 0, NUM_SPECIES,
                                          AMREX_D_DECL(fx,fy,fz), rhoY_arr,
                                          AMREX_D_DECL(umac, vmac, wmac),
@@ -294,6 +344,7 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
                                          tmpfab.dataPtr(),m_Godunov_ppm,
                                          m_Godunov_ForceInTrans,
                                          geom[lev]);
+#endif
 #endif
       }
 

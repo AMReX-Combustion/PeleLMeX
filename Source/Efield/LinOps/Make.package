@@ -1,0 +1,9 @@
+# Extra Linear Operators
+CEXE_headers += PrecondOp.H
+CEXE_headers += AMReX_MLCellABecCecLap.H
+CEXE_headers += AMReX_MLABecCecLaplacian.H
+CEXE_headers += AMReX_MLCellABecCecLap_K.H AMReX_MLCellABecCecLap_$(DIM)D_K.H
+CEXE_headers += AMReX_MLABecCecLap_K.H AMReX_MLABecCecLap_$(DIM)D_K.H
+CEXE_sources += PrecondOp.cpp
+CEXE_sources += AMReX_MLCellABecCecLap.cpp
+CEXE_sources += AMReX_MLABecCecLaplacian.cpp

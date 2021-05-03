@@ -1,4 +1,5 @@
 #include <PeleLM.H>
+#include <PeleLM_K.H>
 
 using namespace amrex;
 
@@ -22,8 +23,19 @@ PeleLM::computeDt(int is_init,
       Real dtconv = estConvectiveDt(a_time);
       estdt = std::min(estdt,dtconv);
       if (!m_incompressible && m_has_divu) {
-         Real dtdivU = estDivUDt();
+         Real dtdivU = estDivUDt(a_time);
          estdt = std::min(estdt,dtdivU);
+#ifdef PLM_USE_EFIELD
+         Real dtions = estEFIonsDt(a_time);
+         estdt = std::min(estdt, dtions);
+#endif
+         if ( m_verbose ) {
+            Print() << " Est. time step - Conv: " << dtconv << ", divu: " << dtdivU
+#ifdef PLM_USE_EFIELD
+                    << ", ions: " << dtions
+#endif
+                    << "\n";
+         }
       }
    }
 
@@ -103,11 +115,40 @@ PeleLM::estConvectiveDt(const TimeStamp &a_time) {
 }
 
 Real
-PeleLM::estDivUDt() {
+PeleLM::estDivUDt(const TimeStamp &a_time) {
 
    Real estdt = 1.0e200;
 
-   // TODO
+   // Note: only method 1 of PeleLM is available here
+   AMREX_ASSERT(m_divu_checkFlag==1);
+  
+   for (int lev = 0; lev <= finest_level; ++lev) {
+
+      auto ldata_p = getLevelDataPtr(lev, a_time);
+
+      Real divu_dt = amrex::ReduceMin(ldata_p->density, ldata_p->divu, 0,
+                                      [dtfac = m_divu_dtFactor, rhoMin = m_divu_rhoMin]
+      AMREX_GPU_HOST_DEVICE (Box const& bx, Array4<Real const> const& rho,
+                                            Array4<Real const> const& divu ) noexcept -> Real
+      {
+         using namespace amrex::literals;
+         const auto lo = amrex::lbound(bx);
+         const auto hi = amrex::ubound(bx);
+         amrex::Real dt = 1.e37_rt;
+         for       (int k = lo.z; k <= hi.z; ++k) {
+            for    (int j = lo.y; j <= hi.y; ++j) {
+               for (int i = lo.x; i <= hi.x; ++i) {
+                  Real dtcell = est_divu_dt_1(i, j, k, dtfac, rhoMin, rho, divu );
+                  dt = amrex::min(dt,dtcell);
+               }
+            }
+         }
+         return dt;
+      });
+      estdt = std::min(divu_dt,estdt);
+   }
+
+   ParallelDescriptor::ReduceRealMin(estdt);
 
    return estdt;
 }

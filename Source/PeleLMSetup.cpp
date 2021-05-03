@@ -3,6 +3,9 @@
 #include <PeleLMDeriveFunc.H>
 #include "PelePhysics.H"
 #include <reactor.h>
+#ifdef PLM_USE_EFIELD
+#include "EOS_Extension.H"
+#endif
 
 using namespace amrex;
 
@@ -28,9 +31,6 @@ void PeleLM::Setup() {
    // Initialize Level Hierarchy data
    resizeArray();
 
-   // Initiliaze BCs
-   setBoundaryConditions();
-
    // Initialize EOS and others
    if (!m_incompressible) {
       amrex::Print() << " Initialization of Transport ... \n";
@@ -46,7 +46,17 @@ void PeleLM::Setup() {
          reactor_init(reactor_type,ncells_chem);
 #endif
       }
+
+#ifdef PLM_USE_EFIELD
+      pele::physics::eos::charge_mass(zk.arr);
+      for (int n = 0; n < NUM_SPECIES; n++) {
+         zk[n] *= 1000.0;    // CGS->MKS
+      }
+#endif
    }
+
+   // Initiliaze BCs
+   setBoundaryConditions();
 
    // Problem parameters
    prob_parm.reset(new ProbParm{});
@@ -126,10 +136,67 @@ void PeleLM::readParameters() {
    }
 
    // Store BCs in m_phys_bc.
-   for (int i = 0; i < AMREX_SPACEDIM; i++) {
-      m_phys_bc.setLo(i,lo_bc[i]);
-      m_phys_bc.setHi(i,hi_bc[i]);
+   for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+      m_phys_bc.setLo(idim,lo_bc[idim]);
+      m_phys_bc.setHi(idim,hi_bc[idim]);
    }
+
+#ifdef PLM_USE_EFIELD
+   ParmParse ppef("ef");
+
+   // Get the phiV bc
+   ppef.getarr("phiV_lo_bc",lo_bc_char,0,AMREX_SPACEDIM);
+   ppef.getarr("phiV_hi_bc",hi_bc_char,0,AMREX_SPACEDIM);
+   for (int idim = 0; idim < AMREX_SPACEDIM; idim++) 
+   {
+      if (lo_bc_char[idim] == "Interior"){
+         m_phiV_bc.setLo(idim,0);
+      } else if (lo_bc_char[idim] == "Dirichlet") {
+         m_phiV_bc.setLo(idim,1);
+      } else if (lo_bc_char[idim] == "Neumann") {
+         m_phiV_bc.setLo(idim,2);
+      } else {
+         amrex::Abort("Wrong PhiV bc. Should be : Interior, Dirichlet or Neumann");
+      }    
+      if (hi_bc_char[idim] == "Interior"){
+         m_phiV_bc.setHi(idim,0);
+      } else if (hi_bc_char[idim] == "Dirichlet") {
+         m_phiV_bc.setHi(idim,1);
+      } else if (hi_bc_char[idim] == "Neumann") {
+         m_phiV_bc.setHi(idim,2);
+      } else {
+         amrex::Abort("Wrong PhiV bc. Should be : Interior, Dirichlet or Neumann");
+      }
+   }
+
+   // Get the polarity of BCs
+   ppef.getarr("phiV_polarity_lo",lo_bc_char,0,AMREX_SPACEDIM);
+   ppef.getarr("phiV_polarity_hi",hi_bc_char,0,AMREX_SPACEDIM);
+   for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+      if (lo_bc_char[idim] == "Neutral"){
+         m_phiV_bcpol.setLo(idim,0);
+      } else if (lo_bc_char[idim] == "Anode") {     // Pos. elec = 1
+         m_phiV_bcpol.setLo(idim,1);
+         AMREX_ASSERT(m_phiV_bc.lo(idim)==1);
+      } else if (lo_bc_char[idim]  == "Cathode") {   // Neg. elec = 2
+         m_phiV_bcpol.setLo(idim,2);
+         AMREX_ASSERT(m_phiV_bc.lo(idim)==1);
+      } else {
+         amrex::Abort("Wrong PhiV polarity. Should be : Neutral, Anode or Cathode");
+      }
+      if (hi_bc_char[idim] == "Neutral"){
+         m_phiV_bcpol.setHi(idim,0);
+      } else if (hi_bc_char[idim] == "Anode") {     // Pos. elec = 1
+         m_phiV_bcpol.setHi(idim,1);
+         AMREX_ASSERT(m_phiV_bc.hi(idim)==1);
+      } else if (hi_bc_char[idim] == "Cathode") {   // Neg. elec = 2
+         m_phiV_bcpol.setHi(idim,2);
+         AMREX_ASSERT(m_phiV_bc.hi(idim)==1);
+      } else {
+         amrex::Abort("Wrong PhiV polarity. Should be : Neutral, Anode or Cathode");
+      }
+   }
+#endif
 
    // -----------------------------------------
    // Algorithm
@@ -191,6 +258,16 @@ void PeleLM::readParameters() {
    if ( max_level > 0 ) {
       ppa.query("regrid_int", m_regrid_int);
    }
+
+#ifdef PLM_USE_EFIELD
+   // -----------------------------------------
+   // EFIELD
+   // -----------------------------------------
+   ppef.query("JFNK_newtonTol",m_ef_newtonTol);
+   ppef.query("JFNK_maxNewton",m_ef_maxNewtonIter);
+   ppef.query("JFNK_lambda",m_ef_lambda_jfnk);
+   ppef.query("GMRES_rel_tol",m_ef_GMRES_reltol);
+#endif
 
 }
 
@@ -254,6 +331,12 @@ void PeleLM::variablesSetup() {
       stateComponents.emplace_back(TEMP,"temp");
       Print() << " thermo. pressure: " << RHORT << "\n";
       stateComponents.emplace_back(RHORT,"RhoRT");
+#ifdef PLM_USE_EFIELD
+      Print() << " nE: " << NE << "\n";
+      stateComponents.emplace_back(NE,"nE");
+      Print() << " PhiV: " << PHIV << "\n";
+      stateComponents.emplace_back(PHIV,"PhiV");
+#endif
    }
 
    if (m_nAux > 0) {
@@ -295,6 +378,12 @@ void PeleLM::variablesSetup() {
       m_DiffTypeState[TEMP] = 0;
       m_AdvTypeState[RHORT] = 0;
       m_DiffTypeState[RHORT] = 0;
+#ifdef PLM_USE_EFIELD
+      m_AdvTypeState[NE] = 0;
+      m_DiffTypeState[NE] = 0;
+      m_AdvTypeState[PHIV] = 0;
+      m_DiffTypeState[PHIV] = 0;
+#endif
    }
 }
 
@@ -323,6 +412,28 @@ void PeleLM::derivedSetup()
 
    // Vorticity magnitude
    derive_lst.add("mag_vort",IndexType::TheCellType(),1,pelelm_dermgvort,grow_box_by_two);
+
+#ifdef PLM_USE_EFIELD
+   // Charge distribution
+   derive_lst.add("chargedistrib",IndexType::TheCellType(),1,pelelm_derchargedist,the_same_box);
+
+   // Electric field
+   derive_lst.add("efieldx",IndexType::TheCellType(),1,pelelm_derefx,grow_box_by_one);
+#if (AMREX_SPACEDIM > 1)
+   derive_lst.add("efieldy",IndexType::TheCellType(),1,pelelm_derefy,grow_box_by_one);
+#if (AMREX_SPACEDIM > 2)
+   derive_lst.add("efieldz",IndexType::TheCellType(),1,pelelm_derefz,grow_box_by_one);
+#endif
+#endif
+   // Lorentz forces
+   derive_lst.add("LorentzFx",IndexType::TheCellType(),1,pelelm_derLorentzx,grow_box_by_one);
+#if (AMREX_SPACEDIM > 1)
+   derive_lst.add("LorentzFy",IndexType::TheCellType(),1,pelelm_derLorentzy,grow_box_by_one);
+#if (AMREX_SPACEDIM > 2)
+   derive_lst.add("LorentzFz",IndexType::TheCellType(),1,pelelm_derLorentzz,grow_box_by_one);
+#endif
+#endif
+#endif
 
 }
 
@@ -418,6 +529,10 @@ void PeleLM::resizeArray() {
    m_baChem.resize(max_level+1);
    m_dmapChem.resize(max_level+1);
    m_baChemFlag.resize(max_level+1);
+
+#ifdef PLM_USE_EFIELD
+   m_leveldatanlsolve.resize(max_level+1);
+#endif
 
    // Factory
    m_factory.resize(max_level+1);

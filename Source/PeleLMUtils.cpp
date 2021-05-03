@@ -3,9 +3,7 @@
 
 using namespace amrex;
 
-const Real Real_MAX = DBL_MAX;
-
-void PeleLM::fluxDivergence(Vector<MultiFab> &a_divergence,
+void PeleLM::fluxDivergence(const Vector<MultiFab*> &a_divergence,
                             int div_comp,
                             const Vector<Array<MultiFab*,AMREX_SPACEDIM> > &a_fluxes,
                             int flux_comp,
@@ -16,12 +14,12 @@ void PeleLM::fluxDivergence(Vector<MultiFab> &a_divergence,
    BL_PROFILE_VAR("PeleLM::fluxDivergence()", fluxDivergence);
    if (intensiveFluxes) {        // Fluxes are intensive -> need area scaling in div
       for (int lev = 0; lev <= finest_level; ++lev) {
-         intFluxDivergenceLevel(lev,a_divergence[lev], div_comp, a_fluxes[lev], flux_comp,
+         intFluxDivergenceLevel(lev,*a_divergence[lev], div_comp, a_fluxes[lev], flux_comp,
                                 ncomp, scale);
       }
    } else {                      // Fluxes are extensive
       for (int lev = 0; lev <= finest_level; ++lev) {
-         extFluxDivergenceLevel(lev,a_divergence[lev], div_comp, a_fluxes[lev], flux_comp,
+         extFluxDivergenceLevel(lev,*a_divergence[lev], div_comp, a_fluxes[lev], flux_comp,
                                 ncomp, scale);
       }
    }
@@ -406,7 +404,7 @@ PeleLM::floorSpecies(const TimeStamp &a_time)
          amrex::ParallelFor(bx, [rhoY]
          AMREX_GPU_DEVICE (int i, int j, int k) noexcept
          {
-            fabMinMax( i, j, k, NUM_SPECIES, 0.0, Real_MAX, rhoY);
+            fabMinMax( i, j, k, NUM_SPECIES, 0.0, AMREX_REAL_MAX, rhoY);
          });
       }
    }
@@ -416,10 +414,12 @@ void PeleLM::resetCoveredMask()
 {
    if (!m_resetCoveredMask) return;
 
+   if (m_verbose) Print() << " Resetting covered cells mask \n";
+
    for (int lev = 0; lev < finest_level; ++lev) {
       BoxArray baf = grids[lev+1];
       baf.coarsen(ref_ratio[lev]);
-      m_coveredMask[lev]->setVal(1.0);
+      m_coveredMask[lev]->setVal(1);
 #ifdef _OPENMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
@@ -434,7 +434,7 @@ void PeleLM::resetCoveredMask()
                amrex::ParallelFor(is.second, [mask]
                AMREX_GPU_DEVICE (int i, int j, int k) noexcept
                {
-                  mask(i,j,k) = 0.0;
+                  mask(i,j,k) = 0;
                });
             }
          }
@@ -569,6 +569,38 @@ PeleLM::deriveComp(const std::string &a_name,
    }
 
    return mf;
+}
+
+Real
+PeleLM::MLNorm0(const Vector<const MultiFab*> &a_MF)
+{
+   Real r = 0.0;
+   for (int lev = 0; lev < a_MF.size(); ++lev) {
+      r = std::max(r, a_MF[lev]->norm0(0,0,true,true));
+   }
+   ParallelDescriptor::ReduceRealMax(r);
+   return r;
+}
+
+Vector<Real>
+PeleLM::MLNorm0(const Vector<const MultiFab*> &a_MF,
+                int startcomp, int ncomp)
+{
+   AMREX_ASSERT(a_MF[0]->nComp() >= startcomp+ncomp);
+   Vector<Real> r(ncomp);
+   Vector<int> comps(ncomp);
+   for (int n = 0; n < ncomp; n++) {
+      r[n] = 0.0;
+      comps[n] = startcomp+n;
+   }
+   for (int lev = 0; lev < a_MF.size(); ++lev) {
+      Vector<Real> levMax = a_MF[lev]->norm0(comps,0,true,true);
+      for (int n = 0; n < ncomp; n++) {
+         r[n] = std::max(r[n], levMax[n]);
+      }
+   }
+   ParallelDescriptor::ReduceRealMax(r.data(),ncomp);
+   return r;
 }
 
 bool

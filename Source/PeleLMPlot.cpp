@@ -14,6 +14,18 @@ void GotoNextLine(std::istream& is)
            is.ignore(bl_ignore_max, '\n');
 }
 
+void PeleLM::WriteDebugPlotFile(const Vector<const MultiFab*> &a_MF,
+                                const std::string &pltname)
+{
+   int nComp = a_MF[0]->nComp();
+   Vector<std::string> names(nComp);
+   for (int n = 0; n < nComp; n++) {
+      names[n] = "comp"+std::to_string(n);
+   }
+   Vector<int> istep(finest_level + 1, m_nstep);
+   amrex::WriteMultiLevelPlotfile(pltname, finest_level + 1, a_MF,
+                                  names, Geom(), m_cur_time, istep, refRatio());
+}
 
 void PeleLM::WritePlotFile() {
    BL_PROFILE("PeleLM::WritePlotFile()");
@@ -82,6 +94,10 @@ void PeleLM::WritePlotFile() {
       plt_VarsName.push_back("rhoh");
       plt_VarsName.push_back("temp");
       plt_VarsName.push_back("RhoRT");
+#ifdef PLM_USE_EFIELD
+      plt_VarsName.push_back("nE");
+      plt_VarsName.push_back("phiV");
+#endif
       if (m_has_divu) {
          plt_VarsName.push_back("divu");
       }
@@ -126,6 +142,12 @@ void PeleLM::WritePlotFile() {
          cnt += 1;
          MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->rhoRT, 0, cnt, 1, 0);
          cnt += 1;
+#ifdef PLM_USE_EFIELD
+         MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->nE, 0, cnt, 1, 0);
+         cnt += 1;
+         MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->phiV, 0, cnt, 1, 0);
+         cnt += 1;
+#endif
          if (m_has_divu) {
             MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->divu, 0, cnt, 1, 0);
             cnt += 1;

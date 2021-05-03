@@ -12,7 +12,7 @@ void PeleLM::Advance(int is_initIter) {
 
    //----------------------------------------------------------------
    // Copy old <- new state
-   copyStateNewToOld();
+   copyStateNewToOld(1);
    copyPressNewToOld();
    //----------------------------------------------------------------
 
@@ -45,13 +45,16 @@ void PeleLM::Advance(int is_initIter) {
    //----------------------------------------------------------------
    // Advance setup
    // fillpatch the t^{n} data
-   averageDownState(AmrOldTime); // TODO: needed ?
+   averageDownState(AmrOldTime);
    fillPatchState(AmrOldTime);
 
    // compute t^{n} data
    calcViscosity(AmrOldTime);
    if (! m_incompressible ) {
       calcDiffusivity(AmrOldTime);
+#ifdef PLM_USE_EFIELD
+      poissonSolveEF(AmrOldTime);
+#endif
    }
    // TODO : typical values
    // TODO : check dt
@@ -67,6 +70,9 @@ void PeleLM::Advance(int is_initIter) {
    copyTransportOldToNew();
    if (! m_incompressible ) {
       copyDiffusionOldToNew(diffData);
+#ifdef PLM_USE_EFIELD
+      ionDriftVelocity(advData);
+#endif
    }
 
    // TODO : handle reaction ghost cells
@@ -94,6 +100,9 @@ void PeleLM::Advance(int is_initIter) {
       averageDownSpecies(AmrNewTime);
       averageDownEnthalpy(AmrNewTime);
       averageDownTemp(AmrNewTime);
+#ifdef PLM_USE_EFIELD
+      averageDownnE(AmrNewTime);
+#endif
       fillPatchState(AmrNewTime);
       if (m_has_divu) {
          int is_initialization = 0;             // Not here
@@ -164,6 +173,9 @@ void PeleLM::oneSDC(int sdcIter,
       averageDownSpecies(AmrNewTime);
       averageDownEnthalpy(AmrNewTime);
       averageDownTemp(AmrNewTime);
+#ifdef PLM_USE_EFIELD
+      averageDownnE(AmrNewTime);
+#endif
       fillPatchState(AmrNewTime);
       
       calcDiffusivity(AmrNewTime);
@@ -174,6 +186,9 @@ void PeleLM::oneSDC(int sdcIter,
          int do_avgDown = 1;                          // Always
          calcDivU(is_initialization,computeDiffusionTerm,do_avgDown,AmrNewTime,diffData);
       }
+#ifdef PLM_USE_EFIELD
+      ionDriftVelocity(advData);
+#endif
    }
    //----------------------------------------------------------------
 
@@ -244,6 +259,13 @@ void PeleLM::oneSDC(int sdcIter,
       amrex::Print() << "   - oneSDC()::ScalarDiffusion() " << ScalDiffEnd << "\n";
    }
    //----------------------------------------------------------------
+
+#ifdef PLM_USE_EFIELD
+   //----------------------------------------------------------------
+   // Solve for implicit non-linear nE/PhiV system
+   //----------------------------------------------------------------
+   implicitNonLinearSolve(sdcIter, m_dt, diffData, advData);
+#endif
 
    //----------------------------------------------------------------
    // Reaction

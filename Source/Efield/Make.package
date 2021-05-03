@@ -1,0 +1,12 @@
+CEXE_headers += EOS_Extension.H
+CEXE_headers += PeleLMEF.H
+CEXE_headers += PeleLMEF_K.H
+CEXE_headers += PeleLMEFDeriveFunc.H
+CEXE_sources += PeleLMEFPoisson.cpp
+CEXE_sources += PeleLMEFNLSolve.cpp
+CEXE_sources += PeleLMEFUtils.cpp
+CEXE_sources += PeleLMEFTransport.cpp
+CEXE_sources += PeleLMEFIonDrift.cpp
+CEXE_sources += PeleLMEFTimeStep.cpp
+CEXE_sources += PeleLMEFDeriveFunc.cpp
+CEXE_sources += PeleLMEFReactions.cpp
