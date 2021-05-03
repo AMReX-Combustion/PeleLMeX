@@ -23,7 +23,7 @@ jobs:
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies.sh
     - name: Repo Dependencies
-      run: Tools/CloneDeps.sh
+      run: Utils/CloneDeps.sh
     - name: Build
       env:
          AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
@@ -49,7 +49,7 @@ jobs:
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies.sh
     - name: Repo Dependencies
-      run: Tools/CloneDeps.sh
+      run: Utils/CloneDeps.sh
     - name: Build
       env:
          AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
@@ -75,7 +75,7 @@ jobs:
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies.sh
     - name: Repo Dependencies
-      run: Tools/CloneDeps.sh
+      run: Utils/CloneDeps.sh
     - name: Build
       env:
          AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
@@ -101,7 +101,7 @@ jobs:
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies.sh
     - name: Repo Dependencies
-      run: Tools/CloneDeps.sh
+      run: Utils/CloneDeps.sh
     - name: Build
       env:
          AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
