@@ -113,4 +113,4 @@ jobs:
     - name: Run
       working-directory: ./Exec/RegTests/PeriodicCases/
       run: |
-        ./PeleLMeX2d.gnu.ex inputs.2d_CoVo max_step=2 amr.plot_int=-1 amr.check_int=-1
+        ./PeleLMeX2d.gnu.ex input.2d_CoVo amr.max_step=2 amr.plot_int=-1 amr.check_int=-1
