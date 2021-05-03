@@ -2,8 +2,10 @@
 #include <AMReX_ParmParse.H>
 #include <PeleLMDeriveFunc.H>
 #include "PelePhysics.H"
-#include "EOS_Extension.H"
 #include <reactor.h>
+#ifdef PLM_USE_EFIELD
+#include "EOS_Extension.H"
+#endif
 
 using namespace amrex;
 

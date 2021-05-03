@@ -257,6 +257,7 @@ void PeleLM::fillPatchTemp(const TimeStamp &a_time) {
    }
 }
 
+#ifdef PLM_USE_EFIELD
 void PeleLM::fillPatchPhiV(const TimeStamp &a_time) {
    BL_PROFILE_VAR("PeleLM::fillPatchPhiV()", fillPatchPhiV);
    for (int lev = 0; lev <= finest_level; lev++) {
@@ -265,6 +266,7 @@ void PeleLM::fillPatchPhiV(const TimeStamp &a_time) {
       fillpatch_phiV(lev, time, ldata_p->phiV, m_nGrowState);
    }
 }
+#endif
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
