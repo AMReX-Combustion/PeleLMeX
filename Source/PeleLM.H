@@ -346,7 +346,7 @@ class PeleLM : public amrex::AmrCore {
 
    amrex::Real computeDt(int is_init, const PeleLM::TimeStamp &a_time);
    amrex::Real estConvectiveDt(const PeleLM::TimeStamp &a_time);
-   amrex::Real estDivUDt();
+   amrex::Real estDivUDt(const PeleLM::TimeStamp &a_time);
    //-----------------------------------------------------------------------------
 
    //-----------------------------------------------------------------------------
@@ -820,6 +820,11 @@ class PeleLM : public amrex::AmrCore {
 
    // DivU ? default ON when not incompressible
    int m_has_divu = 1;
+
+   // DivU dt
+   int m_divu_checkFlag = 1;
+   amrex::Real m_divu_dtFactor = 0.5;
+   amrex::Real m_divu_rhoMin = 0.1;  
 
    // Number if passive scalars
    int m_nAux = 0;
