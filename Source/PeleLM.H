@@ -874,6 +874,9 @@ class PeleLM : public amrex::AmrCore {
    int m_numDivuIter = 1;
    int m_init_iter = 3;
 
+   // Chem
+   amrex::Real m_rtol_chem = 1.0e-10;
+   amrex::Real m_atol_chem = 1.0e-10;
 #ifdef AMREX_USE_EB
    int m_refine_cutcells = 1
 #endif

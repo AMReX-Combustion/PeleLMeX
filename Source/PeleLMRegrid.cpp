@@ -68,8 +68,8 @@ void PeleLM::MakeNewLevelFromCoarse( int lev,
 
    if (max_level > 0 && lev != max_level) {
       m_coveredMask[lev].reset(new iMultiFab(ba, dm, 1, 0));
-      m_resetCoveredMask = 1;
    }
+   m_resetCoveredMask = 1;
 
 #ifdef PLM_USE_EFIELD
    m_leveldatanlsolve[lev].reset(new LevelDataNLSolve(ba, dm, *m_factory[lev], 1));
@@ -150,8 +150,8 @@ void PeleLM::RemakeLevel( int lev,
 
    if (max_level > 0 && lev != max_level) {
       m_coveredMask[lev].reset(new iMultiFab(ba, dm, 1, 0));
-      m_resetCoveredMask = 1;
    }
+   m_resetCoveredMask = 1;
 
 #ifdef PLM_USE_EFIELD
    m_leveldatanlsolve[lev].reset(new LevelDataNLSolve(ba, dm, *m_factory[lev], 1));

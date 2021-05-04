@@ -40,6 +40,9 @@ void PeleLM::Setup() {
          int reactor_type = 2;
          int ncells_chem = 1;
          amrex::Print() << " Initialization of reaction integrator ... \n";
+#ifdef USE_SUNDIALS_PP
+         SetTolFactODE(m_rtol_chem,m_atol_chem);
+#endif
 #ifdef AMREX_USE_GPU
          reactor_info(reactor_type,ncells_chem);
 #else
@@ -236,6 +239,8 @@ void PeleLM::readParameters() {
    // Reaction
    // -----------------------------------------
    pp.query("do_react",m_do_react);
+   pp.query("chem_rtol",m_rtol_chem);
+   pp.query("chem_atol",m_atol_chem);
 
    // -----------------------------------------
    // Advection
