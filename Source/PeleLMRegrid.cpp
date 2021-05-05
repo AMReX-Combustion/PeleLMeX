@@ -42,9 +42,9 @@ void PeleLM::MakeNewLevelFromCoarse( int lev,
 
    if (!m_incompressible) {
       fillcoarsepatch_mass(lev, time, n_leveldata_new->density,
-                           n_leveldata_new->species, 0);
+                           n_leveldata_new->species, 1);
       fillcoarsepatch_energy(lev, time, n_leveldata_new->rhoh,
-                             n_leveldata_new->temp, 0);
+                             n_leveldata_new->temp, 1);
       if (m_has_divu) {
          fillcoarsepatch_divu(lev, time, n_leveldata_new->divu,0);
       }
@@ -64,6 +64,12 @@ void PeleLM::MakeNewLevelFromCoarse( int lev,
       fillcoarsepatch_reaction(lev, time, n_leveldatareact->I_R, 0);
       n_leveldatareact->functC.setVal(0.0);
       m_leveldatareact[lev] = std::move(n_leveldatareact);
+   }
+
+
+   if (!m_incompressible) {
+      // Initialize thermodynamic pressure
+      setThermoPress(lev, AmrNewTime);
    }
 
    if (max_level > 0 && lev != max_level) {
@@ -152,6 +158,11 @@ void PeleLM::RemakeLevel( int lev,
       m_coveredMask[lev].reset(new iMultiFab(ba, dm, 1, 0));
    }
    m_resetCoveredMask = 1;
+
+   if (!m_incompressible) {
+      // Initialize thermodynamic pressure
+      setThermoPress(lev, AmrNewTime);
+   }
 
 #ifdef PLM_USE_EFIELD
    m_leveldatanlsolve[lev].reset(new LevelDataNLSolve(ba, dm, *m_factory[lev], 1));
