@@ -204,6 +204,9 @@ void PeleLM::initData() {
       // Read starting configuration from chk file.
       ReadCheckPointFile();
 
+      // Generate the covered cell mask
+      m_resetCoveredMask = 1;
+      resetCoveredMask();
    }
 
 }
