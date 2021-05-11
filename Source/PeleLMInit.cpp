@@ -234,6 +234,9 @@ void PeleLM::initData() {
       }
 #endif
 
+      // Generate the covered cell mask
+      m_resetCoveredMask = 1;
+      resetCoveredMask();
    }
 
 }
