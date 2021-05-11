@@ -53,7 +53,7 @@ void PeleLM::WritePlotFile() {
    // Reactions
    if (m_do_react) {
       // Cons Rate
-      ncomp += NUM_SPECIES;
+      ncomp += nCompIR();
       // FunctCall
       ncomp += 1;
    }
@@ -115,6 +115,9 @@ void PeleLM::WritePlotFile() {
       for (int n = 0; n < NUM_SPECIES; n++) {
          plt_VarsName.push_back("I_R("+names[n]+")");
       }
+#ifdef PLM_USE_EFIELD
+      plt_VarsName.push_back("I_R(nE)");
+#endif
       plt_VarsName.push_back("FunctCall");
    }
 
@@ -157,8 +160,8 @@ void PeleLM::WritePlotFile() {
       cnt += AMREX_SPACEDIM;
 
       if (m_do_react) {
-         MultiFab::Copy(mf_plt[lev], m_leveldatareact[lev]->I_R, 0, cnt, NUM_SPECIES, 0);
-         cnt += NUM_SPECIES;
+         MultiFab::Copy(mf_plt[lev], m_leveldatareact[lev]->I_R, 0, cnt, nCompIR(), 0);
+         cnt += nCompIR();
 
          MultiFab::Copy(mf_plt[lev], m_leveldatareact[lev]->functC, 0, cnt, 1, 0);
          cnt += 1;
@@ -284,6 +287,14 @@ void PeleLM::WriteCheckPointFile()
             VisMF::Write(m_leveldatareact[lev]->I_R,
                          amrex::MultiFabFileFullPrefix(lev, checkpointname, level_prefix, "I_R"));
          }
+
+#ifdef PLM_USE_EFIELD
+         VisMF::Write(m_leveldata_new[lev]->phiV,
+                      amrex::MultiFabFileFullPrefix(lev, checkpointname, level_prefix, "phiV"));
+
+         VisMF::Write(m_leveldata_new[lev]->nE,
+                      amrex::MultiFabFileFullPrefix(lev, checkpointname, level_prefix, "nE"));
+#endif
       }    
    }   
 }
@@ -299,7 +310,7 @@ void PeleLM::ReadCheckPointFile()
 
    /***************************************************************************
    ** Load header: set up problem domain (including BoxArray)                 *
-   **              allocate incflo memory (incflo::AllocateArrays)            *
+   **              allocate PeleLM memory (PeleLM::AllocateArrays)            *
    **              (by calling MakeNewLevelFromScratch)                       *
    ****************************************************************************/
 
@@ -391,44 +402,69 @@ void PeleLM::ReadCheckPointFile()
    for(int lev = 0; lev <= finest_level; ++lev)
    {
       VisMF::Read(m_leveldata_new[lev]->velocity,
-             		amrex::MultiFabFileFullPrefix(lev, m_restart_file, level_prefix, "velocity"));
-   
+                  amrex::MultiFabFileFullPrefix(lev, m_restart_file, level_prefix, "velocity"));
+
       VisMF::Read(m_leveldata_new[lev]->gp,
-             		amrex::MultiFabFileFullPrefix(lev, m_restart_file, level_prefix, "gradp"));
-   
+                  amrex::MultiFabFileFullPrefix(lev, m_restart_file, level_prefix, "gradp"));
+
       VisMF::Read(m_leveldata_new[lev]->press,
-                   amrex::MultiFabFileFullPrefix(lev, m_restart_file, level_prefix, "p"));
-   
+                  amrex::MultiFabFileFullPrefix(lev, m_restart_file, level_prefix, "p"));
+
       if (!m_incompressible) {
          VisMF::Read(m_leveldata_new[lev]->density,
-                 		amrex::MultiFabFileFullPrefix(lev, m_restart_file, level_prefix, "density"));
-   
+                     amrex::MultiFabFileFullPrefix(lev, m_restart_file, level_prefix, "density"));
+
          VisMF::Read(m_leveldata_new[lev]->species,
-                 		amrex::MultiFabFileFullPrefix(lev, m_restart_file, level_prefix, "species"));
-   
+                     amrex::MultiFabFileFullPrefix(lev, m_restart_file, level_prefix, "species"));
+
          VisMF::Read(m_leveldata_new[lev]->rhoh,
-                 		amrex::MultiFabFileFullPrefix(lev, m_restart_file, level_prefix, "rhoH"));
-   
+                     amrex::MultiFabFileFullPrefix(lev, m_restart_file, level_prefix, "rhoH"));
+
          VisMF::Read(m_leveldata_new[lev]->temp,
-                 		amrex::MultiFabFileFullPrefix(lev, m_restart_file, level_prefix, "temp"));
-   
+                     amrex::MultiFabFileFullPrefix(lev, m_restart_file, level_prefix, "temp"));
+
          VisMF::Read(m_leveldata_new[lev]->rhoRT,
                      amrex::MultiFabFileFullPrefix(lev, m_restart_file, level_prefix, "rhoRT"));
-   
+
          if (m_has_divu) {
             VisMF::Read(m_leveldata_new[lev]->divu,
                         amrex::MultiFabFileFullPrefix(lev, m_restart_file, level_prefix, "divU"));
          }
-   
+
+#ifdef PLM_USE_EFIELD
+         if (!m_restart_nonEF) {
+            VisMF::Read(m_leveldata_new[lev]->phiV,
+                        amrex::MultiFabFileFullPrefix(lev, m_restart_file, level_prefix, "phiV"));
+
+            VisMF::Read(m_leveldata_new[lev]->nE,
+                        amrex::MultiFabFileFullPrefix(lev, m_restart_file, level_prefix, "nE"));
+
+            if (m_do_react) {
+               VisMF::Read(m_leveldatareact[lev]->I_R,
+                           amrex::MultiFabFileFullPrefix(lev, m_restart_file, level_prefix, "I_R"));
+            }
+         } else {
+            // I_R for non-EF simulation is one component shorted, need to account for that.
+            if (m_do_react) {
+               MultiFab I_Rtemp(grids[lev],dmap[lev],NUM_SPECIES,0);
+               VisMF::Read(I_Rtemp,amrex::MultiFabFileFullPrefix(lev, m_restart_file, level_prefix, "I_R"));
+               MultiFab::Copy(m_leveldatareact[lev]->I_R,I_Rtemp,0,0,NUM_SPECIES,0);
+            }
+
+            // Initialize phiV
+            m_leveldata_new[lev]->phiV.setVal(0.0);
+         }
+#else
          if (m_do_react) {
             VisMF::Read(m_leveldatareact[lev]->I_R,
                         amrex::MultiFabFileFullPrefix(lev, m_restart_file, level_prefix, "I_R"));
          }
-      }    
+#endif
+      }
    }
-	if (m_verbose) {
-   	amrex::Print() << "Restart complete" << std::endl;
-	}
+   if (m_verbose) {
+      amrex::Print() << "Restart complete" << std::endl;
+   }
 }
 
 void PeleLM::WriteJobInfo(const std::string& path) const
