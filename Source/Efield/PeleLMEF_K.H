@@ -3,6 +3,8 @@
 
 #include <PeleLMEF_Constants.H>
 #include <PelePhysics.H>
+#include <PelePhysics.H>
+#include <EOS_Extension.H>
 #include <mechanism.h>
 
 AMREX_GPU_HOST_DEVICE
@@ -245,5 +247,93 @@ addLorentzForce(int i, int j, int k,
 #if ( AMREX_SPACEDIM == 3 )
    force(i,j,k,2) -= ne(i,j,k) * elemCharge * EFz;
 #endif
+}
+
+AMREX_GPU_HOST_DEVICE
+AMREX_FORCE_INLINE
+void
+initElecNeutral(int i, int j, int k,
+                amrex::Array4<amrex::Real> const& rho,
+                amrex::Array4<amrex::Real> const& rhoY,
+                amrex::Array4<amrex::Real> const& rhoH,
+                amrex::Array4<amrex::Real> const& temp,
+                amrex::Array4<amrex::Real> const& nE,
+                ProbParm const& prob_parm)
+{
+   auto eos = pele::physics::PhysicsType::eos();
+
+   // Get species charge/mass
+   amrex::Real zk[NUM_SPECIES] = {0.0};
+   pele::physics::eos::charge_mass(zk);
+   for (int n = 0; n < NUM_SPECIES; n++) {
+	   zk[n] *= 1000.0;    // CGS->MKS
+	}
+
+   // Get mass fractions
+   amrex::Real massfrac[NUM_SPECIES] = {0.0};
+   amrex::Real rho_inv = 1.0/rho(i,j,k);
+   for (int n = 0; n < NUM_SPECIES; n++) {
+      massfrac[n] = rhoY(i,j,k,n) * rho_inv;
+   }
+
+   // Set such that mixture is electro-neutral
+   // by adding nE or remove ions if needed
+   // First remove Y_nE
+   massfrac[E_ID] = 0.0;
+   amrex::Real sum = 0.0;
+   for (int n = 0; n < NUM_SPECIES; n++) {
+       massfrac[n] = std::max(0.0,massfrac[n]);
+       if ( n != N2_ID ) sum += massfrac[n];
+   }
+   massfrac[N2_ID] = 1.0 - sum;
+
+   // Change ions massfrac where charge already < 0.0
+   amrex::Real chargeDist = 0.0;
+   for (int n = 0; n < NUM_SPECIES; n++) {
+      chargeDist += massfrac[n] * zk[n];
+   }
+   if ( chargeDist < 0.0 ) {
+      amrex::Real sum_pos_ion = 0.0;
+      amrex::Real mean_zk_pos_ion = 0.0;
+      for (int n = 0; n < NUM_SPECIES; n++) {
+         if ( zk[n] > 0.0 ) {
+            sum_pos_ion += massfrac[n];
+            mean_zk_pos_ion += massfrac[n] * zk[n];
+         }
+      }
+      if ( sum_pos_ion > 0.0 ) {
+         for (int n = 0; n < NUM_SPECIES; n++) {
+            if ( zk[n] > 0.0 ) {
+               massfrac[N2_ID] += massfrac[n] / sum_pos_ion * chargeDist / mean_zk_pos_ion * sum_pos_ion;
+               massfrac[n] -= massfrac[n] / sum_pos_ion * chargeDist / mean_zk_pos_ion * sum_pos_ion;   
+            }
+         }
+      }
+   }
+   // Add Electrons
+   chargeDist = 0.0;
+   for (int n = 0; n < NUM_SPECIES; n++) {
+      chargeDist += massfrac[n] * zk[n];
+   }
+   nE(i,j,k) = std::max(1.0e-24,chargeDist/elemCharge);
+
+   // We keep the temperature constant
+   // recompute rho
+   amrex::Real P_cgs = prob_parm.P_mean * 10.0;
+   amrex::Real rho_cgs = 0.0;
+   eos.PYT2R(P_cgs, massfrac, temp(i,j,k), rho_cgs);
+   rho(i,j,k) = rho_cgs * 1.0e3;
+
+   // recompute enthalpy
+   amrex::Real h_cgs = 0.0;
+   eos.TY2H(temp(i,j,k), massfrac, h_cgs);
+   rhoH(i,j,k) = h_cgs * 1.0e-4 * rho(i,j,k);
+
+   // Species mass
+   for (int n = 0; n < NUM_SPECIES; n++) {
+      rhoY(i,j,k,n) = massfrac[n] * rho(i,j,k);
+   }
+
+   nE(i,j,k) *= rho(i,j,k);
 }
 #endif

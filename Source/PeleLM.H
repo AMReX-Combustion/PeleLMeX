@@ -585,6 +585,9 @@ class PeleLM : public amrex::AmrCore {
 
    void calcEFTransport(const PeleLM::TimeStamp &a_time);
 
+   void initializeElectronNeutral();
+   void initializeElectronFromMassFraction();
+
    void implicitNonLinearSolve(int sdcIter,
                                const amrex::Real &a_dt,
                                std::unique_ptr<AdvanceDiffData> &diffData,
