@@ -8,6 +8,11 @@
    amrex::Real                 nl_stateNorm;       // norm of the non-linear state
    amrex::Real                 nl_residNorm;       // norm of the non-linear residual
 
+   // Restart options
+   int m_restart_nonEF = 0;
+   int m_restart_electroneutral = 1;
+   int m_restart_resetTime = 1;
+
    // Scaling of non-linear system
    amrex::Real                 nE_scale;           // nE state scale
    amrex::Real                 phiV_scale;         // phiV state scale
