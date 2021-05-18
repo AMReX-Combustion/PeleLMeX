@@ -113,7 +113,8 @@ MLGMRESSolver::solve(const Vector<MultiFab*> &a_sol,
 
    Real rhsNorm  = computeMLNorm(a_rhs);                                  // RHS norm
    initResNorm = computeMLResidualNorm(a_sol,a_rhs);                      // Initial resisual norm
-   targetResNorm = initResNorm * a_rel_tol;                               // Target relative tolerance
+   target_relResNorm = initResNorm * a_rel_tol;                           // Target relative tolerance
+   target_absResNorm = a_abs_tol;                                         // Target absolute tolerance
 
    if ( m_verbose > 0 ) {
       amrex::Print() << "  GMRES: Initial rhs = " << rhsNorm << "\n";
@@ -180,7 +181,8 @@ MLGMRESSolver::one_restart(const Vector<MultiFab*> &a_x, const Vector<MultiFab*>
       iter_count++;
 
       // Test exit condition
-      if ( resNorm < targetResNorm ) {
+      if ( (resNorm/initResNorm) < target_relResNorm ||
+           resNorm < target_absResNorm ) {
          m_converged = true;
          k_end = k;
          break;
@@ -265,6 +267,8 @@ MLGMRESSolver::gramSchmidtOrtho(const int iter, Vector<Vector<MultiFab>>& Base)
          Base[iter+1][lev].mult(1.0/normNewVec);
       }
    }
+   //m_pelelm->WriteDebugPlotFile(GetVecOfConstPtrs(Base[iter+1]),"KspVec_"+std::to_string(iter_count));
+
 }
 
 Real
