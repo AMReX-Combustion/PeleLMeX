@@ -139,7 +139,7 @@ void PeleLM::implicitNonLinearSolve(int sdcIter,
          }
          if ( !m_ef_use_PETSC_direct ) {
             const Real S_tol     = m_ef_GMRES_reltol;
-            const Real S_tol_abs = max_nlres * m_ef_GMRES_reltol;
+            const Real S_tol_abs = 1.0e-12;
             GMRES_tot_count += gmres.solve(GetVecOfPtrs(newtonDir),getNLresidVect(),S_tol_abs,S_tol);
          } else {
          }
@@ -154,7 +154,8 @@ void PeleLM::implicitNonLinearSolve(int sdcIter,
          nlSolveNorm(getNLresidVect(),nl_residNorm);
          getNLResidScaling(scaledResnE, scaledResphiV);
          max_nlres = std::max(scaledResnE, scaledResphiV);
-         //WriteDebugPlotFile(GetVecOfConstPtrs(getNLresidVect()),"NLRes_"+std::to_string(NK_ite));
+         //WriteDebugPlotFile(GetVecOfConstPtrs(getNLstateVect()),"NLState_"+std::to_string(NK_ite));
+         //WriteDebugPlotFile(GetVecOfConstPtrs(getNLresidVect()),"NLResid_"+std::to_string(NK_ite));
 
          // Exit condition
          exit_newton = testExitNewton(NK_ite, max_nlres);
@@ -236,6 +237,7 @@ void PeleLM::updateNLState(const Vector<MultiFab*> &a_update)
       auto ldataNLs_p = getLevelDataNLSolvePtr(lev);   // NL data
       ldataNLs_p->nlState.plus(*a_update[lev],0,2,0);
    }
+
    // AverageDown the new state
    for (int lev = finest_level; lev > 0; --lev) {
       auto ldataNLsFine_p = getLevelDataNLSolvePtr(lev);   // NL data
@@ -250,6 +252,41 @@ void PeleLM::updateNLState(const Vector<MultiFab*> &a_update)
                    0,2,refRatio(lev-1));
 #endif
    }
+
+
+   // FillBoundary NLState
+   /*
+   for (int lev = 0; lev <= finest_level; ++lev) {
+      auto ldataNLs_p = getLevelDataNLSolvePtr(lev);   // NL data
+      ldataNLs_p->nlState.FillBoundary(geom[lev].periodicity());
+   }
+   */
+
+   /*
+   // Need to fillpatch the NL state
+   // First unscale NLState
+   for (int lev = 0; lev <= finest_level; ++lev) {
+      auto ldataNLs_p = getLevelDataNLSolvePtr(lev);   // NL data
+      ldataNLs_p->nlState.mult(nE_scale  ,0,1,1);
+      ldataNLs_p->nlState.mult(phiV_scale,1,1,1);
+   }
+
+
+   // FillPatch
+   Vector<MultiFab> nEState;
+   Vector<MultiFab> phiVState;
+   for (int lev = 0; lev <= finest_level; ++lev) {
+      auto ldataNLs_p = getLevelDataNLSolvePtr(lev);   // NL data
+      nEState.emplace_back(ldataNLs_p->nlState,amrex::make_alias,0,1);
+      phiVState.emplace_back(ldataNLs_p->nlState,amrex::make_alias,1,1);
+   }
+   fillPatchNLnE(m_cur_time,GetVecOfPtrs(nEState),1);
+   fillPatchNLphiV(m_cur_time,GetVecOfPtrs(phiVState),1);
+
+   // Rescale
+   scaleNLState(nE_scale, phiV_scale);
+   */
+   
 }
 
 void PeleLM::incrementElectronForcing(int a_sstep,
@@ -704,11 +741,27 @@ void PeleLM::setUpPrecond(const Real &a_dt,
       getPrecondOp()->setDiffOpCCoeff(lev, GetArrOfConstPtrs(ldataNLs_p->uEffnE));
    }
 
+   // Stilda approx first-order
+   Vector<MultiFab> diagDiffOp(finest_level+1);
+   if ( m_ef_PC_approx == 2 ) {
+      for (int lev = 0; lev <= finest_level; ++lev) {
+         diagDiffOp[lev].define(grids[lev],dmap[lev],1,1);
+         getPrecondOp()->getDiffOpDiagonal(lev,diagDiffOp[lev]);
+         diagDiffOp[lev].mult(FnE_scale/nE_scale);
+      }
+      fillPatchExtrap(m_cur_time,GetVecOfPtrs(diagDiffOp),1);
+   }
+
    //--------------------------------------------------------------------------
    // Set Stilda and drift operators
+
    // Set scalars
    getPrecondOp()->setDriftOpScalars(0.0,0.5*phiV_scale/FnE_scale*a_dt);
-   getPrecondOp()->setStildaOpScalars(0.0,-1.0);
+   if ( m_ef_PC_approx == 1 || m_ef_PC_approx == 2 ) {
+      getPrecondOp()->setStildaOpScalars(0.0,-1.0);
+   } else if ( m_ef_PC_approx == 3 || m_ef_PC_approx == 4 ) {
+      getPrecondOp()->setStildaOpScalars(0.0,1.0);
+   }
 
    // Set BCs
    getPrecondOp()->setDriftOpBCs(bcRecPhiV[0]);
@@ -722,19 +775,32 @@ void PeleLM::setUpPrecond(const Real &a_dt,
 
       // CC neKe values
       MultiFab nEKe(grids[lev],dmap[lev],1,1);
+
+      // CC Schur neKe values
+      MultiFab Schur_nEKe;
+      if ( m_ef_PC_approx == 2 ) {
+         Schur_nEKe.define(grids[lev],dmap[lev],1,1);
+      }
+
 #ifdef _OPENMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
       for (MFIter mfi(nEKe, TilingIfNotGPU()); mfi.isValid(); ++mfi)
       {
          const Box& gbx = mfi.growntilebox();
-         auto const& neke   = nEKe.array(mfi);
-         auto const& ne_arr = a_nE[lev]->const_array(mfi);
-         amrex::ParallelFor(gbx, [neke,ne_arr]
+         auto const& neke        = nEKe.array(mfi);
+         auto const& ne_arr      = a_nE[lev]->const_array(mfi);
+         auto const& Schur       = ( m_ef_PC_approx == 2 ) ? Schur_nEKe.array(mfi) : nEKe.array(mfi);
+         auto const& diffOp_diag = ( m_ef_PC_approx == 2 ) ? diagDiffOp[lev].array(mfi) : nEKe.array(mfi);
+         int do_Schur = ( m_ef_PC_approx == 2 ) ? 1 : 0;
+         amrex::ParallelFor(gbx, [neke,ne_arr,Schur,diffOp_diag,a_dt,do_Schur]
          AMREX_GPU_DEVICE (int i, int j, int k) noexcept
          {
             getKappaE(i,j,k,neke);
             neke(i,j,k) *= ne_arr(i,j,k);
+            if ( do_Schur ) {
+               Schur(i,j,k) = - a_dt * 0.5 * neke(i,j,k) / diffOp_diag(i,j,k);
+            }
          });
       }
 
@@ -742,16 +808,30 @@ void PeleLM::setUpPrecond(const Real &a_dt,
       Array<MultiFab,AMREX_SPACEDIM> neKe_ec = getUpwindedEdge(lev, 0, 1, bcRecnE,
                                                                nEKe, GetArrOfConstPtrs(ldataNLs_p->uEffnE));
 
-      // Set Op coefficients
+      // Set drift Op coefficients
       getPrecondOp()->setDriftOpBCoeff(lev, GetArrOfConstPtrs(neKe_ec));
 
-      // Add Stilda pieces
-      Real scalLap = eps0 * epsr / elemCharge;
-      for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
-         neKe_ec[idim].mult(0.5*a_dt,0,1);
-         neKe_ec[idim].plus(scalLap,0,1);
+      // Set Stilda Op coefficients
+      if ( m_ef_PC_approx == 1 ) {              // Assuming identity of the inverse of DiffOp
+         // Add Stilda pieces
+         Real scalLap = eps0 * epsr / elemCharge;
+         for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+            neKe_ec[idim].mult(0.5*a_dt,0,1);
+            neKe_ec[idim].plus(scalLap,0,1);
+         }
+         getPrecondOp()->setStildaOpBCoeff(lev, GetArrOfConstPtrs(neKe_ec));
+      } else if ( m_ef_PC_approx == 2 ) {       // Assuming inverse of the diag of DiffOp
+         // Upwinded Schur edge neKe values
+         Array<MultiFab,AMREX_SPACEDIM> Schur_neKe_ec = getUpwindedEdge(lev, 0, 1, bcRecnE,
+                                                                         Schur_nEKe, GetArrOfConstPtrs(ldataNLs_p->uEffnE));
+         Real scalLap = eps0 * epsr / elemCharge;
+         for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+            Schur_neKe_ec[idim].plus(scalLap,0,1);
+         }
+         getPrecondOp()->setStildaOpBCoeff(lev, GetArrOfConstPtrs(Schur_neKe_ec));
+      } else {
+         Abort("Preconditioner option /= 1 or 2 not available yet");
       }
-      getPrecondOp()->setStildaOpBCoeff(lev, GetArrOfConstPtrs(neKe_ec));
    }
 }
 
