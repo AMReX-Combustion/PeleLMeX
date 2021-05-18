@@ -42,6 +42,8 @@ class PrecondOp
    void setDiffOpCCoeff(int lev,
                         const amrex::Array<const amrex::MultiFab*,AMREX_SPACEDIM> &a_cCoeff);
 
+   void getDiffOpDiagonal(int lev, amrex::MultiFab &a_diffOpDiag);
+
    void setDriftOpBCoeff(int lev,
                          const amrex::Array<const amrex::MultiFab*,AMREX_SPACEDIM> &a_bCoeff);
    void setStildaOpBCoeff(int lev,

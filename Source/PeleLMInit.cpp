@@ -204,6 +204,39 @@ void PeleLM::initData() {
       // Read starting configuration from chk file.
       ReadCheckPointFile();
 
+#ifdef PLM_USE_EFIELD
+      // If restarting from a non efield simulation
+      if (m_restart_nonEF) {
+         // either pass Y_ne -> nE or initialize nE for electro-neutral
+         if (m_restart_electroneutral) {
+            initializeElectronNeutral();
+         } else {
+            initializeElectronFromMassFraction();
+         }
+
+         // do an initial Poisson solve
+         poissonSolveEF(AmrNewTime);
+         fillPatchPhiV(AmrNewTime);
+
+         // Reset time data
+         if ( m_restart_resetTime ) {
+            m_nstep = 0;
+            m_dt = -1.0;
+            int is_init = 1;
+            Real dtInit = computeDt(is_init,AmrNewTime);
+            Print() << " Initial dt: " << dtInit << "\n";
+         }
+
+         // Let's write the initial condition
+         if (m_plot_int > 0 ) {
+            WritePlotFile();
+         }
+      }
+#endif
+
+      // Generate the covered cell mask
+      m_resetCoveredMask = 1;
+      resetCoveredMask();
    }
 
 }

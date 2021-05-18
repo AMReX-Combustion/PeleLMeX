@@ -1,7 +1,7 @@
 #include <PeleLMDeriveFunc.H>
 #include <PeleLM_Index.H>
 #include <PelePhysics.H>
-#include <mechanism.h>
+#include <mechanism.H>
 
 using namespace amrex;
 

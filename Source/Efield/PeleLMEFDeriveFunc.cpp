@@ -3,7 +3,7 @@
 #include <PeleLM_Index.H>
 #include <PelePhysics.H>
 #include <EOS_Extension.H>
-#include <mechanism.h>
+#include <mechanism.H>
 
 using namespace amrex;
 

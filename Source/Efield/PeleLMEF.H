@@ -8,6 +8,11 @@
    amrex::Real                 nl_stateNorm;       // norm of the non-linear state
    amrex::Real                 nl_residNorm;       // norm of the non-linear residual
 
+   // Restart options
+   int m_restart_nonEF = 0;
+   int m_restart_electroneutral = 1;
+   int m_restart_resetTime = 1;
+
    // Scaling of non-linear system
    amrex::Real                 nE_scale;           // nE state scale
    amrex::Real                 phiV_scale;         // phiV state scale
@@ -17,6 +22,7 @@
    // Linear solve
    int                         m_ef_maxNewtonIter    = 5; 
    int                         m_ef_use_PETSC_direct = 0;
+   int                         m_ef_PC_approx        = 1;
    amrex::Real                 m_ef_lambda_jfnk      = 1.0e-7;
    amrex::Real                 m_ef_newtonTol        = std::pow(1.0e-13,2.0/3.0);
    amrex::Real                 m_ef_GMRES_reltol     = 1.0e-6;

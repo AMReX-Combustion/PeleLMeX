@@ -91,7 +91,8 @@ class MLGMRESSolver
      int m_restart = 2;
      int m_nComp = -1;
      amrex::Real initResNorm;
-     amrex::Real targetResNorm;
+     amrex::Real target_relResNorm;
+     amrex::Real target_absResNorm;
      int iter_count;
      int restart_count;
 
