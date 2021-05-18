@@ -1,7 +1,7 @@
 #ifndef PeleLM_K_H_
 #define PeleLM_K_H_
 
-#include <mechanism.h>
+#include <mechanism.H>
 #include <PelePhysics.H>
 
 AMREX_GPU_DEVICE

@@ -5,7 +5,7 @@
 #include <PelePhysics.H>
 #include <PelePhysics.H>
 #include <EOS_Extension.H>
-#include <mechanism.h>
+#include <mechanism.H>
 
 AMREX_GPU_HOST_DEVICE
 AMREX_FORCE_INLINE

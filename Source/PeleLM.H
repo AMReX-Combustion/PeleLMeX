@@ -9,7 +9,7 @@
 #include <AMReX_ErrorList.H>
 #include <AMReX_VisMF.H>
 
-#include <mechanism.h>
+#include <mechanism.H>
 #include <PeleLM_Index.H>
 #include <PeleLMDerive.H>
 #include <pelelm_prob_parm.H>

@@ -3,7 +3,7 @@
 
 #include <AMReX.H>
 #include <AMReX_REAL.H>
-#include "chemistry_file.H"
+#include "mechanism.H"
 
 namespace pele {
 namespace physics {   
