@@ -603,7 +603,7 @@ void PeleLM::fillpatch_nE(int lev,
    ProbParm const* lprobparm = prob_parm.get();
    if (lev == 0) {
 
-      // Density
+      // nE
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirnE>> bndry_func(geom[lev], fetchBCRecArray(NE,1),
                                                                     PeleLMCCFillExtDirnE{lprobparm, pmf_data_g, m_nAux});
       FillPatchSingleLevel(a_nE, IntVect(nGhost), a_time,
@@ -620,7 +620,7 @@ void PeleLM::fillpatch_nE(int lev,
       Interpolater* mapper = &cell_cons_interp;
 #endif
 
-      // Density
+      // nE
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirnE>> crse_bndry_func(geom[lev-1], fetchBCRecArray(NE,1), 
                                                                          PeleLMCCFillExtDirnE{lprobparm, pmf_data_g, m_nAux});
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirnE>> fine_bndry_func(geom[lev], fetchBCRecArray(NE,1),
