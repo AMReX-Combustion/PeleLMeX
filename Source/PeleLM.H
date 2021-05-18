@@ -448,6 +448,9 @@ class PeleLM : public amrex::AmrCore {
 #ifdef PLM_USE_EFIELD
    void fillpatch_nE(int lev, amrex::Real a_time, amrex::MultiFab& a_nE, int nGhost);
    void fillpatch_phiV(int lev, amrex::Real a_time, amrex::MultiFab& a_phiV, int nGhost);
+   void fillPatchExtrap(amrex::Real a_time, amrex::Vector<amrex::MultiFab*> const &a_MF, int a_nGrow);
+   void fillPatchNLnE(amrex::Real a_time, amrex::Vector<amrex::MultiFab*> const &a_nE, int a_nGrow);
+   void fillPatchNLphiV(amrex::Real a_time, amrex::Vector<amrex::MultiFab*> const &a_phiV, int a_nGrow);
 #endif
 
    // FillCoarsePatch state components
