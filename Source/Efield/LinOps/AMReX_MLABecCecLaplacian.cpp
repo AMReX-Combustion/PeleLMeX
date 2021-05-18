@@ -705,12 +705,11 @@ MLABecCecLaplacian::checkDiagonalDominance (int amrlev, int mglev)
 }
 
 void
-MLABecCecLaplacian::getDiagonal(MultiFab& diag)
+MLABecCecLaplacian::getDiagonal(int amrlev, MultiFab& diag)
 {
     BL_PROFILE("MLABecCecLaplacian::getDiagonal()");
 
-    int amrlev = 0.0;
-    int mglev = 0.0;
+    int mglev = 0;
 
     const MultiFab& acoef = m_a_coeffs[amrlev][mglev];
     AMREX_D_TERM(const MultiFab& bxcoef = m_b_coeffs[amrlev][mglev][0];,

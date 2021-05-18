@@ -135,6 +135,12 @@ PrecondOp::setDiffOpCCoeff(int lev,
 }
 
 void
+PrecondOp::getDiffOpDiagonal(int lev, MultiFab &a_diffOpDiag)
+{
+   m_diff->getDiagonal(lev,a_diffOpDiag);
+}
+
+void
 PrecondOp::setDriftOpBCoeff(int lev,
                             const Array<const MultiFab*,AMREX_SPACEDIM> &a_bCoeff)
 {
