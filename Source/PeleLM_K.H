@@ -496,7 +496,7 @@ makeVelForce(int i, int j, int k,
       rho_lcl = rho(i,j,k);
    }
 
-   if ( std::abs(gravity) > 0.0001_rt ) {
+   if ( std::abs(gravity) > 0.000001_rt ) {
       force(i,j,k,0) = 0.0_rt;
 #if ( AMREX_SPACEDIM == 2 )
       force(i,j,k,1) = gravity*rho_lcl;
