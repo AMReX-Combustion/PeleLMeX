@@ -824,6 +824,8 @@ class PeleLM : public amrex::AmrCore {
    amrex::Real m_rho = 1.175;
    amrex::Real m_mu  = 2.0e-5;
 
+   amrex::Real m_gravity = 0.0;
+
    // DivU ? default ON when not incompressible
    int m_has_divu = 1;
 

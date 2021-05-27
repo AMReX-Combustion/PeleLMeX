@@ -215,6 +215,7 @@ void PeleLM::readParameters() {
    }
    pp.query("rho", m_rho);
    pp.query("mu", m_mu);
+   pp.query("gravity", m_gravity);
 
    // -----------------------------------------
    // diffusion
