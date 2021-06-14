@@ -220,11 +220,11 @@ void PeleLM::advanceChemistry(int lev,
    mask.setVal(1);
 
    // ParallelCopy into chem MFs
-   chemState.copy(*statemf,FIRSTSPEC,0,NUM_SPECIES+3);
-   chemForcing.copy(a_extForcing,0,0,nCompForcing());
-   chemAvgDownIR.copy(*a_avgDownIR,0,0,nCompIR());
+   chemState.ParallelCopy(*statemf,FIRSTSPEC,0,NUM_SPECIES+3);
+   chemForcing.ParallelCopy(a_extForcing,0,0,nCompForcing());
+   chemAvgDownIR.ParallelCopy(*a_avgDownIR,0,0,nCompIR());
 #ifdef PLM_USE_EFIELD
-   chemnE.copy(*statemf,NE,0,1);
+   chemnE.ParallelCopy(*statemf,NE,0,1);
 #endif
    //VisMF::Write(chemAvgDownIR,"avgDownIRNewBA_Level"+std::to_string(lev)+"_step"+std::to_string(m_nstep));
 
@@ -339,11 +339,11 @@ void PeleLM::advanceChemistry(int lev,
    // ParallelCopy into newstate MFs
    // Get the entire new state
    MultiFab StateTemp(grids[lev],dmap[lev],NUM_SPECIES+3,0);
-   StateTemp.copy(chemState,0,0,NUM_SPECIES+3);
-   ldataR_p->functC.copy(functC,0,0,1);
+   StateTemp.ParallelCopy(chemState,0,0,NUM_SPECIES+3);
+   ldataR_p->functC.ParallelCopy(functC,0,0,1);
 #ifdef PLM_USE_EFIELD
    MultiFab nETemp(grids[lev],dmap[lev],1,0);
-   nETemp.copy(chemnE,0,0,1);
+   nETemp.ParallelCopy(chemnE,0,0,1);
 #endif
 
    // Pass from temp state MF to leveldata and set reaction term

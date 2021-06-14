@@ -57,9 +57,38 @@ void pelelm_initdata(int i, int j, int k,
        const amrex::Real v_vort = prob_parm.forcevort*deltax/r_sq * exp(-d_sq/r_sq/2.);
        const amrex::Real w_vort = 0.;
 
-       AMREX_D_TERM(vel(i,j,k,0) = prob_parm.meanFlowMag + u_vort;,
-                    vel(i,j,k,1) = v_vort;,
-                    vel(i,j,k,2) = 0.0);
+       switch(prob_parm.meanFlowDir) {
+         case 1  :
+            AMREX_D_TERM(vel(i,j,k,0) = prob_parm.meanFlowMag + u_vort;,
+                         vel(i,j,k,1) = v_vort;,
+                         vel(i,j,k,2) = 0.0);
+            break;
+         case -1  :
+            AMREX_D_TERM(vel(i,j,k,0) = -prob_parm.meanFlowMag + u_vort;,
+                         vel(i,j,k,1) = v_vort;,
+                         vel(i,j,k,2) = 0.0);
+            break;
+         case 2  :
+            AMREX_D_TERM(vel(i,j,k,0) = u_vort;,
+                         vel(i,j,k,1) = prob_parm.meanFlowMag + v_vort;,
+                         vel(i,j,k,2) = 0.0);
+            break;
+         case -2  :
+            AMREX_D_TERM(vel(i,j,k,0) = u_vort;,
+                         vel(i,j,k,1) = -prob_parm.meanFlowMag + v_vort;,
+                         vel(i,j,k,2) = 0.0);
+            break;
+         case 3  :
+            AMREX_D_TERM(vel(i,j,k,0) = prob_parm.meanFlowMag + u_vort;,
+                         vel(i,j,k,1) = prob_parm.meanFlowMag + v_vort;,
+                         vel(i,j,k,2) = 0.0);
+            break;
+         case -3  :
+            AMREX_D_TERM(vel(i,j,k,0) = -prob_parm.meanFlowMag + u_vort;,
+                         vel(i,j,k,1) = -prob_parm.meanFlowMag + v_vort;,
+                         vel(i,j,k,2) = 0.0);
+            break;
+       }
 
        if (is_incompressible) return;
 
