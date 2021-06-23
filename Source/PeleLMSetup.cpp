@@ -251,6 +251,13 @@ void PeleLM::readParameters() {
    ppg.query("use_forceInTrans", m_Godunov_ForceInTrans);
 
    // -----------------------------------------
+   // Temporals
+   // -----------------------------------------
+   pp.query("do_temporals",m_do_temporals);
+   pp.query("temporal_int",m_temp_int);
+   pp.query("mass_balance",m_do_massBalance);
+
+   // -----------------------------------------
    // Time stepping control
    // -----------------------------------------
    ParmParse ppa("amr");
@@ -423,6 +430,9 @@ void PeleLM::derivedSetup()
 
    // Vorticity magnitude
    derive_lst.add("mag_vort",IndexType::TheCellType(),1,pelelm_dermgvort,grow_box_by_two);
+
+   // Kinetic energy
+   derive_lst.add("kinetic_energy",IndexType::TheCellType(),1,pelelm_derkineticenergy,the_same_box);
 
 #ifdef PLM_USE_EFIELD
    // Charge distribution
