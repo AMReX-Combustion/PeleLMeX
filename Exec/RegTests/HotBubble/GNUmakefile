@@ -22,9 +22,9 @@ USE_HIP         = FALSE
 
 # PelePhysics
 Chemistry_Model = air
-Reactions_dir	 = Null
-Eos_dir			 = Fuego
-Transport_dir   = Constant
+Reactor_dir     = null
+Eos_Model       = Fuego
+Transport_Model = Constant
 
 USE_SUNDIALS_PP = TRUE
 
