@@ -76,7 +76,7 @@ void PeleLM::WritePlotFile() {
    //----------------------------------------------------------------
    // Components names
    Vector<std::string> names;
-   pele::physics::eos::speciesNames(names);
+   pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(names);
 
    Vector<std::string> plt_VarsName;
    plt_VarsName.push_back("x_velocity");

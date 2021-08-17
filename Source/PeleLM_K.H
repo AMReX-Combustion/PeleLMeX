@@ -13,7 +13,8 @@ getTransportCoeff(int i, int j, int k,
                   amrex::Array4<      amrex::Real> const& rhoDi,
                   amrex::Array4<      amrex::Real> const& lambda,
                   amrex::Array4<      amrex::Real> const& mu,
-                  pele::physics::transport::TransParm const* trans_parm) noexcept
+                  pele::physics::transport::TransParm<pele::physics::PhysicsType::eos_type,
+                                                      pele::physics::PhysicsType::transport_type> const* trans_parm) noexcept
 {
    using namespace amrex::literals;
 
@@ -65,7 +66,8 @@ getVelViscosity(int i, int j, int k,
                 amrex::Array4<const amrex::Real> const& rhoY,
                 amrex::Array4<      amrex::Real> const& T,
                 amrex::Array4<      amrex::Real> const& mu,
-                pele::physics::transport::TransParm const* trans_parm) noexcept
+                pele::physics::transport::TransParm<pele::physics::PhysicsType::eos_type,
+                                                    pele::physics::PhysicsType::transport_type> const* trans_parm) noexcept
 {
    using namespace amrex::literals;
 
