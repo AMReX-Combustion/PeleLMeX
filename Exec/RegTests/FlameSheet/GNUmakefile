@@ -22,10 +22,8 @@ USE_HIP         = FALSE
 
 # PelePhysics
 Chemistry_Model = drm19
-Reactions_dir	 = Fuego
-Eos_dir			 = Fuego
-Transport_dir   = Simple
-
-USE_SUNDIALS_PP = TRUE
+Reactor_dir	 	= cvode
+Eos_Model		= Fuego
+Transport_Model = Simple
 
 include $(PELELMEX_HOME)/Utils/Make.PeleLMeX

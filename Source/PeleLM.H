@@ -10,6 +10,7 @@
 #include <AMReX_VisMF.H>
 
 #include <mechanism.H>
+#include "PelePhysics.H"
 #include <PeleLM_Index.H>
 #include <PeleLMDerive.H>
 #include <pelelm_prob_parm.H>
@@ -780,6 +781,10 @@ class PeleLM : public amrex::AmrCore {
 
    // Problem parameters
    std::unique_ptr<ProbParm> prob_parm;
+
+   // Transport pointer
+   pele::physics::transport::TransportParams<
+         pele::physics::PhysicsType::transport_type> trans_parms;
 
    // Linear solvers
    std::unique_ptr<DiffusionOp> m_diffusion_op;
