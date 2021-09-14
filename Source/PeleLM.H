@@ -873,7 +873,8 @@ class PeleLM : public amrex::AmrCore {
    amrex::Real m_pNew = -1.0;
    int m_closed_chamber = 0;
 
-   // Godunov
+   // Godunov (no MOL in LMeX)
+   std::string m_advection_type = "Godunov";
    int m_Godunov_ppm = 1;
    int m_Godunov_ForceInTrans = 0;
 
