@@ -86,11 +86,12 @@ endif
 #---------------
 # AMReX-Hydro sources
 #---------------
-Hdirs := Slopes Godunov Utils
+Hdirs := Slopes Godunov MOL Utils
 ifeq ($(USE_EB), TRUE)
     Hdirs += Redistribution EBGodunov
 endif
-Bpack += $(foreach dir, $(Hdirs), $(AMREX_HYDRO_HOME)/Src/$(dir)/Make.package)
+Bpack += $(foreach dir, $(Hdirs), $(AMREX_HYDRO_HOME)/$(dir)/Make.package)
+Blocs += $(foreach dir, $(Hdirs), $(AMREX_HYDRO_HOME)/$(dir))
 
 #---------------
 # AMReX sources
