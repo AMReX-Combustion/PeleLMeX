@@ -17,7 +17,7 @@ all: $(executable)
 #---------------
 # PeleLM sources
 #---------------
-LMdirs := Source Source/Godunov
+LMdirs := Source
 ifeq ($(USE_EFIELD),TRUE)
    DEFINES += -DPLM_USE_EFIELD
    LMdirs += Source/Efield Source/Efield/GMRES Source/Efield/LinOps
