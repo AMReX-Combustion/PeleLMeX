@@ -1,11 +1,11 @@
 #include <PeleLM.H>
 #include <PeleLMUtils.H>
-#include <Godunov.H>
+#include <hydro_utils.H>
 
 using namespace amrex;
 
 void PeleLM::predictVelocity(std::unique_ptr<AdvanceAdvData>  &advData,
-                        std::unique_ptr<AdvanceDiffData> &diffData)
+                             std::unique_ptr<AdvanceDiffData> &diffData)
 {
    BL_PROFILE_VAR("PeleLM::predictVelocity()", predictVelocity);
 
@@ -46,18 +46,18 @@ void PeleLM::predictVelocity(std::unique_ptr<AdvanceAdvData>  &advData,
       auto ldata_p = getLevelDataPtr(lev,AmrOldTime);
       Real time = getTime(lev,AmrOldTime);
 
+      HydroUtils::ExtrapVelToFaces(ldata_p->velocity,
+                                   velForces[lev],
+                                   AMREX_D_DECL(advData->umac[lev][0],
+                                                advData->umac[lev][1],
+                                                advData->umac[lev][2]),
+                                   bcRecVel, bcRecVel_d.dataPtr(),
+                                   geom[lev], m_dt,
 #ifdef AMREX_USE_EB
-#else
-      godunov::predict_godunov(time,
-                               AMREX_D_DECL(advData->umac[lev][0],
-                                            advData->umac[lev][1],
-                                            advData->umac[lev][2]),
-                               ldata_p->velocity,
-                               velForces[lev],
-                               bcRecVel, bcRecVel_d.dataPtr(),
-                               geom[lev], m_dt,
-                               m_Godunov_ppm, m_Godunov_ForceInTrans);
+                                   // TODO: ebfact
 #endif
+                                   m_Godunov_ppm, m_Godunov_ForceInTrans,
+                                   m_advection_type);
    }
 }
 
@@ -165,9 +165,20 @@ void PeleLM::macProject(const TimeStamp &a_time,
 
    // FillBoundary umac
    for (int lev = 0; lev <= finest_level; ++lev) {
-      AMREX_D_TERM(advData->umac[lev][0].FillBoundary(geom[lev].periodicity());,
-                   advData->umac[lev][1].FillBoundary(geom[lev].periodicity());,
-                   advData->umac[lev][2].FillBoundary(geom[lev].periodicity()));
+       if (lev > 0) {
+           // We need to fill the MAC velocities outside the fine region so we can use them in the Godunov method
+           IntVect rr  = geom[lev].Domain().size() / geom[lev-1].Domain().size();
+           auto divu_lev = (has_divu) ? a_divu[lev] : nullptr;
+           HydroUtils::create_constrained_umac_grown(lev, m_nGrowMAC, grids[lev],
+                                                     &geom[lev-1], &geom[lev],
+                                                     GetArrOfPtrs(advData->umac[lev-1]),
+                                                     GetArrOfPtrs(advData->umac[lev]),
+                                                     divu_lev, rr);
+       } else {
+           AMREX_D_TERM(advData->umac[lev][0].FillBoundary(geom[lev].periodicity());,
+                        advData->umac[lev][1].FillBoundary(geom[lev].periodicity());,
+                        advData->umac[lev][2].FillBoundary(geom[lev].periodicity()));
+       }
    }
 }
 
