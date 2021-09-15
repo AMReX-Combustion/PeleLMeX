@@ -1,6 +1,7 @@
 PELELMEX_HOME ?= /path/to/PeleLMeX
 AMREX_HOME ?= /path/to/AMREX
 PELE_PHYSICS_HOME ?= /path/to/PELE_PHYSICS_HOME
+AMREX_HYDRO_HOME ?= /path/to/AMREX_HYDRO_HOME
 
 # AMReX definitions
 include $(AMREX_HOME)/Tools/GNUMake/Make.defs
@@ -16,7 +17,7 @@ all: $(executable)
 #---------------
 # PeleLM sources
 #---------------
-LMdirs := Source Source/Godunov
+LMdirs := Source
 ifeq ($(USE_EFIELD),TRUE)
    DEFINES += -DPLM_USE_EFIELD
    LMdirs += Source/Efield Source/Efield/GMRES Source/Efield/LinOps
@@ -83,6 +84,16 @@ ifeq ($(USE_SUNDIALS_PP),TRUE)
 endif
 
 #---------------
+# AMReX-Hydro sources
+#---------------
+Hdirs := Slopes Godunov MOL Utils
+ifeq ($(USE_EB), TRUE)
+    Hdirs += Redistribution EBGodunov
+endif
+Bpack += $(foreach dir, $(Hdirs), $(AMREX_HYDRO_HOME)/$(dir)/Make.package)
+Blocs += $(foreach dir, $(Hdirs), $(AMREX_HYDRO_HOME)/$(dir))
+
+#---------------
 # AMReX sources
 #---------------
 Pdirs := Base Boundary AmrCore LinearSolvers/MLMG LinearSolvers/Projections
@@ -111,7 +122,7 @@ AMReX_buildInfo.cpp:
       --amrex_home "$(AMREX_HOME)" \
       --COMP "$(COMP)" --COMP_VERSION "$(COMP_VERSION)" \
       --FCOMP "$(FCOMP)" --FCOMP_VERSION "$(FCOMP_VERSION)" \
-      --GIT "$(PELELMEX_HOME) $(AMREX_HOME) $(PELE_PHYSICS_HOME)"
+      --GIT "$(PELELMEX_HOME) $(AMREX_HOME) $(PELE_PHYSICS_HOME) $(AMREX_HYDRO_HOME)"
 
 #---------------
 # Rules
