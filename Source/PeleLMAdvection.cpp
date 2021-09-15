@@ -21,8 +21,6 @@ void PeleLM::computeVelocityAdvTerm(std::unique_ptr<AdvanceAdvData> &advData)
       for (int idim = 0; idim <AMREX_SPACEDIM; idim++) {
          fluxes[lev][idim].define(amrex::convert(grids[lev],IntVect::TheDimensionVector(idim)),
                                   dmap[lev], AMREX_SPACEDIM, 0, MFInfo(), Factory(lev));
-      }
-      for (int idim = 0; idim <AMREX_SPACEDIM; idim++) {
          faces[lev][idim].define(amrex::convert(grids[lev],IntVect::TheDimensionVector(idim)),
                                  dmap[lev], AMREX_SPACEDIM, 0, MFInfo(), Factory(lev));
       }
@@ -107,17 +105,43 @@ void PeleLM::computeVelocityAdvTerm(std::unique_ptr<AdvanceAdvData> &advData)
       EB_average_down_faces(GetArrOfConstPtrs(fluxes[lev]),
                             GetArrOfPtrs(fluxes[lev-1]),
                             refRatio(lev-1),geom[lev-1]);
+      EB_average_down_faces(GetArrOfConstPtrs(faces[lev]),
+                            GetArrOfPtrs(faces[lev-1]),
+                            refRatio(lev-1),geom[lev-1]);
 #else
       average_down_faces(GetArrOfConstPtrs(fluxes[lev]),
                          GetArrOfPtrs(fluxes[lev-1]),
+                         refRatio(lev-1),geom[lev-1]);
+      average_down_faces(GetArrOfConstPtrs(faces[lev]),
+                         GetArrOfPtrs(faces[lev-1]),
                          refRatio(lev-1),geom[lev-1]);
 #endif
    }
 
    //----------------------------------------------------------------
    // Fluxes divergence to get the velocity advection term
-   advFluxDivergence(advData->AofS,VELX,GetVecOfArrOfPtrs(fluxes),0,
-                     GetVecOfArrOfPtrs(advData->umac),AMREX_SPACEDIM,AdvTypeVel_d.dataPtr(),-1.0);
+   for (int lev = 0; lev <= finest_level; ++lev) {
+      auto ldata_p = getLevelDataPtr(lev,AmrOldTime);
+
+      int nGrow_divu = 4;  // Why incflo use 4 ?
+      MultiFab divu(grids[lev],dmap[lev],1,nGrow_divu,MFInfo(),Factory(lev));
+      if (m_incompressible) {
+         divu.setVal(0.0);
+      } else {
+         Real time  = getTime(lev,AmrOldTime);
+         fillpatch_divu(lev,time,divu,nGrow_divu);
+      }
+
+      bool fluxes_are_area_weighted = false;
+      advFluxDivergence(advData->AofS[lev], VELX,
+                        divu,
+                        GetArrOfConstPtrs(fluxes[lev]), 0,
+                        GetArrOfConstPtrs(faces[lev]), 0,
+                        AMREX_SPACEDIM,
+                        AdvTypeVel_d.dataPtr(),
+                        geom[lev], -1.0,
+                        fluxes_are_area_weighted);
+   }
 }
 
 void PeleLM::updateVelocity(int is_init,
@@ -508,8 +532,28 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
    // Fluxes divergence to get the scalars advection term
    auto AdvTypeAll = fetchAdvTypeArray(FIRSTSPEC,NUM_SPECIES+1); // Species+RhoH
    auto AdvTypeAll_d = convertToDeviceVector(AdvTypeAll);
-   advFluxDivergence(advData->AofS,FIRSTSPEC,GetVecOfArrOfPtrs(fluxes),0,
-                     GetVecOfArrOfPtrs(advData->umac),NUM_SPECIES+1,AdvTypeAll_d.dataPtr(),-1.0);
+   for (int lev = 0; lev <= finest_level; ++lev) {
+      auto ldata_p = getLevelDataPtr(lev,AmrOldTime);
+
+      int nGrow_divu = 1;  // TODO EB Why incflo use 4 ?
+      MultiFab divu(grids[lev],dmap[lev],1,nGrow_divu,MFInfo(),Factory(lev));
+      if (m_incompressible) {
+         divu.setVal(0.0);
+      } else {
+         Real time  = getTime(lev,AmrOldTime);
+         fillpatch_divu(lev,time,divu,nGrow_divu);
+      }
+
+      bool fluxes_are_area_weighted = false;
+      advFluxDivergence(advData->AofS[lev], FIRSTSPEC,
+                        divu,
+                        GetArrOfConstPtrs(fluxes[lev]), 0,
+                        GetArrOfConstPtrs(fluxes[lev]), 0, // This will not be used since none of rhoY/rhoH in convective
+                        NUM_SPECIES+1,
+                        AdvTypeAll_d.dataPtr(),
+                        geom[lev], -1.0,
+                        fluxes_are_area_weighted);
+   }
 
    //----------------------------------------------------------------
    // Sum over the species AofS to get the density advection term
