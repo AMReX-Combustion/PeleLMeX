@@ -498,7 +498,11 @@ PeleLM::MLNorm0(const Vector<const MultiFab*> &a_MF)
 {
    Real r = 0.0;
    for (int lev = 0; lev < a_MF.size(); ++lev) {
-      r = std::max(r, a_MF[lev]->norm0(0,0,true,true));
+      if (lev != finest_level) {
+         r = std::max(r, a_MF[lev]->norm0(*m_coveredMask[lev],0,0,true));
+      } else {
+         r = std::max(r, a_MF[lev]->norm0(0,0,true,true));
+      }
    }
    ParallelDescriptor::ReduceRealMax(r);
    return r;
@@ -510,15 +514,18 @@ PeleLM::MLNorm0(const Vector<const MultiFab*> &a_MF,
 {
    AMREX_ASSERT(a_MF[0]->nComp() >= startcomp+ncomp);
    Vector<Real> r(ncomp);
-   Vector<int> comps(ncomp);
    for (int n = 0; n < ncomp; n++) {
       r[n] = 0.0;
-      comps[n] = startcomp+n;
    }
    for (int lev = 0; lev < a_MF.size(); ++lev) {
-      Vector<Real> levMax = a_MF[lev]->norm0(comps,0,true,true);
-      for (int n = 0; n < ncomp; n++) {
-         r[n] = std::max(r[n], levMax[n]);
+      if (lev != finest_level) {
+         for (int n = 0; n < ncomp; n++) {
+            r[n] = std::max(r[n], a_MF[lev]->norm0(*m_coveredMask[lev],startcomp+n,0,true));
+         }
+      } else {
+         for (int n = 0; n < ncomp; n++) {
+            r[n] = std::max(r[n], a_MF[lev]->norm0(startcomp+n,0,true,true));
+         }
       }
    }
    ParallelDescriptor::ReduceRealMax(r.data(),ncomp);

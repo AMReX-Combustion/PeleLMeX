@@ -529,6 +529,13 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
    }
 
    //----------------------------------------------------------------
+   // If mass balance is required, compute face domain integrals
+   // using level 0 since we've averaged down the fluxes already
+   if (m_do_massBalance && (m_sdcIter == m_nSDCmax)) {
+      addMassFluxes(GetArrOfConstPtrs(fluxes[0]),geom[0]);
+   }
+
+   //----------------------------------------------------------------
    // Fluxes divergence to get the scalars advection term
    auto AdvTypeAll = fetchAdvTypeArray(FIRSTSPEC,NUM_SPECIES+1); // Species+RhoH
    auto AdvTypeAll_d = convertToDeviceVector(AdvTypeAll);

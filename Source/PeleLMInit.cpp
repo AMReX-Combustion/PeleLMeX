@@ -7,8 +7,12 @@ using namespace amrex;
 void PeleLM::Init() {
    BL_PROFILE_VAR("PeleLM::Init()", Init);
 
+   // Open temporals file
+   openTempFile();
+
    // Initialize data
    initData();
+
 
 }
 
@@ -191,6 +195,10 @@ void PeleLM::initData() {
       initialIterations();
 
       m_nstep = 0;
+
+      if (m_do_temporals) {
+         writeTemporals();
+      }
 
       if (m_plot_int > 0 ) {
          WritePlotFile();

@@ -416,6 +416,17 @@ class PeleLM : public amrex::AmrCore {
    //-----------------------------------------------------------------------------
 
    //-----------------------------------------------------------------------------
+   // Temporal
+   void massBalance();
+   void initTemporals();
+   void writeTemporals();
+   void addMassFluxes(const amrex::Array<const amrex::MultiFab*,AMREX_SPACEDIM> &a_fluxes, const amrex::Geometry &a_geom);
+   void openTempFile();
+   void closeTempFile();
+   bool doTemporalsNow();
+   //-----------------------------------------------------------------------------
+
+   //-----------------------------------------------------------------------------
    // BOUNDARY CONDITIONS / FILLPATCH
    // Convert PhysBC into field BCs
    void setBoundaryConditions();
@@ -528,6 +539,8 @@ class PeleLM : public amrex::AmrCore {
    amrex::Vector<amrex::Real>
    MLNorm0(const amrex::Vector<const amrex::MultiFab*> &a_MF,
            int startcomp, int ncomp);
+
+   amrex::Real MFSum(const amrex::Vector<const amrex::MultiFab*> &a_MF, int comp);
 
    void resetCoveredMask();
 
@@ -854,6 +867,7 @@ class PeleLM : public amrex::AmrCore {
 
    // SDC
    int m_nSDCmax = 1;
+   int m_sdcIter = 0;
 
    // DeltaT iterations
    int m_deltaT_verbose = 0;
@@ -870,6 +884,17 @@ class PeleLM : public amrex::AmrCore {
    std::string m_advection_type = "Godunov";
    int m_Godunov_ppm = 1;
    int m_Godunov_ForceInTrans = 0;
+
+   // Temporals
+   int m_do_temporals = 0;
+   int m_temp_int = 5;
+   int m_do_massBalance = 0;
+   amrex::Real m_massOld;
+   amrex::Real m_massNew;
+   amrex::Array<amrex::Real,2*AMREX_SPACEDIM> m_domainMassFlux;
+   std::ofstream tmpStateFile;
+   std::ofstream tmpMassFile;
+   std::ofstream tmpSpecFile;
 
    // Number of ghost cells
    int m_nGrowState = 3;
