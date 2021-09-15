@@ -2,7 +2,7 @@
 #include <AMReX_ParmParse.H>
 #include <PeleLMDeriveFunc.H>
 #include "PelePhysics.H"
-#include <reactor.h>
+#include <reactor.H>
 #ifdef PLM_USE_EFIELD
 #include "EOS_Extension.H"
 #endif
@@ -34,8 +34,7 @@ void PeleLM::Setup() {
    // Initialize EOS and others
    if (!m_incompressible) {
       amrex::Print() << " Initialization of Transport ... \n";
-      pele::physics::transport::InitTransport<
-         pele::physics::PhysicsType::eos_type>()();
+      trans_parms.allocate();
       if (m_do_react) {
          int reactor_type = 2;
          int ncells_chem = 1;
@@ -339,7 +338,7 @@ void PeleLM::variablesSetup() {
       stateComponents.emplace_back(DENSITY,"density");
       Print() << " First species: " << FIRSTSPEC << "\n";
       Vector<std::string> names;
-      pele::physics::eos::speciesNames(names);
+      pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(names);
       for (int n = 0; n < NUM_SPECIES; n++ ) {
          stateComponents.emplace_back(FIRSTSPEC+n,"rho.Y("+names[n]+")");
       }
@@ -413,7 +412,7 @@ void PeleLM::derivedSetup()
 
       // Get species names
       Vector<std::string> spec_names;
-      pele::physics::eos::speciesNames(spec_names);
+      pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(spec_names);
 
       // Set species mass fractions
       Vector<std::string> var_names_massfrac(NUM_SPECIES);

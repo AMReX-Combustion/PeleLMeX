@@ -27,7 +27,7 @@ jobs:
          python3 -m pip install --user argparse
          python3 -m pip install --user matplotlib
     - name: Repo Dependencies
-      run: Tools/CloneDeps.sh
+      run: Utils/CloneDeps.sh
     - name: Build AMReX Tools
       env:
          AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex

@@ -63,6 +63,9 @@ void PeleLM::Evolve() {
    if ( m_check_int > 0 && !chk_justDidIt ) {
       WriteCheckPointFile();
    }
+
+   // TODO: set a clean up function.
+   trans_parms.deallocate();
    
 }
 

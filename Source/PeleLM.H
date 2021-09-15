@@ -10,6 +10,7 @@
 #include <AMReX_VisMF.H>
 
 #include <mechanism.H>
+#include "PelePhysics.H"
 #include <PeleLM_Index.H>
 #include <PeleLMDerive.H>
 #include <pelelm_prob_parm.H>
@@ -505,14 +506,17 @@ class PeleLM : public amrex::AmrCore {
                        int intensiveFluxes,
                        amrex::Real scale);
 
-   void advFluxDivergence(amrex::Vector<amrex::MultiFab> &a_divergence,
-                          int div_comp,
-                          const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM> > &a_fluxes,
+   void advFluxDivergence(amrex::MultiFab &a_divergence, int div_comp,
+                          amrex::MultiFab &a_divu,
+                          const amrex::Array<const amrex::MultiFab*,AMREX_SPACEDIM> &a_fluxes,
                           int flux_comp,
-                          const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM> > &a_umac,
+                          const amrex::Array<const amrex::MultiFab*,AMREX_SPACEDIM> &a_faceState,
+                          int face_comp,
                           int ncomp,
                           int const* l_conserv_d,
-                          amrex::Real scale);
+                          const amrex::Geometry &a_geom,
+                          amrex::Real scale,
+                          bool fluxes_are_area_weighted);
 
    void extFluxDivergenceLevel(int lev,
                                amrex::MultiFab &a_divergence,
@@ -529,16 +533,6 @@ class PeleLM : public amrex::AmrCore {
                                int flux_comp,
                                int ncomp,
                                amrex::Real scale);
-
-   void intAdvFluxDivergenceLevel(int lev,
-                                  amrex::MultiFab &a_divergence,
-                                  int div_comp,
-                                  const amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM> &a_fluxes,
-                                  int flux_comp,
-                                  const amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM> &a_umac,
-                                  int ncomp,
-                                  int const* l_conserv_d,
-                                  amrex::Real scale);
 
    void floorSpecies(const PeleLM::TimeStamp &a_time);
    amrex::Real MLNorm0(const amrex::Vector<const amrex::MultiFab*> &a_MF);
@@ -794,6 +788,10 @@ class PeleLM : public amrex::AmrCore {
    // Problem parameters
    std::unique_ptr<ProbParm> prob_parm;
 
+   // Transport pointer
+   pele::physics::transport::TransportParams<
+         pele::physics::PhysicsType::transport_type> trans_parms;
+
    // Linear solvers
    std::unique_ptr<DiffusionOp> m_diffusion_op;
    std::unique_ptr<DiffusionTensorOp> m_diffusionTensor_op;
@@ -882,7 +880,8 @@ class PeleLM : public amrex::AmrCore {
    amrex::Real m_pNew = -1.0;
    int m_closed_chamber = 0;
 
-   // Godunov
+   // Godunov (no MOL in LMeX)
+   std::string m_advection_type = "Godunov";
    int m_Godunov_ppm = 1;
    int m_Godunov_ForceInTrans = 0;
 
