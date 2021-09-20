@@ -1,6 +1,5 @@
 #include <PeleLM.H>
 #include <PeleLM_K.H>
-#include <reactor.H>
 #ifdef PLM_USE_EFIELD
 #include <PeleLMEF_Constants.H>
 #endif
@@ -100,28 +99,19 @@ void PeleLM::advanceChemistry(int lev,
       });
 #endif
 
-#ifdef AMREX_USE_GPU
-      int ncells           = bx.numPts();
-      const auto ec = Gpu::ExecutionConfig(ncells);
-#endif
-
       Real dt_incr     = a_dt;
       Real time_chem   = 0;
       int reactor_type = 2;
-#ifdef AMREX_USE_GPU
-      int tmp_fctCn = 0;
-      tmp_fctCn = react(bx, rhoY_n, extF_rhoY, temp_n, rhon, extF_rhoH, fcl, mask_arr, 
-                        dt_incr, time_chem, reactor_type, amrex::Gpu::gpuStream());
-      dt_incr = a_dt;
-      time_chem = 0;
-#else
       /* Solve */
-      int tmp_fctCn = 0;
-      tmp_fctCn = react(bx, rhoY_n, extF_rhoY, temp_n, rhoH_n, extF_rhoH, fcl, mask_arr,
-                        dt_incr, time_chem, reactor_type);
+      m_reactor->react(bx, rhoY_n, extF_rhoY, temp_n,
+                       rhoH_n, extF_rhoH, fcl, mask_arr,
+                       dt_incr, time_chem
+#ifdef AMREX_USE_GPU
+                       , amrex::Gpu::gpuStream()
+#endif
+                       );
       dt_incr   = a_dt;
       time_chem = 0;
-#endif
 
       // Convert CGS -> MKS
       ParallelFor(bx, [rhoY_n, rhoH_n, extF_rhoY, extF_rhoH]
@@ -281,28 +271,17 @@ void PeleLM::advanceChemistry(int lev,
 
       if ( do_reactionBox ) {
          // Do reaction as usual using PelePhysics chemistry integrator
-#ifdef AMREX_USE_GPU
-         int ncells           = bx.numPts();
-         const auto ec = Gpu::ExecutionConfig(ncells);
-#endif
-
          Real dt_incr     = a_dt;
          Real time_chem   = 0;
          int reactor_type = 2;
-#ifdef AMREX_USE_GPU
-         int tmp_fctCn = 0;
-         tmp_fctCn = react(bx, rhoY_o, extF_rhoY, temp_o, rhoH_o, extF_rhoH, fcl, mask_arr, 
-                           dt_incr, time_chem, reactor_type, amrex::Gpu::gpuStream());
-         dt_incr = a_dt;
-         time_chem = 0;
-#else
          /* Solve */
-         int tmp_fctCn = 0;
-         tmp_fctCn = react(bx, rhoY_o, extF_rhoY, temp_o, rhoH_o, extF_rhoH, fcl, mask_arr,
-                           dt_incr, time_chem, reactor_type);
-         dt_incr   = a_dt;
-         time_chem = 0;
-#endif
+         m_reactor->react(bx, rhoY_o, extF_rhoY, temp_o,
+                          rhoH_o, extF_rhoH, fcl, mask_arr,
+                          dt_incr, time_chem
+#ifdef AMREX_USE_GPU
+                          , amrex::Gpu::gpuStream()
+#endif   
+                          );
       } else {
          // Use forcing and averaged down IR to advance species/rhoH/temp
          Real dt_incr     = a_dt;
