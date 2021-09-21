@@ -10,6 +10,8 @@ PeleLM::~PeleLM()
       ClearLevel(lev);
    }
    prob_parm.reset();
+   trans_parms.deallocate();
+   m_reactor->close();
 
    closeTempFile();
 }

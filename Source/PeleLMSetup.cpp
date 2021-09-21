@@ -2,7 +2,6 @@
 #include <AMReX_ParmParse.H>
 #include <PeleLMDeriveFunc.H>
 #include "PelePhysics.H"
-#include <reactor.H>
 #ifdef PLM_USE_EFIELD
 #include "EOS_Extension.H"
 #endif
@@ -38,15 +37,17 @@ void PeleLM::Setup() {
       if (m_do_react) {
          int reactor_type = 2;
          int ncells_chem = 1;
-         amrex::Print() << " Initialization of reaction integrator ... \n";
-#ifdef USE_SUNDIALS_PP
-         SetTolFactODE(m_rtol_chem,m_atol_chem);
+         amrex::Print() << " Initialization of chemical reactor ... \n";
+         m_chem_integrator = "ReactorNull";
+         ParmParse pp("peleLM");
+         pp.query("chem_integrator",m_chem_integrator);
+         m_reactor = pele::physics::reactions::ReactorBase::create(m_chem_integrator);
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
-#ifdef AMREX_USE_GPU
-         reactor_info(reactor_type,ncells_chem);
-#else
-         reactor_init(reactor_type,ncells_chem);
-#endif
+         {
+            m_reactor->init(reactor_type, ncells_chem);
+         }
       }
 
 #ifdef PLM_USE_EFIELD

@@ -11,6 +11,7 @@
 
 #include <mechanism.H>
 #include "PelePhysics.H"
+#include "ReactorBase.H"
 #include <PeleLM_Index.H>
 #include <PeleLMDerive.H>
 #include <pelelm_prob_parm.H>
@@ -791,6 +792,10 @@ class PeleLM : public amrex::AmrCore {
    // Transport pointer
    pele::physics::transport::TransportParams<
          pele::physics::PhysicsType::transport_type> trans_parms;
+
+   // Reactor pointer
+   std::string m_chem_integrator;
+   std::unique_ptr<pele::physics::reactions::ReactorBase> m_reactor;
 
    // Linear solvers
    std::unique_ptr<DiffusionOp> m_diffusion_op;

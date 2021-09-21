@@ -2,6 +2,7 @@ TOP = ../../../..
 AMREX_HOME         ?= ${TOP}/amrex
 PELELMEX_HOME      ?= ${TOP}/PeleLMeX
 PELE_PHYSICS_HOME  ?= ${TOP}/PelePhysics
+AMREX_HYDRO_HOME   ?= ${TOP}/AMReX-Hydro
 
 
 # AMReX
@@ -22,7 +23,6 @@ USE_HIP         = FALSE
 
 # PelePhysics
 Chemistry_Model = drm19
-Reactor_dir	 	= cvode
 Eos_Model		= Fuego
 Transport_Model = Simple
 
