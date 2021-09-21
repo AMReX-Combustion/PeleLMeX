@@ -38,7 +38,7 @@ void PeleLM::Setup() {
          int reactor_type = 2;
          int ncells_chem = 1;
          amrex::Print() << " Initialization of chemical reactor ... \n";
-         m_chem_integrator = "NullReactor";
+         m_chem_integrator = "ReactorNull";
          ParmParse pp("peleLM");
          pp.query("chem_integrator",m_chem_integrator);
          m_reactor = pele::physics::reactions::ReactorBase::create(m_chem_integrator);
