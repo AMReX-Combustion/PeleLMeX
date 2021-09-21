@@ -264,7 +264,7 @@ void PeleLM::initLevelData(int lev) {
    ProbParm const* lprobparm = prob_parm.get();
    PmfData const* lpmfdata   = pmf_data_g;
 
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
    for (MFIter mfi(ldata_p->velocity,TilingIfNotGPU()); mfi.isValid(); ++mfi)
