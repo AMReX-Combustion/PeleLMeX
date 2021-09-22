@@ -101,7 +101,6 @@ void PeleLM::advanceChemistry(int lev,
 
       Real dt_incr     = a_dt;
       Real time_chem   = 0;
-      int reactor_type = 2;
       /* Solve */
       m_reactor->react(bx, rhoY_n, extF_rhoY, temp_n,
                        rhoH_n, extF_rhoH, fcl, mask_arr,
