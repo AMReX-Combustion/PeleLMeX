@@ -43,10 +43,8 @@ void pelelm_initdata(int i, int j, int k,
     amrex::GpuArray<amrex::Real, NUM_SPECIES + 4> pmf_vals = {0.0};
     amrex::Real molefrac[NUM_SPECIES] = {0.0};
     amrex::Real massfrac[NUM_SPECIES] = {0.0};
-    amrex::Real pert;
-    amrex::Real y1, y2;
+    amrex::Real pert = 0.0;
 
-    pert = 0.0;
     if (prob_parm.pertmag > 0.0) 
     {
        pert = prob_parm.pertmag * 
@@ -57,8 +55,8 @@ void pelelm_initdata(int i, int j, int k,
               0.982 * std::sin(2 * Pi * 5 * (x - 0.014234) / Lx));
     }
 
-    y1 = (y - prob_parm.standoff - 0.5*dx[1] + pert)*100;
-    y2 = (y - prob_parm.standoff + 0.5*dx[1] + pert)*100;
+    amrex::Real y1 = (y - prob_parm.standoff - 0.5*dx[1] + pert)*100;
+    amrex::Real y2 = (y - prob_parm.standoff + 0.5*dx[1] + pert)*100;
 
     PMF::pmf(pmf_data,y1, y2, pmf_vals);
 
