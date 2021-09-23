@@ -42,6 +42,7 @@ jobs:
          PELELMEX_HOME: ${GITHUB_WORKSPACE}
       working-directory: ./Exec/RegTests/PeriodicCases
       run: |
+        make -j 2 TPL COMP=gnu
         make -j 2 COMP=gnu
     - name: Run
       working-directory: ./Exec/RegTests/PeriodicCases

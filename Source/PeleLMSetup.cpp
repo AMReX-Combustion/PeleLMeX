@@ -6,6 +6,10 @@
 #include "EOS_Extension.H"
 #endif
 
+#ifdef AMREX_USE_GPU
+#include <AMReX_SUNMemory.H>
+#endif
+
 using namespace amrex;
 
 static Box the_same_box (const Box& b)    { return b;                }
@@ -14,6 +18,10 @@ static Box grow_box_by_two (const Box& b) { return amrex::grow(b,2); }
 
 void PeleLM::Setup() {
    BL_PROFILE_VAR("PeleLM::Setup()", Setup);
+
+#ifdef AMREX_USE_GPU
+   sundials::MemoryHelper::Initialize();
+#endif
 
    // Read PeleLM parameters
    readParameters();

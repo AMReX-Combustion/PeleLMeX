@@ -719,7 +719,6 @@ fabMinMax(int i, int j, int k,
    }
 }
 
-AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
 void
 linearChemForcing(const amrex::Box& bx,

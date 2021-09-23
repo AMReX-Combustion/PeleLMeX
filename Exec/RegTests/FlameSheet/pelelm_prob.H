@@ -43,12 +43,12 @@ void pelelm_initdata(int i, int j, int k,
     amrex::GpuArray<amrex::Real, NUM_SPECIES + 4> pmf_vals = {0.0};
     amrex::Real molefrac[NUM_SPECIES] = {0.0};
     amrex::Real massfrac[NUM_SPECIES] = {0.0};
-    amrex::Real pert;
-    amrex::Real y1, y2;
+    amrex::Real pert = 0.0;
 
-    pert = 0.0;
     if (prob_parm.pertmag > 0.0) 
     {
+
+#if ( AMREX_SPACEDIM == 2 )
        pert = prob_parm.pertmag * 
              (1.0 * std::sin(2 * Pi * 4 * x / Lx) +
               1.023 * std::sin(2 * Pi * 2 * (x - 0.004598) / Lx) +
@@ -57,8 +57,27 @@ void pelelm_initdata(int i, int j, int k,
               0.982 * std::sin(2 * Pi * 5 * (x - 0.014234) / Lx));
     }
 
-    y1 = (y - prob_parm.standoff - 0.5*dx[1] + pert)*100;
-    y2 = (y - prob_parm.standoff + 0.5*dx[1] + pert)*100;
+    amrex::Real y1 = (y - prob_parm.standoff - 0.5*dx[1] + pert)*100;
+    amrex::Real y2 = (y - prob_parm.standoff + 0.5*dx[1] + pert)*100;
+
+#elif ( AMREX_SPACEDIM == 3 )
+
+       pert = prob_parm.pertmag *
+             (1.0 * std::sin(2 * Pi * 4 * x / Lx) *
+                std::sin(2 * Pi * 5 * y / Ly) +
+              1.023 * std::sin(2 * Pi * 2 * (x - 0.004598) / Lx) *
+                std::sin(2 * Pi * 4 * (y - 0.0053765) / Ly) +
+              0.945 * std::sin(2 * Pi * 3 * (x - 0.00712435) / Lx) *
+                std::sin(2 * Pi * 3 * (y - 0.02137) / Ly) +
+              1.017 * std::sin(2 * Pi * 5 * (x - 0.0033) / Lx) *
+                std::sin(2 * Pi * 6 * (y - 0.018) / Ly) +
+              0.982 * std::sin(2 * Pi * 5 * (x - 0.014234) / Lx));
+    }
+
+    amrex::Real y1 = (z - prob_parm.standoff - 0.5*dx[2] + pert)*100;
+    amrex::Real y2 = (z - prob_parm.standoff + 0.5*dx[2] + pert)*100;
+#endif
+
 
     PMF::pmf(pmf_data,y1, y2, pmf_vals);
 
@@ -69,9 +88,13 @@ void pelelm_initdata(int i, int j, int k,
     }
     eos.X2Y(molefrac, massfrac);
 
-    AMREX_D_TERM(vel(i,j,k,0) = 0.0;,
-                 vel(i,j,k,1) = pmf_vals[1]*1e-2;,
-                 vel(i,j,k,2) = 0.0);
+    vel(i,j,k,0) = 0.0;
+#if ( AMREX_SPACEDIM == 2 )
+    vel(i,j,k,1) = pmf_vals[1]*1e-2;
+#elif ( AMREX_SPACEDIM == 3 )
+    vel(i,j,k,1) = 0.0;
+    vel(i,j,k,2) = pmf_vals[1]*1e-2;
+#endif
 
     amrex::Real P_cgs = prob_parm.P_mean * 10.0;
 
@@ -114,9 +137,13 @@ bcnormal(
   if (sgn == 1) {
     PMF::pmf(pmf_data,prob_lo[idir], prob_lo[idir], pmf_vals);
 
-    AMREX_D_TERM(s_ext[VELX] = 0.0;,
-                 s_ext[VELY] = pmf_vals[1]*1e-2;,
-                 s_ext[VELZ] = 0.0);
+    s_ext[VELX] = 0.0;
+#if ( AMREX_SPACEDIM == 2 )
+    s_ext[VELY] = pmf_vals[1]*1e-2;
+#elif ( AMREX_SPACEDIM == 3 )
+    s_ext[VELY] = 0.0;
+    s_ext[VELZ] = pmf_vals[1]*1e-2;
+#endif
 
     s_ext[TEMP] = pmf_vals[0];
     for (int n = 0; n < NUM_SPECIES; n++){
