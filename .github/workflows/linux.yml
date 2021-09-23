@@ -113,6 +113,7 @@ jobs:
          AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
       working-directory: ./Exec/RegTests/PeriodicCases/
       run: |
+        make TPL COMP=gnu USE_MPI=FALSE
         make -j 2 COMP=gnu USE_MPI=FALSE
     - name: Run
       working-directory: ./Exec/RegTests/PeriodicCases/
