@@ -30,7 +30,7 @@ void PeleLM::initialProjection()
 
          auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
 
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
          for (MFIter mfi(ldata_p->density,TilingIfNotGPU()); mfi.isValid(); ++mfi) {
@@ -51,7 +51,7 @@ void PeleLM::initialProjection()
    for (int lev = 0; lev <= finest_level; ++lev) {
       vel.push_back(&(m_leveldata_new[lev]->velocity));
       vel[lev]->setBndry(0.0);
-      setPhysBoundaryVel(*vel[lev],lev,AmrNewTime);
+      setInflowBoundaryVel(*vel[lev],lev,AmrNewTime);
    }
 
    // Get RHS cc: - divU
@@ -107,7 +107,7 @@ void PeleLM::velocityProjection(int is_initIter,
 
          sigma[lev].reset(new MultiFab(grids[lev], dmap[lev], 1, nGhost, MFInfo(), *m_factory[lev]));
 
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
          for (MFIter mfi(*rhoHalf[lev],TilingIfNotGPU()); mfi.isValid(); ++mfi) {
@@ -131,7 +131,7 @@ void PeleLM::velocityProjection(int is_initIter,
          auto ldataOld_p = getLevelDataPtr(lev,AmrOldTime);
          auto ldataNew_p = getLevelDataPtr(lev,AmrNewTime);
 
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
          for (MFIter mfi(ldataNew_p->velocity,TilingIfNotGPU()); mfi.isValid(); ++mfi) {
@@ -171,7 +171,7 @@ void PeleLM::velocityProjection(int is_initIter,
       auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
       vel.push_back(&(ldata_p->velocity));
       vel[lev]->setBndry(0.0);
-      if (!incremental) setPhysBoundaryVel(*vel[lev],lev,AmrNewTime);
+      if (!incremental) setInflowBoundaryVel(*vel[lev],lev,AmrNewTime);
    }
 
    // Get RHS cc
@@ -188,7 +188,7 @@ void PeleLM::velocityProjection(int is_initIter,
             auto ldataOld_p = getLevelDataPtr(lev,AmrOldTime);
             auto ldataNew_p = getLevelDataPtr(lev,AmrNewTime);
             rhs_cc[lev].define(grids[lev],dmap[lev],1,ldataOld_p->divu.nGrow(), MFInfo(), *m_factory[lev]);
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
             for (MFIter mfi(rhs_cc[lev],TilingIfNotGPU()); mfi.isValid(); ++mfi)
@@ -296,7 +296,7 @@ void PeleLM::doNodalProject(Vector<MultiFab*> &a_vel,
 
       auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
 
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
       for (MFIter mfi(ldata_p->gp,TilingIfNotGPU()); mfi.isValid(); ++mfi) {

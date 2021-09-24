@@ -989,20 +989,38 @@ void PeleLM::fillcoarsepatch_phiV(int lev,
 }
 #endif
 
-// Fill the physical boundary of a velocity MF
-void PeleLM::setPhysBoundaryVel(MultiFab &a_vel,
+// Fill the inflow boundary of a velocity MF
+// used for velocity projection
+void PeleLM::setInflowBoundaryVel(MultiFab &a_vel,
                                 int lev,
                                 TimeStamp a_time) {
-   BL_PROFILE_VAR("PeleLM::setPhysBoundaryVel()", setPhysBoundaryVel);
+   BL_PROFILE_VAR("PeleLM::setInflowBoundaryVel()", setInflowBoundaryVel);
    
    Real time = getTime(lev, a_time);
 
-   // Fills interior and periodic domain boundary ghost cells
-   a_vel.FillBoundary(geom[lev].periodicity());
+   // Create a dummy BCRec from Velocity BCRec keeping only Inflow and set the other to bogus
+   auto  realVelBCRec = fetchBCRecArray(VELX,AMREX_SPACEDIM);
+   amrex::Vector<amrex::BCRec> dummyVelBCRec(AMREX_SPACEDIM);
+   for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+      for (int idim2 = 0; idim2 < AMREX_SPACEDIM; idim2++) {
+         if ( realVelBCRec[idim].lo(idim2) == BCType::ext_dir ) {
+            dummyVelBCRec[idim].setLo(idim2,BCType::ext_dir);
+         } else {
+            dummyVelBCRec[idim].setLo(idim2,BCType::bogus);
+         }
+         if ( realVelBCRec[idim].hi(idim2) == BCType::ext_dir ) {
+            dummyVelBCRec[idim].setHi(idim2,BCType::ext_dir);
+         } else {
+            dummyVelBCRec[idim].setHi(idim2,BCType::bogus);
+         }
+      }
+   }  
 
    ProbParm const* lprobparm = prob_parm.get();
-   PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirVel>> bndry_func(geom[lev], fetchBCRecArray(VELX,AMREX_SPACEDIM),
+   PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirVel>> bndry_func(geom[lev], dummyVelBCRec,
                                                                   PeleLMCCFillExtDirVel{lprobparm, pmf_data_g, m_nAux});
 
-   bndry_func(a_vel,0,AMREX_SPACEDIM,a_vel.nGrowVect(), time, 0);
+   bndry_func(a_vel, 0, AMREX_SPACEDIM, a_vel.nGrowVect(), time, 0);
+
+   a_vel.EnforcePeriodicity(geom[lev].periodicity());
 }
