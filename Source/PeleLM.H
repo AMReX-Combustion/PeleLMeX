@@ -479,7 +479,7 @@ class PeleLM : public amrex::AmrCore {
 #endif
 
    // Fill physical boundaries
-   void setPhysBoundaryVel (amrex::MultiFab &a_vel, int lev, PeleLM::TimeStamp a_time);
+   void setInflowBoundaryVel (amrex::MultiFab &a_vel, int lev, PeleLM::TimeStamp a_time);
 
    // Average down operations
    void averageDownState(const PeleLM::TimeStamp &a_time);
