@@ -401,6 +401,10 @@ class PeleLM : public amrex::AmrCore {
                   const amrex::Vector<amrex::MultiFab*> &a_dPdt);
    void calc_dPdt(int lev, const PeleLM::TimeStamp &a_time,
                   amrex::MultiFab* a_dPdt);
+
+   // Closed Chamber
+   amrex::Real
+   adjustPandDivU(std::unique_ptr<AdvanceAdvData> &advData);
    //-----------------------------------------------------------------------------
 
    //-----------------------------------------------------------------------------
@@ -724,6 +728,7 @@ class PeleLM : public amrex::AmrCore {
    amrex::Vector<amrex::MultiFab* > getDensityVect(const PeleLM::TimeStamp &a_time);
    amrex::Vector<amrex::MultiFab* > getSpeciesVect(const PeleLM::TimeStamp &a_time);
    amrex::Vector<amrex::MultiFab* > getTempVect(const PeleLM::TimeStamp &a_time);
+   amrex::Vector<amrex::MultiFab* > getDivUVect(const PeleLM::TimeStamp &a_time);
    amrex::Vector<amrex::MultiFab* > getDiffusivityVect(const PeleLM::TimeStamp &a_time);
    amrex::Vector<amrex::MultiFab* > getViscosityVect(const PeleLM::TimeStamp &a_time);
 #ifdef PLM_USE_EFIELD
@@ -883,6 +888,8 @@ class PeleLM : public amrex::AmrCore {
    amrex::Real m_dpdtFactor = 1.0;
    amrex::Real m_pOld = -1.0;
    amrex::Real m_pNew = -1.0;
+   amrex::Real m_dp0dt = 0.0;
+   amrex::Real m_uncoveredVol = -1.0;
    int m_closed_chamber = 0;
 
    // Godunov (no MOL in LMeX)
