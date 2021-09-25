@@ -142,8 +142,13 @@ void PeleLM::macProject(const TimeStamp &a_time,
             rho_inv[lev][idim].invert(m_dt/2.0,0);
             rho_inv[lev][idim].FillBoundary(geom[lev].periodicity());
          }
-
       }
+   }
+
+   // For closed chamber, compute change in chamber pressure
+   Real Sbar = 0.0;
+   if (m_closed_chamber) {
+      Sbar = adjustPandDivU(advData);
    }
 
    if (macproj->needInitialization()) {
@@ -162,6 +167,13 @@ void PeleLM::macProject(const TimeStamp &a_time,
 
    // Project
    macproj->project(m_mac_mg_rtol,m_mac_mg_atol);
+
+   // Restore mac_divu
+   if (m_closed_chamber) {
+      for (int lev = 0; lev <= finest_level; ++lev) {
+         a_divu[lev]->plus(Sbar,0,1);
+      }
+   }
 
    // FillBoundary umac
    for (int lev = 0; lev <= finest_level; ++lev) {
