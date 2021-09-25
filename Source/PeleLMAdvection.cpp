@@ -220,13 +220,11 @@ void PeleLM::getScalarAdvForce(std::unique_ptr<AdvanceAdvData> &advData,
          auto const& r       = ldataR_p->I_R.const_array(mfi);
          auto const& fY      = advData->Forcing[lev].array(mfi,0);
          auto const& fT      = advData->Forcing[lev].array(mfi,NUM_SPECIES);
-         Real        dp0dt_d = 0.0; // TODO dp0dt;
-         int     closed_ch_d = 0;   // TODO closed_chamber;
-
-         amrex::ParallelFor(bx, [rho, rhoY, T, dn, ddn, r, fY, fT, dp0dt_d, closed_ch_d, do_react=m_do_react]
+         amrex::ParallelFor(bx, [rho, rhoY, T, dn, ddn, r, fY, fT, dp0dt=m_dp0dt,
+                                 is_closed_ch=m_closed_chamber, do_react=m_do_react]
          AMREX_GPU_DEVICE (int i, int j, int k) noexcept
          {
-            buildAdvectionForcing( i, j, k, rho, rhoY, T, dn, ddn, r, dp0dt_d, closed_ch_d, do_react, fY, fT );
+            buildAdvectionForcing( i, j, k, rho, rhoY, T, dn, ddn, r, dp0dt, is_closed_ch, do_react, fY, fT );
          });
       }
    }
