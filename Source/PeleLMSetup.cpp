@@ -76,6 +76,7 @@ void PeleLM::Setup() {
    readProbParm();
 
    // Initialize ambient pressure
+   // Will be overwriten on restart.
    m_pOld = prob_parm->P_mean;
    m_pNew = prob_parm->P_mean;
 }

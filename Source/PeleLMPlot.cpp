@@ -214,7 +214,6 @@ void PeleLM::WriteHeader(const std::string& name, bool is_checkpoint) const
         HeaderFile << m_cur_time << "\n";
         HeaderFile << m_dt << "\n";
         HeaderFile << m_prev_dt << "\n";
-        //HeaderFile << m_prev_prev_dt << "\n";
 
         // Geometry
         for(int i = 0; i < AMREX_SPACEDIM; ++i) {
@@ -232,6 +231,9 @@ void PeleLM::WriteHeader(const std::string& name, bool is_checkpoint) const
             boxArray(lev).writeOn(HeaderFile);
             HeaderFile << '\n';
         }
+
+        // Ambient pressure and typvals TODO
+        HeaderFile << m_pNew << "\n";
     }
 }
 
@@ -246,7 +248,7 @@ void PeleLM::WriteCheckPointFile()
    }
    
    amrex::PreBuildDirectorHierarchy(checkpointname, level_prefix, finest_level + 1, true);
-   
+
    bool is_checkpoint = true;
    WriteHeader(checkpointname, is_checkpoint);
    WriteJobInfo(checkpointname);
@@ -393,6 +395,12 @@ void PeleLM::ReadCheckPointFile()
        DistributionMapping dm{ba, ParallelDescriptor::NProcs()};
        MakeNewLevelFromScratch(lev, m_cur_time, ba, dm);
    }
+
+   // deal with typ_val (TODO) and P_amb
+   is >> m_pNew;
+   GotoNextLine(is);
+   m_pOld = m_pNew;
+
 
    /***************************************************************************
     * Load fluid data                                                         *
