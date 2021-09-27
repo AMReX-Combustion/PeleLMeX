@@ -73,7 +73,7 @@ include $(PELE_PHYSICS_HOME)/ThirdParty/Make.ThirdParty
 #---------------
 Hdirs := Slopes Godunov MOL Utils
 ifeq ($(USE_EB), TRUE)
-    Hdirs += Redistribution EBGodunov
+    Hdirs += Redistribution EBGodunov EBMOL
 endif
 Bpack += $(foreach dir, $(Hdirs), $(AMREX_HYDRO_HOME)/$(dir)/Make.package)
 Blocs += $(foreach dir, $(Hdirs), $(AMREX_HYDRO_HOME)/$(dir))
@@ -82,6 +82,9 @@ Blocs += $(foreach dir, $(Hdirs), $(AMREX_HYDRO_HOME)/$(dir))
 # AMReX sources
 #---------------
 Pdirs := Base Boundary AmrCore LinearSolvers/MLMG LinearSolvers/Projections
+ifeq ($(USE_EB), TRUE)
+    Pdirs += EB
+endif
 Bpack += $(foreach dir, $(Pdirs), $(AMREX_HOME)/Src/$(dir)/Make.package)
 
 #---------------
