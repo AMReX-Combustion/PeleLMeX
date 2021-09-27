@@ -58,6 +58,11 @@ void PeleLM::WritePlotFile() {
       ncomp += 1;
    }
 
+#ifdef AMREX_USE_EB
+   // Include volume fraction in plotfile
+   ncomp += 1;
+#endif
+
    // Derive
    int deriveEntryCount = 0;
    for (int ivar = 0; ivar < m_derivePlotVarCount; ivar++ ) {
@@ -121,6 +126,10 @@ void PeleLM::WritePlotFile() {
       plt_VarsName.push_back("FunctCall");
    }
 
+#ifdef AMREX_USE_EB
+   plt_VarsName.push_back("volFrac");
+#endif
+
    for (int ivar = 0; ivar < m_derivePlotVarCount; ivar++ ) {
       const PeleLMDeriveRec* rec = derive_lst.get(m_derivePlotVars[ivar]);
       for (int dvar = 0; dvar < rec->numDerive(); dvar++ ) {
@@ -166,6 +175,11 @@ void PeleLM::WritePlotFile() {
          MultiFab::Copy(mf_plt[lev], m_leveldatareact[lev]->functC, 0, cnt, 1, 0);
          cnt += 1;
       }
+
+#ifdef AMREX_USE_EB
+      MultiFab::Copy(mf_plt[lev], EBFactory(lev).getVolFrac(), 0, cnt, 1, 0);
+      cnt += 1;
+#endif
 
       for (int ivar = 0; ivar < m_derivePlotVarCount; ivar++ ) {
          std::unique_ptr<MultiFab> mf;
