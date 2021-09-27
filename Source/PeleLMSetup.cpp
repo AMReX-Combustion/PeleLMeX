@@ -26,6 +26,10 @@ void PeleLM::Setup() {
    // Read PeleLM parameters
    readParameters();
 
+#ifdef AMREX_USE_EB
+   makeEBGeometry();
+#endif
+
    // Setup the state variables
    variablesSetup();
 

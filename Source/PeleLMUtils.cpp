@@ -42,7 +42,7 @@ void PeleLM::extFluxDivergenceLevel(int lev,
    geom[lev].GetVolume(volume);
 
 #ifdef AMREX_USE_EB
-      auto const& ebfactory = dynamic_cast<EBFArrayBoxFactory const&>(Factory());
+   auto const& ebfactory = dynamic_cast<EBFArrayBoxFactory const&>(Factory(lev));
 #endif
 
 
@@ -76,7 +76,7 @@ void PeleLM::extFluxDivergenceLevel(int lev,
          AMREX_GPU_DEVICE (int i, int j, int k) noexcept
          {
             if ( flag(i,j,k).isCovered() ) {
-               for (int n = 0; n < nComp; n++) {
+               for (int n = 0; n < ncomp; n++) {
                   divergence(i,j,k,n) = 0.0;
                }
             } else if ( flag(i,j,k).isRegular() ) {
@@ -88,7 +88,7 @@ void PeleLM::extFluxDivergenceLevel(int lev,
                extFluxDivergence_K( i, j, k, ncomp,
                                     AMREX_D_DECL(fluxX, fluxY, fluxZ),
                                     vol, scale, divergence);
-               for (int n = 0; n < nComp; n++) {
+               for (int n = 0; n < ncomp; n++) {
                   divergence(i,j,k,n) *= vfracinv;
                }
             }
@@ -108,6 +108,7 @@ void PeleLM::extFluxDivergenceLevel(int lev,
 #endif
    }
 
+/*
 #ifdef AMREX_USE_EB
    {
       MultiFab div_SrcGhostCell(grids,dmap,nComp,a_divergence.nGrow()+2,MFInfo(),Factory());
@@ -117,6 +118,7 @@ void PeleLM::extFluxDivergenceLevel(int lev,
    }
    EB_set_covered(fdiv,0.);
 #endif
+*/
 }
 
 void PeleLM::intFluxDivergenceLevel(int lev,
@@ -147,7 +149,7 @@ void PeleLM::intFluxDivergenceLevel(int lev,
 
    // Get areafrac if EB
 #ifdef AMREX_USE_EB
-      auto const& ebfactory = dynamic_cast<EBFArrayBoxFactory const&>(Factory());
+      auto const& ebfactory = dynamic_cast<EBFArrayBoxFactory const&>(Factory(lev));
       Array< const MultiCutFab*,AMREX_SPACEDIM> areafrac;
       areafrac  = ebfactory.getAreaFrac();
 #endif
@@ -190,7 +192,7 @@ void PeleLM::intFluxDivergenceLevel(int lev,
          AMREX_GPU_DEVICE (int i, int j, int k) noexcept
          {
             if ( flag(i,j,k).isCovered() ) {
-               for (int n = 0; n < nComp; n++) {
+               for (int n = 0; n < ncomp; n++) {
                   divergence(i,j,k,n) = 0.0;
                }
             } else if ( flag(i,j,k).isRegular() ) {
@@ -205,7 +207,7 @@ void PeleLM::intFluxDivergenceLevel(int lev,
                                     AMREX_D_DECL(afrac_x, afrac_y, afrac_z),
                                     AMREX_D_DECL(areax, areay, areaz),
                                     vol, scale, divergence);
-               for (int n = 0; n < nComp; n++) {
+               for (int n = 0; n < ncomp; n++) {
                   divergence(i,j,k,n) *= vfracinv;
                }
             }
@@ -229,6 +231,7 @@ void PeleLM::intFluxDivergenceLevel(int lev,
 #endif
    }
 
+/*
 #ifdef AMREX_USE_EB
    {
       MultiFab div_SrcGhostCell(grids,dmap,nComp,a_divergence.nGrow()+2,MFInfo(),Factory());
@@ -238,6 +241,7 @@ void PeleLM::intFluxDivergenceLevel(int lev,
    }
    EB_set_covered(fdiv,0.);
 #endif
+*/
 }
 
 void PeleLM::advFluxDivergence(MultiFab &a_divergence, int div_comp,
@@ -609,8 +613,8 @@ PeleLM::MFSum (const Vector<const MultiFab*> &a_mf, int comp)
        Real vol = AMREX_D_TERM(dx[0],*dx[1],*dx[2]);
 #ifdef AMREX_USE_EB
        // TODO: will need a temporary for EB.
-       const EBFArrayBoxFactory* ebfact = &EBFactory(lev);
-       auto const& vfrac = ebfact->getVolFrac();
+       auto const& ebfact = dynamic_cast<EBFArrayBoxFactory const&>(Factory(lev));
+       auto const& vfrac = ebfact.getVolFrac();
    
        Real sm = amrex::ReduceSum(*a_mf[lev], vfrac, 0, [vol, comp]
        AMREX_GPU_HOST_DEVICE (Box const& bx, Array4<Real const> const& mf_arr, Array4<Real const> const& vf_arr) -> Real

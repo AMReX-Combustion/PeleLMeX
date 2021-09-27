@@ -13,7 +13,6 @@ void PeleLM::Init() {
    // Initialize data
    initData();
 
-
 }
 
 void PeleLM::MakeNewLevelFromScratch( int lev,
@@ -36,9 +35,7 @@ void PeleLM::MakeNewLevelFromScratch( int lev,
    // Define the FAB Factory
 #ifdef AMREX_USE_EB
    m_factory[lev] = makeEBFabFactory(geom[lev], grids[lev], dmap[lev],
-                                     {nghost_eb_basic(),
-                                      nghost_eb_volume(),
-                                      nghost_eb_full()},
+                                     {4,4,4},
                                      EBSupport::full);
 #else
    m_factory[lev].reset(new FArrayBoxFactory());
@@ -132,6 +129,8 @@ void PeleLM::initData() {
       // Post data Init time step estimate
       m_dt = computeDt(is_init,AmrNewTime);
       Print() << " Initial dt: " << m_dt << "\n";
+         WritePlotFile();
+      Abort();
 
       //----------------------------------------------------------------
       // Initial velocity projection iterations

@@ -3,6 +3,11 @@
 #include <DiffusionOp.H>
 #include <AMReX_PlotFileUtil.H>
 
+#ifdef AMREX_USE_EB
+#include <AMReX_EB_utils.H>
+#include <AMReX_EBFArrayBox.H>
+#endif
+
 using namespace amrex;
 
 DiffusionOp*
@@ -303,14 +308,15 @@ void PeleLM::adjustSpeciesFluxes(const Vector<Array<MultiFab*,AMREX_SPACEDIM> > 
       int nGrow = 1;
       const auto& ba = a_spec[lev]->boxArray();
       const auto& dm = a_spec[lev]->DistributionMap();
-      const auto& factory = a_spec[lev]->Factory();
+      const auto& ebfact = EBFactory(lev);
       Array<MultiFab,AMREX_SPACEDIM> edgstate{AMREX_D_DECL(MultiFab(amrex::convert(ba,IntVect::TheDimensionVector(0)),
-                                                                    dm, NUM_SPECIES, nGrow, MFInfo(), factory),
+                                                                    dm, NUM_SPECIES, nGrow, MFInfo(), ebfact),
                                                            MultiFab(amrex::convert(ba,IntVect::TheDimensionVector(1)),
-                                                                    dm, NUM_SPECIES, nGrow, MFInfo(), factory),
+                                                                    dm, NUM_SPECIES, nGrow, MFInfo(), ebfact),
                                                            MultiFab(amrex::convert(ba,IntVect::TheDimensionVector(2)),
-                                                                    dm, NUM_SPECIES, nGrow, MFInfo(), factory))};
+                                                                    dm, NUM_SPECIES, nGrow, MFInfo(), ebfact))};
       EB_interp_CellCentroid_to_FaceCentroid(*a_spec[lev], GetArrOfPtrs(edgstate), 0, 0, NUM_SPECIES, geom[lev], bcRecSpec);
+      auto const &areafrac = ebfact.getAreaFrac();
 #endif
 
 #ifdef AMREX_USE_OMP
@@ -328,13 +334,13 @@ void PeleLM::adjustSpeciesFluxes(const Vector<Array<MultiFab*,AMREX_SPACEDIM> > 
             const auto bc_hi = bcRecSpec[0].hi(idim);
 
 #ifdef AMREX_USE_EB
-            const EBFArrayBox&  state_fab = static_cast<EBFArrayBox const&>(a_spec[lev][mfi]);
-            const EBCellFlagFab&    flags = state_fab.getEBCellFlagFab();
+            auto const& flagfab  = ebfact.getMultiEBCellFlagFab()[mfi];
+//            auto const& flags    = flagfab.const_array();
 
-            if (flags.getType(amrex::grow(ebx,0)) != FabType::covered )
+            if (flagfab.getType(amrex::grow(ebx,0)) != FabType::covered )
             {
                // No cut cells in tile + nghost-cell witdh halo -> use non-eb routine
-               if (flags.getType(amrex::grow(ebx,nghost)) == FabType::regular )
+               if (flagfab.getType(amrex::grow(ebx,nGrow)) == FabType::regular )
                {
                   amrex::ParallelFor(ebx, [idim, rhoY, flux_dir, edomain, bc_lo, bc_hi]
                   AMREX_GPU_DEVICE (int i, int j, int k) noexcept
@@ -350,8 +356,8 @@ void PeleLM::adjustSpeciesFluxes(const Vector<Array<MultiFab*,AMREX_SPACEDIM> > 
                else
                {
                   auto const& rhoYed_ar   = edgstate[idim].const_array(mfi);
-                  auto const& areafrac_ar = areafrac[idim]->const_array(mfi);
-                  amrex::ParallelFor(ebx, [idim, rhoY, flux_dir, rhoYed_d, areafrac_d, edomain, bc_lo, bc_hi]
+                  auto const &areafrac_ar = areafrac[idim]->const_array(mfi);
+                  amrex::ParallelFor(ebx, [idim, rhoY, flux_dir, rhoYed_ar, areafrac_ar, edomain, bc_lo, bc_hi]
                   AMREX_GPU_DEVICE (int i, int j, int k) noexcept
                   {
                      int idx[3] = {i,j,k};
