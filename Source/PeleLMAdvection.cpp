@@ -57,6 +57,11 @@ void PeleLM::computeVelocityAdvTerm(std::unique_ptr<AdvanceAdvData> &advData)
       }
 
       //----------------------------------------------------------------
+#ifdef AMREX_USE_EB
+      const auto& ebfact = EBFactory(lev);
+#endif
+
+      //----------------------------------------------------------------
       // Compute the velocity fluxes
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -89,10 +94,10 @@ void PeleLM::computeVelocityAdvTerm(std::unique_ptr<AdvanceAdvData> &advData)
                                                  divu_arr, force_arr,
                                                  geom[lev], m_dt,
                                                  bcRecVel, bcRecVel_d.dataPtr(), AdvTypeVel_d.dataPtr(),
-                                                 m_Godunov_ppm, m_Godunov_ForceInTrans,
 #ifdef AMREX_USE_EB
-                                                 // TODO ebfact
+                                                 ebfact,
 #endif
+                                                 m_Godunov_ppm, m_Godunov_ForceInTrans,
                                                  is_velocity, fluxes_are_area_weighted,
                                                  m_advection_type);
       }
@@ -295,6 +300,11 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
          MultiFab::Copy(divu,advData->mac_divu[lev],0,0,1,nGrow_divu);
       }
 
+      //----------------------------------------------------------------
+#ifdef AMREX_USE_EB
+      const auto& ebfact = EBFactory(lev);
+#endif
+
       // Get the species edge state and advection term
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -328,10 +338,10 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
                                                  divu_arr, force_arr,
                                                  geom[lev], m_dt,
                                                  bcRecSpec, bcRecSpec_d.dataPtr(), AdvTypeSpec_d.dataPtr(),
-                                                 m_Godunov_ppm, m_Godunov_ForceInTrans,
 #ifdef AMREX_USE_EB
-                                                 // TODO ebfact
+                                                 ebfact,
 #endif
+                                                 m_Godunov_ppm, m_Godunov_ForceInTrans,
                                                  is_velocity, fluxes_are_area_weighted,
                                                  m_advection_type);
 
@@ -360,10 +370,10 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
                                                     divu_arr, forceions_arr,
                                                     geom[lev], m_dt,
                                                     bcRecIons, bcRecIons_d.dataPtr(), AdvTypeIons_d.dataPtr(),
-                                                    m_Godunov_ppm, m_Godunov_ForceInTrans,
 #ifdef AMREX_USE_EB
-                                                    // TODO ebfact
+                                                    ebfact,
 #endif
+                                                    m_Godunov_ppm, m_Godunov_ForceInTrans,
                                                     is_velocity, fluxes_are_area_weighted,
                                                     m_advection_type);
          }
@@ -379,10 +389,10 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
                                                  divu_arr, force_arr,
                                                  geom[lev], m_dt,
                                                  bcRecSpec, bcRecSpec_d.dataPtr(), AdvTypeSpec_d.dataPtr(),
-                                                 m_Godunov_ppm, m_Godunov_ForceInTrans,
 #ifdef AMREX_USE_EB
-                                                 // TODO ebfact
+                                                 ebfact,
 #endif
+                                                 m_Godunov_ppm, m_Godunov_ForceInTrans,
                                                  is_velocity, fluxes_are_area_weighted,
                                                  m_advection_type);
 #endif
@@ -442,10 +452,10 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
                                                  divu_arr, force_arr,
                                                  geom[lev], m_dt,
                                                  bcRecTemp, bcRecTemp_d.dataPtr(), AdvTypeTemp_d.dataPtr(),
-                                                 m_Godunov_ppm, m_Godunov_ForceInTrans,
 #ifdef AMREX_USE_EB
-                                                 // TODO ebfact
+                                                 ebfact,
 #endif
+                                                 m_Godunov_ppm, m_Godunov_ForceInTrans,
                                                  is_velocity, fluxes_are_area_weighted,
                                                  m_advection_type);
       }
@@ -503,10 +513,10 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
                                                  divu_arr, force_arr,
                                                  geom[lev], m_dt,
                                                  bcRecRhoH, bcRecRhoH_d.dataPtr(), AdvTypeRhoH_d.dataPtr(),
-                                                 m_Godunov_ppm, m_Godunov_ForceInTrans,
 #ifdef AMREX_USE_EB
-                                                 // TODO ebfact
+                                                 ebfact,
 #endif
+                                                 m_Godunov_ppm, m_Godunov_ForceInTrans,
                                                  is_velocity, fluxes_are_area_weighted,
                                                  m_advection_type);
       }
