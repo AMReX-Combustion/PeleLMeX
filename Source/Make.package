@@ -36,3 +36,4 @@ CEXE_sources += PeleLMForces.cpp
 CEXE_sources += PeleLMUMac.cpp
 CEXE_sources += PeleLMReactions.cpp
 CEXE_sources += PeleLMTemporals.cpp
+CEXE_sources += PeleLMEB.cpp
