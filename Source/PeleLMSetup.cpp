@@ -76,6 +76,7 @@ void PeleLM::Setup() {
    readProbParm();
 
    // Initialize ambient pressure
+   // Will be overwriten on restart.
    m_pOld = prob_parm->P_mean;
    m_pNew = prob_parm->P_mean;
 }
@@ -95,6 +96,7 @@ void PeleLM::readParameters() {
    // -----------------------------------------
    // Boundary conditions
    // -----------------------------------------
+   int isOpenDomain = 0;
 
    Vector<std::string> lo_bc_char(AMREX_SPACEDIM);
    Vector<std::string> hi_bc_char(AMREX_SPACEDIM);
@@ -107,8 +109,10 @@ void PeleLM::readParameters() {
          lo_bc[dir] = 0;
       } else if (lo_bc_char[dir] == "Inflow") {
          lo_bc[dir] = 1;
+         isOpenDomain = 1;
       } else if (lo_bc_char[dir] == "Outflow") {
          lo_bc[dir] = 2;
+         isOpenDomain = 1;
       } else if (lo_bc_char[dir] == "Symmetry") {
          lo_bc[dir] = 3;
       } else if (lo_bc_char[dir] == "SlipWallAdiab") {
@@ -128,8 +132,10 @@ void PeleLM::readParameters() {
          hi_bc[dir] = 0;
       } else if (hi_bc_char[dir] == "Inflow") {
          hi_bc[dir] = 1;
+         isOpenDomain = 1;
       } else if (hi_bc_char[dir] == "Outflow") {
          hi_bc[dir] = 2;
+         isOpenDomain = 1;
       } else if (hi_bc_char[dir] == "Symmetry") {
          hi_bc[dir] = 3;
       } else if (hi_bc_char[dir] == "SlipWallAdiab") {
@@ -150,6 +156,14 @@ void PeleLM::readParameters() {
    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
       m_phys_bc.setLo(idim,lo_bc[idim]);
       m_phys_bc.setHi(idim,hi_bc[idim]);
+   }
+
+   // Activate closed chamber if !isOpenDomain
+   // enable overwriting
+   m_closed_chamber = (isOpenDomain) ? 0 : 1;
+   pp.query("closed_chamber", m_closed_chamber);
+   if (verbose && m_closed_chamber) {
+      Print() << " Simulation performed with the closed chamber algorithm \n";
    }
 
 #ifdef PLM_USE_EFIELD
@@ -257,6 +271,17 @@ void PeleLM::readParameters() {
    ParmParse ppg("godunov");
    ppg.query("use_ppm",m_Godunov_ppm);
    ppg.query("use_forceInTrans", m_Godunov_ForceInTrans);
+
+   // -----------------------------------------
+   // Linear solvers tols
+   // -----------------------------------------
+   ParmParse ppnproj("nodal_proj");
+   ppnproj.query("atol",m_nodal_mg_atol);
+   ppnproj.query("rtol",m_nodal_mg_rtol);
+
+   ParmParse ppmacproj("mac_proj");
+   ppmacproj.query("atol",m_mac_mg_atol);
+   ppmacproj.query("rtol",m_mac_mg_rtol);
 
    // -----------------------------------------
    // Temporals

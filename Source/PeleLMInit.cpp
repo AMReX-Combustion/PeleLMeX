@@ -184,7 +184,6 @@ void PeleLM::initData() {
                               m_nGrowAdv, m_use_wbar, is_initialization));
                calcDivU(is_initialization,computeDiffusionTerm,do_avgDown,AmrNewTime,diffData);
             }
-            // TODO: closed_chamber correction
 
             initialProjection();
          }

@@ -54,24 +54,37 @@ void PeleLM::initialProjection()
       setInflowBoundaryVel(*vel[lev],lev,AmrNewTime);
    }
 
-   // Get RHS cc: - divU
+   // Get RHS cc: - divU (- \int{divU})
+   Real Sbar = 0.0;
    Vector<MultiFab*> rhs_cc;
    if (!m_incompressible && m_has_divu ) {
+      // Ensure integral of RHS is zero for closed chamber
+      if (m_closed_chamber) {
+         Sbar = MFSum(GetVecOfConstPtrs(getDivUVect(AmrNewTime)),0);
+         Sbar /= m_uncoveredVol;        // Transform in Mean.
+      }
       for (int lev = 0; lev <= finest_level; ++lev) {
          rhs_cc.push_back(&(m_leveldata_new[lev]->divu));
+         if (m_closed_chamber) {
+            rhs_cc[lev]->plus(-Sbar,0,1);
+         }
          rhs_cc[lev]->mult(-1.0,0,1,rhs_cc[lev]->nGrow());
       }
    }
 
    doNodalProject(vel, amrex::GetVecOfPtrs(sigma), rhs_cc, {}, incremental, dummy_dt);
 
-   // Set back press and gpress to zero and invert divu sign
+   // Set back press and gpress to zero and restore divu
    for (int lev = 0; lev <= finest_level; lev++) {
       auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
       ldata_p->press.setVal(0.0);
       ldata_p->gp.setVal(0.0);
       if (!m_incompressible && m_has_divu ) {
          m_leveldata_new[lev]->divu.mult(-1.0,0,1,rhs_cc[lev]->nGrow());
+         // Restore divU integral
+         if (m_closed_chamber) {
+            m_leveldata_new[lev]->divu.plus(Sbar,0,1);
+         }
       }
    }
 
@@ -174,6 +187,18 @@ void PeleLM::velocityProjection(int is_initIter,
       if (!incremental) setInflowBoundaryVel(*vel[lev],lev,AmrNewTime);
    }
 
+   // To ensure integral of RHS is zero for closed chamber, get mean divU
+   Real SbarOld = 0.0;
+   Real SbarNew = 0.0;
+   if (m_closed_chamber) {
+      SbarNew = MFSum(GetVecOfConstPtrs(getDivUVect(AmrNewTime)),0);
+      SbarNew /= m_uncoveredVol;        // Transform in Mean.
+      if (incremental) {
+         SbarOld = MFSum(GetVecOfConstPtrs(getDivUVect(AmrOldTime)),0);
+         SbarOld /= m_uncoveredVol;        // Transform in Mean.
+      }
+   }
+
    // Get RHS cc
    Vector<MultiFab> rhs_cc;
    if (!m_incompressible && m_has_divu ) {
@@ -183,6 +208,9 @@ void PeleLM::velocityProjection(int is_initIter,
             auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
             rhs_cc[lev].define(grids[lev],dmap[lev],1,ldata_p->divu.nGrow(), MFInfo(), *m_factory[lev]);
             MultiFab::Copy(rhs_cc[lev],ldata_p->divu,0,0,1,ldata_p->divu.nGrow());
+            if (m_closed_chamber) {
+               rhs_cc[lev].plus(-SbarNew,0,1);
+            }
             rhs_cc[lev].mult(-1.0,0,1,ldata_p->divu.nGrow());
          } else {
             auto ldataOld_p = getLevelDataPtr(lev,AmrOldTime);
@@ -197,16 +225,18 @@ void PeleLM::velocityProjection(int is_initIter,
                const auto& divu_o   = ldataOld_p->divu.const_array(mfi);
                const auto& divu_n   = ldataNew_p->divu.const_array(mfi);
                const auto& rhs      = rhs_cc[lev].array(mfi);
-               amrex::ParallelFor(gbx, [divu_o,divu_n,rhs]
+               amrex::ParallelFor(gbx, [divu_o,divu_n,rhs,SbarNew,SbarOld,is_closed_ch=m_closed_chamber]
                AMREX_GPU_DEVICE (int i, int j, int k) noexcept
                {
                   rhs(i,j,k) = - (divu_n(i,j,k) - divu_o(i,j,k));
+                  if (is_closed_ch) {
+                     rhs(i,j,k) += SbarNew - SbarOld;               // subtract the mean, but rhs's already -
+                  }
                });
             }
          }
       }
    }
-
 
    doNodalProject(vel, GetVecOfPtrs(sigma), GetVecOfPtrs(rhs_cc), {}, incremental, a_dt);
 

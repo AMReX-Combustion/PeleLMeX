@@ -388,6 +388,18 @@ void PeleLM::resetCoveredMask()
       m_dmapChem[lev].reset(new DistributionMapping(*m_baChem[lev]));
    }
 
+   //----------------------------------------------------------------------------
+   // Need to compute the uncovered volume
+   // TODO Might need to recompute if new levels are added with EB.
+   if (m_uncoveredVol < 0.0 ) {
+      Vector<MultiFab> dummy(finest_level+1);
+      for (int lev = 0; lev <= finest_level; ++lev) {
+         dummy[lev].define(grids[lev], dmap[lev], 1, 0, MFInfo(), *m_factory[lev]);
+         dummy[lev].setVal(1.0);
+      }
+      m_uncoveredVol = MFSum(GetVecOfConstPtrs(dummy),0);
+   }
+
    // Switch off trigger
    m_resetCoveredMask = 0;
 }
@@ -581,3 +593,74 @@ PeleLM::fetchDiffTypeArray(int scomp, int ncomp)
    }
    return types;
 }
+
+Real 
+PeleLM::MFSum (const Vector<const MultiFab*> &a_mf, int comp)
+{
+    // Get the integral of the MF, not including the fine-covered cells
+
+    Real  volwgtsum = 0.0;
+
+    for (int lev = 0; lev <= finest_level; ++lev)
+    {
+        const Real* dx = geom[lev].CellSize();
+
+       // Use amrex::ReduceSum
+       Real vol = AMREX_D_TERM(dx[0],*dx[1],*dx[2]);
+#ifdef AMREX_USE_EB
+       // TODO: will need a temporary for EB.
+       const EBFArrayBoxFactory* ebfact = &EBFactory(lev);
+       auto const& vfrac = ebfact->getVolFrac();
+   
+       Real sm = amrex::ReduceSum(*a_mf[lev], vfrac, 0, [vol, comp]
+       AMREX_GPU_HOST_DEVICE (Box const& bx, Array4<Real const> const& mf_arr, Array4<Real const> const& vf_arr) -> Real
+       {
+           Real sum = 0.0;
+           AMREX_LOOP_3D(bx, i, j, k,
+           {
+               sum += mf_arr(i,j,k,comp) * vf_arr(i,j,k) * vol;
+           });
+           return sum;
+       });
+#else
+       Real sm = 0.0;
+       if ( lev != finest_level ) {
+          sm = amrex::ReduceSum(*a_mf[lev], *m_coveredMask[lev], 0, [vol, comp]
+          AMREX_GPU_HOST_DEVICE (Box const& bx, Array4<Real const> const& mf_arr, Array4<int const> const& covered_arr) -> Real
+          {
+              Real sum = 0.0;
+              AMREX_LOOP_3D(bx, i, j, k,
+              {
+                  sum += mf_arr(i,j,k,comp) * vol * covered_arr(i,j,k);
+              });
+              return sum;
+          });
+       } else {
+          sm = amrex::ReduceSum(*a_mf[lev], 0, [vol, comp]
+          AMREX_GPU_HOST_DEVICE (Box const& bx, Array4<Real const> const& mf_arr) -> Real
+          {
+              Real sum = 0.0;
+              AMREX_LOOP_3D(bx, i, j, k,
+              {
+                  sum += mf_arr(i,j,k,comp) * vol;
+              });
+              return sum;
+          });
+       }
+#endif
+
+        volwgtsum += sm;
+    } // lev
+
+    ParallelDescriptor::ReduceRealSum(volwgtsum);
+
+    return volwgtsum;
+}
+
+/*
+Array<Real,3>
+PeleLM::MFStat (const Vector<const MultiFab*> &a_mf, int comp)
+{
+   // Get the min/max/mean of a given component, not including the fine-covered cells
+}
+*/
