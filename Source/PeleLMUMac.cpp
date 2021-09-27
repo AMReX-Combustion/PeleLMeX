@@ -7,7 +7,7 @@ using namespace amrex;
 void PeleLM::predictVelocity(std::unique_ptr<AdvanceAdvData>  &advData,
                              std::unique_ptr<AdvanceDiffData> &diffData)
 {
-   BL_PROFILE_VAR("PeleLM::predictVelocity()", predictVelocity);
+   BL_PROFILE("PeleLM::predictVelocity()");
 
    // set umac boundaries to zero 
    if ( advData->umac[0][0].nGrow() > 0 ) {
@@ -63,7 +63,7 @@ void PeleLM::predictVelocity(std::unique_ptr<AdvanceAdvData>  &advData,
 
 void PeleLM::createMACRHS(std::unique_ptr<AdvanceAdvData>  &advData)
 {
-   BL_PROFILE_VAR("PeleLM::createMACRHS()", createMACRHS);
+   BL_PROFILE("PeleLM::createMACRHS()");
 
    for (int lev = 0; lev <= finest_level; ++lev) {
       Real halftime = 0.5 * (m_t_old[lev] + m_t_new[lev]);
@@ -75,7 +75,7 @@ void PeleLM::addChiIncrement(int a_sdcIter,
                              const TimeStamp &a_time,
                              std::unique_ptr<AdvanceAdvData>  &advData)
 {
-   BL_PROFILE_VAR("PeleLM::addChiIncrement()", addChiIncrement);
+   BL_PROFILE("PeleLM::addChiIncrement()");
 
    int nGrow = m_nGrowAdv;
    Vector<MultiFab> chiIncr(finest_level+1);
@@ -92,7 +92,7 @@ void PeleLM::addChiIncrement(int a_sdcIter,
    // Add chiIncr to chi and add chi to mac_divu
    // Both mac_divu and chiIncr have properly filled ghost cells -> work on grownbox
    for (int lev = 0; lev <= finest_level; ++lev) {
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
       for (MFIter mfi(advData->chi[lev],TilingIfNotGPU()); mfi.isValid(); ++mfi)
@@ -119,7 +119,7 @@ void PeleLM::macProject(const TimeStamp &a_time,
                         std::unique_ptr<AdvanceAdvData>  &advData,
                         const Vector<MultiFab*> &a_divu)
 {
-   BL_PROFILE_VAR("PeleLM::macProject()", macProject);
+   BL_PROFILE("PeleLM::macProject()");
 
    int has_divu = (!a_divu.empty());
 
