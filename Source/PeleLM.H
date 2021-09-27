@@ -561,6 +561,19 @@ class PeleLM : public amrex::AmrCore {
    int stateVariableIndex(const std::string &a_name);
    //-----------------------------------------------------------------------------
 
+#ifdef AMREX_USE_EB
+   //-----------------------------------------------------------------------------
+   // EB
+
+   void makeEBGeometry();
+
+   // static_cast factory into ebfactory
+   amrex::EBFArrayBoxFactory const& 
+   EBFactory (int lev) const noexcept { 
+      return static_cast<amrex::EBFArrayBoxFactory const&>(*m_factory[lev]);
+   }
+#endif
+
 
    //-----------------------------------------------------------------------------
    // ADVANCE
@@ -922,7 +935,7 @@ class PeleLM : public amrex::AmrCore {
    amrex::Real m_rtol_chem = 1.0e-10;
    amrex::Real m_atol_chem = 1.0e-10;
 #ifdef AMREX_USE_EB
-   int m_refine_cutcells = 1
+   int m_refine_cutcells = 1;
 #endif
    //-----------------------------------------------------------------------------
 
