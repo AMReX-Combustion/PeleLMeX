@@ -196,8 +196,8 @@ void PeleLM::calc_dPdt(int lev,
 
    auto ldata_p = getLevelDataPtr(lev,a_time);
 
-   // Use old ambient pressure to compute dPdt
-   Real p_amb = m_pOld;
+   // Use new ambient pressure to compute dPdt
+   Real p_amb = m_pNew;
 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -285,9 +285,9 @@ PeleLM::adjustPandDivU(std::unique_ptr<AdvanceAdvData> &advData)
         }
     }
 
-//    if (m_verbose > 2 ) {
-        Print() << " >> Closed chamber pOld: " << m_pOld << ", pNew: " << m_pNew << "\n";
-//    }
+    if (m_verbose > 2 ) {
+        Print() << " >> Closed chamber pOld: " << m_pOld << ", pNew: " << m_pNew << ", dp0dt: " << m_dp0dt << "\n";
+    }
 
     // Return Sbar so that we'll add it back to mac_divu after the MAC projection
     return Sbar;
