@@ -5,6 +5,7 @@
 
 #ifdef AMREX_USE_EB
 #include <AMReX_EB_utils.H>
+#include <AMReX_EBFArrayBox.H>
 #endif
 
 using namespace amrex;
@@ -99,7 +100,7 @@ void DiffusionOp::diffuse_scalar(Vector<MultiFab*> const& a_phi, int phi_comp,
    for (int lev = 0; lev <= finest_level; ++lev) {
       phi[lev].define(a_phi[lev]->boxArray(),a_phi[lev]->DistributionMap(),
                       ncomp, 1, MFInfo(), a_phi[lev]->Factory());
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
       for (MFIter mfi(phi[lev], TilingIfNotGPU()); mfi.isValid(); ++mfi) {
@@ -209,7 +210,7 @@ void DiffusionOp::diffuse_scalar(Vector<MultiFab*> const& a_phi, int phi_comp,
    // Times rho{np1,kp1} if needed
    // Don't touch the ghost cells
    for (int lev = 0; lev <= finest_level; ++lev) {
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
       for (MFIter mfi(phi[lev], TilingIfNotGPU()); mfi.isValid(); ++mfi) {
@@ -314,7 +315,7 @@ void DiffusionOp::computeDiffFluxes(Vector<Array<MultiFab*,AMREX_SPACEDIM>> cons
    for (int lev = 0; lev <= finest_level; ++lev) {
       phi[lev].define(a_phi[lev]->boxArray(),a_phi[lev]->DistributionMap(),
                       ncomp, 1, MFInfo(), a_phi[lev]->Factory());
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
       for (MFIter mfi(phi[lev], TilingIfNotGPU()); mfi.isValid(); ++mfi) {
@@ -437,83 +438,6 @@ DiffusionOp::computeGradient(const Vector<Array<MultiFab*,AMREX_SPACEDIM>> &a_gr
 }
 
 void
-DiffusionOp::scaleExtensiveFluxes(const Vector<Array<MultiFab*,AMREX_SPACEDIM>> &a_fluxes,
-                                  int flux_comp,
-                                  int ncomp,
-                                  Real fac)
-{
-
-   int finest_level = m_pelelm->finestLevel();
-
-   for (int lev = 0; lev <= finest_level; ++lev) {
-
-      MultiFab dummy(m_pelelm->boxArray(lev),m_pelelm->DistributionMap(lev),1,0);
-      const Real* dx = m_pelelm->Geom(lev).CellSize();
-#if ( AMREX_SPACEDIM == 2 )
-      Real areax = dx[1];
-      Real areay = dx[0];
-#elif ( AMREX_SPACEDIM == 3 )
-      Real areax = dx[1]*dx[2];
-      Real areay = dx[0]*dx[2];
-      Real areaz = dx[0]*dx[1];
-#endif
-
-#ifdef AMREX_USE_EB
-      auto const& ebfactory = dynamic_cast<EBFArrayBoxFactory const&> a_fluxes[lev][0]->Factory();
-      Array< const MultiCutFab*,AMREX_SPACEDIM> areafrac;
-      areafrac  = ebfactory.getAreaFrac();
-#endif
-
-      MFItInfo mfi_info;
-      if (Gpu::notInLaunchRegion()) mfi_info.EnableTiling().SetDynamic(true);
-
-#ifdef _OPENMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
-      for (MFIter mfi(dummy, mfi_info); mfi.isValid(); ++mfi)
-      {
-         AMREX_D_TERM(const auto& fx = a_fluxes[lev][0]->array(mfi,flux_comp);,
-                      const auto& fy = a_fluxes[lev][1]->array(mfi,flux_comp);,
-                      const auto& fz = a_fluxes[lev][2]->array(mfi,flux_comp););
-
-         AMREX_D_TERM(const Box ubx = mfi.nodaltilebox(0);,
-                      const Box vbx = mfi.nodaltilebox(1);,
-                      const Box wbx = mfi.nodaltilebox(2););
-
-#ifdef AMREX_USE_EB
-         Box bx = mfi.tilebox();
-
-         const EBFArrayBox&      cc_fab = static_cast<EBFArrayBox const&>(Soln[mfi]);
-         const EBCellFlagFab&    flags = cc_fab.getEBCellFlagFab();
-
-         if ( flags.getType(amrex::grow(bx,0)) == FabType::covered ) {
-            //
-            // For now, set to very large num so we know if you accidentally use it
-            // MLMG will set covered fluxes to zero
-            //
-            AMREX_D_TERM(AMREX_PARALLEL_FOR_4D(ubx, i, j, k, n, {fx(i,j,k,n) = COVERED_VAL;});,
-                         AMREX_PARALLEL_FOR_4D(vbx, i, j, k, n, {fy(i,j,k,n) = COVERED_VAL;});,
-                         AMREX_PARALLEL_FOR_4D(wbx, i, j, k, n, {fz(i,j,k,n) = COVERED_VAL;}););
-         } else if ( flags.getType(amrex::grow(bx,0)) != FabType::regular ) {
-            AMREX_D_TERM( const auto& afrac_x = areafrac[0]->array(mfi);,
-                          const auto& afrac_y = areafrac[1]->array(mfi);,
-                          const auto& afrac_z = areafrac[2]->array(mfi););
-
-            AMREX_D_TERM(AMREX_PARALLEL_FOR_4D(ubx, ncomp, i, j, k, n, {fx(i,j,k,n) *= fac*areax*afrac_x(i,j,k);});,
-                         AMREX_PARALLEL_FOR_4D(vbx, ncomp, i, j, k, n, {fy(i,j,k,n) *= fac*areay*afrac_y(i,j,k);});,
-                         AMREX_PARALLEL_FOR_4D(wbx, ncomp, i, j, k, n, {fz(i,j,k,n) *= fac*areaz*afrac_z(i,j,k);}););
-         } else
-#endif
-         {
-            AMREX_D_TERM(AMREX_PARALLEL_FOR_4D(ubx, ncomp, i, j, k, n, {fx(i,j,k,n) *= fac*areax;});,
-                         AMREX_PARALLEL_FOR_4D(vbx, ncomp, i, j, k, n, {fy(i,j,k,n) *= fac*areay;});,
-                         AMREX_PARALLEL_FOR_4D(wbx, ncomp, i, j, k, n, {fz(i,j,k,n) *= fac*areaz;}););
-         }
-      }
-   }
-}
-
-void
 DiffusionOp::avgDownFluxes(const Vector<Array<MultiFab*,AMREX_SPACEDIM>> &a_fluxes,
                            int flux_comp,
                            int ncomp)
@@ -631,7 +555,7 @@ void DiffusionTensorOp::compute_divtau (Vector<MultiFab*> const& a_divtau,
 
    if (have_density) {
       for (int lev = 0; lev <= finest_level; ++lev) {
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
          for (MFIter mfi(*a_divtau[lev],TilingIfNotGPU()); mfi.isValid(); ++mfi) {
@@ -683,7 +607,7 @@ void DiffusionTensorOp::diffuse_velocity (Vector<MultiFab*> const& a_vel,
    for (int lev = 0; lev <= finest_level; ++lev) {
        rhs[lev].define(a_vel[lev]->boxArray(),
                        a_vel[lev]->DistributionMap(), AMREX_SPACEDIM, 0);
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
        for (MFIter mfi(rhs[lev],TilingIfNotGPU()); mfi.isValid(); ++mfi) {

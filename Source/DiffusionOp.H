@@ -7,6 +7,7 @@
 #ifdef AMREX_USE_EB
 #include <AMReX_MLEBABecLap.H>
 #include <AMReX_MLEBTensorOp.H>
+#define COVERED_VAL 1.0e40
 #endif
 #include <AMReX_MLABecLaplacian.H>
 #include <AMReX_MLTensorOp.H>
@@ -60,11 +61,6 @@ class DiffusionOp
                         const amrex::Vector<amrex::MultiFab const*> &a_phi,
                         const amrex::BCRec &a_bcrec,
                         int do_avgDown);
-
-   void scaleExtensiveFluxes(amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> const& a_fluxes,
-                             int flux_comp,
-                             int ncomp,
-                             amrex::Real fac);
 
    void avgDownFluxes(amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> const& a_fluxes,
                       int flux_comp,
