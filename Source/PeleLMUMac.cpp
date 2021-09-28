@@ -25,8 +25,8 @@ void PeleLM::predictVelocity(std::unique_ptr<AdvanceAdvData>  &advData,
    Vector<MultiFab> divtau(finest_level+1);
    Vector<MultiFab> velForces(finest_level+1);
    for (int lev = 0; lev <= finest_level; ++lev) {
-      divtau[lev].define(grids[lev], dmap[lev], AMREX_SPACEDIM, 0);
-      velForces[lev].define(grids[lev], dmap[lev], AMREX_SPACEDIM, nGrow_force);
+      divtau[lev].define(grids[lev], dmap[lev], AMREX_SPACEDIM, 0, MFInfo(), Factory(lev));
+      velForces[lev].define(grids[lev], dmap[lev], AMREX_SPACEDIM, nGrow_force, MFInfo(), Factory(lev));
    }
    int use_density = 0;
    computeDivTau(AmrOldTime,GetVecOfPtrs(divtau),use_density);
