@@ -28,7 +28,7 @@ void PeleLM::computeDifferentialDiffusionTerms(const TimeStamp &a_time,
                                                std::unique_ptr<AdvanceDiffData> &diffData,
                                                int is_init)
 {
-   BL_PROFILE_VAR("PeleLM::computeDifferentialDiffusionTerms()", computeDifferentialDiffusionTerms);
+   BL_PROFILE("PeleLM::computeDifferentialDiffusionTerms()");
 
    //----------------------------------------------------------------
    // Checks
@@ -87,7 +87,7 @@ void PeleLM::computeDifferentialDiffusionFluxes(const TimeStamp &a_time,
                                                 const Vector<Array<MultiFab*,AMREX_SPACEDIM> > &a_fluxes,
                                                 const Vector<Array<MultiFab*,AMREX_SPACEDIM> > &a_wbarfluxes)
 {
-   BL_PROFILE_VAR("PeleLM::computeDifferentialDiffusionFluxes()", computeDifferentialDiffusionFluxes);
+   BL_PROFILE("PeleLM::computeDifferentialDiffusionFluxes()");
 
    //----------------------------------------------------------------
    // Species fluxes
@@ -149,6 +149,14 @@ void PeleLM::computeDifferentialDiffusionFluxes(const TimeStamp &a_time,
    // Get fluxes consistent accross levels by averaging down all components
    getDiffusionOp()->avgDownFluxes(a_fluxes,0,NUM_SPECIES+2);
    //----------------------------------------------------------------
+
+#ifdef AMREX_USE_EB
+   //----------------------------------------------------------------
+   // Set covered faces to large dummy values to catch any usage
+   for (int lev = 0; lev <= finest_level; ++lev) {
+      EB_set_covered_faces({AMREX_D_DECL(a_fluxes[lev][0],a_fluxes[lev][1],a_fluxes[lev][2])},1.234e40);
+   }
+#endif
 }
 
 void PeleLM::addWbarTerm(const Vector<Array<MultiFab*,AMREX_SPACEDIM> > &a_spfluxes,
@@ -157,7 +165,6 @@ void PeleLM::addWbarTerm(const Vector<Array<MultiFab*,AMREX_SPACEDIM> > &a_spflu
                          Vector<MultiFab const*> const &a_rho,
                          Vector<MultiFab const*> const &a_beta)
 {
-
    //------------------------------------------------------------------------
    // if a container for wbar fluxes is provided, fill it
    int need_wbar_fluxes = (a_spwbarfluxes.empty()) ? 0 : 1;
@@ -170,7 +177,7 @@ void PeleLM::addWbarTerm(const Vector<Array<MultiFab*,AMREX_SPACEDIM> > &a_spflu
 
       Wbar[lev].define(grids[lev],dmap[lev],1,nGrow,MFInfo(),Factory(lev));
 
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
       for (MFIter mfi(Wbar[lev],TilingIfNotGPU()); mfi.isValid(); ++mfi)
@@ -219,7 +226,7 @@ void PeleLM::addWbarTerm(const Vector<Array<MultiFab*,AMREX_SPACEDIM> > &a_spflu
       const Box& domain = geom[lev].Domain();
       bool use_harmonic_avg = m_harm_avg_cen2edge ? true : false;
 
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
       {
@@ -294,7 +301,7 @@ void PeleLM::adjustSpeciesFluxes(const Vector<Array<MultiFab*,AMREX_SPACEDIM> > 
                                  Vector<MultiFab const*> const &a_spec)
 {
 
-   BL_PROFILE_VAR("PeleLM::adjustSpeciesFluxes()", adjustSpeciesFluxes);
+   BL_PROFILE("PeleLM::adjustSpeciesFluxes()");
 
    // Get the species BCRec
    auto bcRecSpec = fetchBCRecArray(FIRSTSPEC,NUM_SPECIES);
@@ -304,6 +311,7 @@ void PeleLM::adjustSpeciesFluxes(const Vector<Array<MultiFab*,AMREX_SPACEDIM> > 
       const Box& domain = geom[lev].Domain();
 
 #ifdef AMREX_USE_EB
+      //------------------------------------------------------------------------
       // Get the edge species state needed for EB
       int nGrow = 1;
       const auto& ba = a_spec[lev]->boxArray();
@@ -335,7 +343,6 @@ void PeleLM::adjustSpeciesFluxes(const Vector<Array<MultiFab*,AMREX_SPACEDIM> > 
 
 #ifdef AMREX_USE_EB
             auto const& flagfab  = ebfact.getMultiEBCellFlagFab()[mfi];
-//            auto const& flags    = flagfab.const_array();
 
             if (flagfab.getType(amrex::grow(ebx,0)) != FabType::covered )
             {
@@ -390,7 +397,7 @@ void PeleLM::computeSpeciesEnthalpyFlux(const Vector<Array<MultiFab*,AMREX_SPACE
                                         Vector<MultiFab const*> const &a_temp)
 {
 
-   BL_PROFILE_VAR("PeleLM::computeSpeciesEnthalpyFlux()", computeSpeciesEnthalpyFlux);
+   BL_PROFILE("PeleLM::computeSpeciesEnthalpyFlux()");
 
    // Get the species BCRec
    auto bcRecSpec = fetchBCRecArray(FIRSTSPEC,NUM_SPECIES);
@@ -402,7 +409,7 @@ void PeleLM::computeSpeciesEnthalpyFlux(const Vector<Array<MultiFab*,AMREX_SPACE
       int nGrow = 1;
       MultiFab Enth(grids[lev],dmap[lev],NUM_SPECIES,nGrow,MFInfo(),Factory(lev));
 
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
       for (MFIter mfi(Enth,TilingIfNotGPU()); mfi.isValid(); ++mfi)
@@ -423,15 +430,11 @@ void PeleLM::computeSpeciesEnthalpyFlux(const Vector<Array<MultiFab*,AMREX_SPACE
 
       //------------------------------------------------------------------------
       // Compute \sum_k { \Flux_k * h_k }
-
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
       for (MFIter mfi(Enth,TilingIfNotGPU()); mfi.isValid(); ++mfi)
       {
-#if AMREX_USE_EB
-         // TODO
-#else
          for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
            const Box&  ebox        = mfi.nodaltilebox(idim);
            auto const& spflux_ar   = a_fluxes[lev][idim]->const_array(mfi, 0);
@@ -446,7 +449,6 @@ void PeleLM::computeSpeciesEnthalpyFlux(const Vector<Array<MultiFab*,AMREX_SPACE
               }
            });
          } 
-#endif
       }
    }
 }
@@ -479,7 +481,7 @@ void PeleLM::differentialDiffusionUpdate(std::unique_ptr<AdvanceAdvData> &advDat
 
       // Get t^{n} data pointer
       auto ldata_p = getLevelDataPtr(lev,AmrOldTime);
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
       for (MFIter mfi(advData->Forcing[lev],TilingIfNotGPU()); mfi.isValid(); ++mfi)
@@ -521,7 +523,7 @@ void PeleLM::differentialDiffusionUpdate(std::unique_ptr<AdvanceAdvData> &advDat
 
          auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
 
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
          for (MFIter mfi(ldata_p->species,TilingIfNotGPU()); mfi.isValid(); ++mfi)
@@ -560,7 +562,7 @@ void PeleLM::differentialDiffusionUpdate(std::unique_ptr<AdvanceAdvData> &advDat
 
       auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
 
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
       for (MFIter mfi(ldata_p->species,TilingIfNotGPU()); mfi.isValid(); ++mfi)
@@ -679,7 +681,7 @@ void PeleLM::deltaTIter_prepare(const Vector<MultiFab*> &a_rhs,
       auto ldataOld_p = getLevelDataPtr(lev,AmrOldTime);
       auto ldataNew_p = getLevelDataPtr(lev,AmrNewTime);
 
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
       for (MFIter mfi(ldataNew_p->species,TilingIfNotGPU()); mfi.isValid(); ++mfi)
@@ -776,7 +778,7 @@ void PeleLM::deltaTIter_update(int a_dtiter,
 
       auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
 
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
       for (MFIter mfi(ldata_p->species,TilingIfNotGPU()); mfi.isValid(); ++mfi)
@@ -805,7 +807,7 @@ void PeleLM::getScalarDiffForce(std::unique_ptr<AdvanceAdvData> &advData,
       auto ldata_p = getLevelDataPtr(lev,AmrOldTime);
       auto ldataR_p = getLevelDataReactPtr(lev);
 
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
       for (MFIter mfi(advData->Forcing[lev],TilingIfNotGPU()); mfi.isValid(); ++mfi)
