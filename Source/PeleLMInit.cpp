@@ -129,8 +129,6 @@ void PeleLM::initData() {
       // Post data Init time step estimate
       m_dt = computeDt(is_init,AmrNewTime);
       Print() << " Initial dt: " << m_dt << "\n";
-         WritePlotFile();
-      Abort();
 
       //----------------------------------------------------------------
       // Initial velocity projection iterations
