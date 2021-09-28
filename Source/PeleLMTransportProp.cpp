@@ -20,7 +20,7 @@ void PeleLM::calcViscosity(const TimeStamp &a_time) {
          // Transport data pointer
          auto const* ltransparm = trans_parms.device_trans_parm();
 
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
          for (MFIter mfi(ldata_p->visc_cc, TilingIfNotGPU()); mfi.isValid(); ++mfi)
@@ -50,7 +50,7 @@ void PeleLM::calcDiffusivity(const TimeStamp &a_time) {
       // Transport data pointer
       auto const* ltransparm = trans_parms.device_trans_parm();
 
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
       for (MFIter mfi(ldata_p->diff_cc, TilingIfNotGPU()); mfi.isValid(); ++mfi)
@@ -90,7 +90,7 @@ PeleLM::getDiffusivity(int lev, int beta_comp, int ncomp,
                        Vector<BCRec> bcrec,
                        MultiFab const& beta_cc)
 {
-   BL_PROFILE_VAR("PeleLM::getDiffusivity()", getDiffusivity);
+   BL_PROFILE("PeleLM::getDiffusivity()");
 
    AMREX_ASSERT(bcrec.size() >= ncomp);
    AMREX_ASSERT(beta_cc.nComp() >= beta_comp+ncomp);
@@ -108,13 +108,13 @@ PeleLM::getDiffusivity(int lev, int beta_comp, int ncomp,
 #ifdef AMREX_USE_EB
    // EB : use EB CCentroid -> FCentroid
    EB_interp_CellCentroid_to_FaceCentroid(beta_cc, GetArrOfPtrs(beta_ec), beta_comp, 0, ncomp, geom[lev], bcrec);
-   EB_set_covered_faces(GetArrOfPtrs(beta_ec),0.0);
+   EB_set_covered_faces(GetArrOfPtrs(beta_ec),1.234e40);
 #else
    // NON-EB : use cen2edg_cpp
    const Box& domain = geom[lev].Domain();
    bool use_harmonic_avg = m_harm_avg_cen2edge ? true : false;
 
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
    for (MFIter mfi(beta_cc,TilingIfNotGPU()); mfi.isValid();++mfi)
