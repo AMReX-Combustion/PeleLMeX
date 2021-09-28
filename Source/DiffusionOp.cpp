@@ -29,25 +29,54 @@ DiffusionOp::DiffusionOp (PeleLM* a_pelelm)
    LPInfo info_apply;
    info_apply.setMaxCoarseningLevel(0);
 
+#ifdef AMREX_USE_EB
+   // Get vector of EB Factory
+   Vector<EBFArrayBoxFactory const*> ebfactVec;
+   for (int lev = 0; lev <= m_pelelm->finestLevel(); ++lev) {
+       ebfactVec.push_back(&(m_pelelm->EBFactory(lev)));
+   }
+#endif
+
    // Scalar apply op.
+#ifdef AMREX_USE_EB
+   m_scal_apply_op.reset(new MLEBABecLap(m_pelelm->Geom(0,m_pelelm->finestLevel()),
+                                         m_pelelm->boxArray(0,m_pelelm->finestLevel()),
+                                         m_pelelm->DistributionMap(0,m_pelelm->finestLevel()),
+                                         info_apply, ebfactVec));
+#else
    m_scal_apply_op.reset(new MLABecLaplacian(m_pelelm->Geom(0,m_pelelm->finestLevel()),
                                              m_pelelm->boxArray(0,m_pelelm->finestLevel()),
                                              m_pelelm->DistributionMap(0,m_pelelm->finestLevel()),
                                              info_apply));
+#endif
    m_scal_apply_op->setMaxOrder(m_mg_maxorder);
 
    // Scalar solve op.
+#ifdef AMREX_USE_EB
+   m_scal_solve_op.reset(new MLEBABecLap(m_pelelm->Geom(0,m_pelelm->finestLevel()),
+                                         m_pelelm->boxArray(0,m_pelelm->finestLevel()),
+                                         m_pelelm->DistributionMap(0,m_pelelm->finestLevel()),
+                                         info_solve, ebfactVec));
+#else
    m_scal_solve_op.reset(new MLABecLaplacian(m_pelelm->Geom(0,m_pelelm->finestLevel()),
                                              m_pelelm->boxArray(0,m_pelelm->finestLevel()),
                                              m_pelelm->DistributionMap(0,m_pelelm->finestLevel()),
                                              info_solve));
+#endif
    m_scal_solve_op->setMaxOrder(m_mg_maxorder);
 
    // Gradient op. : scalar/coefficient already preset
+#ifdef AMREX_USE_EB
+   m_gradient_op.reset(new MLEBABecLap(m_pelelm->Geom(0,m_pelelm->finestLevel()),
+                                       m_pelelm->boxArray(0,m_pelelm->finestLevel()),
+                                       m_pelelm->DistributionMap(0,m_pelelm->finestLevel()),
+                                       info_apply, ebfactVec));
+#else
    m_gradient_op.reset(new MLABecLaplacian(m_pelelm->Geom(0,m_pelelm->finestLevel()),
                                            m_pelelm->boxArray(0,m_pelelm->finestLevel()),
                                            m_pelelm->DistributionMap(0,m_pelelm->finestLevel()),
                                            info_apply));
+#endif
    m_gradient_op->setMaxOrder(m_mg_maxorder);
    m_gradient_op->setScalars(0.0,1.0);
    for (int lev = 0; lev <= m_pelelm->finestLevel(); ++lev) {
@@ -161,7 +190,11 @@ void DiffusionOp::diffuse_scalar(Vector<MultiFab*> const& a_phi, int phi_comp,
 
          if (have_bcoeff) {
             Array<MultiFab,AMREX_SPACEDIM> bcoeff_ec = m_pelelm->getDiffusivity(lev, bcoeff_comp+comp, 1, {a_bcrec[comp]}, *a_bcoeff[lev]);
+#ifdef AMREX_USE_EB
+            m_scal_solve_op->setBCoeffs(lev, GetArrOfConstPtrs(bcoeff_ec), MLMG::Location::FaceCentroid);
+#else
             m_scal_solve_op->setBCoeffs(lev, GetArrOfConstPtrs(bcoeff_ec));
+#endif
          } else {
             m_scal_solve_op->setBCoeffs(lev, 1.0);
          }
@@ -278,7 +311,11 @@ void DiffusionOp::computeDiffLap(Vector<MultiFab*> const& a_laps, int lap_comp,
           component.emplace_back(phi[lev],amrex::make_alias,comp,1);
           Array<MultiFab,AMREX_SPACEDIM> bcoeff_ec = m_pelelm->getDiffusivity(lev, bcoeff_comp+comp, 1, {a_bcrec[comp]}, *a_bcoeff[lev]);
 
+#ifdef AMREX_USE_EB
+          m_scal_apply_op->setBCoeffs(lev, GetArrOfConstPtrs(bcoeff_ec), MLMG::Location::FaceCentroid);
+#else
           m_scal_apply_op->setBCoeffs(lev, GetArrOfConstPtrs(bcoeff_ec));
+#endif
           m_scal_apply_op->setLevelBC(lev, &component[lev]);
       }   
 
@@ -365,8 +402,11 @@ void DiffusionOp::computeDiffFluxes(Vector<Array<MultiFab*,AMREX_SPACEDIM>> cons
          Array<MultiFab,AMREX_SPACEDIM> bcoeff_ec = m_pelelm->getDiffusivity(lev, bcoeff_comp+comp, 1, {a_bcrec[comp]}, *a_bcoeff[lev]);
          laps.emplace_back(a_phi[lev]->boxArray(), a_phi[lev]->DistributionMap(),
                            1, 1, MFInfo(), a_phi[lev]->Factory());
-
+#ifdef AMREX_USE_EB
+         m_scal_apply_op->setBCoeffs(lev, GetArrOfConstPtrs(bcoeff_ec),  MLMG::Location::FaceCentroid);
+#else
          m_scal_apply_op->setBCoeffs(lev, GetArrOfConstPtrs(bcoeff_ec));
+#endif
          m_scal_apply_op->setLevelBC(lev, &component[lev]);
       }
 
@@ -474,8 +514,11 @@ DiffusionOp::readParameters ()
 {
    ParmParse pp("diffusion");
 
-   pp.query("verbose", m_verbose);
-   // TODO: add all the user-defined options
+   pp.query("verbose", m_mg_verbose);
+   pp.query("atol", m_mg_atol);
+   pp.query("rtol", m_mg_rtol);
+   pp.query("max_iter", m_mg_max_iter);
+   pp.query("bottom_solver", m_mg_bottom_solver);
 }
 
 //---------------------------------------------------------------------------------------
@@ -489,18 +532,31 @@ DiffusionTensorOp::DiffusionTensorOp (PeleLM* a_pelelm)
 
    int finest_level = m_pelelm->finestLevel();
 
-// TODO EB
-
    auto bcRecVel = m_pelelm->fetchBCRecArray(VELX,AMREX_SPACEDIM);
 
    // Solve LPInfo
    LPInfo info_solve;
    info_solve.setMaxCoarseningLevel(m_mg_max_coarsening_level);
 
+#ifdef AMREX_USE_EB
+   // Get vector of EB Factory
+   Vector<EBFArrayBoxFactory const*> ebfactVec;
+   for (int lev = 0; lev <= finest_level; ++lev) {
+       ebfactVec.push_back(&(m_pelelm->EBFactory(lev)));
+   }
+#endif
+
+#ifdef AMREX_USE_EB
+   m_solve_op.reset(new MLEBTensorOp(m_pelelm->Geom(0,finest_level),
+                                     m_pelelm->boxArray(0,finest_level),
+                                     m_pelelm->DistributionMap(0,finest_level),
+                                     info_solve,ebfactVec));
+#else
    m_solve_op.reset(new MLTensorOp(m_pelelm->Geom(0,finest_level),
                                    m_pelelm->boxArray(0,finest_level),
                                    m_pelelm->DistributionMap(0,finest_level),
                                    info_solve));
+#endif
    m_solve_op->setMaxOrder(m_mg_maxorder);
    m_solve_op->setDomainBC(m_pelelm->getDiffusionTensorOpBC(Orientation::low,bcRecVel),
                            m_pelelm->getDiffusionTensorOpBC(Orientation::high,bcRecVel));
@@ -509,10 +565,17 @@ DiffusionTensorOp::DiffusionTensorOp (PeleLM* a_pelelm)
    LPInfo info_apply;
    info_apply.setMaxCoarseningLevel(0);
 
+#ifdef AMREX_USE_EB
+   m_apply_op.reset(new MLEBTensorOp(m_pelelm->Geom(0,finest_level),
+                                     m_pelelm->boxArray(0,finest_level),
+                                     m_pelelm->DistributionMap(0,finest_level),
+                                     info_apply,ebfactVec));
+#else
    m_apply_op.reset(new MLTensorOp(m_pelelm->Geom(0,finest_level),
                                    m_pelelm->boxArray(0,finest_level),
                                    m_pelelm->DistributionMap(0,finest_level),
                                    info_apply));
+#endif
    m_apply_op->setMaxOrder(m_mg_maxorder);
    m_apply_op->setDomainBC(m_pelelm->getDiffusionTensorOpBC(Orientation::low,bcRecVel),
                            m_pelelm->getDiffusionTensorOpBC(Orientation::high,bcRecVel));
@@ -538,8 +601,38 @@ void DiffusionTensorOp::compute_divtau (Vector<MultiFab*> const& a_divtau,
       MultiFab::Copy(vel[lev], *a_vel[lev], 0, 0, AMREX_SPACEDIM, 1);
    }
 
-   //TODO EB
+#ifdef AMREX_USE_EB
+   // Need a tempory divTau to apply redistribution
+   Vector<MultiFab> divtau_tmp(finest_level+1);
+   for (int lev = 0; lev <= finest_level; ++lev) {
+      divtau_tmp[lev].define(a_divtau[lev]->boxArray(),
+                             a_divtau[lev]->DistributionMap(),
+                             AMREX_SPACEDIM, 2, MFInfo(),
+                             a_divtau[lev]->Factory());
+      divtau_tmp[lev].setVal(0.0);
+   }
 
+   m_apply_op->setScalars(0.0, -scale);
+   for (int lev = 0; lev <= finest_level; ++lev) {
+       if (have_density) { // alpha being zero, not sure that this does anything.
+          m_apply_op->setACoeffs(lev, *a_density[lev]);
+       }
+       Array<MultiFab,AMREX_SPACEDIM> beta_ec = m_pelelm->getDiffusivity(lev, 0, 1, {a_bcrec}, *a_beta[lev]);
+       m_apply_op->setShearViscosity(lev, GetArrOfConstPtrs(beta_ec), MLMG::Location::FaceCentroid);
+       m_apply_op->setEBShearViscosity(lev, *a_beta[lev]);
+       m_apply_op->setLevelBC(lev, &vel[lev]);
+   }
+
+   MLMG mlmg(*m_apply_op);
+   mlmg.apply(GetVecOfPtrs(divtau_tmp), GetVecOfPtrs(vel));
+
+   // Flux redistribute explicit diffusion fluxes into outgoing a_divtau
+   for(int lev = 0; lev <= finest_level; ++lev)
+   {
+      amrex::single_level_redistribute( divtau_tmp[lev], *a_divtau[lev], 0, AMREX_SPACEDIM, m_pelelm->Geom(lev));
+   }
+
+#else
    m_apply_op->setScalars(0.0, -scale);
    for (int lev = 0; lev <= finest_level; ++lev) {
        if (have_density) { // alpha being zero, not sure that this does anything.
@@ -552,6 +645,7 @@ void DiffusionTensorOp::compute_divtau (Vector<MultiFab*> const& a_divtau,
 
    MLMG mlmg(*m_apply_op);
    mlmg.apply(a_divtau, GetVecOfPtrs(vel));
+#endif
 
    if (have_density) {
       for (int lev = 0; lev <= finest_level; ++lev) {
@@ -584,7 +678,6 @@ void DiffusionTensorOp::diffuse_velocity (Vector<MultiFab*> const& a_vel,
 
    const int finest_level = m_pelelm->finestLevel();
 
-   // TODO EB
    int have_density = (a_density.empty()) ? 0 : 1;
 
    AMREX_ASSERT( (!m_pelelm->m_incompressible && have_density) ||
@@ -598,7 +691,12 @@ void DiffusionTensorOp::diffuse_velocity (Vector<MultiFab*> const& a_vel,
           m_solve_op->setACoeffs(lev, m_pelelm->m_rho);
        }
        Array<MultiFab,AMREX_SPACEDIM> beta_ec = m_pelelm->getDiffusivity(lev, 0, 1, {a_bcrec}, *a_beta[lev]);
+#ifdef AMREX_USE_EB
+       m_solve_op->setShearViscosity(lev, GetArrOfConstPtrs(beta_ec), MLMG::Location::FaceCentroid);
+       m_solve_op->setEBShearViscosity(lev, *a_beta[lev]);
+#else
        m_solve_op->setShearViscosity(lev, GetArrOfConstPtrs(beta_ec));
+#endif
        m_solve_op->setLevelBC(lev, a_vel[lev]);
    }
 
@@ -651,7 +749,10 @@ DiffusionTensorOp::readParameters ()
 {
    ParmParse pp("tensor_diffusion");
 
-   pp.query("verbose", m_verbose);
-   // TODO: add all the user-defined options
+   pp.query("verbose", m_mg_verbose);
+   pp.query("atol", m_mg_atol);
+   pp.query("rtol", m_mg_rtol);
+   pp.query("max_iter", m_mg_max_iter);
+   pp.query("bottom_solver", m_mg_bottom_solver);
 }
 

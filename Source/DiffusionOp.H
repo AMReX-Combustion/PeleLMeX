@@ -71,6 +71,16 @@ class DiffusionOp
    // Data and parameters
    PeleLM* m_pelelm;
 
+#ifdef AMREX_USE_EB
+   // Scalar diffusion apply operator
+   std::unique_ptr<amrex::MLEBABecLap> m_scal_apply_op;
+
+   // Scalar diffusion solve operator
+   std::unique_ptr<amrex::MLEBABecLap> m_scal_solve_op;
+
+   // Poisson-like operator for gradients
+   std::unique_ptr<amrex::MLEBABecLap> m_gradient_op;
+#else
    // Scalar diffusion apply operator
    std::unique_ptr<amrex::MLABecLaplacian> m_scal_apply_op;
 
@@ -79,6 +89,7 @@ class DiffusionOp
 
    // Poisson-like operator for gradients
    std::unique_ptr<amrex::MLABecLaplacian> m_gradient_op;
+#endif
 
    int m_verbose = 0;
 
@@ -127,9 +138,15 @@ private:
    // Data and parameters
    PeleLM* m_pelelm;
 
+#ifdef AMREX_USE_EB
+   // Apply operator
+   std::unique_ptr<amrex::MLEBTensorOp> m_apply_op;
+   std::unique_ptr<amrex::MLEBTensorOp> m_solve_op;
+#else
    // Apply operator
    std::unique_ptr<amrex::MLTensorOp> m_apply_op;
    std::unique_ptr<amrex::MLTensorOp> m_solve_op;
+#endif
 
    int m_verbose = 0;
 
