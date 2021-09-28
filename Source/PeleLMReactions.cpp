@@ -52,7 +52,7 @@ void PeleLM::advanceChemistry(int lev,
    FabArray<BaseFab<int>> mask(grids[lev],dmap[lev],1,0);
    mask.setVal(1);
 
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
    for (MFIter mfi(ldataNew_p->density,amrex::TilingIfNotGPU()); mfi.isValid(); ++mfi)
@@ -145,7 +145,7 @@ void PeleLM::advanceChemistry(int lev,
    }
 
    // Set reaction term
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
    for (MFIter mfi(ldataNew_p->density,amrex::TilingIfNotGPU()); mfi.isValid(); ++mfi)
@@ -179,7 +179,7 @@ void PeleLM::advanceChemistry(int lev,
 // This advanceChemistry is called on all but the finest level
 // It works with BoxArrays built such that each box is either covered
 // or uncovered and chem. integrator is called only on uncovered boxes 
-// the averaged down version of I_R is linearly added to the forcing
+// the averaged down version of I_R is linearly added to the AD forcing
 // to build the t^{np1} solution on covered boxes.
 void PeleLM::advanceChemistry(int lev,
                               const Real &a_dt,
@@ -204,7 +204,7 @@ void PeleLM::advanceChemistry(int lev,
    MultiFab chemnE(*m_baChem[lev],*m_dmapChem[lev],1,0);
 #endif
 
-   // TODO Setup EB covered cells mask
+   // TODO EB Setup EB covered cells mask
    FabArray<BaseFab<int>> mask(*m_baChem[lev],*m_dmapChem[lev],1,0);
    mask.setVal(1);
 
@@ -217,7 +217,7 @@ void PeleLM::advanceChemistry(int lev,
 #endif
    //VisMF::Write(chemAvgDownIR,"avgDownIRNewBA_Level"+std::to_string(lev)+"_step"+std::to_string(m_nstep));
 
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
    for (MFIter mfi(chemState,amrex::TilingIfNotGPU()); mfi.isValid(); ++mfi)
@@ -325,7 +325,7 @@ void PeleLM::advanceChemistry(int lev,
 #endif
 
    // Pass from temp state MF to leveldata and set reaction term
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
    for (MFIter mfi(ldataNew_p->density,amrex::TilingIfNotGPU()); mfi.isValid(); ++mfi)
@@ -378,7 +378,7 @@ void PeleLM::computeInstantaneousReactionRate(const Vector<MultiFab*> &I_R,
    BL_PROFILE_VAR("PeleLM::computeInstantaneousReactionRate()", computeInstantaneousReactionRate);
 
    for (int lev = 0; lev <= finest_level; ++lev) {
-      // TODO Setup covered cells mask
+      // TODO EB Setup covered cells mask
       MultiFab mask(grids[lev],dmap[lev],1,0);
       mask.setVal(1.0);
 #ifdef PLM_USE_EFIELD
@@ -396,7 +396,7 @@ void PeleLM::computeInstantaneousReactionRate(int lev,
 {
    auto ldata_p = getLevelDataPtr(lev,a_time);
 
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
    for (MFIter mfi(ldata_p->species,TilingIfNotGPU()); mfi.isValid(); ++mfi)
@@ -428,7 +428,7 @@ void PeleLM::getScalarReactForce(std::unique_ptr<AdvanceAdvData> &advData)
       auto ldataNew_p = getLevelDataPtr(lev,AmrNewTime);
       auto ldataR_p = getLevelDataReactPtr(lev);
 
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
       for (MFIter mfi(advData->Forcing[lev],TilingIfNotGPU()); mfi.isValid(); ++mfi)
