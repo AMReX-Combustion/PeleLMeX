@@ -511,7 +511,8 @@ class PeleLM : public amrex::AmrCore {
                        int intensiveFluxes,
                        amrex::Real scale);
 
-   void advFluxDivergence(amrex::MultiFab &a_divergence, int div_comp,
+   void advFluxDivergence(int a_lev,
+                          amrex::MultiFab &a_divergence, int div_comp,
                           amrex::MultiFab &a_divu,
                           const amrex::Array<const amrex::MultiFab*,AMREX_SPACEDIM> &a_fluxes,
                           int flux_comp,
@@ -566,6 +567,15 @@ class PeleLM : public amrex::AmrCore {
    // EB
 
    void makeEBGeometry();
+
+   void redistributeAofS(int a_lev,
+                         amrex::Real &a_dt,
+                         amrex::MultiFab &a_tmpDiv, int div_comp,
+                         amrex::MultiFab &a_AofS, int aofs_comp,
+                         amrex::MultiFab &a_state, int state_comp,
+                         int ncomp,
+                         const amrex::BCRec * d_bc,
+                         const amrex::Geometry &a_geom);
 
    // static_cast factory into ebfactory
    amrex::EBFArrayBoxFactory const& 
@@ -922,7 +932,11 @@ class PeleLM : public amrex::AmrCore {
    std::ofstream tmpSpecFile;
 
    // Number of ghost cells
+#ifdef AMREX_USE_EB
+   int m_nGrowState = 4;
+#else
    int m_nGrowState = 3;
+#endif
    int m_nGrowAdv = 1;
    int m_nGrowMAC = 1;
 
@@ -934,8 +948,12 @@ class PeleLM : public amrex::AmrCore {
    // Chem
    amrex::Real m_rtol_chem = 1.0e-10;
    amrex::Real m_atol_chem = 1.0e-10;
+
 #ifdef AMREX_USE_EB
+   // EB
    int m_refine_cutcells = 1;
+   std::string m_adv_redist_type = "StateRedist";
+   std::string m_diff_redist_type = "FluxRedist";
 #endif
    //-----------------------------------------------------------------------------
 
