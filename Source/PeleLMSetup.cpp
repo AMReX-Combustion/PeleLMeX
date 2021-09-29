@@ -280,6 +280,7 @@ void PeleLM::readParameters() {
    // Linear solvers tols
    // -----------------------------------------
    ParmParse ppnproj("nodal_proj");
+   ppnproj.query("mg_max_coarsening_level",m_nodal_mg_max_coarsening_level);
    ppnproj.query("atol",m_nodal_mg_atol);
    ppnproj.query("rtol",m_nodal_mg_rtol);
 
