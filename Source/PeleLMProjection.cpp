@@ -133,6 +133,9 @@ void PeleLM::velocityProjection(int is_initIter,
                sig_arr(i,j,k) = a_dt / rho_arr(i,j,k);
             });
          }
+#ifdef AMREX_USE_EB
+         EB_set_covered(*sigma[lev],0.0);
+#endif
       }
    }
 
@@ -183,6 +186,9 @@ void PeleLM::velocityProjection(int is_initIter,
    for (int lev = 0; lev <= finest_level; ++lev) {
       auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
       vel.push_back(&(ldata_p->velocity));
+#ifdef AMREX_USE_EB
+       EB_set_covered(*vel[lev],0.0);
+#endif
       vel[lev]->setBndry(0.0);
       if (!incremental) setInflowBoundaryVel(*vel[lev],lev,AmrNewTime);
    }
@@ -235,6 +241,9 @@ void PeleLM::velocityProjection(int is_initIter,
                });
             }
          }
+#ifdef AMREX_USE_EB
+         EB_set_covered(rhs_cc[lev],0.0);
+#endif
       }
    }
 
