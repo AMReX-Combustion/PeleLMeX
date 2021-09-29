@@ -1,4 +1,5 @@
 #include <PeleLM.H>
+#include <PeleLMUtils.H>
 #include <PeleLM_K.H>
 #include <DiffusionOp.H>
 #include <AMReX_PlotFileUtil.H>
@@ -67,19 +68,71 @@ void PeleLM::computeDifferentialDiffusionTerms(const TimeStamp &a_time,
    }
 
    //----------------------------------------------------------------
+   // TODO simplify the following ...
    // Compute divergence/fill a_viscTerm
    // [0:NUM_SPECIES-1] Species           : \nabla \cdot \Flux_k
    // [NUM_SPECIES]     Temperature       : \nabla \cdot (-\lambda \nabla T)
    // [NUM_SPECIES+1]   Differential diff : \nabla \cdot \sum_k ( h_k * \Flux_k )
    if (a_time == AmrOldTime) {
+#ifdef AMREX_USE_EB
+      auto bcRecSpec = fetchBCRecArray(FIRSTSPEC,NUM_SPECIES);
+      auto bcRecSpec_d = convertToDeviceVector(bcRecSpec);
+      fluxDivergenceRD(GetVecOfConstPtrs(getSpeciesVect(AmrOldTime)), 0,
+                       GetVecOfPtrs(diffData->Dn), 0,
+                       GetVecOfArrOfPtrs(fluxes), 0,
+                       NUM_SPECIES, 1, bcRecSpec_d.dataPtr(), -1.0, m_dt);
+      auto bcRecTemp = fetchBCRecArray(TEMP,1); 
+      auto bcRecTemp_d = convertToDeviceVector(bcRecTemp);
+      fluxDivergenceRD(GetVecOfConstPtrs(getTempVect(AmrOldTime)), 0,
+                       GetVecOfPtrs(diffData->Dn), NUM_SPECIES,
+                       GetVecOfArrOfPtrs(fluxes), NUM_SPECIES,
+                       1, 1, bcRecTemp_d.dataPtr(), -1.0, m_dt);
+      auto bcRecRhoH = fetchBCRecArray(RHOH,1); 
+      auto bcRecRhoH_d = convertToDeviceVector(bcRecRhoH);
+      fluxDivergenceRD(GetVecOfConstPtrs(getRhoHVect(AmrOldTime)), 0,
+                       GetVecOfPtrs(diffData->Dn), NUM_SPECIES+1,
+                       GetVecOfArrOfPtrs(fluxes), NUM_SPECIES+1,
+                       1, 1, bcRecRhoH_d.dataPtr(), -1.0, m_dt);
+#else
       fluxDivergence(GetVecOfPtrs(diffData->Dn), 0, GetVecOfArrOfPtrs(fluxes), 0, NUM_SPECIES+2, 1, -1.0);
+#endif
    } else {
+#ifdef AMREX_USE_EB
+      auto bcRecSpec = fetchBCRecArray(FIRSTSPEC,NUM_SPECIES);
+      auto bcRecSpec_d = convertToDeviceVector(bcRecSpec);
+      fluxDivergenceRD(GetVecOfConstPtrs(getSpeciesVect(AmrNewTime)), 0,
+                       GetVecOfPtrs(diffData->Dnp1), 0,
+                       GetVecOfArrOfPtrs(fluxes), 0,
+                       NUM_SPECIES, 1, bcRecSpec_d.dataPtr(), -1.0, m_dt);
+      auto bcRecTemp = fetchBCRecArray(TEMP,1); 
+      auto bcRecTemp_d = convertToDeviceVector(bcRecTemp);
+      fluxDivergenceRD(GetVecOfConstPtrs(getTempVect(AmrNewTime)), 0,
+                       GetVecOfPtrs(diffData->Dnp1), NUM_SPECIES,
+                       GetVecOfArrOfPtrs(fluxes), NUM_SPECIES,
+                       1, 1, bcRecTemp_d.dataPtr(), -1.0, m_dt);
+      auto bcRecRhoH = fetchBCRecArray(RHOH,1); 
+      auto bcRecRhoH_d = convertToDeviceVector(bcRecRhoH);
+      fluxDivergenceRD(GetVecOfConstPtrs(getRhoHVect(AmrNewTime)), 0,
+                       GetVecOfPtrs(diffData->Dnp1), NUM_SPECIES+1,
+                       GetVecOfArrOfPtrs(fluxes), NUM_SPECIES+1,
+                       1, 1, bcRecRhoH_d.dataPtr(), -1.0, m_dt);
+#else
       fluxDivergence(GetVecOfPtrs(diffData->Dnp1), 0, GetVecOfArrOfPtrs(fluxes), 0, NUM_SPECIES+2, 1, -1.0);
+#endif
    }
 
    // Get the wbar term if appropriate
    if (!is_init && m_use_wbar) {
+#ifdef AMREX_USE_EB
+      auto bcRecSpec = fetchBCRecArray(FIRSTSPEC,NUM_SPECIES);
+      auto bcRecSpec_d = convertToDeviceVector(bcRecSpec);
+      fluxDivergenceRD(GetVecOfConstPtrs(getSpeciesVect(a_time)), 0,
+                       GetVecOfPtrs(diffData->Dwbar), 0,
+                       GetVecOfArrOfPtrs(diffData->wbar_fluxes), 0,
+                       NUM_SPECIES, 1, bcRecSpec_d.dataPtr(), -1.0, m_dt);
+#else
       fluxDivergence(GetVecOfPtrs(diffData->Dwbar), 0, GetVecOfArrOfPtrs(diffData->wbar_fluxes), 0, NUM_SPECIES, 1, -1.0);
+#endif
    }
 }
 
