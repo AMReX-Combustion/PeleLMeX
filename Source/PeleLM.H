@@ -511,6 +511,18 @@ class PeleLM : public amrex::AmrCore {
                        int intensiveFluxes,
                        amrex::Real scale);
 
+   void fluxDivergenceRD(const amrex::Vector<const amrex::MultiFab*> &a_state,
+                         int state_comp,
+                         const amrex::Vector<amrex::MultiFab*> &a_divergence,
+                         int div_comp,
+                         const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM> > &a_fluxes,
+                         int flux_comp,
+                         int ncomp,
+                         int intensiveFluxes,
+                         const amrex::BCRec *state_bc_d,
+                         const amrex::Real &scale,
+                         const amrex::Real &a_dt);
+
    void advFluxDivergence(int a_lev,
                           amrex::MultiFab &a_divergence, int div_comp,
                           amrex::MultiFab &a_divu,
@@ -573,6 +585,15 @@ class PeleLM : public amrex::AmrCore {
                          amrex::MultiFab &a_tmpDiv, int div_comp,
                          amrex::MultiFab &a_AofS, int aofs_comp,
                          amrex::MultiFab &a_state, int state_comp,
+                         int ncomp,
+                         const amrex::BCRec * d_bc,
+                         const amrex::Geometry &a_geom);
+
+   void redistributeDiff(int a_lev,
+                         const amrex::Real &a_dt,
+                         amrex::MultiFab &a_tmpDiv, int div_comp,
+                         amrex::MultiFab &a_AofS, int aofs_comp,
+                         const amrex::MultiFab &a_state, int state_comp,
                          int ncomp,
                          const amrex::BCRec * d_bc,
                          const amrex::Geometry &a_geom);
@@ -751,6 +772,7 @@ class PeleLM : public amrex::AmrCore {
    amrex::Vector<amrex::MultiFab* > getDensityVect(const PeleLM::TimeStamp &a_time);
    amrex::Vector<amrex::MultiFab* > getSpeciesVect(const PeleLM::TimeStamp &a_time);
    amrex::Vector<amrex::MultiFab* > getTempVect(const PeleLM::TimeStamp &a_time);
+   amrex::Vector<amrex::MultiFab* > getRhoHVect(const PeleLM::TimeStamp &a_time);
    amrex::Vector<amrex::MultiFab* > getDivUVect(const PeleLM::TimeStamp &a_time);
    amrex::Vector<amrex::MultiFab* > getDiffusivityVect(const PeleLM::TimeStamp &a_time);
    amrex::Vector<amrex::MultiFab* > getViscosityVect(const PeleLM::TimeStamp &a_time);
