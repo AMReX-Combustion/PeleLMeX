@@ -2,6 +2,7 @@ TOP = ../../../..
 AMREX_HOME         ?= ${TOP}/amrex
 PELELMEX_HOME      ?= ${TOP}/PeleLMeX
 PELE_PHYSICS_HOME  ?= ${TOP}/PelePhysics
+AMREX_HYDRO_HOME   ?= ${TOP}/AMReX-Hydro
 
 
 # AMReX
@@ -22,9 +23,8 @@ USE_HIP         = FALSE
 
 # PelePhysics
 Chemistry_Model = air
-Reactions_dir	 = Null
-Eos_dir			 = Fuego
-Transport_dir   = Constant
+Eos_Model       = Fuego
+Transport_Model = Constant
 
 USE_SUNDIALS_PP = TRUE
 

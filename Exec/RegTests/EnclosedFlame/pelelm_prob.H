@@ -37,6 +37,10 @@ void pelelm_initdata(int i, int j, int k,
                  const amrex::Real Ly = prob_hi[1] - prob_lo[1];,
                  const amrex::Real Lz = prob_hi[2] - prob_lo[2]);
 
+    AMREX_D_TERM(const amrex::Real xc = prob_lo[0] + 0.5 * Lx;,
+                 const amrex::Real yc = prob_lo[1] + 0.5 * Ly;,
+                 const amrex::Real zc = prob_lo[2] + 0.5 * Lz;);
+
     constexpr amrex::Real Pi = 3.14159265358979323846264338327950288;
 
     auto eos = pele::physics::PhysicsType::eos();
@@ -45,20 +49,25 @@ void pelelm_initdata(int i, int j, int k,
     amrex::Real massfrac[NUM_SPECIES] = {0.0};
     amrex::Real pert = 0.0;
 
+    amrex::Real radius = std::sqrt(AMREX_D_TERM(  (x-xc)*(x-xc),
+                                                + (y-yc)*(y-yc),
+                                                + (z-zc)*(z-zc)));
+
     if (prob_parm.pertmag > 0.0) 
     {
 
 #if ( AMREX_SPACEDIM == 2 )
+       amrex::Real angle = std::atan2((y-yc),(x-xc));
        pert = prob_parm.pertmag * 
-             (1.0 * std::sin(2 * Pi * 4 * x / Lx) +
-              1.023 * std::sin(2 * Pi * 2 * (x - 0.004598) / Lx) +
-              0.945 * std::sin(2 * Pi * 3 * (x - 0.00712435) / Lx) +
-              1.017 * std::sin(2 * Pi * 5 * (x - 0.0033) / Lx) +
-              0.982 * std::sin(2 * Pi * 5 * (x - 0.014234) / Lx));
+             (0.7 * std::sin(2*angle) +
+              //1.023 * std::sin(2 * (angle - 0.004598) / radius2) +
+              //0.945 * std::sin(3 * (angle - 0.00712435) / radius2) +
+              0.9 * std::sin(8 * angle ) +
+              1.4 * std::sin(4 * angle  ));
     }
 
-    amrex::Real y1 = (y - prob_parm.standoff - 0.5*dx[1] + pert)*100;
-    amrex::Real y2 = (y - prob_parm.standoff + 0.5*dx[1] + pert)*100;
+    amrex::Real y1 = 3.6 - (radius - prob_parm.standoff - 1.42*dx[1] + pert)*100;
+    amrex::Real y2 = 3.6 - (radius - prob_parm.standoff + 1.42*dx[1] + pert)*100;
 
 #elif ( AMREX_SPACEDIM == 3 )
 
@@ -79,7 +88,7 @@ void pelelm_initdata(int i, int j, int k,
 #endif
 
 
-    PMF::pmf(pmf_data,y1, y2, pmf_vals);
+    PMF::pmf(pmf_data,y1, y1, pmf_vals);
 
     temp(i,j,k) = pmf_vals[0];;
 
@@ -129,40 +138,5 @@ bcnormal(
   PmfData const *pmf_data)
 {
   const amrex::Real* prob_lo = geomdata.ProbLo();
-  amrex::GpuArray<amrex::Real, NUM_SPECIES + 4> pmf_vals = {0.0};
-  amrex::Real molefrac[NUM_SPECIES] = {0.0};
-  amrex::Real massfrac[NUM_SPECIES] = {0.0};
-
-  auto eos = pele::physics::PhysicsType::eos();
-  if (sgn == 1) {
-    PMF::pmf(pmf_data,prob_lo[idir], prob_lo[idir], pmf_vals);
-
-    s_ext[VELX] = 0.0;
-#if ( AMREX_SPACEDIM == 2 )
-    s_ext[VELY] = pmf_vals[1]*1e-2;
-#elif ( AMREX_SPACEDIM == 3 )
-    s_ext[VELY] = 0.0;
-    s_ext[VELZ] = pmf_vals[1]*1e-2;
-#endif
-
-    s_ext[TEMP] = pmf_vals[0];
-    for (int n = 0; n < NUM_SPECIES; n++){
-      molefrac[n] = pmf_vals[3 + n];
-    }
-    eos.X2Y(molefrac, massfrac);
-
-    amrex::Real rho_cgs, P_cgs, RhoH_temp;
-    P_cgs = prob_parm.P_mean * 10.0;
-
-    eos.PYT2R(P_cgs, massfrac, s_ext[TEMP], rho_cgs);
-    s_ext[DENSITY] = rho_cgs * 1.0e3;
-
-    eos.TY2H(s_ext[TEMP], massfrac, RhoH_temp);
-    s_ext[RHOH] = RhoH_temp * 1.0e-4 * s_ext[DENSITY];   // CGS -> MKS conversion
-
-    for (int n = 0; n < NUM_SPECIES; n++) {
-      s_ext[FIRSTSPEC+n] = massfrac[n] * s_ext[DENSITY];
-    }
-  }
 }
 #endif

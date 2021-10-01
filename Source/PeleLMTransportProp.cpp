@@ -18,8 +18,7 @@ void PeleLM::calcViscosity(const TimeStamp &a_time) {
       } else {
 
          // Transport data pointer
-         pele::physics::transport::TransParm const* ltransparm =
-            pele::physics::transport::trans_parm_g;
+         auto const* ltransparm = trans_parms.device_trans_parm();
 
 #ifdef _OPENMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -49,8 +48,7 @@ void PeleLM::calcDiffusivity(const TimeStamp &a_time) {
       auto ldata_p = getLevelDataPtr(lev,a_time);
 
       // Transport data pointer
-      pele::physics::transport::TransParm const* ltransparm =
-         pele::physics::transport::trans_parm_g;
+      auto const* ltransparm = trans_parms.device_trans_parm();
 
 #ifdef _OPENMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())

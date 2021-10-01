@@ -1,14 +1,18 @@
 #include <PeleLM.H>
 #include <PeleLMUtils.H>
-#include <Godunov.H>
 
 using namespace amrex;
 
 void PeleLM::Advance(int is_initIter) {
-   BL_PROFILE_VAR("PeleLM::Advance()", Advance);
+   BL_PROFILE("PeleLM::Advance()");
 
    // Start timing current time step
    Real strt_time = ParallelDescriptor::second();
+
+   // Deal with ambient pressure
+   if (m_closed_chamber) {
+      m_pNew = m_pOld;
+   }
 
    //----------------------------------------------------------------
    // Copy old <- new state
@@ -44,6 +48,10 @@ void PeleLM::Advance(int is_initIter) {
 
    //----------------------------------------------------------------
    // Advance setup
+
+   // initiliaze temporals
+   initTemporals();
+
    // fillpatch the t^{n} data
    averageDownState(AmrOldTime);
    fillPatchState(AmrOldTime);
@@ -58,7 +66,6 @@ void PeleLM::Advance(int is_initIter) {
    }
    // TODO : typical values
    // TODO : check dt
-   // TODO : floor_species
 
    if (! m_incompressible ) {
       floorSpecies(AmrOldTime);
@@ -142,6 +149,11 @@ void PeleLM::Advance(int is_initIter) {
    }
    //----------------------------------------------------------------
 
+   // Deal with ambient pressure
+   if (m_closed_chamber && !is_initIter) {
+      m_pOld = m_pNew;
+   }
+
    //----------------------------------------------------------------
    // Wrapup advance
    // Timing current time step
@@ -157,6 +169,7 @@ void PeleLM::oneSDC(int sdcIter,
                     std::unique_ptr<AdvanceAdvData> &advData,
                     std::unique_ptr<AdvanceDiffData> &diffData)
 {
+   m_sdcIter = sdcIter;
 
    if (m_verbose > 0) {
       amrex::Print() << "   SDC iter [" << sdcIter << "] \n";
@@ -206,7 +219,7 @@ void PeleLM::oneSDC(int sdcIter,
    createMACRHS(advData);
 
    // Re-evaluate thermo. pressure and add chi_increment
-   addChiIncrement(sdcIter, AmrNewTime,advData);
+   addChiIncrement(sdcIter, AmrNewTime, advData);
 
    // MAC projection
    macProject(AmrOldTime,advData,GetVecOfPtrs(advData->mac_divu));

@@ -10,6 +10,10 @@ PeleLM::~PeleLM()
       ClearLevel(lev);
    }
    prob_parm.reset();
+   trans_parms.deallocate();
+   m_reactor->close();
+
+   closeTempFile();
 }
 
 PeleLM::LevelData*
@@ -125,6 +129,23 @@ PeleLM::getTempVect(const TimeStamp &a_time) {
    } else {
       for (int lev = 0; lev <= finest_level; ++lev) {
          r.push_back(&(m_leveldata_new[lev]->temp));
+      }
+   }
+   return r;
+}
+
+Vector<MultiFab *>
+PeleLM::getDivUVect(const TimeStamp &a_time) {
+   AMREX_ASSERT(!m_incompressible);
+   Vector<MultiFab*> r;
+   r.reserve(finest_level+1);
+   if ( a_time == AmrOldTime ) {
+      for (int lev = 0; lev <= finest_level; ++lev) {
+         r.push_back(&(m_leveldata_old[lev]->divu));
+      }
+   } else {
+      for (int lev = 0; lev <= finest_level; ++lev) {
+         r.push_back(&(m_leveldata_new[lev]->divu));
       }
    }
    return r;

@@ -21,9 +21,9 @@ void pelelm_dertemp (const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
     auto       der = derfab.array(dcomp);
     amrex::ParallelFor(bx,
     [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
-    {   
+    {
         der(i,j,k) = in_dat(i,j,k,TEMP);
-    }); 
+    });
 }
 
 //
@@ -44,10 +44,10 @@ void pelelm_dermassfrac (const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
     auto       der = derfab.array(dcomp);
     amrex::ParallelFor(bx, NUM_SPECIES,
     [=] AMREX_GPU_DEVICE (int i, int j, int k, int n) noexcept
-    {   
+    {
         amrex::Real rhoinv = 1.0 / in_dat(i,j,k,DENSITY);
         der(i,j,k,n) = in_dat(i,j,k,FIRSTSPEC+n) * rhoinv;
-    }); 
+    });
 }
 
 //
@@ -65,7 +65,7 @@ void pelelm_deravgpress (const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
     Real factor = 1.0 / ( AMREX_D_TERM(2.0,*2.0,*2.0) );
     amrex::ParallelFor(bx,
     [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
-    {   
+    {
         der(i,j,k) =  factor * (  in_dat(i+1,j,k)     + in_dat(i,j,k)
 #if (AMREX_SPACEDIM >= 2 )
                                 + in_dat(i+1,j+1,k)   + in_dat(i,j+1,k)
@@ -74,8 +74,8 @@ void pelelm_deravgpress (const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
                                 + in_dat(i+1,j+1,k+1) + in_dat(i,j+1,k+1)
 #endif
 #endif
-                                );  
-    }); 
+                                );
+    });
 }
 
 //
@@ -122,3 +122,28 @@ void pelelm_dermgvort (const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
     }
 
 }
+
+//
+// Compute the kinetic energy
+//
+void pelelm_derkineticenergy (const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
+                              const FArrayBox& statefab, const FArrayBox& /*pressfab*/,
+                              const Geometry& /*geomdata*/,
+                              Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
+
+{
+    AMREX_ASSERT(derfab.box().contains(bx));
+    AMREX_ASSERT(statefab.box().contains(bx));
+    auto const rho = statefab.array(DENSITY);
+    auto const vel = statefab.array(VELX);
+    auto       der = derfab.array(dcomp);
+    amrex::ParallelFor(bx,
+    [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+    {
+        der(i,j,k) = 0.5 * rho(i,j,k)
+                         * ( AMREX_D_TERM(  vel(i,j,k,0)*vel(i,j,k,0),
+                                          + vel(i,j,k,1)*vel(i,j,k,1),
+                                          + vel(i,j,k,2)*vel(i,j,k,2)) );
+    });
+}
+

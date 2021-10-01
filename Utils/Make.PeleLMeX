@@ -1,6 +1,7 @@
 PELELMEX_HOME ?= /path/to/PeleLMeX
 AMREX_HOME ?= /path/to/AMREX
 PELE_PHYSICS_HOME ?= /path/to/PELE_PHYSICS_HOME
+AMREX_HYDRO_HOME ?= /path/to/AMREX_HYDRO_HOME
 
 # AMReX definitions
 include $(AMREX_HOME)/Tools/GNUMake/Make.defs
@@ -16,7 +17,7 @@ all: $(executable)
 #---------------
 # PeleLM sources
 #---------------
-LMdirs := Source Source/Godunov
+LMdirs := Source
 ifeq ($(USE_EFIELD),TRUE)
    DEFINES += -DPLM_USE_EFIELD
    LMdirs += Source/Efield Source/Efield/GMRES Source/Efield/LinOps
@@ -28,19 +29,54 @@ Blocs += $(foreach dir, $(LMdirs), $(PELELMEX_HOME)/$(dir))
 #---------------
 # PelePhysics sources
 #---------------
-ChemDir  = Support/Fuego/Mechanism/Models/$(Chemistry_Model)
-ReacDir  = Reactions/$(strip $(Reactions_dir))
-EosDir   = Eos/$(strip $(Eos_dir))
-TranDir  = Transport/$(strip $(Transport_dir))
+# EOS models switches
+ifeq ($(Eos_Model),$(filter $(Eos_Model),GammaLaw))
+   DEFINES += -DUSE_GAMMALAW_EOS
+endif
+ifeq ($(Eos_Model),$(filter $(Eos_Model),Fuego))
+   DEFINES += -DUSE_FUEGO_EOS
+endif
+ifeq ($(Eos_Model),$(filter $(Eos_Model),Soave-Redlich-Kwong))
+   DEFINES += -DUSE_SRK_EOS
+endif
 
-PPdirs  := Utility Source $(ChemDir) $(ReacDir) $(EosDir) $(TranDir)
+# Transport model switches
+ifeq ($(Transport_Model), Simple)
+  DEFINES += -DUSE_SIMPLE_TRANSPORT
+endif
+ifeq ($(Transport_Model), EGLib)
+  DEFINES += -DEGLIB_TRANSPORT
+  USE_FUEGO = TRUE
+endif
+ifeq ($(Transport_Model), Constant)
+  DEFINES += -DUSE_CONSTANT_TRANSPORT
+endif
+ifeq ($(Transport_Model), Sutherland)
+  DEFINES += -DUSE_SUTHERLAND_TRANSPORT
+endif
+
+ifeq ($(PELE_USE_KLU), TRUE)
+  DEFINES += -DPELE_USE_KLU
+endif
+
+ChemDir  = Support/Fuego/Mechanism/Models/$(Chemistry_Model)
+
+PPdirs  := Utility Source $(ChemDir) Reactions Eos Transport
 PPHdirs := Support/Fuego/Evaluation
 Bpack += $(foreach dir, $(PPdirs), $(PELE_PHYSICS_HOME)/$(dir)/Make.package)
 Blocs += $(foreach dir, $(PPdirs), $(PELE_PHYSICS_HOME)/$(dir))
 Blocs += $(foreach dir, $(PPHdirs), $(PELE_PHYSICS_HOME)/$(dir))
-ifeq ($(USE_SUNDIALS_PP),TRUE)
-   include $(PELE_PHYSICS_HOME)/ThirdParty/Make.ThirdParty
+include $(PELE_PHYSICS_HOME)/ThirdParty/Make.ThirdParty
+
+#---------------
+# AMReX-Hydro sources
+#---------------
+Hdirs := Slopes Godunov MOL Utils
+ifeq ($(USE_EB), TRUE)
+    Hdirs += Redistribution EBGodunov
 endif
+Bpack += $(foreach dir, $(Hdirs), $(AMREX_HYDRO_HOME)/$(dir)/Make.package)
+Blocs += $(foreach dir, $(Hdirs), $(AMREX_HYDRO_HOME)/$(dir))
 
 #---------------
 # AMReX sources
@@ -71,12 +107,15 @@ AMReX_buildInfo.cpp:
       --amrex_home "$(AMREX_HOME)" \
       --COMP "$(COMP)" --COMP_VERSION "$(COMP_VERSION)" \
       --FCOMP "$(FCOMP)" --FCOMP_VERSION "$(FCOMP_VERSION)" \
-      --GIT "$(PELELMEX_HOME) $(AMREX_HOME) $(PELE_PHYSICS_HOME)"
+      --GIT "$(PELELMEX_HOME) $(AMREX_HOME) $(PELE_PHYSICS_HOME) $(AMREX_HYDRO_HOME)"
 
 #---------------
 # Rules
 #---------------
 include $(AMREX_HOME)/Tools/GNUMake/Make.rules
+
+# Force TPL as deps. of exec sources
+##$(objForExecs): TPL
 
 clean::
 	$(SILENT) $(RM) AMReX_buildInfo.cpp
@@ -88,17 +127,14 @@ print-%::
 #---------------
 # TPL
 #---------------
-ifeq ($(USE_SUNDIALS_PP),TRUE)
-  TPL:
-	cd $(PELE_PHYSICS_HOME)/ThirdParty; make AMREX_HOME=$(AMREX_HOME) USE_CUDA=$(USE_CUDA) USE_KLU=$(USE_KLU_PP) DEBUG=$(DEBUG) COMP=$(COMP) NVCC=$(COMP)
+TPL:
+	@echo "==> Building SUNDIALS library"
+	cd $(PELE_PHYSICS_HOME)/ThirdParty; make sundials AMREX_HOME=$(AMREX_HOME) USE_CUDA=$(USE_CUDA) PELE_USE_KLU=$(PELE_USE_KLU) DEBUG=$(DEBUG) COMP=$(COMP) NVCC=$(COMP)
 
-  TPLclean:
-	cd $(PELE_PHYSICS_HOME)/ThirdParty; make AMREX_HOME=$(AMREX_HOME) USE_CUDA=$(USE_CUDA) USE_KLU=$(USE_KLU_PP) DEBUG=$(DEBUG) COMP=$(HOSTCC) NVCC=$(COMP) clean
+TPLclean:
+	@echo "==> Removing SUNDIALS library"
+	cd $(PELE_PHYSICS_HOME)/ThirdParty; make AMREX_HOME=$(AMREX_HOME) USE_CUDA=$(USE_CUDA) PELE_USE_KLU=$(PELE_USE_KLU) DEBUG=$(DEBUG) COMP=$(HOSTCC) NVCC=$(COMP) clean
 
-  TPLrealclean:
-	cd $(PELE_PHYSICS_HOME)/ThirdParty; make AMREX_HOME=$(AMREX_HOME) USE_CUDA=$(USE_CUDA) USE_KLU=$(USE_KLU_PP) DEBUG=$(DEBUG) COMP=$(HOSTCC) NVCC=$(COMP) realclean
-else
-  TPL:
-  TPLclean:
-  TPLrealclean:
-endif
+TPLrealclean:
+	@echo "==> Removing SUNDIALS library"
+	cd $(PELE_PHYSICS_HOME)/ThirdParty; make AMREX_HOME=$(AMREX_HOME) USE_CUDA=$(USE_CUDA) PELE_USE_KLU=$(PELE_USE_KLU) DEBUG=$(DEBUG) COMP=$(HOSTCC) NVCC=$(COMP) realclean

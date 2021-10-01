@@ -7,8 +7,12 @@ using namespace amrex;
 void PeleLM::Init() {
    BL_PROFILE_VAR("PeleLM::Init()", Init);
 
+   // Open temporals file
+   openTempFile();
+
    // Initialize data
    initData();
+
 
 }
 
@@ -180,7 +184,6 @@ void PeleLM::initData() {
                               m_nGrowAdv, m_use_wbar, is_initialization));
                calcDivU(is_initialization,computeDiffusionTerm,do_avgDown,AmrNewTime,diffData);
             }
-            // TODO: closed_chamber correction
 
             initialProjection();
          }
@@ -191,6 +194,10 @@ void PeleLM::initData() {
       initialIterations();
 
       m_nstep = 0;
+
+      if (m_do_temporals) {
+         writeTemporals();
+      }
 
       if (m_plot_int > 0 ) {
          WritePlotFile();
@@ -256,7 +263,7 @@ void PeleLM::initLevelData(int lev) {
    ProbParm const* lprobparm = prob_parm.get();
    PmfData const* lpmfdata   = pmf_data_g;
 
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
    for (MFIter mfi(ldata_p->velocity,TilingIfNotGPU()); mfi.isValid(); ++mfi)

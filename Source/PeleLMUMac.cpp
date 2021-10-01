@@ -1,13 +1,13 @@
 #include <PeleLM.H>
 #include <PeleLMUtils.H>
-#include <Godunov.H>
+#include <hydro_utils.H>
 
 using namespace amrex;
 
 void PeleLM::predictVelocity(std::unique_ptr<AdvanceAdvData>  &advData,
-                        std::unique_ptr<AdvanceDiffData> &diffData)
+                             std::unique_ptr<AdvanceDiffData> &diffData)
 {
-   BL_PROFILE_VAR("PeleLM::predictVelocity()", predictVelocity);
+   BL_PROFILE("PeleLM::predictVelocity()");
 
    // set umac boundaries to zero 
    if ( advData->umac[0][0].nGrow() > 0 ) {
@@ -46,24 +46,24 @@ void PeleLM::predictVelocity(std::unique_ptr<AdvanceAdvData>  &advData,
       auto ldata_p = getLevelDataPtr(lev,AmrOldTime);
       Real time = getTime(lev,AmrOldTime);
 
+      HydroUtils::ExtrapVelToFaces(ldata_p->velocity,
+                                   velForces[lev],
+                                   AMREX_D_DECL(advData->umac[lev][0],
+                                                advData->umac[lev][1],
+                                                advData->umac[lev][2]),
+                                   bcRecVel, bcRecVel_d.dataPtr(),
+                                   geom[lev], m_dt,
 #ifdef AMREX_USE_EB
-#else
-      godunov::predict_godunov(time,
-                               AMREX_D_DECL(advData->umac[lev][0],
-                                            advData->umac[lev][1],
-                                            advData->umac[lev][2]),
-                               ldata_p->velocity,
-                               velForces[lev],
-                               bcRecVel, bcRecVel_d.dataPtr(),
-                               geom[lev], m_dt,
-                               m_Godunov_ppm, m_Godunov_ForceInTrans);
+                                   // TODO: ebfact
 #endif
+                                   m_Godunov_ppm, m_Godunov_ForceInTrans,
+                                   m_advection_type);
    }
 }
 
 void PeleLM::createMACRHS(std::unique_ptr<AdvanceAdvData>  &advData)
 {
-   BL_PROFILE_VAR("PeleLM::createMACRHS()", createMACRHS);
+   BL_PROFILE("PeleLM::createMACRHS()");
 
    for (int lev = 0; lev <= finest_level; ++lev) {
       Real halftime = 0.5 * (m_t_old[lev] + m_t_new[lev]);
@@ -75,7 +75,7 @@ void PeleLM::addChiIncrement(int a_sdcIter,
                              const TimeStamp &a_time,
                              std::unique_ptr<AdvanceAdvData>  &advData)
 {
-   BL_PROFILE_VAR("PeleLM::addChiIncrement()", addChiIncrement);
+   BL_PROFILE("PeleLM::addChiIncrement()");
 
    int nGrow = m_nGrowAdv;
    Vector<MultiFab> chiIncr(finest_level+1);
@@ -92,7 +92,7 @@ void PeleLM::addChiIncrement(int a_sdcIter,
    // Add chiIncr to chi and add chi to mac_divu
    // Both mac_divu and chiIncr have properly filled ghost cells -> work on grownbox
    for (int lev = 0; lev <= finest_level; ++lev) {
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
       for (MFIter mfi(advData->chi[lev],TilingIfNotGPU()); mfi.isValid(); ++mfi)
@@ -119,7 +119,7 @@ void PeleLM::macProject(const TimeStamp &a_time,
                         std::unique_ptr<AdvanceAdvData>  &advData,
                         const Vector<MultiFab*> &a_divu)
 {
-   BL_PROFILE_VAR("PeleLM::macProject()", macProject);
+   BL_PROFILE("PeleLM::macProject()");
 
    int has_divu = (!a_divu.empty());
 
@@ -142,8 +142,13 @@ void PeleLM::macProject(const TimeStamp &a_time,
             rho_inv[lev][idim].invert(m_dt/2.0,0);
             rho_inv[lev][idim].FillBoundary(geom[lev].periodicity());
          }
-
       }
+   }
+
+   // For closed chamber, compute change in chamber pressure
+   Real Sbar = 0.0;
+   if (m_closed_chamber) {
+      Sbar = adjustPandDivU(advData);
    }
 
    if (macproj->needInitialization()) {
@@ -163,11 +168,29 @@ void PeleLM::macProject(const TimeStamp &a_time,
    // Project
    macproj->project(m_mac_mg_rtol,m_mac_mg_atol);
 
+   // Restore mac_divu
+   if (m_closed_chamber) {
+      for (int lev = 0; lev <= finest_level; ++lev) {
+         a_divu[lev]->plus(Sbar,0,1);
+      }
+   }
+
    // FillBoundary umac
    for (int lev = 0; lev <= finest_level; ++lev) {
-      AMREX_D_TERM(advData->umac[lev][0].FillBoundary(geom[lev].periodicity());,
-                   advData->umac[lev][1].FillBoundary(geom[lev].periodicity());,
-                   advData->umac[lev][2].FillBoundary(geom[lev].periodicity()));
+       if (lev > 0) {
+           // We need to fill the MAC velocities outside the fine region so we can use them in the Godunov method
+           IntVect rr  = geom[lev].Domain().size() / geom[lev-1].Domain().size();
+           auto divu_lev = (has_divu) ? a_divu[lev] : nullptr;
+           HydroUtils::create_constrained_umac_grown(lev, m_nGrowMAC, grids[lev],
+                                                     &geom[lev-1], &geom[lev],
+                                                     GetArrOfPtrs(advData->umac[lev-1]),
+                                                     GetArrOfPtrs(advData->umac[lev]),
+                                                     divu_lev, rr);
+       } else {
+           AMREX_D_TERM(advData->umac[lev][0].FillBoundary(geom[lev].periodicity());,
+                        advData->umac[lev][1].FillBoundary(geom[lev].periodicity());,
+                        advData->umac[lev][2].FillBoundary(geom[lev].periodicity()));
+       }
    }
 }
 

@@ -2,9 +2,12 @@
 #include <AMReX_ParmParse.H>
 #include <PeleLMDeriveFunc.H>
 #include "PelePhysics.H"
-#include <reactor.h>
 #ifdef PLM_USE_EFIELD
 #include "EOS_Extension.H"
+#endif
+
+#ifdef AMREX_USE_GPU
+#include <AMReX_SUNMemory.H>
 #endif
 
 using namespace amrex;
@@ -15,6 +18,10 @@ static Box grow_box_by_two (const Box& b) { return amrex::grow(b,2); }
 
 void PeleLM::Setup() {
    BL_PROFILE_VAR("PeleLM::Setup()", Setup);
+
+#ifdef AMREX_USE_GPU
+   sundials::MemoryHelper::Initialize();
+#endif
 
    // Read PeleLM parameters
    readParameters();
@@ -34,20 +41,21 @@ void PeleLM::Setup() {
    // Initialize EOS and others
    if (!m_incompressible) {
       amrex::Print() << " Initialization of Transport ... \n";
-      pele::physics::transport::InitTransport<
-         pele::physics::PhysicsType::eos_type>()();
+      trans_parms.allocate();
       if (m_do_react) {
          int reactor_type = 2;
          int ncells_chem = 1;
-         amrex::Print() << " Initialization of reaction integrator ... \n";
-#ifdef USE_SUNDIALS_PP
-         SetTolFactODE(m_rtol_chem,m_atol_chem);
+         amrex::Print() << " Initialization of chemical reactor ... \n";
+         m_chem_integrator = "ReactorNull";
+         ParmParse pp("peleLM");
+         pp.query("chem_integrator",m_chem_integrator);
+         m_reactor = pele::physics::reactions::ReactorBase::create(m_chem_integrator);
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
-#ifdef AMREX_USE_GPU
-         reactor_info(reactor_type,ncells_chem);
-#else
-         reactor_init(reactor_type,ncells_chem);
-#endif
+         {
+            m_reactor->init(reactor_type, ncells_chem);
+         }
       }
 
 #ifdef PLM_USE_EFIELD
@@ -68,6 +76,7 @@ void PeleLM::Setup() {
    readProbParm();
 
    // Initialize ambient pressure
+   // Will be overwriten on restart.
    m_pOld = prob_parm->P_mean;
    m_pNew = prob_parm->P_mean;
 }
@@ -87,6 +96,7 @@ void PeleLM::readParameters() {
    // -----------------------------------------
    // Boundary conditions
    // -----------------------------------------
+   int isOpenDomain = 0;
 
    Vector<std::string> lo_bc_char(AMREX_SPACEDIM);
    Vector<std::string> hi_bc_char(AMREX_SPACEDIM);
@@ -99,8 +109,10 @@ void PeleLM::readParameters() {
          lo_bc[dir] = 0;
       } else if (lo_bc_char[dir] == "Inflow") {
          lo_bc[dir] = 1;
+         isOpenDomain = 1;
       } else if (lo_bc_char[dir] == "Outflow") {
          lo_bc[dir] = 2;
+         isOpenDomain = 1;
       } else if (lo_bc_char[dir] == "Symmetry") {
          lo_bc[dir] = 3;
       } else if (lo_bc_char[dir] == "SlipWallAdiab") {
@@ -120,8 +132,10 @@ void PeleLM::readParameters() {
          hi_bc[dir] = 0;
       } else if (hi_bc_char[dir] == "Inflow") {
          hi_bc[dir] = 1;
+         isOpenDomain = 1;
       } else if (hi_bc_char[dir] == "Outflow") {
          hi_bc[dir] = 2;
+         isOpenDomain = 1;
       } else if (hi_bc_char[dir] == "Symmetry") {
          hi_bc[dir] = 3;
       } else if (hi_bc_char[dir] == "SlipWallAdiab") {
@@ -142,6 +156,14 @@ void PeleLM::readParameters() {
    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
       m_phys_bc.setLo(idim,lo_bc[idim]);
       m_phys_bc.setHi(idim,hi_bc[idim]);
+   }
+
+   // Activate closed chamber if !isOpenDomain
+   // enable overwriting
+   m_closed_chamber = (isOpenDomain) ? 0 : 1;
+   pp.query("closed_chamber", m_closed_chamber);
+   if (verbose && m_closed_chamber) {
+      Print() << " Simulation performed with the closed chamber algorithm \n";
    }
 
 #ifdef PLM_USE_EFIELD
@@ -251,6 +273,24 @@ void PeleLM::readParameters() {
    ppg.query("use_forceInTrans", m_Godunov_ForceInTrans);
 
    // -----------------------------------------
+   // Linear solvers tols
+   // -----------------------------------------
+   ParmParse ppnproj("nodal_proj");
+   ppnproj.query("atol",m_nodal_mg_atol);
+   ppnproj.query("rtol",m_nodal_mg_rtol);
+
+   ParmParse ppmacproj("mac_proj");
+   ppmacproj.query("atol",m_mac_mg_atol);
+   ppmacproj.query("rtol",m_mac_mg_rtol);
+
+   // -----------------------------------------
+   // Temporals
+   // -----------------------------------------
+   pp.query("do_temporals",m_do_temporals);
+   pp.query("temporal_int",m_temp_int);
+   pp.query("mass_balance",m_do_massBalance);
+
+   // -----------------------------------------
    // Time stepping control
    // -----------------------------------------
    ParmParse ppa("amr");
@@ -332,7 +372,7 @@ void PeleLM::variablesSetup() {
       stateComponents.emplace_back(DENSITY,"density");
       Print() << " First species: " << FIRSTSPEC << "\n";
       Vector<std::string> names;
-      pele::physics::eos::speciesNames(names);
+      pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(names);
       for (int n = 0; n < NUM_SPECIES; n++ ) {
          stateComponents.emplace_back(FIRSTSPEC+n,"rho.Y("+names[n]+")");
       }
@@ -406,7 +446,7 @@ void PeleLM::derivedSetup()
 
       // Get species names
       Vector<std::string> spec_names;
-      pele::physics::eos::speciesNames(spec_names);
+      pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(spec_names);
 
       // Set species mass fractions
       Vector<std::string> var_names_massfrac(NUM_SPECIES);
@@ -423,6 +463,9 @@ void PeleLM::derivedSetup()
 
    // Vorticity magnitude
    derive_lst.add("mag_vort",IndexType::TheCellType(),1,pelelm_dermgvort,grow_box_by_two);
+
+   // Kinetic energy
+   derive_lst.add("kinetic_energy",IndexType::TheCellType(),1,pelelm_derkineticenergy,the_same_box);
 
 #ifdef PLM_USE_EFIELD
    // Charge distribution

@@ -313,7 +313,7 @@ void PeleLM::adjustSpeciesFluxes(const Vector<Array<MultiFab*,AMREX_SPACEDIM> > 
       EB_interp_CellCentroid_to_FaceCentroid(*a_spec[lev], GetArrOfPtrs(edgstate), 0, 0, NUM_SPECIES, geom[lev], bcRecSpec);
 #endif
 
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
       for (MFIter mfi(*a_spec[lev],TilingIfNotGPU()); mfi.isValid(); ++mfi)
@@ -324,6 +324,9 @@ void PeleLM::adjustSpeciesFluxes(const Vector<Array<MultiFab*,AMREX_SPACEDIM> > 
             auto const& rhoY     = a_spec[lev]->const_array(mfi);
             auto const& flux_dir = a_spfluxes[lev][idim]->array(mfi);
 
+            const auto bc_lo = bcRecSpec[0].lo(idim);
+            const auto bc_hi = bcRecSpec[0].hi(idim);
+
 #ifdef AMREX_USE_EB
             const EBFArrayBox&  state_fab = static_cast<EBFArrayBox const&>(a_spec[lev][mfi]);
             const EBCellFlagFab&    flags = state_fab.getEBCellFlagFab();
@@ -333,13 +336,13 @@ void PeleLM::adjustSpeciesFluxes(const Vector<Array<MultiFab*,AMREX_SPACEDIM> > 
                // No cut cells in tile + nghost-cell witdh halo -> use non-eb routine
                if (flags.getType(amrex::grow(ebx,nghost)) == FabType::regular )
                {
-                  amrex::ParallelFor(ebx, [idim, rhoY, flux_dir, edomain, bcRecSpec]
+                  amrex::ParallelFor(ebx, [idim, rhoY, flux_dir, edomain, bc_lo, bc_hi]
                   AMREX_GPU_DEVICE (int i, int j, int k) noexcept
                   {
                      int idx[3] = {i,j,k};
-                     bool on_lo = ( ( bcRecSpec[0].lo(idim) == amrex::BCType::ext_dir ) &&
+                     bool on_lo = ( ( bc_lo == amrex::BCType::ext_dir ) &&
                                     ( idx[idim] <= edomain.smallEnd(idim) ) );
-                     bool on_hi = ( ( bcRecSpec[0].hi(idim) == amrex::BCType::ext_dir ) &&
+                     bool on_hi = ( ( bc_hi == amrex::BCType::ext_dir ) &&
                                     ( idx[idim] >= edomain.bigEnd(idim) ) );
                      repair_flux( i, j, k, idim, on_lo, on_hi, rhoY, flux_dir );
                   });
@@ -348,26 +351,26 @@ void PeleLM::adjustSpeciesFluxes(const Vector<Array<MultiFab*,AMREX_SPACEDIM> > 
                {
                   auto const& rhoYed_ar   = edgstate[idim].const_array(mfi);
                   auto const& areafrac_ar = areafrac[idim]->const_array(mfi);
-                  amrex::ParallelFor(ebx, [idim, rhoY, flux_dir, rhoYed_d, areafrac_d, edomain, bcRecSpec]
+                  amrex::ParallelFor(ebx, [idim, rhoY, flux_dir, rhoYed_d, areafrac_d, edomain, bc_lo, bc_hi]
                   AMREX_GPU_DEVICE (int i, int j, int k) noexcept
                   {
                      int idx[3] = {i,j,k};
-                     bool on_lo = ( ( bcRecSpec[0].lo(idim) == amrex::BCType::ext_dir ) &&
+                     bool on_lo = ( ( bc_lo == amrex::BCType::ext_dir ) &&
                                     ( idx[idim] <= edomain.smallEnd(idim) ) );
-                     bool on_hi = ( ( bcRecSpec[0].hi(idim) == amrex::BCType::ext_dir ) &&
+                     bool on_hi = ( ( bc_hi == amrex::BCType::ext_dir ) &&
                                     ( idx[idim] >= edomain.bigEnd(idim) ) );
                      repair_flux_eb( i, j, k, idim, on_lo, on_hi, rhoY, rhoYed_ar, areafrac_ar, flux_dir );
                   });
                }
             }
 #else
-            amrex::ParallelFor(ebx, [idim, rhoY, flux_dir, edomain, bcRecSpec]
+            amrex::ParallelFor(ebx, [idim, rhoY, flux_dir, edomain, bc_lo, bc_hi]
             AMREX_GPU_DEVICE (int i, int j, int k) noexcept
             {
                int idx[3] = {i,j,k};
-               bool on_lo = ( ( bcRecSpec[0].lo(idim) == amrex::BCType::ext_dir ) &&
+               bool on_lo = ( ( bc_lo == amrex::BCType::ext_dir ) &&
                               ( idx[idim] <= edomain.smallEnd(idim) ) );
-               bool on_hi = ( ( bcRecSpec[0].hi(idim) == amrex::BCType::ext_dir ) &&
+               bool on_hi = ( ( bc_hi == amrex::BCType::ext_dir ) &&
                               ( idx[idim] >= edomain.bigEnd(idim) ) );
                repair_flux( i, j, k, idim, on_lo, on_hi, rhoY, flux_dir );
             });
@@ -812,13 +815,11 @@ void PeleLM::getScalarDiffForce(std::unique_ptr<AdvanceAdvData> &advData,
          auto const& fT      = advData->Forcing[lev].array(mfi,NUM_SPECIES);
          auto const& dwbar   = (m_use_wbar) ? diffData->Dwbar[lev].const_array(mfi,0)
                                             : diffData->Dn[lev].const_array(mfi,0);          // Dummy unsed Array4
-         Real        dp0dt_d = 0.0; // TODO dp0dt;
-         int     closed_ch_d = 0;   // TODO closed_chamber;
          amrex::ParallelFor(bx, [dn, ddn, dnp1k, ddnp1k, dwbar, use_wbar=m_use_wbar,do_react=m_do_react,
-                                 r, a, fY, fT, dp0dt_d, closed_ch_d]
+                                 r, a, fY, fT, dp0dt=m_dp0dt, is_closed_ch=m_closed_chamber]
          AMREX_GPU_DEVICE (int i, int j, int k) noexcept
          {
-            buildDiffusionForcing( i, j, k, dn, ddn, dnp1k, ddnp1k, r, a, dp0dt_d, closed_ch_d, do_react, fY, fT );
+            buildDiffusionForcing( i, j, k, dn, ddn, dnp1k, ddnp1k, r, a, dp0dt, is_closed_ch, do_react, fY, fT );
             if (use_wbar) {
                for (int n = 0; n < NUM_SPECIES; n++) {
                   fY(i,j,k,n) += dwbar(i,j,k,n);

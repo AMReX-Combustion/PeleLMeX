@@ -13,7 +13,8 @@ getTransportCoeff(int i, int j, int k,
                   amrex::Array4<      amrex::Real> const& rhoDi,
                   amrex::Array4<      amrex::Real> const& lambda,
                   amrex::Array4<      amrex::Real> const& mu,
-                  pele::physics::transport::TransParm const* trans_parm) noexcept
+                  pele::physics::transport::TransParm<pele::physics::PhysicsType::eos_type,
+                                                      pele::physics::PhysicsType::transport_type> const* trans_parm) noexcept
 {
    using namespace amrex::literals;
 
@@ -65,7 +66,8 @@ getVelViscosity(int i, int j, int k,
                 amrex::Array4<const amrex::Real> const& rhoY,
                 amrex::Array4<      amrex::Real> const& T,
                 amrex::Array4<      amrex::Real> const& mu,
-                pele::physics::transport::TransParm const* trans_parm) noexcept
+                pele::physics::transport::TransParm<pele::physics::PhysicsType::eos_type,
+                                                    pele::physics::PhysicsType::transport_type> const* trans_parm) noexcept
 {
    using namespace amrex::literals;
 
@@ -717,7 +719,6 @@ fabMinMax(int i, int j, int k,
    }
 }
 
-AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
 void
 linearChemForcing(const amrex::Box& bx,
@@ -787,5 +788,37 @@ est_divu_dt_1(int i, int j, int k,
       dtcell *= dtfactor;
    }
    return dtcell;
+}
+
+
+AMREX_GPU_HOST_DEVICE
+AMREX_FORCE_INLINE
+amrex::Real
+getGammaInv(int i, int j, int k,
+         amrex::Array4<const amrex::Real> const& rhoY,
+         amrex::Array4<const amrex::Real> const& T) noexcept
+{
+   using namespace amrex::literals;
+
+   auto eos = pele::physics::PhysicsType::eos();
+   // Get rho & Y from rhoY
+   amrex::Real rho = 0.0_rt;
+   for (int n = 0; n < NUM_SPECIES; n++) {
+      rho += rhoY(i,j,k,n);
+   }
+   amrex::Real rhoinv = 1.0_rt / rho; 
+   amrex::Real y[NUM_SPECIES] = {0.0};
+   for (int n = 0; n < NUM_SPECIES; n++) {
+      y[n] = rhoY(i,j,k,n) * rhoinv;
+   }
+
+   amrex::Real cpmix = 0.0_rt;
+   eos.TY2Cp(T(i,j,k), y, cpmix);
+   amrex::Real cvmix = 0.0_rt;
+   eos.TY2Cv(T(i,j,k), y, cvmix);
+   
+   amrex::Real gammainv = cvmix / cpmix;
+
+   return gammainv;
 }
 #endif

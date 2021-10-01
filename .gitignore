@@ -1,0 +1,15 @@
+# Compilation/Executable
+*.ex
+tmp_build*
+
+
+# Run output
+*.p3d
+plt*
+*plt*old*
+Backtrace*
+chk*
+grdlog
+
+# OSX files
+.DS_Store

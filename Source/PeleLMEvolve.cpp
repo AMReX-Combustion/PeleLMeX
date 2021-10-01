@@ -32,6 +32,11 @@ void PeleLM::Evolve() {
       m_nstep++;
       m_cur_time += m_dt;
 
+      // Temporals
+      if (doTemporalsNow()) {
+         writeTemporals();
+      }
+
       // Check for plot file
       if (writePlotNow()) {
          WritePlotFile();
@@ -58,7 +63,6 @@ void PeleLM::Evolve() {
    if ( m_check_int > 0 && !chk_justDidIt ) {
       WriteCheckPointFile();
    }
-   
 }
 
 bool
@@ -83,6 +87,19 @@ PeleLM::writeCheckNow()
       write_now = true;
    }
    // TODO : time controled ?
+
+   return write_now;
+}
+
+bool
+PeleLM::doTemporalsNow()
+{
+   bool write_now = false;
+
+   if ( m_do_temporals &&
+        (m_nstep % m_temp_int == 0) ) {
+      write_now = true;
+   }
 
    return write_now;
 }

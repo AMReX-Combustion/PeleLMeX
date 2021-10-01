@@ -13,6 +13,6 @@ void PeleLM::readProbParm()
 
    std::string pmf_datafile;
    pp.query("pmf_datafile", pmf_datafile);
-   int pmf_do_average = 1;
+   int pmf_do_average = 0;
    PMF::read_pmf(pmf_datafile, pmf_do_average);
 }
