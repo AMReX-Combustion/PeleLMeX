@@ -396,6 +396,10 @@ void PeleLM::computeInstantaneousReactionRate(int lev,
 {
    auto ldata_p = getLevelDataPtr(lev,a_time);
 
+#ifdef AMREX_USE_EB
+   auto const& ebfact = EBFactory(lev);
+#endif
+
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
@@ -408,12 +412,38 @@ void PeleLM::computeInstantaneousReactionRate(int lev,
       auto const& mask    = a_mask.const_array(mfi);
       auto const& rhoYdot = a_I_R->array(mfi);
 
-      amrex::ParallelFor(bx, [rhoY, rhoH, T, mask, rhoYdot]
-      AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+#ifdef AMREX_USE_EB
+      auto const& flagfab = ebfact.getMultiEBCellFlagFab()[mfi];
+      auto const& flag    = flagfab.const_array();
+      if (flagfab.getType(bx) == FabType::covered) {              // Covered boxes
+         amrex::ParallelFor(bx, NUM_SPECIES, [rhoYdot]
+         AMREX_GPU_DEVICE (int i, int j, int k, int n) noexcept
+         {
+            rhoYdot(i,j,k,n) = 0.0;
+         });
+      } else if (flagfab.getType(bx) != FabType::regular ) {     // EB containing boxes 
+         amrex::ParallelFor(bx, [rhoY, rhoH, T, mask, rhoYdot, flag]
+         AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+         {
+            if ( flag(i,j,k).isCovered() ) {
+               for (int n = 0; n<NUM_SPECIES; n++) {
+                  rhoYdot(i,j,k,n) = 0.0;
+               }
+            } else {
+               reactionRateRhoY( i, j, k, rhoY, rhoH, T, mask,
+                                 rhoYdot );
+            }
+         });
+      } else
+#endif
       {
-         reactionRateRhoY( i, j, k, rhoY, rhoH, T, mask,
-                           rhoYdot );
-      });
+         amrex::ParallelFor(bx, [rhoY, rhoH, T, mask, rhoYdot]
+         AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+         {
+            reactionRateRhoY( i, j, k, rhoY, rhoH, T, mask,
+                              rhoYdot );
+         });
+      }
    }
 }
 
