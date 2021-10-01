@@ -580,6 +580,12 @@ class PeleLM : public amrex::AmrCore {
 
    void makeEBGeometry();
 
+   void initialRedistribution();
+
+   void initCoveredState();
+   void setCoveredState(const PeleLM::TimeStamp &a_time);
+   void setCoveredState(int lev, const PeleLM::TimeStamp &a_time);
+
    void redistributeAofS(int a_lev,
                          amrex::Real &a_dt,
                          amrex::MultiFab &a_tmpDiv, int div_comp,
@@ -974,7 +980,9 @@ class PeleLM : public amrex::AmrCore {
 #ifdef AMREX_USE_EB
    // EB
    int m_refine_cutcells = 1;
-   std::string m_adv_redist_type = "StateRedist";
+   amrex::Vector<amrex::Real> coveredState_h;
+   amrex::Gpu::DeviceVector<amrex::Real> coveredState_d;
+   std::string m_adv_redist_type = "NewStateRedist";
    std::string m_diff_redist_type = "FluxRedist";
 #endif
    //-----------------------------------------------------------------------------
