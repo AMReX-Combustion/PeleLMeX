@@ -35,7 +35,7 @@ void PeleLM::MakeNewLevelFromScratch( int lev,
    // Define the FAB Factory
 #ifdef AMREX_USE_EB
    m_factory[lev] = makeEBFabFactory(geom[lev], grids[lev], dmap[lev],
-                                     {4,4,4},
+                                     {6,6,6},
                                      EBSupport::full);
 #else
    m_factory[lev].reset(new FArrayBoxFactory());
@@ -94,6 +94,13 @@ void PeleLM::initData() {
       // with MakeNewLevelFromScratch.
       InitFromScratch(m_cur_time);
       resetCoveredMask();
+
+#ifdef AMREX_USE_EB
+      //----------------------------------------------------------------
+      // Initial redistribution
+      initCoveredState();
+      initialRedistribution();
+#endif
 
       //----------------------------------------------------------------
       // AverageDown and FillPatch the NewState
