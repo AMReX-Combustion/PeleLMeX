@@ -187,7 +187,11 @@ void PeleLM::WritePlotFile() {
          MultiFab::Copy(mf_plt[lev], *mf, 0, cnt, mf->nComp(), 0);
          cnt += mf->nComp();
       }
+#ifdef AMREX_USE_EB
+      EB_set_covered(mf_plt[lev],0.0);
+#endif
    }
+
 
    // No SubCycling, all levels the same step.
    Vector<int> istep(finest_level + 1, m_nstep);
