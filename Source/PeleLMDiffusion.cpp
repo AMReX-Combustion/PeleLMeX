@@ -457,6 +457,9 @@ void PeleLM::computeSpeciesEnthalpyFlux(const Vector<Array<MultiFab*,AMREX_SPACE
 
    for (int lev = 0; lev <= finest_level; ++lev) {
 
+#ifdef AMREX_USE_EB
+      auto const& ebfact = EBFactory(lev);
+#endif
       //------------------------------------------------------------------------
       // Compute the cell-centered species enthalpies
       int nGrow = 1;
@@ -470,11 +473,35 @@ void PeleLM::computeSpeciesEnthalpyFlux(const Vector<Array<MultiFab*,AMREX_SPACE
          const Box& gbx  = mfi.growntilebox();
          auto const& Temp_arr  = a_temp[lev]->const_array(mfi);
          auto const& Hi_arr    = Enth.array(mfi);
-         amrex::ParallelFor(gbx, [Temp_arr, Hi_arr]
-         AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+
+#ifdef AMREX_USE_EB
+         auto const& flagfab = ebfact.getMultiEBCellFlagFab()[mfi];
+         auto const& flag    = flagfab.const_array();
+         if (flagfab.getType(gbx) == FabType::covered) {              // Covered boxes
+            amrex::ParallelFor(gbx, [Hi_arr]
+            AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+            {
+               Hi_arr(i,j,k) = 0.0;
+            });
+         } else if (flagfab.getType(gbx) != FabType::regular ) {     // EB containing boxes 
+            amrex::ParallelFor(gbx, [Temp_arr, Hi_arr, flag]
+            AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+            {
+               if ( flag(i,j,k).isCovered() ) {
+                  Hi_arr(i,j,k) = 0.0;
+               } else {
+                  getHGivenT( i, j, k, Temp_arr, Hi_arr );
+               }
+            });
+         } else
+#endif
          {
-            getHGivenT( i, j, k, Temp_arr, Hi_arr );
-         });
+            amrex::ParallelFor(gbx, [Temp_arr, Hi_arr]
+            AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+            {
+               getHGivenT( i, j, k, Temp_arr, Hi_arr );
+            });
+         }
       }
 
       //------------------------------------------------------------------------
