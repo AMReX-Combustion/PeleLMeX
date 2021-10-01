@@ -405,7 +405,7 @@ void PeleLM::resetCoveredMask()
 {
    if (!m_resetCoveredMask) return;
 
-   if (m_verbose) Print() << " Resetting covered cells mask \n";
+   if (m_verbose) Print() << " Resetting fine-covered cells mask \n";
 
    for (int lev = 0; lev < finest_level; ++lev) {
       BoxArray baf = grids[lev+1];
