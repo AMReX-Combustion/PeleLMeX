@@ -18,7 +18,7 @@ void PeleLM::MakeNewLevelFromCoarse( int lev,
    // New level factory
 #ifdef AMREX_USE_EB
    std::unique_ptr<FabFactory<FArrayBox> > new_fact = makeEBFabFactory(geom[lev], ba, dm,
-                                                                       {4,4,4},
+                                                                       {6,6,6},
                                                                        EBSupport::full);
 #else
    std::unique_ptr<FabFactory<FArrayBox> > new_fact(new FArrayBoxFactory());
@@ -103,7 +103,7 @@ void PeleLM::RemakeLevel( int lev,
    // New level factory
 #ifdef AMREX_USE_EB
    std::unique_ptr<FabFactory<FArrayBox> > new_fact = makeEBFabFactory(geom[lev], ba, dm,
-                                                                       {4,4,4},
+                                                                       {6,6,6},
                                                                        EBSupport::full);
 #else
    std::unique_ptr<FabFactory<FArrayBox> > new_fact(new FArrayBoxFactory());
