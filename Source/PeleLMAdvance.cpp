@@ -145,7 +145,7 @@ void PeleLM::Advance(int is_initIter) {
    if (m_verbose > 1) {
       Real VelAdvEnd = ParallelDescriptor::second() - VelAdvStart;
       ParallelDescriptor::ReduceRealMax(VelAdvEnd, ParallelDescriptor::IOProcessorNumber());
-      amrex::Print() << "   - Advance()::VelocityAdvance " << VelAdvEnd << "\n";
+      amrex::Print() << "   - Advance()::VelocityAdvance  --> Time: " << VelAdvEnd << "\n";
    }
    //----------------------------------------------------------------
 
@@ -161,7 +161,7 @@ void PeleLM::Advance(int is_initIter) {
    {
       Real run_time = ParallelDescriptor::second() - strt_time;
       ParallelDescriptor::ReduceRealMax(run_time, ParallelDescriptor::IOProcessorNumber());
-      amrex::Print() << " >> PeleLM::Advance() " << run_time << "\n";
+      amrex::Print() << " >> PeleLM::Advance() --> Time: " << run_time << "\n";
    }
 }
 
@@ -169,6 +169,7 @@ void PeleLM::oneSDC(int sdcIter,
                     std::unique_ptr<AdvanceAdvData> &advData,
                     std::unique_ptr<AdvanceDiffData> &diffData)
 {
+   BL_PROFILE("PeleLM::oneSDC()");
    m_sdcIter = sdcIter;
 
    if (m_verbose > 0) {
@@ -226,7 +227,7 @@ void PeleLM::oneSDC(int sdcIter,
    if (m_verbose > 1) {
       Real MACEnd = ParallelDescriptor::second() - MACStart;
       ParallelDescriptor::ReduceRealMax(MACEnd, ParallelDescriptor::IOProcessorNumber());
-      amrex::Print() << "   - oneSDC()::MACProjection() " << MACEnd << "\n";
+      amrex::Print() << "   - oneSDC()::MACProjection()   --> Time: " << MACEnd << "\n";
    }
    //----------------------------------------------------------------
 
@@ -250,7 +251,7 @@ void PeleLM::oneSDC(int sdcIter,
    if (m_verbose > 1) {
       Real ScalAdvEnd = ParallelDescriptor::second() - ScalAdvStart;
       ParallelDescriptor::ReduceRealMax(ScalAdvEnd, ParallelDescriptor::IOProcessorNumber());
-      amrex::Print() << "   - oneSDC()::ScalarAdvection() " << ScalAdvEnd << "\n";
+      amrex::Print() << "   - oneSDC()::ScalarAdvection() --> Time: " << ScalAdvEnd << "\n";
    }
    //----------------------------------------------------------------
 
@@ -269,7 +270,7 @@ void PeleLM::oneSDC(int sdcIter,
    if (m_verbose > 1) {
       Real ScalDiffEnd = ParallelDescriptor::second() - ScalDiffStart;
       ParallelDescriptor::ReduceRealMax(ScalDiffEnd, ParallelDescriptor::IOProcessorNumber());
-      amrex::Print() << "   - oneSDC()::ScalarDiffusion() " << ScalDiffEnd << "\n";
+      amrex::Print() << "   - oneSDC()::ScalarDiffusion() --> Time: " << ScalDiffEnd << "\n";
    }
    //----------------------------------------------------------------
 
@@ -295,7 +296,7 @@ void PeleLM::oneSDC(int sdcIter,
    if (m_verbose > 1) {
       Real ScalReacEnd = ParallelDescriptor::second() - ScalReacStart;
       ParallelDescriptor::ReduceRealMax(ScalReacEnd, ParallelDescriptor::IOProcessorNumber());
-      amrex::Print() << "   - oneSDC()::ScalarReaction() " << ScalReacEnd << "\n";
+      amrex::Print() << "   - oneSDC()::ScalarReaction()  --> Time: " << ScalReacEnd << "\n";
    }
    //----------------------------------------------------------------
 

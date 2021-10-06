@@ -47,7 +47,7 @@ void PeleLM::getVelForces(const TimeStamp &a_time,
 
    int has_divTau = (a_divTau != nullptr);
 
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
    for (MFIter mfi(*a_velForce,TilingIfNotGPU()); mfi.isValid(); ++mfi)

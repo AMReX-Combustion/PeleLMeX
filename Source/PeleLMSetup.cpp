@@ -2,6 +2,7 @@
 #include <AMReX_ParmParse.H>
 #include <PeleLMDeriveFunc.H>
 #include "PelePhysics.H"
+#include <AMReX_buildInfo.H>
 #ifdef PLM_USE_EFIELD
 #include "EOS_Extension.H"
 #endif
@@ -22,6 +23,18 @@ void PeleLM::Setup() {
 #ifdef AMREX_USE_GPU
    sundials::MemoryHelper::Initialize();
 #endif
+
+   // Print build info to screen
+   const char* githash1 = buildInfoGetGitHash(1);
+   const char* githash2 = buildInfoGetGitHash(2);
+   const char* githash3 = buildInfoGetGitHash(3);
+   const char* githash4 = buildInfoGetGitHash(4);
+   amrex::Print() << "\n ================= Build infos =================\n";
+   amrex::Print() << " PeleLMeX    git hash: " << githash1 << "\n";
+   amrex::Print() << " AMReX       git hash: " << githash2 << "\n";
+   amrex::Print() << " PelePhysics git hash: " << githash3 << "\n";
+   amrex::Print() << " AMReX-Hydro git hash: " << githash4 << "\n";
+   amrex::Print() << " ===============================================\n";
 
    // Read PeleLM parameters
    readParameters();
