@@ -11,6 +11,12 @@ void PeleLM::MakeNewLevelFromCoarse( int lev,
    if (m_verbose > 0) {
       Print() << " Making new level " << lev << " from coarse\n";
       if (m_verbose > 2) {
+         auto const dx = geom[lev].CellSizeArray();
+         Real vol = AMREX_D_TERM(dx[0],*dx[1],*dx[2]);
+         amrex::Print() << " with " << ba.numPts() << " cells,"
+                        << " over " << ba.numPts() * vol / geom[0].ProbSize() * 100 << "% of the domain \n";
+      }
+      if (m_verbose > 3) {
          amrex::Print() << " with BoxArray " << ba << std::endl;
       }
    }
@@ -96,6 +102,12 @@ void PeleLM::RemakeLevel( int lev,
    if (m_verbose > 0) {
       Print() << " Remaking level " << lev << "\n";
       if (m_verbose > 2) {
+         auto const dx = geom[lev].CellSizeArray();
+         Real vol = AMREX_D_TERM(dx[0],*dx[1],*dx[2]);
+         amrex::Print() << " with " << ba.numPts() << " cells,"
+                        << " over " << ba.numPts() * vol / geom[0].ProbSize() * 100 << "% of the domain \n";
+      }
+      if (m_verbose > 3) {
          amrex::Print() << " with BoxArray " << ba << std::endl;
       }
    }

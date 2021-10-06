@@ -8,7 +8,7 @@ using namespace amrex;
 
 void PeleLM::advanceChemistry(std::unique_ptr<AdvanceAdvData> &advData)
 {
-   BL_PROFILE_VAR("PeleLM::advanceChemistry()", advanceChemistry);
+   BL_PROFILE("PeleLM::advanceChemistry()");
 
    for (int lev = finest_level; lev >= 0; --lev) {
 
@@ -27,13 +27,10 @@ void PeleLM::advanceChemistry(std::unique_ptr<AdvanceAdvData> &advData)
                       *avgDownIR,
                       0,nCompIR(),refRatio(lev));
 #endif
-         //VisMF::Write(*avgDownIR,"AvgDownIR_Level"+std::to_string(lev)+"_step"+std::to_string(m_nstep));
-         //VisMF::Write(advData->Forcing[lev],"ChemForcing_Level"+std::to_string(lev)+"_step"+std::to_string(m_nstep));
          advanceChemistry(lev, m_dt, advData->Forcing[lev], avgDownIR.get());
       } else {
          advanceChemistry(lev, m_dt, advData->Forcing[lev]);
       }
-      //VisMF::Write(m_leveldatareact[lev]->I_R,"FinalIR_Level"+std::to_string(lev)+"_step"+std::to_string(m_nstep));
    }
 }
 
@@ -44,6 +41,8 @@ void PeleLM::advanceChemistry(int lev,
                               const Real &a_dt,
                               MultiFab &a_extForcing)
 {
+   BL_PROFILE("PeleLM::advanceChemistry_Lev"+std::to_string(lev)+"()");
+
    auto ldataOld_p = getLevelDataPtr(lev,AmrOldTime);
    auto ldataNew_p = getLevelDataPtr(lev,AmrNewTime);
    auto ldataR_p   = getLevelDataReactPtr(lev);
@@ -186,6 +185,7 @@ void PeleLM::advanceChemistry(int lev,
                               MultiFab &a_extForcing,
                               MultiFab *a_avgDownIR)
 {
+   BL_PROFILE("PeleLM::advanceChemistry_Lev"+std::to_string(lev)+"()");
    AMREX_ASSERT(a_avgDownIR != nullptr);
 
    auto ldataOld_p = getLevelDataPtr(lev,AmrOldTime);

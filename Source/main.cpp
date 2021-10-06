@@ -23,7 +23,7 @@ int main(int argc, char* argv[]) {
    }
 
    // timer for profiling
-   BL_PROFILE_VAR("main()", main);
+   BL_PROFILE_VAR("PeleLM::main()", main);
 
    // wallclock time
    const Real strt_total = ParallelDescriptor::second();

@@ -513,7 +513,7 @@ void PeleLM::WriteJobInfo(const std::string& path) const
       jobInfoFile << PrettyLine;
 
       jobInfoFile << "number of MPI processes: " << ParallelDescriptor::NProcs() << "\n";
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
       jobInfoFile << "number of threads:       " << omp_get_max_threads() << "\n";
 #endif
 
@@ -541,6 +541,7 @@ void PeleLM::WriteJobInfo(const std::string& path) const
       const char* githash1 = buildInfoGetGitHash(1);
       const char* githash2 = buildInfoGetGitHash(2);
       const char* githash3 = buildInfoGetGitHash(3);
+      const char* githash4 = buildInfoGetGitHash(4);
 
       if (strlen(githash1) > 0) {
          jobInfoFile << "PeleLMeX     git describe: " << githash1 << "\n";
@@ -550,6 +551,9 @@ void PeleLM::WriteJobInfo(const std::string& path) const
       }
       if (strlen(githash3) > 0) {
          jobInfoFile << "PelePhysics  git describe: " << githash3 << "\n";
+      }
+      if (strlen(githash4) > 0) {
+         jobInfoFile << "AMREX-Hydro  git describe: " << githash3 << "\n";
       }
 
       jobInfoFile << "\n\n";
