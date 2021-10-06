@@ -25,8 +25,8 @@ void PeleLM::predictVelocity(std::unique_ptr<AdvanceAdvData>  &advData,
    Vector<MultiFab> divtau(finest_level+1);
    Vector<MultiFab> velForces(finest_level+1);
    for (int lev = 0; lev <= finest_level; ++lev) {
-      divtau[lev].define(grids[lev], dmap[lev], AMREX_SPACEDIM, 0);
-      velForces[lev].define(grids[lev], dmap[lev], AMREX_SPACEDIM, nGrow_force);
+      divtau[lev].define(grids[lev], dmap[lev], AMREX_SPACEDIM, 0, MFInfo(), Factory(lev));
+      velForces[lev].define(grids[lev], dmap[lev], AMREX_SPACEDIM, nGrow_force, MFInfo(), Factory(lev));
    }
    int use_density = 0;
    computeDivTau(AmrOldTime,GetVecOfPtrs(divtau),use_density);
@@ -46,6 +46,11 @@ void PeleLM::predictVelocity(std::unique_ptr<AdvanceAdvData>  &advData,
       auto ldata_p = getLevelDataPtr(lev,AmrOldTime);
       Real time = getTime(lev,AmrOldTime);
 
+      //----------------------------------------------------------------
+#ifdef AMREX_USE_EB
+      const auto& ebfact = EBFactory(lev);
+#endif
+
       HydroUtils::ExtrapVelToFaces(ldata_p->velocity,
                                    velForces[lev],
                                    AMREX_D_DECL(advData->umac[lev][0],
@@ -54,7 +59,7 @@ void PeleLM::predictVelocity(std::unique_ptr<AdvanceAdvData>  &advData,
                                    bcRecVel, bcRecVel_d.dataPtr(),
                                    geom[lev], m_dt,
 #ifdef AMREX_USE_EB
-                                   // TODO: ebfact
+                                   ebfact,
 #endif
                                    m_Godunov_ppm, m_Godunov_ForceInTrans,
                                    m_advection_type);

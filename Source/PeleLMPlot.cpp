@@ -58,6 +58,11 @@ void PeleLM::WritePlotFile() {
       ncomp += 1;
    }
 
+#ifdef AMREX_USE_EB
+   // Include volume fraction in plotfile
+   ncomp += 1;
+#endif
+
    // Derive
    int deriveEntryCount = 0;
    for (int ivar = 0; ivar < m_derivePlotVarCount; ivar++ ) {
@@ -121,6 +126,10 @@ void PeleLM::WritePlotFile() {
       plt_VarsName.push_back("FunctCall");
    }
 
+#ifdef AMREX_USE_EB
+   plt_VarsName.push_back("volFrac");
+#endif
+
    for (int ivar = 0; ivar < m_derivePlotVarCount; ivar++ ) {
       const PeleLMDeriveRec* rec = derive_lst.get(m_derivePlotVars[ivar]);
       for (int dvar = 0; dvar < rec->numDerive(); dvar++ ) {
@@ -167,13 +176,22 @@ void PeleLM::WritePlotFile() {
          cnt += 1;
       }
 
+#ifdef AMREX_USE_EB
+      MultiFab::Copy(mf_plt[lev], EBFactory(lev).getVolFrac(), 0, cnt, 1, 0);
+      cnt += 1;
+#endif
+
       for (int ivar = 0; ivar < m_derivePlotVarCount; ivar++ ) {
          std::unique_ptr<MultiFab> mf;
          mf = derive(m_derivePlotVars[ivar], m_cur_time, lev, 0);
          MultiFab::Copy(mf_plt[lev], *mf, 0, cnt, mf->nComp(), 0);
          cnt += mf->nComp();
       }
+#ifdef AMREX_USE_EB
+      EB_set_covered(mf_plt[lev],0.0);
+#endif
    }
+
 
    // No SubCycling, all levels the same step.
    Vector<int> istep(finest_level + 1, m_nstep);

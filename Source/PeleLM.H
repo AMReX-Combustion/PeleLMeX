@@ -511,7 +511,20 @@ class PeleLM : public amrex::AmrCore {
                        int intensiveFluxes,
                        amrex::Real scale);
 
-   void advFluxDivergence(amrex::MultiFab &a_divergence, int div_comp,
+   void fluxDivergenceRD(const amrex::Vector<const amrex::MultiFab*> &a_state,
+                         int state_comp,
+                         const amrex::Vector<amrex::MultiFab*> &a_divergence,
+                         int div_comp,
+                         const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM> > &a_fluxes,
+                         int flux_comp,
+                         int ncomp,
+                         int intensiveFluxes,
+                         const amrex::BCRec *state_bc_d,
+                         const amrex::Real &scale,
+                         const amrex::Real &a_dt);
+
+   void advFluxDivergence(int a_lev,
+                          amrex::MultiFab &a_divergence, int div_comp,
                           amrex::MultiFab &a_divu,
                           const amrex::Array<const amrex::MultiFab*,AMREX_SPACEDIM> &a_fluxes,
                           int flux_comp,
@@ -560,6 +573,43 @@ class PeleLM : public amrex::AmrCore {
    bool isStateVariable(const std::string &a_name);
    int stateVariableIndex(const std::string &a_name);
    //-----------------------------------------------------------------------------
+
+#ifdef AMREX_USE_EB
+   //-----------------------------------------------------------------------------
+   // EB
+
+   void makeEBGeometry();
+
+   void initialRedistribution();
+
+   void initCoveredState();
+   void setCoveredState(const PeleLM::TimeStamp &a_time);
+   void setCoveredState(int lev, const PeleLM::TimeStamp &a_time);
+
+   void redistributeAofS(int a_lev,
+                         amrex::Real &a_dt,
+                         amrex::MultiFab &a_tmpDiv, int div_comp,
+                         amrex::MultiFab &a_AofS, int aofs_comp,
+                         amrex::MultiFab &a_state, int state_comp,
+                         int ncomp,
+                         const amrex::BCRec * d_bc,
+                         const amrex::Geometry &a_geom);
+
+   void redistributeDiff(int a_lev,
+                         const amrex::Real &a_dt,
+                         amrex::MultiFab &a_tmpDiv, int div_comp,
+                         amrex::MultiFab &a_AofS, int aofs_comp,
+                         const amrex::MultiFab &a_state, int state_comp,
+                         int ncomp,
+                         const amrex::BCRec * d_bc,
+                         const amrex::Geometry &a_geom);
+
+   // static_cast factory into ebfactory
+   amrex::EBFArrayBoxFactory const& 
+   EBFactory (int lev) const noexcept { 
+      return static_cast<amrex::EBFArrayBoxFactory const&>(*m_factory[lev]);
+   }
+#endif
 
 
    //-----------------------------------------------------------------------------
@@ -728,6 +778,7 @@ class PeleLM : public amrex::AmrCore {
    amrex::Vector<amrex::MultiFab* > getDensityVect(const PeleLM::TimeStamp &a_time);
    amrex::Vector<amrex::MultiFab* > getSpeciesVect(const PeleLM::TimeStamp &a_time);
    amrex::Vector<amrex::MultiFab* > getTempVect(const PeleLM::TimeStamp &a_time);
+   amrex::Vector<amrex::MultiFab* > getRhoHVect(const PeleLM::TimeStamp &a_time);
    amrex::Vector<amrex::MultiFab* > getDivUVect(const PeleLM::TimeStamp &a_time);
    amrex::Vector<amrex::MultiFab* > getDiffusivityVect(const PeleLM::TimeStamp &a_time);
    amrex::Vector<amrex::MultiFab* > getViscosityVect(const PeleLM::TimeStamp &a_time);
@@ -909,7 +960,11 @@ class PeleLM : public amrex::AmrCore {
    std::ofstream tmpSpecFile;
 
    // Number of ghost cells
+#ifdef AMREX_USE_EB
+   int m_nGrowState = 4;
+#else
    int m_nGrowState = 3;
+#endif
    int m_nGrowAdv = 1;
    int m_nGrowMAC = 1;
 
@@ -921,8 +976,14 @@ class PeleLM : public amrex::AmrCore {
    // Chem
    amrex::Real m_rtol_chem = 1.0e-10;
    amrex::Real m_atol_chem = 1.0e-10;
+
 #ifdef AMREX_USE_EB
-   int m_refine_cutcells = 1
+   // EB
+   int m_refine_cutcells = 1;
+   amrex::Vector<amrex::Real> coveredState_h;
+   amrex::Gpu::DeviceVector<amrex::Real> coveredState_d;
+   std::string m_adv_redist_type = "NewStateRedist";
+   std::string m_diff_redist_type = "FluxRedist";
 #endif
    //-----------------------------------------------------------------------------
 

@@ -57,6 +57,11 @@ void PeleLM::computeVelocityAdvTerm(std::unique_ptr<AdvanceAdvData> &advData)
       }
 
       //----------------------------------------------------------------
+#ifdef AMREX_USE_EB
+      const auto& ebfact = EBFactory(lev);
+#endif
+
+      //----------------------------------------------------------------
       // Compute the velocity fluxes
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -89,10 +94,10 @@ void PeleLM::computeVelocityAdvTerm(std::unique_ptr<AdvanceAdvData> &advData)
                                                  divu_arr, force_arr,
                                                  geom[lev], m_dt,
                                                  bcRecVel, bcRecVel_d.dataPtr(), AdvTypeVel_d.dataPtr(),
-                                                 m_Godunov_ppm, m_Godunov_ForceInTrans,
 #ifdef AMREX_USE_EB
-                                                 // TODO ebfact
+                                                 ebfact,
 #endif
+                                                 m_Godunov_ppm, m_Godunov_ForceInTrans,
                                                  is_velocity, fluxes_are_area_weighted,
                                                  m_advection_type);
       }
@@ -133,7 +138,13 @@ void PeleLM::computeVelocityAdvTerm(std::unique_ptr<AdvanceAdvData> &advData)
       }
 
       bool fluxes_are_area_weighted = false;
-      advFluxDivergence(advData->AofS[lev], VELX,
+#ifdef AMREX_USE_EB
+      //----------------------------------------------------------------
+      // Use a temporary MF to hold divergence before redistribution
+      int nGrow_divT = 3;
+      MultiFab divTmp(grids[lev],dmap[lev],AMREX_SPACEDIM,nGrow_divT,MFInfo(),EBFactory(lev));
+      divTmp.setVal(0.0);
+      advFluxDivergence(lev, divTmp, 0,
                         divu,
                         GetArrOfConstPtrs(fluxes[lev]), 0,
                         GetArrOfConstPtrs(faces[lev]), 0,
@@ -141,6 +152,28 @@ void PeleLM::computeVelocityAdvTerm(std::unique_ptr<AdvanceAdvData> &advData)
                         AdvTypeVel_d.dataPtr(),
                         geom[lev], -1.0,
                         fluxes_are_area_weighted);
+
+      divTmp.FillBoundary(geom[lev].periodicity());
+
+      redistributeAofS(lev, m_dt,
+                       divTmp, 0,
+                       advData->AofS[lev], VELX,
+                       ldata_p->velocity, 0,
+                       AMREX_SPACEDIM,
+                       bcRecVel_d.dataPtr(),
+                       geom[lev]);
+#else
+      //----------------------------------------------------------------
+      // Otherwise go directly into AofS
+      advFluxDivergence(lev, advData->AofS[lev], VELX,
+                        divu,
+                        GetArrOfConstPtrs(fluxes[lev]), 0,
+                        GetArrOfConstPtrs(faces[lev]), 0,
+                        AMREX_SPACEDIM,
+                        AdvTypeVel_d.dataPtr(),
+                        geom[lev], -1.0,
+                        fluxes_are_area_weighted);
+#endif
    }
 }
 
@@ -152,7 +185,7 @@ void PeleLM::updateVelocity(int is_init,
    // Compute t^n divTau
    Vector<MultiFab> divtau(finest_level+1);
    for (int lev = 0; lev <= finest_level; ++lev) {
-      divtau[lev].define(grids[lev], dmap[lev], AMREX_SPACEDIM, 0);
+      divtau[lev].define(grids[lev], dmap[lev], AMREX_SPACEDIM, 0, MFInfo(), Factory(lev));
    }
    int use_density = 0;
    Real CrankNicholsonFactor = 0.5;
@@ -271,7 +304,7 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
       auto ldata_p = getLevelDataPtr(lev,AmrOldTime);
 
       // Define edge state: Density + Species + RhoH + Temp
-      int nGrow = 0; // TODO more needed for EB ?
+      int nGrow = 0;
       Array<MultiFab,AMREX_SPACEDIM> edgeState;
       for (int idim = 0; idim <AMREX_SPACEDIM; idim++) {
          edgeState[idim].define(amrex::convert(grids[lev],IntVect::TheDimensionVector(idim)),
@@ -294,6 +327,11 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
          // TODO: check the number of ghost cells
          MultiFab::Copy(divu,advData->mac_divu[lev],0,0,1,nGrow_divu);
       }
+
+      //----------------------------------------------------------------
+#ifdef AMREX_USE_EB
+      const auto& ebfact = EBFactory(lev);
+#endif
 
       // Get the species edge state and advection term
 #ifdef AMREX_USE_OMP
@@ -328,10 +366,10 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
                                                  divu_arr, force_arr,
                                                  geom[lev], m_dt,
                                                  bcRecSpec, bcRecSpec_d.dataPtr(), AdvTypeSpec_d.dataPtr(),
-                                                 m_Godunov_ppm, m_Godunov_ForceInTrans,
 #ifdef AMREX_USE_EB
-                                                 // TODO ebfact
+                                                 ebfact,
 #endif
+                                                 m_Godunov_ppm, m_Godunov_ForceInTrans,
                                                  is_velocity, fluxes_are_area_weighted,
                                                  m_advection_type);
 
@@ -360,10 +398,10 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
                                                     divu_arr, forceions_arr,
                                                     geom[lev], m_dt,
                                                     bcRecIons, bcRecIons_d.dataPtr(), AdvTypeIons_d.dataPtr(),
-                                                    m_Godunov_ppm, m_Godunov_ForceInTrans,
 #ifdef AMREX_USE_EB
-                                                    // TODO ebfact
+                                                    ebfact,
 #endif
+                                                    m_Godunov_ppm, m_Godunov_ForceInTrans,
                                                     is_velocity, fluxes_are_area_weighted,
                                                     m_advection_type);
          }
@@ -379,10 +417,10 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
                                                  divu_arr, force_arr,
                                                  geom[lev], m_dt,
                                                  bcRecSpec, bcRecSpec_d.dataPtr(), AdvTypeSpec_d.dataPtr(),
-                                                 m_Godunov_ppm, m_Godunov_ForceInTrans,
 #ifdef AMREX_USE_EB
-                                                 // TODO ebfact
+                                                 ebfact,
 #endif
+                                                 m_Godunov_ppm, m_Godunov_ForceInTrans,
                                                  is_velocity, fluxes_are_area_weighted,
                                                  m_advection_type);
 #endif
@@ -442,10 +480,10 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
                                                  divu_arr, force_arr,
                                                  geom[lev], m_dt,
                                                  bcRecTemp, bcRecTemp_d.dataPtr(), AdvTypeTemp_d.dataPtr(),
-                                                 m_Godunov_ppm, m_Godunov_ForceInTrans,
 #ifdef AMREX_USE_EB
-                                                 // TODO ebfact
+                                                 ebfact,
 #endif
+                                                 m_Godunov_ppm, m_Godunov_ForceInTrans,
                                                  is_velocity, fluxes_are_area_weighted,
                                                  m_advection_type);
       }
@@ -467,7 +505,11 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
             amrex::ParallelFor(ebx, [rho, rhoY, T, rhoHm]
             AMREX_GPU_DEVICE (int i, int j, int k) noexcept
             {
-                getRHmixGivenTY( i, j, k, rho, rhoY, T, rhoHm );
+                if (rho(i,j,k) <= 0.0) {        // Covered faces
+                    rhoHm(i,j,k) = 0.0;
+                } else {
+                    getRHmixGivenTY( i, j, k, rho, rhoY, T, rhoHm );
+                }
             });
          }
       }
@@ -503,10 +545,10 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
                                                  divu_arr, force_arr,
                                                  geom[lev], m_dt,
                                                  bcRecRhoH, bcRecRhoH_d.dataPtr(), AdvTypeRhoH_d.dataPtr(),
-                                                 m_Godunov_ppm, m_Godunov_ForceInTrans,
 #ifdef AMREX_USE_EB
-                                                 // TODO ebfact
+                                                 ebfact,
 #endif
+                                                 m_Godunov_ppm, m_Godunov_ForceInTrans,
                                                  is_velocity, fluxes_are_area_weighted,
                                                  m_advection_type);
       }
@@ -550,7 +592,13 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
       }
 
       bool fluxes_are_area_weighted = false;
-      advFluxDivergence(advData->AofS[lev], FIRSTSPEC,
+#ifdef AMREX_USE_EB
+      //----------------------------------------------------------------
+      // Use a temporary MF to hold divergence before redistribution
+      int nGrow_divTmp= 3;
+      MultiFab divTmp(grids[lev],dmap[lev],NUM_SPECIES+1,nGrow_divTmp,MFInfo(),EBFactory(lev));
+      divTmp.setVal(0.0);
+      advFluxDivergence(lev, divTmp, 0,
                         divu,
                         GetArrOfConstPtrs(fluxes[lev]), 0,
                         GetArrOfConstPtrs(fluxes[lev]), 0, // This will not be used since none of rhoY/rhoH in convective
@@ -558,6 +606,37 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
                         AdvTypeAll_d.dataPtr(),
                         geom[lev], -1.0,
                         fluxes_are_area_weighted);
+
+      divTmp.FillBoundary(geom[lev].periodicity());
+
+      // Need separate redistribution of rhoYs/rhoH
+      redistributeAofS(lev, m_dt,
+                       divTmp, 0,
+                       advData->AofS[lev], FIRSTSPEC,
+                       ldata_p->species, 0,
+                       NUM_SPECIES,
+                       bcRecSpec_d.dataPtr(),
+                       geom[lev]);
+
+      redistributeAofS(lev, m_dt,
+                       divTmp, NUM_SPECIES,
+                       advData->AofS[lev], RHOH,
+                       ldata_p->rhoh, 0,
+                       1,
+                       bcRecRhoH_d.dataPtr(),
+                       geom[lev]);
+#else
+      //----------------------------------------------------------------
+      // Otherwise go directly into AofS
+      advFluxDivergence(lev, advData->AofS[lev], FIRSTSPEC,
+                        divu,
+                        GetArrOfConstPtrs(fluxes[lev]), 0,
+                        GetArrOfConstPtrs(fluxes[lev]), 0, // This will not be used since none of rhoY/rhoH in convective
+                        NUM_SPECIES+1,
+                        AdvTypeAll_d.dataPtr(),
+                        geom[lev], -1.0,
+                        fluxes_are_area_weighted);
+#endif
    }
 
    //----------------------------------------------------------------

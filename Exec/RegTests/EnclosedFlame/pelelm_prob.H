@@ -37,9 +37,9 @@ void pelelm_initdata(int i, int j, int k,
                  const amrex::Real Ly = prob_hi[1] - prob_lo[1];,
                  const amrex::Real Lz = prob_hi[2] - prob_lo[2]);
 
-    AMREX_D_TERM(const amrex::Real xc = prob_lo[0] + 0.5 * Lx;,
-                 const amrex::Real yc = prob_lo[1] + 0.5 * Ly;,
-                 const amrex::Real zc = prob_lo[2] + 0.5 * Lz;);
+    AMREX_D_TERM(const amrex::Real xc = prob_lo[0];,// + 0.5 * Lx;,
+                 const amrex::Real yc = prob_lo[1];,// + 0.5 * Ly;,
+                 const amrex::Real zc = prob_lo[2];);// + 0.5 * Lz;);
 
     constexpr amrex::Real Pi = 3.14159265358979323846264338327950288;
 
@@ -71,20 +71,19 @@ void pelelm_initdata(int i, int j, int k,
 
 #elif ( AMREX_SPACEDIM == 3 )
 
-       pert = prob_parm.pertmag *
-             (1.0 * std::sin(2 * Pi * 4 * x / Lx) *
-                std::sin(2 * Pi * 5 * y / Ly) +
-              1.023 * std::sin(2 * Pi * 2 * (x - 0.004598) / Lx) *
-                std::sin(2 * Pi * 4 * (y - 0.0053765) / Ly) +
-              0.945 * std::sin(2 * Pi * 3 * (x - 0.00712435) / Lx) *
-                std::sin(2 * Pi * 3 * (y - 0.02137) / Ly) +
-              1.017 * std::sin(2 * Pi * 5 * (x - 0.0033) / Lx) *
-                std::sin(2 * Pi * 6 * (y - 0.018) / Ly) +
-              0.982 * std::sin(2 * Pi * 5 * (x - 0.014234) / Lx));
+       amrex::Real angle = std::atan2((y-yc),(x-xc));
+       amrex::Real angle2 = std::atan2((z-zc),(y-yc));
+       pert = prob_parm.pertmag * 
+             (0.5 * std::sin(2*angle) +
+              0.7 * std::sin(8 * angle ) +
+              1.1 * std::sin(4 * angle  )) *
+             (1.04 * std::sin(2*angle2) +
+              0.3 * std::sin(8 * angle2 ) +
+              0.85 * std::sin(16 * angle2  ));
     }
 
-    amrex::Real y1 = (z - prob_parm.standoff - 0.5*dx[2] + pert)*100;
-    amrex::Real y2 = (z - prob_parm.standoff + 0.5*dx[2] + pert)*100;
+    amrex::Real y1 = 3.6 - (radius - prob_parm.standoff - 1.42*dx[1] + pert)*100;
+    amrex::Real y2 = 3.6 - (radius - prob_parm.standoff + 1.42*dx[1] + pert)*100;
 #endif
 
 

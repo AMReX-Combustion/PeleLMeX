@@ -18,9 +18,7 @@ void PeleLM::MakeNewLevelFromCoarse( int lev,
    // New level factory
 #ifdef AMREX_USE_EB
    std::unique_ptr<FabFactory<FArrayBox> > new_fact = makeEBFabFactory(geom[lev], ba, dm,
-                                                                       {nghost_eb_basic(),
-                                                                        nghost_eb_volume(),
-                                                                        nghost_eb_full()},
+                                                                       {6,6,6},
                                                                        EBSupport::full);
 #else
    std::unique_ptr<FabFactory<FArrayBox> > new_fact(new FArrayBoxFactory());
@@ -66,7 +64,6 @@ void PeleLM::MakeNewLevelFromCoarse( int lev,
       m_leveldatareact[lev] = std::move(n_leveldatareact);
    }
 
-
    if (!m_incompressible) {
       // Initialize thermodynamic pressure
       setThermoPress(lev, AmrNewTime);
@@ -106,9 +103,7 @@ void PeleLM::RemakeLevel( int lev,
    // New level factory
 #ifdef AMREX_USE_EB
    std::unique_ptr<FabFactory<FArrayBox> > new_fact = makeEBFabFactory(geom[lev], ba, dm,
-                                                                       {nghost_eb_basic(),
-                                                                        nghost_eb_volume(),
-                                                                        nghost_eb_full()},
+                                                                       {6,6,6},
                                                                        EBSupport::full);
 #else
    std::unique_ptr<FabFactory<FArrayBox> > new_fact(new FArrayBoxFactory());

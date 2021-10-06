@@ -181,6 +181,9 @@ void PeleLM::calc_dPdt(const TimeStamp &a_time,
 
    for (int lev = 0; lev <= finest_level; ++lev) {
       calc_dPdt(lev, a_time, a_dPdt[lev]);
+#ifdef AMRE_USE_EB
+      EB_set_covered(a_dPdt[lev],0.0);
+#endif
    }
 
    // Fill ghost cell(s)

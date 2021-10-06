@@ -12,7 +12,7 @@ void PeleLM::fluxDivergence(const Vector<MultiFab*> &a_divergence,
                             int intensiveFluxes,
                             Real scale) {
 
-   BL_PROFILE_VAR("PeleLM::fluxDivergence()", fluxDivergence);
+   BL_PROFILE("PeleLM::fluxDivergence()");
    if (intensiveFluxes) {        // Fluxes are intensive -> need area scaling in div
       for (int lev = 0; lev <= finest_level; ++lev) {
          intFluxDivergenceLevel(lev,*a_divergence[lev], div_comp, a_fluxes[lev], flux_comp,
@@ -24,6 +24,49 @@ void PeleLM::fluxDivergence(const Vector<MultiFab*> &a_divergence,
                                 ncomp, scale);
       }
    }
+}
+
+void PeleLM::fluxDivergenceRD(const Vector<const MultiFab*> &a_state,
+                              int state_comp,
+                              const Vector<MultiFab*> &a_divergence,
+                              int div_comp,
+                              const Vector<Array<MultiFab*,AMREX_SPACEDIM> > &a_fluxes,
+                              int flux_comp,
+                              int ncomp,
+                              int intensiveFluxes,
+                              const BCRec *state_bc_d,
+                              const Real &scale,
+                              const Real &a_dt)
+{
+    BL_PROFILE("PeleLM::fluxDivergenceRD()");
+#ifdef AMREX_USE_EB
+    for (int lev = 0; lev <= finest_level; ++lev) {
+        //----------------------------------------------------------------
+        // Use a temporary MF to hold divergence before redistribution
+        int nGrow_divTmp= 3;
+        MultiFab divTmp(grids[lev],dmap[lev],ncomp,nGrow_divTmp,MFInfo(),EBFactory(lev));
+        divTmp.setVal(0.0);
+        if (intensiveFluxes) {        // Fluxes are intensive -> need area scaling in div
+            intFluxDivergenceLevel(lev, divTmp, 0, a_fluxes[lev], flux_comp, ncomp, scale);
+        } else {                      // Fluxes are extensive
+            extFluxDivergenceLevel(lev, divTmp, 0, a_fluxes[lev], flux_comp, ncomp, scale);
+        }
+        
+        // Need FillBoundary before redistribution
+        divTmp.FillBoundary(geom[lev].periodicity());
+        
+        // Redistribute diffusion term
+        redistributeDiff(lev, a_dt,
+                         divTmp, 0,
+                         *a_divergence[lev], div_comp,
+                         *a_state[lev], state_comp,
+                         ncomp,
+                         state_bc_d,
+                         geom[lev]);
+    }
+#else
+    fluxDivergence(a_divergence, div_comp, a_fluxes, flux_comp, ncomp, intensiveFluxes, scale);
+#endif
 }
 
 void PeleLM::extFluxDivergenceLevel(int lev,
@@ -42,11 +85,10 @@ void PeleLM::extFluxDivergenceLevel(int lev,
    geom[lev].GetVolume(volume);
 
 #ifdef AMREX_USE_EB
-      auto const& ebfactory = dynamic_cast<EBFArrayBoxFactory const&>(Factory());
+   auto const& ebfact = EBFactory(lev);
 #endif
 
-
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
    for (MFIter mfi(a_divergence,TilingIfNotGPU()); mfi.isValid(); ++mfi)
@@ -59,7 +101,7 @@ void PeleLM::extFluxDivergenceLevel(int lev,
       auto const& vol          = volume.const_array(mfi);
 
 #ifdef AMREX_USE_EB
-      auto const& flagfab = ebfactory.getMultiEBCellFlagFab()[mfi];
+      auto const& flagfab = ebfact.getMultiEBCellFlagFab()[mfi];
       auto const& flag    = flagfab.const_array();
 #endif
 
@@ -71,12 +113,12 @@ void PeleLM::extFluxDivergenceLevel(int lev,
             divergence(i,j,k,n) = 0.0;
          });
       } else if (flagfab.getType(bx) != FabType::regular ) {     // EB containing boxes 
-         auto vfrac = ebfactory.getVolFrac().const_array(mfi);
+         auto vfrac = ebfact.getVolFrac().const_array(mfi);
          amrex::ParallelFor(bx, [ncomp, flag, vfrac, divergence, AMREX_D_DECL(fluxX, fluxY, fluxZ), vol, scale]
          AMREX_GPU_DEVICE (int i, int j, int k) noexcept
          {
             if ( flag(i,j,k).isCovered() ) {
-               for (int n = 0; n < nComp; n++) {
+               for (int n = 0; n < ncomp; n++) {
                   divergence(i,j,k,n) = 0.0;
                }
             } else if ( flag(i,j,k).isRegular() ) {
@@ -88,7 +130,7 @@ void PeleLM::extFluxDivergenceLevel(int lev,
                extFluxDivergence_K( i, j, k, ncomp,
                                     AMREX_D_DECL(fluxX, fluxY, fluxZ),
                                     vol, scale, divergence);
-               for (int n = 0; n < nComp; n++) {
+               for (int n = 0; n < ncomp; n++) {
                   divergence(i,j,k,n) *= vfracinv;
                }
             }
@@ -107,16 +149,6 @@ void PeleLM::extFluxDivergenceLevel(int lev,
       }
 #endif
    }
-
-#ifdef AMREX_USE_EB
-   {
-      MultiFab div_SrcGhostCell(grids,dmap,nComp,a_divergence.nGrow()+2,MFInfo(),Factory());
-      div_SrcGhostCell.setVal(0.);
-      div_SrcGhostCell.copy(a_divergence, div_comp, 0, ncomp);
-      amrex::single_level_weighted_redistribute( {div_SrcGhostCell}, {a_divergence}, *volfrac, div_comp, ncomp, {geom} );
-   }
-   EB_set_covered(fdiv,0.);
-#endif
 }
 
 void PeleLM::intFluxDivergenceLevel(int lev,
@@ -147,13 +179,12 @@ void PeleLM::intFluxDivergenceLevel(int lev,
 
    // Get areafrac if EB
 #ifdef AMREX_USE_EB
-      auto const& ebfactory = dynamic_cast<EBFArrayBoxFactory const&>(Factory());
+      auto const& ebfact = EBFactory(lev);
       Array< const MultiCutFab*,AMREX_SPACEDIM> areafrac;
-      areafrac  = ebfactory.getAreaFrac();
+      areafrac  = ebfact.getAreaFrac();
 #endif
 
-
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
    for (MFIter mfi(a_divergence,TilingIfNotGPU()); mfi.isValid(); ++mfi)
@@ -166,7 +197,7 @@ void PeleLM::intFluxDivergenceLevel(int lev,
       auto const& vol          = volume.const_array(mfi);
 
 #ifdef AMREX_USE_EB
-      auto const& flagfab = ebfactory.getMultiEBCellFlagFab()[mfi];
+      auto const& flagfab = ebfact.getMultiEBCellFlagFab()[mfi];
       auto const& flag    = flagfab.const_array();
 #endif
 
@@ -178,7 +209,7 @@ void PeleLM::intFluxDivergenceLevel(int lev,
             divergence(i,j,k,n) = 0.0;
          });
       } else if (flagfab.getType(bx) != FabType::regular ) {     // EB containing boxes 
-         auto vfrac = ebfactory.getVolFrac().const_array(mfi);
+         auto vfrac = ebfact.getVolFrac().const_array(mfi);
          AMREX_D_TERM( const auto& afrac_x = areafrac[0]->array(mfi);,
                        const auto& afrac_y = areafrac[1]->array(mfi);,
                        const auto& afrac_z = areafrac[2]->array(mfi););
@@ -190,7 +221,7 @@ void PeleLM::intFluxDivergenceLevel(int lev,
          AMREX_GPU_DEVICE (int i, int j, int k) noexcept
          {
             if ( flag(i,j,k).isCovered() ) {
-               for (int n = 0; n < nComp; n++) {
+               for (int n = 0; n < ncomp; n++) {
                   divergence(i,j,k,n) = 0.0;
                }
             } else if ( flag(i,j,k).isRegular() ) {
@@ -205,7 +236,7 @@ void PeleLM::intFluxDivergenceLevel(int lev,
                                     AMREX_D_DECL(afrac_x, afrac_y, afrac_z),
                                     AMREX_D_DECL(areax, areay, areaz),
                                     vol, scale, divergence);
-               for (int n = 0; n < nComp; n++) {
+               for (int n = 0; n < ncomp; n++) {
                   divergence(i,j,k,n) *= vfracinv;
                }
             }
@@ -228,19 +259,10 @@ void PeleLM::intFluxDivergenceLevel(int lev,
       }
 #endif
    }
-
-#ifdef AMREX_USE_EB
-   {
-      MultiFab div_SrcGhostCell(grids,dmap,nComp,a_divergence.nGrow()+2,MFInfo(),Factory());
-      div_SrcGhostCell.setVal(0.);
-      div_SrcGhostCell.copy(a_divergence, div_comp, 0, ncomp);
-      amrex::single_level_weighted_redistribute( {div_SrcGhostCell}, {a_divergence}, *volfrac, div_comp, ncomp, {geom} );
-   }
-   EB_set_covered(fdiv,0.);
-#endif
 }
 
-void PeleLM::advFluxDivergence(MultiFab &a_divergence, int div_comp,
+void PeleLM::advFluxDivergence(int a_lev,
+                               MultiFab &a_divergence, int div_comp,
                                MultiFab &a_divu,
                                const Array<const MultiFab*,AMREX_SPACEDIM> &a_fluxes, int flux_comp,
                                const Array<const MultiFab*,AMREX_SPACEDIM> &a_faceState, int face_comp,
@@ -250,28 +272,47 @@ void PeleLM::advFluxDivergence(MultiFab &a_divergence, int div_comp,
                                amrex::Real scale,
                                bool fluxes_are_area_weighted)
 {
-    BL_PROFILE_VAR("PeleLM::advFluxDivergence()", advFluxDivergence);
+    BL_PROFILE("PeleLM::advFluxDivergence()");
     AMREX_ASSERT(a_divergence.nComp() >= div_comp+ncomp);
     AMREX_ASSERT(a_fluxes[0]->nComp() >= flux_comp+ncomp);
     AMREX_ASSERT(a_faceState[0]->nComp() >= face_comp+ncomp);
 
-    //TODO EB
+#ifdef AMREX_USE_EB
+      auto const& ebfact = EBFactory(a_lev);
+#endif
+
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
     for (MFIter mfi(a_divergence,TilingIfNotGPU()); mfi.isValid(); ++mfi) {
     
         Box const& bx = mfi.tilebox();
+
+#ifdef AMREX_USE_EB
+        auto const& flagfab = ebfact.getMultiEBCellFlagFab()[mfi];
+#endif
     
         // Get the divergence
         auto const& div_arr  = a_divergence.array(mfi,div_comp);
         AMREX_D_TERM(auto const& fx = a_fluxes[0]->const_array(mfi,flux_comp);,
                      auto const& fy = a_fluxes[1]->const_array(mfi,flux_comp);,
                      auto const& fz = a_fluxes[2]->const_array(mfi,flux_comp);)
+
+#ifdef AMREX_USE_EB
+        auto const& vfrac_arr = ebfact.getVolFrac().const_array(mfi);
+        if (flagfab.getType(bx) != FabType::covered) {
+           HydroUtils::EB_ComputeDivergence(bx, div_arr,
+                                            AMREX_D_DECL(fx,fy,fz),
+                                            vfrac_arr,
+                                            ncomp, a_geom,
+                                            scale, fluxes_are_area_weighted);
+        }
+#else
         HydroUtils::ComputeDivergence(bx, div_arr,
                                       AMREX_D_DECL(fx,fy,fz),
                                       ncomp, a_geom,
                                       scale, fluxes_are_area_weighted);
+#endif
 
         // If convective, we define u dot grad q = div (u q) - q div(u)
         // averaging face and t^{n+1/2} q to the cell center
@@ -279,22 +320,50 @@ void PeleLM::advFluxDivergence(MultiFab &a_divergence, int div_comp,
         AMREX_D_TERM(auto const& facex = a_faceState[0]->const_array(mfi,face_comp);,
                      auto const& facey = a_faceState[1]->const_array(mfi,face_comp);,
                      auto const& facez = a_faceState[2]->const_array(mfi,face_comp);)
-        ParallelFor(bx, ncomp, [=]
-        AMREX_GPU_DEVICE (int i, int j, int k, int n) noexcept
-        {
-            if (!l_conserv_d[n]) {
-                Real qavg  = AMREX_D_TERM(  facex(i,j,k,n) + facex(i+1,j,k,n),
-                                          + facey(i,j,k,n) + facey(i,j+1,k,n),
-                                          + facez(i,j,k,n) + facez(i,j,k+1,n));
-#if (AMREX_SPACEDIM == 2)
-                qavg *= 0.25;
-#else
-                qavg /= 6.0;
+
+        bool regular = true;
+#ifdef AMREX_USE_EB
+        regular = (flagfab.getType(bx) == FabType::regular);
 #endif
-                // Note that because we define adv update as MINUS div(u q), here we add q div (u)
-                div_arr(i,j,k,n) += qavg*divu_arr(i,j,k);
-            }
-        });
+        if (regular) {
+            ParallelFor(bx, ncomp, [=]
+            AMREX_GPU_DEVICE (int i, int j, int k, int n) noexcept
+            {
+                if (!l_conserv_d[n]) {
+                    Real qavg  = AMREX_D_TERM(  facex(i,j,k,n) + facex(i+1,j,k,n),
+                                              + facey(i,j,k,n) + facey(i,j+1,k,n),
+                                              + facez(i,j,k,n) + facez(i,j,k+1,n));
+#if (AMREX_SPACEDIM == 2)
+                    qavg *= 0.25;
+#else
+                    qavg /= 6.0;
+#endif
+                    // Note that because we define adv update as MINUS div(u q), here we add q div (u)
+                    div_arr(i,j,k,n) += qavg*divu_arr(i,j,k);
+                }
+            });
+        }
+#ifdef AMREX_USE_EB
+        else {
+            AMREX_D_TERM(auto const& apx_arr = ebfact.getAreaFrac()[0]->const_array(mfi);,
+                         auto const& apy_arr = ebfact.getAreaFrac()[1]->const_array(mfi);,
+                         auto const& apz_arr = ebfact.getAreaFrac()[2]->const_array(mfi););
+            ParallelFor(bx, ncomp, [=]
+            AMREX_GPU_DEVICE (int i, int j, int k, int n) noexcept
+            {
+                if (!l_conserv_d[n] && vfrac_arr(i,j,k) > 0.) {
+                    Real qwsum  = AMREX_D_TERM(  apx_arr(i,j,k) * facex(i,j,k,n) + apx_arr(i+1,j,k) * facex(i+1,j,k,n),
+                                               + apy_arr(i,j,k) * facey(i,j,k,n) + apy_arr(i,j+1,k) * facey(i,j+1,k,n),
+                                               + apz_arr(i,j,k) * facez(i,j,k,n) + apz_arr(i,j,k+1) * facez(i,j,k+1,n));
+                    Real areasum  = AMREX_D_TERM(  apx_arr(i,j,k) + apx_arr(i+1,j,k),
+                                                 + apy_arr(i,j,k) + apy_arr(i,j+1,k),
+                                                 + apz_arr(i,j,k) + apz_arr(i,j,k+1));
+                    // Note that because we define adv update as MINUS div(u q), here we add q div (u)
+                    div_arr(i,j,k,n) += qwsum / areasum * divu_arr(i,j,k);
+                }
+            });
+        }
+#endif
     }
 }
 
@@ -308,7 +377,7 @@ PeleLM::floorSpecies(const TimeStamp &a_time)
    for (int lev = 0; lev <= finest_level; ++lev) {
 
       auto ldata_p = getLevelDataPtr(lev,a_time);
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
       for (MFIter mfi(ldata_p->species,TilingIfNotGPU()); mfi.isValid(); ++mfi)
@@ -336,13 +405,13 @@ void PeleLM::resetCoveredMask()
 {
    if (!m_resetCoveredMask) return;
 
-   if (m_verbose) Print() << " Resetting covered cells mask \n";
+   if (m_verbose) Print() << " Resetting fine-covered cells mask \n";
 
    for (int lev = 0; lev < finest_level; ++lev) {
       BoxArray baf = grids[lev+1];
       baf.coarsen(ref_ratio[lev]);
       m_coveredMask[lev]->setVal(1);
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
       {
@@ -607,21 +676,38 @@ PeleLM::MFSum (const Vector<const MultiFab*> &a_mf, int comp)
 
        // Use amrex::ReduceSum
        Real vol = AMREX_D_TERM(dx[0],*dx[1],*dx[2]);
+
 #ifdef AMREX_USE_EB
-       // TODO: will need a temporary for EB.
-       const EBFArrayBoxFactory* ebfact = &EBFactory(lev);
-       auto const& vfrac = ebfact->getVolFrac();
+       auto const& ebfact = dynamic_cast<EBFArrayBoxFactory const&>(Factory(lev));
+       auto const& vfrac = ebfact.getVolFrac();
    
-       Real sm = amrex::ReduceSum(*a_mf[lev], vfrac, 0, [vol, comp]
-       AMREX_GPU_HOST_DEVICE (Box const& bx, Array4<Real const> const& mf_arr, Array4<Real const> const& vf_arr) -> Real
-       {
-           Real sum = 0.0;
-           AMREX_LOOP_3D(bx, i, j, k,
-           {
-               sum += mf_arr(i,j,k,comp) * vf_arr(i,j,k) * vol;
-           });
-           return sum;
-       });
+       Real sm = 0.0;
+       if ( lev != finest_level ) {
+          sm = amrex::ReduceSum(*a_mf[lev], vfrac, *m_coveredMask[lev], 0, [vol, comp]
+          AMREX_GPU_HOST_DEVICE (Box const& bx, Array4<Real const> const& mf_arr, 
+                                                Array4<Real const> const& vf_arr,
+                                                Array4<int  const> const& covered_arr) -> Real
+          {
+              Real sum = 0.0;
+              AMREX_LOOP_3D(bx, i, j, k,
+              {
+                  sum += mf_arr(i,j,k,comp) * vf_arr(i,j,k) * vol * static_cast<Real>(covered_arr(i,j,k));
+              });
+              return sum;
+          });
+       } else {
+          sm = amrex::ReduceSum(*a_mf[lev], vfrac, 0, [vol, comp]
+          AMREX_GPU_HOST_DEVICE (Box const& bx, Array4<Real const> const& mf_arr, 
+                                                Array4<Real const> const& vf_arr) -> Real
+          {
+              Real sum = 0.0;
+              AMREX_LOOP_3D(bx, i, j, k,
+              {
+                  sum += mf_arr(i,j,k,comp) * vf_arr(i,j,k) * vol;
+              });
+              return sum;
+          });
+       }
 #else
        Real sm = 0.0;
        if ( lev != finest_level ) {
@@ -631,7 +717,7 @@ PeleLM::MFSum (const Vector<const MultiFab*> &a_mf, int comp)
               Real sum = 0.0;
               AMREX_LOOP_3D(bx, i, j, k,
               {
-                  sum += mf_arr(i,j,k,comp) * vol * covered_arr(i,j,k);
+                  sum += mf_arr(i,j,k,comp) * vol * static_cast<Real>(covered_arr(i,j,k));
               });
               return sum;
           });
