@@ -553,12 +553,27 @@ class PeleLM : public amrex::AmrCore {
                                amrex::Real scale);
 
    void floorSpecies(const PeleLM::TimeStamp &a_time);
+
    amrex::Real MLNorm0(const amrex::Vector<const amrex::MultiFab*> &a_MF);
    amrex::Vector<amrex::Real>
    MLNorm0(const amrex::Vector<const amrex::MultiFab*> &a_MF,
            int startcomp, int ncomp);
 
    amrex::Real MFSum(const amrex::Vector<const amrex::MultiFab*> &a_MF, int comp);
+   amrex::Real MFmax(const amrex::MultiFab *a_MF,
+                     const amrex::iMultiFab &a_mask,
+                     int comp);
+   amrex::Real MFmin(const amrex::MultiFab *a_MF,
+                     const amrex::iMultiFab &a_mask,
+                     int comp);
+
+   amrex::Vector<amrex::Real>
+   MLmax(const amrex::Vector<const amrex::MultiFab*> &a_MF,
+         int scomp, int ncomp);
+
+   amrex::Vector<amrex::Real>
+   MLmin(const amrex::Vector<const amrex::MultiFab*> &a_MF,
+         int scomp, int ncomp);
 
    void resetCoveredMask();
 
@@ -572,6 +587,10 @@ class PeleLM : public amrex::AmrCore {
    // Lightweight state description access
    bool isStateVariable(const std::string &a_name);
    int stateVariableIndex(const std::string &a_name);
+
+   // Typical values
+   void setTypicalValues(const PeleLM::TimeStamp &a_time, int is_init = 0);
+   void updateTypicalValuesChem();
    //-----------------------------------------------------------------------------
 
 #ifdef AMREX_USE_EB
@@ -976,6 +995,12 @@ class PeleLM : public amrex::AmrCore {
    // Chem
    amrex::Real m_rtol_chem = 1.0e-10;
    amrex::Real m_atol_chem = 1.0e-10;
+
+   // Typical values
+   int m_resetTypValInt = 10;
+   int m_useTypValChem = 1;
+   amrex::Real m_typicalYvalMin = 1.0e-10;
+   amrex::Vector<amrex::Real> typical_values;
 
 #ifdef AMREX_USE_EB
    // EB

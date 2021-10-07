@@ -101,6 +101,11 @@ void PeleLM::initData() {
       InitFromScratch(m_cur_time);
       resetCoveredMask();
 
+      //----------------------------------------------------------------
+      // Set typical values
+      int is_init = 1;
+      setTypicalValues(AmrNewTime, is_init);
+
 #ifdef AMREX_USE_EB
       //----------------------------------------------------------------
       // Initial redistribution
@@ -120,7 +125,6 @@ void PeleLM::initData() {
 
       // Post data Init time step estimate
       // TODO : this estimate is probably useless
-      int is_init = 1;
       Real dtInit = computeDt(is_init,AmrNewTime);
       Print() << " Initial dt: " << dtInit << "\n";
 

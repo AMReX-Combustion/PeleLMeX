@@ -14,6 +14,7 @@ PeleLM::~PeleLM()
    m_reactor->close();
 
    closeTempFile();
+   typical_values.clear();
 }
 
 PeleLM::LevelData*
