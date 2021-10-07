@@ -750,3 +750,310 @@ PeleLM::MFStat (const Vector<const MultiFab*> &a_mf, int comp)
    // Get the min/max/mean of a given component, not including the fine-covered cells
 }
 */
+
+void PeleLM::setTypicalValues(const TimeStamp &a_time, int is_init)
+{
+    // Get state Max/Min
+    auto rhoMax  = MLmax(GetVecOfConstPtrs(getDensityVect(a_time)),0,1);
+    auto rhoMin  = MLmin(GetVecOfConstPtrs(getDensityVect(a_time)),0,1);
+    auto specMax = MLmax(GetVecOfConstPtrs(getSpeciesVect(a_time)),0,NUM_SPECIES);
+    auto specMin = MLmin(GetVecOfConstPtrs(getSpeciesVect(a_time)),0,NUM_SPECIES);
+    auto rhoHMax = MLmax(GetVecOfConstPtrs(getRhoHVect(a_time)),0,1);
+    auto rhoHMin = MLmin(GetVecOfConstPtrs(getRhoHVect(a_time)),0,1);
+    auto tempMax = MLmax(GetVecOfConstPtrs(getTempVect(a_time)),0,1);
+    auto tempMin = MLmin(GetVecOfConstPtrs(getTempVect(a_time)),0,1);
+    auto velAbsMax = MLNorm0(GetVecOfConstPtrs(getVelocityVect(a_time)),0,AMREX_SPACEDIM);
+    auto velMax  = *max_element(std::begin(velAbsMax), std::end(velAbsMax));
+
+    // Fill typical values vector
+    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+       typical_values[idim] = velMax;
+    }
+
+    // First get the difference between max/min, if too small use average
+    typical_values[DENSITY] = rhoMax[0] - rhoMin[0];
+    if (typical_values[DENSITY] < 0.1 * rhoMin[0]) typical_values[DENSITY] = 0.5 * (rhoMax[0] + rhoMin[0]);
+    for (int n = 0; n < NUM_SPECIES; n++) {
+        typical_values[FIRSTSPEC+n] = specMax[n] - specMin[n];
+        if (typical_values[FIRSTSPEC+n] < 0.1 * specMin[n]) {
+            typical_values[FIRSTSPEC+n] = 0.5 * (specMax[n] + rhoMin[n]);
+        }
+    }
+    typical_values[RHOH] = rhoHMax[0] - rhoHMin[0];
+    if (typical_values[RHOH] < 0.1 * rhoHMin[0]) typical_values[RHOH] = 0.5 * (rhoHMax[0] + rhoHMin[0]);
+    typical_values[TEMP] = tempMax[0] - tempMin[0];
+    if (typical_values[TEMP] < 0.1 * tempMin[0]) typical_values[TEMP] = 0.5 * (tempMax[0] + tempMin[0]);
+    typical_values[RHORT] = m_pOld;
+
+    // Pass into chemsitry if requested
+    updateTypicalValuesChem();
+
+    if (is_init || m_verbose > 1) {
+        std::string PrettyLine = std::string(78, '=') + "\n";
+        Print() << PrettyLine;
+        Print() << "Typical values: " << '\n';
+        Print() << "\tVelocity: ";
+        for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
+            Print() << typical_values[idim] << ' ';
+        }
+        Print() << '\n';
+        Print() << "\tDensity: " << typical_values[DENSITY] << '\n';
+        Print() << "\tTemp:    " << typical_values[TEMP]    << '\n';
+        Print() << "\tRhoH:    " << typical_values[RHOH]    << '\n';
+        Vector<std::string> spec_names;
+        pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(spec_names);
+        for (int n = 0; n < NUM_SPECIES; n++) {
+            Print() << "\tY_" << spec_names[n] << ": " << typical_values[FIRSTSPEC+n] <<'\n';
+        }
+        Print() << PrettyLine;
+    }
+}
+
+void PeleLM::updateTypicalValuesChem()
+{
+    if (m_useTypValChem) {
+        if (m_verbose > 2) Print() << " Update chemistry typical values \n";
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+        {
+            Vector<Real> typical_values_chem;
+            typical_values_chem.resize(NUM_SPECIES+1);
+            for (int i=0; i<NUM_SPECIES; ++i) {
+              typical_values_chem[i] =
+                amrex::max(m_typicalYvalMin,
+                           typical_values[FIRSTSPEC+i] * typical_values[DENSITY] * 1.E-3); // CGS -> MKS conversion
+            }
+            typical_values_chem[NUM_SPECIES] = typical_values[TEMP];
+            m_reactor->SetTypValsODE(typical_values_chem);
+        }
+    }
+}
+
+// MultiFab max, exlucing EB-covered/fine-covered cells, local
+Real
+PeleLM::MFmax(const MultiFab *a_MF,
+              const iMultiFab &a_mask,
+              int comp)
+{
+    Real mx = std::numeric_limits<Real>::lowest();
+
+#ifdef AMREX_USE_EB
+    if ( a_MF->hasEBFabFactory() )
+    {    
+        const auto& ebfactory = dynamic_cast<EBFArrayBoxFactory const&>(a_MF->Factory());
+        auto const& flags = ebfactory.getMultiEBCellFlagFab();
+#ifdef AMREX_USE_GPU
+        if (Gpu::inLaunchRegion()) {
+            auto const& flagsma = flags.const_arrays();
+            auto const& ma = a_MF->const_arrays();
+            auto const& mask = a_mask.const_arrays();
+            mx = ParReduce(TypeList<ReduceOpMax>{}, TypeList<Real>{}, *a_MF, IntVect(0),
+            [=] AMREX_GPU_DEVICE (int box_no, int i, int j, int k) noexcept -> GpuTuple<Real>
+            {    
+                if (flagsma[box_no](i,j,k).isCovered() ||
+                    !mask[box_no](i,j,k)) {
+                    return AMREX_REAL_LOWEST;
+                } else {
+                    return ma[box_no](i,j,k,comp);
+                }    
+            });
+        } else
+#endif
+        {
+#ifdef AMREX_USE_OMP
+#pragma omp parallel reduction(max:mx)
+#endif
+            for (MFIter mfi(*a_MF,true); mfi.isValid(); ++mfi) {
+                Box const& bx = mfi.tilebox();
+                if (flags[mfi].getType(bx) != FabType::covered) {
+                    auto const& flag = flags.const_array(mfi);
+                    auto const& a = a_MF->const_array(mfi);
+                    auto const& mask = a_mask.const_array(mfi);
+                    AMREX_LOOP_3D(bx, i, j, k,
+                    {
+                        if (!flag(i,j,k).isCovered() && mask(i,j,k)) {
+                            mx = std::max(mx, a(i,j,k,comp));
+                        }
+                    });
+                }
+            }
+        }
+    }
+    else
+#endif
+    {
+#ifdef AMREX_USE_GPU
+        if (Gpu::inLaunchRegion()) {
+            auto const& ma = a_MF->const_arrays();
+            auto const& mask = a_mask.const_arrays();
+            mx = ParReduce(TypeList<ReduceOpMax>{}, TypeList<Real>{}, *a_MF, IntVect(0),
+            [=] AMREX_GPU_DEVICE (int box_no, int i, int j, int k) noexcept -> GpuTuple<Real>
+            {
+                if (!mask[box_no](i,j,k)) {
+                    return AMREX_REAL_LOWEST;
+                } else {
+                    return ma[box_no](i,j,k,comp);
+                }    
+            });
+        } else
+#endif
+        {
+#ifdef AMREX_USE_OMP
+#pragma omp parallel reduction(max:mx)
+#endif
+            for (MFIter mfi(*a_MF,true); mfi.isValid(); ++mfi) {
+                Box const& bx = mfi.tilebox();
+                auto const& a = a_MF->const_array(mfi);
+                auto const& mask = a_mask.const_array(mfi);
+                AMREX_LOOP_3D(bx, i, j, k,
+                {
+                    if (mask(i,j,k)) {
+                       mx = std::max(mx, a(i,j,k,comp));
+                    }
+                });
+            }
+        }
+    }
+
+    return mx;
+}
+
+// MultiFab min, exlucing EB-covered/fine-covered cells, local
+Real
+PeleLM::MFmin(const MultiFab *a_MF,
+              const iMultiFab &a_mask,
+              int comp)
+{
+    Real mn = std::numeric_limits<Real>::max();
+
+#ifdef AMREX_USE_EB
+    if ( a_MF->hasEBFabFactory() )
+    {    
+        const auto& ebfactory = dynamic_cast<EBFArrayBoxFactory const&>(a_MF->Factory());
+        auto const& flags = ebfactory.getMultiEBCellFlagFab();
+#ifdef AMREX_USE_GPU
+        if (Gpu::inLaunchRegion()) {
+            auto const& flagsma = flags.const_arrays();
+            auto const& ma = a_MF->const_arrays();
+            auto const& mask = a_mask.const_arrays();
+            mn = ParReduce(TypeList<ReduceOpMin>{}, TypeList<Real>{}, *a_MF, IntVect(0),
+            [=] AMREX_GPU_DEVICE (int box_no, int i, int j, int k) noexcept -> GpuTuple<Real>
+            {    
+                if (flagsma[box_no](i,j,k).isCovered() ||
+                    !mask[box_no](i,j,k)) {
+                    return AMREX_REAL_MAX;
+                } else {
+                    return ma[box_no](i,j,k,comp);
+                }    
+            });
+        } else
+#endif
+        {
+#ifdef AMREX_USE_OMP
+#pragma omp parallel reduction(min:mn)
+#endif
+            for (MFIter mfi(*a_MF,true); mfi.isValid(); ++mfi) {
+                Box const& bx = mfi.tilebox();
+                if (flags[mfi].getType(bx) != FabType::covered) {
+                    auto const& flag = flags.const_array(mfi);
+                    auto const& a = a_MF->const_array(mfi);
+                    auto const& mask = a_mask.const_array(mfi);
+                    AMREX_LOOP_3D(bx, i, j, k,
+                    {
+                        if (!flag(i,j,k).isCovered() && mask(i,j,k)) {
+                            mn = std::min(mn, a(i,j,k,comp));
+                        }
+                    });
+                }
+            }
+        }
+    }
+    else
+#endif
+    {
+#ifdef AMREX_USE_GPU
+        if (Gpu::inLaunchRegion()) {
+            auto const& ma = a_MF->const_arrays();
+            auto const& mask = a_mask.const_arrays();
+            mn = ParReduce(TypeList<ReduceOpMin>{}, TypeList<Real>{}, *a_MF, IntVect(0),
+            [=] AMREX_GPU_DEVICE (int box_no, int i, int j, int k) noexcept -> GpuTuple<Real>
+            {
+                if (!mask[box_no](i,j,k)) {
+                    return AMREX_REAL_MAX;
+                } else {
+                    return ma[box_no](i,j,k,comp);
+                }    
+            });
+        } else
+#endif
+        {
+#ifdef AMREX_USE_OMP
+#pragma omp parallel reduction(min:mn)
+#endif
+            for (MFIter mfi(*a_MF,true); mfi.isValid(); ++mfi) {
+                Box const& bx = mfi.tilebox();
+                auto const& a = a_MF->const_array(mfi);
+                auto const& mask = a_mask.const_array(mfi);
+                AMREX_LOOP_3D(bx, i, j, k,
+                {
+                    if (mask(i,j,k)) {
+                       mn = std::min(mn, a(i,j,k,comp));
+                    }
+                });
+            }
+        }
+    }
+
+    return mn;
+}
+
+// MultiLevel max, exlucing EB-covered/fine-covered cells
+Vector<Real>
+PeleLM::MLmax(const Vector<const MultiFab*> &a_MF,
+      int scomp, int ncomp)
+{
+    AMREX_ASSERT(a_MF[0]->nComp() >= scomp+ncomp);
+
+    Vector<Real> nmax(ncomp,AMREX_REAL_LOWEST);
+
+    for (int lev = 0; lev < a_MF.size(); ++lev) {
+       if (lev != finest_level) {
+          for (int n = 0; n < ncomp; n++) {
+             nmax[n] = std::max(nmax[n], MFmax(a_MF[lev],*m_coveredMask[lev],scomp+n));
+          }
+       } else {
+          for (int n = 0; n < ncomp; n++) {
+             nmax[n] = std::max(nmax[n], a_MF[lev]->max(scomp+n,0,true));
+          }
+       }
+    }
+
+    ParallelDescriptor::ReduceRealMax(nmax.data(),ncomp);
+    return nmax;
+}
+
+// MultiLevel min, exlucing EB-covered/fine-covered cells
+Vector<Real>
+PeleLM::MLmin(const Vector<const MultiFab*> &a_MF,
+      int scomp, int ncomp)
+{
+    AMREX_ASSERT(a_MF[0]->nComp() >= scomp+ncomp);
+
+    Vector<Real> nmin(ncomp,AMREX_REAL_MAX);
+
+    for (int lev = 0; lev < a_MF.size(); ++lev) {
+       if (lev != finest_level) {
+          for (int n = 0; n < ncomp; n++) {
+             nmin[n] = std::min(nmin[n], MFmin(a_MF[lev],*m_coveredMask[lev],scomp+n));
+          }
+       } else {
+          for (int n = 0; n < ncomp; n++) {
+             nmin[n] = std::min(nmin[n], a_MF[lev]->min(scomp+n,0,true));
+          }
+       }
+    }
+
+    ParallelDescriptor::ReduceRealMin(nmin.data(),ncomp);
+    return nmin;
+}
