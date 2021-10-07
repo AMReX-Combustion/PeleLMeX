@@ -250,8 +250,11 @@ void PeleLM::WriteHeader(const std::string& name, bool is_checkpoint) const
             HeaderFile << '\n';
         }
 
-        // Ambient pressure and typvals TODO
+        // Ambient pressure and typvals
         HeaderFile << m_pNew << "\n";
+        for (int n = 0; n < typical_values.size(); n++) {
+            HeaderFile << typical_values[n] << "\n";
+        }
     }
 }
 
@@ -414,11 +417,14 @@ void PeleLM::ReadCheckPointFile()
        MakeNewLevelFromScratch(lev, m_cur_time, ba, dm);
    }
 
-   // deal with typ_val (TODO) and P_amb
+   // deal with typval and P_amb
    is >> m_pNew;
    GotoNextLine(is);
    m_pOld = m_pNew;
-
+   for (int n = 0; n < typical_values.size(); n++) {
+       is >> typical_values[n];
+       GotoNextLine(is);
+   }
 
    /***************************************************************************
     * Load fluid data                                                         *
