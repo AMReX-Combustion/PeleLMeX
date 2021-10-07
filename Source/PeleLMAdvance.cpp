@@ -14,6 +14,12 @@ void PeleLM::Advance(int is_initIter) {
       m_pNew = m_pOld;
    }
 
+   // Put together new typical values
+   if (!is_initIter && m_nstep > 0 &&
+       m_nstep%m_resetTypValInt == 0) {
+       setTypicalValues(AmrNewTime);
+   }
+
    //----------------------------------------------------------------
    // Copy old <- new state
    copyStateNewToOld(1);
