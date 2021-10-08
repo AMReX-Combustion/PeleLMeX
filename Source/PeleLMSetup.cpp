@@ -281,6 +281,8 @@ void PeleLM::readParameters() {
    pp.query("do_react",m_do_react);
    pp.query("chem_rtol",m_rtol_chem);
    pp.query("chem_atol",m_atol_chem);
+   pp.query("use_typ_vals_chem",m_useTypValChem);
+   pp.query("typical_values_reset_int",m_resetTypValInt);
 
    // -----------------------------------------
    // Advection
@@ -454,6 +456,10 @@ void PeleLM::variablesSetup() {
       m_DiffTypeState[PHIV] = 0;
 #endif
    }
+
+   //----------------------------------------------------------------
+   // Typical values container
+   typical_values.resize(NVAR,-1.0);
 }
 
 void PeleLM::derivedSetup()
