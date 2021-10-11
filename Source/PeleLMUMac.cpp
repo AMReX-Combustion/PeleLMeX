@@ -162,6 +162,9 @@ void PeleLM::macProject(const TimeStamp &a_time,
       macproj->initProjector(lpInfo, GetVecOfArrOfConstPtrs(rho_inv));
       macproj->setDomainBC(getMACProjectionBC(Orientation::low),
                            getMACProjectionBC(Orientation::high));
+#ifdef AMREX_USE_HYPRE
+      macproj->getMLMG().setHypreOptionsNamespace(m_hypre_namespace_mac);
+#endif
    } else {
       macproj->updateBeta(GetVecOfArrOfConstPtrs(rho_inv));
    }
