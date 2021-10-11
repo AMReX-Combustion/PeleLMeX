@@ -12,6 +12,7 @@ PRECISION       = DOUBLE
 VERBOSE         = FALSE
 TINY_PROFILE    = FALSE
 USE_EB			= TRUE
+USE_HYPRE		= FALSE
 
 # Compilation
 COMP            = gnu

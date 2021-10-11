@@ -298,10 +298,13 @@ void PeleLM::readParameters() {
    ppnproj.query("mg_max_coarsening_level",m_nodal_mg_max_coarsening_level);
    ppnproj.query("atol",m_nodal_mg_atol);
    ppnproj.query("rtol",m_nodal_mg_rtol);
+   ppnproj.query("hypre_namespace",m_hypre_namespace_nodal);
 
    ParmParse ppmacproj("mac_proj");
+   ppmacproj.query("mg_max_coarsening_level",m_mac_mg_max_coarsening_level);
    ppmacproj.query("atol",m_mac_mg_atol);
    ppmacproj.query("rtol",m_mac_mg_rtol);
+   ppmacproj.query("hypre_namespace",m_hypre_namespace_mac);
 
    // -----------------------------------------
    // Temporals

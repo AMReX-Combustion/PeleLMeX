@@ -1019,12 +1019,14 @@ class PeleLM : public amrex::AmrCore {
    int m_nodal_mg_max_coarsening_level = 100;
    amrex::Real m_nodal_mg_rtol = 1.0e-11;   
    amrex::Real m_nodal_mg_atol = 1.0e-14;
+   std::string m_hypre_namespace_nodal = "nodal_hypre";
 
    // MAC projection
    int m_mac_mg_verbose = 0;
    int m_mac_mg_max_coarsening_level = 100;
    amrex::Real m_mac_mg_rtol = 1.0e-11;   
    amrex::Real m_mac_mg_atol = 1.0e-14;
+   std::string m_hypre_namespace_mac = "mac_hypre";
    //-----------------------------------------------------------------------------
 };
 

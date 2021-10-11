@@ -319,6 +319,10 @@ void PeleLM::doNodalProject(Vector<MultiFab*> &a_vel,
 
    nodal_projector->setDomainBC(lobc, hibc);
 
+#ifdef AMREX_USE_HYPRE
+   nodal_projector->getMLMG().setHypreOptionsNamespace(m_hypre_namespace_nodal);
+#endif
+
 #if (AMREX_SPACEDIM == 2)
    if (m_rz_correction) {
       nodal_projector->getLinOp().setRZCorrection(Geom(0).IsRZ());
