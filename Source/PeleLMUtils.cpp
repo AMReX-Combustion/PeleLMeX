@@ -776,7 +776,7 @@ void PeleLM::setTypicalValues(const TimeStamp &a_time, int is_init)
     for (int n = 0; n < NUM_SPECIES; n++) {
         typical_values[FIRSTSPEC+n] = specMax[n] - specMin[n];
         if (typical_values[FIRSTSPEC+n] < 0.1 * specMin[n]) {
-            typical_values[FIRSTSPEC+n] = 0.5 * (specMax[n] + rhoMin[n]);
+            typical_values[FIRSTSPEC+n] = 0.5 * (specMax[n] + specMin[n]);
         }
     }
     typical_values[RHOH] = rhoHMax[0] - rhoHMin[0];
