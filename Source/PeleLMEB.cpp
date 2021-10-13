@@ -321,14 +321,14 @@ void PeleLM::initialRedistribution()
                                                             flag, AMREX_D_DECL(apx, apy, apz), vfrac,
                                                             AMREX_D_DECL(fcx, fcy, fcz), ccc,
                                                             bcRec_d.dataPtr(), geom[lev], m_adv_redist_type);
-                        auto bcRecRhoH = fetchBCRecArray(RHOH,NUM_SPECIES); 
+                        auto bcRecRhoH = fetchBCRecArray(RHOH,1); 
                         auto bcRecRhoH_d = convertToDeviceVector(bcRecRhoH);
                         Redistribution::ApplyToInitialData( bx, 1,
                                                             ldataNew_p->rhoh.array(mfi), ldataOld_p->rhoh.array(mfi),
                                                             flag, AMREX_D_DECL(apx, apy, apz), vfrac,
                                                             AMREX_D_DECL(fcx, fcy, fcz), ccc,
                                                             bcRecRhoH_d.dataPtr(), geom[lev], m_adv_redist_type);
-                        auto bcRecTemp = fetchBCRecArray(TEMP,NUM_SPECIES); 
+                        auto bcRecTemp = fetchBCRecArray(TEMP,1); 
                         auto bcRecTemp_d = convertToDeviceVector(bcRecTemp);
                         Redistribution::ApplyToInitialData( bx, 1,
                                                             ldataNew_p->temp.array(mfi), ldataOld_p->temp.array(mfi),
