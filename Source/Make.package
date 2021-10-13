@@ -6,6 +6,7 @@ CEXE_headers += PeleLM_K.H
 CEXE_headers += PeleLMBCfill.H
 CEXE_headers += DiffusionOp.H
 CEXE_headers += PeleLMDeriveFunc.H
+CEXE_headers += EBUserDefined.H
 
 ## Sources
 CEXE_sources += main.cpp
