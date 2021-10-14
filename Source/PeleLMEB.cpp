@@ -1,5 +1,6 @@
 #include <PeleLM.H>
 #include <PeleLMUtils.H>
+#include <EBUserDefined.H>
 
 #ifdef AMREX_USE_EB
 #include <AMReX_EB2.H>
@@ -12,8 +13,19 @@ void PeleLM::makeEBGeometry()
 {
     // TODO extend
     int max_coarsening_level = 100;
-    int req_coarsening_level = 2;
-    EB2::Build(geom.back(),req_coarsening_level,max_coarsening_level);
+    int req_coarsening_level = 0;
+
+    // Read the geometry type and act accordingly
+    ParmParse ppeb2("eb2");
+    std::string geom_type;
+    ppeb2.get("geom_type", geom_type);
+
+    if (geom_type == "UserDefined") {
+        EBUserDefined(geom.back(), req_coarsening_level, max_coarsening_level);
+    } else {
+        // If geom_type is not an AMReX recognized type, it'll crash.
+        EB2::Build(geom.back(), req_coarsening_level, max_coarsening_level);
+    }
 }
 
 void PeleLM::redistributeAofS(int a_lev,
@@ -207,6 +219,7 @@ void PeleLM::setCoveredState(int lev, const TimeStamp &a_time)
 
     auto ldata_p = getLevelDataPtr(lev,a_time);
 
+    // TODO: do a single kernel launch there
     EB_set_covered(ldata_p->velocity,coveredState_h[0]);
     EB_set_covered(ldata_p->density,coveredState_h[DENSITY]);
     Vector<Real> covSpec(NUM_SPECIES);
@@ -308,14 +321,14 @@ void PeleLM::initialRedistribution()
                                                             flag, AMREX_D_DECL(apx, apy, apz), vfrac,
                                                             AMREX_D_DECL(fcx, fcy, fcz), ccc,
                                                             bcRec_d.dataPtr(), geom[lev], m_adv_redist_type);
-                        auto bcRecRhoH = fetchBCRecArray(RHOH,NUM_SPECIES); 
+                        auto bcRecRhoH = fetchBCRecArray(RHOH,1); 
                         auto bcRecRhoH_d = convertToDeviceVector(bcRecRhoH);
                         Redistribution::ApplyToInitialData( bx, 1,
                                                             ldataNew_p->rhoh.array(mfi), ldataOld_p->rhoh.array(mfi),
                                                             flag, AMREX_D_DECL(apx, apy, apz), vfrac,
                                                             AMREX_D_DECL(fcx, fcy, fcz), ccc,
                                                             bcRecRhoH_d.dataPtr(), geom[lev], m_adv_redist_type);
-                        auto bcRecTemp = fetchBCRecArray(TEMP,NUM_SPECIES); 
+                        auto bcRecTemp = fetchBCRecArray(TEMP,1); 
                         auto bcRecTemp_d = convertToDeviceVector(bcRecTemp);
                         Redistribution::ApplyToInitialData( bx, 1,
                                                             ldataNew_p->temp.array(mfi), ldataOld_p->temp.array(mfi),
