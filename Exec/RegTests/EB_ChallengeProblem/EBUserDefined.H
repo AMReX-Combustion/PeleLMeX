@@ -20,7 +20,7 @@ EBUserDefined(const Geometry& geom,
     amrex::RealVect p;
 
     Real scaleFact;
-    scaleFact = 0.0025; //MKS
+    scaleFact = 0.0025; // with MKS conversion
 
     p = amrex::RealVect(D_DECL(49.0*0.1*scaleFact, 7.8583*0.1*scaleFact, 0.0));
     lnpts.push_back(p);
@@ -62,7 +62,7 @@ EBUserDefined(const Geometry& geom,
     auto PistonCylinder = EB2::makeUnion(revolvePiston, cylinder);
 
     // Build your geometry shop using EB2::makeShop
-    auto gshop = EB2::makeShop(cylinder);
+    auto gshop = EB2::makeShop(PistonCylinder);
 
     // Build geom using EB2::Build
     EB2::Build(gshop, geom, required_coarsening_level, max_coarsening_level);
