@@ -52,7 +52,7 @@ void pelelm_initdata(int i, int j, int k,
 
     amrex::Real r_xy = std::sqrt(x*x+y*y);
     amrex::Real angle = std::atan2(y,x);
-    amrex::Real angular_vel = r_xy * 150.0 * std::tanh(300*(0.012-r_xy));
+    amrex::Real angular_vel = r_xy * 400.0 * std::tanh(300*(0.012-r_xy));
 
     vel(i,j,k,0) = angular_vel * std::sin(angle);
     vel(i,j,k,1) = -angular_vel * std::cos(angle);
