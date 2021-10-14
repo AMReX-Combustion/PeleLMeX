@@ -7,12 +7,12 @@ AMREX_HYDRO_HOME   ?= ${TOP}/AMReX-Hydro
 
 # AMReX
 DIM             = 3
-DEBUG           = TRUE
+DEBUG           = FALSE
 PRECISION       = DOUBLE
 VERBOSE         = FALSE
 TINY_PROFILE    = FALSE
 USE_EB			= TRUE
-USE_HYPRE		= TRUE
+USE_HYPRE		= FALSE
 
 # Compilation
 COMP            = gnu
