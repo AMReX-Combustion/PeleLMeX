@@ -603,7 +603,9 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
                                                  is_velocity, fluxes_are_area_weighted,
                                                  m_advection_type);
       }
+#ifdef AMREX_USE_EB
       EB_set_covered_faces(GetArrOfPtrs(fluxes[lev]),0.);   
+#endif
    }
 
    //----------------------------------------------------------------
