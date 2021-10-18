@@ -134,6 +134,21 @@ void PeleLM::computeDifferentialDiffusionTerms(const TimeStamp &a_time,
       fluxDivergence(GetVecOfPtrs(diffData->Dwbar), 0, GetVecOfArrOfPtrs(diffData->wbar_fluxes), 0, NUM_SPECIES, 1, -1.0);
 #endif
    }
+
+#ifdef AMREX_USE_EB
+    // Set EB-covered diffusion terms here to avoid having to mask operations using this data
+    // later on
+    for (int lev = 0; lev <= finest_level; ++lev) {
+        if (a_time == AmrOldTime) {
+            EB_set_covered(diffData->Dn[lev],0.0);
+        } else {
+            EB_set_covered(diffData->Dnp1[lev],0.0);
+        }
+        if (!is_init && m_use_wbar) {
+            EB_set_covered(diffData->Dwbar[lev],0.0);
+        }
+    }
+#endif
 }
 
 void PeleLM::computeDifferentialDiffusionFluxes(const TimeStamp &a_time,

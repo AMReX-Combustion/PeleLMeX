@@ -330,7 +330,10 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
 
       //----------------------------------------------------------------
 #ifdef AMREX_USE_EB
+      // Get EBFact & areafrac
       const auto& ebfact = EBFactory(lev);
+      Array< const MultiCutFab*,AMREX_SPACEDIM> areafrac;
+      areafrac  = ebfact.getAreaFrac();
 #endif
 
       // Get the species edge state and advection term
@@ -434,19 +437,44 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
 
          Box const& bx = mfi.tilebox();
 
+#ifdef AMREX_USE_EB
+         auto const& flagfab = ebfact.getMultiEBCellFlagFab()[mfi];
+#endif
+
          // Edge states
          for (int idim = 0; idim <AMREX_SPACEDIM; idim++) {
-            const Box& ebx = amrex::surroundingNodes(bx,idim);
-            auto const& rho_ed   = edgeState[idim].array(mfi,0);
-            auto const& rhoY_ed  = edgeState[idim].array(mfi,1);
-            amrex::ParallelFor(ebx, [rho_ed, rhoY_ed]
-            AMREX_GPU_DEVICE (int i, int j, int k) noexcept
-            {
-               rho_ed(i,j,k) = 0.0;
-               for (int n = 0; n < NUM_SPECIES; n++) {
-                  rho_ed(i,j,k) += rhoY_ed(i,j,k,n);
-               }
-            });
+             const Box& ebx = amrex::surroundingNodes(bx,idim);
+             auto const& rho_ed   = edgeState[idim].array(mfi,0);
+             auto const& rhoY_ed  = edgeState[idim].array(mfi,1);
+#ifdef AMREX_USE_EB
+             if (flagfab.getType(ebx) == FabType::covered) {             // Covered boxes
+                 amrex::ParallelFor(ebx, [rho_ed]
+                 AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+                 {
+                     rho_ed(i,j,k) = 0.0;
+                 });
+             } else if (flagfab.getType(ebx) != FabType::regular ) {     // EB containing boxes 
+                 const auto& afrac = areafrac[idim]->array(mfi);
+                 amrex::ParallelFor(ebx, [rho_ed, rhoY_ed, afrac]
+                 AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+                 {
+                     rho_ed(i,j,k) = 0.0;
+                     if (afrac(i,j,k) > 0.0) {                         // Uncovered faces
+                         for (int n = 0; n < NUM_SPECIES; n++) {
+                            rho_ed(i,j,k) += rhoY_ed(i,j,k,n);
+                         }
+                     }
+                 });
+             } else                                                     // Regular boxes
+#endif
+             amrex::ParallelFor(ebx, [rho_ed, rhoY_ed]
+             AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+             {
+                rho_ed(i,j,k) = 0.0;
+                for (int n = 0; n < NUM_SPECIES; n++) {
+                   rho_ed(i,j,k) += rhoY_ed(i,j,k,n);
+                }
+             });
          }
       }
 
@@ -488,6 +516,7 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
                                                  m_advection_type);
       }
 
+
       // Get the edge RhoH states
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -496,21 +525,43 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
 
          Box const& bx = mfi.tilebox();
 
+#ifdef AMREX_USE_EB
+         auto const& flagfab = ebfact.getMultiEBCellFlagFab()[mfi];
+#endif
+
          for (int idim = 0; idim <AMREX_SPACEDIM; idim++) {
-            const Box& ebx = amrex::surroundingNodes(bx,idim);
-            auto const& rho     = edgeState[idim].const_array(mfi,0);
-            auto const& rhoY    = edgeState[idim].const_array(mfi,1);
-            auto const& T       = edgeState[idim].const_array(mfi,NUM_SPECIES+2);
-            auto const& rhoHm   = edgeState[idim].array(mfi,NUM_SPECIES+1);
-            amrex::ParallelFor(ebx, [rho, rhoY, T, rhoHm]
-            AMREX_GPU_DEVICE (int i, int j, int k) noexcept
-            {
-                if (rho(i,j,k) <= 0.0) {        // Covered faces
-                    rhoHm(i,j,k) = 0.0;
-                } else {
-                    getRHmixGivenTY( i, j, k, rho, rhoY, T, rhoHm );
-                }
-            });
+             const Box& ebx = amrex::surroundingNodes(bx,idim);
+             auto const& rho     = edgeState[idim].const_array(mfi,0);
+             auto const& rhoY    = edgeState[idim].const_array(mfi,1);
+             auto const& T       = edgeState[idim].const_array(mfi,NUM_SPECIES+2);
+             auto const& rhoHm   = edgeState[idim].array(mfi,NUM_SPECIES+1);
+#ifdef AMREX_USE_EB
+             if (flagfab.getType(ebx) == FabType::covered) {             // Covered boxes
+                 amrex::ParallelFor(ebx, [rhoHm]
+                 AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+                 {
+                     rhoHm(i,j,k) = 0.0;
+                 });
+             } else if (flagfab.getType(ebx) != FabType::regular ) {     // EB containing boxes 
+                 const auto& afrac = areafrac[idim]->array(mfi);
+                 amrex::ParallelFor(ebx, [rho, rhoY, T, rhoHm, afrac]
+                 AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+                 {
+                     if (afrac(i,j,k) <= 0.0) {                         // Covered faces
+                         rhoHm(i,j,k) = 0.0;
+                     } else {
+                         getRHmixGivenTY( i, j, k, rho, rhoY, T, rhoHm );
+                     }
+                 });
+             } else                                                     // Regular boxes
+#endif
+             {
+                 amrex::ParallelFor(ebx, [rho, rhoY, T, rhoHm]
+                 AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+                 {
+                     getRHmixGivenTY( i, j, k, rho, rhoY, T, rhoHm );
+                 });
+             }
          }
       }
 
@@ -552,6 +603,9 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
                                                  is_velocity, fluxes_are_area_weighted,
                                                  m_advection_type);
       }
+#ifdef AMREX_USE_EB
+      EB_set_covered_faces(GetArrOfPtrs(fluxes[lev]),0.);   
+#endif
    }
 
    //----------------------------------------------------------------
@@ -625,6 +679,7 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
                        1,
                        bcRecRhoH_d.dataPtr(),
                        geom[lev]);
+      EB_set_covered(advData->AofS[lev],0.0);
 #else
       //----------------------------------------------------------------
       // Otherwise go directly into AofS

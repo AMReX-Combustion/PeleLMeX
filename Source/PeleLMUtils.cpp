@@ -345,23 +345,27 @@ void PeleLM::advFluxDivergence(int a_lev,
         }
 #ifdef AMREX_USE_EB
         else {
-            AMREX_D_TERM(auto const& apx_arr = ebfact.getAreaFrac()[0]->const_array(mfi);,
-                         auto const& apy_arr = ebfact.getAreaFrac()[1]->const_array(mfi);,
-                         auto const& apz_arr = ebfact.getAreaFrac()[2]->const_array(mfi););
-            ParallelFor(bx, ncomp, [=]
-            AMREX_GPU_DEVICE (int i, int j, int k, int n) noexcept
-            {
-                if (!l_conserv_d[n] && vfrac_arr(i,j,k) > 0.) {
-                    Real qwsum  = AMREX_D_TERM(  apx_arr(i,j,k) * facex(i,j,k,n) + apx_arr(i+1,j,k) * facex(i+1,j,k,n),
-                                               + apy_arr(i,j,k) * facey(i,j,k,n) + apy_arr(i,j+1,k) * facey(i,j+1,k,n),
-                                               + apz_arr(i,j,k) * facez(i,j,k,n) + apz_arr(i,j,k+1) * facez(i,j,k+1,n));
-                    Real areasum  = AMREX_D_TERM(  apx_arr(i,j,k) + apx_arr(i+1,j,k),
-                                                 + apy_arr(i,j,k) + apy_arr(i,j+1,k),
-                                                 + apz_arr(i,j,k) + apz_arr(i,j,k+1));
-                    // Note that because we define adv update as MINUS div(u q), here we add q div (u)
-                    div_arr(i,j,k,n) += qwsum / areasum * divu_arr(i,j,k);
-                }
-            });
+            if (flagfab.getType(bx) == FabType::covered) {
+                AMREX_PARALLEL_FOR_4D(bx, ncomp, i, j, k, n, {div_arr(i,j,k,n) = 0.0;});
+            } else {
+                AMREX_D_TERM(auto const& apx_arr = ebfact.getAreaFrac()[0]->const_array(mfi);,
+                             auto const& apy_arr = ebfact.getAreaFrac()[1]->const_array(mfi);,
+                             auto const& apz_arr = ebfact.getAreaFrac()[2]->const_array(mfi););
+                ParallelFor(bx, ncomp, [=]
+                AMREX_GPU_DEVICE (int i, int j, int k, int n) noexcept
+                {
+                    if (!l_conserv_d[n] && vfrac_arr(i,j,k) > 0.) {
+                        Real qwsum  = AMREX_D_TERM(  apx_arr(i,j,k) * facex(i,j,k,n) + apx_arr(i+1,j,k) * facex(i+1,j,k,n),
+                                                   + apy_arr(i,j,k) * facey(i,j,k,n) + apy_arr(i,j+1,k) * facey(i,j+1,k,n),
+                                                   + apz_arr(i,j,k) * facez(i,j,k,n) + apz_arr(i,j,k+1) * facez(i,j,k+1,n));
+                        Real areasum  = AMREX_D_TERM(  apx_arr(i,j,k) + apx_arr(i+1,j,k),
+                                                     + apy_arr(i,j,k) + apy_arr(i,j+1,k),
+                                                     + apz_arr(i,j,k) + apz_arr(i,j,k+1));
+                        // Note that because we define adv update as MINUS div(u q), here we add q div (u)
+                        div_arr(i,j,k,n) += qwsum / areasum * divu_arr(i,j,k);
+                    }
+                });
+            }
         }
 #endif
     }
