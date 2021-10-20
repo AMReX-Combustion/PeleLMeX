@@ -67,11 +67,10 @@ void PeleLM::Setup() {
          ParmParse pp("peleLM");
          pp.query("chem_integrator",m_chem_integrator);
          m_reactor = pele::physics::reactions::ReactorBase::create(m_chem_integrator);
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
-         {
-            m_reactor->init(reactor_type, ncells_chem);
+         m_reactor->init(reactor_type, ncells_chem);
+         // For ReactorNull, we need to also skip instantaneous RR used in divU
+         if (m_chem_integrator == "ReactorNull") {
+            m_skipInstantRR = 1;
          }
       }
 
@@ -279,8 +278,6 @@ void PeleLM::readParameters() {
    // Reaction
    // -----------------------------------------
    pp.query("do_react",m_do_react);
-   pp.query("chem_rtol",m_rtol_chem);
-   pp.query("chem_atol",m_atol_chem);
    pp.query("use_typ_vals_chem",m_useTypValChem);
    pp.query("typical_values_reset_int",m_resetTypValInt);
 
