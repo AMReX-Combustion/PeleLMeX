@@ -938,6 +938,7 @@ class PeleLM : public amrex::AmrCore {
    int m_use_wbar = 1;
 
    // switch on/off different processes
+   // TODO: actually implement that
    int m_do_react = 1;
    int m_do_diff = 1;
    int m_do_adv = 1;
@@ -992,9 +993,9 @@ class PeleLM : public amrex::AmrCore {
    int m_numDivuIter = 1;
    int m_init_iter = 3;
 
-   // Chem
-   amrex::Real m_rtol_chem = 1.0e-10;
-   amrex::Real m_atol_chem = 1.0e-10;
+   // Chemistry
+   int m_skipInstantRR = 0;
+   
 
    // Typical values
    int m_resetTypValInt = 10;
