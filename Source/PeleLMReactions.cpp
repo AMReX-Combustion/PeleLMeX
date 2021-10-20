@@ -375,8 +375,6 @@ void PeleLM::advanceChemistry(int lev,
 void PeleLM::computeInstantaneousReactionRate(const Vector<MultiFab*> &I_R,
                                               const TimeStamp &a_time)
 {
-   BL_PROFILE_VAR("PeleLM::computeInstantaneousReactionRate()", computeInstantaneousReactionRate);
-
    for (int lev = 0; lev <= finest_level; ++lev) {
       // TODO EB Setup covered cells mask
       MultiFab mask(grids[lev],dmap[lev],1,0);
@@ -394,6 +392,7 @@ void PeleLM::computeInstantaneousReactionRate(int lev,
                                               const MultiFab &a_mask,
                                               MultiFab* a_I_R)
 {
+   BL_PROFILE("PeleLM::computeInstantaneousReactionRate()");
    auto ldata_p = getLevelDataPtr(lev,a_time);
 
 #ifdef AMREX_USE_EB
