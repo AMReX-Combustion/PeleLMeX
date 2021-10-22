@@ -80,7 +80,7 @@ void PeleLM::calcDivU(int is_init,
             // TODO Setup covered cells mask
             MultiFab mask(grids[lev],dmap[lev],1,0);
             mask.setVal(1.0);
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
             computeInstantaneousReactionRateEF(lev, a_time, mask, &RhoYdot);
 #else
             computeInstantaneousReactionRate(lev, a_time, mask, &RhoYdot);

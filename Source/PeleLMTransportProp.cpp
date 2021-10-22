@@ -1,6 +1,6 @@
 #include <PeleLM.H>
 #include <PeleLM_K.H>
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
 #include <PeleLMEF_K.H>
 #endif
 
@@ -69,7 +69,7 @@ void PeleLM::calcDiffusivity(const TimeStamp &a_time) {
          {
             getTransportCoeff( i, j, k, rhoY, T, rhoD, lambda, mu, ltransparm);
          });
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
          auto const& Ks   = ldata_p->mob_cc.array(mfi,0);
          auto eos = pele::physics::PhysicsType::eos();
          Real mwt[NUM_SPECIES] = {0.0};

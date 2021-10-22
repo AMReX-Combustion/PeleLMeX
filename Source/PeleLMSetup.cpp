@@ -3,7 +3,7 @@
 #include <PeleLMDeriveFunc.H>
 #include "PelePhysics.H"
 #include <AMReX_buildInfo.H>
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
 #include "EOS_Extension.H"
 #endif
 
@@ -74,7 +74,7 @@ void PeleLM::Setup() {
          }
       }
 
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
       pele::physics::eos::charge_mass(zk.arr);
       for (int n = 0; n < NUM_SPECIES; n++) {
          zk[n] *= 1000.0;    // CGS->MKS
@@ -182,7 +182,7 @@ void PeleLM::readParameters() {
       Print() << " Simulation performed with the closed chamber algorithm \n";
    }
 
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
    ParmParse ppef("ef");
 
    // Get the phiV bc
@@ -325,7 +325,7 @@ void PeleLM::readParameters() {
       ppa.query("regrid_int", m_regrid_int);
    }
 
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
    // -----------------------------------------
    // EFIELD
    // -----------------------------------------
@@ -402,7 +402,7 @@ void PeleLM::variablesSetup() {
       stateComponents.emplace_back(TEMP,"temp");
       Print() << " thermo. pressure: " << RHORT << "\n";
       stateComponents.emplace_back(RHORT,"RhoRT");
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
       Print() << " nE: " << NE << "\n";
       stateComponents.emplace_back(NE,"nE");
       Print() << " PhiV: " << PHIV << "\n";
@@ -449,7 +449,7 @@ void PeleLM::variablesSetup() {
       m_DiffTypeState[TEMP] = 0;
       m_AdvTypeState[RHORT] = 0;
       m_DiffTypeState[RHORT] = 0;
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
       m_AdvTypeState[NE] = 0;
       m_DiffTypeState[NE] = 0;
       m_AdvTypeState[PHIV] = 0;
@@ -491,7 +491,7 @@ void PeleLM::derivedSetup()
    // Kinetic energy
    derive_lst.add("kinetic_energy",IndexType::TheCellType(),1,pelelm_derkineticenergy,the_same_box);
 
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
    // Charge distribution
    derive_lst.add("chargedistrib",IndexType::TheCellType(),1,pelelm_derchargedist,the_same_box);
 
@@ -608,7 +608,7 @@ void PeleLM::resizeArray() {
    m_dmapChem.resize(max_level+1);
    m_baChemFlag.resize(max_level+1);
 
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
    m_leveldatanlsolve.resize(max_level+1);
 #endif
 

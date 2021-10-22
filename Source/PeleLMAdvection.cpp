@@ -311,7 +311,7 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
                                                dmap[lev], NUM_SPECIES+3, nGrow, MFInfo(), Factory(lev));
       }
 
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
       //----------------------------------------------------------------
       // Assemble drift and mac velocities
       ionDriftAddUmac(lev,advData);
@@ -356,7 +356,7 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
          auto const& rhoY_arr  = ldata_p->species.const_array(mfi);
          auto const& force_arr = advData->Forcing[lev].const_array(mfi,0);
 
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
          // Uncharged species all at once
          bool is_velocity = false;
          bool fluxes_are_area_weighted = false;

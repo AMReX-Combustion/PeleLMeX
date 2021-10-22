@@ -99,7 +99,7 @@ void PeleLM::WritePlotFile() {
       plt_VarsName.push_back("rhoh");
       plt_VarsName.push_back("temp");
       plt_VarsName.push_back("RhoRT");
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
       plt_VarsName.push_back("nE");
       plt_VarsName.push_back("phiV");
 #endif
@@ -120,7 +120,7 @@ void PeleLM::WritePlotFile() {
       for (int n = 0; n < NUM_SPECIES; n++) {
          plt_VarsName.push_back("I_R("+names[n]+")");
       }
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
       plt_VarsName.push_back("I_R(nE)");
 #endif
       plt_VarsName.push_back("FunctCall");
@@ -154,7 +154,7 @@ void PeleLM::WritePlotFile() {
          cnt += 1;
          MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->rhoRT, 0, cnt, 1, 0);
          cnt += 1;
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
          MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->nE, 0, cnt, 1, 0);
          cnt += 1;
          MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->phiV, 0, cnt, 1, 0);
@@ -311,7 +311,7 @@ void PeleLM::WriteCheckPointFile()
                          amrex::MultiFabFileFullPrefix(lev, checkpointname, level_prefix, "I_R"));
          }
 
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
          VisMF::Write(m_leveldata_new[lev]->phiV,
                       amrex::MultiFabFileFullPrefix(lev, checkpointname, level_prefix, "phiV"));
 
@@ -463,7 +463,7 @@ void PeleLM::ReadCheckPointFile()
                         amrex::MultiFabFileFullPrefix(lev, m_restart_file, level_prefix, "divU"));
          }
 
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
          if (!m_restart_nonEF) {
             VisMF::Read(m_leveldata_new[lev]->phiV,
                         amrex::MultiFabFileFullPrefix(lev, m_restart_file, level_prefix, "phiV"));

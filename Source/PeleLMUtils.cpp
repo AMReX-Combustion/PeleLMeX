@@ -393,7 +393,7 @@ PeleLM::floorSpecies(const TimeStamp &a_time)
          {
             fabMinMax( i, j, k, NUM_SPECIES, 0.0, AMREX_REAL_MAX, rhoY);
          });
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
          auto const& nE    = ldata_p->nE.array(mfi);
          amrex::ParallelFor(bx, [nE]
          AMREX_GPU_DEVICE (int i, int j, int k) noexcept

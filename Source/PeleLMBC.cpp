@@ -60,7 +60,7 @@ force_bc[] =
   BCType::foextrap, BCType::foextrap
 };
 
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
 int
 nE_bc[] =
 {
@@ -148,7 +148,7 @@ void PeleLM::setBoundaryConditions() {
          }
       }
 
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
       // nE
       for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
          m_bcrec_state[NE].setLo(idim,nE_bc[lo_bc[idim]]);
@@ -221,7 +221,7 @@ void PeleLM::fillPatchState(int lev, const TimeStamp &a_time) {
       if (m_has_divu) {
          fillpatch_divu(lev, time, ldata_p->divu, ldata_p->divu.nGrow());
       }
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
       fillpatch_nE(lev, time, ldata_p->nE, m_nGrowState);
       fillpatch_phiV(lev, time, ldata_p->phiV, m_nGrowState);
 #endif
@@ -257,7 +257,7 @@ void PeleLM::fillPatchTemp(const TimeStamp &a_time) {
    }
 }
 
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
 void PeleLM::fillPatchPhiV(const TimeStamp &a_time) {
    BL_PROFILE("PeleLM::fillPatchPhiV()");
    for (int lev = 0; lev <= finest_level; lev++) {
@@ -291,7 +291,7 @@ PeleLM::fillPatchState(int lev, Real a_time, int nGrow) {
       fillpatch_energy(lev, a_time, rhoh, temp, nGrow);
       MultiFab rhoRT(*mf, amrex::make_alias, RHORT, 1);
       fillpatch_thermoPress(lev, a_time, rhoRT, nGrow);
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
       MultiFab nE(*mf, amrex::make_alias, NE, 1);
       fillpatch_nE(lev, a_time, nE, nGrow);
       MultiFab phiV(*mf, amrex::make_alias, PHIV, 1);
@@ -595,7 +595,7 @@ void PeleLM::fillpatch_forces(Real a_time,
    }
 }
 
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
 void PeleLM::fillpatch_nE(int lev,
                           const amrex::Real a_time,
                           amrex::MultiFab &a_nE,
@@ -637,7 +637,7 @@ void PeleLM::fillpatch_nE(int lev,
 }
 #endif
 
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
 void PeleLM::fillpatch_phiV(int lev,
                             const amrex::Real a_time,
                             amrex::MultiFab &a_phiV,
@@ -935,7 +935,7 @@ void PeleLM::fillcoarsepatch_reaction(int lev,
                          refRatio(lev-1), mapper, {m_bcrec_force}, 0);
 }
 
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
 // Fill the nE
 void PeleLM::fillcoarsepatch_nE(int lev,
                                 const amrex::Real a_time,

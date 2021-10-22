@@ -64,7 +64,7 @@ void PeleLM::getVelForces(const TimeStamp &a_time,
       // Get other forces (gravity, ...)
       getVelForces(lev, bx, time, force_arr, vel_arr, rho_arr, rhoY_arr, rhoh_arr, temp_arr);
 
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
       const auto& phiV_arr    = ldata_p->phiV.const_array(mfi);
       const auto& ne_arr      = ldata_p->nE.const_array(mfi);
       addLorentzVelForces(lev, bx, time, force_arr, rhoY_arr, phiV_arr, ne_arr);
