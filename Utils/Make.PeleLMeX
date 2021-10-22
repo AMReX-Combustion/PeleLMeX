@@ -19,7 +19,7 @@ all: $(executable)
 #---------------
 LMdirs := Source
 ifeq ($(USE_EFIELD),TRUE)
-   DEFINES += -DPLM_USE_EFIELD
+   DEFINES += -DPELE_USE_EFIELD
    LMdirs += Source/Efield Source/Efield/GMRES Source/Efield/LinOps
 endif
 
