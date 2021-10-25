@@ -23,7 +23,7 @@ PeleLM::LevelData::LevelData(amrex::BoxArray const& ba,
          divu.define (ba, dm, 1             , 1           , MFInfo(), factory);
       }
       diff_cc.define (ba, dm, NUM_SPECIES+2 , 1           , MFInfo(), factory);
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
       nE.define      (ba, dm, 1             , a_nGrowState, MFInfo(), factory);
       phiV.define    (ba, dm, 1             , a_nGrowState, MFInfo(), factory);
       diffE_cc.define(ba, dm, 1             , 1           , MFInfo(), factory);
@@ -41,14 +41,14 @@ PeleLM::LevelDataReact::LevelDataReact(const amrex::BoxArray &ba,
                                        const amrex::FabFactory<FArrayBox> &factory)
 {
    int IRsize = NUM_SPECIES;
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
    IRsize += 1;
 #endif
    I_R.define(ba, dm, IRsize, 0, MFInfo(), factory);
    functC.define(ba, dm, 1, 0, MFInfo(), factory);
 }
 
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
 PeleLM::LevelDataNLSolve::LevelDataNLSolve(amrex::BoxArray const& ba,
                                            amrex::DistributionMapping const& dm,
                                            amrex::FabFactory<FArrayBox> const& factory,
@@ -124,7 +124,7 @@ PeleLM::AdvanceAdvData::AdvanceAdvData(int a_finestLevel,
       Forcing.resize(a_finestLevel+1);
       mac_divu.resize(a_finestLevel+1);
    }
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
    uDrift.resize(a_finestLevel+1);
 #endif
 
@@ -133,7 +133,7 @@ PeleLM::AdvanceAdvData::AdvanceAdvData(int a_finestLevel,
       for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
          const BoxArray& faceba = amrex::convert(ba[lev],IntVect::TheDimensionVector(idim));
          umac[lev][idim].define(faceba,dm[lev], 1, nGrowMAC, MFInfo(), *factory[lev]);
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
          uDrift[lev][idim].define(faceba,dm[lev], NUM_IONS, nGrowMAC, MFInfo(), *factory[lev]);
 #endif
       }
@@ -142,7 +142,7 @@ PeleLM::AdvanceAdvData::AdvanceAdvData(int a_finestLevel,
       } else {
          AofS[lev].define(ba[lev], dm[lev], NVAR , 0, MFInfo(), *factory[lev]);
          chi[lev].define(ba[lev], dm[lev], 1, 1, MFInfo(), *factory[lev]);
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
          Forcing[lev].define(ba[lev], dm[lev], NUM_SPECIES+2, nGrowAdv, MFInfo(), *factory[lev]); // Species + TEMP + nE
 #else
          Forcing[lev].define(ba[lev], dm[lev], NUM_SPECIES+1, nGrowAdv, MFInfo(), *factory[lev]); // Species + TEMP
@@ -166,7 +166,7 @@ PeleLM::copyStateNewToOld(int nGhost) {
          if ( m_has_divu ) {
             MultiFab::Copy(m_leveldata_old[lev]->divu,m_leveldata_new[lev]->divu,0,0,1,std::min(nGhost,1));
          }
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
          MultiFab::Copy(m_leveldata_old[lev]->nE,m_leveldata_new[lev]->nE,0,0,1,nGhost);
          MultiFab::Copy(m_leveldata_old[lev]->phiV,m_leveldata_new[lev]->phiV,0,0,1,nGhost);
 #endif
@@ -196,7 +196,7 @@ PeleLM::copyStateOldToNew(int nGhost) {
          if ( m_has_divu ) {
             MultiFab::Copy(m_leveldata_new[lev]->divu,m_leveldata_old[lev]->divu,0,0,1,std::min(nGhost,1));
          }
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
          MultiFab::Copy(m_leveldata_new[lev]->nE,m_leveldata_old[lev]->nE,0,0,1,nGhost);
          MultiFab::Copy(m_leveldata_new[lev]->phiV,m_leveldata_old[lev]->phiV,0,0,1,nGhost);
 #endif
@@ -211,7 +211,7 @@ PeleLM::copyTransportOldToNew() {
       MultiFab::Copy(m_leveldata_new[lev]->visc_cc,m_leveldata_old[lev]->visc_cc,0,0,1,1);
       if ( !m_incompressible ) {
          MultiFab::Copy(m_leveldata_new[lev]->diff_cc,m_leveldata_old[lev]->diff_cc,0,0,NUM_SPECIES+2,1);
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
          MultiFab::Copy(m_leveldata_new[lev]->diffE_cc,m_leveldata_old[lev]->diffE_cc,0,0,1,1);
          MultiFab::Copy(m_leveldata_new[lev]->mobE_cc,m_leveldata_old[lev]->mobE_cc,0,0,1,1);
          MultiFab::Copy(m_leveldata_new[lev]->mob_cc,m_leveldata_old[lev]->mob_cc,0,0,NUM_IONS,1);

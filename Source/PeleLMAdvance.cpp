@@ -66,7 +66,7 @@ void PeleLM::Advance(int is_initIter) {
    calcViscosity(AmrOldTime);
    if (! m_incompressible ) {
       calcDiffusivity(AmrOldTime);
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
       poissonSolveEF(AmrOldTime);
 #endif
    }
@@ -83,7 +83,7 @@ void PeleLM::Advance(int is_initIter) {
    copyTransportOldToNew();
    if (! m_incompressible ) {
       copyDiffusionOldToNew(diffData);
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
       ionDriftVelocity(advData);
 #endif
    }
@@ -113,7 +113,7 @@ void PeleLM::Advance(int is_initIter) {
       averageDownSpecies(AmrNewTime);
       averageDownEnthalpy(AmrNewTime);
       averageDownTemp(AmrNewTime);
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
       averageDownnE(AmrNewTime);
 #endif
       fillPatchState(AmrNewTime);
@@ -193,7 +193,7 @@ void PeleLM::oneSDC(int sdcIter,
       averageDownSpecies(AmrNewTime);
       averageDownEnthalpy(AmrNewTime);
       averageDownTemp(AmrNewTime);
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
       averageDownnE(AmrNewTime);
 #endif
       fillPatchState(AmrNewTime);
@@ -206,7 +206,7 @@ void PeleLM::oneSDC(int sdcIter,
          int do_avgDown = 1;                          // Always
          calcDivU(is_initialization,computeDiffusionTerm,do_avgDown,AmrNewTime,diffData);
       }
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
       ionDriftVelocity(advData);
 #endif
    }
@@ -280,7 +280,7 @@ void PeleLM::oneSDC(int sdcIter,
    }
    //----------------------------------------------------------------
 
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
    //----------------------------------------------------------------
    // Solve for implicit non-linear nE/PhiV system
    //----------------------------------------------------------------

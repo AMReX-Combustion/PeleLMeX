@@ -25,13 +25,13 @@ PeleLM::computeDt(int is_init,
       if (!m_incompressible && m_has_divu) {
          Real dtdivU = estDivUDt(a_time);
          estdt = std::min(estdt,dtdivU);
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
          Real dtions = estEFIonsDt(a_time);
          estdt = std::min(estdt, dtions);
 #endif
          if ( m_verbose ) {
             Print() << " Est. time step - Conv: " << dtconv << ", divu: " << dtdivU
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
                     << ", ions: " << dtions
 #endif
                     << "\n";

@@ -42,7 +42,7 @@ PeleLM::getLevelDataPtr(int lev, const PeleLM::TimeStamp &a_time, int useUMac)
          fillpatch_density(lev, time, m_leveldata_floating->density, m_nGrowState);
          fillpatch_species(lev, time, m_leveldata_floating->species, m_nGrowState);
          fillpatch_energy(lev, time, m_leveldata_floating->rhoh, m_leveldata_floating->temp, m_nGrowState);
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
          fillpatch_phiV(lev, time, m_leveldata_floating->phiV, m_nGrowState);
          fillpatch_nE(lev, time, m_leveldata_floating->nE, m_nGrowState);
 #endif
@@ -328,7 +328,7 @@ PeleLM::averageDownRhoRT(const PeleLM::TimeStamp &a_time)
    }
 }
 
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
 void
 PeleLM::averageDownnE(const PeleLM::TimeStamp &a_time)
 {

@@ -64,7 +64,7 @@ void PeleLM::MakeNewLevelFromScratch( int lev,
       m_leveldatareact[lev]->functC.setVal(0.0);
    }
 
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
    int nGrowNL = 1;
    m_leveldatanlsolve[lev].reset(new LevelDataNLSolve(grids[lev], dmap[lev], *m_factory[lev], 1));
 #endif
@@ -118,7 +118,7 @@ void PeleLM::initData() {
       averageDownState(AmrNewTime);
       fillPatchState(AmrNewTime);
 
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
       poissonSolveEF(AmrNewTime);
       fillPatchPhiV(AmrNewTime);
 #endif
@@ -228,7 +228,7 @@ void PeleLM::initData() {
       // Read starting configuration from chk file.
       ReadCheckPointFile();
 
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
       // If restarting from a non efield simulation
       if (m_restart_nonEF) {
          // either pass Y_ne -> nE or initialize nE for electro-neutral
@@ -293,7 +293,7 @@ void PeleLM::initLevelData(int lev) {
       auto  const &rhoH_arr  = (m_incompressible) ? DummyFab.array() : ldata_p->rhoh.array(mfi);
       auto  const &temp_arr  = (m_incompressible) ? DummyFab.array() : ldata_p->temp.array(mfi);
       auto  const &aux_arr   = (m_nAux > 0) ? ldata_p->auxiliaries.array(mfi) : DummyFab.array();
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
       auto  const &ne_arr    = ldata_p->nE.array(mfi);
       auto  const &phiV_arr  = ldata_p->phiV.array(mfi);
 #endif
@@ -302,7 +302,7 @@ void PeleLM::initLevelData(int lev) {
       {
          pelelm_initdata(i, j, k, m_incompressible, vel_arr, rho_arr,
                          rhoY_arr, rhoH_arr, temp_arr, aux_arr,
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
                          ne_arr, phiV_arr,  
 #endif
                          geomdata, *lprobparm, lpmfdata);
