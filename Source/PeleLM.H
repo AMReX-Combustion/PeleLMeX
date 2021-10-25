@@ -341,6 +341,7 @@ class PeleLM : public amrex::AmrCore {
                                          const PeleLM::TimeStamp &a_time,
                                          const amrex::MultiFab &a_mask,
                                          amrex::MultiFab* a_I_R);
+   void getHeatRelease(int lev, amrex::MultiFab *a_HR);
    //-----------------------------------------------------------------------------
 
    //-----------------------------------------------------------------------------
@@ -887,6 +888,9 @@ class PeleLM : public amrex::AmrCore {
    std::string m_check_file{"chk"};
    int m_derivePlotVarCount = 0;
    amrex::Vector<std::string> m_derivePlotVars;
+   int m_plotChemDiag = 0;
+   int m_plotHeatRelease = 0;
+   int m_plotStateSpec = 0;
    int m_plot_int = 0;
    int m_check_int = 0;
 
@@ -995,7 +999,6 @@ class PeleLM : public amrex::AmrCore {
 
    // Chemistry
    int m_skipInstantRR = 0;
-   
 
    // Typical values
    int m_resetTypValInt = 10;

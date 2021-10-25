@@ -483,3 +483,36 @@ void PeleLM::getScalarReactForce(std::unique_ptr<AdvanceAdvData> &advData)
       }
    }
 }
+
+void PeleLM::getHeatRelease(int a_lev,
+                            MultiFab *a_HR)
+{
+    auto ldataNew_p = getLevelDataPtr(a_lev,AmrNewTime);
+    auto ldataR_p = getLevelDataReactPtr(a_lev);
+
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+    {
+        FArrayBox EnthFab;
+        for (MFIter mfi(*a_HR,TilingIfNotGPU()); mfi.isValid(); ++mfi)
+        {
+           const Box& bx = mfi.tilebox();
+           EnthFab.resize(bx,NUM_SPECIES);
+           Elixir  Enthi   = EnthFab.elixir();
+           auto const& react = ldataR_p->I_R.const_array(mfi,0);
+           auto const& T     = ldataNew_p->temp.const_array(mfi);
+           auto const& Hi    = EnthFab.array();
+           auto const& HRR   = a_HR->array(mfi);
+           amrex::ParallelFor(bx, [T, Hi, HRR, react]
+           AMREX_GPU_DEVICE (int i, int j, int k) noexcept 
+           {    
+              getHGivenT( i, j, k, T, Hi );
+              HRR(i,j,k) = 0.0; 
+              for (int n = 0; n < NUM_SPECIES; n++) {
+                 HRR(i,j,k) -= Hi(i,j,k,n) * react(i,j,k,n);
+              }    
+           });
+        }
+    }
+}

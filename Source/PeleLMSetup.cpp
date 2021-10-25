@@ -71,6 +71,8 @@ void PeleLM::Setup() {
          // For ReactorNull, we need to also skip instantaneous RR used in divU
          if (m_chem_integrator == "ReactorNull") {
             m_skipInstantRR = 1;
+            m_plotChemDiag = 0;
+            m_plotHeatRelease = 0;
          }
       }
 
@@ -280,6 +282,12 @@ void PeleLM::readParameters() {
    pp.query("do_react",m_do_react);
    pp.query("use_typ_vals_chem",m_useTypValChem);
    pp.query("typical_values_reset_int",m_resetTypValInt);
+   if (m_do_react) {
+      m_plotChemDiag = 0;
+      m_plotHeatRelease = 1;
+      pp.query("plot_chemDiagnostics",m_plotChemDiag);
+      pp.query("plot_heatRelease",m_plotHeatRelease);
+   }
 
    // -----------------------------------------
    // Advection
@@ -359,6 +367,7 @@ void PeleLM::readIOParameters() {
          pp.get("derive_plot_vars", m_derivePlotVars[ivar],ivar);
       }
    }
+   pp.query("plot_speciesState" , m_plotStateSpec);
 
 }
 

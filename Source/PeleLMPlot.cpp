@@ -42,20 +42,27 @@ void PeleLM::WritePlotFile() {
 
    // State
    if (m_incompressible) {
+      // Velocity + pressure gradients
       ncomp = 2*AMREX_SPACEDIM;
    } else {
+      // State + pressure gradients
       ncomp = NVAR + AMREX_SPACEDIM;
+      // Make the plot lighter by dropping species by default
+      if (!m_plotStateSpec) ncomp -= NUM_SPECIES;
       if (m_has_divu) {
          ncomp += 1;
       }
    }
 
    // Reactions
-   if (m_do_react) {
+   if (m_do_react && !m_skipInstantRR) {
       // Cons Rate
       ncomp += nCompIR();
       // FunctCall
       ncomp += 1;
+      // Extras:
+      if (m_plotHeatRelease) ncomp += 1;
+      //if (m_plotChemDiag) ncomp += 1;     // TODO
    }
 
 #ifdef AMREX_USE_EB
@@ -93,8 +100,10 @@ void PeleLM::WritePlotFile() {
 #endif
    if (!m_incompressible) {
       plt_VarsName.push_back("density");
-      for (int n = 0; n < NUM_SPECIES; n++) {
-         plt_VarsName.push_back("rho.Y("+names[n]+")");
+      if (m_plotStateSpec) {
+         for (int n = 0; n < NUM_SPECIES; n++) {
+            plt_VarsName.push_back("rho.Y("+names[n]+")");
+         }
       }
       plt_VarsName.push_back("rhoh");
       plt_VarsName.push_back("temp");
@@ -116,7 +125,7 @@ void PeleLM::WritePlotFile() {
 #endif
 #endif
 
-   if (m_do_react) {
+   if (m_do_react  && !m_skipInstantRR) {
       for (int n = 0; n < NUM_SPECIES; n++) {
          plt_VarsName.push_back("I_R("+names[n]+")");
       }
@@ -124,6 +133,9 @@ void PeleLM::WritePlotFile() {
       plt_VarsName.push_back("I_R(nE)");
 #endif
       plt_VarsName.push_back("FunctCall");
+      // Extras:
+      if (m_plotHeatRelease) plt_VarsName.push_back("HeatRelease");
+      //if (m_plotChemDiag) ncomp += 1;     // TODO
    }
 
 #ifdef AMREX_USE_EB
@@ -146,8 +158,10 @@ void PeleLM::WritePlotFile() {
       if (!m_incompressible) {
          MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->density, 0, cnt, 1, 0);
          cnt += 1;
-         MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->species, 0, cnt, NUM_SPECIES, 0);
-         cnt += NUM_SPECIES;
+         if (m_plotStateSpec) {
+            MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->species, 0, cnt, NUM_SPECIES, 0);
+            cnt += NUM_SPECIES;
+         }
          MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->rhoh, 0, cnt, 1, 0);
          cnt += 1;
          MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->temp, 0, cnt, 1, 0);
@@ -168,12 +182,20 @@ void PeleLM::WritePlotFile() {
       MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->gp, 0, cnt,AMREX_SPACEDIM,0);
       cnt += AMREX_SPACEDIM;
 
-      if (m_do_react) {
+      if (m_do_react  && !m_skipInstantRR) {
          MultiFab::Copy(mf_plt[lev], m_leveldatareact[lev]->I_R, 0, cnt, nCompIR(), 0);
          cnt += nCompIR();
 
          MultiFab::Copy(mf_plt[lev], m_leveldatareact[lev]->functC, 0, cnt, 1, 0);
          cnt += 1;
+
+         if (m_plotHeatRelease) {
+            std::unique_ptr<MultiFab> mf;
+            mf.reset( new MultiFab(grids[lev],dmap[lev],1,0));
+            getHeatRelease(lev, mf.get());
+            MultiFab::Copy(mf_plt[lev], *mf, 0, cnt, 1, 0);
+            cnt += 1;
+         }
       }
 
 #ifdef AMREX_USE_EB
