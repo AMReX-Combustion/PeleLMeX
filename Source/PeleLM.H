@@ -4,8 +4,8 @@
 #include <AMReX_AmrCore.H>
 #include <AMReX_MultiFabUtil.H>
 #include <AMReX_BC_TYPES.H>
-#include <AMReX_MacProjector.H>
-#include <AMReX_NodalProjector.H>
+#include <hydro_MacProjector.H>
+#include <hydro_NodalProjector.H>
 #include <AMReX_ErrorList.H>
 #include <AMReX_VisMF.H>
 
