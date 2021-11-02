@@ -23,9 +23,9 @@ USE_EFIELD		 = FALSE
 
 # PelePhysics
 Chemistry_Model = drm19
-Reactions_dir	 = Fuego
-Eos_dir			 = Fuego
-Transport_dir   = Simple
+Reactions_Model	 = Fuego
+Eos_Model			 = Fuego
+Transport_Model   = Simple
 
 USE_SUNDIALS_PP = TRUE
 
