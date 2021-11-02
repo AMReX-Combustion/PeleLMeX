@@ -27,7 +27,7 @@ amr.max_grid_size   = 128               # max box size
 prob.P_mean = 1013250.0
 prob.standoff = -0.012
 prob.pertmag = 0.0001
-prob.pmf_datafile = "drm19_H2CH4_10Atm.dat"
+pmf.datafile = "drm19_H2CH4_10Atm.dat"
 
 #-------------------------PeleLM CONTROL----------------------------
 peleLM.v = 1
