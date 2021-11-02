@@ -1,6 +1,5 @@
 #include <PeleLM.H>
 #include <AMReX_ParmParse.H>
-#include <pmf.H>
 
 void PeleLM::readProbParm()
 {
@@ -18,8 +17,4 @@ void PeleLM::readProbParm()
    pp.query("do_ignition",  PeleLM::prob_parm->do_ignit);
    pp.query("ignition_SphRad",  PeleLM::prob_parm->ignitSphereRad);
    pp.query("ignition_SphT",  PeleLM::prob_parm->ignitT);
-   std::string pmf_datafile;
-   pp.query("pmf_datafile", pmf_datafile);
-   int pmf_do_average = 0;
-   PMF::read_pmf(pmf_datafile, pmf_do_average);
 }
