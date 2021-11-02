@@ -11,6 +11,7 @@
 
 #include <mechanism.H>
 #include "PelePhysics.H"
+#include "PMFData.H"
 #include "ReactorBase.H"
 #include <PeleLM_Index.H>
 #include <PeleLMDerive.H>
@@ -864,6 +865,9 @@ class PeleLM : public amrex::AmrCore {
 
    // Problem parameters
    std::unique_ptr<ProbParm> prob_parm;
+
+   // PMF parameters
+   pele::physics::PMF::PmfData pmf_data;
 
    // Transport pointer
    pele::physics::transport::TransportParams<

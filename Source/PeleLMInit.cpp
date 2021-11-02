@@ -1,5 +1,4 @@
 #include <PeleLM.H>
-#include <pmf_data.H>
 #include <pelelm_prob.H>
 
 using namespace amrex;
@@ -278,7 +277,7 @@ void PeleLM::initLevelData(int lev) {
 
    // Prob/PMF datas
    ProbParm const* lprobparm = prob_parm.get();
-   PmfData const* lpmfdata   = pmf_data_g;
+   pele::physics::PMF::PmfData::DataContainer const* lpmfdata   = pmf_data.getDeviceData();
 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
