@@ -7,8 +7,8 @@
 
 #include <PeleLM_Index.H>
 #include <pelelm_prob_parm.H>
-#include <pmf.H>
-#include <pmf_data.H>
+#include <PMF.H>
+#include <PMFData.H>
 #include <PelePhysics.H>
 
 AMREX_GPU_DEVICE
@@ -23,7 +23,7 @@ void pelelm_initdata(int i, int j, int k,
                      amrex::Array4<amrex::Real> const& aux,
                      amrex::GeometryData const& geomdata,
                      ProbParm const& prob_parm,
-                     PmfData const * pmf_data)
+                     pele::physics::PMF::PmfData::DataContainer const * pmf_data)
 {
     const amrex::Real* prob_lo = geomdata.ProbLo();
     const amrex::Real* prob_hi = geomdata.ProbHi();
@@ -79,7 +79,7 @@ void pelelm_initdata(int i, int j, int k,
 #endif
 
 
-    PMF::pmf(pmf_data,y1, y2, pmf_vals);
+    pele::physics::PMF::pmf(pmf_data,y1, y2, pmf_vals);
 
     temp(i,j,k) = pmf_vals[0];;
 
@@ -126,7 +126,7 @@ bcnormal(
   const amrex::Real time,
   amrex::GeometryData const& geomdata,
   ProbParm const& prob_parm,
-  PmfData const *pmf_data)
+  pele::physics::PMF::PmfData::DataContainer const *pmf_data)
 {
   const amrex::Real* prob_lo = geomdata.ProbLo();
   amrex::GpuArray<amrex::Real, NUM_SPECIES + 4> pmf_vals = {0.0};
@@ -135,7 +135,7 @@ bcnormal(
 
   auto eos = pele::physics::PhysicsType::eos();
   if (sgn == 1) {
-    PMF::pmf(pmf_data,prob_lo[idir], prob_lo[idir], pmf_vals);
+    pele::physics::PMF::pmf(pmf_data,prob_lo[idir], prob_lo[idir], pmf_vals);
 
     s_ext[VELX] = 0.0;
 #if ( AMREX_SPACEDIM == 2 )
