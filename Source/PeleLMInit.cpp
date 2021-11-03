@@ -1,5 +1,4 @@
 #include <PeleLM.H>
-#include <pmf_data.H>
 #include <pelelm_prob.H>
 
 using namespace amrex;
@@ -80,12 +79,12 @@ void PeleLM::MakeNewLevelFromScratch( int lev,
 
    // Mac projector
 #if AMREX_USE_EB
-   macproj.reset(new MacProjector(Geom(0,finest_level),
-                                  MLMG::Location::FaceCentroid,  // Location of mac velocity
-                                  MLMG::Location::FaceCentroid,  // Location of beta
-                                  MLMG::Location::CellCenter) ); // Location of solution variable phi
+   macproj.reset(new Hydro::MacProjector(Geom(0,finest_level),
+                                         MLMG::Location::FaceCentroid,  // Location of mac velocity
+                                         MLMG::Location::FaceCentroid,  // Location of beta
+                                         MLMG::Location::CellCenter) ); // Location of solution variable phi
 #else
-   macproj.reset(new MacProjector(Geom(0,finest_level)));
+   macproj.reset(new Hydro::MacProjector(Geom(0,finest_level)));
 #endif
    m_macProjOldSize = finest_level+1;
 }
@@ -278,7 +277,7 @@ void PeleLM::initLevelData(int lev) {
 
    // Prob/PMF datas
    ProbParm const* lprobparm = prob_parm.get();
-   PmfData const* lpmfdata   = pmf_data_g;
+   pele::physics::PMF::PmfData::DataContainer const* lpmfdata   = pmf_data.getDeviceData();
 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())

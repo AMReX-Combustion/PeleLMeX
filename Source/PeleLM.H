@@ -11,6 +11,7 @@
 
 #include <mechanism.H>
 #include "PelePhysics.H"
+#include "PMFData.H"
 #include "ReactorBase.H"
 #include <PeleLM_Index.H>
 #include <PeleLMDerive.H>
@@ -865,6 +866,9 @@ class PeleLM : public amrex::AmrCore {
    // Problem parameters
    std::unique_ptr<ProbParm> prob_parm;
 
+   // PMF parameters
+   pele::physics::PMF::PmfData pmf_data;
+
    // Transport pointer
    pele::physics::transport::TransportParams<
          pele::physics::PhysicsType::transport_type> trans_parms;
@@ -876,7 +880,7 @@ class PeleLM : public amrex::AmrCore {
    // Linear solvers
    std::unique_ptr<DiffusionOp> m_diffusion_op;
    std::unique_ptr<DiffusionTensorOp> m_diffusionTensor_op;
-   std::unique_ptr<amrex::MacProjector> macproj;
+   std::unique_ptr<Hydro::MacProjector> macproj;
    int m_macProjNeedReset = 0;
    int m_macProjOldSize = 0;
 

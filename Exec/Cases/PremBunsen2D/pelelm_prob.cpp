@@ -1,6 +1,6 @@
 #include <PeleLM.H>
 #include <AMReX_ParmParse.H>
-#include <pmf.H>
+#include <PMFData.H>
 
 void PeleLM::readProbParm()
 {
@@ -14,8 +14,5 @@ void PeleLM::readProbParm()
    pp.query("Vcoflow", PeleLM::prob_parm->Vcoflow);
    pp.query("slot_width", PeleLM::prob_parm->slot_width);
 
-   std::string pmf_datafile;
-   pp.query("pmf_datafile", pmf_datafile);
-   int pmf_do_average = 1;
-   PMF::read_pmf(pmf_datafile, pmf_do_average);
+   PeleLM::pmf_data.initialize(); 
 }

@@ -1,5 +1,4 @@
 #include <PeleLM.H>
-#include <pmf_data.H>
 #include <PeleLMBCfill.H>
 #include <AMReX_FillPatchUtil.H>
 #ifdef AMREX_USE_EB
@@ -310,9 +309,10 @@ void PeleLM::fillpatch_velocity(int lev,
                                 amrex::MultiFab &a_vel,
                                 int nGhost) {
    ProbParm const* lprobparm = prob_parm.get();
+   pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
    if (lev == 0) {
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirVel>> bndry_func(geom[lev], fetchBCRecArray(VELX,AMREX_SPACEDIM),
-                                                                     PeleLMCCFillExtDirVel{lprobparm, pmf_data_g, m_nAux});
+                                                                     PeleLMCCFillExtDirVel{lprobparm, lpmfdata, m_nAux});
       FillPatchSingleLevel(a_vel, IntVect(nGhost), a_time,
                            {&(m_leveldata_old[lev]->velocity),&(m_leveldata_new[lev]->velocity)},
                            {m_t_old[lev], m_t_new[lev]},0,0,AMREX_SPACEDIM,geom[lev], bndry_func, 0);
@@ -327,9 +327,9 @@ void PeleLM::fillpatch_velocity(int lev,
 #endif
 
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirVel>> crse_bndry_func(geom[lev-1], fetchBCRecArray(VELX,AMREX_SPACEDIM),
-                                                                          PeleLMCCFillExtDirVel{lprobparm, pmf_data_g, m_nAux});
+                                                                          PeleLMCCFillExtDirVel{lprobparm, lpmfdata, m_nAux});
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirVel>> fine_bndry_func(geom[lev], fetchBCRecArray(VELX,AMREX_SPACEDIM),
-                                                                          PeleLMCCFillExtDirVel{lprobparm, pmf_data_g, m_nAux});
+                                                                          PeleLMCCFillExtDirVel{lprobparm, lpmfdata, m_nAux});
       FillPatchTwoLevels(a_vel, IntVect(nGhost), a_time,
                          {&(m_leveldata_old[lev-1]->velocity),&(m_leveldata_new[lev-1]->velocity)},
                          {m_t_old[lev-1], m_t_new[lev-1]},
@@ -347,11 +347,12 @@ void PeleLM::fillpatch_density(int lev,
                                amrex::MultiFab &a_density,
                                int nGhost) {
    ProbParm const* lprobparm = prob_parm.get();
+   pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
    if (lev == 0) {
 
       // Density
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDens>> bndry_func_rho(geom[lev], fetchBCRecArray(DENSITY,1),
-                                                                          PeleLMCCFillExtDirDens{lprobparm, pmf_data_g, m_nAux});
+                                                                          PeleLMCCFillExtDirDens{lprobparm, lpmfdata, m_nAux});
       FillPatchSingleLevel(a_density, IntVect(nGhost), a_time,
                            {&(m_leveldata_old[lev]->density),&(m_leveldata_new[lev]->density)},
                            {m_t_old[lev], m_t_new[lev]},0,0,1,geom[lev], bndry_func_rho, 0);
@@ -368,9 +369,9 @@ void PeleLM::fillpatch_density(int lev,
 
       // Density
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDens>> crse_bndry_func_rho(geom[lev-1], fetchBCRecArray(DENSITY,1), 
-                                                                               PeleLMCCFillExtDirDens{lprobparm, pmf_data_g, m_nAux});
+                                                                               PeleLMCCFillExtDirDens{lprobparm, lpmfdata, m_nAux});
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDens>> fine_bndry_func_rho(geom[lev], fetchBCRecArray(DENSITY,1),
-                                                                               PeleLMCCFillExtDirDens{lprobparm, pmf_data_g, m_nAux});
+                                                                               PeleLMCCFillExtDirDens{lprobparm, lpmfdata, m_nAux});
       FillPatchTwoLevels(a_density, IntVect(nGhost), a_time,
                          {&(m_leveldata_old[lev-1]->density),&(m_leveldata_new[lev-1]->density)},
                          {m_t_old[lev-1], m_t_new[lev-1]},
@@ -388,11 +389,12 @@ void PeleLM::fillpatch_species(int lev,
                                amrex::MultiFab &a_species,
                                int nGhost) {
    ProbParm const* lprobparm = prob_parm.get();
+   pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
    if (lev == 0) {
 
       // Species
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirSpec>> bndry_func(geom[lev], fetchBCRecArray(FIRSTSPEC,NUM_SPECIES),
-                                                                      PeleLMCCFillExtDirSpec{lprobparm, pmf_data_g, m_nAux});
+                                                                      PeleLMCCFillExtDirSpec{lprobparm, lpmfdata, m_nAux});
       FillPatchSingleLevel(a_species, IntVect(nGhost), a_time,
                            {&(m_leveldata_old[lev]->species),&(m_leveldata_new[lev]->species)},
                            {m_t_old[lev], m_t_new[lev]},0,0,NUM_SPECIES,geom[lev], bndry_func, 0);
@@ -408,9 +410,9 @@ void PeleLM::fillpatch_species(int lev,
 
       // Species
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirSpec>> crse_bndry_func(geom[lev-1], fetchBCRecArray(FIRSTSPEC,NUM_SPECIES),
-                                                                           PeleLMCCFillExtDirSpec{lprobparm, pmf_data_g, m_nAux});
+                                                                           PeleLMCCFillExtDirSpec{lprobparm, lpmfdata, m_nAux});
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirSpec>> fine_bndry_func(geom[lev], fetchBCRecArray(FIRSTSPEC,NUM_SPECIES),
-                                                                           PeleLMCCFillExtDirSpec{lprobparm, pmf_data_g, m_nAux});
+                                                                           PeleLMCCFillExtDirSpec{lprobparm, lpmfdata, m_nAux});
       FillPatchTwoLevels(a_species, IntVect(nGhost), a_time,
                          {&(m_leveldata_old[lev-1]->species),&(m_leveldata_new[lev-1]->species)},
                          {m_t_old[lev-1], m_t_new[lev-1]},
@@ -429,18 +431,19 @@ void PeleLM::fillpatch_energy(int lev,
                               amrex::MultiFab &a_temp,
                               int nGhost) {
    ProbParm const* lprobparm = prob_parm.get();
+   pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
    if (lev == 0) {
 
       // rhoH
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirRhoH>> bndry_func_rhoh(geom[lev], fetchBCRecArray(RHOH,1),
-                                                                          PeleLMCCFillExtDirRhoH{lprobparm, pmf_data_g, m_nAux});
+                                                                          PeleLMCCFillExtDirRhoH{lprobparm, lpmfdata, m_nAux});
       FillPatchSingleLevel(a_rhoh, IntVect(nGhost), a_time,
                            {&(m_leveldata_old[lev]->rhoh),&(m_leveldata_new[lev]->rhoh)},
                            {m_t_old[lev], m_t_new[lev]},0,0,1,geom[lev], bndry_func_rhoh, 0);
 
       // temperature
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirTemp>> bndry_func(geom[lev], fetchBCRecArray(TEMP,1),
-                                                                      PeleLMCCFillExtDirTemp{lprobparm, pmf_data_g, m_nAux});
+                                                                      PeleLMCCFillExtDirTemp{lprobparm, lpmfdata, m_nAux});
       FillPatchSingleLevel(a_temp, IntVect(nGhost), a_time,
                            {&(m_leveldata_old[lev]->temp),&(m_leveldata_new[lev]->temp)},
                            {m_t_old[lev], m_t_new[lev]},0,0,1,geom[lev], bndry_func, 0);
@@ -456,9 +459,9 @@ void PeleLM::fillpatch_energy(int lev,
 
       // rhoH
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirRhoH>> crse_bndry_func_rhoh(geom[lev-1], fetchBCRecArray(RHOH,1),
-                                                                                PeleLMCCFillExtDirRhoH{lprobparm, pmf_data_g, m_nAux});
+                                                                                PeleLMCCFillExtDirRhoH{lprobparm, lpmfdata, m_nAux});
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirRhoH>> fine_bndry_func_rhoh(geom[lev], fetchBCRecArray(RHOH,1),
-                                                                                PeleLMCCFillExtDirRhoH{lprobparm, pmf_data_g, m_nAux});
+                                                                                PeleLMCCFillExtDirRhoH{lprobparm, lpmfdata, m_nAux});
       FillPatchTwoLevels(a_rhoh, IntVect(nGhost), a_time,
                          {&(m_leveldata_old[lev-1]->rhoh),&(m_leveldata_new[lev-1]->rhoh)},
                          {m_t_old[lev-1], m_t_new[lev-1]},
@@ -470,9 +473,9 @@ void PeleLM::fillpatch_energy(int lev,
 
       // temperature
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirTemp>> crse_bndry_func(geom[lev-1], fetchBCRecArray(TEMP,1),
-                                                                           PeleLMCCFillExtDirTemp{lprobparm, pmf_data_g, m_nAux});
+                                                                           PeleLMCCFillExtDirTemp{lprobparm, lpmfdata, m_nAux});
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirTemp>> fine_bndry_func(geom[lev], fetchBCRecArray(TEMP,1),
-                                                                           PeleLMCCFillExtDirTemp{lprobparm, pmf_data_g, m_nAux});
+                                                                           PeleLMCCFillExtDirTemp{lprobparm, lpmfdata, m_nAux});
       FillPatchTwoLevels(a_temp, IntVect(nGhost), a_time,
                          {&(m_leveldata_old[lev-1]->temp),&(m_leveldata_new[lev-1]->temp)},
                          {m_t_old[lev-1], m_t_new[lev-1]},
@@ -491,6 +494,7 @@ void PeleLM::fillpatch_thermoPress(int lev,
                                    amrex::MultiFab &a_rhoRT,
                                    int nGhost) {
    ProbParm const* lprobparm = prob_parm.get();
+   pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
    if (lev == 0) {
 
       // Density
@@ -532,6 +536,7 @@ void PeleLM::fillpatch_divu(int lev,
                             amrex::MultiFab &a_divu,
                             int nGhost) {
    ProbParm const* lprobparm = prob_parm.get();
+   pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
    if (lev == 0) {
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> bndry_func(geom[lev], {m_bcrec_divu},
                                                                      PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
@@ -572,6 +577,7 @@ void PeleLM::fillpatch_forces(Real a_time,
    AMREX_ASSERT(a_force[0]->nComp() <= m_bcrec_force.size());
    const int nComp = a_force[0]->nComp();
    ProbParm const* lprobparm = prob_parm.get();
+   pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
 
    int lev = 0;
    {
@@ -601,11 +607,12 @@ void PeleLM::fillpatch_nE(int lev,
                           amrex::MultiFab &a_nE,
                           int nGhost) {
    ProbParm const* lprobparm = prob_parm.get();
+   pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
    if (lev == 0) {
 
       // nE
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirnE>> bndry_func(geom[lev], fetchBCRecArray(NE,1),
-                                                                    PeleLMCCFillExtDirnE{lprobparm, pmf_data_g, m_nAux});
+                                                                    PeleLMCCFillExtDirnE{lprobparm, lpmfdata, m_nAux});
       FillPatchSingleLevel(a_nE, IntVect(nGhost), a_time,
                            {&(m_leveldata_old[lev]->nE),&(m_leveldata_new[lev]->nE)},
                            {m_t_old[lev], m_t_new[lev]},0,0,1,geom[lev], bndry_func, 0);
@@ -622,9 +629,9 @@ void PeleLM::fillpatch_nE(int lev,
 
       // nE
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirnE>> crse_bndry_func(geom[lev-1], fetchBCRecArray(NE,1), 
-                                                                         PeleLMCCFillExtDirnE{lprobparm, pmf_data_g, m_nAux});
+                                                                         PeleLMCCFillExtDirnE{lprobparm, lpmfdata, m_nAux});
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirnE>> fine_bndry_func(geom[lev], fetchBCRecArray(NE,1),
-                                                                         PeleLMCCFillExtDirnE{lprobparm, pmf_data_g, m_nAux});
+                                                                         PeleLMCCFillExtDirnE{lprobparm, lpmfdata, m_nAux});
       FillPatchTwoLevels(a_nE, IntVect(nGhost), a_time,
                          {&(m_leveldata_old[lev-1]->nE),&(m_leveldata_new[lev-1]->nE)},
                          {m_t_old[lev-1], m_t_new[lev-1]},
@@ -643,11 +650,12 @@ void PeleLM::fillpatch_phiV(int lev,
                             amrex::MultiFab &a_phiV,
                             int nGhost) {
    ProbParm const* lprobparm = prob_parm.get();
+   pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
    if (lev == 0) {
 
       // Density
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirPhiV>> bndry_func(geom[lev], fetchBCRecArray(PHIV,1),
-                                                                      PeleLMCCFillExtDirPhiV{lprobparm, pmf_data_g, m_nAux});
+                                                                      PeleLMCCFillExtDirPhiV{lprobparm, lpmfdata, m_nAux});
       FillPatchSingleLevel(a_phiV, IntVect(nGhost), a_time,
                            {&(m_leveldata_old[lev]->phiV),&(m_leveldata_new[lev]->phiV)},
                            {m_t_old[lev], m_t_new[lev]},0,0,1,geom[lev], bndry_func, 0);
@@ -664,9 +672,9 @@ void PeleLM::fillpatch_phiV(int lev,
 
       // Density
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirPhiV>> crse_bndry_func(geom[lev-1], fetchBCRecArray(PHIV,1), 
-                                                                           PeleLMCCFillExtDirPhiV{lprobparm, pmf_data_g, m_nAux});
+                                                                           PeleLMCCFillExtDirPhiV{lprobparm, lpmfdata, m_nAux});
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirPhiV>> fine_bndry_func(geom[lev], fetchBCRecArray(PHIV,1),
-                                                                           PeleLMCCFillExtDirPhiV{lprobparm, pmf_data_g, m_nAux});
+                                                                           PeleLMCCFillExtDirPhiV{lprobparm, lpmfdata, m_nAux});
       FillPatchTwoLevels(a_phiV, IntVect(nGhost), a_time,
                          {&(m_leveldata_old[lev-1]->phiV),&(m_leveldata_new[lev-1]->phiV)},
                          {m_t_old[lev-1], m_t_new[lev-1]},
@@ -685,6 +693,7 @@ void PeleLM::fillpatch_gradp(int lev,
                              amrex::MultiFab &a_gp,
                              int nGhost) {
    ProbParm const* lprobparm = prob_parm.get();
+   pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
    if (lev == 0) {
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> bndry_func(geom[lev], {m_bcrec_force},
                                                                        PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
@@ -722,6 +731,7 @@ void PeleLM::fillpatch_reaction(int lev,
                                 amrex::MultiFab &a_I_R,
                                 int nGhost) {
    ProbParm const* lprobparm = prob_parm.get();
+   pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
    if (lev == 0) {
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> bndry_func(geom[lev], {m_bcrec_force},
                                                                      PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
@@ -757,6 +767,7 @@ void PeleLM::fillcoarsepatch_velocity(int lev,
                                       amrex::MultiFab &a_vel,
                                       int nGhost) {
    ProbParm const* lprobparm = prob_parm.get();
+   pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
 
    // Interpolator
 #ifdef AMREX_USE_EB
@@ -767,9 +778,9 @@ void PeleLM::fillcoarsepatch_velocity(int lev,
 #endif
 
    PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirVel>> crse_bndry_func(geom[lev-1], fetchBCRecArray(VELX,AMREX_SPACEDIM),
-                                                                       PeleLMCCFillExtDirVel{lprobparm, pmf_data_g, m_nAux});
+                                                                       PeleLMCCFillExtDirVel{lprobparm, lpmfdata, m_nAux});
    PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirVel>> fine_bndry_func(geom[lev], fetchBCRecArray(VELX,AMREX_SPACEDIM),
-                                                                       PeleLMCCFillExtDirVel{lprobparm, pmf_data_g, m_nAux});
+                                                                       PeleLMCCFillExtDirVel{lprobparm, lpmfdata, m_nAux});
    InterpFromCoarseLevel(a_vel, IntVect(nGhost), a_time,
                          m_leveldata_new[lev-1]->velocity, 0, 0, AMREX_SPACEDIM,
                          geom[lev-1], geom[lev],
@@ -784,6 +795,7 @@ void PeleLM::fillcoarsepatch_mass(int lev,
                                   amrex::MultiFab &a_species,
                                   int nGhost) {
    ProbParm const* lprobparm = prob_parm.get();
+   pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
 
    // Interpolator
 #ifdef AMREX_USE_EB
@@ -795,9 +807,9 @@ void PeleLM::fillcoarsepatch_mass(int lev,
 
    // Density
    PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDens>> crse_bndry_func_rho(geom[lev-1], fetchBCRecArray(DENSITY,1),
-                                                                            PeleLMCCFillExtDirDens{lprobparm, pmf_data_g, m_nAux});
+                                                                            PeleLMCCFillExtDirDens{lprobparm, lpmfdata, m_nAux});
    PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDens>> fine_bndry_func_rho(geom[lev], fetchBCRecArray(DENSITY,1),
-                                                                            PeleLMCCFillExtDirDens{lprobparm, pmf_data_g, m_nAux});
+                                                                            PeleLMCCFillExtDirDens{lprobparm, lpmfdata, m_nAux});
    InterpFromCoarseLevel(a_density, IntVect(nGhost), a_time,
                          m_leveldata_new[lev-1]->density, 0, 0, 1,
                          geom[lev-1], geom[lev],
@@ -806,9 +818,9 @@ void PeleLM::fillcoarsepatch_mass(int lev,
 
    // Species
    PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirSpec>> crse_bndry_func(geom[lev-1], fetchBCRecArray(FIRSTSPEC,NUM_SPECIES),
-                                                                        PeleLMCCFillExtDirSpec{lprobparm, pmf_data_g, m_nAux});
+                                                                        PeleLMCCFillExtDirSpec{lprobparm, lpmfdata, m_nAux});
    PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirSpec>> fine_bndry_func(geom[lev], fetchBCRecArray(FIRSTSPEC,NUM_SPECIES),
-                                                                        PeleLMCCFillExtDirSpec{lprobparm, pmf_data_g, m_nAux});
+                                                                        PeleLMCCFillExtDirSpec{lprobparm, lpmfdata, m_nAux});
    InterpFromCoarseLevel(a_species, IntVect(nGhost), a_time,
                          m_leveldata_new[lev-1]->species, 0, 0, NUM_SPECIES,
                          geom[lev-1], geom[lev],
@@ -824,6 +836,7 @@ void PeleLM::fillcoarsepatch_energy(int lev,
                                     amrex::MultiFab &a_temp,
                                     int nGhost) {
    ProbParm const* lprobparm = prob_parm.get();
+   pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
 
    // Interpolator
 #ifdef AMREX_USE_EB
@@ -835,9 +848,9 @@ void PeleLM::fillcoarsepatch_energy(int lev,
 
    // rhoH
    PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirRhoH>> crse_bndry_func_rhoh(geom[lev-1], fetchBCRecArray(RHOH,1),
-                                                                             PeleLMCCFillExtDirRhoH{lprobparm, pmf_data_g, m_nAux});
+                                                                             PeleLMCCFillExtDirRhoH{lprobparm, lpmfdata, m_nAux});
    PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirRhoH>> fine_bndry_func_rhoh(geom[lev], fetchBCRecArray(RHOH,1),
-                                                                             PeleLMCCFillExtDirRhoH{lprobparm, pmf_data_g, m_nAux});
+                                                                             PeleLMCCFillExtDirRhoH{lprobparm, lpmfdata, m_nAux});
    InterpFromCoarseLevel(a_rhoh, IntVect(nGhost), a_time,
                          m_leveldata_new[lev-1]->rhoh, 0, 0, 1,
                          geom[lev-1], geom[lev],
@@ -846,9 +859,9 @@ void PeleLM::fillcoarsepatch_energy(int lev,
 
    // temperature
    PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirTemp>> crse_bndry_func(geom[lev-1], fetchBCRecArray(TEMP,1),
-                                                                        PeleLMCCFillExtDirTemp{lprobparm, pmf_data_g, m_nAux});
+                                                                        PeleLMCCFillExtDirTemp{lprobparm, lpmfdata, m_nAux});
    PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirTemp>> fine_bndry_func(geom[lev], fetchBCRecArray(TEMP,1),
-                                                                        PeleLMCCFillExtDirTemp{lprobparm, pmf_data_g, m_nAux});
+                                                                        PeleLMCCFillExtDirTemp{lprobparm, lpmfdata, m_nAux});
    InterpFromCoarseLevel(a_temp, IntVect(nGhost), a_time,
                          m_leveldata_new[lev-1]->temp, 0, 0, 1,
                          geom[lev-1], geom[lev],
@@ -863,6 +876,7 @@ void PeleLM::fillcoarsepatch_gradp(int lev,
                                    amrex::MultiFab &a_gp,
                                    int nGhost) {
    ProbParm const* lprobparm = prob_parm.get();
+   pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
 
    // Interpolator
 #ifdef AMREX_USE_EB
@@ -889,6 +903,7 @@ void PeleLM::fillcoarsepatch_divu(int lev,
                                   amrex::MultiFab &a_divu,
                                   int nGhost) {
    ProbParm const* lprobparm = prob_parm.get();
+   pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
 
    // Interpolator
 #ifdef AMREX_USE_EB
@@ -915,6 +930,7 @@ void PeleLM::fillcoarsepatch_reaction(int lev,
                                       amrex::MultiFab &a_I_R,
                                       int nGhost) {
    ProbParm const* lprobparm = prob_parm.get();
+   pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
 
    // Interpolator
 #ifdef AMREX_USE_EB
@@ -942,6 +958,7 @@ void PeleLM::fillcoarsepatch_nE(int lev,
                                 amrex::MultiFab &a_nE,
                                 int nGhost) {
    ProbParm const* lprobparm = prob_parm.get();
+   pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
 
    // Interpolator
 #ifdef AMREX_USE_EB
@@ -952,9 +969,9 @@ void PeleLM::fillcoarsepatch_nE(int lev,
 #endif
 
    PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirnE>> crse_bndry_func(geom[lev-1], fetchBCRecArray(NE,1),
-                                                                      PeleLMCCFillExtDirnE{lprobparm, pmf_data_g, m_nAux});
+                                                                      PeleLMCCFillExtDirnE{lprobparm, lpmfdata, m_nAux});
    PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirnE>> fine_bndry_func(geom[lev], fetchBCRecArray(NE,1),
-                                                                      PeleLMCCFillExtDirnE{lprobparm, pmf_data_g, m_nAux});
+                                                                      PeleLMCCFillExtDirnE{lprobparm, lpmfdata, m_nAux});
    InterpFromCoarseLevel(a_nE, IntVect(nGhost), a_time,
                          m_leveldata_new[lev-1]->nE, 0, 0, 1,
                          geom[lev-1], geom[lev],
@@ -968,6 +985,7 @@ void PeleLM::fillcoarsepatch_phiV(int lev,
                                   amrex::MultiFab &a_phiV,
                                   int nGhost) {
    ProbParm const* lprobparm = prob_parm.get();
+   pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
 
    // Interpolator
 #ifdef AMREX_USE_EB
@@ -978,9 +996,9 @@ void PeleLM::fillcoarsepatch_phiV(int lev,
 #endif
 
    PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirPhiV>> crse_bndry_func(geom[lev-1], fetchBCRecArray(PHIV,1),
-                                                                        PeleLMCCFillExtDirPhiV{lprobparm, pmf_data_g, m_nAux});
+                                                                        PeleLMCCFillExtDirPhiV{lprobparm, lpmfdata, m_nAux});
    PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirPhiV>> fine_bndry_func(geom[lev], fetchBCRecArray(PHIV,1),
-                                                                        PeleLMCCFillExtDirPhiV{lprobparm, pmf_data_g, m_nAux});
+                                                                        PeleLMCCFillExtDirPhiV{lprobparm, lpmfdata, m_nAux});
    InterpFromCoarseLevel(a_phiV, IntVect(nGhost), a_time,
                          m_leveldata_new[lev-1]->phiV, 0, 0, 1,
                          geom[lev-1], geom[lev],
@@ -1017,8 +1035,9 @@ void PeleLM::setInflowBoundaryVel(MultiFab &a_vel,
    }  
 
    ProbParm const* lprobparm = prob_parm.get();
+   pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
    PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirVel>> bndry_func(geom[lev], dummyVelBCRec,
-                                                                  PeleLMCCFillExtDirVel{lprobparm, pmf_data_g, m_nAux});
+                                                                  PeleLMCCFillExtDirVel{lprobparm, lpmfdata, m_nAux});
 
    bndry_func(a_vel, 0, AMREX_SPACEDIM, a_vel.nGrowVect(), time, 0);
 

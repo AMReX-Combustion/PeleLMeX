@@ -303,17 +303,17 @@ void PeleLM::doNodalProject(Vector<MultiFab*> &a_vel,
    }
 
    // Setup NodalProjector
-   std::unique_ptr<NodalProjector> nodal_projector;
+   std::unique_ptr<Hydro::NodalProjector> nodal_projector;
 
    if ( m_incompressible ) {
       Real constant_sigma = scaling_factor / m_rho;
-      nodal_projector.reset(new NodalProjector(a_vel, constant_sigma, Geom(0,finest_level), info));
+      nodal_projector.reset(new Hydro::NodalProjector(a_vel, constant_sigma, Geom(0,finest_level), info));
    } else {
       if ( has_rhs ) {
-         nodal_projector.reset(new NodalProjector(a_vel, GetVecOfConstPtrs(a_sigma), Geom(0,finest_level),
-                                                  info, rhs_cc, rhs_nd));
+         nodal_projector.reset(new Hydro::NodalProjector(a_vel, GetVecOfConstPtrs(a_sigma), Geom(0,finest_level),
+                                                         info, rhs_cc, rhs_nd));
       } else {
-         nodal_projector.reset(new NodalProjector(a_vel, GetVecOfConstPtrs(a_sigma), Geom(0,finest_level), info));
+         nodal_projector.reset(new Hydro::NodalProjector(a_vel, GetVecOfConstPtrs(a_sigma), Geom(0,finest_level), info));
       }
    }
 

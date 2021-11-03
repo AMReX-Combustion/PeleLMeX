@@ -7,8 +7,7 @@
 
 #include <PeleLM_Index.H>
 #include <pelelm_prob_parm.H>
-#include <pmf.H>
-#include <pmf_data.H>
+#include <PMFData.H>
 #include <PelePhysics.H>
 
 AMREX_GPU_DEVICE
@@ -23,7 +22,7 @@ void pelelm_initdata(int i, int j, int k,
                      amrex::Array4<amrex::Real> const& aux,
                      amrex::GeometryData const& geomdata,
                      ProbParm const& prob_parm,
-                     PmfData const * /*pmf_data*/)
+                     pele::physics::PMF::PmfData::DataContainer const * /*pmf_data*/)
 {
     const amrex::Real* prob_lo = geomdata.ProbLo();
     const amrex::Real* prob_hi = geomdata.ProbHi();
@@ -168,7 +167,7 @@ bcnormal(
   const amrex::Real time,
   amrex::GeometryData const& geomdata,
   ProbParm const& prob_parm,
-  PmfData const * /*pmf_data*/)
+  pele::physics::PMF::PmfData::DataContainer const * /*pmf_data*/)
 {
   const amrex::Real* prob_lo = geomdata.ProbLo();
   //amrex::GpuArray<amrex::Real, NUM_SPECIES + 4> pmf_vals = {0.0};

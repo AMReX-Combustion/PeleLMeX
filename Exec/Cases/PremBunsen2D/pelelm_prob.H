@@ -7,8 +7,8 @@
 
 #include <PeleLM_Index.H>
 #include <pelelm_prob_parm.H>
-#include <pmf.H>
-#include <pmf_data.H>
+#include <PMF.H>
+#include <PMFData.H>
 #include <PelePhysics.H>
 
 AMREX_GPU_DEVICE
@@ -23,7 +23,7 @@ void pelelm_initdata(int i, int j, int k,
                      amrex::Array4<amrex::Real> const& aux,
                      amrex::GeometryData const& geomdata,
                      ProbParm const& prob_parm,
-                     PmfData const * pmf_data)
+                     pele::physics::PMF::PmfData::DataContainer const * pmf_data)
 {
     const amrex::Real* prob_lo = geomdata.ProbLo();
     const amrex::Real* prob_hi = geomdata.ProbHi();
@@ -60,7 +60,7 @@ void pelelm_initdata(int i, int j, int k,
           y1 += prob_parm.standoff;
           y2 += prob_parm.standoff;
 
-          PMF::pmf(pmf_data,y2, y2, pmf_vals);
+          pele::physics::PMF::pmf(pmf_data,y2, y2, pmf_vals);
           temp(i,j,k) = pmf_vals[0];
           for (int n = 0; n < NUM_SPECIES; n++){
             massfrac[n] = pmf_vals[3 + n];
@@ -75,7 +75,7 @@ void pelelm_initdata(int i, int j, int k,
           y1 += prob_parm.standoff;
           y2 += prob_parm.standoff;
 
-          PMF::pmf(pmf_data, y2, y2, pmf_vals);
+          pele::physics::PMF::pmf(pmf_data, y2, y2, pmf_vals);
           temp(i,j,k) = pmf_vals[0];
           for (int n = 0; n < NUM_SPECIES; n++){
             massfrac[n] = pmf_vals[3 + n];
@@ -118,7 +118,7 @@ bcnormal(
   const amrex::Real time,
   amrex::GeometryData const& geomdata,
   ProbParm const& prob_parm,
-  PmfData const * /*pmf_data*/)
+  pele::physics::PMF::PmfData::DataContainer const * /*pmf_data*/)
 {
    const amrex::Real* prob_lo = geomdata.ProbLo();
    const amrex::Real* prob_hi = geomdata.ProbHi();

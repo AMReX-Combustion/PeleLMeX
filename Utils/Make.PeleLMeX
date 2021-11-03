@@ -61,7 +61,7 @@ endif
 
 ChemDir  = Support/Fuego/Mechanism/Models/$(Chemistry_Model)
 
-PPdirs  := Utility Source $(ChemDir) Reactions Eos Transport
+PPdirs  := Utility/PMF Source $(ChemDir) Reactions Eos Transport
 PPHdirs := Support/Fuego/Evaluation
 Bpack += $(foreach dir, $(PPdirs), $(PELE_PHYSICS_HOME)/$(dir)/Make.package)
 Blocs += $(foreach dir, $(PPdirs), $(PELE_PHYSICS_HOME)/$(dir))

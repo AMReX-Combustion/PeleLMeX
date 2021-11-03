@@ -7,8 +7,8 @@
 
 #include <PeleLM_Index.H>
 #include <pelelm_prob_parm.H>
-#include <pmf.H>
-#include <pmf_data.H>
+#include <PMF.H>
+#include <PMFData.H>
 #include <PelePhysics.H>
 
 AMREX_GPU_DEVICE
@@ -23,7 +23,7 @@ void pelelm_initdata(int i, int j, int k,
                      amrex::Array4<amrex::Real> const& aux,
                      amrex::GeometryData const& geomdata,
                      ProbParm const& prob_parm,
-                     PmfData const * pmf_data)
+                     pele::physics::PMF::PmfData::DataContainer const * pmf_data)
 {
     const amrex::Real* prob_lo = geomdata.ProbLo();
     const amrex::Real* prob_hi = geomdata.ProbHi();
@@ -37,9 +37,9 @@ void pelelm_initdata(int i, int j, int k,
                  const amrex::Real Ly = prob_hi[1] - prob_lo[1];,
                  const amrex::Real Lz = prob_hi[2] - prob_lo[2]);
 
-    AMREX_D_TERM(const amrex::Real xc = prob_lo[0];,// + 0.5 * Lx;,
-                 const amrex::Real yc = prob_lo[1];,// + 0.5 * Ly;,
-                 const amrex::Real zc = prob_lo[2];);// + 0.5 * Lz;);
+    AMREX_D_TERM(const amrex::Real xc = prob_lo[0]+ 0.5 * Lx;,
+                 const amrex::Real yc = prob_lo[1]+ 0.5 * Ly;,
+                 const amrex::Real zc = prob_lo[2] + 0.5 * Lz;);
 
     constexpr amrex::Real Pi = 3.14159265358979323846264338327950288;
 
@@ -87,7 +87,7 @@ void pelelm_initdata(int i, int j, int k,
 #endif
 
 
-    PMF::pmf(pmf_data,y1, y1, pmf_vals);
+    pele::physics::PMF::pmf(pmf_data,y1, y1, pmf_vals);
 
     temp(i,j,k) = pmf_vals[0];;
 
@@ -134,7 +134,7 @@ bcnormal(
   const amrex::Real time,
   amrex::GeometryData const& geomdata,
   ProbParm const& prob_parm,
-  PmfData const *pmf_data)
+  pele::physics::PMF::PmfData::DataContainer const *pmf_data)
 {
   const amrex::Real* prob_lo = geomdata.ProbLo();
 }
