@@ -19,7 +19,7 @@ all: $(executable)
 #---------------
 LMdirs := Source
 ifeq ($(USE_EFIELD),TRUE)
-   DEFINES += -DPLM_USE_EFIELD
+   DEFINES += -DPELE_USE_EFIELD
    LMdirs += Source/Efield Source/Efield/GMRES Source/Efield/LinOps
 endif
 
@@ -61,7 +61,7 @@ endif
 
 ChemDir  = Support/Fuego/Mechanism/Models/$(Chemistry_Model)
 
-PPdirs  := Utility Source $(ChemDir) Reactions Eos Transport
+PPdirs  := Utility/PMF Source $(ChemDir) Reactions Eos Transport
 PPHdirs := Support/Fuego/Evaluation
 Bpack += $(foreach dir, $(PPdirs), $(PELE_PHYSICS_HOME)/$(dir)/Make.package)
 Blocs += $(foreach dir, $(PPdirs), $(PELE_PHYSICS_HOME)/$(dir))
@@ -71,9 +71,9 @@ include $(PELE_PHYSICS_HOME)/ThirdParty/Make.ThirdParty
 #---------------
 # AMReX-Hydro sources
 #---------------
-Hdirs := Slopes Godunov MOL Utils
+Hdirs := Slopes Godunov MOL Utils Projections
 ifeq ($(USE_EB), TRUE)
-    Hdirs += Redistribution EBGodunov
+    Hdirs += Redistribution EBGodunov EBMOL
 endif
 Bpack += $(foreach dir, $(Hdirs), $(AMREX_HYDRO_HOME)/$(dir)/Make.package)
 Blocs += $(foreach dir, $(Hdirs), $(AMREX_HYDRO_HOME)/$(dir))
@@ -81,7 +81,10 @@ Blocs += $(foreach dir, $(Hdirs), $(AMREX_HYDRO_HOME)/$(dir))
 #---------------
 # AMReX sources
 #---------------
-Pdirs := Base Boundary AmrCore LinearSolvers/MLMG LinearSolvers/Projections
+Pdirs := Base Boundary AmrCore LinearSolvers/MLMG
+ifeq ($(USE_EB), TRUE)
+    Pdirs += EB
+endif
 Bpack += $(foreach dir, $(Pdirs), $(AMREX_HOME)/Src/$(dir)/Make.package)
 
 #---------------

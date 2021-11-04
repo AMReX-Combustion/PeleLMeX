@@ -2,7 +2,8 @@
 #include <AMReX_ParmParse.H>
 #include <PeleLMDeriveFunc.H>
 #include "PelePhysics.H"
-#ifdef PLM_USE_EFIELD
+#include <AMReX_buildInfo.H>
+#ifdef PELE_USE_EFIELD
 #include "EOS_Extension.H"
 #endif
 
@@ -23,8 +24,24 @@ void PeleLM::Setup() {
    sundials::MemoryHelper::Initialize();
 #endif
 
+   // Print build info to screen
+   const char* githash1 = buildInfoGetGitHash(1);
+   const char* githash2 = buildInfoGetGitHash(2);
+   const char* githash3 = buildInfoGetGitHash(3);
+   const char* githash4 = buildInfoGetGitHash(4);
+   amrex::Print() << "\n ================= Build infos =================\n";
+   amrex::Print() << " PeleLMeX    git hash: " << githash1 << "\n";
+   amrex::Print() << " AMReX       git hash: " << githash2 << "\n";
+   amrex::Print() << " PelePhysics git hash: " << githash3 << "\n";
+   amrex::Print() << " AMReX-Hydro git hash: " << githash4 << "\n";
+   amrex::Print() << " ===============================================\n";
+
    // Read PeleLM parameters
    readParameters();
+
+#ifdef AMREX_USE_EB
+   makeEBGeometry();
+#endif
 
    // Setup the state variables
    variablesSetup();
@@ -50,15 +67,16 @@ void PeleLM::Setup() {
          ParmParse pp("peleLM");
          pp.query("chem_integrator",m_chem_integrator);
          m_reactor = pele::physics::reactions::ReactorBase::create(m_chem_integrator);
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
-         {
-            m_reactor->init(reactor_type, ncells_chem);
+         m_reactor->init(reactor_type, ncells_chem);
+         // For ReactorNull, we need to also skip instantaneous RR used in divU
+         if (m_chem_integrator == "ReactorNull") {
+            m_skipInstantRR = 1;
+            m_plotChemDiag = 0;
+            m_plotHeatRelease = 0;
          }
       }
 
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
       pele::physics::eos::charge_mass(zk.arr);
       for (int n = 0; n < NUM_SPECIES; n++) {
          zk[n] *= 1000.0;    // CGS->MKS
@@ -166,7 +184,7 @@ void PeleLM::readParameters() {
       Print() << " Simulation performed with the closed chamber algorithm \n";
    }
 
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
    ParmParse ppef("ef");
 
    // Get the phiV bc
@@ -262,8 +280,14 @@ void PeleLM::readParameters() {
    // Reaction
    // -----------------------------------------
    pp.query("do_react",m_do_react);
-   pp.query("chem_rtol",m_rtol_chem);
-   pp.query("chem_atol",m_atol_chem);
+   pp.query("use_typ_vals_chem",m_useTypValChem);
+   pp.query("typical_values_reset_int",m_resetTypValInt);
+   if (m_do_react) {
+      m_plotChemDiag = 0;
+      m_plotHeatRelease = 1;
+      pp.query("plot_chemDiagnostics",m_plotChemDiag);
+      pp.query("plot_heatRelease",m_plotHeatRelease);
+   }
 
    // -----------------------------------------
    // Advection
@@ -276,12 +300,16 @@ void PeleLM::readParameters() {
    // Linear solvers tols
    // -----------------------------------------
    ParmParse ppnproj("nodal_proj");
+   ppnproj.query("mg_max_coarsening_level",m_nodal_mg_max_coarsening_level);
    ppnproj.query("atol",m_nodal_mg_atol);
    ppnproj.query("rtol",m_nodal_mg_rtol);
+   ppnproj.query("hypre_namespace",m_hypre_namespace_nodal);
 
    ParmParse ppmacproj("mac_proj");
+   ppmacproj.query("mg_max_coarsening_level",m_mac_mg_max_coarsening_level);
    ppmacproj.query("atol",m_mac_mg_atol);
    ppmacproj.query("rtol",m_mac_mg_rtol);
+   ppmacproj.query("hypre_namespace",m_hypre_namespace_mac);
 
    // -----------------------------------------
    // Temporals
@@ -305,7 +333,7 @@ void PeleLM::readParameters() {
       ppa.query("regrid_int", m_regrid_int);
    }
 
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
    // -----------------------------------------
    // EFIELD
    // -----------------------------------------
@@ -339,6 +367,7 @@ void PeleLM::readIOParameters() {
          pp.get("derive_plot_vars", m_derivePlotVars[ivar],ivar);
       }
    }
+   pp.query("plot_speciesState" , m_plotStateSpec);
 
 }
 
@@ -382,7 +411,7 @@ void PeleLM::variablesSetup() {
       stateComponents.emplace_back(TEMP,"temp");
       Print() << " thermo. pressure: " << RHORT << "\n";
       stateComponents.emplace_back(RHORT,"RhoRT");
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
       Print() << " nE: " << NE << "\n";
       stateComponents.emplace_back(NE,"nE");
       Print() << " PhiV: " << PHIV << "\n";
@@ -429,13 +458,17 @@ void PeleLM::variablesSetup() {
       m_DiffTypeState[TEMP] = 0;
       m_AdvTypeState[RHORT] = 0;
       m_DiffTypeState[RHORT] = 0;
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
       m_AdvTypeState[NE] = 0;
       m_DiffTypeState[NE] = 0;
       m_AdvTypeState[PHIV] = 0;
       m_DiffTypeState[PHIV] = 0;
 #endif
    }
+
+   //----------------------------------------------------------------
+   // Typical values container
+   typical_values.resize(NVAR,-1.0);
 }
 
 void PeleLM::derivedSetup()
@@ -467,7 +500,7 @@ void PeleLM::derivedSetup()
    // Kinetic energy
    derive_lst.add("kinetic_energy",IndexType::TheCellType(),1,pelelm_derkineticenergy,the_same_box);
 
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
    // Charge distribution
    derive_lst.add("chargedistrib",IndexType::TheCellType(),1,pelelm_derchargedist,the_same_box);
 
@@ -584,7 +617,7 @@ void PeleLM::resizeArray() {
    m_dmapChem.resize(max_level+1);
    m_baChemFlag.resize(max_level+1);
 
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
    m_leveldatanlsolve.resize(max_level+1);
 #endif
 

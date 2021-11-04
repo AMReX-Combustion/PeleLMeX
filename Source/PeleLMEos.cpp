@@ -65,7 +65,7 @@ void PeleLM::calcDivU(int is_init,
       auto ldata_p = getLevelDataPtr(lev,a_time);
 
       MultiFab RhoYdot;
-      if ( m_do_react ) {
+      if ( m_do_react && !m_skipInstantRR ) {
          if (is_init) {          // Either pre-divU, divU or press initial iterations
             if ( m_dt > 0.0 ) {  // divU ite   -> use I_R
                auto ldataR_p = getLevelDataReactPtr(lev);
@@ -80,9 +80,19 @@ void PeleLM::calcDivU(int is_init,
             // TODO Setup covered cells mask
             MultiFab mask(grids[lev],dmap[lev],1,0);
             mask.setVal(1.0);
+#ifdef PELE_USE_EFIELD
+            computeInstantaneousReactionRateEF(lev, a_time, mask, &RhoYdot);
+#else
             computeInstantaneousReactionRate(lev, a_time, mask, &RhoYdot);
+#endif
          }
       }
+
+      //----------------------------------------------------------------
+#ifdef AMREX_USE_EB
+      // Get EBFact
+      const auto& ebfact = EBFactory(lev);
+#endif
 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -90,6 +100,12 @@ void PeleLM::calcDivU(int is_init,
       for (MFIter mfi(ldata_p->divu, TilingIfNotGPU()); mfi.isValid(); ++mfi)
       {
          const Box& bx = mfi.tilebox();
+
+#ifdef AMREX_USE_EB
+         auto const& flagfab = ebfact.getMultiEBCellFlagFab()[mfi];
+         auto const& flag    = flagfab.const_array();
+#endif
+
          auto const& rhoY     = ldata_p->species.const_array(mfi);
          auto const& T        = ldata_p->temp.const_array(mfi);
          auto const& SpecD    = ( a_time == AmrOldTime ) ? diffData->Dn[lev].const_array(mfi,0)
@@ -98,14 +114,37 @@ void PeleLM::calcDivU(int is_init,
                                                          : diffData->Dnp1[lev].const_array(mfi,NUM_SPECIES);
          auto const& DiffDiff = ( a_time == AmrOldTime ) ? diffData->Dn[lev].const_array(mfi,NUM_SPECIES+1)
                                                          : diffData->Dnp1[lev].const_array(mfi,NUM_SPECIES+1);
-         auto const& r        = (m_do_react) ? RhoYdot.const_array(mfi)
+         auto const& r        = (m_do_react && !m_skipInstantRR) ? RhoYdot.const_array(mfi)
                                              : ldata_p->species.const_array(mfi);   // Dummy unused Array4
          auto const& divu     = ldata_p->divu.array(mfi);
-         amrex::ParallelFor(bx, [ rhoY, T, SpecD, Fourier, DiffDiff, r, divu, do_react=m_do_react]
-         AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+         int use_react        = (m_do_react && !m_skipInstantRR) ? 1 : 0;
+
+#ifdef AMREX_USE_EB
+         if (flagfab.getType(bx) == FabType::covered) {             // Covered boxes
+             amrex::ParallelFor(bx, [divu]
+             AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+             {
+                 divu(i,j,k) = 0.0;
+             });
+         } else if (flagfab.getType(bx) != FabType::regular ) {     // EB containing boxes 
+             amrex::ParallelFor(bx, [ rhoY, T, SpecD, Fourier, DiffDiff, r, divu, use_react, flag]
+             AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+             {
+                if ( flag(i,j,k).isCovered() ) {
+                    divu(i,j,k) = 0.0;
+                } else {
+                    compute_divu( i, j, k, rhoY, T, SpecD, Fourier, DiffDiff, r, divu, use_react );
+                }
+             });
+         } else
+#endif
          {
-            compute_divu( i, j, k, rhoY, T, SpecD, Fourier, DiffDiff, r, divu, do_react );
-         });
+             amrex::ParallelFor(bx, [ rhoY, T, SpecD, Fourier, DiffDiff, r, divu, use_react]
+             AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+             {
+                compute_divu( i, j, k, rhoY, T, SpecD, Fourier, DiffDiff, r, divu, use_react );
+             });
+         }
       }
    }
 
@@ -181,6 +220,9 @@ void PeleLM::calc_dPdt(const TimeStamp &a_time,
 
    for (int lev = 0; lev <= finest_level; ++lev) {
       calc_dPdt(lev, a_time, a_dPdt[lev]);
+#ifdef AMRE_USE_EB
+      EB_set_covered(a_dPdt[lev],0.0);
+#endif
    }
 
    // Fill ghost cell(s)

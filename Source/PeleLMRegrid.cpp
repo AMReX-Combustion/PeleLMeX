@@ -11,6 +11,12 @@ void PeleLM::MakeNewLevelFromCoarse( int lev,
    if (m_verbose > 0) {
       Print() << " Making new level " << lev << " from coarse\n";
       if (m_verbose > 2) {
+         auto const dx = geom[lev].CellSizeArray();
+         Real vol = AMREX_D_TERM(dx[0],*dx[1],*dx[2]);
+         amrex::Print() << " with " << ba.numPts() << " cells,"
+                        << " over " << ba.numPts() * vol / geom[0].ProbSize() * 100 << "% of the domain \n";
+      }
+      if (m_verbose > 3) {
          amrex::Print() << " with BoxArray " << ba << std::endl;
       }
    }
@@ -18,9 +24,7 @@ void PeleLM::MakeNewLevelFromCoarse( int lev,
    // New level factory
 #ifdef AMREX_USE_EB
    std::unique_ptr<FabFactory<FArrayBox> > new_fact = makeEBFabFactory(geom[lev], ba, dm,
-                                                                       {nghost_eb_basic(),
-                                                                        nghost_eb_volume(),
-                                                                        nghost_eb_full()},
+                                                                       {6,6,6},
                                                                        EBSupport::full);
 #else
    std::unique_ptr<FabFactory<FArrayBox> > new_fact(new FArrayBoxFactory());
@@ -48,7 +52,7 @@ void PeleLM::MakeNewLevelFromCoarse( int lev,
       if (m_has_divu) {
          fillcoarsepatch_divu(lev, time, n_leveldata_new->divu,0);
       }
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
       fillcoarsepatch_phiV(lev, time, n_leveldata_new->phiV,0);
       fillcoarsepatch_nE(lev, time, n_leveldata_new->nE,0);
 #endif
@@ -66,7 +70,6 @@ void PeleLM::MakeNewLevelFromCoarse( int lev,
       m_leveldatareact[lev] = std::move(n_leveldatareact);
    }
 
-
    if (!m_incompressible) {
       // Initialize thermodynamic pressure
       setThermoPress(lev, AmrNewTime);
@@ -77,7 +80,7 @@ void PeleLM::MakeNewLevelFromCoarse( int lev,
    }
    m_resetCoveredMask = 1;
 
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
    m_leveldatanlsolve[lev].reset(new LevelDataNLSolve(ba, dm, *m_factory[lev], 1));
    m_precond_op.reset();
 #endif
@@ -99,6 +102,12 @@ void PeleLM::RemakeLevel( int lev,
    if (m_verbose > 0) {
       Print() << " Remaking level " << lev << "\n";
       if (m_verbose > 2) {
+         auto const dx = geom[lev].CellSizeArray();
+         Real vol = AMREX_D_TERM(dx[0],*dx[1],*dx[2]);
+         amrex::Print() << " with " << ba.numPts() << " cells,"
+                        << " over " << ba.numPts() * vol / geom[0].ProbSize() * 100 << "% of the domain \n";
+      }
+      if (m_verbose > 3) {
          amrex::Print() << " with BoxArray " << ba << std::endl;
       }
    }
@@ -106,9 +115,7 @@ void PeleLM::RemakeLevel( int lev,
    // New level factory
 #ifdef AMREX_USE_EB
    std::unique_ptr<FabFactory<FArrayBox> > new_fact = makeEBFabFactory(geom[lev], ba, dm,
-                                                                       {nghost_eb_basic(),
-                                                                        nghost_eb_volume(),
-                                                                        nghost_eb_full()},
+                                                                       {6,6,6},
                                                                        EBSupport::full);
 #else
    std::unique_ptr<FabFactory<FArrayBox> > new_fact(new FArrayBoxFactory());
@@ -136,7 +143,7 @@ void PeleLM::RemakeLevel( int lev,
       if (m_has_divu) {
          fillpatch_divu(lev, time, n_leveldata_new->divu, 1);
       }
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
       fillpatch_phiV(lev, time, n_leveldata_new->phiV,m_nGrowState);
       fillpatch_nE(lev, time, n_leveldata_new->nE,m_nGrowState);
 #endif
@@ -164,7 +171,7 @@ void PeleLM::RemakeLevel( int lev,
       setThermoPress(lev, AmrNewTime);
    }
 
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
    m_leveldatanlsolve[lev].reset(new LevelDataNLSolve(ba, dm, *m_factory[lev], 1));
    m_precond_op.reset();
 #endif
@@ -190,7 +197,7 @@ void PeleLM::ClearLevel(int lev) {
    m_diffusion_op.reset();
    m_diffusionTensor_op.reset();
    macproj.reset();
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
    m_leveldatanlsolve[lev].reset();
 #endif
 }
@@ -204,12 +211,12 @@ void PeleLM::resetMacProjector()
 
    // MacProj
 #ifdef AMREX_USE_EB
-   macproj.reset(new MacProjector(Geom(0,finest_level),
-                                  MLMG::Location::FaceCentroid,  // Location of mac velocity
-                                  MLMG::Location::FaceCentroid,  // Location of beta
-                                  MLMG::Location::CellCenter) ); // Location of solution variable phi
+   macproj.reset(new Hydro::MacProjector(Geom(0,finest_level),
+                                         MLMG::Location::FaceCentroid,  // Location of mac velocity
+                                         MLMG::Location::FaceCentroid,  // Location of beta
+                                         MLMG::Location::CellCenter) ); // Location of solution variable phi
 #else
-   macproj.reset(new MacProjector(Geom(0,finest_level)));
+   macproj.reset(new Hydro::MacProjector(Geom(0,finest_level)));
 #endif
 
    // Store the old MacProj size and switch off reset flag

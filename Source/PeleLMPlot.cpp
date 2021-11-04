@@ -42,21 +42,33 @@ void PeleLM::WritePlotFile() {
 
    // State
    if (m_incompressible) {
+      // Velocity + pressure gradients
       ncomp = 2*AMREX_SPACEDIM;
    } else {
+      // State + pressure gradients
       ncomp = NVAR + AMREX_SPACEDIM;
+      // Make the plot lighter by dropping species by default
+      if (!m_plotStateSpec) ncomp -= NUM_SPECIES;
       if (m_has_divu) {
          ncomp += 1;
       }
    }
 
    // Reactions
-   if (m_do_react) {
+   if (m_do_react && !m_skipInstantRR) {
       // Cons Rate
       ncomp += nCompIR();
       // FunctCall
       ncomp += 1;
+      // Extras:
+      if (m_plotHeatRelease) ncomp += 1;
+      //if (m_plotChemDiag) ncomp += 1;     // TODO
    }
+
+#ifdef AMREX_USE_EB
+   // Include volume fraction in plotfile
+   ncomp += 1;
+#endif
 
    // Derive
    int deriveEntryCount = 0;
@@ -88,13 +100,15 @@ void PeleLM::WritePlotFile() {
 #endif
    if (!m_incompressible) {
       plt_VarsName.push_back("density");
-      for (int n = 0; n < NUM_SPECIES; n++) {
-         plt_VarsName.push_back("rho.Y("+names[n]+")");
+      if (m_plotStateSpec) {
+         for (int n = 0; n < NUM_SPECIES; n++) {
+            plt_VarsName.push_back("rho.Y("+names[n]+")");
+         }
       }
       plt_VarsName.push_back("rhoh");
       plt_VarsName.push_back("temp");
       plt_VarsName.push_back("RhoRT");
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
       plt_VarsName.push_back("nE");
       plt_VarsName.push_back("phiV");
 #endif
@@ -111,15 +125,22 @@ void PeleLM::WritePlotFile() {
 #endif
 #endif
 
-   if (m_do_react) {
+   if (m_do_react  && !m_skipInstantRR) {
       for (int n = 0; n < NUM_SPECIES; n++) {
          plt_VarsName.push_back("I_R("+names[n]+")");
       }
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
       plt_VarsName.push_back("I_R(nE)");
 #endif
       plt_VarsName.push_back("FunctCall");
+      // Extras:
+      if (m_plotHeatRelease) plt_VarsName.push_back("HeatRelease");
+      //if (m_plotChemDiag) ncomp += 1;     // TODO
    }
+
+#ifdef AMREX_USE_EB
+   plt_VarsName.push_back("volFrac");
+#endif
 
    for (int ivar = 0; ivar < m_derivePlotVarCount; ivar++ ) {
       const PeleLMDeriveRec* rec = derive_lst.get(m_derivePlotVars[ivar]);
@@ -137,15 +158,17 @@ void PeleLM::WritePlotFile() {
       if (!m_incompressible) {
          MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->density, 0, cnt, 1, 0);
          cnt += 1;
-         MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->species, 0, cnt, NUM_SPECIES, 0);
-         cnt += NUM_SPECIES;
+         if (m_plotStateSpec) {
+            MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->species, 0, cnt, NUM_SPECIES, 0);
+            cnt += NUM_SPECIES;
+         }
          MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->rhoh, 0, cnt, 1, 0);
          cnt += 1;
          MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->temp, 0, cnt, 1, 0);
          cnt += 1;
          MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->rhoRT, 0, cnt, 1, 0);
          cnt += 1;
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
          MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->nE, 0, cnt, 1, 0);
          cnt += 1;
          MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->phiV, 0, cnt, 1, 0);
@@ -159,13 +182,26 @@ void PeleLM::WritePlotFile() {
       MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->gp, 0, cnt,AMREX_SPACEDIM,0);
       cnt += AMREX_SPACEDIM;
 
-      if (m_do_react) {
+      if (m_do_react  && !m_skipInstantRR) {
          MultiFab::Copy(mf_plt[lev], m_leveldatareact[lev]->I_R, 0, cnt, nCompIR(), 0);
          cnt += nCompIR();
 
          MultiFab::Copy(mf_plt[lev], m_leveldatareact[lev]->functC, 0, cnt, 1, 0);
          cnt += 1;
+
+         if (m_plotHeatRelease) {
+            std::unique_ptr<MultiFab> mf;
+            mf.reset( new MultiFab(grids[lev],dmap[lev],1,0));
+            getHeatRelease(lev, mf.get());
+            MultiFab::Copy(mf_plt[lev], *mf, 0, cnt, 1, 0);
+            cnt += 1;
+         }
       }
+
+#ifdef AMREX_USE_EB
+      MultiFab::Copy(mf_plt[lev], EBFactory(lev).getVolFrac(), 0, cnt, 1, 0);
+      cnt += 1;
+#endif
 
       for (int ivar = 0; ivar < m_derivePlotVarCount; ivar++ ) {
          std::unique_ptr<MultiFab> mf;
@@ -173,7 +209,11 @@ void PeleLM::WritePlotFile() {
          MultiFab::Copy(mf_plt[lev], *mf, 0, cnt, mf->nComp(), 0);
          cnt += mf->nComp();
       }
+#ifdef AMREX_USE_EB
+      EB_set_covered(mf_plt[lev],0.0);
+#endif
    }
+
 
    // No SubCycling, all levels the same step.
    Vector<int> istep(finest_level + 1, m_nstep);
@@ -232,8 +272,11 @@ void PeleLM::WriteHeader(const std::string& name, bool is_checkpoint) const
             HeaderFile << '\n';
         }
 
-        // Ambient pressure and typvals TODO
+        // Ambient pressure and typvals
         HeaderFile << m_pNew << "\n";
+        for (int n = 0; n < typical_values.size(); n++) {
+            HeaderFile << typical_values[n] << "\n";
+        }
     }
 }
 
@@ -290,7 +333,7 @@ void PeleLM::WriteCheckPointFile()
                          amrex::MultiFabFileFullPrefix(lev, checkpointname, level_prefix, "I_R"));
          }
 
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
          VisMF::Write(m_leveldata_new[lev]->phiV,
                       amrex::MultiFabFileFullPrefix(lev, checkpointname, level_prefix, "phiV"));
 
@@ -396,11 +439,14 @@ void PeleLM::ReadCheckPointFile()
        MakeNewLevelFromScratch(lev, m_cur_time, ba, dm);
    }
 
-   // deal with typ_val (TODO) and P_amb
+   // deal with typval and P_amb
    is >> m_pNew;
    GotoNextLine(is);
    m_pOld = m_pNew;
-
+   for (int n = 0; n < typical_values.size(); n++) {
+       is >> typical_values[n];
+       GotoNextLine(is);
+   }
 
    /***************************************************************************
     * Load fluid data                                                         *
@@ -439,7 +485,7 @@ void PeleLM::ReadCheckPointFile()
                         amrex::MultiFabFileFullPrefix(lev, m_restart_file, level_prefix, "divU"));
          }
 
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
          if (!m_restart_nonEF) {
             VisMF::Read(m_leveldata_new[lev]->phiV,
                         amrex::MultiFabFileFullPrefix(lev, m_restart_file, level_prefix, "phiV"));
@@ -495,7 +541,7 @@ void PeleLM::WriteJobInfo(const std::string& path) const
       jobInfoFile << PrettyLine;
 
       jobInfoFile << "number of MPI processes: " << ParallelDescriptor::NProcs() << "\n";
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
       jobInfoFile << "number of threads:       " << omp_get_max_threads() << "\n";
 #endif
 
@@ -523,6 +569,7 @@ void PeleLM::WriteJobInfo(const std::string& path) const
       const char* githash1 = buildInfoGetGitHash(1);
       const char* githash2 = buildInfoGetGitHash(2);
       const char* githash3 = buildInfoGetGitHash(3);
+      const char* githash4 = buildInfoGetGitHash(4);
 
       if (strlen(githash1) > 0) {
          jobInfoFile << "PeleLMeX     git describe: " << githash1 << "\n";
@@ -532,6 +579,9 @@ void PeleLM::WriteJobInfo(const std::string& path) const
       }
       if (strlen(githash3) > 0) {
          jobInfoFile << "PelePhysics  git describe: " << githash3 << "\n";
+      }
+      if (strlen(githash4) > 0) {
+         jobInfoFile << "AMREX-Hydro  git describe: " << githash3 << "\n";
       }
 
       jobInfoFile << "\n\n";

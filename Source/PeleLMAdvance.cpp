@@ -14,6 +14,12 @@ void PeleLM::Advance(int is_initIter) {
       m_pNew = m_pOld;
    }
 
+   // Put together new typical values
+   if (!is_initIter && m_nstep > 0 &&
+       m_nstep%m_resetTypValInt == 0) {
+       setTypicalValues(AmrNewTime);
+   }
+
    //----------------------------------------------------------------
    // Copy old <- new state
    copyStateNewToOld(1);
@@ -60,7 +66,7 @@ void PeleLM::Advance(int is_initIter) {
    calcViscosity(AmrOldTime);
    if (! m_incompressible ) {
       calcDiffusivity(AmrOldTime);
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
       poissonSolveEF(AmrOldTime);
 #endif
    }
@@ -77,7 +83,7 @@ void PeleLM::Advance(int is_initIter) {
    copyTransportOldToNew();
    if (! m_incompressible ) {
       copyDiffusionOldToNew(diffData);
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
       ionDriftVelocity(advData);
 #endif
    }
@@ -107,7 +113,7 @@ void PeleLM::Advance(int is_initIter) {
       averageDownSpecies(AmrNewTime);
       averageDownEnthalpy(AmrNewTime);
       averageDownTemp(AmrNewTime);
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
       averageDownnE(AmrNewTime);
 #endif
       fillPatchState(AmrNewTime);
@@ -145,7 +151,7 @@ void PeleLM::Advance(int is_initIter) {
    if (m_verbose > 1) {
       Real VelAdvEnd = ParallelDescriptor::second() - VelAdvStart;
       ParallelDescriptor::ReduceRealMax(VelAdvEnd, ParallelDescriptor::IOProcessorNumber());
-      amrex::Print() << "   - Advance()::VelocityAdvance " << VelAdvEnd << "\n";
+      amrex::Print() << "   - Advance()::VelocityAdvance  --> Time: " << VelAdvEnd << "\n";
    }
    //----------------------------------------------------------------
 
@@ -161,7 +167,7 @@ void PeleLM::Advance(int is_initIter) {
    {
       Real run_time = ParallelDescriptor::second() - strt_time;
       ParallelDescriptor::ReduceRealMax(run_time, ParallelDescriptor::IOProcessorNumber());
-      amrex::Print() << " >> PeleLM::Advance() " << run_time << "\n";
+      amrex::Print() << " >> PeleLM::Advance() --> Time: " << run_time << "\n";
    }
 }
 
@@ -169,6 +175,7 @@ void PeleLM::oneSDC(int sdcIter,
                     std::unique_ptr<AdvanceAdvData> &advData,
                     std::unique_ptr<AdvanceDiffData> &diffData)
 {
+   BL_PROFILE("PeleLM::oneSDC()");
    m_sdcIter = sdcIter;
 
    if (m_verbose > 0) {
@@ -186,7 +193,7 @@ void PeleLM::oneSDC(int sdcIter,
       averageDownSpecies(AmrNewTime);
       averageDownEnthalpy(AmrNewTime);
       averageDownTemp(AmrNewTime);
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
       averageDownnE(AmrNewTime);
 #endif
       fillPatchState(AmrNewTime);
@@ -199,7 +206,7 @@ void PeleLM::oneSDC(int sdcIter,
          int do_avgDown = 1;                          // Always
          calcDivU(is_initialization,computeDiffusionTerm,do_avgDown,AmrNewTime,diffData);
       }
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
       ionDriftVelocity(advData);
 #endif
    }
@@ -226,7 +233,7 @@ void PeleLM::oneSDC(int sdcIter,
    if (m_verbose > 1) {
       Real MACEnd = ParallelDescriptor::second() - MACStart;
       ParallelDescriptor::ReduceRealMax(MACEnd, ParallelDescriptor::IOProcessorNumber());
-      amrex::Print() << "   - oneSDC()::MACProjection() " << MACEnd << "\n";
+      amrex::Print() << "   - oneSDC()::MACProjection()   --> Time: " << MACEnd << "\n";
    }
    //----------------------------------------------------------------
 
@@ -250,7 +257,7 @@ void PeleLM::oneSDC(int sdcIter,
    if (m_verbose > 1) {
       Real ScalAdvEnd = ParallelDescriptor::second() - ScalAdvStart;
       ParallelDescriptor::ReduceRealMax(ScalAdvEnd, ParallelDescriptor::IOProcessorNumber());
-      amrex::Print() << "   - oneSDC()::ScalarAdvection() " << ScalAdvEnd << "\n";
+      amrex::Print() << "   - oneSDC()::ScalarAdvection() --> Time: " << ScalAdvEnd << "\n";
    }
    //----------------------------------------------------------------
 
@@ -269,11 +276,11 @@ void PeleLM::oneSDC(int sdcIter,
    if (m_verbose > 1) {
       Real ScalDiffEnd = ParallelDescriptor::second() - ScalDiffStart;
       ParallelDescriptor::ReduceRealMax(ScalDiffEnd, ParallelDescriptor::IOProcessorNumber());
-      amrex::Print() << "   - oneSDC()::ScalarDiffusion() " << ScalDiffEnd << "\n";
+      amrex::Print() << "   - oneSDC()::ScalarDiffusion() --> Time: " << ScalDiffEnd << "\n";
    }
    //----------------------------------------------------------------
 
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
    //----------------------------------------------------------------
    // Solve for implicit non-linear nE/PhiV system
    //----------------------------------------------------------------
@@ -295,7 +302,7 @@ void PeleLM::oneSDC(int sdcIter,
    if (m_verbose > 1) {
       Real ScalReacEnd = ParallelDescriptor::second() - ScalReacStart;
       ParallelDescriptor::ReduceRealMax(ScalReacEnd, ParallelDescriptor::IOProcessorNumber());
-      amrex::Print() << "   - oneSDC()::ScalarReaction() " << ScalReacEnd << "\n";
+      amrex::Print() << "   - oneSDC()::ScalarReaction()  --> Time: " << ScalReacEnd << "\n";
    }
    //----------------------------------------------------------------
 

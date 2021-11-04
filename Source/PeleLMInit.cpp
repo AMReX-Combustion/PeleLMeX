@@ -1,5 +1,4 @@
 #include <PeleLM.H>
-#include <pmf_data.H>
 #include <pelelm_prob.H>
 
 using namespace amrex;
@@ -13,7 +12,6 @@ void PeleLM::Init() {
    // Initialize data
    initData();
 
-
 }
 
 void PeleLM::MakeNewLevelFromScratch( int lev,
@@ -24,7 +22,13 @@ void PeleLM::MakeNewLevelFromScratch( int lev,
 
    if (m_verbose > 0) {
       amrex::Print() << " Making new level " << lev << " from scratch" << std::endl;
-      if (m_verbose > 2) {
+      if (m_verbose > 2 && lev > 0) {
+         auto const dx = geom[lev].CellSizeArray();
+         Real vol = AMREX_D_TERM(dx[0],*dx[1],*dx[2]);
+         amrex::Print() << " with " << ba.numPts() << " cells,"
+                        << " over " << ba.numPts() * vol / geom[0].ProbSize() * 100 << "% of the domain \n";
+      }
+      if (m_verbose > 3 && lev > 0) {
          amrex::Print() << " with BoxArray " << ba << std::endl;
       }
    }
@@ -36,9 +40,7 @@ void PeleLM::MakeNewLevelFromScratch( int lev,
    // Define the FAB Factory
 #ifdef AMREX_USE_EB
    m_factory[lev] = makeEBFabFactory(geom[lev], grids[lev], dmap[lev],
-                                     {nghost_eb_basic(),
-                                      nghost_eb_volume(),
-                                      nghost_eb_full()},
+                                     {6,6,6},
                                      EBSupport::full);
 #else
    m_factory[lev].reset(new FArrayBoxFactory());
@@ -61,7 +63,7 @@ void PeleLM::MakeNewLevelFromScratch( int lev,
       m_leveldatareact[lev]->functC.setVal(0.0);
    }
 
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
    int nGrowNL = 1;
    m_leveldatanlsolve[lev].reset(new LevelDataNLSolve(grids[lev], dmap[lev], *m_factory[lev], 1));
 #endif
@@ -77,12 +79,12 @@ void PeleLM::MakeNewLevelFromScratch( int lev,
 
    // Mac projector
 #if AMREX_USE_EB
-   macproj.reset(new MacProjector(Geom(0,finest_level),
-                                  MLMG::Location::FaceCentroid,  // Location of mac velocity
-                                  MLMG::Location::FaceCentroid,  // Location of beta
-                                  MLMG::Location::CellCenter) ); // Location of solution variable phi
+   macproj.reset(new Hydro::MacProjector(Geom(0,finest_level),
+                                         MLMG::Location::FaceCentroid,  // Location of mac velocity
+                                         MLMG::Location::FaceCentroid,  // Location of beta
+                                         MLMG::Location::CellCenter) ); // Location of solution variable phi
 #else
-   macproj.reset(new MacProjector(Geom(0,finest_level)));
+   macproj.reset(new Hydro::MacProjector(Geom(0,finest_level)));
 #endif
    m_macProjOldSize = finest_level+1;
 }
@@ -99,20 +101,34 @@ void PeleLM::initData() {
       resetCoveredMask();
 
       //----------------------------------------------------------------
+      // Set typical values
+      int is_init = 1;
+      setTypicalValues(AmrNewTime, is_init);
+
+#ifdef AMREX_USE_EB
+      //----------------------------------------------------------------
+      // Initial redistribution
+      initCoveredState();
+      initialRedistribution();
+#endif
+
+      //----------------------------------------------------------------
       // AverageDown and FillPatch the NewState
       averageDownState(AmrNewTime);
       fillPatchState(AmrNewTime);
 
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
       poissonSolveEF(AmrNewTime);
       fillPatchPhiV(AmrNewTime);
 #endif
 
       // Post data Init time step estimate
       // TODO : this estimate is probably useless
-      int is_init = 1;
       Real dtInit = computeDt(is_init,AmrNewTime);
       Print() << " Initial dt: " << dtInit << "\n";
+      //WriteDebugPlotFile(GetVecOfConstPtrs(getDensityVect(AmrNewTime)),"RhoPostDist");
+      //WriteDebugPlotFile(GetVecOfConstPtrs(getSpeciesVect(AmrNewTime)),"RhoYsPostDist");
+      //WriteDebugPlotFile(GetVecOfConstPtrs(getTempVect(AmrNewTime)),"TempPostDist");
 
       // Subcycling IAMR/PeleLM first does a projection with no reaction divU
       // which can make the dt for evaluating I_R better
@@ -211,7 +227,7 @@ void PeleLM::initData() {
       // Read starting configuration from chk file.
       ReadCheckPointFile();
 
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
       // If restarting from a non efield simulation
       if (m_restart_nonEF) {
          // either pass Y_ne -> nE or initialize nE for electro-neutral
@@ -261,7 +277,7 @@ void PeleLM::initLevelData(int lev) {
 
    // Prob/PMF datas
    ProbParm const* lprobparm = prob_parm.get();
-   PmfData const* lpmfdata   = pmf_data_g;
+   pele::physics::PMF::PmfData::DataContainer const* lpmfdata   = pmf_data.getDeviceData();
 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -276,7 +292,7 @@ void PeleLM::initLevelData(int lev) {
       auto  const &rhoH_arr  = (m_incompressible) ? DummyFab.array() : ldata_p->rhoh.array(mfi);
       auto  const &temp_arr  = (m_incompressible) ? DummyFab.array() : ldata_p->temp.array(mfi);
       auto  const &aux_arr   = (m_nAux > 0) ? ldata_p->auxiliaries.array(mfi) : DummyFab.array();
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
       auto  const &ne_arr    = ldata_p->nE.array(mfi);
       auto  const &phiV_arr  = ldata_p->phiV.array(mfi);
 #endif
@@ -285,7 +301,7 @@ void PeleLM::initLevelData(int lev) {
       {
          pelelm_initdata(i, j, k, m_incompressible, vel_arr, rho_arr,
                          rhoY_arr, rhoH_arr, temp_arr, aux_arr,
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
                          ne_arr, phiV_arr,  
 #endif
                          geomdata, *lprobparm, lpmfdata);

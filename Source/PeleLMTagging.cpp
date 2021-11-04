@@ -1,5 +1,8 @@
 #include <PeleLM.H>
 #include <AMReX_TagBox.H>
+#ifdef AMREX_USE_EB
+#include <AMReX_EBAmrUtil.H>
+#endif
 
 using namespace amrex;
 

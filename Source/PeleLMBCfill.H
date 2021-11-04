@@ -1,6 +1,6 @@
 #include <PeleLM_Index.H>
 #include <pelelm_prob.H>
-#include <pmf_data.H>
+#include <PMFData.H>
 #include <AMReX_PhysBCFunct.H>
 #include <AMReX_Geometry.H>
 
@@ -10,11 +10,12 @@ struct PeleLMCCFillExtDirVel
 {
 
    ProbParm const* lprobparm;
-   PmfData const* lpmfdata;
+   pele::physics::PMF::PmfData::DataContainer const* lpmfdata;
    const int m_nAux;
 
    AMREX_GPU_HOST
-   constexpr PeleLMCCFillExtDirVel(ProbParm const* a_prob_parm, PmfData const* a_pmf_data, int a_nAux)
+   constexpr PeleLMCCFillExtDirVel(ProbParm const* a_prob_parm,
+                                   pele::physics::PMF::PmfData::DataContainer const* a_pmf_data, int a_nAux)
                                    : lprobparm(a_prob_parm), lpmfdata(a_pmf_data), m_nAux(a_nAux) {}
 
    AMREX_GPU_DEVICE
@@ -75,11 +76,12 @@ struct PeleLMCCFillExtDirSpec
 {
 
    ProbParm const* lprobparm;
-   PmfData const* lpmfdata;
+   pele::physics::PMF::PmfData::DataContainer const* lpmfdata;
    const int m_nAux;
 
    AMREX_GPU_HOST
-   constexpr PeleLMCCFillExtDirSpec(ProbParm const* a_prob_parm, PmfData const* a_pmf_data, int a_nAux)
+   constexpr PeleLMCCFillExtDirSpec(ProbParm const* a_prob_parm,
+                                    pele::physics::PMF::PmfData::DataContainer const* a_pmf_data, int a_nAux)
                                    : lprobparm(a_prob_parm), lpmfdata(a_pmf_data), m_nAux(a_nAux) {}
 
    AMREX_GPU_DEVICE
@@ -138,11 +140,12 @@ struct PeleLMCCFillExtDirDens
 {
 
    ProbParm const* lprobparm;
-   PmfData const* lpmfdata;
+   pele::physics::PMF::PmfData::DataContainer const* lpmfdata;
    const int m_nAux;
 
    AMREX_GPU_HOST
-   constexpr PeleLMCCFillExtDirDens(ProbParm const* a_prob_parm, PmfData const* a_pmf_data, int a_nAux)
+   constexpr PeleLMCCFillExtDirDens(ProbParm const* a_prob_parm,
+                                    pele::physics::PMF::PmfData::DataContainer const* a_pmf_data, int a_nAux)
                                    : lprobparm(a_prob_parm), lpmfdata(a_pmf_data), m_nAux(a_nAux) {}
 
    AMREX_GPU_DEVICE
@@ -199,11 +202,12 @@ struct PeleLMCCFillExtDirRhoH
 {
 
    ProbParm const* lprobparm;
-   PmfData const* lpmfdata;
+   pele::physics::PMF::PmfData::DataContainer const* lpmfdata;
    const int m_nAux;
 
    AMREX_GPU_HOST
-   constexpr PeleLMCCFillExtDirRhoH(ProbParm const* a_prob_parm, PmfData const* a_pmf_data, int a_nAux)
+   constexpr PeleLMCCFillExtDirRhoH(ProbParm const* a_prob_parm,
+                                    pele::physics::PMF::PmfData::DataContainer const* a_pmf_data, int a_nAux)
                                    : lprobparm(a_prob_parm), lpmfdata(a_pmf_data), m_nAux(a_nAux) {}
 
    AMREX_GPU_DEVICE
@@ -260,11 +264,12 @@ struct PeleLMCCFillExtDirTemp
 {
 
    ProbParm const* lprobparm;
-   PmfData const* lpmfdata;
+   pele::physics::PMF::PmfData::DataContainer const* lpmfdata;
    const int m_nAux;
 
    AMREX_GPU_HOST
-   constexpr PeleLMCCFillExtDirTemp(ProbParm const* a_prob_parm, PmfData const* a_pmf_data, int a_nAux)
+   constexpr PeleLMCCFillExtDirTemp(ProbParm const* a_prob_parm,
+                                    pele::physics::PMF::PmfData::DataContainer const* a_pmf_data, int a_nAux)
                                    : lprobparm(a_prob_parm), lpmfdata(a_pmf_data), m_nAux(a_nAux) {}
 
    AMREX_GPU_DEVICE
@@ -317,16 +322,17 @@ struct PeleLMCCFillExtDirTemp
    }
 };
 
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
 struct PeleLMCCFillExtDirnE
 {
 
    ProbParm const* lprobparm;
-   PmfData const* lpmfdata;
+   pele::physics::PMF::PmfData::DataContainer const* lpmfdata;
    const int m_nAux;
 
    AMREX_GPU_HOST
-   constexpr PeleLMCCFillExtDirnE(ProbParm const* a_prob_parm, PmfData const* a_pmf_data, int a_nAux)
+   constexpr PeleLMCCFillExtDirnE(ProbParm const* a_prob_parm,
+                                  pele::physics::PMF::PmfData::DataContainer const* a_pmf_data, int a_nAux)
                                  : lprobparm(a_prob_parm), lpmfdata(a_pmf_data), m_nAux(a_nAux) {}
 
    AMREX_GPU_DEVICE
@@ -380,16 +386,17 @@ struct PeleLMCCFillExtDirnE
 };
 #endif
 
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
 struct PeleLMCCFillExtDirPhiV
 {
 
    ProbParm const* lprobparm;
-   PmfData const* lpmfdata;
+   pele::physics::PMF::PmfData::DataContainer const* lpmfdata;
    const int m_nAux;
 
    AMREX_GPU_HOST
-   constexpr PeleLMCCFillExtDirPhiV(ProbParm const* a_prob_parm, PmfData const* a_pmf_data, int a_nAux)
+   constexpr PeleLMCCFillExtDirPhiV(ProbParm const* a_prob_parm,
+                                    pele::physics::PMF::PmfData::DataContainer const* a_pmf_data, int a_nAux)
                                    : lprobparm(a_prob_parm), lpmfdata(a_pmf_data), m_nAux(a_nAux) {}
 
    AMREX_GPU_DEVICE

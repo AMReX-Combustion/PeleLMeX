@@ -14,6 +14,7 @@ PeleLM::~PeleLM()
    m_reactor->close();
 
    closeTempFile();
+   typical_values.clear();
 }
 
 PeleLM::LevelData*
@@ -41,7 +42,7 @@ PeleLM::getLevelDataPtr(int lev, const PeleLM::TimeStamp &a_time, int useUMac)
          fillpatch_density(lev, time, m_leveldata_floating->density, m_nGrowState);
          fillpatch_species(lev, time, m_leveldata_floating->species, m_nGrowState);
          fillpatch_energy(lev, time, m_leveldata_floating->rhoh, m_leveldata_floating->temp, m_nGrowState);
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
          fillpatch_phiV(lev, time, m_leveldata_floating->phiV, m_nGrowState);
          fillpatch_nE(lev, time, m_leveldata_floating->nE, m_nGrowState);
 #endif
@@ -129,6 +130,23 @@ PeleLM::getTempVect(const TimeStamp &a_time) {
    } else {
       for (int lev = 0; lev <= finest_level; ++lev) {
          r.push_back(&(m_leveldata_new[lev]->temp));
+      }
+   }
+   return r;
+}
+
+Vector<MultiFab *>
+PeleLM::getRhoHVect(const TimeStamp &a_time) {
+   AMREX_ASSERT(!m_incompressible);
+   Vector<MultiFab*> r;
+   r.reserve(finest_level+1);
+   if ( a_time == AmrOldTime ) {
+      for (int lev = 0; lev <= finest_level; ++lev) {
+         r.push_back(&(m_leveldata_old[lev]->rhoh));
+      }
+   } else {
+      for (int lev = 0; lev <= finest_level; ++lev) {
+         r.push_back(&(m_leveldata_new[lev]->rhoh));
       }
    }
    return r;
@@ -310,7 +328,7 @@ PeleLM::averageDownRhoRT(const PeleLM::TimeStamp &a_time)
    }
 }
 
-#ifdef PLM_USE_EFIELD
+#ifdef PELE_USE_EFIELD
 void
 PeleLM::averageDownnE(const PeleLM::TimeStamp &a_time)
 {
