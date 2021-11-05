@@ -4,6 +4,9 @@
 #ifdef AMREX_USE_EB
 #include <AMReX_EBInterpolater.H>
 #endif
+#ifdef PELE_USE_TURBINFLOW
+#include <turbinflow.H>
+#endif
 
 // Conversion from physBC to fieldBC maps
 // Components are  Interior, Inflow, Outflow, Symmetry, &
@@ -308,8 +311,13 @@ void PeleLM::fillpatch_velocity(int lev,
                                 const amrex::Real a_time,
                                 amrex::MultiFab &a_vel,
                                 int nGhost) {
-   ProbParm const* lprobparm = prob_parm.get();
+   ProbParm const* lprobparm = prob_parm_d;
    pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
+
+#ifdef PELE_USE_TURBINFLOW
+   fillTurbInflow(a_vel, lev, a_time);
+#endif
+
    if (lev == 0) {
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirVel>> bndry_func(geom[lev], fetchBCRecArray(VELX,AMREX_SPACEDIM),
                                                                      PeleLMCCFillExtDirVel{lprobparm, lpmfdata, m_nAux});
@@ -339,6 +347,7 @@ void PeleLM::fillpatch_velocity(int lev,
                          crse_bndry_func,0,fine_bndry_func,0,
                          refRatio(lev-1), mapper, fetchBCRecArray(VELX,AMREX_SPACEDIM), 0);
    }
+   a_vel.EnforcePeriodicity(geom[lev].periodicity());
 }
 
 // Fill the density
@@ -346,7 +355,7 @@ void PeleLM::fillpatch_density(int lev,
                                const amrex::Real a_time,
                                amrex::MultiFab &a_density,
                                int nGhost) {
-   ProbParm const* lprobparm = prob_parm.get();
+   ProbParm const* lprobparm = prob_parm_d;
    pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
    if (lev == 0) {
 
@@ -388,7 +397,7 @@ void PeleLM::fillpatch_species(int lev,
                                const amrex::Real a_time,
                                amrex::MultiFab &a_species,
                                int nGhost) {
-   ProbParm const* lprobparm = prob_parm.get();
+   ProbParm const* lprobparm = prob_parm_d;
    pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
    if (lev == 0) {
 
@@ -430,7 +439,7 @@ void PeleLM::fillpatch_energy(int lev,
                               amrex::MultiFab &a_rhoh,
                               amrex::MultiFab &a_temp,
                               int nGhost) {
-   ProbParm const* lprobparm = prob_parm.get();
+   ProbParm const* lprobparm = prob_parm_d;
    pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
    if (lev == 0) {
 
@@ -493,7 +502,7 @@ void PeleLM::fillpatch_thermoPress(int lev,
                                    const amrex::Real a_time,
                                    amrex::MultiFab &a_rhoRT,
                                    int nGhost) {
-   ProbParm const* lprobparm = prob_parm.get();
+   ProbParm const* lprobparm = prob_parm_d;
    pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
    if (lev == 0) {
 
@@ -535,7 +544,7 @@ void PeleLM::fillpatch_divu(int lev,
                             const amrex::Real a_time,
                             amrex::MultiFab &a_divu,
                             int nGhost) {
-   ProbParm const* lprobparm = prob_parm.get();
+   ProbParm const* lprobparm = prob_parm_d;
    pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
    if (lev == 0) {
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> bndry_func(geom[lev], {m_bcrec_divu},
@@ -576,7 +585,7 @@ void PeleLM::fillpatch_forces(Real a_time,
 {
    AMREX_ASSERT(a_force[0]->nComp() <= m_bcrec_force.size());
    const int nComp = a_force[0]->nComp();
-   ProbParm const* lprobparm = prob_parm.get();
+   ProbParm const* lprobparm = prob_parm_d;
    pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
 
    int lev = 0;
@@ -606,7 +615,7 @@ void PeleLM::fillpatch_nE(int lev,
                           const amrex::Real a_time,
                           amrex::MultiFab &a_nE,
                           int nGhost) {
-   ProbParm const* lprobparm = prob_parm.get();
+   ProbParm const* lprobparm = prob_parm_d;
    pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
    if (lev == 0) {
 
@@ -649,7 +658,7 @@ void PeleLM::fillpatch_phiV(int lev,
                             const amrex::Real a_time,
                             amrex::MultiFab &a_phiV,
                             int nGhost) {
-   ProbParm const* lprobparm = prob_parm.get();
+   ProbParm const* lprobparm = prob_parm_d;
    pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
    if (lev == 0) {
 
@@ -692,7 +701,7 @@ void PeleLM::fillpatch_gradp(int lev,
                              const amrex::Real a_time,
                              amrex::MultiFab &a_gp,
                              int nGhost) {
-   ProbParm const* lprobparm = prob_parm.get();
+   ProbParm const* lprobparm = prob_parm_d;
    pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
    if (lev == 0) {
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> bndry_func(geom[lev], {m_bcrec_force},
@@ -730,7 +739,7 @@ void PeleLM::fillpatch_reaction(int lev,
                                 const amrex::Real a_time,
                                 amrex::MultiFab &a_I_R,
                                 int nGhost) {
-   ProbParm const* lprobparm = prob_parm.get();
+   ProbParm const* lprobparm = prob_parm_d;
    pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
    if (lev == 0) {
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> bndry_func(geom[lev], {m_bcrec_force},
@@ -766,7 +775,7 @@ void PeleLM::fillcoarsepatch_velocity(int lev,
                                       const amrex::Real a_time,
                                       amrex::MultiFab &a_vel,
                                       int nGhost) {
-   ProbParm const* lprobparm = prob_parm.get();
+   ProbParm const* lprobparm = prob_parm_d;
    pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
 
    // Interpolator
@@ -794,7 +803,7 @@ void PeleLM::fillcoarsepatch_mass(int lev,
                                   amrex::MultiFab &a_density,
                                   amrex::MultiFab &a_species,
                                   int nGhost) {
-   ProbParm const* lprobparm = prob_parm.get();
+   ProbParm const* lprobparm = prob_parm_d;
    pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
 
    // Interpolator
@@ -835,7 +844,7 @@ void PeleLM::fillcoarsepatch_energy(int lev,
                                     amrex::MultiFab &a_rhoh,
                                     amrex::MultiFab &a_temp,
                                     int nGhost) {
-   ProbParm const* lprobparm = prob_parm.get();
+   ProbParm const* lprobparm = prob_parm_d;
    pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
 
    // Interpolator
@@ -875,7 +884,7 @@ void PeleLM::fillcoarsepatch_gradp(int lev,
                                    const amrex::Real a_time,
                                    amrex::MultiFab &a_gp,
                                    int nGhost) {
-   ProbParm const* lprobparm = prob_parm.get();
+   ProbParm const* lprobparm = prob_parm_d;
    pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
 
    // Interpolator
@@ -902,7 +911,7 @@ void PeleLM::fillcoarsepatch_divu(int lev,
                                   const amrex::Real a_time,
                                   amrex::MultiFab &a_divu,
                                   int nGhost) {
-   ProbParm const* lprobparm = prob_parm.get();
+   ProbParm const* lprobparm = prob_parm_d;
    pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
 
    // Interpolator
@@ -929,7 +938,7 @@ void PeleLM::fillcoarsepatch_reaction(int lev,
                                       const amrex::Real a_time,
                                       amrex::MultiFab &a_I_R,
                                       int nGhost) {
-   ProbParm const* lprobparm = prob_parm.get();
+   ProbParm const* lprobparm = prob_parm_d;
    pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
 
    // Interpolator
@@ -957,7 +966,7 @@ void PeleLM::fillcoarsepatch_nE(int lev,
                                 const amrex::Real a_time,
                                 amrex::MultiFab &a_nE,
                                 int nGhost) {
-   ProbParm const* lprobparm = prob_parm.get();
+   ProbParm const* lprobparm = prob_parm_d;
    pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
 
    // Interpolator
@@ -984,7 +993,7 @@ void PeleLM::fillcoarsepatch_phiV(int lev,
                                   const amrex::Real a_time,
                                   amrex::MultiFab &a_phiV,
                                   int nGhost) {
-   ProbParm const* lprobparm = prob_parm.get();
+   ProbParm const* lprobparm = prob_parm_d;
    pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
 
    // Interpolator
@@ -1034,7 +1043,11 @@ void PeleLM::setInflowBoundaryVel(MultiFab &a_vel,
       }
    }  
 
-   ProbParm const* lprobparm = prob_parm.get();
+#ifdef PELE_USE_TURBINFLOW
+   fillTurbInflow(a_vel, lev, a_time);
+#endif
+
+   ProbParm const* lprobparm = prob_parm_d;
    pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
    PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirVel>> bndry_func(geom[lev], dummyVelBCRec,
                                                                   PeleLMCCFillExtDirVel{lprobparm, lpmfdata, m_nAux});
@@ -1043,3 +1056,73 @@ void PeleLM::setInflowBoundaryVel(MultiFab &a_vel,
 
    a_vel.EnforcePeriodicity(geom[lev].periodicity());
 }
+
+#ifdef PELE_USE_TURBINFLOW
+void PeleLM::fillTurbInflow(MultiFab &a_vel,
+                            int lev,
+                            const Real a_time)
+{
+   if (PeleLM::prob_parm->do_turb)  {
+
+        ProbParm *probparmDD = PeleLM::prob_parm_d;
+        ProbParm *probparmDH = PeleLM::prob_parm;
+
+        // Velocity BCs
+        auto velBCRec = fetchBCRecArray(VELX,AMREX_SPACEDIM);
+
+        // Copy problem parameter structs to host
+        amrex::Gpu::copy(amrex::Gpu::deviceToHost, probparmDD, probparmDD + 1, probparmDH);
+
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+        for (MFIter mfi(a_vel,TilingIfNotGPU()); mfi.isValid(); ++mfi) {
+            Box const& bx = mfi.growntilebox();
+            FArrayBox& data = a_vel[mfi];
+
+            for (int dir=0; dir<AMREX_SPACEDIM; ++dir) {
+
+                auto bndryBoxLO = amrex::Box(amrex::adjCellLo(geom[lev].Domain(),dir,4) & bx);
+                if (velBCRec[0].lo()[dir]==EXT_DIR && bndryBoxLO.ok())
+                {
+                    // Create box with ghost cells and set them to zero
+                    amrex::IntVect growVect(amrex::IntVect::TheUnitVector());
+                    int Grow = 4;     // Being conservative
+                    for(int n=0;n<AMREX_SPACEDIM;n++)
+                      growVect[n] = Grow;
+                    growVect[dir] = 0;
+                    amrex::Box modDom = geom[lev].Domain();
+                    modDom.grow(growVect);
+                    auto bndryBoxLO_ghost = amrex::Box(amrex::adjCellLo(modDom,dir,Grow) & bx);
+                    data.setVal<amrex::RunOn::Device>(0.0,bndryBoxLO_ghost,VELX,AMREX_SPACEDIM);
+
+                    add_turb(bndryBoxLO, data, 0, geom[lev], a_time, dir, amrex::Orientation::low, probparmDH->tp);
+                    probparmDH->turb_ok[dir] = true;
+                }
+
+                auto bndryBoxHI = amrex::Box(amrex::adjCellHi(geom[lev].Domain(),dir,4) & bx);
+                if (velBCRec[0].hi()[dir]==EXT_DIR && bndryBoxHI.ok())
+                {
+                    //Create box with ghost cells and set them to zero
+                    amrex::IntVect growVect(amrex::IntVect::TheUnitVector());
+                    int Grow = 4;
+                    for(int n=0;n<AMREX_SPACEDIM;n++)
+                      growVect[n] = Grow;
+                    growVect[dir] = 0;
+                    amrex::Box modDom = geom[lev].Domain();
+                    modDom.grow(growVect);
+                    auto bndryBoxHI_ghost = amrex::Box(amrex::adjCellHi(modDom,dir,Grow) & bx);
+                    data.setVal<amrex::RunOn::Device>(0.0,bndryBoxHI_ghost,VELX,AMREX_SPACEDIM);
+
+                    add_turb(bndryBoxHI, data, 0, geom[lev], a_time, dir, amrex::Orientation::high, probparmDH->tp);
+                    probparmDH->turb_ok[dir+AMREX_SPACEDIM] = true;
+                }
+            }
+        }
+
+        // Copy problem parameter structs back to device
+        amrex::Gpu::copy(amrex::Gpu::hostToDevice, probparmDH, probparmDH + 1, probparmDD);
+
+    }
+}
+#endif
