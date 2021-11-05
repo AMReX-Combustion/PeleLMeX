@@ -276,7 +276,7 @@ void PeleLM::initLevelData(int lev) {
    ldata_p->gp.setVal(0.0);
 
    // Prob/PMF datas
-   ProbParm const* lprobparm = prob_parm.get();
+   ProbParm const* lprobparm = prob_parm_d;
    pele::physics::PMF::PmfData::DataContainer const* lpmfdata   = pmf_data.getDeviceData();
 
 #ifdef AMREX_USE_OMP
