@@ -88,7 +88,8 @@ void PeleLM::Setup() {
    setBoundaryConditions();
 
    // Problem parameters
-   prob_parm.reset(new ProbParm{});
+   prob_parm = new ProbParm{};
+   prob_parm_d = (ProbParm*)The_Arena()->alloc(sizeof(ProbParm));
 
    // Problem parameters
    readProbParm();
@@ -97,6 +98,9 @@ void PeleLM::Setup() {
    // Will be overwriten on restart.
    m_pOld = prob_parm->P_mean;
    m_pNew = prob_parm->P_mean;
+
+   // Copy problem parameters into device copy
+   Gpu::copy(Gpu::hostToDevice, prob_parm, prob_parm+1,prob_parm_d); 
 }
 
 void PeleLM::readParameters() {
