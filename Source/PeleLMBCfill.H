@@ -54,7 +54,11 @@ struct PeleLMCCFillExtDirVel
             bcnormal(x, m_nAux, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
 
             for (int n = 0; n < AMREX_SPACEDIM; n++) {
+#ifdef PELE_USE_TURBINFLOW
+               vel(iv,n) += s_ext[VELX+n];
+#else
                vel(iv,n) = s_ext[VELX+n];
+#endif
             }
 
          // High
@@ -64,7 +68,11 @@ struct PeleLMCCFillExtDirVel
             bcnormal(x, m_nAux, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
 
             for (int n = 0; n < AMREX_SPACEDIM; n++) {
+#ifdef PELE_USE_TURBINFLOW
+               vel(iv,n) += s_ext[VELX+n];
+#else
                vel(iv,n) = s_ext[VELX+n];
+#endif
             }
 
          }
