@@ -50,7 +50,8 @@ void pelelm_initdata(int i, int j, int k,
 
     AMREX_D_TERM(vel(i,j,k,0) = 0.0;,
                  vel(i,j,k,1) = 0.0;,
-                 vel(i,j,k,2) = 5.0);
+                 vel(i,j,k,2) = 0.0);
+    vel(i,j,k,prob_parm.meanFlowDir) =  prob_parm.meanFlowMag;
 
     if (is_incompressible) return;
 
@@ -89,31 +90,40 @@ bcnormal(
   ProbParm const& prob_parm,
   pele::physics::PMF::PmfData::DataContainer const * /*pmf_data*/)
 {
-  const amrex::Real* prob_lo = geomdata.ProbLo();
-  const amrex::Real* prob_hi = geomdata.ProbHi();
+    const amrex::Real* prob_lo = geomdata.ProbLo();
+    const amrex::Real* prob_hi = geomdata.ProbHi();
 
-  AMREX_D_TERM(const amrex::Real Lx = prob_hi[0] - prob_lo[0];,
-               const amrex::Real Ly = prob_hi[1] - prob_lo[1];,
-               const amrex::Real Lz = prob_hi[2] - prob_lo[2]);
+    AMREX_D_TERM(const amrex::Real Lx = prob_hi[0] - prob_lo[0];,
+                 const amrex::Real Ly = prob_hi[1] - prob_lo[1];,
+                 const amrex::Real Lz = prob_hi[2] - prob_lo[2]);
 
-  AMREX_D_TERM(const amrex::Real x_c = prob_lo[0] + 0.5*Lx;,
-               const amrex::Real y_c = prob_lo[1] + 0.5*Ly;,
-               const amrex::Real z_c = prob_lo[2] + 0.5*Lz);
+    AMREX_D_TERM(const amrex::Real x_c = prob_lo[0] + 0.5*Lx;,
+                 const amrex::Real y_c = prob_lo[1] + 0.5*Ly;,
+                 const amrex::Real z_c = prob_lo[2] + 0.5*Lz);
 
-  amrex::Real massfrac[NUM_SPECIES] = {0.0};
+    amrex::Real massfrac[NUM_SPECIES] = {0.0};
 
-  auto eos = pele::physics::PhysicsType::eos();
-  if (sgn == 1) {
+    auto eos = pele::physics::PhysicsType::eos();
 
     AMREX_D_TERM(s_ext[VELX] = 0.0;,
                  s_ext[VELY] = 0.0;,
-                 s_ext[VELZ] = 5.0);
+                 s_ext[VELZ] = 0.0);
+    s_ext[prob_parm.meanFlowDir] =  prob_parm.meanFlowMag;
 
     massfrac[O2_ID] = 0.233;
     massfrac[N2_ID] = 0.767;
 
-    amrex::Real rad = std::sqrt( (x[0]-x_c)*(x[0]-x_c) +
-                                 (x[1]-y_c)*(x[1]-y_c) );
+    amrex::Real rad = 0.0;
+    if ( prob_parm.meanFlowDir == 0 ) {
+        rad = std::sqrt( (x[1]-y_c)*(x[1]-y_c) +
+                         (x[2]-z_c)*(x[2]-z_c) );
+    } else if ( prob_parm.meanFlowDir == 1 ) {
+        rad = std::sqrt( (x[0]-x_c)*(x[0]-x_c) +
+                         (x[2]-z_c)*(x[2]-z_c) );
+    } else if ( prob_parm.meanFlowDir == 2 ) {
+        rad = std::sqrt( (x[0]-x_c)*(x[0]-x_c) +
+                         (x[1]-y_c)*(x[1]-y_c) );
+    }
 
     if (rad < 0.15 * Lx) {
         massfrac[O2_ID] = 0.5;
@@ -134,6 +144,5 @@ bcnormal(
     for (int n = 0; n < NUM_SPECIES; n++) {
       s_ext[FIRSTSPEC+n] = massfrac[n] * s_ext[DENSITY];
     }
-  }
 }
 #endif

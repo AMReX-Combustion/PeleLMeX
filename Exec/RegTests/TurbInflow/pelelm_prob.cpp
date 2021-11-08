@@ -7,6 +7,8 @@ void PeleLM::readProbParm()
    
     pp.query("T_mean", prob_parm->T_mean);
     pp.query("P_mean", prob_parm->P_mean);
+    pp.query("flowDir", prob_parm->meanFlowDir);
+    pp.query("flowMag", prob_parm->meanFlowMag);
 
     auto problo = geom[0].ProbLo();
     auto probhi = geom[0].ProbHi();
@@ -30,8 +32,18 @@ void PeleLM::readProbParm()
         AMREX_ASSERT_WITH_MESSAGE(PeleLM::prob_parm->tp.tph == nullptr,"Can only be one TurbParmHost");
         PeleLM::prob_parm->tp.tph = new TurbParmHost;
 
-        amrex::Vector<amrex::Real> turb_center = { 
-          {0.5 * (probhi[0] + problo[0]), 0.5 * (probhi[1] + problo[1])}};
+        amrex::Vector<amrex::Real> turb_center = {0.0};
+        if ( prob_parm->meanFlowDir == 0 ) {
+            turb_center[0] = 0.5 * (probhi[1] + problo[1]);
+            turb_center[1] = 0.5 * (probhi[2] + problo[2]);
+        } else if ( prob_parm->meanFlowDir == 1 ) {
+            turb_center[0] = 0.5 * (probhi[0] + problo[0]);
+            turb_center[1] = 0.5 * (probhi[2] + problo[2]);
+        } else if ( prob_parm->meanFlowDir == 2 ) {
+            turb_center[0] = 0.5 * (probhi[0] + problo[0]);
+            turb_center[1] = 0.5 * (probhi[1] + problo[1]);
+        }
+
         pp.queryarr("turb_center", turb_center);
         AMREX_ASSERT_WITH_MESSAGE(turb_center.size() == 2, "turb_center must have two elements");
         for (int n = 0; n < turb_center.size(); ++n) {
