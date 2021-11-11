@@ -487,6 +487,10 @@ class PeleLM : public amrex::AmrCore {
    // Fill physical boundaries
    void setInflowBoundaryVel (amrex::MultiFab &a_vel, int lev, PeleLM::TimeStamp a_time);
 
+#ifdef PELE_USE_TURBINFLOW
+   void fillTurbInflow(amrex::MultiFab &a_vel, int lev, const amrex::Real a_time);
+#endif
+
    // Average down operations
    void averageDownState(const PeleLM::TimeStamp &a_time);
    void averageDownVelocity(const PeleLM::TimeStamp &a_time);
@@ -864,7 +868,8 @@ class PeleLM : public amrex::AmrCore {
    amrex::Vector<amrex::AMRErrorTag> errTags;
 
    // Problem parameters
-   std::unique_ptr<ProbParm> prob_parm;
+   ProbParm* prob_parm;
+   ProbParm* prob_parm_d;
 
    // PMF parameters
    pele::physics::PMF::PmfData pmf_data;

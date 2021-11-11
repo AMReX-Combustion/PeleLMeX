@@ -179,7 +179,7 @@ void PeleLM::addLorentzVelForces(int lev,
 void PeleLM::initializeElectronNeutral()
 {
    // Prob/PMF datas
-   ProbParm const* lprobparm = prob_parm.get();
+   ProbParm const* lprobparm = prob_parm_d;
 
    for (int lev = 0; lev <= finest_level; ++lev) {
 
@@ -237,7 +237,7 @@ void PeleLM::fillPatchExtrap(Real a_time,
 {
    AMREX_ASSERT(a_MF[0]->nComp() <= m_bcrec_force.size());
    const int nComp = a_MF[0]->nComp();
-   ProbParm const* lprobparm = prob_parm.get();
+   ProbParm const* lprobparm = prob_parm_d;
 
    int lev = 0;
    {
@@ -265,7 +265,7 @@ void PeleLM::fillPatchNLnE(Real a_time,
                            Vector<MultiFab*> const &a_nE,
                            int a_nGrow)
 {
-   ProbParm const* lprobparm = prob_parm.get();
+   ProbParm const* lprobparm = prob_parm_d;
 
    int lev = 0;
    {
@@ -294,7 +294,7 @@ void PeleLM::fillPatchNLphiV(Real a_time,
                            Vector<MultiFab*> const &a_phiV,
                            int a_nGrow)
 {
-   ProbParm const* lprobparm = prob_parm.get();
+   ProbParm const* lprobparm = prob_parm_d;
 
    int lev = 0;
    {

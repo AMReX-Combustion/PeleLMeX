@@ -9,12 +9,14 @@ PeleLM::~PeleLM()
    for (int lev = 0; lev <= finest_level; ++lev) {
       ClearLevel(lev);
    }
-   prob_parm.reset();
    trans_parms.deallocate();
    m_reactor->close();
 
    closeTempFile();
    typical_values.clear();
+
+   delete prob_parm;
+   The_Arena()->free(prob_parm_d);
 }
 
 PeleLM::LevelData*
