@@ -337,6 +337,14 @@ void PeleLM::readParameters() {
       ppa.query("regrid_int", m_regrid_int);
    }
 
+#ifdef AMREX_USE_EB
+   if ( max_level > 0 ) {
+      pp.query("refine_EB",m_refine_cutcells);
+      m_maxEBrefine = max_level;
+      pp.query("refine_EB_max_level",m_maxEBrefine);
+   }
+#endif
+
 #ifdef PELE_USE_EFIELD
    // -----------------------------------------
    // EFIELD
