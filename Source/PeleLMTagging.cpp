@@ -15,9 +15,11 @@ PeleLM::ErrorEst( int lev,
    BL_PROFILE_VAR("PeleLM::ErrorEst()", ErrorEst);
 
 #ifdef AMREX_USE_EB
-   if (m_refine_cutcells) {
+   if (m_refine_cutcells &&
+       (lev < m_maxEBrefine) ) {
       const MultiFab& rho = (getLevelDataPtr(lev,AmrNewTime))->density;
       TagCutCells(tags, rho);
+      Print() << " Tag EB on level " << lev << "\n";
    }
 #endif
 
@@ -28,4 +30,8 @@ PeleLM::ErrorEst( int lev,
       }
       errTags[n](tags,mf.get(),TagBox::CLEAR,TagBox::SET,time,lev,geom[lev]);
    }
+
+#ifdef AMREX_USE_EB
+   // Untag cell close to EB
+#endif
 }
