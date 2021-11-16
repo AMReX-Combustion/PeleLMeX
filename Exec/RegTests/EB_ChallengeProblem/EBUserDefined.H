@@ -58,11 +58,13 @@ EBUserDefined(const Geometry& geom,
 
     EB2::CylinderIF cylinder(48.0*0.1*scaleFact, 70.0*0.1*scaleFact, 2, {0.0, 0.0, -20.0*0.1*scaleFact}, true);
 
+    EB2::CylinderIF simpleCylinder(48.0*0.1*scaleFact, 70.0*0.1*scaleFact, 2, {0.0, 0.0, 0.0}, true);
+
     auto revolvePiston  = EB2::lathe(Piston);
     auto PistonCylinder = EB2::makeUnion(revolvePiston, cylinder);
 
     // Build your geometry shop using EB2::makeShop
-    auto gshop = EB2::makeShop(PistonCylinder);
+    auto gshop = EB2::makeShop(simpleCylinder);
 
     // Build geom using EB2::Build
     EB2::Build(gshop, geom, required_coarsening_level, max_coarsening_level);

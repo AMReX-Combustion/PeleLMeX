@@ -12,7 +12,7 @@ PRECISION       = DOUBLE
 VERBOSE         = FALSE
 TINY_PROFILE    = FALSE
 USE_EB			= TRUE
-USE_HYPRE		= FALSE
+USE_HYPRE		= TRUE
 
 # Compilation
 COMP            = gnu
@@ -25,8 +25,8 @@ USE_HIP         = FALSE
 CEXE_headers 	+= EBUserDefined.H
 
 # PelePhysics
-Chemistry_Model = air
+Chemistry_Model = heptane_3sp
 Eos_Model		= Fuego
-Transport_Model = Constant
+Transport_Model = Simple
 
 include $(PELELMEX_HOME)/Utils/Make.PeleLMeX
