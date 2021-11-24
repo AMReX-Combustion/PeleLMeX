@@ -1019,6 +1019,7 @@ class PeleLM : public amrex::AmrCore {
    // EB
    int m_refine_cutcells = 1;
    int m_maxEBrefine = -1;
+   std::unique_ptr<amrex::MultiFab> m_signedDist0 = nullptr;
    amrex::Vector<amrex::Real> coveredState_h;
    amrex::Gpu::DeviceVector<amrex::Real> coveredState_d;
    std::string m_adv_redist_type = "NewStateRedist";

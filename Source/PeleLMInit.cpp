@@ -1,5 +1,8 @@
 #include <PeleLM.H>
 #include <pelelm_prob.H>
+#ifdef AMREX_USE_EB
+#include <AMReX_EB_utils.H>
+#endif
 
 using namespace amrex;
 
@@ -87,6 +90,36 @@ void PeleLM::MakeNewLevelFromScratch( int lev,
    macproj.reset(new Hydro::MacProjector(Geom(0,finest_level)));
 #endif
    m_macProjOldSize = finest_level+1;
+
+#if AMREX_USE_EB
+   if ( lev == 0 ) {
+      // Set up CC signed distance container to control EB refinement
+      m_signedDist0.reset(new MultiFab(grids[lev], dmap[lev], 1, 0, MFInfo(), *m_factory[lev]));
+      MultiFab signDist(convert(grids[0],IntVect::TheUnitVector()),dmap[0],1,0,MFInfo(),EBFactory(0));
+      FillSignedDistance(signDist,true);
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+      {
+         for (MFIter mfi(*m_signedDist0,TilingIfNotGPU()); mfi.isValid(); ++mfi)
+         {
+            const Box& bx = mfi.tilebox();
+            auto const& sd_cc = m_signedDist0->array(mfi);
+            auto const& sd_nd = signDist.const_array(mfi);
+            amrex::ParallelFor(bx, [sd_cc, sd_nd]
+            AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+            {
+               amrex::Real fac = AMREX_D_PICK(0.5,0.25,0.125);
+               sd_cc(i,j,k) = AMREX_D_TERM(  sd_nd(i,j,k)   + sd_nd(i+1,j,k),
+                                           + sd_nd(i,j+1,k) + sd_nd(i+1,j+1,k),
+                                           + sd_nd(i,j,k+1) + sd_nd(i+1,j,k+1)
+                                           + sd_nd(i,j+1,k+1) + sd_nd(i+1,j+1,k+1));
+               sd_cc(i,j,k) *= fac;
+            });
+         }
+      }
+   }
+#endif
 }
 
 void PeleLM::initData() {

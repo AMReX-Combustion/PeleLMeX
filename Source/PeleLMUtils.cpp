@@ -815,7 +815,7 @@ void PeleLM::setTypicalValues(const TimeStamp &a_time, int is_init)
 
 void PeleLM::updateTypicalValuesChem()
 {
-    if (m_useTypValChem) {
+    if (m_useTypValChem && m_do_react) {
         if (m_verbose > 2) Print() << " Update chemistry typical values \n";
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())

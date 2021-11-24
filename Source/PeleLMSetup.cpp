@@ -63,9 +63,11 @@ void PeleLM::Setup() {
          int reactor_type = 2;
          int ncells_chem = 1;
          amrex::Print() << " Initialization of chemical reactor ... \n";
-         m_chem_integrator = "ReactorNull";
          ParmParse pp("peleLM");
-         pp.query("chem_integrator",m_chem_integrator);
+         if (!pp.contains("chem_integrator")) {
+            Abort("peleLM.chem_integrator need to be specified");
+         }
+         pp.get("chem_integrator",m_chem_integrator);
          m_reactor = pele::physics::reactions::ReactorBase::create(m_chem_integrator);
          m_reactor->init(reactor_type, ncells_chem);
          // For ReactorNull, we need to also skip instantaneous RR used in divU
@@ -73,6 +75,7 @@ void PeleLM::Setup() {
             m_skipInstantRR = 1;
             m_plotChemDiag = 0;
             m_plotHeatRelease = 0;
+            m_useTypValChem = 0;
          }
       }
 
