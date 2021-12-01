@@ -188,6 +188,10 @@ void PeleLM::oneSDC(int sdcIter,
    // At the first SDC, we already copied old -> new
    if (sdcIter > 1) {
 
+      Real UpdateStart = 0.0;
+      if (m_verbose > 1) {
+         UpdateStart = ParallelDescriptor::second();
+      }
       // fillpatch the new state
       averageDownDensity(AmrNewTime); // Gather the following if needed TODO
       averageDownSpecies(AmrNewTime);
@@ -209,6 +213,11 @@ void PeleLM::oneSDC(int sdcIter,
 #ifdef PELE_USE_EFIELD
       ionDriftVelocity(advData);
 #endif
+      if (m_verbose > 1) {
+         Real UpdateEnd = ParallelDescriptor::second() - UpdateStart;
+         ParallelDescriptor::ReduceRealMax(UpdateEnd, ParallelDescriptor::IOProcessorNumber());
+         amrex::Print() << "   - oneSDC()::Update t^{n+1,k}  --> Time: " << UpdateEnd << "\n";
+      }
    }
    //----------------------------------------------------------------
 
