@@ -95,8 +95,18 @@ void PeleLM::MakeNewLevelFromScratch( int lev,
    if ( lev == 0 ) {
       // Set up CC signed distance container to control EB refinement
       m_signedDist0.reset(new MultiFab(grids[lev], dmap[lev], 1, 0, MFInfo(), *m_factory[lev]));
+    
+      // Estimate the maximum distance we need in terms of level 0 dx:
+      Real extentFactor = static_cast<Real>(nErrorBuf(0));
+      for (int ilev = 1; ilev <= max_level; ++ilev) {
+          extentFactor += static_cast<Real>(nErrorBuf(ilev)) / std::pow(static_cast<Real>(refRatio(ilev-1)[0]),
+                                                                        static_cast<Real>(ilev));
+      }
+      extentFactor *= std::sqrt(2.0);  // Account for diagonals
+
       MultiFab signDist(convert(grids[0],IntVect::TheUnitVector()),dmap[0],1,0,MFInfo(),EBFactory(0));
-      FillSignedDistance(signDist,true);
+      FillSignedDistance(signDist,true,extentFactor);
+
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
