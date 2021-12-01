@@ -342,9 +342,20 @@ void PeleLM::readParameters() {
 
 #ifdef AMREX_USE_EB
    if ( max_level > 0 ) {
-      pp.query("refine_EB",m_refine_cutcells);
-      m_maxEBrefine = max_level;
-      pp.query("refine_EB_max_level",m_maxEBrefine);
+      // Default EB refine type in Static
+      pp.query("refine_EB_type",m_EB_refine_type);
+      if ( m_EB_refine_type != "Static" &&
+           m_EB_refine_type != "Adaptive" ) {
+         Abort("refine_EB_type can only be 'Static' or 'Adaptive'");
+      }
+      // Default EB refinement level is max_level 
+      m_EB_refine_LevMax = max_level;
+      pp.query("refine_EB_max_level",m_EB_refine_LevMax);
+      if ( m_EB_refine_type == "Adaptive" ) {
+         m_EB_refine_LevMin = 0;
+         pp.query("refine_EB_min_level",m_EB_refine_LevMin);
+         m_EB_refine_LevAdapt = m_EB_refine_LevMin;
+      }
    }
 #endif
 
