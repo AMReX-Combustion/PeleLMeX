@@ -77,13 +77,10 @@ void PeleLM::calcDivU(int is_init,
             }
          } else {                // Regular    -> use instantaneous RR
             RhoYdot.define(grids[lev],dmap[lev],nCompIR(),0);
-            // TODO Setup covered cells mask
-            MultiFab mask(grids[lev],dmap[lev],1,0);
-            mask.setVal(1.0);
 #ifdef PELE_USE_EFIELD
-            computeInstantaneousReactionRateEF(lev, a_time, mask, &RhoYdot);
+            computeInstantaneousReactionRateEF(lev, a_time, &RhoYdot);
 #else
-            computeInstantaneousReactionRate(lev, a_time, mask, &RhoYdot);
+            computeInstantaneousReactionRate(lev, a_time, &RhoYdot);
 #endif
          }
       }
