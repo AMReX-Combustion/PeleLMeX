@@ -340,7 +340,6 @@ class PeleLM : public amrex::AmrCore {
 
    void computeInstantaneousReactionRate(int lev,
                                          const PeleLM::TimeStamp &a_time,
-                                         const amrex::MultiFab &a_mask,
                                          amrex::MultiFab* a_I_R);
    void getHeatRelease(int lev, amrex::MultiFab *a_HR);
    //-----------------------------------------------------------------------------
@@ -707,7 +706,6 @@ class PeleLM : public amrex::AmrCore {
 
    void computeInstantaneousReactionRateEF(int lev,
                                            const PeleLM::TimeStamp &a_time,
-                                           const amrex::MultiFab &a_mask,
                                            amrex::MultiFab* a_I_R);
 
    amrex::BCRec

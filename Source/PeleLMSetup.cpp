@@ -21,7 +21,7 @@ void PeleLM::Setup() {
    BL_PROFILE_VAR("PeleLM::Setup()", Setup);
 
 #ifdef AMREX_USE_GPU
-   sundials::MemoryHelper::Initialize();
+   sundials::Initialize();
 #endif
 
    // Print build info to screen

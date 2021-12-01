@@ -5,7 +5,6 @@ using namespace amrex;
 
 void PeleLM::computeInstantaneousReactionRateEF(int lev,
                                                 const TimeStamp &a_time,
-                                                const MultiFab &a_mask,
                                                 MultiFab* a_I_R)
 {
    auto ldata_p = getLevelDataPtr(lev,a_time);
@@ -20,15 +19,13 @@ void PeleLM::computeInstantaneousReactionRateEF(int lev,
       auto const& rhoH    = ldata_p->rhoh.const_array(mfi);
       auto const& nE      = ldata_p->nE.const_array(mfi);
       auto const& T       = ldata_p->temp.const_array(mfi);
-      auto const& mask    = a_mask.const_array(mfi);
       auto const& rhoYdot = a_I_R->array(mfi);
       auto const& nEdot   = a_I_R->array(mfi,NUM_SPECIES);
 
-      amrex::ParallelFor(bx, [rhoY, rhoH, nE, T, mask, rhoYdot, nEdot]
+      amrex::ParallelFor(bx, [rhoY, rhoH, nE, T, rhoYdot, nEdot]
       AMREX_GPU_DEVICE (int i, int j, int k) noexcept
       {
-         reactionRateRhoY_EF( i, j, k, rhoY, rhoH, T, nE, mask,
-                             rhoYdot, nEdot );
+         reactionRateRhoY_EF( i, j, k, rhoY, rhoH, T, nE, rhoYdot, nEdot );
       });
    }
 }

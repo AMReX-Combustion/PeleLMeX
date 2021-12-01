@@ -376,20 +376,16 @@ void PeleLM::computeInstantaneousReactionRate(const Vector<MultiFab*> &I_R,
                                               const TimeStamp &a_time)
 {
    for (int lev = 0; lev <= finest_level; ++lev) {
-      // TODO EB Setup covered cells mask
-      MultiFab mask(grids[lev],dmap[lev],1,0);
-      mask.setVal(1.0);
 #ifdef PELE_USE_EFIELD
-      computeInstantaneousReactionRateEF(lev, a_time, mask, I_R[lev]);
+      computeInstantaneousReactionRateEF(lev, a_time, I_R[lev]);
 #else
-      computeInstantaneousReactionRate(lev, a_time, mask, I_R[lev]);
+      computeInstantaneousReactionRate(lev, a_time, I_R[lev]);
 #endif
    }
 }
 
 void PeleLM::computeInstantaneousReactionRate(int lev,
                                               const TimeStamp &a_time,
-                                              const MultiFab &a_mask,
                                               MultiFab* a_I_R)
 {
    BL_PROFILE("PeleLM::computeInstantaneousReactionRate()");
@@ -408,7 +404,6 @@ void PeleLM::computeInstantaneousReactionRate(int lev,
       auto const& rhoY    = ldata_p->species.const_array(mfi);
       auto const& rhoH    = ldata_p->rhoh.const_array(mfi);
       auto const& T       = ldata_p->temp.const_array(mfi);
-      auto const& mask    = a_mask.const_array(mfi);
       auto const& rhoYdot = a_I_R->array(mfi);
 
 #ifdef AMREX_USE_EB
@@ -421,7 +416,7 @@ void PeleLM::computeInstantaneousReactionRate(int lev,
             rhoYdot(i,j,k,n) = 0.0;
          });
       } else if (flagfab.getType(bx) != FabType::regular ) {     // EB containing boxes 
-         amrex::ParallelFor(bx, [rhoY, rhoH, T, mask, rhoYdot, flag]
+         amrex::ParallelFor(bx, [rhoY, rhoH, T, rhoYdot, flag]
          AMREX_GPU_DEVICE (int i, int j, int k) noexcept
          {
             if ( flag(i,j,k).isCovered() ) {
@@ -429,18 +424,16 @@ void PeleLM::computeInstantaneousReactionRate(int lev,
                   rhoYdot(i,j,k,n) = 0.0;
                }
             } else {
-               reactionRateRhoY( i, j, k, rhoY, rhoH, T, mask,
-                                 rhoYdot );
+               reactionRateRhoY( i, j, k, rhoY, rhoH, T, rhoYdot );
             }
          });
       } else
 #endif
       {
-         amrex::ParallelFor(bx, [rhoY, rhoH, T, mask, rhoYdot]
+         amrex::ParallelFor(bx, [rhoY, rhoH, T, rhoYdot]
          AMREX_GPU_DEVICE (int i, int j, int k) noexcept
          {
-            reactionRateRhoY( i, j, k, rhoY, rhoH, T, mask,
-                              rhoYdot );
+            reactionRateRhoY( i, j, k, rhoY, rhoH, T, rhoYdot );
          });
       }
    }
