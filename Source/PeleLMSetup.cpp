@@ -361,6 +361,7 @@ void PeleLM::readParameters() {
    ppa.query("cfl", m_cfl);
    ppa.query("dt_shrink", m_dtshrink);
    ppa.query("dt_change_max", m_dtChangeMax);
+   ppa.query("max_dt", m_max_dt);
 
    if ( max_level > 0 ) {
       ppa.query("regrid_int", m_regrid_int);
