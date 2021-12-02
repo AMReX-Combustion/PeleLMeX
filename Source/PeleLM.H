@@ -944,6 +944,7 @@ class PeleLM : public amrex::AmrCore {
    amrex::Real m_prev_dt      = -1.0;
    amrex::Real m_dtChangeMax  = 1.1;
    amrex::Real m_stop_time    = -1.0;
+   amrex::Real m_max_dt       = 1e12;
    int m_nstep = -1; 
    int m_max_step = -1;
 
