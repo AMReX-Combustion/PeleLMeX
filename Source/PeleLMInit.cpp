@@ -69,8 +69,12 @@ void PeleLM::MakeNewLevelFromScratch( int lev,
 #endif
 
    // Fill the initial solution (if not restarting)
-   if (m_restart_file.empty()) {
-      initLevelData(lev);
+   if (m_restart_chkfile.empty()) {
+      if (m_restart_pltfile.empty()) {
+          initLevelData(lev);
+      } else {
+          initLevelDataFromPlt(lev, m_restart_pltfile);
+      }
    }
 
    // Times
@@ -92,7 +96,7 @@ void PeleLM::MakeNewLevelFromScratch( int lev,
 void PeleLM::initData() {
    BL_PROFILE_VAR("PeleLM::initData()", initData);
 
-   if (m_restart_file.empty()) {
+   if (m_restart_chkfile.empty()) {
 
       //----------------------------------------------------------------
       // This is an AmrCore member function which recursively makes new levels
