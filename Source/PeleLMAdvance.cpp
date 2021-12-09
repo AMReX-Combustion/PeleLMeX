@@ -9,6 +9,10 @@ void PeleLM::Advance(int is_initIter) {
    // Start timing current time step
    Real strt_time = ParallelDescriptor::second();
 
+   //----------------------------------------------------------------
+   BL_PROFILE_VAR("PeleLM::advance::setup", PLM_SETUP);
+   //----------------------------------------------------------------
+
    // Deal with ambient pressure
    if (m_closed_chamber) {
       m_pNew = m_pOld;
@@ -70,16 +74,31 @@ void PeleLM::Advance(int is_initIter) {
       poissonSolveEF(AmrOldTime);
 #endif
    }
-   // TODO : typical values
    // TODO : check dt
+
+   //----------------------------------------------------------------
+   BL_PROFILE_VAR_STOP(PLM_SETUP);
+   //----------------------------------------------------------------
+
 
    if (! m_incompressible ) {
       floorSpecies(AmrOldTime);
+
+      //----------------------------------------------------------------
+      BL_PROFILE_VAR("PeleLM::advance::mac", PLM_MAC);
       setThermoPress(AmrOldTime);
+      BL_PROFILE_VAR_STOP(PLM_MAC);
+      //----------------------------------------------------------------
+      BL_PROFILE_VAR("PeleLM::advance::diffusion", PLM_DIFF);
       computeDifferentialDiffusionTerms(AmrOldTime,diffData);
+      BL_PROFILE_VAR_STOP(PLM_DIFF);
+      //----------------------------------------------------------------
    }
 
    // Initialize terms t^{np1,k} from t^{n}
+   //----------------------------------------------------------------
+   BL_PROFILE_VAR_START(PLM_SETUP);
+   //----------------------------------------------------------------
    copyTransportOldToNew();
    if (! m_incompressible ) {
       copyDiffusionOldToNew(diffData);
@@ -87,6 +106,7 @@ void PeleLM::Advance(int is_initIter) {
       ionDriftVelocity(advData);
 #endif
    }
+   BL_PROFILE_VAR_STOP(PLM_SETUP);
 
    // TODO : handle reaction ghost cells
    //----------------------------------------------------------------
@@ -127,6 +147,7 @@ void PeleLM::Advance(int is_initIter) {
    //----------------------------------------------------------------
 
    //----------------------------------------------------------------
+   BL_PROFILE_VAR("PeleLM::advance::velocity", PLM_VEL);
    // Velocity advance
    Real VelAdvStart = 0.0;
    if (m_verbose > 1) {
@@ -153,6 +174,7 @@ void PeleLM::Advance(int is_initIter) {
       ParallelDescriptor::ReduceRealMax(VelAdvEnd, ParallelDescriptor::IOProcessorNumber());
       amrex::Print() << "   - Advance()::VelocityAdvance  --> Time: " << VelAdvEnd << "\n";
    }
+   BL_PROFILE_VAR_STOP(PLM_VEL);
    //----------------------------------------------------------------
 
    // Deal with ambient pressure
@@ -224,6 +246,7 @@ void PeleLM::oneSDC(int sdcIter,
    //----------------------------------------------------------------
    // Get u MAC
    //----------------------------------------------------------------
+   BL_PROFILE_VAR("PeleLM::advance::mac", PLM_MAC);
    Real MACStart = 0.0;
    if (m_verbose > 1) {
       MACStart = ParallelDescriptor::second();
@@ -244,11 +267,13 @@ void PeleLM::oneSDC(int sdcIter,
       ParallelDescriptor::ReduceRealMax(MACEnd, ParallelDescriptor::IOProcessorNumber());
       amrex::Print() << "   - oneSDC()::MACProjection()   --> Time: " << MACEnd << "\n";
    }
+   BL_PROFILE_VAR_STOP(PLM_MAC);
    //----------------------------------------------------------------
 
    //----------------------------------------------------------------
    // Scalar advections
    //----------------------------------------------------------------
+   BL_PROFILE_VAR("PeleLM::advance::scalars_adv", PLM_SADV);
    Real ScalAdvStart = 0.0;
    if (m_verbose > 1) {
       ScalAdvStart = ParallelDescriptor::second();
@@ -268,11 +293,13 @@ void PeleLM::oneSDC(int sdcIter,
       ParallelDescriptor::ReduceRealMax(ScalAdvEnd, ParallelDescriptor::IOProcessorNumber());
       amrex::Print() << "   - oneSDC()::ScalarAdvection() --> Time: " << ScalAdvEnd << "\n";
    }
+   BL_PROFILE_VAR_STOP(PLM_SADV);
    //----------------------------------------------------------------
 
    //----------------------------------------------------------------
    // Scalar diffusion
    //----------------------------------------------------------------
+   BL_PROFILE_VAR("PeleLM::advance::diffusion", PLM_DIFF);
    Real ScalDiffStart = 0.0;
    if (m_verbose > 1) {
       ScalDiffStart = ParallelDescriptor::second();
@@ -287,6 +314,7 @@ void PeleLM::oneSDC(int sdcIter,
       ParallelDescriptor::ReduceRealMax(ScalDiffEnd, ParallelDescriptor::IOProcessorNumber());
       amrex::Print() << "   - oneSDC()::ScalarDiffusion() --> Time: " << ScalDiffEnd << "\n";
    }
+   BL_PROFILE_VAR_STOP(PLM_DIFF);
    //----------------------------------------------------------------
 
 #ifdef PELE_USE_EFIELD
@@ -299,6 +327,7 @@ void PeleLM::oneSDC(int sdcIter,
    //----------------------------------------------------------------
    // Reaction
    //----------------------------------------------------------------
+   BL_PROFILE_VAR("PeleLM::advance::reactions", PLM_REAC);
    Real ScalReacStart = 0.0;
    if (m_verbose > 1) {
       ScalReacStart = ParallelDescriptor::second();
@@ -313,6 +342,7 @@ void PeleLM::oneSDC(int sdcIter,
       ParallelDescriptor::ReduceRealMax(ScalReacEnd, ParallelDescriptor::IOProcessorNumber());
       amrex::Print() << "   - oneSDC()::ScalarReaction()  --> Time: " << ScalReacEnd << "\n";
    }
+   BL_PROFILE_VAR_STOP(PLM_REAC);
    //----------------------------------------------------------------
 
    //----------------------------------------------------------------
