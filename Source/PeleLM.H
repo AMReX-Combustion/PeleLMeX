@@ -419,6 +419,7 @@ class PeleLM : public amrex::AmrCore {
    void WriteHeader(const std::string &name, bool is_checkpoint) const;
    void WriteDebugPlotFile(const amrex::Vector<const amrex::MultiFab*> &a_MF,
                            const std::string &pltname);
+   void initLevelDataFromPlt(int a_lev, const std::string &a_pltFile);
    //-----------------------------------------------------------------------------
 
    //-----------------------------------------------------------------------------
@@ -890,7 +891,8 @@ class PeleLM : public amrex::AmrCore {
    int m_verbose = 0;
 
    // IO options
-   std::string m_restart_file{""};
+   std::string m_restart_chkfile{""};
+   std::string m_restart_pltfile{""};
    std::string m_plot_file{"plt"};
    std::string m_check_file{"chk"};
    int m_derivePlotVarCount = 0;
