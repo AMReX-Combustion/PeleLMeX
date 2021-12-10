@@ -76,6 +76,18 @@ phiV_bc[] =
 };
 #endif
 
+InterpBase* PeleLM::getInterpolator() {
+//
+// Get EB-aware interpolater when needed
+//
+#ifdef AMREX_USE_EB  
+  return (EBFactory(0).isAllRegular()) ? &mf_cell_cons_interp
+	  			       : &eb_mf_cell_cons_interp;
+#else
+  return &mf_cell_cons_interp;
+#endif
+}
+ 
 void PeleLM::setBoundaryConditions() {
 
    // Initialize the BCRecs
@@ -327,12 +339,7 @@ void PeleLM::fillpatch_velocity(int lev,
    } else {
 
       // Interpolator
-#ifdef AMREX_USE_EB
-      Interpolater* mapper = (EBFactory(0).isAllRegular()) ?
-                             (Interpolater*)(&cell_cons_interp) : (Interpolater*)(&eb_cell_cons_interp);
-#else
-      Interpolater* mapper = &cell_cons_interp;
-#endif
+      auto* mapper = getInterpolator();
 
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirVel>> crse_bndry_func(geom[lev-1], fetchBCRecArray(VELX,AMREX_SPACEDIM),
                                                                           PeleLMCCFillExtDirVel{lprobparm, lpmfdata, m_nAux});
@@ -369,12 +376,7 @@ void PeleLM::fillpatch_density(int lev,
    } else {
 
       // Interpolator
-#ifdef AMREX_USE_EB
-      Interpolater* mapper = (EBFactory(0).isAllRegular()) ?
-                             (Interpolater*)(&cell_cons_interp) : (Interpolater*)(&eb_cell_cons_interp);
-#else
-      Interpolater* mapper = &cell_cons_interp;
-#endif
+      auto* mapper = getInterpolator();
 
       // Density
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDens>> crse_bndry_func_rho(geom[lev-1], fetchBCRecArray(DENSITY,1), 
@@ -410,12 +412,7 @@ void PeleLM::fillpatch_species(int lev,
    } else {
 
       // Interpolator
-#ifdef AMREX_USE_EB
-      Interpolater* mapper = (EBFactory(0).isAllRegular()) ?
-                             (Interpolater*)(&cell_cons_interp) : (Interpolater*)(&eb_cell_cons_interp);
-#else
-      Interpolater* mapper = &cell_cons_interp;
-#endif
+      auto* mapper = getInterpolator();
 
       // Species
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirSpec>> crse_bndry_func(geom[lev-1], fetchBCRecArray(FIRSTSPEC,NUM_SPECIES),
@@ -459,12 +456,7 @@ void PeleLM::fillpatch_energy(int lev,
    } else {
 
       // Interpolator
-#ifdef AMREX_USE_EB
-      Interpolater* mapper = (EBFactory(0).isAllRegular()) ?
-                             (Interpolater*)(&cell_cons_interp) : (Interpolater*)(&eb_cell_cons_interp);
-#else
-      Interpolater* mapper = &cell_cons_interp;
-#endif
+      auto* mapper = getInterpolator();
 
       // rhoH
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirRhoH>> crse_bndry_func_rhoh(geom[lev-1], fetchBCRecArray(RHOH,1),
@@ -516,12 +508,7 @@ void PeleLM::fillpatch_thermoPress(int lev,
    } else {
 
       // Interpolator
-#ifdef AMREX_USE_EB
-      Interpolater* mapper = (EBFactory(0).isAllRegular()) ?
-                             (Interpolater*)(&cell_cons_interp) : (Interpolater*)(&eb_cell_cons_interp);
-#else
-      Interpolater* mapper = &cell_cons_interp;
-#endif
+      auto* mapper = getInterpolator();
 
       // Density
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> crse_bndry_func_rhoRT(geom[lev-1], fetchBCRecArray(RHORT,1), 
@@ -555,12 +542,7 @@ void PeleLM::fillpatch_divu(int lev,
    } else {
 
       // Interpolator
-#ifdef AMREX_USE_EB
-      Interpolater* mapper = (EBFactory(0).isAllRegular()) ?
-                             (Interpolater*)(&cell_cons_interp) : (Interpolater*)(&eb_cell_cons_interp);
-#else
-      Interpolater* mapper = &cell_cons_interp;
-#endif
+      auto* mapper = getInterpolator();
 
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> crse_bndry_func(geom[lev-1], {m_bcrec_divu},
                                                                             PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
@@ -629,12 +611,7 @@ void PeleLM::fillpatch_nE(int lev,
    } else {
 
       // Interpolator
-#ifdef AMREX_USE_EB
-      Interpolater* mapper = (EBFactory(0).isAllRegular()) ?
-                             (Interpolater*)(&cell_cons_interp) : (Interpolater*)(&eb_cell_cons_interp);
-#else
-      Interpolater* mapper = &cell_cons_interp;
-#endif
+      auto* mapper = getInterpolator();
 
       // nE
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirnE>> crse_bndry_func(geom[lev-1], fetchBCRecArray(NE,1), 
@@ -672,12 +649,7 @@ void PeleLM::fillpatch_phiV(int lev,
    } else {
 
       // Interpolator
-#ifdef AMREX_USE_EB
-      Interpolater* mapper = (EBFactory(0).isAllRegular()) ?
-                             (Interpolater*)(&cell_cons_interp) : (Interpolater*)(&eb_cell_cons_interp);
-#else
-      Interpolater* mapper = &cell_cons_interp;
-#endif
+      auto* mapper = getInterpolator();
 
       // Density
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirPhiV>> crse_bndry_func(geom[lev-1], fetchBCRecArray(PHIV,1), 
@@ -712,12 +684,7 @@ void PeleLM::fillpatch_gradp(int lev,
    } else {
 
       // Interpolator
-#ifdef AMREX_USE_EB
-      Interpolater* mapper = (EBFactory(0).isAllRegular()) ?
-                             (Interpolater*)(&cell_cons_interp) : (Interpolater*)(&eb_cell_cons_interp);
-#else
-      Interpolater* mapper = &cell_cons_interp;
-#endif
+      auto* mapper = getInterpolator();
 
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> crse_bndry_func(geom[lev-1], {m_bcrec_force},
                                                                             PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
@@ -750,12 +717,7 @@ void PeleLM::fillpatch_reaction(int lev,
    } else {
 
       // Interpolator
-#ifdef AMREX_USE_EB
-      Interpolater* mapper = (EBFactory(0).isAllRegular()) ?
-                             (Interpolater*)(&cell_cons_interp) : (Interpolater*)(&eb_cell_cons_interp);
-#else
-      Interpolater* mapper = &cell_cons_interp;
-#endif
+      auto* mapper = getInterpolator();
 
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> crse_bndry_func(geom[lev-1], {m_bcrec_force},
                                                                             PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
@@ -779,12 +741,7 @@ void PeleLM::fillcoarsepatch_velocity(int lev,
    pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
 
    // Interpolator
-#ifdef AMREX_USE_EB
-   Interpolater* mapper = (EBFactory(0).isAllRegular()) ?
-                          (Interpolater*)(&cell_cons_interp) : (Interpolater*)(&eb_cell_cons_interp);
-#else
-   Interpolater* mapper = &cell_cons_interp;
-#endif
+   auto* mapper = getInterpolator();
 
    PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirVel>> crse_bndry_func(geom[lev-1], fetchBCRecArray(VELX,AMREX_SPACEDIM),
                                                                        PeleLMCCFillExtDirVel{lprobparm, lpmfdata, m_nAux});
@@ -807,12 +764,7 @@ void PeleLM::fillcoarsepatch_mass(int lev,
    pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
 
    // Interpolator
-#ifdef AMREX_USE_EB
-   Interpolater* mapper = (EBFactory(0).isAllRegular()) ?
-                          (Interpolater*)(&cell_cons_interp) : (Interpolater*)(&eb_cell_cons_interp);
-#else
-   Interpolater* mapper = &cell_cons_interp;
-#endif
+   auto* mapper = getInterpolator();
 
    // Density
    PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDens>> crse_bndry_func_rho(geom[lev-1], fetchBCRecArray(DENSITY,1),
@@ -848,12 +800,7 @@ void PeleLM::fillcoarsepatch_energy(int lev,
    pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
 
    // Interpolator
-#ifdef AMREX_USE_EB
-   Interpolater* mapper = (EBFactory(0).isAllRegular()) ?
-                          (Interpolater*)(&cell_cons_interp) : (Interpolater*)(&eb_cell_cons_interp);
-#else
-   Interpolater* mapper = &cell_cons_interp;
-#endif
+   auto* mapper = getInterpolator();
 
    // rhoH
    PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirRhoH>> crse_bndry_func_rhoh(geom[lev-1], fetchBCRecArray(RHOH,1),
@@ -888,12 +835,7 @@ void PeleLM::fillcoarsepatch_gradp(int lev,
    pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
 
    // Interpolator
-#ifdef AMREX_USE_EB
-   Interpolater* mapper = (EBFactory(0).isAllRegular()) ?
-                          (Interpolater*)(&cell_cons_interp) : (Interpolater*)(&eb_cell_cons_interp);
-#else
-   Interpolater* mapper = &cell_cons_interp;
-#endif
+   auto* mapper = getInterpolator();
 
    PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> crse_bndry_func(geom[lev-1], {m_bcrec_force},
                                                                        PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
@@ -915,12 +857,7 @@ void PeleLM::fillcoarsepatch_divu(int lev,
    pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
 
    // Interpolator
-#ifdef AMREX_USE_EB
-   Interpolater* mapper = (EBFactory(0).isAllRegular()) ?
-                          (Interpolater*)(&cell_cons_interp) : (Interpolater*)(&eb_cell_cons_interp);
-#else
-   Interpolater* mapper = &cell_cons_interp;
-#endif
+   auto* mapper = getInterpolator();
 
    PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> crse_bndry_func(geom[lev-1], {m_bcrec_divu},
                                                                        PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
@@ -942,12 +879,7 @@ void PeleLM::fillcoarsepatch_reaction(int lev,
    pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
 
    // Interpolator
-#ifdef AMREX_USE_EB
-   Interpolater* mapper = (EBFactory(0).isAllRegular()) ?
-                          (Interpolater*)(&cell_cons_interp) : (Interpolater*)(&eb_cell_cons_interp);
-#else
-   Interpolater* mapper = &cell_cons_interp;
-#endif
+   auto* mapper = getInterpolator();
 
    PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> crse_bndry_func(geom[lev-1], {m_bcrec_force},
                                                                          PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
@@ -970,12 +902,7 @@ void PeleLM::fillcoarsepatch_nE(int lev,
    pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
 
    // Interpolator
-#ifdef AMREX_USE_EB
-   Interpolater* mapper = (EBFactory(0).isAllRegular()) ?
-                          (Interpolater*)(&cell_cons_interp) : (Interpolater*)(&eb_cell_cons_interp);
-#else
-   Interpolater* mapper = &cell_cons_interp;
-#endif
+   auto* mapper = getInterpolator();
 
    PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirnE>> crse_bndry_func(geom[lev-1], fetchBCRecArray(NE,1),
                                                                       PeleLMCCFillExtDirnE{lprobparm, lpmfdata, m_nAux});
@@ -997,12 +924,7 @@ void PeleLM::fillcoarsepatch_phiV(int lev,
    pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
 
    // Interpolator
-#ifdef AMREX_USE_EB
-   Interpolater* mapper = (EBFactory(0).isAllRegular()) ?
-                          (Interpolater*)(&cell_cons_interp) : (Interpolater*)(&eb_cell_cons_interp);
-#else
-   Interpolater* mapper = &cell_cons_interp;
-#endif
+   auto* mapper = getInterpolator();
 
    PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirPhiV>> crse_bndry_func(geom[lev-1], fetchBCRecArray(PHIV,1),
                                                                         PeleLMCCFillExtDirPhiV{lprobparm, lpmfdata, m_nAux});
