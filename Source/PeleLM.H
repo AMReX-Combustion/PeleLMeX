@@ -435,6 +435,8 @@ class PeleLM : public amrex::AmrCore {
 
    //-----------------------------------------------------------------------------
    // BOUNDARY CONDITIONS / FILLPATCH
+
+   amrex::InterpBase* getInterpolator();
    // Convert PhysBC into field BCs
    void setBoundaryConditions();
 
