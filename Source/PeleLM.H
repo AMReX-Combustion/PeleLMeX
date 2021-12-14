@@ -818,6 +818,7 @@ class PeleLM : public amrex::AmrCore {
    amrex::Vector<int>          fetchAdvTypeArray(int scomp, int ncomp);
    amrex::Vector<int>          fetchDiffTypeArray(int scomp, int ncomp);
    DiffusionOp* getDiffusionOp ();
+   DiffusionOp* getMCDiffusionOp (int ncomp = 1);
    DiffusionTensorOp* getDiffusionTensorOp ();
    //-----------------------------------------------------------------------------
 
@@ -885,6 +886,7 @@ class PeleLM : public amrex::AmrCore {
 
    // Linear solvers
    std::unique_ptr<DiffusionOp> m_diffusion_op;
+   std::unique_ptr<DiffusionOp> m_mcdiffusion_op;
    std::unique_ptr<DiffusionTensorOp> m_diffusionTensor_op;
    std::unique_ptr<Hydro::MacProjector> macproj;
    int m_macProjNeedReset = 0;
