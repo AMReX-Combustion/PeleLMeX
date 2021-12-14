@@ -87,6 +87,7 @@ void PeleLM::MakeNewLevelFromCoarse( int lev,
 
    // DiffusionOp will be recreated
    m_diffusion_op.reset();
+   m_mcdiffusion_op.reset();
    m_diffusionTensor_op.reset();
 
    // Trigger MacProj reset
@@ -178,6 +179,7 @@ void PeleLM::RemakeLevel( int lev,
 
    // DiffusionOp will be recreated
    m_diffusion_op.reset();
+   m_mcdiffusion_op.reset();
    m_diffusionTensor_op.reset();
 
    // Trigger MacProj reset
@@ -195,6 +197,7 @@ void PeleLM::ClearLevel(int lev) {
    m_dmapChem[lev].reset();
    m_factory[lev].reset();
    m_diffusion_op.reset();
+   m_mcdiffusion_op.reset();
    m_diffusionTensor_op.reset();
    macproj.reset();
 #ifdef PELE_USE_EFIELD
