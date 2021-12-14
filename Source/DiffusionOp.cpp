@@ -13,8 +13,8 @@ using namespace amrex;
 //---------------------------------------------------------------------------------------
 // Diffusion Operator
 
-DiffusionOp::DiffusionOp (PeleLM* a_pelelm)
-                        : m_pelelm(a_pelelm)
+DiffusionOp::DiffusionOp (PeleLM* a_pelelm, int ncomp)
+                        : m_pelelm(a_pelelm), m_ncomp(ncomp)
 {
    readParameters();
 
@@ -42,12 +42,12 @@ DiffusionOp::DiffusionOp (PeleLM* a_pelelm)
    m_scal_apply_op.reset(new MLEBABecLap(m_pelelm->Geom(0,m_pelelm->finestLevel()),
                                          m_pelelm->boxArray(0,m_pelelm->finestLevel()),
                                          m_pelelm->DistributionMap(0,m_pelelm->finestLevel()),
-                                         info_apply, ebfactVec));
+                                         info_apply, ebfactVec, m_ncomp));
 #else
    m_scal_apply_op.reset(new MLABecLaplacian(m_pelelm->Geom(0,m_pelelm->finestLevel()),
                                              m_pelelm->boxArray(0,m_pelelm->finestLevel()),
                                              m_pelelm->DistributionMap(0,m_pelelm->finestLevel()),
-                                             info_apply));
+                                             info_apply, {}, m_ncomp));
 #endif
    m_scal_apply_op->setMaxOrder(m_mg_maxorder);
 
@@ -56,12 +56,12 @@ DiffusionOp::DiffusionOp (PeleLM* a_pelelm)
    m_scal_solve_op.reset(new MLEBABecLap(m_pelelm->Geom(0,m_pelelm->finestLevel()),
                                          m_pelelm->boxArray(0,m_pelelm->finestLevel()),
                                          m_pelelm->DistributionMap(0,m_pelelm->finestLevel()),
-                                         info_solve, ebfactVec));
+                                         info_solve, ebfactVec, m_ncomp));
 #else
    m_scal_solve_op.reset(new MLABecLaplacian(m_pelelm->Geom(0,m_pelelm->finestLevel()),
                                              m_pelelm->boxArray(0,m_pelelm->finestLevel()),
                                              m_pelelm->DistributionMap(0,m_pelelm->finestLevel()),
-                                             info_solve));
+                                             info_solve, {}, m_ncomp));
 #endif
    m_scal_solve_op->setMaxOrder(m_mg_maxorder);
 
@@ -70,12 +70,12 @@ DiffusionOp::DiffusionOp (PeleLM* a_pelelm)
    m_gradient_op.reset(new MLEBABecLap(m_pelelm->Geom(0,m_pelelm->finestLevel()),
                                        m_pelelm->boxArray(0,m_pelelm->finestLevel()),
                                        m_pelelm->DistributionMap(0,m_pelelm->finestLevel()),
-                                       info_apply, ebfactVec));
+                                       info_apply, ebfactVec, m_ncomp));
 #else
    m_gradient_op.reset(new MLABecLaplacian(m_pelelm->Geom(0,m_pelelm->finestLevel()),
                                            m_pelelm->boxArray(0,m_pelelm->finestLevel()),
                                            m_pelelm->DistributionMap(0,m_pelelm->finestLevel()),
-                                           info_apply));
+                                           info_apply, {}, m_ncomp));
 #endif
    m_gradient_op->setMaxOrder(m_mg_maxorder);
    m_gradient_op->setScalars(0.0,1.0);
