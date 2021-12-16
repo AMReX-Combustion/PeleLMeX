@@ -818,6 +818,7 @@ class PeleLM : public amrex::AmrCore {
    amrex::Vector<int>          fetchAdvTypeArray(int scomp, int ncomp);
    amrex::Vector<int>          fetchDiffTypeArray(int scomp, int ncomp);
    DiffusionOp* getDiffusionOp ();
+   DiffusionOp* getMCDiffusionOp (int ncomp = 1);
    DiffusionTensorOp* getDiffusionTensorOp ();
    //-----------------------------------------------------------------------------
 
@@ -885,6 +886,7 @@ class PeleLM : public amrex::AmrCore {
 
    // Linear solvers
    std::unique_ptr<DiffusionOp> m_diffusion_op;
+   std::unique_ptr<DiffusionOp> m_mcdiffusion_op;
    std::unique_ptr<DiffusionTensorOp> m_diffusionTensor_op;
    std::unique_ptr<Hydro::MacProjector> macproj;
    int m_macProjNeedReset = 0;
@@ -1022,7 +1024,7 @@ class PeleLM : public amrex::AmrCore {
    int m_refine_cutcells = 1;
    amrex::Vector<amrex::Real> coveredState_h;
    amrex::Gpu::DeviceVector<amrex::Real> coveredState_d;
-   std::string m_adv_redist_type = "NewStateRedist";
+   std::string m_adv_redist_type = "StateRedist";
    std::string m_diff_redist_type = "FluxRedist";
 #endif
    //-----------------------------------------------------------------------------
