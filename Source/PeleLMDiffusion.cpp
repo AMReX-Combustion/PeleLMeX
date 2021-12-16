@@ -172,11 +172,11 @@ void PeleLM::computeDifferentialDiffusionFluxes(const TimeStamp &a_time,
    // Get the species diffusion fluxes from the DiffusionOp
    // Don't average down just yet
    int do_avgDown = 0;
-   getDiffusionOp()->computeDiffFluxes(a_fluxes, 0,
-                                       GetVecOfConstPtrs(getSpeciesVect(a_time)), 0,
-                                       GetVecOfConstPtrs(getDensityVect(a_time)),
-                                       GetVecOfConstPtrs(getDiffusivityVect(a_time)), 0, bcRecSpec,
-                                       NUM_SPECIES, -1.0, do_avgDown);
+   getMCDiffusionOp(NUM_SPECIES)->computeDiffFluxes(a_fluxes, 0,
+                                                    GetVecOfConstPtrs(getSpeciesVect(a_time)), 0,
+                                                    GetVecOfConstPtrs(getDensityVect(a_time)),
+                                                    GetVecOfConstPtrs(getDiffusivityVect(a_time)), 0, bcRecSpec,
+                                                    NUM_SPECIES, -1.0, do_avgDown);
 
    // Add the wbar term
    // TODO: might need to do an average_down of the wbar fluxes
@@ -610,13 +610,13 @@ void PeleLM::differentialDiffusionUpdate(std::unique_ptr<AdvanceAdvData> &advDat
    // Solve for \widetilda{rhoY^{np1,kp1}}
    // -> return the uncorrected fluxes^{np1,kp1}
    // -> and the partially updated species (not including wbar or flux correction)
-   getDiffusionOp()->diffuse_scalar(getSpeciesVect(AmrNewTime), 0,
-                                    GetVecOfConstPtrs(advData->Forcing), 0,
-                                    GetVecOfArrOfPtrs(fluxes), 0,
-                                    GetVecOfConstPtrs(getDensityVect(AmrNewTime)),        // this is the acoeff of LinOp
-                                    GetVecOfConstPtrs(getDensityVect(AmrNewTime)),        // this triggers proper scaling by density
-                                    GetVecOfConstPtrs(getDiffusivityVect(AmrNewTime)), 0, bcRecSpec,
-                                    NUM_SPECIES, 0, m_dt);
+   getMCDiffusionOp(NUM_SPECIES)->diffuse_scalar(getSpeciesVect(AmrNewTime), 0,
+                                                 GetVecOfConstPtrs(advData->Forcing), 0,
+                                                 GetVecOfArrOfPtrs(fluxes), 0,
+                                                 GetVecOfConstPtrs(getDensityVect(AmrNewTime)),        // this is the acoeff of LinOp
+                                                 GetVecOfConstPtrs(getDensityVect(AmrNewTime)),        // this triggers proper scaling by density
+                                                 GetVecOfConstPtrs(getDiffusivityVect(AmrNewTime)), 0, bcRecSpec,
+                                                 NUM_SPECIES, 0, m_dt);
 
    // Add lagged Wbar term
    // Computed in computeDifferentialDiffusionTerms at t^{n} if first SDC iteration, t^{np1,k} otherwise
