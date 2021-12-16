@@ -20,7 +20,7 @@ class DiffusionOp
 
    // Methods
 
-   DiffusionOp (PeleLM* a_pelelm);
+   DiffusionOp (PeleLM* a_pelelm, int ncomp = 1);
 
    void diffuse_scalar (amrex::Vector<amrex::MultiFab*> const& a_phi,
                         int phi_comp,
@@ -92,6 +92,7 @@ class DiffusionOp
 #endif
 
    int m_verbose = 0;
+   int m_ncomp = 1;
 
    // Options to control MLMG behavior
    int m_mg_verbose = 0;
