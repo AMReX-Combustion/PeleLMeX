@@ -71,8 +71,7 @@ void PeleLM::redistributeAofS(int a_lev,
                 // FluxRedistribute
                 Box gbx = bx;
 
-                if (m_adv_redist_type == "StateRedist" || 
-                    m_adv_redist_type == "NewStateRedist")
+                if (m_adv_redist_type == "StateRedist")
                   gbx.grow(3);
                 else if (m_adv_redist_type == "FluxRedist")
                   gbx.grow(2);
@@ -144,8 +143,7 @@ void PeleLM::redistributeDiff(int a_lev,
                 // FluxRedistribute
                 Box gbx = bx;
 
-                if (m_diff_redist_type == "StateRedist" || 
-                    m_diff_redist_type == "NewStateRedist")
+                if (m_diff_redist_type == "StateRedist")
                   gbx.grow(3);
                 else if (m_diff_redist_type == "FluxRedist")
                   gbx.grow(2);
@@ -236,9 +234,7 @@ void PeleLM::initialRedistribution()
 {
     // Redistribute the initial solution if adv/diff scheme uses State or NewState
     if (m_adv_redist_type == "StateRedist" || 
-        m_adv_redist_type == "NewStateRedist" ||
-        m_diff_redist_type == "StateRedist" ||
-        m_diff_redist_type == "NewStateRedist") { 
+        m_diff_redist_type == "StateRedist") { 
 
         for (int lev = 0; lev <= finest_level; ++lev) {
 

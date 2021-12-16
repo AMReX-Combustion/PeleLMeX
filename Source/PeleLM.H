@@ -1024,7 +1024,7 @@ class PeleLM : public amrex::AmrCore {
    int m_refine_cutcells = 1;
    amrex::Vector<amrex::Real> coveredState_h;
    amrex::Gpu::DeviceVector<amrex::Real> coveredState_d;
-   std::string m_adv_redist_type = "NewStateRedist";
+   std::string m_adv_redist_type = "StateRedist";
    std::string m_diff_redist_type = "FluxRedist";
 #endif
    //-----------------------------------------------------------------------------
