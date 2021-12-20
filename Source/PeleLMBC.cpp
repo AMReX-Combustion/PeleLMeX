@@ -312,10 +312,9 @@ void PeleLM::fillpatch_state(int lev,
    ProbParm const* lprobparm = prob_parm_d;
    pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
 
-// TODO restore this
-//#ifdef PELE_USE_TURBINFLOW
-//   fillTurbInflow(a_vel, lev, a_time);
-//#endif
+#ifdef PELE_USE_TURBINFLOW
+   fillTurbInflow(a_state, VELX, lev, a_time);
+#endif
 
    if (lev == 0) {
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirState>> bndry_func(geom[lev], fetchBCRecArray(0,NVAR),
@@ -341,7 +340,10 @@ void PeleLM::fillpatch_state(int lev,
                          crse_bndry_func,0,fine_bndry_func,0,
                          refRatio(lev-1), mapper, fetchBCRecArray(0,NVAR), 0);
    }
-   // TODO: restore a_vel.EnforcePeriodicity(geom[lev].periodicity());
+
+#ifdef PELE_USE_TURBINFLOW
+   a_state.EnforcePeriodicity(geom[lev].periodicity());
+#endif
 }
 
 // Fill the density
@@ -796,8 +798,8 @@ void PeleLM::fillcoarsepatch_phiV(int lev,
 // Fill the inflow boundary of a velocity MF
 // used for velocity projection
 void PeleLM::setInflowBoundaryVel(MultiFab &a_vel,
-                                int lev,
-                                TimeStamp a_time) {
+                                 int lev,
+                                 TimeStamp a_time) {
    BL_PROFILE_VAR("PeleLM::setInflowBoundaryVel()", setInflowBoundaryVel);
    
    Real time = getTime(lev, a_time);
@@ -821,7 +823,7 @@ void PeleLM::setInflowBoundaryVel(MultiFab &a_vel,
    }  
 
 #ifdef PELE_USE_TURBINFLOW
-   fillTurbInflow(a_vel, lev, a_time);
+   fillTurbInflow(a_vel, 0, lev, a_time);
 #endif
 
    ProbParm const* lprobparm = prob_parm_d;
@@ -831,11 +833,14 @@ void PeleLM::setInflowBoundaryVel(MultiFab &a_vel,
 
    bndry_func(a_vel, 0, AMREX_SPACEDIM, a_vel.nGrowVect(), time, 0);
 
+#ifdef PELE_USE_TURBINFLOW
    a_vel.EnforcePeriodicity(geom[lev].periodicity());
+#endif
 }
 
 #ifdef PELE_USE_TURBINFLOW
 void PeleLM::fillTurbInflow(MultiFab &a_vel,
+                            int vel_comp,
                             int lev,
                             const Real a_time)
 {
@@ -871,7 +876,7 @@ void PeleLM::fillTurbInflow(MultiFab &a_vel,
                     amrex::Box modDom = geom[lev].Domain();
                     modDom.grow(growVect);
                     auto bndryBoxLO_ghost = amrex::Box(amrex::adjCellLo(modDom,dir,Grow) & bx);
-                    data.setVal<amrex::RunOn::Device>(0.0,bndryBoxLO_ghost,VELX,AMREX_SPACEDIM);
+                    data.setVal<amrex::RunOn::Device>(0.0,bndryBoxLO_ghost,vel_comp,AMREX_SPACEDIM);
 
                     add_turb(bndryBoxLO, data, 0, geom[lev], a_time, dir, amrex::Orientation::low, probparmDH->tp);
                     probparmDH->turb_ok[dir] = true;
@@ -889,7 +894,7 @@ void PeleLM::fillTurbInflow(MultiFab &a_vel,
                     amrex::Box modDom = geom[lev].Domain();
                     modDom.grow(growVect);
                     auto bndryBoxHI_ghost = amrex::Box(amrex::adjCellHi(modDom,dir,Grow) & bx);
-                    data.setVal<amrex::RunOn::Device>(0.0,bndryBoxHI_ghost,VELX,AMREX_SPACEDIM);
+                    data.setVal<amrex::RunOn::Device>(0.0,bndryBoxHI_ghost,vel_comp,AMREX_SPACEDIM);
 
                     add_turb(bndryBoxHI, data, 0, geom[lev], a_time, dir, amrex::Orientation::high, probparmDH->tp);
                     probparmDH->turb_ok[dir+AMREX_SPACEDIM] = true;

@@ -53,10 +53,17 @@ struct PeleLMCCFillExtDirState
 
             if ((bc[idir] == amrex::BCType::ext_dir) and (iv[idir] < domlo[idir])) {
 
+#ifdef PELE_USE_TURBINFLOW
+               // If using TurbInflow, pass in the turbulent data. User can overwrite if needed
+               if ( n >= VELX && n < DENSITY ) {
+                  for (int n = 0; n < AMREX_SPACEDIM; n++) {
+                     s_ext[VELX+n] = vel(iv,n);
+                  }
+               }
+#endif
                // bcnormal() is defined in pelelm_prob.H in problem directory in /Exec
                bcnormal(x, m_nAux, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
                state(iv,n) = s_ext[n];
-               // TODO handle velocity exceptions
             }
          }
 
@@ -71,10 +78,17 @@ struct PeleLMCCFillExtDirState
 
             if ((bc[idir+AMREX_SPACEDIM] == amrex::BCType::ext_dir) and (iv[idir] > domhi[idir])) {
 
+#ifdef PELE_USE_TURBINFLOW
+               // If using TurbInflow, pass in the turbulent data. User can overwrite if needed
+               if ( n >= VELX && n < DENSITY ) {
+                  for (int n = 0; n < AMREX_SPACEDIM; n++) {
+                     s_ext[VELX+n] = vel(iv,n);
+                  }
+               }
+#endif
                // bcnormal() is defined in pelelm_prob.H in problem directory in /Exec
                bcnormal(x, m_nAux, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
                state(iv,n) = s_ext[n];
-               // TODO handle velocity exceptions
             }
          }
       }
