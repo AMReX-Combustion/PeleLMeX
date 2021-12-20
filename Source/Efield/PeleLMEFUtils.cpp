@@ -188,13 +188,13 @@ void PeleLM::initializeElectronNeutral()
 #ifdef _OPENMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
-      for (MFIter mfi(ldata_p->species, TilingIfNotGPU()); mfi.isValid(); ++mfi)
+      for (MFIter mfi(ldata_p->state, TilingIfNotGPU()); mfi.isValid(); ++mfi)
       {
          const Box& bx = mfi.tilebox();
-         auto const& rho      = ldata_p->density.array(mfi);
-         auto const& rhoY     = ldata_p->species.array(mfi);
-         auto const& rhoH     = ldata_p->rhoh.array(mfi);
-         auto const& temp     = ldata_p->temp.array(mfi);
+         auto const& rho      = ldata_p->state.array(mfi,DENSITY);
+         auto const& rhoY     = ldata_p->state.array(mfi,FIRSTSPEC);
+         auto const& rhoH     = ldata_p->state.array(mfi,RHOH);
+         auto const& temp     = ldata_p->state.array(mfi,TEMP);
          auto const& nE       = ldata_p->nE.array(mfi);
          amrex::ParallelFor(bx, [rho, rhoY, rhoH, temp, nE, lprobparm]
          AMREX_GPU_DEVICE (int i, int j, int k) noexcept

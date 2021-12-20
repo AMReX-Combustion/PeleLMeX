@@ -286,15 +286,15 @@ void PeleLM::initLevelData(int lev) {
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
-   for (MFIter mfi(ldata_p->velocity,TilingIfNotGPU()); mfi.isValid(); ++mfi)
+   for (MFIter mfi(ldata_p->state,TilingIfNotGPU()); mfi.isValid(); ++mfi)
    {
       const Box& bx = mfi.tilebox();
       FArrayBox DummyFab(bx,1);
-      auto  const &vel_arr   = ldata_p->velocity.array(mfi);
-      auto  const &rho_arr   = (m_incompressible) ? DummyFab.array() : ldata_p->density.array(mfi);
-      auto  const &rhoY_arr  = (m_incompressible) ? DummyFab.array() : ldata_p->species.array(mfi);
-      auto  const &rhoH_arr  = (m_incompressible) ? DummyFab.array() : ldata_p->rhoh.array(mfi);
-      auto  const &temp_arr  = (m_incompressible) ? DummyFab.array() : ldata_p->temp.array(mfi);
+      auto  const &vel_arr   = ldata_p->state.array(mfi,VELX);
+      auto  const &rho_arr   = (m_incompressible) ? DummyFab.array() : ldata_p->state.array(mfi,DENSITY);
+      auto  const &rhoY_arr  = (m_incompressible) ? DummyFab.array() : ldata_p->state.array(mfi,FIRSTSPEC);
+      auto  const &rhoH_arr  = (m_incompressible) ? DummyFab.array() : ldata_p->state.array(mfi,RHOH);
+      auto  const &temp_arr  = (m_incompressible) ? DummyFab.array() : ldata_p->state.array(mfi,TEMP);
       auto  const &aux_arr   = (m_nAux > 0) ? ldata_p->auxiliaries.array(mfi) : DummyFab.array();
 #ifdef PELE_USE_EFIELD
       auto  const &ne_arr    = ldata_p->nE.array(mfi);

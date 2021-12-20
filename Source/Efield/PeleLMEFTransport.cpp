@@ -18,7 +18,7 @@ void PeleLM::calcEFTransport(const TimeStamp &a_time) {
          const Box& gbx     = mfi.growntilebox();
          auto const& mobE   = ldata_p->mobE_cc.array(mfi);
          auto const& diffE  = ldata_p->diffE_cc.array(mfi);
-         auto const& T      = ldata_p->temp.const_array(mfi);
+         auto const& T      = ldata_p->state.const_array(mfi,TEMP);
          Real factor = PP_RU_MKS / ( Na * elemCharge );
          amrex::ParallelFor(gbx, [mobE, diffE, T, factor]
          AMREX_GPU_DEVICE (int i, int j, int k) noexcept

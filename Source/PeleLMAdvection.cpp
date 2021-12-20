@@ -66,7 +66,7 @@ void PeleLM::computeVelocityAdvTerm(std::unique_ptr<AdvanceAdvData> &advData)
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
-      for (MFIter mfi(ldata_p->velocity,TilingIfNotGPU()); mfi.isValid(); ++mfi) {
+      for (MFIter mfi(ldata_p->state,TilingIfNotGPU()); mfi.isValid(); ++mfi) {
 
          Box const& bx = mfi.tilebox();
          AMREX_D_TERM(auto const& umac = advData->umac[lev][0].const_array(mfi);,
@@ -79,7 +79,7 @@ void PeleLM::computeVelocityAdvTerm(std::unique_ptr<AdvanceAdvData> &advData)
                       auto const& facey = faces[lev][1].array(mfi);,
                       auto const& facez = faces[lev][2].array(mfi);)
          auto const& divu_arr  = divu.const_array(mfi);
-         auto const& vel_arr   = ldata_p->velocity.const_array(mfi);
+         auto const& vel_arr   = ldata_p->state.const_array(mfi,VELX);
          auto const& force_arr = velForces[lev].const_array(mfi);
 
          bool is_velocity = true;
@@ -162,7 +162,7 @@ void PeleLM::computeVelocityAdvTerm(std::unique_ptr<AdvanceAdvData> &advData)
       redistributeAofS(lev, m_dt,
                        divTmp, 0,
                        advData->AofS[lev], VELX,
-                       ldata_p->velocity, 0,
+                       ldata_p->state, VELX,
                        AMREX_SPACEDIM,
                        bcRecVel_d.dataPtr(),
                        geom[lev]);
@@ -217,13 +217,13 @@ void PeleLM::updateVelocity(int is_init,
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
-      for (MFIter mfi(ldataOld_p->velocity,TilingIfNotGPU()); mfi.isValid(); ++mfi) {
+      for (MFIter mfi(ldataOld_p->state,TilingIfNotGPU()); mfi.isValid(); ++mfi) {
 
          Box const& bx = mfi.tilebox();
-         auto const& vel_old  = ldataOld_p->velocity.const_array(mfi);
+         auto const& vel_old  = ldataOld_p->state.const_array(mfi,VELX);
          auto const& vel_aofs = advData->AofS[lev].const_array(mfi,VELX);
          auto const& force    = velForces[lev].const_array(mfi);
-         auto const& vel_new  = ldataNew_p->velocity.array(mfi);
+         auto const& vel_new  = ldataNew_p->state.array(mfi,VELX);
          Real dt_loc = m_dt;
          amrex::ParallelFor(bx, AMREX_SPACEDIM,
          [=] AMREX_GPU_DEVICE (int i, int j, int k, int n) noexcept
@@ -249,9 +249,9 @@ void PeleLM::getScalarAdvForce(std::unique_ptr<AdvanceAdvData> &advData,
       for (MFIter mfi(advData->Forcing[lev],TilingIfNotGPU()); mfi.isValid(); ++mfi)
       {
          const Box& bx = mfi.tilebox();
-         auto const& rho     = ldata_p->density.const_array(mfi);
-         auto const& rhoY    = ldata_p->species.const_array(mfi);
-         auto const& T       = ldata_p->temp.const_array(mfi);
+         auto const& rho     = ldata_p->state.const_array(mfi,DENSITY);
+         auto const& rhoY    = ldata_p->state.const_array(mfi,FIRSTSPEC);
+         auto const& T       = ldata_p->state.const_array(mfi,TEMP);
          auto const& dn      = diffData->Dn[lev].const_array(mfi,0);
          auto const& ddn     = diffData->Dn[lev].const_array(mfi,NUM_SPECIES+1);
          auto const& r       = ldataR_p->I_R.const_array(mfi);
@@ -344,7 +344,7 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
-      for (MFIter mfi(ldata_p->density,TilingIfNotGPU()); mfi.isValid(); ++mfi) {
+      for (MFIter mfi(ldata_p->state,TilingIfNotGPU()); mfi.isValid(); ++mfi) {
 
          Box const& bx = mfi.tilebox();
          AMREX_D_TERM(auto const& umac = advData->umac[lev][0].const_array(mfi);,
@@ -357,7 +357,7 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
                       auto const& edgey = edgeState[1].array(mfi,1);,
                       auto const& edgez = edgeState[2].array(mfi,1);)
          auto const& divu_arr  = divu.const_array(mfi);
-         auto const& rhoY_arr  = ldata_p->species.const_array(mfi);
+         auto const& rhoY_arr  = ldata_p->state.const_array(mfi,FIRSTSPEC);
          auto const& force_arr = advData->Forcing[lev].const_array(mfi,0);
 
 #ifdef PELE_USE_EFIELD
@@ -395,7 +395,7 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
             AMREX_D_TERM(auto const& edgex_ions = edgeState[0].array(mfi,1+NUM_SPECIES-NUM_IONS+n);,
                          auto const& edgey_ions = edgeState[1].array(mfi,1+NUM_SPECIES-NUM_IONS+n);,
                          auto const& edgez_ions = edgeState[2].array(mfi,1+NUM_SPECIES-NUM_IONS+n);)
-            auto const& rhoYions_arr  = ldata_p->species.const_array(mfi,NUM_SPECIES-NUM_IONS+n);
+            auto const& rhoYions_arr  = ldata_p->state.const_array(mfi,FIRSTSPEC+NUM_SPECIES-NUM_IONS+n);
             auto const& forceions_arr = advData->Forcing[lev].const_array(mfi,NUM_SPECIES-NUM_IONS+n);
             HydroUtils::ComputeFluxesOnBoxFromState(bx, 1, mfi,
                                                     rhoYions_arr,
@@ -437,7 +437,7 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
-      for (MFIter mfi(ldata_p->density,TilingIfNotGPU()); mfi.isValid(); ++mfi) {
+      for (MFIter mfi(ldata_p->state,TilingIfNotGPU()); mfi.isValid(); ++mfi) {
 
          Box const& bx = mfi.tilebox();
 
@@ -486,7 +486,7 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
-      for (MFIter mfi(ldata_p->density,TilingIfNotGPU()); mfi.isValid(); ++mfi) {
+      for (MFIter mfi(ldata_p->state,TilingIfNotGPU()); mfi.isValid(); ++mfi) {
 
          Box const& bx = mfi.tilebox();
          AMREX_D_TERM(auto const& umac = advData->umac[lev][0].const_array(mfi);,
@@ -499,7 +499,7 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
                       auto const& edgey = edgeState[1].array(mfi,NUM_SPECIES+2);,
                       auto const& edgez = edgeState[2].array(mfi,NUM_SPECIES+2);)
          auto const& divu_arr  = divu.const_array(mfi);
-         auto const& temp_arr  = ldata_p->temp.const_array(mfi);
+         auto const& temp_arr  = ldata_p->state.const_array(mfi,TEMP);
          auto const& force_arr = advData->Forcing[lev].const_array(mfi,NUM_SPECIES);
          bool is_velocity = false;
          bool fluxes_are_area_weighted = false;
@@ -525,7 +525,7 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
-      for (MFIter mfi(ldata_p->density,TilingIfNotGPU()); mfi.isValid(); ++mfi) {
+      for (MFIter mfi(ldata_p->state,TilingIfNotGPU()); mfi.isValid(); ++mfi) {
 
          Box const& bx = mfi.tilebox();
 
@@ -574,7 +574,7 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
-      for (MFIter mfi(ldata_p->density,TilingIfNotGPU()); mfi.isValid(); ++mfi) {
+      for (MFIter mfi(ldata_p->state,TilingIfNotGPU()); mfi.isValid(); ++mfi) {
 
          Box const& bx = mfi.tilebox();
          AMREX_D_TERM(auto const& umac = advData->umac[lev][0].const_array(mfi);,
@@ -587,7 +587,7 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
                       auto const& edgey = edgeState[1].array(mfi,NUM_SPECIES+1);,
                       auto const& edgez = edgeState[2].array(mfi,NUM_SPECIES+1);)
          auto const& divu_arr  = divu.const_array(mfi);
-         auto const& rhoh_arr  = ldata_p->rhoh.const_array(mfi);
+         auto const& rhoh_arr  = ldata_p->state.const_array(mfi,RHOH);
          auto const& force_arr = advData->Forcing[lev].const_array(mfi,NUM_SPECIES);
          bool is_velocity = false;
          bool fluxes_are_area_weighted = false;
@@ -671,7 +671,7 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
       redistributeAofS(lev, m_dt,
                        divTmp, 0,
                        advData->AofS[lev], FIRSTSPEC,
-                       ldata_p->species, 0,
+                       ldata_p->state, FIRSTSPEC,
                        NUM_SPECIES,
                        bcRecSpec_d.dataPtr(),
                        geom[lev]);
@@ -679,7 +679,7 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
       redistributeAofS(lev, m_dt,
                        divTmp, NUM_SPECIES,
                        advData->AofS[lev], RHOH,
-                       ldata_p->rhoh, 0,
+                       ldata_p->state, RHOH,
                        1,
                        bcRecRhoH_d.dataPtr(),
                        geom[lev]);
@@ -730,10 +730,10 @@ void PeleLM::updateDensity(std::unique_ptr<AdvanceAdvData> &advData)
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
-      for (MFIter mfi(ldataNew_p->density,TilingIfNotGPU()); mfi.isValid(); ++mfi) {
+      for (MFIter mfi(ldataNew_p->state,TilingIfNotGPU()); mfi.isValid(); ++mfi) {
          Box const& bx = mfi.tilebox();
-         auto const& rhoOld_arr  = ldataOld_p->density.const_array(mfi);
-         auto const& rhoNew_arr  = ldataNew_p->density.array(mfi);
+         auto const& rhoOld_arr  = ldataOld_p->state.const_array(mfi,DENSITY);
+         auto const& rhoNew_arr  = ldataNew_p->state.array(mfi,DENSITY);
          auto const& a_of_rho    = advData->AofS[lev].const_array(mfi,DENSITY);
          amrex::ParallelFor(bx, [rhoOld_arr, rhoNew_arr, a_of_rho,dt=m_dt]
          AMREX_GPU_DEVICE (int i, int j, int k) noexcept
