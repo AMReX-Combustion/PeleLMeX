@@ -207,6 +207,12 @@ void PeleLM::initData() {
 
             initialProjection();
          }
+         if ( m_numDivuIter == 0 ) {
+            for (int lev = 0; lev <= finest_level; ++lev) {
+               auto ldataR_p   = getLevelDataReactPtr(lev);
+               ldataR_p->I_R.setVal(0.0);
+            }
+         }
       }
 
       //----------------------------------------------------------------
