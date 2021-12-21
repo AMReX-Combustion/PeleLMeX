@@ -155,21 +155,20 @@ void PeleLM::WritePlotFile() {
    // Fill the plot MultiFabs
    for (int lev = 0; lev <= finest_level; ++lev) {
       int cnt = 0;
-      MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->velocity, 0, cnt, AMREX_SPACEDIM, 0);
-      cnt += AMREX_SPACEDIM;
-      if (!m_incompressible) {
-         MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->density, 0, cnt, 1, 0);
-         cnt += 1;
+      if (m_incompressible) {
+         MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->state, 0, cnt, AMREX_SPACEDIM, 0);
+         cnt += AMREX_SPACEDIM;
+      } else {
+         // Velocity and density
+         MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->state, 0, cnt, AMREX_SPACEDIM+1, 0);
+         cnt += AMREX_SPACEDIM+1;
+         // Species only if requested
          if (m_plotStateSpec) {
-            MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->species, 0, cnt, NUM_SPECIES, 0);
+            MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->state, FIRSTSPEC, cnt, NUM_SPECIES, 0);
             cnt += NUM_SPECIES;
          }
-         MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->rhoh, 0, cnt, 1, 0);
-         cnt += 1;
-         MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->temp, 0, cnt, 1, 0);
-         cnt += 1;
-         MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->rhoRT, 0, cnt, 1, 0);
-         cnt += 1;
+         MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->state, RHOH, cnt, 3, 0);
+         cnt += 3;
 #ifdef PELE_USE_EFIELD
          MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->nE, 0, cnt, 1, 0);
          cnt += 1;
@@ -300,8 +299,8 @@ void PeleLM::WriteCheckPointFile()
    
    for(int lev = 0; lev <= finest_level; ++lev)
    {   
-      VisMF::Write(m_leveldata_new[lev]->velocity,
-                   amrex::MultiFabFileFullPrefix(lev, checkpointname, level_prefix, "velocity"));
+      VisMF::Write(m_leveldata_new[lev]->state,
+                   amrex::MultiFabFileFullPrefix(lev, checkpointname, level_prefix, "state"));
    
       VisMF::Write(m_leveldata_new[lev]->gp,
                    amrex::MultiFabFileFullPrefix(lev, checkpointname, level_prefix, "gradp"));
@@ -310,21 +309,6 @@ void PeleLM::WriteCheckPointFile()
                    amrex::MultiFabFileFullPrefix(lev, checkpointname, level_prefix, "p"));
    
       if (!m_incompressible) {
-         VisMF::Write(m_leveldata_new[lev]->density,
-                      amrex::MultiFabFileFullPrefix(lev, checkpointname, level_prefix, "density"));
-   
-         VisMF::Write(m_leveldata_new[lev]->species,
-                      amrex::MultiFabFileFullPrefix(lev, checkpointname, level_prefix, "species"));
-   
-         VisMF::Write(m_leveldata_new[lev]->rhoh,
-                      amrex::MultiFabFileFullPrefix(lev, checkpointname, level_prefix, "rhoH"));
-   
-         VisMF::Write(m_leveldata_new[lev]->temp,
-                      amrex::MultiFabFileFullPrefix(lev, checkpointname, level_prefix, "temp"));
-   
-         VisMF::Write(m_leveldata_new[lev]->rhoRT,
-                      amrex::MultiFabFileFullPrefix(lev, checkpointname, level_prefix, "rhoRT"));
-   
          if (m_has_divu) {
             VisMF::Write(m_leveldata_new[lev]->divu,
                          amrex::MultiFabFileFullPrefix(lev, checkpointname, level_prefix, "divU"));
@@ -457,8 +441,8 @@ void PeleLM::ReadCheckPointFile()
    // Load the field data
    for(int lev = 0; lev <= finest_level; ++lev)
    {
-      VisMF::Read(m_leveldata_new[lev]->velocity,
-                  amrex::MultiFabFileFullPrefix(lev, m_restart_chkfile, level_prefix, "velocity"));
+      VisMF::Read(m_leveldata_new[lev]->state,
+                  amrex::MultiFabFileFullPrefix(lev, m_restart_chkfile, level_prefix, "state"));
 
       VisMF::Read(m_leveldata_new[lev]->gp,
                   amrex::MultiFabFileFullPrefix(lev, m_restart_chkfile, level_prefix, "gradp"));
@@ -467,21 +451,6 @@ void PeleLM::ReadCheckPointFile()
                   amrex::MultiFabFileFullPrefix(lev, m_restart_chkfile, level_prefix, "p"));
 
       if (!m_incompressible) {
-         VisMF::Read(m_leveldata_new[lev]->density,
-                     amrex::MultiFabFileFullPrefix(lev, m_restart_chkfile, level_prefix, "density"));
-
-         VisMF::Read(m_leveldata_new[lev]->species,
-                     amrex::MultiFabFileFullPrefix(lev, m_restart_chkfile, level_prefix, "species"));
-
-         VisMF::Read(m_leveldata_new[lev]->rhoh,
-                     amrex::MultiFabFileFullPrefix(lev, m_restart_chkfile, level_prefix, "rhoH"));
-
-         VisMF::Read(m_leveldata_new[lev]->temp,
-                     amrex::MultiFabFileFullPrefix(lev, m_restart_chkfile, level_prefix, "temp"));
-
-         VisMF::Read(m_leveldata_new[lev]->rhoRT,
-                     amrex::MultiFabFileFullPrefix(lev, m_restart_chkfile, level_prefix, "rhoRT"));
-
          if (m_has_divu) {
             VisMF::Read(m_leveldata_new[lev]->divu,
                         amrex::MultiFabFileFullPrefix(lev, m_restart_chkfile, level_prefix, "divU"));
@@ -567,12 +536,12 @@ void PeleLM::initLevelDataFromPlt(int a_lev,
 
    // Velocity
    for (int i = 0; i < AMREX_SPACEDIM; i++) {
-      amrData.FillVar(ldata_p->velocity, a_lev, plotnames[idV+i], i);
+      amrData.FillVar(ldata_p->state, a_lev, plotnames[idV+i], FIRSTSPEC+i);
       amrData.FlushGrids(idV+i);
    }
 
    // Temperature
-   amrData.FillVar(ldata_p->temp, a_lev, plotnames[idT], 0);
+   amrData.FillVar(ldata_p->state, a_lev, plotnames[idT], TEMP);
    amrData.FlushGrids(idT);
 
    // Species
@@ -587,11 +556,11 @@ void PeleLM::initLevelDataFromPlt(int a_lev,
       int foundSpec = 0;
       for (int iplt = 0; iplt < nSpecPlt; iplt++) {
          if ( specString == plotnames[idY+iplt] ) {
-            MultiFab::Copy(ldata_p->species, speciesPlt, iplt, i, 1, 0);
+            MultiFab::Copy(ldata_p->state, speciesPlt, iplt, FIRSTSPEC+i, 1, 0);
             foundSpec = 1;
          }
       }
-      if (!foundSpec) ldata_p->species.setVal(0.0,i,1);
+      if (!foundSpec) ldata_p->state.setVal(0.0,FIRSTSPEC+i,1);
    }
 
    // Pressure and pressure gradients to zero
@@ -603,13 +572,13 @@ void PeleLM::initLevelDataFromPlt(int a_lev,
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
-   for (MFIter mfi(ldata_p->velocity,TilingIfNotGPU()); mfi.isValid(); ++mfi)
+   for (MFIter mfi(ldata_p->state,TilingIfNotGPU()); mfi.isValid(); ++mfi)
    {
       const Box& bx = mfi.tilebox();
-      auto  const &rho_arr   = ldata_p->density.array(mfi);
-      auto  const &rhoY_arr  = ldata_p->species.array(mfi);
-      auto  const &rhoH_arr  = ldata_p->rhoh.array(mfi);
-      auto  const &temp_arr  = ldata_p->temp.array(mfi);
+      auto  const &rho_arr   = ldata_p->state.array(mfi,DENSITY);
+      auto  const &rhoY_arr  = ldata_p->state.array(mfi,FIRSTSPEC);
+      auto  const &rhoH_arr  = ldata_p->state.array(mfi,RHOH);
+      auto  const &temp_arr  = ldata_p->state.array(mfi,TEMP);
       amrex::ParallelFor(bx, [=]
       AMREX_GPU_DEVICE (int i, int j, int k) noexcept
       {

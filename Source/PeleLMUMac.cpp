@@ -38,7 +38,7 @@ void PeleLM::predictVelocity(std::unique_ptr<AdvanceAdvData>  &advData,
    getVelForces(AmrOldTime,GetVecOfPtrs(divtau),GetVecOfPtrs(velForces),nGrow_force,add_gradP);
 
    //----------------------------------------------------------------
-   // Predict face velocities with Godunov
+   // Predict face velocities at t^{n+1/2} with Godunov
    auto bcRecVel = fetchBCRecArray(VELX,AMREX_SPACEDIM); 
    auto bcRecVel_d = convertToDeviceVector(bcRecVel);
    for (int lev = 0; lev <= finest_level; ++lev) {
@@ -51,7 +51,7 @@ void PeleLM::predictVelocity(std::unique_ptr<AdvanceAdvData>  &advData,
       const auto& ebfact = EBFactory(lev);
 #endif
 
-      HydroUtils::ExtrapVelToFaces(ldata_p->velocity,
+      HydroUtils::ExtrapVelToFaces(ldata_p->state,
                                    velForces[lev],
                                    AMREX_D_DECL(advData->umac[lev][0],
                                                 advData->umac[lev][1],
@@ -142,7 +142,7 @@ void PeleLM::macProject(const TimeStamp &a_time,
          }
       } else {
          auto ldata_p = getLevelDataPtr(lev,a_time);
-         rho_inv[lev] = getDiffusivity(lev,0,1,{bcRec},ldata_p->density);
+         rho_inv[lev] = getDiffusivity(lev,DENSITY,1,{bcRec},ldata_p->state);
          for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
             rho_inv[lev][idim].invert(m_dt/2.0,0);
             rho_inv[lev][idim].FillBoundary(geom[lev].periodicity());

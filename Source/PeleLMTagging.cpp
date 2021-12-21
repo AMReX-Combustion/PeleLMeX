@@ -16,8 +16,8 @@ PeleLM::ErrorEst( int lev,
 
 #ifdef AMREX_USE_EB
    if (m_refine_cutcells) {
-      const MultiFab& rho = (getLevelDataPtr(lev,AmrNewTime))->density;
-      TagCutCells(tags, rho);
+      const MultiFab& state = (getLevelDataPtr(lev,AmrNewTime))->state;
+      TagCutCells(tags, state);
    }
 #endif
 

@@ -26,8 +26,8 @@ void PeleLM::calcViscosity(const TimeStamp &a_time) {
          for (MFIter mfi(ldata_p->visc_cc, TilingIfNotGPU()); mfi.isValid(); ++mfi)
          {
             const Box& gbx     = mfi.growntilebox();
-            auto const& rhoY   = ldata_p->species.const_array(mfi);
-            auto const& T      = ldata_p->temp.array(mfi);
+            auto const& rhoY   = ldata_p->state.const_array(mfi,FIRSTSPEC);
+            auto const& T      = ldata_p->state.array(mfi,TEMP);
             auto const& mu     = ldata_p->visc_cc.array(mfi,0);
 
             amrex::ParallelFor(gbx, [rhoY, T, mu, ltransparm]
@@ -56,8 +56,8 @@ void PeleLM::calcDiffusivity(const TimeStamp &a_time) {
       for (MFIter mfi(ldata_p->diff_cc, TilingIfNotGPU()); mfi.isValid(); ++mfi)
       {
          const Box& gbx     = mfi.growntilebox();
-         auto const& rhoY   = ldata_p->species.const_array(mfi);
-         auto const& T      = ldata_p->temp.const_array(mfi);
+         auto const& rhoY   = ldata_p->state.const_array(mfi,FIRSTSPEC);
+         auto const& T      = ldata_p->state.const_array(mfi,TEMP);
          auto const& rhoD   = ldata_p->diff_cc.array(mfi,0);
          auto const& lambda = ldata_p->diff_cc.array(mfi,NUM_SPECIES);
          auto const& mu     = ldata_p->diff_cc.array(mfi,NUM_SPECIES+1);

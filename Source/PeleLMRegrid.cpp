@@ -40,15 +40,11 @@ void PeleLM::MakeNewLevelFromCoarse( int lev,
                                                    m_nAux, m_nGrowState, m_nGrowMAC));
 
    // Fill the leveldata_new
-   fillcoarsepatch_velocity(lev, time, n_leveldata_new->velocity, 0);
+   fillcoarsepatch_state(lev, time, n_leveldata_new->state, 0);
    fillcoarsepatch_gradp(lev, time, n_leveldata_new->gp, 0);
    n_leveldata_new->press.setVal(0.0);
 
    if (!m_incompressible) {
-      fillcoarsepatch_mass(lev, time, n_leveldata_new->density,
-                           n_leveldata_new->species, 1);
-      fillcoarsepatch_energy(lev, time, n_leveldata_new->rhoh,
-                             n_leveldata_new->temp, 1);
       if (m_has_divu) {
          fillcoarsepatch_divu(lev, time, n_leveldata_new->divu,0);
       }
@@ -132,15 +128,11 @@ void PeleLM::RemakeLevel( int lev,
                                                    m_nAux, m_nGrowState, m_nGrowMAC));
 
    // Fill the leveldata_new
-   fillpatch_velocity(lev, time, n_leveldata_new->velocity, m_nGrowState);
+   fillpatch_state(lev, time, n_leveldata_new->state, m_nGrowState);
    fillpatch_gradp(lev, time, n_leveldata_new->gp, 0);
    n_leveldata_new->press.setVal(0.0);
 
    if (!m_incompressible) {
-      fillpatch_density(lev, time, n_leveldata_new->density, m_nGrowState);
-      fillpatch_species(lev, time, n_leveldata_new->species, m_nGrowState);
-      fillpatch_energy(lev, time, n_leveldata_new->rhoh,
-                       n_leveldata_new->temp, m_nGrowState);
       if (m_has_divu) {
          fillpatch_divu(lev, time, n_leveldata_new->divu, 1);
       }
