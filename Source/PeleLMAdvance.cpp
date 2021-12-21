@@ -129,10 +129,7 @@ void PeleLM::Advance(int is_initIter) {
       }
 
       // Post SDC
-      averageDownDensity(AmrNewTime); // Gather the following if needed TODO
-      averageDownSpecies(AmrNewTime);
-      averageDownEnthalpy(AmrNewTime);
-      averageDownTemp(AmrNewTime);
+      averageDownScalars(AmrNewTime);
 #ifdef PELE_USE_EFIELD
       averageDownnE(AmrNewTime);
 #endif
@@ -215,10 +212,7 @@ void PeleLM::oneSDC(int sdcIter,
          UpdateStart = ParallelDescriptor::second();
       }
       // fillpatch the new state
-      averageDownDensity(AmrNewTime); // Gather the following if needed TODO
-      averageDownSpecies(AmrNewTime);
-      averageDownEnthalpy(AmrNewTime);
-      averageDownTemp(AmrNewTime);
+      averageDownScalars(AmrNewTime);
 #ifdef PELE_USE_EFIELD
       averageDownnE(AmrNewTime);
 #endif

@@ -54,15 +54,15 @@ void PeleLM::advanceChemistry(int lev,
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
-   for (MFIter mfi(ldataNew_p->density,amrex::TilingIfNotGPU()); mfi.isValid(); ++mfi)
+   for (MFIter mfi(ldataNew_p->state,amrex::TilingIfNotGPU()); mfi.isValid(); ++mfi)
    {
       const Box& bx          = mfi.tilebox();
-      auto const& rhoY_o     = ldataOld_p->species.const_array(mfi);
-      auto const& rhoH_o     = ldataOld_p->rhoh.const_array(mfi);
-      auto const& temp_o     = ldataOld_p->temp.const_array(mfi);
-      auto const& rhoY_n     = ldataNew_p->species.array(mfi);
-      auto const& rhoH_n     = ldataNew_p->rhoh.array(mfi);
-      auto const& temp_n     = ldataNew_p->temp.array(mfi);
+      auto const& rhoY_o     = ldataOld_p->state.const_array(mfi,FIRSTSPEC);
+      auto const& rhoH_o     = ldataOld_p->state.const_array(mfi,RHOH);
+      auto const& temp_o     = ldataOld_p->state.const_array(mfi,TEMP);
+      auto const& rhoY_n     = ldataNew_p->state.array(mfi,FIRSTSPEC);
+      auto const& rhoH_n     = ldataNew_p->state.array(mfi,RHOH);
+      auto const& temp_n     = ldataNew_p->state.array(mfi,TEMP);
       auto const& extF_rhoY  = a_extForcing.array(mfi,0);
       auto const& extF_rhoH  = a_extForcing.array(mfi,NUM_SPECIES);
       auto const& fcl        = ldataR_p->functC.array(mfi);
@@ -85,7 +85,7 @@ void PeleLM::advanceChemistry(int lev,
       // Pass nE -> rhoY_e & FnE -> FrhoY_e
       auto const& nE_o    = ldataOld_p->nE.const_array(mfi);
       auto const& FnE     = a_extForcing.array(mfi,NUM_SPECIES+1);
-      auto const& rhoYe_n = ldataNew_p->species.array(mfi,E_ID);
+      auto const& rhoYe_n = ldataNew_p->state.array(mfi,FIRSTSPEC+E_ID);
       auto const& FrhoYe  = a_extForcing.array(mfi,E_ID);
       auto eos = pele::physics::PhysicsType::eos();
       Real mwt[NUM_SPECIES] = {0.0};
@@ -147,11 +147,11 @@ void PeleLM::advanceChemistry(int lev,
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
-   for (MFIter mfi(ldataNew_p->density,amrex::TilingIfNotGPU()); mfi.isValid(); ++mfi)
+   for (MFIter mfi(ldataNew_p->state,amrex::TilingIfNotGPU()); mfi.isValid(); ++mfi)
    {
       const Box& bx          = mfi.tilebox();
-      auto const& rhoY_o     = ldataOld_p->species.const_array(mfi);
-      auto const& rhoY_n     = ldataNew_p->species.const_array(mfi);
+      auto const& rhoY_o     = ldataOld_p->state.const_array(mfi,FIRSTSPEC);
+      auto const& rhoY_n     = ldataNew_p->state.const_array(mfi,FIRSTSPEC);
       auto const& extF_rhoY  = a_extForcing.const_array(mfi,0);
       auto const& rhoYdot    = ldataR_p->I_R.array(mfi,0);
       Real dt_inv = 1.0/a_dt;
@@ -328,14 +328,14 @@ void PeleLM::advanceChemistry(int lev,
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
-   for (MFIter mfi(ldataNew_p->density,amrex::TilingIfNotGPU()); mfi.isValid(); ++mfi)
+   for (MFIter mfi(ldataNew_p->state,amrex::TilingIfNotGPU()); mfi.isValid(); ++mfi)
    {
       const Box& bx          = mfi.tilebox();
       auto const& state_arr  = StateTemp.const_array(mfi);
-      auto const& rhoY_o     = ldataOld_p->species.const_array(mfi);
-      auto const& rhoY_n     = ldataNew_p->species.array(mfi);
-      auto const& rhoH_n     = ldataNew_p->rhoh.array(mfi);
-      auto const& temp_n     = ldataNew_p->temp.array(mfi);
+      auto const& rhoY_o     = ldataOld_p->state.const_array(mfi,FIRSTSPEC);
+      auto const& rhoY_n     = ldataNew_p->state.array(mfi,FIRSTSPEC);
+      auto const& rhoH_n     = ldataNew_p->state.array(mfi,RHOH);
+      auto const& temp_n     = ldataNew_p->state.array(mfi,TEMP);
       auto const& extF_rhoY  = a_extForcing.const_array(mfi,0);
       auto const& rhoYdot    = ldataR_p->I_R.array(mfi,0);
       Real dt_inv = 1.0/a_dt;
@@ -398,12 +398,12 @@ void PeleLM::computeInstantaneousReactionRate(int lev,
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
-   for (MFIter mfi(ldata_p->species,TilingIfNotGPU()); mfi.isValid(); ++mfi)
+   for (MFIter mfi(ldata_p->state,TilingIfNotGPU()); mfi.isValid(); ++mfi)
    {
       const Box& bx = mfi.tilebox();
-      auto const& rhoY    = ldata_p->species.const_array(mfi);
-      auto const& rhoH    = ldata_p->rhoh.const_array(mfi);
-      auto const& T       = ldata_p->temp.const_array(mfi);
+      auto const& rhoY    = ldata_p->state.const_array(mfi,FIRSTSPEC);
+      auto const& rhoH    = ldata_p->state.const_array(mfi,RHOH);
+      auto const& T       = ldata_p->state.const_array(mfi,TEMP);
       auto const& rhoYdot = a_I_R->array(mfi);
 
 #ifdef AMREX_USE_EB
@@ -456,10 +456,10 @@ void PeleLM::getScalarReactForce(std::unique_ptr<AdvanceAdvData> &advData)
       for (MFIter mfi(advData->Forcing[lev],TilingIfNotGPU()); mfi.isValid(); ++mfi)
       {
          const Box& bx = mfi.tilebox();
-         auto const& rhoY_o     = ldataOld_p->species.const_array(mfi);
-         auto const& rhoH_o     = ldataOld_p->rhoh.const_array(mfi);
-         auto const& rhoY_n     = ldataNew_p->species.const_array(mfi);
-         auto const& rhoH_n     = ldataNew_p->rhoh.const_array(mfi);
+         auto const& rhoY_o     = ldataOld_p->state.const_array(mfi,FIRSTSPEC);
+         auto const& rhoH_o     = ldataOld_p->state.const_array(mfi,RHOH);
+         auto const& rhoY_n     = ldataNew_p->state.const_array(mfi,FIRSTSPEC);
+         auto const& rhoH_n     = ldataNew_p->state.const_array(mfi,RHOH);
          auto const& react      = ldataR_p->I_R.const_array(mfi,0);
          auto const& extF_rhoY  = advData->Forcing[lev].array(mfi,0);
          auto const& extF_rhoH  = advData->Forcing[lev].array(mfi,NUM_SPECIES);
@@ -494,7 +494,7 @@ void PeleLM::getHeatRelease(int a_lev,
            EnthFab.resize(bx,NUM_SPECIES);
            Elixir  Enthi   = EnthFab.elixir();
            auto const& react = ldataR_p->I_R.const_array(mfi,0);
-           auto const& T     = ldataNew_p->temp.const_array(mfi);
+           auto const& T     = ldataNew_p->state.const_array(mfi,TEMP);
            auto const& Hi    = EnthFab.array();
            auto const& HRR   = a_HR->array(mfi);
            amrex::ParallelFor(bx, [T, Hi, HRR, react]

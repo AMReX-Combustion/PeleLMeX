@@ -8,17 +8,12 @@ PeleLM::LevelData::LevelData(amrex::BoxArray const& ba,
                              int a_incompressible, int a_has_divu, 
                              int a_nAux, int a_nGrowState, int a_nGrowMAC)
 {
-   velocity.define(ba, dm, AMREX_SPACEDIM, a_nGrowState, MFInfo(), factory);
+   state.define(   ba, dm, NVAR          , a_nGrowState, MFInfo(), factory);
    gp.define(      ba, dm, AMREX_SPACEDIM, 0           , MFInfo(), factory);
    press.define(   amrex::convert(ba,IntVect::TheNodeVector()),
                        dm, 1             , 1           , MFInfo(), factory);
    visc_cc.define( ba, dm, 1             , 1           , MFInfo(), factory);
    if (! a_incompressible ) {
-      density.define (ba, dm, 1             , a_nGrowState, MFInfo(), factory);
-      species.define (ba, dm, NUM_SPECIES   , a_nGrowState, MFInfo(), factory);
-      rhoh.define    (ba, dm, 1             , a_nGrowState, MFInfo(), factory);
-      rhoRT.define   (ba, dm, 1             , a_nGrowState, MFInfo(), factory);
-      temp.define    (ba, dm, 1             , a_nGrowState, MFInfo(), factory);
       if (a_has_divu) {   
          divu.define (ba, dm, 1             , 1           , MFInfo(), factory);
       }
@@ -156,13 +151,8 @@ void
 PeleLM::copyStateNewToOld(int nGhost) {
    AMREX_ASSERT(nGhost<=m_nGrowState);
    for (int lev = 0; lev <= finest_level; lev++ ) {
-      MultiFab::Copy(m_leveldata_old[lev]->velocity,m_leveldata_new[lev]->velocity,0,0,AMREX_SPACEDIM,nGhost);
+      MultiFab::Copy(m_leveldata_old[lev]->state,m_leveldata_new[lev]->state,0,0,NVAR,nGhost);
       if ( !m_incompressible ) {
-         MultiFab::Copy(m_leveldata_old[lev]->density,m_leveldata_new[lev]->density,0,0,1,nGhost);
-         MultiFab::Copy(m_leveldata_old[lev]->species,m_leveldata_new[lev]->species,0,0,NUM_SPECIES,nGhost);
-         MultiFab::Copy(m_leveldata_old[lev]->rhoh,m_leveldata_new[lev]->rhoh,0,0,1,nGhost);
-         MultiFab::Copy(m_leveldata_old[lev]->temp,m_leveldata_new[lev]->temp,0,0,1,nGhost);
-         MultiFab::Copy(m_leveldata_old[lev]->rhoRT,m_leveldata_new[lev]->rhoRT,0,0,1,nGhost);
          if ( m_has_divu ) {
             MultiFab::Copy(m_leveldata_old[lev]->divu,m_leveldata_new[lev]->divu,0,0,1,std::min(nGhost,1));
          }
@@ -186,13 +176,8 @@ void
 PeleLM::copyStateOldToNew(int nGhost) {
    AMREX_ASSERT(nGhost<=m_nGrowState);
    for (int lev = 0; lev <= finest_level; lev++ ) {
-      MultiFab::Copy(m_leveldata_new[lev]->velocity,m_leveldata_old[lev]->velocity,0,0,AMREX_SPACEDIM,nGhost);
+      MultiFab::Copy(m_leveldata_new[lev]->state,m_leveldata_old[lev]->state,0,0,NVAR,nGhost);
       if ( !m_incompressible ) {
-         MultiFab::Copy(m_leveldata_new[lev]->density,m_leveldata_old[lev]->density,0,0,1,nGhost);
-         MultiFab::Copy(m_leveldata_new[lev]->species,m_leveldata_old[lev]->species,0,0,NUM_SPECIES,nGhost);
-         MultiFab::Copy(m_leveldata_new[lev]->rhoh,m_leveldata_old[lev]->rhoh,0,0,1,nGhost);
-         MultiFab::Copy(m_leveldata_new[lev]->temp,m_leveldata_old[lev]->temp,0,0,1,nGhost);
-         MultiFab::Copy(m_leveldata_new[lev]->rhoRT,m_leveldata_old[lev]->rhoRT,0,0,1,nGhost);
          if ( m_has_divu ) {
             MultiFab::Copy(m_leveldata_new[lev]->divu,m_leveldata_old[lev]->divu,0,0,1,std::min(nGhost,1));
          }

@@ -91,7 +91,7 @@ PeleLM::estConvectiveDt(const TimeStamp &a_time) {
 
       // Get max velocity
       Vector<Real> u_max(AMREX_SPACEDIM);
-      u_max = ldata_p->velocity.norm0({AMREX_D_DECL(0,1,2)},0,true,true);
+      u_max = ldata_p->state.norm0({AMREX_D_DECL(VELX,VELY,VELZ)},0,true,true);
 
       //----------------------------------------------------------------
       // Est. min time step on lev
@@ -125,10 +125,11 @@ PeleLM::estDivUDt(const TimeStamp &a_time) {
    for (int lev = 0; lev <= finest_level; ++lev) {
 
       auto ldata_p = getLevelDataPtr(lev, a_time);
+      std::unique_ptr<MultiFab> density = std::make_unique <MultiFab>(ldata_p->state, amrex::make_alias, DENSITY, 1);
 
       auto dtfac = m_divu_dtFactor;
       auto rhoMin = m_divu_rhoMin;
-      Real divu_dt = amrex::ReduceMin(ldata_p->density, ldata_p->divu, 0,
+      Real divu_dt = amrex::ReduceMin(*density, ldata_p->divu, 0,
                                       [dtfac, rhoMin]
       AMREX_GPU_HOST_DEVICE (Box const& bx, Array4<Real const> const& rho,
                                             Array4<Real const> const& divu ) noexcept -> Real
