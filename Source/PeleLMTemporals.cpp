@@ -15,6 +15,20 @@ void PeleLM::initTemporals()
          m_domainMassFlux[2*idim+1] = 0.0;
       }
    }
+   m_RhoHOld = MFSum(GetVecOfConstPtrs(getRhoHVect(AmrOldTime)),0);
+   for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+      m_domainRhoHFlux[2*idim] = 0.0;
+      m_domainRhoHFlux[2*idim+1] = 0.0;
+   }
+
+   for (int n = 0; n < NUM_SPECIES; n++){
+      m_RhoYOld[n] = MFSum(GetVecOfConstPtrs(getSpeciesVect(AmrOldTime)),n);
+      for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+         m_domainRhoYFlux[2*n*AMREX_SPACEDIM+2*idim] = 0.0;
+         m_domainRhoYFlux[1+2*n*AMREX_SPACEDIM+2*idim] = 0.0;
+      }
+   }
+
 }
 
 void PeleLM::massBalance()
@@ -98,6 +112,187 @@ void PeleLM::addMassFluxes(const Array<const MultiFab*,AMREX_SPACEDIM> &a_fluxes
       ParallelAllReduce::Sum(sumHi, ParallelContext::CommunicatorSub());
       m_domainMassFlux[2*idim] += sumLo;
       m_domainMassFlux[2*idim+1] -= sumHi;   // Outflow, negate flux
+   }
+}
+
+void PeleLM::rhoHBalance()
+{
+   // Compute the enthalpy balance on the computational domain (rho*h)
+   m_RhoHNew = MFSum(GetVecOfConstPtrs(getRhoHVect(AmrNewTime)),0);
+   Real dRhoHdt = (m_RhoHNew - m_RhoHOld) / m_dt;
+   Real rhoHFluxBalance = AMREX_D_TERM(  m_domainRhoHFlux[0] + m_domainRhoHFlux[1],
+                                       + m_domainRhoHFlux[2] + m_domainRhoHFlux[3],               
+                                       + m_domainRhoHFlux[4] + m_domainRhoHFlux[5]);               
+
+   // tmpMassFile << m_nstep << " " << m_cur_time                          // Time info
+   //             << " " << m_RhoHNew                                      // RhoH
+   //             << " " << dRhoHdt                                        // RhoH temporal derivative
+   //             << " " << rhoHFluxBalance                                // domain boundaries RhoH fluxes
+   //             << " " << std::abs(dRhoHdt - rhoHFluxBalance) << " \n";  // balance
+   // tmpMassFile.flush();
+}
+
+void PeleLM::addRhoHFluxes(const Array<const MultiFab*,AMREX_SPACEDIM> &a_fluxes,
+                           const Geometry& a_geom)
+{
+
+   // Do when m_nstep is -1 since m_nstep is increased by one before
+   // the writeTemporals
+   if ( !(m_nstep % m_temp_int == m_temp_int-1) ) return;
+
+   // Get the face areas
+   const Real*  dx = a_geom.CellSize();
+   Array<Real,AMREX_SPACEDIM> area;
+#if ( AMREX_SPACEDIM == 1 )
+   area[0] = 1.0;
+#elif ( AMREX_SPACEDIM == 2 )
+   area[0] = dx[1];
+   area[1] = dx[0];
+#else
+   area[0] = dx[1]*dx[2];
+   area[1] = dx[0]*dx[2];
+   area[2] = dx[0]*dx[1];
+#endif
+
+   for (int idim = 0; idim <  AMREX_SPACEDIM; idim++) {
+      auto faceDomain = amrex::convert(a_geom.Domain(),IntVect::TheDimensionVector(idim));
+
+      Real sumLo = 0.0;
+      Real sumHi = 0.0;
+
+      sumLo = amrex::ReduceSum(*a_fluxes[idim], 0, [=] 
+         AMREX_GPU_HOST_DEVICE (Box const& bx, Array4<Real const> const& flux) -> Real
+         {
+            Real t = 0.0;
+            AMREX_LOOP_3D(bx, i, j, k,
+            {
+               int idx = (idim == 0) ? i : ( (idim == 1) ? j : k );
+               if ( idx == faceDomain.smallEnd(idim) ) {
+                  // accumulate the RhoH terms
+                  t += flux(i,j,k,NUM_SPECIES) * area[idim];
+               }
+            });
+            return t;
+         });
+
+      sumHi = amrex::ReduceSum(*a_fluxes[idim], 0, [=] 
+         AMREX_GPU_HOST_DEVICE (Box const& bx, Array4<Real const> const& flux) -> Real
+         {
+            Real t = 0.0;
+            AMREX_LOOP_3D(bx, i, j, k,
+            {
+               int idx = (idim == 0) ? i : ( (idim == 1) ? j : k );
+               if ( idx == faceDomain.bigEnd(idim) ) {
+                  // accumulate the RhoH terms
+                  t += flux(i,j,k,NUM_SPECIES) * area[idim];
+               }
+            });
+            return t;
+         });
+
+      ParallelAllReduce::Sum(sumLo, ParallelContext::CommunicatorSub());
+      ParallelAllReduce::Sum(sumHi, ParallelContext::CommunicatorSub());
+
+      m_domainRhoHFlux[2*idim] += sumLo;
+      m_domainRhoHFlux[2*idim+1] -= sumHi;   // Outflow, negate flux
+   }
+}
+
+
+void PeleLM::rhoYBalance()
+{
+   // Compute the enthalpy balance on the computational domain (rho*h)
+   for (int n = 0; n < NUM_SPECIES; n++){
+      m_RhoYNew[n] = MFSum(GetVecOfConstPtrs(getSpeciesVect(AmrNewTime)),n);
+   }
+
+   amrex::Real dRhoYdt[NUM_SPECIES] = {0.0};  
+   Real rhoYFluxBalance[NUM_SPECIES] = {0.0};
+   for (int n = 0; n < NUM_SPECIES; n++){
+      rhoYFluxBalance[n] = AMREX_D_TERM(  m_domainRhoYFlux[n*2*AMREX_SPACEDIM] + m_domainRhoYFlux[1+n*2*AMREX_SPACEDIM],
+                                        + m_domainRhoYFlux[2+n*2*AMREX_SPACEDIM] + m_domainRhoYFlux[3+n*2*AMREX_SPACEDIM],
+                                        + m_domainRhoYFlux[4+n*2*AMREX_SPACEDIM] + m_domainRhoYFlux[5+n*2*AMREX_SPACEDIM]);
+   }
+
+   for (int n = 0; n < NUM_SPECIES; n++) {
+      dRhoYdt[n] = (m_RhoYNew[n] - m_RhoYOld[n]) / m_dt;
+   }             
+
+   // tmpMassFile << m_nstep << " " << m_cur_time                          // Time info
+   //             << " " << m_RhoYNew                                      // RhoY
+   //             << " " << dRhoYdt                                        // RhoY temporal derivative
+   //             << " " << rhoYFluxBalance                                // domain boundaries RhoY fluxes
+   //             << " " << std::abs(dRhoHdt - rhoYFluxBalance) << " \n";  // balance
+   // tmpMassFile.flush();
+}
+
+void PeleLM::addRhoYFluxes(const Array<const MultiFab*,AMREX_SPACEDIM> &a_fluxes,
+                           const Geometry& a_geom)
+{
+
+   // Do when m_nstep is -1 since m_nstep is increased by one before
+   // the writeTemporals
+   if ( !(m_nstep % m_temp_int == m_temp_int-1) ) return;
+
+   // Get the face areas
+   const Real*  dx = a_geom.CellSize();
+   Array<Real,AMREX_SPACEDIM> area;
+#if ( AMREX_SPACEDIM == 1 )
+   area[0] = 1.0;
+#elif ( AMREX_SPACEDIM == 2 )
+   area[0] = dx[1];
+   area[1] = dx[0];
+#else
+   area[0] = dx[1]*dx[2];
+   area[1] = dx[0]*dx[2];
+   area[2] = dx[0]*dx[1];
+#endif
+
+   // Outer loop over species
+   for (int n = 0; n < NUM_SPECIES; n++){
+      // Inner loop over dimensions
+      for (int idim = 0; idim <  AMREX_SPACEDIM; idim++) {
+         auto faceDomain = amrex::convert(a_geom.Domain(),IntVect::TheDimensionVector(idim));
+
+         Real sumLo = 0.0;
+         Real sumHi = 0.0;
+
+         sumLo = amrex::ReduceSum(*a_fluxes[idim], 0, [=] 
+            AMREX_GPU_HOST_DEVICE (Box const& bx, Array4<Real const> const& flux) -> Real
+            {
+               Real t = 0.0;
+               AMREX_LOOP_3D(bx, i, j, k,
+               {
+                  int idx = (idim == 0) ? i : ( (idim == 1) ? j : k );
+                  if ( idx == faceDomain.smallEnd(idim) ) {
+                     // accumulate the RhoY terms for current species
+                     t += flux(i,j,k,n) * area[idim];
+                  }
+               });
+               return t;
+            });
+
+         sumHi = amrex::ReduceSum(*a_fluxes[idim], 0, [=] 
+            AMREX_GPU_HOST_DEVICE (Box const& bx, Array4<Real const> const& flux) -> Real
+            {
+               Real t = 0.0;
+               AMREX_LOOP_3D(bx, i, j, k,
+               {
+                  int idx = (idim == 0) ? i : ( (idim == 1) ? j : k );
+                  if ( idx == faceDomain.bigEnd(idim) ) {
+                     // accumulate the RhoY terms for current species
+                     t += flux(i,j,k,n) * area[idim];
+                  }
+               });
+               return t;
+            });
+
+         ParallelAllReduce::Sum(sumLo, ParallelContext::CommunicatorSub());
+         ParallelAllReduce::Sum(sumHi, ParallelContext::CommunicatorSub());
+
+         m_domainRhoYFlux[2*idim+n*2*AMREX_SPACEDIM] += sumLo;
+         m_domainRhoYFlux[2*idim+n*2*AMREX_SPACEDIM+1] -= sumHi;   // Outflow, negate flux
+      }
    }
 }
 

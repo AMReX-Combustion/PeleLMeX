@@ -64,6 +64,10 @@ void PeleLM::calcDivU(int is_init,
 
       auto ldata_p = getLevelDataPtr(lev,a_time);
 
+      // Explicitly get old and new data for time derivatives
+      auto ldataOld_p = getLevelDataPtr(lev,AmrOldTime);
+      auto ldataNew_p = getLevelDataPtr(lev,AmrNewTime);
+
       MultiFab RhoYdot;
       if ( m_do_react && !m_skipInstantRR ) {
          if (is_init) {          // Either pre-divU, divU or press initial iterations
@@ -119,6 +123,19 @@ void PeleLM::calcDivU(int is_init,
          auto const& divu     = ldata_p->divu.array(mfi);
          int use_react        = (m_do_react && !m_skipInstantRR) ? 1 : 0;
 
+         amrex::Real massFluxBalance = AMREX_D_TERM(  m_domainMassFlux[0] + m_domainMassFlux[1],
+                                       + m_domainMassFlux[2] + m_domainMassFlux[3],               
+                                       + m_domainMassFlux[4] + m_domainMassFlux[5]);
+         amrex::Real rhoHFluxBalance = AMREX_D_TERM(  m_domainRhoHFlux[0] + m_domainRhoHFlux[1],
+                                       + m_domainRhoHFlux[2] + m_domainRhoHFlux[3],               
+                                       + m_domainRhoHFlux[4] + m_domainRhoHFlux[5]);
+         Real rhoYFluxBalance[NUM_SPECIES] = {0.0};
+         for (int n = 0; n < NUM_SPECIES; n++){
+            rhoYFluxBalance[n] = AMREX_D_TERM(  m_domainRhoYFlux[n*2*AMREX_SPACEDIM] + m_domainRhoYFlux[1+n*2*AMREX_SPACEDIM],
+                                              + m_domainRhoYFlux[2+n*2*AMREX_SPACEDIM] + m_domainRhoYFlux[3+n*2*AMREX_SPACEDIM],
+                                              + m_domainRhoYFlux[4+n*2*AMREX_SPACEDIM] + m_domainRhoYFlux[5+n*2*AMREX_SPACEDIM]);            
+         }
+
 #ifdef AMREX_USE_EB
          if (flagfab.getType(bx) == FabType::covered) {             // Covered boxes
              amrex::ParallelFor(bx, [divu]
@@ -127,22 +144,22 @@ void PeleLM::calcDivU(int is_init,
                  divu(i,j,k) = 0.0;
              });
          } else if (flagfab.getType(bx) != FabType::regular ) {     // EB containing boxes 
-             amrex::ParallelFor(bx, [ rhoY, T, SpecD, Fourier, DiffDiff, r, divu, use_react, flag]
+             amrex::ParallelFor(bx, [ rhoY, T, SpecD, Fourier, DiffDiff, r, rhoHFluxBalance, rhoYFluxBalance, divu, use_react, flag]
              AMREX_GPU_DEVICE (int i, int j, int k) noexcept
              {
                 if ( flag(i,j,k).isCovered() ) {
                     divu(i,j,k) = 0.0;
                 } else {
-                    compute_divu( i, j, k, rhoY, T, SpecD, Fourier, DiffDiff, r, divu, use_react );
+                    compute_divu( i, j, k, rhoY, T, SpecD, Fourier, DiffDiff, r, rhoHFluxBalance, rhoYFluxBalance, divu, use_react );
                 }
              });
          } else
 #endif
          {
-             amrex::ParallelFor(bx, [ rhoY, T, SpecD, Fourier, DiffDiff, r, divu, use_react]
+             amrex::ParallelFor(bx, [ rhoY, T, SpecD, Fourier, DiffDiff, r, rhoHFluxBalance, rhoYFluxBalance, divu, use_react]
              AMREX_GPU_DEVICE (int i, int j, int k) noexcept
              {
-                compute_divu( i, j, k, rhoY, T, SpecD, Fourier, DiffDiff, r, divu, use_react );
+                compute_divu( i, j, k, rhoY, T, SpecD, Fourier, DiffDiff, r, rhoHFluxBalance, rhoYFluxBalance, divu, use_react );
              });
          }
       }

@@ -105,6 +105,9 @@ void PeleLM::initData() {
       int is_init = 1;
       setTypicalValues(AmrNewTime, is_init);
 
+      // initiliaze temporals
+      initTemporals();
+
 #ifdef AMREX_USE_EB
       //----------------------------------------------------------------
       // Initial redistribution
