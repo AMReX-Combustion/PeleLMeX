@@ -30,6 +30,9 @@ void PeleLM::Advance(int is_initIter) {
    copyPressNewToOld();
    //----------------------------------------------------------------
 
+   // initiliaze temporals
+   initTemporals();
+
    //----------------------------------------------------------------
    // TIME
    // Compute time-step size
@@ -59,8 +62,8 @@ void PeleLM::Advance(int is_initIter) {
    //----------------------------------------------------------------
    // Advance setup
 
-   // initiliaze temporals
-   initTemporals();
+   // // initiliaze temporals
+   // initTemporals();
 
    // fillpatch the t^{n} data
    averageDownState(AmrOldTime);

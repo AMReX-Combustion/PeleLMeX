@@ -102,31 +102,59 @@ bcnormal(
 
     if (idir == 2 and sgn == 1){
 
-        eta = 0.5 * (1.0 - tanh( (sqrt(x[0]*x[0] + x[1]*x[1]) - prob_parm.jet_rad) / (prob_parm.bl_thickness / 4.0)));
+        if (time <= 0.1){
 
-        for (int n = 0; n < NUM_SPECIES; n++) {
-            massfrac[n] = eta * Y_jet[n] + (1.0 - eta) * Y_air[n];
+            eta = 0.5 * (1.0 - tanh( (sqrt(x[0]*x[0] + x[1]*x[1]) - prob_parm.jet_rad) / (prob_parm.bl_thickness / 4.0)));
+
+            for (int n = 0; n < NUM_SPECIES; n++) {
+                massfrac[n] = eta * Y_jet[n] + (1.0 - eta) * Y_air[n];
+            }
+
+            amrex::Real rho_cgs, P_cgs, RhoH_temp;
+            P_cgs = prob_parm.P_mean * 10.0;
+
+            s_ext[TEMP] = eta * prob_parm.T_jet + (1.0 - eta) * prob_parm.T_mean;
+
+            eos.PYT2R(P_cgs, massfrac, s_ext[TEMP], rho_cgs);
+            s_ext[DENSITY] = rho_cgs * 1.0e3;
+
+            eos.TY2H(s_ext[TEMP], massfrac, RhoH_temp);
+            s_ext[RHOH] = RhoH_temp * 1.0e-4 * s_ext[DENSITY]; // CGS -> MKS conversion
+
+            for (int n = 0; n < NUM_SPECIES; n++) {
+                s_ext[FIRSTSPEC + n] = massfrac[n] * s_ext[DENSITY];
+            }   
+
+            // Velocity
+            s_ext[VELX] = 0.0;
+            s_ext[VELY] = 0.0;
+            s_ext[VELZ] = eta * prob_parm.V_jet;
         }
+        else {
+            for (int n = 0; n < NUM_SPECIES; n++) {
+                massfrac[n] = Y_air[n];
+            }
 
-        amrex::Real rho_cgs, P_cgs, RhoH_temp;
-        P_cgs = prob_parm.P_mean * 10.0;
+            amrex::Real rho_cgs, P_cgs, RhoH_temp;
+            P_cgs = prob_parm.P_mean * 10.0;
+            s_ext[TEMP] = prob_parm.T_mean;
 
-        s_ext[TEMP] = eta * prob_parm.T_jet + (1.0 - eta) * prob_parm.T_mean;
+            eos.PYT2R(P_cgs, massfrac, s_ext[TEMP], rho_cgs);
+            s_ext[DENSITY] = rho_cgs * 1.0e3;
 
-        eos.PYT2R(P_cgs, massfrac, s_ext[TEMP], rho_cgs);
-        s_ext[DENSITY] = rho_cgs * 1.0e3;
+            eos.TY2H(s_ext[TEMP], massfrac, RhoH_temp);
+            s_ext[RHOH] = RhoH_temp * 1.0e-4 * s_ext[DENSITY]; // CGS -> MKS conversion
 
-        eos.TY2H(s_ext[TEMP], massfrac, RhoH_temp);
-        s_ext[RHOH] = RhoH_temp * 1.0e-4 * s_ext[DENSITY]; // CGS -> MKS conversion
+            for (int n = 0; n < NUM_SPECIES; n++) {
+                s_ext[FIRSTSPEC + n] = massfrac[n] * s_ext[DENSITY];
+            }   
 
-        for (int n = 0; n < NUM_SPECIES; n++) {
-            s_ext[FIRSTSPEC + n] = massfrac[n] * s_ext[DENSITY];
-        }   
+            // Velocity
+            s_ext[VELX] = 0.0;
+            s_ext[VELY] = 0.0;
+            s_ext[VELZ] = 0.0;
 
-        // Velocity
-        s_ext[VELX] = 0.0;
-        s_ext[VELY] = 0.0;
-        s_ext[VELZ] = eta * prob_parm.V_jet;
+        }
 
     }
 
