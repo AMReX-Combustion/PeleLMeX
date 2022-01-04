@@ -174,15 +174,14 @@ compute_divu(int i, int j, int k,
       if (do_react) specTerm += rhoYdot(i,j,k,n);
       divu(i,j,k) +=  specTerm * ( mwtinv[n] * Wbar * rhoinv - hi[n] * denominv );
    }
-   // NOTE: These should probably be removed...
-   // // Add in S_rhoYm here as source term
-   // // Add [S_rhoh - Sum_m (h_m * S_rhoYm)] * 1/rhoCpT
-   // divu(i,j,k) += rhoHFluxBalance * denominv;
-   // for (int n = 0; n < NUM_SPECIES; n++) {
-   //    divu(i,j,k) += rhoYFluxBalance[n] * mwtinv[n] * Wbar * rhoinv;
-   //    divu(i,j,k) -= (hi[n] * rhoYFluxBalance[n]) * denominv;
-   // }
-
+   // Add in S_rhoYm here as source term
+   // Add [S_rhoh - Sum_m (h_m * S_rhoYm)] * 1/rhoCpT
+   divu(i,j,k) += rhoHFluxBalance * denominv;
+   for (int n = 0; n < NUM_SPECIES; n++) {
+      divu(i,j,k) += rhoYFluxBalance[n] * mwtinv[n] * Wbar * rhoinv;
+      divu(i,j,k) -= (hi[n] * rhoYFluxBalance[n]) * denominv;
+   }
+   
 }
 
 AMREX_GPU_DEVICE

@@ -119,7 +119,6 @@ void PeleLM::addMassFluxes(const Array<const MultiFab*,AMREX_SPACEDIM> &a_fluxes
    }
 }
 
-
 void PeleLM::addUmacFluxes(std::unique_ptr<AdvanceAdvData> &advData, const Geometry& a_geom)
 {
 
