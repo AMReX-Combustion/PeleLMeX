@@ -43,13 +43,13 @@ peleLM.temporal_int = 2
 peleLM.mass_balance = 1
 
 #amr.restart = chk00005
-amr.check_int = 5
+amr.check_int = 20
 amr.plot_int = 10
-amr.max_step = 5
+amr.max_step = 200
 amr.dt_shrink = 0.1
 amr.stop_time = 1.0
 #amr.stop_time = 1.00
-amr.cfl = 0.15
+amr.cfl = 0.3
 amr.derive_plot_vars = avg_pressure mag_vort mass_fractions
 
 # --------------- INPUTS TO CHEMISTRY REACTOR ---------------
@@ -86,7 +86,7 @@ nodal_proj.verbose = 2
 nodal_proj.mg_max_coarsening_level = 2
 nodal_proj.bottom_solver = "smoother"
 
-fabarray.mfiter_tile_size = 1024 1024 1024
+#fabarray.mfiter_tile_size = 1024 1024 1024
 
 amrex.fpe_trap_invalid = 1
 amrex.fpe_trap_zero = 1

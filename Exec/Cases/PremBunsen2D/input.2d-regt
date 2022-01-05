@@ -30,7 +30,7 @@ prob.pertmag = 0.000
 prob.Vin = 2.0
 prob.Vcoflow = 0.4
 prob.slot_width = 0.003
-prob.pmf_datafile = "drm_CH4Air_stoich.dat"
+pmf.datafile = "drm_CH4Air_stoich.dat"
 
 #-------------------------PeleLM CONTROL----------------------------
 peleLM.v = 2
@@ -53,8 +53,12 @@ amr.stop_time = 1.1
 amr.cfl = 0.3
 amr.derive_plot_vars = avg_pressure mag_vort mass_fractions
 
-cvode.solve_type = dense               # CVODE Linear solve type (for Newton direction) 
-ode.analytical_jacobian = 0            # Provide analytical jacobian (from Fuego) 
+peleLM.chem_integrator = "ReactorCvode"
+peleLM.use_typ_vals_chem = 1          # Use species/temp typical values in CVODE
+ode.rtol = 1.0e-6                     # Relative tolerance of the chemical solve
+ode.atol = 1.0e-5                     # Absolute tolerance factor applied on typical values
+cvode.solve_type = dense_direct     # CVODE Linear solve type (for Newton direction) 
+cvode.max_order  = 4                  # CVODE max BDF order. 
 
 #--------------------REFINEMENT CONTROL------------------------
 #amr.refinement_indicators = temp

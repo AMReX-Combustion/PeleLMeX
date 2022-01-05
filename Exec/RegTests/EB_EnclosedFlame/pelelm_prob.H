@@ -49,9 +49,8 @@ void pelelm_initdata(int i, int j, int k,
     amrex::Real massfrac[NUM_SPECIES] = {0.0};
     amrex::Real pert = 0.0;
 
-    amrex::Real radius = std::sqrt(AMREX_D_TERM(  (x-xc)*(x-xc),
-                                                + (y-yc)*(y-yc),
-                                                + (z-zc)*(z-zc)));
+    amrex::Real radius = std::sqrt(   (x-xc)*(x-xc)
+                                    + (y-yc)*(y-yc));
 
     if (prob_parm.pertmag > 0.0) 
     {
@@ -60,8 +59,6 @@ void pelelm_initdata(int i, int j, int k,
        amrex::Real angle = std::atan2((y-yc),(x-xc));
        pert = prob_parm.pertmag * 
              (0.7 * std::sin(2*angle) +
-              //1.023 * std::sin(2 * (angle - 0.004598) / radius2) +
-              //0.945 * std::sin(3 * (angle - 0.00712435) / radius2) +
               0.9 * std::sin(8 * angle ) +
               1.4 * std::sin(4 * angle  ));
     }
@@ -70,16 +67,16 @@ void pelelm_initdata(int i, int j, int k,
     amrex::Real y2 = 3.6 - (radius - prob_parm.standoff + 1.42*dx[1] + pert)*100;
 
 #elif ( AMREX_SPACEDIM == 3 )
-
+       amrex::Real pertLz = (prob_parm.pertLz > 0.0) ? prob_parm.pertLz 
+                                                     : Lz;
        amrex::Real angle = std::atan2((y-yc),(x-xc));
-       amrex::Real angle2 = std::atan2((z-zc),(y-yc));
        pert = prob_parm.pertmag * 
-             (0.7 * std::sin(2*angle) +
-              0.9 * std::sin(8 * angle ) +
-              1.4 * std::sin(4 * angle  )) *
-             (1.2 * std::sin(2*angle2) +
-              0.5 * std::sin(8 * angle2 ) +
-              0.9 * std::sin(16 * angle2  ));
+             (0.974 * std::sin(3 * angle ) *
+              0.995 * std::sin(2 * Pi * (z - 0.00712435) / pertLz) +
+              0.983 * std::sin(11 * (angle-0.63578) ) *
+              0.982 /* std::sin(2 * Pi * 3 * (z - 0.0014234)  / pertLz)*/ +
+              1.022 * std::sin(7 * angle ) *
+              0.945 * std::sin(2 * Pi * 2 * (z - 0.0039765) / pertLz));
     }
 
     amrex::Real y1 = 3.6 - (radius - prob_parm.standoff - 1.42*dx[1] + pert)*100;
@@ -96,12 +93,12 @@ void pelelm_initdata(int i, int j, int k,
     }
     eos.X2Y(molefrac, massfrac);
 
-    vel(i,j,k,0) = 0.0;
+    vel(i,j,k,0) = 0.1;
 #if ( AMREX_SPACEDIM == 2 )
-    vel(i,j,k,1) = pmf_vals[1]*1e-2;
+    vel(i,j,k,1) = 0.1;
 #elif ( AMREX_SPACEDIM == 3 )
-    vel(i,j,k,1) = 0.0;
-    vel(i,j,k,2) = pmf_vals[1]*1e-2;
+    vel(i,j,k,1) = 0.1;
+    vel(i,j,k,2) = 0.0;
 #endif
 
     amrex::Real P_cgs = prob_parm.P_mean * 10.0;

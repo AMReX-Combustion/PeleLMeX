@@ -27,7 +27,7 @@ amr.max_grid_size   = 128               # max box size
 prob.P_mean = 101325.0
 prob.standoff = -.01
 prob.pertmag = 0.0000
-prob.pmf_datafile = "pmf_CH4Air_1p0.dat"
+pmf.datafile = "pmf_CH4Air_1p0.dat"
 prob.PhiV_y_hi = 1000.0
 
 #-------------------------PeleLM CONTROL----------------------------
@@ -36,14 +36,14 @@ peleLM.incompressible = 0
 peleLM.rho = 1.17
 peleLM.mu = 0.0
 peleLM.use_wbar = 1
-peleLM.sdc_iterMax = 1
-peleLM.floor_species = 1
+peleLM.sdc_iterMax = 2
+peleLM.floor_species = 0
 peleLM.num_init_iter = 2
 
 #amr.restart = chk00005
 #amr.check_int = 2000
 amr.plot_int = 10
-amr.max_step = 50
+amr.max_step = 100
 amr.dt_shrink = 0.01
 amr.stop_time = 0.001
 #amr.stop_time = 1.00
@@ -52,11 +52,13 @@ amr.cfl = 0.5
 amr.derive_plot_vars = avg_pressure mag_vort mass_fractions chargedistrib efieldy
 
 peleLM.chem_integrator = "ReactorCvode"
-#peleLM.use_typ_vals_chem = 1          # Use species/temp typical values in CVODE
-#ode.rtol = 1.0e-6                     # Relative tolerance of the chemical solve
-#ode.atol = 1.0e-5                     # Absolute tolerance factor applied on typical values
+peleLM.use_typ_vals_chem = 1          # Use species/temp typical values in CVODE
+ode.rtol = 1.0e-6                     # Relative tolerance of the chemical solve
+ode.atol = 1.0e-5                     # Absolute tolerance factor applied on typical values
 cvode.solve_type = denseAJ_direct     # CVODE Linear solve type (for Newton direction) 
 cvode.max_order  = 4                  # CVODE max BDF order. 
+
+godunov.use_ppm = 0
 
 #--------------------REFINEMENT CONTROL------------------------
 ef.phiV_lo_bc = Interior Dirichlet

@@ -23,7 +23,7 @@ USE_HIP         = FALSE
 USE_EFIELD      = TRUE
 
 # PelePhysics
-Chemistry_Model = CH4Ion_LuSk
+Chemistry_Model = CH4Ion_GRI
 Eos_Model	    = Fuego
 Transport_Model = Simple
 

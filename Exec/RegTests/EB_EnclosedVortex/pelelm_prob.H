@@ -7,8 +7,7 @@
 
 #include <PeleLM_Index.H>
 #include <pelelm_prob_parm.H>
-#include <pmf.H>
-#include <pmf_data.H>
+#include <PMFData.H>
 #include <PelePhysics.H>
 
 AMREX_GPU_DEVICE
@@ -23,7 +22,7 @@ void pelelm_initdata(int i, int j, int k,
                      amrex::Array4<amrex::Real> const& aux,
                      amrex::GeometryData const& geomdata,
                      ProbParm const& prob_parm,
-                     PmfData const * pmf_data)
+                     pele::physics::PMF::PmfData::DataContainer const * pmf_data)
 {
     const amrex::Real* prob_lo = geomdata.ProbLo();
     const amrex::Real* prob_hi = geomdata.ProbHi();
@@ -48,6 +47,11 @@ void pelelm_initdata(int i, int j, int k,
     massfrac[O2_ID] = 0.233;
     massfrac[N2_ID] = 0.767;
 
+    if ( std::abs(x-xc) < 0.1*Lx ) {
+        massfrac[O2_ID] = 0.283;
+        massfrac[N2_ID] = 0.717;
+    }
+
     const amrex::Real deltax = x - prob_parm.xvort;
     const amrex::Real deltay = y - prob_parm.yvort;
     const amrex::Real d_sq = deltax*deltax + deltay*deltay;
@@ -59,11 +63,9 @@ void pelelm_initdata(int i, int j, int k,
     temp(i,j,k) = prob_parm.T_mean;
 
     vel(i,j,k,0) = u_vort;
-#if ( AMREX_SPACEDIM == 2 )
     vel(i,j,k,1) = v_vort;
-#elif ( AMREX_SPACEDIM == 3 )
-    vel(i,j,k,1) = 0.0;
-    vel(i,j,k,2) = pmf_vals[1]*1e-2;
+#if ( AMREX_SPACEDIM == 3 )
+    vel(i,j,k,2) = w_vort;
 #endif
 
     amrex::Real P_cgs = prob_parm.P_mean * 10.0;
@@ -96,7 +98,7 @@ bcnormal(
   const amrex::Real time,
   amrex::GeometryData const& geomdata,
   ProbParm const& prob_parm,
-  PmfData const *pmf_data)
+  pele::physics::PMF::PmfData::DataContainer const *pmf_data)
 {
   const amrex::Real* prob_lo = geomdata.ProbLo();
 }
