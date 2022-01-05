@@ -37,9 +37,9 @@ void pelelm_initdata(int i, int j, int k,
                  const amrex::Real Ly = prob_hi[1] - prob_lo[1];,
                  const amrex::Real Lz = prob_hi[2] - prob_lo[2]);
 
-    AMREX_D_TERM(const amrex::Real xc = prob_lo[0];,// + 0.5 * Lx;,
-                 const amrex::Real yc = prob_lo[1];,// + 0.5 * Ly;,
-                 const amrex::Real zc = prob_lo[2];);// + 0.5 * Lz;);
+    AMREX_D_TERM(const amrex::Real xc = prob_lo[0] + 0.5 * Lx;,
+                 const amrex::Real yc = prob_lo[1] + 0.5 * Ly;,
+                 const amrex::Real zc = prob_lo[2] + 0.5 * Lz;);
 
     constexpr amrex::Real Pi = 3.14159265358979323846264338327950288;
 
@@ -66,8 +66,8 @@ void pelelm_initdata(int i, int j, int k,
               1.4 * std::sin(4 * angle  ));
     }
 
-    amrex::Real y1 = 3.6 - (radius - prob_parm.standoff - 1.42*dx[1] + pert)*100;
-    amrex::Real y2 = 3.6 - (radius - prob_parm.standoff + 1.42*dx[1] + pert)*100;
+    amrex::Real y1 = 3.6 - (radius - prob_parm.standoff - 0.5*dx[1] + pert)*100;
+    amrex::Real y2 = 3.6 - (radius - prob_parm.standoff + 0.5*dx[1] + pert)*100;
 
 #elif ( AMREX_SPACEDIM == 3 )
 
@@ -86,7 +86,8 @@ void pelelm_initdata(int i, int j, int k,
     amrex::Real y2 = 3.6 - (radius - prob_parm.standoff + 1.42*dx[1] + pert)*100;
 #endif
 
-    pele::physics::PMF::pmf(pmf_data,y1, y1, pmf_vals);
+    amrex::Real ymean = 0.5 * (y1+y2);
+    pele::physics::PMF::pmf(pmf_data,ymean, ymean, pmf_vals);
 
     temp(i,j,k) = pmf_vals[0];;
 

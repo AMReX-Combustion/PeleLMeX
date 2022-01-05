@@ -143,7 +143,7 @@ bcnormal(
       if ( zone == 3 ) {
          s_ext[VELZ] = prob_parm.Vin * ( 1.0 - (rad_xy/prob_parm.slot_width) * (rad_xy/prob_parm.slot_width) );
       } else if ( zone == 1 ) {
-         s_ext[VELZ] = prob_parm.Vcoflow * ( 1.0 + (rad_xy)/0.025);
+         s_ext[VELZ] = prob_parm.Vcoflow * ( 1.0 + 1.5*(rad_xy)/0.025);
          if ( rad_xy <= prob_parm.slot_width*1.4 ) s_ext[VELZ] = 0.0;
       }
 

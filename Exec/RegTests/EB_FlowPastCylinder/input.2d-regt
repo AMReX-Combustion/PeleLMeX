@@ -42,7 +42,7 @@ peleLM.rho = 1.17
 peleLM.mu = 0.0003
 
 amr.plot_int = 20
-amr.max_step = 20
+amr.max_step = 5
 amr.dt_shrink = 0.1
 amr.stop_time = 0.02
 amr.cfl = 0.7

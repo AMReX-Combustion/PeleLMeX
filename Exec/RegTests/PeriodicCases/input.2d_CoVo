@@ -43,12 +43,20 @@ peleLM.v = 1
 peleLM.incompressible = 0
 peleLM.rho = 1.17
 peleLM.mu = 0.0
+peleLM.sdc_iterMax = 1
+peleLM.num_init_iter = 5
+godunov.use_ppm = 0
+mac_proj.verbose = 0
+nodal_proj.verbose = 0
+mac_proj.rtol = 5e-13
+nodal_proj.rtol = 5e-13
+
 
 amr.plot_int = 10000
 amr.max_step = 50000
-amr.dt_shrink = 0.1
+amr.dt_shrink = 0.001
 amr.stop_time = 0.02
-amr.cfl = 0.5
+amr.cfl = 0.3
 amr.derive_plot_vars = avg_pressure mag_vort
 
 #--------------------REFINEMENT CONTROL------------------------

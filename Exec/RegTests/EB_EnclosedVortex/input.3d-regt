@@ -12,15 +12,15 @@ peleLM.hi_bc = NoSlipWallAdiab NoSlipWallAdiab Symmetry
 
 
 #-------------------------AMR CONTROL----------------------------
-amr.n_cell          = 64 64 32      # Level 0 number of cells in each direction   
+amr.n_cell          = 128 128 32      # Level 0 number of cells in each direction   
 amr.v               = 1                # AMR verbose
-amr.max_level       = 2                # maximum level number allowed
+amr.max_level       = 3                # maximum level number allowed
 amr.ref_ratio       = 2 2 2 2 2         # refinement ratio
 amr.regrid_int      = 5                # how often to regrid
 amr.n_error_buf     = 2 2 2 2          # number of buffer cells in error est
 amr.grid_eff        = 0.7              # what constitutes an efficient grid
 amr.blocking_factor = 16               # block factor in grid generation (min box size)
-amr.max_grid_size   = 128               # max box size
+amr.max_grid_size   = 64               # max box size
 
 
 #--------------------------- Problem -------------------------------
@@ -38,20 +38,19 @@ peleLM.sdc_iterMax = 1
 peleLM.floor_species = 0
 peleLM.num_divu_iter = 0
 peleLM.num_init_iter = 1
-peleLM.do_react = 0
 
 peleLM.do_temporals = 1
 peleLM.temporal_int = 2
 peleLM.mass_balance = 1
 
-#amr.restart = chk00005
-amr.check_int = 5
-amr.plot_int = 100
-amr.max_step = 10
+amr.restart = chk01000
+amr.check_int = 100
+amr.plot_int = 50
+amr.max_step = 2000
 amr.dt_shrink = 0.1
 amr.stop_time = 1.0
 #amr.stop_time = 1.00
-amr.cfl = 0.15
+amr.cfl = 0.5
 amr.derive_plot_vars = avg_pressure mag_vort mass_fractions
 
 # --------------- INPUTS TO CHEMISTRY REACTOR ---------------
@@ -59,8 +58,8 @@ peleLM.chem_integrator = "ReactorNull"
 #peleLM.use_typ_vals_chem = 1          # Use species/temp typical values in CVODE
 #ode.rtol = 1.0e-6                     # Relative tolerance of the chemical solve
 #ode.atol = 1.0e-5                     # Absolute tolerance factor applied on typical values
-cvode.solve_type = denseAJ_direct     # CVODE Linear solve type (for Newton direction) 
-cvode.max_order  = 4                  # CVODE max BDF order. 
+#cvode.solve_type = denseAJ_direct     # CVODE Linear solve type (for Newton direction) 
+#cvode.max_order  = 4                  # CVODE max BDF order. 
 
 #------------------------- EB SETUP -----------------------------
 eb2.geom_type = sphere
@@ -69,24 +68,26 @@ eb2.sphere_center = 0.0 0.0 0.0
 eb2.sphere_has_fluid_inside = 1
 eb2.small_volfrac = 1.e-4
 
-#--------------------REFINEMENT CONTROL------------------------
-#amr.refinement_indicators = temp
-#amr.temp.max_level     = 1
-#amr.temp.value_greater = 305
-#amr.temp.field_name    = temp
+peleLM.refine_EB_max_level = 0
 
-#amr.refinement_indicators = magVort
-#amr.magVort.max_level     = 1
-#amr.magVort.value_greater = 500.0
-#amr.magVort.field_name    = mag_vort
+#--------------------REFINEMENT CONTROL------------------------
+#amr.refinement_indicators = spec
+amr.spec.max_level     = 3
+amr.spec.value_greater = 0.245
+amr.spec.field_name    = Y(O2)
+
+amr.refinement_indicators = magVort spec
+amr.magVort.max_level     = 3
+amr.magVort.value_greater = 500.0
+amr.magVort.field_name    = mag_vort
 
 #--------------------LINEAR SOLVER CONTROL------------------------
 nodal_proj.verbose = 1
 nodal_proj.rtol = 1.0e-10
 nodal_proj.atol = 1.0e-10
-nodal_proj.mg_max_coarsening_level = 2
+#nodal_proj.mg_max_coarsening_level = 2
 
-#fabarray.mfiter_tile_size = 1024 1024 1024
+fabarray.mfiter_tile_size = 1024 1024 1024
 
 amrex.fpe_trap_invalid = 1
 amrex.fpe_trap_zero = 1
