@@ -1,0 +1,9 @@
+[submodule "Submodules/amrex"]
+	path = Submodules/amrex
+	url = https://github.com/AMReX-Codes/amrex.git
+[submodule "Submodules/AMReX-Hydro"]
+	path = Submodules/AMReX-Hydro
+	url = https://github.com/AMReX-Codes/AMReX-Hydro.git
+[submodule "Submodules/PelePhysics"]
+	path = Submodules/PelePhysics
+	url = https://github.com/AMReX-Combustion/PelePhysics.git
