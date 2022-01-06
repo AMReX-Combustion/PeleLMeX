@@ -13,8 +13,6 @@ peleLM.hi_bc = NoSlipWallAdiab NoSlipWallAdiab NoSlipWallAdiab
 
 #-------------------------AMR CONTROL----------------------------
 amr.n_cell          = 64 64 32      # Level 0 number of cells in each direction   
-amr.n_cell          = 256 256 128      # Level 0 number of cells in each direction   
-amr.n_cell          = 128 128 64      # Level 0 number of cells in each direction   
 amr.v               = 1                # AMR verbose
 amr.max_level       = 0                # maximum level number allowed
 amr.ref_ratio       = 2 2 2 2 2         # refinement ratio
@@ -64,7 +62,7 @@ cvode.max_order  = 4                  # CVODE max BDF order.
 
 #------------------------- EB SETUP -----------------------------
 eb2.geom_type = UserDefined
-eb2.small_volfrac = 1.e-3
+eb2.small_volfrac = 1.e-2
 
 #------------  INPUTS TO CONSTANT TRANSPORT -----------------
 transport.const_viscosity        = 0.0002

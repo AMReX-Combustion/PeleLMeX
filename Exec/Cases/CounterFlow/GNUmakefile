@@ -25,6 +25,6 @@ USE_EFIELD		 = FALSE
 # PelePhysics
 Chemistry_Model = drm19
 Eos_Model	    = Fuego
-Transport_Model = Constant
+Transport_Model = Simple
 
 include $(PELELMEX_HOME)/Utils/Make.PeleLMeX

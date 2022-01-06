@@ -20,10 +20,10 @@ USE_CUDA        = FALSE
 USE_HIP         = FALSE
 
 # PeleLMeX
-USE_EFIELD		= FALSE
+USE_EFIELD      = FALSE
 
 # PelePhysics
-Chemistry_Model = CH4Ion_GRI
+Chemistry_Model = drm19
 Eos_Model       = Fuego
 Transport_Model = Simple
 

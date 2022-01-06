@@ -45,7 +45,7 @@ USAGE = """
 def pproc(args):
 
     # User data
-    vars=["y_velocity", "x_velocity", "avg_pressure", "gradp_x", "gradp_y", "mag_vort"]
+    vars=["y_velocity", "x_velocity"]
     resolution = [32,64,128,256,512]
     pproc_type = "fcompare"
     Target = 2.00
