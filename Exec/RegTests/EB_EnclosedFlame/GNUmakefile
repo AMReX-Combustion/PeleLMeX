@@ -6,7 +6,7 @@ AMREX_HYDRO_HOME   ?= ${TOP}/AMReX-Hydro
 
 
 # AMReX
-DIM             = 3
+DIM             = 2
 DEBUG           = FALSE
 PRECISION       = DOUBLE
 VERBOSE         = FALSE
@@ -24,7 +24,7 @@ USE_HIP         = FALSE
 # PeleLMeX
 
 # PelePhysics
-Chemistry_Model = dodecane_lu
+Chemistry_Model = drm19
 Eos_Model		= Fuego
 Transport_Model = Simple
 

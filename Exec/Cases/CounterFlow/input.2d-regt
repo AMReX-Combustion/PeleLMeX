@@ -33,47 +33,47 @@ prob.inert_radius = 0.0075
 prob.inert_velocity = 0.2
 prob.pertmag = 0.000
 prob.pmf_datafile = "drm_CH4Air_stoich.dat"
-prob.do_ignition = 0
-prob.ignition_SphT = 1000.0
+prob.do_ignition = 1
+prob.ignition_SphT = 2200.0
 
 #-------------------------PeleLM CONTROL----------------------------
-peleLM.v = 4
+peleLM.v = 1
 peleLM.incompressible = 0
 peleLM.rho = 1.17
 peleLM.mu = 0.0
-peleLM.use_wbar = 0
-peleLM.sdc_iterMax = 1
-peleLM.floor_species = 0
+peleLM.use_wbar = 1
+peleLM.sdc_iterMax = 2
+peleLM.floor_species = 1
 peleLM.deltaT_verbose = 0
 
-#amr.restart = chk00100
+#amr.restart = chk01500
 #amr.regrid_on_restart = 1
 amr.check_int = 100
 amr.plot_int = 20
-amr.max_step = 120
-amr.dt_shrink = 0.001
+amr.max_step = 100
+amr.dt_shrink = 0.01
 amr.stop_time = 1.1
 #amr.stop_time = 1.00
-amr.cfl = 0.4
+amr.cfl = 0.25
 amr.derive_plot_vars = avg_pressure mag_vort mass_fractions
 
-peleLM.chem_integrator = "ReactorNull"
+peleLM.chem_integrator = "ReactorCvode"
 peleLM.use_typ_vals_chem = 1          # Use species/temp typical values in CVODE
 ode.rtol = 1.0e-6                     # Relative tolerance of the chemical solve
 ode.atol = 1.0e-5                     # Absolute tolerance factor applied on typical values
 cvode.solve_type = denseAJ_direct               # CVODE Linear solve type (for Newton direction) 
-cvode.max_order  = 2                  # CVODE max BDF order. 
+cvode.max_order  = 4                  # CVODE max BDF order. 
 
-godunov.use_ppm = 1
+godunov.use_ppm = 0
 godunov.use_forceInTrans = 0
 
 nodal_proj.verbose = 0
 mac_proj.verbose = 0
 #diffusion.verbose = 2
 
-#peleLM.do_temporals = 1
-#peleLM.temporal_int = 2
-#peleLM.mass_balance = 1
+peleLM.do_temporals = 1
+peleLM.temporal_int = 2
+peleLM.mass_balance = 1
 
 #--------------------REFINEMENT CONTROL------------------------
 amr.refinement_indicators = temp
@@ -99,6 +99,6 @@ amr.temp.field_name    = temp
 #amr.CH2O.value_greater = 1.00e-3
 #amr.CH2O.field_name    = Y(CH2O)
 
-amrex.fpe_trap_invalid = 1
-amrex.fpe_trap_zero = 1
-amrex.fpe_trap_overflow = 1
+#amrex.fpe_trap_invalid = 1
+#amrex.fpe_trap_zero = 1
+#amrex.fpe_trap_overflow = 1

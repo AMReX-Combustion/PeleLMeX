@@ -54,9 +54,9 @@ nodal_proj.rtol = 5e-13
 
 amr.plot_int = 10000
 amr.max_step = 50000
-amr.dt_shrink = 0.001
+amr.dt_shrink = 0.1
 amr.stop_time = 0.02
-amr.cfl = 0.3
+amr.cfl = 0.5
 amr.derive_plot_vars = avg_pressure mag_vort
 
 #--------------------REFINEMENT CONTROL------------------------
