@@ -3,6 +3,8 @@ AMREX_HOME ?= /path/to/AMREX
 PELE_PHYSICS_HOME ?= /path/to/PELE_PHYSICS_HOME
 AMREX_HYDRO_HOME ?= /path/to/AMREX_HYDRO_HOME
 
+USE_SUNDIALS = TRUE
+
 # AMReX definitions
 include $(AMREX_HOME)/Tools/GNUMake/Make.defs
 
