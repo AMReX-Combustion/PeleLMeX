@@ -20,10 +20,6 @@ static Box grow_box_by_two (const Box& b) { return amrex::grow(b,2); }
 void PeleLM::Setup() {
    BL_PROFILE_VAR("PeleLM::Setup()", Setup);
 
-#ifdef AMREX_USE_GPU
-   sundials::Initialize();
-#endif
-
    // Print build info to screen
    const char* githash1 = buildInfoGetGitHash(1);
    const char* githash2 = buildInfoGetGitHash(2);
