@@ -272,7 +272,6 @@ void PeleLM::advanceChemistry(int lev,
          // Do reaction as usual using PelePhysics chemistry integrator
          Real dt_incr     = a_dt;
          Real time_chem   = 0;
-         int reactor_type = 2;
          /* Solve */
          m_reactor->react(bx, rhoY_o, extF_rhoY, temp_o,
                           rhoH_o, extF_rhoH, fcl, mask_arr,

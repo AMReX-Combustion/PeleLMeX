@@ -10,7 +10,7 @@ void
 PeleLM::ErrorEst( int lev,
                   TagBoxArray& tags,
                   Real time,
-                  int ng)
+                  int /*ng*/)
 {
    BL_PROFILE_VAR("PeleLM::ErrorEst()", ErrorEst);
 

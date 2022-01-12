@@ -269,7 +269,6 @@ void DiffusionOp::diffuse_scalar(Vector<MultiFab*> const& a_phi, int phi_comp,
 
 void DiffusionOp::computeDiffLap(Vector<MultiFab*> const& a_laps, int lap_comp,
                                  Vector<MultiFab const*> const& a_phi, int phi_comp,
-                                 Vector<MultiFab const*> const& a_density,
                                  Vector<MultiFab const*> const& a_bcoeff, int bcoeff_comp,
                                  Vector<BCRec> a_bcrec,
                                  int ncomp)
@@ -338,6 +337,9 @@ void DiffusionOp::computeDiffFluxes(Vector<Array<MultiFab*,AMREX_SPACEDIM>> cons
                                     int do_avgDown)
 {
    BL_PROFILE_VAR("DiffusionOp::computeDiffFluxes()", computeDiffFluxes);
+
+   // TODO: how come this is not used ?
+   amrex::ignore_unused(scale);
 
    //----------------------------------------------------------------
    // Checks

@@ -14,13 +14,13 @@
 AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
 void pelelm_initdata(int i, int j, int k,
-                     int is_incompressible,
+                     int /*is_incompressible*/,
                      amrex::Array4<amrex::Real> const& vel,
                      amrex::Array4<amrex::Real> const& rho,
                      amrex::Array4<amrex::Real> const& rhoY,
                      amrex::Array4<amrex::Real> const& rhoH,
                      amrex::Array4<amrex::Real> const& temp,
-                     amrex::Array4<amrex::Real> const& aux,
+                     amrex::Array4<amrex::Real> const& /*aux*/,
                      amrex::GeometryData const& geomdata,
                      ProbParm const& prob_parm,
                      pele::physics::PMF::PmfData::DataContainer const * pmf_data)
@@ -33,9 +33,9 @@ void pelelm_initdata(int i, int j, int k,
                  const amrex::Real y = prob_lo[1] + (j+0.5)*dx[1];,
                  const amrex::Real z = prob_lo[2] + (k+0.5)*dx[2];);
 
-    AMREX_D_TERM(const amrex::Real Lx = prob_hi[0] - prob_lo[0];,
-                 const amrex::Real Ly = prob_hi[1] - prob_lo[1];,
-                 const amrex::Real Lz = prob_hi[2] - prob_lo[2]);
+    AMREX_D_TERM(,
+                 const amrex::Real Lx = prob_hi[0] - prob_lo[0];,
+                 const amrex::Real Ly = prob_hi[1] - prob_lo[1]);
 
     constexpr amrex::Real Pi = 3.14159265358979323846264338327950288;
 
@@ -119,11 +119,11 @@ AMREX_FORCE_INLINE
 void
 bcnormal(
   const amrex::Real* /*x[AMREX_SPACEDIM]*/,
-  const int m_nAux,
+  const int /*m_nAux*/,
   amrex::Real s_ext[NVAR],
   const int idir,
   const int sgn,
-  const amrex::Real time,
+  const amrex::Real /*time*/,
   amrex::GeometryData const& geomdata,
   ProbParm const& prob_parm,
   pele::physics::PMF::PmfData::DataContainer const *pmf_data)

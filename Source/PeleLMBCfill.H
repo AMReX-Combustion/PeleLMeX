@@ -378,8 +378,8 @@ struct PeleLMCCFillExtDirTemp
       amrex::GeometryData const& geom,
       const amrex::Real time,
       const amrex::BCRec* bcr,
-      const int bcomp,
-      const int orig_comp) const
+      const int /*bcomp*/,
+      const int /*orig_comp*/) const
    {
 
       // Get geometry data

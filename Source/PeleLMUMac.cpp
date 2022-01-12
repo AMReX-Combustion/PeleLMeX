@@ -6,8 +6,7 @@
 
 using namespace amrex;
 
-void PeleLM::predictVelocity(std::unique_ptr<AdvanceAdvData>  &advData,
-                             std::unique_ptr<AdvanceDiffData> &diffData)
+void PeleLM::predictVelocity(std::unique_ptr<AdvanceAdvData>  &advData)
 {
    BL_PROFILE("PeleLM::predictVelocity()");
 
@@ -46,7 +45,6 @@ void PeleLM::predictVelocity(std::unique_ptr<AdvanceAdvData>  &advData,
    for (int lev = 0; lev <= finest_level; ++lev) {
 
       auto ldata_p = getLevelDataPtr(lev,AmrOldTime);
-      Real time = getTime(lev,AmrOldTime);
 
       //----------------------------------------------------------------
 #ifdef AMREX_USE_EB

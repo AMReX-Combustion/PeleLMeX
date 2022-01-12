@@ -107,7 +107,7 @@ class PeleLM : public amrex::AmrCore {
                  amrex::DistributionMapping const& dm,
                  amrex::FabFactory<amrex::FArrayBox> const& factory,
                  int a_incompressible, int a_has_divu, 
-                 int a_nAux, int a_nGrowState, int a_nGrowMAC);
+                 int a_nAux, int a_nGrowState);
 
       // cell-centered state multifabs
       amrex::MultiFab state;           // Stqte data: velocity, density, rhoYs, rhoH, Temp, RhoRT
@@ -223,8 +223,7 @@ class PeleLM : public amrex::AmrCore {
    void resetMacProjector();
    
    // Predict face velocity using Godunov
-   void predictVelocity(std::unique_ptr<AdvanceAdvData> &advData,
-                        std::unique_ptr<AdvanceDiffData> &diffData);
+   void predictVelocity(std::unique_ptr<AdvanceAdvData> &advData);
 
    // Create the MAC projection RHS
    void createMACRHS(std::unique_ptr<AdvanceAdvData> &advData);
@@ -656,7 +655,7 @@ class PeleLM : public amrex::AmrCore {
    void copyDiffusionOldToNew(std::unique_ptr<AdvanceDiffData> &diffData);
 
    void computeVelocityAdvTerm(std::unique_ptr<AdvanceAdvData> &advData);
-   void updateVelocity(int is_initIter, std::unique_ptr<AdvanceAdvData> &advData);
+   void updateVelocity(std::unique_ptr<AdvanceAdvData> &advData);
 
    void getScalarAdvForce(std::unique_ptr<AdvanceAdvData> &advData,
                           std::unique_ptr<AdvanceDiffData> &diffData);

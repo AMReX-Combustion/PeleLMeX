@@ -461,7 +461,6 @@ void PeleLM::fillpatch_divu(int lev,
                             amrex::MultiFab &a_divu,
                             int nGhost) {
    ProbParm const* lprobparm = prob_parm_d;
-   pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
    if (lev == 0) {
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> bndry_func(geom[lev], {m_bcrec_divu},
                                                                      PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
@@ -497,7 +496,6 @@ void PeleLM::fillpatch_forces(Real a_time,
    AMREX_ASSERT(a_force[0]->nComp() <= m_bcrec_force.size());
    const int nComp = a_force[0]->nComp();
    ProbParm const* lprobparm = prob_parm_d;
-   pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
 
    int lev = 0;
    {
@@ -603,7 +601,6 @@ void PeleLM::fillpatch_gradp(int lev,
                              amrex::MultiFab &a_gp,
                              int nGhost) {
    ProbParm const* lprobparm = prob_parm_d;
-   pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
    if (lev == 0) {
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> bndry_func(geom[lev], {m_bcrec_force},
                                                                        PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
@@ -636,7 +633,6 @@ void PeleLM::fillpatch_reaction(int lev,
                                 amrex::MultiFab &a_I_R,
                                 int nGhost) {
    ProbParm const* lprobparm = prob_parm_d;
-   pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
    if (lev == 0) {
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> bndry_func(geom[lev], {m_bcrec_force},
                                                                      PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
@@ -689,7 +685,6 @@ void PeleLM::fillcoarsepatch_gradp(int lev,
                                    amrex::MultiFab &a_gp,
                                    int nGhost) {
    ProbParm const* lprobparm = prob_parm_d;
-   pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
 
    // Interpolator
    auto* mapper = getInterpolator();
@@ -711,7 +706,6 @@ void PeleLM::fillcoarsepatch_divu(int lev,
                                   amrex::MultiFab &a_divu,
                                   int nGhost) {
    ProbParm const* lprobparm = prob_parm_d;
-   pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
 
    // Interpolator
    auto* mapper = getInterpolator();
@@ -733,7 +727,6 @@ void PeleLM::fillcoarsepatch_reaction(int lev,
                                       amrex::MultiFab &a_I_R,
                                       int nGhost) {
    ProbParm const* lprobparm = prob_parm_d;
-   pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
 
    // Interpolator
    auto* mapper = getInterpolator();
