@@ -20,7 +20,7 @@ PeleLM::~PeleLM()
 }
 
 PeleLM::LevelData*
-PeleLM::getLevelDataPtr(int lev, const PeleLM::TimeStamp &a_time, int useUMac)
+PeleLM::getLevelDataPtr(int lev, const PeleLM::TimeStamp &a_time, int /*useUMac*/)
 {
    AMREX_ASSERT(a_time==AmrOldTime || a_time==AmrNewTime || a_time==AmrHalfTime);
    if ( a_time == AmrOldTime ) { 
@@ -30,7 +30,7 @@ PeleLM::getLevelDataPtr(int lev, const PeleLM::TimeStamp &a_time, int useUMac)
    } else {
       m_leveldata_floating.reset( new LevelData(grids[lev], dmap[lev], *m_factory[lev],
                                   m_incompressible, m_has_divu,
-                                  m_nAux, m_nGrowState, m_nGrowMAC));
+                                  m_nAux, m_nGrowState));
       Real time = getTime(lev,a_time);
       fillpatch_state(lev, time, m_leveldata_floating->state, m_nGrowState);
       //if (useUMac) {

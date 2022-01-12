@@ -72,7 +72,6 @@ PeleLM::estConvectiveDt(const TimeStamp &a_time) {
       //----------------------------------------------------------------
       // Get level data ptr
       auto ldata_p = getLevelDataPtr(lev, a_time);
-      Real time = getTime(lev, a_time);
 
       auto const dx = geom[lev].CellSizeArray();
 
