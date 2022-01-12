@@ -39,7 +39,6 @@ class DiffusionOp
 
    void computeDiffLap (amrex::Vector<amrex::MultiFab*> const& laps, int lap_comp,
                         amrex::Vector<amrex::MultiFab const*> const& phi, int phi_comp,
-                        amrex::Vector<amrex::MultiFab const*> const& density,
                         amrex::Vector<amrex::MultiFab const*> const& bcoeff, int bcoeff_comp,
                         amrex::Vector<amrex::BCRec> a_bcrec,
                         int ncomp);

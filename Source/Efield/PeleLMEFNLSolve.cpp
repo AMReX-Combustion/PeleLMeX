@@ -413,7 +413,6 @@ void PeleLM::nonLinearResidual(const Real &a_dt,
    auto bcRecnE = fetchBCRecArray(NE,1);
    getDiffusionOp()->computeDiffLap(GetVecOfPtrs(diffnE), 0,
                                     GetVecOfConstPtrs(nE), 0,
-                                    {},
                                     GetVecOfConstPtrs(getnEDiffusivityVect(AmrNewTime)), 0,
                                     bcRecnE, 1);
 

@@ -116,7 +116,7 @@ void PeleLM::Advance(int is_initIter) {
    if ( m_incompressible ) {
 
       // Still need to get face velocities ...
-      predictVelocity(advData,diffData);
+      predictVelocity(advData);
 
       // ... and MAC-project face velocities, but no divu
       macProject(AmrOldTime,advData,{});
@@ -158,7 +158,7 @@ void PeleLM::Advance(int is_initIter) {
 
    // Compute provisional new velocity for diffusion solve RHS
    // U^{np1**} = U^{n} - dt*AofS^{n+1/2} - dt/rho^{n+1/2} \nabla \pi^{n-1/2} + dt/rho^{n+1/2} * F^{n+1/2}
-   updateVelocity(is_initIter,advData);
+   updateVelocity(advData);
 
    // Semi-implicit CN diffusion solve to get U^{np1*}
    diffuseVelocity();
@@ -246,7 +246,7 @@ void PeleLM::oneSDC(int sdcIter,
       MACStart = ParallelDescriptor::second();
    }
    // Predict face velocity with Godunov
-   predictVelocity(advData,diffData);
+   predictVelocity(advData);
 
    // Create S^{n+1/2} by fillpatching t^{n} and t^{np1,k}
    createMACRHS(advData);

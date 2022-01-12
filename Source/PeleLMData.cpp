@@ -6,7 +6,7 @@ PeleLM::LevelData::LevelData(amrex::BoxArray const& ba,
                              amrex::DistributionMapping const& dm,
                              amrex::FabFactory<FArrayBox> const& factory,
                              int a_incompressible, int a_has_divu, 
-                             int a_nAux, int a_nGrowState, int a_nGrowMAC)
+                             int a_nAux, int a_nGrowState)
 {
    state.define(   ba, dm, NVAR          , a_nGrowState, MFInfo(), factory);
    gp.define(      ba, dm, AMREX_SPACEDIM, 0           , MFInfo(), factory);

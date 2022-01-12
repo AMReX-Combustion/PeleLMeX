@@ -130,7 +130,6 @@ void PeleLM::computeVelocityAdvTerm(std::unique_ptr<AdvanceAdvData> &advData)
    //----------------------------------------------------------------
    // Fluxes divergence to get the velocity advection term
    for (int lev = 0; lev <= finest_level; ++lev) {
-      auto ldata_p = getLevelDataPtr(lev,AmrOldTime);
 
       int nGrow_divu = 4;  // Why incflo use 4 ?
       MultiFab divu(grids[lev],dmap[lev],1,nGrow_divu,MFInfo(),Factory(lev));
@@ -143,6 +142,7 @@ void PeleLM::computeVelocityAdvTerm(std::unique_ptr<AdvanceAdvData> &advData)
 
       bool fluxes_are_area_weighted = false;
 #ifdef AMREX_USE_EB
+      auto ldata_p = getLevelDataPtr(lev,AmrOldTime);
       //----------------------------------------------------------------
       // Use a temporary MF to hold divergence before redistribution
       int nGrow_divT = 3;
@@ -181,8 +181,7 @@ void PeleLM::computeVelocityAdvTerm(std::unique_ptr<AdvanceAdvData> &advData)
    }
 }
 
-void PeleLM::updateVelocity(int is_init,
-                            std::unique_ptr<AdvanceAdvData> &advData)
+void PeleLM::updateVelocity(std::unique_ptr<AdvanceAdvData> &advData)
 {
 
    //----------------------------------------------------------------
@@ -638,7 +637,6 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
    auto AdvTypeAll = fetchAdvTypeArray(FIRSTSPEC,NUM_SPECIES+1); // Species+RhoH
    auto AdvTypeAll_d = convertToDeviceVector(AdvTypeAll);
    for (int lev = 0; lev <= finest_level; ++lev) {
-      auto ldata_p = getLevelDataPtr(lev,AmrOldTime);
 
       int nGrow_divu = 1;  // TODO EB Why incflo use 4 ?
       MultiFab divu(grids[lev],dmap[lev],1,nGrow_divu,MFInfo(),Factory(lev));
@@ -651,6 +649,7 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
 
       bool fluxes_are_area_weighted = false;
 #ifdef AMREX_USE_EB
+      auto ldata_p = getLevelDataPtr(lev,AmrOldTime);
       //----------------------------------------------------------------
       // Use a temporary MF to hold divergence before redistribution
       int nGrow_divTmp= 3;

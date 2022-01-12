@@ -53,7 +53,7 @@ void pelelm_dermassfrac (const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
 //
 // Compute cell averaged pressure from nodes
 //
-void pelelm_deravgpress (const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
+void pelelm_deravgpress (const Box& bx, FArrayBox& derfab, int dcomp, int /*ncomp*/,
                          const FArrayBox& /*statefab*/, const FArrayBox& pressfab,
                          const Geometry& /*geomdata*/,
                          Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
@@ -81,7 +81,7 @@ void pelelm_deravgpress (const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
 //
 // Compute vorticity magnitude
 //
-void pelelm_dermgvort (const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
+void pelelm_dermgvort (const Box& bx, FArrayBox& derfab, int dcomp, int /*ncomp*/,
                        const FArrayBox& statefab, const FArrayBox& /*pressfab*/,
                        const Geometry& geomdata,
                        Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
@@ -93,7 +93,7 @@ void pelelm_dermgvort (const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
                  const amrex::Real idz = geomdata.InvCellSize(2););
 
     auto const& dat_arr = statefab.const_array();
-    auto const&vort_arr = derfab.array();
+    auto const&vort_arr = derfab.array(dcomp);
 
     // TODO : EB
     // TODO : BCs
@@ -126,7 +126,7 @@ void pelelm_dermgvort (const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
 //
 // Compute the kinetic energy
 //
-void pelelm_derkineticenergy (const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
+void pelelm_derkineticenergy (const Box& bx, FArrayBox& derfab, int dcomp, int /*ncomp*/,
                               const FArrayBox& statefab, const FArrayBox& /*pressfab*/,
                               const Geometry& /*geomdata*/,
                               Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
@@ -146,4 +146,3 @@ void pelelm_derkineticenergy (const Box& bx, FArrayBox& derfab, int dcomp, int n
                                           + vel(i,j,k,2)*vel(i,j,k,2)) );
     });
 }
-

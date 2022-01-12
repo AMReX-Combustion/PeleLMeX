@@ -6,8 +6,6 @@ void PeleLM::initialProjection()
 {
    BL_PROFILE_VAR("PeleLM::initialProjection()", initialProjection);
 
-   Real time = 0.0;
-
    if (m_verbose) {
       Vector<Real> velMax(AMREX_SPACEDIM);
       velMax = MLNorm0(GetVecOfConstPtrs(getVelocityVect(AmrNewTime)),0,AMREX_SPACEDIM);
