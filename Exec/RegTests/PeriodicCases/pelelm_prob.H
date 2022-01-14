@@ -94,9 +94,38 @@ void pelelm_initdata(int i, int j, int k,
        temp(i,j,k) = prob_parm.T_mean;
     } else if ( prob_parm.probType == 1 ) { // CoGau
 
-       AMREX_D_TERM(vel(i,j,k,0) = prob_parm.meanFlowMag;,
-                    vel(i,j,k,1) = 0.0;,
-                    vel(i,j,k,2) = 0.0);
+       switch(prob_parm.meanFlowDir) {
+         case 1  :
+            AMREX_D_TERM(vel(i,j,k,0) = prob_parm.meanFlowMag;,
+                         vel(i,j,k,1) = 0.0;,
+                         vel(i,j,k,2) = 0.0);
+            break;
+         case -1  :
+            AMREX_D_TERM(vel(i,j,k,0) = -prob_parm.meanFlowMag;,
+                         vel(i,j,k,1) = 0.0;,
+                         vel(i,j,k,2) = 0.0);
+            break;
+         case 2  :
+            AMREX_D_TERM(vel(i,j,k,0) = 0.0;,
+                         vel(i,j,k,1) = prob_parm.meanFlowMag;,
+                         vel(i,j,k,2) = 0.0);
+            break;
+         case -2  :
+            AMREX_D_TERM(vel(i,j,k,0) = 0.0;,
+                         vel(i,j,k,1) = -prob_parm.meanFlowMag;,
+                         vel(i,j,k,2) = 0.0);
+            break;
+         case 3  :
+            AMREX_D_TERM(vel(i,j,k,0) = prob_parm.meanFlowMag;,
+                         vel(i,j,k,1) = prob_parm.meanFlowMag;,
+                         vel(i,j,k,2) = 0.0);
+            break;
+         case -3  :
+            AMREX_D_TERM(vel(i,j,k,0) = -prob_parm.meanFlowMag;,
+                         vel(i,j,k,1) = -prob_parm.meanFlowMag;,
+                         vel(i,j,k,2) = 0.0);
+            break;
+       }
 
        if (is_incompressible) return;
 
