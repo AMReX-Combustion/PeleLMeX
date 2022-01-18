@@ -109,6 +109,7 @@ void PeleLM::readParameters() {
    // -----------------------------------------
    // Misc
    // -----------------------------------------
+   pp.query("run_mode",m_run_mode);
    pp.query("v", m_verbose);
 
    // -----------------------------------------
@@ -331,6 +332,19 @@ void PeleLM::readParameters() {
 
    if ( max_level > 0 ) {
       ppa.query("regrid_int", m_regrid_int);
+   }
+
+   // -----------------------------------------
+   // Evaluate mode variables
+   // -----------------------------------------
+   if (runMode() == "evaluate") {
+      m_evaluatePlotVarCount = (pp.countval("evaluate_vars"));
+      if (m_evaluatePlotVarCount != 0) {
+         m_evaluatePlotVars.resize(m_evaluatePlotVarCount);
+         for (int ivar = 0; ivar < m_evaluatePlotVarCount; ivar++) {
+            pp.get("evaluate_vars", m_evaluatePlotVars[ivar],ivar);
+         }
+      }
    }
 
 #ifdef PELE_USE_EFIELD
