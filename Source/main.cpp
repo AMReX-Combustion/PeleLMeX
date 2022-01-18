@@ -49,6 +49,8 @@ int main(int argc, char* argv[]) {
           // 
           pelelm.Evaluate();
 
+       } else {
+          Abort(" Wrong peleLM.run_mode ! It can only be 'normal' (D) or 'evaluate'");
        }
 
        // wallclock time
