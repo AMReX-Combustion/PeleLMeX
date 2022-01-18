@@ -121,6 +121,12 @@ void PeleLM::initData() {
       averageDownState(AmrNewTime);
       fillPatchState(AmrNewTime);
 
+      //----------------------------------------------------------------
+      // If performing UnitTest, let's stop here
+      if (runMode() != "normal") {
+         return;
+      }
+
 #ifdef PELE_USE_EFIELD
       poissonSolveEF(AmrNewTime);
       fillPatchPhiV(AmrNewTime);
