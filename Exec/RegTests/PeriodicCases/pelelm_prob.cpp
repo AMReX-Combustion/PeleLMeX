@@ -38,7 +38,8 @@ void PeleLM::readProbParm()
       pp.query("meanFlowMag", PeleLM::prob_parm->meanFlowMag);
    } else if ( type == "DiffusedGaussian" ) {
       PeleLM::prob_parm->probType = 2;
-      pp.query("gaussian_rad", PeleLM::prob_parm->rgauss);
+      pp.query("gaussian_time", PeleLM::prob_parm->gaussTime);
+      pp.query("gaussian_diffusivity", PeleLM::prob_parm->gaussDiff);
       pp.query("gaussian_x0", PeleLM::prob_parm->xgauss);
       pp.query("gaussian_y0", PeleLM::prob_parm->ygauss);
       pp.query("gaussian_ampl", PeleLM::prob_parm->ampgauss);
