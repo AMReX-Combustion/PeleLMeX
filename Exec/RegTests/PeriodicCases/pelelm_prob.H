@@ -44,8 +44,18 @@ void pelelm_initdata(int i, int j, int k,
     constexpr amrex::Real Pi = 3.14159265358979323846264338327950288;
 
     amrex::Real massfrac[NUM_SPECIES] = {0.0};
-    massfrac[O2_ID] = 0.233;
-    massfrac[N2_ID] = 0.767;
+
+    // Species IDs
+#ifdef O2_ID
+    int sp1_ID = O2_ID;
+#endif
+#ifdef N2a_ID
+    int sp1_ID = N2a_ID;
+#endif
+    int sp2_ID = N2_ID;
+
+    massfrac[sp1_ID] = 0.233;
+    massfrac[sp2_ID] = 0.767;
 
     if ( prob_parm.probType == 0 ) { // CoVo
        const amrex::Real deltax = x - prob_parm.xvort;
@@ -94,9 +104,38 @@ void pelelm_initdata(int i, int j, int k,
        temp(i,j,k) = prob_parm.T_mean;
     } else if ( prob_parm.probType == 1 ) { // CoGau
 
-       AMREX_D_TERM(vel(i,j,k,0) = prob_parm.meanFlowMag;,
-                    vel(i,j,k,1) = 0.0;,
-                    vel(i,j,k,2) = 0.0);
+       switch(prob_parm.meanFlowDir) {
+         case 1  :
+            AMREX_D_TERM(vel(i,j,k,0) = prob_parm.meanFlowMag;,
+                         vel(i,j,k,1) = 0.0;,
+                         vel(i,j,k,2) = 0.0);
+            break;
+         case -1  :
+            AMREX_D_TERM(vel(i,j,k,0) = -prob_parm.meanFlowMag;,
+                         vel(i,j,k,1) = 0.0;,
+                         vel(i,j,k,2) = 0.0);
+            break;
+         case 2  :
+            AMREX_D_TERM(vel(i,j,k,0) = 0.0;,
+                         vel(i,j,k,1) = prob_parm.meanFlowMag;,
+                         vel(i,j,k,2) = 0.0);
+            break;
+         case -2  :
+            AMREX_D_TERM(vel(i,j,k,0) = 0.0;,
+                         vel(i,j,k,1) = -prob_parm.meanFlowMag;,
+                         vel(i,j,k,2) = 0.0);
+            break;
+         case 3  :
+            AMREX_D_TERM(vel(i,j,k,0) = prob_parm.meanFlowMag;,
+                         vel(i,j,k,1) = prob_parm.meanFlowMag;,
+                         vel(i,j,k,2) = 0.0);
+            break;
+         case -3  :
+            AMREX_D_TERM(vel(i,j,k,0) = -prob_parm.meanFlowMag;,
+                         vel(i,j,k,1) = -prob_parm.meanFlowMag;,
+                         vel(i,j,k,2) = 0.0);
+            break;
+       }
 
        if (is_incompressible) return;
 
@@ -106,14 +145,14 @@ void pelelm_initdata(int i, int j, int k,
        const amrex::Real d_sq = deltax*deltax + deltay*deltay;
        const amrex::Real r_sq = prob_parm.rgauss * prob_parm.rgauss;
        if ( prob_parm.gauss_type == 0 ) { // Spec
-          massfrac[O2_ID] += massfrac[O2_ID] * prob_parm.ampgauss * std::exp(-d_sq/r_sq);
-          massfrac[N2_ID] = 1.0 - massfrac[O2_ID];
+          massfrac[sp1_ID] += massfrac[sp1_ID] * prob_parm.ampgauss * std::exp(-d_sq/r_sq);
+          massfrac[sp2_ID] = 1.0 - massfrac[sp1_ID];
        } else if ( prob_parm.gauss_type == 1 ) { // Temp
           temp(i,j,k) = prob_parm.T_mean * ( 1.0 + prob_parm.ampgauss * std::exp(-d_sq/r_sq) );
        } else {
           amrex::Abort("Unknown gauss_type: should be either Temp or Spec");
        }
-    } else if ( prob_parm.probType == 2 ) { // DifGau
+    } else if ( prob_parm.probType == 2 ) { // DiffGau
 
        AMREX_D_TERM(vel(i,j,k,0) = 0.0;,
                     vel(i,j,k,1) = 0.0;,
@@ -122,14 +161,19 @@ void pelelm_initdata(int i, int j, int k,
        if (is_incompressible) return;
 
        temp(i,j,k) = prob_parm.T_mean;
+       // Set up the Gaussian as the solution of the diffusion of a delta dirac initial distribution
+       // after time gaussTime of a diffusion process with constant diffusion coeff. gaussDiff. Use ampgauss
+       // to avoid undershoot/overshoot of the 2-species mixture.
        const amrex::Real deltax = x - prob_parm.xgauss;
        const amrex::Real deltay = y - prob_parm.ygauss;
-       const amrex::Real d_sq = deltax*deltax + deltay*deltay;
-       const amrex::Real r_sq = prob_parm.rgauss * prob_parm.rgauss;
+       amrex::Real denom_inv = prob_parm.ampgauss / std::sqrt(4*Pi*prob_parm.gaussTime*prob_parm.gaussDiff);     
+       const amrex::Real d_sq = deltax*deltax;
+       const amrex::Real r_sq = 4.0*prob_parm.gaussTime*prob_parm.gaussDiff;
        if ( prob_parm.gauss_type == 0 ) { // Spec
-          massfrac[O2_ID] += massfrac[O2_ID] * prob_parm.ampgauss * std::exp(-d_sq/r_sq);
-          massfrac[N2_ID] = 1.0 - massfrac[O2_ID];
+          massfrac[sp1_ID] = denom_inv * std::exp(-d_sq/r_sq);
+          massfrac[sp2_ID] = 1.0 - massfrac[sp1_ID];
        } else if ( prob_parm.gauss_type == 1 ) { //Temp
+          // TODO: find a better way, one with an analytical solution
           temp(i,j,k) = prob_parm.T_mean * ( 1.0 + prob_parm.ampgauss * std::exp(-d_sq/r_sq) );
        } else {
           amrex::Abort("Unknown gauss_type: should be either Temp or Spec");
@@ -160,48 +204,14 @@ AMREX_FORCE_INLINE
 void
 bcnormal(
   const amrex::Real* /*x[AMREX_SPACEDIM]*/,
-  const int m_nAux,
-  amrex::Real s_ext[NVAR],
-  const int idir,
-  const int sgn,
-  const amrex::Real time,
-  amrex::GeometryData const& geomdata,
-  ProbParm const& prob_parm,
+  const int /*m_nAux*/,
+  amrex::Real* /*s_ext[NVAR]*/,
+  const int /*idir*/,
+  const int /*sgn*/,
+  const amrex::Real /*time*/,
+  amrex::GeometryData const& /*geomdata*/,
+  ProbParm const& /*prob_parm*/,
   pele::physics::PMF::PmfData::DataContainer const * /*pmf_data*/)
 {
-  const amrex::Real* prob_lo = geomdata.ProbLo();
-  //amrex::GpuArray<amrex::Real, NUM_SPECIES + 4> pmf_vals = {0.0};
-  amrex::Real massfrac[NUM_SPECIES] = {0.0};
-
-  auto eos = pele::physics::PhysicsType::eos();
-  if (sgn == 1) {
-    //PMF::pmf(pmf_data,prob_lo[idir], prob_lo[idir], pmf_vals);
-
-    s_ext[VELX] = 0.0;
-#if ( AMREX_SPACEDIM > 1 )
-    s_ext[VELY] = 0.0;
-#if ( AMREX_SPACEDIM > 2)
-    s_ext[VELZ] = 0.0;
-#endif
-#endif
-
-    massfrac[O2_ID] = 0.233;
-    massfrac[N2_ID] = 0.767;
-
-    s_ext[TEMP] = prob_parm.T_mean;
-
-    amrex::Real rho_cgs, P_cgs, RhoH_temp;
-    P_cgs = prob_parm.P_mean * 10.0;
-
-    eos.PYT2R(P_cgs, massfrac, s_ext[TEMP], rho_cgs);
-    s_ext[DENSITY] = rho_cgs * 1.0e3;
-
-    eos.TY2H(s_ext[TEMP], massfrac, RhoH_temp);
-    s_ext[RHOH] = RhoH_temp * 1.0e-4 * s_ext[DENSITY];   // CGS -> MKS conversion
-
-    for (int n = 0; n < NUM_SPECIES; n++) {
-      s_ext[FIRSTSPEC+n] = massfrac[n] * s_ext[DENSITY];
-    }
-  }
 }
 #endif
