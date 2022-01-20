@@ -18,7 +18,7 @@ static Box grow_box_by_one (const Box& b) { return amrex::grow(b,1); }
 static Box grow_box_by_two (const Box& b) { return amrex::grow(b,2); }
 
 void PeleLM::Setup() {
-   BL_PROFILE_VAR("PeleLM::Setup()", Setup);
+   BL_PROFILE("PeleLM::Setup()");
 
    // Print build info to screen
    const char* githash1 = buildInfoGetGitHash(1);
@@ -44,6 +44,9 @@ void PeleLM::Setup() {
 
    // Derived variables
    derivedSetup();
+
+   // Evaluate variables
+   evaluateSetup();
 
    // Tagging setup
    taggingSetup();
@@ -100,7 +103,7 @@ void PeleLM::Setup() {
 }
 
 void PeleLM::readParameters() {
-   BL_PROFILE_VAR("PeleLM::readParameters()", readParameters);
+   BL_PROFILE("PeleLM::readParameters()");
 
    readIOParameters();
 
@@ -387,7 +390,7 @@ void PeleLM::readIOParameters() {
 }
 
 void PeleLM::variablesSetup() {
-   BL_PROFILE_VAR("PeleLM::variablesSetup()", variablesSetup);
+   BL_PROFILE("PeleLM::variablesSetup()");
 
    std::string PrettyLine = std::string(78, '=') + "\n";
 
@@ -488,7 +491,7 @@ void PeleLM::variablesSetup() {
 
 void PeleLM::derivedSetup()
 {
-   BL_PROFILE_VAR("PeleLM::derivedSetup()", derivedSetup);
+   BL_PROFILE("PeleLM::derivedSetup()");
 
    if (!m_incompressible) {
 
@@ -539,9 +542,62 @@ void PeleLM::derivedSetup()
 
 }
 
+void PeleLM::evaluateSetup()
+{
+   BL_PROFILE("PeleLM::evaluateSetup()");
+
+   // Get species names
+   Vector<std::string> spec_names;
+   pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(spec_names);
+
+   // divU
+   evaluate_lst.add("divU",IndexType::TheCellType(),1,the_same_box);
+
+   // scalar diffusion term
+   {
+      Vector<std::string> var_names(NUM_SPECIES+2);
+      for (int n = 0 ; n < NUM_SPECIES; n++) {
+         var_names[n] = "D("+spec_names[n]+")";
+      }
+      var_names[NUM_SPECIES] = "D(RhoH)";
+      var_names[NUM_SPECIES+1] = "D(Temp)";
+      evaluate_lst.add("diffTerm",IndexType::TheCellType(),NUM_SPECIES+2,var_names,the_same_box);
+   }
+
+   // scalar advection term
+   {
+      Vector<std::string> var_names(NUM_SPECIES+1);
+      for (int n = 0 ; n < NUM_SPECIES; n++) {
+         var_names[n] = "A("+spec_names[n]+")";
+      }
+      var_names[NUM_SPECIES] = "A(RhoH)";
+      evaluate_lst.add("advTerm",IndexType::TheCellType(),NUM_SPECIES+1,var_names,the_same_box);
+   }
+
+   // instantaneous reaction rate
+   {
+      Vector<std::string> var_names(NUM_SPECIES);
+      for (int n = 0 ; n < NUM_SPECIES; n++) {
+         var_names[n] = "I_R("+spec_names[n]+")";
+      }
+      evaluate_lst.add("instRR",IndexType::TheCellType(),NUM_SPECIES,var_names,the_same_box);
+   }
+
+   // cell-centered transport coefficients
+   {
+      Vector<std::string> var_names(NUM_SPECIES+2);
+      for (int n = 0 ; n < NUM_SPECIES; n++) {
+         var_names[n] = "rhoD("+spec_names[n]+")";
+      }
+      var_names[NUM_SPECIES] = "Lamdba";
+      var_names[NUM_SPECIES+1] = "Mu";
+      evaluate_lst.add("transportCC",IndexType::TheCellType(),NUM_SPECIES+2,var_names,the_same_box);
+   }
+}
+
 void PeleLM::taggingSetup()
 {
-   BL_PROFILE_VAR("PeleLM::taggingSetup()", taggingSetup);
+   BL_PROFILE("PeleLM::taggingSetup()");
 
    std::string amr_prefix = "amr";
    ParmParse ppamr(amr_prefix);
