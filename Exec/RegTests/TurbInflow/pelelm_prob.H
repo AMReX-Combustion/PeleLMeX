@@ -105,10 +105,9 @@ bcnormal(
 
     auto eos = pele::physics::PhysicsType::eos();
 
-    AMREX_D_TERM(s_ext[VELX] = 0.0;,
-                 s_ext[VELY] = 0.0;,
-                 s_ext[VELZ] = 0.0);
-    s_ext[prob_parm.meanFlowDir] =  prob_parm.meanFlowMag;
+    // When using PELE_USE_TURBINFLOW, s_ext comes in with
+    // turbulence data. Only add the mean flow here.
+    s_ext[prob_parm.meanFlowDir] +=  prob_parm.meanFlowMag;
 
     massfrac[O2_ID] = 0.233;
     massfrac[N2_ID] = 0.767;
