@@ -73,7 +73,7 @@ void PeleLM::Evaluate() {
    // Write the evaluated variables to disc
    Vector<int> istep(finest_level + 1, 0);
 
-   std::string plotfilename = "testEvaluate";
+   std::string plotfilename = "pltEvaluate";
    amrex::WriteMultiLevelPlotfile(plotfilename, finest_level + 1, GetVecOfConstPtrs(mf_plt),
                                   plt_VarsName, Geom(), m_cur_time, istep, refRatio());
 }
@@ -115,6 +115,8 @@ PeleLM::MLevaluate(const Vector<MultiFab *> &a_MFVec,
         }
         nComp = NUM_SPECIES+2;
     } else if ( a_var == "advTerm" ) {
+        // TODO
+        Abort("advTerm not available yet, soon hopefully");
     } else if ( a_var == "instRR" ) {
         for (int lev = 0; lev <= finest_level; ++lev) {
             std::unique_ptr<MultiFab> I_RR = std::make_unique<MultiFab> (*a_MFVec[lev],amrex::make_alias,a_comp,NUM_SPECIES); 

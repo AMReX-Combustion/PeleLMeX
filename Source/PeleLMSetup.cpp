@@ -566,6 +566,7 @@ void PeleLM::evaluateSetup()
 
    // scalar advection term
    {
+      // TODO
       Vector<std::string> var_names(NUM_SPECIES+1);
       for (int n = 0 ; n < NUM_SPECIES; n++) {
          var_names[n] = "A("+spec_names[n]+")";
