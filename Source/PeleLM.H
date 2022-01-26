@@ -495,7 +495,7 @@ class PeleLM : public amrex::AmrCore {
    void setInflowBoundaryVel (amrex::MultiFab &a_vel, int lev, PeleLM::TimeStamp a_time);
 
 #ifdef PELE_USE_TURBINFLOW
-   void fillTurbInflow(amrex::MultiFab &a_vel, int lev, const amrex::Real a_time);
+   void fillTurbInflow(amrex::MultiFab &a_vel, int vel_comp, int lev, const amrex::Real a_time);
 #endif
 
    // Average down operations

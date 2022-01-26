@@ -56,9 +56,7 @@ struct PeleLMCCFillExtDirState
 #ifdef PELE_USE_TURBINFLOW
                // If using TurbInflow, pass in the turbulent data. User can overwrite if needed
                if ( n >= VELX && n < DENSITY ) {
-                  for (int n = 0; n < AMREX_SPACEDIM; n++) {
-                     s_ext[VELX+n] = vel(iv,n);
-                  }
+                  s_ext[VELX+n] = state(iv,VELX+n);
                }
 #endif
                // bcnormal() is defined in pelelm_prob.H in problem directory in /Exec
@@ -81,9 +79,7 @@ struct PeleLMCCFillExtDirState
 #ifdef PELE_USE_TURBINFLOW
                // If using TurbInflow, pass in the turbulent data. User can overwrite if needed
                if ( n >= VELX && n < DENSITY ) {
-                  for (int n = 0; n < AMREX_SPACEDIM; n++) {
-                     s_ext[VELX+n] = vel(iv,n);
-                  }
+                  s_ext[VELX+n] = state(iv,VELX+n);
                }
 #endif
                // bcnormal() is defined in pelelm_prob.H in problem directory in /Exec
@@ -139,31 +135,33 @@ struct PeleLMCCFillExtDirVel
          // Low
          if ((bc[idir] == amrex::BCType::ext_dir) and (iv[idir] < domlo[idir])) {
 
+#ifdef PELE_USE_TURBINFLOW
+            // If using TurbInflow, pass in the turbulent data. User can overwrite if needed
+            for (int n = 0; n < AMREX_SPACEDIM; n++) {
+               s_ext[VELX+n] = vel(iv,VELX+n);
+            }
+#endif
             // bcnormal() is defined in pelelm_prob.H in problem directory in /Exec
             bcnormal(x, m_nAux, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
 
             for (int n = 0; n < AMREX_SPACEDIM; n++) {
-#ifdef PELE_USE_TURBINFLOW
-               vel(iv,n) += s_ext[VELX+n];
-#else
                vel(iv,n) = s_ext[VELX+n];
-#endif
             }
-
          // High
          } else if ((bc[idir+AMREX_SPACEDIM] == amrex::BCType::ext_dir) and (iv[idir] > domhi[idir])) {
 
+#ifdef PELE_USE_TURBINFLOW
+            // If using TurbInflow, pass in the turbulent data. User can overwrite if needed
+            for (int n = 0; n < AMREX_SPACEDIM; n++) {
+               s_ext[VELX+n] = vel(iv,VELX+n);
+            }
+#endif
             // bcnormal() is defined in pelelm_prob.H in problem directory in /Exec
             bcnormal(x, m_nAux, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
 
             for (int n = 0; n < AMREX_SPACEDIM; n++) {
-#ifdef PELE_USE_TURBINFLOW
-               vel(iv,n) += s_ext[VELX+n];
-#else
                vel(iv,n) = s_ext[VELX+n];
-#endif
             }
-
          }
       }
    }

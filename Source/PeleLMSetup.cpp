@@ -662,6 +662,7 @@ void PeleLM::taggingSetup()
          itexists = derive_lst.canDerive(field) || isStateVariable(field);
       } else if (realbox.ok()) {
         errTags.push_back(AMRErrorTag(info));
+        itexists = true;
       } else {
         Abort(std::string("Unrecognized refinement indicator for " + refinement_indicators[n]).c_str());
       }
