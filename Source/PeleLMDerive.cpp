@@ -35,6 +35,37 @@ PeleLMDeriveRec::PeleLMDeriveRec (const std::string&   a_name,
     bx_map(box_map)
 {}
 
+PeleLMDeriveRec::PeleLMDeriveRec (const std::string& a_name,
+                                  IndexType          result_type,
+                                  int                nvar_derive,
+                                  DeriveBoxMap       box_map,
+                                  Interpolater*      a_interp)
+    :
+    derive_name(a_name),
+    variable_names(),
+    der_type(result_type),
+    n_derive(nvar_derive),
+    func(nullptr),
+    mapper(a_interp),
+    bx_map(box_map)
+{}
+
+PeleLMDeriveRec::PeleLMDeriveRec (const std::string&   a_name,
+                                  IndexType            result_type,
+                                  int                  nvar_derive,
+		                            Vector<std::string>& var_names,
+                                  DeriveBoxMap         box_map,
+                                  Interpolater*        a_interp)
+    :
+    derive_name(a_name),
+    variable_names(var_names),
+    der_type(result_type),
+    n_derive(nvar_derive),
+    func(nullptr),
+    mapper(a_interp),
+    bx_map(box_map)
+{}
+
 PeleLMDeriveRec::~PeleLMDeriveRec () 
 {
    func     = nullptr;
@@ -126,6 +157,27 @@ PeleLMDeriveList::add (const std::string&            name,
                        Interpolater*                 interp)
 {
     lst.push_back(PeleLMDeriveRec(name,result_type,nvar_der,vars,der_func,bx_map,interp));
+}
+
+void
+PeleLMDeriveList::add (const std::string&            name,
+                       IndexType                     result_type,
+                       int                           nvar_der,
+                       PeleLMDeriveRec::DeriveBoxMap bx_map,
+                       Interpolater*                 interp)
+{
+    lst.push_back(PeleLMDeriveRec(name,result_type,nvar_der,bx_map,interp));
+}
+
+void
+PeleLMDeriveList::add (const std::string&            name,
+                       IndexType                     result_type,
+                       int                           nvar_der,
+                       Vector<std::string>&          vars,
+                       PeleLMDeriveRec::DeriveBoxMap bx_map,
+                       Interpolater*                 interp)
+{
+    lst.push_back(PeleLMDeriveRec(name,result_type,nvar_der,vars,bx_map,interp));
 }
 
 std::list<PeleLMDeriveRec>&

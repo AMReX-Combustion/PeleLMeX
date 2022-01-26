@@ -1,0 +1,48 @@
+#----------------------DOMAIN DEFINITION------------------------
+geometry.is_periodic = 1 1 0              # For each dir, 0: non-perio, 1: periodic
+geometry.coord_sys   = 0                  # 0 => cart, 1 => RZ
+geometry.prob_lo     = 0.0 0.0 0.0        # x_lo y_lo (z_lo)
+geometry.prob_hi     = 0.008 0.008 0.016  # x_hi y_hi (z_hi)
+
+# >>>>>>>>>>>>>  BC FLAGS <<<<<<<<<<<<<<<<
+# Interior, Inflow, Outflow, Symmetry,
+# SlipWallAdiab, NoSlipWallAdiab, SlipWallIsotherm, NoSlipWallIsotherm
+peleLM.lo_bc = Interior Interior Inflow
+peleLM.hi_bc = Interior Interior Outflow
+
+#-------------------------AMR CONTROL----------------------------
+amr.n_cell          = 32 32 64   # Level 0 number of cells 
+amr.v               = 1                # AMR verbose
+amr.max_level       = 1                # maximum level number allowed
+amr.ref_ratio       = 2 2 2 2          # refinement ratio
+amr.regrid_int      = 2                # how often to regrid
+amr.n_error_buf     = 2 2 2 2          # number of buffer cells in error est
+amr.grid_eff        = 0.7              # what constitutes an efficient grid
+amr.blocking_factor = 16               # block factor in grid generation (min box size)
+amr.max_grid_size   = 64               # max box size
+
+#--------------------------- Problem -------------------------------
+prob.P_mean = 101325.0
+prob.standoff = -.012
+prob.pertmag = 0.0004
+pmf.datafile = "dodecaneLu_pmf.dat"
+
+#-------------------------PeleLM CONTROL----------------------------
+peleLM.run_mode = evaluate
+peleLM.evaluate_vars = avg_pressure mag_vort diffTerm divU temp instRR transportCC
+
+amr.derive_plot_vars = avg_pressure mag_vort mass_fractions
+
+# --------------- INPUTS TO CHEMISTRY REACTOR ---------------
+peleLM.chem_integrator = "ReactorNull"
+
+#--------------------REFINEMENT CONTROL------------------------
+amr.refinement_indicators = yH
+amr.yH.max_level     = 3
+amr.yH.value_greater = 2.0e-5
+amr.yH.field_name    = Y(H)
+
+amrex.the_arena_is_managed=1
+amrex.abort_on_out_of_gpu_memory = 1
+amrex.signal_handling=0
+amr.loadbalance_with_workestimates = 1

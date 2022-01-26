@@ -7,7 +7,7 @@
 using namespace amrex;
 
 void PeleLM::calcViscosity(const TimeStamp &a_time) {
-   BL_PROFILE_VAR("PeleLM::calcViscosity()", calcViscosity);
+   BL_PROFILE("PeleLM::calcViscosity()");
 
    for (int lev = 0; lev <= finest_level; ++lev) {
 
@@ -41,7 +41,7 @@ void PeleLM::calcViscosity(const TimeStamp &a_time) {
 }
 
 void PeleLM::calcDiffusivity(const TimeStamp &a_time) {
-   BL_PROFILE_VAR("PeleLM::calcDiffusivity()", calcDiffusivity);
+   BL_PROFILE("PeleLM::calcDiffusivity()");
 
    for (int lev = 0; lev <= finest_level; ++lev) {
 
