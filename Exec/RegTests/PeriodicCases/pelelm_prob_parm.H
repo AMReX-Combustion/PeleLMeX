@@ -21,11 +21,14 @@ struct ProbParm
    amrex::Real yvort = 0.5;
    amrex::Real forcevort = 6.0;
 
-   // CoGau & DifGau params
+   // CoGau & DiffGau params
    amrex::Real rgauss = 0.1;
    amrex::Real xgauss = 0.5;
    amrex::Real ygauss = 0.5;
    amrex::Real ampgauss = 0.1;
    int gauss_type = 0;
+
+   amrex::Real gaussTime = 0.001;
+   amrex::Real gaussDiff = 0.000001;
 };
 #endif
