@@ -92,6 +92,9 @@ class PeleLM : public amrex::AmrCore {
    // DerivedSetup
    void derivedSetup();
 
+   // EvaluateSetup
+   void evaluateSetup();
+
    // TaggingSetup
    void taggingSetup();
 
@@ -591,6 +594,11 @@ class PeleLM : public amrex::AmrCore {
    std::unique_ptr<amrex::MultiFab> deriveComp(const std::string &a_name,
                                                amrex::Real a_time, int lev, int nGrow);
 
+   // Evaluate function
+   void MLevaluate(const amrex::Vector<amrex::MultiFab*> &a_MFVec,
+                   int a_comp,
+                   int &nComp,
+                   const std::string &a_var);
 
    // Lightweight state description access
    bool isStateVariable(const std::string &a_name);
@@ -866,6 +874,9 @@ class PeleLM : public amrex::AmrCore {
    // Derived quantities
    PeleLMDeriveList     derive_lst;
 
+   // Derived quantities
+   PeleLMDeriveList     evaluate_lst;
+
    // Tagging
    amrex::Vector<amrex::AMRErrorTag> errTags;
 
@@ -906,6 +917,8 @@ class PeleLM : public amrex::AmrCore {
    int m_plotStateSpec = 0;
    int m_plot_int = 0;
    int m_check_int = 0;
+   int m_evaluatePlotVarCount = 0;
+   amrex::Vector<std::string> m_evaluatePlotVars;
 
    //-----------------------------------------------------------------------------
    // ALGORITHM
