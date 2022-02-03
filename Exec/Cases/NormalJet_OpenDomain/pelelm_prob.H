@@ -96,9 +96,11 @@ bcnormal(
     amrex::Real eta = 0.5*(1.0 - std::tanh(2.0*(radius-prob_parm.D*0.5)/(0.1*prob_parm.D*0.5)));
     eta *= time_func(time,prob_parm.inj_start,prob_parm.inj_dur,prob_parm.tau);
 
-    s_ext[VELX] *= eta;
-    s_ext[VELY] *= eta;
-    s_ext[VELZ] *= eta;
+    if ( radius > prob_parm.D*0.5 ) {
+       s_ext[VELX] = 0.0;
+       s_ext[VELY] = 0.0;
+       s_ext[VELZ] = 0.0;
+    }
     s_ext[VELZ] += eta*prob_parm.v_in;
 
     for (int n = 0; n < NUM_SPECIES; n++)
