@@ -40,7 +40,7 @@ void PeleLM::MakeNewLevelFromCoarse( int lev,
                                                    m_nAux, m_nGrowState));
 
    // Fill the leveldata_new
-   fillcoarsepatch_state(lev, time, n_leveldata_new->state, 0);
+   fillcoarsepatch_state(lev, time, n_leveldata_new->state, m_nGrowState);
    fillcoarsepatch_gradp(lev, time, n_leveldata_new->gp, 0);
    n_leveldata_new->press.setVal(0.0);
 
@@ -49,8 +49,8 @@ void PeleLM::MakeNewLevelFromCoarse( int lev,
          fillcoarsepatch_divu(lev, time, n_leveldata_new->divu,0);
       }
 #ifdef PELE_USE_EFIELD
-      fillcoarsepatch_phiV(lev, time, n_leveldata_new->phiV,0);
-      fillcoarsepatch_nE(lev, time, n_leveldata_new->nE,0);
+      fillcoarsepatch_phiV(lev, time, n_leveldata_new->phiV,m_nGrowState);
+      fillcoarsepatch_nE(lev, time, n_leveldata_new->nE,m_nGrowState);
 #endif
    }
 

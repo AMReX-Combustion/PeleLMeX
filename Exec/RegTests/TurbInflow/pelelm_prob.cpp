@@ -32,7 +32,7 @@ void PeleLM::readProbParm()
         AMREX_ASSERT_WITH_MESSAGE(PeleLM::prob_parm->tp.tph == nullptr,"Can only be one TurbParmHost");
         PeleLM::prob_parm->tp.tph = new TurbParmHost;
 
-        amrex::Vector<amrex::Real> turb_center = {0.0};
+        amrex::Vector<amrex::Real> turb_center(2,0.0);
         if ( prob_parm->meanFlowDir == 0 ) {
             turb_center[0] = 0.5 * (probhi[1] + problo[1]);
             turb_center[1] = 0.5 * (probhi[2] + problo[2]);
