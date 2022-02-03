@@ -662,8 +662,13 @@ void PeleLM::fillcoarsepatch_state(int lev,
                                    const amrex::Real a_time,
                                    amrex::MultiFab &a_state,
                                    int nGhost) {
+   AMREX_ASSERT(lev>0);
    ProbParm const* lprobparm = prob_parm_d;
    pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
+
+#ifdef PELE_USE_TURBINFLOW
+   fillTurbInflow(a_state, VELX, lev, a_time);
+#endif
 
    // Interpolator
    auto* mapper = getInterpolator();
@@ -897,7 +902,6 @@ void PeleLM::fillTurbInflow(MultiFab &a_vel,
 
         // Copy problem parameter structs back to device
         amrex::Gpu::copy(amrex::Gpu::hostToDevice, probparmDH, probparmDH + 1, probparmDD);
-
     }
 }
 #endif
