@@ -152,6 +152,56 @@ void pelelm_initdata(int i, int j, int k,
        } else {
           amrex::Abort("Unknown gauss_type: should be either Temp or Spec");
        }
+    } else if ( prob_parm.probType == 3 ) { // CoTanH
+
+       switch(prob_parm.meanFlowDir) {
+         case 1  :
+            AMREX_D_TERM(vel(i,j,k,0) = prob_parm.meanFlowMag;,
+                         vel(i,j,k,1) = 0.0;,
+                         vel(i,j,k,2) = 0.0);
+            break;
+         case -1  :
+            AMREX_D_TERM(vel(i,j,k,0) = -prob_parm.meanFlowMag;,
+                         vel(i,j,k,1) = 0.0;,
+                         vel(i,j,k,2) = 0.0);
+            break;
+         case 2  :
+            AMREX_D_TERM(vel(i,j,k,0) = 0.0;,
+                         vel(i,j,k,1) = prob_parm.meanFlowMag;,
+                         vel(i,j,k,2) = 0.0);
+            break;
+         case -2  :
+            AMREX_D_TERM(vel(i,j,k,0) = 0.0;,
+                         vel(i,j,k,1) = -prob_parm.meanFlowMag;,
+                         vel(i,j,k,2) = 0.0);
+            break;
+         case 3  :
+            AMREX_D_TERM(vel(i,j,k,0) = prob_parm.meanFlowMag;,
+                         vel(i,j,k,1) = prob_parm.meanFlowMag;,
+                         vel(i,j,k,2) = 0.0);
+            break;
+         case -3  :
+            AMREX_D_TERM(vel(i,j,k,0) = -prob_parm.meanFlowMag;,
+                         vel(i,j,k,1) = -prob_parm.meanFlowMag;,
+                         vel(i,j,k,2) = 0.0);
+            break;
+       }
+
+       if (is_incompressible) return;
+
+       temp(i,j,k) = prob_parm.T_mean;
+       const amrex::Real deltax = x - prob_parm.xgauss;
+       const amrex::Real deltay = y - prob_parm.ygauss;
+       const amrex::Real rad = std::sqrt(deltax*deltax + deltay*deltay);
+       const amrex::Real eta = 0.5*(1.0 - std::tanh(2.0*(rad-prob_parm.rgauss)/(0.05*prob_parm.rgauss)));
+       if ( prob_parm.gauss_type == 0 ) { // Spec
+          massfrac[sp1_ID] += massfrac[sp1_ID] * prob_parm.ampgauss * eta;
+          massfrac[sp2_ID] = 1.0 - massfrac[sp1_ID];
+       } else if ( prob_parm.gauss_type == 1 ) { // Temp
+          temp(i,j,k) = prob_parm.T_mean * ( 1.0 + prob_parm.ampgauss * eta );
+       } else {
+          amrex::Abort("Unknown tanh_type: should be either Temp or Spec");
+       }
     } else if ( prob_parm.probType == 2 ) { // DiffGau
 
        AMREX_D_TERM(vel(i,j,k,0) = 0.0;,
