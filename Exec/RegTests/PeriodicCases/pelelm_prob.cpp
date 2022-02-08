@@ -36,6 +36,24 @@ void PeleLM::readProbParm()
       }
       pp.query("meanFlowDir", PeleLM::prob_parm->meanFlowDir);
       pp.query("meanFlowMag", PeleLM::prob_parm->meanFlowMag);
+   } else if ( type == "ConvectedTanH" ) {
+      PeleLM::prob_parm->probType = 3;
+      pp.query("tanh_rad", PeleLM::prob_parm->rgauss);
+      pp.query("tanh_x0", PeleLM::prob_parm->xgauss);
+      pp.query("tanh_y0", PeleLM::prob_parm->ygauss);
+      pp.query("tanh_ampl", PeleLM::prob_parm->ampgauss);
+      std::string gtype;
+      pp.query("tanh_type", gtype);
+      if ( gtype == "Spec" ) {
+         PeleLM::prob_parm->gauss_type = 0;
+      } else if ( gtype == "Temp" ) { 
+         PeleLM::prob_parm->gauss_type = 1;
+      } else {
+         amrex::Print() << " Unknown prob.tanh_type ! Should be Spec or Temp \n";
+         amrex::Abort();
+      }
+      pp.query("meanFlowDir", PeleLM::prob_parm->meanFlowDir);
+      pp.query("meanFlowMag", PeleLM::prob_parm->meanFlowMag);
    } else if ( type == "DiffusedGaussian" ) {
       PeleLM::prob_parm->probType = 2;
       pp.query("gaussian_time", PeleLM::prob_parm->gaussTime);
