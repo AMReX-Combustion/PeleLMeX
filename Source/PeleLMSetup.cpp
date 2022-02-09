@@ -296,6 +296,7 @@ void PeleLM::readParameters() {
    // -----------------------------------------
    // Advection
    // -----------------------------------------
+   pp.query("scalar_advection_scheme",m_scalar_advection_type);
    ParmParse ppg("godunov");
    ppg.query("use_ppm",m_Godunov_ppm);
    ppg.query("use_forceInTrans", m_Godunov_ForceInTrans);
