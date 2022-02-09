@@ -81,7 +81,7 @@ include $(PELE_PHYSICS_HOME)/ThirdParty/Make.ThirdParty
 #---------------
 # AMReX-Hydro sources
 #---------------
-Hdirs := Slopes Godunov MOL Utils Projections
+Hdirs := Slopes Godunov MOL Utils Projections BDS
 ifeq ($(USE_EB), TRUE)
     Hdirs += Redistribution EBGodunov EBMOL
 endif
