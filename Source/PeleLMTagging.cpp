@@ -10,7 +10,7 @@ void
 PeleLM::ErrorEst( int lev,
                   TagBoxArray& tags,
                   Real time,
-                  int ng)
+                  int /*ng*/)
 {
    BL_PROFILE_VAR("PeleLM::ErrorEst()", ErrorEst);
 
@@ -19,8 +19,8 @@ PeleLM::ErrorEst( int lev,
    //              m_EB_refine_LevAdapt-1 if Adaptive
    if ( ( m_EB_refine_type == "Static" && lev < m_EB_refine_LevMax ) ||
         ( m_EB_refine_type == "Adaptive" && lev < m_EB_refine_LevAdapt ) ) {
-      const MultiFab& rho = (getLevelDataPtr(lev,AmrNewTime))->density;
-      TagCutCells(tags, rho);
+      const MultiFab& state = (getLevelDataPtr(lev,AmrNewTime))->state;
+      TagCutCells(tags, state);
    }
 #endif
 

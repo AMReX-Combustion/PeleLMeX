@@ -28,7 +28,7 @@ prob.T_mean = 298.0
 prob.P_mean = 101325.0
 prob.type          = ConvectedGaussian
 prob.meanFlowMag   = 50.0
-prob.meanFlowDir   = 1
+prob.meanFlowDir   = 2
 prob.gaussian_rad  = 0.1
 prob.gaussian_x0   = 0.5
 prob.gaussian_y0   = 0.5
@@ -46,6 +46,7 @@ peleLM.v = 1
 peleLM.incompressible = 0
 peleLM.rho = 1.17
 peleLM.mu = 0.0
+peleLM.sdc_iterMax = 2
 
 amr.plot_int = 10000
 amr.max_step = 50000

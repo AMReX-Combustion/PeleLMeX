@@ -33,28 +33,24 @@ void PeleLM::MakeNewLevelFromCoarse( int lev,
    // New leveldatas
    std::unique_ptr<LevelData> n_leveldata_old( new LevelData(ba, dm, *new_fact,
                                                    m_incompressible, m_has_divu,
-                                                   m_nAux, m_nGrowState, m_nGrowMAC));
+                                                   m_nAux, m_nGrowState));
 
    std::unique_ptr<LevelData> n_leveldata_new( new LevelData(ba, dm, *new_fact,
                                                    m_incompressible, m_has_divu,
-                                                   m_nAux, m_nGrowState, m_nGrowMAC));
+                                                   m_nAux, m_nGrowState));
 
    // Fill the leveldata_new
-   fillcoarsepatch_velocity(lev, time, n_leveldata_new->velocity, 0);
+   fillcoarsepatch_state(lev, time, n_leveldata_new->state, m_nGrowState);
    fillcoarsepatch_gradp(lev, time, n_leveldata_new->gp, 0);
    n_leveldata_new->press.setVal(0.0);
 
    if (!m_incompressible) {
-      fillcoarsepatch_mass(lev, time, n_leveldata_new->density,
-                           n_leveldata_new->species, 1);
-      fillcoarsepatch_energy(lev, time, n_leveldata_new->rhoh,
-                             n_leveldata_new->temp, 1);
       if (m_has_divu) {
          fillcoarsepatch_divu(lev, time, n_leveldata_new->divu,0);
       }
 #ifdef PELE_USE_EFIELD
-      fillcoarsepatch_phiV(lev, time, n_leveldata_new->phiV,0);
-      fillcoarsepatch_nE(lev, time, n_leveldata_new->nE,0);
+      fillcoarsepatch_phiV(lev, time, n_leveldata_new->phiV,m_nGrowState);
+      fillcoarsepatch_nE(lev, time, n_leveldata_new->nE,m_nGrowState);
 #endif
    }
 
@@ -87,6 +83,7 @@ void PeleLM::MakeNewLevelFromCoarse( int lev,
 
    // DiffusionOp will be recreated
    m_diffusion_op.reset();
+   m_mcdiffusion_op.reset();
    m_diffusionTensor_op.reset();
 
    // Trigger MacProj reset
@@ -124,22 +121,18 @@ void PeleLM::RemakeLevel( int lev,
    // New leveldatas
    std::unique_ptr<LevelData> n_leveldata_old( new LevelData(ba, dm, *new_fact,
                                                    m_incompressible, m_has_divu,
-                                                   m_nAux, m_nGrowState, m_nGrowMAC));
+                                                   m_nAux, m_nGrowState));
 
    std::unique_ptr<LevelData> n_leveldata_new( new LevelData(ba, dm, *new_fact,
                                                    m_incompressible, m_has_divu,
-                                                   m_nAux, m_nGrowState, m_nGrowMAC));
+                                                   m_nAux, m_nGrowState));
 
    // Fill the leveldata_new
-   fillpatch_velocity(lev, time, n_leveldata_new->velocity, m_nGrowState);
+   fillpatch_state(lev, time, n_leveldata_new->state, m_nGrowState);
    fillpatch_gradp(lev, time, n_leveldata_new->gp, 0);
    n_leveldata_new->press.setVal(0.0);
 
    if (!m_incompressible) {
-      fillpatch_density(lev, time, n_leveldata_new->density, m_nGrowState);
-      fillpatch_species(lev, time, n_leveldata_new->species, m_nGrowState);
-      fillpatch_energy(lev, time, n_leveldata_new->rhoh,
-                       n_leveldata_new->temp, m_nGrowState);
       if (m_has_divu) {
          fillpatch_divu(lev, time, n_leveldata_new->divu, 1);
       }
@@ -178,6 +171,7 @@ void PeleLM::RemakeLevel( int lev,
 
    // DiffusionOp will be recreated
    m_diffusion_op.reset();
+   m_mcdiffusion_op.reset();
    m_diffusionTensor_op.reset();
 
    // Trigger MacProj reset
@@ -195,6 +189,7 @@ void PeleLM::ClearLevel(int lev) {
    m_dmapChem[lev].reset();
    m_factory[lev].reset();
    m_diffusion_op.reset();
+   m_mcdiffusion_op.reset();
    m_diffusionTensor_op.reset();
    macproj.reset();
 #ifdef PELE_USE_EFIELD

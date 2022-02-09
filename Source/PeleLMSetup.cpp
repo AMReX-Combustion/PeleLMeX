@@ -18,11 +18,7 @@ static Box grow_box_by_one (const Box& b) { return amrex::grow(b,1); }
 static Box grow_box_by_two (const Box& b) { return amrex::grow(b,2); }
 
 void PeleLM::Setup() {
-   BL_PROFILE_VAR("PeleLM::Setup()", Setup);
-
-#ifdef AMREX_USE_GPU
-   sundials::MemoryHelper::Initialize();
-#endif
+   BL_PROFILE("PeleLM::Setup()");
 
    // Print build info to screen
    const char* githash1 = buildInfoGetGitHash(1);
@@ -48,6 +44,9 @@ void PeleLM::Setup() {
 
    // Derived variables
    derivedSetup();
+
+   // Evaluate variables
+   evaluateSetup();
 
    // Tagging setup
    taggingSetup();
@@ -107,7 +106,7 @@ void PeleLM::Setup() {
 }
 
 void PeleLM::readParameters() {
-   BL_PROFILE_VAR("PeleLM::readParameters()", readParameters);
+   BL_PROFILE("PeleLM::readParameters()");
 
    readIOParameters();
 
@@ -116,6 +115,7 @@ void PeleLM::readParameters() {
    // -----------------------------------------
    // Misc
    // -----------------------------------------
+   pp.query("run_mode",m_run_mode);
    pp.query("v", m_verbose);
 
    // -----------------------------------------
@@ -342,7 +342,7 @@ void PeleLM::readParameters() {
 
 #ifdef AMREX_USE_EB
    if ( max_level > 0 ) {
-      // Default EB refine type in Static
+      // Default EB refine type is Static
       pp.query("refine_EB_type",m_EB_refine_type);
       if ( m_EB_refine_type != "Static" &&
            m_EB_refine_type != "Adaptive" ) {
@@ -358,6 +358,20 @@ void PeleLM::readParameters() {
       }
    }
 #endif
+
+   // -----------------------------------------
+   // Evaluate mode variables
+   // -----------------------------------------
+   if (runMode() == "evaluate") {
+      m_evaluatePlotVarCount = (pp.countval("evaluate_vars"));
+      if (m_evaluatePlotVarCount != 0) {
+         m_evaluatePlotVars.resize(m_evaluatePlotVarCount);
+         for (int ivar = 0; ivar < m_evaluatePlotVarCount; ivar++) {
+            pp.get("evaluate_vars", m_evaluatePlotVars[ivar],ivar);
+         }
+      }
+   }
+>>>>>>> development
 
 #ifdef PELE_USE_EFIELD
    // -----------------------------------------
@@ -383,7 +397,8 @@ void PeleLM::readIOParameters() {
 
    pp.query("check_file", m_check_file);
    pp.query("check_int" , m_check_int);
-   pp.query("restart" , m_restart_file);
+   pp.query("restart" , m_restart_chkfile);
+   pp.query("initDataPlt" , m_restart_pltfile);
    pp.query("plot_file", m_plot_file);
    pp.query("plot_int" , m_plot_int);
    m_derivePlotVarCount = (pp.countval("derive_plot_vars"));
@@ -398,7 +413,7 @@ void PeleLM::readIOParameters() {
 }
 
 void PeleLM::variablesSetup() {
-   BL_PROFILE_VAR("PeleLM::variablesSetup()", variablesSetup);
+   BL_PROFILE("PeleLM::variablesSetup()");
 
    std::string PrettyLine = std::string(78, '=') + "\n";
 
@@ -499,7 +514,7 @@ void PeleLM::variablesSetup() {
 
 void PeleLM::derivedSetup()
 {
-   BL_PROFILE_VAR("PeleLM::derivedSetup()", derivedSetup);
+   BL_PROFILE("PeleLM::derivedSetup()");
 
    if (!m_incompressible) {
 
@@ -550,9 +565,63 @@ void PeleLM::derivedSetup()
 
 }
 
+void PeleLM::evaluateSetup()
+{
+   BL_PROFILE("PeleLM::evaluateSetup()");
+
+   // Get species names
+   Vector<std::string> spec_names;
+   pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(spec_names);
+
+   // divU
+   evaluate_lst.add("divU",IndexType::TheCellType(),1,the_same_box);
+
+   // scalar diffusion term
+   {
+      Vector<std::string> var_names(NUM_SPECIES+2);
+      for (int n = 0 ; n < NUM_SPECIES; n++) {
+         var_names[n] = "D("+spec_names[n]+")";
+      }
+      var_names[NUM_SPECIES] = "D(RhoH)";
+      var_names[NUM_SPECIES+1] = "D(Temp)";
+      evaluate_lst.add("diffTerm",IndexType::TheCellType(),NUM_SPECIES+2,var_names,the_same_box);
+   }
+
+   // scalar advection term
+   {
+      // TODO
+      Vector<std::string> var_names(NUM_SPECIES+1);
+      for (int n = 0 ; n < NUM_SPECIES; n++) {
+         var_names[n] = "A("+spec_names[n]+")";
+      }
+      var_names[NUM_SPECIES] = "A(RhoH)";
+      evaluate_lst.add("advTerm",IndexType::TheCellType(),NUM_SPECIES+1,var_names,the_same_box);
+   }
+
+   // instantaneous reaction rate
+   {
+      Vector<std::string> var_names(NUM_SPECIES);
+      for (int n = 0 ; n < NUM_SPECIES; n++) {
+         var_names[n] = "I_R("+spec_names[n]+")";
+      }
+      evaluate_lst.add("instRR",IndexType::TheCellType(),NUM_SPECIES,var_names,the_same_box);
+   }
+
+   // cell-centered transport coefficients
+   {
+      Vector<std::string> var_names(NUM_SPECIES+2);
+      for (int n = 0 ; n < NUM_SPECIES; n++) {
+         var_names[n] = "rhoD("+spec_names[n]+")";
+      }
+      var_names[NUM_SPECIES] = "Lamdba";
+      var_names[NUM_SPECIES+1] = "Mu";
+      evaluate_lst.add("transportCC",IndexType::TheCellType(),NUM_SPECIES+2,var_names,the_same_box);
+   }
+}
+
 void PeleLM::taggingSetup()
 {
-   BL_PROFILE_VAR("PeleLM::taggingSetup()", taggingSetup);
+   BL_PROFILE("PeleLM::taggingSetup()");
 
    std::string amr_prefix = "amr";
    ParmParse ppamr(amr_prefix);
@@ -617,6 +686,7 @@ void PeleLM::taggingSetup()
          itexists = derive_lst.canDerive(field) || isStateVariable(field);
       } else if (realbox.ok()) {
         errTags.push_back(AMRErrorTag(info));
+        itexists = true;
       } else {
         Abort(std::string("Unrecognized refinement indicator for " + refinement_indicators[n]).c_str());
       }

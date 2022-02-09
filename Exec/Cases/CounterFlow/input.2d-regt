@@ -64,6 +64,9 @@ ode.atol = 1.0e-5                     # Absolute tolerance factor applied on typ
 cvode.solve_type = denseAJ_direct               # CVODE Linear solve type (for Newton direction) 
 cvode.max_order  = 4                  # CVODE max BDF order. 
 
+godunov.use_ppm = 0
+godunov.use_forceInTrans = 0
+
 nodal_proj.verbose = 0
 mac_proj.verbose = 0
 #diffusion.verbose = 2

@@ -343,7 +343,7 @@ void PeleLM::computeBGcharge(const Real &a_time,
       for (MFIter mfi(ldataNLs_p->backgroundCharge,TilingIfNotGPU()); mfi.isValid(); ++mfi)
       {
          const Box& bx = mfi.tilebox();
-         auto const& rhoYold  = ldata_p->species.const_array(mfi);
+         auto const& rhoYold  = ldata_p->state.const_array(mfi,FIRSTSPEC);
          auto const& adv_arr  = advData->AofS[lev].const_array(mfi,FIRSTSPEC);
          auto const& dn_arr   = diffData->Dn[lev].const_array(mfi);
          auto const& dnp1_arr = diffData->Dnp1[lev].const_array(mfi);
@@ -413,7 +413,6 @@ void PeleLM::nonLinearResidual(const Real &a_dt,
    auto bcRecnE = fetchBCRecArray(NE,1);
    getDiffusionOp()->computeDiffLap(GetVecOfPtrs(diffnE), 0,
                                     GetVecOfConstPtrs(nE), 0,
-                                    {},
                                     GetVecOfConstPtrs(getnEDiffusivityVect(AmrNewTime)), 0,
                                     bcRecnE, 1);
 

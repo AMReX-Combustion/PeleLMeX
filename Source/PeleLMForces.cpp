@@ -54,11 +54,11 @@ void PeleLM::getVelForces(const TimeStamp &a_time,
    {    
       const auto& bx          = mfi.tilebox();
       FArrayBox DummyFab(bx,1);
-      const auto& vel_arr     = ldata_p->velocity.const_array(mfi);
-      const auto& rho_arr     = (m_incompressible) ? DummyFab.array() : ldata_p->density.const_array(mfi);
-      const auto& rhoY_arr    = (m_incompressible) ? DummyFab.array() : ldata_p->species.const_array(mfi);
-      const auto& rhoh_arr    = (m_incompressible) ? DummyFab.array() : ldata_p->rhoh.const_array(mfi);
-      const auto& temp_arr    = (m_incompressible) ? DummyFab.array() : ldata_p->temp.const_array(mfi);
+      const auto& vel_arr     = ldata_p->state.const_array(mfi,VELX);
+      const auto& rho_arr     = (m_incompressible) ? DummyFab.array() : ldata_p->state.const_array(mfi,DENSITY);
+      const auto& rhoY_arr    = (m_incompressible) ? DummyFab.array() : ldata_p->state.const_array(mfi,FIRSTSPEC);
+      const auto& rhoh_arr    = (m_incompressible) ? DummyFab.array() : ldata_p->state.const_array(mfi,RHOH);
+      const auto& temp_arr    = (m_incompressible) ? DummyFab.array() : ldata_p->state.const_array(mfi,TEMP);
       const auto& force_arr   = a_velForce->array(mfi);
 
       // Get other forces (gravity, ...)

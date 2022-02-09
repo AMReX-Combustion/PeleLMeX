@@ -25,13 +25,13 @@ void PeleLM::setThermoPress(int lev, const TimeStamp &a_time) {
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
    {
-      for (MFIter mfi(ldata_p->rhoRT,TilingIfNotGPU()); mfi.isValid(); ++mfi)
+      for (MFIter mfi(ldata_p->state,TilingIfNotGPU()); mfi.isValid(); ++mfi)
       {
          const Box& bx = mfi.tilebox();
-         auto const& rho     = ldata_p->density.const_array(mfi);
-         auto const& rhoY    = ldata_p->species.const_array(mfi);
-         auto const& T       = ldata_p->temp.const_array(mfi);
-         auto const& P       = ldata_p->rhoRT.array(mfi);
+         auto const& rho     = ldata_p->state.const_array(mfi,DENSITY);
+         auto const& rhoY    = ldata_p->state.const_array(mfi,FIRSTSPEC);
+         auto const& T       = ldata_p->state.const_array(mfi,TEMP);
+         auto const& P       = ldata_p->state.array(mfi,RHORT);
 
          amrex::ParallelFor(bx, [rho, rhoY, T, P]
          AMREX_GPU_DEVICE (int i, int j, int k) noexcept
@@ -77,13 +77,10 @@ void PeleLM::calcDivU(int is_init,
             }
          } else {                // Regular    -> use instantaneous RR
             RhoYdot.define(grids[lev],dmap[lev],nCompIR(),0);
-            // TODO Setup covered cells mask
-            MultiFab mask(grids[lev],dmap[lev],1,0);
-            mask.setVal(1.0);
 #ifdef PELE_USE_EFIELD
-            computeInstantaneousReactionRateEF(lev, a_time, mask, &RhoYdot);
+            computeInstantaneousReactionRateEF(lev, a_time, &RhoYdot);
 #else
-            computeInstantaneousReactionRate(lev, a_time, mask, &RhoYdot);
+            computeInstantaneousReactionRate(lev, a_time, &RhoYdot);
 #endif
          }
       }
@@ -106,8 +103,8 @@ void PeleLM::calcDivU(int is_init,
          auto const& flag    = flagfab.const_array();
 #endif
 
-         auto const& rhoY     = ldata_p->species.const_array(mfi);
-         auto const& T        = ldata_p->temp.const_array(mfi);
+         auto const& rhoY     = ldata_p->state.const_array(mfi,FIRSTSPEC);
+         auto const& T        = ldata_p->state.const_array(mfi,TEMP);
          auto const& SpecD    = ( a_time == AmrOldTime ) ? diffData->Dn[lev].const_array(mfi,0)
                                                          : diffData->Dnp1[lev].const_array(mfi,0);
          auto const& Fourier  = ( a_time == AmrOldTime ) ? diffData->Dn[lev].const_array(mfi,NUM_SPECIES)
@@ -115,7 +112,7 @@ void PeleLM::calcDivU(int is_init,
          auto const& DiffDiff = ( a_time == AmrOldTime ) ? diffData->Dn[lev].const_array(mfi,NUM_SPECIES+1)
                                                          : diffData->Dnp1[lev].const_array(mfi,NUM_SPECIES+1);
          auto const& r        = (m_do_react && !m_skipInstantRR) ? RhoYdot.const_array(mfi)
-                                             : ldata_p->species.const_array(mfi);   // Dummy unused Array4
+                                             : ldata_p->state.const_array(mfi,FIRSTSPEC);   // Dummy unused Array4
          auto const& divu     = ldata_p->divu.array(mfi);
          int use_react        = (m_do_react && !m_skipInstantRR) ? 1 : 0;
 
@@ -194,13 +191,13 @@ void PeleLM::setTemperature(int lev, const TimeStamp &a_time) {
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
    {
-      for (MFIter mfi(ldata_p->temp,TilingIfNotGPU()); mfi.isValid(); ++mfi)
+      for (MFIter mfi(ldata_p->state,TilingIfNotGPU()); mfi.isValid(); ++mfi)
       {
          const Box& bx = mfi.tilebox();
-         auto const& rho     = ldata_p->density.const_array(mfi);
-         auto const& rhoY    = ldata_p->species.const_array(mfi);
-         auto const& rhoh    = ldata_p->rhoh.const_array(mfi);
-         auto const& T       = ldata_p->temp.array(mfi);
+         auto const& rho     = ldata_p->state.const_array(mfi,DENSITY);
+         auto const& rhoY    = ldata_p->state.const_array(mfi,FIRSTSPEC);
+         auto const& rhoh    = ldata_p->state.const_array(mfi,RHOH);
+         auto const& T       = ldata_p->state.array(mfi,TEMP);
 
          amrex::ParallelFor(bx, [rho, rhoY, rhoh, T]
          AMREX_GPU_DEVICE (int i, int j, int k) noexcept
@@ -248,7 +245,7 @@ void PeleLM::calc_dPdt(int lev,
    {
       const Box& bx = mfi.tilebox();
       auto const& dPdt  = a_dPdt->array(mfi);
-      auto const& P     = ldata_p->rhoRT.const_array(mfi);
+      auto const& P     = ldata_p->state.const_array(mfi,RHORT);
       amrex::ParallelFor(bx, [dPdt, P, p_amb, dt=m_dt, dpdt_fac=m_dpdtFactor]
       AMREX_GPU_DEVICE (int i, int j, int k) noexcept
       {
@@ -278,10 +275,10 @@ PeleLM::adjustPandDivU(std::unique_ptr<AdvanceAdvData> &advData)
         for (MFIter mfi(*ThetaHalft[lev],TilingIfNotGPU()); mfi.isValid(); ++mfi)
         {
             const Box& bx = mfi.tilebox();
-            auto const& rhoYo  = ldataOld_p->species.const_array(mfi);
-            auto const& rhoYn  = ldataNew_p->species.const_array(mfi);
-            auto const& T_o    = ldataOld_p->temp.const_array(mfi);
-            auto const& T_n    = ldataNew_p->temp.const_array(mfi);
+            auto const& rhoYo  = ldataOld_p->state.const_array(mfi,FIRSTSPEC);
+            auto const& rhoYn  = ldataNew_p->state.const_array(mfi,FIRSTSPEC);
+            auto const& T_o    = ldataOld_p->state.const_array(mfi,TEMP);
+            auto const& T_n    = ldataNew_p->state.const_array(mfi,TEMP);
             auto const& theta  = ThetaHalft[lev]->array(mfi);
             amrex::ParallelFor(bx, [=,pOld=m_pOld,pNew=m_pNew]
             AMREX_GPU_DEVICE (int i, int j, int k) noexcept

@@ -664,19 +664,11 @@ reactionRateRhoY(int i, int j, int k,
                  amrex::Array4<const amrex::Real> const& rhoY,
                  amrex::Array4<const amrex::Real> const& rhoH,
                  amrex::Array4<const amrex::Real> const& T,
-                 amrex::Array4<const amrex::Real> const& mask,
                  amrex::Array4<      amrex::Real> const& rhoYdot) noexcept
 {
    using namespace amrex::literals;
 
    auto eos = pele::physics::PhysicsType::eos();
-   // mask < 0 is EB covered cells: no reactions.
-   if ( mask(i,j,k) < 0 ) { 
-      for (int n = 0; n < NUM_SPECIES; n++) {
-         rhoYdot(i,j,k,n) = 0.0;
-      }
-      return;
-   }
 
    // Get rho & Ys from rhoYs.
    amrex::Real rho = 0.0_rt;

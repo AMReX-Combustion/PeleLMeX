@@ -65,6 +65,10 @@ void PeleLM::fluxDivergenceRD(const Vector<const MultiFab*> &a_state,
                          geom[lev]);
     }
 #else
+    amrex::ignore_unused(a_state);
+    amrex::ignore_unused(state_comp);
+    amrex::ignore_unused(state_bc_d);
+    amrex::ignore_unused(a_dt);
     fluxDivergence(a_divergence, div_comp, a_fluxes, flux_comp, ncomp, intensiveFluxes, scale);
 #endif
 }
@@ -278,7 +282,9 @@ void PeleLM::advFluxDivergence(int a_lev,
     AMREX_ASSERT(a_faceState[0]->nComp() >= face_comp+ncomp);
 
 #ifdef AMREX_USE_EB
-      auto const& ebfact = EBFactory(a_lev);
+    auto const& ebfact = EBFactory(a_lev);
+#else
+    amrex::ignore_unused(a_lev); 
 #endif
 
 #ifdef AMREX_USE_OMP
@@ -384,10 +390,10 @@ PeleLM::floorSpecies(const TimeStamp &a_time)
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
-      for (MFIter mfi(ldata_p->species,TilingIfNotGPU()); mfi.isValid(); ++mfi)
+      for (MFIter mfi(ldata_p->state,TilingIfNotGPU()); mfi.isValid(); ++mfi)
       {
          const Box& bx = mfi.tilebox();
-         auto const& rhoY    = ldata_p->species.array(mfi);
+         auto const& rhoY    = ldata_p->state.array(mfi,FIRSTSPEC);
          amrex::ParallelFor(bx, [rhoY]
          AMREX_GPU_DEVICE (int i, int j, int k) noexcept
          {

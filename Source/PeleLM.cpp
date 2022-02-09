@@ -20,7 +20,7 @@ PeleLM::~PeleLM()
 }
 
 PeleLM::LevelData*
-PeleLM::getLevelDataPtr(int lev, const PeleLM::TimeStamp &a_time, int useUMac)
+PeleLM::getLevelDataPtr(int lev, const PeleLM::TimeStamp &a_time, int /*useUMac*/)
 {
    AMREX_ASSERT(a_time==AmrOldTime || a_time==AmrNewTime || a_time==AmrHalfTime);
    if ( a_time == AmrOldTime ) { 
@@ -30,25 +30,21 @@ PeleLM::getLevelDataPtr(int lev, const PeleLM::TimeStamp &a_time, int useUMac)
    } else {
       m_leveldata_floating.reset( new LevelData(grids[lev], dmap[lev], *m_factory[lev],
                                   m_incompressible, m_has_divu,
-                                  m_nAux, m_nGrowState, m_nGrowMAC));
+                                  m_nAux, m_nGrowState));
       Real time = getTime(lev,a_time);
-      if (useUMac) {
-         // TODO: find a way to get U^{n+1/2} from Umac
-         // For now get old time
-         Real oldtime = getTime(lev,AmrOldTime);
-         fillpatch_velocity(lev, oldtime, m_leveldata_floating->velocity, m_nGrowState);
-      } else {
-         fillpatch_velocity(lev, time, m_leveldata_floating->velocity, m_nGrowState);
-      }
-      if (!m_incompressible) {
-         fillpatch_density(lev, time, m_leveldata_floating->density, m_nGrowState);
-         fillpatch_species(lev, time, m_leveldata_floating->species, m_nGrowState);
-         fillpatch_energy(lev, time, m_leveldata_floating->rhoh, m_leveldata_floating->temp, m_nGrowState);
+      fillpatch_state(lev, time, m_leveldata_floating->state, m_nGrowState);
+      //if (useUMac) {
+      //   // TODO: find a way to get U^{n+1/2} from Umac
+      //   // For now get old time
+      //   Real oldtime = getTime(lev,AmrOldTime);
+      //   fillpatch_velocity(lev, oldtime, m_leveldata_floating->state, VELX, m_nGrowState);
+      //}
 #ifdef PELE_USE_EFIELD
+      if (!m_incompressible) {
          fillpatch_phiV(lev, time, m_leveldata_floating->phiV, m_nGrowState);
          fillpatch_nE(lev, time, m_leveldata_floating->nE, m_nGrowState);
-#endif
       }
+#endif
       return m_leveldata_floating.get();
    }
 }
@@ -63,92 +59,91 @@ PeleLM::getLevelDataReactPtr(int lev)
    }
 }
 
-Vector<MultiFab *>
+Vector<std::unique_ptr<MultiFab> >
 PeleLM::getVelocityVect(const TimeStamp &a_time) {
-   Vector<MultiFab*> r;
+   Vector<std::unique_ptr<MultiFab> > r;
    r.reserve(finest_level+1);
    if ( a_time == AmrOldTime ) {
       for (int lev = 0; lev <= finest_level; ++lev) {
-         r.push_back(&(m_leveldata_old[lev]->velocity));
+         r.push_back(std::make_unique<MultiFab> (m_leveldata_old[lev]->state,amrex::make_alias,VELX,AMREX_SPACEDIM));
       }
    } else {
       for (int lev = 0; lev <= finest_level; ++lev) {
-         r.push_back(&(m_leveldata_new[lev]->velocity));
+         r.push_back(std::make_unique<MultiFab> (m_leveldata_new[lev]->state,amrex::make_alias,VELX,AMREX_SPACEDIM));
       }
    }
    return r;
 }
 
-Vector<MultiFab *>
+Vector<std::unique_ptr<MultiFab> >
 PeleLM::getSpeciesVect(const TimeStamp &a_time) {
    AMREX_ASSERT(!m_incompressible);
-   Vector<MultiFab*> r;
+   Vector<std::unique_ptr<MultiFab> > r;
    r.reserve(finest_level+1);
    if ( a_time == AmrOldTime ) {
       for (int lev = 0; lev <= finest_level; ++lev) {
-         r.push_back(&(m_leveldata_old[lev]->species));
+         r.push_back(std::make_unique<MultiFab> (m_leveldata_old[lev]->state,amrex::make_alias,FIRSTSPEC,NUM_SPECIES));
       }
    } else {
       for (int lev = 0; lev <= finest_level; ++lev) {
-         r.push_back(&(m_leveldata_new[lev]->species));
+         r.push_back(std::make_unique<MultiFab> (m_leveldata_new[lev]->state,amrex::make_alias,FIRSTSPEC,NUM_SPECIES));
       }
    }
    return r;
 }
 
-Vector<MultiFab *>
+Vector<std::unique_ptr<MultiFab> >
 PeleLM::getDensityVect(const TimeStamp &a_time) {
    AMREX_ASSERT(!m_incompressible);
-   Vector<MultiFab*> r;
+   Vector<std::unique_ptr<MultiFab> > r;
    r.reserve(finest_level+1);
    if ( a_time == AmrOldTime ) {
       for (int lev = 0; lev <= finest_level; ++lev) {
-         r.push_back(&(m_leveldata_old[lev]->density));
+         r.push_back(std::make_unique<MultiFab> (m_leveldata_old[lev]->state,amrex::make_alias,DENSITY,1));
       }
    } else if ( a_time == AmrNewTime ) {
       for (int lev = 0; lev <= finest_level; ++lev) {
-         r.push_back(&(m_leveldata_new[lev]->density));
+         r.push_back(std::make_unique<MultiFab> (m_leveldata_new[lev]->state,amrex::make_alias,DENSITY,1));
       }
    } else {
       for (int lev = 0; lev <= finest_level; ++lev) {
          Real time = getTime(lev,a_time);
-         m_halfTimeDensity[lev].reset( new MultiFab(grids[lev], dmap[lev], 1, m_nGrowState) );
-         fillpatch_density(lev,time,*(m_halfTimeDensity[lev].get()),m_nGrowState);
-         r.push_back(m_halfTimeDensity[lev].get());
+         r.push_back(std::make_unique<MultiFab> (grids[lev], dmap[lev], 1, m_nGrowState) );
+         fillpatch_density(lev,time,*(r[lev].get()),0,m_nGrowState);
       }
    }
    return r;
 }
 
-Vector<MultiFab *>
+Vector<std::unique_ptr<MultiFab> >
 PeleLM::getTempVect(const TimeStamp &a_time) {
    AMREX_ASSERT(!m_incompressible);
-   Vector<MultiFab*> r;
+   Vector<std::unique_ptr<MultiFab> > r;
    r.reserve(finest_level+1);
    if ( a_time == AmrOldTime ) {
       for (int lev = 0; lev <= finest_level; ++lev) {
-         r.push_back(&(m_leveldata_old[lev]->temp));
+         r.push_back(std::make_unique<MultiFab> (m_leveldata_old[lev]->state,amrex::make_alias,TEMP,1));
       }
    } else {
       for (int lev = 0; lev <= finest_level; ++lev) {
-         r.push_back(&(m_leveldata_new[lev]->temp));
+         r.push_back(std::make_unique<MultiFab> (m_leveldata_new[lev]->state,amrex::make_alias,TEMP,1));
       }
    }
    return r;
 }
 
-Vector<MultiFab *>
+Vector<std::unique_ptr<MultiFab> >
 PeleLM::getRhoHVect(const TimeStamp &a_time) {
    AMREX_ASSERT(!m_incompressible);
-   Vector<MultiFab*> r;
+   Vector<std::unique_ptr<MultiFab> > r;
    r.reserve(finest_level+1);
    if ( a_time == AmrOldTime ) {
       for (int lev = 0; lev <= finest_level; ++lev) {
-         r.push_back(&(m_leveldata_old[lev]->rhoh));
+         r.push_back(std::make_unique<MultiFab> (m_leveldata_old[lev]->state,amrex::make_alias,RHOH,1));
       }
    } else {
       for (int lev = 0; lev <= finest_level; ++lev) {
-         r.push_back(&(m_leveldata_new[lev]->rhoh));
+         r.push_back(std::make_unique<MultiFab> (m_leveldata_new[lev]->state,amrex::make_alias,RHOH,1));
       }
    }
    return r;
@@ -208,16 +203,34 @@ void
 PeleLM::averageDownState(const PeleLM::TimeStamp &a_time)
 {
    for (int lev = finest_level; lev > 0; --lev) {
-      std::unique_ptr<MultiFab> stateFine = fillPatchState(lev, getTime(lev,a_time), 0);
-      std::unique_ptr<MultiFab> stateCrse = fillPatchState(lev-1, getTime(lev,a_time), 0);
+      auto ldataFine_p = getLevelDataPtr(lev,a_time);
+      auto ldataCrse_p = getLevelDataPtr(lev-1,a_time);
 #ifdef AMREX_USE_EB
-      EB_average_down(*stateFine,
-                      *stateCrse,
+      EB_average_down(ldataFine_p->state,
+                      ldataCrse_p->state,
                       0,NVAR,refRatio(lev-1));
 #else
-      average_down(*stateFine,
-                   *stateCrse,
+      average_down(ldataFine_p->state,
+                   ldataCrse_p->state,
                    0,NVAR,refRatio(lev-1));
+#endif
+   }
+}
+
+void
+PeleLM::averageDownScalars(const PeleLM::TimeStamp &a_time)
+{
+   for (int lev = finest_level; lev > 0; --lev) {
+      auto ldataFine_p = getLevelDataPtr(lev,a_time);
+      auto ldataCrse_p = getLevelDataPtr(lev-1,a_time);
+#ifdef AMREX_USE_EB
+      EB_average_down(ldataFine_p->state,
+                      ldataCrse_p->state,
+                      DENSITY,NUM_SPECIES+3,refRatio(lev-1));
+#else
+      average_down(ldataFine_p->state,
+                   ldataCrse_p->state,
+                   DENSITY,NUM_SPECIES+3,refRatio(lev-1));
 #endif
    }
 }
@@ -229,31 +242,13 @@ PeleLM::averageDownDensity(const PeleLM::TimeStamp &a_time)
       auto ldataFine_p = getLevelDataPtr(lev,a_time);
       auto ldataCrse_p = getLevelDataPtr(lev-1,a_time);
 #ifdef AMREX_USE_EB
-      EB_average_down(ldataFine_p->density,
-                      ldataCrse_p->density,
-                      0,1,refRatio(lev-1));
+      EB_average_down(ldataFine_p->state,
+                      ldataCrse_p->state,
+                      DENSITY,1,refRatio(lev-1));
 #else
-      average_down(ldataFine_p->density,
-                   ldataCrse_p->density,
-                   0,1,refRatio(lev-1));
-#endif
-   }
-}
-
-void
-PeleLM::averageDownSpecies(const PeleLM::TimeStamp &a_time)
-{
-   for (int lev = finest_level; lev > 0; --lev) {
-      auto ldataFine_p = getLevelDataPtr(lev,a_time);
-      auto ldataCrse_p = getLevelDataPtr(lev-1,a_time);
-#ifdef AMREX_USE_EB
-      EB_average_down(ldataFine_p->species,
-                      ldataCrse_p->species,
-                      0,NUM_SPECIES,refRatio(lev-1));
-#else
-      average_down(ldataFine_p->species,
-                   ldataCrse_p->species,
-                   0,NUM_SPECIES,refRatio(lev-1));
+      average_down(ldataFine_p->state,
+                   ldataCrse_p->state,
+                   DENSITY,1,refRatio(lev-1));
 #endif
    }
 }
@@ -265,49 +260,13 @@ PeleLM::averageDownVelocity(const PeleLM::TimeStamp &a_time)
       auto ldataFine_p = getLevelDataPtr(lev,a_time);
       auto ldataCrse_p = getLevelDataPtr(lev-1,a_time);
 #ifdef AMREX_USE_EB
-      EB_average_down(ldataFine_p->velocity,
-                      ldataCrse_p->velocity,
-                      0,AMREX_SPACEDIM,refRatio(lev-1));
+      EB_average_down(ldataFine_p->state,
+                      ldataCrse_p->state,
+                      VELX,AMREX_SPACEDIM,refRatio(lev-1));
 #else
-      average_down(ldataFine_p->velocity,
-                   ldataCrse_p->velocity,
-                   0,AMREX_SPACEDIM,refRatio(lev-1));
-#endif
-   }
-}
-
-void
-PeleLM::averageDownTemp(const PeleLM::TimeStamp &a_time)
-{
-   for (int lev = finest_level; lev > 0; --lev) {
-      auto ldataFine_p = getLevelDataPtr(lev,a_time);
-      auto ldataCrse_p = getLevelDataPtr(lev-1,a_time);
-#ifdef AMREX_USE_EB
-      EB_average_down(ldataFine_p->temp,
-                      ldataCrse_p->temp,
-                      0,1,refRatio(lev-1));
-#else
-      average_down(ldataFine_p->temp,
-                   ldataCrse_p->temp,
-                   0,1,refRatio(lev-1));
-#endif
-   }
-}
-
-void
-PeleLM::averageDownEnthalpy(const PeleLM::TimeStamp &a_time)
-{
-   for (int lev = finest_level; lev > 0; --lev) {
-      auto ldataFine_p = getLevelDataPtr(lev,a_time);
-      auto ldataCrse_p = getLevelDataPtr(lev-1,a_time);
-#ifdef AMREX_USE_EB
-      EB_average_down(ldataFine_p->rhoh,
-                      ldataCrse_p->rhoh,
-                      0,1,refRatio(lev-1));
-#else
-      average_down(ldataFine_p->rhoh,
-                   ldataCrse_p->rhoh,
-                   0,1,refRatio(lev-1));
+      average_down(ldataFine_p->state,
+                   ldataCrse_p->state,
+                   VELX,AMREX_SPACEDIM,refRatio(lev-1));
 #endif
    }
 }
@@ -319,13 +278,13 @@ PeleLM::averageDownRhoRT(const PeleLM::TimeStamp &a_time)
       auto ldataFine_p = getLevelDataPtr(lev,a_time);
       auto ldataCrse_p = getLevelDataPtr(lev-1,a_time);
 #ifdef AMREX_USE_EB
-      EB_average_down(ldataFine_p->rhoRT,
-                      ldataCrse_p->rhoRT,
-                      0,1,refRatio(lev-1));
+      EB_average_down(ldataFine_p->state,
+                      ldataCrse_p->state,
+                      RHORT,1,refRatio(lev-1));
 #else
-      average_down(ldataFine_p->rhoRT,
-                   ldataCrse_p->rhoRT,
-                   0,1,refRatio(lev-1));
+      average_down(ldataFine_p->state,
+                   ldataCrse_p->state,
+                   RHORT,1,refRatio(lev-1));
 #endif
    }
 }
