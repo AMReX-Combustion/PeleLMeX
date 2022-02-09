@@ -993,8 +993,9 @@ class PeleLM : public amrex::AmrCore {
    amrex::Real m_uncoveredVol = -1.0;
    int m_closed_chamber = 0;
 
-   // Godunov (no MOL in LMeX)
+   // Godunov is default
    std::string m_advection_type = "Godunov";
+   std::string m_scalar_advection_type = "Godunov";
    int m_Godunov_ppm = 1;
    int m_Godunov_ForceInTrans = 0;
 
