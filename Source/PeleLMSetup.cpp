@@ -371,7 +371,6 @@ void PeleLM::readParameters() {
          }
       }
    }
->>>>>>> development
 
 #ifdef PELE_USE_EFIELD
    // -----------------------------------------

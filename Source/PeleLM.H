@@ -643,6 +643,9 @@ class PeleLM : public amrex::AmrCore {
    void getEBDistance(int a_lev,
                       amrex::MultiFab &a_signDistLev); 
 
+   void extendSignedDistance( amrex::MultiFab *a_signDist,
+                              amrex::Real a_extendFactor);
+
    // static_cast factory into ebfactory
    amrex::EBFArrayBoxFactory const& 
    EBFactory (int lev) const noexcept { 

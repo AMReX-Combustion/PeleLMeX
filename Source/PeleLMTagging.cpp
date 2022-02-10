@@ -55,7 +55,7 @@ PeleLM::ErrorEst( int lev,
       for (MFIter mfi(tags,TilingIfNotGPU()); mfi.isValid(); ++mfi)
       {   
           const auto& bx    = mfi.tilebox();
-          const auto& dist  = signDist.array(mfi); 
+          const auto& dist  = signDist.const_array(mfi); 
           auto tag          = tags.array(mfi);
           amrex::ParallelFor(bx,
           [=] AMREX_GPU_HOST_DEVICE (int i, int j, int k)
