@@ -3,7 +3,7 @@
 
 #include <PeleLMEF_Constants.H>
 #include <PelePhysics.H>
-#include <PelePhysics.H>
+#include <hydro_slopes_K.H>
 #include <EOS_Extension.H>
 #include <mechanism.H>
 
@@ -93,6 +93,77 @@ ef_edge_state_extdir(int i,int j,int k,
    } else {
       state_ed = 0.5_rt * ( state(id_l[0],id_l[1],id_l[2]) +
                             state(id_h[0],id_h[1],id_h[2]) );
+   }
+   return state_ed;
+}
+
+AMREX_GPU_HOST_DEVICE
+AMREX_FORCE_INLINE
+amrex::Real
+ef_edge_state_2ndO_extdir(int i,int j,int k,
+                          int dir,
+                          const bool                       on_lo,
+                          const bool                       on_hi,
+                          const bool             extdir_or_ho_lo,
+                          const bool             extdir_or_ho_hi,
+                          int                              domlo,
+                          int                              domhi,
+                          amrex::Array4<amrex::Real const> const& state,
+                          amrex::Array4<amrex::Real const> const& effvel,
+                          const amrex::Box& box ) noexcept
+{
+   using namespace amrex::literals;
+
+   // Default behavior: id_l -1 in dir
+   // Handle the BCs
+   // Need -1 in id_l and id_h in dir on low Dirichlet BC
+   // Need nothing on high Dirichlet BC
+   int  id_l[3] = {i,j,k};
+   int  id_h[3] = {i,j,k};
+   if (!on_lo ) {
+      if ( !on_hi ) {
+         id_l[dir] -= 1;
+      }
+   } else {
+      id_l[dir] -= 1;
+      id_h[dir] -= 1;
+   }
+
+   int order = 2;
+
+   amrex::Real state_ed;
+   // Just zero out edge state on hi/lo external boundaries (these fluxes are updated later)
+   if (on_hi || on_lo){
+      state_ed = 0.0;
+   }
+   else{
+      amrex::Real state_pls = state(id_h[0],id_h[1],id_h[2]);
+      if ( dir == 0 ) {
+         state_pls -= 0.5 * amrex_calc_xslope_extdir(id_h[0],id_h[1],id_h[2],0,order,state,extdir_or_ho_lo,extdir_or_ho_hi,domlo,domhi);
+      } else if ( dir == 1 ) {
+         state_pls -= 0.5 * amrex_calc_yslope_extdir(id_h[0],id_h[1],id_h[2],0,order,state,extdir_or_ho_lo,extdir_or_ho_hi,domlo,domhi);
+#if (AMREX_SPACEDIM == 3)
+      } else {
+         state_pls -= 0.5 * amrex_calc_zslope_extdir(id_h[0],id_h[1],id_h[2],0,order,state,extdir_or_ho_lo,extdir_or_ho_hi,domlo,domhi);
+#endif
+      }
+      amrex::Real state_mns = state(id_l[0],id_l[1],id_l[2]);
+      if ( dir == 0 ) {
+         state_mns += 0.5 * amrex_calc_xslope_extdir(id_l[0],id_l[1],id_l[2],0,order,state,extdir_or_ho_lo,extdir_or_ho_hi,domlo,domhi);
+      } else if ( dir == 1 ) {
+         state_mns += 0.5 * amrex_calc_yslope_extdir(id_l[0],id_l[1],id_l[2],0,order,state,extdir_or_ho_lo,extdir_or_ho_hi,domlo,domhi);
+#if (AMREX_SPACEDIM == 3)
+      } else {
+         state_mns += 0.5 * amrex_calc_zslope_extdir(id_l[0],id_l[1],id_l[2],0,order,state,extdir_or_ho_lo,extdir_or_ho_hi,domlo,domhi);
+#endif
+      }
+      if ( effvel(i,j,k) > smallVel) {
+         state_ed = state_mns;
+      } else if ( effvel(i,j,k) < -smallVel) {
+         state_ed = state_pls;
+      } else {
+         state_ed = 0.5_rt * ( state_pls + state_mns );
+      }
    }
    return state_ed;
 }
