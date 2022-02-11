@@ -360,6 +360,7 @@ void PeleLM::readParameters() {
    ppef.query("GMRES_rel_tol",m_ef_GMRES_reltol);
    ppef.query("GMRES_abs_tol",m_ef_GMRES_abstol);
    ppef.query("PC_approx",m_ef_PC_approx);
+   ppef.query("advection_scheme_order",m_nEAdvOrder);
 
    ppef.query("restart_nonEF",m_restart_nonEF);
    ppef.query("restart_electroneutral",m_restart_electroneutral);

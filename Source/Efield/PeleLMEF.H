@@ -13,13 +13,16 @@
    int m_restart_electroneutral = 1;
    int m_restart_resetTime = 1;
 
+   // Scheme
+   int                         m_nEAdvOrder = 2;
+
    // Scaling of non-linear system
    amrex::Real                 nE_scale;           // nE state scale
    amrex::Real                 phiV_scale;         // phiV state scale
    amrex::Real                 FnE_scale = 1.0;    // nE residual scale
    amrex::Real                 FphiV_scale = 1.0;  // phiV residual scale
 
-   // Linear solve
+   // non-linear / linear solve
    int                         m_ef_maxNewtonIter    = 5; 
    int                         m_ef_use_PETSC_direct = 0;
    int                         m_ef_PC_approx        = 1;
@@ -58,3 +61,4 @@
    amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM >> getUeffVect();
    amrex::Vector<amrex::MultiFab*> getNLresidVect();
    amrex::Vector<amrex::MultiFab*> getNLstateVect();
+   amrex::Vector<amrex::MultiFab*> getNLBGChargeVect();
