@@ -139,7 +139,7 @@ void PeleLM::implicitNonLinearSolve(int sdcIter,
          }
          if ( !m_ef_use_PETSC_direct ) {
             const Real S_tol     = m_ef_GMRES_reltol;
-            const Real S_tol_abs = 1.0e-12;
+            const Real S_tol_abs = m_ef_GMRES_abstol;
             GMRES_tot_count += gmres.solve(GetVecOfPtrs(newtonDir),getNLresidVect(),S_tol_abs,S_tol);
          } else {
          }

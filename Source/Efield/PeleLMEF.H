@@ -26,6 +26,7 @@
    amrex::Real                 m_ef_lambda_jfnk      = 1.0e-7;
    amrex::Real                 m_ef_newtonTol        = std::pow(1.0e-13,2.0/3.0);
    amrex::Real                 m_ef_GMRES_reltol     = 1.0e-6;
+   amrex::Real                 m_ef_GMRES_abstol     = 1.0e-12;
    amrex::Real                 m_ef_PC_MG_Tol        = 1.0e-6;
 
    // Species charge per unit mass
