@@ -64,8 +64,7 @@ void PeleLM::MakeNewLevelFromScratch( int lev,
    }
 
 #ifdef PELE_USE_EFIELD
-   int nGrowNL = 1;
-   m_leveldatanlsolve[lev].reset(new LevelDataNLSolve(grids[lev], dmap[lev], *m_factory[lev], 1));
+   m_leveldatanlsolve[lev].reset(new LevelDataNLSolve(grids[lev], dmap[lev], *m_factory[lev], m_nGrowState));
 #endif
 
    // Fill the initial solution (if not restarting)

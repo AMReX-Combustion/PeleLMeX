@@ -77,7 +77,7 @@ void PeleLM::MakeNewLevelFromCoarse( int lev,
    m_resetCoveredMask = 1;
 
 #ifdef PELE_USE_EFIELD
-   m_leveldatanlsolve[lev].reset(new LevelDataNLSolve(ba, dm, *m_factory[lev], 1));
+   m_leveldatanlsolve[lev].reset(new LevelDataNLSolve(ba, dm, *m_factory[lev], m_nGrowState));
    m_precond_op.reset();
 #endif
 
@@ -165,7 +165,7 @@ void PeleLM::RemakeLevel( int lev,
    }
 
 #ifdef PELE_USE_EFIELD
-   m_leveldatanlsolve[lev].reset(new LevelDataNLSolve(ba, dm, *m_factory[lev], 1));
+   m_leveldatanlsolve[lev].reset(new LevelDataNLSolve(ba, dm, *m_factory[lev], m_nGrowState));
    m_precond_op.reset();
 #endif
 
