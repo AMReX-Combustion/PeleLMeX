@@ -13,6 +13,10 @@ void
 getKappaE(int i, int j, int k,
           int isKeTabulated,
           const amrex::Real &cstKe,
+          amrex::GpuArray<amrex::Real,AMREX_SPACEDIM> const& dxinv,
+          amrex::Array4<const amrex::Real> const& rhoY,
+          amrex::Array4<const amrex::Real> const& phiV,
+          amrex::Array4<const amrex::Real> const& T, 
           amrex::Array4<amrex::Real> const& Ke) noexcept
 {
       using namespace amrex::literals;
@@ -20,6 +24,39 @@ getKappaE(int i, int j, int k,
       if (!isKeTabulated) {
           Ke(i,j,k) = cstKe;
       } else {
+          auto eos = pele::physics::PhysicsType::eos();
+
+          // Get rho & Y from rhoY
+          amrex::Real rho = 0.0_rt;
+          for (int n = 0; n < NUM_SPECIES; n++) {
+             rho += rhoY(i,j,k,n);
+          }   
+          amrex::Real rhoinv = 1.0_rt / rho;
+          amrex::Real y[NUM_SPECIES] = {0.0};
+          for (int n = 0; n < NUM_SPECIES; n++) {
+             y[n] = rhoY(i,j,k,n) * rhoinv;
+          }
+
+          // Get the reduced electric field
+          amrex::Real Wbar = 0.0_rt;
+          eos.Y2WBAR(y, Wbar);
+          amrex::Real Ngas = rho * Na / Wbar * 1000.0;          // CGS -> MKS conversion
+          amrex::Real EnormSq = AMREX_D_TERM(  0.5 * (phiV(i+1,j,k) - phiV(i-1,j,k)) * dxinv[0]
+                                             * 0.5 * (phiV(i+1,j,k) - phiV(i-1,j,k)) * dxinv[0],
+                                             + 0.5 * (phiV(i,j+1,k) - phiV(i,j-1,k)) * dxinv[1]
+                                             * 0.5 * (phiV(i,j+1,k) - phiV(i,j-1,k)) * dxinv[1],
+                                             + 0.5 * (phiV(i,j,k+1) - phiV(i,j,k-1)) * dxinv[2]
+                                             * 0.5 * (phiV(i,j,k+1) - phiV(i,j,k-1)) * dxinv[2]);
+          amrex::Real Enorm = std::sqrt(EnormSq);
+          amrex::Real redE = Enorm / Ngas * 1e21;      // Td conversion
+
+          amrex::Real C = (T(i,j,k) - 298.0) / (2140.0 - 298.0);
+
+          // Linear values along C axis at ~1Td
+          amrex::Real keLow = 0.8;
+          amrex::Real keHigh = 0.035;
+          amrex::Real kappaC = keLow + C * (keHigh-keLow);
+          Ke(i,j,k) = kappaC;  
       }
 }
 

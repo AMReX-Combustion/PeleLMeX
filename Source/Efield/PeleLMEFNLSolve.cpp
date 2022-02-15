@@ -876,6 +876,7 @@ void PeleLM::setUpPrecond(const Real &a_dt,
 
       // Get nl solve data pointer
       auto ldataNLs_p = getLevelDataNLSolvePtr(lev);
+      auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
 
       // CC neKe values
       MultiFab nEKe(grids[lev],dmap[lev],1,1);
@@ -893,15 +894,15 @@ void PeleLM::setUpPrecond(const Real &a_dt,
       {
          const Box& gbx = mfi.growntilebox();
          auto const& neke        = nEKe.array(mfi);
+         auto const& kappaE      = ldata_p->mobE_cc.array(mfi);
          auto const& ne_arr      = a_nE[lev]->const_array(mfi);
          auto const& Schur       = ( m_ef_PC_approx == 2 ) ? Schur_nEKe.array(mfi) : nEKe.array(mfi);
          auto const& diffOp_diag = ( m_ef_PC_approx == 2 ) ? diagDiffOp[lev].array(mfi) : nEKe.array(mfi);
          int do_Schur = ( m_ef_PC_approx == 2 ) ? 1 : 0;
-         amrex::ParallelFor(gbx, [neke,ne_arr,Schur,diffOp_diag,a_dt,do_Schur,useTab = m_electronKappaTab, fixedKe = m_fixedKappaE]
+         amrex::ParallelFor(gbx, [neke,ne_arr,kappaE,Schur,diffOp_diag,a_dt,do_Schur]
          AMREX_GPU_DEVICE (int i, int j, int k) noexcept
          {
-            getKappaE(i,j,k,useTab,fixedKe,neke);
-            neke(i,j,k) *= ne_arr(i,j,k);
+            neke(i,j,k) = kappaE(i,j,k) * ne_arr(i,j,k);
             if ( do_Schur ) {
                Schur(i,j,k) = - a_dt * 0.5 * neke(i,j,k) / diffOp_diag(i,j,k);
             }
