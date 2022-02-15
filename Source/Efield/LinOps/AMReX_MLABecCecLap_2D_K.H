@@ -3,7 +3,7 @@
 
 namespace amrex {
 
-constexpr Real eps = 1.0e-6;
+constexpr Real eps = 1.0e-10;
 
 inline Real getFaceStateUpwind ( Real const &edgeVel, Real const &leftState, Real const &rightState ) {
    Real edstate = 0.0;
