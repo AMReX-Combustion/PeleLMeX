@@ -128,5 +128,6 @@ void PeleLM::ionDriftAddUmac(int lev, std::unique_ptr<AdvanceAdvData> &advData)
             Ud_Sp(i,j,k,n) += umac(i,j,k);
          });
       }
+      advData->uDrift[lev][idim].FillBoundary(geom[lev].periodicity());
    }
 }
