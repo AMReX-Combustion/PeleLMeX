@@ -712,6 +712,12 @@ class PeleLM : public amrex::AmrCore {
                            const amrex::Array<const amrex::MultiFab*,AMREX_SPACEDIM> &a_ueff,
                            amrex::BCRec bcrec);
 
+   void getAdvectionFluxesMOL(int lev,
+                              const amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM> &a_fluxes,
+                              const amrex::MultiFab &a_nE,
+                              const amrex::Array<const amrex::MultiFab*,AMREX_SPACEDIM> &a_ueff,
+                              amrex::BCRec bcrec);
+
    void ionDriftVelocity(std::unique_ptr<AdvanceAdvData> &advData);
    void ionDriftAddUmac(int lev, std::unique_ptr<AdvanceAdvData> &advData);
 
@@ -737,7 +743,8 @@ class PeleLM : public amrex::AmrCore {
                     amrex::Real &norm);
 
    int testExitNewton(int newtonIter,
-                      const amrex::Real &max_res); 
+                      const amrex::Real &max_res,
+                      const amrex::Real &norm_newtonDir); 
 
    void updateNLState(const amrex::Vector<amrex::MultiFab*> &a_update);
 
