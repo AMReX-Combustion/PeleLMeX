@@ -10,7 +10,7 @@ void PeleLM::calcEFTransport(const TimeStamp &a_time) {
 
       auto ldata_p = getLevelDataPtr(lev,a_time);
 
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
       for (MFIter mfi(ldata_p->diffE_cc, TilingIfNotGPU()); mfi.isValid(); ++mfi)
@@ -20,10 +20,10 @@ void PeleLM::calcEFTransport(const TimeStamp &a_time) {
          auto const& diffE  = ldata_p->diffE_cc.array(mfi);
          auto const& T      = ldata_p->state.const_array(mfi,TEMP);
          Real factor = PP_RU_MKS / ( Na * elemCharge );
-         amrex::ParallelFor(gbx, [mobE, diffE, T, factor]
+         amrex::ParallelFor(gbx, [mobE, diffE, T, factor, useTab = m_electronKappaTab, fixedKe = m_fixedKappaE]
          AMREX_GPU_DEVICE (int i, int j, int k) noexcept
          {
-            getKappaE(i,j,k,mobE);
+            getKappaE(i,j,k,useTab,fixedKe,mobE);
             getDiffE(i,j,k,factor,T,mobE,diffE);
          });
       }

@@ -366,6 +366,9 @@ void PeleLM::readParameters() {
    ppef.query("advection_scheme_order",m_nEAdvOrder);
    AMREX_ASSERT(m_nEAdvOrder == 1 || m_nEAdvOrder == 2);
 
+   ppef.query("tabulated_Ke",m_electronKappaTab);
+   ppef.query("fixed_Ke",m_fixedKappaE);
+
    ppef.query("restart_nonEF",m_restart_nonEF);
    ppef.query("restart_electroneutral",m_restart_electroneutral);
    ppef.query("restart_resetTime",m_restart_resetTime);

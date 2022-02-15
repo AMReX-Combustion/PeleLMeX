@@ -11,11 +11,16 @@ AMREX_GPU_HOST_DEVICE
 AMREX_FORCE_INLINE
 void
 getKappaE(int i, int j, int k,
+          int isKeTabulated,
+          const amrex::Real &cstKe,
           amrex::Array4<amrex::Real> const& Ke) noexcept
 {
       using namespace amrex::literals;
 
-         Ke(i,j,k) = 0.4_rt;
+      if (!isKeTabulated) {
+          Ke(i,j,k) = cstKe;
+      } else {
+      }
 }
 
 AMREX_GPU_HOST_DEVICE

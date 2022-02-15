@@ -16,6 +16,10 @@
    // Scheme
    int                         m_nEAdvOrder = 2;
 
+   // Electron transport
+   int                         m_electronKappaTab = 0;
+   amrex::Real                 m_fixedKappaE = 0.4;
+
    // Scaling of non-linear system
    amrex::Real                 nE_scale;           // nE state scale
    amrex::Real                 phiV_scale;         // phiV state scale

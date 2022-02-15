@@ -706,6 +706,9 @@ void PeleLM::getAdvectionFluxes(int lev,
          AMREX_D_TERM( Array4<Real> xstate = edgstate[0].array();,
                        Array4<Real> ystate = edgstate[1].array();,
                        Array4<Real> zstate = edgstate[2].array());
+         AMREX_D_TERM( Elixir xstate_eli = edgstate[0].elixir();,
+                       Elixir ystate_eli = edgstate[1].elixir();,
+                       Elixir zstate_eli = edgstate[2].elixir());
 
          // Predict edge states
          // X
@@ -894,10 +897,10 @@ void PeleLM::setUpPrecond(const Real &a_dt,
          auto const& Schur       = ( m_ef_PC_approx == 2 ) ? Schur_nEKe.array(mfi) : nEKe.array(mfi);
          auto const& diffOp_diag = ( m_ef_PC_approx == 2 ) ? diagDiffOp[lev].array(mfi) : nEKe.array(mfi);
          int do_Schur = ( m_ef_PC_approx == 2 ) ? 1 : 0;
-         amrex::ParallelFor(gbx, [neke,ne_arr,Schur,diffOp_diag,a_dt,do_Schur]
+         amrex::ParallelFor(gbx, [neke,ne_arr,Schur,diffOp_diag,a_dt,do_Schur,useTab = m_electronKappaTab, fixedKe = m_fixedKappaE]
          AMREX_GPU_DEVICE (int i, int j, int k) noexcept
          {
-            getKappaE(i,j,k,neke);
+            getKappaE(i,j,k,useTab,fixedKe,neke);
             neke(i,j,k) *= ne_arr(i,j,k);
             if ( do_Schur ) {
                Schur(i,j,k) = - a_dt * 0.5 * neke(i,j,k) / diffOp_diag(i,j,k);
