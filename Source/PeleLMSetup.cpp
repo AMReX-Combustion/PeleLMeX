@@ -357,10 +357,14 @@ void PeleLM::readParameters() {
    ppef.query("JFNK_newtonTol",m_ef_newtonTol);
    ppef.query("JFNK_maxNewton",m_ef_maxNewtonIter);
    ppef.query("JFNK_lambda",m_ef_lambda_jfnk);
+   ppef.query("JFNK_diffType",m_ef_diffT_jfnk);
+   AMREX_ASSERT(m_ef_diffT_jfnk == 1 || m_ef_diffT_jfnk == 2);
    ppef.query("GMRES_rel_tol",m_ef_GMRES_reltol);
    ppef.query("GMRES_abs_tol",m_ef_GMRES_abstol);
    ppef.query("PC_approx",m_ef_PC_approx);
+   ppef.query("PC_damping",m_ABecCecOmega);
    ppef.query("advection_scheme_order",m_nEAdvOrder);
+   AMREX_ASSERT(m_nEAdvOrder == 1 || m_nEAdvOrder == 2);
 
    ppef.query("restart_nonEF",m_restart_nonEF);
    ppef.query("restart_electroneutral",m_restart_electroneutral);
