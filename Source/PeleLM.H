@@ -994,8 +994,10 @@ class PeleLM : public amrex::AmrCore {
    int m_closed_chamber = 0;
 
    // Godunov is default
-   std::string m_advection_type = "Godunov";
-   std::string m_scalar_advection_type = "Godunov";
+   std::string m_predict_advection_key = "Godunov_PLM";
+   std::string m_advection_key = "Godunov_PLM";
+   std::string m_predict_advection_type;
+   std::string m_advection_type;
    int m_Godunov_ppm = 1;
    int m_Godunov_ForceInTrans = 0;
 

@@ -296,10 +296,24 @@ void PeleLM::readParameters() {
    // -----------------------------------------
    // Advection
    // -----------------------------------------
-   pp.query("scalar_advection_scheme",m_scalar_advection_type);
-   ParmParse ppg("godunov");
-   ppg.query("use_ppm",m_Godunov_ppm);
-   ppg.query("use_forceInTrans", m_Godunov_ForceInTrans);
+   pp.query("advection_scheme",m_advection_key);
+   if ( m_advection_key == "Godunov_PLM" ) {
+       m_advection_type = "Godunov";
+       m_Godunov_ppm = 0;
+       ParmParse ppg("godunov");
+       ppg.query("use_forceInTrans", m_Godunov_ForceInTrans);
+   } else if ( m_advection_key == "Godunov_PPM" ) {
+       m_advection_type = "Godunov";
+       m_Godunov_ppm = 1;
+       ParmParse ppg("godunov");
+       ppg.query("use_forceInTrans", m_Godunov_ForceInTrans);
+   } else if ( m_advection_key == "Godunov_BDS" ) {
+       m_advection_type = "BDS";
+       m_Godunov_ppm = 0;
+   } else {
+       Abort("Unknown 'advection_scheme'. Recognized options are: Godunov_PLM, Godunov_PPM or Godunov_BDS");
+   } 
+   m_predict_advection_type = "Godunov";  // Only option at this point. This will disapear when predict_velocity support BDS.
 
    // -----------------------------------------
    // Linear solvers tols
