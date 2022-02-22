@@ -311,7 +311,7 @@ void PeleLM::initLevelData(int lev) {
       amrex::ParallelFor(bx, [=,m_incompressible=m_incompressible]
       AMREX_GPU_DEVICE (int i, int j, int k) noexcept
       {
-         pelelm_initdata(i, j, k, m_incompressible, state_arr,
+         pelelm_initdata(i, j, k, m_incompressible, state_arr, aux_arr,
 #ifdef PELE_USE_EFIELD
                          ne_arr, phiV_arr,  
 #endif
