@@ -888,8 +888,8 @@ class PeleLM : public amrex::AmrCore {
    pele::physics::PMF::PmfData pmf_data;
 
    // Transport pointer
-   pele::physics::transport::TransportParams<
-         pele::physics::PhysicsType::transport_type> trans_parms;
+   static pele::physics::transport::TransportParams<
+             pele::physics::PhysicsType::transport_type> trans_parms;
 
    // Reactor pointer
    std::string m_chem_integrator;
