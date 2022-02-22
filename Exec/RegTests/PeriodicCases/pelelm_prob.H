@@ -144,7 +144,7 @@ void pelelm_initdata(int i, int j, int k,
           massfrac[sp1_ID] += massfrac[sp1_ID] * prob_parm.ampgauss * std::exp(-d_sq/r_sq);
           massfrac[sp2_ID] = 1.0 - massfrac[sp1_ID];
        } else if ( prob_parm.gauss_type == 1 ) { // Temp
-          temp(i,j,k) = prob_parm.T_mean * ( 1.0 + prob_parm.ampgauss * std::exp(-d_sq/r_sq) );
+          state(i,j,k,TEMP) = prob_parm.T_mean * ( 1.0 + prob_parm.ampgauss * std::exp(-d_sq/r_sq) );
        } else {
           amrex::Abort("Unknown gauss_type: should be either Temp or Spec");
        }
