@@ -14,11 +14,7 @@ AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
 void pelelm_initdata(int i, int j, int k,
                      int is_incompressible,
-                     amrex::Array4<amrex::Real> const& vel,
-                     amrex::Array4<amrex::Real> const& rho,
-                     amrex::Array4<amrex::Real> const& rhoY,
-                     amrex::Array4<amrex::Real> const& rhoH,
-                     amrex::Array4<amrex::Real> const& temp,
+                     amrex::Array4<amrex::Real> const& state,
                      amrex::Array4<amrex::Real> const& aux,
                      amrex::GeometryData const& geomdata,
                      ProbParm const& prob_parm,
@@ -68,78 +64,78 @@ void pelelm_initdata(int i, int j, int k,
 
        switch(prob_parm.meanFlowDir) {
          case 1  :
-            AMREX_D_TERM(vel(i,j,k,0) = prob_parm.meanFlowMag + u_vort;,
-                         vel(i,j,k,1) = v_vort;,
-                         vel(i,j,k,2) = 0.0);
+            AMREX_D_TERM(state(i,j,k,VELX) = prob_parm.meanFlowMag + u_vort;,
+                         state(i,j,k,VELY) = v_vort;,
+                         state(i,j,k,VELZ) = 0.0);
             break;
          case -1  :
-            AMREX_D_TERM(vel(i,j,k,0) = -prob_parm.meanFlowMag + u_vort;,
-                         vel(i,j,k,1) = v_vort;,
-                         vel(i,j,k,2) = 0.0);
+            AMREX_D_TERM(state(i,j,k,VELX) = -prob_parm.meanFlowMag + u_vort;,
+                         state(i,j,k,VELY) = v_vort;,
+                         state(i,j,k,VELZ) = 0.0);
             break;
          case 2  :
-            AMREX_D_TERM(vel(i,j,k,0) = u_vort;,
-                         vel(i,j,k,1) = prob_parm.meanFlowMag + v_vort;,
-                         vel(i,j,k,2) = 0.0);
+            AMREX_D_TERM(state(i,j,k,VELX) = u_vort;,
+                         state(i,j,k,VELY) = prob_parm.meanFlowMag + v_vort;,
+                         state(i,j,k,VELZ) = 0.0);
             break;
          case -2  :
-            AMREX_D_TERM(vel(i,j,k,0) = u_vort;,
-                         vel(i,j,k,1) = -prob_parm.meanFlowMag + v_vort;,
-                         vel(i,j,k,2) = 0.0);
+            AMREX_D_TERM(state(i,j,k,VELX) = u_vort;,
+                         state(i,j,k,VELY) = -prob_parm.meanFlowMag + v_vort;,
+                         state(i,j,k,VELZ) = 0.0);
             break;
          case 3  :
-            AMREX_D_TERM(vel(i,j,k,0) = prob_parm.meanFlowMag + u_vort;,
-                         vel(i,j,k,1) = prob_parm.meanFlowMag + v_vort;,
-                         vel(i,j,k,2) = 0.0);
+            AMREX_D_TERM(state(i,j,k,VELX) = prob_parm.meanFlowMag + u_vort;,
+                         state(i,j,k,VELY) = prob_parm.meanFlowMag + v_vort;,
+                         state(i,j,k,VELZ) = 0.0);
             break;
          case -3  :
-            AMREX_D_TERM(vel(i,j,k,0) = -prob_parm.meanFlowMag + u_vort;,
-                         vel(i,j,k,1) = -prob_parm.meanFlowMag + v_vort;,
-                         vel(i,j,k,2) = 0.0);
+            AMREX_D_TERM(state(i,j,k,VELX) = -prob_parm.meanFlowMag + u_vort;,
+                         state(i,j,k,VELY) = -prob_parm.meanFlowMag + v_vort;,
+                         state(i,j,k,VELZ) = 0.0);
             break;
        }
 
        if (is_incompressible) return;
 
-       temp(i,j,k) = prob_parm.T_mean;
+       state(i,j,k,TEMP) = prob_parm.T_mean;
     } else if ( prob_parm.probType == 1 ) { // CoGau
 
        switch(prob_parm.meanFlowDir) {
          case 1  :
-            AMREX_D_TERM(vel(i,j,k,0) = prob_parm.meanFlowMag;,
-                         vel(i,j,k,1) = 0.0;,
-                         vel(i,j,k,2) = 0.0);
-            break;
-         case -1  :
-            AMREX_D_TERM(vel(i,j,k,0) = -prob_parm.meanFlowMag;,
-                         vel(i,j,k,1) = 0.0;,
-                         vel(i,j,k,2) = 0.0);
-            break;
-         case 2  :
-            AMREX_D_TERM(vel(i,j,k,0) = 0.0;,
-                         vel(i,j,k,1) = prob_parm.meanFlowMag;,
-                         vel(i,j,k,2) = 0.0);
-            break;
-         case -2  :
-            AMREX_D_TERM(vel(i,j,k,0) = 0.0;,
-                         vel(i,j,k,1) = -prob_parm.meanFlowMag;,
-                         vel(i,j,k,2) = 0.0);
-            break;
-         case 3  :
-            AMREX_D_TERM(vel(i,j,k,0) = prob_parm.meanFlowMag;,
-                         vel(i,j,k,1) = prob_parm.meanFlowMag;,
-                         vel(i,j,k,2) = 0.0);
-            break;
-         case -3  :
-            AMREX_D_TERM(vel(i,j,k,0) = -prob_parm.meanFlowMag;,
-                         vel(i,j,k,1) = -prob_parm.meanFlowMag;,
-                         vel(i,j,k,2) = 0.0);
+            AMREX_D_TERM(state(i,j,k,VELX) = prob_parm.meanFlowMag;,
+                         state(i,j,k,VELY) = 0.0;,
+                         state(i,j,k,VELZ) = 0.0);
+            break;                         
+         case -1  :                        
+            AMREX_D_TERM(state(i,j,k,VELX) = -prob_parm.meanFlowMag;,
+                         state(i,j,k,VELY) = 0.0;,
+                         state(i,j,k,VELZ) = 0.0);
+            break;                         
+         case 2  :                         
+            AMREX_D_TERM(state(i,j,k,VELX) = 0.0;,
+                         state(i,j,k,VELY) = prob_parm.meanFlowMag;,
+                         state(i,j,k,VELZ) = 0.0);
+            break;                         
+         case -2  :                        
+            AMREX_D_TERM(state(i,j,k,VELX) = 0.0;,
+                         state(i,j,k,VELY) = -prob_parm.meanFlowMag;,
+                         state(i,j,k,VELZ) = 0.0);
+            break;                         
+         case 3  :                         
+            AMREX_D_TERM(state(i,j,k,VELX) = prob_parm.meanFlowMag;,
+                         state(i,j,k,VELY) = prob_parm.meanFlowMag;,
+                         state(i,j,k,VELZ) = 0.0);
+            break;                         
+         case -3  :                        
+            AMREX_D_TERM(state(i,j,k,VELX) = -prob_parm.meanFlowMag;,
+                         state(i,j,k,VELY) = -prob_parm.meanFlowMag;,
+                         state(i,j,k,VELZ) = 0.0);
             break;
        }
 
        if (is_incompressible) return;
 
-       temp(i,j,k) = prob_parm.T_mean;
+       state(i,j,k,TEMP) = prob_parm.T_mean;
        const amrex::Real deltax = x - prob_parm.xgauss;
        const amrex::Real deltay = y - prob_parm.ygauss;
        const amrex::Real d_sq = deltax*deltax + deltay*deltay;
@@ -148,19 +144,69 @@ void pelelm_initdata(int i, int j, int k,
           massfrac[sp1_ID] += massfrac[sp1_ID] * prob_parm.ampgauss * std::exp(-d_sq/r_sq);
           massfrac[sp2_ID] = 1.0 - massfrac[sp1_ID];
        } else if ( prob_parm.gauss_type == 1 ) { // Temp
-          temp(i,j,k) = prob_parm.T_mean * ( 1.0 + prob_parm.ampgauss * std::exp(-d_sq/r_sq) );
+          state(i,j,k,TEMP) = prob_parm.T_mean * ( 1.0 + prob_parm.ampgauss * std::exp(-d_sq/r_sq) );
        } else {
           amrex::Abort("Unknown gauss_type: should be either Temp or Spec");
        }
-    } else if ( prob_parm.probType == 2 ) { // DiffGau
+    } else if ( prob_parm.probType == 3 ) { // CoTanH
 
-       AMREX_D_TERM(vel(i,j,k,0) = 0.0;,
-                    vel(i,j,k,1) = 0.0;,
-                    vel(i,j,k,2) = 0.0);
+       switch(prob_parm.meanFlowDir) {
+         case 1  :
+            AMREX_D_TERM(state(i,j,k,VELX) = prob_parm.meanFlowMag;,
+                         state(i,j,k,VELY) = 0.0;,
+                         state(i,j,k,VELZ) = 0.0);
+            break;                         
+         case -1  :                        
+            AMREX_D_TERM(state(i,j,k,VELX) = -prob_parm.meanFlowMag;,
+                         state(i,j,k,VELY) = 0.0;,
+                         state(i,j,k,VELZ) = 0.0);
+            break;                         
+         case 2  :                         
+            AMREX_D_TERM(state(i,j,k,VELX) = 0.0;,
+                         state(i,j,k,VELY) = prob_parm.meanFlowMag;,
+                         state(i,j,k,VELZ) = 0.0);
+            break;                         
+         case -2  :                        
+            AMREX_D_TERM(state(i,j,k,VELX) = 0.0;,
+                         state(i,j,k,VELY) = -prob_parm.meanFlowMag;,
+                         state(i,j,k,VELZ) = 0.0);
+            break;                         
+         case 3  :                         
+            AMREX_D_TERM(state(i,j,k,VELX) = prob_parm.meanFlowMag;,
+                         state(i,j,k,VELY) = prob_parm.meanFlowMag;,
+                         state(i,j,k,VELZ) = 0.0);
+            break;                         
+         case -3  :                        
+            AMREX_D_TERM(state(i,j,k,VELX)  = -prob_parm.meanFlowMag;,
+                         state(i,j,k,VELY)  = -prob_parm.meanFlowMag;,
+                         state(i,j,k,VELZ)  = 0.0);
+            break;
+       }
 
        if (is_incompressible) return;
 
-       temp(i,j,k) = prob_parm.T_mean;
+       state(i,j,k,TEMP) = prob_parm.T_mean;
+       const amrex::Real deltax = x - prob_parm.xgauss;
+       const amrex::Real deltay = y - prob_parm.ygauss;
+       const amrex::Real rad = std::sqrt(deltax*deltax + deltay*deltay);
+       const amrex::Real eta = 0.5*(1.0 - std::tanh(2.0*(rad-prob_parm.rgauss)/(0.05*prob_parm.rgauss)));
+       if ( prob_parm.gauss_type == 0 ) { // Spec
+          massfrac[sp1_ID] += massfrac[sp1_ID] * prob_parm.ampgauss * eta;
+          massfrac[sp2_ID] = 1.0 - massfrac[sp1_ID];
+       } else if ( prob_parm.gauss_type == 1 ) { // Temp
+          state(i,j,k,TEMP) = prob_parm.T_mean * ( 1.0 + prob_parm.ampgauss * eta );
+       } else {
+          amrex::Abort("Unknown tanh_type: should be either Temp or Spec");
+       }
+    } else if ( prob_parm.probType == 2 ) { // DiffGau
+
+       AMREX_D_TERM(state(i,j,k,VELX) = 0.0;,
+                    state(i,j,k,VELY) = 0.0;,
+                    state(i,j,k,VELZ) = 0.0);
+
+       if (is_incompressible) return;
+
+       state(i,j,k,TEMP) = prob_parm.T_mean;
        // Set up the Gaussian as the solution of the diffusion of a delta dirac initial distribution
        // after time gaussTime of a diffusion process with constant diffusion coeff. gaussDiff. Use ampgauss
        // to avoid undershoot/overshoot of the 2-species mixture.
@@ -174,7 +220,7 @@ void pelelm_initdata(int i, int j, int k,
           massfrac[sp2_ID] = 1.0 - massfrac[sp1_ID];
        } else if ( prob_parm.gauss_type == 1 ) { //Temp
           // TODO: find a better way, one with an analytical solution
-          temp(i,j,k) = prob_parm.T_mean * ( 1.0 + prob_parm.ampgauss * std::exp(-d_sq/r_sq) );
+          state(i,j,k,TEMP) = prob_parm.T_mean * ( 1.0 + prob_parm.ampgauss * std::exp(-d_sq/r_sq) );
        } else {
           amrex::Abort("Unknown gauss_type: should be either Temp or Spec");
        }
@@ -184,17 +230,17 @@ void pelelm_initdata(int i, int j, int k,
 
     // Density
     amrex::Real rho_cgs = 0.0;
-    eos.PYT2R(P_cgs, massfrac, temp(i,j,k), rho_cgs);
-    rho(i,j,k) = rho_cgs * 1.0e3;
+    eos.PYT2R(P_cgs, massfrac, state(i,j,k,TEMP), rho_cgs);
+    state(i,j,k,DENSITY) = rho_cgs * 1.0e3;
 
     // Enthalpy
     amrex::Real h_cgs = 0.0;
-    eos.TY2H(temp(i,j,k), massfrac, h_cgs);
-    rhoH(i,j,k) = h_cgs * 1.0e-4 * rho(i,j,k);
+    eos.TY2H(state(i,j,k,TEMP), massfrac, h_cgs);
+    state(i,j,k,RHOH) = h_cgs * 1.0e-4 * state(i,j,k,DENSITY);
 
     // Species mass
     for (int n = 0; n < NUM_SPECIES; n++) {
-       rhoY(i,j,k,n) = massfrac[n] * rho(i,j,k);
+       state(i,j,k,FIRSTSPEC+n) = massfrac[n] * state(i,j,k,DENSITY);
     }
 
 }

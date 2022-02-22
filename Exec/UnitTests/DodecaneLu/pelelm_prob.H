@@ -15,11 +15,7 @@ AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
 void pelelm_initdata(int i, int j, int k,
                      int /*is_incompressible*/,
-                     amrex::Array4<amrex::Real> const& vel,
-                     amrex::Array4<amrex::Real> const& rho,
-                     amrex::Array4<amrex::Real> const& rhoY,
-                     amrex::Array4<amrex::Real> const& rhoH,
-                     amrex::Array4<amrex::Real> const& temp,
+                     amrex::Array4<amrex::Real> const& state,
                      amrex::Array4<amrex::Real> const& /*aux*/,
                      amrex::GeometryData const& geomdata,
                      ProbParm const& prob_parm,
@@ -81,36 +77,36 @@ void pelelm_initdata(int i, int j, int k,
 
     pele::physics::PMF::pmf(pmf_data,y1, y2, pmf_vals);
 
-    temp(i,j,k) = pmf_vals[0];;
+    state(i,j,k,TEMP) = pmf_vals[0];;
 
     for (int n = 0; n < NUM_SPECIES; n++){
       molefrac[n] = pmf_vals[3 + n];
     }
     eos.X2Y(molefrac, massfrac);
 
-    vel(i,j,k,0) = 0.0;
+    state(i,j,k,VELX) = 0.0;
 #if ( AMREX_SPACEDIM == 2 )
-    vel(i,j,k,1) = pmf_vals[1]*1e-2;
+    state(i,j,k,VELY) = pmf_vals[1]*1e-2;
 #elif ( AMREX_SPACEDIM == 3 )
-    vel(i,j,k,1) = 0.0;
-    vel(i,j,k,2) = pmf_vals[1]*1e-2;
+    state(i,j,k,VELY) = 0.0;
+    state(i,j,k,VELZ) = pmf_vals[1]*1e-2;
 #endif
 
     amrex::Real P_cgs = prob_parm.P_mean * 10.0;
 
     // Density
     amrex::Real rho_cgs = 0.0;
-    eos.PYT2R(P_cgs, massfrac, temp(i,j,k), rho_cgs);
-    rho(i,j,k) = rho_cgs * 1.0e3;
+    eos.PYT2R(P_cgs, massfrac, state(i,j,k,TEMP), rho_cgs);
+    state(i,j,k,DENSITY) = rho_cgs * 1.0e3;
 
     // Enthalpy
     amrex::Real h_cgs = 0.0;
-    eos.TY2H(temp(i,j,k), massfrac, h_cgs);
-    rhoH(i,j,k) = h_cgs * 1.0e-4 * rho(i,j,k);
+    eos.TY2H(state(i,j,k,TEMP), massfrac, h_cgs);
+    state(i,j,k,RHOH) = h_cgs * 1.0e-4 * state(i,j,k,DENSITY);
 
     // Species mass
     for (int n = 0; n < NUM_SPECIES; n++) {
-       rhoY(i,j,k,n) = massfrac[n] * rho(i,j,k);
+       state(i,j,k,FIRSTSPEC+n) = massfrac[n] * state(i,j,k,DENSITY);
     }
 }
 

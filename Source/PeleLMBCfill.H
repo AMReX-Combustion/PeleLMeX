@@ -55,10 +55,12 @@ struct PeleLMCCFillExtDirState
 
 #ifdef PELE_USE_TURBINFLOW
                // If using TurbInflow, pass in the turbulent data. User can overwrite if needed
-               if ( n >= VELX && n < DENSITY ) {
-                  if ( !isnan(state(iv,VELX+n)) ) {  // During fillcoarsepatch, get here with nan. TODO: find a better fix
-                     s_ext[VELX+n] = state(iv,VELX+n);
-                  }
+               if (lprobparm->do_turb) {
+                 if ( n >= VELX && n < DENSITY ) {
+                   if ( !isnan(state(iv,VELX+n)) ) {  // During fillcoarsepatch, get here with nan. TODO: find a better fix
+                      s_ext[VELX+n] = state(iv,VELX+n);
+                   }
+                 }
                }
 #endif
                // bcnormal() is defined in pelelm_prob.H in problem directory in /Exec
@@ -80,10 +82,12 @@ struct PeleLMCCFillExtDirState
 
 #ifdef PELE_USE_TURBINFLOW
                // If using TurbInflow, pass in the turbulent data. User can overwrite if needed
-               if ( n >= VELX && n < DENSITY ) {
-                  if ( !isnan(state(iv,VELX+n)) ) {  // During fillcoarsepatch, get here with nan. TODO: find a better fix
-                     s_ext[VELX+n] = state(iv,VELX+n);
-                  }
+               if (lprobparm->do_turb) {
+                 if ( n >= VELX && n < DENSITY ) {
+                   if ( !isnan(state(iv,VELX+n)) ) {  // During fillcoarsepatch, get here with nan. TODO: find a better fix
+                      s_ext[VELX+n] = state(iv,VELX+n);
+                   }
+                 }
                }
 #endif
                // bcnormal() is defined in pelelm_prob.H in problem directory in /Exec
