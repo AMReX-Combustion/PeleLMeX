@@ -34,16 +34,17 @@ peleLM.gravity = -9.81
 peleLM.use_wbar = 0
 peleLM.sdc_iterMax = 1
 peleLM.floor_species = 0
+peleLM.advection_scheme = "Godunov_BDS"
 
 #amr.restart = chk00005
 #amr.check_int = 2000
 amr.plot_int = 100
 amr.max_step = 400
 amr.dt_shrink = 0.1
-amr.stop_time = 10.0
+amr.stop_time = 0.1
 #amr.fixed_dt = 0.0001
 #amr.stop_time = 1.00
-amr.cfl = 0.5
+amr.cfl = 0.9
 amr.derive_plot_vars = avg_pressure mag_vort mass_fractions
 
 cvode.solve_type = dense               # CVODE Linear solve type (for Newton direction) 
