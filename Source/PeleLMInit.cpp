@@ -104,6 +104,12 @@ void PeleLM::initData() {
       InitFromScratch(m_cur_time);
       resetCoveredMask();
 
+#ifdef SPRAY_PELE_LM
+      if (do_spray_particles) {
+        initSprays();
+      }
+#endif
+
       //----------------------------------------------------------------
       // Set typical values
       int is_init = 1;
@@ -243,6 +249,11 @@ void PeleLM::initData() {
       // Read starting configuration from chk file.
       ReadCheckPointFile();
 
+#ifdef SPRAY_PELE_LM
+      if (do_spray_particles) {
+        sprayRestart();
+      }
+#endif
 #ifdef PELE_USE_EFIELD
       // If restarting from a non efield simulation
       if (m_restart_nonEF) {

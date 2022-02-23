@@ -22,6 +22,11 @@
 #include <PrecondOp.H>
 #endif
 
+// Forward declarations
+#ifdef SPRAY_PELE_LM
+class SprayParticleContainer;
+#endif
+
 class PeleLM : public amrex::AmrCore {
 
    public:
@@ -85,6 +90,23 @@ class PeleLM : public amrex::AmrCore {
 
    // ReadProblemParameters
    void readProbParm();
+
+#ifdef SPRAY_PELE_LM
+   // ReadSprayParameters
+   void readSprayParameters();
+
+   // SprayParticleSetup
+   void sprayParticleSetup();
+
+   // CreateSprayData
+   void createSprayData();
+
+   // InitSprays
+   void initSprays();
+
+   // SprayRestart
+   void sprayRestart();
+#endif
 
    // VariablesSetup
    void variablesSetup();
@@ -385,7 +407,21 @@ class PeleLM : public amrex::AmrCore {
                      amrex::Array4<const amrex::Real> const& temp);
    //-----------------------------------------------------------------------------
 
+#ifdef SPRAY_PELE_LM
+   //-----------------------------------------------------------------------------
+   // Sprays
 
+   void sprayRedistribute(int lbase, bool init_part);
+   static int write_spray_ascii_files;
+   static int num_spray_src;
+   static int do_spray_particles;
+   static int plot_spray_src;
+   static amrex::Vector<std::string> spray_fuel_names;
+   static SprayParticleContainer* theSprayPC();
+   static SprayParticleContainer* theVirtPC();
+   static SprayParticleContainer* theGhostPC();
+   //-----------------------------------------------------------------------------
+#endif
    //-----------------------------------------------------------------------------
    // EOS
 
@@ -888,8 +924,8 @@ class PeleLM : public amrex::AmrCore {
    pele::physics::PMF::PmfData pmf_data;
 
    // Transport pointer
-   pele::physics::transport::TransportParams<
-         pele::physics::PhysicsType::transport_type> trans_parms;
+   static pele::physics::transport::TransportParams<
+          pele::physics::PhysicsType::transport_type> trans_parms;
 
    // Reactor pointer
    std::string m_chem_integrator;

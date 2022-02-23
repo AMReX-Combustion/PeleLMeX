@@ -51,6 +51,12 @@ void PeleLM::Setup() {
    // Tagging setup
    taggingSetup();
 
+#ifdef AMREX_PARTICLES
+   if (do_spray_particles) {
+     sprayParticleSetup();
+   }
+#endif
+
    // Initialize Level Hierarchy data
    resizeArray();
 
@@ -364,7 +370,9 @@ void PeleLM::readParameters() {
    ppef.query("restart_electroneutral",m_restart_electroneutral);
    ppef.query("restart_resetTime",m_restart_resetTime);
 #endif
-
+#ifdef PELE_LM_SPRAY
+   readSprayParameters();
+#endif
 }
 
 void PeleLM::readIOParameters() {
