@@ -49,11 +49,7 @@ AMREX_FORCE_INLINE
 void
 pelelm_initdata (int i, int j, int k, 
                  int is_incompressible,
-                 amrex::Array4<amrex::Real> const& vel,
-                 amrex::Array4<amrex::Real> const& rho,
-                 amrex::Array4<amrex::Real> const& rhoY,
-                 amrex::Array4<amrex::Real> const& rhoH,
-                 amrex::Array4<amrex::Real> const& temp,
+                 amrex::Array4<amrex::Real> const& state,
                  amrex::Array4<amrex::Real> const& aux,
                  amrex::GeometryData const& geomdata,
                  ProbParm const& prob_parm,
@@ -94,7 +90,7 @@ pelelm_initdata (int i, int j, int k,
     
     amrex::Real Gaussian_T = std::exp( - (rad*rad) / (2.0 * ( Gauss_T_width * ( 1.0 + (y - y_lo) / 0.03)) 
                                                           * ( Gauss_T_width * ( 1.0 + (y - y_lo) / 0.03)) ));  
-    temp(i,j,k) = prob_parm.T_in + (Gauss_maxT-prob_parm.T_in) * Gaussian_T;
+    state(i,j,k,TEMP) = prob_parm.T_in + (Gauss_maxT-prob_parm.T_in) * Gaussian_T;
 
     amrex::Real Gaussian_spec = std::exp( - (rad*rad) / (2.0 * ( Gauss_Spec_width * ( 1.0 + (y - y_lo) / 0.03)) 
                                                           * ( Gauss_Spec_width * ( 1.0 + (y - y_lo) / 0.03)) ));  
@@ -102,20 +98,20 @@ pelelm_initdata (int i, int j, int k,
        massfrac[n] = (1.0 - Gaussian_spec) * massfrac[n] + Gaussian_spec * air_Y[n];
     }     
 
-    vel(i,j,k,0) = 0.0;
-    vel(i,j,k,1) = prob_parm.V_in;
+    state(i,j,k,VELX) = 0.0;
+    state(i,j,k,VELY) = prob_parm.V_in;
 
     amrex::Real rho_cgs, P_cgs;
     P_cgs = prob_parm.P_mean * 10.0;
 
-    eos.PYT2R(P_cgs, massfrac, temp(i,j,k), rho_cgs);
-    rho(i,j,k) = rho_cgs * 1.0e3;            // CGS -> MKS conversion
+    eos.PYT2R(P_cgs, massfrac, state(i,j,k,TEMP), rho_cgs);
+    state(i,j,k,DENSITY) = rho_cgs * 1.0e3;               // CGS -> MKS conversion
 
-    eos.TY2H(temp(i,j,k), massfrac, rhoH(i,j,k));
-    rhoH(i,j,k) = rhoH(i,j,k) * 1.0e-4 * rho(i,j,k);   // CGS -> MKS conversion
+    eos.TY2H(state(i,j,k,TEMP), massfrac, state(i,j,k,RHOH));
+    state(i,j,k,RHOH) *= 1.0e-4 * state(i,j,k,DENSITY);   // CGS -> MKS conversion
 
     for (int n = 0; n < NUM_SPECIES; n++) {
-      rhoY(i,j,k,n) = massfrac[n] * rho(i,j,k);
+      state(i,j,k,FIRSTSPEC+n) = massfrac[n] * state(i,j,k,DENSITY);
     }
 }
 

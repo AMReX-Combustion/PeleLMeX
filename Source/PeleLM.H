@@ -925,7 +925,7 @@ class PeleLM : public amrex::AmrCore {
 
    // Transport pointer
    static pele::physics::transport::TransportParams<
-          pele::physics::PhysicsType::transport_type> trans_parms;
+             pele::physics::PhysicsType::transport_type> trans_parms;
 
    // Reactor pointer
    std::string m_chem_integrator;

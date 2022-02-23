@@ -1,8 +1,11 @@
 #include <PeleLM.H>
 
 using namespace amrex;
+
 pele::physics::transport::TransportParams<
-  pele::physics::PhysicsType::transport_type> PeleLM::trans_parms;
+  pele::physics::PhysicsType::transport_type>
+  PeleLM::trans_parms;
+
 PeleLM::PeleLM() = default;
 
 PeleLM::~PeleLM()
