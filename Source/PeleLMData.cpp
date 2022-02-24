@@ -8,7 +8,11 @@ PeleLM::LevelData::LevelData(amrex::BoxArray const& ba,
                              int a_incompressible, int a_has_divu, 
                              int a_nAux, int a_nGrowState)
 {
-   state.define(   ba, dm, NVAR          , a_nGrowState, MFInfo(), factory);
+   if (a_incompressible ) {
+       state.define(  ba, dm, AMREX_SPACEDIM , a_nGrowState, MFInfo(), factory);
+   } else {
+       state.define(  ba, dm, NVAR           , a_nGrowState, MFInfo(), factory);
+   }
    gp.define(      ba, dm, AMREX_SPACEDIM, 0           , MFInfo(), factory);
    press.define(   amrex::convert(ba,IntVect::TheNodeVector()),
                        dm, 1             , 1           , MFInfo(), factory);
@@ -151,8 +155,10 @@ void
 PeleLM::copyStateNewToOld(int nGhost) {
    AMREX_ASSERT(nGhost<=m_nGrowState);
    for (int lev = 0; lev <= finest_level; lev++ ) {
-      MultiFab::Copy(m_leveldata_old[lev]->state,m_leveldata_new[lev]->state,0,0,NVAR,nGhost);
-      if ( !m_incompressible ) {
+      if ( m_incompressible ) {
+         MultiFab::Copy(m_leveldata_old[lev]->state,m_leveldata_new[lev]->state,0,0,AMREX_SPACEDIM,nGhost);
+      } else {
+         MultiFab::Copy(m_leveldata_old[lev]->state,m_leveldata_new[lev]->state,0,0,NVAR,nGhost);
          if ( m_has_divu ) {
             MultiFab::Copy(m_leveldata_old[lev]->divu,m_leveldata_new[lev]->divu,0,0,1,std::min(nGhost,1));
          }
@@ -176,8 +182,10 @@ void
 PeleLM::copyStateOldToNew(int nGhost) {
    AMREX_ASSERT(nGhost<=m_nGrowState);
    for (int lev = 0; lev <= finest_level; lev++ ) {
-      MultiFab::Copy(m_leveldata_new[lev]->state,m_leveldata_old[lev]->state,0,0,NVAR,nGhost);
-      if ( !m_incompressible ) {
+      if ( m_incompressible ) {
+         MultiFab::Copy(m_leveldata_new[lev]->state,m_leveldata_old[lev]->state,0,0,AMREX_SPACEDIM,nGhost);
+      } else {
+         MultiFab::Copy(m_leveldata_new[lev]->state,m_leveldata_old[lev]->state,0,0,NVAR,nGhost);
          if ( m_has_divu ) {
             MultiFab::Copy(m_leveldata_new[lev]->divu,m_leveldata_old[lev]->divu,0,0,1,std::min(nGhost,1));
          }

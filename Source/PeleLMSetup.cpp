@@ -444,14 +444,23 @@ void PeleLM::variablesSetup() {
       }
    }
 
-   Print() << " => Total number of state variables: " << NVAR << "\n";
+   if ( m_incompressible ) {
+      Print() << " => Total number of state variables: " << AMREX_SPACEDIM << "\n";
+   } else {
+      Print() << " => Total number of state variables: " << NVAR << "\n";
+   }
    Print() << PrettyLine;
    Print() << "\n";
 
    //----------------------------------------------------------------
    // Set advection/diffusion types
-   m_AdvTypeState.resize(NVAR);
-   m_DiffTypeState.resize(NVAR);
+   if ( m_incompressible ) {
+      m_AdvTypeState.resize(AMREX_SPACEDIM);
+      m_DiffTypeState.resize(AMREX_SPACEDIM);
+   } else {
+      m_AdvTypeState.resize(NVAR);
+      m_DiffTypeState.resize(NVAR);
+   }
 
    // Velocity - follow incflo
    for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
@@ -486,7 +495,11 @@ void PeleLM::variablesSetup() {
 
    //----------------------------------------------------------------
    // Typical values container
-   typical_values.resize(NVAR,-1.0);
+   if ( m_incompressible ) {
+      typical_values.resize(AMREX_SPACEDIM,-1.0);
+   } else {
+      typical_values.resize(NVAR,-1.0);
+   }
 }
 
 void PeleLM::derivedSetup()

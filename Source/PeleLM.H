@@ -808,6 +808,7 @@ class PeleLM : public amrex::AmrCore {
       }
    }
 
+   amrex::Vector<std::unique_ptr<amrex::MultiFab> > getStateVect(const PeleLM::TimeStamp &a_time);
    amrex::Vector<std::unique_ptr<amrex::MultiFab> > getVelocityVect(const PeleLM::TimeStamp &a_time);
    amrex::Vector<std::unique_ptr<amrex::MultiFab> > getDensityVect(const PeleLM::TimeStamp &a_time);
    amrex::Vector<std::unique_ptr<amrex::MultiFab> > getSpeciesVect(const PeleLM::TimeStamp &a_time);
@@ -955,7 +956,7 @@ class PeleLM : public amrex::AmrCore {
    amrex::Real m_divu_dtFactor = 0.5;
    amrex::Real m_divu_rhoMin = 0.1;  
 
-   // Number if passive scalars
+   // Aux data size
    int m_nAux = 0;
 
    // R-z

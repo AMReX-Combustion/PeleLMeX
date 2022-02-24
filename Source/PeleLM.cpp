@@ -13,8 +13,11 @@ PeleLM::~PeleLM()
    for (int lev = 0; lev <= finest_level; ++lev) {
       ClearLevel(lev);
    }
-   trans_parms.deallocate();
-   m_reactor->close();
+   
+   if (!m_incompressible) {
+      trans_parms.deallocate();
+      m_reactor->close();
+   } 
 
    closeTempFile();
    typical_values.clear();
@@ -61,6 +64,34 @@ PeleLM::getLevelDataReactPtr(int lev)
    } else {
       return nullptr;
    }
+}
+
+Vector<std::unique_ptr<MultiFab> >
+PeleLM::getStateVect(const TimeStamp &a_time) {
+   Vector<std::unique_ptr<MultiFab> > r;
+   r.reserve(finest_level+1);
+   if ( a_time == AmrOldTime ) {
+      if (m_incompressible) {
+         for (int lev = 0; lev <= finest_level; ++lev) {
+            r.push_back(std::make_unique<MultiFab> (m_leveldata_old[lev]->state,amrex::make_alias,0,AMREX_SPACEDIM));
+         }
+      } else {
+         for (int lev = 0; lev <= finest_level; ++lev) {
+            r.push_back(std::make_unique<MultiFab> (m_leveldata_old[lev]->state,amrex::make_alias,0,NVAR));
+         }
+      }
+   } else {
+      if (m_incompressible) {
+         for (int lev = 0; lev <= finest_level; ++lev) {
+            r.push_back(std::make_unique<MultiFab> (m_leveldata_new[lev]->state,amrex::make_alias,0,AMREX_SPACEDIM));
+         }
+      } else {
+         for (int lev = 0; lev <= finest_level; ++lev) {
+            r.push_back(std::make_unique<MultiFab> (m_leveldata_new[lev]->state,amrex::make_alias,0,NVAR));
+         }
+      }
+   }
+   return r;
 }
 
 Vector<std::unique_ptr<MultiFab> >
@@ -206,17 +237,18 @@ PeleLM::getViscosityVect(const TimeStamp &a_time) {
 void
 PeleLM::averageDownState(const PeleLM::TimeStamp &a_time)
 {
+   int nCompState = ( m_incompressible ) ? AMREX_SPACEDIM : NVAR;
    for (int lev = finest_level; lev > 0; --lev) {
       auto ldataFine_p = getLevelDataPtr(lev,a_time);
       auto ldataCrse_p = getLevelDataPtr(lev-1,a_time);
 #ifdef AMREX_USE_EB
       EB_average_down(ldataFine_p->state,
                       ldataCrse_p->state,
-                      0,NVAR,refRatio(lev-1));
+                      0,nCompState,refRatio(lev-1));
 #else
       average_down(ldataFine_p->state,
                    ldataCrse_p->state,
-                   0,NVAR,refRatio(lev-1));
+                   0,nCompState,refRatio(lev-1));
 #endif
    }
 }
