@@ -12,7 +12,6 @@ peleLM.hi_bc = Interior  Interior  Interior
 
 #-------------------------AMR CONTROL----------------------------
 amr.n_cell          = 32 32 32      # Level 0 number of cells in each direction   
-amr.n_cell          = 128 128 128      # Level 0 number of cells in each direction   
 amr.v               = 1                # AMR verbose
 amr.max_level       = 0                # maximum level number allowed
 amr.ref_ratio       = 2 2 2 2          # refinement ratio
@@ -25,8 +24,8 @@ amr.max_grid_size   = 64               # max box size
 #----------------------- PROBLEM PARAMETERS---------------------
 prob.T_mean           = 298.0
 prob.P_mean           = 101325.
-prob.input_name       = hit_ic_7_128.dat
-prob.input_resolution = 128
+prob.input_name       = hit_ic_4_32.dat
+prob.input_resolution = 32
 prob.input_binaryformat = 0
 prob.urms0            = 2.0
 
