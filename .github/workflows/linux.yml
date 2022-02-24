@@ -244,3 +244,34 @@ jobs:
       run: |
         ./PeleLMeX2d.gnu.MPI.ex input.2d-regt amr.max_step=2 amr.plot_int=-1 amr.check_int=-1
         ./PeleLMeX2d.gnu.MPI.ex input.2d-regt_WallBump amr.max_step=2 amr.plot_int=-1 amr.check_int=-1
+
+  # Build and Run the HIT RegTest with GNU7.5 and MPI support
+  HIT3D_MPIRun:
+    name: GNU@7.5 MPI Run [HIT3D]
+    runs-on: ubuntu-latest
+    env: 
+      {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
+    steps:
+    - name: Cancel previous runs
+      uses: styfle/cancel-workflow-action@0.6.0
+      with:
+        access_token: ${{github.token}}
+    - uses: actions/checkout@v2
+    - name: System Dependencies
+      run: .github/workflows/dependencies/dependencies.sh
+    - name: Repo Dependencies
+      run: Utils/CloneDeps.sh
+    - name: Build
+      env:
+         AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
+         PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
+         PELELM_HOME: ${GITHUB_WORKSPACE}
+         AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
+      working-directory: ./Exec/RegTests/HITDecay/
+      run: |
+        make TPL COMP=gnu USE_MPI=TRUE
+        make -j 2 COMP=gnu USE_MPI=TRUE
+    - name: Run
+      working-directory: ./Exec/RegTests/HITDecay/
+      run: |
+        ./PeleLMeX3d.gnu.MPI.ex input.3d amr.max_step=10 amr.plot_int=-1 amr.check_int=-1
