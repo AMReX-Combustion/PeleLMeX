@@ -29,18 +29,10 @@ prob.forcevort = 0.3
 
 #-------------------------PeleLM CONTROL----------------------------
 peleLM.v = 3
-peleLM.incompressible = 0
+peleLM.incompressible = 1
 peleLM.rho = 1.17
-peleLM.mu = 0.0
-peleLM.use_wbar = 1
-peleLM.sdc_iterMax = 1
-peleLM.floor_species = 0
-peleLM.num_divu_iter = 1
+peleLM.mu = 0.0005
 peleLM.num_init_iter = 3
-
-peleLM.do_temporals = 1
-peleLM.temporal_int = 2
-peleLM.mass_balance = 1
 
 amr.check_int = 100
 amr.plot_int = 50
@@ -49,15 +41,7 @@ amr.dt_shrink = 1.0
 amr.stop_time = 1.0
 #amr.stop_time = 1.00
 amr.cfl = 0.6
-amr.derive_plot_vars = avg_pressure mag_vort mass_fractions
-
-# --------------- INPUTS TO CHEMISTRY REACTOR ---------------
-peleLM.chem_integrator = "ReactorNull"
-#peleLM.use_typ_vals_chem = 1          # Use species/temp typical values in CVODE
-#ode.rtol = 1.0e-6                     # Relative tolerance of the chemical solve
-#ode.atol = 1.0e-5                     # Absolute tolerance factor applied on typical values
-cvode.solve_type = denseAJ_direct     # CVODE Linear solve type (for Newton direction) 
-cvode.max_order  = 4                  # CVODE max BDF order. 
+amr.derive_plot_vars = avg_pressure mag_vort
 
 #------------------------- EB SETUP -----------------------------
 eb2.geom_type = sphere
