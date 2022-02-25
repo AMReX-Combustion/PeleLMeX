@@ -4,9 +4,6 @@
 #ifdef AMREX_USE_EB
 #include <AMReX_EBInterpolater.H>
 #endif
-#ifdef PELE_USE_TURBINFLOW
-#include <turbinflow.H>
-#endif
 
 // Conversion from physBC to fieldBC maps
 // Components are  Interior, Inflow, Outflow, Symmetry, &
@@ -318,13 +315,12 @@ void PeleLM::fillpatch_state(int lev,
 
    int nCompState = ( m_incompressible ) ? AMREX_SPACEDIM : NVAR;
 
-#ifdef PELE_USE_TURBINFLOW
    fillTurbInflow(a_state, VELX, lev, a_time);
-#endif
 
    if (lev == 0) {
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirState>> bndry_func(geom[lev], fetchBCRecArray(0,nCompState),
-                                                                       PeleLMCCFillExtDirState{lprobparm, lpmfdata, m_nAux});
+                                                                       PeleLMCCFillExtDirState{lprobparm, lpmfdata,
+                                                                                               m_nAux, turb_inflow.is_initialized()});
       FillPatchSingleLevel(a_state, IntVect(nGhost), a_time,
                            {&(m_leveldata_old[lev]->state),&(m_leveldata_new[lev]->state)},
                            {m_t_old[lev], m_t_new[lev]},0,0,nCompState,geom[lev], bndry_func, 0);
@@ -334,9 +330,11 @@ void PeleLM::fillpatch_state(int lev,
       auto* mapper = getInterpolator();
 
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirState>> crse_bndry_func(geom[lev-1], fetchBCRecArray(0,nCompState),
-                                                                            PeleLMCCFillExtDirState{lprobparm, lpmfdata, m_nAux});
+                                                                            PeleLMCCFillExtDirState{lprobparm, lpmfdata,
+                                                                                                    m_nAux, turb_inflow.is_initialized()});
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirState>> fine_bndry_func(geom[lev], fetchBCRecArray(0,nCompState),
-                                                                            PeleLMCCFillExtDirState{lprobparm, lpmfdata, m_nAux});
+                                                                            PeleLMCCFillExtDirState{lprobparm, lpmfdata,
+                                                                                                    m_nAux, turb_inflow.is_initialized()});
       FillPatchTwoLevels(a_state, IntVect(nGhost), a_time,
                          {&(m_leveldata_old[lev-1]->state),&(m_leveldata_new[lev-1]->state)},
                          {m_t_old[lev-1], m_t_new[lev-1]},
@@ -347,9 +345,7 @@ void PeleLM::fillpatch_state(int lev,
                          refRatio(lev-1), mapper, fetchBCRecArray(0,nCompState), 0);
    }
 
-#ifdef PELE_USE_TURBINFLOW
    a_state.EnforcePeriodicity(geom[lev].periodicity());
-#endif
 }
 
 // Fill the density
@@ -674,17 +670,17 @@ void PeleLM::fillcoarsepatch_state(int lev,
 
    int nCompState = ( m_incompressible ) ? AMREX_SPACEDIM : NVAR;
 
-#ifdef PELE_USE_TURBINFLOW
    fillTurbInflow(a_state, VELX, lev, a_time);
-#endif
 
    // Interpolator
    auto* mapper = getInterpolator();
 
    PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirState>> crse_bndry_func(geom[lev-1], fetchBCRecArray(0,nCompState),
-                                                                         PeleLMCCFillExtDirState{lprobparm, lpmfdata, m_nAux});
+                                                                         PeleLMCCFillExtDirState{lprobparm, lpmfdata,
+                                                                                                 m_nAux, turb_inflow.is_initialized()});
    PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirState>> fine_bndry_func(geom[lev], fetchBCRecArray(0,nCompState),
-                                                                         PeleLMCCFillExtDirState{lprobparm, lpmfdata, m_nAux});
+                                                                         PeleLMCCFillExtDirState{lprobparm, lpmfdata,
+                                                                                                 m_nAux, turb_inflow.is_initialized()});
    InterpFromCoarseLevel(a_state, IntVect(nGhost), a_time,
                          m_leveldata_new[lev-1]->state, 0, 0, nCompState,
                          geom[lev-1], geom[lev],
@@ -828,29 +824,25 @@ void PeleLM::setInflowBoundaryVel(MultiFab &a_vel,
       }
    }  
 
-#ifdef PELE_USE_TURBINFLOW
    fillTurbInflow(a_vel, 0, lev, a_time);
-#endif
 
    ProbParm const* lprobparm = prob_parm_d;
    pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
-   PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirVel>> bndry_func(geom[lev], dummyVelBCRec,
-                                                                  PeleLMCCFillExtDirVel{lprobparm, lpmfdata, m_nAux});
+   PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirState>> bndry_func(geom[lev], dummyVelBCRec,
+                                                                    PeleLMCCFillExtDirState{lprobparm, lpmfdata,
+                                                                                            m_nAux, turb_inflow.is_initialized()});
 
    bndry_func(a_vel, 0, AMREX_SPACEDIM, a_vel.nGrowVect(), time, 0);
 
-#ifdef PELE_USE_TURBINFLOW
    a_vel.EnforcePeriodicity(geom[lev].periodicity());
-#endif
 }
 
-#ifdef PELE_USE_TURBINFLOW
 void PeleLM::fillTurbInflow(MultiFab &a_vel,
                             int vel_comp,
                             int lev,
                             const Real a_time)
 {
-   if (PeleLM::prob_parm->do_turb)  {
+   if (turb_inflow.is_initialized())  {
 
         ProbParm *probparmDD = PeleLM::prob_parm_d;
         ProbParm *probparmDH = PeleLM::prob_parm;
@@ -884,8 +876,7 @@ void PeleLM::fillTurbInflow(MultiFab &a_vel,
                     auto bndryBoxLO_ghost = amrex::Box(amrex::adjCellLo(modDom,dir,Grow) & bx);
                     data.setVal<amrex::RunOn::Device>(0.0,bndryBoxLO_ghost,vel_comp,AMREX_SPACEDIM);
 
-                    add_turb(bndryBoxLO, data, 0, geom[lev], a_time, dir, amrex::Orientation::low, probparmDH->tp);
-                    probparmDH->turb_ok[dir] = true;
+                    turb_inflow.add_turb(bndryBoxLO, data, 0, geom[lev], a_time, dir, amrex::Orientation::low);
                 }
 
                 auto bndryBoxHI = amrex::Box(amrex::adjCellHi(geom[lev].Domain(),dir,4) & bx);
@@ -902,8 +893,7 @@ void PeleLM::fillTurbInflow(MultiFab &a_vel,
                     auto bndryBoxHI_ghost = amrex::Box(amrex::adjCellHi(modDom,dir,Grow) & bx);
                     data.setVal<amrex::RunOn::Device>(0.0,bndryBoxHI_ghost,vel_comp,AMREX_SPACEDIM);
 
-                    add_turb(bndryBoxHI, data, 0, geom[lev], a_time, dir, amrex::Orientation::high, probparmDH->tp);
-                    probparmDH->turb_ok[dir+AMREX_SPACEDIM] = true;
+                    turb_inflow.add_turb(bndryBoxHI, data, 0, geom[lev], a_time, dir, amrex::Orientation::high);
                 }
             }
         }
@@ -912,4 +902,3 @@ void PeleLM::fillTurbInflow(MultiFab &a_vel,
         amrex::Gpu::copy(amrex::Gpu::hostToDevice, probparmDH, probparmDH + 1, probparmDD);
     }
 }
-#endif
