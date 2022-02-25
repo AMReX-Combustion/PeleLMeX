@@ -808,6 +808,7 @@ class PeleLM : public amrex::AmrCore {
       }
    }
 
+   amrex::Vector<std::unique_ptr<amrex::MultiFab> > getStateVect(const PeleLM::TimeStamp &a_time);
    amrex::Vector<std::unique_ptr<amrex::MultiFab> > getVelocityVect(const PeleLM::TimeStamp &a_time);
    amrex::Vector<std::unique_ptr<amrex::MultiFab> > getDensityVect(const PeleLM::TimeStamp &a_time);
    amrex::Vector<std::unique_ptr<amrex::MultiFab> > getSpeciesVect(const PeleLM::TimeStamp &a_time);
@@ -945,7 +946,8 @@ class PeleLM : public amrex::AmrCore {
    amrex::Real m_rho = 1.175;
    amrex::Real m_mu  = 2.0e-5;
 
-   amrex::Real m_gravity = 0.0;
+   amrex::GpuArray<amrex::Real,AMREX_SPACEDIM> m_gravity{AMREX_D_DECL(0.0,0.0,0.0)};
+   amrex::GpuArray<amrex::Real,AMREX_SPACEDIM> m_background_gp{AMREX_D_DECL(0.0,0.0,0.0)};
 
    // DivU ? default ON when not incompressible
    int m_has_divu = 1;
@@ -955,7 +957,7 @@ class PeleLM : public amrex::AmrCore {
    amrex::Real m_divu_dtFactor = 0.5;
    amrex::Real m_divu_rhoMin = 0.1;  
 
-   // Number if passive scalars
+   // Aux data size
    int m_nAux = 0;
 
    // R-z

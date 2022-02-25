@@ -23,7 +23,7 @@ struct PeleLMCCFillExtDirState
       const amrex::IntVect& iv,
       amrex::Array4<amrex::Real> const& state,
       const int /*dcomp*/,
-      const int /*numcomp*/,
+      const int numcomp,
       amrex::GeometryData const& geom,
       const amrex::Real time,
       const amrex::BCRec* bcr,
@@ -43,7 +43,7 @@ struct PeleLMCCFillExtDirState
       for (int idir = 0; idir < AMREX_SPACEDIM; idir++) {
 
          // Low
-         for (int n = 0; n < NVAR; n++) {
+         for (int n = 0; n < std::min(numcomp,NVAR); n++) {
 
             // bcnormal handles all the state components at once
             amrex::Real s_ext[NVAR] = {0.0};
@@ -70,7 +70,7 @@ struct PeleLMCCFillExtDirState
          }
 
          // High
-         for (int n = 0; n < NVAR; n++) {
+         for (int n = 0; n < std::min(numcomp,NVAR); n++) {
 
             // bcnormal handles all the state components at once
             amrex::Real s_ext[NVAR] = {0.0};
@@ -145,8 +145,10 @@ struct PeleLMCCFillExtDirVel
 
 #ifdef PELE_USE_TURBINFLOW
             // If using TurbInflow, pass in the turbulent data. User can overwrite if needed
-            for (int n = 0; n < AMREX_SPACEDIM; n++) {
-               s_ext[VELX+n] = vel(iv,VELX+n);
+            if (lprobparm->do_turb) {
+               for (int n = 0; n < AMREX_SPACEDIM; n++) {
+                  s_ext[VELX+n] = vel(iv,VELX+n);
+               }
             }
 #endif
             // bcnormal() is defined in pelelm_prob.H in problem directory in /Exec
@@ -160,8 +162,10 @@ struct PeleLMCCFillExtDirVel
 
 #ifdef PELE_USE_TURBINFLOW
             // If using TurbInflow, pass in the turbulent data. User can overwrite if needed
-            for (int n = 0; n < AMREX_SPACEDIM; n++) {
-               s_ext[VELX+n] = vel(iv,VELX+n);
+            if (lprobparm->do_turb) {
+               for (int n = 0; n < AMREX_SPACEDIM; n++) {
+                  s_ext[VELX+n] = vel(iv,VELX+n);
+               }
             }
 #endif
             // bcnormal() is defined in pelelm_prob.H in problem directory in /Exec

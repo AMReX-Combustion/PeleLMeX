@@ -175,33 +175,47 @@ void PeleLM::redistributeDiff(int a_lev,
 void PeleLM::initCoveredState()
 {
     // TODO use typical values
-    coveredState_h.resize(NVAR);
-    AMREX_D_TERM(coveredState_h[0] = 0.0;,
-                 coveredState_h[1] = 0.0;,
-                 coveredState_h[2] = 0.0;)
-    coveredState_h[DENSITY] = 1.179;
-    int idO2 = O2_ID;
-    int idN2 = N2_ID;
-    for (int n = 0; n < NUM_SPECIES; n++ ) {
-       if ( n == idO2 ) {
-          coveredState_h[FIRSTSPEC+n] = 0.233*1.179;
-       } else if ( n == idN2 ) {
-          coveredState_h[FIRSTSPEC+n] = 0.767*1.179;
-       } else {
-          coveredState_h[FIRSTSPEC+n] = 0.0;
-       }
-    }
-    coveredState_h[RHOH] = -139.7;
-    coveredState_h[TEMP] = 300.0;
-    coveredState_h[RHORT] = 101325.0;
-
-    coveredState_d.resize(NVAR);
+    if ( m_incompressible ) {
+        coveredState_h.resize(AMREX_SPACEDIM);
+        AMREX_D_TERM(coveredState_h[0] = 0.0;,
+                     coveredState_h[1] = 0.0;,
+                     coveredState_h[2] = 0.0;)
+        coveredState_d.resize(AMREX_SPACEDIM);
 #ifdef AMREX_USE_GPU
-    Gpu::htod_memcpy
+        Gpu::htod_memcpy
 #else
-    std::memcpy
+        std::memcpy
 #endif
-       (coveredState_d.data(),coveredState_h.data(), sizeof(Real)*NVAR);
+          (coveredState_d.data(),coveredState_h.data(), sizeof(Real)*AMREX_SPACEDIM);
+    } else {
+        coveredState_h.resize(NVAR);
+        AMREX_D_TERM(coveredState_h[0] = 0.0;,
+                     coveredState_h[1] = 0.0;,
+                     coveredState_h[2] = 0.0;)
+        coveredState_h[DENSITY] = 1.179;
+        int idO2 = O2_ID;
+        int idN2 = N2_ID;
+        for (int n = 0; n < NUM_SPECIES; n++ ) {
+           if ( n == idO2 ) {
+              coveredState_h[FIRSTSPEC+n] = 0.233*1.179;
+           } else if ( n == idN2 ) {
+              coveredState_h[FIRSTSPEC+n] = 0.767*1.179;
+           } else {
+              coveredState_h[FIRSTSPEC+n] = 0.0;
+           }
+        }
+        coveredState_h[RHOH] = -139.7;
+        coveredState_h[TEMP] = 300.0;
+        coveredState_h[RHORT] = 101325.0;
+
+        coveredState_d.resize(NVAR);
+#ifdef AMREX_USE_GPU
+        Gpu::htod_memcpy
+#else
+        std::memcpy
+#endif
+          (coveredState_d.data(),coveredState_h.data(), sizeof(Real)*NVAR);
+    }
 }
 
 void PeleLM::setCoveredState(const TimeStamp &a_time)
@@ -217,14 +231,18 @@ void PeleLM::setCoveredState(int lev, const TimeStamp &a_time)
 
     auto ldata_p = getLevelDataPtr(lev,a_time);
 
-    EB_set_covered(ldata_p->state,0,NVAR,coveredState_h);
+    if ( m_incompressible ) {
+        EB_set_covered(ldata_p->state,0,AMREX_SPACEDIM,coveredState_h);
+    } else {
+        EB_set_covered(ldata_p->state,0,NVAR,coveredState_h);
+    }
 }
 
 void PeleLM::initialRedistribution()
 {
     // Redistribute the initial solution if adv/diff scheme uses State or NewState
-    if (m_adv_redist_type == "StateRedist" || 
-        m_diff_redist_type == "StateRedist") { 
+    if (m_adv_redist_type == "StateRedist" ||
+        m_diff_redist_type == "StateRedist") {
 
         for (int lev = 0; lev <= finest_level; ++lev) {
 
@@ -239,13 +257,20 @@ void PeleLM::initialRedistribution()
             auto const& fact = EBFactory(lev);
 
             // State
-            Vector<Real> stateCovered(NVAR,0.0);
-            EB_set_covered(ldataNew_p->state,0,NVAR,stateCovered);
-            ldataNew_p->state.FillBoundary(geom[lev].periodicity());
-            MultiFab::Copy(ldataOld_p->state, ldataNew_p->state, 0, 0, NVAR, m_nGrowState);
+            if ( m_incompressible ) {
+               Vector<Real> stateCovered(AMREX_SPACEDIM,0.0);
+               EB_set_covered(ldataNew_p->state,0,AMREX_SPACEDIM,stateCovered);
+               ldataNew_p->state.FillBoundary(geom[lev].periodicity());
+               MultiFab::Copy(ldataOld_p->state, ldataNew_p->state, 0, 0, AMREX_SPACEDIM, m_nGrowState);
+            } else {
+               Vector<Real> stateCovered(NVAR,0.0);
+               EB_set_covered(ldataNew_p->state,0,NVAR,stateCovered);
+               ldataNew_p->state.FillBoundary(geom[lev].periodicity());
+               MultiFab::Copy(ldataOld_p->state, ldataNew_p->state, 0, 0, NVAR, m_nGrowState);
+            }
             fillpatch_state(lev, timeNew, ldataOld_p->state, m_nGrowState);
 
-            for (MFIter mfi(ldataNew_p->state,TilingIfNotGPU()); mfi.isValid(); ++mfi) {   
+            for (MFIter mfi(ldataNew_p->state,TilingIfNotGPU()); mfi.isValid(); ++mfi) {
 
                 const Box& bx = mfi.validbox();
 
@@ -254,7 +279,7 @@ void PeleLM::initialRedistribution()
 
                 if ( (flagfab.getType(bx)                != FabType::covered) &&
                      (flagfab.getType(amrex::grow(bx,4)) != FabType::regular) )
-                {   
+                {
                     Array4<Real const> AMREX_D_DECL(fcx, fcy, fcz), ccc, vfrac, AMREX_D_DECL(apx, apy, apz);
                     AMREX_D_TERM(fcx = fact.getFaceCent()[0]->const_array(mfi);,
                                  fcy = fact.getFaceCent()[1]->const_array(mfi);,
@@ -265,13 +290,23 @@ void PeleLM::initialRedistribution()
                                  apz = fact.getAreaFrac()[2]->const_array(mfi););
                     vfrac = fact.getVolFrac().const_array(mfi);
 
-                    auto bcRec = fetchBCRecArray(0,NVAR); 
-                    auto bcRec_d = convertToDeviceVector(bcRec);
-                    Redistribution::ApplyToInitialData( bx, NVAR,
-                                                        ldataNew_p->state.array(mfi,0), ldataOld_p->state.array(mfi,0),
-                                                        flag, AMREX_D_DECL(apx, apy, apz), vfrac,
-                                                        AMREX_D_DECL(fcx, fcy, fcz), ccc,
-                                                        bcRec_d.dataPtr(), geom[lev], m_adv_redist_type);
+                    if ( m_incompressible ) {
+                        auto bcRec = fetchBCRecArray(0,AMREX_SPACEDIM);
+                        auto bcRec_d = convertToDeviceVector(bcRec);
+                        Redistribution::ApplyToInitialData( bx, AMREX_SPACEDIM,
+                                                            ldataNew_p->state.array(mfi,0), ldataOld_p->state.array(mfi,0),
+                                                            flag, AMREX_D_DECL(apx, apy, apz), vfrac,
+                                                            AMREX_D_DECL(fcx, fcy, fcz), ccc,
+                                                            bcRec_d.dataPtr(), geom[lev], m_adv_redist_type);
+                    } else {
+                        auto bcRec = fetchBCRecArray(0,NVAR);
+                        auto bcRec_d = convertToDeviceVector(bcRec);
+                        Redistribution::ApplyToInitialData( bx, NVAR,
+                                                            ldataNew_p->state.array(mfi,0), ldataOld_p->state.array(mfi,0),
+                                                            flag, AMREX_D_DECL(apx, apy, apz), vfrac,
+                                                            AMREX_D_DECL(fcx, fcy, fcz), ccc,
+                                                            bcRec_d.dataPtr(), geom[lev], m_adv_redist_type);
+                    }
                 }
             }
         }

@@ -30,7 +30,7 @@ prob.bubble_y0   = 0.01
 
 #-------------------------PeleLM CONTROL----------------------------
 peleLM.v = 1
-peleLM.gravity = -9.81
+peleLM.gravity = 0.0 -9.81 0.0
 peleLM.use_wbar = 0
 peleLM.sdc_iterMax = 1
 peleLM.floor_species = 0
