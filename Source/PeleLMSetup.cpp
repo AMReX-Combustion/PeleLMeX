@@ -259,7 +259,16 @@ void PeleLM::readParameters() {
    }
    pp.query("rho", m_rho);
    pp.query("mu", m_mu);
-   pp.query("gravity", m_gravity);
+   Vector<Real> grav(AMREX_SPACEDIM,0);
+   pp.queryarr("gravity", grav, 0, AMREX_SPACEDIM);
+   Vector<Real> gp0(AMREX_SPACEDIM,0);
+   pp.queryarr("gradP0", gp0, 0, AMREX_SPACEDIM);
+   for (int idim = 0; idim < AMREX_SPACEDIM; idim++) 
+   {
+      m_background_gp[idim] = gp0[idim];
+      m_gravity[idim] = grav[idim];
+   }
+   
 
    // -----------------------------------------
    // diffusion
