@@ -70,6 +70,6 @@ amr.O2.value_greater = 0.4
 amr.O2.field_name    = Y(O2)
 
 fabarray.mfiter_tile_size = 1024 1024 1024
-#amrex.fpe_trap_invalid = 1
-#amrex.fpe_trap_zero = 1
-#amrex.fpe_trap_overflow = 1
+amrex.fpe_trap_invalid = 1
+amrex.fpe_trap_zero = 1
+amrex.fpe_trap_overflow = 1
