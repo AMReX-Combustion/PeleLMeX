@@ -83,6 +83,9 @@ void PeleLM::Setup() {
 #endif
    }
 
+   // Initiliaze turbulence injection
+   turb_inflow.init(Geom(0));
+
    // Initiliaze BCs
    setBoundaryConditions();
 
