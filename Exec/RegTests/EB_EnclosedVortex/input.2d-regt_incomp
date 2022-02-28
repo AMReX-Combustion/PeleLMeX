@@ -1,0 +1,71 @@
+#----------------------DOMAIN DEFINITION------------------------
+geometry.is_periodic = 0 0               # For each dir, 0: non-perio, 1: periodic
+geometry.coord_sys   = 0                  # 0 => cart, 1 => RZ
+geometry.prob_lo     = -0.02 -0.02 0.0        # x_lo y_lo (z_lo)
+geometry.prob_hi     =  0.02  0.02 0.016        # x_hi y_hi (z_hi)
+
+# >>>>>>>>>>>>>  BC FLAGS <<<<<<<<<<<<<<<<
+# Interior, Inflow, Outflow, Symmetry,
+# SlipWallAdiab, NoSlipWallAdiab, SlipWallIsotherm, NoSlipWallIsotherm
+peleLM.lo_bc = NoSlipWallAdiab NoSlipWallAdiab
+peleLM.hi_bc = NoSlipWallAdiab NoSlipWallAdiab
+
+
+#-------------------------AMR CONTROL----------------------------
+amr.n_cell          = 256 256 32      # Level 0 number of cells in each direction   
+amr.v               = 1                # AMR verbose
+amr.max_level       = 1                # maximum level number allowed
+amr.ref_ratio       = 2 2 2 2 2         # refinement ratio
+amr.regrid_int      = 5                # how often to regrid
+amr.n_error_buf     = 2 2 2 2          # number of buffer cells in error est
+amr.grid_eff        = 0.7              # what constitutes an efficient grid
+amr.blocking_factor = 8               # block factor in grid generation (min box size)
+amr.max_grid_size   = 32               # max box size
+
+#--------------------------- Problem -------------------------------
+prob.P_mean = 101325.0
+prob.rvort  = 0.006
+prob.forcevort = 0.3
+
+#-------------------------PeleLM CONTROL----------------------------
+peleLM.v = 3
+peleLM.incompressible = 1
+peleLM.rho = 1.17
+peleLM.mu = 0.0005
+peleLM.num_init_iter = 3
+
+amr.check_int = 100
+amr.plot_int = 50
+amr.max_step = 20
+amr.dt_shrink = 1.0
+amr.stop_time = 1.0
+#amr.stop_time = 1.00
+amr.cfl = 0.6
+amr.derive_plot_vars = avg_pressure mag_vort
+
+#------------------------- EB SETUP -----------------------------
+eb2.geom_type = sphere
+eb2.sphere_radius = 0.018
+eb2.sphere_center = 0.0 0.0
+eb2.sphere_has_fluid_inside = 1
+eb2.small_volfrac = 1.e-4
+
+#--------------------REFINEMENT CONTROL------------------------
+#amr.refinement_indicators = temp
+#amr.temp.max_level     = 1
+#amr.temp.value_greater = 305
+#amr.temp.field_name    = temp
+
+#amr.refinement_indicators = magVort
+#amr.magVort.max_level     = 1
+#amr.magVort.value_greater = 500.0
+#amr.magVort.field_name    = mag_vort
+
+#--------------------LINEAR SOLVER CONTROL------------------------
+nodal_proj.verbose = 0
+#nodal_proj.rtol = 1.0e-10
+#nodal_proj.atol = 1.0e-10
+#nodal_proj.mg_max_coarsening_level = 2
+amrex.fpe_trap_invalid = 1
+amrex.fpe_trap_zero = 1
+amrex.fpe_trap_overflow = 1
