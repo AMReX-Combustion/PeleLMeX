@@ -29,12 +29,12 @@ prob.P_mean = 101325.0
 prob.flowDir = 2
 prob.flowMag = 5
 
-prob.turb_file = TurbFileHIT/TurbTEST
-prob.turb_scale_loc = 633.151
-prob.turb_scale_vel = 0.5
-prob.turb_center = 0.005 0.005
-prob.turb_conv_vel = 5.
-prob.turb_nplane = 32
+turbinflow.turb_file = TurbFileHIT/TurbTEST
+turbinflow.turb_scale_loc = 633.151
+turbinflow.turb_scale_vel = 0.5
+turbinflow.turb_center = 0.005 0.005
+turbinflow.turb_conv_vel = 5.
+turbinflow.turb_nplane = 32
 
 #------------  INPUTS TO CONSTANT TRANSPORT -----------------
 transport.const_viscosity        = 0.0001 
@@ -73,6 +73,6 @@ amr.loBoxZ.in_box_lo = 0.0 0.0 0.0
 amr.loBoxZ.in_box_hi = 0.01 0.01 0.005
 
 fabarray.mfiter_tile_size = 1024 1024 1024
-#amrex.fpe_trap_invalid = 1
-#amrex.fpe_trap_zero = 1
-#amrex.fpe_trap_overflow = 1
+amrex.fpe_trap_invalid = 1
+amrex.fpe_trap_zero = 1
+amrex.fpe_trap_overflow = 1
