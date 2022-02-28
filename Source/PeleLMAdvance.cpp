@@ -54,6 +54,11 @@ void PeleLM::Advance(int is_initIter) {
    std::unique_ptr<AdvanceAdvData> advData;
    advData.reset(new AdvanceAdvData(finest_level, grids, dmap, m_factory, m_incompressible,
                                     m_nGrowAdv, m_nGrowMAC));
+
+   for (int lev = 0; lev <= finest_level; lev++) {
+     m_extSource[lev]->define(grids[lev], dmap[lev], NVAR, amrex::max(m_nGrowAdv, m_nGrowMAC), MFInfo(), *m_factory[lev]);
+     m_extSource[lev]->setVal(0.);
+   }
    //----------------------------------------------------------------
 
    //----------------------------------------------------------------
@@ -79,7 +84,11 @@ void PeleLM::Advance(int is_initIter) {
    //----------------------------------------------------------------
    BL_PROFILE_VAR_STOP(PLM_SETUP);
    //----------------------------------------------------------------
-
+#ifdef SPRAY_PELE_LM
+   if (!is_initIter) {
+     sprayMKD(m_cur_time, m_dt);
+   }
+#endif
 
    if (! m_incompressible ) {
       floorSpecies(AmrOldTime);
@@ -127,7 +136,15 @@ void PeleLM::Advance(int is_initIter) {
       for (int sdc_iter = 1; sdc_iter <= m_nSDCmax; ++sdc_iter ) {
          oneSDC(sdc_iter,advData,diffData);
       }
-
+#ifdef SPRAY_PELE_LM
+      // Reset external sources to zero
+      for (int lev = 0; lev <= finest_level; ++lev) {
+        m_extSource[lev]->setVal(0.);
+      }
+      if (!is_initIter) {
+        sprayMK(m_cur_time + m_dt, m_dt);
+      }
+#endif
       // Post SDC
       averageDownScalars(AmrNewTime);
 #ifdef PELE_USE_EFIELD
@@ -178,7 +195,11 @@ void PeleLM::Advance(int is_initIter) {
    if (m_closed_chamber && !is_initIter) {
       m_pOld = m_pNew;
    }
-
+#ifdef SPRAY_PELE_LM
+   if (!is_initIter) {
+     sprayPostTimestep();
+   }
+#endif
    //----------------------------------------------------------------
    // Wrapup advance
    // Timing current time step

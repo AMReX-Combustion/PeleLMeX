@@ -91,6 +91,9 @@ void PeleLM::MakeNewLevelFromScratch( int lev,
    macproj.reset(new Hydro::MacProjector(Geom(0,finest_level)));
 #endif
    m_macProjOldSize = finest_level+1;
+   m_extSource[lev].reset(new MultiFab(grids[lev], dmap[lev], NVAR, amrex::max(m_nGrowAdv, m_nGrowMAC),
+                                       MFInfo(), *m_factory[lev]));
+   m_extSource[lev]->setVal(0.);
 }
 
 void PeleLM::initData() {

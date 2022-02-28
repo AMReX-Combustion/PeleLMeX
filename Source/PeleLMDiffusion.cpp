@@ -919,12 +919,14 @@ void PeleLM::getScalarDiffForce(std::unique_ptr<AdvanceAdvData> &advData,
          auto const& ddnp1k  = diffData->Dnp1[lev].const_array(mfi,NUM_SPECIES+1);
          auto const& r       = ldataR_p->I_R.const_array(mfi);
          auto const& a       = advData->AofS[lev].const_array(mfi,FIRSTSPEC);
+         auto const& extRhoY = m_extSource[lev]->const_array(mfi,FIRSTSPEC);
+         auto const& extRhoH = m_extSource[lev]->const_array(mfi,RHOH);
          auto const& fY      = advData->Forcing[lev].array(mfi,0);
          auto const& fT      = advData->Forcing[lev].array(mfi,NUM_SPECIES);
          auto const& dwbar   = (m_use_wbar) ? diffData->Dwbar[lev].const_array(mfi,0)
                                             : diffData->Dn[lev].const_array(mfi,0);          // Dummy unsed Array4
          amrex::ParallelFor(bx, [dn, ddn, dnp1k, ddnp1k, dwbar, use_wbar=m_use_wbar,do_react=m_do_react,
-                                 r, a, fY, fT, dp0dt=m_dp0dt, is_closed_ch=m_closed_chamber]
+                                 r, a, extRhoY, extRhoH, fY, fT, dp0dt=m_dp0dt, is_closed_ch=m_closed_chamber]
          AMREX_GPU_DEVICE (int i, int j, int k) noexcept
          {
             buildDiffusionForcing( i, j, k, dn, ddn, dnp1k, ddnp1k, r, a, dp0dt, is_closed_ch, do_react, fY, fT );
@@ -933,6 +935,10 @@ void PeleLM::getScalarDiffForce(std::unique_ptr<AdvanceAdvData> &advData,
                   fY(i,j,k,n) += dwbar(i,j,k,n);
                }
             }
+            for (int n = 0; n < NUM_SPECIES; n++) {
+              fY(i,j,k,n) += extRhoY(i,j,k,n);
+            }
+            fT(i,j,k) += extRhoH(i,j,k);
          });
       }
    }

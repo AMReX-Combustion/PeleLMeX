@@ -6,6 +6,9 @@
 #include <AMReX_DataServices.H>
 #include <AMReX_AmrData.H>
 
+#ifdef SPRAY_PELE_LM
+#include "SprayParticles.H"
+#endif
 using namespace amrex;
 
 namespace { const std::string level_prefix{"Level_"}; }
@@ -222,6 +225,15 @@ void PeleLM::WritePlotFile() {
    amrex::WriteMultiLevelPlotfile(plotfilename, finest_level + 1, GetVecOfConstPtrs(mf_plt),
                                   plt_VarsName, Geom(), m_cur_time, istep, refRatio());
 
+#ifdef SPRAY_PELE_LM
+   if (theSprayPC() != nullptr && do_spray_particles) {
+     bool is_spraycheck = false;
+     for (int lev = 0; lev <= finest_level; ++lev) {
+       theSprayPC()->SprayParticleIO(
+         lev, is_spraycheck, write_spray_ascii_files, plotfilename, PeleLM::spray_fuel_names);
+     }
+   }
+#endif
 }
 
 void PeleLM::WriteHeader(const std::string& name, bool is_checkpoint) const
@@ -327,7 +339,16 @@ void PeleLM::WriteCheckPointFile()
                       amrex::MultiFabFileFullPrefix(lev, checkpointname, level_prefix, "nE"));
 #endif
       }    
-   }   
+   }
+#ifdef SPRAY_PELE_LM
+   if (theSprayPC() != nullptr && do_spray_particles) {
+     int write_ascii = 0; // Not for checkpoints
+     bool is_spraycheck = true;
+     for (int lev = 0; lev <= finest_level; ++lev) {
+       theSprayPC()->SprayParticleIO(lev, is_spraycheck, write_ascii, checkpointname, PeleLM::spray_fuel_names);
+     }
+   }
+#endif
 }
 
 void PeleLM::ReadCheckPointFile()

@@ -206,6 +206,7 @@ class PeleLM : public amrex::AmrCore {
 #ifdef PELE_USE_EFIELD
       amrex::Vector<amrex::Array<amrex::MultiFab,AMREX_SPACEDIM>> uDrift;        // ions drift face velocity
 #endif
+
    };
    //-----------------------------------------------------------------------------
 
@@ -404,19 +405,42 @@ class PeleLM : public amrex::AmrCore {
                      amrex::Array4<const amrex::Real> const& rho,
                      amrex::Array4<const amrex::Real> const& rhoY,
                      amrex::Array4<const amrex::Real> const& rhoh,
-                     amrex::Array4<const amrex::Real> const& temp);
+                     amrex::Array4<const amrex::Real> const& temp,
+                     amrex::Array4<const amrex::Real> const& extMom,
+                     amrex::Array4<const amrex::Real> const& extRho);
    //-----------------------------------------------------------------------------
 
 #ifdef SPRAY_PELE_LM
    //-----------------------------------------------------------------------------
    // Sprays
-
-   void sprayRedistribute(int lbase, bool init_part);
+   void setupVirtualParticles(const int level);
+   void removeVirtualParticles(const int level);
+   void setupGhostParticles(const int ngrow, const int level);
+   void removeGhostParticles(const int level);
+   amrex::Real estSprayDt();
+   void sprayMKD(const amrex::Real time,
+                 const amrex::Real dt);
+   void sprayMKDLevel(const int level,
+                      const amrex::Real time,
+                      const amrex::Real dt,
+                      const int ghost_width,
+                      const int spray_n_grow,
+                      const int tmp_src_width,
+                      amrex::MultiFab& tmp_spray_source);
+   void sprayMK(const amrex::Real time,
+                const amrex::Real dt);
+   void sprayMKLevel(const int level,
+                     const amrex::Real time,
+                     const amrex::Real dt,
+                     const int spray_n_grow,
+                     const int tmp_src_width,
+                     amrex::MultiFab& tmp_spray_source);
+   void sprayPostTimestep();
    static int write_spray_ascii_files;
    static int num_spray_src;
    static int do_spray_particles;
    static int plot_spray_src;
-   static amrex::Vector<std::string> spray_fuel_names;
+   static std::string spray_fuel_names[SPRAY_FUEL_NUM];
    static SprayParticleContainer* theSprayPC();
    static SprayParticleContainer* theVirtPC();
    static SprayParticleContainer* theGhostPC();
@@ -882,6 +906,8 @@ class PeleLM : public amrex::AmrCore {
    // FAB factory
    amrex::Vector<std::unique_ptr<amrex::FabFactory<amrex::FArrayBox> > > m_factory;
 
+   // External source terms
+   amrex::Vector<std::unique_ptr<amrex::MultiFab> >  m_extSource;
    // Covered cells mask
    amrex::Vector<std::unique_ptr<amrex::iMultiFab> > m_coveredMask;
    amrex::Vector<std::unique_ptr<amrex::BoxArray> > m_baChem;

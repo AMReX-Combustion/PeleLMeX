@@ -51,7 +51,7 @@ void PeleLM::Setup() {
    // Tagging setup
    taggingSetup();
 
-#ifdef AMREX_PARTICLES
+#ifdef SPRAY_PELE_LM
    if (do_spray_particles) {
      sprayParticleSetup();
    }
@@ -370,7 +370,7 @@ void PeleLM::readParameters() {
    ppef.query("restart_electroneutral",m_restart_electroneutral);
    ppef.query("restart_resetTime",m_restart_resetTime);
 #endif
-#ifdef PELE_LM_SPRAY
+#ifdef SPRAY_PELE_LM
    readSprayParameters();
 #endif
 }
@@ -701,6 +701,9 @@ void PeleLM::resizeArray() {
 #ifdef PELE_USE_EFIELD
    m_leveldatanlsolve.resize(max_level+1);
 #endif
+
+   // External sources
+   m_extSource.resize(max_level+1);
 
    // Factory
    m_factory.resize(max_level+1);

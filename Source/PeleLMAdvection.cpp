@@ -254,13 +254,16 @@ void PeleLM::getScalarAdvForce(std::unique_ptr<AdvanceAdvData> &advData,
          auto const& dn      = diffData->Dn[lev].const_array(mfi,0);
          auto const& ddn     = diffData->Dn[lev].const_array(mfi,NUM_SPECIES+1);
          auto const& r       = ldataR_p->I_R.const_array(mfi);
+         auto const& extRhoY = m_extSource[lev]->const_array(mfi,FIRSTSPEC);
+         auto const& extRhoH = m_extSource[lev]->const_array(mfi,RHOH);
          auto const& fY      = advData->Forcing[lev].array(mfi,0);
          auto const& fT      = advData->Forcing[lev].array(mfi,NUM_SPECIES);
-         amrex::ParallelFor(bx, [rho, rhoY, T, dn, ddn, r, fY, fT, dp0dt=m_dp0dt,
+         amrex::ParallelFor(bx, [rho, rhoY, T, dn, ddn, r, fY, fT, extRhoY, extRhoH, dp0dt=m_dp0dt,
                                  is_closed_ch=m_closed_chamber, do_react=m_do_react]
          AMREX_GPU_DEVICE (int i, int j, int k) noexcept
          {
-            buildAdvectionForcing( i, j, k, rho, rhoY, T, dn, ddn, r, dp0dt, is_closed_ch, do_react, fY, fT );
+            buildAdvectionForcing( i, j, k, rho, rhoY, T, dn, ddn, r, extRhoY, extRhoH,
+                                   dp0dt, is_closed_ch, do_react, fY, fT );
          });
       }
    }
@@ -734,10 +737,11 @@ void PeleLM::updateDensity(std::unique_ptr<AdvanceAdvData> &advData)
          auto const& rhoOld_arr  = ldataOld_p->state.const_array(mfi,DENSITY);
          auto const& rhoNew_arr  = ldataNew_p->state.array(mfi,DENSITY);
          auto const& a_of_rho    = advData->AofS[lev].const_array(mfi,DENSITY);
-         amrex::ParallelFor(bx, [rhoOld_arr, rhoNew_arr, a_of_rho,dt=m_dt]
+         auto const& extRho      = m_extSource[lev]->const_array(mfi,DENSITY);
+         amrex::ParallelFor(bx, [rhoOld_arr, rhoNew_arr, a_of_rho, extRho, dt=m_dt]
          AMREX_GPU_DEVICE (int i, int j, int k) noexcept
          {
-            rhoNew_arr(i,j,k) = rhoOld_arr(i,j,k) + dt * a_of_rho(i,j,k);
+            rhoNew_arr(i,j,k) = rhoOld_arr(i,j,k) + dt * (a_of_rho(i,j,k) + extRho(i,j,k));
          });
       }
    }
