@@ -20,7 +20,6 @@ USE_CUDA        = FALSE
 USE_HIP         = FALSE
 
 # PeleLMeX
-USE_TURBINFLOW  = TRUE
 
 # PelePhysics
 Chemistry_Model = air

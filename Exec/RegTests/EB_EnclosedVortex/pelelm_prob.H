@@ -38,6 +38,24 @@ void pelelm_initdata(int i, int j, int k,
 
     constexpr amrex::Real Pi = 3.14159265358979323846264338327950288;
 
+    const amrex::Real deltax = x - prob_parm.xvort;
+    const amrex::Real deltay = y - prob_parm.yvort;
+    const amrex::Real d_sq = deltax*deltax + deltay*deltay;
+    const amrex::Real r_sq = prob_parm.rvort * prob_parm.rvort;
+    const amrex::Real u_vort = -prob_parm.forcevort*deltay/r_sq * exp(-d_sq/r_sq/2.);
+    const amrex::Real v_vort = prob_parm.forcevort*deltax/r_sq * exp(-d_sq/r_sq/2.);
+    const amrex::Real w_vort = 0.;
+
+    state(i,j,k,VELX) = u_vort;
+    state(i,j,k,VELY) = v_vort;
+#if ( AMREX_SPACEDIM == 3 )
+    state(i,j,k,VELZ) = w_vort;
+#endif
+
+    if (is_incompressible) {
+       return;
+    }
+
     auto eos = pele::physics::PhysicsType::eos();
     amrex::Real massfrac[NUM_SPECIES] = {0.0};
     massfrac[O2_ID] = 0.233;
@@ -48,21 +66,7 @@ void pelelm_initdata(int i, int j, int k,
         massfrac[N2_ID] = 0.717;
     }
 
-    const amrex::Real deltax = x - prob_parm.xvort;
-    const amrex::Real deltay = y - prob_parm.yvort;
-    const amrex::Real d_sq = deltax*deltax + deltay*deltay;
-    const amrex::Real r_sq = prob_parm.rvort * prob_parm.rvort;
-    const amrex::Real u_vort = -prob_parm.forcevort*deltay/r_sq * exp(-d_sq/r_sq/2.);
-    const amrex::Real v_vort = prob_parm.forcevort*deltax/r_sq * exp(-d_sq/r_sq/2.);
-    const amrex::Real w_vort = 0.;
-
     state(i,j,k,TEMP) = prob_parm.T_mean;
-
-    state(i,j,k,VELX) = u_vort;
-    state(i,j,k,VELY) = v_vort;
-#if ( AMREX_SPACEDIM == 3 )
-    state(i,j,k,VELZ) = w_vort;
-#endif
 
     amrex::Real P_cgs = prob_parm.P_mean * 10.0;
 
