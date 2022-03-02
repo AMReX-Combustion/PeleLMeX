@@ -1,0 +1,66 @@
+#----------------------DOMAIN DEFINITION------------------------
+geometry.is_periodic = 1 0 0                # For each dir, 0: non-perio, 1: periodic
+geometry.coord_sys   = 0                  # 0 => cart, 1 => RZ
+geometry.prob_lo     = 0.0  -0.005 -0.005        # x_lo y_lo (z_lo)
+geometry.prob_hi     = 0.04  0.005  0.005  # x_hi y_hi (z_hi)
+
+# >>>>>>>>>>>>>  BC FLAGS <<<<<<<<<<<<<<<<
+# Interior, Inflow, Outflow, Symmetry,
+# SlipWallAdiab, NoSlipWallAdiab, SlipWallIsotherm, NoSlipWallIsotherm
+peleLM.lo_bc = Interior NoSlipWallAdiab NoSlipWallAdiab
+peleLM.hi_bc = Interior NoSlipWallAdiab NoSlipWallAdiab
+
+
+#-------------------------AMR CONTROL----------------------------
+amr.n_cell          = 512 128 128        # Level 0 number of cells in each direction   
+amr.n_cell          = 256 64 64         # Level 0 number of cells in each direction   
+amr.v               = 1                # AMR verbose
+amr.max_level       = 0                # maximum level number allowed
+amr.ref_ratio       = 2 2 2 2          # refinement ratio
+amr.regrid_int      = 2                # how often to regrid
+amr.n_error_buf     = 1 1 2 2          # number of buffer cells in error est
+amr.grid_eff        = 0.7              # what constitutes an efficient grid
+amr.blocking_factor = 16               # block factor in grid generation (min box size)
+amr.max_grid_size   = 64               # max box size
+
+#--------------------------- Problem -------------------------------
+prob.T_mean = 298.0
+prob.P_mean = 101325.0
+prob.meanFlowMag = 15.0
+prob.meanFlowDir = 1
+
+#-------------------------PeleLM CONTROL----------------------------
+peleLM.v = 2
+peleLM.incompressible = 1
+peleLM.rho = 1.17
+peleLM.mu = 0.00002
+peleLM.gradP0 = 3000.0 0.0 0.0
+
+amr.check_int = 1000
+amr.plot_int = 10
+amr.max_step = 500
+amr.dt_shrink = 1.0
+amr.stop_time = 1.0
+amr.cfl = 0.7
+amr.derive_plot_vars = avg_pressure mag_vort
+
+#------------------------- EB SETUP -----------------------------
+eb2.geom_type = cylinder
+eb2.cylinder_radius     = 0.0046
+eb2.cylinder_direction  = 0
+eb2.cylinder_center     = 0.0 0.0 0.0
+eb2.cylinder.internal_flow    = true
+eb2.cylinder_has_fluid_inside = 1
+eb2.small_volfrac = 1.0e-4
+
+#--------------------REFINEMENT CONTROL------------------------
+amr.refinement_indicators = vort
+amr.vort.max_level     = 2
+amr.vort.vorticity_greater = 500
+
+fabarray.mfiter_tile_size = 1024 1024 1024
+
+nodal_proj.verbose = 0
+amrex.fpe_trap_invalid = 1
+amrex.fpe_trap_zero = 1
+amrex.fpe_trap_overflow = 1

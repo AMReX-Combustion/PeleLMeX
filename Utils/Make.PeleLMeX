@@ -24,9 +24,6 @@ ifeq ($(USE_EFIELD),TRUE)
    DEFINES += -DPELE_USE_EFIELD
    LMdirs += Source/Efield Source/Efield/GMRES Source/Efield/LinOps
 endif
-ifeq ($(USE_TURBINFLOW), TRUE)
-   DEFINES += -DPELE_USE_TURBINFLOW
-endif
 
 Bpack += $(foreach dir, $(LMdirs), $(PELELMEX_HOME)/$(dir)/Make.package)
 Blocs += $(foreach dir, $(LMdirs), $(PELELMEX_HOME)/$(dir))
@@ -66,12 +63,8 @@ endif
 
 ChemDir  = Support/Fuego/Mechanism/Models/$(Chemistry_Model)
 
-PPdirs  := Utility/PMF Source $(ChemDir) Reactions Eos Transport
+PPdirs  := Utility/PMF Utility/TurbInflow Source $(ChemDir) Reactions Eos Transport
 PPHdirs := Support/Fuego/Evaluation
-
-ifeq ($(USE_TURBINFLOW), TRUE)
-   PPdirs += Utility/TurbInflow
-endif
 
 Bpack += $(foreach dir, $(PPdirs), $(PELE_PHYSICS_HOME)/$(dir)/Make.package)
 Blocs += $(foreach dir, $(PPdirs), $(PELE_PHYSICS_HOME)/$(dir))
@@ -81,7 +74,7 @@ include $(PELE_PHYSICS_HOME)/ThirdParty/Make.ThirdParty
 #---------------
 # AMReX-Hydro sources
 #---------------
-Hdirs := Slopes Godunov MOL Utils Projections
+Hdirs := Slopes Godunov MOL Utils Projections BDS
 ifeq ($(USE_EB), TRUE)
     Hdirs += Redistribution EBGodunov EBMOL
 endif
@@ -146,12 +139,12 @@ print-%::
 #---------------
 TPL:
 	@echo "==> Building SUNDIALS library"
-	cd $(PELE_PHYSICS_HOME)/ThirdParty; $(MAKE) sundials AMREX_HOME=$(AMREX_HOME) USE_CUDA=$(USE_CUDA) PELE_USE_KLU=$(PELE_USE_KLU) PELE_USE_MAGMA=$(PELE_USE_MAGMA) DEBUG=$(DEBUG) COMP=$(COMP) NVCC=$(COMP)
+	cd $(PELE_PHYSICS_HOME)/ThirdParty; $(MAKE) sundials AMREX_HOME=$(AMREX_HOME) USE_CUDA=$(USE_CUDA) USE_HIP=$(USE_HIP) PELE_USE_KLU=$(PELE_USE_KLU) PELE_USE_MAGMA=$(PELE_USE_MAGMA) DEBUG=$(DEBUG) COMP=$(COMP) NVCC=$(COMP)
 
 TPLclean:
 	@echo "==> Removing SUNDIALS library"
-	cd $(PELE_PHYSICS_HOME)/ThirdParty; make AMREX_HOME=$(AMREX_HOME) USE_CUDA=$(USE_CUDA) PELE_USE_KLU=$(PELE_USE_KLU) PELE_USE_MAGMA=$(PELE_USE_MAGMA) DEBUG=$(DEBUG) COMP=$(HOSTCC) NVCC=$(COMP) clean
+	cd $(PELE_PHYSICS_HOME)/ThirdParty; make AMREX_HOME=$(AMREX_HOME) USE_CUDA=$(USE_CUDA) USE_HIP=$(USE_HIP) PELE_USE_KLU=$(PELE_USE_KLU) PELE_USE_MAGMA=$(PELE_USE_MAGMA) DEBUG=$(DEBUG) COMP=$(HOSTCC) NVCC=$(COMP) clean
 
 TPLrealclean:
 	@echo "==> Removing SUNDIALS library"
-	cd $(PELE_PHYSICS_HOME)/ThirdParty; make AMREX_HOME=$(AMREX_HOME) USE_CUDA=$(USE_CUDA) PELE_USE_KLU=$(PELE_USE_KLU) PELE_USE_MAGMA=$(PELE_USE_MAGMA) DEBUG=$(DEBUG) COMP=$(HOSTCC) NVCC=$(COMP) realclean
+	cd $(PELE_PHYSICS_HOME)/ThirdParty; make AMREX_HOME=$(AMREX_HOME) USE_CUDA=$(USE_CUDA) USE_HIP=$(USE_HIP) PELE_USE_KLU=$(PELE_USE_KLU) PELE_USE_MAGMA=$(PELE_USE_MAGMA) DEBUG=$(DEBUG) COMP=$(HOSTCC) NVCC=$(COMP) realclean

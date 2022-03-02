@@ -764,39 +764,35 @@ PeleLM::MFStat (const Vector<const MultiFab*> &a_mf, int comp)
 void PeleLM::setTypicalValues(const TimeStamp &a_time, int is_init)
 {
     // Get state Max/Min
-    auto rhoMax  = MLmax(GetVecOfConstPtrs(getDensityVect(a_time)),0,1);
-    auto rhoMin  = MLmin(GetVecOfConstPtrs(getDensityVect(a_time)),0,1);
-    auto specMax = MLmax(GetVecOfConstPtrs(getSpeciesVect(a_time)),0,NUM_SPECIES);
-    auto specMin = MLmin(GetVecOfConstPtrs(getSpeciesVect(a_time)),0,NUM_SPECIES);
-    auto rhoHMax = MLmax(GetVecOfConstPtrs(getRhoHVect(a_time)),0,1);
-    auto rhoHMin = MLmin(GetVecOfConstPtrs(getRhoHVect(a_time)),0,1);
-    auto tempMax = MLmax(GetVecOfConstPtrs(getTempVect(a_time)),0,1);
-    auto tempMin = MLmin(GetVecOfConstPtrs(getTempVect(a_time)),0,1);
-    auto velAbsMax = MLNorm0(GetVecOfConstPtrs(getVelocityVect(a_time)),0,AMREX_SPACEDIM);
-    auto velMax  = *max_element(std::begin(velAbsMax), std::end(velAbsMax));
+    auto stateMax = ( m_incompressible ) ? MLmax(GetVecOfConstPtrs(getStateVect(a_time)),0,AMREX_SPACEDIM)
+                                         : MLmax(GetVecOfConstPtrs(getStateVect(a_time)),0,NVAR);
+    auto stateMin = ( m_incompressible ) ? MLmin(GetVecOfConstPtrs(getStateVect(a_time)),0,AMREX_SPACEDIM)
+                                         : MLmin(GetVecOfConstPtrs(getStateVect(a_time)),0,NVAR);
 
     // Fill typical values vector
     for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
-       typical_values[idim] = velMax;
+       typical_values[idim] = std::max(stateMax[VELX+idim],std::abs(stateMin[VELX+idim]));
     }
-
-    // First get the difference between max/min, if too small use average
-    typical_values[DENSITY] = rhoMax[0] - rhoMin[0];
-    if (typical_values[DENSITY] < 0.1 * rhoMin[0]) typical_values[DENSITY] = 0.5 * (rhoMax[0] + rhoMin[0]);
-    for (int n = 0; n < NUM_SPECIES; n++) {
-        typical_values[FIRSTSPEC+n] = specMax[n] - specMin[n];
-        if (typical_values[FIRSTSPEC+n] < 0.1 * specMin[n]) {
-            typical_values[FIRSTSPEC+n] = 0.5 * (specMax[n] + specMin[n]);
+    
+    if (!m_incompressible) {
+        // First get the difference between max/min, if too small use average
+        typical_values[DENSITY] = stateMax[DENSITY] - stateMin[DENSITY];
+        if (typical_values[DENSITY] < 0.1 * stateMin[DENSITY]) typical_values[DENSITY] = 0.5 * (stateMax[DENSITY] + stateMin[DENSITY]);
+        for (int n = 0; n < NUM_SPECIES; n++) {
+            typical_values[FIRSTSPEC+n] = stateMax[FIRSTSPEC+n] - stateMin[FIRSTSPEC+n];
+            if (typical_values[FIRSTSPEC+n] < 0.1 * stateMin[FIRSTSPEC+n]) {
+                typical_values[FIRSTSPEC+n] = 0.5 * (stateMax[FIRSTSPEC+n] + stateMin[FIRSTSPEC+n]);
+            }
         }
-    }
-    typical_values[RHOH] = rhoHMax[0] - rhoHMin[0];
-    if (typical_values[RHOH] < 0.1 * rhoHMin[0]) typical_values[RHOH] = 0.5 * (rhoHMax[0] + rhoHMin[0]);
-    typical_values[TEMP] = tempMax[0] - tempMin[0];
-    if (typical_values[TEMP] < 0.1 * tempMin[0]) typical_values[TEMP] = 0.5 * (tempMax[0] + tempMin[0]);
-    typical_values[RHORT] = m_pOld;
+        typical_values[RHOH] = stateMax[RHOH] - stateMin[RHOH];
+        if (typical_values[RHOH] < 0.1 * stateMin[RHOH]) typical_values[RHOH] = 0.5 * (stateMax[RHOH] + stateMin[RHOH]);
+        typical_values[TEMP] = stateMax[TEMP] - stateMin[TEMP];
+        if (typical_values[TEMP] < 0.1 * stateMin[TEMP]) typical_values[TEMP] = 0.5 * (stateMax[TEMP] + stateMin[TEMP]);
+        typical_values[RHORT] = m_pOld;
 
-    // Pass into chemsitry if requested
-    updateTypicalValuesChem();
+        // Pass into chemsitry if requested
+        updateTypicalValuesChem();
+    }
 
     if (is_init || m_verbose > 1) {
         std::string PrettyLine = std::string(78, '=') + "\n";
@@ -807,13 +803,15 @@ void PeleLM::setTypicalValues(const TimeStamp &a_time, int is_init)
             Print() << typical_values[idim] << ' ';
         }
         Print() << '\n';
-        Print() << "\tDensity: " << typical_values[DENSITY] << '\n';
-        Print() << "\tTemp:    " << typical_values[TEMP]    << '\n';
-        Print() << "\tRhoH:    " << typical_values[RHOH]    << '\n';
-        Vector<std::string> spec_names;
-        pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(spec_names);
-        for (int n = 0; n < NUM_SPECIES; n++) {
-            Print() << "\tY_" << spec_names[n] << ": " << typical_values[FIRSTSPEC+n] <<'\n';
+        if (!m_incompressible) {
+            Print() << "\tDensity: " << typical_values[DENSITY] << '\n';
+            Print() << "\tTemp:    " << typical_values[TEMP]    << '\n';
+            Print() << "\tRhoH:    " << typical_values[RHOH]    << '\n';
+            Vector<std::string> spec_names;
+            pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(spec_names);
+            for (int n = 0; n < NUM_SPECIES; n++) {
+                Print() << "\tY_" << spec_names[n] << ": " << typical_values[FIRSTSPEC+n] <<'\n';
+            }
         }
         Print() << PrettyLine;
     }

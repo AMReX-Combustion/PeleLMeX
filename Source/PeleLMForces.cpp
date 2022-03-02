@@ -131,12 +131,11 @@ void PeleLM::getVelForces(int lev,
    int is_incomp   = m_incompressible;
    Real rho_incomp = m_rho;
 
-   amrex::ParallelFor(bx, [is_incomp, rho_incomp, force, vel, rho, rhoY, rhoh, temp, 
-                           a_time, grav=m_gravity, pseudo_gravity, dV_control, dx]
+   amrex::ParallelFor(bx, [=,grav=m_gravity, gp0=m_background_gp]
    AMREX_GPU_DEVICE(int i, int j, int k) noexcept
    {
       makeVelForce(i,j,k, is_incomp, rho_incomp, 
-                   pseudo_gravity, a_time, grav, dV_control, dx,
+                   pseudo_gravity, a_time, grav, gp0, dV_control, dx,
                    vel, rho, rhoY, rhoh, temp, force);
    });  
 }

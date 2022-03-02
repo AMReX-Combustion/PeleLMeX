@@ -166,6 +166,7 @@ void PeleLM::computeVelocityAdvTerm(std::unique_ptr<AdvanceAdvData> &advData)
                        AMREX_SPACEDIM,
                        bcRecVel_d.dataPtr(),
                        geom[lev]);
+      EB_set_covered(advData->AofS[lev],0.0);
 #else
       //----------------------------------------------------------------
       // Otherwise go directly into AofS
@@ -183,7 +184,6 @@ void PeleLM::computeVelocityAdvTerm(std::unique_ptr<AdvanceAdvData> &advData)
 
 void PeleLM::updateVelocity(std::unique_ptr<AdvanceAdvData> &advData)
 {
-
    //----------------------------------------------------------------
    // Compute t^n divTau
    Vector<MultiFab> divtau(finest_level+1);

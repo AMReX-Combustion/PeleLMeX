@@ -12,6 +12,7 @@
 #include <mechanism.H>
 #include "PelePhysics.H"
 #include "PMFData.H"
+#include "turbinflow.H"
 #include "ReactorBase.H"
 #include <PeleLM_Index.H>
 #include <PeleLMDerive.H>
@@ -494,9 +495,7 @@ class PeleLM : public amrex::AmrCore {
    // Fill physical boundaries
    void setInflowBoundaryVel (amrex::MultiFab &a_vel, int lev, PeleLM::TimeStamp a_time);
 
-#ifdef PELE_USE_TURBINFLOW
    void fillTurbInflow(amrex::MultiFab &a_vel, int vel_comp, int lev, const amrex::Real a_time);
-#endif
 
    // Average down operations
    void averageDownState(const PeleLM::TimeStamp &a_time);
@@ -815,6 +814,7 @@ class PeleLM : public amrex::AmrCore {
       }
    }
 
+   amrex::Vector<std::unique_ptr<amrex::MultiFab> > getStateVect(const PeleLM::TimeStamp &a_time);
    amrex::Vector<std::unique_ptr<amrex::MultiFab> > getVelocityVect(const PeleLM::TimeStamp &a_time);
    amrex::Vector<std::unique_ptr<amrex::MultiFab> > getDensityVect(const PeleLM::TimeStamp &a_time);
    amrex::Vector<std::unique_ptr<amrex::MultiFab> > getSpeciesVect(const PeleLM::TimeStamp &a_time);
@@ -895,12 +895,15 @@ class PeleLM : public amrex::AmrCore {
    pele::physics::PMF::PmfData pmf_data;
 
    // Transport pointer
-   pele::physics::transport::TransportParams<
-         pele::physics::PhysicsType::transport_type> trans_parms;
+   static pele::physics::transport::TransportParams<
+             pele::physics::PhysicsType::transport_type> trans_parms;
 
    // Reactor pointer
    std::string m_chem_integrator;
    std::unique_ptr<pele::physics::reactions::ReactorBase> m_reactor;
+
+   // Turbulence injection
+   pele::physics::turbinflow::TurbInflow turb_inflow;
 
    // Linear solvers
    std::unique_ptr<DiffusionOp> m_diffusion_op;
@@ -952,7 +955,8 @@ class PeleLM : public amrex::AmrCore {
    amrex::Real m_rho = 1.175;
    amrex::Real m_mu  = 2.0e-5;
 
-   amrex::Real m_gravity = 0.0;
+   amrex::GpuArray<amrex::Real,AMREX_SPACEDIM> m_gravity{AMREX_D_DECL(0.0,0.0,0.0)};
+   amrex::GpuArray<amrex::Real,AMREX_SPACEDIM> m_background_gp{AMREX_D_DECL(0.0,0.0,0.0)};
 
    // DivU ? default ON when not incompressible
    int m_has_divu = 1;
@@ -962,7 +966,7 @@ class PeleLM : public amrex::AmrCore {
    amrex::Real m_divu_dtFactor = 0.5;
    amrex::Real m_divu_rhoMin = 0.1;  
 
-   // Number if passive scalars
+   // Aux data size
    int m_nAux = 0;
 
    // R-z
@@ -1000,8 +1004,11 @@ class PeleLM : public amrex::AmrCore {
    amrex::Real m_uncoveredVol = -1.0;
    int m_closed_chamber = 0;
 
-   // Godunov (no MOL in LMeX)
-   std::string m_advection_type = "Godunov";
+   // Godunov is default
+   std::string m_predict_advection_key = "Godunov_PLM";
+   std::string m_advection_key = "Godunov_PLM";
+   std::string m_predict_advection_type;
+   std::string m_advection_type;
    int m_Godunov_ppm = 1;
    int m_Godunov_ForceInTrans = 0;
 
