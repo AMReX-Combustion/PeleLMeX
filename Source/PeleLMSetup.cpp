@@ -398,6 +398,7 @@ void PeleLM::readIOParameters() {
    pp.query("initDataPlt" , m_restart_pltfile);
    pp.query("plot_file", m_plot_file);
    pp.query("plot_int" , m_plot_int);
+   pp.query("plot_per", m_plot_per);
    m_derivePlotVarCount = (pp.countval("derive_plot_vars"));
    if (m_derivePlotVarCount != 0) {
       m_derivePlotVars.resize(m_derivePlotVarCount);

@@ -998,6 +998,7 @@ class PeleLM : public amrex::AmrCore {
    int m_plotHeatRelease = 0;
    int m_plotStateSpec = 0;
    int m_plot_int = 0;
+   amrex::Real m_plot_per = -1.;
    int m_check_int = 0;
    int m_evaluatePlotVarCount = 0;
    amrex::Vector<std::string> m_evaluatePlotVars;
