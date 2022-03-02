@@ -29,6 +29,11 @@ void PeleLM::Evolve() {
 
       int is_init = 0;
       Advance(is_init);
+#ifdef SPRAY_PELE_LM
+      if (do_spray_particles) {
+        sprayPostTimestep();
+      }
+#endif
       m_nstep++;
       m_cur_time += m_dt;
 

@@ -102,9 +102,13 @@ void PeleLM::initData() {
    if (m_restart_chkfile.empty()) {
 
       //----------------------------------------------------------------
-      // This is an AmrCore member function which recursively makes new levels
-      // with MakeNewLevelFromScratch.
-      InitFromScratch(m_cur_time);
+      if (!m_initial_grid_file.empty()) {
+         InitFromGridFile(m_cur_time);
+      } else {
+         // This is an AmrCore member function which recursively makes new levels
+         // with MakeNewLevelFromScratch.
+         InitFromScratch(m_cur_time);
+      }
       resetCoveredMask();
 
 #ifdef SPRAY_PELE_LM
@@ -369,4 +373,19 @@ void PeleLM::initialIterations() {
       // Copy back old state
       copyStateOldToNew();
    }
+}
+
+void PeleLM::InitFromGridFile(amrex::Real time)
+{
+  {
+     const amrex::BoxArray& ba = MakeBaseGrids();
+     DistributionMapping dm(ba);
+     MakeNewLevelFromScratch(0, time, ba, dm);
+  }
+  finest_level = m_initial_ba.size();
+  for (int lev = 1; lev <= finest_level; lev++) {
+     const amrex::BoxArray ba = m_initial_ba[lev-1];
+     DistributionMapping dm(ba);
+     MakeNewLevelFromScratch(lev, time, ba, dm);
+  }
 }

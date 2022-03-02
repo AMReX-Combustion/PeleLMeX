@@ -403,6 +403,10 @@ void PeleLM::readIOParameters() {
       }
    }
    pp.query("plot_speciesState" , m_plotStateSpec);
+   m_initial_grid_file = "";
+   m_regrid_file = "";
+   pp.query("initial_grid_file", m_initial_grid_file);
+   pp.query("regrid_file", m_regrid_file);
 
 }
 
@@ -516,6 +520,75 @@ void PeleLM::variablesSetup() {
       typical_values.resize(AMREX_SPACEDIM,-1.0);
    } else {
       typical_values.resize(NVAR,-1.0);
+   }
+   if (max_level > 0 && !m_initial_grid_file.empty()) {
+#define STRIP while( is.get() != '\n' ) {}
+      std::ifstream is(m_initial_grid_file.c_str(),std::ios::in);
+      if (!is.good()) {
+        amrex::FileOpenFailed(m_initial_grid_file);
+      }
+
+      int in_finest,ngrid;
+
+      is >> in_finest;
+      STRIP;
+      m_initial_ba.resize(in_finest);
+
+      use_fixed_upto_level = in_finest;
+      if (in_finest > max_level) {
+        amrex::Error("You have fewer levels in your inputs file then in your grids file!");
+      }
+
+        for (int lev = 1; lev <= in_finest; lev++) {
+            BoxList bl;
+            is >> ngrid;
+            STRIP;
+            for (int i = 0; i < ngrid; i++) {
+                Box bx;
+                is >> bx;
+                STRIP;
+                bx.refine(ref_ratio[lev-1]);
+                bl.push_back(bx);
+            }
+            m_initial_ba[lev-1].define(bl);
+        }
+        is.close();
+        if (verbose > 0) {
+            amrex::Print() << "Read initial_ba. Size is " << m_initial_ba.size() << "\n";
+        }
+
+#undef STRIP
+    }
+   if (max_level > 0 && !m_regrid_file.empty() && m_regrid_int > 0) {
+#define STRIP while( is.get() != '\n' ) {}
+      std::ifstream is(m_regrid_file.c_str(),std::ios::in);
+      if (!is.good()) {
+         amrex::FileOpenFailed(m_regrid_file);
+      }
+
+      int in_finest,ngrid;
+
+      is >> in_finest;
+      STRIP;
+      m_regrid_ba.resize(in_finest);
+      for (int lev = 1; lev <= in_finest; lev++) {
+         BoxList bl;
+         is >> ngrid;
+         STRIP;
+         for (int i = 0; i < ngrid; i++) {
+            Box bx;
+            is >> bx;
+            STRIP;
+            bx.refine(ref_ratio[lev-1]);
+            bl.push_back(bx);
+         }
+         m_regrid_ba[lev-1].define(bl);
+      }
+      is.close();
+      if (verbose > 0) {
+         amrex::Print() << "Read regrid_ba. Size is " << m_regrid_ba.size() << "\n";
+      }
+#undef STRIP
    }
 }
 

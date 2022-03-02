@@ -280,13 +280,21 @@ void
 PeleLM::sprayMKD(const Real time,
                  const Real dt)
 {
+  if (spray_verbose) {
+    amrex::Print()
+      << "moveKickDrift ... updating particle positions and velocity\n";
+  }
   for (int lev = 0; lev <= finest_level; ++lev) {
+    if (spray_verbose > 1) {
+      amrex::Print() << "sprayMKDLevel " << lev << std::endl;
+    }
     int spray_n_grow = 1;
     int ghost_width = 0;
     if (lev < finest_level) {
       ghost_width = 1;
     }
     int tmp_src_width = 1;
+    if (lev > 0) tmp_src_width = 2;
     MultiFab tmp_spray_source(grids[lev], dmap[lev], num_spray_src, tmp_src_width, MFInfo(), Factory(lev));
     tmp_spray_source.setVal(0.);
     sprayMKDLevel(lev, time, dt, ghost_width, spray_n_grow, tmp_src_width, tmp_spray_source);
@@ -328,10 +336,7 @@ PeleLM::sprayMKDLevel(
 
   // Advance the particle velocities to the half-time and the positions to
   // the new time
-  if (spray_verbose) {
-    amrex::Print()
-      << "moveKickDrift ... updating particle positions and velocity\n";
-  }
+
   auto ldata_p = getLevelDataPtr(level,AmrOldTime);
   amrex::MultiFab& state = ldata_p->state;
   // Do the valid particles themselves
@@ -362,8 +367,12 @@ PeleLM::sprayMK(const Real time,
                 const Real dt)
 {
   for (int lev = 0; lev <= finest_level; ++lev) {
+    if (spray_verbose > 1) {
+      amrex::Print() << "sprayMKLevel " << lev << std::endl;
+    }
     int spray_n_grow = 1;
     int tmp_src_width = 1;
+    if (lev > 0) tmp_src_width = 2;
     MultiFab tmp_spray_source(grids[lev], dmap[lev], num_spray_src, tmp_src_width, MFInfo(), Factory(lev));
     tmp_spray_source.setVal(0.);
     sprayMKLevel(lev, time, dt, spray_n_grow, tmp_src_width, tmp_spray_source);
@@ -396,6 +405,35 @@ PeleLM::sprayMKLevel(
     theGhostPC()->moveKick(
       state, tmp_spray_source, level, dt, time, false, true, spray_n_grow,
       tmp_src_width);
+  }
+}
+
+void
+PeleLM::sprayRedistribute(int lbase)
+{
+  if (lbase > 0) return;
+  BL_PROFILE("PeleLM::sprayRedistribute");
+  if (theSprayPC()) {
+     static Vector<BoxArray> ba;
+     static Vector<DistributionMapping> dm;
+     bool changed = false;
+     if (ba.size() != finest_level + 1) {
+        ba.resize(finest_level + 1);
+        dm.resize(finest_level + 1);
+        changed = true;
+     } else {
+        for (int lev = 0; lev <= finest_level && !changed; lev++) {
+           if (ba[lev] != grids[lev]) {
+              changed = true;
+           }
+           if (!changed && dm[lev] != dmap[lev]) {
+              changed = true;
+           }
+        }
+     }
+     if (changed) {
+       theSprayPC()->Redistribute();
+     }
   }
 }
 

@@ -205,11 +205,7 @@ void PeleLM::Advance(int is_initIter) {
    if (m_closed_chamber && !is_initIter) {
       m_pOld = m_pNew;
    }
-#ifdef SPRAY_PELE_LM
-   if (!is_initIter) {
-     sprayPostTimestep();
-   }
-#endif
+
    //----------------------------------------------------------------
    // Wrapup advance
    // Timing current time step

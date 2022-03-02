@@ -56,6 +56,10 @@ class PeleLM : public amrex::AmrCore {
 
    //-----------------------------------------------------------------------------
    // Virtual AmrCore functions
+   virtual void regrid(int lbase,
+                       amrex::Real time,
+                       bool initial = false) override;
+
    virtual void MakeNewLevelFromScratch( int lev, 
                                                amrex::Real time,
                                          const amrex::BoxArray& ba,
@@ -221,6 +225,15 @@ class PeleLM : public amrex::AmrCore {
 
    // initialIterations
    void initialIterations();
+
+   // initFromGridFile
+   void InitFromGridFile(amrex::Real time);
+
+   // regridFromFile
+   void regridFromGridFile(int lbase,
+                           amrex::Real time,
+                           bool initial);
+
    //-----------------------------------------------------------------------------
 
    //-----------------------------------------------------------------------------
@@ -418,8 +431,7 @@ class PeleLM : public amrex::AmrCore {
    void setupGhostParticles(const int ngrow, const int level);
    void removeGhostParticles(const int level);
    amrex::Real estSprayDt();
-   void sprayMKD(const amrex::Real time,
-                 const amrex::Real dt);
+   void sprayMKD(const amrex::Real time, const amrex::Real dt);
    void sprayMKDLevel(const int level,
                       const amrex::Real time,
                       const amrex::Real dt,
@@ -436,6 +448,7 @@ class PeleLM : public amrex::AmrCore {
                      const int tmp_src_width,
                      amrex::MultiFab& tmp_spray_source);
    void sprayPostTimestep();
+   void sprayRedistribute(int lbase = 0);
    static int write_spray_ascii_files;
    static int num_spray_src;
    static int do_spray_particles;
@@ -940,8 +953,12 @@ class PeleLM : public amrex::AmrCore {
    // Derived quantities
    PeleLMDeriveList     evaluate_lst;
 
-   // Tagging
+   // Tagging/Refinement
    amrex::Vector<amrex::AMRErrorTag> errTags;
+   std::string m_initial_grid_file;
+   std::string m_regrid_file;
+   amrex::Vector<amrex::BoxArray> m_initial_ba;
+   amrex::Vector<amrex::BoxArray> m_regrid_ba;
 
    // Problem parameters
    ProbParm* prob_parm;
