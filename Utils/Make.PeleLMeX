@@ -24,9 +24,6 @@ ifeq ($(USE_EFIELD),TRUE)
    DEFINES += -DPELE_USE_EFIELD
    LMdirs += Source/Efield Source/Efield/GMRES Source/Efield/LinOps
 endif
-ifeq ($(USE_TURBINFLOW), TRUE)
-   DEFINES += -DPELE_USE_TURBINFLOW
-endif
 ifeq ($(USE_PARTICLES), TRUE)
   ifdef SPRAY_FUEL_NUM
     DEFINES += -DSPRAY_PELE_LM
@@ -78,12 +75,8 @@ endif
 
 ChemDir  = Support/Fuego/Mechanism/Models/$(Chemistry_Model)
 
-PPdirs  := Utility/PMF Source $(ChemDir) Reactions Eos Transport
+PPdirs  := Utility/PMF Utility/TurbInflow Source $(ChemDir) Reactions Eos Transport
 PPHdirs := Support/Fuego/Evaluation
-
-ifeq ($(USE_TURBINFLOW), TRUE)
-   PPdirs += Utility/TurbInflow
-endif
 
 Bpack += $(foreach dir, $(PPdirs), $(PELE_PHYSICS_HOME)/$(dir)/Make.package)
 Blocs += $(foreach dir, $(PPdirs), $(PELE_PHYSICS_HOME)/$(dir))
@@ -93,7 +86,7 @@ include $(PELE_PHYSICS_HOME)/ThirdParty/Make.ThirdParty
 #---------------
 # AMReX-Hydro sources
 #---------------
-Hdirs := Slopes Godunov MOL Utils Projections
+Hdirs := Slopes Godunov MOL Utils Projections BDS
 ifeq ($(USE_EB), TRUE)
     Hdirs += Redistribution EBGodunov EBMOL
 endif

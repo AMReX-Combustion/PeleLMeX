@@ -12,6 +12,7 @@
 #include <mechanism.H>
 #include "PelePhysics.H"
 #include "PMFData.H"
+#include "turbinflow.H"
 #include "ReactorBase.H"
 #include <PeleLM_Index.H>
 #include <PeleLMDerive.H>
@@ -567,9 +568,7 @@ class PeleLM : public amrex::AmrCore {
    // Fill physical boundaries
    void setInflowBoundaryVel (amrex::MultiFab &a_vel, int lev, PeleLM::TimeStamp a_time);
 
-#ifdef PELE_USE_TURBINFLOW
    void fillTurbInflow(amrex::MultiFab &a_vel, int vel_comp, int lev, const amrex::Real a_time);
-#endif
 
    // Average down operations
    void averageDownState(const PeleLM::TimeStamp &a_time);
@@ -974,6 +973,9 @@ class PeleLM : public amrex::AmrCore {
    // Reactor pointer
    std::string m_chem_integrator;
    std::unique_ptr<pele::physics::reactions::ReactorBase> m_reactor;
+
+   // Turbulence injection
+   pele::physics::turbinflow::TurbInflow turb_inflow;
 
    // Linear solvers
    std::unique_ptr<DiffusionOp> m_diffusion_op;
