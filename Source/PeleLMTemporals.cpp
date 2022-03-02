@@ -8,7 +8,7 @@ void PeleLM::initTemporals()
        && !(m_nstep % m_temp_int == 0)) return;
 
    // Reset mass fluxes integrals on domain boundaries
-   if (m_do_massBalance) {
+   if (m_do_massBalance && !m_incompressible) {
       m_massOld = MFSum(GetVecOfConstPtrs(getDensityVect(AmrOldTime)),0);
       for (int idim = 0; idim <  AMREX_SPACEDIM; idim++) {
          m_domainMassFlux[2*idim] = 0.0;
@@ -105,7 +105,7 @@ void PeleLM::writeTemporals()
 {
    //----------------------------------------------------------------
    // Mass balance
-   if (m_do_massBalance) {
+   if (m_do_massBalance && !m_incompressible) {
       massBalance();
    }
 

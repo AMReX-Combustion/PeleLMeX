@@ -114,12 +114,22 @@ void PeleLM::Advance(int is_initIter) {
    //----------------------------------------------------------------
    // Scalar advance
    if ( m_incompressible ) {
+      Real MACStart = 0.0;
+      if (m_verbose > 1) {
+         MACStart = ParallelDescriptor::second();
+      }
 
       // Still need to get face velocities ...
       predictVelocity(advData);
 
       // ... and MAC-project face velocities, but no divu
       macProject(AmrOldTime,advData,{});
+
+      if (m_verbose > 1) {
+         Real MACEnd = ParallelDescriptor::second() - MACStart;
+         ParallelDescriptor::ReduceRealMax(MACEnd, ParallelDescriptor::IOProcessorNumber());
+         amrex::Print() << "   - Advance()::MACProjection()  --> Time: " << MACEnd << "\n";
+      }
 
    } else {
 

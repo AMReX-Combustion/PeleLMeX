@@ -193,7 +193,7 @@ void PeleLM::velocityProjection(int is_initIter,
    // To ensure integral of RHS is zero for closed chamber, get mean divU
    Real SbarOld = 0.0;
    Real SbarNew = 0.0;
-   if (m_closed_chamber) {
+   if (m_closed_chamber && !m_incompressible) {
       SbarNew = MFSum(GetVecOfConstPtrs(getDivUVect(AmrNewTime)),0);
       SbarNew /= m_uncoveredVol;        // Transform in Mean.
       if (incremental) {
