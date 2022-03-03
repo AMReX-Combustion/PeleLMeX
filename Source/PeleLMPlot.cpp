@@ -501,6 +501,22 @@ void PeleLM::initLevelDataFromPlt(int a_lev,
 
    amrex::Print() << " initData on level " << a_lev << " from pltfile " << a_dataPltFile << "\n";
 
+   std::string pltFileHeader(a_dataPltFile + "/Header");
+   int plt_nlevel = 1;
+   Vector<BoxArray> plt_BA;
+   Vector<std::string> plt_vars;
+   Vector<Geometry> plt_geoms;
+   Vector<int> plt_refRatio;
+   Real plt_time = 0.0;
+   readGenericPlotfileHeader(pltFileHeader, plt_nlevel, plt_BA, plt_vars, plt_geoms, plt_refRatio, plt_time);
+
+   for(int n = 0; n < plt_vars.size(); n++)
+   {
+       Print() << plt_vars[n] << "\n";
+   }
+
+   Abort();
+
    // Use DataService to load pltfile and fill level data
    DataServices::SetBatchMode();
    Amrvis::FileType fileType(Amrvis::NEWPLT);
@@ -713,4 +729,91 @@ void PeleLM::WriteJobInfo(const std::string& path) const
     }
 }
 
+void PeleLM::readGenericPlotfileHeader(const std::string &a_pltFile,
+                                       int &nlevels,
+                                       Vector<BoxArray> &a_boxArray,
+                                       Vector<std::string> &a_varnames,
+                                       Vector<Geometry> &a_geom,
+                                       Vector<int> &a_refRatio,
+                                       Real &a_time)
+{
+    Vector<char> fileCharPtr;
+    ParallelDescriptor::ReadAndBcastFile(a_pltFile, fileCharPtr);
+    std::string fileCharPtrString(fileCharPtr.dataPtr());
+    std::istringstream is(fileCharPtrString, std::istringstream::in);   
 
+    std::string line, word;
+
+    // Title line
+    std::getline(is, line);
+     
+    // Number of variables
+    int nVars = 0;
+    is >> nVars;
+    GotoNextLine(is);
+
+    // Extract variables names
+    a_varnames.resize(nVars);
+    for(int n = 0; n < nVars; n++)
+    {
+        is >> a_varnames[n];
+        GotoNextLine(is);
+    }
+
+    // Get and check space dimension
+    int PLT_SPACEDIM = AMREX_SPACEDIM;
+    is >> PLT_SPACEDIM;
+    GotoNextLine(is);
+    AMREX_ASSERT(PLT_SPACEDIM == AMREX_SPACEDIM);
+
+    // Simulation time
+    is >> time;
+    GotoNextLine(is);
+
+    // Number of levels
+    is >> nlevels;
+    GotoNextLine(is);
+    nlevels += 1;       // Finest is stored, need to add 1
+
+    // Setup data holders
+    a_boxArray.resize(nlevels);
+    a_geom.resize(nlevels);
+    a_refRatio.resize(nlevels-1);
+
+    // Level 0 geometry
+    Real prob_lo[AMREX_SPACEDIM];
+    Real prob_hi[AMREX_SPACEDIM];
+    // Low coordinates of domain bounding box
+    std::getline(is, line);
+    {
+        std::istringstream lis(line);
+        int i = 0;
+        while(lis >> word)
+        {
+            prob_lo[i++] = std::stod(word);
+        }
+    }
+
+    // High coordinates of domain bounding box
+    std::getline(is, line);
+    {
+        std::istringstream lis(line);
+        int i = 0;
+        while(lis >> word)
+        {
+            prob_hi[i++] = std::stod(word);
+        }
+    }
+    // Set up problem domain
+    RealBox rb(prob_lo, prob_hi);
+
+    std::getline(is, line);
+    {
+        std::istringstream lis(line);
+        int i = 0;
+        while(lis >> word)
+        {
+            a_refRatio[i++] = std::stoi(word);
+        }
+    }
+}

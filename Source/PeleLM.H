@@ -428,6 +428,13 @@ class PeleLM : public amrex::AmrCore {
    void WriteDebugPlotFile(const amrex::Vector<const amrex::MultiFab*> &a_MF,
                            const std::string &pltname);
    void initLevelDataFromPlt(int a_lev, const std::string &a_pltFile);
+   void readGenericPlotfileHeader(const std::string &a_pltHeader,
+                                  int &a_nlevels,
+                                  amrex::Vector<amrex::BoxArray> &a_boxArray,
+                                  amrex::Vector<std::string> &a_varnames,
+                                  amrex::Vector<amrex::Geometry> &a_geoms,
+                                  amrex::Vector<int> &a_refRatio,
+                                  amrex::Real &time);
    //-----------------------------------------------------------------------------
 
    //-----------------------------------------------------------------------------
