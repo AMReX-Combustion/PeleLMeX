@@ -8,6 +8,11 @@ void PeleLM::readProbParm()
    pp.query("Zst",    PeleLM::prob_parm->Zst);
    pp.query("T_in",   PeleLM::prob_parm->T_in);
    pp.query("U_b",    PeleLM::prob_parm->U_b);
+   pp.query("standoff", PeleLM::prob_parm->standoff);
+   pp.query("pertmag",  PeleLM::prob_parm->pertmag);
+   pp.query("amplification",  PeleLM::prob_parm->amplification);
+
+   PeleLM::pmf_data.initialize();
 
    auto problo = geom[0].ProbLo();
    auto probhi = geom[0].ProbHi();
