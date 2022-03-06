@@ -3,8 +3,11 @@
 #include <AMReX_buildInfo.H>
 #include "PelePhysics.H"
 #include <AMReX_ParmParse.H>
-#include <AMReX_DataServices.H>
-#include <AMReX_AmrData.H>
+#include <PeleLMBCfill.H>
+#include <AMReX_FillPatchUtil.H>
+#ifdef AMREX_USE_EB
+#include <AMReX_EBInterpolater.H>
+#endif
 
 using namespace amrex;
 
@@ -501,41 +504,29 @@ void PeleLM::initLevelDataFromPlt(int a_lev,
 
    amrex::Print() << " initData on level " << a_lev << " from pltfile " << a_dataPltFile << "\n";
 
+   // Define container for the pltfile data
    std::string pltFileHeader(a_dataPltFile + "/Header");
    int plt_nlevel = 1;
    Vector<BoxArray> plt_BA;
+   Vector<MultiFab> plt_Data;
    Vector<std::string> plt_vars;
    Vector<Geometry> plt_geoms;
+   Vector<DistributionMapping> plt_dmap;
    Vector<int> plt_refRatio;
    Real plt_time = 0.0;
    readGenericPlotfileHeader(pltFileHeader, plt_nlevel, plt_BA, plt_vars, plt_geoms, plt_refRatio, plt_time);
-
-   for(int n = 0; n < plt_vars.size(); n++)
-   {
-       Print() << plt_vars[n] << "\n";
-   }
-
-   Abort();
-
-   // Use DataService to load pltfile and fill level data
-   DataServices::SetBatchMode();
-   Amrvis::FileType fileType(Amrvis::NEWPLT);
-   DataServices dataServices(a_dataPltFile, fileType);
-   if (!dataServices.AmrDataOk()) {
-      DataServices::Dispatch(DataServices::ExitRequest, NULL);
-   }    
-   AmrData& amrData = dataServices.AmrDataRef();
-
-   Vector<std::string> spec_names;
-   pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(spec_names);
-   Vector<std::string> plotnames = amrData.PlotVarNames();
+   plt_Data.resize(plt_nlevel);
+   plt_dmap.resize(plt_nlevel);
+   readPlotFile(a_dataPltFile, plt_nlevel, plt_vars.size(), plt_BA, plt_dmap, plt_Data);
 
    // Find required data in pltfile
+   Vector<std::string> spec_names;
+   pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(spec_names);
    int idT = -1, idV = -1, idY = -1, nSpecPlt = 0;
-   for (int i = 0; i < plotnames.size(); ++i) {
-      std::string firstChars = plotnames[i].substr(0, 2);
-      if (plotnames[i] == "temp")            idT = i; 
-      if (plotnames[i] == "x_velocity")      idV = i; 
+   for (int i = 0; i < plt_vars.size(); ++i) {
+      std::string firstChars = plt_vars[i].substr(0, 2);
+      if (plt_vars[i] == "temp")            idT = i; 
+      if (plt_vars[i] == "x_velocity")      idV = i; 
       if (firstChars == "Y(" && idY < 0 ) {  // species might not be ordered in the order of the current mech.
          idY = i;
       }
@@ -545,33 +536,30 @@ void PeleLM::initLevelDataFromPlt(int a_lev,
    if ( idY < 0 ) {
       Abort("Coudn't find species mass fractions in pltfile");
    }
-   Print() << " " << nSpecPlt << " species found in pltfile, starting with " << plotnames[idY] << "\n";
+   Print() << " " << nSpecPlt << " species found in pltfile, starting with " << plt_vars[idY] << "\n";
 
    // Get level data
    auto ldata_p = getLevelDataPtr(a_lev,AmrNewTime);
 
    // Velocity
-   for (int i = 0; i < AMREX_SPACEDIM; i++) {
-      amrData.FillVar(ldata_p->state, a_lev, plotnames[idV+i], FIRSTSPEC+i);
-      amrData.FlushGrids(idV+i);
-   }
+   fillPatchFromPlt(ldata_p->state, a_lev, idV, VELX, AMREX_SPACEDIM,
+                    plt_BA, plt_geoms, plt_refRatio, plt_dmap, GetVecOfPtrs(plt_Data));
 
    // Temperature
-   amrData.FillVar(ldata_p->state, a_lev, plotnames[idT], TEMP);
-   amrData.FlushGrids(idT);
+   fillPatchFromPlt(ldata_p->state, a_lev, idT, TEMP, 1,
+                    plt_BA, plt_geoms, plt_refRatio, plt_dmap, GetVecOfPtrs(plt_Data));
 
    // Species
    // Hold the species in temporary MF before copying to level data
+   // in case the number of species differs.
    MultiFab speciesPlt(grids[a_lev], dmap[a_lev], nSpecPlt, 0);
-   for (int i = 0; i < nSpecPlt; i++) {
-      amrData.FillVar(speciesPlt, a_lev, plotnames[idY+i], i);
-      amrData.FlushGrids(idY+i);
-   }
+   fillPatchFromPlt(speciesPlt, a_lev, idY, 0, nSpecPlt,
+                    plt_BA, plt_geoms, plt_refRatio, plt_dmap, GetVecOfPtrs(plt_Data));
    for (int i = 0; i < NUM_SPECIES; i++) {
       std::string specString = "Y("+spec_names[i]+")";
       int foundSpec = 0;
       for (int iplt = 0; iplt < nSpecPlt; iplt++) {
-         if ( specString == plotnames[idY+iplt] ) {
+         if ( specString == plt_vars[idY+iplt] ) {
             MultiFab::Copy(ldata_p->state, speciesPlt, iplt, FIRSTSPEC+i, 1, 0);
             foundSpec = 1;
          }
@@ -585,6 +573,9 @@ void PeleLM::initLevelDataFromPlt(int a_lev,
 
    ProbParm const* lprobparm = prob_parm_d;
 
+   // Enforce rho and rhoH consistent with temperature and mixture
+   // TODO the above handles species mapping (to some extent), but nothing enforce
+   // sum of Ys = 1
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
@@ -729,7 +720,7 @@ void PeleLM::WriteJobInfo(const std::string& path) const
     }
 }
 
-void PeleLM::readGenericPlotfileHeader(const std::string &a_pltFile,
+void PeleLM::readGenericPlotfileHeader(const std::string &a_pltHeader,
                                        int &nlevels,
                                        Vector<BoxArray> &a_boxArray,
                                        Vector<std::string> &a_varnames,
@@ -738,7 +729,7 @@ void PeleLM::readGenericPlotfileHeader(const std::string &a_pltFile,
                                        Real &a_time)
 {
     Vector<char> fileCharPtr;
-    ParallelDescriptor::ReadAndBcastFile(a_pltFile, fileCharPtr);
+    ParallelDescriptor::ReadAndBcastFile(a_pltHeader, fileCharPtr);
     std::string fileCharPtrString(fileCharPtr.dataPtr());
     std::istringstream is(fileCharPtrString, std::istringstream::in);   
 
@@ -767,7 +758,7 @@ void PeleLM::readGenericPlotfileHeader(const std::string &a_pltFile,
     AMREX_ASSERT(PLT_SPACEDIM == AMREX_SPACEDIM);
 
     // Simulation time
-    is >> time;
+    is >> a_time;
     GotoNextLine(is);
 
     // Number of levels
@@ -804,8 +795,12 @@ void PeleLM::readGenericPlotfileHeader(const std::string &a_pltFile,
             prob_hi[i++] = std::stod(word);
         }
     }
-    // Set up problem domain
+
+    // Set up PltFile domain real box and assert that
+    // our current level 0 geoms fits in it: we don't create
+    // data out of thin air
     RealBox rb(prob_lo, prob_hi);
+    AMREX_ALWAYS_ASSERT(rb.contains(geom[0].ProbDomain(),0.0000001));
 
     std::getline(is, line);
     {
@@ -814,6 +809,223 @@ void PeleLM::readGenericPlotfileHeader(const std::string &a_pltFile,
         while(lis >> word)
         {
             a_refRatio[i++] = std::stoi(word);
+        }
+    }
+
+    // Get levels Domains
+    Vector<Box> Domains(nlevels);
+    for(int lev = 0; lev < nlevels; ++lev) {
+        is >> Domains[lev];
+    }
+    GotoNextLine(is);
+    GotoNextLine(is); // Skip nsteps line
+    for(int lev = 0; lev < nlevels; ++lev) {
+       GotoNextLine(is); // Skip dx line
+    }
+
+    // Coordinate system
+    int coord_sys = 0;
+    is >> coord_sys;
+    GotoNextLine(is);
+
+    // Populate the geometry vector, use perio from current run geometry
+    a_geom[0] = Geometry( Domains[0], rb, coord_sys, geom[0].isPeriodic());
+    for(int lev = 1; lev < nlevels; ++lev) {
+       a_geom[lev] = amrex::refine(a_geom[lev - 1], a_refRatio[lev-1]);
+    }
+}
+
+void PeleLM::readPlotFile(const std::string &a_pltFile,
+                          int a_nlevels,
+                          int a_nVars,
+                          Vector<BoxArray> &a_boxArray,
+                          Vector<DistributionMapping> &a_dmap,
+                          Vector<MultiFab> &a_data)
+{
+    // Set BA on each level and load data
+    for(int lev = 0; lev < a_nlevels; ++lev)
+    {
+        getPltLevelBA(a_pltFile, lev, a_boxArray[lev]);
+        a_dmap[lev] = DistributionMapping(a_boxArray[lev]);
+        a_data[lev].define(a_boxArray[lev], a_dmap[lev], a_nVars, 0);
+        VisMF::Read(a_data[lev], MultiFabFileFullPrefix(lev, a_pltFile, level_prefix, "Cell"));
+    }
+}
+
+void PeleLM::getPltLevelBA(const std::string &a_pltFile,
+                           int a_lev,
+                           BoxArray &a_BA)
+{
+    const std::string lvlHeader(a_pltFile + "/" + level_prefix + std::to_string(a_lev) +"/Cell_H");
+
+    Vector<char> fileCharPtr;
+    ParallelDescriptor::ReadAndBcastFile(lvlHeader, fileCharPtr);
+    std::string fileCharPtrString(fileCharPtr.dataPtr());
+    std::istringstream is(fileCharPtrString, std::istringstream::in);   
+
+    std::string line;
+
+    std::getline(is, line); // Skip
+    GotoNextLine(is);       // Skip
+    GotoNextLine(is);       // Skip
+    GotoNextLine(is);       // Skip
+    a_BA.readFrom(is);
+}
+
+void PeleLM::fillPatchFromPlt(MultiFab &a_state,
+                              int a_lev,
+                              int pltComp,
+                              int stateComp,
+                              int nComp,
+                              const Vector<BoxArray> &a_boxArray,
+                              const Vector<Geometry> &a_geoms,
+                              const Vector<int> &a_refRatio,
+                              const Vector<DistributionMapping> &a_dmap,
+                              const Vector<MultiFab*> &a_data)
+{
+    ProbParm const* lprobparm = prob_parm_d;
+    pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
+
+    Vector<BCRec> dummyBCRec(nComp);
+    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+        if (geom[0].isPeriodic(idim)) {
+            for (int n = 0; n < nComp; n++) {
+                dummyBCRec[n].setLo(idim,BCType::int_dir);
+                dummyBCRec[n].setHi(idim,BCType::int_dir);
+            }
+        } else {
+            for (int n = 0; n < nComp; n++) {
+                dummyBCRec[n].setLo(idim,BCType::foextrap);
+                dummyBCRec[n].setHi(idim,BCType::foextrap);
+            }
+        }
+    }  
+
+    // There might be a number of problems related to proper nesting of the current BA
+    // and the PltFile BA. Try to address some of those, but need further testing.
+
+    if (a_lev == 0) {
+        // Check the refRatio between PltFile level 0 and ours
+        IntVect lev0rr  = geom[a_lev].Domain().size() / a_geoms[0].Domain().size();
+
+        // Same domain size, just do a fill patch single level
+        if (lev0rr == IntVect::TheUnitVector()) {
+            PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> bndry_func(geom[a_lev], {dummyBCRec},
+                                                                             PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
+            FillPatchSingleLevel(a_state, IntVect(0), 0.0,
+                                 {a_data[a_lev]},
+                                 {0.0}, pltComp, stateComp, nComp, geom[a_lev], bndry_func, 0);
+
+        // Our level 0 is finer than the PltFile one.
+        } else if (lev0rr.max() > 1) {
+
+            // Interpolator
+            auto* mapper = getInterpolator();
+
+            // Start by filling all the data with a coarseInterp. We've checked that the geom RealBoxes
+            // match already, so PltFile level 0 is good to interp.
+            {
+                PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> crse_bndry_func(a_geoms[0], {dummyBCRec},
+                                                                                      PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
+                PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> fine_bndry_func(geom[a_lev], {dummyBCRec},
+                                                                                      PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
+                InterpFromCoarseLevel(a_state, IntVect(0), 0.0,
+                                      *a_data[0], pltComp, stateComp, nComp,
+                                      a_geoms[0], geom[a_lev],
+                                      crse_bndry_func, 0, fine_bndry_func, 0,
+                                      lev0rr, mapper, {dummyBCRec}, 0);
+            }
+
+            // Then get data from the PltFile finer levels if any
+            for (int pltlev = 1; pltlev < a_geoms.size(); pltlev++) {
+
+                IntVect rr  = geom[a_lev].Domain().size() / a_geoms[pltlev].Domain().size();
+
+                // Current Plt level resolution matches our: lets interp and wrap it up
+                if (rr == IntVect::TheUnitVector()) {
+                    MultiFab temp(a_boxArray[pltlev],a_dmap[pltlev],nComp,0);
+                    PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> bndry_func(a_geoms[pltlev], {dummyBCRec},
+                                                                                     PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
+                    FillPatchSingleLevel(temp, IntVect(0), 0.0,
+                                         {a_data[pltlev]},
+                                         {0.0}, pltComp, 0, nComp, a_geoms[pltlev], bndry_func, 0);
+
+                    a_state.ParallelCopy(temp,0,stateComp,nComp);
+
+                    break;
+
+                // otherwise let just do another InterpFromCoarseLevel
+                } else {
+                    MultiFab temp(amrex::refine(a_boxArray[pltlev],rr),a_dmap[pltlev],nComp,0);
+                    PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> crse_bndry_func(a_geoms[pltlev], {dummyBCRec},
+                                                                                          PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
+                    PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> fine_bndry_func(geom[a_lev], {dummyBCRec},
+                                                                                          PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
+                    InterpFromCoarseLevel(temp, IntVect(0), 0.0,
+                                          *a_data[pltlev], pltComp, 0, nComp,
+                                          a_geoms[pltlev], geom[a_lev],
+                                          crse_bndry_func, 0, fine_bndry_func, 0,
+                                          rr, mapper, {dummyBCRec}, 0);
+                    a_state.ParallelCopy(temp,0,stateComp,nComp);
+                }
+            }
+
+        // Otherwise bail out because we don't handle averaging_down (TODO ?)
+        } else {
+           Abort("When initializing dataFromPlt, our level 0 can't be coarser than the PltFile one");
+        }
+    } else {
+        // Check the refRatio between PltFile level 0 and the current level
+        IntVect lev0rr  = geom[a_lev].Domain().size() / a_geoms[0].Domain().size();
+
+        // Interpolator
+        auto* mapper = getInterpolator();
+
+        // Start by filling the entire level with level 0 from PltFile, to ensure we have some data everywhere
+        {
+            PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> crse_bndry_func(a_geoms[0], {dummyBCRec},
+                                                                                  PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
+            PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> fine_bndry_func(geom[a_lev], {dummyBCRec},
+                                                                                  PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
+            InterpFromCoarseLevel(a_state, IntVect(0), 0.0,
+                                  *a_data[0], pltComp, stateComp, nComp,
+                                  a_geoms[0], geom[a_lev],
+                                  crse_bndry_func, 0, fine_bndry_func, 0,
+                                  lev0rr, mapper, {dummyBCRec}, 0);
+        }
+
+        // Then get data from the PltFile finer levels if any
+        for (int pltlev = 1; pltlev < a_geoms.size(); pltlev++) {
+
+            IntVect rr  = geom[a_lev].Domain().size() / a_geoms[pltlev].Domain().size();
+
+            // Current Plt level resolution matches our: lets interp and wrap it up
+            if (rr == IntVect::TheUnitVector()) {
+                MultiFab temp(a_boxArray[pltlev],a_dmap[pltlev],nComp,0);
+                PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> bndry_func(a_geoms[pltlev], {dummyBCRec},
+                                                                                 PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
+                FillPatchSingleLevel(temp, IntVect(0), 0.0,
+                                     {a_data[pltlev]},
+                                     {0.0}, pltComp, 0, nComp, a_geoms[pltlev], bndry_func, 0);
+
+                a_state.ParallelCopy(temp,0,stateComp,nComp);
+
+                break;
+
+            // otherwise let just do another InterpFromCoarseLevel
+            } else {
+                MultiFab temp(amrex::refine(a_boxArray[pltlev],rr),a_dmap[pltlev],nComp,0);
+                PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> crse_bndry_func(a_geoms[pltlev], {dummyBCRec},
+                                                                                      PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
+                PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> fine_bndry_func(geom[a_lev], {dummyBCRec},
+                                                                                      PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
+                InterpFromCoarseLevel(temp, IntVect(0), 0.0,
+                                      *a_data[pltlev], pltComp, 0, nComp,
+                                      a_geoms[pltlev], geom[a_lev],
+                                      crse_bndry_func, 0, fine_bndry_func, 0,
+                                      rr, mapper, {dummyBCRec}, 0);
+                a_state.ParallelCopy(temp,0,stateComp,nComp);
+            }
         }
     }
 }

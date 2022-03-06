@@ -435,6 +435,22 @@ class PeleLM : public amrex::AmrCore {
                                   amrex::Vector<amrex::Geometry> &a_geoms,
                                   amrex::Vector<int> &a_refRatio,
                                   amrex::Real &time);
+   void readPlotFile(const std::string &a_pltFile,
+                     int a_nlevels,
+                     int a_nVars,
+                     amrex::Vector<amrex::BoxArray> &a_boxArray,
+                     amrex::Vector<amrex::DistributionMapping> &a_dmap,
+                     amrex::Vector<amrex::MultiFab> &a_data);
+   void getPltLevelBA(const std::string &a_pltFile,
+                      int a_lev,
+                      amrex::BoxArray &a_BA);
+   void fillPatchFromPlt(amrex::MultiFab &a_state,
+                         int a_lev, int pltComp, int stateComp, int nComp,
+                         const amrex::Vector<amrex::BoxArray> &a_boxArray,
+                         const amrex::Vector<amrex::Geometry> &a_geoms,
+                         const amrex::Vector<int> &a_refRatio,
+                         const amrex::Vector<amrex::DistributionMapping> &a_dmap,
+                         const amrex::Vector<amrex::MultiFab*> &a_data);
    //-----------------------------------------------------------------------------
 
    //-----------------------------------------------------------------------------
