@@ -161,6 +161,7 @@ void PeleLM::Advance(int is_initIter) {
 #ifdef SOOT_MODEL
          if (do_soot_solve) {
             computeSootSource(AmrNewTime, m_dt);
+            clipSootMoments();
          }
 #endif
       }

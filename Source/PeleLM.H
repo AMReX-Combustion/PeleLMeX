@@ -480,6 +480,10 @@ class PeleLM : public amrex::AmrCore {
    // Compute the soot source terms
    void computeSootSource(const PeleLM::TimeStamp &a_timestamp,
                           const amrex::Real a_dt);
+
+   // Clip soot moments
+   void clipSootMoments();
+
    //-----------------------------------------------------------------------------
 #endif
    //-----------------------------------------------------------------------------

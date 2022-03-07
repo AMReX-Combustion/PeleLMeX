@@ -201,7 +201,7 @@ void PeleLM::setBoundaryConditions() {
       for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
         for (int mom = 0; mom < NUMSOOTVAR; mom++) {
           m_bcrec_state[FIRSTSOOT+mom].setLo(idim,soot_bc[lo_bc[idim]]);
-          m_bcrec_state[FIRSTSOOT+mom].setHi(idim,soot_bc[lo_bc[idim]]);
+          m_bcrec_state[FIRSTSOOT+mom].setHi(idim,soot_bc[hi_bc[idim]]);
         }
       }
 #endif
