@@ -9,6 +9,9 @@
 #ifdef SPRAY_PELE_LM
 #include "SprayParticles.H"
 #endif
+#ifdef SOOT_MODEL
+#include "SootModel.H"
+#endif
 using namespace amrex;
 
 namespace { const std::string level_prefix{"Level_"}; }
@@ -60,7 +63,7 @@ void PeleLM::WritePlotFile() {
    }
 
    // Reactions
-   if (m_do_react && !m_skipInstantRR) {
+   if (m_do_react && !m_skipInstantRR && m_plot_react) {
       // Cons Rate
       ncomp += nCompIR();
       // FunctCall
@@ -117,6 +120,12 @@ void PeleLM::WritePlotFile() {
       plt_VarsName.push_back("nE");
       plt_VarsName.push_back("phiV");
 #endif
+#ifdef SOOT_MODEL
+      for (int mom = 0; mom < NUMSOOTVAR; mom++) {
+        std::string sootname = soot_model->sootVariableName(mom);
+        plt_VarsName.push_back(sootname);
+      }
+#endif
       if (m_has_divu) {
          plt_VarsName.push_back("divu");
       }
@@ -130,7 +139,7 @@ void PeleLM::WritePlotFile() {
 #endif
 #endif
 
-   if (m_do_react  && !m_skipInstantRR) {
+   if (m_do_react  && !m_skipInstantRR && m_plot_react) {
       for (int n = 0; n < NUM_SPECIES; n++) {
          plt_VarsName.push_back("I_R("+names[n]+")");
       }
@@ -178,6 +187,10 @@ void PeleLM::WritePlotFile() {
          MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->phiV, 0, cnt, 1, 0);
          cnt += 1;
 #endif
+#ifdef SOOT_MODEL
+         MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->state, FIRSTSOOT, cnt, NUMSOOTVAR, 0);
+         cnt += NUMSOOTVAR;
+#endif
          if (m_has_divu) {
             MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->divu, 0, cnt, 1, 0);
             cnt += 1;
@@ -186,7 +199,7 @@ void PeleLM::WritePlotFile() {
       MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->gp, 0, cnt,AMREX_SPACEDIM,0);
       cnt += AMREX_SPACEDIM;
 
-      if (m_do_react  && !m_skipInstantRR) {
+      if (m_do_react  && !m_skipInstantRR && m_plot_react) {
          MultiFab::Copy(mf_plt[lev], m_leveldatareact[lev]->I_R, 0, cnt, nCompIR(), 0);
          cnt += nCompIR();
 

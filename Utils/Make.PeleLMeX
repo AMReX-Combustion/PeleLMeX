@@ -37,6 +37,20 @@ ifeq ($(USE_PARTICLES), TRUE)
   endif
 endif
 
+# Soot modeling
+ifeq ($(USE_SOOT), TRUE)
+# Ensure the number of soot moments is correct
+    ifeq (,$(filter $(NUM_SOOT_MOMENTS),3 6))
+        $(error NUM_SOOT_MOMENTS must be 3 or 6)
+    endif
+  DEFINES+=-DSOOT_PELE_LM
+  DEFINES+=-DSOOT_MODEL
+  DEFINES+=-DNUM_SOOT_MOMENTS=$(NUM_SOOT_MOMENTS)
+  LMdirs += Source/Soot
+  Bpack   += $(PELEMP_HOME)/Source/Soot_Models/Make.package
+  Blocs   += $(PELEMP_HOME)/Source/Soot_Models
+endif
+
 Bpack += $(foreach dir, $(LMdirs), $(PELELMEX_HOME)/$(dir)/Make.package)
 Blocs += $(foreach dir, $(LMdirs), $(PELELMEX_HOME)/$(dir))
 

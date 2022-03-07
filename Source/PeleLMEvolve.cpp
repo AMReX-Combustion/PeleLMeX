@@ -62,7 +62,7 @@ void PeleLM::Evolve() {
    if (m_verbose > 0) {
       amrex::Print() << "\n >> Final simulation time: " << m_cur_time << "\n";
    }
-   if ( m_plot_int > 0 && !plt_justDidIt ) {
+   if ( (m_plot_int > 0 || m_plot_per > 0.) && !plt_justDidIt ) {
       WritePlotFile();
    }
    if ( m_check_int > 0 && !chk_justDidIt ) {
@@ -100,7 +100,7 @@ PeleLM::writePlotNow()
       {
          num_per_old += 1;
       }
-      if (num_per_old != num_per_new || m_cur_time == 0.)
+      if (num_per_old != num_per_new)
       {
          write_now = true;
       }

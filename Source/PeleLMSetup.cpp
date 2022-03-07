@@ -11,6 +11,9 @@
 #include <AMReX_SUNMemory.H>
 #endif
 
+#ifdef SOOT_MODEL
+#include "SootModel.H"
+#endif
 using namespace amrex;
 
 static Box the_same_box (const Box& b)    { return b;                }
@@ -31,6 +34,10 @@ void PeleLM::Setup() {
    amrex::Print() << " PelePhysics git hash: " << githash3 << "\n";
    amrex::Print() << " AMReX-Hydro git hash: " << githash4 << "\n";
    amrex::Print() << " ===============================================\n";
+
+#ifdef SOOT_MODEL
+   soot_model = new SootModel{};
+#endif
 
    // Read PeleLM parameters
    readParameters();
@@ -56,6 +63,11 @@ void PeleLM::Setup() {
      sprayParticleSetup();
    }
 #endif
+#ifdef SOOT_MODEL
+   if (do_soot_solve) {
+     soot_model->define();
+   }
+#endif
 
    // Initialize Level Hierarchy data
    resizeArray();
@@ -79,6 +91,7 @@ void PeleLM::Setup() {
             m_plotChemDiag = 0;
             m_plotHeatRelease = 0;
          }
+         pp.query("plot_react", m_plot_react);
       }
 
 #ifdef PELE_USE_EFIELD
@@ -98,6 +111,7 @@ void PeleLM::Setup() {
    // Problem parameters
    prob_parm = new ProbParm{};
    prob_parm_d = (ProbParm*)The_Arena()->alloc(sizeof(ProbParm));
+
 
    // Problem parameters
    readProbParm();
@@ -385,6 +399,14 @@ void PeleLM::readParameters() {
 #ifdef SPRAY_PELE_LM
    readSprayParameters();
 #endif
+#ifdef SOOT_MODEL
+   do_soot_solve = 1;
+   pp.query("do_soot_solve", do_soot_solve);
+   if ( m_verbose && do_soot_solve ) {
+     Print() << "Simulation performed with soot modeling \n";
+   }
+   soot_model->readSootParams();
+#endif
 }
 
 void PeleLM::readIOParameters() {
@@ -460,6 +482,14 @@ void PeleLM::variablesSetup() {
       Print() << " PhiV: " << PHIV << "\n";
       stateComponents.emplace_back(PHIV,"PhiV");
 #endif
+#ifdef SOOT_MODEL
+      for (int mom = 0; mom < NUMSOOTVAR; mom++) {
+        std::string sootname = soot_model->sootVariableName(mom);
+        Print() << " " << sootname << ": " << FIRSTSOOT + mom << "\n";
+        stateComponents.emplace_back(FIRSTSOOT+mom,sootname);
+      }
+      setSootIndx();
+#endif
    }
 
    if (m_nAux > 0) {
@@ -515,6 +545,12 @@ void PeleLM::variablesSetup() {
       m_DiffTypeState[NE] = 0;
       m_AdvTypeState[PHIV] = 0;
       m_DiffTypeState[PHIV] = 0;
+#endif
+#ifdef SOOT_MODEL
+      for (int mom = 0; mom < NUMSOOTVAR; mom++) {
+        m_AdvTypeState[FIRSTSOOT+mom] = 0;
+        m_DiffTypeState[FIRSTSOOT+mom] = 0;
+      }
 #endif
    }
 
@@ -646,7 +682,20 @@ void PeleLM::derivedSetup()
 #endif
 #endif
 #endif
-
+#ifdef SOOT_MODEL
+   // if (do_soot_solve) {
+   //   addSootDerivePlotVars(derive_lst);
+   // }
+#endif
+   auto it = m_derivePlotVars.begin();
+   while ( it != m_derivePlotVars.end() ) {
+     if ( !derive_lst.canDerive(*it) ) {
+       it = m_derivePlotVars.erase(it);
+     } else {
+       it++;
+     }
+   }
+   m_derivePlotVarCount = m_derivePlotVars.size();
 }
 
 void PeleLM::evaluateSetup()

@@ -28,6 +28,10 @@
 class SprayParticleContainer;
 #endif
 
+#ifdef SOOT_MODEL
+class SootModel;
+#endif
+
 class PeleLM : public amrex::AmrCore {
 
    public:
@@ -460,6 +464,24 @@ class PeleLM : public amrex::AmrCore {
    static SprayParticleContainer* theGhostPC();
    //-----------------------------------------------------------------------------
 #endif
+#ifdef SOOT_MODEL
+   //-----------------------------------------------------------------------------
+   // Soot
+
+   // SetSootIndx
+   void setSootIndx();
+
+   // CleanupSootModel
+   void cleanupSootModel();
+
+   // AddSootDerivePlotVars
+   //void addSootDerivePlotVars(PeleLMDeriveList& derive_lst);
+
+   // Compute the soot source terms
+   void computeSootSource(const PeleLM::TimeStamp &a_timestamp,
+                          const amrex::Real a_dt);
+   //-----------------------------------------------------------------------------
+#endif
    //-----------------------------------------------------------------------------
    // EOS
 
@@ -576,6 +598,7 @@ class PeleLM : public amrex::AmrCore {
    void averageDownVelocity(const PeleLM::TimeStamp &a_time);
    void averageDownDensity(const PeleLM::TimeStamp &a_time);
    void averageDownRhoRT(const PeleLM::TimeStamp &a_time);
+   void averageDown(const PeleLM::TimeStamp &a_time, const int state_comp, const int ncomp);
 #ifdef PELE_USE_EFIELD
    void averageDownnE(const PeleLM::TimeStamp &a_time);
    void averageDownPhiV(const PeleLM::TimeStamp &a_time);
@@ -740,7 +763,9 @@ class PeleLM : public amrex::AmrCore {
    void getScalarAdvForce(std::unique_ptr<AdvanceAdvData> &advData,
                           std::unique_ptr<AdvanceDiffData> &diffData);
    void computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData);
+   void computePassiveAdvTerms(std::unique_ptr<AdvanceAdvData> &advData);
    void updateDensity(std::unique_ptr<AdvanceAdvData> &advData);
+   void updateScalarComp(std::unique_ptr<AdvanceAdvData> &advData, int state_comp, int ncomp);
 
    void getScalarDiffForce(std::unique_ptr<AdvanceAdvData> &advData,
                            std::unique_ptr<AdvanceDiffData> &diffData);
@@ -921,6 +946,7 @@ class PeleLM : public amrex::AmrCore {
 
    // External source terms
    amrex::Vector<std::unique_ptr<amrex::MultiFab> >  m_extSource;
+
    // Covered cells mask
    amrex::Vector<std::unique_ptr<amrex::iMultiFab> > m_coveredMask;
    amrex::Vector<std::unique_ptr<amrex::BoxArray> > m_baChem;
@@ -962,6 +988,12 @@ class PeleLM : public amrex::AmrCore {
    // Problem parameters
    ProbParm* prob_parm;
    ProbParm* prob_parm_d;
+
+#ifdef SOOT_MODEL
+   // Soot parameters
+   SootModel* soot_model;
+   int do_soot_solve;
+#endif
 
    // PMF parameters
    pele::physics::PMF::PmfData pmf_data;
@@ -1109,6 +1141,7 @@ class PeleLM : public amrex::AmrCore {
 
    // Chemistry
    int m_skipInstantRR = 0;
+   int m_plot_react = 1;
 
    // Typical values
    int m_resetTypValInt = 10;

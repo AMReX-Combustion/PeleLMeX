@@ -12,10 +12,17 @@
 #ifdef PELE_USE_EFIELD
 #define NE RHORT + 1
 #define PHIV NE + 1
-#define FIRSTAUX PHIV + 1 
+#define NUMEFIELD 2
 #else
-#define FIRSTAUX RHORT + 1 
+#define NUMEFIELD 0
 #endif
+#ifdef SOOT_MODEL
+#define FIRSTSOOT RHORT + NUMEFIELD + 1
+#define NUMSOOTVAR NUM_SOOT_MOMENTS + 1
+#else
+#define NUMSOOTVAR 0
+#endif
+#define FIRSTAUX RHORT + NUMEFIELD + NUMSOOTVAR + 1
 #define NVAR FIRSTAUX + 0
 //TODO: handle NAUX
 

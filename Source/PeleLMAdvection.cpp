@@ -737,13 +737,212 @@ void PeleLM::updateDensity(std::unique_ptr<AdvanceAdvData> &advData)
          auto const& rhoOld_arr  = ldataOld_p->state.const_array(mfi,DENSITY);
          auto const& rhoNew_arr  = ldataNew_p->state.array(mfi,DENSITY);
          auto const& a_of_rho    = advData->AofS[lev].const_array(mfi,DENSITY);
-         auto const& extRho      = m_extSource[lev]->const_array(mfi,DENSITY);
-         amrex::ParallelFor(bx, [rhoOld_arr, rhoNew_arr, a_of_rho, extRho, dt=m_dt]
+         auto const& ext_rho     = m_extSource[lev]->const_array(mfi,DENSITY);
+         amrex::ParallelFor(bx, [rhoOld_arr, rhoNew_arr, a_of_rho, ext_rho, dt=m_dt]
          AMREX_GPU_DEVICE (int i, int j, int k) noexcept
          {
-            rhoNew_arr(i,j,k) = rhoOld_arr(i,j,k) + dt * (a_of_rho(i,j,k) + extRho(i,j,k));
+            rhoNew_arr(i,j,k) = rhoOld_arr(i,j,k) + dt * (a_of_rho(i,j,k) + ext_rho(i,j,k));
          });
       }
    }
    averageDownDensity(AmrNewTime);
+}
+
+void PeleLM::computePassiveAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
+{
+   //----------------------------------------------------------------
+   // Get the BCRecs and AdvectionTypes
+#ifdef SOOT_MODEL
+   int firstpass = FIRSTSOOT;
+   int numpass = NUMSOOTVAR;
+#else
+   return;
+#endif
+   auto bcRecPass = fetchBCRecArray(firstpass,numpass);
+   auto bcRecPass_d = convertToDeviceVector(bcRecPass);
+   auto AdvTypePass = fetchAdvTypeArray(firstpass,numpass);
+   auto AdvTypePass_d = convertToDeviceVector(AdvTypePass);
+
+   //----------------------------------------------------------------
+   // Create temporary containers
+   Vector<Array<MultiFab,AMREX_SPACEDIM> > fluxes(finest_level+1);
+   Vector<Array<MultiFab,AMREX_SPACEDIM> > edgeState(finest_level+1);
+   for (int lev = 0; lev <= finest_level; ++lev) {
+      for (int idim = 0; idim <AMREX_SPACEDIM; idim++) {
+         fluxes[lev][idim].define(amrex::convert(grids[lev],IntVect::TheDimensionVector(idim)),
+                                  dmap[lev], numpass, 0, MFInfo(), Factory(lev));
+         edgeState[lev][idim].define(amrex::convert(grids[lev],IntVect::TheDimensionVector(idim)),
+                                dmap[lev], numpass, 0, MFInfo(), Factory(lev));
+      }
+   }
+
+   //----------------------------------------------------------------
+   // Loop over levels and get the fluxes
+   for (int lev = 0; lev <= finest_level; ++lev) { 
+      // Get level data ptr Old
+      auto ldata_p = getLevelDataPtr(lev,AmrOldTime);
+
+      //----------------------------------------------------------------
+      // Get divU
+      int nGrow_divu = 1;  // Why incflo use 4 ?
+      MultiFab divu(grids[lev],dmap[lev],1,nGrow_divu,MFInfo(),Factory(lev));
+      if (m_incompressible) {
+         divu.setVal(0.0);
+      } else {
+         // TODO: check the number of ghost cells
+         MultiFab::Copy(divu,advData->mac_divu[lev],0,0,1,nGrow_divu);
+      }
+
+      //----------------------------------------------------------------
+#ifdef AMREX_USE_EB
+      // Get EBFact & areafrac
+      const auto& ebfact = EBFactory(lev);
+      Array< const MultiCutFab*,AMREX_SPACEDIM> areafrac;
+      areafrac  = ebfact.getAreaFrac();
+#endif
+
+      // Get the passive variables edge state and advection term
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+      for (MFIter mfi(ldata_p->state,TilingIfNotGPU()); mfi.isValid(); ++mfi) {
+         Box const& bx = mfi.tilebox();
+         AMREX_D_TERM(auto const& umac = advData->umac[lev][0].const_array(mfi);,
+                      auto const& vmac = advData->umac[lev][1].const_array(mfi);,
+                      auto const& wmac = advData->umac[lev][2].const_array(mfi);)
+         AMREX_D_TERM(auto const& fx = fluxes[lev][0].array(mfi,0);,
+                      auto const& fy = fluxes[lev][1].array(mfi,0);,
+                      auto const& fz = fluxes[lev][2].array(mfi,0);)
+         AMREX_D_TERM(auto const& edgex = edgeState[lev][0].array(mfi,0);,
+                      auto const& edgey = edgeState[lev][1].array(mfi,0);,
+                      auto const& edgez = edgeState[lev][2].array(mfi,0);)
+         auto const& divu_arr  = divu.const_array(mfi);
+         auto const& pass_arr  = ldata_p->state.const_array(mfi,firstpass);
+         // TODO: Find way to include diffusive forces for passive scalars that diffuse
+         auto const& force_arr = m_extSource[lev]->const_array(mfi,firstpass);
+         bool is_velocity = false;
+         bool fluxes_are_area_weighted = false;
+         bool knownEdgeState = false;
+         HydroUtils::ComputeFluxesOnBoxFromState(bx, numpass, mfi,
+                                                 pass_arr,
+                                                 AMREX_D_DECL(fx,fy,fz),
+                                                 AMREX_D_DECL(edgex,edgey,edgez), knownEdgeState,
+                                                 AMREX_D_DECL(umac, vmac, wmac),
+                                                 divu_arr, force_arr,
+                                                 geom[lev], m_dt,
+                                                 bcRecPass, bcRecPass_d.dataPtr(), AdvTypePass_d.dataPtr(),
+#ifdef AMREX_USE_EB
+                                                 ebfact,
+#endif
+                                                 m_Godunov_ppm, m_Godunov_ForceInTrans,
+                                                 is_velocity, fluxes_are_area_weighted,
+                                                 m_advection_type);
+      }
+#ifdef AMREX_USE_EB
+      EB_set_covered_faces(GetArrOfPtrs(fluxes[lev]),0.);
+#endif
+   }
+   //----------------------------------------------------------------
+   // Average down fluxes and edge state to ensure C/F consistency
+   for (int lev = finest_level; lev > 0; --lev) {
+#ifdef AMREX_USE_EB
+      EB_average_down_faces(GetArrOfConstPtrs(fluxes[lev]),
+                            GetArrOfPtrs(fluxes[lev-1]),
+                            refRatio(lev-1),geom[lev-1]);
+      EB_average_down_faces(GetArrOfConstPtrs(edgeState[lev]),
+                            GetArrOfPtrs(edgeState[lev-1]),
+                            refRatio(lev-1),geom[lev-1]);
+#else
+      average_down_faces(GetArrOfConstPtrs(fluxes[lev]),
+                         GetArrOfPtrs(fluxes[lev-1]),
+                         refRatio(lev-1),geom[lev-1]);
+      average_down_faces(GetArrOfConstPtrs(edgeState[lev]),
+                         GetArrOfPtrs(edgeState[lev-1]),
+                         refRatio(lev-1),geom[lev-1]);
+#endif
+   }
+   //----------------------------------------------------------------
+   // Fluxes divergence to get the scalars advection term
+   auto AdvTypeAll = fetchAdvTypeArray(firstpass,numpass);
+   auto AdvTypeAll_d = convertToDeviceVector(AdvTypeAll);
+   for (int lev = 0; lev <= finest_level; ++lev) {
+
+      int nGrow_divu = 1;  // TODO EB Why incflo use 4 ?
+      MultiFab divu(grids[lev],dmap[lev],1,nGrow_divu,MFInfo(),Factory(lev));
+      if (m_incompressible) {
+         divu.setVal(0.0);
+      } else {
+         Real time  = getTime(lev,AmrOldTime);
+         fillpatch_divu(lev,time,divu,nGrow_divu);
+      }
+
+      bool fluxes_are_area_weighted = false;
+#ifdef AMREX_USE_EB
+      auto ldata_p = getLevelDataPtr(lev,AmrOldTime);
+      //----------------------------------------------------------------
+      // Use a temporary MF to hold divergence before redistribution
+      int nGrow_divTmp= 3;
+      MultiFab divTmp(grids[lev],dmap[lev],numpass,nGrow_divTmp,MFInfo(),EBFactory(lev));
+      divTmp.setVal(0.0);
+      advFluxDivergence(lev, divTmp, 0,
+                        divu,
+                        GetArrOfConstPtrs(fluxes[lev]), 0,
+                        GetArrOfConstPtrs(edgeState[lev]), 0,
+                        numpass,
+                        AdvTypeAll_d.dataPtr(),
+                        geom[lev], -1.0,
+                        fluxes_are_area_weighted);
+
+      divTmp.FillBoundary(geom[lev].periodicity());
+
+      redistributeAofS(lev, m_dt,
+                       divTmp, 0,
+                       advData->AofS[lev], firstpass,
+                       ldata_p->state, firstpass,
+                       numpass,
+                       bcRecPass_d.dataPtr(),
+                       geom[lev]);
+#else
+      //----------------------------------------------------------------
+      // Otherwise go directly into AofS
+      advFluxDivergence(lev, advData->AofS[lev], firstpass,
+                        divu,
+                        GetArrOfConstPtrs(fluxes[lev]), 0,
+                        GetArrOfConstPtrs(edgeState[lev]), 0,
+                        numpass,
+                        AdvTypeAll_d.dataPtr(),
+                        geom[lev], -1.0,
+                        fluxes_are_area_weighted);
+#endif
+   }
+   // TODO: This assumes passive variables have no diffusive fluxes
+   updateScalarComp(advData, firstpass, numpass);
+}
+
+void PeleLM::updateScalarComp(std::unique_ptr<AdvanceAdvData> &advData,
+                              int state_comp,
+                              int ncomp)
+{
+   for (int lev = 0; lev <= finest_level; ++lev) {
+
+      // Get level data ptr
+      auto ldataOld_p = getLevelDataPtr(lev,AmrOldTime);
+      auto ldataNew_p = getLevelDataPtr(lev,AmrNewTime);
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+      for (MFIter mfi(ldataNew_p->state,TilingIfNotGPU()); mfi.isValid(); ++mfi) {
+         Box const& bx = mfi.tilebox();
+         auto const& old_arr  = ldataOld_p->state.const_array(mfi,state_comp);
+         auto const& new_arr  = ldataNew_p->state.array(mfi,state_comp);
+         auto const& a_of_s    = advData->AofS[lev].const_array(mfi,state_comp);
+         auto const& ext     = m_extSource[lev]->const_array(mfi,state_comp);
+         amrex::ParallelFor(bx, ncomp, [old_arr, new_arr, a_of_s, ext, dt=m_dt]
+         AMREX_GPU_DEVICE (int i, int j, int k, int n) noexcept
+         {
+           new_arr(i,j,k,n) = old_arr(i,j,k,n) + dt * (a_of_s(i,j,k,n) + ext(i,j,k,n));
+         });
+      }
+   }
+   averageDown(AmrNewTime, state_comp, ncomp);
 }
