@@ -500,6 +500,9 @@ void PeleLM::initLevelDataFromPlt(int a_lev,
 
    // Find required data in pltfile
    int idT = -1, idV = -1, idY = -1, nSpecPlt = 0;
+#ifdef PELE_USE_EFIELD
+   int inE = -1, iPhiV = -1; 
+#endif
    for (int i = 0; i < plotnames.size(); ++i) {
       std::string firstChars = plotnames[i].substr(0, 2);
       if (plotnames[i] == "temp")            idT = i; 
@@ -508,6 +511,10 @@ void PeleLM::initLevelDataFromPlt(int a_lev,
          idY = i;
       }
       if (firstChars == "Y(")                nSpecPlt += 1;
+#ifdef PELE_USE_EFIELD
+      if (plotnames[i] == "nE")              inE = i;
+      if (plotnames[i] == "phiV")            iPhiV = i;
+#endif
    }
 
    if ( idY < 0 ) {
@@ -546,6 +553,15 @@ void PeleLM::initLevelDataFromPlt(int a_lev,
       }
       if (!foundSpec) ldata_p->state.setVal(0.0,FIRSTSPEC+i,1);
    }
+
+#ifdef PELE_USE_EFIELD
+   // nE
+   amrData.FillVar(ldata_p->state, a_lev, plotnames[inE], NE);
+   amrData.FlushGrids(inE);
+   // phiV
+   amrData.FillVar(ldata_p->state, a_lev, plotnames[iPhiV], PHIV);
+   amrData.FlushGrids(iPhiV);
+#endif
 
    // Pressure and pressure gradients to zero
    ldata_p->press.setVal(0.0);
