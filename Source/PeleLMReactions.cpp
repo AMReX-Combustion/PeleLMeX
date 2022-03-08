@@ -83,7 +83,7 @@ void PeleLM::advanceChemistry(int lev,
 
 #ifdef PELE_USE_EFIELD
       // Pass nE -> rhoY_e & FnE -> FrhoY_e
-      auto const& nE_o    = ldataOld_p->nE.const_array(mfi);
+      auto const& nE_o    = ldataOld_p->state.const_array(mfi,NE);
       auto const& FnE     = a_extForcing.array(mfi,NUM_SPECIES+1);
       auto const& rhoYe_n = ldataNew_p->state.array(mfi,FIRSTSPEC+E_ID);
       auto const& FrhoYe  = a_extForcing.array(mfi,E_ID);
@@ -125,7 +125,7 @@ void PeleLM::advanceChemistry(int lev,
 
 #ifdef PELE_USE_EFIELD
       // rhoY_e -> nE and set rhoY_e to zero
-      auto const& nE_n   = ldataNew_p->nE.array(mfi);
+      auto const& nE_n   = ldataNew_p->state.array(mfi,NE);
       Real invmwt[NUM_SPECIES] = {0.0};
       eos.inv_molecular_weight(invmwt);
       ParallelFor(bx, [invmwt,nE_n,rhoYe_n,extF_rhoY]
@@ -162,8 +162,8 @@ void PeleLM::advanceChemistry(int lev,
       });
 
 #ifdef PELE_USE_EFIELD
-      auto const& nE_o   = ldataOld_p->nE.const_array(mfi);
-      auto const& nE_n   = ldataNew_p->nE.const_array(mfi);
+      auto const& nE_o   = ldataOld_p->state.const_array(mfi,NE);
+      auto const& nE_n   = ldataNew_p->state.const_array(mfi,NE);
       auto const& FnE    = a_extForcing.const_array(mfi,NUM_SPECIES+1);
       auto const& nEdot  = ldataR_p->I_R.array(mfi,NUM_SPECIES);
       ParallelFor(bx, [nE_o, nE_n, FnE, nEdot, dt_inv]
@@ -355,8 +355,8 @@ void PeleLM::advanceChemistry(int lev,
 
 #ifdef PELE_USE_EFIELD
       auto const& nE_arr = nETemp.const_array(mfi);
-      auto const& nE_o   = ldataOld_p->nE.const_array(mfi);
-      auto const& nE_n   = ldataNew_p->nE.array(mfi);
+      auto const& nE_o   = ldataOld_p->state.const_array(mfi,NE);
+      auto const& nE_n   = ldataNew_p->state.array(mfi,NE);
       auto const& FnE    = a_extForcing.const_array(mfi,NUM_SPECIES+1);
       auto const& nEdot  = ldataR_p->I_R.array(mfi,NUM_SPECIES);
       ParallelFor(bx, [nE_arr, nE_o, nE_n, FnE, nEdot, dt_inv]

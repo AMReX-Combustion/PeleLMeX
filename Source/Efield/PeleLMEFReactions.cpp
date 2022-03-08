@@ -17,7 +17,7 @@ void PeleLM::computeInstantaneousReactionRateEF(int lev,
       const Box& bx = mfi.tilebox();
       auto const& rhoY    = ldata_p->state.const_array(mfi,FIRSTSPEC);
       auto const& rhoH    = ldata_p->state.const_array(mfi,RHOH);
-      auto const& nE      = ldata_p->nE.const_array(mfi);
+      auto const& nE      = ldata_p->state.const_array(mfi,NE);
       auto const& T       = ldata_p->state.const_array(mfi,TEMP);
       auto const& rhoYdot = a_I_R->array(mfi);
       auto const& nEdot   = a_I_R->array(mfi,NUM_SPECIES);

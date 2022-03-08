@@ -170,10 +170,8 @@ void PeleLM::WritePlotFile() {
          MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->state, RHOH, cnt, 3, 0);
          cnt += 3;
 #ifdef PELE_USE_EFIELD
-         MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->nE, 0, cnt, 1, 0);
-         cnt += 1;
-         MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->phiV, 0, cnt, 1, 0);
-         cnt += 1;
+         MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->state, NE, cnt, 2, 0);
+         cnt += 2;
 #endif
          if (m_has_divu) {
             MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->divu, 0, cnt, 1, 0);
@@ -318,14 +316,6 @@ void PeleLM::WriteCheckPointFile()
             VisMF::Write(m_leveldatareact[lev]->I_R,
                          amrex::MultiFabFileFullPrefix(lev, checkpointname, level_prefix, "I_R"));
          }
-
-#ifdef PELE_USE_EFIELD
-         VisMF::Write(m_leveldata_new[lev]->phiV,
-                      amrex::MultiFabFileFullPrefix(lev, checkpointname, level_prefix, "phiV"));
-
-         VisMF::Write(m_leveldata_new[lev]->nE,
-                      amrex::MultiFabFileFullPrefix(lev, checkpointname, level_prefix, "nE"));
-#endif
       }    
    }   
 }
@@ -458,12 +448,6 @@ void PeleLM::ReadCheckPointFile()
 
 #ifdef PELE_USE_EFIELD
          if (!m_restart_nonEF) {
-            VisMF::Read(m_leveldata_new[lev]->phiV,
-                        amrex::MultiFabFileFullPrefix(lev, m_restart_chkfile, level_prefix, "phiV"));
-
-            VisMF::Read(m_leveldata_new[lev]->nE,
-                        amrex::MultiFabFileFullPrefix(lev, m_restart_chkfile, level_prefix, "nE"));
-
             if (m_do_react) {
                VisMF::Read(m_leveldatareact[lev]->I_R,
                            amrex::MultiFabFileFullPrefix(lev, m_restart_chkfile, level_prefix, "I_R"));
@@ -477,7 +461,7 @@ void PeleLM::ReadCheckPointFile()
             }
 
             // Initialize phiV
-            m_leveldata_new[lev]->phiV.setVal(0.0);
+            m_leveldata_new[lev]->state.setVal(0.0,PHIV,1,0);
          }
 #else
          if (m_do_react) {

@@ -29,7 +29,7 @@ void PeleLM::poissonSolveEF(const TimeStamp &a_time)
       {
          const Box& bx = mfi.tilebox();
          auto const& rhoY = ldata_p->state.const_array(mfi,FIRSTSPEC);
-         auto const& nE   = ldata_p->nE.const_array(mfi);
+         auto const& nE   = ldata_p->state.const_array(mfi,NE);
          auto const& rhs  = rhsPoisson[lev]->array(mfi);
          Real      factor = -1.0;// / ( eps0  * epsr);
          amrex::ParallelFor(bx, [rhs, rhoY, nE, factor,zk=zk]
@@ -44,7 +44,7 @@ void PeleLM::poissonSolveEF(const TimeStamp &a_time)
    }
 
    // Solve for PhiV
-   getDiffusionOp()->diffuse_scalar(getPhiVVect(a_time),0,
+   getDiffusionOp()->diffuse_scalar(GetVecOfPtrs(getPhiVVect(a_time)),0,
                                     GetVecOfConstPtrs(rhsPoisson),0,
                                     {},0,
                                     {},

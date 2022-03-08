@@ -140,9 +140,6 @@ void PeleLM::Advance(int is_initIter) {
 
       // Post SDC
       averageDownScalars(AmrNewTime);
-#ifdef PELE_USE_EFIELD
-      averageDownnE(AmrNewTime);
-#endif
       fillPatchState(AmrNewTime);
       if (m_has_divu) {
          int is_initialization = 0;             // Not here
@@ -223,9 +220,6 @@ void PeleLM::oneSDC(int sdcIter,
       }
       // fillpatch the new state
       averageDownScalars(AmrNewTime);
-#ifdef PELE_USE_EFIELD
-      averageDownnE(AmrNewTime);
-#endif
       fillPatchState(AmrNewTime);
       
       calcDiffusivity(AmrNewTime);

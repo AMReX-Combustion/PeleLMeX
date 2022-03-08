@@ -119,11 +119,6 @@ class PeleLM : public amrex::AmrCore {
       amrex::MultiFab gp;              // pressure gradient (dim:AMREX_SPACEDIM)
       amrex::MultiFab divu;            // Velocity divergence constraint
 
-#ifdef PELE_USE_EFIELD
-      amrex::MultiFab nE;              // ELectron number density (dim:1)
-      amrex::MultiFab phiV;            // Electro-static potential (dim:1)
-#endif
-
       // node-centered state multifabs
       amrex::MultiFab press;           // nodal pressure (dim:1)
 
@@ -476,7 +471,7 @@ class PeleLM : public amrex::AmrCore {
    void fillpatch_forces(amrex::Real a_time, amrex::Vector<amrex::MultiFab*> const &a_velForces, int nGrowForce);
 #ifdef PELE_USE_EFIELD
    void fillpatch_nE(int lev, amrex::Real a_time, amrex::MultiFab& a_nE, int nGhost);
-   void fillpatch_phiV(int lev, amrex::Real a_time, amrex::MultiFab& a_phiV, int nGhost);
+   void fillpatch_phiV(int lev, amrex::Real a_time, amrex::MultiFab& a_phiV, int phiV_comp, int nGhost);
    void fillPatchExtrap(amrex::Real a_time, amrex::Vector<amrex::MultiFab*> const &a_MF, int a_nGrow);
    void fillPatchNLnE(amrex::Real a_time, amrex::Vector<amrex::MultiFab*> const &a_nE, int a_nGrow);
    void fillPatchNLphiV(amrex::Real a_time, amrex::Vector<amrex::MultiFab*> const &a_phiV, int a_nGrow);
@@ -487,10 +482,6 @@ class PeleLM : public amrex::AmrCore {
    void fillcoarsepatch_divu(int lev, amrex::Real a_time, amrex::MultiFab& a_divu, int nGhost);
    void fillcoarsepatch_gradp(int lev, amrex::Real a_time, amrex::MultiFab& a_gp, int nGhost);
    void fillcoarsepatch_reaction(int lev, amrex::Real a_time, amrex::MultiFab& a_I_R, int nGhost);
-#ifdef PELE_USE_EFIELD
-   void fillcoarsepatch_nE(int lev, amrex::Real a_time, amrex::MultiFab& a_nE, int nGhost);
-   void fillcoarsepatch_phiV(int lev, amrex::Real a_time, amrex::MultiFab& a_phiV, int nGhost);
-#endif
 
    // Fill physical boundaries
    void setInflowBoundaryVel (amrex::MultiFab &a_vel, int lev, PeleLM::TimeStamp a_time);
@@ -503,10 +494,6 @@ class PeleLM : public amrex::AmrCore {
    void averageDownVelocity(const PeleLM::TimeStamp &a_time);
    void averageDownDensity(const PeleLM::TimeStamp &a_time);
    void averageDownRhoRT(const PeleLM::TimeStamp &a_time);
-#ifdef PELE_USE_EFIELD
-   void averageDownnE(const PeleLM::TimeStamp &a_time);
-   void averageDownPhiV(const PeleLM::TimeStamp &a_time);
-#endif
    //-----------------------------------------------------------------------------
 
    //-----------------------------------------------------------------------------
@@ -824,8 +811,8 @@ class PeleLM : public amrex::AmrCore {
    amrex::Vector<amrex::MultiFab* > getDiffusivityVect(const PeleLM::TimeStamp &a_time);
    amrex::Vector<amrex::MultiFab* > getViscosityVect(const PeleLM::TimeStamp &a_time);
 #ifdef PELE_USE_EFIELD
-   amrex::Vector<amrex::MultiFab* > getPhiVVect(const PeleLM::TimeStamp &a_time);
-   amrex::Vector<amrex::MultiFab* > getnEVect(const PeleLM::TimeStamp &a_time);
+   amrex::Vector<std::unique_ptr<amrex::MultiFab> > getPhiVVect(const PeleLM::TimeStamp &a_time);
+   amrex::Vector<std::unique_ptr<amrex::MultiFab> > getnEVect(const PeleLM::TimeStamp &a_time);
    amrex::Vector<amrex::MultiFab* > getnEDiffusivityVect(const PeleLM::TimeStamp &a_time);
 #endif
 

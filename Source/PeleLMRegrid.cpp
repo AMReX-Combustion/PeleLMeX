@@ -48,10 +48,6 @@ void PeleLM::MakeNewLevelFromCoarse( int lev,
       if (m_has_divu) {
          fillcoarsepatch_divu(lev, time, n_leveldata_new->divu,0);
       }
-#ifdef PELE_USE_EFIELD
-      fillcoarsepatch_phiV(lev, time, n_leveldata_new->phiV,m_nGrowState);
-      fillcoarsepatch_nE(lev, time, n_leveldata_new->nE,m_nGrowState);
-#endif
    }
 
    // Move std::unique_ptr into the PeleLM vector
@@ -136,10 +132,6 @@ void PeleLM::RemakeLevel( int lev,
       if (m_has_divu) {
          fillpatch_divu(lev, time, n_leveldata_new->divu, 1);
       }
-#ifdef PELE_USE_EFIELD
-      fillpatch_phiV(lev, time, n_leveldata_new->phiV,m_nGrowState);
-      fillpatch_nE(lev, time, n_leveldata_new->nE,m_nGrowState);
-#endif
    }
 
    // Move std::unique_ptr into the PeleLM vector

@@ -303,17 +303,10 @@ void PeleLM::initLevelData(int lev) {
       FArrayBox DummyFab(bx,1);
       auto  const &state_arr   = ldata_p->state.array(mfi);
       auto  const &aux_arr   = (m_nAux > 0) ? ldata_p->auxiliaries.array(mfi) : DummyFab.array();
-#ifdef PELE_USE_EFIELD
-      auto  const &ne_arr    = ldata_p->nE.array(mfi);
-      auto  const &phiV_arr  = ldata_p->phiV.array(mfi);
-#endif
       amrex::ParallelFor(bx, [=,m_incompressible=m_incompressible]
       AMREX_GPU_DEVICE (int i, int j, int k) noexcept
       {
          pelelm_initdata(i, j, k, m_incompressible, state_arr, aux_arr,
-#ifdef PELE_USE_EFIELD
-                         ne_arr, phiV_arr,  
-#endif
                          geomdata, *lprobparm, lpmfdata);
       });
    }

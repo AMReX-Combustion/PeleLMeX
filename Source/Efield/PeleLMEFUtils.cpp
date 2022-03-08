@@ -205,7 +205,7 @@ void PeleLM::initializeElectronNeutral()
          auto const& rhoY     = ldata_p->state.array(mfi,FIRSTSPEC);
          auto const& rhoH     = ldata_p->state.array(mfi,RHOH);
          auto const& temp     = ldata_p->state.array(mfi,TEMP);
-         auto const& nE       = ldata_p->nE.array(mfi);
+         auto const& nE       = ldata_p->state.array(mfi,NE);
          amrex::ParallelFor(bx, [rho, rhoY, rhoH, temp, nE, lprobparm]
          AMREX_GPU_DEVICE (int i, int j, int k) noexcept
          {

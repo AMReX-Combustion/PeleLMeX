@@ -20,7 +20,7 @@ void PeleLM::calcEFTransport(const TimeStamp &a_time) {
          auto const& mobE   = ldata_p->mobE_cc.array(mfi);
          auto const& diffE  = ldata_p->diffE_cc.array(mfi);
          auto const& rhoY   = ldata_p->state.const_array(mfi,FIRSTSPEC);
-         auto const& phiV   = ldata_p->phiV.const_array(mfi);
+         auto const& phiV   = ldata_p->state.const_array(mfi,PHIV);
          auto const& T      = ldata_p->state.const_array(mfi,TEMP);
          Real factor = PP_RU_MKS / ( Na * elemCharge );
          amrex::ParallelFor(gbx, [mobE, diffE, rhoY, phiV, T, factor, dxinv, useTab = m_electronKappaTab, fixedKe = m_fixedKappaE]

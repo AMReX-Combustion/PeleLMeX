@@ -40,8 +40,8 @@ void PeleLM::implicitNonLinearSolve(int sdcIter,
       auto ldata_p = getLevelDataPtr(lev,AmrOldTime);
       // Get nl solve data pointer
       auto ldataNLs_p = getLevelDataNLSolvePtr(lev);
-      MultiFab::Copy(ldataNLs_p->nlState, ldata_p->nE, 0, 0, 1, m_nGrowState);
-      MultiFab::Copy(ldataNLs_p->nlState, ldata_p->phiV, 0, 1, 1, m_nGrowState);
+      MultiFab::Copy(ldataNLs_p->nlState, ldata_p->state, NE, 0, 1, m_nGrowState);
+      MultiFab::Copy(ldataNLs_p->nlState, ldata_p->state, PHIV, 1, 1, m_nGrowState);
    }
 
    // Gradient of PhiV at t^{n}
@@ -185,8 +185,8 @@ void PeleLM::implicitNonLinearSolve(int sdcIter,
       // Get nl solve data pointer
       auto ldataNLs_p = getLevelDataNLSolvePtr(lev);
       int nGrowNL = 0;
-      MultiFab::Copy(ldata_p->nE,   ldataNLs_p->nlState, 0, 0, 1, nGrowNL);
-      MultiFab::Copy(ldata_p->phiV, ldataNLs_p->nlState, 1, 0, 1, nGrowNL);
+      MultiFab::Copy(ldata_p->state, ldataNLs_p->nlState, 0, NE, 1, nGrowNL);
+      MultiFab::Copy(ldata_p->state, ldataNLs_p->nlState, 1, PHIV, 1, nGrowNL);
    }
 
    if (ef_verbose) {
@@ -306,10 +306,10 @@ void PeleLM::incrementElectronForcing(int a_sstep,
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
-      for (MFIter mfi(ldata_p->nE,TilingIfNotGPU()); mfi.isValid(); ++mfi)
+      for (MFIter mfi(ldata_p->state,TilingIfNotGPU()); mfi.isValid(); ++mfi)
       {
          const Box& bx = mfi.tilebox();
-         auto const& nE_o   = ldata_p->nE.const_array(mfi); 
+         auto const& nE_o   = ldata_p->state.const_array(mfi,NE); 
          auto const& nE_n   = ldataNLs_p->nlState.const_array(mfi);
          auto const& I_R_nE = ldataR_p->I_R.const_array(mfi,NUM_SPECIES);
          auto const& FnE    = advData->Forcing[lev].array(mfi,NUM_SPECIES+1);
@@ -461,7 +461,7 @@ void PeleLM::nonLinearResidual(const Real &a_dt,
          auto const& ne_diff  = diffnE[lev].const_array(mfi);
          auto const& ne_adv   = advnE[lev].const_array(mfi);
          auto const& ne_curr  = nE[lev].const_array(mfi);
-         auto const& ne_old   = ldataOld_p->nE.const_array(mfi);
+         auto const& ne_old   = ldataOld_p->state.const_array(mfi,NE);
          auto const& charge   = ldataNLs_p->backgroundCharge.const_array(mfi);
          auto const& res_nE   = a_nlresid[lev]->array(mfi,0);
          auto const& res_phiV = a_nlresid[lev]->array(mfi,1);
