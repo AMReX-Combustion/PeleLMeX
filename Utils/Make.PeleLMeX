@@ -25,30 +25,24 @@ ifeq ($(USE_EFIELD),TRUE)
    LMdirs += Source/Efield Source/Efield/GMRES Source/Efield/LinOps
 endif
 ifeq ($(USE_PARTICLES), TRUE)
-  ifdef SPRAY_FUEL_NUM
-    DEFINES += -DSPRAY_PELE_LM
-    DEFINES += -DSPRAY_FUEL_NUM=$(SPRAY_FUEL_NUM)
-    ifeq ($(USE_SPRAY_SOA), TRUE)
-      DEFINES += -DUSE_SPRAY_SOA
-    endif
-    LMdirs += Source/Spray
-    Bpack += $(PELEMP_HOME)/Source/PP_Spray/Make.package
-    Blocs += $(PELEMP_HOME)/Source/PP_Spray
-  endif
+   ifdef SPRAY_FUEL_NUM
+      DEFINES += -DSPRAY_PELE_LM
+      DEFINES += -DSPRAY_FUEL_NUM=$(SPRAY_FUEL_NUM)
+      ifeq ($(USE_SPRAY_SOA), TRUE)
+         DEFINES += -DUSE_SPRAY_SOA
+      endif
+      LMdirs += Source/Spray
+   endif
 endif
-
-# Soot modeling
 ifeq ($(USE_SOOT), TRUE)
-# Ensure the number of soot moments is correct
-    ifeq (,$(filter $(NUM_SOOT_MOMENTS),3 6))
-        $(error NUM_SOOT_MOMENTS must be 3 or 6)
-    endif
-  DEFINES+=-DSOOT_PELE_LM
-  DEFINES+=-DSOOT_MODEL
-  DEFINES+=-DNUM_SOOT_MOMENTS=$(NUM_SOOT_MOMENTS)
-  LMdirs += Source/Soot
-  Bpack   += $(PELEMP_HOME)/Source/Soot_Models/Make.package
-  Blocs   += $(PELEMP_HOME)/Source/Soot_Models
+   # Ensure the number of soot moments is correct
+   ifeq (,$(filter $(NUM_SOOT_MOMENTS),3 6))
+       $(error NUM_SOOT_MOMENTS must be 3 or 6)
+   endif
+   DEFINES += -DSOOT_PELE_LM
+   DEFINES += -DSOOT_MODEL
+   DEFINES += -DNUM_SOOT_MOMENTS=$(NUM_SOOT_MOMENTS)
+   LMdirs += Source/Soot
 endif
 
 Bpack += $(foreach dir, $(LMdirs), $(PELELMEX_HOME)/$(dir)/Make.package)
@@ -119,6 +113,20 @@ ifeq ($(USE_PARTICLES), TRUE)
 endif
 
 Bpack += $(foreach dir, $(Pdirs), $(AMREX_HOME)/Src/$(dir)/Make.package)
+
+#---------------
+# PeleMP sources
+#---------------
+ifeq ($(USE_PARTICLES), TRUE)
+   ifdef SPRAY_FUEL_NUM
+      Bpack += $(PELEMP_HOME)/Source/PP_Spray/Make.package
+      Blocs += $(PELEMP_HOME)/Source/PP_Spray
+   endif
+endif
+ifeq ($(USE_SOOT), TRUE)
+   Bpack += $(PELEMP_HOME)/Source/Soot_Models/Make.package
+   Blocs += $(PELEMP_HOME)/Source/Soot_Models
+endif
 
 #---------------
 # Includes
