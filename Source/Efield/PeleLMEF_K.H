@@ -139,7 +139,7 @@ ef_edge_state_extdir(int i,int j,int k,
    return state_ed;
 }
 
-AMREX_GPU_HOST_DEVICE
+AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
 amrex::Real
 ef_edge_state_2ndO_extdir(int i,int j,int k,
