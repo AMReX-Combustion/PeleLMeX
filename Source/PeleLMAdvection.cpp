@@ -756,6 +756,8 @@ void PeleLM::computePassiveAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
    int firstpass = FIRSTSOOT;
    int numpass = NUMSOOTVAR;
 #else
+   int firstpass = 0;
+   int numpass = 0;
    return;
 #endif
    auto bcRecPass = fetchBCRecArray(firstpass,numpass);
