@@ -265,7 +265,7 @@ class PeleLM : public amrex::AmrCore {
    
    // get edge-centered diffusivity on a per level / per comp basis
    amrex::Array<amrex::MultiFab,AMREX_SPACEDIM>
-   getDiffusivity(int lev, int beta_comp, int ncomp,
+   getDiffusivity(int lev, int beta_comp, int ncomp, int doZeroVisc,
                   amrex::Vector<amrex::BCRec> a_bcrec,
                   const amrex::MultiFab &a_diff_cc);
 

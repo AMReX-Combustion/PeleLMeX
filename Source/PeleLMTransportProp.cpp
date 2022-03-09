@@ -1,5 +1,6 @@
 #include <PeleLM.H>
 #include <PeleLM_K.H>
+#include <pelelm_prob.H>
 #ifdef PELE_USE_EFIELD
 #include <PeleLMEF_K.H>
 #endif
@@ -86,7 +87,7 @@ void PeleLM::calcDiffusivity(const TimeStamp &a_time) {
 }
 
 Array<MultiFab,AMREX_SPACEDIM>
-PeleLM::getDiffusivity(int lev, int beta_comp, int ncomp,
+PeleLM::getDiffusivity(int lev, int beta_comp, int ncomp, int doZeroVisc,
                        Vector<BCRec> bcrec,
                        MultiFab const& beta_cc)
 {
@@ -138,8 +139,26 @@ PeleLM::getDiffusivity(int lev, int beta_comp, int ncomp,
       }
    }
 #endif
-
-   //TODO: zero_visc
+  
+   // Enable zeroing diffusivity on faces to produce walls
+   if (doZeroVisc) {
+      const auto geomdata = geom[lev].data();
+      for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {    
+         const Box& edomain = amrex::surroundingNodes(domain,idim);
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+         for (MFIter mfi(beta_ec[idim],TilingIfNotGPU()); mfi.isValid();++mfi) {
+            const Box ebx = mfi.tilebox();
+            const auto& diff_ec = beta_ec[idim].array(mfi);
+            amrex::ParallelFor(ebx, [=]
+            AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+            {
+                zero_visc(i, j, k, diff_ec, geomdata, edomain, idim, beta_comp, ncomp);
+            });
+         }
+      }
+   }
 
    return beta_ec;
 }
