@@ -160,4 +160,20 @@ bcnormal(
   }
 
 }
+
+AMREX_GPU_DEVICE
+AMREX_FORCE_INLINE
+void
+zero_visc (int i, int j, int k,
+           amrex::Array4<amrex::Real> const& beta,
+           amrex::GeometryData const& geomdata,
+           amrex::Box const& domainBox,
+           const int  dir,
+           const int  beta_comp,
+           const int  nComp)
+{
+     amrex::ignore_unused(i,j,k,beta,geomdata,domainBox,dir,beta_comp,nComp);
+    // We treat species when beta_comp == 0 and nComp == NUM_SPECIES
+    // otherwise this routine could be called for other face diffusivity (Temp, velocity, ...)
+}
 #endif
