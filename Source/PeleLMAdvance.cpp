@@ -84,16 +84,18 @@ void PeleLM::Advance(int is_initIter) {
    //----------------------------------------------------------------
    BL_PROFILE_VAR_STOP(PLM_SETUP);
    //----------------------------------------------------------------
-   if (!is_initIter) {
+
 #ifdef SPRAY_PELE_LM
+   if (!is_initIter) {
      sprayMKD(m_cur_time, m_dt);
+   }
 #endif
 #ifdef SOOT_MODEL
-     if (do_soot_solve) {
-        computeSootSource(AmrOldTime, m_dt);
-     }
-#endif
+   if (do_soot_solve) {
+     computeSootSource(AmrOldTime, m_dt);
    }
+#endif
+
    if (! m_incompressible ) {
       floorSpecies(AmrOldTime);
 
@@ -154,17 +156,18 @@ void PeleLM::Advance(int is_initIter) {
       for (int lev = 0; lev <= finest_level; ++lev) {
          m_extSource[lev]->setVal(0.);
       }
-      if (!is_initIter) {
+
 #ifdef SPRAY_PELE_LM
+      if (!is_initIter) {
          sprayMK(m_cur_time + m_dt, m_dt);
+      }
 #endif
 #ifdef SOOT_MODEL
-         if (do_soot_solve) {
-            computeSootSource(AmrNewTime, m_dt);
-            clipSootMoments();
-         }
-#endif
+      if (do_soot_solve) {
+         computeSootSource(AmrNewTime, m_dt);
+         clipSootMoments();
       }
+#endif
 
       // Post SDC
       averageDownScalars(AmrNewTime);
