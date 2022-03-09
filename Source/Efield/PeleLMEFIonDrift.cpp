@@ -72,7 +72,8 @@ void PeleLM::ionDriftVelocity(std::unique_ptr<AdvanceAdvData> &advData)
       }
 
       // Get the face centered ions mobility
-      Array<MultiFab,AMREX_SPACEDIM> mobH_ec = getDiffusivity(lev, 0, NUM_IONS, bcRecIons, mobH_cc);
+      int doZeroVisc = 0;
+      Array<MultiFab,AMREX_SPACEDIM> mobH_ec = getDiffusivity(lev, 0, NUM_IONS, doZeroVisc, bcRecIons, mobH_cc);
 
       // Assemble the ions drift velocity
       for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {

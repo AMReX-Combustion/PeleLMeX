@@ -142,7 +142,8 @@ void PeleLM::macProject(const TimeStamp &a_time,
          }
       } else {
          auto ldata_p = getLevelDataPtr(lev,a_time);
-         rho_inv[lev] = getDiffusivity(lev,DENSITY,1,{bcRec},ldata_p->state);
+         int doZeroVisc = 0;
+         rho_inv[lev] = getDiffusivity(lev,DENSITY,1,doZeroVisc,{bcRec},ldata_p->state);
          for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
             rho_inv[lev][idim].invert(m_dt/2.0,0);
             rho_inv[lev][idim].FillBoundary(geom[lev].periodicity());
