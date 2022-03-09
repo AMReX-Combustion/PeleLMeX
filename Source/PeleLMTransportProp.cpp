@@ -106,13 +106,14 @@ PeleLM::getDiffusivity(int lev, int beta_comp, int ncomp, int doZeroVisc,
                                                        MultiFab(amrex::convert(ba,IntVect::TheDimensionVector(2)),
                                                                 dm, ncomp, 0, MFInfo(), factory))};
 
+   const Box& domain = geom[lev].Domain();
+
 #ifdef AMREX_USE_EB
    // EB : use EB CCentroid -> FCentroid
    EB_interp_CellCentroid_to_FaceCentroid(beta_cc, GetArrOfPtrs(beta_ec), beta_comp, 0, ncomp, geom[lev], bcrec);
    EB_set_covered_faces(GetArrOfPtrs(beta_ec),1.234e40);
 #else
    // NON-EB : use cen2edg_cpp
-   const Box& domain = geom[lev].Domain();
    bool use_harmonic_avg = m_harm_avg_cen2edge ? true : false;
 
 #ifdef AMREX_USE_OMP
