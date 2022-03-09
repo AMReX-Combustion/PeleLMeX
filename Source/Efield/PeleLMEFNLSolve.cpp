@@ -522,7 +522,8 @@ void PeleLM::getAdvectionTerm(const Vector<const MultiFab*> &a_nE,
       auto ldataNLs_p = getLevelDataNLSolvePtr(lev);
 
       // Get the face centered electron mobility
-      Array<MultiFab,AMREX_SPACEDIM> mobE_ec = getDiffusivity(lev, 0, 1, bcRecnE, ldata_p->mobE_cc);
+      int doZeroVisc = 0;
+      Array<MultiFab,AMREX_SPACEDIM> mobE_ec = getDiffusivity(lev, 0, 1, doZeroVisc, bcRecnE, ldata_p->mobE_cc);
 
       // Get the electron effective velocity
       for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
@@ -733,7 +734,8 @@ void PeleLM::setUpPrecond(const Real &a_dt,
       // Get nl solve data pointer
       auto ldataNLs_p = getLevelDataNLSolvePtr(lev);
 
-      Array<MultiFab,AMREX_SPACEDIM> diffE_ec = getDiffusivity(lev, 0, 1, bcRecnE, ldata_p->diffE_cc);
+      int doZeroVisc = 0;
+      Array<MultiFab,AMREX_SPACEDIM> diffE_ec = getDiffusivity(lev, 0, 1, doZeroVisc, bcRecnE, ldata_p->diffE_cc);
 
       getPrecondOp()->setDiffOpACoeff(lev, 1.0);
       getPrecondOp()->setDiffOpBCoeff(lev, GetArrOfConstPtrs(diffE_ec));

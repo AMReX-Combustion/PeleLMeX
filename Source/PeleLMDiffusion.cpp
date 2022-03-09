@@ -295,7 +295,8 @@ void PeleLM::addWbarTerm(const Vector<Array<MultiFab*,AMREX_SPACEDIM> > &a_spflu
    for (int lev = 0; lev <= finest_level; ++lev) {
 
       // Get edge diffusivity
-      Array<MultiFab,AMREX_SPACEDIM> beta_ec = getDiffusivity(lev, 0, NUM_SPECIES, bcRecSpec, *a_beta[lev]);
+      int doZeroVisc = 1;
+      Array<MultiFab,AMREX_SPACEDIM> beta_ec = getDiffusivity(lev, 0, NUM_SPECIES, doZeroVisc, bcRecSpec, *a_beta[lev]);
 
       const Box& domain = geom[lev].Domain();
       bool use_harmonic_avg = m_harm_avg_cen2edge ? true : false;
@@ -527,7 +528,8 @@ void PeleLM::computeSpeciesEnthalpyFlux(const Vector<Array<MultiFab*,AMREX_SPACE
 
       //------------------------------------------------------------------------
       // Get the face-centered species enthalpies
-      Array<MultiFab,AMREX_SPACEDIM> Enth_ec = getDiffusivity(lev, 0, NUM_SPECIES, bcRecSpec, Enth);
+      int doZeroVisc = 0;
+      Array<MultiFab,AMREX_SPACEDIM> Enth_ec = getDiffusivity(lev, 0, NUM_SPECIES, doZeroVisc, bcRecSpec, Enth);
 
       //------------------------------------------------------------------------
       // Compute \sum_k { \Flux_k * h_k }
@@ -557,7 +559,7 @@ void PeleLM::computeSpeciesEnthalpyFlux(const Vector<Array<MultiFab*,AMREX_SPACE
 void PeleLM::differentialDiffusionUpdate(std::unique_ptr<AdvanceAdvData> &advData,
                                          std::unique_ptr<AdvanceDiffData> &diffData)
 {
-   BL_PROFILE_VAR("PeleLM::differentialDiffusionUpdate()", differentialDiffusionUpdate);
+   BL_PROFILE("PeleLM::differentialDiffusionUpdate()");
 
    //------------------------------------------------------------------------
    // Setup fluxes
@@ -577,7 +579,7 @@ void PeleLM::differentialDiffusionUpdate(std::unique_ptr<AdvanceAdvData> &advDat
 
    //------------------------------------------------------------------------
    // Convert species forcing into actual solve RHS by *dt and adding rhoY^{n}
-   // Could have do at the same time the forcing is built, but this is clearer
+   // Could have done it at the same time the forcing is built, but this is clearer
    for (int lev = 0; lev <= finest_level; ++lev) {
 
       // Get t^{n} data pointer
