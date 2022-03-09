@@ -37,20 +37,24 @@ void PeleLM::Evolve() {
          writeTemporals();
       }
 
+      // Check message
+      bool dump_and_stop = checkMessage();
+
       // Check for plot file
-      if (writePlotNow()) {
+      if (writePlotNow() || dump_and_stop) {
          WritePlotFile();
          plt_justDidIt = 1;
       }
 
-      if (writeCheckNow()) {
+      if (writeCheckNow() || dump_and_stop) {
          WriteCheckPointFile();
          chk_justDidIt = 1;
       }
 
       // Check for the end of the simulation
       do_not_evolve = ( (m_max_step >= 0 && m_nstep >= m_max_step) ||
-                        (m_stop_time >= 0.0 && m_cur_time >= m_stop_time - 1.0e-12 * m_dt) );
+                        (m_stop_time >= 0.0 && m_cur_time >= m_stop_time - 1.0e-12 * m_dt) ||
+                        dump_and_stop );
 
    }
 
@@ -102,4 +106,26 @@ PeleLM::doTemporalsNow()
    }
 
    return write_now;
+}
+
+bool
+PeleLM::checkMessage()
+{
+    bool dump_and_stop = false;
+    if (m_nstep % m_message_int == 0) {
+        int dumpclose = 0;
+        if (ParallelDescriptor::IOProcessor()) {
+            FILE *fp;
+            if ( (fp=fopen("dump_and_stop","r")) != 0 ) {
+                remove("dump_and_stop");
+                dumpclose = 1;
+                fclose(fp);
+            }
+        }
+        int packed_data[1];
+        packed_data[0] = dumpclose;
+        ParallelDescriptor::Bcast(packed_data, 1, ParallelDescriptor::IOProcessorNumber());
+        dump_and_stop = packed_data[0];
+    }
+    return dump_and_stop;
 }

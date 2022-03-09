@@ -260,7 +260,7 @@ class PeleLM : public amrex::AmrCore {
    
    // get edge-centered diffusivity on a per level / per comp basis
    amrex::Array<amrex::MultiFab,AMREX_SPACEDIM>
-   getDiffusivity(int lev, int beta_comp, int ncomp,
+   getDiffusivity(int lev, int beta_comp, int ncomp, int doZeroVisc,
                   amrex::Vector<amrex::BCRec> a_bcrec,
                   const amrex::MultiFab &a_diff_cc);
 
@@ -415,6 +415,7 @@ class PeleLM : public amrex::AmrCore {
    // I/O
    void WritePlotFile();
    bool writePlotNow();
+   bool checkMessage();
    void WriteCheckPointFile();
    void ReadCheckPointFile();
    bool writeCheckNow();
@@ -914,6 +915,7 @@ class PeleLM : public amrex::AmrCore {
    int m_plotStateSpec = 0;
    int m_plot_int = 0;
    int m_check_int = 0;
+   int m_message_int = 10;
    int m_evaluatePlotVarCount = 0;
    amrex::Vector<std::string> m_evaluatePlotVars;
 
