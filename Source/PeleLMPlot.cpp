@@ -506,8 +506,7 @@ void PeleLM::initLevelDataFromPlt(int a_lev,
    amrex::Print() << " initData on level " << a_lev << " from pltfile " << a_dataPltFile << "\n";
 
    // Use PelePhysics PltFileManager
-   pele::physics::PltFileManager pltData;
-   pltData.init(a_dataPltFile);
+   pele::physics::pltfilemanager::PltFileManager pltData(a_dataPltFile);
    Vector<std::string> plt_vars = pltData.getVariableList();
 
    // Find required data in pltfile
