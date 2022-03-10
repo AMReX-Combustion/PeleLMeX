@@ -253,12 +253,17 @@ void PeleLM::initData() {
          }
 
          // do an initial Poisson solve
-         poissonSolveEF(AmrNewTime);
          fillPatchPhiV(AmrNewTime);
+         poissonSolveEF(AmrNewTime);
 
          // Reset time data
          if ( m_restart_resetTime ) {
             m_nstep = 0;
+            m_cur_time = 0.0;
+            for (int lev = 0; lev <= finest_level; ++lev) {
+                m_t_new[lev] = 0.0;
+                m_t_old[lev] = -1.0e200;
+            }
             m_dt = -1.0;
             int is_init = 1;
             Real dtInit = computeDt(is_init,AmrNewTime);
