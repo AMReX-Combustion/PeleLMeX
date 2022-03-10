@@ -184,13 +184,11 @@ bcnormal(
       amrex::Real dampWidth = 0.0002;
       amrex::Real lipFunction = 0.5 * (std::tanh((rad_xy-prob_parm.r_int)/dampWidth) - std::tanh((rad_xy-prob_parm.r_ext)/dampWidth));
       s_ext[PHIV] = 0.01*prob_parm.burner_phiV + lipFunction * prob_parm.burner_phiV;
-      s_ext[PHIV] = 0.0;
    } else if (idir == 2 && sgn == -1) {   // electrode side
       amrex::Real dampWidth = 0.0002;
       amrex::Real lipFunction = 0.5 * (std::tanh((rad_xy - (prob_parm.electrode_radius - 0.0015))/dampWidth)
                                      - std::tanh((rad_xy - (prob_parm.electrode_radius + 0.0015))/dampWidth));
       s_ext[PHIV] = 0.01*prob_parm.electrode_phiV + lipFunction * prob_parm.electrode_phiV;
-      s_ext[PHIV] = 6000.0;
    }
 #endif
 }
