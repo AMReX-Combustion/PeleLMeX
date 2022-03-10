@@ -431,8 +431,21 @@ void PeleLM::ReadCheckPointFile()
    // Load the field data
    for(int lev = 0; lev <= finest_level; ++lev)
    {
+#ifdef PELE_USE_EFIELD
+      if (!m_restart_nonEF) {
+         VisMF::Read(m_leveldata_new[lev]->state,
+                     amrex::MultiFabFileFullPrefix(lev, m_restart_chkfile, level_prefix, "state"));
+      } else {
+         // The chk state is 2 component shorter since phiV and nE aren't in it
+         MultiFab stateTemp(grids[lev],dmap[lev],NVAR-2,0);
+         VisMF::Read(stateTemp,
+                     amrex::MultiFabFileFullPrefix(lev, m_restart_chkfile, level_prefix, "state"));
+         MultiFab::Copy(m_leveldata_new[lev]->state, stateTemp, 0, 0, NVAR-2, 0);
+      }
+#else
       VisMF::Read(m_leveldata_new[lev]->state,
                   amrex::MultiFabFileFullPrefix(lev, m_restart_chkfile, level_prefix, "state"));
+#endif
 
       VisMF::Read(m_leveldata_new[lev]->gp,
                   amrex::MultiFabFileFullPrefix(lev, m_restart_chkfile, level_prefix, "gradp"));
@@ -527,7 +540,7 @@ void PeleLM::initLevelDataFromPlt(int a_lev,
 
    // Velocity
    for (int i = 0; i < AMREX_SPACEDIM; i++) {
-      amrData.FillVar(ldata_p->state, a_lev, plotnames[idV+i], FIRSTSPEC+i);
+      amrData.FillVar(ldata_p->state, a_lev, plotnames[idV+i], VELX+i);
       amrData.FlushGrids(idV+i);
    }
 
