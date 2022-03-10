@@ -4,6 +4,7 @@ PELE_PHYSICS_HOME ?= /path/to/PELE_PHYSICS_HOME
 AMREX_HYDRO_HOME ?= /path/to/AMREX_HYDRO_HOME
 
 USE_SUNDIALS = TRUE
+BL_NO_FORT = TRUE
 
 # AMReX definitions
 include $(AMREX_HOME)/Tools/GNUMake/Make.defs
@@ -63,7 +64,7 @@ endif
 
 ChemDir  = Support/Fuego/Mechanism/Models/$(Chemistry_Model)
 
-PPdirs  := Utility/PMF Utility/TurbInflow Source $(ChemDir) Reactions Eos Transport
+PPdirs  := Utility/PMF Utility/TurbInflow Utility/PltFileManager Source $(ChemDir) Reactions Eos Transport
 PPHdirs := Support/Fuego/Evaluation
 
 Bpack += $(foreach dir, $(PPdirs), $(PELE_PHYSICS_HOME)/$(dir)/Make.package)
@@ -84,7 +85,7 @@ Blocs += $(foreach dir, $(Hdirs), $(AMREX_HYDRO_HOME)/$(dir))
 #---------------
 # AMReX sources
 #---------------
-Pdirs := Base Boundary AmrCore LinearSolvers/MLMG Extern/amrdata
+Pdirs := Base Boundary AmrCore LinearSolvers/MLMG
 ifeq ($(USE_EB), TRUE)
     Pdirs += EB
 endif
@@ -112,7 +113,6 @@ AMReX_buildInfo.cpp:
 	$(AMREX_HOME)/Tools/C_scripts/makebuildinfo_C.py \
       --amrex_home "$(AMREX_HOME)" \
       --COMP "$(COMP)" --COMP_VERSION "$(COMP_VERSION)" \
-      --FCOMP "$(FCOMP)" --FCOMP_VERSION "$(FCOMP_VERSION)" \
       --GIT "$(PELELMEX_HOME) $(AMREX_HOME) $(PELE_PHYSICS_HOME) $(AMREX_HYDRO_HOME)"
 
 #---------------
