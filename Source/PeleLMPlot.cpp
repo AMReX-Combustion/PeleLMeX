@@ -352,8 +352,10 @@ void PeleLM::ReadCheckPointFile()
    std::getline(is, line);
 
    // Finest level
-   is >> finest_level;
+   int chk_finest_level = 0;
+   is >> chk_finest_level;
    GotoNextLine(is);
+   finest_level = std::min(chk_finest_level,max_level);
 
    // Step count
    is >> m_nstep;
@@ -437,10 +439,10 @@ void PeleLM::ReadCheckPointFile()
                      amrex::MultiFabFileFullPrefix(lev, m_restart_chkfile, level_prefix, "state"));
       } else {
          // The chk state is 2 component shorter since phiV and nE aren't in it
-         MultiFab stateTemp(grids[lev],dmap[lev],NVAR-2,0);
+         MultiFab stateTemp(grids[lev],dmap[lev],NVAR-2,m_nGrowState);
          VisMF::Read(stateTemp,
                      amrex::MultiFabFileFullPrefix(lev, m_restart_chkfile, level_prefix, "state"));
-         MultiFab::Copy(m_leveldata_new[lev]->state, stateTemp, 0, 0, NVAR-2, 0);
+         MultiFab::Copy(m_leveldata_new[lev]->state, stateTemp, 0, 0, NVAR-2, m_nGrowState);
       }
 #else
       VisMF::Read(m_leveldata_new[lev]->state,
@@ -473,8 +475,8 @@ void PeleLM::ReadCheckPointFile()
                MultiFab::Copy(m_leveldatareact[lev]->I_R,I_Rtemp,0,0,NUM_SPECIES,0);
             }
 
-            // Initialize phiV
-            m_leveldata_new[lev]->state.setVal(0.0,PHIV,1,0);
+            // Initialize nE & phiV
+            m_leveldata_new[lev]->state.setVal(0.0,NE,2,m_nGrowState);
          }
 #else
          if (m_do_react) {
