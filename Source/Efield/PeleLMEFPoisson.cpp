@@ -22,7 +22,7 @@ void PeleLM::poissonSolveEF(const TimeStamp &a_time)
       rhsPoisson[lev].reset(new MultiFab(grids[lev], dmap[lev], 1, nGhost, MFInfo(), *m_factory[lev]));
 
       auto ldata_p = getLevelDataPtr(lev,a_time);
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
       for (MFIter mfi(*rhsPoisson[lev],TilingIfNotGPU()); mfi.isValid(); ++mfi)
