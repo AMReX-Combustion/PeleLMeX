@@ -4,6 +4,8 @@
 #ifdef SPRAY_PELE_LM
 #include "SprayParticles.H"
 
+using namespace amrex;
+
 namespace {
 bool virtual_particles_set = false;
 //

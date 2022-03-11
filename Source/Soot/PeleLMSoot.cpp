@@ -4,6 +4,8 @@
 #include <PeleLMDerive.H>
 #include "SootModel.H"
 
+using namespace amrex;
+
 void
 PeleLM::setSootIndx()
 {
