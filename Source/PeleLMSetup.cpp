@@ -356,6 +356,7 @@ void PeleLM::readParameters() {
    ParmParse ppa("amr");
    ppa.query("max_step", m_max_step);
    ppa.query("stop_time", m_stop_time);
+   ppa.query("message_int", m_message_int);
    ppa.query("fixed_dt", m_fixed_dt);
    ppa.query("cfl", m_cfl);
    ppa.query("dt_shrink", m_dtshrink);
