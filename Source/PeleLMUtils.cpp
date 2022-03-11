@@ -139,9 +139,9 @@ void PeleLM::extFluxDivergenceLevel(int lev,
                }
             }
          });
-      } else {                                                   // Regular boxes
+      } else                                                    // Regular boxes
 #endif
-
+      {
          amrex::ParallelFor(bx, [ncomp, divergence, AMREX_D_DECL(fluxX, fluxY, fluxZ), vol, scale]
          AMREX_GPU_DEVICE (int i, int j, int k) noexcept
          {
@@ -149,9 +149,7 @@ void PeleLM::extFluxDivergenceLevel(int lev,
                                  AMREX_D_DECL(fluxX, fluxY, fluxZ),
                                  vol, scale, divergence);
          });
-#ifdef AMREX_USE_EB
       }
-#endif
    }
 }
 
