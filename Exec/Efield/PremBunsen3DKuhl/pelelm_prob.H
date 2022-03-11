@@ -181,13 +181,13 @@ bcnormal(
 
 #ifdef PELE_USE_EFIELD
    if (idir == 2 && sgn == 1) {         // Burner side
-      amrex::Real dampWidth = 0.0002;
+      amrex::Real dampWidth = 0.0005;
       amrex::Real lipFunction = 0.5 * (std::tanh((rad_xy-prob_parm.r_int)/dampWidth) - std::tanh((rad_xy-prob_parm.r_ext)/dampWidth));
       s_ext[PHIV] = 0.01*prob_parm.burner_phiV + lipFunction * prob_parm.burner_phiV;
    } else if (idir == 2 && sgn == -1) {   // electrode side
-      amrex::Real dampWidth = 0.0002;
-      amrex::Real lipFunction = 0.5 * (std::tanh((rad_xy - (prob_parm.electrode_radius - 0.0015))/dampWidth)
-                                     - std::tanh((rad_xy - (prob_parm.electrode_radius + 0.0015))/dampWidth));
+      amrex::Real dampWidth = 0.001;
+      amrex::Real lipFunction = 0.5 * (std::tanh((rad_xy - (prob_parm.electrode_radius - 0.0025))/dampWidth)
+                                     - std::tanh((rad_xy - (prob_parm.electrode_radius + 0.0025))/dampWidth));
       s_ext[PHIV] = 0.01*prob_parm.electrode_phiV + lipFunction * prob_parm.electrode_phiV;
    }
 #endif
@@ -218,7 +218,7 @@ zero_visc (int i, int j, int k,
             amrex::Real rad_xy = std::sqrt(x*x + y*y);
             if ( rad_xy >= 0.0065 && rad_xy <= 0.0075 ) {   // hard coded size of the burner lip ...
                 for (int n = 0; n < nComp; n++) {
-                    beta(i,k,j,n) = 0.0;
+                    beta(i,j,k,n) = 0.0;
                 }
             }
         }
