@@ -108,7 +108,7 @@ void PeleLM::MakeNewLevelFromScratch( int lev,
       }
       extentFactor *= std::sqrt(2.0);  // Account for diagonals
 
-      MultiFab signDist(convert(grids[0],IntVect::TheUnitVector()),dmap[0],1,0,MFInfo(),EBFactory(0));
+      MultiFab signDist(convert(grids[0],IntVect::TheUnitVector()),dmap[0],1,1,MFInfo(),EBFactory(0));
       FillSignedDistance(signDist,true);
 
 #ifdef AMREX_USE_OMP
@@ -116,7 +116,7 @@ void PeleLM::MakeNewLevelFromScratch( int lev,
 #endif
       for (MFIter mfi(*m_signedDist0,TilingIfNotGPU()); mfi.isValid(); ++mfi)
       {
-         const Box& bx = mfi.tilebox();
+         const Box& bx = mfi.growntilebox();
          auto const& sd_cc = m_signedDist0->array(mfi);
          auto const& sd_nd = signDist.const_array(mfi);
          amrex::ParallelFor(bx, [sd_cc, sd_nd]
