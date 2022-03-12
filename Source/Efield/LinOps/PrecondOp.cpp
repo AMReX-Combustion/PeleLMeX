@@ -162,6 +162,8 @@ PrecondOp::diffOpSolve(const Vector<MultiFab*> &a_sol,
    // TODO set all the MLMG options
    MLMG mlmg(*m_diff);
    mlmg.setVerbose(m_diff_verbose);
+   mlmg.setPreSmooth(m_num_pre_smooth);
+   mlmg.setPostSmooth(m_num_post_smooth);
    if (m_fixed_mg_it > 0) mlmg.setFixedIter(m_fixed_mg_it);
    
    mlmg.solve(a_sol, a_rhs, m_mg_rtol, m_mg_atol);
@@ -225,5 +227,8 @@ PrecondOp::readParameters ()
    pp.query("diff_verbose", m_diff_verbose);
    pp.query("Stilda_verbose", m_Stilda_verbose);
    pp.query("fixedIter",m_fixed_mg_it);
+   pp.query("max_coarsening_level", m_mg_max_coarsening_level);
+   pp.query("num_pre_smooth", m_num_pre_smooth);
+   pp.query("num_post_smooth", m_num_post_smooth);
    // TODO: add all the user-defined options
 }
