@@ -819,7 +819,7 @@ void PeleLM::setTypicalValues(const TimeStamp &a_time, int is_init)
 
 void PeleLM::updateTypicalValuesChem()
 {
-    if (m_useTypValChem) {
+    if (m_useTypValChem && m_do_react) {
         if (m_verbose > 2) Print() << " Update chemistry typical values \n";
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -1065,3 +1065,87 @@ PeleLM::MLmin(const Vector<const MultiFab*> &a_MF,
     ParallelDescriptor::ReduceRealMin(nmin.data(),ncomp);
     return nmin;
 }
+
+#ifdef AMREX_USE_EB
+// Extend the cell-centered based signed distance function
+void PeleLM::extendSignedDistance(MultiFab *a_signDist,
+                                  Real a_extendFactor)
+{
+      // This is a not-so-pretty piece of code that'll take AMReX cell-averaged
+      // signed distance and propagates it manually up to the point where we need to have it
+      // for derefining.
+      const auto geomdata = geom[0].data();
+      Real maxSignedDist = a_signDist->max(0);
+      const auto& ebfactory = dynamic_cast<EBFArrayBoxFactory const&>(a_signDist->Factory());
+      const auto& flags = ebfactory.getMultiEBCellFlagFab();
+      int nGrowFac = flags.nGrow()+1;
+       
+      // First set the region far away at the max value we need
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+      for (MFIter mfi(*a_signDist,TilingIfNotGPU()); mfi.isValid(); ++mfi)
+      {
+         const Box& bx = mfi.growntilebox();
+         auto const& sd_cc = a_signDist->array(mfi);
+         ParallelFor(bx, [=]
+         AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+         {
+            if ( sd_cc(i,j,k) >= maxSignedDist - 1e-12 ) {
+               const Real* dx = geomdata.CellSize(); 
+               sd_cc(i,j,k) = nGrowFac*dx[0]*a_extendFactor;
+            }
+         });
+      }
+
+      // Iteratively compute the distance function in boxes, propagating accross boxes using ghost cells
+      // If needed, increase the number of loop to extend the reach of the distance function
+      int nMaxLoop = 4;
+      for (int dloop = 1; dloop <= nMaxLoop; dloop++ ) {
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+         for (MFIter mfi(*a_signDist,TilingIfNotGPU()); mfi.isValid(); ++mfi)
+         {
+            const Box& bx = mfi.tilebox();
+            const Box& gbx = grow(bx,1);
+            if ( flags[mfi].getType(gbx) == FabType::covered ) {
+                continue;
+            }
+            auto const& sd_cc = a_signDist->array(mfi);
+            ParallelFor(bx, [=]
+            AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+            {
+               const auto glo = amrex::lbound(gbx);
+               const auto ghi = amrex::ubound(gbx);
+               const Real* dx = geomdata.CellSize();
+               Real extendedDist = dx[0] * a_extendFactor;
+               if ( sd_cc(i,j,k) >= maxSignedDist - 1e-12 ) {
+                  Real closestEBDist = 1e12;
+                  for (int kk = glo.z; kk <= ghi.z; ++kk) {
+                     for (int jj = glo.y; jj <= ghi.y; ++jj) {
+                        for (int ii = glo.x; ii <= ghi.x; ++ii) {
+                           if ( (i != ii) || (j != jj) || (k != kk) ) {
+                              if ( sd_cc(ii,jj,kk) > 0.0) {
+                                 Real distToCell = std::sqrt( AMREX_D_TERM(  ((i-ii)*dx[0]*(i-ii)*dx[0]),
+                                                                           + ((j-jj)*dx[1]*(j-jj)*dx[1]),
+                                                                           + ((k-kk)*dx[2]*(k-kk)*dx[2])));
+                                 Real distToEB = distToCell + sd_cc(ii,jj,kk);
+                                 if ( distToEB < closestEBDist ) closestEBDist = distToEB;
+                              }
+                           }
+                        }
+                     }
+                  }
+                  if ( closestEBDist < 1e10 ) {
+                     sd_cc(i,j,k) = closestEBDist;
+                  } else {
+                     sd_cc(i,j,k) = extendedDist;
+                  }
+               }
+            });
+         }
+         a_signDist->FillBoundary(geom[0].periodicity());  
+      }
+}
+#endif
