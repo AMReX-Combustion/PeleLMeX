@@ -1,0 +1,104 @@
+#-------------
+geometry.is_periodic = 0 0 0            # Periodicity in each direction: 0 => no, 1 => yes
+geometry.coord_sys   = 0                # 0 => cart, 1 => RZ
+geometry.prob_lo     = 0.00 0.00  0.0   # x_lo y_lo
+geometry.prob_hi     = 0.32 0.32  0.32  # x_hi y_hi
+
+# >>>>>>>>>>>>>  BC FLAGS <<<<<<<<<<<<<<<<
+# Interior, Inflow, Outflow, Symmetry,
+# SlipWallAdiab, NoSlipWallAdiab, SlipWallIsotherm, NoSlipWallIsotherm
+peleLM.lo_bc = Outflow Outflow Inflow
+peleLM.hi_bc = Outflow Outflow Outflow
+
+#-------------------------AMR CONTROL----------------------------
+amr.n_cell          = 256 256 256  # Level 0 number of cells in each direction
+amr.v               = 1            # amr verbosity level
+amr.max_level       = 1            # maximum level number allowed
+amr.ref_ratio       = 2 2 2 2      # refinement ratio
+amr.regrid_int      = 1            # how often to regrid
+amr.n_error_buf     = 1 1 1 2      # number of buffer cells in error est
+amr.grid_eff        = 0.7          # what constitutes an efficient grid
+amr.blocking_factor = 16           # block factor in grid generation
+amr.max_grid_size   = 128          # maximum box size
+
+#----------------------- PROBLEM PARAMETERS --------------------
+prob.standoff = -0.29
+prob.pertmag = 0.004
+prob.amplification = 10
+pmf.datafile = "pmfdata.dat"
+
+#----------------------TIME STEPING CONTROL----------------------
+amr.max_step        = 50             # maximum number of time steps
+amr.stop_time       = 1.001            # final physical time
+amr.cfl             = 0.75              # cfl number for hyperbolic system
+amr.dt_shrink       = 0.001            # scale back initial timestep
+amr.change_max      = 1.1              # max timestep size increase
+
+#-------------------------IO CONTROL----------------------------
+#amr.restart             = chk00050
+amr.check_file          = chk          # root name of checkpoint file
+amr.check_int           = 100          # number of timesteps between checkpoints
+amr.plot_file           = plt          # root name of plot file
+amr.plot_int            = 10          # number of timesteps between plot files
+amr.derive_plot_vars    = mag_vort avg_pressure mass_fractions
+amr.grid_log            = grdlog       # name of grid logging file
+
+#-------------------------PeleLM CONTROL----------------------------
+peleLM.v = 1
+peleLM.incompressible = 0
+peleLM.rho = 1.17
+peleLM.mu = 0.0
+peleLM.use_wbar = 1
+peleLM.sdc_iterMax = 1
+peleLM.floor_species = 0
+
+#--------------------REFINEMENT CONTROL------------------------
+amr.refinement_indicators = magvort HR #flame_tracer flame_tracer2 gradT
+
+#amr.lo_temp.max_level = 4
+#amr.lo_temp.value_greater = 1000
+#amr.lo_temp.field_name = temp
+
+#amr.gradT.max_level = 3
+#amr.gradT.adjacent_difference_greater = 100
+#amr.gradT.field_name = temp
+
+amr.HR.max_level = 3
+amr.HR.value_greater = 1.e8
+amr.HR.field_name = HeatRelease
+
+#amr.flame_tracer2.max_level = 3
+#amr.flame_tracer2.value_greater = 5.e-5
+#amr.flame_tracer2.field_name = Y(CH2O)
+
+#amr.flame_tracer.max_level = 3
+#amr.flame_tracer.value_greater = 1.0e-6
+#amr.flame_tracer.field_name = Y(HCO)
+
+# Refinement according to the vorticity, no field_name needed
+amr.refinement_indicators = magvort
+amr.magvort.max_level = 3
+amr.magvort.vorticity_greater = 1000
+
+# --------------- INPUTS TO CHEMISTRY REACTOR ---------------
+peleLM.chem_integrator = "ReactorCvode"
+peleLM.use_typ_vals_chem = 1          # Use species/temp typical values in CVODE
+ode.rtol = 1.0e-6                     # Relative tolerance of the chemical solve
+ode.atol = 1.0e-5                     # Absolute tolerance factor applied on typical values
+cvode.solve_type = GMRES     # CVODE Linear solve type (for Newton direction)
+cvode.max_order  = 4                  # CVODE max BDF order.
+
+#--------------------------OMP TILE INPUTS-----------------------------
+#fabarray.mfiter_tile_size = 512 512 512
+
+#--------------------------DEBUG/REGTESTS INPUTS-----------------------------
+amrex.regtest_reduction = 0
+amrex.fpe_trap_invalid  = 0
+amrex.fpe_trap_zero     = 0
+amrex.fpe_trap_overflow = 0
+
+#------------------- Embedded boundary---------------------------------
+eb2.geom_type                    = plane
+eb2.plane_point                  = 0.00556 0.0018564 -0.006451
+eb2.plane_normal                 = 0 -1 0.6
+eb2.small_volfrac                = 1.0e-3
