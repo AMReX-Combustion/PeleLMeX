@@ -6,6 +6,7 @@
 #include <AMReX_EB2.H>
 #include <AMReX_EB2_IF.H>
 #include <hydro_redistribution.H>
+#include <AMReX_EBMFInterpolater.H>
 
 using namespace amrex;
 
@@ -314,5 +315,57 @@ void PeleLM::initialRedistribution()
 
     // Initialize covered state
     setCoveredState(AmrNewTime);
+}
+
+void PeleLM::getEBDistance(int a_lev,
+                           MultiFab &a_signDistLev) {
+    
+
+    if (a_lev == 0) {
+        MultiFab::Copy(a_signDistLev,*m_signedDist0,0,0,1,0);
+        return;
+    }
+
+    // A pair of MF to hold crse & fine dist data
+    Array<std::unique_ptr<MultiFab>,2> MFpair;
+
+    // Interpolate on successive levels up to a_lev
+    for (int lev = 1; lev <= a_lev; ++lev) {
+
+        // Use MF EB interp
+        auto& interpolater  = eb_mf_lincc_interp;
+
+        // Get signDist on coarsen fineBA
+        BoxArray coarsenBA(grids[lev].size());
+        for (int j = 0, N = coarsenBA.size(); j < N; ++j) 
+        {    
+            coarsenBA.set(j,interpolater.CoarseBox(grids[lev][j], refRatio(lev-1)));
+        }
+        MultiFab coarsenSignDist(coarsenBA,dmap[lev],1,0);
+        coarsenSignDist.setVal(0.0);
+        MultiFab *crseSignDist = (lev == 1) ? m_signedDist0.get()
+                                            : MFpair[0].get();
+        coarsenSignDist.ParallelCopy(*crseSignDist,0,0,1);
+
+        // Interpolate on current lev
+        MultiFab *currentSignDist;
+        if ( lev < a_lev ) {
+            MFpair[1].reset(new MultiFab(grids[lev],dmap[lev],1,0,MFInfo(),EBFactory(lev)));
+        }
+        currentSignDist = (lev == a_lev) ? &a_signDistLev
+                                         : MFpair[1].get();
+
+        interpolater.interp(coarsenSignDist, 0,
+                            *currentSignDist, 0,
+                            1, IntVect(0),
+                            Geom(lev-1), Geom(lev), 
+                            Geom(lev).Domain(), refRatio(lev-1),
+                            {m_bcrec_force},0);
+
+        // Swap MFpair
+        if (lev < a_lev ) {
+            swap(MFpair[0],MFpair[1]);
+        }
+    }
 }
 #endif

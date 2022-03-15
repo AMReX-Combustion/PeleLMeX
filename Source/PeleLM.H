@@ -265,7 +265,7 @@ class PeleLM : public amrex::AmrCore {
    
    // get edge-centered diffusivity on a per level / per comp basis
    amrex::Array<amrex::MultiFab,AMREX_SPACEDIM>
-   getDiffusivity(int lev, int beta_comp, int ncomp,
+   getDiffusivity(int lev, int beta_comp, int ncomp, int doZeroVisc,
                   amrex::Vector<amrex::BCRec> a_bcrec,
                   const amrex::MultiFab &a_diff_cc);
 
@@ -420,6 +420,7 @@ class PeleLM : public amrex::AmrCore {
    // I/O
    void WritePlotFile();
    bool writePlotNow();
+   bool checkMessage();
    void WriteCheckPointFile();
    void ReadCheckPointFile();
    bool writeCheckNow();
@@ -637,6 +638,13 @@ class PeleLM : public amrex::AmrCore {
                          int ncomp,
                          const amrex::BCRec * d_bc,
                          const amrex::Geometry &a_geom);
+
+
+   void getEBDistance(int a_lev,
+                      amrex::MultiFab &a_signDistLev); 
+
+   void extendSignedDistance( amrex::MultiFab *a_signDist,
+                              amrex::Real a_extendFactor);
 
    // static_cast factory into ebfactory
    amrex::EBFArrayBoxFactory const& 
@@ -920,6 +928,7 @@ class PeleLM : public amrex::AmrCore {
    int m_plotStateSpec = 0;
    int m_plot_int = 0;
    int m_check_int = 0;
+   int m_message_int = 10;
    int m_evaluatePlotVarCount = 0;
    amrex::Vector<std::string> m_evaluatePlotVars;
 
@@ -1041,7 +1050,11 @@ class PeleLM : public amrex::AmrCore {
 
 #ifdef AMREX_USE_EB
    // EB
-   int m_refine_cutcells = 1;
+   std::string m_EB_refine_type = "Static";
+   int m_EB_refine_LevMax = -1;
+   int m_EB_refine_LevMin = -1;
+   int m_EB_refine_LevAdapt = -1;
+   std::unique_ptr<amrex::MultiFab> m_signedDist0 = nullptr;
    amrex::Vector<amrex::Real> coveredState_h;
    amrex::Gpu::DeviceVector<amrex::Real> coveredState_d;
    std::string m_adv_redist_type = "StateRedist";
