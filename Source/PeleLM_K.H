@@ -168,20 +168,12 @@ compute_divu(int i, int j, int k,
    }
 
    amrex::Real denominv = 1.0_rt / ( rho * cpmix * T(i,j,k) );
-   divu(i,j,k) = -( specEnthDiff(i,j,k) + tempDiff(i,j,k) ) * denominv;
+   divu(i,j,k) = ( specEnthDiff(i,j,k) + tempDiff(i,j,k) ) * denominv;
    for (int n = 0; n < NUM_SPECIES; n++) {
-      amrex::Real specTerm = -specDiff(i,j,k,n);
+      amrex::Real specTerm = specDiff(i,j,k,n);
       if (do_react) specTerm += rhoYdot(i,j,k,n);
       divu(i,j,k) +=  specTerm * ( mwtinv[n] * Wbar * rhoinv - hi[n] * denominv );
    }
-   // Add in S_rhoYm here as source term
-   // Add [S_rhoh - Sum_m (h_m * S_rhoYm)] * 1/rhoCpT
-   divu(i,j,k) += rhoHFluxBalance * denominv;
-   for (int n = 0; n < NUM_SPECIES; n++) {
-      divu(i,j,k) += rhoYFluxBalance[n] * mwtinv[n] * Wbar * rhoinv;
-      divu(i,j,k) -= (hi[n] * rhoYFluxBalance[n]) * denominv;
-   }
-   
 }
 
 AMREX_GPU_DEVICE

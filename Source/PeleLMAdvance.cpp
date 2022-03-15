@@ -31,7 +31,7 @@ void PeleLM::Advance(int is_initIter) {
    //----------------------------------------------------------------
 
    // initiliaze temporals
-   initTemporals();
+   // initTemporals();
 
    //----------------------------------------------------------------
    // TIME
