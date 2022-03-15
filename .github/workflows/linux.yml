@@ -11,7 +11,7 @@ jobs:
   #Build the 2D FlameSheet RegTest with GNU7.5 and no MPI support
   FS2D_NoMPI:
     name: GNU@7.5 NOMPI Comp [FS2D]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     env: 
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
@@ -38,7 +38,7 @@ jobs:
   # Build the 2D FlameSheet RegTest with GNU7.5 and MPI support
   FS2D_MPI:
     name: GNU@7.5 MPI Comp [FS2D]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     env: 
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
@@ -65,7 +65,7 @@ jobs:
   # Build the 2D FlameSheet RegTest with GNU7.5 and MPI+OMP support
   FS2D_MPIOMP:
     name: GNU@7.5 MPI OMP Comp [FS2D]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     env: 
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
@@ -92,7 +92,7 @@ jobs:
   # Build and Run the CoVo RegTest with GNU7.5 and no MPI support
   COVO2D_NoMPIRun:
     name: GNU@7.5 NOMPI Run [COVO2D]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     env: 
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
@@ -123,7 +123,7 @@ jobs:
   # Build and Run the HoBubble RegTest with GNU7.5 and MPI support
   HB2D_MPIRun:
     name: GNU@7.5 MPI Run [HB2D]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     env: 
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
@@ -154,7 +154,7 @@ jobs:
   # Build and Run the HoBubble RegTest with GNU7.5 in DEBUG
   HB2D_DBGRun:
     name: GNU@7.5 DEBUG Run [HB2DDBG]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     env: 
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
@@ -185,7 +185,7 @@ jobs:
   # Build and Run the EnclosedFlame RegTest with GNU7.5 and MPI support
   EF2D_MPIRun:
     name: GNU@7.5 MPI Run [EF2D]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     env: 
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
@@ -216,7 +216,7 @@ jobs:
   # Build and Run the EB_FlowPastCylinder RegTest with GNU7.5 and MPI support
   FPC2D_MPIRun:
     name: GNU@7.5 MPI Run [FPC2D]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     env: 
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
@@ -248,7 +248,7 @@ jobs:
   # Build and Run the HIT RegTest with GNU7.5 and MPI support
   HIT3D_MPIRun:
     name: GNU@7.5 MPI Run [HIT3D]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     env: 
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
@@ -280,7 +280,7 @@ jobs:
   # Build and Run the EB_PipeFlow RegTest with GNU7.5 and MPI support
   EBPF3D_MPIRun:
     name: GNU@7.5 MPI Run [EBPF3D]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     env: 
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
@@ -311,7 +311,7 @@ jobs:
   # Build and Run the TurbInflow RegTest in DEBUG with GNU7.5 and MPI support
   TI3D_MPIRun:
     name: GNU@7.5 MPI Run [TI3DDBG]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     env: 
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
