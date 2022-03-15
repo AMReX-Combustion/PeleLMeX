@@ -31,7 +31,7 @@ void PeleLM::Advance(int is_initIter) {
    //----------------------------------------------------------------
 
    // initiliaze temporals
-   initTemporals();
+   // initTemporals();
 
    //----------------------------------------------------------------
    // TIME
@@ -276,6 +276,9 @@ void PeleLM::oneSDC(int sdcIter,
    }
    BL_PROFILE_VAR_STOP(PLM_MAC);
    //----------------------------------------------------------------
+
+   // initiliaze temporals
+   initTemporals();
 
    //----------------------------------------------------------------
    // Scalar advections

@@ -119,7 +119,6 @@ void PeleLM::calcDivU(int is_init,
                                              : ldata_p->state.const_array(mfi,FIRSTSPEC);   // Dummy unused Array4
          auto const& divu     = ldata_p->divu.array(mfi);
          int use_react        = (m_do_react && !m_skipInstantRR) ? 1 : 0;
-
          amrex::Real massFluxBalance = AMREX_D_TERM(  m_domainMassFlux[0] + m_domainMassFlux[1],
                                        + m_domainMassFlux[2] + m_domainMassFlux[3],               
                                        + m_domainMassFlux[4] + m_domainMassFlux[5]);
@@ -130,7 +129,7 @@ void PeleLM::calcDivU(int is_init,
          for (int n = 0; n < NUM_SPECIES; n++){
             rhoYFluxBalance[n] = AMREX_D_TERM(  m_domainRhoYFlux[n*2*AMREX_SPACEDIM] + m_domainRhoYFlux[1+n*2*AMREX_SPACEDIM],
                                               + m_domainRhoYFlux[2+n*2*AMREX_SPACEDIM] + m_domainRhoYFlux[3+n*2*AMREX_SPACEDIM],
-                                              + m_domainRhoYFlux[4+n*2*AMREX_SPACEDIM] + m_domainRhoYFlux[5+n*2*AMREX_SPACEDIM]);            
+                                              + m_domainRhoYFlux[4+n*2*AMREX_SPACEDIM] + m_domainRhoYFlux[5+n*2*AMREX_SPACEDIM]); 
          }
 
 #ifdef AMREX_USE_EB
@@ -307,6 +306,90 @@ PeleLM::adjustPandDivU(std::unique_ptr<AdvanceAdvData> &advData)
         }
     }
 
+      // NOTE: This are probably obsolete and should be removed in the next push...
+//     // Add in source terms to divu here...
+//     for (int lev = 0; lev <= finest_level; ++lev) {
+// #ifdef AMREX_USE_OMP
+// #pragma omp parallel if (Gpu::notInLaunchRegion())
+// #endif
+//         auto ldataOld_p = getLevelDataPtr(lev,AmrOldTime);
+//         auto ldataNew_p = getLevelDataPtr(lev,AmrNewTime);
+
+//         for (MFIter mfi(*ThetaHalft[lev],TilingIfNotGPU()); mfi.isValid(); ++mfi)
+//         {
+//             const Box& bx = mfi.tilebox();
+//             auto const& theta    = ThetaHalft[lev]->const_array(mfi);
+//             auto const& macdivU  = advData->mac_divu[lev].array(mfi);
+//             auto const& rhoY     = ldataNew_p->species.const_array(mfi);
+//             auto const& T        = ldataNew_p->temp.const_array(mfi);
+//             amrex::Real massFluxBalance = AMREX_D_TERM(  m_domainMassFlux[0] + m_domainMassFlux[1],
+//                                        + m_domainMassFlux[2] + m_domainMassFlux[3],               
+//                                        + m_domainMassFlux[4] + m_domainMassFlux[5]);
+//             // amrex::Print() << "massFluxBalance = " << massFluxBalance << std::endl;
+//             amrex::Real rhoHFluxBalance = AMREX_D_TERM(  m_domainRhoHFlux[0] + m_domainRhoHFlux[1],
+//                                           + m_domainRhoHFlux[2] + m_domainRhoHFlux[3],               
+//                                           + m_domainRhoHFlux[4] + m_domainRhoHFlux[5]);
+//             // amrex::Print() << "rhoHFluxBalance = " << rhoHFluxBalance << std::endl;
+//             Real rhoYFluxBalance[NUM_SPECIES] = {0.0};
+//             for (int n = 0; n < NUM_SPECIES; n++){
+//                rhoYFluxBalance[n] = AMREX_D_TERM(  m_domainRhoYFlux[n*2*AMREX_SPACEDIM] + m_domainRhoYFlux[1+n*2*AMREX_SPACEDIM],
+//                                                  + m_domainRhoYFlux[2+n*2*AMREX_SPACEDIM] + m_domainRhoYFlux[3+n*2*AMREX_SPACEDIM],
+//                                                  + m_domainRhoYFlux[4+n*2*AMREX_SPACEDIM] + m_domainRhoYFlux[5+n*2*AMREX_SPACEDIM]); 
+//                // amrex::Print() << "rhoYFluxBalance[" << n << "] = " << rhoYFluxBalance[n] << std::endl;
+//             }
+
+//             // amrex::ParallelFor(bx, [=,dp0dt=m_dp0dt, &rhoY, &T, &rhoHFluxBalance, &rhoYFluxBalance]
+//             // AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+//             // {
+//             //    // compute terms for divu source
+//             //    auto eos = pele::physics::PhysicsType::eos();
+//             //    amrex::Real mwtinv[NUM_SPECIES] = {0.0};
+//             //    eos.inv_molecular_weight(mwtinv);
+//             //    // Get rho & Y from rhoY
+//             //    amrex::Real rho = 0.0_rt;
+//             //    for (int n = 0; n < NUM_SPECIES; n++) {
+//             //       rho += rhoY(i,j,k,n);
+//             //    }
+//             //    amrex::Real rhoinv = 1.0_rt / rho;
+//             //    amrex::Real y[NUM_SPECIES] = {0.0};
+//             //    for (int n = 0; n < NUM_SPECIES; n++) {
+//             //       y[n] = rhoY(i,j,k,n) * rhoinv;
+//             //    }
+//             //    // get cpmix from T and Y
+//             //    amrex::Real cpmix = 0.0_rt;
+//             //    eos.TY2Cp(T(i,j,k), y, cpmix);
+//             //    amrex::Real Wbar = 0.0_rt;
+//             //    eos.Y2WBAR(y, Wbar);
+//             //    amrex::Real hi[NUM_SPECIES] = {0.0};
+//             //    eos.T2Hi(T(i,j,k), hi);
+//             //    cpmix *= 1.0e-4_rt;                                // CGS -> MKS conversion
+//             //    for (int n = 0; n < NUM_SPECIES; n++) {
+//             //       hi[n] *= 1.0e-4_rt;                             // CGS -> MKS conversion
+//             //    }
+//             //    amrex::Real denominv = 1.0_rt / ( rho * cpmix * T(i,j,k) );
+//             //    //Need to use the face rho, T, for the source terms -- different from volumetric sources terms
+
+//             //    // // Add in the source terms
+//             //    //  macdivU(i,j,k) += rhoHFluxBalance * denominv;
+//             //    //  for (int n = 0; n < NUM_SPECIES; n++) {
+//             //    //    macdivU(i,j,k) += rhoYFluxBalance[n] * mwtinv[n] * Wbar * rhoinv;
+//             //    //    macdivU(i,j,k) -= (hi[n] * rhoYFluxBalance[n]) * denominv;
+//             //    //  }
+
+
+//             // });
+//          }
+//       }
+
+
+    Vector<MultiFab> dummy(finest_level+1);
+    for (int lev = 0; lev <= finest_level; ++lev) {
+       dummy[lev].define(grids[lev], dmap[lev], 1, 0, MFInfo(), *m_factory[lev]);
+       dummy[lev].setVal(1.0);
+    }
+
+    m_uncoveredVol = MFSum(GetVecOfConstPtrs(dummy),0);
+
     // Get the mean mac_divu (Sbar) and mean theta
     Real Sbar = MFSum(GetVecOfConstPtrs(advData->mac_divu),0);
     Sbar /= m_uncoveredVol;
@@ -315,19 +398,37 @@ PeleLM::adjustPandDivU(std::unique_ptr<AdvanceAdvData> &advData)
 
     // Adjust
     for (int lev = 0; lev <= finest_level; ++lev) {
+        // ThetaHalft is now delta_theta
         ThetaHalft[lev]->plus(-Thetabar,0,1);
+        // mac_divu is now delta_S
         advData->mac_divu[lev].plus(-Sbar,0,1);
     }
+  
+    // Compute 1/Volume * int(U_inflow)dA
+    amrex::Real umacFluxBalance = AMREX_D_TERM(  m_domainUmacFlux[0] + m_domainUmacFlux[1],
+                                       + m_domainUmacFlux[2] + m_domainUmacFlux[3],               
+                                       + m_domainUmacFlux[4] + m_domainUmacFlux[5]);
+    Real divu_vol = umacFluxBalance/m_uncoveredVol;
+    // Real divu_vol = 0.0;
+
+    amrex::Print() << "Total mass_old = " << m_massOld << std::endl;
+    amrex::Print() << "Pressure old = " << m_pOld << std::endl;
+    amrex::Print() << "umacFluxBalance = " << umacFluxBalance << std::endl;
+    amrex::Print() << "divu_vol = " << divu_vol << std::endl;
 
     // Advance the ambient pressure
-    m_pNew = m_pOld + m_dt * (Sbar/Thetabar);
-    m_dp0dt = Sbar/Thetabar;
+    m_pNew = m_pOld + m_dt * (Sbar/Thetabar - divu_vol/Thetabar);
+    m_dp0dt = Sbar/Thetabar - divu_vol/Thetabar;
+
+    amrex::Print() << "Sbar/Thetabar = " << Sbar/Thetabar << std::endl;
+    amrex::Print() << "divu_vol/Thetabar = " << divu_vol/Thetabar << std::endl;
 
     // subtract \tilde{theta} * Sbar / Thetabar from divu
     for (int lev = 0; lev <= finest_level; ++lev) {
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
+
         for (MFIter mfi(*ThetaHalft[lev],TilingIfNotGPU()); mfi.isValid(); ++mfi)
         {
             const Box& bx = mfi.tilebox();
@@ -336,7 +437,9 @@ PeleLM::adjustPandDivU(std::unique_ptr<AdvanceAdvData> &advData)
             amrex::ParallelFor(bx, [=,dp0dt=m_dp0dt]
             AMREX_GPU_DEVICE (int i, int j, int k) noexcept
             {
-                macdivU(i,j,k) -= theta(i,j,k) * dp0dt;
+               // Do the closed chamber pressure correction
+                // macdivU(i,j,k) -= theta(i,j,k) * dp0dt;
+               macdivU(i,j,k) -= (theta(i,j,k) * Sbar/Thetabar - divu_vol*(1 + theta(i,j,k)/Thetabar));
             });
         }
     }
