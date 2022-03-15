@@ -27,7 +27,7 @@ void PeleLM::Advance(int is_initIter) {
    //----------------------------------------------------------------
 
    // initiliaze temporals
-   initTemporals();
+   // initTemporals();
 
    //----------------------------------------------------------------
    // TIME
@@ -239,6 +239,9 @@ void PeleLM::oneSDC(int sdcIter,
       amrex::Print() << "   - oneSDC()::MACProjection()   --> Time: " << MACEnd << "\n";
    }
    //----------------------------------------------------------------
+
+   // initiliaze temporals
+   initTemporals();
 
    //----------------------------------------------------------------
    // Scalar advections
