@@ -14,11 +14,7 @@ AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
 void pelelm_initdata(int i, int j, int k,
                      int is_incompressible,
-                     amrex::Array4<amrex::Real> const& vel,
-                     amrex::Array4<amrex::Real> const& rho,
-                     amrex::Array4<amrex::Real> const& rhoY,
-                     amrex::Array4<amrex::Real> const& rhoH,
-                     amrex::Array4<amrex::Real> const& temp,
+                     amrex::Array4<amrex::Real> const& state,
                      amrex::Array4<amrex::Real> const& aux,
                      amrex::GeometryData const& geomdata,
                      ProbParm const& prob_parm,
@@ -41,30 +37,30 @@ void pelelm_initdata(int i, int j, int k,
     auto eos = pele::physics::PhysicsType::eos();
     amrex::Real massfrac[NUM_SPECIES] = {0.0};
 
-    temp(i,j,k) = prob_parm.T_mean;
+    state(i,j,k,TEMP) = prob_parm.T_mean;
     
     massfrac[O2_ID] = 0.233;
     massfrac[N2_ID] = 0.767;
     
-    AMREX_D_TERM(vel(i,j,k,0) = 0.0;,
-                 vel(i,j,k,1) = 0.0;,
-                 vel(i,j,k,2) = 0.0);
+    AMREX_D_TERM(state(i,j,k,VELX) = 0.0;,
+                 state(i,j,k,VELY) = 0.0;,
+                 state(i,j,k,VELZ) = 0.0);
 
     amrex::Real P_cgs = prob_parm.P_mean * 10.0;
 
     // Density
     amrex::Real rho_cgs = 0.0;
-    eos.PYT2R(P_cgs, massfrac, temp(i,j,k), rho_cgs);
-    rho(i,j,k) = rho_cgs * 1.0e3;
+    eos.PYT2R(P_cgs, massfrac, state(i,j,k,TEMP), rho_cgs);
+    state(i,j,k,DENSITY) = rho_cgs * 1.0e3;
 
     // Enthalpy
     amrex::Real h_cgs = 0.0;
-    eos.TY2H(temp(i,j,k), massfrac, h_cgs);
-    rhoH(i,j,k) = h_cgs * 1.0e-4 * rho(i,j,k);
+    eos.TY2H(state(i,j,k,TEMP), massfrac, h_cgs);
+    state(i,j,k,RHOH) = h_cgs * 1.0e-4 * state(i,j,k,DENSITY);
 
     // Species mass
     for (int n = 0; n < NUM_SPECIES; n++) {
-       rhoY(i,j,k,n) = massfrac[n] * rho(i,j,k);
+       state(i,j,k,FIRSTSPEC+n) = massfrac[n] * state(i,j,k,DENSITY);
     }
 }
 
@@ -91,11 +87,18 @@ bcnormal(
     amrex::Real X_jet[NUM_SPECIES] = {0.0};
     amrex::Real Y_jet[NUM_SPECIES] = {0.0};
     amrex::Real eta = 0.0;
+    amrex::Real p_int;
 
+    const amrex::Real* prob_lo = geomdata.ProbLo();
+    const amrex::Real* prob_hi = geomdata.ProbHi();
+    const amrex::Real* dx      = geomdata.CellSize();
+
+    // Simple, air into air injection
     X_air[O2_ID] = 0.21;
     X_air[N2_ID] = 1.0 - X_air[O2_ID];
-    X_jet[H2_ID] = 1.0;
-    X_jet[N2_ID] = 1.0 - X_jet[H2_ID];
+
+    X_jet[O2_ID] = 0.21;
+    X_jet[N2_ID] = 1.0 - X_air[O2_ID];
 
     eos.X2Y(X_air, Y_air);
     eos.X2Y(X_jet, Y_jet);
@@ -130,33 +133,37 @@ bcnormal(
             s_ext[VELY] = 0.0;
             s_ext[VELZ] = eta * prob_parm.V_jet;
         }
-        else {
-            for (int n = 0; n < NUM_SPECIES; n++) {
-                massfrac[n] = Y_air[n];
-            }
-
-            amrex::Real rho_cgs, P_cgs, RhoH_temp;
-            P_cgs = prob_parm.P_mean * 10.0;
-            s_ext[TEMP] = prob_parm.T_mean;
-
-            eos.PYT2R(P_cgs, massfrac, s_ext[TEMP], rho_cgs);
-            s_ext[DENSITY] = rho_cgs * 1.0e3;
-
-            eos.TY2H(s_ext[TEMP], massfrac, RhoH_temp);
-            s_ext[RHOH] = RhoH_temp * 1.0e-4 * s_ext[DENSITY]; // CGS -> MKS conversion
-
-            for (int n = 0; n < NUM_SPECIES; n++) {
-                s_ext[FIRSTSPEC + n] = massfrac[n] * s_ext[DENSITY];
-            }   
-
-            // Velocity
-            s_ext[VELX] = 0.0;
-            s_ext[VELY] = 0.0;
-            s_ext[VELZ] = 0.0;
-
-        }
 
     }
 
 }
+
+AMREX_GPU_DEVICE
+AMREX_FORCE_INLINE
+void
+zero_visc (int i, int j, int k,
+           amrex::Array4<amrex::Real> const& beta,
+           amrex::GeometryData const& geomdata,
+           amrex::Box const& domainBox,
+           const int  dir,
+           const int  beta_comp,
+           const int  nComp)
+{
+     // amrex::ignore_unused(i,j,k,beta,geomdata,domainBox,dir,beta_comp,nComp);
+    // We treat species when beta_comp == 0 and nComp == NUM_SPECIES
+    // otherwise this routine could be called for other face diffusivity (Temp, velocity, ...)
+     if (beta_comp == 0 && nComp == NUM_SPECIES) {
+        if (dir == 2 && k <= domainBox.smallEnd(dir)) {
+            const amrex::Real* prob_lo = geomdata.ProbLo();
+            const amrex::Real* prob_hi = geomdata.ProbHi();
+            const amrex::Real* dx      = geomdata.CellSize();
+
+            // Just over whole inlet
+            for (int n = 0; n < nComp; n++) {
+                beta(i,j,k,n) = 0.0;
+            }   
+        }   
+    }   
+}
+
 #endif
