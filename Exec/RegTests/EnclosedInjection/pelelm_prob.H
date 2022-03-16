@@ -91,11 +91,18 @@ bcnormal(
     amrex::Real X_jet[NUM_SPECIES] = {0.0};
     amrex::Real Y_jet[NUM_SPECIES] = {0.0};
     amrex::Real eta = 0.0;
+    amrex::Real p_int;
+
+    const amrex::Real* prob_lo = geomdata.ProbLo();
+    const amrex::Real* prob_hi = geomdata.ProbHi();
+    const amrex::Real* dx      = geomdata.CellSize();
 
     X_air[O2_ID] = 0.21;
     X_air[N2_ID] = 1.0 - X_air[O2_ID];
-    X_jet[H2_ID] = 1.0;
-    X_jet[N2_ID] = 1.0 - X_jet[H2_ID];
+    // X_jet[CH4_ID] = 1.0;
+    // X_jet[N2_ID] = 1.0 - X_jet[CH4_ID];
+    X_jet[O2_ID] = 0.21;
+    X_jet[N2_ID] = 1.0 - X_air[O2_ID];
 
     eos.X2Y(X_air, Y_air);
     eos.X2Y(X_jet, Y_jet);
@@ -104,14 +111,30 @@ bcnormal(
 
         if (time <= 0.1){
 
+            // s_ext[DENSITY] = s_int[DENSITY];
+            // s_ext[VELX] = -s_int[VELX];
+            // s_ext[VELY] = -s_int[VELY];
+            // s_ext[VELZ] = -s_int[VELZ];
+            // s_ext[RHOH] = s_int[RHOH];
+            // s_ext[TEMP] = s_int[TEMP];
+            // for (int n = 0; n < NUM_SPECIES; n++){
+            //     s_ext[FIRSTSPEC + n] = s_int[FIRSTSPEC + n];
+            // }
+
+
             eta = 0.5 * (1.0 - tanh( (sqrt(x[0]*x[0] + x[1]*x[1]) - prob_parm.jet_rad) / (prob_parm.bl_thickness / 4.0)));
 
             for (int n = 0; n < NUM_SPECIES; n++) {
                 massfrac[n] = eta * Y_jet[n] + (1.0 - eta) * Y_air[n];
             }
 
+            // p_int = 0;
+            // eos.RTY2P(s_int[DENSITY], s_int[TEMP], massfrac, p_int);
+
             amrex::Real rho_cgs, P_cgs, RhoH_temp;
-            P_cgs = prob_parm.P_mean * 10.0;
+            // P_cgs = prob_parm.P_mean * 10.0;
+            P_cgs = pNew;
+            // eos.RTY2R()
 
             s_ext[TEMP] = eta * prob_parm.T_jet + (1.0 - eta) * prob_parm.T_mean;
 
@@ -120,6 +143,10 @@ bcnormal(
 
             eos.TY2H(s_ext[TEMP], massfrac, RhoH_temp);
             s_ext[RHOH] = RhoH_temp * 1.0e-4 * s_ext[DENSITY]; // CGS -> MKS conversion
+            // if (eta == 1){
+                // amrex::Print() << "Density = " << s_ext[DENSITY] << std::endl;
+                // amrex::Print() << "RhoH = " << s_ext[RHOH] << std::endl;
+            // }
 
             for (int n = 0; n < NUM_SPECIES; n++) {
                 s_ext[FIRSTSPEC + n] = massfrac[n] * s_ext[DENSITY];
@@ -129,31 +156,6 @@ bcnormal(
             s_ext[VELX] = 0.0;
             s_ext[VELY] = 0.0;
             s_ext[VELZ] = eta * prob_parm.V_jet;
-        }
-        else {
-            for (int n = 0; n < NUM_SPECIES; n++) {
-                massfrac[n] = Y_air[n];
-            }
-
-            amrex::Real rho_cgs, P_cgs, RhoH_temp;
-            P_cgs = prob_parm.P_mean * 10.0;
-            s_ext[TEMP] = prob_parm.T_mean;
-
-            eos.PYT2R(P_cgs, massfrac, s_ext[TEMP], rho_cgs);
-            s_ext[DENSITY] = rho_cgs * 1.0e3;
-
-            eos.TY2H(s_ext[TEMP], massfrac, RhoH_temp);
-            s_ext[RHOH] = RhoH_temp * 1.0e-4 * s_ext[DENSITY]; // CGS -> MKS conversion
-
-            for (int n = 0; n < NUM_SPECIES; n++) {
-                s_ext[FIRSTSPEC + n] = massfrac[n] * s_ext[DENSITY];
-            }   
-
-            // Velocity
-            s_ext[VELX] = 0.0;
-            s_ext[VELY] = 0.0;
-            s_ext[VELZ] = 0.0;
-
         }
 
     }
