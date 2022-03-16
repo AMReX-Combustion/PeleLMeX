@@ -28,7 +28,7 @@ void PeleLM::poissonSolveEF(const TimeStamp &a_time)
       for (MFIter mfi(*rhsPoisson[lev],TilingIfNotGPU()); mfi.isValid(); ++mfi)
       {
          const Box& bx = mfi.tilebox();
-         auto const& rhoY = ldata_p->species.const_array(mfi);
+         auto const& rhoY = ldata_p->state.const_array(mfi,FIRSTSPEC);
          auto const& nE   = ldata_p->nE.const_array(mfi);
          auto const& rhs  = rhsPoisson[lev]->array(mfi);
          Real      factor = -1.0;// / ( eps0  * epsr);

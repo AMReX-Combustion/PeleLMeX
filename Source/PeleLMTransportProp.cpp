@@ -1,5 +1,6 @@
 #include <PeleLM.H>
 #include <PeleLM_K.H>
+#include <pelelm_prob.H>
 #ifdef PELE_USE_EFIELD
 #include <PeleLMEF_K.H>
 #endif
@@ -7,7 +8,7 @@
 using namespace amrex;
 
 void PeleLM::calcViscosity(const TimeStamp &a_time) {
-   BL_PROFILE_VAR("PeleLM::calcViscosity()", calcViscosity);
+   BL_PROFILE("PeleLM::calcViscosity()");
 
    for (int lev = 0; lev <= finest_level; ++lev) {
 
@@ -26,8 +27,8 @@ void PeleLM::calcViscosity(const TimeStamp &a_time) {
          for (MFIter mfi(ldata_p->visc_cc, TilingIfNotGPU()); mfi.isValid(); ++mfi)
          {
             const Box& gbx     = mfi.growntilebox();
-            auto const& rhoY   = ldata_p->species.const_array(mfi);
-            auto const& T      = ldata_p->temp.array(mfi);
+            auto const& rhoY   = ldata_p->state.const_array(mfi,FIRSTSPEC);
+            auto const& T      = ldata_p->state.array(mfi,TEMP);
             auto const& mu     = ldata_p->visc_cc.array(mfi,0);
 
             amrex::ParallelFor(gbx, [rhoY, T, mu, ltransparm]
@@ -41,7 +42,7 @@ void PeleLM::calcViscosity(const TimeStamp &a_time) {
 }
 
 void PeleLM::calcDiffusivity(const TimeStamp &a_time) {
-   BL_PROFILE_VAR("PeleLM::calcDiffusivity()", calcDiffusivity);
+   BL_PROFILE("PeleLM::calcDiffusivity()");
 
    for (int lev = 0; lev <= finest_level; ++lev) {
 
@@ -56,8 +57,8 @@ void PeleLM::calcDiffusivity(const TimeStamp &a_time) {
       for (MFIter mfi(ldata_p->diff_cc, TilingIfNotGPU()); mfi.isValid(); ++mfi)
       {
          const Box& gbx     = mfi.growntilebox();
-         auto const& rhoY   = ldata_p->species.const_array(mfi);
-         auto const& T      = ldata_p->temp.const_array(mfi);
+         auto const& rhoY   = ldata_p->state.const_array(mfi,FIRSTSPEC);
+         auto const& T      = ldata_p->state.const_array(mfi,TEMP);
          auto const& rhoD   = ldata_p->diff_cc.array(mfi,0);
          auto const& lambda = ldata_p->diff_cc.array(mfi,NUM_SPECIES);
          auto const& mu     = ldata_p->diff_cc.array(mfi,NUM_SPECIES+1);
@@ -86,7 +87,7 @@ void PeleLM::calcDiffusivity(const TimeStamp &a_time) {
 }
 
 Array<MultiFab,AMREX_SPACEDIM>
-PeleLM::getDiffusivity(int lev, int beta_comp, int ncomp,
+PeleLM::getDiffusivity(int lev, int beta_comp, int ncomp, int doZeroVisc,
                        Vector<BCRec> bcrec,
                        MultiFab const& beta_cc)
 {
@@ -105,13 +106,14 @@ PeleLM::getDiffusivity(int lev, int beta_comp, int ncomp,
                                                        MultiFab(amrex::convert(ba,IntVect::TheDimensionVector(2)),
                                                                 dm, ncomp, 0, MFInfo(), factory))};
 
+   const Box& domain = geom[lev].Domain();
+
 #ifdef AMREX_USE_EB
    // EB : use EB CCentroid -> FCentroid
    EB_interp_CellCentroid_to_FaceCentroid(beta_cc, GetArrOfPtrs(beta_ec), beta_comp, 0, ncomp, geom[lev], bcrec);
    EB_set_covered_faces(GetArrOfPtrs(beta_ec),1.234e40);
 #else
    // NON-EB : use cen2edg_cpp
-   const Box& domain = geom[lev].Domain();
    bool use_harmonic_avg = m_harm_avg_cen2edge ? true : false;
 
 #ifdef AMREX_USE_OMP
@@ -138,8 +140,26 @@ PeleLM::getDiffusivity(int lev, int beta_comp, int ncomp,
       }
    }
 #endif
-
-   //TODO: zero_visc
+  
+   // Enable zeroing diffusivity on faces to produce walls
+   if (doZeroVisc) {
+      const auto geomdata = geom[lev].data();
+      for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {    
+         const Box& edomain = amrex::surroundingNodes(domain,idim);
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+         for (MFIter mfi(beta_ec[idim],TilingIfNotGPU()); mfi.isValid();++mfi) {
+            const Box ebx = mfi.tilebox();
+            const auto& diff_ec = beta_ec[idim].array(mfi);
+            amrex::ParallelFor(ebx, [=]
+            AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+            {
+                zero_visc(i, j, k, diff_ec, geomdata, edomain, idim, beta_comp, ncomp);
+            });
+         }
+      }
+   }
 
    return beta_ec;
 }

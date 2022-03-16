@@ -1,6 +1,5 @@
 #include <PeleLM.H>
 #include <AMReX_ParmParse.H>
-#include <pmf.H>
 
 void PeleLM::readProbParm()
 {
@@ -14,8 +13,5 @@ void PeleLM::readProbParm()
    pp.query("PhiV_y_hi", PeleLM::prob_parm->phiV_hiy);
    pp.query("PhiV_y_lo", PeleLM::prob_parm->phiV_loy);
 
-   std::string pmf_datafile;
-   pp.query("pmf_datafile", pmf_datafile);
-   int pmf_do_average = 1;
-   PMF::read_pmf(pmf_datafile, pmf_do_average);
+   PeleLM::pmf_data.initialize();
 }

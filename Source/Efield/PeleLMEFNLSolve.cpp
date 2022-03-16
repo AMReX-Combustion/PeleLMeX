@@ -343,7 +343,7 @@ void PeleLM::computeBGcharge(const Real &a_time,
       for (MFIter mfi(ldataNLs_p->backgroundCharge,TilingIfNotGPU()); mfi.isValid(); ++mfi)
       {
          const Box& bx = mfi.tilebox();
-         auto const& rhoYold  = ldata_p->species.const_array(mfi);
+         auto const& rhoYold  = ldata_p->state.const_array(mfi,FIRSTSPEC);
          auto const& adv_arr  = advData->AofS[lev].const_array(mfi,FIRSTSPEC);
          auto const& dn_arr   = diffData->Dn[lev].const_array(mfi);
          auto const& dnp1_arr = diffData->Dnp1[lev].const_array(mfi);
@@ -413,7 +413,6 @@ void PeleLM::nonLinearResidual(const Real &a_dt,
    auto bcRecnE = fetchBCRecArray(NE,1);
    getDiffusionOp()->computeDiffLap(GetVecOfPtrs(diffnE), 0,
                                     GetVecOfConstPtrs(nE), 0,
-                                    {},
                                     GetVecOfConstPtrs(getnEDiffusivityVect(AmrNewTime)), 0,
                                     bcRecnE, 1);
 
@@ -523,7 +522,8 @@ void PeleLM::getAdvectionTerm(const Vector<const MultiFab*> &a_nE,
       auto ldataNLs_p = getLevelDataNLSolvePtr(lev);
 
       // Get the face centered electron mobility
-      Array<MultiFab,AMREX_SPACEDIM> mobE_ec = getDiffusivity(lev, 0, 1, bcRecnE, ldata_p->mobE_cc);
+      int doZeroVisc = 0;
+      Array<MultiFab,AMREX_SPACEDIM> mobE_ec = getDiffusivity(lev, 0, 1, doZeroVisc, bcRecnE, ldata_p->mobE_cc);
 
       // Get the electron effective velocity
       for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
@@ -734,7 +734,8 @@ void PeleLM::setUpPrecond(const Real &a_dt,
       // Get nl solve data pointer
       auto ldataNLs_p = getLevelDataNLSolvePtr(lev);
 
-      Array<MultiFab,AMREX_SPACEDIM> diffE_ec = getDiffusivity(lev, 0, 1, bcRecnE, ldata_p->diffE_cc);
+      int doZeroVisc = 0;
+      Array<MultiFab,AMREX_SPACEDIM> diffE_ec = getDiffusivity(lev, 0, 1, doZeroVisc, bcRecnE, ldata_p->diffE_cc);
 
       getPrecondOp()->setDiffOpACoeff(lev, 1.0);
       getPrecondOp()->setDiffOpBCoeff(lev, GetArrOfConstPtrs(diffE_ec));

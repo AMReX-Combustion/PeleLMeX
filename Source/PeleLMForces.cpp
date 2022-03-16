@@ -54,11 +54,11 @@ void PeleLM::getVelForces(const TimeStamp &a_time,
    {    
       const auto& bx          = mfi.tilebox();
       FArrayBox DummyFab(bx,1);
-      const auto& vel_arr     = ldata_p->velocity.const_array(mfi);
-      const auto& rho_arr     = (m_incompressible) ? DummyFab.array() : ldata_p->density.const_array(mfi);
-      const auto& rhoY_arr    = (m_incompressible) ? DummyFab.array() : ldata_p->species.const_array(mfi);
-      const auto& rhoh_arr    = (m_incompressible) ? DummyFab.array() : ldata_p->rhoh.const_array(mfi);
-      const auto& temp_arr    = (m_incompressible) ? DummyFab.array() : ldata_p->temp.const_array(mfi);
+      const auto& vel_arr     = ldata_p->state.const_array(mfi,VELX);
+      const auto& rho_arr     = (m_incompressible) ? DummyFab.array() : ldata_p->state.const_array(mfi,DENSITY);
+      const auto& rhoY_arr    = (m_incompressible) ? DummyFab.array() : ldata_p->state.const_array(mfi,FIRSTSPEC);
+      const auto& rhoh_arr    = (m_incompressible) ? DummyFab.array() : ldata_p->state.const_array(mfi,RHOH);
+      const auto& temp_arr    = (m_incompressible) ? DummyFab.array() : ldata_p->state.const_array(mfi,TEMP);
       const auto& force_arr   = a_velForce->array(mfi);
 
       // Get other forces (gravity, ...)
@@ -131,12 +131,11 @@ void PeleLM::getVelForces(int lev,
    int is_incomp   = m_incompressible;
    Real rho_incomp = m_rho;
 
-   amrex::ParallelFor(bx, [is_incomp, rho_incomp, force, vel, rho, rhoY, rhoh, temp, 
-                           a_time, grav=m_gravity, pseudo_gravity, dV_control, dx]
+   amrex::ParallelFor(bx, [=,grav=m_gravity, gp0=m_background_gp]
    AMREX_GPU_DEVICE(int i, int j, int k) noexcept
    {
       makeVelForce(i,j,k, is_incomp, rho_incomp, 
-                   pseudo_gravity, a_time, grav, dV_control, dx,
+                   pseudo_gravity, a_time, grav, gp0, dV_control, dx,
                    vel, rho, rhoY, rhoh, temp, force);
    });  
 }

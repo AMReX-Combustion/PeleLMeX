@@ -1,5 +1,8 @@
 #include <PeleLM.H>
 #include <pelelm_prob.H>
+#ifdef AMREX_USE_EB
+#include <AMReX_EB_utils.H>
+#endif
 
 using namespace amrex;
 
@@ -49,10 +52,10 @@ void PeleLM::MakeNewLevelFromScratch( int lev,
    // Initialize the LevelData
    m_leveldata_old[lev].reset(new LevelData(grids[lev], dmap[lev], *m_factory[lev],
                                             m_incompressible, m_has_divu,
-                                            m_nAux, m_nGrowState, m_nGrowMAC));
+                                            m_nAux, m_nGrowState));
    m_leveldata_new[lev].reset(new LevelData(grids[lev], dmap[lev], *m_factory[lev],
                                             m_incompressible, m_has_divu,
-                                            m_nAux, m_nGrowState, m_nGrowMAC));
+                                            m_nAux, m_nGrowState));
 
    if (max_level > 0 && lev != max_level) {
       m_coveredMask[lev].reset(new iMultiFab(grids[lev], dmap[lev], 1, 0));
@@ -69,8 +72,12 @@ void PeleLM::MakeNewLevelFromScratch( int lev,
 #endif
 
    // Fill the initial solution (if not restarting)
-   if (m_restart_file.empty()) {
-      initLevelData(lev);
+   if (m_restart_chkfile.empty()) {
+      if (m_restart_pltfile.empty()) {
+          initLevelData(lev);
+      } else {
+          initLevelDataFromPlt(lev, m_restart_pltfile);
+      }
    }
 
    // Times
@@ -87,12 +94,52 @@ void PeleLM::MakeNewLevelFromScratch( int lev,
    macproj.reset(new Hydro::MacProjector(Geom(0,finest_level)));
 #endif
    m_macProjOldSize = finest_level+1;
+
+#if AMREX_USE_EB
+   if ( lev == 0 ) {
+      // Set up CC signed distance container to control EB refinement
+      m_signedDist0.reset(new MultiFab(grids[lev], dmap[lev], 1, 1, MFInfo(), *m_factory[lev]));
+    
+      // Estimate the maximum distance we need in terms of level 0 dx:
+      Real extentFactor = static_cast<Real>(nErrorBuf(0));
+      for (int ilev = 1; ilev <= max_level; ++ilev) {
+          extentFactor += static_cast<Real>(nErrorBuf(ilev)) / std::pow(static_cast<Real>(refRatio(ilev-1)[0]),
+                                                                        static_cast<Real>(ilev));
+      }
+      extentFactor *= std::sqrt(2.0);  // Account for diagonals
+
+      MultiFab signDist(convert(grids[0],IntVect::TheUnitVector()),dmap[0],1,1,MFInfo(),EBFactory(0));
+      FillSignedDistance(signDist,true);
+
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+      for (MFIter mfi(*m_signedDist0,TilingIfNotGPU()); mfi.isValid(); ++mfi)
+      {
+         const Box& bx = mfi.growntilebox();
+         auto const& sd_cc = m_signedDist0->array(mfi);
+         auto const& sd_nd = signDist.const_array(mfi);
+         amrex::ParallelFor(bx, [sd_cc, sd_nd]
+         AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+         {
+            amrex::Real fac = AMREX_D_PICK(0.5,0.25,0.125);
+            sd_cc(i,j,k) = AMREX_D_TERM(  sd_nd(i,j,k)   + sd_nd(i+1,j,k),
+                                        + sd_nd(i,j+1,k) + sd_nd(i+1,j+1,k),
+                                        + sd_nd(i,j,k+1) + sd_nd(i+1,j,k+1)
+                                        + sd_nd(i,j+1,k+1) + sd_nd(i+1,j+1,k+1));
+            sd_cc(i,j,k) *= fac;
+         });
+      }
+      m_signedDist0->FillBoundary(geom[0].periodicity());
+      extendSignedDistance(m_signedDist0.get(), extentFactor);
+   }
+#endif
 }
 
 void PeleLM::initData() {
    BL_PROFILE_VAR("PeleLM::initData()", initData);
 
-   if (m_restart_file.empty()) {
+   if (m_restart_chkfile.empty()) {
 
       //----------------------------------------------------------------
       // This is an AmrCore member function which recursively makes new levels
@@ -116,6 +163,12 @@ void PeleLM::initData() {
       // AverageDown and FillPatch the NewState
       averageDownState(AmrNewTime);
       fillPatchState(AmrNewTime);
+
+      //----------------------------------------------------------------
+      // If performing UnitTest, let's stop here
+      if (runMode() != "normal") {
+         return;
+      }
 
 #ifdef PELE_USE_EFIELD
       poissonSolveEF(AmrNewTime);
@@ -203,6 +256,12 @@ void PeleLM::initData() {
 
             initialProjection();
          }
+         if ( m_numDivuIter == 0 ) {
+            for (int lev = 0; lev <= finest_level; ++lev) {
+               auto ldataR_p   = getLevelDataReactPtr(lev);
+               ldataR_p->I_R.setVal(0.0);
+            }
+         }
       }
 
       //----------------------------------------------------------------
@@ -276,21 +335,17 @@ void PeleLM::initLevelData(int lev) {
    ldata_p->gp.setVal(0.0);
 
    // Prob/PMF datas
-   ProbParm const* lprobparm = prob_parm.get();
+   ProbParm const* lprobparm = prob_parm_d;
    pele::physics::PMF::PmfData::DataContainer const* lpmfdata   = pmf_data.getDeviceData();
 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
-   for (MFIter mfi(ldata_p->velocity,TilingIfNotGPU()); mfi.isValid(); ++mfi)
+   for (MFIter mfi(ldata_p->state,TilingIfNotGPU()); mfi.isValid(); ++mfi)
    {
       const Box& bx = mfi.tilebox();
       FArrayBox DummyFab(bx,1);
-      auto  const &vel_arr   = ldata_p->velocity.array(mfi);
-      auto  const &rho_arr   = (m_incompressible) ? DummyFab.array() : ldata_p->density.array(mfi);
-      auto  const &rhoY_arr  = (m_incompressible) ? DummyFab.array() : ldata_p->species.array(mfi);
-      auto  const &rhoH_arr  = (m_incompressible) ? DummyFab.array() : ldata_p->rhoh.array(mfi);
-      auto  const &temp_arr  = (m_incompressible) ? DummyFab.array() : ldata_p->temp.array(mfi);
+      auto  const &state_arr   = ldata_p->state.array(mfi);
       auto  const &aux_arr   = (m_nAux > 0) ? ldata_p->auxiliaries.array(mfi) : DummyFab.array();
 #ifdef PELE_USE_EFIELD
       auto  const &ne_arr    = ldata_p->nE.array(mfi);
@@ -299,8 +354,7 @@ void PeleLM::initLevelData(int lev) {
       amrex::ParallelFor(bx, [=,m_incompressible=m_incompressible]
       AMREX_GPU_DEVICE (int i, int j, int k) noexcept
       {
-         pelelm_initdata(i, j, k, m_incompressible, vel_arr, rho_arr,
-                         rhoY_arr, rhoH_arr, temp_arr, aux_arr,
+         pelelm_initdata(i, j, k, m_incompressible, state_arr, aux_arr,
 #ifdef PELE_USE_EFIELD
                          ne_arr, phiV_arr,  
 #endif

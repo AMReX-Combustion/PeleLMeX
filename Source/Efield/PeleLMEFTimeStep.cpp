@@ -86,10 +86,10 @@ PeleLM::estEFIonsDt(const TimeStamp &a_time)
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
-      for (MFIter mfi(ldata_p->velocity,TilingIfNotGPU()); mfi.isValid(); ++mfi)
+      for (MFIter mfi(ldata_p->state,TilingIfNotGPU()); mfi.isValid(); ++mfi)
       {
          const Box& bx = mfi.tilebox();
-         auto const& vel     = ldata_p->velocity.const_array(mfi);
+         auto const& vel     = ldata_p->state.const_array(mfi,VELX);
          auto const& efield  = efield_cc.const_array(mfi);
          auto const& mob_cc  = ldata_p->mob_cc.const_array(mfi);
          auto const& uDrMax  = driftVelMax_cc.array(mfi);
@@ -107,9 +107,9 @@ PeleLM::estEFIonsDt(const TimeStamp &a_time)
          });
       }
 
-		const auto dx = Geom(lev).CellSizeArray();
-   	amrex::Real cfl_lcl = m_cfl;
-   	estdt_lev = amrex::ReduceMin(driftVelMax_cc, 0, [dx,cfl_lcl]
+      const auto dx = Geom(lev).CellSizeArray();
+      amrex::Real cfl_lcl = m_cfl;
+      estdt_lev = amrex::ReduceMin(driftVelMax_cc, 0, [dx,cfl_lcl]
       AMREX_GPU_HOST_DEVICE (Box const& bx, Array4<Real const> const& ueffm) noexcept -> Real
       {
          using namespace amrex::literals;

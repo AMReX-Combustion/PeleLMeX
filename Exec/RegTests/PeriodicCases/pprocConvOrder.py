@@ -46,7 +46,7 @@ def pproc(args):
 
     # User data
     vars=["y_velocity", "x_velocity"]
-    resolution = [32,64,128,256]
+    resolution = [32,64,128,256,512]
     pproc_type = "fcompare"
     Target = 2.00
 
@@ -74,8 +74,9 @@ def pproc(args):
                     if (f.startswith("{}_plt_{}_".format(args.test_name,case))):
                         pltfile.append(f)
             pltfile.sort()
+            refpltfile = pltfile[0]
             outfile = "error_{}.analysis.out".format(case)
-            os.system("./{} -n 2 {} {} > {}".format(os.path.basename(args.pproc_exe), pltfile[0], pltfile[-1], outfile))
+            os.system("./{} -n 2 {} {} > {}".format(os.path.basename(args.pproc_exe), refpltfile, pltfile[-1], outfile))
             pltfile.clear()
         
             # Extract errors on each variable

@@ -13,9 +13,10 @@ using namespace amrex;
 //---------------------------------------------------------------------------------------
 // Diffusion Operator
 
-DiffusionOp::DiffusionOp (PeleLM* a_pelelm)
-                        : m_pelelm(a_pelelm)
+DiffusionOp::DiffusionOp (PeleLM* a_pelelm, int ncomp)
+                        : m_pelelm(a_pelelm), m_ncomp(ncomp)
 {
+   BL_PROFILE("DiffusionOp::DiffusionOp()");
    readParameters();
 
    // Solve LPInfo
@@ -42,12 +43,12 @@ DiffusionOp::DiffusionOp (PeleLM* a_pelelm)
    m_scal_apply_op.reset(new MLEBABecLap(m_pelelm->Geom(0,m_pelelm->finestLevel()),
                                          m_pelelm->boxArray(0,m_pelelm->finestLevel()),
                                          m_pelelm->DistributionMap(0,m_pelelm->finestLevel()),
-                                         info_apply, ebfactVec));
+                                         info_apply, ebfactVec, m_ncomp));
 #else
    m_scal_apply_op.reset(new MLABecLaplacian(m_pelelm->Geom(0,m_pelelm->finestLevel()),
                                              m_pelelm->boxArray(0,m_pelelm->finestLevel()),
                                              m_pelelm->DistributionMap(0,m_pelelm->finestLevel()),
-                                             info_apply));
+                                             info_apply, {}, m_ncomp));
 #endif
    m_scal_apply_op->setMaxOrder(m_mg_maxorder);
 
@@ -56,12 +57,12 @@ DiffusionOp::DiffusionOp (PeleLM* a_pelelm)
    m_scal_solve_op.reset(new MLEBABecLap(m_pelelm->Geom(0,m_pelelm->finestLevel()),
                                          m_pelelm->boxArray(0,m_pelelm->finestLevel()),
                                          m_pelelm->DistributionMap(0,m_pelelm->finestLevel()),
-                                         info_solve, ebfactVec));
+                                         info_solve, ebfactVec, m_ncomp));
 #else
    m_scal_solve_op.reset(new MLABecLaplacian(m_pelelm->Geom(0,m_pelelm->finestLevel()),
                                              m_pelelm->boxArray(0,m_pelelm->finestLevel()),
                                              m_pelelm->DistributionMap(0,m_pelelm->finestLevel()),
-                                             info_solve));
+                                             info_solve, {}, m_ncomp));
 #endif
    m_scal_solve_op->setMaxOrder(m_mg_maxorder);
 
@@ -70,12 +71,12 @@ DiffusionOp::DiffusionOp (PeleLM* a_pelelm)
    m_gradient_op.reset(new MLEBABecLap(m_pelelm->Geom(0,m_pelelm->finestLevel()),
                                        m_pelelm->boxArray(0,m_pelelm->finestLevel()),
                                        m_pelelm->DistributionMap(0,m_pelelm->finestLevel()),
-                                       info_apply, ebfactVec));
+                                       info_apply, ebfactVec, m_ncomp));
 #else
    m_gradient_op.reset(new MLABecLaplacian(m_pelelm->Geom(0,m_pelelm->finestLevel()),
                                            m_pelelm->boxArray(0,m_pelelm->finestLevel()),
                                            m_pelelm->DistributionMap(0,m_pelelm->finestLevel()),
-                                           info_apply));
+                                           info_apply, {}, m_ncomp));
 #endif
    m_gradient_op->setMaxOrder(m_mg_maxorder);
    m_gradient_op->setScalars(0.0,1.0);
@@ -96,7 +97,7 @@ void DiffusionOp::diffuse_scalar(Vector<MultiFab*> const& a_phi, int phi_comp,
                                  int isPoissonSolve,
                                  Real a_dt)
 {
-   BL_PROFILE_VAR("DiffusionOp::diffuse_scalar()", diffuse_scalar);
+   BL_PROFILE("DiffusionOp::diffuse_scalar()");
 
    //----------------------------------------------------------------
    // What are we dealing with ?
@@ -107,6 +108,7 @@ void DiffusionOp::diffuse_scalar(Vector<MultiFab*> const& a_phi, int phi_comp,
 
    //----------------------------------------------------------------
    // Checks
+   AMREX_ASSERT(m_ncomp == 1 || m_ncomp == ncomp);
    AMREX_ASSERT(a_phi[0]->nComp() >= phi_comp+ncomp);
    AMREX_ASSERT(a_rhs[0]->nComp() >= rhs_comp+ncomp);
    if ( have_fluxes ) {
@@ -168,8 +170,8 @@ void DiffusionOp::diffuse_scalar(Vector<MultiFab*> const& a_phi, int phi_comp,
    }
 
    //----------------------------------------------------------------
-   // Solve and get fluxes on a per component basis
-   for (int comp = 0; comp < ncomp; ++comp) {
+   // Solve and get fluxes on a m_ncomp component basis
+   for (int comp = 0; comp < ncomp; comp+=m_ncomp) {
 
       // Aliases
       Vector<Array<MultiFab*,AMREX_SPACEDIM>> fluxes(finest_level+1);
@@ -184,12 +186,15 @@ void DiffusionOp::diffuse_scalar(Vector<MultiFab*> const& a_phi, int phi_comp,
       for (int lev = 0; lev <= finest_level; ++lev) {
          if (have_fluxes) {
             for (int idim = 0; idim < AMREX_SPACEDIM; idim++ ) {
-               fluxes[lev][idim] = new MultiFab(*a_flux[lev][idim],amrex::make_alias,flux_comp+comp,1);
+               fluxes[lev][idim] = new MultiFab(*a_flux[lev][idim],amrex::make_alias,flux_comp+comp,m_ncomp);
             }
          }
 
          if (have_bcoeff) {
-            Array<MultiFab,AMREX_SPACEDIM> bcoeff_ec = m_pelelm->getDiffusivity(lev, bcoeff_comp+comp, 1, {a_bcrec[comp]}, *a_bcoeff[lev]);
+            int doZeroVisc = 1;
+            Vector<BCRec> subBCRec = {a_bcrec.begin()+comp,a_bcrec.begin()+comp+m_ncomp};
+            Array<MultiFab,AMREX_SPACEDIM> bcoeff_ec = m_pelelm->getDiffusivity(lev, bcoeff_comp+comp, m_ncomp, 
+                                                                                doZeroVisc, subBCRec, *a_bcoeff[lev]);
 #ifdef AMREX_USE_EB
             m_scal_solve_op->setBCoeffs(lev, GetArrOfConstPtrs(bcoeff_ec), MLMG::Location::FaceCentroid);
 #else
@@ -199,8 +204,8 @@ void DiffusionOp::diffuse_scalar(Vector<MultiFab*> const& a_phi, int phi_comp,
             m_scal_solve_op->setBCoeffs(lev, 1.0);
          }
 
-         component.emplace_back(phi[lev],amrex::make_alias,comp,1);
-         rhs.emplace_back(*a_rhs[lev],amrex::make_alias,rhs_comp+comp,1);
+         component.emplace_back(phi[lev],amrex::make_alias,comp,m_ncomp);
+         rhs.emplace_back(*a_rhs[lev],amrex::make_alias,rhs_comp+comp,m_ncomp);
          m_scal_solve_op->setLevelBC(lev, &component[lev]);
       }
 
@@ -267,15 +272,15 @@ void DiffusionOp::diffuse_scalar(Vector<MultiFab*> const& a_phi, int phi_comp,
 
 void DiffusionOp::computeDiffLap(Vector<MultiFab*> const& a_laps, int lap_comp,
                                  Vector<MultiFab const*> const& a_phi, int phi_comp,
-                                 Vector<MultiFab const*> const& a_density,
                                  Vector<MultiFab const*> const& a_bcoeff, int bcoeff_comp,
                                  Vector<BCRec> a_bcrec,
                                  int ncomp)
 {
-   BL_PROFILE_VAR("DiffusionOp::computeDiffLap()", computeDiffLap);
+   BL_PROFILE("DiffusionOp::computeDiffLap()");
 
    //----------------------------------------------------------------
    // Checks
+   AMREX_ASSERT(m_ncomp == 1 || m_ncomp == ncomp);
    AMREX_ASSERT(a_laps[0]->nComp() >= lap_comp+ncomp);
    AMREX_ASSERT(a_phi[0]->nComp() >= phi_comp+ncomp);
    AMREX_ASSERT(a_bcoeff[0]->nComp() >= bcoeff_comp+ncomp);
@@ -300,16 +305,19 @@ void DiffusionOp::computeDiffLap(Vector<MultiFab*> const& a_laps, int lap_comp,
    Real beta  = -1.0;
    m_scal_apply_op->setScalars(alpha, beta);
 
-   for (int comp = 0; comp < ncomp; ++comp) {
+   for (int comp = 0; comp < ncomp; comp+=m_ncomp) {
 
       // Component based vector of data
       Vector<MultiFab> laps;
       Vector<MultiFab> component;
 
       for (int lev = 0; lev <= finest_level; ++lev) {
-          laps.emplace_back(*a_laps[lev],amrex::make_alias,lap_comp+comp,1);
-          component.emplace_back(phi[lev],amrex::make_alias,comp,1);
-          Array<MultiFab,AMREX_SPACEDIM> bcoeff_ec = m_pelelm->getDiffusivity(lev, bcoeff_comp+comp, 1, {a_bcrec[comp]}, *a_bcoeff[lev]);
+          laps.emplace_back(*a_laps[lev],amrex::make_alias,lap_comp+comp,m_ncomp);
+          component.emplace_back(phi[lev],amrex::make_alias,comp,m_ncomp);
+          int doZeroVisc = 0;
+          Vector<BCRec> subBCRec = {a_bcrec.begin()+comp,a_bcrec.begin()+comp+m_ncomp};
+          Array<MultiFab,AMREX_SPACEDIM> bcoeff_ec = m_pelelm->getDiffusivity(lev, bcoeff_comp+comp, m_ncomp,
+                                                                              doZeroVisc, subBCRec, *a_bcoeff[lev]);
 
 #ifdef AMREX_USE_EB
           m_scal_apply_op->setBCoeffs(lev, GetArrOfConstPtrs(bcoeff_ec), MLMG::Location::FaceCentroid);
@@ -333,10 +341,14 @@ void DiffusionOp::computeDiffFluxes(Vector<Array<MultiFab*,AMREX_SPACEDIM>> cons
                                     Real scale,
                                     int do_avgDown)
 {
-   BL_PROFILE_VAR("DiffusionOp::computeDiffFluxes()", computeDiffFluxes);
+   BL_PROFILE("DiffusionOp::computeDiffFluxes()");
+
+   // TODO: how come this is not used ?
+   amrex::ignore_unused(scale);
 
    //----------------------------------------------------------------
    // Checks
+   AMREX_ASSERT(m_ncomp == 1 || m_ncomp == ncomp);
    AMREX_ASSERT(a_flux[0][0]->nComp() >= flux_comp+ncomp);
    AMREX_ASSERT(a_phi[0]->nComp() >= phi_comp+ncomp);
    AMREX_ASSERT(a_bcoeff[0]->nComp() >= bcoeff_comp+ncomp);
@@ -382,8 +394,8 @@ void DiffusionOp::computeDiffFluxes(Vector<Array<MultiFab*,AMREX_SPACEDIM>> cons
    Real beta  = -1.0;
    m_scal_apply_op->setScalars(alpha, beta);
 
-   // Get fluxes on a per component basis
-   for (int comp = 0; comp < ncomp; ++comp) {
+   // Get fluxes on a m_ncomp component(s) basis
+   for (int comp = 0; comp < ncomp; comp+=m_ncomp) {
 
       // Component based vector of data
       Vector<Array<MultiFab*,AMREX_SPACEDIM>> fluxes(finest_level+1);
@@ -396,12 +408,15 @@ void DiffusionOp::computeDiffFluxes(Vector<Array<MultiFab*,AMREX_SPACEDIM>> cons
 
       for (int lev = 0; lev <= finest_level; ++lev) {
          for (int idim = 0; idim < AMREX_SPACEDIM; idim++ ) {
-            fluxes[lev][idim] = new MultiFab(*a_flux[lev][idim],amrex::make_alias,flux_comp+comp,1);
+            fluxes[lev][idim] = new MultiFab(*a_flux[lev][idim],amrex::make_alias,flux_comp+comp,m_ncomp);
          }
-         component.emplace_back(phi[lev],amrex::make_alias,comp,1);
-         Array<MultiFab,AMREX_SPACEDIM> bcoeff_ec = m_pelelm->getDiffusivity(lev, bcoeff_comp+comp, 1, {a_bcrec[comp]}, *a_bcoeff[lev]);
+         component.emplace_back(phi[lev],amrex::make_alias,comp,m_ncomp);
+         int doZeroVisc = 1;
+         Vector<BCRec> subBCRec = {a_bcrec.begin()+comp,a_bcrec.begin()+comp+m_ncomp};
+         Array<MultiFab,AMREX_SPACEDIM> bcoeff_ec = m_pelelm->getDiffusivity(lev, bcoeff_comp+comp, m_ncomp,
+                                                                             doZeroVisc, subBCRec, *a_bcoeff[lev]);
          laps.emplace_back(a_phi[lev]->boxArray(), a_phi[lev]->DistributionMap(),
-                           1, 1, MFInfo(), a_phi[lev]->Factory());
+                           m_ncomp, 1, MFInfo(), a_phi[lev]->Factory());
 #ifdef AMREX_USE_EB
          m_scal_apply_op->setBCoeffs(lev, GetArrOfConstPtrs(bcoeff_ec),  MLMG::Location::FaceCentroid);
 #else
@@ -435,7 +450,7 @@ DiffusionOp::computeGradient(const Vector<Array<MultiFab*,AMREX_SPACEDIM>> &a_gr
                              const BCRec &a_bcrec,
                              int do_avgDown)
 {
-   BL_PROFILE_VAR("DiffusionOp::computeGradient()", computeGradient);
+   BL_PROFILE("DiffusionOp::computeGradient()");
 
    // Do I need the Laplacian out ?
    int need_laplacian = (a_laps.empty()) ? 0 : 1;
@@ -617,7 +632,9 @@ void DiffusionTensorOp::compute_divtau (Vector<MultiFab*> const& a_divtau,
        if (have_density) { // alpha being zero, not sure that this does anything.
           m_apply_op->setACoeffs(lev, *a_density[lev]);
        }
-       Array<MultiFab,AMREX_SPACEDIM> beta_ec = m_pelelm->getDiffusivity(lev, 0, 1, {a_bcrec}, *a_beta[lev]);
+       int doZeroVisc = 0;
+       Array<MultiFab,AMREX_SPACEDIM> beta_ec = m_pelelm->getDiffusivity(lev, 0, 1,
+                                                                         doZeroVisc, {a_bcrec}, *a_beta[lev]);
        m_apply_op->setShearViscosity(lev, GetArrOfConstPtrs(beta_ec), MLMG::Location::FaceCentroid);
        m_apply_op->setEBShearViscosity(lev, *a_beta[lev]);
        m_apply_op->setLevelBC(lev, &vel[lev]);
@@ -638,7 +655,9 @@ void DiffusionTensorOp::compute_divtau (Vector<MultiFab*> const& a_divtau,
        if (have_density) { // alpha being zero, not sure that this does anything.
           m_apply_op->setACoeffs(lev, *a_density[lev]);
        }
-       Array<MultiFab,AMREX_SPACEDIM> beta_ec = m_pelelm->getDiffusivity(lev, 0, 1, {a_bcrec}, *a_beta[lev]);
+       int doZeroVisc = 0;
+       Array<MultiFab,AMREX_SPACEDIM> beta_ec = m_pelelm->getDiffusivity(lev, 0, 1,
+                                                                         doZeroVisc, {a_bcrec}, *a_beta[lev]);
        m_apply_op->setShearViscosity(lev, GetArrOfConstPtrs(beta_ec));
        m_apply_op->setLevelBC(lev, &vel[lev]);
    }
@@ -690,7 +709,9 @@ void DiffusionTensorOp::diffuse_velocity (Vector<MultiFab*> const& a_vel,
        } else {
           m_solve_op->setACoeffs(lev, m_pelelm->m_rho);
        }
-       Array<MultiFab,AMREX_SPACEDIM> beta_ec = m_pelelm->getDiffusivity(lev, 0, 1, {a_bcrec}, *a_beta[lev]);
+       int doZeroVisc = 0;
+       Array<MultiFab,AMREX_SPACEDIM> beta_ec = m_pelelm->getDiffusivity(lev, 0, 1,
+                                                                         doZeroVisc, {a_bcrec}, *a_beta[lev]);
 #ifdef AMREX_USE_EB
        m_solve_op->setShearViscosity(lev, GetArrOfConstPtrs(beta_ec), MLMG::Location::FaceCentroid);
        m_solve_op->setEBShearViscosity(lev, *a_beta[lev]);

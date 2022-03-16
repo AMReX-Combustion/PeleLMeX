@@ -145,20 +145,10 @@ reactionRateRhoY_EF(int i, int j, int k,
                     amrex::Array4<const amrex::Real> const& rhoH,
                     amrex::Array4<const amrex::Real> const& T,
                     amrex::Array4<const amrex::Real> const& nE,
-                    amrex::Array4<const amrex::Real> const& mask,
                     amrex::Array4<      amrex::Real> const& rhoYdot,
                     amrex::Array4<      amrex::Real> const& nEdot) noexcept
 {
    using namespace amrex::literals;
-
-   // mask < 0 is EB covered cells: no reactions.
-   if ( mask(i,j,k) < 0.0 ) {
-      for (int n = 0; n < NUM_SPECIES; n++) {
-         rhoYdot(i,j,k,n) = 0.0;
-      }
-      nEdot(i,j,k) = 0.0;
-      return;
-   }
 
    // Get rho from rhoY. Is there a better way ?
    amrex::Real rho = 0.0_rt;

@@ -9,7 +9,7 @@ AMREX_HYDRO_HOME   ?= ${TOP}/AMReX-Hydro
 DIM             = 2
 DEBUG           = FALSE
 PRECISION       = DOUBLE
-VERBOSE         = TRUE
+VERBOSE         = FALSE
 TINY_PROFILE    = FALSE
 
 # Compilation

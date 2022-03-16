@@ -6,24 +6,27 @@
 
 using namespace amrex;
 
-struct PeleLMCCFillExtDirVel
+struct PeleLMCCFillExtDirState
 {
 
    ProbParm const* lprobparm;
    pele::physics::PMF::PmfData::DataContainer const* lpmfdata;
    const int m_nAux;
+   int m_do_turbInflow = 0;
 
    AMREX_GPU_HOST
-   constexpr PeleLMCCFillExtDirVel(ProbParm const* a_prob_parm,
-                                   pele::physics::PMF::PmfData::DataContainer const* a_pmf_data, int a_nAux)
-                                   : lprobparm(a_prob_parm), lpmfdata(a_pmf_data), m_nAux(a_nAux) {}
+   constexpr PeleLMCCFillExtDirState(ProbParm const* a_prob_parm,
+                                     pele::physics::PMF::PmfData::DataContainer const* a_pmf_data,
+                                     int a_nAux, int do_turbInflow)
+                                     : lprobparm(a_prob_parm), lpmfdata(a_pmf_data),
+                                       m_nAux(a_nAux), m_do_turbInflow(do_turbInflow) {}
 
    AMREX_GPU_DEVICE
    void operator()(
       const amrex::IntVect& iv,
-      amrex::Array4<amrex::Real> const& vel,
+      amrex::Array4<amrex::Real> const& state,
       const int /*dcomp*/,
-      const int /*numcomp*/,
+      const int numcomp,
       amrex::GeometryData const& geom,
       const amrex::Real time,
       const amrex::BCRec* bcr,
@@ -40,33 +43,56 @@ struct PeleLMCCFillExtDirVel
                                                           prob_lo[1] + (iv[1] + 0.5) * dx[1],
                                                           prob_lo[2] + (iv[2] + 0.5) * dx[2])};
 
-      // Get the first velocity component BC
-      const int* bc = bcr->data();
-
-      // bcnormal handles all the state components at once
-      amrex::Real s_ext[NVAR] = {0.0};
-
       for (int idir = 0; idir < AMREX_SPACEDIM; idir++) {
+
          // Low
-         if ((bc[idir] == amrex::BCType::ext_dir) and (iv[idir] < domlo[idir])) {
+         for (int n = 0; n < std::min(numcomp,NVAR); n++) {
 
-            // bcnormal() is defined in pelelm_prob.H in problem directory in /Exec
-            bcnormal(x, m_nAux, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
+            // bcnormal handles all the state components at once
+            amrex::Real s_ext[NVAR] = {0.0};
 
-            for (int n = 0; n < AMREX_SPACEDIM; n++) {
-               vel(iv,n) = s_ext[VELX+n];
+            // Get current state component BC
+            const int* bc = bcr[n].data();
+
+            if ((bc[idir] == amrex::BCType::ext_dir) and (iv[idir] < domlo[idir])) {
+
+               // If using TurbInflow, pass in the turbulent data. User can overwrite if needed
+               if (m_do_turbInflow) {
+                 if ( n >= VELX && n < DENSITY ) {
+                   if ( !isnan(state(iv,VELX+n)) ) {  // During fillcoarsepatch, get here with nan. TODO: find a better fix
+                      s_ext[VELX+n] = state(iv,VELX+n);
+                   }
+                 }
+               }
+               // bcnormal() is defined in pelelm_prob.H in problem directory in /Exec
+               bcnormal(x, m_nAux, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
+               state(iv,n) = s_ext[n];
             }
+         }
 
          // High
-         } else if ((bc[idir+AMREX_SPACEDIM] == amrex::BCType::ext_dir) and (iv[idir] > domhi[idir])) {
+         for (int n = 0; n < std::min(numcomp,NVAR); n++) {
 
-            // bcnormal() is defined in pelelm_prob.H in problem directory in /Exec
-            bcnormal(x, m_nAux, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
+            // bcnormal handles all the state components at once
+            amrex::Real s_ext[NVAR] = {0.0};
 
-            for (int n = 0; n < AMREX_SPACEDIM; n++) {
-               vel(iv,n) = s_ext[VELX+n];
+            // Get current state component BC
+            const int* bc = bcr[n].data();
+
+            if ((bc[idir+AMREX_SPACEDIM] == amrex::BCType::ext_dir) and (iv[idir] > domhi[idir])) {
+
+               // If using TurbInflow, pass in the turbulent data. User can overwrite if needed
+               if (m_do_turbInflow) {
+                 if ( n >= VELX && n < DENSITY ) {
+                   if ( !isnan(state(iv,VELX+n)) ) {  // During fillcoarsepatch, get here with nan. TODO: find a better fix
+                      s_ext[VELX+n] = state(iv,VELX+n);
+                   }
+                 }
+               }
+               // bcnormal() is defined in pelelm_prob.H in problem directory in /Exec
+               bcnormal(x, m_nAux, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
+               state(iv,n) = s_ext[n];
             }
-
          }
       }
    }
@@ -88,7 +114,7 @@ struct PeleLMCCFillExtDirSpec
    void operator()(
       const amrex::IntVect& iv,
       amrex::Array4<amrex::Real> const& rhoY,
-      const int /*dcomp*/,
+      const int dcomp,
       const int /*numcomp*/,
       amrex::GeometryData const& geom,
       const amrex::Real time,
@@ -121,7 +147,7 @@ struct PeleLMCCFillExtDirSpec
                // bcnormal() is defined in pelelm_prob.H in problem directory in /Exec
                bcnormal(x, m_nAux, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
 
-               rhoY(iv,n) = s_ext[FIRSTSPEC+n];
+               rhoY(iv,dcomp+n) = s_ext[FIRSTSPEC+n];
 
             // High
             } else if ((bc[idir+AMREX_SPACEDIM] == amrex::BCType::ext_dir) and (iv[idir] > domhi[idir])) {
@@ -129,7 +155,7 @@ struct PeleLMCCFillExtDirSpec
                // bcnormal() is defined in pelelm_prob.H in problem directory in /Exec
                bcnormal(x, m_nAux, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
 
-               rhoY(iv,n) = s_ext[FIRSTSPEC+n];
+               rhoY(iv,dcomp+n) = s_ext[FIRSTSPEC+n];
             }
          }
       }
@@ -151,8 +177,8 @@ struct PeleLMCCFillExtDirDens
    AMREX_GPU_DEVICE
    void operator()(
       const amrex::IntVect& iv,
-      amrex::Array4<amrex::Real> const& rho,
-      const int /*dcomp*/,
+      amrex::Array4<amrex::Real> const& state,
+      const int dcomp,
       const int /*numcomp*/,
       amrex::GeometryData const& geom,
       const amrex::Real time,
@@ -183,7 +209,7 @@ struct PeleLMCCFillExtDirDens
             // bcnormal() is defined in pelelm_prob.H in problem directory in /Exec
             bcnormal(x, m_nAux, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
 
-            rho(iv) = s_ext[DENSITY];
+            state(iv,dcomp) = s_ext[DENSITY];
 
          // High
          } else if ((bc[idir+AMREX_SPACEDIM] == amrex::BCType::ext_dir) and (iv[idir] > domhi[idir])) {
@@ -191,7 +217,7 @@ struct PeleLMCCFillExtDirDens
             // bcnormal() is defined in pelelm_prob.H in problem directory in /Exec
             bcnormal(x, m_nAux, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
 
-            rho(iv) = s_ext[DENSITY];
+            state(iv,dcomp) = s_ext[DENSITY];
 
          }
       }
@@ -275,8 +301,8 @@ struct PeleLMCCFillExtDirTemp
    AMREX_GPU_DEVICE
    void operator()(
       const amrex::IntVect& iv,
-      amrex::Array4<amrex::Real> const& temp,
-      const int /*dcomp*/,
+      amrex::Array4<amrex::Real> const& state,
+      const int dcomp,
       const int /*numcomp*/,
       amrex::GeometryData const& geom,
       const amrex::Real time,
@@ -307,7 +333,7 @@ struct PeleLMCCFillExtDirTemp
             // bcnormal() is defined in pelelm_prob.H in problem directory in /Exec
             bcnormal(x, m_nAux, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
 
-            temp(iv) = s_ext[TEMP];
+            state(iv,dcomp) = s_ext[TEMP];
 
          // High
          } else if ((bc[idir+AMREX_SPACEDIM] == amrex::BCType::ext_dir) and (iv[idir] > domhi[idir])) {
@@ -315,7 +341,7 @@ struct PeleLMCCFillExtDirTemp
             // bcnormal() is defined in pelelm_prob.H in problem directory in /Exec
             bcnormal(x, m_nAux, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
 
-            temp(iv) = s_ext[TEMP];
+            state(iv,dcomp) = s_ext[TEMP];
 
          }
       }
@@ -472,4 +498,35 @@ struct PeleLMCCFillExtDirDummy
       const int /*bcomp*/,
       const int /*orig_comp*/) const
    { }
+};
+
+//
+// A dummy function because FillPatch requires something to exist for filling dirichlet boundary conditions,
+// even if we know we cannot have an ext_dir BC.
+// u_mac BCs are only either periodic (INT_DIR) or first order extrapolation (FOEXTRAP).
+//
+struct umacFill
+{
+    AMREX_GPU_DEVICE
+    void operator()(
+       const amrex::IntVect& /*iv*/,
+       amrex::Array4<amrex::Real> const& /*dummy*/,
+       const int /*dcomp*/,
+       const int numcomp,
+       amrex::GeometryData const& /*geom*/,
+       const amrex::Real /*time*/,
+       const amrex::BCRec* bcr, 
+       const int bcomp,
+       const int /*orig_comp*/) const
+    {    
+        // Abort if this function is expected to fill an ext_dir BC.
+        for (int n = bcomp; n < bcomp+numcomp; ++n) {
+            const amrex::BCRec& bc = bcr[n];
+            if ( AMREX_D_TERM(   bc.lo(0) == amrex::BCType::ext_dir || bc.hi(0) == amrex::BCType::ext_dir,
+                              || bc.lo(1) == amrex::BCType::ext_dir || bc.hi(1) == amrex::BCType::ext_dir,
+                              || bc.lo(2) == amrex::BCType::ext_dir || bc.hi(2) == amrex::BCType::ext_dir ) ) {
+               amrex::Abort("PeleLM::umacFill: umac should not have BCType::ext_dir");
+            }    
+        }    
+    }    
 };

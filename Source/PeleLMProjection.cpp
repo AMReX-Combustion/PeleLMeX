@@ -6,8 +6,6 @@ void PeleLM::initialProjection()
 {
    BL_PROFILE_VAR("PeleLM::initialProjection()", initialProjection);
 
-   Real time = 0.0;
-
    if (m_verbose) {
       Vector<Real> velMax(AMREX_SPACEDIM);
       velMax = MLNorm0(GetVecOfConstPtrs(getVelocityVect(AmrNewTime)),0,AMREX_SPACEDIM);
@@ -33,9 +31,9 @@ void PeleLM::initialProjection()
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
-         for (MFIter mfi(ldata_p->density,TilingIfNotGPU()); mfi.isValid(); ++mfi) {
+         for (MFIter mfi(ldata_p->state,TilingIfNotGPU()); mfi.isValid(); ++mfi) {
             Box const& bx = mfi.tilebox();
-            auto const& rho_arr = ldata_p->density.const_array(mfi);
+            auto const& rho_arr = ldata_p->state.const_array(mfi,DENSITY);
             auto const& sig_arr = sigma[lev]->array(mfi);
             amrex::ParallelFor(bx, [rho_arr,sig_arr,dummy_dt]
             AMREX_GPU_DEVICE (int i, int j, int k) noexcept
@@ -47,9 +45,9 @@ void PeleLM::initialProjection()
    }
 
    // Get velocity
-   Vector<MultiFab*> vel;
+   Vector<std::unique_ptr<MultiFab> > vel;
    for (int lev = 0; lev <= finest_level; ++lev) {
-      vel.push_back(&(m_leveldata_new[lev]->velocity));
+      vel.push_back(std::make_unique<MultiFab> (m_leveldata_new[lev]->state, amrex::make_alias,VELX,AMREX_SPACEDIM));
       vel[lev]->setBndry(0.0);
       setInflowBoundaryVel(*vel[lev],lev,AmrNewTime);
    }
@@ -72,7 +70,7 @@ void PeleLM::initialProjection()
       }
    }
 
-   doNodalProject(vel, amrex::GetVecOfPtrs(sigma), rhs_cc, {}, incremental, dummy_dt);
+   doNodalProject(GetVecOfPtrs(vel), GetVecOfPtrs(sigma), rhs_cc, {}, incremental, dummy_dt);
 
    // Set back press and gpress to zero and restore divu
    for (int lev = 0; lev <= finest_level; lev++) {
@@ -112,9 +110,9 @@ void PeleLM::velocityProjection(int is_initIter,
    int incremental = (is_initIter) ? 1 : 0;
 
    // Get sigma : scaled density inv. if not incompressible
-   Vector<std::unique_ptr<MultiFab>> sigma(finest_level+1);
+   Vector<std::unique_ptr<MultiFab> > sigma(finest_level+1);
    if (! m_incompressible ) {
-      Vector<MultiFab*> rhoHalf(finest_level+1);
+      Vector<std::unique_ptr<MultiFab> > rhoHalf(finest_level+1);
       rhoHalf = getDensityVect(a_rhoTime);
       for (int lev = 0; lev <= finest_level; ++lev ) {
 
@@ -140,7 +138,7 @@ void PeleLM::velocityProjection(int is_initIter,
    }
 
    if (!incremental) {
-      Vector<MultiFab*> rhoHalf(finest_level+1);
+      Vector<std::unique_ptr<MultiFab> > rhoHalf(finest_level+1);
       if (!m_incompressible) rhoHalf = getDensityVect(a_rhoTime);
       for (int lev = 0; lev <= finest_level; ++lev ) {
 
@@ -150,9 +148,9 @@ void PeleLM::velocityProjection(int is_initIter,
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
-         for (MFIter mfi(ldataNew_p->velocity,TilingIfNotGPU()); mfi.isValid(); ++mfi) {
+         for (MFIter mfi(ldataNew_p->state,TilingIfNotGPU()); mfi.isValid(); ++mfi) {
             Box const& bx = mfi.tilebox();
-            auto const& vel_arr = ldataNew_p->velocity.array(mfi);
+            auto const& vel_arr = ldataNew_p->state.array(mfi,VELX);
             auto const& gp_arr  = ldataOld_p->gp.const_array(mfi);
             auto const& rho_arr = (m_incompressible) ? Array4<Real const>() : rhoHalf[lev]->const_array(mfi);
             amrex::ParallelFor(bx, [vel_arr,gp_arr,rho_arr,a_dt,
@@ -175,19 +173,18 @@ void PeleLM::velocityProjection(int is_initIter,
       for (int lev = 0; lev <= finest_level; ++lev) {
          auto ldataOld_p = getLevelDataPtr(lev,AmrOldTime);
          auto ldataNew_p = getLevelDataPtr(lev,AmrNewTime);
-         MultiFab::Subtract(ldataNew_p->velocity,
-                            ldataOld_p->velocity,
-                            0,0,AMREX_SPACEDIM,0);
+         MultiFab::Subtract(ldataNew_p->state,
+                            ldataOld_p->state,
+                            VELX,VELX,AMREX_SPACEDIM,0);
       }
    }
 
    // Get velocity
-   Vector<MultiFab*> vel;
+   Vector<std::unique_ptr<MultiFab> > vel;
    for (int lev = 0; lev <= finest_level; ++lev) {
-      auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
-      vel.push_back(&(ldata_p->velocity));
+      vel.push_back(std::make_unique<MultiFab> (m_leveldata_new[lev]->state,amrex::make_alias,VELX,AMREX_SPACEDIM));
 #ifdef AMREX_USE_EB
-       EB_set_covered(*vel[lev],0.0);
+      EB_set_covered(*vel[lev],0.0);
 #endif
       vel[lev]->setBndry(0.0);
       if (!incremental) setInflowBoundaryVel(*vel[lev],lev,AmrNewTime);
@@ -196,7 +193,7 @@ void PeleLM::velocityProjection(int is_initIter,
    // To ensure integral of RHS is zero for closed chamber, get mean divU
    Real SbarOld = 0.0;
    Real SbarNew = 0.0;
-   if (m_closed_chamber) {
+   if (m_closed_chamber && !m_incompressible) {
       SbarNew = MFSum(GetVecOfConstPtrs(getDivUVect(AmrNewTime)),0);
       SbarNew /= m_uncoveredVol;        // Transform in Mean.
       if (incremental) {
@@ -247,7 +244,7 @@ void PeleLM::velocityProjection(int is_initIter,
       }
    }
 
-   doNodalProject(vel, GetVecOfPtrs(sigma), GetVecOfPtrs(rhs_cc), {}, incremental, a_dt);
+   doNodalProject(GetVecOfPtrs(vel), GetVecOfPtrs(sigma), GetVecOfPtrs(rhs_cc), {}, incremental, a_dt);
 
    // If incremental
    // define back to be U^{np1} by adding U^{n}
@@ -255,15 +252,15 @@ void PeleLM::velocityProjection(int is_initIter,
       for (int lev = 0; lev <= finest_level; ++lev) {
          auto ldataOld_p = getLevelDataPtr(lev,AmrOldTime);
          auto ldataNew_p = getLevelDataPtr(lev,AmrNewTime);
-         MultiFab::Add(ldataNew_p->velocity,
-                       ldataOld_p->velocity,
-                       0,0,AMREX_SPACEDIM,0);
+         MultiFab::Add(ldataNew_p->state,
+                       ldataOld_p->state,
+                       VELX,VELX,AMREX_SPACEDIM,0);
       }
    }
 
 }
 
-void PeleLM::doNodalProject(Vector<MultiFab*> &a_vel,
+void PeleLM::doNodalProject(const Vector<MultiFab*> &a_vel,
                             const Vector<MultiFab*> &a_sigma,
                             const Vector<MultiFab*> &rhs_cc,
                             const Vector<const MultiFab*> &rhs_nd,

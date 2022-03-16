@@ -7,7 +7,6 @@
 using namespace amrex::literals;
 
 struct ProbParm
-   : amrex::Gpu::Managed
 {
    amrex::Real P_mean = 101325.0;
    amrex::Real splitx = 0.0;

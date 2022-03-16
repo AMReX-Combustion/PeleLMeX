@@ -14,22 +14,21 @@ peleLM.hi_bc = NoSlipWallAdiab NoSlipWallAdiab
 #-------------------------AMR CONTROL----------------------------
 amr.n_cell          = 256 256 32      # Level 0 number of cells in each direction   
 amr.v               = 1                # AMR verbose
-amr.max_level       = 0                # maximum level number allowed
+amr.max_level       = 1                # maximum level number allowed
 amr.ref_ratio       = 2 2 2 2 2         # refinement ratio
 amr.regrid_int      = 5                # how often to regrid
 amr.n_error_buf     = 2 2 2 2          # number of buffer cells in error est
 amr.grid_eff        = 0.7              # what constitutes an efficient grid
-amr.blocking_factor = 16               # block factor in grid generation (min box size)
-amr.max_grid_size   = 128               # max box size
-
+amr.blocking_factor = 8               # block factor in grid generation (min box size)
+amr.max_grid_size   = 32               # max box size
 
 #--------------------------- Problem -------------------------------
 prob.P_mean = 101325.0
-prob.rvort  = 0.003
-prob.forcevort = 0.2
+prob.rvort  = 0.006
+prob.forcevort = 0.3
 
 #-------------------------PeleLM CONTROL----------------------------
-peleLM.v = 1
+peleLM.v = 3
 peleLM.incompressible = 0
 peleLM.rho = 1.17
 peleLM.mu = 0.0
@@ -43,14 +42,13 @@ peleLM.do_temporals = 1
 peleLM.temporal_int = 2
 peleLM.mass_balance = 1
 
-#amr.restart = chk00005
-amr.check_int = 5
-amr.plot_int = 100
-amr.max_step = 10
-amr.dt_shrink = 0.1
+amr.check_int = 100
+amr.plot_int = 50
+amr.max_step = 20
+amr.dt_shrink = 1.0
 amr.stop_time = 1.0
 #amr.stop_time = 1.00
-amr.cfl = 0.15
+amr.cfl = 0.6
 amr.derive_plot_vars = avg_pressure mag_vort mass_fractions
 
 # --------------- INPUTS TO CHEMISTRY REACTOR ---------------
@@ -80,10 +78,10 @@ eb2.small_volfrac = 1.e-4
 #amr.magVort.field_name    = mag_vort
 
 #--------------------LINEAR SOLVER CONTROL------------------------
-nodal_proj.verbose = 1
-nodal_proj.rtol = 1.0e-10
-nodal_proj.atol = 1.0e-10
-nodal_proj.mg_max_coarsening_level = 2
+nodal_proj.verbose = 0
+#nodal_proj.rtol = 1.0e-10
+#nodal_proj.atol = 1.0e-10
+#nodal_proj.mg_max_coarsening_level = 2
 amrex.fpe_trap_invalid = 1
 amrex.fpe_trap_zero = 1
 amrex.fpe_trap_overflow = 1

@@ -478,7 +478,8 @@ makeVelForce(int i, int j, int k,
              const amrex::Real                     & rho_incomp,
              int                                     pseudo_gravity,
              const amrex::Real                     & /*time*/,
-             const amrex::Real                     & gravity,
+             amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const gravity,
+             amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const gp0,
              const amrex::Real                     & dV_control,
              amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const /*dx*/,
              amrex::Array4<const amrex::Real> const& /*vel*/,
@@ -498,18 +499,8 @@ makeVelForce(int i, int j, int k,
       rho_lcl = rho(i,j,k);
    }
 
-   if ( std::abs(gravity) > 0.000001_rt ) {
-      force(i,j,k,0) = 0.0_rt;
-#if ( AMREX_SPACEDIM == 2 )
-      force(i,j,k,1) = gravity*rho_lcl;
-#elif ( AMREX_SPACEDIM == 3 )
-      force(i,j,k,1) = 0.0_rt;
-      force(i,j,k,2) = gravity*rho_lcl;
-#endif
-   } else {
-      for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
-         force(i,j,k,idim) = 0.0_rt;
-      }
+   for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+      force(i,j,k,idim) = gp0[idim] + gravity[idim];
    }
 
    // TODO direction of pseudo grav should be runtime params
@@ -664,19 +655,11 @@ reactionRateRhoY(int i, int j, int k,
                  amrex::Array4<const amrex::Real> const& rhoY,
                  amrex::Array4<const amrex::Real> const& rhoH,
                  amrex::Array4<const amrex::Real> const& T,
-                 amrex::Array4<const amrex::Real> const& mask,
                  amrex::Array4<      amrex::Real> const& rhoYdot) noexcept
 {
    using namespace amrex::literals;
 
    auto eos = pele::physics::PhysicsType::eos();
-   // mask < 0 is EB covered cells: no reactions.
-   if ( mask(i,j,k) < 0 ) { 
-      for (int n = 0; n < NUM_SPECIES; n++) {
-         rhoYdot(i,j,k,n) = 0.0;
-      }
-      return;
-   }
 
    // Get rho & Ys from rhoYs.
    amrex::Real rho = 0.0_rt;

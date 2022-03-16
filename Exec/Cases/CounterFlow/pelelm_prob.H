@@ -14,11 +14,7 @@ AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
 void pelelm_initdata(int i, int j, int k,
                      int is_incompressible,
-                     amrex::Array4<amrex::Real> const& vel,
-                     amrex::Array4<amrex::Real> const& rho,
-                     amrex::Array4<amrex::Real> const& rhoY,
-                     amrex::Array4<amrex::Real> const& rhoH,
-                     amrex::Array4<amrex::Real> const& temp,
+                     amrex::Array4<amrex::Real> const& state,
                      amrex::Array4<amrex::Real> const& aux,
                      amrex::GeometryData const& geomdata,
                      ProbParm const& prob_parm,
@@ -43,17 +39,12 @@ void pelelm_initdata(int i, int j, int k,
     constexpr amrex::Real Pi = 3.14159265358979323846264338327950288;
 
     auto eos = pele::physics::PhysicsType::eos();
-    amrex::GpuArray<amrex::Real, NUM_SPECIES + 4> pmf_vals = {0.0};
-    amrex::Real u[3] = {0.0};
-    amrex::Real molefrac[NUM_SPECIES] = {0.0};
     amrex::Real massfrac[NUM_SPECIES] = {0.0};
-    amrex::Real y1, y2;
-    amrex::Real splitx = prob_lo[0] + 0.5 * Lx;
 
     massfrac[N2_ID] = 0.767;
     massfrac[O2_ID] = 0.233;
 
-    temp(i,j,k) = 298.0;
+    state(i,j,k,TEMP) = 298.0;
 
     if (prob_parm.do_ignit) {
        amrex::Real radiusSq = AMREX_D_TERM(  (x-xc) * (x-xc),
@@ -62,31 +53,31 @@ void pelelm_initdata(int i, int j, int k,
        amrex::Real radius = std::sqrt(radiusSq);
        amrex::Real mixingWidth = 0.1*prob_parm.ignitSphereRad;
        amrex::Real mixingFunction = 0.5 * ( 1.0 + std::tanh((prob_parm.ignitSphereRad - radius)/mixingWidth));
-       temp(i,j,k) = mixingFunction * prob_parm.ignitT + (1.0 - mixingFunction) * 298.0;
+       state(i,j,k,TEMP) = mixingFunction * prob_parm.ignitT + (1.0 - mixingFunction) * 298.0;
        massfrac[CH4_ID] = 0.02;
        massfrac[O2_ID] = 0.233 * (1.0 - massfrac[CH4_ID]);
        massfrac[N2_ID] = 1.0 - massfrac[CH4_ID] - massfrac[O2_ID];
     }
 
-    AMREX_D_TERM(vel(i,j,k,0) = 0.0;,
-                 vel(i,j,k,1) = 0.1;,
-                 vel(i,j,k,2) = 0.0);
+    AMREX_D_TERM(state(i,j,k,VELX) = 0.0;,
+                 state(i,j,k,VELY) = 0.1;,
+                 state(i,j,k,VELZ) = 0.0);
 
     amrex::Real P_cgs = prob_parm.P_mean * 10.0;
 
     // Density
     amrex::Real rho_cgs = 0.0;
-    eos.PYT2R(P_cgs, massfrac, temp(i,j,k), rho_cgs);
-    rho(i,j,k) = rho_cgs * 1.0e3;
+    eos.PYT2R(P_cgs, massfrac, state(i,j,k,TEMP), rho_cgs);
+    state(i,j,k,DENSITY) = rho_cgs * 1.0e3;
 
     // Enthalpy
     amrex::Real h_cgs = 0.0;
-    eos.TY2H(temp(i,j,k), massfrac, h_cgs);
-    rhoH(i,j,k) = h_cgs * 1.0e-4 * rho(i,j,k);
+    eos.TY2H(state(i,j,k,TEMP), massfrac, h_cgs);
+    state(i,j,k,RHOH) = h_cgs * 1.0e-4 * state(i,j,k,DENSITY);
 
     // Species mass
     for (int n = 0; n < NUM_SPECIES; n++) {
-       rhoY(i,j,k,n) = massfrac[n] * rho(i,j,k);
+       state(i,j,k,FIRSTSPEC+n) = massfrac[n] * state(i,j,k,DENSITY);
     }
 }
 
@@ -197,5 +188,21 @@ bcnormal(
                         prob_parm.inertVel /* (1.0 + (radius/0.025))*/ * (1.0 - mixingFunction);
       s_ext[VELX] = -vel;
    }
+}
+
+AMREX_GPU_DEVICE
+AMREX_FORCE_INLINE
+void
+zero_visc (int i, int j, int k,
+           amrex::Array4<amrex::Real> const& beta,
+           amrex::GeometryData const& geomdata,
+           amrex::Box const& domainBox,
+           const int  dir,
+           const int  beta_comp,
+           const int  nComp)
+{
+     amrex::ignore_unused(i,j,k,beta,geomdata,domainBox,dir,beta_comp,nComp);
+    // We treat species when beta_comp == 0 and nComp == NUM_SPECIES
+    // otherwise this routine could be called for other face diffusivity (Temp, velocity, ...)
 }
 #endif
