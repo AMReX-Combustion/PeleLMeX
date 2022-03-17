@@ -101,7 +101,7 @@ bcnormal(
   // Jet composition
   amrex::Real massfrac_jet[NUM_SPECIES] = {0.0};
   for (int n = 0; n < NUM_SPECIES; n++) {
-    massfrac_jet[n] = prob_parm->Z * massfrac_fuel[n] + (1.0 - prob_parm->Z) * massfrac_ch[n];
+    massfrac_jet[n] = prob_parm.Z * massfrac_fuel[n] + (1.0 - prob_parm.Z) * massfrac_ch[n];
   }
 
   // Fill defaults: no slip wall, sort of.
