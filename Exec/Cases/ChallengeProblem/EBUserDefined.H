@@ -56,7 +56,7 @@ EBUserDefined(const Geometry& geom,
     lnpts.push_back(p);
     Piston.addLineElement(lnpts);
 
-    EB2::CylinderIF cylinder(48.0*0.1*scaleFact, 70.0*0.1*scaleFact, 2, {0.0, 0.0, -20.0*0.1*scaleFact}, true);
+    EB2::CylinderIF cylinder(48.0*0.1*scaleFact, 75.0*0.1*scaleFact, 2, {0.0, 0.0, -20.0*0.1*scaleFact}, true);
 
     auto revolvePiston  = EB2::lathe(Piston);
     auto PistonCylinder = EB2::makeUnion(revolvePiston, cylinder);
