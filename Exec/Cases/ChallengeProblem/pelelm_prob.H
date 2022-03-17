@@ -41,18 +41,16 @@ void pelelm_initdata(int i, int j, int k,
 
     auto eos = pele::physics::PhysicsType::eos();
     amrex::Real massfrac[NUM_SPECIES] = {0.0};
-    massfrac[O2_ID] = 0.233;
-    massfrac[N2_ID] = 0.767;
+    massfrac[CH4_ID] = prob_parm.Y_CH4_chamber;
+    massfrac[O2_ID] = prob_parm.Y_O2_chamber;
+    massfrac[N2_ID] = 1.0 - massfrac[O2_ID] - massfrac[CH4_ID];
 
     state(i,j,k,TEMP) = prob_parm.T_mean;
 
-    amrex::Real r_xy = std::sqrt(x*x+y*y);
-    amrex::Real angle = std::atan2(y,x);
-    amrex::Real angular_vel = r_xy * 400.0 * std::tanh(300*(0.012-r_xy));
-
-    state(i,j,k,VELX) = angular_vel * std::sin(angle);
-    state(i,j,k,VELY) = -angular_vel * std::cos(angle);
-    state(i,j,k,VELZ) = 0.0;
+    // Read in turbulent fluctuations from MarcHDF
+    state(i,j,k,VELX) = 0.0;
+    state(i,j,k,VELY) = 0.0;
+    state(i,j,k,VELZ) = 1.0;
 
     amrex::Real P_cgs = prob_parm.P_mean * 10.0;
 
@@ -90,20 +88,33 @@ bcnormal(
   constexpr amrex::Real Pi = 3.14159265358979323846264338327950288;
   auto eos = pele::physics::PhysicsType::eos();
 
+  // Chamber composition
+  amrex::Real massfrac_ch[NUM_SPECIES] = {0.0};
+  massfrac_ch[CH4_ID] = prob_parm.Y_CH4_chamber;
+  massfrac_ch[O2_ID] = prob_parm.Y_O2_chamber;
+  massfrac_ch[N2_ID] = 1.0 - massfrac_ch[O2_ID] - massfrac_ch[CH4_ID];
+
+  // Pure fuel composition
+  amrex::Real massfrac_fuel[NUM_SPECIES] = {0.0};
+  massfrac_fuel[NC12H26_ID] = 1.0;
+
+  // Jet composition
+  amrex::Real massfrac_jet[NUM_SPECIES] = {0.0};
+  for (int n = 0; n < NUM_SPECIES; n++) {
+    massfrac_jet[n] = prob_parm->Z * massfrac_fuel[n] + (1.0 - prob_parm->Z) * massfrac_ch[n];
+  }
+
   // Fill defaults: no slip wall, sort of.
   amrex::Real p_cgs = prob_parm.P_mean * 10.0;
   amrex::Real rho_cgs = 0.0;
   amrex::Real RhoH_temp = 0.0;
-  amrex::Real massfrac[NUM_SPECIES] = {0.0};
-  massfrac[O2_ID] = 0.233;
-  massfrac[N2_ID] = 0.767;
   s_ext[TEMP] = prob_parm.T_mean;
-  eos.PYT2R(p_cgs, massfrac, s_ext[TEMP], rho_cgs);
+  eos.PYT2R(p_cgs, massfrac_ch, s_ext[TEMP], rho_cgs);
   s_ext[DENSITY] = rho_cgs * 1.0e3;
-  eos.TY2H(s_ext[TEMP], massfrac, RhoH_temp);
+  eos.TY2H(s_ext[TEMP], massfrac_ch, RhoH_temp);
   s_ext[RHOH] = RhoH_temp * 1.0e-4 * s_ext[DENSITY];   // CGS -> MKS conversion
   for (int n = 0; n < NUM_SPECIES; n++) {
-    s_ext[FIRSTSPEC+n] = massfrac[n] * s_ext[DENSITY];
+    s_ext[FIRSTSPEC+n] = massfrac_ch[n] * s_ext[DENSITY];
   }
   s_ext[VELX] = 0.0;
   s_ext[VELY] = 0.0;
@@ -114,26 +125,36 @@ bcnormal(
   const amrex::Real dphi_angle = 2.0 * Pi / prob_parm.nholes;
 
   for (int nh = 1; nh <= prob_parm.nholes; nh++) {
+    // Current hole center
     const amrex::Real phi_angle = nh * dphi_angle;
-    const amrex::Real hole_cx = prob_parm.centx + prob_parm.r_circ * cos(phi_angle);
-    const amrex::Real hole_cy = prob_parm.centy + prob_parm.r_circ * sin(phi_angle);
-    if ( ((x[0] - hole_cx) * (x[0] - hole_cx) +
-          (x[1] - hole_cy) * (x[1] - hole_cy)) <
-         (prob_parm.r_hole * prob_parm.r_hole)) {
+    const amrex::Real cx = prob_parm.centx + prob_parm.r_circ * cos(phi_angle);
+    const amrex::Real cy = prob_parm.centy + prob_parm.r_circ * sin(phi_angle);
 
-      const amrex::Real rSq = (x[0] - hole_cx) * (x[0] - hole_cx) +
-                              (x[1] - hole_cy) * (x[1] - hole_cy);
-      const amrex::Real rad = sqrt(rSq);
+    // Injecting on an ellipse with R_minor = prob_parm.r_hole and R_major = prob_parm.r_hole / cos(prob_parm.cone_angle)
+    // Local coordinates: 
+    amrex::Real n_loc = (x[0] - cx) * cos(phi_angle) - (x[1] - cy) * sin(phi_angle);
+    amrex::Real t_loc = (x[0] - cx) * sin(phi_angle) + (x[1] - cy) * cos(phi_angle);
 
+    // Ellipse: major in normal, minor is tangential
+    amrex::Real elrSq =  n_loc * n_loc / (  prob_parm.r_hole/cos(prob_parm.cone_angle* Pi / 180.0)
+                                          * prob_parm.r_hole/cos(prob_parm.cone_angle* Pi / 180.0) )
+                       + t_loc * t_loc / ( prob_parm.r_hole * prob_parm.r_hole );
 
-      // subsonic velocity inlet
-      amrex::Real massfrac_jet[NUM_SPECIES] = {0.0};
-      massfrac_jet[NC7H16_ID] = 1.0;
+    // We are using a tanH profile, past 1.2 keep no-slip walls conditions from above
+    if ( elrSq < 1.2 ) {
+      // Tanh profile, assuming 10% tanh width
+      amrex::Real eta = 0.5 * ( 1.0 - std::tanh((elrSq-1.0)/0.1));
 
+      // Composition
+      amrex::Real massfrac[NUM_SPECIES] = {0.0};
+      for (int n = 0; n < NUM_SPECIES; n++)
+      {
+        massfrac[n] = eta * massfrac_jet[n]+ (1.0-eta) * massfrac_ch[n];
+      }
+
+      // Velocity
       amrex::Real vx_in = 0.0, vy_in = 0.0, vz_in = 0.0;
-      const amrex::Real vjet_pipeflow =
-          prob_parm.vel_jet *
-          (1.0 - rSq / (prob_parm.r_hole * prob_parm.r_hole));
+      const amrex::Real vjet_pipeflow = prob_parm.vel_jet * eta;
 
       // find velocity vector
       vz_in =
@@ -145,12 +166,12 @@ bcnormal(
       vy_in = vr_in * sin(phi_angle);
 
       s_ext[TEMP] = prob_parm.T_jet;
-      eos.PYT2R(p_cgs, massfrac_jet, s_ext[TEMP], rho_cgs);
+      eos.PYT2R(p_cgs, massfrac, s_ext[TEMP], rho_cgs);
       s_ext[DENSITY] = rho_cgs * 1.0e3;
-      eos.TY2H(s_ext[TEMP], massfrac_jet, RhoH_temp);
+      eos.TY2H(s_ext[TEMP], massfrac, RhoH_temp);
       s_ext[RHOH] = RhoH_temp * 1.0e-4 * s_ext[DENSITY];   // CGS -> MKS conversion
       for (int n = 0; n < NUM_SPECIES; n++) {
-        s_ext[FIRSTSPEC+n] = massfrac_jet[n] * s_ext[DENSITY];
+        s_ext[FIRSTSPEC+n] = massfrac[n] * s_ext[DENSITY];
       }
       s_ext[VELX] = vx_in;
       s_ext[VELY] = vy_in;

@@ -25,7 +25,7 @@ USE_HIP         = FALSE
 CEXE_headers 	+= EBUserDefined.H
 
 # PelePhysics
-Chemistry_Model = heptane_3sp
+Chemistry_Model = dodmethair_4sp
 Eos_Model		= Fuego
 Transport_Model = Simple
 
