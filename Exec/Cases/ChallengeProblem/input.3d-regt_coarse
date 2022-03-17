@@ -12,7 +12,7 @@ peleLM.hi_bc = NoSlipWallAdiab NoSlipWallAdiab Inflow
 
 
 #-------------------------AMR CONTROL----------------------------
-amr.n_cell          = 128 128 32      # Level 0 number of cells in each direction   
+amr.n_cell          = 256 256 64       # Level 0 number of cells in each direction   
 amr.v               = 1                # AMR verbose
 amr.max_level       = 0                # maximum level number allowed
 amr.ref_ratio       = 2 2 2 2 2         # refinement ratio
@@ -28,8 +28,8 @@ prob.P_mean = 6079500.0
 prob.T_mean = 900.0
 prob.centx  = 0.0
 prob.centy  = 0.0
-prob.r_circ = 0.015
-prob.r_hole = 0.00085
+prob.r_circ = 0.0015
+prob.r_hole = 0.0004
 prob.nholes = 4
 prob.cone_angle = 45.0
 prob.T_jet  = 470.0
@@ -47,13 +47,11 @@ peleLM.use_wbar = 1
 peleLM.sdc_iterMax = 1
 peleLM.floor_species = 0
 peleLM.num_divu_iter = 1
-peleLM.num_init_iter = 3
+peleLM.num_init_iter = 0
 
 peleLM.do_temporals = 1
 peleLM.temporal_int = 2
 peleLM.mass_balance = 1
-peleLM.num_init_iter = 0
-peleLM.num_divu_iter = 0
 
 #amr.restart = chk00005
 amr.check_int = 5
@@ -77,6 +75,7 @@ cvode.max_order  = 4                  # CVODE max BDF order.
 #------------------------- EB SETUP -----------------------------
 eb2.geom_type = UserDefined
 eb2.small_volfrac = 1.e-2
+eb2.maxiter = 100
 
 #------------  INPUTS TO CONSTANT TRANSPORT -----------------
 transport.const_viscosity        = 0.0002
@@ -97,7 +96,7 @@ transport.const_diffusivity      = 0.0
 
 #--------------------LINEAR SOLVER CONTROL------------------------
 nodal_proj.verbose = 2
-nodal_proj.mg_max_coarsening_level = 2
+nodal_proj.mg_max_coarsening_level = 3
 nodal_proj.bottom_solver = "smoother"
 
 fabarray.mfiter_tile_size = 1024 1024 1024
