@@ -8,4 +8,4 @@ find_package(Sphinx REQUIRED)
 add_custom_target(sphinx ALL
   COMMAND ${SPHINX_EXECUTABLE} -M html
   "${CMAKE_CURRENT_SOURCE_DIR}/source" "${CMAKE_CURRENT_BINARY_DIR}/source"
-  -c ${CMAKE_CURRENT_SOURCE_DIR}/sphinx)
+  -c ${CMAKE_CURRENT_SOURCE_DIR}/source)

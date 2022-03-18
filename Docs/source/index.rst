@@ -1,10 +1,10 @@
 .. PeleLMeX documentation master file, created by
-      sphinx-quickstart on Sat Oct 20 12:17:48 2018.
+   sphinx-quickstart on Fri Mar 18 15:03:51 2022.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to the documentation for `PeleLMeX`
-=========================================
+Welcome to PeleLMeX's documentation!
+====================================
 
 `PeleLMeX` is the non-subcycling version of `PeleLM <https://amrex-combustion.github.io/PeleLM/>`_, an adaptive-mesh low Mach number hydrodynamics 
 code for reacting flows. If you need help or have questions, please join the users `forum <https://groups.google.com/forum/#!forum/pelelmusers>`_.
@@ -25,12 +25,14 @@ point your web browser at the file ``${PELELMEX_HOME}/Docs/build/html/index.html
 
 .. toctree::
    :maxdepth: 2
-   :caption: Documentation contents:
+   :caption: Contents:
 
    LMeXControls.rst
+
 
 Indices and tables
 ==================
 
 * :ref:`genindex`
+* :ref:`modindex`
 * :ref:`search`
