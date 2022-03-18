@@ -1,6 +1,7 @@
 name: PeleLMeX-Docs
 
 on:
+  workflow_dispatch:
   push:
     branches: [development]
     paths:
