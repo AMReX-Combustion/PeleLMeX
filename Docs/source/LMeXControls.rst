@@ -5,16 +5,19 @@ The input file specified on the command line is a free-format text file, one ent
 This file needs to specified along with the executable as an `argv` option, for example:
 
 ::
+
     mpirun -np 64 ./PeleLMeX2d.xxx.ex inputs
 
 Also, any entry that can be specified in the inputs file can also be specified on the command line; values specified on the command line override values in the inputs file, e.g.:
 
 ::
+
     mpirun -np 64 ./PeleLMeX2d.xxx.ex inputs amr.max_level=2
 
 The available options are divided into groups: those that control primarily AMReX are prefaced with `amr.`, those that are specific to the PeleLM are prefaced by `peleLM.`, while those corresponding to the various pieces of the algorithm are prefaced with specific keys, such that `diffusion`, `nodal_proj`, ... as described below.
 
 ::
+
     #--------------------GEOMETRY DEFINITION-----------------------   
     geometry.is_periodic = 1 1 0              # For each dir, 0: non-perio, 1: periodic
     geometry.coord_sys   = 0                  # 0 => cart, 1 => RZ
