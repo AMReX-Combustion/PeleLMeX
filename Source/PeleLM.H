@@ -1033,7 +1033,7 @@ class PeleLM : public amrex::AmrCore {
    amrex::Array<amrex::Real,2*AMREX_SPACEDIM> m_domainRhoHFlux;
    amrex::Array<amrex::Real,2*AMREX_SPACEDIM*NUM_SPECIES> m_domainRhoYFlux;
    amrex::Array<amrex::Real,2*AMREX_SPACEDIM> m_domainUmacFlux;
-
+   
    std::ofstream tmpStateFile;
    std::ofstream tmpMassFile;
    std::ofstream tmpSpecFile;
