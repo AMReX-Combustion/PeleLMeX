@@ -435,7 +435,6 @@ class PeleLM : public amrex::AmrCore {
    // Temporal
    void massBalance();
    void rhoHBalance();
-   void rhoYBalance();
    void initTemporals();
    void writeTemporals();
    void addMassFluxes(const amrex::Array<const amrex::MultiFab*,AMREX_SPACEDIM> &a_fluxes, const amrex::Geometry &a_geom);

@@ -194,12 +194,12 @@ void PeleLM::rhoHBalance()
                                        + m_domainRhoHFlux[2] + m_domainRhoHFlux[3],               
                                        + m_domainRhoHFlux[4] + m_domainRhoHFlux[5]);               
 
-   // tmpMassFile << m_nstep << " " << m_cur_time                          // Time info
-   //             << " " << m_RhoHNew                                      // RhoH
-   //             << " " << dRhoHdt                                        // RhoH temporal derivative
-   //             << " " << rhoHFluxBalance                                // domain boundaries RhoH fluxes
-   //             << " " << std::abs(dRhoHdt - rhoHFluxBalance) << " \n";  // balance
-   // tmpMassFile.flush();
+   tmpMassFile << m_nstep << " " << m_cur_time                          // Time info
+               << " " << m_RhoHNew                                      // RhoH
+               << " " << dRhoHdt                                        // RhoH temporal derivative
+               << " " << rhoHFluxBalance                                // domain boundaries RhoH fluxes
+               << " " << std::abs(dRhoHdt - rhoHFluxBalance) << " \n";  // balance
+   tmpMassFile.flush();
 }
 
 void PeleLM::addRhoHFluxes(const Array<const MultiFab*,AMREX_SPACEDIM> &a_fluxes,
@@ -268,33 +268,6 @@ void PeleLM::addRhoHFluxes(const Array<const MultiFab*,AMREX_SPACEDIM> &a_fluxes
    }
 }
 
-
-void PeleLM::rhoYBalance()
-{
-   // Compute the enthalpy balance on the computational domain (rho*h)
-   for (int n = 0; n < NUM_SPECIES; n++){
-      m_RhoYNew[n] = MFSum(GetVecOfConstPtrs(getSpeciesVect(AmrNewTime)),n);
-   }
-
-   amrex::Real dRhoYdt[NUM_SPECIES] = {0.0};  
-   Real rhoYFluxBalance[NUM_SPECIES] = {0.0};
-   for (int n = 0; n < NUM_SPECIES; n++){
-      rhoYFluxBalance[n] = AMREX_D_TERM(  m_domainRhoYFlux[n*2*AMREX_SPACEDIM] + m_domainRhoYFlux[1+n*2*AMREX_SPACEDIM],
-                                        + m_domainRhoYFlux[2+n*2*AMREX_SPACEDIM] + m_domainRhoYFlux[3+n*2*AMREX_SPACEDIM],
-                                        + m_domainRhoYFlux[4+n*2*AMREX_SPACEDIM] + m_domainRhoYFlux[5+n*2*AMREX_SPACEDIM]);
-   }
-
-   for (int n = 0; n < NUM_SPECIES; n++) {
-      dRhoYdt[n] = (m_RhoYNew[n] - m_RhoYOld[n]) / m_dt;
-   }             
-
-   // tmpMassFile << m_nstep << " " << m_cur_time                          // Time info
-   //             << " " << m_RhoYNew                                      // RhoY
-   //             << " " << dRhoYdt                                        // RhoY temporal derivative
-   //             << " " << rhoYFluxBalance                                // domain boundaries RhoY fluxes
-   //             << " " << std::abs(dRhoHdt - rhoYFluxBalance) << " \n";  // balance
-   // tmpMassFile.flush();
-}
 
 void PeleLM::addRhoYFluxes(const Array<const MultiFab*,AMREX_SPACEDIM> &a_fluxes,
                            const Geometry& a_geom)
