@@ -137,7 +137,7 @@ void PeleLM::calcDivU(int is_init,
                  divu(i,j,k) = 0.0;
              });
          } else if (flagfab.getType(bx) != FabType::regular ) {     // EB containing boxes 
-             amrex::ParallelFor(bx, [ rhoY, T, SpecD, Fourier, DiffDiff, r, rhoHFluxBalance, rhoYFluxBalance, divu, use_react, flag]
+             amrex::ParallelFor(bx, [ rhoY, T, SpecD, Fourier, DiffDiff, r, divu, use_react, flag]
              AMREX_GPU_DEVICE (int i, int j, int k) noexcept
              {
                 if ( flag(i,j,k).isCovered() ) {
