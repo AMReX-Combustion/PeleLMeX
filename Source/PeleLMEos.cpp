@@ -147,16 +147,16 @@ void PeleLM::calcDivU(int is_init,
                 if ( flag(i,j,k).isCovered() ) {
                     divu(i,j,k) = 0.0;
                 } else {
-                    compute_divu( i, j, k, rhoY, T, SpecD, Fourier, DiffDiff, r, rhoHFluxBalance, rhoYFluxBalance, divu, use_react );
+                    compute_divu( i, j, k, rhoY, T, SpecD, Fourier, DiffDiff, r, divu, use_react );
                 }
              });
          } else
 #endif
          {
-             amrex::ParallelFor(bx, [ rhoY, T, SpecD, Fourier, DiffDiff, r, rhoHFluxBalance, rhoYFluxBalance, divu, use_react]
+             amrex::ParallelFor(bx, [ rhoY, T, SpecD, Fourier, DiffDiff, r, divu, use_react]
              AMREX_GPU_DEVICE (int i, int j, int k) noexcept
              {
-                compute_divu( i, j, k, rhoY, T, SpecD, Fourier, DiffDiff, r, rhoHFluxBalance, rhoYFluxBalance, divu, use_react );
+                compute_divu( i, j, k, rhoY, T, SpecD, Fourier, DiffDiff, r, divu, use_react );
              });
          }
       }

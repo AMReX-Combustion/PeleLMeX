@@ -134,8 +134,6 @@ compute_divu(int i, int j, int k,
              amrex::Array4<const amrex::Real> const& tempDiff,
              amrex::Array4<const amrex::Real> const& specEnthDiff,
              amrex::Array4<const amrex::Real> const& rhoYdot,
-             const amrex::Real                     & rhoHFluxBalance,
-             const amrex::Real*                      rhoYFluxBalance,
              amrex::Array4<      amrex::Real> const& divu,
              int do_react) noexcept
 {
