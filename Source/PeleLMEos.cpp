@@ -64,10 +64,6 @@ void PeleLM::calcDivU(int is_init,
 
       auto ldata_p = getLevelDataPtr(lev,a_time);
 
-      // Explicitly get old and new data for time derivatives
-      auto ldataOld_p = getLevelDataPtr(lev,AmrOldTime);
-      auto ldataNew_p = getLevelDataPtr(lev,AmrNewTime);
-
       MultiFab RhoYdot;
       if ( m_do_react && !m_skipInstantRR ) {
          if (is_init) {          // Either pre-divU, divU or press initial iterations
