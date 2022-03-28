@@ -440,20 +440,15 @@ class PeleLM : public amrex::AmrCore {
    void sprayMKDLevel(const int level,
                       const amrex::Real time,
                       const amrex::Real dt,
-                      const int ghost_width,
-                      const int spray_n_grow,
-                      const int tmp_src_width,
-                      amrex::MultiFab& tmp_spray_source);
+                      const int ghost_width);
    void sprayMK(const amrex::Real time,
                 const amrex::Real dt);
    void sprayMKLevel(const int level,
                      const amrex::Real time,
                      const amrex::Real dt,
-                     const int spray_n_grow,
-                     const int tmp_src_width,
                      amrex::MultiFab& tmp_spray_source);
-   void sprayPostTimestep();
-   void sprayRedistribute(int lbase = 0);
+   void sprayInjectRedist(bool regridded, int lbase = 0);
+   void setSprayState(const amrex::Real& a_flow_dt);
    static int write_spray_ascii_files;
    static int num_spray_src;
    static int do_spray_particles;
@@ -462,6 +457,9 @@ class PeleLM : public amrex::AmrCore {
    static SprayParticleContainer* theSprayPC();
    static SprayParticleContainer* theVirtPC();
    static SprayParticleContainer* theGhostPC();
+   // State used for spray interpolation
+   amrex::Vector<std::unique_ptr<amrex::MultiFab> > m_spraysource;
+   amrex::Vector<std::unique_ptr<amrex::MultiFab> > m_spraystate;
    //-----------------------------------------------------------------------------
 #endif
 #ifdef SOOT_MODEL

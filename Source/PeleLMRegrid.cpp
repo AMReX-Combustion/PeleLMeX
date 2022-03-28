@@ -12,11 +12,6 @@ void PeleLM::regrid(int lbase,
   } else {
      AmrCore::regrid(lbase, time, initial);
   }
-#ifdef SPRAY_PELE_LM
-  if (do_spray_particles) {
-     sprayRedistribute(lbase);
-  }
-#endif
 }
 
 void PeleLM::MakeNewLevelFromCoarse( int lev,

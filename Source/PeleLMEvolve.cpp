@@ -20,20 +20,23 @@ void PeleLM::Evolve() {
          amrex::Print() << "\n ====================   NEW TIME STEP   ==================== \n";
       }
 
+      bool regridded = false;
       if ( (m_regrid_int > 0) && (m_nstep > 0) && (m_nstep%m_regrid_int == 0) ) {
          if (m_verbose > 0) amrex::Print() << " Regridding...\n";
          regrid(0, m_cur_time);
          resetMacProjector();
          resetCoveredMask();
+         regridded = true;
       }
-
-      int is_init = 0;
-      Advance(is_init);
 #ifdef SPRAY_PELE_LM
+      // Inject and redistribute spray particles
       if (do_spray_particles) {
-        sprayPostTimestep();
+        sprayInjectRedist(regridded);
       }
 #endif
+      int is_init = 0;
+      Advance(is_init);
+
       m_nstep++;
       m_cur_time += m_dt;
 

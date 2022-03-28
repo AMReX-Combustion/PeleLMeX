@@ -875,5 +875,8 @@ void PeleLM::resizeArray() {
    // Time
    m_t_old.resize(max_level+1);
    m_t_new.resize(max_level+1);
-
+#ifdef SPRAY_PELE_LM
+   m_spraystate.resize(max_level+1);
+   m_spraysource.resize(max_level+1);
+#endif
 }

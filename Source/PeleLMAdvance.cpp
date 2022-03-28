@@ -34,6 +34,12 @@ void PeleLM::Advance(int is_initIter) {
    // TIME
    // Compute time-step size
    m_dt = computeDt(is_initIter,AmrOldTime);
+#ifdef SPRAY_PELE_LM
+   if (!is_initIter && do_spray_particles) {
+     // Create the state MF used for spray interpolation
+     setSprayState(m_dt);
+   }
+#endif
 
    // Update time vectors
    for(int lev = 0; lev <= finest_level; lev++)
@@ -152,6 +158,13 @@ void PeleLM::Advance(int is_initIter) {
       for (int sdc_iter = 1; sdc_iter <= m_nSDCmax; ++sdc_iter ) {
          oneSDC(sdc_iter,advData,diffData);
       }
+
+      // Post SDC
+      averageDownScalars(AmrNewTime);
+#ifdef PELE_USE_EFIELD
+      averageDownnE(AmrNewTime);
+#endif
+      fillPatchState(AmrNewTime);
       // Reset external sources to zero
       for (int lev = 0; lev <= finest_level; ++lev) {
          m_extSource[lev]->setVal(0.);
@@ -168,13 +181,6 @@ void PeleLM::Advance(int is_initIter) {
          clipSootMoments();
       }
 #endif
-
-      // Post SDC
-      averageDownScalars(AmrNewTime);
-#ifdef PELE_USE_EFIELD
-      averageDownnE(AmrNewTime);
-#endif
-      fillPatchState(AmrNewTime);
       if (m_has_divu) {
          int is_initialization = 0;             // Not here
          int computeDiffusionTerm = 1;          // Yes, re-evaluate the diffusion term after the last chemistry solve
