@@ -90,6 +90,7 @@ void PeleLM::Setup() {
             m_skipInstantRR = 1;
             m_plotChemDiag = 0;
             m_plotHeatRelease = 0;
+            m_useTypValChem = 0;
          }
          pp.query("plot_react", m_plot_react);
       }
@@ -384,6 +385,25 @@ void PeleLM::readParameters() {
    if ( max_level > 0 ) {
       ppa.query("regrid_int", m_regrid_int);
    }
+
+#ifdef AMREX_USE_EB
+   if ( max_level > 0 ) {
+      // Default EB refine type is Static
+      pp.query("refine_EB_type",m_EB_refine_type);
+      if ( m_EB_refine_type != "Static" &&
+           m_EB_refine_type != "Adaptive" ) {
+         Abort("refine_EB_type can only be 'Static' or 'Adaptive'");
+      }
+      // Default EB refinement level is max_level 
+      m_EB_refine_LevMax = max_level;
+      pp.query("refine_EB_max_level",m_EB_refine_LevMax);
+      if ( m_EB_refine_type == "Adaptive" ) {
+         m_EB_refine_LevMin = 0;
+         pp.query("refine_EB_min_level",m_EB_refine_LevMin);
+         m_EB_refine_LevAdapt = m_EB_refine_LevMin;
+      }
+   }
+#endif
 
    // -----------------------------------------
    // Evaluate mode variables

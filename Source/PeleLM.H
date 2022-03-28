@@ -737,6 +737,13 @@ class PeleLM : public amrex::AmrCore {
                          const amrex::BCRec * d_bc,
                          const amrex::Geometry &a_geom);
 
+
+   void getEBDistance(int a_lev,
+                      amrex::MultiFab &a_signDistLev); 
+
+   void extendSignedDistance( amrex::MultiFab *a_signDist,
+                              amrex::Real a_extendFactor);
+
    // static_cast factory into ebfactory
    amrex::EBFArrayBoxFactory const& 
    EBFactory (int lev) const noexcept { 
@@ -1158,7 +1165,11 @@ class PeleLM : public amrex::AmrCore {
 
 #ifdef AMREX_USE_EB
    // EB
-   int m_refine_cutcells = 1;
+   std::string m_EB_refine_type = "Static";
+   int m_EB_refine_LevMax = -1;
+   int m_EB_refine_LevMin = -1;
+   int m_EB_refine_LevAdapt = -1;
+   std::unique_ptr<amrex::MultiFab> m_signedDist0 = nullptr;
    amrex::Vector<amrex::Real> coveredState_h;
    amrex::Gpu::DeviceVector<amrex::Real> coveredState_d;
    std::string m_adv_redist_type = "StateRedist";

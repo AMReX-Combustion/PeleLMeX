@@ -2,9 +2,13 @@
 #include <AMReX_PlotFileUtil.H>
 #include <AMReX_buildInfo.H>
 #include "PelePhysics.H"
+#include <PltFileManager.H>
 #include <AMReX_ParmParse.H>
-#include <AMReX_DataServices.H>
-#include <AMReX_AmrData.H>
+#include <PeleLMBCfill.H>
+#include <AMReX_FillPatchUtil.H>
+#ifdef AMREX_USE_EB
+#include <AMReX_EBInterpolater.H>
+#endif
 
 #ifdef SPRAY_PELE_LM
 #include "SprayParticles.H"
@@ -535,61 +539,50 @@ void PeleLM::initLevelDataFromPlt(int a_lev,
 
    amrex::Print() << " initData on level " << a_lev << " from pltfile " << a_dataPltFile << "\n";
 
-   // Use DataService to load pltfile and fill level data
-   DataServices::SetBatchMode();
-   Amrvis::FileType fileType(Amrvis::NEWPLT);
-   DataServices dataServices(a_dataPltFile, fileType);
-   if (!dataServices.AmrDataOk()) {
-      DataServices::Dispatch(DataServices::ExitRequest, NULL);
-   }    
-   AmrData& amrData = dataServices.AmrDataRef();
-
-   Vector<std::string> spec_names;
-   pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(spec_names);
-   Vector<std::string> plotnames = amrData.PlotVarNames();
+   // Use PelePhysics PltFileManager
+   pele::physics::pltfilemanager::PltFileManager pltData(a_dataPltFile);
+   Vector<std::string> plt_vars = pltData.getVariableList();
 
    // Find required data in pltfile
+   Vector<std::string> spec_names;
+   pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(spec_names);
    int idT = -1, idV = -1, idY = -1, nSpecPlt = 0;
-   for (int i = 0; i < plotnames.size(); ++i) {
-      std::string firstChars = plotnames[i].substr(0, 2);
-      if (plotnames[i] == "temp")            idT = i; 
-      if (plotnames[i] == "x_velocity")      idV = i; 
+   for (int i = 0; i < plt_vars.size(); ++i) {
+      std::string firstChars = plt_vars[i].substr(0, 2);
+      if (plt_vars[i] == "temp")            idT = i; 
+      if (plt_vars[i] == "x_velocity")      idV = i; 
       if (firstChars == "Y(" && idY < 0 ) {  // species might not be ordered in the order of the current mech.
          idY = i;
       }
       if (firstChars == "Y(")                nSpecPlt += 1;
    }
-
    if ( idY < 0 ) {
       Abort("Coudn't find species mass fractions in pltfile");
    }
-   Print() << " " << nSpecPlt << " species found in pltfile, starting with " << plotnames[idY] << "\n";
+   Print() << " " << nSpecPlt << " species found in pltfile, starting with " << plt_vars[idY] << "\n";
 
    // Get level data
    auto ldata_p = getLevelDataPtr(a_lev,AmrNewTime);
 
    // Velocity
-   for (int i = 0; i < AMREX_SPACEDIM; i++) {
-      amrData.FillVar(ldata_p->state, a_lev, plotnames[idV+i], FIRSTSPEC+i);
-      amrData.FlushGrids(idV+i);
-   }
+   pltData.fillPatchFromPlt(a_lev, geom[a_lev], idV, VELX, AMREX_SPACEDIM,
+                            ldata_p->state);
 
    // Temperature
-   amrData.FillVar(ldata_p->state, a_lev, plotnames[idT], TEMP);
-   amrData.FlushGrids(idT);
+   pltData.fillPatchFromPlt(a_lev, geom[a_lev], idT, TEMP, 1,
+                            ldata_p->state);
 
    // Species
    // Hold the species in temporary MF before copying to level data
+   // in case the number of species differs.
    MultiFab speciesPlt(grids[a_lev], dmap[a_lev], nSpecPlt, 0);
-   for (int i = 0; i < nSpecPlt; i++) {
-      amrData.FillVar(speciesPlt, a_lev, plotnames[idY+i], i);
-      amrData.FlushGrids(idY+i);
-   }
+   pltData.fillPatchFromPlt(a_lev, geom[a_lev], idY, 0, nSpecPlt,
+                            speciesPlt);
    for (int i = 0; i < NUM_SPECIES; i++) {
       std::string specString = "Y("+spec_names[i]+")";
       int foundSpec = 0;
       for (int iplt = 0; iplt < nSpecPlt; iplt++) {
-         if ( specString == plotnames[idY+iplt] ) {
+         if ( specString == plt_vars[idY+iplt] ) {
             MultiFab::Copy(ldata_p->state, speciesPlt, iplt, FIRSTSPEC+i, 1, 0);
             foundSpec = 1;
          }
@@ -603,6 +596,9 @@ void PeleLM::initLevelDataFromPlt(int a_lev,
 
    ProbParm const* lprobparm = prob_parm_d;
 
+   // Enforce rho and rhoH consistent with temperature and mixture
+   // TODO the above handles species mapping (to some extent), but nothing enforce
+   // sum of Ys = 1
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
@@ -746,5 +742,3 @@ void PeleLM::WriteJobInfo(const std::string& path) const
       jobInfoFile.close();
     }
 }
-
-
