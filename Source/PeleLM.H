@@ -954,8 +954,8 @@ class PeleLM : public amrex::AmrCore {
 
    // Incompressible ?
    int m_incompressible = 0;
-   amrex::Real m_rho = 1.175;
-   amrex::Real m_mu  = 2.0e-5;
+   amrex::Real m_rho = -1.0;
+   amrex::Real m_mu  = -1.0;
 
    amrex::GpuArray<amrex::Real,AMREX_SPACEDIM> m_gravity{AMREX_D_DECL(0.0,0.0,0.0)};
    amrex::GpuArray<amrex::Real,AMREX_SPACEDIM> m_background_gp{AMREX_D_DECL(0.0,0.0,0.0)};
@@ -1054,6 +1054,7 @@ class PeleLM : public amrex::AmrCore {
    int m_EB_refine_LevMax = -1;
    int m_EB_refine_LevMin = -1;
    int m_EB_refine_LevAdapt = -1;
+   int m_signDistNeeded = 0;
    std::unique_ptr<amrex::MultiFab> m_signedDist0 = nullptr;
    amrex::Vector<amrex::Real> coveredState_h;
    amrex::Gpu::DeviceVector<amrex::Real> coveredState_d;
