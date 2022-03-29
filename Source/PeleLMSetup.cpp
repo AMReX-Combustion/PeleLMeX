@@ -51,6 +51,9 @@ void PeleLM::Setup() {
    // Tagging setup
    taggingSetup();
 
+   // Diagnostics setup
+   createDiagnostics();
+
    // Initialize Level Hierarchy data
    resizeArray();
 

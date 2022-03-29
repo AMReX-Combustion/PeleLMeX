@@ -37,6 +37,9 @@ void PeleLM::Evolve() {
          writeTemporals();
       }
 
+      // Diagnostics
+      doDiagnostics();
+
       // Check message
       bool dump_and_stop = checkMessage();
 
