@@ -72,6 +72,7 @@ void PeleLM::Setup() {
             m_skipInstantRR = 1;
             m_plotChemDiag = 0;
             m_plotHeatRelease = 0;
+            m_useTypValChem = 0;
          }
       }
 
@@ -259,9 +260,11 @@ void PeleLM::readParameters() {
    if (m_incompressible) {
       m_has_divu = 0;
       m_do_react = 0;
+      pp.query("rho", m_rho);
+      pp.query("mu", m_mu);
+      AMREX_ASSERT_WITH_MESSAGE(m_rho>0.0,"peleLM.rho is needed when running incompressible");
+      AMREX_ASSERT_WITH_MESSAGE(m_mu>0.0,"peleLM.mu is needed when running incompressible");
    }
-   pp.query("rho", m_rho);
-   pp.query("mu", m_mu);
    Vector<Real> grav(AMREX_SPACEDIM,0);
    pp.queryarr("gravity", grav, 0, AMREX_SPACEDIM);
    Vector<Real> gp0(AMREX_SPACEDIM,0);
@@ -364,6 +367,28 @@ void PeleLM::readParameters() {
    if ( max_level > 0 ) {
       ppa.query("regrid_int", m_regrid_int);
    }
+
+#ifdef AMREX_USE_EB
+   if ( max_level > 0 ) {
+      // Default EB refine type is Static
+      pp.query("refine_EB_type",m_EB_refine_type);
+      if ( m_EB_refine_type != "Static" &&
+           m_EB_refine_type != "Adaptive" ) {
+         Abort("refine_EB_type can only be 'Static' or 'Adaptive'");
+      }
+      // Default EB refinement level is max_level 
+      m_EB_refine_LevMax = max_level;
+      pp.query("refine_EB_max_level",m_EB_refine_LevMax);
+      if ( m_EB_refine_type == "Adaptive" ) {
+         m_EB_refine_LevMin = 0;
+         pp.query("refine_EB_min_level",m_EB_refine_LevMin);
+         m_EB_refine_LevAdapt = m_EB_refine_LevMin;
+      }
+      if (m_EB_refine_LevMax < max_level) {
+         m_signDistNeeded = 1;
+      }
+   }
+#endif
 
    // -----------------------------------------
    // Evaluate mode variables

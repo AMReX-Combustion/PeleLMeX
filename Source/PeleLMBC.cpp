@@ -824,7 +824,7 @@ void PeleLM::setInflowBoundaryVel(MultiFab &a_vel,
       }
    }  
 
-   fillTurbInflow(a_vel, 0, lev, a_time);
+   fillTurbInflow(a_vel, 0, lev, time);
 
    ProbParm const* lprobparm = prob_parm_d;
    pele::physics::PMF::PmfData::DataContainer const* lpmfdata = pmf_data.getDeviceData();
