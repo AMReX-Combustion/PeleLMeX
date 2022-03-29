@@ -39,7 +39,7 @@ The available options are divided into groups: those that control primarily AMRe
 
     #-------------------------AMR CONTROL--------------------------
     amr.n_cell          = 64 64 128        # Number of cells on Level 0 in each direction   
-    amr.v               = 1                # AMR verbose
+    amr.v               = 1                # [OPT, DEF=0] AMR verbose
     amr.max_level       = 1                # maximum level number allowed
     amr.ref_ratio       = 2 2 2 2          # refinement ratio, one per refinement level
     amr.regrid_int      = 5                # how often to regrid
@@ -55,11 +55,12 @@ The available options are divided into groups: those that control primarily AMRe
     #-------------------------TIME STEPPING------------------------
     amr.max_step  = 20                     # Maximum number of steps
     amr.stop_time = 0.001                  # Maximum simulation time [s]
-    amr.cfl = 0.5                          # CFL for advection-controlled dt estimate
+    amr.cfl = 0.5                          # [OPT, DEF=0.7] CFL for advection-controlled dt estimate
     amr.fixed_dt  = 1e-6                   # [OPT] optional fixed dt (override CFL condition)
-    amr.dt_shrink = 0.0001                 # dt factor upon initialization
+    amr.dt_shrink = 0.0001                 # [OPT, DEF=1.0] dt factor upon initialization
+    amr.dt_change_max = 1.1                # [OPT, DEF=1.1] maximum dt change between consecutive steps
 
-Note that either a `max_step` or a `stop_time` is reauired, and if both are specified, the first stopping criteria
+Note that either a `max_step` or a `stop_time` is required, and if both are specified, the first stopping criteria
 encountered will lead to termination of the simulation.
 
 ### IO parameters
@@ -67,21 +68,78 @@ encountered will lead to termination of the simulation.
 ::
 
     #--------------------------IO CONTROL--------------------------
-    amr.plot_int         = 20              # frequency (as step #) for writting plot file
-    amr.plot_file        = "plt_"          # [OPT, DEF="plt_"] plot file prefix
-    amr.check_int        = 100             # frequency (as step #) for writting checkpoint file
-    amr.check_file       = "chk"           # [OPT, DEF="chk"] checkpoint file prefix
-    amr.derive_plot_vars = avg_pressure ...# List of derived variable included in the plot files
-    amr.restart          = chk00100        # [OPT] checkpoint from which to restart the simulation
+    amr.plot_int         = 20              # [OPT, DEF=-1] Frequency (as step #) for writting plot file
+    amr.plot_file        = "plt_"          # [OPT, DEF="plt_"] Plot file prefix
+    amr.check_int        = 100             # [OPT, DEF=-1] Frequency (as step #) for writting checkpoint file
+    amr.check_file       = "chk"           # [OPT, DEF="chk"] Checkpoint file prefix
+    amr.derive_plot_vars = avg_pressure ...# [OPT, DEF=""] List of derived variable included in the plot files
+    amr.plot_speciesState = 0              # [OPT, DEF=0] Force adding state rhoYs to the plot files
+
+    amr.restart          = chk00100        # [OPT, DEF=""] Checkpoint from which to restart the simulation
+    amr.initDataPlt      = plt01000        # [OPT, DEF=""] Provide a plotfile from which to extract initial data
 
 ### PeleLMeX algorithm
 
 ::
 
     #-----------------------PELELMEX CONTROL-----------------------
-    amr.plot_int         = 20              # frequency (as step #) for writting plot file
-    amr.plot_file        = "plt_"          # [OPT, DEF="plt_"] plot file prefix
-    amr.check_int        = 100             # frequency (as step #) for writting checkpoint file
-    amr.check_file       = "chk"           # [OPT, DEF="chk"] checkpoint file prefix
-    amr.derive_plot_vars = avg_pressure ...# List of derived variable included in the plot files
-    amr.restart          = chk00100        # [OPT] checkpoint from which to restart the simulation
+    peleLM.v = 1                           # [OPT, DEF=0] Verbose
+    peleLM.run_mode = normal               # [OPT, DEF=normal] Switch between time-advance mode (normal) or UnitTest (evaluate)
+    peleLM.use_wbar = 1                    # [OPT, DEF=1] Enable Wbar correction in diffusion fluxes
+    peleLM.sdc_iterMax = 2                 # [OPT, DEF=1] Number of SDC iterations
+    peleLM.num_init_iter = 2               # [OPT, DEF=3] Number of iterations to get initial pressure
+    peleLM.num_divu_iter = 1               # [OPT, DEF=1] Number of divU iterations to get initial dt estimate
+    peleLM.do_init_proj = 1                # [OPT, DEF=1] Control over initial projection
+    peleLM.advection_scheme = Godunov_BDS  # [OPT, DEF=Godunov_PLM] Advection scheme: Godunov_PLM, Godunov_PPM or Godunov_BDS
+    peleLM.incompressible = 0              # [OPT, DEF=0] Enable to run fully incompressible, scalar advance is bypassed
+    peleLM.m_rho = 1.17                    # [OPT, DEF=-1] If incompressible, density value [MKS]
+    peleLM.m_mu = 1.8e-5                   # [OPT, DEF=-1] If incompressible, kinematic visc. value [MKS]
+    peleLM.gravity = 0.0 0.0 -9.81         # [OPT, DEF=Vec{0.0}] Gravity vector [MKS]
+    peleLM.gradP0 = 0.0 0.0 10.0           # [OPT, DEF=Vec{0.0}] Average background pressure gradient [Pa/m]
+    peleLM.closed_chamber = 0              # [OPT] Override the automatic detection of closed chamber (based on Outflow(s))
+    peleLM.floor_species = 0               # [OPT, DEF=0] Crudely enforce mass fraction positivity
+    peleLM.deltaT_verbose = 0              # [OPT, DEF=0] Verbose of the deltaT iterative solve algorithm
+    peleLM.deltaT_iterMax = 5              # [OPT, DEF=10] Maximum number of deltaT iterations
+    peleLM.deltaT_tol = 1e-10              # [OPT, DEF=1.e-10] Tolerance of the deltaT solve
+    peleLM.evaluate_vars =...              # [OPT, DEF=""] In evaluate mode, list unitTest: diffTerm, divU, instRR, transportCC
+
+### Chemistry integrator
+
+::
+
+    #-----------------------CHEMISTRY CONTROL----------------------
+    peleLM.chem_integrator   = "ReactorCvode"   # Chemistry integrator, from PelePhysics available list
+    peleLM.use_typ_vals_chem = 1                # [OPT, DEF=1] Use Typical values to scale components in the reactors
+    peleLM.typical_values_reset_int = 5         # [OPT, DEF=10] Frequency at which the typical values are updated
+    ode.rtol = 1.0e-6                           # [OPT, DEF=1e-10] Relative tolerance of the chem. reactor
+    ode.atol = 1.0e-6                           # [OPT, DEF=1e-10] Aboslute tolerance of the chem. reactor, or pre-factor of the typical values when used
+    cvode.solve_type = denseAJ_direct           # [OPT, DEF=GMRES] Linear solver employed for CVODE Newton direction
+    cvode.max_order  = 4                        # [OPT, DEF=2] Maximum order of the BDF method in CVODE
+
+Note that the last four parameters belong to the Reactor class of PelePhysics but are specified here for completeness. In particular, CVODE is the adequate choice of integrator to tackle PeleLMeX large time step sizes. Several linear solvers are available depending on whether or not GPU are employed: on CPU, `dense_direct` is a finite-difference direct solver, `denseAJ_direct` is an analytical-jacobian direct solver (preferred choice), `sparse_direct` is an analytical-jacobian sparse direct solver based on the KLU library and `GMRES` is a matrix-free iterative solver; on GPU `GMRES` is a matrix-free iterative solver (available on all the platforms), `sparse_direct` is a batched block-sparse direct solve based on NVIDIA's cuSparse (only with CUDA), `magma_direct` is a batched block-dense direct solve based on the MAGMA library (available with CUDA and HIP.
+
+
+### Linear solvers
+
+Linear solvers are a key component of PeleLMeX algorithm, separate controls are dedicated to the various solver (MAC projection, nodal projection, diffusion, ...)
+
+::
+
+    #-------------------------LINEAR SOLVERS-----------------------
+    nodal_proj.verbose = 1                      # [OPT, DEF=0] Verbose of the nodal projector
+    nodal_proj.rtol = 1.0e-11                   # [OPT, DEF=1e-11] Relative tolerance of the nodal projection
+    nodal_proj.atol = 1.0e-12                   # [OPT, DEF=1e-14] Absolute tolerance of the nodal projection
+    nodal_proj.mg_max_coarsening_level = 5      # [OPT, DEF=100] Maximum number of MG levels (useful when using EB)
+    
+    mac_proj.verbose = 1                        # [OPT, DEF=0] Verbose of the MAC projector
+    mac_proj.rtol = 1.0e-11                     # [OPT, DEF=1e-11] Relative tolerance of the MAC projection
+    mac_proj.atol = 1.0e-12                     # [OPT, DEF=1e-14] Absolute tolerance of the MAC projection
+    mac_proj.mg_max_coarsening_level = 5        # [OPT, DEF=100] Maximum number of MG levels (useful when using EB)
+
+    diffusion.verbose                           # [OPT, DEF=0] Verbose of the scalar diffusion solve
+    diffusion.rtol = 1.0e-11                    # [OPT, DEF=1e-11] Relative tolerance of the scalar diffusion solve
+    diffusion.atol = 1.0e-12                    # [OPT, DEF=1e-14] Absolute tolerance of the scalar diffusion solve
+
+    tensor_diffusion.verbose                    # [OPT, DEF=0] Verbose of the velocity tensor diffusion solve
+    tensor_diffusion.rtol = 1.0e-11             # [OPT, DEF=1e-11] Relative tolerance of the velocity tensor diffusion solve
+    tensor_diffusion.atol = 1.0e-12             # [OPT, DEF=1e-14] Absolute tolerance of the velocity tensor diffusion solve
