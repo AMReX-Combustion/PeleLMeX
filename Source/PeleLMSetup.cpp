@@ -384,6 +384,9 @@ void PeleLM::readParameters() {
          pp.query("refine_EB_min_level",m_EB_refine_LevMin);
          m_EB_refine_LevAdapt = m_EB_refine_LevMin;
       }
+      if (m_EB_refine_LevMax < max_level) {
+         m_signDistNeeded = 1;
+      }
    }
 #endif
 
