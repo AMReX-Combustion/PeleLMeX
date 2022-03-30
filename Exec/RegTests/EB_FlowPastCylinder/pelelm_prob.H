@@ -171,4 +171,25 @@ zero_visc (int i, int j, int k,
     // We treat species when beta_comp == 0 and nComp == NUM_SPECIES
     // otherwise this routine could be called for other face diffusivity (Temp, velocity, ...)
 }
+
+AMREX_GPU_DEVICE
+AMREX_FORCE_INLINE
+void
+setEBState(
+  const amrex::Real xEBface[AMREX_SPACEDIM],
+  amrex::Real s_ext[NVAR],
+  const amrex::Real time,
+  amrex::GeometryData const& geomdata,
+  ProbParm const& prob_parm)
+{
+
+   // Setup a fixed EB temperature
+   if ( xEBface[1] > 0.02 ) {
+      s_ext[TEMP] = 500.0;
+   } else {
+      s_ext[TEMP] = 300.0;
+   }
+
+}
+
 #endif
