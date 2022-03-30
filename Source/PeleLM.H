@@ -272,6 +272,7 @@ class PeleLM : public amrex::AmrCore {
    // get species/enthalpy differential diffusion fluxes
    void computeDifferentialDiffusionFluxes(const PeleLM::TimeStamp &a_time,
                                            const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> &a_fluxes,
+                                           const amrex::Vector<amrex::MultiFab*> &a_EBfluxes,
                                            const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> &a_wbarfluxes);
 
    // get species/enthalpy differential diffusion terms
@@ -305,6 +306,7 @@ class PeleLM : public amrex::AmrCore {
 
    void deltaTIter_update(int a_dtiter,
                           const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> &a_fluxes,
+                          const amrex::Vector<amrex::MultiFab*> &a_ebfluxes,
                           const amrex::Vector<amrex::MultiFab const*> &a_Tsave,
                           std::unique_ptr<AdvanceDiffData> &diffData,
                           amrex::Real &a_deltaT_norm);
@@ -522,12 +524,24 @@ class PeleLM : public amrex::AmrCore {
                        int intensiveFluxes,
                        amrex::Real scale);
 
+   void fluxDivergence(const amrex::Vector<amrex::MultiFab*> &a_divergence,
+                       int div_comp,
+                       const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM> > &a_fluxes,
+                       int flux_comp,
+                       const amrex::Vector<amrex::MultiFab* > &a_EBfluxes,
+                       int ebflux_comp,
+                       int ncomp,
+                       int intensiveFluxes,
+                       amrex::Real scale);
+
    void fluxDivergenceRD(const amrex::Vector<const amrex::MultiFab*> &a_state,
                          int state_comp,
                          const amrex::Vector<amrex::MultiFab*> &a_divergence,
                          int div_comp,
                          const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM> > &a_fluxes,
                          int flux_comp,
+                         const amrex::Vector<amrex::MultiFab* > &a_EBfluxes,
+                         int ebflux_comp,
                          int ncomp,
                          int intensiveFluxes,
                          const amrex::BCRec *state_bc_d,
@@ -562,6 +576,16 @@ class PeleLM : public amrex::AmrCore {
                                int flux_comp,
                                int ncomp,
                                amrex::Real scale);
+
+   void intFluxDivergenceLevelEB(int lev,
+                                 amrex::MultiFab &a_divergence,
+                                 int div_comp,
+                                 const amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM> &a_fluxes,
+                                 int flux_comp,
+                                 const amrex::MultiFab* a_EBfluxes,
+                                 int ebflux_comp,
+                                 int ncomp,
+                                 amrex::Real scale);
 
    void floorSpecies(const PeleLM::TimeStamp &a_time);
 
@@ -645,6 +669,12 @@ class PeleLM : public amrex::AmrCore {
 
    void extendSignedDistance( amrex::MultiFab *a_signDist,
                               amrex::Real a_extendFactor);
+
+   void getEBState(int a_lev,
+                   const amrex::Real &a_time,
+                   amrex::MultiFab &a_EBstate,
+                   int         stateComp,
+                   int         nComp);
 
    // static_cast factory into ebfactory
    amrex::EBFArrayBoxFactory const& 
@@ -1049,15 +1079,20 @@ class PeleLM : public amrex::AmrCore {
    amrex::Vector<amrex::Real> typical_values;
 
 #ifdef AMREX_USE_EB
-   // EB
+   // EB refinement
    std::string m_EB_refine_type = "Static";
    int m_EB_refine_LevMax = -1;
    int m_EB_refine_LevMin = -1;
    int m_EB_refine_LevAdapt = -1;
    int m_signDistNeeded = 0;
    std::unique_ptr<amrex::MultiFab> m_signedDist0 = nullptr;
+
+   // EB bc/covered
    amrex::Vector<amrex::Real> coveredState_h;
    amrex::Gpu::DeviceVector<amrex::Real> coveredState_d;
+   int m_isothermalEB = 0;
+
+   // EB redistribution
    std::string m_adv_redist_type = "StateRedist";
    std::string m_diff_redist_type = "FluxRedist";
 #endif

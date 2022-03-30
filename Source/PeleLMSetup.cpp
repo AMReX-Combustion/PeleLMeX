@@ -388,6 +388,7 @@ void PeleLM::readParameters() {
          m_signDistNeeded = 1;
       }
    }
+   pp.query("isothermal_EB",m_isothermalEB);
 #endif
 
    // -----------------------------------------
