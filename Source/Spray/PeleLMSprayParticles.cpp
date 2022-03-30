@@ -220,12 +220,12 @@ void
 PeleLM::createSprayData()
 {
   SprayPC = new SprayParticleContainer(
-    this, &m_phys_bc, sprayData, scomps, wall_temp);
+    this, &m_phys_bc, sprayData, scomps, wall_temp, max_spray_cfl);
   theSprayPC()->SetVerbose(spray_verbose);
   VirtPC = new SprayParticleContainer(
-    this, &m_phys_bc, sprayData, scomps, wall_temp);
+    this, &m_phys_bc, sprayData, scomps, wall_temp, max_spray_cfl);
   GhostPC = new SprayParticleContainer(
-    this, &m_phys_bc, sprayData, scomps, wall_temp);
+    this, &m_phys_bc, sprayData, scomps, wall_temp, max_spray_cfl);
 }
 
 void
