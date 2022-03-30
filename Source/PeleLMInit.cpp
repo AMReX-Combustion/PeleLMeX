@@ -153,7 +153,7 @@ void PeleLM::initData() {
       setTypicalValues(AmrNewTime, is_init);
 
       // initiliaze temporals
-      initTemporals();
+      initTemporals(AmrNewTime);
 
 #ifdef AMREX_USE_EB
       //----------------------------------------------------------------

@@ -2,27 +2,27 @@
 
 using namespace amrex;
 
-void PeleLM::initTemporals()
+void PeleLM::initTemporals(const PeleLM::TimeStamp &a_time)
 {
    if (!m_do_temporals
        && !(m_nstep % m_temp_int == 0)) return;
 
    // Reset mass fluxes integrals on domain boundaries
    if (m_do_massBalance && !m_incompressible) {
-      m_massOld = MFSum(GetVecOfConstPtrs(getDensityVect(AmrOldTime)),0);
+      m_massOld = MFSum(GetVecOfConstPtrs(getDensityVect(a_time)),0);
       for (int idim = 0; idim <  AMREX_SPACEDIM; idim++) {
          m_domainMassFlux[2*idim] = 0.0;
          m_domainMassFlux[2*idim+1] = 0.0;
       }
    }
-   m_RhoHOld = MFSum(GetVecOfConstPtrs(getRhoHVect(AmrOldTime)),0);
+   m_RhoHOld = MFSum(GetVecOfConstPtrs(getRhoHVect(a_time)),0);
    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
       m_domainRhoHFlux[2*idim] = 0.0;
       m_domainRhoHFlux[2*idim+1] = 0.0;
    }
 
    for (int n = 0; n < NUM_SPECIES; n++){
-      m_RhoYOld[n] = MFSum(GetVecOfConstPtrs(getSpeciesVect(AmrOldTime)),n);
+      m_RhoYOld[n] = MFSum(GetVecOfConstPtrs(getSpeciesVect(a_time)),n);
       for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
          m_domainRhoYFlux[2*n*AMREX_SPACEDIM+2*idim] = 0.0;
          m_domainRhoYFlux[1+2*n*AMREX_SPACEDIM+2*idim] = 0.0;
@@ -357,7 +357,7 @@ void PeleLM::writeTemporals()
 
    // Get min/max/mean for non-species state components
 
-   tmpStateFile << m_nstep << " " << m_cur_time << " " << kinetic_energy << " \n";
+   tmpStateFile << m_nstep << " " << m_cur_time << " " << kinetic_energy << " " << m_pNew << " \n";
    tmpStateFile.flush();
 }
 
