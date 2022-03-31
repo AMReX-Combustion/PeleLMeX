@@ -28,6 +28,14 @@ void
 PeleLM::updateDiagnostics()
 {
     // Might need to update some internal data as the grid changes
+    for (int n = 0; n < m_diagnostics.size(); ++n) {
+        if ( m_diagnostics[n]->needUpdate() ) {
+            m_diagnostics[n]->prepare(finestLevel()+1,
+                                      Geom(0,finestLevel()),
+                                      boxArray(0,finestLevel()),
+                                      dmap);
+        }
+    }
 }
 
 void
@@ -35,7 +43,7 @@ PeleLM::doDiagnostics()
 {
     for (int n = 0; n < m_diagnostics.size(); ++n) {
         if ( m_diagnostics[n]->doDiag(m_cur_time, m_nstep) ) {
-            // Might internalize the check into processDiag()
+            m_diagnostics[n]->processDiag(m_cur_time, GetVecOfConstPtrs(getStateVect(AmrNewTime)));
         }
     }
 }

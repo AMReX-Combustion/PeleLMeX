@@ -25,6 +25,7 @@ void PeleLM::Evolve() {
          regrid(0, m_cur_time);
          resetMacProjector();
          resetCoveredMask();
+         updateDiagnostics();
       }
 
       int is_init = 0;

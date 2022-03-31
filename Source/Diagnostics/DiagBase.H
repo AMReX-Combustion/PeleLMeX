@@ -14,11 +14,14 @@ public:
 
   virtual void close() = 0; 
 
+  bool needUpdate() { return need_update;};
+
   virtual bool doDiag(const amrex::Real &a_time, int a_nstep);
 
   virtual void prepare(int a_nlevels,
                        const amrex::Vector<amrex::Geometry> &a_geoms,
-                       const amrex::Vector<amrex::BoxArray> &a_grids) = 0;
+                       const amrex::Vector<amrex::BoxArray> &a_grids,
+                       const amrex::Vector<amrex::DistributionMapping> &a_dmap) = 0;
 
   virtual void processDiag(const amrex::Real &a_time,
                            const amrex::Vector<const amrex::MultiFab*> &a_state) = 0;
@@ -27,6 +30,7 @@ protected:
   int m_verbose = 0;
   amrex::Real m_per = -1.0;
   int m_freq = -1;
+  bool need_update = true;
 };
 
 #endif

@@ -12,7 +12,8 @@ public:
 
   void prepare(int a_nlevels,
                const amrex::Vector<amrex::Geometry> &a_geoms,
-               const amrex::Vector<amrex::BoxArray> &a_grids) override;
+               const amrex::Vector<amrex::BoxArray> &a_grids,
+               const amrex::Vector<amrex::DistributionMapping> &a_dmap) override;
 
   void processDiag(const amrex::Real &a_time,
                    const amrex::Vector<const amrex::MultiFab*> &a_state) override;
@@ -22,6 +23,16 @@ public:
 private:
   int m_normal;
   amrex::GpuArray<amrex::Real,AMREX_SPACEDIM> m_center;
+
+  // Interpolation data
+  amrex::Vector<amrex::GpuArray<amrex::Real,AMREX_SPACEDIM> > m_intwgt;
+  amrex::Vector<int> m_k0;
+
+  // 2D-plane boxArray vector
+  amrex::Geometry m_geomLev0;
+  amrex::Vector<amrex::BoxArray> m_sliceBA;
+  amrex::Vector<amrex::Vector<int> > m_dmConvert;
+  amrex::Vector<amrex::DistributionMapping> m_sliceDM;
 };
 
 #endif
