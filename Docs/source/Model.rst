@@ -3,7 +3,7 @@
 .. _sec:model:
 
 The `PeleLMeX` Model
-==================
+====================
 
 In this section, we present the actual model that is evolved numerically by `PeleLMeX`, and the numerical algorithms
 to do it.  There are many control parameters to customize the solution strategy and process, and in order to actually
@@ -12,9 +12,9 @@ that implement initial and boundary data and refinement criteria for the adaptiv
 setup and control of `PeleLMeX` in later sections. `PeleLMeX` is a non-subcycling version of `PeleLM` and as such, much of the following is identical to the model in `PeleLM` with a few key differences.
 
 Overview of `PeleLMeX`
---------------------
+----------------------
 
-`PeleLMeX` evolves chemically reacting low Mach number flows with block-structured adaptive mesh refinement (AMR). The code depends upon the `AMReX <https://github.com/AMReX-Codes/amrex>`_ library to provide the underlying data structures, and tools to manage and operate on them across massively parallel computing architectures. `PeleLMeX` also utilizes the source code and algorithmic infrastructure of `AMReX-Hydro <https://github.com/AMReX-Codes/AMReX-Hydro>`. `PeleLMeX` borrows heavily from `PeleLM <https://github.com/AMReX-Combustion/PeleLM>`.  The core algorithms in `PeleLM`are described in the following papers:
+`PeleLMeX` evolves chemically reacting low Mach number flows with block-structured adaptive mesh refinement (AMR). The code depends upon the `AMReX <https://github.com/AMReX-Codes/amrex>` library to provide the underlying data structures, and tools to manage and operate on them across massively parallel computing architectures. `PeleLMeX` also utilizes the source code and algorithmic infrastructure of `AMReX-Hydro <https://github.com/AMReX-Codes/AMReX-Hydro>`. `PeleLMeX` borrows heavily from `PeleLM <https://github.com/AMReX-Combustion/PeleLM>`.  The core algorithms in `PeleLM`are described in the following papers:
 
 * *A conservative, thermodynamically consistent numerical approach for low Mach number combustion. I. Single-level integration*, A. Nonaka, J. B. Bell, and M. S. Day, *Combust. Theor. Model.*, **22** (1) 156-184 (2018)
 
