@@ -87,10 +87,10 @@ DiagFramePlane::processDiag(const amrex::Real &a_time,
     amrex::Vector<amrex::MultiFab> planeData(a_state.size());
     for (int lev = 0; lev < a_state.size(); ++lev) {
         planeData[lev].define(m_sliceBA[lev], m_sliceDM[lev], a_state[0]->nComp(), 0);
+        int p0 = m_k0[lev];
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
-        int p0 = m_k0[lev];
         for (amrex::MFIter mfi(planeData[lev], amrex::TilingIfNotGPU()); mfi.isValid(); ++mfi) {
             const auto &bx = mfi.tilebox();
             const int state_idx = m_dmConvert[lev][mfi.index()];
