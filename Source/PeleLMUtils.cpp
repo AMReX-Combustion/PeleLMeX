@@ -413,6 +413,19 @@ PeleLM::floorSpecies(const TimeStamp &a_time)
 
 void PeleLM::resetCoveredMask()
 {
+
+   //----------------------------------------------------------------------------
+   // Need to compute the uncovered volume
+   // TODO Might need to recompute if new levels are added with EB.
+   if (m_uncoveredVol < 0.0 ) {
+      Vector<MultiFab> dummy(finest_level+1);
+      for (int lev = 0; lev <= finest_level; ++lev) {
+         dummy[lev].define(grids[lev], dmap[lev], 1, 0, MFInfo(), *m_factory[lev]);
+         dummy[lev].setVal(1.0);
+      }
+      m_uncoveredVol = MFSum(GetVecOfConstPtrs(dummy),0);
+   }
+
    if (!m_resetCoveredMask) return;
 
    if (m_verbose) Print() << " Resetting fine-covered cells mask \n";
@@ -465,18 +478,6 @@ void PeleLM::resetCoveredMask()
       }
       m_baChem[lev].reset(new BoxArray(std::move(bl)));
       m_dmapChem[lev].reset(new DistributionMapping(*m_baChem[lev]));
-   }
-
-   //----------------------------------------------------------------------------
-   // Need to compute the uncovered volume
-   // TODO Might need to recompute if new levels are added with EB.
-   if (m_uncoveredVol < 0.0 ) {
-      Vector<MultiFab> dummy(finest_level+1);
-      for (int lev = 0; lev <= finest_level; ++lev) {
-         dummy[lev].define(grids[lev], dmap[lev], 1, 0, MFInfo(), *m_factory[lev]);
-         dummy[lev].setVal(1.0);
-      }
-      m_uncoveredVol = MFSum(GetVecOfConstPtrs(dummy),0);
    }
 
    // Switch off trigger
