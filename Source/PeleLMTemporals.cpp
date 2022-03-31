@@ -28,10 +28,6 @@ void PeleLM::initTemporals(const PeleLM::TimeStamp &a_time)
          m_domainRhoYFlux[1+2*n*AMREX_SPACEDIM+2*idim] = 0.0;
       }
    }
-   for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
-      m_domainUmacFlux[2*idim] = 0.0;
-      m_domainUmacFlux[2*idim+1] = 0.0;
-   }
 
 }
 

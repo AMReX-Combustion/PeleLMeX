@@ -310,8 +310,6 @@ PeleLM::adjustPandDivU(std::unique_ptr<AdvanceAdvData> &advData)
        dummy[lev].setVal(1.0);
     }
 
-    m_uncoveredVol = MFSum(GetVecOfConstPtrs(dummy),0);
-
     // Get the mean mac_divu (Sbar) and mean theta
     Real Sbar = MFSum(GetVecOfConstPtrs(advData->mac_divu),0);
     Sbar /= m_uncoveredVol;
@@ -342,7 +340,6 @@ PeleLM::adjustPandDivU(std::unique_ptr<AdvanceAdvData> &advData)
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
-
         for (MFIter mfi(*ThetaHalft[lev],TilingIfNotGPU()); mfi.isValid(); ++mfi)
         {
             const Box& bx = mfi.tilebox();

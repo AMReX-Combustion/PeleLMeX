@@ -62,6 +62,14 @@ void PeleLM::Advance(int is_initIter) {
    // initiliaze temporals
    initTemporals();
 
+   // Compute velocity flux on boundary faces if doing closed chamber
+   if (m_closed_chamber) {
+      for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+         m_domainUmacFlux[2*idim] = 0.0;
+         m_domainUmacFlux[2*idim+1] = 0.0;
+      }
+   }
+
    // fillpatch the t^{n} data
    averageDownState(AmrOldTime);
    fillPatchState(AmrOldTime);
