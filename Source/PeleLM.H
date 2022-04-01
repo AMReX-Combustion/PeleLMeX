@@ -443,9 +443,13 @@ class PeleLM : public amrex::AmrCore {
    //-----------------------------------------------------------------------------
    // Temporal
    void massBalance();
-   void initTemporals();
+   void rhoHBalance();
+   void initTemporals(const PeleLM::TimeStamp &a_time = AmrOldTime);
    void writeTemporals();
    void addMassFluxes(const amrex::Array<const amrex::MultiFab*,AMREX_SPACEDIM> &a_fluxes, const amrex::Geometry &a_geom);
+   void addRhoHFluxes(const amrex::Array<const amrex::MultiFab*,AMREX_SPACEDIM> &a_fluxes, const amrex::Geometry &a_geom);
+   void addRhoYFluxes(const amrex::Array<const amrex::MultiFab*,AMREX_SPACEDIM> &a_fluxes, const amrex::Geometry &a_geom);
+   void addUmacFluxes(std::unique_ptr<AdvanceAdvData> &advData, const amrex::Geometry &a_geom);
    void openTempFile();
    void closeTempFile();
    bool doTemporalsNow();
@@ -956,6 +960,7 @@ class PeleLM : public amrex::AmrCore {
    amrex::Real m_prev_dt      = -1.0;
    amrex::Real m_dtChangeMax  = 1.1;
    amrex::Real m_stop_time    = -1.0;
+   amrex::Real m_max_dt       = 1e12;
    int m_nstep = -1; 
    int m_max_step = -1;
 
@@ -1032,7 +1037,15 @@ class PeleLM : public amrex::AmrCore {
    int m_do_massBalance = 0;
    amrex::Real m_massOld;
    amrex::Real m_massNew;
+   amrex::Real m_RhoHOld;
+   amrex::Real m_RhoHNew;
+   amrex::Array<amrex::Real,NUM_SPECIES> m_RhoYOld;
+   amrex::Array<amrex::Real,NUM_SPECIES> m_RhoYNew;
    amrex::Array<amrex::Real,2*AMREX_SPACEDIM> m_domainMassFlux;
+   amrex::Array<amrex::Real,2*AMREX_SPACEDIM> m_domainRhoHFlux;
+   amrex::Array<amrex::Real,2*AMREX_SPACEDIM*NUM_SPECIES> m_domainRhoYFlux;
+   amrex::Array<amrex::Real,2*AMREX_SPACEDIM> m_domainUmacFlux;
+   
    std::ofstream tmpStateFile;
    std::ofstream tmpMassFile;
    std::ofstream tmpSpecFile;
