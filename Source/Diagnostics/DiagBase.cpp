@@ -5,7 +5,7 @@ DiagBase::doDiag(const amrex::Real &a_time,
                  int a_nstep)
 {
     bool willDo = false;
-    if ( m_freq > 0 && (a_nstep % m_freq == 0) ) {
+    if ( m_interval > 0 && (a_nstep % m_interval == 0) ) {
         willDo = true;
     }
 

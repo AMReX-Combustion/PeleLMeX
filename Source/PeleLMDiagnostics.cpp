@@ -43,7 +43,7 @@ PeleLM::doDiagnostics()
 {
     for (int n = 0; n < m_diagnostics.size(); ++n) {
         if ( m_diagnostics[n]->doDiag(m_cur_time, m_nstep) ) {
-            m_diagnostics[n]->processDiag(m_cur_time, GetVecOfConstPtrs(getStateVect(AmrNewTime)));
+            m_diagnostics[n]->processDiag(m_nstep, m_cur_time, GetVecOfConstPtrs(getStateVect(AmrNewTime)));
         }
     }
 }

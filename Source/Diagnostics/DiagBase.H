@@ -23,14 +23,17 @@ public:
                        const amrex::Vector<amrex::BoxArray> &a_grids,
                        const amrex::Vector<amrex::DistributionMapping> &a_dmap) = 0;
 
-  virtual void processDiag(const amrex::Real &a_time,
+  virtual void processDiag(int a_nstep,
+                           const amrex::Real &a_time,
                            const amrex::Vector<const amrex::MultiFab*> &a_state) = 0;
 
 protected:
+  std::string m_diagfile;
   int m_verbose = 0;
   amrex::Real m_per = -1.0;
-  int m_freq = -1;
+  int m_interval = -1;
   bool need_update = true;
+  bool first_time = true;
 };
 
 #endif
