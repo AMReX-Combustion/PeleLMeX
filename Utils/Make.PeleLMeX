@@ -135,6 +135,11 @@ print-%::
 	@$(RM) AMReX_buildInfo.cpp
 
 #---------------
+# Additional C++ flags
+#---------------
+CXXFLAGS += -std=c++17
+
+#---------------
 # TPL
 #---------------
 TPL:
