@@ -290,6 +290,13 @@ PeleLM::adjustPandDivU(std::unique_ptr<AdvanceAdvData> &advData)
         }
     }
 
+
+    Vector<MultiFab> dummy(finest_level+1);
+    for (int lev = 0; lev <= finest_level; ++lev) {
+       dummy[lev].define(grids[lev], dmap[lev], 1, 0, MFInfo(), *m_factory[lev]);
+       dummy[lev].setVal(1.0);
+    }
+
     // Get the mean mac_divu (Sbar) and mean theta
     Real Sbar = MFSum(GetVecOfConstPtrs(advData->mac_divu),0);
     Sbar /= m_uncoveredVol;
@@ -298,13 +305,22 @@ PeleLM::adjustPandDivU(std::unique_ptr<AdvanceAdvData> &advData)
 
     // Adjust
     for (int lev = 0; lev <= finest_level; ++lev) {
+        // ThetaHalft is now delta_theta
         ThetaHalft[lev]->plus(-Thetabar,0,1);
+        // mac_divu is now delta_S
         advData->mac_divu[lev].plus(-Sbar,0,1);
     }
+  
+    // Compute 1/Volume * int(U_inflow)dA across all boundary faces
+    amrex::Real umacFluxBalance = AMREX_D_TERM(  m_domainUmacFlux[0] + m_domainUmacFlux[1],
+                                       + m_domainUmacFlux[2] + m_domainUmacFlux[3],               
+                                       + m_domainUmacFlux[4] + m_domainUmacFlux[5]);
+    Real divu_vol = umacFluxBalance/m_uncoveredVol;
 
     // Advance the ambient pressure
-    m_pNew = m_pOld + m_dt * (Sbar/Thetabar);
-    m_dp0dt = Sbar/Thetabar;
+    m_pNew = m_pOld + m_dt * (Sbar - divu_vol)/Thetabar;
+    m_dp0dt = (Sbar - divu_vol)/Thetabar;
+
 
     // subtract \tilde{theta} * Sbar / Thetabar from divu
     for (int lev = 0; lev <= finest_level; ++lev) {
@@ -319,13 +335,15 @@ PeleLM::adjustPandDivU(std::unique_ptr<AdvanceAdvData> &advData)
             amrex::ParallelFor(bx, [=,dp0dt=m_dp0dt]
             AMREX_GPU_DEVICE (int i, int j, int k) noexcept
             {
-                macdivU(i,j,k) -= theta(i,j,k) * dp0dt;
+               // Do the closed chamber pressure correction
+               macdivU(i,j,k) -= (theta(i,j,k) * Sbar/Thetabar - divu_vol*(1 + theta(i,j,k)/Thetabar));
             });
         }
     }
 
     if (m_verbose > 2 ) {
         Print() << " >> Closed chamber pOld: " << m_pOld << ", pNew: " << m_pNew << ", dp0dt: " << m_dp0dt << "\n";
+        Print() << " >> Total mass old: " << m_massOld << ", mass new: " << m_massNew << std::endl;
     }
 
     // Return Sbar so that we'll add it back to mac_divu after the MAC projection
