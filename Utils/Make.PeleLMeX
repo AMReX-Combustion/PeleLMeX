@@ -138,6 +138,12 @@ print-%::
 # Additional C++ flags
 #---------------
 CXXFLAGS += -std=c++17
+ifeq ($(gcc_major_version),6)
+  CXXFLAGS += -lstdc++fs 
+endif
+ifeq ($(gcc_major_version),7)
+  CXXFLAGS += -lstdc++fs 
+endif
 
 #---------------
 # TPL

@@ -2,8 +2,15 @@
 #include "AMReX_VisMF.H"
 #include <AMReX_FPC.H>
 #include "AMReX_PlotFileUtil.H"
-#include <filesystem>
 #include <regex>
+
+#if __cplusplus >= 201703L
+#include <filesystem>
+namespace filesystem = std::filesystem;
+#else
+#include <experimental/filesystem>
+namespace filesystem = std::experimental::filesystem;
+#endif
 
 void
 printLowerDimIntVect(std::ostream &a_File,
@@ -436,14 +443,14 @@ DiagFramePlane::ReWriteLevelVisMFHeader(const std::string &a_HeaderPath) {
         HeaderFile.close();
 
         // Replace header file
-        std::filesystem::copy(HeaderFileName, OldHeaderFileName, std::filesystem::copy_options::overwrite_existing);
-        std::filesystem::remove(HeaderFileName);
+        filesystem::copy(HeaderFileName, OldHeaderFileName, filesystem::copy_options::overwrite_existing);
+        filesystem::remove(HeaderFileName);
 
         // Replace 3D data file by 2D ones
         for (int i = 0; i < dataFiles.size(); ++i) {
             std::string newname = a_HeaderPath+dataFiles[i];
             newname = std::regex_replace(newname, std::regex("Cell_"), "Cell2D_");
-            std::filesystem::rename(newname, a_HeaderPath+dataFiles[i]);
+            filesystem::rename(newname, a_HeaderPath+dataFiles[i]);
         }
     }
 }
