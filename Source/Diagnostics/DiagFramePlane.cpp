@@ -40,6 +40,7 @@ void
 DiagFramePlane::init(const std::string &a_prefix)
 {
     amrex::ParmParse pp(a_prefix);
+
     // Plane normal
     pp.get("normal", m_normal);
     AMREX_ASSERT(m_normal>=0 && m_normal<AMREX_SPACEDIM);
@@ -61,6 +62,17 @@ DiagFramePlane::init(const std::string &a_prefix)
     m_diagfile = "DiagFramePlane";
     pp.query("file",m_diagfile);
     AMREX_ASSERT(m_interval>0 || m_per>0.0);
+
+    // Interpolation
+    std::string intType = "Quadratic";
+    pp.query("interpolation", intType);
+    if (intType == "Linear") {
+        m_interpType = Linear;
+    } else if (intType == "Quadratic") {
+        m_interpType = Quadratic;
+    } else {
+        amrex::Abort("Unknown interpolation type for "+a_prefix);
+    }
 }
 
 void 
@@ -95,10 +107,27 @@ DiagFramePlane::prepare(int a_nlevels,
         int k0 = static_cast<int>(std::round(dist));
         dist -= static_cast<amrex::Real>(k0);
         m_k0[lev] = k0;
-        // Quadratic interp. weights on k0-1, k0, k0+1
-        m_intwgt[lev][0] = 0.5 * (dist - 1.0) * (dist - 2.0);
-        m_intwgt[lev][1] = dist * (2.0 - dist);
-        m_intwgt[lev][2] = 0.5 * dist * (dist - 1.0);;
+        if (m_interpType == Quadratic) {
+            // Quadratic interp. weights on k0-1, k0, k0+1
+            m_intwgt[lev][0] = 0.5 * (dist - 1.0) * (dist - 2.0);
+            m_intwgt[lev][1] = dist * (2.0 - dist);
+            m_intwgt[lev][2] = 0.5 * dist * (dist - 1.0);;
+        } else if (m_interpType == Linear) {
+            // linear interp. weights on k0-1, k0, k0+1
+            if ( dist > 0.0 ) {
+               m_intwgt[lev][0] = 0.0;
+               m_intwgt[lev][1] = 1.0 - dist;
+               m_intwgt[lev][2] = dist;
+            } else if  ( dist < 0.0 ) {
+               m_intwgt[lev][0] = -dist;
+               m_intwgt[lev][1] = 1.0 + dist;
+               m_intwgt[lev][2] = 0.0;
+            } else {
+               m_intwgt[lev][0] = 0.0;
+               m_intwgt[lev][1] = 1.0;
+               m_intwgt[lev][2] = 0.0;
+            }
+        }
     }
 
     // Assemble the 2D slice boxArray
@@ -138,7 +167,8 @@ DiagFramePlane::prepare(int a_nlevels,
 void
 DiagFramePlane::processDiag(int a_nstep,
                             const amrex::Real &a_time,
-                            const amrex::Vector<const amrex::MultiFab*> &a_state)
+                            const amrex::Vector<const amrex::MultiFab*> &a_state,
+                            const amrex::Vector<std::string> &a_stateVar)
 {
     // Interpolate data to slice
     amrex::Vector<amrex::MultiFab> planeData(a_state.size());
@@ -181,16 +211,15 @@ DiagFramePlane::processDiag(int a_nstep,
         }
     }
 
+    // Count the number of level where the cut exists
     int nlevs = 0;
     for (int lev = 0; lev < a_state.size(); lev++) {
         if (!m_sliceBA[lev].empty()) nlevs +=1;
     }
+
+    // Build up a z-normal 2D Geom
     amrex::Vector<amrex::Geometry> pltGeoms(nlevs);
     pltGeoms[0] = m_geomLev0;
-    amrex::Vector<std::string> varnames(a_state[0]->nComp());
-    for (int i=0; i<a_state[0]->nComp(); ++i) {
-        varnames[i] = "Var" + std::to_string(i);
-    }
     amrex::Vector<amrex::IntVect> ref_ratio;
     amrex::IntVect rref(AMREX_D_DECL(2,2,1));
     for (int lev = 1; lev < nlevs; ++lev) {
@@ -198,6 +227,7 @@ DiagFramePlane::processDiag(int a_nstep,
         ref_ratio.push_back(rref);
     }
 
+    // File name based on tep or time
     std::string diagfile;
     if (m_interval > 0) {
         diagfile = amrex::Concatenate(m_diagfile,a_nstep,6);
@@ -205,8 +235,8 @@ DiagFramePlane::processDiag(int a_nstep,
     if (m_per > 0.0) {
         diagfile = m_diagfile+std::to_string(a_time);
     }
-    amrex::Vector<int> step_array(nlevs,0);
-    Write2DMultiLevelPlotfile(diagfile, nlevs, GetVecOfConstPtrs(planeData), varnames,
+    amrex::Vector<int> step_array(nlevs,a_nstep);
+    Write2DMultiLevelPlotfile(diagfile, nlevs, GetVecOfConstPtrs(planeData), a_stateVar,
                                    pltGeoms, a_time, step_array, ref_ratio);
     
 }
@@ -384,17 +414,18 @@ DiagFramePlane::ReWriteLevelVisMFHeader(const std::string &a_HeaderPath) {
         // Get list of Datafiles
         std::getline(is, line);
         HeaderFile << line << "\n";
-        int nFile = std::stoi(line);
-        amrex::Vector<std::string> dataFiles(nFile);
-        for (int i = 0; i < dataFiles.size(); ++i) {
+        int nFabs = std::stoi(line);
+        amrex::Vector<std::string> dataFiles;
+        for (int i = 0; i < nFabs; ++i) {
             std::getline(is, line);
             HeaderFile << line << "\n";
             std::istringstream lis(line);
-            int iw = 0;
-            while(lis >> word) {
-                if (iw==1) dataFiles[i] = word;
-                iw++;
-            }
+            std::string w1, w2, w3;
+            lis >> w1;
+            lis >> w2;
+            lis >> w3;
+            int offset = std::stoi(w3);
+            if (offset==0) dataFiles.push_back(w2);
         }
 
         // Just pass from istream to ostream `till the end

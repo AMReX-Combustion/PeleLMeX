@@ -25,7 +25,8 @@ public:
 
   virtual void processDiag(int a_nstep,
                            const amrex::Real &a_time,
-                           const amrex::Vector<const amrex::MultiFab*> &a_state) = 0;
+                           const amrex::Vector<const amrex::MultiFab*> &a_state,
+                           const amrex::Vector<std::string> &a_varNames) =0;
 
 protected:
   std::string m_diagfile;

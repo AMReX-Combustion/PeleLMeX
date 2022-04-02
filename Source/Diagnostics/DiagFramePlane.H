@@ -8,6 +8,8 @@ class DiagFramePlane : public DiagBase::Register<DiagFramePlane>
 public:
   static std::string identifier() { return "DiagFramePlane"; }
 
+  enum InterpType {Linear, Quadratic};
+
   void init(const std::string &a_prefix) override;
 
   void prepare(int a_nlevels,
@@ -17,7 +19,8 @@ public:
 
   void processDiag(int a_nstep,
                    const amrex::Real &a_time,
-                   const amrex::Vector<const amrex::MultiFab*> &a_state) override;
+                   const amrex::Vector<const amrex::MultiFab*> &a_state,
+                   const amrex::Vector<std::string> &a_varNames) override;
 
   void Write2DMultiLevelPlotfile(const std::string &a_pltfile,
                                  int a_nlevels,
@@ -57,7 +60,8 @@ private:
   amrex::GpuArray<amrex::Real,AMREX_SPACEDIM> m_center;
 
   // Interpolation data
-  amrex::Vector<amrex::GpuArray<amrex::Real,AMREX_SPACEDIM> > m_intwgt;
+  InterpType m_interpType; 
+  amrex::Vector<amrex::GpuArray<amrex::Real,3> > m_intwgt;
   amrex::Vector<int> m_k0;
 
   // 2D-plane boxArray vector

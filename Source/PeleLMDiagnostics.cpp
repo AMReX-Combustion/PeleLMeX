@@ -41,9 +41,17 @@ PeleLM::updateDiagnostics()
 void
 PeleLM::doDiagnostics()
 {
+    // At this point, we're only dealing with the state components
+    Vector<std::string> stateNames;
+    for (std::list<std::tuple<int,std::string>>::const_iterator li = stateComponents.begin(),
+         End = stateComponents.end(); li != End; ++li) {
+       stateNames.push_back(get<1>(*li));
+    }
     for (int n = 0; n < m_diagnostics.size(); ++n) {
         if ( m_diagnostics[n]->doDiag(m_cur_time, m_nstep) ) {
-            m_diagnostics[n]->processDiag(m_nstep, m_cur_time, GetVecOfConstPtrs(getStateVect(AmrNewTime)));
+            m_diagnostics[n]->processDiag(m_nstep, m_cur_time,
+                                          GetVecOfConstPtrs(getStateVect(AmrNewTime)),
+                                          stateNames);
         }
     }
 }
