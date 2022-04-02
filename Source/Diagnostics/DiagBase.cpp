@@ -10,6 +10,7 @@ DiagBase::doDiag(const amrex::Real &a_time,
     }
 
     // TODO: using a_time
+    amrex::ignore_unused(a_time);
 
     return willDo;
 }
