@@ -4,7 +4,7 @@
 #include "AMReX_PlotFileUtil.H"
 #include <regex>
 
-#if __cplusplus >= 201703L
+#if __GNUC__ > 7
 #include <filesystem>
 namespace filesystem = std::filesystem;
 #else
