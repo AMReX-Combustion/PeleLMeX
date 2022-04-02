@@ -115,19 +115,6 @@ void PeleLM::calcDivU(int is_init,
                                              : ldata_p->state.const_array(mfi,FIRSTSPEC);   // Dummy unused Array4
          auto const& divu     = ldata_p->divu.array(mfi);
          int use_react        = (m_do_react && !m_skipInstantRR) ? 1 : 0;
-         amrex::Real massFluxBalance = AMREX_D_TERM(  m_domainMassFlux[0] + m_domainMassFlux[1],
-                                       + m_domainMassFlux[2] + m_domainMassFlux[3],               
-                                       + m_domainMassFlux[4] + m_domainMassFlux[5]);
-         amrex::Real rhoHFluxBalance = AMREX_D_TERM(  m_domainRhoHFlux[0] + m_domainRhoHFlux[1],
-                                       + m_domainRhoHFlux[2] + m_domainRhoHFlux[3],               
-                                       + m_domainRhoHFlux[4] + m_domainRhoHFlux[5]);
-         Real rhoYFluxBalance[NUM_SPECIES] = {0.0};
-         for (int n = 0; n < NUM_SPECIES; n++){
-            rhoYFluxBalance[n] = AMREX_D_TERM(  m_domainRhoYFlux[n*2*AMREX_SPACEDIM] + m_domainRhoYFlux[1+n*2*AMREX_SPACEDIM],
-                                              + m_domainRhoYFlux[2+n*2*AMREX_SPACEDIM] + m_domainRhoYFlux[3+n*2*AMREX_SPACEDIM],
-                                              + m_domainRhoYFlux[4+n*2*AMREX_SPACEDIM] + m_domainRhoYFlux[5+n*2*AMREX_SPACEDIM]); 
-         }
-
 
 #ifdef AMREX_USE_EB
          if (flagfab.getType(bx) == FabType::covered) {             // Covered boxes

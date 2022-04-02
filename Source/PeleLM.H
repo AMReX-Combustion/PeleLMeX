@@ -18,6 +18,7 @@
 #include <PeleLMDerive.H>
 #include <pelelm_prob_parm.H>
 #include <DiffusionOp.H>
+#include <DiagBase.H>
 
 #ifdef PELE_USE_EFIELD
 #include <PrecondOp.H>
@@ -429,6 +430,14 @@ class PeleLM : public amrex::AmrCore {
    void WriteDebugPlotFile(const amrex::Vector<const amrex::MultiFab*> &a_MF,
                            const std::string &pltname);
    void initLevelDataFromPlt(int a_lev, const std::string &a_pltFile);
+   //-----------------------------------------------------------------------------
+
+   //-----------------------------------------------------------------------------
+   // Diagnostics
+   void createDiagnostics();
+   void updateDiagnostics();
+   void doDiagnostics();
+
    //-----------------------------------------------------------------------------
 
    //-----------------------------------------------------------------------------
@@ -909,6 +918,9 @@ class PeleLM : public amrex::AmrCore {
 
    // Turbulence injection
    pele::physics::turbinflow::TurbInflow turb_inflow;
+
+   // Diagnostics
+   amrex::Vector<std::unique_ptr<DiagBase>> m_diagnostics; 
 
    // Linear solvers
    std::unique_ptr<DiffusionOp> m_diffusion_op;

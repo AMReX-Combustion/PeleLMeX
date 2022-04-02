@@ -146,6 +146,7 @@ void PeleLM::initData() {
       // with MakeNewLevelFromScratch.
       InitFromScratch(m_cur_time);
       resetCoveredMask();
+      updateDiagnostics();
 
       //----------------------------------------------------------------
       // Set typical values
@@ -322,6 +323,7 @@ void PeleLM::initData() {
       // Generate the covered cell mask
       m_resetCoveredMask = 1;
       resetCoveredMask();
+      updateDiagnostics();
    }
 
 }
