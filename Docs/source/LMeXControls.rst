@@ -143,3 +143,27 @@ Linear solvers are a key component of PeleLMeX algorithm, separate controls are 
     tensor_diffusion.verbose                    # [OPT, DEF=0] Verbose of the velocity tensor diffusion solve
     tensor_diffusion.rtol = 1.0e-11             # [OPT, DEF=1e-11] Relative tolerance of the velocity tensor diffusion solve
     tensor_diffusion.atol = 1.0e-12             # [OPT, DEF=1e-14] Absolute tolerance of the velocity tensor diffusion solve
+
+### Run-time diagnostics
+
+A set of diagnostics available at runtime are currently under development. The following provide an example for extracting
+the state variables on a 'x','y' or 'z' aligned plane and writting a 2D plotfile compatible with Amrvis, Paraview or yt:
+
+::
+
+    #--------------------------DIAGNOSTICS------------------------
+    
+    peleLM.diagnostics = xnormal ynormal
+    peleLM.xnormal.type = DiagFramePlane
+    peleLM.xnormal.file = xNorm5mm
+    peleLM.xnormal.normal = 0
+    peleLM.xnormal.center = 0.005
+    peleLM.xnormal.int    = 5
+    peleLM.xnormal.interpolation = Linear
+    
+    peleLM.ynormal.type = DiagFramePlane
+    peleLM.ynormal.file = yNormCent
+    peleLM.ynormal.normal = 1
+    peleLM.ynormal.center = 0.0
+    peleLM.ynormal.int    = 10
+    peleLM.ynormal.interpolation = Quadratic
