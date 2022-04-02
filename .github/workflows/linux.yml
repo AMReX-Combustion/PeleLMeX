@@ -21,7 +21,7 @@ jobs:
         access_token: ${{github.token}}
     - uses: actions/checkout@v2
     - name: System Dependencies
-      run: .github/workflows/dependencies/dependencies.sh
+      run: .github/workflows/dependencies/dependencies_gcc10.sh
     - name: Repo Dependencies
       run: Utils/CloneDeps.sh
     - name: Build
@@ -48,7 +48,7 @@ jobs:
         access_token: ${{github.token}}
     - uses: actions/checkout@v2
     - name: System Dependencies
-      run: .github/workflows/dependencies/dependencies.sh
+      run: .github/workflows/dependencies/dependencies_gcc10.sh
     - name: Repo Dependencies
       run: Utils/CloneDeps.sh
     - name: Build
@@ -75,7 +75,7 @@ jobs:
         access_token: ${{github.token}}
     - uses: actions/checkout@v2
     - name: System Dependencies
-      run: .github/workflows/dependencies/dependencies.sh
+      run: .github/workflows/dependencies/dependencies_gcc10.sh
     - name: Repo Dependencies
       run: Utils/CloneDeps.sh
     - name: Build
@@ -102,7 +102,7 @@ jobs:
         access_token: ${{github.token}}
     - uses: actions/checkout@v2
     - name: System Dependencies
-      run: .github/workflows/dependencies/dependencies.sh
+      run: .github/workflows/dependencies/dependencies_gcc10.sh
     - name: Repo Dependencies
       run: Utils/CloneDeps.sh
     - name: Build
@@ -133,7 +133,7 @@ jobs:
         access_token: ${{github.token}}
     - uses: actions/checkout@v2
     - name: System Dependencies
-      run: .github/workflows/dependencies/dependencies.sh
+      run: .github/workflows/dependencies/dependencies_gcc10.sh
     - name: Repo Dependencies
       run: Utils/CloneDeps.sh
     - name: Build
@@ -164,7 +164,7 @@ jobs:
         access_token: ${{github.token}}
     - uses: actions/checkout@v2
     - name: System Dependencies
-      run: .github/workflows/dependencies/dependencies.sh
+      run: .github/workflows/dependencies/dependencies_gcc10.sh
     - name: Repo Dependencies
       run: Utils/CloneDeps.sh
     - name: Build
@@ -195,7 +195,7 @@ jobs:
         access_token: ${{github.token}}
     - uses: actions/checkout@v2
     - name: System Dependencies
-      run: .github/workflows/dependencies/dependencies.sh
+      run: .github/workflows/dependencies/dependencies_gcc10.sh
     - name: Repo Dependencies
       run: Utils/CloneDeps.sh
     - name: Build
@@ -226,7 +226,7 @@ jobs:
         access_token: ${{github.token}}
     - uses: actions/checkout@v2
     - name: System Dependencies
-      run: .github/workflows/dependencies/dependencies.sh
+      run: .github/workflows/dependencies/dependencies_gcc10.sh
     - name: Repo Dependencies
       run: Utils/CloneDeps.sh
     - name: Build
@@ -258,7 +258,7 @@ jobs:
         access_token: ${{github.token}}
     - uses: actions/checkout@v2
     - name: System Dependencies
-      run: .github/workflows/dependencies/dependencies.sh
+      run: .github/workflows/dependencies/dependencies_gcc10.sh
     - name: Repo Dependencies
       run: Utils/CloneDeps.sh
     - name: Build
@@ -290,7 +290,7 @@ jobs:
         access_token: ${{github.token}}
     - uses: actions/checkout@v2
     - name: System Dependencies
-      run: .github/workflows/dependencies/dependencies.sh
+      run: .github/workflows/dependencies/dependencies_gcc10.sh
     - name: Repo Dependencies
       run: Utils/CloneDeps.sh
     - name: Build
@@ -321,7 +321,7 @@ jobs:
         access_token: ${{github.token}}
     - uses: actions/checkout@v2
     - name: System Dependencies
-      run: .github/workflows/dependencies/dependencies.sh
+      run: .github/workflows/dependencies/dependencies_gcc10.sh
     - name: Repo Dependencies
       run: Utils/CloneDeps.sh
     - name: GenerateTurbFile
