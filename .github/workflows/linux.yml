@@ -32,6 +32,8 @@ jobs:
          AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
       run: |
         cd Exec/RegTests/FlameSheet/
+        make help
+        mpicxx -v
         make TPL COMP=gnu USE_MPI=FALSE
         make -j 2 COMP=gnu USE_MPI=FALSE
   
