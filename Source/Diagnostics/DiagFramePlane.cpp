@@ -3,14 +3,8 @@
 #include <AMReX_FPC.H>
 #include "AMReX_PlotFileUtil.H"
 #include <regex>
+#include <stdio.h>
 
-#if __GNUC__ > 7
-#include <filesystem>
-namespace filesystem = std::filesystem;
-#else
-#include <experimental/filesystem>
-namespace filesystem = std::experimental::filesystem;
-#endif
 
 void
 printLowerDimIntVect(std::ostream &a_File,
@@ -190,29 +184,30 @@ DiagFramePlane::processDiag(int a_nstep,
             const int state_idx = m_dmConvert[lev][mfi.index()];
             auto const& state = a_state[lev]->const_array(state_idx,0);
             auto const& plane = planeData[lev].array(mfi);
+            auto const& intwgt = m_intwgt[lev];
             if (m_normal == 0) {
                 amrex::ParallelFor(bx, a_state[0]->nComp(), [=]
                 AMREX_GPU_DEVICE (int i, int j, int k, int n) noexcept
                 {
-                    plane(i,j,k,n) = m_intwgt[lev][0] * state(p0-1,i,j,n) +
-                                     m_intwgt[lev][1] * state(p0  ,i,j,n) +
-                                     m_intwgt[lev][2] * state(p0+1,i,j,n);
+                    plane(i,j,k,n) = intwgt[0] * state(p0-1,i,j,n) +
+                                     intwgt[1] * state(p0  ,i,j,n) +
+                                     intwgt[2] * state(p0+1,i,j,n);
                 });
             } else if (m_normal == 1) {
                 amrex::ParallelFor(bx, a_state[0]->nComp(), [=]
                 AMREX_GPU_DEVICE (int i, int j, int k, int n) noexcept
                 {
-                    plane(i,j,k,n) = m_intwgt[lev][0] * state(i,p0-1,j,n) +
-                                     m_intwgt[lev][1] * state(i,p0  ,j,n) +
-                                     m_intwgt[lev][2] * state(i,p0+1,j,n);
+                    plane(i,j,k,n) = intwgt[0] * state(i,p0-1,j,n) +
+                                     intwgt[1] * state(i,p0  ,j,n) +
+                                     intwgt[2] * state(i,p0+1,j,n);
                 });
             } else if (m_normal == 2) {
                 amrex::ParallelFor(bx, a_state[0]->nComp(), [=]
                 AMREX_GPU_DEVICE (int i, int j, int k, int n) noexcept
                 {
-                    plane(i,j,k,n) = m_intwgt[lev][0] * state(i,j,p0-1,n) +
-                                     m_intwgt[lev][1] * state(i,j,p0  ,n) +
-                                     m_intwgt[lev][2] * state(i,j,p0+1,n);
+                    plane(i,j,k,n) = intwgt[0] * state(i,j,p0-1,n) +
+                                     intwgt[1] * state(i,j,p0  ,n) +
+                                     intwgt[2] * state(i,j,p0+1,n);
                 });
             }
         }
@@ -443,14 +438,13 @@ DiagFramePlane::ReWriteLevelVisMFHeader(const std::string &a_HeaderPath) {
         HeaderFile.close();
 
         // Replace header file
-        filesystem::copy(HeaderFileName, OldHeaderFileName, filesystem::copy_options::overwrite_existing);
-        filesystem::remove(HeaderFileName);
+        std::rename(HeaderFileName.c_str(), OldHeaderFileName.c_str());
 
         // Replace 3D data file by 2D ones
         for (int i = 0; i < dataFiles.size(); ++i) {
             std::string newname = a_HeaderPath+dataFiles[i];
             newname = std::regex_replace(newname, std::regex("Cell_"), "Cell2D_");
-            filesystem::rename(newname, a_HeaderPath+dataFiles[i]);
+            std::rename(newname.c_str(), (a_HeaderPath+dataFiles[i]).c_str());
         }
     }
 }
@@ -524,9 +518,9 @@ DiagFramePlane::VisMF2D(const amrex::MultiFab& a_mf,
              std::unique_ptr<amrex::FArrayBox> hostfab;
              if (fab.arena()->isManaged() || fab.arena()->isDevice()) {
                  hostfab = std::make_unique<amrex::FArrayBox>(fab.box(), fab.nComp(),
-                                                              The_Pinned_Arena());
+                                                              amrex::The_Pinned_Arena());
                  amrex::Gpu::dtoh_memcpy_async(hostfab->dataPtr(), fab.dataPtr(),
-                                               fab.size()*sizeof(Real));
+                                               fab.size()*sizeof(amrex::Real));
                  amrex::Gpu::streamSynchronize();
                  fabdata = hostfab->dataPtr();
              }    
