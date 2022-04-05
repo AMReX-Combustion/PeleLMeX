@@ -314,11 +314,14 @@ PeleLM::setSprayState(const Real& a_flow_dt)
     spray_cfl[lev] = amrex::max(spray_cfl[lev], max_vel * a_flow_dt / dx[0]);
     if (lev < finest_level) {
       Real cfl_levnp = spray_cfl[lev] * Real(refRatio(lev)[0]);
-      // TODO: Fix this to work correctly
       int ghostpcells = 1 + int(std::round(cfl_levnp));
       spray_ghost_num[lev] = ghostpcells;
       // Number of interpolated invalid ghost cells for N+1
-      int invalid_state_ghosts = 2 * ghostpcells;
+      // Note: particles adjacent to C/F boundaries and fine boxes
+      // can be up to 1 cell away from the intuitive box
+      // Once ghost particle fix is pushed to AMReX
+      //int invalid_state_ghosts = ghostpcells + 2;
+      int invalid_state_ghosts = ghostpcells * 2;
       spray_state_ghosts[lev+1] = invalid_state_ghosts;
     }
   }
@@ -327,8 +330,8 @@ PeleLM::setSprayState(const Real& a_flow_dt)
     auto const dx = geom[lev].CellSizeArray();
     spray_cfl[lev] = amrex::max(spray_cfl[lev], max_vel * a_flow_dt / dx[0]);
     int exp_ghosts = 1 + int(std::round(spray_cfl[lev]));
-    int source_ghosts = amrex::max(spray_source_ghosts[lev], exp_ghosts);
-    int state_ghosts = amrex::max(source_ghosts, spray_state_ghosts[lev]);
+    int state_ghosts = amrex::max(spray_state_ghosts[lev], exp_ghosts);
+    int source_ghosts = exp_ghosts;
     spray_state_ghosts[lev] = state_ghosts;
     spray_source_ghosts[lev] = source_ghosts;
     m_spraystate[lev].reset(new MultiFab(grids[lev], dmap[lev], NVAR, state_ghosts, MFInfo(), *m_factory[lev]));
@@ -355,7 +358,6 @@ PeleLM::sprayMKD(const Real time,
     if (lev < finest_level) {
       ghost_width = spray_ghost_num[lev];
     }
-    int source_ghosts = spray_source_ghosts[lev];
     sprayMKDLevel(lev, time, dt, ghost_width);
     removeGhostParticles(lev);
     removeVirtualParticles(lev);
@@ -426,7 +428,9 @@ PeleLM::sprayMKDLevel(
   }
   source.SumBoundary(geom[level].periodicity());
   if (theGhostPC() != nullptr && level != 0) {
-    int invalid_source_ghosts = 2 * spray_ghost_num[level-1];
+    // Once ghost particle optimizations are implemented
+    //int invalid_source_ghosts = state_ghosts;
+    int invalid_source_ghosts = 2 * spray_ghost_num[level - 1];
     MultiFab ghost_spray_src(grids[level], dmap[level], num_spray_src, invalid_source_ghosts, MFInfo(), *m_factory[level]);
     ghost_spray_src.setVal(0.);
     theGhostPC()->moveKickDrift(
@@ -510,7 +514,7 @@ void
 PeleLM::sprayInjectRedist(bool regridded, int lbase)
 {
   if (lbase > 0) return;
-  BL_PROFILE("PeleLM::sprayRedistribute");
+  BL_PROFILE("PeleLM::sprayInjectRedist");
   if (theSprayPC()) {
      bool injected = false;
      static Vector<BoxArray> ba_spray;
