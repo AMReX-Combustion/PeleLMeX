@@ -135,14 +135,6 @@ print-%::
 	@$(RM) AMReX_buildInfo.cpp
 
 #---------------
-# Additional C++ flags
-#---------------
-CXXFLAGS += -std=c++17
-ifeq ($(shell test $(gcc_major_version) -lt 9; echo $$?),0)
-  FINAL_LIBS += -lstdc++fs 
-endif
-
-#---------------
 # TPL
 #---------------
 TPL:
