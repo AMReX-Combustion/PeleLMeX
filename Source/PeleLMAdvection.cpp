@@ -634,6 +634,13 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
    if (m_do_massBalance && (m_sdcIter == m_nSDCmax)) {
       addMassFluxes(GetArrOfConstPtrs(fluxes[0]),geom[0]);
    }
+   // Compute face domain integrals for RhoH and RhoY
+   if (m_sdcIter == m_nSDCmax) {
+      addRhoHFluxes(GetArrOfConstPtrs(fluxes[0]),geom[0]);
+      addRhoYFluxes(GetArrOfConstPtrs(fluxes[0]),geom[0]);
+   }
+   // Compute face domain integral for U at every SDC iteration
+   addUmacFluxes(advData, geom[0]);
 
    //----------------------------------------------------------------
    // Fluxes divergence to get the scalars advection term

@@ -27,6 +27,7 @@ void PeleLM::Evolve() {
          resetMacProjector();
          resetCoveredMask();
          regridded = true;
+         updateDiagnostics();
       }
 #ifdef SPRAY_PELE_LM
       // Inject and redistribute spray particles
@@ -44,6 +45,9 @@ void PeleLM::Evolve() {
       if (doTemporalsNow()) {
          writeTemporals();
       }
+
+      // Diagnostics
+      doDiagnostics();
 
       // Check message
       bool dump_and_stop = checkMessage();

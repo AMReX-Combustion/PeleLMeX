@@ -99,7 +99,7 @@ void PeleLM::MakeNewLevelFromScratch( int lev,
    m_extSource[lev]->setVal(0.);
 
 #if AMREX_USE_EB
-   if ( lev == 0 ) {
+   if ( lev == 0 && m_signDistNeeded) {
       // Set up CC signed distance container to control EB refinement
       m_signedDist0.reset(new MultiFab(grids[lev], dmap[lev], 1, 1, MFInfo(), *m_factory[lev]));
     
@@ -153,6 +153,7 @@ void PeleLM::initData() {
          InitFromScratch(m_cur_time);
       }
       resetCoveredMask();
+      updateDiagnostics();
 
 #ifdef SPRAY_PELE_LM
       if (do_spray_particles) {
@@ -164,6 +165,9 @@ void PeleLM::initData() {
       // Set typical values
       int is_init = 1;
       setTypicalValues(AmrNewTime, is_init);
+
+      // initiliaze temporals
+      initTemporals(AmrNewTime);
 
 #ifdef AMREX_USE_EB
       //----------------------------------------------------------------
@@ -337,6 +341,7 @@ void PeleLM::initData() {
       // Generate the covered cell mask
       m_resetCoveredMask = 1;
       resetCoveredMask();
+      updateDiagnostics();
    }
 
 }

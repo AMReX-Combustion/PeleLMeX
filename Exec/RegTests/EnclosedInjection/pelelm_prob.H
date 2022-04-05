@@ -18,7 +18,7 @@ void pelelm_initdata(int i, int j, int k,
                      amrex::Array4<amrex::Real> const& aux,
                      amrex::GeometryData const& geomdata,
                      ProbParm const& prob_parm,
-                     pele::physics::PMF::PmfData::DataContainer const * /*pmf_data*/)
+                     pele::physics::PMF::PmfData::DataContainer const * pmf_data)
 {
     const amrex::Real* prob_lo = geomdata.ProbLo();
     const amrex::Real* prob_hi = geomdata.ProbHi();
@@ -32,26 +32,19 @@ void pelelm_initdata(int i, int j, int k,
                  const amrex::Real Ly = prob_hi[1] - prob_lo[1];,
                  const amrex::Real Lz = prob_hi[2] - prob_lo[2]);
 
-    AMREX_D_TERM(const amrex::Real x_c = prob_lo[0] + 0.5*Lx;,
-                 const amrex::Real y_c = prob_lo[1] + 0.5*Ly;,
-                 const amrex::Real z_c = prob_lo[2] + 0.5*Lz);
-
-    auto eos = pele::physics::PhysicsType::eos();
     constexpr amrex::Real Pi = 3.14159265358979323846264338327950288;
 
+    auto eos = pele::physics::PhysicsType::eos();
     amrex::Real massfrac[NUM_SPECIES] = {0.0};
+
+    state(i,j,k,TEMP) = prob_parm.T_mean;
+    
     massfrac[O2_ID] = 0.233;
     massfrac[N2_ID] = 0.767;
-
-
+    
     AMREX_D_TERM(state(i,j,k,VELX) = 0.0;,
                  state(i,j,k,VELY) = 0.0;,
                  state(i,j,k,VELZ) = 0.0);
-    state(i,j,k,VELX+prob_parm.meanFlowDir) =  prob_parm.meanFlowMag;
-
-    if (is_incompressible) return;
-
-    state(i,j,k,TEMP) = prob_parm.T_mean;
 
     amrex::Real P_cgs = prob_parm.P_mean * 10.0;
 
@@ -69,7 +62,6 @@ void pelelm_initdata(int i, int j, int k,
     for (int n = 0; n < NUM_SPECIES; n++) {
        state(i,j,k,FIRSTSPEC+n) = massfrac[n] * state(i,j,k,DENSITY);
     }
-
 }
 
 AMREX_GPU_DEVICE
@@ -82,71 +74,68 @@ bcnormal(
   const int idir,
   const int sgn,
   const amrex::Real time,
-  amrex::GeometryData const& geomdata,
-  ProbParm const& prob_parm,
-  pele::physics::PMF::PmfData::DataContainer const * /*pmf_data*/)
+  amrex::GeometryData const &geomdata,
+  ProbParm const &prob_parm,
+  pele::physics::PMF::PmfData::DataContainer const *pmf_data)
 {
+    
+    auto eos = pele::physics::PhysicsType::eos();
+    amrex::Real massfrac[NUM_SPECIES] = {0.0};
+    amrex::Real molefrac[NUM_SPECIES] = {0.0};
+    amrex::Real X_air[NUM_SPECIES] = {0.0};
+    amrex::Real Y_air[NUM_SPECIES] = {0.0};
+    amrex::Real X_jet[NUM_SPECIES] = {0.0};
+    amrex::Real Y_jet[NUM_SPECIES] = {0.0};
+    amrex::Real eta = 0.0;
+    amrex::Real p_int;
+
     const amrex::Real* prob_lo = geomdata.ProbLo();
     const amrex::Real* prob_hi = geomdata.ProbHi();
+    const amrex::Real* dx      = geomdata.CellSize();
 
-    AMREX_D_TERM(const amrex::Real Lx = prob_hi[0] - prob_lo[0];,
-                 const amrex::Real Ly = prob_hi[1] - prob_lo[1];,
-                 const amrex::Real Lz = prob_hi[2] - prob_lo[2]);
+    // Simple, air into air injection
+    X_air[O2_ID] = 0.21;
+    X_air[N2_ID] = 1.0 - X_air[O2_ID];
 
-    AMREX_D_TERM(const amrex::Real x_c = prob_lo[0] + 0.5*Lx;,
-                 const amrex::Real y_c = prob_lo[1] + 0.5*Ly;,
-                 const amrex::Real z_c = prob_lo[2] + 0.5*Lz);
+    X_jet[O2_ID] = 0.21;
+    X_jet[N2_ID] = 1.0 - X_air[O2_ID];
 
-    amrex::Real massfrac[NUM_SPECIES] = {0.0};
+    eos.X2Y(X_air, Y_air);
+    eos.X2Y(X_jet, Y_jet);
 
-    auto eos = pele::physics::PhysicsType::eos();
+    if (idir == 2 and sgn == 1){
 
-    // When using PELE_USE_TURBINFLOW, s_ext comes in with
-    // turbulence data. Only add the mean flow here.
-    if (prob_parm.bothSides) {
-       if (sgn == 1) {
-         s_ext[prob_parm.meanFlowDir] +=  std::abs(prob_parm.meanFlowMag);
-       } else {
-         s_ext[prob_parm.meanFlowDir] -=  std::abs(prob_parm.meanFlowMag);
-       }
-    } else {
-       s_ext[prob_parm.meanFlowDir] +=  prob_parm.meanFlowMag;
+        if (time <= 0.1){
+
+            eta = 0.5 * (1.0 - tanh( (sqrt(x[0]*x[0] + x[1]*x[1]) - prob_parm.jet_rad) / (prob_parm.bl_thickness / 4.0)));
+
+            for (int n = 0; n < NUM_SPECIES; n++) {
+                massfrac[n] = eta * Y_jet[n] + (1.0 - eta) * Y_air[n];
+            }
+
+            amrex::Real rho_cgs, P_cgs, RhoH_temp;
+            P_cgs = prob_parm.P_mean * 10.0;
+
+            s_ext[TEMP] = eta * prob_parm.T_jet + (1.0 - eta) * prob_parm.T_mean;
+
+            eos.PYT2R(P_cgs, massfrac, s_ext[TEMP], rho_cgs);
+            s_ext[DENSITY] = rho_cgs * 1.0e3;
+
+            eos.TY2H(s_ext[TEMP], massfrac, RhoH_temp);
+            s_ext[RHOH] = RhoH_temp * 1.0e-4 * s_ext[DENSITY]; // CGS -> MKS conversion
+
+            for (int n = 0; n < NUM_SPECIES; n++) {
+                s_ext[FIRSTSPEC + n] = massfrac[n] * s_ext[DENSITY];
+            }   
+
+            // Velocity
+            s_ext[VELX] = 0.0;
+            s_ext[VELY] = 0.0;
+            s_ext[VELZ] = eta * prob_parm.V_jet;
+        }
+
     }
 
-    massfrac[O2_ID] = 0.233;
-    massfrac[N2_ID] = 0.767;
-
-    amrex::Real rad = 0.0;
-    if ( prob_parm.meanFlowDir == 0 ) {
-        rad = std::sqrt( (x[1]-y_c)*(x[1]-y_c) +
-                         (x[2]-z_c)*(x[2]-z_c) );
-    } else if ( prob_parm.meanFlowDir == 1 ) {
-        rad = std::sqrt( (x[0]-x_c)*(x[0]-x_c) +
-                         (x[2]-z_c)*(x[2]-z_c) );
-    } else if ( prob_parm.meanFlowDir == 2 ) {
-        rad = std::sqrt( (x[0]-x_c)*(x[0]-x_c) +
-                         (x[1]-y_c)*(x[1]-y_c) );
-    }
-
-    if (rad < 0.15 * Lx) {
-        massfrac[O2_ID] = 0.5;
-        massfrac[N2_ID] = 0.5;
-    }
-
-    s_ext[TEMP] = prob_parm.T_mean;
-
-    amrex::Real rho_cgs, P_cgs, RhoH_temp;
-    P_cgs = prob_parm.P_mean * 10.0;
-
-    eos.PYT2R(P_cgs, massfrac, s_ext[TEMP], rho_cgs);
-    s_ext[DENSITY] = rho_cgs * 1.0e3;
-
-    eos.TY2H(s_ext[TEMP], massfrac, RhoH_temp);
-    s_ext[RHOH] = RhoH_temp * 1.0e-4 * s_ext[DENSITY];   // CGS -> MKS conversion
-
-    for (int n = 0; n < NUM_SPECIES; n++) {
-      s_ext[FIRSTSPEC+n] = massfrac[n] * s_ext[DENSITY];
-    }
 }
 
 AMREX_GPU_DEVICE
@@ -160,8 +149,21 @@ zero_visc (int i, int j, int k,
            const int  beta_comp,
            const int  nComp)
 {
-     amrex::ignore_unused(i,j,k,beta,geomdata,domainBox,dir,beta_comp,nComp);
+     // amrex::ignore_unused(i,j,k,beta,geomdata,domainBox,dir,beta_comp,nComp);
     // We treat species when beta_comp == 0 and nComp == NUM_SPECIES
     // otherwise this routine could be called for other face diffusivity (Temp, velocity, ...)
+     if (beta_comp == 0 && nComp == NUM_SPECIES) {
+        if (dir == 2 && k <= domainBox.smallEnd(dir)) {
+            const amrex::Real* prob_lo = geomdata.ProbLo();
+            const amrex::Real* prob_hi = geomdata.ProbHi();
+            const amrex::Real* dx      = geomdata.CellSize();
+
+            // Just over whole inlet
+            for (int n = 0; n < nComp; n++) {
+                beta(i,j,k,n) = 0.0;
+            }   
+        }   
+    }   
 }
+
 #endif
