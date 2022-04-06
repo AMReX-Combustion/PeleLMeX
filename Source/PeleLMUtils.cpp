@@ -413,6 +413,63 @@ PeleLM::floorSpecies(const TimeStamp &a_time)
 
 void PeleLM::resetCoveredMask()
 {
+   if (m_resetCoveredMask) {
+
+      if (m_verbose) Print() << " Resetting fine-covered cells mask \n";
+
+      for (int lev = 0; lev < finest_level; ++lev) {
+         BoxArray baf = grids[lev+1];
+         baf.coarsen(ref_ratio[lev]);
+         m_coveredMask[lev]->setVal(1);
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+         {
+            std::vector< std::pair<int,Box> > isects;
+            for (MFIter mfi(*m_coveredMask[lev],TilingIfNotGPU()); mfi.isValid(); ++mfi)
+            {
+               auto const& mask = m_coveredMask[lev]->array(mfi);
+               baf.intersections(grids[lev][mfi.index()],isects);
+               for (const auto& is : isects)
+               {
+                  amrex::ParallelFor(is.second, [mask]
+                  AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+                  {
+                     mask(i,j,k) = 0;
+                  });
+               }
+            }
+         }
+
+         //----------------------------------------------------------------------------
+         // Setup a BoxArray for the chemistry
+
+         // Get an uncovered BoxArray
+         BoxArray baCompDom = complementIn(geom[lev].Domain(), baf);
+         BoxArray baUnCovered = intersect(baCompDom,grids[lev]);
+
+         // Assemble a BoxArray with covered and uncovered ones + flags
+         BoxList bl(grids[lev].ixType());
+         bl.reserve(baUnCovered.size()+baf.size());
+         m_baChemFlag[lev].resize(baUnCovered.size()+baf.size());
+         int bxIdx = 0;
+         for (int i = 0, n = baUnCovered.size(); i < n; ++i) {  // Append uncovered boxes
+            bl.push_back(baUnCovered[i]);
+            m_baChemFlag[lev][bxIdx] = 1;
+            bxIdx += 1;
+         }
+         for (int i = 0, n = baf.size(); i < n; ++i) {          // Append covered boxes
+            bl.push_back(baf[i]);
+            m_baChemFlag[lev][bxIdx] = 0;
+            bxIdx += 1;
+         }
+         m_baChem[lev].reset(new BoxArray(std::move(bl)));
+         m_dmapChem[lev].reset(new DistributionMapping(*m_baChem[lev]));
+      }
+
+      // Switch off trigger
+      m_resetCoveredMask = 0;
+   }
 
    //----------------------------------------------------------------------------
    // Need to compute the uncovered volume
@@ -426,62 +483,6 @@ void PeleLM::resetCoveredMask()
       m_uncoveredVol = MFSum(GetVecOfConstPtrs(dummy),0);
    }
 
-   if (!m_resetCoveredMask) return;
-
-   if (m_verbose) Print() << " Resetting fine-covered cells mask \n";
-
-   for (int lev = 0; lev < finest_level; ++lev) {
-      BoxArray baf = grids[lev+1];
-      baf.coarsen(ref_ratio[lev]);
-      m_coveredMask[lev]->setVal(1);
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
-      {
-         std::vector< std::pair<int,Box> > isects;
-         for (MFIter mfi(*m_coveredMask[lev],TilingIfNotGPU()); mfi.isValid(); ++mfi)
-         {
-            auto const& mask = m_coveredMask[lev]->array(mfi);
-            baf.intersections(grids[lev][mfi.index()],isects);
-            for (const auto& is : isects)
-            {
-               amrex::ParallelFor(is.second, [mask]
-               AMREX_GPU_DEVICE (int i, int j, int k) noexcept
-               {
-                  mask(i,j,k) = 0;
-               });
-            }
-         }
-      }
-
-      //----------------------------------------------------------------------------
-      // Setup a BoxArray for the chemistry
-
-      // Get an uncovered BoxArray
-      BoxArray baCompDom = complementIn(geom[lev].Domain(), baf);
-      BoxArray baUnCovered = intersect(baCompDom,grids[lev]);
-
-      // Assemble a BoxArray with covered and uncovered ones + flags
-      BoxList bl(grids[lev].ixType());
-      bl.reserve(baUnCovered.size()+baf.size());
-      m_baChemFlag[lev].resize(baUnCovered.size()+baf.size());
-      int bxIdx = 0;
-      for (int i = 0, n = baUnCovered.size(); i < n; ++i) {  // Append uncovered boxes
-         bl.push_back(baUnCovered[i]);
-         m_baChemFlag[lev][bxIdx] = 1;
-         bxIdx += 1;
-      }
-      for (int i = 0, n = baf.size(); i < n; ++i) {          // Append covered boxes
-         bl.push_back(baf[i]);
-         m_baChemFlag[lev][bxIdx] = 0;
-         bxIdx += 1;
-      }
-      m_baChem[lev].reset(new BoxArray(std::move(bl)));
-      m_dmapChem[lev].reset(new DistributionMapping(*m_baChem[lev]));
-   }
-
-   // Switch off trigger
-   m_resetCoveredMask = 0;
 }
 
 // Return a unique_ptr with the entire derive
