@@ -1,5 +1,5 @@
 #----------------------DOMAIN DEFINITION------------------------
-geometry.is_periodic = 0 1 1              # For each dir, 0: non-perio, 1: periodic
+geometry.is_periodic = 1 0 0              # For each dir, 0: non-perio, 1: periodic
 geometry.coord_sys   = 0                  # 0 => cart, 1 => RZ
 geometry.prob_lo     = 0.0 0.0 0.0        # x_lo y_lo (z_lo)
 geometry.prob_hi     = 0.01 0.01 0.01  # x_hi y_hi (z_hi)
@@ -7,8 +7,8 @@ geometry.prob_hi     = 0.01 0.01 0.01  # x_hi y_hi (z_hi)
 # >>>>>>>>>>>>>  BC FLAGS <<<<<<<<<<<<<<<<
 # Interior, Inflow, Outflow, Symmetry,
 # SlipWallAdiab, NoSlipWallAdiab, SlipWallIsotherm, NoSlipWallIsotherm
-peleLM.lo_bc = Inflow  Interior Interior
-peleLM.hi_bc = Outflow Interior Interior
+peleLM.lo_bc = Interior Inflow Outflow
+peleLM.hi_bc = Interior Inflow Outflow
 
 
 #-------------------------AMR CONTROL----------------------------
@@ -26,18 +26,31 @@ amr.max_grid_size   = 64               # max box size
 #--------------------------- Problem -------------------------------
 prob.T_mean = 298.0
 prob.P_mean = 101325.0
-prob.flowDir = 0
+prob.flowDir = 1
 prob.flowMag = 5
+prob.bothSides = 1
 
-turbinflows = lowX
-turbinflow.lowX.turb_file      = TurbFileHIT/TurbTEST
-turbinflow.lowX.dir            = 0
-turbinflow.lowX.side           = low
-turbinflow.lowX.turb_scale_loc = 633.151
-turbinflow.lowX.turb_scale_vel = 0.5
-turbinflow.lowX.turb_center    = 0.005 0.005
-turbinflow.lowX.turb_conv_vel  = 5.
-turbinflow.lowX.turb_nplane    = 32
+turbinflows=low high
+
+turbinflow.low.turb_file      = TurbFileHIT/TurbTEST
+turbinflow.low.dir            = 1
+turbinflow.low.side           = "low"
+turbinflow.low.turb_scale_loc = 633.151
+turbinflow.low.turb_scale_vel = 1.0
+turbinflow.low.turb_center    = 0.005 0.005
+turbinflow.low.turb_conv_vel  = 5.
+turbinflow.low.turb_nplane    = 32
+turbinflow.low.time_offset    = 0.0
+
+turbinflow.high.turb_file      = TurbFileHIT/TurbTEST
+turbinflow.high.dir            = 1
+turbinflow.high.side           = "high"
+turbinflow.high.turb_scale_loc = 633.151
+turbinflow.high.turb_scale_vel = 1.0
+turbinflow.high.turb_center    = 0.005 0.005
+turbinflow.high.turb_conv_vel  = 5.
+turbinflow.high.turb_nplane    = 32
+turbinflow.high.time_offset    = 0.0006
 
 #------------  INPUTS TO CONSTANT TRANSPORT -----------------
 transport.const_viscosity        = 0.0001 
@@ -50,7 +63,7 @@ peleLM.v = 1
 peleLM.incompressible = 0
 peleLM.rho = 1.17
 peleLM.mu = 0.0
-peleLM.sdc_iterMax = 2
+peleLM.sdc_iterMax = 1
 peleLM.floor_species = 0
 peleLM.num_divu_iter = 1
 peleLM.num_init_iter = 3

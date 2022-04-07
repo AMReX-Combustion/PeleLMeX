@@ -51,6 +51,9 @@ void PeleLM::Setup() {
    // Tagging setup
    taggingSetup();
 
+   // Diagnostics setup
+   createDiagnostics();
+
    // Initialize Level Hierarchy data
    resizeArray();
 
@@ -260,9 +263,11 @@ void PeleLM::readParameters() {
    if (m_incompressible) {
       m_has_divu = 0;
       m_do_react = 0;
+      pp.query("rho", m_rho);
+      pp.query("mu", m_mu);
+      AMREX_ASSERT_WITH_MESSAGE(m_rho>0.0,"peleLM.rho is needed when running incompressible");
+      AMREX_ASSERT_WITH_MESSAGE(m_mu>0.0,"peleLM.mu is needed when running incompressible");
    }
-   pp.query("rho", m_rho);
-   pp.query("mu", m_mu);
    Vector<Real> grav(AMREX_SPACEDIM,0);
    pp.queryarr("gravity", grav, 0, AMREX_SPACEDIM);
    Vector<Real> gp0(AMREX_SPACEDIM,0);
@@ -361,6 +366,7 @@ void PeleLM::readParameters() {
    ppa.query("cfl", m_cfl);
    ppa.query("dt_shrink", m_dtshrink);
    ppa.query("dt_change_max", m_dtChangeMax);
+   ppa.query("max_dt", m_max_dt);
 
    if ( max_level > 0 ) {
       ppa.query("regrid_int", m_regrid_int);
@@ -381,6 +387,9 @@ void PeleLM::readParameters() {
          m_EB_refine_LevMin = 0;
          pp.query("refine_EB_min_level",m_EB_refine_LevMin);
          m_EB_refine_LevAdapt = m_EB_refine_LevMin;
+      }
+      if (m_EB_refine_LevMax < max_level) {
+         m_signDistNeeded = 1;
       }
    }
 #endif

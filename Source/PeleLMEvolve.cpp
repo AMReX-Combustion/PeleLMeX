@@ -25,6 +25,7 @@ void PeleLM::Evolve() {
          regrid(0, m_cur_time);
          resetMacProjector();
          resetCoveredMask();
+         updateDiagnostics();
       }
 
       int is_init = 0;
@@ -36,6 +37,9 @@ void PeleLM::Evolve() {
       if (doTemporalsNow()) {
          writeTemporals();
       }
+
+      // Diagnostics
+      doDiagnostics();
 
       // Check message
       bool dump_and_stop = checkMessage();

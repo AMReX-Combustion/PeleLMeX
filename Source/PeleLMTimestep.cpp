@@ -45,6 +45,7 @@ PeleLM::computeDt(int is_init,
       estdt *= m_dtshrink;
    } else {
       estdt = std::min(estdt,m_prev_dt*m_dtChangeMax);
+      estdt = std::min(estdt,m_max_dt);
       if (m_stop_time >= 0.0) {
          // Ensure ~O(dt) last step by checking a little in advance
          Real timeLeft = (m_stop_time-m_cur_time);
