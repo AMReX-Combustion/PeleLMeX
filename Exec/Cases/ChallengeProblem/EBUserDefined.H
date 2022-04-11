@@ -14,7 +14,7 @@ EBUserDefined(const Geometry& geom,
 {
     // ParmParse your geometry parameters
     // --> fixed geometry of the challenge problem
-    amrex::ParmParse pp("EB2");
+    amrex::ParmParse pp("eb2");
 
     amrex::Real radius = 48.0;
     pp.query("cylinder_radius", radius);
