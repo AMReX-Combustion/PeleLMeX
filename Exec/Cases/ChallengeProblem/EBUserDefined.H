@@ -4,6 +4,7 @@
 using namespace amrex;
 
 #ifdef AMREX_USE_EB
+#include <AMReX_ParmParse.H>
 #include <AMReX_EB2.H>
 #include <AMReX_EB2_IF.H>
 void
@@ -13,6 +14,12 @@ EBUserDefined(const Geometry& geom,
 {
     // ParmParse your geometry parameters
     // --> fixed geometry of the challenge problem
+    amrex::ParmParse pp("EB2");
+
+    amrex::Real radius = 48.0;
+    pp.query("cylinder_radius", radius);
+    amrex::Real zoffset = 0.0;
+    pp.query("head_offset", zoffset);
 
     // Build geometry pieces using EB2::* methods
     EB2::SplineIF Piston;
@@ -22,41 +29,41 @@ EBUserDefined(const Geometry& geom,
     Real scaleFact  = 0.25;      // Geometry scaled by a factor 1/4
     scaleFact *= 0.01;           // MKS conversion
 
-    p = amrex::RealVect(D_DECL(49.0*0.1*scaleFact, 7.8583*0.1*scaleFact, 0.0));
+    p = amrex::RealVect(D_DECL(radius*1.1*0.1*scaleFact, (7.8583+zoffset)*0.1*scaleFact, 0.0));
     lnpts.push_back(p);
-    p = amrex::RealVect(D_DECL(36.193*0.1*scaleFact, 7.8583*0.1*scaleFact, 0.0));
-    lnpts.push_back(p);
-    Piston.addLineElement(lnpts);
-    lnpts.clear();
-
-    p = amrex::RealVect(D_DECL(36.193*0.1*scaleFact, 7.8583*0.1*scaleFact, 0.0));
-    lnpts.push_back(p);
-    p = amrex::RealVect(D_DECL(24.035*0.1*scaleFact, -7.8586*0.1*scaleFact, 0.0));
+    p = amrex::RealVect(D_DECL(36.193*0.1*scaleFact, (7.8583+zoffset)*0.1*scaleFact, 0.0));
     lnpts.push_back(p);
     Piston.addLineElement(lnpts);
     lnpts.clear();
 
-    p = amrex::RealVect(D_DECL(24.035*0.1*scaleFact, -7.8586*0.1*scaleFact, 0.0));
+    p = amrex::RealVect(D_DECL(36.193*0.1*scaleFact, (7.8583+zoffset)*0.1*scaleFact, 0.0));
     lnpts.push_back(p);
-    p = amrex::RealVect(D_DECL(20.0*0.1*scaleFact, -7.8586*0.1*scaleFact, 0.0));
-    lnpts.push_back(p);
-    Piston.addLineElement(lnpts);
-    lnpts.clear();
-
-    p = amrex::RealVect(D_DECL(20.0*0.1*scaleFact, -7.8586*0.1*scaleFact, 0.0));
-    lnpts.push_back(p);
-    p = amrex::RealVect(D_DECL(1.9934*0.1*scaleFact, 3.464*0.1*scaleFact, 0.0));
+    p = amrex::RealVect(D_DECL(24.035*0.1*scaleFact, (-7.8586+zoffset)*0.1*scaleFact, 0.0));
     lnpts.push_back(p);
     Piston.addLineElement(lnpts);
     lnpts.clear();
 
-    p = amrex::RealVect(D_DECL(1.9934*0.1*scaleFact, 3.464*0.1*scaleFact, 0.0));
+    p = amrex::RealVect(D_DECL(24.035*0.1*scaleFact, (-7.8586+zoffset)*0.1*scaleFact, 0.0));
     lnpts.push_back(p);
-    p = amrex::RealVect(D_DECL(0.09061*0.1*scaleFact, 3.464*0.1*scaleFact, 0.0));
+    p = amrex::RealVect(D_DECL(20.0*0.1*scaleFact, (-7.8586+zoffset)*0.1*scaleFact, 0.0));
+    lnpts.push_back(p);
+    Piston.addLineElement(lnpts);
+    lnpts.clear();
+
+    p = amrex::RealVect(D_DECL(20.0*0.1*scaleFact, (-7.8586+zoffset)*0.1*scaleFact, 0.0));
+    lnpts.push_back(p);
+    p = amrex::RealVect(D_DECL(1.9934*0.1*scaleFact, (3.464+zoffset)*0.1*scaleFact, 0.0));
+    lnpts.push_back(p);
+    Piston.addLineElement(lnpts);
+    lnpts.clear();
+
+    p = amrex::RealVect(D_DECL(1.9934*0.1*scaleFact, (3.464+zoffset)*0.1*scaleFact, 0.0));
+    lnpts.push_back(p);
+    p = amrex::RealVect(D_DECL(0.09061*0.1*scaleFact, (3.464+zoffset)*0.1*scaleFact, 0.0));
     lnpts.push_back(p);
     Piston.addLineElement(lnpts);
 
-    EB2::CylinderIF cylinder(48.0*0.1*scaleFact, 75.0*0.1*scaleFact, 2, {0.0, 0.0, -20.0*0.1*scaleFact}, true);
+    EB2::CylinderIF cylinder(radius*0.1*scaleFact, 100.0*0.1*scaleFact, 2, {0.0, 0.0, -20.0*0.1*scaleFact}, true);
 
     auto revolvePiston  = EB2::lathe(Piston);
     auto PistonCylinder = EB2::makeUnion(revolvePiston, cylinder);
