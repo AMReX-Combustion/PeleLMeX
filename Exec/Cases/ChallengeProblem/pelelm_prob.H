@@ -50,7 +50,7 @@ void pelelm_initdata(int i, int j, int k,
     // Read in turbulent fluctuations from MarcHDF
     state(i,j,k,VELX) = 0.0;
     state(i,j,k,VELY) = 0.0;
-    state(i,j,k,VELZ) = 1.0;
+    state(i,j,k,VELZ) = 0.0;
 
     amrex::Real P_cgs = prob_parm.P_mean * 10.0;
 
