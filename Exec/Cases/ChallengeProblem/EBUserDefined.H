@@ -70,6 +70,7 @@ EBUserDefined(const Geometry& geom,
        lnpts.push_back(p);
        p = amrex::RealVect(D_DECL(0.0*0.1*scaleFact, (-7.8586+zoffset)*0.1*scaleFact, 0.0));
        lnpts.push_back(p);
+       Piston.addLineElement(lnpts);
     }
 
     EB2::CylinderIF cylinder(radius*0.1*scaleFact, 100.0*0.1*scaleFact, 2, {0.0, 0.0, -20.0*0.1*scaleFact}, true);
