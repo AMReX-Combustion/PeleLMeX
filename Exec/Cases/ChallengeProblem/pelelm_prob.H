@@ -122,6 +122,7 @@ bcnormal(
 
 // Assuming this boundary is the top XY plane
 // and in-plane angle is measured from X axis
+  int isInjCell = 0;
   const amrex::Real dphi_angle = 2.0 * Pi / prob_parm.nholes;
 
   for (int nh = 1; nh <= prob_parm.nholes; nh++) {
@@ -173,10 +174,18 @@ bcnormal(
       for (int n = 0; n < NUM_SPECIES; n++) {
         s_ext[FIRSTSPEC+n] = massfrac[n] * s_ext[DENSITY];
       }
-      s_ext[VELX] = vx_in;
-      s_ext[VELY] = vy_in;
-      s_ext[VELZ] = vz_in;
+      // Add jet velocity to turbulence data
+      s_ext[VELX] += vx_in;
+      s_ext[VELY] += vy_in;
+      s_ext[VELZ] += vz_in;
     }
+  }
+
+  // If not a cell located on an injection, set velocity fluctuations to zero
+  if (!isInjCell) {
+     s_ext[VELX] = 0.0;
+     s_ext[VELY] = 0.0;
+     s_ext[VELZ] = 0.0;                                                                                                                                                      
   }
 }
 
