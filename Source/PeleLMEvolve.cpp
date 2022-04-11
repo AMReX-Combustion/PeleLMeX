@@ -37,7 +37,6 @@ void PeleLM::Evolve() {
 #endif
       int is_init = 0;
       Advance(is_init);
-
       m_nstep++;
       m_cur_time += m_dt;
 
