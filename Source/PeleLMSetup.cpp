@@ -11,7 +11,7 @@
 #include <AMReX_SUNMemory.H>
 #endif
 
-#ifdef SOOT_MODEL
+#ifdef PELELM_USE_SOOT
 #include "SootModel.H"
 #endif
 using namespace amrex;
@@ -35,7 +35,7 @@ void PeleLM::Setup() {
    amrex::Print() << " AMReX-Hydro git hash: " << githash4 << "\n";
    amrex::Print() << " ===============================================\n";
 
-#ifdef SOOT_MODEL
+#ifdef PELELM_USE_SOOT
    soot_model = new SootModel{};
 #endif
 
@@ -58,12 +58,12 @@ void PeleLM::Setup() {
    // Tagging setup
    taggingSetup();
 
-#ifdef SPRAY_PELE_LM
+#ifdef PELELM_USE_SPRAY
    if (do_spray_particles) {
      sprayParticleSetup();
    }
 #endif
-#ifdef SOOT_MODEL
+#ifdef PELELM_USE_SOOT
    if (do_soot_solve) {
      soot_model->define();
    }
@@ -440,10 +440,10 @@ void PeleLM::readParameters() {
    ppef.query("restart_electroneutral",m_restart_electroneutral);
    ppef.query("restart_resetTime",m_restart_resetTime);
 #endif
-#ifdef SPRAY_PELE_LM
+#ifdef PELELM_USE_SPRAY
    readSprayParameters();
 #endif
-#ifdef SOOT_MODEL
+#ifdef PELELM_USE_SOOT
    do_soot_solve = 1;
    pp.query("do_soot_solve", do_soot_solve);
    if ( m_verbose && do_soot_solve ) {
@@ -526,7 +526,7 @@ void PeleLM::variablesSetup() {
       Print() << " PhiV: " << PHIV << "\n";
       stateComponents.emplace_back(PHIV,"PhiV");
 #endif
-#ifdef SOOT_MODEL
+#ifdef PELELM_USE_SOOT
       for (int mom = 0; mom < NUMSOOTVAR; mom++) {
         std::string sootname = soot_model->sootVariableName(mom);
         Print() << " " << sootname << ": " << FIRSTSOOT + mom << "\n";
@@ -590,7 +590,7 @@ void PeleLM::variablesSetup() {
       m_AdvTypeState[PHIV] = 0;
       m_DiffTypeState[PHIV] = 0;
 #endif
-#ifdef SOOT_MODEL
+#ifdef PELELM_USE_SOOT
       for (int mom = 0; mom < NUMSOOTVAR; mom++) {
         m_AdvTypeState[FIRSTSOOT+mom] = 0;
         m_DiffTypeState[FIRSTSOOT+mom] = 0;
@@ -606,74 +606,53 @@ void PeleLM::variablesSetup() {
       typical_values.resize(NVAR,-1.0);
    }
    if (max_level > 0 && !m_initial_grid_file.empty()) {
-#define STRIP while( is.get() != '\n' ) {}
-      std::ifstream is(m_initial_grid_file.c_str(),std::ios::in);
-      if (!is.good()) {
-        amrex::FileOpenFailed(m_initial_grid_file);
-      }
-
-      int in_finest,ngrid;
-
-      is >> in_finest;
-      STRIP;
-      m_initial_ba.resize(in_finest);
-
-      use_fixed_upto_level = in_finest;
-      if (in_finest > max_level) {
-        amrex::Error("You have fewer levels in your inputs file then in your grids file!");
-      }
-
-        for (int lev = 1; lev <= in_finest; lev++) {
-            BoxList bl;
-            is >> ngrid;
-            STRIP;
-            for (int i = 0; i < ngrid; i++) {
-                Box bx;
-                is >> bx;
-                STRIP;
-                bx.refine(ref_ratio[lev-1]);
-                bl.push_back(bx);
-            }
-            m_initial_ba[lev-1].define(bl);
-        }
-        is.close();
-        if (verbose > 0) {
-            amrex::Print() << "Read initial_ba. Size is " << m_initial_ba.size() << "\n";
-        }
-
-#undef STRIP
+     readGridFile(m_initial_grid_file, m_initial_ba);
+     if (verbose > 0) {
+       amrex::Print() << "Read initial_ba. Size is " << m_initial_ba.size() << "\n";
+     }
     }
    if (max_level > 0 && !m_regrid_file.empty() && m_regrid_int > 0) {
-#define STRIP while( is.get() != '\n' ) {}
-      std::ifstream is(m_regrid_file.c_str(),std::ios::in);
-      if (!is.good()) {
-         amrex::FileOpenFailed(m_regrid_file);
-      }
-
-      int in_finest,ngrid;
-
-      is >> in_finest;
-      STRIP;
-      m_regrid_ba.resize(in_finest);
-      for (int lev = 1; lev <= in_finest; lev++) {
-         BoxList bl;
-         is >> ngrid;
-         STRIP;
-         for (int i = 0; i < ngrid; i++) {
-            Box bx;
-            is >> bx;
-            STRIP;
-            bx.refine(ref_ratio[lev-1]);
-            bl.push_back(bx);
-         }
-         m_regrid_ba[lev-1].define(bl);
-      }
-      is.close();
+     readGridFile(m_regrid_file, m_regrid_ba);
       if (verbose > 0) {
          amrex::Print() << "Read regrid_ba. Size is " << m_regrid_ba.size() << "\n";
       }
-#undef STRIP
    }
+}
+
+void PeleLM::readGridFile(std::string grid_file,
+                          amrex::Vector<amrex::BoxArray>& input_ba)
+{
+#define STRIP while( is.get() != '\n' ) {}
+  std::ifstream is(grid_file.c_str(),std::ios::in);
+  if (!is.good()) {
+    amrex::FileOpenFailed(grid_file);
+  }
+  int in_finest,ngrid;
+
+  is >> in_finest;
+  STRIP;
+  input_ba.resize(in_finest);
+  use_fixed_upto_level = in_finest;
+  if (in_finest > max_level) {
+    amrex::Error("You have fewer levels in your inputs file then in your grids file!");
+  }
+
+  for (int lev = 1; lev <= in_finest; lev++) {
+    BoxList bl;
+    is >> ngrid;
+    STRIP;
+    for (int i = 0; i < ngrid; i++) {
+      Box bx;
+      is >> bx;
+      STRIP;
+      bx.refine(ref_ratio[lev-1]);
+      bl.push_back(bx);
+    }
+    input_ba[lev-1].define(bl);
+  }
+  is.close();
+
+#undef STRIP
 }
 
 void PeleLM::derivedSetup()
@@ -726,7 +705,7 @@ void PeleLM::derivedSetup()
 #endif
 #endif
 #endif
-#ifdef SOOT_MODEL
+#ifdef PELELM_USE_SOOT
    // if (do_soot_solve) {
    //   addSootDerivePlotVars(derive_lst);
    // }
@@ -903,7 +882,7 @@ void PeleLM::resizeArray() {
    // Time
    m_t_old.resize(max_level+1);
    m_t_new.resize(max_level+1);
-#ifdef SPRAY_PELE_LM
+#ifdef PELELM_USE_SPRAY
    m_spraystate.resize(max_level+1);
    m_spraysource.resize(max_level+1);
 #endif

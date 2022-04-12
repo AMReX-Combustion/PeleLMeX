@@ -755,21 +755,15 @@ void PeleLM::updateDensity(std::unique_ptr<AdvanceAdvData> &advData)
    averageDownDensity(AmrNewTime);
 }
 
-void PeleLM::computePassiveAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
+void PeleLM::computePassiveAdvTerms(std::unique_ptr<AdvanceAdvData> &advData,
+                                    int state_comp,
+                                    int ncomp)
 {
    //----------------------------------------------------------------
    // Get the BCRecs and AdvectionTypes
-#ifdef SOOT_MODEL
-   int firstpass = FIRSTSOOT;
-   int numpass = NUMSOOTVAR;
-#else
-   int firstpass = 0;
-   int numpass = 0;
-   return;
-#endif
-   auto bcRecPass = fetchBCRecArray(firstpass,numpass);
+   auto bcRecPass = fetchBCRecArray(state_comp,ncomp);
    auto bcRecPass_d = convertToDeviceVector(bcRecPass);
-   auto AdvTypePass = fetchAdvTypeArray(firstpass,numpass);
+   auto AdvTypePass = fetchAdvTypeArray(state_comp,ncomp);
    auto AdvTypePass_d = convertToDeviceVector(AdvTypePass);
 
    //----------------------------------------------------------------
@@ -779,9 +773,9 @@ void PeleLM::computePassiveAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
    for (int lev = 0; lev <= finest_level; ++lev) {
       for (int idim = 0; idim <AMREX_SPACEDIM; idim++) {
          fluxes[lev][idim].define(amrex::convert(grids[lev],IntVect::TheDimensionVector(idim)),
-                                  dmap[lev], numpass, 0, MFInfo(), Factory(lev));
+                                  dmap[lev], ncomp, 0, MFInfo(), Factory(lev));
          edgeState[lev][idim].define(amrex::convert(grids[lev],IntVect::TheDimensionVector(idim)),
-                                dmap[lev], numpass, 0, MFInfo(), Factory(lev));
+                                dmap[lev], ncomp, 0, MFInfo(), Factory(lev));
       }
    }
 
@@ -826,13 +820,13 @@ void PeleLM::computePassiveAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
                       auto const& edgey = edgeState[lev][1].array(mfi,0);,
                       auto const& edgez = edgeState[lev][2].array(mfi,0);)
          auto const& divu_arr  = divu.const_array(mfi);
-         auto const& pass_arr  = ldata_p->state.const_array(mfi,firstpass);
+         auto const& pass_arr  = ldata_p->state.const_array(mfi,state_comp);
          // TODO: Find way to include diffusive forces for passive scalars that diffuse
-         auto const& force_arr = m_extSource[lev]->const_array(mfi,firstpass);
+         auto const& force_arr = m_extSource[lev]->const_array(mfi,state_comp);
          bool is_velocity = false;
          bool fluxes_are_area_weighted = false;
          bool knownEdgeState = false;
-         HydroUtils::ComputeFluxesOnBoxFromState(bx, numpass, mfi,
+         HydroUtils::ComputeFluxesOnBoxFromState(bx, ncomp, mfi,
                                                  pass_arr,
                                                  AMREX_D_DECL(fx,fy,fz),
                                                  AMREX_D_DECL(edgex,edgey,edgez), knownEdgeState,
@@ -872,7 +866,7 @@ void PeleLM::computePassiveAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
    }
    //----------------------------------------------------------------
    // Fluxes divergence to get the scalars advection term
-   auto AdvTypeAll = fetchAdvTypeArray(firstpass,numpass);
+   auto AdvTypeAll = fetchAdvTypeArray(state_comp,ncomp);
    auto AdvTypeAll_d = convertToDeviceVector(AdvTypeAll);
    for (int lev = 0; lev <= finest_level; ++lev) {
 
@@ -891,13 +885,13 @@ void PeleLM::computePassiveAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
       //----------------------------------------------------------------
       // Use a temporary MF to hold divergence before redistribution
       int nGrow_divTmp= 3;
-      MultiFab divTmp(grids[lev],dmap[lev],numpass,nGrow_divTmp,MFInfo(),EBFactory(lev));
+      MultiFab divTmp(grids[lev],dmap[lev],ncomp,nGrow_divTmp,MFInfo(),EBFactory(lev));
       divTmp.setVal(0.0);
       advFluxDivergence(lev, divTmp, 0,
                         divu,
                         GetArrOfConstPtrs(fluxes[lev]), 0,
                         GetArrOfConstPtrs(edgeState[lev]), 0,
-                        numpass,
+                        ncomp,
                         AdvTypeAll_d.dataPtr(),
                         geom[lev], -1.0,
                         fluxes_are_area_weighted);
@@ -906,26 +900,26 @@ void PeleLM::computePassiveAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
 
       redistributeAofS(lev, m_dt,
                        divTmp, 0,
-                       advData->AofS[lev], firstpass,
-                       ldata_p->state, firstpass,
-                       numpass,
+                       advData->AofS[lev], state_comp,
+                       ldata_p->state, state_comp,
+                       ncomp,
                        bcRecPass_d.dataPtr(),
                        geom[lev]);
 #else
       //----------------------------------------------------------------
       // Otherwise go directly into AofS
-      advFluxDivergence(lev, advData->AofS[lev], firstpass,
+      advFluxDivergence(lev, advData->AofS[lev], state_comp,
                         divu,
                         GetArrOfConstPtrs(fluxes[lev]), 0,
                         GetArrOfConstPtrs(edgeState[lev]), 0,
-                        numpass,
+                        ncomp,
                         AdvTypeAll_d.dataPtr(),
                         geom[lev], -1.0,
                         fluxes_are_area_weighted);
 #endif
    }
    // TODO: This assumes passive variables have no diffusive fluxes
-   updateScalarComp(advData, firstpass, numpass);
+   updateScalarComp(advData, state_comp, ncomp);
 }
 
 void PeleLM::updateScalarComp(std::unique_ptr<AdvanceAdvData> &advData,

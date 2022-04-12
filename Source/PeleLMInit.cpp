@@ -155,7 +155,7 @@ void PeleLM::initData() {
       resetCoveredMask();
       updateDiagnostics();
 
-#ifdef SPRAY_PELE_LM
+#ifdef PELELM_USE_SPRAY
       if (do_spray_particles) {
         initSprays();
       }
@@ -303,7 +303,7 @@ void PeleLM::initData() {
       // Read starting configuration from chk file.
       ReadCheckPointFile();
 
-#ifdef SPRAY_PELE_LM
+#ifdef PELELM_USE_SPRAY
       if (do_spray_particles) {
         sprayRestart();
       }

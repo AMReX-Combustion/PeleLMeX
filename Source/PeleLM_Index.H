@@ -16,9 +16,9 @@
 #else
 #define NUMEFIELD 0
 #endif
-#ifdef SOOT_MODEL
-#define FIRSTSOOT RHORT + NUMEFIELD + 1
-#define NUMSOOTVAR NUM_SOOT_MOMENTS + 1
+#ifdef PELELM_USE_SOOT
+#define FIRSTSOOT (RHORT + NUMEFIELD + 1)
+#define NUMSOOTVAR (NUM_SOOT_MOMENTS + 1)
 #else
 #define NUMSOOTVAR 0
 #endif

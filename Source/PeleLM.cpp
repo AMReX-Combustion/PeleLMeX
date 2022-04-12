@@ -26,7 +26,7 @@ PeleLM::~PeleLM()
    The_Arena()->free(prob_parm_d);
    m_initial_ba.clear();
    m_regrid_ba.clear();
-#ifdef SOOT_MODEL
+#ifdef PELELM_USE_SOOT
    cleanupSootModel();
 #endif
 }

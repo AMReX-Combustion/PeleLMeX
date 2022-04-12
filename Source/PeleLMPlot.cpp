@@ -10,10 +10,10 @@
 #include <AMReX_EBInterpolater.H>
 #endif
 
-#ifdef SPRAY_PELE_LM
+#ifdef PELELM_USE_SPRAY
 #include "SprayParticles.H"
 #endif
-#ifdef SOOT_MODEL
+#ifdef PELELM_USE_SOOT
 #include "SootModel.H"
 #endif
 using namespace amrex;
@@ -124,7 +124,7 @@ void PeleLM::WritePlotFile() {
       plt_VarsName.push_back("nE");
       plt_VarsName.push_back("phiV");
 #endif
-#ifdef SOOT_MODEL
+#ifdef PELELM_USE_SOOT
       for (int mom = 0; mom < NUMSOOTVAR; mom++) {
         std::string sootname = soot_model->sootVariableName(mom);
         plt_VarsName.push_back(sootname);
@@ -191,7 +191,7 @@ void PeleLM::WritePlotFile() {
          MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->phiV, 0, cnt, 1, 0);
          cnt += 1;
 #endif
-#ifdef SOOT_MODEL
+#ifdef PELELM_USE_SOOT
          MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->state, FIRSTSOOT, cnt, NUMSOOTVAR, 0);
          cnt += NUMSOOTVAR;
 #endif
@@ -242,7 +242,7 @@ void PeleLM::WritePlotFile() {
    amrex::WriteMultiLevelPlotfile(plotfilename, finest_level + 1, GetVecOfConstPtrs(mf_plt),
                                   plt_VarsName, Geom(), m_cur_time, istep, refRatio());
 
-#ifdef SPRAY_PELE_LM
+#ifdef PELELM_USE_SPRAY
    if (theSprayPC() != nullptr && do_spray_particles) {
      bool is_spraycheck = false;
      for (int lev = 0; lev <= finest_level; ++lev) {
@@ -357,7 +357,7 @@ void PeleLM::WriteCheckPointFile()
 #endif
       }    
    }
-#ifdef SPRAY_PELE_LM
+#ifdef PELELM_USE_SPRAY
    if (theSprayPC() != nullptr && do_spray_particles) {
      int write_ascii = 0; // Not for checkpoints
      bool is_spraycheck = true;

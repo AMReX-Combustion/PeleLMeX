@@ -73,7 +73,7 @@ phiV_bc[] =
 };
 #endif
 
-#ifdef SOOT_MODEL
+#ifdef PELELM_USE_SOOT
 int
 soot_bc[] =
 {
@@ -197,7 +197,7 @@ void PeleLM::setBoundaryConditions() {
          m_bcrec_state[NE] = hackBCChargedParticle(-1.0, bcnESave);
       }
 #endif
-#ifdef SOOT_MODEL
+#ifdef PELELM_USE_SOOT
       for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
         for (int mom = 0; mom < NUMSOOTVAR; mom++) {
           m_bcrec_state[FIRSTSOOT+mom].setLo(idim,soot_bc[lo_bc[idim]]);

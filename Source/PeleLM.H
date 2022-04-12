@@ -25,11 +25,11 @@
 #endif
 
 // Forward declarations
-#ifdef SPRAY_PELE_LM
+#ifdef PELELM_USE_SPRAY
 class SprayParticleContainer;
 #endif
 
-#ifdef SOOT_MODEL
+#ifdef PELELM_USE_SOOT
 class SootModel;
 #endif
 
@@ -101,7 +101,11 @@ class PeleLM : public amrex::AmrCore {
    // ReadProblemParameters
    void readProbParm();
 
-#ifdef SPRAY_PELE_LM
+   // ReadGridFile
+  void readGridFile(std::string grid_file,
+                    amrex::Vector<amrex::BoxArray>& input_ba);
+
+#ifdef PELELM_USE_SPRAY
    // ReadSprayParameters
    void readSprayParameters();
 
@@ -429,7 +433,7 @@ class PeleLM : public amrex::AmrCore {
                      amrex::Array4<const amrex::Real> const& extRho);
    //-----------------------------------------------------------------------------
 
-#ifdef SPRAY_PELE_LM
+#ifdef PELELM_USE_SPRAY
    //-----------------------------------------------------------------------------
    // Sprays
    void setupVirtualParticles(const int level);
@@ -463,7 +467,7 @@ class PeleLM : public amrex::AmrCore {
    amrex::Vector<std::unique_ptr<amrex::MultiFab> > m_spraystate;
    //-----------------------------------------------------------------------------
 #endif
-#ifdef SOOT_MODEL
+#ifdef PELELM_USE_SOOT
    //-----------------------------------------------------------------------------
    // Soot
 
@@ -786,7 +790,7 @@ class PeleLM : public amrex::AmrCore {
    void getScalarAdvForce(std::unique_ptr<AdvanceAdvData> &advData,
                           std::unique_ptr<AdvanceDiffData> &diffData);
    void computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData);
-   void computePassiveAdvTerms(std::unique_ptr<AdvanceAdvData> &advData);
+   void computePassiveAdvTerms(std::unique_ptr<AdvanceAdvData> &advData, int state_comp, int ncomp);
    void updateDensity(std::unique_ptr<AdvanceAdvData> &advData);
    void updateScalarComp(std::unique_ptr<AdvanceAdvData> &advData, int state_comp, int ncomp);
 
@@ -1012,7 +1016,7 @@ class PeleLM : public amrex::AmrCore {
    ProbParm* prob_parm;
    ProbParm* prob_parm_d;
 
-#ifdef SOOT_MODEL
+#ifdef PELELM_USE_SOOT
    // Soot parameters
    SootModel* soot_model;
    int do_soot_solve;

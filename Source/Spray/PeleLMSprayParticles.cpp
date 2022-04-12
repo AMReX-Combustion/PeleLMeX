@@ -1,7 +1,7 @@
 
 #include <PeleLM.H>
 
-#ifdef SPRAY_PELE_LM
+#ifdef PELELM_USE_SPRAY
 #include "SprayParticles.H"
 #include <AMReX_FillPatchUtil.H>
 
@@ -319,9 +319,8 @@ PeleLM::setSprayState(const Real& a_flow_dt)
       // Number of interpolated invalid ghost cells for N+1
       // Note: particles adjacent to C/F boundaries and fine boxes
       // can be up to 1 cell away from the intuitive box
-      // Once ghost particle fix is pushed to AMReX
-      //int invalid_state_ghosts = ghostpcells + 2;
-      int invalid_state_ghosts = ghostpcells * 2;
+      int invalid_state_ghosts = ghostpcells + 1;
+      //int invalid_state_ghosts = ghostpcells * 2;
       spray_state_ghosts[lev+1] = invalid_state_ghosts;
     }
   }
@@ -429,8 +428,8 @@ PeleLM::sprayMKDLevel(
   source.SumBoundary(geom[level].periodicity());
   if (theGhostPC() != nullptr && level != 0) {
     // Once ghost particle optimizations are implemented
-    //int invalid_source_ghosts = state_ghosts;
-    int invalid_source_ghosts = 2 * spray_ghost_num[level - 1];
+    int invalid_source_ghosts = 1 + int(std::round(spray_cfl[level]));
+    //int invalid_source_ghosts = 2 * spray_ghost_num[level - 1];
     MultiFab ghost_spray_src(grids[level], dmap[level], num_spray_src, invalid_source_ghosts, MFInfo(), *m_factory[level]);
     ghost_spray_src.setVal(0.);
     theGhostPC()->moveKickDrift(

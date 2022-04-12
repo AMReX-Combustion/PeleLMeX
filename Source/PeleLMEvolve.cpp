@@ -29,7 +29,7 @@ void PeleLM::Evolve() {
          regridded = true;
          updateDiagnostics();
       }
-#ifdef SPRAY_PELE_LM
+#ifdef PELELM_USE_SPRAY
       // Inject and redistribute spray particles
       if (do_spray_particles) {
         sprayInjectRedist(regridded);

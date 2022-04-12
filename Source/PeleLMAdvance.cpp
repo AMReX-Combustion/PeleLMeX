@@ -34,7 +34,7 @@ void PeleLM::Advance(int is_initIter) {
    // TIME
    // Compute time-step size
    m_dt = computeDt(is_initIter,AmrOldTime);
-#ifdef SPRAY_PELE_LM
+#ifdef PELELM_USE_SPRAY
    if (!is_initIter && do_spray_particles) {
      // Create the state MF used for spray interpolation
      setSprayState(m_dt);
@@ -99,12 +99,12 @@ void PeleLM::Advance(int is_initIter) {
    BL_PROFILE_VAR_STOP(PLM_SETUP);
    //----------------------------------------------------------------
 
-#ifdef SPRAY_PELE_LM
+#ifdef PELELM_USE_SPRAY
    if (!is_initIter) {
      sprayMKD(m_cur_time, m_dt);
    }
 #endif
-#ifdef SOOT_MODEL
+#ifdef PELELM_USE_SOOT
    if (do_soot_solve) {
      computeSootSource(AmrOldTime, m_dt);
    }
@@ -178,12 +178,12 @@ void PeleLM::Advance(int is_initIter) {
          m_extSource[lev]->setVal(0.);
       }
 
-#ifdef SPRAY_PELE_LM
+#ifdef PELELM_USE_SPRAY
       if (!is_initIter) {
          sprayMK(m_cur_time + m_dt, m_dt);
       }
 #endif
-#ifdef SOOT_MODEL
+#ifdef PELELM_USE_SOOT
       if (do_soot_solve) {
          computeSootSource(AmrNewTime, m_dt);
          clipSootMoments();
@@ -327,9 +327,9 @@ void PeleLM::oneSDC(int sdcIter,
    if (m_verbose > 1) {
       ScalAdvStart = ParallelDescriptor::second();
    }
-#ifdef SOOT_MODEL
+#ifdef PELELM_USE_SOOT
    // Compute and update passive advective terms
-   computePassiveAdvTerms(advData);
+   computePassiveAdvTerms(advData, FIRSTSOOT, NUMSOOTVAR);
 #endif
    // Get scalar advection SDC forcing
    getScalarAdvForce(advData,diffData);
