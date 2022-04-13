@@ -116,9 +116,6 @@ bcnormal(
   for (int n = 0; n < NUM_SPECIES; n++) {
     s_ext[FIRSTSPEC+n] = massfrac_ch[n] * s_ext[DENSITY];
   }
-  s_ext[VELX] = 0.0;
-  s_ext[VELY] = 0.0;
-  s_ext[VELZ] = 0.0;
 
 // Assuming this boundary is the top XY plane
 // and in-plane angle is measured from X axis
@@ -143,6 +140,7 @@ bcnormal(
 
     // We are using a tanH profile, past 1.2 keep no-slip walls conditions from above
     if ( elrSq < 1.2 ) {
+      isInjCell = 1;
       // Tanh profile, assuming 10% tanh width
       amrex::Real eta = 0.5 * ( 1.0 - std::tanh((elrSq-1.0)/0.1));
 
