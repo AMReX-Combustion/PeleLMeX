@@ -620,6 +620,8 @@ class PeleLM : public amrex::AmrCore {
    // Typical values
    void setTypicalValues(const PeleLM::TimeStamp &a_time, int is_init = 0);
    void updateTypicalValuesChem();
+    
+   void checkMemory(const std::string &a_message);
    //-----------------------------------------------------------------------------
 
 #ifdef AMREX_USE_EB
@@ -1008,6 +1010,7 @@ class PeleLM : public amrex::AmrCore {
 
    // Misc.
    int m_floor_species = 0;
+   int m_checkMem = 0;
 
    // SDC
    int m_nSDCmax = 1;

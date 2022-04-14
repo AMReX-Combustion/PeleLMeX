@@ -295,6 +295,7 @@ void PeleLM::readParameters() {
    // -----------------------------------------
    pp.query("sdc_iterMax",m_nSDCmax);
    pp.query("floor_species",m_floor_species);
+   pp.query("memory_checks",m_checkMem);
 
    // -----------------------------------------
    // Reaction

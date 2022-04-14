@@ -1062,6 +1062,24 @@ PeleLM::MLmin(const Vector<const MultiFab*> &a_MF,
     return nmin;
 }
 
+void
+PeleLM::checkMemory(const std::string &a_message)
+{
+    if (!m_checkMem) return;
+
+    const int IOProc = ParallelDescriptor::IOProcessorNumber();
+#ifdef AMREX_USE_GPU
+    Long free_mem_avail = Gpu::Device::freeMemAvailable() / (1024*1024);
+    ParallelDescriptor::ReduceLongMin(free_mem_avail, IOProc);
+    Print() << "     [" << a_message << "] GPU mem. avail. (MB) " << free_mem_avail << "\n";
+#else
+    // MultiFab memory usage
+    Long max_fab_megabytes = amrex::TotalBytesAllocatedInFabsHWM() / (1024*1024);
+    ParallelDescriptor::ReduceLongMax(max_fab_megabytes, IOProc);
+    Print() << "     [" << a_message << "] MFs mem. allocated (MB) " << max_fab_megabytes << "\n";
+#endif
+}
+
 #ifdef AMREX_USE_EB
 // Extend the cell-centered based signed distance function
 void PeleLM::extendSignedDistance(MultiFab *a_signDist,
