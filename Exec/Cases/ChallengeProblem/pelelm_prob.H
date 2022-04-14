@@ -72,6 +72,20 @@ void pelelm_initdata(int i, int j, int k,
 
 AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
+amrex::Real
+time_eta(
+  amrex::Real time, amrex::Real start, amrex::Real duration, amrex::Real tau)
+{
+  amrex::Real eta_time;
+  eta_time = 0.5 * (std::tanh((time - start) / (duration * tau)) *
+                    std::tanh((-time + start + duration) / (duration * tau)) +
+                    1.0);
+  eta_time = std::min(std::max(eta_time, 0.0), 1.0);
+  return eta_time;
+}
+
+AMREX_GPU_DEVICE
+AMREX_FORCE_INLINE
 void
 bcnormal(
   const amrex::Real x[AMREX_SPACEDIM],
@@ -140,9 +154,13 @@ bcnormal(
 
     // We are using a tanH profile, past 1.2 keep no-slip walls conditions from above
     if ( elrSq < 1.2 ) {
+      // Switch ON flag for injection face
       isInjCell = 1;
+
       // Tanh profile, assuming 10% tanh width
       amrex::Real eta = 0.5 * ( 1.0 - std::tanh((elrSq-1.0)/0.1));
+
+      eta *= time_eta(time, prob_parm.inj_start, prob_parm.inj_dur, prob_parm.tau);
 
       // Composition
       amrex::Real massfrac[NUM_SPECIES] = {0.0};
@@ -173,6 +191,9 @@ bcnormal(
         s_ext[FIRSTSPEC+n] = massfrac[n] * s_ext[DENSITY];
       }
       // Add jet velocity to turbulence data
+      s_ext[VELX] *= eta;
+      s_ext[VELY] *= eta;
+      s_ext[VELZ] *= eta;
       s_ext[VELX] += vx_in;
       s_ext[VELY] += vy_in;
       s_ext[VELZ] += vz_in;
