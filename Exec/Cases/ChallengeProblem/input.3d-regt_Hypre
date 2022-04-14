@@ -15,7 +15,7 @@ peleLM.hi_bc = NoSlipWallAdiab NoSlipWallAdiab Inflow
 amr.n_cell          = 512 512 128      # Level 0 number of cells in each direction   
 amr.v               = 1                # AMR verbose
 amr.max_level       = 0                # maximum level number allowed
-amr.ref_ratio       = 2 2 2 2 2         # refinement ratio
+amr.ref_ratio       = 2 2 2 2 2        # refinement ratio
 amr.regrid_int      = 5                # how often to regrid
 amr.n_error_buf     = 2 2 2 2          # number of buffer cells in error est
 amr.grid_eff        = 0.7              # what constitutes an efficient grid
@@ -60,7 +60,7 @@ turbinflow.inj2.turb_scale_vel = 1.0
 turbinflow.inj2.turb_center    = -0.0015 0.0
 turbinflow.inj2.turb_conv_vel  = 28.0
 turbinflow.inj2.turb_nplane    = 32
-turbinflow.inj2.time_offset    = 0.001
+turbinflow.inj2.time_offset    = 0.000014
 
 turbinflow.inj3.turb_file      = Turb.test2
 turbinflow.inj3.dir            = 2
@@ -70,7 +70,7 @@ turbinflow.inj3.turb_scale_vel = 1.0
 turbinflow.inj3.turb_center    = 0.0 -0.0015
 turbinflow.inj3.turb_conv_vel  = 28.0
 turbinflow.inj3.turb_nplane    = 32
-turbinflow.inj3.time_offset    = 0.002
+turbinflow.inj3.time_offset    = 0.000028
 
 turbinflow.inj4.turb_file      = Turb.test2
 turbinflow.inj4.dir            = 2
@@ -80,7 +80,7 @@ turbinflow.inj4.turb_scale_vel = 1.0
 turbinflow.inj4.turb_center    = 0.0015 0.0
 turbinflow.inj4.turb_conv_vel  = 28.0
 turbinflow.inj4.turb_nplane    = 32
-turbinflow.inj4.time_offset    = 0.003
+turbinflow.inj4.time_offset    = 0.000056
 
 #-------------------------PeleLM CONTROL----------------------------
 peleLM.v = 3
@@ -120,13 +120,13 @@ cvode.max_order  = 4                  # CVODE max BDF order.
 
 #------------------------- EB SETUP -----------------------------
 eb2.geom_type = UserDefined
-eb2.small_volfrac = 1.e-3
+eb2.small_volfrac = 5.e-3
 eb2.maxiter = 100
-eb2.cylinder_radius = 48.0000
-eb2.head_offset = 0.0000
-eb2.head_isFlat = 0
-peleLM.refine_EB_type = Static
-peleLM.refine_EB_max_level = 0
+#eb2.cylinder_radius = 480.0000
+#eb2.head_offset = -10.0000e4
+#eb2.head_isFlat = 1
+#peleLM.refine_EB_type = Static
+#peleLM.refine_EB_max_level = 0
 
 #--------------------REFINEMENT CONTROL------------------------
 #amr.refinement_indicators = temp
@@ -139,9 +139,13 @@ peleLM.refine_EB_max_level = 0
 #amr.magVort.value_greater = 500.0
 #amr.magVort.field_name    = mag_vort
 
+amr.refinement_indicators = boxHZ
+amr.boxHZ.in_box_lo = -0.004 -0.004 0.0008
+amr.boxHZ.in_box_hi =  0.004  0.004 0.00175
+
 #--------------------LINEAR SOLVER CONTROL------------------------
 nodal_proj.verbose = 2
-nodal_proj.mg_max_coarsening_level = 0 
+nodal_proj.mg_max_coarsening_level = 0
 nodal_proj.rtol = 1.0e-10
 nodal_proj.atol = 1.0e-10
 nodal_proj.bottom_solver = "hypre"
