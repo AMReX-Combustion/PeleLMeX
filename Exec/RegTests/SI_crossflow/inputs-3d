@@ -30,7 +30,7 @@ prob.flowDir = 0
 
 prob.V_in          = 10.0
 
-turbinflows = lowX
+#turbinflows = lowX
 turbinflow.lowX.turb_file      = Turb_tprf_phi1_egr10_Ka6
 turbinflow.lowX.dir            = 0
 turbinflow.lowX.side           = low
@@ -55,45 +55,46 @@ peleLM.num_init_iter = 1
 # peleLM.temporal_int = 2
 # peleLM.mass_balance = 1
 
-eb2.geom_type = 3D-ignition_vessel
-eb2.small_volfrac = 1.e-1
+eb2.geom_type = UserDefined
+eb2.small_volfrac = 1.e-2
 eb2.maxiter = 100
 
 amr.plot_int = 10
-amr.max_step = 0
-amr.dt_shrink = 0.001
+amr.max_step = 10
+amr.dt_shrink = 0.1
 amr.stop_time = 0.02
-amr.cfl = 0.3
+amr.cfl = 0.5
 amr.derive_plot_vars = avg_pressure mag_vort mass_fractions
 
 
 nodal_proj.verbose = 2
-# nodal_proj.mg_max_coarsening_level = 0
+#nodal_proj.mg_max_coarsening_level = 0
 nodal_proj.bottom_rtol = 1.0e-11
 nodal_proj.bottom_atol = 1.0e-11
-nodal_proj.bottom_solver = "hypre"
-nodal_proj.bottom_verbose = 1
-nodal_proj.hypre_namespace = nodal_proj.hypre
-nodal_proj.hypre.verbose = 2
-nodal_proj.hypre.hypre_solver = GMRES
-nodal_proj.hypre.hypre_preconditioner = BoomerAMG
-nodal_proj.hypre.bamg_verbose = 1
-nodal_proj.hypre.num_krylov = 100
-nodal_proj.hypre.bamg_coarsen_type = 10
-nodal_proj.hypre.bamg_interp_type = 6
-nodal_proj.hypre.bamg_relax_type = 3
-nodal_proj.hypre.bamg_num_sweeps = 5
-nodal_proj.hypre.bamg_cycle_type = 1
-nodal_proj.hypre.bamg_relax_order = 0
-nodal_proj.hypre.bamg_trunc_factor = 0.25
-nodal_proj.hypre.bamg_max_levels = 10
-nodal_proj.hypre.bamg_pmax_elmts = 4
-nodal_proj.hypre.bamg_keep_transpose = 1
-nodal_proj.hypre.bamg_strong_threshold = .57
-nodal_proj.hypre.recompute_preconditioner = 1
-nodal_proj.hypre.write_matrix_files = 0
-nodal_proj.hypre.overwrite_existing_matrix_files = 0
-nodal_proj.hypre.adjust_singular_matrix = 1
+#nodal_proj.bottom_solver = "hypre"
+
+#nodal_proj.bottom_verbose = 1
+#nodal_proj.hypre_namespace = nodal_proj.hypre
+#nodal_proj.hypre.verbose = 2
+#nodal_proj.hypre.hypre_solver = GMRES
+#nodal_proj.hypre.hypre_preconditioner = BoomerAMG
+#nodal_proj.hypre.bamg_verbose = 1
+#nodal_proj.hypre.num_krylov = 100
+#nodal_proj.hypre.bamg_coarsen_type = 10
+#nodal_proj.hypre.bamg_interp_type = 6
+#nodal_proj.hypre.bamg_relax_type = 3
+#nodal_proj.hypre.bamg_num_sweeps = 5
+#nodal_proj.hypre.bamg_cycle_type = 1
+#nodal_proj.hypre.bamg_relax_order = 0
+#nodal_proj.hypre.bamg_trunc_factor = 0.25
+#nodal_proj.hypre.bamg_max_levels = 10
+#nodal_proj.hypre.bamg_pmax_elmts = 4
+#nodal_proj.hypre.bamg_keep_transpose = 1
+#nodal_proj.hypre.bamg_strong_threshold = .57
+#nodal_proj.hypre.recompute_preconditioner = 1
+#nodal_proj.hypre.write_matrix_files = 0
+#nodal_proj.hypre.overwrite_existing_matrix_files = 0
+#nodal_proj.hypre.adjust_singular_matrix = 1
 
 #--------------------REFINEMENT CONTROL------------------------
 # amr.refinement_indicators = O2

@@ -22,6 +22,7 @@ USE_HIP         = FALSE
 # PeleLMeX
 USE_EFIELD      = FALSE
 USE_EB          = TRUE
+CEXE_headers 	+= EBUserDefined.H
 
 # PelePhysics
 Chemistry_Model = air
