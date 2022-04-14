@@ -15,17 +15,21 @@ void PeleLM::initTemporals(const PeleLM::TimeStamp &a_time)
          m_domainMassFlux[2*idim+1] = 0.0;
       }
    }
-   m_RhoHOld = MFSum(GetVecOfConstPtrs(getRhoHVect(a_time)),0);
-   for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
-      m_domainRhoHFlux[2*idim] = 0.0;
-      m_domainRhoHFlux[2*idim+1] = 0.0;
+   if (m_do_energyBalance && !m_incompressible) {
+      m_RhoHOld = MFSum(GetVecOfConstPtrs(getRhoHVect(a_time)),0);
+      for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+         m_domainRhoHFlux[2*idim] = 0.0;
+         m_domainRhoHFlux[2*idim+1] = 0.0;
+      }
    }
 
-   for (int n = 0; n < NUM_SPECIES; n++){
-      m_RhoYOld[n] = MFSum(GetVecOfConstPtrs(getSpeciesVect(a_time)),n);
-      for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
-         m_domainRhoYFlux[2*n*AMREX_SPACEDIM+2*idim] = 0.0;
-         m_domainRhoYFlux[1+2*n*AMREX_SPACEDIM+2*idim] = 0.0;
+   if (m_do_speciesBalance && !m_incompressible) {
+      for (int n = 0; n < NUM_SPECIES; n++){
+         m_RhoYOld[n] = MFSum(GetVecOfConstPtrs(getSpeciesVect(a_time)),n);
+         for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+            m_domainRhoYFlux[2*n*AMREX_SPACEDIM+2*idim] = 0.0;
+            m_domainRhoYFlux[1+2*n*AMREX_SPACEDIM+2*idim] = 0.0;
+         }
       }
    }
 

@@ -1038,6 +1038,8 @@ class PeleLM : public amrex::AmrCore {
    int m_do_temporals = 0;
    int m_temp_int = 5;
    int m_do_massBalance = 0;
+   int m_do_energyBalance = 0;
+   int m_do_speciesBalance = 0;
    amrex::Real m_massOld;
    amrex::Real m_massNew;
    amrex::Real m_RhoHOld;
