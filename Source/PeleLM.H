@@ -664,6 +664,9 @@ class PeleLM : public amrex::AmrCore {
    EBFactory (int lev) const noexcept { 
       return static_cast<amrex::EBFArrayBoxFactory const&>(*m_factory[lev]);
    }
+
+   void correct_vel_small_cells(amrex::Vector<amrex::MultiFab*> const &a_vel,
+                                amrex::Vector<amrex::Array<amrex::MultiFab const*,AMREX_SPACEDIM> > const &a_umac);
 #endif
 
 
