@@ -456,7 +456,7 @@ class PeleLM : public amrex::AmrCore {
    void setSprayState(const amrex::Real& a_flow_dt);
    static int write_spray_ascii_files;
    static int num_spray_src;
-   static int do_spray_particles;
+   static bool do_spray_particles;
    static int plot_spray_src;
    static std::string spray_fuel_names[SPRAY_FUEL_NUM];
    static SprayParticleContainer* theSprayPC();
@@ -1019,7 +1019,7 @@ class PeleLM : public amrex::AmrCore {
 #ifdef PELELM_USE_SOOT
    // Soot parameters
    SootModel* soot_model;
-   int do_soot_solve;
+   bool do_soot_solve;
 #endif
 
    // PMF parameters

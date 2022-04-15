@@ -444,9 +444,9 @@ void PeleLM::readParameters() {
    readSprayParameters();
 #endif
 #ifdef PELELM_USE_SOOT
-   do_soot_solve = 1;
+   do_soot_solve = true;
    pp.query("do_soot_solve", do_soot_solve);
-   if ( m_verbose && do_soot_solve ) {
+   if (m_verbose && do_soot_solve) {
      Print() << "Simulation performed with soot modeling \n";
    }
    soot_model->readSootParams();
