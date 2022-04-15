@@ -183,9 +183,7 @@ void PeleLM::initData() {
       // TODO : this estimate is probably useless
       Real dtInit = computeDt(is_init,AmrNewTime);
       Print() << " Initial dt: " << dtInit << "\n";
-      //WriteDebugPlotFile(GetVecOfConstPtrs(getDensityVect(AmrNewTime)),"RhoPostDist");
-      //WriteDebugPlotFile(GetVecOfConstPtrs(getSpeciesVect(AmrNewTime)),"RhoYsPostDist");
-      //WriteDebugPlotFile(GetVecOfConstPtrs(getTempVect(AmrNewTime)),"TempPostDist");
+      //WriteDebugPlotFile(GetVecOfConstPtrs(getStateVect(AmrNewTime)),"InitSol");
 
       // Subcycling IAMR/PeleLM first does a projection with no reaction divU
       // which can make the dt for evaluating I_R better

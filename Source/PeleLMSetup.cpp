@@ -138,7 +138,6 @@ void PeleLM::readParameters() {
          lo_bc[dir] = 0;
       } else if (lo_bc_char[dir] == "Inflow") {
          lo_bc[dir] = 1;
-         isOpenDomain = 1;
       } else if (lo_bc_char[dir] == "Outflow") {
          lo_bc[dir] = 2;
          isOpenDomain = 1;
@@ -161,7 +160,6 @@ void PeleLM::readParameters() {
          hi_bc[dir] = 0;
       } else if (hi_bc_char[dir] == "Inflow") {
          hi_bc[dir] = 1;
-         isOpenDomain = 1;
       } else if (hi_bc_char[dir] == "Outflow") {
          hi_bc[dir] = 2;
          isOpenDomain = 1;
@@ -297,6 +295,7 @@ void PeleLM::readParameters() {
    // -----------------------------------------
    pp.query("sdc_iterMax",m_nSDCmax);
    pp.query("floor_species",m_floor_species);
+   pp.query("memory_checks",m_checkMem);
 
    // -----------------------------------------
    // Reaction
