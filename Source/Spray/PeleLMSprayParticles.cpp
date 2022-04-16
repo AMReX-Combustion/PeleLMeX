@@ -8,7 +8,6 @@
 using namespace amrex;
 
 namespace {
-bool virtual_particles_set = false;
 //
 // Containers for the real "active" Particles
 //
@@ -172,7 +171,7 @@ void
 PeleLM::setupVirtualParticles(const int level)
 {
   BL_PROFILE("PeleLM::setupVirtualParticles()");
-  if (theSprayPC() != nullptr && !virtual_particles_set) {
+  if (theSprayPC() != nullptr) {
     if (level < finest_level) {
       SprayParticleContainer::AoS virts;
       setupVirtualParticles(level + 1);
@@ -182,7 +181,6 @@ PeleLM::setupVirtualParticles(const int level)
       theSprayPC()->CreateVirtualParticles(level + 1, virts);
       theVirtPC()->AddParticlesAtLevel(virts, level);
     }
-    virtual_particles_set = true;
   }
 }
 
@@ -190,10 +188,9 @@ void
 PeleLM::removeVirtualParticles(const int level)
 {
   BL_PROFILE("PeleLM::removeVirtualParticles()");
-  if (VirtPC != nullptr) {
-    VirtPC->RemoveParticlesAtLevel(level);
+  if (theVirtPC() != nullptr) {
+    theVirtPC()->RemoveParticlesAtLevel(level);
   }
-  virtual_particles_set = false;
 }
 
 void
@@ -299,7 +296,7 @@ PeleLM::setSprayState(const Real& a_flow_dt)
   spray_state_ghosts[0] = 0;
   for (int lev = 0; lev <= finest_level; ++lev) {
     auto const dx = geom[lev].CellSizeArray();
-    // Extract velocity and CFL from a given spray CFL (typically 0.5)
+    // Extract velocity and CFL from a given spray CFL
     Real spraydt_lev = theSprayPC()->estTimestep(lev, max_spray_cfl);
     Real vel_lev = max_spray_cfl * dx[0] / spraydt_lev;
     max_vel = amrex::max(max_vel, vel_lev);
@@ -337,67 +334,57 @@ PeleLM::setSprayState(const Real& a_flow_dt)
 }
 
 void
+PeleLM::addSpraySource(const int level)
+{
+  MultiFab& source = *(m_spraysource[level].get());
+  MultiFab& extsource = *(m_extSource[level].get());
+  const int eghosts = extsource.nGrow();
+  MultiFab::Add(
+    extsource, source, scomps.rhoSrcIndx, scomps.rhoIndx, 1, eghosts);
+  MultiFab::Add(
+    extsource, source, scomps.engSrcIndx, scomps.engIndx, 1, eghosts);
+  MultiFab::Add(
+    extsource, source, scomps.momSrcIndx, scomps.momIndx, AMREX_SPACEDIM,
+    eghosts);
+  for (int n = 0; n < SPRAY_FUEL_NUM; ++n) {
+    const int dstcomp = scomps.specIndx + sprayData.indx[n];
+    MultiFab::Add(
+      extsource, source, scomps.specSrcIndx + n, dstcomp, 1, eghosts);
+  }
+}
+
+void
 PeleLM::sprayMKD(const Real time, const Real dt)
 {
+  if (!do_spray_particles) {
+    return;
+  }
   if (spray_verbose) {
     amrex::Print()
       << "moveKickDrift ... updating particle positions and velocity\n";
   }
+  // Setup the virtual particles that represent particles on finer levels
+  setupVirtualParticles(0);
   for (int lev = 0; lev <= finest_level; ++lev) {
     if (spray_verbose > 1) {
       amrex::Print() << "sprayMKDLevel " << lev << std::endl;
     }
-    // Width to create ghost particles for the next level
-    int ghost_width = 0;
-    if (lev < finest_level) {
-      ghost_width = spray_ghost_num[lev];
-    }
-    sprayMKDLevel(lev, time, dt, ghost_width);
+    sprayMKDLevel(lev, time, dt);
+    addSpraySource(lev);
     removeGhostParticles(lev);
     removeVirtualParticles(lev);
-  }
-  for (int lev = 0; lev <= finest_level; ++lev) {
-    MultiFab& source = *(m_spraysource[lev].get());
-    MultiFab& extsource = *(m_extSource[lev].get());
-    const int eghosts = extsource.nGrow();
-    MultiFab::Add(
-      extsource, source, scomps.rhoSrcIndx, scomps.rhoIndx, 1, eghosts);
-    MultiFab::Add(
-      extsource, source, scomps.engSrcIndx, scomps.engIndx, 1, eghosts);
-    MultiFab::Add(
-      extsource, source, scomps.momSrcIndx, scomps.momIndx, AMREX_SPACEDIM,
-      eghosts);
-    for (int n = 0; n < SPRAY_FUEL_NUM; ++n) {
-      const int dstcomp = scomps.specIndx + sprayData.indx[n];
-      MultiFab::Add(
-        extsource, source, scomps.specSrcIndx + n, dstcomp, 1, eghosts);
-    }
+    m_spraysource[lev]->setVal(0.);
   }
   theSprayPC()->Redistribute();
 }
 
 void
-PeleLM::sprayMKDLevel(
-  const int level, const Real time, const Real dt, const int ghost_width)
+PeleLM::sprayMKDLevel(const int level, const Real time, const Real dt)
 {
-  //
-  // Setup ghost particles for use in finer levels. Note that ghost
-  // particles that will be used by this level have already been created,
-  // the particles being set here are only used by finer levels.
-  //
-
-  //
-  // Setup the virtual particles that represent particles on finer levels
-  //
   if (level < finest_level) {
-    setupVirtualParticles(level);
-  }
-
-  //
-  // Make a copy of the particles on this level into ghost particles
-  // for the finer level
-  //
-  if (level < finest_level) {
+    // Make a copy of the particles on this level into ghost particles
+    // for the finer level
+    int ghost_width = spray_ghost_num[level];
     setupGhostParticles(ghost_width, level);
   }
 
@@ -426,17 +413,15 @@ PeleLM::sprayMKDLevel(
   }
   source.SumBoundary(geom[level].periodicity());
   if (theGhostPC() != nullptr && level != 0) {
-    isGhost = true;
     isVirt = false;
-    int invalid_source_ghosts = 1 + int(std::round(spray_cfl[level]));
+    isGhost = true;
     MultiFab ghost_spray_src(
-      grids[level], dmap[level], num_spray_src, invalid_source_ghosts, MFInfo(),
+      grids[level], dmap[level], num_spray_src, source_ghosts, MFInfo(),
       *m_factory[level]);
     ghost_spray_src.setVal(0.);
     theGhostPC()->moveKickDrift(
       state, ghost_spray_src, level, dt, time, isVirt, isGhost, state_ghosts,
-      invalid_source_ghosts, doMove, ltransparm, spray_cfl[level]);
-    // TODO: Fix this to work correctly
+      source_ghosts, doMove, ltransparm, spray_cfl[level]);
     ghost_spray_src.SumBoundary(geom[level].periodicity());
     source.ParallelAdd(ghost_spray_src, 0, 0, num_spray_src);
   }
@@ -445,81 +430,55 @@ PeleLM::sprayMKDLevel(
 void
 PeleLM::sprayMK(const Real time, const Real dt)
 {
+  if (!do_spray_particles) {
+    return;
+  }
+  setupVirtualParticles(0);
   for (int lev = 0; lev <= finest_level; ++lev) {
     if (spray_verbose > 1) {
       amrex::Print() << "sprayMKLevel " << lev << std::endl;
     }
-    // Since droplets aren't moving, we only need 1 layer of ghost cells for
-    // source terms
-    int source_ghosts = 1;
-    MultiFab tmp_spray_source(
-      grids[lev], dmap[lev], num_spray_src, source_ghosts, MFInfo(),
-      Factory(lev));
-    tmp_spray_source.setVal(0.);
-    sprayMKLevel(lev, time, dt, tmp_spray_source);
-    MultiFab& extsource = *(m_extSource[lev].get());
-    const int eghosts = extsource.nGrow();
-    MultiFab::Add(
-      extsource, tmp_spray_source, scomps.rhoSrcIndx, scomps.rhoIndx, 1,
-      eghosts);
-    MultiFab::Add(
-      extsource, tmp_spray_source, scomps.engSrcIndx, scomps.engIndx, 1,
-      eghosts);
-    MultiFab::Add(
-      extsource, tmp_spray_source, scomps.momSrcIndx, scomps.momIndx,
-      AMREX_SPACEDIM, eghosts);
-    for (int n = 0; n < SPRAY_FUEL_NUM; ++n) {
-      const int dstcomp = scomps.specIndx + sprayData.indx[n];
-      MultiFab::Add(
-        extsource, tmp_spray_source, scomps.specSrcIndx + n, dstcomp, 1,
-        eghosts);
-    }
+    sprayMKLevel(lev, time, dt);
+    addSpraySource(lev);
+    removeVirtualParticles(lev);
+    removeGhostParticles(lev);
   }
 }
 
 void
-PeleLM::sprayMKLevel(
-  const int level,
-  const Real time,
-  const Real dt,
-  amrex::MultiFab& tmp_spray_source)
+PeleLM::sprayMKLevel(const int level, const Real time, const Real dt)
 {
   auto ldata_p = getLevelDataPtr(level, AmrNewTime);
+  amrex::MultiFab& source = *(m_spraysource[level].get());
   amrex::MultiFab& state = ldata_p->state;
   auto const* ltransparm = PeleLM::trans_parms.device_trans_parm();
   int state_ghosts = 2;
   int source_ghosts = 2;
   if (level < finest_level) {
-    setupVirtualParticles(level);
     setupGhostParticles(1, level);
   }
+  bool isVirt = false;
+  bool isGhost = false;
   theSprayPC()->moveKick(
-    state, tmp_spray_source, level, dt, time, false, false, state_ghosts,
+    state, source, level, dt, time, isVirt, isGhost, state_ghosts,
     source_ghosts, ltransparm);
   if (level < finest_level && theVirtPC() != nullptr) {
+    isVirt = true;
+    isGhost = false;
     theVirtPC()->moveKick(
-      state, tmp_spray_source, level, dt, time, true, false, state_ghosts,
+      state, source, level, dt, time, isVirt, isGhost, state_ghosts,
       source_ghosts, ltransparm);
   }
-  tmp_spray_source.SumBoundary(geom[level].periodicity());
-  // Ghost particles require more ghost cells for source
   if (theGhostPC() != nullptr && level != 0) {
-    int invalid_source_ghosts = 2;
-    int invalid_state_ghosts = 2;
-    MultiFab ghost_spray_source(
-      grids[level], dmap[level], num_spray_src, invalid_source_ghosts, MFInfo(),
-      *m_factory[level]);
-    ghost_spray_source.setVal(0.);
+    isVirt = false;
+    isGhost = true;
     theGhostPC()->moveKick(
-      state, ghost_spray_source, level, dt, time, false, true,
-      invalid_state_ghosts, invalid_source_ghosts, ltransparm);
-    ghost_spray_source.SumBoundary(geom[level].periodicity());
-    tmp_spray_source.ParallelAdd(ghost_spray_source, 0, 0, num_spray_src);
+      state, source, level, dt, time, isVirt, isGhost, state_ghosts,
+      source_ghosts, ltransparm);
   }
-  // Remove virtual particles at this level if we have any.
-  removeVirtualParticles(level);
-  // Remove Ghost particles on the final iteration
-  removeGhostParticles(level);
+  source.SumBoundary(
+    0, num_spray_src, amrex::IntVect::TheUnitVector() * source_ghosts,
+    geom[level].periodicity());
 }
 
 void
