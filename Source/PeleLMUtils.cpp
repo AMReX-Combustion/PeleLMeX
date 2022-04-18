@@ -777,19 +777,13 @@ void PeleLM::setTypicalValues(const TimeStamp &a_time, int is_init)
     }
     
     if (!m_incompressible) {
-        // First get the difference between max/min, if too small use average
-        typical_values[DENSITY] = stateMax[DENSITY] - stateMin[DENSITY];
-        if (typical_values[DENSITY] < 0.1 * stateMin[DENSITY]) typical_values[DENSITY] = 0.5 * (stateMax[DENSITY] + stateMin[DENSITY]);
+        // Average between max/min
+        typical_values[DENSITY] = 0.5 * (stateMax[DENSITY] + stateMin[DENSITY]);
         for (int n = 0; n < NUM_SPECIES; n++) {
-            typical_values[FIRSTSPEC+n] = stateMax[FIRSTSPEC+n] - stateMin[FIRSTSPEC+n];
-            if (typical_values[FIRSTSPEC+n] < 0.1 * stateMin[FIRSTSPEC+n]) {
-                typical_values[FIRSTSPEC+n] = 0.5 * (stateMax[FIRSTSPEC+n] + stateMin[FIRSTSPEC+n]);
-            }
+            typical_values[FIRSTSPEC+n] = 0.5 * (stateMax[FIRSTSPEC+n] + stateMin[FIRSTSPEC+n]) / typical_values[DENSITY];
         }
-        typical_values[RHOH] = stateMax[RHOH] - stateMin[RHOH];
-        if (typical_values[RHOH] < 0.1 * stateMin[RHOH]) typical_values[RHOH] = 0.5 * (stateMax[RHOH] + stateMin[RHOH]);
-        typical_values[TEMP] = stateMax[TEMP] - stateMin[TEMP];
-        if (typical_values[TEMP] < 0.1 * stateMin[TEMP]) typical_values[TEMP] = 0.5 * (stateMax[TEMP] + stateMin[TEMP]);
+        typical_values[RHOH] = 0.5 * (stateMax[RHOH] + stateMin[RHOH]) / typical_values[DENSITY];
+        typical_values[TEMP] = 0.5 * (stateMax[TEMP] + stateMin[TEMP]);
         typical_values[RHORT] = m_pOld;
 
         // Pass into chemsitry if requested
@@ -808,7 +802,7 @@ void PeleLM::setTypicalValues(const TimeStamp &a_time, int is_init)
         if (!m_incompressible) {
             Print() << "\tDensity: " << typical_values[DENSITY] << '\n';
             Print() << "\tTemp:    " << typical_values[TEMP]    << '\n';
-            Print() << "\tRhoH:    " << typical_values[RHOH]    << '\n';
+            Print() << "\tH:       " << typical_values[RHOH]    << '\n';
             Vector<std::string> spec_names;
             pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(spec_names);
             for (int n = 0; n < NUM_SPECIES; n++) {
@@ -1066,6 +1060,24 @@ PeleLM::MLmin(const Vector<const MultiFab*> &a_MF,
 
     ParallelDescriptor::ReduceRealMin(nmin.data(),ncomp);
     return nmin;
+}
+
+void
+PeleLM::checkMemory(const std::string &a_message)
+{
+    if (!m_checkMem) return;
+
+    const int IOProc = ParallelDescriptor::IOProcessorNumber();
+#ifdef AMREX_USE_GPU
+    Long free_mem_avail = Gpu::Device::freeMemAvailable() / (1024*1024);
+    ParallelDescriptor::ReduceLongMin(free_mem_avail, IOProc);
+    Print() << "     [" << a_message << "] GPU mem. avail. (MB) " << free_mem_avail << "\n";
+#else
+    // MultiFab memory usage
+    Long max_fab_megabytes = amrex::TotalBytesAllocatedInFabsHWM() / (1024*1024);
+    ParallelDescriptor::ReduceLongMax(max_fab_megabytes, IOProc);
+    Print() << "     [" << a_message << "] MFs mem. allocated (MB) " << max_fab_megabytes << "\n";
+#endif
 }
 
 #ifdef AMREX_USE_EB
