@@ -476,9 +476,7 @@ PeleLM::sprayMKLevel(const int level, const Real time, const Real dt)
       state, source, level, dt, time, isVirt, isGhost, state_ghosts,
       source_ghosts, ltransparm);
   }
-  source.SumBoundary(
-    0, num_spray_src, amrex::IntVect::TheUnitVector() * source_ghosts,
-    geom[level].periodicity());
+  source.SumBoundary(geom[level].periodicity());
 }
 
 void
