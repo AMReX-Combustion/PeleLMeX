@@ -403,7 +403,6 @@ PeleLM::sprayMKDLevel(const int level, const Real time, const Real dt)
   theSprayPC()->moveKickDrift(
     state, source, level, dt, time, isVirt, isGhost, state_ghosts,
     source_ghosts, doMove, ltransparm, spray_cfl[level]);
-  // Only need the coarsest virtual particles here.
   if (level < finest_level) {
     isVirt = true;
     isGhost = false;
@@ -411,20 +410,14 @@ PeleLM::sprayMKDLevel(const int level, const Real time, const Real dt)
       state, source, level, dt, time, isVirt, isGhost, state_ghosts,
       source_ghosts, doMove, ltransparm, spray_cfl[level]);
   }
-  source.SumBoundary(geom[level].periodicity());
   if (theGhostPC() != nullptr && level != 0) {
     isVirt = false;
     isGhost = true;
-    MultiFab ghost_spray_src(
-      grids[level], dmap[level], num_spray_src, source_ghosts, MFInfo(),
-      *m_factory[level]);
-    ghost_spray_src.setVal(0.);
     theGhostPC()->moveKickDrift(
-      state, ghost_spray_src, level, dt, time, isVirt, isGhost, state_ghosts,
+      state, source, level, dt, time, isVirt, isGhost, state_ghosts,
       source_ghosts, doMove, ltransparm, spray_cfl[level]);
-    ghost_spray_src.SumBoundary(geom[level].periodicity());
-    source.ParallelAdd(ghost_spray_src, 0, 0, num_spray_src);
   }
+  source.SumBoundary(geom[level].periodicity());
 }
 
 void
