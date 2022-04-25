@@ -58,7 +58,11 @@ void PeleLM::WritePlotFile() {
       ncomp = 2*AMREX_SPACEDIM;
    } else {
       // State + pressure gradients
-      ncomp = NVAR + AMREX_SPACEDIM;
+      if (m_plot_grad_p) {
+         ncomp = NVAR + AMREX_SPACEDIM;
+      } else {
+         ncomp = NVAR;
+      }
       // Make the plot lighter by dropping species by default
       if (!m_plotStateSpec) ncomp -= NUM_SPECIES;
       if (m_has_divu) {
@@ -135,13 +139,15 @@ void PeleLM::WritePlotFile() {
       }
    }
 
-   plt_VarsName.push_back("gradp_x");
+   if (m_plot_grad_p) {
+      plt_VarsName.push_back("gradp_x");
 #if ( AMREX_SPACEDIM > 1 )
-   plt_VarsName.push_back("gradp_y");
+      plt_VarsName.push_back("gradp_y");
 #if ( AMREX_SPACEDIM > 2 )
-   plt_VarsName.push_back("gradp_z");
+      plt_VarsName.push_back("gradp_z");
 #endif
 #endif
+   }
 
    if (m_do_react  && !m_skipInstantRR && m_plot_react) {
       for (int n = 0; n < NUM_SPECIES; n++) {
@@ -200,8 +206,10 @@ void PeleLM::WritePlotFile() {
             cnt += 1;
          }
       }
-      MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->gp, 0, cnt,AMREX_SPACEDIM,0);
-      cnt += AMREX_SPACEDIM;
+      if (m_plot_grad_p) {
+         MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->gp, 0, cnt,AMREX_SPACEDIM,0);
+         cnt += AMREX_SPACEDIM;
+      }
 
       if (m_do_react  && !m_skipInstantRR && m_plot_react) {
          MultiFab::Copy(mf_plt[lev], m_leveldatareact[lev]->I_R, 0, cnt, nCompIR(), 0);

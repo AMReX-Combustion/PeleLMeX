@@ -1068,6 +1068,7 @@ class PeleLM : public amrex::AmrCore {
    int m_check_int = 0;
    int m_message_int = 10;
    int m_evaluatePlotVarCount = 0;
+   int m_plot_grad_p = 1;
    amrex::Vector<std::string> m_evaluatePlotVars;
 
    //-----------------------------------------------------------------------------
