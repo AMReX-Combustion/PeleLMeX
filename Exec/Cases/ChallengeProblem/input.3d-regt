@@ -1,18 +1,18 @@
 #----------------------DOMAIN DEFINITION------------------------
 geometry.is_periodic = 0 0 0               # For each dir, 0: non-perio, 1: periodic
 geometry.coord_sys   = 0                  # 0 => cart, 1 => RZ
-geometry.prob_lo     = -0.013 -0.013 -0.008        # x_lo y_lo (z_lo)
-geometry.prob_hi     =  0.013  0.013  0.005        # x_hi y_hi (z_hi)
+geometry.prob_lo     = -0.014 -0.014 -0.00275        # x_lo y_lo (z_lo)
+geometry.prob_hi     =  0.014  0.014  0.00425        # x_hi y_hi (z_hi)
 
 # >>>>>>>>>>>>>  BC FLAGS <<<<<<<<<<<<<<<<
 # Interior, Inflow, Outflow, Symmetry,
 # SlipWallAdiab, NoSlipWallAdiab, SlipWallIsotherm, NoSlipWallIsotherm
 peleLM.lo_bc = NoSlipWallAdiab NoSlipWallAdiab NoSlipWallAdiab
-peleLM.hi_bc = NoSlipWallAdiab NoSlipWallAdiab NoSlipWallAdiab 
+peleLM.hi_bc = NoSlipWallAdiab NoSlipWallAdiab Inflow
 
 
 #-------------------------AMR CONTROL----------------------------
-amr.n_cell          = 64 64 32      # Level 0 number of cells in each direction   
+amr.n_cell          = 512 512 128      # Level 0 number of cells in each direction   
 amr.v               = 1                # AMR verbose
 amr.max_level       = 0                # maximum level number allowed
 amr.ref_ratio       = 2 2 2 2 2         # refinement ratio
@@ -24,8 +24,19 @@ amr.max_grid_size   = 128               # max box size
 
 
 #--------------------------- Problem -------------------------------
-prob.P_mean = 101325.0
-prob.T_mean = 290.0
+prob.P_mean = 6079500.0
+prob.T_mean = 900.0
+prob.centx  = 0.0
+prob.centy  = 0.0
+prob.r_circ = 0.0015
+prob.r_hole = 0.000085
+prob.nholes = 4
+prob.cone_angle = 45.0
+prob.T_jet  = 470.0
+prob.vel_jet = 28.0
+prob.Z      = 0.45
+prob.injection_start = 0.0
+prob.injection_duration = 0.0005
 
 #-------------------------PeleLM CONTROL----------------------------
 peleLM.v = 3
@@ -45,12 +56,13 @@ peleLM.mass_balance = 1
 #amr.restart = chk00005
 amr.check_int = 5
 amr.plot_int = 10
-amr.max_step = 5
+amr.max_step = 0
 amr.dt_shrink = 0.1
 amr.stop_time = 1.0
 #amr.stop_time = 1.00
+amr.fixed_dt = 0.000001
 amr.cfl = 0.15
-amr.derive_plot_vars = avg_pressure mag_vort mass_fractions
+amr.derive_plot_vars = avg_pressure mag_vort
 
 # --------------- INPUTS TO CHEMISTRY REACTOR ---------------
 peleLM.chem_integrator = "ReactorNull"
@@ -63,6 +75,7 @@ cvode.max_order  = 4                  # CVODE max BDF order.
 #------------------------- EB SETUP -----------------------------
 eb2.geom_type = UserDefined
 eb2.small_volfrac = 1.e-2
+eb2.maxiter = 100
 
 #------------  INPUTS TO CONSTANT TRANSPORT -----------------
 transport.const_viscosity        = 0.0002
@@ -83,11 +96,11 @@ transport.const_diffusivity      = 0.0
 
 #--------------------LINEAR SOLVER CONTROL------------------------
 nodal_proj.verbose = 2
-nodal_proj.mg_max_coarsening_level = 2
+nodal_proj.mg_max_coarsening_level = 3
 nodal_proj.bottom_solver = "smoother"
 
 fabarray.mfiter_tile_size = 1024 1024 1024
 
-amrex.fpe_trap_invalid = 1
-amrex.fpe_trap_zero = 1
-amrex.fpe_trap_overflow = 1
+#amrex.fpe_trap_invalid = 1
+#amrex.fpe_trap_zero = 1
+#amrex.fpe_trap_overflow = 1
