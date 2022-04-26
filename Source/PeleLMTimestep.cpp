@@ -20,21 +20,25 @@ PeleLM::computeDt(int is_init,
    if ( m_fixed_dt > 0.0 ) {
       estdt = m_fixed_dt;
    } else{
-      Real dtconv = estConvectiveDt(a_time);
-      estdt = std::min(estdt,dtconv);
-      if (!m_incompressible && m_has_divu) {
-         Real dtdivU = estDivUDt(a_time);
-         estdt = std::min(estdt,dtdivU);
+      if ((is_init || m_nstep == 0) && m_init_dt > 0.0 ) {
+         estdt = m_init_dt;
+      } else {
+         Real dtconv = estConvectiveDt(a_time);
+         estdt = std::min(estdt,dtconv);
+         if (!m_incompressible && m_has_divu) {
+            Real dtdivU = estDivUDt(a_time);
+            estdt = std::min(estdt,dtdivU);
 #ifdef PELE_USE_EFIELD
-         Real dtions = estEFIonsDt(a_time);
-         estdt = std::min(estdt, dtions);
+            Real dtions = estEFIonsDt(a_time);
+            estdt = std::min(estdt, dtions);
 #endif
-         if ( m_verbose ) {
-            Print() << " Est. time step - Conv: " << dtconv << ", divu: " << dtdivU
+            if ( m_verbose ) {
+               Print() << " Est. time step - Conv: " << dtconv << ", divu: " << dtdivU
 #ifdef PELE_USE_EFIELD
-                    << ", ions: " << dtions
+                       << ", ions: " << dtions
 #endif
-                    << "\n";
+                       << "\n";
+            }
          }
       }
    }

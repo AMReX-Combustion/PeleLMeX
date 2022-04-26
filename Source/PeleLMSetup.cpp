@@ -362,6 +362,7 @@ void PeleLM::readParameters() {
    ppa.query("stop_time", m_stop_time);
    ppa.query("message_int", m_message_int);
    ppa.query("fixed_dt", m_fixed_dt);
+   ppa.query("init_dt", m_init_dt);
    ppa.query("cfl", m_cfl);
    ppa.query("dt_shrink", m_dtshrink);
    ppa.query("dt_change_max", m_dtChangeMax);
