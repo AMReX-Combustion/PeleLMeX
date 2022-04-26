@@ -14,7 +14,7 @@ void PeleLM::makeEBGeometry()
 {
     // TODO extend
     int max_coarsening_level = 100;
-    int req_coarsening_level = 0;
+    int req_coarsening_level = geom.size()-1;
 
     // Read the geometry type and act accordingly
     ParmParse ppeb2("eb2");
