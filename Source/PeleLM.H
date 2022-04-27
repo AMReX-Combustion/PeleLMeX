@@ -1079,6 +1079,7 @@ class PeleLM : public amrex::AmrCore {
    amrex::Real m_dt           = -1.0;
    amrex::Real m_cfl          = 0.7;
    amrex::Real m_fixed_dt     = -1.0;
+   amrex::Real m_init_dt      = -1.0;
    amrex::Real m_dtshrink     = 1.0;
    amrex::Real m_prev_dt      = -1.0;
    amrex::Real m_dtChangeMax  = 1.1;
