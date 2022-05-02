@@ -82,10 +82,10 @@ def get_runtime_params(box, args):
 def parse_args(arg_string=None):
     parser = argparse.ArgumentParser(description=USAGE)
 
-    parser.add_argument("--test_name", type=str, default="None", metavar="test-name",
+    parser.add_argument("--test_name", type=str, default="testfiles",
                         help="name of the test. Default = testfiles")
 
-    parser.add_argument("--input_file", type=str, default="None", metavar="Pele-input",
+    parser.add_argument("--input_file", type=str, default="None",metavar="input.2d"
                         help="input file name. Default = first inputs.* in current directory")
 
     parser.add_argument("--grid_files_loc", type=str, default="two_d_gridfiles",

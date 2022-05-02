@@ -97,8 +97,8 @@ def checkError(data, test_name, vars, maxerror):
 def parse_args(arg_string=None):
     parser = argparse.ArgumentParser(description=USAGE)
 
-    parser.add_argument("--test_name", type=str, default="None", metavar="test-name",
-                        help="name of the test. Default = current folder name")
+    parser.add_argument("--test_name", type=str, default="testfiles",
+                        help="name of the test. Default = testfiles")
 
     parser.add_argument("--max_error", type=float, default=1.E-12,
                         help="max error for tests.")
