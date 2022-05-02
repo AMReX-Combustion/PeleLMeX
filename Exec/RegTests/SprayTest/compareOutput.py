@@ -93,6 +93,7 @@ def checkError(data, test_name, vars, maxerror):
             if (data[i,v] > maxerror):
                 errorStatement="{} did not reach target convergence order: {} > {}".format(vars[v],data[i,v],maxerror)
                 raise ValueError(errorStatement)
+    print("Errors for given variables are less than "+ str(maxerror))
 
 def parse_args(arg_string=None):
     parser = argparse.ArgumentParser(description=USAGE)
