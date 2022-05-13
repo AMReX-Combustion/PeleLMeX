@@ -25,20 +25,28 @@ PeleLM::computeDt(int is_init,
       } else {
          Real dtconv = estConvectiveDt(a_time);
          estdt = std::min(estdt,dtconv);
+         Real dtdivU = 1.0e200;
          if (!m_incompressible && m_has_divu) {
-            Real dtdivU = estDivUDt(a_time);
+            dtdivU = estDivUDt(a_time);
             estdt = std::min(estdt,dtdivU);
+         }
 #ifdef PELE_USE_EFIELD
-            Real dtions = estEFIonsDt(a_time);
-            estdt = std::min(estdt, dtions);
+         Real dtions = estEFIonsDt(a_time);
+         estdt = std::min(estdt, dtions);
 #endif
-            if ( m_verbose ) {
-               Print() << " Est. time step - Conv: " << dtconv << ", divu: " << dtdivU
+#ifdef PELELM_USE_SPRAY
+         Real dtspray = estSprayDt();
+         estdt = std::min(estdt, dtspray);
+#endif
+         if ( m_verbose ) {
+           Print() << " Est. time step - Conv: " << dtconv << ", divu: " << dtdivU
 #ifdef PELE_USE_EFIELD
-                       << ", ions: " << dtions
+                   << ", ions: " << dtions
 #endif
-                       << "\n";
-            }
+#ifdef PELELM_USE_SPRAY
+                   << ", sprays: " << dtspray
+#endif
+                   << "\n";
          }
       }
    }

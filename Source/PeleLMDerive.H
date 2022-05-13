@@ -26,8 +26,8 @@ class PeleLMDeriveRec
 public:
 
    typedef amrex::Box (*DeriveBoxMap)(const amrex::Box&);
-   amrex::Box TheSameBox (const amrex::Box& box) noexcept;
-   amrex::Box GrowBoxByOne (const amrex::Box& box) noexcept;
+   static amrex::Box TheSameBox (const amrex::Box& box) noexcept;
+   static amrex::Box GrowBoxByOne (const amrex::Box& box) noexcept;
 
    /**
    * \brief The destructor.

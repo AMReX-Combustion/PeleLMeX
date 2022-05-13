@@ -2,6 +2,18 @@
 
 using namespace amrex;
 
+void PeleLM::regrid(int lbase,
+                    amrex::Real time,
+                    bool initial)
+{
+  if (lbase >= max_level) return;
+  if (!m_regrid_file.empty()) {
+     regridFromGridFile(lbase, time, initial);
+  } else {
+     AmrCore::regrid(lbase, time, initial);
+  }
+}
+
 void PeleLM::MakeNewLevelFromCoarse( int lev,
                                            amrex::Real time,
                                      const amrex::BoxArray& ba,
@@ -88,6 +100,9 @@ void PeleLM::MakeNewLevelFromCoarse( int lev,
 
    // Trigger MacProj reset
    m_macProjNeedReset = 1;
+   m_extSource[lev].reset(new MultiFab(ba, dm, NVAR, amrex::max(m_nGrowAdv, m_nGrowMAC),
+                                       MFInfo(), *m_factory[lev]));
+   m_extSource[lev]->setVal(0.);
 }
 
 void PeleLM::RemakeLevel( int lev,
@@ -176,6 +191,9 @@ void PeleLM::RemakeLevel( int lev,
 
    // Trigger MacProj reset
    m_macProjNeedReset = 1;
+   m_extSource[lev].reset(new MultiFab(ba, dm, NVAR, amrex::max(m_nGrowAdv, m_nGrowMAC),
+                                       MFInfo(), *m_factory[lev]));
+   m_extSource[lev]->setVal(0.);
 }
 
 void PeleLM::ClearLevel(int lev) {
@@ -195,6 +213,7 @@ void PeleLM::ClearLevel(int lev) {
 #ifdef PELE_USE_EFIELD
    m_leveldatanlsolve[lev].reset();
 #endif
+   m_extSource[lev]->clear();
 }
 
 void PeleLM::resetMacProjector()
@@ -217,4 +236,51 @@ void PeleLM::resetMacProjector()
    // Store the old MacProj size and switch off reset flag
    m_macProjOldSize = finest_level+1;
    m_macProjNeedReset = 0;
+}
+
+void PeleLM::regridFromGridFile(int lbase,
+                                amrex::Real time,
+                                bool /*initial*/)
+{
+  int new_finest = m_regrid_ba.size();
+  Vector<BoxArray> new_grids(finest_level+2);
+  BL_ASSERT(new_finest <= finest_level+1);
+
+  bool coarse_ba_changed = false;
+  for (int lev = lbase+1; lev <= new_finest; ++lev) {
+     new_grids[lev] = m_regrid_ba[lev-1];
+     if (lev <= finest_level) { // an old level
+        bool ba_changed = (new_grids[lev] != grids[lev]);
+        if (ba_changed || coarse_ba_changed) {
+           BoxArray level_grids = grids[lev];
+           DistributionMapping level_dmap = dmap[lev];
+           if (ba_changed) {
+              level_grids = new_grids[lev];
+              level_dmap = DistributionMapping(level_grids);
+           }
+           const auto old_num_setdm = num_setdm;
+           RemakeLevel(lev, time, level_grids, level_dmap);
+           SetBoxArray(lev, level_grids);
+           if (old_num_setdm == num_setdm) {
+              SetDistributionMap(lev, level_dmap);
+           }
+        }
+        coarse_ba_changed = ba_changed;;
+      } else { // a new level
+        DistributionMapping new_dmap(new_grids[lev]);
+        const auto old_num_setdm = num_setdm;
+        MakeNewLevelFromCoarse(lev, time, new_grids[lev], new_dmap);
+        SetBoxArray(lev, new_grids[lev]);
+        if (old_num_setdm == num_setdm) {
+           SetDistributionMap(lev, new_dmap);
+        }
+     }
+  }
+  for (int lev = new_finest+1; lev <= finest_level; ++lev) {
+     ClearLevel(lev);
+     ClearBoxArray(lev);
+     ClearDistributionMap(lev);
+  }
+
+  finest_level = new_finest;
 }
