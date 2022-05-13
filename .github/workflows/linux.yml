@@ -397,4 +397,4 @@ jobs:
         cp ${GITHUB_WORKSPACE}/build/amrex/Tools/Plotfile/fcompare.gnu.ex .
         sed -i "s/mpiexec -n 1/mpiexec -n 2/g" multiRuns.py
         ./multiRuns.py
-        ./computeOutput.py
+        ./compareOutput.py
