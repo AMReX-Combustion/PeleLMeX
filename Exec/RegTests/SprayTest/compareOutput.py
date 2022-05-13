@@ -40,8 +40,13 @@ def pproc(args):
 
     # Get a local copy of post-processing executable
     run_dir = os.getcwd()
-    pproc_exe = "fcompare.llvm.ex"
-
+    pproc_exe = "None"
+    for f in os.listdir(run_dir):
+        if ( f.startswith("fcompare") and f.endswith(".ex")):
+               pproc_exe = f
+    if (pproc_exe == "None"):
+        errorStatement="fcompare executable not found"
+        raise ValueError(errorStatement)
     # Check the test name: current folder name is default
     if ( args.test_name == "None" ):
         args.test_name = "testfiles"
