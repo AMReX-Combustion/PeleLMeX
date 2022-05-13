@@ -66,6 +66,7 @@ def multiRun(args):
         # Restart a case from checkpoint at iter_1
         os.system("mpiexec -n 1 ./{} {} {} {}".format(executable, args.input_file, runtime_params, second_params))
         # Now delete the checkpoint files and starting plot files
+        print("Deleting unused plot and checkpoint files")
         os.system("rm -r {}/*plt00000".format(args.test_name, box))
         os.system("rm -r {}/{}_chk*".format(args.test_name, box))
 
