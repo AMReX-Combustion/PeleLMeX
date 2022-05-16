@@ -355,10 +355,26 @@ void PeleLM::writeTemporals()
    }
    Real kinetic_energy = MFSum(GetVecOfConstPtrs(kinEnergy),0);
 
+   // Combustion
+   Real fuelConsumptionInt = 0.0;
+   Real heatReleaseRateInt = 0.0;
+   if (fuelID > 0 && !(m_chem_integrator == "ReactorNull")) {
+       fuelConsumptionInt =  MFSum(GetVecOfConstPtrs(getIRVect()),fuelID);
+       for (int lev = 0; lev <= finest_level; ++lev) { 
+          getHeatRelease(lev, kinEnergy[lev].get());  // Re-use kinEnergy container
+       }
+       heatReleaseRateInt = MFSum(GetVecOfConstPtrs(kinEnergy),0);
+   }
+
    // Get min/max/mean for non-species state components
 
-   tmpStateFile << m_nstep << " " << m_cur_time << " " << kinetic_energy << " " << m_pNew << " \n";
-   tmpStateFile.flush();
+   tmpStateFile << m_nstep << " " << m_cur_time                 // Time
+                << " " << kinetic_energy                        // Kinetic energy
+                << " " << m_pNew                                // Thermo. pressure
+                << " " << fuelConsumptionInt                    // Integ fuel burning rate
+                << " " << heatReleaseRateInt                    // Integ heat release rate
+                << " \n";
+   tmpStateFile.flush(); 
 }
 
 void PeleLM::openTempFile()
