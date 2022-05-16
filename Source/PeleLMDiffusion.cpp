@@ -767,7 +767,11 @@ void PeleLM::differentialDiffusionUpdate(std::unique_ptr<AdvanceAdvData> &advDat
 
       // Check for convergence failure
       if ( (dTiter == m_deltaTIterMax-1) && ( deltaT_norm > m_deltaT_norm_max ) ) {
-         Abort("deltaT_iters not converged !");
+         if ( m_crashOnDeltaTFail ) {
+            Abort("deltaT_iters not converged !");
+         } else {
+            Print() << "deltaT_iters not converged !\n";
+         }
       }
    }
    //------------------------------------------------------------------------

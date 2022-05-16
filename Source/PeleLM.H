@@ -1150,6 +1150,7 @@ class PeleLM : public amrex::AmrCore {
    int m_deltaT_verbose = 0;
    int m_deltaTIterMax = 10;
    amrex::Real m_deltaT_norm_max = 1.0e-10;
+   int m_crashOnDeltaTFail = 1;
 
    // Pressure
    amrex::Real m_dpdtFactor = 1.0;
