@@ -586,6 +586,108 @@ PeleLM::deriveComp(const std::string &a_name,
    return mf;
 }
 
+void
+PeleLM::initProgressVariable()
+{
+    Vector<std::string> varNames;
+    pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(varNames);
+    varNames.push_back("temp");
+
+    auto eos = pele::physics::PhysicsType::eos();
+
+    ParmParse pp("peleLM");
+    std::string Cformat;
+    int hasUserC = pp.contains("progressVariable.format");
+    if ( hasUserC ) {
+        pp.query("progressVariable.format", Cformat);
+        if ( !Cformat.compare("Cantera")) {             // use a Cantera-like format with <entry>:<weight>, default to 0.0
+            // Weights
+            Vector<std::string> stringIn;
+            Vector<Real> weightsIn(NUM_SPECIES+1,0.0);
+            int entryCount = pp.countval("progressVariable.weights");
+            stringIn.resize(entryCount);
+            pp.getarr("progressVariable.weights",stringIn,0,entryCount);
+            parseVars(varNames, stringIn, weightsIn); 
+
+            // Cold side/Hot side
+            Vector<Real> coldState(NUM_SPECIES+1,0.0);
+            entryCount = pp.countval("progressVariable.coldState");
+            stringIn.resize(entryCount);
+            pp.getarr("progressVariable.coldState",stringIn,0,entryCount);
+            parseVars(varNames, stringIn, coldState); 
+            Vector<Real> hotState(NUM_SPECIES+1,0.0);
+            entryCount = pp.countval("progressVariable.hotState");
+            stringIn.resize(entryCount);
+            pp.getarr("progressVariable.hotState",stringIn,0,entryCount);
+            parseVars(varNames, stringIn, hotState); 
+            m_C0 = 0.0;
+            m_C1 = 0.0;
+            for (int i = 0; i < NUM_SPECIES+1; ++i) {
+                m_Cweights[i] = weightsIn[i];
+                m_C0 += coldState[i] * m_Cweights[i];
+                m_C1 += hotState[i] * m_Cweights[i];
+            }
+        } else if ( !Cformat.compare("RealList")) {     // use a list of Real. MUST contains an entry for each species+Temp
+            // Weights
+            Vector<Real> weightsIn;
+            int entryCount = pp.countval("progressVariable.weights");
+            AMREX_ALWAYS_ASSERT(entryCount==NUM_SPECIES+1);
+            weightsIn.resize(entryCount);
+            pp.getarr("progressVariable.weights",weightsIn,0,entryCount);
+            for (int i=0; i<NUM_SPECIES; ++i) {
+               m_Cweights[i] = weightsIn[i];
+            }
+            // Cold side/Hot side
+            entryCount = pp.countval("progressVariable.coldState");
+            AMREX_ALWAYS_ASSERT(entryCount==NUM_SPECIES+1);
+            Vector<Real> coldState(entryCount);
+            pp.getarr("progressVariable.coldState",coldState,0,entryCount);
+            entryCount = pp.countval("progressVariable.hotState");
+            AMREX_ALWAYS_ASSERT(entryCount==NUM_SPECIES+1);
+            Vector<Real> hotState(entryCount);
+            pp.getarr("progressVariable.hotState",hotState,0,entryCount);
+            m_C0 = 0.0;
+            m_C1 = 0.0;
+            for (int i = 0; i < NUM_SPECIES+1; ++i) {
+                m_C0 += coldState[i] * m_Cweights[i];
+                m_C1 += hotState[i] * m_Cweights[i];
+            }
+        } else {
+            Abort("Unknown progressVariable.format ! Should be 'Cantera' or 'RealList'");
+        }
+        pp.query("progressVariable.revert", m_Crevert);
+    }
+}
+
+void
+PeleLM::parseVars(const Vector<std::string> &a_varsNames,
+                  const Vector<std::string> &a_stringIn,
+                  Vector<Real>       &a_rVars)
+{
+   int varCountIn = a_stringIn.size();
+
+   // For each entry in the user-provided composition, parse name and value
+   std::string delimiter = ":";
+   for (int i = 0; i < varCountIn; i++ ) {
+      long unsigned sep = a_stringIn[i].find(delimiter);
+      if ( sep == std::string::npos ) {
+         Abort("Error parsing '"+a_stringIn[i]+"' --> unable to find delimiter :");
+      }
+      std::string varNameIn = a_stringIn[i].substr(0, sep);
+      Real value = std::stod(a_stringIn[i].substr(sep+1,a_stringIn[i].length()));
+      int foundIt = 0;
+      for (int k = 0; k < a_varsNames.size(); k++ ) {
+         if ( varNameIn == a_varsNames[k] ) {
+            a_rVars[k] = value;
+            foundIt = 1;
+         }
+      }
+      if ( !foundIt ) {
+         Abort("Error parsing '"+a_stringIn[i]+"' --> unable to match to any provided variable name");
+      }
+   }
+}
+
 Real
 PeleLM::MLNorm0(const Vector<const MultiFab*> &a_MF)
 {
