@@ -724,11 +724,15 @@ class PeleLM : public amrex::AmrCore {
     
    void checkMemory(const std::string &a_message);
 
-   // Mixture fraction
+   // Mixture fraction & Progress variable
    void initMixtureFraction();
    void parseComposition(amrex::Vector<std::string> compositionIn,
                          std::string                compositionType,
                          amrex::Real               *massFrac);
+   void parseVars(const amrex::Vector<std::string> &a_varNames,
+                  const amrex::Vector<std::string> &a_stringIn,
+                  amrex::Vector<amrex::Real> &a_rVars);
+   void initProgressVariable();
    //-----------------------------------------------------------------------------
 
 #ifdef AMREX_USE_EB
@@ -1234,8 +1238,12 @@ class PeleLM : public amrex::AmrCore {
    amrex::Real Zox = -1.0;
 
    // Progress variable
+   // C is a linear combination of Ys and T
+   amrex::GpuArray<amrex::Real,NUM_SPECIES+1> m_Cweights;
+   amrex::Real m_C0 = -1.0;
+   amrex::Real m_C1 = -1.0;
+   int m_Crevert = 0;           // Flip the definition with 1 - ∑_k wgt*v_k
    //-----------------------------------------------------------------------------
-
 
    //-----------------------------------------------------------------------------
    // Linear Solvers
