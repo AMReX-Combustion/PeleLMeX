@@ -544,6 +544,63 @@ PeleLM::floorSpecies(const TimeStamp &a_time)
 
 void PeleLM::resetCoveredMask()
 {
+   if (m_resetCoveredMask) {
+
+      if (m_verbose) Print() << " Resetting fine-covered cells mask \n";
+
+      for (int lev = 0; lev < finest_level; ++lev) {
+         BoxArray baf = grids[lev+1];
+         baf.coarsen(ref_ratio[lev]);
+         m_coveredMask[lev]->setVal(1);
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+         {
+            std::vector< std::pair<int,Box> > isects;
+            for (MFIter mfi(*m_coveredMask[lev],TilingIfNotGPU()); mfi.isValid(); ++mfi)
+            {
+               auto const& mask = m_coveredMask[lev]->array(mfi);
+               baf.intersections(grids[lev][mfi.index()],isects);
+               for (const auto& is : isects)
+               {
+                  amrex::ParallelFor(is.second, [mask]
+                  AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+                  {
+                     mask(i,j,k) = 0;
+                  });
+               }
+            }
+         }
+
+         //----------------------------------------------------------------------------
+         // Setup a BoxArray for the chemistry
+
+         // Get an uncovered BoxArray
+         BoxArray baCompDom = complementIn(geom[lev].Domain(), baf);
+         BoxArray baUnCovered = intersect(baCompDom,grids[lev]);
+
+         // Assemble a BoxArray with covered and uncovered ones + flags
+         BoxList bl(grids[lev].ixType());
+         bl.reserve(baUnCovered.size()+baf.size());
+         m_baChemFlag[lev].resize(baUnCovered.size()+baf.size());
+         int bxIdx = 0;
+         for (int i = 0, n = baUnCovered.size(); i < n; ++i) {  // Append uncovered boxes
+            bl.push_back(baUnCovered[i]);
+            m_baChemFlag[lev][bxIdx] = 1;
+            bxIdx += 1;
+         }
+         for (int i = 0, n = baf.size(); i < n; ++i) {          // Append covered boxes
+            bl.push_back(baf[i]);
+            m_baChemFlag[lev][bxIdx] = 0;
+            bxIdx += 1;
+         }
+         m_baChem[lev].reset(new BoxArray(std::move(bl)));
+         m_dmapChem[lev].reset(new DistributionMapping(*m_baChem[lev]));
+      }
+
+      // Switch off trigger
+      m_resetCoveredMask = 0;
+   }
 
    //----------------------------------------------------------------------------
    // Need to compute the uncovered volume
@@ -557,62 +614,6 @@ void PeleLM::resetCoveredMask()
       m_uncoveredVol = MFSum(GetVecOfConstPtrs(dummy),0);
    }
 
-   if (!m_resetCoveredMask) return;
-
-   if (m_verbose) Print() << " Resetting fine-covered cells mask \n";
-
-   for (int lev = 0; lev < finest_level; ++lev) {
-      BoxArray baf = grids[lev+1];
-      baf.coarsen(ref_ratio[lev]);
-      m_coveredMask[lev]->setVal(1);
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
-      {
-         std::vector< std::pair<int,Box> > isects;
-         for (MFIter mfi(*m_coveredMask[lev],TilingIfNotGPU()); mfi.isValid(); ++mfi)
-         {
-            auto const& mask = m_coveredMask[lev]->array(mfi);
-            baf.intersections(grids[lev][mfi.index()],isects);
-            for (const auto& is : isects)
-            {
-               amrex::ParallelFor(is.second, [mask]
-               AMREX_GPU_DEVICE (int i, int j, int k) noexcept
-               {
-                  mask(i,j,k) = 0;
-               });
-            }
-         }
-      }
-
-      //----------------------------------------------------------------------------
-      // Setup a BoxArray for the chemistry
-
-      // Get an uncovered BoxArray
-      BoxArray baCompDom = complementIn(geom[lev].Domain(), baf);
-      BoxArray baUnCovered = intersect(baCompDom,grids[lev]);
-
-      // Assemble a BoxArray with covered and uncovered ones + flags
-      BoxList bl(grids[lev].ixType());
-      bl.reserve(baUnCovered.size()+baf.size());
-      m_baChemFlag[lev].resize(baUnCovered.size()+baf.size());
-      int bxIdx = 0;
-      for (int i = 0, n = baUnCovered.size(); i < n; ++i) {  // Append uncovered boxes
-         bl.push_back(baUnCovered[i]);
-         m_baChemFlag[lev][bxIdx] = 1;
-         bxIdx += 1;
-      }
-      for (int i = 0, n = baf.size(); i < n; ++i) {          // Append covered boxes
-         bl.push_back(baf[i]);
-         m_baChemFlag[lev][bxIdx] = 0;
-         bxIdx += 1;
-      }
-      m_baChem[lev].reset(new BoxArray(std::move(bl)));
-      m_dmapChem[lev].reset(new DistributionMapping(*m_baChem[lev]));
-   }
-
-   // Switch off trigger
-   m_resetCoveredMask = 0;
 }
 
 // Return a unique_ptr with the entire derive
@@ -649,7 +650,7 @@ PeleLM::derive(const std::string &a_name,
           FArrayBox& derfab = (*mf)[mfi];
           FArrayBox const& statefab = (*statemf)[mfi];
           FArrayBox const& pressfab = ldata_p->press[mfi];
-          rec->derFunc()(bx, derfab, 0, rec->numDerive(), statefab, pressfab, geom[lev], a_time, stateBCs, lev);
+          rec->derFunc()(this, bx, derfab, 0, rec->numDerive(), statefab, pressfab, geom[lev], a_time, stateBCs, lev);
       }
    } else {          // This is a state variable
       mf.reset(new MultiFab(grids[lev], dmap[lev], 1, nGrow));
@@ -698,7 +699,7 @@ PeleLM::deriveComp(const std::string &a_name,
           FArrayBox& derfab = derTemp[mfi];
           FArrayBox const& statefab = (*statemf)[mfi];
           FArrayBox const& pressfab = ldata_p->press[mfi];
-          rec->derFunc()(bx, derfab, 0, rec->numDerive(), statefab, pressfab, geom[lev], a_time, stateBCs, lev);
+          rec->derFunc()(this, bx, derfab, 0, rec->numDerive(), statefab, pressfab, geom[lev], a_time, stateBCs, lev);
       }
       // Copy into outgoing unique_ptr
       int derComp = rec->variableComp(a_name);
@@ -714,6 +715,108 @@ PeleLM::deriveComp(const std::string &a_name,
    }
 
    return mf;
+}
+
+void
+PeleLM::initProgressVariable()
+{
+    Vector<std::string> varNames;
+    pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(varNames);
+    varNames.push_back("temp");
+
+    auto eos = pele::physics::PhysicsType::eos();
+
+    ParmParse pp("peleLM");
+    std::string Cformat;
+    int hasUserC = pp.contains("progressVariable.format");
+    if ( hasUserC ) {
+        pp.query("progressVariable.format", Cformat);
+        if ( !Cformat.compare("Cantera")) {             // use a Cantera-like format with <entry>:<weight>, default to 0.0
+            // Weights
+            Vector<std::string> stringIn;
+            Vector<Real> weightsIn(NUM_SPECIES+1,0.0);
+            int entryCount = pp.countval("progressVariable.weights");
+            stringIn.resize(entryCount);
+            pp.getarr("progressVariable.weights",stringIn,0,entryCount);
+            parseVars(varNames, stringIn, weightsIn); 
+
+            // Cold side/Hot side
+            Vector<Real> coldState(NUM_SPECIES+1,0.0);
+            entryCount = pp.countval("progressVariable.coldState");
+            stringIn.resize(entryCount);
+            pp.getarr("progressVariable.coldState",stringIn,0,entryCount);
+            parseVars(varNames, stringIn, coldState); 
+            Vector<Real> hotState(NUM_SPECIES+1,0.0);
+            entryCount = pp.countval("progressVariable.hotState");
+            stringIn.resize(entryCount);
+            pp.getarr("progressVariable.hotState",stringIn,0,entryCount);
+            parseVars(varNames, stringIn, hotState); 
+            m_C0 = 0.0;
+            m_C1 = 0.0;
+            for (int i = 0; i < NUM_SPECIES+1; ++i) {
+                m_Cweights[i] = weightsIn[i];
+                m_C0 += coldState[i] * m_Cweights[i];
+                m_C1 += hotState[i] * m_Cweights[i];
+            }
+        } else if ( !Cformat.compare("RealList")) {     // use a list of Real. MUST contains an entry for each species+Temp
+            // Weights
+            Vector<Real> weightsIn;
+            int entryCount = pp.countval("progressVariable.weights");
+            AMREX_ALWAYS_ASSERT(entryCount==NUM_SPECIES+1);
+            weightsIn.resize(entryCount);
+            pp.getarr("progressVariable.weights",weightsIn,0,entryCount);
+            for (int i=0; i<NUM_SPECIES; ++i) {
+               m_Cweights[i] = weightsIn[i];
+            }
+            // Cold side/Hot side
+            entryCount = pp.countval("progressVariable.coldState");
+            AMREX_ALWAYS_ASSERT(entryCount==NUM_SPECIES+1);
+            Vector<Real> coldState(entryCount);
+            pp.getarr("progressVariable.coldState",coldState,0,entryCount);
+            entryCount = pp.countval("progressVariable.hotState");
+            AMREX_ALWAYS_ASSERT(entryCount==NUM_SPECIES+1);
+            Vector<Real> hotState(entryCount);
+            pp.getarr("progressVariable.hotState",hotState,0,entryCount);
+            m_C0 = 0.0;
+            m_C1 = 0.0;
+            for (int i = 0; i < NUM_SPECIES+1; ++i) {
+                m_C0 += coldState[i] * m_Cweights[i];
+                m_C1 += hotState[i] * m_Cweights[i];
+            }
+        } else {
+            Abort("Unknown progressVariable.format ! Should be 'Cantera' or 'RealList'");
+        }
+        pp.query("progressVariable.revert", m_Crevert);
+    }
+}
+
+void
+PeleLM::parseVars(const Vector<std::string> &a_varsNames,
+                  const Vector<std::string> &a_stringIn,
+                  Vector<Real>       &a_rVars)
+{
+   int varCountIn = a_stringIn.size();
+
+   // For each entry in the user-provided composition, parse name and value
+   std::string delimiter = ":";
+   for (int i = 0; i < varCountIn; i++ ) {
+      long unsigned sep = a_stringIn[i].find(delimiter);
+      if ( sep == std::string::npos ) {
+         Abort("Error parsing '"+a_stringIn[i]+"' --> unable to find delimiter :");
+      }
+      std::string varNameIn = a_stringIn[i].substr(0, sep);
+      Real value = std::stod(a_stringIn[i].substr(sep+1,a_stringIn[i].length()));
+      int foundIt = 0;
+      for (int k = 0; k < a_varsNames.size(); k++ ) {
+         if ( varNameIn == a_varsNames[k] ) {
+            a_rVars[k] = value;
+            foundIt = 1;
+         }
+      }
+      if ( !foundIt ) {
+         Abort("Error parsing '"+a_stringIn[i]+"' --> unable to match to any provided variable name");
+      }
+   }
 }
 
 Real
@@ -808,7 +911,8 @@ PeleLM::fetchDiffTypeArray(int scomp, int ncomp)
 Real 
 PeleLM::MFSum (const Vector<const MultiFab*> &a_mf, int comp)
 {
-    // Get the integral of the MF, not including the fine-covered cells
+    // Get the integral of the MF, not including the fine-covered and
+    // EB-covered cells
 
     Real  volwgtsum = 0.0;
 
@@ -907,19 +1011,13 @@ void PeleLM::setTypicalValues(const TimeStamp &a_time, int is_init)
     }
     
     if (!m_incompressible) {
-        // First get the difference between max/min, if too small use average
-        typical_values[DENSITY] = stateMax[DENSITY] - stateMin[DENSITY];
-        if (typical_values[DENSITY] < 0.1 * stateMin[DENSITY]) typical_values[DENSITY] = 0.5 * (stateMax[DENSITY] + stateMin[DENSITY]);
+        // Average between max/min
+        typical_values[DENSITY] = 0.5 * (stateMax[DENSITY] + stateMin[DENSITY]);
         for (int n = 0; n < NUM_SPECIES; n++) {
-            typical_values[FIRSTSPEC+n] = stateMax[FIRSTSPEC+n] - stateMin[FIRSTSPEC+n];
-            if (typical_values[FIRSTSPEC+n] < 0.1 * stateMin[FIRSTSPEC+n]) {
-                typical_values[FIRSTSPEC+n] = 0.5 * (stateMax[FIRSTSPEC+n] + stateMin[FIRSTSPEC+n]);
-            }
+            typical_values[FIRSTSPEC+n] = 0.5 * (stateMax[FIRSTSPEC+n] + stateMin[FIRSTSPEC+n]) / typical_values[DENSITY];
         }
-        typical_values[RHOH] = stateMax[RHOH] - stateMin[RHOH];
-        if (typical_values[RHOH] < 0.1 * stateMin[RHOH]) typical_values[RHOH] = 0.5 * (stateMax[RHOH] + stateMin[RHOH]);
-        typical_values[TEMP] = stateMax[TEMP] - stateMin[TEMP];
-        if (typical_values[TEMP] < 0.1 * stateMin[TEMP]) typical_values[TEMP] = 0.5 * (stateMax[TEMP] + stateMin[TEMP]);
+        typical_values[RHOH] = 0.5 * (stateMax[RHOH] + stateMin[RHOH]) / typical_values[DENSITY];
+        typical_values[TEMP] = 0.5 * (stateMax[TEMP] + stateMin[TEMP]);
         typical_values[RHORT] = m_pOld;
 
         // Pass into chemsitry if requested
@@ -938,7 +1036,7 @@ void PeleLM::setTypicalValues(const TimeStamp &a_time, int is_init)
         if (!m_incompressible) {
             Print() << "\tDensity: " << typical_values[DENSITY] << '\n';
             Print() << "\tTemp:    " << typical_values[TEMP]    << '\n';
-            Print() << "\tRhoH:    " << typical_values[RHOH]    << '\n';
+            Print() << "\tH:       " << typical_values[RHOH]    << '\n';
             Vector<std::string> spec_names;
             pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(spec_names);
             for (int n = 0; n < NUM_SPECIES; n++) {
@@ -1196,6 +1294,185 @@ PeleLM::MLmin(const Vector<const MultiFab*> &a_MF,
 
     ParallelDescriptor::ReduceRealMin(nmin.data(),ncomp);
     return nmin;
+}
+
+void
+PeleLM::checkMemory(const std::string &a_message)
+{
+    if (!m_checkMem) return;
+
+    const int IOProc = ParallelDescriptor::IOProcessorNumber();
+#ifdef AMREX_USE_GPU
+    Long free_mem_avail = Gpu::Device::freeMemAvailable() / (1024*1024);
+    ParallelDescriptor::ReduceLongMin(free_mem_avail, IOProc);
+    Print() << "     [" << a_message << "] GPU mem. avail. (MB) " << free_mem_avail << "\n";
+#else
+    // MultiFab memory usage
+    Long max_fab_megabytes = amrex::TotalBytesAllocatedInFabsHWM() / (1024*1024);
+    ParallelDescriptor::ReduceLongMax(max_fab_megabytes, IOProc);
+    Print() << "     [" << a_message << "] MFs mem. allocated (MB) " << max_fab_megabytes << "\n";
+#endif
+}
+
+void
+PeleLM::initMixtureFraction()
+{
+    // Get default fuel and oxy tank composition: pure fuel vs air
+    Vector<std::string> specNames;
+    pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(specNames);
+    amrex::Real YF[NUM_SPECIES], YO[NUM_SPECIES];
+    for (int i=0; i<NUM_SPECIES; ++i) {
+        YF[i] = 0.0;
+        YO[i] = 0.0;
+        if (!specNames[i].compare("O2"))  YO[i] = 0.233;
+        if (!specNames[i].compare("N2"))  YO[i] = 0.767;
+        if (i == fuelID) YF[i] = 1.0;
+    }
+
+    auto eos = pele::physics::PhysicsType::eos();
+    // Overwrite with user-defined value if provided in input file
+    ParmParse pp("peleLM");
+    std::string MFformat;
+    int hasUserMF = pp.contains("mixtureFraction.format");
+    if ( hasUserMF ) {
+        pp.query("mixtureFraction.format", MFformat);
+        if ( !MFformat.compare("Cantera")) {             // use a Cantera-like format with <SpeciesName>:<Value>, default in 0.0
+            std::string MFCompoType;
+            pp.query("mixtureFraction.type", MFCompoType);
+            Vector<std::string> compositionIn;
+            int entryCount = pp.countval("mixtureFraction.oxidTank");
+            compositionIn.resize(entryCount);
+            pp.getarr("mixtureFraction.oxidTank",compositionIn,0,entryCount);
+            parseComposition(compositionIn, MFCompoType, YO); 
+            entryCount = pp.countval("mixtureFraction.fuelTank");
+            compositionIn.resize(entryCount);
+            pp.getarr("mixtureFraction.fuelTank",compositionIn,0,entryCount);
+            parseComposition(compositionIn, MFCompoType, YF); 
+        } else if ( !MFformat.compare("RealList")) {     // use a list of Real. MUST contains an entry for each species in the mixture
+            std::string MFCompoType;
+            pp.query("mixtureFraction.type", MFCompoType);
+            if ( !MFCompoType.compare("mass") ) {
+               int entryCount = pp.countval("mixtureFraction.oxidTank");
+               AMREX_ALWAYS_ASSERT(entryCount==NUM_SPECIES);
+               Vector<amrex::Real> compositionIn(NUM_SPECIES);
+               pp.getarr("mixtureFraction.oxidTank",compositionIn,0,NUM_SPECIES);
+               for (int i=0; i<NUM_SPECIES; ++i) {
+                  YO[i] = compositionIn[i];
+               }
+               entryCount = pp.countval("mixtureFraction.fuelTank");
+               AMREX_ALWAYS_ASSERT(entryCount==NUM_SPECIES);
+               pp.getarr("mixtureFraction.fuelTank",compositionIn,0,NUM_SPECIES);
+               for (int i=0; i<NUM_SPECIES; ++i) {
+                  YF[i] = compositionIn[i];
+               }
+            } else if ( !MFCompoType.compare("mole") ) {
+               amrex::Real XF[NUM_SPECIES], XO[NUM_SPECIES];
+               int entryCount = pp.countval("mixtureFraction.oxidTank");
+               AMREX_ALWAYS_ASSERT(entryCount==NUM_SPECIES);
+               Vector<amrex::Real> compositionIn(NUM_SPECIES);
+               pp.getarr("mixtureFraction.oxidTank",compositionIn,0,NUM_SPECIES);
+               for (int i=0; i<NUM_SPECIES; ++i) {
+                  XO[i] = compositionIn[i];
+               }
+               entryCount = pp.countval("mixtureFraction.fuelTank");
+               AMREX_ALWAYS_ASSERT(entryCount==NUM_SPECIES);
+               pp.getarr("mixtureFraction.fuelTank",compositionIn,0,NUM_SPECIES);
+               for (int i=0; i<NUM_SPECIES; ++i) {
+                  XF[i] = compositionIn[i];
+               }
+
+               eos.X2Y(XO,YO);
+               eos.X2Y(XF,YF);
+            } else {
+               Abort("Unknown mixtureFraction.type ! Should be 'mass' or 'mole'");
+            }
+        } else {
+            Abort("Unknown mixtureFraction.format ! Should be 'Cantera' or 'RealList'");
+        }
+    }
+    if (fuelID<0 && !hasUserMF) {
+        Print() << " Mixture fraction definition lacks fuelID: consider using peleLM.fuel_name keyword \n";
+    }
+
+    // Only interested in CHON -in that order. Compute Bilger weights
+    amrex::Real atwCHON[4] = {0.0};
+    pele::physics::eos::atomic_weightsCHON<pele::physics::PhysicsType::eos_type>(atwCHON);
+    Beta_mix[0] = ( atwCHON[0] != 0.0 ) ? 2.0/atwCHON[0] : 0.0;
+    Beta_mix[1] = ( atwCHON[1] != 0.0 ) ? 1.0/(2.0*atwCHON[1]) : 0.0;
+    Beta_mix[2] = ( atwCHON[2] != 0.0 ) ? -1.0/atwCHON[2] : 0.0;
+    Beta_mix[3] = 0.0;
+
+    // Compute each species weight for the Bilger formulation based on elemental compo
+    // Only interested in CHON -in that order.
+    int ecompCHON[NUM_SPECIES*4];
+    pele::physics::eos::element_compositionCHON<pele::physics::PhysicsType::eos_type>(ecompCHON);
+    amrex::Real mwt[NUM_SPECIES];
+    eos.molecular_weight(mwt);
+    Zfu = 0.0;
+    Zox = 0.0;
+    for (int i=0; i<NUM_SPECIES; ++i) {
+        spec_Bilger_fact[i] = 0.0;
+        for (int k = 0; k < 4; k++) {
+            spec_Bilger_fact[i] += Beta_mix[k] * (ecompCHON[i*4 + k]*atwCHON[k]/mwt[i]);
+        }
+        Zfu += spec_Bilger_fact[i]*YF[i];
+        Zox += spec_Bilger_fact[i]*YO[i];
+    }
+}
+
+void
+PeleLM::parseComposition(Vector<std::string> compositionIn,
+                         std::string         compositionType,
+                         Real               *massFrac)
+{
+   Real compoIn[NUM_SPECIES] = {0.0};
+
+   // Get species names
+   Vector<std::string> specNames;
+   pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(specNames);
+
+   // For each entry in the user-provided composition, parse name and value
+   std::string delimiter = ":"; 
+   int specCountIn = compositionIn.size();
+   for (int i = 0; i < specCountIn; i++ ) {
+      long unsigned sep = compositionIn[i].find(delimiter);
+      if ( sep == std::string::npos ) {
+         Abort("Error parsing '"+compositionIn[i]+"' --> unable to find delimiter :");
+      }    
+      std::string specNameIn = compositionIn[i].substr(0, sep);
+      Real value = std::stod(compositionIn[i].substr(sep+1,compositionIn[i].length()));
+      int foundIt = 0; 
+      for (int k = 0; k < NUM_SPECIES; k++ ) {
+         if ( specNameIn == specNames[k] ) {
+            compoIn[k] = value;
+            foundIt = 1; 
+         }    
+      }    
+      if ( !foundIt ) {
+         Abort("Error parsing '"+compositionIn[i]+"' --> unable to match to any species name");
+      }    
+   }
+
+   // Ensure that it sums to 1.0:
+   Real sum = 0.0; 
+   for (int k = 0; k < NUM_SPECIES; k++ ) {
+      sum += compoIn[k];
+   }
+   for (int k = 0; k < NUM_SPECIES; k++ ) {
+      compoIn[k] /= sum;
+   }
+
+   // Fill the massFrac array, convert from mole fraction if necessary
+   if ( compositionType == "mass" ) {                // mass
+      for (int i = 0; i < NUM_SPECIES; i++ ) {
+         massFrac[i] = compoIn[i];
+      }
+   } else if ( compositionType == "mole" ) {         // mole
+      auto eos = pele::physics::PhysicsType::eos();
+      eos.X2Y(compoIn,massFrac);
+   } else {
+      Abort("Unknown mixtureFraction.type ! Should be 'mass' or 'mole'");
+   }
 }
 
 #ifdef AMREX_USE_EB

@@ -24,6 +24,15 @@
 #include <PrecondOp.H>
 #endif
 
+// Forward declarations
+#ifdef PELELM_USE_SPRAY
+class SprayParticleContainer;
+#endif
+
+#ifdef PELELM_USE_SOOT
+class SootModel;
+#endif
+
 class PeleLM : public amrex::AmrCore {
 
    public:
@@ -53,6 +62,10 @@ class PeleLM : public amrex::AmrCore {
 
    //-----------------------------------------------------------------------------
    // Virtual AmrCore functions
+   virtual void regrid(int lbase,
+                       amrex::Real time,
+                       bool initial = false) override;
+
    virtual void MakeNewLevelFromScratch( int lev, 
                                                amrex::Real time,
                                          const amrex::BoxArray& ba,
@@ -87,6 +100,27 @@ class PeleLM : public amrex::AmrCore {
 
    // ReadProblemParameters
    void readProbParm();
+
+   // ReadGridFile
+  void readGridFile(std::string grid_file,
+                    amrex::Vector<amrex::BoxArray>& input_ba);
+
+#ifdef PELELM_USE_SPRAY
+   // ReadSprayParameters
+   void readSprayParameters();
+
+   // SprayParticleSetup
+   void sprayParticleSetup();
+
+   // CreateSprayData
+   void createSprayData();
+
+   // InitSprays
+   void initSprays();
+
+   // SprayRestart
+   void sprayRestart();
+#endif
 
    // VariablesSetup
    void variablesSetup();
@@ -186,6 +220,7 @@ class PeleLM : public amrex::AmrCore {
 #ifdef PELE_USE_EFIELD
       amrex::Vector<amrex::Array<amrex::MultiFab,AMREX_SPACEDIM>> uDrift;        // ions drift face velocity
 #endif
+
    };
    //-----------------------------------------------------------------------------
 
@@ -200,6 +235,15 @@ class PeleLM : public amrex::AmrCore {
 
    // initialIterations
    void initialIterations();
+
+   // initFromGridFile
+   void InitFromGridFile(amrex::Real time);
+
+   // regridFromFile
+   void regridFromGridFile(int lbase,
+                           amrex::Real time,
+                           bool initial);
+
    //-----------------------------------------------------------------------------
 
    //-----------------------------------------------------------------------------
@@ -386,10 +430,66 @@ class PeleLM : public amrex::AmrCore {
                      amrex::Array4<const amrex::Real> const& rho,
                      amrex::Array4<const amrex::Real> const& rhoY,
                      amrex::Array4<const amrex::Real> const& rhoh,
-                     amrex::Array4<const amrex::Real> const& temp);
+                     amrex::Array4<const amrex::Real> const& temp,
+                     amrex::Array4<const amrex::Real> const& extMom,
+                     amrex::Array4<const amrex::Real> const& extRho);
    //-----------------------------------------------------------------------------
 
+#ifdef PELELM_USE_SPRAY
+   //-----------------------------------------------------------------------------
+   // Sprays
+   void setupVirtualParticles(const int level);
+   void removeVirtualParticles(const int level);
+   void setupGhostParticles(const int ngrow, const int level);
+   void removeGhostParticles(const int level);
+   amrex::Real estSprayDt();
+   void sprayMKD(const amrex::Real time, const amrex::Real dt);
+   void sprayMKDLevel(const int level,
+                      const amrex::Real time,
+                      const amrex::Real dt);
+   void sprayMK(const amrex::Real time,
+                const amrex::Real dt);
+   void sprayMKLevel(const int level,
+                     const amrex::Real time,
+                     const amrex::Real dt);
+   void sprayInjectRedist(bool regridded, int lbase = 0);
+   void setSprayState(const amrex::Real& a_flow_dt);
+   void addSpraySource(const int level);
+   static int write_spray_ascii_files;
+   static int num_spray_src;
+   static bool do_spray_particles;
+   static int plot_spray_src;
+   static std::string spray_fuel_names[SPRAY_FUEL_NUM];
+   static SprayParticleContainer* theSprayPC();
+   static SprayParticleContainer* theVirtPC();
+   static SprayParticleContainer* theGhostPC();
+   // State used for spray interpolation
+   amrex::Vector<std::unique_ptr<amrex::MultiFab> > m_spraysource;
+   amrex::Vector<std::unique_ptr<amrex::MultiFab> > m_spraystate;
+   //-----------------------------------------------------------------------------
+#endif
+#ifdef PELELM_USE_SOOT
+   //-----------------------------------------------------------------------------
+   // Soot
 
+   // SetSootIndx
+   void setSootIndx();
+
+   // CleanupSootModel
+   void cleanupSootModel();
+
+   // AddSootDerivePlotVars
+   //void addSootDerivePlotVars(PeleLMDeriveList& derive_lst);
+
+   // Compute the soot source terms
+   void computeSootSource(const PeleLM::TimeStamp &a_timestamp,
+                          const amrex::Real a_dt);
+
+   // Clip soot moments
+   void clipSootMoments();
+
+   //-----------------------------------------------------------------------------
+#endif
    //-----------------------------------------------------------------------------
    // EOS
 
@@ -519,6 +619,7 @@ class PeleLM : public amrex::AmrCore {
    void averageDownVelocity(const PeleLM::TimeStamp &a_time);
    void averageDownDensity(const PeleLM::TimeStamp &a_time);
    void averageDownRhoRT(const PeleLM::TimeStamp &a_time);
+   void averageDown(const PeleLM::TimeStamp &a_time, const int state_comp, const int ncomp);
 #ifdef PELE_USE_EFIELD
    void averageDownnE(const PeleLM::TimeStamp &a_time);
    void averageDownPhiV(const PeleLM::TimeStamp &a_time);
@@ -644,6 +745,18 @@ class PeleLM : public amrex::AmrCore {
    // Typical values
    void setTypicalValues(const PeleLM::TimeStamp &a_time, int is_init = 0);
    void updateTypicalValuesChem();
+    
+   void checkMemory(const std::string &a_message);
+
+   // Mixture fraction & Progress variable
+   void initMixtureFraction();
+   void parseComposition(amrex::Vector<std::string> compositionIn,
+                         std::string                compositionType,
+                         amrex::Real               *massFrac);
+   void parseVars(const amrex::Vector<std::string> &a_varNames,
+                  const amrex::Vector<std::string> &a_stringIn,
+                  amrex::Vector<amrex::Real> &a_rVars);
+   void initProgressVariable();
    //-----------------------------------------------------------------------------
 
 #ifdef AMREX_USE_EB
@@ -694,6 +807,9 @@ class PeleLM : public amrex::AmrCore {
    EBFactory (int lev) const noexcept { 
       return static_cast<amrex::EBFArrayBoxFactory const&>(*m_factory[lev]);
    }
+
+   void correct_vel_small_cells(amrex::Vector<amrex::MultiFab*> const &a_vel,
+                                amrex::Vector<amrex::Array<amrex::MultiFab const*,AMREX_SPACEDIM> > const &a_umac);
 #endif
 
 
@@ -718,7 +834,9 @@ class PeleLM : public amrex::AmrCore {
    void getScalarAdvForce(std::unique_ptr<AdvanceAdvData> &advData,
                           std::unique_ptr<AdvanceDiffData> &diffData);
    void computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData);
+   void computePassiveAdvTerms(std::unique_ptr<AdvanceAdvData> &advData, int state_comp, int ncomp);
    void updateDensity(std::unique_ptr<AdvanceAdvData> &advData);
+   void updateScalarComp(std::unique_ptr<AdvanceAdvData> &advData, int state_comp, int ncomp);
 
    void getScalarDiffForce(std::unique_ptr<AdvanceAdvData> &advData,
                            std::unique_ptr<AdvanceDiffData> &diffData);
@@ -867,6 +985,7 @@ class PeleLM : public amrex::AmrCore {
    amrex::Vector<amrex::MultiFab* > getDivUVect(const PeleLM::TimeStamp &a_time);
    amrex::Vector<amrex::MultiFab* > getDiffusivityVect(const PeleLM::TimeStamp &a_time);
    amrex::Vector<amrex::MultiFab* > getViscosityVect(const PeleLM::TimeStamp &a_time);
+   amrex::Vector<amrex::MultiFab* > getIRVect();
 #ifdef PELE_USE_EFIELD
    amrex::Vector<amrex::MultiFab* > getPhiVVect(const PeleLM::TimeStamp &a_time);
    amrex::Vector<amrex::MultiFab* > getnEVect(const PeleLM::TimeStamp &a_time);
@@ -896,6 +1015,9 @@ class PeleLM : public amrex::AmrCore {
 
    // FAB factory
    amrex::Vector<std::unique_ptr<amrex::FabFactory<amrex::FArrayBox> > > m_factory;
+
+   // External source terms
+   amrex::Vector<std::unique_ptr<amrex::MultiFab> >  m_extSource;
 
    // Covered cells mask
    amrex::Vector<std::unique_ptr<amrex::iMultiFab> > m_coveredMask;
@@ -928,12 +1050,22 @@ class PeleLM : public amrex::AmrCore {
    // Derived quantities
    PeleLMDeriveList     evaluate_lst;
 
-   // Tagging
+   // Tagging/Refinement
    amrex::Vector<amrex::AMRErrorTag> errTags;
+   std::string m_initial_grid_file;
+   std::string m_regrid_file;
+   amrex::Vector<amrex::BoxArray> m_initial_ba;
+   amrex::Vector<amrex::BoxArray> m_regrid_ba;
 
    // Problem parameters
    ProbParm* prob_parm;
    ProbParm* prob_parm_d;
+
+#ifdef PELELM_USE_SOOT
+   // Soot parameters
+   SootModel* soot_model;
+   bool do_soot_solve;
+#endif
 
    // PMF parameters
    pele::physics::PMF::PmfData pmf_data;
@@ -973,9 +1105,11 @@ class PeleLM : public amrex::AmrCore {
    int m_plotHeatRelease = 0;
    int m_plotStateSpec = 0;
    int m_plot_int = 0;
+   amrex::Real m_plot_per = -1.;
    int m_check_int = 0;
    int m_message_int = 10;
    int m_evaluatePlotVarCount = 0;
+   int m_plot_grad_p = 1;
    amrex::Vector<std::string> m_evaluatePlotVars;
 
    //-----------------------------------------------------------------------------
@@ -986,6 +1120,7 @@ class PeleLM : public amrex::AmrCore {
    amrex::Real m_dt           = -1.0;
    amrex::Real m_cfl          = 0.7;
    amrex::Real m_fixed_dt     = -1.0;
+   amrex::Real m_init_dt      = -1.0;
    amrex::Real m_dtshrink     = 1.0;
    amrex::Real m_prev_dt      = -1.0;
    amrex::Real m_dtChangeMax  = 1.1;
@@ -1035,6 +1170,7 @@ class PeleLM : public amrex::AmrCore {
 
    // Misc.
    int m_floor_species = 0;
+   int m_checkMem = 0;
 
    // SDC
    int m_nSDCmax = 1;
@@ -1065,6 +1201,8 @@ class PeleLM : public amrex::AmrCore {
    int m_do_temporals = 0;
    int m_temp_int = 5;
    int m_do_massBalance = 0;
+   int m_do_energyBalance = 0;
+   int m_do_speciesBalance = 0;
    amrex::Real m_massOld;
    amrex::Real m_massNew;
    amrex::Real m_RhoHOld;
@@ -1096,6 +1234,7 @@ class PeleLM : public amrex::AmrCore {
 
    // Chemistry
    int m_skipInstantRR = 0;
+   int m_plot_react = 1;
 
    // Typical values
    int m_resetTypValInt = 10;
@@ -1121,6 +1260,24 @@ class PeleLM : public amrex::AmrCore {
    std::string m_adv_redist_type = "StateRedist";
    std::string m_diff_redist_type = "FluxRedist";
 #endif
+   //-----------------------------------------------------------------------------
+
+   //-----------------------------------------------------------------------------
+   // Combustion physics
+   int fuelID = -1;
+
+   // Mixture fraction
+   amrex::Array<amrex::Real, 4> Beta_mix;
+   amrex::Array<amrex::Real, NUM_SPECIES> spec_Bilger_fact;
+   amrex::Real Zfu = -1.0;
+   amrex::Real Zox = -1.0;
+
+   // Progress variable
+   // C is a linear combination of Ys and T
+   amrex::GpuArray<amrex::Real,NUM_SPECIES+1> m_Cweights;
+   amrex::Real m_C0 = -1.0;
+   amrex::Real m_C1 = -1.0;
+   int m_Crevert = 0;           // Flip the definition with 1 - ∑_k wgt*v_k
    //-----------------------------------------------------------------------------
 
    //-----------------------------------------------------------------------------

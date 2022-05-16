@@ -9,3 +9,5 @@ git clone -b development https://github.com/AMReX-Combustion/PelePhysics.git bui
 export PELE_PHYSICS_HOME=${PWD}/build/PelePhysics
 git clone https://github.com/AMReX-Codes/AMReX-Hydro.git build/AMReX-Hydro
 export AMREX_HYDRO_HOME=${PWD}/build/AMReX-Hydro
+git clone https://github.com/AMReX-Combustion/PeleMP.git build/PeleMP
+export PELEMP_HOME=${PWD}/build/PeleMP

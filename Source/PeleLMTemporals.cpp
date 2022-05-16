@@ -15,17 +15,21 @@ void PeleLM::initTemporals(const PeleLM::TimeStamp &a_time)
          m_domainMassFlux[2*idim+1] = 0.0;
       }
    }
-   m_RhoHOld = MFSum(GetVecOfConstPtrs(getRhoHVect(a_time)),0);
-   for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
-      m_domainRhoHFlux[2*idim] = 0.0;
-      m_domainRhoHFlux[2*idim+1] = 0.0;
+   if (m_do_energyBalance && !m_incompressible) {
+      m_RhoHOld = MFSum(GetVecOfConstPtrs(getRhoHVect(a_time)),0);
+      for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+         m_domainRhoHFlux[2*idim] = 0.0;
+         m_domainRhoHFlux[2*idim+1] = 0.0;
+      }
    }
 
-   for (int n = 0; n < NUM_SPECIES; n++){
-      m_RhoYOld[n] = MFSum(GetVecOfConstPtrs(getSpeciesVect(a_time)),n);
-      for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
-         m_domainRhoYFlux[2*n*AMREX_SPACEDIM+2*idim] = 0.0;
-         m_domainRhoYFlux[1+2*n*AMREX_SPACEDIM+2*idim] = 0.0;
+   if (m_do_speciesBalance && !m_incompressible) {
+      for (int n = 0; n < NUM_SPECIES; n++){
+         m_RhoYOld[n] = MFSum(GetVecOfConstPtrs(getSpeciesVect(a_time)),n);
+         for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+            m_domainRhoYFlux[2*n*AMREX_SPACEDIM+2*idim] = 0.0;
+            m_domainRhoYFlux[1+2*n*AMREX_SPACEDIM+2*idim] = 0.0;
+         }
       }
    }
 
@@ -351,10 +355,26 @@ void PeleLM::writeTemporals()
    }
    Real kinetic_energy = MFSum(GetVecOfConstPtrs(kinEnergy),0);
 
+   // Combustion
+   Real fuelConsumptionInt = 0.0;
+   Real heatReleaseRateInt = 0.0;
+   if (fuelID > 0 && !(m_chem_integrator == "ReactorNull")) {
+       fuelConsumptionInt =  MFSum(GetVecOfConstPtrs(getIRVect()),fuelID);
+       for (int lev = 0; lev <= finest_level; ++lev) { 
+          getHeatRelease(lev, kinEnergy[lev].get());  // Re-use kinEnergy container
+       }
+       heatReleaseRateInt = MFSum(GetVecOfConstPtrs(kinEnergy),0);
+   }
+
    // Get min/max/mean for non-species state components
 
-   tmpStateFile << m_nstep << " " << m_cur_time << " " << kinetic_energy << " " << m_pNew << " \n";
-   tmpStateFile.flush();
+   tmpStateFile << m_nstep << " " << m_cur_time                 // Time
+                << " " << kinetic_energy                        // Kinetic energy
+                << " " << m_pNew                                // Thermo. pressure
+                << " " << fuelConsumptionInt                    // Integ fuel burning rate
+                << " " << heatReleaseRateInt                    // Integ heat release rate
+                << " \n";
+   tmpStateFile.flush(); 
 }
 
 void PeleLM::openTempFile()

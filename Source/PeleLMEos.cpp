@@ -113,6 +113,8 @@ void PeleLM::calcDivU(int is_init,
                                                          : diffData->Dnp1[lev].const_array(mfi,NUM_SPECIES+1);
          auto const& r        = (m_do_react && !m_skipInstantRR) ? RhoYdot.const_array(mfi)
                                              : ldata_p->state.const_array(mfi,FIRSTSPEC);   // Dummy unused Array4
+         auto const& extRhoY  = m_extSource[lev]->const_array(mfi,FIRSTSPEC);
+         auto const& extRhoH  = m_extSource[lev]->const_array(mfi,RHOH);
          auto const& divu     = ldata_p->divu.array(mfi);
          int use_react        = (m_do_react && !m_skipInstantRR) ? 1 : 0;
 
@@ -124,22 +126,22 @@ void PeleLM::calcDivU(int is_init,
                  divu(i,j,k) = 0.0;
              });
          } else if (flagfab.getType(bx) != FabType::regular ) {     // EB containing boxes 
-             amrex::ParallelFor(bx, [ rhoY, T, SpecD, Fourier, DiffDiff, r, divu, use_react, flag]
+             amrex::ParallelFor(bx, [ rhoY, T, SpecD, Fourier, DiffDiff, r, extRhoY, extRhoH, divu, use_react, flag]
              AMREX_GPU_DEVICE (int i, int j, int k) noexcept
              {
                 if ( flag(i,j,k).isCovered() ) {
                     divu(i,j,k) = 0.0;
                 } else {
-                    compute_divu( i, j, k, rhoY, T, SpecD, Fourier, DiffDiff, r, divu, use_react );
+                    compute_divu( i, j, k, rhoY, T, SpecD, Fourier, DiffDiff, r, extRhoY, extRhoH, divu, use_react );
                 }
              });
          } else
 #endif
          {
-             amrex::ParallelFor(bx, [ rhoY, T, SpecD, Fourier, DiffDiff, r, divu, use_react]
+             amrex::ParallelFor(bx, [ rhoY, T, SpecD, Fourier, DiffDiff, r, extRhoY, extRhoH, divu, use_react]
              AMREX_GPU_DEVICE (int i, int j, int k) noexcept
              {
-                compute_divu( i, j, k, rhoY, T, SpecD, Fourier, DiffDiff, r, divu, use_react );
+                compute_divu( i, j, k, rhoY, T, SpecD, Fourier, DiffDiff, r, extRhoY, extRhoH, divu, use_react );
              });
          }
       }
@@ -217,8 +219,8 @@ void PeleLM::calc_dPdt(const TimeStamp &a_time,
 
    for (int lev = 0; lev <= finest_level; ++lev) {
       calc_dPdt(lev, a_time, a_dPdt[lev]);
-#ifdef AMRE_USE_EB
-      EB_set_covered(a_dPdt[lev],0.0);
+#ifdef AMREX_USE_EB
+      EB_set_covered(*a_dPdt[lev],0.0);
 #endif
    }
 

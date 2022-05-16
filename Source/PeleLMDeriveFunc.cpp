@@ -2,13 +2,14 @@
 #include <PeleLM_Index.H>
 #include <PelePhysics.H>
 #include <mechanism.H>
+#include <PeleLM.H>
 
 using namespace amrex;
 
 //
 // Extract temp
 //
-void pelelm_dertemp (const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
+void pelelm_dertemp (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
                      const FArrayBox& statefab, const FArrayBox& /*pressfab*/,
                      const Geometry& /*geomdata*/,
                      Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
@@ -29,7 +30,7 @@ void pelelm_dertemp (const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
 //
 // Extract species mass fractions Y_n
 //
-void pelelm_dermassfrac (const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
+void pelelm_dermassfrac (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
                          const FArrayBox& statefab, const FArrayBox& /*pressfab*/,
                          const Geometry& /*geomdata*/,
                          Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
@@ -53,7 +54,7 @@ void pelelm_dermassfrac (const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
 //
 // Compute cell averaged pressure from nodes
 //
-void pelelm_deravgpress (const Box& bx, FArrayBox& derfab, int dcomp, int /*ncomp*/,
+void pelelm_deravgpress (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int /*ncomp*/,
                          const FArrayBox& /*statefab*/, const FArrayBox& pressfab,
                          const Geometry& /*geomdata*/,
                          Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
@@ -81,7 +82,7 @@ void pelelm_deravgpress (const Box& bx, FArrayBox& derfab, int dcomp, int /*ncom
 //
 // Compute vorticity magnitude
 //
-void pelelm_dermgvort (const Box& bx, FArrayBox& derfab, int dcomp, int /*ncomp*/,
+void pelelm_dermgvort (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int /*ncomp*/,
                        const FArrayBox& statefab, const FArrayBox& /*pressfab*/,
                        const Geometry& geomdata,
                        Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
@@ -126,7 +127,7 @@ void pelelm_dermgvort (const Box& bx, FArrayBox& derfab, int dcomp, int /*ncomp*
 //
 // Compute the kinetic energy
 //
-void pelelm_derkineticenergy (const Box& bx, FArrayBox& derfab, int dcomp, int /*ncomp*/,
+void pelelm_derkineticenergy (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int /*ncomp*/,
                               const FArrayBox& statefab, const FArrayBox& /*pressfab*/,
                               const Geometry& /*geomdata*/,
                               Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
@@ -146,3 +147,88 @@ void pelelm_derkineticenergy (const Box& bx, FArrayBox& derfab, int dcomp, int /
                                           + vel(i,j,k,2)*vel(i,j,k,2)) );
     });
 }
+
+//
+// Compute mixture fraction
+//
+void pelelm_dermixfrac (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
+                        const FArrayBox& statefab, const FArrayBox& /*pressfab*/,
+                        const Geometry& /*geomdata*/,
+                        Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
+
+{
+    AMREX_ASSERT(derfab.box().contains(bx));
+    AMREX_ASSERT(statefab.box().contains(bx));
+    AMREX_ASSERT(ncomp == 1);
+
+    if (a_pelelm->Zfu < 0.0) amrex::Abort("Mixture fraction not initialized");
+
+    auto const density   = statefab.array(DENSITY);
+    auto const rhoY      = statefab.array(FIRSTSPEC);
+    auto       mixt_frac = derfab.array(dcomp);
+
+    amrex::Real Zox_lcl   = a_pelelm->Zox;
+    amrex::Real Zfu_lcl   = a_pelelm->Zfu;
+    amrex::Real denom_inv = 1.0 / (Zfu_lcl - Zox_lcl);
+    amrex::GpuArray<amrex::Real,NUM_SPECIES> fact_Bilger;
+    for (int n=0; n<NUM_SPECIES; ++n) {
+        fact_Bilger[n] = a_pelelm->spec_Bilger_fact[n];
+    }
+
+    amrex::ParallelFor(bx,
+    [density, rhoY, mixt_frac, fact_Bilger, Zox_lcl, denom_inv] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+    {
+        amrex::Real rho_inv = 1.0_rt / density(i,j,k);
+        mixt_frac(i,j,k) = 0.0_rt;
+        for (int n = 0; n<NUM_SPECIES; ++n) {
+            mixt_frac(i,j,k) += ( rhoY(i,j,k,n) * fact_Bilger[n] ) * rho_inv;
+        }
+        mixt_frac(i,j,k) = ( mixt_frac(i,j,k) - Zox_lcl ) * denom_inv;
+    });
+}
+
+//
+// Compute progress variable
+//
+void pelelm_derprogvar (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
+                        const FArrayBox& statefab, const FArrayBox& /*pressfab*/,
+                        const Geometry& /*geomdata*/,
+                        Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
+
+{
+    AMREX_ASSERT(derfab.box().contains(bx));
+    AMREX_ASSERT(statefab.box().contains(bx));
+    AMREX_ASSERT(ncomp == 1); 
+
+    if (a_pelelm->m_C0 < 0.0) amrex::Abort("Progress variable not initialized");
+
+    auto const density  = statefab.array(DENSITY);
+    auto const rhoY     = statefab.array(FIRSTSPEC);
+    auto const temp     = statefab.array(TEMP);
+    auto       prog_var = derfab.array(dcomp);
+
+    amrex::Real C0_lcl   = a_pelelm->m_C0;
+    amrex::Real C1_lcl   = a_pelelm->m_C1;
+    amrex::Real denom_inv = 1.0 / (C1_lcl - C0_lcl);
+    amrex::GpuArray<amrex::Real,NUM_SPECIES+1> Cweights;
+    for (int n=0; n<NUM_SPECIES+1; ++n) {
+        Cweights[n] = a_pelelm->m_Cweights[n];
+    }   
+
+    amrex::ParallelFor(bx, [=,revert=a_pelelm->m_Crevert]
+    AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+    {   
+        amrex::Real rho_inv = 1.0_rt / density(i,j,k);
+        prog_var(i,j,k) = 0.0_rt;
+        for (int n = 0; n<NUM_SPECIES; ++n) {
+            prog_var(i,j,k) += ( rhoY(i,j,k,n) * Cweights[n] ) * rho_inv;
+        }   
+        prog_var(i,j,k) += temp(i,j,k) * Cweights[NUM_SPECIES];
+        if (revert) {
+           prog_var(i,j,k) = 1.0 - ( prog_var(i,j,k) - C0_lcl ) * denom_inv;
+        } else {
+           prog_var(i,j,k) = ( prog_var(i,j,k) - C0_lcl ) * denom_inv;
+        }   
+    });
+}
+

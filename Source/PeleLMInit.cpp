@@ -94,6 +94,9 @@ void PeleLM::MakeNewLevelFromScratch( int lev,
    macproj.reset(new Hydro::MacProjector(Geom(0,finest_level)));
 #endif
    m_macProjOldSize = finest_level+1;
+   m_extSource[lev].reset(new MultiFab(grids[lev], dmap[lev], NVAR, amrex::max(m_nGrowAdv, m_nGrowMAC),
+                                       MFInfo(), *m_factory[lev]));
+   m_extSource[lev]->setVal(0.);
 
 #if AMREX_USE_EB
    if ( lev == 0 && m_signDistNeeded) {
@@ -142,11 +145,21 @@ void PeleLM::initData() {
    if (m_restart_chkfile.empty()) {
 
       //----------------------------------------------------------------
-      // This is an AmrCore member function which recursively makes new levels
-      // with MakeNewLevelFromScratch.
-      InitFromScratch(m_cur_time);
+      if (!m_initial_grid_file.empty()) {
+         InitFromGridFile(m_cur_time);
+      } else {
+         // This is an AmrCore member function which recursively makes new levels
+         // with MakeNewLevelFromScratch.
+         InitFromScratch(m_cur_time);
+      }
       resetCoveredMask();
       updateDiagnostics();
+
+#ifdef PELELM_USE_SPRAY
+      if (do_spray_particles) {
+        initSprays();
+      }
+#endif
 
       //----------------------------------------------------------------
       // Set typical values
@@ -183,9 +196,7 @@ void PeleLM::initData() {
       // TODO : this estimate is probably useless
       Real dtInit = computeDt(is_init,AmrNewTime);
       Print() << " Initial dt: " << dtInit << "\n";
-      //WriteDebugPlotFile(GetVecOfConstPtrs(getDensityVect(AmrNewTime)),"RhoPostDist");
-      //WriteDebugPlotFile(GetVecOfConstPtrs(getSpeciesVect(AmrNewTime)),"RhoYsPostDist");
-      //WriteDebugPlotFile(GetVecOfConstPtrs(getTempVect(AmrNewTime)),"TempPostDist");
+      //WriteDebugPlotFile(GetVecOfConstPtrs(getStateVect(AmrNewTime)),"InitSol");
 
       // Subcycling IAMR/PeleLM first does a projection with no reaction divU
       // which can make the dt for evaluating I_R better
@@ -278,7 +289,7 @@ void PeleLM::initData() {
          writeTemporals();
       }
 
-      if (m_plot_int > 0 ) {
+      if (m_plot_int > 0 || m_plot_per > 0.) {
          WritePlotFile();
       }
       if (m_check_int > 0 ) {
@@ -290,6 +301,11 @@ void PeleLM::initData() {
       // Read starting configuration from chk file.
       ReadCheckPointFile();
 
+#ifdef PELELM_USE_SPRAY
+      if (do_spray_particles) {
+        sprayRestart();
+      }
+#endif
 #ifdef PELE_USE_EFIELD
       // If restarting from a non efield simulation
       if (m_restart_nonEF) {
@@ -403,4 +419,19 @@ void PeleLM::initialIterations() {
       // Copy back old state
       copyStateOldToNew();
    }
+}
+
+void PeleLM::InitFromGridFile(amrex::Real time)
+{
+  {
+     const amrex::BoxArray& ba = MakeBaseGrids();
+     DistributionMapping dm(ba);
+     MakeNewLevelFromScratch(0, time, ba, dm);
+  }
+  finest_level = m_initial_ba.size();
+  for (int lev = 1; lev <= finest_level; lev++) {
+     const amrex::BoxArray ba = m_initial_ba[lev-1];
+     DistributionMapping dm(ba);
+     MakeNewLevelFromScratch(lev, time, ba, dm);
+  }
 }

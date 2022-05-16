@@ -134,6 +134,8 @@ compute_divu(int i, int j, int k,
              amrex::Array4<const amrex::Real> const& tempDiff,
              amrex::Array4<const amrex::Real> const& specEnthDiff,
              amrex::Array4<const amrex::Real> const& rhoYdot,
+             amrex::Array4<const amrex::Real> const& extRhoY,
+             amrex::Array4<const amrex::Real> const& extRhoH,
              amrex::Array4<      amrex::Real> const& divu,
              int do_react) noexcept
 {
@@ -166,9 +168,9 @@ compute_divu(int i, int j, int k,
    }
 
    amrex::Real denominv = 1.0_rt / ( rho * cpmix * T(i,j,k) );
-   divu(i,j,k) = ( specEnthDiff(i,j,k) + tempDiff(i,j,k) ) * denominv;
+   divu(i,j,k) = ( specEnthDiff(i,j,k) + tempDiff(i,j,k) + extRhoH(i,j,k) ) * denominv;
    for (int n = 0; n < NUM_SPECIES; n++) {
-      amrex::Real specTerm = specDiff(i,j,k,n);
+      amrex::Real specTerm = specDiff(i,j,k,n) + extRhoY(i,j,k,n);
       if (do_react) specTerm += rhoYdot(i,j,k,n);
       divu(i,j,k) +=  specTerm * ( mwtinv[n] * Wbar * rhoinv - hi[n] * denominv );
    }
@@ -474,11 +476,13 @@ makeVelForce(int i, int j, int k,
              amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const gp0,
              const amrex::Real                     & dV_control,
              amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const /*dx*/,
-             amrex::Array4<const amrex::Real> const& /*vel*/,
+             amrex::Array4<const amrex::Real> const& vel,
              amrex::Array4<const amrex::Real> const& rho,
              amrex::Array4<const amrex::Real> const& /*rhoY*/,
              amrex::Array4<const amrex::Real> const& /*rhoh*/,
              amrex::Array4<const amrex::Real> const& /*temp*/,
+             amrex::Array4<const amrex::Real> const& extmom,
+             amrex::Array4<const amrex::Real> const& extrho,
              amrex::Array4<      amrex::Real> const& force) noexcept
 {
    using namespace amrex::literals;
@@ -498,6 +502,9 @@ makeVelForce(int i, int j, int k,
    // TODO direction of pseudo grav should be runtime params
    if (pseudo_gravity) {
       force(i,j,k,AMREX_SPACEDIM-1) += dV_control * rho_lcl;
+   }
+   for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+     force(i,j,k,idim) += extmom(i,j,k,idim) - vel(i,j,k,idim) * extrho(i,j,k);
    }
 }
 
@@ -579,6 +586,8 @@ buildAdvectionForcing(int i, int j, int k,
                       amrex::Array4<const amrex::Real> const& dn,
                       amrex::Array4<const amrex::Real> const& ddn,
                       amrex::Array4<const amrex::Real> const& r,
+                      amrex::Array4<const amrex::Real> const& extRhoY,
+                      amrex::Array4<const amrex::Real> const& extRhoH,
                       amrex::Real                      const& dp0dt,
                       int                              const& closed_chamber,
                       int                                     do_react,
@@ -602,8 +611,10 @@ buildAdvectionForcing(int i, int j, int k,
       forceY(i,j,k,n) = dn(i,j,k,n);                                 // forceY = Dnk
       if (do_react) forceY(i,j,k,n) += r(i,j,k,n);                   //         + Rk 
       forceT(i,j,k) -= forceY(i,j,k,n) * hi_spec[n] * 0.0001_rt;     // forceT -= Sum{ hk. (Rk + Dnk) } with CGS -> MKS conversion of hk
+      forceY(i,j,k,n) += extRhoY(i,j,k,n);
    }
 
+   forceT(i,j,k) += extRhoH(i,j,k);
    if ( closed_chamber == 1 ) forceT(i,j,k) += dp0dt;                // Add dp0/dt
 
    amrex::Real cpmix = 0.0_rt;
