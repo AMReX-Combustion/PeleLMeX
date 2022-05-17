@@ -306,6 +306,8 @@ void PeleLM::readParameters() {
    pp.query("deltaT_verbose",m_deltaT_verbose);
    pp.query("deltaT_iterMax",m_deltaTIterMax);
    pp.query("deltaT_tol",m_deltaT_norm_max);
+   pp.query("deltaT_crashIfFailing",m_crashOnDeltaTFail);
+  
 
    // -----------------------------------------
    // initialization
