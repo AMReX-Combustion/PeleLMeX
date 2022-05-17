@@ -724,6 +724,16 @@ class PeleLM : public amrex::AmrCore {
    void updateTypicalValuesChem();
     
    void checkMemory(const std::string &a_message);
+
+   // Mixture fraction & Progress variable
+   void initMixtureFraction();
+   void parseComposition(amrex::Vector<std::string> compositionIn,
+                         std::string                compositionType,
+                         amrex::Real               *massFrac);
+   void parseVars(const amrex::Vector<std::string> &a_varNames,
+                  const amrex::Vector<std::string> &a_stringIn,
+                  amrex::Vector<amrex::Real> &a_rVars);
+   void initProgressVariable();
    //-----------------------------------------------------------------------------
 
 #ifdef AMREX_USE_EB
@@ -946,6 +956,7 @@ class PeleLM : public amrex::AmrCore {
    amrex::Vector<amrex::MultiFab* > getDivUVect(const PeleLM::TimeStamp &a_time);
    amrex::Vector<amrex::MultiFab* > getDiffusivityVect(const PeleLM::TimeStamp &a_time);
    amrex::Vector<amrex::MultiFab* > getViscosityVect(const PeleLM::TimeStamp &a_time);
+   amrex::Vector<amrex::MultiFab* > getIRVect();
 #ifdef PELE_USE_EFIELD
    amrex::Vector<amrex::MultiFab* > getPhiVVect(const PeleLM::TimeStamp &a_time);
    amrex::Vector<amrex::MultiFab* > getnEVect(const PeleLM::TimeStamp &a_time);
@@ -1140,6 +1151,7 @@ class PeleLM : public amrex::AmrCore {
    int m_deltaT_verbose = 0;
    int m_deltaTIterMax = 10;
    amrex::Real m_deltaT_norm_max = 1.0e-10;
+   int m_crashOnDeltaTFail = 1;
 
    // Pressure
    amrex::Real m_dpdtFactor = 1.0;
@@ -1215,6 +1227,24 @@ class PeleLM : public amrex::AmrCore {
    std::string m_adv_redist_type = "StateRedist";
    std::string m_diff_redist_type = "FluxRedist";
 #endif
+   //-----------------------------------------------------------------------------
+
+   //-----------------------------------------------------------------------------
+   // Combustion physics
+   int fuelID = -1;
+
+   // Mixture fraction
+   amrex::Array<amrex::Real, 4> Beta_mix;
+   amrex::Array<amrex::Real, NUM_SPECIES> spec_Bilger_fact;
+   amrex::Real Zfu = -1.0;
+   amrex::Real Zox = -1.0;
+
+   // Progress variable
+   // C is a linear combination of Ys and T
+   amrex::GpuArray<amrex::Real,NUM_SPECIES+1> m_Cweights;
+   amrex::Real m_C0 = -1.0;
+   amrex::Real m_C1 = -1.0;
+   int m_Crevert = 0;           // Flip the definition with 1 - ∑_k wgt*v_k
    //-----------------------------------------------------------------------------
 
    //-----------------------------------------------------------------------------

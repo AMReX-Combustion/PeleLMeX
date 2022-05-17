@@ -105,6 +105,10 @@ void PeleLM::Setup() {
 #endif
    }
 
+   // Mixture fraction & Progress variable
+   initMixtureFraction();
+   initProgressVariable();
+
    // Initiliaze turbulence injection
    turb_inflow.init(Geom(0));
 
@@ -302,6 +306,8 @@ void PeleLM::readParameters() {
    pp.query("deltaT_verbose",m_deltaT_verbose);
    pp.query("deltaT_iterMax",m_deltaTIterMax);
    pp.query("deltaT_tol",m_deltaT_norm_max);
+   pp.query("deltaT_crashIfFailing",m_crashOnDeltaTFail);
+  
 
    // -----------------------------------------
    // initialization
@@ -606,6 +612,20 @@ void PeleLM::variablesSetup() {
    } else {
       typical_values.resize(NVAR,-1.0);
    }
+
+   if ( !m_incompressible ) {
+      // -----------------------------------------
+      // Combustion
+      // -----------------------------------------
+      ParmParse pp("peleLM");
+      std::string fuel_name = "";
+      pp.query("fuel_name",fuel_name);
+      fuel_name = "rho.Y("+fuel_name+")";
+      if (isStateVariable(fuel_name)) {
+         fuelID = stateVariableIndex(fuel_name) - FIRSTSPEC;
+      }
+   }
+
    if (max_level > 0 && !m_initial_grid_file.empty()) {
      readGridFile(m_initial_grid_file, m_initial_ba);
      if (verbose > 0) {
@@ -684,6 +704,12 @@ void PeleLM::derivedSetup()
 
    // Kinetic energy
    derive_lst.add("kinetic_energy",IndexType::TheCellType(),1,pelelm_derkineticenergy,the_same_box);
+
+   // Mixture fraction
+   derive_lst.add("mixture_fraction",IndexType::TheCellType(),1,pelelm_dermixfrac,the_same_box);
+
+   // Progress variable
+   derive_lst.add("progress_variable",IndexType::TheCellType(),1,pelelm_derprogvar,the_same_box);
 
 #ifdef PELE_USE_EFIELD
    // Charge distribution
