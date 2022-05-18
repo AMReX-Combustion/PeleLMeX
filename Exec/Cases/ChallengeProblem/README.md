@@ -24,7 +24,6 @@ The initial conditions in the chamber are controled by the following parameters 
 ```
 with the remainder of the mixture made up of nitrogen. These default conditions correspond to a lean
 mixture of CH4 in viciated air at an equivalence ratio of 0.5.
-Additionnally, an initial velocity field is specified with large scale turbulence feature (TODO)
 
 ## Diesel injection
 
@@ -56,3 +55,19 @@ plane with the jet angle specified by *cone_angle* (measured between the cylinde
 The temperature and velocoty of the jet, as well as the number of jets are controlled by *T_jet*, *vel_jet* and
 *nholes*, respectively.
 Finally, the timing and duration of the injector can be controlled.
+
+## Running the KPP problem
+
+To run this problem, the nodal projection needs to be performed with the Hypre library because the
+EB geometry leads to linear system condition numbers that AMReX GMG is not able to handle.
+In particular, one needs the preconditioning strategy recently developed by S. Thomas (https://arxiv.org/abs/2111.09512)
+and currently implemented in the `IterTriSolve` branch of:
+https://github.com/sthomas61/hypre.git
+
+Once Hypre been compiled, one can turn on the use of Hypre in AMReX (USE_HYPRE=TRUE) and the provide the path to
+the library using HYPRE_HOME in the GNUmakefile.
+
+The turbulent jet boundary condition is read in from a precursor simulation stored into a 'TurbFile'. A single file is 
+employed for all 4 jets, with a time offset allowing each jet to read in turbulent data shifted in time. The `TurbFile`
+used for the KPP can be found on ORNL's Summit on the following location (shared CMB138 project directory):
+/gpfs/alpine/proj-shared/cmb138/ECP_KPP/Turb.test2
