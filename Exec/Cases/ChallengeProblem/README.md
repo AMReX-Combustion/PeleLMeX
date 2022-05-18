@@ -71,3 +71,6 @@ The turbulent jet boundary condition is read in from a precursor simulation stor
 employed for all 4 jets, with a time offset allowing each jet to read in turbulent data shifted in time. The `TurbFile`
 used for the KPP can be found on ORNL's Summit on the following location (shared CMB138 project directory):
 /gpfs/alpine/proj-shared/cmb138/ECP_KPP/Turb.test2
+
+On Crusher, please load the following modules:
+module load PrgEnv-amd rocm/5.1.0 craype-accel-amd-gfx90a cray-libsci/21.08.1.2
