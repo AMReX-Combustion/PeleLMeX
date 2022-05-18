@@ -62,6 +62,7 @@ To run this problem, the nodal projection needs to be performed with the Hypre l
 EB geometry leads to linear system condition numbers that AMReX GMG is not able to handle.
 In particular, one needs the preconditioning strategy recently developed by S. Thomas (https://arxiv.org/abs/2111.09512)
 and currently implemented in the `IterTriSolve` branch of:
+
 https://github.com/sthomas61/hypre.git
 
 Once Hypre been compiled, one can turn on the use of Hypre in AMReX (USE_HYPRE=TRUE) and the provide the path to
@@ -70,7 +71,13 @@ the library using HYPRE_HOME in the GNUmakefile.
 The turbulent jet boundary condition is read in from a precursor simulation stored into a 'TurbFile'. A single file is 
 employed for all 4 jets, with a time offset allowing each jet to read in turbulent data shifted in time. The `TurbFile`
 used for the KPP can be found on ORNL's Summit on the following location (shared CMB138 project directory):
+
 /gpfs/alpine/proj-shared/cmb138/ECP_KPP/Turb.test2
 
 On Crusher, please load the following modules:
+
 module load PrgEnv-amd rocm/5.1.0 craype-accel-amd-gfx90a cray-libsci/21.08.1.2
+
+On Summit, please load the following ones:
+
+module load cmake gcc cuda netlib-lapack
