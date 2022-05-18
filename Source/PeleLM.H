@@ -935,6 +935,7 @@ class PeleLM : public amrex::AmrCore {
    // IO options
    std::string m_restart_chkfile{""};
    std::string m_restart_pltfile{""};
+   std::string pltfileSource{"LM"};
    std::string m_plot_file{"plt"};
    std::string m_check_file{"chk"};
    int m_derivePlotVarCount = 0;
