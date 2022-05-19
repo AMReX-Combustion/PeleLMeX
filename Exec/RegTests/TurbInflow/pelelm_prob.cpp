@@ -9,6 +9,7 @@ void PeleLM::readProbParm()
     pp.query("P_mean", prob_parm->P_mean);
     pp.query("flowDir", prob_parm->meanFlowDir);
     pp.query("flowMag", prob_parm->meanFlowMag);
+    pp.query("bothSides", prob_parm->bothSides);
 
    /*
    if (!m_incompressible) {

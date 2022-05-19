@@ -59,10 +59,12 @@ void PeleLM::getVelForces(const TimeStamp &a_time,
       const auto& rhoY_arr    = (m_incompressible) ? DummyFab.array() : ldata_p->state.const_array(mfi,FIRSTSPEC);
       const auto& rhoh_arr    = (m_incompressible) ? DummyFab.array() : ldata_p->state.const_array(mfi,RHOH);
       const auto& temp_arr    = (m_incompressible) ? DummyFab.array() : ldata_p->state.const_array(mfi,TEMP);
+      const auto& extmom_arr  = m_extSource[lev]->const_array(mfi,VELX);
+      const auto& extrho_arr  = m_extSource[lev]->const_array(mfi,DENSITY);
       const auto& force_arr   = a_velForce->array(mfi);
 
       // Get other forces (gravity, ...)
-      getVelForces(lev, bx, time, force_arr, vel_arr, rho_arr, rhoY_arr, rhoh_arr, temp_arr);
+      getVelForces(lev, bx, time, force_arr, vel_arr, rho_arr, rhoY_arr, rhoh_arr, temp_arr, extmom_arr, extrho_arr);
 
 #ifdef PELE_USE_EFIELD
       const auto& phiV_arr    = ldata_p->phiV.const_array(mfi);
@@ -120,7 +122,9 @@ void PeleLM::getVelForces(int lev,
                           Array4<const Real> const& rho,
                           Array4<const Real> const& rhoY,
                           Array4<const Real> const& rhoh,
-                          Array4<const Real> const& temp)
+                          Array4<const Real> const& temp,
+                          Array4<const Real> const& extMom,
+                          Array4<const Real> const& extRho)
 {
    const auto  dx       = geom[lev].CellSizeArray();
 
@@ -136,6 +140,6 @@ void PeleLM::getVelForces(int lev,
    {
       makeVelForce(i,j,k, is_incomp, rho_incomp, 
                    pseudo_gravity, a_time, grav, gp0, dV_control, dx,
-                   vel, rho, rhoY, rhoh, temp, force);
+                   vel, rho, rhoY, rhoh, temp, extMom, extRho, force);
    });  
 }

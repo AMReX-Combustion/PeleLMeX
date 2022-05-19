@@ -103,7 +103,15 @@ bcnormal(
 
     // When using PELE_USE_TURBINFLOW, s_ext comes in with
     // turbulence data. Only add the mean flow here.
-    s_ext[prob_parm.meanFlowDir] +=  prob_parm.meanFlowMag;
+    if (prob_parm.bothSides) {
+       if (sgn == 1) {
+         s_ext[prob_parm.meanFlowDir] +=  std::abs(prob_parm.meanFlowMag);
+       } else {
+         s_ext[prob_parm.meanFlowDir] -=  std::abs(prob_parm.meanFlowMag);
+       }
+    } else {
+       s_ext[prob_parm.meanFlowDir] +=  prob_parm.meanFlowMag;
+    }
 
     massfrac[O2_ID] = 0.233;
     massfrac[N2_ID] = 0.767;

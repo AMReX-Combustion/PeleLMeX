@@ -11,6 +11,9 @@
 #include <AMReX_SUNMemory.H>
 #endif
 
+#ifdef PELELM_USE_SOOT
+#include "SootModel.H"
+#endif
 using namespace amrex;
 
 static Box the_same_box (const Box& b)    { return b;                }
@@ -32,6 +35,10 @@ void PeleLM::Setup() {
    amrex::Print() << " AMReX-Hydro git hash: " << githash4 << "\n";
    amrex::Print() << " ===============================================\n";
 
+#ifdef PELELM_USE_SOOT
+   soot_model = new SootModel{};
+#endif
+
    // Read PeleLM parameters
    readParameters();
 
@@ -50,6 +57,19 @@ void PeleLM::Setup() {
 
    // Tagging setup
    taggingSetup();
+
+#ifdef PELELM_USE_SPRAY
+   if (do_spray_particles) {
+     sprayParticleSetup();
+   }
+#endif
+#ifdef PELELM_USE_SOOT
+   if (do_soot_solve) {
+     soot_model->define();
+   }
+#endif
+   // Diagnostics setup
+   createDiagnostics();
 
    // Initialize Level Hierarchy data
    resizeArray();
@@ -74,6 +94,7 @@ void PeleLM::Setup() {
             m_plotHeatRelease = 0;
             m_useTypValChem = 0;
          }
+         pp.query("plot_react", m_plot_react);
       }
 
 #ifdef PELE_USE_EFIELD
@@ -84,6 +105,10 @@ void PeleLM::Setup() {
 #endif
    }
 
+   // Mixture fraction & Progress variable
+   initMixtureFraction();
+   initProgressVariable();
+
    // Initiliaze turbulence injection
    turb_inflow.init(Geom(0));
 
@@ -93,6 +118,7 @@ void PeleLM::Setup() {
    // Problem parameters
    prob_parm = new ProbParm{};
    prob_parm_d = (ProbParm*)The_Arena()->alloc(sizeof(ProbParm));
+
 
    // Problem parameters
    readProbParm();
@@ -135,7 +161,6 @@ void PeleLM::readParameters() {
          lo_bc[dir] = 0;
       } else if (lo_bc_char[dir] == "Inflow") {
          lo_bc[dir] = 1;
-         isOpenDomain = 1;
       } else if (lo_bc_char[dir] == "Outflow") {
          lo_bc[dir] = 2;
          isOpenDomain = 1;
@@ -158,7 +183,6 @@ void PeleLM::readParameters() {
          hi_bc[dir] = 0;
       } else if (hi_bc_char[dir] == "Inflow") {
          hi_bc[dir] = 1;
-         isOpenDomain = 1;
       } else if (hi_bc_char[dir] == "Outflow") {
          hi_bc[dir] = 2;
          isOpenDomain = 1;
@@ -260,9 +284,11 @@ void PeleLM::readParameters() {
    if (m_incompressible) {
       m_has_divu = 0;
       m_do_react = 0;
+      pp.query("rho", m_rho);
+      pp.query("mu", m_mu);
+      AMREX_ASSERT_WITH_MESSAGE(m_rho>0.0,"peleLM.rho is needed when running incompressible");
+      AMREX_ASSERT_WITH_MESSAGE(m_mu>0.0,"peleLM.mu is needed when running incompressible");
    }
-   pp.query("rho", m_rho);
-   pp.query("mu", m_mu);
    Vector<Real> grav(AMREX_SPACEDIM,0);
    pp.queryarr("gravity", grav, 0, AMREX_SPACEDIM);
    Vector<Real> gp0(AMREX_SPACEDIM,0);
@@ -280,6 +306,8 @@ void PeleLM::readParameters() {
    pp.query("deltaT_verbose",m_deltaT_verbose);
    pp.query("deltaT_iterMax",m_deltaTIterMax);
    pp.query("deltaT_tol",m_deltaT_norm_max);
+   pp.query("deltaT_crashIfFailing",m_crashOnDeltaTFail);
+  
 
    // -----------------------------------------
    // initialization
@@ -292,6 +320,7 @@ void PeleLM::readParameters() {
    // -----------------------------------------
    pp.query("sdc_iterMax",m_nSDCmax);
    pp.query("floor_species",m_floor_species);
+   pp.query("memory_checks",m_checkMem);
 
    // -----------------------------------------
    // Reaction
@@ -358,9 +387,11 @@ void PeleLM::readParameters() {
    ppa.query("stop_time", m_stop_time);
    ppa.query("message_int", m_message_int);
    ppa.query("fixed_dt", m_fixed_dt);
+   ppa.query("init_dt", m_init_dt);
    ppa.query("cfl", m_cfl);
    ppa.query("dt_shrink", m_dtshrink);
    ppa.query("dt_change_max", m_dtChangeMax);
+   ppa.query("max_dt", m_max_dt);
 
    if ( max_level > 0 ) {
       ppa.query("regrid_int", m_regrid_int);
@@ -381,6 +412,9 @@ void PeleLM::readParameters() {
          m_EB_refine_LevMin = 0;
          pp.query("refine_EB_min_level",m_EB_refine_LevMin);
          m_EB_refine_LevAdapt = m_EB_refine_LevMin;
+      }
+      if (m_EB_refine_LevMax < max_level) {
+         m_signDistNeeded = 1;
       }
    }
 #endif
@@ -412,7 +446,17 @@ void PeleLM::readParameters() {
    ppef.query("restart_electroneutral",m_restart_electroneutral);
    ppef.query("restart_resetTime",m_restart_resetTime);
 #endif
-
+#ifdef PELELM_USE_SPRAY
+   readSprayParameters();
+#endif
+#ifdef PELELM_USE_SOOT
+   do_soot_solve = true;
+   pp.query("do_soot_solve", do_soot_solve);
+   if (m_verbose && do_soot_solve) {
+     Print() << "Simulation performed with soot modeling \n";
+   }
+   soot_model->readSootParams();
+#endif
 }
 
 void PeleLM::readIOParameters() {
@@ -426,6 +470,8 @@ void PeleLM::readIOParameters() {
    pp.query("initDataPlt" , m_restart_pltfile);
    pp.query("plot_file", m_plot_file);
    pp.query("plot_int" , m_plot_int);
+   pp.query("plot_per", m_plot_per);
+   pp.query("plot_grad_p", m_plot_grad_p);
    m_derivePlotVarCount = (pp.countval("derive_plot_vars"));
    if (m_derivePlotVarCount != 0) {
       m_derivePlotVars.resize(m_derivePlotVarCount);
@@ -434,6 +480,10 @@ void PeleLM::readIOParameters() {
       }
    }
    pp.query("plot_speciesState" , m_plotStateSpec);
+   m_initial_grid_file = "";
+   m_regrid_file = "";
+   pp.query("initial_grid_file", m_initial_grid_file);
+   pp.query("regrid_file", m_regrid_file);
 
 }
 
@@ -482,6 +532,14 @@ void PeleLM::variablesSetup() {
       stateComponents.emplace_back(NE,"nE");
       Print() << " PhiV: " << PHIV << "\n";
       stateComponents.emplace_back(PHIV,"PhiV");
+#endif
+#ifdef PELELM_USE_SOOT
+      for (int mom = 0; mom < NUMSOOTVAR; mom++) {
+        std::string sootname = soot_model->sootVariableName(mom);
+        Print() << " " << sootname << ": " << FIRSTSOOT + mom << "\n";
+        stateComponents.emplace_back(FIRSTSOOT+mom,sootname);
+      }
+      setSootIndx();
 #endif
    }
 
@@ -539,6 +597,12 @@ void PeleLM::variablesSetup() {
       m_AdvTypeState[PHIV] = 0;
       m_DiffTypeState[PHIV] = 0;
 #endif
+#ifdef PELELM_USE_SOOT
+      for (int mom = 0; mom < NUMSOOTVAR; mom++) {
+        m_AdvTypeState[FIRSTSOOT+mom] = 0;
+        m_DiffTypeState[FIRSTSOOT+mom] = 0;
+      }
+#endif
    }
 
    //----------------------------------------------------------------
@@ -548,6 +612,68 @@ void PeleLM::variablesSetup() {
    } else {
       typical_values.resize(NVAR,-1.0);
    }
+
+   if ( !m_incompressible ) {
+      // -----------------------------------------
+      // Combustion
+      // -----------------------------------------
+      ParmParse pp("peleLM");
+      std::string fuel_name = "";
+      pp.query("fuel_name",fuel_name);
+      fuel_name = "rho.Y("+fuel_name+")";
+      if (isStateVariable(fuel_name)) {
+         fuelID = stateVariableIndex(fuel_name) - FIRSTSPEC;
+      }
+   }
+
+   if (max_level > 0 && !m_initial_grid_file.empty()) {
+     readGridFile(m_initial_grid_file, m_initial_ba);
+     if (verbose > 0) {
+       amrex::Print() << "Read initial_ba. Size is " << m_initial_ba.size() << "\n";
+     }
+    }
+   if (max_level > 0 && !m_regrid_file.empty() && m_regrid_int > 0) {
+     readGridFile(m_regrid_file, m_regrid_ba);
+      if (verbose > 0) {
+         amrex::Print() << "Read regrid_ba. Size is " << m_regrid_ba.size() << "\n";
+      }
+   }
+}
+
+void PeleLM::readGridFile(std::string grid_file,
+                          amrex::Vector<amrex::BoxArray>& input_ba)
+{
+#define STRIP while( is.get() != '\n' ) {}
+  std::ifstream is(grid_file.c_str(),std::ios::in);
+  if (!is.good()) {
+    amrex::FileOpenFailed(grid_file);
+  }
+  int in_finest,ngrid;
+
+  is >> in_finest;
+  STRIP;
+  input_ba.resize(in_finest);
+  use_fixed_upto_level = in_finest;
+  if (in_finest > max_level) {
+    amrex::Error("You have fewer levels in your inputs file then in your grids file!");
+  }
+
+  for (int lev = 1; lev <= in_finest; lev++) {
+    BoxList bl;
+    is >> ngrid;
+    STRIP;
+    for (int i = 0; i < ngrid; i++) {
+      Box bx;
+      is >> bx;
+      STRIP;
+      bx.refine(ref_ratio[lev-1]);
+      bl.push_back(bx);
+    }
+    input_ba[lev-1].define(bl);
+  }
+  is.close();
+
+#undef STRIP
 }
 
 void PeleLM::derivedSetup()
@@ -579,6 +705,12 @@ void PeleLM::derivedSetup()
    // Kinetic energy
    derive_lst.add("kinetic_energy",IndexType::TheCellType(),1,pelelm_derkineticenergy,the_same_box);
 
+   // Mixture fraction
+   derive_lst.add("mixture_fraction",IndexType::TheCellType(),1,pelelm_dermixfrac,the_same_box);
+
+   // Progress variable
+   derive_lst.add("progress_variable",IndexType::TheCellType(),1,pelelm_derprogvar,the_same_box);
+
 #ifdef PELE_USE_EFIELD
    // Charge distribution
    derive_lst.add("chargedistrib",IndexType::TheCellType(),1,pelelm_derchargedist,the_same_box);
@@ -600,7 +732,20 @@ void PeleLM::derivedSetup()
 #endif
 #endif
 #endif
-
+#ifdef PELELM_USE_SOOT
+   // if (do_soot_solve) {
+   //   addSootDerivePlotVars(derive_lst);
+   // }
+#endif
+   auto it = m_derivePlotVars.begin();
+   while ( it != m_derivePlotVars.end() ) {
+     if ( !derive_lst.canDerive(*it) ) {
+       it = m_derivePlotVars.erase(it);
+     } else {
+       it++;
+     }
+   }
+   m_derivePlotVarCount = m_derivePlotVars.size();
 }
 
 void PeleLM::evaluateSetup()
@@ -755,11 +900,17 @@ void PeleLM::resizeArray() {
    m_leveldatanlsolve.resize(max_level+1);
 #endif
 
+   // External sources
+   m_extSource.resize(max_level+1);
+
    // Factory
    m_factory.resize(max_level+1);
 
    // Time
    m_t_old.resize(max_level+1);
    m_t_new.resize(max_level+1);
-
+#ifdef PELELM_USE_SPRAY
+   m_spraystate.resize(max_level+1);
+   m_spraysource.resize(max_level+1);
+#endif
 }

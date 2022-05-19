@@ -8,14 +8,14 @@
 
 ## Documentation
 
-PeleLMeX solves of the multispecies reactive Navier-Stokes equations in the low Mach number limit as described in the [PeleLM documentation](https://amrex-combustion.github.io/PeleLM/manual/html/Model.html). It also inherits most of PeleLM algorithmic features, but differs significantly in its implementation stemming from the non-subcycling approach. A brief summary of PeleLMeX control is provided in this exhaustive [input file example](https://github.com/AMReX-Combustion/PeleLMeX/.).
+PeleLMeX solves of the multispecies reactive Navier-Stokes equations in the low Mach number limit as described in the [PeleLM documentation](https://amrex-combustion.github.io/PeleLM/manual/html/Model.html). It also inherits most of PeleLM algorithmic features, but differs significantly in its implementation stemming from the non-subcycling approach. A brief summary of PeleLMeX control is provided in this exhaustive [input file example](https://amrex-combustion.github.io/PeleLMeX/LMeXControls.html).
 
 ## Installation
 
 ### Using git submodules
 
 You can clone the PeleLMeX and tested versions of its submodules 
-([amrex](https://github.com/AMReX-Codes/amrex), [AMReX-Hydro](https://github.com/AMReX-Codes/AMReX-Hydro) and [*PelePhysics*](https://github.com/AMReX-Combustion/PelePhysics)) using:
+([amrex](https://github.com/AMReX-Codes/amrex), [AMReX-Hydro](https://github.com/AMReX-Codes/AMReX-Hydro) and [PelePhysics](https://github.com/AMReX-Combustion/PelePhysics)) using:
 
 ```
 git clone --recursive https://github.com/AMReX-Combustion/PeleLMeX.git
@@ -42,7 +42,7 @@ Finally, make with: `make -j`, or if on macOS: `make -j COMP=llvm`.
 
 ### Using separate git clone
 
-First, clone the source code and its prerequisite ([amrex](https://github.com/AMReX-Codes/amrex), [AMReX-Hydro](https://github.com/AMReX-Codes/AMReX-Hydro) and [*PelePhysics*](https://github.com/AMReX-Combustion/PelePhysics)) using:
+First, clone the source code and its prerequisite ([amrex](https://github.com/AMReX-Codes/amrex), [AMReX-Hydro](https://github.com/AMReX-Codes/AMReX-Hydro) and [PelePhysics](https://github.com/AMReX-Combustion/PelePhysics)) using:
 
 ```
 git clone https://github.com/AMReX-Codes/amrex.git

@@ -1,0 +1,195 @@
+#----------------------DOMAIN DEFINITION------------------------
+geometry.is_periodic = 0 0 0               # For each dir, 0: non-perio, 1: periodic
+geometry.coord_sys   = 0                  # 0 => cart, 1 => RZ
+geometry.prob_lo     = -0.014 -0.014 -0.00275        # x_lo y_lo (z_lo)
+geometry.prob_hi     =  0.014  0.014  0.00425        # x_hi y_hi (z_hi)
+
+# >>>>>>>>>>>>>  BC FLAGS <<<<<<<<<<<<<<<<
+# Interior, Inflow, Outflow, Symmetry,
+# SlipWallAdiab, NoSlipWallAdiab, SlipWallIsotherm, NoSlipWallIsotherm
+peleLM.lo_bc = NoSlipWallAdiab NoSlipWallAdiab NoSlipWallAdiab
+peleLM.hi_bc = NoSlipWallAdiab NoSlipWallAdiab Inflow
+
+
+#-------------------------AMR CONTROL----------------------------
+amr.n_cell          = 512 512 128      # Level 0 number of cells in each direction   
+amr.v               = 1                # AMR verbose
+amr.max_level       = 0                # maximum level number allowed
+amr.ref_ratio       = 2 2 2 2 2        # refinement ratio
+amr.regrid_int      = 5                # how often to regrid
+amr.n_error_buf     = 2 2 2 2          # number of buffer cells in error est
+amr.grid_eff        = 0.7              # what constitutes an efficient grid
+amr.blocking_factor = 16               # block factor in grid generation (min box size)
+amr.max_grid_size   = 32               # max box size
+
+#--------------------------- Problem -------------------------------
+prob.P_mean = 6079500.0
+prob.T_mean = 900.0
+prob.centx  = 0.0
+prob.centy  = 0.0
+prob.r_circ = 0.0015
+prob.r_hole = 0.000085
+prob.nholes = 4
+prob.cone_angle = 45.0
+prob.T_jet  = 470.0
+prob.vel_jet = 28.0
+prob.Z      = 0.45
+prob.injection_start = 0.0
+prob.injection_duration = 0.0005
+
+#--------------------------- Turbulence -------------------------------
+# NOTE: the centers must be consistent with the injection data provided
+# above.
+turbinflows= inj1 inj2 inj3 inj4
+
+turbinflow.inj1.turb_file      = Turb.test2
+turbinflow.inj1.dir            = 2
+turbinflow.inj1.side           = high
+turbinflow.inj1.turb_scale_loc = 1.0
+turbinflow.inj1.turb_scale_vel = 1.0
+turbinflow.inj1.turb_center    = 0.0 0.0015
+turbinflow.inj1.turb_conv_vel  = 28.0
+turbinflow.inj1.turb_nplane    = 32
+turbinflow.inj1.time_offset    = 0.0
+
+turbinflow.inj2.turb_file      = Turb.test2
+turbinflow.inj2.dir            = 2
+turbinflow.inj2.side           = high
+turbinflow.inj2.turb_scale_loc = 1.0
+turbinflow.inj2.turb_scale_vel = 1.0
+turbinflow.inj2.turb_center    = -0.0015 0.0
+turbinflow.inj2.turb_conv_vel  = 28.0
+turbinflow.inj2.turb_nplane    = 32
+turbinflow.inj2.time_offset    = 0.000014
+
+turbinflow.inj3.turb_file      = Turb.test2
+turbinflow.inj3.dir            = 2
+turbinflow.inj3.side           = high
+turbinflow.inj3.turb_scale_loc = 1.0
+turbinflow.inj3.turb_scale_vel = 1.0
+turbinflow.inj3.turb_center    = 0.0 -0.0015
+turbinflow.inj3.turb_conv_vel  = 28.0
+turbinflow.inj3.turb_nplane    = 32
+turbinflow.inj3.time_offset    = 0.000028
+
+turbinflow.inj4.turb_file      = Turb.test2
+turbinflow.inj4.dir            = 2
+turbinflow.inj4.side           = high
+turbinflow.inj4.turb_scale_loc = 1.0
+turbinflow.inj4.turb_scale_vel = 1.0
+turbinflow.inj4.turb_center    = 0.0015 0.0
+turbinflow.inj4.turb_conv_vel  = 28.0
+turbinflow.inj4.turb_nplane    = 32
+turbinflow.inj4.time_offset    = 0.000056
+
+#-------------------------PeleLM CONTROL----------------------------
+peleLM.v = 3
+peleLM.incompressible = 0
+peleLM.rho = 1.17
+peleLM.mu = 0.0
+peleLM.use_wbar = 1
+peleLM.sdc_iterMax = 1
+peleLM.floor_species = 0
+peleLM.num_divu_iter = 1
+peleLM.num_init_iter = 3
+
+peleLM.do_temporals = 1
+peleLM.temporal_int = 2
+peleLM.mass_balance = 1
+peleLM.num_init_iter = 1
+peleLM.num_divu_iter = 1
+
+#amr.restart = chk00005
+amr.check_int = 5
+amr.plot_int = 10
+amr.max_step = 5
+amr.dt_shrink = 0.1
+amr.stop_time = 1.0
+#amr.stop_time = 1.00
+amr.fixed_dt = 0.000001
+amr.cfl = 0.4
+amr.derive_plot_vars = avg_pressure mag_vort mass_fractions
+
+# --------------- INPUTS TO CHEMISTRY REACTOR ---------------
+peleLM.chem_integrator = "ReactorNull"
+#peleLM.use_typ_vals_chem = 1          # Use species/temp typical values in CVODE
+#ode.rtol = 1.0e-6                     # Relative tolerance of the chemical solve
+#ode.atol = 1.0e-5                     # Absolute tolerance factor applied on typical values
+cvode.solve_type = denseAJ_direct     # CVODE Linear solve type (for Newton direction) 
+cvode.max_order  = 4                  # CVODE max BDF order. 
+
+#------------------------- EB SETUP -----------------------------
+eb2.geom_type = UserDefined
+eb2.small_volfrac = 5.e-3
+eb2.maxiter = 100
+#eb2.cylinder_radius = 480.0000
+#eb2.head_offset = -10.0000e4
+#eb2.head_isFlat = 1
+#peleLM.refine_EB_type = Static
+#peleLM.refine_EB_max_level = 0
+
+#--------------------REFINEMENT CONTROL------------------------
+#amr.refinement_indicators = temp
+#amr.temp.max_level     = 1
+#amr.temp.value_greater = 305
+#amr.temp.field_name    = temp
+
+#amr.refinement_indicators = magVort
+#amr.magVort.max_level     = 1
+#amr.magVort.value_greater = 500.0
+#amr.magVort.field_name    = mag_vort
+
+amr.refinement_indicators = boxHZ
+amr.boxHZ.in_box_lo = -0.004 -0.004 0.0008
+amr.boxHZ.in_box_hi =  0.004  0.004 0.00175
+
+#--------------------LINEAR SOLVER CONTROL------------------------
+nodal_proj.verbose = 2
+nodal_proj.mg_max_coarsening_level = 0
+nodal_proj.rtol = 1.0e-10
+nodal_proj.atol = 1.0e-10
+nodal_proj.bottom_solver = "hypre"
+nodal_proj.hypre_namespace = nodal_proj.hypre
+
+nodal_proj.hypre.verbose = 0
+nodal_proj.hypre.hypre_solver = GMRES
+nodal_proj.hypre.hypre_preconditioner = BoomerAMG
+nodal_proj.hypre.num_krylov = 200 
+nodal_proj.hypre.max_iterations = 200 
+
+nodal_proj.hypre.bamg_verbose = 0
+nodal_proj.hypre.bamg_coarsen_type = 8 
+nodal_proj.hypre.bamg_interp_type = 6 
+nodal_proj.hypre.bamg_relax_type = 11
+nodal_proj.hypre.bamg_num_sweeps = 2 
+nodal_proj.hypre.bamg_cycle_type = 1 
+nodal_proj.hypre.bamg_relax_order = 0 
+nodal_proj.hypre.bamg_keep_transpose = 1 
+nodal_proj.hypre.bamg_trunc_factor = 0.44351885396256086
+nodal_proj.hypre.bamg_strong_threshold = 0.30015419030906665
+nodal_proj.hypre.bamg_pmax_elmts = 4 
+#nodal_proj.hypre.bamg_max_levels = 6 
+
+nodal_proj.hypre.bamg_agg_num_levels = 3 
+nodal_proj.hypre.bamg_agg_interp_type = 5 
+nodal_proj.hypre.bamg_agg_pmax_elmts = 5 
+
+nodal_proj.hypre.bamg_smooth_type = 5 
+nodal_proj.hypre.bamg_smooth_num_sweeps = 1 
+nodal_proj.hypre.bamg_smooth_num_levels = 1 
+nodal_proj.hypre.bamg_ilu_type = 0 
+nodal_proj.hypre.bamg_ilu_level = 0 
+nodal_proj.hypre.bamg_ilu_max_iter = 1 
+nodal_proj.hypre.bamg_ilu_reordering_type = 0 
+nodal_proj.hypre.bamg_ilu_tri_solve = 0 
+nodal_proj.hypre.bamg_ilu_lower_jacobi_iters = 13
+nodal_proj.hypre.bamg_ilu_upper_jacobi_iters = 5
+
+fabarray.mfiter_tile_size = 1024 1024 1024
+
+amrex.abort_on_out_of_gpu_memory = 1
+amrex.the_arena_is_managed = 0
+
+#amrex.fpe_trap_invalid = 1
+#amrex.fpe_trap_zero = 1
+#amrex.fpe_trap_overflow = 1

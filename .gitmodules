@@ -7,3 +7,6 @@
 [submodule "Submodules/PelePhysics"]
 	path = Submodules/PelePhysics
 	url = https://github.com/AMReX-Combustion/PelePhysics.git
+[submodule "Submodules/PeleMP"]
+	path = Submodules/PeleMP
+	url = https://github.com/AMReX-Combustion/PeleMP.git

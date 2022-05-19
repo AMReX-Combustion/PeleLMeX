@@ -10,6 +10,12 @@
 #include <AMReX_EBInterpolater.H>
 #endif
 
+#ifdef PELELM_USE_SPRAY
+#include "SprayParticles.H"
+#endif
+#ifdef PELELM_USE_SOOT
+#include "SootModel.H"
+#endif
 using namespace amrex;
 
 namespace { const std::string level_prefix{"Level_"}; }
@@ -52,7 +58,11 @@ void PeleLM::WritePlotFile() {
       ncomp = 2*AMREX_SPACEDIM;
    } else {
       // State + pressure gradients
-      ncomp = NVAR + AMREX_SPACEDIM;
+      if (m_plot_grad_p) {
+         ncomp = NVAR + AMREX_SPACEDIM;
+      } else {
+         ncomp = NVAR;
+      }
       // Make the plot lighter by dropping species by default
       if (!m_plotStateSpec) ncomp -= NUM_SPECIES;
       if (m_has_divu) {
@@ -61,7 +71,7 @@ void PeleLM::WritePlotFile() {
    }
 
    // Reactions
-   if (m_do_react && !m_skipInstantRR) {
+   if (m_do_react && !m_skipInstantRR && m_plot_react) {
       // Cons Rate
       ncomp += nCompIR();
       // FunctCall
@@ -118,20 +128,28 @@ void PeleLM::WritePlotFile() {
       plt_VarsName.push_back("nE");
       plt_VarsName.push_back("phiV");
 #endif
+#ifdef PELELM_USE_SOOT
+      for (int mom = 0; mom < NUMSOOTVAR; mom++) {
+        std::string sootname = soot_model->sootVariableName(mom);
+        plt_VarsName.push_back(sootname);
+      }
+#endif
       if (m_has_divu) {
          plt_VarsName.push_back("divu");
       }
    }
 
-   plt_VarsName.push_back("gradp_x");
+   if (m_plot_grad_p) {
+      plt_VarsName.push_back("gradp_x");
 #if ( AMREX_SPACEDIM > 1 )
-   plt_VarsName.push_back("gradp_y");
+      plt_VarsName.push_back("gradp_y");
 #if ( AMREX_SPACEDIM > 2 )
-   plt_VarsName.push_back("gradp_z");
+      plt_VarsName.push_back("gradp_z");
 #endif
 #endif
+   }
 
-   if (m_do_react  && !m_skipInstantRR) {
+   if (m_do_react  && !m_skipInstantRR && m_plot_react) {
       for (int n = 0; n < NUM_SPECIES; n++) {
          plt_VarsName.push_back("I_R("+names[n]+")");
       }
@@ -179,15 +197,21 @@ void PeleLM::WritePlotFile() {
          MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->phiV, 0, cnt, 1, 0);
          cnt += 1;
 #endif
+#ifdef PELELM_USE_SOOT
+         MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->state, FIRSTSOOT, cnt, NUMSOOTVAR, 0);
+         cnt += NUMSOOTVAR;
+#endif
          if (m_has_divu) {
             MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->divu, 0, cnt, 1, 0);
             cnt += 1;
          }
       }
-      MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->gp, 0, cnt,AMREX_SPACEDIM,0);
-      cnt += AMREX_SPACEDIM;
+      if (m_plot_grad_p) {
+         MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->gp, 0, cnt,AMREX_SPACEDIM,0);
+         cnt += AMREX_SPACEDIM;
+      }
 
-      if (m_do_react  && !m_skipInstantRR) {
+      if (m_do_react  && !m_skipInstantRR && m_plot_react) {
          MultiFab::Copy(mf_plt[lev], m_leveldatareact[lev]->I_R, 0, cnt, nCompIR(), 0);
          cnt += nCompIR();
 
@@ -226,6 +250,15 @@ void PeleLM::WritePlotFile() {
    amrex::WriteMultiLevelPlotfile(plotfilename, finest_level + 1, GetVecOfConstPtrs(mf_plt),
                                   plt_VarsName, Geom(), m_cur_time, istep, refRatio());
 
+#ifdef PELELM_USE_SPRAY
+   if (theSprayPC() != nullptr && do_spray_particles) {
+     bool is_spraycheck = false;
+     for (int lev = 0; lev <= finest_level; ++lev) {
+       theSprayPC()->SprayParticleIO(
+         lev, is_spraycheck, write_spray_ascii_files, plotfilename, PeleLM::spray_fuel_names);
+     }
+   }
+#endif
 }
 
 void PeleLM::WriteHeader(const std::string& name, bool is_checkpoint) const
@@ -331,7 +364,16 @@ void PeleLM::WriteCheckPointFile()
                       amrex::MultiFabFileFullPrefix(lev, checkpointname, level_prefix, "nE"));
 #endif
       }    
-   }   
+   }
+#ifdef PELELM_USE_SPRAY
+   if (theSprayPC() != nullptr && do_spray_particles) {
+     int write_ascii = 0; // Not for checkpoints
+     bool is_spraycheck = true;
+     for (int lev = 0; lev <= finest_level; ++lev) {
+       theSprayPC()->SprayParticleIO(lev, is_spraycheck, write_ascii, checkpointname, PeleLM::spray_fuel_names);
+     }
+   }
+#endif
 }
 
 void PeleLM::ReadCheckPointFile()
