@@ -271,6 +271,7 @@ void PeleLM::computeDifferentialDiffusionFluxes(const TimeStamp &a_time,
          EBdiff.push_back(std::make_unique<MultiFab> (ldata_p->diff_cc,amrex::make_alias,NUM_SPECIES,1));
          getEBState(lev,getTime(lev,a_time),EBvalue[lev],TEMP,1);
       }
+      a_EBfluxes[0]->setVal(0.0);
       getDiffusionOp()->computeDiffFluxes(a_fluxes, NUM_SPECIES,
                                           a_EBfluxes, NUM_SPECIES,
                                           GetVecOfConstPtrs(getTempVect(a_time)), 0,
@@ -864,13 +865,42 @@ void PeleLM::differentialDiffusionUpdate(std::unique_ptr<AdvanceAdvData> &advDat
                          advData, diffData);
 
       // Diffuse deltaT
-      getDiffusionOp()->diffuse_scalar(GetVecOfPtrs(getTempVect(AmrNewTime)), 0,
-                                       GetVecOfConstPtrs(rhs), 0,
-                                       GetVecOfArrOfPtrs(fluxes), NUM_SPECIES,
-                                       GetVecOfConstPtrs(RhoCp),
-                                       {},
-                                       GetVecOfConstPtrs(getDiffusivityVect(AmrNewTime)), NUM_SPECIES, bcRecTemp,
-                                       1, 0, m_dt);
+#ifdef AMREX_USE_EB
+      if (m_isothermalEB) {
+          // Set up EB dirichlet value and diffusivity
+          // Dirichlet value is deltaT
+          Vector<MultiFab> EBvalue(finest_level+1);
+          Vector<std::unique_ptr<MultiFab> > EBdiff;
+          EBdiff.reserve(finest_level+1);
+          for (int lev = 0; lev <= finest_level; ++lev) {
+             auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
+             EBvalue[lev].define(grids[lev],dmap[lev], 1, 0, MFInfo(), EBFactory(lev));
+             EBdiff.push_back(std::make_unique<MultiFab> (ldata_p->diff_cc,amrex::make_alias,NUM_SPECIES,1));
+             getEBState(lev,getTime(lev,AmrNewTime),EBvalue[lev],TEMP,1);
+             MultiFab::Subtract(EBvalue[lev],Tsave[lev],0,0,1,0);
+          }
+          getDiffusionOp()->diffuse_scalar(GetVecOfPtrs(getTempVect(AmrNewTime)), 0,
+                                           GetVecOfConstPtrs(EBvalue), 0,
+                                           GetVecOfConstPtrs(rhs), 0,
+                                           GetVecOfArrOfPtrs(fluxes), NUM_SPECIES,
+                                           GetVecOfConstPtrs(RhoCp),
+                                           {},
+                                           GetVecOfConstPtrs(getDiffusivityVect(AmrNewTime)), NUM_SPECIES,
+                                           GetVecOfConstPtrs(EBdiff), 0, bcRecTemp,
+                                           1, 0, m_dt);
+      } else
+#endif
+      {
+          getDiffusionOp()->diffuse_scalar(GetVecOfPtrs(getTempVect(AmrNewTime)), 0,
+                                           GetVecOfConstPtrs(rhs), 0,
+                                           GetVecOfArrOfPtrs(fluxes), NUM_SPECIES,
+                                           GetVecOfConstPtrs(RhoCp),
+                                           {},
+                                           GetVecOfConstPtrs(getDiffusivityVect(AmrNewTime)), NUM_SPECIES, bcRecTemp,
+                                           1, 0, m_dt);
+      }
+
+      //WriteDebugPlotFile(GetVecOfConstPtrs(getStateVect(AmrNewTime)),"deltaT_it"+std::to_string(dTiter));
 
       // Post deltaT iteration linear solve
       // -> evaluate deltaT_norm
@@ -893,6 +923,7 @@ void PeleLM::differentialDiffusionUpdate(std::unique_ptr<AdvanceAdvData> &advDat
                            GetVecOfConstPtrs(Tsave),
                            diffData, deltaT_norm);
       }
+      //WriteDebugPlotFile(GetVecOfConstPtrs(getStateVect(AmrNewTime)),"Temp_it"+std::to_string(dTiter));
 
       // Check for convergence failure
       if ( (dTiter == m_deltaTIterMax-1) && ( deltaT_norm > m_deltaT_norm_max ) ) {
@@ -903,6 +934,7 @@ void PeleLM::differentialDiffusionUpdate(std::unique_ptr<AdvanceAdvData> &advDat
          }
       }
    }
+   //Abort();
    //------------------------------------------------------------------------
 }
 
