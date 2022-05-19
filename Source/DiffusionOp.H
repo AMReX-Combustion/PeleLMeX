@@ -37,6 +37,27 @@ class DiffusionOp
                         int isPoissonSolve,
                         amrex::Real dt);
 
+#ifdef AMREX_USE_EB
+   void diffuse_scalar (amrex::Vector<amrex::MultiFab*> const& a_phi,
+                        int phi_comp,
+                        amrex::Vector<amrex::MultiFab const*> const& a_phiEB,
+                        int phiEB_comp,
+                        amrex::Vector<amrex::MultiFab const*> const& a_rhs,
+                        int rhs_comp,
+                        amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> const& a_fluxes,
+                        int flux_comp,
+                        amrex::Vector<amrex::MultiFab const*> const& a_acoeff,
+                        amrex::Vector<amrex::MultiFab const*> const& a_density,
+                        amrex::Vector<amrex::MultiFab const*> const& a_bcoeff,
+                        int bcoeff_comp,
+                        amrex::Vector<amrex::MultiFab const*> const& a_bcoeffEB,
+                        int bcoeffEB_comp,
+                        amrex::Vector<amrex::BCRec> a_bcrec,
+                        int ncomp,
+                        int isPoissonSolve,
+                        amrex::Real dt);
+#endif
+
    void computeDiffLap (amrex::Vector<amrex::MultiFab*> const& laps, int lap_comp,
                         amrex::Vector<amrex::MultiFab const*> const& phi, int phi_comp,
                         amrex::Vector<amrex::MultiFab const*> const& bcoeff, int bcoeff_comp,
