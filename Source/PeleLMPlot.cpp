@@ -254,13 +254,18 @@ void PeleLM::WritePlotFile() {
       }
 #ifdef PELELM_USE_SPRAY
       if (spray_derive_vars.size() > 0) {
+        int num_spray_derive = spray_derive_vars.size();
+        mf_plt[lev].setVal(0., cnt, num_spray_derive);
         theSprayPC()->computeDerivedVars(
           mf_plt[lev], lev, cnt, spray_derive_vars, spray_fuel_names);
         if (lev < finest_level) {
+          MultiFab tmp_plt(grids[lev], dmap[lev], num_spray_derive, 0, MFInfo(), Factory(lev));
+          tmp_plt.setVal(0.);
           theVirtPC()->computeDerivedVars(
-            mf_plt[lev], lev, cnt, spray_derive_vars, spray_fuel_names);
+            tmp_plt, lev, 0, spray_derive_vars, spray_fuel_names);
+          MultiFab::Add(mf_plt[lev], tmp_plt, 0, cnt, num_spray_derive, 0);
         }
-        cnt += spray_derive_vars.size();
+        cnt += num_spray_derive;
       }
 #endif
 #ifdef AMREX_USE_EB
