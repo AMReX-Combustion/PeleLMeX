@@ -53,11 +53,12 @@ The available options are divided into groups: those that control primarily AMRe
 ::
 
     #-------------------------TIME STEPPING------------------------
-    amr.max_step  = 20                     # Maximum number of steps
-    amr.stop_time = 0.001                  # Maximum simulation time [s]
-    amr.cfl = 0.5                          # [OPT, DEF=0.7] CFL for advection-controlled dt estimate
-    amr.fixed_dt  = 1e-6                   # [OPT] optional fixed dt (override CFL condition)
-    amr.dt_shrink = 0.0001                 # [OPT, DEF=1.0] dt factor upon initialization
+    amr.max_step      = 20                 # Maximum number of steps
+    amr.stop_time     = 0.001              # Maximum simulation time [s]
+    amr.cfl           = 0.5                # [OPT, DEF=0.7] CFL for advection-controlled dt estimate
+    amr.fixed_dt      = 1e-6               # [OPT] optional fixed dt (override CFL condition)
+    amr.init_dt       = 1e-6               # [OPT] optional initial dt (override CFL condition upon initialization)
+    amr.dt_shrink     = 0.0001             # [OPT, DEF=1.0] dt factor upon initialization
     amr.dt_change_max = 1.1                # [OPT, DEF=1.1] maximum dt change between consecutive steps
 
 Note that either a `max_step` or a `stop_time` is required, and if both are specified, the first stopping criteria
@@ -145,6 +146,30 @@ Linear solvers are a key component of PeleLMeX algorithm, separate controls are 
     tensor_diffusion.atol = 1.0e-12             # [OPT, DEF=1e-14] Absolute tolerance of the velocity tensor diffusion solve
 
 ### Run-time diagnostics
+
+Combustion diagnostics often involve the use of a mixture fraction and/or a progress variable, both of which can be defined
+at run time and added to the derived variables included in the plotfile. If `mixture_fraction` or `progress_variable` is
+added to the `amr.derive_plot_vars` list, one need to provide input for defining those. The mixture fraction is based on
+Bilger's element definition and one needs to provide the composition of the 'fuel' and 'oxidizer' tanks using a Cantera-like
+format (<species>:<value>) which assumes unspecified species at zero, or a list of floats, in which case all the species must
+be specified in the order they appear in the mechanism file.
+The progress variable definition in based on a linear combination of the species mass fractions and temperature, and can be
+specified in a manner similar to the mixture fraction, providing a list of weights and the prescription of a 'cold' and 'hot'
+state:
+
+::
+
+    # ------------------- INPUTS DERIVED DIAGS ------------------
+    peleLM.fuel_name = CH4 
+    peleLM.mixtureFraction.format = Cantera
+    peleLM.mixtureFraction.type   = mass
+    peleLM.mixtureFraction.oxidTank = O2:0.233 N2:0.767
+    peleLM.mixtureFraction.fuelTank = H2:0.5 CH4:0.5
+    peleLM.progressVariable.format = Cantera
+    peleLM.progressVariable.weights = CO:1.0 CO2:1.0
+    peleLM.progressVariable.coldState = CO:0.0 CO2:0.0
+    peleLM.progressVariable.hotState = CO:0.000002 CO2:0.0666
+
 
 A set of diagnostics available at runtime are currently under development. The following provide an example for extracting
 the state variables on a 'x','y' or 'z' aligned plane and writting a 2D plotfile compatible with Amrvis, Paraview or yt:

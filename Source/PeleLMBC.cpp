@@ -73,6 +73,14 @@ phiV_bc[] =
 };
 #endif
 
+#ifdef PELELM_USE_SOOT
+int
+soot_bc[] =
+{
+  INT_DIR, EXT_DIR, FOEXTRAP, REFLECT_EVEN, REFLECT_EVEN, REFLECT_EVEN, EXT_DIR, EXT_DIR
+};
+#endif
+
 InterpBase* PeleLM::getInterpolator() {
 //
 // Get EB-aware interpolater when needed
@@ -187,6 +195,14 @@ void PeleLM::setBoundaryConditions() {
       for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
          auto const bcnESave = m_bcrec_state[NE];
          m_bcrec_state[NE] = hackBCChargedParticle(-1.0, bcnESave);
+      }
+#endif
+#ifdef PELELM_USE_SOOT
+      for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+        for (int mom = 0; mom < NUMSOOTVAR; mom++) {
+          m_bcrec_state[FIRSTSOOT+mom].setLo(idim,soot_bc[lo_bc[idim]]);
+          m_bcrec_state[FIRSTSOOT+mom].setHi(idim,soot_bc[hi_bc[idim]]);
+        }
       }
 #endif
    }
