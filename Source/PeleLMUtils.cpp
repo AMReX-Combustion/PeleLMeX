@@ -372,7 +372,7 @@ void PeleLM::intFluxDivergenceLevelEB(int lev,
                                        AMREX_D_DECL(afrac_x, afrac_y, afrac_z),
                                        AMREX_D_DECL(areax, areay, areaz),
                                        ebflux, ebarea,
-                                       dx[0], vol, scale, divergence);
+                                       vol, dx[0], scale, divergence);
                for (int n = 0; n < ncomp; n++) {
                   divergence(i,j,k,n) *= vfracinv;
                }
