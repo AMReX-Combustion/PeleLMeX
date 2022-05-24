@@ -68,6 +68,7 @@ nodal_proj.verbose = 0
 
 #--------------------SPRAY PARTICLE DATA-----------------------
 peleLM.do_spray_particles = 1
+particles.derive_plot_vars = 1
 particles.fuel_species = NC10H22
 # Properties for decane, in MKS
 particles.fuel_crit_temp = 617.8 # K

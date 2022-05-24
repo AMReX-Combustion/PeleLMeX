@@ -460,6 +460,7 @@ class PeleLM : public amrex::AmrCore {
    static bool do_spray_particles;
    static int plot_spray_src;
    static std::string spray_fuel_names[SPRAY_FUEL_NUM];
+   static amrex::Vector<std::string> spray_derive_vars;
    static SprayParticleContainer* theSprayPC();
    static SprayParticleContainer* theVirtPC();
    static SprayParticleContainer* theGhostPC();
