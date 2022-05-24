@@ -876,8 +876,7 @@ void PeleLM::differentialDiffusionUpdate(std::unique_ptr<AdvanceAdvData> &advDat
              auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
              EBvalue[lev].define(grids[lev],dmap[lev], 1, 0, MFInfo(), EBFactory(lev));
              EBdiff.push_back(std::make_unique<MultiFab> (ldata_p->diff_cc,amrex::make_alias,NUM_SPECIES,1));
-             getEBState(lev,getTime(lev,AmrNewTime),EBvalue[lev],TEMP,1);
-             MultiFab::Subtract(EBvalue[lev],Tsave[lev],0,0,1,0);
+             EBvalue[lev].setVal(0.0);
           }
           getDiffusionOp()->diffuse_scalar(GetVecOfPtrs(getTempVect(AmrNewTime)), 0,
                                            GetVecOfConstPtrs(EBvalue), 0,
@@ -900,8 +899,6 @@ void PeleLM::differentialDiffusionUpdate(std::unique_ptr<AdvanceAdvData> &advDat
                                            1, 0, m_dt);
       }
 
-      //WriteDebugPlotFile(GetVecOfConstPtrs(getStateVect(AmrNewTime)),"deltaT_it"+std::to_string(dTiter));
-
       // Post deltaT iteration linear solve
       // -> evaluate deltaT_norm
       // -> add deltaT to T^{np1,kp1}
@@ -923,7 +920,6 @@ void PeleLM::differentialDiffusionUpdate(std::unique_ptr<AdvanceAdvData> &advDat
                            GetVecOfConstPtrs(Tsave),
                            diffData, deltaT_norm);
       }
-      //WriteDebugPlotFile(GetVecOfConstPtrs(getStateVect(AmrNewTime)),"Temp_it"+std::to_string(dTiter));
 
       // Check for convergence failure
       if ( (dTiter == m_deltaTIterMax-1) && ( deltaT_norm > m_deltaT_norm_max ) ) {
@@ -934,7 +930,6 @@ void PeleLM::differentialDiffusionUpdate(std::unique_ptr<AdvanceAdvData> &advDat
          }
       }
    }
-   //Abort();
    //------------------------------------------------------------------------
 }
 
