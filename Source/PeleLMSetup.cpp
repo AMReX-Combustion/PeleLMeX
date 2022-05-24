@@ -484,7 +484,7 @@ void PeleLM::readIOParameters() {
    m_regrid_file = "";
    pp.query("initial_grid_file", m_initial_grid_file);
    pp.query("regrid_file", m_regrid_file);
-   pp.query("IOdigits", m_ioDigits);
+   pp.query("file_stepDigits", m_ioDigits);
 
 }
 
