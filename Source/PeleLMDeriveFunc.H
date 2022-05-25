@@ -16,6 +16,11 @@ void pelelm_dermassfrac (PeleLM* a_pelelm, const amrex::Box& bx, amrex::FArrayBo
                          const amrex::Geometry& geomdata,
                          amrex::Real time, const amrex::Vector<amrex::BCRec> &bcrec, int level);
 
+void pelelm_dermolefrac (PeleLM* a_pelelm, const amrex::Box& bx, amrex::FArrayBox& derfab, int dcomp, int ncomp,
+                         const amrex::FArrayBox& statefab, const amrex::FArrayBox& pressfab,
+                         const amrex::Geometry& geomdata,
+                         amrex::Real time, const amrex::Vector<amrex::BCRec> &bcrec, int level);
+
 void pelelm_dertemp (PeleLM* a_pelelm, const amrex::Box& bx, amrex::FArrayBox& derfab, int dcomp, int ncomp,
                      const amrex::FArrayBox& statefab, const amrex::FArrayBox& pressfab,
                      const amrex::Geometry& geomdata,
@@ -45,4 +50,9 @@ void pelelm_derprogvar (PeleLM* a_pelelm, const amrex::Box& bx, amrex::FArrayBox
                         const amrex::FArrayBox& statefab, const amrex::FArrayBox& pressfab,
                         const amrex::Geometry& geomdata,
                         amrex::Real time, const amrex::Vector<amrex::BCRec> &bcrec, int level);
+
+void pelelm_dervisc (PeleLM* a_pelelm, const amrex::Box& bx, amrex::FArrayBox& derfab, int dcomp, int ncomp,
+                     const amrex::FArrayBox& statefab, const amrex::FArrayBox& pressfab,
+                     const amrex::Geometry& geomdata,
+                     amrex::Real time, const amrex::Vector<amrex::BCRec> &bcrec, int level);
 #endif
