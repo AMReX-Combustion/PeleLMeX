@@ -504,7 +504,7 @@ makeVelForce(int i, int j, int k,
    }
 
    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
-      force(i,j,k,idim) = gp0[idim] + gravity[idim];
+      force(i,j,k,idim) = -gp0[idim] + gravity[idim] * rho_lcl;
    }
 
    // TODO direction of pseudo grav should be runtime params
