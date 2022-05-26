@@ -289,7 +289,7 @@ void PeleLM::initData() {
          writeTemporals();
       }
 
-      if (m_plot_int > 0 || m_plot_per > 0.) {
+      if (m_plot_int > 0 || m_plot_per_approx > 0. || m_plot_per_exact > 0.) {
          WritePlotFile();
       }
       if (m_check_int > 0 ) {
