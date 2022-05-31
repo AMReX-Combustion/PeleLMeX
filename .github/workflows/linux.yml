@@ -244,7 +244,7 @@ jobs:
     - name: Run
       working-directory: ./Exec/RegTests/EB_FlowPastCylinder/
       run: |
-        ./PeleLMeX2d.gnu.DEBUG.MPI.ex input.2d-regt amr.max_step=2 amr.plot_int=-1 amr.check_int=-1
+        ./PeleLMeX2d.gnu.DEBUG.MPI.ex input.2d-regt amr.max_step=2 amr.plot_int=-1 amr.check_int=-1 amrex.fpe_trap_invalid=1 amrex.fpe_trap_zero=1 amrex.fpe_trap_overflow=1
         ./PeleLMeX2d.gnu.DEBUG.MPI.ex input.2d-regt_WallBump amr.max_step=2 amr.plot_int=-1 amr.check_int=-1
 
   # Build and Run the HIT RegTest with GNU7.5 and MPI support
