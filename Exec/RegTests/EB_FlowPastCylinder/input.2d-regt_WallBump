@@ -63,6 +63,6 @@ eb2.sphere_has_fluid_inside = 0
 #amr.vort_high.value_greater = 2000
 #amr.vort_high.field_name    = mag_vort
 
-amrex.fpe_trap_invalid = 1
-amrex.fpe_trap_zero = 1
-amrex.fpe_trap_overflow = 1
+#amrex.fpe_trap_invalid = 1
+#amrex.fpe_trap_zero = 1
+#amrex.fpe_trap_overflow = 1
