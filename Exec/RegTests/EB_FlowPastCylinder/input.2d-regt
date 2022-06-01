@@ -61,6 +61,6 @@ eb2.small_volfrac = 1.0e-4
 #amr.temp.value_greater = 305
 #amr.temp.field_name    = temp
 
-amrex.fpe_trap_invalid = 1
-amrex.fpe_trap_zero = 1
-amrex.fpe_trap_overflow = 1
+#amrex.fpe_trap_invalid = 1
+#amrex.fpe_trap_zero = 1
+#amrex.fpe_trap_overflow = 1

@@ -76,8 +76,6 @@ amr.yH.max_level     = 3
 amr.yH.value_greater = 1.0e-6
 amr.yH.field_name    = Y(H)
 
-amrex.fpe_trap_invalid = 1
-amrex.fpe_trap_zero = 1
-amrex.fpe_trap_overflow = 1
-
-amrex.the_arena_is_managed=0
+#amrex.fpe_trap_invalid = 1
+#amrex.fpe_trap_zero = 1
+#amrex.fpe_trap_overflow = 1
