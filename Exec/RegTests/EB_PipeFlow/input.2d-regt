@@ -33,7 +33,7 @@ peleLM.v = 2
 peleLM.incompressible = 1
 peleLM.rho = 1.17
 peleLM.mu = 0.0005
-peleLM.gradP0 = 1200.0 0.0 0.0
+peleLM.gradP0 = -1200.0 0.0 0.0
 
 amr.check_int = 1000
 amr.plot_int = 100

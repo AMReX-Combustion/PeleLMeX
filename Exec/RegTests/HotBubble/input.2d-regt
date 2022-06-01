@@ -76,6 +76,6 @@ amr.gtemp.max_level     = 4
 amr.gtemp.adjacent_difference_greater = 10.0
 amr.gtemp.field_name    = temp
 
-amrex.fpe_trap_invalid = 1
-amrex.fpe_trap_zero = 1
-amrex.fpe_trap_overflow = 1
+#amrex.fpe_trap_invalid = 1
+#amrex.fpe_trap_zero = 1
+#amrex.fpe_trap_overflow = 1

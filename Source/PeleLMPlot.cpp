@@ -42,7 +42,7 @@ void PeleLM::WriteDebugPlotFile(const Vector<const MultiFab*> &a_MF,
 void PeleLM::WritePlotFile() {
    BL_PROFILE("PeleLM::WritePlotFile()");
 
-   const std::string& plotfilename = amrex::Concatenate(m_plot_file, m_nstep);
+   const std::string& plotfilename = amrex::Concatenate(m_plot_file, m_nstep, m_ioDigits);
 
    if (m_verbose) {
       amrex::Print() << " Dumping plotfile: " << plotfilename << "\n";
@@ -354,7 +354,7 @@ void PeleLM::WriteCheckPointFile()
 {
    BL_PROFILE("PeleLM::WriteCheckPointFile()");
    
-   const std::string& checkpointname = amrex::Concatenate(m_check_file, m_nstep);
+   const std::string& checkpointname = amrex::Concatenate(m_check_file, m_nstep, m_ioDigits);
    
    if (m_verbose) {
       amrex::Print() << "\n Writting checkpoint file: " << checkpointname << "\n";

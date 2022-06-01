@@ -28,7 +28,7 @@ void PeleLM::calcViscosity(const TimeStamp &a_time) {
          {
             const Box& gbx     = mfi.growntilebox();
             auto const& rhoY   = ldata_p->state.const_array(mfi,FIRSTSPEC);
-            auto const& T      = ldata_p->state.array(mfi,TEMP);
+            auto const& T      = ldata_p->state.const_array(mfi,TEMP);
             auto const& mu     = ldata_p->visc_cc.array(mfi,0);
 
             amrex::ParallelFor(gbx, [rhoY, T, mu, ltransparm]
