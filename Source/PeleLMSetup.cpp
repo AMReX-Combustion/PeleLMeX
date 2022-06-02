@@ -408,6 +408,7 @@ void PeleLM::readParameters() {
       // Default EB refinement level is max_level 
       m_EB_refine_LevMax = max_level;
       pp.query("refine_EB_max_level",m_EB_refine_LevMax);
+      pp.query("refine_EB_buffer",m_derefineEBBuffer);
       if ( m_EB_refine_type == "Adaptive" ) {
          m_EB_refine_LevMin = 0;
          pp.query("refine_EB_min_level",m_EB_refine_LevMin);
