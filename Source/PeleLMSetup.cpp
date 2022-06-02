@@ -470,7 +470,15 @@ void PeleLM::readIOParameters() {
    pp.query("initDataPlt" , m_restart_pltfile);
    pp.query("plot_file", m_plot_file);
    pp.query("plot_int" , m_plot_int);
-   pp.query("plot_per", m_plot_per);
+   if (pp.contains("plot_per")) {
+      int do_exact = 0;
+      pp.query("plot_per_exact",do_exact);
+      if ( do_exact ) {
+        pp.query("plot_per", m_plot_per_exact);
+      } else {
+        pp.query("plot_per", m_plot_per_approx);
+      }
+   }
    pp.query("plot_grad_p", m_plot_grad_p);
    m_derivePlotVarCount = (pp.countval("derive_plot_vars"));
    if (m_derivePlotVarCount != 0) {
@@ -484,6 +492,7 @@ void PeleLM::readIOParameters() {
    m_regrid_file = "";
    pp.query("initial_grid_file", m_initial_grid_file);
    pp.query("regrid_file", m_regrid_file);
+   pp.query("file_stepDigits", m_ioDigits);
 
 }
 
@@ -694,22 +703,30 @@ void PeleLM::derivedSetup()
       derive_lst.add("mass_fractions",IndexType::TheCellType(),NUM_SPECIES,
                      var_names_massfrac,pelelm_dermassfrac,the_same_box);
 
+      for (int n = 0 ; n < NUM_SPECIES; n++) {
+         var_names_massfrac[n] = "X("+spec_names[n]+")";
+      }
+      derive_lst.add("mole_fractions",IndexType::TheCellType(),NUM_SPECIES,
+                     var_names_massfrac,pelelm_dermolefrac,the_same_box);
+
+      // Mixture fraction
+      derive_lst.add("mixture_fraction",IndexType::TheCellType(),1,pelelm_dermixfrac,the_same_box);
+
+      // Progress variable
+      derive_lst.add("progress_variable",IndexType::TheCellType(),1,pelelm_derprogvar,the_same_box);
    }
 
    // Cell average pressure
    derive_lst.add("avg_pressure",IndexType::TheCellType(),1,pelelm_deravgpress,the_same_box);
+
+   // Viscosity
+   derive_lst.add("viscosity",IndexType::TheCellType(),1,pelelm_dervisc,the_same_box);
 
    // Vorticity magnitude
    derive_lst.add("mag_vort",IndexType::TheCellType(),1,pelelm_dermgvort,grow_box_by_two);
 
    // Kinetic energy
    derive_lst.add("kinetic_energy",IndexType::TheCellType(),1,pelelm_derkineticenergy,the_same_box);
-
-   // Mixture fraction
-   derive_lst.add("mixture_fraction",IndexType::TheCellType(),1,pelelm_dermixfrac,the_same_box);
-
-   // Progress variable
-   derive_lst.add("progress_variable",IndexType::TheCellType(),1,pelelm_derprogvar,the_same_box);
 
 #ifdef PELE_USE_EFIELD
    // Charge distribution

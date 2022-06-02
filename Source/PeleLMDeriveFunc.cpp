@@ -3,6 +3,7 @@
 #include <PelePhysics.H>
 #include <mechanism.H>
 #include <PeleLM.H>
+#include <PeleLM_K.H>
 
 using namespace amrex;
 
@@ -18,6 +19,7 @@ void pelelm_dertemp (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dco
     AMREX_ASSERT(derfab.box().contains(bx));
     AMREX_ASSERT(statefab.box().contains(bx));
     AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
+    AMREX_ASSERT(!a_pelelm->m_incompressible);
     auto const in_dat = statefab.array();
     auto       der = derfab.array(dcomp);
     amrex::ParallelFor(bx,
@@ -41,6 +43,7 @@ void pelelm_dermassfrac (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int
     AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
     AMREX_ASSERT(statefab.nComp() >= NUM_SPECIES+1);
     AMREX_ASSERT(ncomp == NUM_SPECIES);
+    AMREX_ASSERT(!a_pelelm->m_incompressible);
     auto const in_dat = statefab.array();
     auto       der = derfab.array(dcomp);
     amrex::ParallelFor(bx, NUM_SPECIES,
@@ -48,6 +51,39 @@ void pelelm_dermassfrac (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int
     {
         amrex::Real rhoinv = 1.0 / in_dat(i,j,k,DENSITY);
         der(i,j,k,n) = in_dat(i,j,k,FIRSTSPEC+n) * rhoinv;
+    });
+}
+
+//
+// Extract species mole fractions X_n
+//
+void pelelm_dermolefrac (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
+                         const FArrayBox& statefab, const FArrayBox& /*pressfab*/,
+                         const Geometry& /*geomdata*/,
+                         Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
+{
+    AMREX_ASSERT(derfab.box().contains(bx));
+    AMREX_ASSERT(statefab.box().contains(bx));
+    AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
+    AMREX_ASSERT(statefab.nComp() >= NUM_SPECIES+1);
+    AMREX_ASSERT(ncomp == NUM_SPECIES);
+    AMREX_ASSERT(!a_pelelm->m_incompressible);
+    auto const in_dat = statefab.array();
+    auto       der = derfab.array(dcomp);
+    amrex::ParallelFor(bx,
+    [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+    {
+        amrex::Real Yt[NUM_SPECIES] = {0.0};
+        amrex::Real Xt[NUM_SPECIES] = {0.0};
+        amrex::Real rhoinv = 1.0 / in_dat(i,j,k,DENSITY);
+        for (int n = 0; n < NUM_SPECIES; n++) {
+           Yt[n] = in_dat(i,j,k,FIRSTSPEC+n) * rhoinv;
+        }
+        auto eos = pele::physics::PhysicsType::eos();
+        eos.Y2X(Yt,Xt);
+        for (int n = 0; n < NUM_SPECIES; n++) {
+           der(i,j,k,n) = Xt[n];
+        }
     });
 }
 
@@ -135,17 +171,30 @@ void pelelm_derkineticenergy (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab
 {
     AMREX_ASSERT(derfab.box().contains(bx));
     AMREX_ASSERT(statefab.box().contains(bx));
-    auto const rho = statefab.array(DENSITY);
-    auto const vel = statefab.array(VELX);
-    auto       der = derfab.array(dcomp);
-    amrex::ParallelFor(bx,
-    [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
-    {
-        der(i,j,k) = 0.5 * rho(i,j,k)
-                         * ( AMREX_D_TERM(  vel(i,j,k,0)*vel(i,j,k,0),
-                                          + vel(i,j,k,1)*vel(i,j,k,1),
-                                          + vel(i,j,k,2)*vel(i,j,k,2)) );
-    });
+    if (a_pelelm->m_incompressible) {
+       auto const vel = statefab.array(VELX);
+       auto       der = derfab.array(dcomp);
+       amrex::ParallelFor(bx,
+       [=,rho=a_pelelm->m_rho] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+       {
+           der(i,j,k) = 0.5 * rho
+                            * ( AMREX_D_TERM(  vel(i,j,k,0)*vel(i,j,k,0),
+                                             + vel(i,j,k,1)*vel(i,j,k,1),
+                                             + vel(i,j,k,2)*vel(i,j,k,2)) );
+       });
+    } else {
+       auto const rho = statefab.array(DENSITY);
+       auto const vel = statefab.array(VELX);
+       auto       der = derfab.array(dcomp);
+       amrex::ParallelFor(bx,
+       [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+       {
+           der(i,j,k) = 0.5 * rho(i,j,k)
+                            * ( AMREX_D_TERM(  vel(i,j,k,0)*vel(i,j,k,0),
+                                             + vel(i,j,k,1)*vel(i,j,k,1),
+                                             + vel(i,j,k,2)*vel(i,j,k,2)) );
+       });
+    }
 }
 
 //
@@ -232,3 +281,29 @@ void pelelm_derprogvar (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int 
     });
 }
 
+//
+// Extract mixture viscosity
+//
+void pelelm_dervisc (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
+                     const FArrayBox& statefab, const FArrayBox& /*pressfab*/,
+                     const Geometry& /*geomdata*/,
+                     Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
+{
+    AMREX_ASSERT(derfab.box().contains(bx));
+    AMREX_ASSERT(statefab.box().contains(bx));
+    AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
+
+    if (a_pelelm->m_incompressible) {
+        derfab.setVal<RunOn::Device>(a_pelelm->m_mu,bx,dcomp,1);
+    } else {
+        auto const& rhoY = statefab.const_array(FIRSTSPEC);
+        auto const& T    = statefab.array(TEMP);
+        auto       der   = derfab.array(dcomp);
+        auto const* ltransparm = a_pelelm->trans_parms.device_trans_parm();
+        amrex::ParallelFor(bx,
+        [rhoY,T,der,ltransparm] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+        {
+            getVelViscosity(i, j, k, rhoY, T, der, ltransparm);
+        });
+    }
+}

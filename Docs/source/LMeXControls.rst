@@ -70,9 +70,12 @@ encountered will lead to termination of the simulation.
 
     #--------------------------IO CONTROL--------------------------
     amr.plot_int         = 20              # [OPT, DEF=-1] Frequency (as step #) for writting plot file
+    amr.plot_per         = 002             # [OPT, DEF=-1] Period (time in s) for writting plot file
+    amr.plot_per_exact   = 1               # [OPT, DEF=0] Flag to enforce exactly plt_per by shortening dt 
     amr.plot_file        = "plt_"          # [OPT, DEF="plt_"] Plot file prefix
     amr.check_int        = 100             # [OPT, DEF=-1] Frequency (as step #) for writting checkpoint file
     amr.check_file       = "chk"           # [OPT, DEF="chk"] Checkpoint file prefix
+    amr.file_stepDigits  = 6               # [OPT, DEF=5] Number of digits when adding nsteps to plt and chk names
     amr.derive_plot_vars = avg_pressure ...# [OPT, DEF=""] List of derived variable included in the plot files
     amr.plot_speciesState = 0              # [OPT, DEF=0] Force adding state rhoYs to the plot files
 
@@ -137,11 +140,11 @@ Linear solvers are a key component of PeleLMeX algorithm, separate controls are 
     mac_proj.atol = 1.0e-12                     # [OPT, DEF=1e-14] Absolute tolerance of the MAC projection
     mac_proj.mg_max_coarsening_level = 5        # [OPT, DEF=100] Maximum number of MG levels (useful when using EB)
 
-    diffusion.verbose                           # [OPT, DEF=0] Verbose of the scalar diffusion solve
+    diffusion.verbose = 1                       # [OPT, DEF=0] Verbose of the scalar diffusion solve
     diffusion.rtol = 1.0e-11                    # [OPT, DEF=1e-11] Relative tolerance of the scalar diffusion solve
     diffusion.atol = 1.0e-12                    # [OPT, DEF=1e-14] Absolute tolerance of the scalar diffusion solve
 
-    tensor_diffusion.verbose                    # [OPT, DEF=0] Verbose of the velocity tensor diffusion solve
+    tensor_diffusion.verbose = 1                # [OPT, DEF=0] Verbose of the velocity tensor diffusion solve
     tensor_diffusion.rtol = 1.0e-11             # [OPT, DEF=1e-11] Relative tolerance of the velocity tensor diffusion solve
     tensor_diffusion.atol = 1.0e-12             # [OPT, DEF=1e-14] Absolute tolerance of the velocity tensor diffusion solve
 
