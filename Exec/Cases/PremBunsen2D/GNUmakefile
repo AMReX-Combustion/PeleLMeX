@@ -2,6 +2,7 @@ TOP = ../../../..
 AMREX_HOME         ?= ${TOP}/amrex
 PELELMEX_HOME      ?= ${TOP}/PeleLMeX
 PELE_PHYSICS_HOME  ?= ${TOP}/PelePhysics
+AMREX_HYDRO_HOME   ?= ${TOP}/AMReX-Hydro
 
 
 # AMReX
@@ -22,11 +23,8 @@ USE_HIP         = FALSE
 USE_EFIELD		 = FALSE
 
 # PelePhysics
-Chemistry_Model = drm19
-Reactions_Model	 = Fuego
-Eos_Model			 = Fuego
-Transport_Model   = Simple
-
-USE_SUNDIALS_PP = TRUE
+Chemistry_Model  = drm19
+Eos_Model        = Fuego
+Transport_Model  = Simple
 
 include $(PELELMEX_HOME)/Utils/Make.PeleLMeX
