@@ -87,6 +87,15 @@ DiagFramePlane::prepare(int a_nlevels,
         auto initDomain  = a_geoms[0].Domain();
         auto initRealBox = a_geoms[0].ProbDomain();
         const amrex::Real* dxlcl = a_geoms[0].CellSize();
+        int cdim = 0;
+        for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
+            if (idim != m_normal) {
+                initDomain.setRange(cdim,initDomain.smallEnd(idim),initDomain.bigEnd(idim)+1);
+                initRealBox.setLo(cdim,a_geoms[0].ProbLo(idim));
+                initRealBox.setHi(cdim,a_geoms[0].ProbHi(idim));
+                cdim += 1;
+            }
+        }
         initDomain.setRange(2,0,1);
         initRealBox.setLo(2,0.0);
         initRealBox.setHi(2,dxlcl[2]);
