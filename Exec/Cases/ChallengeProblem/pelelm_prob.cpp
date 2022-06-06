@@ -24,4 +24,7 @@ void PeleLM::readProbParm()
    pp.query("injection_duration", PeleLM::prob_parm->inj_dur);
    pp.query("tau", PeleLM::prob_parm->tau);
    pp.query("Z", PeleLM::prob_parm->Z);
+
+   // Simplifications
+   pp.query("useSymmetry", PeleLM::prob_parm->doQuarterDomain);
 }

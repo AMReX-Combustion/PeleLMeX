@@ -41,7 +41,7 @@ PeleLM::ErrorEst( int lev,
       //VisMF::Write(signDist,"signDistLev"+std::to_string(lev));
     
       // Estimate how far I need to derefine
-      Real diagFac = std::sqrt(2.0) * 3.0;
+      Real diagFac = std::sqrt(2.0) * m_derefineEBBuffer;
       Real clearTagDist = Geom(m_EB_refine_LevMax).CellSize(0) * static_cast<Real>(nErrorBuf(m_EB_refine_LevMax)) * diagFac;
       for (int ilev = m_EB_refine_LevMax+1; ilev <= finest_level; ++ilev) {
           clearTagDist += static_cast<Real>(nErrorBuf(ilev)) * Geom(m_EB_refine_LevMax).CellSize(0) * diagFac;

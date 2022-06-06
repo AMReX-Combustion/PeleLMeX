@@ -14,11 +14,11 @@ peleLM.hi_bc = NoSlipWallAdiab NoSlipWallAdiab Inflow
 #-------------------------AMR CONTROL----------------------------
 amr.n_cell          = 512 512 128      # Level 0 number of cells in each direction   
 amr.v               = 1                # AMR verbose
-amr.max_level       = 0                # maximum level number allowed
+amr.max_level       = 2                # maximum level number allowed
 amr.ref_ratio       = 2 2 2 2 2        # refinement ratio
 amr.regrid_int      = 5                # how often to regrid
-amr.n_error_buf     = 2 2 2 2          # number of buffer cells in error est
-amr.grid_eff        = 0.7              # what constitutes an efficient grid
+amr.n_error_buf     = 2 3 2 2          # number of buffer cells in error est
+amr.grid_eff        = 0.95             # what constitutes an efficient grid
 amr.blocking_factor = 16               # block factor in grid generation (min box size)
 amr.max_grid_size   = 32               # max box size
 
@@ -88,7 +88,7 @@ peleLM.incompressible = 0
 peleLM.rho = 1.17
 peleLM.mu = 0.0
 peleLM.use_wbar = 1
-peleLM.sdc_iterMax = 1
+peleLM.sdc_iterMax = 2
 peleLM.floor_species = 0
 peleLM.num_divu_iter = 1
 peleLM.num_init_iter = 3
@@ -100,28 +100,29 @@ peleLM.num_init_iter = 1
 peleLM.num_divu_iter = 1
 
 #amr.restart = chk00005
-amr.check_int = 5
-amr.plot_int = 10
-amr.max_step = 5
+amr.check_int = 50
+amr.plot_int = 20
+amr.max_step = 10
 amr.dt_shrink = 0.1
 amr.stop_time = 1.0
 #amr.stop_time = 1.00
-amr.fixed_dt = 0.000001
-amr.cfl = 0.4
+amr.init_dt = 0.000001
+amr.cfl = 0.8
 amr.derive_plot_vars = avg_pressure mag_vort mass_fractions
 
 # --------------- INPUTS TO CHEMISTRY REACTOR ---------------
-peleLM.chem_integrator = "ReactorNull"
-#peleLM.use_typ_vals_chem = 1          # Use species/temp typical values in CVODE
-#ode.rtol = 1.0e-6                     # Relative tolerance of the chemical solve
-#ode.atol = 1.0e-5                     # Absolute tolerance factor applied on typical values
-cvode.solve_type = denseAJ_direct     # CVODE Linear solve type (for Newton direction) 
+peleLM.chem_integrator = "ReactorCvode"
+peleLM.use_typ_vals_chem = 1          # Use species/temp typical values in CVODE
+ode.rtol = 1.0e-8                     # Relative tolerance of the chemical solve
+ode.atol = 1.0e-8                     # Absolute tolerance factor applied on typical values
+ode.clean_init_massfrac = 0
+cvode.solve_type = GMRES              # CVODE Linear solve type (for Newton direction) 
 cvode.max_order  = 4                  # CVODE max BDF order. 
 
 #------------------------- EB SETUP -----------------------------
 eb2.geom_type = UserDefined
-eb2.small_volfrac = 5.e-3
-eb2.maxiter = 100
+eb2.small_volfrac = 1.e-3
+eb2.maxiter = 500
 #eb2.cylinder_radius = 480.0000
 #eb2.head_offset = -10.0000e4
 #eb2.head_isFlat = 1
@@ -139,17 +140,31 @@ eb2.maxiter = 100
 #amr.magVort.value_greater = 500.0
 #amr.magVort.field_name    = mag_vort
 
-amr.refinement_indicators = boxHZ
-amr.boxHZ.in_box_lo = -0.004 -0.004 0.0008
-amr.boxHZ.in_box_hi =  0.004  0.004 0.00175
+peleLM.refine_EB_max_level = 0
+amr.refinement_indicators = boxHZ fuel loTemp hiTemp
+amr.boxHZ.max_level     = 1
+amr.boxHZ.in_box_lo = -0.003 -0.003 0.004
+amr.boxHZ.in_box_hi =  0.003  0.003 0.0045
+
+amr.fuel.max_level     = 3
+amr.fuel.value_greater = 0.05
+amr.fuel.field_name    = Y(NC12H26)
+
+amr.loTemp.max_level     = 3
+amr.loTemp.value_less    = 850.0
+amr.loTemp.field_name    = temp
+
+amr.hiTemp.max_level     = 3
+amr.hiTemp.value_greater = 950.0
+amr.hiTemp.field_name    = temp
 
 #--------------------LINEAR SOLVER CONTROL------------------------
-nodal_proj.verbose = 2
-nodal_proj.mg_max_coarsening_level = 0
-nodal_proj.rtol = 1.0e-10
-nodal_proj.atol = 1.0e-10
-nodal_proj.bottom_solver = "hypre"
-nodal_proj.hypre_namespace = nodal_proj.hypre
+nodal_proj.verbose = 1
+#nodal_proj.mg_max_coarsening_level = 0
+nodal_proj.rtol = 1.0e-11
+nodal_proj.atol = 1.0e-11
+#nodal_proj.bottom_solver = "hypre"
+#nodal_proj.hypre_namespace = nodal_proj.hypre
 
 nodal_proj.hypre.verbose = 0
 nodal_proj.hypre.hypre_solver = GMRES
@@ -188,7 +203,6 @@ nodal_proj.hypre.bamg_ilu_upper_jacobi_iters = 5
 fabarray.mfiter_tile_size = 1024 1024 1024
 
 amrex.abort_on_out_of_gpu_memory = 1
-amrex.the_arena_is_managed = 0
 
 #amrex.fpe_trap_invalid = 1
 #amrex.fpe_trap_zero = 1
