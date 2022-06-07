@@ -1,0 +1,93 @@
+#----------------------DOMAIN DEFINITION------------------------
+geometry.is_periodic = 0 0                # For each dir, 0: non-perio, 1: periodic
+geometry.coord_sys   = 0                  # 0 => cart, 1 => RZ
+geometry.prob_lo     = -0.01   -0.01        # x_lo y_lo (z_lo)
+geometry.prob_hi     =  0.05    0.01        # x_hi y_hi (z_hi)
+
+# >>>>>>>>>>>>>  BC FLAGS <<<<<<<<<<<<<<<<
+# Interior, Inflow, Outflow, Symmetry,
+# SlipWallAdiab, NoSlipWallAdiab, SlipWallIsotherm, NoSlipWallIsotherm
+peleLM.lo_bc = Inflow  NoSlipWallIsotherm
+peleLM.hi_bc = Outflow NoSlipWallAdiab
+
+
+#-------------------------AMR CONTROL----------------------------
+amr.n_cell          = 192 64        # Level 0 number of cells in each direction   
+amr.v               = 1                # AMR verbose
+amr.max_level       = 2               # maximum level number allowed
+amr.ref_ratio       = 2 2 2 2          # refinement ratio
+amr.regrid_int      = 2               # how often to regrid
+amr.n_error_buf     = 2 2 2 2          # number of buffer cells in error est
+amr.grid_eff        = 0.7              # what constitutes an efficient grid
+amr.blocking_factor = 16               # block factor in grid generation (min box size)
+amr.max_grid_size   = 64               # max box size
+
+#--------------------------- Problem -------------------------------
+prob.T_mean = 298.0
+prob.P_mean = 101325.0
+prob.T_dh = 1800
+prob.meanFlowMag = 10.0
+prob.meanFlowDir = 1
+prob.Y_fuel = 0.0445269
+prob.Y_o2 = 0.2226345
+
+#-------------------------PeleLM CONTROL----------------------------
+peleLM.v = 1
+peleLM.incompressible = 0
+peleLM.rho = 1.17
+peleLM.mu = 0.0
+peleLM.use_wbar = 1
+peleLM.sdc_iterMax = 2
+peleLM.floor_species = 0
+
+peleLM.do_temporals = 1
+#peleLM.temporal_int = 2
+#peleLM.mass_balance = 1
+
+peleLM.isothermal_EB = 1
+peleLM.deltaT_verbose = 0
+
+#amr.restart       =  chk01000  
+amr.check_int = 500
+amr.plot_int = 30
+amr.max_step = 2000
+amr.dt_shrink = 0.001
+amr.stop_time = 1.0
+amr.cfl = 0.5
+#amr.plot_reactions = 1
+
+amr.derive_plot_vars = avg_pressure mag_vort mass_fractions temp
+
+# --------------- INPUTS TO CHEMISTRY REACTOR ---------------
+peleLM.chem_integrator = "ReactorCvode"
+peleLM.use_typ_vals_chem = 1          # Use species/temp typical values in CVODE
+ode.rtol = 1.0e-6                     # Relative tolerance of the chemical solve
+ode.atol = 1.0e-5                     # Absolute tolerance factor applied on typical values
+ode.clean_init_massfrac = 1
+cvode.solve_type = denseAJ_direct     # CVODE Linear solve type (for Newton direction) 
+cvode.max_order  = 4                  # CVODE max BDF order. 
+
+nodal_proj.verbose = 0
+mac_proj.verbose = 0
+
+peleLM.do_temporals = 1
+peleLM.temporal_int = 2
+peleLM.mass_balance = 1
+
+#------------------------- EB SETUP -----------------------------
+eb2.geom_type = box
+eb2.box_lo =    -0.01   -0.01
+eb2.box_hi =     0.01     0.0
+eb2.box_has_fluid_inside = 0
+eb2.small_volfrac   = 1.0e-4
+
+amr.refinement_indicators = gradT
+amr.gradT.max_level     = 3
+amr.gradT.adjacent_difference_greater = 100 
+amr.gradT.field_name    = temp
+
+#--------------------LINEAR SOLVER CONTROL------------------------
+#nodal_proj.verbose = 2
+#nodal_proj.bottom_solver = "smoother"
+#nodal_proj.mg_max_coarsening_level = 6
+nodal_proj.rtol = 1.0e-10
