@@ -88,6 +88,7 @@ particles.use_splash_model = false
 particles.init_function = 1
 
 particles.v             = 0
+particles.cfl           = 4.
 particles.mom_transfer  = 1
 particles.mass_transfer = 1
 particles.write_spray_ascii_files = 0
