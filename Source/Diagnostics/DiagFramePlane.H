@@ -38,6 +38,9 @@ public:
                        const amrex::FArrayBox& f,
                        int                     nvar);
 
+  int diff_2D3D_header(const amrex::Box a_box,
+                       int              nvar);
+
   void Write2DPlotfileHeader(std::ostream &HeaderFile,
                              int nlevels,
                              const amrex::Vector<amrex::BoxArray> &bArray,

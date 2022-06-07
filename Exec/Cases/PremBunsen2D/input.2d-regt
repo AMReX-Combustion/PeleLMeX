@@ -22,7 +22,6 @@ amr.grid_eff        = 0.7              # what constitutes an efficient grid
 amr.blocking_factor = 16               # block factor in grid generation (min box size)
 amr.max_grid_size   = 64               # max box size
 
-
 #--------------------------- Problem -------------------------------
 prob.P_mean = 101325.0
 prob.standoff = 0.1085
@@ -38,15 +37,15 @@ peleLM.incompressible = 0
 peleLM.rho = 1.17
 peleLM.mu = 0.0
 peleLM.use_wbar = 1
-peleLM.sdc_iterMax = 1
+peleLM.sdc_iterMax = 2
 peleLM.floor_species = 0
-peleLM.deltaT_verbose = 0
+peleLM.advection_scheme = Godunov_BDS
 
-#amr.restart = chk04000
+#amr.restart = chk00200
 #amr.regrid_on_restart = 1
 amr.check_int = 100
 amr.plot_int = 100
-amr.max_step = 100
+amr.max_step = 200
 amr.dt_shrink = 0.001
 amr.stop_time = 1.1
 #amr.stop_time = 1.00
@@ -55,9 +54,10 @@ amr.derive_plot_vars = avg_pressure mag_vort mass_fractions
 
 peleLM.chem_integrator = "ReactorCvode"
 peleLM.use_typ_vals_chem = 1          # Use species/temp typical values in CVODE
-ode.rtol = 1.0e-6                     # Relative tolerance of the chemical solve
-ode.atol = 1.0e-5                     # Absolute tolerance factor applied on typical values
-cvode.solve_type = dense_direct     # CVODE Linear solve type (for Newton direction) 
+ode.rtol = 1.0e-8                     # Relative tolerance of the chemical solve
+ode.atol = 1.0e-7                     # Absolute tolerance factor applied on typical values
+ode.clean_init_massfrac = 1           # Reaction computed as increment
+cvode.solve_type = denseAJ_direct     # CVODE Linear solve type (for Newton direction) 
 cvode.max_order  = 4                  # CVODE max BDF order. 
 
 #--------------------REFINEMENT CONTROL------------------------
@@ -83,6 +83,7 @@ amr.yH_Fine.field_name    = Y(H)
 amr.CH2O.max_level     = 4
 amr.CH2O.value_greater = 1.00e-3
 amr.CH2O.field_name    = Y(CH2O)
+
 #amrex.fpe_trap_invalid = 1
 #amrex.fpe_trap_zero = 1
 #amrex.fpe_trap_overflow = 1

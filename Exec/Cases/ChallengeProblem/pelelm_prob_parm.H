@@ -27,5 +27,8 @@ struct ProbParm
    amrex::Real inj_dur    = .5e-3;
    amrex::Real tau        = 0.01;
    amrex::Real Z          = 0.45;
+
+   // Simplification
+   int doQuarterDomain    = 0;
 };
 #endif

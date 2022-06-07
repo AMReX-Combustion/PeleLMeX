@@ -1253,6 +1253,7 @@ class PeleLM : public amrex::AmrCore {
    int m_EB_refine_LevMin = -1;
    int m_EB_refine_LevAdapt = -1;
    int m_signDistNeeded = 0;
+   amrex::Real m_derefineEBBuffer = 3.0;
    std::unique_ptr<amrex::MultiFab> m_signedDist0 = nullptr;
 
    // EB bc/covered

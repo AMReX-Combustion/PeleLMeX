@@ -109,7 +109,7 @@ void PeleLM::MakeNewLevelFromScratch( int lev,
           extentFactor += static_cast<Real>(nErrorBuf(ilev)) / std::pow(static_cast<Real>(refRatio(ilev-1)[0]),
                                                                         static_cast<Real>(ilev));
       }
-      extentFactor *= std::sqrt(2.0);  // Account for diagonals
+      extentFactor *= std::sqrt(2.0) * m_derefineEBBuffer;  // Account for diagonals
 
       MultiFab signDist(convert(grids[0],IntVect::TheUnitVector()),dmap[0],1,1,MFInfo(),EBFactory(0));
       FillSignedDistance(signDist,true);
