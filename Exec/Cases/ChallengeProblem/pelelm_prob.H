@@ -138,7 +138,10 @@ bcnormal(
 
   for (int nh = 1; nh <= prob_parm.nholes; nh++) {
     // Current hole center
-    const amrex::Real phi_angle = nh * dphi_angle;
+    amrex::Real phi_angle = nh * dphi_angle;
+    if (prob_parm.doQuarterDomain) {      // Add pi/4 to not have the jet on the symmetry
+       phi_angle += 0.25 * Pi;
+    }
     const amrex::Real cx = prob_parm.centx + prob_parm.r_circ * cos(phi_angle);
     const amrex::Real cy = prob_parm.centy + prob_parm.r_circ * sin(phi_angle);
 

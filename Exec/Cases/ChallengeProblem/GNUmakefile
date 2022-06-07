@@ -25,8 +25,10 @@ USE_HIP         = TRUE
 # PeleLMeX
 CEXE_headers 	+= EBUserDefined.H
 
+PELE_USE_MAGMA  = TRUE
+
 # PelePhysics
-Chemistry_Model = dodmethair_4sp
+Chemistry_Model = dodecane_lu_qss
 Eos_Model		 = Fuego
 Transport_Model = Simple
 
