@@ -82,6 +82,50 @@ encountered will lead to termination of the simulation.
     amr.restart          = chk00100        # [OPT, DEF=""] Checkpoint from which to restart the simulation
     amr.initDataPlt      = plt01000        # [OPT, DEF=""] Provide a plotfile from which to extract initial data
 
+### PeleLMeX derived variables
+
+The following list of derived variables are available in PeleLMeX:
+
+.. list-table:: PeleLMeX derived variables
+    :widths: 25 25 100
+    :header-rows: 1
+
+    * - Key
+      - Size (nComp)
+      - Brief
+    * - `mass_fractions`
+      - NUM_SPECIES
+      - Species mass fractions
+    * - `mole_fractions`
+      - NUM_SPECIES
+      - Species mole fractions
+    * - `diffcoeffs`
+      - NUM_SPECIES
+      - Species mixture-averaged diffusion coefficients
+    * - `lambda`
+      - 1
+      - Thermal diffusivity
+    * - `viscosity`
+      - 1
+      - Mixture viscosity
+    * - `mixture_fraction`
+      - 1
+      - Mixture fraction based on Bilger's element formulation
+    * - `progress_variable`
+      - 1
+      - Progress variable based on a linear combination of Ys, T
+    * - `avg_pressure`
+      - 1
+      - Cell-averaged pressure (from the node-centered pressure)
+    * - `mag_vort`
+      - 1
+      - Vorticity (2D) or vorticity magnitude (3D)
+    * - `kinetic_energy`
+      - 1
+      - Kinetic energy
+
+Note that `mixture_fraction` and `progress_variable` requires additional inputs from the users as described below.
+
 ### PeleLMeX algorithm
 
 ::
