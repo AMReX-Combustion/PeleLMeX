@@ -55,4 +55,14 @@ void pelelm_dervisc (PeleLM* a_pelelm, const amrex::Box& bx, amrex::FArrayBox& d
                      const amrex::FArrayBox& statefab, const amrex::FArrayBox& pressfab,
                      const amrex::Geometry& geomdata,
                      amrex::Real time, const amrex::Vector<amrex::BCRec> &bcrec, int level);
+
+void pelelm_derdiffc (PeleLM* a_pelelm, const amrex::Box& bx, amrex::FArrayBox& derfab, int dcomp, int ncomp,
+                      const amrex::FArrayBox& statefab, const amrex::FArrayBox& pressfab,
+                      const amrex::Geometry& geomdata,
+                      amrex::Real time, const amrex::Vector<amrex::BCRec> &bcrec, int level);
+
+void pelelm_derlambda (PeleLM* a_pelelm, const amrex::Box& bx, amrex::FArrayBox& derfab, int dcomp, int ncomp,
+                       const amrex::FArrayBox& statefab, const amrex::FArrayBox& pressfab,
+                       const amrex::Geometry& geomdata,
+                       amrex::Real time, const amrex::Vector<amrex::BCRec> &bcrec, int level);
 #endif
