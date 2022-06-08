@@ -1059,7 +1059,7 @@ void PeleLM::updateTypicalValuesChem()
             typical_values_chem.resize(NUM_SPECIES+1);
             for (int i=0; i<NUM_SPECIES; ++i) {
               typical_values_chem[i] =
-                amrex::max(m_typicalYvalMin,
+                amrex::max(m_typicalYvalMin * typical_values[DENSITY] * 1.E-3,
                            typical_values[FIRSTSPEC+i] * typical_values[DENSITY] * 1.E-3); // CGS -> MKS conversion
             }
             typical_values_chem[NUM_SPECIES] = typical_values[TEMP];

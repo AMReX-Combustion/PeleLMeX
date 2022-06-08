@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 
-# Template post-processing script for PeleLM convergence analysis
-# Must be used after multirun.py script
-# Input are limited by the regression framework.
+# Template post-processing script for spray coupled with PeleLM regression test
+# Must be used after multiRun.py script
 
 # Usage:
 #   ./compareOutput.py --test_name DummyTest
@@ -12,7 +11,7 @@
 #   * --max_error: the maximum allow able error
 
 # "Internal" user input
-#   * vars : a list of the variables of interest (no check is done on whether it exists in plt ...)
+#   * vars : a list of the variables of interest
 
 # Output:
 #  If the error in vars is higher than the max_error, an error statement is returned
@@ -30,13 +29,13 @@ import argparse
 import numpy as np
 
 USAGE = """
-    Template post-processing script for PeleLM convergence analysis
+    Template post-processing script for PeleLM/sprays regression test
 """
 
 def pproc(args):
 
     # User data
-    vars=["density", "rho.Y(NC10H22)", "x_velocity", "temp", "rhoh"]
+    vars=["density", "rho.Y(NC10H22)", "x_velocity", "temp", "rhoh", "spray_vol"]
 
     # Get a local copy of post-processing executable
     run_dir = os.getcwd()
@@ -66,39 +65,46 @@ def pproc(args):
             elif (f.startswith("64_2_plt")):
                 pltfiles[3] = f
     # We have 3 comparisons to make,
-    # 32_1 to 32_2, 64_1 to 64_2, and 32_1 to 64_1
+    # 32_1 to 64_1, 32_1 to 32_2, and 64_1 to 64_2
     numcomps = 3
-    comp1 = [0, 2, 0]
-    comp2 = [1, 3, 2]
-    errors = np.empty([numcomps,len(vars)+1])
+    comp1 = [0, 0, 2]
+    comp2 = [2, 1, 3]
+    errfail = 0
+    max_error = args.max_error
     for comp in range(numcomps):
         indx1 = comp1[comp]
         indx2 = comp2[comp]
         plt1 = args.test_name + "/" + pltfiles[indx1]
         plt2 = args.test_name + "/" + pltfiles[indx2]
-        print("Comparing " + plt1 + " with " + plt2)
+        print("Comparing the L2 norm of the error between " + plt1 + " and " + plt2)
         outfile = "error_{}.analysis.out".format(comp)
         os.system("./{} -n 2 -a {} {} > {}".format(os.path.basename(pproc_exe), plt1, plt2, outfile))
         # Extract errors on each variable
+        curlev = 0
+        varcount = 0 # Ensure all vars are found
         with open(outfile) as fp:
             for i, line in enumerate(fp):
-                if (i >= 5):
+                if (i >= 2):
                     var = line.split()[0]
+                    if (var == "level"):
+                        curlev = int(line.split()[2])
                     for v in range(len(vars)):
                         if ( var == vars[v] ):
-                            errors[comp,v+1] = line.split()[2]
-        os.system("rm {}".format(outfile))
-    # Check error
-    passed = checkError(errors, args.test_name, vars, args.max_error)
-
-def checkError(data, test_name, vars, maxerror):
-    # Evaluate order
-    for v in range(len(vars)):
-        for i in range(len(data[:,0])):
-            if (data[i,v] > maxerror):
-                errorStatement="{} did not reach target convergence order: {} > {}".format(vars[v],data[i,v],maxerror)
-                raise ValueError(errorStatement)
-    print("Errors for given variables are less than "+ str(maxerror))
+                            if (curlev == 0):
+                                varcount += 1
+                            cer = float(line.split()[2])
+                            if (cer > max_error):
+                                errfail += 1
+                                perr = "Error in {} on level {}: {} > {}".format(var,curlev,cer,maxerror)
+                                print(perr)
+        if (varcount != len(vars)):
+            error = "Not all variables were found in plot file"
+            raise ValueError(error)
+    if (errfail > 0):
+        errorStatement = "Failure detected in spray test"
+        raise ValueError(errorStatement)
+    else:
+        print("Spray tests passed")
 
 def parse_args(arg_string=None):
     parser = argparse.ArgumentParser(description=USAGE)
