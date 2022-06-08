@@ -710,11 +710,22 @@ void PeleLM::derivedSetup()
       derive_lst.add("mole_fractions",IndexType::TheCellType(),NUM_SPECIES,
                      var_names_massfrac,pelelm_dermolefrac,the_same_box);
 
+      // Species diffusion coefficients
+      for (int n = 0 ; n < NUM_SPECIES; n++) {
+         var_names_massfrac[n] = "D_"+spec_names[n];
+      }
+      derive_lst.add("diffcoeff",IndexType::TheCellType(),NUM_SPECIES,
+                     var_names_massfrac,pelelm_derdiffc,the_same_box);
+
+      // Thermal diffusivity
+      derive_lst.add("lambda",IndexType::TheCellType(),1,pelelm_derlambda,the_same_box);
+
       // Mixture fraction
       derive_lst.add("mixture_fraction",IndexType::TheCellType(),1,pelelm_dermixfrac,the_same_box);
 
       // Progress variable
       derive_lst.add("progress_variable",IndexType::TheCellType(),1,pelelm_derprogvar,the_same_box);
+
    }
 
    // Cell average pressure

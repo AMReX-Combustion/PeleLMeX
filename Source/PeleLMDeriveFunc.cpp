@@ -307,3 +307,56 @@ void pelelm_dervisc (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dco
         });
     }
 }
+
+//
+// Extract mixture averaged species diffusion coefficients
+//
+void pelelm_derdiffc (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
+                      const FArrayBox& statefab, const FArrayBox& /*pressfab*/,
+                      const Geometry& /*geomdata*/,
+                      Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
+{
+    AMREX_ASSERT(derfab.box().contains(bx));
+    AMREX_ASSERT(statefab.box().contains(bx));
+    AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
+    AMREX_ASSERT(ncomp == NUM_SPECIES);
+
+    FArrayBox dummies(bx,2,The_Async_Arena());
+    auto const& rhoY = statefab.const_array(FIRSTSPEC);
+    auto const& T    = statefab.array(TEMP);
+    auto       rhoD  = derfab.array(dcomp);
+    auto     lambda  = dummies.array(0);
+    auto         mu  = dummies.array(1);
+    auto const* ltransparm = a_pelelm->trans_parms.device_trans_parm();
+    amrex::ParallelFor(bx,
+    [rhoY,T,rhoD,lambda,mu,ltransparm] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+    {
+        getTransportCoeff(i, j, k, rhoY, T, rhoD, lambda, mu, ltransparm);
+    });
+}
+
+//
+// Extract thermal diffusivity
+//
+void pelelm_derlambda (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
+                       const FArrayBox& statefab, const FArrayBox& /*pressfab*/,
+                       const Geometry& /*geomdata*/,
+                       Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
+{
+    AMREX_ASSERT(derfab.box().contains(bx));
+    AMREX_ASSERT(statefab.box().contains(bx));
+    AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
+
+    FArrayBox dummies(bx,NUM_SPECIES+1,The_Async_Arena());
+    auto const& rhoY = statefab.const_array(FIRSTSPEC);
+    auto const& T    = statefab.array(TEMP);
+    auto       rhoD  = dummies.array(1);
+    auto     lambda  = derfab.array(dcomp);
+    auto         mu  = dummies.array(0);
+    auto const* ltransparm = a_pelelm->trans_parms.device_trans_parm();
+    amrex::ParallelFor(bx,
+    [rhoY,T,rhoD,lambda,mu,ltransparm] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+    {
+        getTransportCoeff(i, j, k, rhoY, T, rhoD, lambda, mu, ltransparm);
+    });
+}
