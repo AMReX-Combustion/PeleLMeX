@@ -1,5 +1,5 @@
 PeleLMeX controls
-------------------------
+=================
 
 The input file specified on the command line is a free-format text file, one entry per row, that specifies input data processed by the AMReX ``ParmParse`` module.
 This file needs to specified along with the executable as an `argv` option, for example:
@@ -16,7 +16,8 @@ Also, any entry that can be specified in the inputs file can also be specified o
 
 The available options are divided into groups: those that control primarily AMReX are prefaced with `amr.`, those that are specific to the PeleLM are prefaced by `peleLM.`, while those corresponding to the various pieces of the algorithm are prefaced with specific keys, such that `diffusion`, `nodal_proj`, ... as described below.
 
-### Computational domain definition
+Computational domain definition
+-------------------------------
 
 ::
 
@@ -33,7 +34,8 @@ The available options are divided into groups: those that control primarily AMRe
     peleLM.lo_bc = Interior Interior Inflow
     peleLM.hi_bc = Interior Interior Inflow
 
-### AMR parameters
+AMR parameters
+--------------
 
 ::
 
@@ -48,7 +50,8 @@ The available options are divided into groups: those that control primarily AMRe
     amr.blocking_factor = 16               # block factor in grid generation (min box size)
     amr.max_grid_size   = 64               # max box size
 
-### Time stepping parameters
+Time stepping parameters
+------------------------
 
 ::
 
@@ -64,7 +67,8 @@ The available options are divided into groups: those that control primarily AMRe
 Note that either a `max_step` or a `stop_time` is required, and if both are specified, the first stopping criteria
 encountered will lead to termination of the simulation.
 
-### IO parameters
+IO parameters
+-------------
 
 ::
 
@@ -82,7 +86,8 @@ encountered will lead to termination of the simulation.
     amr.restart          = chk00100        # [OPT, DEF=""] Checkpoint from which to restart the simulation
     amr.initDataPlt      = plt01000        # [OPT, DEF=""] Provide a plotfile from which to extract initial data
 
-### PeleLMeX derived variables
+PeleLMeX derived variables
+--------------------------
 
 The following list of derived variables are available in PeleLMeX:
 
@@ -126,7 +131,8 @@ The following list of derived variables are available in PeleLMeX:
 
 Note that `mixture_fraction` and `progress_variable` requires additional inputs from the users as described below.
 
-### PeleLMeX algorithm
+PeleLMeX algorithm
+------------------
 
 ::
 
@@ -151,7 +157,8 @@ Note that `mixture_fraction` and `progress_variable` requires additional inputs 
     peleLM.deltaT_tol = 1e-10              # [OPT, DEF=1.e-10] Tolerance of the deltaT solve
     peleLM.evaluate_vars =...              # [OPT, DEF=""] In evaluate mode, list unitTest: diffTerm, divU, instRR, transportCC
 
-### Chemistry integrator
+Chemistry integrator
+--------------------
 
 ::
 
@@ -167,7 +174,8 @@ Note that `mixture_fraction` and `progress_variable` requires additional inputs 
 Note that the last four parameters belong to the Reactor class of PelePhysics but are specified here for completeness. In particular, CVODE is the adequate choice of integrator to tackle PeleLMeX large time step sizes. Several linear solvers are available depending on whether or not GPU are employed: on CPU, `dense_direct` is a finite-difference direct solver, `denseAJ_direct` is an analytical-jacobian direct solver (preferred choice), `sparse_direct` is an analytical-jacobian sparse direct solver based on the KLU library and `GMRES` is a matrix-free iterative solver; on GPU `GMRES` is a matrix-free iterative solver (available on all the platforms), `sparse_direct` is a batched block-sparse direct solve based on NVIDIA's cuSparse (only with CUDA), `magma_direct` is a batched block-dense direct solve based on the MAGMA library (available with CUDA and HIP.
 
 
-### Linear solvers
+Linear solvers
+--------------
 
 Linear solvers are a key component of PeleLMeX algorithm, separate controls are dedicated to the various solver (MAC projection, nodal projection, diffusion, ...)
 
@@ -192,7 +200,8 @@ Linear solvers are a key component of PeleLMeX algorithm, separate controls are 
     tensor_diffusion.rtol = 1.0e-11             # [OPT, DEF=1e-11] Relative tolerance of the velocity tensor diffusion solve
     tensor_diffusion.atol = 1.0e-12             # [OPT, DEF=1e-14] Absolute tolerance of the velocity tensor diffusion solve
 
-### Run-time diagnostics
+Run-time diagnostics
+--------------------
 
 Combustion diagnostics often involve the use of a mixture fraction and/or a progress variable, both of which can be defined
 at run time and added to the derived variables included in the plotfile. If `mixture_fraction` or `progress_variable` is
