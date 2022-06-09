@@ -1,7 +1,7 @@
 Troubleshooting
 ===============
 
-This intend to gather information on common failure mode of PeleLMeX.
+This section is intended to gather information on common failure mode of PeleLMeX.
 Additional information can be found in GitHub issues of `PeleLM <https://github.com/AMReX-Combustion/PeleLM/issues>`_ and `PeleLMeX <https://github.com/AMReX-Combustion/PeleLMeX/issues>`_
 
 
