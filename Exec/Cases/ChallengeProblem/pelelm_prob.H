@@ -90,6 +90,10 @@ void pelelm_initdata(int i, int j, int k,
 
     state(i,j,k,TEMP) = prob_parm.T_mean;
 
+    state(i,j,k,VELX) = 0.0;
+    state(i,j,k,VELY) = 0.0;
+    state(i,j,k,VELZ) = 0.0;
+
     // Read in turbulent fluctuations from MarcHDF
     if (prob_parm.hitIC) {
       amrex::Real u[3] = {0.0};
@@ -101,8 +105,7 @@ void pelelm_initdata(int i, int j, int k,
         mod[cnt] = std::fmod(x[cnt], prob_parm.Linput);
         locate(prob_parm.d_xarray, prob_parm.input_resolution, mod[cnt], idx[cnt]);
         idxp1[cnt] = (idx[cnt] + 1) % prob_parm.input_resolution;
-        slp[cnt] =
-          (mod[cnt] - prob_parm.d_xarray[idx[cnt]]) / prob_parm.d_xdiff[idx[cnt]];
+        slp[cnt] = (mod[cnt] - prob_parm.d_xarray[idx[cnt]]) / prob_parm.d_xdiff[idx[cnt]];
       }
       int inSize = prob_parm.input_resolution;
 
@@ -214,10 +217,6 @@ void pelelm_initdata(int i, int j, int k,
       state(i,j,k,VELX) = u[0];
       state(i,j,k,VELY) = u[1];
       state(i,j,k,VELZ) = u[2];
-    } else {
-      state(i,j,k,VELX) = 0.0;
-      state(i,j,k,VELY) = 0.0;
-      state(i,j,k,VELZ) = 0.0;
     }
 
     amrex::Real P_cgs = prob_parm.P_mean * 10.0;

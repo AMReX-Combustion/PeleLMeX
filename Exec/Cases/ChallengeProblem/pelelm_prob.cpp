@@ -101,8 +101,6 @@ void PeleLM::readProbParm()
 {
    amrex::ParmParse pp("prob");
 
-   ProbParm prob_parm;
-   
    // Chamber conditions
    pp.query("P_mean", PeleLM::prob_parm->P_mean);
    pp.query("T_mean", PeleLM::prob_parm->T_mean);
@@ -155,9 +153,9 @@ void PeleLM::readProbParm()
       ppic.query("input_binaryformat",binfmt);
 
       // Read initial velocity field
-      const size_t nx = prob_parm.input_resolution;
-      const size_t ny = prob_parm.input_resolution;
-      const size_t nz = prob_parm.input_resolution;
+      const size_t nx = PeleLM::prob_parm->input_resolution;
+      const size_t ny = PeleLM::prob_parm->input_resolution;
+      const size_t nz = PeleLM::prob_parm->input_resolution;
       amrex::Vector<double> data(nx * ny * nz * 6); /* this needs to be double */
       if (binfmt) {
         read_binary(datafile, nx, ny, nz, 6, data);
@@ -181,9 +179,9 @@ void PeleLM::readProbParm()
       for (int i = 0; i < xinput.size(); i++) {
         xinput[i] = (data[0 + i * 6] + PeleLM::prob_parm->offset) / 
                     PeleLM::prob_parm->lscale;
-        uinput[i] = data[3 + i * 6] * prob_parm.urms0 / prob_parm.uin_norm;
-        vinput[i] = data[4 + i * 6] * prob_parm.urms0 / prob_parm.uin_norm;
-        winput[i] = data[5 + i * 6] * prob_parm.urms0 / prob_parm.uin_norm;
+        uinput[i] = data[3 + i * 6] * PeleLM::prob_parm->urms0 / PeleLM::prob_parm->uin_norm;
+        vinput[i] = data[4 + i * 6] * PeleLM::prob_parm->urms0 / PeleLM::prob_parm->uin_norm;
+        winput[i] = data[5 + i * 6] * PeleLM::prob_parm->urms0 / PeleLM::prob_parm->uin_norm;
       }
       
       // Get the xarray table and the differences.
@@ -206,23 +204,6 @@ void PeleLM::readProbParm()
       }
       PeleLM::prob_parm->Linput = xarray[nx - 1] + 0.5 * xdiff[nx - 1];
       
-      // Pass data to the prob_parm
-      prob_parm.d_xarray = (amrex::Real*) amrex::The_Pinned_Arena()->alloc(nx*sizeof(amrex::Real));
-      prob_parm.d_xdiff = (amrex::Real*) amrex::The_Pinned_Arena()->alloc(nx*sizeof(amrex::Real));
-      prob_parm.d_uinput = (amrex::Real*) amrex::The_Pinned_Arena()->alloc(nx*ny*nz*sizeof(amrex::Real)); 
-      prob_parm.d_vinput = (amrex::Real*) amrex::The_Pinned_Arena()->alloc(nx*ny*nz*sizeof(amrex::Real));
-      prob_parm.d_winput = (amrex::Real*) amrex::The_Pinned_Arena()->alloc(nx*ny*nz*sizeof(amrex::Real));
-      
-      for (int i = 0; i < nx; i++) {
-         prob_parm.d_xarray[i] = xarray[i];
-         prob_parm.d_xdiff[i]  = xdiff[i];
-      }
-      for (int i = 0; i < nx*ny*nz; i++) {
-         prob_parm.d_uinput[i] = uinput[i]; 
-         prob_parm.d_vinput[i] = vinput[i];
-         prob_parm.d_winput[i] = winput[i];
-      }
-      
       // Initialize PeleLM::prob_parm containers
       PeleLM::prob_parm->d_xarray = (amrex::Real*) amrex::The_Arena()->alloc(nx*sizeof(amrex::Real));
       PeleLM::prob_parm->d_xdiff = (amrex::Real*) amrex::The_Arena()->alloc(nx*sizeof(amrex::Real));
@@ -232,31 +213,25 @@ void PeleLM::readProbParm()
       
       // Copy into PeleLM::prob_parm
       amrex::Gpu::copy(amrex::Gpu::hostToDevice,
-                                &prob_parm.d_xarray,
-                                &prob_parm.d_xarray+1,
+                                xarray.begin(),
+                                xarray.end(),
                        PeleLM::prob_parm->d_xarray);
       amrex::Gpu::copy(amrex::Gpu::hostToDevice,
-                                &prob_parm.d_xdiff,
-                                &prob_parm.d_xdiff+1,
+                                xdiff.begin(),
+                                xdiff.end(),
                        PeleLM::prob_parm->d_xdiff);
       amrex::Gpu::copy(amrex::Gpu::hostToDevice,
-                                &prob_parm.d_uinput,
-                                &prob_parm.d_uinput+1,
+                                uinput.begin(),
+                                uinput.end(),
                        PeleLM::prob_parm->d_uinput);
       amrex::Gpu::copy(amrex::Gpu::hostToDevice,
-                                &prob_parm.d_vinput,
-                                &prob_parm.d_vinput+1,
+                                vinput.begin(),
+                                vinput.end(),
                        PeleLM::prob_parm->d_vinput);
       amrex::Gpu::copy(amrex::Gpu::hostToDevice,
-                                &prob_parm.d_winput,
-                                &prob_parm.d_winput+1,
+                                winput.begin(),
+                                winput.end(),
                        PeleLM::prob_parm->d_winput);
-
-      amrex::The_Pinned_Arena()->free(prob_parm.d_xarray);
-      amrex::The_Pinned_Arena()->free(prob_parm.d_xdiff);
-      amrex::The_Pinned_Arena()->free(prob_parm.d_uinput);
-      amrex::The_Pinned_Arena()->free(prob_parm.d_vinput);
-      amrex::The_Pinned_Arena()->free(prob_parm.d_winput);
    }
    
 }
