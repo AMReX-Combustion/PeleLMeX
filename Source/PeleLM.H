@@ -267,6 +267,9 @@ class PeleLM : public amrex::AmrCore {
                        const amrex::Vector<const amrex::MultiFab*> &rhs_nd,
                        int increment_gp,
                        amrex::Real scaling_factor);
+
+   void scaleRHS_RZ(int a_lev,
+                    amrex::MultiFab &a_rhs);
    //-----------------------------------------------------------------------------
 
    //-----------------------------------------------------------------------------

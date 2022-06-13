@@ -387,3 +387,27 @@ void PeleLM::doNodalProject(const Vector<MultiFab*> &a_vel,
    }
 
 }
+
+void
+PeleLM::scaleRHS_RZ(int a_lev,
+                    MultiFab &a_rhs)
+{
+#ifdef AMREX_SPACEDIM = 2
+    // Scale nodal projection cell-centered RHS by radius
+    if (geom[a_lev].IsRZ()) {
+        const Box& domain  = geom[a_lev].Domain();
+        const Real dr      = geom[a_lev].CellSize()[0];
+        auto const& rhs_ma = a_rhs.arrays();
+        amrex::ParallelFor(a_rhs, [=]
+        AMREX_GPU_DEVICE (int box_no, int i, int j, int k) noexcept
+        {
+            auto rhs = rhs_ma[box_no];
+            if (domain.contains(i,j,k)) {
+                rhs(i,j,k) *= (static_cast<Real>(i) + 0.5) * dr;
+            } else {
+                rhs(i,j,k) = 0.0;
+            }
+        });
+    }
+#endif
+}
