@@ -15,6 +15,8 @@ void PeleLM::Init() {
    // Initialize data
    initData();
 
+   // Check run parameters
+   checkRunParams();
 }
 
 void PeleLM::MakeNewLevelFromScratch( int lev,
@@ -434,4 +436,13 @@ void PeleLM::InitFromGridFile(amrex::Real time)
      DistributionMapping dm(ba);
      MakeNewLevelFromScratch(lev, time, ba, dm);
   }
+}
+
+void PeleLM::checkRunParams()
+{
+#ifdef AMREX_USE_EB
+    if (geom[0].IsRZ()) {
+        Abort("RZ geometry is not available with EB");
+    }
+#endif
 }

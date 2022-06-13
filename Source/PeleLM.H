@@ -244,6 +244,9 @@ class PeleLM : public amrex::AmrCore {
                            amrex::Real time,
                            bool initial);
 
+   // checkRunParams
+   void checkRunParams();
+
    //-----------------------------------------------------------------------------
 
    //-----------------------------------------------------------------------------
