@@ -10,6 +10,7 @@ void PeleLM::readProbParm()
    pp.query("T_bubble", prob_parm->T_bubble);
    pp.query("bubble_radius", prob_parm->bubble_rad);
    pp.query("bubble_y0", prob_parm->bubble_y0);
+   pp.query("use_symmetry", prob_parm->is_sym);
 
    auto& trans_parm = PeleLM::trans_parms.host_trans_parm();
    amrex::ParmParse pptr("transport");
