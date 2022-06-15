@@ -268,8 +268,11 @@ class PeleLM : public amrex::AmrCore {
                        int increment_gp,
                        amrex::Real scaling_factor);
 
-   void scaleRHS_RZ(int a_lev,
-                    amrex::MultiFab &a_rhs);
+   // Scaling functions for 2D-RZ calculations
+   void scaleProj_RZ(int a_lev,
+                     amrex::MultiFab &a_rhs);
+   void unscaleProj_RZ(int a_lev,
+                       amrex::MultiFab &a_rhs);
    //-----------------------------------------------------------------------------
 
    //-----------------------------------------------------------------------------

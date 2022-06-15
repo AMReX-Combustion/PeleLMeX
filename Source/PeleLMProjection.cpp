@@ -41,6 +41,7 @@ void PeleLM::initialProjection()
                sig_arr(i,j,k) = dummy_dt / rho_arr(i,j,k);
             });
          }
+         scaleProj_RZ(lev,*sigma[lev]);
       }
    }
 
@@ -50,11 +51,12 @@ void PeleLM::initialProjection()
       vel.push_back(std::make_unique<MultiFab> (m_leveldata_new[lev]->state, amrex::make_alias,VELX,AMREX_SPACEDIM));
       vel[lev]->setBndry(0.0);
       setInflowBoundaryVel(*vel[lev],lev,AmrNewTime);
+      scaleProj_RZ(lev,*vel[lev]);
    }
 
    // Get RHS cc: - divU (- \int{divU})
    Real Sbar = 0.0;
-   Vector<MultiFab*> rhs_cc;
+   Vector<MultiFab> rhs_cc(finest_level+1);
    if (!m_incompressible && m_has_divu ) {
       // Ensure integral of RHS is zero for closed chamber
       if (m_closed_chamber) {
@@ -62,28 +64,33 @@ void PeleLM::initialProjection()
          Sbar /= m_uncoveredVol;        // Transform in Mean.
       }
       for (int lev = 0; lev <= finest_level; ++lev) {
-         rhs_cc.push_back(&(m_leveldata_new[lev]->divu));
+         //rhs_cc.push_back(&(m_leveldata_new[lev]->divu));
+         rhs_cc[lev].define(grids[lev],dmap[lev],1,m_leveldata_new[lev]->divu.nGrow());
+         MultiFab::Copy(rhs_cc[lev],m_leveldata_new[lev]->divu,0,0,1,m_leveldata_new[lev]->divu.nGrow());
          if (m_closed_chamber) {
-            rhs_cc[lev]->plus(-Sbar,0,1);
+            rhs_cc[lev].plus(-Sbar,0,1);
          }
-         rhs_cc[lev]->mult(-1.0,0,1,rhs_cc[lev]->nGrow());
+         scaleProj_RZ(lev,rhs_cc[lev]);
+         rhs_cc[lev].mult(-1.0,0,1,rhs_cc[lev].nGrow());
       }
    }
 
-   doNodalProject(GetVecOfPtrs(vel), GetVecOfPtrs(sigma), rhs_cc, {}, incremental, dummy_dt);
+   doNodalProject(GetVecOfPtrs(vel), GetVecOfPtrs(sigma), GetVecOfPtrs(rhs_cc), {}, incremental, dummy_dt);
 
    // Set back press and gpress to zero and restore divu
+   // and rescale velocity if 2D-RZ
    for (int lev = 0; lev <= finest_level; lev++) {
       auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
       ldata_p->press.setVal(0.0);
       ldata_p->gp.setVal(0.0);
       if (!m_incompressible && m_has_divu ) {
-         m_leveldata_new[lev]->divu.mult(-1.0,0,1,rhs_cc[lev]->nGrow());
+         m_leveldata_new[lev]->divu.mult(-1.0,0,1,rhs_cc[lev].nGrow());
          // Restore divU integral
          if (m_closed_chamber) {
             m_leveldata_new[lev]->divu.plus(Sbar,0,1);
          }
       }
+      unscaleProj_RZ(lev,*vel[lev]);
    }
 
    // Average down velocity
@@ -134,6 +141,7 @@ void PeleLM::velocityProjection(int is_initIter,
 #ifdef AMREX_USE_EB
          EB_set_covered(*sigma[lev],0.0);
 #endif
+         scaleProj_RZ(lev,*sigma[lev]);
       }
    }
 
@@ -188,6 +196,7 @@ void PeleLM::velocityProjection(int is_initIter,
 #endif
       vel[lev]->setBndry(0.0);
       if (!incremental) setInflowBoundaryVel(*vel[lev],lev,AmrNewTime);
+      scaleProj_RZ(lev,*vel[lev]);
    }
 
    // To ensure integral of RHS is zero for closed chamber, get mean divU
@@ -241,6 +250,7 @@ void PeleLM::velocityProjection(int is_initIter,
 #ifdef AMREX_USE_EB
          EB_set_covered(rhs_cc[lev],0.0);
 #endif
+         scaleProj_RZ(lev,rhs_cc[lev]);
       }
    }
 
@@ -248,13 +258,19 @@ void PeleLM::velocityProjection(int is_initIter,
 
    // If incremental
    // define back to be U^{np1} by adding U^{n}
+   // and handles scaling if 2D-RZ
    if (incremental) {
       for (int lev = 0; lev <= finest_level; ++lev) {
          auto ldataOld_p = getLevelDataPtr(lev,AmrOldTime);
          auto ldataNew_p = getLevelDataPtr(lev,AmrNewTime);
+         unscaleProj_RZ(lev,*vel[lev]);         // Unscaling New vel before adding back old one
          MultiFab::Add(ldataNew_p->state,
                        ldataOld_p->state,
                        VELX,VELX,AMREX_SPACEDIM,0);
+      }
+   } else {
+      for (int lev = 0; lev <= finest_level; ++lev) {
+         unscaleProj_RZ(lev,*vel[lev]);
       }
    }
 
@@ -320,12 +336,6 @@ void PeleLM::doNodalProject(const Vector<MultiFab*> &a_vel,
    nodal_projector->getMLMG().setHypreOptionsNamespace(m_hypre_namespace_nodal);
 #endif
 
-#if (AMREX_SPACEDIM == 2)
-   if (m_rz_correction) {
-      nodal_projector->getLinOp().setRZCorrection(Geom(0).IsRZ());
-   }
-#endif
-
    // Solve
    nodal_projector->project(m_nodal_mg_rtol, m_nodal_mg_atol);
 
@@ -389,23 +399,55 @@ void PeleLM::doNodalProject(const Vector<MultiFab*> &a_vel,
 }
 
 void
-PeleLM::scaleRHS_RZ(int a_lev,
-                    MultiFab &a_rhs)
+PeleLM::scaleProj_RZ(int a_lev,
+                    MultiFab &a_mf)
 {
-#ifdef AMREX_SPACEDIM = 2
-    // Scale nodal projection cell-centered RHS by radius
+#if AMREX_SPACEDIM == 2
+    // Scale nodal projection cell-centered mfs by radius
+    if (geom[a_lev].IsRZ()) {
+        const Box& domain = geom[a_lev].Domain();
+        const Real dr     = geom[a_lev].CellSize()[0];
+        auto const& mf_ma = a_mf.arrays();
+        amrex::ParallelFor(a_mf, a_mf.nGrowVect(), [=,ncomp=a_mf.nComp()]
+        AMREX_GPU_DEVICE (int box_no, int i, int j, int k) noexcept
+        {
+            auto mf = mf_ma[box_no];
+            if (domain.contains(i,j,k)) {
+                for (int n = 0; n < ncomp; ++n) {
+                   mf(i,j,k,n) *= (static_cast<Real>(i) + 0.5) * dr;
+                }
+            } else {
+                for (int n = 0; n < ncomp; ++n) {
+                   mf(i,j,k,n) = 0.0;
+                }
+            }
+        });
+    }
+#endif
+}
+
+void
+PeleLM::unscaleProj_RZ(int a_lev,
+                       MultiFab &a_mf)
+{
+#if AMREX_SPACEDIM == 2
+    // Scale nodal projection cell-centered mfs by radius
     if (geom[a_lev].IsRZ()) {
         const Box& domain  = geom[a_lev].Domain();
         const Real dr      = geom[a_lev].CellSize()[0];
-        auto const& rhs_ma = a_rhs.arrays();
-        amrex::ParallelFor(a_rhs, [=]
+        auto const& mf_ma = a_mf.arrays();
+        amrex::ParallelFor(a_mf, a_mf.nGrowVect(), [=,ncomp=a_mf.nComp()]
         AMREX_GPU_DEVICE (int box_no, int i, int j, int k) noexcept
         {
-            auto rhs = rhs_ma[box_no];
+            auto mf = mf_ma[box_no];
             if (domain.contains(i,j,k)) {
-                rhs(i,j,k) *= (static_cast<Real>(i) + 0.5) * dr;
+                for (int n = 0; n < ncomp; ++n) {
+                   mf(i,j,k,n) /= (static_cast<Real>(i) + 0.5) * dr;
+                }
             } else {
-                rhs(i,j,k) = 0.0;
+                for (int n = 0; n < ncomp; ++n) {
+                   mf(i,j,k,n) = 0.0;
+                }
             }
         });
     }
