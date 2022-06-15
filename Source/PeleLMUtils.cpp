@@ -827,12 +827,12 @@ PeleLM::MFSum (const Vector<const MultiFab*> &a_mf, int comp)
 
     for (int lev = 0; lev <= finest_level; ++lev)
     {
-        const Real* dx = geom[lev].CellSize();
-
-       // Use amrex::ReduceSum
+#ifdef AMREX_USE_EB
+       // For EB, use constant vol
+       const Real* dx = geom[lev].CellSize();
        Real vol = AMREX_D_TERM(dx[0],*dx[1],*dx[2]);
 
-#ifdef AMREX_USE_EB
+       // Use amrex::ReduceSum
        auto const& ebfact = dynamic_cast<EBFArrayBoxFactory const&>(Factory(lev));
        auto const& vfrac = ebfact.getVolFrac();
    
@@ -864,26 +864,33 @@ PeleLM::MFSum (const Vector<const MultiFab*> &a_mf, int comp)
           });
        }
 #else
+       // Get the geometry volume to account for 2D-RZ
+       MultiFab volume(grids[lev], dmap[lev], 1, 0);
+       geom[lev].GetVolume(volume);
+       
        Real sm = 0.0;
        if ( lev != finest_level ) {
-          sm = amrex::ReduceSum(*a_mf[lev], *m_coveredMask[lev], 0, [vol, comp]
-          AMREX_GPU_HOST_DEVICE (Box const& bx, Array4<Real const> const& mf_arr, Array4<int const> const& covered_arr) -> Real
+          sm = amrex::ReduceSum(*a_mf[lev], volume, *m_coveredMask[lev], 0, [comp]
+          AMREX_GPU_HOST_DEVICE (Box const& bx, Array4<Real const> const& mf_arr,
+                                                Array4<Real const> const& vol_arr,
+                                                Array4<int const> const& covered_arr) -> Real
           {
               Real sum = 0.0;
               AMREX_LOOP_3D(bx, i, j, k,
               {
-                  sum += mf_arr(i,j,k,comp) * vol * static_cast<Real>(covered_arr(i,j,k));
+                  sum += mf_arr(i,j,k,comp) * vol_arr(i,j,k) * static_cast<Real>(covered_arr(i,j,k));
               });
               return sum;
           });
        } else {
-          sm = amrex::ReduceSum(*a_mf[lev], 0, [vol, comp]
-          AMREX_GPU_HOST_DEVICE (Box const& bx, Array4<Real const> const& mf_arr) -> Real
+          sm = amrex::ReduceSum(*a_mf[lev], volume, 0, [comp]
+          AMREX_GPU_HOST_DEVICE (Box const& bx, Array4<Real const> const& mf_arr,
+                                                Array4<Real const> const& vol_arr) -> Real
           {
               Real sum = 0.0;
               AMREX_LOOP_3D(bx, i, j, k,
               {
-                  sum += mf_arr(i,j,k,comp) * vol;
+                  sum += mf_arr(i,j,k,comp) * vol_arr(i,j,k);
               });
               return sum;
           });
