@@ -50,8 +50,8 @@ void PeleLM::initialProjection()
    for (int lev = 0; lev <= finest_level; ++lev) {
       vel.push_back(std::make_unique<MultiFab> (m_leveldata_new[lev]->state, amrex::make_alias,VELX,AMREX_SPACEDIM));
       vel[lev]->setBndry(0.0);
-      setInflowBoundaryVel(*vel[lev],lev,AmrNewTime);
       scaleProj_RZ(lev,*vel[lev]);
+      setInflowBoundaryVel(*vel[lev],lev,AmrNewTime);
    }
 
    // Get RHS cc: - divU (- \int{divU})
@@ -64,7 +64,6 @@ void PeleLM::initialProjection()
          Sbar /= m_uncoveredVol;        // Transform in Mean.
       }
       for (int lev = 0; lev <= finest_level; ++lev) {
-         //rhs_cc.push_back(&(m_leveldata_new[lev]->divu));
          rhs_cc[lev].define(grids[lev],dmap[lev],1,m_leveldata_new[lev]->divu.nGrow());
          MultiFab::Copy(rhs_cc[lev],m_leveldata_new[lev]->divu,0,0,1,m_leveldata_new[lev]->divu.nGrow());
          if (m_closed_chamber) {
@@ -104,7 +103,60 @@ void PeleLM::initialProjection()
                                       "  V: " << velMax[1] <<,
                                       "  W: " << velMax[2] <<) "\n";
    }
+}
 
+void PeleLM::initialPressProjection()
+{
+   BL_PROFILE_VAR("PeleLM::initialPressProjection()", initialProjection);
+
+   if (m_verbose) {
+      amrex::Print() << " Initial pressure projection \n";
+   }
+
+   Real dummy_dt = 1.0;
+   int incremental = 0;
+   int nGhost = 1;
+
+   // Get sigma : density if not incompressible
+   Vector<std::unique_ptr<MultiFab>> sigma(finest_level+1);
+   if (! m_incompressible ) {
+      for (int lev = 0; lev <= finest_level; ++lev ) {
+
+         sigma[lev].reset(new MultiFab(grids[lev], dmap[lev], 1, nGhost, MFInfo(), *m_factory[lev]));
+
+         auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
+
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+         for (MFIter mfi(ldata_p->state,TilingIfNotGPU()); mfi.isValid(); ++mfi) {
+            Box const& bx = mfi.tilebox();
+            auto const& rho_arr = ldata_p->state.const_array(mfi,DENSITY);
+            auto const& sig_arr = sigma[lev]->array(mfi);
+            amrex::ParallelFor(bx, [rho_arr,sig_arr,dummy_dt]
+            AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+            {
+               sig_arr(i,j,k) = dummy_dt / rho_arr(i,j,k);
+            });
+         }
+         scaleProj_RZ(lev,*sigma[lev]);
+      }
+   }
+
+   // Set the velocity to the gravity field
+   Vector<MultiFab> vel(finest_level+1);
+   for (int lev = 0; lev <= finest_level; ++lev) {
+      vel[lev].define(grids[lev], dmap[lev], AMREX_SPACEDIM, nGhost, MFInfo(), *m_factory[lev]);
+      for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
+         vel[lev].setVal(m_gravity[idim],idim,1,1);
+      }
+      vel[lev].setBndry(0.0);
+      scaleProj_RZ(lev,vel[lev]);
+      setInflowBoundaryVel(vel[lev],lev,AmrNewTime);
+   }
+
+   // Done without divU in IAMR
+   doNodalProject(GetVecOfPtrs(vel), GetVecOfPtrs(sigma), {}, {}, incremental, dummy_dt);
 }
 
 void PeleLM::velocityProjection(int is_initIter,
@@ -195,8 +247,8 @@ void PeleLM::velocityProjection(int is_initIter,
       EB_set_covered(*vel[lev],0.0);
 #endif
       vel[lev]->setBndry(0.0);
-      if (!incremental) setInflowBoundaryVel(*vel[lev],lev,AmrNewTime);
       scaleProj_RZ(lev,*vel[lev]);
+      if (!incremental) setInflowBoundaryVel(*vel[lev],lev,AmrNewTime);
    }
 
    // To ensure integral of RHS is zero for closed chamber, get mean divU
