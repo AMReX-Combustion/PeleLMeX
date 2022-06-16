@@ -252,8 +252,10 @@ class PeleLM : public amrex::AmrCore {
    //-----------------------------------------------------------------------------
    // PROJECTION
 
-   // Initial projection
+   // Initial projections
    void initialProjection();
+
+   void initialPressProjection();
 
    // Velocity projection at Time
    void velocityProjection(int is_init,
@@ -1271,6 +1273,7 @@ class PeleLM : public amrex::AmrCore {
    // MAC projection
    int m_mac_mg_verbose = 0;
    int m_mac_mg_max_coarsening_level = 100;
+   int m_mac_max_order = 4;
    amrex::Real m_mac_mg_rtol = 1.0e-11;   
    amrex::Real m_mac_mg_atol = 1.0e-14;
    std::string m_hypre_namespace_mac = "mac_hypre";

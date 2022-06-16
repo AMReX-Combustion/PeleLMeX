@@ -134,7 +134,7 @@ void PeleLM::macProject(const TimeStamp &a_time,
    for (int lev = 0; lev <= finest_level; ++lev)
    {
       if (m_incompressible) {
-         Real rhoInv = 1.0/m_rho;
+         Real rhoInv = m_dt/(2.0*m_rho);
          for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
             rho_inv[lev][idim].define(amrex::convert(grids[lev],IntVect::TheDimensionVector(idim)),
                                       dmap[lev], 1, 0, MFInfo(), Factory(lev));
@@ -171,6 +171,7 @@ void PeleLM::macProject(const TimeStamp &a_time,
    }
 
    // set MAC velocity and projection RHS
+   macproj->getLinOp().setMaxOrder(m_mac_max_order);
    macproj->setUMAC(GetVecOfArrOfPtrs(advData->umac));
    if (has_divu) macproj->setDivU(GetVecOfConstPtrs(a_divu));
 
