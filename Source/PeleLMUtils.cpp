@@ -340,24 +340,11 @@ void PeleLM::advFluxDivergence(int a_lev,
                                             scale, fluxes_are_area_weighted);
         } else if (flagfab.getType(bx) == FabType::regular)
 #endif
-        {
-#if (AMREX_SPACEDIM == 2)
-           if ( geom[a_lev].IsRZ() ) {
-              auto const& vol = volume.const_array(mfi);
-              auto const&  ax =  mf_ax.const_array(mfi);
-              auto const&  ay =  mf_ay.const_array(mfi);
-              HydroUtils::ComputeDivergenceRZ(bx, div_arr,
-                                              AMREX_D_DECL(fx,fy,fz),
-                                              vol, ax, ay, 
-                                              ncomp, scale, fluxes_are_area_weighted);
-           } else
-#endif
-           { 
-              HydroUtils::ComputeDivergence(bx, div_arr,
-                                            AMREX_D_DECL(fx,fy,fz),
-                                            ncomp, a_geom,
-                                            scale, fluxes_are_area_weighted);
-           }
+        { 
+           HydroUtils::ComputeDivergence(bx, div_arr,
+                                         AMREX_D_DECL(fx,fy,fz),
+                                         ncomp, a_geom,
+                                         scale, fluxes_are_area_weighted);
         }
 
         // If convective, we define u dot grad q = div (u q) - q div(u)
