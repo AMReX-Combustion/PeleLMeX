@@ -48,8 +48,8 @@ int init_function = 1;
 int spray_verbose = 0;
 Real max_spray_cfl = 5.;
 Real wall_temp = 300.;
-int mass_trans = 1;
-int mom_trans = 1;
+bool mass_trans = true;
+bool mom_trans = true;
 } // namespace
 
 bool PeleLM::do_spray_particles = true;
@@ -153,8 +153,8 @@ PeleLM::sprayParticleSetup()
     const int fspec = sprayData.indx[ns];
     sprayData.latent[ns] -= fuelEnth[fspec] * 1.E-4;
   }
-  scomps.mass_tran = mass_trans;
-  scomps.mom_tran = mom_trans;
+  scomps.mass_trans = mass_trans;
+  scomps.mom_trans = mom_trans;
   // Component indices for conservative variables
   scomps.rhoIndx = DENSITY;
   scomps.momIndx = VELX;
