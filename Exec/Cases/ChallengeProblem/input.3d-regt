@@ -18,7 +18,7 @@ amr.max_level       = 0                # maximum level number allowed
 amr.ref_ratio       = 2 2 2 2 2        # refinement ratio
 amr.regrid_int      = 5                # how often to regrid
 amr.n_error_buf     = 2 2 2 2          # number of buffer cells in error est
-amr.grid_eff        = 0.7              # what constitutes an efficient grid
+amr.grid_eff        = 0.95             # what constitutes an efficient grid
 amr.blocking_factor = 16               # block factor in grid generation (min box size)
 amr.max_grid_size   = 32               # max box size
 
@@ -36,6 +36,18 @@ prob.vel_jet = 28.0
 prob.Z      = 0.45
 prob.injection_start = 0.0
 prob.injection_duration = 0.0005
+
+ic.hitIC = 1
+ic.input_resolution = 128
+ic.input_binaryformat = 1
+ic.input_name = "hit_ic_ut_128.in"
+ic.uin_norm = 1.3231790983814187
+ic.lscale = 241.66097335 # = 2*pi / domain length
+ic.offset = -3.1415926536
+ic.urms0 = 4.0
+ic.win_lo = -0.007 -0.007 0.0015
+ic.win_hi =  0.007 0.007 0.003
+ic.win_slope = 1000.0
 
 #--------------------------- Turbulence -------------------------------
 # NOTE: the centers must be consistent with the injection data provided
@@ -88,7 +100,7 @@ peleLM.incompressible = 0
 peleLM.rho = 1.17
 peleLM.mu = 0.0
 peleLM.use_wbar = 1
-peleLM.sdc_iterMax = 1
+peleLM.sdc_iterMax = 2
 peleLM.floor_species = 0
 peleLM.num_divu_iter = 1
 peleLM.num_init_iter = 3
@@ -100,33 +112,35 @@ peleLM.num_init_iter = 1
 peleLM.num_divu_iter = 1
 
 #amr.restart = chk00005
-amr.check_int = 5
-amr.plot_int = 10
-amr.max_step = 5
+amr.check_int = 100
+amr.plot_int = 50
+amr.max_step = 10
 amr.dt_shrink = 0.1
 amr.stop_time = 1.0
 #amr.stop_time = 1.00
-amr.fixed_dt = 0.000001
-amr.cfl = 0.4
+amr.init_dt = 0.000001
+amr.cfl = 0.7
 amr.derive_plot_vars = avg_pressure mag_vort mass_fractions
 
 # --------------- INPUTS TO CHEMISTRY REACTOR ---------------
-peleLM.chem_integrator = "ReactorNull"
-#peleLM.use_typ_vals_chem = 1          # Use species/temp typical values in CVODE
-#ode.rtol = 1.0e-6                     # Relative tolerance of the chemical solve
-#ode.atol = 1.0e-5                     # Absolute tolerance factor applied on typical values
-cvode.solve_type = denseAJ_direct     # CVODE Linear solve type (for Newton direction) 
+peleLM.chem_integrator = "ReactorCvode"
+peleLM.use_typ_vals_chem = 1          # Use species/temp typical values in CVODE
+ode.rtol = 1.0e-8                     # Relative tolerance of the chemical solve
+ode.atol = 1.0e-6                     # Absolute tolerance factor applied on typical values
+ode.clean_init_massfrac = 0
+cvode.solve_type = magma_direct       # CVODE Linear solve type (for Newton direction) 
 cvode.max_order  = 4                  # CVODE max BDF order. 
 
 #------------------------- EB SETUP -----------------------------
 eb2.geom_type = UserDefined
-eb2.small_volfrac = 5.e-3
-eb2.maxiter = 100
+eb2.small_volfrac = 1.e-3
+eb2.maxiter = 500
 #eb2.cylinder_radius = 480.0000
 #eb2.head_offset = -10.0000e4
 #eb2.head_isFlat = 1
-#peleLM.refine_EB_type = Static
-#peleLM.refine_EB_max_level = 0
+peleLM.refine_EB_type = Static
+peleLM.refine_EB_max_level = 0
+peleLM.refine_EB_buffer = 2.0
 
 #--------------------REFINEMENT CONTROL------------------------
 #amr.refinement_indicators = temp
@@ -139,17 +153,44 @@ eb2.maxiter = 100
 #amr.magVort.value_greater = 500.0
 #amr.magVort.field_name    = mag_vort
 
-amr.refinement_indicators = boxHZ
-amr.boxHZ.in_box_lo = -0.004 -0.004 0.0008
-amr.boxHZ.in_box_hi =  0.004  0.004 0.00175
+amr.refinement_indicators = boxHZ fuel loTemp hiTemp
+amr.boxHZ.max_level     = 1
+amr.boxHZ.in_box_lo = -0.003 -0.003 0.004
+amr.boxHZ.in_box_hi =  0.003  0.003 0.0045
+
+amr.fuel.max_level     = 3
+amr.fuel.value_greater = 0.05
+amr.fuel.field_name    = Y(NC12H26)
+
+amr.loTemp.max_level     = 3
+amr.loTemp.value_less    = 850.0
+amr.loTemp.field_name    = temp
+
+amr.hiTemp.max_level     = 3
+amr.hiTemp.value_greater = 950.0
+amr.hiTemp.field_name    = temp
+
+peleLM.diagnostics = xnormal ynormal
+peleLM.xnormal.type = DiagFramePlane
+peleLM.xnormal.file = centXPlane
+peleLM.xnormal.normal = 0 
+peleLM.xnormal.center = 0.0
+peleLM.xnormal.int    = 10
+peleLM.xnormal.interpolation = Linear
+peleLM.ynormal.type = DiagFramePlane
+peleLM.ynormal.file = centYPlane
+peleLM.ynormal.normal = 1 
+peleLM.ynormal.center = 0.0
+peleLM.ynormal.int    = 10
+peleLM.ynormal.interpolation = Linear
 
 #--------------------LINEAR SOLVER CONTROL------------------------
-nodal_proj.verbose = 2
-nodal_proj.mg_max_coarsening_level = 0
-nodal_proj.rtol = 1.0e-10
-nodal_proj.atol = 1.0e-10
-nodal_proj.bottom_solver = "hypre"
-nodal_proj.hypre_namespace = nodal_proj.hypre
+nodal_proj.verbose = 1
+#nodal_proj.mg_max_coarsening_level = 0
+nodal_proj.rtol = 1.0e-11
+nodal_proj.atol = 1.0e-11
+#nodal_proj.bottom_solver = "hypre"
+#nodal_proj.hypre_namespace = nodal_proj.hypre
 
 nodal_proj.hypre.verbose = 0
 nodal_proj.hypre.hypre_solver = GMRES
