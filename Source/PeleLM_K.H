@@ -249,7 +249,7 @@ EB_intFluxDivergence_K(int i, int j, int k,
                                     amrex::Real areay,
                                     amrex::Real areaz),
                        amrex::Array4<const amrex::Real> const& ebFlux,
-                       amrex::Array4<const amrex::Real> const& ebArea,
+                       amrex::Array4<const amrex::Real> const& ebAreaFrac,
                        amrex::Array4<const amrex::Real>              const& vol,
                        const amrex::Real                                  & a_dx,
                        const amrex::Real                                  & scaling,
@@ -258,6 +258,7 @@ EB_intFluxDivergence_K(int i, int j, int k,
    using namespace amrex::literals;
 
    amrex::Real factor = scaling / vol(i,j,k);
+   amrex::Real eb_area = AMREX_D_TERM(1.0,*a_dx,*a_dx) * ebAreaFrac(i,j,k);
 
    for (int n = 0; n < ncomp; n++) {
       div(i,j,k,n) = AMREX_D_TERM (  (   areax * afracX(i+1,j,k) * fluxX(i+1,j,k,n)
@@ -266,7 +267,7 @@ EB_intFluxDivergence_K(int i, int j, int k,
                                        - areay * afracY(i,j  ,k) * fluxY(i,j  ,k,n) ),
                                    + (   areaz * afracZ(i,j,k+1) * fluxZ(i,j,k+1,n)
                                        - areaz * afracZ(i,j,k  ) * fluxZ(i,j,k  ,n) ));
-      div(i,j,k,n) += a_dx * ebArea(i,j,k) * ebFlux(i,j,k,n);
+      div(i,j,k,n) += eb_area * ebFlux(i,j,k,n);
       div(i,j,k,n) *= factor;
    }
 }
