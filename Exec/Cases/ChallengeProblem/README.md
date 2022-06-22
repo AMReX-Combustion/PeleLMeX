@@ -25,6 +25,26 @@ The initial conditions in the chamber are controled by the following parameters 
 with the remainder of the mixture made up of nitrogen. These default conditions correspond to a lean
 mixture of CH4 in viciated air at an equivalence ratio of 0.5.
 
+Velocity in the chamber is initialized from a precursor HIT simulation. Data are stored in a binary
+fine and interpolated onto the AMReX grid. A set of paramter control the position as well as the
+scaling of this velocity field and it is advised not to modify those parameters:
+
+```
+ic.hitIC = 1 
+ic.input_resolution = 128 
+ic.input_binaryformat = 1 
+ic.input_name = "hit_ic_ut_128.in"
+ic.uin_norm = 1.3231790983814187
+ic.lscale = 241.66097335 # = 2*pi / domain length
+ic.offset = -3.1415926536
+ic.urms0 = 4.0 
+ic.win_lo = -0.007 -0.007 0.0015
+ic.win_hi =  0.007  0.007 0.003
+ic.win_slope = 1000.0
+```
+
+One can remove this initial velocity field by switching of the `ic.hitIC` key.
+
 ## Diesel injection
 
 The second fuel is injected directly into the chamber and diesel is represented by a single component
@@ -73,6 +93,11 @@ employed for all 4 jets, with a time offset allowing each jet to read in turbule
 used for the KPP can be found on ORNL's Summit on the following location (shared CMB138 project directory):
 
 /gpfs/alpine/proj-shared/cmb138/ECP_KPP/Turb.test2
+
+Similarly, the initial velocity condition is generated from an HIT simulation. The HIT data are stored in a file
+that can be obtained in the same location:
+
+/gpfs/alpine/proj-shared/cmb138/ECP_KPP/hit_ic_ut_128.in
 
 On Crusher, please load the following modules:
 
