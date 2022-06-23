@@ -43,8 +43,10 @@ void pelelm_initdata(int i, int j, int k,
     state(i,j,k,TEMP) = prob_parm.T_mean;
     amrex::Real x_c = prob_parm.is_sym ? prob_lo[0]
                                        : prob_lo[0]+0.5*Lx;
+#if AMREX_SPACEDIM == 3
     amrex::Real z_c = prob_parm.is_sym ? prob_lo[2]
                                        : prob_lo[2]+0.5*Lz;
+#endif
     amrex::Real rad = std::sqrt(AMREX_D_TERM(  (y-prob_parm.bubble_y0) * (y-prob_parm.bubble_y0),
                                              + (x-x_c) * (x-x_c),
                                              + (z-z_c) * (z-z_c)));
