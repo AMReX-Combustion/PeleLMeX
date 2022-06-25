@@ -270,6 +270,17 @@ PeleLM::create_constrained_umac_grown(int a_lev, int a_nGrow,
     const GpuArray<Real,AMREX_SPACEDIM> dxinv = fine_geom->InvCellSizeArray();
     const GpuArray<Real,AMREX_SPACEDIM> dx = fine_geom->CellSizeArray();
 
+    // Get areas
+#if ( AMREX_SPACEDIM == 2 )
+    MultiFab mf_ax, mf_ay, volume;
+    if (fine_geom->IsRZ()) {
+        fine_geom->GetFaceArea(mf_ax, grids[a_lev], dmap[a_lev], 0, 1);
+        fine_geom->GetFaceArea(mf_ay, grids[a_lev], dmap[a_lev], 1, 1);
+        volume.define(grids[a_lev], dmap[a_lev], 1, 1);
+        fine_geom->GetVolume(volume);
+    }
+#endif
+
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
@@ -282,38 +293,79 @@ PeleLM::create_constrained_umac_grown(int a_lev, int a_nGrow,
                                                                             u_mac_fine[1]->array(mfi),
                                                                             u_mac_fine[2]->array(mfi))};
         for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
-            // Grow the box in the direction of the faces we will correct
-            const Box& gbx = mfi.growntilebox(IntVect::TheDimensionVector(idim));
-            amrex::ParallelFor(gbx, [idim, bx, divuarr, maskarr, crsebnd, umac_arr, dx, dxinv, has_divu]
-            AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+#if AMREX_SPACEDIM == 2
+            if (fine_geom->IsRZ()) {
+               Array<Array4<const Real>, AMREX_SPACEDIM> const &areas_arr = {mf_ax.const_array(mfi),
+                                                                             mf_ay.const_array(mfi)};
+               auto const &vol_arr = volume.const_array(mfi);
+               // Grow the box in the direction of the faces we will correct
+               const Box& gbx = mfi.growntilebox(IntVect::TheDimensionVector(idim));
+               amrex::ParallelFor(gbx, [=]
+               AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+               {
+                   // Only works on ghost cells flagged as C-F boundaries
+                   if ( !bx.contains(i,j,k) && (maskarr(i,j,k) == crsebnd) ) {
+                       // Get the divU components from the transverse velocities (!= idim)
+                       GpuArray<int,3> idx = {AMREX_D_DECL(i,j,k)};
+                       Real transverseTerm = 0.0;
+                       for (int trdim = 0; trdim < AMREX_SPACEDIM; trdim++) {
+                           if (trdim != idim) {
+                               GpuArray<int,3> idxp1 = {AMREX_D_DECL(i,j,k)};
+                               idxp1[trdim]++;
+                               transverseTerm +=  (  umac_arr[trdim](idxp1[0], idxp1[1], idxp1[2]) * areas_arr[trdim](idxp1[0], idxp1[1], idxp1[2])
+                                                   - umac_arr[trdim](idx[0], idx[1], idx[2]) * areas_arr[trdim](idx[0], idx[1], idx[2]) ) / vol_arr(i,j,k);
+                           }
+                       }
+                       // Correct the outer umac face
+                       GpuArray<int,3> idxp1 = {AMREX_D_DECL(i,j,k)};
+                       idxp1[idim]++;
+                       if ( idx[idim] < bx.smallEnd(idim) ) {
+                           umac_arr[idim](i,j,k) =  umac_arr[idim](idxp1[0], idxp1[1], idxp1[2]) * areas_arr[idim](idxp1[0], idxp1[1], idxp1[2]) / areas_arr[idim](i,j,k)
+                                                  + vol_arr(i,j,k) / areas_arr[idim](i,j,k)  * transverseTerm;
+                           if (has_divu) umac_arr[idim](i,j,k) -= vol_arr(i,j,k) / areas_arr[idim](i,j,k) * divuarr(i,j,k);
+                       } else if (idx[idim] > bx.bigEnd(idim)) {
+                           umac_arr[idim](idxp1[0], idxp1[1], idxp1[2]) =  umac_arr[idim](i,j,k) * areas_arr[idim](i,j,k) / areas_arr[idim](idxp1[0], idxp1[1], idxp1[2])
+                                                                         - vol_arr(i,j,k) / areas_arr[idim](idxp1[0], idxp1[1], idxp1[2]) * transverseTerm;
+                           if (has_divu) umac_arr[idim](idxp1[0], idxp1[1], idxp1[2]) += vol_arr(i,j,k) / areas_arr[idim](idxp1[0], idxp1[1], idxp1[2]) * divuarr(i,j,k);
+                       }
+                   }
+               });
+            } else
+#endif
             {
-                // Only works on ghost cells flagged as C-F boundaries
-                if ( !bx.contains(i,j,k) && (maskarr(i,j,k) == crsebnd) ) {
-                    // Get the divU components from the transverse velocities (!= idim)
-                    GpuArray<int,3> idx = {AMREX_D_DECL(i,j,k)};
-                    Real transverseTerm = 0.0;
-                    for (int trdim = 0; trdim < AMREX_SPACEDIM; trdim++) {
-                        if (trdim != idim) {
-                            GpuArray<int,3> idxp1 = {AMREX_D_DECL(i,j,k)};
-                            idxp1[trdim]++;
-                            transverseTerm +=  (  umac_arr[trdim](idxp1[0], idxp1[1], idxp1[2])
-                                                - umac_arr[trdim](idx[0], idx[1], idx[2]) ) * dxinv[trdim];
-                        }
-                    }
-                    // Correct the outer umac face
-                    GpuArray<int,3> idxp1 = {AMREX_D_DECL(i,j,k)};
-                    idxp1[idim]++;
-                    if ( idx[idim] < bx.smallEnd(idim) ) {
-                        umac_arr[idim](i,j,k) =  umac_arr[idim](idxp1[0], idxp1[1], idxp1[2])
-                                               + dx[idim] * transverseTerm;
-                        if (has_divu) umac_arr[idim](i,j,k) -= dx[idim] * divuarr(i,j,k);
-                    } else if (idx[idim] > bx.bigEnd(idim)) {
-                        umac_arr[idim](idxp1[0], idxp1[1], idxp1[2]) =  umac_arr[idim](i,j,k)
-                                                                      - dx[idim] * transverseTerm;
-                        if (has_divu) umac_arr[idim](idxp1[0], idxp1[1], idxp1[2]) += dx[idim] * divuarr(i,j,k);
-                    }
-                }
-            });
+               // Grow the box in the direction of the faces we will correct
+               const Box& gbx = mfi.growntilebox(IntVect::TheDimensionVector(idim));
+               amrex::ParallelFor(gbx, [idim, bx, divuarr, maskarr, crsebnd, umac_arr, dx, dxinv, has_divu]
+               AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+               {
+                   // Only works on ghost cells flagged as C-F boundaries
+                   if ( !bx.contains(i,j,k) && (maskarr(i,j,k) == crsebnd) ) {
+                       // Get the divU components from the transverse velocities (!= idim)
+                       GpuArray<int,3> idx = {AMREX_D_DECL(i,j,k)};
+                       Real transverseTerm = 0.0;
+                       for (int trdim = 0; trdim < AMREX_SPACEDIM; trdim++) {
+                           if (trdim != idim) {
+                               GpuArray<int,3> idxp1 = {AMREX_D_DECL(i,j,k)};
+                               idxp1[trdim]++;
+                               transverseTerm +=  (  umac_arr[trdim](idxp1[0], idxp1[1], idxp1[2])
+                                                   - umac_arr[trdim](idx[0], idx[1], idx[2]) ) * dxinv[trdim];
+                           }
+                       }
+                       // Correct the outer umac face
+                       GpuArray<int,3> idxp1 = {AMREX_D_DECL(i,j,k)};
+                       idxp1[idim]++;
+                       if ( idx[idim] < bx.smallEnd(idim) ) {
+                           umac_arr[idim](i,j,k) =  umac_arr[idim](idxp1[0], idxp1[1], idxp1[2])
+                                                  + dx[idim] * transverseTerm;
+                           if (has_divu) umac_arr[idim](i,j,k) -= dx[idim] * divuarr(i,j,k);
+                       } else if (idx[idim] > bx.bigEnd(idim)) {
+                           umac_arr[idim](idxp1[0], idxp1[1], idxp1[2]) =  umac_arr[idim](i,j,k)
+                                                                         - dx[idim] * transverseTerm;
+                           if (has_divu) umac_arr[idim](idxp1[0], idxp1[1], idxp1[2]) += dx[idim] * divuarr(i,j,k);
+                       }
+                   }
+               });
+            }
         }
     }
 
