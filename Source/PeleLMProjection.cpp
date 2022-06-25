@@ -92,8 +92,12 @@ void PeleLM::initialProjection()
       unscaleProj_RZ(lev,*vel[lev]);
    }
 
-   // Average down velocity
-   averageDownVelocity(AmrNewTime);
+   // In R-Z, AMReX-Hydro do an average down of r*vel.
+   // Now that we have unscaled vel, need to do average down again
+   // to have consistent vel across levels
+   if (Geom(0).IsRZ()) {
+      averageDownVelocity(AmrNewTime);
+   }
 
    if (m_verbose) {
       Vector<Real> velMax(AMREX_SPACEDIM);
@@ -326,6 +330,12 @@ void PeleLM::velocityProjection(int is_initIter,
       }
    }
 
+   // In R-Z, AMReX-Hydro do an average down of r*vel.
+   // Now that we have unscaled vel, need to do average down again
+   // to have consistent vel across levels
+   if (Geom(0).IsRZ()) {
+      averageDownVelocity(AmrNewTime);
+   }
 }
 
 void PeleLM::doNodalProject(const Vector<MultiFab*> &a_vel,
