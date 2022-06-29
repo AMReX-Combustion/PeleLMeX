@@ -348,12 +348,15 @@ void PeleLM::writeTemporals()
 
    //----------------------------------------------------------------
    // State
-   // Get kinetic energy
+   // Get kinetic energy and enstrophy
    Vector<std::unique_ptr<MultiFab>> kinEnergy(finest_level + 1);
+   Vector<std::unique_ptr<MultiFab>> enstrophy(finest_level + 1);
    for (int lev = 0; lev <= finest_level; ++lev) {
       kinEnergy[lev] = derive("kinetic_energy", m_cur_time, lev, 0);
+      enstrophy[lev] = derive("enstrophy", m_cur_time, lev, 0);
    }
-   Real kinetic_energy = MFSum(GetVecOfConstPtrs(kinEnergy),0);
+   Real kinenergy_int = MFSum(GetVecOfConstPtrs(kinEnergy),0);
+   Real enstrophy_int = MFSum(GetVecOfConstPtrs(enstrophy),0);
 
    // Combustion
    Real fuelConsumptionInt = 0.0;
@@ -369,7 +372,8 @@ void PeleLM::writeTemporals()
    // Get min/max/mean for non-species state components
 
    tmpStateFile << m_nstep << " " << m_cur_time                 // Time
-                << " " << kinetic_energy                        // Kinetic energy
+                << " " << kinenergy_int                         // Kinetic energy
+                << " " << enstrophy_int                         // Enstrophy
                 << " " << m_pNew                                // Thermo. pressure
                 << " " << fuelConsumptionInt                    // Integ fuel burning rate
                 << " " << heatReleaseRateInt                    // Integ heat release rate

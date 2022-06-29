@@ -740,6 +740,9 @@ void PeleLM::derivedSetup()
    // Kinetic energy
    derive_lst.add("kinetic_energy",IndexType::TheCellType(),1,pelelm_derkineticenergy,the_same_box);
 
+   // Enstrophy
+   derive_lst.add("enstrophy",IndexType::TheCellType(),1,pelelm_derenstrophy,grow_box_by_two);
+
 #ifdef PELE_USE_EFIELD
    // Charge distribution
    derive_lst.add("chargedistrib",IndexType::TheCellType(),1,pelelm_derchargedist,the_same_box);

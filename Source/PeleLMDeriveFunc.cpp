@@ -198,6 +198,52 @@ void pelelm_derkineticenergy (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab
 }
 
 //
+// Compute enstrophy
+//
+void pelelm_derenstrophy (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int /*ncomp*/,
+                          const FArrayBox& statefab, const FArrayBox& /*pressfab*/,
+                          const Geometry& geomdata,
+                          Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
+
+{
+
+    AMREX_D_TERM(const amrex::Real idx = geomdata.InvCellSize(0);,
+                 const amrex::Real idy = geomdata.InvCellSize(1);,
+                 const amrex::Real idz = geomdata.InvCellSize(2););
+
+    auto const&  dat_arr = statefab.const_array(VELX);
+    auto const&  rho_arr = statefab.const_array(DENSITY);
+    auto const&  ens_arr = derfab.array(dcomp);
+
+    // TODO : EB
+    // TODO : BCs
+    {
+        amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+        {
+#if ( AMREX_SPACEDIM == 2 )
+            amrex::Real vx = 0.5 * (dat_arr(i+1,j,k,1) - dat_arr(i-1,j,k,1)) * idx;
+            amrex::Real uy = 0.5 * (dat_arr(i,j+1,k,0) - dat_arr(i,j-1,k,0)) * idy;
+            ens_arr(i,j,k) = 0.5 * rho_arr(i,j,k) * (vx-uy)*(vx-uy);
+
+#elif ( AMREX_SPACEDIM == 3 )
+            amrex::Real vx = 0.5 * (dat_arr(i+1,j,k,1) - dat_arr(i-1,j,k,1)) * idx;
+            amrex::Real wx = 0.5 * (dat_arr(i+1,j,k,2) - dat_arr(i-1,j,k,2)) * idx;
+
+            amrex::Real uy = 0.5 * (dat_arr(i,j+1,k,0) - dat_arr(i,j-1,k,0)) * idy;
+            amrex::Real wy = 0.5 * (dat_arr(i,j+1,k,2) - dat_arr(i,j-1,k,2)) * idy;
+
+            amrex::Real uz = 0.5 * (dat_arr(i,j,k+1,0) - dat_arr(i,j,k-1,0)) * idz;
+            amrex::Real vz = 0.5 * (dat_arr(i,j,k+1,1) - dat_arr(i,j,k-1,1)) * idz;
+
+            ens_arr(i,j,k) = 0.5 * rho_arr(i,j,k) * ((wy-vz)*(wy-vz) + (uz-wx)*(uz-wx) + (vx-uy)*(vx-uy));
+#endif
+        });
+    }
+
+}
+
+
+//
 // Compute mixture fraction
 //
 void pelelm_dermixfrac (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
