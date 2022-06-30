@@ -177,7 +177,7 @@ void PeleLM::advanceChemistry(int lev,
 
 // This advanceChemistry is called on all but the finest level
 // It works with BoxArrays built such that each box is either covered
-// or uncovered and chem. integrator is called only on uncovered boxes 
+// or uncovered and chem. integrator is called only on uncovered boxes
 // the averaged down version of I_R is linearly added to the AD forcing
 // to build the t^{np1} solution on covered boxes.
 void PeleLM::advanceChemistry(int lev,
@@ -278,7 +278,7 @@ void PeleLM::advanceChemistry(int lev,
                           dt_incr, time_chem
 #ifdef AMREX_USE_GPU
                           , amrex::Gpu::gpuStream()
-#endif   
+#endif
                           );
       } else {
          // Use forcing and averaged down IR to advance species/rhoH/temp
@@ -414,7 +414,7 @@ void PeleLM::computeInstantaneousReactionRate(int lev,
          {
             rhoYdot(i,j,k,n) = 0.0;
          });
-      } else if (flagfab.getType(bx) != FabType::regular ) {     // EB containing boxes 
+      } else if (flagfab.getType(bx) != FabType::regular ) {     // EB containing boxes
          amrex::ParallelFor(bx, [rhoY, rhoH, T, rhoYdot, flag]
          AMREX_GPU_DEVICE (int i, int j, int k) noexcept
          {
@@ -497,13 +497,13 @@ void PeleLM::getHeatRelease(int a_lev,
            auto const& Hi    = EnthFab.array();
            auto const& HRR   = a_HR->array(mfi);
            amrex::ParallelFor(bx, [T, Hi, HRR, react]
-           AMREX_GPU_DEVICE (int i, int j, int k) noexcept 
-           {    
+           AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+           {
               getHGivenT( i, j, k, T, Hi );
-              HRR(i,j,k) = 0.0; 
+              HRR(i,j,k) = 0.0;
               for (int n = 0; n < NUM_SPECIES; n++) {
                  HRR(i,j,k) -= Hi(i,j,k,n) * react(i,j,k,n);
-              }    
+              }
            });
         }
     }

@@ -81,7 +81,7 @@ void PeleLM::redistributeAofS(int a_lev,
                 Elixir eli = tmpfab.elixir();
                 Array4<Real> scratch = tmpfab.array(0);
                 if (m_adv_redist_type == "FluxRedist")
-                {    
+                {
                     amrex::ParallelFor(Box(scratch),
                     [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
                     { scratch(i,j,k) = 1.;});   // TODO might want to test volfrac
@@ -153,7 +153,7 @@ void PeleLM::redistributeDiff(int a_lev,
                 Elixir eli = tmpfab.elixir();
                 Array4<Real> scratch = tmpfab.array(0);
                 if (m_diff_redist_type == "FluxRedist")
-                {    
+                {
                     amrex::ParallelFor(Box(scratch),
                     [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
                     { scratch(i,j,k) = 1.;});   // TODO might want to test volfrac
@@ -311,7 +311,7 @@ void PeleLM::initialRedistribution()
 
 void PeleLM::getEBDistance(int a_lev,
                            MultiFab &a_signDistLev) {
-    
+
 
     if (a_lev == 0) {
         MultiFab::Copy(a_signDistLev,*m_signedDist0,0,0,1,0);
@@ -329,8 +329,8 @@ void PeleLM::getEBDistance(int a_lev,
 
         // Get signDist on coarsen fineBA
         BoxArray coarsenBA(grids[lev].size());
-        for (int j = 0, N = coarsenBA.size(); j < N; ++j) 
-        {    
+        for (int j = 0, N = coarsenBA.size(); j < N; ++j)
+        {
             coarsenBA.set(j,interpolater.CoarseBox(grids[lev][j], refRatio(lev-1)));
         }
         MultiFab coarsenSignDist(coarsenBA,dmap[lev],1,0);
@@ -350,7 +350,7 @@ void PeleLM::getEBDistance(int a_lev,
         interpolater.interp(coarsenSignDist, 0,
                             *currentSignDist, 0,
                             1, IntVect(0),
-                            Geom(lev-1), Geom(lev), 
+                            Geom(lev-1), Geom(lev),
                             Geom(lev).Domain(), refRatio(lev-1),
                             {m_bcrec_force},0);
 

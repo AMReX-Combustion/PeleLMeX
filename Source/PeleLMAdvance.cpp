@@ -282,11 +282,11 @@ void PeleLM::oneSDC(int sdcIter,
       averageDownnE(AmrNewTime);
 #endif
       fillPatchState(AmrNewTime);
-      
+
       calcDiffusivity(AmrNewTime);
       computeDifferentialDiffusionTerms(AmrNewTime,diffData);
       if (m_has_divu) {
-         int is_initialization = 0;                   // Not here 
+         int is_initialization = 0;                   // Not here
          int computeDiffusionTerm = 0;                // Nope, we just did that
          int do_avgDown = 1;                          // Always
          calcDivU(is_initialization,computeDiffusionTerm,do_avgDown,AmrNewTime,diffData);

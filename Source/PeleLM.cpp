@@ -13,11 +13,11 @@ PeleLM::~PeleLM()
    for (int lev = 0; lev <= finest_level; ++lev) {
       ClearLevel(lev);
    }
-   
+
    if (!m_incompressible) {
       trans_parms.deallocate();
       m_reactor->close();
-   } 
+   }
 
    closeTempFile();
    typical_values.clear();
@@ -35,7 +35,7 @@ PeleLM::LevelData*
 PeleLM::getLevelDataPtr(int lev, const PeleLM::TimeStamp &a_time, int /*useUMac*/)
 {
    AMREX_ASSERT(a_time==AmrOldTime || a_time==AmrNewTime || a_time==AmrHalfTime);
-   if ( a_time == AmrOldTime ) { 
+   if ( a_time == AmrOldTime ) {
       return m_leveldata_old[lev].get();
    } else if ( a_time == AmrNewTime ) {
       return m_leveldata_new[lev].get();

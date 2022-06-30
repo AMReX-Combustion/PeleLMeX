@@ -122,7 +122,7 @@ PeleLM::getDiffusivity(int lev, int beta_comp, int ncomp, int doZeroVisc,
    for (MFIter mfi(beta_cc,TilingIfNotGPU()); mfi.isValid();++mfi)
    {
       for (int idim = 0; idim < AMREX_SPACEDIM; idim++)
-      {    
+      {
          const Box ebx = mfi.nodaltilebox(idim);
          const Box& edomain = amrex::surroundingNodes(domain,idim);
          const auto& diff_c  = beta_cc.const_array(mfi,beta_comp);
@@ -140,11 +140,11 @@ PeleLM::getDiffusivity(int lev, int beta_comp, int ncomp, int doZeroVisc,
       }
    }
 #endif
-  
+
    // Enable zeroing diffusivity on faces to produce walls
    if (doZeroVisc) {
       const auto geomdata = geom[lev].data();
-      for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {    
+      for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
          const Box& edomain = amrex::surroundingNodes(domain,idim);
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())

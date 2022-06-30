@@ -10,7 +10,7 @@ void PeleLM::predictVelocity(std::unique_ptr<AdvanceAdvData>  &advData)
 {
    BL_PROFILE("PeleLM::predictVelocity()");
 
-   // set umac boundaries to zero 
+   // set umac boundaries to zero
    if ( advData->umac[0][0].nGrow() > 0 ) {
       for (int lev=0; lev <= finest_level; ++lev)
       {
@@ -40,7 +40,7 @@ void PeleLM::predictVelocity(std::unique_ptr<AdvanceAdvData>  &advData)
 
    //----------------------------------------------------------------
    // Predict face velocities at t^{n+1/2} with Godunov
-   auto bcRecVel = fetchBCRecArray(VELX,AMREX_SPACEDIM); 
+   auto bcRecVel = fetchBCRecArray(VELX,AMREX_SPACEDIM);
    auto bcRecVel_d = convertToDeviceVector(bcRecVel);
    for (int lev = 0; lev <= finest_level; ++lev) {
 
@@ -215,7 +215,7 @@ PeleLM::create_constrained_umac_grown(int a_lev, int a_nGrow,
 
     // Divergence preserving interp
     Interpolater* mapper = &face_divfree_interp;
-    
+
     // Set BCRec for Umac
     Vector<BCRec> bcrec(1);
     for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
@@ -225,16 +225,16 @@ PeleLM::create_constrained_umac_grown(int a_lev, int a_nGrow,
          } else {
             bcrec[0].setLo(idim,BCType::foextrap);
             bcrec[0].setHi(idim,BCType::foextrap);
-         }    
-    }    
+         }
+    }
     Array<Vector<BCRec>,AMREX_SPACEDIM> bcrecArr = {AMREX_D_DECL(bcrec,bcrec,bcrec)};
-    
+
     PhysBCFunct<GpuBndryFuncFab<umacFill>> crse_bndry_func(*crse_geom, bcrec, umacFill{});
     Array<PhysBCFunct<GpuBndryFuncFab<umacFill>>,AMREX_SPACEDIM> cbndyFuncArr = {AMREX_D_DECL(crse_bndry_func,crse_bndry_func,crse_bndry_func)};
-    
+
     PhysBCFunct<GpuBndryFuncFab<umacFill>> fine_bndry_func(*fine_geom, bcrec, umacFill{});
     Array<PhysBCFunct<GpuBndryFuncFab<umacFill>>,AMREX_SPACEDIM> fbndyFuncArr = {AMREX_D_DECL(fine_bndry_func,fine_bndry_func,fine_bndry_func)};
-    
+
     // Use piecewise constant interpolation in time, so create dummy variable for time
     Real dummy = 0.;
     FillPatchTwoLevels(u_mac_fine, IntVect(a_nGrow), dummy,
