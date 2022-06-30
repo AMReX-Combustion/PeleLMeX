@@ -209,6 +209,27 @@ Linear solvers are a key component of PeleLMeX algorithm, separate controls are 
 Run-time diagnostics
 --------------------
 
+PeleLMeX provides a few diagnostics to check you simulations while it is running as well as adding basic analysis ingredients.
+
+It is often usefull to have an estimate of integrated quantities (kinetic energy, heat release rate, ,..), state extremas
+or other overall balance information to get a sense of the status and sanity of the simulation. To this end, it is possible
+to activate `temporal` diagnostics performing these reductions at given intervals:
+
+::
+
+    #-------------------------TEMPORALS---------------------------
+    peleLM.do_temporals = 1                     # [OPT, DEF=0] Activate temporal diagnostics
+    peleLM.temporal_int = 10                    # [OPT, DEF=5] Temporal freq.
+    peleLM.do_extremas = 1                      # [OPT, DEF=0] Trigger extremas, if temporals activated
+    peleLM.do_mass_balance = 1                  # [OPT, DEF=0] Compute mass balance, if temporals activated
+
+The `do_temporal` flag will trigger the creation of a `temporals` folder in your run directory and the following entries 
+will be appended to an ASCII `temporals/tempState` file: step, time, dt, kin. energy integral, enstrophy integral, mean pressure
+, fuel consumption rate integral, heat release rate integral. Additionnally, if the `do_temporal` flag is activated, one can
+turn on state extremas (stored in `temporals/tempExtremas` as min/max for each state entry) and mass balance (stored in
+`temporals/tempMass`) computing the total mass, dMdt and mass fluxes across the domain boundary as well as the error in
+the balance (dMdt - sum of fluxes).
+
 Combustion diagnostics often involve the use of a mixture fraction and/or a progress variable, both of which can be defined
 at run time and added to the derived variables included in the plotfile. If `mixture_fraction` or `progress_variable` is
 added to the `amr.derive_plot_vars` list, one need to provide input for defining those. The mixture fraction is based on
