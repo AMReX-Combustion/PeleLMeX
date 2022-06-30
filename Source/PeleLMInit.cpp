@@ -12,9 +12,11 @@ void PeleLM::Init() {
    // Open temporals file
    openTempFile();
 
+   // Check run parameters
+   checkRunParams();
+
    // Initialize data
    initData();
-
 }
 
 void PeleLM::MakeNewLevelFromScratch( int lev,
@@ -212,6 +214,11 @@ void PeleLM::initData() {
          calcDivU(is_initialization,computeDiffusionTerm,do_avgDown,AmrNewTime,diffData);
       }
       initialProjection();
+     
+      // If gravity is used, do initial pressure projection to get the hydrostatic pressure
+      if (std::abs(m_gravity.sum()) > 0.0) {
+         initialPressProjection();
+      }
 
       // Post data Init time step estimate
       m_dt = computeDt(is_init,AmrNewTime);
@@ -434,4 +441,19 @@ void PeleLM::InitFromGridFile(amrex::Real time)
      DistributionMapping dm(ba);
      MakeNewLevelFromScratch(lev, time, ba, dm);
   }
+}
+
+void PeleLM::checkRunParams()
+{
+#ifdef AMREX_USE_EB
+    if (geom[0].IsRZ()) {
+        Abort("RZ geometry is not available with EB");
+    }
+#endif
+
+#if (AMREX_SPACEDIM == 2)
+    if (geom[0].IsRZ() && m_phys_bc.lo(0) != 3) {
+        Abort("x-low must be 'Symmetry' when using RZ coordinate system");
+    }
+#endif
 }
