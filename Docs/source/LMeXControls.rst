@@ -127,7 +127,13 @@ The following list of derived variables are available in PeleLMeX:
       - Vorticity (2D) or vorticity magnitude (3D)
     * - `kinetic_energy`
       - 1
-      - Kinetic energy
+      - Kinetic energy: 0.5 * rho * (u^2+v^2+w^2)
+    * - `enstrophy`
+      - 1
+      - enstrophy: 0.5 * rho * (\omega_x^2+\omega_y^2+\omega_z^2)
+    * - `HeatRelease`
+      - 1
+      - Heat release rate from chem. reactions
 
 Note that `mixture_fraction` and `progress_variable` requires additional inputs from the users as described below.
 
