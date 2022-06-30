@@ -267,19 +267,14 @@ intFluxDivergence_K(int i, int j, int k,
 AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
 void
-intAdvFluxDivergence_K(int i, int j, int k,
+intFluxDivergence_rz_K(int i, int j, int k,
                        int ncomp,
                        AMREX_D_DECL(amrex::Array4<const amrex::Real> const& fluxX,
                                     amrex::Array4<const amrex::Real> const& fluxY,
                                     amrex::Array4<const amrex::Real> const& fluxZ),
-                       AMREX_D_DECL(amrex::Array4<const amrex::Real> const& umac,
-                                    amrex::Array4<const amrex::Real> const& vmac,
-                                    amrex::Array4<const amrex::Real> const& wmac),
-                       AMREX_D_DECL(amrex::Real areax,
-                                    amrex::Real areay,
-                                    amrex::Real areaz),
+                       amrex::Array4<const amrex::Real>              const& ax,
+                       amrex::Array4<const amrex::Real>              const& ay,
                        amrex::Array4<const amrex::Real>              const& vol,
-                       int const* l_conserv_d,
                        const amrex::Real                                  & scaling,
                        amrex::Array4<      amrex::Real>              const& div) noexcept
 {
@@ -288,22 +283,10 @@ intAdvFluxDivergence_K(int i, int j, int k,
    amrex::Real factor = scaling / vol(i,j,k);
 
    for (int n = 0; n < ncomp; n++) {
-      if (l_conserv_d[n]) {
-         div(i,j,k,n) = AMREX_D_TERM (  (   areax * fluxX(i+1,j,k,n)
-                                          - areax * fluxX(i  ,j,k,n) ),
-                                      + (   areay * fluxY(i,j+1,k,n)
-                                          - areay * fluxY(i,j  ,k,n) ),
-                                      + (   areaz * fluxZ(i,j,k+1,n)
-                                          - areaz * fluxZ(i,j,k  ,n) ));
-      } else {
-         // Fluxes are supposed to contains face states and not fluxes ...
-         div(i,j,k,n) = AMREX_D_TERM (  ( 0.5 * areax * ( umac (i  ,j  ,k  )   + umac (i+1,j  ,k  ) )
-                                                      * ( fluxX(i+1,j  ,k  ,n) - fluxX(i  ,j  ,k,  n) ) ),
-                                      + ( 0.5 * areay * ( vmac (i  ,j  ,k  )   + vmac (i  ,j+1,k  ) )
-                                                      * ( fluxY(i  ,j+1,k  ,n) - fluxY(i  ,j  ,k  ,n) ) ),
-                                      + ( 0.5 * areaz * ( wmac (i  ,j  ,k  )   + wmac (i  ,j  ,k+1) )
-                                                      * ( fluxZ(i  ,j  ,k+1,n) - fluxZ(i  ,j  ,k  ,n) ) ));
-      }
+      div(i,j,k,n) =  (  ax(i+1,j,k) * fluxX(i+1,j,k,n)
+                       - ax(i  ,j,k) * fluxX(i  ,j,k,n))
+                    + (  ay(i,j+1,k) * fluxY(i,j+1,k,n)
+                       - ay(i,j  ,k) * fluxY(i,j  ,k,n));
       div(i,j,k,n) *= factor;
    }
 }

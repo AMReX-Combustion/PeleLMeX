@@ -145,11 +145,11 @@ void PeleLM::WritePlotFile() {
    }
 
    if (m_plot_grad_p) {
-      plt_VarsName.push_back("gradp_x");
+      plt_VarsName.push_back("gradpx");
 #if ( AMREX_SPACEDIM > 1 )
-      plt_VarsName.push_back("gradp_y");
+      plt_VarsName.push_back("gradpy");
 #if ( AMREX_SPACEDIM > 2 )
-      plt_VarsName.push_back("gradp_z");
+      plt_VarsName.push_back("gradpz");
 #endif
 #endif
    }

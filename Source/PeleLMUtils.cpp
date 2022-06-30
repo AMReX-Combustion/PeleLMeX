@@ -84,7 +84,6 @@ void PeleLM::extFluxDivergenceLevel(int lev,
    AMREX_ASSERT(a_divergence.nComp() >= div_comp+ncomp);
 
    // Get the volume
-   // TODO: might want to store that somewhere ...
    MultiFab volume(grids[lev], dmap[lev], 1, 0);
    geom[lev].GetVolume(volume);
 
@@ -166,13 +165,17 @@ void PeleLM::intFluxDivergenceLevel(int lev,
    AMREX_ASSERT(a_divergence.nComp() >= div_comp+ncomp);
 
    // Get the volume
-   // TODO: might want to store that somewhere ...
    MultiFab volume(grids[lev], dmap[lev], 1, 0);
    geom[lev].GetVolume(volume);
 
-   // Get area
+   // Get areas
    const Real* dx = Geom(lev).CellSize();
 #if ( AMREX_SPACEDIM == 2 )
+   MultiFab mf_ax, mf_ay;
+   if (geom[lev].IsRZ()) {
+       geom[lev].GetFaceArea(mf_ax, grids[lev], dmap[lev], 0, 0);
+       geom[lev].GetFaceArea(mf_ay, grids[lev], dmap[lev], 1, 0);
+   }  
    Real areax = dx[1];
    Real areay = dx[0];
 #elif ( AMREX_SPACEDIM == 3 )
@@ -203,9 +206,7 @@ void PeleLM::intFluxDivergenceLevel(int lev,
 #ifdef AMREX_USE_EB
       auto const& flagfab = ebfact.getMultiEBCellFlagFab()[mfi];
       auto const& flag    = flagfab.const_array();
-#endif
 
-#ifdef AMREX_USE_EB
       if (flagfab.getType(bx) == FabType::covered) {              // Covered boxes
          amrex::ParallelFor(bx, ncomp, [divergence]
          AMREX_GPU_DEVICE( int i, int j, int k, int n) noexcept
@@ -245,23 +246,40 @@ void PeleLM::intFluxDivergenceLevel(int lev,
                }
             }
          });
-      } else {                                                   // Regular boxes
+      } else                                                    // Regular boxes
 #endif
-
-         amrex::ParallelFor(bx, [ncomp, divergence,
-                                 AMREX_D_DECL(fluxX, fluxY, fluxZ),
-                                 AMREX_D_DECL(areax, areay, areaz),
-                                 vol, scale]
-         AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+      {  
+#if (AMREX_SPACEDIM==2)
+         if (geom[lev].IsRZ()) {
+            Array4<Real const> const&  ax =  mf_ax.const_array(mfi);
+            Array4<Real const> const&  ay =  mf_ay.const_array(mfi);
+            amrex::ParallelFor(bx, [ncomp, divergence,
+                                    AMREX_D_DECL(fluxX, fluxY, fluxZ),
+                                    ax, ay,
+                                    vol, scale]
+            AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+            {
+               intFluxDivergence_rz_K( i, j, k, ncomp,
+                                      AMREX_D_DECL(fluxX, fluxY, fluxZ),
+                                      ax, ay,
+                                      vol, scale, divergence);
+            });
+         } else
+#endif
          {
-            intFluxDivergence_K( i, j, k, ncomp,
-                                 AMREX_D_DECL(fluxX, fluxY, fluxZ),
-                                 AMREX_D_DECL(areax, areay, areaz),
-                                 vol, scale, divergence);
-         });
-#ifdef AMREX_USE_EB
+            amrex::ParallelFor(bx, [ncomp, divergence,
+                                    AMREX_D_DECL(fluxX, fluxY, fluxZ),
+                                    AMREX_D_DECL(areax, areay, areaz),
+                                    vol, scale]
+            AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+            {
+               intFluxDivergence_K( i, j, k, ncomp,
+                                    AMREX_D_DECL(fluxX, fluxY, fluxZ),
+                                    AMREX_D_DECL(areax, areay, areaz),
+                                    vol, scale, divergence);
+            });
+         }
       }
-#endif
    }
 }
 
@@ -281,6 +299,17 @@ void PeleLM::advFluxDivergence(int a_lev,
     AMREX_ASSERT(a_fluxes[0]->nComp() >= flux_comp+ncomp);
     AMREX_ASSERT(a_faceState[0]->nComp() >= face_comp+ncomp);
 
+    // Get the volume
+    MultiFab volume(grids[a_lev], dmap[a_lev], 1, 0);
+    geom[a_lev].GetVolume(volume);
+#if ( AMREX_SPACEDIM == 2 )
+    MultiFab mf_ax, mf_ay;
+    if (geom[a_lev].IsRZ()) {
+        geom[a_lev].GetFaceArea(mf_ax, grids[a_lev], dmap[a_lev], 0, 0);
+        geom[a_lev].GetFaceArea(mf_ay, grids[a_lev], dmap[a_lev], 1, 0);
+    }  
+#endif
+
 #ifdef AMREX_USE_EB
     auto const& ebfact = EBFactory(a_lev);
 #else
@@ -294,10 +323,6 @@ void PeleLM::advFluxDivergence(int a_lev,
     
         Box const& bx = mfi.tilebox();
 
-#ifdef AMREX_USE_EB
-        auto const& flagfab = ebfact.getMultiEBCellFlagFab()[mfi];
-#endif
-    
         // Get the divergence
         auto const& div_arr  = a_divergence.array(mfi,div_comp);
         AMREX_D_TERM(auto const& fx = a_fluxes[0]->const_array(mfi,flux_comp);,
@@ -305,20 +330,22 @@ void PeleLM::advFluxDivergence(int a_lev,
                      auto const& fz = a_fluxes[2]->const_array(mfi,flux_comp);)
 
 #ifdef AMREX_USE_EB
+        auto const& flagfab = ebfact.getMultiEBCellFlagFab()[mfi];
         auto const& vfrac_arr = ebfact.getVolFrac().const_array(mfi);
-        if (flagfab.getType(bx) != FabType::covered) {
+        if (flagfab.getType(bx) == FabType::singlevalued) {
            HydroUtils::EB_ComputeDivergence(bx, div_arr,
                                             AMREX_D_DECL(fx,fy,fz),
                                             vfrac_arr,
                                             ncomp, a_geom,
                                             scale, fluxes_are_area_weighted);
-        }
-#else
-        HydroUtils::ComputeDivergence(bx, div_arr,
-                                      AMREX_D_DECL(fx,fy,fz),
-                                      ncomp, a_geom,
-                                      scale, fluxes_are_area_weighted);
+        } else if (flagfab.getType(bx) == FabType::regular)
 #endif
+        { 
+           HydroUtils::ComputeDivergence(bx, div_arr,
+                                         AMREX_D_DECL(fx,fy,fz),
+                                         ncomp, a_geom,
+                                         scale, fluxes_are_area_weighted);
+        }
 
         // If convective, we define u dot grad q = div (u q) - q div(u)
         // averaging face and t^{n+1/2} q to the cell center
@@ -787,12 +814,12 @@ PeleLM::MFSum (const Vector<const MultiFab*> &a_mf, int comp)
 
     for (int lev = 0; lev <= finest_level; ++lev)
     {
-        const Real* dx = geom[lev].CellSize();
-
-       // Use amrex::ReduceSum
+#ifdef AMREX_USE_EB
+       // For EB, use constant vol
+       const Real* dx = geom[lev].CellSize();
        Real vol = AMREX_D_TERM(dx[0],*dx[1],*dx[2]);
 
-#ifdef AMREX_USE_EB
+       // Use amrex::ReduceSum
        auto const& ebfact = dynamic_cast<EBFArrayBoxFactory const&>(Factory(lev));
        auto const& vfrac = ebfact.getVolFrac();
    
@@ -824,26 +851,33 @@ PeleLM::MFSum (const Vector<const MultiFab*> &a_mf, int comp)
           });
        }
 #else
+       // Get the geometry volume to account for 2D-RZ
+       MultiFab volume(grids[lev], dmap[lev], 1, 0);
+       geom[lev].GetVolume(volume);
+       
        Real sm = 0.0;
        if ( lev != finest_level ) {
-          sm = amrex::ReduceSum(*a_mf[lev], *m_coveredMask[lev], 0, [vol, comp]
-          AMREX_GPU_HOST_DEVICE (Box const& bx, Array4<Real const> const& mf_arr, Array4<int const> const& covered_arr) -> Real
+          sm = amrex::ReduceSum(*a_mf[lev], volume, *m_coveredMask[lev], 0, [comp]
+          AMREX_GPU_HOST_DEVICE (Box const& bx, Array4<Real const> const& mf_arr,
+                                                Array4<Real const> const& vol_arr,
+                                                Array4<int const> const& covered_arr) -> Real
           {
               Real sum = 0.0;
               AMREX_LOOP_3D(bx, i, j, k,
               {
-                  sum += mf_arr(i,j,k,comp) * vol * static_cast<Real>(covered_arr(i,j,k));
+                  sum += mf_arr(i,j,k,comp) * vol_arr(i,j,k) * static_cast<Real>(covered_arr(i,j,k));
               });
               return sum;
           });
        } else {
-          sm = amrex::ReduceSum(*a_mf[lev], 0, [vol, comp]
-          AMREX_GPU_HOST_DEVICE (Box const& bx, Array4<Real const> const& mf_arr) -> Real
+          sm = amrex::ReduceSum(*a_mf[lev], volume, 0, [comp]
+          AMREX_GPU_HOST_DEVICE (Box const& bx, Array4<Real const> const& mf_arr,
+                                                Array4<Real const> const& vol_arr) -> Real
           {
               Real sum = 0.0;
               AMREX_LOOP_3D(bx, i, j, k,
               {
-                  sum += mf_arr(i,j,k,comp) * vol;
+                  sum += mf_arr(i,j,k,comp) * vol_arr(i,j,k);
               });
               return sum;
           });
