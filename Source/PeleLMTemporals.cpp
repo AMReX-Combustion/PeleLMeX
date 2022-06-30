@@ -371,7 +371,7 @@ void PeleLM::writeTemporals()
 
    // Get min/max/mean for non-species state components
 
-   tmpStateFile << m_nstep << " " << m_cur_time                 // Time
+   tmpStateFile << m_nstep << " " << m_cur_time << " " << m_dt  // Time
                 << " " << kinenergy_int                         // Kinetic energy
                 << " " << enstrophy_int                         // Enstrophy
                 << " " << m_pNew                                // Thermo. pressure
