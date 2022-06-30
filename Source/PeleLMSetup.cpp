@@ -377,9 +377,9 @@ void PeleLM::readParameters() {
    // -----------------------------------------
    pp.query("do_temporals",m_do_temporals);
    if (m_do_temporals) {
-      pp.query("do_extremas",m_do_extremas);
       pp.query("temporal_int",m_temp_int);
-      pp.query("mass_balance",m_do_massBalance);
+      pp.query("do_extremas",m_do_extremas);
+      pp.query("do_mass_balance",m_do_massBalance);
    }
 
    // -----------------------------------------
