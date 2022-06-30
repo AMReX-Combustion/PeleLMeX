@@ -31,14 +31,20 @@ void PeleLM::Evolve() {
       }
 #ifdef PELELM_USE_SPRAY
       // Inject and redistribute spray particles
-      if (do_spray_particles) {
-        sprayInjectRedist(regridded);
+      if (do_spray_particles && regridded) {
+        sprayPostRegrid();
       }
 #endif
       int is_init = 0;
       Advance(is_init);
       m_nstep++;
       m_cur_time += m_dt;
+
+#ifdef PELELM_USE_SPRAY
+      if (do_spray_particles) {
+        sprayInjectRedist();
+      }
+#endif
 
       // Temporals
       if (doTemporalsNow()) {

@@ -255,7 +255,8 @@ PeleLM::initSprays()
       Abort("Must initialize spray particles with particles.init_function or "
             "particles.init_file");
     }
-    sprayInjectRedist(true);
+    sprayPostRegrid();
+    sprayInjectRedist();
     if (spray_verbose >= 1) {
       amrex::Print() << "Total number of initial particles "
                      << theSprayPC()->TotalNumberOfParticles(false, false)
@@ -277,6 +278,7 @@ PeleLM::sprayRestart()
     amrex::ExecOnFinalize(RemoveParticlesOnExit);
     {
       theSprayPC()->Restart(m_restart_chkfile, "particles", true);
+      sprayPostRegrid();
       amrex::Gpu::Device::streamSynchronize();
     }
   }
@@ -430,57 +432,66 @@ PeleLM::sprayMKDLevel(const int level, const Real time, const Real dt)
 }
 
 void
-PeleLM::sprayInjectRedist(bool regridded)
+PeleLM::sprayPostRegrid()
+{
+  static Vector<BoxArray> ba_spray;
+  static Vector<DistributionMapping> dm_spray;
+  bool changed = false;
+  if (ba_spray.size() != finest_level + 1) {
+    ba_spray.resize(finest_level + 1);
+    dm_spray.resize(finest_level + 1);
+    prev_state.resize(finest_level + 1);
+    prev_source.resize(finest_level + 1);
+    changed = true;
+  } else {
+    for (int lev = 0; lev <= finest_level && !changed; lev++) {
+      if (ba_spray[lev] != grids[lev]) {
+        changed = true;
+      }
+      if (!changed && dm_spray[lev] != dmap[lev]) {
+        changed = true;
+      }
+    }
+  }
+  // Update the local BoxArray and DistributionMap
+  if (changed) {
+    mesh_regrid = true;
+    for (int lev = 0; lev <= finest_level; ++lev) {
+      ba_spray[lev] = grids[lev];
+      dm_spray[lev] = dmap[lev];
+      prev_state[lev] = -1;
+      prev_source[lev] = -1;
+    }
+    theSprayPC()->Redistribute();
+  }
+}
+
+void
+PeleLM::sprayInjectRedist()
 {
   BL_PROFILE("PeleLM::sprayInjectRedist");
-  if (theSprayPC() != nullptr) {
-    bool injected = false;
-    static Vector<BoxArray> ba_spray;
-    static Vector<DistributionMapping> dm_spray;
-    for (int lev = 0; lev <= finest_level; ++lev) {
-      int nstep = 0; // Unused
-      BL_PROFILE_VAR("SprayParticles::injectParticles()", INJECT_SPRAY);
-      ProbParm const* lprobparm = prob_parm;
-      Real cur_time = m_t_new[lev]; // Still the time from the last time step
-      Real dt = m_dt;
-      bool lev_injected = theSprayPC()->injectParticles(
-        cur_time, dt, nstep, lev, finest_level, *lprobparm);
-      if (!injected && lev_injected) {
-        injected = true;
-      }
-      BL_PROFILE_VAR_STOP(INJECT_SPRAY);
+  Long prev_count = 0;
+  if (spray_verbose >= 3) {
+    prev_count = theSprayPC()->TotalNumberOfParticles(true, false);
+  }
+  bool injected = false;
+  for (int lev = 0; lev <= finest_level; ++lev) {
+    int nstep = 0; // Unused
+    ProbParm const* lprobparm = prob_parm;
+    Real cur_time = m_t_new[lev]; // Still the time from the last time step
+    Real dt = m_dt;
+    bool lev_injected = theSprayPC()->injectParticles(
+      cur_time, dt, nstep, lev, finest_level, *lprobparm);
+    if (lev_injected) {
+      injected = true;
     }
-    bool changed = false;
-    if (regridded) {
-      if (ba_spray.size() != finest_level + 1) {
-        ba_spray.resize(finest_level + 1);
-        dm_spray.resize(finest_level + 1);
-        prev_state.resize(finest_level + 1);
-        prev_source.resize(finest_level + 1);
-        changed = true;
-      } else {
-        for (int lev = 0; lev <= finest_level && !changed; lev++) {
-          if (ba_spray[lev] != grids[lev]) {
-            changed = true;
-          }
-          if (!changed && dm_spray[lev] != dmap[lev]) {
-            changed = true;
-          }
-        }
-      }
-    }
-    // Update the local BoxArray and DistributionMap
-    if (changed) {
-      mesh_regrid = true;
-      for (int lev = 0; lev <= finest_level; ++lev) {
-        ba_spray[lev] = grids[lev];
-        dm_spray[lev] = dmap[lev];
-        prev_state[lev] = -1;
-        prev_source[lev] = -1;
-      }
-    }
-    // We must redistribute after each time step
-    theSprayPC()->Redistribute();
+  }
+  // We must redistribute after each time step
+  theSprayPC()->Redistribute();
+  if (spray_verbose >= 3 && injected) {
+    Long new_count = theSprayPC()->TotalNumberOfParticles(true, false);
+    Long num_inj = new_count - prev_count;
+    amrex::Print() << "Injected " << num_inj << " particles at time " << m_t_new[0] << std::endl;
   }
 }
 

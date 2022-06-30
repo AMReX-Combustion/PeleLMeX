@@ -445,7 +445,8 @@ class PeleLM : public amrex::AmrCore {
    void sprayMKDLevel(const int level,
                       const amrex::Real time,
                       const amrex::Real dt);
-   void sprayInjectRedist(bool regridded);
+   void sprayInjectRedist();
+   void sprayPostRegrid();
    void setSprayState(const amrex::Real& a_flow_dt);
    void addSpraySource(const int level);
    static int write_spray_ascii_files;
