@@ -376,8 +376,11 @@ void PeleLM::readParameters() {
    // Temporals
    // -----------------------------------------
    pp.query("do_temporals",m_do_temporals);
-   pp.query("temporal_int",m_temp_int);
-   pp.query("mass_balance",m_do_massBalance);
+   if (m_do_temporals) {
+      pp.query("do_extremas",m_do_extremas);
+      pp.query("temporal_int",m_temp_int);
+      pp.query("mass_balance",m_do_massBalance);
+   }
 
    // -----------------------------------------
    // Time stepping control

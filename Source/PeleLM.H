@@ -1174,6 +1174,7 @@ class PeleLM : public amrex::AmrCore {
    // Temporals
    int m_do_temporals = 0;
    int m_temp_int = 5;
+   int m_do_extremas = 0;
    int m_do_massBalance = 0;
    int m_do_energyBalance = 0;
    int m_do_speciesBalance = 0;
@@ -1189,6 +1190,7 @@ class PeleLM : public amrex::AmrCore {
    amrex::Array<amrex::Real,2*AMREX_SPACEDIM> m_domainUmacFlux;
    
    std::ofstream tmpStateFile;
+   std::ofstream tmpExtremasFile;
    std::ofstream tmpMassFile;
    std::ofstream tmpSpecFile;
 
