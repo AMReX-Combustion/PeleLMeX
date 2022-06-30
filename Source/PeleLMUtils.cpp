@@ -51,10 +51,10 @@ void PeleLM::fluxDivergenceRD(const Vector<const MultiFab*> &a_state,
         } else {                      // Fluxes are extensive
             extFluxDivergenceLevel(lev, divTmp, 0, a_fluxes[lev], flux_comp, ncomp, scale);
         }
-        
+
         // Need FillBoundary before redistribution
         divTmp.FillBoundary(geom[lev].periodicity());
-        
+
         // Redistribute diffusion term
         redistributeDiff(lev, a_dt,
                          divTmp, 0,
@@ -116,7 +116,7 @@ void PeleLM::extFluxDivergenceLevel(int lev,
          {
             divergence(i,j,k,n) = 0.0;
          });
-      } else if (flagfab.getType(bx) != FabType::regular ) {     // EB containing boxes 
+      } else if (flagfab.getType(bx) != FabType::regular ) {     // EB containing boxes
          auto vfrac = ebfact.getVolFrac().const_array(mfi);
          amrex::ParallelFor(bx, [ncomp, flag, vfrac, divergence, AMREX_D_DECL(fluxX, fluxY, fluxZ), vol, scale]
          AMREX_GPU_DEVICE (int i, int j, int k) noexcept
@@ -212,7 +212,7 @@ void PeleLM::intFluxDivergenceLevel(int lev,
          {
             divergence(i,j,k,n) = 0.0;
          });
-      } else if (flagfab.getType(bx) != FabType::regular ) {     // EB containing boxes 
+      } else if (flagfab.getType(bx) != FabType::regular ) {     // EB containing boxes
          auto vfrac = ebfact.getVolFrac().const_array(mfi);
          AMREX_D_TERM( const auto& afrac_x = areafrac[0]->array(mfi);,
                        const auto& afrac_y = areafrac[1]->array(mfi);,
@@ -284,20 +284,20 @@ void PeleLM::advFluxDivergence(int a_lev,
 #ifdef AMREX_USE_EB
     auto const& ebfact = EBFactory(a_lev);
 #else
-    amrex::ignore_unused(a_lev); 
+    amrex::ignore_unused(a_lev);
 #endif
 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
     for (MFIter mfi(a_divergence,TilingIfNotGPU()); mfi.isValid(); ++mfi) {
-    
+
         Box const& bx = mfi.tilebox();
 
 #ifdef AMREX_USE_EB
         auto const& flagfab = ebfact.getMultiEBCellFlagFab()[mfi];
 #endif
-    
+
         // Get the divergence
         auto const& div_arr  = a_divergence.array(mfi,div_comp);
         AMREX_D_TERM(auto const& fx = a_fluxes[0]->const_array(mfi,flux_comp);,
@@ -509,6 +509,7 @@ PeleLM::derive(const std::string &a_name,
       std::unique_ptr<MultiFab> statemf = fillPatchState(lev, a_time, m_nGrowState);
       // Get pressure: TODO no fillpatch for pressure just yet, simply get new state
       auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
+      auto ldataR_p = getLevelDataReactPtr(lev);
       auto stateBCs = fetchBCRecArray(VELX,NVAR);
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -518,8 +519,9 @@ PeleLM::derive(const std::string &a_name,
           const Box& bx = mfi.growntilebox(nGrow);
           FArrayBox& derfab = (*mf)[mfi];
           FArrayBox const& statefab = (*statemf)[mfi];
+          FArrayBox const& reactfab = ldataR_p->I_R[mfi];
           FArrayBox const& pressfab = ldata_p->press[mfi];
-          rec->derFunc()(this, bx, derfab, 0, rec->numDerive(), statefab, pressfab, geom[lev], a_time, stateBCs, lev);
+          rec->derFunc()(this, bx, derfab, 0, rec->numDerive(), statefab, reactfab, pressfab, geom[lev], a_time, stateBCs, lev);
       }
    } else {          // This is a state variable
       mf.reset(new MultiFab(grids[lev], dmap[lev], 1, nGrow));
@@ -555,6 +557,7 @@ PeleLM::deriveComp(const std::string &a_name,
       std::unique_ptr<MultiFab> statemf = fillPatchState(lev, a_time, m_nGrowState);
       // Get pressure: TODO no fillpatch for pressure just yet, simply get new state
       auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
+      auto ldataR_p = getLevelDataReactPtr(lev);
       auto stateBCs = fetchBCRecArray(VELX,NVAR);
 
       // Temp MF for all the derive components
@@ -567,8 +570,9 @@ PeleLM::deriveComp(const std::string &a_name,
           const Box& bx = mfi.growntilebox(nGrow);
           FArrayBox& derfab = derTemp[mfi];
           FArrayBox const& statefab = (*statemf)[mfi];
+          FArrayBox const& reactfab = ldataR_p->I_R[mfi];
           FArrayBox const& pressfab = ldata_p->press[mfi];
-          rec->derFunc()(this, bx, derfab, 0, rec->numDerive(), statefab, pressfab, geom[lev], a_time, stateBCs, lev);
+          rec->derFunc()(this, bx, derfab, 0, rec->numDerive(), statefab, reactfab, pressfab, geom[lev], a_time, stateBCs, lev);
       }
       // Copy into outgoing unique_ptr
       int derComp = rec->variableComp(a_name);
@@ -607,19 +611,19 @@ PeleLM::initProgressVariable()
             int entryCount = pp.countval("progressVariable.weights");
             stringIn.resize(entryCount);
             pp.getarr("progressVariable.weights",stringIn,0,entryCount);
-            parseVars(varNames, stringIn, weightsIn); 
+            parseVars(varNames, stringIn, weightsIn);
 
             // Cold side/Hot side
             Vector<Real> coldState(NUM_SPECIES+1,0.0);
             entryCount = pp.countval("progressVariable.coldState");
             stringIn.resize(entryCount);
             pp.getarr("progressVariable.coldState",stringIn,0,entryCount);
-            parseVars(varNames, stringIn, coldState); 
+            parseVars(varNames, stringIn, coldState);
             Vector<Real> hotState(NUM_SPECIES+1,0.0);
             entryCount = pp.countval("progressVariable.hotState");
             stringIn.resize(entryCount);
             pp.getarr("progressVariable.hotState",stringIn,0,entryCount);
-            parseVars(varNames, stringIn, hotState); 
+            parseVars(varNames, stringIn, hotState);
             m_C0 = 0.0;
             m_C1 = 0.0;
             for (int i = 0; i < NUM_SPECIES+1; ++i) {
@@ -777,7 +781,7 @@ PeleLM::fetchDiffTypeArray(int scomp, int ncomp)
    return types;
 }
 
-Real 
+Real
 PeleLM::MFSum (const Vector<const MultiFab*> &a_mf, int comp)
 {
     // Get the integral of the MF, not including the fine-covered and
@@ -795,11 +799,11 @@ PeleLM::MFSum (const Vector<const MultiFab*> &a_mf, int comp)
 #ifdef AMREX_USE_EB
        auto const& ebfact = dynamic_cast<EBFArrayBoxFactory const&>(Factory(lev));
        auto const& vfrac = ebfact.getVolFrac();
-   
+
        Real sm = 0.0;
        if ( lev != finest_level ) {
           sm = amrex::ReduceSum(*a_mf[lev], vfrac, *m_coveredMask[lev], 0, [vol, comp]
-          AMREX_GPU_HOST_DEVICE (Box const& bx, Array4<Real const> const& mf_arr, 
+          AMREX_GPU_HOST_DEVICE (Box const& bx, Array4<Real const> const& mf_arr,
                                                 Array4<Real const> const& vf_arr,
                                                 Array4<int  const> const& covered_arr) -> Real
           {
@@ -812,7 +816,7 @@ PeleLM::MFSum (const Vector<const MultiFab*> &a_mf, int comp)
           });
        } else {
           sm = amrex::ReduceSum(*a_mf[lev], vfrac, 0, [vol, comp]
-          AMREX_GPU_HOST_DEVICE (Box const& bx, Array4<Real const> const& mf_arr, 
+          AMREX_GPU_HOST_DEVICE (Box const& bx, Array4<Real const> const& mf_arr,
                                                 Array4<Real const> const& vf_arr) -> Real
           {
               Real sum = 0.0;
@@ -878,7 +882,7 @@ void PeleLM::setTypicalValues(const TimeStamp &a_time, int is_init)
     for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
        typical_values[idim] = std::max(stateMax[VELX+idim],std::abs(stateMin[VELX+idim]));
     }
-    
+
     if (!m_incompressible) {
         // Average between max/min
         typical_values[DENSITY] = 0.5 * (stateMax[DENSITY] + stateMin[DENSITY]);
@@ -947,7 +951,7 @@ PeleLM::MFmax(const MultiFab *a_MF,
 
 #ifdef AMREX_USE_EB
     if ( a_MF->hasEBFabFactory() )
-    {    
+    {
         const auto& ebfactory = dynamic_cast<EBFArrayBoxFactory const&>(a_MF->Factory());
         auto const& flags = ebfactory.getMultiEBCellFlagFab();
 #ifdef AMREX_USE_GPU
@@ -957,13 +961,13 @@ PeleLM::MFmax(const MultiFab *a_MF,
             auto const& mask = a_mask.const_arrays();
             mx = ParReduce(TypeList<ReduceOpMax>{}, TypeList<Real>{}, *a_MF, IntVect(0),
             [=] AMREX_GPU_DEVICE (int box_no, int i, int j, int k) noexcept -> GpuTuple<Real>
-            {    
+            {
                 if (flagsma[box_no](i,j,k).isCovered() ||
                     !mask[box_no](i,j,k)) {
                     return AMREX_REAL_LOWEST;
                 } else {
                     return ma[box_no](i,j,k,comp);
-                }    
+                }
             });
         } else
 #endif
@@ -1001,7 +1005,7 @@ PeleLM::MFmax(const MultiFab *a_MF,
                     return AMREX_REAL_LOWEST;
                 } else {
                     return ma[box_no](i,j,k,comp);
-                }    
+                }
             });
         } else
 #endif
@@ -1036,7 +1040,7 @@ PeleLM::MFmin(const MultiFab *a_MF,
 
 #ifdef AMREX_USE_EB
     if ( a_MF->hasEBFabFactory() )
-    {    
+    {
         const auto& ebfactory = dynamic_cast<EBFArrayBoxFactory const&>(a_MF->Factory());
         auto const& flags = ebfactory.getMultiEBCellFlagFab();
 #ifdef AMREX_USE_GPU
@@ -1046,13 +1050,13 @@ PeleLM::MFmin(const MultiFab *a_MF,
             auto const& mask = a_mask.const_arrays();
             mn = ParReduce(TypeList<ReduceOpMin>{}, TypeList<Real>{}, *a_MF, IntVect(0),
             [=] AMREX_GPU_DEVICE (int box_no, int i, int j, int k) noexcept -> GpuTuple<Real>
-            {    
+            {
                 if (flagsma[box_no](i,j,k).isCovered() ||
                     !mask[box_no](i,j,k)) {
                     return AMREX_REAL_MAX;
                 } else {
                     return ma[box_no](i,j,k,comp);
-                }    
+                }
             });
         } else
 #endif
@@ -1090,7 +1094,7 @@ PeleLM::MFmin(const MultiFab *a_MF,
                     return AMREX_REAL_MAX;
                 } else {
                     return ma[box_no](i,j,k,comp);
-                }    
+                }
             });
         } else
 #endif
@@ -1212,11 +1216,11 @@ PeleLM::initMixtureFraction()
             int entryCount = pp.countval("mixtureFraction.oxidTank");
             compositionIn.resize(entryCount);
             pp.getarr("mixtureFraction.oxidTank",compositionIn,0,entryCount);
-            parseComposition(compositionIn, MFCompoType, YO); 
+            parseComposition(compositionIn, MFCompoType, YO);
             entryCount = pp.countval("mixtureFraction.fuelTank");
             compositionIn.resize(entryCount);
             pp.getarr("mixtureFraction.fuelTank",compositionIn,0,entryCount);
-            parseComposition(compositionIn, MFCompoType, YF); 
+            parseComposition(compositionIn, MFCompoType, YF);
         } else if ( !MFformat.compare("RealList")) {     // use a list of Real. MUST contains an entry for each species in the mixture
             std::string MFCompoType;
             pp.query("mixtureFraction.type", MFCompoType);
@@ -1301,29 +1305,29 @@ PeleLM::parseComposition(Vector<std::string> compositionIn,
    pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(specNames);
 
    // For each entry in the user-provided composition, parse name and value
-   std::string delimiter = ":"; 
+   std::string delimiter = ":";
    int specCountIn = compositionIn.size();
    for (int i = 0; i < specCountIn; i++ ) {
       long unsigned sep = compositionIn[i].find(delimiter);
       if ( sep == std::string::npos ) {
          Abort("Error parsing '"+compositionIn[i]+"' --> unable to find delimiter :");
-      }    
+      }
       std::string specNameIn = compositionIn[i].substr(0, sep);
       Real value = std::stod(compositionIn[i].substr(sep+1,compositionIn[i].length()));
-      int foundIt = 0; 
+      int foundIt = 0;
       for (int k = 0; k < NUM_SPECIES; k++ ) {
          if ( specNameIn == specNames[k] ) {
             compoIn[k] = value;
-            foundIt = 1; 
-         }    
-      }    
+            foundIt = 1;
+         }
+      }
       if ( !foundIt ) {
          Abort("Error parsing '"+compositionIn[i]+"' --> unable to match to any species name");
-      }    
+      }
    }
 
    // Ensure that it sums to 1.0:
-   Real sum = 0.0; 
+   Real sum = 0.0;
    for (int k = 0; k < NUM_SPECIES; k++ ) {
       sum += compoIn[k];
    }
@@ -1357,7 +1361,7 @@ void PeleLM::extendSignedDistance(MultiFab *a_signDist,
       const auto& ebfactory = dynamic_cast<EBFArrayBoxFactory const&>(a_signDist->Factory());
       const auto& flags = ebfactory.getMultiEBCellFlagFab();
       int nGrowFac = flags.nGrow()+1;
-       
+
       // First set the region far away at the max value we need
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -1370,7 +1374,7 @@ void PeleLM::extendSignedDistance(MultiFab *a_signDist,
          AMREX_GPU_DEVICE (int i, int j, int k) noexcept
          {
             if ( sd_cc(i,j,k) >= maxSignedDist - 1e-12 ) {
-               const Real* dx = geomdata.CellSize(); 
+               const Real* dx = geomdata.CellSize();
                sd_cc(i,j,k) = nGrowFac*dx[0]*a_extendFactor;
             }
          });
@@ -1423,7 +1427,7 @@ void PeleLM::extendSignedDistance(MultiFab *a_signDist,
                }
             });
          }
-         a_signDist->FillBoundary(geom[0].periodicity());  
+         a_signDist->FillBoundary(geom[0].periodicity());
       }
 }
 #endif
