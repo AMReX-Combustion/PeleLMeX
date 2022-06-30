@@ -23,6 +23,11 @@ static Box grow_box_by_two (const Box& b) { return amrex::grow(b,2); }
 void PeleLM::Setup() {
    BL_PROFILE("PeleLM::Setup()");
 
+   // Ensure grid is isotropic
+   {
+     auto const dx = geom[0].CellSizeArray();
+     AMREX_ALWAYS_ASSERT(AMREX_D_TERM(,dx[0] == dx[1], && dx[1] == dx[2]));
+   }
    // Print build info to screen
    const char* githash1 = buildInfoGetGitHash(1);
    const char* githash2 = buildInfoGetGitHash(2);

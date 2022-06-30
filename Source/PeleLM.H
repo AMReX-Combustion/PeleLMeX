@@ -244,13 +244,18 @@ class PeleLM : public amrex::AmrCore {
                            amrex::Real time,
                            bool initial);
 
+   // checkRunParams
+   void checkRunParams();
+
    //-----------------------------------------------------------------------------
 
    //-----------------------------------------------------------------------------
    // PROJECTION
 
-   // Initial projection
+   // Initial projections
    void initialProjection();
+
+   void initialPressProjection();
 
    // Velocity projection at Time
    void velocityProjection(int is_init,
@@ -264,6 +269,12 @@ class PeleLM : public amrex::AmrCore {
                        const amrex::Vector<const amrex::MultiFab*> &rhs_nd,
                        int increment_gp,
                        amrex::Real scaling_factor);
+
+   // Scaling functions for 2D-RZ calculations
+   void scaleProj_RZ(int a_lev,
+                     amrex::MultiFab &a_rhs);
+   void unscaleProj_RZ(int a_lev,
+                       amrex::MultiFab &a_rhs);
    //-----------------------------------------------------------------------------
 
    //-----------------------------------------------------------------------------
@@ -445,12 +456,8 @@ class PeleLM : public amrex::AmrCore {
    void sprayMKDLevel(const int level,
                       const amrex::Real time,
                       const amrex::Real dt);
-   void sprayMK(const amrex::Real time,
-                const amrex::Real dt);
-   void sprayMKLevel(const int level,
-                     const amrex::Real time,
-                     const amrex::Real dt);
-   void sprayInjectRedist(bool regridded, int lbase = 0);
+   void sprayInjectRedist();
+   void sprayPostRegrid();
    void setSprayState(const amrex::Real& a_flow_dt);
    void addSpraySource(const int level);
    static int write_spray_ascii_files;
@@ -1264,6 +1271,7 @@ class PeleLM : public amrex::AmrCore {
    // MAC projection
    int m_mac_mg_verbose = 0;
    int m_mac_mg_max_coarsening_level = 100;
+   int m_mac_max_order = 4;
    amrex::Real m_mac_mg_rtol = 1.0e-11;   
    amrex::Real m_mac_mg_atol = 1.0e-14;
    std::string m_hypre_namespace_mac = "mac_hypre";

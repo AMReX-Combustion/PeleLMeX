@@ -960,8 +960,8 @@ void PeleLM::computeDivTau(const TimeStamp &a_time,
                            int use_density,
                            Real scale)
 {
-   // Get the first velocity component BCRec
-   auto bcRec = fetchBCRecArray(VELX,1);
+   // Get the density component BCRec to get viscosity on faces
+   auto bcRec = fetchBCRecArray(DENSITY,1);
 
    if (use_density) {
       getDiffusionTensorOp()->compute_divtau(a_divtau,
@@ -980,8 +980,8 @@ void PeleLM::computeDivTau(const TimeStamp &a_time,
 
 void PeleLM::diffuseVelocity()
 {
-   // Get the first velocity component BCRec
-   auto bcRec = fetchBCRecArray(VELX,1);
+   // Get the density component BCRec to get viscosity on faces
+   auto bcRec = fetchBCRecArray(DENSITY,1);
 
    // CrankNicholson 0.5 coeff
    Real dt_lcl = 0.5 * m_dt;
