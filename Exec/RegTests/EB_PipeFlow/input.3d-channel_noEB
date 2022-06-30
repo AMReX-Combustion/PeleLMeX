@@ -1,0 +1,68 @@
+#----------------------DOMAIN DEFINITION------------------------
+# https://amrex-combustion.github.io/PeleLMeX/LMeXControls.html
+geometry.is_periodic = 1 0 1              # For each dir, 0: non-perio, 1: periodic
+geometry.coord_sys   = 0                  # 0 => cart, 1 => RZ
+geometry.prob_lo     = 0.0 -0.005 -0.0075        # x_lo y_lo (z_lo)
+geometry.prob_hi     = 0.03 0.005 0.0075  # x_hi y_hi (z_hi)
+
+# >>>>>>>>>>>>>  BC FLAGS <<<<<<<<<<<<<<<<
+# Interior, Inflow, Outflow, Symmetry,
+# SlipWallAdiab, NoSlipWallAdiab, SlipWallIsotherm, NoSlipWallIsotherm
+# STM: NoSlipWallIsotherm crashes?
+peleLM.lo_bc = Interior NoSlipWallAdiab Interior
+peleLM.hi_bc = Interior NoSlipWallAdiab Interior
+
+
+#-------------------------AMR CONTROL----------------------------
+#amr.n_cell          = 96 32 48         # Level 0 number of cells in each direction   
+#amr.n_cell          = 1152 384 576      # Level 0 number of cells in each direction   
+amr.n_cell           = 384  128 192
+amr.n_cell           = 576  192 256
+amr.v               = 1                # AMR verbose
+amr.max_level       = 1                # maximum level number allowed
+amr.ref_ratio       = 2 2 2 2          # refinement ratio
+amr.regrid_int      = 1000             # how often to regrid
+amr.n_error_buf     = 2 2 2 2          # number of buffer cells in error est
+amr.grid_eff        = 0.7              # what constitutes an efficient grid
+amr.blocking_factor = 16               # block factor in grid generation (min box size)
+amr.max_grid_size   = 128               # max box size
+
+#--------------------------- Problem -------------------------------
+prob.T_mean = 750.0
+prob.P_mean = 101325.0
+prob.problem_type = 2
+prob.meanFlowMag = 5.0
+
+#-------------------------PeleLM CONTROL----------------------------
+peleLM.v = 1
+peleLM.incompressible = 0
+peleLM.gradP0 = -709.79 0.0 0.0
+
+peleLM.do_temporals = 1
+peleLM.temporal_int = 10
+
+#amr.restart = chk30000
+amr.max_step = 1000
+amr.stop_time = 0.2
+amr.plot_int = 100
+amr.check_int = 100
+amr.cfl = 0.5
+amr.derive_plot_vars = avg_pressure mag_vort
+
+peleLM.chem_integrator   = "ReactorNull"   # Chemistry integrator, from PelePhysics available list
+
+#--------------------REFINEMENT CONTROL------------------------
+#amr.refinement_indicators = temp
+#amr.temp.max_level     = 2
+#amr.temp.value_greater = 305
+#amr.temp.field_name    = temp
+
+amr.refinement_indicators = yLow yHigh
+amr.yLow.in_box_lo = -0.001  -0.0052  -0.0085
+amr.yLow.in_box_hi =  0.031 -0.0045    0.0085
+amr.yHigh.in_box_lo = -0.001  0.0045  -0.0085
+amr.yHigh.in_box_hi =  0.031  0.0052    0.0085
+
+#amrex.fpe_trap_invalid = 1
+#amrex.fpe_trap_zero = 1
+#amrex.fpe_trap_overflow = 1
