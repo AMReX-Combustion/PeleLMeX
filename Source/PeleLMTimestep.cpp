@@ -144,7 +144,7 @@ PeleLM::estDivUDt(const TimeStamp &a_time) {
 
    // Note: only method 1 of PeleLM is available here
    AMREX_ASSERT(m_divu_checkFlag==1);
-  
+
    for (int lev = 0; lev <= finest_level; ++lev) {
 
       auto ldata_p = getLevelDataPtr(lev, a_time);

@@ -5,7 +5,7 @@ using namespace amrex;
 PeleLM::LevelData::LevelData(amrex::BoxArray const& ba,
                              amrex::DistributionMapping const& dm,
                              amrex::FabFactory<FArrayBox> const& factory,
-                             int a_incompressible, int a_has_divu, 
+                             int a_incompressible, int a_has_divu,
                              int a_nAux, int a_nGrowState)
 {
    if (a_incompressible ) {
@@ -18,7 +18,7 @@ PeleLM::LevelData::LevelData(amrex::BoxArray const& ba,
                        dm, 1             , 1           , MFInfo(), factory);
    visc_cc.define( ba, dm, 1             , 1           , MFInfo(), factory);
    if (! a_incompressible ) {
-      if (a_has_divu) {   
+      if (a_has_divu) {
          divu.define (ba, dm, 1             , 1           , MFInfo(), factory);
       }
       diff_cc.define (ba, dm, NUM_SPECIES+2 , 1           , MFInfo(), factory);
@@ -36,7 +36,7 @@ PeleLM::LevelData::LevelData(amrex::BoxArray const& ba,
 }
 
 PeleLM::LevelDataReact::LevelDataReact(const amrex::BoxArray &ba,
-                                       const amrex::DistributionMapping &dm, 
+                                       const amrex::DistributionMapping &dm,
                                        const amrex::FabFactory<FArrayBox> &factory)
 {
    int IRsize = NUM_SPECIES;
@@ -67,7 +67,7 @@ PeleLM::LevelDataNLSolve::LevelDataNLSolve(amrex::BoxArray const& ba,
 
 PeleLM::AdvanceDiffData::AdvanceDiffData(int a_finestLevel,
                                          const amrex::Vector<amrex::BoxArray> &ba,
-                                         const amrex::Vector<amrex::DistributionMapping> &dm, 
+                                         const amrex::Vector<amrex::DistributionMapping> &dm,
                                          const amrex::Vector<std::unique_ptr<amrex::FabFactory<FArrayBox>>> &factory,
                                          int nGrowAdv,
                                          int a_use_wbar,
@@ -109,7 +109,7 @@ PeleLM::AdvanceDiffData::AdvanceDiffData(int a_finestLevel,
 
 PeleLM::AdvanceAdvData::AdvanceAdvData(int a_finestLevel,
                                        const amrex::Vector<amrex::BoxArray> &ba,
-                                       const amrex::Vector<amrex::DistributionMapping> &dm, 
+                                       const amrex::Vector<amrex::DistributionMapping> &dm,
                                        const amrex::Vector<std::unique_ptr<amrex::FabFactory<FArrayBox>>> &factory,
                                        int a_incompressible,
                                        int nGrowAdv,

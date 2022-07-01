@@ -41,8 +41,8 @@ void PeleLM::massBalance()
    m_massNew = MFSum(GetVecOfConstPtrs(getDensityVect(AmrNewTime)),0);
    Real dmdt = (m_massNew - m_massOld) / m_dt;
    Real massFluxBalance = AMREX_D_TERM(  m_domainMassFlux[0] + m_domainMassFlux[1],
-                                       + m_domainMassFlux[2] + m_domainMassFlux[3],               
-                                       + m_domainMassFlux[4] + m_domainMassFlux[5]);               
+                                       + m_domainMassFlux[2] + m_domainMassFlux[3],
+                                       + m_domainMassFlux[4] + m_domainMassFlux[5]);
 
    tmpMassFile << m_nstep << " " << m_cur_time                          // Time info
                << " " << m_massNew                                      // mass
@@ -80,7 +80,7 @@ void PeleLM::addMassFluxes(const Array<const MultiFab*,AMREX_SPACEDIM> &a_fluxes
       Real sumLo = 0.0;
       Real sumHi = 0.0;
 
-      sumLo = amrex::ReduceSum(*a_fluxes[idim], 0, [=] 
+      sumLo = amrex::ReduceSum(*a_fluxes[idim], 0, [=]
          AMREX_GPU_HOST_DEVICE (Box const& bx, Array4<Real const> const& flux) -> Real
          {
             Real t = 0.0;
@@ -96,7 +96,7 @@ void PeleLM::addMassFluxes(const Array<const MultiFab*,AMREX_SPACEDIM> &a_fluxes
             return t;
          });
 
-      sumHi = amrex::ReduceSum(*a_fluxes[idim], 0, [=] 
+      sumHi = amrex::ReduceSum(*a_fluxes[idim], 0, [=]
          AMREX_GPU_HOST_DEVICE (Box const& bx, Array4<Real const> const& flux) -> Real
          {
             Real t = 0.0;
@@ -149,7 +149,7 @@ void PeleLM::addUmacFluxes(std::unique_ptr<AdvanceAdvData> &advData, const Geome
       Real sumLo = 0.0;
       Real sumHi = 0.0;
 
-      sumLo = amrex::ReduceSum(advData->umac[lev][idim], 0, [=] 
+      sumLo = amrex::ReduceSum(advData->umac[lev][idim], 0, [=]
          AMREX_GPU_HOST_DEVICE (Box const& bx, Array4<Real const> const& flux) -> Real
          {
             Real t = 0.0;
@@ -163,7 +163,7 @@ void PeleLM::addUmacFluxes(std::unique_ptr<AdvanceAdvData> &advData, const Geome
             return t;
          });
 
-      sumHi = amrex::ReduceSum(advData->umac[lev][idim], 0, [=] 
+      sumHi = amrex::ReduceSum(advData->umac[lev][idim], 0, [=]
          AMREX_GPU_HOST_DEVICE (Box const& bx, Array4<Real const> const& flux) -> Real
          {
             Real t = 0.0;
@@ -190,8 +190,8 @@ void PeleLM::rhoHBalance()
    m_RhoHNew = MFSum(GetVecOfConstPtrs(getRhoHVect(AmrNewTime)),0);
    Real dRhoHdt = (m_RhoHNew - m_RhoHOld) / m_dt;
    Real rhoHFluxBalance = AMREX_D_TERM(  m_domainRhoHFlux[0] + m_domainRhoHFlux[1],
-                                       + m_domainRhoHFlux[2] + m_domainRhoHFlux[3],               
-                                       + m_domainRhoHFlux[4] + m_domainRhoHFlux[5]);               
+                                       + m_domainRhoHFlux[2] + m_domainRhoHFlux[3],
+                                       + m_domainRhoHFlux[4] + m_domainRhoHFlux[5]);
 
    tmpMassFile << m_nstep << " " << m_cur_time                          // Time info
                << " " << m_RhoHNew                                      // RhoH
@@ -229,7 +229,7 @@ void PeleLM::addRhoHFluxes(const Array<const MultiFab*,AMREX_SPACEDIM> &a_fluxes
       Real sumLo = 0.0;
       Real sumHi = 0.0;
 
-      sumLo = amrex::ReduceSum(*a_fluxes[idim], 0, [=] 
+      sumLo = amrex::ReduceSum(*a_fluxes[idim], 0, [=]
          AMREX_GPU_HOST_DEVICE (Box const& bx, Array4<Real const> const& flux) -> Real
          {
             Real t = 0.0;
@@ -244,7 +244,7 @@ void PeleLM::addRhoHFluxes(const Array<const MultiFab*,AMREX_SPACEDIM> &a_fluxes
             return t;
          });
 
-      sumHi = amrex::ReduceSum(*a_fluxes[idim], 0, [=] 
+      sumHi = amrex::ReduceSum(*a_fluxes[idim], 0, [=]
          AMREX_GPU_HOST_DEVICE (Box const& bx, Array4<Real const> const& flux) -> Real
          {
             Real t = 0.0;
@@ -299,7 +299,7 @@ void PeleLM::addRhoYFluxes(const Array<const MultiFab*,AMREX_SPACEDIM> &a_fluxes
          Real sumLo = 0.0;
          Real sumHi = 0.0;
 
-         sumLo = amrex::ReduceSum(*a_fluxes[idim], 0, [=] 
+         sumLo = amrex::ReduceSum(*a_fluxes[idim], 0, [=]
             AMREX_GPU_HOST_DEVICE (Box const& bx, Array4<Real const> const& flux) -> Real
             {
                Real t = 0.0;
@@ -314,7 +314,7 @@ void PeleLM::addRhoYFluxes(const Array<const MultiFab*,AMREX_SPACEDIM> &a_fluxes
                return t;
             });
 
-         sumHi = amrex::ReduceSum(*a_fluxes[idim], 0, [=] 
+         sumHi = amrex::ReduceSum(*a_fluxes[idim], 0, [=]
             AMREX_GPU_HOST_DEVICE (Box const& bx, Array4<Real const> const& flux) -> Real
             {
                Real t = 0.0;
@@ -348,33 +348,49 @@ void PeleLM::writeTemporals()
 
    //----------------------------------------------------------------
    // State
-   // Get kinetic energy
+   // Get kinetic energy and enstrophy
    Vector<std::unique_ptr<MultiFab>> kinEnergy(finest_level + 1);
+   Vector<std::unique_ptr<MultiFab>> enstrophy(finest_level + 1);
    for (int lev = 0; lev <= finest_level; ++lev) {
       kinEnergy[lev] = derive("kinetic_energy", m_cur_time, lev, 0);
+      enstrophy[lev] = derive("enstrophy", m_cur_time, lev, 0);
    }
-   Real kinetic_energy = MFSum(GetVecOfConstPtrs(kinEnergy),0);
+   Real kinenergy_int = MFSum(GetVecOfConstPtrs(kinEnergy),0);
+   Real enstrophy_int = MFSum(GetVecOfConstPtrs(enstrophy),0);
 
    // Combustion
    Real fuelConsumptionInt = 0.0;
    Real heatReleaseRateInt = 0.0;
    if (fuelID > 0 && !(m_chem_integrator == "ReactorNull")) {
        fuelConsumptionInt =  MFSum(GetVecOfConstPtrs(getIRVect()),fuelID);
-       for (int lev = 0; lev <= finest_level; ++lev) { 
+       for (int lev = 0; lev <= finest_level; ++lev) {
           getHeatRelease(lev, kinEnergy[lev].get());  // Re-use kinEnergy container
        }
        heatReleaseRateInt = MFSum(GetVecOfConstPtrs(kinEnergy),0);
    }
 
-   // Get min/max/mean for non-species state components
-
-   tmpStateFile << m_nstep << " " << m_cur_time                 // Time
-                << " " << kinetic_energy                        // Kinetic energy
+   tmpStateFile << m_nstep << " " << m_cur_time << " " << m_dt  // Time
+                << " " << kinenergy_int                         // Kinetic energy
+                << " " << enstrophy_int                         // Enstrophy
                 << " " << m_pNew                                // Thermo. pressure
                 << " " << fuelConsumptionInt                    // Integ fuel burning rate
                 << " " << heatReleaseRateInt                    // Integ heat release rate
                 << " \n";
-   tmpStateFile.flush(); 
+   tmpStateFile.flush();
+
+   // Get min/max for state components
+   auto stateMax  = ( m_incompressible ) ? MLmax(GetVecOfConstPtrs(getStateVect(AmrNewTime)),0,AMREX_SPACEDIM)
+                                         : MLmax(GetVecOfConstPtrs(getStateVect(AmrNewTime)),0,NVAR);
+   auto stateMin  = ( m_incompressible ) ? MLmin(GetVecOfConstPtrs(getStateVect(AmrNewTime)),0,AMREX_SPACEDIM)
+                                         : MLmin(GetVecOfConstPtrs(getStateVect(AmrNewTime)),0,NVAR);
+
+   tmpExtremasFile << m_nstep << " " << m_cur_time;           // Time
+   for (int n = 0; n < stateMax.size(); ++n) {                // Min & max of each state variable
+       tmpExtremasFile << " " << stateMin[n] << " " << stateMax[n];
+   }
+   tmpExtremasFile << " \n";
+   tmpExtremasFile.flush();
+
 }
 
 void PeleLM::openTempFile()
@@ -393,6 +409,11 @@ void PeleLM::openTempFile()
          tmpMassFile.open(tempFileName.c_str(),std::ios::out | std::ios::app | std::ios_base::binary);
          tmpMassFile.precision(12);
       }
+      if (m_do_extremas) {
+         std::string tempFileName = "temporals/tempExtremas";
+         tmpExtremasFile.open(tempFileName.c_str(),std::ios::out | std::ios::app | std::ios_base::binary);
+         tmpExtremasFile.precision(12);
+      }
    }
 }
 
@@ -406,6 +427,10 @@ void PeleLM::closeTempFile()
       if (m_do_massBalance) {
          tmpMassFile.flush();
          tmpMassFile.close();
+      }
+      if (m_do_extremas) {
+         tmpExtremasFile.flush();
+         tmpExtremasFile.close();
       }
    }
 }

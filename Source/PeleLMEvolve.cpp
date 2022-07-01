@@ -10,7 +10,7 @@ void PeleLM::Evolve() {
 
    int plt_justDidIt = 0;
    int chk_justDidIt = 0;
-   
+
    while(!do_not_evolve) {
 
       plt_justDidIt = 0;
@@ -93,10 +93,10 @@ PeleLM::writePlotNow()
 
    if ( m_plot_int > 0 && (m_nstep % m_plot_int == 0) ) {
       write_now = true;
-   
+
    } else if ( m_plot_per_exact > 0.0 && (std::abs(std::remainder(m_cur_time, m_plot_per_exact)) < 1.e-12) ) {
       write_now = true;
- 
+
    } else if (m_plot_per_approx > 0.0) {
       // Check to see if we've crossed a plot_per interval by comparing
       // the number of intervals that have elapsed for both the current

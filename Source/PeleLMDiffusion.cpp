@@ -88,13 +88,13 @@ void PeleLM::computeDifferentialDiffusionTerms(const TimeStamp &a_time,
                        GetVecOfPtrs(diffData->Dn), 0,
                        GetVecOfArrOfPtrs(fluxes), 0,
                        NUM_SPECIES, 1, bcRecSpec_d.dataPtr(), -1.0, m_dt);
-      auto bcRecTemp = fetchBCRecArray(TEMP,1); 
+      auto bcRecTemp = fetchBCRecArray(TEMP,1);
       auto bcRecTemp_d = convertToDeviceVector(bcRecTemp);
       fluxDivergenceRD(GetVecOfConstPtrs(getTempVect(AmrOldTime)), 0,
                        GetVecOfPtrs(diffData->Dn), NUM_SPECIES,
                        GetVecOfArrOfPtrs(fluxes), NUM_SPECIES,
                        1, 1, bcRecTemp_d.dataPtr(), -1.0, m_dt);
-      auto bcRecRhoH = fetchBCRecArray(RHOH,1); 
+      auto bcRecRhoH = fetchBCRecArray(RHOH,1);
       auto bcRecRhoH_d = convertToDeviceVector(bcRecRhoH);
       fluxDivergenceRD(GetVecOfConstPtrs(getRhoHVect(AmrOldTime)), 0,
                        GetVecOfPtrs(diffData->Dn), NUM_SPECIES+1,
@@ -111,13 +111,13 @@ void PeleLM::computeDifferentialDiffusionTerms(const TimeStamp &a_time,
                        GetVecOfPtrs(diffData->Dnp1), 0,
                        GetVecOfArrOfPtrs(fluxes), 0,
                        NUM_SPECIES, 1, bcRecSpec_d.dataPtr(), -1.0, m_dt);
-      auto bcRecTemp = fetchBCRecArray(TEMP,1); 
+      auto bcRecTemp = fetchBCRecArray(TEMP,1);
       auto bcRecTemp_d = convertToDeviceVector(bcRecTemp);
       fluxDivergenceRD(GetVecOfConstPtrs(getTempVect(AmrNewTime)), 0,
                        GetVecOfPtrs(diffData->Dnp1), NUM_SPECIES,
                        GetVecOfArrOfPtrs(fluxes), NUM_SPECIES,
                        1, 1, bcRecTemp_d.dataPtr(), -1.0, m_dt);
-      auto bcRecRhoH = fetchBCRecArray(RHOH,1); 
+      auto bcRecRhoH = fetchBCRecArray(RHOH,1);
       auto bcRecRhoH_d = convertToDeviceVector(bcRecRhoH);
       fluxDivergenceRD(GetVecOfConstPtrs(getRhoHVect(AmrNewTime)), 0,
                        GetVecOfPtrs(diffData->Dnp1), NUM_SPECIES+1,
@@ -505,7 +505,7 @@ void PeleLM::computeSpeciesEnthalpyFlux(const Vector<Array<MultiFab*,AMREX_SPACE
             {
                Hi_arr(i,j,k) = 0.0;
             });
-         } else if (flagfab.getType(gbx) != FabType::regular ) {     // EB containing boxes 
+         } else if (flagfab.getType(gbx) != FabType::regular ) {     // EB containing boxes
             amrex::ParallelFor(gbx, [Temp_arr, Hi_arr, flag]
             AMREX_GPU_DEVICE (int i, int j, int k) noexcept
             {
@@ -551,7 +551,7 @@ void PeleLM::computeSpeciesEnthalpyFlux(const Vector<Array<MultiFab*,AMREX_SPACE
                   enthflux_ar(i,j,k) += spflux_ar(i,j,k,n)*enth_ar(i,j,k,n);
               }
            });
-         } 
+         }
       }
    }
 }

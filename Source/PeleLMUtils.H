@@ -3,7 +3,7 @@
 template <class T>
 amrex::Gpu::DeviceVector<T>
 convertToDeviceVector ( amrex::Vector<T> v)
-{   
+{
    int ncomp = v.size();
    amrex::Gpu::DeviceVector<T> v_d(ncomp);
 #ifdef AMREX_USE_GPU

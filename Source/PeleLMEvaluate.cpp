@@ -57,7 +57,7 @@ void PeleLM::Evaluate() {
 
       // Regular derived functions and State entries are called on a per level basis
       // derive function can handle both derived and state entries
-      } else if (    derive_lst.canDerive(m_evaluatePlotVars[ivar]) 
+      } else if (    derive_lst.canDerive(m_evaluatePlotVars[ivar])
                   || isStateVariable(m_evaluatePlotVars[ivar]) ) {
          for (int lev = 0; lev <= finest_level; ++lev) {
             std::unique_ptr<MultiFab> mf;
@@ -67,7 +67,7 @@ void PeleLM::Evaluate() {
          }
       }
       cnt += cntIncr;
-   } 
+   }
 
    //----------------------------------------------------------------
    // Write the evaluated variables to disc
@@ -119,12 +119,12 @@ PeleLM::MLevaluate(const Vector<MultiFab *> &a_MFVec,
         Abort("advTerm not available yet, soon hopefully");
     } else if ( a_var == "instRR" ) {
         for (int lev = 0; lev <= finest_level; ++lev) {
-            std::unique_ptr<MultiFab> I_RR = std::make_unique<MultiFab> (*a_MFVec[lev],amrex::make_alias,a_comp,NUM_SPECIES); 
+            std::unique_ptr<MultiFab> I_RR = std::make_unique<MultiFab> (*a_MFVec[lev],amrex::make_alias,a_comp,NUM_SPECIES);
             computeInstantaneousReactionRate(lev, AmrNewTime, I_RR.get());
         }
         nComp = NUM_SPECIES;
     } else if ( a_var == "transportCC" ) {
-        // Cell-centered transport coefficients functions go through the level 
+        // Cell-centered transport coefficients functions go through the level
         // data container. Simply copy once the later has been filled.
         calcViscosity(AmrNewTime);
         calcDiffusivity(AmrNewTime);

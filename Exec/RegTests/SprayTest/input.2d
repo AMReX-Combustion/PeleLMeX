@@ -48,8 +48,7 @@ peleLM.sdc_iterMax = 1
 peleLM.floor_species = 0
 
 peleLM.do_temporals = 0
-peleLM.temporal_int = 2
-peleLM.mass_balance = 1
+peleLM.do_mass_balance = 0
 peleLM.num_init_iter = 0
 
 amr.plot_int = 100

@@ -39,14 +39,14 @@ int main(int argc, char* argv[]) {
        pelelm.Init();
 
        // Switch between Evolve and UnitTest mode
-       if ( pelelm.runMode() == "normal" ) { 
+       if ( pelelm.runMode() == "normal" ) {
 
           // Advance solution to final time
           pelelm.Evolve();
 
        } else if ( pelelm.runMode() == "evaluate" ) {
 
-          // 
+          //
           pelelm.Evaluate();
 
        } else {

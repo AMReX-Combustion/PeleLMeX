@@ -127,7 +127,13 @@ The following list of derived variables are available in PeleLMeX:
       - Vorticity (2D) or vorticity magnitude (3D)
     * - `kinetic_energy`
       - 1
-      - Kinetic energy
+      - Kinetic energy: 0.5 * rho * (u^2+v^2+w^2)
+    * - `enstrophy`
+      - 1
+      - enstrophy: 0.5 * rho * (\omega_x^2+\omega_y^2+\omega_z^2)
+    * - `HeatRelease`
+      - 1
+      - Heat release rate from chem. reactions
 
 Note that `mixture_fraction` and `progress_variable` requires additional inputs from the users as described below.
 
@@ -202,6 +208,27 @@ Linear solvers are a key component of PeleLMeX algorithm, separate controls are 
 
 Run-time diagnostics
 --------------------
+
+PeleLMeX provides a few diagnostics to check you simulations while it is running as well as adding basic analysis ingredients.
+
+It is often usefull to have an estimate of integrated quantities (kinetic energy, heat release rate, ,..), state extremas
+or other overall balance information to get a sense of the status and sanity of the simulation. To this end, it is possible
+to activate `temporal` diagnostics performing these reductions at given intervals:
+
+::
+
+    #-------------------------TEMPORALS---------------------------
+    peleLM.do_temporals = 1                     # [OPT, DEF=0] Activate temporal diagnostics
+    peleLM.temporal_int = 10                    # [OPT, DEF=5] Temporal freq.
+    peleLM.do_extremas = 1                      # [OPT, DEF=0] Trigger extremas, if temporals activated
+    peleLM.do_mass_balance = 1                  # [OPT, DEF=0] Compute mass balance, if temporals activated
+
+The `do_temporal` flag will trigger the creation of a `temporals` folder in your run directory and the following entries 
+will be appended to an ASCII `temporals/tempState` file: step, time, dt, kin. energy integral, enstrophy integral, mean pressure
+, fuel consumption rate integral, heat release rate integral. Additionnally, if the `do_temporal` flag is activated, one can
+turn on state extremas (stored in `temporals/tempExtremas` as min/max for each state entry) and mass balance (stored in
+`temporals/tempMass`) computing the total mass, dMdt and mass fluxes across the domain boundary as well as the error in
+the balance (dMdt - sum of fluxes).
 
 Combustion diagnostics often involve the use of a mixture fraction and/or a progress variable, both of which can be defined
 at run time and added to the derived variables included in the plotfile. If `mixture_fraction` or `progress_variable` is

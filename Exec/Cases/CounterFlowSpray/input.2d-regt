@@ -110,8 +110,7 @@ nodal_proj.rtol = 1.0e-10
 #diffusion.verbose = 2
 
 peleLM.do_temporals = 1
-peleLM.temporal_int = 2
-peleLM.mass_balance = 1
+peleLM.do_mass_balance = 1
 
 #--------------------REFINEMENT CONTROL------------------------
 amr.refinement_indicators = temp
