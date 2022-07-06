@@ -15,8 +15,7 @@ void PeleLM::readProbParm()
     pp.query("omega_y", prob_parm->omega_y);
     pp.query("omega_z", prob_parm->omega_z);
 
-    constexpr amrex::Real Pi = 3.14159265358979323846264338327950288;
-    prob_parm->L = 0.01 / Pi;
+    prob_parm->L = 0.01 / M_PI;
 
     // Mixture composition
     amrex::Real massfrac[NUM_SPECIES] = {0.0};

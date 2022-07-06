@@ -32,12 +32,7 @@ void pelelm_initdata(int i, int j, int k,
                  const amrex::Real Ly = prob_hi[1] - prob_lo[1];,
                  const amrex::Real Lz = prob_hi[2] - prob_lo[2]);
 
-    AMREX_D_TERM(const amrex::Real x_c = prob_lo[0] + 0.5*Lx;,
-                 const amrex::Real y_c = prob_lo[1] + 0.5*Ly;,
-                 const amrex::Real z_c = prob_lo[2] + 0.5*Lz);
-
     auto eos = pele::physics::PhysicsType::eos();
-    constexpr amrex::Real Pi = 3.14159265358979323846264338327950288;
 
     amrex::Real massfrac[NUM_SPECIES] = {0.0};
     massfrac[O2_ID] = 0.233;
@@ -45,12 +40,12 @@ void pelelm_initdata(int i, int j, int k,
 
     // TG functions
     amrex::Real u[3] = {0.0};
-    u[0] = prob_parm.v0 * sin(prob_parm.omega_x * x / prob_parm.L) *
-           cos(prob_parm.omega_y * y / prob_parm.L) *
-           cos(prob_parm.omega_z * z / prob_parm.L);
-    u[1] = -prob_parm.v0 * cos(prob_parm.omega_x * x / prob_parm.L) *
-           sin(prob_parm.omega_y * y / prob_parm.L) *
-           cos(prob_parm.omega_z * z / prob_parm.L);
+    u[0] = prob_parm.v0 * AMREX_D_TERM( sin(prob_parm.omega_x * x / prob_parm.L),
+                                       *cos(prob_parm.omega_y * y / prob_parm.L),
+                                       *cos(prob_parm.omega_z * z / prob_parm.L));
+    u[1] = -prob_parm.v0 * AMREX_D_TERM( cos(prob_parm.omega_x * x / prob_parm.L),
+                                        *sin(prob_parm.omega_y * y / prob_parm.L),
+                                        *cos(prob_parm.omega_z * z / prob_parm.L));
     if (prob_parm.convecting) {
       u[0] += prob_parm.v0;
       u[1] += prob_parm.v0;
