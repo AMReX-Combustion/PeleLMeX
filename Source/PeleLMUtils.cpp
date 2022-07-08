@@ -385,36 +385,17 @@ void PeleLM::intFluxDivergenceLevelEB(int lev,
       } else                                                     // Regular boxes
 #endif
       {
-#if (AMREX_SPACEDIM==2)
-         if (geom[lev].IsRZ()) {
-            Array4<Real const> const&  ax =  mf_ax.const_array(mfi);
-            Array4<Real const> const&  ay =  mf_ay.const_array(mfi);
-            amrex::ParallelFor(bx, [ncomp, divergence,
-                                    AMREX_D_DECL(fluxX, fluxY, fluxZ),
-                                    ax, ay,
-                                    vol, scale]
-            AMREX_GPU_DEVICE (int i, int j, int k) noexcept
-            {
-               intFluxDivergence_rz_K( i, j, k, ncomp,
-                                      AMREX_D_DECL(fluxX, fluxY, fluxZ),
-                                      ax, ay,
-                                      vol, scale, divergence);
-            });
-         } else
-#endif
+         amrex::ParallelFor(bx, [ncomp, divergence,
+                                 AMREX_D_DECL(fluxX, fluxY, fluxZ),
+                                 AMREX_D_DECL(areax, areay, areaz),
+                                 vol, scale]
+         AMREX_GPU_DEVICE (int i, int j, int k) noexcept
          {
-            amrex::ParallelFor(bx, [ncomp, divergence,
-                                    AMREX_D_DECL(fluxX, fluxY, fluxZ),
-                                    AMREX_D_DECL(areax, areay, areaz),
-                                    vol, scale]
-            AMREX_GPU_DEVICE (int i, int j, int k) noexcept
-            {
-               intFluxDivergence_K( i, j, k, ncomp,
-                                    AMREX_D_DECL(fluxX, fluxY, fluxZ),
-                                    AMREX_D_DECL(areax, areay, areaz),
-                                    vol, scale, divergence);
-            });
-         }
+            intFluxDivergence_K( i, j, k, ncomp,
+                                 AMREX_D_DECL(fluxX, fluxY, fluxZ),
+                                 AMREX_D_DECL(areax, areay, areaz),
+                                 vol, scale, divergence);
+         });
       }
    }
 }
