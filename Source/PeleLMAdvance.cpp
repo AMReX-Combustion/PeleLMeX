@@ -70,7 +70,6 @@ void PeleLM::Advance(int is_initIter) {
                                     m_nGrowAdv, m_nGrowMAC));
 
    for (int lev = 0; lev <= finest_level; lev++) {
-     m_extSource[lev]->define(grids[lev], dmap[lev], NVAR, amrex::max(m_nGrowAdv, m_nGrowMAC), MFInfo(), *m_factory[lev]);
      m_extSource[lev]->setVal(0.);
    }
    //----------------------------------------------------------------
@@ -182,19 +181,9 @@ void PeleLM::Advance(int is_initIter) {
       averageDownnE(AmrNewTime);
 #endif
       fillPatchState(AmrNewTime);
-      // Reset external sources to zero
-      for (int lev = 0; lev <= finest_level; ++lev) {
-         m_extSource[lev]->setVal(0.);
-      }
 
-#ifdef PELELM_USE_SPRAY
-      if (!is_initIter) {
-         sprayMK(m_cur_time + m_dt, m_dt);
-      }
-#endif
 #ifdef PELELM_USE_SOOT
       if (do_soot_solve) {
-         computeSootSource(AmrNewTime, m_dt);
          clipSootMoments();
       }
 #endif
@@ -282,11 +271,11 @@ void PeleLM::oneSDC(int sdcIter,
       averageDownnE(AmrNewTime);
 #endif
       fillPatchState(AmrNewTime);
-      
+
       calcDiffusivity(AmrNewTime);
       computeDifferentialDiffusionTerms(AmrNewTime,diffData);
       if (m_has_divu) {
-         int is_initialization = 0;                   // Not here 
+         int is_initialization = 0;                   // Not here
          int computeDiffusionTerm = 0;                // Nope, we just did that
          int do_avgDown = 1;                          // Always
          calcDivU(is_initialization,computeDiffusionTerm,do_avgDown,AmrNewTime,diffData);

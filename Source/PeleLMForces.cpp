@@ -51,7 +51,7 @@ void PeleLM::getVelForces(const TimeStamp &a_time,
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
    for (MFIter mfi(*a_velForce,TilingIfNotGPU()); mfi.isValid(); ++mfi)
-   {    
+   {
       const auto& bx          = mfi.tilebox();
       FArrayBox DummyFab(bx,1);
       const auto& vel_arr     = ldata_p->state.const_array(mfi,VELX);
@@ -78,20 +78,20 @@ void PeleLM::getVelForces(const TimeStamp &a_time,
       if ( add_gradP || has_divTau ) {
          const auto& gp_arr     = (add_gradP)  ? ldataGP_p->gp.const_array(mfi) : DummyFab.array();
          const auto& divTau_arr = (has_divTau) ? a_divTau->const_array(mfi)   : DummyFab.array();
-         amrex::ParallelFor(bx, [incomp_rho_inv, is_incomp, add_gradP, has_divTau, rho_arr, 
+         amrex::ParallelFor(bx, [incomp_rho_inv, is_incomp, add_gradP, has_divTau, rho_arr,
                                  gp_arr, divTau_arr, force_arr]
          AMREX_GPU_DEVICE(int i, int j, int k) noexcept
          {
             if ( is_incomp ) {
                for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
-                  if (add_gradP) force_arr(i,j,k,idim) -= gp_arr(i,j,k,idim);   
-                  if (has_divTau) force_arr(i,j,k,idim) += divTau_arr(i,j,k,idim);   
+                  if (add_gradP) force_arr(i,j,k,idim) -= gp_arr(i,j,k,idim);
+                  if (has_divTau) force_arr(i,j,k,idim) += divTau_arr(i,j,k,idim);
                   force_arr(i,j,k,idim) *= incomp_rho_inv;
                }
             } else {
                for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
-                  if (add_gradP) force_arr(i,j,k,idim) -= gp_arr(i,j,k,idim);   
-                  if (has_divTau) force_arr(i,j,k,idim) += divTau_arr(i,j,k,idim);   
+                  if (add_gradP) force_arr(i,j,k,idim) -= gp_arr(i,j,k,idim);
+                  if (has_divTau) force_arr(i,j,k,idim) += divTau_arr(i,j,k,idim);
                   force_arr(i,j,k,idim) /= rho_arr(i,j,k);
                }
             }
@@ -138,8 +138,8 @@ void PeleLM::getVelForces(int lev,
    amrex::ParallelFor(bx, [=,grav=m_gravity, gp0=m_background_gp]
    AMREX_GPU_DEVICE(int i, int j, int k) noexcept
    {
-      makeVelForce(i,j,k, is_incomp, rho_incomp, 
+      makeVelForce(i,j,k, is_incomp, rho_incomp,
                    pseudo_gravity, a_time, grav, gp0, dV_control, dx,
                    vel, rho, rhoY, rhoh, temp, extMom, extRho, force);
-   });  
+   });
 }

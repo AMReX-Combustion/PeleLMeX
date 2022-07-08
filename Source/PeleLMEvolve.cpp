@@ -10,7 +10,7 @@ void PeleLM::Evolve() {
 
    int plt_justDidIt = 0;
    int chk_justDidIt = 0;
-   
+
    while(!do_not_evolve) {
 
       plt_justDidIt = 0;
@@ -31,14 +31,20 @@ void PeleLM::Evolve() {
       }
 #ifdef PELELM_USE_SPRAY
       // Inject and redistribute spray particles
-      if (do_spray_particles) {
-        sprayInjectRedist(regridded);
+      if (do_spray_particles && regridded) {
+        sprayPostRegrid();
       }
 #endif
       int is_init = 0;
       Advance(is_init);
       m_nstep++;
       m_cur_time += m_dt;
+
+#ifdef PELELM_USE_SPRAY
+      if (do_spray_particles) {
+        sprayInjectRedist();
+      }
+#endif
 
       // Temporals
       if (doTemporalsNow()) {
@@ -87,10 +93,10 @@ PeleLM::writePlotNow()
 
    if ( m_plot_int > 0 && (m_nstep % m_plot_int == 0) ) {
       write_now = true;
-   
+
    } else if ( m_plot_per_exact > 0.0 && (std::abs(std::remainder(m_cur_time, m_plot_per_exact)) < 1.e-12) ) {
       write_now = true;
- 
+
    } else if (m_plot_per_approx > 0.0) {
       // Check to see if we've crossed a plot_per interval by comparing
       // the number of intervals that have elapsed for both the current

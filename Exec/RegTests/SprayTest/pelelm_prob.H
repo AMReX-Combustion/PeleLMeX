@@ -17,17 +17,10 @@ void pelelm_initdata(int i, int j, int k,
                      int /*is_incompressible*/,
                      amrex::Array4<amrex::Real> const& state,
                      amrex::Array4<amrex::Real> const& /*aux*/,
-                     amrex::GeometryData const& geomdata,
+                     amrex::GeometryData const& /*geomdata*/,
                      ProbParm const& prob_parm,
                      pele::physics::PMF::PmfData::DataContainer const * /*pmf_data*/)
 {
-    const amrex::Real* prob_lo = geomdata.ProbLo();
-    const amrex::Real* prob_hi = geomdata.ProbHi();
-    const amrex::Real* dx      = geomdata.CellSize();
-
-    AMREX_D_TERM(const amrex::Real x = prob_lo[0] + (i+0.5)*dx[0];,
-                 const amrex::Real y = prob_lo[1] + (j+0.5)*dx[1];,
-                 const amrex::Real z = prob_lo[2] + (k+0.5)*dx[2];);
 
     auto eos = pele::physics::PhysicsType::eos();
     amrex::Real massfrac[NUM_SPECIES] = {0.0};
@@ -68,17 +61,17 @@ bcnormal(
   const amrex::Real* /*x[AMREX_SPACEDIM]*/,
   const int /*m_nAux*/,
   amrex::Real s_ext[NVAR],
-  const int idir,
-  const int sgn,
+  const int /*idir*/,
+  const int /*sgn*/,
   const amrex::Real /*time*/,
-  amrex::GeometryData const& geomdata,
+  amrex::GeometryData const& /*geomdata*/,
   ProbParm const& prob_parm,
   pele::physics::PMF::PmfData::DataContainer const* /*pmf_data*/)
 {
   AMREX_D_TERM(s_ext[VELX] = prob_parm.vel;, s_ext[VELY] = 0.;
                , s_ext[VELZ] = 0.;);
   amrex::GpuArray<amrex::Real, NUM_SPECIES> massfrac = {{0.0}};
-    massfrac[N2_ID] = prob_parm.Y_N2;
+  massfrac[N2_ID] = prob_parm.Y_N2;
   massfrac[O2_ID] = prob_parm.Y_O2;
   s_ext[TEMP] = prob_parm.T0;
   amrex::Real rho_cgs, P_cgs;

@@ -21,12 +21,12 @@ amr.ref_ratio = 2 2 2
 
 amr.blocking_factor = 32               # block factor in grid generation (min box size)
 amr.max_grid_size   = 32               # max box size
-amr.initial_grid_file = two_d_gridfiles/gridfile_32
+amr.initial_grid_file = two_d_gridfiles/gridfile_32_1
 amr.regrid_file = two_d_gridfiles/gridfile_32_2
 
 # amr.blocking_factor = 64               # block factor in grid generation (min box size)
 # amr.max_grid_size   = 64               # max box size
-# amr.initial_grid_file = two_d_gridfiles/gridfile_64
+# amr.initial_grid_file = two_d_gridfiles/gridfile_64_1
 # amr.regrid_file = two_d_gridfiles/gridfile_64_2
 
 #--------------------------- Problem -------------------------------
@@ -48,8 +48,7 @@ peleLM.sdc_iterMax = 1
 peleLM.floor_species = 0
 
 peleLM.do_temporals = 0
-peleLM.temporal_int = 2
-peleLM.mass_balance = 1
+peleLM.do_mass_balance = 0
 peleLM.num_init_iter = 0
 
 amr.plot_int = 100
