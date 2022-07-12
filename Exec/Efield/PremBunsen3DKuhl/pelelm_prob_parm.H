@@ -19,8 +19,10 @@ struct ProbParm
    int phi              = 1;
 #ifdef PELE_USE_EFIELD
    amrex::Real electrode_radius = 0.0085;
+   amrex::Real electrode_width = 0.0005;
    amrex::Real electrode_phiV = 6000.0;
    amrex::Real burner_phiV = 0.0;
+   amrex::Real burner_Rext = 0.0;
 #endif
 };
 #endif

@@ -182,10 +182,10 @@ bcnormal(
 #ifdef PELE_USE_EFIELD
    if (idir == 2 && sgn == 1) {         // Burner side
       amrex::Real dampWidth = 0.0005;
-      amrex::Real lipFunction = 0.5 * (std::tanh((rad_xy-prob_parm.r_int)/dampWidth) - std::tanh((rad_xy-prob_parm.r_ext)/dampWidth));
+      amrex::Real lipFunction = 0.5 * (std::tanh((rad_xy-prob_parm.r_int)/dampWidth) - std::tanh((rad_xy-prob_parm.burner_Rext)/dampWidth));
       s_ext[PHIV] = 0.01*prob_parm.burner_phiV + lipFunction * prob_parm.burner_phiV;
    } else if (idir == 2 && sgn == -1) {   // electrode side
-      amrex::Real dampWidth = 0.001;
+      amrex::Real dampWidth = prob_parm.electrode_width;
       amrex::Real lipFunction = 0.5 * (std::tanh((rad_xy - (prob_parm.electrode_radius - 0.0025))/dampWidth)
                                      - std::tanh((rad_xy - (prob_parm.electrode_radius + 0.0025))/dampWidth));
       s_ext[PHIV] = 0.01*prob_parm.electrode_phiV + lipFunction * prob_parm.electrode_phiV;
