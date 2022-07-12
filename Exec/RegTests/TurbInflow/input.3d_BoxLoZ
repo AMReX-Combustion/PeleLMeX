@@ -29,12 +29,15 @@ prob.P_mean = 101325.0
 prob.flowDir = 2
 prob.flowMag = 5
 
-turbinflow.turb_file = TurbFileHIT/TurbTEST
-turbinflow.turb_scale_loc = 633.151
-turbinflow.turb_scale_vel = 0.5
-turbinflow.turb_center = 0.005 0.005
-turbinflow.turb_conv_vel = 5.
-turbinflow.turb_nplane = 32
+turbinflows = lowZ
+turbinflow.lowZ.turb_file      = TurbFileHIT/TurbTEST
+turbinflow.lowZ.dir            = 2
+turbinflow.lowZ.side           = low
+turbinflow.lowZ.turb_scale_loc = 633.151
+turbinflow.lowZ.turb_scale_vel = 0.5
+turbinflow.lowZ.turb_center    = 0.005 0.005
+turbinflow.lowZ.turb_conv_vel  = 5.
+turbinflow.lowZ.turb_nplane    = 32
 
 #------------  INPUTS TO CONSTANT TRANSPORT -----------------
 transport.const_viscosity        = 0.0001 
@@ -53,8 +56,7 @@ peleLM.num_divu_iter = 1
 peleLM.num_init_iter = 3
 
 peleLM.do_temporals = 1
-peleLM.temporal_int = 2
-peleLM.mass_balance = 1
+peleLM.do_mass_balance = 1
 
 amr.plot_int = 10
 amr.max_step = 300

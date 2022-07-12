@@ -41,8 +41,7 @@ peleLM.num_divu_iter = 1
 peleLM.num_init_iter = 1
 
 peleLM.do_temporals = 1
-peleLM.temporal_int = 2
-peleLM.mass_balance = 1
+peleLM.do_mass_balance = 1
 
 #amr.restart = chk00700
 amr.check_int = 20

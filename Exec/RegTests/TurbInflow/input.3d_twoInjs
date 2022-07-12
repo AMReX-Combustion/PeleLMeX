@@ -1,0 +1,90 @@
+#----------------------DOMAIN DEFINITION------------------------
+geometry.is_periodic = 1 0 0              # For each dir, 0: non-perio, 1: periodic
+geometry.coord_sys   = 0                  # 0 => cart, 1 => RZ
+geometry.prob_lo     = 0.0 0.0 0.0        # x_lo y_lo (z_lo)
+geometry.prob_hi     = 0.01 0.01 0.01  # x_hi y_hi (z_hi)
+
+# >>>>>>>>>>>>>  BC FLAGS <<<<<<<<<<<<<<<<
+# Interior, Inflow, Outflow, Symmetry,
+# SlipWallAdiab, NoSlipWallAdiab, SlipWallIsotherm, NoSlipWallIsotherm
+peleLM.lo_bc = Interior Inflow Outflow
+peleLM.hi_bc = Interior Inflow Outflow
+
+
+#-------------------------AMR CONTROL----------------------------
+amr.n_cell          = 64 64 64         # Level 0 number of cells in each direction   
+amr.v               = 1                # AMR verbose
+amr.max_level       = 1                # maximum level number allowed
+amr.ref_ratio       = 2 2 2 2          # refinement ratio
+amr.regrid_int      = 2                # how often to regrid
+amr.n_error_buf     = 1 1 2 2          # number of buffer cells in error est
+amr.grid_eff        = 0.7              # what constitutes an efficient grid
+amr.blocking_factor = 16               # block factor in grid generation (min box size)
+amr.max_grid_size   = 64               # max box size
+
+
+#--------------------------- Problem -------------------------------
+prob.T_mean = 298.0
+prob.P_mean = 101325.0
+prob.flowDir = 1
+prob.flowMag = 5
+prob.bothSides = 1
+
+turbinflows=low high
+
+turbinflow.low.turb_file      = TurbFileHIT/TurbTEST
+turbinflow.low.dir            = 1
+turbinflow.low.side           = "low"
+turbinflow.low.turb_scale_loc = 633.151
+turbinflow.low.turb_scale_vel = 1.0
+turbinflow.low.turb_center    = 0.005 0.005
+turbinflow.low.turb_conv_vel  = 5.
+turbinflow.low.turb_nplane    = 32
+turbinflow.low.time_offset    = 0.0
+
+turbinflow.high.turb_file      = TurbFileHIT/TurbTEST
+turbinflow.high.dir            = 1
+turbinflow.high.side           = "high"
+turbinflow.high.turb_scale_loc = 633.151
+turbinflow.high.turb_scale_vel = 1.0
+turbinflow.high.turb_center    = 0.005 0.005
+turbinflow.high.turb_conv_vel  = 5.
+turbinflow.high.turb_nplane    = 32
+turbinflow.high.time_offset    = 0.0006
+
+#------------  INPUTS TO CONSTANT TRANSPORT -----------------
+transport.const_viscosity        = 0.0001 
+transport.const_bulk_viscosity   = 0.0 
+transport.const_conductivity     = 0.0 
+transport.const_diffusivity      = 0.0001
+
+#-------------------------PeleLM CONTROL----------------------------
+peleLM.v = 1
+peleLM.incompressible = 0
+peleLM.rho = 1.17
+peleLM.mu = 0.0
+peleLM.sdc_iterMax = 1
+peleLM.floor_species = 0
+peleLM.num_divu_iter = 1
+peleLM.num_init_iter = 3
+
+peleLM.do_temporals = 1
+peleLM.do_mass_balance = 1
+
+amr.plot_int = 10
+amr.max_step = 100
+amr.dt_shrink = 0.1
+amr.stop_time = 0.02
+amr.cfl = 0.5
+amr.derive_plot_vars = avg_pressure mag_vort mass_fractions
+
+#--------------------REFINEMENT CONTROL------------------------
+amr.refinement_indicators = O2
+amr.O2.max_level     = 1
+amr.O2.value_greater = 0.4
+amr.O2.field_name    = Y(O2)
+
+fabarray.mfiter_tile_size = 1024 1024 1024
+amrex.fpe_trap_invalid = 1
+amrex.fpe_trap_zero = 1
+amrex.fpe_trap_overflow = 1

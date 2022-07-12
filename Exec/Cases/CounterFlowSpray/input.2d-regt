@@ -1,0 +1,141 @@
+#----------------------DOMAIN DEFINITION------------------------
+geometry.is_periodic = 0 0               # For each dir, 0: non-perio, 1: periodic
+geometry.coord_sys   = 0                  # 0 => cart, 1 => RZ
+geometry.prob_lo     =  -0.01 -0.01 0.0        # x_lo y_lo (z_lo)
+geometry.prob_hi     =   0.01  0.01 0.016        # x_hi y_hi (z_hi)
+
+# >>>>>>>>>>>>>  BC FLAGS <<<<<<<<<<<<<<<<
+# Interior, Inflow, Outflow, Symmetry,
+# SlipWallAdiab, NoSlipWallAdiab, SlipWallIsotherm, NoSlipWallIsotherm
+peleLM.lo_bc = Inflow Outflow
+peleLM.hi_bc = Inflow Outflow
+
+
+#-------------------------AMR CONTROL----------------------------
+amr.n_cell          = 128 128 32      # Level 0 number of cells in each direction   
+amr.v               = 1                # AMR verbose
+amr.max_level       = 1                # maximum level number allowed
+amr.ref_ratio       = 2 2 2 2          # refinement ratio
+amr.regrid_int      = 5                # how often to regrid
+amr.n_error_buf     = 2 2 2 2          # number of buffer cells in error est
+amr.grid_eff        = 0.7              # what constitutes an efficient grid
+amr.blocking_factor = 16               # block factor in grid generation (min box size)
+amr.max_grid_size   = 64               # max box size
+
+
+#--------------------------- Problem -------------------------------
+prob.P_mean = 101325.0
+prob.T_ox   = 298.0
+prob.T_fuel = 298.0
+prob.massflow = 2.0
+prob.jet_radius = 0.005
+prob.inert_radius = 0.0075
+prob.inert_velocity = 1.5
+prob.pertmag = 0.000
+prob.do_ignition = 1
+prob.ignition_SphT = 2000.0
+prob.ignition_SphRad = 0.006
+prob.mass_flow_rate = 0.00098
+prob.jet_vel = 2.0
+prob.part_mean_dia =  0.000045
+prob.part_stdev_dia = 0.000005
+prob.part_temp = 300.0
+
+#--------------------SPRAY PARTICLE DATA-----------------------
+peleLM.do_spray_particles = 1
+particles.v = 4
+particles.plot_src = 1
+particles.mom_transfer = 1
+particles.mass_transfer = 1
+particles.init_function = 1 # Sprays are initialized using SprayParticleInitInsert.cpp
+#particles.init_file = spray00500.p3d
+particles.write_spray_ascii_files = 1
+particles.parcel_size = 2. # Number of particles per parcel
+particles.fuel_species = NXC7H16
+# Properties for liquid decane
+particles.fuel_crit_temp = 540. # K
+particles.fuel_boil_temp = 371.6 # K
+particles.fuel_ref_temp = 298.15
+particles.fuel_latent = 3.69E5
+particles.fuel_cp = 2.2483E3 # Cp at 298
+#particles.fuel_latent = 3.0294e9
+#particles.fuel_cp = 2.5939e7 # Cp at 298 K
+particles.fuel_rho = 681.43
+# Coefficients for saturation pressure using Antoine equation
+# These are from the NIST website
+# Last coefficient converts units, in this case bar, to Pa
+particles.NXC7H16_psat = 4.02832 1268.636 -56.199 1.E5
+
+particles.use_splash_model = false
+
+#-------------------------PeleLM CONTROL----------------------------
+peleLM.v = 3
+peleLM.incompressible = 0
+peleLM.rho = 1.17
+peleLM.mu = 0.0
+peleLM.use_wbar = 1
+peleLM.sdc_iterMax = 2
+peleLM.floor_species = 1
+peleLM.deltaT_verbose = 0
+
+#amr.restart = chk00830
+#amr.regrid_on_restart = 1
+amr.check_int = 50
+amr.plot_int = 20
+amr.max_step = 2000
+amr.dt_shrink = 0.01
+amr.init_dt = 1.0e-6
+amr.stop_time = 1.1
+#amr.stop_time = 1.00
+amr.cfl = 0.5
+amr.derive_plot_vars = avg_pressure mag_vort mass_fractions mixture_fraction
+
+peleLM.fuel_name = NXC7H16
+peleLM.mixtureFraction.format = Cantera
+peleLM.mixtureFraction.type   = mass
+peleLM.mixtureFraction.oxidTank = O2:0.233 N2:0.767
+peleLM.mixtureFraction.fuelTank = NXC7H16:1.0
+
+peleLM.chem_integrator = "ReactorCvode"
+peleLM.use_typ_vals_chem = 1          # Use species/temp typical values in CVODE
+ode.rtol = 1.0e-6                     # Relative tolerance of the chemical solve
+ode.atol = 1.0e-5                     # Absolute tolerance factor applied on typical values
+cvode.solve_type = denseAJ_direct               # CVODE Linear solve type (for Newton direction) 
+cvode.max_order  = 4                  # CVODE max BDF order. 
+
+nodal_proj.verbose = 2
+mac_proj.verbose = 2
+mac_proj.rtol = 1.0e-10
+nodal_proj.rtol = 1.0e-10
+#diffusion.verbose = 2
+
+peleLM.do_temporals = 1
+peleLM.do_mass_balance = 1
+
+#--------------------REFINEMENT CONTROL------------------------
+amr.refinement_indicators = temp
+amr.temp.max_level     = 2
+amr.temp.value_greater = 1500
+amr.temp.field_name    = temp
+
+#amr.refinement_indicators = magVort
+#amr.magVort.max_level     = 1
+#amr.magVort.value_greater = 500.0
+#amr.magVort.field_name    = mag_vort
+
+#amr.refinement_indicators = yH_Crse yH_Fine CH2O
+#amr.yH_Crse.max_level     = 1
+#amr.yH_Crse.value_greater = 1.50e-4
+#amr.yH_Crse.field_name    = Y(H)
+#
+#amr.yH_Fine.max_level     = 3
+#amr.yH_Fine.value_greater = 2.00e-4
+#amr.yH_Fine.field_name    = Y(H)
+#
+#amr.CH2O.max_level     = 4
+#amr.CH2O.value_greater = 1.00e-3
+#amr.CH2O.field_name    = Y(CH2O)
+
+#amrex.fpe_trap_invalid = 1
+#amrex.fpe_trap_zero = 1
+#amrex.fpe_trap_overflow = 1

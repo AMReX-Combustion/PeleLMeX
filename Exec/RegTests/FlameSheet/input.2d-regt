@@ -39,8 +39,9 @@ peleLM.sdc_iterMax = 2
 peleLM.floor_species = 0
 
 peleLM.do_temporals = 1
-peleLM.temporal_int = 2
-peleLM.mass_balance = 1
+peleLM.temporal_int = 10
+peleLM.do_extremas = 1
+peleLM.do_mass_balance = 1
 
 #amr.restart = chk00005
 #amr.check_int = 2000
@@ -50,7 +51,18 @@ amr.dt_shrink = 0.0001
 amr.stop_time = 0.001
 #amr.stop_time = 1.00
 amr.cfl = 0.5
-amr.derive_plot_vars = avg_pressure mag_vort mass_fractions
+amr.derive_plot_vars = avg_pressure mag_vort mass_fractions mixture_fraction progress_variable
+
+# ------------------- INPUTS DERIVED DIAGS ------------------
+peleLM.fuel_name = CH4
+peleLM.mixtureFraction.format = Cantera
+peleLM.mixtureFraction.type   = mass
+peleLM.mixtureFraction.oxidTank = O2:0.233 N2:0.767
+peleLM.mixtureFraction.fuelTank = H2:0.5 CH4:0.5
+peleLM.progressVariable.format = Cantera
+peleLM.progressVariable.weights = CO:1.0 CO2:1.0
+peleLM.progressVariable.coldState = CO:0.0 CO2:0.0
+peleLM.progressVariable.hotState = CO:0.000002 CO2:0.0666
 
 # --------------- INPUTS TO CHEMISTRY REACTOR ---------------
 peleLM.chem_integrator = "ReactorCvode"

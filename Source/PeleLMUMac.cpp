@@ -10,7 +10,7 @@ void PeleLM::predictVelocity(std::unique_ptr<AdvanceAdvData>  &advData)
 {
    BL_PROFILE("PeleLM::predictVelocity()");
 
-   // set umac boundaries to zero 
+   // set umac boundaries to zero
    if ( advData->umac[0][0].nGrow() > 0 ) {
       for (int lev=0; lev <= finest_level; ++lev)
       {
@@ -40,7 +40,7 @@ void PeleLM::predictVelocity(std::unique_ptr<AdvanceAdvData>  &advData)
 
    //----------------------------------------------------------------
    // Predict face velocities at t^{n+1/2} with Godunov
-   auto bcRecVel = fetchBCRecArray(VELX,AMREX_SPACEDIM); 
+   auto bcRecVel = fetchBCRecArray(VELX,AMREX_SPACEDIM);
    auto bcRecVel_d = convertToDeviceVector(bcRecVel);
    for (int lev = 0; lev <= finest_level; ++lev) {
 
@@ -134,7 +134,7 @@ void PeleLM::macProject(const TimeStamp &a_time,
    for (int lev = 0; lev <= finest_level; ++lev)
    {
       if (m_incompressible) {
-         Real rhoInv = 1.0/m_rho;
+         Real rhoInv = m_dt/(2.0*m_rho);
          for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
             rho_inv[lev][idim].define(amrex::convert(grids[lev],IntVect::TheDimensionVector(idim)),
                                       dmap[lev], 1, 0, MFInfo(), Factory(lev));
@@ -171,6 +171,7 @@ void PeleLM::macProject(const TimeStamp &a_time,
    }
 
    // set MAC velocity and projection RHS
+   macproj->getLinOp().setMaxOrder(m_mac_max_order);
    macproj->setUMAC(GetVecOfArrOfPtrs(advData->umac));
    if (has_divu) macproj->setDivU(GetVecOfConstPtrs(a_divu));
 
@@ -215,7 +216,7 @@ PeleLM::create_constrained_umac_grown(int a_lev, int a_nGrow,
 
     // Divergence preserving interp
     Interpolater* mapper = &face_divfree_interp;
-    
+
     // Set BCRec for Umac
     Vector<BCRec> bcrec(1);
     for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
@@ -225,16 +226,16 @@ PeleLM::create_constrained_umac_grown(int a_lev, int a_nGrow,
          } else {
             bcrec[0].setLo(idim,BCType::foextrap);
             bcrec[0].setHi(idim,BCType::foextrap);
-         }    
-    }    
+         }
+    }
     Array<Vector<BCRec>,AMREX_SPACEDIM> bcrecArr = {AMREX_D_DECL(bcrec,bcrec,bcrec)};
-    
+
     PhysBCFunct<GpuBndryFuncFab<umacFill>> crse_bndry_func(*crse_geom, bcrec, umacFill{});
     Array<PhysBCFunct<GpuBndryFuncFab<umacFill>>,AMREX_SPACEDIM> cbndyFuncArr = {AMREX_D_DECL(crse_bndry_func,crse_bndry_func,crse_bndry_func)};
-    
+
     PhysBCFunct<GpuBndryFuncFab<umacFill>> fine_bndry_func(*fine_geom, bcrec, umacFill{});
     Array<PhysBCFunct<GpuBndryFuncFab<umacFill>>,AMREX_SPACEDIM> fbndyFuncArr = {AMREX_D_DECL(fine_bndry_func,fine_bndry_func,fine_bndry_func)};
-    
+
     // Use piecewise constant interpolation in time, so create dummy variable for time
     Real dummy = 0.;
     FillPatchTwoLevels(u_mac_fine, IntVect(a_nGrow), dummy,
@@ -269,6 +270,17 @@ PeleLM::create_constrained_umac_grown(int a_lev, int a_nGrow,
     const GpuArray<Real,AMREX_SPACEDIM> dxinv = fine_geom->InvCellSizeArray();
     const GpuArray<Real,AMREX_SPACEDIM> dx = fine_geom->CellSizeArray();
 
+    // Get areas
+#if ( AMREX_SPACEDIM == 2 )
+    MultiFab mf_ax, mf_ay, volume;
+    if (fine_geom->IsRZ()) {
+        fine_geom->GetFaceArea(mf_ax, grids[a_lev], dmap[a_lev], 0, 1);
+        fine_geom->GetFaceArea(mf_ay, grids[a_lev], dmap[a_lev], 1, 1);
+        volume.define(grids[a_lev], dmap[a_lev], 1, 1);
+        fine_geom->GetVolume(volume);
+    }
+#endif
+
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
@@ -281,38 +293,79 @@ PeleLM::create_constrained_umac_grown(int a_lev, int a_nGrow,
                                                                             u_mac_fine[1]->array(mfi),
                                                                             u_mac_fine[2]->array(mfi))};
         for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
-            // Grow the box in the direction of the faces we will correct
-            const Box& gbx = mfi.growntilebox(IntVect::TheDimensionVector(idim));
-            amrex::ParallelFor(gbx, [idim, bx, divuarr, maskarr, crsebnd, umac_arr, dx, dxinv, has_divu]
-            AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+#if AMREX_SPACEDIM == 2
+            if (fine_geom->IsRZ()) {
+               Array<Array4<const Real>, AMREX_SPACEDIM> const &areas_arr = {mf_ax.const_array(mfi),
+                                                                             mf_ay.const_array(mfi)};
+               auto const &vol_arr = volume.const_array(mfi);
+               // Grow the box in the direction of the faces we will correct
+               const Box& gbx = mfi.growntilebox(IntVect::TheDimensionVector(idim));
+               amrex::ParallelFor(gbx, [=]
+               AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+               {
+                   // Only works on ghost cells flagged as C-F boundaries
+                   if ( !bx.contains(i,j,k) && (maskarr(i,j,k) == crsebnd) ) {
+                       // Get the divU components from the transverse velocities (!= idim)
+                       GpuArray<int,3> idx = {AMREX_D_DECL(i,j,k)};
+                       Real transverseTerm = 0.0;
+                       for (int trdim = 0; trdim < AMREX_SPACEDIM; trdim++) {
+                           if (trdim != idim) {
+                               GpuArray<int,3> idxp1 = {AMREX_D_DECL(i,j,k)};
+                               idxp1[trdim]++;
+                               transverseTerm +=  (  umac_arr[trdim](idxp1[0], idxp1[1], idxp1[2]) * areas_arr[trdim](idxp1[0], idxp1[1], idxp1[2])
+                                                   - umac_arr[trdim](idx[0], idx[1], idx[2]) * areas_arr[trdim](idx[0], idx[1], idx[2]) ) / vol_arr(i,j,k);
+                           }
+                       }
+                       // Correct the outer umac face
+                       GpuArray<int,3> idxp1 = {AMREX_D_DECL(i,j,k)};
+                       idxp1[idim]++;
+                       if ( idx[idim] < bx.smallEnd(idim) ) {
+                           umac_arr[idim](i,j,k) =  umac_arr[idim](idxp1[0], idxp1[1], idxp1[2]) * areas_arr[idim](idxp1[0], idxp1[1], idxp1[2]) / areas_arr[idim](i,j,k)
+                                                  + vol_arr(i,j,k) / areas_arr[idim](i,j,k)  * transverseTerm;
+                           if (has_divu) umac_arr[idim](i,j,k) -= vol_arr(i,j,k) / areas_arr[idim](i,j,k) * divuarr(i,j,k);
+                       } else if (idx[idim] > bx.bigEnd(idim)) {
+                           umac_arr[idim](idxp1[0], idxp1[1], idxp1[2]) =  umac_arr[idim](i,j,k) * areas_arr[idim](i,j,k) / areas_arr[idim](idxp1[0], idxp1[1], idxp1[2])
+                                                                         - vol_arr(i,j,k) / areas_arr[idim](idxp1[0], idxp1[1], idxp1[2]) * transverseTerm;
+                           if (has_divu) umac_arr[idim](idxp1[0], idxp1[1], idxp1[2]) += vol_arr(i,j,k) / areas_arr[idim](idxp1[0], idxp1[1], idxp1[2]) * divuarr(i,j,k);
+                       }
+                   }
+               });
+            } else
+#endif
             {
-                // Only works on ghost cells flagged as C-F boundaries
-                if ( !bx.contains(i,j,k) && (maskarr(i,j,k) == crsebnd) ) {
-                    // Get the divU components from the transverse velocities (!= idim)
-                    GpuArray<int,3> idx = {AMREX_D_DECL(i,j,k)};
-                    Real transverseTerm = 0.0;
-                    for (int trdim = 0; trdim < AMREX_SPACEDIM; trdim++) {
-                        if (trdim != idim) {
-                            GpuArray<int,3> idxp1 = {AMREX_D_DECL(i,j,k)};
-                            idxp1[trdim]++;
-                            transverseTerm +=  (  umac_arr[trdim](idxp1[0], idxp1[1], idxp1[2])
-                                                - umac_arr[trdim](idx[0], idx[1], idx[2]) ) * dxinv[trdim];
-                        }
-                    }
-                    // Correct the outer umac face
-                    GpuArray<int,3> idxp1 = {AMREX_D_DECL(i,j,k)};
-                    idxp1[idim]++;
-                    if ( idx[idim] < bx.smallEnd(idim) ) {
-                        umac_arr[idim](i,j,k) =  umac_arr[idim](idxp1[0], idxp1[1], idxp1[2])
-                                               + dx[idim] * transverseTerm;
-                        if (has_divu) umac_arr[idim](i,j,k) -= dx[idim] * divuarr(i,j,k);
-                    } else if (idx[idim] > bx.bigEnd(idim)) {
-                        umac_arr[idim](idxp1[0], idxp1[1], idxp1[2]) =  umac_arr[idim](i,j,k)
-                                                                      - dx[idim] * transverseTerm;
-                        if (has_divu) umac_arr[idim](idxp1[0], idxp1[1], idxp1[2]) += dx[idim] * divuarr(i,j,k);
-                    }
-                }
-            });
+               // Grow the box in the direction of the faces we will correct
+               const Box& gbx = mfi.growntilebox(IntVect::TheDimensionVector(idim));
+               amrex::ParallelFor(gbx, [idim, bx, divuarr, maskarr, crsebnd, umac_arr, dx, dxinv, has_divu]
+               AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+               {
+                   // Only works on ghost cells flagged as C-F boundaries
+                   if ( !bx.contains(i,j,k) && (maskarr(i,j,k) == crsebnd) ) {
+                       // Get the divU components from the transverse velocities (!= idim)
+                       GpuArray<int,3> idx = {AMREX_D_DECL(i,j,k)};
+                       Real transverseTerm = 0.0;
+                       for (int trdim = 0; trdim < AMREX_SPACEDIM; trdim++) {
+                           if (trdim != idim) {
+                               GpuArray<int,3> idxp1 = {AMREX_D_DECL(i,j,k)};
+                               idxp1[trdim]++;
+                               transverseTerm +=  (  umac_arr[trdim](idxp1[0], idxp1[1], idxp1[2])
+                                                   - umac_arr[trdim](idx[0], idx[1], idx[2]) ) * dxinv[trdim];
+                           }
+                       }
+                       // Correct the outer umac face
+                       GpuArray<int,3> idxp1 = {AMREX_D_DECL(i,j,k)};
+                       idxp1[idim]++;
+                       if ( idx[idim] < bx.smallEnd(idim) ) {
+                           umac_arr[idim](i,j,k) =  umac_arr[idim](idxp1[0], idxp1[1], idxp1[2])
+                                                  + dx[idim] * transverseTerm;
+                           if (has_divu) umac_arr[idim](i,j,k) -= dx[idim] * divuarr(i,j,k);
+                       } else if (idx[idim] > bx.bigEnd(idim)) {
+                           umac_arr[idim](idxp1[0], idxp1[1], idxp1[2]) =  umac_arr[idim](i,j,k)
+                                                                         - dx[idim] * transverseTerm;
+                           if (has_divu) umac_arr[idim](idxp1[0], idxp1[1], idxp1[2]) += dx[idim] * divuarr(i,j,k);
+                       }
+                   }
+               });
+            }
         }
     }
 

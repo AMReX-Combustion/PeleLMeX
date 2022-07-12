@@ -61,7 +61,6 @@ void pelelm_initdata(int i, int j, int k,
           for (int n = 0; n < NUM_SPECIES; n++){
             massfrac[n] = pmf_vals[3 + n];
           }
-          //eos.X2Y(molefrac, massfrac);
        }
     } else {
        if ( std::abs((x-splitx)) < ( std::sqrt((y+0.0009) / 0.01))/100.0) {
@@ -76,13 +75,12 @@ void pelelm_initdata(int i, int j, int k,
           for (int n = 0; n < NUM_SPECIES; n++){
             massfrac[n] = pmf_vals[3 + n];
           }
-          //eos.X2Y(molefrac, massfrac);
        }
     }
 
     AMREX_D_TERM(state(i,j,k,VELX) = 0.0;,
-                 state(i,j,k,VELX) = 0.1;,
-                 state(i,j,k,VELX) = 0.0);
+                 state(i,j,k,VELY) = 0.1;,
+                 state(i,j,k,VELZ) = 0.0);
 
     amrex::Real P_cgs = prob_parm.P_mean * 10.0;
 

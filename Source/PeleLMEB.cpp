@@ -6,6 +6,7 @@
 #include <AMReX_EB2.H>
 #include <AMReX_EB2_IF.H>
 #include <hydro_redistribution.H>
+#include <AMReX_EBMFInterpolater.H>
 
 using namespace amrex;
 
@@ -13,7 +14,7 @@ void PeleLM::makeEBGeometry()
 {
     // TODO extend
     int max_coarsening_level = 100;
-    int req_coarsening_level = 0;
+    int req_coarsening_level = geom.size()-1;
 
     // Read the geometry type and act accordingly
     ParmParse ppeb2("eb2");
@@ -80,7 +81,7 @@ void PeleLM::redistributeAofS(int a_lev,
                 Elixir eli = tmpfab.elixir();
                 Array4<Real> scratch = tmpfab.array(0);
                 if (m_adv_redist_type == "FluxRedist")
-                {    
+                {
                     amrex::ParallelFor(Box(scratch),
                     [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
                     { scratch(i,j,k) = 1.;});   // TODO might want to test volfrac
@@ -152,7 +153,7 @@ void PeleLM::redistributeDiff(int a_lev,
                 Elixir eli = tmpfab.elixir();
                 Array4<Real> scratch = tmpfab.array(0);
                 if (m_diff_redist_type == "FluxRedist")
-                {    
+                {
                     amrex::ParallelFor(Box(scratch),
                     [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
                     { scratch(i,j,k) = 1.;});   // TODO might want to test volfrac
@@ -177,9 +178,9 @@ void PeleLM::initCoveredState()
     // TODO use typical values
     if ( m_incompressible ) {
         coveredState_h.resize(AMREX_SPACEDIM);
-        AMREX_D_TERM(coveredState_h[0] = 0.0;,
-                     coveredState_h[1] = 0.0;,
-                     coveredState_h[2] = 0.0;)
+        AMREX_D_TERM(coveredState_h[0] = typical_values[VELX+0];,
+                     coveredState_h[1] = typical_values[VELX+1];,
+                     coveredState_h[2] = typical_values[VELX+2];)
         coveredState_d.resize(AMREX_SPACEDIM);
 #ifdef AMREX_USE_GPU
         Gpu::htod_memcpy
@@ -189,24 +190,16 @@ void PeleLM::initCoveredState()
           (coveredState_d.data(),coveredState_h.data(), sizeof(Real)*AMREX_SPACEDIM);
     } else {
         coveredState_h.resize(NVAR);
-        AMREX_D_TERM(coveredState_h[0] = 0.0;,
-                     coveredState_h[1] = 0.0;,
-                     coveredState_h[2] = 0.0;)
-        coveredState_h[DENSITY] = 1.179;
-        int idO2 = O2_ID;
-        int idN2 = N2_ID;
+        AMREX_D_TERM(coveredState_h[0] = typical_values[VELX+0];,
+                     coveredState_h[1] = typical_values[VELX+1];,
+                     coveredState_h[2] = typical_values[VELX+2];)
+        coveredState_h[DENSITY] = typical_values[DENSITY];
         for (int n = 0; n < NUM_SPECIES; n++ ) {
-           if ( n == idO2 ) {
-              coveredState_h[FIRSTSPEC+n] = 0.233*1.179;
-           } else if ( n == idN2 ) {
-              coveredState_h[FIRSTSPEC+n] = 0.767*1.179;
-           } else {
-              coveredState_h[FIRSTSPEC+n] = 0.0;
-           }
+           coveredState_h[FIRSTSPEC+n] = typical_values[FIRSTSPEC+n];
         }
-        coveredState_h[RHOH] = -139.7;
-        coveredState_h[TEMP] = 300.0;
-        coveredState_h[RHORT] = 101325.0;
+        coveredState_h[RHOH] = typical_values[RHOH];
+        coveredState_h[TEMP] = typical_values[TEMP]-10.0;
+        coveredState_h[RHORT] = typical_values[RHORT];
 
         coveredState_d.resize(NVAR);
 #ifdef AMREX_USE_GPU
@@ -315,4 +308,128 @@ void PeleLM::initialRedistribution()
     // Initialize covered state
     setCoveredState(AmrNewTime);
 }
+
+void PeleLM::getEBDistance(int a_lev,
+                           MultiFab &a_signDistLev) {
+
+
+    if (a_lev == 0) {
+        MultiFab::Copy(a_signDistLev,*m_signedDist0,0,0,1,0);
+        return;
+    }
+
+    // A pair of MF to hold crse & fine dist data
+    Array<std::unique_ptr<MultiFab>,2> MFpair;
+
+    // Interpolate on successive levels up to a_lev
+    for (int lev = 1; lev <= a_lev; ++lev) {
+
+        // Use MF EB interp
+        auto& interpolater  = eb_mf_lincc_interp;
+
+        // Get signDist on coarsen fineBA
+        BoxArray coarsenBA(grids[lev].size());
+        for (int j = 0, N = coarsenBA.size(); j < N; ++j)
+        {
+            coarsenBA.set(j,interpolater.CoarseBox(grids[lev][j], refRatio(lev-1)));
+        }
+        MultiFab coarsenSignDist(coarsenBA,dmap[lev],1,0);
+        coarsenSignDist.setVal(0.0);
+        MultiFab *crseSignDist = (lev == 1) ? m_signedDist0.get()
+                                            : MFpair[0].get();
+        coarsenSignDist.ParallelCopy(*crseSignDist,0,0,1);
+
+        // Interpolate on current lev
+        MultiFab *currentSignDist;
+        if ( lev < a_lev ) {
+            MFpair[1].reset(new MultiFab(grids[lev],dmap[lev],1,0,MFInfo(),EBFactory(lev)));
+        }
+        currentSignDist = (lev == a_lev) ? &a_signDistLev
+                                         : MFpair[1].get();
+
+        interpolater.interp(coarsenSignDist, 0,
+                            *currentSignDist, 0,
+                            1, IntVect(0),
+                            Geom(lev-1), Geom(lev),
+                            Geom(lev).Domain(), refRatio(lev-1),
+                            {m_bcrec_force},0);
+
+        // Swap MFpair
+        if (lev < a_lev ) {
+            swap(MFpair[0],MFpair[1]);
+        }
+    }
+}
+
+void
+PeleLM::correct_vel_small_cells (Vector<MultiFab*> const& a_vel,
+                                 Vector<Array<MultiFab const*,AMREX_SPACEDIM> > const& a_umac)
+{
+    BL_PROFILE("PeleLM::correct_vel_small_cells");
+
+    for (int lev = 0; lev <= finest_level; lev++)
+    {
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+       for (MFIter mfi(*a_vel[lev],TilingIfNotGPU()); mfi.isValid(); ++mfi)
+       {
+          // Tilebox
+          const Box bx = mfi.tilebox();
+
+          EBCellFlagFab const& flags = EBFactory(lev).getMultiEBCellFlagFab()[mfi];
+
+          // Face-centered velocity components
+          AMREX_D_TERM(const auto& umac_fab = (a_umac[lev][0])->const_array(mfi);,
+                       const auto& vmac_fab = (a_umac[lev][1])->const_array(mfi);,
+                       const auto& wmac_fab = (a_umac[lev][2])->const_array(mfi););
+
+          if (flags.getType(amrex::grow(bx,0)) == FabType::covered )
+          {
+            // do nothing
+          }
+
+          // No cut cells in this FAB
+          else if (flags.getType(amrex::grow(bx,1)) == FabType::regular )
+          {
+            // do nothing
+          }
+
+          // Cut cells in this FAB
+          else
+          {
+             // Face-centered areas
+             AMREX_D_TERM(const auto& apx_fab   = EBFactory(lev).getAreaFrac()[0]->const_array(mfi);,
+                          const auto& apy_fab   = EBFactory(lev).getAreaFrac()[1]->const_array(mfi);,
+                          const auto& apz_fab   = EBFactory(lev).getAreaFrac()[2]->const_array(mfi););
+
+             const auto& vfrac_fab = EBFactory(lev).getVolFrac().const_array(mfi);
+
+             const auto& ccvel_fab = a_vel[lev]->array(mfi);
+
+             // This FAB has cut cells -- we define the centroid value in terms of the MAC velocities onfaces
+             amrex::ParallelFor(bx,
+               [vfrac_fab,AMREX_D_DECL(apx_fab,apy_fab,apz_fab),ccvel_fab,AMREX_D_DECL(umac_fab,vmac_fab,wmac_fab)]
+               AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+             {
+                 if (vfrac_fab(i,j,k) > 0.0 && vfrac_fab(i,j,k) < 5.e-3)
+                 {
+                    AMREX_D_TERM(Real u_avg = (apx_fab(i,j,k) * umac_fab(i,j,k) + apx_fab(i+1,j,k) * umac_fab(i+1,j,k))
+                                            / (apx_fab(i,j,k) + apx_fab(i+1,j,k));,
+                                 Real v_avg = (apy_fab(i,j,k) * vmac_fab(i,j,k) + apy_fab(i,j+1,k) * vmac_fab(i,j+1,k))
+                                            / (apy_fab(i,j,k) + apy_fab(i,j+1,k));,
+                                 Real w_avg = (apz_fab(i,j,k) * wmac_fab(i,j,k) + apz_fab(i,j,k+1) * wmac_fab(i,j,k+1))
+                                            / (apz_fab(i,j,k) + apz_fab(i,j,k+1)););
+
+                    AMREX_D_TERM(ccvel_fab(i,j,k,0) = u_avg;,
+                                 ccvel_fab(i,j,k,1) = v_avg;,
+                                 ccvel_fab(i,j,k,2) = w_avg;);
+
+                 }
+             });
+          }
+       }
+    }
+}
+
 #endif

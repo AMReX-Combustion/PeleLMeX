@@ -1,10 +1,16 @@
 #include <PeleLM.H>
 #include <PeleLMUtils.H>
+#include <AMReX_MemProfiler.H>
 
 using namespace amrex;
 
 void PeleLM::Advance(int is_initIter) {
    BL_PROFILE("PeleLM::Advance()");
+
+#ifdef AMREX_MEM_PROFILING
+   // Memory profiler if compiled
+   MemProfiler::report("STEP ["+std::to_string(m_nstep)+"]");
+#endif
 
    // Start timing current time step
    Real strt_time = ParallelDescriptor::second();
@@ -34,6 +40,12 @@ void PeleLM::Advance(int is_initIter) {
    // TIME
    // Compute time-step size
    m_dt = computeDt(is_initIter,AmrOldTime);
+#ifdef PELELM_USE_SPRAY
+   if (!is_initIter && do_spray_particles) {
+     // Create the state MF used for spray interpolation
+     setSprayState(m_dt);
+   }
+#endif
 
    // Update time vectors
    for(int lev = 0; lev <= finest_level; lev++)
@@ -47,6 +59,8 @@ void PeleLM::Advance(int is_initIter) {
       amrex::Print() << " STEP [" << m_nstep << "] - Time: " << m_cur_time << ", dt " << m_dt << "\n";
    }
 
+   checkMemory("Adv. start");
+
    //----------------------------------------------------------------
    // Data for the advance, only live for the duration of the advance
    std::unique_ptr<AdvanceDiffData> diffData;
@@ -54,6 +68,10 @@ void PeleLM::Advance(int is_initIter) {
    std::unique_ptr<AdvanceAdvData> advData;
    advData.reset(new AdvanceAdvData(finest_level, grids, dmap, m_factory, m_incompressible,
                                     m_nGrowAdv, m_nGrowMAC));
+
+   for (int lev = 0; lev <= finest_level; lev++) {
+     m_extSource[lev]->setVal(0.);
+   }
    //----------------------------------------------------------------
 
    //----------------------------------------------------------------
@@ -61,6 +79,14 @@ void PeleLM::Advance(int is_initIter) {
 
    // initiliaze temporals
    initTemporals();
+
+   // Compute velocity flux on boundary faces if doing closed chamber
+   if (m_closed_chamber) {
+      for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+         m_domainUmacFlux[2*idim] = 0.0;
+         m_domainUmacFlux[2*idim+1] = 0.0;
+      }
+   }
 
    // fillpatch the t^{n} data
    averageDownState(AmrOldTime);
@@ -80,6 +106,16 @@ void PeleLM::Advance(int is_initIter) {
    BL_PROFILE_VAR_STOP(PLM_SETUP);
    //----------------------------------------------------------------
 
+#ifdef PELELM_USE_SPRAY
+   if (!is_initIter) {
+     sprayMKD(m_cur_time, m_dt);
+   }
+#endif
+#ifdef PELELM_USE_SOOT
+   if (do_soot_solve) {
+     computeSootSource(AmrOldTime, m_dt);
+   }
+#endif
 
    if (! m_incompressible ) {
       floorSpecies(AmrOldTime);
@@ -130,6 +166,7 @@ void PeleLM::Advance(int is_initIter) {
          ParallelDescriptor::ReduceRealMax(MACEnd, ParallelDescriptor::IOProcessorNumber());
          amrex::Print() << "   - Advance()::MACProjection()  --> Time: " << MACEnd << "\n";
       }
+      checkMemory("MAC-Proj");
 
    } else {
 
@@ -141,6 +178,12 @@ void PeleLM::Advance(int is_initIter) {
       // Post SDC
       averageDownScalars(AmrNewTime);
       fillPatchState(AmrNewTime);
+
+#ifdef PELELM_USE_SOOT
+      if (do_soot_solve) {
+         clipSootMoments();
+      }
+#endif
       if (m_has_divu) {
          int is_initialization = 0;             // Not here
          int computeDiffusionTerm = 1;          // Yes, re-evaluate the diffusion term after the last chemistry solve
@@ -178,6 +221,7 @@ void PeleLM::Advance(int is_initIter) {
       ParallelDescriptor::ReduceRealMax(VelAdvEnd, ParallelDescriptor::IOProcessorNumber());
       amrex::Print() << "   - Advance()::VelocityAdvance  --> Time: " << VelAdvEnd << "\n";
    }
+   checkMemory("Nodal-Proj");
    BL_PROFILE_VAR_STOP(PLM_VEL);
    //----------------------------------------------------------------
 
@@ -221,11 +265,11 @@ void PeleLM::oneSDC(int sdcIter,
       // fillpatch the new state
       averageDownScalars(AmrNewTime);
       fillPatchState(AmrNewTime);
-      
+
       calcDiffusivity(AmrNewTime);
       computeDifferentialDiffusionTerms(AmrNewTime,diffData);
       if (m_has_divu) {
-         int is_initialization = 0;                   // Not here 
+         int is_initialization = 0;                   // Not here
          int computeDiffusionTerm = 0;                // Nope, we just did that
          int do_avgDown = 1;                          // Always
          calcDivU(is_initialization,computeDiffusionTerm,do_avgDown,AmrNewTime,diffData);
@@ -265,6 +309,7 @@ void PeleLM::oneSDC(int sdcIter,
       ParallelDescriptor::ReduceRealMax(MACEnd, ParallelDescriptor::IOProcessorNumber());
       amrex::Print() << "   - oneSDC()::MACProjection()   --> Time: " << MACEnd << "\n";
    }
+   checkMemory("MAC-Proj");
    BL_PROFILE_VAR_STOP(PLM_MAC);
    //----------------------------------------------------------------
 
@@ -276,6 +321,10 @@ void PeleLM::oneSDC(int sdcIter,
    if (m_verbose > 1) {
       ScalAdvStart = ParallelDescriptor::second();
    }
+#ifdef PELELM_USE_SOOT
+   // Compute and update passive advective terms
+   computePassiveAdvTerms(advData, FIRSTSOOT, NUMSOOTVAR);
+#endif
    // Get scalar advection SDC forcing
    getScalarAdvForce(advData,diffData);
 
@@ -291,6 +340,7 @@ void PeleLM::oneSDC(int sdcIter,
       ParallelDescriptor::ReduceRealMax(ScalAdvEnd, ParallelDescriptor::IOProcessorNumber());
       amrex::Print() << "   - oneSDC()::ScalarAdvection() --> Time: " << ScalAdvEnd << "\n";
    }
+   checkMemory("ScalAdv");
    BL_PROFILE_VAR_STOP(PLM_SADV);
    //----------------------------------------------------------------
 
@@ -312,6 +362,7 @@ void PeleLM::oneSDC(int sdcIter,
       ParallelDescriptor::ReduceRealMax(ScalDiffEnd, ParallelDescriptor::IOProcessorNumber());
       amrex::Print() << "   - oneSDC()::ScalarDiffusion() --> Time: " << ScalDiffEnd << "\n";
    }
+   checkMemory("ScalDiff");
    BL_PROFILE_VAR_STOP(PLM_DIFF);
    //----------------------------------------------------------------
 
@@ -340,6 +391,7 @@ void PeleLM::oneSDC(int sdcIter,
       ParallelDescriptor::ReduceRealMax(ScalReacEnd, ParallelDescriptor::IOProcessorNumber());
       amrex::Print() << "   - oneSDC()::ScalarReaction()  --> Time: " << ScalReacEnd << "\n";
    }
+   checkMemory("ScalReact");
    BL_PROFILE_VAR_STOP(PLM_REAC);
    //----------------------------------------------------------------
 

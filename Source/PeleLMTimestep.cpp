@@ -20,21 +20,33 @@ PeleLM::computeDt(int is_init,
    if ( m_fixed_dt > 0.0 ) {
       estdt = m_fixed_dt;
    } else{
-      Real dtconv = estConvectiveDt(a_time);
-      estdt = std::min(estdt,dtconv);
-      if (!m_incompressible && m_has_divu) {
-         Real dtdivU = estDivUDt(a_time);
-         estdt = std::min(estdt,dtdivU);
+      if ((is_init || m_nstep == 0) && m_init_dt > 0.0 ) {
+         estdt = m_init_dt;
+      } else {
+         Real dtconv = estConvectiveDt(a_time);
+         estdt = std::min(estdt,dtconv);
+         Real dtdivU = 1.0e200;
+         if (!m_incompressible && m_has_divu) {
+            dtdivU = estDivUDt(a_time);
+            estdt = std::min(estdt,dtdivU);
+         }
 #ifdef PELE_USE_EFIELD
          Real dtions = estEFIonsDt(a_time);
          estdt = std::min(estdt, dtions);
 #endif
-         if ( m_verbose ) {
-            Print() << " Est. time step - Conv: " << dtconv << ", divu: " << dtdivU
-#ifdef PELE_USE_EFIELD
-                    << ", ions: " << dtions
+#ifdef PELELM_USE_SPRAY
+         Real dtspray = estSprayDt();
+         estdt = std::min(estdt, dtspray);
 #endif
-                    << "\n";
+         if ( m_verbose ) {
+           Print() << " Est. time step - Conv: " << dtconv << ", divu: " << dtdivU
+#ifdef PELE_USE_EFIELD
+                   << ", ions: " << dtions
+#endif
+#ifdef PELELM_USE_SPRAY
+                   << ", sprays: " << dtspray
+#endif
+                   << "\n";
          }
       }
    }
@@ -45,6 +57,18 @@ PeleLM::computeDt(int is_init,
       estdt *= m_dtshrink;
    } else {
       estdt = std::min(estdt,m_prev_dt*m_dtChangeMax);
+      estdt = std::min(estdt,m_max_dt);
+      // Shorten the dt to output plt file at exact req. time
+      if (m_plot_per_exact > 0.0) {
+         // Ensure ~O(dt) step by checking a little in advance
+         Real timeToNextPlot = (std::floor( m_cur_time / m_plot_per_exact ) + 1) * m_plot_per_exact - m_cur_time;
+         if ( 2.0 * estdt > timeToNextPlot && timeToNextPlot > estdt ) {
+            estdt = 0.5 * timeToNextPlot;
+         } else {
+            estdt = std::min(estdt,timeToNextPlot);
+         }
+      }
+      // If we're are getting close to the end of the simulation, shorten the dt too
       if (m_stop_time >= 0.0) {
          // Ensure ~O(dt) last step by checking a little in advance
          Real timeLeft = (m_stop_time-m_cur_time);
@@ -120,7 +144,7 @@ PeleLM::estDivUDt(const TimeStamp &a_time) {
 
    // Note: only method 1 of PeleLM is available here
    AMREX_ASSERT(m_divu_checkFlag==1);
-  
+
    for (int lev = 0; lev <= finest_level; ++lev) {
 
       auto ldata_p = getLevelDataPtr(lev, a_time);

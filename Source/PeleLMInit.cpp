@@ -1,5 +1,8 @@
 #include <PeleLM.H>
 #include <pelelm_prob.H>
+#ifdef AMREX_USE_EB
+#include <AMReX_EB_utils.H>
+#endif
 
 using namespace amrex;
 
@@ -9,9 +12,11 @@ void PeleLM::Init() {
    // Open temporals file
    openTempFile();
 
+   // Check run parameters
+   checkRunParams();
+
    // Initialize data
    initData();
-
 }
 
 void PeleLM::MakeNewLevelFromScratch( int lev,
@@ -90,6 +95,49 @@ void PeleLM::MakeNewLevelFromScratch( int lev,
    macproj.reset(new Hydro::MacProjector(Geom(0,finest_level)));
 #endif
    m_macProjOldSize = finest_level+1;
+   m_extSource[lev].reset(new MultiFab(grids[lev], dmap[lev], NVAR, amrex::max(m_nGrowAdv, m_nGrowMAC),
+                                       MFInfo(), *m_factory[lev]));
+   m_extSource[lev]->setVal(0.);
+
+#if AMREX_USE_EB
+   if ( lev == 0 && m_signDistNeeded) {
+      // Set up CC signed distance container to control EB refinement
+      m_signedDist0.reset(new MultiFab(grids[lev], dmap[lev], 1, 1, MFInfo(), *m_factory[lev]));
+
+      // Estimate the maximum distance we need in terms of level 0 dx:
+      Real extentFactor = static_cast<Real>(nErrorBuf(0));
+      for (int ilev = 1; ilev <= max_level; ++ilev) {
+          extentFactor += static_cast<Real>(nErrorBuf(ilev)) / std::pow(static_cast<Real>(refRatio(ilev-1)[0]),
+                                                                        static_cast<Real>(ilev));
+      }
+      extentFactor *= std::sqrt(2.0) * m_derefineEBBuffer;  // Account for diagonals
+
+      MultiFab signDist(convert(grids[0],IntVect::TheUnitVector()),dmap[0],1,1,MFInfo(),EBFactory(0));
+      FillSignedDistance(signDist,true);
+
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+      for (MFIter mfi(*m_signedDist0,TilingIfNotGPU()); mfi.isValid(); ++mfi)
+      {
+         const Box& bx = mfi.growntilebox();
+         auto const& sd_cc = m_signedDist0->array(mfi);
+         auto const& sd_nd = signDist.const_array(mfi);
+         amrex::ParallelFor(bx, [sd_cc, sd_nd]
+         AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+         {
+            amrex::Real fac = AMREX_D_PICK(0.5,0.25,0.125);
+            sd_cc(i,j,k) = AMREX_D_TERM(  sd_nd(i,j,k)   + sd_nd(i+1,j,k),
+                                        + sd_nd(i,j+1,k) + sd_nd(i+1,j+1,k),
+                                        + sd_nd(i,j,k+1) + sd_nd(i+1,j,k+1)
+                                        + sd_nd(i,j+1,k+1) + sd_nd(i+1,j+1,k+1));
+            sd_cc(i,j,k) *= fac;
+         });
+      }
+      m_signedDist0->FillBoundary(geom[0].periodicity());
+      extendSignedDistance(m_signedDist0.get(), extentFactor);
+   }
+#endif
 }
 
 void PeleLM::initData() {
@@ -98,15 +146,29 @@ void PeleLM::initData() {
    if (m_restart_chkfile.empty()) {
 
       //----------------------------------------------------------------
-      // This is an AmrCore member function which recursively makes new levels
-      // with MakeNewLevelFromScratch.
-      InitFromScratch(m_cur_time);
+      if (!m_initial_grid_file.empty()) {
+         InitFromGridFile(m_cur_time);
+      } else {
+         // This is an AmrCore member function which recursively makes new levels
+         // with MakeNewLevelFromScratch.
+         InitFromScratch(m_cur_time);
+      }
       resetCoveredMask();
+      updateDiagnostics();
+
+#ifdef PELELM_USE_SPRAY
+      if (do_spray_particles) {
+        initSprays();
+      }
+#endif
 
       //----------------------------------------------------------------
       // Set typical values
       int is_init = 1;
       setTypicalValues(AmrNewTime, is_init);
+
+      // initiliaze temporals
+      initTemporals(AmrNewTime);
 
 #ifdef AMREX_USE_EB
       //----------------------------------------------------------------
@@ -135,9 +197,7 @@ void PeleLM::initData() {
       // TODO : this estimate is probably useless
       Real dtInit = computeDt(is_init,AmrNewTime);
       Print() << " Initial dt: " << dtInit << "\n";
-      //WriteDebugPlotFile(GetVecOfConstPtrs(getDensityVect(AmrNewTime)),"RhoPostDist");
-      //WriteDebugPlotFile(GetVecOfConstPtrs(getSpeciesVect(AmrNewTime)),"RhoYsPostDist");
-      //WriteDebugPlotFile(GetVecOfConstPtrs(getTempVect(AmrNewTime)),"TempPostDist");
+      //WriteDebugPlotFile(GetVecOfConstPtrs(getStateVect(AmrNewTime)),"InitSol");
 
       // Subcycling IAMR/PeleLM first does a projection with no reaction divU
       // which can make the dt for evaluating I_R better
@@ -153,6 +213,11 @@ void PeleLM::initData() {
          calcDivU(is_initialization,computeDiffusionTerm,do_avgDown,AmrNewTime,diffData);
       }
       initialProjection();
+     
+      // If gravity is used, do initial pressure projection to get the hydrostatic pressure
+      if (std::abs(m_gravity.sum()) > 0.0) {
+         initialPressProjection();
+      }
 
       // Post data Init time step estimate
       m_dt = computeDt(is_init,AmrNewTime);
@@ -230,7 +295,7 @@ void PeleLM::initData() {
          writeTemporals();
       }
 
-      if (m_plot_int > 0 ) {
+      if (m_plot_int > 0 || m_plot_per_approx > 0. || m_plot_per_exact > 0.) {
          WritePlotFile();
       }
       if (m_check_int > 0 ) {
@@ -242,6 +307,11 @@ void PeleLM::initData() {
       // Read starting configuration from chk file.
       ReadCheckPointFile();
 
+#ifdef PELELM_USE_SPRAY
+      if (do_spray_particles) {
+        sprayRestart();
+      }
+#endif
 #ifdef PELE_USE_EFIELD
       // If restarting from a non efield simulation
       if (m_restart_nonEF) {
@@ -280,6 +350,7 @@ void PeleLM::initData() {
       // Generate the covered cell mask
       m_resetCoveredMask = 1;
       resetCoveredMask();
+      updateDiagnostics();
    }
 
 }
@@ -352,4 +423,34 @@ void PeleLM::initialIterations() {
       // Copy back old state
       copyStateOldToNew();
    }
+}
+
+void PeleLM::InitFromGridFile(amrex::Real time)
+{
+  {
+     const amrex::BoxArray& ba = MakeBaseGrids();
+     DistributionMapping dm(ba);
+     MakeNewLevelFromScratch(0, time, ba, dm);
+  }
+  finest_level = m_initial_ba.size();
+  for (int lev = 1; lev <= finest_level; lev++) {
+     const amrex::BoxArray ba = m_initial_ba[lev-1];
+     DistributionMapping dm(ba);
+     MakeNewLevelFromScratch(lev, time, ba, dm);
+  }
+}
+
+void PeleLM::checkRunParams()
+{
+#ifdef AMREX_USE_EB
+    if (geom[0].IsRZ()) {
+        Abort("RZ geometry is not available with EB");
+    }
+#endif
+
+#if (AMREX_SPACEDIM == 2)
+    if (geom[0].IsRZ() && m_phys_bc.lo(0) != 3) {
+        Abort("x-low must be 'Symmetry' when using RZ coordinate system");
+    }
+#endif
 }

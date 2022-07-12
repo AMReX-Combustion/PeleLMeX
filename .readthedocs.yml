@@ -1,0 +1,9 @@
+# Copyright 2022 PeleTeam
+#
+# This file is part of PeleLMeX
+#
+# License: BSD-3-Clause-LBNL
+
+requirements_file: Docs/requirements.txt
+
+formats:

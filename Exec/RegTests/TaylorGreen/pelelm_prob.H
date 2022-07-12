@@ -7,7 +7,6 @@
 
 #include <PeleLM_Index.H>
 #include <pelelm_prob_parm.H>
-#include <PMF.H>
 #include <PMFData.H>
 #include <PelePhysics.H>
 
@@ -16,10 +15,10 @@ AMREX_FORCE_INLINE
 void pelelm_initdata(int i, int j, int k,
                      int is_incompressible,
                      amrex::Array4<amrex::Real> const& state,
-                     amrex::Array4<amrex::Real> const& /*aux*/,
+                     amrex::Array4<amrex::Real> const& aux,
                      amrex::GeometryData const& geomdata,
                      ProbParm const& prob_parm,
-                     pele::physics::PMF::PmfData::DataContainer const * pmf_data)
+                     pele::physics::PMF::PmfData::DataContainer const * /*pmf_data*/)
 {
     const amrex::Real* prob_lo = geomdata.ProbLo();
     const amrex::Real* prob_hi = geomdata.ProbHi();
@@ -33,26 +32,30 @@ void pelelm_initdata(int i, int j, int k,
                  const amrex::Real Ly = prob_hi[1] - prob_lo[1];,
                  const amrex::Real Lz = prob_hi[2] - prob_lo[2]);
 
-    AMREX_D_TERM(const amrex::Real xc = prob_lo[0] + 0.5 * Lx;,
-                 const amrex::Real yc = prob_lo[1] + 0.5 * Ly;,
-                 const amrex::Real zc = prob_lo[2] + 0.5 * Lz;);
-
-    constexpr amrex::Real Pi = 3.14159265358979323846264338327950288;
-
     auto eos = pele::physics::PhysicsType::eos();
+
     amrex::Real massfrac[NUM_SPECIES] = {0.0};
     massfrac[O2_ID] = 0.233;
     massfrac[N2_ID] = 0.767;
 
+    // TG functions
+    amrex::Real u[3] = {0.0};
+    u[0] = prob_parm.v0 * AMREX_D_TERM( sin(prob_parm.omega_x * x / prob_parm.L),
+                                       *cos(prob_parm.omega_y * y / prob_parm.L),
+                                       *cos(prob_parm.omega_z * z / prob_parm.L));
+    u[1] = -prob_parm.v0 * AMREX_D_TERM( cos(prob_parm.omega_x * x / prob_parm.L),
+                                        *sin(prob_parm.omega_y * y / prob_parm.L),
+                                        *cos(prob_parm.omega_z * z / prob_parm.L));
+    if (prob_parm.convecting) {
+      u[0] += prob_parm.v0;
+      u[1] += prob_parm.v0;
+    }
+
+    AMREX_D_TERM(state(i,j,k,VELX) = u[0];,
+                 state(i,j,k,VELY) = u[1];,
+                 state(i,j,k,VELZ) = u[2]);
+
     state(i,j,k,TEMP) = prob_parm.T_mean;
-
-    amrex::Real r_xy = std::sqrt(x*x+y*y);
-    amrex::Real angle = std::atan2(y,x);
-    amrex::Real angular_vel = r_xy * 400.0 * std::tanh(300*(0.012-r_xy));
-
-    state(i,j,k,VELX) = angular_vel * std::sin(angle);
-    state(i,j,k,VELY) = -angular_vel * std::cos(angle);
-    state(i,j,k,VELZ) = 0.0;
 
     amrex::Real P_cgs = prob_parm.P_mean * 10.0;
 
@@ -70,6 +73,7 @@ void pelelm_initdata(int i, int j, int k,
     for (int n = 0; n < NUM_SPECIES; n++) {
        state(i,j,k,FIRSTSPEC+n) = massfrac[n] * state(i,j,k,DENSITY);
     }
+
 }
 
 AMREX_GPU_DEVICE
@@ -77,16 +81,15 @@ AMREX_FORCE_INLINE
 void
 bcnormal(
   const amrex::Real* /*x[AMREX_SPACEDIM]*/,
-  const int m_nAux,
-  amrex::Real s_ext[NVAR],
-  const int idir,
-  const int sgn,
-  const amrex::Real time,
-  amrex::GeometryData const& geomdata,
-  ProbParm const& prob_parm,
-  pele::physics::PMF::PmfData::DataContainer const *pmf_data)
+  const int /*m_nAux*/,
+  amrex::Real* /*s_ext[NVAR]*/,
+  const int /*idir*/,
+  const int /*sgn*/,
+  const amrex::Real /*time*/,
+  amrex::GeometryData const& /*geomdata*/,
+  ProbParm const& /*prob_parm*/,
+  pele::physics::PMF::PmfData::DataContainer const * /*pmf_data*/)
 {
-  const amrex::Real* prob_lo = geomdata.ProbLo();
 }
 
 AMREX_GPU_DEVICE

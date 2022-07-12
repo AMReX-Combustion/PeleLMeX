@@ -2,10 +2,20 @@
 #include <AMReX_PlotFileUtil.H>
 #include <AMReX_buildInfo.H>
 #include "PelePhysics.H"
+#include <PltFileManager.H>
 #include <AMReX_ParmParse.H>
-#include <AMReX_DataServices.H>
-#include <AMReX_AmrData.H>
+#include <PeleLMBCfill.H>
+#include <AMReX_FillPatchUtil.H>
+#ifdef AMREX_USE_EB
+#include <AMReX_EBInterpolater.H>
+#endif
 
+#ifdef PELELM_USE_SPRAY
+#include "SprayParticles.H"
+#endif
+#ifdef PELELM_USE_SOOT
+#include "SootModel.H"
+#endif
 using namespace amrex;
 
 namespace { const std::string level_prefix{"Level_"}; }
@@ -32,7 +42,7 @@ void PeleLM::WriteDebugPlotFile(const Vector<const MultiFab*> &a_MF,
 void PeleLM::WritePlotFile() {
    BL_PROFILE("PeleLM::WritePlotFile()");
 
-   const std::string& plotfilename = amrex::Concatenate(m_plot_file, m_nstep);
+   const std::string& plotfilename = amrex::Concatenate(m_plot_file, m_nstep, m_ioDigits);
 
    if (m_verbose) {
       amrex::Print() << " Dumping plotfile: " << plotfilename << "\n";
@@ -48,7 +58,11 @@ void PeleLM::WritePlotFile() {
       ncomp = 2*AMREX_SPACEDIM;
    } else {
       // State + pressure gradients
-      ncomp = NVAR + AMREX_SPACEDIM;
+      if (m_plot_grad_p) {
+         ncomp = NVAR + AMREX_SPACEDIM;
+      } else {
+         ncomp = NVAR;
+      }
       // Make the plot lighter by dropping species by default
       if (!m_plotStateSpec) ncomp -= NUM_SPECIES;
       if (m_has_divu) {
@@ -57,7 +71,7 @@ void PeleLM::WritePlotFile() {
    }
 
    // Reactions
-   if (m_do_react && !m_skipInstantRR) {
+   if (m_do_react && !m_skipInstantRR && m_plot_react) {
       // Cons Rate
       ncomp += nCompIR();
       // FunctCall
@@ -79,6 +93,11 @@ void PeleLM::WritePlotFile() {
       deriveEntryCount += rec->numDerive();
    }
    ncomp += deriveEntryCount;
+#ifdef PELELM_USE_SPRAY
+   if (do_spray_particles) {
+     ncomp += spray_derive_vars.size();
+   }
+#endif
 
    //----------------------------------------------------------------
    // Plot MultiFabs
@@ -114,20 +133,28 @@ void PeleLM::WritePlotFile() {
       plt_VarsName.push_back("nE");
       plt_VarsName.push_back("phiV");
 #endif
+#ifdef PELELM_USE_SOOT
+      for (int mom = 0; mom < NUMSOOTVAR; mom++) {
+        std::string sootname = soot_model->sootVariableName(mom);
+        plt_VarsName.push_back(sootname);
+      }
+#endif
       if (m_has_divu) {
          plt_VarsName.push_back("divu");
       }
    }
 
-   plt_VarsName.push_back("gradp_x");
+   if (m_plot_grad_p) {
+      plt_VarsName.push_back("gradpx");
 #if ( AMREX_SPACEDIM > 1 )
-   plt_VarsName.push_back("gradp_y");
+      plt_VarsName.push_back("gradpy");
 #if ( AMREX_SPACEDIM > 2 )
-   plt_VarsName.push_back("gradp_z");
+      plt_VarsName.push_back("gradpz");
 #endif
 #endif
+   }
 
-   if (m_do_react  && !m_skipInstantRR) {
+   if (m_do_react  && !m_skipInstantRR && m_plot_react) {
       for (int n = 0; n < NUM_SPECIES; n++) {
          plt_VarsName.push_back("I_R("+names[n]+")");
       }
@@ -150,6 +177,15 @@ void PeleLM::WritePlotFile() {
          plt_VarsName.push_back(rec->variableName(dvar));
       }
    }
+#ifdef PELELM_USE_SPRAY
+   if (spray_derive_vars.size() > 0) {
+     // We need virtual particles for the lower levels
+     setupVirtualParticles(0);
+     for (int ivar = 0; ivar < spray_derive_vars.size(); ivar++) {
+       plt_VarsName.push_back(spray_derive_vars[ivar]);
+     }
+   }
+#endif
 
    //----------------------------------------------------------------
    // Fill the plot MultiFabs
@@ -173,15 +209,21 @@ void PeleLM::WritePlotFile() {
          MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->state, NE, cnt, 2, 0);
          cnt += 2;
 #endif
+#ifdef PELELM_USE_SOOT
+         MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->state, FIRSTSOOT, cnt, NUMSOOTVAR, 0);
+         cnt += NUMSOOTVAR;
+#endif
          if (m_has_divu) {
             MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->divu, 0, cnt, 1, 0);
             cnt += 1;
          }
       }
-      MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->gp, 0, cnt,AMREX_SPACEDIM,0);
-      cnt += AMREX_SPACEDIM;
+      if (m_plot_grad_p) {
+         MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->gp, 0, cnt,AMREX_SPACEDIM,0);
+         cnt += AMREX_SPACEDIM;
+      }
 
-      if (m_do_react  && !m_skipInstantRR) {
+      if (m_do_react  && !m_skipInstantRR && m_plot_react) {
          MultiFab::Copy(mf_plt[lev], m_leveldatareact[lev]->I_R, 0, cnt, nCompIR(), 0);
          cnt += nCompIR();
 
@@ -208,6 +250,22 @@ void PeleLM::WritePlotFile() {
          MultiFab::Copy(mf_plt[lev], *mf, 0, cnt, mf->nComp(), 0);
          cnt += mf->nComp();
       }
+#ifdef PELELM_USE_SPRAY
+      if (spray_derive_vars.size() > 0) {
+        int num_spray_derive = spray_derive_vars.size();
+        mf_plt[lev].setVal(0., cnt, num_spray_derive);
+        theSprayPC()->computeDerivedVars(
+          mf_plt[lev], lev, cnt, spray_derive_vars, spray_fuel_names);
+        if (lev < finest_level) {
+          MultiFab tmp_plt(grids[lev], dmap[lev], num_spray_derive, 0, MFInfo(), Factory(lev));
+          tmp_plt.setVal(0.);
+          theVirtPC()->computeDerivedVars(
+            tmp_plt, lev, 0, spray_derive_vars, spray_fuel_names);
+          MultiFab::Add(mf_plt[lev], tmp_plt, 0, cnt, num_spray_derive, 0);
+        }
+        cnt += num_spray_derive;
+      }
+#endif
 #ifdef AMREX_USE_EB
       EB_set_covered(mf_plt[lev],0.0);
 #endif
@@ -220,6 +278,17 @@ void PeleLM::WritePlotFile() {
    amrex::WriteMultiLevelPlotfile(plotfilename, finest_level + 1, GetVecOfConstPtrs(mf_plt),
                                   plt_VarsName, Geom(), m_cur_time, istep, refRatio());
 
+#ifdef PELELM_USE_SPRAY
+   if (theSprayPC() != nullptr && do_spray_particles) {
+     bool is_spraycheck = false;
+     for (int lev = 0; lev <= finest_level; ++lev) {
+       theSprayPC()->SprayParticleIO(
+         lev, is_spraycheck, write_spray_ascii_files, plotfilename, spray_fuel_names);
+       // Remove virtual particles that were made for derived variables
+       removeVirtualParticles(lev);
+     }
+   }
+#endif
 }
 
 void PeleLM::WriteHeader(const std::string& name, bool is_checkpoint) const
@@ -282,42 +351,52 @@ void PeleLM::WriteHeader(const std::string& name, bool is_checkpoint) const
 void PeleLM::WriteCheckPointFile()
 {
    BL_PROFILE("PeleLM::WriteCheckPointFile()");
-   
-   const std::string& checkpointname = amrex::Concatenate(m_check_file, m_nstep);
-   
+
+   const std::string& checkpointname = amrex::Concatenate(m_check_file, m_nstep, m_ioDigits);
+
    if (m_verbose) {
       amrex::Print() << "\n Writting checkpoint file: " << checkpointname << "\n";
    }
-   
+
    amrex::PreBuildDirectorHierarchy(checkpointname, level_prefix, finest_level + 1, true);
 
    bool is_checkpoint = true;
    WriteHeader(checkpointname, is_checkpoint);
    WriteJobInfo(checkpointname);
-   
+
    for(int lev = 0; lev <= finest_level; ++lev)
-   {   
+   {
       VisMF::Write(m_leveldata_new[lev]->state,
                    amrex::MultiFabFileFullPrefix(lev, checkpointname, level_prefix, "state"));
-   
+
       VisMF::Write(m_leveldata_new[lev]->gp,
                    amrex::MultiFabFileFullPrefix(lev, checkpointname, level_prefix, "gradp"));
-   
+
       VisMF::Write(m_leveldata_new[lev]->press,
                    amrex::MultiFabFileFullPrefix(lev, checkpointname, level_prefix, "p"));
-   
+
       if (!m_incompressible) {
          if (m_has_divu) {
             VisMF::Write(m_leveldata_new[lev]->divu,
                          amrex::MultiFabFileFullPrefix(lev, checkpointname, level_prefix, "divU"));
          }
-   
+
          if (m_do_react) {
             VisMF::Write(m_leveldatareact[lev]->I_R,
                          amrex::MultiFabFileFullPrefix(lev, checkpointname, level_prefix, "I_R"));
          }
-      }    
-   }   
+      }
+   }
+#ifdef PELELM_USE_SPRAY
+   if (theSprayPC() != nullptr && do_spray_particles) {
+     int write_ascii = 0; // Not for checkpoints
+     bool is_spraycheck = true;
+     for (int lev = 0; lev <= finest_level; ++lev) {
+       theSprayPC()->SprayParticleIO(
+         lev, is_spraycheck, write_ascii, checkpointname, spray_fuel_names);
+     }
+   }
+#endif
 }
 
 void PeleLM::ReadCheckPointFile()
@@ -342,12 +421,12 @@ void PeleLM::ReadCheckPointFile()
    Vector<char> fileCharPtr;
    ParallelDescriptor::ReadAndBcastFile(File, fileCharPtr);
    std::string fileCharPtrString(fileCharPtr.dataPtr());
-   std::istringstream is(fileCharPtrString, std::istringstream::in);   
+   std::istringstream is(fileCharPtrString, std::istringstream::in);
 
    std::string line, word;
 
-   // Start reading from checkpoint file 
-   
+   // Start reading from checkpoint file
+
    // Title line
    std::getline(is, line);
 
@@ -500,21 +579,15 @@ void PeleLM::initLevelDataFromPlt(int a_lev,
 
    amrex::Print() << " initData on level " << a_lev << " from pltfile " << a_dataPltFile << "\n";
 
-   // Use DataService to load pltfile and fill level data
-   DataServices::SetBatchMode();
-   Amrvis::FileType fileType(Amrvis::NEWPLT);
-   DataServices dataServices(a_dataPltFile, fileType);
-   if (!dataServices.AmrDataOk()) {
-      DataServices::Dispatch(DataServices::ExitRequest, NULL);
-   }    
-   AmrData& amrData = dataServices.AmrDataRef();
-
-   Vector<std::string> spec_names;
-   pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(spec_names);
-   Vector<std::string> plotnames = amrData.PlotVarNames();
+   // Use PelePhysics PltFileManager
+   pele::physics::pltfilemanager::PltFileManager pltData(a_dataPltFile);
+   Vector<std::string> plt_vars = pltData.getVariableList();
 
    // Find required data in pltfile
+   Vector<std::string> spec_names;
+   pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(spec_names);
    int idT = -1, idV = -1, idY = -1, nSpecPlt = 0;
+<<<<<<< HEAD
 #ifdef PELE_USE_EFIELD
    int inE = -1, iPhiV = -1; 
 #endif
@@ -522,6 +595,12 @@ void PeleLM::initLevelDataFromPlt(int a_lev,
       std::string firstChars = plotnames[i].substr(0, 2);
       if (plotnames[i] == "temp")            idT = i; 
       if (plotnames[i] == "x_velocity")      idV = i; 
+=======
+   for (int i = 0; i < plt_vars.size(); ++i) {
+      std::string firstChars = plt_vars[i].substr(0, 2);
+      if (plt_vars[i] == "temp")            idT = i;
+      if (plt_vars[i] == "x_velocity")      idV = i;
+>>>>>>> development
       if (firstChars == "Y(" && idY < 0 ) {  // species might not be ordered in the order of the current mech.
          idY = i;
       }
@@ -531,37 +610,40 @@ void PeleLM::initLevelDataFromPlt(int a_lev,
       if (plotnames[i] == "phiV")            iPhiV = i;
 #endif
    }
-
    if ( idY < 0 ) {
       Abort("Coudn't find species mass fractions in pltfile");
    }
-   Print() << " " << nSpecPlt << " species found in pltfile, starting with " << plotnames[idY] << "\n";
+   Print() << " " << nSpecPlt << " species found in pltfile, starting with " << plt_vars[idY] << "\n";
 
    // Get level data
    auto ldata_p = getLevelDataPtr(a_lev,AmrNewTime);
 
    // Velocity
+<<<<<<< HEAD
    for (int i = 0; i < AMREX_SPACEDIM; i++) {
       amrData.FillVar(ldata_p->state, a_lev, plotnames[idV+i], VELX+i);
       amrData.FlushGrids(idV+i);
    }
+=======
+   pltData.fillPatchFromPlt(a_lev, geom[a_lev], idV, VELX, AMREX_SPACEDIM,
+                            ldata_p->state);
+>>>>>>> development
 
    // Temperature
-   amrData.FillVar(ldata_p->state, a_lev, plotnames[idT], TEMP);
-   amrData.FlushGrids(idT);
+   pltData.fillPatchFromPlt(a_lev, geom[a_lev], idT, TEMP, 1,
+                            ldata_p->state);
 
    // Species
    // Hold the species in temporary MF before copying to level data
+   // in case the number of species differs.
    MultiFab speciesPlt(grids[a_lev], dmap[a_lev], nSpecPlt, 0);
-   for (int i = 0; i < nSpecPlt; i++) {
-      amrData.FillVar(speciesPlt, a_lev, plotnames[idY+i], i);
-      amrData.FlushGrids(idY+i);
-   }
+   pltData.fillPatchFromPlt(a_lev, geom[a_lev], idY, 0, nSpecPlt,
+                            speciesPlt);
    for (int i = 0; i < NUM_SPECIES; i++) {
       std::string specString = "Y("+spec_names[i]+")";
       int foundSpec = 0;
       for (int iplt = 0; iplt < nSpecPlt; iplt++) {
-         if ( specString == plotnames[idY+iplt] ) {
+         if ( specString == plt_vars[idY+iplt] ) {
             MultiFab::Copy(ldata_p->state, speciesPlt, iplt, FIRSTSPEC+i, 1, 0);
             foundSpec = 1;
          }
@@ -584,6 +666,9 @@ void PeleLM::initLevelDataFromPlt(int a_lev,
 
    ProbParm const* lprobparm = prob_parm_d;
 
+   // Enforce rho and rhoH consistent with temperature and mixture
+   // TODO the above handles species mapping (to some extent), but nothing enforce
+   // sum of Ys = 1
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
@@ -606,7 +691,7 @@ void PeleLM::initLevelDataFromPlt(int a_lev,
                 sumYs += massfrac[n];
              }
           }
-          massfrac[N2_ID] = 1.0 - sumYs; 
+          massfrac[N2_ID] = 1.0 - sumYs;
 
           // Get density
           Real P_cgs = lprobparm->P_mean * 10.0;
@@ -618,7 +703,7 @@ void PeleLM::initLevelDataFromPlt(int a_lev,
           Real h_cgs = 0.0;
           eos.TY2H(temp_arr(i,j,k), massfrac, h_cgs);
           rhoH_arr(i,j,k) = h_cgs * 1.0e-4 * rho_arr(i,j,k);
-            
+
           // Fill rhoYs
           for (int n = 0; n < NUM_SPECIES; n++){
              rhoY_arr(i,j,k,n) = massfrac[n] * rho_arr(i,j,k);
@@ -710,7 +795,7 @@ void PeleLM::WriteJobInfo(const std::string& path) const
           jobInfoFile << "   maximum zones   = ";
           for(int idim = 0; idim < AMREX_SPACEDIM; idim++)
           {
-              jobInfoFile << geom[lev].Domain().length(idim) << " "; 
+              jobInfoFile << geom[lev].Domain().length(idim) << " ";
           }
           jobInfoFile << "\n\n";
       }
@@ -727,5 +812,3 @@ void PeleLM::WriteJobInfo(const std::string& path) const
       jobInfoFile.close();
     }
 }
-
-

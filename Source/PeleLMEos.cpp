@@ -113,6 +113,8 @@ void PeleLM::calcDivU(int is_init,
                                                          : diffData->Dnp1[lev].const_array(mfi,NUM_SPECIES+1);
          auto const& r        = (m_do_react && !m_skipInstantRR) ? RhoYdot.const_array(mfi)
                                              : ldata_p->state.const_array(mfi,FIRSTSPEC);   // Dummy unused Array4
+         auto const& extRhoY  = m_extSource[lev]->const_array(mfi,FIRSTSPEC);
+         auto const& extRhoH  = m_extSource[lev]->const_array(mfi,RHOH);
          auto const& divu     = ldata_p->divu.array(mfi);
          int use_react        = (m_do_react && !m_skipInstantRR) ? 1 : 0;
 
@@ -123,23 +125,23 @@ void PeleLM::calcDivU(int is_init,
              {
                  divu(i,j,k) = 0.0;
              });
-         } else if (flagfab.getType(bx) != FabType::regular ) {     // EB containing boxes 
-             amrex::ParallelFor(bx, [ rhoY, T, SpecD, Fourier, DiffDiff, r, divu, use_react, flag]
+         } else if (flagfab.getType(bx) != FabType::regular ) {     // EB containing boxes
+             amrex::ParallelFor(bx, [ rhoY, T, SpecD, Fourier, DiffDiff, r, extRhoY, extRhoH, divu, use_react, flag]
              AMREX_GPU_DEVICE (int i, int j, int k) noexcept
              {
                 if ( flag(i,j,k).isCovered() ) {
                     divu(i,j,k) = 0.0;
                 } else {
-                    compute_divu( i, j, k, rhoY, T, SpecD, Fourier, DiffDiff, r, divu, use_react );
+                    compute_divu( i, j, k, rhoY, T, SpecD, Fourier, DiffDiff, r, extRhoY, extRhoH, divu, use_react );
                 }
              });
          } else
 #endif
          {
-             amrex::ParallelFor(bx, [ rhoY, T, SpecD, Fourier, DiffDiff, r, divu, use_react]
+             amrex::ParallelFor(bx, [ rhoY, T, SpecD, Fourier, DiffDiff, r, extRhoY, extRhoH, divu, use_react]
              AMREX_GPU_DEVICE (int i, int j, int k) noexcept
              {
-                compute_divu( i, j, k, rhoY, T, SpecD, Fourier, DiffDiff, r, divu, use_react );
+                compute_divu( i, j, k, rhoY, T, SpecD, Fourier, DiffDiff, r, extRhoY, extRhoH, divu, use_react );
              });
          }
       }
@@ -217,8 +219,8 @@ void PeleLM::calc_dPdt(const TimeStamp &a_time,
 
    for (int lev = 0; lev <= finest_level; ++lev) {
       calc_dPdt(lev, a_time, a_dPdt[lev]);
-#ifdef AMRE_USE_EB
-      EB_set_covered(a_dPdt[lev],0.0);
+#ifdef AMREX_USE_EB
+      EB_set_covered(*a_dPdt[lev],0.0);
 #endif
    }
 
@@ -283,11 +285,18 @@ PeleLM::adjustPandDivU(std::unique_ptr<AdvanceAdvData> &advData)
             amrex::ParallelFor(bx, [=,pOld=m_pOld,pNew=m_pNew]
             AMREX_GPU_DEVICE (int i, int j, int k) noexcept
             {
-                Real gammaInv_o = getGammaInv(i,j,k,rhoYo,T_o); 
-                Real gammaInv_n = getGammaInv(i,j,k,rhoYn,T_n); 
+                Real gammaInv_o = getGammaInv(i,j,k,rhoYo,T_o);
+                Real gammaInv_n = getGammaInv(i,j,k,rhoYn,T_n);
                 theta(i,j,k) = 0.5 * (gammaInv_o/pOld + gammaInv_n/pNew);
             });
         }
+    }
+
+
+    Vector<MultiFab> dummy(finest_level+1);
+    for (int lev = 0; lev <= finest_level; ++lev) {
+       dummy[lev].define(grids[lev], dmap[lev], 1, 0, MFInfo(), *m_factory[lev]);
+       dummy[lev].setVal(1.0);
     }
 
     // Get the mean mac_divu (Sbar) and mean theta
@@ -298,13 +307,22 @@ PeleLM::adjustPandDivU(std::unique_ptr<AdvanceAdvData> &advData)
 
     // Adjust
     for (int lev = 0; lev <= finest_level; ++lev) {
+        // ThetaHalft is now delta_theta
         ThetaHalft[lev]->plus(-Thetabar,0,1);
+        // mac_divu is now delta_S
         advData->mac_divu[lev].plus(-Sbar,0,1);
     }
 
+    // Compute 1/Volume * int(U_inflow)dA across all boundary faces
+    amrex::Real umacFluxBalance = AMREX_D_TERM(  m_domainUmacFlux[0] + m_domainUmacFlux[1],
+                                               + m_domainUmacFlux[2] + m_domainUmacFlux[3],
+                                               + m_domainUmacFlux[4] + m_domainUmacFlux[5]);
+    Real divu_vol = umacFluxBalance/m_uncoveredVol;
+
     // Advance the ambient pressure
-    m_pNew = m_pOld + m_dt * (Sbar/Thetabar);
-    m_dp0dt = Sbar/Thetabar;
+    m_pNew = m_pOld + m_dt * (Sbar - divu_vol)/Thetabar;
+    m_dp0dt = (Sbar - divu_vol)/Thetabar;
+
 
     // subtract \tilde{theta} * Sbar / Thetabar from divu
     for (int lev = 0; lev <= finest_level; ++lev) {
@@ -319,13 +337,15 @@ PeleLM::adjustPandDivU(std::unique_ptr<AdvanceAdvData> &advData)
             amrex::ParallelFor(bx, [=,dp0dt=m_dp0dt]
             AMREX_GPU_DEVICE (int i, int j, int k) noexcept
             {
-                macdivU(i,j,k) -= theta(i,j,k) * dp0dt;
+               // Do the closed chamber pressure correction
+               macdivU(i,j,k) -= (theta(i,j,k) * Sbar/Thetabar - divu_vol*(1 + theta(i,j,k)/Thetabar));
             });
         }
     }
 
     if (m_verbose > 2 ) {
         Print() << " >> Closed chamber pOld: " << m_pOld << ", pNew: " << m_pNew << ", dp0dt: " << m_dp0dt << "\n";
+        Print() << " >> Total mass old: " << m_massOld << ", mass new: " << m_massNew << std::endl;
     }
 
     // Return Sbar so that we'll add it back to mac_divu after the MAC projection

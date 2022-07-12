@@ -11,7 +11,7 @@ jobs:
   #Build the 2D FlameSheet RegTest with GNU7.5 and no MPI support
   FS2D_NoMPI:
     name: GNU@7.5 NOMPI Comp [FS2D]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     env: 
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
@@ -21,7 +21,7 @@ jobs:
         access_token: ${{github.token}}
     - uses: actions/checkout@v2
     - name: System Dependencies
-      run: .github/workflows/dependencies/dependencies.sh
+      run: .github/workflows/dependencies/dependencies_gcc10.sh
     - name: Repo Dependencies
       run: Utils/CloneDeps.sh
     - name: Build
@@ -32,13 +32,15 @@ jobs:
          AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
       run: |
         cd Exec/RegTests/FlameSheet/
+        make help
+        mpicxx -v
         make TPL COMP=gnu USE_MPI=FALSE
         make -j 2 COMP=gnu USE_MPI=FALSE
   
   # Build the 2D FlameSheet RegTest with GNU7.5 and MPI support
   FS2D_MPI:
     name: GNU@7.5 MPI Comp [FS2D]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     env: 
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
@@ -48,7 +50,7 @@ jobs:
         access_token: ${{github.token}}
     - uses: actions/checkout@v2
     - name: System Dependencies
-      run: .github/workflows/dependencies/dependencies.sh
+      run: .github/workflows/dependencies/dependencies_gcc10.sh
     - name: Repo Dependencies
       run: Utils/CloneDeps.sh
     - name: Build
@@ -65,7 +67,7 @@ jobs:
   # Build the 2D FlameSheet RegTest with GNU7.5 and MPI+OMP support
   FS2D_MPIOMP:
     name: GNU@7.5 MPI OMP Comp [FS2D]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     env: 
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
@@ -75,7 +77,7 @@ jobs:
         access_token: ${{github.token}}
     - uses: actions/checkout@v2
     - name: System Dependencies
-      run: .github/workflows/dependencies/dependencies.sh
+      run: .github/workflows/dependencies/dependencies_gcc10.sh
     - name: Repo Dependencies
       run: Utils/CloneDeps.sh
     - name: Build
@@ -92,7 +94,7 @@ jobs:
   # Build and Run the CoVo RegTest with GNU7.5 and no MPI support
   COVO2D_NoMPIRun:
     name: GNU@7.5 NOMPI Run [COVO2D]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     env: 
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
@@ -102,7 +104,7 @@ jobs:
         access_token: ${{github.token}}
     - uses: actions/checkout@v2
     - name: System Dependencies
-      run: .github/workflows/dependencies/dependencies.sh
+      run: .github/workflows/dependencies/dependencies_gcc10.sh
     - name: Repo Dependencies
       run: Utils/CloneDeps.sh
     - name: Build
@@ -123,7 +125,7 @@ jobs:
   # Build and Run the HoBubble RegTest with GNU7.5 and MPI support
   HB2D_MPIRun:
     name: GNU@7.5 MPI Run [HB2D]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     env: 
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
@@ -133,7 +135,7 @@ jobs:
         access_token: ${{github.token}}
     - uses: actions/checkout@v2
     - name: System Dependencies
-      run: .github/workflows/dependencies/dependencies.sh
+      run: .github/workflows/dependencies/dependencies_gcc10.sh
     - name: Repo Dependencies
       run: Utils/CloneDeps.sh
     - name: Build
@@ -154,7 +156,7 @@ jobs:
   # Build and Run the HoBubble RegTest with GNU7.5 in DEBUG
   HB2D_DBGRun:
     name: GNU@7.5 DEBUG Run [HB2DDBG]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     env: 
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
@@ -164,7 +166,7 @@ jobs:
         access_token: ${{github.token}}
     - uses: actions/checkout@v2
     - name: System Dependencies
-      run: .github/workflows/dependencies/dependencies.sh
+      run: .github/workflows/dependencies/dependencies_gcc10.sh
     - name: Repo Dependencies
       run: Utils/CloneDeps.sh
     - name: Build
@@ -185,7 +187,7 @@ jobs:
   # Build and Run the EnclosedFlame RegTest with GNU7.5 and MPI support
   EF2D_MPIRun:
     name: GNU@7.5 MPI Run [EF2D]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     env: 
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
@@ -195,7 +197,7 @@ jobs:
         access_token: ${{github.token}}
     - uses: actions/checkout@v2
     - name: System Dependencies
-      run: .github/workflows/dependencies/dependencies.sh
+      run: .github/workflows/dependencies/dependencies_gcc10.sh
     - name: Repo Dependencies
       run: Utils/CloneDeps.sh
     - name: Build
@@ -215,8 +217,8 @@ jobs:
 
   # Build and Run the EB_FlowPastCylinder RegTest with GNU7.5 and MPI support
   FPC2D_MPIRun:
-    name: GNU@7.5 MPI Run [FPC2D]
-    runs-on: ubuntu-latest
+    name: GNU@7.5 MPI Run [FPC2DDBG]
+    runs-on: ubuntu-18.04
     env: 
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
@@ -226,7 +228,7 @@ jobs:
         access_token: ${{github.token}}
     - uses: actions/checkout@v2
     - name: System Dependencies
-      run: .github/workflows/dependencies/dependencies.sh
+      run: .github/workflows/dependencies/dependencies_gcc10.sh
     - name: Repo Dependencies
       run: Utils/CloneDeps.sh
     - name: Build
@@ -237,18 +239,18 @@ jobs:
          AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
       working-directory: ./Exec/RegTests/EB_FlowPastCylinder/
       run: |
-        make TPL COMP=gnu USE_MPI=TRUE
-        make -j 2 COMP=gnu USE_MPI=TRUE
+        make TPL COMP=gnu USE_MPI=TRUE DEBUG=TRUE
+        make -j 2 COMP=gnu USE_MPI=TRUE DEBUG=TRUE
     - name: Run
       working-directory: ./Exec/RegTests/EB_FlowPastCylinder/
       run: |
-        ./PeleLMeX2d.gnu.MPI.ex input.2d-regt amr.max_step=2 amr.plot_int=-1 amr.check_int=-1
-        ./PeleLMeX2d.gnu.MPI.ex input.2d-regt_WallBump amr.max_step=2 amr.plot_int=-1 amr.check_int=-1
+        ./PeleLMeX2d.gnu.DEBUG.MPI.ex input.2d-regt amr.max_step=2 amr.plot_int=-1 amr.check_int=-1 amrex.fpe_trap_invalid=1 amrex.fpe_trap_zero=1 amrex.fpe_trap_overflow=1
+        ./PeleLMeX2d.gnu.DEBUG.MPI.ex input.2d-regt_WallBump amr.max_step=2 amr.plot_int=-1 amr.check_int=-1
 
   # Build and Run the HIT RegTest with GNU7.5 and MPI support
   HIT3D_MPIRun:
     name: GNU@7.5 MPI Run [HIT3D]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     env: 
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
@@ -258,7 +260,7 @@ jobs:
         access_token: ${{github.token}}
     - uses: actions/checkout@v2
     - name: System Dependencies
-      run: .github/workflows/dependencies/dependencies.sh
+      run: .github/workflows/dependencies/dependencies_gcc10.sh
     - name: Repo Dependencies
       run: Utils/CloneDeps.sh
     - name: Build
@@ -280,7 +282,7 @@ jobs:
   # Build and Run the EB_PipeFlow RegTest with GNU7.5 and MPI support
   EBPF3D_MPIRun:
     name: GNU@7.5 MPI Run [EBPF3D]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     env: 
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
@@ -290,7 +292,7 @@ jobs:
         access_token: ${{github.token}}
     - uses: actions/checkout@v2
     - name: System Dependencies
-      run: .github/workflows/dependencies/dependencies.sh
+      run: .github/workflows/dependencies/dependencies_gcc10.sh
     - name: Repo Dependencies
       run: Utils/CloneDeps.sh
     - name: Build
@@ -306,12 +308,12 @@ jobs:
     - name: Run
       working-directory: ./Exec/RegTests/EB_PipeFlow/
       run: |
-        ./PeleLMeX3d.gnu.MPI.ex input.3d-regt amr.max_step=2 amr.plot_int=-1 amr.check_int=-1
+        mpirun -n 2 ./PeleLMeX3d.gnu.MPI.ex input.3d-regt amr.max_step=2 amr.plot_int=-1 amr.check_int=-1 amr.n_cell=128 32 32
 
   # Build and Run the TurbInflow RegTest in DEBUG with GNU7.5 and MPI support
   TI3D_MPIRun:
     name: GNU@7.5 MPI Run [TI3DDBG]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     env: 
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
@@ -321,7 +323,7 @@ jobs:
         access_token: ${{github.token}}
     - uses: actions/checkout@v2
     - name: System Dependencies
-      run: .github/workflows/dependencies/dependencies.sh
+      run: .github/workflows/dependencies/dependencies_gcc10.sh
     - name: Repo Dependencies
       run: Utils/CloneDeps.sh
     - name: GenerateTurbFile
@@ -348,6 +350,51 @@ jobs:
       working-directory: ./Exec/RegTests/TurbInflow/
       run: |
         mpirun -n 2 ./PeleLMeX3d.gnu.DEBUG.MPI.ex input.3d peleLM.num_init_iter=1 amr.n_cell=32 32 32 amr.max_step=2 amr.plot_int=-1 amr.check_int=-1
-        mpirun -n 2 ./PeleLMeX3d.gnu.DEBUG.MPI.ex input.3d_negY peleLM.num_init_iter=1 amr.n_cell=32 32 32 amr.max_step=2 amr.plot_int=-1 amr.check_int=-1
+        mpirun -n 2 ./PeleLMeX3d.gnu.DEBUG.MPI.ex input.3d_twoInjs peleLM.num_init_iter=1 amr.n_cell=32 32 32 amr.max_step=2 amr.plot_int=-1 amr.check_int=-1
         mpirun -n 2 ./PeleLMeX3d.gnu.DEBUG.MPI.ex input.3d_posX peleLM.num_init_iter=1 amr.n_cell=32 32 32 amr.max_step=2 amr.plot_int=-1 amr.check_int=-1
         mpirun -n 2 ./PeleLMeX3d.gnu.DEBUG.MPI.ex input.3d_BoxLoZ peleLM.num_init_iter=1 amr.n_cell=32 32 32 amr.max_step=2 amr.plot_int=-1 amr.check_int=-1
+
+  # Build and Run the SprayTest RegTest with GNU7.5 and MPI support
+  SPRAY_MPIRun:
+    name: GNU@7.5 MPI Run [SPRAY]
+    runs-on: ubuntu-18.04
+    env:
+      {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
+    steps:
+    - name: Cancel previous runs
+      uses: styfle/cancel-workflow-action@0.6.0
+      with:
+        access_token: ${{github.token}}
+    - uses: actions/checkout@v2
+    - name: System Dependencies
+      run: |
+         .github/workflows/dependencies/dependencies_gcc10.sh
+         sudo apt-get install -y python3-setuptools
+         python3 -m pip install --user numpy
+         python3 -m pip install --user argparse
+    - name: Repo Dependencies
+      run: Utils/CloneDeps.sh
+    - name: Build AMReX Tools
+      env:
+         AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
+      working-directory: ./build/amrex/Tools/Plotfile
+      run: |
+        make
+    - name: Build PeleLMeX
+      env:
+         AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
+         PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
+         PELELMEX_HOME: ${GITHUB_WORKSPACE}
+         AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
+         PELEMP_HOME: ${GITHUB_WORKSPACE}/build/PeleMP
+      working-directory: ./Exec/RegTests/SprayTest/
+      run: |
+        make TPL COMP=gnu USE_MPI=TRUE
+        make -j 2 COMP=gnu USE_MPI=TRUE
+    - name: Run
+      working-directory: ./Exec/RegTests/SprayTest/
+      run: |
+        cp ${GITHUB_WORKSPACE}/build/amrex/Tools/Plotfile/fcompare.gnu.ex .
+        sed -i "s/mpiexec -n 1/mpiexec -n 2/g" multiRuns.py
+        ./multiRuns.py
+        ./compareOutput.py

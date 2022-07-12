@@ -1,70 +1,59 @@
 #----------------------DOMAIN DEFINITION------------------------
-geometry.is_periodic = 1 0               # For each dir, 0: non-perio, 1: periodic
+geometry.is_periodic = 1 1 1              # For each dir, 0: non-perio, 1: periodic
 geometry.coord_sys   = 0                  # 0 => cart, 1 => RZ
-geometry.prob_lo     = 0.0 0.0 0.0        # x_lo y_lo (z_lo)
-geometry.prob_hi     = 0.016 0.016 0.016        # x_hi y_hi (z_hi)
+geometry.prob_lo     = -0.01 -0.01 -0.01        # x_lo y_lo (z_lo)
+geometry.prob_hi     =  0.01  0.01  0.01  # x_hi y_hi (z_hi)
 
 # >>>>>>>>>>>>>  BC FLAGS <<<<<<<<<<<<<<<<
 # Interior, Inflow, Outflow, Symmetry,
 # SlipWallAdiab, NoSlipWallAdiab, SlipWallIsotherm, NoSlipWallIsotherm
-peleLM.lo_bc = Interior Inflow
-peleLM.hi_bc = Interior Outflow
+peleLM.lo_bc = Interior Interior Interior
+peleLM.hi_bc = Interior Interior Interior
 
 
 #-------------------------AMR CONTROL----------------------------
-amr.n_cell          = 128 128 128      # Level 0 number of cells in each direction   
+amr.n_cell          = 32 32 32         # Level 0 number of cells in each direction   
+#amr.n_cell          = 64 64 64         # Level 0 number of cells in each direction   
 amr.v               = 1                # AMR verbose
 amr.max_level       = 0                # maximum level number allowed
 amr.ref_ratio       = 2 2 2 2          # refinement ratio
 amr.regrid_int      = 2                # how often to regrid
-amr.n_error_buf     = 2 2 2 2          # number of buffer cells in error est
+amr.n_error_buf     = 1 1 2 2          # number of buffer cells in error est
 amr.grid_eff        = 0.7              # what constitutes an efficient grid
 amr.blocking_factor = 16               # block factor in grid generation (min box size)
 amr.max_grid_size   = 64               # max box size
 
 
 #--------------------------- Problem -------------------------------
+prob.T_mean = 351.59509
 prob.P_mean = 101325.0
-prob.standoff = -.023
-prob.pertmag = 0.0004
-prob.pmf_datafile = "drm19_pmf.dat"
+prob.reynolds = 1600.0
+prob.mach = 0.08
+prob.prandtl = 0.71
 
 #-------------------------PeleLM CONTROL----------------------------
-peleLM.v = 3
+peleLM.v = 1
 peleLM.incompressible = 0
-peleLM.rho = 1.17
-peleLM.mu = 0.0
-peleLM.use_wbar = 1
 peleLM.sdc_iterMax = 1
+peleLM.advection_scheme = "Godunov_PPM"
 
-amr.plot_int = 10
-amr.max_step = 100
-amr.dt_shrink = 0.0001
-amr.stop_time = 0.02
-#amr.stop_time = 1.00
-amr.cfl = 0.62
-amr.derive_plot_vars = avg_pressure mag_vort mass_fractions
+peleLM.do_temporals = 1
+peleLM.temporal_int = 5
 
-cvode.solve_type = dense               # CVODE Linear solve type (for Newton direction) 
-ode.analytical_jacobian = 0            # Provide analytical jacobian (from Fuego) 
+amr.check_int = 100
+amr.plot_int = 100
+amr.max_step = 500
+amr.dt_shrink = 0.1
+amr.stop_time = 0.0021160148
+amr.cfl = 0.7
+amr.derive_plot_vars = avg_pressure mag_vort
+#amr.restart = chk00500
 
 #--------------------REFINEMENT CONTROL------------------------
 #amr.refinement_indicators = temp
-#amr.temp.max_level     = 1
+#amr.temp.max_level     = 2
 #amr.temp.value_greater = 305
 #amr.temp.field_name    = temp
-
-#amr.refinement_indicators = magVort
-#amr.magVort.max_level     = 1
-#amr.magVort.value_greater = 500.0
-#amr.magVort.field_name    = mag_vort
-
-amr.refinement_indicators = yH
-amr.yH.max_level     = 1
-amr.yH.value_greater = 1.0e-6
-amr.yH.field_name    = Y(H)
-
-
 
 #amrex.fpe_trap_invalid = 1
 #amrex.fpe_trap_zero = 1

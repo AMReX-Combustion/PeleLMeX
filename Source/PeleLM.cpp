@@ -13,24 +13,29 @@ PeleLM::~PeleLM()
    for (int lev = 0; lev <= finest_level; ++lev) {
       ClearLevel(lev);
    }
-   
+
    if (!m_incompressible) {
       trans_parms.deallocate();
       m_reactor->close();
-   } 
+   }
 
    closeTempFile();
    typical_values.clear();
 
    delete prob_parm;
    The_Arena()->free(prob_parm_d);
+   m_initial_ba.clear();
+   m_regrid_ba.clear();
+#ifdef PELELM_USE_SOOT
+   cleanupSootModel();
+#endif
 }
 
 PeleLM::LevelData*
 PeleLM::getLevelDataPtr(int lev, const PeleLM::TimeStamp &a_time, int /*useUMac*/)
 {
    AMREX_ASSERT(a_time==AmrOldTime || a_time==AmrNewTime || a_time==AmrHalfTime);
-   if ( a_time == AmrOldTime ) { 
+   if ( a_time == AmrOldTime ) {
       return m_leveldata_old[lev].get();
    } else if ( a_time == AmrNewTime ) {
       return m_leveldata_new[lev].get();
@@ -228,6 +233,16 @@ PeleLM::getViscosityVect(const TimeStamp &a_time) {
    return r;
 }
 
+Vector<MultiFab *>
+PeleLM::getIRVect() {
+   Vector<MultiFab*> r;
+   r.reserve(finest_level+1);
+   for (int lev = 0; lev <= finest_level; ++lev) {
+      r.push_back(&(m_leveldatareact[lev]->I_R));
+   }
+   return r;
+}
+
 void
 PeleLM::averageDownState(const PeleLM::TimeStamp &a_time)
 {
@@ -265,6 +280,26 @@ PeleLM::averageDownScalars(const PeleLM::TimeStamp &a_time)
       average_down(ldataFine_p->state,
                    ldataCrse_p->state,
                    DENSITY,nScal,refRatio(lev-1));
+#endif
+   }
+}
+
+void
+PeleLM::averageDown(const PeleLM::TimeStamp &a_time,
+                    const int state_comp,
+                    const int ncomp)
+{
+   for (int lev = finest_level; lev > 0; --lev) {
+      auto ldataFine_p = getLevelDataPtr(lev,a_time);
+      auto ldataCrse_p = getLevelDataPtr(lev-1,a_time);
+#ifdef AMREX_USE_EB
+      EB_average_down(ldataFine_p->state,
+                      ldataCrse_p->state,
+                      state_comp,ncomp,refRatio(lev-1));
+#else
+      average_down(ldataFine_p->state,
+                   ldataCrse_p->state,
+                   state_comp,ncomp,refRatio(lev-1));
 #endif
    }
 }
