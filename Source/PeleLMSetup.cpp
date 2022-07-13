@@ -588,11 +588,7 @@ void PeleLM::variablesSetup() {
 
    // Velocity - follow incflo
    for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
-#ifdef AMREX_USE_EB
-      m_AdvTypeState[VELX+idim] = 1;   // Conservative
-#else
       m_AdvTypeState[VELX+idim] = 0;   // NonConservative
-#endif
       m_DiffTypeState[VELX+idim] = 1;  // Diffusive
    }
 
