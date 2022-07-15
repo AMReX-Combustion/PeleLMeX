@@ -587,27 +587,20 @@ void PeleLM::initLevelDataFromPlt(int a_lev,
    Vector<std::string> spec_names;
    pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(spec_names);
    int idT = -1, idV = -1, idY = -1, nSpecPlt = 0;
-<<<<<<< HEAD
 #ifdef PELE_USE_EFIELD
    int inE = -1, iPhiV = -1; 
 #endif
-   for (int i = 0; i < plotnames.size(); ++i) {
-      std::string firstChars = plotnames[i].substr(0, 2);
-      if (plotnames[i] == "temp")            idT = i; 
-      if (plotnames[i] == "x_velocity")      idV = i; 
-=======
    for (int i = 0; i < plt_vars.size(); ++i) {
       std::string firstChars = plt_vars[i].substr(0, 2);
       if (plt_vars[i] == "temp")            idT = i;
       if (plt_vars[i] == "x_velocity")      idV = i;
->>>>>>> development
       if (firstChars == "Y(" && idY < 0 ) {  // species might not be ordered in the order of the current mech.
          idY = i;
       }
       if (firstChars == "Y(")                nSpecPlt += 1;
 #ifdef PELE_USE_EFIELD
-      if (plotnames[i] == "nE")              inE = i;
-      if (plotnames[i] == "phiV")            iPhiV = i;
+      if (plt_vars[i] == "nE")              inE = i;
+      if (plt_vars[i] == "phiV")            iPhiV = i;
 #endif
    }
    if ( idY < 0 ) {
@@ -619,15 +612,8 @@ void PeleLM::initLevelDataFromPlt(int a_lev,
    auto ldata_p = getLevelDataPtr(a_lev,AmrNewTime);
 
    // Velocity
-<<<<<<< HEAD
-   for (int i = 0; i < AMREX_SPACEDIM; i++) {
-      amrData.FillVar(ldata_p->state, a_lev, plotnames[idV+i], VELX+i);
-      amrData.FlushGrids(idV+i);
-   }
-=======
    pltData.fillPatchFromPlt(a_lev, geom[a_lev], idV, VELX, AMREX_SPACEDIM,
                             ldata_p->state);
->>>>>>> development
 
    // Temperature
    pltData.fillPatchFromPlt(a_lev, geom[a_lev], idT, TEMP, 1,
@@ -653,11 +639,11 @@ void PeleLM::initLevelDataFromPlt(int a_lev,
 
 #ifdef PELE_USE_EFIELD
    // nE
-   amrData.FillVar(ldata_p->state, a_lev, plotnames[inE], NE);
-   amrData.FlushGrids(inE);
+   pltData.fillPatchFromPlt(a_lev, geom[a_lev], inE, NE, 1,
+                            ldata_p->state);
    // phiV
-   amrData.FillVar(ldata_p->state, a_lev, plotnames[iPhiV], PHIV);
-   amrData.FlushGrids(iPhiV);
+   pltData.fillPatchFromPlt(a_lev, geom[a_lev], iPhiV, PHIV, 1,
+                            ldata_p->state);
 #endif
 
    // Pressure and pressure gradients to zero
