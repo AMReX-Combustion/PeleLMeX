@@ -41,9 +41,9 @@ void PeleLM::Advance(int is_initIter) {
    // Compute time-step size
    m_dt = computeDt(is_initIter,AmrOldTime);
 #ifdef PELELM_USE_SPRAY
-   if (!is_initIter && do_spray_particles) {
+   if (!is_initIter) {
      // Create the state MF used for spray interpolation
-     setSprayState(m_dt);
+     SpraySetState(m_dt);
    }
 #endif
 
@@ -108,7 +108,7 @@ void PeleLM::Advance(int is_initIter) {
 
 #ifdef PELELM_USE_SPRAY
    if (!is_initIter) {
-     sprayMKD(m_cur_time, m_dt);
+     SprayMKD(m_cur_time, m_dt);
    }
 #endif
 #ifdef PELELM_USE_SOOT

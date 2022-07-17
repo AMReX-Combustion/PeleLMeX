@@ -35,7 +35,7 @@ PeleLM::computeDt(int is_init,
          estdt = std::min(estdt, dtions);
 #endif
 #ifdef PELELM_USE_SPRAY
-         Real dtspray = estSprayDt();
+         Real dtspray = SprayEstDt();
          estdt = std::min(estdt, dtspray);
 #endif
          if ( m_verbose ) {

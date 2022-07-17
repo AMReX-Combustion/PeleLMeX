@@ -64,9 +64,7 @@ void PeleLM::Setup() {
    taggingSetup();
 
 #ifdef PELELM_USE_SPRAY
-   if (do_spray_particles) {
-     sprayParticleSetup();
-   }
+   SpraySetup();
 #endif
 #ifdef PELELM_USE_SOOT
    if (do_soot_solve) {
@@ -456,7 +454,7 @@ void PeleLM::readParameters() {
    ppef.query("restart_resetTime",m_restart_resetTime);
 #endif
 #ifdef PELELM_USE_SPRAY
-   readSprayParameters();
+   sprayReadParameters();
 #endif
 #ifdef PELELM_USE_SOOT
    do_soot_solve = true;

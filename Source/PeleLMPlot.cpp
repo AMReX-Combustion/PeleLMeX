@@ -281,7 +281,7 @@ void PeleLM::WritePlotFile() {
                                   plt_VarsName, Geom(), m_cur_time, istep, refRatio());
 
 #ifdef PELELM_USE_SPRAY
-   if (theSprayPC() != nullptr && do_spray_particles) {
+   if (do_spray_particles) {
      bool is_spraycheck = false;
      for (int lev = 0; lev <= finest_level; ++lev) {
        theSprayPC()->SprayParticleIO(
@@ -398,7 +398,7 @@ void PeleLM::WriteCheckPointFile()
       }
    }
 #ifdef PELELM_USE_SPRAY
-   if (theSprayPC() != nullptr && do_spray_particles) {
+   if (do_spray_particles) {
      int write_ascii = 0; // Not for checkpoints
      bool is_spraycheck = true;
      for (int lev = 0; lev <= finest_level; ++lev) {
