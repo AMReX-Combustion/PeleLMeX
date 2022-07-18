@@ -17,8 +17,10 @@ PrecondOp::PrecondOp(PeleLM* a_pelelm)
    readParameters();
 
    // Solve LPInfo
-   LPInfo info_solve;
-   info_solve.setMaxCoarseningLevel(m_mg_max_coarsening_level);
+   LPInfo info_diff;
+   info_diff.setMaxCoarseningLevel(m_mg_max_coarsening_level_diff);
+   LPInfo info_Stilda;
+   info_Stilda.setMaxCoarseningLevel(m_mg_max_coarsening_level_Stilda);
 
    // Apply LPInfo (no coarsening)
    LPInfo info_apply;
@@ -28,7 +30,7 @@ PrecondOp::PrecondOp(PeleLM* a_pelelm)
    m_diff.reset(new MLABecCecLaplacian(m_pelelm->Geom(0,m_pelelm->finestLevel()),
                                        m_pelelm->boxArray(0,m_pelelm->finestLevel()),
                                        m_pelelm->DistributionMap(0,m_pelelm->finestLevel()),
-                                       info_solve));
+                                       info_diff));
    m_diff->setMaxOrder(m_mg_maxorder);
 
    // Drift Op
@@ -42,7 +44,7 @@ PrecondOp::PrecondOp(PeleLM* a_pelelm)
    m_Stilda.reset(new MLABecLaplacian(m_pelelm->Geom(0,m_pelelm->finestLevel()),
                                       m_pelelm->boxArray(0,m_pelelm->finestLevel()),
                                       m_pelelm->DistributionMap(0,m_pelelm->finestLevel()),
-                                      info_solve));
+                                      info_Stilda));
    m_Stilda->setMaxOrder(m_mg_maxorder);
 }
 
@@ -227,7 +229,8 @@ PrecondOp::readParameters ()
    pp.query("diff_verbose", m_diff_verbose);
    pp.query("Stilda_verbose", m_Stilda_verbose);
    pp.query("fixedIter",m_fixed_mg_it);
-   pp.query("max_coarsening_level", m_mg_max_coarsening_level);
+   pp.query("max_coarsening_level_diff", m_mg_max_coarsening_level_diff);
+   pp.query("max_coarsening_level_Stilda", m_mg_max_coarsening_level_Stilda);
    pp.query("num_pre_smooth", m_num_pre_smooth);
    pp.query("num_post_smooth", m_num_post_smooth);
    // TODO: add all the user-defined options
