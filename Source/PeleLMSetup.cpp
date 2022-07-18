@@ -454,7 +454,7 @@ void PeleLM::readParameters() {
    ppef.query("restart_resetTime",m_restart_resetTime);
 #endif
 #ifdef PELELM_USE_SPRAY
-   sprayReadParameters();
+   SprayReadParameters();
 #endif
 #ifdef PELELM_USE_SOOT
    do_soot_solve = true;

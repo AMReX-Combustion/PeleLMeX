@@ -250,7 +250,7 @@ PeleLM::SprayInit()
   std::string restart_file =
     (m_restart_chkfile.empty()) ? m_restart_pltfile : m_restart_chkfile;
   std::string restart_partfile = restart_file + "/particles";
-  if (amrex::Exists(restart_partfile)) {
+  if (FileSystem::Exists(restart_partfile)) {
     SprayRestart(restart_file);
   } else {
     if (!m_restart_chkfile.empty() || !m_restart_pltfile.empty()) {
@@ -286,6 +286,7 @@ PeleLM::SprayRestart(const std::string& restart_file)
   //
   theSprayPC()->Restart(restart_file, "particles", true);
   SprayPostRegrid();
+  //theSprayPC()->Redistribute();
   amrex::Gpu::Device::streamSynchronize();
 }
 
@@ -470,6 +471,10 @@ PeleLM::SprayPostRegrid()
       dm_spray[lev] = dmap[lev];
       prev_state[lev] = -1;
       prev_source[lev] = -1;
+      if (lev < theSprayPC()->GetParticles().size()) {
+        theSprayPC()->SetParticleDistributionMap(lev, dmap[lev]);
+        theSprayPC()->SetParticleBoxArray(lev, grids[lev]);
+      }
     }
     theSprayPC()->Redistribute();
   }

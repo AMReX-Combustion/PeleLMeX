@@ -119,7 +119,7 @@ class PeleLM : public amrex::AmrCore {
    void SprayInit();
 
    // SprayRestart
-   void SprayRestart(std::string restart_file);
+   void SprayRestart(const std::string& restart_file);
 #endif
 
    // VariablesSetup
