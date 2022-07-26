@@ -55,8 +55,8 @@ void pelelm_initdata(int i, int j, int k,
               0.982 * std::sin(2 * Pi * 5 * (x - 0.014234) / Lx));
     }
 
-    y1 = (y - prob_parm.standoff - 0.5*dx[1] + pert);
-    y2 = (y - prob_parm.standoff + 0.5*dx[1] + pert);
+    y1 = (y - prob_parm.standoff - 0.5*dx[1] + pert)*100.0;
+    y2 = (y - prob_parm.standoff + 0.5*dx[1] + pert)*100.0;
 
     y1 += 0.5*dx[1];
     pele::physics::PMF::pmf(pmf_data,y1, y1, pmf_vals);
@@ -64,8 +64,10 @@ void pelelm_initdata(int i, int j, int k,
     state(i,j,k,TEMP) = pmf_vals[0];;
 
     for (int n = 0; n < NUM_SPECIES; n++){
-      massfrac[n] = pmf_vals[3 + n];
+      molefrac[n] = pmf_vals[3 + n];
     }
+
+    eos.X2Y(molefrac,massfrac);
 
     amrex::Real mw[NUM_SPECIES] = {0.0};
     eos.molecular_weight(mw);
@@ -110,7 +112,7 @@ void pelelm_initdata(int i, int j, int k,
 
 
     AMREX_D_TERM(state(i,j,k,VELX) = 0.0;,
-                 state(i,j,k,VELY) = pmf_vals[1];,
+                 state(i,j,k,VELY) = pmf_vals[1] * 0.01;,
                  state(i,j,k,VELZ) = 0.0);
 
     amrex::Real P_cgs = prob_parm.P_mean * 10.0;
@@ -158,19 +160,20 @@ bcnormal(
       pele::physics::PMF::pmf(pmf_data,prob_lo[idir], prob_lo[idir], pmf_vals);
 
       AMREX_D_TERM(s_ext[VELX] = 0.0;,
-                   s_ext[VELY] = pmf_vals[1];,
+                   s_ext[VELY] = pmf_vals[1]*0.01;,
                    s_ext[VELZ] = 0.0);
 
       s_ext[TEMP] = pmf_vals[0];
       for (int n = 0; n < NUM_SPECIES; n++){
-         massfrac[n] = pmf_vals[3 + n];
+         molefrac[n] = pmf_vals[3 + n];
       }
 
-      massfrac[N2_ID] += massfrac[E_ID] + massfrac[H3Op_ID] + massfrac[HCOp_ID] + massfrac[C2H3Op_ID];
+      eos.X2Y(molefrac,massfrac);
+
+      massfrac[N2_ID] += massfrac[E_ID] + massfrac[H3Op_ID] + massfrac[CHOp_ID];
       massfrac[E_ID] = 0.0;
       massfrac[H3Op_ID] = 0.0;
-      massfrac[HCOp_ID] = 0.0;
-      massfrac[C2H3Op_ID] = 0.0;
+      massfrac[CHOp_ID] = 0.0;
 
       amrex::Real rho_cgs, P_cgs, RhoH_temp;
       P_cgs = prob_parm.P_mean * 10.0;
