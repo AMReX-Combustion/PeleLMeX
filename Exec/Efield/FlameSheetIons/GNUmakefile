@@ -23,7 +23,7 @@ USE_HIP         = FALSE
 USE_EFIELD      = TRUE
 
 # PelePhysics
-Chemistry_Model = CH4Ion_GRI
+Chemistry_Model = methaneIons_diRenzo
 Eos_Model	    = Fuego
 Transport_Model = Simple
 

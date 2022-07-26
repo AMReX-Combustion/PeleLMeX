@@ -29,7 +29,7 @@ prob.standoff = -.01
 prob.pertmag = 0.0001
 pmf.datafile = "pmf_DiRenzoSkCH4Air_1p0.dat"
 pmf.do_cellAverage = 0
-prob.PhiV_y_hi = 1000.0
+prob.PhiV_y_hi = -1000.0
 
 #-------------------------PeleLM CONTROL----------------------------
 peleLM.v = 2
@@ -61,8 +61,8 @@ cvode.max_order  = 4                  # CVODE max BDF order.
 #--------------------REFINEMENT CONTROL------------------------
 ef.phiV_lo_bc = Interior Dirichlet
 ef.phiV_hi_bc = Interior Dirichlet
-ef.phiV_polarity_lo = Neutral Cathode
-ef.phiV_polarity_hi = Neutral Anode
+ef.phiV_polarity_lo = Neutral Anode
+ef.phiV_polarity_hi = Neutral Cathode
 ef.GMRES_rel_tol  = 1.0e-5
 ef.GMRES_abs_tol  = 1.0e-13
 ef.JFNK_lambda = 1.0e-7
