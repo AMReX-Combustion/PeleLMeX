@@ -27,7 +27,7 @@ amr.max_grid_size   = 128               # max box size
 prob.P_mean = 101325.0
 prob.standoff = -.01
 prob.pertmag = 0.0001
-pmf.datafile = "pmf_CH4Air_1p0.dat"
+pmf.datafile = "pmf_DiRenzoSkCH4Air_1p0.dat"
 pmf.do_cellAverage = 0
 prob.PhiV_y_hi = 1000.0
 
@@ -42,7 +42,7 @@ eleLM.floor_species = 0
 peleLM.num_init_iter = 2
 peleLM.advection_scheme = "Godunov_BDS"
 
-#amr.restart = chk00070
+#amr.restart = chk00080
 amr.check_int = 20
 amr.plot_int = 10
 amr.max_step = 20
@@ -63,20 +63,20 @@ ef.phiV_lo_bc = Interior Dirichlet
 ef.phiV_hi_bc = Interior Dirichlet
 ef.phiV_polarity_lo = Neutral Cathode
 ef.phiV_polarity_hi = Neutral Anode
-ef.GMRES_rel_tol  = 1.0e-6
+ef.GMRES_rel_tol  = 1.0e-5
 ef.GMRES_abs_tol  = 1.0e-13
-ef.JFNK_lambda = 5.0e-7
+ef.JFNK_lambda = 1.0e-7
 ef.JFNK_diffType = 1
 ef.PC_approx = 2
-#ef.PC_damping = 0.95
+#ef.PC_damping = 0.75
 ef.advection_scheme_order = 1
-ef.precond.diff_verbose = 2
+ef.precond.diff_verbose = 0
 ef.precond.Stilda_verbose = 0
-ef.precond.fixedIter = 3
+ef.precond.fixedIter = 4
 #ef.precond.max_coarsening_level_diff = 3
-gmres.krylovBasis_size = 20
-gmres.verbose  = 0
-gmres.max_restart = 3
+gmres.krylovBasis_size = 30
+gmres.verbose  = 1
+gmres.max_restart = 2
 
 #--------------------REFINEMENT CONTROL------------------------
 #amr.refinement_indicators = temp
