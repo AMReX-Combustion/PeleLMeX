@@ -35,8 +35,16 @@ void PeleLM::WriteDebugPlotFile(const Vector<const MultiFab*> &a_MF,
       names[n] = "comp"+std::to_string(n);
    }
    Vector<int> istep(finest_level + 1, m_nstep);
-   amrex::WriteMultiLevelPlotfile(pltname, finest_level + 1, a_MF,
-                                  names, Geom(), m_cur_time, istep, refRatio());
+#ifdef AMREX_USE_HDF5
+   if (m_write_hdf5_pltfile) {
+       amrex::WriteMultiLevelPlotfileHDF5(pltname, finest_level + 1, a_MF,
+                                          names, Geom(), m_cur_time, istep, refRatio());
+   } else
+#endif
+   {
+       amrex::WriteMultiLevelPlotfile(pltname, finest_level + 1, a_MF,
+                                      names, Geom(), m_cur_time, istep, refRatio());
+   }
 }
 
 void PeleLM::WritePlotFile() {
@@ -277,8 +285,16 @@ void PeleLM::WritePlotFile() {
    // No SubCycling, all levels the same step.
    Vector<int> istep(finest_level + 1, m_nstep);
 
-   amrex::WriteMultiLevelPlotfile(plotfilename, finest_level + 1, GetVecOfConstPtrs(mf_plt),
-                                  plt_VarsName, Geom(), m_cur_time, istep, refRatio());
+#ifdef AMREX_USE_HDF5
+   if (m_write_hdf5_pltfile) {
+       amrex::WriteMultiLevelPlotfileHDF5(plotfilename, finest_level + 1, GetVecOfConstPtrs(mf_plt),
+                                          plt_VarsName, Geom(), m_cur_time, istep, refRatio());
+   } else
+#endif
+   {
+       amrex::WriteMultiLevelPlotfile(plotfilename, finest_level + 1, GetVecOfConstPtrs(mf_plt),
+                                      plt_VarsName, Geom(), m_cur_time, istep, refRatio());
+   }
 
 #ifdef PELELM_USE_SPRAY
    if (theSprayPC() != nullptr && do_spray_particles) {
