@@ -13,19 +13,29 @@
    int m_restart_electroneutral = 1;
    int m_restart_resetTime = 1;
 
+   // Scheme
+   int                         m_nEAdvOrder = 2;
+
+   // Electron transport
+   int                         m_electronKappaTab = 0;
+   amrex::Real                 m_fixedKappaE = 0.4;
+
    // Scaling of non-linear system
    amrex::Real                 nE_scale;           // nE state scale
    amrex::Real                 phiV_scale;         // phiV state scale
    amrex::Real                 FnE_scale = 1.0;    // nE residual scale
    amrex::Real                 FphiV_scale = 1.0;  // phiV residual scale
 
-   // Linear solve
+   // non-linear / linear solve
    int                         m_ef_maxNewtonIter    = 5; 
    int                         m_ef_use_PETSC_direct = 0;
    int                         m_ef_PC_approx        = 1;
+   int                         m_ef_diffT_jfnk       = 1;
+   amrex::Real                 m_ABecCecOmega        = 0.9;
    amrex::Real                 m_ef_lambda_jfnk      = 1.0e-7;
    amrex::Real                 m_ef_newtonTol        = std::pow(1.0e-13,2.0/3.0);
    amrex::Real                 m_ef_GMRES_reltol     = 1.0e-6;
+   amrex::Real                 m_ef_GMRES_abstol     = 1.0e-12;
    amrex::Real                 m_ef_PC_MG_Tol        = 1.0e-6;
 
    // Species charge per unit mass
@@ -57,3 +67,4 @@
    amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM >> getUeffVect();
    amrex::Vector<amrex::MultiFab*> getNLresidVect();
    amrex::Vector<amrex::MultiFab*> getNLstateVect();
+   amrex::Vector<amrex::MultiFab*> getNLBGChargeVect();

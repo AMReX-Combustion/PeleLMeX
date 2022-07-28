@@ -55,7 +55,7 @@ void PeleLM::ionDriftVelocity(std::unique_ptr<AdvanceAdvData> &advData)
       auto ldataNew_p = getLevelDataPtr(lev,AmrNewTime);
 
       MultiFab mobH_cc(grids[lev],dmap[lev],NUM_IONS,1);
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
       for (MFIter mfi(mobH_cc,TilingIfNotGPU()); mfi.isValid();++mfi)
@@ -77,7 +77,7 @@ void PeleLM::ionDriftVelocity(std::unique_ptr<AdvanceAdvData> &advData)
 
       // Assemble the ions drift velocity
       for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
          for (MFIter mfi(mobH_ec[idim],TilingIfNotGPU()); mfi.isValid();++mfi)
@@ -115,7 +115,7 @@ void PeleLM::ionDriftAddUmac(int lev, std::unique_ptr<AdvanceAdvData> &advData)
 {
    // Add umac to the ions drift velocity to get the effective velocity
    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
       for (MFIter mfi(advData->umac[lev][idim],TilingIfNotGPU()); mfi.isValid();++mfi)
@@ -129,5 +129,6 @@ void PeleLM::ionDriftAddUmac(int lev, std::unique_ptr<AdvanceAdvData> &advData)
             Ud_Sp(i,j,k,n) += umac(i,j,k);
          });
       }
+      advData->uDrift[lev][idim].FillBoundary(geom[lev].periodicity());
    }
 }

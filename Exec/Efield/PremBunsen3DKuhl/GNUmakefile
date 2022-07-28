@@ -6,14 +6,14 @@ AMREX_HYDRO_HOME   ?= ${TOP}/AMReX-Hydro
 
 
 # AMReX
-DIM             = 2
+DIM             = 3
 DEBUG           = FALSE
 PRECISION       = DOUBLE
 VERBOSE         = FALSE
 TINY_PROFILE    = FALSE
 
 # Compilation
-COMP            = gnu
+COMP            = gnu 
 USE_MPI         = TRUE
 USE_OMP         = FALSE
 USE_CUDA        = FALSE
@@ -21,10 +21,12 @@ USE_HIP         = FALSE
 
 # PeleLMeX
 USE_EFIELD      = TRUE
+PELE_USE_MAGMA  = FALSE
 
 # PelePhysics
-Chemistry_Model = methaneIons_diRenzo
-Eos_Model	    = Fuego
+Chemistry_Model = CH4Ion_LuSk
+#Chemistry_Model = drm19
+Eos_Model       = Fuego
 Transport_Model = Simple
 
 include $(PELELMEX_HOME)/Utils/Make.PeleLMeX

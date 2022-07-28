@@ -4,9 +4,6 @@
 #include <AMReX_FArrayBox.H>
 #include <AMReX_Geometry.H>
 #include <AMReX_BCRec.H>
-#ifdef PELE_USE_EFIELD
-#include <PeleLMEFDeriveFunc.H>
-#endif
 
 // Forward declaration of PeleLM
 class PeleLM;
@@ -75,4 +72,9 @@ void pelelm_derlambda (PeleLM* a_pelelm, const amrex::Box& bx, amrex::FArrayBox&
                        const amrex::FArrayBox& statefab, const amrex::FArrayBox& reactfab, const amrex::FArrayBox& pressfab,
                        const amrex::Geometry& geomdata,
                        amrex::Real time, const amrex::Vector<amrex::BCRec> &bcrec, int level);
+
+#ifdef PELE_USE_EFIELD
+#include <PeleLMEFDeriveFunc.H>
+#endif
+
 #endif

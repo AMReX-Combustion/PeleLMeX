@@ -299,9 +299,6 @@ void PeleLM::advFluxDivergence(int a_lev,
     AMREX_ASSERT(a_fluxes[0]->nComp() >= flux_comp+ncomp);
     AMREX_ASSERT(a_faceState[0]->nComp() >= face_comp+ncomp);
 
-    // Get the volume
-    MultiFab volume(grids[a_lev], dmap[a_lev], 1, 0);
-    geom[a_lev].GetVolume(volume);
 #if ( AMREX_SPACEDIM == 2 )
     MultiFab mf_ax, mf_ay;
     if (geom[a_lev].IsRZ()) {
@@ -312,8 +309,6 @@ void PeleLM::advFluxDivergence(int a_lev,
 
 #ifdef AMREX_USE_EB
     auto const& ebfact = EBFactory(a_lev);
-#else
-    amrex::ignore_unused(a_lev);
 #endif
 
 #ifdef AMREX_USE_OMP
@@ -354,53 +349,66 @@ void PeleLM::advFluxDivergence(int a_lev,
                      auto const& facey = a_faceState[1]->const_array(mfi,face_comp);,
                      auto const& facez = a_faceState[2]->const_array(mfi,face_comp);)
 
-        bool regular = true;
 #ifdef AMREX_USE_EB
-        regular = (flagfab.getType(bx) == FabType::regular);
-#endif
-        if (regular) {
+        if (flagfab.getType(bx) == FabType::covered) {
+            AMREX_PARALLEL_FOR_4D(bx, ncomp, i, j, k, n, {div_arr(i,j,k,n) = 0.0;});
+        } else if (flagfab.getType(bx) == FabType::singlevalued) {
+            AMREX_D_TERM(auto const& apx_arr = ebfact.getAreaFrac()[0]->const_array(mfi);,
+                         auto const& apy_arr = ebfact.getAreaFrac()[1]->const_array(mfi);,
+                         auto const& apz_arr = ebfact.getAreaFrac()[2]->const_array(mfi););
             ParallelFor(bx, ncomp, [=]
             AMREX_GPU_DEVICE (int i, int j, int k, int n) noexcept
             {
-                if (!l_conserv_d[n]) {
-                    Real qavg  = AMREX_D_TERM(  facex(i,j,k,n) + facex(i+1,j,k,n),
-                                              + facey(i,j,k,n) + facey(i,j+1,k,n),
-                                              + facez(i,j,k,n) + facez(i,j,k+1,n));
-#if (AMREX_SPACEDIM == 2)
-                    qavg *= 0.25;
-#else
-                    qavg /= 6.0;
-#endif
+                if (!l_conserv_d[n] && vfrac_arr(i,j,k) > 0.) {
+                    Real qwsum  = AMREX_D_TERM(  apx_arr(i,j,k) * facex(i,j,k,n) + apx_arr(i+1,j,k) * facex(i+1,j,k,n),
+                                               + apy_arr(i,j,k) * facey(i,j,k,n) + apy_arr(i,j+1,k) * facey(i,j+1,k,n),
+                                               + apz_arr(i,j,k) * facez(i,j,k,n) + apz_arr(i,j,k+1) * facez(i,j,k+1,n));
+                    Real areasum  = AMREX_D_TERM(  apx_arr(i,j,k) + apx_arr(i+1,j,k),
+                                                 + apy_arr(i,j,k) + apy_arr(i,j+1,k),
+                                                 + apz_arr(i,j,k) + apz_arr(i,j,k+1));
                     // Note that because we define adv update as MINUS div(u q), here we add q div (u)
-                    div_arr(i,j,k,n) += qavg*divu_arr(i,j,k);
+                    div_arr(i,j,k,n) += qwsum / areasum * divu_arr(i,j,k);
                 }
             });
-        }
-#ifdef AMREX_USE_EB
-        else {
-            if (flagfab.getType(bx) == FabType::covered) {
-                AMREX_PARALLEL_FOR_4D(bx, ncomp, i, j, k, n, {div_arr(i,j,k,n) = 0.0;});
-            } else {
-                AMREX_D_TERM(auto const& apx_arr = ebfact.getAreaFrac()[0]->const_array(mfi);,
-                             auto const& apy_arr = ebfact.getAreaFrac()[1]->const_array(mfi);,
-                             auto const& apz_arr = ebfact.getAreaFrac()[2]->const_array(mfi););
+        } else
+#endif
+        {
+#if (AMREX_SPACEDIM == 2)
+            if (geom[a_lev].IsRZ()) {
+                Array4<Real const> const&  ax =  mf_ax.const_array(mfi);
+                Array4<Real const> const&  ay =  mf_ay.const_array(mfi);
                 ParallelFor(bx, ncomp, [=]
                 AMREX_GPU_DEVICE (int i, int j, int k, int n) noexcept
                 {
-                    if (!l_conserv_d[n] && vfrac_arr(i,j,k) > 0.) {
-                        Real qwsum  = AMREX_D_TERM(  apx_arr(i,j,k) * facex(i,j,k,n) + apx_arr(i+1,j,k) * facex(i+1,j,k,n),
-                                                   + apy_arr(i,j,k) * facey(i,j,k,n) + apy_arr(i,j+1,k) * facey(i,j+1,k,n),
-                                                   + apz_arr(i,j,k) * facez(i,j,k,n) + apz_arr(i,j,k+1) * facez(i,j,k+1,n));
-                        Real areasum  = AMREX_D_TERM(  apx_arr(i,j,k) + apx_arr(i+1,j,k),
-                                                     + apy_arr(i,j,k) + apy_arr(i,j+1,k),
-                                                     + apz_arr(i,j,k) + apz_arr(i,j,k+1));
+                    if (!l_conserv_d[n]) {
+                        Real qavg  = AMREX_D_TERM(  ax(i,j,k) * facex(i,j,k,n) + ax(i+1,j,k) * facex(i+1,j,k,n),
+                                                  + ay(i,j,k) * facey(i,j,k,n) + ay(i,j+1,k) * facey(i,j+1,k,n),
+                                                  + 0.0);
+                        Real areasum = ax(i,j,k) + ax(i+1,j,k) + ay(i,j,k) + ay(i,j+1,k);
+                        qavg /= areasum;
                         // Note that because we define adv update as MINUS div(u q), here we add q div (u)
-                        div_arr(i,j,k,n) += qwsum / areasum * divu_arr(i,j,k);
+                        div_arr(i,j,k,n) += qavg*divu_arr(i,j,k);
+                    }
+                });
+            } else
+#endif
+            {
+                ParallelFor(bx, ncomp, [=]
+                AMREX_GPU_DEVICE (int i, int j, int k, int n) noexcept
+                {
+                    if (!l_conserv_d[n]) {
+                        Real qavg  = AMREX_D_TERM(  facex(i,j,k,n) + facex(i+1,j,k,n),
+                                                  + facey(i,j,k,n) + facey(i,j+1,k,n),
+                                                  + facez(i,j,k,n) + facez(i,j,k+1,n));
+                        AMREX_D_PICK(qavg *= 0.5;,
+                                     qavg *= 0.25;,
+                                     qavg /= 6.0;)
+                        // Note that because we define adv update as MINUS div(u q), here we add q div (u)
+                        div_arr(i,j,k,n) += qavg*divu_arr(i,j,k);
                     }
                 });
             }
         }
-#endif
     }
 }
 
@@ -427,7 +435,7 @@ PeleLM::floorSpecies(const TimeStamp &a_time)
             fabMinMax( i, j, k, NUM_SPECIES, 0.0, AMREX_REAL_MAX, rhoY);
          });
 #ifdef PELE_USE_EFIELD
-         auto const& nE    = ldata_p->nE.array(mfi);
+         auto const& nE    = ldata_p->state.array(mfi,NE);
          amrex::ParallelFor(bx, [nE]
          AMREX_GPU_DEVICE (int i, int j, int k) noexcept
          {

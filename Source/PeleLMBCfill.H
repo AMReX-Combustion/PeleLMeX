@@ -429,7 +429,7 @@ struct PeleLMCCFillExtDirPhiV
    void operator()(
       const amrex::IntVect& iv,
       amrex::Array4<amrex::Real> const& phiV,
-      const int /*dcomp*/,
+      const int dcomp,
       const int /*numcomp*/,
       amrex::GeometryData const& geom,
       const amrex::Real time,
@@ -460,7 +460,7 @@ struct PeleLMCCFillExtDirPhiV
             // bcnormal() is defined in pelelm_prob.H in problem directory in /Exec
             bcnormal(x, m_nAux, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
 
-            phiV(iv) = s_ext[PHIV];
+            phiV(iv,dcomp) = s_ext[PHIV];
 
          // High
          } else if ((bc[idir+AMREX_SPACEDIM] == amrex::BCType::ext_dir) and (iv[idir] > domhi[idir])) {
@@ -468,7 +468,7 @@ struct PeleLMCCFillExtDirPhiV
             // bcnormal() is defined in pelelm_prob.H in problem directory in /Exec
             bcnormal(x, m_nAux, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
 
-            phiV(iv) = s_ext[PHIV];
+            phiV(iv,dcomp) = s_ext[PHIV];
 
          }
       }

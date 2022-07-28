@@ -46,6 +46,16 @@ PeleLM::getNLstateVect() {
    return r;
 }
 
+Vector<MultiFab*>
+PeleLM::getNLBGChargeVect() {
+   Vector<MultiFab*> r;
+   r.reserve(finest_level+1);
+   for (int lev = 0; lev <= finest_level; ++lev) {
+      r.push_back(&(m_leveldatanlsolve[lev]->backgroundCharge));
+   }
+   return r;
+}
+
 void PeleLM::getNLStateScaling(Real &nEScale, Real &phiVScale)
 {
    Array<Real,2> r = {0.0,0.0};
@@ -87,8 +97,8 @@ void PeleLM::getNLResidScaling(Real &nEScale, Real &phiVScale)
 void PeleLM::scaleNLState(const Real &nEScale, const Real &phiVScale)
 {
    for (int lev = 0; lev <= finest_level; ++lev) {
-      m_leveldatanlsolve[lev]->nlState.mult(1.0/nE_scale,0,1,1);
-      m_leveldatanlsolve[lev]->nlState.mult(1.0/phiV_scale,1,1,1);
+      m_leveldatanlsolve[lev]->nlState.mult(1.0/nE_scale,0,1,m_nGrowState);
+      m_leveldatanlsolve[lev]->nlState.mult(1.0/phiV_scale,1,1,m_nGrowState);
    }
 }
 
@@ -185,7 +195,7 @@ void PeleLM::initializeElectronNeutral()
       // Get level data new time pointer
       auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
 
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
       for (MFIter mfi(ldata_p->state, TilingIfNotGPU()); mfi.isValid(); ++mfi)
@@ -195,7 +205,7 @@ void PeleLM::initializeElectronNeutral()
          auto const& rhoY     = ldata_p->state.array(mfi,FIRSTSPEC);
          auto const& rhoH     = ldata_p->state.array(mfi,RHOH);
          auto const& temp     = ldata_p->state.array(mfi,TEMP);
-         auto const& nE       = ldata_p->nE.array(mfi);
+         auto const& nE       = ldata_p->state.array(mfi,NE);
          amrex::ParallelFor(bx, [rho, rhoY, rhoH, temp, nE, lprobparm]
          AMREX_GPU_DEVICE (int i, int j, int k) noexcept
          {
@@ -205,7 +215,7 @@ void PeleLM::initializeElectronNeutral()
 
       // Convert I_R(Y_nE) into I_R(nE) and set I_R(Y_nE) to zero
       auto ldataR_p   = getLevelDataReactPtr(lev);
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
       for (MFIter mfi(ldataR_p->I_R, TilingIfNotGPU()); mfi.isValid(); ++mfi)
