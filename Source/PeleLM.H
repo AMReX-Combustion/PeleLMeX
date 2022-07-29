@@ -197,6 +197,10 @@ class PeleLM : public amrex::AmrCore {
 
       amrex::Vector<amrex::MultiFab> Dwbar;        // Diffusion term of Wbar
       amrex::Vector<amrex::Array<amrex::MultiFab,AMREX_SPACEDIM>> wbar_fluxes;     // Wbar flux correction
+#ifdef USE_SORET
+      amrex::Vector<amrex::MultiFab> DT;        // Diffusion term of T (soret flux)
+      amrex::Vector<amrex::Array<amrex::MultiFab,AMREX_SPACEDIM>> soret_fluxes;     // Soret flux correction
+#endif
    };
    struct AdvanceAdvData {
       AdvanceAdvData () = default;
@@ -323,8 +327,13 @@ class PeleLM : public amrex::AmrCore {
    // get species/enthalpy differential diffusion fluxes
    void computeDifferentialDiffusionFluxes(const PeleLM::TimeStamp &a_time,
                                            const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> &a_fluxes,
-                                           const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> &a_wbarfluxes);
-
+                                           const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> &a_wbarfluxes
+#ifdef USE_SORET
+					   ,const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> &a_soretfluxes
+#endif
+					   );
+  
+  
    // get species/enthalpy differential diffusion terms
    void computeDifferentialDiffusionTerms(const PeleLM::TimeStamp &a_time,
                                           std::unique_ptr<AdvanceDiffData> &diffData,
@@ -337,6 +346,15 @@ class PeleLM : public amrex::AmrCore {
                     amrex::Vector<amrex::MultiFab const*> const &a_rho,
                     amrex::Vector<amrex::MultiFab const*> const &a_beta);
 
+#ifdef USE_SORET
+  // add soret term to the species flux
+   void addSoretTerm(const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> &a_fluxes,
+                    const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> &a_soretfluxes, 
+                    amrex::Vector<amrex::MultiFab const*> const &a_spec,
+                    amrex::Vector<amrex::MultiFab const*> const &a_rho,
+                    amrex::Vector<amrex::MultiFab const*> const &a_temp,
+                    amrex::Vector<amrex::MultiFab const*> const &a_beta);
+#endif
    // Ensure sum of specues diffusion fluxes sum to 0
    void adjustSpeciesFluxes(const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> &a_fluxes,
                             amrex::Vector<amrex::MultiFab const*> const &a_spec);

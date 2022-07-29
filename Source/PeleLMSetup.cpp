@@ -723,13 +723,22 @@ void PeleLM::derivedSetup()
       derive_lst.add("mole_fractions",IndexType::TheCellType(),NUM_SPECIES,
                      var_names_massfrac,pelelm_dermolefrac,the_same_box);
 
+      
       // Species diffusion coefficients
       for (int n = 0 ; n < NUM_SPECIES; n++) {
-         var_names_massfrac[n] = "D_"+spec_names[n];
+        var_names_massfrac[n] = "D_"+spec_names[n];
       }
+#ifdef USE_SORET
+      var_names_massfrac.resize(2*NUM_SPECIES);
+      for (int n = 0; n < NUM_SPECIES; n++) {
+	var_names_massfrac[n+NUM_SPECIES] = "theta_"+spec_names[n]; 
+      }
+      derive_lst.add("diffcoeff",IndexType::TheCellType(),2*NUM_SPECIES,
+                     var_names_massfrac,pelelm_derdiffc,the_same_box);
+#else
       derive_lst.add("diffcoeff",IndexType::TheCellType(),NUM_SPECIES,
                      var_names_massfrac,pelelm_derdiffc,the_same_box);
-
+#endif
       // Heat Release
       derive_lst.add("HeatRelease",IndexType::TheCellType(),1,pelelm_derheatrelease,the_same_box);
 

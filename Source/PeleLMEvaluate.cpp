@@ -132,7 +132,14 @@ PeleLM::MLevaluate(const Vector<MultiFab *> &a_MFVec,
            auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
            MultiFab::Copy(*a_MFVec[lev],ldata_p->diff_cc,0,a_comp,NUM_SPECIES+1,0);
            MultiFab::Copy(*a_MFVec[lev],ldata_p->visc_cc,0,a_comp+NUM_SPECIES+1,1,0);
+#ifdef USE_SORET
+	   MultiFab::Copy(*a_MFVec[lev],ldata_p->diff_cc,NUM_SPECIES+2,a_comp+NUM_SPECIES+2,NUM_SPECIES,0);
+#endif
         }
+#ifdef USE_SORET
+	nComp = 2*NUM_SPECIES+2;
+#else
         nComp = NUM_SPECIES+2;
+#endif	
     }
 }

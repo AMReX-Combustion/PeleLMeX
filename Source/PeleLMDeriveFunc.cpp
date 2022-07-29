@@ -421,8 +421,11 @@ void pelelm_derdiffc (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dc
     AMREX_ASSERT(derfab.box().contains(bx));
     AMREX_ASSERT(statefab.box().contains(bx));
     AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
+#ifdef USE_SORET
+    AMREX_ASSERT(ncomp == 2*NUM_SPECIES);
+#else
     AMREX_ASSERT(ncomp == NUM_SPECIES);
-
+#endif
     FArrayBox dummies(bx,2,The_Async_Arena());
     auto const& rhoY = statefab.const_array(FIRSTSPEC);
     auto const& T    = statefab.array(TEMP);
@@ -430,11 +433,22 @@ void pelelm_derdiffc (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dc
     auto     lambda  = dummies.array(0);
     auto         mu  = dummies.array(1);
     auto const* ltransparm = a_pelelm->trans_parms.device_trans_parm();
+#ifdef USE_SORET
+    auto rhotheta = derfab.array(dcomp+NUM_SPECIES);
+    amrex::ParallelFor(bx,
+		       [rhoY,T,rhoD,rhotheta,lambda,mu,ltransparm] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+    {
+      getTransportCoeffSoret(i, j, k, rhoY, T, rhoD, rhotheta, lambda, mu, ltransparm);
+    });
+
+#else    
     amrex::ParallelFor(bx,
     [rhoY,T,rhoD,lambda,mu,ltransparm] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
     {
         getTransportCoeff(i, j, k, rhoY, T, rhoD, lambda, mu, ltransparm);
     });
+#endif
+    
 }
 
 //

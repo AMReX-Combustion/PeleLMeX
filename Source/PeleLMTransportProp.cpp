@@ -62,7 +62,15 @@ void PeleLM::calcDiffusivity(const TimeStamp &a_time) {
          auto const& rhoD   = ldata_p->diff_cc.array(mfi,0);
          auto const& lambda = ldata_p->diff_cc.array(mfi,NUM_SPECIES);
          auto const& mu     = ldata_p->diff_cc.array(mfi,NUM_SPECIES+1);
+#ifdef USE_SORET
+	 auto const& rhotheta = ldata_p->diff_cc.array(mfi,NUM_SPECIES+2);
 
+         amrex::ParallelFor(gbx, [rhoY, T, rhoD, lambda, mu, rhotheta, ltransparm]
+         AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+         {
+	   getTransportCoeffSoret( i, j, k, rhoY, T, rhoD, rhotheta, lambda, mu, ltransparm);
+         });
+#else
          // TODO: unity Lewis
 
          amrex::ParallelFor(gbx, [rhoY, T, rhoD, lambda, mu, ltransparm]
@@ -70,6 +78,7 @@ void PeleLM::calcDiffusivity(const TimeStamp &a_time) {
          {
             getTransportCoeff( i, j, k, rhoY, T, rhoD, lambda, mu, ltransparm);
          });
+#endif
 #ifdef PELE_USE_EFIELD
          auto const& Ks   = ldata_p->mob_cc.array(mfi,0);
          auto eos = pele::physics::PhysicsType::eos();
