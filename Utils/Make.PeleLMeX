@@ -44,6 +44,10 @@ ifeq ($(USE_SOOT), TRUE)
    LMdirs += Source/Soot
 endif
 
+ifeq ($(USE_SORET), TRUE)
+     DEFINES += -DUSE_SORET
+endif
+
 Bpack += $(foreach dir, $(LMdirs), $(PELELMEX_HOME)/$(dir)/Make.package)
 Blocs += $(foreach dir, $(LMdirs), $(PELELMEX_HOME)/$(dir))
 
