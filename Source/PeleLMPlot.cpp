@@ -316,9 +316,13 @@ void PeleLM::WriteHeader(const std::string& name, bool is_checkpoint) const
         }
 
         HeaderFile << finest_level << "\n";
-
-        // Time stepping controls
+        
         HeaderFile << m_nstep << "\n";
+
+#ifdef AMREX_USE_EB
+        HeaderFile << m_EB_generate_max_level << "\n";
+#endif
+
         HeaderFile << m_cur_time << "\n";
         HeaderFile << m_dt << "\n";
         HeaderFile << m_prev_dt << "\n";
@@ -440,9 +444,26 @@ void PeleLM::ReadCheckPointFile()
    is >> m_nstep;
    GotoNextLine(is);
 
+#ifdef AMREX_USE_EB
+   // Finest level at which EB was generated
+   // actually used independently, so just skip ...
+   std::getline(is, line);
+
+   // ... but to be backward compatible, if we get a float,
+   // let's assume it's m_cur_time
+   if (line.find('.') != std::string::npos) {
+      m_cur_time = std::stod(line);
+   } else {
+      // Skip line and read current time
+      is >> m_cur_time;
+      GotoNextLine(is);
+   }
+#else 
+
    // Current time
    is >> m_cur_time;
    GotoNextLine(is);
+#endif
 
    // Time step size
    is >> m_dt;
