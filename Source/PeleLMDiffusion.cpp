@@ -549,8 +549,8 @@ void PeleLM::addSoretTerm(const Vector<Array<MultiFab*,AMREX_SPACEDIM> > &a_spfl
                auto const& spsoretFlux_ar = ( need_soret_fluxes ) ? a_spsoretfluxes[lev][idim]->array(mfi)
                                                                 : a_spfluxes[lev][idim]->array(mfi);     // Dummy unused Array4
 
-               // Soret flux is : - \rho Y_m * theta_m * \nabla T / T
-               // with beta_m = \rho * theta_m below
+               // Soret flux is : - \rho * Y theta_m * \nabla T / T
+               // with beta_m = \rho (* Y?) * theta_m below
                amrex::ParallelFor(ebx, [need_soret_fluxes, gradT_ar, beta_ar, rhoY, T, spFlux_ar, spsoretFlux_ar]
                AMREX_GPU_DEVICE (int i, int j, int k) noexcept
                {
@@ -565,12 +565,12 @@ void PeleLM::addSoretTerm(const Vector<Array<MultiFab*,AMREX_SPACEDIM> > &a_spfl
                      y[n] = rhoY(i,j,k,n) * rho_inv;
                   }
                   for (int n = 0; n < NUM_SPECIES; n++) {
-		    spFlux_ar(i,j,k,n) -= y[n] * beta_ar(i,j,k,n) * gradT_ar(i,j,k) / T(i,j,k);
+		    spFlux_ar(i,j,k,n) -= beta_ar(i,j,k,n) * gradT_ar(i,j,k) / T(i,j,k);
 		  }
 		  
                   if ( need_soret_fluxes ) {
                      for (int n = 0; n < NUM_SPECIES; n++) {
-		       spsoretFlux_ar(i,j,k,n) = -y[n] * beta_ar(i,j,k,n) * gradT_ar(i,j,k) / T(i,j,k);
+		       spsoretFlux_ar(i,j,k,n) = - beta_ar(i,j,k,n) * gradT_ar(i,j,k) / T(i,j,k);
                      }
                   }
                });
