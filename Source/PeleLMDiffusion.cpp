@@ -74,6 +74,14 @@ void PeleLM::computeDifferentialDiffusionTerms(const TimeStamp &a_time,
       computeDifferentialDiffusionFluxes(a_time, GetVecOfArrOfPtrs(fluxes), GetVecOfArrOfPtrs(diffData->wbar_fluxes));
    }
 
+   // If doing species balances, compute face domain integrals
+   // using level 0 since we've averaged down the fluxes already
+   // Factor for SDC is 0.5 is for Dn and -0.5 for Dnp1
+   if ((m_sdcIter == 0 || m_sdcIter == m_nSDCmax)  && m_do_speciesBalance) {
+       Real sdc_weight = (a_time == AmrOldTime) ? 0.5 : -0.5;
+       addRhoYFluxes(GetArrOfConstPtrs(fluxes[0]),geom[0], sdc_weight);
+   }
+
    //----------------------------------------------------------------
    // TODO simplify the following ...
    // Compute divergence/fill a_viscTerm
@@ -734,6 +742,12 @@ void PeleLM::differentialDiffusionUpdate(std::unique_ptr<AdvanceAdvData> &advDat
 
    // FillPatch species again before going into the enthalpy solve
    fillPatchSpecies(AmrNewTime);
+
+   // If doing species balances, compute face domain integrals
+   // using level 0 since we've averaged down the fluxes already
+   if (m_sdcIter == m_nSDCmax && m_do_speciesBalance) {
+       addRhoYFluxes(GetArrOfConstPtrs(fluxes[0]),geom[0]);
+   }
    //------------------------------------------------------------------------
 
    //------------------------------------------------------------------------

@@ -629,15 +629,12 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
    }
 
    //----------------------------------------------------------------
-   // If mass balance is required, compute face domain integrals
+   // If balances are required, compute face domain integrals
    // using level 0 since we've averaged down the fluxes already
-   if (m_do_massBalance && (m_sdcIter == m_nSDCmax)) {
-      addMassFluxes(GetArrOfConstPtrs(fluxes[0]),geom[0]);
-   }
-   // Compute face domain integrals for RhoH and RhoY
    if (m_sdcIter == m_nSDCmax) {
-      addRhoHFluxes(GetArrOfConstPtrs(fluxes[0]),geom[0]);
-      addRhoYFluxes(GetArrOfConstPtrs(fluxes[0]),geom[0]);
+      if (m_do_massBalance) addMassFluxes(GetArrOfConstPtrs(fluxes[0]),geom[0]);
+      if (m_do_energyBalance) addRhoHFluxes(GetArrOfConstPtrs(fluxes[0]),geom[0]);
+      if (m_do_speciesBalance) addRhoYFluxes(GetArrOfConstPtrs(fluxes[0]),geom[0]);
    }
    // Compute face domain integral for U at every SDC iteration
    addUmacFluxes(advData, geom[0]);
