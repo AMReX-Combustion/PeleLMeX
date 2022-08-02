@@ -639,6 +639,22 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
    // Compute face domain integral for U at every SDC iteration
    addUmacFluxes(advData, geom[0]);
 
+#ifdef PELE_USE_EFIELD
+   if (m_do_extraEFdiags) {
+      for (int lev = 0; lev <= finest_level; ++lev) {
+         for (int n = 0; n < NUM_IONS; ++n) {
+            int spec_idx = NUM_SPECIES - NUM_IONS + n;
+            Array<std::unique_ptr<MultiFab>,AMREX_SPACEDIM> ionFlux;
+            for (int idim = 0; idim < AMREX_SPACEDIM; idim++ ) {
+               ionFlux[idim].reset(new MultiFab(fluxes[lev][idim],amrex::make_alias,spec_idx,1));
+            }
+            average_face_to_cellcenter(*m_ionsFluxes[lev],n*AMREX_SPACEDIM,
+                                       GetArrOfConstPtrs(ionFlux));
+         }
+      }
+   }
+#endif
+
    //----------------------------------------------------------------
    // Fluxes divergence to get the scalars advection term
    auto AdvTypeAll = fetchAdvTypeArray(FIRSTSPEC,NUM_SPECIES+1); // Species+RhoH
