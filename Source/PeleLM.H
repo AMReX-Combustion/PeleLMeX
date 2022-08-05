@@ -546,12 +546,15 @@ class PeleLM : public amrex::AmrCore {
    //-----------------------------------------------------------------------------
    // Temporal
    void massBalance();
+   void speciesBalance();
    void rhoHBalance();
    void initTemporals(const PeleLM::TimeStamp &a_time = AmrOldTime);
    void writeTemporals();
    void addMassFluxes(const amrex::Array<const amrex::MultiFab*,AMREX_SPACEDIM> &a_fluxes, const amrex::Geometry &a_geom);
    void addRhoHFluxes(const amrex::Array<const amrex::MultiFab*,AMREX_SPACEDIM> &a_fluxes, const amrex::Geometry &a_geom);
-   void addRhoYFluxes(const amrex::Array<const amrex::MultiFab*,AMREX_SPACEDIM> &a_fluxes, const amrex::Geometry &a_geom);
+   void addRhoYFluxes(const amrex::Array<const amrex::MultiFab*,AMREX_SPACEDIM> &a_fluxes,
+                      const amrex::Geometry &a_geom,
+                      const amrex::Real &a_factor = 1.0);
    void addUmacFluxes(std::unique_ptr<AdvanceAdvData> &advData, const amrex::Geometry &a_geom);
    void openTempFile();
    void closeTempFile();

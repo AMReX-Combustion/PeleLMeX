@@ -222,13 +222,15 @@ to activate `temporal` diagnostics performing these reductions at given interval
     peleLM.temporal_int = 10                    # [OPT, DEF=5] Temporal freq.
     peleLM.do_extremas = 1                      # [OPT, DEF=0] Trigger extremas, if temporals activated
     peleLM.do_mass_balance = 1                  # [OPT, DEF=0] Compute mass balance, if temporals activated
+    peleLM.do_species_balance = 1               # [OPT, DEF=0] Compute species mass balance, if temporals activated
 
 The `do_temporal` flag will trigger the creation of a `temporals` folder in your run directory and the following entries 
 will be appended to an ASCII `temporals/tempState` file: step, time, dt, kin. energy integral, enstrophy integral, mean pressure
 , fuel consumption rate integral, heat release rate integral. Additionnally, if the `do_temporal` flag is activated, one can
-turn on state extremas (stored in `temporals/tempExtremas` as min/max for each state entry) and mass balance (stored in
-`temporals/tempMass`) computing the total mass, dMdt and mass fluxes across the domain boundary as well as the error in
-the balance (dMdt - sum of fluxes).
+turn on state extremas (stored in `temporals/tempExtremas` as min/max for each state entry), mass balance (stored in
+`temporals/tempMass`) computing the total mass, dMdt and advective mass fluxes across the domain boundaries as well as the error in
+the balance (dMdt - sum of fluxes), and species balance (stored in `temporals/tempSpec`) computing each species total mass, dM_Ydt,
+advective \& diffusive fluxes across the domain boundaries, consumption rate integral and the error (dMdt - sum of fluxes - reaction).
 
 Combustion diagnostics often involve the use of a mixture fraction and/or a progress variable, both of which can be defined
 at run time and added to the derived variables included in the plotfile. If `mixture_fraction` or `progress_variable` is

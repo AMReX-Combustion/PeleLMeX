@@ -385,6 +385,7 @@ void PeleLM::readParameters() {
       pp.query("temporal_int",m_temp_int);
       pp.query("do_extremas",m_do_extremas);
       pp.query("do_mass_balance",m_do_massBalance);
+      pp.query("do_species_balance",m_do_speciesBalance);
    }
 
    // -----------------------------------------
