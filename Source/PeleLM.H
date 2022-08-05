@@ -1093,6 +1093,7 @@ class PeleLM : public amrex::AmrCore {
    int m_plot_grad_p = 1;
    int m_ioDigits = 5;
    amrex::Vector<std::string> m_evaluatePlotVars;
+   bool m_write_hdf5_pltfile = false;
 
    //-----------------------------------------------------------------------------
    // ALGORITHM

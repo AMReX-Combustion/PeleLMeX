@@ -522,6 +522,7 @@ void PeleLM::readIOParameters() {
    pp.query("initial_grid_file", m_initial_grid_file);
    pp.query("regrid_file", m_regrid_file);
    pp.query("file_stepDigits", m_ioDigits);
+   pp.query("use_hdf5_plt",m_write_hdf5_pltfile);
 
 }
 
