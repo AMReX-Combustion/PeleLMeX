@@ -246,13 +246,12 @@ PeleLM::initSprays()
       createSprayData();
     }
 
-    bool init_part = true; // Whether we need to set IC for particle
+    bool init_part = true;
     if (!init_file.empty()) {
       theSprayPC()->InitFromAsciiFile(init_file, NSR_SPR + NAR_SPR);
+    }
+    if (init_function <= 0) {
       init_part = false;
-    } else if (init_function <= 0) {
-      Abort("Must initialize spray particles with particles.init_function or "
-            "particles.init_file");
     }
     ProbParm const* lprobparm = prob_parm;
     theSprayPC()->InitSprayParticles(init_part, *lprobparm);
