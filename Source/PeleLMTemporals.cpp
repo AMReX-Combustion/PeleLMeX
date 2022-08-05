@@ -425,6 +425,13 @@ void PeleLM::writeTemporals()
    tmpExtremasFile << " \n";
    tmpExtremasFile.flush();
 
+
+#ifdef PELE_USE_EFIELD
+   if (m_do_ionsBalance) {
+      ionsBalance();
+   }
+#endif
+
 }
 
 void PeleLM::openTempFile()
@@ -453,6 +460,13 @@ void PeleLM::openTempFile()
          tmpExtremasFile.open(tempFileName.c_str(),std::ios::out | std::ios::app | std::ios_base::binary);
          tmpExtremasFile.precision(12);
       }
+#ifdef PELE_USE_EFIELD
+      if (m_do_ionsBalance) {
+         tempFileName = "temporals/tempIons";
+         tmpIonsFile.open(tempFileName.c_str(),std::ios::out | std::ios::app | std::ios_base::binary);
+         tmpIonsFile.precision(12);
+      }
+#endif
    }
 }
 
@@ -475,5 +489,11 @@ void PeleLM::closeTempFile()
          tmpExtremasFile.flush();
          tmpExtremasFile.close();
       }
+#ifdef PELE_USE_EFIELD
+      if (m_do_ionsBalance) {
+         tmpIonsFile.flush();
+         tmpIonsFile.close();
+      }
+#endif
    }
 }

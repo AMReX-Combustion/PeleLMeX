@@ -905,12 +905,12 @@ class PeleLM : public amrex::AmrCore {
    void jTimesV(const amrex::Vector<amrex::MultiFab*> &a_x,
                 const amrex::Vector<amrex::MultiFab*> &a_Ax);
 
-
-
    void setUpPrecond(const amrex::Real &a_dt,
                      const amrex::Vector<const amrex::MultiFab*> &a_nE);
    void applyPrecond(const amrex::Vector<amrex::MultiFab*> &a_v,
                      const amrex::Vector<amrex::MultiFab*> &a_Pv);
+
+   void ionsBalance();
    //-----------------------------------------------------------------------------
 #endif
 
