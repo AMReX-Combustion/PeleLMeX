@@ -52,6 +52,34 @@ void PeleLM::massBalance()
    tmpMassFile.flush();
 }
 
+void PeleLM::speciesBalance()
+{
+   // Compute the species rhoY balance on the computational domain
+   Array<Real,NUM_SPECIES> dmYdt;
+   Array<Real,NUM_SPECIES> massYFluxBalance;
+   Array<Real,NUM_SPECIES> rhoYdots;
+   for (int n = 0; n < NUM_SPECIES; n++){
+       m_RhoYNew[n] = MFSum(GetVecOfConstPtrs(getSpeciesVect(AmrNewTime)),n);
+       rhoYdots[n] =  MFSum(GetVecOfConstPtrs(getIRVect()),n);
+       dmYdt[n] = (m_RhoYNew[n] - m_RhoYOld[n]) / m_dt;
+       massYFluxBalance[n] = AMREX_D_TERM(  m_domainRhoYFlux[2*n*AMREX_SPACEDIM]   + m_domainRhoYFlux[2*n*AMREX_SPACEDIM+1],
+                                          + m_domainRhoYFlux[2*n*AMREX_SPACEDIM+2] + m_domainRhoYFlux[2*n*AMREX_SPACEDIM+3],
+                                          + m_domainRhoYFlux[2*n*AMREX_SPACEDIM+4] + m_domainRhoYFlux[2*n*AMREX_SPACEDIM+5]);
+   }
+
+   tmpSpecFile << m_nstep << " " << m_cur_time;                         // Time info
+   for (int n = 0; n < NUM_SPECIES; n++){
+       tmpSpecFile << " " << m_RhoYNew[n]                               // mass of Y
+                   << " " << dmYdt[n]                                   // mass temporal derivative
+                   << " " << massYFluxBalance[n]                        // domain boundaries mass fluxes
+                   << " " << rhoYdots[n]                                // integrated consumption rate
+                   << " " << std::abs(dmYdt[n] - massYFluxBalance[n]
+                                      - rhoYdots[n]);                   // balance
+   }
+   tmpSpecFile << "\n";
+   tmpSpecFile.flush();
+}
+
 void PeleLM::addMassFluxes(const Array<const MultiFab*,AMREX_SPACEDIM> &a_fluxes,
                            const Geometry& a_geom)
 {
@@ -269,7 +297,7 @@ void PeleLM::addRhoHFluxes(const Array<const MultiFab*,AMREX_SPACEDIM> &a_fluxes
 
 
 void PeleLM::addRhoYFluxes(const Array<const MultiFab*,AMREX_SPACEDIM> &a_fluxes,
-                           const Geometry& a_geom)
+                           const Geometry& a_geom, const Real &a_factor)
 {
 
    // Do when m_nstep is -1 since m_nstep is increased by one before
@@ -332,8 +360,8 @@ void PeleLM::addRhoYFluxes(const Array<const MultiFab*,AMREX_SPACEDIM> &a_fluxes
          ParallelAllReduce::Sum(sumLo, ParallelContext::CommunicatorSub());
          ParallelAllReduce::Sum(sumHi, ParallelContext::CommunicatorSub());
 
-         m_domainRhoYFlux[2*idim+n*2*AMREX_SPACEDIM] += sumLo;
-         m_domainRhoYFlux[2*idim+n*2*AMREX_SPACEDIM+1] -= sumHi;   // Outflow, negate flux
+         m_domainRhoYFlux[2*idim+n*2*AMREX_SPACEDIM] += a_factor * sumLo;
+         m_domainRhoYFlux[2*idim+n*2*AMREX_SPACEDIM+1] -= a_factor * sumHi;   // Outflow, negate flux
       }
    }
 }
@@ -344,6 +372,12 @@ void PeleLM::writeTemporals()
    // Mass balance
    if (m_do_massBalance && !m_incompressible) {
       massBalance();
+   }
+
+   //----------------------------------------------------------------
+   // Species balance
+   if (m_do_speciesBalance && !m_incompressible) {
+      speciesBalance();
    }
 
    //----------------------------------------------------------------
@@ -391,6 +425,13 @@ void PeleLM::writeTemporals()
    tmpExtremasFile << " \n";
    tmpExtremasFile.flush();
 
+
+#ifdef PELE_USE_EFIELD
+   if (m_do_ionsBalance) {
+      ionsBalance();
+   }
+#endif
+
 }
 
 void PeleLM::openTempFile()
@@ -409,11 +450,23 @@ void PeleLM::openTempFile()
          tmpMassFile.open(tempFileName.c_str(),std::ios::out | std::ios::app | std::ios_base::binary);
          tmpMassFile.precision(12);
       }
+      if (m_do_speciesBalance) {
+         tempFileName = "temporals/tempSpecies";
+         tmpSpecFile.open(tempFileName.c_str(),std::ios::out | std::ios::app | std::ios_base::binary);
+         tmpSpecFile.precision(12);
+      }
       if (m_do_extremas) {
-         std::string tempFileName = "temporals/tempExtremas";
+         tempFileName = "temporals/tempExtremas";
          tmpExtremasFile.open(tempFileName.c_str(),std::ios::out | std::ios::app | std::ios_base::binary);
          tmpExtremasFile.precision(12);
       }
+#ifdef PELE_USE_EFIELD
+      if (m_do_ionsBalance) {
+         tempFileName = "temporals/tempIons";
+         tmpIonsFile.open(tempFileName.c_str(),std::ios::out | std::ios::app | std::ios_base::binary);
+         tmpIonsFile.precision(12);
+      }
+#endif
    }
 }
 
@@ -428,9 +481,19 @@ void PeleLM::closeTempFile()
          tmpMassFile.flush();
          tmpMassFile.close();
       }
+      if (m_do_speciesBalance) {
+         tmpSpecFile.flush();
+         tmpSpecFile.close();
+      }
       if (m_do_extremas) {
          tmpExtremasFile.flush();
          tmpExtremasFile.close();
       }
+#ifdef PELE_USE_EFIELD
+      if (m_do_ionsBalance) {
+         tmpIonsFile.flush();
+         tmpIonsFile.close();
+      }
+#endif
    }
 }

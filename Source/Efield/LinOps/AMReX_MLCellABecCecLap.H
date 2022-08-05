@@ -1,5 +1,6 @@
 #ifndef AMREX_ML_CELL_ABECCECLAP_H_
 #define AMREX_ML_CELL_ABECCECLAP_H_
+#include <AMReX_Config.H>
 
 #include <AMReX_MLCellLinOp.H>
 
@@ -60,9 +61,9 @@ public:
     virtual Array<MultiFab const*,AMREX_SPACEDIM> getBCoeffs (int amrlev, int mglev) const = 0;
     virtual Array<MultiFab const*,AMREX_SPACEDIM> getCCoeffs (int amrlev, int mglev) const = 0;
 
-    virtual void applyInhomogNeumannTerm (int amrlev, MultiFab& rhs) const final override;
+    virtual void applyInhomogNeumannTerm (int amrlev, Any& a_rhs) const final override;
 
-    virtual void applyOverset (int amlev, MultiFab& rhs) const override;
+    virtual void applyOverset (int amlev, Any& a_rhs) const override;
 #ifdef AMREX_USE_HYPRE
     virtual std::unique_ptr<Hypre> makeHypre (Hypre::Interface hypre_interface) const override;
 #endif

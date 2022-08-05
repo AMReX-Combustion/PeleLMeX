@@ -629,18 +629,31 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
    }
 
    //----------------------------------------------------------------
-   // If mass balance is required, compute face domain integrals
+   // If balances are required, compute face domain integrals
    // using level 0 since we've averaged down the fluxes already
-   if (m_do_massBalance && (m_sdcIter == m_nSDCmax)) {
-      addMassFluxes(GetArrOfConstPtrs(fluxes[0]),geom[0]);
-   }
-   // Compute face domain integrals for RhoH and RhoY
    if (m_sdcIter == m_nSDCmax) {
-      addRhoHFluxes(GetArrOfConstPtrs(fluxes[0]),geom[0]);
-      addRhoYFluxes(GetArrOfConstPtrs(fluxes[0]),geom[0]);
+      if (m_do_massBalance) addMassFluxes(GetArrOfConstPtrs(fluxes[0]),geom[0]);
+      if (m_do_energyBalance) addRhoHFluxes(GetArrOfConstPtrs(fluxes[0]),geom[0]);
+      if (m_do_speciesBalance) addRhoYFluxes(GetArrOfConstPtrs(fluxes[0]),geom[0]);
    }
    // Compute face domain integral for U at every SDC iteration
    addUmacFluxes(advData, geom[0]);
+
+#ifdef PELE_USE_EFIELD
+   if (m_do_extraEFdiags) {
+      for (int lev = 0; lev <= finest_level; ++lev) {
+         for (int n = 0; n < NUM_IONS; ++n) {
+            int spec_idx = NUM_SPECIES - NUM_IONS + n;
+            Array<std::unique_ptr<MultiFab>,AMREX_SPACEDIM> ionFlux;
+            for (int idim = 0; idim < AMREX_SPACEDIM; idim++ ) {
+               ionFlux[idim].reset(new MultiFab(fluxes[lev][idim],amrex::make_alias,spec_idx,1));
+            }
+            average_face_to_cellcenter(*m_ionsFluxes[lev],n*AMREX_SPACEDIM,
+                                       GetArrOfConstPtrs(ionFlux));
+         }
+      }
+   }
+#endif
 
    //----------------------------------------------------------------
    // Fluxes divergence to get the scalars advection term
