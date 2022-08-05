@@ -124,7 +124,6 @@ void PeleLM::Setup() {
    prob_parm = new ProbParm{};
    prob_parm_d = (ProbParm*)The_Arena()->alloc(sizeof(ProbParm));
 
-
    // Problem parameters
    readProbParm();
 
