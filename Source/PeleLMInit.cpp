@@ -70,6 +70,9 @@ void PeleLM::MakeNewLevelFromScratch( int lev,
 
 #ifdef PELE_USE_EFIELD
    m_leveldatanlsolve[lev].reset(new LevelDataNLSolve(grids[lev], dmap[lev], *m_factory[lev], m_nGrowState));
+   if (m_do_extraEFdiags) {
+      m_ionsFluxes[lev].reset(new MultiFab(grids[lev], dmap[lev], NUM_IONS*AMREX_SPACEDIM, 0));
+   }
 #endif
 
    // Fill the initial solution (if not restarting)

@@ -99,6 +99,12 @@ void PeleLM::WritePlotFile() {
    }
 #endif
 
+#ifdef PELE_USE_EFIELD
+   if (m_do_extraEFdiags) {
+       ncomp += NUM_IONS * AMREX_SPACEDIM;
+   }
+#endif
+
    //----------------------------------------------------------------
    // Plot MultiFabs
    Vector<MultiFab> mf_plt(finest_level + 1);
@@ -187,6 +193,17 @@ void PeleLM::WritePlotFile() {
    }
 #endif
 
+#ifdef PELE_USE_EFIELD
+   if (m_do_extraEFdiags) {
+       for (int ivar = 0; ivar < NUM_IONS; ++ivar) {
+           for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
+               std::string dir = (idim == 0) ? "X" : ( (idim == 1) ? "Y" : "Z");
+               plt_VarsName.push_back("DriftFlux_"+names[NUM_SPECIES-NUM_IONS+ivar]+"_"+dir);
+           }
+       }
+   }
+#endif
+
    //----------------------------------------------------------------
    // Fill the plot MultiFabs
    for (int lev = 0; lev <= finest_level; ++lev) {
@@ -264,6 +281,11 @@ void PeleLM::WritePlotFile() {
           MultiFab::Add(mf_plt[lev], tmp_plt, 0, cnt, num_spray_derive, 0);
         }
         cnt += num_spray_derive;
+      }
+#endif
+#ifdef PELE_USE_EFIELD
+      if (m_do_extraEFdiags) {
+          MultiFab::Copy(mf_plt[lev], *m_ionsFluxes[lev], 0, cnt, m_ionsFluxes[lev]->nComp(),0);
       }
 #endif
 #ifdef AMREX_USE_EB

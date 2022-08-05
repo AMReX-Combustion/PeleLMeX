@@ -42,6 +42,7 @@ peleLM.do_temporals = 1
 peleLM.temporal_int = 10
 peleLM.do_extremas = 1
 peleLM.do_mass_balance = 1
+peleLM.do_species_balance = 1
 
 #amr.restart = chk00005
 #amr.check_int = 2000

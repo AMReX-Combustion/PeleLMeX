@@ -384,6 +384,7 @@ void PeleLM::readParameters() {
       pp.query("temporal_int",m_temp_int);
       pp.query("do_extremas",m_do_extremas);
       pp.query("do_mass_balance",m_do_massBalance);
+      pp.query("do_species_balance",m_do_speciesBalance);
    }
 
    // -----------------------------------------
@@ -462,7 +463,18 @@ void PeleLM::readParameters() {
    ppef.query("restart_nonEF",m_restart_nonEF);
    ppef.query("restart_electroneutral",m_restart_electroneutral);
    ppef.query("restart_resetTime",m_restart_resetTime);
+   ppef.query("plot_extras",m_do_extraEFdiags);
+
+   // Getting the ions fluxes on the domain boundaries
+   // Species balance data is needed, so override if not activated
+   if (m_do_temporals) {
+      ppef.query("do_ionsBalance",m_do_ionsBalance);
+      if (m_do_ionsBalance) {
+         m_do_speciesBalance = 1; 
+      }
+   }
 #endif
+
 #ifdef PELELM_USE_SPRAY
    readSprayParameters();
 #endif
@@ -945,6 +957,7 @@ void PeleLM::resizeArray() {
 
 #ifdef PELE_USE_EFIELD
    m_leveldatanlsolve.resize(max_level+1);
+   m_ionsFluxes.resize(max_level+1);
 #endif
 
    // External sources

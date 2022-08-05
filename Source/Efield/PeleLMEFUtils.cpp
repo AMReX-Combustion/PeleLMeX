@@ -329,3 +329,21 @@ void PeleLM::fillPatchNLphiV(Real a_time,
                          refRatio(lev-1), mapper, fetchBCRecArray(PHIV,1), 0);
    }
 }
+
+void PeleLM::ionsBalance()
+{
+   // Compute the sum of ions on the domain boundaries
+   Array<Real,2*AMREX_SPACEDIM> ionsCurrent{0.0};
+   for (int n = NUM_SPECIES-NUM_IONS; n < NUM_SPECIES; n++){
+      for (int i = 0; i < 2*AMREX_SPACEDIM; i++) {
+         ionsCurrent[i] += m_domainRhoYFlux[2*n*AMREX_SPACEDIM+i] * zk[n];
+      }
+   }
+
+   tmpIonsFile << m_nstep << " " << m_cur_time;                         // Time info
+   for (int i = 0; i < 2*AMREX_SPACEDIM; i++) {
+       tmpIonsFile << " " << ionsCurrent[i];                            // ions current as xlo, xhi, ylo, ...
+   }
+   tmpIonsFile << "\n";
+   tmpIonsFile.flush();
+}
