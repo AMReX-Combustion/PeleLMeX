@@ -546,12 +546,15 @@ class PeleLM : public amrex::AmrCore {
    //-----------------------------------------------------------------------------
    // Temporal
    void massBalance();
+   void speciesBalance();
    void rhoHBalance();
    void initTemporals(const PeleLM::TimeStamp &a_time = AmrOldTime);
    void writeTemporals();
    void addMassFluxes(const amrex::Array<const amrex::MultiFab*,AMREX_SPACEDIM> &a_fluxes, const amrex::Geometry &a_geom);
    void addRhoHFluxes(const amrex::Array<const amrex::MultiFab*,AMREX_SPACEDIM> &a_fluxes, const amrex::Geometry &a_geom);
-   void addRhoYFluxes(const amrex::Array<const amrex::MultiFab*,AMREX_SPACEDIM> &a_fluxes, const amrex::Geometry &a_geom);
+   void addRhoYFluxes(const amrex::Array<const amrex::MultiFab*,AMREX_SPACEDIM> &a_fluxes,
+                      const amrex::Geometry &a_geom,
+                      const amrex::Real &a_factor = 1.0);
    void addUmacFluxes(std::unique_ptr<AdvanceAdvData> &advData, const amrex::Geometry &a_geom);
    void openTempFile();
    void closeTempFile();
@@ -739,6 +742,8 @@ class PeleLM : public amrex::AmrCore {
 
    void makeEBGeometry();
 
+   int getRestartEBMaxLevel();
+
    void initialRedistribution();
 
    void initCoveredState();
@@ -902,12 +907,12 @@ class PeleLM : public amrex::AmrCore {
    void jTimesV(const amrex::Vector<amrex::MultiFab*> &a_x,
                 const amrex::Vector<amrex::MultiFab*> &a_Ax);
 
-
-
    void setUpPrecond(const amrex::Real &a_dt,
                      const amrex::Vector<const amrex::MultiFab*> &a_nE);
    void applyPrecond(const amrex::Vector<amrex::MultiFab*> &a_v,
                      const amrex::Vector<amrex::MultiFab*> &a_Pv);
+
+   void ionsBalance();
    //-----------------------------------------------------------------------------
 #endif
 
@@ -1088,6 +1093,7 @@ class PeleLM : public amrex::AmrCore {
    int m_plot_grad_p = 1;
    int m_ioDigits = 5;
    amrex::Vector<std::string> m_evaluatePlotVars;
+   bool m_write_hdf5_pltfile = false;
 
    //-----------------------------------------------------------------------------
    // ALGORITHM
@@ -1229,6 +1235,7 @@ class PeleLM : public amrex::AmrCore {
    int m_EB_refine_LevMin = -1;
    int m_EB_refine_LevAdapt = -1;
    int m_signDistNeeded = 0;
+   int m_EB_generate_max_level = -1;
    amrex::Real m_derefineEBBuffer = 3.0;
    std::unique_ptr<amrex::MultiFab> m_signedDist0 = nullptr;
    amrex::Vector<amrex::Real> coveredState_h;
