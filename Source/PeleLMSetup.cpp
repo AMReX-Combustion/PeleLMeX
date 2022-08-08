@@ -497,6 +497,7 @@ void PeleLM::readIOParameters() {
    pp.query("check_int" , m_check_int);
    pp.query("restart" , m_restart_chkfile);
    pp.query("initDataPlt" , m_restart_pltfile);
+   pp.query("initDataPltSource" , pltfileSource);
    pp.query("plot_file", m_plot_file);
    pp.query("plot_int" , m_plot_int);
    if (pp.contains("plot_per")) {

@@ -175,7 +175,8 @@ print-%::
 #---------------
 TPL:
 	@echo "==> Building SUNDIALS library"
-	cd $(PELE_PHYSICS_HOME)/ThirdParty; $(MAKE) sundials AMREX_HOME=$(AMREX_HOME) USE_CUDA=$(USE_CUDA) USE_HIP=$(USE_HIP) PELE_USE_KLU=$(PELE_USE_KLU) PELE_USE_MAGMA=$(PELE_USE_MAGMA) DEBUG=$(DEBUG) COMP=$(COMP) NVCC=$(COMP)
+	@cd $(PELE_PHYSICS_HOME)/ThirdParty && $(MAKE) $(MAKEFLAGS) sundials AMREX_HOME=$(AMREX_HOME) USE_CUDA=$(USE_CUDA) USE_HIP=$(USE_HIP) PELE_USE_KLU=$(PELE_USE_KLU) DEBUG=$(DEBUG) COMP=$(HOSTCC) NVCC=$(COMP)
+
 
 TPLclean:
 	@echo "==> Removing SUNDIALS library"
