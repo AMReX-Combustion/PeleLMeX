@@ -35,8 +35,16 @@ void PeleLM::WriteDebugPlotFile(const Vector<const MultiFab*> &a_MF,
       names[n] = "comp"+std::to_string(n);
    }
    Vector<int> istep(finest_level + 1, m_nstep);
-   amrex::WriteMultiLevelPlotfile(pltname, finest_level + 1, a_MF,
-                                  names, Geom(), m_cur_time, istep, refRatio());
+#ifdef AMREX_USE_HDF5
+   if (m_write_hdf5_pltfile) {
+       amrex::WriteMultiLevelPlotfileHDF5(pltname, finest_level + 1, a_MF,
+                                          names, Geom(), m_cur_time, istep, refRatio());
+   } else
+#endif
+   {
+       amrex::WriteMultiLevelPlotfile(pltname, finest_level + 1, a_MF,
+                                      names, Geom(), m_cur_time, istep, refRatio());
+   }
 }
 
 void PeleLM::WritePlotFile() {
@@ -99,6 +107,12 @@ void PeleLM::WritePlotFile() {
    }
 #endif
 
+#ifdef PELE_USE_EFIELD
+   if (m_do_extraEFdiags) {
+       ncomp += NUM_IONS * AMREX_SPACEDIM;
+   }
+#endif
+
    //----------------------------------------------------------------
    // Plot MultiFabs
    Vector<MultiFab> mf_plt(finest_level + 1);
@@ -145,11 +159,11 @@ void PeleLM::WritePlotFile() {
    }
 
    if (m_plot_grad_p) {
-      plt_VarsName.push_back("gradp_x");
+      plt_VarsName.push_back("gradpx");
 #if ( AMREX_SPACEDIM > 1 )
-      plt_VarsName.push_back("gradp_y");
+      plt_VarsName.push_back("gradpy");
 #if ( AMREX_SPACEDIM > 2 )
-      plt_VarsName.push_back("gradp_z");
+      plt_VarsName.push_back("gradpz");
 #endif
 #endif
    }
@@ -187,6 +201,17 @@ void PeleLM::WritePlotFile() {
    }
 #endif
 
+#ifdef PELE_USE_EFIELD
+   if (m_do_extraEFdiags) {
+       for (int ivar = 0; ivar < NUM_IONS; ++ivar) {
+           for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
+               std::string dir = (idim == 0) ? "X" : ( (idim == 1) ? "Y" : "Z");
+               plt_VarsName.push_back("DriftFlux_"+names[NUM_SPECIES-NUM_IONS+ivar]+"_"+dir);
+           }
+       }
+   }
+#endif
+
    //----------------------------------------------------------------
    // Fill the plot MultiFabs
    for (int lev = 0; lev <= finest_level; ++lev) {
@@ -206,10 +231,8 @@ void PeleLM::WritePlotFile() {
          MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->state, RHOH, cnt, 3, 0);
          cnt += 3;
 #ifdef PELE_USE_EFIELD
-         MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->nE, 0, cnt, 1, 0);
-         cnt += 1;
-         MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->phiV, 0, cnt, 1, 0);
-         cnt += 1;
+         MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->state, NE, cnt, 2, 0);
+         cnt += 2;
 #endif
 #ifdef PELELM_USE_SOOT
          MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->state, FIRSTSOOT, cnt, NUMSOOTVAR, 0);
@@ -268,6 +291,11 @@ void PeleLM::WritePlotFile() {
         cnt += num_spray_derive;
       }
 #endif
+#ifdef PELE_USE_EFIELD
+      if (m_do_extraEFdiags) {
+          MultiFab::Copy(mf_plt[lev], *m_ionsFluxes[lev], 0, cnt, m_ionsFluxes[lev]->nComp(),0);
+      }
+#endif
 #ifdef AMREX_USE_EB
       EB_set_covered(mf_plt[lev],0.0);
 #endif
@@ -277,8 +305,16 @@ void PeleLM::WritePlotFile() {
    // No SubCycling, all levels the same step.
    Vector<int> istep(finest_level + 1, m_nstep);
 
-   amrex::WriteMultiLevelPlotfile(plotfilename, finest_level + 1, GetVecOfConstPtrs(mf_plt),
-                                  plt_VarsName, Geom(), m_cur_time, istep, refRatio());
+#ifdef AMREX_USE_HDF5
+   if (m_write_hdf5_pltfile) {
+       amrex::WriteMultiLevelPlotfileHDF5(plotfilename, finest_level + 1, GetVecOfConstPtrs(mf_plt),
+                                          plt_VarsName, Geom(), m_cur_time, istep, refRatio());
+   } else
+#endif
+   {
+       amrex::WriteMultiLevelPlotfile(plotfilename, finest_level + 1, GetVecOfConstPtrs(mf_plt),
+                                      plt_VarsName, Geom(), m_cur_time, istep, refRatio());
+   }
 
 #ifdef PELELM_USE_SPRAY
    if (theSprayPC() != nullptr && do_spray_particles) {
@@ -318,9 +354,13 @@ void PeleLM::WriteHeader(const std::string& name, bool is_checkpoint) const
         }
 
         HeaderFile << finest_level << "\n";
-
-        // Time stepping controls
+        
         HeaderFile << m_nstep << "\n";
+
+#ifdef AMREX_USE_EB
+        HeaderFile << m_EB_generate_max_level << "\n";
+#endif
+
         HeaderFile << m_cur_time << "\n";
         HeaderFile << m_dt << "\n";
         HeaderFile << m_prev_dt << "\n";
@@ -353,49 +393,41 @@ void PeleLM::WriteHeader(const std::string& name, bool is_checkpoint) const
 void PeleLM::WriteCheckPointFile()
 {
    BL_PROFILE("PeleLM::WriteCheckPointFile()");
-   
+
    const std::string& checkpointname = amrex::Concatenate(m_check_file, m_nstep, m_ioDigits);
-   
+
    if (m_verbose) {
       amrex::Print() << "\n Writting checkpoint file: " << checkpointname << "\n";
    }
-   
+
    amrex::PreBuildDirectorHierarchy(checkpointname, level_prefix, finest_level + 1, true);
 
    bool is_checkpoint = true;
    WriteHeader(checkpointname, is_checkpoint);
    WriteJobInfo(checkpointname);
-   
+
    for(int lev = 0; lev <= finest_level; ++lev)
-   {   
+   {
       VisMF::Write(m_leveldata_new[lev]->state,
                    amrex::MultiFabFileFullPrefix(lev, checkpointname, level_prefix, "state"));
-   
+
       VisMF::Write(m_leveldata_new[lev]->gp,
                    amrex::MultiFabFileFullPrefix(lev, checkpointname, level_prefix, "gradp"));
-   
+
       VisMF::Write(m_leveldata_new[lev]->press,
                    amrex::MultiFabFileFullPrefix(lev, checkpointname, level_prefix, "p"));
-   
+
       if (!m_incompressible) {
          if (m_has_divu) {
             VisMF::Write(m_leveldata_new[lev]->divu,
                          amrex::MultiFabFileFullPrefix(lev, checkpointname, level_prefix, "divU"));
          }
-   
+
          if (m_do_react) {
             VisMF::Write(m_leveldatareact[lev]->I_R,
                          amrex::MultiFabFileFullPrefix(lev, checkpointname, level_prefix, "I_R"));
          }
-
-#ifdef PELE_USE_EFIELD
-         VisMF::Write(m_leveldata_new[lev]->phiV,
-                      amrex::MultiFabFileFullPrefix(lev, checkpointname, level_prefix, "phiV"));
-
-         VisMF::Write(m_leveldata_new[lev]->nE,
-                      amrex::MultiFabFileFullPrefix(lev, checkpointname, level_prefix, "nE"));
-#endif
-      }    
+      }
    }
 #ifdef PELELM_USE_SPRAY
    if (theSprayPC() != nullptr && do_spray_particles) {
@@ -431,26 +463,45 @@ void PeleLM::ReadCheckPointFile()
    Vector<char> fileCharPtr;
    ParallelDescriptor::ReadAndBcastFile(File, fileCharPtr);
    std::string fileCharPtrString(fileCharPtr.dataPtr());
-   std::istringstream is(fileCharPtrString, std::istringstream::in);   
+   std::istringstream is(fileCharPtrString, std::istringstream::in);
 
    std::string line, word;
 
-   // Start reading from checkpoint file 
-   
+   // Start reading from checkpoint file
+
    // Title line
    std::getline(is, line);
 
    // Finest level
-   is >> finest_level;
+   int chk_finest_level = 0;
+   is >> chk_finest_level;
    GotoNextLine(is);
+   finest_level = std::min(chk_finest_level,max_level);
 
    // Step count
    is >> m_nstep;
    GotoNextLine(is);
 
+#ifdef AMREX_USE_EB
+   // Finest level at which EB was generated
+   // actually used independently, so just skip ...
+   std::getline(is, line);
+
+   // ... but to be backward compatible, if we get a float,
+   // let's assume it's m_cur_time
+   if (line.find('.') != std::string::npos) {
+      m_cur_time = std::stod(line);
+   } else {
+      // Skip line and read current time
+      is >> m_cur_time;
+      GotoNextLine(is);
+   }
+#else 
+
    // Current time
    is >> m_cur_time;
    GotoNextLine(is);
+#endif
 
    // Time step size
    is >> m_dt;
@@ -520,8 +571,21 @@ void PeleLM::ReadCheckPointFile()
    // Load the field data
    for(int lev = 0; lev <= finest_level; ++lev)
    {
+#ifdef PELE_USE_EFIELD
+      if (!m_restart_nonEF) {
+         VisMF::Read(m_leveldata_new[lev]->state,
+                     amrex::MultiFabFileFullPrefix(lev, m_restart_chkfile, level_prefix, "state"));
+      } else {
+         // The chk state is 2 component shorter since phiV and nE aren't in it
+         MultiFab stateTemp(grids[lev],dmap[lev],NVAR-2,m_nGrowState);
+         VisMF::Read(stateTemp,
+                     amrex::MultiFabFileFullPrefix(lev, m_restart_chkfile, level_prefix, "state"));
+         MultiFab::Copy(m_leveldata_new[lev]->state, stateTemp, 0, 0, NVAR-2, m_nGrowState);
+      }
+#else
       VisMF::Read(m_leveldata_new[lev]->state,
                   amrex::MultiFabFileFullPrefix(lev, m_restart_chkfile, level_prefix, "state"));
+#endif
 
       VisMF::Read(m_leveldata_new[lev]->gp,
                   amrex::MultiFabFileFullPrefix(lev, m_restart_chkfile, level_prefix, "gradp"));
@@ -537,12 +601,6 @@ void PeleLM::ReadCheckPointFile()
 
 #ifdef PELE_USE_EFIELD
          if (!m_restart_nonEF) {
-            VisMF::Read(m_leveldata_new[lev]->phiV,
-                        amrex::MultiFabFileFullPrefix(lev, m_restart_chkfile, level_prefix, "phiV"));
-
-            VisMF::Read(m_leveldata_new[lev]->nE,
-                        amrex::MultiFabFileFullPrefix(lev, m_restart_chkfile, level_prefix, "nE"));
-
             if (m_do_react) {
                VisMF::Read(m_leveldatareact[lev]->I_R,
                            amrex::MultiFabFileFullPrefix(lev, m_restart_chkfile, level_prefix, "I_R"));
@@ -555,8 +613,8 @@ void PeleLM::ReadCheckPointFile()
                MultiFab::Copy(m_leveldatareact[lev]->I_R,I_Rtemp,0,0,NUM_SPECIES,0);
             }
 
-            // Initialize phiV
-            m_leveldata_new[lev]->phiV.setVal(0.0);
+            // Initialize nE & phiV
+            m_leveldata_new[lev]->state.setVal(0.0,NE,2,m_nGrowState);
          }
 #else
          if (m_do_react) {
@@ -588,14 +646,21 @@ void PeleLM::initLevelDataFromPlt(int a_lev,
    Vector<std::string> spec_names;
    pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(spec_names);
    int idT = -1, idV = -1, idY = -1, nSpecPlt = 0;
+#ifdef PELE_USE_EFIELD
+   int inE = -1, iPhiV = -1; 
+#endif
    for (int i = 0; i < plt_vars.size(); ++i) {
       std::string firstChars = plt_vars[i].substr(0, 2);
-      if (plt_vars[i] == "temp")            idT = i; 
-      if (plt_vars[i] == "x_velocity")      idV = i; 
+      if (plt_vars[i] == "temp")            idT = i;
+      if (plt_vars[i] == "x_velocity")      idV = i;
       if (firstChars == "Y(" && idY < 0 ) {  // species might not be ordered in the order of the current mech.
          idY = i;
       }
       if (firstChars == "Y(")                nSpecPlt += 1;
+#ifdef PELE_USE_EFIELD
+      if (plt_vars[i] == "nE")              inE = i;
+      if (plt_vars[i] == "phiV")            iPhiV = i;
+#endif
    }
    if ( idY < 0 ) {
       Abort("Coudn't find species mass fractions in pltfile");
@@ -631,6 +696,15 @@ void PeleLM::initLevelDataFromPlt(int a_lev,
       if (!foundSpec) ldata_p->state.setVal(0.0,FIRSTSPEC+i,1);
    }
 
+#ifdef PELE_USE_EFIELD
+   // nE
+   pltData.fillPatchFromPlt(a_lev, geom[a_lev], inE, NE, 1,
+                            ldata_p->state);
+   // phiV
+   pltData.fillPatchFromPlt(a_lev, geom[a_lev], iPhiV, PHIV, 1,
+                            ldata_p->state);
+#endif
+
    // Pressure and pressure gradients to zero
    ldata_p->press.setVal(0.0);
    ldata_p->gp.setVal(0.0);
@@ -662,7 +736,7 @@ void PeleLM::initLevelDataFromPlt(int a_lev,
                 sumYs += massfrac[n];
              }
           }
-          massfrac[N2_ID] = 1.0 - sumYs; 
+          massfrac[N2_ID] = 1.0 - sumYs;
 
           // Get density
           Real P_cgs = lprobparm->P_mean * 10.0;
@@ -674,7 +748,7 @@ void PeleLM::initLevelDataFromPlt(int a_lev,
           Real h_cgs = 0.0;
           eos.TY2H(temp_arr(i,j,k), massfrac, h_cgs);
           rhoH_arr(i,j,k) = h_cgs * 1.0e-4 * rho_arr(i,j,k);
-            
+
           // Fill rhoYs
           for (int n = 0; n < NUM_SPECIES; n++){
              rhoY_arr(i,j,k,n) = massfrac[n] * rho_arr(i,j,k);
@@ -766,7 +840,7 @@ void PeleLM::WriteJobInfo(const std::string& path) const
           jobInfoFile << "   maximum zones   = ";
           for(int idim = 0; idim < AMREX_SPACEDIM; idim++)
           {
-              jobInfoFile << geom[lev].Domain().length(idim) << " "; 
+              jobInfoFile << geom[lev].Domain().length(idim) << " ";
           }
           jobInfoFile << "\n\n";
       }

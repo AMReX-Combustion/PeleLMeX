@@ -43,37 +43,75 @@ void pelelm_initdata(int i, int j, int k,
     massfrac[O2_ID] = 0.233;
     massfrac[N2_ID] = 0.767;
 
-    switch(prob_parm.meanFlowDir) {
-      case 1  :
-         AMREX_D_TERM(state(i,j,k,VELX) = prob_parm.meanFlowMag;,
-                      state(i,j,k,VELY) = 5.0 * std::sin(2 * Pi * 4 * y / Ly) * std::sin(2 * Pi * 11 * x / Lx);,
-                      state(i,j,k,VELZ) = 5.0 * std::sin(2 * Pi * 5 * z / Lz) * std::sin(2 * Pi * 4 * x / Lx));
-         break;
-      case -1  :
-         AMREX_D_TERM(state(i,j,k,VELX) = -prob_parm.meanFlowMag;,
-                      state(i,j,k,VELY) = 0.0;,
-                      state(i,j,k,VELZ) = 0.0);
-         break;
-      case 2  :
-         AMREX_D_TERM(state(i,j,k,VELX) = 0.0;,
-                      state(i,j,k,VELY) = prob_parm.meanFlowMag;,
-                      state(i,j,k,VELZ) = 0.0);
-         break;
-      case -2  :
-         AMREX_D_TERM(state(i,j,k,VELX) = 0.0;,
-                      state(i,j,k,VELY) = -prob_parm.meanFlowMag;,
-                      state(i,j,k,VELZ) = 0.0);
-         break;
-      case 3  :
-         AMREX_D_TERM(state(i,j,k,VELX) = prob_parm.meanFlowMag;,
-                      state(i,j,k,VELY) = prob_parm.meanFlowMag;,
-                      state(i,j,k,VELZ) = 0.0);
-         break;
-      case -3  :
-         AMREX_D_TERM(state(i,j,k,VELX) = -prob_parm.meanFlowMag;,
-                      state(i,j,k,VELY) = -prob_parm.meanFlowMag;,
-                      state(i,j,k,VELZ) = 0.0);
-         break;
+    if ( prob_parm.flowType == 1 ) {
+        switch(prob_parm.meanFlowDir) {
+          case 1  :
+             AMREX_D_TERM(state(i,j,k,VELX) = prob_parm.meanFlowMag;,
+                          state(i,j,k,VELY) = 5.0 * std::sin(2 * Pi * 4 * y / Ly) * std::sin(2 * Pi * 11 * x / Lx);,
+                          state(i,j,k,VELZ) = 5.0 * std::sin(2 * Pi * 5 * z / Lz) * std::sin(2 * Pi * 4 * x / Lx));
+             break;
+          case -1  :
+             AMREX_D_TERM(state(i,j,k,VELX) = -prob_parm.meanFlowMag;,
+                          state(i,j,k,VELY) = 0.0;,
+                          state(i,j,k,VELZ) = 0.0);
+             break;
+          case 2  :
+             AMREX_D_TERM(state(i,j,k,VELX) = 0.0;,
+                          state(i,j,k,VELY) = prob_parm.meanFlowMag;,
+                          state(i,j,k,VELZ) = 0.0);
+             break;
+          case -2  :
+             AMREX_D_TERM(state(i,j,k,VELX) = 0.0;,
+                          state(i,j,k,VELY) = -prob_parm.meanFlowMag;,
+                          state(i,j,k,VELZ) = 0.0);
+             break;
+          case 3  :
+             AMREX_D_TERM(state(i,j,k,VELX) = prob_parm.meanFlowMag;,
+                          state(i,j,k,VELY) = prob_parm.meanFlowMag;,
+                          state(i,j,k,VELZ) = 0.0);
+             break;
+          case -3  :
+             AMREX_D_TERM(state(i,j,k,VELX) = -prob_parm.meanFlowMag;,
+                          state(i,j,k,VELY) = -prob_parm.meanFlowMag;,
+                          state(i,j,k,VELZ) = 0.0);
+             break;
+        }
+    } else if ( prob_parm.flowType == 2 ) {
+        const amrex::Real dpdx = 709.79; // Pa/m
+        const amrex::Real c_f = 0.0062418;
+        amrex::GpuArray<amrex::Real,AMREX_SPACEDIM> u;
+        u[0] = sqrt(dpdx*Ly/(0.4688*c_f))*(1.0-pow(fabs(2.0*y/Ly),10.0));
+
+        // Can't get AMReX random engine in here without changing
+        // the initdata function signature -> just use not random IC
+
+        //amrex::Real randp = 0.0;
+        //amrex::Real randr = 0.0;
+        //amrex::Real noisefac = 0.0;
+        // srand(time(NULL) + getpid() + getppid());
+        //randp = amrex::Random()/(amrex::Real)(RAND_MAX/1.0);
+        //randr = amrex::Random()/(amrex::Real)(RAND_MAX/1.0);
+        //// x direction
+        //noisefac = sqrt(-2.0*log(randr))*sin(2.0*Pi*randp);
+        //u[0] += prob_parm.meanFlowMag * noisefac;
+        //// y direction. Note the cos().
+        //noisefac = sqrt(-2.0*log(randr))*cos(2.0*Pi*randp);
+        //u[1] += prob_parm.meanFlowMag * noisefac;
+        //// z direction
+        //randp = (amrex::Real)rand()/(amrex::Real)(RAND_MAX/1.0);
+        //randr = (amrex::Real)rand()/(amrex::Real)(RAND_MAX/1.0);
+        //noisefac = sqrt(-2.0*log(randr))*sin(2.0*Pi*randp);
+        //u[2] += prob_parm.meanFlowMag * noisefac;
+               
+        //AMREX_D_TERM(state(i,j,k,VELX) = u[0];,
+        //             state(i,j,k,VELY) = u[1];,
+        //             state(i,j,k,VELZ) = u[2]);
+        AMREX_D_TERM(state(i,j,k,VELX) = u[0] * (1.0 + std::sin(2 * Pi * 5 * y / Ly) * std::sin(2 * Pi * 14 * z / Lz)
+                                                     + std::sin(2 * Pi * 7 * y / Ly) * std::sin(2 * Pi * 6 * (z-0.00541) / Lz));,
+                     state(i,j,k,VELY) = 0.2*u[0] * (   std::sin(2 * Pi * 5 * y / Ly) * std::sin(2 * Pi * 7 * (x-0.0013) / Lx)
+                                                      + std::sin(2 * Pi * 6 * y / Ly) * std::sin(2 * Pi * 13 * x / Lx));,
+                     state(i,j,k,VELZ) = 0.2*u[0] * (   std::sin(2 * Pi * 11 * z / Lz) * std::sin(2 * Pi * 4 * x / Lx)
+                                                      + std::sin(2 * Pi * 3 * z / Lz) * std::sin(2 * Pi * 9 * (x-0.00779) / Lx)));
     }
 
     if (is_incompressible) return;
@@ -113,46 +151,48 @@ bcnormal(
   ProbParm const& prob_parm,
   pele::physics::PMF::PmfData::DataContainer const * /*pmf_data*/)
 {
-  const amrex::Real* prob_lo = geomdata.ProbLo();
-  //amrex::GpuArray<amrex::Real, NUM_SPECIES + 4> pmf_vals = {0.0};
-  amrex::Real massfrac[NUM_SPECIES] = {0.0};
+    const amrex::Real* prob_lo = geomdata.ProbLo();
+    //amrex::GpuArray<amrex::Real, NUM_SPECIES + 4> pmf_vals = {0.0};
+    amrex::Real massfrac[NUM_SPECIES] = {0.0};
 
-  auto eos = pele::physics::PhysicsType::eos();
+    auto eos = pele::physics::PhysicsType::eos();
 
-    switch(prob_parm.meanFlowDir) {
-      case 1  :
-        AMREX_D_TERM(s_ext[VELX] = prob_parm.meanFlowMag;,
-                     s_ext[VELY] = 0.0;,
-                     s_ext[VELZ] = 0.0);
-        break;
-      case 2  :
-        AMREX_D_TERM(s_ext[VELY] = prob_parm.meanFlowMag;,
-                     s_ext[VELX] = 0.0;,
-                     s_ext[VELZ] = 0.0);
-        break;
-      case 3  :
-        AMREX_D_TERM(s_ext[VELZ] = prob_parm.meanFlowMag;,
-                     s_ext[VELX] = 0.0;,
-                     s_ext[VELY] = 0.0);
-        break;
-    }
+    if ( prob_parm.flowType == 1 ) {
+        switch(prob_parm.meanFlowDir) {
+          case 1  :
+            AMREX_D_TERM(s_ext[VELX] = prob_parm.meanFlowMag;,
+                         s_ext[VELY] = 0.0;,
+                         s_ext[VELZ] = 0.0);
+            break;
+          case 2  :
+            AMREX_D_TERM(s_ext[VELY] = prob_parm.meanFlowMag;,
+                         s_ext[VELX] = 0.0;,
+                         s_ext[VELZ] = 0.0);
+            break;
+          case 3  :
+            AMREX_D_TERM(s_ext[VELZ] = prob_parm.meanFlowMag;,
+                         s_ext[VELX] = 0.0;,
+                         s_ext[VELY] = 0.0);
+            break;
+        }
 
-    massfrac[O2_ID] = 0.333;
-    massfrac[N2_ID] = 0.667;
+        massfrac[O2_ID] = 0.333;
+        massfrac[N2_ID] = 0.667;
 
-    s_ext[TEMP] = prob_parm.T_mean;
+        s_ext[TEMP] = prob_parm.T_mean;
 
-    amrex::Real rho_cgs, P_cgs, RhoH_temp;
-    P_cgs = prob_parm.P_mean * 10.0;
+        amrex::Real rho_cgs, P_cgs, RhoH_temp;
+        P_cgs = prob_parm.P_mean * 10.0;
 
-    eos.PYT2R(P_cgs, massfrac, s_ext[TEMP], rho_cgs);
-    s_ext[DENSITY] = rho_cgs * 1.0e3;
+        eos.PYT2R(P_cgs, massfrac, s_ext[TEMP], rho_cgs);
+        s_ext[DENSITY] = rho_cgs * 1.0e3;
 
-    eos.TY2H(s_ext[TEMP], massfrac, RhoH_temp);
-    s_ext[RHOH] = RhoH_temp * 1.0e-4 * s_ext[DENSITY];   // CGS -> MKS conversion
+        eos.TY2H(s_ext[TEMP], massfrac, RhoH_temp);
+        s_ext[RHOH] = RhoH_temp * 1.0e-4 * s_ext[DENSITY];   // CGS -> MKS conversion
 
-    for (int n = 0; n < NUM_SPECIES; n++) {
-      s_ext[FIRSTSPEC+n] = massfrac[n] * s_ext[DENSITY];
+        for (int n = 0; n < NUM_SPECIES; n++) {
+          s_ext[FIRSTSPEC+n] = massfrac[n] * s_ext[DENSITY];
+        }
     }
 }
 

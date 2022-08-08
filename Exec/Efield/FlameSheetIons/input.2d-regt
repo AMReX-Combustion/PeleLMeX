@@ -2,7 +2,7 @@
 geometry.is_periodic = 1 0               # For each dir, 0: non-perio, 1: periodic
 geometry.coord_sys   = 0                  # 0 => cart, 1 => RZ
 geometry.prob_lo     = 0.0 0.0 0.0        # x_lo y_lo (z_lo)
-geometry.prob_hi     = 0.004 0.016 0.016        # x_hi y_hi (z_hi)
+geometry.prob_hi     = 0.008 0.016 0.016        # x_hi y_hi (z_hi)
 
 # >>>>>>>>>>>>>  BC FLAGS <<<<<<<<<<<<<<<<
 # Interior, Inflow, Outflow, Symmetry,
@@ -12,12 +12,12 @@ peleLM.hi_bc = Interior Outflow
 
 
 #-------------------------AMR CONTROL----------------------------
-amr.n_cell          = 32 128 32      # Level 0 number of cells in each direction   
+amr.n_cell          = 64 128 32      # Level 0 number of cells in each direction   
 amr.v               = 1                # AMR verbose
 amr.max_level       = 2                # maximum level number allowed
 amr.ref_ratio       = 2 2 2 2          # refinement ratio
 amr.regrid_int      = 2                # how often to regrid
-amr.n_error_buf     = 2 2 2 2          # number of buffer cells in error est
+amr.n_error_buf     = 2 4 2 2          # number of buffer cells in error est
 amr.grid_eff        = 0.7              # what constitutes an efficient grid
 amr.blocking_factor = 16               # block factor in grid generation (min box size)
 amr.max_grid_size   = 128               # max box size
@@ -26,12 +26,13 @@ amr.max_grid_size   = 128               # max box size
 #--------------------------- Problem -------------------------------
 prob.P_mean = 101325.0
 prob.standoff = -.01
-prob.pertmag = 0.0000
-pmf.datafile = "pmf_CH4Air_1p0.dat"
+prob.pertmag = 0.0001
+pmf.datafile = "pmf_DiRenzoSkCH4Air_1p0.dat"
+pmf.do_cellAverage = 0
 prob.PhiV_y_hi = 1000.0
 
 #-------------------------PeleLM CONTROL----------------------------
-peleLM.v = 1
+peleLM.v = 2
 peleLM.incompressible = 0
 peleLM.rho = 1.17
 peleLM.mu = 0.0
@@ -39,40 +40,43 @@ peleLM.use_wbar = 1
 peleLM.sdc_iterMax = 2
 peleLM.floor_species = 0
 peleLM.num_init_iter = 2
+peleLM.advection_scheme = "Godunov_BDS"
 
-#amr.restart = chk00005
-#amr.check_int = 2000
+#amr.restart = chk00020
+amr.check_int = 20
 amr.plot_int = 10
-amr.max_step = 100
-amr.dt_shrink = 0.01
+amr.max_step = 20
+amr.dt_shrink = 0.1
 amr.stop_time = 0.001
-#amr.stop_time = 1.00
-#amr.fixed_dt = 1.957622853e-9
-amr.cfl = 0.5
-amr.derive_plot_vars = avg_pressure mag_vort mass_fractions chargedistrib efieldy
+amr.cfl = 0.95
+amr.derive_plot_vars = avg_pressure mag_vort mass_fractions chargedistrib efieldx efieldy LorentzFx LorentzFy 
 
 peleLM.chem_integrator = "ReactorCvode"
 peleLM.use_typ_vals_chem = 1          # Use species/temp typical values in CVODE
-ode.rtol = 1.0e-6                     # Relative tolerance of the chemical solve
-ode.atol = 1.0e-5                     # Absolute tolerance factor applied on typical values
+ode.rtol = 1.0e-7                     # Relative tolerance of the chemical solve
+ode.atol = 1.0e-6                     # Absolute tolerance factor applied on typical values
 cvode.solve_type = denseAJ_direct     # CVODE Linear solve type (for Newton direction) 
 cvode.max_order  = 4                  # CVODE max BDF order. 
-
-godunov.use_ppm = 0
 
 #--------------------REFINEMENT CONTROL------------------------
 ef.phiV_lo_bc = Interior Dirichlet
 ef.phiV_hi_bc = Interior Dirichlet
 ef.phiV_polarity_lo = Neutral Cathode
 ef.phiV_polarity_hi = Neutral Anode
-ef.GMRES_rel_tol  = 1.0e-8
-ef.JFNK_lambda = 1.0e-6
+ef.GMRES_rel_tol  = 1.0e-5
+ef.GMRES_abs_tol  = 1.0e-13
+ef.JFNK_lambda = 1.0e-7
+ef.JFNK_diffType = 1
+ef.PC_approx = 2
+#ef.PC_damping = 0.75
+ef.advection_scheme_order = 1
 ef.precond.diff_verbose = 0
 ef.precond.Stilda_verbose = 0
-ef.precond.fixedIter = 10
-gmres.krylovBasis_size = 20
-gmres.verbose  = 2
-gmres.max_restart = 3
+ef.precond.fixedIter = 4
+#ef.precond.max_coarsening_level_diff = 3
+gmres.krylovBasis_size = 30
+gmres.verbose  = 0
+gmres.max_restart = 2
 
 #--------------------REFINEMENT CONTROL------------------------
 #amr.refinement_indicators = temp
@@ -87,7 +91,7 @@ gmres.max_restart = 3
 
 amr.refinement_indicators = yE
 amr.yE.max_level     = 3
-amr.yE.value_greater = 1.0e16
+amr.yE.value_greater = 1.0e17
 amr.yE.field_name    = nE
 
 #amrex.fpe_trap_invalid = 1

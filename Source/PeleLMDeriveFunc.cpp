@@ -11,7 +11,7 @@ using namespace amrex;
 // Extract temp
 //
 void pelelm_dertemp (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
-                     const FArrayBox& statefab, const FArrayBox& /*pressfab*/,
+                     const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
                      const Geometry& /*geomdata*/,
                      Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
 
@@ -30,10 +30,43 @@ void pelelm_dertemp (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dco
 }
 
 //
+// Compute heat release
+//
+void pelelm_derheatrelease (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
+                            const FArrayBox& statefab, const FArrayBox& reactfab, const FArrayBox& /*pressfab*/,
+                            const Geometry& /*geomdata*/,
+                            Real /*time*/, const Vector<BCRec>& /*bcrec*/, int level)
+
+{
+    AMREX_ASSERT(derfab.box().contains(bx));
+    AMREX_ASSERT(statefab.box().contains(bx));
+    AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
+    AMREX_ASSERT(!a_pelelm->m_incompressible);
+
+    FArrayBox EnthFab;
+    EnthFab.resize(bx,NUM_SPECIES);
+    Elixir  Enthi   = EnthFab.elixir();
+
+    auto const temp = statefab.const_array(TEMP);
+    auto const react = reactfab.const_array(0);
+    auto const& Hi    = EnthFab.array();
+    auto       HRR = derfab.array(dcomp);
+    amrex::ParallelFor(bx,
+    [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+    {
+        getHGivenT( i, j, k, temp, Hi );
+        HRR(i,j,k) = 0.0;
+        for (int n = 0; n < NUM_SPECIES; n++) {
+           HRR(i,j,k) -= Hi(i,j,k,n) * react(i,j,k,n);
+        }
+    });
+}
+
+//
 // Extract species mass fractions Y_n
 //
 void pelelm_dermassfrac (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
-                         const FArrayBox& statefab, const FArrayBox& /*pressfab*/,
+                         const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
                          const Geometry& /*geomdata*/,
                          Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
 
@@ -58,7 +91,7 @@ void pelelm_dermassfrac (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int
 // Extract species mole fractions X_n
 //
 void pelelm_dermolefrac (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
-                         const FArrayBox& statefab, const FArrayBox& /*pressfab*/,
+                         const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
                          const Geometry& /*geomdata*/,
                          Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
 {
@@ -91,7 +124,7 @@ void pelelm_dermolefrac (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int
 // Compute cell averaged pressure from nodes
 //
 void pelelm_deravgpress (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int /*ncomp*/,
-                         const FArrayBox& /*statefab*/, const FArrayBox& pressfab,
+                         const FArrayBox& /*statefab*/, const FArrayBox& /*reactfab*/, const FArrayBox& pressfab,
                          const Geometry& /*geomdata*/,
                          Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
 
@@ -119,7 +152,7 @@ void pelelm_deravgpress (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int
 // Compute vorticity magnitude
 //
 void pelelm_dermgvort (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int /*ncomp*/,
-                       const FArrayBox& statefab, const FArrayBox& /*pressfab*/,
+                       const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
                        const Geometry& geomdata,
                        Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
 
@@ -164,7 +197,7 @@ void pelelm_dermgvort (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int d
 // Compute the kinetic energy
 //
 void pelelm_derkineticenergy (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int /*ncomp*/,
-                              const FArrayBox& statefab, const FArrayBox& /*pressfab*/,
+                              const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
                               const Geometry& /*geomdata*/,
                               Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
 
@@ -198,10 +231,79 @@ void pelelm_derkineticenergy (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab
 }
 
 //
+// Compute enstrophy
+//
+void pelelm_derenstrophy (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int /*ncomp*/,
+                          const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
+                          const Geometry& geomdata,
+                          Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
+
+{
+
+    AMREX_D_TERM(const amrex::Real idx = geomdata.InvCellSize(0);,
+                 const amrex::Real idy = geomdata.InvCellSize(1);,
+                 const amrex::Real idz = geomdata.InvCellSize(2););
+
+    // TODO : EB
+    // TODO : BCs
+
+    if (a_pelelm->m_incompressible) {
+        auto const&  dat_arr = statefab.const_array(VELX);
+        auto const&  ens_arr = derfab.array(dcomp);
+        amrex::ParallelFor(bx, [=,rho=a_pelelm->m_rho] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+        {
+#if ( AMREX_SPACEDIM == 2 )
+            amrex::Real vx = 0.5 * (dat_arr(i+1,j,k,1) - dat_arr(i-1,j,k,1)) * idx;
+            amrex::Real uy = 0.5 * (dat_arr(i,j+1,k,0) - dat_arr(i,j-1,k,0)) * idy;
+            ens_arr(i,j,k) = 0.5 * rho * (vx-uy)*(vx-uy);
+
+#elif ( AMREX_SPACEDIM == 3 )
+            amrex::Real vx = 0.5 * (dat_arr(i+1,j,k,1) - dat_arr(i-1,j,k,1)) * idx;
+            amrex::Real wx = 0.5 * (dat_arr(i+1,j,k,2) - dat_arr(i-1,j,k,2)) * idx;
+
+            amrex::Real uy = 0.5 * (dat_arr(i,j+1,k,0) - dat_arr(i,j-1,k,0)) * idy;
+            amrex::Real wy = 0.5 * (dat_arr(i,j+1,k,2) - dat_arr(i,j-1,k,2)) * idy;
+
+            amrex::Real uz = 0.5 * (dat_arr(i,j,k+1,0) - dat_arr(i,j,k-1,0)) * idz;
+            amrex::Real vz = 0.5 * (dat_arr(i,j,k+1,1) - dat_arr(i,j,k-1,1)) * idz;
+
+            ens_arr(i,j,k) = 0.5 * rho * ((wy-vz)*(wy-vz) + (uz-wx)*(uz-wx) + (vx-uy)*(vx-uy));
+#endif
+        });
+    } else {
+        auto const&  dat_arr = statefab.const_array(VELX);
+        auto const&  rho_arr = statefab.const_array(DENSITY);
+        auto const&  ens_arr = derfab.array(dcomp);
+        amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+        {
+#if ( AMREX_SPACEDIM == 2 )
+            amrex::Real vx = 0.5 * (dat_arr(i+1,j,k,1) - dat_arr(i-1,j,k,1)) * idx;
+            amrex::Real uy = 0.5 * (dat_arr(i,j+1,k,0) - dat_arr(i,j-1,k,0)) * idy;
+            ens_arr(i,j,k) = 0.5 * rho_arr(i,j,k) * (vx-uy)*(vx-uy);
+
+#elif ( AMREX_SPACEDIM == 3 )
+            amrex::Real vx = 0.5 * (dat_arr(i+1,j,k,1) - dat_arr(i-1,j,k,1)) * idx;
+            amrex::Real wx = 0.5 * (dat_arr(i+1,j,k,2) - dat_arr(i-1,j,k,2)) * idx;
+
+            amrex::Real uy = 0.5 * (dat_arr(i,j+1,k,0) - dat_arr(i,j-1,k,0)) * idy;
+            amrex::Real wy = 0.5 * (dat_arr(i,j+1,k,2) - dat_arr(i,j-1,k,2)) * idy;
+
+            amrex::Real uz = 0.5 * (dat_arr(i,j,k+1,0) - dat_arr(i,j,k-1,0)) * idz;
+            amrex::Real vz = 0.5 * (dat_arr(i,j,k+1,1) - dat_arr(i,j,k-1,1)) * idz;
+
+            ens_arr(i,j,k) = 0.5 * rho_arr(i,j,k) * ((wy-vz)*(wy-vz) + (uz-wx)*(uz-wx) + (vx-uy)*(vx-uy));
+#endif
+        });
+    }
+
+}
+
+
+//
 // Compute mixture fraction
 //
 void pelelm_dermixfrac (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
-                        const FArrayBox& statefab, const FArrayBox& /*pressfab*/,
+                        const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
                         const Geometry& /*geomdata*/,
                         Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
 
@@ -240,14 +342,14 @@ void pelelm_dermixfrac (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int 
 // Compute progress variable
 //
 void pelelm_derprogvar (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
-                        const FArrayBox& statefab, const FArrayBox& /*pressfab*/,
+                        const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
                         const Geometry& /*geomdata*/,
                         Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
 
 {
     AMREX_ASSERT(derfab.box().contains(bx));
     AMREX_ASSERT(statefab.box().contains(bx));
-    AMREX_ASSERT(ncomp == 1); 
+    AMREX_ASSERT(ncomp == 1);
 
     if (a_pelelm->m_C0 < 0.0) amrex::Abort("Progress variable not initialized");
 
@@ -262,22 +364,22 @@ void pelelm_derprogvar (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int 
     amrex::GpuArray<amrex::Real,NUM_SPECIES+1> Cweights;
     for (int n=0; n<NUM_SPECIES+1; ++n) {
         Cweights[n] = a_pelelm->m_Cweights[n];
-    }   
+    }
 
     amrex::ParallelFor(bx, [=,revert=a_pelelm->m_Crevert]
     AMREX_GPU_DEVICE (int i, int j, int k) noexcept
-    {   
+    {
         amrex::Real rho_inv = 1.0_rt / density(i,j,k);
         prog_var(i,j,k) = 0.0_rt;
         for (int n = 0; n<NUM_SPECIES; ++n) {
             prog_var(i,j,k) += ( rhoY(i,j,k,n) * Cweights[n] ) * rho_inv;
-        }   
+        }
         prog_var(i,j,k) += temp(i,j,k) * Cweights[NUM_SPECIES];
         if (revert) {
            prog_var(i,j,k) = 1.0 - ( prog_var(i,j,k) - C0_lcl ) * denom_inv;
         } else {
            prog_var(i,j,k) = ( prog_var(i,j,k) - C0_lcl ) * denom_inv;
-        }   
+        }
     });
 }
 
@@ -285,7 +387,7 @@ void pelelm_derprogvar (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int 
 // Extract mixture viscosity
 //
 void pelelm_dervisc (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
-                     const FArrayBox& statefab, const FArrayBox& /*pressfab*/,
+                     const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
                      const Geometry& /*geomdata*/,
                      Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
 {
@@ -312,7 +414,7 @@ void pelelm_dervisc (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dco
 // Extract mixture averaged species diffusion coefficients
 //
 void pelelm_derdiffc (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
-                      const FArrayBox& statefab, const FArrayBox& /*pressfab*/,
+                      const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
                       const Geometry& /*geomdata*/,
                       Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
 {
@@ -339,7 +441,7 @@ void pelelm_derdiffc (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dc
 // Extract thermal diffusivity
 //
 void pelelm_derlambda (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
-                       const FArrayBox& statefab, const FArrayBox& /*pressfab*/,
+                       const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
                        const Geometry& /*geomdata*/,
                        Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
 {

@@ -305,6 +305,33 @@ intFluxDivergence_K(int i, int j, int k,
 AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
 void
+intFluxDivergence_rz_K(int i, int j, int k,
+                       int ncomp,
+                       AMREX_D_DECL(amrex::Array4<const amrex::Real> const& fluxX,
+                                    amrex::Array4<const amrex::Real> const& fluxY,
+                                    amrex::Array4<const amrex::Real> const& fluxZ),
+                       amrex::Array4<const amrex::Real>              const& ax,
+                       amrex::Array4<const amrex::Real>              const& ay,
+                       amrex::Array4<const amrex::Real>              const& vol,
+                       const amrex::Real                                  & scaling,
+                       amrex::Array4<      amrex::Real>              const& div) noexcept
+{
+   using namespace amrex::literals;
+
+   amrex::Real factor = scaling / vol(i,j,k);
+
+   for (int n = 0; n < ncomp; n++) {
+      div(i,j,k,n) =  (  ax(i+1,j,k) * fluxX(i+1,j,k,n)
+                       - ax(i  ,j,k) * fluxX(i  ,j,k,n))
+                    + (  ay(i,j+1,k) * fluxY(i,j+1,k,n)
+                       - ay(i,j  ,k) * fluxY(i,j  ,k,n));
+      div(i,j,k,n) *= factor;
+   }
+}
+
+AMREX_GPU_DEVICE
+AMREX_FORCE_INLINE
+void
 getMwmixGivenRY(int i, int j, int k,
                 amrex::Array4<const amrex::Real> const& rho,
                 amrex::Array4<const amrex::Real> const& rhoY,
