@@ -118,6 +118,8 @@ ifeq ($(USE_PARTICLES), TRUE)
    ifdef SPRAY_FUEL_NUM
       Bpack += $(PELEMP_HOME)/Source/PP_Spray/Make.package
       Blocs += $(PELEMP_HOME)/Source/PP_Spray
+      Bpack += $(PELEMP_HOME)/Source/PP_Spray/Distribution/Make.package
+      Blocs += $(PELEMP_HOME)/Source/PP_Spray/Distribution
    endif
 endif
 ifeq ($(USE_SOOT), TRUE)
