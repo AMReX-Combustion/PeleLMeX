@@ -108,7 +108,7 @@ MLCellABecCecLap::define (const Vector<Geometry>& a_geom,
     amrlev = 0;
     for (int mglev = 1; mglev < m_num_mg_levels[amrlev]; ++mglev) {
         MultiFab foo(m_grids[amrlev][mglev], m_dmap[amrlev][mglev], 1, 0, MFInfo().SetAlloc(false));
-        if (! isMFIterSafe(*m_overset_mask[amrlev][mglev], foo)) {
+        if (! amrex::isMFIterSafe(*m_overset_mask[amrlev][mglev], foo)) {
             auto osm = std::make_unique<iMultiFab>(m_grids[amrlev][mglev],
                                                    m_dmap[amrlev][mglev], 1, 1);
             osm->ParallelCopy(*m_overset_mask[amrlev][mglev]);
@@ -194,7 +194,7 @@ MLCellABecCecLap::getFluxes (const Vector<Array<MultiFab*,AMREX_SPACEDIM> >& a_f
 }
 
 void
-MLCellABecCecLap::applyInhomogNeumannTerm (int amrlev, MultiFab& rhs) const
+MLCellABecCecLap::applyInhomogNeumannTerm (int amrlev, Any& a_rhs) const
 {
     bool has_inhomog_neumann = hasInhomogNeumannBC();
     bool has_robin = hasRobinBC();
@@ -206,9 +206,11 @@ MLCellABecCecLap::applyInhomogNeumannTerm (int amrlev, MultiFab& rhs) const
 }
 
 void
-MLCellABecCecLap::applyOverset (int amrlev, MultiFab& rhs) const
+MLCellABecCecLap::applyOverset (int amrlev, Any& a_rhs) const
 {
     if (m_overset_mask[amrlev][0]) {
+        AMREX_ASSERT(a_rhs.is<MultiFab>());
+        auto& rhs = a_rhs.get<MultiFab>();
         const int ncomp = getNComp();
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())

@@ -66,7 +66,7 @@ PeleLMDeriveRec::PeleLMDeriveRec (const std::string&   a_name,
     bx_map(box_map)
 {}
 
-PeleLMDeriveRec::~PeleLMDeriveRec () 
+PeleLMDeriveRec::~PeleLMDeriveRec ()
 {
    func     = nullptr;
    mapper   = 0;
@@ -187,7 +187,7 @@ PeleLMDeriveList::dlist ()
 }
 
 bool
-PeleLMDeriveList::canDerive (const std::string& name) const 
+PeleLMDeriveList::canDerive (const std::string& name) const
 {
     for (std::list<PeleLMDeriveRec>::const_iterator li = lst.begin(), End = lst.end();
          li != End;

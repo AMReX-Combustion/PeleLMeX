@@ -87,6 +87,15 @@ DiagFramePlane::prepare(int a_nlevels,
         auto initDomain  = a_geoms[0].Domain();
         auto initRealBox = a_geoms[0].ProbDomain();
         const amrex::Real* dxlcl = a_geoms[0].CellSize();
+        int cdim = 0;
+        for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
+            if (idim != m_normal) {
+                initDomain.setRange(cdim,initDomain.smallEnd(idim),initDomain.bigEnd(idim)+1);
+                initRealBox.setLo(cdim,a_geoms[0].ProbLo(idim));
+                initRealBox.setHi(cdim,a_geoms[0].ProbHi(idim));
+                cdim += 1;
+            }
+        }
         initDomain.setRange(2,0,1);
         initRealBox.setLo(2,0.0);
         initRealBox.setHi(2,dxlcl[2]);
@@ -403,31 +412,84 @@ DiagFramePlane::ReWriteLevelVisMFHeader(const std::string &a_HeaderPath) {
         is.ignore(std::streamsize(10000), '(') >> nbox >> dummy;
         is.ignore(std::streamsize(10000), '\n');
         HeaderFile << '(' << nbox << ' ' << 0 << '\n';
+        amrex::Vector<amrex::Box> fullDimBox(nbox);
         for (int i = 0; i < nbox; ++i) {
-            amrex::Box fullDimBox;
-            is >> fullDimBox;
-            printLowerDimBox(HeaderFile, fullDimBox, 2);
+            is >> fullDimBox[i];
+            printLowerDimBox(HeaderFile, fullDimBox[i], 2);
             HeaderFile << '\n';
         }
         is.ignore(std::streamsize(10000), '\n');
         std::getline(is, line);
         HeaderFile << line << "\n";
 
-        // Get list of Datafiles
+        //------------------------------------------------------------------
+        // Get list of Datafiles and correct for FAB header length in offset
+        //------------------------------------------------------------------
         std::getline(is, line);
         HeaderFile << line << "\n";
         int nFabs = std::stoi(line);
+
+        // Stash away lines and count the number of files
         amrex::Vector<std::string> dataFiles;
+        amrex::Vector<std::string> fablines(nFabs);
         for (int i = 0; i < nFabs; ++i) {
-            std::getline(is, line);
-            HeaderFile << line << "\n";
-            std::istringstream lis(line);
+            std::getline(is, fablines[i]);
+            std::istringstream lis(fablines[i]);
             std::string w1, w2, w3;
             lis >> w1;
             lis >> w2;
             lis >> w3;
             int offset = std::stoi(w3);
             if (offset==0) dataFiles.push_back(w2);
+        }
+
+        // Map files and FABs
+        int nDataFiles = dataFiles.size();
+        amrex::Vector<int> nFabsInFiles(nDataFiles);
+        amrex::Vector<amrex::Vector<int> > FabsInFiles(nDataFiles);
+        for (int i = 0; i < nFabs; ++i) {
+            std::istringstream lis(fablines[i]);
+            std::string w1, w2, w3;
+            lis >> w1;
+            lis >> w2;
+            lis >> w3;
+            for (int f = 0; f < nDataFiles; ++f) {
+                if (w2 == dataFiles[f]) {
+                    nFabsInFiles[f]+=1;
+                    FabsInFiles[f].push_back(i);
+                    break;
+                }
+            }
+        }
+        // Check
+        for (int f = 0; f < nDataFiles; ++f) {
+           if (nFabsInFiles[f] != FabsInFiles[f].size()) {
+               amrex::Abort("Something went wrong while counting FABs in files");
+           }
+        }
+
+        // Write out the FAB on disk list, corrected
+        for (int i = 0; i < nFabs; ++i) {
+            std::istringstream lis(fablines[i]);
+            std::string w1, w2, w3;
+            lis >> w1;
+            lis >> w2;
+            lis >> w3;
+            int offset = std::stoi(w3);
+            for (int f = 0; f < nDataFiles; ++f) {
+                if (w2 == dataFiles[f]) {
+                   for (int fa = 0; fa < FabsInFiles[f].size(); ++fa) {
+                      if (FabsInFiles[f][fa] == i) {
+                         if (fa > 0) { 
+                             for (int fback = fa-1; fback >= 0; --fback) {
+                                 offset -= diff_2D3D_header(fullDimBox[fback],nComp);
+                             }
+                         }
+                      }
+                   }
+                }
+            }
+            HeaderFile << w1 << " " << w2 << " " << offset << "\n";
         }
 
         // Just pass from istream to ostream `till the end
@@ -454,6 +516,7 @@ DiagFramePlane::VisMF2D(const amrex::MultiFab& a_mf,
                         const std::string& a_mf_name)
 {
      auto whichRD = amrex::FArrayBox::getDataDescriptor();
+     bool doConvert(*whichRD != amrex::FPC::NativeRealDescriptor());
 
      amrex::Long bytesWritten(0);
 
@@ -501,32 +564,75 @@ DiagFramePlane::VisMF2D(const amrex::MultiFab& a_mf,
              bytesWritten += fab.box().numPts() * a_mf.nComp() * whichRDBytes;
              ++nFABs;
          }
+         char *allFabData = nullptr;
+         bool canCombineFABs = false;
+         if((nFABs > 1 || doConvert) && amrex::VisMF::GetUseSingleWrite()) {
+             allFabData = new(std::nothrow) char[bytesWritten];
+         }    // ---- else { no need to make a copy for one fab }
+         if(allFabData == nullptr) {
+             canCombineFABs = false;
+         } else {
+             canCombineFABs = true;
+         }
 
-         for(amrex::MFIter mfi(a_mf); mfi.isValid(); ++mfi) {
-             int hLength(0);
-             const amrex::FArrayBox &fab = a_mf[mfi];
-             writeDataItems = fab.box().numPts() * a_mf.nComp();
-             writeDataSize = writeDataItems * whichRDBytes;
-             std::stringstream hss; 
-             write_2D_header(hss, fab, fab.nComp());
-             hLength = static_cast<std::streamoff>(hss.tellp());
-             auto tstr = hss.str();
-             nfi.Stream().write(tstr.c_str(), hLength);    // ---- the fab header
-             nfi.Stream().flush();
-             amrex::Real const* fabdata = fab.dataPtr();
+         if(canCombineFABs) {
+             amrex::Long writePosition = 0;
+             for(amrex::MFIter mfi(a_mf); mfi.isValid(); ++mfi) {
+                 int hLength(0);
+                 const amrex::FArrayBox &fab = a_mf[mfi];
+                 writeDataItems = fab.box().numPts() * a_mf.nComp();
+                 writeDataSize = writeDataItems * whichRDBytes;
+                 char *afPtr = allFabData + writePosition;
+                 std::stringstream hss;
+                 write_2D_header(hss, fab, fab.nComp());
+                 hLength = static_cast<std::streamoff>(hss.tellp());
+                 auto tstr = hss.str();
+                 std::memcpy(afPtr, tstr.c_str(), hLength);  // ---- the fab header
+                 amrex::Real const* fabdata = fab.dataPtr();
 #ifdef AMREX_USE_GPU
-             std::unique_ptr<amrex::FArrayBox> hostfab;
-             if (fab.arena()->isManaged() || fab.arena()->isDevice()) {
-                 hostfab = std::make_unique<amrex::FArrayBox>(fab.box(), fab.nComp(),
-                                                              amrex::The_Pinned_Arena());
-                 amrex::Gpu::dtoh_memcpy_async(hostfab->dataPtr(), fab.dataPtr(),
-                                               fab.size()*sizeof(amrex::Real));
-                 amrex::Gpu::streamSynchronize();
-                 fabdata = hostfab->dataPtr();
-             }    
+                 std::unique_ptr<amrex::FArrayBox> hostfab;
+                 if (fab.arena()->isManaged() || fab.arena()->isDevice()) {
+                     hostfab = std::make_unique<amrex::FArrayBox>(fab.box(), fab.nComp(),
+                                                                  amrex::The_Pinned_Arena());
+                     amrex::Gpu::dtoh_memcpy_async(hostfab->dataPtr(), fab.dataPtr(),
+                                            fab.size()*sizeof(amrex::Real));
+                     amrex::Gpu::streamSynchronize();
+                     fabdata = hostfab->dataPtr();
+                 }
 #endif
-             nfi.Stream().write((char *) fabdata, writeDataSize);
+                 memcpy(afPtr + hLength, fabdata, writeDataSize);
+                 writePosition += hLength + writeDataSize;
+             }
+             nfi.Stream().write(allFabData, bytesWritten);
              nfi.Stream().flush();
+             delete [] allFabData;
+         } else {
+             for(amrex::MFIter mfi(a_mf); mfi.isValid(); ++mfi) {
+                 int hLength = 0;
+                 const amrex::FArrayBox &fab = a_mf[mfi];
+                 writeDataItems = fab.box().numPts() * a_mf.nComp();
+                 writeDataSize = writeDataItems * whichRDBytes;
+                 std::stringstream hss; 
+                 write_2D_header(hss, fab, fab.nComp());
+                 hLength = static_cast<std::streamoff>(hss.tellp());
+                 auto tstr = hss.str();
+                 nfi.Stream().write(tstr.c_str(), hLength);    // ---- the fab header
+                 nfi.Stream().flush();
+                 amrex::Real const* fabdata = fab.dataPtr();
+#ifdef AMREX_USE_GPU
+                 std::unique_ptr<amrex::FArrayBox> hostfab;
+                 if (fab.arena()->isManaged() || fab.arena()->isDevice()) {
+                     hostfab = std::make_unique<amrex::FArrayBox>(fab.box(), fab.nComp(),
+                                                                  amrex::The_Pinned_Arena());
+                     amrex::Gpu::dtoh_memcpy_async(hostfab->dataPtr(), fab.dataPtr(),
+                                                   fab.size()*sizeof(amrex::Real));
+                     amrex::Gpu::streamSynchronize();
+                     fabdata = hostfab->dataPtr();
+                 }    
+#endif
+                 nfi.Stream().write((char *) fabdata, writeDataSize);
+                 nfi.Stream().flush();
+              }
           }
      }
 }
@@ -542,4 +648,30 @@ DiagFramePlane::write_2D_header(std::ostream&           os,
         printLowerDimBox(os, f.box(), 2);
         os << ' ' << nvar << '\n';
     }
+}
+
+int
+DiagFramePlane::diff_2D3D_header(const amrex::Box a_box,
+                                 int              nvar)
+{
+    std::stringstream hss2D;
+    std::stringstream hss3D;
+    hss2D << "FAB " << amrex::FPC::NativeRealDescriptor();
+    amrex::StreamRetry sr(hss2D, "FABio_write_header", 4);
+    while(sr.TryOutput()) {
+        printLowerDimBox(hss2D, a_box, 2);   // Skipping z-dir
+        hss2D << ' ' << nvar << '\n';
+    }
+
+    hss3D << "FAB " << amrex::FPC::NativeRealDescriptor();
+    amrex::StreamRetry sr3(hss3D, "FABio_write_header", 4);
+    while(sr3.TryOutput()) {
+        hss3D << a_box;
+        hss3D << ' ' << nvar << '\n';
+    }
+
+    int Length2D = static_cast<std::streamoff>(hss2D.tellp());
+    int Length3D = static_cast<std::streamoff>(hss3D.tellp());
+
+    return Length3D-Length2D;
 }

@@ -1,5 +1,5 @@
 PeleLMeX controls
-------------------------
+=================
 
 The input file specified on the command line is a free-format text file, one entry per row, that specifies input data processed by the AMReX ``ParmParse`` module.
 This file needs to specified along with the executable as an `argv` option, for example:
@@ -16,7 +16,8 @@ Also, any entry that can be specified in the inputs file can also be specified o
 
 The available options are divided into groups: those that control primarily AMReX are prefaced with `amr.`, those that are specific to the PeleLM are prefaced by `peleLM.`, while those corresponding to the various pieces of the algorithm are prefaced with specific keys, such that `diffusion`, `nodal_proj`, ... as described below.
 
-### Computational domain definition
+Computational domain definition
+-------------------------------
 
 ::
 
@@ -33,7 +34,8 @@ The available options are divided into groups: those that control primarily AMRe
     peleLM.lo_bc = Interior Interior Inflow
     peleLM.hi_bc = Interior Interior Inflow
 
-### AMR parameters
+AMR parameters
+--------------
 
 ::
 
@@ -48,7 +50,8 @@ The available options are divided into groups: those that control primarily AMRe
     amr.blocking_factor = 16               # block factor in grid generation (min box size)
     amr.max_grid_size   = 64               # max box size
 
-### Time stepping parameters
+Time stepping parameters
+------------------------
 
 ::
 
@@ -64,22 +67,78 @@ The available options are divided into groups: those that control primarily AMRe
 Note that either a `max_step` or a `stop_time` is required, and if both are specified, the first stopping criteria
 encountered will lead to termination of the simulation.
 
-### IO parameters
+IO parameters
+-------------
 
 ::
 
     #--------------------------IO CONTROL--------------------------
     amr.plot_int         = 20              # [OPT, DEF=-1] Frequency (as step #) for writting plot file
+    amr.plot_per         = 002             # [OPT, DEF=-1] Period (time in s) for writting plot file
+    amr.plot_per_exact   = 1               # [OPT, DEF=0] Flag to enforce exactly plt_per by shortening dt 
     amr.plot_file        = "plt_"          # [OPT, DEF="plt_"] Plot file prefix
     amr.check_int        = 100             # [OPT, DEF=-1] Frequency (as step #) for writting checkpoint file
     amr.check_file       = "chk"           # [OPT, DEF="chk"] Checkpoint file prefix
+    amr.file_stepDigits  = 6               # [OPT, DEF=5] Number of digits when adding nsteps to plt and chk names
     amr.derive_plot_vars = avg_pressure ...# [OPT, DEF=""] List of derived variable included in the plot files
     amr.plot_speciesState = 0              # [OPT, DEF=0] Force adding state rhoYs to the plot files
 
     amr.restart          = chk00100        # [OPT, DEF=""] Checkpoint from which to restart the simulation
     amr.initDataPlt      = plt01000        # [OPT, DEF=""] Provide a plotfile from which to extract initial data
 
-### PeleLMeX algorithm
+PeleLMeX derived variables
+--------------------------
+
+The following list of derived variables are available in PeleLMeX:
+
+.. list-table:: PeleLMeX derived variables
+    :widths: 25 25 100
+    :header-rows: 1
+
+    * - Key
+      - Size (nComp)
+      - Brief
+    * - `mass_fractions`
+      - NUM_SPECIES
+      - Species mass fractions
+    * - `mole_fractions`
+      - NUM_SPECIES
+      - Species mole fractions
+    * - `diffcoeffs`
+      - NUM_SPECIES
+      - Species mixture-averaged diffusion coefficients
+    * - `lambda`
+      - 1
+      - Thermal diffusivity
+    * - `viscosity`
+      - 1
+      - Mixture viscosity
+    * - `mixture_fraction`
+      - 1
+      - Mixture fraction based on Bilger's element formulation
+    * - `progress_variable`
+      - 1
+      - Progress variable based on a linear combination of Ys, T
+    * - `avg_pressure`
+      - 1
+      - Cell-averaged pressure (from the node-centered pressure)
+    * - `mag_vort`
+      - 1
+      - Vorticity (2D) or vorticity magnitude (3D)
+    * - `kinetic_energy`
+      - 1
+      - Kinetic energy: 0.5 * rho * (u^2+v^2+w^2)
+    * - `enstrophy`
+      - 1
+      - enstrophy: 0.5 * rho * (\omega_x^2+\omega_y^2+\omega_z^2)
+    * - `HeatRelease`
+      - 1
+      - Heat release rate from chem. reactions
+
+Note that `mixture_fraction` and `progress_variable` requires additional inputs from the users as described below.
+
+PeleLMeX algorithm
+------------------
 
 ::
 
@@ -104,7 +163,8 @@ encountered will lead to termination of the simulation.
     peleLM.deltaT_tol = 1e-10              # [OPT, DEF=1.e-10] Tolerance of the deltaT solve
     peleLM.evaluate_vars =...              # [OPT, DEF=""] In evaluate mode, list unitTest: diffTerm, divU, instRR, transportCC
 
-### Chemistry integrator
+Chemistry integrator
+--------------------
 
 ::
 
@@ -120,7 +180,8 @@ encountered will lead to termination of the simulation.
 Note that the last four parameters belong to the Reactor class of PelePhysics but are specified here for completeness. In particular, CVODE is the adequate choice of integrator to tackle PeleLMeX large time step sizes. Several linear solvers are available depending on whether or not GPU are employed: on CPU, `dense_direct` is a finite-difference direct solver, `denseAJ_direct` is an analytical-jacobian direct solver (preferred choice), `sparse_direct` is an analytical-jacobian sparse direct solver based on the KLU library and `GMRES` is a matrix-free iterative solver; on GPU `GMRES` is a matrix-free iterative solver (available on all the platforms), `sparse_direct` is a batched block-sparse direct solve based on NVIDIA's cuSparse (only with CUDA), `magma_direct` is a batched block-dense direct solve based on the MAGMA library (available with CUDA and HIP.
 
 
-### Linear solvers
+Linear solvers
+--------------
 
 Linear solvers are a key component of PeleLMeX algorithm, separate controls are dedicated to the various solver (MAC projection, nodal projection, diffusion, ...)
 
@@ -137,15 +198,39 @@ Linear solvers are a key component of PeleLMeX algorithm, separate controls are 
     mac_proj.atol = 1.0e-12                     # [OPT, DEF=1e-14] Absolute tolerance of the MAC projection
     mac_proj.mg_max_coarsening_level = 5        # [OPT, DEF=100] Maximum number of MG levels (useful when using EB)
 
-    diffusion.verbose                           # [OPT, DEF=0] Verbose of the scalar diffusion solve
+    diffusion.verbose = 1                       # [OPT, DEF=0] Verbose of the scalar diffusion solve
     diffusion.rtol = 1.0e-11                    # [OPT, DEF=1e-11] Relative tolerance of the scalar diffusion solve
     diffusion.atol = 1.0e-12                    # [OPT, DEF=1e-14] Absolute tolerance of the scalar diffusion solve
 
-    tensor_diffusion.verbose                    # [OPT, DEF=0] Verbose of the velocity tensor diffusion solve
+    tensor_diffusion.verbose = 1                # [OPT, DEF=0] Verbose of the velocity tensor diffusion solve
     tensor_diffusion.rtol = 1.0e-11             # [OPT, DEF=1e-11] Relative tolerance of the velocity tensor diffusion solve
     tensor_diffusion.atol = 1.0e-12             # [OPT, DEF=1e-14] Absolute tolerance of the velocity tensor diffusion solve
 
-### Run-time diagnostics
+Run-time diagnostics
+--------------------
+
+PeleLMeX provides a few diagnostics to check you simulations while it is running as well as adding basic analysis ingredients.
+
+It is often usefull to have an estimate of integrated quantities (kinetic energy, heat release rate, ,..), state extremas
+or other overall balance information to get a sense of the status and sanity of the simulation. To this end, it is possible
+to activate `temporal` diagnostics performing these reductions at given intervals:
+
+::
+
+    #-------------------------TEMPORALS---------------------------
+    peleLM.do_temporals = 1                     # [OPT, DEF=0] Activate temporal diagnostics
+    peleLM.temporal_int = 10                    # [OPT, DEF=5] Temporal freq.
+    peleLM.do_extremas = 1                      # [OPT, DEF=0] Trigger extremas, if temporals activated
+    peleLM.do_mass_balance = 1                  # [OPT, DEF=0] Compute mass balance, if temporals activated
+    peleLM.do_species_balance = 1               # [OPT, DEF=0] Compute species mass balance, if temporals activated
+
+The `do_temporal` flag will trigger the creation of a `temporals` folder in your run directory and the following entries 
+will be appended to an ASCII `temporals/tempState` file: step, time, dt, kin. energy integral, enstrophy integral, mean pressure
+, fuel consumption rate integral, heat release rate integral. Additionnally, if the `do_temporal` flag is activated, one can
+turn on state extremas (stored in `temporals/tempExtremas` as min/max for each state entry), mass balance (stored in
+`temporals/tempMass`) computing the total mass, dMdt and advective mass fluxes across the domain boundaries as well as the error in
+the balance (dMdt - sum of fluxes), and species balance (stored in `temporals/tempSpec`) computing each species total mass, dM_Ydt,
+advective \& diffusive fluxes across the domain boundaries, consumption rate integral and the error (dMdt - sum of fluxes - reaction).
 
 Combustion diagnostics often involve the use of a mixture fraction and/or a progress variable, both of which can be defined
 at run time and added to the derived variables included in the plotfile. If `mixture_fraction` or `progress_variable` is

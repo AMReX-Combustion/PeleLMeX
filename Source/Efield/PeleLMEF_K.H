@@ -3,7 +3,7 @@
 
 #include <PeleLMEF_Constants.H>
 #include <PelePhysics.H>
-#include <PelePhysics.H>
+#include <hydro_slopes_K.H>
 #include <EOS_Extension.H>
 #include <mechanism.H>
 
@@ -11,11 +11,53 @@ AMREX_GPU_HOST_DEVICE
 AMREX_FORCE_INLINE
 void
 getKappaE(int i, int j, int k,
+          int isKeTabulated,
+          const amrex::Real &cstKe,
+          amrex::GpuArray<amrex::Real,AMREX_SPACEDIM> const& dxinv,
+          amrex::Array4<const amrex::Real> const& rhoY,
+          amrex::Array4<const amrex::Real> const& phiV,
+          amrex::Array4<const amrex::Real> const& T, 
           amrex::Array4<amrex::Real> const& Ke) noexcept
 {
       using namespace amrex::literals;
 
-         Ke(i,j,k) = 0.4_rt;
+      if (!isKeTabulated) {
+          Ke(i,j,k) = cstKe;
+      } else {
+          auto eos = pele::physics::PhysicsType::eos();
+
+          // Get rho & Y from rhoY
+          amrex::Real rho = 0.0_rt;
+          for (int n = 0; n < NUM_SPECIES; n++) {
+             rho += rhoY(i,j,k,n);
+          }   
+          amrex::Real rhoinv = 1.0_rt / rho;
+          amrex::Real y[NUM_SPECIES] = {0.0};
+          for (int n = 0; n < NUM_SPECIES; n++) {
+             y[n] = rhoY(i,j,k,n) * rhoinv;
+          }
+
+          // Get the reduced electric field
+          amrex::Real Wbar = 0.0_rt;
+          eos.Y2WBAR(y, Wbar);
+          amrex::Real Ngas = rho * Na / Wbar * 1000.0;          // CGS -> MKS conversion
+          amrex::Real EnormSq = AMREX_D_TERM(  0.5 * (phiV(i+1,j,k) - phiV(i-1,j,k)) * dxinv[0]
+                                             * 0.5 * (phiV(i+1,j,k) - phiV(i-1,j,k)) * dxinv[0],
+                                             + 0.5 * (phiV(i,j+1,k) - phiV(i,j-1,k)) * dxinv[1]
+                                             * 0.5 * (phiV(i,j+1,k) - phiV(i,j-1,k)) * dxinv[1],
+                                             + 0.5 * (phiV(i,j,k+1) - phiV(i,j,k-1)) * dxinv[2]
+                                             * 0.5 * (phiV(i,j,k+1) - phiV(i,j,k-1)) * dxinv[2]);
+          amrex::Real Enorm = std::sqrt(EnormSq);
+          amrex::Real redE = Enorm / Ngas * 1e21;      // Td conversion
+
+          amrex::Real C = (T(i,j,k) - 298.0) / (2140.0 - 298.0);
+
+          // Linear values along C axis at ~1Td
+          amrex::Real keLow = 0.8;
+          amrex::Real keHigh = 0.035;
+          amrex::Real kappaC = keLow + C * (keHigh-keLow);
+          Ke(i,j,k) = kappaC;  
+      }
 }
 
 AMREX_GPU_HOST_DEVICE
@@ -93,6 +135,77 @@ ef_edge_state_extdir(int i,int j,int k,
    } else {
       state_ed = 0.5_rt * ( state(id_l[0],id_l[1],id_l[2]) +
                             state(id_h[0],id_h[1],id_h[2]) );
+   }
+   return state_ed;
+}
+
+AMREX_GPU_DEVICE
+AMREX_FORCE_INLINE
+amrex::Real
+ef_edge_state_2ndO_extdir(int i,int j,int k,
+                          int dir,
+                          const bool                       on_lo,
+                          const bool                       on_hi,
+                          const bool             extdir_or_ho_lo,
+                          const bool             extdir_or_ho_hi,
+                          int                              domlo,
+                          int                              domhi,
+                          amrex::Array4<amrex::Real const> const& state,
+                          amrex::Array4<amrex::Real const> const& effvel,
+                          const amrex::Box& box ) noexcept
+{
+   using namespace amrex::literals;
+
+   // Default behavior: id_l -1 in dir
+   // Handle the BCs
+   // Need -1 in id_l and id_h in dir on low Dirichlet BC
+   // Need nothing on high Dirichlet BC
+   int  id_l[3] = {i,j,k};
+   int  id_h[3] = {i,j,k};
+   if (!on_lo ) {
+      if ( !on_hi ) {
+         id_l[dir] -= 1;
+      }
+   } else {
+      id_l[dir] -= 1;
+      id_h[dir] -= 1;
+   }
+
+   int order = 2;
+
+   amrex::Real state_ed;
+   // Just zero out edge state on hi/lo external boundaries (these fluxes are updated later)
+   if (on_hi || on_lo){
+      state_ed = 0.0;
+   }
+   else{
+      amrex::Real state_pls = state(id_h[0],id_h[1],id_h[2]);
+      if ( dir == 0 ) {
+         state_pls -= 0.5 * amrex_calc_xslope_extdir(id_h[0],id_h[1],id_h[2],0,order,state,extdir_or_ho_lo,extdir_or_ho_hi,domlo,domhi);
+      } else if ( dir == 1 ) {
+         state_pls -= 0.5 * amrex_calc_yslope_extdir(id_h[0],id_h[1],id_h[2],0,order,state,extdir_or_ho_lo,extdir_or_ho_hi,domlo,domhi);
+#if (AMREX_SPACEDIM == 3)
+      } else {
+         state_pls -= 0.5 * amrex_calc_zslope_extdir(id_h[0],id_h[1],id_h[2],0,order,state,extdir_or_ho_lo,extdir_or_ho_hi,domlo,domhi);
+#endif
+      }
+      amrex::Real state_mns = state(id_l[0],id_l[1],id_l[2]);
+      if ( dir == 0 ) {
+         state_mns += 0.5 * amrex_calc_xslope_extdir(id_l[0],id_l[1],id_l[2],0,order,state,extdir_or_ho_lo,extdir_or_ho_hi,domlo,domhi);
+      } else if ( dir == 1 ) {
+         state_mns += 0.5 * amrex_calc_yslope_extdir(id_l[0],id_l[1],id_l[2],0,order,state,extdir_or_ho_lo,extdir_or_ho_hi,domlo,domhi);
+#if (AMREX_SPACEDIM == 3)
+      } else {
+         state_mns += 0.5 * amrex_calc_zslope_extdir(id_l[0],id_l[1],id_l[2],0,order,state,extdir_or_ho_lo,extdir_or_ho_hi,domlo,domhi);
+#endif
+      }
+      if ( effvel(i,j,k) > smallVel) {
+         state_ed = state_mns;
+      } else if ( effvel(i,j,k) < -smallVel) {
+         state_ed = state_pls;
+      } else {
+         state_ed = 0.5_rt * ( state_pls + state_mns );
+      }
    }
    return state_ed;
 }

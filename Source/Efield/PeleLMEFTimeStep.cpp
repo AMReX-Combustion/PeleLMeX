@@ -28,10 +28,10 @@ PeleLM::estEFIonsDt(const TimeStamp &a_time)
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
-      for (MFIter mfi(ldata_p->phiV,TilingIfNotGPU()); mfi.isValid(); ++mfi)
+      for (MFIter mfi(ldata_p->state,TilingIfNotGPU()); mfi.isValid(); ++mfi)
       {
          const Box& bx = mfi.tilebox();
-         auto const& phiV     = ldata_p->phiV.const_array(mfi);
+         auto const& phiV     = ldata_p->state.const_array(mfi,PHIV);
          auto const& efield   = efield_cc.array(mfi,0);
 
          // X

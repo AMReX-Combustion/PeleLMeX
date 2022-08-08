@@ -193,7 +193,7 @@ void DiffusionOp::diffuse_scalar(Vector<MultiFab*> const& a_phi, int phi_comp,
          if (have_bcoeff) {
             int doZeroVisc = 1;
             Vector<BCRec> subBCRec = {a_bcrec.begin()+comp,a_bcrec.begin()+comp+m_ncomp};
-            Array<MultiFab,AMREX_SPACEDIM> bcoeff_ec = m_pelelm->getDiffusivity(lev, bcoeff_comp+comp, m_ncomp, 
+            Array<MultiFab,AMREX_SPACEDIM> bcoeff_ec = m_pelelm->getDiffusivity(lev, bcoeff_comp+comp, m_ncomp,
                                                                                 doZeroVisc, subBCRec, *a_bcoeff[lev]);
 #ifdef AMREX_USE_EB
             m_scal_solve_op->setBCoeffs(lev, GetArrOfConstPtrs(bcoeff_ec), MLMG::Location::FaceCentroid);
@@ -325,11 +325,11 @@ void DiffusionOp::computeDiffLap(Vector<MultiFab*> const& a_laps, int lap_comp,
           m_scal_apply_op->setBCoeffs(lev, GetArrOfConstPtrs(bcoeff_ec));
 #endif
           m_scal_apply_op->setLevelBC(lev, &component[lev]);
-      }   
+      }
 
       MLMG mlmg(*m_scal_apply_op);
       mlmg.apply(GetVecOfPtrs(laps), GetVecOfPtrs(component));
-   }   
+   }
 }
 
 void DiffusionOp::computeDiffFluxes(Vector<Array<MultiFab*,AMREX_SPACEDIM>> const& a_flux, int flux_comp,

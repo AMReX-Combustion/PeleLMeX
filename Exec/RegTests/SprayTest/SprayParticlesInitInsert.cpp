@@ -8,8 +8,8 @@ unflatten_particles(const amrex::ULong idx, const amrex::IntVect& max_parts)
   amrex::IntVect indx;
   amrex::ULong cidx = idx;
   amrex::ULong d1 = max_parts[0];
-  amrex::ULong d2 = max_parts[1];
 #if AMREX_SPACEDIM > 2
+  amrex::ULong d2 = max_parts[1];
   indx[2] = int(cidx / (d1 * d2));
   cidx -= amrex::ULong(indx[2]) * d1 * d2;
 #endif
@@ -31,8 +31,13 @@ SprayParticleContainer::injectParticles(
 }
 
 void
-SprayParticleContainer::InitSprayParticles(ProbParm const& prob_parm)
+SprayParticleContainer::InitSprayParticles(
+  const bool init_parts,
+  ProbParm const& prob_parm)
 {
+  if (!init_parts) {
+    return;
+  }
   const int lev = 0;
   const int MyProc = amrex::ParallelDescriptor::MyProc();
   const int NProcs = amrex::ParallelDescriptor::NProcs();

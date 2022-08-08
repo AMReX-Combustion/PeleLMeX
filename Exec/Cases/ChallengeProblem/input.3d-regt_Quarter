@@ -1,18 +1,18 @@
 #----------------------DOMAIN DEFINITION------------------------
 geometry.is_periodic = 0 0 0               # For each dir, 0: non-perio, 1: periodic
 geometry.coord_sys   = 0                  # 0 => cart, 1 => RZ
-geometry.prob_lo     = -0.014 -0.014 -0.00275        # x_lo y_lo (z_lo)
-geometry.prob_hi     =  0.014  0.014  0.00425        # x_hi y_hi (z_hi)
+geometry.prob_lo     = 0.000  0.000 -0.00275        # x_lo y_lo (z_lo)
+geometry.prob_hi     = 0.014  0.014  0.00425        # x_hi y_hi (z_hi)
 
 # >>>>>>>>>>>>>  BC FLAGS <<<<<<<<<<<<<<<<
 # Interior, Inflow, Outflow, Symmetry,
 # SlipWallAdiab, NoSlipWallAdiab, SlipWallIsotherm, NoSlipWallIsotherm
-peleLM.lo_bc = NoSlipWallAdiab NoSlipWallAdiab NoSlipWallAdiab
+peleLM.lo_bc = Symmetry        Symmetry        NoSlipWallAdiab
 peleLM.hi_bc = NoSlipWallAdiab NoSlipWallAdiab Inflow
 
 
 #-------------------------AMR CONTROL----------------------------
-amr.n_cell          = 512 512 128      # Level 0 number of cells in each direction   
+amr.n_cell          = 512 512 256      # Level 0 number of cells in each direction   
 amr.v               = 1                # AMR verbose
 amr.max_level       = 0                # maximum level number allowed
 amr.ref_ratio       = 2 2 2 2 2        # refinement ratio
@@ -36,51 +36,22 @@ prob.vel_jet = 28.0
 prob.Z      = 0.45
 prob.injection_start = 0.0
 prob.injection_duration = 0.0005
+prob.useSymmetry = 1
 
 #--------------------------- Turbulence -------------------------------
 # NOTE: the centers must be consistent with the injection data provided
 # above.
-turbinflows= inj1 inj2 inj3 inj4
+turbinflows= inj1
 
 turbinflow.inj1.turb_file      = Turb.test2
 turbinflow.inj1.dir            = 2
 turbinflow.inj1.side           = high
 turbinflow.inj1.turb_scale_loc = 1.0
 turbinflow.inj1.turb_scale_vel = 1.0
-turbinflow.inj1.turb_center    = 0.0 0.0015
+turbinflow.inj1.turb_center    = 0.00106 0.00106
 turbinflow.inj1.turb_conv_vel  = 28.0
 turbinflow.inj1.turb_nplane    = 32
 turbinflow.inj1.time_offset    = 0.0
-
-turbinflow.inj2.turb_file      = Turb.test2
-turbinflow.inj2.dir            = 2
-turbinflow.inj2.side           = high
-turbinflow.inj2.turb_scale_loc = 1.0
-turbinflow.inj2.turb_scale_vel = 1.0
-turbinflow.inj2.turb_center    = -0.0015 0.0
-turbinflow.inj2.turb_conv_vel  = 28.0
-turbinflow.inj2.turb_nplane    = 32
-turbinflow.inj2.time_offset    = 0.000014
-
-turbinflow.inj3.turb_file      = Turb.test2
-turbinflow.inj3.dir            = 2
-turbinflow.inj3.side           = high
-turbinflow.inj3.turb_scale_loc = 1.0
-turbinflow.inj3.turb_scale_vel = 1.0
-turbinflow.inj3.turb_center    = 0.0 -0.0015
-turbinflow.inj3.turb_conv_vel  = 28.0
-turbinflow.inj3.turb_nplane    = 32
-turbinflow.inj3.time_offset    = 0.000028
-
-turbinflow.inj4.turb_file      = Turb.test2
-turbinflow.inj4.dir            = 2
-turbinflow.inj4.side           = high
-turbinflow.inj4.turb_scale_loc = 1.0
-turbinflow.inj4.turb_scale_vel = 1.0
-turbinflow.inj4.turb_center    = 0.0015 0.0
-turbinflow.inj4.turb_conv_vel  = 28.0
-turbinflow.inj4.turb_nplane    = 32
-turbinflow.inj4.time_offset    = 0.000056
 
 #-------------------------PeleLM CONTROL----------------------------
 peleLM.v = 3
@@ -94,8 +65,7 @@ peleLM.num_divu_iter = 1
 peleLM.num_init_iter = 3
 
 peleLM.do_temporals = 1
-peleLM.temporal_int = 2
-peleLM.mass_balance = 1
+peleLM.do_mass_balance = 1
 peleLM.num_init_iter = 1
 peleLM.num_divu_iter = 1
 
@@ -188,7 +158,6 @@ nodal_proj.hypre.bamg_ilu_upper_jacobi_iters = 5
 fabarray.mfiter_tile_size = 1024 1024 1024
 
 amrex.abort_on_out_of_gpu_memory = 1
-amrex.the_arena_is_managed = 0
 
 #amrex.fpe_trap_invalid = 1
 #amrex.fpe_trap_zero = 1

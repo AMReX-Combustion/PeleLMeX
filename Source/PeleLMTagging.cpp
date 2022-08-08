@@ -39,9 +39,9 @@ PeleLM::ErrorEst( int lev,
       MultiFab signDist(grids[lev],dmap[lev],1,0,MFInfo(),EBFactory(lev));
       getEBDistance(lev, signDist);
       //VisMF::Write(signDist,"signDistLev"+std::to_string(lev));
-    
+
       // Estimate how far I need to derefine
-      Real diagFac = std::sqrt(2.0) * 3.0;
+      Real diagFac = std::sqrt(2.0) * m_derefineEBBuffer;
       Real clearTagDist = Geom(m_EB_refine_LevMax).CellSize(0) * static_cast<Real>(nErrorBuf(m_EB_refine_LevMax)) * diagFac;
       for (int ilev = m_EB_refine_LevMax+1; ilev <= finest_level; ++ilev) {
           clearTagDist += static_cast<Real>(nErrorBuf(ilev)) * Geom(m_EB_refine_LevMax).CellSize(0) * diagFac;
@@ -53,9 +53,9 @@ PeleLM::ErrorEst( int lev,
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
       for (MFIter mfi(tags,TilingIfNotGPU()); mfi.isValid(); ++mfi)
-      {   
+      {
           const auto& bx    = mfi.tilebox();
-          const auto& dist  = signDist.const_array(mfi); 
+          const auto& dist  = signDist.const_array(mfi);
           auto tag          = tags.array(mfi);
           amrex::ParallelFor(bx,
           [=] AMREX_GPU_HOST_DEVICE (int i, int j, int k)

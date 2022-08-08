@@ -21,12 +21,32 @@ void PeleLM::makeEBGeometry()
     std::string geom_type;
     ppeb2.get("geom_type", geom_type);
 
+    // At what level should the EB be generated ?
+    // Default : max_level
+    int prev_max_lvl_eb = max_level;
+
+    // If restarting: use the level at which it was generated earlier
+    prev_max_lvl_eb  = (getRestartEBMaxLevel() > 0) ? getRestartEBMaxLevel()
+                                                    : prev_max_lvl_eb;
+    
+    // Manual override if needed -> might incur issues with previously covered/uncovered
+    // cell flipping
+    ppeb2.query("max_level_generation",prev_max_lvl_eb);
+    AMREX_ALWAYS_ASSERT(prev_max_lvl_eb <= max_level);
+
+    // Stash away the level at which we ended up
+    m_EB_generate_max_level = prev_max_lvl_eb;
+
+    // Generate the EB data at prev_max_lvl_eb and create consistent coarse version from there.
     if (geom_type == "UserDefined") {
-        EBUserDefined(geom.back(), req_coarsening_level, max_coarsening_level);
+        EBUserDefined(geom[prev_max_lvl_eb], req_coarsening_level, max_coarsening_level);
     } else {
         // If geom_type is not an AMReX recognized type, it'll crash.
-        EB2::Build(geom.back(), req_coarsening_level, max_coarsening_level);
+        EB2::Build(geom[prev_max_lvl_eb], req_coarsening_level, max_coarsening_level);
     }
+
+    // Add finer level, might be inconsistent with the coarser level created above.
+    EB2::addFineLevels(max_level - prev_max_lvl_eb);
 }
 
 void PeleLM::redistributeAofS(int a_lev,
@@ -81,7 +101,7 @@ void PeleLM::redistributeAofS(int a_lev,
                 Elixir eli = tmpfab.elixir();
                 Array4<Real> scratch = tmpfab.array(0);
                 if (m_adv_redist_type == "FluxRedist")
-                {    
+                {
                     amrex::ParallelFor(Box(scratch),
                     [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
                     { scratch(i,j,k) = 1.;});   // TODO might want to test volfrac
@@ -153,7 +173,7 @@ void PeleLM::redistributeDiff(int a_lev,
                 Elixir eli = tmpfab.elixir();
                 Array4<Real> scratch = tmpfab.array(0);
                 if (m_diff_redist_type == "FluxRedist")
-                {    
+                {
                     amrex::ParallelFor(Box(scratch),
                     [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
                     { scratch(i,j,k) = 1.;});   // TODO might want to test volfrac
@@ -311,7 +331,7 @@ void PeleLM::initialRedistribution()
 
 void PeleLM::getEBDistance(int a_lev,
                            MultiFab &a_signDistLev) {
-    
+
 
     if (a_lev == 0) {
         MultiFab::Copy(a_signDistLev,*m_signedDist0,0,0,1,0);
@@ -329,8 +349,8 @@ void PeleLM::getEBDistance(int a_lev,
 
         // Get signDist on coarsen fineBA
         BoxArray coarsenBA(grids[lev].size());
-        for (int j = 0, N = coarsenBA.size(); j < N; ++j) 
-        {    
+        for (int j = 0, N = coarsenBA.size(); j < N; ++j)
+        {
             coarsenBA.set(j,interpolater.CoarseBox(grids[lev][j], refRatio(lev-1)));
         }
         MultiFab coarsenSignDist(coarsenBA,dmap[lev],1,0);
@@ -350,7 +370,7 @@ void PeleLM::getEBDistance(int a_lev,
         interpolater.interp(coarsenSignDist, 0,
                             *currentSignDist, 0,
                             1, IntVect(0),
-                            Geom(lev-1), Geom(lev), 
+                            Geom(lev-1), Geom(lev),
                             Geom(lev).Domain(), refRatio(lev-1),
                             {m_bcrec_force},0);
 
@@ -429,6 +449,46 @@ PeleLM::correct_vel_small_cells (Vector<MultiFab*> const& a_vel,
              });
           }
        }
+    }
+}
+
+int
+PeleLM::getRestartEBMaxLevel()
+{
+    if (m_restart_chkfile.empty()) {
+        return -1;
+    } else {
+        // Go and parse the line we need
+        std::string File(m_restart_chkfile + "/Header");
+
+        VisMF::IO_Buffer io_buffer(VisMF::GetIOBufferSize());
+
+        Vector<char> fileCharPtr;
+        ParallelDescriptor::ReadAndBcastFile(File, fileCharPtr);
+        std::string fileCharPtrString(fileCharPtr.dataPtr());
+        std::istringstream is(fileCharPtrString, std::istringstream::in);
+
+        std::string line, word;
+
+        // Title line
+        std::getline(is, line);
+
+        // Finest level
+        std::getline(is, line);
+
+        // Step count
+        std::getline(is, line);
+
+        // Either what we're looking for or m_cur_time
+        std::getline(is, line);
+
+        if (line.find('.') != std::string::npos) {
+            return -1;
+        } else {
+            int max_eb_rst = -1;
+            max_eb_rst = std::stoi(line);
+            return max_eb_rst;
+        }
     }
 }
 

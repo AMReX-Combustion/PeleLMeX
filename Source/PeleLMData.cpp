@@ -5,7 +5,7 @@ using namespace amrex;
 PeleLM::LevelData::LevelData(amrex::BoxArray const& ba,
                              amrex::DistributionMapping const& dm,
                              amrex::FabFactory<FArrayBox> const& factory,
-                             int a_incompressible, int a_has_divu, 
+                             int a_incompressible, int a_has_divu,
                              int a_nAux, int a_nGrowState)
 {
    if (a_incompressible ) {
@@ -18,13 +18,11 @@ PeleLM::LevelData::LevelData(amrex::BoxArray const& ba,
                        dm, 1             , 1           , MFInfo(), factory);
    visc_cc.define( ba, dm, 1             , 1           , MFInfo(), factory);
    if (! a_incompressible ) {
-      if (a_has_divu) {   
+      if (a_has_divu) {
          divu.define (ba, dm, 1             , 1           , MFInfo(), factory);
       }
       diff_cc.define (ba, dm, NUM_SPECIES+2 , 1           , MFInfo(), factory);
 #ifdef PELE_USE_EFIELD
-      nE.define      (ba, dm, 1             , a_nGrowState, MFInfo(), factory);
-      phiV.define    (ba, dm, 1             , a_nGrowState, MFInfo(), factory);
       diffE_cc.define(ba, dm, 1             , 1           , MFInfo(), factory);
       mobE_cc.define (ba, dm, 1             , 1           , MFInfo(), factory);
       mob_cc.define  (ba, dm, NUM_IONS      , 1           , MFInfo(), factory);
@@ -36,7 +34,7 @@ PeleLM::LevelData::LevelData(amrex::BoxArray const& ba,
 }
 
 PeleLM::LevelDataReact::LevelDataReact(const amrex::BoxArray &ba,
-                                       const amrex::DistributionMapping &dm, 
+                                       const amrex::DistributionMapping &dm,
                                        const amrex::FabFactory<FArrayBox> &factory)
 {
    int IRsize = NUM_SPECIES;
@@ -67,7 +65,7 @@ PeleLM::LevelDataNLSolve::LevelDataNLSolve(amrex::BoxArray const& ba,
 
 PeleLM::AdvanceDiffData::AdvanceDiffData(int a_finestLevel,
                                          const amrex::Vector<amrex::BoxArray> &ba,
-                                         const amrex::Vector<amrex::DistributionMapping> &dm, 
+                                         const amrex::Vector<amrex::DistributionMapping> &dm,
                                          const amrex::Vector<std::unique_ptr<amrex::FabFactory<FArrayBox>>> &factory,
                                          int nGrowAdv,
                                          int a_use_wbar,
@@ -109,7 +107,7 @@ PeleLM::AdvanceDiffData::AdvanceDiffData(int a_finestLevel,
 
 PeleLM::AdvanceAdvData::AdvanceAdvData(int a_finestLevel,
                                        const amrex::Vector<amrex::BoxArray> &ba,
-                                       const amrex::Vector<amrex::DistributionMapping> &dm, 
+                                       const amrex::Vector<amrex::DistributionMapping> &dm,
                                        const amrex::Vector<std::unique_ptr<amrex::FabFactory<FArrayBox>>> &factory,
                                        int a_incompressible,
                                        int nGrowAdv,
@@ -162,10 +160,6 @@ PeleLM::copyStateNewToOld(int nGhost) {
          if ( m_has_divu ) {
             MultiFab::Copy(m_leveldata_old[lev]->divu,m_leveldata_new[lev]->divu,0,0,1,std::min(nGhost,1));
          }
-#ifdef PELE_USE_EFIELD
-         MultiFab::Copy(m_leveldata_old[lev]->nE,m_leveldata_new[lev]->nE,0,0,1,nGhost);
-         MultiFab::Copy(m_leveldata_old[lev]->phiV,m_leveldata_new[lev]->phiV,0,0,1,nGhost);
-#endif
       }
    }
 }
@@ -189,10 +183,6 @@ PeleLM::copyStateOldToNew(int nGhost) {
          if ( m_has_divu ) {
             MultiFab::Copy(m_leveldata_new[lev]->divu,m_leveldata_old[lev]->divu,0,0,1,std::min(nGhost,1));
          }
-#ifdef PELE_USE_EFIELD
-         MultiFab::Copy(m_leveldata_new[lev]->nE,m_leveldata_old[lev]->nE,0,0,1,nGhost);
-         MultiFab::Copy(m_leveldata_new[lev]->phiV,m_leveldata_old[lev]->phiV,0,0,1,nGhost);
-#endif
       }
    }
 }

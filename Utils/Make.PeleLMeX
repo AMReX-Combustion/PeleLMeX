@@ -80,14 +80,12 @@ ifeq ($(PELE_USE_KLU), TRUE)
   DEFINES += -DPELE_USE_KLU
 endif
 
-ChemDir  = Support/Fuego/Mechanism/Models/$(Chemistry_Model)
+ChemDir  = Support/Mechanism/Models/$(Chemistry_Model)
 
 PPdirs  := Utility/PMF Utility/TurbInflow Utility/PltFileManager Source $(ChemDir) Reactions Eos Transport
-PPHdirs := Support/Fuego/Evaluation
 
 Bpack += $(foreach dir, $(PPdirs), $(PELE_PHYSICS_HOME)/$(dir)/Make.package)
 Blocs += $(foreach dir, $(PPdirs), $(PELE_PHYSICS_HOME)/$(dir))
-Blocs += $(foreach dir, $(PPHdirs), $(PELE_PHYSICS_HOME)/$(dir))
 include $(PELE_PHYSICS_HOME)/ThirdParty/Make.ThirdParty
 
 #---------------
@@ -120,6 +118,8 @@ ifeq ($(USE_PARTICLES), TRUE)
    ifdef SPRAY_FUEL_NUM
       Bpack += $(PELEMP_HOME)/Source/PP_Spray/Make.package
       Blocs += $(PELEMP_HOME)/Source/PP_Spray
+      Bpack += $(PELEMP_HOME)/Source/PP_Spray/Distribution/Make.package
+      Blocs += $(PELEMP_HOME)/Source/PP_Spray/Distribution
    endif
 endif
 ifeq ($(USE_SOOT), TRUE)

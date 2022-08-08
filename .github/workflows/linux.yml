@@ -217,7 +217,7 @@ jobs:
 
   # Build and Run the EB_FlowPastCylinder RegTest with GNU7.5 and MPI support
   FPC2D_MPIRun:
-    name: GNU@7.5 MPI Run [FPC2D]
+    name: GNU@7.5 MPI Run [FPC2DDBG]
     runs-on: ubuntu-18.04
     env: 
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
@@ -239,13 +239,13 @@ jobs:
          AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
       working-directory: ./Exec/RegTests/EB_FlowPastCylinder/
       run: |
-        make TPL COMP=gnu USE_MPI=TRUE
-        make -j 2 COMP=gnu USE_MPI=TRUE
+        make TPL COMP=gnu USE_MPI=TRUE DEBUG=TRUE
+        make -j 2 COMP=gnu USE_MPI=TRUE DEBUG=TRUE
     - name: Run
       working-directory: ./Exec/RegTests/EB_FlowPastCylinder/
       run: |
-        ./PeleLMeX2d.gnu.MPI.ex input.2d-regt amr.max_step=2 amr.plot_int=-1 amr.check_int=-1
-        ./PeleLMeX2d.gnu.MPI.ex input.2d-regt_WallBump amr.max_step=2 amr.plot_int=-1 amr.check_int=-1
+        ./PeleLMeX2d.gnu.DEBUG.MPI.ex input.2d-regt amr.max_step=2 amr.plot_int=-1 amr.check_int=-1 amrex.fpe_trap_invalid=1 amrex.fpe_trap_zero=1 amrex.fpe_trap_overflow=1
+        ./PeleLMeX2d.gnu.DEBUG.MPI.ex input.2d-regt_WallBump amr.max_step=2 amr.plot_int=-1 amr.check_int=-1
 
   # Build and Run the HIT RegTest with GNU7.5 and MPI support
   HIT3D_MPIRun:

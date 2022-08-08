@@ -3,9 +3,10 @@
 
 namespace amrex {
 
-constexpr Real eps = 1.0e-6;
+constexpr Real eps = 1.0e-10;
 
-inline Real getFaceStateUpwind ( Real const &edgeVel, Real const &leftState, Real const &rightState ) {
+AMREX_GPU_HOST_DEVICE AMREX_INLINE
+Real getFaceStateUpwind ( Real const &edgeVel, Real const &leftState, Real const &rightState ) {
    Real edstate = 0.0;
    if ( edgeVel > eps ) { 
       edstate = leftState;
@@ -19,7 +20,8 @@ inline Real getFaceStateUpwind ( Real const &edgeVel, Real const &leftState, Rea
    return edstate;
 }
 
-inline Real getCellUpwindCoeff ( Real const &leftedgeVel, Real const &rightedgeVel ) {
+AMREX_GPU_HOST_DEVICE AMREX_INLINE
+Real getCellUpwindCoeff ( Real const &leftedgeVel, Real const &rightedgeVel ) {
 
    Real coeff = 0.0;
    if ( leftedgeVel*rightedgeVel < 0.0 ) { // Case where velocity change sign, use centered + art. visc
@@ -40,7 +42,8 @@ inline Real getCellUpwindCoeff ( Real const &leftedgeVel, Real const &rightedgeV
    return coeff;
 }
 
-inline Real getLeftCellUpwindCoeff ( Real const &leftedgeVel, Real const &rightedgeVel ) {
+AMREX_GPU_HOST_DEVICE AMREX_INLINE
+Real getLeftCellUpwindCoeff ( Real const &leftedgeVel, Real const &rightedgeVel ) {
 
    Real coeff = 0.0;
    if ( leftedgeVel*rightedgeVel < 0.0 ) {
@@ -56,7 +59,8 @@ inline Real getLeftCellUpwindCoeff ( Real const &leftedgeVel, Real const &righte
    return coeff;
 }
 
-inline Real getRightCellUpwindCoeff ( Real const &leftedgeVel, Real const &rightedgeVel ) {
+AMREX_GPU_HOST_DEVICE AMREX_INLINE
+Real getRightCellUpwindCoeff ( Real const &leftedgeVel, Real const &rightedgeVel ) {
 
    Real coeff = 0.0;
    if ( leftedgeVel*rightedgeVel < 0.0 ) {
@@ -72,7 +76,8 @@ inline Real getRightCellUpwindCoeff ( Real const &leftedgeVel, Real const &right
    return coeff;
 }
 
-inline Real getCellUpwindCoeff ( Real const &leftedgeVel, Real const &rightedgeVel,
+AMREX_GPU_HOST_DEVICE AMREX_INLINE
+Real getCellUpwindCoeff ( Real const &leftedgeVel, Real const &rightedgeVel,
                                  Real const &relaxleft  , Real const &relaxright ) {
 
    Real coeff = 0.0;
@@ -94,7 +99,8 @@ inline Real getCellUpwindCoeff ( Real const &leftedgeVel, Real const &rightedgeV
    return coeff;
 }
 
-inline Real getFaceUpwindFlux ( Real const &edgeVel, Real const &leftState, Real const &rightState ) {
+AMREX_GPU_HOST_DEVICE AMREX_INLINE
+Real getFaceUpwindFlux ( Real const &edgeVel, Real const &leftState, Real const &rightState ) {
 
    Real Flux = 0.0;
    if ( edgeVel > eps )

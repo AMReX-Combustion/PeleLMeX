@@ -11,6 +11,48 @@
 #include <PMFData.H>
 #include <PelePhysics.H>
 
+// -----------------------------------------------------------
+// Search for the closest index in an array to a given value
+// using the bisection technique.
+// INPUTS/OUTPUTS:
+// xtable(0:n-1) => array to search in (ascending order)
+// n             => array size
+// x             => x location
+// idxlo        <=> output st. xtable(idxlo) <= x < xtable(idxlo+1)
+// -----------------------------------------------------------
+AMREX_GPU_DEVICE
+AMREX_FORCE_INLINE
+void
+locate(const amrex::Real* xtable, const int n, const amrex::Real& x, int& idxlo)
+{
+  // If x is out of bounds, return boundary index
+  if (x >= xtable[n - 1]) {
+    idxlo = n - 1;
+    return;
+  }
+  if (x <= xtable[0]) {
+    idxlo = 0;
+    return;
+  }
+
+  // Do the bisection
+  idxlo = 0;
+  int idxhi = n - 1;
+  bool notdone = true;
+  while (notdone) {
+    if (idxhi - idxlo <= 1) {
+      notdone = false;
+    } else {
+      const int idxmid = (idxhi + idxlo) / 2;
+      if (x >= xtable[idxmid]) {
+        idxlo = idxmid;
+      } else {
+        idxhi = idxmid;
+      }   
+    }
+  }
+}
+
 AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
 void pelelm_initdata(int i, int j, int k,
@@ -25,9 +67,10 @@ void pelelm_initdata(int i, int j, int k,
     const amrex::Real* prob_hi = geomdata.ProbHi();
     const amrex::Real* dx      = geomdata.CellSize();
 
-    AMREX_D_TERM(const amrex::Real x = prob_lo[0] + (i+0.5)*dx[0];,
-                 const amrex::Real y = prob_lo[1] + (j+0.5)*dx[1];,
-                 const amrex::Real z = prob_lo[2] + (k+0.5)*dx[2];);
+    amrex::Real x[3] = {
+      prob_lo[0] + static_cast<amrex::Real>(i + 0.5) * dx[0],
+      prob_lo[1] + static_cast<amrex::Real>(j + 0.5) * dx[1],
+      prob_lo[2] + static_cast<amrex::Real>(k + 0.5) * dx[2]};
 
     AMREX_D_TERM(const amrex::Real Lx = prob_hi[0] - prob_lo[0];,
                  const amrex::Real Ly = prob_hi[1] - prob_lo[1];,
@@ -47,10 +90,134 @@ void pelelm_initdata(int i, int j, int k,
 
     state(i,j,k,TEMP) = prob_parm.T_mean;
 
-    // Read in turbulent fluctuations from MarcHDF
     state(i,j,k,VELX) = 0.0;
     state(i,j,k,VELY) = 0.0;
     state(i,j,k,VELZ) = 0.0;
+
+    // Read in turbulent fluctuations from MarcHDF
+    if (prob_parm.hitIC) {
+      amrex::Real u[3] = {0.0};
+      amrex::Real mod[3] = {0.0};
+      int idx[3] = {0};
+      int idxp1[3] = {0};
+      amrex::Real slp[3] = {0.0};
+      for (int cnt = 0; cnt < 3; cnt++) {
+        mod[cnt] = std::fmod(x[cnt], prob_parm.Linput);
+        locate(prob_parm.d_xarray, prob_parm.input_resolution, mod[cnt], idx[cnt]);
+        idxp1[cnt] = (idx[cnt] + 1) % prob_parm.input_resolution;
+        slp[cnt] = (mod[cnt] - prob_parm.d_xarray[idx[cnt]]) / prob_parm.d_xdiff[idx[cnt]];
+      }
+      int inSize = prob_parm.input_resolution;
+
+      const amrex::Real f0 = (1 - slp[0]) * (1 - slp[1]) * (1 - slp[2]);
+      const amrex::Real f1 = slp[0] * (1 - slp[1]) * (1 - slp[2]);
+      const amrex::Real f2 = (1 - slp[0]) * slp[1] * (1 - slp[2]);
+      const amrex::Real f3 = (1 - slp[0]) * (1 - slp[1]) * slp[2];
+      const amrex::Real f4 = slp[0] * (1 - slp[1]) * slp[2];
+      const amrex::Real f5 = (1 - slp[0]) * slp[1] * slp[2];
+      const amrex::Real f6 = slp[0] * slp[1] * (1 - slp[2]);
+      const amrex::Real f7 = slp[0] * slp[1] * slp[2];
+      u[0] = 
+        prob_parm.d_uinput
+            [idx[0] + inSize * (idx[1] + inSize * idx[2])] *
+          f0 +
+        prob_parm.d_uinput
+            [idxp1[0] + inSize * (idx[1] + inSize * idx[2])] *
+          f1 +
+        prob_parm.d_uinput
+            [idx[0] + inSize * (idxp1[1] + inSize * idx[2])] *
+          f2 +
+        prob_parm.d_uinput
+            [idx[0] + inSize * (idx[1] + inSize * idxp1[2])] *
+          f3 +
+        prob_parm.d_uinput
+            [idxp1[0] + inSize * (idx[1] + inSize * idxp1[2])] *
+          f4 +
+        prob_parm.d_uinput
+            [idx[0] + inSize * (idxp1[1] + inSize * idxp1[2])] *
+          f5 +
+        prob_parm.d_uinput
+            [idxp1[0] + inSize * (idxp1[1] + inSize * idx[2])] *
+          f6 +
+        prob_parm.d_uinput
+            [idxp1[0] +
+             inSize * (idxp1[1] + inSize * idxp1[2])] *
+          f7;
+      u[1] =
+        prob_parm.d_vinput
+            [idx[0] + inSize * (idx[1] + inSize * idx[2])] *
+          f0 +
+        prob_parm.d_vinput
+            [idxp1[0] + inSize * (idx[1] + inSize * idx[2])] *
+          f1 +
+        prob_parm.d_vinput
+            [idx[0] + inSize * (idxp1[1] + inSize * idx[2])] *
+          f2 +
+        prob_parm.d_vinput
+            [idx[0] + inSize * (idx[1] + inSize * idxp1[2])] *
+          f3 +
+        prob_parm.d_vinput
+            [idxp1[0] + inSize * (idx[1] + inSize * idxp1[2])] *
+          f4 +
+        prob_parm.d_vinput
+            [idx[0] + inSize * (idxp1[1] + inSize * idxp1[2])] *
+          f5 +
+        prob_parm.d_vinput
+            [idxp1[0] + inSize * (idxp1[1] + inSize * idx[2])] *
+          f6 +
+        prob_parm.d_vinput
+            [idxp1[0] +
+             inSize * (idxp1[1] + inSize * idxp1[2])] *
+          f7;
+      u[2] =
+        prob_parm.d_winput
+            [idx[0] + inSize * (idx[1] + inSize * idx[2])] *
+          f0 +
+        prob_parm.d_winput
+            [idxp1[0] + inSize * (idx[1] + inSize * idx[2])] *
+          f1 +
+        prob_parm.d_winput
+            [idx[0] + inSize * (idxp1[1] + inSize * idx[2])] *
+          f2 +
+        prob_parm.d_winput
+            [idx[0] + inSize * (idx[1] + inSize * idxp1[2])] *
+          f3 +
+        prob_parm.d_winput
+            [idxp1[0] + inSize * (idx[1] + inSize * idxp1[2])] *
+          f4 +
+        prob_parm.d_winput
+            [idx[0] + inSize * (idxp1[1] + inSize * idxp1[2])] *
+          f5 +
+        prob_parm.d_winput
+            [idxp1[0] + inSize * (idxp1[1] + inSize * idx[2])] *
+          f6 +
+        prob_parm.d_winput
+            [idxp1[0] +
+             inSize * (idxp1[1] + inSize * idxp1[2])] *
+          f7;
+
+      const amrex::Real decayx =
+        (0.5 *
+         (std::tanh((x[0] - prob_parm.win_lo[0]) * prob_parm.win_slope) + 1)) *
+        (0.5 *
+         (std::tanh(-(x[0] - prob_parm.win_hi[0]) * prob_parm.win_slope) + 1));
+      const amrex::Real decayy =
+        (0.5 *
+         (std::tanh((x[1] - prob_parm.win_lo[1]) * prob_parm.win_slope) + 1)) *
+        (0.5 *
+         (std::tanh(-(x[1] - prob_parm.win_hi[1]) * prob_parm.win_slope) + 1));
+      const amrex::Real decayz =
+        (0.5 *
+         (std::tanh((x[2] - prob_parm.win_lo[2]) * prob_parm.win_slope) + 1)) *
+        (0.5 *
+         (std::tanh(-(x[2] - prob_parm.win_hi[2]) * prob_parm.win_slope) + 1));
+      u[0] *= decayx * decayy * decayz;
+      u[1] *= decayx * decayy * decayz;
+      u[2] *= decayx * decayy * decayz;
+      state(i,j,k,VELX) = u[0];
+      state(i,j,k,VELY) = u[1];
+      state(i,j,k,VELZ) = u[2];
+    }
 
     amrex::Real P_cgs = prob_parm.P_mean * 10.0;
 
@@ -138,7 +305,10 @@ bcnormal(
 
   for (int nh = 1; nh <= prob_parm.nholes; nh++) {
     // Current hole center
-    const amrex::Real phi_angle = nh * dphi_angle;
+    amrex::Real phi_angle = nh * dphi_angle;
+    if (prob_parm.doQuarterDomain) {      // Add pi/4 to not have the jet on the symmetry
+       phi_angle += 0.25 * Pi;
+    }
     const amrex::Real cx = prob_parm.centx + prob_parm.r_circ * cos(phi_angle);
     const amrex::Real cy = prob_parm.centy + prob_parm.r_circ * sin(phi_angle);
 

@@ -1,0 +1,99 @@
+#----------------------DOMAIN DEFINITION------------------------
+geometry.is_periodic = 1 0               # For each dir, 0: non-perio, 1: periodic
+geometry.coord_sys   = 0                  # 0 => cart, 1 => RZ
+geometry.prob_lo     = 0.0 0.0 0.0        # x_lo y_lo (z_lo)
+geometry.prob_hi     = 0.032 0.032 0.016        # x_hi y_hi (z_hi)
+
+# >>>>>>>>>>>>>  BC FLAGS <<<<<<<<<<<<<<<<
+# Interior, Inflow, Outflow, Symmetry,
+# SlipWallAdiab, NoSlipWallAdiab, SlipWallIsotherm, NoSlipWallIsotherm
+peleLM.lo_bc = Interior Inflow
+peleLM.hi_bc = Interior Outflow
+
+
+#-------------------------AMR CONTROL----------------------------
+amr.n_cell          = 128 128 32      # Level 0 number of cells in each direction   
+amr.v               = 1                # AMR verbose
+amr.max_level       = 2                # maximum level number allowed
+amr.ref_ratio       = 2 2 2 2          # refinement ratio
+amr.regrid_int      = 5                # how often to regrid
+amr.n_error_buf     = 1 1 2 2          # number of buffer cells in error est
+amr.grid_eff        = 0.7              # what constitutes an efficient grid
+amr.blocking_factor = 16               # block factor in grid generation (min box size)
+amr.max_grid_size   = 128               # max box size
+
+
+#--------------------------- Problem -------------------------------
+prob.P_mean = 101325.0
+prob.standoff = -.023
+prob.pertmag = 0.00025
+pmf.datafile = "IonAir_pmf.dat"
+prob.PhiV_y_hi = 100.0
+
+#-------------------------PeleLM CONTROL----------------------------
+peleLM.v = 1
+peleLM.incompressible = 0
+peleLM.rho = 1.17
+peleLM.mu = 0.0
+peleLM.use_wbar = 1
+peleLM.sdc_iterMax = 2
+peleLM.floor_species = 0
+peleLM.num_init_iter = 3
+
+#amr.restart = chk00005
+#amr.check_int = 2000
+amr.plot_int = 2
+amr.max_step = 20
+amr.dt_shrink = 0.01
+amr.stop_time = 0.001
+#amr.stop_time = 1.00
+amr.cfl = 0.5
+amr.derive_plot_vars = avg_pressure mag_vort mass_fractions chargedistrib efieldx efieldy
+
+cvode.solve_type = dense               # CVODE Linear solve type (for Newton direction) 
+ode.analytical_jacobian = 0            # Provide analytical jacobian (from Fuego) 
+
+#--------------------EFIELD CONTROL------------------------
+ef.phiV_lo_bc = Interior Dirichlet
+ef.phiV_hi_bc = Interior Dirichlet
+ef.phiV_polarity_lo = Neutral Cathode
+ef.phiV_polarity_hi = Neutral Anode
+ef.GMRES_rel_tol  = 1.0e-6
+ef.GMRES_abs_tol  = 1.0e-13
+ef.JFNK_lambda = 1.0e-7
+#ef.JFNK_diffType = 1 
+#ef.JFNK_maxNewton = 10
+ef.PC_approx = 2 
+#ef.PC_damping = 0.8
+ef.advection_scheme_order = 1
+ef.precond.diff_verbose = 0
+ef.precond.Stilda_verbose = 0 
+ef.precond.fixedIter = 10
+#ef.precond.max_coarsening_level = 2
+#ef.precond.num_pre_smooth = 4
+#ef.precond.num_post_smooth = 4
+ef.tabulated_Ke = 0
+ef.fixed_Ke = 0.4
+gmres.krylovBasis_size = 20
+gmres.verbose  = 0
+gmres.max_restart = 3 
+
+#--------------------REFINEMENT CONTROL------------------------
+#amr.refinement_indicators = temp
+#amr.temp.max_level     = 1
+#amr.temp.value_greater = 305
+#amr.temp.field_name    = temp
+
+#amr.refinement_indicators = magVort
+#amr.magVort.max_level     = 1
+#amr.magVort.value_greater = 500.0
+#amr.magVort.field_name    = mag_vort
+
+amr.refinement_indicators = yE
+amr.yE.max_level     = 3
+amr.yE.value_greater = 1.0e12
+amr.yE.field_name    = nE
+
+#amrex.fpe_trap_invalid = 1
+#amrex.fpe_trap_zero = 1
+#amrex.fpe_trap_overflow = 1

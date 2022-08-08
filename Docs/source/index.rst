@@ -28,7 +28,9 @@ point your web browser at the file ``${PELELMEX_HOME}/Docs/build/html/index.html
    :caption: Contents:
 
    Model.rst
+   Validation.rst
    LMeXControls.rst
+   Troubleshooting.rst
 
 
 Indices and tables

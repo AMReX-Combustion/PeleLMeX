@@ -10,7 +10,7 @@ void PeleLM::Evolve() {
 
    int plt_justDidIt = 0;
    int chk_justDidIt = 0;
-   
+
    while(!do_not_evolve) {
 
       plt_justDidIt = 0;
@@ -31,14 +31,20 @@ void PeleLM::Evolve() {
       }
 #ifdef PELELM_USE_SPRAY
       // Inject and redistribute spray particles
-      if (do_spray_particles) {
-        sprayInjectRedist(regridded);
+      if (do_spray_particles && regridded) {
+        sprayPostRegrid();
       }
 #endif
       int is_init = 0;
       Advance(is_init);
       m_nstep++;
       m_cur_time += m_dt;
+
+#ifdef PELELM_USE_SPRAY
+      if (do_spray_particles) {
+        sprayInjectRedist();
+      }
+#endif
 
       // Temporals
       if (doTemporalsNow()) {
@@ -72,7 +78,7 @@ void PeleLM::Evolve() {
    if (m_verbose > 0) {
       amrex::Print() << "\n >> Final simulation time: " << m_cur_time << "\n";
    }
-   if ( (m_plot_int > 0 || m_plot_per > 0.) && !plt_justDidIt ) {
+   if ( (m_plot_int > 0 || m_plot_per_approx > 0. || m_plot_per_exact > 0.) && !plt_justDidIt ) {
       WritePlotFile();
    }
    if ( m_check_int > 0 && !chk_justDidIt ) {
@@ -87,18 +93,22 @@ PeleLM::writePlotNow()
 
    if ( m_plot_int > 0 && (m_nstep % m_plot_int == 0) ) {
       write_now = true;
-   } else if (m_plot_per > 0.0) {
+
+   } else if ( m_plot_per_exact > 0.0 && (std::abs(std::remainder(m_cur_time, m_plot_per_exact)) < 1.e-12) ) {
+      write_now = true;
+
+   } else if (m_plot_per_approx > 0.0) {
       // Check to see if we've crossed a plot_per interval by comparing
       // the number of intervals that have elapsed for both the current
       // time and the time at the beginning of this timestep.
-      int num_per_old = static_cast<int>((m_cur_time-m_dt) / m_plot_per);
-      int num_per_new = static_cast<int>((m_cur_time     ) / m_plot_per);
+      int num_per_old = static_cast<int>((m_cur_time-m_dt) / m_plot_per_approx);
+      int num_per_new = static_cast<int>((m_cur_time     ) / m_plot_per_approx);
       // Before using these, however, we must test for the case where we're
       // within machine epsilon of the next interval. In that case, increment
       // the counter, because we have indeed reached the next plot_per interval
       // at this point.
       const Real eps = std::numeric_limits<Real>::epsilon() * 10.0_rt * std::abs(m_cur_time);
-      const Real next_plot_time = (num_per_old + 1) * m_plot_per;
+      const Real next_plot_time = (num_per_old + 1) * m_plot_per_approx;
       if ((num_per_new == num_per_old) && std::abs(m_cur_time - next_plot_time) <= eps)
       {
          num_per_new += 1;

@@ -23,6 +23,11 @@ static Box grow_box_by_two (const Box& b) { return amrex::grow(b,2); }
 void PeleLM::Setup() {
    BL_PROFILE("PeleLM::Setup()");
 
+   // Ensure grid is isotropic
+   {
+     auto const dx = geom[0].CellSizeArray();
+     AMREX_ALWAYS_ASSERT(AMREX_D_TERM(,dx[0] == dx[1], && dx[1] == dx[2]));
+   }
    // Print build info to screen
    const char* githash1 = buildInfoGetGitHash(1);
    const char* githash2 = buildInfoGetGitHash(2);
@@ -119,7 +124,6 @@ void PeleLM::Setup() {
    prob_parm = new ProbParm{};
    prob_parm_d = (ProbParm*)The_Arena()->alloc(sizeof(ProbParm));
 
-
    // Problem parameters
    readProbParm();
 
@@ -129,7 +133,7 @@ void PeleLM::Setup() {
    m_pNew = prob_parm->P_mean;
 
    // Copy problem parameters into device copy
-   Gpu::copy(Gpu::hostToDevice, prob_parm, prob_parm+1,prob_parm_d); 
+   Gpu::copy(Gpu::hostToDevice, prob_parm, prob_parm+1,prob_parm_d);
 }
 
 void PeleLM::readParameters() {
@@ -222,7 +226,7 @@ void PeleLM::readParameters() {
    // Get the phiV bc
    ppef.getarr("phiV_lo_bc",lo_bc_char,0,AMREX_SPACEDIM);
    ppef.getarr("phiV_hi_bc",hi_bc_char,0,AMREX_SPACEDIM);
-   for (int idim = 0; idim < AMREX_SPACEDIM; idim++) 
+   for (int idim = 0; idim < AMREX_SPACEDIM; idim++)
    {
       if (lo_bc_char[idim] == "Interior"){
          m_phiV_bc.setLo(idim,0);
@@ -232,7 +236,7 @@ void PeleLM::readParameters() {
          m_phiV_bc.setLo(idim,2);
       } else {
          amrex::Abort("Wrong PhiV bc. Should be : Interior, Dirichlet or Neumann");
-      }    
+      }
       if (hi_bc_char[idim] == "Interior"){
          m_phiV_bc.setHi(idim,0);
       } else if (hi_bc_char[idim] == "Dirichlet") {
@@ -293,12 +297,12 @@ void PeleLM::readParameters() {
    pp.queryarr("gravity", grav, 0, AMREX_SPACEDIM);
    Vector<Real> gp0(AMREX_SPACEDIM,0);
    pp.queryarr("gradP0", gp0, 0, AMREX_SPACEDIM);
-   for (int idim = 0; idim < AMREX_SPACEDIM; idim++) 
+   for (int idim = 0; idim < AMREX_SPACEDIM; idim++)
    {
       m_background_gp[idim] = gp0[idim];
       m_gravity[idim] = grav[idim];
    }
-   
+
 
    // -----------------------------------------
    // diffusion
@@ -307,7 +311,7 @@ void PeleLM::readParameters() {
    pp.query("deltaT_iterMax",m_deltaTIterMax);
    pp.query("deltaT_tol",m_deltaT_norm_max);
    pp.query("deltaT_crashIfFailing",m_crashOnDeltaTFail);
-  
+
 
    // -----------------------------------------
    // initialization
@@ -354,7 +358,7 @@ void PeleLM::readParameters() {
        m_Godunov_ppm = 0;
    } else {
        Abort("Unknown 'advection_scheme'. Recognized options are: Godunov_PLM, Godunov_PPM or Godunov_BDS");
-   } 
+   }
    m_predict_advection_type = "Godunov";  // Only option at this point. This will disapear when predict_velocity support BDS.
 
    // -----------------------------------------
@@ -376,8 +380,12 @@ void PeleLM::readParameters() {
    // Temporals
    // -----------------------------------------
    pp.query("do_temporals",m_do_temporals);
-   pp.query("temporal_int",m_temp_int);
-   pp.query("mass_balance",m_do_massBalance);
+   if (m_do_temporals) {
+      pp.query("temporal_int",m_temp_int);
+      pp.query("do_extremas",m_do_extremas);
+      pp.query("do_mass_balance",m_do_massBalance);
+      pp.query("do_species_balance",m_do_speciesBalance);
+   }
 
    // -----------------------------------------
    // Time stepping control
@@ -405,9 +413,10 @@ void PeleLM::readParameters() {
            m_EB_refine_type != "Adaptive" ) {
          Abort("refine_EB_type can only be 'Static' or 'Adaptive'");
       }
-      // Default EB refinement level is max_level 
+      // Default EB refinement level is max_level
       m_EB_refine_LevMax = max_level;
       pp.query("refine_EB_max_level",m_EB_refine_LevMax);
+      pp.query("refine_EB_buffer",m_derefineEBBuffer);
       if ( m_EB_refine_type == "Adaptive" ) {
          m_EB_refine_LevMin = 0;
          pp.query("refine_EB_min_level",m_EB_refine_LevMin);
@@ -439,13 +448,33 @@ void PeleLM::readParameters() {
    ppef.query("JFNK_newtonTol",m_ef_newtonTol);
    ppef.query("JFNK_maxNewton",m_ef_maxNewtonIter);
    ppef.query("JFNK_lambda",m_ef_lambda_jfnk);
+   ppef.query("JFNK_diffType",m_ef_diffT_jfnk);
+   AMREX_ASSERT(m_ef_diffT_jfnk == 1 || m_ef_diffT_jfnk == 2);
    ppef.query("GMRES_rel_tol",m_ef_GMRES_reltol);
+   ppef.query("GMRES_abs_tol",m_ef_GMRES_abstol);
    ppef.query("PC_approx",m_ef_PC_approx);
+   ppef.query("PC_damping",m_ABecCecOmega);
+   ppef.query("advection_scheme_order",m_nEAdvOrder);
+   AMREX_ASSERT(m_nEAdvOrder == 1 || m_nEAdvOrder == 2);
+
+   ppef.query("tabulated_Ke",m_electronKappaTab);
+   ppef.query("fixed_Ke",m_fixedKappaE);
 
    ppef.query("restart_nonEF",m_restart_nonEF);
    ppef.query("restart_electroneutral",m_restart_electroneutral);
    ppef.query("restart_resetTime",m_restart_resetTime);
+   ppef.query("plot_extras",m_do_extraEFdiags);
+
+   // Getting the ions fluxes on the domain boundaries
+   // Species balance data is needed, so override if not activated
+   if (m_do_temporals) {
+      ppef.query("do_ionsBalance",m_do_ionsBalance);
+      if (m_do_ionsBalance) {
+         m_do_speciesBalance = 1; 
+      }
+   }
 #endif
+
 #ifdef PELELM_USE_SPRAY
    readSprayParameters();
 #endif
@@ -471,7 +500,15 @@ void PeleLM::readIOParameters() {
    pp.query("initDataPltSource" , pltfileSource);
    pp.query("plot_file", m_plot_file);
    pp.query("plot_int" , m_plot_int);
-   pp.query("plot_per", m_plot_per);
+   if (pp.contains("plot_per")) {
+      int do_exact = 0;
+      pp.query("plot_per_exact",do_exact);
+      if ( do_exact ) {
+        pp.query("plot_per", m_plot_per_exact);
+      } else {
+        pp.query("plot_per", m_plot_per_approx);
+      }
+   }
    pp.query("plot_grad_p", m_plot_grad_p);
    m_derivePlotVarCount = (pp.countval("derive_plot_vars"));
    if (m_derivePlotVarCount != 0) {
@@ -485,6 +522,8 @@ void PeleLM::readIOParameters() {
    m_regrid_file = "";
    pp.query("initial_grid_file", m_initial_grid_file);
    pp.query("regrid_file", m_regrid_file);
+   pp.query("file_stepDigits", m_ioDigits);
+   pp.query("use_hdf5_plt",m_write_hdf5_pltfile);
 
 }
 
@@ -494,7 +533,7 @@ void PeleLM::variablesSetup() {
    std::string PrettyLine = std::string(78, '=') + "\n";
 
    //----------------------------------------------------------------
-   // Variables ordering is defined through compiler macro in PeleLM_Index.H 
+   // Variables ordering is defined through compiler macro in PeleLM_Index.H
    // Simply print on screen the state layout and append to the stateComponents list
    Print() << "\n";
    Print() << PrettyLine;
@@ -571,11 +610,7 @@ void PeleLM::variablesSetup() {
 
    // Velocity - follow incflo
    for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
-#ifdef AMREX_USE_EB
-      m_AdvTypeState[VELX+idim] = 1;   // Conservative
-#else
       m_AdvTypeState[VELX+idim] = 0;   // NonConservative
-#endif
       m_DiffTypeState[VELX+idim] = 1;  // Diffusive
    }
 
@@ -695,10 +730,38 @@ void PeleLM::derivedSetup()
       derive_lst.add("mass_fractions",IndexType::TheCellType(),NUM_SPECIES,
                      var_names_massfrac,pelelm_dermassfrac,the_same_box);
 
+      for (int n = 0 ; n < NUM_SPECIES; n++) {
+         var_names_massfrac[n] = "X("+spec_names[n]+")";
+      }
+      derive_lst.add("mole_fractions",IndexType::TheCellType(),NUM_SPECIES,
+                     var_names_massfrac,pelelm_dermolefrac,the_same_box);
+
+      // Species diffusion coefficients
+      for (int n = 0 ; n < NUM_SPECIES; n++) {
+         var_names_massfrac[n] = "D_"+spec_names[n];
+      }
+      derive_lst.add("diffcoeff",IndexType::TheCellType(),NUM_SPECIES,
+                     var_names_massfrac,pelelm_derdiffc,the_same_box);
+
+      // Heat Release
+      derive_lst.add("HeatRelease",IndexType::TheCellType(),1,pelelm_derheatrelease,the_same_box);
+
+      // Thermal diffusivity
+      derive_lst.add("lambda",IndexType::TheCellType(),1,pelelm_derlambda,the_same_box);
+
+      // Mixture fraction
+      derive_lst.add("mixture_fraction",IndexType::TheCellType(),1,pelelm_dermixfrac,the_same_box);
+
+      // Progress variable
+      derive_lst.add("progress_variable",IndexType::TheCellType(),1,pelelm_derprogvar,the_same_box);
+
    }
 
    // Cell average pressure
    derive_lst.add("avg_pressure",IndexType::TheCellType(),1,pelelm_deravgpress,the_same_box);
+
+   // Viscosity
+   derive_lst.add("viscosity",IndexType::TheCellType(),1,pelelm_dervisc,the_same_box);
 
    // Vorticity magnitude
    derive_lst.add("mag_vort",IndexType::TheCellType(),1,pelelm_dermgvort,grow_box_by_two);
@@ -706,11 +769,8 @@ void PeleLM::derivedSetup()
    // Kinetic energy
    derive_lst.add("kinetic_energy",IndexType::TheCellType(),1,pelelm_derkineticenergy,the_same_box);
 
-   // Mixture fraction
-   derive_lst.add("mixture_fraction",IndexType::TheCellType(),1,pelelm_dermixfrac,the_same_box);
-
-   // Progress variable
-   derive_lst.add("progress_variable",IndexType::TheCellType(),1,pelelm_derprogvar,the_same_box);
+   // Enstrophy
+   derive_lst.add("enstrophy",IndexType::TheCellType(),1,pelelm_derenstrophy,grow_box_by_two);
 
 #ifdef PELE_USE_EFIELD
    // Charge distribution
@@ -899,6 +959,7 @@ void PeleLM::resizeArray() {
 
 #ifdef PELE_USE_EFIELD
    m_leveldatanlsolve.resize(max_level+1);
+   m_ionsFluxes.resize(max_level+1);
 #endif
 
    // External sources

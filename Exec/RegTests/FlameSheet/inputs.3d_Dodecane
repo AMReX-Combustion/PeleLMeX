@@ -38,9 +38,7 @@ peleLM.use_wbar = 1
 peleLM.sdc_iterMax = 2
 peleLM.floor_species = 0
 
-peleLM.do_temporals = 1
-peleLM.temporal_int = 2
-peleLM.mass_balance = 1
+peleLM.do_temporals = 0
 
 #amr.restart = chk00005
 #amr.check_int = 2000

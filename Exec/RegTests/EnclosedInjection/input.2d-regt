@@ -51,8 +51,7 @@ peleLM.typical_values_reset_int = 10
 # Advection
 # Temporals
 peleLM.do_temporals = 1
-peleLM.temporal_int = 1
-peleLM.mass_balance = 1
+peleLM.do_mass_balance = 1
 # Chamber
 peleLM.closed_chamber = 1
 

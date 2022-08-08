@@ -58,6 +58,17 @@ PeleLM::computeDt(int is_init,
    } else {
       estdt = std::min(estdt,m_prev_dt*m_dtChangeMax);
       estdt = std::min(estdt,m_max_dt);
+      // Shorten the dt to output plt file at exact req. time
+      if (m_plot_per_exact > 0.0) {
+         // Ensure ~O(dt) step by checking a little in advance
+         Real timeToNextPlot = (std::floor( m_cur_time / m_plot_per_exact ) + 1) * m_plot_per_exact - m_cur_time;
+         if ( 2.0 * estdt > timeToNextPlot && timeToNextPlot > estdt ) {
+            estdt = 0.5 * timeToNextPlot;
+         } else {
+            estdt = std::min(estdt,timeToNextPlot);
+         }
+      }
+      // If we're are getting close to the end of the simulation, shorten the dt too
       if (m_stop_time >= 0.0) {
          // Ensure ~O(dt) last step by checking a little in advance
          Real timeLeft = (m_stop_time-m_cur_time);
@@ -133,7 +144,7 @@ PeleLM::estDivUDt(const TimeStamp &a_time) {
 
    // Note: only method 1 of PeleLM is available here
    AMREX_ASSERT(m_divu_checkFlag==1);
-  
+
    for (int lev = 0; lev <= finest_level; ++lev) {
 
       auto ldata_p = getLevelDataPtr(lev, a_time);

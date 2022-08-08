@@ -12,9 +12,11 @@ void PeleLM::Init() {
    // Open temporals file
    openTempFile();
 
+   // Check run parameters
+   checkRunParams();
+
    // Initialize data
    initData();
-
 }
 
 void PeleLM::MakeNewLevelFromScratch( int lev,
@@ -67,8 +69,10 @@ void PeleLM::MakeNewLevelFromScratch( int lev,
    }
 
 #ifdef PELE_USE_EFIELD
-   int nGrowNL = 1;
-   m_leveldatanlsolve[lev].reset(new LevelDataNLSolve(grids[lev], dmap[lev], *m_factory[lev], 1));
+   m_leveldatanlsolve[lev].reset(new LevelDataNLSolve(grids[lev], dmap[lev], *m_factory[lev], m_nGrowState));
+   if (m_do_extraEFdiags) {
+      m_ionsFluxes[lev].reset(new MultiFab(grids[lev], dmap[lev], NUM_IONS*AMREX_SPACEDIM, 0));
+   }
 #endif
 
    // Fill the initial solution (if not restarting)
@@ -102,14 +106,14 @@ void PeleLM::MakeNewLevelFromScratch( int lev,
    if ( lev == 0 && m_signDistNeeded) {
       // Set up CC signed distance container to control EB refinement
       m_signedDist0.reset(new MultiFab(grids[lev], dmap[lev], 1, 1, MFInfo(), *m_factory[lev]));
-    
+
       // Estimate the maximum distance we need in terms of level 0 dx:
       Real extentFactor = static_cast<Real>(nErrorBuf(0));
       for (int ilev = 1; ilev <= max_level; ++ilev) {
           extentFactor += static_cast<Real>(nErrorBuf(ilev)) / std::pow(static_cast<Real>(refRatio(ilev-1)[0]),
                                                                         static_cast<Real>(ilev));
       }
-      extentFactor *= std::sqrt(2.0);  // Account for diagonals
+      extentFactor *= std::sqrt(2.0) * m_derefineEBBuffer;  // Account for diagonals
 
       MultiFab signDist(convert(grids[0],IntVect::TheUnitVector()),dmap[0],1,1,MFInfo(),EBFactory(0));
       FillSignedDistance(signDist,true);
@@ -212,6 +216,11 @@ void PeleLM::initData() {
          calcDivU(is_initialization,computeDiffusionTerm,do_avgDown,AmrNewTime,diffData);
       }
       initialProjection();
+     
+      // If gravity is used, do initial pressure projection to get the hydrostatic pressure
+      if (std::abs(m_gravity.sum()) > 0.0) {
+         initialPressProjection();
+      }
 
       // Post data Init time step estimate
       m_dt = computeDt(is_init,AmrNewTime);
@@ -289,7 +298,7 @@ void PeleLM::initData() {
          writeTemporals();
       }
 
-      if (m_plot_int > 0 || m_plot_per > 0.) {
+      if (m_plot_int > 0 || m_plot_per_approx > 0. || m_plot_per_exact > 0.) {
          WritePlotFile();
       }
       if (m_check_int > 0 ) {
@@ -317,12 +326,17 @@ void PeleLM::initData() {
          }
 
          // do an initial Poisson solve
-         poissonSolveEF(AmrNewTime);
          fillPatchPhiV(AmrNewTime);
+         poissonSolveEF(AmrNewTime);
 
          // Reset time data
          if ( m_restart_resetTime ) {
             m_nstep = 0;
+            m_cur_time = 0.0;
+            for (int lev = 0; lev <= finest_level; ++lev) {
+                m_t_new[lev] = 0.0;
+                m_t_old[lev] = -1.0e200;
+            }
             m_dt = -1.0;
             int is_init = 1;
             Real dtInit = computeDt(is_init,AmrNewTime);
@@ -368,17 +382,10 @@ void PeleLM::initLevelData(int lev) {
       FArrayBox DummyFab(bx,1);
       auto  const &state_arr   = ldata_p->state.array(mfi);
       auto  const &aux_arr   = (m_nAux > 0) ? ldata_p->auxiliaries.array(mfi) : DummyFab.array();
-#ifdef PELE_USE_EFIELD
-      auto  const &ne_arr    = ldata_p->nE.array(mfi);
-      auto  const &phiV_arr  = ldata_p->phiV.array(mfi);
-#endif
       amrex::ParallelFor(bx, [=,m_incompressible=m_incompressible]
       AMREX_GPU_DEVICE (int i, int j, int k) noexcept
       {
          pelelm_initdata(i, j, k, m_incompressible, state_arr, aux_arr,
-#ifdef PELE_USE_EFIELD
-                         ne_arr, phiV_arr,  
-#endif
                          geomdata, *lprobparm, lpmfdata);
       });
    }
@@ -434,4 +441,19 @@ void PeleLM::InitFromGridFile(amrex::Real time)
      DistributionMapping dm(ba);
      MakeNewLevelFromScratch(lev, time, ba, dm);
   }
+}
+
+void PeleLM::checkRunParams()
+{
+#ifdef AMREX_USE_EB
+    if (geom[0].IsRZ()) {
+        Abort("RZ geometry is not available with EB");
+    }
+#endif
+
+#if (AMREX_SPACEDIM == 2)
+    if (geom[0].IsRZ() && m_phys_bc.lo(0) != 3) {
+        Abort("x-low must be 'Symmetry' when using RZ coordinate system");
+    }
+#endif
 }

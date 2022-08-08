@@ -9,7 +9,11 @@ void PeleLM::readProbParm()
    pp.query("P_mean", prob_parm->P_mean);
    pp.query("meanFlowDir", prob_parm->meanFlowDir);
    pp.query("meanFlowMag", prob_parm->meanFlowMag);
+   pp.query("problem_type",prob_parm->flowType);
+   AMREX_ALWAYS_ASSERT(prob_parm->flowType == 1 ||
+                       prob_parm->flowType == 2);
 
+   /*
    if (!m_incompressible) {
       auto& trans_parm = PeleLM::trans_parms.host_trans_parm();
       amrex::ParmParse pptr("transport");
@@ -19,4 +23,5 @@ void PeleLM::readProbParm()
       pp.query("const_diffusivity", trans_parm.const_diffusivity);
       PeleLM::trans_parms.sync_to_device();
    }
+   */
 }

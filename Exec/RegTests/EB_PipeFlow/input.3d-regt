@@ -34,7 +34,7 @@ peleLM.v = 2
 peleLM.incompressible = 1
 peleLM.rho = 1.17
 peleLM.mu = 0.00002
-peleLM.gradP0 = 3000.0 0.0 0.0
+peleLM.gradP0 = -3000.0 0.0 0.0
 
 amr.check_int = 1000
 amr.plot_int = 10
@@ -61,6 +61,7 @@ amr.vort.vorticity_greater = 500
 fabarray.mfiter_tile_size = 1024 1024 1024
 
 nodal_proj.verbose = 0
+nodal_proj.mg_max_coarsening_level = 2
 amrex.fpe_trap_invalid = 1
 amrex.fpe_trap_zero = 1
 amrex.fpe_trap_overflow = 1
