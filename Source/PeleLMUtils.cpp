@@ -204,7 +204,7 @@ void PeleLM::intFluxDivergenceLevel(int lev,
    if (geom[lev].IsRZ()) {
        geom[lev].GetFaceArea(mf_ax, grids[lev], dmap[lev], 0, 0);
        geom[lev].GetFaceArea(mf_ay, grids[lev], dmap[lev], 1, 0);
-   }  
+   }
    Real areax = dx[1];
    Real areay = dx[0];
 #elif ( AMREX_SPACEDIM == 3 )
@@ -317,7 +317,7 @@ void PeleLM::intFluxDivergenceLevelEB(int lev,
                                       int div_comp,
                                       const Array<MultiFab*,AMREX_SPACEDIM> &a_fluxes,
                                       int flux_comp,
-                                      const MultiFab* a_EBfluxes, 
+                                      const MultiFab* a_EBfluxes,
                                       int ebflux_comp,
                                       int ncomp,
                                       Real scale) {
@@ -370,7 +370,7 @@ void PeleLM::intFluxDivergenceLevelEB(int lev,
          {
             divergence(i,j,k,n) = 0.0;
          });
-      } else if (flagfab.getType(bx) != FabType::regular ) {     // EB containing boxes 
+      } else if (flagfab.getType(bx) != FabType::regular ) {     // EB containing boxes
          auto vfrac = ebfact.getVolFrac().const_array(mfi);
          AMREX_D_TERM( const auto& afrac_x = areafrac[0]->array(mfi);,
                        const auto& afrac_y = areafrac[1]->array(mfi);,
@@ -440,7 +440,7 @@ void PeleLM::advFluxDivergence(int a_lev,
     if (geom[a_lev].IsRZ()) {
         geom[a_lev].GetFaceArea(mf_ax, grids[a_lev], dmap[a_lev], 0, 0);
         geom[a_lev].GetFaceArea(mf_ay, grids[a_lev], dmap[a_lev], 1, 0);
-    }  
+    }
 #endif
 
 #ifdef AMREX_USE_EB
@@ -471,7 +471,7 @@ void PeleLM::advFluxDivergence(int a_lev,
                                             scale, fluxes_are_area_weighted);
         } else if (flagfab.getType(bx) == FabType::regular)
 #endif
-        { 
+        {
            HydroUtils::ComputeDivergence(bx, div_arr,
                                          AMREX_D_DECL(fx,fy,fz),
                                          ncomp, a_geom,
@@ -1002,7 +1002,7 @@ PeleLM::MFSum (const Vector<const MultiFab*> &a_mf, int comp)
        // Get the geometry volume to account for 2D-RZ
        MultiFab volume(grids[lev], dmap[lev], 1, 0);
        geom[lev].GetVolume(volume);
-       
+
        Real sm = 0.0;
        if ( lev != finest_level ) {
           sm = amrex::ReduceSum(*a_mf[lev], volume, *m_coveredMask[lev], 0, [comp]
