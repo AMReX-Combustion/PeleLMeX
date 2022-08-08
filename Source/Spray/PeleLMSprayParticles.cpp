@@ -246,15 +246,15 @@ PeleLM::initSprays()
       createSprayData();
     }
 
+    bool init_part = true;
     if (!init_file.empty()) {
       theSprayPC()->InitFromAsciiFile(init_file, NSR_SPR + NAR_SPR);
-    } else if (init_function > 0) {
-      ProbParm const* lprobparm = prob_parm;
-      theSprayPC()->InitSprayParticles(*lprobparm);
-    } else {
-      Abort("Must initialize spray particles with particles.init_function or "
-            "particles.init_file");
     }
+    if (init_function <= 0) {
+      init_part = false;
+    }
+    ProbParm const* lprobparm = prob_parm;
+    theSprayPC()->InitSprayParticles(init_part, *lprobparm);
     sprayPostRegrid();
     sprayInjectRedist();
     if (spray_verbose >= 1) {
@@ -278,6 +278,8 @@ PeleLM::sprayRestart()
     amrex::ExecOnFinalize(RemoveParticlesOnExit);
     {
       theSprayPC()->Restart(m_restart_chkfile, "particles", true);
+      ProbParm const* lprobparm = prob_parm;
+      theSprayPC()->InitSprayParticles(false, *lprobparm);
       sprayPostRegrid();
       amrex::Gpu::Device::streamSynchronize();
     }
