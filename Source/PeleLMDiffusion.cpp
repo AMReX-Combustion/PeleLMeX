@@ -1018,6 +1018,7 @@ void PeleLM::computeDivTau(const TimeStamp &a_time,
                            int use_density,
                            Real scale)
 {
+   BL_PROFILE("PeleLM::computeDivTau()");
    // Get the density component BCRec to get viscosity on faces
    auto bcRec = fetchBCRecArray(DENSITY,1);
 
@@ -1038,6 +1039,7 @@ void PeleLM::computeDivTau(const TimeStamp &a_time,
 
 void PeleLM::diffuseVelocity()
 {
+   BL_PROFILE("PeleLM::diffuseVelocity()");
    // Get the density component BCRec to get viscosity on faces
    auto bcRec = fetchBCRecArray(DENSITY,1);
 
