@@ -12,6 +12,7 @@ using namespace amrex;
 
 void PeleLM::makeEBGeometry()
 {
+    BL_PROFILE("PeleLM::makeEBGeometry()");
     // TODO extend
     int max_coarsening_level = 100;
     int req_coarsening_level = geom.size()-1;
@@ -28,7 +29,7 @@ void PeleLM::makeEBGeometry()
     // If restarting: use the level at which it was generated earlier
     prev_max_lvl_eb  = (getRestartEBMaxLevel() > 0) ? getRestartEBMaxLevel()
                                                     : prev_max_lvl_eb;
-    
+
     // Manual override if needed -> might incur issues with previously covered/uncovered
     // cell flipping
     ppeb2.query("max_level_generation",prev_max_lvl_eb);
@@ -58,6 +59,7 @@ void PeleLM::redistributeAofS(int a_lev,
                               const BCRec * d_bc,
                               const Geometry &a_geom)
 {
+    BL_PROFILE("PeleLM::redistributeAofS()");
     AMREX_ASSERT(a_tmpDiv.nComp() >= div_comp+ncomp);
     AMREX_ASSERT(a_AofS.nComp() >= aofs_comp+ncomp);
     AMREX_ASSERT(a_state.nComp() >= state_comp+ncomp);
@@ -130,6 +132,7 @@ void PeleLM::redistributeDiff(int a_lev,
                               const BCRec * d_bc,
                               const Geometry &a_geom)
 {
+    BL_PROFILE("PeleLM::redistributeDiff()");
     AMREX_ASSERT(a_tmpDiv.nComp() >= div_comp+ncomp);
     AMREX_ASSERT(a_diff.nComp() >= diff_comp+ncomp);
     AMREX_ASSERT(a_state.nComp() >= state_comp+ncomp);
@@ -233,6 +236,7 @@ void PeleLM::initCoveredState()
 
 void PeleLM::setCoveredState(const TimeStamp &a_time)
 {
+    BL_PROFILE("PeleLM::setCoveredState()");
     for (int lev = 0; lev <= finest_level; lev++) {
         setCoveredState(lev,a_time);
     }
@@ -332,6 +336,7 @@ void PeleLM::initialRedistribution()
 void PeleLM::getEBDistance(int a_lev,
                            MultiFab &a_signDistLev) {
 
+    BL_PROFILE("PeleLM::getEBDistance()");
 
     if (a_lev == 0) {
         MultiFab::Copy(a_signDistLev,*m_signedDist0,0,0,1,0);
