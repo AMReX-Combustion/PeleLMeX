@@ -99,8 +99,7 @@ void PeleLM::redistributeAofS(int a_lev,
                 else if (m_adv_redist_type == "FluxRedist")
                   gbx.grow(2);
 
-                FArrayBox tmpfab(gbx, ncomp);
-                Elixir eli = tmpfab.elixir();
+                FArrayBox tmpfab(gbx, ncomp, The_Async_Arena());
                 Array4<Real> scratch = tmpfab.array(0);
                 if (m_adv_redist_type == "FluxRedist")
                 {
@@ -172,8 +171,7 @@ void PeleLM::redistributeDiff(int a_lev,
                 else if (m_diff_redist_type == "FluxRedist")
                   gbx.grow(2);
 
-                FArrayBox tmpfab(gbx, ncomp);
-                Elixir eli = tmpfab.elixir();
+                FArrayBox tmpfab(gbx, ncomp, The_Async_Arena());
                 Array4<Real> scratch = tmpfab.array(0);
                 if (m_diff_redist_type == "FluxRedist")
                 {

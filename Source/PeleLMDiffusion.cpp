@@ -333,15 +333,13 @@ void PeleLM::addWbarTerm(const Vector<Array<MultiFab*,AMREX_SPACEDIM> > &a_spflu
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
       {
-         FArrayBox rhoY_ed;
          for (MFIter mfi(*a_beta[lev],TilingIfNotGPU()); mfi.isValid();++mfi)
          {
             for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
 
                // Get edge centered rhoYs
                const Box ebx = mfi.nodaltilebox(idim);
-               rhoY_ed.resize(ebx,NUM_SPECIES);
-               Elixir rhoY_el = rhoY_ed.elixir();
+               FArrayBox rhoY_ed(ebx, NUM_SPECIES, The_Async_Arena());
 
                const Box& edomain = amrex::surroundingNodes(domain,idim);
                auto const& rhoY_arr = a_spec[lev]->const_array(mfi);

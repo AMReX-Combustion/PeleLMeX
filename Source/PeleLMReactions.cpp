@@ -486,12 +486,10 @@ void PeleLM::getHeatRelease(int a_lev,
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
     {
-        FArrayBox EnthFab;
         for (MFIter mfi(*a_HR,TilingIfNotGPU()); mfi.isValid(); ++mfi)
         {
            const Box& bx = mfi.tilebox();
-           EnthFab.resize(bx,NUM_SPECIES);
-           Elixir  Enthi   = EnthFab.elixir();
+           FArrayBox EnthFab(bx, NUM_SPECIES, The_Async_Arena());
            auto const& react = ldataR_p->I_R.const_array(mfi,0);
            auto const& T     = ldataNew_p->state.const_array(mfi,TEMP);
            auto const& Hi    = EnthFab.array();
