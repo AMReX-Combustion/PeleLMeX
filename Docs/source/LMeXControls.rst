@@ -296,8 +296,9 @@ The list of available triggers is:
 .. list-table:: PeleLMeX run-time triggers
     :widths: 50 100
     :header-rows: 1
+
     * - File
-      - Fction
+      - Function
     * - plt_and_continue
       - Write a pltfile to disk and pursue the simulation
     * - chk_and_continue
