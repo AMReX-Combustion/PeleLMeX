@@ -55,15 +55,17 @@ void PeleLM::Evolve() {
       doDiagnostics();
 
       // Check message
-      bool dump_and_stop = checkMessage();
+      bool dump_and_stop = checkMessage("dump_and_stop");
+      bool plt_and_continue = checkMessage("plt_and_continue");
+      bool chk_and_continue = checkMessage("chk_and_continue");
 
       // Check for plot file
-      if (writePlotNow() || dump_and_stop) {
+      if (writePlotNow() || dump_and_stop || plt_and_continue)  {
          WritePlotFile();
          plt_justDidIt = 1;
       }
 
-      if (writeCheckNow() || dump_and_stop) {
+      if (writeCheckNow() || dump_and_stop || chk_and_continue) {
          WriteCheckPointFile();
          chk_justDidIt = 1;
       }
@@ -71,6 +73,7 @@ void PeleLM::Evolve() {
       // Check for the end of the simulation
       do_not_evolve = ( (m_max_step >= 0 && m_nstep >= m_max_step) ||
                         (m_stop_time >= 0.0 && m_cur_time >= m_stop_time - 1.0e-12 * m_dt) ||
+                        (m_dt < m_min_dt) ||    
                         dump_and_stop );
 
    }
@@ -156,23 +159,35 @@ PeleLM::doTemporalsNow()
 }
 
 bool
-PeleLM::checkMessage()
+PeleLM::checkMessage(const std::string &a_action)
 {
-    bool dump_and_stop = false;
+    bool take_action = false;
+
+    std::string action_file = "";
+    if (a_action == "dump_and_stop") {
+        action_file = "dump_and_stop";
+    } else if (a_action == "plt_and_continue") {
+        action_file = "plt_and_continue";
+    } else if (a_action == "chk_and_continue") {
+        action_file = "chk_and_continue";
+    } else {
+        Abort("Unknown action in checkMessage()");
+    }
+
     if (m_nstep % m_message_int == 0) {
-        int dumpclose = 0;
+        int action_flag = 0;
         if (ParallelDescriptor::IOProcessor()) {
             FILE *fp;
-            if ( (fp=fopen("dump_and_stop","r")) != 0 ) {
-                remove("dump_and_stop");
-                dumpclose = 1;
+            if ( (fp=fopen(action_file.c_str(),"r")) != 0 ) {
+                remove(action_file.c_str());
+                action_flag = 1;
                 fclose(fp);
             }
         }
         int packed_data[1];
-        packed_data[0] = dumpclose;
+        packed_data[0] = action_flag;
         ParallelDescriptor::Bcast(packed_data, 1, ParallelDescriptor::IOProcessorNumber());
-        dump_and_stop = packed_data[0];
+        take_action = packed_data[0];
     }
-    return dump_and_stop;
+    return take_action;
 }
