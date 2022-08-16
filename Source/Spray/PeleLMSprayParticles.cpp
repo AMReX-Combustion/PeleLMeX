@@ -51,8 +51,6 @@ int init_function = 1;
 int spray_verbose = 0;
 Real max_spray_cfl = 5.;
 Real wall_temp = 300.;
-bool mass_trans = true;
-bool mom_trans = true;
 } // namespace
 
 bool PeleLM::do_spray_particles = true;
@@ -115,9 +113,9 @@ PeleLM::readSprayParameters()
   // Mush change dtmod to 1 since we only do MKD
   sprayData.dtmod = 1.;
   SprayParticleContainer::readSprayParams(
-    spray_verbose, max_spray_cfl, wall_temp, mass_trans, mom_trans,
-    write_spray_ascii_files, plot_spray_src, init_function, init_file,
-    sprayData, spray_fuel_names, spray_derive_vars, temp_cfl);
+    spray_verbose, max_spray_cfl, wall_temp, write_spray_ascii_files,
+    plot_spray_src, init_function, init_file, sprayData, spray_fuel_names,
+    spray_derive_vars, temp_cfl);
 }
 
 void
@@ -157,8 +155,6 @@ PeleLM::sprayParticleSetup()
     const int fspec = sprayData.indx[ns];
     sprayData.latent[ns] -= fuelEnth[fspec] * 1.E-4;
   }
-  scomps.mass_trans = mass_trans;
-  scomps.mom_trans = mom_trans;
   // Component indices for conservative variables
   scomps.rhoIndx = DENSITY;
   scomps.momIndx = VELX;
@@ -493,7 +489,8 @@ PeleLM::sprayInjectRedist()
   if (spray_verbose >= 3 && injected) {
     Long new_count = theSprayPC()->TotalNumberOfParticles(true, false);
     Long num_inj = new_count - prev_count;
-    amrex::Print() << "Injected " << num_inj << " particles at time " << m_t_new[0] << std::endl;
+    amrex::Print() << "Injected " << num_inj << " particles at time "
+                   << m_t_new[0] << std::endl;
   }
 }
 
