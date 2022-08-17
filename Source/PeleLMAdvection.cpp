@@ -723,7 +723,7 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
    //----------------------------------------------------------------
    // Sum over the species AofS to get the density advection term
    for (int lev = 0; lev <= finest_level; ++lev) {
-      auto aofsma = advData->AofS[lev].const_arrays();
+      auto aofsma = advData->AofS[lev].arrays();
       amrex::ParallelFor(advData->AofS[lev], [=, dt=m_dt]
       AMREX_GPU_DEVICE (int box_no, int i, int j, int k) noexcept
       {
