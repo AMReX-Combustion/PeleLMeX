@@ -11,7 +11,6 @@ void PeleLM::setThermoPress(const TimeStamp &a_time) {
    for (int lev = 0; lev <= finest_level; ++lev) {
       setThermoPress(lev, a_time);
    }
-
    averageDownRhoRT(a_time);
 }
 
@@ -31,6 +30,7 @@ void PeleLM::setThermoPress(int lev, const TimeStamp &a_time) {
                    Array4<Real const>(sma[box_no],TEMP),
                    Array4<Real      >(sma[box_no],RHORT));
    });
+   Gpu::streamSynchronize();
 }
 
 void PeleLM::calcDivU(int is_init,
@@ -172,6 +172,7 @@ void PeleLM::setTemperature(const TimeStamp &a_time) {
    for (int lev = 0; lev <= finest_level; ++lev) {
       setTemperature(lev, a_time);
    }
+   Gpu::streamSynchronize();
 }
 
 void PeleLM::setTemperature(int lev, const TimeStamp &a_time) {
@@ -190,6 +191,7 @@ void PeleLM::setTemperature(int lev, const TimeStamp &a_time) {
                   Array4<Real const>(sma[box_no],RHOH),
                   Array4<Real      >(sma[box_no],TEMP));
    });
+   Gpu::streamSynchronize();
 }
 
 void PeleLM::calc_dPdt(const TimeStamp &a_time,
@@ -229,6 +231,7 @@ void PeleLM::calc_dPdt(int lev,
       auto sa    = sma[box_no];
       dPdta(i,j,k) = (sa(i,j,k,RHORT) - p_amb) / ( dt * sa(i,j,k,RHORT) ) * dpdt_fac;
    });
+   Gpu::streamSynchronize();
 }
 
 Real
@@ -257,6 +260,7 @@ PeleLM::adjustPandDivU(std::unique_ptr<AdvanceAdvData> &advData)
            theta(i,j,k) = 0.5 * (gammaInv_o/pOld + gammaInv_n/pNew);
         });
     }
+    Gpu::streamSynchronize();
 
     // Get the mean mac_divu (Sbar) and mean theta
     Real Sbar = MFSum(GetVecOfConstPtrs(advData->mac_divu),0);
@@ -293,6 +297,7 @@ PeleLM::adjustPandDivU(std::unique_ptr<AdvanceAdvData> &advData)
            uma[box_no](i,j,k) -= (theta(i,j,k) * Sbar/Thetabar - divu_vol*(1 + theta(i,j,k)/Thetabar));
         });
     }
+    Gpu::streamSynchronize();
 
     if (m_verbose > 2 ) {
         Print() << " >> Closed chamber pOld: " << m_pOld << ", pNew: " << m_pNew << ", dp0dt: " << m_dp0dt << "\n";

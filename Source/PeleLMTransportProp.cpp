@@ -36,6 +36,7 @@ void PeleLM::calcViscosity(const TimeStamp &a_time) {
          });
       }
    }
+   Gpu::streamSynchronize();
 }
 
 void PeleLM::calcDiffusivity(const TimeStamp &a_time) {
@@ -78,6 +79,7 @@ void PeleLM::calcDiffusivity(const TimeStamp &a_time) {
 #endif
       });
    }
+   Gpu::streamSynchronize();
 }
 
 Array<MultiFab,AMREX_SPACEDIM>

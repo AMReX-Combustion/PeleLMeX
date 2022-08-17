@@ -991,7 +991,7 @@ void PeleLM::updateTypicalValuesChem()
     }
 }
 
-// MultiFab max, exlucing EB-covered/fine-covered cells, local
+// MultiFab max, excluding EB-covered/fine-covered cells, local
 Real
 PeleLM::MFmax(const MultiFab *a_MF,
               const iMultiFab &a_mask,
@@ -1081,7 +1081,7 @@ PeleLM::MFmax(const MultiFab *a_MF,
     return mx;
 }
 
-// MultiFab min, exlucing EB-covered/fine-covered cells, local
+// MultiFab min, excluding EB-covered/fine-covered cells, local
 Real
 PeleLM::MFmin(const MultiFab *a_MF,
               const iMultiFab &a_mask,

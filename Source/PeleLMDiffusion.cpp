@@ -938,27 +938,19 @@ void PeleLM::deltaTIter_update(int a_dtiter,
    //------------------------------------------------------------------------
    // Recompute RhoH
    for (int lev = 0; lev <= finest_level; ++lev) {
-
       auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
-
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
-      for (MFIter mfi(ldata_p->state,TilingIfNotGPU()); mfi.isValid(); ++mfi)
+      auto const& sma = ldata_p->state.arrays();
+      amrex::ParallelFor(ldata_p->state, [=]
+      AMREX_GPU_DEVICE (int box_no, int i, int j, int k) noexcept
       {
-         const Box& bx       = mfi.tilebox();
-         auto const& rho     = ldata_p->state.const_array(mfi,DENSITY);
-         auto const& rhoY    = ldata_p->state.const_array(mfi,FIRSTSPEC);
-         auto const& T       = ldata_p->state.const_array(mfi,TEMP);
-         auto const& rhoHm   = ldata_p->state.array(mfi,RHOH);
-
-         amrex::ParallelFor(bx, [rho, rhoY, T, rhoHm]
-         AMREX_GPU_DEVICE (int i, int j, int k) noexcept
-         {
-            getRHmixGivenTY( i, j, k, rho, rhoY, T, rhoHm );
-         });
-      }
+         getRHmixGivenTY( i,j,k,
+                          Array4<Real const>(sma[box_no],DENSITY),
+                          Array4<Real const>(sma[box_no],FIRSTSPEC),
+                          Array4<Real const>(sma[box_no],TEMP),
+                          Array4<Real      >(sma[box_no],RHOH));
+      });
    }
+   Gpu::streamSynchronize();
 }
 
 void PeleLM::getScalarDiffForce(std::unique_ptr<AdvanceAdvData> &advData,
