@@ -524,7 +524,7 @@ class PeleLM : public amrex::AmrCore {
    // I/O
    void WritePlotFile();
    bool writePlotNow();
-   bool checkMessage();
+   bool checkMessage(const std::string &a_action);
    void WriteCheckPointFile();
    void ReadCheckPointFile();
    bool writeCheckNow();
@@ -1105,6 +1105,7 @@ class PeleLM : public amrex::AmrCore {
    amrex::Real m_cfl          = 0.7;
    amrex::Real m_fixed_dt     = -1.0;
    amrex::Real m_init_dt      = -1.0;
+   amrex::Real m_min_dt       = 1.0e-12;
    amrex::Real m_dtshrink     = 1.0;
    amrex::Real m_prev_dt      = -1.0;
    amrex::Real m_dtChangeMax  = 1.1;
