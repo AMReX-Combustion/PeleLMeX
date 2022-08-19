@@ -69,7 +69,7 @@ nE_bc[] =
 int
 phiV_bc[] =
 {
-        INT_DIR, EXT_DIR, REFLECT_EVEN
+  INT_DIR, EXT_DIR, REFLECT_EVEN
 };
 #endif
 
