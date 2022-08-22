@@ -60,6 +60,7 @@ Time stepping parameters
     amr.stop_time     = 0.001              # Maximum simulation time [s]
     amr.cfl           = 0.5                # [OPT, DEF=0.7] CFL for advection-controlled dt estimate
     amr.fixed_dt      = 1e-6               # [OPT] optional fixed dt (override CFL condition)
+    amr.min_dt        = 1e-11              # [OPT, DEF=1e-12] small time step size limit triggering simulation termination
     amr.init_dt       = 1e-6               # [OPT] optional initial dt (override CFL condition upon initialization)
     amr.dt_shrink     = 0.0001             # [OPT, DEF=1.0] dt factor upon initialization
     amr.dt_change_max = 1.1                # [OPT, DEF=1.1] maximum dt change between consecutive steps
@@ -277,3 +278,38 @@ the state variables on a 'x','y' or 'z' aligned plane and writting a 2D plotfile
     peleLM.ynormal.center = 0.0
     peleLM.ynormal.int    = 10
     peleLM.ynormal.interpolation = Quadratic
+
+
+Run-time control
+--------------------
+
+Following some of AMReX's AmrLevel class implementation, PeleLMeX provides a couple of triggers to interact with the code while
+it is running. This can be done by adding an empty file to the folder where the simulation is currently running using for 
+example:
+
+::
+
+    touch plt_and_continue
+
+The list of available triggers is:
+
+.. list-table:: PeleLMeX run-time triggers
+    :widths: 50 100
+    :header-rows: 1
+
+    * - File
+      - Function
+    * - plt_and_continue
+      - Write a pltfile to disk and pursue the simulation
+    * - chk_and_continue
+      - Write a chkfile to disk and pursue the simulation
+    * - dump_and_stop
+      - Write both pltfile and chkfile to disk and stop the simulation
+
+By default, the code checks if these files exist every 10 time steps, but the user can either increase or decrease the 
+frequency using:
+
+::
+
+    amr.message_int      = 20                # [OPT, DEF=10] Frequency for checking the presence of trigger files
+    
