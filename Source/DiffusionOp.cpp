@@ -23,7 +23,6 @@ DiffusionOp::DiffusionOp (PeleLM* a_pelelm, int ncomp)
    LPInfo info_solve;
    info_solve.setAgglomeration(1);
    info_solve.setConsolidation(1);
-   info_solve.setMetricTerm(false);
    info_solve.setMaxCoarseningLevel(m_mg_max_coarsening_level);
 
    // Apply LPInfo (no coarsening)
@@ -454,6 +453,11 @@ DiffusionOp::computeGradient(const Vector<Array<MultiFab*,AMREX_SPACEDIM>> &a_gr
 
    // Do I need the Laplacian out ?
    int need_laplacian = (a_laps.empty()) ? 0 : 1;
+
+   // Force updating the operator
+   for (int lev = 0; lev <= m_pelelm->finestLevel(); ++lev) {
+      m_gradient_op->setBCoeffs(lev,-1.0);
+   }
 
    // Checks: one components only and 1 ghost cell at least
    AMREX_ASSERT(a_phi[0]->nComp() == 1);
