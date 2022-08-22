@@ -14,5 +14,6 @@ struct ProbParm
    amrex::Real Vcoflow  = 0.0;
    amrex::Real slot_width  = 0.0;
    amrex::Real splitx   = 0.0;
+   int         is_sym   = 0;
 };
 #endif
