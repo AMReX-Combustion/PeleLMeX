@@ -333,15 +333,13 @@ void PeleLM::addWbarTerm(const Vector<Array<MultiFab*,AMREX_SPACEDIM> > &a_spflu
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
       {
-         FArrayBox rhoY_ed;
          for (MFIter mfi(*a_beta[lev],TilingIfNotGPU()); mfi.isValid();++mfi)
          {
             for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
 
                // Get edge centered rhoYs
                const Box ebx = mfi.nodaltilebox(idim);
-               rhoY_ed.resize(ebx,NUM_SPECIES);
-               Elixir rhoY_el = rhoY_ed.elixir();
+               FArrayBox rhoY_ed(ebx, NUM_SPECIES, The_Async_Arena());
 
                const Box& edomain = amrex::surroundingNodes(domain,idim);
                auto const& rhoY_arr = a_spec[lev]->const_array(mfi);
@@ -940,27 +938,19 @@ void PeleLM::deltaTIter_update(int a_dtiter,
    //------------------------------------------------------------------------
    // Recompute RhoH
    for (int lev = 0; lev <= finest_level; ++lev) {
-
       auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
-
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
-      for (MFIter mfi(ldata_p->state,TilingIfNotGPU()); mfi.isValid(); ++mfi)
+      auto const& sma = ldata_p->state.arrays();
+      amrex::ParallelFor(ldata_p->state, [=]
+      AMREX_GPU_DEVICE (int box_no, int i, int j, int k) noexcept
       {
-         const Box& bx       = mfi.tilebox();
-         auto const& rho     = ldata_p->state.const_array(mfi,DENSITY);
-         auto const& rhoY    = ldata_p->state.const_array(mfi,FIRSTSPEC);
-         auto const& T       = ldata_p->state.const_array(mfi,TEMP);
-         auto const& rhoHm   = ldata_p->state.array(mfi,RHOH);
-
-         amrex::ParallelFor(bx, [rho, rhoY, T, rhoHm]
-         AMREX_GPU_DEVICE (int i, int j, int k) noexcept
-         {
-            getRHmixGivenTY( i, j, k, rho, rhoY, T, rhoHm );
-         });
-      }
+         getRHmixGivenTY( i,j,k,
+                          Array4<Real const>(sma[box_no],DENSITY),
+                          Array4<Real const>(sma[box_no],FIRSTSPEC),
+                          Array4<Real const>(sma[box_no],TEMP),
+                          Array4<Real      >(sma[box_no],RHOH));
+      });
    }
+   Gpu::streamSynchronize();
 }
 
 void PeleLM::getScalarDiffForce(std::unique_ptr<AdvanceAdvData> &advData,
@@ -1018,6 +1008,7 @@ void PeleLM::computeDivTau(const TimeStamp &a_time,
                            int use_density,
                            Real scale)
 {
+   BL_PROFILE("PeleLM::computeDivTau()");
    // Get the density component BCRec to get viscosity on faces
    auto bcRec = fetchBCRecArray(DENSITY,1);
 
@@ -1038,6 +1029,7 @@ void PeleLM::computeDivTau(const TimeStamp &a_time,
 
 void PeleLM::diffuseVelocity()
 {
+   BL_PROFILE("PeleLM::diffuseVelocity()");
    // Get the density component BCRec to get viscosity on faces
    auto bcRec = fetchBCRecArray(DENSITY,1);
 

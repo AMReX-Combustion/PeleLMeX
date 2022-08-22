@@ -723,48 +723,37 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
    //----------------------------------------------------------------
    // Sum over the species AofS to get the density advection term
    for (int lev = 0; lev <= finest_level; ++lev) {
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
-      for (MFIter mfi(advData->AofS[lev],TilingIfNotGPU()); mfi.isValid(); ++mfi) {
-         Box const& bx = mfi.tilebox();
-         auto const& aofrho = advData->AofS[lev].array(mfi,DENSITY);
-         auto const& aofrhoY = advData->AofS[lev].const_array(mfi,FIRSTSPEC);
-         amrex::ParallelFor(bx, [aofrho, aofrhoY]
-         AMREX_GPU_DEVICE (int i, int j, int k) noexcept
-         {
-            aofrho(i,j,k) = 0.0;
-            for (int n = 0; n < NUM_SPECIES; n++) {
-               aofrho(i,j,k) += aofrhoY(i,j,k,n);
-            }
-         });
-      }
+      auto aofsma = advData->AofS[lev].arrays();
+      amrex::ParallelFor(advData->AofS[lev], [=, dt=m_dt]
+      AMREX_GPU_DEVICE (int box_no, int i, int j, int k) noexcept
+      {
+         aofsma[box_no](i,j,k,DENSITY) = 0.0;
+         for (int n = 0; n < NUM_SPECIES; n++) {
+            aofsma[box_no](i,j,k,DENSITY) += aofsma[box_no](i,j,k,FIRSTSPEC+n);
+         }
+      });
    }
+   Gpu::streamSynchronize();
 }
 
 void PeleLM::updateDensity(std::unique_ptr<AdvanceAdvData> &advData)
 {
    for (int lev = 0; lev <= finest_level; ++lev) {
 
-      // Get level data ptr
-      auto ldataOld_p = getLevelDataPtr(lev,AmrOldTime);
-      auto ldataNew_p = getLevelDataPtr(lev,AmrNewTime);
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
-      for (MFIter mfi(ldataNew_p->state,TilingIfNotGPU()); mfi.isValid(); ++mfi) {
-         Box const& bx = mfi.tilebox();
-         auto const& rhoOld_arr  = ldataOld_p->state.const_array(mfi,DENSITY);
-         auto const& rhoNew_arr  = ldataNew_p->state.array(mfi,DENSITY);
-         auto const& a_of_rho    = advData->AofS[lev].const_array(mfi,DENSITY);
-         auto const& ext_rho     = m_extSource[lev]->const_array(mfi,DENSITY);
-         amrex::ParallelFor(bx, [rhoOld_arr, rhoNew_arr, a_of_rho, ext_rho, dt=m_dt]
-         AMREX_GPU_DEVICE (int i, int j, int k) noexcept
-         {
-            rhoNew_arr(i,j,k) = rhoOld_arr(i,j,k) + dt * (a_of_rho(i,j,k) + ext_rho(i,j,k));
-         });
-      }
+      // Get MultiArrays
+      auto const& sma_o = getLevelDataPtr(lev,AmrOldTime)->state.arrays();
+      auto const& sma_n = getLevelDataPtr(lev,AmrNewTime)->state.arrays();
+      auto aofsma = advData->AofS[lev].const_arrays();
+      auto extma = m_extSource[lev]->const_arrays();
+
+      amrex::ParallelFor(advData->AofS[lev], [=, dt=m_dt]
+      AMREX_GPU_DEVICE (int box_no, int i, int j, int k) noexcept
+      {
+         sma_n[box_no](i,j,k,DENSITY) =  sma_o[box_no](i,j,k,DENSITY)
+                                       + dt * (aofsma[box_no](i,j,k,DENSITY) + extma[box_no](i,j,k,DENSITY));
+      });
    }
+   Gpu::streamSynchronize();
    averageDownDensity(AmrNewTime);
 }
 
