@@ -41,6 +41,7 @@ PeleLM::updateDiagnostics()
 void
 PeleLM::doDiagnostics()
 {
+    BL_PROFILE("PeleLM::doDiagnostics()");
     // At this point, we're only dealing with the state components
     Vector<std::string> stateNames;
     for (std::list<std::tuple<int,std::string>>::const_iterator li = stateComponents.begin(),
