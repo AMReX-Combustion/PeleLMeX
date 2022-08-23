@@ -180,11 +180,6 @@ void PeleLM::addMassFluxes(const Array<const MultiFab*,AMREX_SPACEDIM> &a_fluxes
 
 void PeleLM::addUmacFluxes(std::unique_ptr<AdvanceAdvData> &advData, const Geometry& a_geom)
 {
-
-   // Do when m_nstep is -1 since m_nstep is increased by one before
-   // the writeTemporals
-   if ( !(m_nstep % m_temp_int == m_temp_int-1) ) return;
-
    // Get the face areas
    const Real*  dx = a_geom.CellSize();
    Array<Real,AMREX_SPACEDIM> area;
