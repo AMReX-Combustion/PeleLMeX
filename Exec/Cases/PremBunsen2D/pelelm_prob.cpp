@@ -13,6 +13,7 @@ void PeleLM::readProbParm()
    pp.query("Vin", PeleLM::prob_parm->Vin);
    pp.query("Vcoflow", PeleLM::prob_parm->Vcoflow);
    pp.query("slot_width", PeleLM::prob_parm->slot_width);
+   pp.query("is_sym", PeleLM::prob_parm->is_sym);
 
    PeleLM::pmf_data.initialize(); 
 }

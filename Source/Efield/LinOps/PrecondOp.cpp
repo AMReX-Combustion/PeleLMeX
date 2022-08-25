@@ -46,6 +46,11 @@ PrecondOp::PrecondOp(PeleLM* a_pelelm)
                                       m_pelelm->DistributionMap(0,m_pelelm->finestLevel()),
                                       info_Stilda));
    m_Stilda->setMaxOrder(m_mg_maxorder);
+
+   // MLMGs
+   m_mlmg_diff = std::make_unique<MLMG>(*m_diff);
+   m_mlmg_drift = std::make_unique<MLMG>(*m_drift);
+   m_mlmg_Stilda = std::make_unique<MLMG>(*m_Stilda);
 }
 
 void
@@ -162,13 +167,12 @@ PrecondOp::diffOpSolve(const Vector<MultiFab*> &a_sol,
                        const Real &rtol, const Real &atol)
 {
    // TODO set all the MLMG options
-   MLMG mlmg(*m_diff);
-   mlmg.setVerbose(m_diff_verbose);
-   mlmg.setPreSmooth(m_num_pre_smooth);
-   mlmg.setPostSmooth(m_num_post_smooth);
-   if (m_fixed_mg_it > 0) mlmg.setFixedIter(m_fixed_mg_it);
+   m_mlmg_diff->setVerbose(m_diff_verbose);
+   m_mlmg_diff->setPreSmooth(m_num_pre_smooth);
+   m_mlmg_diff->setPostSmooth(m_num_post_smooth);
+   if (m_fixed_mg_it > 0) m_mlmg_diff->setFixedIter(m_fixed_mg_it);
    
-   mlmg.solve(a_sol, a_rhs, m_mg_rtol, m_mg_atol);
+   m_mlmg_diff->solve(a_sol, a_rhs, m_mg_rtol, m_mg_atol);
 }
 
 void
@@ -177,11 +181,10 @@ PrecondOp::StildaOpSolve(const Vector<MultiFab*> &a_sol,
                          const Real &rtol, const Real &atol)
 {
    // TODO set all the MLMG options
-   MLMG mlmg(*m_Stilda);
-   mlmg.setVerbose(m_Stilda_verbose);
-   if (m_fixed_mg_it > 0) mlmg.setFixedIter(m_fixed_mg_it);
+   m_mlmg_Stilda->setVerbose(m_Stilda_verbose);
+   if (m_fixed_mg_it > 0) m_mlmg_Stilda->setFixedIter(m_fixed_mg_it);
    
-   mlmg.solve(a_sol, a_rhs, m_mg_rtol, m_mg_atol);
+   m_mlmg_Stilda->solve(a_sol, a_rhs, m_mg_rtol, m_mg_atol);
 }
 
 void
@@ -189,10 +192,8 @@ PrecondOp::driftOpApply(const Vector<MultiFab*> &a_Ax,
                         const Vector<MultiFab*> &a_x)
 {
    // TODO set all the MLMG options
-   MLMG mlmg(*m_drift);
-   mlmg.setVerbose(m_drift_verbose);
-   
-   mlmg.apply(a_Ax, a_x);
+   m_mlmg_drift->setVerbose(m_drift_verbose);
+   m_mlmg_drift->apply(a_Ax, a_x);
 }
 
 Array<LinOpBCType,AMREX_SPACEDIM>

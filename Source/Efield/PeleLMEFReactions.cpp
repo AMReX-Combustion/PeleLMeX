@@ -9,7 +9,7 @@ void PeleLM::computeInstantaneousReactionRateEF(int lev,
 {
    auto ldata_p = getLevelDataPtr(lev,a_time);
 
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
    for (MFIter mfi(ldata_p->state,TilingIfNotGPU()); mfi.isValid(); ++mfi)
