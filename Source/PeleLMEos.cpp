@@ -11,7 +11,6 @@ void PeleLM::setThermoPress(const TimeStamp &a_time) {
    for (int lev = 0; lev <= finest_level; ++lev) {
       setThermoPress(lev, a_time);
    }
-
    averageDownRhoRT(a_time);
 }
 
@@ -20,26 +19,18 @@ void PeleLM::setThermoPress(int lev, const TimeStamp &a_time) {
    AMREX_ASSERT(a_time == AmrOldTime || a_time == AmrNewTime);
 
    auto ldata_p = getLevelDataPtr(lev,a_time);
+   auto const& sma = ldata_p->state.arrays();
 
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
+   amrex::ParallelFor(ldata_p->state, [=]
+   AMREX_GPU_DEVICE (int box_no, int i, int j, int k) noexcept
    {
-      for (MFIter mfi(ldata_p->state,TilingIfNotGPU()); mfi.isValid(); ++mfi)
-      {
-         const Box& bx = mfi.tilebox();
-         auto const& rho     = ldata_p->state.const_array(mfi,DENSITY);
-         auto const& rhoY    = ldata_p->state.const_array(mfi,FIRSTSPEC);
-         auto const& T       = ldata_p->state.const_array(mfi,TEMP);
-         auto const& P       = ldata_p->state.array(mfi,RHORT);
-
-         amrex::ParallelFor(bx, [rho, rhoY, T, P]
-         AMREX_GPU_DEVICE (int i, int j, int k) noexcept
-         {
-            getPGivenRTY( i, j, k, rho, rhoY, T, P );
-         });
-      }
-   }
+      getPGivenRTY(i,j,k,
+                   Array4<Real const>(sma[box_no],DENSITY),
+                   Array4<Real const>(sma[box_no],FIRSTSPEC),
+                   Array4<Real const>(sma[box_no],TEMP),
+                   Array4<Real      >(sma[box_no],RHORT));
+   });
+   Gpu::streamSynchronize();
 }
 
 void PeleLM::calcDivU(int is_init,
@@ -181,6 +172,7 @@ void PeleLM::setTemperature(const TimeStamp &a_time) {
    for (int lev = 0; lev <= finest_level; ++lev) {
       setTemperature(lev, a_time);
    }
+   Gpu::streamSynchronize();
 }
 
 void PeleLM::setTemperature(int lev, const TimeStamp &a_time) {
@@ -188,26 +180,18 @@ void PeleLM::setTemperature(int lev, const TimeStamp &a_time) {
    AMREX_ASSERT(a_time == AmrOldTime || a_time == AmrNewTime);
 
    auto ldata_p = getLevelDataPtr(lev,a_time);
+   auto const& sma = ldata_p->state.arrays();
 
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
+   amrex::ParallelFor(ldata_p->state, [=]
+   AMREX_GPU_DEVICE (int box_no, int i, int j, int k) noexcept
    {
-      for (MFIter mfi(ldata_p->state,TilingIfNotGPU()); mfi.isValid(); ++mfi)
-      {
-         const Box& bx = mfi.tilebox();
-         auto const& rho     = ldata_p->state.const_array(mfi,DENSITY);
-         auto const& rhoY    = ldata_p->state.const_array(mfi,FIRSTSPEC);
-         auto const& rhoh    = ldata_p->state.const_array(mfi,RHOH);
-         auto const& T       = ldata_p->state.array(mfi,TEMP);
-
-         amrex::ParallelFor(bx, [rho, rhoY, rhoh, T]
-         AMREX_GPU_DEVICE (int i, int j, int k) noexcept
-         {
-            getTfromHY( i, j, k, rho, rhoY, rhoh, T);
-         });
-      }
-   }
+      getTfromHY( i,j,k,
+                  Array4<Real const>(sma[box_no],DENSITY),
+                  Array4<Real const>(sma[box_no],FIRSTSPEC),
+                  Array4<Real const>(sma[box_no],RHOH),
+                  Array4<Real      >(sma[box_no],TEMP));
+   });
+   Gpu::streamSynchronize();
 }
 
 void PeleLM::calc_dPdt(const TimeStamp &a_time,
@@ -234,26 +218,20 @@ void PeleLM::calc_dPdt(int lev,
                        const TimeStamp &a_time,
                        MultiFab* a_dPdt)
 {
-
-   auto ldata_p = getLevelDataPtr(lev,a_time);
+   auto const& sma    = getLevelDataPtr(lev,a_time)->state.arrays();
+   auto const& dPdtma = a_dPdt->arrays();
 
    // Use new ambient pressure to compute dPdt
    Real p_amb = m_pNew;
 
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
-   for (MFIter mfi(*a_dPdt,TilingIfNotGPU()); mfi.isValid(); ++mfi)
+   amrex::ParallelFor(*a_dPdt, [=, dt=m_dt, dpdt_fac=m_dpdtFactor]
+   AMREX_GPU_DEVICE (int box_no, int i, int j, int k) noexcept
    {
-      const Box& bx = mfi.tilebox();
-      auto const& dPdt  = a_dPdt->array(mfi);
-      auto const& P     = ldata_p->state.const_array(mfi,RHORT);
-      amrex::ParallelFor(bx, [dPdt, P, p_amb, dt=m_dt, dpdt_fac=m_dpdtFactor]
-      AMREX_GPU_DEVICE (int i, int j, int k) noexcept
-      {
-         dPdt(i,j,k) = (P(i,j,k) - p_amb) / ( dt * P(i,j,k) ) * dpdt_fac;
-      });
-   }
+      auto dPdta = dPdtma[box_no];
+      auto sa    = sma[box_no];
+      dPdta(i,j,k) = (sa(i,j,k,RHORT) - p_amb) / ( dt * sa(i,j,k,RHORT) ) * dpdt_fac;
+   });
+   Gpu::streamSynchronize();
 }
 
 Real
@@ -266,38 +244,23 @@ PeleLM::adjustPandDivU(std::unique_ptr<AdvanceAdvData> &advData)
     // Get theta = 1 / (\Gamma * P_amb) at half time
     for (int lev = 0; lev <= finest_level; ++lev) {
 
-        auto ldataOld_p = getLevelDataPtr(lev,AmrOldTime);
-        auto ldataNew_p = getLevelDataPtr(lev,AmrNewTime);
-
         ThetaHalft[lev].reset(new MultiFab(grids[lev], dmap[lev], 1, 0, MFInfo(), *m_factory[lev]));
+        auto const& tma   = ThetaHalft[lev]->arrays();
+        auto const& sma_o = getLevelDataPtr(lev,AmrOldTime)->state.const_arrays();
+        auto const& sma_n = getLevelDataPtr(lev,AmrNewTime)->state.const_arrays();
 
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
-        for (MFIter mfi(*ThetaHalft[lev],TilingIfNotGPU()); mfi.isValid(); ++mfi)
+        amrex::ParallelFor(*ThetaHalft[lev], [=, pOld=m_pOld,pNew=m_pNew]
+        AMREX_GPU_DEVICE (int box_no, int i, int j, int k) noexcept
         {
-            const Box& bx = mfi.tilebox();
-            auto const& rhoYo  = ldataOld_p->state.const_array(mfi,FIRSTSPEC);
-            auto const& rhoYn  = ldataNew_p->state.const_array(mfi,FIRSTSPEC);
-            auto const& T_o    = ldataOld_p->state.const_array(mfi,TEMP);
-            auto const& T_n    = ldataNew_p->state.const_array(mfi,TEMP);
-            auto const& theta  = ThetaHalft[lev]->array(mfi);
-            amrex::ParallelFor(bx, [=,pOld=m_pOld,pNew=m_pNew]
-            AMREX_GPU_DEVICE (int i, int j, int k) noexcept
-            {
-                Real gammaInv_o = getGammaInv(i,j,k,rhoYo,T_o);
-                Real gammaInv_n = getGammaInv(i,j,k,rhoYn,T_n);
-                theta(i,j,k) = 0.5 * (gammaInv_o/pOld + gammaInv_n/pNew);
-            });
-        }
+           auto theta = tma[box_no];
+           Real gammaInv_o = getGammaInv(i,j,k, Array4<Real const>(sma_o[box_no],FIRSTSPEC),
+                                                Array4<Real const>(sma_o[box_no],TEMP));
+           Real gammaInv_n = getGammaInv(i,j,k, Array4<Real const>(sma_n[box_no],FIRSTSPEC),
+                                                Array4<Real const>(sma_n[box_no],TEMP));
+           theta(i,j,k) = 0.5 * (gammaInv_o/pOld + gammaInv_n/pNew);
+        });
     }
-
-
-    Vector<MultiFab> dummy(finest_level+1);
-    for (int lev = 0; lev <= finest_level; ++lev) {
-       dummy[lev].define(grids[lev], dmap[lev], 1, 0, MFInfo(), *m_factory[lev]);
-       dummy[lev].setVal(1.0);
-    }
+    Gpu::streamSynchronize();
 
     // Get the mean mac_divu (Sbar) and mean theta
     Real Sbar = MFSum(GetVecOfConstPtrs(advData->mac_divu),0);
@@ -323,25 +286,18 @@ PeleLM::adjustPandDivU(std::unique_ptr<AdvanceAdvData> &advData)
     m_pNew = m_pOld + m_dt * (Sbar - divu_vol)/Thetabar;
     m_dp0dt = (Sbar - divu_vol)/Thetabar;
 
-
     // subtract \tilde{theta} * Sbar / Thetabar from divu
     for (int lev = 0; lev <= finest_level; ++lev) {
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
-        for (MFIter mfi(*ThetaHalft[lev],TilingIfNotGPU()); mfi.isValid(); ++mfi)
+        auto const& tma   = ThetaHalft[lev]->arrays();
+        auto const& uma   = advData->mac_divu[lev].arrays();
+        amrex::ParallelFor(*ThetaHalft[lev], [=,dp0dt=m_dp0dt]
+        AMREX_GPU_DEVICE (int box_no, int i, int j, int k) noexcept
         {
-            const Box& bx = mfi.tilebox();
-            auto const& theta    = ThetaHalft[lev]->const_array(mfi);
-            auto const& macdivU  = advData->mac_divu[lev].array(mfi);
-            amrex::ParallelFor(bx, [=,dp0dt=m_dp0dt]
-            AMREX_GPU_DEVICE (int i, int j, int k) noexcept
-            {
-               // Do the closed chamber pressure correction
-               macdivU(i,j,k) -= (theta(i,j,k) * Sbar/Thetabar - divu_vol*(1 + theta(i,j,k)/Thetabar));
-            });
-        }
+           auto theta = tma[box_no];
+           uma[box_no](i,j,k) -= (theta(i,j,k) * Sbar/Thetabar - divu_vol*(1 + theta(i,j,k)/Thetabar));
+        });
     }
+    Gpu::streamSynchronize();
 
     if (m_verbose > 2 ) {
         Print() << " >> Closed chamber pOld: " << m_pOld << ", pNew: " << m_pNew << ", dp0dt: " << m_dp0dt << "\n";

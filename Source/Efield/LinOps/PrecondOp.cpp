@@ -17,8 +17,10 @@ PrecondOp::PrecondOp(PeleLM* a_pelelm)
    readParameters();
 
    // Solve LPInfo
-   LPInfo info_solve;
-   info_solve.setMaxCoarseningLevel(m_mg_max_coarsening_level);
+   LPInfo info_diff;
+   info_diff.setMaxCoarseningLevel(m_mg_max_coarsening_level_diff);
+   LPInfo info_Stilda;
+   info_Stilda.setMaxCoarseningLevel(m_mg_max_coarsening_level_Stilda);
 
    // Apply LPInfo (no coarsening)
    LPInfo info_apply;
@@ -28,7 +30,7 @@ PrecondOp::PrecondOp(PeleLM* a_pelelm)
    m_diff.reset(new MLABecCecLaplacian(m_pelelm->Geom(0,m_pelelm->finestLevel()),
                                        m_pelelm->boxArray(0,m_pelelm->finestLevel()),
                                        m_pelelm->DistributionMap(0,m_pelelm->finestLevel()),
-                                       info_solve));
+                                       info_diff));
    m_diff->setMaxOrder(m_mg_maxorder);
 
    // Drift Op
@@ -42,8 +44,13 @@ PrecondOp::PrecondOp(PeleLM* a_pelelm)
    m_Stilda.reset(new MLABecLaplacian(m_pelelm->Geom(0,m_pelelm->finestLevel()),
                                       m_pelelm->boxArray(0,m_pelelm->finestLevel()),
                                       m_pelelm->DistributionMap(0,m_pelelm->finestLevel()),
-                                      info_solve));
+                                      info_Stilda));
    m_Stilda->setMaxOrder(m_mg_maxorder);
+
+   // MLMGs
+   m_mlmg_diff = std::make_unique<MLMG>(*m_diff);
+   m_mlmg_drift = std::make_unique<MLMG>(*m_drift);
+   m_mlmg_Stilda = std::make_unique<MLMG>(*m_Stilda);
 }
 
 void
@@ -160,11 +167,12 @@ PrecondOp::diffOpSolve(const Vector<MultiFab*> &a_sol,
                        const Real &rtol, const Real &atol)
 {
    // TODO set all the MLMG options
-   MLMG mlmg(*m_diff);
-   mlmg.setVerbose(m_diff_verbose);
-   if (m_fixed_mg_it > 0) mlmg.setFixedIter(m_fixed_mg_it);
+   m_mlmg_diff->setVerbose(m_diff_verbose);
+   m_mlmg_diff->setPreSmooth(m_num_pre_smooth);
+   m_mlmg_diff->setPostSmooth(m_num_post_smooth);
+   if (m_fixed_mg_it > 0) m_mlmg_diff->setFixedIter(m_fixed_mg_it);
    
-   mlmg.solve(a_sol, a_rhs, m_mg_rtol, m_mg_atol);
+   m_mlmg_diff->solve(a_sol, a_rhs, m_mg_rtol, m_mg_atol);
 }
 
 void
@@ -173,11 +181,10 @@ PrecondOp::StildaOpSolve(const Vector<MultiFab*> &a_sol,
                          const Real &rtol, const Real &atol)
 {
    // TODO set all the MLMG options
-   MLMG mlmg(*m_Stilda);
-   mlmg.setVerbose(m_Stilda_verbose);
-   if (m_fixed_mg_it > 0) mlmg.setFixedIter(m_fixed_mg_it);
+   m_mlmg_Stilda->setVerbose(m_Stilda_verbose);
+   if (m_fixed_mg_it > 0) m_mlmg_Stilda->setFixedIter(m_fixed_mg_it);
    
-   mlmg.solve(a_sol, a_rhs, m_mg_rtol, m_mg_atol);
+   m_mlmg_Stilda->solve(a_sol, a_rhs, m_mg_rtol, m_mg_atol);
 }
 
 void
@@ -185,10 +192,8 @@ PrecondOp::driftOpApply(const Vector<MultiFab*> &a_Ax,
                         const Vector<MultiFab*> &a_x)
 {
    // TODO set all the MLMG options
-   MLMG mlmg(*m_drift);
-   mlmg.setVerbose(m_drift_verbose);
-   
-   mlmg.apply(a_Ax, a_x);
+   m_mlmg_drift->setVerbose(m_drift_verbose);
+   m_mlmg_drift->apply(a_Ax, a_x);
 }
 
 Array<LinOpBCType,AMREX_SPACEDIM>
@@ -225,5 +230,9 @@ PrecondOp::readParameters ()
    pp.query("diff_verbose", m_diff_verbose);
    pp.query("Stilda_verbose", m_Stilda_verbose);
    pp.query("fixedIter",m_fixed_mg_it);
+   pp.query("max_coarsening_level_diff", m_mg_max_coarsening_level_diff);
+   pp.query("max_coarsening_level_Stilda", m_mg_max_coarsening_level_Stilda);
+   pp.query("num_pre_smooth", m_num_pre_smooth);
+   pp.query("num_post_smooth", m_num_post_smooth);
    // TODO: add all the user-defined options
 }

@@ -44,8 +44,7 @@ void pelelm_derheatrelease (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, 
     AMREX_ASSERT(!a_pelelm->m_incompressible);
 
     FArrayBox EnthFab;
-    EnthFab.resize(bx,NUM_SPECIES);
-    Elixir  Enthi   = EnthFab.elixir();
+    EnthFab.resize(bx,NUM_SPECIES,The_Async_Arena());
 
     auto const temp = statefab.const_array(TEMP);
     auto const react = reactfab.const_array(0);

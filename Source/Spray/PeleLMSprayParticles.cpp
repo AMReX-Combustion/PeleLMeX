@@ -51,8 +51,6 @@ int init_function = 1;
 int spray_verbose = 0;
 Real max_spray_cfl = 5.;
 Real wall_temp = 300.;
-bool mass_trans = true;
-bool mom_trans = true;
 } // namespace
 
 bool PeleLM::do_spray_particles = true;
@@ -115,9 +113,9 @@ PeleLM::SprayReadParameters()
   // Mush change dtmod to 1 since we only do MKD
   sprayData.dtmod = 1.;
   SprayParticleContainer::readSprayParams(
-    spray_verbose, max_spray_cfl, wall_temp, mass_trans, mom_trans,
-    write_spray_ascii_files, plot_spray_src, init_function, init_file,
-    sprayData, spray_fuel_names, spray_derive_vars, temp_cfl);
+    spray_verbose, max_spray_cfl, wall_temp, write_spray_ascii_files,
+    plot_spray_src, init_function, init_file, sprayData, spray_fuel_names,
+    spray_derive_vars, temp_cfl);
 }
 
 void
@@ -160,8 +158,6 @@ PeleLM::SpraySetup()
     const int fspec = sprayData.indx[ns];
     sprayData.latent[ns] -= fuelEnth[fspec] * 1.E-4;
   }
-  scomps.mass_trans = mass_trans;
-  scomps.mom_trans = mom_trans;
   // Component indices for conservative variables
   scomps.rhoIndx = DENSITY;
   scomps.momIndx = VELX;
@@ -259,17 +255,17 @@ PeleLM::SprayInit()
       amrex::Warning(warn_msg);
     }
 
+    bool init_part = true;
     if (!init_file.empty()) {
       theSprayPC()->InitFromAsciiFile(init_file, NSR_SPR + NAR_SPR);
-    } else if (init_function > 0) {
-      ProbParm const* lprobparm = prob_parm;
-      theSprayPC()->InitSprayParticles(*lprobparm);
-    } else {
-      Abort("Must initialize spray particles with particles.init_function or "
-            "particles.init_file");
     }
-    SprayPostRegrid();
-    SprayInjectRedist();
+    if (init_function <= 0) {
+      init_part = false;
+    }
+    ProbParm const* lprobparm = prob_parm;
+    theSprayPC()->InitSprayParticles(init_part, *lprobparm);
+    sprayPostRegrid();
+    sprayInjectRedist();
     if (spray_verbose >= 1) {
       amrex::Print() << "Total number of initial particles "
                      << theSprayPC()->TotalNumberOfParticles(false, false)
@@ -281,12 +277,22 @@ PeleLM::SprayInit()
 void
 PeleLM::SprayRestart(const std::string& restart_file)
 {
-  //
-  // Make sure to call RemoveParticlesOnExit() on exit.
-  //
-  theSprayPC()->Restart(restart_file, "particles", true);
-  SprayPostRegrid();
-  amrex::Gpu::Device::streamSynchronize();
+  if (do_spray_particles) {
+    AMREX_ASSERT(SprayPC == nullptr);
+    createSprayData();
+
+    //
+    // Make sure to call RemoveParticlesOnExit() on exit.
+    //
+    amrex::ExecOnFinalize(RemoveParticlesOnExit);
+    {
+      theSprayPC()->Restart(m_restart_chkfile, "particles", true);
+      ProbParm const* lprobparm = prob_parm;
+      theSprayPC()->InitSprayParticles(false, *lprobparm);
+      sprayPostRegrid();
+      amrex::Gpu::Device::streamSynchronize();
+    }
+  }
 }
 
 // Sets the number of ghost cells for the state, source, and ghost particles

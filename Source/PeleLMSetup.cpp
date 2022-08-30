@@ -122,7 +122,6 @@ void PeleLM::Setup() {
    prob_parm = new ProbParm{};
    prob_parm_d = (ProbParm*)The_Arena()->alloc(sizeof(ProbParm));
 
-
    // Problem parameters
    readProbParm();
 
@@ -383,6 +382,7 @@ void PeleLM::readParameters() {
       pp.query("temporal_int",m_temp_int);
       pp.query("do_extremas",m_do_extremas);
       pp.query("do_mass_balance",m_do_massBalance);
+      pp.query("do_species_balance",m_do_speciesBalance);
    }
 
    // -----------------------------------------
@@ -398,6 +398,7 @@ void PeleLM::readParameters() {
    ppa.query("dt_shrink", m_dtshrink);
    ppa.query("dt_change_max", m_dtChangeMax);
    ppa.query("max_dt", m_max_dt);
+   ppa.query("min_dt", m_min_dt);
 
    if ( max_level > 0 ) {
       ppa.query("regrid_int", m_regrid_int);
@@ -446,13 +447,33 @@ void PeleLM::readParameters() {
    ppef.query("JFNK_newtonTol",m_ef_newtonTol);
    ppef.query("JFNK_maxNewton",m_ef_maxNewtonIter);
    ppef.query("JFNK_lambda",m_ef_lambda_jfnk);
+   ppef.query("JFNK_diffType",m_ef_diffT_jfnk);
+   AMREX_ASSERT(m_ef_diffT_jfnk == 1 || m_ef_diffT_jfnk == 2);
    ppef.query("GMRES_rel_tol",m_ef_GMRES_reltol);
+   ppef.query("GMRES_abs_tol",m_ef_GMRES_abstol);
    ppef.query("PC_approx",m_ef_PC_approx);
+   ppef.query("PC_damping",m_ABecCecOmega);
+   ppef.query("advection_scheme_order",m_nEAdvOrder);
+   AMREX_ASSERT(m_nEAdvOrder == 1 || m_nEAdvOrder == 2);
+
+   ppef.query("tabulated_Ke",m_electronKappaTab);
+   ppef.query("fixed_Ke",m_fixedKappaE);
 
    ppef.query("restart_nonEF",m_restart_nonEF);
    ppef.query("restart_electroneutral",m_restart_electroneutral);
    ppef.query("restart_resetTime",m_restart_resetTime);
+   ppef.query("plot_extras",m_do_extraEFdiags);
+
+   // Getting the ions fluxes on the domain boundaries
+   // Species balance data is needed, so override if not activated
+   if (m_do_temporals) {
+      ppef.query("do_ionsBalance",m_do_ionsBalance);
+      if (m_do_ionsBalance) {
+         m_do_speciesBalance = 1; 
+      }
+   }
 #endif
+
 #ifdef PELELM_USE_SPRAY
    SprayReadParameters();
 #endif
@@ -475,6 +496,7 @@ void PeleLM::readIOParameters() {
    pp.query("check_int" , m_check_int);
    pp.query("restart" , m_restart_chkfile);
    pp.query("initDataPlt" , m_restart_pltfile);
+   pp.query("initDataPltSource" , pltfileSource);
    pp.query("plot_file", m_plot_file);
    pp.query("plot_int" , m_plot_int);
    if (pp.contains("plot_per")) {
@@ -500,6 +522,7 @@ void PeleLM::readIOParameters() {
    pp.query("initial_grid_file", m_initial_grid_file);
    pp.query("regrid_file", m_regrid_file);
    pp.query("file_stepDigits", m_ioDigits);
+   pp.query("use_hdf5_plt",m_write_hdf5_pltfile);
 
 }
 
@@ -935,6 +958,7 @@ void PeleLM::resizeArray() {
 
 #ifdef PELE_USE_EFIELD
    m_leveldatanlsolve.resize(max_level+1);
+   m_ionsFluxes.resize(max_level+1);
 #endif
 
    // External sources

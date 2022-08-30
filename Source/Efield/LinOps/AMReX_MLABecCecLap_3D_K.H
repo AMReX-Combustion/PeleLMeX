@@ -5,7 +5,8 @@ namespace amrex {
 
 constexpr Real eps = 1.0e-6;
 
-inline Real getFaceStateUpwind ( Real const &edgeVel, Real const &leftState, Real const &rightState ) {
+AMREX_GPU_HOST_DEVICE AMREX_INLINE
+Real getFaceStateUpwind ( Real const &edgeVel, Real const &leftState, Real const &rightState ) {
    Real edstate = 0.0;
    if ( edgeVel > eps ) { 
       edstate = leftState;
@@ -19,7 +20,8 @@ inline Real getFaceStateUpwind ( Real const &edgeVel, Real const &leftState, Rea
    return edstate;
 }
 
-inline Real getCellUpwindCoeff ( Real const &leftedgeVel, Real const &rightedgeVel ) {
+AMREX_GPU_HOST_DEVICE AMREX_INLINE
+Real getCellUpwindCoeff ( Real const &leftedgeVel, Real const &rightedgeVel ) {
 
    Real coeff = 0.0;
    if ( leftedgeVel*rightedgeVel < 0.0 ) { // Case where velocity change sign, use centered + art. visc
@@ -40,7 +42,8 @@ inline Real getCellUpwindCoeff ( Real const &leftedgeVel, Real const &rightedgeV
    return coeff;
 }
 
-inline Real getLeftCellUpwindCoeff ( Real const &leftedgeVel, Real const &rightedgeVel ) {
+AMREX_GPU_HOST_DEVICE AMREX_INLINE
+Real getLeftCellUpwindCoeff ( Real const &leftedgeVel, Real const &rightedgeVel ) {
 
    Real coeff = 0.0;
    if ( leftedgeVel*rightedgeVel < 0.0 ) {
@@ -56,7 +59,8 @@ inline Real getLeftCellUpwindCoeff ( Real const &leftedgeVel, Real const &righte
    return coeff;
 }
 
-inline Real getRightCellUpwindCoeff ( Real const &leftedgeVel, Real const &rightedgeVel ) {
+AMREX_GPU_HOST_DEVICE AMREX_INLINE
+Real getRightCellUpwindCoeff ( Real const &leftedgeVel, Real const &rightedgeVel ) {
 
    Real coeff = 0.0;
    if ( leftedgeVel*rightedgeVel < 0.0 ) {
@@ -72,7 +76,8 @@ inline Real getRightCellUpwindCoeff ( Real const &leftedgeVel, Real const &right
    return coeff;
 }
 
-inline Real getCellUpwindCoeff ( Real const &leftedgeVel, Real const &rightedgeVel,
+AMREX_GPU_HOST_DEVICE AMREX_INLINE
+Real getCellUpwindCoeff ( Real const &leftedgeVel, Real const &rightedgeVel,
                                  Real const &relaxleft  , Real const &relaxright ) {
 
    Real coeff = 0.0;
@@ -94,7 +99,8 @@ inline Real getCellUpwindCoeff ( Real const &leftedgeVel, Real const &rightedgeV
    return coeff;
 }
 
-inline Real getFaceUpwindFlux ( Real const &edgeVel, Real const &leftState, Real const &rightState ) {
+AMREX_GPU_HOST_DEVICE AMREX_INLINE
+Real getFaceUpwindFlux ( Real const &edgeVel, Real const &leftState, Real const &rightState ) {
 
    Real Flux = 0.0;
    if ( edgeVel > eps )
@@ -685,13 +691,13 @@ void abeccec_chkdiag (Box const& box, Real alpha,
                                      -dhz  * (  getLeftCellUpwindCoeff( cZ(i  ,j  ,k  ,n),cZ(i  ,j  ,k+1,n)) 
                                               + getRightCellUpwindCoeff(cZ(i  ,j  ,k  ,n),cZ(i  ,j  ,k+1,n)));
 
-                    if ( fabs(offdiagdiff+offdiagadv) > fabs(diag) ) {
-                       amrex::Print() << " Abort LinOp not diagonal dominant at: " << i << " " << j << " " << k << "\n";
-                      // amrex::Print() << j << " Val diag: " << diag << ", offdiagdiff/adv: " << offdiagdiff << " " << offdiagadv << "\n";     
-                      // amrex::Print() << j << " Val diag: " << diag << ", left/right: " << left << "  " << right << "\n";
-                      // amrex::Print() << j << " " << fabs(diag) << " " << fabs(offdiagdiff+offdiagadv) << "\n";     
-                      // amrex::Abort("MLABecCec is not diagonal dominant !!!");
-                    }
+                    //if ( fabs(offdiagdiff+offdiagadv) > fabs(diag) ) {
+                    //   amrex::Print() << " Abort LinOp not diagonal dominant at: " << i << " " << j << " " << k << "\n";
+                    //  // amrex::Print() << j << " Val diag: " << diag << ", offdiagdiff/adv: " << offdiagdiff << " " << offdiagadv << "\n";     
+                    //  // amrex::Print() << j << " Val diag: " << diag << ", left/right: " << left << "  " << right << "\n";
+                    //  // amrex::Print() << j << " " << fabs(diag) << " " << fabs(offdiagdiff+offdiagadv) << "\n";     
+                    //  // amrex::Abort("MLABecCec is not diagonal dominant !!!");
+                    //}
                 }
             }
         }
@@ -699,10 +705,10 @@ void abeccec_chkdiag (Box const& box, Real alpha,
 }
 
 AMREX_GPU_HOST_DEVICE AMREX_INLINE
-void abeccec_chkdiag (Box const& box, Real alpha,
+void abeccec_getdiag (Box const& box, Real alpha,
                       Array4<Real const> const& a,
                       Real dhxsq, Real dhysq, Real dhzsq,
-                      Real dhx, Real dhy, Real dhz, 
+                      Real dhx, Real dhy, Real dhz,
                       Array4<Real const> const& bX,
                       Array4<Real const> const& bY,
                       Array4<Real const> const& bZ,
@@ -730,6 +736,59 @@ void abeccec_chkdiag (Box const& box, Real alpha,
                 }
             }
         }
+    }
+}
+
+AMREX_GPU_HOST_DEVICE AMREX_INLINE
+void abeccec_getnetfcoeff (Box const& box, Real alpha,
+                           Array4<Real const> const& a,
+                           Real dhxsq, Real dhysq, Real dhzsq,
+                           Real dhx, Real dhy, Real dhz,
+                           Array4<Real const> const& bX,
+                           Array4<Real const> const& bY,
+                           Array4<Real const> const& bZ,
+                           Array4<Real const> const& cX,
+                           Array4<Real const> const& cY,
+                           Array4<Real const> const& cZ,
+                           int nc, int dir,
+                           Array4<Real> const& coeffd) noexcept
+{
+    auto lo = amrex::lbound(box);
+    auto hi = amrex::ubound(box);
+    // Gettting face coefficient
+    if ( dir == 0 ) {
+       for (int n = 0; n < nc; ++n) {
+           for         (int k = lo.z; k <= hi.z; ++k) {
+               for     (int j = lo.y; j <= hi.y; ++j) {
+                   AMREX_PRAGMA_SIMD
+                   for (int i = lo.x; i <= hi.x; ++i) {
+                       coeffd(i,j,k) = - dhxsq * bX(i,j,k,n) - dhx * cX(i,j,k,n);
+                   }
+               }
+           }
+       }
+    } else if ( dir == 1 ) {
+       for (int n = 0; n < nc; ++n) {
+           for         (int k = lo.z; k <= hi.z; ++k) {
+               for     (int j = lo.y; j <= hi.y; ++j) {
+                   AMREX_PRAGMA_SIMD
+                   for (int i = lo.x; i <= hi.x; ++i) {
+                       coeffd(i,j,k) = - dhysq * bY(i,j,k,n) - dhy * cY(i,j,k,n);
+                   }
+               }
+           }
+       }
+    } else if ( dir == 2 ) {
+       for (int n = 0; n < nc; ++n) {
+           for         (int k = lo.z; k <= hi.z; ++k) {
+               for     (int j = lo.y; j <= hi.y; ++j) {
+                   AMREX_PRAGMA_SIMD
+                   for (int i = lo.x; i <= hi.x; ++i) {
+                       coeffd(i,j,k) = - dhzsq * bZ(i,j,k,n) - dhz * cZ(i,j,k,n);
+                   }
+               }
+           }
+       }
     }
 }
 

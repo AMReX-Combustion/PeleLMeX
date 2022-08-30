@@ -80,6 +80,15 @@ PeleLM::computeDt(int is_init,
       }
    }
 
+   if (estdt < m_min_dt) {
+      Print() << "\n";
+      Print() << " ###################################### \n";
+      Print() << " Estimated dt " << estdt << " is below allowed dt_min "
+              << m_min_dt << ": the simulation will stop ! \n";
+      Print() << " ###################################### \n";
+      Print() << "\n";
+   }
+
    return estdt;
 }
 

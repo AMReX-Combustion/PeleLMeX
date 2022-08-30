@@ -50,8 +50,8 @@ void PeleLM::initialProjection()
    for (int lev = 0; lev <= finest_level; ++lev) {
       vel.push_back(std::make_unique<MultiFab> (m_leveldata_new[lev]->state, amrex::make_alias,VELX,AMREX_SPACEDIM));
       vel[lev]->setBndry(0.0);
-      scaleProj_RZ(lev,*vel[lev]);
       setInflowBoundaryVel(*vel[lev],lev,AmrNewTime);
+      scaleProj_RZ(lev,*vel[lev]);
    }
 
    // Get RHS cc: - divU (- \int{divU})
@@ -155,8 +155,8 @@ void PeleLM::initialPressProjection()
          vel[lev].setVal(m_gravity[idim],idim,1,1);
       }
       vel[lev].setBndry(0.0);
-      scaleProj_RZ(lev,vel[lev]);
       setInflowBoundaryVel(vel[lev],lev,AmrNewTime);
+      scaleProj_RZ(lev,vel[lev]);
    }
 
    // Done without divU in IAMR
@@ -251,8 +251,8 @@ void PeleLM::velocityProjection(int is_initIter,
       EB_set_covered(*vel[lev],0.0);
 #endif
       vel[lev]->setBndry(0.0);
-      scaleProj_RZ(lev,*vel[lev]);
       if (!incremental) setInflowBoundaryVel(*vel[lev],lev,AmrNewTime);
+      scaleProj_RZ(lev,*vel[lev]);
    }
 
    // To ensure integral of RHS is zero for closed chamber, get mean divU
@@ -467,7 +467,16 @@ PeleLM::scaleProj_RZ(int a_lev,
 #if AMREX_SPACEDIM == 2
     // Scale nodal projection cell-centered mfs by radius
     if (geom[a_lev].IsRZ()) {
-        const Box& domain = geom[a_lev].Domain();
+        Box domain = geom[a_lev].Domain();
+        auto BCRecVel = fetchBCRecArray(VELX,1);
+        for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
+            if (BCRecVel[0].lo(idim) == BCType::ext_dir) {
+                domain.growLo(idim,1);
+            }
+            if (BCRecVel[0].hi(idim) == BCType::ext_dir) {
+                domain.growHi(idim,1);
+            }
+        }
         const Real dr     = geom[a_lev].CellSize()[0];
         auto const& mf_ma = a_mf.arrays();
         amrex::ParallelFor(a_mf, a_mf.nGrowVect(), [=,ncomp=a_mf.nComp()]
@@ -484,6 +493,7 @@ PeleLM::scaleProj_RZ(int a_lev,
                 }
             }
         });
+        Gpu::streamSynchronize();
     }
 #endif
 }
@@ -493,7 +503,7 @@ PeleLM::unscaleProj_RZ(int a_lev,
                        MultiFab &a_mf)
 {
 #if AMREX_SPACEDIM == 2
-    // Scale nodal projection cell-centered mfs by radius
+    // Unscale nodal projection cell-centered mfs by radius
     if (geom[a_lev].IsRZ()) {
         const Box& domain  = geom[a_lev].Domain();
         const Real dr      = geom[a_lev].CellSize()[0];

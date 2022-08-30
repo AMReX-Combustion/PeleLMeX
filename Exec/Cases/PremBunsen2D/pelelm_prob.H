@@ -41,7 +41,8 @@ void pelelm_initdata(int i, int j, int k,
     amrex::Real molefrac[NUM_SPECIES] = {0.0};
     amrex::Real massfrac[NUM_SPECIES] = {0.0};
     amrex::Real y1, y2;
-    amrex::Real splitx = prob_lo[0] + 0.5 * Lx;
+    amrex::Real splitx = (prob_parm.is_sym) ? prob_lo[0]
+                                            : prob_lo[0] + 0.5 * Lx;
 
     massfrac[N2_ID] = 0.767;
     massfrac[O2_ID] = 0.233;
@@ -121,7 +122,8 @@ bcnormal(
                 const amrex::Real Ly = prob_hi[1] - prob_lo[1];,
                 const amrex::Real Lz = prob_hi[2] - prob_lo[2]);
 
-   amrex::Real splitx = prob_lo[0] + 0.5 * Lx;
+   amrex::Real splitx = (prob_parm.is_sym) ? prob_lo[0]
+                                           : prob_lo[0] + 0.5 * Lx;
    amrex::Real massfrac_air[NUM_SPECIES] = {0.0};
    amrex::Real massfrac_jet[NUM_SPECIES] = {0.0};
    massfrac_air[N2_ID] = 0.767;

@@ -31,8 +31,13 @@ SprayParticleContainer::injectParticles(
 }
 
 void
-SprayParticleContainer::InitSprayParticles(ProbParm const& prob_parm)
+SprayParticleContainer::InitSprayParticles(
+  const bool init_parts,
+  ProbParm const& prob_parm)
 {
+  if (!init_parts) {
+    return;
+  }
   const int lev = 0;
   const int MyProc = amrex::ParallelDescriptor::MyProc();
   const int NProcs = amrex::ParallelDescriptor::NProcs();

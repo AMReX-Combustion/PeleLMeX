@@ -76,11 +76,13 @@ void PeleLM::Advance(int is_initIter) {
 
    //----------------------------------------------------------------
    // Advance setup
+   // Pre-SDC
+   m_sdcIter = 0;
 
    // initiliaze temporals
    initTemporals();
 
-   // Compute velocity flux on boundary faces if doing closed chamber
+   // Reset velocity flux on boundary faces if doing closed chamber
    if (m_closed_chamber) {
       for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
          m_domainUmacFlux[2*idim] = 0.0;
@@ -177,9 +179,6 @@ void PeleLM::Advance(int is_initIter) {
 
       // Post SDC
       averageDownScalars(AmrNewTime);
-#ifdef PELE_USE_EFIELD
-      averageDownnE(AmrNewTime);
-#endif
       fillPatchState(AmrNewTime);
 
 #ifdef PELELM_USE_SOOT
@@ -267,9 +266,6 @@ void PeleLM::oneSDC(int sdcIter,
       }
       // fillpatch the new state
       averageDownScalars(AmrNewTime);
-#ifdef PELE_USE_EFIELD
-      averageDownnE(AmrNewTime);
-#endif
       fillPatchState(AmrNewTime);
 
       calcDiffusivity(AmrNewTime);

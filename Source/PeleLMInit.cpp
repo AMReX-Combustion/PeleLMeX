@@ -69,8 +69,10 @@ void PeleLM::MakeNewLevelFromScratch( int lev,
    }
 
 #ifdef PELE_USE_EFIELD
-   int nGrowNL = 1;
-   m_leveldatanlsolve[lev].reset(new LevelDataNLSolve(grids[lev], dmap[lev], *m_factory[lev], 1));
+   m_leveldatanlsolve[lev].reset(new LevelDataNLSolve(grids[lev], dmap[lev], *m_factory[lev], m_nGrowState));
+   if (m_do_extraEFdiags) {
+      m_ionsFluxes[lev].reset(new MultiFab(grids[lev], dmap[lev], NUM_IONS*AMREX_SPACEDIM, 0));
+   }
 #endif
 
    // Fill the initial solution (if not restarting)
@@ -320,12 +322,17 @@ void PeleLM::initData() {
          }
 
          // do an initial Poisson solve
-         poissonSolveEF(AmrNewTime);
          fillPatchPhiV(AmrNewTime);
+         poissonSolveEF(AmrNewTime);
 
          // Reset time data
          if ( m_restart_resetTime ) {
             m_nstep = 0;
+            m_cur_time = 0.0;
+            for (int lev = 0; lev <= finest_level; ++lev) {
+                m_t_new[lev] = 0.0;
+                m_t_old[lev] = -1.0e200;
+            }
             m_dt = -1.0;
             int is_init = 1;
             Real dtInit = computeDt(is_init,AmrNewTime);
@@ -371,17 +378,10 @@ void PeleLM::initLevelData(int lev) {
       FArrayBox DummyFab(bx,1);
       auto  const &state_arr   = ldata_p->state.array(mfi);
       auto  const &aux_arr   = (m_nAux > 0) ? ldata_p->auxiliaries.array(mfi) : DummyFab.array();
-#ifdef PELE_USE_EFIELD
-      auto  const &ne_arr    = ldata_p->nE.array(mfi);
-      auto  const &phiV_arr  = ldata_p->phiV.array(mfi);
-#endif
       amrex::ParallelFor(bx, [=,m_incompressible=m_incompressible]
       AMREX_GPU_DEVICE (int i, int j, int k) noexcept
       {
          pelelm_initdata(i, j, k, m_incompressible, state_arr, aux_arr,
-#ifdef PELE_USE_EFIELD
-                         ne_arr, phiV_arr,
-#endif
                          geomdata, *lprobparm, lpmfdata);
       });
    }

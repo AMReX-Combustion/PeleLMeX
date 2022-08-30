@@ -12,6 +12,7 @@ void PeleLM::getVelForces(const TimeStamp &a_time,
                           int nGrowForce,
                           int add_gradP)
 {
+   BL_PROFILE("PeleLM::getVelForces()");
    int has_divTau = (!a_divTau.empty());
 
    for (int lev = 0; lev <= finest_level; ++lev) {
@@ -67,8 +68,8 @@ void PeleLM::getVelForces(const TimeStamp &a_time,
       getVelForces(lev, bx, time, force_arr, vel_arr, rho_arr, rhoY_arr, rhoh_arr, temp_arr, extmom_arr, extrho_arr);
 
 #ifdef PELE_USE_EFIELD
-      const auto& phiV_arr    = ldata_p->phiV.const_array(mfi);
-      const auto& ne_arr      = ldata_p->nE.const_array(mfi);
+      const auto& phiV_arr    = ldata_p->state.const_array(mfi,PHIV);
+      const auto& ne_arr      = ldata_p->state.const_array(mfi,NE);
       addLorentzVelForces(lev, bx, time, force_arr, rhoY_arr, phiV_arr, ne_arr);
 #endif
 

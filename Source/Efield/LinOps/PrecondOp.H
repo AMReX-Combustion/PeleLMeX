@@ -73,6 +73,11 @@ class PrecondOp
    std::unique_ptr<amrex::MLABecLaplacian>    m_drift;
    std::unique_ptr<amrex::MLABecLaplacian>    m_Stilda;
 
+   // Associated MLMGs
+   std::unique_ptr<amrex::MLMG> m_mlmg_diff;
+   std::unique_ptr<amrex::MLMG> m_mlmg_drift;
+   std::unique_ptr<amrex::MLMG> m_mlmg_Stilda;
+
    // Verbose for each Ops
    int m_diff_verbose = 0;
    int m_drift_verbose = 0;
@@ -85,7 +90,8 @@ class PrecondOp
    int m_mg_max_iter = 100;
    int m_mg_bottom_maxiter = 100;
    int m_mg_max_fmg_iter = 0;
-   int m_mg_max_coarsening_level = 100;
+   int m_mg_max_coarsening_level_diff = 100;
+   int m_mg_max_coarsening_level_Stilda = 100;
    int m_mg_maxorder = 2;
    int m_num_pre_smooth = 2;
    int m_num_post_smooth = 2;

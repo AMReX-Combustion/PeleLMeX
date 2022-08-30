@@ -1,0 +1,99 @@
+#----------------------DOMAIN DEFINITION------------------------
+geometry.is_periodic = 1 0               # For each dir, 0: non-perio, 1: periodic
+geometry.coord_sys   = 0                  # 0 => cart, 1 => RZ
+geometry.prob_lo     = 0.0 0.0 0.0        # x_lo y_lo (z_lo)
+geometry.prob_hi     = 0.008 0.016 0.016        # x_hi y_hi (z_hi)
+
+# >>>>>>>>>>>>>  BC FLAGS <<<<<<<<<<<<<<<<
+# Interior, Inflow, Outflow, Symmetry,
+# SlipWallAdiab, NoSlipWallAdiab, SlipWallIsotherm, NoSlipWallIsotherm
+peleLM.lo_bc = Interior Inflow
+peleLM.hi_bc = Interior Outflow
+
+
+#-------------------------AMR CONTROL----------------------------
+amr.n_cell          = 64 128 32      # Level 0 number of cells in each direction   
+amr.v               = 1                # AMR verbose
+amr.max_level       = 2                # maximum level number allowed
+amr.ref_ratio       = 2 2 2 2          # refinement ratio
+amr.regrid_int      = 2                # how often to regrid
+amr.n_error_buf     = 2 4 2 2          # number of buffer cells in error est
+amr.grid_eff        = 0.7              # what constitutes an efficient grid
+amr.blocking_factor = 16               # block factor in grid generation (min box size)
+amr.max_grid_size   = 128               # max box size
+
+
+#--------------------------- Problem -------------------------------
+prob.P_mean = 101325.0
+prob.standoff = -.01
+prob.pertmag = 0.0001
+pmf.datafile = "pmf_DiRenzoSkCH4Air_1p0.dat"
+pmf.do_cellAverage = 0
+prob.PhiV_y_hi = -1000.0
+
+#-------------------------PeleLM CONTROL----------------------------
+peleLM.v = 2
+peleLM.incompressible = 0
+peleLM.rho = 1.17
+peleLM.mu = 0.0
+peleLM.use_wbar = 1
+peleLM.sdc_iterMax = 2
+peleLM.floor_species = 0
+peleLM.num_init_iter = 2
+peleLM.advection_scheme = "Godunov_BDS"
+
+#amr.restart = chk00020
+amr.check_int = 20
+amr.plot_int = 10
+amr.max_step = 20
+amr.dt_shrink = 0.1
+amr.stop_time = 0.001
+amr.cfl = 0.95
+amr.derive_plot_vars = avg_pressure mag_vort mass_fractions chargedistrib efieldx efieldy LorentzFx LorentzFy 
+
+peleLM.chem_integrator = "ReactorCvode"
+peleLM.use_typ_vals_chem = 1          # Use species/temp typical values in CVODE
+ode.rtol = 1.0e-7                     # Relative tolerance of the chemical solve
+ode.atol = 1.0e-6                     # Absolute tolerance factor applied on typical values
+cvode.solve_type = denseAJ_direct     # CVODE Linear solve type (for Newton direction) 
+cvode.max_order  = 4                  # CVODE max BDF order. 
+
+#--------------------REFINEMENT CONTROL------------------------
+ef.phiV_lo_bc = Interior Dirichlet
+ef.phiV_hi_bc = Interior Dirichlet
+ef.phiV_polarity_lo = Neutral Anode
+ef.phiV_polarity_hi = Neutral Cathode
+ef.GMRES_rel_tol  = 1.0e-5
+ef.GMRES_abs_tol  = 1.0e-13
+ef.JFNK_lambda = 1.0e-7
+ef.JFNK_diffType = 1
+ef.PC_approx = 2
+#ef.PC_damping = 0.75
+ef.advection_scheme_order = 1
+ef.precond.diff_verbose = 0
+ef.precond.Stilda_verbose = 0
+ef.precond.fixedIter = 4
+#ef.precond.max_coarsening_level_diff = 3
+gmres.krylovBasis_size = 30
+gmres.verbose  = 0
+gmres.max_restart = 2
+
+#--------------------REFINEMENT CONTROL------------------------
+#amr.refinement_indicators = temp
+#amr.temp.max_level     = 1
+#amr.temp.value_greater = 305
+#amr.temp.field_name    = temp
+
+#amr.refinement_indicators = magVort
+#amr.magVort.max_level     = 1
+#amr.magVort.value_greater = 500.0
+#amr.magVort.field_name    = mag_vort
+
+amr.refinement_indicators = yE
+amr.yE.max_level     = 3
+amr.yE.value_greater = 1.0e17
+amr.yE.field_name    = nE
+
+#amrex.fpe_trap_invalid = 1
+#amrex.fpe_trap_zero = 1
+#amrex.fpe_trap_overflow = 1

@@ -60,6 +60,7 @@ Time stepping parameters
     amr.stop_time     = 0.001              # Maximum simulation time [s]
     amr.cfl           = 0.5                # [OPT, DEF=0.7] CFL for advection-controlled dt estimate
     amr.fixed_dt      = 1e-6               # [OPT] optional fixed dt (override CFL condition)
+    amr.min_dt        = 1e-11              # [OPT, DEF=1e-12] small time step size limit triggering simulation termination
     amr.init_dt       = 1e-6               # [OPT] optional initial dt (override CFL condition upon initialization)
     amr.dt_shrink     = 0.0001             # [OPT, DEF=1.0] dt factor upon initialization
     amr.dt_change_max = 1.1                # [OPT, DEF=1.1] maximum dt change between consecutive steps
@@ -222,13 +223,15 @@ to activate `temporal` diagnostics performing these reductions at given interval
     peleLM.temporal_int = 10                    # [OPT, DEF=5] Temporal freq.
     peleLM.do_extremas = 1                      # [OPT, DEF=0] Trigger extremas, if temporals activated
     peleLM.do_mass_balance = 1                  # [OPT, DEF=0] Compute mass balance, if temporals activated
+    peleLM.do_species_balance = 1               # [OPT, DEF=0] Compute species mass balance, if temporals activated
 
 The `do_temporal` flag will trigger the creation of a `temporals` folder in your run directory and the following entries 
 will be appended to an ASCII `temporals/tempState` file: step, time, dt, kin. energy integral, enstrophy integral, mean pressure
 , fuel consumption rate integral, heat release rate integral. Additionnally, if the `do_temporal` flag is activated, one can
-turn on state extremas (stored in `temporals/tempExtremas` as min/max for each state entry) and mass balance (stored in
-`temporals/tempMass`) computing the total mass, dMdt and mass fluxes across the domain boundary as well as the error in
-the balance (dMdt - sum of fluxes).
+turn on state extremas (stored in `temporals/tempExtremas` as min/max for each state entry), mass balance (stored in
+`temporals/tempMass`) computing the total mass, dMdt and advective mass fluxes across the domain boundaries as well as the error in
+the balance (dMdt - sum of fluxes), and species balance (stored in `temporals/tempSpec`) computing each species total mass, dM_Ydt,
+advective \& diffusive fluxes across the domain boundaries, consumption rate integral and the error (dMdt - sum of fluxes - reaction).
 
 Combustion diagnostics often involve the use of a mixture fraction and/or a progress variable, both of which can be defined
 at run time and added to the derived variables included in the plotfile. If `mixture_fraction` or `progress_variable` is
@@ -275,3 +278,38 @@ the state variables on a 'x','y' or 'z' aligned plane and writting a 2D plotfile
     peleLM.ynormal.center = 0.0
     peleLM.ynormal.int    = 10
     peleLM.ynormal.interpolation = Quadratic
+
+
+Run-time control
+--------------------
+
+Following some of AMReX's AmrLevel class implementation, PeleLMeX provides a couple of triggers to interact with the code while
+it is running. This can be done by adding an empty file to the folder where the simulation is currently running using for 
+example:
+
+::
+
+    touch plt_and_continue
+
+The list of available triggers is:
+
+.. list-table:: PeleLMeX run-time triggers
+    :widths: 50 100
+    :header-rows: 1
+
+    * - File
+      - Function
+    * - plt_and_continue
+      - Write a pltfile to disk and pursue the simulation
+    * - chk_and_continue
+      - Write a chkfile to disk and pursue the simulation
+    * - dump_and_stop
+      - Write both pltfile and chkfile to disk and stop the simulation
+
+By default, the code checks if these files exist every 10 time steps, but the user can either increase or decrease the 
+frequency using:
+
+::
+
+    amr.message_int      = 20                # [OPT, DEF=10] Frequency for checking the presence of trigger files
+    
