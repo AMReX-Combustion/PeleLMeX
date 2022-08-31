@@ -264,8 +264,8 @@ PeleLM::SprayInit()
     }
     ProbParm const* lprobparm = prob_parm;
     theSprayPC()->InitSprayParticles(init_part, *lprobparm);
-    sprayPostRegrid();
-    sprayInjectRedist();
+    SprayPostRegrid();
+    SprayInjectRedist();
     if (spray_verbose >= 1) {
       amrex::Print() << "Total number of initial particles "
                      << theSprayPC()->TotalNumberOfParticles(false, false)
@@ -279,17 +279,17 @@ PeleLM::SprayRestart(const std::string& restart_file)
 {
   if (do_spray_particles) {
     AMREX_ASSERT(SprayPC == nullptr);
-    createSprayData();
+    SprayCreateData();
 
     //
     // Make sure to call RemoveParticlesOnExit() on exit.
     //
     amrex::ExecOnFinalize(RemoveParticlesOnExit);
     {
-      theSprayPC()->Restart(m_restart_chkfile, "particles", true);
+      theSprayPC()->Restart(restart_file, "particles", true);
       ProbParm const* lprobparm = prob_parm;
       theSprayPC()->InitSprayParticles(false, *lprobparm);
-      sprayPostRegrid();
+      SprayPostRegrid();
       amrex::Gpu::Device::streamSynchronize();
     }
   }
