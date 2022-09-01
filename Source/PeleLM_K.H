@@ -60,8 +60,6 @@ getTransportCoeff(int i, int j, int k,
    mu(i,j,k) = mu_cgs * 1.0e-1_rt;
 }
 
-#ifdef USE_SORET
-
 AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
 void
@@ -120,7 +118,6 @@ getTransportCoeffSoret(int i, int j, int k,
    lambda(i,j,k) = lambda_cgs * 1.0e-5_rt;
    mu(i,j,k) = mu_cgs * 1.0e-1_rt;
 }
-#endif
 
 AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
