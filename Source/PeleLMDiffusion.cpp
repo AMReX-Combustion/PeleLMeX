@@ -1192,7 +1192,7 @@ void PeleLM::getScalarDiffForce(std::unique_ptr<AdvanceAdvData> &advData,
 	 auto const& dT     = (m_use_soret) ? diffData->DT[lev].const_array(mfi,0)
 	                                    : diffData->Dn[lev].const_array(mfi,0);
 
-         amrex::ParallelFor(bx, [dn, ddn, dnp1k, ddnp1k, dwbar, dT, use_wbar=m_use_wbar,do_react=m_do_react,
+         amrex::ParallelFor(bx, [dn, ddn, dnp1k, ddnp1k, dwbar, dT, use_wbar=m_use_wbar, use_soret=m_use_soret,do_react=m_do_react,
                                  r, a, extRhoY, extRhoH, fY, fT, dp0dt=m_dp0dt, is_closed_ch=m_closed_chamber]
          AMREX_GPU_DEVICE (int i, int j, int k) noexcept
          {

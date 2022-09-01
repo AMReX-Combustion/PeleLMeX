@@ -21,7 +21,7 @@ PeleLM::LevelData::LevelData(amrex::BoxArray const& ba,
       if (a_has_divu) {
          divu.define (ba, dm, 1             , 1           , MFInfo(), factory);
       }
-      if (a_dosoret) {
+      if (a_use_soret) {
 	diff_cc.define (ba, dm, 2*NUM_SPECIES+2 , 1           , MFInfo(), factory);
       } else {
 	diff_cc.define (ba, dm, NUM_SPECIES+2 , 1           , MFInfo(), factory);

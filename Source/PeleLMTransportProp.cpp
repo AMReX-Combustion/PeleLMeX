@@ -79,7 +79,6 @@ void PeleLM::calcDiffusivity(const TimeStamp &a_time) {
 				getTransportCoeff( i, j, k, rhoY, T, rhoD, lambda, mu, ltransparm);
 			      });
 	 }
-#endif
 #ifdef PELE_USE_EFIELD
          auto const& Ks   = ldata_p->mob_cc.array(mfi,0);
          auto eos = pele::physics::PhysicsType::eos();

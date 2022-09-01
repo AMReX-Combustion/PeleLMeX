@@ -426,7 +426,6 @@ void pelelm_derdiffc (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dc
     } else {
       AMREX_ASSERT(ncomp == NUM_SPECIES);
     }
-    #endif*/
     FArrayBox dummies(bx,2,The_Async_Arena());
     auto const& rhoY = statefab.const_array(FIRSTSPEC);
     auto const& T    = statefab.array(TEMP);

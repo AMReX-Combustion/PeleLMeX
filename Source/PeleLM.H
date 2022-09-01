@@ -189,7 +189,7 @@ class PeleLM : public amrex::AmrCore {
                        const amrex::Vector<amrex::DistributionMapping> &dm,
                        const amrex::Vector<std::unique_ptr<amrex::FabFactory<amrex::FArrayBox>>> &factory,
                        int a_nGrowAdv,
-                       int a_use_wbar,
+                       int a_use_wbar, int a_use_soret,
                        int is_init = 0);
       amrex::Vector<amrex::MultiFab> Dn;           // Diffusion term t^n
       amrex::Vector<amrex::MultiFab> Dnp1;         // Diffusion term t^(n+1,k)
