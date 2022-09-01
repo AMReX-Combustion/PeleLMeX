@@ -278,15 +278,12 @@ void
 PeleLM::SprayRestart(const std::string& restart_file)
 {
   if (do_spray_particles) {
-    AMREX_ASSERT(SprayPC == nullptr);
-    SprayCreateData();
-
     //
     // Make sure to call RemoveParticlesOnExit() on exit.
     //
     amrex::ExecOnFinalize(RemoveParticlesOnExit);
     {
-      theSprayPC()->Restart(restart_file, "particles", true);
+      theSprayPC()->Restart(restart_file, "particles");
       ProbParm const* lprobparm = prob_parm;
       theSprayPC()->InitSprayParticles(false, *lprobparm);
       SprayPostRegrid();
@@ -476,10 +473,6 @@ PeleLM::SprayPostRegrid()
       dm_spray[lev] = dmap[lev];
       prev_state[lev] = -1;
       prev_source[lev] = -1;
-      if (theSprayPC()->GetParticles().size() > lev) {
-        theSprayPC()->SetParticleDistributionMap(lev, dmap[lev]);
-        theSprayPC()->SetParticleBoxArray(lev, grids[lev]);
-      }
     }
     theSprayPC()->Redistribute();
   }
