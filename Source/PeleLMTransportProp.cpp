@@ -71,9 +71,9 @@ void PeleLM::calcDiffusivity(const TimeStamp &a_time) {
                             Array4<Real      >(dma[box_no],NUM_SPECIES+1),
                             ltransparm);
 #ifdef PELE_USE_EFIELD
-         getKappaSp( i, j, k, mwt, zk,
+         getKappaSp( i, j, k, mwt.arr, zk,
                      Array4<Real const>(sma[box_no],FIRSTSPEC),
-                     Array4<Real const>(dma[box_no],0),
+                     Array4<Real      >(dma[box_no],0),
                      Array4<Real const>(sma[box_no],TEMP),
                      Array4<Real      >(kma[box_no],0));
 #endif
