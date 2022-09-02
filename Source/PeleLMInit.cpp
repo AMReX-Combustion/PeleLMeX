@@ -160,9 +160,7 @@ void PeleLM::initData() {
       updateDiagnostics();
 
 #ifdef PELELM_USE_SPRAY
-      if (do_spray_particles) {
-        initSprays();
-      }
+      SprayInit();
 #endif
 
       //----------------------------------------------------------------
@@ -311,9 +309,7 @@ void PeleLM::initData() {
       ReadCheckPointFile();
 
 #ifdef PELELM_USE_SPRAY
-      if (do_spray_particles) {
-        sprayRestart();
-      }
+      SprayInit();
 #endif
 #ifdef PELE_USE_EFIELD
       // If restarting from a non efield simulation

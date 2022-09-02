@@ -107,19 +107,19 @@ class PeleLM : public amrex::AmrCore {
 
 #ifdef PELELM_USE_SPRAY
    // ReadSprayParameters
-   void readSprayParameters();
+   void SprayReadParameters();
 
-   // SprayParticleSetup
-   void sprayParticleSetup();
+   // SpraySetup
+   void SpraySetup();
 
-   // CreateSprayData
-   void createSprayData();
+   // SprayCreateData
+   void SprayCreateData();
 
-   // InitSprays
-   void initSprays();
+   // SprayInit
+   void SprayInit();
 
    // SprayRestart
-   void sprayRestart();
+   void SprayRestart(const std::string& restart_file);
 #endif
 
    // VariablesSetup
@@ -446,15 +446,15 @@ class PeleLM : public amrex::AmrCore {
    void removeVirtualParticles(const int level);
    void setupGhostParticles(const int ngrow, const int level);
    void removeGhostParticles(const int level);
-   amrex::Real estSprayDt();
-   void sprayMKD(const amrex::Real time, const amrex::Real dt);
-   void sprayMKDLevel(const int level,
+   amrex::Real SprayEstDt();
+   void SprayMKD(const amrex::Real time, const amrex::Real dt);
+   void SprayMKDLevel(const int level,
                       const amrex::Real time,
                       const amrex::Real dt);
-   void sprayInjectRedist();
-   void sprayPostRegrid();
-   void setSprayState(const amrex::Real& a_flow_dt);
-   void addSpraySource(const int level);
+   void SprayInjectRedist();
+   void SprayPostRegrid();
+   void SpraySetState(const amrex::Real& a_flow_dt);
+   void SprayAddSource(const int level);
    static int write_spray_ascii_files;
    static int num_spray_src;
    static bool do_spray_particles;

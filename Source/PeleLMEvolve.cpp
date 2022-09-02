@@ -32,7 +32,7 @@ void PeleLM::Evolve() {
 #ifdef PELELM_USE_SPRAY
       // Inject and redistribute spray particles
       if (do_spray_particles && regridded) {
-        sprayPostRegrid();
+        SprayPostRegrid();
       }
 #endif
       int is_init = 0;
@@ -42,7 +42,7 @@ void PeleLM::Evolve() {
 
 #ifdef PELELM_USE_SPRAY
       if (do_spray_particles) {
-        sprayInjectRedist();
+        SprayInjectRedist();
       }
 #endif
 

@@ -48,7 +48,6 @@ peleLM.sdc_iterMax = 1
 peleLM.floor_species = 0
 
 peleLM.do_temporals = 0
-peleLM.do_mass_balance = 0
 peleLM.num_init_iter = 0
 
 amr.plot_int = 100
@@ -58,6 +57,7 @@ amr.stop_time = 100.
 amr.cfl = 0.5
 amr.plot_speciesState = 1
 amr.plot_grad_p = 0
+amr.derive_plot_vars = mass_fractions
 
 # --------------- INPUTS TO CHEMISTRY REACTOR ---------------
 peleLM.chem_integrator = "ReactorNull"

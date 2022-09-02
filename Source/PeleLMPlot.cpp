@@ -317,7 +317,7 @@ void PeleLM::WritePlotFile() {
    }
 
 #ifdef PELELM_USE_SPRAY
-   if (theSprayPC() != nullptr && do_spray_particles) {
+   if (do_spray_particles) {
      bool is_spraycheck = false;
      for (int lev = 0; lev <= finest_level; ++lev) {
        theSprayPC()->SprayParticleIO(
@@ -430,7 +430,7 @@ void PeleLM::WriteCheckPointFile()
       }
    }
 #ifdef PELELM_USE_SPRAY
-   if (theSprayPC() != nullptr && do_spray_particles) {
+   if (do_spray_particles) {
      int write_ascii = 0; // Not for checkpoints
      bool is_spraycheck = true;
      for (int lev = 0; lev <= finest_level; ++lev) {
@@ -665,7 +665,6 @@ void PeleLM::initLevelDataFromPlt(int a_lev,
         if (plt_vars[i] == "Temp")            idT = i; 
       }
       if (plt_vars[i] == "x_velocity")      idV = i; 
-      if (plt_vars[i] == "x_velocity")      idV = i;
       if (firstChars == "Y(" && idY < 0 ) {  // species might not be ordered in the order of the current mech.
          idY = i;
       }

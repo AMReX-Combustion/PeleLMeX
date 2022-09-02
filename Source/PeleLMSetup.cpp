@@ -64,9 +64,7 @@ void PeleLM::Setup() {
    taggingSetup();
 
 #ifdef PELELM_USE_SPRAY
-   if (do_spray_particles) {
-     sprayParticleSetup();
-   }
+   SpraySetup();
 #endif
 #ifdef PELELM_USE_SOOT
    if (do_soot_solve) {
@@ -477,7 +475,7 @@ void PeleLM::readParameters() {
 #endif
 
 #ifdef PELELM_USE_SPRAY
-   readSprayParameters();
+   SprayReadParameters();
 #endif
 #ifdef PELELM_USE_SOOT
    do_soot_solve = true;
