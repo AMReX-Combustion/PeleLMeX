@@ -665,7 +665,6 @@ void PeleLM::initLevelDataFromPlt(int a_lev,
         if (plt_vars[i] == "Temp")            idT = i; 
       }
       if (plt_vars[i] == "x_velocity")      idV = i; 
-      if (plt_vars[i] == "x_velocity")      idV = i;
       if (firstChars == "Y(" && idY < 0 ) {  // species might not be ordered in the order of the current mech.
          idY = i;
       }
