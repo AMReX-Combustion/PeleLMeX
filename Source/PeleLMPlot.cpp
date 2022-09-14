@@ -103,7 +103,7 @@ void PeleLM::WritePlotFile() {
    ncomp += deriveEntryCount;
 #ifdef PELELM_USE_SPRAY
    if (do_spray_particles) {
-     ncomp += spray_derive_vars.size();
+     ncomp += SprayParticleContainer::spray_derive_vars.size();
    }
 #endif
 
@@ -192,11 +192,12 @@ void PeleLM::WritePlotFile() {
       }
    }
 #ifdef PELELM_USE_SPRAY
-   if (spray_derive_vars.size() > 0) {
+   if (SprayParticleContainer::spray_derive_vars.size() > 0) {
      // We need virtual particles for the lower levels
      setupVirtualParticles(0);
-     for (int ivar = 0; ivar < spray_derive_vars.size(); ivar++) {
-       plt_VarsName.push_back(spray_derive_vars[ivar]);
+     for (int ivar = 0; ivar < SprayParticleContainer::spray_derive_vars.size();
+          ivar++) {
+       plt_VarsName.push_back(SprayParticleContainer::spray_derive_vars[ivar]);
      }
    }
 #endif
@@ -276,16 +277,15 @@ void PeleLM::WritePlotFile() {
          cnt += mf->nComp();
       }
 #ifdef PELELM_USE_SPRAY
-      if (spray_derive_vars.size() > 0) {
-        int num_spray_derive = spray_derive_vars.size();
+      if (SprayParticleContainer::spray_derive_vars.size() > 0) {
+        int num_spray_derive = SprayParticleContainer::spray_derive_vars.size();
         mf_plt[lev].setVal(0., cnt, num_spray_derive);
-        theSprayPC()->computeDerivedVars(
-          mf_plt[lev], lev, cnt, spray_derive_vars, spray_fuel_names);
+        theSprayPC()->computeDerivedVars(mf_plt[lev], lev, cnt);
         if (lev < finest_level) {
-          MultiFab tmp_plt(grids[lev], dmap[lev], num_spray_derive, 0, MFInfo(), Factory(lev));
+          MultiFab tmp_plt(
+            grids[lev], dmap[lev], num_spray_derive, 0, MFInfo(), Factory(lev));
           tmp_plt.setVal(0.);
-          theVirtPC()->computeDerivedVars(
-            tmp_plt, lev, 0, spray_derive_vars, spray_fuel_names);
+          theVirtPC()->computeDerivedVars(tmp_plt, lev, 0);
           MultiFab::Add(mf_plt[lev], tmp_plt, 0, cnt, num_spray_derive, 0);
         }
         cnt += num_spray_derive;
@@ -321,7 +321,7 @@ void PeleLM::WritePlotFile() {
      bool is_spraycheck = false;
      for (int lev = 0; lev <= finest_level; ++lev) {
        theSprayPC()->SprayParticleIO(
-         lev, is_spraycheck, write_spray_ascii_files, plotfilename, spray_fuel_names);
+         lev, is_spraycheck, write_spray_ascii_files, plotfilename);
        // Remove virtual particles that were made for derived variables
        removeVirtualParticles(lev);
      }
@@ -435,7 +435,7 @@ void PeleLM::WriteCheckPointFile()
      bool is_spraycheck = true;
      for (int lev = 0; lev <= finest_level; ++lev) {
        theSprayPC()->SprayParticleIO(
-         lev, is_spraycheck, write_ascii, checkpointname, spray_fuel_names);
+         lev, is_spraycheck, write_ascii, checkpointname);
      }
    }
 #endif
