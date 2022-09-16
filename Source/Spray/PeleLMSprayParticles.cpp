@@ -59,8 +59,6 @@ int PeleLM::num_spray_src = AMREX_SPACEDIM + 2 + SPRAY_FUEL_NUM;
 
 int PeleLM::write_spray_ascii_files = 0;
 int PeleLM::plot_spray_src = 0;
-std::string PeleLM::spray_fuel_names[SPRAY_FUEL_NUM];
-Vector<std::string> PeleLM::spray_derive_vars;
 
 SprayParticleContainer*
 PeleLM::theSprayPC()
@@ -114,8 +112,7 @@ PeleLM::SprayReadParameters()
   sprayData.dtmod = 1.;
   SprayParticleContainer::readSprayParams(
     spray_verbose, max_spray_cfl, wall_temp, write_spray_ascii_files,
-    plot_spray_src, init_function, init_file, sprayData, spray_fuel_names,
-    spray_derive_vars, temp_cfl);
+    plot_spray_src, init_function, init_file, sprayData, temp_cfl);
 }
 
 void
@@ -129,35 +126,7 @@ PeleLM::SpraySetup()
   if (SPRAY_FUEL_NUM > NUM_SPECIES) {
     amrex::Abort("Cannot have more spray fuel species than fluid species");
   }
-#if NUM_SPECIES > 1
-  Vector<std::string> spec_names;
-  pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(
-    spec_names);
-  for (int i = 0; i < SPRAY_FUEL_NUM; ++i) {
-    for (int ns = 0; ns < NUM_SPECIES; ++ns) {
-      std::string gas_spec = spec_names[ns];
-      if (gas_spec == spray_fuel_names[i]) {
-        sprayData.indx[i] = ns;
-      }
-    }
-    if (sprayData.indx[i] < 0) {
-      amrex::Print() << "Fuel " << spray_fuel_names[i]
-                     << " not found in species list" << std::endl;
-      amrex::Abort();
-    }
-  }
-#else
-  for (int ns = 0; ns < SPRAY_FUEL_NUM; ++ns) {
-    sprayData.indx[ns] = 0;
-  }
-#endif
-  amrex::Vector<Real> fuelEnth(NUM_SPECIES);
-  auto eos = pele::physics::PhysicsType::eos();
-  eos.T2Hi(sprayData.ref_T, fuelEnth.data());
-  for (int ns = 0; ns < SPRAY_FUEL_NUM; ++ns) {
-    const int fspec = sprayData.indx[ns];
-    sprayData.latent[ns] -= fuelEnth[fspec] * 1.E-4;
-  }
+  SprayParticleContainer::spraySetup(sprayData);
   // Component indices for conservative variables
   scomps.rhoIndx = DENSITY;
   scomps.momIndx = VELX;
@@ -370,7 +339,7 @@ PeleLM::SprayAddSource(const int level)
     extsource, source, scomps.momSrcIndx, scomps.momIndx, AMREX_SPACEDIM,
     eghosts);
   for (int n = 0; n < SPRAY_FUEL_NUM; ++n) {
-    const int dstcomp = scomps.specIndx + sprayData.indx[n];
+    const int dstcomp = scomps.specIndx + sprayData.dep_indx[n];
     MultiFab::Add(
       extsource, source, scomps.specSrcIndx + n, dstcomp, 1, eghosts);
   }
