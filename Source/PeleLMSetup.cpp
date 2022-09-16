@@ -336,6 +336,9 @@ void PeleLM::readParameters() {
       pp.query("plot_chemDiagnostics",m_plotChemDiag);
       pp.query("plot_heatRelease",m_plotHeatRelease);
    }
+   // Enable the chemistry BA to have smaller grid size
+   m_max_grid_size_chem = -1;
+   pp.query("max_grid_size_chem",m_max_grid_size_chem);
 
    // -----------------------------------------
    // Advection

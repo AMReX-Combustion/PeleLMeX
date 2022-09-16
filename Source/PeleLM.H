@@ -1001,10 +1001,13 @@ class PeleLM : public amrex::AmrCore {
 
    // Covered cells mask
    amrex::Vector<std::unique_ptr<amrex::iMultiFab> > m_coveredMask;
+   int m_resetCoveredMask;
+
+   // Chemistry BA & DM
    amrex::Vector<std::unique_ptr<amrex::BoxArray> > m_baChem;
    amrex::Vector<std::unique_ptr<amrex::DistributionMapping> > m_dmapChem;
    amrex::Vector<amrex::Vector<int > > m_baChemFlag;
-   int m_resetCoveredMask;
+   int m_max_grid_size_chem;
 
    // Times
    amrex::Vector<amrex::Real> m_t_old;

@@ -29,7 +29,12 @@ void PeleLM::advanceChemistry(std::unique_ptr<AdvanceAdvData> &advData)
 #endif
          advanceChemistry(lev, m_dt, advData->Forcing[lev], avgDownIR.get());
       } else {
-         advanceChemistry(lev, m_dt, advData->Forcing[lev]);
+         // If we defined a new BA for chem on finest level, use that instead of the default one
+         if (m_max_grid_size_chem > 0) {
+            advanceChemistry(lev, m_dt, advData->Forcing[lev], nullptr);
+         } else {
+            advanceChemistry(lev, m_dt, advData->Forcing[lev]);
+         }
       }
    }
 }
@@ -186,7 +191,9 @@ void PeleLM::advanceChemistry(int lev,
                               MultiFab *a_avgDownIR)
 {
    BL_PROFILE("PeleLM::advanceChemistry_Lev"+std::to_string(lev)+"()");
-   AMREX_ASSERT(a_avgDownIR != nullptr);
+   AMREX_ASSERT(a_avgDownIR != nullptr || lev == finest_level);
+
+   bool hasAvgDownIR = (a_avgDownIR != nullptr);
 
    auto ldataOld_p = getLevelDataPtr(lev,AmrOldTime);
    auto ldataNew_p = getLevelDataPtr(lev,AmrNewTime);
@@ -195,14 +202,20 @@ void PeleLM::advanceChemistry(int lev,
    // Get the entire old state
    std::unique_ptr<MultiFab> statemf = fillPatchState(lev, getTime(lev,AmrOldTime), 0);
 
+   Print() << " BAChem lev " << lev << " : " << *m_baChem[lev] << "\n";
+
    // Set chemistry MFs based on baChem and dmapChem
    MultiFab chemState(*m_baChem[lev],*m_dmapChem[lev],NUM_SPECIES+3,0);
    MultiFab chemForcing(*m_baChem[lev],*m_dmapChem[lev],nCompForcing(),0);
-   MultiFab chemAvgDownIR(*m_baChem[lev],*m_dmapChem[lev],nCompIR(),0);
+   MultiFab chemAvgDownIR;
+   if (hasAvgDownIR) {
+      chemAvgDownIR.define(*m_baChem[lev],*m_dmapChem[lev],nCompIR(),0);
+   }
    MultiFab functC(*m_baChem[lev],*m_dmapChem[lev],1,0);
 #ifdef PELE_USE_EFIELD
    MultiFab chemnE(*m_baChem[lev],*m_dmapChem[lev],1,0);
 #endif
+   VisMF::Write(*statemf,"chemStateonOrigBA");
 
    // TODO EB Setup EB covered cells mask
    FabArray<BaseFab<int>> mask(*m_baChem[lev],*m_dmapChem[lev],1,0);
@@ -211,7 +224,10 @@ void PeleLM::advanceChemistry(int lev,
    // ParallelCopy into chem MFs
    chemState.ParallelCopy(*statemf,FIRSTSPEC,0,NUM_SPECIES+3);
    chemForcing.ParallelCopy(a_extForcing,0,0,nCompForcing());
-   chemAvgDownIR.ParallelCopy(*a_avgDownIR,0,0,nCompIR());
+   if (hasAvgDownIR) {
+      chemAvgDownIR.ParallelCopy(*a_avgDownIR,0,0,nCompIR());
+   }
+   VisMF::Write(chemState,"chemStateonBA");
 #ifdef PELE_USE_EFIELD
    chemnE.ParallelCopy(*statemf,NE,0,1);
 #endif
@@ -229,7 +245,7 @@ void PeleLM::advanceChemistry(int lev,
       auto const& extF_rhoY  = chemForcing.array(mfi,0);
       auto const& extF_rhoH  = chemForcing.array(mfi,NUM_SPECIES);
       auto const& fcl        = functC.array(mfi);
-      auto const& avgIR      = chemAvgDownIR.array(mfi);
+      auto const& avgIR      = hasAvgDownIR ? chemAvgDownIR.array(mfi) : Array4<Real>();
       auto const& mask_arr   = mask.array(mfi);
 
       // Convert MKS -> CGS
@@ -251,8 +267,8 @@ void PeleLM::advanceChemistry(int lev,
       auto const& FnE     = chemForcing.array(mfi,NUM_SPECIES+1);
       auto const& rhoYe_o = chemState.array(mfi,E_ID);
       auto const& FrhoYe  = chemForcing.array(mfi,E_ID);
-      auto const& avgIRnE = chemAvgDownIR.array(mfi,NUM_SPECIES);
-      auto const& avgIRYe = chemAvgDownIR.array(mfi,E_ID);
+      auto const& avgIRnE = hasAvgDownIR ? chemAvgDownIR.array(mfi,NUM_SPECIES) : Array4<Real>();
+      auto const& avgIRYe = hasAvgDownIR ? chemAvgDownIR.array(mfi,E_ID): Array4<Real>();
       auto eos = pele::physics::PhysicsType::eos();
       Real mwt[NUM_SPECIES] = {0.0};
       eos.molecular_weight(mwt);
