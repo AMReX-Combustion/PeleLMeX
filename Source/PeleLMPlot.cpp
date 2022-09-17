@@ -214,6 +214,12 @@ void PeleLM::WritePlotFile() {
 #endif
 
    //----------------------------------------------------------------
+   // Get consistent reaction data across level
+   if (m_do_react  && !m_skipInstantRR && m_plot_react) {
+      averageDownReaction();
+   }
+
+   //----------------------------------------------------------------
    // Fill the plot MultiFabs
    for (int lev = 0; lev <= finest_level; ++lev) {
       int cnt = 0;
