@@ -389,10 +389,9 @@ class PeleLM : public amrex::AmrCore {
                          const amrex::Real &a_dt,
                          amrex::MultiFab &a_extForcing);
 
-   void advanceChemistry(int lev,
-                         const amrex::Real &a_dt,
-                         amrex::MultiFab &a_extForcing,
-                         amrex::MultiFab *avgDownIR);
+   void advanceChemistryBAChem(int lev,
+                               const amrex::Real &a_dt,
+                               amrex::MultiFab &a_extForcing);
 
    void computeInstantaneousReactionRate(const amrex::Vector<amrex::MultiFab*> &a_I_R,
                                          const PeleLM::TimeStamp &a_time);
