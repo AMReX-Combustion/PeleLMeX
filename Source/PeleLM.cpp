@@ -358,6 +358,24 @@ PeleLM::averageDownRhoRT(const PeleLM::TimeStamp &a_time)
    }
 }
 
+void
+PeleLM::averageDownReaction()
+{
+   for (int lev = finest_level; lev > 0; --lev) {
+      auto ldataRFine_p   = getLevelDataReactPtr(lev);
+      auto ldataRCrse_p   = getLevelDataReactPtr(lev-1);
+#ifdef AMREX_USE_EB
+      EB_average_down(ldataRFine_p->I_R,
+                      ldataRCrse_p->I_R,
+                      0,nCompIR(),refRatio(lev-1));
+#else
+      average_down(ldataRFine_p->I_R,
+                   ldataRCrse_p->I_R,
+                   0,nCompIR(),refRatio(lev-1));
+#endif
+   }
+}
+
 #ifdef PELE_USE_EFIELD
 Vector<std::unique_ptr<MultiFab> >
 PeleLM::getPhiVVect(const TimeStamp &a_time) {
