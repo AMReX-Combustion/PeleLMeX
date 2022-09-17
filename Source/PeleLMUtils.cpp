@@ -515,11 +515,9 @@ void PeleLM::resetCoveredMask()
 
    // Set a BoxArray for the chemistry on the finest level too
    m_baChem[finest_level].reset(new BoxArray(grids[finest_level]));
-   Print() << " BAChem on lev " << finest_level << " before maxgrid has " << m_baChem[finest_level]->size() << "boxes \n";
    if ( m_max_grid_size_chem > 0 ) {
       m_baChem[finest_level]->maxSize(m_max_grid_size_chem);
    }
-   Print() << " After: " << m_baChem[finest_level]->size() << "boxes \n";
    m_baChemFlag[finest_level].resize(m_baChem[finest_level]->size());
    std::fill(m_baChemFlag[finest_level].begin(), m_baChemFlag[finest_level].end(), 1);
    m_dmapChem[finest_level].reset(new DistributionMapping(*m_baChem[finest_level]));
