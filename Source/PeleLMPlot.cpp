@@ -57,6 +57,15 @@ void PeleLM::WritePlotFile() {
    }
 
    //----------------------------------------------------------------
+   // Average down the state
+   averageDownState(AmrNewTime);
+
+   // Get consistent reaction data across level
+   if (m_do_react  && !m_skipInstantRR && m_plot_react) {
+      averageDownReaction();
+   }
+
+   //----------------------------------------------------------------
    // Number of components
    int ncomp = 0;
 
@@ -213,11 +222,6 @@ void PeleLM::WritePlotFile() {
    }
 #endif
 
-   //----------------------------------------------------------------
-   // Get consistent reaction data across level
-   if (m_do_react  && !m_skipInstantRR && m_plot_react) {
-      averageDownReaction();
-   }
 
    //----------------------------------------------------------------
    // Fill the plot MultiFabs
