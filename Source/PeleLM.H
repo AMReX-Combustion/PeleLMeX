@@ -613,8 +613,6 @@ class PeleLM : public amrex::AmrCore {
    void averageDownState(const PeleLM::TimeStamp &a_time);
    void averageDownScalars(const PeleLM::TimeStamp &a_time);
    void averageDownVelocity(const PeleLM::TimeStamp &a_time);
-   void averageDownDensity(const PeleLM::TimeStamp &a_time);
-   void averageDownRhoRT(const PeleLM::TimeStamp &a_time);
    void averageDown(const PeleLM::TimeStamp &a_time, const int state_comp, const int ncomp);
    void averageDownReaction();
 #ifdef PELE_USE_EFIELD

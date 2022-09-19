@@ -305,24 +305,6 @@ PeleLM::averageDown(const PeleLM::TimeStamp &a_time,
 }
 
 void
-PeleLM::averageDownDensity(const PeleLM::TimeStamp &a_time)
-{
-   for (int lev = finest_level; lev > 0; --lev) {
-      auto ldataFine_p = getLevelDataPtr(lev,a_time);
-      auto ldataCrse_p = getLevelDataPtr(lev-1,a_time);
-#ifdef AMREX_USE_EB
-      EB_average_down(ldataFine_p->state,
-                      ldataCrse_p->state,
-                      DENSITY,1,refRatio(lev-1));
-#else
-      average_down(ldataFine_p->state,
-                   ldataCrse_p->state,
-                   DENSITY,1,refRatio(lev-1));
-#endif
-   }
-}
-
-void
 PeleLM::averageDownVelocity(const PeleLM::TimeStamp &a_time)
 {
    for (int lev = finest_level; lev > 0; --lev) {
@@ -336,24 +318,6 @@ PeleLM::averageDownVelocity(const PeleLM::TimeStamp &a_time)
       average_down(ldataFine_p->state,
                    ldataCrse_p->state,
                    VELX,AMREX_SPACEDIM,refRatio(lev-1));
-#endif
-   }
-}
-
-void
-PeleLM::averageDownRhoRT(const PeleLM::TimeStamp &a_time)
-{
-   for (int lev = finest_level; lev > 0; --lev) {
-      auto ldataFine_p = getLevelDataPtr(lev,a_time);
-      auto ldataCrse_p = getLevelDataPtr(lev-1,a_time);
-#ifdef AMREX_USE_EB
-      EB_average_down(ldataFine_p->state,
-                      ldataCrse_p->state,
-                      RHORT,1,refRatio(lev-1));
-#else
-      average_down(ldataFine_p->state,
-                   ldataCrse_p->state,
-                   RHORT,1,refRatio(lev-1));
 #endif
    }
 }
