@@ -325,7 +325,7 @@ void PeleLM::readParameters() {
      m_les_verbose = m_verbose;
      pp.query("les_v", m_les_verbose);
 #ifdef AMREX_USE_EB
-     amrex::Warning("Compatibility of LES implementation with EB has not yet been verified")
+     amrex::Warning("Compatibility of LES implementation with EB has not yet been verified");
 #endif
    }
 
