@@ -81,6 +81,12 @@ void PeleLM::Setup() {
    if (!m_incompressible) {
       amrex::Print() << " Initialization of Transport ... \n";
       trans_parms.allocate();
+      if (m_les_verbose and m_do_les)
+        amrex::Print() << "    Using LES in transport with Sc = " << 1.0/m_Schmidt_inv
+                       << " and Pr = " << 1.0/m_Prandtl_inv << std::endl;
+      if (m_verbose and m_unity_Le)
+        amrex::Print() << "    Using Le = 1 transport with Sc = " << 1.0/m_Schmidt_inv
+                       << " and Pr = " << 1.0/m_Prandtl_inv << std::endl;
       if (m_do_react) {
          int reactor_type = 2;
          int ncells_chem = 1;
@@ -301,15 +307,48 @@ void PeleLM::readParameters() {
       m_gravity[idim] = grav[idim];
    }
 
+   // -----------------------------------------
+   // LES
+   // -----------------------------------------
+   pp.query("les_model", m_les_model);
+   if (m_les_model == "None") {
+     m_do_les = false;
+   } else {
+     if (m_les_model == "Smagorinsky") {
+       pp.get("les_cs_smag", m_les_cs_smag);
+     } else if (m_les_model == "WALES") {
+       pp.get("les_cs_wales", m_les_cs_wales);
+     } else {
+       amrex::Abort("LES model must be None, Smagorinsky, or WALES. Invalid choie: " + m_les_model);
+     }
+     m_do_les = true;
+     m_les_verbose = m_verbose;
+     pp.query("les_v", m_les_verbose);
+#ifdef AMREX_USE_EB
+     amrex::Warning("Compatibility of LES implementation with EB has not yet been verified")
+#endif
+   }
 
    // -----------------------------------------
    // diffusion
    pp.query("use_wbar",m_use_wbar);
+   pp.query("unity_Le",m_unity_Le);
+   if (m_use_wbar and m_unity_Le) {
+     m_use_wbar = 0;
+     amrex::Print() << "WARNING: use_wbar set to false because unity_Le is true"
+                    << std::endl;
+   }
    pp.query("deltaT_verbose",m_deltaT_verbose);
    pp.query("deltaT_iterMax",m_deltaTIterMax);
    pp.query("deltaT_tol",m_deltaT_norm_max);
    pp.query("deltaT_crashIfFailing",m_crashOnDeltaTFail);
 
+   if (m_do_les or m_unity_Le) {
+     amrex::Real Prandtl = 0.7;
+     pp.query("Prandtl", Prandtl);
+     m_Schmidt_inv = 1.0/Prandtl;
+     m_Prandtl_inv = 1.0/Prandtl;
+   }
 
    // -----------------------------------------
    // initialization
@@ -761,6 +800,7 @@ void PeleLM::derivedSetup()
 
    // Viscosity
    derive_lst.add("viscosity",IndexType::TheCellType(),1,pelelm_dervisc,the_same_box);
+   derive_lst.add("viscturb",IndexType::TheCellType(),1,pelelm_derviscturb,the_same_box);
 
    // Vorticity magnitude
    derive_lst.add("mag_vort",IndexType::TheCellType(),1,pelelm_dermgvort,grow_box_by_two);

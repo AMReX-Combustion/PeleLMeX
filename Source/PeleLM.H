@@ -145,8 +145,8 @@ class PeleLM : public amrex::AmrCore {
       LevelData (amrex::BoxArray const& ba,
                  amrex::DistributionMapping const& dm,
                  amrex::FabFactory<amrex::FArrayBox> const& factory,
-                 int a_incompressible, int a_has_divu, 
-                 int a_nAux, int a_nGrowState);
+                 int a_incompressible, int a_has_divu,
+                 int a_nAux, int a_nGrowState, int a_do_les);
 
       // cell-centered state multifabs
       amrex::MultiFab state;           // Stqte data: velocity, density, rhoYs, rhoH, Temp, RhoRT
@@ -159,6 +159,7 @@ class PeleLM : public amrex::AmrCore {
 
       // cell-centered transport multifabs
       amrex::MultiFab visc_cc;         // Viscosity (dim:1)
+      amrex::MultiFab visc_turb_cc;    // Turbulent Viscosity (dim:1)
       amrex::MultiFab diff_cc;         // Diffusivity (dim:NUM_SPECIES+2)
 #ifdef PELE_USE_EFIELD
       amrex::MultiFab diffE_cc;        // Electron diffusivity (dim:1)
@@ -276,7 +277,7 @@ class PeleLM : public amrex::AmrCore {
    // MAC PROJECTION
 
    void resetMacProjector();
-   
+
    // Predict face velocity using Godunov
    void predictVelocity(std::unique_ptr<AdvanceAdvData> &advData);
 
@@ -312,6 +313,7 @@ class PeleLM : public amrex::AmrCore {
 
    // compute cell-centered diffusivity (stored in LevelData)
    void calcViscosity(const PeleLM::TimeStamp &a_time);
+   void calcTurbViscosity(const PeleLM::TimeStamp &a_time);
    void calcDiffusivity(const PeleLM::TimeStamp &a_time);
    
    // get edge-centered diffusivity on a per level / per comp basis
@@ -1142,9 +1144,19 @@ class PeleLM : public amrex::AmrCore {
    // cc->ec average
    int m_harm_avg_cen2edge = 0;
 
-   // wbar diffusion term
+
+   // Diffusion
+   int m_unity_Le = 0;
+   amrex::Real m_Schmidt_inv = 1.0/0.7;
+   amrex::Real m_Prandtl_inv = 1.0/0.7;
    int m_use_wbar = 1;
 
+   // LES Model
+   bool m_do_les = false;
+   int m_les_verbose = 0;
+   std::string m_les_model = "None";
+   amrex::Real m_les_cs_smag = 0.0;
+   amrex::Real m_les_cs_wales = 0.0;
    // switch on/off different processes
    // TODO: actually implement that
    int m_do_react = 1;

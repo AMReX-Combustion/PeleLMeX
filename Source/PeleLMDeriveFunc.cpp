@@ -412,6 +412,44 @@ void pelelm_dervisc (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dco
 //
 // Extract mixture averaged species diffusion coefficients
 //
+void pelelm_derviscturb (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
+                      const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
+                      const Geometry& geomdata,
+                      Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
+{
+    AMREX_ASSERT(derfab.box().contains(bx));
+    AMREX_ASSERT(statefab.box().contains(bx));
+    AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
+    if (!a_pelelm->m_do_les) {
+        derfab.setVal<RunOn::Device>(0.0,bx,dcomp,1);
+    } else {
+        auto const& rho = statefab.const_array(DENSITY);
+        auto const& vel = statefab.array(VELX);
+        auto        der   = derfab.array(dcomp);
+        const auto dxinv = geomdata.InvCellSizeArray();
+        const amrex::Real l_scale = 1.0/dxinv[0]; // assumes dx = dy = dz
+
+        if (a_pelelm->m_les_model == "Smagorinsky") {
+          amrex::Real prefact = a_pelelm->m_les_cs_smag * l_scale * l_scale;
+          amrex::ParallelFor(bx, [rho,vel,dxinv,der,prefact]
+                             AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+                                 {
+                                   getTurbViscSmagorinsky(i, j, k, prefact, dxinv, vel, rho, der);
+                                 });
+        } else if (a_pelelm->m_les_model == "WALES") {
+          amrex::Real prefact = a_pelelm->m_les_cs_wales * l_scale * l_scale;
+          amrex::ParallelFor(bx, [rho,vel,dxinv,der,prefact]
+                             AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+                                 {
+                                   getTurbViscWALES(i, j, k, prefact, dxinv, vel, rho, der);
+                                 });
+        }
+    }
+}
+
+//
+// Extract mixture averaged species diffusion coefficients
+//
 void pelelm_derdiffc (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
                       const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
                       const Geometry& /*geomdata*/,
@@ -429,10 +467,18 @@ void pelelm_derdiffc (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dc
     auto     lambda  = dummies.array(0);
     auto         mu  = dummies.array(1);
     auto const* ltransparm = a_pelelm->trans_parms.device_trans_parm();
+    amrex::Real ScInv = a_pelelm->m_Schmidt_inv;
+    amrex::Real PrInv = a_pelelm->m_Schmidt_inv;
+    int unity_Le = a_pelelm->m_unity_Le;
     amrex::ParallelFor(bx,
-    [rhoY,T,rhoD,lambda,mu,ltransparm] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+    [rhoY,T,rhoD,lambda,mu,ltransparm,unity_Le,ScInv,PrInv]
+    AMREX_GPU_DEVICE (int i, int j, int k) noexcept
     {
+      if (unity_Le) {
+        getTransportCoeffUnityLe(i, j, k, ScInv, PrInv, rhoY, T, rhoD, lambda, mu, ltransparm);
+      } else {
         getTransportCoeff(i, j, k, rhoY, T, rhoD, lambda, mu, ltransparm);
+      }
     });
 }
 
@@ -455,9 +501,17 @@ void pelelm_derlambda (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int d
     auto     lambda  = derfab.array(dcomp);
     auto         mu  = dummies.array(0);
     auto const* ltransparm = a_pelelm->trans_parms.device_trans_parm();
+    amrex::Real ScInv = a_pelelm->m_Schmidt_inv;
+    amrex::Real PrInv = a_pelelm->m_Schmidt_inv;
+    int unity_Le = a_pelelm->m_unity_Le;
     amrex::ParallelFor(bx,
-    [rhoY,T,rhoD,lambda,mu,ltransparm] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+    [rhoY,T,rhoD,lambda,mu,ltransparm,unity_Le,ScInv,PrInv]
+    AMREX_GPU_DEVICE (int i, int j, int k) noexcept
     {
+      if (unity_Le) {
+        getTransportCoeffUnityLe(i, j, k, ScInv, PrInv, rhoY, T, rhoD, lambda, mu, ltransparm);
+      } else {
         getTransportCoeff(i, j, k, rhoY, T, rhoD, lambda, mu, ltransparm);
+      }
     });
 }

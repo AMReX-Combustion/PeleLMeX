@@ -6,7 +6,7 @@ PeleLM::LevelData::LevelData(amrex::BoxArray const& ba,
                              amrex::DistributionMapping const& dm,
                              amrex::FabFactory<FArrayBox> const& factory,
                              int a_incompressible, int a_has_divu,
-                             int a_nAux, int a_nGrowState)
+                             int a_nAux, int a_nGrowState, int a_do_les)
 {
    if (a_incompressible ) {
        state.define(  ba, dm, AMREX_SPACEDIM , a_nGrowState, MFInfo(), factory);
@@ -17,6 +17,9 @@ PeleLM::LevelData::LevelData(amrex::BoxArray const& ba,
    press.define(   amrex::convert(ba,IntVect::TheNodeVector()),
                        dm, 1             , 1           , MFInfo(), factory);
    visc_cc.define( ba, dm, 1             , 1           , MFInfo(), factory);
+   if (a_do_les) {
+     visc_turb_cc.define( ba, dm, 1             , 1           , MFInfo(), factory);
+   }
    if (! a_incompressible ) {
       if (a_has_divu) {
          divu.define (ba, dm, 1             , 1           , MFInfo(), factory);
@@ -192,6 +195,9 @@ void
 PeleLM::copyTransportOldToNew() {
    for (int lev = 0; lev <= finest_level; lev++ ) {
       MultiFab::Copy(m_leveldata_new[lev]->visc_cc,m_leveldata_old[lev]->visc_cc,0,0,1,1);
+      if (m_do_les) {
+         MultiFab::Copy(m_leveldata_new[lev]->visc_turb_cc,m_leveldata_old[lev]->visc_turb_cc,0,0,1,1);
+      }
       if ( !m_incompressible ) {
          MultiFab::Copy(m_leveldata_new[lev]->diff_cc,m_leveldata_old[lev]->diff_cc,0,0,NUM_SPECIES+2,1);
 #ifdef PELE_USE_EFIELD
