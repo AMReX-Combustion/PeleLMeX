@@ -131,6 +131,9 @@ public:
                          const amrex::BCRec &a_bcrec,
                          amrex::Real dt);
 
+  void computeGradientTensor(amrex::Vector<amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>> const& a_velgrad,
+                             amrex::Vector<amrex::MultiFab const*> const& a_vel);
+
 private:
 
    void readParameters ();
@@ -142,10 +145,12 @@ private:
    // Apply operator
    std::unique_ptr<amrex::MLEBTensorOp> m_apply_op;
    std::unique_ptr<amrex::MLEBTensorOp> m_solve_op;
+   std::unique_ptr<amrex::MLEBTensorOp> m_gradient_op;
 #else
    // Apply operator
    std::unique_ptr<amrex::MLTensorOp> m_apply_op;
    std::unique_ptr<amrex::MLTensorOp> m_solve_op;
+   std::unique_ptr<amrex::MLTensorOp> m_gradient_op;
 #endif
 
    int m_verbose = 0;
