@@ -15,7 +15,7 @@ void PeleLM::advanceChemistry(std::unique_ptr<AdvanceAdvData> &advData)
          advanceChemistryBAChem(lev, m_dt, advData->Forcing[lev]);
       } else {
          // If we defined a new BA for chem on finest level, use that instead of the default one
-         if (m_max_grid_size_chem > 0) {
+         if (m_max_grid_size_chem.min() > 0) {
             advanceChemistryBAChem(lev, m_dt, advData->Forcing[lev]);
          } else {
             advanceChemistry(lev, m_dt, advData->Forcing[lev]);

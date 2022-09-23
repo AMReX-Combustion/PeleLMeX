@@ -241,7 +241,7 @@ void PeleLM::initData() {
                   if (lev != finest_level) {
                      advanceChemistryBAChem(lev, dtInit/2.0, Forcing);
                   } else {
-                     if (m_max_grid_size_chem > 0) {
+                     if (m_max_grid_size_chem.min() > 0) {
                         advanceChemistryBAChem(lev, dtInit/2.0, Forcing);
                      } else {
                         advanceChemistry(lev, dtInit/2.0, Forcing);

@@ -1003,7 +1003,7 @@ class PeleLM : public amrex::AmrCore {
    amrex::Vector<std::unique_ptr<amrex::BoxArray> > m_baChem;
    amrex::Vector<std::unique_ptr<amrex::DistributionMapping> > m_dmapChem;
    amrex::Vector<amrex::Vector<int > > m_baChemFlag;
-   int m_max_grid_size_chem;
+   amrex::IntVect m_max_grid_size_chem {AMREX_D_DECL(-1, -1, -1)};
 
    // Times
    amrex::Vector<amrex::Real> m_t_old;
