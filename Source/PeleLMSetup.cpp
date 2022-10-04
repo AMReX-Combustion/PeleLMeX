@@ -351,6 +351,7 @@ void PeleLM::readParameters() {
          AMREX_D_TERM(m_max_grid_size_chem[0] = mgsc[0];,
                       m_max_grid_size_chem[1] = mgsc[1];,
                       m_max_grid_size_chem[2] = mgsc[2]);
+      } else {
          Abort("peleLM.max_grid_size_chem should have 1 or AMREX_SPACEDIM values");
       }
    }
