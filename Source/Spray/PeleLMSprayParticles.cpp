@@ -50,7 +50,6 @@ std::string init_file;
 int init_function = 1;
 int spray_verbose = 0;
 Real max_spray_cfl = 5.;
-Real wall_temp = 300.;
 } // namespace
 
 bool PeleLM::do_spray_particles = true;
@@ -111,7 +110,7 @@ PeleLM::SprayReadParameters()
   // Mush change dtmod to 1 since we only do MKD
   sprayData.dtmod = 1.;
   SprayParticleContainer::readSprayParams(
-    spray_verbose, max_spray_cfl, wall_temp, write_spray_ascii_files,
+    spray_verbose, max_spray_cfl, write_spray_ascii_files,
     plot_spray_src, init_function, init_file, sprayData, temp_cfl);
 }
 
@@ -189,12 +188,12 @@ void
 PeleLM::SprayCreateData()
 {
   SprayPC = new SprayParticleContainer(
-    this, &m_phys_bc, sprayData, scomps, wall_temp, max_spray_cfl);
+    this, &m_phys_bc, sprayData, scomps, max_spray_cfl);
   theSprayPC()->SetVerbose(spray_verbose);
   VirtPC = new SprayParticleContainer(
-    this, &m_phys_bc, sprayData, scomps, wall_temp, max_spray_cfl);
+    this, &m_phys_bc, sprayData, scomps, max_spray_cfl);
   GhostPC = new SprayParticleContainer(
-    this, &m_phys_bc, sprayData, scomps, wall_temp, max_spray_cfl);
+    this, &m_phys_bc, sprayData, scomps, max_spray_cfl);
 }
 
 void
