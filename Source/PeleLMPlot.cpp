@@ -655,6 +655,9 @@ void PeleLM::initLevelDataFromPlt(int a_lev,
 #ifdef PELE_USE_EFIELD
    int inE = -1, iPhiV = -1; 
 #endif
+#ifdef PELELM_USE_SOOT
+   int inSoot = -1;
+#endif
    for (int i = 0; i < plt_vars.size(); ++i) {
       std::string firstChars = plt_vars[i].substr(0, 2);
       
@@ -672,6 +675,9 @@ void PeleLM::initLevelDataFromPlt(int a_lev,
 #ifdef PELE_USE_EFIELD
       if (plt_vars[i] == "nE")              inE = i;
       if (plt_vars[i] == "phiV")            iPhiV = i;
+#endif
+#ifdef PELELM_USE_SOOT
+      if (plt_vars[i] == "soot_N")          inSoot = i;
 #endif
    }
    if ( idY < 0 ) {
@@ -741,7 +747,21 @@ void PeleLM::initLevelDataFromPlt(int a_lev,
    pltData.fillPatchFromPlt(a_lev, geom[a_lev], iPhiV, PHIV, 1,
                             ldata_p->state);
 #endif
-
+#ifdef PELELM_USE_SOOT
+   if (do_soot_solve) {
+     if (inSoot >= 0) {
+       pltData.fillPatchFromPlt(a_lev, geom[a_lev], inSoot,
+                                FIRSTSOOT, NUMSOOTVAR, ldata_p->state);
+     } else {
+       SootData* const sd = soot_model->getSootData();
+       amrex::Real moments[NUM_SOOT_MOMENTS + 1];
+       sd->initialSmallMomVals(moments);
+       for (int mom = 0; mom < NUM_SOOT_MOMENTS + 1; ++mom) {
+         ldata_p->state.setVal(moments[mom], FIRSTSOOT + mom, 1);
+       }
+     }
+   }
+#endif
    // Pressure and pressure gradients to zero
    ldata_p->press.setVal(0.0);
    ldata_p->gp.setVal(0.0);
