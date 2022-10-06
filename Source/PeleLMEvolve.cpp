@@ -23,6 +23,8 @@ void PeleLM::Evolve() {
       bool regridded = false;
       if ( (m_regrid_int > 0) && (m_nstep > 0) && (m_nstep%m_regrid_int == 0) ) {
          if (m_verbose > 0) amrex::Print() << " Regridding...\n";
+         // Average down I_R to have proper values in newly uncovered areas
+         averageDownReaction();
          regrid(0, m_cur_time);
          resetMacProjector();
          resetCoveredMask();
