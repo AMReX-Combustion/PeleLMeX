@@ -337,6 +337,25 @@ void PeleLM::readParameters() {
       pp.query("plot_chemDiagnostics",m_plotChemDiag);
       pp.query("plot_heatRelease",m_plotHeatRelease);
    }
+   // Enable the chemistry BA to have smaller grid size
+   int mgsc_size = pp.countval("max_grid_size_chem");
+   if (mgsc_size > 0) {
+      if ( mgsc_size == 1 ) {
+         int mgsc;
+         pp.query("max_grid_size_chem",mgsc);
+         AMREX_D_TERM(m_max_grid_size_chem[0] = mgsc;,
+                      m_max_grid_size_chem[1] = mgsc;,
+                      m_max_grid_size_chem[2] = mgsc);
+      } else if ( mgsc_size == AMREX_SPACEDIM ) {
+         Vector<int> mgsc;
+         pp.getarr("max_grid_size_chem",mgsc,0,AMREX_SPACEDIM);
+         AMREX_D_TERM(m_max_grid_size_chem[0] = mgsc[0];,
+                      m_max_grid_size_chem[1] = mgsc[1];,
+                      m_max_grid_size_chem[2] = mgsc[2]);
+      } else {
+         Abort("peleLM.max_grid_size_chem should have 1 or AMREX_SPACEDIM values");
+      }
+   }
 
    // -----------------------------------------
    // Advection

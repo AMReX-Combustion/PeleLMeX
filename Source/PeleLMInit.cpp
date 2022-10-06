@@ -239,26 +239,13 @@ void PeleLM::initData() {
                   Forcing.setVal(0.0);
 
                   if (lev != finest_level) {
-                     // On all but the finest level, average down I_R
-                     // and use advanceChemistry with chem BoxArray
-                     std::unique_ptr<MultiFab> avgDownIR;
-                     avgDownIR.reset(new MultiFab(grids[lev],dmap[lev],nCompIR(),0));
-                     avgDownIR->setVal(0.0);
-                     auto ldataRFine_p   = getLevelDataReactPtr(lev+1);
-#ifdef AMREX_USE_EB
-                     EB_average_down(ldataRFine_p->I_R,
-                                     *avgDownIR,
-                                     0,nCompIR(),refRatio(lev));
-#else
-                     average_down(ldataRFine_p->I_R,
-                                  *avgDownIR,
-                                  0,nCompIR(),refRatio(lev));
-#endif
-                     // Call advanceChemistry
-                     advanceChemistry(lev, dtInit/2.0, Forcing, avgDownIR.get());
+                     advanceChemistryBAChem(lev, dtInit/2.0, Forcing);
                   } else {
-                     // Call advanceChemistry
-                     advanceChemistry(lev, dtInit/2.0, Forcing);
+                     if (m_max_grid_size_chem.min() > 0) {
+                        advanceChemistryBAChem(lev, dtInit/2.0, Forcing);
+                     } else {
+                        advanceChemistry(lev, dtInit/2.0, Forcing);
+                     }
                   }
                }
                // Copy back old -> new

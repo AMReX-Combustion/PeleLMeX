@@ -754,7 +754,6 @@ void PeleLM::updateDensity(std::unique_ptr<AdvanceAdvData> &advData)
       });
    }
    Gpu::streamSynchronize();
-   averageDownDensity(AmrNewTime);
 }
 
 void PeleLM::computePassiveAdvTerms(std::unique_ptr<AdvanceAdvData> &advData,

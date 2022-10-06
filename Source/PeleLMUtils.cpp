@@ -488,6 +488,10 @@ void PeleLM::resetCoveredMask()
          // Get an uncovered BoxArray
          BoxArray baCompDom = complementIn(geom[lev].Domain(), baf);
          BoxArray baUnCovered = intersect(baCompDom,grids[lev]);
+         // Chop in smaller boxes if triggered
+         if ( m_max_grid_size_chem.min() > 0 ) {
+            baUnCovered.maxSize(m_max_grid_size_chem);
+         }
 
          // Assemble a BoxArray with covered and uncovered ones + flags
          BoxList bl(grids[lev].ixType());
@@ -508,9 +512,19 @@ void PeleLM::resetCoveredMask()
          m_dmapChem[lev].reset(new DistributionMapping(*m_baChem[lev]));
       }
 
+      // Set a BoxArray for the chemistry on the finest level too
+      m_baChem[finest_level].reset(new BoxArray(grids[finest_level]));
+      if ( m_max_grid_size_chem.min() > 0 ) {
+         m_baChem[finest_level]->maxSize(m_max_grid_size_chem);
+      }
+      m_baChemFlag[finest_level].resize(m_baChem[finest_level]->size());
+      std::fill(m_baChemFlag[finest_level].begin(), m_baChemFlag[finest_level].end(), 1);
+      m_dmapChem[finest_level].reset(new DistributionMapping(*m_baChem[finest_level]));
+
       // Switch off trigger
       m_resetCoveredMask = 0;
    }
+
 
    //----------------------------------------------------------------------------
    // Need to compute the uncovered volume
