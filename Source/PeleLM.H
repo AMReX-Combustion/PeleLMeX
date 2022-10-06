@@ -389,10 +389,9 @@ class PeleLM : public amrex::AmrCore {
                          const amrex::Real &a_dt,
                          amrex::MultiFab &a_extForcing);
 
-   void advanceChemistry(int lev,
-                         const amrex::Real &a_dt,
-                         amrex::MultiFab &a_extForcing,
-                         amrex::MultiFab *avgDownIR);
+   void advanceChemistryBAChem(int lev,
+                               const amrex::Real &a_dt,
+                               amrex::MultiFab &a_extForcing);
 
    void computeInstantaneousReactionRate(const amrex::Vector<amrex::MultiFab*> &a_I_R,
                                          const PeleLM::TimeStamp &a_time);
@@ -614,9 +613,8 @@ class PeleLM : public amrex::AmrCore {
    void averageDownState(const PeleLM::TimeStamp &a_time);
    void averageDownScalars(const PeleLM::TimeStamp &a_time);
    void averageDownVelocity(const PeleLM::TimeStamp &a_time);
-   void averageDownDensity(const PeleLM::TimeStamp &a_time);
-   void averageDownRhoRT(const PeleLM::TimeStamp &a_time);
    void averageDown(const PeleLM::TimeStamp &a_time, const int state_comp, const int ncomp);
+   void averageDownReaction();
 #ifdef PELE_USE_EFIELD
    void averageDownnE(const PeleLM::TimeStamp &a_time);
    void averageDownPhiV(const PeleLM::TimeStamp &a_time);
@@ -999,10 +997,13 @@ class PeleLM : public amrex::AmrCore {
 
    // Covered cells mask
    amrex::Vector<std::unique_ptr<amrex::iMultiFab> > m_coveredMask;
+   int m_resetCoveredMask;
+
+   // Chemistry BA & DM
    amrex::Vector<std::unique_ptr<amrex::BoxArray> > m_baChem;
    amrex::Vector<std::unique_ptr<amrex::DistributionMapping> > m_dmapChem;
    amrex::Vector<amrex::Vector<int > > m_baChemFlag;
-   int m_resetCoveredMask;
+   amrex::IntVect m_max_grid_size_chem {AMREX_D_DECL(-1, -1, -1)};
 
    // Times
    amrex::Vector<amrex::Real> m_t_old;

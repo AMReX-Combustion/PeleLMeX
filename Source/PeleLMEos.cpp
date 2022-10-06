@@ -11,7 +11,6 @@ void PeleLM::setThermoPress(const TimeStamp &a_time) {
    for (int lev = 0; lev <= finest_level; ++lev) {
       setThermoPress(lev, a_time);
    }
-   averageDownRhoRT(a_time);
 }
 
 void PeleLM::setThermoPress(int lev, const TimeStamp &a_time) {
