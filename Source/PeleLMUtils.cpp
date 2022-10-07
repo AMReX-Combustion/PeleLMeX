@@ -1,6 +1,9 @@
 #include <PeleLM.H>
 #include <PeleLM_K.H>
 #include <hydro_utils.H>
+#ifdef PELE_USE_EFIELD
+#include <PeleLMEF_Constants.H>
+#endif
 
 using namespace amrex;
 
@@ -956,6 +959,9 @@ void PeleLM::setTypicalValues(const TimeStamp &a_time, int is_init)
         typical_values[RHOH] = 0.5 * (stateMax[RHOH] + stateMin[RHOH]) / typical_values[DENSITY];
         typical_values[TEMP] = 0.5 * (stateMax[TEMP] + stateMin[TEMP]);
         typical_values[RHORT] = m_pOld;
+#ifdef PELE_USE_EFIELD
+        typical_values[NE] = 0.5 * (stateMax[NE] + stateMin[NE]);
+#endif
 
         // Pass into chemsitry if requested
         updateTypicalValuesChem();
@@ -971,14 +977,17 @@ void PeleLM::setTypicalValues(const TimeStamp &a_time, int is_init)
         }
         Print() << '\n';
         if (!m_incompressible) {
-            Print() << "\tDensity: " << typical_values[DENSITY] << '\n';
-            Print() << "\tTemp:    " << typical_values[TEMP]    << '\n';
-            Print() << "\tH:       " << typical_values[RHOH]    << '\n';
+            Print() << "\tDensity:  " << typical_values[DENSITY] << '\n';
+            Print() << "\tTemp:     " << typical_values[TEMP]    << '\n';
+            Print() << "\tH:        " << typical_values[RHOH]    << '\n';
             Vector<std::string> spec_names;
             pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(spec_names);
             for (int n = 0; n < NUM_SPECIES; n++) {
-                Print() << "\tY_" << spec_names[n] << ": " << typical_values[FIRSTSPEC+n] <<'\n';
+                Print() << "\tY_" << spec_names[n] << std::setw(std::max(0,static_cast<int>(8-spec_names[n].length()))) << std::left << ":" << typical_values[FIRSTSPEC+n] <<'\n';
             }
+#ifdef PELE_USE_EFIELD
+            Print() << "\tnE:       " << typical_values[NE]    << '\n';
+#endif
         }
         Print() << PrettyLine;
     }
@@ -1000,6 +1009,12 @@ void PeleLM::updateTypicalValuesChem()
                            typical_values[FIRSTSPEC+i] * typical_values[DENSITY] * 1.E-3); // CGS -> MKS conversion
             }
             typical_values_chem[NUM_SPECIES] = typical_values[TEMP];
+#ifdef PELE_USE_EFIELD
+            auto eos = pele::physics::PhysicsType::eos();
+            Real mwt[NUM_SPECIES] = {0.0};
+            eos.molecular_weight(mwt);
+            typical_values_chem[E_ID] = typical_values[NE] / Na * mwt[E_ID] * 1.0e-6 * 1.0e-2;
+#endif
             m_reactor->set_typ_vals_ode(typical_values_chem);
         }
     }

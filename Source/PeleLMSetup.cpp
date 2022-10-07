@@ -330,6 +330,7 @@ void PeleLM::readParameters() {
    pp.query("do_react",m_do_react);
    pp.query("use_typ_vals_chem",m_useTypValChem);
    pp.query("typical_values_reset_int",m_resetTypValInt);
+   pp.query("typical_values_Ymin",m_typicalYvalMin);
    if (m_do_react) {
       m_plotChemDiag = 0;
       m_plotHeatRelease = 1;
