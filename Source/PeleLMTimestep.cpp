@@ -63,9 +63,11 @@ PeleLM::computeDt(int is_init,
          // Ensure ~O(dt) step by checking a little in advance
          Real timeToNextPlot = (std::floor( m_cur_time / m_plot_per_exact ) + 1) * m_plot_per_exact - m_cur_time;
          if ( 2.0 * estdt > timeToNextPlot && timeToNextPlot > estdt ) {
-            estdt = 0.5 * timeToNextPlot;
+            estdt = Real(0.5) * timeToNextPlot;
          } else {
-            estdt = std::min(estdt,timeToNextPlot);
+            if (timeToNextPlot > 1.e-12) {
+               estdt = std::min(estdt,timeToNextPlot);
+            }
          }
       }
       // If we're are getting close to the end of the simulation, shorten the dt too
