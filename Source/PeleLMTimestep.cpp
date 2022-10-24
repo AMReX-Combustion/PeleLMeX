@@ -166,7 +166,7 @@ PeleLM::estDivUDt(const TimeStamp &a_time) {
       Real divu_dt = amrex::ReduceMin(*density, ldata_p->divu, 0,
                                       [dtfac, rhoMin]
       AMREX_GPU_HOST_DEVICE (Box const& bx, Array4<Real const> const& rho,
-                                            Array4<Real const> const& divu ) noexcept -> Real
+                                            Array4<Real const> const& divu ) -> Real
       {
          using namespace amrex::literals;
          const auto lo = amrex::lbound(bx);
