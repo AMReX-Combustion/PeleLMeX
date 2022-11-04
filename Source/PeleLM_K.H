@@ -117,6 +117,10 @@ getTransportCoeffSoret(int i, int j, int k,
    }
    lambda(i,j,k) = lambda_cgs * 1.0e-5_rt;
    mu(i,j,k) = mu_cgs * 1.0e-1_rt;
+   //TLH tweaks
+   rhotheta(i,j,k,H_ID) *= 0.58;
+   rhotheta(i,j,k,H2_ID) *= 0.63;
+   
 }
 
 AMREX_GPU_DEVICE
