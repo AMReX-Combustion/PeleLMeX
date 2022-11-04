@@ -199,6 +199,7 @@ class PeleLM : public amrex::AmrCore {
       amrex::Vector<amrex::Array<amrex::MultiFab,AMREX_SPACEDIM>> wbar_fluxes;     // Wbar flux correction
       amrex::Vector<amrex::MultiFab> DT;        // Diffusion term of T (soret flux)
       amrex::Vector<amrex::Array<amrex::MultiFab,AMREX_SPACEDIM>> soret_fluxes;     // Soret flux correction
+     //amrex::Vector<amrex::Array<amrex::MultiFab,AMREX_SPACEDIM>> soret_fluxes_old;     // TLH SDC testing
    };
    struct AdvanceAdvData {
       AdvanceAdvData () = default;

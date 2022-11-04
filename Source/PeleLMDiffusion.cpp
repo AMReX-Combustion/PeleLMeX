@@ -244,6 +244,7 @@ void PeleLM::computeDifferentialDiffusionFluxes(const TimeStamp &a_time,
    
    //Add the Soret term
    if (m_use_soret) {
+     
      int need_soret_fluxes = (a_soretfluxes.empty()) ? 0 : 1;
      if ( !need_soret_fluxes ) {
        addSoretTerm(a_fluxes,
@@ -259,7 +260,8 @@ void PeleLM::computeDifferentialDiffusionFluxes(const TimeStamp &a_time,
 		    GetVecOfConstPtrs(getDensityVect(a_time)),
 		    GetVecOfConstPtrs(getTempVect(a_time)),
 		    GetVecOfConstPtrs(getDiffusivityVect(a_time)));
-     }
+       
+     }     
    }
 
 
@@ -447,7 +449,7 @@ void PeleLM::addSoretTerm(const Vector<Array<MultiFab*,AMREX_SPACEDIM> > &a_spfl
                          Vector<MultiFab const*> const &a_beta)
 {
    //------------------------------------------------------------------------
-   // if a container for wbar fluxes is provided, fill it
+   // if a container for soret fluxes is provided, fill it
    int need_soret_fluxes = (a_spsoretfluxes.empty()) ? 0 : 1;
 
    //------------------------------------------------------------------------
@@ -873,7 +875,28 @@ void PeleLM::differentialDiffusionUpdate(std::unique_ptr<AdvanceAdvData> &advDat
    }
    if (m_use_soret) {
      for (int lev = 0; lev <= finest_level; ++lev) {
-       
+       /* TLH SDC testing
+       int SDC_test = 1;
+       if (SDC_test) {
+	 Vector<int> liteSpecs;
+	 liteSpecs.resize(2);
+	 liteSpecs = {0,3};		  
+	 Print() << "in SDC test, iter = " << m_sdcIter << std::endl;
+	 for (int dir = 0; dir<AMREX_SPACEDIM; dir++) {
+	   MultiFab* soretfluxes = GetVecOfArrOfPtrs(diffData->soret_fluxes)[lev][dir];
+	   MultiFab* soretfluxesold = GetVecOfArrOfPtrs(diffData->soret_fluxes_old)[lev][dir];
+	   if (m_sdcIter > 0) {	     
+	     MultiFab::Subtract(*soretfluxesold,*soretfluxes,0,0,NUM_SPECIES,0);
+	     for (int n=0; n<2; n++) {
+	       Real norm=soretfluxesold->norm1(liteSpecs[n],0);
+	       Real normrel=soretfluxes->norm1(liteSpecs[n],0);
+	       Print() << "L1: " << m_sdcIter << " " << liteSpecs[n] << " " << dir << " " << norm << " " << norm/normrel << std::endl; 
+	     }
+	   }
+	   MultiFab::Copy(*soretfluxesold,*soretfluxes,0,0,NUM_SPECIES,0); 
+	 }
+       }
+       */
        auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
        
 #ifdef AMREX_USE_OMP
