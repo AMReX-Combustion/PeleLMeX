@@ -308,13 +308,12 @@ void PeleLM::readParameters() {
    // -----------------------------------------
    // diffusion
    pp.query("use_wbar",m_use_wbar);
-   pp.query("use_soret",m_use_soret);
    pp.query("deltaT_verbose",m_deltaT_verbose);
    pp.query("deltaT_iterMax",m_deltaTIterMax);
    pp.query("deltaT_tol",m_deltaT_norm_max);
    pp.query("deltaT_crashIfFailing",m_crashOnDeltaTFail);
-
-
+   ParmParse pptrans("transport"); 
+   pptrans.query("use_soret",m_use_soret);
    // -----------------------------------------
    // initialization
    pp.query("num_divu_iter",m_numDivuIter);
@@ -340,7 +339,7 @@ void PeleLM::readParameters() {
       pp.query("plot_chemDiagnostics",m_plotChemDiag);
       pp.query("plot_heatRelease",m_plotHeatRelease);
    }
-
+   
    // -----------------------------------------
    // Advection
    // -----------------------------------------
