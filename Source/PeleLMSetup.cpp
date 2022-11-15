@@ -14,6 +14,11 @@
 #ifdef PELELM_USE_SOOT
 #include "SootModel.H"
 #endif
+
+#ifdef PELELM_USE_RAD
+#include <PeleLMRad.hpp>
+#endif
+
 using namespace amrex;
 
 static Box the_same_box (const Box& b)    { return b;                }
@@ -505,6 +510,12 @@ void PeleLM::readParameters() {
    }
    soot_model->readSootParams();
 #endif
+#ifdef PELELM_USE_RAD
+   do_rad_solve = false;
+   pp.query("do_rad_solve", do_rad_solve);
+   if (m_verbose && do_rad_solve) {
+     Print() << "Simulation performed with radiation modeling \n";
+   }
 }
 
 void PeleLM::readIOParameters() {

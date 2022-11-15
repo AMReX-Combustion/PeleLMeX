@@ -118,6 +118,13 @@ void PeleLM::Advance(int is_initIter) {
      computeSootSource(AmrOldTime, m_dt);
    }
 #endif
+#ifdef PELELM_USE_RAD
+   if (do_rad_solve) {
+     BL_PROFILE_VAR("PeleLM::advance::rad", PLM_RAD);
+     computeRadSource(AmrOldTime, m_dt);
+     BL_PROFILE_VAR_STOP(PLM_RAD);
+   }
+#endif
 
    if (! m_incompressible ) {
       floorSpecies(AmrOldTime);
@@ -184,6 +191,11 @@ void PeleLM::Advance(int is_initIter) {
 #ifdef PELELM_USE_SOOT
       if (do_soot_solve) {
          clipSootMoments();
+      }
+#endif
+#ifdef PELELM_USE_RAD
+      if (do_rad_solve) {
+         computeRadSource(AmrNewTime, m_dt);
       }
 #endif
       if (m_has_divu) {

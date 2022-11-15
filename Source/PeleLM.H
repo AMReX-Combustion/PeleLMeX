@@ -24,6 +24,10 @@
 #include <PrecondOp.H>
 #endif
 
+#ifdef PELELM_USE_RAD
+#include <PeleLMRad.hpp>
+#endif
+
 // Forward declarations
 #ifdef PELELM_USE_SPRAY
 class SprayParticleContainer;
@@ -488,6 +492,16 @@ class PeleLM : public amrex::AmrCore {
 
    //-----------------------------------------------------------------------------
 #endif
+
+#ifdef PELELM_USE_RAD
+//SetRadIndx
+void setRadIndx();
+
+//Compute the radiation source term
+void computeRadSource(const PeleLM::TimeStamp &a_timestamp,
+                       const amrex::Real a_dt);
+#endif
+
    //-----------------------------------------------------------------------------
    // EOS
 
@@ -1044,6 +1058,12 @@ class PeleLM : public amrex::AmrCore {
    // Soot parameters
    SootModel* soot_model;
    bool do_soot_solve;
+#endif
+
+#ifdef PELELM_USE_RAD
+// Radiation parameters
+std::unique_ptr<PeleRad::Radiation> rad_model;
+bool do_rad_solve;
 #endif
 
    // PMF parameters

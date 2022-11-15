@@ -44,6 +44,12 @@ ifeq ($(USE_SOOT), TRUE)
    LMdirs += Source/Soot
 endif
 
+ifeq ($(USE_PELERAD), TRUE)
+   $(info ******** Radiation model is activated ********)
+   DEFINE += -DPELELM_USE_RAD
+   LMdirs += Source/Radiation
+endif
+
 Bpack += $(foreach dir, $(LMdirs), $(PELELMEX_HOME)/$(dir)/Make.package)
 Blocs += $(foreach dir, $(LMdirs), $(PELELMEX_HOME)/$(dir))
 
@@ -125,6 +131,10 @@ endif
 ifeq ($(USE_SOOT), TRUE)
    Bpack += $(PELEMP_HOME)/Source/Soot_Models/Make.package
    Blocs += $(PELEMP_HOME)/Source/Soot_Models
+endif
+ifeq ($(USE_PELERAD), TRUE)
+   Bpack += $(PELERAD_HOME)/src/Make.package
+   Blocs += $(PELERAD_HOME)/src
 endif
 
 #---------------

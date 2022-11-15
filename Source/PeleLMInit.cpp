@@ -163,6 +163,21 @@ void PeleLM::initData() {
       SprayInit();
 #endif
 
+#ifdef PELELM_USE_RAD
+    amrex::Print() << "Radiation model is activated " << "\n";
+    PeleRad::RadComps rc;
+    amrex::Vector<std::string> names;
+    pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(names);
+    for(int i=0; i<NUM_SPECIES; ++i)
+    {
+        if(names[i]=="CO2") {rc.co2Indx = i; continue;}
+        if(names[i]=="H2O") {rc.h2oIndx = i; continue;}
+        if(names[i]=="CO") rc.coIndx = i;
+    }
+   amrex::ParmParse mlmgpp("pelerad");
+   rad_model = std::make_unique<PeleRad::Radiation>(geom, grids, dmap, rc, mlmgpp, 2);
+#endif
+
       //----------------------------------------------------------------
       // Set typical values
       int is_init = 1;
