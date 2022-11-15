@@ -875,28 +875,6 @@ void PeleLM::differentialDiffusionUpdate(std::unique_ptr<AdvanceAdvData> &advDat
    }
    if (m_use_soret) {
      for (int lev = 0; lev <= finest_level; ++lev) {
-       /* TLH SDC testing
-       int SDC_test = 1;
-       if (SDC_test) {
-	 Vector<int> liteSpecs;
-	 liteSpecs.resize(2);
-	 liteSpecs = {0,3};		  
-	 Print() << "in SDC test, iter = " << m_sdcIter << std::endl;
-	 for (int dir = 0; dir<AMREX_SPACEDIM; dir++) {
-	   MultiFab* soretfluxes = GetVecOfArrOfPtrs(diffData->soret_fluxes)[lev][dir];
-	   MultiFab* soretfluxesold = GetVecOfArrOfPtrs(diffData->soret_fluxes_old)[lev][dir];
-	   if (m_sdcIter > 0) {	     
-	     MultiFab::Subtract(*soretfluxesold,*soretfluxes,0,0,NUM_SPECIES,0);
-	     for (int n=0; n<2; n++) {
-	       Real norm=soretfluxesold->norm1(liteSpecs[n],0);
-	       Real normrel=soretfluxes->norm1(liteSpecs[n],0);
-	       Print() << "L1: " << m_sdcIter << " " << liteSpecs[n] << " " << dir << " " << norm << " " << norm/normrel << std::endl; 
-	     }
-	   }
-	   MultiFab::Copy(*soretfluxesold,*soretfluxes,0,0,NUM_SPECIES,0); 
-	 }
-       }
-       */
        auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
        
 #ifdef AMREX_USE_OMP

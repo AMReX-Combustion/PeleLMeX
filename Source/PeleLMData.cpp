@@ -96,7 +96,6 @@ PeleLM::AdvanceDiffData::AdvanceDiffData(int a_finestLevel,
       if ( a_use_soret) {
 	DT.resize(a_finestLevel+1);
 	soret_fluxes.resize(a_finestLevel+1);
-	//soret_fluxes_old.resize(a_finestLevel+1); TLH: testing for SDC convergence
       }
 
       // Define MFs
@@ -116,7 +115,6 @@ PeleLM::AdvanceDiffData::AdvanceDiffData(int a_finestLevel,
 	   for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
 	     const BoxArray& faceba = amrex::convert(ba[lev],IntVect::TheDimensionVector(idim));
 	     soret_fluxes[lev][idim].define(faceba,dm[lev], NUM_SPECIES, 0, MFInfo(), *factory[lev]);
-	     //soret_fluxes_old[lev][idim].define(faceba,dm[lev], NUM_SPECIES, 0, MFInfo(), *factory[lev]); TLH: SDC convergence
 	   }
 	 }
       }
