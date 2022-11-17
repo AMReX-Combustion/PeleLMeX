@@ -762,6 +762,9 @@ void PeleLM::derivedSetup()
       derive_lst.add("diffcoeff",IndexType::TheCellType(),NUM_SPECIES,
                      var_names_massfrac,pelelm_derdiffc,the_same_box);
 
+      // Rho - sum rhoYs
+      derive_lst.add("rhominsumrhoY",IndexType::TheCellType(),1,pelelm_derrhomrhoy,the_same_box);
+
       // Heat Release
       derive_lst.add("HeatRelease",IndexType::TheCellType(),1,pelelm_derheatrelease,the_same_box);
 
