@@ -575,7 +575,7 @@ PeleLM::derive(const std::string &a_name,
           const Box& bx = mfi.growntilebox(nGrow);
           FArrayBox& derfab = (*mf)[mfi];
           FArrayBox const& statefab = (*statemf)[mfi];
-          FArrayBox const& reactfab = ldataR_p->I_R[mfi];
+          FArrayBox const& reactfab = (m_incompressible) ? ldata_p->press[mfi] : ldataR_p->I_R[mfi];
           FArrayBox const& pressfab = ldata_p->press[mfi];
           rec->derFunc()(this, bx, derfab, 0, rec->numDerive(), statefab, reactfab, pressfab, geom[lev], a_time, stateBCs, lev);
       }
@@ -627,7 +627,7 @@ PeleLM::deriveComp(const std::string &a_name,
           const Box& bx = mfi.growntilebox(nGrow);
           FArrayBox& derfab = derTemp[mfi];
           FArrayBox const& statefab = (*statemf)[mfi];
-          FArrayBox const& reactfab = ldataR_p->I_R[mfi];
+          FArrayBox const& reactfab = (m_incompressible) ? ldata_p->press[mfi] : ldataR_p->I_R[mfi];
           FArrayBox const& pressfab = ldata_p->press[mfi];
           rec->derFunc()(this, bx, derfab, 0, rec->numDerive(), statefab, reactfab, pressfab, geom[lev], a_time, stateBCs, lev);
       }
