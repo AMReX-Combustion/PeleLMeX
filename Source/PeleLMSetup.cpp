@@ -543,6 +543,8 @@ void PeleLM::readIOParameters() {
    pp.query("regrid_file", m_regrid_file);
    pp.query("file_stepDigits", m_ioDigits);
    pp.query("use_hdf5_plt",m_write_hdf5_pltfile);
+   pp.query("regrid_interp_method",m_regrid_interp_method);
+   AMREX_ASSERT(m_regrid_interp_method == 0 || m_regrid_interp_method == 1);
 
 }
 
