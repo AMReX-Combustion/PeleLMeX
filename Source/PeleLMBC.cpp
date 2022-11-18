@@ -81,16 +81,26 @@ soot_bc[] =
 };
 #endif
 
-InterpBase* PeleLM::getInterpolator() {
+InterpBase* PeleLM::getInterpolator(int a_method) {
+
+  InterpBase *mapper = nullptr;
+
+  if (a_method == 0) {
+    mapper = &mf_pc_interp;
+  } else if (a_method == 1) {
 //
 // Get EB-aware interpolater when needed
 //
 #ifdef AMREX_USE_EB
-  return (EBFactory(0).isAllRegular()) ? &mf_cell_cons_interp
-	  			       : &eb_mf_cell_cons_interp;
+    mapper = (EBFactory(0).isAllRegular()) ? &mf_cell_cons_interp
+                                           : &eb_mf_cell_cons_interp;
 #else
-  return &mf_cell_cons_interp;
+    mapper = &mf_cell_cons_interp;
 #endif
+  } else {
+    Abort("Unknown interpolation method");
+  }
+  return mapper;
 }
 
 void PeleLM::setBoundaryConditions() {
@@ -636,7 +646,7 @@ void PeleLM::fillcoarsepatch_state(int lev,
    fillTurbInflow(a_state, VELX, lev, a_time);
 
    // Interpolator
-   auto* mapper = getInterpolator();
+   auto* mapper = getInterpolator(m_regrid_interp_method);
 
    PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirState>> crse_bndry_func(geom[lev-1], fetchBCRecArray(0,nCompState),
                                                                          PeleLMCCFillExtDirState{lprobparm, lpmfdata,
@@ -659,7 +669,7 @@ void PeleLM::fillcoarsepatch_gradp(int lev,
    ProbParm const* lprobparm = prob_parm_d;
 
    // Interpolator
-   auto* mapper = getInterpolator();
+   auto* mapper = getInterpolator(m_regrid_interp_method);
 
    PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> crse_bndry_func(geom[lev-1], {m_bcrec_force},
                                                                        PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
@@ -680,7 +690,7 @@ void PeleLM::fillcoarsepatch_divu(int lev,
    ProbParm const* lprobparm = prob_parm_d;
 
    // Interpolator
-   auto* mapper = getInterpolator();
+   auto* mapper = getInterpolator(m_regrid_interp_method);
 
    PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> crse_bndry_func(geom[lev-1], {m_bcrec_divu},
                                                                        PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
@@ -701,7 +711,7 @@ void PeleLM::fillcoarsepatch_reaction(int lev,
    ProbParm const* lprobparm = prob_parm_d;
 
    // Interpolator
-   auto* mapper = getInterpolator();
+   auto* mapper = getInterpolator(m_regrid_interp_method);
 
    PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> crse_bndry_func(geom[lev-1], {m_bcrec_force},
                                                                          PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
