@@ -175,6 +175,28 @@ void pelelm_deravgpress (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int
 }
 
 //
+// Compute the velocity magnitude
+//
+void pelelm_dermgvel (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int /*ncomp*/,
+                      const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
+                      const Geometry& /*geomdata*/,
+                      Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
+
+{
+    AMREX_ASSERT(derfab.box().contains(bx));
+    AMREX_ASSERT(statefab.box().contains(bx));
+    auto const vel = statefab.array(VELX);
+    auto       der = derfab.array(dcomp);
+    amrex::ParallelFor(bx,
+    [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+    {
+        der(i,j,k) = std::sqrt(( AMREX_D_TERM(  vel(i,j,k,0)*vel(i,j,k,0),
+                                              + vel(i,j,k,1)*vel(i,j,k,1),
+                                              + vel(i,j,k,2)*vel(i,j,k,2)) ));
+    });
+}
+
+//
 // Compute vorticity magnitude
 //
 void pelelm_dermgvort (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int /*ncomp*/,

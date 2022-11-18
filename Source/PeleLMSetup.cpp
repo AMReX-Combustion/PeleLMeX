@@ -26,7 +26,7 @@ void PeleLM::Setup() {
    // Ensure grid is isotropic
    {
      auto const dx = geom[0].CellSizeArray();
-     AMREX_ALWAYS_ASSERT(AMREX_D_TERM(,dx[0] == dx[1], && dx[1] == dx[2]));
+     AMREX_ALWAYS_ASSERT(AMREX_D_TERM(,amrex::almostEqual(dx[0], dx[1]), && amrex::almostEqual(dx[1], dx[2])));
    }
    // Print build info to screen
    const char* githash1 = buildInfoGetGitHash(1);
@@ -786,6 +786,9 @@ void PeleLM::derivedSetup()
 
    // Viscosity
    derive_lst.add("viscosity",IndexType::TheCellType(),1,pelelm_dervisc,the_same_box);
+
+   // Velocity magnitude
+   derive_lst.add("mag_vel",IndexType::TheCellType(),1,pelelm_dermgvel,the_same_box);
 
    // Vorticity magnitude
    derive_lst.add("mag_vort",IndexType::TheCellType(),1,pelelm_dermgvort,grow_box_by_two);
