@@ -369,6 +369,19 @@ void PeleLM::readParameters() {
    } else if ( m_advection_key == "Godunov_PPM" ) {
        m_advection_type = "Godunov";
        m_Godunov_ppm = 1;
+       m_Godunov_ppm_limiter = PPM::VanLeer;
+       ParmParse ppg("godunov");
+       ppg.query("use_forceInTrans", m_Godunov_ForceInTrans);
+   } else if ( m_advection_key == "Godunov_PPM_WENOZ" ) {
+       m_advection_type = "Godunov";
+       m_Godunov_ppm = 1;
+       m_Godunov_ppm_limiter = PPM::WENOZ;
+       ParmParse ppg("godunov");
+       ppg.query("use_forceInTrans", m_Godunov_ForceInTrans);
+   } else if ( m_advection_key == "Godunov_PPM_NOLIM" ) {
+       m_advection_type = "Godunov";
+       m_Godunov_ppm = 1;
+       m_Godunov_ppm_limiter = PPM::NoLimiter;
        ParmParse ppg("godunov");
        ppg.query("use_forceInTrans", m_Godunov_ForceInTrans);
    } else if ( m_advection_key == "Godunov_BDS" ) {

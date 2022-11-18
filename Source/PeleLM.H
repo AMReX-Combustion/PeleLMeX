@@ -8,6 +8,7 @@
 #include <hydro_NodalProjector.H>
 #include <AMReX_ErrorList.H>
 #include <AMReX_VisMF.H>
+#include <hydro_godunov_ppm.H>
 
 #include <mechanism.H>
 #include "PelePhysics.H"
@@ -1186,6 +1187,7 @@ class PeleLM : public amrex::AmrCore {
    std::string m_predict_advection_type;
    std::string m_advection_type;
    int m_Godunov_ppm = 1;
+   int m_Godunov_ppm_limiter = PPM::VanLeer;
    int m_Godunov_ForceInTrans = 0;
 
    // Temporals
