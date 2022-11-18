@@ -135,6 +135,9 @@ The following list of derived variables are available in PeleLMeX:
     * - `HeatRelease`
       - 1
       - Heat release rate from chem. reactions
+    * - `rhominsumrhoY`
+      - 1
+      - Rho minus sum of rhoYs, for debug purposes
 
 Note that `mixture_fraction` and `progress_variable` requires additional inputs from the users as described below.
 

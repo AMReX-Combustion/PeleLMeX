@@ -495,6 +495,9 @@ class PeleLM : public amrex::AmrCore {
    void setThermoPress(const PeleLM::TimeStamp &a_time);
    void setThermoPress(int lev, const PeleLM::TimeStamp &a_time);
 
+   // Enforce rho/rhoYs consistency
+   void setRhoToSumRhoY(int lev, const PeleLM::TimeStamp &a_time);
+
    // update Temperature from rhoY and rhoH
    void setTemperature(const PeleLM::TimeStamp &a_time);
    void setTemperature(int lev, const PeleLM::TimeStamp &a_time);
@@ -560,8 +563,11 @@ class PeleLM : public amrex::AmrCore {
 
    //-----------------------------------------------------------------------------
    // BOUNDARY CONDITIONS / FILLPATCH
+   amrex::InterpBase* getInterpolator(int a_method=1);
 
-   amrex::InterpBase* getInterpolator();
+   // Interpolation method for regrid (default to cell cons interp)
+   int m_regrid_interp_method = 1;
+
    // Convert PhysBC into field BCs
    void setBoundaryConditions();
 

@@ -543,6 +543,8 @@ void PeleLM::readIOParameters() {
    pp.query("regrid_file", m_regrid_file);
    pp.query("file_stepDigits", m_ioDigits);
    pp.query("use_hdf5_plt",m_write_hdf5_pltfile);
+   pp.query("regrid_interp_method",m_regrid_interp_method);
+   AMREX_ASSERT(m_regrid_interp_method == 0 || m_regrid_interp_method == 1);
 
 }
 
@@ -761,6 +763,9 @@ void PeleLM::derivedSetup()
       }
       derive_lst.add("diffcoeff",IndexType::TheCellType(),NUM_SPECIES,
                      var_names_massfrac,pelelm_derdiffc,the_same_box);
+
+      // Rho - sum rhoYs
+      derive_lst.add("rhominsumrhoY",IndexType::TheCellType(),1,pelelm_derrhomrhoy,the_same_box);
 
       // Heat Release
       derive_lst.add("HeatRelease",IndexType::TheCellType(),1,pelelm_derheatrelease,the_same_box);

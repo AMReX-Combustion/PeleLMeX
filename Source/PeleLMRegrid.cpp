@@ -75,6 +75,12 @@ void PeleLM::MakeNewLevelFromCoarse( int lev,
    }
 
    if (!m_incompressible) {
+      // Enforce density / species density consistency
+      // only usefull when using cell cons interp
+      if (m_regrid_interp_method == 1) {
+         setRhoToSumRhoY(lev, AmrNewTime);
+      }
+
       // Initialize thermodynamic pressure
       setThermoPress(lev, AmrNewTime);
    }
