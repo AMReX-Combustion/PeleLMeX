@@ -1353,7 +1353,7 @@ PeleLM::initMixtureFraction()
             Abort("Unknown mixtureFraction.format ! Should be 'Cantera' or 'RealList'");
         }
     }
-    if (fuelID<0 && !hasUserMF) {
+    if (fuelID<0 && hasUserMF) {
         Print() << " Mixture fraction definition lacks fuelID: consider using peleLM.fuel_name keyword \n";
     }
 
