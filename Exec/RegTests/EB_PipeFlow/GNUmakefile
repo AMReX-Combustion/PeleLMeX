@@ -26,6 +26,6 @@ USE_HIP         = FALSE
 # PelePhysics
 Chemistry_Model = air
 Eos_Model       = Fuego
-Transport_Model = Constant
+Transport_Model = Simple
 
 include $(PELELMEX_HOME)/Utils/Make.PeleLMeX
