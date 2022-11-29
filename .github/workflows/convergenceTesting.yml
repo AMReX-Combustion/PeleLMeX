@@ -10,7 +10,7 @@ jobs:
   #Run the convergence test on CoVo
   COVO_Conv:
     name: Velocity-Advection
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     env: 
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
