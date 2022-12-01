@@ -9,8 +9,7 @@ Welcome to PeleLMeX's documentation!
 `PeleLMeX` is the non-subcycling version of `PeleLM <https://amrex-combustion.github.io/PeleLM/>`_, an adaptive-mesh low Mach number hydrodynamics 
 code for reacting flows. If you need help or have questions, please join the users `forum <https://groups.google.com/forum/#!forum/pelelmusers>`_.
 The documentation pages appearing here are distributed with the code in the ``Docs`` folder as "restructured text" files.  The html is built
-automatically with certain pushes to the `PeleLM` GibHub repository and are maintained online by `ReadTheDocs <https://pelelmex.readthedocs.io/en/latest>`_.
-A local version can also be built as follows ::
+automatically with certain pushes to the `PeleLMeX` GibHub repository. A local version can also be built as follows ::
 
     cd ${PELELMEX_HOME}/Docs
     make html
