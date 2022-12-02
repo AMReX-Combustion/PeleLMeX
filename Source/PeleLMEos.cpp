@@ -11,7 +11,6 @@ void PeleLM::setThermoPress(const TimeStamp &a_time) {
    for (int lev = 0; lev <= finest_level; ++lev) {
       setThermoPress(lev, a_time);
    }
-   averageDownRhoRT(a_time);
 }
 
 void PeleLM::setThermoPress(int lev, const TimeStamp &a_time) {
@@ -162,6 +161,24 @@ void PeleLM::calcDivU(int is_init,
       auto ldata_p = getLevelDataPtr(lev,a_time);
       fillpatch_divu(lev,time,ldata_p->divu,nGrowDivu);
    }
+}
+
+void PeleLM::setRhoToSumRhoY(int lev, const TimeStamp &a_time) {
+
+   AMREX_ASSERT(a_time == AmrOldTime || a_time == AmrNewTime);
+
+   auto ldata_p = getLevelDataPtr(lev,a_time);
+   auto const& sma = ldata_p->state.arrays();
+
+   amrex::ParallelFor(ldata_p->state, [=]
+   AMREX_GPU_DEVICE (int box_no, int i, int j, int k) noexcept
+   {
+      sma[box_no](i,j,k,DENSITY) = 0.0;
+      for (int n = 0; n < NUM_SPECIES; n++) {
+         sma[box_no](i,j,k,DENSITY) += sma[box_no](i,j,k,FIRSTSPEC+n);
+      }
+   });
+   Gpu::streamSynchronize();
 }
 
 void PeleLM::setTemperature(const TimeStamp &a_time) {

@@ -58,6 +58,7 @@ Time stepping parameters
     #-------------------------TIME STEPPING------------------------
     amr.max_step      = 20                 # Maximum number of steps
     amr.stop_time     = 0.001              # Maximum simulation time [s]
+    amr.max_wall_time = 1.0                # Maximum wall clock time [hr]
     amr.cfl           = 0.5                # [OPT, DEF=0.7] CFL for advection-controlled dt estimate
     amr.fixed_dt      = 1e-6               # [OPT] optional fixed dt (override CFL condition)
     amr.min_dt        = 1e-11              # [OPT, DEF=1e-12] small time step size limit triggering simulation termination
@@ -65,8 +66,8 @@ Time stepping parameters
     amr.dt_shrink     = 0.0001             # [OPT, DEF=1.0] dt factor upon initialization
     amr.dt_change_max = 1.1                # [OPT, DEF=1.1] maximum dt change between consecutive steps
 
-Note that either a `max_step` or a `stop_time` is required, and if both are specified, the first stopping criteria
-encountered will lead to termination of the simulation.
+Note that one of `max_step`, `stop_time`, or `max_wall_time` is required, and if more than one is specified,
+the first stopping criterion encountered will lead to termination of the simulation.
 
 IO parameters
 -------------
@@ -135,6 +136,9 @@ The following list of derived variables are available in PeleLMeX:
     * - `HeatRelease`
       - 1
       - Heat release rate from chem. reactions
+    * - `rhominsumrhoY`
+      - 1
+      - Rho minus sum of rhoYs, for debug purposes
 
 Note that `mixture_fraction` and `progress_variable` requires additional inputs from the users as described below.
 

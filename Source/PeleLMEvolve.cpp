@@ -23,6 +23,8 @@ void PeleLM::Evolve() {
       bool regridded = false;
       if ( (m_regrid_int > 0) && (m_nstep > 0) && (m_nstep%m_regrid_int == 0) ) {
          if (m_verbose > 0) amrex::Print() << " Regridding...\n";
+         // Average down I_R to have proper values in newly uncovered areas
+         if (!m_incompressible) averageDownReaction();
          regrid(0, m_cur_time);
          resetMacProjector();
          resetCoveredMask();
@@ -71,9 +73,21 @@ void PeleLM::Evolve() {
       }
 
       // Check for the end of the simulation
+      bool over_max_wall_time = false;
+      if (m_max_wall_time > 0.0) {
+        amrex::Real t_elapsed =  ParallelDescriptor::second() - m_wall_start;
+        ParallelDescriptor::ReduceRealMax(t_elapsed);
+        if ( t_elapsed >= (m_max_wall_time * 3600)) {
+          over_max_wall_time = true;
+          if (m_verbose > 0) {
+            amrex::Print() << std::endl << "Reached maxmimum allowed wall time, stopping ..." << std::endl;
+          }
+        }
+      }
       do_not_evolve = ( (m_max_step >= 0 && m_nstep >= m_max_step) ||
                         (m_stop_time >= 0.0 && m_cur_time >= m_stop_time - 1.0e-12 * m_dt) ||
-                        (m_dt < m_min_dt) ||    
+                        (m_dt < m_min_dt) ||
+                        over_max_wall_time ||
                         dump_and_stop );
 
    }

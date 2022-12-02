@@ -8,10 +8,10 @@ on:
      branches: [ main, development ]
 
 jobs:
-  #Build the 2D FlameSheet RegTest with GNU7.5 and no MPI support
+  #Build the 2D FlameSheet RegTest with GNU9.3 and no MPI support
   FS2D_NoMPI:
-    name: GNU@7.5 NOMPI Comp [FS2D]
-    runs-on: ubuntu-18.04
+    name: GNU@9.3 NOMPI Comp [FS2D]
+    runs-on: ubuntu-latest
     env: 
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
@@ -19,7 +19,7 @@ jobs:
       uses: styfle/cancel-workflow-action@0.6.0
       with:
         access_token: ${{github.token}}
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies_gcc10.sh
     - name: Repo Dependencies
@@ -37,10 +37,10 @@ jobs:
         make TPL COMP=gnu USE_MPI=FALSE
         make -j 2 COMP=gnu USE_MPI=FALSE
   
-  # Build the 2D FlameSheet RegTest with GNU7.5 and MPI support
+  # Build the 2D FlameSheet RegTest with GNU9.3 and MPI support
   FS2D_MPI:
-    name: GNU@7.5 MPI Comp [FS2D]
-    runs-on: ubuntu-18.04
+    name: GNU@9.3 MPI Comp [FS2D]
+    runs-on: ubuntu-latest
     env: 
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
@@ -48,7 +48,7 @@ jobs:
       uses: styfle/cancel-workflow-action@0.6.0
       with:
         access_token: ${{github.token}}
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies_gcc10.sh
     - name: Repo Dependencies
@@ -64,10 +64,10 @@ jobs:
         make TPL COMP=gnu
         make -j 2 COMP=gnu
   
-  # Build the 2D FlameSheet RegTest with GNU7.5 and MPI+OMP support
+  # Build the 2D FlameSheet RegTest with GNU9.3 and MPI+OMP support
   FS2D_MPIOMP:
-    name: GNU@7.5 MPI OMP Comp [FS2D]
-    runs-on: ubuntu-18.04
+    name: GNU@9.3 MPI OMP Comp [FS2D]
+    runs-on: ubuntu-latest
     env: 
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
@@ -75,7 +75,7 @@ jobs:
       uses: styfle/cancel-workflow-action@0.6.0
       with:
         access_token: ${{github.token}}
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies_gcc10.sh
     - name: Repo Dependencies
@@ -91,10 +91,10 @@ jobs:
         make TPL COMP=gnu USE_OMP=TRUE
         make -j 2 COMP=gnu USE_OMP=TRUE
 
-  # Build and Run the CoVo RegTest with GNU7.5 and no MPI support
+  # Build and Run the CoVo RegTest with GNU9.3 and no MPI support
   COVO2D_NoMPIRun:
-    name: GNU@7.5 NOMPI Run [COVO2D]
-    runs-on: ubuntu-18.04
+    name: GNU@9.3 NOMPI Run [COVO2D]
+    runs-on: ubuntu-latest
     env: 
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
@@ -102,7 +102,7 @@ jobs:
       uses: styfle/cancel-workflow-action@0.6.0
       with:
         access_token: ${{github.token}}
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies_gcc10.sh
     - name: Repo Dependencies
@@ -122,10 +122,10 @@ jobs:
       run: |
         ./PeleLMeX2d.gnu.ex input.2d_CoVo amr.max_step=2 amr.plot_int=-1 amr.check_int=-1
 
-  # Build and Run the HoBubble RegTest with GNU7.5 and MPI support
+  # Build and Run the HoBubble RegTest with GNU9.3 and MPI support
   HB2D_MPIRun:
-    name: GNU@7.5 MPI Run [HB2D]
-    runs-on: ubuntu-18.04
+    name: GNU@9.3 MPI Run [HB2D]
+    runs-on: ubuntu-latest
     env: 
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
@@ -133,7 +133,7 @@ jobs:
       uses: styfle/cancel-workflow-action@0.6.0
       with:
         access_token: ${{github.token}}
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies_gcc10.sh
     - name: Repo Dependencies
@@ -153,10 +153,10 @@ jobs:
       run: |
         ./PeleLMeX2d.gnu.MPI.ex input.2d-regt amr.max_step=20 amr.plot_int=-1 amr.check_int=-1
 
-  # Build and Run the HoBubble RegTest with GNU7.5 in DEBUG
+  # Build and Run the HoBubble RegTest with GNU9.3 in DEBUG
   HB2D_DBGRun:
-    name: GNU@7.5 DEBUG Run [HB2DDBG]
-    runs-on: ubuntu-18.04
+    name: GNU@9.3 DEBUG Run [HB2DDBG]
+    runs-on: ubuntu-latest
     env: 
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
@@ -164,7 +164,7 @@ jobs:
       uses: styfle/cancel-workflow-action@0.6.0
       with:
         access_token: ${{github.token}}
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies_gcc10.sh
     - name: Repo Dependencies
@@ -184,10 +184,10 @@ jobs:
       run: |
         ./PeleLMeX2d.gnu.DEBUG.ex input.2d-regt amr.max_step=20 amr.plot_int=-1 amr.check_int=-1
 
-  # Build and Run the EnclosedFlame RegTest with GNU7.5 and MPI support
+  # Build and Run the EnclosedFlame RegTest with GNU9.3 and MPI support
   EF2D_MPIRun:
-    name: GNU@7.5 MPI Run [EF2D]
-    runs-on: ubuntu-18.04
+    name: GNU@9.3 MPI Run [EF2D]
+    runs-on: ubuntu-latest
     env: 
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
@@ -195,7 +195,7 @@ jobs:
       uses: styfle/cancel-workflow-action@0.6.0
       with:
         access_token: ${{github.token}}
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies_gcc10.sh
     - name: Repo Dependencies
@@ -215,10 +215,10 @@ jobs:
       run: |
         ./PeleLMeX2d.gnu.MPI.ex input.2d-regt amr.max_step=2 amr.plot_int=-1 amr.check_int=-1
 
-  # Build and Run the EB_FlowPastCylinder RegTest with GNU7.5 and MPI support
+  # Build and Run the EB_FlowPastCylinder RegTest with GNU9.3 and MPI support
   FPC2D_MPIRun:
-    name: GNU@7.5 MPI Run [FPC2DDBG]
-    runs-on: ubuntu-18.04
+    name: GNU@9.3 MPI Run [FPC2DDBG]
+    runs-on: ubuntu-latest
     env: 
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
@@ -226,7 +226,7 @@ jobs:
       uses: styfle/cancel-workflow-action@0.6.0
       with:
         access_token: ${{github.token}}
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies_gcc10.sh
     - name: Repo Dependencies
@@ -247,10 +247,10 @@ jobs:
         ./PeleLMeX2d.gnu.DEBUG.MPI.ex input.2d-regt amr.max_step=2 amr.plot_int=-1 amr.check_int=-1 amrex.fpe_trap_invalid=1 amrex.fpe_trap_zero=1 amrex.fpe_trap_overflow=1
         ./PeleLMeX2d.gnu.DEBUG.MPI.ex input.2d-regt_WallBump amr.max_step=2 amr.plot_int=-1 amr.check_int=-1
 
-  # Build and Run the HIT RegTest with GNU7.5 and MPI support
+  # Build and Run the HIT RegTest with GNU9.3 and MPI support
   HIT3D_MPIRun:
-    name: GNU@7.5 MPI Run [HIT3D]
-    runs-on: ubuntu-18.04
+    name: GNU@9.3 MPI Run [HIT3D]
+    runs-on: ubuntu-latest
     env: 
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
@@ -258,7 +258,7 @@ jobs:
       uses: styfle/cancel-workflow-action@0.6.0
       with:
         access_token: ${{github.token}}
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies_gcc10.sh
     - name: Repo Dependencies
@@ -279,10 +279,10 @@ jobs:
         ./PeleLMeX3d.gnu.MPI.ex input.3d amr.max_step=10 amr.plot_int=-1 amr.check_int=-1
 
 
-  # Build and Run the EB_PipeFlow RegTest with GNU7.5 and MPI support
+  # Build and Run the EB_PipeFlow RegTest with GNU9.3 and MPI support
   EBPF3D_MPIRun:
-    name: GNU@7.5 MPI Run [EBPF3D]
-    runs-on: ubuntu-18.04
+    name: GNU@9.3 MPI Run [EBPF3D]
+    runs-on: ubuntu-latest
     env: 
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
@@ -290,7 +290,7 @@ jobs:
       uses: styfle/cancel-workflow-action@0.6.0
       with:
         access_token: ${{github.token}}
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies_gcc10.sh
     - name: Repo Dependencies
@@ -310,10 +310,10 @@ jobs:
       run: |
         mpirun -n 2 ./PeleLMeX3d.gnu.MPI.ex input.3d-regt amr.max_step=2 amr.plot_int=-1 amr.check_int=-1 amr.n_cell=128 32 32
 
-  # Build and Run the TurbInflow RegTest in DEBUG with GNU7.5 and MPI support
+  # Build and Run the TurbInflow RegTest in DEBUG with GNU9.3 and MPI support
   TI3D_MPIRun:
-    name: GNU@7.5 MPI Run [TI3DDBG]
-    runs-on: ubuntu-18.04
+    name: GNU@9.3 MPI Run [TI3DDBG]
+    runs-on: ubuntu-latest
     env: 
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
@@ -321,7 +321,7 @@ jobs:
       uses: styfle/cancel-workflow-action@0.6.0
       with:
         access_token: ${{github.token}}
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies_gcc10.sh
     - name: Repo Dependencies
@@ -354,10 +354,10 @@ jobs:
         mpirun -n 2 ./PeleLMeX3d.gnu.DEBUG.MPI.ex input.3d_posX peleLM.num_init_iter=1 amr.n_cell=32 32 32 amr.max_step=2 amr.plot_int=-1 amr.check_int=-1
         mpirun -n 2 ./PeleLMeX3d.gnu.DEBUG.MPI.ex input.3d_BoxLoZ peleLM.num_init_iter=1 amr.n_cell=32 32 32 amr.max_step=2 amr.plot_int=-1 amr.check_int=-1
 
-  # Build and Run the SprayTest RegTest with GNU7.5 and MPI support
+  # Build and Run the SprayTest RegTest with GNU9.3 and MPI support
   SPRAY_MPIRun:
-    name: GNU@7.5 MPI Run [SPRAY]
-    runs-on: ubuntu-18.04
+    name: GNU@9.3 MPI Run [SPRAY]
+    runs-on: ubuntu-latest
     env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
@@ -365,7 +365,7 @@ jobs:
       uses: styfle/cancel-workflow-action@0.6.0
       with:
         access_token: ${{github.token}}
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: System Dependencies
       run: |
          .github/workflows/dependencies/dependencies_gcc10.sh
