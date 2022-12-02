@@ -1117,6 +1117,8 @@ class PeleLM : public amrex::AmrCore {
    amrex::Real m_dtChangeMax  = 1.1;
    amrex::Real m_stop_time    = -1.0;
    amrex::Real m_max_dt       = 1e12;
+   amrex::Real m_wall_start   = 0.0;
+   amrex::Real m_max_wall_time = -1.0;
    int m_nstep = -1; 
    int m_max_step = -1;
 
