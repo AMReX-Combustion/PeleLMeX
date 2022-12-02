@@ -23,6 +23,8 @@ static Box grow_box_by_two (const Box& b) { return amrex::grow(b,2); }
 void PeleLM::Setup() {
    BL_PROFILE("PeleLM::Setup()");
 
+   m_wall_start = amrex::ParallelDescriptor::second();
+
    // Ensure grid is isotropic
    {
      auto const dx = geom[0].CellSizeArray();
@@ -422,6 +424,7 @@ void PeleLM::readParameters() {
    // Time stepping control
    // -----------------------------------------
    ParmParse ppa("amr");
+   ppa.query("max_wall_time", m_max_wall_time); // hours
    ppa.query("max_step", m_max_step);
    ppa.query("stop_time", m_stop_time);
    ppa.query("message_int", m_message_int);
