@@ -14,7 +14,7 @@ setup and control of `PeleLMeX` in later sections. `PeleLMeX` is a non-subcyclin
 Overview of `PeleLMeX`
 ----------------------
 
-`PeleLMeX` evolves chemically reacting low Mach number flows with block-structured adaptive mesh refinement (AMR). The code depends upon the `AMReX <https://github.com/AMReX-Codes/amrex>` library to provide the underlying data structures, and tools to manage and operate on them across massively parallel computing architectures. `PeleLMeX` also utilizes the source code and algorithmic infrastructure of `AMReX-Hydro <https://github.com/AMReX-Codes/AMReX-Hydro>`. `PeleLMeX` borrows heavily from `PeleLM <https://github.com/AMReX-Combustion/PeleLM>`.  The core algorithms in `PeleLM` are described in the following papers:
+`PeleLMeX` evolves chemically reacting low Mach number flows with block-structured adaptive mesh refinement (AMR). The code depends upon the `AMReX <https://github.com/AMReX-Codes/amrex>`_ library to provide the underlying data structures, and tools to manage and operate on them across massively parallel computing architectures. `PeleLMeX` also utilizes the source code and algorithmic infrastructure of `AMReX-Hydro <https://github.com/AMReX-Codes/AMReX-Hydro>`_. `PeleLMeX` borrows heavily from `PeleLM <https://github.com/AMReX-Combustion/PeleLM>`_. The core algorithms in `PeleLM` are described in the following papers:
 
 * *A conservative, thermodynamically consistent numerical approach for low Mach number combustion. I. Single-level integration*, A. Nonaka, J. B. Bell, and M. S. Day, *Combust. Theor. Model.*, **22** (1) 156-184 (2018)
 
@@ -27,7 +27,7 @@ Overview of `PeleLMeX`
 * *A Conservative Adaptive Projection Method for the Variable Density Incompressible Navier-Stokes Equations,* A. S. Almgren, J. B. Bell, P. Colella, L. H. Howell, and M. L. Welcome, *J. Comp. Phys.*, **142** 1-46 (1998)
 
 The low Mach number flow equations
-----------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 `PeleLMeX` solves the reacting Navier-Stokes flow equations in the *low Mach number* regime, where the characteristic fluid velocity is small compared to the sound speed, and the effect of acoustic wave propagation is unimportant to the overall dynamics of the system. Accordingly, acoustic wave propagation can be mathematically removed from the equations of motion, allowing for a numerical time step based on an advective CFL condition, and this leads to an increase in the allowable time step of order :math:`1/M` over an explicit, fully compressible method (:math:`M` is the Mach number).  In this mathematical framework, the total pressure is decomposed into the sum of a spatially constant (ambient) thermodynamic pressure :math:`P_0` and a perturbational pressure, :math:`\pi({\vec x})` that drives the flow.  Under suitable conditions, :math:`\pi/P_0 = \mathcal{O} (M^2)`. 
 
@@ -145,4 +145,27 @@ and simplified velocity constraint,
 
      \nabla \cdot \boldsymbol{u} = \delta S - \delta \theta \frac{\overline S}{\overline \theta} .
 
-    
+Geometry with Embedded Boundaries
+---------------------------------
+
+`PeleLMeX` relies on `AMReX's implementation<https://amrex-codes.github.io/amrex/docs_html/EB_Chapter.html>`_ of 
+the Embedded Boundaries (EB) approach to represent geometrical objects. In this approach, the underlying computational 
+mesh is uniform and block-structured, but the boundary of the irregular-shaped computational domain conceptually cuts 
+through this mesh. Each cell in the mesh becomes labeled as regular, cut or covered, and the finite-volume 
+based discretization methods traditionally used in AMReX applications need to be modified to incorporate these cell shapes.
+AMReX provides the necessary EB data structures, including volume and area fractions, surface normals and centroids, 
+as well as local connectivity information. The fluxes are then modified to account for the apperture opening between adjacent
+cells and the additional EB-fluxes are included when constructing the cell flux divergences.
+
+A common problem arising with EB is the presence of the small cut-cells which can either introduce undesirable constraint on 
+the explicit time step size or lead to numerical instabilities if not accounterd for. `PeleLMeX` relies on a combination of 
+classical flux redistribution (FRD) (Pember et al, 1995) and state redistribution (SRD) (Giuliani et al., 2022) to circumvent the issue.
+In particular, explicit advective fluxes are treated using SRD while explicit diffusion fluxes (appearing in the SDC context) 
+are treated with FRD. Note that implicit diffusion fluxes are not redistributed as AMReX's linear operators are EB-aware.
+
+The use of AMReX's multigrid linear solver introduces contraint on the complexity of the geometry `PeleLMeX` is able to handle. The
+efficiency of the multigrid appraoch relies on generating coarse version of the linear problem. If the geometry includes thin elements
+(such as tube or plate) or narrow channels, coarsening of the geometry is rapidly limited by the occurence of multi-cut cells (not 
+supported by AMReX) and the linear solvers are no longer able to robustly tackle projections and implicit diffusion solves. AMReX
+include an interface to HYPRE which can help circumvent the issue by sending the coarse-level geometry directly to HYPRE algebraic
+multigrid solvers. More details on how to use HYPRE is provided in control Section.

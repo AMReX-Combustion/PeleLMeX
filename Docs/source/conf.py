@@ -22,7 +22,7 @@ copyright = '2021-2022, PeleTeam'
 author = 'PeleTeam'
 
 # The full version, including alpha/beta/rc tags
-release = '21.11'
+release = '22.11'
 
 
 # -- General configuration ---------------------------------------------------
@@ -30,8 +30,7 @@ release = '21.11'
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['sphinx.ext.autodoc'
-]
+extensions = ['sphinx.ext.autodoc']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
