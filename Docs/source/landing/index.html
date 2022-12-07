@@ -45,7 +45,7 @@
       <ul class="actions">
 	<li>
 	  <a href="https://github.com/AMReX-Combustion/PeleLMeX" class="button big">Source Code</a>
-	  <a href="https://amrex-combustion.github.io/PeleLMeX/" class="button big">Documentation</a>
+	  <a href="manual/html/index.html" class="button big">Documentation</a>
 	</li>
       </ul>
       <ul class="actions small">
@@ -59,22 +59,22 @@
 	<ul class="alt">
           <li><h3>Getting Started</h3>
             <p>
-              PeleLM depends on several separate GitHub repositories, each under active development.  This
+              PeleLMeX depends on several separate GitHub repositories, each under active development. This
               can significantly complicate the required effort to keep all the required software up to date and internally
-              compatible.  Recently, we moved the Pele codes to a new software management style based on git "submodules",
+              compatible. The Pele codes rely on git "submodules" to get the appropriate version of each component,
               which dramatically simplifies the initial install/build/run procedure:
             </p>
 	    <pre>
-              git clone --recursive https://github.com/AMReX-Combustion/PeleProduction.git
-              cd PeleLMruns/FlameSheet2D
+              git clone --recursive https://github.com/AMReX-Combustion/PeleLMeX.git
+              cd Exec/RegTests/FlameSheet/
               make -j 12
-              mpiexec -np 8 ./PeleLM2d.gnu.MPI.ex inputs.2d-regt
+              mpiexec -np 8 ./PeleLMeX2d.gnu.MPI.ex input.2d-regt
             </pre>
             <p>
-              The <a href="https://pelelm.readthedocs.io/en/latest/index.html">PeleLM User's Guide</a>
+              The <a href="manual/html/index.html">PeleLMeX Documentation</a>
               continues to be the best place to learn more about the code.
               You can also ask for help by opening up an issue on the 
-              <a href="https://github.com/AMReX-Combustion/PeleLM">PeleLM GitHub webpage</a>.
+              <a href="https://github.com/AMReX-Combustion/PeleLMeX">PeleLMeX GitHub webpage</a>.
             </p>
 	    </li>
 	  </ul>
@@ -86,22 +86,13 @@
       <div class="container">
 	<section class="ack">
           <h4>Acknowledgment</h4>
-	  The PeleLM code was originally created in 2000 with the name "LMC" and was a BoxLib-based AMR code for low Mach combustion
-          developed by the 
-          <a href="https://ccse.lbl.gov/"> 
-            Center for Computational Sciences and Engineering</a>
-          at <a href="http://www.lbl.gov/"> LBNL </a>.
-          The main algorithms in LMC were first published in
-          <em>"Numerical Simulation of Laminar Reacting Flows with Complex Chemistry,"</em> M. S. Day and J. B. Bell
-          <em>Combust. Theory Model.</em> <b>4</b> 535-556 (2000).  Enhancements to the code since then have been 
-          supported by the US Department of Energy under the Advanced Scientific Computing Research (ASCR) base math program.
-          In 2017, LMC was renamed PeleLM, and is currently supported under the <a href="https://www.exascaleproject.org">The Pele Project</a>.
-          The Pele Project is supported by the Exascale Computing Project (ECP), Project Number: 17-SC-20-SC, a collaborative effort of two DOE organizations -- the Office of Science and the National Nuclear Security Administration -- responsible for the planning and preparation of a capable exascale ecosystem -- including software, applications, hardware, advanced system engineering, and early testbed platforms -- to support the nation's exascale computing imperative.
+This research was supported by the Exascale Computing Project (ECP), Project Number: 17-SC-20-SC, a collaborative effort of two DOE organizations -- the Office of Science and the National Nuclear Security Administration -- responsible for the planning and preparation of a capable exascale ecosystem -- including software, applications, hardware, advanced system engineering, and early testbed platforms -- to support the nation's exascale computing imperative.
 	</section>
 	<div class="row">
 	  <div class="8u 12u$(medium)">
 	    <ul class="copyright">
-	      <li>&copy; The Regents of the University of California.  All rights reserved.</li>
+	      <li>&copy; Alliance for Sustainable Energy, LLC and The Regents of the University of California, through Lawrence Berkeley National Laboratory
+All rights reserved.</li>
 	    </ul>
 	  </div>
 	</div>

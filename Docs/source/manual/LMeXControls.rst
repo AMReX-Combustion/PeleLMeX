@@ -188,7 +188,7 @@ Embedded Geometry
 -----------------
 
 `PeleLMeX` geomtry relies on AMReX implementation of the EB method. Simple geometrical objects 
-can thus be constructed using `AMReX internal parser<https://amrex-codes.github.io/amrex/docs_html/EB.html>`_.
+can thus be constructed using `AMReX internal parser <https://amrex-codes.github.io/amrex/docs_html/EB.html>`_.
 For instance, setting up a sphere of radius 5 mm can be achieved:
 
 ::
