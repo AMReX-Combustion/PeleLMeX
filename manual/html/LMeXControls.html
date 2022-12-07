@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PeleLMeX controls &mdash; PeleLMeX 22.11 documentation</title>
+  <title>PeleLMeX controls &mdash; PeleLMeX 22.12 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -20,7 +20,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Troubleshooting" href="Troubleshooting.html" />
+    <link rel="next" title="Performances" href="Performances.html" />
     <link rel="prev" title="PeleLMeX Verification &amp; Validations" href="Validation.html" /> 
 </head>
 
@@ -30,6 +30,7 @@
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
             <a href="index.html" class="icon icon-home"> PeleLMeX
+            <img src="_static/swirlH2Fast_OH_vort_256.png" class="logo" alt="Logo"/>
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -57,6 +58,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#run-time-control">Run-time control</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="Performances.html">Performances</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Troubleshooting.html">Troubleshooting</a></li>
 </ul>
 
@@ -167,7 +169,7 @@ the first stopping criterion encountered will lead to termination of the simulat
 <h2>PeleLMeX derived variables<a class="headerlink" href="#pelelmex-derived-variables" title="Permalink to this heading"></a></h2>
 <p>The following list of derived variables are available in PeleLMeX:</p>
 <table class="colwidths-given docutils align-default" id="id1">
-<caption><span class="caption-text">PeleLMeX derived variables</span><a class="headerlink" href="#id1" title="Permalink to this table"></a></caption>
+<caption><span class="caption-number">1 </span><span class="caption-text">PeleLMeX derived variables</span><a class="headerlink" href="#id1" title="Permalink to this table"></a></caption>
 <colgroup>
 <col style="width: 17%" />
 <col style="width: 17%" />
@@ -278,7 +280,7 @@ the first stopping criterion encountered will lead to termination of the simulat
 <section id="embedded-geometry">
 <h2>Embedded Geometry<a class="headerlink" href="#embedded-geometry" title="Permalink to this heading"></a></h2>
 <p><cite>PeleLMeX</cite> geomtry relies on AMReX implementation of the EB method. Simple geometrical objects
-can thus be constructed using <a href="#id3"><span class="problematic" id="id4">`AMReX internal parser&lt;https://amrex-codes.github.io/amrex/docs_html/EB.html&gt;`_</span></a>.
+can thus be constructed using <a class="reference external" href="https://amrex-codes.github.io/amrex/docs_html/EB.html">AMReX internal parser</a>.
 For instance, setting up a sphere of radius 5 mm can be achieved:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">eb2</span><span class="o">.</span><span class="n">geom_type</span> <span class="o">=</span> <span class="n">sphere</span>
 <span class="n">eb2</span><span class="o">.</span><span class="n">sphere_radius</span> <span class="o">=</span> <span class="mf">0.005</span>
@@ -411,7 +413,7 @@ example:</p>
 </div>
 <p>The list of available triggers is:</p>
 <table class="colwidths-given docutils align-default" id="id2">
-<caption><span class="caption-text">PeleLMeX run-time triggers</span><a class="headerlink" href="#id2" title="Permalink to this table"></a></caption>
+<caption><span class="caption-number">2 </span><span class="caption-text">PeleLMeX run-time triggers</span><a class="headerlink" href="#id2" title="Permalink to this table"></a></caption>
 <colgroup>
 <col style="width: 33%" />
 <col style="width: 67%" />
@@ -446,7 +448,7 @@ frequency using:</p>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="Validation.html" class="btn btn-neutral float-left" title="PeleLMeX Verification &amp; Validations" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="Troubleshooting.html" class="btn btn-neutral float-right" title="Troubleshooting" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="Performances.html" class="btn btn-neutral float-right" title="Performances" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
