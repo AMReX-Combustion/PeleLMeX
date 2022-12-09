@@ -81,10 +81,10 @@ void PeleLM::getNLResidScaling(Real &nEScale, Real &phiVScale)
    for (int comp = 0; comp < 2; comp++) {
       for (int lev = 0; lev <= finest_level; ++lev) {
          if (lev != finest_level) {
-            r[comp] = std::max(r[comp], 
+            r[comp] = std::max(r[comp],
                                m_leveldatanlsolve[lev]->nlResid.norm0(*m_coveredMask[lev],comp,0,true));
          } else {
-            r[comp] = std::max(r[comp], 
+            r[comp] = std::max(r[comp],
                                m_leveldatanlsolve[lev]->nlResid.norm0(comp,0,true));
          }
       }
@@ -285,7 +285,7 @@ void PeleLM::fillPatchNLnE(Real a_time,
                            0,0,1,geom[lev],bndry_func,0);
    }
    for (lev = 1; lev <= finest_level; ++lev) {
-      PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirnE>> crse_bndry_func(geom[lev-1], fetchBCRecArray(NE,1), 
+      PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirnE>> crse_bndry_func(geom[lev-1], fetchBCRecArray(NE,1),
                                                                          PeleLMCCFillExtDirnE{lprobparm, lpmfdata, m_nAux});
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirnE>> fine_bndry_func(geom[lev], fetchBCRecArray(NE,1),
                                                                          PeleLMCCFillExtDirnE{lprobparm, lpmfdata, m_nAux});
@@ -315,7 +315,7 @@ void PeleLM::fillPatchNLphiV(Real a_time,
                            0,0,1,geom[lev],bndry_func,0);
    }
    for (lev = 1; lev <= finest_level; ++lev) {
-      PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirPhiV>> crse_bndry_func(geom[lev-1], fetchBCRecArray(PHIV,1), 
+      PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirPhiV>> crse_bndry_func(geom[lev-1], fetchBCRecArray(PHIV,1),
                                                                            PeleLMCCFillExtDirPhiV{lprobparm, lpmfdata, m_nAux});
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirPhiV>> fine_bndry_func(geom[lev], fetchBCRecArray(PHIV,1),
                                                                            PeleLMCCFillExtDirPhiV{lprobparm, lpmfdata, m_nAux});
