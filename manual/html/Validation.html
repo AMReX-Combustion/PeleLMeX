@@ -114,8 +114,10 @@ the L2 norm of the error against the analytical profile:</p>
 <section id="taylor-green-vortex-breakdown">
 <h2>Taylor-Green vortex breakdown<a class="headerlink" href="#taylor-green-vortex-breakdown" title="Permalink to this heading"></a></h2>
 <p>The Taylor-Green vortex breakdown case is a classical CFD test case
-described in <cite>here &lt;https://www1.grc.nasa.gov/research-and-engineering/hiocfd/&gt;</cite>
-(case C3.3).</p>
+described in <a class="reference external" href="https://www1.grc.nasa.gov/research-and-engineering/hiocfd/">here</a>
+(case C3.3). It is intended to test the capability of the code to capture turbulence accurately,
+with the flow transitioning to turbulence, with the creation of small scales, followed
+by a decay phase similar to decaying homogeneous turbulence.</p>
 <section id="building-and-running">
 <h3>Building and running<a class="headerlink" href="#building-and-running" title="Permalink to this heading"></a></h3>
 <p>The test case can be found in <code class="docutils literal notranslate"><span class="pre">Exec/RegTests/TaylorGreen</span></code>.</p>
@@ -131,7 +133,10 @@ $ mpiexec -n <span class="m">16</span> <span class="nv">$EXECUTABLE</span> input
 <p>The following figures shows the kinetic energy, the dissipation rate and
 the enstrophy as function of time (all quantities are non-dimensional)
 for increasing resolutions (ranging from 64^3 to 512^3) and compared
-to the results of a high-order spectral solver with a 512^3 resolution.</p>
+to the results of a high-order spectral solver with a 512^3 resolution.
+<cite>PeleLMeX</cite> results are obtained with the <em>Godunov_PPM</em> scheme and show
+that even though <cite>PeleLMeX</cite> uses a 2nd-order scheme, reasonable
+accuracy compared to the spectral results is obtained when the resolution is sufficient.</p>
 <figure class="align-center" style="width: 60%">
 <img alt="_images/KinEnergy.png" src="_images/KinEnergy.png" />
 </figure>
@@ -141,6 +146,14 @@ to the results of a high-order spectral solver with a 512^3 resolution.</p>
 <figure class="align-center" style="width: 60%">
 <img alt="_images/Enstrophy.png" src="_images/Enstrophy.png" />
 </figure>
+<p>Additionnally, it is interesting to compare the different advection schemes
+available in <cite>PeleLMeX</cite> (namely, <em>Godunov_PLM</em>, <em>Godunov_PPM</em>, <em>Godunov_BDS</em>,
+<em>Godunov_PPM_WENOZ</em>) at a fixed 256^3 spatial resolution:</p>
+<figure class="align-center" style="width: 60%">
+<img alt="_images/Enstrophy_AllSchemes.png" src="_images/Enstrophy_AllSchemes.png" />
+</figure>
+<p>On this particular case, the differences between the advection schemes are fairly
+marginal compared to those observed at different grid resolutions.</p>
 </section>
 </section>
 </section>
