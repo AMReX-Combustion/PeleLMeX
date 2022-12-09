@@ -55,9 +55,9 @@ Mathematical background
 The low Mach number flow equations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-`PeleLMeX` solves the reacting Navier-Stokes flow equations in the *low Mach number* regime, where the characteristic fluid velocity is small compared to the sound speed, and the effect of acoustic wave propagation is unimportant to the overall dynamics of the system. Accordingly, acoustic wave propagation can be mathematically removed from the equations of motion, allowing for a numerical time step based on an advective CFL condition, and this leads to an increase in the allowable time step of order :math:`1/M` over an explicit, fully compressible method (:math:`M` is the Mach number).  In this mathematical framework, the total pressure is decomposed into the sum of a spatially constant (ambient) thermodynamic pressure :math:`P_0` and a perturbational pressure, :math:`\pi({\vec x})` that drives the flow.  Under suitable conditions, :math:`\pi/P_0 = \mathcal{O} (M^2)`. 
+`PeleLMeX` solves the reacting Navier-Stokes flow equations in the *low Mach number* regime, where the characteristic fluid velocity is small compared to the sound speed, and the effect of acoustic wave propagation is unimportant to the overall dynamics of the system. Accordingly, acoustic wave propagation can be mathematically removed from the equations of motion, allowing for a numerical time step based on an advective CFL condition, and this leads to an increase in the allowable time step of order :math:`1/M` over an explicit, fully compressible method (:math:`M` is the Mach number).  In this mathematical framework, the total pressure is decomposed into the sum of a spatially constant (ambient) thermodynamic pressure :math:`p_0` and a perturbational pressure, :math:`\pi({\vec x})` that drives the flow.  Under suitable conditions, :math:`\pi/p_0 = \mathcal{O} (M^2)`. Note that :math:`p_0` is spatially constant, but can be time-dependent as described in the next section. 
 
-The set of conservation equations specialized to the low Mach number regime is a system of PDEs with advection, diffusion and reaction (ADR) processes that are constrained to evolve on the manifold of a spatially constant :math:`P_0`:
+The set of conservation equations specialized to the low Mach number regime is a system of PDEs with advection, diffusion and reaction (ADR) processes that are constrained to evolve on the manifold of a spatially constant :math:`p_0`:
 
 .. math::
 
@@ -78,7 +78,7 @@ These evolution equations are supplemented by an equation of state for the therm
 
 .. math::
 
-    P_0(\rho,Y_m,T)=\frac{\rho \mathcal{R} T}{W}=\rho \mathcal{R} T
+    p_0(\rho,Y_m,T)=\frac{\rho \mathcal{R} T}{W}=\rho \mathcal{R} T
     \sum_m \frac{Y_m}{W_m} .  
 
 In the above, :math:`W_m` and :math:`W` are the species :math:`m`, and mean molecular weights, respectively.  To close the system we also require a relationship between enthalpy, species and temperature.  We adopt the definition used in the CHEMKIN standard,
@@ -100,7 +100,7 @@ This, together with the conservation equations form a differential-algebraic equ
 
 .. math::
 
-    \frac{DP_0}{Dt} = 0
+    \frac{Dp_0}{Dt} = 0
 
 and observe that if the initial conditions satisfy the constraint, an evolution satisfying the above will continue to satisfy the constraint over all time.  Expanding this expression via the chain rule and continuity:
 
@@ -192,12 +192,12 @@ of the grid, and is temporally constant on the intervals over the time step.
 The projection scheme is based on a fractional step appraoch where, for purely incompressible flow, the velocity is first advanced in time
 using the momentum equation (**Step 1**) and subsequently projected to enforce the divergence constraint (**Step 3**). When considering variable density flows,
 the scalar thermodynamic advance is performed between these two steps (**Step 2**), but within the SDC context, **Step 1** and **Step 2** are effectively interlaced.
-The three major steps of the algorithm (Almgren et al 1998, Day et al, 2000):
+The three major steps of the algorithm (Almgren *et al.* 1998, Day and Bell, 2000, Nonaka *et al.* 2012):
 
 **Step 1**: (*Compute advection velocities*) Use a second-order Godunov procedure to predict a time-centered
 velocity, :math:`U^{{\rm ADV},*}`, on cell faces using the cell-centered data (plus sources due to any auxiliary forcing) at :math:`t^n`,
 and the lagged pressure gradient from the previous time interval, which we denote as :math:`\nabla \pi^{n-1/2}`.  
-This provisional field, :math:`U^{{\rm ADV},*}`, fails to satisfy the divergence constraint.  We apply a discrete projection (termed *MAC*-projection)
+This provisional field, :math:`U^{{\rm ADV},*}`, fails to satisfy the divergence constraint. We apply a discrete projection (termed *MAC*-projection)
 by solving the elliptic equation with a time-centered source term:
 
 .. math::
@@ -207,16 +207,16 @@ by solving the elliptic equation with a time-centered source term:
 
 for :math:`\phi` at cell-centers, where :math:`D^{{\rm FC}\rightarrow{\rm CC}}` represents a cell-centered divergence of face-centered data,
 and :math:`G^{{\rm CC}\rightarrow{\rm FC}}` represents a face-centered gradient of cell-centered data, and :math:`\rho^n` is computed on
-cell faces using arithmetic averaging from neighboring cell centers.  Also, :math:`S^{MAC}` refers to the RHS of the constraint
+cell faces using arithmetic averaging from neighboring cell centers. Also, :math:`S^{MAC}` refers to the RHS of the constraint
 equation, with adjustments to be discussed in the next section -- these adjustments are computed to ensure that the final update 
-satisfied the equation of state. The solution, :math:`\phi`, is then used to define
+satisfied the equation of state. The solution, :math:`\phi`, is then used to define:
 
 .. math::
 
     U^{\rm ADV} = U^{{\rm ADV},*} - \frac{1}{\rho^n}G^{{\rm CC}\rightarrow{\rm FC}}\phi,
 
 After the *MAC*-projection, :math:`U^{\rm ADV}` is a second-order accurate, staggered (face-centered) grid vector
-field at :math:`t^{n+1/2}` that discretely satisfies the constraint.  This field is the advection velocity used for computing
+field at :math:`t^{n+1/2}` that discretely satisfies the constraint. This field is the advection velocity used for computing
 the time-explicit advective fluxes for :math:`U`, :math:`\rho h`, and :math:`\rho Y_m`.
 
 
@@ -235,9 +235,9 @@ the time-explicit advective fluxes for :math:`U`, :math:`\rho h`, and :math:`\rh
         S^{MAC} = \frac{1}{2}(\widehat S^n + \widehat S^{n+1,(k)}) + \sum_{i=0}^k \frac{1}{p_{therm}^{n+1,(i)}}\frac{p_{therm}^{n+1,(i)}-p_0}{\Delta t}
 
 
-  #. Perform **Step 1** to obtain the time-centered, stagered :math:`U^{ADV}`
+  #. Perform **Step 1** to obtain the time-centered, staggered :math:`U^{ADV}`
 
-  #. Use a 2nd Godunov integrator to predict species time-centered edge states, :math:`(\rho Y_m)^{n+1/2,(k+1)}` and their advection terms :math:`(A_m^{n+1/2,(k+1)})` using :math:`U^{ADV}`. Source terms for this prediction include explicit diffusion forcing, :math:`D^{n}`, and an iteration-lagged reaction term, :math:`I_R^{(k)}`. Since the diffusion and chemistry will not affect the new-time density, we can already compute :math:`\rho^{n+1,(k+1)}`. This will be needed in the trapezoidal-in-time diffusion solves. We also compute :math:`(A_h^{n+1/2,(k+1)})`: we could also use a Godunov scheme, but because :math:`h` contains the heat of formation scaled to an arbitrary reference state, it is not generally monotonic through flames. Also, because the equation of state is generally nonlinear, this will often lead to numerically-generated non-mononoticity in the temperature field. Using the fact that temperature should be smoother and monotonic through the flame, we instead predict temperature with the Godunov scheme and use face-centered :math:`T`, :math:`\rho = \sum (\rho Y_m)` and :math:`Y_m = (\rho Y_m)/\rho` to evaluate :math:`h` instead of extrapolating. We can then evaluate the enthalpy advective flux divergence, :math:`A_h^{n+1/2,(k+1)}`, for :math:`\rho h`.
+  #. Use a 2nd Godunov integrator to predict species time-centered edge states, :math:`(\rho Y_m)^{n+1/2,(k+1)}` and their advection terms :math:`A_m^{n+1/2,(k+1)}` using :math:`U^{ADV}`. Source terms for this prediction include explicit diffusion forcing, :math:`D^{n}`, and an iteration-lagged reaction term, :math:`I_R^{(k)}`. Since the diffusion and chemistry will not affect the new-time density, we can already compute :math:`\rho^{n+1,(k+1)}`. This will be needed in the trapezoidal-in-time diffusion solves. We also compute :math:`A_h^{n+1/2,(k+1)}`: we could also use a Godunov scheme, but because :math:`h` contains the heat of formation scaled to an arbitrary reference state, it is not generally monotonic through flames. Also, because the equation of state is generally nonlinear, this will often lead to numerically-generated non-mononoticity in the temperature field. Using the fact that temperature should be smoother and monotonic through the flame, we instead predict temperature with the Godunov scheme and use face-centered :math:`T`, :math:`\rho = \sum (\rho Y_m)` and :math:`Y_m = (\rho Y_m)/\rho` to evaluate :math:`h` instead of extrapolating. We can then evaluate the enthalpy advective flux divergence, :math:`A_h^{n+1/2,(k+1)}`, for :math:`\rho h`.
 
   #. We now compute provisional, time-advanced species mass fractions, :math:`\widetilde Y_{m,{\rm AD}}^{n+1,(k+1)}`, by solving a backward Euler type correction equation for the Crank-Nicolson update. Note that the provisional species diffusion fluxes reads :math:`\widetilde{\boldsymbol{\cal F}}_{m,{\rm AD}}^{(k)} = -\rho^n D_{m,mix}^n \nabla \widetilde X_{m,{\rm AD}}^{(k)}`. This expression couples together all of the species mass fractions (:math:`Y_m`) in the update of each, even for the mixture-averaged model. Computationally, it is much more tractable to write this as a diagonal matrix update with a lagged correction by noting that :math:`X_m = (W/W_m)Y_m`. Using the chain rule, :math:`\widetilde{\boldsymbol{\cal F}}_{m,{\rm AD}}^{(k)}` then has components proportional to :math:`\nabla Y_m` and :math:`\nabla W`. The latter is lagged in the iterations, and is typically very small. In the limit of sufficient iterations, diffusion is driven by the true form of the the driving force, :math:`d_m`, but in this form, each iteration involves decoupled diagonal solves (following the SDC formalism used above):
 
@@ -333,7 +333,7 @@ Advection schemes
 ^^^^^^^^^^^^^^^^^
 .. _ssec:advScheme:
 
-`PeleLMeX` relies on the `AMReX-Hydro <https://github.com/AMReX-Codes/AMReX-Hydro>`_ implementation of the 2nd-order Godunov method, with several variants available. The basis of the Godunov appraoch is to extrapolate the cell-centered quantity of interest (:math:`U`, :math:`\rho Y`, :math:`\rho h`) to cell faces using a second-order Taylor series expansion in space and time. As detailed in `AMReX-Hydro documentation <https://amrex-codes.github.io/amrex/hydro_html/Schemes.html#godunov-methodsThe>`_, the choice of the slope order and limiting scheme define the exact variant of the Godunov method. Of particular interest for combustion applications, where sharp gradients of intermediate chemical species are found within the flame front, the `Godunov_BDS` appraoch provide a bound-preserving advection scheme which greatly limit the appearance of over-/under-shoot, often leading to critical failure of the stiff chemical kinetic integration.
+`PeleLMeX` relies on the `AMReX-Hydro <https://github.com/AMReX-Codes/AMReX-Hydro>`_ implementation of the 2nd-order Godunov method, with several variants available. The basis of the Godunov appraoch is to extrapolate the cell-centered quantity of interest (:math:`U`, :math:`\rho Y`, :math:`\rho h`) to cell faces using a second-order Taylor series expansion in space and time. As detailed in `AMReX-Hydro documentation <https://amrex-codes.github.io/amrex/hydro_html/Schemes.html#godunov-methodsThe>`_, the choice of the slope order and limiting scheme define the exact variant of the Godunov method. Of particular interest for combustion applications, where sharp gradients of intermediate chemical species are found within flame fronts, the `Godunov_BDS` appraoch provides a bound-preserving advection scheme which greatly limits the appearance of over-/under-shoots, often leading to critical failure of the stiff chemical kinetic integration.
 
 Note that in the presence of EB, only the `Godunov_PLM` variant is available.
 
@@ -347,8 +347,8 @@ This difference is illustrated in the figure below comparing the multi-level tim
    :align: center
    :figwidth: 90%
 
-* `PeleLM` will recursively advance finer levels, halving the time step size (when using a refinement ratio of 2) at each level. For instance, considering a 3 levels simulation, `PeleLM` advances the coarse `Level0` over a :math:`\Delta t_0` step, then `Level1` over a :math:`\Delta t_1` step and `Level2` over two :math:`\Delta t_2` steps, performing an interpolation of the `Level1` data after the first step. At this point, a synchronization step is performed to ensure that the fluxes are conserved at coarse-fine interface and a second `Level1` step is performed, followed by the same two `Level2` steps. At this point, two synchronizations are needed between the two pairs of levels.
-* In order to get to the same physical time, `PeleLMeX` will perform 4 time steps of size similar to `PeleLM` :math:`\Delta t_2`, advancing all the level at once. The coarse-fine fluxe consistency is this time ensured by averaging down the face-centered fluxes from fine to coarse levels. Additionnally, the state itself is averaged down at the end of each SDC iteration.
+* `PeleLM` will recursively advance finer levels, halving the time step size (when using a refinement ratio of 2) at each level. For instance, considering a 3 levels simulation, `PeleLM` advances the coarse `Level0` over a :math:`\Delta t_0` step, then `Level1` over a :math:`\Delta t_1` step and `Level2` over two :math:`\Delta t_2` steps, performing an interpolation of the `Level1` data after the first `Level2` step. At this point, a synchronization step is performed to ensure that the fluxes are conserved at coarse-fine interface and a second `Level1` step is performed, followed by the same two `Level2` steps. At this point, two synchronizations are needed between the two pairs of levels.
+* In order to get to the same physical time, `PeleLMeX` will perform 4 time steps of size similar to `PeleLM`'s :math:`\Delta t_2`, advancing all the levels at once. The coarse-fine fluxes consistency is this time ensured by averaging down the face-centered fluxes from fine to coarse levels. Additionnally, the state itself is averaged down at the end of each SDC iteration.
 
 In practice, `PeleLM` will perform a total of 7 single-level advance steps, while `PeleLMeX` will perform 4 multi-level ones to reach the same physical time, advancing the coarser levels at a smaller CFL number whereas `PeleLM` maintain a fixed CFL at all the level. It might seem that `PeleLMeX` is thus performing extra work, but because it ignore fine-covered regions, `PeleLMeX` do not need to perform the expensive (and often very under-resolved) chemistry integration in fine-covered areas. An exact evaluation of the benefits and drawbacks of each appraoch is under way. 
 
@@ -367,8 +367,9 @@ for the apperture opening between adjacent cells and the additional EB-fluxes ar
 A common problem arising with EB is the presence of the small cut-cells which can either introduce undesirable constraint on 
 the explicit time step size or lead to numerical instabilities if not accounterd for. `PeleLMeX` relies on a combination of 
 classical flux redistribution (FRD) (Pember et al, 1998) and state redistribution (SRD) (Giuliani et al., 2022) to circumvent the issue.
-In particular, explicit advective fluxes are treated using SRD while explicit diffusion fluxes (appearing in the SDC context) 
-are treated with FRD. Note that implicit diffusion fluxes are not redistributed as AMReX's linear operators are EB-aware.
+In particular, explicit advective fluxes :math:`A^{n+1/2,(k+1)}` are treated using SRD while explicit diffusion fluxes 
+:math:`D^{n}` and SDC iteration-lagged :math:`D^{n+1,(k)}` are treated with FRD.
+Note that implicit diffusion fluxes are not redistributed as AMReX's linear operators are EB-aware.
 
 The use of AMReX's multigrid linear solver introduces contraint on the complexity of the geometry `PeleLMeX` is able to handle. The
 efficiency of the multigrid appraoch relies on generating coarse version of the linear problem. If the geometry includes thin elements
