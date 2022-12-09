@@ -224,7 +224,7 @@ cen2edg_upwind(int i, int j, int k,
 {
    using namespace amrex::literals;
 
- 	// Default behavior: id_l -1 in dir
+   // Default behavior: id_l -1 in dir
    // Handle the BCs
    // Need -1 in id_l and id_h in dir on low Dirichlet BC
    // Need nothing on high Dirichlet BC
@@ -369,8 +369,8 @@ initElecNeutral(int i, int j, int k,
    amrex::Real zk[NUM_SPECIES] = {0.0};
    pele::physics::eos::charge_mass(zk);
    for (int n = 0; n < NUM_SPECIES; n++) {
-	   zk[n] *= 1000.0;    // CGS->MKS
-	}
+       zk[n] *= 1000.0;    // CGS->MKS
+   }
 
    // Get mass fractions
    amrex::Real massfrac[NUM_SPECIES] = {0.0};

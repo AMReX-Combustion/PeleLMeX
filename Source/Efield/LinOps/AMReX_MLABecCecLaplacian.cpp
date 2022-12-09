@@ -531,7 +531,7 @@ MLABecCecLaplacian::Fsmooth (int amrlev, int mglev, MultiFab& sol, const MultiFa
 #endif
     for (MFIter mfi(sol,mfi_info); mfi.isValid(); ++mfi)
     {
-	const auto& m0 = mm0.array(mfi);
+        const auto& m0 = mm0.array(mfi);
         const auto& m1 = mm1.array(mfi);
 #if (AMREX_SPACEDIM > 1)
         const auto& m2 = mm2.array(mfi);
@@ -542,7 +542,7 @@ MLABecCecLaplacian::Fsmooth (int amrlev, int mglev, MultiFab& sol, const MultiFa
 #endif
 #endif
 
-	const Box& tbx = mfi.tilebox();
+        const Box& tbx = mfi.tilebox();
         const Box& vbx = mfi.validbox();
         const auto& solnfab = sol.array(mfi);
         const auto& rhsfab  = rhs.array(mfi);
