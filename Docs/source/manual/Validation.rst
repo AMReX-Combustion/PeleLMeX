@@ -43,8 +43,10 @@ Taylor-Green vortex breakdown
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The Taylor-Green vortex breakdown case is a classical CFD test case
-described in `here <https://www1.grc.nasa.gov/research-and-engineering/hiocfd/>`
-(case C3.3).
+described in `here <https://www1.grc.nasa.gov/research-and-engineering/hiocfd/>`_
+(case C3.3). It is intended to test the capability of the code to capture turbulence accurately,
+with the flow transitioning to turbulence, with the creation of small scales, followed
+by a decay phase similar to decaying homogeneous turbulence.
 
 Building and running
 ####################
@@ -66,6 +68,9 @@ The following figures shows the kinetic energy, the dissipation rate and
 the enstrophy as function of time (all quantities are non-dimensional)
 for increasing resolutions (ranging from 64^3 to 512^3) and compared
 to the results of a high-order spectral solver with a 512^3 resolution.
+`PeleLMeX` results are obtained with the *Godunov_PPM* scheme and show 
+that even though `PeleLMeX` uses a 2nd-order scheme, reasonable
+accuracy compared to the spectral results is obtained when the resolution is sufficient.
 
 .. figure:: images/validations/TaylorGreen/KinEnergy.png
    :align: center
@@ -78,3 +83,14 @@ to the results of a high-order spectral solver with a 512^3 resolution.
 .. figure:: images/validations/TaylorGreen/Enstrophy.png
    :align: center
    :figwidth: 60%
+
+Additionnally, it is interesting to compare the different advection schemes
+available in `PeleLMeX` (namely, *Godunov_PLM*, *Godunov_PPM*, *Godunov_BDS*,
+*Godunov_PPM_WENOZ*) at a fixed 256^3 spatial resolution:
+
+.. figure:: images/validations/TaylorGreen/Enstrophy_AllSchemes.png
+   :align: center
+   :figwidth: 60%
+
+On this particular case, the differences between the advection schemes are fairly
+marginal compared to those observed at different grid resolutions.
