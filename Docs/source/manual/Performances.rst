@@ -91,7 +91,7 @@ these tests are:
 
 The graph below compares the timings of the two runs obtained from `AMReX` TinyProfiler. 
 Inclusive averaged data are presented here, for separates portion of the `PeleLMeX` algorithm 
-(see the `algorthim page <https://amrex-combustion.github.io/PeleLMeX/manual/html/Model.html#pelelmex-algorithm>`_ for more 
+(see the `algorithm page <https://amrex-combustion.github.io/PeleLMeX/manual/html/Model.html#pelelmex-algorithm>`_ for more 
 details):
 
 
