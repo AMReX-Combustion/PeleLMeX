@@ -21,7 +21,7 @@ PeleLMDeriveRec::PeleLMDeriveRec (const std::string& a_name,
 PeleLMDeriveRec::PeleLMDeriveRec (const std::string&   a_name,
                                   IndexType            result_type,
                                   int                  nvar_derive,
-		                            Vector<std::string>& var_names,
+                                  Vector<std::string>& var_names,
                                   PeleLMDeriveFunc     der_func,
                                   DeriveBoxMap         box_map,
                                   Interpolater*        a_interp)
@@ -53,7 +53,7 @@ PeleLMDeriveRec::PeleLMDeriveRec (const std::string& a_name,
 PeleLMDeriveRec::PeleLMDeriveRec (const std::string&   a_name,
                                   IndexType            result_type,
                                   int                  nvar_derive,
-		                            Vector<std::string>& var_names,
+                                  Vector<std::string>& var_names,
                                   DeriveBoxMap         box_map,
                                   Interpolater*        a_interp)
     :

@@ -81,10 +81,10 @@ void PeleLM::getNLResidScaling(Real &nEScale, Real &phiVScale)
    for (int comp = 0; comp < 2; comp++) {
       for (int lev = 0; lev <= finest_level; ++lev) {
          if (lev != finest_level) {
-            r[comp] = std::max(r[comp], 
+            r[comp] = std::max(r[comp],
                                m_leveldatanlsolve[lev]->nlResid.norm0(*m_coveredMask[lev],comp,0,true));
          } else {
-            r[comp] = std::max(r[comp], 
+            r[comp] = std::max(r[comp],
                                m_leveldatanlsolve[lev]->nlResid.norm0(comp,0,true));
          }
       }
@@ -285,7 +285,7 @@ void PeleLM::fillPatchNLnE(Real a_time,
                            0,0,1,geom[lev],bndry_func,0);
    }
    for (lev = 1; lev <= finest_level; ++lev) {
-      PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirnE>> crse_bndry_func(geom[lev-1], fetchBCRecArray(NE,1), 
+      PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirnE>> crse_bndry_func(geom[lev-1], fetchBCRecArray(NE,1),
                                                                          PeleLMCCFillExtDirnE{lprobparm, lpmfdata, m_nAux});
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirnE>> fine_bndry_func(geom[lev], fetchBCRecArray(NE,1),
                                                                          PeleLMCCFillExtDirnE{lprobparm, lpmfdata, m_nAux});
@@ -315,7 +315,7 @@ void PeleLM::fillPatchNLphiV(Real a_time,
                            0,0,1,geom[lev],bndry_func,0);
    }
    for (lev = 1; lev <= finest_level; ++lev) {
-      PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirPhiV>> crse_bndry_func(geom[lev-1], fetchBCRecArray(PHIV,1), 
+      PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirPhiV>> crse_bndry_func(geom[lev-1], fetchBCRecArray(PHIV,1),
                                                                            PeleLMCCFillExtDirPhiV{lprobparm, lpmfdata, m_nAux});
       PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirPhiV>> fine_bndry_func(geom[lev], fetchBCRecArray(PHIV,1),
                                                                            PeleLMCCFillExtDirPhiV{lprobparm, lpmfdata, m_nAux});
@@ -328,4 +328,22 @@ void PeleLM::fillPatchNLphiV(Real a_time,
                          crse_bndry_func,0,fine_bndry_func,0,
                          refRatio(lev-1), mapper, fetchBCRecArray(PHIV,1), 0);
    }
+}
+
+void PeleLM::ionsBalance()
+{
+   // Compute the sum of ions on the domain boundaries
+   Array<Real,2*AMREX_SPACEDIM> ionsCurrent{0.0};
+   for (int n = NUM_SPECIES-NUM_IONS; n < NUM_SPECIES; n++){
+      for (int i = 0; i < 2*AMREX_SPACEDIM; i++) {
+         ionsCurrent[i] += m_domainRhoYFlux[2*n*AMREX_SPACEDIM+i] * zk[n];
+      }
+   }
+
+   tmpIonsFile << m_nstep << " " << m_cur_time;                         // Time info
+   for (int i = 0; i < 2*AMREX_SPACEDIM; i++) {
+       tmpIonsFile << " " << ionsCurrent[i];                            // ions current as xlo, xhi, ylo, ...
+   }
+   tmpIonsFile << "\n";
+   tmpIonsFile.flush();
 }

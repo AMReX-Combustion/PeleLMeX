@@ -1,0 +1,150 @@
+#----------------------DOMAIN DEFINITION------------------------
+geometry.is_periodic = 1 0 0              # For each dir, 0: non-perio, 1: periodic
+geometry.coord_sys   = 0                  # 0 => cart, 1 => RZ
+geometry.prob_lo     =   -0.4e-2       1.5219e-2     -0.4e-2
+geometry.prob_hi     =    1.2e-2       2.3219e-2      0.4e-2
+
+# geometry.prob_lo     =   -0.4e-2       1.522e-2     -0.4e-2
+# geometry.prob_hi     =    1.2e-2       2.322e-2      0.4e-2
+
+#small geometry y that can run with 2 AMR levels
+# geometry.prob_lo     =   -0.4e-2       1.722e-2     -0.4e-2
+# geometry.prob_hi     =    1.2e-2       2.122e-2      0.4e-2
+
+
+# geometry.prob_lo     =   -0.4e-2       1.622e-2     -0.4e-2
+# geometry.prob_hi     =    1.2e-2       2.422e-2      0.4e-2
+
+# >>>>>>>>>>>>>  BC FLAGS <<<<<<<<<<<<<<<<
+# Interior, Inflow, Outflow, Symmetry,
+# SlipWallAdiab, NoSlipWallAdiab, SlipWallIsotherm, NoSlipWallIsotherm
+peleLM.lo_bc = Inflow    SlipWallAdiab  SlipWallAdiab
+peleLM.hi_bc = Outflow   SlipWallAdiab  SlipWallAdiab
+
+#-------------------------AMR CONTROL----------------------------
+amr.n_cell          = 512      256      256
+amr.v               = 2                # AMR verbose
+amr.max_level       = 2                # maximum level number allowed
+amr.refine_EB_max_level = 0
+amr.ref_ratio       = 2 2 2 2          # refinement ratio
+amr.regrid_int      = 2                # how often to regrid
+amr.n_error_buf     = 1 1 2 2          # number of buffer cells in error est
+amr.grid_eff        = 0.7              # what constitutes an efficient grid
+amr.blocking_factor = 8               # block factor in grid generation (min box size)
+amr.max_grid_size   = 64               # max box size
+
+
+#--------------------------- Problem -------------------------------
+prob.T_mean = 343.0
+prob.P_mean = 5e+5
+prob.flowDir = 0
+
+prob.V_in          = 1.0
+
+# turbinflows = lowX
+turbinflow.lowX.turb_file      = Turb_tprf_phi1_egr10_Ka6
+turbinflow.lowX.dir            = 0
+turbinflow.lowX.side           = low
+turbinflow.lowX.turb_scale_loc = 1.0
+turbinflow.lowX.turb_scale_vel = 1.0
+turbinflow.lowX.turb_center    = 0.017 0.0
+turbinflow.lowX.turb_conv_vel  = 10.
+turbinflow.lowX.turb_nplane    = 12
+
+
+#-------------------------PeleLM CONTROL----------------------------
+peleLM.v = 2
+peleLM.incompressible = 0
+peleLM.do_react = 1
+peleLM.rho = 5.1
+peleLM.mu = 1.9e-5
+peleLM.sdc_iterMax = 2
+peleLM.floor_species = 0
+peleLM.num_divu_iter = 1
+peleLM.num_init_iter = 1
+peleLM.deltaT_verbose = 2
+
+# peleLM.do_temporals = 1
+# peleLM.temporal_int = 2
+# peleLM.mass_balance = 1
+
+eb2.geom_type = UserDefined
+# eb2.geom_type = all_regular
+eb2.small_volfrac = 1.e-03
+eb2.maxiter = 500
+
+#eb2.torus_center = 0.0 0.0 2.1e-2
+eb2.torus_center = 0.0 0.0 2.11e-2
+eb2.torus_small_radius = 0.0385e-2
+# eb2.torus_large_radius = 0.5e-3
+eb2.torus_large_radius = 0.55e-3
+eb2.has_fluid_inside = false
+eb2.add_torus = true
+eb2.rot_angle = 270
+
+amr.plot_int = 10
+amr.max_step = 0
+amr.fixed_dt = 1.0e-08
+amr.dt_shrink = 0.01
+amr.stop_time = 0.02
+amr.cfl = 0.3
+amr.derive_plot_vars = avg_pressure mag_vort mass_fractions
+
+
+nodal_proj.verbose = 2
+nodal_proj.mg_max_coarsening_level = 0
+nodal_proj.m_mac_mg_atol = 1.0e-10
+nodal_proj.m_mac_mg_rtol = 1.0e-10
+
+nodal_proj.bottom_solver = "hypre"                                                                                                                                           
+nodal_proj.hypre_namespace = nodal_proj.hypre
+
+nodal_proj.hypre.verbose = 1
+nodal_proj.hypre.hypre_solver = GMRES
+nodal_proj.hypre.hypre_preconditioner = BoomerAMG
+nodal_proj.hypre.num_krylov = 200
+nodal_proj.hypre.max_iterations = 200
+
+nodal_proj.hypre.bamg_verbose = 0
+nodal_proj.hypre.bamg_coarsen_type = 8
+nodal_proj.hypre.bamg_interp_type = 6
+nodal_proj.hypre.bamg_relax_type = 11
+nodal_proj.hypre.bamg_num_sweeps = 2
+nodal_proj.hypre.bamg_cycle_type = 1
+nodal_proj.hypre.bamg_relax_order = 0
+nodal_proj.hypre.bamg_keep_transpose = 1
+nodal_proj.hypre.bamg_trunc_factor = 0.44351885396256086
+nodal_proj.hypre.bamg_strong_threshold = 0.30015419030906665
+nodal_proj.hypre.bamg_pmax_elmts = 4
+nodal_proj.hypre.bamg_max_levels = 6
+
+nodal_proj.hypre.bamg_agg_num_levels = 3
+nodal_proj.hypre.bamg_agg_interp_type = 5
+nodal_proj.hypre.bamg_agg_pmax_elmts = 5
+
+nodal_proj.hypre.bamg_smooth_type = 5
+nodal_proj.hypre.bamg_smooth_num_sweeps = 1
+nodal_proj.hypre.bamg_smooth_num_levels = 1
+nodal_proj.hypre.bamg_ilu_type = 0
+nodal_proj.hypre.bamg_ilu_level = 0
+nodal_proj.hypre.bamg_ilu_max_iter = 1
+nodal_proj.hypre.bamg_ilu_reordering_type = 0
+nodal_proj.hypre.bamg_ilu_tri_solve = 0
+nodal_proj.hypre.bamg_ilu_lower_jacobi_iters = 13
+nodal_proj.hypre.bamg_ilu_upper_jacobi_iters = 5
+
+nodal_proj.hypre.recompute_preconditioner = 0
+nodal_proj.hypre.write_matrix_files = 0
+nodal_proj.hypre.overwrite_existing_matrix_files = 0
+nodal_proj.hypre.adjust_singular_matrix = 1
+
+#--------------------REFINEMENT CONTROL------------------------
+# amr.refinement_indicators = O2
+# amr.O2.max_level     = 1
+# amr.O2.value_greater = 0.4
+# amr.O2.field_name    = Y(O2)
+
+# fabarray.mfiter_tile_size = 1024 1024 1024
+#amrex.fpe_trap_invalid = 1
+#amrex.fpe_trap_zero = 1
+#amrex.fpe_trap_overflow = 1

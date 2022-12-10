@@ -151,7 +151,7 @@ SprayParticleContainer::injectParticles(Real time,
     const RealBox& Rbox = RealBox(bx, geom.CellSize(), geom.ProbLo());
     const Real* xloB = Rbox.lo();
     const Real* xhiB = Rbox.hi();
-    
+
     // Only work if intersection for x+ domain face
     if (xhiB[0] == phi[0]) {
       Gpu::HostVector<ParticleType> host_particles;

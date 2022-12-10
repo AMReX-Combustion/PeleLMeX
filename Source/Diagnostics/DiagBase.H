@@ -12,7 +12,7 @@ public:
 
   virtual void init(const std::string &a_prefix) = 0;
 
-  virtual void close() = 0; 
+  virtual void close() = 0;
 
   bool needUpdate() { return need_update;};
 

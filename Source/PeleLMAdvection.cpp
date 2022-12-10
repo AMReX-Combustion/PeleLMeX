@@ -99,7 +99,8 @@ void PeleLM::computeVelocityAdvTerm(std::unique_ptr<AdvanceAdvData> &advData)
 #endif
                                                  m_Godunov_ppm, m_Godunov_ForceInTrans,
                                                  is_velocity, fluxes_are_area_weighted,
-                                                 m_advection_type);
+                                                 m_advection_type,
+                                                 m_Godunov_ppm_limiter);
       }
 #ifdef AMREX_USE_EB
       EB_set_covered_faces(GetArrOfPtrs(fluxes[lev]),0.);
@@ -380,7 +381,8 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
 #endif
                                                  m_Godunov_ppm, m_Godunov_ForceInTrans,
                                                  is_velocity, fluxes_are_area_weighted,
-                                                 m_advection_type);
+                                                 m_advection_type,
+                                                 m_Godunov_ppm_limiter);
 
          // Ions one by one
          for ( int n = 0; n < NUM_IONS; n++) {
@@ -412,7 +414,8 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
 #endif
                                                     m_Godunov_ppm, m_Godunov_ForceInTrans,
                                                     is_velocity, fluxes_are_area_weighted,
-                                                    m_advection_type);
+                                                    m_advection_type,
+                                                    m_Godunov_ppm_limiter);
          }
 #else
          bool is_velocity = false;
@@ -431,7 +434,8 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
 #endif
                                                  m_Godunov_ppm, m_Godunov_ForceInTrans,
                                                  is_velocity, fluxes_are_area_weighted,
-                                                 m_advection_type);
+                                                 m_advection_type,
+                                                 m_Godunov_ppm_limiter);
 #endif
       }
 
@@ -519,7 +523,8 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
 #endif
                                                  m_Godunov_ppm, m_Godunov_ForceInTrans,
                                                  is_velocity, fluxes_are_area_weighted,
-                                                 m_advection_type);
+                                                 m_advection_type,
+                                                 m_Godunov_ppm_limiter);
       }
 
 
@@ -607,7 +612,8 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
 #endif
                                                  m_Godunov_ppm, m_Godunov_ForceInTrans,
                                                  is_velocity, fluxes_are_area_weighted,
-                                                 m_advection_type);
+                                                 m_advection_type,
+                                                 m_Godunov_ppm_limiter);
       }
 #ifdef AMREX_USE_EB
       EB_set_covered_faces(GetArrOfPtrs(fluxes[lev]),0.);
@@ -629,18 +635,31 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
    }
 
    //----------------------------------------------------------------
-   // If mass balance is required, compute face domain integrals
+   // If balances are required, compute face domain integrals
    // using level 0 since we've averaged down the fluxes already
-   if (m_do_massBalance && (m_sdcIter == m_nSDCmax)) {
-      addMassFluxes(GetArrOfConstPtrs(fluxes[0]),geom[0]);
-   }
-   // Compute face domain integrals for RhoH and RhoY
    if (m_sdcIter == m_nSDCmax) {
-      addRhoHFluxes(GetArrOfConstPtrs(fluxes[0]),geom[0]);
-      addRhoYFluxes(GetArrOfConstPtrs(fluxes[0]),geom[0]);
+      if (m_do_massBalance) addMassFluxes(GetArrOfConstPtrs(fluxes[0]),geom[0]);
+      if (m_do_energyBalance) addRhoHFluxes(GetArrOfConstPtrs(fluxes[0]),geom[0]);
+      if (m_do_speciesBalance) addRhoYFluxes(GetArrOfConstPtrs(fluxes[0]),geom[0]);
    }
    // Compute face domain integral for U at every SDC iteration
    addUmacFluxes(advData, geom[0]);
+
+#ifdef PELE_USE_EFIELD
+   if (m_do_extraEFdiags) {
+      for (int lev = 0; lev <= finest_level; ++lev) {
+         for (int n = 0; n < NUM_IONS; ++n) {
+            int spec_idx = NUM_SPECIES - NUM_IONS + n;
+            Array<std::unique_ptr<MultiFab>,AMREX_SPACEDIM> ionFlux;
+            for (int idim = 0; idim < AMREX_SPACEDIM; idim++ ) {
+               ionFlux[idim].reset(new MultiFab(fluxes[lev][idim],amrex::make_alias,spec_idx,1));
+            }
+            average_face_to_cellcenter(*m_ionsFluxes[lev],n*AMREX_SPACEDIM,
+                                       GetArrOfConstPtrs(ionFlux));
+         }
+      }
+   }
+#endif
 
    //----------------------------------------------------------------
    // Fluxes divergence to get the scalars advection term
@@ -710,49 +729,37 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
    //----------------------------------------------------------------
    // Sum over the species AofS to get the density advection term
    for (int lev = 0; lev <= finest_level; ++lev) {
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
-      for (MFIter mfi(advData->AofS[lev],TilingIfNotGPU()); mfi.isValid(); ++mfi) {
-         Box const& bx = mfi.tilebox();
-         auto const& aofrho = advData->AofS[lev].array(mfi,DENSITY);
-         auto const& aofrhoY = advData->AofS[lev].const_array(mfi,FIRSTSPEC);
-         amrex::ParallelFor(bx, [aofrho, aofrhoY]
-         AMREX_GPU_DEVICE (int i, int j, int k) noexcept
-         {
-            aofrho(i,j,k) = 0.0;
-            for (int n = 0; n < NUM_SPECIES; n++) {
-               aofrho(i,j,k) += aofrhoY(i,j,k,n);
-            }
-         });
-      }
+      auto aofsma = advData->AofS[lev].arrays();
+      amrex::ParallelFor(advData->AofS[lev], [=, dt=m_dt]
+      AMREX_GPU_DEVICE (int box_no, int i, int j, int k) noexcept
+      {
+         aofsma[box_no](i,j,k,DENSITY) = 0.0;
+         for (int n = 0; n < NUM_SPECIES; n++) {
+            aofsma[box_no](i,j,k,DENSITY) += aofsma[box_no](i,j,k,FIRSTSPEC+n);
+         }
+      });
    }
+   Gpu::streamSynchronize();
 }
 
 void PeleLM::updateDensity(std::unique_ptr<AdvanceAdvData> &advData)
 {
    for (int lev = 0; lev <= finest_level; ++lev) {
 
-      // Get level data ptr
-      auto ldataOld_p = getLevelDataPtr(lev,AmrOldTime);
-      auto ldataNew_p = getLevelDataPtr(lev,AmrNewTime);
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
-      for (MFIter mfi(ldataNew_p->state,TilingIfNotGPU()); mfi.isValid(); ++mfi) {
-         Box const& bx = mfi.tilebox();
-         auto const& rhoOld_arr  = ldataOld_p->state.const_array(mfi,DENSITY);
-         auto const& rhoNew_arr  = ldataNew_p->state.array(mfi,DENSITY);
-         auto const& a_of_rho    = advData->AofS[lev].const_array(mfi,DENSITY);
-         auto const& ext_rho     = m_extSource[lev]->const_array(mfi,DENSITY);
-         amrex::ParallelFor(bx, [rhoOld_arr, rhoNew_arr, a_of_rho, ext_rho, dt=m_dt]
-         AMREX_GPU_DEVICE (int i, int j, int k) noexcept
-         {
-            rhoNew_arr(i,j,k) = rhoOld_arr(i,j,k) + dt * (a_of_rho(i,j,k) + ext_rho(i,j,k));
-         });
-      }
+      // Get MultiArrays
+      auto const& sma_o = getLevelDataPtr(lev,AmrOldTime)->state.arrays();
+      auto const& sma_n = getLevelDataPtr(lev,AmrNewTime)->state.arrays();
+      auto aofsma = advData->AofS[lev].const_arrays();
+      auto extma = m_extSource[lev]->const_arrays();
+
+      amrex::ParallelFor(advData->AofS[lev], [=, dt=m_dt]
+      AMREX_GPU_DEVICE (int box_no, int i, int j, int k) noexcept
+      {
+         sma_n[box_no](i,j,k,DENSITY) =  sma_o[box_no](i,j,k,DENSITY)
+                                       + dt * (aofsma[box_no](i,j,k,DENSITY) + extma[box_no](i,j,k,DENSITY));
+      });
    }
-   averageDownDensity(AmrNewTime);
+   Gpu::streamSynchronize();
 }
 
 void PeleLM::computePassiveAdvTerms(std::unique_ptr<AdvanceAdvData> &advData,
@@ -839,7 +846,8 @@ void PeleLM::computePassiveAdvTerms(std::unique_ptr<AdvanceAdvData> &advData,
 #endif
                                                  m_Godunov_ppm, m_Godunov_ForceInTrans,
                                                  is_velocity, fluxes_are_area_weighted,
-                                                 m_advection_type);
+                                                 m_advection_type,
+                                                 m_Godunov_ppm_limiter);
       }
 #ifdef AMREX_USE_EB
       EB_set_covered_faces(GetArrOfPtrs(fluxes[lev]),0.);

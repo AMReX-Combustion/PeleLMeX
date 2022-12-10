@@ -133,7 +133,7 @@ pelelm_initdata (int i, int j, int k,
     z2 = (z - prob_parm.standoff + 0.5*dx[2] + pert)*prob_parm.amplification;
 
     pele::physics::PMF::pmf(pmf_data, z1, z2, pmf_vals);
-      
+
     state(i,j,k,TEMP) = (pmf_vals[0]*jet_total) + ((1-jet_total)*(310));
 
     for (int n = 0; n < NUM_SPECIES; ++n) {
@@ -261,7 +261,7 @@ bcnormal(
 
   // Phi: 0.4 , X[CH4] = 0.3, X[H2] = 0.7
 
-  massfrac_fuel[CH4_ID] = 0.01447; 
+  massfrac_fuel[CH4_ID] = 0.01447;
   massfrac_fuel[H2_ID]  = 0.004244;
   massfrac_fuel[N2_ID]  = 0.752786;
   massfrac_fuel[O2_ID]  = 0.2285;

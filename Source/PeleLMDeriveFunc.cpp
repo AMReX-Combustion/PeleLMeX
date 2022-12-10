@@ -44,8 +44,7 @@ void pelelm_derheatrelease (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, 
     AMREX_ASSERT(!a_pelelm->m_incompressible);
 
     FArrayBox EnthFab;
-    EnthFab.resize(bx,NUM_SPECIES);
-    Elixir  Enthi   = EnthFab.elixir();
+    EnthFab.resize(bx,NUM_SPECIES,The_Async_Arena());
 
     auto const temp = statefab.const_array(TEMP);
     auto const react = reactfab.const_array(0);
@@ -121,6 +120,33 @@ void pelelm_dermolefrac (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int
 }
 
 //
+// Extract rho - sum rhoY
+//
+void pelelm_derrhomrhoy (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
+                         const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
+                         const Geometry& /*geomdata*/,
+                         Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
+
+{
+    AMREX_ASSERT(derfab.box().contains(bx));
+    AMREX_ASSERT(statefab.box().contains(bx));
+    AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
+    AMREX_ASSERT(statefab.nComp() >= NUM_SPECIES+1);
+    AMREX_ASSERT(ncomp == NUM_SPECIES);
+    AMREX_ASSERT(!a_pelelm->m_incompressible);
+    auto const in_dat = statefab.array();
+    auto       der = derfab.array(dcomp);
+    amrex::ParallelFor(bx,
+    [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+    {
+        der(i,j,k,0) = in_dat(i,j,k,DENSITY);
+        for (int n = 0; n < NUM_SPECIES; n++) {
+            der(i,j,k,0) -= in_dat(i,j,k,FIRSTSPEC+n);
+        }
+    });
+}
+
+//
 // Compute cell averaged pressure from nodes
 //
 void pelelm_deravgpress (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int /*ncomp*/,
@@ -145,6 +171,28 @@ void pelelm_deravgpress (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int
 #endif
 #endif
                                 );
+    });
+}
+
+//
+// Compute the velocity magnitude
+//
+void pelelm_dermgvel (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int /*ncomp*/,
+                      const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
+                      const Geometry& /*geomdata*/,
+                      Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
+
+{
+    AMREX_ASSERT(derfab.box().contains(bx));
+    AMREX_ASSERT(statefab.box().contains(bx));
+    auto const vel = statefab.array(VELX);
+    auto       der = derfab.array(dcomp);
+    amrex::ParallelFor(bx,
+    [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+    {
+        der(i,j,k) = std::sqrt(( AMREX_D_TERM(  vel(i,j,k,0)*vel(i,j,k,0),
+                                              + vel(i,j,k,1)*vel(i,j,k,1),
+                                              + vel(i,j,k,2)*vel(i,j,k,2)) ));
     });
 }
 

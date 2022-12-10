@@ -493,6 +493,7 @@ PeleLM::scaleProj_RZ(int a_lev,
                 }
             }
         });
+        Gpu::streamSynchronize();
     }
 #endif
 }

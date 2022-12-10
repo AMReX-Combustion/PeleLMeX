@@ -519,7 +519,7 @@ getHGivenT(int i, int j, int k,
    for (int n = 0; n < NUM_SPECIES; n++) {
       Hi(i,j,k,n) = hi_spec[n] * 0.0001_rt;            // CGS -> MKS conversion
    }
-   
+
 }
 
 AMREX_GPU_DEVICE
@@ -667,7 +667,7 @@ buildAdvectionForcing(int i, int j, int k,
    for (int n = 0; n < NUM_SPECIES; n++) {
       y[n] = rhoY(i,j,k,n) * rhoinv;                                 // get y
       forceY(i,j,k,n) = dn(i,j,k,n);                                 // forceY = Dnk
-      if (do_react) forceY(i,j,k,n) += r(i,j,k,n);                   //         + Rk 
+      if (do_react) forceY(i,j,k,n) += r(i,j,k,n);                   //         + Rk
       forceT(i,j,k) -= forceY(i,j,k,n) * hi_spec[n] * 0.0001_rt;     // forceT -= Sum{ hk. (Rk + Dnk) } with CGS -> MKS conversion of hk
       forceY(i,j,k,n) += extRhoY(i,j,k,n);
    }
@@ -737,7 +737,7 @@ reactionRateRhoY(int i, int j, int k,
    amrex::Real Tloc = T(i,j,k);
    amrex::Real H = rhoH(i,j,k) * rhoinv * 1.0e4_rt;      // Include MKS -> CGS conversion
    eos.HY2T(H, y, Tloc);
-   
+
    // Get wdot.
    rho = rho * 0.001_rt;                                 // rho MKS -> CGS
    amrex::Real wdot[NUM_SPECIES] = {0.0_rt};
@@ -761,55 +761,6 @@ fabMinMax(int i, int j, int k,
    for (int n = 0; n < ncomp; n++) {
       fab(i,j,k,n) = amrex::max( fmin, amrex::min( fmax, fab(i,j,k,n) ) );
    }
-}
-
-AMREX_FORCE_INLINE
-void
-linearChemForcing(const amrex::Box& bx,
-                  amrex::Array4<amrex::Real> const& rY_in,
-                  amrex::Array4<amrex::Real> const& rY_src_in,
-                  amrex::Array4<amrex::Real> const& T_in,
-                  amrex::Array4<amrex::Real> const& rhoH_in,
-                  amrex::Array4<amrex::Real> const& rhoH_src_in,
-                  amrex::Array4<amrex::Real> const& FC_in,
-                  amrex::Array4<amrex::Real> const& avgIR,
-                  amrex::Real &dt_react)
-{
-   ParallelFor(bx,
-   [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept
-   {
-      // Integration of external rhoH source term
-      rhoH_in(i,j,k,0) += dt_react * rhoH_src_in(i,j,k,0);
-
-      // Integration of external rhoY source term and avgDown IR
-      for (int n = 0; n < NUM_SPECIES; n++){
-          rY_in(i,j,k,n) += dt_react * ( rY_src_in(i,j,k,n) + avgIR(i,j,k,n) );
-          //TODO need this ? rY_in(i,j,k,n) = amrex::max(0.0,rY_in(i,j,k,n));
-      }
-
-      /* T update with rho, H and Y */
-      // Get updated rho
-      amrex::Real rho_loc = 0.0;
-      for (int n = 0; n < NUM_SPECIES; n++) {
-          rho_loc += rY_in(i,j,k,n);
-      }
-      // Get updated Ys
-      amrex::Real Y_loc[NUM_SPECIES] = {0.0};
-      for (int n = 0; n < NUM_SPECIES; n++) {
-          Y_loc[n] = rY_in(i,j,k,n) / rho_loc;
-      }
-      // Get updated H
-      amrex::Real H_loc = rhoH_in(i,j,k,0) / rho_loc;
-
-      // Get curr estimate of T
-      amrex::Real T_loc    = T_in(i,j,k,0);
-      auto eos = pele::physics::PhysicsType::eos();
-      eos.HY2T(H_loc,Y_loc,T_loc);
-      T_in(i,j,k,0) = T_loc;
-
-      /* Dummy */
-      FC_in(i,j,k,0) = 0.0;
-   });
 }
 
 // DivuCeiling type 1 est_divu_dt function
@@ -850,7 +801,7 @@ getGammaInv(int i, int j, int k,
    for (int n = 0; n < NUM_SPECIES; n++) {
       rho += rhoY(i,j,k,n);
    }
-   amrex::Real rhoinv = 1.0_rt / rho; 
+   amrex::Real rhoinv = 1.0_rt / rho;
    amrex::Real y[NUM_SPECIES] = {0.0};
    for (int n = 0; n < NUM_SPECIES; n++) {
       y[n] = rhoY(i,j,k,n) * rhoinv;
@@ -860,7 +811,7 @@ getGammaInv(int i, int j, int k,
    eos.TY2Cp(T(i,j,k), y, cpmix);
    amrex::Real cvmix = 0.0_rt;
    eos.TY2Cv(T(i,j,k), y, cvmix);
-   
+
    amrex::Real gammainv = cvmix / cpmix;
 
    return gammainv;

@@ -12,6 +12,7 @@ using namespace amrex;
 
 void PeleLM::makeEBGeometry()
 {
+    BL_PROFILE("PeleLM::makeEBGeometry()");
     // TODO extend
     int max_coarsening_level = 100;
     int req_coarsening_level = geom.size()-1;
@@ -21,12 +22,32 @@ void PeleLM::makeEBGeometry()
     std::string geom_type;
     ppeb2.get("geom_type", geom_type);
 
+    // At what level should the EB be generated ?
+    // Default : max_level
+    int prev_max_lvl_eb = max_level;
+
+    // If restarting: use the level at which it was generated earlier
+    prev_max_lvl_eb  = (getRestartEBMaxLevel() > 0) ? getRestartEBMaxLevel()
+                                                    : prev_max_lvl_eb;
+
+    // Manual override if needed -> might incur issues with previously covered/uncovered
+    // cell flipping
+    ppeb2.query("max_level_generation",prev_max_lvl_eb);
+    AMREX_ALWAYS_ASSERT(prev_max_lvl_eb <= max_level);
+
+    // Stash away the level at which we ended up
+    m_EB_generate_max_level = prev_max_lvl_eb;
+
+    // Generate the EB data at prev_max_lvl_eb and create consistent coarse version from there.
     if (geom_type == "UserDefined") {
-        EBUserDefined(geom.back(), req_coarsening_level, max_coarsening_level);
+        EBUserDefined(geom[prev_max_lvl_eb], req_coarsening_level, max_coarsening_level);
     } else {
         // If geom_type is not an AMReX recognized type, it'll crash.
-        EB2::Build(geom.back(), req_coarsening_level, max_coarsening_level);
+        EB2::Build(geom[prev_max_lvl_eb], req_coarsening_level, max_coarsening_level);
     }
+
+    // Add finer level, might be inconsistent with the coarser level created above.
+    EB2::addFineLevels(max_level - prev_max_lvl_eb);
 }
 
 void PeleLM::redistributeAofS(int a_lev,
@@ -38,6 +59,7 @@ void PeleLM::redistributeAofS(int a_lev,
                               const BCRec * d_bc,
                               const Geometry &a_geom)
 {
+    BL_PROFILE("PeleLM::redistributeAofS()");
     AMREX_ASSERT(a_tmpDiv.nComp() >= div_comp+ncomp);
     AMREX_ASSERT(a_AofS.nComp() >= aofs_comp+ncomp);
     AMREX_ASSERT(a_state.nComp() >= state_comp+ncomp);
@@ -77,8 +99,7 @@ void PeleLM::redistributeAofS(int a_lev,
                 else if (m_adv_redist_type == "FluxRedist")
                   gbx.grow(2);
 
-                FArrayBox tmpfab(gbx, ncomp);
-                Elixir eli = tmpfab.elixir();
+                FArrayBox tmpfab(gbx, ncomp, The_Async_Arena());
                 Array4<Real> scratch = tmpfab.array(0);
                 if (m_adv_redist_type == "FluxRedist")
                 {
@@ -110,6 +131,7 @@ void PeleLM::redistributeDiff(int a_lev,
                               const BCRec * d_bc,
                               const Geometry &a_geom)
 {
+    BL_PROFILE("PeleLM::redistributeDiff()");
     AMREX_ASSERT(a_tmpDiv.nComp() >= div_comp+ncomp);
     AMREX_ASSERT(a_diff.nComp() >= diff_comp+ncomp);
     AMREX_ASSERT(a_state.nComp() >= state_comp+ncomp);
@@ -149,8 +171,7 @@ void PeleLM::redistributeDiff(int a_lev,
                 else if (m_diff_redist_type == "FluxRedist")
                   gbx.grow(2);
 
-                FArrayBox tmpfab(gbx, ncomp);
-                Elixir eli = tmpfab.elixir();
+                FArrayBox tmpfab(gbx, ncomp, The_Async_Arena());
                 Array4<Real> scratch = tmpfab.array(0);
                 if (m_diff_redist_type == "FluxRedist")
                 {
@@ -213,6 +234,7 @@ void PeleLM::initCoveredState()
 
 void PeleLM::setCoveredState(const TimeStamp &a_time)
 {
+    BL_PROFILE("PeleLM::setCoveredState()");
     for (int lev = 0; lev <= finest_level; lev++) {
         setCoveredState(lev,a_time);
     }
@@ -312,6 +334,7 @@ void PeleLM::initialRedistribution()
 void PeleLM::getEBDistance(int a_lev,
                            MultiFab &a_signDistLev) {
 
+    BL_PROFILE("PeleLM::getEBDistance()");
 
     if (a_lev == 0) {
         MultiFab::Copy(a_signDistLev,*m_signedDist0,0,0,1,0);
@@ -429,6 +452,46 @@ PeleLM::correct_vel_small_cells (Vector<MultiFab*> const& a_vel,
              });
           }
        }
+    }
+}
+
+int
+PeleLM::getRestartEBMaxLevel()
+{
+    if (m_restart_chkfile.empty()) {
+        return -1;
+    } else {
+        // Go and parse the line we need
+        std::string File(m_restart_chkfile + "/Header");
+
+        VisMF::IO_Buffer io_buffer(VisMF::GetIOBufferSize());
+
+        Vector<char> fileCharPtr;
+        ParallelDescriptor::ReadAndBcastFile(File, fileCharPtr);
+        std::string fileCharPtrString(fileCharPtr.dataPtr());
+        std::istringstream is(fileCharPtrString, std::istringstream::in);
+
+        std::string line, word;
+
+        // Title line
+        std::getline(is, line);
+
+        // Finest level
+        std::getline(is, line);
+
+        // Step count
+        std::getline(is, line);
+
+        // Either what we're looking for or m_cur_time
+        std::getline(is, line);
+
+        if (line.find('.') != std::string::npos) {
+            return -1;
+        } else {
+            int max_eb_rst = -1;
+            max_eb_rst = std::stoi(line);
+            return max_eb_rst;
+        }
     }
 }
 

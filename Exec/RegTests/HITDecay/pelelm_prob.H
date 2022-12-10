@@ -47,7 +47,7 @@ locate(const amrex::Real* xtable, const int n, const amrex::Real& x, int& idxlo)
         idxlo = idxmid;
       } else {
         idxhi = idxmid;
-      }   
+      }
     }
   }
 }
@@ -106,7 +106,7 @@ void pelelm_initdata(int i, int j, int k,
                  + prob_parm.d_uinput[idxp1[0] + inSize * (idxp1[1] + inSize * idx[2])] * f6
                  + prob_parm.d_uinput[idxp1[0] + inSize * (idxp1[1] + inSize * idxp1[2])] * f7;
 
-    uinterp[1] =   prob_parm.d_vinput[idx[0] + inSize * (idx[1] + inSize * idx[2])] * f0 
+    uinterp[1] =   prob_parm.d_vinput[idx[0] + inSize * (idx[1] + inSize * idx[2])] * f0
                  + prob_parm.d_vinput[idxp1[0] + inSize * (idx[1] + inSize * idx[2])] * f1
                  + prob_parm.d_vinput[idx[0] + inSize * (idxp1[1] + inSize * idx[2])] * f2
                  + prob_parm.d_vinput[idx[0] + inSize * (idx[1] + inSize * idxp1[2])] * f3

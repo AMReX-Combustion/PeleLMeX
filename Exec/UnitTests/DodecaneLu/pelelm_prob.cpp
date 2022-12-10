@@ -4,7 +4,7 @@
 void PeleLM::readProbParm()
 {
    amrex::ParmParse pp("prob");
-   
+
    std::string type;
    pp.query("P_mean",   PeleLM::prob_parm->P_mean);
    pp.query("standoff", PeleLM::prob_parm->standoff);

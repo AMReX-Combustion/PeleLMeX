@@ -1,17 +1,15 @@
 #ifndef AMREX_ML_CELL_ABECCECLAP_H_
 #define AMREX_ML_CELL_ABECCECLAP_H_
+#include <AMReX_Config.H>
 
 #include <AMReX_MLCellLinOp.H>
 
 namespace amrex {
 
 class MLCellABecCecLap
-    : public MLCellLinOp
+    : public MLCellLinOpT<MultiFab>
 {
 public:
-
-    friend class MLMG;
-    friend class MLCGSolver;
 
     MLCellABecCecLap ();
     virtual ~MLCellABecCecLap ();

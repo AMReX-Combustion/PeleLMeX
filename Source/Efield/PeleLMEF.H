@@ -27,7 +27,7 @@
    amrex::Real                 FphiV_scale = 1.0;  // phiV residual scale
 
    // non-linear / linear solve
-   int                         m_ef_maxNewtonIter    = 5; 
+   int                         m_ef_maxNewtonIter    = 5;
    int                         m_ef_use_PETSC_direct = 0;
    int                         m_ef_PC_approx        = 1;
    int                         m_ef_diffT_jfnk       = 1;
@@ -68,3 +68,11 @@
    amrex::Vector<amrex::MultiFab*> getNLresidVect();
    amrex::Vector<amrex::MultiFab*> getNLstateVect();
    amrex::Vector<amrex::MultiFab*> getNLBGChargeVect();
+
+   // Temporals
+   int m_do_ionsBalance = 0;
+   std::ofstream tmpIonsFile;
+
+   // Extra diagnostics
+   int m_do_extraEFdiags = 0;
+   amrex::Vector<std::unique_ptr<amrex::MultiFab>>  m_ionsFluxes;

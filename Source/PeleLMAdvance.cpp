@@ -41,9 +41,9 @@ void PeleLM::Advance(int is_initIter) {
    // Compute time-step size
    m_dt = computeDt(is_initIter,AmrOldTime);
 #ifdef PELELM_USE_SPRAY
-   if (!is_initIter && do_spray_particles) {
+   if (!is_initIter) {
      // Create the state MF used for spray interpolation
-     setSprayState(m_dt);
+     SpraySetState(m_dt);
    }
 #endif
 
@@ -76,11 +76,13 @@ void PeleLM::Advance(int is_initIter) {
 
    //----------------------------------------------------------------
    // Advance setup
+   // Pre-SDC
+   m_sdcIter = 0;
 
    // initiliaze temporals
    initTemporals();
 
-   // Compute velocity flux on boundary faces if doing closed chamber
+   // Reset velocity flux on boundary faces if doing closed chamber
    if (m_closed_chamber) {
       for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
          m_domainUmacFlux[2*idim] = 0.0;
@@ -108,7 +110,7 @@ void PeleLM::Advance(int is_initIter) {
 
 #ifdef PELELM_USE_SPRAY
    if (!is_initIter) {
-     sprayMKD(m_cur_time, m_dt);
+     SprayMKD(m_cur_time, m_dt);
    }
 #endif
 #ifdef PELELM_USE_SOOT
