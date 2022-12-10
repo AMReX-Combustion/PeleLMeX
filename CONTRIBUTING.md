@@ -55,5 +55,5 @@ If you want to fix a bug, make a small pull request that only fixes a bug.
 
 ## PeleLMeX Coding Style Guide
 
-As much as possible, `PeleLMeX` adhere to `AMReX Coding Style <https://github.com/AMReX-Codes/amrex/blob/development/CONTRIBUTING.md#amrex-coding-style-guide>`_
+As much as possible, `PeleLMeX` adhere to [AMReX Coding Style](https://github.com/AMReX-Codes/amrex/blob/development/CONTRIBUTING.md#amrex-coding-style-guide)
 and we are encouraging contributors to follow those guidelines.
