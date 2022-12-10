@@ -661,8 +661,6 @@ PeleLM::initProgressVariable()
     pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(varNames);
     varNames.push_back("temp");
 
-    auto eos = pele::physics::PhysicsType::eos();
-
     ParmParse pp("peleLM");
     std::string Cformat;
     int hasUserC = pp.contains("progressVariable.format");
