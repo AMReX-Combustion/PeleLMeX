@@ -19,14 +19,24 @@ point your web browser at the file ``${PELELMEX_HOME}/Docs/build/html/index.html
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Theory:
 
    Model.rst
    Validation.rst
-   LMeXControls.rst
    Performances.rst
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Usage:
+
+   LMeXControls.rst
    Troubleshooting.rst
 
+.. toctree::
+   :maxdepth: 2
+   :caption: Tutorials:
+             
+   Tutorials.rst
 
 Indices and tables
 ==================
