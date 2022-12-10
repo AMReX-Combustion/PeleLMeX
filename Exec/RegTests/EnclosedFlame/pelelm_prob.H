@@ -49,12 +49,12 @@ void pelelm_initdata(int i, int j, int k,
                                                 + (y-yc)*(y-yc),
                                                 + (z-zc)*(z-zc)));
 
-    if (prob_parm.pertmag > 0.0) 
+    if (prob_parm.pertmag > 0.0)
     {
 
 #if ( AMREX_SPACEDIM == 2 )
        amrex::Real angle = std::atan2((y-yc),(x-xc));
-       pert = prob_parm.pertmag * 
+       pert = prob_parm.pertmag *
              (0.7 * std::sin(2*angle) +
               //1.023 * std::sin(2 * (angle - 0.004598) / radius2) +
               //0.945 * std::sin(3 * (angle - 0.00712435) / radius2) +
@@ -69,7 +69,7 @@ void pelelm_initdata(int i, int j, int k,
 
        amrex::Real angle = std::atan2((y-yc),(x-xc));
        amrex::Real angle2 = std::atan2((z-zc),(y-yc));
-       pert = prob_parm.pertmag * 
+       pert = prob_parm.pertmag *
              (0.5 * std::sin(2*angle) +
               0.7 * std::sin(8 * angle ) +
               1.1 * std::sin(4 * angle  )) *

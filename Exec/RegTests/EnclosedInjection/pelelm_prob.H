@@ -38,10 +38,10 @@ void pelelm_initdata(int i, int j, int k,
     amrex::Real massfrac[NUM_SPECIES] = {0.0};
 
     state(i,j,k,TEMP) = prob_parm.T_mean;
-    
+
     massfrac[O2_ID] = 0.233;
     massfrac[N2_ID] = 0.767;
-    
+
     AMREX_D_TERM(state(i,j,k,VELX) = 0.0;,
                  state(i,j,k,VELY) = 0.0;,
                  state(i,j,k,VELZ) = 0.0);
@@ -78,7 +78,7 @@ bcnormal(
   ProbParm const &prob_parm,
   pele::physics::PMF::PmfData::DataContainer const *pmf_data)
 {
-    
+
     auto eos = pele::physics::PhysicsType::eos();
     amrex::Real massfrac[NUM_SPECIES] = {0.0};
     amrex::Real molefrac[NUM_SPECIES] = {0.0};
@@ -126,7 +126,7 @@ bcnormal(
 
             for (int n = 0; n < NUM_SPECIES; n++) {
                 s_ext[FIRSTSPEC + n] = massfrac[n] * s_ext[DENSITY];
-            }   
+            }
 
             // Velocity
             s_ext[VELX] = 0.0;
@@ -161,9 +161,9 @@ zero_visc (int i, int j, int k,
             // Just over whole inlet
             for (int n = 0; n < nComp; n++) {
                 beta(i,j,k,n) = 0.0;
-            }   
-        }   
-    }   
+            }
+        }
+    }
 }
 
 #endif
