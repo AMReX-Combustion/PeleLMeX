@@ -5,7 +5,7 @@
 void PeleLM::readProbParm()
 {
    amrex::ParmParse pp("prob");
-   
+
    std::string type;
    pp.query("P_mean", PeleLM::prob_parm->P_mean);
    pp.query("standoff", PeleLM::prob_parm->standoff);
@@ -15,5 +15,5 @@ void PeleLM::readProbParm()
    pp.query("slot_width", PeleLM::prob_parm->slot_width);
    pp.query("is_sym", PeleLM::prob_parm->is_sym);
 
-   PeleLM::pmf_data.initialize(); 
+   PeleLM::pmf_data.initialize();
 }

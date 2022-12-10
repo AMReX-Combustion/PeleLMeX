@@ -4,7 +4,7 @@
 void PeleLM::readProbParm()
 {
    amrex::ParmParse pp("prob");
-   
+
    // CF params
    pp.query("P_mean", PeleLM::prob_parm->P_mean);
    pp.query("T_oxidizer", PeleLM::prob_parm->T_ox);

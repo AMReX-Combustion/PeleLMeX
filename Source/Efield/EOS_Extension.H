@@ -6,7 +6,7 @@
 #include "mechanism.H"
 
 namespace pele {
-namespace physics {   
+namespace physics {
 namespace eos {
 
   AMREX_GPU_HOST_DEVICE

@@ -505,7 +505,7 @@ void PeleLM::readParameters() {
    if (m_do_temporals) {
       ppef.query("do_ionsBalance",m_do_ionsBalance);
       if (m_do_ionsBalance) {
-         m_do_speciesBalance = 1; 
+         m_do_speciesBalance = 1;
       }
    }
 #endif

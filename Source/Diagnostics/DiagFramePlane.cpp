@@ -56,7 +56,7 @@ DiagFramePlane::init(const std::string &a_prefix)
     } else if (center.size() == 1) {
         m_center[m_normal] = center[0];
     }
-    
+
     // IO
     pp.query("int", m_interval);
     pp.query("per", m_per);
@@ -76,13 +76,13 @@ DiagFramePlane::init(const std::string &a_prefix)
     }
 }
 
-void 
+void
 DiagFramePlane::prepare(int a_nlevels,
                         const amrex::Vector<amrex::Geometry> &a_geoms,
                         const amrex::Vector<amrex::BoxArray> &a_grids,
                         const amrex::Vector<amrex::DistributionMapping> &a_dmap)
 {
-    if (first_time) {    
+    if (first_time) {
         // Store the level0 geometry
         auto initDomain  = a_geoms[0].Domain();
         auto initRealBox = a_geoms[0].ProbDomain();
@@ -157,7 +157,7 @@ DiagFramePlane::prepare(int a_nlevels,
                 amrex::Box zNormalBax;
                 int idx = 0;
                 for (int idim = 0; idim < AMREX_SPACEDIM;++idim) {
-                    if (idim != m_normal) { 
+                    if (idim != m_normal) {
                         zNormalBax.setRange(idx,cBox.smallEnd(idim),cBox.length(idim));
                         idx++;
                     }
@@ -249,7 +249,7 @@ DiagFramePlane::processDiag(int a_nstep,
     amrex::Vector<int> step_array(nlevs,a_nstep);
     Write2DMultiLevelPlotfile(diagfile, nlevs, GetVecOfConstPtrs(planeData), a_stateVar,
                                    pltGeoms, a_time, step_array, ref_ratio);
-    
+
 }
 
 void
@@ -274,13 +274,13 @@ DiagFramePlane::Write2DMultiLevelPlotfile(const std::string &a_pltfile,
         amrex::Vector<amrex::BoxArray> boxArrays(a_nlevels);
         for(int level(0); level < boxArrays.size(); ++level) {
             boxArrays[level] = a_slice[level]->boxArray();
-        }   
+        }
 
         amrex::VisMF::IO_Buffer io_buffer(amrex::VisMF::IO_Buffer_Size);
         std::string HeaderFileName(a_pltfile + "/Header");
         std::ofstream HeaderFile;
         HeaderFile.rdbuf()->pubsetbuf(io_buffer.dataPtr(), io_buffer.size());
-        HeaderFile.open(HeaderFileName.c_str(), std::ofstream::out   |   
+        HeaderFile.open(HeaderFileName.c_str(), std::ofstream::out   |
                                                 std::ofstream::trunc |
                                                 std::ofstream::binary);
         if( ! HeaderFile.good()) amrex::FileOpenFailed(HeaderFileName);
@@ -357,7 +357,7 @@ DiagFramePlane::Write2DPlotfileHeader(std::ostream &HeaderFile,
 
         const amrex::IntVect& domain_lo = geom[level].Domain().smallEnd();
         for (int i = 0; i < bArray[level].size(); ++i)
-        {   
+        {
             // Need to shift because the RealBox ctor we call takes the
             // physical location of index (0,0,0).  This does not affect
             // the usual cases where the domain index starts with 0.
@@ -365,10 +365,10 @@ DiagFramePlane::Write2DPlotfileHeader(std::ostream &HeaderFile,
             amrex::RealBox loc = amrex::RealBox(b, geom[level].CellSize(), geom[level].ProbLo());
             for (int idim = 0; idim < lowerSpaceDim; ++idim) {
                 HeaderFile << loc.lo(idim) << ' ' << loc.hi(idim) << '\n';
-            }   
-        }   
+            }
+        }
         HeaderFile << amrex::MultiFabHeaderPath(level, levelPrefix, mfPrefix) << '\n';
-    }   
+    }
 }
 
 void
@@ -377,13 +377,13 @@ DiagFramePlane::ReWriteLevelVisMFHeader(const std::string &a_HeaderPath) {
     std::string OldHeaderFileName(a_HeaderPath+ "Cell_H");
     amrex::Vector<char> oldfileCharPtr;
     amrex::ParallelDescriptor::ReadAndBcastFile(OldHeaderFileName, oldfileCharPtr);
-    
+
     if (amrex::ParallelDescriptor::IOProcessor()) {
         amrex::VisMF::IO_Buffer io_buffer_new(amrex::VisMF::IO_Buffer_Size);
         std::string HeaderFileName(a_HeaderPath+ "Cell_temp_H");
         std::ofstream HeaderFile;
         HeaderFile.rdbuf()->pubsetbuf(io_buffer_new.dataPtr(), io_buffer_new.size());
-        HeaderFile.open(HeaderFileName.c_str(), std::ofstream::out   |   
+        HeaderFile.open(HeaderFileName.c_str(), std::ofstream::out   |
                                                 std::ofstream::trunc |
                                                 std::ofstream::binary);
         if( ! HeaderFile.good()) amrex::FileOpenFailed(HeaderFileName);
@@ -391,7 +391,7 @@ DiagFramePlane::ReWriteLevelVisMFHeader(const std::string &a_HeaderPath) {
         std::string fileCharPtrString(oldfileCharPtr.dataPtr());
         std::istringstream is(fileCharPtrString, std::istringstream::in);
         std::string line, word;
-        
+
         // Version, How, nComp, nGrow
         int version, how, nComp, nGrow;
         is >> version;
@@ -480,7 +480,7 @@ DiagFramePlane::ReWriteLevelVisMFHeader(const std::string &a_HeaderPath) {
                 if (w2 == dataFiles[f]) {
                    for (int fa = 0; fa < FabsInFiles[f].size(); ++fa) {
                       if (FabsInFiles[f][fa] == i) {
-                         if (fa > 0) { 
+                         if (fa > 0) {
                              for (int fback = fa-1; fback >= 0; --fback) {
                                  offset -= diff_2D3D_header(fullDimBox[fback],nComp);
                              }
@@ -540,13 +540,13 @@ DiagFramePlane::VisMF2D(const amrex::MultiFab& a_mf,
      amrex::Vector<int> procsWithDataVector;
      for(int i(0); i < pmap.size(); ++i) {
          procsWithData.insert(pmap[i]);
-     }    
+     }
      if(static_cast<int>(procsWithData.size()) < nOutFiles) {
          useSparseFPP = true;
          for(std::set<int>::iterator it = procsWithData.begin(); it != procsWithData.end(); ++it) {
              procsWithDataVector.push_back(*it);
-         }    
-     } 
+         }
+     }
 
      if ( useSparseFPP ) {
          nfi.SetSparseFPP(procsWithDataVector);
@@ -612,7 +612,7 @@ DiagFramePlane::VisMF2D(const amrex::MultiFab& a_mf,
                  const amrex::FArrayBox &fab = a_mf[mfi];
                  writeDataItems = fab.box().numPts() * a_mf.nComp();
                  writeDataSize = writeDataItems * whichRDBytes;
-                 std::stringstream hss; 
+                 std::stringstream hss;
                  write_2D_header(hss, fab, fab.nComp());
                  hLength = static_cast<std::streamoff>(hss.tellp());
                  auto tstr = hss.str();
@@ -628,7 +628,7 @@ DiagFramePlane::VisMF2D(const amrex::MultiFab& a_mf,
                                                    fab.size()*sizeof(amrex::Real));
                      amrex::Gpu::streamSynchronize();
                      fabdata = hostfab->dataPtr();
-                 }    
+                 }
 #endif
                  nfi.Stream().write((char *) fabdata, writeDataSize);
                  nfi.Stream().flush();

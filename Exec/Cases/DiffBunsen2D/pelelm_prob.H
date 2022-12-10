@@ -22,7 +22,7 @@
 // Schema : [ 1 | 2 | 3 | 4 ]
 AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
-int get_zone(const amrex::Real x, 
+int get_zone(const amrex::Real x,
              amrex::GeometryData const& geomdata,
              ProbParm const& prob_parm)
 {
@@ -125,18 +125,18 @@ void pelelm_initdata(int i, int j, int k,
                         state(i,j,k,VELY) = prob_parm.V_air;,
                         state(i,j,k,VELZ) = 0.0;);
          }
-    } 
+    }
 
     // Ignition zone for the flame - This zone is set to the stoechimetry for the methane combustion - The temperature profile inside the blob is hyperbolic
     if (prob_parm.do_ignition == 1) {
         amrex::Real xc = prob_parm.Xf;
         amrex::Real yc = prob_parm.Yin;
         amrex::Real rad = std::sqrt((y-yc)*(y-yc)+(x-xc)*(x-xc));
-        
+
         if (rad <= prob_parm.ign_rad)
         {
            amrex::Real thick = 0.005*prob_parm.ign_rad; //This is set so that the blob will loose temperature only in the last percent of radius
-           amrex::Real eta = 0.5*(1.0 - tanh((rad-prob_parm.ign_rad)/(thick))); // in the center, T = ign_T ; at the edge, T = average of T_fu et ign_T 
+           amrex::Real eta = 0.5*(1.0 - tanh((rad-prob_parm.ign_rad)/(thick))); // in the center, T = ign_T ; at the edge, T = average of T_fu et ign_T
            state(i,j,k,TEMP) = prob_parm.ign_T*eta + prob_parm.T_fu*(1.0-eta);
 
            molefrac[CH4_ID] = 0.095;
@@ -157,7 +157,7 @@ void pelelm_initdata(int i, int j, int k,
     state(i,j,k,RHOH) = h_cgs * 1.0e-4 * state(i,j,k,DENSITY);
 
     // Species mass
-    for (int n = 0; n < NUM_SPECIES; n++) 
+    for (int n = 0; n < NUM_SPECIES; n++)
     {
        state(i,j,k,FIRSTSPEC+n) = massfrac[n] * state(i,j,k,DENSITY);
     }
@@ -209,11 +209,11 @@ bcnormal( const amrex::Real x[AMREX_SPACEDIM],
        {
           case 1: // Fuel inflow
           {
-             // The speed in the fuel inflow has a parabolic profile - the fuel tube is supposed ideal and the speed is set at 0 at the limits of the tube. 
+             // The speed in the fuel inflow has a parabolic profile - the fuel tube is supposed ideal and the speed is set at 0 at the limits of the tube.
              a = (-1.5)*prob_parm.V_fu/(prob_parm.Xf*prob_parm.Xf);
              c = 1.5*prob_parm.V_fu;
              s_ext[VELY] = a*x[0]*x[0] + c;
-             
+
              // Temperature and mass fractions are set as uniform
              s_ext[TEMP] = prob_parm.T_fu;
              massfrac[CH4_ID] = prob_parm.dilution;
@@ -233,14 +233,14 @@ bcnormal( const amrex::Real x[AMREX_SPACEDIM],
 
           case 3: // Oxidizer inflow
           {
-             // The speed in tha oxidizer inflow has an hyperbolic profile. This is due to the boundary layer of the extruded tube a=in the real experiment. 
+             // The speed in tha oxidizer inflow has an hyperbolic profile. This is due to the boundary layer of the extruded tube a=in the real experiment.
              delta = 5e-5;
              eta = tanh((x[0]-prob_parm.Xf-prob_parm.Xe)/delta);
              s_ext[VELY] = eta*prob_parm.V_ox;
 
              // Temperature and mass fractions are set as uniform
              s_ext[TEMP] = prob_parm.T_ox;
-             molefrac[O2_ID] = 0.21; 
+             molefrac[O2_ID] = 0.21;
              molefrac[N2_ID] = 1 - molefrac[O2_ID];
              eos.X2Y(molefrac,massfrac);
           }
@@ -267,11 +267,11 @@ bcnormal( const amrex::Real x[AMREX_SPACEDIM],
       eos.TY2H(s_ext[TEMP], massfrac, RhoH_temp);
       s_ext[RHOH] = RhoH_temp * 1.0e-4 * s_ext[DENSITY];   // CGS -> MKS conversion
 
-      for (int n = 0; n < NUM_SPECIES; n++) 
+      for (int n = 0; n < NUM_SPECIES; n++)
       {
          s_ext[FIRSTSPEC+n] = massfrac[n] * s_ext[DENSITY];
       }
-   } 
+   }
 }
 
 AMREX_GPU_DEVICE

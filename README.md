@@ -6,11 +6,27 @@
 
 ## Overview
 
-*PeleLMeX* is a non-subcycling version of [*PeleLM*](https://github.com/AMReX-Combustion/PeleLM) based on AMReX's [AmrCore](https://amrex-codes.github.io/amrex/docs_html/AmrCore.html) and borrowing from the incompressible solver [incflo](https://github.com/AMReX-Codes/incflo).
+*PeleLMeX* is a non-subcycling version of [*PeleLM*](https://github.com/AMReX-Combustion/PeleLM) based on AMReX's [AmrCore](https://amrex-codes.github.io/amrex/docs_html/AmrCore.html) and borrowing from the incompressible solver [incflo](https://github.com/AMReX-Codes/incflo). 
+
+*PeleLMeX* is part of the [Pele combustion Suite](https://amrex-combustion.github.io/).
 
 ## Documentation
 
-PeleLMeX solves of the multispecies reactive Navier-Stokes equations in the low Mach number limit as described in the [PeleLM documentation](https://amrex-combustion.github.io/PeleLM/manual/html/Model.html). It also inherits most of PeleLM algorithmic features, but differs significantly in its implementation stemming from the non-subcycling approach. A brief summary of PeleLMeX control is provided in this exhaustive [input file example](https://amrex-combustion.github.io/PeleLMeX/LMeXControls.html).
+*PeleLMeX* solves of the multispecies reactive Navier-Stokes equations in the low Mach number limit as described in the [documentation](https://amrex-combustion.github.io/PeleLMeX/manual/html/index.html). It inherits most of *PeleLM* algorithmic features, but differs significantly in its implementation stemming from the non-subcycling approach.
+
+A overview of PeleLMeX controls is provided in the [documentation](https://amrex-combustion.github.io/PeleLMeX/manual/html/LMeXControls.html).
+
+### Core Algorithm
+
+The *PeleLMeX* governing equations and core algorithms are described in:
+
+https://amrex-combustion.github.io/PeleLMeX/manual/html/Model.html#mathematical-background
+
+https://amrex-combustion.github.io/PeleLMeX/manual/html/Model.html#pelelmex-algorithm
+
+### Tutorials
+
+A set of self-contained tutorials describing more complex problems is also provided:
 
 ## Installation
 
@@ -72,3 +88,17 @@ If this is a clean install, you will need to make the third party libraries with
 Finally, make with: `make -j`, or if on macOS: `make -j COMP=llvm`.
 
 To clean the installation, use either `make clean` or `make realclean`.
+
+## Contributing
+
+New contributions to *PeleLM* are welcome ! Contributing Guidelines are provided in [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Acknowledgment
+
+This research was supported by the Exascale Computing Project (ECP), Project
+Number: 17-SC-20-SC, a collaborative effort of two DOE organizations -- the 
+Office of Science and the National Nuclear Security Administration --
+responsible for the planning and preparation of a capable exascale ecosystem --
+including software, applications, hardware, advanced system engineering, and 
+early testbed platforms -- to support the nation's exascale computing
+imperative.

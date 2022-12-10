@@ -442,7 +442,7 @@ PeleLM::floorSpecies(const TimeStamp &a_time)
          for (int n = 0; n < NUM_SPECIES; n++) {
             sma[box_no](i,j,k,DENSITY) += sma[box_no](i,j,k,FIRSTSPEC+n);
          }
-         
+
          // ... as well as rhoh
          auto eos = pele::physics::PhysicsType::eos();
          Real massfrac[NUM_SPECIES] = {0.0};
@@ -660,8 +660,6 @@ PeleLM::initProgressVariable()
     Vector<std::string> varNames;
     pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(varNames);
     varNames.push_back("temp");
-
-    auto eos = pele::physics::PhysicsType::eos();
 
     ParmParse pp("peleLM");
     std::string Cformat;

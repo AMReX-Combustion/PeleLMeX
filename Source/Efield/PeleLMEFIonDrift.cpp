@@ -9,7 +9,7 @@ using namespace amrex;
 void PeleLM::ionDriftVelocity(std::unique_ptr<AdvanceAdvData> &advData)
 {
    //----------------------------------------------------------------
-   // set udrift boundaries to zero 
+   // set udrift boundaries to zero
    if ( advData->uDrift[0][0].nGrow() > 0 ) {
       for (int lev=0; lev <= finest_level; ++lev)
       {
@@ -23,7 +23,7 @@ void PeleLM::ionDriftVelocity(std::unique_ptr<AdvanceAdvData> &advData)
    // Get the gradient of Old and New phiV
    Vector<Array<MultiFab,AMREX_SPACEDIM> > gphiVOld(finest_level+1);
    Vector<Array<MultiFab,AMREX_SPACEDIM> > gphiVNew(finest_level+1);
-   int nGrow = 0;               // No need for ghost face on gphiV 
+   int nGrow = 0;               // No need for ghost face on gphiV
    for (int lev = 0; lev <= finest_level; ++lev) {
       const auto& ba = grids[lev];
       const auto& factory = Factory(lev);
@@ -112,7 +112,7 @@ void PeleLM::ionDriftVelocity(std::unique_ptr<AdvanceAdvData> &advData)
 #endif
    }
 
-   // FillPatch Udrift on levels > 0 
+   // FillPatch Udrift on levels > 0
    for (int lev = 0; lev <= finest_level; ++lev) {
        if (lev > 0) {
            IntVect rr  = geom[lev].Domain().size() / geom[lev-1].Domain().size();

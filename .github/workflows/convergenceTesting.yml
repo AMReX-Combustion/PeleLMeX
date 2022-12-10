@@ -1,6 +1,6 @@
 name: ConvergenceTesting
 
-on: 
+on:
    workflow_dispatch:
    schedule:
       - cron: '0 2 * * *'
@@ -11,7 +11,7 @@ jobs:
   COVO_Conv:
     name: Velocity-Advection
     runs-on: ubuntu-latest
-    env: 
+    env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
     - name: Cancel previous runs
@@ -49,7 +49,7 @@ jobs:
       run: |
         cp ${GITHUB_WORKSPACE}/build/amrex/Tools/Plotfile/fcompare.gnu.ex .
         sed -i "34s/.*/    resolution = [32,64,128,256,512]/" multiRuns.py
-        sed -i "s/mpiexec -n 1/mpiexec -n 4 --oversubscribe/g" multiRuns.py 
+        sed -i "s/mpiexec -n 1/mpiexec -n 4 --oversubscribe/g" multiRuns.py
         ./multiRuns.py --test_name GH_CI_CoVo --input_file input.2d_CoVo
         sed -i "49s/.*/    resolution = [32,64,128,256,512]/" pprocConvOrder.py
         ./pprocConvOrder.py ./fcompare.gnu.ex --test_name GH_CI_CoVo

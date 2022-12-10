@@ -213,7 +213,7 @@ void PeleLM::initData() {
             calcDivU(is_initialization,computeDiffusionTerm,do_avgDown,AmrNewTime,diffData);
          }
          initialProjection();
-     
+
          // If gravity is used, do initial pressure projection to get the hydrostatic pressure
          if (std::abs(m_gravity.sum()) > 0.0) {
             initialPressProjection();
@@ -264,7 +264,7 @@ void PeleLM::initData() {
 
             initialProjection();
          }
-         
+
          if ( m_numDivuIter == 0 && m_do_react ) {
             for (int lev = 0; lev <= finest_level; ++lev) {
                auto ldataR_p   = getLevelDataReactPtr(lev);

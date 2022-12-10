@@ -11,10 +11,10 @@
 #   * --pproc_exec: the processing executable path
 #   * --test_name: a TESTNAME that will looked for during the postprocessing
 
-# "Internal" user input 
+# "Internal" user input
 #   * pproc_type:
-#       - pproc_type == "fcompare". fcompare is used to get the error from the initial solution (== analytical solution) 
-#       - pproc_type == "diffsamedomain". Analytical solution is not known and errors are computed from the next finer grid  
+#       - pproc_type == "fcompare". fcompare is used to get the error from the initial solution (== analytical solution)
+#       - pproc_type == "diffsamedomain". Analytical solution is not known and errors are computed from the next finer grid
 #   * vars : a list of the variables of interest (no check is done on whether it exists in plt ...)
 #   * resolution : a list of the resolutions to post-process (should be consistent with multirun.py, if used)
 
@@ -23,10 +23,10 @@
 #   * ConvTable_${TESTNAME}.tex file with the convergence rate formatted in an LaTeX table.
 #   * Convergence_${TESTNAME}.dat plain text file with the convergence rate.
 
-# Head's up : 
-#   - The script will get a copy of the post-processing program (if not already there) in the testing folder. The name of this folder is assumed to be the TESTNAME.  
+# Head's up :
+#   - The script will get a copy of the post-processing program (if not already there) in the testing folder. The name of this folder is assumed to be the TESTNAME.
 #   - The plt files naming convention is: ${TESTNAME}_plt_${resolution}_*****. It is used to get the first and last solution of a test at a given resolution.
-#   - Errors are parsed from the screen output of the standard fcompare/diffsamedomain. Beware of any change of these programs. 
+#   - Errors are parsed from the screen output of the standard fcompare/diffsamedomain. Beware of any change of these programs.
 
 import sys
 import os
@@ -48,7 +48,7 @@ def pproc(args):
     #vars=["y_velocity", "x_velocity", "avg_pressure" ]
     #vars=["rho.Y(O2)", "rho.Y(O2)", "rhoh" ]
     vars=["temp", "rhoh" ]
-    resolution = [32,64,128,256]        
+    resolution = [32,64,128,256]
     pproc_type = "fcompare"
 
     # Get a local copy of post-processing executable
@@ -78,7 +78,7 @@ def pproc(args):
             outfile = "error_{}.analysis.out".format(case)
             os.system("./{} -n 2 {} {} > {}".format(os.path.basename(args.pproc_exe), pltfile[0], pltfile[-1], outfile))
             pltfile.clear()
-        
+
             # Extract errors on each variable
             with open(outfile) as fp:
                 for i, line in enumerate(fp):
@@ -97,7 +97,7 @@ def pproc(args):
             nextcase = resolution[res+1]
             errors[res,0] = case
 
-            # Get the diffsamedomain inputs: last solutions of current 
+            # Get the diffsamedomain inputs: last solutions of current
             # and next finer cases. These run should have been runned to the same final time
             for f in os.listdir(run_dir):
                 if ( not fnmatch.fnmatch(f, '*old*')):
@@ -137,7 +137,7 @@ def plotdata(data, test_name, vars):
     snd_order = data[:,1]*1.05
     for i in range(1,len(data[:,1])):
         snd_order[i] = snd_order[i-1]/np.exp(2.0*np.log(2.0))
-    for i in range(0, len(vars)):    
+    for i in range(0, len(vars)):
         plt.plot(data[:,0], data[:,i+1], label="{}".format(vars[i]))
     plt.plot(data[:,0], snd_order[:],linestyle='--',color='k', label='2nd-order')
     plt.xlabel("Resolution")
@@ -154,13 +154,13 @@ def writetex(data, test_name, vars):
     for v in range(len(vars)):
         for i in range(len(conv_order[:,0])):
             conv_order[i,v] = np.log(data[i,v+1]/data[i+1,v+1])/np.log(2.0)
-    fout = open("ConvTable_{}.tex".format(test_name), "w")            
+    fout = open("ConvTable_{}.tex".format(test_name), "w")
     fout.write("\\begin{table}[ht!]\n")
     fout.write("\centering\n")
     fout.write("\\begin{tabular}{l|")
     for i in range(len(conv_order[:,0])):
         fout.write("c ")
-    fout.write("}\n")    
+    fout.write("}\n")
     fout.write("\hline\n")
     fout.write("Variable ")
     for i in range(len(conv_order[:,0])):
@@ -183,7 +183,7 @@ def writeRegTestFile(data, test_name, vars):
     for v in range(len(vars)):
         for i in range(len(conv_order[:,0])):
             conv_order[i,v] = np.log(data[i,v+1]/data[i+1,v+1])/np.log(2.0)
-    fout = open("Convergence_{}.dat".format(test_name), "w")            
+    fout = open("Convergence_{}.dat".format(test_name), "w")
     fout.write(" Variables ")
     for i in range(len(conv_order[:,0])):
         fout.write(" {}/{} ".format(data[i+1,0],data[i,0]))
@@ -209,7 +209,7 @@ def parse_args(arg_string=None):
     else:
         args, unknown = parser.parse_known_args()
 
-    return args   
+    return args
 
 if __name__ == "__main__":
     arg_string_prepend = ["--pproc_exe"]+sys.argv[1:]
