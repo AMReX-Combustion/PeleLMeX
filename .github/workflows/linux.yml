@@ -1,6 +1,6 @@
 name: PeleLMeX_linux
 
-on: 
+on:
    workflow_dispatch:
    push:
      branches: [ main, development ]
@@ -12,7 +12,7 @@ jobs:
   FS2D_NoMPI:
     name: GNU@9.3 NOMPI Comp [FS2D]
     runs-on: ubuntu-latest
-    env: 
+    env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
     - name: Cancel previous runs
@@ -36,12 +36,12 @@ jobs:
         mpicxx -v
         make TPL COMP=gnu USE_MPI=FALSE
         make -j 2 COMP=gnu USE_MPI=FALSE
-  
+
   # Build the 2D FlameSheet RegTest with GNU9.3 and MPI support
   FS2D_MPI:
     name: GNU@9.3 MPI Comp [FS2D]
     runs-on: ubuntu-latest
-    env: 
+    env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
     - name: Cancel previous runs
@@ -63,12 +63,12 @@ jobs:
         cd Exec/RegTests/FlameSheet/
         make TPL COMP=gnu
         make -j 2 COMP=gnu
-  
+
   # Build the 2D FlameSheet RegTest with GNU9.3 and MPI+OMP support
   FS2D_MPIOMP:
     name: GNU@9.3 MPI OMP Comp [FS2D]
     runs-on: ubuntu-latest
-    env: 
+    env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
     - name: Cancel previous runs
@@ -95,7 +95,7 @@ jobs:
   COVO2D_NoMPIRun:
     name: GNU@9.3 NOMPI Run [COVO2D]
     runs-on: ubuntu-latest
-    env: 
+    env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
     - name: Cancel previous runs
@@ -126,7 +126,7 @@ jobs:
   HB2D_MPIRun:
     name: GNU@9.3 MPI Run [HB2D]
     runs-on: ubuntu-latest
-    env: 
+    env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
     - name: Cancel previous runs
@@ -157,7 +157,7 @@ jobs:
   HB2D_DBGRun:
     name: GNU@9.3 DEBUG Run [HB2DDBG]
     runs-on: ubuntu-latest
-    env: 
+    env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
     - name: Cancel previous runs
@@ -188,7 +188,7 @@ jobs:
   EF2D_MPIRun:
     name: GNU@9.3 MPI Run [EF2D]
     runs-on: ubuntu-latest
-    env: 
+    env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
     - name: Cancel previous runs
@@ -219,7 +219,7 @@ jobs:
   FPC2D_MPIRun:
     name: GNU@9.3 MPI Run [FPC2DDBG]
     runs-on: ubuntu-latest
-    env: 
+    env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
     - name: Cancel previous runs
@@ -251,7 +251,7 @@ jobs:
   HIT3D_MPIRun:
     name: GNU@9.3 MPI Run [HIT3D]
     runs-on: ubuntu-latest
-    env: 
+    env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
     - name: Cancel previous runs
@@ -283,7 +283,7 @@ jobs:
   EBPF3D_MPIRun:
     name: GNU@9.3 MPI Run [EBPF3D]
     runs-on: ubuntu-latest
-    env: 
+    env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
     - name: Cancel previous runs
@@ -314,7 +314,7 @@ jobs:
   TI3D_MPIRun:
     name: GNU@9.3 MPI Run [TI3DDBG]
     runs-on: ubuntu-latest
-    env: 
+    env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
     - name: Cancel previous runs
