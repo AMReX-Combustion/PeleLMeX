@@ -74,8 +74,8 @@ void pelelm_initdata(int i, int j, int k,
     amrex::Real zk[NUM_SPECIES] = {0.0};
     pele::physics::eos::charge_mass(zk);
     for (int n = 0; n < NUM_SPECIES; n++) {
-	    zk[n] *= 1000.0;    // CGS->MKS
-	 }
+        zk[n] *= 1000.0;    // CGS->MKS
+    }
     massfrac[E_ID] = 0.0;
     amrex::Real sum = 0.0;
     for (int n = 0; n < NUM_SPECIES; n++) {

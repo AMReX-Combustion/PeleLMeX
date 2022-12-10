@@ -235,8 +235,8 @@ EBUserDefined(const Geometry& geom,
     auto pr_rot = amrex::EB2::rotate(amrex::EB2::lathe(polys), angle*3.1415/180., dir);
     auto shop   = amrex::EB2::makeShop(pr_rot);
 
-	EB2::Build(shop, geom, required_coarsening_level,
-                   max_coarsening_level);
+    EB2::Build(shop, geom, required_coarsening_level,
+               max_coarsening_level);
 }
 #endif
 #endif
