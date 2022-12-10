@@ -7,7 +7,7 @@ Tutorials
 =========
 
 This sections includes several self-contained tutorials.
-TODO 
+TODO
 
 .. toctree::
    :maxdepth: 1
