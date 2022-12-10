@@ -6,10 +6,10 @@ leveraging the computational power of ExaScale super-computers. As mentioned ear
 `PeleLMeX` is built upon the AMR library `AMReX` and inherits most of its High Performance Computing
 features.
 
-`PeleLMeX` parallel paradigm is based on an MPI+`X` appraoch, where `X` can be OpenMP, or any of 
-CUDA, HIP or SYCL, for Nvidia, AMD and Intel GPUs vendor, respectively. The actual performances 
+`PeleLMeX` parallel paradigm is based on an MPI+`X` appraoch, where `X` can be OpenMP, or any of
+CUDA, HIP or SYCL, for Nvidia, AMD and Intel GPUs vendor, respectively. The actual performances
 gain of using accelerator within `PeleLMeX` is a moving target as both hardware and software are
-continously improving. In the following we demonstrate the gain at a given time (specified and 
+continously improving. In the following we demonstrate the gain at a given time (specified and
 subject to updates) and on selected platforms.
 
 
@@ -20,7 +20,7 @@ Case description
 ^^^^^^^^^^^^^^^^
 
 The simple case of a laminar premixed flame with harmonic perturbation can be found in
-`Exec/RegTests/FlameSheet`. For the following test, the mixture is composed of 
+`Exec/RegTests/FlameSheet`. For the following test, the mixture is composed of
 dodecane and air at ambient temperature and pressure. The chemical mechanism used consist
 of 35 transported species and 18 species assumed in Quqsi-Steady State (QSS) and the `Simple`
 transport model with the `Fuego` EOS is used:
@@ -33,13 +33,13 @@ transport model with the `Fuego` EOS is used:
 
 The initial solution is provided from a Cantera simulation and averaged on the cartesian grid.
 The input file `Exec/RegTests/FlameSheet/inputs.3d_DodecaneQSS` is used, with modifications detailed hereafter.
-Simulations are conducted at a fixed time step size for 16 steps, bypassing the initial reduction of 
+Simulations are conducted at a fixed time step size for 16 steps, bypassing the initial reduction of
 the time step size usually employed to remove artifacts from the initial data:
 
 ::
 
     amr.max_step = 16
-    amr.dt_shrink = 1.0 
+    amr.dt_shrink = 1.0
     amr.fixed_dt = 2.5e-7
 
 Additionnaly, all the tests on GPUs are conducted using the MAGMA dense-direct solver to solve for
@@ -77,7 +77,7 @@ The FlameSheet case is ran using 2 levels of refinement (3 levels total) and the
     amr.n_cell           = 32 64 64
     amr.max_level        = 2
 
-leading to an initial cell count of 3.276 M, i.e. 0.8M/cells per GPU. The git hashes of `PeleLMeX` and its dependencies for 
+leading to an initial cell count of 3.276 M, i.e. 0.8M/cells per GPU. The git hashes of `PeleLMeX` and its dependencies for
 these tests are:
 
 ::
@@ -89,9 +89,9 @@ these tests are:
      AMReX-Hydro git hash: d959ee9
      ===============================================
 
-The graph below compares the timings of the two runs obtained from `AMReX` TinyProfiler. 
-Inclusive averaged data are presented here, for separates portion of the `PeleLMeX` algorithm 
-(see the `algorithm page <https://amrex-combustion.github.io/PeleLMeX/manual/html/Model.html#pelelmex-algorithm>`_ for more 
+The graph below compares the timings of the two runs obtained from `AMReX` TinyProfiler.
+Inclusive averaged data are presented here, for separates portion of the `PeleLMeX` algorithm
+(see the `algorithm page <https://amrex-combustion.github.io/PeleLMeX/manual/html/Model.html#pelelmex-algorithm>`_ for more
 details):
 
 

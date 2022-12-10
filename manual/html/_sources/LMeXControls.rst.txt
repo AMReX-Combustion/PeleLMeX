@@ -40,7 +40,7 @@ AMR parameters
 ::
 
     #-------------------------AMR CONTROL--------------------------
-    amr.n_cell          = 64 64 128        # Number of cells on Level 0 in each direction   
+    amr.n_cell          = 64 64 128        # Number of cells on Level 0 in each direction
     amr.v               = 1                # [OPT, DEF=0] AMR verbose
     amr.max_level       = 1                # maximum level number allowed
     amr.ref_ratio       = 2 2 2 2          # refinement ratio, one per refinement level
@@ -77,7 +77,7 @@ IO parameters
     #--------------------------IO CONTROL--------------------------
     amr.plot_int         = 20              # [OPT, DEF=-1] Frequency (as step #) for writting plot file
     amr.plot_per         = 002             # [OPT, DEF=-1] Period (time in s) for writting plot file
-    amr.plot_per_exact   = 1               # [OPT, DEF=0] Flag to enforce exactly plt_per by shortening dt 
+    amr.plot_per_exact   = 1               # [OPT, DEF=0] Flag to enforce exactly plt_per by shortening dt
     amr.plot_file        = "plt_"          # [OPT, DEF="plt_"] Plot file prefix
     amr.check_int        = 100             # [OPT, DEF=-1] Frequency (as step #) for writting checkpoint file
     amr.check_file       = "chk"           # [OPT, DEF="chk"] Checkpoint file prefix
@@ -187,7 +187,7 @@ Note that the last four parameters belong to the Reactor class of PelePhysics bu
 Embedded Geometry
 -----------------
 
-`PeleLMeX` geomtry relies on AMReX implementation of the EB method. Simple geometrical objects 
+`PeleLMeX` geomtry relies on AMReX implementation of the EB method. Simple geometrical objects
 can thus be constructed using `AMReX internal parser <https://amrex-codes.github.io/amrex/docs_html/EB.html>`_.
 For instance, setting up a sphere of radius 5 mm can be achieved:
 
@@ -200,9 +200,9 @@ For instance, setting up a sphere of radius 5 mm can be achieved:
     eb2.small_volfrac = 1.0e-4
     eb2.maxiter = 200
 
-The `eb2.small_volfrac` controls volume fraction that are deemed too small and eliminated from the EB representation. 
+The `eb2.small_volfrac` controls volume fraction that are deemed too small and eliminated from the EB representation.
 This operation is done iteratively and the maximum number of iteration is prescribed by `eb2.maxiter`.
-For most applications, a single AMReX object is insufficient to represent the geometry. AMReX enable to combine 
+For most applications, a single AMReX object is insufficient to represent the geometry. AMReX enable to combine
 objects using constructive solid geometry (CSG) in order to create complex geometry. It is up to the user to define
 the combination of basic elements leading to its desired geometry. To switch to a user-defined EB definition, one
 must set:
@@ -212,7 +212,7 @@ must set:
     eb2.geom_type = UserDefined
 
 and then implement the actual geometry definition in a `EBUserDefined.H` file located in the run folder (and added
-to the GNUmakefile using `CEXE_headers += EBUserDefined.H`). An example of such implementation is available in the 
+to the GNUmakefile using `CEXE_headers += EBUserDefined.H`). An example of such implementation is available in the
 ``Exec/Case/ChallengeProblem`` folder. Example of more generic EB problems are also found in the ``Exec/RegTest/EB_*``
 folders.
 
@@ -243,7 +243,7 @@ Linear solvers are a key component of PeleLMeX algorithm, separate controls are 
     nodal_proj.rtol = 1.0e-11                   # [OPT, DEF=1e-11] Relative tolerance of the nodal projection
     nodal_proj.atol = 1.0e-12                   # [OPT, DEF=1e-14] Absolute tolerance of the nodal projection
     nodal_proj.mg_max_coarsening_level = 5      # [OPT, DEF=100] Maximum number of MG levels (useful when using EB)
-    
+
     mac_proj.verbose = 1                        # [OPT, DEF=0] Verbose of the MAC projector
     mac_proj.rtol = 1.0e-11                     # [OPT, DEF=1e-11] Relative tolerance of the MAC projection
     mac_proj.atol = 1.0e-12                     # [OPT, DEF=1e-14] Absolute tolerance of the MAC projection
@@ -275,7 +275,7 @@ to activate `temporal` diagnostics performing these reductions at given interval
     peleLM.do_mass_balance = 1                  # [OPT, DEF=0] Compute mass balance, if temporals activated
     peleLM.do_species_balance = 1               # [OPT, DEF=0] Compute species mass balance, if temporals activated
 
-The `do_temporal` flag will trigger the creation of a `temporals` folder in your run directory and the following entries 
+The `do_temporal` flag will trigger the creation of a `temporals` folder in your run directory and the following entries
 will be appended to an ASCII `temporals/tempState` file: step, time, dt, kin. energy integral, enstrophy integral, mean pressure
 , fuel consumption rate integral, heat release rate integral. Additionnally, if the `do_temporal` flag is activated, one can
 turn on state extremas (stored in `temporals/tempExtremas` as min/max for each state entry), mass balance (stored in
@@ -296,7 +296,7 @@ state:
 ::
 
     # ------------------- INPUTS DERIVED DIAGS ------------------
-    peleLM.fuel_name = CH4 
+    peleLM.fuel_name = CH4
     peleLM.mixtureFraction.format = Cantera
     peleLM.mixtureFraction.type   = mass
     peleLM.mixtureFraction.oxidTank = O2:0.233 N2:0.767
@@ -313,7 +313,7 @@ the state variables on a 'x','y' or 'z' aligned plane and writting a 2D plotfile
 ::
 
     #--------------------------DIAGNOSTICS------------------------
-    
+
     peleLM.diagnostics = xnormal ynormal
     peleLM.xnormal.type = DiagFramePlane
     peleLM.xnormal.file = xNorm5mm
@@ -321,7 +321,7 @@ the state variables on a 'x','y' or 'z' aligned plane and writting a 2D plotfile
     peleLM.xnormal.center = 0.005
     peleLM.xnormal.int    = 5
     peleLM.xnormal.interpolation = Linear
-    
+
     peleLM.ynormal.type = DiagFramePlane
     peleLM.ynormal.file = yNormCent
     peleLM.ynormal.normal = 1
@@ -334,7 +334,7 @@ Run-time control
 --------------------
 
 Following some of AMReX's AmrLevel class implementation, PeleLMeX provides a couple of triggers to interact with the code while
-it is running. This can be done by adding an empty file to the folder where the simulation is currently running using for 
+it is running. This can be done by adding an empty file to the folder where the simulation is currently running using for
 example:
 
 ::
@@ -356,10 +356,10 @@ The list of available triggers is:
     * - dump_and_stop
       - Write both pltfile and chkfile to disk and stop the simulation
 
-By default, the code checks if these files exist every 10 time steps, but the user can either increase or decrease the 
+By default, the code checks if these files exist every 10 time steps, but the user can either increase or decrease the
 frequency using:
 
 ::
 
     amr.message_int      = 20                # [OPT, DEF=10] Frequency for checking the presence of trigger files
-    
+
