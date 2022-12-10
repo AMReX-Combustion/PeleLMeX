@@ -10,7 +10,7 @@
 
 ## Documentation
 
-PeleLMeX solves of the multispecies reactive Navier-Stokes equations in the low Mach number limit as described in the [PeleLM documentation](https://amrex-combustion.github.io/PeleLM/manual/html/Model.html). It also inherits most of PeleLM algorithmic features, but differs significantly in its implementation stemming from the non-subcycling approach. A brief summary of PeleLMeX control is provided in this exhaustive [input file example](https://amrex-combustion.github.io/PeleLMeX/LMeXControls.html).
+PeleLMeX solves of the multispecies reactive Navier-Stokes equations in the low Mach number limit as described in the [model documentation](https://amrex-combustion.github.io/PeleLMeX/manual/html/Model.html). It also inherits most of PeleLM algorithmic features, but differs significantly in its implementation stemming from the non-subcycling approach. A overview of PeleLMeX controls is provided in the [documentation](https://amrex-combustion.github.io/PeleLMeX/manual/html/LMeXControls.html).
 
 ## Installation
 
