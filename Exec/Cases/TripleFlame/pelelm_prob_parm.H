@@ -15,7 +15,7 @@ struct ProbParm
    amrex::Real Zst = 0.055;
    amrex::Real T_in = 300.0;
    amrex::Real V_in = 0.4;
-   
+
    int bathID = -1;
    int fuelID = -1;
    int oxidID = -1;

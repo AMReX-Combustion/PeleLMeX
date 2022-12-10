@@ -2,7 +2,6 @@ import os
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_pdf import PdfPages
 
 # A script to plot data from the EB_PipeFlow case
 # when running a simple Poiseuille flow.
@@ -69,7 +68,7 @@ if __name__ == "__main__":
             )
             / r
         )
-    
+
     plt.xlabel(r"$r / R$",fontsize=14)
     plt.ylabel(r"$u / Umax$",fontsize=14)
     plt.grid(which='both',color='#E6E3E3', linestyle=':', linewidth=1.0)
