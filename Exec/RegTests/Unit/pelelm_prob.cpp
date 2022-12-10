@@ -4,7 +4,7 @@
 void PeleLM::readProbParm()
 {
    amrex::ParmParse pp("prob");
-   
+
    std::string type;
    pp.query("type", type);
    pp.query("T_mean", prob_parm->T_mean);
@@ -28,7 +28,7 @@ void PeleLM::readProbParm()
       pp.query("gaussian_type", gtype);
       if ( gtype == "Spec" ) {
          PeleLM::prob_parm->gauss_type = 0;
-      } else if ( gtype == "Temp" ) { 
+      } else if ( gtype == "Temp" ) {
          PeleLM::prob_parm->gauss_type = 1;
       } else {
          amrex::Print() << " Unknown prob.gaussian_type ! Should be Spec or Temp \n";
@@ -52,7 +52,7 @@ void PeleLM::readProbParm()
          amrex::Print() << " Unknown prob.gaussian_type ! Should be Spec or Temp \n";
          amrex::Abort();
       }
-   } else { 
+   } else {
        amrex::Print() << " Unknown prob.type ! Should be ConvectedVortex, ConvectedGaussian or DiffusedGaussian \n";
        amrex::Abort();
    }
