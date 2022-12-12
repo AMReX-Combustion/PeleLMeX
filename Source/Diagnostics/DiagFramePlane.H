@@ -63,7 +63,7 @@ private:
   amrex::GpuArray<amrex::Real,AMREX_SPACEDIM> m_center;
 
   // Interpolation data
-  InterpType m_interpType; 
+  InterpType m_interpType;
   amrex::Vector<amrex::GpuArray<amrex::Real,3> > m_intwgt;
   amrex::Vector<int> m_k0;
 

@@ -194,7 +194,7 @@ MLCellABecCecLap::getFluxes (const Vector<Array<MultiFab*,AMREX_SPACEDIM> >& a_f
 }
 
 void
-MLCellABecCecLap::applyInhomogNeumannTerm (int amrlev, Any& a_rhs) const
+MLCellABecCecLap::applyInhomogNeumannTerm (int amrlev, MultiFab& rhs) const
 {
     bool has_inhomog_neumann = hasInhomogNeumannBC();
     bool has_robin = hasRobinBC();
@@ -206,11 +206,9 @@ MLCellABecCecLap::applyInhomogNeumannTerm (int amrlev, Any& a_rhs) const
 }
 
 void
-MLCellABecCecLap::applyOverset (int amrlev, Any& a_rhs) const
+MLCellABecCecLap::applyOverset (int amrlev, MultiFab& rhs) const
 {
     if (m_overset_mask[amrlev][0]) {
-        AMREX_ASSERT(a_rhs.is<MultiFab>());
-        auto& rhs = a_rhs.get<MultiFab>();
         const int ncomp = getNComp();
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -288,7 +286,7 @@ MLCellABecCecLap::makePETSc () const
     const Geometry& geom = m_geom[0].back();
     const auto& factory = *(m_factory[0].back());
     MPI_Comm comm = BottomCommunicator();
-    
+
     auto petsc_solver = makePetsc(ba, dm, geom, comm);
 
     petsc_solver->setScalars(getAScalar(), getBScalar());

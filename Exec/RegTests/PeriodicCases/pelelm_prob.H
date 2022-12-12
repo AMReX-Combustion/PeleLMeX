@@ -105,28 +105,28 @@ void pelelm_initdata(int i, int j, int k,
             AMREX_D_TERM(state(i,j,k,VELX) = prob_parm.meanFlowMag;,
                          state(i,j,k,VELY) = 0.0;,
                          state(i,j,k,VELZ) = 0.0);
-            break;                         
-         case -1  :                        
+            break;
+         case -1  :
             AMREX_D_TERM(state(i,j,k,VELX) = -prob_parm.meanFlowMag;,
                          state(i,j,k,VELY) = 0.0;,
                          state(i,j,k,VELZ) = 0.0);
-            break;                         
-         case 2  :                         
+            break;
+         case 2  :
             AMREX_D_TERM(state(i,j,k,VELX) = 0.0;,
                          state(i,j,k,VELY) = prob_parm.meanFlowMag;,
                          state(i,j,k,VELZ) = 0.0);
-            break;                         
-         case -2  :                        
+            break;
+         case -2  :
             AMREX_D_TERM(state(i,j,k,VELX) = 0.0;,
                          state(i,j,k,VELY) = -prob_parm.meanFlowMag;,
                          state(i,j,k,VELZ) = 0.0);
-            break;                         
-         case 3  :                         
+            break;
+         case 3  :
             AMREX_D_TERM(state(i,j,k,VELX) = prob_parm.meanFlowMag;,
                          state(i,j,k,VELY) = prob_parm.meanFlowMag;,
                          state(i,j,k,VELZ) = 0.0);
-            break;                         
-         case -3  :                        
+            break;
+         case -3  :
             AMREX_D_TERM(state(i,j,k,VELX) = -prob_parm.meanFlowMag;,
                          state(i,j,k,VELY) = -prob_parm.meanFlowMag;,
                          state(i,j,k,VELZ) = 0.0);
@@ -155,28 +155,28 @@ void pelelm_initdata(int i, int j, int k,
             AMREX_D_TERM(state(i,j,k,VELX) = prob_parm.meanFlowMag;,
                          state(i,j,k,VELY) = 0.0;,
                          state(i,j,k,VELZ) = 0.0);
-            break;                         
-         case -1  :                        
+            break;
+         case -1  :
             AMREX_D_TERM(state(i,j,k,VELX) = -prob_parm.meanFlowMag;,
                          state(i,j,k,VELY) = 0.0;,
                          state(i,j,k,VELZ) = 0.0);
-            break;                         
-         case 2  :                         
+            break;
+         case 2  :
             AMREX_D_TERM(state(i,j,k,VELX) = 0.0;,
                          state(i,j,k,VELY) = prob_parm.meanFlowMag;,
                          state(i,j,k,VELZ) = 0.0);
-            break;                         
-         case -2  :                        
+            break;
+         case -2  :
             AMREX_D_TERM(state(i,j,k,VELX) = 0.0;,
                          state(i,j,k,VELY) = -prob_parm.meanFlowMag;,
                          state(i,j,k,VELZ) = 0.0);
-            break;                         
-         case 3  :                         
+            break;
+         case 3  :
             AMREX_D_TERM(state(i,j,k,VELX) = prob_parm.meanFlowMag;,
                          state(i,j,k,VELY) = prob_parm.meanFlowMag;,
                          state(i,j,k,VELZ) = 0.0);
-            break;                         
-         case -3  :                        
+            break;
+         case -3  :
             AMREX_D_TERM(state(i,j,k,VELX)  = -prob_parm.meanFlowMag;,
                          state(i,j,k,VELY)  = -prob_parm.meanFlowMag;,
                          state(i,j,k,VELZ)  = 0.0);
@@ -212,7 +212,7 @@ void pelelm_initdata(int i, int j, int k,
        // to avoid undershoot/overshoot of the 2-species mixture.
        const amrex::Real deltax = x - prob_parm.xgauss;
        const amrex::Real deltay = y - prob_parm.ygauss;
-       amrex::Real denom_inv = prob_parm.ampgauss / std::sqrt(4*Pi*prob_parm.gaussTime*prob_parm.gaussDiff);     
+       amrex::Real denom_inv = prob_parm.ampgauss / std::sqrt(4*Pi*prob_parm.gaussTime*prob_parm.gaussDiff);
        const amrex::Real d_sq = deltax*deltax;
        const amrex::Real r_sq = 4.0*prob_parm.gaussTime*prob_parm.gaussDiff;
        if ( prob_parm.gauss_type == 0 ) { // Spec

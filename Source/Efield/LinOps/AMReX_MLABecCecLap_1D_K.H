@@ -7,15 +7,15 @@ constexpr Real eps = 1.0e-6;
 
 inline Real getFaceStateUpwind ( Real const &edgeVel, Real const &leftState, Real const &rightState ) {
    Real edstate = 0.0;
-   if ( edgeVel > eps ) { 
+   if ( edgeVel > eps ) {
       edstate = leftState;
-   }   
-   if ( edgeVel < -eps ) { 
+   }
+   if ( edgeVel < -eps ) {
       edstate = rightState;
-   }   
-   if ( fabs(edgeVel) <= eps ) { 
+   }
+   if ( fabs(edgeVel) <= eps ) {
       edstate =  0.5 * ( leftState + rightState );
-   }   
+   }
    return edstate;
 }
 
@@ -27,7 +27,7 @@ inline Real getCellUpwindCoeff ( Real const &leftedgeVel, Real const &rightedgeV
          coeff += 0.5*(rightedgeVel-leftedgeVel); // centered part
          coeff += maxvel; // art. visc.
    } else { // same sign velocity, use upwind
-      if ( leftedgeVel < -eps ) 
+      if ( leftedgeVel < -eps )
          coeff -= leftedgeVel;
       else if ( fabs(leftedgeVel) <= eps )
          coeff -= 0.5*leftedgeVel;
@@ -48,7 +48,7 @@ inline Real getLeftCellUpwindCoeff ( Real const &leftedgeVel, Real const &righte
       coeff -= 0.5*leftedgeVel;
       coeff -= 0.5*maxvel;
    } else {
-      if ( leftedgeVel > eps ) 
+      if ( leftedgeVel > eps )
          coeff -= leftedgeVel;
       else if ( fabs(leftedgeVel) < eps )
          coeff -= 0.5*leftedgeVel;
@@ -81,7 +81,7 @@ inline Real getCellUpwindCoeff ( Real const &leftedgeVel, Real const &rightedgeV
          coeff += 0.5*(rightedgeVel*relaxright-leftedgeVel*relaxleft); // centered part
          coeff += maxvel; // art. visc.
    } else { // same sign velocity, use upwind
-      if ( leftedgeVel < -eps ) 
+      if ( leftedgeVel < -eps )
          coeff -= leftedgeVel*relaxleft;
       else if ( fabs(leftedgeVel) < eps )
          coeff -= 0.5*leftedgeVel*relaxleft;
@@ -182,7 +182,7 @@ void mlabecceclap_normalize (Box const& box, Array4<Real> const& x,
     for (int n = 0; n < ncomp; ++n) {
     AMREX_PRAGMA_SIMD
     for (int i = lo.x; i <= hi.x; ++i) {
-        x(i,0,0,n) /=   alpha*a(i,0,0) 
+        x(i,0,0,n) /=   alpha*a(i,0,0)
                       + dhxsq*(bX(i,0,0)+bX(i+1,0,0))
                       - dhx*getCellUpwindCoeff(cX(i,0,0,n),cX(i+1,0,0,n));
     }
@@ -202,7 +202,7 @@ void mlabecceclap_flux_x (Box const& box, Array4<Real> const& fx, Array4<Real co
     for (int i = lo.x; i <= hi.x; ++i) {
         fx(i,0,0,n) = -fac*bx(i,0,0)*(sol(i,0,0,n)-sol(i-1,0,0,n))
                       -facc*getFaceUpwindFlux(cx(i,0,0,n),sol(i-1,0,0,n),sol(i,0,0,n));
-                      
+
     }
     }
 }
@@ -262,7 +262,7 @@ void abeccec_gsrb (Box const& box, Array4<Real> const& phi, Array4<Real const> c
                                  + bX(i+1,0  ,0)*phi(i+1,0  ,0,n))
                          + dhx  *( getLeftCellUpwindCoeff( cX(i  ,0,0,n),cX(i+1,0,0,n)) * phi(i-1,0,0,n)
                                  + getRightCellUpwindCoeff(cX(i  ,0,0,n),cX(i+1,0,0,n)) * phi(i+1,0,0,n));
-                           
+
 
                 phi(i,0,0,n) = omega * (rhs(i,0,0,n) + rho - phi(i,0,0,n)*delta)
                               / (gamma - delta) + ( 1.0 - omega ) * phi(i,0,0,n);
@@ -312,7 +312,7 @@ void abeccec_gsrb_os (Box const& box, Array4<Real> const& phi, Array4<Real const
                                      + bX(i+1,0  ,0)*phi(i+1,0  ,0,n))
                              + dhx  *( getLeftCellUpwindCoeff( cX(i  ,0,0,n),cX(i+1,0,0,n)) * phi(i-1,0,0,n)
                                      + getRightCellUpwindCoeff(cX(i  ,0,0,n),cX(i+1,0,0,n)) * phi(i+1,0,0,n));
-                               
+
 
                     phi(i,0,0,n) = omega * (rhs(i,0,0,n) + rho - phi(i,0,0,n)*delta)
                                   / (gamma - delta) + ( 1.0 - omega ) * phi(i,0,0,n);
@@ -390,18 +390,18 @@ void abeccec_chkdiag (Box const& box, Real alpha,
                       - dhxsq*( - bX(i,0,0,n) - bX(i+1,0,0,n) )
                       - dhx*getCellUpwindCoeff(cX(i,0,0,n),cX(i+1,0,0,n));
 
-            // Offdiag 
+            // Offdiag
             Real offdiagdiff =-dhxsq* (bX(i  ,0  ,0,n) + bX(i+1,0  ,0,n));
 
-            Real offdiagadv =-dhx  * (  getLeftCellUpwindCoeff(cX(i  ,0  ,0,n),cX(i+1,0  ,0,n)) 
+            Real offdiagadv =-dhx  * (  getLeftCellUpwindCoeff(cX(i  ,0  ,0,n),cX(i+1,0  ,0,n))
                                       + getRightCellUpwindCoeff(cX(i  ,0  ,0,n),cX(i+1,0  ,0,n)));
 
             if ( fabs(offdiagdiff+offdiagadv) > fabs(diag) ) {
             //if ( i == 1 ) {
                amrex::Print() << " Abort LinOp not diagonal dominant at: " << i << "\n";
-              // amrex::Print() << j << " Val diag: " << diag << ", offdiagdiff/adv: " << offdiagdiff << " " << offdiagadv << "\n";     
+              // amrex::Print() << j << " Val diag: " << diag << ", offdiagdiff/adv: " << offdiagdiff << " " << offdiagadv << "\n";
               // amrex::Print() << j << " Val diag: " << diag << ", left/right: " << left << "  " << right << "\n";
-              // amrex::Print() << j << " " << fabs(diag) << " " << fabs(offdiagdiff+offdiagadv) << "\n";     
+              // amrex::Print() << j << " " << fabs(diag) << " " << fabs(offdiagdiff+offdiagadv) << "\n";
               // amrex::Abort("MLABecCec is not diagonal dominant !!!");
             }
         }

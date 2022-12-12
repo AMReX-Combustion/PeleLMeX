@@ -81,7 +81,7 @@ PeleLM::estEFIonsDt(const TimeStamp &a_time)
 #endif
       }
 
-      // Get cell centered max effective velocities across 
+      // Get cell centered max effective velocities across
       // all dimension/ions
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -132,7 +132,7 @@ PeleLM::estEFIonsDt(const TimeStamp &a_time)
 
       // Min across levels
       estdt = std::min(estdt,estdt_lev);
-      
+
    }
 
    // Min across processors

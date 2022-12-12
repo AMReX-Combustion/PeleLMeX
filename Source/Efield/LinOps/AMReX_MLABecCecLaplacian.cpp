@@ -137,7 +137,7 @@ MLABecCecLaplacian::setBCoeffs (int amrlev,
                 MultiFab::Copy(m_b_coeffs[amrlev][0][idim], *beta[idim], icomp, icomp, 1, 0);
             }
         }
-    else 
+    else
         for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
             for (int icomp = 0; icomp < ncomp; ++icomp) {
                 MultiFab::Copy(m_b_coeffs[amrlev][0][idim], *beta[idim], 0, icomp, 1, 0);
@@ -179,7 +179,7 @@ MLABecCecLaplacian::setCCoeffs (int amrlev,
                 MultiFab::Copy(m_c_coeffs[amrlev][0][idim], *eta[idim], icomp, icomp, 1, 0);
             }
         }
-    else 
+    else
         for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
             for (int icomp = 0; icomp < ncomp; ++icomp) {
                 MultiFab::Copy(m_c_coeffs[amrlev][0][idim], *eta[idim], 0, icomp, 1, 0);
@@ -224,7 +224,7 @@ MLABecCecLaplacian::averageDownCoeffsSameAmrLevel (int amrlev, Vector<MultiFab>&
         {
             amrex::average_down(a[mglev-1], a[mglev], 0, 1, ratio);
         }
-        
+
         Vector<const MultiFab*> fine {AMREX_D_DECL(&(b[mglev-1][0]),
                                                    &(b[mglev-1][1]),
                                                    &(b[mglev-1][2]))};
@@ -317,11 +317,11 @@ MLABecCecLaplacian::applyMetricTermsCoeffs ()
     for (int alev = 0; alev < m_num_amr_levels; ++alev)
     {
         const int mglev = 0;
-        applyMetricTermToMF(alev, mglev, m_a_coeffs[alev][mglev]);
+        applyMetricTerm(alev, mglev, m_a_coeffs[alev][mglev]);
         for (int idim = 0; idim < AMREX_SPACEDIM; ++idim)
         {
-            applyMetricTermToMF(alev, mglev, m_b_coeffs[alev][mglev][idim]);
-            applyMetricTermToMF(alev, mglev, m_c_coeffs[alev][mglev][idim]);
+            applyMetricTerm(alev, mglev, m_b_coeffs[alev][mglev][idim]);
+            applyMetricTerm(alev, mglev, m_c_coeffs[alev][mglev][idim]);
         }
     }
 #endif
@@ -349,7 +349,7 @@ MLABecCecLaplacian::prepareForSolve ()
         for (int alev = 0; alev < m_num_amr_levels; ++alev)
         {
             // For now this assumes that overset regions are treated as Dirichlet bc's
-            if (m_domain_covered[alev] && !m_overset_mask[alev][0]) 
+            if (m_domain_covered[alev] && !m_overset_mask[alev][0])
             {
                 if (m_a_scalar == 0.0)
                 {
@@ -409,14 +409,14 @@ MLABecCecLaplacian::Fapply (int amrlev, int mglev, MultiFab& out, const MultiFab
             AMREX_LAUNCH_HOST_DEVICE_LAMBDA ( bx, tbx,
             {
                 mlabecceclap_adotx_os(tbx, yfab, xfab, afab, AMREX_D_DECL(bxfab,byfab,bzfab),
-                                      AMREX_D_DECL(cxfab,cyfab,czfab), osm, dxinv, 
+                                      AMREX_D_DECL(cxfab,cyfab,czfab), osm, dxinv,
                                       ascalar, bscalar, cscalar, ncomp);
             });
         } else {
             AMREX_LAUNCH_HOST_DEVICE_LAMBDA ( bx, tbx,
             {
                 mlabecceclap_adotx(tbx, yfab, xfab, afab, AMREX_D_DECL(bxfab,byfab,bzfab),
-                                   AMREX_D_DECL(cxfab,cyfab,czfab), dxinv, 
+                                   AMREX_D_DECL(cxfab,cyfab,czfab), dxinv,
                                    ascalar, bscalar, cscalar, ncomp);
             });
         }
@@ -462,7 +462,7 @@ MLABecCecLaplacian::normalize (int amrlev, int mglev, MultiFab& mf) const
         AMREX_LAUNCH_HOST_DEVICE_LAMBDA ( bx, tbx,
         {
             mlabecceclap_normalize(tbx, fab, afab, AMREX_D_DECL(bxfab,byfab,bzfab),
-                                   AMREX_D_DECL(cxfab,cyfab,czfab), dxinv, 
+                                   AMREX_D_DECL(cxfab,cyfab,czfab), dxinv,
                                    ascalar, bscalar, cscalar, ncomp);
         });
     }
@@ -531,7 +531,7 @@ MLABecCecLaplacian::Fsmooth (int amrlev, int mglev, MultiFab& sol, const MultiFa
 #endif
     for (MFIter mfi(sol,mfi_info); mfi.isValid(); ++mfi)
     {
-	const auto& m0 = mm0.array(mfi);
+        const auto& m0 = mm0.array(mfi);
         const auto& m1 = mm1.array(mfi);
 #if (AMREX_SPACEDIM > 1)
         const auto& m2 = mm2.array(mfi);
@@ -542,7 +542,7 @@ MLABecCecLaplacian::Fsmooth (int amrlev, int mglev, MultiFab& sol, const MultiFa
 #endif
 #endif
 
-	const Box& tbx = mfi.tilebox();
+        const Box& tbx = mfi.tilebox();
         const Box& vbx = mfi.validbox();
         const auto& solnfab = sol.array(mfi);
         const auto& rhsfab  = rhs.array(mfi);
@@ -934,7 +934,7 @@ MLABecCecLaplacian::update ()
         for (int alev = 0; alev < m_num_amr_levels; ++alev)
         {
             // For now this assumes that overset regions are treated as Dirichlet bc's
-            if (m_domain_covered[alev] && !m_overset_mask[alev][0]) 
+            if (m_domain_covered[alev] && !m_overset_mask[alev][0])
             {
                 if (m_a_scalar == 0.0)
                 {

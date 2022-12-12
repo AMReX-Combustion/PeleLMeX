@@ -8,6 +8,7 @@
 #include <hydro_NodalProjector.H>
 #include <AMReX_ErrorList.H>
 #include <AMReX_VisMF.H>
+#include <hydro_godunov_ppm.H>
 
 #include <mechanism.H>
 #include "PelePhysics.H"
@@ -70,17 +71,17 @@ class PeleLM : public amrex::AmrCore {
                        amrex::Real time,
                        bool initial = false) override;
 
-   virtual void MakeNewLevelFromScratch( int lev, 
+   virtual void MakeNewLevelFromScratch( int lev,
                                                amrex::Real time,
                                          const amrex::BoxArray& ba,
                                          const amrex::DistributionMapping& dm) override;
 
-   virtual void ErrorEst( int lev, 
+   virtual void ErrorEst( int lev,
                           amrex::TagBoxArray& tags,
                           amrex::Real time,
                           int ng) override;
 
-   virtual void MakeNewLevelFromCoarse( int lev, 
+   virtual void MakeNewLevelFromCoarse( int lev,
                                               amrex::Real time,
                                         const amrex::BoxArray& ba,
                                         const amrex::DistributionMapping& dm) override;
@@ -149,7 +150,7 @@ class PeleLM : public amrex::AmrCore {
       LevelData (amrex::BoxArray const& ba,
                  amrex::DistributionMapping const& dm,
                  amrex::FabFactory<amrex::FArrayBox> const& factory,
-                 int a_incompressible, int a_has_divu, 
+                 int a_incompressible, int a_has_divu,
                  int a_nAux, int a_nGrowState);
 
       // cell-centered state multifabs
@@ -280,7 +281,7 @@ class PeleLM : public amrex::AmrCore {
    // MAC PROJECTION
 
    void resetMacProjector();
-   
+
    // Predict face velocity using Godunov
    void predictVelocity(std::unique_ptr<AdvanceAdvData> &advData);
 
@@ -317,7 +318,7 @@ class PeleLM : public amrex::AmrCore {
    // compute cell-centered diffusivity (stored in LevelData)
    void calcViscosity(const PeleLM::TimeStamp &a_time);
    void calcDiffusivity(const PeleLM::TimeStamp &a_time);
-   
+
    // get edge-centered diffusivity on a per level / per comp basis
    amrex::Array<amrex::MultiFab,AMREX_SPACEDIM>
    getDiffusivity(int lev, int beta_comp, int ncomp, int doZeroVisc,
@@ -336,7 +337,7 @@ class PeleLM : public amrex::AmrCore {
 
    // add wbar term to the species fluxes
    void addWbarTerm(const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> &a_fluxes,
-                    const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> &a_wbarfluxes, 
+                    const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> &a_wbarfluxes,
                     amrex::Vector<amrex::MultiFab const*> const &a_spec,
                     amrex::Vector<amrex::MultiFab const*> const &a_rho,
                     amrex::Vector<amrex::MultiFab const*> const &a_beta);
@@ -348,7 +349,7 @@ class PeleLM : public amrex::AmrCore {
    // Compute enthalpy flux due to species diffusion
    void computeSpeciesEnthalpyFlux(const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> &a_fluxes,
                                    amrex::Vector<amrex::MultiFab const*> const &a_temp);
-                    
+
    void differentialDiffusionUpdate(std::unique_ptr<AdvanceAdvData> &advData,
                                     std::unique_ptr<AdvanceDiffData> &diffData);
 
@@ -422,7 +423,7 @@ class PeleLM : public amrex::AmrCore {
                      const amrex::Vector<amrex::MultiFab*> &a_velForce,
                      int nGrowForce,
                      int add_gradP);
-   
+
    void getVelForces(const TimeStamp &a_time,
                      int lev,
                      amrex::MultiFab* a_divTau,
@@ -509,6 +510,9 @@ void computeRadSource(const PeleLM::TimeStamp &a_timestamp,
    void setThermoPress(const PeleLM::TimeStamp &a_time);
    void setThermoPress(int lev, const PeleLM::TimeStamp &a_time);
 
+   // Enforce rho/rhoYs consistency
+   void setRhoToSumRhoY(int lev, const PeleLM::TimeStamp &a_time);
+
    // update Temperature from rhoY and rhoH
    void setTemperature(const PeleLM::TimeStamp &a_time);
    void setTemperature(int lev, const PeleLM::TimeStamp &a_time);
@@ -574,8 +578,11 @@ void computeRadSource(const PeleLM::TimeStamp &a_timestamp,
 
    //-----------------------------------------------------------------------------
    // BOUNDARY CONDITIONS / FILLPATCH
+   amrex::InterpBase* getInterpolator(int a_method=1);
 
-   amrex::InterpBase* getInterpolator();
+   // Interpolation method for regrid (default to cell cons interp)
+   int m_regrid_interp_method = 1;
+
    // Convert PhysBC into field BCs
    void setBoundaryConditions();
 
@@ -732,7 +739,7 @@ void computeRadSource(const PeleLM::TimeStamp &a_timestamp,
    // Typical values
    void setTypicalValues(const PeleLM::TimeStamp &a_time, int is_init = 0);
    void updateTypicalValuesChem();
-    
+
    void checkMemory(const std::string &a_message);
 
    // Mixture fraction & Progress variable
@@ -780,14 +787,14 @@ void computeRadSource(const PeleLM::TimeStamp &a_timestamp,
 
 
    void getEBDistance(int a_lev,
-                      amrex::MultiFab &a_signDistLev); 
+                      amrex::MultiFab &a_signDistLev);
 
    void extendSignedDistance( amrex::MultiFab *a_signDist,
                               amrex::Real a_extendFactor);
 
    // static_cast factory into ebfactory
-   amrex::EBFArrayBoxFactory const& 
-   EBFactory (int lev) const noexcept { 
+   amrex::EBFArrayBoxFactory const&
+   EBFactory (int lev) const noexcept {
       return static_cast<amrex::EBFArrayBoxFactory const&>(*m_factory[lev]);
    }
 
@@ -801,10 +808,10 @@ void computeRadSource(const PeleLM::TimeStamp &a_timestamp,
 
    void advanceSetup();
 
-   void oneSDC(int sdcIter, 
+   void oneSDC(int sdcIter,
                std::unique_ptr<AdvanceAdvData> &advData,
                std::unique_ptr<AdvanceDiffData> &diffData);
-   
+
    void copyTransportOldToNew();
    void copyStateNewToOld(int nGhost = 0);
    void copyPressNewToOld();
@@ -895,7 +902,7 @@ void computeRadSource(const PeleLM::TimeStamp &a_timestamp,
 
    int testExitNewton(int newtonIter,
                       const amrex::Real &max_res,
-                      const amrex::Real &norm_newtonDir); 
+                      const amrex::Real &norm_newtonDir);
 
    void updateNLState(const amrex::Vector<amrex::MultiFab*> &a_update);
 
@@ -1081,7 +1088,7 @@ bool do_rad_solve;
    pele::physics::turbinflow::TurbInflow turb_inflow;
 
    // Diagnostics
-   amrex::Vector<std::unique_ptr<DiagBase>> m_diagnostics; 
+   amrex::Vector<std::unique_ptr<DiagBase>> m_diagnostics;
 
    // Linear solvers
    std::unique_ptr<DiffusionOp> m_diffusion_op;
@@ -1130,7 +1137,9 @@ bool do_rad_solve;
    amrex::Real m_dtChangeMax  = 1.1;
    amrex::Real m_stop_time    = -1.0;
    amrex::Real m_max_dt       = 1e12;
-   int m_nstep = -1; 
+   amrex::Real m_wall_start   = 0.0;
+   amrex::Real m_max_wall_time = -1.0;
+   int m_nstep = -1;
    int m_max_step = -1;
 
    int m_regrid_int = -1;
@@ -1152,7 +1161,7 @@ bool do_rad_solve;
    // DivU dt
    int m_divu_checkFlag = 1;
    amrex::Real m_divu_dtFactor = 0.5;
-   amrex::Real m_divu_rhoMin = 0.1;  
+   amrex::Real m_divu_rhoMin = 0.1;
 
    // Aux data size
    int m_nAux = 0;
@@ -1200,6 +1209,7 @@ bool do_rad_solve;
    std::string m_predict_advection_type;
    std::string m_advection_type;
    int m_Godunov_ppm = 1;
+   int m_Godunov_ppm_limiter = PPM::VanLeer;
    int m_Godunov_ForceInTrans = 0;
 
    // Temporals
@@ -1219,7 +1229,7 @@ bool do_rad_solve;
    amrex::Array<amrex::Real,2*AMREX_SPACEDIM> m_domainRhoHFlux;
    amrex::Array<amrex::Real,2*AMREX_SPACEDIM*NUM_SPECIES> m_domainRhoYFlux;
    amrex::Array<amrex::Real,2*AMREX_SPACEDIM> m_domainUmacFlux;
-   
+
    std::ofstream tmpStateFile;
    std::ofstream tmpExtremasFile;
    std::ofstream tmpMassFile;
@@ -1289,7 +1299,7 @@ bool do_rad_solve;
 
    // Nodal projection
    int m_nodal_mg_max_coarsening_level = 100;
-   amrex::Real m_nodal_mg_rtol = 1.0e-11;   
+   amrex::Real m_nodal_mg_rtol = 1.0e-11;
    amrex::Real m_nodal_mg_atol = 1.0e-14;
    std::string m_hypre_namespace_nodal = "nodal_hypre";
 
@@ -1297,7 +1307,7 @@ bool do_rad_solve;
    int m_mac_mg_verbose = 0;
    int m_mac_mg_max_coarsening_level = 100;
    int m_mac_max_order = 4;
-   amrex::Real m_mac_mg_rtol = 1.0e-11;   
+   amrex::Real m_mac_mg_rtol = 1.0e-11;
    amrex::Real m_mac_mg_atol = 1.0e-14;
    std::string m_hypre_namespace_mac = "mac_hypre";
    //-----------------------------------------------------------------------------

@@ -210,38 +210,37 @@ void PeleLM::initData() {
 #endif
 
       // Post data Init time step estimate
-      // TODO : this estimate is probably useless
       Real dtInit = computeDt(is_init,AmrNewTime);
       Print() << " Initial dt: " << dtInit << "\n";
-      //WriteDebugPlotFile(GetVecOfConstPtrs(getStateVect(AmrNewTime)),"InitSol");
 
-      // Subcycling IAMR/PeleLM first does a projection with no reaction divU
-      // which can make the dt for evaluating I_R better
-      if (m_has_divu) {
-         int is_initialization = 1;             // Yes we are
-         int computeDiffusionTerm = 1;          // Needed here
-         int do_avgDown = 1;                    // Always
-
-         // Light version of the diffusion data container
-         std::unique_ptr<AdvanceDiffData> diffData;
-         diffData.reset(new AdvanceDiffData(finest_level, grids, dmap, m_factory,
-                        m_nGrowAdv, m_use_wbar, is_initialization));
-         calcDivU(is_initialization,computeDiffusionTerm,do_avgDown,AmrNewTime,diffData);
-      }
-      initialProjection();
-     
-      // If gravity is used, do initial pressure projection to get the hydrostatic pressure
-      if (std::abs(m_gravity.sum()) > 0.0) {
-         initialPressProjection();
-      }
-
-      // Post data Init time step estimate
-      m_dt = computeDt(is_init,AmrNewTime);
-      Print() << " Initial dt: " << m_dt << "\n";
-
-      //----------------------------------------------------------------
-      // Initial velocity projection iterations
       if (m_do_init_proj) {
+         // Subcycling IAMR/PeleLM first does a projection with no reaction divU
+         // which can make the dt for evaluating I_R better
+         if (m_has_divu) {
+            int is_initialization = 1;             // Yes we are
+            int computeDiffusionTerm = 1;          // Needed here
+            int do_avgDown = 1;                    // Always
+
+            // Light version of the diffusion data container
+            std::unique_ptr<AdvanceDiffData> diffData;
+            diffData.reset(new AdvanceDiffData(finest_level, grids, dmap, m_factory,
+                           m_nGrowAdv, m_use_wbar, is_initialization));
+            calcDivU(is_initialization,computeDiffusionTerm,do_avgDown,AmrNewTime,diffData);
+         }
+         initialProjection();
+
+         // If gravity is used, do initial pressure projection to get the hydrostatic pressure
+         if (std::abs(m_gravity.sum()) > 0.0) {
+            initialPressProjection();
+
+         }
+
+         // Post data init time step estimate
+         m_dt = computeDt(is_init,AmrNewTime);
+         Print() << " Initial dt: " << m_dt << "\n";
+
+         //----------------------------------------------------------------
+         // Initial velocity projection iterations
          for (int iter = 0; iter < m_numDivuIter; iter++) {
             if (m_do_react) {
                // The new level data has been filled above
@@ -280,11 +279,23 @@ void PeleLM::initData() {
 
             initialProjection();
          }
-         if ( m_numDivuIter == 0 ) {
+
+         if ( m_numDivuIter == 0 && m_do_react ) {
             for (int lev = 0; lev <= finest_level; ++lev) {
                auto ldataR_p   = getLevelDataReactPtr(lev);
                ldataR_p->I_R.setVal(0.0);
             }
+         }
+      } else {
+         // If we didn't do the projection, initialize press/gp(/I_R)
+         for (int lev = 0; lev <= finest_level; ++lev) {
+            if ( m_do_react ) {
+               auto ldataR_p   = getLevelDataReactPtr(lev);
+               ldataR_p->I_R.setVal(0.0);
+            }
+            auto ldata_p   = getLevelDataPtr(lev,AmrNewTime);
+            ldata_p->press.setVal(0.0);
+            ldata_p->gp.setVal(0.0);
          }
       }
 
@@ -400,7 +411,7 @@ void PeleLM::initLevelData(int lev) {
 void PeleLM::initialIterations() {
    BL_PROFILE_VAR("PeleLM::initialIterations()", initialIterations);
 
-   if (m_verbose > 0) {
+   if (m_verbose > 0 && m_init_iter > 0) {
       amrex::Print() << " Doing initial pressure iteration(s) \n";
    }
 

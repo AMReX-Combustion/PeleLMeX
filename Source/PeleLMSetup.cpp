@@ -28,10 +28,12 @@ static Box grow_box_by_two (const Box& b) { return amrex::grow(b,2); }
 void PeleLM::Setup() {
    BL_PROFILE("PeleLM::Setup()");
 
+   m_wall_start = amrex::ParallelDescriptor::second();
+
    // Ensure grid is isotropic
    {
      auto const dx = geom[0].CellSizeArray();
-     AMREX_ALWAYS_ASSERT(AMREX_D_TERM(,dx[0] == dx[1], && dx[1] == dx[2]));
+     AMREX_ALWAYS_ASSERT(AMREX_D_TERM(,amrex::almostEqual(dx[0], dx[1]), && amrex::almostEqual(dx[1], dx[2])));
    }
    // Print build info to screen
    const char* githash1 = buildInfoGetGitHash(1);
@@ -374,6 +376,19 @@ void PeleLM::readParameters() {
    } else if ( m_advection_key == "Godunov_PPM" ) {
        m_advection_type = "Godunov";
        m_Godunov_ppm = 1;
+       m_Godunov_ppm_limiter = PPM::VanLeer;
+       ParmParse ppg("godunov");
+       ppg.query("use_forceInTrans", m_Godunov_ForceInTrans);
+   } else if ( m_advection_key == "Godunov_PPM_WENOZ" ) {
+       m_advection_type = "Godunov";
+       m_Godunov_ppm = 1;
+       m_Godunov_ppm_limiter = PPM::WENOZ;
+       ParmParse ppg("godunov");
+       ppg.query("use_forceInTrans", m_Godunov_ForceInTrans);
+   } else if ( m_advection_key == "Godunov_PPM_NOLIM" ) {
+       m_advection_type = "Godunov";
+       m_Godunov_ppm = 1;
+       m_Godunov_ppm_limiter = PPM::NoLimiter;
        ParmParse ppg("godunov");
        ppg.query("use_forceInTrans", m_Godunov_ForceInTrans);
    } else if ( m_advection_key == "Godunov_BDS" ) {
@@ -414,6 +429,7 @@ void PeleLM::readParameters() {
    // Time stepping control
    // -----------------------------------------
    ParmParse ppa("amr");
+   ppa.query("max_wall_time", m_max_wall_time); // hours
    ppa.query("max_step", m_max_step);
    ppa.query("stop_time", m_stop_time);
    ppa.query("message_int", m_message_int);
@@ -494,7 +510,7 @@ void PeleLM::readParameters() {
    if (m_do_temporals) {
       ppef.query("do_ionsBalance",m_do_ionsBalance);
       if (m_do_ionsBalance) {
-         m_do_speciesBalance = 1; 
+         m_do_speciesBalance = 1;
       }
    }
 #endif
@@ -554,6 +570,8 @@ void PeleLM::readIOParameters() {
    pp.query("regrid_file", m_regrid_file);
    pp.query("file_stepDigits", m_ioDigits);
    pp.query("use_hdf5_plt",m_write_hdf5_pltfile);
+   pp.query("regrid_interp_method",m_regrid_interp_method);
+   AMREX_ASSERT(m_regrid_interp_method == 0 || m_regrid_interp_method == 1);
 
 }
 
@@ -773,6 +791,9 @@ void PeleLM::derivedSetup()
       derive_lst.add("diffcoeff",IndexType::TheCellType(),NUM_SPECIES,
                      var_names_massfrac,pelelm_derdiffc,the_same_box);
 
+      // Rho - sum rhoYs
+      derive_lst.add("rhominsumrhoY",IndexType::TheCellType(),1,pelelm_derrhomrhoy,the_same_box);
+
       // Heat Release
       derive_lst.add("HeatRelease",IndexType::TheCellType(),1,pelelm_derheatrelease,the_same_box);
 
@@ -792,6 +813,9 @@ void PeleLM::derivedSetup()
 
    // Viscosity
    derive_lst.add("viscosity",IndexType::TheCellType(),1,pelelm_dervisc,the_same_box);
+
+   // Velocity magnitude
+   derive_lst.add("mag_vel",IndexType::TheCellType(),1,pelelm_dermgvel,the_same_box);
 
    // Vorticity magnitude
    derive_lst.add("mag_vort",IndexType::TheCellType(),1,pelelm_dermgvort,grow_box_by_two);

@@ -17,6 +17,12 @@ all: $(executable)
 	$(SILENT) $(RM) AMReX_buildInfo.cpp
 	@echo SUCCESS
 
+ifeq ($(USE_CUDA),TRUE)
+   CXXFLAGS+=-Xptxas --disable-optimizer-constants -Xcompiler=-std=c++17
+endif
+
+CXXFLAGS+=-std=c++17
+
 #---------------
 # PeleLM sources
 #---------------
@@ -165,12 +171,6 @@ AMReX_buildInfo.cpp:
 # Rules
 #---------------
 include $(AMREX_HOME)/Tools/GNUMake/Make.rules
-
-ifeq ($(USE_CUDA),TRUE)
-   CXXFLAGS+=-Xptxas --disable-optimizer-constants -Xcompiler=-std=c++17
-endif
-
-CXXFLAGS+=-std=c++17
 
 # Force TPL as deps. of exec sources
 ##$(objForExecs): TPL

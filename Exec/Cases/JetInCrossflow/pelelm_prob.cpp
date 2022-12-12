@@ -3,7 +3,7 @@
 void PeleLM::readProbParm()
 {
    amrex::ParmParse pp("prob");
-   
+
    std::string type;
    pp.query("P_mean",   PeleLM::prob_parm->P_mean);
    pp.query("V_in", PeleLM::prob_parm->V_in);
