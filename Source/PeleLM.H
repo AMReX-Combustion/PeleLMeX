@@ -1169,7 +1169,7 @@ class PeleLM : public amrex::AmrCore {
    int m_use_wbar = 1;
 
    // wbar diffusion term
-   int m_use_soret = 1;
+   int m_use_soret = 0;
   
    // switch on/off different processes
    // TODO: actually implement that
