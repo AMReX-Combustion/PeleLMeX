@@ -15,7 +15,7 @@ jobs:
   #Build the 2D FlameSheet RegTest with GNU9.3 and CUDA 11.2
   FS2D_CUDA:
     name: CUDA@11.2 GNU@9.3.0 C++17 [FS2D]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v3
     - name: System Dependencies
@@ -38,7 +38,7 @@ jobs:
   #Build the EB_EnclosedFlamet RegTest with GNU9.3 and CUDA 11.2
   EBEF2D_CUDA:
     name: CUDA@11.2 GNU@9.3.0 C++17 [EBEF2D]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v3
     - name: System Dependencies
