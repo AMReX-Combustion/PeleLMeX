@@ -1095,6 +1095,7 @@ class PeleLM : public amrex::AmrCore {
    amrex::Real m_plot_per_approx = -1.;
    amrex::Real m_plot_per_exact = -1.;
    int m_check_int = 0;
+   amrex::Real m_check_per = -1.;
    int m_message_int = 10;
    int m_evaluatePlotVarCount = 0;
    int m_plot_grad_p = 1;
