@@ -33,7 +33,7 @@ jobs:
         hipcc --version
         cd Exec/RegTests/FlameSheet/
         make TPL COMP=clang DIM=3 USE_MPI=FALSE USE_HIP=TRUE
-        make -j 2 COMP=clang DIM=3 USE_MPI=FALSE USE_HIP=TRUE
+        make -j $(nproc) COMP=clang DIM=3 USE_MPI=FALSE USE_HIP=TRUE
 
   #Build the EB_EnclosedFlamet RegTest with clang and HIP
   EBEF2D_CUDA:
@@ -56,4 +56,4 @@ jobs:
         hipcc --version
         cd Exec/RegTests/EB_EnclosedFlame/
         make TPL COMP=clang USE_MPI=FALSE USE_HIP=TRUE
-        make -j 2 COMP=clang USE_MPI=FALSE USE_HIP=TRUE
+        make -j $(nproc) COMP=clang USE_MPI=FALSE USE_HIP=TRUE

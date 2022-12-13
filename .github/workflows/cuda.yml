@@ -33,7 +33,7 @@ jobs:
         export LD_LIBRARY_PATH=/usr/local/nvidia/lib:/usr/local/nvidia/lib64:${LD_LIBRARY_PATH}
         cd Exec/RegTests/FlameSheet/
         make TPL COMP=gnu USE_CUDA=TRUE
-        make -j 2 COMP=gnu USE_CUDA=TRUE
+        make -j $(nproc) COMP=gnu USE_CUDA=TRUE
 
   #Build the EB_EnclosedFlamet RegTest with GNU9.4 and CUDA 11.2
   EBEF2D_CUDA:
@@ -56,4 +56,4 @@ jobs:
         export LD_LIBRARY_PATH=/usr/local/nvidia/lib:/usr/local/nvidia/lib64:${LD_LIBRARY_PATH}
         cd Exec/RegTests/EB_EnclosedFlame/
         make TPL COMP=gnu USE_CUDA=TRUE
-        make -j 2 COMP=gnu USE_CUDA=TRUE
+        make -j $(nproc) COMP=gnu USE_CUDA=TRUE
