@@ -35,7 +35,7 @@ jobs:
       make -j 2 COMP=clang USE_MPI=FALSE USE_HIP=TRUE
 
   EBEF2D_CUDA:
-  name: HIP ROCm Clang [FS2D]
+  name: HIP ROCm Clang [EBEF2D]
   runs-on: ubuntu-latest
   steps:
   - uses: actions/checkout@v3
