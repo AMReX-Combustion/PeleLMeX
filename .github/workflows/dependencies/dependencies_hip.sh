@@ -26,7 +26,6 @@ sudo apt-get update
 sudo apt-get install -y --no-install-recommends \
     build-essential \
     libnuma-dev     \
-    cmake           \
     libopenmpi-dev  \
     openmpi-bin     \
     rocm-dev        \
