@@ -33,8 +33,8 @@ jobs:
         source /opt/intel/oneapi/setvars.sh
         set -e
         cd Exec/RegTests/FlameSheet/
-        make TPL COMP=gnu DIM=3 USE_DPCPP=TRUE
-        make -j $(nproc) COMP=gnu DIM=3 USE_DPCPP=TRUE
+        make TPL COMP=intel DIM=3 USE_DPCPP=TRUE
+        make -j $(nproc) COMP=intel DIM=3 USE_DPCPP=TRUE
 
   #Build the EB_EnclosedFlamet RegTest with DPCPP
   EBEF3D_DPCPP:
@@ -57,5 +57,5 @@ jobs:
         source /opt/intel/oneapi/setvars.sh
         set -e
         cd Exec/RegTests/EB_EnclosedFlame/
-        make TPL COMP=gnu DIM=3 USE_DPCPP=TRUE
-        make -j $(nproc) COMP=gnu DIM=3 USE_DPCPP=TRUE
+        make TPL COMP=intel DIM=3 USE_DPCPP=TRUE
+        make -j $(nproc) COMP=intel DIM=3 USE_DPCPP=TRUE
