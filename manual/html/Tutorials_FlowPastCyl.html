@@ -163,7 +163,7 @@ A cylinder of radius 0.0035 m is placed in the middle of the flow at (0.0:0.0).<
 <col style="width: 100%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="Visualization/FPC_SetupSketch.png"><img alt="FPC_a" src="Visualization/FPC_SetupSketch.png" style="width: 100%;" /></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="_images/FPC_SetupSketch.png"><img alt="FPC_a" src="_images/FPC_SetupSketch.png" style="width: 100%;" /></a></p></td>
 </tr>
 </tbody>
 </table>
@@ -308,13 +308,13 @@ Transport_Model := Constant
 amr.max_step    = 300000          # Maximum number of time steps
 amr.stop_time   = 0.025           # final physical time
 amr.cfl         = 0.3             # cfl number for hyperbolic system
-amr.dt_shrink   = 1.0             # scale back initial timestep
+amr.dt_shrink   = 0.1             # scale back initial timestep
 amr.dt_change_max = 1.1           # maximum dt change
 </pre></div>
 </div>
 <p>The final simulation time is set to 0.025 s. <cite>PeleLMeX</cite> solves for the advection, diffusion and reaction processes in time, but only the advection term is treated explicitly and thus it constrains the maximum time step size <span class="math notranslate nohighlight">\(dt_{CFL}\)</span>. This constraint is formulated with a classical Courant-Friedrich-Levy (CFL) number, specified via the keyword <code class="docutils literal notranslate"><span class="pre">amr.cfl</span></code>.
 Additionally, as it is the case here, the initial solution is often made-up by the user and local mixture composition and temperature can result in the introduction of unreasonably fast chemical scales.
-To ease the numerical integration of this initial transient, the parameter <code class="docutils literal notranslate"><span class="pre">amr.dt_shrink</span></code> allows to shrink the inital <cite>dt</cite> (evaluated from the CFL constraint) by a factor (usually smaller than 1), and let it relax towards <span class="math notranslate nohighlight">\(dt_{CFL}\)</span> at a rate given by <code class="docutils literal notranslate"><span class="pre">amr.dt_change_max</span></code> as the simulation proceeds. Since the present case does not involve complex chemical processes, <code class="docutils literal notranslate"><span class="pre">amr.dt_shrink</span></code> is kept to 1.0.</p>
+To ease the numerical integration of this initial transient, the parameter <code class="docutils literal notranslate"><span class="pre">amr.dt_shrink</span></code> allows to shrink the inital <cite>dt</cite> (evaluated from the CFL constraint) by a factor (usually smaller than 1), and let it relax towards <span class="math notranslate nohighlight">\(dt_{CFL}\)</span> at a rate given by <code class="docutils literal notranslate"><span class="pre">amr.dt_change_max</span></code> as the simulation proceeds. Since the present case does not involve complex chemical processes, <code class="docutils literal notranslate"><span class="pre">amr.dt_shrink</span></code> is kept to relatively high value of 0.1.</p>
 <p>Input/output from <cite>PeleLMeX</cite> are specified in the <code class="docutils literal notranslate"><span class="pre">IO</span> <span class="pre">CONTROL</span></code> block:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>#-------------------------IO CONTROL----------------------------
 amr.check_file       = &quot;chk_&quot;      # root name of checkpoint file
@@ -344,7 +344,7 @@ We have specified here that a checkpoint file will be generated every 50 ms and 
 <col style="width: 100%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="Visualization/FPC_Coarse_25ms.png"><img alt="FPC_b" src="Visualization/FPC_Coarse_25ms.png" style="width: 100%;" /></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="_images/FPC_Coarse_25ms.png"><img alt="FPC_b" src="_images/FPC_Coarse_25ms.png" style="width: 100%;" /></a></p></td>
 </tr>
 </tbody>
 </table>
@@ -422,12 +422,12 @@ As a final step, we will add another level of refinement, only at the vicinity o
 <p>You should obtain a flow with a vorticity field similar to Fig. <a class="reference internal" href="#fig-fpc-vortfinal"><span class="std std-numref">5</span></a>.
 For the purpose of the present tutorial, this will be our final solution but one can see that the flow has not yet return to a periodic vortex shedding and additinal resolution could be added locally to obtain smoother flow features.</p>
 <span id="fig-fpc-vortfinal"></span><table class="docutils align-center" id="id3">
-<caption><span class="caption-number">5 </span><span class="caption-text">Contour plots of vorticit at t = 350 ms with 2 levels of refinements.</span><a class="headerlink" href="#id3" title="Permalink to this table"></a></caption>
+<caption><span class="caption-number">5 </span><span class="caption-text">Contour plots of vorticity at t = 350 ms with 2 levels of refinements.</span><a class="headerlink" href="#id3" title="Permalink to this table"></a></caption>
 <colgroup>
 <col style="width: 100%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="Visualization/FPC_VorticityFinal.png"><img alt="FPC_c" src="Visualization/FPC_VorticityFinal.png" style="width: 100%;" /></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="_images/FPC_VorticityFinal.png"><img alt="FPC_c" src="_images/FPC_VorticityFinal.png" style="width: 100%;" /></a></p></td>
 </tr>
 </tbody>
 </table>
