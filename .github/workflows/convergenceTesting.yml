@@ -18,7 +18,7 @@ jobs:
       uses: styfle/cancel-workflow-action@0.6.0
       with:
         access_token: ${{github.token}}
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: System Dependencies
       run: |
          .github/workflows/dependencies/dependencies.sh
@@ -34,7 +34,7 @@ jobs:
       working-directory: ./build/amrex/Tools/Plotfile
       run: |
         make
-    - name: Build PeleLM
+    - name: Build PeleLMeX
       env:
          AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
          PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
