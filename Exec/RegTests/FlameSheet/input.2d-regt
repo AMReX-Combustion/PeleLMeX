@@ -20,7 +20,7 @@ amr.regrid_int      = 5                # how often to regrid
 amr.n_error_buf     = 1 1 2 2          # number of buffer cells in error est
 amr.grid_eff        = 0.7              # what constitutes an efficient grid
 amr.blocking_factor = 16               # block factor in grid generation (min box size)
-amr.max_grid_size   = 64               # max box size
+amr.max_grid_size   = 256               # max box size
 
 
 #--------------------------- Problem -------------------------------

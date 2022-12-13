@@ -13,7 +13,7 @@ VERBOSE         = FALSE
 TINY_PROFILE    = FALSE
 
 # Compilation
-COMP            = gnu
+COMP            = llvm
 USE_MPI         = TRUE
 USE_OMP         = FALSE
 USE_CUDA        = FALSE
