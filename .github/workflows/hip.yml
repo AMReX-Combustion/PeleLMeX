@@ -8,14 +8,14 @@ on:
     branches: [ main, development ]
 
 concurrency:
-  group: ${{ github.ref }}-${{ github.head_ref }}-cuda
+  group: ${{ github.ref }}-${{ github.head_ref }}-hip
   cancel-in-progress: true
 
 jobs:
   #Build the 3D FlameSheet RegTest with clang and HIP
   FS2D_HIP:
     name: HIP ROCm Clang [FS2D]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v3
     - name: System Dependencies
@@ -38,7 +38,7 @@ jobs:
   #Build the EB_EnclosedFlamet RegTest with clang and HIP
   EBEF2D_CUDA:
     name: HIP ROCm Clang [EBEF2D]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v3
     - name: System Dependencies

@@ -12,9 +12,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  #Build the 2D FlameSheet RegTest with GNU9.3 and CUDA 11.2
+  #Build the 2D FlameSheet RegTest with GNU9.4 and CUDA 11.2
   FS2D_CUDA:
-    name: CUDA@11.2 GNU@9.3.0 C++17 [FS2D]
+    name: CUDA@11.2 GNU@9.4.0 C++17 [FS2D]
     runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v3
@@ -35,9 +35,9 @@ jobs:
         make TPL COMP=gnu USE_CUDA=TRUE
         make -j 2 COMP=gnu USE_CUDA=TRUE
 
-  #Build the EB_EnclosedFlamet RegTest with GNU9.3 and CUDA 11.2
+  #Build the EB_EnclosedFlamet RegTest with GNU9.4 and CUDA 11.2
   EBEF2D_CUDA:
-    name: CUDA@11.2 GNU@9.3.0 C++17 [EBEF2D]
+    name: CUDA@11.2 GNU@9.4.0 C++17 [EBEF2D]
     runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v3
