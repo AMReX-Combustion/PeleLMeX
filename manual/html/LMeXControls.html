@@ -95,7 +95,7 @@
              
   <section id="pelelmex-controls">
 <h1>PeleLMeX controls<a class="headerlink" href="#pelelmex-controls" title="Permalink to this heading"></a></h1>
-<p>The input file specified on the command line is a free-format text file, one entry per row, that specifies input data processed by the AMReX <code class="docutils literal notranslate"><span class="pre">ParmParse</span></code> module.
+<p id="sec-control">The input file specified on the command line is a free-format text file, one entry per row, that specifies input data processed by the AMReX <code class="docutils literal notranslate"><span class="pre">ParmParse</span></code> module.
 This file needs to specified along with the executable as an <cite>argv</cite> option, for example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">mpirun</span> <span class="o">-</span><span class="n">np</span> <span class="mi">64</span> <span class="o">./</span><span class="n">PeleLMeX2d</span><span class="o">.</span><span class="n">xxx</span><span class="o">.</span><span class="n">ex</span> <span class="n">inputs</span>
 </pre></div>
@@ -158,10 +158,11 @@ the first stopping criterion encountered will lead to termination of the simulat
 <h2>IO parameters<a class="headerlink" href="#io-parameters" title="Permalink to this heading"></a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1">#--------------------------IO CONTROL--------------------------</span>
 <span class="n">amr</span><span class="o">.</span><span class="n">plot_int</span>         <span class="o">=</span> <span class="mi">20</span>              <span class="c1"># [OPT, DEF=-1] Frequency (as step #) for writting plot file</span>
-<span class="n">amr</span><span class="o">.</span><span class="n">plot_per</span>         <span class="o">=</span> <span class="mi">002</span>             <span class="c1"># [OPT, DEF=-1] Period (time in s) for writting plot file</span>
+<span class="n">amr</span><span class="o">.</span><span class="n">plot_per</span>         <span class="o">=</span> <span class="mf">0.002</span>           <span class="c1"># [OPT, DEF=-1] Period (time in s) for writting plot file</span>
 <span class="n">amr</span><span class="o">.</span><span class="n">plot_per_exact</span>   <span class="o">=</span> <span class="mi">1</span>               <span class="c1"># [OPT, DEF=0] Flag to enforce exactly plt_per by shortening dt</span>
 <span class="n">amr</span><span class="o">.</span><span class="n">plot_file</span>        <span class="o">=</span> <span class="s2">&quot;plt_&quot;</span>          <span class="c1"># [OPT, DEF=&quot;plt_&quot;] Plot file prefix</span>
 <span class="n">amr</span><span class="o">.</span><span class="n">check_int</span>        <span class="o">=</span> <span class="mi">100</span>             <span class="c1"># [OPT, DEF=-1] Frequency (as step #) for writting checkpoint file</span>
+<span class="n">amr</span><span class="o">.</span><span class="n">check_per</span>        <span class="o">=</span> <span class="mf">0.05</span>            <span class="c1"># [OPT, DEF=-1] Period (time in s) for writting checkpoint file</span>
 <span class="n">amr</span><span class="o">.</span><span class="n">check_file</span>       <span class="o">=</span> <span class="s2">&quot;chk&quot;</span>           <span class="c1"># [OPT, DEF=&quot;chk&quot;] Checkpoint file prefix</span>
 <span class="n">amr</span><span class="o">.</span><span class="n">file_stepDigits</span>  <span class="o">=</span> <span class="mi">6</span>               <span class="c1"># [OPT, DEF=5] Number of digits when adding nsteps to plt and chk names</span>
 <span class="n">amr</span><span class="o">.</span><span class="n">derive_plot_vars</span> <span class="o">=</span> <span class="n">avg_pressure</span> <span class="o">...</span><span class="c1"># [OPT, DEF=&quot;&quot;] List of derived variable included in the plot files</span>
