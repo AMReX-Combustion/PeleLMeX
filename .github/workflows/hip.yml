@@ -1,4 +1,4 @@
-name: PeleLMeX_Cuda
+name: PeleLMeX_Hip
 
 on:
   workflow_dispatch:
