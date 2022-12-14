@@ -297,6 +297,8 @@ void pelelm_derQcrit (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dc
                       Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
 
 {
+
+#if AMREX_SPACEDIM == 3
     AMREX_D_TERM(const amrex::Real idx = geomdata.InvCellSize(0);,
                  const amrex::Real idy = geomdata.InvCellSize(1);,
                  const amrex::Real idz = geomdata.InvCellSize(2););
@@ -338,6 +340,8 @@ void pelelm_derQcrit (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dc
         }
       }
     });
+#endif
+
 }
 
 //
