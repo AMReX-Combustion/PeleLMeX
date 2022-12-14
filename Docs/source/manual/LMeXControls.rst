@@ -129,7 +129,13 @@ The following list of derived variables are available in PeleLMeX:
       - Cell-averaged pressure (from the node-centered pressure)
     * - `mag_vort`
       - 1
-      - Vorticity (2D) or vorticity magnitude (3D)
+      - Vorticity magnitude
+    * - `vorticity`
+      - AMREX_SPACEDIM*2-3
+      - VortZ (2D) or VortX, VortY, VortZ (3D)
+    * - `Qcrit`
+      - 1
+      - Q-Criterion : :math:`0.5(|\boldsymbol{\Omega}|^2 - |\boldsymbol{S}|^2)` 
     * - `kinetic_energy`
       - 1
       - Kinetic energy: 0.5 * rho * (u^2+v^2+w^2)

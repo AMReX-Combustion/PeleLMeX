@@ -810,6 +810,21 @@ void PeleLM::derivedSetup()
    // Vorticity magnitude
    derive_lst.add("mag_vort",IndexType::TheCellType(),1,pelelm_dermgvort,grow_box_by_two);
 
+   // Vorticity components
+   const int vort_ncomp = 2*AMREX_SPACEDIM-3;
+#if (AMREX_SPACEDIM == 2)
+   Vector<std::string> var_names({"VortZ"});
+#elif (AMREX_SPACEDIM == 3)
+   Vector<std::string> var_names({"VortX","VortY","VortZ"});
+#endif
+   derive_lst.add("vorticity",IndexType::TheCellType(),vort_ncomp,var_names,
+                  pelelm_dervort,grow_box_by_two);
+
+#if (AMREX_SPACEDIM == 3)
+   // Q-criterion
+   derive_lst.add("Qcrit",IndexType::TheCellType(),1,pelelm_derQcrit,grow_box_by_two);
+#endif
+
    // Kinetic energy
    derive_lst.add("kinetic_energy",IndexType::TheCellType(),1,pelelm_derkineticenergy,the_same_box);
 
