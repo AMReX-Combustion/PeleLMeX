@@ -329,8 +329,8 @@ void pelelm_derQcrit (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dc
       qcrit_arr(i,j,k) = 0.0;
       for (int dim1 = 0; dim1 < AMREX_SPACEDIM; ++dim1) {
         for (int dim2 = 0; dim2 < AMREX_SPACEDIM; ++dim2) {
-          Real Ohm = 0.5 * (gradU(dim1,dim2) - gradU(dim2,dim1)); 
-          Real Sij = 0.5 * (gradU(dim1,dim2) + gradU(dim2,dim1)); 
+          Real Ohm = 0.5 * (gradU(dim1,dim2) - gradU(dim2,dim1));
+          Real Sij = 0.5 * (gradU(dim1,dim2) + gradU(dim2,dim1));
           if (dim1 == dim2) {
             Sij -= divU/AMREX_SPACEDIM;
           }
