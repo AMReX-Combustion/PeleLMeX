@@ -17,6 +17,7 @@
         <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
         <script src="_static/sphinx_highlight.js"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -224,7 +225,15 @@ the first stopping criterion encountered will lead to termination of the simulat
 </tr>
 <tr class="row-even"><td><p><cite>mag_vort</cite></p></td>
 <td><p>1</p></td>
-<td><p>Vorticity (2D) or vorticity magnitude (3D)</p></td>
+<td><p>Vorticity magnitude</p></td>
+</tr>
+<tr class="row-odd"><td><p><cite>vorticity</cite></p></td>
+<td><p>AMREX_SPACEDIM*2-3</p></td>
+<td><p>VortZ (2D) or VortX, VortY, VortZ (3D)</p></td>
+</tr>
+<tr class="row-even"><td><p><cite>Qcrit</cite></p></td>
+<td><p>1</p></td>
+<td><p>Q-Criterion : <span class="math notranslate nohighlight">\(0.5(|\boldsymbol{\Omega}|^2 - |\boldsymbol{S}|^2)\)</span></p></td>
 </tr>
 <tr class="row-odd"><td><p><cite>kinetic_energy</cite></p></td>
 <td><p>1</p></td>
