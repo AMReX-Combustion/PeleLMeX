@@ -243,7 +243,7 @@ void pelelm_dermgvort (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int d
 //
 // Compute vorticity components
 //
-void pelelm_dervort (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int /*ncomp*/,
+void pelelm_dervort (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
                      const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
                      const Geometry& geomdata,
                      Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
