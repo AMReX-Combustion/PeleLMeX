@@ -4,7 +4,7 @@
 void PeleLM::readProbParm()
 {
    amrex::ParmParse pp("prob");
-   
+
    pp.query("P_mean",   prob_parm->P_mean);
    pp.query("inj_start",   prob_parm->inj_start);
    pp.query("inj_dur",   prob_parm->inj_dur);
@@ -22,7 +22,7 @@ void PeleLM::readProbParm()
    amrex::Real Y_fu_ox = {0.};
    pp.query("Y_O2_ox",   Y_O2_ox);
    pp.query("Y_fu_ox",   Y_fu_ox);
-   
+
    amrex::Vector<std::string> sname;
    pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(sname);
    amrex::Real Y_pure_fuel[NUM_SPECIES] = {0.0};

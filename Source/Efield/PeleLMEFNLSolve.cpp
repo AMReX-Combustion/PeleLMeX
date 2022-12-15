@@ -91,7 +91,7 @@ void PeleLM::implicitNonLinearSolve(int sdcIter,
       if ( ef_verbose ) {
          amrex::Print() << "(" << sstep << ") ne scaling: " << nE_scale << "\n";
          amrex::Print() << "(" << sstep << ") phiV scaling: " << phiV_scale << "\n";
-      }    
+      }
       scaleNLState(nE_scale, phiV_scale);
 
       // Compute the background charge distribution at curtime
@@ -309,7 +309,7 @@ void PeleLM::incrementElectronForcing(int a_sstep,
       for (MFIter mfi(ldata_p->state,TilingIfNotGPU()); mfi.isValid(); ++mfi)
       {
          const Box& bx = mfi.tilebox();
-         auto const& nE_o   = ldata_p->state.const_array(mfi,NE); 
+         auto const& nE_o   = ldata_p->state.const_array(mfi,NE);
          auto const& nE_n   = ldataNLs_p->nlState.const_array(mfi);
          auto const& I_R_nE = ldataR_p->I_R.const_array(mfi,NUM_SPECIES);
          auto const& FnE    = advData->Forcing[lev].array(mfi,NUM_SPECIES+1);
@@ -617,7 +617,7 @@ void PeleLM::getAdvectionFluxesMOL(int lev,
                                    const Array<const MultiFab*,AMREX_SPACEDIM> &a_ueff,
                                    BCRec bcrec)
 {
-   auto bcRec_d = convertToDeviceVector(Vector<BCRec>(1,bcrec)); 
+   auto bcRec_d = convertToDeviceVector(Vector<BCRec>(1,bcrec));
    auto AdvType = fetchAdvTypeArray(FIRSTSPEC,1);
    auto AdvType_d = convertToDeviceVector(AdvType);
 
@@ -635,7 +635,7 @@ void PeleLM::getAdvectionFluxesMOL(int lev,
 
          AMREX_D_TERM(auto const& fx = a_fluxes[0]->array(mfi,0);,
                       auto const& fy = a_fluxes[1]->array(mfi,0);,
-                      auto const& fz = a_fluxes[2]->array(mfi,0);) 
+                      auto const& fz = a_fluxes[2]->array(mfi,0);)
          AMREX_D_TERM(auto const& ueff = a_ueff[0]->const_array(mfi);,
                       auto const& veff = a_ueff[1]->const_array(mfi);,
                       auto const& weff = a_ueff[2]->const_array(mfi);)
@@ -725,12 +725,12 @@ void PeleLM::getAdvectionFluxes(int lev,
                int idx[3] = {i,j,k};
                bool on_lo = ( ( bc_lo == BCType::ext_dir ) && ( idx[0] <= edomain.smallEnd(0) ) );
                bool on_hi = ( ( bc_hi == BCType::ext_dir ) && ( idx[0] >= edomain.bigEnd(0) ) );
-               if (order == 1) { 
+               if (order == 1) {
                   xstate(i,j,k) = ef_edge_state_extdir(i,j,k,0,on_lo,on_hi,ne_arr,u);
                } else if (order == 2) {
                   bool extdir_or_ho_lo = ( bc_lo == BCType::ext_dir ) || ( bc_lo == BCType::hoextrap );
                   bool extdir_or_ho_hi = ( bc_hi == BCType::ext_dir ) || ( bc_hi == BCType::hoextrap );
-                  xstate(i,j,k) = ef_edge_state_2ndO_extdir(i,j,k,0,on_lo,on_hi,extdir_or_ho_lo, extdir_or_ho_hi, 
+                  xstate(i,j,k) = ef_edge_state_2ndO_extdir(i,j,k,0,on_lo,on_hi,extdir_or_ho_lo, extdir_or_ho_hi,
                                                             domain.smallEnd(0), domain.bigEnd(0), ne_arr, u, xbx);
                }
             });
@@ -749,12 +749,12 @@ void PeleLM::getAdvectionFluxes(int lev,
                int idx[3] = {i,j,k};
                bool on_lo = ( ( bc_lo == BCType::ext_dir ) && ( idx[1] <= edomain.smallEnd(1) ) );
                bool on_hi = ( ( bc_hi == BCType::ext_dir ) && ( idx[1] >= edomain.bigEnd(1) ) );
-               if (order == 1) { 
+               if (order == 1) {
                   ystate(i,j,k) = ef_edge_state_extdir(i,j,k,1,on_lo,on_hi,ne_arr,v);
                } else if (order == 2) {
                   bool extdir_or_ho_lo = ( bc_lo == BCType::ext_dir ) || ( bc_lo == BCType::hoextrap );
                   bool extdir_or_ho_hi = ( bc_hi == BCType::ext_dir ) || ( bc_hi == BCType::hoextrap );
-                  ystate(i,j,k) = ef_edge_state_2ndO_extdir(i,j,k,1,on_lo,on_hi,extdir_or_ho_lo, extdir_or_ho_hi, 
+                  ystate(i,j,k) = ef_edge_state_2ndO_extdir(i,j,k,1,on_lo,on_hi,extdir_or_ho_lo, extdir_or_ho_hi,
                                                             domain.smallEnd(1), domain.bigEnd(1), ne_arr, v, ybx);
                }
             });
@@ -778,7 +778,7 @@ void PeleLM::getAdvectionFluxes(int lev,
                } else if (order == 2) {
                   bool extdir_or_ho_lo = ( bc_lo == BCType::ext_dir ) || ( bc_lo == BCType::hoextrap );
                   bool extdir_or_ho_hi = ( bc_hi == BCType::ext_dir ) || ( bc_hi == BCType::hoextrap );
-                  zstate(i,j,k) = ef_edge_state_2ndO_extdir(i,j,k,2,on_lo,on_hi,extdir_or_ho_lo, extdir_or_ho_hi, 
+                  zstate(i,j,k) = ef_edge_state_2ndO_extdir(i,j,k,2,on_lo,on_hi,extdir_or_ho_lo, extdir_or_ho_hi,
                                                             domain.smallEnd(2), domain.bigEnd(2), ne_arr, w, zbx);
                }
             });
@@ -970,7 +970,7 @@ PeleLM::getUpwindedEdge(int lev, int edge_comp, int ncomp,
    for (MFIter mfi(ccMF,TilingIfNotGPU()); mfi.isValid();++mfi)
    {
       for (int idim = 0; idim < AMREX_SPACEDIM; idim++)
-      {    
+      {
          const Box ebx = mfi.nodaltilebox(idim);
          const Box& edomain = amrex::surroundingNodes(domain,idim);
          const auto& ccVal  = ccMF.const_array(mfi,edge_comp);

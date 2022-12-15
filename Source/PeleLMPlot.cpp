@@ -364,7 +364,7 @@ void PeleLM::WriteHeader(const std::string& name, bool is_checkpoint) const
         }
 
         HeaderFile << finest_level << "\n";
-        
+
         HeaderFile << m_nstep << "\n";
 
 #ifdef AMREX_USE_EB
@@ -506,7 +506,7 @@ void PeleLM::ReadCheckPointFile()
       is >> m_cur_time;
       GotoNextLine(is);
    }
-#else 
+#else
 
    // Current time
    is >> m_cur_time;
@@ -648,10 +648,10 @@ void PeleLM::initLevelDataFromPlt(int a_lev,
 
    amrex::Print() << " initData on level " << a_lev << " from pltfile " << a_dataPltFile << "\n";
    if(pltfileSource == "LM"){
-     amrex::Print() << " Assuming pltfile was generated in LM/LMeX \n"; 
+     amrex::Print() << " Assuming pltfile was generated in LM/LMeX \n";
    }
    else if(pltfileSource == "C"){
-     amrex::Print() << " Assuming pltfile was generated in PeleC \n"; 
+     amrex::Print() << " Assuming pltfile was generated in PeleC \n";
    }
 
    // Use PelePhysics PltFileManager
@@ -663,21 +663,21 @@ void PeleLM::initLevelDataFromPlt(int a_lev,
    pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(spec_names);
    int idT = -1, idV = -1, idY = -1, nSpecPlt = 0;
 #ifdef PELE_USE_EFIELD
-   int inE = -1, iPhiV = -1; 
+   int inE = -1, iPhiV = -1;
 #endif
 #ifdef PELELM_USE_SOOT
    int inSoot = -1;
 #endif
    for (int i = 0; i < plt_vars.size(); ++i) {
       std::string firstChars = plt_vars[i].substr(0, 2);
-      
+
       if(pltfileSource == "LM"){
-        if (plt_vars[i] == "temp")            idT = i; 
+        if (plt_vars[i] == "temp")            idT = i;
       }
       else if(pltfileSource == "C"){
-        if (plt_vars[i] == "Temp")            idT = i; 
+        if (plt_vars[i] == "Temp")            idT = i;
       }
-      if (plt_vars[i] == "x_velocity")      idV = i; 
+      if (plt_vars[i] == "x_velocity")      idV = i;
       if (firstChars == "Y(" && idY < 0 ) {  // species might not be ordered in the order of the current mech.
          idY = i;
       }

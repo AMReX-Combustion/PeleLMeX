@@ -16,7 +16,7 @@ problem, the code will abort with the following message:
 amrex::Abort::0::MLMG failed !!!
 ```
 
-or 
+or
 
 ```
 amrex::Abort::0::MLMG failing so lets stop here !!!
@@ -28,13 +28,13 @@ PeleLMeX, as well as the projection solves verbose (see the `Control <https://am
 section for more details on LMeX controls):
 
 ::
-    
+
     peleLM.verbose = 3
     nodal_proj.verbose = 2
     mac_proj.verbose = 2
 
 Note that we focused on the projection solves here because they are generally more
-prone to failure than the diffusion ones. You can then restart the simulation 
+prone to failure than the diffusion ones. You can then restart the simulation
 again and identify if the code is failing in the nodal projection, either during the
 initial projection (following *Initial velocity projection*) or during the time step
 one (following *- oneSDC()::ScalarReaction()  -->*), or in the MAC-projection (right after
@@ -70,7 +70,7 @@ residual:
     ...
 
 it generally means that the required solver tolerance is too small for the problem. The
-default relative tolerances of all solvers in PeleLMeX is `1e-11`, but increasing the 
+default relative tolerances of all solvers in PeleLMeX is `1e-11`, but increasing the
 resolution, using a small `amr.blocking_factor` (<16) or large flow divergence accross
 coarse-fine interfaces can lead to the example above. In this case, one can increase the
 tolerance of the faulty solver using one of:
@@ -87,7 +87,7 @@ setup and one should take a closer look at the solution to understand the proble
 Alternatively, the solver can fail as follows:
 
 ::
-    
+
     MLMG: # of AMR levels: 2
       # of MG levels on the coarsest AMR level: 6
     MLMG: Initial rhs               = 395786.0963
@@ -106,14 +106,14 @@ Chemistry integration failure
 
 PeleLMeX relies on `Sundials CVODE <https://computing.llnl.gov/projects/sundials/cvode>`_ to
 integrate the stiff ODE resulting of the chemical system (along with advection/diffusion
-forcing). CVODE has multiple failure modes, but the most common one appearing in PeleLMeX 
+forcing). CVODE has multiple failure modes, but the most common one appearing in PeleLMeX
 will promp a message similar to one of the following:
 
 ::
 
     From CVODE: At t = 0 and h = 6.01889e-195, the corrector convergence test failed repeatedly or with |h| = hmin.```
     From CVODE: At t = 2.459e-6 and h = 6.01889e-16, the corrector convergence test failed repeatedly or with |h| = hmin.```
-    [CVODE ERROR]  CVode 
+    [CVODE ERROR]  CVode
         At t = 5.09606e-09, mxstep steps taken before reaching tout.
 
 All of which indicate that the internal sub-stepping algorithm of CVODE did not managed to integrate
@@ -121,26 +121,26 @@ the system of ODEs up to the CFL-constrained time step requested by PeleLMeX bec
 reauired awfully small substep size.
 
 In the case of the first message, one can see that CVODE failed right away (`At t = 0`) which suggests
-that the state given to CVODE was wrong. If this happens right at the start of the simulation, your 
-initial solution is most likely erroneous. 
+that the state given to CVODE was wrong. If this happens right at the start of the simulation, your
+initial solution is most likely erroneous.
 
 In the case of the second message, the system was integrated up to 2.459e-6 s, but CVODE was not able
 to proceed any further as its internal step size droped to a small value. This could indicates that your
-CFL condition is too loose and the chemical stifness can't be properly handled by 
+CFL condition is too loose and the chemical stifness can't be properly handled by
 CVODE. You can consider reduce your CFL number:
 
 ::
 
     peleLM.cfl = 0.1
 
-if your CFL step size is too large (generally >1e-5 s). e.g. as for a slow, laminar case. This message 
+if your CFL step size is too large (generally >1e-5 s). e.g. as for a slow, laminar case. This message
 can also appear if your state contains species mass fraction undershoots due to poor spatial resolution.
 In this case, one can use the following option:
 
 ::
-    
+
     ode.clean_init_massfrac = 1
 
-where the ODE integration is then computed as an increment where the initial species mass fractions 
+where the ODE integration is then computed as an increment where the initial species mass fractions
 [0-1] bounds are enforced.
 

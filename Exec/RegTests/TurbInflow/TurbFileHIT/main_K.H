@@ -11,7 +11,7 @@
 AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
 void
-fillVelFab (int i, int j, int k, 
+fillVelFab (int i, int j, int k,
             amrex::Array4<amrex::Real> const& vfab,
             amrex::GeometryData const& geomdata,
             HITData const& a_data)
@@ -61,7 +61,7 @@ fillVelFab (int i, int j, int k,
                  + a_data.d_uinput[idxp1[0] + inSize * (idxp1[1] + inSize * idx[2])] * f6
                  + a_data.d_uinput[idxp1[0] + inSize * (idxp1[1] + inSize * idxp1[2])] * f7;
 
-    uinterp[1] =   a_data.d_vinput[idx[0] + inSize * (idx[1] + inSize * idx[2])] * f0 
+    uinterp[1] =   a_data.d_vinput[idx[0] + inSize * (idx[1] + inSize * idx[2])] * f0
                  + a_data.d_vinput[idxp1[0] + inSize * (idx[1] + inSize * idx[2])] * f1
                  + a_data.d_vinput[idx[0] + inSize * (idxp1[1] + inSize * idx[2])] * f2
                  + a_data.d_vinput[idx[0] + inSize * (idx[1] + inSize * idxp1[2])] * f3

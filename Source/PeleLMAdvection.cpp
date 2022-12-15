@@ -99,7 +99,8 @@ void PeleLM::computeVelocityAdvTerm(std::unique_ptr<AdvanceAdvData> &advData)
 #endif
                                                  m_Godunov_ppm, m_Godunov_ForceInTrans,
                                                  is_velocity, fluxes_are_area_weighted,
-                                                 m_advection_type);
+                                                 m_advection_type,
+                                                 m_Godunov_ppm_limiter);
       }
 #ifdef AMREX_USE_EB
       EB_set_covered_faces(GetArrOfPtrs(fluxes[lev]),0.);
@@ -380,7 +381,8 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
 #endif
                                                  m_Godunov_ppm, m_Godunov_ForceInTrans,
                                                  is_velocity, fluxes_are_area_weighted,
-                                                 m_advection_type);
+                                                 m_advection_type,
+                                                 m_Godunov_ppm_limiter);
 
          // Ions one by one
          for ( int n = 0; n < NUM_IONS; n++) {
@@ -412,7 +414,8 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
 #endif
                                                     m_Godunov_ppm, m_Godunov_ForceInTrans,
                                                     is_velocity, fluxes_are_area_weighted,
-                                                    m_advection_type);
+                                                    m_advection_type,
+                                                    m_Godunov_ppm_limiter);
          }
 #else
          bool is_velocity = false;
@@ -431,7 +434,8 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
 #endif
                                                  m_Godunov_ppm, m_Godunov_ForceInTrans,
                                                  is_velocity, fluxes_are_area_weighted,
-                                                 m_advection_type);
+                                                 m_advection_type,
+                                                 m_Godunov_ppm_limiter);
 #endif
       }
 
@@ -519,7 +523,8 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
 #endif
                                                  m_Godunov_ppm, m_Godunov_ForceInTrans,
                                                  is_velocity, fluxes_are_area_weighted,
-                                                 m_advection_type);
+                                                 m_advection_type,
+                                                 m_Godunov_ppm_limiter);
       }
 
 
@@ -607,7 +612,8 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
 #endif
                                                  m_Godunov_ppm, m_Godunov_ForceInTrans,
                                                  is_velocity, fluxes_are_area_weighted,
-                                                 m_advection_type);
+                                                 m_advection_type,
+                                                 m_Godunov_ppm_limiter);
       }
 #ifdef AMREX_USE_EB
       EB_set_covered_faces(GetArrOfPtrs(fluxes[lev]),0.);
@@ -840,7 +846,8 @@ void PeleLM::computePassiveAdvTerms(std::unique_ptr<AdvanceAdvData> &advData,
 #endif
                                                  m_Godunov_ppm, m_Godunov_ForceInTrans,
                                                  is_velocity, fluxes_are_area_weighted,
-                                                 m_advection_type);
+                                                 m_advection_type,
+                                                 m_Godunov_ppm_limiter);
       }
 #ifdef AMREX_USE_EB
       EB_set_covered_faces(GetArrOfPtrs(fluxes[lev]),0.);

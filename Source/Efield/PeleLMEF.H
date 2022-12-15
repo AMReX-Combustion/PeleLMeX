@@ -27,7 +27,7 @@
    amrex::Real                 FphiV_scale = 1.0;  // phiV residual scale
 
    // non-linear / linear solve
-   int                         m_ef_maxNewtonIter    = 5; 
+   int                         m_ef_maxNewtonIter    = 5;
    int                         m_ef_use_PETSC_direct = 0;
    int                         m_ef_PC_approx        = 1;
    int                         m_ef_diffT_jfnk       = 1;

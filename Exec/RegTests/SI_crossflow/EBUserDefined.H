@@ -19,7 +19,7 @@ EBUserDefined(const Geometry& geom,
     amrex::Real dy = geom.CellSize()[1]; //* pow(2.0,max_coarsening_level);
     amrex::Real dx = geom.CellSize()[0]; //* pow(2.0,max_coarsening_level);
 
-    // The cell_id step is done to have the vertical and horizontal planes 
+    // The cell_id step is done to have the vertical and horizontal planes
     // exactly at the cell face and avoid numerical problems with small volume cells
     int cell_id = 0.15875e-2 / dx;
     amrex::EB2::PlaneIF cathode_vert_left({AMREX_D_DECL(-cell_id*dx,0.,0.)},
@@ -37,7 +37,7 @@ EBUserDefined(const Geometry& geom,
 
     amrex::EB2::PlaneIF insulator_vert_right({AMREX_D_DECL(0.225e-2,0.,0.)},
                                    {AMREX_D_DECL(-1.,0.,0.)});
-    
+
     cell_id = 0.077e-2 / dx;
     amrex::EB2::PlaneIF anode_vert_left({AMREX_D_DECL(-cell_id*dx,0.,0.)},
                                   {AMREX_D_DECL(1.,0.,0.)});
@@ -68,7 +68,7 @@ EBUserDefined(const Geometry& geom,
     /* ---------- Cathode cone ---------- */
     amrex::Array<amrex::Real,AMREX_SPACEDIM> point0_cat;
     amrex::Array<amrex::Real,AMREX_SPACEDIM> point1_cat;
-    
+
     point1_cat[0] = -0.15875e-2; //x-coordinate
     point1_cat[1] =  1.8122e-2; //y-coordinate
 
@@ -78,13 +78,13 @@ EBUserDefined(const Geometry& geom,
     amrex::Array<amrex::Real,AMREX_SPACEDIM> norm0;
 
     norm0[0] =  (point0_cat[0]-point1_cat[0]);
-    norm0[1] =  (point0_cat[1]-point1_cat[1]); 
+    norm0[1] =  (point0_cat[1]-point1_cat[1]);
     norm0[2] = 0.0;
 
     amrex::Real norm = sqrt(norm0[0]*norm0[0]+norm0[1]*norm0[1]);
     norm0[0] = norm0[0]/norm;
     norm0[1] = norm0[1]/norm;
-    
+
     amrex::EB2::PlaneIF cone_cathode_angle_left({AMREX_D_DECL(point1_cat[0],1.46147e-2,0)},
                                    {AMREX_D_DECL(norm0[0],-norm0[1],0)});
 
@@ -93,7 +93,7 @@ EBUserDefined(const Geometry& geom,
 
     // Anode tip is cut based on grid spacing in y to avoid numerical problems
     //get the cathode tip plane based on grid spacing to avoid cutting through a cell
-    cell_id = (point0_cat[1]-1.80e-2-0.001e-2) / dy; 
+    cell_id = (point0_cat[1]-1.80e-2-0.001e-2) / dy;
 
     amrex::EB2::PlaneIF cathode_tip({AMREX_D_DECL(0.,(1.8e-2 + cell_id*dy),0)},
                             {AMREX_D_DECL(0.,-1.,0)});
@@ -101,7 +101,7 @@ EBUserDefined(const Geometry& geom,
     // This is adding a shallower cone angle close to the cathode tip
     amrex::Array<amrex::Real,AMREX_SPACEDIM> p0_cat;
     amrex::Array<amrex::Real,AMREX_SPACEDIM> p1_cat;
-    
+
     // p1_cat[0] = -4.1955e-03; //x-coordinate 40 degrees
     // p1_cat[0] = -1.8198e-03; //x-coordinate 20 degrees
     p1_cat[0] = -2.88675e-05; //x-coordinate 30 degrees
@@ -113,13 +113,13 @@ EBUserDefined(const Geometry& geom,
     amrex::Array<amrex::Real,AMREX_SPACEDIM> n0;
 
     n0[0] =  (p0_cat[0]-p1_cat[0]);
-    n0[1] =  (p0_cat[1]-p1_cat[1]); 
+    n0[1] =  (p0_cat[1]-p1_cat[1]);
     n0[2] = 0.0;
 
     amrex::Real n = sqrt(n0[0]*n0[0]+n0[1]*n0[1]);
     n0[0] = n0[0]/n;
     n0[1] = n0[1]/n;
-    
+
     amrex::EB2::PlaneIF cathode_chamfer_left({AMREX_D_DECL(p1_cat[0],1.872e-2,0)},
                                    {AMREX_D_DECL(n0[0],-n0[1],0)});
 
@@ -159,21 +159,21 @@ EBUserDefined(const Geometry& geom,
     amrex::Array<amrex::Real,AMREX_SPACEDIM> point0_anode;
     amrex::Array<amrex::Real,AMREX_SPACEDIM> point1_anode;
 
-    
-    cell_id = 0.07700e-2 / dx; 
+
+    cell_id = 0.07700e-2 / dx;
     point1_anode[0] = -cell_id*dx; //x-coordinate
-    cell_id = 2.05960e-2 / dy; 
+    cell_id = 2.05960e-2 / dy;
     point1_anode[1] =  cell_id*dy; //y-coordinate
 
-    cell_id = 0.00000 / dx; 
+    cell_id = 0.00000 / dx;
     point0_anode[0] =  cell_id*dx; //x-coordinate
-    cell_id = 1.97500e-2 / dy; 
+    cell_id = 1.97500e-2 / dy;
     point0_anode[1] =  cell_id*dy; //y-coordinate
 
     amrex::Array<amrex::Real,AMREX_SPACEDIM> norm1;
 
     norm1[0] =  (point0_anode[0]-point1_anode[0]);
-    norm1[1] =  (point0_anode[1]-point1_anode[1]); 
+    norm1[1] =  (point0_anode[1]-point1_anode[1]);
     norm1[2] = 0.0;
 
     norm = sqrt(norm1[0]*norm1[0]+norm1[1]*norm1[1]);
@@ -183,11 +183,11 @@ EBUserDefined(const Geometry& geom,
     // amrex::Print() << " Anode norm " << norm1[0] << norm1[1];
     // amrex::Abort();
 
-    cell_id = 2.03793e-2 / dy; 
+    cell_id = 2.03793e-2 / dy;
     amrex::EB2::PlaneIF cone_anode_angle_left({AMREX_D_DECL(point1_anode[0],cell_id*dy,0)},
                                    {AMREX_D_DECL(norm1[0],-norm1[1],0)});
 
-    cell_id = 2.03793e-2 / dy; 
+    cell_id = 2.03793e-2 / dy;
     amrex::EB2::PlaneIF cone_anode_angle_right({AMREX_D_DECL(-point1_anode[0],cell_id*dy,0)},
                                    {AMREX_D_DECL(-norm1[0],-norm1[1],0)});
 
@@ -228,15 +228,15 @@ EBUserDefined(const Geometry& geom,
 
     int dir = 0;
     // pp.get("rot_dir",dir);
-    amrex::Real angle = 270; 
+    amrex::Real angle = 270;
     // pp.get("rot_angle",angle);
 
     auto pr     = amrex::EB2::lathe(polys);
     auto pr_rot = amrex::EB2::rotate(amrex::EB2::lathe(polys), angle*3.1415/180., dir);
     auto shop   = amrex::EB2::makeShop(pr_rot);
 
-	EB2::Build(shop, geom, required_coarsening_level,
-                   max_coarsening_level);
+    EB2::Build(shop, geom, required_coarsening_level,
+               max_coarsening_level);
 }
 #endif
 #endif

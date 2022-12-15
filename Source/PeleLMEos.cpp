@@ -163,6 +163,24 @@ void PeleLM::calcDivU(int is_init,
    }
 }
 
+void PeleLM::setRhoToSumRhoY(int lev, const TimeStamp &a_time) {
+
+   AMREX_ASSERT(a_time == AmrOldTime || a_time == AmrNewTime);
+
+   auto ldata_p = getLevelDataPtr(lev,a_time);
+   auto const& sma = ldata_p->state.arrays();
+
+   amrex::ParallelFor(ldata_p->state, [=]
+   AMREX_GPU_DEVICE (int box_no, int i, int j, int k) noexcept
+   {
+      sma[box_no](i,j,k,DENSITY) = 0.0;
+      for (int n = 0; n < NUM_SPECIES; n++) {
+         sma[box_no](i,j,k,DENSITY) += sma[box_no](i,j,k,FIRSTSPEC+n);
+      }
+   });
+   Gpu::streamSynchronize();
+}
+
 void PeleLM::setTemperature(const TimeStamp &a_time) {
    BL_PROFILE_VAR("PeleLM::setTemperature()", setTemperature);
 

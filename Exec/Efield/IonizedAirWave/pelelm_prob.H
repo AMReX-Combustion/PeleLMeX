@@ -43,9 +43,9 @@ void pelelm_initdata(int i, int j, int k,
     amrex::Real y1, y2;
 
     pert = 0.0;
-    if (prob_parm.pertmag > 0.0) 
+    if (prob_parm.pertmag > 0.0)
     {
-       pert = prob_parm.pertmag * 
+       pert = prob_parm.pertmag *
              (1.0 * std::sin(2 * Pi * 4 * x / Lx) +
               1.023 * std::sin(2 * Pi * 2 * (x - 0.004598) / Lx) +
               0.945 * std::sin(2 * Pi * 3 * (x - 0.00712435) / Lx) +
@@ -145,7 +145,7 @@ bcnormal(
       } else {          // hi
          s_ext[NE] = 0.0;
          s_ext[PHIV] = prob_parm.phiV_hiy;
-      }   
+      }
    }
 }
 

@@ -48,7 +48,7 @@ locate(const amrex::Real* xtable, const int n, const amrex::Real& x, int& idxlo)
         idxlo = idxmid;
       } else {
         idxhi = idxmid;
-      }   
+      }
     }
   }
 }
@@ -117,7 +117,7 @@ void pelelm_initdata(int i, int j, int k,
       const amrex::Real f5 = (1 - slp[0]) * slp[1] * slp[2];
       const amrex::Real f6 = slp[0] * slp[1] * (1 - slp[2]);
       const amrex::Real f7 = slp[0] * slp[1] * slp[2];
-      u[0] = 
+      u[0] =
         prob_parm.d_uinput
             [idx[0] + inSize * (idx[1] + inSize * idx[2])] *
           f0 +
@@ -313,7 +313,7 @@ bcnormal(
     const amrex::Real cy = prob_parm.centy + prob_parm.r_circ * sin(phi_angle);
 
     // Injecting on an ellipse with R_minor = prob_parm.r_hole and R_major = prob_parm.r_hole / cos(prob_parm.cone_angle)
-    // Local coordinates: 
+    // Local coordinates:
     amrex::Real n_loc = (x[0] - cx) * cos(phi_angle) - (x[1] - cy) * sin(phi_angle);
     amrex::Real t_loc = (x[0] - cx) * sin(phi_angle) + (x[1] - cy) * cos(phi_angle);
 
@@ -374,7 +374,7 @@ bcnormal(
   if (!isInjCell) {
      s_ext[VELX] = 0.0;
      s_ext[VELY] = 0.0;
-     s_ext[VELZ] = 0.0;                                                                                                                                                      
+     s_ext[VELZ] = 0.0;
   }
 }
 

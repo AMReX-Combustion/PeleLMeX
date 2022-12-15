@@ -23,10 +23,12 @@ static Box grow_box_by_two (const Box& b) { return amrex::grow(b,2); }
 void PeleLM::Setup() {
    BL_PROFILE("PeleLM::Setup()");
 
+   m_wall_start = amrex::ParallelDescriptor::second();
+
    // Ensure grid is isotropic
    {
      auto const dx = geom[0].CellSizeArray();
-     AMREX_ALWAYS_ASSERT(AMREX_D_TERM(,dx[0] == dx[1], && dx[1] == dx[2]));
+     AMREX_ALWAYS_ASSERT(AMREX_D_TERM(,amrex::almostEqual(dx[0], dx[1]), && amrex::almostEqual(dx[1], dx[2])));
    }
    // Print build info to screen
    const char* githash1 = buildInfoGetGitHash(1);
@@ -330,6 +332,7 @@ void PeleLM::readParameters() {
    pp.query("do_react",m_do_react);
    pp.query("use_typ_vals_chem",m_useTypValChem);
    pp.query("typical_values_reset_int",m_resetTypValInt);
+   pp.query("typical_values_Ymin",m_typicalYvalMin);
    if (m_do_react) {
       m_plotChemDiag = 0;
       m_plotHeatRelease = 1;
@@ -368,6 +371,19 @@ void PeleLM::readParameters() {
    } else if ( m_advection_key == "Godunov_PPM" ) {
        m_advection_type = "Godunov";
        m_Godunov_ppm = 1;
+       m_Godunov_ppm_limiter = PPM::VanLeer;
+       ParmParse ppg("godunov");
+       ppg.query("use_forceInTrans", m_Godunov_ForceInTrans);
+   } else if ( m_advection_key == "Godunov_PPM_WENOZ" ) {
+       m_advection_type = "Godunov";
+       m_Godunov_ppm = 1;
+       m_Godunov_ppm_limiter = PPM::WENOZ;
+       ParmParse ppg("godunov");
+       ppg.query("use_forceInTrans", m_Godunov_ForceInTrans);
+   } else if ( m_advection_key == "Godunov_PPM_NOLIM" ) {
+       m_advection_type = "Godunov";
+       m_Godunov_ppm = 1;
+       m_Godunov_ppm_limiter = PPM::NoLimiter;
        ParmParse ppg("godunov");
        ppg.query("use_forceInTrans", m_Godunov_ForceInTrans);
    } else if ( m_advection_key == "Godunov_BDS" ) {
@@ -408,6 +424,7 @@ void PeleLM::readParameters() {
    // Time stepping control
    // -----------------------------------------
    ParmParse ppa("amr");
+   ppa.query("max_wall_time", m_max_wall_time); // hours
    ppa.query("max_step", m_max_step);
    ppa.query("stop_time", m_stop_time);
    ppa.query("message_int", m_message_int);
@@ -488,7 +505,7 @@ void PeleLM::readParameters() {
    if (m_do_temporals) {
       ppef.query("do_ionsBalance",m_do_ionsBalance);
       if (m_do_ionsBalance) {
-         m_do_speciesBalance = 1; 
+         m_do_speciesBalance = 1;
       }
    }
 #endif
@@ -513,6 +530,7 @@ void PeleLM::readIOParameters() {
 
    pp.query("check_file", m_check_file);
    pp.query("check_int" , m_check_int);
+   pp.query("check_per" , m_check_per);
    pp.query("restart" , m_restart_chkfile);
    pp.query("initDataPlt" , m_restart_pltfile);
    pp.query("initDataPltSource" , pltfileSource);
@@ -542,6 +560,8 @@ void PeleLM::readIOParameters() {
    pp.query("regrid_file", m_regrid_file);
    pp.query("file_stepDigits", m_ioDigits);
    pp.query("use_hdf5_plt",m_write_hdf5_pltfile);
+   pp.query("regrid_interp_method",m_regrid_interp_method);
+   AMREX_ASSERT(m_regrid_interp_method == 0 || m_regrid_interp_method == 1);
 
 }
 
@@ -761,6 +781,9 @@ void PeleLM::derivedSetup()
       derive_lst.add("diffcoeff",IndexType::TheCellType(),NUM_SPECIES,
                      var_names_massfrac,pelelm_derdiffc,the_same_box);
 
+      // Rho - sum rhoYs
+      derive_lst.add("rhominsumrhoY",IndexType::TheCellType(),1,pelelm_derrhomrhoy,the_same_box);
+
       // Heat Release
       derive_lst.add("HeatRelease",IndexType::TheCellType(),1,pelelm_derheatrelease,the_same_box);
 
@@ -781,8 +804,26 @@ void PeleLM::derivedSetup()
    // Viscosity
    derive_lst.add("viscosity",IndexType::TheCellType(),1,pelelm_dervisc,the_same_box);
 
+   // Velocity magnitude
+   derive_lst.add("mag_vel",IndexType::TheCellType(),1,pelelm_dermgvel,the_same_box);
+
    // Vorticity magnitude
    derive_lst.add("mag_vort",IndexType::TheCellType(),1,pelelm_dermgvort,grow_box_by_two);
+
+   // Vorticity components
+   const int vort_ncomp = 2*AMREX_SPACEDIM-3;
+#if (AMREX_SPACEDIM == 2)
+   Vector<std::string> var_names({"VortZ"});
+#elif (AMREX_SPACEDIM == 3)
+   Vector<std::string> var_names({"VortX","VortY","VortZ"});
+#endif
+   derive_lst.add("vorticity",IndexType::TheCellType(),vort_ncomp,var_names,
+                  pelelm_dervort,grow_box_by_two);
+
+#if (AMREX_SPACEDIM == 3)
+   // Q-criterion
+   derive_lst.add("Qcrit",IndexType::TheCellType(),1,pelelm_derQcrit,grow_box_by_two);
+#endif
 
    // Kinetic energy
    derive_lst.add("kinetic_energy",IndexType::TheCellType(),1,pelelm_derkineticenergy,the_same_box);
@@ -838,6 +879,24 @@ void PeleLM::evaluateSetup()
    // divU
    evaluate_lst.add("divU",IndexType::TheCellType(),1,the_same_box);
 
+   // projected velocity field
+   {
+      Vector<std::string> var_names = { AMREX_D_DECL("x_velProj", "y_velProj", "z_velProj") };
+      evaluate_lst.add("velProj",IndexType::TheCellType(),AMREX_SPACEDIM,var_names,the_same_box);
+   }
+
+   // velocity force
+   {
+      Vector<std::string> var_names = { AMREX_D_DECL("x_velForce", "y_velForce", "z_velForce") };
+      evaluate_lst.add("velForce",IndexType::TheCellType(),AMREX_SPACEDIM,var_names,the_same_box);
+   }
+
+   // divTau
+   {
+      Vector<std::string> var_names = { AMREX_D_DECL("x_divTau", "y_divTau", "z_divTau") };
+      evaluate_lst.add("divTau",IndexType::TheCellType(),AMREX_SPACEDIM,var_names,the_same_box);
+   }
+
    // scalar diffusion term
    {
       Vector<std::string> var_names(NUM_SPECIES+2);
@@ -879,6 +938,7 @@ void PeleLM::evaluateSetup()
       var_names[NUM_SPECIES+1] = "Mu";
       evaluate_lst.add("transportCC",IndexType::TheCellType(),NUM_SPECIES+2,var_names,the_same_box);
    }
+
 }
 
 void PeleLM::taggingSetup()

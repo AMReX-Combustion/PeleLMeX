@@ -63,9 +63,11 @@ PeleLM::computeDt(int is_init,
          // Ensure ~O(dt) step by checking a little in advance
          Real timeToNextPlot = (std::floor( m_cur_time / m_plot_per_exact ) + 1) * m_plot_per_exact - m_cur_time;
          if ( 2.0 * estdt > timeToNextPlot && timeToNextPlot > estdt ) {
-            estdt = 0.5 * timeToNextPlot;
+            estdt = Real(0.5) * timeToNextPlot;
          } else {
-            estdt = std::min(estdt,timeToNextPlot);
+            if (timeToNextPlot > 1.e-12) {
+               estdt = std::min(estdt,timeToNextPlot);
+            }
          }
       }
       // If we're are getting close to the end of the simulation, shorten the dt too
@@ -164,7 +166,7 @@ PeleLM::estDivUDt(const TimeStamp &a_time) {
       Real divu_dt = amrex::ReduceMin(*density, ldata_p->divu, 0,
                                       [dtfac, rhoMin]
       AMREX_GPU_HOST_DEVICE (Box const& bx, Array4<Real const> const& rho,
-                                            Array4<Real const> const& divu ) noexcept -> Real
+                                            Array4<Real const> const& divu ) -> Real
       {
          using namespace amrex::literals;
          const auto lo = amrex::lbound(bx);

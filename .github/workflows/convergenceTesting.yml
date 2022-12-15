@@ -1,6 +1,6 @@
 name: ConvergenceTesting
 
-on: 
+on:
    workflow_dispatch:
    schedule:
       - cron: '0 2 * * *'
@@ -10,15 +10,15 @@ jobs:
   #Run the convergence test on CoVo
   COVO_Conv:
     name: Velocity-Advection
-    runs-on: ubuntu-18.04
-    env: 
+    runs-on: ubuntu-latest
+    env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
     - name: Cancel previous runs
       uses: styfle/cancel-workflow-action@0.6.0
       with:
         access_token: ${{github.token}}
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: System Dependencies
       run: |
          .github/workflows/dependencies/dependencies.sh
@@ -34,7 +34,7 @@ jobs:
       working-directory: ./build/amrex/Tools/Plotfile
       run: |
         make
-    - name: Build PeleLM
+    - name: Build PeleLMeX
       env:
          AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
          PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
@@ -49,7 +49,7 @@ jobs:
       run: |
         cp ${GITHUB_WORKSPACE}/build/amrex/Tools/Plotfile/fcompare.gnu.ex .
         sed -i "34s/.*/    resolution = [32,64,128,256,512]/" multiRuns.py
-        sed -i "s/mpiexec -n 1/mpiexec -n 4 --oversubscribe/g" multiRuns.py 
+        sed -i "s/mpiexec -n 1/mpiexec -n 4 --oversubscribe/g" multiRuns.py
         ./multiRuns.py --test_name GH_CI_CoVo --input_file input.2d_CoVo
         sed -i "49s/.*/    resolution = [32,64,128,256,512]/" pprocConvOrder.py
         ./pprocConvOrder.py ./fcompare.gnu.ex --test_name GH_CI_CoVo

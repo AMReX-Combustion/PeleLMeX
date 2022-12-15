@@ -2,14 +2,15 @@
 *.ex
 tmp_build*
 
-
 # Run output
 *.p3d
-plt*
-*plt*old*
 Backtrace*
+*plt*old*
 chk*
+plt*
 grdlog
+temporals
 
 # OSX files
 .DS_Store
+.AppleDouble

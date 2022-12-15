@@ -24,7 +24,7 @@ void PeleLM::Evolve() {
       if ( (m_regrid_int > 0) && (m_nstep > 0) && (m_nstep%m_regrid_int == 0) ) {
          if (m_verbose > 0) amrex::Print() << " Regridding...\n";
          // Average down I_R to have proper values in newly uncovered areas
-         averageDownReaction();
+         if (!m_incompressible) averageDownReaction();
          regrid(0, m_cur_time);
          resetMacProjector();
          resetCoveredMask();
@@ -73,9 +73,21 @@ void PeleLM::Evolve() {
       }
 
       // Check for the end of the simulation
+      bool over_max_wall_time = false;
+      if (m_max_wall_time > 0.0) {
+        amrex::Real t_elapsed =  ParallelDescriptor::second() - m_wall_start;
+        ParallelDescriptor::ReduceRealMax(t_elapsed);
+        if ( t_elapsed >= (m_max_wall_time * 3600)) {
+          over_max_wall_time = true;
+          if (m_verbose > 0) {
+            amrex::Print() << std::endl << "Reached maxmimum allowed wall time, stopping ..." << std::endl;
+          }
+        }
+      }
       do_not_evolve = ( (m_max_step >= 0 && m_nstep >= m_max_step) ||
                         (m_stop_time >= 0.0 && m_cur_time >= m_stop_time - 1.0e-12 * m_dt) ||
-                        (m_dt < m_min_dt) ||    
+                        (m_dt < m_min_dt) ||
+                        over_max_wall_time ||
                         dump_and_stop );
 
    }
@@ -141,8 +153,34 @@ PeleLM::writeCheckNow()
 
    if ( m_check_int > 0 && (m_nstep % m_check_int == 0) ) {
       write_now = true;
+   } else if (m_check_per > 0.0) {
+      // Check to see if we've crossed a plot_per interval by comparing
+      // the number of intervals that have elapsed for both the current
+      // time and the time at the beginning of this timestep.
+      int num_per_old = static_cast<int>((m_cur_time-m_dt) / m_check_per);
+      int num_per_new = static_cast<int>((m_cur_time     ) / m_check_per);
+      // Before using these, however, we must test for the case where we're
+      // within machine epsilon of the next interval. In that case, increment
+      // the counter, because we have indeed reached the next plot_per interval
+      // at this point.
+      const Real eps = std::numeric_limits<Real>::epsilon() * 10.0_rt * std::abs(m_cur_time);
+      const Real next_check_time = (num_per_old + 1) * m_check_per;
+      if ((num_per_new == num_per_old) && std::abs(m_cur_time - next_check_time) <= eps)
+      {
+         num_per_new += 1;
+      }
+      // Similarly, we have to account for the case where the old time is within
+      // machine epsilon of the beginning of this interval, so that we don't double
+      // count that time threshold -- we already plotted at that time on the last timestep.
+      if ((num_per_new != num_per_old) && std::abs((m_cur_time - m_dt) - next_check_time) <= eps)
+      {
+         num_per_old += 1;
+      }
+      if (num_per_old != num_per_new)
+      {
+         write_now = true;
+      }
    }
-   // TODO : time controled ?
 
    return write_now;
 }

@@ -4,7 +4,7 @@
 void PeleLM::readProbParm()
 {
    amrex::ParmParse pp("prob");
-   
+
    pp.query("P_mean", PeleLM::prob_parm->P_mean);
    pp.query("T_mean", PeleLM::prob_parm->T_mean);
    pp.query("rvort", PeleLM::prob_parm->rvort);

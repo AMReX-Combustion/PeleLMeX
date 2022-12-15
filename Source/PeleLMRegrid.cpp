@@ -75,6 +75,12 @@ void PeleLM::MakeNewLevelFromCoarse( int lev,
    }
 
    if (!m_incompressible) {
+      // Enforce density / species density consistency
+      // only usefull when using cell cons interp
+      if (m_regrid_interp_method == 1) {
+         setRhoToSumRhoY(lev, AmrNewTime);
+      }
+
       // Initialize thermodynamic pressure
       setThermoPress(lev, AmrNewTime);
    }
@@ -86,7 +92,7 @@ void PeleLM::MakeNewLevelFromCoarse( int lev,
 
 #ifdef PELE_USE_EFIELD
    m_leveldatanlsolve[lev].reset(new LevelDataNLSolve(ba, dm, *m_factory[lev], m_nGrowState));
-   if (m_do_extraEFdiags) { 
+   if (m_do_extraEFdiags) {
       m_ionsFluxes[lev].reset(new MultiFab(ba, dm, NUM_IONS*AMREX_SPACEDIM, 0));
    }
    m_precond_op.reset();
@@ -176,7 +182,7 @@ void PeleLM::RemakeLevel( int lev,
 
 #ifdef PELE_USE_EFIELD
    m_leveldatanlsolve[lev].reset(new LevelDataNLSolve(ba, dm, *m_factory[lev], m_nGrowState));
-   if (m_do_extraEFdiags) { 
+   if (m_do_extraEFdiags) {
       m_ionsFluxes[lev].reset(new MultiFab(ba, dm, NUM_IONS*AMREX_SPACEDIM, 0));
    }
    m_precond_op.reset();
@@ -210,7 +216,7 @@ void PeleLM::ClearLevel(int lev) {
    macproj.reset();
 #ifdef PELE_USE_EFIELD
    m_leveldatanlsolve[lev].reset();
-   if (m_do_extraEFdiags) { 
+   if (m_do_extraEFdiags) {
       m_ionsFluxes[lev].reset();
    }
 #endif

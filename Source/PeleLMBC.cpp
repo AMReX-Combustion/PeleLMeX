@@ -12,43 +12,43 @@
 int
 norm_vel_bc[] =
 {
-  INT_DIR, EXT_DIR, FOEXTRAP, REFLECT_ODD, REFLECT_ODD, REFLECT_ODD, REFLECT_ODD, REFLECT_ODD
+    INT_DIR, EXT_DIR, FOEXTRAP, REFLECT_ODD, EXT_DIR, EXT_DIR, EXT_DIR, EXT_DIR
 };
 
 int
 tang_vel_bc[] =
 {
-  INT_DIR, EXT_DIR, FOEXTRAP, REFLECT_EVEN, REFLECT_EVEN, REFLECT_ODD, REFLECT_EVEN, REFLECT_ODD
+    INT_DIR, EXT_DIR, FOEXTRAP, REFLECT_EVEN, HOEXTRAP, EXT_DIR, HOEXTRAP, EXT_DIR
 };
 
 int
 density_bc[] =
 {
-  INT_DIR, EXT_DIR, FOEXTRAP, REFLECT_EVEN, REFLECT_EVEN, REFLECT_EVEN, REFLECT_EVEN, REFLECT_EVEN
+    INT_DIR, EXT_DIR, FOEXTRAP, REFLECT_EVEN, FOEXTRAP, FOEXTRAP, FOEXTRAP, FOEXTRAP
 };
 
 int
 species_bc[] =
 {
-  INT_DIR, EXT_DIR, FOEXTRAP, REFLECT_EVEN, REFLECT_EVEN, REFLECT_EVEN, EXT_DIR, EXT_DIR
+    INT_DIR, EXT_DIR, FOEXTRAP, REFLECT_EVEN, FOEXTRAP, FOEXTRAP, EXT_DIR, EXT_DIR
 };
 
 int
 rhoh_bc[] =
 {
-  INT_DIR, EXT_DIR, FOEXTRAP, REFLECT_EVEN, REFLECT_EVEN, REFLECT_EVEN, EXT_DIR, EXT_DIR
+    INT_DIR, EXT_DIR, FOEXTRAP, REFLECT_EVEN, FOEXTRAP, FOEXTRAP, EXT_DIR, EXT_DIR
 };
 
 int
 temp_bc[] =
 {
-  INT_DIR, EXT_DIR, FOEXTRAP, REFLECT_EVEN, REFLECT_EVEN, REFLECT_EVEN, EXT_DIR, EXT_DIR
+    INT_DIR, EXT_DIR, FOEXTRAP, REFLECT_EVEN, FOEXTRAP, FOEXTRAP, EXT_DIR, EXT_DIR
 };
 
 int
 divu_bc[] =
 {
-  INT_DIR, REFLECT_EVEN, REFLECT_EVEN, REFLECT_EVEN, REFLECT_EVEN, REFLECT_EVEN, REFLECT_EVEN, REFLECT_EVEN
+    INT_DIR, REFLECT_EVEN, REFLECT_EVEN, REFLECT_EVEN, REFLECT_EVEN, REFLECT_EVEN, REFLECT_EVEN, REFLECT_EVEN
 };
 
 // Following incflo rather than IAMR here
@@ -81,16 +81,26 @@ soot_bc[] =
 };
 #endif
 
-InterpBase* PeleLM::getInterpolator() {
+InterpBase* PeleLM::getInterpolator(int a_method) {
+
+  InterpBase *mapper = nullptr;
+
+  if (a_method == 0) {
+    mapper = &mf_pc_interp;
+  } else if (a_method == 1) {
 //
 // Get EB-aware interpolater when needed
 //
 #ifdef AMREX_USE_EB
-  return (EBFactory(0).isAllRegular()) ? &mf_cell_cons_interp
-	  			       : &eb_mf_cell_cons_interp;
+    mapper = (EBFactory(0).isAllRegular()) ? &mf_cell_cons_interp
+                                           : &eb_mf_cell_cons_interp;
 #else
-  return &mf_cell_cons_interp;
+    mapper = &mf_cell_cons_interp;
 #endif
+  } else {
+    Abort("Unknown interpolation method");
+  }
+  return mapper;
 }
 
 void PeleLM::setBoundaryConditions() {
@@ -636,7 +646,7 @@ void PeleLM::fillcoarsepatch_state(int lev,
    fillTurbInflow(a_state, VELX, lev, a_time);
 
    // Interpolator
-   auto* mapper = getInterpolator();
+   auto* mapper = getInterpolator(m_regrid_interp_method);
 
    PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirState>> crse_bndry_func(geom[lev-1], fetchBCRecArray(0,nCompState),
                                                                          PeleLMCCFillExtDirState{lprobparm, lpmfdata,
@@ -659,7 +669,7 @@ void PeleLM::fillcoarsepatch_gradp(int lev,
    ProbParm const* lprobparm = prob_parm_d;
 
    // Interpolator
-   auto* mapper = getInterpolator();
+   auto* mapper = getInterpolator(m_regrid_interp_method);
 
    PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> crse_bndry_func(geom[lev-1], {m_bcrec_force},
                                                                        PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
@@ -680,7 +690,7 @@ void PeleLM::fillcoarsepatch_divu(int lev,
    ProbParm const* lprobparm = prob_parm_d;
 
    // Interpolator
-   auto* mapper = getInterpolator();
+   auto* mapper = getInterpolator(m_regrid_interp_method);
 
    PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> crse_bndry_func(geom[lev-1], {m_bcrec_divu},
                                                                        PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
@@ -701,7 +711,7 @@ void PeleLM::fillcoarsepatch_reaction(int lev,
    ProbParm const* lprobparm = prob_parm_d;
 
    // Interpolator
-   auto* mapper = getInterpolator();
+   auto* mapper = getInterpolator(m_regrid_interp_method);
 
    PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> crse_bndry_func(geom[lev-1], {m_bcrec_force},
                                                                          PeleLMCCFillExtDirDummy{lprobparm, m_nAux});

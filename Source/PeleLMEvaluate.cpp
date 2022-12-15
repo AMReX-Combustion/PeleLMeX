@@ -12,13 +12,13 @@ void PeleLM::Evaluate() {
    int ncomp = 0;
    Vector<std::string> plt_VarsName;
    for (int ivar = 0; ivar < m_evaluatePlotVarCount; ivar++ ) {
-      Print() << m_evaluatePlotVars[ivar] << "\n";
       bool itexists =    derive_lst.canDerive(m_evaluatePlotVars[ivar])
                       || evaluate_lst.canDerive(m_evaluatePlotVars[ivar])
                       || isStateVariable(m_evaluatePlotVars[ivar]);
       if ( !itexists ) {
          amrex::Error("PeleLM::evaluate(): unknown variable: "+m_evaluatePlotVars[ivar]);
       }
+      Print() << " --> Evaluating " << m_evaluatePlotVars[ivar] << "\n";
       if ( derive_lst.canDerive(m_evaluatePlotVars[ivar]) ) {
          const PeleLMDeriveRec* rec = derive_lst.get(m_evaluatePlotVars[ivar]);
          ncomp += rec->numDerive();
@@ -103,6 +103,41 @@ PeleLM::MLevaluate(const Vector<MultiFab *> &a_MFVec,
            MultiFab::Copy(*a_MFVec[lev],ldata_p->divu,0,a_comp,1,0);
         }
         nComp = 1;
+    } else if ( a_var == "velProj" ) {
+        // Will need DivU
+        int is_initialization = 0;             // No, use IRR
+        int computeDiffusionTerm = 1;          // Needed here
+        int do_avgDown = 1;                    // Always
+
+        // Light version of the diffusion data container
+        std::unique_ptr<AdvanceDiffData> diffData;
+        diffData.reset(new AdvanceDiffData(finest_level, grids, dmap, m_factory,
+                       m_nGrowAdv, m_use_wbar, is_initialization));
+        calcDivU(is_initialization,computeDiffusionTerm,do_avgDown,AmrNewTime,diffData);
+
+        // Do initProj
+        initialProjection();
+
+        // Copy into outgoing data holder
+        for (int lev = 0; lev <= finest_level; ++lev) {
+           auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
+           MultiFab::Copy(*a_MFVec[lev],ldata_p->state,VELX,a_comp,AMREX_SPACEDIM,0);
+        }
+        nComp = AMREX_SPACEDIM;
+    } else if ( a_var == "divTau" ) {
+        // Velocity tensor components
+        int use_density = 0;
+        Vector<std::unique_ptr<MultiFab> > aliasDivTau(finest_level+1);
+        for (int lev = 0; lev <= finest_level; ++lev) {
+            aliasDivTau[lev] = std::make_unique<MultiFab> (*a_MFVec[lev], amrex::make_alias, a_comp, AMREX_SPACEDIM);
+        }
+        computeDivTau(AmrNewTime,GetVecOfPtrs(aliasDivTau),use_density);
+#ifdef AMREX_USE_EB
+        for (int lev = 0; lev <= finest_level; ++lev) {
+            EB_set_covered(*aliasDivTau[lev],0.0);
+        }
+#endif
+        nComp = AMREX_SPACEDIM;
     } else if ( a_var == "diffTerm" ) {
         // Use the diffusion data holder, get diffusivity and calc D
         // Finally, copy into a_MFVec
@@ -134,5 +169,14 @@ PeleLM::MLevaluate(const Vector<MultiFab *> &a_MFVec,
            MultiFab::Copy(*a_MFVec[lev],ldata_p->visc_cc,0,a_comp+NUM_SPECIES+1,1,0);
         }
         nComp = NUM_SPECIES+2;
+    } else if ( a_var == "velForce" ) {
+        // Velocity forces used in computing the velocity advance
+        int add_gradP = 0;
+        Vector<std::unique_ptr<MultiFab> > aliasMFVec(finest_level+1);
+        for (int lev = 0; lev <= finest_level; ++lev) {
+            aliasMFVec[lev] = std::make_unique<MultiFab> (*a_MFVec[lev], amrex::make_alias, a_comp, AMREX_SPACEDIM);
+        }
+        getVelForces(AmrNewTime, {}, GetVecOfPtrs(aliasMFVec), 0, add_gradP);
+        nComp = AMREX_SPACEDIM;
     }
 }

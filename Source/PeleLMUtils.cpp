@@ -1,6 +1,9 @@
 #include <PeleLM.H>
 #include <PeleLM_K.H>
 #include <hydro_utils.H>
+#ifdef PELE_USE_EFIELD
+#include <PeleLMEF_Constants.H>
+#endif
 
 using namespace amrex;
 
@@ -421,30 +424,37 @@ PeleLM::floorSpecies(const TimeStamp &a_time)
    if (!m_floor_species) {
       return;
    }
+
    for (int lev = 0; lev <= finest_level; ++lev) {
 
       auto ldata_p = getLevelDataPtr(lev,a_time);
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
-      for (MFIter mfi(ldata_p->state,TilingIfNotGPU()); mfi.isValid(); ++mfi)
+      auto const& sma = ldata_p->state.arrays();
+
+      amrex::ParallelFor(ldata_p->state, [=]
+      AMREX_GPU_DEVICE (int box_no, int i, int j, int k) noexcept
       {
-         const Box& bx = mfi.tilebox();
-         auto const& rhoY    = ldata_p->state.array(mfi,FIRSTSPEC);
-         amrex::ParallelFor(bx, [rhoY]
-         AMREX_GPU_DEVICE (int i, int j, int k) noexcept
-         {
-            fabMinMax( i, j, k, NUM_SPECIES, 0.0, AMREX_REAL_MAX, rhoY);
-         });
+         fabMinMax( i, j, k, NUM_SPECIES, 0.0, AMREX_REAL_MAX, Array4<Real>(sma[box_no],FIRSTSPEC));
 #ifdef PELE_USE_EFIELD
-         auto const& nE    = ldata_p->state.array(mfi,NE);
-         amrex::ParallelFor(bx, [nE]
-         AMREX_GPU_DEVICE (int i, int j, int k) noexcept
-         {
-            fabMinMax( i, j, k, 1, 0.0, AMREX_REAL_MAX, nE);
-         });
+         fabMinMax( i, j, k, 1, 0.0, AMREX_REAL_MAX, Array4<Real>(sma[box_no],NE));
 #endif
-      }
+         // Update density accordingly ...
+         sma[box_no](i,j,k,DENSITY) = 0.0;
+         for (int n = 0; n < NUM_SPECIES; n++) {
+            sma[box_no](i,j,k,DENSITY) += sma[box_no](i,j,k,FIRSTSPEC+n);
+         }
+
+         // ... as well as rhoh
+         auto eos = pele::physics::PhysicsType::eos();
+         Real massfrac[NUM_SPECIES] = {0.0};
+         Real rhoinv = Real(1.0) / sma[box_no](i,j,k,DENSITY);
+         for (int n = 0; n < NUM_SPECIES; n++){
+            massfrac[n] = sma[box_no](i,j,k,FIRSTSPEC+n) * rhoinv;
+         }
+         Real h_cgs = 0.0;
+         eos.TY2H(sma[box_no](i,j,k,TEMP), massfrac, h_cgs);
+         sma[box_no](i,j,k,RHOH) = h_cgs * 1.0e-4 * sma[box_no](i,j,k,DENSITY);
+      });
+      Gpu::streamSynchronize();
    }
 }
 
@@ -572,7 +582,7 @@ PeleLM::derive(const std::string &a_name,
           const Box& bx = mfi.growntilebox(nGrow);
           FArrayBox& derfab = (*mf)[mfi];
           FArrayBox const& statefab = (*statemf)[mfi];
-          FArrayBox const& reactfab = ldataR_p->I_R[mfi];
+          FArrayBox const& reactfab = (m_incompressible) ? ldata_p->press[mfi] : ldataR_p->I_R[mfi];
           FArrayBox const& pressfab = ldata_p->press[mfi];
           rec->derFunc()(this, bx, derfab, 0, rec->numDerive(), statefab, reactfab, pressfab, geom[lev], a_time, stateBCs, lev);
       }
@@ -624,7 +634,7 @@ PeleLM::deriveComp(const std::string &a_name,
           const Box& bx = mfi.growntilebox(nGrow);
           FArrayBox& derfab = derTemp[mfi];
           FArrayBox const& statefab = (*statemf)[mfi];
-          FArrayBox const& reactfab = ldataR_p->I_R[mfi];
+          FArrayBox const& reactfab = (m_incompressible) ? ldata_p->press[mfi] : ldataR_p->I_R[mfi];
           FArrayBox const& pressfab = ldata_p->press[mfi];
           rec->derFunc()(this, bx, derfab, 0, rec->numDerive(), statefab, reactfab, pressfab, geom[lev], a_time, stateBCs, lev);
       }
@@ -650,8 +660,6 @@ PeleLM::initProgressVariable()
     Vector<std::string> varNames;
     pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(varNames);
     varNames.push_back("temp");
-
-    auto eos = pele::physics::PhysicsType::eos();
 
     ParmParse pp("peleLM");
     std::string Cformat;
@@ -956,6 +964,9 @@ void PeleLM::setTypicalValues(const TimeStamp &a_time, int is_init)
         typical_values[RHOH] = 0.5 * (stateMax[RHOH] + stateMin[RHOH]) / typical_values[DENSITY];
         typical_values[TEMP] = 0.5 * (stateMax[TEMP] + stateMin[TEMP]);
         typical_values[RHORT] = m_pOld;
+#ifdef PELE_USE_EFIELD
+        typical_values[NE] = 0.5 * (stateMax[NE] + stateMin[NE]);
+#endif
 
         // Pass into chemsitry if requested
         updateTypicalValuesChem();
@@ -971,14 +982,17 @@ void PeleLM::setTypicalValues(const TimeStamp &a_time, int is_init)
         }
         Print() << '\n';
         if (!m_incompressible) {
-            Print() << "\tDensity: " << typical_values[DENSITY] << '\n';
-            Print() << "\tTemp:    " << typical_values[TEMP]    << '\n';
-            Print() << "\tH:       " << typical_values[RHOH]    << '\n';
+            Print() << "\tDensity:  " << typical_values[DENSITY] << '\n';
+            Print() << "\tTemp:     " << typical_values[TEMP]    << '\n';
+            Print() << "\tH:        " << typical_values[RHOH]    << '\n';
             Vector<std::string> spec_names;
             pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(spec_names);
             for (int n = 0; n < NUM_SPECIES; n++) {
-                Print() << "\tY_" << spec_names[n] << ": " << typical_values[FIRSTSPEC+n] <<'\n';
+                Print() << "\tY_" << spec_names[n] << std::setw(std::max(0,static_cast<int>(8-spec_names[n].length()))) << std::left << ":" << typical_values[FIRSTSPEC+n] <<'\n';
             }
+#ifdef PELE_USE_EFIELD
+            Print() << "\tnE:       " << typical_values[NE]    << '\n';
+#endif
         }
         Print() << PrettyLine;
     }
@@ -1000,6 +1014,12 @@ void PeleLM::updateTypicalValuesChem()
                            typical_values[FIRSTSPEC+i] * typical_values[DENSITY] * 1.E-3); // CGS -> MKS conversion
             }
             typical_values_chem[NUM_SPECIES] = typical_values[TEMP];
+#ifdef PELE_USE_EFIELD
+            auto eos = pele::physics::PhysicsType::eos();
+            Real mwt[NUM_SPECIES] = {0.0};
+            eos.molecular_weight(mwt);
+            typical_values_chem[E_ID] = typical_values[NE] / Na * mwt[E_ID] * 1.0e-6 * 1.0e-2;
+#endif
             m_reactor->set_typ_vals_ode(typical_values_chem);
         }
     }
@@ -1331,7 +1351,7 @@ PeleLM::initMixtureFraction()
             Abort("Unknown mixtureFraction.format ! Should be 'Cantera' or 'RealList'");
         }
     }
-    if (fuelID<0 && !hasUserMF) {
+    if (fuelID<0 && hasUserMF) {
         Print() << " Mixture fraction definition lacks fuelID: consider using peleLM.fuel_name keyword \n";
     }
 
