@@ -879,6 +879,24 @@ void PeleLM::evaluateSetup()
    // divU
    evaluate_lst.add("divU",IndexType::TheCellType(),1,the_same_box);
 
+   // projected velocity field
+   {
+      Vector<std::string> var_names = { AMREX_D_DECL("x_velProj", "y_velProj", "z_velProj") };
+      evaluate_lst.add("velProj",IndexType::TheCellType(),AMREX_SPACEDIM,var_names,the_same_box);
+   }
+
+   // velocity force
+   {
+      Vector<std::string> var_names = { AMREX_D_DECL("x_velForce", "y_velForce", "z_velForce") };
+      evaluate_lst.add("velForce",IndexType::TheCellType(),AMREX_SPACEDIM,var_names,the_same_box);
+   }
+
+   // divTau
+   {
+      Vector<std::string> var_names = { AMREX_D_DECL("x_divTau", "y_divTau", "z_divTau") };
+      evaluate_lst.add("divTau",IndexType::TheCellType(),AMREX_SPACEDIM,var_names,the_same_box);
+   }
+
    // scalar diffusion term
    {
       Vector<std::string> var_names(NUM_SPECIES+2);
@@ -920,6 +938,7 @@ void PeleLM::evaluateSetup()
       var_names[NUM_SPECIES+1] = "Mu";
       evaluate_lst.add("transportCC",IndexType::TheCellType(),NUM_SPECIES+2,var_names,the_same_box);
    }
+
 }
 
 void PeleLM::taggingSetup()
