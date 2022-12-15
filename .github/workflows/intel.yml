@@ -35,8 +35,8 @@ jobs:
         export CXX=$(which dpcpp)
         export CC=$(which icc)
         cd Exec/RegTests/FlameSheet/
-        make TPL COMP=intel DIM=3 USE_DPCPP=TRUE
-        make -j $(nproc) COMP=intel DIM=3 USE_DPCPP=TRUE
+        make TPL COMP=intel DIM=3 USE_DPCPP=TRUE USE_MPI=FALSE
+        make -j $(nproc) COMP=intel DIM=3 USE_DPCPP=TRUE USE_MPI=FALSE
 
   #Build the EB_EnclosedFlamet RegTest with DPCPP
   EBEF3D_DPCPP:
@@ -62,5 +62,5 @@ jobs:
         export CXX=$(which dpcpp)
         export CC=$(which icc)
         cd Exec/RegTests/EB_EnclosedFlame/
-        make TPL COMP=intel DIM=3 USE_DPCPP=TRUE
-        make -j $(nproc) COMP=intel DIM=3 USE_DPCPP=TRUE
+        make TPL COMP=intel DIM=3 USE_DPCPP=TRUE USE_MPI=FALSE
+        make -j $(nproc) COMP=intel DIM=3 USE_DPCPP=TRUE USE_MPI=FALSE
