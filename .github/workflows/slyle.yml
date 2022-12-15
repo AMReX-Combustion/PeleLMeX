@@ -1,6 +1,10 @@
 name: Style
 
-on: [push, pull_request]
+on:
+   push:
+     branches: [ main, development ]
+   pull_request:
+     branches: [ main, development ]
 
 concurrency:
   group: ${{ github.ref }}-${{ github.head_ref }}-style

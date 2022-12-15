@@ -1,0 +1,59 @@
+name: PeleLMeX_Cuda
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, development ]
+  pull_request:
+    branches: [ main, development ]
+
+concurrency:
+  group: ${{ github.ref }}-${{ github.head_ref }}-cuda
+  cancel-in-progress: true
+
+jobs:
+  #Build the 2D FlameSheet RegTest with GNU9.4 and CUDA 11.2
+  FS2D_CUDA:
+    name: CUDA@11.2 GNU@9.4.0 C++17 [FS2D]
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v3
+    - name: System Dependencies
+      run: .github/workflows/dependencies/dependencies_nvcc.sh
+    - name: Repo Dependencies
+      run: Utils/CloneDeps.sh
+    - name: Build
+      env:
+         AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
+         PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
+         PELELM_HOME: ${GITHUB_WORKSPACE}
+         AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
+      run: |
+        export PATH=/usr/local/nvidia/bin:/usr/local/cuda/bin:${PATH}
+        export LD_LIBRARY_PATH=/usr/local/nvidia/lib:/usr/local/nvidia/lib64:${LD_LIBRARY_PATH}
+        cd Exec/RegTests/FlameSheet/
+        make TPL COMP=gnu USE_CUDA=TRUE
+        make -j $(nproc) COMP=gnu USE_CUDA=TRUE
+
+  #Build the EB_EnclosedFlamet RegTest with GNU9.4 and CUDA 11.2
+  EBEF2D_CUDA:
+    name: CUDA@11.2 GNU@9.4.0 C++17 [EBEF2D]
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v3
+    - name: System Dependencies
+      run: .github/workflows/dependencies/dependencies_nvcc.sh
+    - name: Repo Dependencies
+      run: Utils/CloneDeps.sh
+    - name: Build
+      env:
+         AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
+         PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
+         PELELM_HOME: ${GITHUB_WORKSPACE}
+         AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
+      run: |
+        export PATH=/usr/local/nvidia/bin:/usr/local/cuda/bin:${PATH}
+        export LD_LIBRARY_PATH=/usr/local/nvidia/lib:/usr/local/nvidia/lib64:${LD_LIBRARY_PATH}
+        cd Exec/RegTests/EB_EnclosedFlame/
+        make TPL COMP=gnu USE_CUDA=TRUE
+        make -j $(nproc) COMP=gnu USE_CUDA=TRUE
