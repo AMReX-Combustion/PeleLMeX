@@ -12,12 +12,12 @@ peleLM.hi_bc = NoSlipWallAdiab NoSlipWallAdiab Inflow
 
 
 #-------------------------AMR CONTROL----------------------------
-amr.n_cell          = 512 512 128      # Level 0 number of cells in each direction   
+amr.n_cell          = 512 512 128      # Level 0 number of cells in each direction
 amr.v               = 1                # AMR verbose
-amr.max_level       = 0                # maximum level number allowed
-amr.ref_ratio       = 2 2 2 2 2        # refinement ratio
+amr.max_level       = 5                # maximum level number allowed
+amr.ref_ratio       = 2 2 2 2 2 2      # refinement ratio
 amr.regrid_int      = 5                # how often to regrid
-amr.n_error_buf     = 2 2 2 2          # number of buffer cells in error est
+amr.n_error_buf     = 2 2 2 2 2 2      # number of buffer cells in error est
 amr.grid_eff        = 0.95             # what constitutes an efficient grid
 amr.blocking_factor = 16               # block factor in grid generation (min box size)
 amr.max_grid_size   = 32               # max box size
@@ -101,58 +101,61 @@ peleLM.rho = 1.17
 peleLM.mu = 0.0
 peleLM.use_wbar = 1
 peleLM.sdc_iterMax = 2
-peleLM.floor_species = 0
+peleLM.floor_species = 1
 peleLM.num_divu_iter = 1
 peleLM.num_init_iter = 3
+peleLM.deltaT_verbose = 1
+peleLM.deltaT_iterMax = 15
+peleLM.deltaT_crashIfFailing = 0
+#peleLM.memory_checks = 1
 
 peleLM.do_temporals = 1
-peleLM.do_mass_balance = 1
+peleLM.temporal_int = 5
+peleLM.do_extremas = 1
 peleLM.num_init_iter = 1
 peleLM.num_divu_iter = 1
 
-#amr.restart = chk00005
-amr.check_int = 100
-amr.plot_int = 50
-amr.max_step = 10
+#amr.restart = chk06100
+amr.check_int = 50
+amr.plot_int = 100
+amr.max_step = 6102
 amr.dt_shrink = 0.1
 amr.stop_time = 1.0
 #amr.stop_time = 1.00
 amr.init_dt = 0.000001
-amr.cfl = 0.7
+amr.cfl = 0.5
 amr.derive_plot_vars = avg_pressure mag_vort mass_fractions
 
 # --------------- INPUTS TO CHEMISTRY REACTOR ---------------
 peleLM.chem_integrator = "ReactorCvode"
 peleLM.use_typ_vals_chem = 1          # Use species/temp typical values in CVODE
-ode.rtol = 1.0e-8                     # Relative tolerance of the chemical solve
+ode.rtol = 1.0e-7                     # Relative tolerance of the chemical solve
 ode.atol = 1.0e-6                     # Absolute tolerance factor applied on typical values
-ode.clean_init_massfrac = 0
-cvode.solve_type = magma_direct       # CVODE Linear solve type (for Newton direction) 
-cvode.max_order  = 4                  # CVODE max BDF order. 
+ode.clean_init_massfrac = 1
+cvode.solve_type = magma_direct       # CVODE Linear solve type (for Newton direction)
+cvode.max_order  = 4                  # CVODE max BDF order.
 
 #------------------------- EB SETUP -----------------------------
 eb2.geom_type = UserDefined
-eb2.small_volfrac = 1.e-3
 eb2.maxiter = 500
-#eb2.cylinder_radius = 480.0000
-#eb2.head_offset = -10.0000e4
-#eb2.head_isFlat = 1
+eb2.num_coarsen_opt=3
+eb2.max_grid_size=64
+
+# ------------------- INPUTS DERIVED DIAGS ------------------
+peleLM.fuel_name = NC12H26
+peleLM.mixtureFraction.format = Cantera
+peleLM.mixtureFraction.type   = mass
+peleLM.mixtureFraction.oxidTank = O2:0.233 N2:0.767
+peleLM.mixtureFraction.fuelTank = NC12H26:1.0
+
+#--------------------REFINEMENT CONTROL------------------------
+# EB parameters
 peleLM.refine_EB_type = Static
 peleLM.refine_EB_max_level = 0
 peleLM.refine_EB_buffer = 2.0
 
-#--------------------REFINEMENT CONTROL------------------------
-#amr.refinement_indicators = temp
-#amr.temp.max_level     = 1
-#amr.temp.value_greater = 305
-#amr.temp.field_name    = temp
-
-#amr.refinement_indicators = magVort
-#amr.magVort.max_level     = 1
-#amr.magVort.value_greater = 500.0
-#amr.magVort.field_name    = mag_vort
-
-amr.refinement_indicators = boxHZ fuel loTemp hiTemp
+# Field paramters
+amr.refinement_indicators = boxHZ fuel loTemp hiTemp yOH
 amr.boxHZ.max_level     = 1
 amr.boxHZ.in_box_lo = -0.003 -0.003 0.004
 amr.boxHZ.in_box_hi =  0.003  0.003 0.0045
@@ -166,69 +169,18 @@ amr.loTemp.value_less    = 850.0
 amr.loTemp.field_name    = temp
 
 amr.hiTemp.max_level     = 3
-amr.hiTemp.value_greater = 950.0
+amr.hiTemp.value_greater = 925.0
 amr.hiTemp.field_name    = temp
 
-peleLM.diagnostics = xnormal ynormal
-peleLM.xnormal.type = DiagFramePlane
-peleLM.xnormal.file = centXPlane
-peleLM.xnormal.normal = 0 
-peleLM.xnormal.center = 0.0
-peleLM.xnormal.int    = 10
-peleLM.xnormal.interpolation = Linear
-peleLM.ynormal.type = DiagFramePlane
-peleLM.ynormal.file = centYPlane
-peleLM.ynormal.normal = 1 
-peleLM.ynormal.center = 0.0
-peleLM.ynormal.int    = 10
-peleLM.ynormal.interpolation = Linear
+amr.yOH.max_level     = 3
+amr.yOH.value_greater = 2e-6
+amr.yOH.field_name    = Y(OH)
 
 #--------------------LINEAR SOLVER CONTROL------------------------
 nodal_proj.verbose = 1
-#nodal_proj.mg_max_coarsening_level = 0
 nodal_proj.rtol = 1.0e-11
 nodal_proj.atol = 1.0e-11
-#nodal_proj.bottom_solver = "hypre"
-#nodal_proj.hypre_namespace = nodal_proj.hypre
-
-nodal_proj.hypre.verbose = 0
-nodal_proj.hypre.hypre_solver = GMRES
-nodal_proj.hypre.hypre_preconditioner = BoomerAMG
-nodal_proj.hypre.num_krylov = 200 
-nodal_proj.hypre.max_iterations = 200 
-
-nodal_proj.hypre.bamg_verbose = 0
-nodal_proj.hypre.bamg_coarsen_type = 8 
-nodal_proj.hypre.bamg_interp_type = 6 
-nodal_proj.hypre.bamg_relax_type = 11
-nodal_proj.hypre.bamg_num_sweeps = 2 
-nodal_proj.hypre.bamg_cycle_type = 1 
-nodal_proj.hypre.bamg_relax_order = 0 
-nodal_proj.hypre.bamg_keep_transpose = 1 
-nodal_proj.hypre.bamg_trunc_factor = 0.44351885396256086
-nodal_proj.hypre.bamg_strong_threshold = 0.30015419030906665
-nodal_proj.hypre.bamg_pmax_elmts = 4 
-#nodal_proj.hypre.bamg_max_levels = 6 
-
-nodal_proj.hypre.bamg_agg_num_levels = 3 
-nodal_proj.hypre.bamg_agg_interp_type = 5 
-nodal_proj.hypre.bamg_agg_pmax_elmts = 5 
-
-nodal_proj.hypre.bamg_smooth_type = 5 
-nodal_proj.hypre.bamg_smooth_num_sweeps = 1 
-nodal_proj.hypre.bamg_smooth_num_levels = 1 
-nodal_proj.hypre.bamg_ilu_type = 0 
-nodal_proj.hypre.bamg_ilu_level = 0 
-nodal_proj.hypre.bamg_ilu_max_iter = 1 
-nodal_proj.hypre.bamg_ilu_reordering_type = 0 
-nodal_proj.hypre.bamg_ilu_tri_solve = 0 
-nodal_proj.hypre.bamg_ilu_lower_jacobi_iters = 13
-nodal_proj.hypre.bamg_ilu_upper_jacobi_iters = 5
 
 fabarray.mfiter_tile_size = 1024 1024 1024
 
 amrex.abort_on_out_of_gpu_memory = 1
-
-#amrex.fpe_trap_invalid = 1
-#amrex.fpe_trap_zero = 1
-#amrex.fpe_trap_overflow = 1
