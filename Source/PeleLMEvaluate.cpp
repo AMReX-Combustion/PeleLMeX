@@ -117,7 +117,7 @@ PeleLM::MLevaluate(const Vector<MultiFab *> &a_MFVec,
 
         // Do initProj
         initialProjection();
-    
+
         // Copy into outgoing data holder
         for (int lev = 0; lev <= finest_level; ++lev) {
            auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
