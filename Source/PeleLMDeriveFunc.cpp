@@ -222,7 +222,7 @@ void pelelm_dermgvort (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int d
 #if ( AMREX_SPACEDIM == 2 )
             amrex::Real vx = 0.5 * (dat_arr(i+1,j,k,1) - dat_arr(i-1,j,k,1)) * idx;
             amrex::Real uy = 0.5 * (dat_arr(i,j+1,k,0) - dat_arr(i,j-1,k,0)) * idy;
-            vort_arr(i,j,k) = vx-uy;
+            vort_arr(i,j,k) = std::abs(vx-uy);
 
 #elif ( AMREX_SPACEDIM == 3 )
             amrex::Real vx = 0.5 * (dat_arr(i+1,j,k,1) - dat_arr(i-1,j,k,1)) * idx;
@@ -238,6 +238,109 @@ void pelelm_dermgvort (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int d
 #endif
         });
     }
+}
+
+//
+// Compute vorticity components
+//
+void pelelm_dervort (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
+                     const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
+                     const Geometry& geomdata,
+                     Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
+
+{
+    AMREX_ASSERT(derfab.box().contains(bx));
+    AMREX_ASSERT(statefab.box().contains(bx));
+    AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
+    AMREX_D_TERM(const amrex::Real idx = geomdata.InvCellSize(0);,
+                 const amrex::Real idy = geomdata.InvCellSize(1);,
+                 const amrex::Real idz = geomdata.InvCellSize(2););
+
+    auto const& dat_arr = statefab.const_array();
+    auto const&vort_arr = derfab.array(dcomp);
+
+    // TODO : EB
+    // TODO : BCs
+
+    {
+        amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+        {
+#if ( AMREX_SPACEDIM == 2 )
+            amrex::Real vx = 0.5 * (dat_arr(i+1,j,k,1) - dat_arr(i-1,j,k,1)) * idx;
+            amrex::Real uy = 0.5 * (dat_arr(i,j+1,k,0) - dat_arr(i,j-1,k,0)) * idy;
+            vort_arr(i,j,k) = vx-uy;
+
+#elif ( AMREX_SPACEDIM == 3 )
+            amrex::Real vx = 0.5 * (dat_arr(i+1,j,k,1) - dat_arr(i-1,j,k,1)) * idx;
+            amrex::Real wx = 0.5 * (dat_arr(i+1,j,k,2) - dat_arr(i-1,j,k,2)) * idx;
+
+            amrex::Real uy = 0.5 * (dat_arr(i,j+1,k,0) - dat_arr(i,j-1,k,0)) * idy;
+            amrex::Real wy = 0.5 * (dat_arr(i,j+1,k,2) - dat_arr(i,j-1,k,2)) * idy;
+
+            amrex::Real uz = 0.5 * (dat_arr(i,j,k+1,0) - dat_arr(i,j,k-1,0)) * idz;
+            amrex::Real vz = 0.5 * (dat_arr(i,j,k+1,1) - dat_arr(i,j,k-1,1)) * idz;
+
+            vort_arr(i,j,k,0) = (wy-vz)*(wy-vz);
+            vort_arr(i,j,k,1) = (uz-wx)*(uz-wx);
+            vort_arr(i,j,k,2) = (vx-uy)*(vx-uy);
+#endif
+        });
+    }
+}
+
+//
+// Compute Q-criterion
+//
+void pelelm_derQcrit (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int /*ncomp*/,
+                      const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
+                      const Geometry& geomdata,
+                      Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
+
+{
+
+#if AMREX_SPACEDIM == 3
+    AMREX_D_TERM(const amrex::Real idx = geomdata.InvCellSize(0);,
+                 const amrex::Real idy = geomdata.InvCellSize(1);,
+                 const amrex::Real idz = geomdata.InvCellSize(2););
+
+    auto const &  dat_arr = statefab.const_array();
+    auto const &qcrit_arr = derfab.array(dcomp);
+
+    // TODO : EB
+    // TODO : BCs
+
+    amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+    {
+      // Strain rate tensor
+      Array2D<Real,0,2,0,2> gradU;
+      gradU(0,0) = 0.5 * (dat_arr(i+1,j,k,0) - dat_arr(i-1,j,k,0)) * idx;
+      gradU(0,1) = 0.5 * (dat_arr(i,j+1,k,0) - dat_arr(i,j-1,k,0)) * idy;
+      gradU(0,2) = 0.5 * (dat_arr(i,j,k+1,0) - dat_arr(i,j,k-1,0)) * idz;
+      gradU(1,0) = 0.5 * (dat_arr(i+1,j,k,1) - dat_arr(i-1,j,k,1)) * idx;
+      gradU(1,1) = 0.5 * (dat_arr(i,j+1,k,1) - dat_arr(i,j-1,k,1)) * idy;
+      gradU(1,2) = 0.5 * (dat_arr(i,j,k+1,1) - dat_arr(i,j,k-1,1)) * idz;
+      gradU(2,0) = 0.5 * (dat_arr(i+1,j,k,2) - dat_arr(i-1,j,k,2)) * idx;
+      gradU(2,1) = 0.5 * (dat_arr(i,j+1,k,2) - dat_arr(i,j-1,k,2)) * idy;
+      gradU(2,2) = 0.5 * (dat_arr(i,j,k+1,2) - dat_arr(i,j,k-1,2)) * idz;
+
+      // Divu
+      amrex::Real divU = gradU(0,0) + gradU(1,1) + gradU(2,2);
+
+      // Directly Assemble Sym. & AntiSym. into Qcrit.
+      // Remove divU (dilatation) from the Sym. tensor (due to mixing/reaction most often)
+      qcrit_arr(i,j,k) = 0.0;
+      for (int dim1 = 0; dim1 < AMREX_SPACEDIM; ++dim1) {
+        for (int dim2 = 0; dim2 < AMREX_SPACEDIM; ++dim2) {
+          Real Ohm = 0.5 * (gradU(dim1,dim2) - gradU(dim2,dim1));
+          Real Sij = 0.5 * (gradU(dim1,dim2) + gradU(dim2,dim1));
+          if (dim1 == dim2) {
+            Sij -= divU/AMREX_SPACEDIM;
+          }
+          qcrit_arr(i,j,k) += Ohm*Ohm - Sij*Sij;
+        }
+      }
+    });
+#endif
 
 }
 

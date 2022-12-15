@@ -74,7 +74,7 @@ as shown in Fig :numref:`fig:FPC_NumSetup`.
 Periodic boundary conditions are used in the transverse (:math:`y`) direction, while ``Inflow`` (dirichlet) and ``Outflow`` (neumann) boundary conditions are used in the main flow direction (:math:`x`). The flow goes from left to right.
 A cylinder of radius 0.0035 m is placed in the middle of the flow at (0.0:0.0).
 
-.. |FPC_a| image:: /Visualization/FPC_SetupSketch.png
+.. |FPC_a| image:: /images/tutorials/FPC_SetupSketch.png
      :width: 100%
 
 .. _fig:FPC_NumSetup:
@@ -243,12 +243,12 @@ Time-stepping parameters in ``input.2d-Re500`` are specified in the ``TIME STEPP
     amr.max_step    = 300000          # Maximum number of time steps
     amr.stop_time   = 0.025           # final physical time
     amr.cfl         = 0.3             # cfl number for hyperbolic system
-    amr.dt_shrink   = 1.0             # scale back initial timestep
+    amr.dt_shrink   = 0.1             # scale back initial timestep
     amr.dt_change_max = 1.1           # maximum dt change
 
 The final simulation time is set to 0.025 s. `PeleLMeX` solves for the advection, diffusion and reaction processes in time, but only the advection term is treated explicitly and thus it constrains the maximum time step size :math:`dt_{CFL}`. This constraint is formulated with a classical Courant-Friedrich-Levy (CFL) number, specified via the keyword ``amr.cfl``.
 Additionally, as it is the case here, the initial solution is often made-up by the user and local mixture composition and temperature can result in the introduction of unreasonably fast chemical scales.
-To ease the numerical integration of this initial transient, the parameter ``amr.dt_shrink`` allows to shrink the inital `dt` (evaluated from the CFL constraint) by a factor (usually smaller than 1), and let it relax towards :math:`dt_{CFL}` at a rate given by ``amr.dt_change_max`` as the simulation proceeds. Since the present case does not involve complex chemical processes, ``amr.dt_shrink`` is kept to 1.0.
+To ease the numerical integration of this initial transient, the parameter ``amr.dt_shrink`` allows to shrink the inital `dt` (evaluated from the CFL constraint) by a factor (usually smaller than 1), and let it relax towards :math:`dt_{CFL}` at a rate given by ``amr.dt_change_max`` as the simulation proceeds. Since the present case does not involve complex chemical processes, ``amr.dt_shrink`` is kept to relatively high value of 0.1.
 
 Input/output from `PeleLMeX` are specified in the ``IO CONTROL`` block: ::
 
@@ -275,7 +275,7 @@ Whether you have used one or the other command, the computation finishes within 
    amrvis -a plt_?????
 
 
-.. |FPC_b| image:: /Visualization/FPC_Coarse_25ms.png
+.. |FPC_b| image:: /images/tutorials/FPC_Coarse_25ms.png
      :width: 100%
 
 .. _fig:FPC_Coarse:
@@ -363,12 +363,12 @@ and since the vorticity refinement criterion only refine up to level 1, the leve
 You should obtain a flow with a vorticity field similar to Fig. :numref:`fig:FPC_VortFinal`.
 For the purpose of the present tutorial, this will be our final solution but one can see that the flow has not yet return to a periodic vortex shedding and additinal resolution could be added locally to obtain smoother flow features.
 
-.. |FPC_c| image:: /Visualization/FPC_VorticityFinal.png
+.. |FPC_c| image:: /images/tutorials/FPC_VorticityFinal.png
      :width: 100%
 
 .. _fig:FPC_VortFinal:
 
-.. table:: Contour plots of vorticit at t = 350 ms with 2 levels of refinements.
+.. table:: Contour plots of vorticity at t = 350 ms with 2 levels of refinements.
      :align: center
 
      +---------+
