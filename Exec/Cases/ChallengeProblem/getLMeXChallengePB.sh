@@ -8,7 +8,7 @@
 # salloc -t 1:00:00 -N 1 -A CMB138 -p ecp
 
 # Tulip
-# srun -N 1 -t 1:00:00 -p amdMI100 --pty bash -i 
+# srun -N 1 -t 1:00:00 -p amdMI100 --pty bash -i
 
 # Crusher: missing internet connection to clone !
 # salloc -J LMeXTest -t 1:00:00 -N 1 -A CMB138_crusher -p batch
@@ -40,12 +40,12 @@ git clone --recursive https://github.com/AMReX-Combustion/PeleLMeX.git PeleLMeX
 # Patch amrex
 cd ${MYPWD}/PeleLMeX/Submodules/amrex
 patch -p1 <<'EOF'
-diff --git a/Src/LinearSolvers/MLMG/AMReX_MLNodeLap_3D_K.H b/Src/LinearSolvers/MLMG/AMReX_MLNodeLap_3D_K.H                                                                   
+diff --git a/Src/LinearSolvers/MLMG/AMReX_MLNodeLap_3D_K.H b/Src/LinearSolvers/MLMG/AMReX_MLNodeLap_3D_K.H
 index 5886ce2a3..0b7d3f62b 100644
 --- a/Src/LinearSolvers/MLMG/AMReX_MLNodeLap_3D_K.H
 +++ b/Src/LinearSolvers/MLMG/AMReX_MLNodeLap_3D_K.H
 @@ -6666,6 +6666,13 @@ void mlndlap_set_stencil_eb (int i, int j, int k, Array4<Real> const& sten,
- 
+
      // i+1,j+1,k+1
      sten(i,j,k,ist_ppp) = sig(i,j,k) * (facx*conn(i,j,k,i_c_ybzb) + facy*conn(i,j,k,i_c_xbzb) + facz*conn(i,j,k,i_c_xbyb) );
 +
@@ -56,7 +56,7 @@ index 5886ce2a3..0b7d3f62b 100644
 +    }
 +
  }
- 
+
  AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE
 EOF
 cd -
@@ -69,39 +69,39 @@ export PELE_PHYSICS_HOME="${MYPWD}/PeleLMeX/Submodules/PelePhysics"
 export PELEMP_HOME="${MYPWD}/PeleLMeX/Submodules/PeleMP"
 cd ${MYPWD}/PeleLMeX/Exec/Cases/ChallengeProblem/
 if [ "$testMachine" = "summit" ]; then
-   # Currently this branch default to HIP=TRUE, so switch it off for Summit 
+   # Currently this branch default to HIP=TRUE, so switch it off for Summit
    #Build SUNDIALS (requires internet connection because a clone happens)
    make -j 12 COMP=gcc USE_HIP=FALSE USE_CUDA=TRUE USE_MPI=TRUE Chemistry_Model=dodecane_lu_qss HOSTNAME=summit TPLrealclean
    make -j 12 COMP=gcc USE_HIP=FALSE USE_CUDA=TRUE USE_MPI=TRUE Chemistry_Model=dodecane_lu_qss HOSTNAME=summit TPL
-   
+
    #Build PeleLMeX
    make -j 12 COMP=gnu USE_HIP=FALSE USE_CUDA=TRUE USE_MPI=TRUE Chemistry_Model=dodecane_lu_qss HOSTNAME=summit realclean
-   make -j 12 COMP=gnu USE_HIP=FALSE USE_CUDA=TRUE USE_MPI=TRUE Chemistry_Model=dodecane_lu_qss HOSTNAME=summit 
+   make -j 12 COMP=gnu USE_HIP=FALSE USE_CUDA=TRUE USE_MPI=TRUE Chemistry_Model=dodecane_lu_qss HOSTNAME=summit
 
 elif [ "$testMachine" = "spock" ]; then
    #Build SUNDIALS (requires internet connection because a clone happens)
    make -j 8 COMP=clang USE_HIP=TRUE USE_MPI=FALSE Chemistry_Model=dodecane_lu_qss HOSTNAME=spock TPLrealclean
    make -j 8 COMP=clang USE_HIP=TRUE USE_MPI=FALSE Chemistry_Model=dodecane_lu_qss HOSTNAME=spock TPL
-   
+
    #Build PeleLMeX
    make -j 8 COMP=clang USE_HIP=TRUE USE_MPI=FALSE Chemistry_Model=dodecane_lu_qss HOSTNAME=spock realclean
-   make -j 8 COMP=clang USE_HIP=TRUE USE_MPI=FALSE Chemistry_Model=dodecane_lu_qss HOSTNAME=spock 
+   make -j 8 COMP=clang USE_HIP=TRUE USE_MPI=FALSE Chemistry_Model=dodecane_lu_qss HOSTNAME=spock
 
 elif [ "$testMachine" = "crusher" ]; then
    #Build SUNDIALS (requires internet connection because a clone happens)
    make -j 8 COMP=clang USE_HIP=TRUE USE_MPI=TRUE USE_HYPRE=FALSE Chemistry_Model=dodecane_lu_qss HOSTNAME=crusher TPLrealclean
    make -j 8 COMP=clang USE_HIP=TRUE USE_MPI=TRUE USE_HYPRE=FALSE Chemistry_Model=dodecane_lu_qss HOSTNAME=crusher TPL
-   
+
    #Build PeleLMeX
    make -j 8 COMP=clang USE_HIP=TRUE USE_MPI=TRUE USE_HYPRE=FALSE Chemistry_Model=dodecane_lu_qss HOSTNAME=crusher realclean
-   make -j 8 COMP=clang USE_HIP=TRUE USE_MPI=TRUE USE_HYPRE=FALSE Chemistry_Model=dodecane_lu_qss HOSTNAME=crusher 
+   make -j 8 COMP=clang USE_HIP=TRUE USE_MPI=TRUE USE_HYPRE=FALSE Chemistry_Model=dodecane_lu_qss HOSTNAME=crusher
 
 elif [ "$testMachine" = "frontier" ]; then
    #Build SUNDIALS (requires internet connection because a clone happens)
    make -j 8 COMP=clang USE_HIP=TRUE USE_MPI=TRUE USE_HYPRE=FALSE Chemistry_Model=dodecane_lu_qss HOSTNAME=frontier TPLrealclean
    make -j 8 COMP=clang USE_HIP=TRUE USE_MPI=TRUE USE_HYPRE=FALSE Chemistry_Model=dodecane_lu_qss HOSTNAME=frontier TPL
-   
+
    #Build PeleLMeX
    make -j 8 COMP=clang USE_HIP=TRUE USE_MPI=TRUE USE_HYPRE=FALSE Chemistry_Model=dodecane_lu_qss HOSTNAME=frontier realclean
-   make -j 8 COMP=clang USE_HIP=TRUE USE_MPI=TRUE USE_HYPRE=FALSE Chemistry_Model=dodecane_lu_qss HOSTNAME=frontier 
+   make -j 8 COMP=clang USE_HIP=TRUE USE_MPI=TRUE USE_HYPRE=FALSE Chemistry_Model=dodecane_lu_qss HOSTNAME=frontier
 fi

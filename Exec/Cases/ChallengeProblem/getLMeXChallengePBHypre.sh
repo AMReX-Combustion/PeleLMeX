@@ -8,7 +8,7 @@
 # salloc -t 1:00:00 -N 1 -A CMB138 -p ecp
 
 # Tulip
-# srun -N 1 -t 1:00:00 -p amdMI100 --pty bash -i 
+# srun -N 1 -t 1:00:00 -p amdMI100 --pty bash -i
 
 # Crusher: missing internet connection to clone !
 # salloc -J LMeXTest -t 1:00:00 -N 1 -A CMB138_crusher -p batch
@@ -107,38 +107,38 @@ export PELEMP_HOME="${MYPWD}/PeleLMeX/Submodules/PeleMP"
 export HYPRE_HOME=${MYPWD}/hypre/install/
 cd ${MYPWD}/PeleLMeX/Exec/Cases/ChallengeProblem/
 if [ "$testMachine" = "summit" ]; then
-   # Currently this branch default to HIP=TRUE, so switch it off for Summit 
+   # Currently this branch default to HIP=TRUE, so switch it off for Summit
    #Build SUNDIALS (requires internet connection because a clone happens)
    make -j 12 COMP=gcc USE_HIP=FALSE USE_CUDA=TRUE USE_MPI=TRUE Chemistry_Model=dodecane_lu_qss HOSTNAME=summit TPLrealclean
    make -j 12 COMP=gcc USE_HIP=FALSE USE_CUDA=TRUE USE_MPI=TRUE Chemistry_Model=dodecane_lu_qss HOSTNAME=summit TPL
-   
+
    #Build PeleLMeX
    make -j 12 COMP=gnu USE_HIP=FALSE USE_CUDA=TRUE USE_MPI=TRUE Chemistry_Model=dodecane_lu_qss HOSTNAME=summit realclean
-   make -j 12 COMP=gnu USE_HIP=FALSE USE_CUDA=TRUE USE_MPI=TRUE Chemistry_Model=dodecane_lu_qss HOSTNAME=summit 
+   make -j 12 COMP=gnu USE_HIP=FALSE USE_CUDA=TRUE USE_MPI=TRUE Chemistry_Model=dodecane_lu_qss HOSTNAME=summit
 
 elif [ "$testMachine" = "spock" ]; then
    #Build SUNDIALS (requires internet connection because a clone happens)
    make -j 8 COMP=clang USE_HIP=TRUE USE_MPI=FALSE Chemistry_Model=dodecane_lu_qss HOSTNAME=spock TPLrealclean
    make -j 8 COMP=clang USE_HIP=TRUE USE_MPI=FALSE Chemistry_Model=dodecane_lu_qss HOSTNAME=spock TPL
-   
+
    #Build PeleLMeX
    make -j 8 COMP=clang USE_HIP=TRUE USE_MPI=FALSE Chemistry_Model=dodecane_lu_qss HOSTNAME=spock realclean
-   make -j 8 COMP=clang USE_HIP=TRUE USE_MPI=FALSE Chemistry_Model=dodecane_lu_qss HOSTNAME=spock 
+   make -j 8 COMP=clang USE_HIP=TRUE USE_MPI=FALSE Chemistry_Model=dodecane_lu_qss HOSTNAME=spock
 
 elif [ "$testMachine" = "crusher" ]; then
    #Build SUNDIALS (requires internet connection because a clone happens)
    make -j 8 COMP=clang USE_HIP=TRUE USE_MPI=TRUE Chemistry_Model=dodecane_lu_qss HOSTNAME=crusher TPLrealclean
    make -j 8 COMP=clang USE_HIP=TRUE USE_MPI=TRUE Chemistry_Model=dodecane_lu_qss HOSTNAME=crusher TPL
-   
+
    #Build PeleLMeX
    make -j 8 COMP=clang USE_HIP=TRUE USE_MPI=TRUE Chemistry_Model=dodecane_lu_qss HOSTNAME=crusher realclean
-   make -j 8 COMP=clang USE_HIP=TRUE USE_MPI=TRUE Chemistry_Model=dodecane_lu_qss HOSTNAME=crusher 
+   make -j 8 COMP=clang USE_HIP=TRUE USE_MPI=TRUE Chemistry_Model=dodecane_lu_qss HOSTNAME=crusher
 elif [ "$testMachine" = "frontier" ]; then
    #Build SUNDIALS (requires internet connection because a clone happens)
    make -j 8 COMP=clang USE_HIP=TRUE USE_MPI=TRUE Chemistry_Model=dodecane_lu_qss HOSTNAME=frontier TPLrealclean
    make -j 8 COMP=clang USE_HIP=TRUE USE_MPI=TRUE Chemistry_Model=dodecane_lu_qss HOSTNAME=frontier TPL
-   
+
    #Build PeleLMeX
    make -j 8 COMP=clang USE_HIP=TRUE USE_MPI=TRUE Chemistry_Model=dodecane_lu_qss HOSTNAME=frontier realclean
-   make -j 8 COMP=clang USE_HIP=TRUE USE_MPI=TRUE Chemistry_Model=dodecane_lu_qss HOSTNAME=frontier 
+   make -j 8 COMP=clang USE_HIP=TRUE USE_MPI=TRUE Chemistry_Model=dodecane_lu_qss HOSTNAME=frontier
 fi
