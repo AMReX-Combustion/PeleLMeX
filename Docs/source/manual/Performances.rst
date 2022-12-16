@@ -102,3 +102,45 @@ details):
 The total time comparison shows close to a 4x speed-up on a node basis on this platform, with the AMD Milan CPU being amongst
 the most performant to date. The detailed distribution of the computational time within each run highlight the dominant contribution
 of the stiff chemistry integration, especially on the GPU.
+
+Results on Crusher (ORNL)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Crusher is the testbed for DOE's first ExaScale platform Frontier. Crusher's `nodes <https://docs.olcf.ornl.gov/systems/crusher_quick_start_guide.html#crusher-compute-nodes>`_ consists of a single AMD EPYC 7A53 (Trento), 64 cores CPU connected to 4 AMD MI250X, 
+each containing 2 Graphics Compute Dies (GCDs) for a total of 8 GCDs per node. When running with GPU acceleration, `PeleLMeX` will use 8 MPI ranks with each access to one GCD, while when running on flat MPI, we will use 64 MPI-ranks.
+
+The FlameSheet case is ran using 2 levels of refinement (3 levels total) and the following domain size and cell count:
+
+::
+
+    geometry.prob_lo     = 0.0 0.0 0.0        # x_lo y_lo (z_lo)
+    geometry.prob_hi     = 0.008 0.016 0.016  # x_hi y_hi (z_hi)
+
+    amr.n_cell           = 32 64 64
+    amr.max_level        = 2
+
+leading to an initial cell count of 3.276 M, i.e. 0.8M/cells per GPU. The git hashes of `PeleLMeX` and its dependencies for
+these tests are:
+
+::
+
+     ================= Build infos =================
+     PeleLMeX    git hash: v22.12-15-g769168c-dirty
+     AMReX       git hash: 22.12-15-gff1cce552-dirty
+     PelePhysics git hash: v0.1-1054-gd6733fef
+     AMReX-Hydro git hash: cc9b82d
+     ===============================================
+
+The graph below compares the timings of the two runs obtained from `AMReX` TinyProfiler.
+Inclusive averaged data are presented here, for separates portion of the `PeleLMeX` algorithm
+(see the `algorithm page <https://amrex-combustion.github.io/PeleLMeX/manual/html/Model.html#pelelmex-algorithm>`_ for more
+details):
+
+
+.. figure:: images/performances/PMF/SingleNodePMF_Crusher.png
+   :align: center
+   :figwidth: 90%
+
+The total time comparison shows more than a 5.5x speed-up on a node basis on this platform, 
+The detailed distribution of the computational time within each run highlight the dominant contribution
+of the stiff chemistry integration, especially on the GPU.
