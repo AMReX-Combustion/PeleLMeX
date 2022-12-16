@@ -114,12 +114,12 @@ The FlameSheet case is ran using 2 levels of refinement (3 levels total) and the
 ::
 
     geometry.prob_lo     = 0.0 0.0 0.0        # x_lo y_lo (z_lo)
-    geometry.prob_hi     = 0.008 0.016 0.016  # x_hi y_hi (z_hi)
+    geometry.prob_hi     = 0.016 0.016 0.016  # x_hi y_hi (z_hi)
 
-    amr.n_cell           = 32 64 64
+    amr.n_cell           = 64 64 64
     amr.max_level        = 2
 
-leading to an initial cell count of 3.276 M, i.e. 0.8M/cells per GPU. The git hashes of `PeleLMeX` and its dependencies for
+leading to an initial cell count of 6.545 M, i.e. 0.8M/cells per GPU. The git hashes of `PeleLMeX` and its dependencies for
 these tests are:
 
 ::
@@ -141,6 +141,6 @@ details):
    :align: center
    :figwidth: 90%
 
-The total time comparison shows more than a 5.5x speed-up on a node basis on this platform, 
+The total time comparison shows more than a 7.5x speed-up on a node basis on this platform, 
 The detailed distribution of the computational time within each run highlight the dominant contribution
 of the stiff chemistry integration, especially on the GPU.
