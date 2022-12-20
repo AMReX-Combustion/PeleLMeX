@@ -98,8 +98,6 @@ void PeleLM::advanceChemistry(int lev,
                        , amrex::Gpu::gpuStream()
 #endif
                        );
-      dt_incr   = a_dt;
-      time_chem = 0;
 
       // Convert CGS -> MKS
       ParallelFor(bx, [rhoY_n, rhoH_n, extF_rhoY, extF_rhoH]
