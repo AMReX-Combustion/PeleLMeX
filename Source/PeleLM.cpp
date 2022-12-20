@@ -10,10 +10,6 @@ PeleLM::PeleLM() = default;
 
 PeleLM::~PeleLM()
 {
-   for (int lev = 0; lev <= finest_level; ++lev) {
-      ClearLevel(lev);
-   }
-
    if (!m_incompressible) {
       trans_parms.deallocate();
       m_reactor->close();
