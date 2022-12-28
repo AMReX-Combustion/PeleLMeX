@@ -17,6 +17,7 @@
         <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
         <script src="_static/sphinx_highlight.js"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -51,6 +52,10 @@
 <li class="toctree-l3"><a class="reference internal" href="#results-on-crusher-ornl">Results on Crusher (ORNL)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#results-on-summit-ornl">Results on Summit (ORNL)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#system-comparison">System comparison</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#weak-scaling-performances-flamesheet-case">Weak scaling performances: FlameSheet case</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id4">Case description</a></li>
 </ul>
 </li>
 </ul>
@@ -252,8 +257,54 @@ to provide a node time / million of cells.</p>
 <figure class="align-center" style="width: 60%">
 <img alt="_images/SingleNodePMFComparison.png" src="_images/SingleNodePMFComparison.png" />
 </figure>
-<p>Results shows that a 3x and 4.2x speed is obtained on a node basis going from Summit to more recent
+<p>Results show that a 3x and 4.2x speed is obtained on a node basis going from Summit to more recent
 Perlmutter or Crusher, respectively.</p>
+</section>
+</section>
+<section id="weak-scaling-performances-flamesheet-case">
+<h2>Weak scaling performances: FlameSheet case<a class="headerlink" href="#weak-scaling-performances-flamesheet-case" title="Permalink to this heading"></a></h2>
+<section id="id4">
+<h3>Case description<a class="headerlink" href="#id4" title="Permalink to this heading"></a></h3>
+<p>Once again the case of a laminar premixed flame with harmonic perturbations is employed. On
+a single node, the case is similar to the one used in the previous section. To perform the
+weak scaling study (characterising the ability of the solver to scale up while keeping the
+same amount of work per compute unit), the dimentions of the computational domain are
+increased by a factor 2 in <span class="math notranslate nohighlight">\(x\)</span> and <span class="math notranslate nohighlight">\(y\)</span> alternatively as the number of
+compute nodes is doubled. The periodicity of the initial conditions allow to ensure
+that the amount of work per node remains constant.</p>
+<p>To provide a more comprehensive test of <cite>PeleLMeX</cite>, the scaling study is also reproduced in the case
+of a flame freely propagating in a quiescient mixture towards an EB flat wall. The presence of the
+EB triggers numerous changes in the actual code path employed (from advection scheme to linear solvers).</p>
+<p>The stude is performed on ORNL’s Crusher machine and the FlameSheet case is ran using 2 levels
+of refinement (3 levels total) and the following domain size and cell count:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">geometry</span><span class="o">.</span><span class="n">prob_lo</span>     <span class="o">=</span> <span class="mf">0.0</span> <span class="mf">0.0</span> <span class="mf">0.0</span>        <span class="c1"># x_lo y_lo (z_lo)</span>
+<span class="n">geometry</span><span class="o">.</span><span class="n">prob_hi</span>     <span class="o">=</span> <span class="mf">0.016</span> <span class="mf">0.016</span> <span class="mf">0.016</span>  <span class="c1"># x_hi y_hi (z_hi)</span>
+
+<span class="n">amr</span><span class="o">.</span><span class="n">n_cell</span>           <span class="o">=</span> <span class="mi">64</span> <span class="mi">64</span> <span class="mi">64</span>
+<span class="n">amr</span><span class="o">.</span><span class="n">max_level</span>        <span class="o">=</span> <span class="mi">2</span>
+</pre></div>
+</div>
+<p>When introducing the EB plane, the following EB definition is employed:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">eb2</span><span class="o">.</span><span class="n">geom_type</span>     <span class="o">=</span> <span class="n">plane</span>
+<span class="n">eb2</span><span class="o">.</span><span class="n">plane_point</span>   <span class="o">=</span> <span class="mf">0.00</span> <span class="mf">0.00</span> <span class="mf">0.0004</span>
+<span class="n">eb2</span><span class="o">.</span><span class="n">plane_normal</span>  <span class="o">=</span> <span class="mi">0</span> <span class="mi">0</span> <span class="o">-</span><span class="mf">1.0</span>
+</pre></div>
+</div>
+<p>and because nothing interesting is happening at the EB surface, it is maintained on the base
+level using the following parameters:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">peleLM</span><span class="o">.</span><span class="n">refine_EB_type</span> <span class="o">=</span> <span class="n">Static</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">refine_EB_max_level</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">refine_EB_buffer</span> <span class="o">=</span> <span class="mf">2.0</span>
+</pre></div>
+</div>
+<p>The parallel efficiency, defined as the time to solution obtained on a single node divided by the
+time to solution obtained with an increasing number of nodes is reported in the figure below
+for the case wo. EB and w. EB. The efficiency is found to drop to 90% when going from 1 to 128
+Crusher nodes (8 to 1024 GPUs) and a closer look at the scaling data shows that most of the
+efficiency loss is associated with the communication intensive linear solves.</p>
+<figure class="align-center" style="width: 60%">
+<img alt="_images/WeakScalingFSCrusher.png" src="_images/WeakScalingFSCrusher.png" />
+</figure>
 </section>
 </section>
 </section>
