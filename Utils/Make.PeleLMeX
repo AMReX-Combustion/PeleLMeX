@@ -86,6 +86,12 @@ ifeq ($(PELE_USE_KLU), TRUE)
   DEFINES += -DPELE_USE_KLU
 endif
 
+PELE_COMPILE_AJACOBIAN ?= TRUE
+
+ifeq ($(PELE_COMPILE_AJACOBIAN), TRUE)
+  DEFINES += -DPELE_COMPILE_AJACOBIAN
+endif
+
 ChemDir  = Support/Mechanism/Models/$(Chemistry_Model)
 
 PPdirs  := Utility/PMF Utility/TurbInflow Utility/PltFileManager Source $(ChemDir) Reactions Eos Transport
