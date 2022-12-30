@@ -2,8 +2,8 @@
 
 .. _sec:tutorialFlowPastCyl:
 
-Tutorial - Non-reacting flow past a cylinder
-============================================
+Non-reacting flow past a cylinder
+=================================
 
 .. _sec:TUTO_FPC::Intro:
 
