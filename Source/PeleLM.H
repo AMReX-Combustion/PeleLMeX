@@ -140,7 +140,9 @@ class PeleLM : public amrex::AmrCore {
    //-----------------------------------------------------------------------------
 
    //-----------------------------------------------------------------------------
-   // Gather State Data of a level into a struct
+   /**
+   * \brief Data container for the state data and long lived derived data
+   */
    struct LevelData {
       LevelData () = default;
       LevelData (amrex::BoxArray const& ba,
@@ -168,6 +170,9 @@ class PeleLM : public amrex::AmrCore {
 #endif
    };
 
+   /**
+   * \brief Data container for reaction data
+   */
    struct LevelDataReact {
       LevelDataReact () = default;
       LevelDataReact (const amrex::BoxArray &ba,
@@ -182,7 +187,9 @@ class PeleLM : public amrex::AmrCore {
    //-----------------------------------------------------------------------------
 
    //-----------------------------------------------------------------------------
-   // Gather Advance Datas into a structs
+   /**
+   * \brief Advance function data container for diffusion term
+   */
    struct AdvanceDiffData {
       AdvanceDiffData () = default;
       AdvanceDiffData (int a_finestLevel,
@@ -199,6 +206,9 @@ class PeleLM : public amrex::AmrCore {
       amrex::Vector<amrex::MultiFab> Dwbar;        // Diffusion term of Wbar
       amrex::Vector<amrex::Array<amrex::MultiFab,AMREX_SPACEDIM>> wbar_fluxes;     // Wbar flux correction
    };
+   /**
+   * \brief Advance function data container for advection term
+   */
    struct AdvanceAdvData {
       AdvanceAdvData () = default;
       AdvanceAdvData (int a_finestLevel,
@@ -223,13 +233,35 @@ class PeleLM : public amrex::AmrCore {
    //-----------------------------------------------------------------------------
    // INIT
 
-   // initData
+   /**
+   * \brief Top level initialization function
+   */
    void initData();
 
-   // initLevelData
+   /**
+   * \brief Fill the initial level data container
+   * using the user defined init function
+   */
    void initLevelData(int lev);
 
-   // initialIterations
+   /**
+   * \brief Fill the initial level data container
+   * using the data from a pltfile
+   * \param a_pltFile path to PeleLMeX plot file
+   */
+   void initLevelDataFromPlt(int a_lev, const std::string &a_pltFile);
+
+   /**
+   * \brief Project the initial solution velocity field,
+   * initializing the reaction term and providing a first
+   * estimate of the time step size
+   */
+   void projectInitSolution();
+
+   /**
+   * \brief Iterate the advance function to provide an
+   * initial pressure field.
+   */
    void initialIterations();
 
    // initFromGridFile
@@ -240,25 +272,51 @@ class PeleLM : public amrex::AmrCore {
                            amrex::Real time,
                            bool initial);
 
-   // checkRunParams
+   /**
+   * \brief Check the consistency of the run
+   * parameters.
+   */
    void checkRunParams();
 
    //-----------------------------------------------------------------------------
 
    //-----------------------------------------------------------------------------
-   // PROJECTION
+   // NODAL PROJECTION
 
-   // Initial projections
+   /**
+   * \brief Initial velocity projection. The pressure and 
+   * pressure gradient are reset to zero after the projection.
+   * Sigma is 1/rho instead of dt/rho.
+   */
    void initialProjection();
 
+   /**
+   * \brief Initial velocity projection considering zero
+   * velocity divergence (no cell-centered RHS) to establish 
+   * the isostatic pressure when using gravity
+   * Sigma is 1/rho instead of dt/rho.
+   */
    void initialPressProjection();
 
-   // Velocity projection at Time
+   /**
+   * \brief Advance function velocity projection.
+   * \param is_init flag initial iteration calls
+   * \param a_rhoTime time used to fill sigma
+   * \param a_dt time time step size
+   */
    void velocityProjection(int is_init,
                            const PeleLM::TimeStamp &a_rhoTime,
                            const amrex::Real &a_dt);
 
-   // Actual projection function
+   /**
+   * \brief Actual nodal projection call function.
+   * \param a_vel vector of velocity MultiFabs
+   * \param a_sigma vector of variable coefficient
+   * \param rhs_cc vector of cell-centered projection RHS (can be empty)
+   * \param rhs_cc vector of node-centered projection RHS (can be empty)
+   * \param increment_gp flag incremental projection (where vel is U^{np1*} - U^{n})
+   * \param scaling_factor used for constant coefficient projection
+   */
    void doNodalProject(const amrex::Vector<amrex::MultiFab*> &a_vel,
                        const amrex::Vector<amrex::MultiFab*> &a_sigma,
                        const amrex::Vector<amrex::MultiFab*> &rhs_cc,
@@ -266,11 +324,22 @@ class PeleLM : public amrex::AmrCore {
                        int increment_gp,
                        amrex::Real scaling_factor);
 
-   // Scaling functions for 2D-RZ calculations
+   /**
+   * \brief For 2D-RZ, scale multifab components by radius
+   * including 1 ghost cell on Dirichlet BC
+   * \param a_lev level index
+   * \param a_mf  MultiFab to act upon
+   */
    void scaleProj_RZ(int a_lev,
-                     amrex::MultiFab &a_rhs);
+                     amrex::MultiFab &a_mf);
+
+   /**
+   * \brief For 2D-RZ, unscale multifab components by radius
+   * \param a_lev level index
+   * \param a_mf  MultiFab to act upon
+   */
    void unscaleProj_RZ(int a_lev,
-                       amrex::MultiFab &a_rhs);
+                       amrex::MultiFab &a_mf);
    //-----------------------------------------------------------------------------
 
    //-----------------------------------------------------------------------------
@@ -533,7 +602,6 @@ class PeleLM : public amrex::AmrCore {
    void WriteHeader(const std::string &name, bool is_checkpoint) const;
    void WriteDebugPlotFile(const amrex::Vector<const amrex::MultiFab*> &a_MF,
                            const std::string &pltname);
-   void initLevelDataFromPlt(int a_lev, const std::string &a_pltFile);
    //-----------------------------------------------------------------------------
 
    //-----------------------------------------------------------------------------
@@ -717,6 +785,8 @@ class PeleLM : public amrex::AmrCore {
                    int a_comp,
                    int &nComp,
                    const std::string &a_var);
+
+   void evaluateChemExtForces(const amrex::Vector<amrex::MultiFab*> &a_chemForces);
 
    // Lightweight state description access
    bool isStateVariable(const std::string &a_name);

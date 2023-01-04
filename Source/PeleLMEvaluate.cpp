@@ -73,6 +73,9 @@ void PeleLM::Evaluate() {
    // Write the evaluated variables to disc
    Vector<int> istep(finest_level + 1, 0);
 
+   // Override m_cur_time to store the dt in pltEvaluate
+   m_cur_time = m_dt;
+
    std::string plotfilename = "pltEvaluate";
    amrex::WriteMultiLevelPlotfile(plotfilename, finest_level + 1, GetVecOfConstPtrs(mf_plt),
                                   plt_VarsName, Geom(), m_cur_time, istep, refRatio());
@@ -152,6 +155,24 @@ PeleLM::MLevaluate(const Vector<MultiFab *> &a_MFVec,
     } else if ( a_var == "advTerm" ) {
         // TODO
         Abort("advTerm not available yet, soon hopefully");
+    } else if ( a_var == "chemTest" ) {
+        // 'Old' chemical state (rhoYs + rhoH + T) and adv/diff forcing for chem. integration
+        // Replicate most of the advance function
+        // Copy the state
+        for (int lev = 0; lev <= finest_level; ++lev) {
+           auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
+           MultiFab::Copy(*a_MFVec[lev],ldata_p->state,FIRSTSPEC,a_comp,NUM_SPECIES+2,0);
+        }
+        // Inital velocity projection
+        if (m_restart_chkfile.empty()) {
+            projectInitSolution();
+        }
+        Vector<std::unique_ptr<MultiFab> > aliasMF(finest_level+1);
+        for (int lev = 0; lev <= finest_level; ++lev) {
+            aliasMF[lev] = std::make_unique<MultiFab> (*a_MFVec[lev], amrex::make_alias, a_comp+NUM_SPECIES+2, NUM_SPECIES+1);
+        }
+        evaluateChemExtForces(GetVecOfPtrs(aliasMF));
+        nComp = 2*(NUM_SPECIES+1)+1;
     } else if ( a_var == "instRR" ) {
         for (int lev = 0; lev <= finest_level; ++lev) {
             std::unique_ptr<MultiFab> I_RR = std::make_unique<MultiFab> (*a_MFVec[lev],amrex::make_alias,a_comp,NUM_SPECIES);
@@ -179,4 +200,99 @@ PeleLM::MLevaluate(const Vector<MultiFab *> &a_MFVec,
         getVelForces(AmrNewTime, {}, GetVecOfPtrs(aliasMFVec), 0, add_gradP);
         nComp = AMREX_SPACEDIM;
     }
+}
+
+void
+PeleLM::evaluateChemExtForces(const amrex::Vector<amrex::MultiFab*> &a_chemForces)
+{
+   //----------------------------------------------------------------
+   // Copy old <- new state
+   copyStateNewToOld(1);
+   copyPressNewToOld();
+
+   //----------------------------------------------------------------
+   // TIME
+   // Compute time-step size
+   m_dt = computeDt(0,AmrOldTime);
+
+   // Update time vectors
+   for(int lev = 0; lev <= finest_level; lev++)
+   {
+       m_t_old[lev] = m_cur_time;
+       m_t_new[lev] = m_cur_time + m_dt;
+   }
+   //----------------------------------------------------------------
+
+   //----------------------------------------------------------------
+   // Data for the advance, only live for the duration of the advance
+   std::unique_ptr<AdvanceDiffData> diffData;
+   diffData.reset(new AdvanceDiffData(finest_level, grids, dmap, m_factory, m_nGrowAdv, m_use_wbar));
+   std::unique_ptr<AdvanceAdvData> advData;
+   advData.reset(new AdvanceAdvData(finest_level, grids, dmap, m_factory, m_incompressible,
+                                    m_nGrowAdv, m_nGrowMAC));
+
+   //----------------------------------------------------------------
+   // Advance setup
+   // Pre-SDC
+   m_sdcIter = 0;
+
+   // fillpatch the t^{n} data
+   averageDownState(AmrOldTime);
+   fillPatchState(AmrOldTime);
+
+   // compute t^{n} data
+   calcViscosity(AmrOldTime);
+   calcDiffusivity(AmrOldTime);
+
+   floorSpecies(AmrOldTime);
+   setThermoPress(AmrOldTime);
+   computeDifferentialDiffusionTerms(AmrOldTime,diffData);
+
+   // Init SDC iteration
+   copyTransportOldToNew();
+   copyDiffusionOldToNew(diffData);
+
+   //----------------------------------------------------------------
+   // Perform a single SDC iteration
+   m_sdcIter = 1;
+
+   // Predict face velocity with Godunov
+   predictVelocity(advData);
+
+   // Create S^{n+1/2} by fillpatching t^{n} and t^{np1,k}
+   createMACRHS(advData);
+
+   // Re-evaluate thermo. pressure and add chi_increment
+   addChiIncrement(m_sdcIter, AmrNewTime, advData);
+
+   // MAC projection
+   macProject(AmrOldTime,advData,GetVecOfPtrs(advData->mac_divu));
+
+   // Get scalar advection SDC forcing
+   getScalarAdvForce(advData,diffData);
+
+   // Get AofS: (\nabla \cdot (\rho Y Umac))^{n+1/2,k}
+   // and for density = \sum_k AofS_k
+   computeScalarAdvTerms(advData);
+
+   // Compute \rho^{np1,k+1} and fillpatch new density
+   updateDensity(advData);
+   fillPatchDensity(AmrNewTime);
+
+   // Get scalar diffusion SDC RHS (stored in Forcing)
+   getScalarDiffForce(advData,diffData);
+
+   // Diffuse scalars
+   differentialDiffusionUpdate(advData,diffData);
+
+   // Get external forcing for chemistry
+   getScalarReactForce(advData);
+
+   // Copy external forcing for chemistry into outgoing container
+   for (int lev = 0; lev <= finest_level; ++lev) {
+      MultiFab::Copy(*a_chemForces[lev],advData->Forcing[lev],0,0,NUM_SPECIES+1,0);
+   }
+
+   // Reset state
+   copyStateOldToNew();
 }

@@ -919,6 +919,21 @@ void PeleLM::evaluateSetup()
       evaluate_lst.add("advTerm",IndexType::TheCellType(),NUM_SPECIES+1,var_names,the_same_box);
    }
 
+   // Chemical state and external chem. forcing (used in ReactEval)
+   {
+      Vector<std::string> var_names(2*(NUM_SPECIES+1)+1);
+      for (int n = 0 ; n < NUM_SPECIES; n++) {
+         var_names[n] = "rhoY("+spec_names[n]+")";
+      }
+      var_names[NUM_SPECIES] = "rhoH";
+      var_names[NUM_SPECIES+1] = "Temp";
+      for (int n = 0 ; n < NUM_SPECIES; n++) {
+         var_names[NUM_SPECIES+2+n] = "F_rhoY("+spec_names[n]+")";
+      }
+      var_names[2*NUM_SPECIES+2] = "F_rhoH";
+      evaluate_lst.add("chemTest",IndexType::TheCellType(),2*(NUM_SPECIES+1)+1,var_names,the_same_box);
+   }
+
    // instantaneous reaction rate
    {
       Vector<std::string> var_names(NUM_SPECIES);

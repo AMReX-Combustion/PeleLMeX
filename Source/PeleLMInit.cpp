@@ -147,7 +147,6 @@ void PeleLM::initData() {
    BL_PROFILE_VAR("PeleLM::initData()", initData);
 
    if (m_restart_chkfile.empty()) {
-
       //----------------------------------------------------------------
       if (!m_initial_grid_file.empty()) {
          InitFromGridFile(m_cur_time);
@@ -189,103 +188,12 @@ void PeleLM::initData() {
          return;
       }
 
-#ifdef PELE_USE_EFIELD
-      poissonSolveEF(AmrNewTime);
-      fillPatchPhiV(AmrNewTime);
-#endif
-
-      // Post data Init time step estimate
-      Real dtInit = computeDt(is_init,AmrNewTime);
-      Print() << " Initial dt: " << dtInit << "\n";
-
-      if (m_do_init_proj) {
-         // Subcycling IAMR/PeleLM first does a projection with no reaction divU
-         // which can make the dt for evaluating I_R better
-         if (m_has_divu) {
-            int is_initialization = 1;             // Yes we are
-            int computeDiffusionTerm = 1;          // Needed here
-            int do_avgDown = 1;                    // Always
-
-            // Light version of the diffusion data container
-            std::unique_ptr<AdvanceDiffData> diffData;
-            diffData.reset(new AdvanceDiffData(finest_level, grids, dmap, m_factory,
-                           m_nGrowAdv, m_use_wbar, is_initialization));
-            calcDivU(is_initialization,computeDiffusionTerm,do_avgDown,AmrNewTime,diffData);
-         }
-         initialProjection();
-
-         // If gravity is used, do initial pressure projection to get the hydrostatic pressure
-         if (std::abs(m_gravity.sum()) > 0.0) {
-            initialPressProjection();
-
-         }
-
-         // Post data init time step estimate
-         m_dt = computeDt(is_init,AmrNewTime);
-         Print() << " Initial dt: " << m_dt << "\n";
-
-         //----------------------------------------------------------------
-         // Initial velocity projection iterations
-         for (int iter = 0; iter < m_numDivuIter; iter++) {
-            if (m_do_react) {
-               // The new level data has been filled above
-               // Copy new -> old since old used in advanceChemistry
-               copyStateNewToOld();
-
-               for (int lev = finest_level; lev >= 0; --lev) {
-                  // Setup empty forcing
-                  MultiFab Forcing(grids[lev],dmap[lev],nCompForcing(),0);
-                  Forcing.setVal(0.0);
-
-                  if (lev != finest_level) {
-                     advanceChemistryBAChem(lev, dtInit/2.0, Forcing);
-                  } else {
-                     if (m_max_grid_size_chem.min() > 0) {
-                        advanceChemistryBAChem(lev, dtInit/2.0, Forcing);
-                     } else {
-                        advanceChemistry(lev, dtInit/2.0, Forcing);
-                     }
-                  }
-               }
-               // Copy back old -> new
-               copyStateOldToNew();
-            }
-            if (m_has_divu) {
-               int is_initialization = 1;             // Yes we are
-               int computeDiffusionTerm = 1;          // Needed here
-               int do_avgDown = 1;                    // Always
-
-               // Light version of the diffusion data container
-               std::unique_ptr<AdvanceDiffData> diffData;
-               diffData.reset(new AdvanceDiffData(finest_level, grids, dmap, m_factory,
-                              m_nGrowAdv, m_use_wbar, is_initialization));
-               calcDivU(is_initialization,computeDiffusionTerm,do_avgDown,AmrNewTime,diffData);
-            }
-
-            initialProjection();
-         }
-
-         if ( m_numDivuIter == 0 && m_do_react ) {
-            for (int lev = 0; lev <= finest_level; ++lev) {
-               auto ldataR_p   = getLevelDataReactPtr(lev);
-               ldataR_p->I_R.setVal(0.0);
-            }
-         }
-      } else {
-         // If we didn't do the projection, initialize press/gp(/I_R)
-         for (int lev = 0; lev <= finest_level; ++lev) {
-            if ( m_do_react ) {
-               auto ldataR_p   = getLevelDataReactPtr(lev);
-               ldataR_p->I_R.setVal(0.0);
-            }
-            auto ldata_p   = getLevelDataPtr(lev,AmrNewTime);
-            ldata_p->press.setVal(0.0);
-            ldata_p->gp.setVal(0.0);
-         }
-      }
+      //----------------------------------------------------------------
+      // Project initial solution
+      projectInitSolution();
 
       //----------------------------------------------------------------
-      // Initial pressure iterations
+      // Do initial pressure iterations
       initialIterations();
 
       m_nstep = 0;
@@ -389,6 +297,106 @@ void PeleLM::initLevelData(int lev) {
       setThermoPress(lev, AmrNewTime);
       if (m_has_divu) {
          ldata_p->divu.setVal(0.0);
+      }
+   }
+}
+
+void PeleLM::projectInitSolution()
+{
+   const int is_init = 1;
+
+#ifdef PELE_USE_EFIELD
+   poissonSolveEF(AmrNewTime);
+   fillPatchPhiV(AmrNewTime);
+#endif
+
+   // Post data Init time step estimate
+   Real dtInit = computeDt(is_init,AmrNewTime);
+   Print() << " Initial dt: " << dtInit << "\n";
+
+   if (m_do_init_proj) {
+      // Subcycling IAMR/PeleLM first does a projection with no reaction divU
+      // which can make the dt for evaluating I_R better
+      if (m_has_divu) {
+         int is_initialization = 1;             // Yes we are
+         int computeDiffusionTerm = 1;          // Needed here
+         int do_avgDown = 1;                    // Always
+
+         // Light version of the diffusion data container
+         std::unique_ptr<AdvanceDiffData> diffData;
+         diffData.reset(new AdvanceDiffData(finest_level, grids, dmap, m_factory,
+                        m_nGrowAdv, m_use_wbar, is_initialization));
+         calcDivU(is_initialization,computeDiffusionTerm,do_avgDown,AmrNewTime,diffData);
+      }
+      initialProjection();
+
+      // If gravity is used, do initial pressure projection to get the hydrostatic pressure
+      if (std::abs(m_gravity.sum()) > 0.0) {
+         initialPressProjection();
+
+      }
+
+      // Post data init time step estimate
+      m_dt = computeDt(is_init,AmrNewTime);
+      Print() << " Initial dt: " << m_dt << "\n";
+
+      //----------------------------------------------------------------
+      // Initial velocity projection iterations
+      for (int iter = 0; iter < m_numDivuIter; iter++) {
+         if (m_do_react) {
+            // The new level data has been filled above
+            // Copy new -> old since old used in advanceChemistry
+            copyStateNewToOld();
+
+            for (int lev = finest_level; lev >= 0; --lev) {
+               // Setup empty forcing
+               MultiFab Forcing(grids[lev],dmap[lev],nCompForcing(),0);
+               Forcing.setVal(0.0);
+
+               if (lev != finest_level) {
+                  advanceChemistryBAChem(lev, dtInit/2.0, Forcing);
+               } else {
+                  if (m_max_grid_size_chem.min() > 0) {
+                     advanceChemistryBAChem(lev, dtInit/2.0, Forcing);
+                  } else {
+                     advanceChemistry(lev, dtInit/2.0, Forcing);
+                  }
+               }
+            }
+            // Copy back old -> new
+            copyStateOldToNew();
+         }
+         if (m_has_divu) {
+            int is_initialization = 1;             // Yes we are
+            int computeDiffusionTerm = 1;          // Needed here
+            int do_avgDown = 1;                    // Always
+
+            // Light version of the diffusion data container
+            std::unique_ptr<AdvanceDiffData> diffData;
+            diffData.reset(new AdvanceDiffData(finest_level, grids, dmap, m_factory,
+                           m_nGrowAdv, m_use_wbar, is_initialization));
+            calcDivU(is_initialization,computeDiffusionTerm,do_avgDown,AmrNewTime,diffData);
+         }
+
+         initialProjection();
+      }
+
+      if ( m_numDivuIter == 0 && m_do_react ) {
+         for (int lev = 0; lev <= finest_level; ++lev) {
+            auto ldataR_p   = getLevelDataReactPtr(lev);
+            ldataR_p->I_R.setVal(0.0);
+         }
+      }
+   } else {
+      // If we didn't do the projection, initialize press/gp(/I_R)
+      for (int lev = 0; lev <= finest_level; ++lev) {
+         if ( m_do_react ) {
+            auto ldataR_p   = getLevelDataReactPtr(lev);
+            ldataR_p->I_R.setVal(0.0);
+         }
+         auto ldata_p   = getLevelDataPtr(lev,AmrNewTime);
+         ldata_p->press.setVal(0.0);
+         ldata_p->gp.setVal(0.0);
       }
    }
 }
