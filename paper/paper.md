@@ -15,16 +15,27 @@ authors:
   - name: Marc Day
     orcid: 0000-0002-1711-3963
     affiliation: 1
-  - name: Nicolas Wimer
-    affiliation: 1
-  - name: Bruce Perry
-    affiliation: 1
-  - name: Landon Owen
-    affiliation: 3
-  - name: Andy Nonaka
-    affiliation: 2
   - name: John Bell
     orcid: 0000-0002-5749-334X
+    affiliation: 2
+  - name: Anne Felden
+    affiliation: 2
+  - name: Candace Gilet
+  - name: Ray Grout
+    affiliation: 1
+  - name: Emmanuel Motheau
+    affiliation: 2
+  - name: Andy Nonaka
+    affiliation: 2
+  - name: Landon Owen
+    affiliation: 3
+  - name: Bruce Perry
+    affiliation: 1
+  - name: Jon Rood
+    affiliation: 1
+  - name: Nicolas Wimer
+    affiliation: 1
+  - name: Weiqun Zhang
     affiliation: 2
 affiliations:
   - name: High Performance Algorithms and Complex Fluids, National Renewable Energy Laboratory, USA
