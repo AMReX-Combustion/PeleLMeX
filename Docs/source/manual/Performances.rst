@@ -207,5 +207,61 @@ to provide a node time / million of cells.
    :figwidth: 60%
 
 
-Results shows that a 3x and 4.2x speed is obtained on a node basis going from Summit to more recent
+Results show that a 3x and 4.2x speed is obtained on a node basis going from Summit to more recent
 Perlmutter or Crusher, respectively.
+
+Weak scaling performances: FlameSheet case
+------------------------------------------
+
+Case description
+^^^^^^^^^^^^^^^^
+
+Once again the case of a laminar premixed flame with harmonic perturbations is employed. On
+a single node, the case is similar to the one used in the previous section. To perform the
+weak scaling study (characterising the ability of the solver to scale up while keeping the
+same amount of work per compute unit), the dimentions of the computational domain are
+increased by a factor 2 in :math:`x` and :math:`y` alternatively as the number of
+compute nodes is doubled. The periodicity of the initial conditions allow to ensure
+that the amount of work per node remains constant.
+
+To provide a more comprehensive test of `PeleLMeX`, the scaling study is also reproduced in the case
+of a flame freely propagating in a quiescient mixture towards an EB flat wall. The presence of the
+EB triggers numerous changes in the actual code path employed (from advection scheme to linear solvers).
+
+The stude is performed on ORNL's Crusher machine and the FlameSheet case is ran using 2 levels
+of refinement (3 levels total) and the following domain size and cell count:
+
+::
+
+    geometry.prob_lo     = 0.0 0.0 0.0        # x_lo y_lo (z_lo)
+    geometry.prob_hi     = 0.016 0.016 0.016  # x_hi y_hi (z_hi)
+
+    amr.n_cell           = 64 64 64
+    amr.max_level        = 2
+
+When introducing the EB plane, the following EB definition is employed:
+
+::
+
+     eb2.geom_type     = plane
+     eb2.plane_point   = 0.00 0.00 0.0004
+     eb2.plane_normal  = 0 0 -1.0
+
+and because nothing interesting is happening at the EB surface, it is maintained on the base
+level using the following parameters:
+
+::
+
+     peleLM.refine_EB_type = Static
+     peleLM.refine_EB_max_level = 0
+     peleLM.refine_EB_buffer = 2.0
+
+The parallel efficiency, defined as the time to solution obtained on a single node divided by the
+time to solution obtained with an increasing number of nodes is reported in the figure below
+for the case wo. EB and w. EB. The efficiency is found to drop to 90% when going from 1 to 128
+Crusher nodes (8 to 1024 GPUs) and a closer look at the scaling data shows that most of the
+efficiency loss is associated with the communication intensive linear solves.
+
+.. figure:: images/performances/PMF/WeakScalingFSCrusher.png
+   :align: center
+   :figwidth: 60%
