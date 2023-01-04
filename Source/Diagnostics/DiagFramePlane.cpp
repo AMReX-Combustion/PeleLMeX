@@ -249,7 +249,6 @@ DiagFramePlane::processDiag(int a_nstep,
     amrex::Vector<int> step_array(nlevs,a_nstep);
     Write2DMultiLevelPlotfile(diagfile, nlevs, GetVecOfConstPtrs(planeData), a_stateVar,
                                    pltGeoms, a_time, step_array, ref_ratio);
-
 }
 
 void
@@ -372,8 +371,8 @@ DiagFramePlane::Write2DPlotfileHeader(std::ostream &HeaderFile,
 }
 
 void
-DiagFramePlane::ReWriteLevelVisMFHeader(const std::string &a_HeaderPath) {
-
+DiagFramePlane::ReWriteLevelVisMFHeader(const std::string &a_HeaderPath)
+{
     std::string OldHeaderFileName(a_HeaderPath+ "Cell_H");
     amrex::Vector<char> oldfileCharPtr;
     amrex::ParallelDescriptor::ReadAndBcastFile(OldHeaderFileName, oldfileCharPtr);
@@ -501,13 +500,14 @@ DiagFramePlane::ReWriteLevelVisMFHeader(const std::string &a_HeaderPath) {
 
         // Replace header file
         std::rename(HeaderFileName.c_str(), OldHeaderFileName.c_str());
+    }
 
-        // Replace 3D data file by 2D ones
-        for (int i = 0; i < dataFiles.size(); ++i) {
-            std::string newname = a_HeaderPath+dataFiles[i];
-            newname = std::regex_replace(newname, std::regex("Cell_"), "Cell2D_");
-            std::rename(newname.c_str(), (a_HeaderPath+dataFiles[i]).c_str());
-        }
+    // Replace 3D data file by 2D ones
+    std::string oldname = amrex::Concatenate(a_HeaderPath+"Cell2D_D_",amrex::ParallelDescriptor::MyProc(),5);
+    if (amrex::FileSystem::Exists(oldname.c_str())) {
+        std::string newname = std::regex_replace(oldname, std::regex("Cell2D_"), "Cell_");
+        std::remove(newname.c_str());
+        std::rename(oldname.c_str(), newname.c_str());
     }
 }
 
