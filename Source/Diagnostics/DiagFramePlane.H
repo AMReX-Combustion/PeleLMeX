@@ -10,12 +10,14 @@ public:
 
   enum InterpType {Linear, Quadratic};
 
-  void init(const std::string &a_prefix) override;
+  void init(const std::string &a_prefix,
+            std::string_view a_diagName) override;
 
   void prepare(int a_nlevels,
                const amrex::Vector<amrex::Geometry> &a_geoms,
                const amrex::Vector<amrex::BoxArray> &a_grids,
-               const amrex::Vector<amrex::DistributionMapping> &a_dmap) override;
+               const amrex::Vector<amrex::DistributionMapping> &a_dmap,
+               const amrex::Vector<std::string> &a_varNames) override;
 
   void processDiag(int a_nstep,
                    const amrex::Real &a_time,

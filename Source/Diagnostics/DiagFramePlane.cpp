@@ -38,8 +38,15 @@ printLowerDimBox(std::ostream &a_File,
 }
 
 void
-DiagFramePlane::init(const std::string &a_prefix)
+DiagFramePlane::init(const std::string &a_prefix,
+                     std::string_view a_diagName)
 {
+    DiagBase::init(a_prefix, a_diagName);
+
+    if (m_filters.size() != 0) {
+        amrex::Print() << " Filters are not available on DiagFramePlane and will be discarded \n";
+    }
+
     amrex::ParmParse pp(a_prefix);
 
     // Plane normal
@@ -57,13 +64,6 @@ DiagFramePlane::init(const std::string &a_prefix)
         m_center[m_normal] = center[0];
     }
 
-    // IO
-    pp.query("int", m_interval);
-    pp.query("per", m_per);
-    m_diagfile = "DiagFramePlane";
-    pp.query("file",m_diagfile);
-    AMREX_ASSERT(m_interval>0 || m_per>0.0);
-
     // Interpolation
     std::string intType = "Quadratic";
     pp.query("interpolation", intType);
@@ -80,7 +80,8 @@ void
 DiagFramePlane::prepare(int a_nlevels,
                         const amrex::Vector<amrex::Geometry> &a_geoms,
                         const amrex::Vector<amrex::BoxArray> &a_grids,
-                        const amrex::Vector<amrex::DistributionMapping> &a_dmap)
+                        const amrex::Vector<amrex::DistributionMapping> &a_dmap,
+                        const amrex::Vector<std::string> &a_varNames)
 {
     if (first_time) {
         // Store the level0 geometry

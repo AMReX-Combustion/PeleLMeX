@@ -20,20 +20,26 @@ PeleLM::createDiagnostics()
         ParmParse ppd(diag_prefix);
         std::string diag_type; ppd.get("type", diag_type);
         m_diagnostics[n] = DiagBase::create(diag_type);
-        m_diagnostics[n]->init(diag_prefix);
+        m_diagnostics[n]->init(diag_prefix,diags[n]);
     }
 }
 
 void
 PeleLM::updateDiagnostics()
 {
+    // At this point, we're only dealing with the state components
+    Vector<std::string> stateNames;
+    for (std::list<std::tuple<int,std::string>>::const_iterator li = stateComponents.begin(),
+         End = stateComponents.end(); li != End; ++li) {
+       stateNames.push_back(get<1>(*li));
+    }
     // Might need to update some internal data as the grid changes
     for (int n = 0; n < m_diagnostics.size(); ++n) {
         if ( m_diagnostics[n]->needUpdate() ) {
             m_diagnostics[n]->prepare(finestLevel()+1,
                                       Geom(0,finestLevel()),
                                       boxArray(0,finestLevel()),
-                                      dmap);
+                                      dmap, stateNames);
         }
     }
 }
