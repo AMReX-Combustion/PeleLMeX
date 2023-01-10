@@ -190,7 +190,7 @@ Transport coeffs and LES
     peleLM.les_cm_wale = 0.60              # [OPT, DEF=0.60] If using WALE LES model, provides model coefficient
     peleLM.les_v = 0                       # [OPT, DEF=0] Verbosity level for LES model
     peleLM.plot_les = 0                    # [OPT, DEF=0] If doing LES, whether to plot the turbulent viscosity
-    
+
 Chemistry integrator
 --------------------
 
