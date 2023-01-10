@@ -604,23 +604,6 @@ DiffusionTensorOp::DiffusionTensorOp (PeleLM* a_pelelm)
    m_apply_op->setMaxOrder(m_mg_maxorder);
    m_apply_op->setDomainBC(m_pelelm->getDiffusionTensorOpBC(Orientation::low,bcRecVel),
                            m_pelelm->getDiffusionTensorOpBC(Orientation::high,bcRecVel));
-
-   // Gradient Operator
-   LPInfo info_gradient;
-#ifdef AMREX_USE_EB
-   m_gradient_op.reset(new MLEBTensorOp(m_pelelm->Geom(0,finest_level),
-                                        m_pelelm->boxArray(0,finest_level),
-                                        m_pelelm->DistributionMap(0,finest_level),
-                                        info_gradient,ebfactVec));
-#else
-   m_gradient_op.reset(new MLTensorOp(m_pelelm->Geom(0,finest_level),
-                                      m_pelelm->boxArray(0,finest_level),
-                                      m_pelelm->DistributionMap(0,finest_level),
-                                      info_gradient));
-#endif
-   m_gradient_op->setMaxOrder(m_mg_maxorder);
-   m_gradient_op->setDomainBC(m_pelelm->getDiffusionTensorOpBC(Orientation::low,bcRecVel),
-                              m_pelelm->getDiffusionTensorOpBC(Orientation::high,bcRecVel));
 }
 
 void DiffusionTensorOp::computeGradientTensor (Vector<Array<MultiFab*, AMREX_SPACEDIM>> const& a_velgrad,
@@ -644,11 +627,11 @@ void DiffusionTensorOp::computeGradientTensor (Vector<Array<MultiFab*, AMREX_SPA
    }
 
    // Set up some parameters
-   m_gradient_op->setMaxOrder(m_mg_maxorder);
-   m_gradient_op->setScalars(0.0,1.0);
+   m_apply_op->setMaxOrder(m_mg_maxorder);
+   m_apply_op->setScalars(0.0,1.0);
    for (int lev = 0; lev <= finest_level; ++lev) {
-     m_gradient_op->setShearViscosity(lev,0.0);
-     m_gradient_op->setLevelBC(lev, &vel[lev]);
+     m_apply_op->setShearViscosity(lev,0.0);
+     m_apply_op->setLevelBC(lev, &vel[lev]);
    }
 
    // Dummy variable for applying MLMG operator
@@ -659,12 +642,12 @@ void DiffusionTensorOp::computeGradientTensor (Vector<Array<MultiFab*, AMREX_SPA
    }
 
    // Create MLMG object and apply to setup BCs, etc
-   MLMG mlmg(*m_gradient_op);
+   MLMG mlmg(*m_apply_op);
    mlmg.apply(GetVecOfPtrs(divtau), GetVecOfPtrs(vel));
 
    // Compute the velocity gradient on faces
    for (int lev = 0; lev <= finest_level; ++lev) {
-     m_gradient_op->compVelGrad(lev, a_velgrad[lev], vel[lev], MLLinOp::Location::FaceCentroid);
+     m_apply_op->compVelGrad(lev, a_velgrad[lev], vel[lev], MLLinOp::Location::FaceCentroid);
    }
 }
 

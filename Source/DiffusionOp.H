@@ -145,12 +145,10 @@ private:
    // Apply operator
    std::unique_ptr<amrex::MLEBTensorOp> m_apply_op;
    std::unique_ptr<amrex::MLEBTensorOp> m_solve_op;
-   std::unique_ptr<amrex::MLEBTensorOp> m_gradient_op;
 #else
    // Apply operator
    std::unique_ptr<amrex::MLTensorOp> m_apply_op;
    std::unique_ptr<amrex::MLTensorOp> m_solve_op;
-   std::unique_ptr<amrex::MLTensorOp> m_gradient_op;
 #endif
 
    int m_verbose = 0;
