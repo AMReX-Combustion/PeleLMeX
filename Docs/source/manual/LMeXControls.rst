@@ -177,6 +177,20 @@ PeleLMeX algorithm
     peleLM.deltaT_tol = 1e-10              # [OPT, DEF=1.e-10] Tolerance of the deltaT solve
     peleLM.evaluate_vars =...              # [OPT, DEF=""] In evaluate mode, list unitTest: diffTerm, divU, instRR, transportCC
 
+Transport coeffs and LES
+------------------------
+
+::
+
+    #-----------------------DIFFUSION AND LES MODEL CONTROL-----------------------
+    peleLM.unity_Le = 0                    # [OPT, DEF=0] Use the unity Lewis number approximation for diffusivities
+    peleLM.Prandtl = 0.7                   # [OPT, DEF=0.7] If unity_Le or doing LES, specifies the Prandtl number
+    peleLM.les_model = "None"              # [OPT, DEF="None"] Model to compute turbulent viscosity: None, Smagorinsky, WALE
+    peleLM.les_cs_smag = 0.18              # [OPT, DEF=0.18] If using Smagorinsky LES model, provides model coefficient
+    peleLM.les_cm_wale = 0.60              # [OPT, DEF=0.60] If using WALE LES model, provides model coefficient
+    peleLM.les_v = 0                       # [OPT, DEF=0] Verbosity level for LES model
+    peleLM.plot_les = 0                    # [OPT, DEF=0] If doing LES, whether to plot the turbulent viscosity
+    
 Chemistry integrator
 --------------------
 
