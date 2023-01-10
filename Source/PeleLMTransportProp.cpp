@@ -86,7 +86,7 @@ void PeleLM::calcTurbViscosity(const TimeStamp &a_time) {
                                                           + geom[lev].CellSize(1)*geom[lev].CellSize(1),
                                                           + geom[lev].CellSize(2)*geom[lev].CellSize(2)));
        if (m_les_model == "Smagorinsky") {
-         const amrex::Real prefact = m_les_cs_smag * l_scale * l_scale;
+         const amrex::Real prefact = m_les_cs_smag * m_les_cs_smag * l_scale * l_scale;
          amrex::ParallelFor(ldata_p->visc_turb_fc[idim], ldata_p->visc_turb_fc[idim].nGrowVect(), [=]
                             AMREX_GPU_DEVICE (int box_no, int i, int j, int k) noexcept
                             {
@@ -96,7 +96,7 @@ void PeleLM::calcTurbViscosity(const TimeStamp &a_time) {
                                                       Array4<Real      >(mut_arr[box_no]) );
                             });
        } else if (m_les_model == "WALE") {
-         const amrex::Real prefact = m_les_cs_wale * l_scale * l_scale;
+         const amrex::Real prefact = m_les_cm_wale * m_les_cm_wale * l_scale * l_scale;
          amrex::ParallelFor(ldata_p->visc_turb_fc[idim], ldata_p->visc_turb_fc[idim].nGrowVect(), [=]
                             AMREX_GPU_DEVICE (int box_no, int i, int j, int k) noexcept
                             {

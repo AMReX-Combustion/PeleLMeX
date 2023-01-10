@@ -317,9 +317,9 @@ void PeleLM::readParameters() {
      m_do_les = false;
    } else {
      if (m_les_model == "Smagorinsky") {
-       pp.get("les_cs_smag", m_les_cs_smag);
+       pp.query("les_cs_smag", m_les_cs_smag);
      } else if (m_les_model == "WALE") {
-       pp.get("les_cs_wale", m_les_cs_wale);
+       pp.query("les_cm_wale", m_les_cm_wale);
      } else {
        amrex::Abort("LES model must be None, Smagorinsky, or WALE. Invalid choie: " + m_les_model);
      }

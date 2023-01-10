@@ -1169,8 +1169,8 @@ class PeleLM : public amrex::AmrCore {
    bool m_plot_les = false;
    int m_les_verbose = 0;
    std::string m_les_model = "None";
-   amrex::Real m_les_cs_smag = 0.0;
-   amrex::Real m_les_cs_wale = 0.0;
+   amrex::Real m_les_cs_smag = 0.18;
+   amrex::Real m_les_cm_wale = 0.60;
    amrex::Vector<amrex::Real> m_turb_visc_time;
 
    // switch on/off different processes
