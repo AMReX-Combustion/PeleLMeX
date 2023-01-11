@@ -582,7 +582,7 @@ void pelelm_derdiffc (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dc
     auto         mu  = dummies.array(1);
     auto const* ltransparm = a_pelelm->trans_parms.device_trans_parm();
     amrex::Real ScInv = a_pelelm->m_Schmidt_inv;
-    amrex::Real PrInv = a_pelelm->m_Schmidt_inv;
+    amrex::Real PrInv = a_pelelm->m_Prandtl_inv;
     int unity_Le = a_pelelm->m_unity_Le;
     amrex::ParallelFor(bx,
     [rhoY,T,rhoD,lambda,mu,ltransparm,unity_Le,ScInv,PrInv]
@@ -616,7 +616,7 @@ void pelelm_derlambda (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int d
     auto         mu  = dummies.array(0);
     auto const* ltransparm = a_pelelm->trans_parms.device_trans_parm();
     amrex::Real ScInv = a_pelelm->m_Schmidt_inv;
-    amrex::Real PrInv = a_pelelm->m_Schmidt_inv;
+    amrex::Real PrInv = a_pelelm->m_Prandtl_inv;
     int unity_Le = a_pelelm->m_unity_Le;
     amrex::ParallelFor(bx,
     [rhoY,T,rhoD,lambda,mu,ltransparm,unity_Le,ScInv,PrInv]
