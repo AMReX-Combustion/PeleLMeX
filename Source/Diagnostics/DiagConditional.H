@@ -30,6 +30,9 @@ public:
                        int comp);  
   amrex::Real MFVecMax(const amrex::Vector<const amrex::MultiFab*> &a_state,
                        int comp);  
+  void writeAverageDataToFile(const amrex::Vector<amrex::Real> &a_condAbs,
+                              const amrex::Vector<amrex::Real> &a_cond,
+                              const amrex::Vector<amrex::Real> &a_condSq);
 
   void close() override {}
 

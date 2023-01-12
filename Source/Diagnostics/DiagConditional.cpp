@@ -75,16 +75,17 @@ DiagConditional::processDiag(int a_nstep,
        m_highBnd = MFVecMax(a_state,cFieldIdx);
     }
     amrex::Real binWidth = (m_highBnd - m_lowBnd) / (m_nBins);
-    amrex::Print() <<  " Conditional metadata: [" << m_lowBnd << "," << m_highBnd << "," << binWidth << "] \n"; 
 
     // Data holders
     int nProcessFields = m_fieldIndices_d.size();
     amrex::Gpu::DeviceVector<amrex::Real> cond_d(m_nBins*nProcessFields,0.0);
     amrex::Gpu::DeviceVector<amrex::Real> condSq_d(m_nBins*nProcessFields,0.0);
-    amrex::Gpu::DeviceVector<amrex::Real> condVol_d(m_nBins*nProcessFields,0.0);
+    amrex::Gpu::DeviceVector<amrex::Real> condAbs_d(m_nBins,0.0);
+    amrex::Gpu::DeviceVector<amrex::Real> condVol_d(m_nBins,0.0);
     amrex::Vector<amrex::Real> cond(m_nBins*nProcessFields,0.0);
     amrex::Vector<amrex::Real> condSq(m_nBins*nProcessFields,0.0);
-    amrex::Vector<amrex::Real> condVol(m_nBins*nProcessFields,0.0);
+    amrex::Vector<amrex::Real> condAbs(m_nBins,0.0);
+    amrex::Vector<amrex::Real> condVol(m_nBins,0.0);
 
     // Populate the data from each level on each proc
     for (int lev = 0; lev < a_state.size(); ++lev) {
@@ -94,10 +95,11 @@ DiagConditional::processDiag(int a_nstep,
         if (lev == a_state.size()-1) {
            mask.define(a_state[lev]->boxArray(), a_state[lev]->DistributionMap(),
                        1, amrex::IntVect(0));
+           mask.setVal(1);
         } else {
            mask = amrex::makeFineMask(*a_state[lev], *a_state[lev+1], amrex::IntVect(0),
                                       m_refRatio[lev],amrex::Periodicity::NonPeriodic(),
-                                      0, 1);
+                                      1, 0);
         }
         auto const& sarrs = a_state[lev]->const_arrays(); 
         auto const& marrs = mask.arrays(); 
@@ -119,42 +121,54 @@ DiagConditional::processDiag(int a_nstep,
         auto const& varrs = volume.const_arrays(); 
 
         auto *cond_d_p = cond_d.dataPtr();
+        auto *condAbs_d_p = condAbs_d.dataPtr();
         auto *idx_d_p = m_fieldIndices_d.dataPtr();
         if (m_condType == Average) {
             auto *condVol_d_p = condVol_d.dataPtr();
             auto *condSq_d_p = condSq_d.dataPtr();
-            amrex::ParallelFor(*a_state[lev], amrex::IntVect(0), nProcessFields,
-                [=,nBins=m_nBins,lowBnd=m_lowBnd] AMREX_GPU_DEVICE(int box_no, int i, int j, int k, int f) noexcept {
+            amrex::ParallelFor(*a_state[lev], amrex::IntVect(0),
+                [=,nBins=m_nBins,lowBnd=m_lowBnd] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
                     if (marrs[box_no](i,j,k)) {
-                        int fidx = idx_d_p[f];
-                        int binOffset = f * nBins;
                         int cbin = std::floor((sarrs[box_no](i,j,k,cFieldIdx) - lowBnd) / binWidth);
                         if (cbin >= 0 && cbin < nBins) {
-                            amrex::HostDevice::Atomic::Add(&(cond_d_p[binOffset+cbin]), varrs[box_no](i,j,k)*sarrs[box_no](i,j,k,fidx));
-                            amrex::HostDevice::Atomic::Add(&(condSq_d_p[binOffset+cbin]), 
-                                                           varrs[box_no](i,j,k)*sarrs[box_no](i,j,k,fidx)*sarrs[box_no](i,j,k,fidx));
-                            amrex::HostDevice::Atomic::Add(&(condVol_d_p[binOffset+cbin]), varrs[box_no](i,j,k));
+                            for (size_t f{0}; f<nProcessFields; ++f) {
+                                int fidx = idx_d_p[f];
+                                int binOffset = f * nBins;
+                                amrex::HostDevice::Atomic::Add(&(cond_d_p[binOffset+cbin]), varrs[box_no](i,j,k)*sarrs[box_no](i,j,k,fidx));
+                                amrex::HostDevice::Atomic::Add(&(condSq_d_p[binOffset+cbin]), 
+                                                               varrs[box_no](i,j,k)*sarrs[box_no](i,j,k,fidx)*sarrs[box_no](i,j,k,fidx));
+                            }
+                            amrex::HostDevice::Atomic::Add(&(condVol_d_p[cbin]), varrs[box_no](i,j,k));
+                            amrex::HostDevice::Atomic::Add(&(condAbs_d_p[cbin]), varrs[box_no](i,j,k)*sarrs[box_no](i,j,k,cFieldIdx));
                         }
                     }
                 });
         } else if (m_condType == Integral) {
-            amrex::ParallelFor(*a_state[lev], amrex::IntVect(0), nProcessFields,
-                [=,nBins=m_nBins,lowBnd=m_lowBnd] AMREX_GPU_DEVICE(int box_no, int i, int j, int k, int f) noexcept {
+            amrex::ParallelFor(*a_state[lev], amrex::IntVect(0),
+                [=,nBins=m_nBins,lowBnd=m_lowBnd] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
                     if (marrs[box_no](i,j,k)) {
-                        int fidx = idx_d_p[f];
-                        int binOffset = f * nBins;
                         int cbin = std::floor((sarrs[box_no](i,j,k,cFieldIdx) - lowBnd) / binWidth);
-                        amrex::HostDevice::Atomic::Add(&(cond_d_p[binOffset+cbin]), varrs[box_no](i,j,k)*sarrs[box_no](i,j,k,fidx));
+                        if (cbin >= 0 && cbin < nBins) {
+                            for (size_t f{0}; f<nProcessFields; ++f) {
+                                int fidx = idx_d_p[f];
+                                int binOffset = f * nBins;
+                                amrex::HostDevice::Atomic::Add(&(cond_d_p[binOffset+cbin]), varrs[box_no](i,j,k)*sarrs[box_no](i,j,k,fidx));
+                            }
+                        }
                     }
                 });
         } else if (m_condType == Sum) {
-            amrex::ParallelFor(*a_state[lev], amrex::IntVect(0), nProcessFields,
-                [=,nBins=m_nBins,lowBnd=m_lowBnd] AMREX_GPU_DEVICE(int box_no, int i, int j, int k, int f) noexcept {
+            amrex::ParallelFor(*a_state[lev], amrex::IntVect(0),
+                [=,nBins=m_nBins,lowBnd=m_lowBnd] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
                     if (marrs[box_no](i,j,k)) {
-                        int fidx = idx_d_p[f];
-                        int binOffset = f * nBins;
                         int cbin = std::floor((sarrs[box_no](i,j,k,cFieldIdx) - lowBnd) / binWidth);
-                        amrex::HostDevice::Atomic::Add(&(cond_d_p[binOffset+cbin]), sarrs[box_no](i,j,k,fidx));
+                        if (cbin >= 0 && cbin < nBins) {
+                            for (size_t f{0}; f<nProcessFields; ++f) {
+                                int fidx = idx_d_p[f];
+                                int binOffset = f * nBins;
+                                amrex::HostDevice::Atomic::Add(&(cond_d_p[binOffset+cbin]), sarrs[box_no](i,j,k,fidx));
+                            }
+                        }
                     }
                 });
         }
@@ -164,6 +178,9 @@ DiagConditional::processDiag(int a_nstep,
     amrex::Gpu::copy(amrex::Gpu::deviceToHost,cond_d.begin(),cond_d.end(),cond.begin());
     amrex::Gpu::streamSynchronize();
     amrex::ParallelDescriptor::ReduceRealSum(cond.data(),cond.size());
+    amrex::Gpu::copy(amrex::Gpu::deviceToHost,condAbs_d.begin(),condAbs_d.end(),condAbs.begin());
+    amrex::Gpu::streamSynchronize();
+    amrex::ParallelDescriptor::ReduceRealSum(condAbs.data(),condAbs.size());
     if (m_condType == Average) {
         amrex::Gpu::copy(amrex::Gpu::deviceToHost,condVol_d.begin(),condVol_d.end(),condVol.begin());
         amrex::Gpu::streamSynchronize();
@@ -171,21 +188,24 @@ DiagConditional::processDiag(int a_nstep,
         amrex::Gpu::copy(amrex::Gpu::deviceToHost,condSq_d.begin(),condSq_d.end(),condSq.begin());
         amrex::Gpu::streamSynchronize();
         amrex::ParallelDescriptor::ReduceRealSum(condSq.data(),condSq.size());
-        for (int n{0}; n < cond.size(); ++n) {
-            cond[n] /= condVol[n];
-            condSq[n] /= condVol[n];
+        for (size_t f{0}; f<nProcessFields; ++f) {
+            int binOffset = f * m_nBins;
+            for (size_t n{0}; n < m_nBins; ++n) {
+                cond[binOffset+n] /= condVol[n];
+                condSq[binOffset+n] /= condVol[n];
+            }
+        }
+        for (size_t n{0}; n < m_nBins; ++n) {
+            condAbs[n] /= condVol[n];
         }
     }
 
-    // 
-    for (size_t i{0}; i<cond.size(); ++i) {
-        amrex::Print() << m_lowBnd+(static_cast<amrex::Real>(i)+0.5)*binWidth << " "
-                       << cond[i] << " "
-                       << std::sqrt(condSq[i] - cond[i]*cond[i]) << " "
-                       << condVol[i] << "\n";
-        //amrex::Print() << m_lowBnd+static_cast<amrex::Real>(i)*binWidth << " " << cond[i] << " " << condVol[i] << "\n";
+    // Write data to file
+    if (m_condType == Average) {
+        writeAverageDataToFile(condAbs,cond,condSq);
+    } else if (m_condType == Integral) {
+    } else if (m_condType == Sum) {
     }
-
 }
 
 int
@@ -231,4 +251,24 @@ DiagConditional::MFVecMax(const amrex::Vector<const amrex::MultiFab*> &a_state,
 
     amrex::ParallelDescriptor::ReduceRealMax(mmax);
     return mmax;
+}
+
+void
+DiagConditional::writeAverageDataToFile(const amrex::Vector<amrex::Real> &a_condAbs,
+                                        const amrex::Vector<amrex::Real> &a_cond,
+                                        const amrex::Vector<amrex::Real> &a_condSq)
+{
+    // Retrieve some data
+    int nProcessFields = m_fieldIndices_d.size();
+    amrex::Real binWidth = (m_highBnd - m_lowBnd) / (m_nBins);
+
+    for (size_t f{0}; f<nProcessFields; ++f) {
+        int binOffset = f * m_nBins;
+        for (size_t n{0}; n<m_nBins; ++n) {
+            amrex::Print() << a_condAbs[n] << " "
+                           << a_cond[binOffset+n] << " "
+                           << std::sqrt(std::abs(a_condSq[binOffset+n] - a_cond[binOffset+n]*a_cond[binOffset+n])) << " "
+                           << "\n";
+        }
+    }
 }
