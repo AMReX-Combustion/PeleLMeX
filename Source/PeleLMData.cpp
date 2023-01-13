@@ -6,7 +6,7 @@ PeleLM::LevelData::LevelData(amrex::BoxArray const& ba,
                              amrex::DistributionMapping const& dm,
                              amrex::FabFactory<FArrayBox> const& factory,
                              int a_incompressible, int a_has_divu,
-                             int a_nAux, int a_nGrowState)
+                             int a_nAux, int a_nGrowState, int a_do_les)
 {
    if (a_incompressible ) {
        state.define(  ba, dm, AMREX_SPACEDIM , a_nGrowState, MFInfo(), factory);
@@ -17,6 +17,14 @@ PeleLM::LevelData::LevelData(amrex::BoxArray const& ba,
    press.define(   amrex::convert(ba,IntVect::TheNodeVector()),
                        dm, 1             , 1           , MFInfo(), factory);
    visc_cc.define( ba, dm, 1             , 1           , MFInfo(), factory);
+   if (a_do_les) {
+     for (int i = 0; i < AMREX_SPACEDIM; ++i) {
+       visc_turb_fc[i].define(amrex::convert(ba,IntVect::TheDimensionVector(i)), dm, 1, 0, MFInfo(), factory);
+       if (!a_incompressible) {
+         lambda_turb_fc[i].define(amrex::convert(ba,IntVect::TheDimensionVector(i)), dm, 1, 0, MFInfo(), factory);
+       }
+     }
+   }
    if (! a_incompressible ) {
       if (a_has_divu) {
          divu.define (ba, dm, 1             , 1           , MFInfo(), factory);

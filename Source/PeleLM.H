@@ -147,7 +147,7 @@ class PeleLM : public amrex::AmrCore {
                  amrex::DistributionMapping const& dm,
                  amrex::FabFactory<amrex::FArrayBox> const& factory,
                  int a_incompressible, int a_has_divu,
-                 int a_nAux, int a_nGrowState);
+                 int a_nAux, int a_nGrowState, int a_do_les);
 
       // cell-centered state multifabs
       amrex::MultiFab state;           // Stqte data: velocity, density, rhoYs, rhoH, Temp, RhoRT
@@ -160,6 +160,8 @@ class PeleLM : public amrex::AmrCore {
 
       // cell-centered transport multifabs
       amrex::MultiFab visc_cc;         // Viscosity (dim:1)
+      amrex::Array<amrex::MultiFab, AMREX_SPACEDIM> visc_turb_fc;    // Turbulent Viscosity (dim:)
+      amrex::Array<amrex::MultiFab, AMREX_SPACEDIM> lambda_turb_fc;    // Turbulent thermal conductivity (dim:)
       amrex::MultiFab diff_cc;         // Diffusivity (dim:NUM_SPECIES+2)
 #ifdef PELE_USE_EFIELD
       amrex::MultiFab diffE_cc;        // Electron diffusivity (dim:1)
@@ -313,13 +315,15 @@ class PeleLM : public amrex::AmrCore {
 
    // compute cell-centered diffusivity (stored in LevelData)
    void calcViscosity(const PeleLM::TimeStamp &a_time);
+   void calcTurbViscosity(const PeleLM::TimeStamp &a_time);
    void calcDiffusivity(const PeleLM::TimeStamp &a_time);
 
    // get edge-centered diffusivity on a per level / per comp basis
    amrex::Array<amrex::MultiFab,AMREX_SPACEDIM>
    getDiffusivity(int lev, int beta_comp, int ncomp, int doZeroVisc,
                   amrex::Vector<amrex::BCRec> a_bcrec,
-                  const amrex::MultiFab &a_diff_cc);
+                  const amrex::MultiFab &a_diff_cc,
+                  int addTurbContrib = 0);
 
    // get species/enthalpy differential diffusion fluxes
    void computeDifferentialDiffusionFluxes(const PeleLM::TimeStamp &a_time,
@@ -1153,8 +1157,21 @@ class PeleLM : public amrex::AmrCore {
    // cc->ec average
    int m_harm_avg_cen2edge = 0;
 
-   // wbar diffusion term
+
+   // Diffusion
+   int m_unity_Le = 0;
+   amrex::Real m_Schmidt_inv = 1.0/0.7;
+   amrex::Real m_Prandtl_inv = 1.0/0.7;
    int m_use_wbar = 1;
+
+   // LES Model
+   bool m_do_les = false;
+   bool m_plot_les = false;
+   int m_les_verbose = 0;
+   std::string m_les_model = "None";
+   amrex::Real m_les_cs_smag = 0.18;
+   amrex::Real m_les_cm_wale = 0.60;
+   amrex::Vector<amrex::Real> m_turb_visc_time;
 
    // switch on/off different processes
    // TODO: actually implement that

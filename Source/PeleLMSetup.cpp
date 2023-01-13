@@ -83,6 +83,12 @@ void PeleLM::Setup() {
    if (!m_incompressible) {
       amrex::Print() << " Initialization of Transport ... \n";
       trans_parms.allocate();
+      if (m_les_verbose and m_do_les)
+        amrex::Print() << "    Using LES in transport with Sc = " << 1.0/m_Schmidt_inv
+                       << " and Pr = " << 1.0/m_Prandtl_inv << std::endl;
+      if (m_verbose and m_unity_Le)
+        amrex::Print() << "    Using Le = 1 transport with Sc = " << 1.0/m_Schmidt_inv
+                       << " and Pr = " << 1.0/m_Prandtl_inv << std::endl;
       if (m_do_react) {
          int reactor_type = 2;
          int ncells_chem = 1;
@@ -303,15 +309,55 @@ void PeleLM::readParameters() {
       m_gravity[idim] = grav[idim];
    }
 
+   // -----------------------------------------
+   // LES
+   // -----------------------------------------
+   pp.query("les_model", m_les_model);
+   if (m_les_model == "None") {
+     m_do_les = false;
+   } else {
+     if (m_les_model == "Smagorinsky") {
+       pp.query("les_cs_smag", m_les_cs_smag);
+     } else if (m_les_model == "WALE") {
+       pp.query("les_cm_wale", m_les_cm_wale);
+     } else {
+       amrex::Abort("LES model must be None, Smagorinsky, or WALE. Invalid choie: " + m_les_model);
+     }
+     m_do_les = true;
+     m_les_verbose = m_verbose;
+     pp.query("plot_les", m_plot_les);
+     pp.query("les_v", m_les_verbose);
+     for (int lev=0; lev<= max_level ; ++lev) {
+       m_turb_visc_time.push_back(-1.0E200);
+     }
+#ifdef AMREX_USE_EB
+     amrex::Abort("LES implementation with EB depends on EB compVelGrad in amrex");
+#endif
+#ifdef PELE_USE_EFIELD
+     amrex::Abort("LES implementation is not yet compatible with efield/ions");
+#endif
+   }
 
    // -----------------------------------------
    // diffusion
    pp.query("use_wbar",m_use_wbar);
+   pp.query("unity_Le",m_unity_Le);
+   if (m_use_wbar and m_unity_Le) {
+     m_use_wbar = 0;
+     amrex::Print() << "WARNING: use_wbar set to false because unity_Le is true"
+                    << std::endl;
+   }
    pp.query("deltaT_verbose",m_deltaT_verbose);
    pp.query("deltaT_iterMax",m_deltaTIterMax);
    pp.query("deltaT_tol",m_deltaT_norm_max);
    pp.query("deltaT_crashIfFailing",m_crashOnDeltaTFail);
 
+   if (m_do_les or m_unity_Le) {
+     amrex::Real Prandtl = 0.7;
+     pp.query("Prandtl", Prandtl);
+     m_Schmidt_inv = 1.0/Prandtl;
+     m_Prandtl_inv = 1.0/Prandtl;
+   }
 
    // -----------------------------------------
    // initialization
