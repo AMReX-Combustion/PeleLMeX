@@ -69,6 +69,7 @@ void PeleLM::calcTurbViscosity(const TimeStamp &a_time) {
                                               Array4<Real const>(state_arr[box_no], TEMP),
                                               Array4<Real      >(cp_arr[box_no]) );
                           });
+       Gpu::streamSynchronize();
 
        // this function really just interpolates CCs to FCs in this case
        int doZeroVisc = 0;
@@ -106,6 +107,7 @@ void PeleLM::calcTurbViscosity(const TimeStamp &a_time) {
                                                 Array4<Real      >(mut_arr[box_no]) );
                             });
        }
+       Gpu::streamSynchronize();
 
        // Compute lambda_turb = alpha_t * cp = mu_t / Pr_t * cp
        if (!m_incompressible) {
@@ -115,7 +117,6 @@ void PeleLM::calcTurbViscosity(const TimeStamp &a_time) {
        }
      }
    }
-   Gpu::streamSynchronize();
 }
 
 void PeleLM::calcViscosity(const TimeStamp &a_time) {

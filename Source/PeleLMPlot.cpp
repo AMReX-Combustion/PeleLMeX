@@ -329,6 +329,7 @@ void PeleLM::WritePlotFile() {
                                                                                 + mut_arr_y[box_no](i,j,k) + mut_arr_y[box_no](i,j+1,k),
                                                                                 + mut_arr_z[box_no](i,j,k) + mut_arr_z[box_no](i,j,k+1)));
                            });
+        Gpu::streamSynchronize();
         cnt += 1;
       }
 

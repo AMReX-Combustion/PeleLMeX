@@ -18,7 +18,7 @@ PeleLM::LevelData::LevelData(amrex::BoxArray const& ba,
                        dm, 1             , 1           , MFInfo(), factory);
    visc_cc.define( ba, dm, 1             , 1           , MFInfo(), factory);
    if (a_do_les) {
-     for (int i; i < AMREX_SPACEDIM; ++i) {
+     for (int i = 0; i < AMREX_SPACEDIM; ++i) {
        visc_turb_fc[i].define(amrex::convert(ba,IntVect::TheDimensionVector(i)), dm, 1, 0, MFInfo(), factory);
        if (!a_incompressible) {
          lambda_turb_fc[i].define(amrex::convert(ba,IntVect::TheDimensionVector(i)), dm, 1, 0, MFInfo(), factory);
