@@ -216,9 +216,9 @@ by a decay phase similar to decaying homogeneous turbulence.</p>
 <section id="building-and-running">
 <h3>Building and running<a class="headerlink" href="#building-and-running" title="Permalink to this heading">¶</a></h3>
 <p>The test case can be found in <code class="docutils literal notranslate"><span class="pre">Exec/RegTests/TaylorGreen</span></code>.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ make -j <span class="m">16</span> <span class="nv">DIM</span><span class="o">=</span><span class="m">3</span> <span class="nv">USE_MPI</span><span class="o">=</span>TRUE TPL
-$ make -j <span class="m">16</span> <span class="nv">DIM</span><span class="o">=</span><span class="m">3</span> <span class="nv">USE_MPI</span><span class="o">=</span>TRUE
-$ mpiexec -n <span class="m">16</span> <span class="nv">$EXECUTABLE</span> inputs_3d amr.ncell<span class="o">=</span><span class="m">64</span> <span class="m">64</span> <span class="m">64</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>make<span class="w"> </span>-j<span class="w"> </span><span class="m">16</span><span class="w"> </span><span class="nv">DIM</span><span class="o">=</span><span class="m">3</span><span class="w"> </span><span class="nv">USE_MPI</span><span class="o">=</span>TRUE<span class="w"> </span>TPL
+$<span class="w"> </span>make<span class="w"> </span>-j<span class="w"> </span><span class="m">16</span><span class="w"> </span><span class="nv">DIM</span><span class="o">=</span><span class="m">3</span><span class="w"> </span><span class="nv">USE_MPI</span><span class="o">=</span>TRUE
+$<span class="w"> </span>mpiexec<span class="w"> </span>-n<span class="w"> </span><span class="m">16</span><span class="w"> </span><span class="nv">$EXECUTABLE</span><span class="w"> </span>inputs_3d<span class="w"> </span>amr.ncell<span class="o">=</span><span class="m">64</span><span class="w"> </span><span class="m">64</span><span class="w"> </span><span class="m">64</span>
 </pre></div>
 </div>
 <p>The user can run a convergence study by varying <code class="docutils literal notranslate"><span class="pre">amr.ncell</span></code>.</p>

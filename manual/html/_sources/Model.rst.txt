@@ -377,3 +377,38 @@ efficiency of the multigrid appraoch relies on generating coarse version of the 
 supported by AMReX) and the linear solvers are no longer able to robustly tackle projections and implicit diffusion solves. AMReX
 include an interface to HYPRE which can help circumvent the issue by sending the coarse-level geometry directly to HYPRE algebraic
 multigrid solvers. More details on how to use HYPRE is provided in control Section.
+
+Large Eddy Simulation
+^^^^^^^^^^^^^^^^^^^^^
+
+To provide closure for the unresolved trubulent stress/flux terms in Large Eddy Simulation (LES), PeleLMeX supports the
+constant-coefficient Smagorinsky and WALE models for turbulent transport of momentum, species, and energy. These models are
+based on a gradient transport assumption, resulting in terms analagous to the molecular transport of these quantities, but with
+modified turbulent transport coefficients. In the Smgorinsky model, the turbulent viscosity :math:`\mu_t` is computed as:
+
+.. math::
+
+   \mu_t = \overline{\rho} C_s^2 \bar{\Delta}^2 |\widetilde{S}|, \hspace{12pt}  \widetilde{S}_{ij} = \frac{1}{2} \left(\frac{\partial u_i}{\partial x_j} + \frac{\partial u_j}{\partial x_i} \right).
+
+where filtered quantities are indicated with an overbar, Favre-filtered quantities are indicated with
+a tilde. In the WALE model, it is computed as:
+
+.. math::
+   \mu_t = \overline{\rho} C_m^2 \Delta^2 \frac{\left(\widetilde{S}_{ij}^{d}\widetilde{S}_{ij}^{d} \right)^{3/2} + }{\left(\widetilde{S}_{ij}\widetilde{S}_{ij} \right)^{5/2} + \left(\widetilde{S}_{ij}^{d}\widetilde{S}_{ij}^{d} \right)^{5/4}},
+   \hspace{12pt} \widetilde{S}_{ij}^d = \frac{1}{2}\left( \left(\frac{\partial \widetilde{u}_i}{\partial x_j} \right)^2 + \left(\frac{\partial \widetilde{u}_j}{\partial x_i} \right)^2 \right) - \frac{\delta_{ij}}{3} \left(\frac{\partial \widetilde{u}_k}{\partial x_k} \right)^{2}.
+
+The total diffusive transport of momentum from both viscous and turbulent stresses is then computed as
+
+.. math::
+   \frac{\partial}{\partial x_j}{ \left( \bar{\sigma}_{ij} \right)}
+   - \frac{\partial}{\partial x_j}{ \left(\bar{\rho}\widetilde{u_i u_j} - \bar{\rho}\widetilde{u_i} \widetilde{u_j} \right)}
+   = \frac{\partial}{\partial x_j}\left[\left(\widetilde{\mu} + \mu_t \right)\left(\frac{\partial \widetilde{u}_i}{\partial x_j}
+   + \frac{\partial \widetilde{u}_j}{\partial x_i}- \frac{2}{3} \frac{\partial \widetilde{u}_k}{\partial x_k}\delta_{ij} \right)  \right]
+
+The thermal conducivity and species diffusivities are similarly modified with turbulent contributions, :math:`\lambda_t = \mu_t \widetilde{c_p} / Pr_t` and :math:`(\rho D)_t = \mu_t/Sc_t`. The solution algorithm is unchanged other than the addition of these turbulent coefficients to the corresponding molecular transport properties. Nominal values for the model coefficients are :math:`c_s = 0.18`, :math:`c_m = 0.60`, and :math:`Sc_t = Pr_t = 0.7`.
+
+**Limitations**: Because the turbulent transport coefficients are nonlinear functions of the velocity field, the treatment of
+the diffusion terms is not fully implicity when LES models are active. While the implicit solves as described above are kept
+in place to ensure numerical stability, the turbulent transport coefficients are evaluated only at the old timestep, with the
+old turbulent values also used to approximate the values at the new timestep. Additionally, the present implementation cannot
+be used with EB or EFIELD.

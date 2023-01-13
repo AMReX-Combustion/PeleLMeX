@@ -103,6 +103,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#io-parameters">IO parameters</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#pelelmex-derived-variables">PeleLMeX derived variables</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#pelelmex-algorithm">PeleLMeX algorithm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#transport-coeffs-and-les">Transport coeffs and LES</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#chemistry-integrator">Chemistry integrator</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#embedded-geometry">Embedded Geometry</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#linear-solvers">Linear solvers</a></li>
@@ -365,6 +366,19 @@ the first stopping criterion encountered will lead to termination of the simulat
 <span class="n">peleLM</span><span class="o">.</span><span class="n">deltaT_iterMax</span> <span class="o">=</span> <span class="mi">5</span>              <span class="c1"># [OPT, DEF=10] Maximum number of deltaT iterations</span>
 <span class="n">peleLM</span><span class="o">.</span><span class="n">deltaT_tol</span> <span class="o">=</span> <span class="mf">1e-10</span>              <span class="c1"># [OPT, DEF=1.e-10] Tolerance of the deltaT solve</span>
 <span class="n">peleLM</span><span class="o">.</span><span class="n">evaluate_vars</span> <span class="o">=...</span>              <span class="c1"># [OPT, DEF=&quot;&quot;] In evaluate mode, list unitTest: diffTerm, divU, instRR, transportCC</span>
+</pre></div>
+</div>
+</section>
+<section id="transport-coeffs-and-les">
+<h2>Transport coeffs and LES<a class="headerlink" href="#transport-coeffs-and-les" title="Permalink to this heading">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1">#-----------------------DIFFUSION AND LES MODEL CONTROL-----------------------</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">unity_Le</span> <span class="o">=</span> <span class="mi">0</span>                    <span class="c1"># [OPT, DEF=0] Use the unity Lewis number approximation for diffusivities</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">Prandtl</span> <span class="o">=</span> <span class="mf">0.7</span>                   <span class="c1"># [OPT, DEF=0.7] If unity_Le or doing LES, specifies the Prandtl number</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">les_model</span> <span class="o">=</span> <span class="s2">&quot;None&quot;</span>              <span class="c1"># [OPT, DEF=&quot;None&quot;] Model to compute turbulent viscosity: None, Smagorinsky, WALE</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">les_cs_smag</span> <span class="o">=</span> <span class="mf">0.18</span>              <span class="c1"># [OPT, DEF=0.18] If using Smagorinsky LES model, provides model coefficient</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">les_cm_wale</span> <span class="o">=</span> <span class="mf">0.60</span>              <span class="c1"># [OPT, DEF=0.60] If using WALE LES model, provides model coefficient</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">les_v</span> <span class="o">=</span> <span class="mi">0</span>                       <span class="c1"># [OPT, DEF=0] Verbosity level for LES model</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">plot_les</span> <span class="o">=</span> <span class="mi">0</span>                    <span class="c1"># [OPT, DEF=0] If doing LES, whether to plot the turbulent viscosity</span>
 </pre></div>
 </div>
 </section>
