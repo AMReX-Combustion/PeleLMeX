@@ -52,7 +52,7 @@ endif
 
 ifeq ($(USE_PELERAD), TRUE)
    $(info ******** Radiation model is activated ********)
-   DEFINE += -DPELELM_USE_RAD
+   DEFINES += -DPELELM_USE_RAD
    LMdirs += Source/Radiation
 endif
 

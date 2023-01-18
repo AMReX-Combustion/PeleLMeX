@@ -97,6 +97,7 @@ void PeleLM::Setup() {
          pp.query("chem_integrator",m_chem_integrator);
          m_reactor = pele::physics::reactions::ReactorBase::create(m_chem_integrator);
          m_reactor->init(reactor_type, ncells_chem);
+
          // For ReactorNull, we need to also skip instantaneous RR used in divU
          if (m_chem_integrator == "ReactorNull") {
             m_skipInstantRR = 1;
@@ -532,6 +533,7 @@ void PeleLM::readParameters() {
    if (m_verbose && do_rad_solve) {
      Print() << "Simulation performed with radiation modeling \n";
    }
+#endif
 }
 
 void PeleLM::readIOParameters() {

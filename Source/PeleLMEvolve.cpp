@@ -37,6 +37,15 @@ void PeleLM::Evolve() {
         SprayPostRegrid();
       }
 #endif
+
+#ifdef PELELM_USE_RAD
+     // regrid for radiation module
+     if (do_rad_solve && regridded) {
+        rad_model->initVars(grids, dmap);
+        rad_model->regrid();
+     }
+#endif
+
       int is_init = 0;
       Advance(is_init);
       m_nstep++;
