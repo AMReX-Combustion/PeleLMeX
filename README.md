@@ -6,7 +6,7 @@
 
 ## Overview
 
-*PeleLMeX* is a non-subcycling version of [*PeleLM*](https://github.com/AMReX-Combustion/PeleLM) based on AMReX's [AmrCore](https://amrex-codes.github.io/amrex/docs_html/AmrCore.html) and borrowing from the incompressible solver [incflo](https://github.com/AMReX-Codes/incflo). 
+*PeleLMeX* is a non-subcycling version of [*PeleLM*](https://github.com/AMReX-Combustion/PeleLM) based on AMReX's [AmrCore](https://amrex-codes.github.io/amrex/docs_html/AmrCore.html) and borrowing from the incompressible solver [incflo](https://github.com/AMReX-Codes/incflo).
 
 *PeleLMeX* is part of the [Pele combustion Suite](https://amrex-combustion.github.io/).
 
@@ -28,11 +28,13 @@ https://amrex-combustion.github.io/PeleLMeX/manual/html/Model.html#pelelmex-algo
 
 A set of self-contained tutorials describing more complex problems is also provided:
 
+https://amrex-combustion.github.io/PeleLMeX/manual/html/Tutorials.html
+
 ## Installation
 
 ### Using git submodules
 
-You can clone the PeleLMeX and tested versions of its submodules 
+You can clone the PeleLMeX and tested versions of its submodules
 ([amrex](https://github.com/AMReX-Codes/amrex), [AMReX-Hydro](https://github.com/AMReX-Codes/AMReX-Hydro) and [PelePhysics](https://github.com/AMReX-Combustion/PelePhysics)) using:
 
 ```
@@ -91,14 +93,14 @@ To clean the installation, use either `make clean` or `make realclean`.
 
 ## Contributing
 
-New contributions to *PeleLM* are welcome ! Contributing Guidelines are provided in [CONTRIBUTING.md](CONTRIBUTING.md).
+New contributions to *PeleLMeX* are welcome ! Contributing Guidelines are provided in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Acknowledgment
 
 This research was supported by the Exascale Computing Project (ECP), Project
-Number: 17-SC-20-SC, a collaborative effort of two DOE organizations -- the 
+Number: 17-SC-20-SC, a collaborative effort of two DOE organizations -- the
 Office of Science and the National Nuclear Security Administration --
 responsible for the planning and preparation of a capable exascale ecosystem --
-including software, applications, hardware, advanced system engineering, and 
+including software, applications, hardware, advanced system engineering, and
 early testbed platforms -- to support the nation's exascale computing
 imperative.

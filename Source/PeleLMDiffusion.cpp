@@ -373,7 +373,8 @@ void PeleLM::addWbarTerm(const Vector<Array<MultiFab*,AMREX_SPACEDIM> > &a_spflu
 
       // Get edge diffusivity
       int doZeroVisc = 1;
-      Array<MultiFab,AMREX_SPACEDIM> beta_ec = getDiffusivity(lev, 0, NUM_SPECIES, doZeroVisc, bcRecSpec, *a_beta[lev]);
+      int addTurbContrib = 0;
+      Array<MultiFab,AMREX_SPACEDIM> beta_ec = getDiffusivity(lev, 0, NUM_SPECIES, doZeroVisc, bcRecSpec, *a_beta[lev], addTurbContrib);
 
       const Box& domain = geom[lev].Domain();
       bool use_harmonic_avg = m_harm_avg_cen2edge ? true : false;
@@ -739,7 +740,8 @@ void PeleLM::computeSpeciesEnthalpyFlux(const Vector<Array<MultiFab*,AMREX_SPACE
       //------------------------------------------------------------------------
       // Get the face-centered species enthalpies
       int doZeroVisc = 0;
-      Array<MultiFab,AMREX_SPACEDIM> Enth_ec = getDiffusivity(lev, 0, NUM_SPECIES, doZeroVisc, bcRecSpec, Enth);
+      int addTurbContrib = 0;
+      Array<MultiFab,AMREX_SPACEDIM> Enth_ec = getDiffusivity(lev, 0, NUM_SPECIES, doZeroVisc, bcRecSpec, Enth, addTurbContrib);
 
       //------------------------------------------------------------------------
       // Compute \sum_k { \Flux_k * h_k }

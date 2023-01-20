@@ -54,10 +54,10 @@ void PeleLM::MakeNewLevelFromScratch( int lev,
    // Initialize the LevelData
    m_leveldata_old[lev].reset(new LevelData(grids[lev], dmap[lev], *m_factory[lev],
                                             m_incompressible, m_has_divu,
-                                            m_nAux, m_nGrowState,m_use_soret));
+                                            m_nAux, m_nGrowState, m_use_soret, m_do_les));
    m_leveldata_new[lev].reset(new LevelData(grids[lev], dmap[lev], *m_factory[lev],
                                             m_incompressible, m_has_divu,
-                                            m_nAux, m_nGrowState,m_use_soret));
+                                            m_nAux, m_nGrowState, m_use_soret, m_do_les));
 
    if (max_level > 0 && lev != max_level) {
       m_coveredMask[lev].reset(new iMultiFab(grids[lev], dmap[lev], 1, 0));
@@ -297,7 +297,7 @@ void PeleLM::initData() {
       if (m_plot_int > 0 || m_plot_per_approx > 0. || m_plot_per_exact > 0.) {
          WritePlotFile();
       }
-      if (m_check_int > 0 ) {
+      if (m_check_int > 0 || m_check_per > 0.) {
          WriteCheckPointFile();
       }
 

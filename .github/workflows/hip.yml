@@ -1,0 +1,59 @@
+name: PeleLMeX_Hip
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, development ]
+  pull_request:
+    branches: [ main, development ]
+
+concurrency:
+  group: ${{ github.ref }}-${{ github.head_ref }}-hip
+  cancel-in-progress: true
+
+jobs:
+  #Build the 3D FlameSheet RegTest with clang and HIP
+  FS3D_HIP:
+    name: HIP ROCm Clang [FS3D]
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v3
+    - name: System Dependencies
+      run: .github/workflows/dependencies/dependencies_hip.sh
+    - name: Repo Dependencies
+      run: Utils/CloneDeps.sh
+    - name: Build
+      env:
+         AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
+         PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
+         PELELM_HOME: ${GITHUB_WORKSPACE}
+         AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
+      run: |
+        source /etc/profile.d/rocm.sh
+        hipcc --version
+        cd Exec/RegTests/FlameSheet/
+        make TPL COMP=clang DIM=3 USE_MPI=FALSE USE_HIP=TRUE
+        make -j $(nproc) COMP=clang DIM=3 USE_MPI=FALSE USE_HIP=TRUE
+
+  #Build the EB_EnclosedFlamet RegTest with clang and HIP
+  EBEF2D_CUDA:
+    name: HIP ROCm Clang [EBEF2D]
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v3
+    - name: System Dependencies
+      run: .github/workflows/dependencies/dependencies_hip.sh
+    - name: Repo Dependencies
+      run: Utils/CloneDeps.sh
+    - name: Build
+      env:
+         AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
+         PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
+         PELELM_HOME: ${GITHUB_WORKSPACE}
+         AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
+      run: |
+        source /etc/profile.d/rocm.sh
+        hipcc --version
+        cd Exec/RegTests/EB_EnclosedFlame/
+        make TPL COMP=clang USE_MPI=FALSE USE_HIP=TRUE
+        make -j $(nproc) COMP=clang USE_MPI=FALSE USE_HIP=TRUE

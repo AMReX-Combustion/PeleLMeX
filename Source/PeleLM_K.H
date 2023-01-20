@@ -7,6 +7,58 @@
 AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
 void
+getTransportCoeffUnityLe(int i, int j, int k,
+                         amrex::Real ScInv, amrex::Real PrInv,
+                         amrex::Array4<const amrex::Real> const& rhoY,
+                         amrex::Array4<const amrex::Real> const& T,
+                         amrex::Array4<      amrex::Real> const& rhoDi,
+                         amrex::Array4<      amrex::Real> const& lambda,
+                         amrex::Array4<      amrex::Real> const& mu,
+                         pele::physics::transport::TransParm<pele::physics::PhysicsType::eos_type,
+                         pele::physics::PhysicsType::transport_type> const* trans_parm) noexcept
+{
+   using namespace amrex::literals;
+
+   auto eos = pele::physics::PhysicsType::eos();
+   // Get rho & Y from rhoY
+   amrex::Real rho = 0.0_rt;
+   for (int n = 0; n < NUM_SPECIES; n++) {
+      rho += rhoY(i,j,k,n);
+   }
+   amrex::Real rhoinv = 1.0_rt / rho;
+   amrex::Real y[NUM_SPECIES] = {0.0};
+   for (int n = 0; n < NUM_SPECIES; n++) {
+      y[n] = rhoY(i,j,k,n) * rhoinv;
+   }
+   rho *= 1.0e-3_rt;                          // MKS -> CGS conversion
+   amrex::Real Tloc = T(i,j,k);               // So that we can use const_array
+
+   amrex::Real rhoDi_cgs[NUM_SPECIES] = {0.0};
+   amrex::Real lambda_cgs = 0.0_rt;
+   amrex::Real mu_cgs = 0.0_rt;
+   amrex::Real dummy_xi = 0.0_rt;
+
+   bool get_xi = false;
+   bool get_mu = true;
+   bool get_lam = false;
+   bool get_Ddiag = false;
+   auto trans = pele::physics::PhysicsType::transport();
+   trans.transport(get_xi, get_mu, get_lam, get_Ddiag, Tloc,
+                   rho, y, rhoDi_cgs, mu_cgs, dummy_xi, lambda_cgs, trans_parm);
+
+   mu(i,j,k) = mu_cgs * 1.0e-1_rt;                       // CGS -> MKS conversions
+   for (int n = 0; n < NUM_SPECIES; n++) {
+      rhoDi(i,j,k,n) = mu_cgs * 1.0e-1_rt * ScInv;       // Constant Schmidt number
+   }
+
+   amrex::Real cpmix = 0.0_rt;
+   eos.TY2Cp(T(i,j,k), y, cpmix);
+   lambda(i,j,k) = mu_cgs * PrInv * cpmix * 1.0e-5_rt;   // Constant Prandtl number
+}
+
+AMREX_GPU_DEVICE
+AMREX_FORCE_INLINE
+void
 getTransportCoeff(int i, int j, int k,
                   amrex::Array4<const amrex::Real> const& rhoY,
                   amrex::Array4<const amrex::Real> const& T,
@@ -816,4 +868,100 @@ getGammaInv(int i, int j, int k,
 
    return gammainv;
 }
+
+AMREX_GPU_HOST_DEVICE
+AMREX_FORCE_INLINE
+amrex::Real
+getSijSij(int i, int j, int k, amrex::Array4<const amrex::Real> const& velgrad) noexcept
+{
+  // This function returns SijSij, not strain rate magnitude |S| = sqrt(2 SijSij)
+  amrex::Real SijSij = 0.0;
+  for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
+    for (int jdim = 0; jdim < AMREX_SPACEDIM; ++jdim) {
+      // Sij = 0.5(dui/dxj + duj/dxi)
+      amrex::Real Sij = 0.5*(velgrad(i,j,k,idim*AMREX_SPACEDIM + jdim)
+                             + velgrad(i,j,k,jdim*AMREX_SPACEDIM + idim));
+      SijSij += Sij*Sij;
+    }
+  }
+  return SijSij;
+}
+
+AMREX_GPU_HOST_DEVICE
+AMREX_FORCE_INLINE
+amrex::Real
+getVelGradTerm(int i, int j, int k, amrex::Array4<const amrex::Real> const& velgrad) noexcept
+{
+  // Compute S^d_ij*S^d_ij
+  // S^d_ij = 0.5(g2_ij + g2_ji) - (1/3)*delta_ij*g2_kk
+  // g2_ij = du_i/dx_l * du_l/dx_j
+  // Therefore, g2_kk = du_k/dx_l * du_l/dx_k
+  amrex::GpuArray<amrex::Real, AMREX_SPACEDIM*AMREX_SPACEDIM> g2_ij;
+  for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
+    for (int jdim = 0; jdim < AMREX_SPACEDIM; ++jdim) {
+      g2_ij[idim*AMREX_SPACEDIM + jdim] = 0.0;
+      for (int ldim = 0; ldim < AMREX_SPACEDIM; ++ldim) {
+        g2_ij[idim*AMREX_SPACEDIM + jdim] += (velgrad(i,j,k,idim*AMREX_SPACEDIM + ldim)
+                                              *velgrad(i,j,k,ldim*AMREX_SPACEDIM + jdim));
+      }
+    }
+  }
+  amrex::Real g2_kk_third = (1.0/AMREX_SPACEDIM) * (AMREX_D_TERM(g2_ij[0],
+                                                                 + g2_ij[AMREX_SPACEDIM + 1],
+                                                                 + g2_ij[2*AMREX_SPACEDIM + 2]));
+
+  amrex::Real SdijSdij = 0.0;
+  for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
+    for (int jdim = 0; jdim < AMREX_SPACEDIM; ++jdim) {
+      amrex::Real Sdij = (idim == jdim) ?
+        g2_ij[idim*AMREX_SPACEDIM + jdim] - g2_kk_third
+        : 0.5*(g2_ij[idim*AMREX_SPACEDIM + jdim] + g2_ij[jdim*AMREX_SPACEDIM + idim]);
+      SdijSdij += Sdij*Sdij;
+    }
+  }
+  return SdijSdij;
+}
+
+AMREX_GPU_HOST_DEVICE
+AMREX_FORCE_INLINE
+void
+getTurbViscSmagorinsky(int i, int j, int k,
+                       amrex::Real prefactor,
+                       amrex::Array4<const amrex::Real> const& velgrad,
+                       amrex::Array4<const amrex::Real> const& rho,
+                       amrex::Array4<      amrex::Real> const& mu_t) noexcept
+{
+   using namespace amrex::literals;
+
+   // mu_t = rho * Cs * Delta^2 * |S|    where |S| = sqrt(2 SijSij)
+
+   amrex::Real Smag = std::sqrt(2.0 * getSijSij(i,j,k,velgrad));
+   mu_t(i,j,k) = prefactor * rho(i,j,k) * Smag;
+}
+
+AMREX_GPU_HOST_DEVICE
+AMREX_FORCE_INLINE
+void
+getTurbViscWALE(int i, int j, int k,
+                amrex::Real prefactor,
+                amrex::Array4<const amrex::Real> const& velgrad,
+                amrex::Array4<const amrex::Real> const& rho,
+                amrex::Array4<      amrex::Real> const& mu_t) noexcept
+{
+   using namespace amrex::literals;
+
+   // From Ducros, Nicoud, and Poinsot 1999
+   // mu_t = rho * Cs * Delta^2 * (S^d_ijS^d_ij)^(3/2)
+   //        / (SijSij^(5/2) + (S^d_ijS^d_ij)^(5/4) + smallnum)
+   // smallnum included to make sure denom is nonzero
+
+   amrex::Real SijSij = getSijSij(i,j,k,velgrad);
+   amrex::Real Sterm52 = std::pow(SijSij, 2.5);
+   amrex::Real Sdterm = getVelGradTerm(i,j,k,velgrad); // (S^d_ijS^d_ij)
+   amrex::Real Sdterm14 = std::pow(Sdterm, 0.25);
+   amrex::Real Sdterm54 = Sdterm*Sdterm14;
+   amrex::Real Sdterm32 = Sdterm54*Sdterm14;
+   mu_t(i,j,k) = prefactor * rho(i,j,k) * Sdterm32 / (Sterm52 + Sdterm54 + 1.0e-12);
+}
+
 #endif

@@ -1,6 +1,8 @@
 PeleLMeX controls
 =================
 
+.. _sec:control:
+
 The input file specified on the command line is a free-format text file, one entry per row, that specifies input data processed by the AMReX ``ParmParse`` module.
 This file needs to specified along with the executable as an `argv` option, for example:
 
@@ -76,10 +78,11 @@ IO parameters
 
     #--------------------------IO CONTROL--------------------------
     amr.plot_int         = 20              # [OPT, DEF=-1] Frequency (as step #) for writting plot file
-    amr.plot_per         = 002             # [OPT, DEF=-1] Period (time in s) for writting plot file
+    amr.plot_per         = 0.002           # [OPT, DEF=-1] Period (time in s) for writting plot file
     amr.plot_per_exact   = 1               # [OPT, DEF=0] Flag to enforce exactly plt_per by shortening dt
     amr.plot_file        = "plt_"          # [OPT, DEF="plt_"] Plot file prefix
     amr.check_int        = 100             # [OPT, DEF=-1] Frequency (as step #) for writting checkpoint file
+    amr.check_per        = 0.05            # [OPT, DEF=-1] Period (time in s) for writting checkpoint file
     amr.check_file       = "chk"           # [OPT, DEF="chk"] Checkpoint file prefix
     amr.file_stepDigits  = 6               # [OPT, DEF=5] Number of digits when adding nsteps to plt and chk names
     amr.derive_plot_vars = avg_pressure ...# [OPT, DEF=""] List of derived variable included in the plot files
@@ -126,7 +129,13 @@ The following list of derived variables are available in PeleLMeX:
       - Cell-averaged pressure (from the node-centered pressure)
     * - `mag_vort`
       - 1
-      - Vorticity (2D) or vorticity magnitude (3D)
+      - Vorticity magnitude
+    * - `vorticity`
+      - AMREX_SPACEDIM*2-3
+      - VortZ (2D) or VortX, VortY, VortZ (3D)
+    * - `Qcrit`
+      - 1
+      - Q-Criterion : :math:`0.5(|\boldsymbol{\Omega}|^2 - |\boldsymbol{S}|^2)`
     * - `kinetic_energy`
       - 1
       - Kinetic energy: 0.5 * rho * (u^2+v^2+w^2)
@@ -167,6 +176,20 @@ PeleLMeX algorithm
     peleLM.deltaT_iterMax = 5              # [OPT, DEF=10] Maximum number of deltaT iterations
     peleLM.deltaT_tol = 1e-10              # [OPT, DEF=1.e-10] Tolerance of the deltaT solve
     peleLM.evaluate_vars =...              # [OPT, DEF=""] In evaluate mode, list unitTest: diffTerm, divU, instRR, transportCC
+
+Transport coeffs and LES
+------------------------
+
+::
+
+    #-----------------------DIFFUSION AND LES MODEL CONTROL-----------------------
+    peleLM.unity_Le = 0                    # [OPT, DEF=0] Use the unity Lewis number approximation for diffusivities
+    peleLM.Prandtl = 0.7                   # [OPT, DEF=0.7] If unity_Le or doing LES, specifies the Prandtl number
+    peleLM.les_model = "None"              # [OPT, DEF="None"] Model to compute turbulent viscosity: None, Smagorinsky, WALE
+    peleLM.les_cs_smag = 0.18              # [OPT, DEF=0.18] If using Smagorinsky LES model, provides model coefficient
+    peleLM.les_cm_wale = 0.60              # [OPT, DEF=0.60] If using WALE LES model, provides model coefficient
+    peleLM.les_v = 0                       # [OPT, DEF=0] Verbosity level for LES model
+    peleLM.plot_les = 0                    # [OPT, DEF=0] If doing LES, whether to plot the turbulent viscosity
 
 Chemistry integrator
 --------------------

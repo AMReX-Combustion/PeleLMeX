@@ -83,6 +83,12 @@ void PeleLM::Setup() {
    if (!m_incompressible) {
       amrex::Print() << " Initialization of Transport ... \n";
       trans_parms.allocate();
+      if (m_les_verbose and m_do_les)
+        amrex::Print() << "    Using LES in transport with Sc = " << 1.0/m_Schmidt_inv
+                       << " and Pr = " << 1.0/m_Prandtl_inv << std::endl;
+      if (m_verbose and m_unity_Le)
+        amrex::Print() << "    Using Le = 1 transport with Sc = " << 1.0/m_Schmidt_inv
+                       << " and Pr = " << 1.0/m_Prandtl_inv << std::endl;
       if (m_do_react) {
          int reactor_type = 2;
          int ncells_chem = 1;
@@ -303,16 +309,58 @@ void PeleLM::readParameters() {
       m_gravity[idim] = grav[idim];
    }
 
+   // -----------------------------------------
+   // LES
+   // -----------------------------------------
+   pp.query("les_model", m_les_model);
+   if (m_les_model == "None") {
+     m_do_les = false;
+   } else {
+     if (m_les_model == "Smagorinsky") {
+       pp.query("les_cs_smag", m_les_cs_smag);
+     } else if (m_les_model == "WALE") {
+       pp.query("les_cm_wale", m_les_cm_wale);
+     } else {
+       amrex::Abort("LES model must be None, Smagorinsky, or WALE. Invalid choie: " + m_les_model);
+     }
+     m_do_les = true;
+     m_les_verbose = m_verbose;
+     pp.query("plot_les", m_plot_les);
+     pp.query("les_v", m_les_verbose);
+     for (int lev=0; lev<= max_level ; ++lev) {
+       m_turb_visc_time.push_back(-1.0E200);
+     }
+#ifdef AMREX_USE_EB
+     amrex::Abort("LES implementation with EB depends on EB compVelGrad in amrex");
+#endif
+#ifdef PELE_USE_EFIELD
+     amrex::Abort("LES implementation is not yet compatible with efield/ions");
+#endif
+   }
 
    // -----------------------------------------
    // diffusion
    pp.query("use_wbar",m_use_wbar);
+   pp.query("unity_Le",m_unity_Le);
+   if (m_use_wbar and m_unity_Le) {
+     m_use_wbar = 0;
+     amrex::Print() << "WARNING: use_wbar set to false because unity_Le is true"
+                    << std::endl;
+   }
    pp.query("deltaT_verbose",m_deltaT_verbose);
    pp.query("deltaT_iterMax",m_deltaTIterMax);
    pp.query("deltaT_tol",m_deltaT_norm_max);
    pp.query("deltaT_crashIfFailing",m_crashOnDeltaTFail);
    ParmParse pptrans("transport"); 
    pptrans.query("use_soret",m_use_soret);
+
+   if (m_do_les or m_unity_Le) {
+     amrex::Real Prandtl = 0.7;
+     pp.query("Prandtl", Prandtl);
+     m_Schmidt_inv = 1.0/Prandtl;
+     m_Prandtl_inv = 1.0/Prandtl;
+   }
+
    // -----------------------------------------
    // initialization
    pp.query("num_divu_iter",m_numDivuIter);
@@ -530,6 +578,7 @@ void PeleLM::readIOParameters() {
 
    pp.query("check_file", m_check_file);
    pp.query("check_int" , m_check_int);
+   pp.query("check_per" , m_check_per);
    pp.query("restart" , m_restart_chkfile);
    pp.query("initDataPlt" , m_restart_pltfile);
    pp.query("initDataPltSource" , pltfileSource);
@@ -818,6 +867,21 @@ void PeleLM::derivedSetup()
    // Vorticity magnitude
    derive_lst.add("mag_vort",IndexType::TheCellType(),1,pelelm_dermgvort,grow_box_by_two);
 
+   // Vorticity components
+   const int vort_ncomp = 2*AMREX_SPACEDIM-3;
+#if (AMREX_SPACEDIM == 2)
+   Vector<std::string> var_names({"VortZ"});
+#elif (AMREX_SPACEDIM == 3)
+   Vector<std::string> var_names({"VortX","VortY","VortZ"});
+#endif
+   derive_lst.add("vorticity",IndexType::TheCellType(),vort_ncomp,var_names,
+                  pelelm_dervort,grow_box_by_two);
+
+#if (AMREX_SPACEDIM == 3)
+   // Q-criterion
+   derive_lst.add("Qcrit",IndexType::TheCellType(),1,pelelm_derQcrit,grow_box_by_two);
+#endif
+
    // Kinetic energy
    derive_lst.add("kinetic_energy",IndexType::TheCellType(),1,pelelm_derkineticenergy,the_same_box);
 
@@ -872,6 +936,24 @@ void PeleLM::evaluateSetup()
    // divU
    evaluate_lst.add("divU",IndexType::TheCellType(),1,the_same_box);
 
+   // projected velocity field
+   {
+      Vector<std::string> var_names = { AMREX_D_DECL("x_velProj", "y_velProj", "z_velProj") };
+      evaluate_lst.add("velProj",IndexType::TheCellType(),AMREX_SPACEDIM,var_names,the_same_box);
+   }
+
+   // velocity force
+   {
+      Vector<std::string> var_names = { AMREX_D_DECL("x_velForce", "y_velForce", "z_velForce") };
+      evaluate_lst.add("velForce",IndexType::TheCellType(),AMREX_SPACEDIM,var_names,the_same_box);
+   }
+
+   // divTau
+   {
+      Vector<std::string> var_names = { AMREX_D_DECL("x_divTau", "y_divTau", "z_divTau") };
+      evaluate_lst.add("divTau",IndexType::TheCellType(),AMREX_SPACEDIM,var_names,the_same_box);
+   }
+
    // scalar diffusion term
    {
       Vector<std::string> var_names(NUM_SPECIES+2);
@@ -913,6 +995,7 @@ void PeleLM::evaluateSetup()
       var_names[NUM_SPECIES+1] = "Mu";
       evaluate_lst.add("transportCC",IndexType::TheCellType(),NUM_SPECIES+2,var_names,the_same_box);
    }
+
 }
 
 void PeleLM::taggingSetup()

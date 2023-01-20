@@ -6,11 +6,13 @@ AMREX_HYDRO_HOME   ?= ${TOP}/AMReX-Hydro
 
 
 # AMReX
-DIM             = 2
+DIM             = 3
 DEBUG           = FALSE
 PRECISION       = DOUBLE
 VERBOSE         = FALSE
 TINY_PROFILE    = FALSE
+USE_EB 			= TRUE
+USE_HYPRE		= FALSE
 
 # Compilation
 COMP            = llvm
@@ -20,7 +22,6 @@ USE_CUDA        = FALSE
 USE_HIP         = FALSE
 
 # PeleLMeX
-USE_EFIELD      = FALSE
 
 # PelePhysics
 Chemistry_Model = drm19

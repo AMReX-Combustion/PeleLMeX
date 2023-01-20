@@ -3,7 +3,7 @@ AMREX_HOME         ?= ${TOP}/amrex
 PELELMEX_HOME      ?= ${TOP}/PeleLMeX
 PELE_PHYSICS_HOME  ?= ${TOP}/PelePhysics
 AMREX_HYDRO_HOME   ?= ${TOP}/AMReX-Hydro
-HYPRE_HOME         = /ccs/home/lesclapez/hypre/install
+HYPRE_HOME         = /ccs/home/lesclapez/hypre/install-2807
 
 
 # AMReX
@@ -13,7 +13,7 @@ PRECISION       = DOUBLE
 VERBOSE         = FALSE
 TINY_PROFILE    = FALSE
 USE_EB			 = TRUE
-USE_HYPRE		 = TRUE
+USE_HYPRE		 = FALSE
 
 # Compilation
 COMP            = clang

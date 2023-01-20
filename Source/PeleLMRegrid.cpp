@@ -45,11 +45,11 @@ void PeleLM::MakeNewLevelFromCoarse( int lev,
    // New leveldatas
    std::unique_ptr<LevelData> n_leveldata_old( new LevelData(ba, dm, *new_fact,
                                                    m_incompressible, m_has_divu,
-							     m_nAux, m_nGrowState,m_use_soret));
+                                                   m_nAux, m_nGrowState, m_use_soret, m_do_les));
 
    std::unique_ptr<LevelData> n_leveldata_new( new LevelData(ba, dm, *new_fact,
                                                    m_incompressible, m_has_divu,
-							     m_nAux, m_nGrowState,m_use_soret));
+                                                   m_nAux, m_nGrowState, m_use_soret, m_do_les));
 
    // Fill the leveldata_new
    fillcoarsepatch_state(lev, time, n_leveldata_new->state, m_nGrowState);
@@ -141,11 +141,11 @@ void PeleLM::RemakeLevel( int lev,
    // New leveldatas
    std::unique_ptr<LevelData> n_leveldata_old( new LevelData(ba, dm, *new_fact,
                                                    m_incompressible, m_has_divu,
-							     m_nAux, m_nGrowState,m_use_soret));
+                                                   m_nAux, m_nGrowState, m_use_soret, m_do_les));
 
    std::unique_ptr<LevelData> n_leveldata_new( new LevelData(ba, dm, *new_fact,
                                                    m_incompressible, m_has_divu,
-							     m_nAux, m_nGrowState,m_use_soret));
+                                                   m_nAux, m_nGrowState, m_use_soret, m_do_les));
 
    // Fill the leveldata_new
    fillpatch_state(lev, time, n_leveldata_new->state, m_nGrowState);
