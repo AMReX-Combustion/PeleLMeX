@@ -176,10 +176,11 @@ void PeleLM::calcDiffusivity(const TimeStamp &a_time) {
       amrex::Real Sc_inv = m_Schmidt_inv;
       amrex::Real Pr_inv = m_Prandtl_inv;
       int  do_unity_le = m_unity_Le;
+      int  do_soret = m_use_soret;
       amrex::ParallelFor(ldata_p->diff_cc, ldata_p->diff_cc.nGrowVect(), [=]
       AMREX_GPU_DEVICE (int box_no, int i, int j, int k) noexcept
       {
-         if (m_use_soret) {
+         if (do_soret) {
            getTransportCoeffSoret( i, j, k,
                                   Array4<Real const>(sma[box_no],FIRSTSPEC),
                                   Array4<Real const>(sma[box_no],TEMP),
