@@ -146,7 +146,7 @@ class PeleLM : public amrex::AmrCore {
       LevelData (amrex::BoxArray const& ba,
                  amrex::DistributionMapping const& dm,
                  amrex::FabFactory<amrex::FArrayBox> const& factory,
-                 int a_incompressible, int a_has_divu, 
+                 int a_incompressible, int a_has_divu,
                  int a_nAux, int a_nGrowState, int a_use_soret, int a_do_les);
 
       // cell-centered state multifabs
@@ -331,10 +331,10 @@ class PeleLM : public amrex::AmrCore {
    void computeDifferentialDiffusionFluxes(const PeleLM::TimeStamp &a_time,
                                            const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> &a_fluxes,
                                            const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> &a_wbarfluxes,
-					   const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> &a_soretfluxes
-					   );
-  
-  
+                       const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> &a_soretfluxes
+                       );
+
+
    // get species/enthalpy differential diffusion terms
    void computeDifferentialDiffusionTerms(const PeleLM::TimeStamp &a_time,
                                           std::unique_ptr<AdvanceDiffData> &diffData,
@@ -349,7 +349,7 @@ class PeleLM : public amrex::AmrCore {
 
   // add soret term to the species flux
    void addSoretTerm(const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> &a_fluxes,
-                    const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> &a_soretfluxes, 
+                    const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> &a_soretfluxes,
                     amrex::Vector<amrex::MultiFab const*> const &a_spec,
                     amrex::Vector<amrex::MultiFab const*> const &a_rho,
                     amrex::Vector<amrex::MultiFab const*> const &a_temp,
@@ -1176,7 +1176,7 @@ class PeleLM : public amrex::AmrCore {
    amrex::Real m_Prandtl_inv = 1.0/0.7;
    int m_use_wbar = 1;
    int m_use_soret = 0;
-  
+
    // LES Model
    bool m_do_les = false;
    bool m_plot_les = false;

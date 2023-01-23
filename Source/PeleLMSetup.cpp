@@ -351,7 +351,7 @@ void PeleLM::readParameters() {
    pp.query("deltaT_iterMax",m_deltaTIterMax);
    pp.query("deltaT_tol",m_deltaT_norm_max);
    pp.query("deltaT_crashIfFailing",m_crashOnDeltaTFail);
-   ParmParse pptrans("transport"); 
+   ParmParse pptrans("transport");
    pptrans.query("use_soret",m_use_soret);
 
    if (m_do_les or m_unity_Le) {

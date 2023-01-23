@@ -96,7 +96,7 @@ PeleLM::MLevaluate(const Vector<MultiFab *> &a_MFVec,
         // Light version of the diffusion data container
         std::unique_ptr<AdvanceDiffData> diffData;
         diffData.reset(new AdvanceDiffData(finest_level, grids, dmap, m_factory,
-					   m_nGrowAdv, m_use_wbar, m_use_soret, is_initialization));
+                       m_nGrowAdv, m_use_wbar, m_use_soret, is_initialization));
         calcDivU(is_initialization,computeDiffusionTerm,do_avgDown,AmrNewTime,diffData);
         for (int lev = 0; lev <= finest_level; ++lev) {
            auto ldata_p = getLevelDataPtr(lev,AmrNewTime);

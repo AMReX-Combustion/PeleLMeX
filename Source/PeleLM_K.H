@@ -96,7 +96,7 @@ getTransportCoeff(int i, int j, int k,
    amrex::Real lambda_cgs = 0.0_rt;
    amrex::Real mu_cgs = 0.0_rt;
    amrex::Real dummy_xi = 0.0_rt;
-   amrex::Real Tloc = T(i,j,k); 
+   amrex::Real Tloc = T(i,j,k);
    bool get_xi = false;
    bool get_mu = true;
    bool get_lam = true;
@@ -123,7 +123,7 @@ getTransportCoeffSoret(int i, int j, int k,
                   amrex::Array4<      amrex::Real> const& rhoDi,
                   amrex::Array4<      amrex::Real> const& rhotheta,
                   amrex::Array4<      amrex::Real> const& lambda,
-		  amrex::Array4<      amrex::Real> const& mu,
+          amrex::Array4<      amrex::Real> const& mu,
                   pele::physics::transport::TransParm<pele::physics::PhysicsType::eos_type,
                                                       pele::physics::PhysicsType::transport_type> const* trans_parm) noexcept
 {
@@ -171,10 +171,6 @@ getTransportCoeffSoret(int i, int j, int k,
    }
    lambda(i,j,k) = lambda_cgs * 1.0e-5_rt;
    mu(i,j,k) = mu_cgs * 1.0e-1_rt;
-   //TLH tweaks
-   //rhotheta(i,j,k,H_ID) *= 0.58;
-   //rhotheta(i,j,k,H2_ID) *= 0.63;
-   
 }
 
 AMREX_GPU_DEVICE
