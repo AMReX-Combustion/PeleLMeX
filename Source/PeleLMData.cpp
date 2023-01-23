@@ -34,7 +34,7 @@ PeleLM::LevelData::LevelData(amrex::BoxArray const& ba,
       } else {
          diff_cc.define (ba, dm, NUM_SPECIES+2 , 1           , MFInfo(), factory);
       }
-      
+
 #ifdef PELE_USE_EFIELD
       diffE_cc.define(ba, dm, 1             , 1           , MFInfo(), factory);
       mobE_cc.define (ba, dm, 1             , 1           , MFInfo(), factory);
