@@ -173,10 +173,10 @@ void PeleLM::calcDiffusivity(const TimeStamp &a_time) {
       }
 #endif
 
-      amrex::Real Sc_inv = m_Schmidt_inv;
-      amrex::Real Pr_inv = m_Prandtl_inv;
-      int  do_unity_le = m_unity_Le;
-      int  do_soret = m_use_soret;
+      const amrex::Real Sc_inv = m_Schmidt_inv;
+      const amrex::Real Pr_inv = m_Prandtl_inv;
+      const int do_unity_le = m_unity_Le;
+      const int do_soret = m_use_soret;
       amrex::ParallelFor(ldata_p->diff_cc, ldata_p->diff_cc.nGrowVect(), [=]
       AMREX_GPU_DEVICE (int box_no, int i, int j, int k) noexcept
       {
