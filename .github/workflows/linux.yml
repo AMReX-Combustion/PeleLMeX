@@ -66,15 +66,15 @@ jobs:
     - name: RunBase
       working-directory: ./Exec/RegTests/FlameSheet/
       run: |
-        ./PeleLMeX2d.gnu.ex input.2d-regt amr.max_step=2 amr.plot_int=-1 amr.check_int=-1
+        ./PeleLMeX2d.gnu.MPI.ex input.2d-regt amr.max_step=2 amr.plot_int=-1 amr.check_int=-1
     - name: RunSoret
       working-directory: ./Exec/RegTests/FlameSheet/
       run: |
-        ./PeleLMeX2d.gnu.ex input.2d-regt transport.use_soret=1 amr.max_step=2 amr.plot_int=-1 amr.check_int=-1
+        ./PeleLMeX2d.gnu.MPI.ex input.2d-regt transport.use_soret=1 amr.max_step=2 amr.plot_int=-1 amr.check_int=-1
     - name: RunUnityLe
       working-directory: ./Exec/RegTests/FlameSheet/
       run: |
-        ./PeleLMeX2d.gnu.ex input.2d-regt peleLM.unity_Le=1 peleLM.Prandtl=0.75 amr.max_step=2 amr.plot_int=-1 amr.check_int=-1
+        ./PeleLMeX2d.gnu.MPI.ex input.2d-regt peleLM.unity_Le=1 peleLM.Prandtl=0.75 amr.max_step=2 amr.plot_int=-1 amr.check_int=-1
 
   # Build the 2D FlameSheet RegTest with GNU9.3 and MPI+OMP support
   FS2D_MPIOMP:
