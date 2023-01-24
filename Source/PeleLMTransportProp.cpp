@@ -173,28 +173,41 @@ void PeleLM::calcDiffusivity(const TimeStamp &a_time) {
       }
 #endif
 
-      amrex::Real Sc_inv = m_Schmidt_inv;
-      amrex::Real Pr_inv = m_Prandtl_inv;
-      int  do_unity_le = m_unity_Le;
+      const amrex::Real Sc_inv = m_Schmidt_inv;
+      const amrex::Real Pr_inv = m_Prandtl_inv;
+      const int do_unity_le = m_unity_Le;
+      const int do_soret = m_use_soret;
       amrex::ParallelFor(ldata_p->diff_cc, ldata_p->diff_cc.nGrowVect(), [=]
       AMREX_GPU_DEVICE (int box_no, int i, int j, int k) noexcept
       {
-        if (do_unity_le) {
-          getTransportCoeffUnityLe( i, j, k, Sc_inv, Pr_inv,
-                                    Array4<Real const>(sma[box_no],FIRSTSPEC),
-                                    Array4<Real const>(sma[box_no],TEMP),
-                                    Array4<Real      >(dma[box_no],0),
-                                    Array4<Real      >(dma[box_no],NUM_SPECIES),
-                                    Array4<Real      >(dma[box_no],NUM_SPECIES+1),
-                                    ltransparm);
-        } else {
-          getTransportCoeff( i, j, k,
-                             Array4<Real const>(sma[box_no],FIRSTSPEC),
-                             Array4<Real const>(sma[box_no],TEMP),
-                             Array4<Real      >(dma[box_no],0),
-                             Array4<Real      >(dma[box_no],NUM_SPECIES),
-                             Array4<Real      >(dma[box_no],NUM_SPECIES+1),
-                             ltransparm);
+         if (do_soret) {
+           getTransportCoeffSoret( i, j, k,
+                                  Array4<Real const>(sma[box_no],FIRSTSPEC),
+                                  Array4<Real const>(sma[box_no],TEMP),
+                                  Array4<Real      >(dma[box_no],0),
+                                  Array4<Real      >(dma[box_no],NUM_SPECIES+2),
+                                  Array4<Real      >(dma[box_no],NUM_SPECIES),
+                                  Array4<Real      >(dma[box_no],NUM_SPECIES+1),
+                                  ltransparm);
+
+         } else {
+           if (do_unity_le) {
+             getTransportCoeffUnityLe( i, j, k, Sc_inv, Pr_inv,
+                                       Array4<Real const>(sma[box_no],FIRSTSPEC),
+                                       Array4<Real const>(sma[box_no],TEMP),
+                                       Array4<Real      >(dma[box_no],0),
+                                       Array4<Real      >(dma[box_no],NUM_SPECIES),
+                                       Array4<Real      >(dma[box_no],NUM_SPECIES+1),
+                                       ltransparm);
+           } else {
+             getTransportCoeff( i, j, k,
+                                Array4<Real const>(sma[box_no],FIRSTSPEC),
+                                Array4<Real const>(sma[box_no],TEMP),
+                                Array4<Real      >(dma[box_no],0),
+                                Array4<Real      >(dma[box_no],NUM_SPECIES),
+                                Array4<Real      >(dma[box_no],NUM_SPECIES+1),
+                                ltransparm);
+           }
         }
 #ifdef PELE_USE_EFIELD
         getKappaSp( i, j, k, mwt.arr, zk,

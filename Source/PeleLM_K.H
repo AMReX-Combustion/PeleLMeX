@@ -34,6 +34,7 @@ getTransportCoeffUnityLe(int i, int j, int k,
    amrex::Real Tloc = T(i,j,k);               // So that we can use const_array
 
    amrex::Real rhoDi_cgs[NUM_SPECIES] = {0.0};
+   amrex::Real dummy_chi[NUM_SPECIES] = {0.0};
    amrex::Real lambda_cgs = 0.0_rt;
    amrex::Real mu_cgs = 0.0_rt;
    amrex::Real dummy_xi = 0.0_rt;
@@ -42,9 +43,10 @@ getTransportCoeffUnityLe(int i, int j, int k,
    bool get_mu = true;
    bool get_lam = false;
    bool get_Ddiag = false;
+   bool get_chi = false;
    auto trans = pele::physics::PhysicsType::transport();
-   trans.transport(get_xi, get_mu, get_lam, get_Ddiag, Tloc,
-                   rho, y, rhoDi_cgs, mu_cgs, dummy_xi, lambda_cgs, trans_parm);
+   trans.transport(get_xi, get_mu, get_lam, get_Ddiag, get_chi, Tloc,
+                   rho, y, rhoDi_cgs, dummy_chi, mu_cgs, dummy_xi, lambda_cgs, trans_parm);
 
    mu(i,j,k) = mu_cgs * 1.0e-1_rt;                       // CGS -> MKS conversions
    for (int n = 0; n < NUM_SPECIES; n++) {
@@ -90,22 +92,82 @@ getTransportCoeff(int i, int j, int k,
 
    rho *= 1.0e-3_rt;                          // MKS -> CGS conversion
    amrex::Real rhoDi_cgs[NUM_SPECIES] = {0.0};
+   amrex::Real dummy_chi[NUM_SPECIES] = {0.0};
    amrex::Real lambda_cgs = 0.0_rt;
    amrex::Real mu_cgs = 0.0_rt;
    amrex::Real dummy_xi = 0.0_rt;
+   amrex::Real Tloc = T(i,j,k);
+   bool get_xi = false;
+   bool get_mu = true;
+   bool get_lam = true;
+   bool get_Ddiag = true;
+   bool get_chi = false;
+   auto trans = pele::physics::PhysicsType::transport();
+   trans.transport(get_xi, get_mu, get_lam, get_Ddiag, get_chi, Tloc,
+                   rho, y, rhoDi_cgs, dummy_chi, mu_cgs, dummy_xi, lambda_cgs, trans_parm);
+
+   // Do CGS -> MKS conversions
+   for (int n = 0; n < NUM_SPECIES; n++) {
+      rhoDi(i,j,k,n) = rhoDi_cgs[n] * Wbar * mwtinv[n] * 1.0e-1_rt;
+   }
+   lambda(i,j,k) = lambda_cgs * 1.0e-5_rt;
+   mu(i,j,k) = mu_cgs * 1.0e-1_rt;
+}
+
+AMREX_GPU_DEVICE
+AMREX_FORCE_INLINE
+void
+getTransportCoeffSoret(int i, int j, int k,
+                  amrex::Array4<const amrex::Real> const& rhoY,
+                  amrex::Array4<const amrex::Real> const& T,
+                  amrex::Array4<      amrex::Real> const& rhoDi,
+                  amrex::Array4<      amrex::Real> const& rhotheta,
+                  amrex::Array4<      amrex::Real> const& lambda,
+          amrex::Array4<      amrex::Real> const& mu,
+                  pele::physics::transport::TransParm<pele::physics::PhysicsType::eos_type,
+                                                      pele::physics::PhysicsType::transport_type> const* trans_parm) noexcept
+{
+   using namespace amrex::literals;
+
+   auto eos = pele::physics::PhysicsType::eos();
+   amrex::Real mwtinv[NUM_SPECIES] = {0.0};
+   eos.inv_molecular_weight(mwtinv);
+
+   // Get rho & Y from rhoY
+   amrex::Real rho = 0.0_rt;
+   for (int n = 0; n < NUM_SPECIES; n++) {
+      rho += rhoY(i,j,k,n);
+   }
+   amrex::Real rhoinv = 1.0_rt / rho;
+   amrex::Real y[NUM_SPECIES] = {0.0};
+   for (int n = 0; n < NUM_SPECIES; n++) {
+      y[n] = rhoY(i,j,k,n) * rhoinv;
+   }
+
+   amrex::Real Wbar = 0.0_rt;
+   eos.Y2WBAR(y, Wbar);
+
+   rho *= 1.0e-3_rt;                          // MKS -> CGS conversion
+   amrex::Real rhoDi_cgs[NUM_SPECIES] = {0.0};
+   amrex::Real lambda_cgs = 0.0_rt;
+   amrex::Real mu_cgs = 0.0_rt;
+   amrex::Real dummy_xi = 0.0_rt;
+   amrex::Real chi_loc[NUM_SPECIES] = {0.0};
    amrex::Real Tloc = T(i,j,k);
 
    bool get_xi = false;
    bool get_mu = true;
    bool get_lam = true;
    bool get_Ddiag = true;
+   bool get_chi = true;
    auto trans = pele::physics::PhysicsType::transport();
-   trans.transport(get_xi, get_mu, get_lam, get_Ddiag, Tloc,
-                   rho, y, rhoDi_cgs, mu_cgs, dummy_xi, lambda_cgs, trans_parm);
+   trans.transport(get_xi, get_mu, get_lam, get_Ddiag, get_chi, Tloc,
+                   rho, y, rhoDi_cgs, chi_loc, mu_cgs, dummy_xi, lambda_cgs, trans_parm);
 
    // Do CGS -> MKS conversions
    for (int n = 0; n < NUM_SPECIES; n++) {
       rhoDi(i,j,k,n) = rhoDi_cgs[n] * Wbar * mwtinv[n] * 1.0e-1_rt;
+      rhotheta(i,j,k,n) = - rhoDi_cgs[n] * 1.0e-1_rt * chi_loc[n];
    }
    lambda(i,j,k) = lambda_cgs * 1.0e-5_rt;
    mu(i,j,k) = mu_cgs * 1.0e-1_rt;
@@ -137,6 +199,7 @@ getVelViscosity(int i, int j, int k,
    rho *= 1.0e-3_rt;                          // MKS -> CGS conversion
    amrex::Real temp = T(i,j,k);
    amrex::Real dummy_rhoDi[NUM_SPECIES] = {0.0};
+   amrex::Real dummy_chi[NUM_SPECIES] = {0.0};
    amrex::Real dummy_lambda = 0.0_rt;
    amrex::Real mu_cgs = 0.0_rt;
    amrex::Real dummy_xi = 0.0_rt;
@@ -145,9 +208,10 @@ getVelViscosity(int i, int j, int k,
    bool get_mu = true;
    bool get_lam = false;
    bool get_Ddiag = false;
+   bool get_chi = false;
    auto trans = pele::physics::PhysicsType::transport();
-   trans.transport(get_xi, get_mu, get_lam, get_Ddiag, temp,
-                   rho, y, dummy_rhoDi, mu_cgs, dummy_xi, dummy_lambda, trans_parm);
+   trans.transport(get_xi, get_mu, get_lam, get_Ddiag, get_chi, temp,
+                   rho, y, dummy_rhoDi, dummy_chi, mu_cgs, dummy_xi, dummy_lambda, trans_parm);
 
    // Do CGS -> MKS conversions
    mu(i,j,k) = mu_cgs * 1.0e-1_rt;

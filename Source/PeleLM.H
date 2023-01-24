@@ -147,7 +147,7 @@ class PeleLM : public amrex::AmrCore {
                  amrex::DistributionMapping const& dm,
                  amrex::FabFactory<amrex::FArrayBox> const& factory,
                  int a_incompressible, int a_has_divu,
-                 int a_nAux, int a_nGrowState, int a_do_les);
+                 int a_nAux, int a_nGrowState, int a_use_soret, int a_do_les);
 
       // cell-centered state multifabs
       amrex::MultiFab state;           // Stqte data: velocity, density, rhoYs, rhoH, Temp, RhoRT
@@ -192,7 +192,7 @@ class PeleLM : public amrex::AmrCore {
                        const amrex::Vector<amrex::DistributionMapping> &dm,
                        const amrex::Vector<std::unique_ptr<amrex::FabFactory<amrex::FArrayBox>>> &factory,
                        int a_nGrowAdv,
-                       int a_use_wbar,
+                       int a_use_wbar, int a_use_soret,
                        int is_init = 0);
       amrex::Vector<amrex::MultiFab> Dn;           // Diffusion term t^n
       amrex::Vector<amrex::MultiFab> Dnp1;         // Diffusion term t^(n+1,k)
@@ -200,6 +200,8 @@ class PeleLM : public amrex::AmrCore {
 
       amrex::Vector<amrex::MultiFab> Dwbar;        // Diffusion term of Wbar
       amrex::Vector<amrex::Array<amrex::MultiFab,AMREX_SPACEDIM>> wbar_fluxes;     // Wbar flux correction
+      amrex::Vector<amrex::MultiFab> DT;        // Diffusion term of T (soret flux)
+      amrex::Vector<amrex::Array<amrex::MultiFab,AMREX_SPACEDIM>> soret_fluxes;     // Soret flux correction
    };
    struct AdvanceAdvData {
       AdvanceAdvData () = default;
@@ -328,7 +330,8 @@ class PeleLM : public amrex::AmrCore {
    // get species/enthalpy differential diffusion fluxes
    void computeDifferentialDiffusionFluxes(const PeleLM::TimeStamp &a_time,
                                            const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> &a_fluxes,
-                                           const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> &a_wbarfluxes);
+                                           const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> &a_wbarfluxes,
+                                           const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> &a_soretfluxes);
 
    // get species/enthalpy differential diffusion terms
    void computeDifferentialDiffusionTerms(const PeleLM::TimeStamp &a_time,
@@ -342,7 +345,15 @@ class PeleLM : public amrex::AmrCore {
                     amrex::Vector<amrex::MultiFab const*> const &a_rho,
                     amrex::Vector<amrex::MultiFab const*> const &a_beta);
 
-   // Ensure sum of specues diffusion fluxes sum to 0
+  // add soret term to the species flux
+   void addSoretTerm(const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> &a_fluxes,
+                    const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> &a_soretfluxes,
+                    amrex::Vector<amrex::MultiFab const*> const &a_spec,
+                    amrex::Vector<amrex::MultiFab const*> const &a_rho,
+                    amrex::Vector<amrex::MultiFab const*> const &a_temp,
+                    amrex::Vector<amrex::MultiFab const*> const &a_beta);
+
+  // Ensure sum of specues diffusion fluxes sum to 0
    void adjustSpeciesFluxes(const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> &a_fluxes,
                             amrex::Vector<amrex::MultiFab const*> const &a_spec);
 
@@ -1157,12 +1168,12 @@ class PeleLM : public amrex::AmrCore {
    // cc->ec average
    int m_harm_avg_cen2edge = 0;
 
-
    // Diffusion
    int m_unity_Le = 0;
    amrex::Real m_Schmidt_inv = 1.0/0.7;
    amrex::Real m_Prandtl_inv = 1.0/0.7;
    int m_use_wbar = 1;
+   int m_use_soret = 0;
 
    // LES Model
    bool m_do_les = false;

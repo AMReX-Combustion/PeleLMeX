@@ -351,6 +351,8 @@ void PeleLM::readParameters() {
    pp.query("deltaT_iterMax",m_deltaTIterMax);
    pp.query("deltaT_tol",m_deltaT_norm_max);
    pp.query("deltaT_crashIfFailing",m_crashOnDeltaTFail);
+   ParmParse pptrans("transport");
+   pptrans.query("use_soret",m_use_soret);
 
    if (m_do_les or m_unity_Le) {
      amrex::Real Prandtl = 0.7;
@@ -822,10 +824,19 @@ void PeleLM::derivedSetup()
 
       // Species diffusion coefficients
       for (int n = 0 ; n < NUM_SPECIES; n++) {
-         var_names_massfrac[n] = "D_"+spec_names[n];
+        var_names_massfrac[n] = "D_"+spec_names[n];
       }
-      derive_lst.add("diffcoeff",IndexType::TheCellType(),NUM_SPECIES,
-                     var_names_massfrac,pelelm_derdiffc,the_same_box);
+      if (m_use_soret) {
+        var_names_massfrac.resize(2*NUM_SPECIES);
+        for (int n = 0; n < NUM_SPECIES; n++) {
+          var_names_massfrac[n+NUM_SPECIES] = "theta_"+spec_names[n];
+        }
+        derive_lst.add("diffcoeff",IndexType::TheCellType(),2*NUM_SPECIES,
+                       var_names_massfrac,pelelm_derdiffc,the_same_box);
+      } else {
+        derive_lst.add("diffcoeff",IndexType::TheCellType(),NUM_SPECIES,
+                       var_names_massfrac,pelelm_derdiffc,the_same_box);
+      }
 
       // Rho - sum rhoYs
       derive_lst.add("rhominsumrhoY",IndexType::TheCellType(),1,pelelm_derrhomrhoy,the_same_box);
