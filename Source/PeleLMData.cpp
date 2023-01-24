@@ -6,7 +6,7 @@ PeleLM::LevelData::LevelData(amrex::BoxArray const& ba,
                              amrex::DistributionMapping const& dm,
                              amrex::FabFactory<FArrayBox> const& factory,
                              int a_incompressible, int a_has_divu,
-                             int a_nAux, int a_nGrowState)
+                             int a_nAux, int a_nGrowState, int a_use_soret, int a_do_les)
 {
    if (a_incompressible ) {
        state.define(  ba, dm, AMREX_SPACEDIM , a_nGrowState, MFInfo(), factory);
@@ -17,11 +17,24 @@ PeleLM::LevelData::LevelData(amrex::BoxArray const& ba,
    press.define(   amrex::convert(ba,IntVect::TheNodeVector()),
                        dm, 1             , 1           , MFInfo(), factory);
    visc_cc.define( ba, dm, 1             , 1           , MFInfo(), factory);
+   if (a_do_les) {
+     for (int i = 0; i < AMREX_SPACEDIM; ++i) {
+       visc_turb_fc[i].define(amrex::convert(ba,IntVect::TheDimensionVector(i)), dm, 1, 0, MFInfo(), factory);
+       if (!a_incompressible) {
+         lambda_turb_fc[i].define(amrex::convert(ba,IntVect::TheDimensionVector(i)), dm, 1, 0, MFInfo(), factory);
+       }
+     }
+   }
    if (! a_incompressible ) {
       if (a_has_divu) {
          divu.define (ba, dm, 1             , 1           , MFInfo(), factory);
       }
-      diff_cc.define (ba, dm, NUM_SPECIES+2 , 1           , MFInfo(), factory);
+      if (a_use_soret) {
+         diff_cc.define (ba, dm, 2*NUM_SPECIES+2 , 1           , MFInfo(), factory);
+      } else {
+         diff_cc.define (ba, dm, NUM_SPECIES+2 , 1           , MFInfo(), factory);
+      }
+
 #ifdef PELE_USE_EFIELD
       diffE_cc.define(ba, dm, 1             , 1           , MFInfo(), factory);
       mobE_cc.define (ba, dm, 1             , 1           , MFInfo(), factory);
@@ -68,7 +81,7 @@ PeleLM::AdvanceDiffData::AdvanceDiffData(int a_finestLevel,
                                          const amrex::Vector<amrex::DistributionMapping> &dm,
                                          const amrex::Vector<std::unique_ptr<amrex::FabFactory<FArrayBox>>> &factory,
                                          int nGrowAdv,
-                                         int a_use_wbar,
+                                         int a_use_wbar, int a_use_soret,
                                          int is_init)
 {
    if (is_init) {                   // All I need is a container for a single diffusion term
@@ -88,6 +101,10 @@ PeleLM::AdvanceDiffData::AdvanceDiffData(int a_finestLevel,
          Dwbar.resize(a_finestLevel+1);
          wbar_fluxes.resize(a_finestLevel+1);
       }
+      if ( a_use_soret) {
+         DT.resize(a_finestLevel+1);
+         soret_fluxes.resize(a_finestLevel+1);
+      }
 
       // Define MFs
       for (int lev = 0; lev <= a_finestLevel; lev++ ) {
@@ -100,6 +117,13 @@ PeleLM::AdvanceDiffData::AdvanceDiffData(int a_finestLevel,
                const BoxArray& faceba = amrex::convert(ba[lev],IntVect::TheDimensionVector(idim));
                wbar_fluxes[lev][idim].define(faceba,dm[lev], NUM_SPECIES, 0, MFInfo(), *factory[lev]);
             }
+         }
+         if (a_use_soret) {
+           DT[lev].define(ba[lev], dm[lev], NUM_SPECIES, nGrowAdv, MFInfo(), *factory[lev]);
+           for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
+             const BoxArray& faceba = amrex::convert(ba[lev],IntVect::TheDimensionVector(idim));
+             soret_fluxes[lev][idim].define(faceba,dm[lev], NUM_SPECIES, 0, MFInfo(), *factory[lev]);
+           }
          }
       }
    }

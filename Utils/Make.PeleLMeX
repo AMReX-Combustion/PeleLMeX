@@ -50,6 +50,7 @@ ifeq ($(USE_SOOT), TRUE)
    LMdirs += Source/Soot
 endif
 
+
 Bpack += $(foreach dir, $(LMdirs), $(PELELMEX_HOME)/$(dir)/Make.package)
 Blocs += $(foreach dir, $(LMdirs), $(PELELMEX_HOME)/$(dir))
 
@@ -84,6 +85,12 @@ endif
 
 ifeq ($(PELE_USE_KLU), TRUE)
   DEFINES += -DPELE_USE_KLU
+endif
+
+PELE_COMPILE_AJACOBIAN ?= TRUE
+
+ifeq ($(PELE_COMPILE_AJACOBIAN), TRUE)
+  DEFINES += -DPELE_COMPILE_AJACOBIAN
 endif
 
 ChemDir  = Support/Mechanism/Models/$(Chemistry_Model)

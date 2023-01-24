@@ -96,7 +96,7 @@ PeleLM::MLevaluate(const Vector<MultiFab *> &a_MFVec,
         // Light version of the diffusion data container
         std::unique_ptr<AdvanceDiffData> diffData;
         diffData.reset(new AdvanceDiffData(finest_level, grids, dmap, m_factory,
-                       m_nGrowAdv, m_use_wbar, is_initialization));
+                       m_nGrowAdv, m_use_wbar, m_use_soret, is_initialization));
         calcDivU(is_initialization,computeDiffusionTerm,do_avgDown,AmrNewTime,diffData);
         for (int lev = 0; lev <= finest_level; ++lev) {
            auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
@@ -142,7 +142,7 @@ PeleLM::MLevaluate(const Vector<MultiFab *> &a_MFVec,
         // Use the diffusion data holder, get diffusivity and calc D
         // Finally, copy into a_MFVec
         std::unique_ptr<AdvanceDiffData> diffData;
-        diffData.reset(new AdvanceDiffData(finest_level, grids, dmap, m_factory, m_nGrowAdv, m_use_wbar));
+        diffData.reset(new AdvanceDiffData(finest_level, grids, dmap, m_factory, m_nGrowAdv, m_use_wbar, m_use_soret));
         calcDiffusivity(AmrNewTime);
         computeDifferentialDiffusionTerms(AmrNewTime,diffData);
         for (int lev = 0; lev <= finest_level; ++lev) {
@@ -167,8 +167,15 @@ PeleLM::MLevaluate(const Vector<MultiFab *> &a_MFVec,
            auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
            MultiFab::Copy(*a_MFVec[lev],ldata_p->diff_cc,0,a_comp,NUM_SPECIES+1,0);
            MultiFab::Copy(*a_MFVec[lev],ldata_p->visc_cc,0,a_comp+NUM_SPECIES+1,1,0);
+           if (m_use_soret) {
+             MultiFab::Copy(*a_MFVec[lev],ldata_p->diff_cc,NUM_SPECIES+2,a_comp+NUM_SPECIES+2,NUM_SPECIES,0);
+           }
         }
-        nComp = NUM_SPECIES+2;
+        if (m_use_soret) {
+          nComp = 2*NUM_SPECIES+2;
+        } else {
+          nComp = NUM_SPECIES+2;
+        }
     } else if ( a_var == "velForce" ) {
         // Velocity forces used in computing the velocity advance
         int add_gradP = 0;
