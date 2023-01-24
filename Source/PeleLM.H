@@ -331,9 +331,7 @@ class PeleLM : public amrex::AmrCore {
    void computeDifferentialDiffusionFluxes(const PeleLM::TimeStamp &a_time,
                                            const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> &a_fluxes,
                                            const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> &a_wbarfluxes,
-                       const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> &a_soretfluxes
-                       );
-
+                                           const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> &a_soretfluxes);
 
    // get species/enthalpy differential diffusion terms
    void computeDifferentialDiffusionTerms(const PeleLM::TimeStamp &a_time,

@@ -1132,7 +1132,7 @@ void PeleLM::deltaTIter_update(int a_dtiter,
    auto bcRecTemp = fetchBCRecArray(TEMP,1);
 
    // Fourier: - \lambda \nabla T
-   int do_avgDown = 0;
+   const int do_avgDown = 0;
    getDiffusionOp()->computeDiffFluxes(a_fluxes, NUM_SPECIES,
                                        GetVecOfConstPtrs(getTempVect(AmrNewTime)), 0,
                                        {},
@@ -1193,9 +1193,8 @@ void PeleLM::getScalarDiffForce(std::unique_ptr<AdvanceAdvData> &advData,
          auto const& fT      = advData->Forcing[lev].array(mfi,NUM_SPECIES);
          auto const& dwbar   = (m_use_wbar) ? diffData->Dwbar[lev].const_array(mfi,0)
                                             : diffData->Dn[lev].const_array(mfi,0);          // Dummy unsed Array4
-
-     auto const& dT     = (m_use_soret) ? diffData->DT[lev].const_array(mfi,0)
-                                        : diffData->Dn[lev].const_array(mfi,0);
+         auto const& dT     = (m_use_soret) ? diffData->DT[lev].const_array(mfi,0)
+                                            : diffData->Dn[lev].const_array(mfi,0);
 
          amrex::ParallelFor(bx, [dn, ddn, dnp1k, ddnp1k, dwbar, dT, use_wbar=m_use_wbar, use_soret=m_use_soret,do_react=m_do_react,
                                  r, a, extRhoY, extRhoH, fY, fT, dp0dt=m_dp0dt, is_closed_ch=m_closed_chamber]
@@ -1207,13 +1206,13 @@ void PeleLM::getScalarDiffForce(std::unique_ptr<AdvanceAdvData> &advData,
                   fY(i,j,k,n) += dwbar(i,j,k,n);
                }
             }
-        if (use_soret) {
-          for (int n = 0; n < NUM_SPECIES; n++) {
-        fY(i,j,k,n) += dT(i,j,k,n);
-          }
-        }
+            if (use_soret) {
+               for (int n = 0; n < NUM_SPECIES; n++) {
+                  fY(i,j,k,n) += dT(i,j,k,n);
+               }
+            }
             for (int n = 0; n < NUM_SPECIES; n++) {
-              fY(i,j,k,n) += extRhoY(i,j,k,n);
+               fY(i,j,k,n) += extRhoY(i,j,k,n);
             }
             fT(i,j,k) += extRhoH(i,j,k);
          });
@@ -1257,7 +1256,7 @@ void PeleLM::diffuseVelocity()
    auto bcRec = fetchBCRecArray(DENSITY,1);
 
    // CrankNicholson 0.5 coeff
-   Real dt_lcl = 0.5 * m_dt;
+   const Real dt_lcl = 0.5 * m_dt;
    if (m_incompressible) {
       getDiffusionTensorOp()->diffuse_velocity(GetVecOfPtrs(getVelocityVect(AmrNewTime)),
                                                {},
