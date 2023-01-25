@@ -29,9 +29,18 @@ prob.input_resolution = 32
 prob.input_binaryformat = 0
 prob.urms0            = 2.0
 
+#-----------------------DIFFUSION AND LES MODEL CONTROL-----------------------
+peleLM.unity_Le = 1                    # [OPT, DEF=0] Use the unity Lewis number approximation for diffusivities
+peleLM.Prandtl = 0.7                   # [OPT, DEF=0.7] If unity_Le or doing LES, specifies the Prandtl number
+peleLM.les_model = "Smagorinsky"              # [OPT, DEF="None"] Model to compute turbulent viscosity: None, Smagorinsky, WALE
+peleLM.les_cs_smag = 0.18              # [OPT, DEF=0.18] If using Smagorinsky LES model, provides model coefficient
+peleLM.les_cm_wale = 0.60              # [OPT, DEF=0.60] If using WALE LES model, provides model coefficient
+peleLM.les_v = 1                       # [OPT, DEF=0] Verbosity level for LES model
+peleLM.plot_les = 1
+
 #-------------------------PeleLM CONTROL----------------------------
 peleLM.v = 3
-peleLM.incompressible = 1
+peleLM.incompressible = 0
 peleLM.rho = 1.17
 peleLM.mu = 0.00001
 peleLM.num_init_iter = 3
