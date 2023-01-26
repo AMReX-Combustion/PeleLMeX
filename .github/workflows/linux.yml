@@ -28,7 +28,7 @@ jobs:
       env:
          AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
          PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
-         PELELM_HOME: ${GITHUB_WORKSPACE}
+         PELELMEX_HOME: ${GITHUB_WORKSPACE}
          AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
       run: |
         cd Exec/RegTests/FlameSheet/
@@ -57,7 +57,7 @@ jobs:
       env:
          AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
          PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
-         PELELM_HOME: ${GITHUB_WORKSPACE}
+         PELELMEX_HOME: ${GITHUB_WORKSPACE}
          AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
       run: |
         cd Exec/RegTests/FlameSheet/
@@ -96,7 +96,7 @@ jobs:
       env:
          AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
          PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
-         PELELM_HOME: ${GITHUB_WORKSPACE}
+         PELELMEX_HOME: ${GITHUB_WORKSPACE}
          AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
       run: |
         cd Exec/RegTests/FlameSheet/
@@ -123,7 +123,7 @@ jobs:
       env:
          AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
          PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
-         PELELM_HOME: ${GITHUB_WORKSPACE}
+         PELELMEX_HOME: ${GITHUB_WORKSPACE}
          AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
       working-directory: ./Exec/RegTests/PeriodicCases/
       run: |
@@ -154,7 +154,7 @@ jobs:
       env:
          AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
          PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
-         PELELM_HOME: ${GITHUB_WORKSPACE}
+         PELELMEX_HOME: ${GITHUB_WORKSPACE}
          AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
       working-directory: ./Exec/RegTests/HotBubble/
       run: |
@@ -185,7 +185,7 @@ jobs:
       env:
          AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
          PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
-         PELELM_HOME: ${GITHUB_WORKSPACE}
+         PELELMEX_HOME: ${GITHUB_WORKSPACE}
          AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
       working-directory: ./Exec/RegTests/HotBubble/
       run: |
@@ -216,7 +216,7 @@ jobs:
       env:
          AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
          PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
-         PELELM_HOME: ${GITHUB_WORKSPACE}
+         PELELMEX_HOME: ${GITHUB_WORKSPACE}
          AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
       working-directory: ./Exec/RegTests/EnclosedFlame/
       run: |
@@ -247,7 +247,7 @@ jobs:
       env:
          AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
          PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
-         PELELM_HOME: ${GITHUB_WORKSPACE}
+         PELELMEX_HOME: ${GITHUB_WORKSPACE}
          AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
       working-directory: ./Exec/RegTests/EB_FlowPastCylinder/
       run: |
@@ -279,7 +279,7 @@ jobs:
       env:
          AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
          PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
-         PELELM_HOME: ${GITHUB_WORKSPACE}
+         PELELMEX_HOME: ${GITHUB_WORKSPACE}
          AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
       working-directory: ./Exec/RegTests/HITDecay/
       run: |
@@ -319,7 +319,7 @@ jobs:
       env:
          AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
          PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
-         PELELM_HOME: ${GITHUB_WORKSPACE}
+         PELELMEX_HOME: ${GITHUB_WORKSPACE}
          AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
       working-directory: ./Exec/RegTests/EB_PipeFlow/
       run: |
@@ -350,7 +350,7 @@ jobs:
       env:
          AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
          PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
-         PELELM_HOME: ${GITHUB_WORKSPACE}
+         PELELMEX_HOME: ${GITHUB_WORKSPACE}
          AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
       working-directory: ./Exec/RegTests/TurbInflow/TurbFileHIT
       run: |
@@ -360,7 +360,7 @@ jobs:
       env:
          AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
          PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
-         PELELM_HOME: ${GITHUB_WORKSPACE}
+         PELELMEX_HOME: ${GITHUB_WORKSPACE}
          AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
       working-directory: ./Exec/RegTests/TurbInflow/
       run: |
