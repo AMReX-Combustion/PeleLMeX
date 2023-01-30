@@ -330,9 +330,6 @@ void PeleLM::readParameters() {
      for (int lev=0; lev<= max_level ; ++lev) {
        m_turb_visc_time.push_back(-1.0E200);
      }
-#ifdef AMREX_USE_EB
-     amrex::Abort("LES implementation with EB depends on EB compVelGrad in amrex");
-#endif
 #ifdef PELE_USE_EFIELD
      amrex::Abort("LES implementation is not yet compatible with efield/ions");
 #endif
