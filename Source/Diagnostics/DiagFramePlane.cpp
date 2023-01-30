@@ -291,6 +291,7 @@ DiagFramePlane::Write2DMultiLevelPlotfile(const std::string &a_pltfile,
     for (int level = 0; level < a_nlevels; ++level) {
         VisMF2D(*a_slice[level], amrex::MultiFabFileFullPrefix(level, a_pltfile, levelPrefix, mfPrefix+"2D"));
         amrex::VisMF::Write(*a_slice[level], amrex::MultiFabFileFullPrefix(level, a_pltfile, levelPrefix, mfPrefix));
+        amrex::ParallelDescriptor::Barrier();
         ReWriteLevelVisMFHeader(amrex::MultiFabFileFullPrefix(level, a_pltfile, levelPrefix, ""));
     }
 }
