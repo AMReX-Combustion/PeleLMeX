@@ -26,7 +26,7 @@ jobs:
       env:
          AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
          PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
-         PELELM_HOME: ${GITHUB_WORKSPACE}
+         PELELMEX_HOME: ${GITHUB_WORKSPACE}
          AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
       run: |
         export PATH=/usr/local/nvidia/bin:/usr/local/cuda/bin:${PATH}
@@ -49,7 +49,7 @@ jobs:
       env:
          AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
          PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
-         PELELM_HOME: ${GITHUB_WORKSPACE}
+         PELELMEX_HOME: ${GITHUB_WORKSPACE}
          AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
       run: |
         export PATH=/usr/local/nvidia/bin:/usr/local/cuda/bin:${PATH}
