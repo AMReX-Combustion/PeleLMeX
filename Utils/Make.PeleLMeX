@@ -50,6 +50,7 @@ ifeq ($(USE_SOOT), TRUE)
    LMdirs += Source/Soot
 endif
 
+
 Bpack += $(foreach dir, $(LMdirs), $(PELELMEX_HOME)/$(dir)/Make.package)
 Blocs += $(foreach dir, $(LMdirs), $(PELELMEX_HOME)/$(dir))
 

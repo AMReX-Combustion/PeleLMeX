@@ -122,6 +122,10 @@ void PeleLM::WritePlotFile() {
    }
 #endif
 
+   if (m_do_les && m_plot_les) {
+     ncomp += 1;
+   }
+
    //----------------------------------------------------------------
    // Plot MultiFabs
    Vector<MultiFab> mf_plt(finest_level + 1);
@@ -222,6 +226,9 @@ void PeleLM::WritePlotFile() {
    }
 #endif
 
+   if (m_do_les && m_plot_les) {
+     plt_VarsName.push_back("viscturb");
+   }
 
    //----------------------------------------------------------------
    // Fill the plot MultiFabs
@@ -304,8 +311,28 @@ void PeleLM::WritePlotFile() {
 #ifdef PELE_USE_EFIELD
       if (m_do_extraEFdiags) {
           MultiFab::Copy(mf_plt[lev], *m_ionsFluxes[lev], 0, cnt, m_ionsFluxes[lev]->nComp(),0);
+          cnt += m_ionsFluxes[lev]->nComp();
       }
 #endif
+
+      if (m_do_les && m_plot_les) {
+        constexpr amrex::Real fact = 0.5/AMREX_SPACEDIM;
+        auto const& plot_arr = mf_plt[lev].arrays();
+        AMREX_D_TERM(auto const& mut_arr_x = m_leveldata_old[lev]->visc_turb_fc[0].const_arrays();,
+                     auto const& mut_arr_y = m_leveldata_old[lev]->visc_turb_fc[1].const_arrays();,
+                     auto const& mut_arr_z = m_leveldata_old[lev]->visc_turb_fc[2].const_arrays();)
+        // interpolate turbulent viscosity from faces to centers
+        amrex::ParallelFor(mf_plt[lev], [plot_arr, fact, AMREX_D_DECL(mut_arr_x, mut_arr_y, mut_arr_z), cnt]
+                           AMREX_GPU_DEVICE (int box_no, int i, int j, int k) noexcept
+                           {
+                             plot_arr[box_no](i,j,k,cnt) = fact*( AMREX_D_TERM( mut_arr_x[box_no](i,j,k) + mut_arr_x[box_no](i+1,j,k),
+                                                                                + mut_arr_y[box_no](i,j,k) + mut_arr_y[box_no](i,j+1,k),
+                                                                                + mut_arr_z[box_no](i,j,k) + mut_arr_z[box_no](i,j,k+1)));
+                           });
+        Gpu::streamSynchronize();
+        cnt += 1;
+      }
+
 #ifdef AMREX_USE_EB
       EB_set_covered(mf_plt[lev],0.0);
 #endif
