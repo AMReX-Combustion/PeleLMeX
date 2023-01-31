@@ -32,14 +32,15 @@ prob.jet_radius = 0.005
 prob.inert_radius = 0.0075
 prob.inert_velocity = 1.5
 prob.pertmag = 0.000
-prob.do_ignition = 1
+
+prob.do_ignition = 0
 prob.ignition_SphT = 2000.0
 prob.ignition_SphRad = 0.006
-prob.mass_flow_rate = 0.00098
-prob.jet_vel = 2.0
-prob.part_mean_dia =  0.000045
-prob.part_stdev_dia = 0.000005
-prob.part_temp = 300.0
+
+prob.spray_mass_flow_rate = 0.00098
+prob.spray_vel = 2.0
+prob.spray_temp = 300.0
+dropDist.diameter = 0.00005
 
 #--------------------SPRAY PARTICLE DATA-----------------------
 peleLM.do_spray_particles = 1
@@ -49,7 +50,7 @@ particles.mom_transfer = 1
 particles.mass_transfer = 1
 particles.init_function = 1 # Sprays are initialized using SprayParticleInitInsert.cpp
 #particles.init_file = spray00500.p3d
-particles.write_spray_ascii_files = 1
+#particles.write_ascii_files = 1
 particles.parcel_size = 2. # Number of particles per parcel
 particles.fuel_species = NXC7H16
 # Properties for liquid decane
@@ -82,7 +83,7 @@ peleLM.deltaT_verbose = 0
 #amr.regrid_on_restart = 1
 amr.check_int = 50
 amr.plot_int = 20
-amr.max_step = 2000
+amr.max_step = 200
 amr.dt_shrink = 0.01
 amr.init_dt = 1.0e-6
 amr.stop_time = 1.1

@@ -1,9 +1,9 @@
 TOP = ../../..
-PELELMEX_HOME      ?= ${TOP}/PeleLMeX
+PELELMEX_HOME      ?= ${TOP}
 AMREX_HOME         ?= ${PELELMEX_HOME}/Submodules/amrex
 PELE_PHYSICS_HOME  ?= ${PELELMEX_HOME}/Submodules/PelePhysics
 AMREX_HYDRO_HOME   ?= ${PELELMEX_HOME}/Submodules/AMReX-Hydro
-PELLEMP_HOME       ?= ${PELELMEX_HOME}/Submodules/PeleMP
+PELEMP_HOME        ?= ${PELELMEX_HOME}/Submodules/PeleMP
 
 # AMReX
 DIM             = 2
