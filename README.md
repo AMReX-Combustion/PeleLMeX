@@ -41,7 +41,7 @@ You can clone the PeleLMeX and tested versions of its submodules
 git clone --recursive https://github.com/AMReX-Combustion/PeleLMeX.git
 ```
 
-and setup the following environment variables (e.g. using bash):
+You can optionally setup the following environment variables (e.g. using bash):
 
 ```
 export PELELMEX_HOME=<path_to_PeleLMeX>
@@ -50,7 +50,9 @@ export AMREX_HYDRO_HOME=${PELELMEX_HOME}/Submodules/AMReX-Hydro
 export PELE_PHYSICS_HOME=${PELELMEX_HOME}/Submodules/PelePhysics
 ```
 
-Then, move into one of the available example, such as `HotBubble`:
+If you do not set these paths as environment variables, they will be assumed as specified in the `GNUmakefile` for the case you are compiling. If compiling in the default location for each case, no modifications are necessary.
+
+Then, move into one of the available examples, such as `HotBubble`:
 
 ```
 cd PeleLMeX/Exec/RegTest/HotBubble
