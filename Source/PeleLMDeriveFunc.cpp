@@ -292,7 +292,7 @@ void pelelm_dervort (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dco
 // Compute cell-centered coordinates
 //
 void pelelm_dercoord (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
-                      const FArrayBox& /*statefab*/, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
+                      const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
                       const Geometry& geomdata,
                       Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
 
