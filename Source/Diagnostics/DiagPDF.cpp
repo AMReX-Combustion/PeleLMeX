@@ -24,6 +24,12 @@ DiagPDF::init(const std::string &a_prefix,
 }
 
 void
+DiagPDF::addVars(amrex::Vector<std::string> &a_varList) {
+    DiagBase::addVars(a_varList);
+    a_varList.push_back(m_fieldName);
+}
+
+void
 DiagPDF::prepare(int a_nlevels,
                  const amrex::Vector<amrex::Geometry> &a_geoms,
                  const amrex::Vector<amrex::BoxArray> &a_grids,
@@ -53,7 +59,7 @@ DiagPDF::processDiag(int a_nstep,
                      const amrex::Vector<std::string> &a_stateVar)
 {
     // Set PDF range
-    int fieldIdx = getFieldIndex(a_stateVar);
+    int fieldIdx = getFieldIndex(m_fieldName,a_stateVar);
     if (m_useFieldMinMax) {
        m_lowBnd = MFVecMin(a_state,fieldIdx);
        m_highBnd = MFVecMax(a_state,fieldIdx);
@@ -124,26 +130,7 @@ DiagPDF::processDiag(int a_nstep,
     amrex::ParallelDescriptor::ReduceRealSum(pdf.data(),pdf.size());
     auto sum = std::accumulate(pdf.begin(), pdf.end(), decltype(pdf)::value_type(0));
 
-    // 
-    for (size_t i{0}; i<pdf.size(); ++i) {
-        amrex::Print() << m_lowBnd+(static_cast<amrex::Real>(i)+0.5)*binWidth << " " << pdf[i]/sum/binWidth << "\n";
-    }
-}
-
-int
-DiagPDF::getFieldIndex(const amrex::Vector<std::string> &a_stateVar)
-{
-    int index = -1;
-    for (int n{0}; n < a_stateVar.size(); ++n) {
-        if (a_stateVar[n] == m_fieldName) {
-            index = n;
-            break;
-        }
-    }
-    if (index < 0) {
-        amrex::Abort("PDF Field : "+m_fieldName+" wasn't found in available fields");  
-    }
-    return index;
+    writePDFToFile(a_nstep, a_time, pdf, sum);
 }
 
 amrex::Real
@@ -172,4 +159,35 @@ DiagPDF::MFVecMax(const amrex::Vector<const amrex::MultiFab*> &a_state,
 
     amrex::ParallelDescriptor::ReduceRealMax(mmax);
     return mmax;
+}
+
+void
+DiagPDF::writePDFToFile(int a_nstep, const amrex::Real &a_time,
+                        const amrex::Vector<amrex::Real> &a_pdf,
+                        const amrex::Real &a_sum)
+{
+    std::string diagfile;
+    if (m_interval > 0) {
+        diagfile = amrex::Concatenate(m_diagfile,a_nstep,6);
+    }
+    if (m_per > 0.0) {
+        diagfile = m_diagfile+std::to_string(a_time);
+    }
+    diagfile = diagfile+".dat";
+
+    if (amrex::ParallelDescriptor::IOProcessor()) {
+
+        std::ofstream pdfFile;
+        pdfFile.open(diagfile.c_str(),std::ios::out | std::ios::app);
+        pdfFile.precision(12);
+
+        amrex::Real binWidth = (m_highBnd - m_lowBnd) / (m_nBins);
+
+        for (size_t i{0}; i<a_pdf.size(); ++i) {
+            pdfFile << m_lowBnd+(static_cast<amrex::Real>(i)+0.5)*binWidth << " " << a_pdf[i]/a_sum/binWidth << "\n";
+        }
+
+        pdfFile.flush();
+        pdfFile.close();
+    }
 }

@@ -34,6 +34,15 @@ DiagConditional::init(const std::string &a_prefix,
 }
 
 void
+DiagConditional::addVars(amrex::Vector<std::string> &a_varList) {
+    DiagBase::addVars(a_varList);
+    a_varList.push_back(m_cFieldName);
+    for (const auto& v : m_fieldNames) {
+        a_varList.push_back(v);
+    }
+}
+
+void
 DiagConditional::prepare(int a_nlevels,
                          const amrex::Vector<amrex::Geometry> &a_geoms,
                          const amrex::Vector<amrex::BoxArray> &a_grids,
@@ -202,27 +211,12 @@ DiagConditional::processDiag(int a_nstep,
 
     // Write data to file
     if (m_condType == Average) {
-        writeAverageDataToFile(condAbs,cond,condSq);
+        writeAverageDataToFile(a_nstep, a_time, condAbs, cond, condSq);
     } else if (m_condType == Integral) {
+        writeIntegralDataToFile(a_nstep, a_time, condAbs, cond);
     } else if (m_condType == Sum) {
+        writeSumDataToFile(a_nstep, a_time, condAbs, cond);
     }
-}
-
-int
-DiagConditional::getFieldIndex(const std::string &a_field,
-                               const amrex::Vector<std::string> &a_stateVar)
-{
-    int index = -1;
-    for (int n{0}; n < a_stateVar.size(); ++n) {
-        if (a_stateVar[n] == a_field) {
-            index = n;
-            break;
-        }
-    }
-    if (index < 0) {
-        amrex::Abort("Conditional Field : "+a_field+" wasn't found in available fields");  
-    }
-    return index;
 }
 
 amrex::Real
@@ -254,21 +248,114 @@ DiagConditional::MFVecMax(const amrex::Vector<const amrex::MultiFab*> &a_state,
 }
 
 void
-DiagConditional::writeAverageDataToFile(const amrex::Vector<amrex::Real> &a_condAbs,
+DiagConditional::writeAverageDataToFile(int a_nstep, const amrex::Real &a_time,
+                                        const amrex::Vector<amrex::Real> &a_condAbs,
                                         const amrex::Vector<amrex::Real> &a_cond,
                                         const amrex::Vector<amrex::Real> &a_condSq)
 {
-    // Retrieve some data
-    int nProcessFields = m_fieldIndices_d.size();
-    amrex::Real binWidth = (m_highBnd - m_lowBnd) / (m_nBins);
+    std::string diagfile;
+    if (m_interval > 0) {
+        diagfile = amrex::Concatenate(m_diagfile,a_nstep,6);
+    }
+    if (m_per > 0.0) {
+        diagfile = m_diagfile+std::to_string(a_time);
+    }
+    diagfile = diagfile+".dat";
 
-    for (size_t f{0}; f<nProcessFields; ++f) {
-        int binOffset = f * m_nBins;
+    if (amrex::ParallelDescriptor::IOProcessor()) {
+
+        std::ofstream condFile;
+        condFile.open(diagfile.c_str(),std::ios::out | std::ios::app);
+        condFile.precision(12);
+
+        // Retrieve some data
+        int nProcessFields = m_fieldIndices_d.size();
+        amrex::Real binWidth = (m_highBnd - m_lowBnd) / (m_nBins);
+
         for (size_t n{0}; n<m_nBins; ++n) {
-            amrex::Print() << a_condAbs[n] << " "
-                           << a_cond[binOffset+n] << " "
-                           << std::sqrt(std::abs(a_condSq[binOffset+n] - a_cond[binOffset+n]*a_cond[binOffset+n])) << " "
-                           << "\n";
+            condFile << a_condAbs[n] << " ";
+            for (size_t f{0}; f<nProcessFields; ++f) {
+                int binOffset = f * m_nBins;
+                 condFile << a_cond[binOffset+n] << " "
+                          << std::sqrt(std::abs(a_condSq[binOffset+n] - a_cond[binOffset+n]*a_cond[binOffset+n])) << " ";
+            }
+            condFile << "\n";
         }
+        condFile.flush();
+        condFile.close();
+    }
+}
+
+void
+DiagConditional::writeIntegralDataToFile(int a_nstep, const amrex::Real &a_time,
+                                         const amrex::Vector<amrex::Real> &a_condAbs,
+                                         const amrex::Vector<amrex::Real> &a_cond)
+{
+    std::string diagfile;
+    if (m_interval > 0) {
+        diagfile = amrex::Concatenate(m_diagfile,a_nstep,6);
+    }
+    if (m_per > 0.0) {
+        diagfile = m_diagfile+std::to_string(a_time);
+    }
+    diagfile = diagfile+".dat";
+
+    if (amrex::ParallelDescriptor::IOProcessor()) {
+
+        std::ofstream condFile;
+        condFile.open(diagfile.c_str(),std::ios::out | std::ios::app);
+        condFile.precision(12);
+
+        // Retrieve some data
+        int nProcessFields = m_fieldIndices_d.size();
+        amrex::Real binWidth = (m_highBnd - m_lowBnd) / (m_nBins);
+
+        for (size_t n{0}; n<m_nBins; ++n) {
+            condFile << a_condAbs[n] << " ";
+            for (size_t f{0}; f<nProcessFields; ++f) {
+                int binOffset = f * m_nBins;
+                 condFile << a_cond[binOffset+n] << " ";
+            }
+            condFile << "\n";
+        }
+        condFile.flush();
+        condFile.close();
+    }
+}
+
+void
+DiagConditional::writeSumDataToFile(int a_nstep, const amrex::Real &a_time,
+                                    const amrex::Vector<amrex::Real> &a_condAbs,
+                                    const amrex::Vector<amrex::Real> &a_cond)
+{
+    std::string diagfile;
+    if (m_interval > 0) {
+        diagfile = amrex::Concatenate(m_diagfile,a_nstep,6);
+    }
+    if (m_per > 0.0) {
+        diagfile = m_diagfile+std::to_string(a_time);
+    }
+    diagfile = diagfile+".dat";
+
+    if (amrex::ParallelDescriptor::IOProcessor()) {
+
+        std::ofstream condFile;
+        condFile.open(diagfile.c_str(),std::ios::out | std::ios::app);
+        condFile.precision(12);
+
+        // Retrieve some data
+        int nProcessFields = m_fieldIndices_d.size();
+        amrex::Real binWidth = (m_highBnd - m_lowBnd) / (m_nBins);
+
+        for (size_t n{0}; n<m_nBins; ++n) {
+            condFile << a_condAbs[n] << " ";
+            for (size_t f{0}; f<nProcessFields; ++f) {
+                int binOffset = f * m_nBins;
+                 condFile << a_cond[binOffset+n] << " ";
+            }
+            condFile << "\n";
+        }
+        condFile.flush();
+        condFile.close();
     }
 }

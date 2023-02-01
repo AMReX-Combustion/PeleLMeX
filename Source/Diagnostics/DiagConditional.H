@@ -24,15 +24,22 @@ public:
                    const amrex::Vector<const amrex::MultiFab*> &a_state,
                    const amrex::Vector<std::string> &a_varNames) override;
 
-  int getFieldIndex(const std::string &a_field,
-                    const amrex::Vector<std::string> &a_varNames);
+  void addVars(amrex::Vector<std::string> &a_varList) override;
+
   amrex::Real MFVecMin(const amrex::Vector<const amrex::MultiFab*> &a_state,
                        int comp);  
   amrex::Real MFVecMax(const amrex::Vector<const amrex::MultiFab*> &a_state,
                        int comp);  
-  void writeAverageDataToFile(const amrex::Vector<amrex::Real> &a_condAbs,
+  void writeAverageDataToFile(int a_nstep, const amrex::Real &a_time,
+                              const amrex::Vector<amrex::Real> &a_condAbs,
                               const amrex::Vector<amrex::Real> &a_cond,
                               const amrex::Vector<amrex::Real> &a_condSq);
+  void writeIntegralDataToFile(int a_nstep, const amrex::Real &a_time,
+                               const amrex::Vector<amrex::Real> &a_condAbs,
+                               const amrex::Vector<amrex::Real> &a_cond);
+  void writeSumDataToFile(int a_nstep, const amrex::Real &a_time,
+                          const amrex::Vector<amrex::Real> &a_condAbs,
+                          const amrex::Vector<amrex::Real> &a_cond);
 
   void close() override {}
 

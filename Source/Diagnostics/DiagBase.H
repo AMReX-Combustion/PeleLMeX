@@ -31,6 +31,11 @@ public:
                            const amrex::Vector<const amrex::MultiFab*> &a_state,
                            const amrex::Vector<std::string> &a_varNames) = 0;
 
+  virtual void addVars(amrex::Vector<std::string> &a_varList);
+
+  int getFieldIndex(const std::string &a_field,
+                    const amrex::Vector<std::string> &a_varList);
+
 protected:
   std::string m_diagfile{""};
   int m_verbose{0};

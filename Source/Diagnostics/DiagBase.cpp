@@ -67,3 +67,28 @@ DiagBase::doDiag(const amrex::Real &a_time,
 
     return willDo;
 }
+
+void
+DiagBase::addVars(amrex::Vector<std::string> &a_varList) {
+    int nFilters = m_filters.size();
+    for (int n = 0; n < nFilters; ++n) {
+        a_varList.push_back(m_filters[n].m_filterVar);
+    }
+}
+
+int
+DiagBase::getFieldIndex(const std::string &a_field,
+                        const amrex::Vector<std::string> &a_varList)
+{
+    int index = -1;
+    for (int n{0}; n < a_varList.size(); ++n) {
+        if (a_varList[n] == a_field) {
+            index = n;
+            break;
+        }
+    }
+    if (index < 0) {
+        amrex::Abort("Field : "+a_field+" wasn't found in available fields");  
+    }
+    return index;
+}
