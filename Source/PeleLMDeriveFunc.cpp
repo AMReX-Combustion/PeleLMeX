@@ -289,6 +289,34 @@ void pelelm_dervort (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dco
 }
 
 //
+// Compute cell-centered coordinates
+//
+void pelelm_dercoord (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
+                      const FArrayBox& /*statefab*/, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
+                      const Geometry& geomdata,
+                      Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
+
+{
+    AMREX_ASSERT(derfab.box().contains(bx));
+    AMREX_ASSERT(statefab.box().contains(bx));
+    AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
+    AMREX_D_TERM(const amrex::Real dx = geomdata.CellSize(0);,
+                 const amrex::Real dy = geomdata.CellSize(1);,
+                 const amrex::Real dz = geomdata.CellSize(2););
+
+    auto const& coord_arr = derfab.array(dcomp);
+
+    // TODO : EB
+    amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+    {
+        const amrex::Real* prob_lo = geomdata.ProbLo();
+        AMREX_D_TERM(coord_arr(i,j,k,0) = prob_lo[0] + (i+0.5)*dx;,
+                     coord_arr(i,j,k,1) = prob_lo[1] + (j+0.5)*dy;,
+                     coord_arr(i,j,k,2) = prob_lo[2] + (k+0.5)*dz;);
+    });
+}
+
+//
 // Compute Q-criterion
 //
 void pelelm_derQcrit (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int /*ncomp*/,

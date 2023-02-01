@@ -63,6 +63,11 @@ void pelelm_dervort (PeleLM* a_pelelm, const amrex::Box& bx, amrex::FArrayBox& d
                      const amrex::Geometry& geomdata,
                      amrex::Real time, const amrex::Vector<amrex::BCRec> &bcrec, int level);
 
+void pelelm_dercoord (PeleLM* a_pelelm, const amrex::Box& bx, amrex::FArrayBox& derfab, int dcomp, int ncomp,
+                      const amrex::FArrayBox& statefab, const amrex::FArrayBox& reactfab, const amrex::FArrayBox& pressfab,
+                      const amrex::Geometry& geomdata,
+                      amrex::Real time, const amrex::Vector<amrex::BCRec> &bcrec, int level);
+
 void pelelm_derQcrit (PeleLM* a_pelelm, const amrex::Box& bx, amrex::FArrayBox& derfab, int dcomp, int ncomp,
                       const amrex::FArrayBox& statefab, const amrex::FArrayBox& reactfab, const amrex::FArrayBox& pressfab,
                       const amrex::Geometry& geomdata,
