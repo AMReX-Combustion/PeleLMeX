@@ -559,7 +559,9 @@ PeleLM::derive(const std::string &a_name,
 
    std::unique_ptr<MultiFab> mf;
 
-   bool itexists = derive_lst.canDerive(a_name) || isStateVariable(a_name);
+   bool itexists =    derive_lst.canDerive(a_name)
+                   || isStateVariable(a_name)
+                   || isReactVariable(a_name);
 
    if ( !itexists ) {
       amrex::Error("PeleLM::derive(): unknown variable: "+a_name);
@@ -586,11 +588,15 @@ PeleLM::derive(const std::string &a_name,
           FArrayBox const& pressfab = ldata_p->press[mfi];
           rec->derFunc()(this, bx, derfab, 0, rec->numDerive(), statefab, reactfab, pressfab, geom[lev], a_time, stateBCs, lev);
       }
-   } else {          // This is a state variable
+   } else if (isStateVariable(a_name)) {          // This is a state variable
       mf.reset(new MultiFab(grids[lev], dmap[lev], 1, nGrow));
       int idx = stateVariableIndex(a_name);
       std::unique_ptr<MultiFab> statemf = fillPatchState(lev, a_time, nGrow);
       MultiFab::Copy(*mf,*statemf,idx,0,1,nGrow);
+   } else {                                       // This is a reaction variable, just alias, no time interpolation
+      AMREX_ASSERT(nGrow <= getLevelDataReactPtr(lev)->I_R.nGrow());
+      int idx = reactVariableIndex(a_name);
+      mf.reset(new MultiFab(getLevelDataReactPtr(lev)->I_R, amrex::make_alias, idx, 1));
    }
 
    return mf;
@@ -608,7 +614,9 @@ PeleLM::deriveComp(const std::string &a_name,
 
    std::unique_ptr<MultiFab> mf;
 
-   bool itexists = derive_lst.canDerive(a_name) || isStateVariable(a_name);
+   bool itexists =    derive_lst.canDerive(a_name)
+                   || isStateVariable(a_name)
+                   || isReactVariable(a_name);
 
    if ( !itexists ) {
       amrex::Error("PeleLM::derive(): unknown variable: "+a_name);
@@ -644,11 +652,15 @@ PeleLM::deriveComp(const std::string &a_name,
          amrex::Error("PeleLM::deriveComp(): unknown derive component: " + a_name + " of " + rec->variableName(1000));
       }
       MultiFab::Copy(*mf,derTemp,derComp,0,1,nGrow);
-   } else {          // This is a state variable
+   } else if (isStateVariable(a_name)) {          // This is a state variable
       mf.reset(new MultiFab(grids[lev], dmap[lev], 1, nGrow));
       int idx = stateVariableIndex(a_name);
       std::unique_ptr<MultiFab> statemf = fillPatchState(lev, a_time, nGrow);
       MultiFab::Copy(*mf,*statemf,idx,0,1,nGrow);
+   } else {                                       // This is a reaction variable, just alias, no time interpolation
+      AMREX_ASSERT(nGrow <= getLevelDataReactPtr(lev)->I_R.nGrow());
+      int idx = reactVariableIndex(a_name);
+      mf.reset(new MultiFab(getLevelDataReactPtr(lev)->I_R, amrex::make_alias, idx, 1));
    }
 
    return mf;
@@ -796,8 +808,9 @@ PeleLM::MLNorm0(const Vector<const MultiFab*> &a_MF,
 }
 
 bool
-PeleLM::isStateVariable(const std::string &a_name)
+PeleLM::isStateVariable(std::string_view a_name)
 {
+   // Check state
    for (std::list<std::tuple<int,std::string>>::const_iterator li = stateComponents.begin(),
         End = stateComponents.end(); li != End; ++li)
    {
@@ -808,15 +821,46 @@ PeleLM::isStateVariable(const std::string &a_name)
    return false;
 }
 
+bool
+PeleLM::isReactVariable(std::string_view a_name)
+{
+   // Check reaction state
+   for (std::list<std::tuple<int,std::string>>::const_iterator li = reactComponents.begin(),
+        End = reactComponents.end(); li != End; ++li)
+   {
+      if (std::get<1>(*li) == a_name) {
+         return true;
+      }
+   }
+   return false;
+}
+
 int
-PeleLM::stateVariableIndex(const std::string &a_name)
+PeleLM::stateVariableIndex(std::string_view a_name)
 {
    int idx = -1;
    if (!isStateVariable(a_name)) {
-      amrex::Error("PeleLM::stateVariableIndex(): unknown State variable: "+a_name);
+      amrex::Error("PeleLM::stateVariableIndex(): unknown State variable: "+static_cast<std::string>(a_name));
    }
    for (std::list<std::tuple<int,std::string>>::const_iterator li = stateComponents.begin(),
         End = stateComponents.end(); li != End; ++li)
+   {
+      if (std::get<1>(*li) == a_name) {
+         idx = std::get<0>(*li);
+      }
+   }
+   return idx;
+}
+
+int
+PeleLM::reactVariableIndex(std::string_view a_name)
+{
+   int idx = -1;
+   if (!isReactVariable(a_name)) {
+      amrex::Error("PeleLM::reactVariableIndex(): unknown Reaction variable: "+static_cast<std::string>(a_name));
+   }
+   for (std::list<std::tuple<int,std::string>>::const_iterator li = reactComponents.begin(),
+        End = reactComponents.end(); li != End; ++li)
    {
       if (std::get<1>(*li) == a_name) {
          idx = std::get<0>(*li);

@@ -104,6 +104,7 @@ void PeleLM::Setup() {
             m_plotChemDiag = 0;
             m_plotHeatRelease = 0;
             m_useTypValChem = 0;
+            reactComponents.clear();
          }
          pp.query("plot_react", m_plot_react);
       }
@@ -646,6 +647,7 @@ void PeleLM::variablesSetup() {
       pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(names);
       for (int n = 0; n < NUM_SPECIES; n++ ) {
          stateComponents.emplace_back(FIRSTSPEC+n,"rho.Y("+names[n]+")");
+         reactComponents.emplace_back(n,"I_R("+names[n]+")");
       }
       Print() << " Enthalpy: " << RHOH << "\n";
       stateComponents.emplace_back(RHOH,"rhoh");
@@ -867,15 +869,24 @@ void PeleLM::derivedSetup()
    // Vorticity magnitude
    derive_lst.add("mag_vort",IndexType::TheCellType(),1,pelelm_dermgvort,grow_box_by_two);
 
+   // Spatial coordinates
+   {
+      Vector<std::string> var_names({AMREX_D_DECL("x","y","z")});
+      derive_lst.add("coordinates",IndexType::TheCellType(),AMREX_SPACEDIM,var_names,
+                     pelelm_dercoord,the_same_box);
+   }
+
    // Vorticity components
-   const int vort_ncomp = 2*AMREX_SPACEDIM-3;
+   {
+      const int vort_ncomp = 2*AMREX_SPACEDIM-3;
 #if (AMREX_SPACEDIM == 2)
-   Vector<std::string> var_names({"VortZ"});
+      Vector<std::string> var_names({"VortZ"});
 #elif (AMREX_SPACEDIM == 3)
-   Vector<std::string> var_names({"VortX","VortY","VortZ"});
+      Vector<std::string> var_names({"VortX","VortY","VortZ"});
 #endif
-   derive_lst.add("vorticity",IndexType::TheCellType(),vort_ncomp,var_names,
-                  pelelm_dervort,grow_box_by_two);
+      derive_lst.add("vorticity",IndexType::TheCellType(),vort_ncomp,var_names,
+                     pelelm_dervort,grow_box_by_two);
+   }
 
 #if (AMREX_SPACEDIM == 3)
    // Q-criterion
@@ -1047,22 +1058,22 @@ void PeleLM::taggingSetup()
          Real value; ppr.get("value_greater",value);
          std::string field; ppr.get("field_name",field);
          errTags.push_back(AMRErrorTag(value,AMRErrorTag::GREATER,field,info));
-         itexists = derive_lst.canDerive(field) || isStateVariable(field);
+         itexists = derive_lst.canDerive(field) || isStateVariable(field) || isReactVariable(field);
       } else if (ppr.countval("value_less")) {
          Real value; ppr.get("value_less",value);
          std::string field; ppr.get("field_name",field);
          errTags.push_back(AMRErrorTag(value,AMRErrorTag::LESS,field,info));
-         itexists = derive_lst.canDerive(field) || isStateVariable(field);
+         itexists = derive_lst.canDerive(field) || isStateVariable(field) || isReactVariable(field);
       } else if (ppr.countval("vorticity_greater")) {
          Real value; ppr.get("vorticity_greater",value);
          const std::string field="mag_vort";
          errTags.push_back(AMRErrorTag(value,AMRErrorTag::VORT,field,info));
-         itexists = derive_lst.canDerive(field) || isStateVariable(field);
+         itexists = derive_lst.canDerive(field) || isStateVariable(field) || isReactVariable(field);
       } else if (ppr.countval("adjacent_difference_greater")) {
          Real value; ppr.get("adjacent_difference_greater",value);
          std::string field; ppr.get("field_name",field);
          errTags.push_back(AMRErrorTag(value,AMRErrorTag::GRAD,field,info));
-         itexists = derive_lst.canDerive(field) || isStateVariable(field);
+         itexists = derive_lst.canDerive(field) || isStateVariable(field) || isReactVariable(field);
       } else if (realbox.ok()) {
         errTags.push_back(AMRErrorTag(info));
         itexists = true;
