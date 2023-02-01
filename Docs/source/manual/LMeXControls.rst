@@ -340,7 +340,7 @@ Currently, the list of diagnostic contains:
 * `DiagFramePlane` : extract a plane aligned in the 'x','y' or 'z' direction across the AMR hierarchy, writing
   a 2D plotfile compatible with Amrvis, Paraview or yt. Only available for 3D simulations.
 * `DiagPDF` : extract the PDF of a given variable and write it to an ASCII file.
-* `DiagConditional` : extract statistics (average and standard deviation, integral or sum) of a 
+* `DiagConditional` : extract statistics (average and standard deviation, integral or sum) of a
   set of variables conditioned on the value of given variable and write it to an ASCII file.
 
 When using `DiagPDF` or `DiagConditional`, it is possible to narrow down the diagnostic to a region of interest
@@ -358,7 +358,7 @@ fine-covered regions are masked. The following provide examples for each diagnos
     peleLM.xnormP.normal = 0                                        # Plane normal (0, 1 or 2 for x, y or z)
     peleLM.xnormP.center = 0.005                                    # Coordinate in the normal direction
     peleLM.xnormP.int    = 5                                        # Frequency (as step #) for performing the diagnostic
-    peleLM.xnormP.interpolation = Linear                            # [OPT, DEF=Linear] Interpolation type : Linear or Quadratic 
+    peleLM.xnormP.interpolation = Linear                            # [OPT, DEF=Linear] Interpolation type : Linear or Quadratic
     peleLM.xnormP.field_names = x_velocity mag_vort density         # List of variables outputed to the 2D pltfile
 
     peleLM.condT.type = DiagConditional                             # Diagnostic type
