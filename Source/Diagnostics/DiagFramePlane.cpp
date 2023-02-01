@@ -221,11 +221,12 @@ DiagFramePlane::processDiag(int a_nstep,
             auto const& state = a_state[lev]->const_array(state_idx,0);
             auto const& plane = planeData[lev].array(mfi);
             auto const& intwgt = m_intwgt[lev];
+            auto *idx_d_p = m_fieldIndices_d.dataPtr();
             if (m_normal == 0) {
                 amrex::ParallelFor(bx, m_fieldNames.size(), [=]
                 AMREX_GPU_DEVICE (int i, int j, int k, int n) noexcept
                 {
-                    int stIdx = m_fieldIndices_d[n];
+                    int stIdx = idx_d_p[n];
                     plane(i,j,k,n) = intwgt[0] * state(p0-1,i,j,stIdx) +
                                      intwgt[1] * state(p0  ,i,j,stIdx) +
                                      intwgt[2] * state(p0+1,i,j,stIdx);
@@ -234,7 +235,7 @@ DiagFramePlane::processDiag(int a_nstep,
                 amrex::ParallelFor(bx, m_fieldNames.size(), [=]
                 AMREX_GPU_DEVICE (int i, int j, int k, int n) noexcept
                 {
-                    int stIdx = m_fieldIndices_d[n];
+                    int stIdx = idx_d_p[n];
                     plane(i,j,k,n) = intwgt[0] * state(i,p0-1,j,stIdx) +
                                      intwgt[1] * state(i,p0  ,j,stIdx) +
                                      intwgt[2] * state(i,p0+1,j,stIdx);
@@ -243,7 +244,7 @@ DiagFramePlane::processDiag(int a_nstep,
                 amrex::ParallelFor(bx, m_fieldNames.size(), [=]
                 AMREX_GPU_DEVICE (int i, int j, int k, int n) noexcept
                 {
-                    int stIdx = m_fieldIndices_d[n];
+                    int stIdx = idx_d_p[n];
                     plane(i,j,k,n) = intwgt[0] * state(i,j,p0-1,stIdx) +
                                      intwgt[1] * state(i,j,p0  ,stIdx) +
                                      intwgt[2] * state(i,j,p0+1,stIdx);
