@@ -25,7 +25,7 @@ PeleLM::createDiagnostics()
     }
 
     // Remove duplicates from m_diagVars and check that all the variables exists
-    std::sort(m_diagVars.begin(), m_diagVars.end()); 
+    std::sort(m_diagVars.begin(), m_diagVars.end());
     auto last = std::unique(m_diagVars.begin(), m_diagVars.end());
     m_diagVars.erase(last, m_diagVars.end());
     for (auto &v : m_diagVars) {
@@ -64,7 +64,7 @@ PeleLM::doDiagnostics()
             MultiFab::Copy(*diagMFVec[lev].get(), *mf, 0, v, 1, 0);
         }
     }
-    
+
     Vector<std::string> stateNames;
     for (std::list<std::tuple<int,std::string>>::const_iterator li = stateComponents.begin(),
          End = stateComponents.end(); li != End; ++li) {

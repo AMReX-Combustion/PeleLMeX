@@ -65,7 +65,7 @@ private:
   // Variables output
   amrex::Vector<std::string> m_fieldNames;
   amrex::Gpu::DeviceVector<int> m_fieldIndices_d;
-  
+
   // Plane definition
   int m_normal;
   amrex::GpuArray<amrex::Real,AMREX_SPACEDIM> m_center;

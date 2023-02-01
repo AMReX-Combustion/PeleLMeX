@@ -49,7 +49,7 @@ DiagPDF::prepare(int a_nlevels,
             m_refRatio[lev-1] = amrex::IntVect(static_cast<int>(a_geoms[lev-1].CellSize(0)/a_geoms[lev].CellSize(0)));
         }
     }
-    
+
 }
 
 void
@@ -65,7 +65,7 @@ DiagPDF::processDiag(int a_nstep,
        m_highBnd = MFVecMax(a_state,fieldIdx);
     }
     amrex::Real binWidth = (m_highBnd - m_lowBnd) / m_nBins;
-    amrex::Print() <<  " PDF metadata: [" << m_lowBnd << "," << m_highBnd << "," << binWidth << "] \n"; 
+    amrex::Print() <<  " PDF metadata: [" << m_lowBnd << "," << m_highBnd << "," << binWidth << "] \n";
 
     // Data holders
     amrex::Gpu::DeviceVector<amrex::Real> pdf_d(m_nBins,0.0);
@@ -85,8 +85,8 @@ DiagPDF::processDiag(int a_nstep,
                                       m_refRatio[lev],amrex::Periodicity::NonPeriodic(),
                                       1, 0);
         }
-        auto const& sarrs = a_state[lev]->const_arrays(); 
-        auto const& marrs = mask.arrays(); 
+        auto const& sarrs = a_state[lev]->const_arrays();
+        auto const& marrs = mask.arrays();
         auto *fdata_p = m_filterData.data();
         amrex::ParallelFor(*a_state[lev], amrex::IntVect(0),
             [=,nFilters=m_filters.size()] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
@@ -103,7 +103,7 @@ DiagPDF::processDiag(int a_nstep,
             // Get the geometry volume to account for 2D-RZ
             amrex::MultiFab volume(a_state[lev]->boxArray(), a_state[lev]->DistributionMap(), 1, 0);
             m_geoms[lev].GetVolume(volume);
-            auto const& varrs = volume.const_arrays(); 
+            auto const& varrs = volume.const_arrays();
 
             auto *pdf_d_p = pdf_d.dataPtr();
             amrex::ParallelFor(*a_state[lev], amrex::IntVect(0),

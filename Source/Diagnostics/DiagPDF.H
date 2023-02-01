@@ -25,9 +25,9 @@ public:
   void addVars(amrex::Vector<std::string> &a_varList) override;
 
   amrex::Real MFVecMin(const amrex::Vector<const amrex::MultiFab*> &a_state,
-                       int comp);  
+                       int comp);
   amrex::Real MFVecMax(const amrex::Vector<const amrex::MultiFab*> &a_state,
-                       int comp);  
+                       int comp);
   void writePDFToFile(int a_nstep, const amrex::Real &a_time,
                       const amrex::Vector<amrex::Real> &a_pdf,
                       const amrex::Real &a_sum);

@@ -125,7 +125,7 @@ DiagFramePlane::prepare(int a_nlevels,
             m_fieldIndices[f] = getFieldIndex(m_fieldNames[f],a_varNames);
         }
         amrex::Gpu::copy(amrex::Gpu::hostToDevice,m_fieldIndices.begin(),
-                         m_fieldIndices.end(),m_fieldIndices_d.begin()); 
+                         m_fieldIndices.end(),m_fieldIndices_d.begin());
 
         first_time = false;
     }

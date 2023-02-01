@@ -27,9 +27,9 @@ public:
   void addVars(amrex::Vector<std::string> &a_varList) override;
 
   amrex::Real MFVecMin(const amrex::Vector<const amrex::MultiFab*> &a_state,
-                       int comp);  
+                       int comp);
   amrex::Real MFVecMax(const amrex::Vector<const amrex::MultiFab*> &a_state,
-                       int comp);  
+                       int comp);
   void writeAverageDataToFile(int a_nstep, const amrex::Real &a_time,
                               const amrex::Vector<amrex::Real> &a_condAbs,
                               const amrex::Vector<amrex::Real> &a_cond,

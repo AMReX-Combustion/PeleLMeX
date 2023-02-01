@@ -88,7 +88,7 @@ DiagBase::getFieldIndex(const std::string &a_field,
         }
     }
     if (index < 0) {
-        amrex::Abort("Field : "+a_field+" wasn't found in available fields");  
+        amrex::Abort("Field : "+a_field+" wasn't found in available fields");
     }
     return index;
 }

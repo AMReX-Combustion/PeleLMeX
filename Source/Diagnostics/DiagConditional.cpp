@@ -58,7 +58,7 @@ DiagConditional::prepare(int a_nlevels,
             m_fieldIndices[f] = getFieldIndex(m_fieldNames[f],a_varNames);
         }
         amrex::Gpu::copy(amrex::Gpu::hostToDevice,m_fieldIndices.begin(),
-                         m_fieldIndices.end(),m_fieldIndices_d.begin()); 
+                         m_fieldIndices.end(),m_fieldIndices_d.begin());
     }
 
     m_geoms.resize(a_nlevels);
@@ -110,8 +110,8 @@ DiagConditional::processDiag(int a_nstep,
                                       m_refRatio[lev],amrex::Periodicity::NonPeriodic(),
                                       1, 0);
         }
-        auto const& sarrs = a_state[lev]->const_arrays(); 
-        auto const& marrs = mask.arrays(); 
+        auto const& sarrs = a_state[lev]->const_arrays();
+        auto const& marrs = mask.arrays();
         auto *fdata_p = m_filterData.data();
         amrex::ParallelFor(*a_state[lev], amrex::IntVect(0),
             [=,nFilters=m_filters.size()] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
@@ -127,7 +127,7 @@ DiagConditional::processDiag(int a_nstep,
         // Get the geometry volume to account for 2D-RZ
         amrex::MultiFab volume(a_state[lev]->boxArray(), a_state[lev]->DistributionMap(), 1, 0);
         m_geoms[lev].GetVolume(volume);
-        auto const& varrs = volume.const_arrays(); 
+        auto const& varrs = volume.const_arrays();
 
         auto *cond_d_p = cond_d.dataPtr();
         auto *condAbs_d_p = condAbs_d.dataPtr();
@@ -144,7 +144,7 @@ DiagConditional::processDiag(int a_nstep,
                                 int fidx = idx_d_p[f];
                                 int binOffset = f * nBins;
                                 amrex::HostDevice::Atomic::Add(&(cond_d_p[binOffset+cbin]), varrs[box_no](i,j,k)*sarrs[box_no](i,j,k,fidx));
-                                amrex::HostDevice::Atomic::Add(&(condSq_d_p[binOffset+cbin]), 
+                                amrex::HostDevice::Atomic::Add(&(condSq_d_p[binOffset+cbin]),
                                                                varrs[box_no](i,j,k)*sarrs[box_no](i,j,k,fidx)*sarrs[box_no](i,j,k,fidx));
                             }
                             amrex::HostDevice::Atomic::Add(&(condVol_d_p[cbin]), varrs[box_no](i,j,k));
