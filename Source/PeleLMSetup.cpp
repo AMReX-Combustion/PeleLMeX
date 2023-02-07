@@ -888,6 +888,9 @@ void PeleLM::derivedSetup()
                      pelelm_dervort,grow_box_by_two);
    }
 
+   // UserDefined derived
+   derive_lst.add("derUserDefined",IndexType::TheCellType(),1,pelelm_deruserdef,the_same_box);
+
 #if (AMREX_SPACEDIM == 3)
    // Q-criterion
    derive_lst.add("Qcrit",IndexType::TheCellType(),1,pelelm_derQcrit,grow_box_by_two);
