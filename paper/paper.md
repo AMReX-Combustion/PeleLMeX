@@ -75,7 +75,7 @@ suite [@SUNDIALS]). The resolution of the linear systems arising in the implicit
 handled using AMReX's native geometric multigrid (GMG) solver, but can also be transfered to HYPRE [@Hypre] if GMG fails.
 PeleLMeX relies on a non-subcycling approach to advance the numerical solution on an AMR hierarchy, where all the levels
 are advanced together using the same time step, which size is precribed a CFL condition accross all the levels. The consistency of
-the numerical fluxes is ensured by averaging down fluxes from fine to coarse levels.
+the numerical fluxes at coarse/fine interfaces is ensured by averaging down fluxes from fine to coarse levels.
 
 In addition, PeleLMeX uses an Embedded Boundary (EB) approach to represent complex geometries: an arbitrary surface can 
 be intersected with the Cartesian matrix of uniform cells, and the numerical stencils are modified near cells that are cut 
@@ -95,7 +95,8 @@ From its inception, under the name LMC in the early 2000, the motivation was to 
 formulation to achieve high performances from a small desktop stations to the world largest supercomputer, and to this day
 it remains the only publicly available code to offers these features. Recent code developments focused on enabling
 massively parallel simulations at scale on high-performance accelerated computer architectures to tackle the challenging
-requirements of fundamental and applied combustion research.
+requirements of fundamental and applied combustion research, as well as extending the solver modeling capabilities by including
+Large Eddy Simulation (LES) closure models and support for data-driven combustion models [@Perry:2021].
 
 PeleLMeX is predominantly used to study the fine scale interactions between turbulence and chemical reactions occuring in many
 combustion applications. A better understanding of these interactions is the basis for developing accurate modeling approaches
