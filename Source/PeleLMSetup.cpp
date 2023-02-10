@@ -889,7 +889,11 @@ void PeleLM::derivedSetup()
    }
 
    // UserDefined derived
-   derive_lst.add("derUserDefined",IndexType::TheCellType(),1,pelelm_deruserdef,the_same_box);
+   {
+       Vector<std::string> var_names = pelelm_setuserderives();
+       derive_lst.add("derUserDefined",IndexType::TheCellType(),var_names.size(),var_names,
+                      pelelm_deruserdef,the_same_box);
+   }
 
 #if (AMREX_SPACEDIM == 3)
    // Q-criterion
