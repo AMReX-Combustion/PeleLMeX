@@ -140,8 +140,8 @@ DiagConditional::processDiag(int a_nstep,
         auto *condAbs_d_p = condAbs_d.dataPtr();
         auto *idx_d_p = m_fieldIndices_d.dataPtr();
         if (m_condType == Average) {
-            auto *condVol_d_p = condVol_d.dataPtr();
             auto *condSq_d_p = condSq_d.dataPtr();
+            auto *condVol_d_p = condVol_d.dataPtr();
             amrex::ParallelFor(*a_state[lev], amrex::IntVect(0),
                 [=,nBins=m_nBins,lowBnd=m_lowBnd] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
                     if (marrs[box_no](i,j,k)) {
@@ -170,6 +170,7 @@ DiagConditional::processDiag(int a_nstep,
                                 int binOffset = f * nBins;
                                 amrex::HostDevice::Atomic::Add(&(cond_d_p[binOffset+cbin]), varrs[box_no](i,j,k)*sarrs[box_no](i,j,k,fidx));
                             }
+                            amrex::HostDevice::Atomic::Add(&(condAbs_d_p[cbin]), varrs[box_no](i,j,k)*sarrs[box_no](i,j,k,cFieldIdx));
                         }
                     }
                 });
@@ -184,6 +185,7 @@ DiagConditional::processDiag(int a_nstep,
                                 int binOffset = f * nBins;
                                 amrex::HostDevice::Atomic::Add(&(cond_d_p[binOffset+cbin]), sarrs[box_no](i,j,k,fidx));
                             }
+                            amrex::HostDevice::Atomic::Add(&(condAbs_d_p[cbin]), varrs[box_no](i,j,k)*sarrs[box_no](i,j,k,cFieldIdx));
                         }
                     }
                 });
@@ -207,18 +209,22 @@ DiagConditional::processDiag(int a_nstep,
         for (size_t f{0}; f<nProcessFields; ++f) {
             int binOffset = f * m_nBins;
             for (size_t n{0}; n < m_nBins; ++n) {
-                cond[binOffset+n] /= condVol[n];
-                condSq[binOffset+n] /= condVol[n];
+                if (condVol[n] != 0.0) {
+                    cond[binOffset+n] /= condVol[n];
+                    condSq[binOffset+n] /= condVol[n];
+                }
             }
         }
         for (size_t n{0}; n < m_nBins; ++n) {
-            condAbs[n] /= condVol[n];
+            if (condVol[n] != 0.0) {
+                condAbs[n] /= condVol[n];
+            }
         }
     }
 
     // Write data to file
     if (m_condType == Average) {
-        writeAverageDataToFile(a_nstep, a_time, condAbs, cond, condSq);
+        writeAverageDataToFile(a_nstep, a_time, condAbs, cond, condSq, condVol);
     } else if (m_condType == Integral) {
         writeIntegralDataToFile(a_nstep, a_time, condAbs, cond);
     } else if (m_condType == Sum) {
@@ -258,7 +264,8 @@ void
 DiagConditional::writeAverageDataToFile(int a_nstep, const amrex::Real &a_time,
                                         const amrex::Vector<amrex::Real> &a_condAbs,
                                         const amrex::Vector<amrex::Real> &a_cond,
-                                        const amrex::Vector<amrex::Real> &a_condSq)
+                                        const amrex::Vector<amrex::Real> &a_condSq,
+                                        const amrex::Vector<amrex::Real> &a_condVol)
 {
     std::string diagfile;
     if (m_interval > 0) {
@@ -276,7 +283,9 @@ DiagConditional::writeAverageDataToFile(int a_nstep, const amrex::Real &a_time,
         int prec = 8;
         int width = 16;
 
+        condFile << std::left << std::setw(width) << "BinCenter" << " ";
         condFile << std::left << std::setw(width) << m_cFieldName << " ";
+        condFile << std::left << std::setw(width) << "Volume" << " ";
         for (auto &f : m_fieldNames) {
             condFile << std::left << std::setw(width) << f+"_Avg" << " ";
             condFile << std::left << std::setw(width) << f+"_StdDev" << " ";
@@ -288,7 +297,9 @@ DiagConditional::writeAverageDataToFile(int a_nstep, const amrex::Real &a_time,
         amrex::Real binWidth = (m_highBnd - m_lowBnd) / (m_nBins);
 
         for (size_t n{0}; n<m_nBins; ++n) {
+            condFile << std::left << std::setw(width) << std::setprecision(prec) << std::scientific << m_lowBnd + (n+0.5)*binWidth << " ";
             condFile << std::left << std::setw(width) << std::setprecision(prec) << std::scientific << a_condAbs[n] << " ";
+            condFile << std::left << std::setw(width) << std::setprecision(prec) << std::scientific << a_condVol[n] << " ";
             for (size_t f{0}; f<nProcessFields; ++f) {
                 int binOffset = f * m_nBins;
                 condFile << std::left << std::setw(width) << std::setprecision(prec) << std::scientific << a_cond[binOffset+n] << " "
