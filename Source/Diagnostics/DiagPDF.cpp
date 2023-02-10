@@ -178,13 +178,18 @@ DiagPDF::writePDFToFile(int a_nstep, const amrex::Real &a_time,
     if (amrex::ParallelDescriptor::IOProcessor()) {
 
         std::ofstream pdfFile;
-        pdfFile.open(diagfile.c_str(),std::ios::out | std::ios::app);
-        pdfFile.precision(12);
+        pdfFile.open(diagfile.c_str(),std::ios::out);
+        int prec = 8;
+        int width = 16;
 
         amrex::Real binWidth = (m_highBnd - m_lowBnd) / (m_nBins);
 
+        pdfFile << std::setw(width) << m_fieldName << " "
+                << std::setw(width) << m_fieldName+"_PDF" << "\n";
+
         for (size_t i{0}; i<a_pdf.size(); ++i) {
-            pdfFile << m_lowBnd+(static_cast<amrex::Real>(i)+0.5)*binWidth << " " << a_pdf[i]/a_sum/binWidth << "\n";
+            pdfFile << std::setw(width) << std::setprecision(prec) << std::scientific << m_lowBnd+(static_cast<amrex::Real>(i)+0.5)*binWidth << " "
+                    << std::setw(width) << std::setprecision(prec) << std::scientific << a_pdf[i]/a_sum/binWidth << "\n";
         }
 
         pdfFile.flush();

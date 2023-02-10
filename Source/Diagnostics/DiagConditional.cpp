@@ -265,19 +265,27 @@ DiagConditional::writeAverageDataToFile(int a_nstep, const amrex::Real &a_time,
     if (amrex::ParallelDescriptor::IOProcessor()) {
 
         std::ofstream condFile;
-        condFile.open(diagfile.c_str(),std::ios::out | std::ios::app);
-        condFile.precision(12);
+        condFile.open(diagfile.c_str(),std::ios::out);
+        int prec = 8;
+        int width = 16;
+
+        condFile << std::left << std::setw(width) << m_cFieldName << " ";
+        for (auto &f : m_fieldNames) {
+            condFile << std::left << std::setw(width) << f+"_Avg" << " ";
+            condFile << std::left << std::setw(width) << f+"_StdDev" << " ";
+        }
+        condFile << "\n";
 
         // Retrieve some data
         int nProcessFields = m_fieldIndices_d.size();
         amrex::Real binWidth = (m_highBnd - m_lowBnd) / (m_nBins);
 
         for (size_t n{0}; n<m_nBins; ++n) {
-            condFile << a_condAbs[n] << " ";
+            condFile << std::left << std::setw(width) << std::setprecision(prec) << std::scientific << a_condAbs[n] << " ";
             for (size_t f{0}; f<nProcessFields; ++f) {
                 int binOffset = f * m_nBins;
-                 condFile << a_cond[binOffset+n] << " "
-                          << std::sqrt(std::abs(a_condSq[binOffset+n] - a_cond[binOffset+n]*a_cond[binOffset+n])) << " ";
+                condFile << std::left << std::setw(width) << std::setprecision(prec) << std::scientific << a_cond[binOffset+n] << " "
+                         << std::setw(width) << std::setprecision(prec) << std::scientific << std::sqrt(std::abs(a_condSq[binOffset+n] - a_cond[binOffset+n]*a_cond[binOffset+n])) << " ";
             }
             condFile << "\n";
         }
@@ -304,17 +312,24 @@ DiagConditional::writeIntegralDataToFile(int a_nstep, const amrex::Real &a_time,
 
         std::ofstream condFile;
         condFile.open(diagfile.c_str(),std::ios::out | std::ios::app);
-        condFile.precision(12);
+        int prec = 8;
+        int width = 16;
+
+        condFile << std::left << std::setw(width) << m_cFieldName << " ";
+        for (auto &f : m_fieldNames) {
+            condFile << std::left << std::setw(width) << f+"_Int" << " ";
+        }
+        condFile << "\n";
 
         // Retrieve some data
         int nProcessFields = m_fieldIndices_d.size();
         amrex::Real binWidth = (m_highBnd - m_lowBnd) / (m_nBins);
 
         for (size_t n{0}; n<m_nBins; ++n) {
-            condFile << a_condAbs[n] << " ";
+            condFile << std::left << std::setw(width) << std::setprecision(prec) << std::scientific << a_condAbs[n] << " ";
             for (size_t f{0}; f<nProcessFields; ++f) {
                 int binOffset = f * m_nBins;
-                 condFile << a_cond[binOffset+n] << " ";
+                condFile << std::left << std::setw(width) << std::setprecision(prec) << std::scientific << a_cond[binOffset+n] << " ";
             }
             condFile << "\n";
         }
@@ -341,17 +356,24 @@ DiagConditional::writeSumDataToFile(int a_nstep, const amrex::Real &a_time,
 
         std::ofstream condFile;
         condFile.open(diagfile.c_str(),std::ios::out | std::ios::app);
-        condFile.precision(12);
+        int prec = 8;
+        int width = 16;
+
+        condFile << std::left << std::setw(width) << m_cFieldName << " ";
+        for (auto &f : m_fieldNames) {
+            condFile << std::left << std::setw(width) << f+"_Sum" << " ";
+        }
+        condFile << "\n";
 
         // Retrieve some data
         int nProcessFields = m_fieldIndices_d.size();
         amrex::Real binWidth = (m_highBnd - m_lowBnd) / (m_nBins);
 
         for (size_t n{0}; n<m_nBins; ++n) {
-            condFile << a_condAbs[n] << " ";
+            condFile << std::left << std::setw(width) << std::setprecision(prec) << std::scientific << a_condAbs[n] << " ";
             for (size_t f{0}; f<nProcessFields; ++f) {
                 int binOffset = f * m_nBins;
-                 condFile << a_cond[binOffset+n] << " ";
+                condFile << std::left << std::setw(width) << std::setprecision(prec) << std::scientific << a_cond[binOffset+n] << " ";
             }
             condFile << "\n";
         }
