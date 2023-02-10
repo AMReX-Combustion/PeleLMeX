@@ -23,6 +23,13 @@ DiagConditional::init(const std::string &a_prefix,
     pp.get("nBins",m_nBins);
     AMREX_ASSERT(m_nBins > 0);
     pp.get("condition_field_name",m_cFieldName);
+    if (pp.countval("range")) {
+        amrex::Vector<amrex::Real> range{0.0};
+        pp.getarr("range", range, 0, 2);
+        m_lowBnd = std::min(range[0],range[1]);
+        m_highBnd = std::max(range[0],range[1]);
+        m_usecFieldMinMax = false;
+    }
     int nProcessFields = -1;
     nProcessFields = pp.countval("field_names");
     AMREX_ASSERT(nProcessFields > 0);
@@ -79,7 +86,7 @@ DiagConditional::processDiag(int a_nstep,
 {
     // Set conditional range
     int cFieldIdx = getFieldIndex(m_cFieldName,a_stateVar);
-    if (m_useFieldMinMax) {
+    if (m_usecFieldMinMax) {
        m_lowBnd = MFVecMin(a_state,cFieldIdx);
        m_highBnd = MFVecMax(a_state,cFieldIdx);
     }

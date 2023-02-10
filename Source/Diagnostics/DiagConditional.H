@@ -50,7 +50,7 @@ private:
   amrex::Vector<std::string> m_fieldNames;   // Processed Field names
   amrex::Gpu::DeviceVector<int> m_fieldIndices_d;
   int m_nBins{-1};                           // Number of bins
-  bool m_useFieldMinMax{true};               // Use min/max from field
+  bool m_usecFieldMinMax{true};              // Use min/max from condition field
   amrex::Real m_lowBnd{0.0};                 // Low bound
   amrex::Real m_highBnd{0.0};                // High bound
 
