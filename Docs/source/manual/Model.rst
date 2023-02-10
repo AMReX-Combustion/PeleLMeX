@@ -381,21 +381,38 @@ multigrid solvers. More details on how to use HYPRE is provided in control Secti
 Large Eddy Simulation
 ^^^^^^^^^^^^^^^^^^^^^
 
-To provide closure for the unresolved trubulent stress/flux terms in Large Eddy Simulation (LES), PeleLMeX supports the
-constant-coefficient Smagorinsky and WALE models for turbulent transport of momentum, species, and energy. These models are
+To provide closure for the unresolved turbulent stress/flux terms in Large Eddy Simulation (LES), PeleLMeX supports the
+constant-coefficient Smagorinsky, WALE and Sigma models for turbulent transport of momentum, species, and energy. These models are
 based on a gradient transport assumption, resulting in terms analagous to the molecular transport of these quantities, but with
-modified turbulent transport coefficients. In the Smgorinsky model, the turbulent viscosity :math:`\mu_t` is computed as:
+modified turbulent transport coefficients. The basis of all these algebraic closures is to model the subgrid scale (sgs) viscosity with:
 
 .. math::
 
-   \mu_t = \overline{\rho} C_s^2 \bar{\Delta}^2 |\widetilde{S}|, \hspace{12pt}  \widetilde{S}_{ij} = \frac{1}{2} \left(\frac{\partial u_i}{\partial x_j} + \frac{\partial u_j}{\partial x_i} \right).
+    \nu_{t} = \nu_{sgs} = ( C_m \Delta )^2 \mathcal{D}(\boldsymbol{u})
+
+where :math:`C_m` is a model constant, :math:`\Delta` is the subgrid length scale (typically the grid size) and :math:`\mathcal{D}(\boldsymbol{u})`
+is a differential operator acting on the filtered velocity. :math:`\mu_t` is then calculated using the filtered density :math:`\mu_t = \overline{\rho} \cdot \nu_{t}`.
+In the `Smgorinsky <https://doi.org/10.1175/1520-0493(1963)091<0099:GCEWTP>2.3.CO;2>`_ model, :math:`C_m = C_s = 0.18` and :math:`\mathcal{D}` writes:
+
+.. math::
+
+   \mathcal{D}_{s} = |\widetilde{S}| = sqrt(2 \widetilde{S}_{ij}\widetilde{S}_{ij}), \hspace{12pt} \widetilde{S}_{ij} = \frac{1}{2} \left(\frac{\partial u_i}{\partial x_j} + \frac{\partial u_j}{\partial x_i} \right).
 
 where filtered quantities are indicated with an overbar, Favre-filtered quantities are indicated with
-a tilde. In the WALE model, it is computed as:
+a tilde. In the `<WALE https://doi.org/10.1023/A:1009995426001>`_  model, :math:`C_m = C_w = 0.60` and :math:`\mathcal{D}` writes:
 
 .. math::
-   \mu_t = \overline{\rho} C_m^2 \Delta^2 \frac{\left(\widetilde{S}_{ij}^{d}\widetilde{S}_{ij}^{d} \right)^{3/2} + }{\left(\widetilde{S}_{ij}\widetilde{S}_{ij} \right)^{5/2} + \left(\widetilde{S}_{ij}^{d}\widetilde{S}_{ij}^{d} \right)^{5/4}},
+
+   \mathcal{D}_{w} = \frac{\left(\widetilde{S}_{ij}^{d}\widetilde{S}_{ij}^{d} \right)^{3/2} + }{\left(\widetilde{S}_{ij}\widetilde{S}_{ij} \right)^{5/2} + \left(\widetilde{S}_{ij}^{d}\widetilde{S}_{ij}^{d} \right)^{5/4}},
    \hspace{12pt} \widetilde{S}_{ij}^d = \frac{1}{2}\left( \left(\frac{\partial \widetilde{u}_i}{\partial x_j} \right)^2 + \left(\frac{\partial \widetilde{u}_j}{\partial x_i} \right)^2 \right) - \frac{\delta_{ij}}{3} \left(\frac{\partial \widetilde{u}_k}{\partial x_k} \right)^{2}.
+
+When using the `Sigma <https://doi.org/10.1063/1.3623274>`_ model, :math:`C_m = C_{\sigma} = 1.35` and :math:`\mathcal{D}` writes:
+
+.. math::
+
+    \mathcal{D}_{\sigma} = \frac{\sigma_3(\sigma_1-\sigma_2)(\sigma_2-\sigma_3)}{\sigma_1^2},
+
+where the :math:`\sigma` are the singular values of the filtered velocity gradient tensor.
 
 The total diffusive transport of momentum from both viscous and turbulent stresses is then computed as
 
@@ -405,10 +422,10 @@ The total diffusive transport of momentum from both viscous and turbulent stress
    = \frac{\partial}{\partial x_j}\left[\left(\widetilde{\mu} + \mu_t \right)\left(\frac{\partial \widetilde{u}_i}{\partial x_j}
    + \frac{\partial \widetilde{u}_j}{\partial x_i}- \frac{2}{3} \frac{\partial \widetilde{u}_k}{\partial x_k}\delta_{ij} \right)  \right]
 
-The thermal conducivity and species diffusivities are similarly modified with turbulent contributions, :math:`\lambda_t = \mu_t \widetilde{c_p} / Pr_t` and :math:`(\rho D)_t = \mu_t/Sc_t`. The solution algorithm is unchanged other than the addition of these turbulent coefficients to the corresponding molecular transport properties. Nominal values for the model coefficients are :math:`c_s = 0.18`, :math:`c_m = 0.60`, and :math:`Sc_t = Pr_t = 0.7`.
+The thermal conducivity and species diffusivities are similarly modified with turbulent contributions, :math:`\lambda_t = \mu_t \widetilde{c_p} / Pr_t` and :math:`(\rho D)_t = \mu_t/Sc_t`. The solution algorithm is unchanged other than the addition of these turbulent coefficients to the corresponding molecular transport properties. Nominal values for the model coefficient :math:`Sc_t = Pr_t = 0.7`.
 
 **Limitations**: Because the turbulent transport coefficients are nonlinear functions of the velocity field, the treatment of
 the diffusion terms is not fully implicity when LES models are active. While the implicit solves as described above are kept
 in place to ensure numerical stability, the turbulent transport coefficients are evaluated only at the old timestep, with the
 old turbulent values also used to approximate the values at the new timestep. Additionally, the present implementation cannot
-be used with EB or EFIELD.
+be used with EFIELD.
