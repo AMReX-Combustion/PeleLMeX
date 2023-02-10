@@ -65,7 +65,6 @@ DiagPDF::processDiag(int a_nstep,
        m_highBnd = MFVecMax(a_state,fieldIdx);
     }
     amrex::Real binWidth = (m_highBnd - m_lowBnd) / m_nBins;
-    amrex::Print() <<  " PDF metadata: [" << m_lowBnd << "," << m_highBnd << "," << binWidth << "] \n";
 
     // Data holders
     amrex::Gpu::DeviceVector<amrex::Real> pdf_d(m_nBins,0.0);
