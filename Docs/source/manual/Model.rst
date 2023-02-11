@@ -392,14 +392,14 @@ modified turbulent transport coefficients. The basis of all these algebraic clos
 
 where :math:`C_m` is a model constant, :math:`\Delta` is the subgrid length scale (typically the grid size) and :math:`\mathcal{D}(\boldsymbol{u})`
 is a differential operator acting on the filtered velocity. :math:`\mu_t` is then calculated using the filtered density :math:`\mu_t = \overline{\rho} \cdot \nu_{t}`.
-In the `Smgorinsky <https://doi.org/10.1175/1520-0493(1963)091<0099:GCEWTP>2.3.CO;2>`_ model, :math:`C_m = C_s = 0.18` and :math:`\mathcal{D}` writes:
+In the `Smagorinsky <https://journals.ametsoc.org/view/journals/mwre/91/3/1520-0493_1963_091_0099_gcewtp_2_3_co_2.xml>`_ model, :math:`C_m = C_s = 0.18` and :math:`\mathcal{D}` writes:
 
 .. math::
 
    \mathcal{D}_{s} = |\widetilde{S}| = sqrt(2 \widetilde{S}_{ij}\widetilde{S}_{ij}), \hspace{12pt} \widetilde{S}_{ij} = \frac{1}{2} \left(\frac{\partial u_i}{\partial x_j} + \frac{\partial u_j}{\partial x_i} \right).
 
 where filtered quantities are indicated with an overbar, Favre-filtered quantities are indicated with
-a tilde. In the `<WALE https://doi.org/10.1023/A:1009995426001>`_  model, :math:`C_m = C_w = 0.60` and :math:`\mathcal{D}` writes:
+a tilde. In the `WALE <https://doi.org/10.1023/A:1009995426001>`_  model, :math:`C_m = C_w = 0.60` and :math:`\mathcal{D}` writes:
 
 .. math::
 
