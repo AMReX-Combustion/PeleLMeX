@@ -631,6 +631,9 @@ void DiffusionTensorOp::computeGradientTensor (Vector<Array<MultiFab*, AMREX_SPA
    m_apply_op->setScalars(0.0,1.0);
    for (int lev = 0; lev <= finest_level; ++lev) {
      m_apply_op->setShearViscosity(lev,0.0);
+#ifdef AMREX_USE_EB
+     m_apply_op->setEBShearViscosity(lev, 0.0);
+#endif
      m_apply_op->setLevelBC(lev, &vel[lev]);
    }
 
