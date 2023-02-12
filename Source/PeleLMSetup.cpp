@@ -744,7 +744,8 @@ void PeleLM::variablesSetup() {
       pp.query("fuel_name",fuel_name);
       fuel_name = "rho.Y("+fuel_name+")";
       if (isStateVariable(fuel_name)) {
-         fuelID = stateVariableIndex(fuel_name) - FIRSTSPEC;
+         fuelID = stateVariableIndex(fuel_name);
+         fuelID -= FIRSTSPEC;
       }
    }
 
