@@ -51,30 +51,30 @@ bibliography: paper.bib
 # Summary
 
 PeleLMeX evolves chemically reacting low Mach number flows with block-structured adaptive mesh refinement (AMR). 
-The code is built upon the AMReX [@AMReX] library to provide the underlying data structures and tools to manage 
+The code is built upon the AMReX [@AMReX] library which provides the underlying data structures and tools to manage 
 and operate on them across massively parallel computing architectures. Together with its compressible flow counterpart 
 PeleC [@PeleC], the thermo-chemistry library PelePhysics and the multi-physics library PeleMP, it forms the Pele suite of 
 open-source reactive flow simulation codes.
 
 PeleLMeX uses a finite volume approach to solve the multi-species reacting Navier-Stokes equations in 
-their low Mach number limit [@Day:2000], where the characteristic fluid velocity is small compared to the sound speed, 
+their low Mach number limit [@Day:2000], where the characteristic fluid velocity is small compared to the speed of sound, 
 and the effect of acoustic wave propagation is unimportant to the overall dynamics of the system. Accordingly, 
 acoustic wave propagation can be mathematically removed from the equations of motion, allowing for a numerical time 
 step based on an advective CFL condition.
 This low Mach number limit mathematically translates into a constraint on the divergence of the velocity field [@Majda:1986]. The 
 momemtum equation is then solved for using a predictor/corrector method initially developed for incompressible flows [@Almgren1998]
 and later extended to reactive, variable-density flows [@Pember:1998]. In the low Mach framework, the thermodynamic pressure is 
-uniform in space but can evolve in time when simulating closed domains with chemical reactions and additional mass injections [@Nonaka:2018].
+uniform in space but can evolve in time when simulating closed domains with chemical reactions and additional mass injections [@Nonaka:18].
 PeleLMeX uses an iterative Spectral Defered Correction (SDC) time advancement scheme [@Nonaka12,@Nonaka18] to ensure a tight coupling
 of the fast diffusion/reaction and the comparatively slow advection, while iteratively enforcing 
 the low Mach number contraint.
 Advection terms are treated explicitly using second-order Godunov schemes [@AMReX-Hydro], diffusion terms are treated
 semi-implicitly with a Crank-Nicholson scheme and the often stiffer reaction term is obtained using a fully implicit 
-Backward Differentiation Formulas scheme (specifically, the CVODE integrator [@cvodeDocumentation] of the Sundials
-suite [@SUNDIALS]). The resolution of the linear systems arising in the implicit diffusion and velocity projections are
-handled using AMReX's native geometric multigrid (GMG) solver, but can also be transfered to HYPRE [@Hypre] if GMG fails.
+Backward Differentiation Formula schemes (specifically, the CVODE integrator [@balos2021enabling] of the Sundials
+suite [@SUNDIALS,@gardner2022sundials]). The resolution of the linear systems arising in the implicit diffusion and velocity projections are
+handled using AMReX's native geometric multigrid (GMG) solver, but can also be transfered to HYPRE [@Hypre2002] if GMG fails.
 PeleLMeX relies on a non-subcycling approach to advance the numerical solution on an AMR hierarchy, where all the levels
-are advanced together using the same time step, which size is precribed a CFL condition accross all the levels. The consistency of
+are advanced together using the same time step, the size of which is precribed by a CFL condition accross all the levels. The consistency of
 the numerical fluxes at coarse/fine interfaces is ensured by averaging down fluxes from fine to coarse levels.
 
 In addition, PeleLMeX uses an Embedded Boundary (EB) approach to represent complex geometries: an arbitrary surface can 
