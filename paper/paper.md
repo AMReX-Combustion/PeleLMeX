@@ -64,14 +64,14 @@ step based on an advective CFL condition.
 This low Mach number limit mathematically translates into a constraint on the divergence of the velocity field [@Majda:1986]. The 
 momemtum equation is then solved for using a predictor/corrector method initially developed for incompressible flows [@Almgren1998]
 and later extended to reactive, variable-density flows [@Pember:1998]. In the low Mach framework, the thermodynamic pressure is 
-uniform in space but can evolve in time when simulating closed domains with chemical reactions and additional mass injections [@Nonaka:18].
-PeleLMeX uses an iterative Spectral Defered Correction (SDC) time advancement scheme [@Nonaka12,@Nonaka18] to ensure a tight coupling
+uniform in space but can evolve in time when simulating closed domains with chemical reactions and additional mass injections [@Nonaka18].
+PeleLMeX uses an iterative Spectral Defered Correction (SDC) time advancement scheme [@Nonaka12;@Nonaka18] to ensure a tight coupling
 of the fast diffusion/reaction and the comparatively slow advection, while iteratively enforcing 
 the low Mach number contraint.
 Advection terms are treated explicitly using second-order Godunov schemes [@AMReX-Hydro], diffusion terms are treated
 semi-implicitly with a Crank-Nicholson scheme and the often stiffer reaction term is obtained using a fully implicit 
 Backward Differentiation Formula schemes (specifically, the CVODE integrator [@balos2021enabling] of the Sundials
-suite [@SUNDIALS,@gardner2022sundials]). The resolution of the linear systems arising in the implicit diffusion and velocity projections are
+suite [@SUNDIALS;@gardner2022sundials]). The resolution of the linear systems arising in the implicit diffusion and velocity projections are
 handled using AMReX's native geometric multigrid (GMG) solver, but can also be transfered to HYPRE [@Hypre2002] if GMG fails.
 PeleLMeX relies on a non-subcycling approach to advance the numerical solution on an AMR hierarchy, where all the levels
 are advanced together using the same time step, the size of which is precribed by a CFL condition accross all the levels. The consistency of
