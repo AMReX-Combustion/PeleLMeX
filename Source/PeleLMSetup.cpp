@@ -320,8 +320,11 @@ void PeleLM::readParameters() {
        pp.query("les_cs_smag", m_les_cs_smag);
      } else if (m_les_model == "WALE") {
        pp.query("les_cm_wale", m_les_cm_wale);
+     } else if (m_les_model == "Sigma") {
+       pp.query("les_cs_sigma", m_les_cs_sigma);
+       AMREX_ALWAYS_ASSERT(AMREX_SPACEDIM == 3); // Sigma only available in 3D
      } else {
-       amrex::Abort("LES model must be None, Smagorinsky, or WALE. Invalid choie: " + m_les_model);
+       amrex::Abort("LES model must be None, Smagorinsky, WALE or Sigma. Invalid choie: " + m_les_model);
      }
      m_do_les = true;
      m_les_verbose = m_verbose;
@@ -330,9 +333,6 @@ void PeleLM::readParameters() {
      for (int lev=0; lev<= max_level ; ++lev) {
        m_turb_visc_time.push_back(-1.0E200);
      }
-#ifdef AMREX_USE_EB
-     amrex::Abort("LES implementation with EB depends on EB compVelGrad in amrex");
-#endif
 #ifdef PELE_USE_EFIELD
      amrex::Abort("LES implementation is not yet compatible with efield/ions");
 #endif
@@ -744,7 +744,8 @@ void PeleLM::variablesSetup() {
       pp.query("fuel_name",fuel_name);
       fuel_name = "rho.Y("+fuel_name+")";
       if (isStateVariable(fuel_name)) {
-         fuelID = stateVariableIndex(fuel_name) - FIRSTSPEC;
+         fuelID = stateVariableIndex(fuel_name);
+         fuelID -= FIRSTSPEC;
       }
    }
 

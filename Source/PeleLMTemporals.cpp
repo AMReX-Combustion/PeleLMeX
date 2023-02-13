@@ -496,7 +496,7 @@ void PeleLM::writeTemporals()
    // Combustion
    Real fuelConsumptionInt = 0.0;
    Real heatReleaseRateInt = 0.0;
-   if (fuelID > 0 && !(m_chem_integrator == "ReactorNull")) {
+   if (fuelID >= 0 && !(m_chem_integrator == "ReactorNull")) {
        fuelConsumptionInt =  MFSum(GetVecOfConstPtrs(getIRVect()),fuelID);
        for (int lev = 0; lev <= finest_level; ++lev) {
           getHeatRelease(lev, kinEnergy[lev].get());  // Re-use kinEnergy container

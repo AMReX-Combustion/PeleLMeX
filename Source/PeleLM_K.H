@@ -962,4 +962,75 @@ getTurbViscWALE(int i, int j, int k,
    mu_t(i,j,k) = prefactor * rho(i,j,k) * Sdterm32 / (Sterm52 + Sdterm54 + 1.0e-12);
 }
 
+AMREX_GPU_HOST_DEVICE
+AMREX_FORCE_INLINE
+void
+getTurbViscSigma(int i, int j, int k,
+                 amrex::Real prefactor,
+                 amrex::Array4<const amrex::Real> const& velgrad,
+                 amrex::Array4<const amrex::Real> const& rho,
+                 amrex::Array4<      amrex::Real> const& mu_t) noexcept
+{
+   using namespace amrex::literals;
+
+   // From Nicoud, et al . 2011
+   // mu_t = rho * Cs * Delta^2 * \sig_3(\sig_1-\sig_2)(\sig_2-\sig_3)
+   //        / (\sig_1*\sig_1 + smallnum)
+   // smallnum included to make sure denom is nonzero
+   // where sig_* are the singular values of G = g^tg
+
+   constexpr amrex::Real Pi = 3.14159265358979323846264338327950288;
+
+   amrex::Real D_sig = 0.0;
+
+   // Get G
+   amrex::Array2D<amrex::Real, 0, AMREX_SPACEDIM-1, 0, AMREX_SPACEDIM-1> gtg;
+   for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
+     for (int jdim = 0; jdim < AMREX_SPACEDIM; ++jdim) {
+       gtg(idim,jdim) = 0.0;
+       for (int ldim = 0; ldim < AMREX_SPACEDIM; ++ldim) {
+         gtg(idim,jdim) += ( velgrad(i,j,k,idim*AMREX_SPACEDIM + ldim)
+                            *velgrad(i,j,k,ldim*AMREX_SPACEDIM + jdim));
+       }
+     }
+   }
+
+   // Invariants: tr(G), 0.5*(tr(G)^2 - tr(G^2)), det(G)
+   amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> I{0.0};
+   I[0] = gtg(0,0) + gtg(1,1) + gtg(2,2);
+   I[1] =  gtg(0,0)*gtg(1,1) - gtg(0,1)*gtg(0,1)
+         + gtg(0,0)*gtg(2,2) - gtg(0,2)*gtg(0,2)
+         + gtg(1,1)*gtg(2,2) - gtg(1,2)*gtg(1,2);
+   I[2] =  gtg(0,0)*(gtg(1,1) * gtg(2,2) - gtg(1,2) * gtg(2,1))
+         - gtg(1,0)*(gtg(0,1) * gtg(2,2) - gtg(0,2) * gtg(2,1))
+         + gtg(2,0)*(gtg(0,1) * gtg(1,2) - gtg(0,2) * gtg(1,1));
+
+   // Rotation angles:
+   amrex::Real alpha1 = 0.0;
+   amrex::Real alpha2 = 0.0;
+   amrex::Real alpha3 = 0.0;
+
+   alpha1 = std::max(alpha1,(I[0]/3.0)*(I[0]/3.0) - I[1]/3.0);
+   if ( alpha1 != 0.0 ) {
+      alpha2 = (I[0]/3.0)*(I[0]/3.0)*(I[0]/3.0) - I[0]*I[1]/6.0 + I[2]/2.0;
+      amrex::Real arcCosArg = std::min(1.0,std::max(-1.0, alpha2/std::pow(alpha1,1.5)));
+      alpha3 = std::acos(arcCosArg)/3.0;
+
+      // Singular values:
+      amrex::Real sigma1 = std::sqrt(std::max(0.0,I[0]/3.0 + 2.0 * std::sqrt(alpha1) * std::cos(alpha3)));
+      amrex::Real sigma2 = std::sqrt(std::max(0.0,I[0]/3.0 - 2.0 * std::sqrt(alpha1) * std::cos(Pi/3.0 + alpha3)));
+      amrex::Real sigma3 = std::sqrt(std::max(0.0,I[0]/3.0 - 2.0 * std::sqrt(alpha1) * std::cos(Pi/3.0 - alpha3)));
+
+      // Sort
+      sigma2 = std::max(sigma3,sigma2);
+      sigma1 = std::max(sigma2,sigma1);
+      sigma1 = std::max(1e-16,sigma1);
+
+      D_sig = sigma3 * (sigma1 - sigma2) * (sigma2 - sigma3) / (sigma1*sigma1);
+   }
+
+   mu_t(i,j,k) = prefactor * rho(i,j,k) * D_sig;
+}
+
+
 #endif
