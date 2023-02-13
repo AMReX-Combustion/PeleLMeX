@@ -94,3 +94,163 @@ available in `PeleLMeX` (namely, *Godunov_PLM*, *Godunov_PPM*, *Godunov_BDS*,
 
 On this particular case, the differences between the advection schemes are fairly
 marginal compared to those observed at different grid resolutions.
+
+Channel Flow using EB
+~~~~~~~~~~~~~~~~~~~~~
+
+We present results of the classical periodic channel flow, available in the
+``Exec/RegTests/EB_PipeFlow`` folder. Simulations are performed at three
+stress Reynold number :math:`Re_{\tau}` = 180, 395 and 934 corresponding
+to the cases described in `Kim et al., 1986 <https://doi.org/10.1017/S0022112087000892>`_,
+`Moser et al., 1999 <https://doi.org/10.1063/1.869966>`_ and
+`Hoyas and Jimenez, 2006 <https://doi.org/10.1063/1.2162185>`_, respectively. A first
+DNS is performed at :math:`Re_{\tau}` = 180, then the LES models implementation is tested
+at higher Reynold numbers.
+
+For all cases, the configuration is periodic in the :math:`x` and :math:`z` directions and wall boundaries are
+imposed in the :math:`y` direction using Embedded Boundaries.
+
+DNS results at :math:`Re_{\tau}` = 180
+######################################
+
+The channel half width :math:`\delta` is set to 0.005 m, and the computational domain extend
+in +/- 0.0052 m in :math:`y` with EB intersecting the domain at +/- :math:`\delta`. A background pressure gradient in
+imposed in the :math:`x` to compensate wall friction. The base grid and two levels of refinement are described in the following
+table:
+
+.. list-table:: DNS Channel flow domain
+    :widths: 50 25 25 25
+    :header-rows: 1
+
+    * -
+      - :math:`x`
+      - :math:`y`
+      - :math:`z`
+    * - Domain size
+      - 6.24:math:`\delta`
+      - 2.08:math:`\delta`
+      - 3.12:math:`\delta`
+    * - Base grid L0
+      - 384
+      - 128
+      - 192
+    * - L1
+      - 768
+      - 256
+      - 384
+    * - L2
+      - 1536
+      - 512
+      - 768
+
+The fluid in the simulation is air at ambient pressure and a temperature of 750.0 K, the physical
+property of which are summarized in the following table:
+
+.. list-table:: Fluid properties
+    :widths: 50 25 25 25 25 25
+    :header-rows: 1
+
+    * -
+      - Pressure
+      - Temperature
+      - Density
+      - :math:`\mu`
+      - :math:`\nu`
+    * - Value [MKS]
+      - 102325.0
+      - 750.0
+      - 0.468793
+      - 3.57816e-5
+      - 7.63271e-5
+
+The characteristics of the flows are reported in the following table:
+
+.. list-table:: DNS Channel flow characteristics
+    :widths: 25 25 25 25 35
+    :header-rows: 1
+
+    * - :math:`Re_{\tau}`
+      - :math:`u_{\tau}`
+      - :math:`\tau_w`
+      - :math:`dp/dx`
+      - :math:`t^* = \delta/u_{\tau}`
+    * - 180.2
+      - 2.75122
+      - 3.5485
+      - -709.79
+      - 1.817e-3
+
+Two levels of refinement, targeted on the EB, are employed in order to sufficiently resolve the boundary
+layer. The mesh characteristics are summarized in the following table. The :math:`y^+` value is that of
+the cell center of the first full cell (uncut by the EB).
+
+.. list-table:: Mesh characteristics
+    :widths: 25 25 25 25 35
+    :header-rows: 1
+
+    * - :math:`Re_{\tau}`
+      - :math:`\Delta y^+ L0`
+      - :math:`\Delta y^+ Lmax`
+      - :math:`y^+`
+      - :math:`# cell`
+    * - 180.2
+      - 2.93
+      - 0.732
+      - 0.479
+      - 56.6 M
+
+Simulations are carried out for 15 eddy turn over time :math:`t^*` to reach statistically steady
+conditions and data are then spatially averaged in the periodic directions and averaged in time over 10 :math:`t^*`
+to get the velocity statistics in the direction normal to the wall.
+
+.. figure:: images/validations/EBChannelFlow/Uplus_Re180_DNS_LMeX.png
+   :align: center
+   :figwidth: 60%
+
+.. figure:: images/validations/EBChannelFlow/VelRMSplus_Re180_DNS_LMeX.png
+   :align: center
+   :figwidth: 60%
+
+Results indicate that `PeleLMeX` is able to reproduce accurately the DNS data obtained with
+a high-order spectral solver, provided sufficient resolution at the wall. 
+
+LES results at :math:`Re_{\tau}` = 395, 934
+###########################################
+
+The channel half width :math:`\delta` is set to 0.01 m, and the computational domain extend
+in +/- 0.0101 m in :math:`y` with EB intersecting the domain at +/- :math:`\delta`. The base grid is coarser
+than the DNS one by a factor of 2. A background pressure gradient in imposed in the :math:`x` to compensate 
+wall friction. The fluid conditions are similar to that of the DNS case and the flow
+and mesh characteristics are summarized hereafter:
+
+.. list-table:: LES Channel flow characteristics
+    :widths: 25 25 25 25 25 25 25
+    :header-rows: 1
+
+    * - :math:`Re_{\tau}`
+      - :math:`u_{\tau}`
+      - :math:`\tau_w`
+      - :math:`dp/dx`
+      - :math:`t^* = \delta/u_{\tau}`
+      - :math:`\Delta y^+ L0`
+      - :math:`\Delta y^+ Lmax`
+    * - 395
+      - 3.01492
+      - 4.26121
+      - -426.121
+      - 3.3317e-3
+      - 12.467
+      - 6.2336
+    * - 934
+      - 7.12895
+      - 23.8250
+      - -2382.50
+      - 1.4027e-3
+      - 29.479
+      - 7.36984
+
+Note that a single level of refinement is employed for the :math:`Re_{\tau}` = 395 while two are 
+used for :math:`Re_{\tau}` = 934 in order to provide sufficient (but still below :math:`y^+=1`)
+resolution near the walls.
+
+Simulations are performed with both the Smagorinsky and the WALE LES models.
