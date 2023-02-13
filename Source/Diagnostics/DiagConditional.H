@@ -33,7 +33,8 @@ public:
   void writeAverageDataToFile(int a_nstep, const amrex::Real &a_time,
                               const amrex::Vector<amrex::Real> &a_condAbs,
                               const amrex::Vector<amrex::Real> &a_cond,
-                              const amrex::Vector<amrex::Real> &a_condSq);
+                              const amrex::Vector<amrex::Real> &a_condSq,
+                              const amrex::Vector<amrex::Real> &a_condVol);
   void writeIntegralDataToFile(int a_nstep, const amrex::Real &a_time,
                                const amrex::Vector<amrex::Real> &a_condAbs,
                                const amrex::Vector<amrex::Real> &a_cond);

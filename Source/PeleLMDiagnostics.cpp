@@ -61,7 +61,12 @@ PeleLM::doDiagnostics()
         for (int v{0}; v < m_diagVars.size(); ++v ) {
             std::unique_ptr<MultiFab> mf;
             mf = derive(m_diagVars[v], m_cur_time, lev, 0);
-            MultiFab::Copy(*diagMFVec[lev].get(), *mf, 0, v, 1, 0);
+            // If the variable is a derive component, get its index from the derive multifab
+            // TODO: if multiple diagVars are components of the same derive, they get redundantly derived each time
+            int mf_idx = 0;
+            const PeleLMDeriveRec* rec = derive_lst.get(m_diagVars[v]);
+            if (rec) mf_idx = rec->variableComp(m_diagVars[v]);
+            MultiFab::Copy(*diagMFVec[lev].get(), *mf, mf_idx, v, 1, 0);
         }
     }
 
