@@ -62,19 +62,19 @@ and the effect of acoustic wave propagation is unimportant to the overall dynami
 acoustic wave propagation can be mathematically removed from the equations of motion, allowing for a numerical time 
 step based on an advective CFL condition.
 This low Mach number limit mathematically translates into a constraint on the divergence of the velocity field [@Majda:1986]. The 
-momemtum equation is then solved for using a predictor/corrector method initially developed for incompressible flows [@Almgren1998]
+momentum equation is then solved for using a predictor/corrector method initially developed for incompressible flows [@Almgren1998]
 and later extended to reactive, variable-density flows [@Pember:1998]. In the low Mach framework, the thermodynamic pressure is 
 uniform in space but can evolve in time when simulating closed domains with chemical reactions and additional mass injections [@Nonaka18].
-PeleLMeX uses an iterative Spectral Defered Correction (SDC) time advancement scheme [@Nonaka12;@Nonaka18] to ensure a tight coupling
+PeleLMeX uses an iterative Spectral Deferred Correction (SDC) time advancement scheme [@Nonaka12;@Nonaka18] to ensure a tight coupling
 of the fast diffusion/reaction and the comparatively slow advection, while iteratively enforcing 
-the low Mach number contraint.
+the low Mach number constraint.
 Advection terms are treated explicitly using second-order Godunov schemes [@AMReX-Hydro], diffusion terms are treated
 semi-implicitly with a Crank-Nicholson scheme and the often stiffer reaction term is obtained using a fully implicit 
 Backward Differentiation Formula schemes (specifically, the CVODE integrator [@balos2021enabling] of the Sundials
 suite [@SUNDIALS;@gardner2022sundials]). The resolution of the linear systems arising in the implicit diffusion and velocity projections are
-handled using AMReX's native geometric multigrid (GMG) solver, but can also be transfered to HYPRE [@Hypre2002] if GMG fails.
+handled using AMReX's native geometric multigrid (GMG) solver, but can also be transferred to HYPRE [@Hypre2002] if GMG fails.
 PeleLMeX relies on a non-subcycling approach to advance the numerical solution on an AMR hierarchy, where all the levels
-are advanced together using the same time step, the size of which is precribed by a CFL condition accross all the levels. The consistency of
+are advanced together using the same time step, the size of which is prescribed by a CFL condition across all the levels. The consistency of
 the numerical fluxes at coarse/fine interfaces is ensured by averaging down fluxes from fine to coarse levels.
 
 In addition, PeleLMeX uses an Embedded Boundary (EB) approach to represent complex geometries: an arbitrary surface can 
@@ -92,13 +92,13 @@ on GPU-accelerated machines.
 
 While there exist several reactive flow Direct Numerical Simulation codes, PeleLMeX presents a unique set of features. 
 From its inception, under the name LMC in the early 2000, the motivation was to combine an AMR approach with a low Mach number 
-formulation to achieve high performances from a small desktop stations to the world largest supercomputer, and to this day
+formulation to achieve high performances from a small desktop station to the world largest supercomputer, and to this day
 it remains the only publicly available code to offers these features. Recent code developments focused on enabling
 massively parallel simulations at scale on high-performance accelerated computer architectures to tackle the challenging
 requirements of fundamental and applied combustion research, as well as extending the solver modeling capabilities by including
 Large Eddy Simulation (LES) closure models and support for data-driven combustion models [@Perry:2021].
 
-PeleLMeX is predominantly used to study the fine scale interactions between turbulence and chemical reactions occuring in many
+PeleLMeX is predominantly used to study the fine scale interactions between turbulence and chemical reactions occurring in many
 combustion applications. A better understanding of these interactions is the basis for developing accurate modeling approaches
 that can be used to design the next generation of low-emission combustion devices.
 
