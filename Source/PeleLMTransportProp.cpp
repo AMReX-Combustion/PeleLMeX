@@ -106,6 +106,16 @@ void PeleLM::calcTurbViscosity(const TimeStamp &a_time) {
                                                 Array4<Real const>(dens_arr[box_no]),
                                                 Array4<Real      >(mut_arr[box_no]) );
                             });
+       } else if (m_les_model == "Sigma") {
+         const amrex::Real prefact = m_les_cs_sigma * m_les_cs_sigma * l_scale * l_scale;
+         amrex::ParallelFor(ldata_p->visc_turb_fc[idim], ldata_p->visc_turb_fc[idim].nGrowVect(), [=]
+                            AMREX_GPU_DEVICE (int box_no, int i, int j, int k) noexcept
+                            {
+                              getTurbViscSigma( i, j, k, prefact,
+                                                Array4<Real const>(velgrad_arr[box_no]),
+                                                Array4<Real const>(dens_arr[box_no]),
+                                                Array4<Real      >(mut_arr[box_no]) );
+                            });
        }
        Gpu::streamSynchronize();
 
