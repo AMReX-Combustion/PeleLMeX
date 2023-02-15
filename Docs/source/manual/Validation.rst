@@ -1,7 +1,74 @@
 PeleLMeX Verification & Validations
 ===================================
 
-This section is work-in-progress.
+This section assembles results of `PeleLMeX` simulations on a set a test cases
+for which a reference solution can be obtained from the litterature or an
+analytical solution exists.
+
+Laminar premixed flame 
+~~~~~~~~~~~~~~~~~~~~~~
+
+The case of a laminar premixed flame is a foundational test case for a reactive
+flow solver. A laminar premixed flame setup is available in ``Exec/RegTests/FlameSheet``.
+The case reported hereafter is that of a planar laminar methane/air flame at 
+atmospheric conditions and a lean equivalence ratio of 0.9. The initial condition 
+is obtained from a Cantera simulation using 
+the DRM19 mechanism and the simulation is conducted starting with a coarse resolution
+:math:`d_{l,0}/\delta_x = 3.5` (3.5 grid cells in the flame thermal thickness) and progressively
+refined to :math:`d_{l,0}/\delta_x = 110` using AMR. Note that the simulation is carried for
+about 30 :math:`\tau_f = d_{l,0} / S_{l,0}` ensuring that initial numerical noise introduced
+by interpolating the Cantera solution onto the cartesian grid is completely removed.
+
+The `PeleLMeX` results obtained with the finest grid are compared to that of Cantera in the following
+figure. Profiles of major and intermediate species as well as temperature across the flame front are
+displayed, with Cantera results shown as black ticked lined underlying each continuous line obtained
+with `PeleLMeX`, demonstrating the solver accuracy.
+
+.. figure:: images/validations/PremixedFlame/LMeX_DRM19_Phi0p9.png
+   :align: center
+   :figwidth: 60%
+
+It is interesting to see how resolution affect the accuracy of `PeleLMeX` results. The following table
+shows the laminar flame speed, obtained by numerically integrating the fuel consumption rate, at
+increasing level of refinement. For each AMR level addition, simulation are conducted for about 10 :math:`\tau_f`,
+until the flame speed stabilize. With only a handful of cells across the flame thermal thickness, the flame
+speed is recovered with an accuracy close to 1.0%.
+
+.. list-table:: Effect of resolution on the laminar flame speed
+    :widths: 50 25 25 25 25 25 25
+    :header-rows: 1
+
+    * - :math:`d_{l,0}/\delta_x` [-]
+      - 3.44
+      - 6.88
+      - 13.8
+      - 27.5
+      - 55
+      - 110
+    * - :math:`S_{l,0}` [m/s]
+      - 0.35696
+      - 0.35144
+      - 0.35408
+      - 0.35473
+      - 0.35488
+      - 0.35494
+    * - Error (vs. Cantera) [%]
+      - 0.02
+      - 1.54
+      - 0.8
+      - 0.6
+      - 0.58
+      - 0.57
+
+Additionally, the following figure compared profiles of major and intermediate species as well as 
+temperature across the flame front for the coarsest and the finest resolution employed. Results
+indicates that major species (or temperature) are well captured whereas short lived species peak
+values are locally off due to the lack of resolution but are stil reasonably well located within
+the flame front.
+
+.. figure:: images/validations/PremixedFlame/LMeX_FinevsCoarse.png
+   :align: center
+   :figwidth: 60%
 
 Laminar Poiseuille flow
 ~~~~~~~~~~~~~~~~~~~~~~~
