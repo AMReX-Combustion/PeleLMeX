@@ -33,25 +33,25 @@ Follow the steps listed below to get to this point:
 
 #. Move into the Exec folder containing the ``FlowPastCylinder``. To do so: ::
 
-   cd PeleLMeX/Exec/RegTests/EB_FlowPastCylinder
+    cd PeleLMeX/Exec/RegTests/EB_FlowPastCylinder
 
 #. Finally, setup the environment variables providing paths to `PeleLMeX` and its dependencies. This can done in
    one of two ways:
 
    #. Directly into the `GNUmakefile` by updating the top-most lines as follows: ::
 
-      PELELMEX_HOME     = <path_to_PeleLMeX>
-      AMREX_HOME        =${PELELMEX_HOME}/Submodules/amrex
-      AMREX_HYDRO_HOME  =${PELELMEX_HOME}/Submodules/AMReX-Hydro
-      PELE_PHYSICS_HOME =${PELELMEX_HOME}/Submodules/PelePhysics
+       PELELMEX_HOME     = <path_to_PeleLMeX>
+       AMREX_HOME        =${PELELMEX_HOME}/Submodules/amrex
+       AMREX_HYDRO_HOME  =${PELELMEX_HOME}/Submodules/AMReX-Hydro
+       PELE_PHYSICS_HOME =${PELELMEX_HOME}/Submodules/PelePhysics
 
 
    #. Exporting shell environement variables (using *bash* for instance): ::
 
-      export PELELMEX_HOME=<path_to_PeleLMeX>
-      export AMREX_HOME=${PELELMEX_HOME}/Submodules/amrex
-      export AMREX_HYDRO_HOME=${PELELMEX_HOME}/Submodules/AMReX-Hydro
-      export PELE_PHYSICS_HOME=${PELELMEX_HOME}/Submodules/PelePhysics
+       export PELELMEX_HOME=<path_to_PeleLMeX>
+       export AMREX_HOME=${PELELMEX_HOME}/Submodules/amrex
+       export AMREX_HYDRO_HOME=${PELELMEX_HOME}/Submodules/AMReX-Hydro
+       export PELE_PHYSICS_HOME=${PELELMEX_HOME}/Submodules/PelePhysics
 
    Both options require to provide the path to where you cloned `PeleLMeX`. Note that using the first option will overwrite any
    environement variables you might have previously defined when using this `GNUmakefile`.
@@ -61,7 +61,7 @@ You're good to go !
 Numerical setup
 ---------------
 
-In this section we review the content of the various input files for the flow past cylinder test case. To get additional information about the keywords discussed, the user is referred to section :ref:`sec:control`.
+In this section we review the content of the various input files for the flow past cylinder test case. To get additional information about the keywords discussed, the user is referred to :doc:`LMeXControls`.
 
 Test case and boundary conditions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -173,7 +173,7 @@ This initial solution is constructed via the routine ``pelelm_initdata()``, in t
 Numerical scheme
 ^^^^^^^^^^^^^^^^
 
-The ``NUMERICS CONTROL`` block can be modified by the user to increase the number of SDC iterations. Note that there are many other parameters controlling the numerical algorithm that the advanced user can tweak, but we will not talk about them in the present Tutorial. The interested user can refer to section :ref:`sec:control`.
+The ``NUMERICS CONTROL`` block can be modified by the user to increase the number of SDC iterations. Note that there are many other parameters controlling the numerical algorithm that the advanced user can tweak, but we will not talk about them in the present Tutorial. The interested user can refer to :doc:`LMeXControls`.
 
 
 Building the executable

@@ -16,25 +16,31 @@ is obtained from a Cantera simulation using
 the DRM19 mechanism and the simulation is conducted starting with a coarse resolution
 :math:`d_{l,0}/\delta_x = 3.5` (3.5 grid cells in the flame thermal thickness) and progressively
 refined to :math:`d_{l,0}/\delta_x = 110` using AMR. Note that the simulation is carried for
-about 30 :math:`\tau_f = d_{l,0} / S_{l,0}` ensuring that initial numerical noise introduced
-by interpolating the Cantera solution onto the cartesian grid is completely removed.
+about 30 :math:`\tau_f = d_{l,0} / S_{l,0}` before adding refinement levels ensuring that initial 
+numerical noise introduced by interpolating the Cantera solution onto the cartesian grid is 
+completely removed.
 
-The `PeleLMeX` results obtained with the finest grid are compared to that of Cantera in the following
-figure. Profiles of major and intermediate species as well as temperature across the flame front are
+The `PeleLMeX` results obtained with the finest grid are compared to that of Cantera in :numref:`PMFLMeXCantera`.
+Profiles of major and intermediate species as well as temperature across the flame front are
 displayed, with Cantera results shown as black ticked lined underlying each continuous line obtained
 with `PeleLMeX`, demonstrating the solver accuracy.
 
 .. figure:: images/validations/PremixedFlame/LMeX_DRM19_Phi0p9.png
+   :name: PMFLMeXCantera
    :align: center
-   :figwidth: 60%
+   :figwidth: 50%
 
-It is interesting to see how resolution affect the accuracy of `PeleLMeX` results. The following table
+   : One-dimentional flame profiles with PeleLMeX and Cantera (underlying black dashed lines)
+
+It is interesting to see how resolution affect the prediction of `PeleLMeX`. The :numref:`PMFTableResolution`
 shows the laminar flame speed, obtained by numerically integrating the fuel consumption rate, at
 increasing level of refinement. For each AMR level addition, simulation are conducted for about 10 :math:`\tau_f`,
-until the flame speed stabilize. With only a handful of cells across the flame thermal thickness, the flame
-speed is recovered with an accuracy close to 1.0%.
+until the flame speed stabilizes. With only a handful of cells across the flame thermal thickness, the flame
+speed is recovered with an accuracy close to 1.5%.
 
 .. list-table:: Effect of resolution on the laminar flame speed
+    :name: PMFTableResolution
+    :align: center
     :widths: 50 25 25 25 25 25 25
     :header-rows: 1
 
@@ -60,15 +66,18 @@ speed is recovered with an accuracy close to 1.0%.
       - 0.58
       - 0.57
 
-Additionally, the following figure compared profiles of major and intermediate species as well as 
+Additionally, :numref:`PMFLMeXCrseFine` compares profiles of major and intermediate species as well as 
 temperature across the flame front for the coarsest and the finest resolution employed. Results
 indicates that major species (or temperature) are well captured whereas short lived species peak
 values are locally off due to the lack of resolution but are stil reasonably well located within
 the flame front.
 
 .. figure:: images/validations/PremixedFlame/LMeX_FinevsCoarse.png
+   :name: PMFLMeXCrseFine
    :align: center
-   :figwidth: 60%
+   :figwidth: 50%
+
+   : Comparison of a coarsed and finely resolved 1D flame in PeleLMeX
 
 Laminar Poiseuille flow
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -90,19 +99,25 @@ the input parameters are very similar to the PeleC counterpart of
 this case.
 
 The steady-state :math:`x`-velocity profiles accross the pipe diameter
-at increasing resolution are plotted along with the theorerical profile:
+at increasing resolution are plotted along with the theorerical profile in :numref:`PoiseuilleVelProf`:
 
 .. figure:: images/validations/Poiseuille3D/PoiseuilleVelProf.png
+   :name: PoiseuilleVelProf
    :align: center
-   :figwidth: 60%
+   :figwidth: 50%
+
+   : Axial velocity profile at increasing resolution with PeleLMeX
 
 A more quantitative evaluation of PeleLMeX results is obtained by calculating
 the L2 norm of the error against the analytical profile:
 
 
 .. figure:: images/validations/Poiseuille3D/PoiseuilleConvergence.png
+   :name: PoiseuilleConvergence
    :align: center
-   :figwidth: 60%
+   :figwidth: 50%
+
+   : L2-norm of the axial velocity profile as function of the number of cells across the pipe diameter
 
 showing second-order convergence for this diffusion dominated flow.
 
@@ -139,17 +154,18 @@ to the results of a high-order spectral solver with a 512^3 resolution.
 that even though `PeleLMeX` uses a 2nd-order scheme, reasonable
 accuracy compared to the spectral results is obtained when the resolution is sufficient.
 
-.. figure:: images/validations/TaylorGreen/KinEnergy.png
-   :align: center
-   :figwidth: 60%
+.. |TGKinEnergy| image:: images/validations/TaylorGreen/KinEnergy.png
+   :width: 48%
 
-.. figure:: images/validations/TaylorGreen/Dissipation.png
-   :align: center
-   :figwidth: 60%
+.. |TGDiss| image:: images/validations/TaylorGreen/Dissipation.png
+   :width: 48%
 
-.. figure:: images/validations/TaylorGreen/Enstrophy.png
-   :align: center
-   :figwidth: 60%
+.. |TGEnstrophy| image:: images/validations/TaylorGreen/Enstrophy.png
+   :width: 48%
+
+|TGKinEnergy| |TGDiss|
+
+|TGEnstrophy|
 
 Additionnally, it is interesting to compare the different advection schemes
 available in `PeleLMeX` (namely, *Godunov_PLM*, *Godunov_PPM*, *Godunov_BDS*,
@@ -157,7 +173,7 @@ available in `PeleLMeX` (namely, *Godunov_PLM*, *Godunov_PPM*, *Godunov_BDS*,
 
 .. figure:: images/validations/TaylorGreen/Enstrophy_AllSchemes.png
    :align: center
-   :figwidth: 60%
+   :figwidth: 48%
 
 On this particular case, the differences between the advection schemes are fairly
 marginal compared to those observed at different grid resolutions.
@@ -182,10 +198,11 @@ DNS results at :math:`Re_{\tau}` = 180
 
 The channel half width :math:`\delta` is set to 0.005 m, and the computational domain extend
 in +/- 0.0052 m in :math:`y` with EB intersecting the domain at +/- :math:`\delta`. A background pressure gradient in
-imposed in the :math:`x` to compensate wall friction. The base grid and two levels of refinement are described in the following
-table:
+imposed in the :math:`x` to compensate wall friction. The base grid and two levels of refinement are described in :numref:`EBCDomain`:
 
 .. list-table:: DNS Channel flow domain
+    :name: EBCDomain
+    :align: center
     :widths: 50 25 25 25
     :header-rows: 1
 
@@ -194,9 +211,9 @@ table:
       - :math:`y`
       - :math:`z`
     * - Domain size
-      - 6.24:math:`\delta`
-      - 2.08:math:`\delta`
-      - 3.12:math:`\delta`
+      - 6.24 :math:`\delta`
+      - 2.08 :math:`\delta`
+      - 3.12 :math:`\delta`
     * - Base grid L0
       - 384
       - 128
@@ -211,10 +228,12 @@ table:
       - 768
 
 The fluid in the simulation is air at ambient pressure and a temperature of 750.0 K, the physical
-property of which are summarized in the following table:
+property of which are summarized in :numref:`EBCFluidProp`:
 
 .. list-table:: Fluid properties
-    :widths: 50 25 25 25 25 25
+    :name: EBCFluidProp
+    :align: center
+    :widths: 25 25 25 25 25 25
     :header-rows: 1
 
     * -
@@ -230,9 +249,11 @@ property of which are summarized in the following table:
       - 3.57816e-5
       - 7.63271e-5
 
-The characteristics of the flows are reported in the following table:
+The characteristics of the flows are reported in :numref:`EBCFlowChar`:
 
 .. list-table:: DNS Channel flow characteristics
+    :name: EBCFlowChar
+    :align: center
     :widths: 25 25 25 25 35
     :header-rows: 1
 
@@ -248,10 +269,12 @@ The characteristics of the flows are reported in the following table:
       - 1.817e-3
 
 Two levels of refinement, targeted on the EB, are employed in order to sufficiently resolve the boundary
-layer. The mesh characteristics are summarized in the following table. The :math:`y^+` value is that of
+layer. The mesh characteristics are summarized in :numref:`EBCMeshes`. The :math:`y^+` value is that of
 the cell center of the first full cell (uncut by the EB).
 
 .. list-table:: Mesh characteristics
+    :name: EBCMeshes
+    :align: center
     :widths: 25 25 25 25 35
     :header-rows: 1
 
@@ -259,24 +282,24 @@ the cell center of the first full cell (uncut by the EB).
       - :math:`\Delta y^+ L0`
       - :math:`\Delta y^+ Lmax`
       - :math:`y^+`
-      - :math:`# cell`
+      - Cells count
     * - 180.2
       - 2.93
       - 0.732
       - 0.479
       - 56.6 M
 
-Simulations are carried out for 15 eddy turn over time :math:`t^*` to reach statistically steady
+Simulations are carried out for 20 eddy turn over time :math:`t^*` to reach statistically steady
 conditions and data are then spatially averaged in the periodic directions and averaged in time over 10 :math:`t^*`
 to get the velocity statistics in the direction normal to the wall.
 
-.. figure:: images/validations/EBChannelFlow/Uplus_Re180_DNS_LMeX.png
-   :align: center
-   :figwidth: 60%
+.. |DNS180Uplus| image:: images/validations/EBChannelFlow/Uplus_Re180_DNS_LMeX.png
+   :width: 48%
 
-.. figure:: images/validations/EBChannelFlow/VelRMSplus_Re180_DNS_LMeX.png
-   :align: center
-   :figwidth: 60%
+.. |DNS180Urms| image:: images/validations/EBChannelFlow/VelRMSplus_Re180_DNS_LMeX.png
+   :width: 48%
+
+|DNS180Uplus| |DNS180Urms|
 
 Results indicate that `PeleLMeX` is able to reproduce accurately the DNS data obtained with
 a high-order spectral solver, provided sufficient resolution at the wall. 
@@ -288,9 +311,11 @@ The channel half width :math:`\delta` is set to 0.01 m, and the computational do
 in +/- 0.0101 m in :math:`y` with EB intersecting the domain at +/- :math:`\delta`. The base grid is coarser
 than the DNS one by a factor of 2. A background pressure gradient in imposed in the :math:`x` to compensate 
 wall friction. The fluid conditions are similar to that of the DNS case and the flow
-and mesh characteristics are summarized hereafter:
+and mesh characteristics are summarized in :numref:`EBCLESFlowsChar`:
 
 .. list-table:: LES Channel flow characteristics
+    :name: EBCLESFlowsChar
+    :align: center
     :widths: 25 25 25 25 25 25 25
     :header-rows: 1
 
@@ -320,4 +345,12 @@ Note that a single level of refinement is employed for the :math:`Re_{\tau}` = 3
 used for :math:`Re_{\tau}` = 934 in order to provide sufficient (but still below :math:`y^+=1`)
 resolution near the walls.
 
-Simulations are performed with both the Smagorinsky and the WALE LES models.
+Simulations are performed with the WALE LES SGS model. The plots below shows that `PeleLMeX`
+
+.. |LES395Uplus| image:: images/validations/EBChannelFlow/Uplus_Re395_LES_LMeX.png
+   :width: 48%
+
+.. |LES395Urms| image:: images/validations/EBChannelFlow/VelRMSplus_Re395_LES_LMeX.png
+   :width: 48%
+
+|LES395Uplus| |LES395Urms|
