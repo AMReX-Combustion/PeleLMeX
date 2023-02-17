@@ -21,6 +21,7 @@ authors:
   - name: Anne Felden
     affiliation: 2
   - name: Candace Gilet
+    affiliation: 4
   - name: Ray Grout
     affiliation: 1
   - name: Emmanuel Motheau
@@ -44,6 +45,8 @@ affiliations:
     index: 2
   - name: Sandia National Laboratory, USA
     index: 3
+  - name: Independent Researcher, USA
+    index: 4
 date: 28 December 2022
 bibliography: paper.bib
 ---
