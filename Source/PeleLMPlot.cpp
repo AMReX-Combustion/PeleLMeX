@@ -592,6 +592,13 @@ void PeleLM::ReadCheckPointFile()
        MakeNewLevelFromScratch(lev, m_cur_time, ba, dm);
    }
 
+   for(int lev = finest_level+1; lev <= chk_finest_level; ++lev)
+   {
+       // read dummy level 'lev' BoxArray if restarting with reduced levels
+       BoxArray ba;
+       ba.readFrom(is);
+   }
+
    // deal with typval and P_amb
    is >> m_pNew;
    GotoNextLine(is);
