@@ -82,7 +82,7 @@ the numerical fluxes at coarse/fine interfaces is ensured by averaging down flux
 
 In addition, PeleLMeX uses an Embedded Boundary (EB) approach to represent complex geometries: an arbitrary surface can 
 be intersected with the Cartesian matrix of uniform cells, and the numerical stencils are modified near cells that are cut 
-by the EB. Redistribution schemes [@Berger:2021] are then used for the explicit advection and diffusion updates in order to alleviate the 
+by the EB. Redistribution schemes [@Giuliani:2022] are then used for the explicit advection and diffusion updates in order to alleviate the 
 constraint associated with small cut cells. Through its dependency to the multi-physics library PeleMP, PeleLMeX also inherits 
 the ability to include Lagrangian sprays as well as soot and radiation models. 
 
