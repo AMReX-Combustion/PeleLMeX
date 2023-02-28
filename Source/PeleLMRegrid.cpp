@@ -81,7 +81,7 @@ void PeleLM::MakeNewLevelFromCoarse( int lev,
          setRhoToSumRhoY(lev, AmrNewTime);
       }
 
-      // Recompute temperature from interpolated rhoYs and rhoH 
+      // Recompute temperature from interpolated rhoYs and rhoH
       setTemperature(lev, AmrNewTime);
 
       // Initialize thermodynamic pressure
@@ -185,7 +185,7 @@ void PeleLM::RemakeLevel( int lev,
          setRhoToSumRhoY(lev, AmrNewTime);
       }
 
-      // Recompute temperature from interpolated rhoYs and rhoH 
+      // Recompute temperature from interpolated rhoYs and rhoH
       setTemperature(lev, AmrNewTime);
 
       // Initialize thermodynamic pressure
