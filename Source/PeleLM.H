@@ -733,9 +733,11 @@ class PeleLM : public amrex::AmrCore {
                    int &nComp,
                    const std::string &a_var);
 
-   // Lightweight state description access
-   bool isStateVariable(const std::string &a_name);
-   int stateVariableIndex(const std::string &a_name);
+   // Lightweight descriptors access
+   bool isStateVariable(std::string_view a_name);
+   bool isReactVariable(std::string_view a_name);
+   int stateVariableIndex(std::string_view a_name);
+   int reactVariableIndex(std::string_view a_name);
 
    // Typical values
    void setTypicalValues(const PeleLM::TimeStamp &a_time, int is_init = 0);
@@ -1001,6 +1003,7 @@ class PeleLM : public amrex::AmrCore {
    //protected:
    // Brief state descriptor
    std::list<std::tuple<int,std::string>> stateComponents;
+   std::list<std::tuple<int,std::string>> reactComponents;
 
    // Class level data
    amrex::Vector<std::unique_ptr<LevelData> > m_leveldata_old;
@@ -1084,6 +1087,7 @@ class PeleLM : public amrex::AmrCore {
 
    // Diagnostics
    amrex::Vector<std::unique_ptr<DiagBase>> m_diagnostics;
+   amrex::Vector<std::string> m_diagVars;
 
    // Linear solvers
    std::unique_ptr<DiffusionOp> m_diffusion_op;

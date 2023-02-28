@@ -10,9 +10,8 @@ geometry.prob_hi     = 0.016 0.016 0.032        # x_hi y_hi (z_hi)
 peleLM.lo_bc = Interior Interior Inflow
 peleLM.hi_bc = Interior Interior Outflow
 
-
 #-------------------------AMR CONTROL----------------------------
-amr.n_cell          = 32 32 64      # Level 0 number of cells in each direction   
+amr.n_cell          = 32 32 64      # Level 0 number of cells in each direction
 amr.v               = 1                # AMR verbose
 amr.max_level       = 1                # maximum level number allowed
 amr.ref_ratio       = 2 2 2 2          # refinement ratio
@@ -57,8 +56,46 @@ peleLM.chem_integrator = "ReactorCvode"
 peleLM.use_typ_vals_chem = 1          # Use species/temp typical values in CVODE
 ode.rtol = 1.0e-6                     # Relative tolerance of the chemical solve
 ode.atol = 1.0e-5                     # Absolute tolerance factor applied on typical values
-cvode.solve_type = GMRES               # CVODE Linear solve type (for Newton direction) 
-cvode.max_order  = 4                   # CVODE max BDF order. 
+cvode.solve_type = GMRES               # CVODE Linear solve type (for Newton direction)
+cvode.max_order  = 4                   # CVODE max BDF order.
+
+#-------------------DIAGNOSTIC CONTROL-----------------------
+peleLM.diagnostics = xnormal ynormal condT pdfVel
+peleLM.xnormal.type = DiagFramePlane
+peleLM.xnormal.file = xNorm5mm
+peleLM.xnormal.normal = 0
+peleLM.xnormal.center = 0.008
+peleLM.xnormal.int    = 5
+peleLM.xnormal.interpolation = Linear
+peleLM.xnormal.field_names = Y(O2) x_velocity temp
+
+peleLM.ynormal.type = DiagFramePlane
+peleLM.ynormal.file = yNormCent
+peleLM.ynormal.normal = 1
+peleLM.ynormal.center = 0.008
+peleLM.ynormal.int    = 5
+peleLM.ynormal.interpolation = Quadratic
+peleLM.ynormal.field_names = density Y(H2) Y(CH4) mag_vort
+
+peleLM.condT.type = DiagConditional
+peleLM.condT.file = condTest
+peleLM.condT.int  = 2
+peleLM.condT.filters = innerXCore
+peleLM.condT.innerXCore.field_name = x
+peleLM.condT.innerXCore.value_inrange = 0.006 0.010
+peleLM.condT.conditional_type = Average
+peleLM.condT.nBins = 50
+peleLM.condT.condition_field_name = temp
+peleLM.condT.field_names = HeatRelease I_R(CH4) I_R(H2)
+
+peleLM.pdfVel.type = DiagPDF
+peleLM.pdfVel.file = PDFTest
+peleLM.pdfVel.int  = 2
+peleLM.pdfVel.filters = innerFlame
+peleLM.pdfVel.innerFlame.field_name = temp
+peleLM.pdfVel.innerFlame.value_inrange = 350 1500
+peleLM.pdfVel.nBins = 50
+peleLM.pdfVel.field_name = x_velocity
 
 #--------------------REFINEMENT CONTROL------------------------
 #amr.refinement_indicators = temp

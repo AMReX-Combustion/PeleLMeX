@@ -12,7 +12,7 @@ using namespace amrex;
 //
 void pelelm_dertemp (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
                      const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
-                     const Geometry& /*geomdata*/,
+                     const Geometry& /*geom*/,
                      Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
 
 {
@@ -34,7 +34,7 @@ void pelelm_dertemp (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dco
 //
 void pelelm_derheatrelease (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
                             const FArrayBox& statefab, const FArrayBox& reactfab, const FArrayBox& /*pressfab*/,
-                            const Geometry& /*geomdata*/,
+                            const Geometry& /*geom*/,
                             Real /*time*/, const Vector<BCRec>& /*bcrec*/, int level)
 
 {
@@ -66,7 +66,7 @@ void pelelm_derheatrelease (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, 
 //
 void pelelm_dermassfrac (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
                          const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
-                         const Geometry& /*geomdata*/,
+                         const Geometry& /*geom*/,
                          Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
 
 {
@@ -91,7 +91,7 @@ void pelelm_dermassfrac (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int
 //
 void pelelm_dermolefrac (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
                          const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
-                         const Geometry& /*geomdata*/,
+                         const Geometry& /*geom*/,
                          Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
 {
     AMREX_ASSERT(derfab.box().contains(bx));
@@ -124,7 +124,7 @@ void pelelm_dermolefrac (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int
 //
 void pelelm_derrhomrhoy (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
                          const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
-                         const Geometry& /*geomdata*/,
+                         const Geometry& /*geom*/,
                          Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
 
 {
@@ -151,7 +151,7 @@ void pelelm_derrhomrhoy (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int
 //
 void pelelm_deravgpress (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int /*ncomp*/,
                          const FArrayBox& /*statefab*/, const FArrayBox& /*reactfab*/, const FArrayBox& pressfab,
-                         const Geometry& /*geomdata*/,
+                         const Geometry& /*geom*/,
                          Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
 
 {
@@ -179,7 +179,7 @@ void pelelm_deravgpress (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int
 //
 void pelelm_dermgvel (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int /*ncomp*/,
                       const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
-                      const Geometry& /*geomdata*/,
+                      const Geometry& /*geom*/,
                       Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
 
 {
@@ -201,14 +201,14 @@ void pelelm_dermgvel (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dc
 //
 void pelelm_dermgvort (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int /*ncomp*/,
                        const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
-                       const Geometry& geomdata,
+                       const Geometry& geom,
                        Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
 
 {
 
-    AMREX_D_TERM(const amrex::Real idx = geomdata.InvCellSize(0);,
-                 const amrex::Real idy = geomdata.InvCellSize(1);,
-                 const amrex::Real idz = geomdata.InvCellSize(2););
+    AMREX_D_TERM(const amrex::Real idx = geom.InvCellSize(0);,
+                 const amrex::Real idy = geom.InvCellSize(1);,
+                 const amrex::Real idz = geom.InvCellSize(2););
 
     auto const& dat_arr = statefab.const_array();
     auto const&vort_arr = derfab.array(dcomp);
@@ -245,16 +245,16 @@ void pelelm_dermgvort (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int d
 //
 void pelelm_dervort (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
                      const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
-                     const Geometry& geomdata,
+                     const Geometry& geom,
                      Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
 
 {
     AMREX_ASSERT(derfab.box().contains(bx));
     AMREX_ASSERT(statefab.box().contains(bx));
     AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
-    AMREX_D_TERM(const amrex::Real idx = geomdata.InvCellSize(0);,
-                 const amrex::Real idy = geomdata.InvCellSize(1);,
-                 const amrex::Real idz = geomdata.InvCellSize(2););
+    AMREX_D_TERM(const amrex::Real idx = geom.InvCellSize(0);,
+                 const amrex::Real idy = geom.InvCellSize(1);,
+                 const amrex::Real idz = geom.InvCellSize(2););
 
     auto const& dat_arr = statefab.const_array();
     auto const&vort_arr = derfab.array(dcomp);
@@ -289,19 +289,48 @@ void pelelm_dervort (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dco
 }
 
 //
+// Compute cell-centered coordinates
+//
+void pelelm_dercoord (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
+                      const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
+                      const Geometry& geom,
+                      Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
+
+{
+    AMREX_ASSERT(derfab.box().contains(bx));
+    AMREX_ASSERT(statefab.box().contains(bx));
+    AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
+    AMREX_D_TERM(const amrex::Real dx = geom.CellSize(0);,
+                 const amrex::Real dy = geom.CellSize(1);,
+                 const amrex::Real dz = geom.CellSize(2););
+
+    auto const& coord_arr = derfab.array(dcomp);
+    const auto geomdata = geom.data();
+
+    // TODO : EB
+    amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+    {
+        const amrex::Real* prob_lo = geomdata.ProbLo();
+        AMREX_D_TERM(coord_arr(i,j,k,0) = prob_lo[0] + (i+0.5)*dx;,
+                     coord_arr(i,j,k,1) = prob_lo[1] + (j+0.5)*dy;,
+                     coord_arr(i,j,k,2) = prob_lo[2] + (k+0.5)*dz;);
+    });
+}
+
+//
 // Compute Q-criterion
 //
 void pelelm_derQcrit (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int /*ncomp*/,
                       const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
-                      const Geometry& geomdata,
+                      const Geometry& geom,
                       Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
 
 {
 
 #if AMREX_SPACEDIM == 3
-    AMREX_D_TERM(const amrex::Real idx = geomdata.InvCellSize(0);,
-                 const amrex::Real idy = geomdata.InvCellSize(1);,
-                 const amrex::Real idz = geomdata.InvCellSize(2););
+    AMREX_D_TERM(const amrex::Real idx = geom.InvCellSize(0);,
+                 const amrex::Real idy = geom.InvCellSize(1);,
+                 const amrex::Real idz = geom.InvCellSize(2););
 
     auto const &  dat_arr = statefab.const_array();
     auto const &qcrit_arr = derfab.array(dcomp);
@@ -349,7 +378,7 @@ void pelelm_derQcrit (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dc
 //
 void pelelm_derkineticenergy (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int /*ncomp*/,
                               const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
-                              const Geometry& /*geomdata*/,
+                              const Geometry& /*geom*/,
                               Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
 
 {
@@ -386,14 +415,14 @@ void pelelm_derkineticenergy (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab
 //
 void pelelm_derenstrophy (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int /*ncomp*/,
                           const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
-                          const Geometry& geomdata,
+                          const Geometry& geom,
                           Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
 
 {
 
-    AMREX_D_TERM(const amrex::Real idx = geomdata.InvCellSize(0);,
-                 const amrex::Real idy = geomdata.InvCellSize(1);,
-                 const amrex::Real idz = geomdata.InvCellSize(2););
+    AMREX_D_TERM(const amrex::Real idx = geom.InvCellSize(0);,
+                 const amrex::Real idy = geom.InvCellSize(1);,
+                 const amrex::Real idz = geom.InvCellSize(2););
 
     // TODO : EB
     // TODO : BCs
@@ -455,7 +484,7 @@ void pelelm_derenstrophy (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, in
 //
 void pelelm_dermixfrac (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
                         const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
-                        const Geometry& /*geomdata*/,
+                        const Geometry& /*geom*/,
                         Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
 
 {
@@ -494,7 +523,7 @@ void pelelm_dermixfrac (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int 
 //
 void pelelm_derprogvar (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
                         const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
-                        const Geometry& /*geomdata*/,
+                        const Geometry& /*geom*/,
                         Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
 
 {
@@ -539,7 +568,7 @@ void pelelm_derprogvar (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int 
 //
 void pelelm_dervisc (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
                      const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
-                     const Geometry& /*geomdata*/,
+                     const Geometry& /*geom*/,
                      Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
 {
     AMREX_ASSERT(derfab.box().contains(bx));
@@ -566,7 +595,7 @@ void pelelm_dervisc (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dco
 //
 void pelelm_derdiffc (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
                       const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
-                      const Geometry& /*geomdata*/,
+                      const Geometry& /*geom*/,
                       Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
 {
     AMREX_ASSERT(derfab.box().contains(bx));
@@ -615,7 +644,7 @@ void pelelm_derdiffc (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dc
 //
 void pelelm_derlambda (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
                        const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
-                       const Geometry& /*geomdata*/,
+                       const Geometry& /*geom*/,
                        Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
 {
     AMREX_ASSERT(derfab.box().contains(bx));

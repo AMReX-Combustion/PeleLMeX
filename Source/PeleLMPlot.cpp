@@ -191,7 +191,6 @@ void PeleLM::WritePlotFile() {
       plt_VarsName.push_back("FunctCall");
       // Extras:
       if (m_plotHeatRelease) plt_VarsName.push_back("HeatRelease");
-      //if (m_plotChemDiag) ncomp += 1;     // TODO
    }
 
 #ifdef AMREX_USE_EB

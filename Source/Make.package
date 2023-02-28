@@ -39,3 +39,4 @@ CEXE_sources += PeleLMReactions.cpp
 CEXE_sources += PeleLMTemporals.cpp
 CEXE_sources += PeleLMEB.cpp
 CEXE_sources += PeleLMDiagnostics.cpp
+CEXE_sources += DeriveUserDefined.cpp
