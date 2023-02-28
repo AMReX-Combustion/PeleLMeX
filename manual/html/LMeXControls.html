@@ -254,6 +254,10 @@ the first stopping criterion encountered will lead to termination of the simulat
 <td><p>1</p></td>
 <td><p>Rho minus sum of rhoYs, for debug purposes</p></td>
 </tr>
+<tr class="row-odd"><td><p><cite>coordinates</cite></p></td>
+<td><p>AMREX_SPACEDIM</p></td>
+<td><p>Cell-center coordinates</p></td>
+</tr>
 </tbody>
 </table>
 <p>Note that <cite>mixture_fraction</cite> and <cite>progress_variable</cite> requires additional inputs from the users as described below.</p>
@@ -416,24 +420,55 @@ state:</p>
 <span class="n">peleLM</span><span class="o">.</span><span class="n">progressVariable</span><span class="o">.</span><span class="n">hotState</span> <span class="o">=</span> <span class="n">CO</span><span class="p">:</span><span class="mf">0.000002</span> <span class="n">CO2</span><span class="p">:</span><span class="mf">0.0666</span>
 </pre></div>
 </div>
-<p>A set of diagnostics available at runtime are currently under development. The following provide an example for extracting
-the state variables on a ‘x’,’y’ or ‘z’ aligned plane and writting a 2D plotfile compatible with Amrvis, Paraview or yt:</p>
+<p>Analysing the data a-posteriori can become extremely cumbersome when dealing with extreme datasets.
+PeleLMeX offers a set of diagnostics available at runtime and more are under development.
+Currently, the list of diagnostic contains:</p>
+<ul class="simple">
+<li><p><cite>DiagFramePlane</cite> : extract a plane aligned in the ‘x’,’y’ or ‘z’ direction across the AMR hierarchy, writing
+a 2D plotfile compatible with Amrvis, Paraview or yt. Only available for 3D simulations.</p></li>
+<li><p><cite>DiagPDF</cite> : extract the PDF of a given variable and write it to an ASCII file.</p></li>
+<li><p><cite>DiagConditional</cite> : extract statistics (average and standard deviation, integral or sum) of a
+set of variables conditioned on the value of given variable and write it to an ASCII file.</p></li>
+</ul>
+<p>When using <cite>DiagPDF</cite> or <cite>DiagConditional</cite>, it is possible to narrow down the diagnostic to a region of interest
+by specifying a set of filters, defining a range of interest for a variable. Note also the for these two diagnostics,
+fine-covered regions are masked. The following provide examples for each diagnostic:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1">#--------------------------DIAGNOSTICS------------------------</span>
 
-<span class="n">peleLM</span><span class="o">.</span><span class="n">diagnostics</span> <span class="o">=</span> <span class="n">xnormal</span> <span class="n">ynormal</span>
-<span class="n">peleLM</span><span class="o">.</span><span class="n">xnormal</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="n">DiagFramePlane</span>
-<span class="n">peleLM</span><span class="o">.</span><span class="n">xnormal</span><span class="o">.</span><span class="n">file</span> <span class="o">=</span> <span class="n">xNorm5mm</span>
-<span class="n">peleLM</span><span class="o">.</span><span class="n">xnormal</span><span class="o">.</span><span class="n">normal</span> <span class="o">=</span> <span class="mi">0</span>
-<span class="n">peleLM</span><span class="o">.</span><span class="n">xnormal</span><span class="o">.</span><span class="n">center</span> <span class="o">=</span> <span class="mf">0.005</span>
-<span class="n">peleLM</span><span class="o">.</span><span class="n">xnormal</span><span class="o">.</span><span class="n">int</span>    <span class="o">=</span> <span class="mi">5</span>
-<span class="n">peleLM</span><span class="o">.</span><span class="n">xnormal</span><span class="o">.</span><span class="n">interpolation</span> <span class="o">=</span> <span class="n">Linear</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">diagnostics</span> <span class="o">=</span> <span class="n">xnormP</span> <span class="n">condT</span> <span class="n">pdfTest</span>
 
-<span class="n">peleLM</span><span class="o">.</span><span class="n">ynormal</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="n">DiagFramePlane</span>
-<span class="n">peleLM</span><span class="o">.</span><span class="n">ynormal</span><span class="o">.</span><span class="n">file</span> <span class="o">=</span> <span class="n">yNormCent</span>
-<span class="n">peleLM</span><span class="o">.</span><span class="n">ynormal</span><span class="o">.</span><span class="n">normal</span> <span class="o">=</span> <span class="mi">1</span>
-<span class="n">peleLM</span><span class="o">.</span><span class="n">ynormal</span><span class="o">.</span><span class="n">center</span> <span class="o">=</span> <span class="mf">0.0</span>
-<span class="n">peleLM</span><span class="o">.</span><span class="n">ynormal</span><span class="o">.</span><span class="n">int</span>    <span class="o">=</span> <span class="mi">10</span>
-<span class="n">peleLM</span><span class="o">.</span><span class="n">ynormal</span><span class="o">.</span><span class="n">interpolation</span> <span class="o">=</span> <span class="n">Quadratic</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">xnormP</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="n">DiagFramePlane</span>                             <span class="c1"># Diagnostic type</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">xnormP</span><span class="o">.</span><span class="n">file</span> <span class="o">=</span> <span class="n">xNorm5mm</span>                                   <span class="c1"># Output file prefix</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">xnormP</span><span class="o">.</span><span class="n">normal</span> <span class="o">=</span> <span class="mi">0</span>                                        <span class="c1"># Plane normal (0, 1 or 2 for x, y or z)</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">xnormP</span><span class="o">.</span><span class="n">center</span> <span class="o">=</span> <span class="mf">0.005</span>                                    <span class="c1"># Coordinate in the normal direction</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">xnormP</span><span class="o">.</span><span class="n">int</span>    <span class="o">=</span> <span class="mi">5</span>                                        <span class="c1"># Frequency (as step #) for performing the diagnostic</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">xnormP</span><span class="o">.</span><span class="n">interpolation</span> <span class="o">=</span> <span class="n">Linear</span>                            <span class="c1"># [OPT, DEF=Linear] Interpolation type : Linear or Quadratic</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">xnormP</span><span class="o">.</span><span class="n">field_names</span> <span class="o">=</span> <span class="n">x_velocity</span> <span class="n">mag_vort</span> <span class="n">density</span>         <span class="c1"># List of variables outputed to the 2D pltfile</span>
+
+<span class="n">peleLM</span><span class="o">.</span><span class="n">condT</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="n">DiagConditional</span>                             <span class="c1"># Diagnostic type</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">condT</span><span class="o">.</span><span class="n">file</span> <span class="o">=</span> <span class="n">condTest</span>                                    <span class="c1"># Output file prefix</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">condT</span><span class="o">.</span><span class="n">int</span>  <span class="o">=</span> <span class="mi">5</span>                                           <span class="c1"># Frequency (as step #) for performing the diagnostic</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">condT</span><span class="o">.</span><span class="n">filters</span> <span class="o">=</span> <span class="n">xHigh</span> <span class="n">stoich</span>                             <span class="c1"># [OPT, DEF=None] List of filters</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">condT</span><span class="o">.</span><span class="n">xHigh</span><span class="o">.</span><span class="n">field_name</span> <span class="o">=</span> <span class="n">x</span>                               <span class="c1"># Filter field</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">condT</span><span class="o">.</span><span class="n">xHigh</span><span class="o">.</span><span class="n">value_greater</span> <span class="o">=</span> <span class="mf">0.006</span>                        <span class="c1"># Filter definition : value_greater, value_less, value_inrange</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">condT</span><span class="o">.</span><span class="n">stoich</span><span class="o">.</span><span class="n">field_name</span> <span class="o">=</span> <span class="n">mixture_fraction</span>               <span class="c1"># Filter field</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">condT</span><span class="o">.</span><span class="n">stoich</span><span class="o">.</span><span class="n">value_inrange</span> <span class="o">=</span> <span class="mf">0.053</span> <span class="mf">0.055</span>                 <span class="c1"># Filter definition : value_greater, value_less, value_inrange</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">condT</span><span class="o">.</span><span class="n">conditional_type</span> <span class="o">=</span> <span class="n">Average</span>                         <span class="c1"># Conditional type : Average, Integral or Sum</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">condT</span><span class="o">.</span><span class="n">nBins</span> <span class="o">=</span> <span class="mi">50</span>                                         <span class="c1"># Number of bins for the conditioning variable</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">condT</span><span class="o">.</span><span class="n">condition_field_name</span> <span class="o">=</span> <span class="n">temp</span>                        <span class="c1"># Conditioning variable name</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">condT</span><span class="o">.</span><span class="n">field_names</span> <span class="o">=</span> <span class="n">HeatRelease</span> <span class="n">I_R</span><span class="p">(</span><span class="n">CH4</span><span class="p">)</span> <span class="n">I_R</span><span class="p">(</span><span class="n">H2</span><span class="p">)</span>         <span class="c1"># List of variables to be treated</span>
+
+<span class="n">peleLM</span><span class="o">.</span><span class="n">pdfTest</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="n">DiagPDF</span>                                   <span class="c1"># Diagnostic type</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">pdfTest</span><span class="o">.</span><span class="n">file</span> <span class="o">=</span> <span class="n">PDFTest</span>                                   <span class="c1"># Output file prefix</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">pdfTest</span><span class="o">.</span><span class="n">int</span>  <span class="o">=</span> <span class="mi">5</span>                                         <span class="c1"># Frequency (as step #) for performing the diagnostic</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">pdfTest</span><span class="o">.</span><span class="n">filters</span> <span class="o">=</span> <span class="n">innerFlame</span>                             <span class="c1"># [OPT, DEF=None] List of filters</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">pdfTest</span><span class="o">.</span><span class="n">innerFlame</span><span class="o">.</span><span class="n">field_name</span> <span class="o">=</span> <span class="n">temp</span>                     <span class="c1"># Filter field</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">pdfTest</span><span class="o">.</span><span class="n">innerFlame</span><span class="o">.</span><span class="n">value_inrange</span> <span class="o">=</span> <span class="mf">450.0</span> <span class="mf">1500.0</span>          <span class="c1"># Filter definition : value_greater, value_less, value_inrange</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">pdfTest</span><span class="o">.</span><span class="n">nBins</span> <span class="o">=</span> <span class="mi">50</span>                                       <span class="c1"># Number of bins for the PDF</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">pdfTest</span><span class="o">.</span><span class="n">normalized</span> <span class="o">=</span> <span class="mi">1</span>                                   <span class="c1"># [OPT, DEF=1] PDF is normalized (i.e. integral is unity) ?</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">pdfTest</span><span class="o">.</span><span class="n">volume_weighted</span> <span class="o">=</span> <span class="mi">1</span>                              <span class="c1"># [OPT, DEF=1] Computation of the PDF is volume weighted ?</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">pdfTest</span><span class="o">.</span><span class="n">range</span> <span class="o">=</span> <span class="mf">0.0</span> <span class="mf">2.0</span>                                  <span class="c1"># [OPT, DEF=data min/max] Specify the range of the PDF</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">pdfTest</span><span class="o">.</span><span class="n">field_name</span> <span class="o">=</span> <span class="n">x_velocity</span>                          <span class="c1"># Variable of interest</span>
 </pre></div>
 </div>
 </section>
