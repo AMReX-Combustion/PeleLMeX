@@ -99,7 +99,7 @@ formulation to achieve high performances from a small desktop station to the wor
 it remains the only publicly available code to offers these features. Recent code developments focused on enabling
 massively parallel simulations at scale on high-performance accelerated computer architectures to tackle the challenging
 requirements of fundamental and applied combustion research, as well as extending the solver modeling capabilities by including
-Large Eddy Simulation (LES) closure models and support for data-driven combustion models [@Perry:2021].
+Large Eddy Simulation (LES) closure models and support for data-driven combustion models [@Perry:2022].
 
 PeleLMeX is predominantly used to study the fine scale interactions between turbulence and chemical reactions occurring in many
 combustion applications. A better understanding of these interactions is the basis for developing accurate modeling approaches
