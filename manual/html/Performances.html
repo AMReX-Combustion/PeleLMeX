@@ -7,6 +7,7 @@
   <title>Performances &mdash; PeleLMeX 22.12 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="_static/theme.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
@@ -57,7 +58,7 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#weak-scaling-performances-flamesheet-case">Weak scaling performances: FlameSheet case</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#id4">Case description</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id3">Case description</a></li>
 </ul>
 </li>
 </ul>
@@ -180,7 +181,7 @@ of the stiff chemistry integration, especially on the GPU.</p>
 </section>
 <section id="results-on-crusher-ornl">
 <h3>Results on Crusher (ORNL)<a class="headerlink" href="#results-on-crusher-ornl" title="Permalink to this heading"></a></h3>
-<p>Crusher is the testbed for DOE’s first ExaScale platform Frontier. Crusher’s <a class="reference external" href="https://docs.olcf.ornl.gov/systems/crusher_quick_start_guide.html#crusher-compute-nodes">nodes</a> consists of a single AMD EPYC 7A53 (Trento), 64 cores CPU connected to 4 AMD MI250X,
+<p>Crusher is the testbed for DOE’s first ExaScale platform Frontier. <a class="reference external" href="https://docs.olcf.ornl.gov/systems/crusher_quick_start_guide.html#crusher-compute-nodes">Crusher’s nodes</a> consists of a single AMD EPYC 7A53 (Trento), 64 cores CPU connected to 4 AMD MI250X,
 each containing 2 Graphics Compute Dies (GCDs) for a total of 8 GCDs per node. When running with GPU acceleration, <cite>PeleLMeX</cite> will use 8 MPI ranks with each access to one GCD, while when running on flat MPI, we will use 64 MPI-ranks.</p>
 <p>The FlameSheet case is ran using 2 levels of refinement (3 levels total) and the following domain size and cell count:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">geometry</span><span class="o">.</span><span class="n">prob_lo</span>     <span class="o">=</span> <span class="mf">0.0</span> <span class="mf">0.0</span> <span class="mf">0.0</span>        <span class="c1"># x_lo y_lo (z_lo)</span>
@@ -214,7 +215,7 @@ of the stiff chemistry integration, especially on the GPU.</p>
 <section id="results-on-summit-ornl">
 <h3>Results on Summit (ORNL)<a class="headerlink" href="#results-on-summit-ornl" title="Permalink to this heading"></a></h3>
 <p>Summit was launched in 2018 as the first DOE’s fully GPU-accelerated platform.
-Summit’s <a class="reference external" href="https://docs.olcf.ornl.gov/systems/summit_user_guide.html#summit-nodes">nodes</a> consists
+<a class="reference external" href="https://docs.olcf.ornl.gov/systems/summit_user_guide.html#summit-nodes">Summit’s nodes</a> consists
 of a two IBM Power9 CPU connected to 6 NVIDIA V100 GPUs. When running with GPU acceleration, <cite>PeleLMeX</cite> will
 use 6 MPI ranks with each access to one V100, while when running on flat MPI, we will use 42 MPI-ranks.
 Note that in contrast with newer GPUs available on Perlmutter or Crusher, Summit’s V100s only have 16GBs of
@@ -265,8 +266,8 @@ Perlmutter or Crusher, respectively.</p>
 </section>
 <section id="weak-scaling-performances-flamesheet-case">
 <h2>Weak scaling performances: FlameSheet case<a class="headerlink" href="#weak-scaling-performances-flamesheet-case" title="Permalink to this heading"></a></h2>
-<section id="id4">
-<h3>Case description<a class="headerlink" href="#id4" title="Permalink to this heading"></a></h3>
+<section id="id3">
+<h3>Case description<a class="headerlink" href="#id3" title="Permalink to this heading"></a></h3>
 <p>Once again the case of a laminar premixed flame with harmonic perturbations is employed. On
 a single node, the case is similar to the one used in the previous section. To perform the
 weak scaling study (characterising the ability of the solver to scale up while keeping the

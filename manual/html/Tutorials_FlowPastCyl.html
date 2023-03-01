@@ -7,6 +7,7 @@
   <title>Non-reacting flow past a cylinder &mdash; PeleLMeX 22.12 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="_static/theme.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
@@ -123,22 +124,28 @@ Follow the steps listed below to get to this point:</p>
 </div>
 </li>
 <li><p>Move into the Exec folder containing the <code class="docutils literal notranslate"><span class="pre">FlowPastCylinder</span></code>. To do so:</p>
-<p>cd PeleLMeX/Exec/RegTests/EB_FlowPastCylinder</p>
+<div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>cd PeleLMeX/Exec/RegTests/EB_FlowPastCylinder
+</pre></div>
+</div>
 </li>
 <li><p>Finally, setup the environment variables providing paths to <cite>PeleLMeX</cite> and its dependencies. This can done in
 one of two ways:</p>
 <ol class="arabic">
 <li><p>Directly into the <cite>GNUmakefile</cite> by updating the top-most lines as follows:</p>
-<p>PELELMEX_HOME     = &lt;path_to_PeleLMeX&gt;
+<div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>PELELMEX_HOME     = &lt;path_to_PeleLMeX&gt;
 AMREX_HOME        =${PELELMEX_HOME}/Submodules/amrex
 AMREX_HYDRO_HOME  =${PELELMEX_HOME}/Submodules/AMReX-Hydro
-PELE_PHYSICS_HOME =${PELELMEX_HOME}/Submodules/PelePhysics</p>
+PELE_PHYSICS_HOME =${PELELMEX_HOME}/Submodules/PelePhysics
+</pre></div>
+</div>
 </li>
 <li><p>Exporting shell environement variables (using <em>bash</em> for instance):</p>
-<p>export PELELMEX_HOME=&lt;path_to_PeleLMeX&gt;
+<div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>export PELELMEX_HOME=&lt;path_to_PeleLMeX&gt;
 export AMREX_HOME=${PELELMEX_HOME}/Submodules/amrex
 export AMREX_HYDRO_HOME=${PELELMEX_HOME}/Submodules/AMReX-Hydro
-export PELE_PHYSICS_HOME=${PELELMEX_HOME}/Submodules/PelePhysics</p>
+export PELE_PHYSICS_HOME=${PELELMEX_HOME}/Submodules/PelePhysics
+</pre></div>
+</div>
 </li>
 </ol>
 <p>Both options require to provide the path to where you cloned <cite>PeleLMeX</cite>. Note that using the first option will overwrite any
@@ -149,18 +156,18 @@ environement variables you might have previously defined when using this <cite>G
 </section>
 <section id="numerical-setup">
 <h2>Numerical setup<a class="headerlink" href="#numerical-setup" title="Permalink to this heading"></a></h2>
-<p>In this section we review the content of the various input files for the flow past cylinder test case. To get additional information about the keywords discussed, the user is referred to section <span class="xref std std-ref">sec:control</span>.</p>
+<p>In this section we review the content of the various input files for the flow past cylinder test case. To get additional information about the keywords discussed, the user is referred to <a class="reference internal" href="LMeXControls.html"><span class="doc">PeleLMeX controls</span></a>.</p>
 <section id="test-case-and-boundary-conditions">
 <h3>Test case and boundary conditions<a class="headerlink" href="#test-case-and-boundary-conditions" title="Permalink to this heading"></a></h3>
 <p>Direct Numerical Simulations (DNS) is performed on a 12x4 <span class="math notranslate nohighlight">\(cm^2\)</span> 2D computational domain, with the bottom left corner located at (-0.02:-0.02) and the top right corner at (0.10:0.02).
 The base grid is decomposed into 192x64 cells and up to 3 levels of refinement (although we will start with a single level).
 The refinement ratio between each level is set to 2.
 The maximum box size is fixed at 64, and the base (level 0) grid is composed of 3 boxes,
-as shown in Fig <a class="reference internal" href="#fig-fpc-numsetup"><span class="std std-numref">3</span></a>.</p>
+as shown in Fig <a class="reference internal" href="#fig-fpc-numsetup"><span class="std std-numref">Table 9</span></a>.</p>
 <p>Periodic boundary conditions are used in the transverse (<span class="math notranslate nohighlight">\(y\)</span>) direction, while <code class="docutils literal notranslate"><span class="pre">Inflow</span></code> (dirichlet) and <code class="docutils literal notranslate"><span class="pre">Outflow</span></code> (neumann) boundary conditions are used in the main flow direction (<span class="math notranslate nohighlight">\(x\)</span>). The flow goes from left to right.
 A cylinder of radius 0.0035 m is placed in the middle of the flow at (0.0:0.0).</p>
 <span id="fig-fpc-numsetup"></span><table class="docutils align-center" id="id1">
-<caption><span class="caption-number">3 </span><span class="caption-text">Sketch of the computational domain with level 0 box decomposition.</span><a class="headerlink" href="#id1" title="Permalink to this table"></a></caption>
+<caption><span class="caption-number">Table 9 </span><span class="caption-text">Sketch of the computational domain with level 0 box decomposition.</span><a class="headerlink" href="#id1" title="Permalink to this table"></a></caption>
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="_images/FPC_SetupSketch.png"><img alt="FPC_a" src="_images/FPC_SetupSketch.png" style="width: 100%;" /></a></p></td>
 </tr>
@@ -174,7 +181,7 @@ geometry.prob_lo     = -0.02 -0.02     # x_lo y_lo
 geometry.prob_hi     =  0.10  0.02     # x_hi y_hi
 </pre></div>
 </div>
-<p>The second block determines the boundary conditions. Note that <cite>Interior</cite> is used to indicate periodic boundary conditions. Refer to Fig <a class="reference internal" href="#fig-fpc-numsetup"><span class="std std-numref">3</span></a>:</p>
+<p>The second block determines the boundary conditions. Note that <cite>Interior</cite> is used to indicate periodic boundary conditions. Refer to Fig <a class="reference internal" href="#fig-fpc-numsetup"><span class="std std-numref">Table 9</span></a>:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>#--------------------------BC FLAGS-----------------------------
 # Interior, Inflow, Outflow, Symmetry,
 # SlipWallAdiab, NoSlipWallAdiab, SlipWallIsotherm, NoSlipWallIsotherm
@@ -244,7 +251,7 @@ transport.const_diffusivity      = 0.0
 </section>
 <section id="numerical-scheme">
 <h3>Numerical scheme<a class="headerlink" href="#numerical-scheme" title="Permalink to this heading"></a></h3>
-<p>The <code class="docutils literal notranslate"><span class="pre">NUMERICS</span> <span class="pre">CONTROL</span></code> block can be modified by the user to increase the number of SDC iterations. Note that there are many other parameters controlling the numerical algorithm that the advanced user can tweak, but we will not talk about them in the present Tutorial. The interested user can refer to section <span class="xref std std-ref">sec:control</span>.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">NUMERICS</span> <span class="pre">CONTROL</span></code> block can be modified by the user to increase the number of SDC iterations. Note that there are many other parameters controlling the numerical algorithm that the advanced user can tweak, but we will not talk about them in the present Tutorial. The interested user can refer to <a class="reference internal" href="LMeXControls.html"><span class="doc">PeleLMeX controls</span></a>.</p>
 </section>
 </section>
 <section id="building-the-executable">
@@ -338,15 +345,15 @@ We have specified here that a checkpoint file will be generated every 50 ms and 
 </pre></div>
 </div>
 <span id="fig-fpc-coarse"></span><table class="docutils align-center" id="id2">
-<caption><span class="caption-number">4 </span><span class="caption-text">Contour plots of velocity components, vorticity, pressure and volume fraction at t = 25 ms on the coarse grid.</span><a class="headerlink" href="#id2" title="Permalink to this table"></a></caption>
+<caption><span class="caption-number">Table 10 </span><span class="caption-text">Contour plots of velocity components, vorticity, pressure and volume fraction at t = 25 ms on the coarse grid.</span><a class="headerlink" href="#id2" title="Permalink to this table"></a></caption>
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="_images/FPC_Coarse_25ms.png"><img alt="FPC_b" src="_images/FPC_Coarse_25ms.png" style="width: 100%;" /></a></p></td>
 </tr>
 </tbody>
 </table>
 <p>At this point, you have established a flow with a large recirculation zone in the wake of the cylinder, but the flow has not yet fully transitioned to periodic vortex shedding.
-The flow is depicted in Fig <a class="reference internal" href="#fig-fpc-coarse"><span class="std std-numref">4</span></a> showing a few of the available contour plots at 25 ms. Note that the value of the fully covered cells is set to zero.</p>
-<p>As can be seen from Fig <a class="reference internal" href="#fig-fpc-coarse"><span class="std std-numref">4</span></a>, the flow has not yet transitioned to the familiar Von-Karman alleys and two aspects of the current simulation can delay or even prevent the onset of vortex shedding:</p>
+The flow is depicted in Fig <a class="reference internal" href="#fig-fpc-coarse"><span class="std std-numref">Table 10</span></a> showing a few of the available contour plots at 25 ms. Note that the value of the fully covered cells is set to zero.</p>
+<p>As can be seen from Fig <a class="reference internal" href="#fig-fpc-coarse"><span class="std std-numref">Table 10</span></a>, the flow has not yet transitioned to the familiar Von-Karman alleys and two aspects of the current simulation can delay or even prevent the onset of vortex shedding:</p>
 <blockquote>
 <div><ul class="simple">
 <li><p>the flow is initially symmetric and the transition to the familiar periodic flow is due to the growth of infinitesimal perturbations in the shear layer of the wake. Because the flow is artificially too symmetric, this transition can be delayed until round-off errors sufficiently accumulate.</p></li>
@@ -415,10 +422,10 @@ As a final step, we will add another level of refinement, only at the vicinity o
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>mpirun -n 4 ./PeleLMeX2d.gnu.MPI.ex input.2d-Re500 &gt; log3Levels.dat &amp;
 </pre></div>
 </div>
-<p>You should obtain a flow with a vorticity field similar to Fig. <a class="reference internal" href="#fig-fpc-vortfinal"><span class="std std-numref">5</span></a>.
+<p>You should obtain a flow with a vorticity field similar to Fig. <a class="reference internal" href="#fig-fpc-vortfinal"><span class="std std-numref">Table 11</span></a>.
 For the purpose of the present tutorial, this will be our final solution but one can see that the flow has not yet return to a periodic vortex shedding and additinal resolution could be added locally to obtain smoother flow features.</p>
 <span id="fig-fpc-vortfinal"></span><table class="docutils align-center" id="id3">
-<caption><span class="caption-number">5 </span><span class="caption-text">Contour plots of vorticity at t = 350 ms with 2 levels of refinements.</span><a class="headerlink" href="#id3" title="Permalink to this table"></a></caption>
+<caption><span class="caption-number">Table 11 </span><span class="caption-text">Contour plots of vorticity at t = 350 ms with 2 levels of refinements.</span><a class="headerlink" href="#id3" title="Permalink to this table"></a></caption>
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="_images/FPC_VorticityFinal.png"><img alt="FPC_c" src="_images/FPC_VorticityFinal.png" style="width: 100%;" /></a></p></td>
 </tr>

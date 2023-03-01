@@ -7,6 +7,7 @@
   <title>The PeleLMeX Model &mdash; PeleLMeX 22.12 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="_static/theme.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
@@ -222,12 +223,12 @@ adaptive mesh refinement (AMR) code that solves the reacting Navier-Stokes equat
 <section id="pelelmex-algorithm">
 <h2>PeleLMeX Algorithm<a class="headerlink" href="#pelelmex-algorithm" title="Permalink to this heading"></a></h2>
 <p>An overview of <cite>PeleLMeX</cite> time-advance function is provided in the figure below and details are provided in the following subsections.</p>
-<figure class="align-center" style="width: 70%">
+<figure class="align-center" style="width: 50%">
 <img alt="_images/PeleLMeX_Algorithm.png" src="_images/PeleLMeX_Algorithm.png" />
 </figure>
-<p>The three steps of the low Mach number projection scheme described in Section <a class="reference internal" href="#ssec-projscheme">ssec:projScheme</a> are referenced to better emphasize how the thermodynamic solve is
-closely weaved into the fractional step appraoch. Striped boxes indicate where the Godunov procedure described in Section <a class="reference internal" href="#ssec-advscheme">ssec:advScheme</a> is employed while
-the four different linear solves are highlighted.</p>
+<p>The three steps of the low Mach number projection scheme described <a class="reference internal" href="#ssec-projscheme"><span class="std std-ref">below</span></a> are referenced to better
+emphasize how the thermodynamic solve is closely weaved into the fractional step appraoch. Striped boxes indicate where the
+<a class="reference internal" href="#ssec-advscheme"><span class="std std-ref">Godunov procedure</span></a> is employed while the four different linear solves are highlighted.</p>
 <section id="low-mach-number-projection-scheme">
 <h3>Low Mach number projection scheme<a class="headerlink" href="#low-mach-number-projection-scheme" title="Permalink to this heading"></a></h3>
 <p id="ssec-projscheme"><cite>PeleLMeX</cite> implements a finite-volume, Cartesian grid discretization approach with constant grid spacing, where
@@ -340,7 +341,7 @@ that they satisfy the constraint.</p>
 <h3>AMR extension<a class="headerlink" href="#amr-extension" title="Permalink to this heading"></a></h3>
 <p>In contrast with <a class="reference external" href="https://github.com/AMReX-Combustion/PeleLM">PeleLM</a>, <cite>PeleLMeX</cite> do not rely a on subcycling appraoch to advance the AMR hierarchy.
 This difference is illustrated in the figure below comparing the multi-level time-stepping approach in both codes:</p>
-<figure class="align-center" style="width: 90%">
+<figure class="align-center" style="width: 60%">
 <img alt="_images/PeleLMeX_Subcycling.png" src="_images/PeleLMeX_Subcycling.png" />
 </figure>
 <ul class="simple">
@@ -357,7 +358,7 @@ mesh is uniform and block-structured, but the boundary of the irregular-shaped c
 through this mesh. Each cell in the mesh becomes labeled as regular, cut or covered, and the finite-volume
 based discretization methods traditionally used in AMReX applications need to be modified to incorporate these cell shapes.
 AMReX provides the necessary EB data structures, including volume and area fractions, surface normals and centroids,
-as well as local connectivity information. The fluxes described in Section <a class="reference internal" href="#ssec-projscheme">ssec:projScheme</a> are then modified to account
+as well as local connectivity information. The fluxes described in <a class="reference internal" href="#ssec-projscheme"><span class="std std-ref">the projection scheme section</span></a> are then modified to account
 for the apperture opening between adjacent cells and the additional EB-fluxes are included when constructing the cell flux divergences.</p>
 <p>A common problem arising with EB is the presence of the small cut-cells which can either introduce undesirable constraint on
 the explicit time step size or lead to numerical instabilities if not accounterd for. <cite>PeleLMeX</cite> relies on a combination of
