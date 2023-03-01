@@ -61,7 +61,8 @@ pygments_style = 'sphinx'
 html_logo = "_static/swirlH2Fast_OH_vort_256.png"
 
 numfig = True
-numfig_format = {'figure': '%s', 'table': '%s', 'code-block': '%s'}
+numfig_format = {'figure': 'Fig. %s', 'table': 'Table %s', 'code-block': '%s'}
+numfig_secnum_depth=3
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -79,3 +80,6 @@ html_static_path = ['_static']
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'PeleLMeXdoc'
+
+def setup(app):
+    app.add_css_file('theme.css')

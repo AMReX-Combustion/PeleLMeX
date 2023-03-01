@@ -106,7 +106,7 @@ of the stiff chemistry integration, especially on the GPU.
 Results on Crusher (ORNL)
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Crusher is the testbed for DOE's first ExaScale platform Frontier. Crusher's `nodes <https://docs.olcf.ornl.gov/systems/crusher_quick_start_guide.html#crusher-compute-nodes>`_ consists of a single AMD EPYC 7A53 (Trento), 64 cores CPU connected to 4 AMD MI250X,
+Crusher is the testbed for DOE's first ExaScale platform Frontier. `Crusher's nodes <https://docs.olcf.ornl.gov/systems/crusher_quick_start_guide.html#crusher-compute-nodes>`_ consists of a single AMD EPYC 7A53 (Trento), 64 cores CPU connected to 4 AMD MI250X,
 each containing 2 Graphics Compute Dies (GCDs) for a total of 8 GCDs per node. When running with GPU acceleration, `PeleLMeX` will use 8 MPI ranks with each access to one GCD, while when running on flat MPI, we will use 64 MPI-ranks.
 
 The FlameSheet case is ran using 2 levels of refinement (3 levels total) and the following domain size and cell count:
@@ -149,7 +149,7 @@ Results on Summit (ORNL)
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 Summit was launched in 2018 as the first DOE's fully GPU-accelerated platform.
-Summit's `nodes <https://docs.olcf.ornl.gov/systems/summit_user_guide.html#summit-nodes>`_ consists
+`Summit's nodes <https://docs.olcf.ornl.gov/systems/summit_user_guide.html#summit-nodes>`_ consists
 of a two IBM Power9 CPU connected to 6 NVIDIA V100 GPUs. When running with GPU acceleration, `PeleLMeX` will
 use 6 MPI ranks with each access to one V100, while when running on flat MPI, we will use 42 MPI-ranks.
 Note that in contrast with newer GPUs available on Perlmutter or Crusher, Summit's V100s only have 16GBs of
