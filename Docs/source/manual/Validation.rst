@@ -5,19 +5,19 @@ This section assembles results of `PeleLMeX` simulations on a set a test cases
 for which a reference solution can be obtained from the litterature or an
 analytical solution exists.
 
-Laminar premixed flame 
+Laminar premixed flame
 ~~~~~~~~~~~~~~~~~~~~~~
 
 The case of a laminar premixed flame is a foundational test case for a reactive
 flow solver. A laminar premixed flame setup is available in ``Exec/RegTests/FlameSheet``.
-The case reported hereafter is that of a planar laminar methane/air flame at 
-atmospheric conditions and a lean equivalence ratio of 0.9. The initial condition 
-is obtained from a Cantera simulation using 
+The case reported hereafter is that of a planar laminar methane/air flame at
+atmospheric conditions and a lean equivalence ratio of 0.9. The initial condition
+is obtained from a Cantera simulation using
 the DRM19 mechanism and the simulation is conducted starting with a coarse resolution
 :math:`d_{l,0}/\delta_x = 3.5` (3.5 grid cells in the flame thermal thickness) and progressively
 refined to :math:`d_{l,0}/\delta_x = 110` using AMR. Note that the simulation is carried for
-about 30 :math:`\tau_f = d_{l,0} / S_{l,0}` before adding refinement levels ensuring that initial 
-numerical noise introduced by interpolating the Cantera solution onto the cartesian grid is 
+about 30 :math:`\tau_f = d_{l,0} / S_{l,0}` before adding refinement levels ensuring that initial
+numerical noise introduced by interpolating the Cantera solution onto the cartesian grid is
 completely removed.
 
 The `PeleLMeX` results obtained with the finest grid are compared to that of Cantera in :numref:`PMFLMeXCantera`.
@@ -66,7 +66,7 @@ speed is recovered with an accuracy close to 1.5%.
       - 0.58
       - 0.57
 
-Additionally, :numref:`PMFLMeXCrseFine` compares profiles of major and intermediate species as well as 
+Additionally, :numref:`PMFLMeXCrseFine` compares profiles of major and intermediate species as well as
 temperature across the flame front for the coarsest and the finest resolution employed. Results
 indicates that major species (or temperature) are well captured whereas short lived species peak
 values are locally off due to the lack of resolution but are stil reasonably well located within
@@ -302,14 +302,14 @@ to get the velocity statistics in the direction normal to the wall.
 |DNS180Uplus| |DNS180Urms|
 
 Results indicate that `PeleLMeX` is able to reproduce accurately the DNS data obtained with
-a high-order spectral solver, provided sufficient resolution at the wall. 
+a high-order spectral solver, provided sufficient resolution at the wall.
 
 LES results at :math:`Re_{\tau}` = 395, 934
 ###########################################
 
 The channel half width :math:`\delta` is set to 0.01 m, and the computational domain extend
 in +/- 0.0101 m in :math:`y` with EB intersecting the domain at +/- :math:`\delta`. The base grid is coarser
-than the DNS one by a factor of 2. A background pressure gradient in imposed in the :math:`x` to compensate 
+than the DNS one by a factor of 2. A background pressure gradient in imposed in the :math:`x` to compensate
 wall friction. The fluid conditions are similar to that of the DNS case and the flow
 and mesh characteristics are summarized in :numref:`EBCLESFlowsChar`:
 
@@ -341,7 +341,7 @@ and mesh characteristics are summarized in :numref:`EBCLESFlowsChar`:
       - 29.479
       - 7.36984
 
-Note that a single level of refinement is employed for the :math:`Re_{\tau}` = 395 while two are 
+Note that a single level of refinement is employed for the :math:`Re_{\tau}` = 395 while two are
 used for :math:`Re_{\tau}` = 934 in order to provide sufficient (but still below :math:`y^+=1`)
 resolution near the walls.
 
@@ -366,7 +366,7 @@ requirements for a Wall Resolved LES are not quite attained with the grid employ
 |LES934Uplus| |LES934Urms|
 
 The velocity variance in the plot above show distinctive drops around coarse/fine interfaces,
-where the filter size change and a the subgrid-scale contribution increases as depicted on the figure below showing the 
+where the filter size change and a the subgrid-scale contribution increases as depicted on the figure below showing the
 subgrid-scale viscosity for the :math:`Re_{\tau}` = 934 case.
 
 .. figure:: images/validations/EBChannelFlow/nu_t_Re934_LES_LMeX.png

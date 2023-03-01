@@ -178,8 +178,8 @@ An overview of `PeleLMeX` time-advance function is provided in the figure below 
    :align: center
    :figwidth: 50%
 
-The three steps of the low Mach number projection scheme described :ref:`below <ssec:projScheme>` are referenced to better 
-emphasize how the thermodynamic solve is closely weaved into the fractional step appraoch. Striped boxes indicate where the 
+The three steps of the low Mach number projection scheme described :ref:`below <ssec:projScheme>` are referenced to better
+emphasize how the thermodynamic solve is closely weaved into the fractional step appraoch. Striped boxes indicate where the
 :ref:`Godunov procedure <ssec:advScheme>` is employed while the four different linear solves are highlighted.
 
 Low Mach number projection scheme
