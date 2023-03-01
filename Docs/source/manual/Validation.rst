@@ -345,7 +345,9 @@ Note that a single level of refinement is employed for the :math:`Re_{\tau}` = 3
 used for :math:`Re_{\tau}` = 934 in order to provide sufficient (but still below :math:`y^+=1`)
 resolution near the walls.
 
-Simulations are performed with the WALE LES SGS model. The plots below shows that `PeleLMeX`
+Simulations are performed with the WALE LES SGS model. The plots below shows that `PeleLMeX` is
+able to reproduce the normalized velocity profile reasonably well even though the resolution
+requirements for a Wall Resolved LES are not quite attained with the grid employed here.
 
 .. |LES395Uplus| image:: images/validations/EBChannelFlow/Uplus_Re395_LES_LMeX.png
    :width: 48%
@@ -354,3 +356,22 @@ Simulations are performed with the WALE LES SGS model. The plots below shows tha
    :width: 48%
 
 |LES395Uplus| |LES395Urms|
+
+.. |LES934Uplus| image:: images/validations/EBChannelFlow/Uplus_Re934_LES_LMeX.png
+   :width: 48%
+
+.. |LES934Urms| image:: images/validations/EBChannelFlow/VelRMSplus_Re934_LES_LMeX.png
+   :width: 48%
+
+|LES934Uplus| |LES934Urms|
+
+The velocity variance in the plot above show distinctive drops around coarse/fine interfaces,
+where the filter size change and a the subgrid-scale contribution increases as depicted on the figure below showing the 
+subgrid-scale viscosity for the :math:`Re_{\tau}` = 934 case.
+
+.. figure:: images/validations/EBChannelFlow/nu_t_Re934_LES_LMeX.png
+   :align: center
+   :figwidth: 48%
+
+Further work is ongoing to assess how to better handle large LES filter size changes in the context
+of AMR-LES
