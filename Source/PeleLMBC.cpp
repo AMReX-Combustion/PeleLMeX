@@ -97,6 +97,12 @@ InterpBase* PeleLM::getInterpolator(int a_method) {
 #else
     mapper = &mf_cell_cons_interp;
 #endif
+  } else if (a_method == 2) {
+#ifdef AMREX_USE_EB
+    Abort("Regrid interpolation method = 2 not available with EB !");
+#else
+    mapper = &mf_linear_slope_minmax_interp;
+#endif
   } else {
     Abort("Unknown interpolation method");
   }
