@@ -172,9 +172,9 @@ void PeleLM::WritePlotFile() {
 #endif
 #ifdef PELELM_USE_RAD
       if (do_rad_solve) {
-        plt_VarName.push_back("rad.G");
-        plt_VarName.push_back("rad.kappa");
-        plt_VarName.push_back("rad.emis");
+        plt_VarsName.push_back("rad.G");
+        plt_VarsName.push_back("rad.kappa");
+        plt_VarsName.push_back("rad.emis");
       }
 #endif
       if (m_has_divu) {

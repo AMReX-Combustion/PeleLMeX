@@ -162,7 +162,6 @@ void PeleLM::initData() {
 #ifdef PELELM_USE_SPRAY
       SprayInit();
 #endif
-
 #ifdef PELELM_USE_RAD
     amrex::Print() << "Radiation model is activated " << "\n";
     PeleRad::RadComps rc;
@@ -175,6 +174,7 @@ void PeleLM::initData() {
         if(names[i]=="CO") rc.coIndx = i;
     }
    amrex::ParmParse mlmgpp("pelerad");
+
    rad_model = std::make_unique<PeleRad::Radiation>(geom, grids, dmap, rc, mlmgpp, 2);
 #endif
 
@@ -320,9 +320,23 @@ void PeleLM::initData() {
       //----------------------------------------------------------------
       // Read starting configuration from chk file.
       ReadCheckPointFile();
-
 #ifdef PELELM_USE_SPRAY
       SprayInit();
+#endif
+#ifdef PELELM_USE_RAD
+    amrex::Print() << "Radiation model is activated " << "\n";
+    PeleRad::RadComps rc;
+    amrex::Vector<std::string> names;
+    pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(names);
+    for(int i=0; i<NUM_SPECIES; ++i)
+    {
+        if(names[i]=="CO2") {rc.co2Indx = i; continue;}
+        if(names[i]=="H2O") {rc.h2oIndx = i; continue;}
+        if(names[i]=="CO") rc.coIndx = i;
+    }
+   amrex::ParmParse mlmgpp("pelerad");
+
+   rad_model = std::make_unique<PeleRad::Radiation>(geom, grids, dmap, rc, mlmgpp, 2);
 #endif
 #ifdef PELE_USE_EFIELD
       // If restarting from a non efield simulation

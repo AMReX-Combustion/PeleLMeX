@@ -193,11 +193,6 @@ void PeleLM::Advance(int is_initIter) {
          clipSootMoments();
       }
 #endif
-#ifdef PELELM_USE_RAD
-      if (do_rad_solve) {
-         computeRadSource(AmrNewTime, m_dt);
-      }
-#endif
       if (m_has_divu) {
          int is_initialization = 0;             // Not here
          int computeDiffusionTerm = 1;          // Yes, re-evaluate the diffusion term after the last chemistry solve

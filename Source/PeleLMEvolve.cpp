@@ -42,7 +42,6 @@ void PeleLM::Evolve() {
      // regrid for radiation module
      if (do_rad_solve && regridded) {
         rad_model->initVars(grids, dmap);
-        rad_model->regrid();
      }
 #endif
 

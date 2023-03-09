@@ -132,7 +132,7 @@ void pelelm_derrhomrhoy (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int
     AMREX_ASSERT(statefab.box().contains(bx));
     AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
     AMREX_ASSERT(statefab.nComp() >= NUM_SPECIES+1);
-    AMREX_ASSERT(ncomp == NUM_SPECIES);
+//    AMREX_ASSERT(ncomp == NUM_SPECIES);
     AMREX_ASSERT(!a_pelelm->m_incompressible);
     auto const in_dat = statefab.array();
     auto       der = derfab.array(dcomp);

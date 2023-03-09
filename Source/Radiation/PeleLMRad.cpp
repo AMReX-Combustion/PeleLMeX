@@ -10,7 +10,6 @@ void PeleLM::computeRadSource(const PeleLM::TimeStamp& a_timestamp,
   int const coIndx = rad_model->readRadIndices().coIndx;
 
   for (int lev = 0; lev <= finest_level; lev++) {
-//    std::cout << "In computeRadSource() lev=" <<lev << std::endl;
     auto ldata_p = PeleLM::getLevelDataPtr(lev, a_timestamp);
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
