@@ -838,5 +838,9 @@ DiffusionTensorOp::readParameters ()
    pp.query("rtol", m_mg_rtol);
    pp.query("max_iter", m_mg_max_iter);
    pp.query("bottom_solver", m_mg_bottom_solver);
+   pp.query("mg_max_coarsening_level",m_mg_max_coarsening_level);
+   pp.query("mg_max_fmg_iter",m_mg_max_fmg_iter);
+   pp.query("num_pre_smooth",m_num_pre_smooth);
+   pp.query("num_post_smooth",m_num_post_smooth);
 }
 
