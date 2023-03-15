@@ -3,6 +3,9 @@ target_include_directories(pelelmex PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_LIS
 target_sources(pelelmex
     PRIVATE
         main.cpp
+        DeriveUserDefined.cpp
+        DiffusionOp.H
+        DiffusionOp.cpp
         PeleLM.cpp
         PeleLM.H
         PeleLM_Index.H
@@ -35,6 +38,7 @@ target_sources(pelelmex
         PeleLMTransportProp.cpp
         PeleLMUMac.cpp
         PeleLMUtils.H
+        PeleLMUtils.cpp
         Utils.cpp
     )
 
