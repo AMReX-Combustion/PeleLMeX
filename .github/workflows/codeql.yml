@@ -38,7 +38,7 @@ jobs:
           cmake -S . -B build
       - name: Build
         run: |
-          cmake --build build --parallel 2
+          cmake --build build --parallel 4
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v2
         with:
@@ -50,7 +50,7 @@ jobs:
         with:
           patterns: |
             -**/Submodules/sundials/**
-            -**/Submodules/AMReX/**
+            -**/Submodules/amrex/**
             -**/Submodules/AMReX-Hydro/**
           input: sarif-results/cpp.sarif
           output: sarif-results/cpp.sarif
