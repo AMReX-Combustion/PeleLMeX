@@ -7,6 +7,10 @@ on:
    pull_request:
      branches: [ main, development ]
 
+concurrency:
+  group: ${{ github.ref }}-${{ github.head_ref }}-PeleLMeX_linux
+  cancel-in-progress: true
+
 jobs:
   #Build the 2D FlameSheet RegTest with GNU9.3 and no MPI support
   FS2D_NoMPI:
@@ -15,10 +19,6 @@ jobs:
     env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
-    - name: Cancel previous runs
-      uses: styfle/cancel-workflow-action@0.6.0
-      with:
-        access_token: ${{github.token}}
     - uses: actions/checkout@v3
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies_gcc10.sh
@@ -44,10 +44,6 @@ jobs:
     env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
-    - name: Cancel previous runs
-      uses: styfle/cancel-workflow-action@0.6.0
-      with:
-        access_token: ${{github.token}}
     - uses: actions/checkout@v3
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies_gcc10.sh
@@ -83,10 +79,6 @@ jobs:
     env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
-    - name: Cancel previous runs
-      uses: styfle/cancel-workflow-action@0.6.0
-      with:
-        access_token: ${{github.token}}
     - uses: actions/checkout@v3
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies_gcc10.sh
@@ -110,10 +102,6 @@ jobs:
     env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
-    - name: Cancel previous runs
-      uses: styfle/cancel-workflow-action@0.6.0
-      with:
-        access_token: ${{github.token}}
     - uses: actions/checkout@v3
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies_gcc10.sh
@@ -141,10 +129,6 @@ jobs:
     env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
-    - name: Cancel previous runs
-      uses: styfle/cancel-workflow-action@0.6.0
-      with:
-        access_token: ${{github.token}}
     - uses: actions/checkout@v3
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies_gcc10.sh
@@ -172,10 +156,6 @@ jobs:
     env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
-    - name: Cancel previous runs
-      uses: styfle/cancel-workflow-action@0.6.0
-      with:
-        access_token: ${{github.token}}
     - uses: actions/checkout@v3
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies_gcc10.sh
@@ -203,10 +183,6 @@ jobs:
     env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
-    - name: Cancel previous runs
-      uses: styfle/cancel-workflow-action@0.6.0
-      with:
-        access_token: ${{github.token}}
     - uses: actions/checkout@v3
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies_gcc10.sh
@@ -234,10 +210,6 @@ jobs:
     env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
-    - name: Cancel previous runs
-      uses: styfle/cancel-workflow-action@0.6.0
-      with:
-        access_token: ${{github.token}}
     - uses: actions/checkout@v3
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies_gcc10.sh
@@ -266,10 +238,6 @@ jobs:
     env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
-    - name: Cancel previous runs
-      uses: styfle/cancel-workflow-action@0.6.0
-      with:
-        access_token: ${{github.token}}
     - uses: actions/checkout@v3
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies_gcc10.sh
@@ -306,10 +274,6 @@ jobs:
     env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
-    - name: Cancel previous runs
-      uses: styfle/cancel-workflow-action@0.6.0
-      with:
-        access_token: ${{github.token}}
     - uses: actions/checkout@v3
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies_gcc10.sh
@@ -337,10 +301,6 @@ jobs:
     env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
-    - name: Cancel previous runs
-      uses: styfle/cancel-workflow-action@0.6.0
-      with:
-        access_token: ${{github.token}}
     - uses: actions/checkout@v3
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies_gcc10.sh
@@ -381,10 +341,6 @@ jobs:
     env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
-    - name: Cancel previous runs
-      uses: styfle/cancel-workflow-action@0.6.0
-      with:
-        access_token: ${{github.token}}
     - uses: actions/checkout@v3
     - name: System Dependencies
       run: |
