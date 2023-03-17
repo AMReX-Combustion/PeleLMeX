@@ -90,16 +90,17 @@ DiagConditional::processDiag(int a_nstep,
        m_lowBnd = MFVecMin(a_state,cFieldIdx);
        m_highBnd = MFVecMax(a_state,cFieldIdx);
     }
-    amrex::Real binWidth = (m_highBnd - m_lowBnd) / (m_nBins);
+    amrex::Real binWidth = (m_highBnd - m_lowBnd) / static_cast<amrex::Real>(m_nBins);
 
     // Data holders
     int nProcessFields = m_fieldIndices_d.size();
-    amrex::Gpu::DeviceVector<amrex::Real> cond_d(m_nBins*nProcessFields,0.0);
-    amrex::Gpu::DeviceVector<amrex::Real> condSq_d(m_nBins*nProcessFields,0.0);
+    int vecSize = m_nBins*nProcessFields;
+    amrex::Gpu::DeviceVector<amrex::Real> cond_d(vecSize,0.0);
+    amrex::Gpu::DeviceVector<amrex::Real> condSq_d(vecSize,0.0);
     amrex::Gpu::DeviceVector<amrex::Real> condAbs_d(m_nBins,0.0);
     amrex::Gpu::DeviceVector<amrex::Real> condVol_d(m_nBins,0.0);
-    amrex::Vector<amrex::Real> cond(m_nBins*nProcessFields,0.0);
-    amrex::Vector<amrex::Real> condSq(m_nBins*nProcessFields,0.0);
+    amrex::Vector<amrex::Real> cond(vecSize,0.0);
+    amrex::Vector<amrex::Real> condSq(vecSize,0.0);
     amrex::Vector<amrex::Real> condAbs(m_nBins,0.0);
     amrex::Vector<amrex::Real> condVol(m_nBins,0.0);
 
