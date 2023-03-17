@@ -48,10 +48,10 @@ jobs:
           ./PeleLMeX3d.gnu.MPI.ex inputs.3d
     - name: Reset Environment Variables
       run: |
-              echo "AMREX_HOME=${{github.workspace}}/PeleLMeX/Submodules/amrex" >> $GITHUB_ENV
-              echo "PELE_PHYSICS_HOME=${{github.workspace}}/PeleLMeX/Submodules/PelePhysics" >> $GITHUB_ENV
-              echo "AMREX_HYDRO_HOME=${{github.workspace}}/PeleLMeX/Submodules/AMReX-Hydro" >> $GITHUB_ENV
-              echo "PELELMEX_HOME=${{github.workspace}}/PeleLMeX/" >> $GITHUB_ENV
+              echo "AMREX_HOME=${{github.workspace}}/Submodules/amrex" >> $GITHUB_ENV
+              echo "PELE_PHYSICS_HOME=${{github.workspace}}/Submodules/PelePhysics" >> $GITHUB_ENV
+              echo "AMREX_HYDRO_HOME=${{github.workspace}}/Submodules/AMReX-Hydro" >> $GITHUB_ENV
+              echo "PELELMEX_HOME=${{github.workspace}}" >> $GITHUB_ENV
     - name: Build AMReX Tools
       working-directory: ${{env.AMREX_HOME}}/Tools/Plotfile
       run: |
