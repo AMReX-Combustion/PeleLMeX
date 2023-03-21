@@ -6,9 +6,9 @@
 
 ## Overview
 
-![CUDA build](https://github.com/AMReX-Combustion/PeleLMeX/blob/development/.github/workflows/cuda.yml/badge.svg)
-![HIP build](https://github.com/AMReX-Combustion/PeleLMeX/blob/development/.github/workflows/hip.yml/badge.svg)
-![SYCL build](https://github.com/AMReX-Combustion/PeleLMeX/blob/development/.github/workflows/intel.yml/badge.svg)
+![CUDA build](https://github.com/AMReX-Combustion/PeleLMeX/blob/development/.github/workflows/cuda/badge.svg)
+![HIP build](https://github.com/AMReX-Combustion/PeleLMeX/blob/development/.github/workflows/hip/badge.svg)
+![SYCL build](https://github.com/AMReX-Combustion/PeleLMeX/blob/development/.github/workflows/intel/badge.svg)
 
 *PeleLMeX* is a non-subcycling version of [*PeleLM*](https://github.com/AMReX-Combustion/PeleLM) based on AMReX's [AmrCore](https://amrex-codes.github.io/amrex/docs_html/AmrCore.html) and borrowing from the incompressible solver [incflo](https://github.com/AMReX-Codes/incflo). It is designed to run efficiently on small workstations as well as the largest ExaScale platforms currently available.
 
@@ -16,7 +16,7 @@
 
 ## Documentation
 
-![Documentation](https://github.com/AMReX-Combustion/PeleLMeX/blob/development/.github/workflows/docs.yml/badge.svg)
+![Documentation](https://github.com/AMReX-Combustion/PeleLMeX/blob/development/.github/workflows/docs/badge.svg)
 
 *PeleLMeX* solves of the multispecies reactive Navier-Stokes equations in the low Mach number limit as described in the [documentation](https://amrex-combustion.github.io/PeleLMeX/manual/html/index.html). It inherits most of *PeleLM* algorithmic features, but differs significantly in its implementation stemming from the non-subcycling approach.
 
