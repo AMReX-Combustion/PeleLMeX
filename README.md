@@ -6,15 +6,21 @@
 
 ## Overview
 
-*PeleLMeX* is a non-subcycling version of [*PeleLM*](https://github.com/AMReX-Combustion/PeleLM) based on AMReX's [AmrCore](https://amrex-codes.github.io/amrex/docs_html/AmrCore.html) and borrowing from the incompressible solver [incflo](https://github.com/AMReX-Codes/incflo).
+![CUDA build](https://github.com/AMReX-Combustion/PeleLMeX/workflows/cuda/badge.svg)
+![HIP build](https://github.com/AMReX-Combustion/PeleLMeX/workflows/hip/badge.svg)
+![SYCL build](https://github.com/AMReX-Combustion/PeleLMeX/workflows/intel/badge.svg)
+
+*PeleLMeX* is a non-subcycling version of [*PeleLM*](https://github.com/AMReX-Combustion/PeleLM) based on AMReX's [AmrCore](https://amrex-codes.github.io/amrex/docs_html/AmrCore.html) and borrowing from the incompressible solver [incflo](https://github.com/AMReX-Codes/incflo). It is designed to run efficiently on small workstations as well as the largest ExaScale platforms currently available.
 
 *PeleLMeX* is part of the [Pele combustion Suite](https://amrex-combustion.github.io/).
 
 ## Documentation
 
+![Documentation](https://github.com/AMReX-Combustion/PeleLMeX/workflows/docs/badge.svg)
+
 *PeleLMeX* solves of the multispecies reactive Navier-Stokes equations in the low Mach number limit as described in the [documentation](https://amrex-combustion.github.io/PeleLMeX/manual/html/index.html). It inherits most of *PeleLM* algorithmic features, but differs significantly in its implementation stemming from the non-subcycling approach.
 
-A overview of PeleLMeX controls is provided in the [documentation](https://amrex-combustion.github.io/PeleLMeX/manual/html/LMeXControls.html).
+A overview of *PeleLMeX* controls is provided in the [documentation](https://amrex-combustion.github.io/PeleLMeX/manual/html/LMeXControls.html).
 
 ### Core Algorithm
 
@@ -32,27 +38,35 @@ https://amrex-combustion.github.io/PeleLMeX/manual/html/Tutorials.html
 
 ## Installation
 
-### Using git submodules
+### Download
 
-You can clone the PeleLMeX and tested versions of its submodules
-([amrex](https://github.com/AMReX-Codes/amrex), [AMReX-Hydro](https://github.com/AMReX-Codes/AMReX-Hydro) and [PelePhysics](https://github.com/AMReX-Combustion/PelePhysics)) using:
+The prefered method consist in cloning the *PeleLMeX* and its submodules using a recursive `git clone`:
+([amrex](https://github.com/AMReX-Codes/amrex), [AMReX-Hydro](https://github.com/AMReX-Codes/AMReX-Hydro) and [PelePhysics](https://github.com/AMReX-Combustion/PelePhysics), [PeleMP](https://github.com/AMReX-Combustion/PeleMP)) using:
 
 ```
-git clone --recursive https://github.com/AMReX-Combustion/PeleLMeX.git
+git clone --depth 1 --recursive https://github.com/AMReX-Combustion/PeleLMeX.git
 ```
 
-You can optionally setup the following environment variables (e.g. using bash):
+Alternatively, you can use separate `git clone` of the each of the submodules.
+The default location for *PeleLMeX* dependencies is the `Submodule` folder but you optionnally
+setup the following environment variables (e.g. using bash) to an other location:
 
 ```
 export PELELMEX_HOME=<path_to_PeleLMeX>
 export AMREX_HOME=${PELELMEX_HOME}/Submodules/amrex
 export AMREX_HYDRO_HOME=${PELELMEX_HOME}/Submodules/AMReX-Hydro
 export PELE_PHYSICS_HOME=${PELELMEX_HOME}/Submodules/PelePhysics
+export PELEMP_HOME=${PELELMEX_HOME}/Submodules/PeleMP
 ```
 
-If you do not set these paths as environment variables, they will be assumed as specified in the `GNUmakefile` for the case you are compiling. If compiling in the default location for each case, no modifications are necessary.
+### Compilation
 
-Then, move into one of the available examples, such as `HotBubble`:
+Both GNUmake and CMake can be used to build a *PeleLMeX* executable, but GNUmake is the prefered choice.
+The code handling the initial condition and boundary conditions is unique to each case,
+and subfolders in the `Exec` directory provide a number of example.
+
+For instance, to compile the executable for the case of a rising hot bubble,
+move into the `HotBubble` folder:
 
 ```
 cd PeleLMeX/Exec/RegTest/HotBubble
@@ -60,38 +74,19 @@ cd PeleLMeX/Exec/RegTest/HotBubble
 
 If this is a clean install, you will need to make the third party libraries with: `make TPL` (note: if on macOS, you might need to specify `COMP=llvm` in the `make` statements).
 
-Finally, make with: `make -j`, or if on macOS: `make -j COMP=llvm`.
+Finally, make with: `make -j`, or if on macOS: `make -j COMP=llvm`. To clean the installation, use either `make clean` or `make realclean`.
 
-### Using separate git clone
-
-First, clone the source code and its prerequisite ([amrex](https://github.com/AMReX-Codes/amrex), [AMReX-Hydro](https://github.com/AMReX-Codes/AMReX-Hydro) and [PelePhysics](https://github.com/AMReX-Combustion/PelePhysics)) using:
+When using CMake (cmake version >= 3.23 is required), first configure CMake directly in *PeleLMeX* root folder:
 
 ```
-git clone https://github.com/AMReX-Codes/amrex.git
-git clone https://github.com/AMReX-Codes/AMReX-Hydro.git
-git clone https://github.com/AMReX-Combustion/PelePhysics.git
-git clone https://github.com/AMReX-Combustion/PeleLMeX.git
+cmake -S . -B buildHotBubble -DPELELMEX_MPI=ON -DPELELMEX_CASE=HotBubble
 ```
 
-Ensure the following paths are set somewhere (e.g., in `.bashrc`) and point to the recently cloned repos:
-```
-export AMREX_HOME=<path_to_amrex>
-export AMREX_HYDRO_HOME=<path_to_AMReX-Hydro>
-export PELE_PHYSICS_HOME=<path_to_PelePhysics>
-export PELELMEX_HOME=<path_to_PeleLMeX>
-```
-
-Move to a sample case to compile, such as `HotBubble`:
+Then build the executable:
 
 ```
-cd PeleLMeX/Exec/RegTests/HotBubble
+cmake --build buildHoBubble --parallel 4
 ```
-
-If this is a clean install, you will need to make the third party libraries with: `make TPL` (note: if on macOS, you might need to specify `COMP=llvm` in the `make` statements).
-
-Finally, make with: `make -j`, or if on macOS: `make -j COMP=llvm`.
-
-To clean the installation, use either `make clean` or `make realclean`.
 
 ## Contributing
 
