@@ -14,7 +14,7 @@
 # "Internal" user input
 #   * resolution : a list of the resolutions to run
 
-# Head's up : 
+# Head's up :
 #   * The PeleLM executable is searched for in the current directory.
 
 import sys
@@ -23,22 +23,22 @@ import shutil
 import argparse
 import numpy as np
 
-USAGE = """    
+USAGE = """
     A template script to launch several times PeleLM.
 """
 
 def multiRun(args):
-    
+
     print(" Scripted multiple runs for convergence study ")
     # User data
-    resolution = [32,64,128,256]        
+    resolution = [32,64,128,256]
 
     # Get the PeleLM exec
     run_dir = os.getcwd()
     for f in os.listdir(run_dir):
         if ( f.startswith("PeleLM") and f.endswith(".ex")):
                executable = f
-    
+
     # Check the test name: current folder name is default
     if ( args.test_name == "None" ):
         args.test_name = run_dir.split("/")[-1]
@@ -50,7 +50,7 @@ def multiRun(args):
                 args.input_file = f
                 break
 
-    # Loop on /= resolutions, run 
+    # Loop on /= resolutions, run
     for case in resolution:
         outfile = "{}_{}.run.out".format(args.test_name,case)
         print(" Running {}x{} case".format(case,case))
@@ -72,7 +72,7 @@ def parse_args(arg_string=None):
     else:
         args, unknown = parser.parse_known_args()
 
-    return args   
+    return args
 
 if __name__ == "__main__":
     args = parse_args(arg_string=sys.argv[1:])

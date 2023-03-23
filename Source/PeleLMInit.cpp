@@ -54,10 +54,10 @@ void PeleLM::MakeNewLevelFromScratch( int lev,
    // Initialize the LevelData
    m_leveldata_old[lev].reset(new LevelData(grids[lev], dmap[lev], *m_factory[lev],
                                             m_incompressible, m_has_divu,
-                                            m_nAux, m_nGrowState));
+                                            m_nAux, m_nGrowState, m_use_soret, m_do_les));
    m_leveldata_new[lev].reset(new LevelData(grids[lev], dmap[lev], *m_factory[lev],
                                             m_incompressible, m_has_divu,
-                                            m_nAux, m_nGrowState));
+                                            m_nAux, m_nGrowState, m_use_soret, m_do_les));
 
    if (max_level > 0 && lev != max_level) {
       m_coveredMask[lev].reset(new iMultiFab(grids[lev], dmap[lev], 1, 0));
@@ -89,7 +89,7 @@ void PeleLM::MakeNewLevelFromScratch( int lev,
    m_t_old[lev] = time - 1.0e200;
 
    // Mac projector
-#if AMREX_USE_EB
+#ifdef AMREX_USE_EB
    macproj.reset(new Hydro::MacProjector(Geom(0,finest_level),
                                          MLMG::Location::FaceCentroid,  // Location of mac velocity
                                          MLMG::Location::FaceCentroid,  // Location of beta
@@ -102,7 +102,7 @@ void PeleLM::MakeNewLevelFromScratch( int lev,
                                        MFInfo(), *m_factory[lev]));
    m_extSource[lev]->setVal(0.);
 
-#if AMREX_USE_EB
+#ifdef AMREX_USE_EB
    if ( lev == 0 && m_signDistNeeded) {
       // Set up CC signed distance container to control EB refinement
       m_signedDist0.reset(new MultiFab(grids[lev], dmap[lev], 1, 1, MFInfo(), *m_factory[lev]));
@@ -160,9 +160,7 @@ void PeleLM::initData() {
       updateDiagnostics();
 
 #ifdef PELELM_USE_SPRAY
-      if (do_spray_particles) {
-        initSprays();
-      }
+      SprayInit();
 #endif
 
       //----------------------------------------------------------------
@@ -197,38 +195,37 @@ void PeleLM::initData() {
 #endif
 
       // Post data Init time step estimate
-      // TODO : this estimate is probably useless
       Real dtInit = computeDt(is_init,AmrNewTime);
       Print() << " Initial dt: " << dtInit << "\n";
-      //WriteDebugPlotFile(GetVecOfConstPtrs(getStateVect(AmrNewTime)),"InitSol");
 
-      // Subcycling IAMR/PeleLM first does a projection with no reaction divU
-      // which can make the dt for evaluating I_R better
-      if (m_has_divu) {
-         int is_initialization = 1;             // Yes we are
-         int computeDiffusionTerm = 1;          // Needed here
-         int do_avgDown = 1;                    // Always
-
-         // Light version of the diffusion data container
-         std::unique_ptr<AdvanceDiffData> diffData;
-         diffData.reset(new AdvanceDiffData(finest_level, grids, dmap, m_factory,
-                        m_nGrowAdv, m_use_wbar, is_initialization));
-         calcDivU(is_initialization,computeDiffusionTerm,do_avgDown,AmrNewTime,diffData);
-      }
-      initialProjection();
-     
-      // If gravity is used, do initial pressure projection to get the hydrostatic pressure
-      if (std::abs(m_gravity.sum()) > 0.0) {
-         initialPressProjection();
-      }
-
-      // Post data Init time step estimate
-      m_dt = computeDt(is_init,AmrNewTime);
-      Print() << " Initial dt: " << m_dt << "\n";
-
-      //----------------------------------------------------------------
-      // Initial velocity projection iterations
       if (m_do_init_proj) {
+         // Subcycling IAMR/PeleLM first does a projection with no reaction divU
+         // which can make the dt for evaluating I_R better
+         if (m_has_divu) {
+            int is_initialization = 1;             // Yes we are
+            int computeDiffusionTerm = 1;          // Needed here
+            int do_avgDown = 1;                    // Always
+
+            // Light version of the diffusion data container
+            std::unique_ptr<AdvanceDiffData> diffData;
+            diffData.reset(new AdvanceDiffData(finest_level, grids, dmap, m_factory,
+                           m_nGrowAdv, m_use_wbar, m_use_soret, is_initialization));
+            calcDivU(is_initialization,computeDiffusionTerm,do_avgDown,AmrNewTime,diffData);
+         }
+         initialProjection();
+
+         // If gravity is used, do initial pressure projection to get the hydrostatic pressure
+         if (std::abs(m_gravity.sum()) > 0.0) {
+            initialPressProjection();
+
+         }
+
+         // Post data init time step estimate
+         m_dt = computeDt(is_init,AmrNewTime);
+         Print() << " Initial dt: " << m_dt << "\n";
+
+         //----------------------------------------------------------------
+         // Initial velocity projection iterations
          for (int iter = 0; iter < m_numDivuIter; iter++) {
             if (m_do_react) {
                // The new level data has been filled above
@@ -241,26 +238,13 @@ void PeleLM::initData() {
                   Forcing.setVal(0.0);
 
                   if (lev != finest_level) {
-                     // On all but the finest level, average down I_R
-                     // and use advanceChemistry with chem BoxArray
-                     std::unique_ptr<MultiFab> avgDownIR;
-                     avgDownIR.reset(new MultiFab(grids[lev],dmap[lev],nCompIR(),0));
-                     avgDownIR->setVal(0.0);
-                     auto ldataRFine_p   = getLevelDataReactPtr(lev+1);
-#ifdef AMREX_USE_EB
-                     EB_average_down(ldataRFine_p->I_R,
-                                     *avgDownIR,
-                                     0,nCompIR(),refRatio(lev));
-#else
-                     average_down(ldataRFine_p->I_R,
-                                  *avgDownIR,
-                                  0,nCompIR(),refRatio(lev));
-#endif
-                     // Call advanceChemistry
-                     advanceChemistry(lev, dtInit/2.0, Forcing, avgDownIR.get());
+                     advanceChemistryBAChem(lev, dtInit/2.0, Forcing);
                   } else {
-                     // Call advanceChemistry
-                     advanceChemistry(lev, dtInit/2.0, Forcing);
+                     if (m_max_grid_size_chem.min() > 0) {
+                        advanceChemistryBAChem(lev, dtInit/2.0, Forcing);
+                     } else {
+                        advanceChemistry(lev, dtInit/2.0, Forcing);
+                     }
                   }
                }
                // Copy back old -> new
@@ -274,17 +258,29 @@ void PeleLM::initData() {
                // Light version of the diffusion data container
                std::unique_ptr<AdvanceDiffData> diffData;
                diffData.reset(new AdvanceDiffData(finest_level, grids, dmap, m_factory,
-                              m_nGrowAdv, m_use_wbar, is_initialization));
+                          m_nGrowAdv, m_use_wbar, m_use_soret, is_initialization));
                calcDivU(is_initialization,computeDiffusionTerm,do_avgDown,AmrNewTime,diffData);
             }
 
             initialProjection();
          }
-         if ( m_numDivuIter == 0 ) {
+
+         if ( m_numDivuIter == 0 && m_do_react ) {
             for (int lev = 0; lev <= finest_level; ++lev) {
                auto ldataR_p   = getLevelDataReactPtr(lev);
                ldataR_p->I_R.setVal(0.0);
             }
+         }
+      } else {
+         // If we didn't do the projection, initialize press/gp(/I_R)
+         for (int lev = 0; lev <= finest_level; ++lev) {
+            if ( m_do_react ) {
+               auto ldataR_p   = getLevelDataReactPtr(lev);
+               ldataR_p->I_R.setVal(0.0);
+            }
+            auto ldata_p   = getLevelDataPtr(lev,AmrNewTime);
+            ldata_p->press.setVal(0.0);
+            ldata_p->gp.setVal(0.0);
          }
       }
 
@@ -301,7 +297,7 @@ void PeleLM::initData() {
       if (m_plot_int > 0 || m_plot_per_approx > 0. || m_plot_per_exact > 0.) {
          WritePlotFile();
       }
-      if (m_check_int > 0 ) {
+      if (m_check_int > 0 || m_check_per > 0.) {
          WriteCheckPointFile();
       }
 
@@ -311,9 +307,7 @@ void PeleLM::initData() {
       ReadCheckPointFile();
 
 #ifdef PELELM_USE_SPRAY
-      if (do_spray_particles) {
-        sprayRestart();
-      }
+      SprayInit();
 #endif
 #ifdef PELE_USE_EFIELD
       // If restarting from a non efield simulation
@@ -402,7 +396,7 @@ void PeleLM::initLevelData(int lev) {
 void PeleLM::initialIterations() {
    BL_PROFILE_VAR("PeleLM::initialIterations()", initialIterations);
 
-   if (m_verbose > 0) {
+   if (m_verbose > 0 && m_init_iter > 0) {
       amrex::Print() << " Doing initial pressure iteration(s) \n";
    }
 

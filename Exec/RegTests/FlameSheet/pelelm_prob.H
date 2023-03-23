@@ -41,33 +41,42 @@ void pelelm_initdata(int i, int j, int k,
     amrex::Real massfrac[NUM_SPECIES] = {0.0};
     amrex::Real pert = 0.0;
 
-    if (prob_parm.pertmag > 0.0) 
+    if (prob_parm.pertmag > 0.0)
     {
 
 #if ( AMREX_SPACEDIM == 2 )
-       pert = prob_parm.pertmag * 
-             (1.0 * std::sin(2 * Pi * 4 * x / Lx) +
-              1.023 * std::sin(2 * Pi * 2 * (x - 0.004598) / Lx) +
-              0.945 * std::sin(2 * Pi * 3 * (x - 0.00712435) / Lx) +
-              1.017 * std::sin(2 * Pi * 5 * (x - 0.0033) / Lx) +
-              0.982 * std::sin(2 * Pi * 5 * (x - 0.014234) / Lx));
+       amrex::GpuArray<amrex::Real,AMREX_SPACEDIM-1> lpert{Lx};
+       if (prob_parm.pertlength > 0.0) {
+          lpert[0] = prob_parm.pertlength;
+       }
+       pert = prob_parm.pertmag *
+             (1.0 * std::sin(2 * Pi * 4 * x / lpert[0]) +
+              1.023 * std::sin(2 * Pi * 2 * (x - 0.004598) / lpert[0]) +
+              0.945 * std::sin(2 * Pi * 3 * (x - 0.00712435) / lpert[0]) +
+              1.017 * std::sin(2 * Pi * 5 * (x - 0.0033) / lpert[0]) +
+              0.982 * std::sin(2 * Pi * 5 * (x - 0.014234) / lpert[0]));
     }
 
     amrex::Real y1 = (y - prob_parm.standoff - 0.5*dx[1] + pert)*100;
     amrex::Real y2 = (y - prob_parm.standoff + 0.5*dx[1] + pert)*100;
 
 #elif ( AMREX_SPACEDIM == 3 )
+       amrex::GpuArray<amrex::Real,AMREX_SPACEDIM-1> lpert{Lx,Ly};
+       if (prob_parm.pertlength > 0.0) {
+          lpert[0] = prob_parm.pertlength;
+          lpert[1] = prob_parm.pertlength;
+       }
 
        pert = prob_parm.pertmag *
-             (1.0 * std::sin(2 * Pi * 4 * x / Lx) *
-                std::sin(2 * Pi * 5 * y / Ly) +
-              1.023 * std::sin(2 * Pi * 2 * (x - 0.004598) / Lx) *
-                std::sin(2 * Pi * 4 * (y - 0.0053765) / Ly) +
-              0.945 * std::sin(2 * Pi * 3 * (x - 0.00712435) / Lx) *
-                std::sin(2 * Pi * 3 * (y - 0.02137) / Ly) +
-              1.017 * std::sin(2 * Pi * 5 * (x - 0.0033) / Lx) *
-                std::sin(2 * Pi * 6 * (y - 0.018) / Ly) +
-              0.982 * std::sin(2 * Pi * 5 * (x - 0.014234) / Lx));
+             (1.0 * std::sin(2 * Pi * 4 * x / lpert[0]) *
+                std::sin(2 * Pi * 5 * y / lpert[1]) +
+              1.023 * std::sin(2 * Pi * 2 * (x - 0.004598) / lpert[0]) *
+                std::sin(2 * Pi * 4 * (y - 0.0053765) / lpert[1]) +
+              0.945 * std::sin(2 * Pi * 3 * (x - 0.00712435) / lpert[0]) *
+                std::sin(2 * Pi * 3 * (y - 0.02137) / lpert[1]) +
+              1.017 * std::sin(2 * Pi * 5 * (x - 0.0033) / lpert[0]) *
+                std::sin(2 * Pi * 6 * (y - 0.018) / lpert[1]) +
+              0.982 * std::sin(2 * Pi * 5 * (x - 0.014234) / lpert[0]));
     }
 
     amrex::Real y1 = (z - prob_parm.standoff - 0.5*dx[2] + pert)*100;

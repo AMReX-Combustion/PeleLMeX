@@ -8,15 +8,15 @@ constexpr Real eps = 1.0e-6;
 AMREX_GPU_HOST_DEVICE AMREX_INLINE
 Real getFaceStateUpwind ( Real const &edgeVel, Real const &leftState, Real const &rightState ) {
    Real edstate = 0.0;
-   if ( edgeVel > eps ) { 
+   if ( edgeVel > eps ) {
       edstate = leftState;
-   }   
-   if ( edgeVel < -eps ) { 
+   }
+   if ( edgeVel < -eps ) {
       edstate = rightState;
-   }   
-   if ( fabs(edgeVel) <= eps ) { 
+   }
+   if ( fabs(edgeVel) <= eps ) {
       edstate =  0.5 * ( leftState + rightState );
-   }   
+   }
    return edstate;
 }
 
@@ -29,7 +29,7 @@ Real getCellUpwindCoeff ( Real const &leftedgeVel, Real const &rightedgeVel ) {
          coeff += 0.5*(rightedgeVel-leftedgeVel); // centered part
          coeff += maxvel; // art. visc.
    } else { // same sign velocity, use upwind
-      if ( leftedgeVel < -eps ) 
+      if ( leftedgeVel < -eps )
          coeff -= leftedgeVel;
       else if ( fabs(leftedgeVel) <= eps )
          coeff -= 0.5*leftedgeVel;
@@ -51,7 +51,7 @@ Real getLeftCellUpwindCoeff ( Real const &leftedgeVel, Real const &rightedgeVel 
       coeff -= 0.5*leftedgeVel;
       coeff -= 0.5*maxvel;
    } else {
-      if ( leftedgeVel > eps ) 
+      if ( leftedgeVel > eps )
          coeff -= leftedgeVel;
       else if ( fabs(leftedgeVel) < eps )
          coeff -= 0.5*leftedgeVel;
@@ -86,7 +86,7 @@ Real getCellUpwindCoeff ( Real const &leftedgeVel, Real const &rightedgeVel,
          coeff += 0.5*(rightedgeVel*relaxright-leftedgeVel*relaxleft); // centered part
          coeff += maxvel; // art. visc.
    } else { // same sign velocity, use upwind
-      if ( leftedgeVel < -eps ) 
+      if ( leftedgeVel < -eps )
          coeff -= leftedgeVel*relaxleft;
       else if ( fabs(leftedgeVel) < eps )
          coeff -= 0.5*leftedgeVel*relaxleft;
@@ -244,8 +244,8 @@ void mlabecceclap_normalize (Box const& box, Array4<Real> const& x,
                     + dhysq*(bY(i,j,k,n)+bY(i,j+1,k,n))
                     + dhzsq*(bZ(i,j,k,n)+bZ(i,j,k+1,n))
                     - dhx*getCellUpwindCoeff(cX(i,j,k,n),cX(i+1,j,k,n))
-                    - dhy*getCellUpwindCoeff(cY(i,j,k,n),cY(i,j+1,k,n))   
-                    - dhz*getCellUpwindCoeff(cZ(i,j,k,n),cZ(i,j,k+1,n));   
+                    - dhy*getCellUpwindCoeff(cY(i,j,k,n),cY(i,j+1,k,n))
+                    - dhz*getCellUpwindCoeff(cZ(i,j,k,n),cZ(i,j,k+1,n));
             }
         }
     }
@@ -439,7 +439,7 @@ void abeccec_gsrb (Box const& box, Array4<Real> const& phi, Array4<Real const> c
                                  + dhxsq * (bX(i,j,k,n)+bX(i+1,j,k,n))
                                  + dhysq * (bY(i,j,k,n)+bY(i,j+1,k,n))
                                  + dhzsq * (bZ(i,j,k,n)+bZ(i,j,k+1,n))
-                                 - dhx   * getCellUpwindCoeff(cX(i,j,k,n),cX(i+1,j,k,n))   
+                                 - dhx   * getCellUpwindCoeff(cX(i,j,k,n),cX(i+1,j,k,n))
                                  - dhy   * getCellUpwindCoeff(cY(i,j,k,n),cY(i,j+1,k,n))
                                  - dhz   * getCellUpwindCoeff(cZ(i,j,k,n),cZ(i,j,k+1,n));
 
@@ -521,7 +521,7 @@ void abeccec_gsrb_os (Box const& box, Array4<Real> const& phi, Array4<Real const
                                      + dhxsq * (bX(i,j,k,n)+bX(i+1,j,k,n))
                                      + dhysq * (bY(i,j,k,n)+bY(i,j+1,k,n))
                                      + dhzsq * (bZ(i,j,k,n)+bZ(i,j,k+1,n))
-                                     - dhx   * getCellUpwindCoeff(cX(i,j,k,n),cX(i+1,j,k,n))   
+                                     - dhx   * getCellUpwindCoeff(cX(i,j,k,n),cX(i+1,j,k,n))
                                      - dhy   * getCellUpwindCoeff(cY(i,j,k,n),cY(i,j+1,k,n))
                                      - dhz   * getCellUpwindCoeff(cZ(i,j,k,n),cZ(i,j,k+1,n));
 
@@ -653,7 +653,7 @@ AMREX_GPU_HOST_DEVICE AMREX_INLINE
 void abeccec_chkdiag (Box const& box, Real alpha,
                       Array4<Real const> const& a,
                       Real dhxsq, Real dhysq, Real dhzsq,
-                      Real dhx, Real dhy, Real dhz, 
+                      Real dhx, Real dhy, Real dhz,
                       Array4<Real const> const& bX,
                       Array4<Real const> const& bY,
                       Array4<Real const> const& bZ,
@@ -679,23 +679,23 @@ void abeccec_chkdiag (Box const& box, Real alpha,
                         - dhy*getCellUpwindCoeff(cY(i,j,k,n),cY(i,j+1,k,n))
                         - dhz*getCellUpwindCoeff(cZ(i,j,k,n),cZ(i,j,k+1,n));
 
-                    // Offdiag 
+                    // Offdiag
                     Real offdiagdiff =-dhxsq* (bX(i  ,j  ,k,n) + bX(i+1,j  ,k  ,n))
                                       -dhysq* (bY(i  ,j  ,k,n) + bY(i  ,j+1,k  ,n))
                                       -dhzsq* (bZ(i  ,j  ,k,n) + bZ(i  ,j  ,k+1,n));
 
-                    Real offdiagadv =-dhx  * (  getLeftCellUpwindCoeff( cX(i  ,j  ,k  ,n),cX(i+1,j  ,k  ,n)) 
-                                              + getRightCellUpwindCoeff(cX(i  ,j  ,k  ,n),cX(i+1,j  ,k  ,n)))   
-                                     -dhy  * (  getLeftCellUpwindCoeff( cY(i  ,j  ,k  ,n),cY(i  ,j+1,k  ,n)) 
+                    Real offdiagadv =-dhx  * (  getLeftCellUpwindCoeff( cX(i  ,j  ,k  ,n),cX(i+1,j  ,k  ,n))
+                                              + getRightCellUpwindCoeff(cX(i  ,j  ,k  ,n),cX(i+1,j  ,k  ,n)))
+                                     -dhy  * (  getLeftCellUpwindCoeff( cY(i  ,j  ,k  ,n),cY(i  ,j+1,k  ,n))
                                               + getRightCellUpwindCoeff(cY(i  ,j  ,k  ,n),cY(i  ,j+1,k  ,n)))
-                                     -dhz  * (  getLeftCellUpwindCoeff( cZ(i  ,j  ,k  ,n),cZ(i  ,j  ,k+1,n)) 
+                                     -dhz  * (  getLeftCellUpwindCoeff( cZ(i  ,j  ,k  ,n),cZ(i  ,j  ,k+1,n))
                                               + getRightCellUpwindCoeff(cZ(i  ,j  ,k  ,n),cZ(i  ,j  ,k+1,n)));
 
                     //if ( fabs(offdiagdiff+offdiagadv) > fabs(diag) ) {
                     //   amrex::Print() << " Abort LinOp not diagonal dominant at: " << i << " " << j << " " << k << "\n";
-                    //  // amrex::Print() << j << " Val diag: " << diag << ", offdiagdiff/adv: " << offdiagdiff << " " << offdiagadv << "\n";     
+                    //  // amrex::Print() << j << " Val diag: " << diag << ", offdiagdiff/adv: " << offdiagdiff << " " << offdiagadv << "\n";
                     //  // amrex::Print() << j << " Val diag: " << diag << ", left/right: " << left << "  " << right << "\n";
-                    //  // amrex::Print() << j << " " << fabs(diag) << " " << fabs(offdiagdiff+offdiagadv) << "\n";     
+                    //  // amrex::Print() << j << " " << fabs(diag) << " " << fabs(offdiagdiff+offdiagadv) << "\n";
                     //  // amrex::Abort("MLABecCec is not diagonal dominant !!!");
                     //}
                 }

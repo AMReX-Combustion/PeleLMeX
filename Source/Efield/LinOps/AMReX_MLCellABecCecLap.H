@@ -7,12 +7,9 @@
 namespace amrex {
 
 class MLCellABecCecLap
-    : public MLCellLinOp
+    : public MLCellLinOpT<MultiFab>
 {
 public:
-
-    friend class MLMG;
-    friend class MLCGSolver;
 
     MLCellABecCecLap ();
     virtual ~MLCellABecCecLap ();
@@ -61,9 +58,9 @@ public:
     virtual Array<MultiFab const*,AMREX_SPACEDIM> getBCoeffs (int amrlev, int mglev) const = 0;
     virtual Array<MultiFab const*,AMREX_SPACEDIM> getCCoeffs (int amrlev, int mglev) const = 0;
 
-    virtual void applyInhomogNeumannTerm (int amrlev, Any& a_rhs) const final override;
+    virtual void applyInhomogNeumannTerm (int amrlev, MultiFab& rhs) const final override;
 
-    virtual void applyOverset (int amlev, Any& a_rhs) const override;
+    virtual void applyOverset (int amlev, MultiFab& rhs) const override;
 #ifdef AMREX_USE_HYPRE
     virtual std::unique_ptr<Hypre> makeHypre (Hypre::Interface hypre_interface) const override;
 #endif

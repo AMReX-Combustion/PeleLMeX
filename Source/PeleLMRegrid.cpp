@@ -45,11 +45,11 @@ void PeleLM::MakeNewLevelFromCoarse( int lev,
    // New leveldatas
    std::unique_ptr<LevelData> n_leveldata_old( new LevelData(ba, dm, *new_fact,
                                                    m_incompressible, m_has_divu,
-                                                   m_nAux, m_nGrowState));
+                                                   m_nAux, m_nGrowState, m_use_soret, m_do_les));
 
    std::unique_ptr<LevelData> n_leveldata_new( new LevelData(ba, dm, *new_fact,
                                                    m_incompressible, m_has_divu,
-                                                   m_nAux, m_nGrowState));
+                                                   m_nAux, m_nGrowState, m_use_soret, m_do_les));
 
    // Fill the leveldata_new
    fillcoarsepatch_state(lev, time, n_leveldata_new->state, m_nGrowState);
@@ -75,6 +75,15 @@ void PeleLM::MakeNewLevelFromCoarse( int lev,
    }
 
    if (!m_incompressible) {
+      // Enforce density / species density consistency
+      // only usefull when using cell cons interp
+      if (m_regrid_interp_method == 1) {
+         setRhoToSumRhoY(lev, AmrNewTime);
+      }
+
+      // Recompute temperature from interpolated rhoYs and rhoH
+      setTemperature(lev, AmrNewTime);
+
       // Initialize thermodynamic pressure
       setThermoPress(lev, AmrNewTime);
    }
@@ -86,7 +95,7 @@ void PeleLM::MakeNewLevelFromCoarse( int lev,
 
 #ifdef PELE_USE_EFIELD
    m_leveldatanlsolve[lev].reset(new LevelDataNLSolve(ba, dm, *m_factory[lev], m_nGrowState));
-   if (m_do_extraEFdiags) { 
+   if (m_do_extraEFdiags) {
       m_ionsFluxes[lev].reset(new MultiFab(ba, dm, NUM_IONS*AMREX_SPACEDIM, 0));
    }
    m_precond_op.reset();
@@ -135,11 +144,11 @@ void PeleLM::RemakeLevel( int lev,
    // New leveldatas
    std::unique_ptr<LevelData> n_leveldata_old( new LevelData(ba, dm, *new_fact,
                                                    m_incompressible, m_has_divu,
-                                                   m_nAux, m_nGrowState));
+                                                   m_nAux, m_nGrowState, m_use_soret, m_do_les));
 
    std::unique_ptr<LevelData> n_leveldata_new( new LevelData(ba, dm, *new_fact,
                                                    m_incompressible, m_has_divu,
-                                                   m_nAux, m_nGrowState));
+                                                   m_nAux, m_nGrowState, m_use_soret, m_do_les));
 
    // Fill the leveldata_new
    fillpatch_state(lev, time, n_leveldata_new->state, m_nGrowState);
@@ -170,13 +179,22 @@ void PeleLM::RemakeLevel( int lev,
    m_resetCoveredMask = 1;
 
    if (!m_incompressible) {
+      // Enforce density / species density consistency
+      // only usefull when using cell cons interp
+      if (m_regrid_interp_method == 1) {
+         setRhoToSumRhoY(lev, AmrNewTime);
+      }
+
+      // Recompute temperature from interpolated rhoYs and rhoH
+      setTemperature(lev, AmrNewTime);
+
       // Initialize thermodynamic pressure
       setThermoPress(lev, AmrNewTime);
    }
 
 #ifdef PELE_USE_EFIELD
    m_leveldatanlsolve[lev].reset(new LevelDataNLSolve(ba, dm, *m_factory[lev], m_nGrowState));
-   if (m_do_extraEFdiags) { 
+   if (m_do_extraEFdiags) {
       m_ionsFluxes[lev].reset(new MultiFab(ba, dm, NUM_IONS*AMREX_SPACEDIM, 0));
    }
    m_precond_op.reset();
@@ -210,7 +228,7 @@ void PeleLM::ClearLevel(int lev) {
    macproj.reset();
 #ifdef PELE_USE_EFIELD
    m_leveldatanlsolve[lev].reset();
-   if (m_do_extraEFdiags) { 
+   if (m_do_extraEFdiags) {
       m_ionsFluxes[lev].reset();
    }
 #endif

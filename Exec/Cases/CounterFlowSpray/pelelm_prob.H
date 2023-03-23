@@ -43,7 +43,7 @@ void pelelm_initdata(int i, int j, int k,
     amrex::Real massfrac_cold[NUM_SPECIES] = {0.0};
     amrex::Real massfrac_hot[NUM_SPECIES] = {0.0};
 
-    
+
     massfrac_cold[NXC7H16_ID] = 0.05;
     massfrac_cold[O2_ID] = 0.233 * (1.0 - massfrac_cold[NXC7H16_ID]);;
     massfrac_cold[N2_ID] = 1.0 - massfrac_cold[NXC7H16_ID] - massfrac_cold[O2_ID];
@@ -150,12 +150,12 @@ bcnormal(
    amrex::Real rhoOx = -1.0;
    {
       eos.PYT2R(P_cgs, massfrac_ox, prob_parm.T_ox, rhoOx);
-      rhoOx *= 1.0e3; 
+      rhoOx *= 1.0e3;
    }
    amrex::Real rhoFuel = -1.0;
    {
       eos.PYT2R(P_cgs, massfrac_fuel, prob_parm.T_fuel, rhoFuel);
-      rhoFuel *= 1.0e3; 
+      rhoFuel *= 1.0e3;
    }
    if ( zone == 1 ) {
       s_ext[TEMP] = prob_parm.T_ox * mixingFunction +

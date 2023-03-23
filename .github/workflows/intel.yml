@@ -1,0 +1,65 @@
+name: PeleLMeX_Intel
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, development ]
+  pull_request:
+    branches: [ main, development ]
+
+concurrency:
+  group: ${{ github.ref }}-${{ github.head_ref }}-intel
+  cancel-in-progress: true
+
+jobs:
+  #Build the 3D FlameSheet RegTest with SYCL
+  FS3D_SYCL:
+    name: SYCL C++17 [FS3D]
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v3
+    - name: System Dependencies
+      run: .github/workflows/dependencies/dependencies_dpcpp.sh
+    - name: Repo Dependencies
+      run: Utils/CloneDeps.sh
+    - name: Build
+      env:
+         AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
+         PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
+         PELELMEX_HOME: ${GITHUB_WORKSPACE}
+         AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
+      run: |
+        set +e
+        source /opt/intel/oneapi/setvars.sh
+        set -e
+        export CXX=$(which icpx)
+        export CC=$(which icx)
+        cd Exec/RegTests/FlameSheet/
+        make TPL COMP=intel DIM=3 USE_SYCL=TRUE USE_MPI=FALSE
+        make -j $(nproc) COMP=intel DIM=3 USE_SYCL=TRUE USE_MPI=FALSE
+
+  #Build the EB_EnclosedFlamet RegTest with SYCL
+  EBEF3D_STCL:
+    name: SYCL C++17 [EBEF3D]
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v3
+    - name: System Dependencies
+      run: .github/workflows/dependencies/dependencies_dpcpp.sh
+    - name: Repo Dependencies
+      run: Utils/CloneDeps.sh
+    - name: Build
+      env:
+         AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
+         PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
+         PELELMEX_HOME: ${GITHUB_WORKSPACE}
+         AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
+      run: |
+        set +e
+        source /opt/intel/oneapi/setvars.sh
+        set -e
+        export CXX=$(which icpx)
+        export CC=$(which icx)
+        cd Exec/RegTests/EB_EnclosedFlame/
+        make TPL COMP=intel DIM=3 USE_SYCL=TRUE USE_MPI=FALSE
+        make -j $(nproc) COMP=intel DIM=3 USE_SYCL=TRUE USE_MPI=FALSE

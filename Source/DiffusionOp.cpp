@@ -23,7 +23,6 @@ DiffusionOp::DiffusionOp (PeleLM* a_pelelm, int ncomp)
    LPInfo info_solve;
    info_solve.setAgglomeration(1);
    info_solve.setConsolidation(1);
-   info_solve.setMetricTerm(false);
    info_solve.setMaxCoarseningLevel(m_mg_max_coarsening_level);
 
    // Apply LPInfo (no coarsening)
@@ -192,9 +191,11 @@ void DiffusionOp::diffuse_scalar(Vector<MultiFab*> const& a_phi, int phi_comp,
 
          if (have_bcoeff) {
             int doZeroVisc = 1;
+            int addTurbContrib = 1;
             Vector<BCRec> subBCRec = {a_bcrec.begin()+comp,a_bcrec.begin()+comp+m_ncomp};
             Array<MultiFab,AMREX_SPACEDIM> bcoeff_ec = m_pelelm->getDiffusivity(lev, bcoeff_comp+comp, m_ncomp,
-                                                                                doZeroVisc, subBCRec, *a_bcoeff[lev]);
+                                                                                doZeroVisc, subBCRec, *a_bcoeff[lev],
+                                                                                addTurbContrib);
 #ifdef AMREX_USE_EB
             m_scal_solve_op->setBCoeffs(lev, GetArrOfConstPtrs(bcoeff_ec), MLMG::Location::FaceCentroid);
 #else
@@ -504,9 +505,11 @@ void DiffusionOp::computeDiffLap(Vector<MultiFab*> const& a_laps, int lap_comp,
           laps.emplace_back(*a_laps[lev],amrex::make_alias,lap_comp+comp,m_ncomp);
           component.emplace_back(phi[lev],amrex::make_alias,comp,m_ncomp);
           int doZeroVisc = 0;
+          int addTurbContrib = 0;
           Vector<BCRec> subBCRec = {a_bcrec.begin()+comp,a_bcrec.begin()+comp+m_ncomp};
           Array<MultiFab,AMREX_SPACEDIM> bcoeff_ec = m_pelelm->getDiffusivity(lev, bcoeff_comp+comp, m_ncomp,
-                                                                              doZeroVisc, subBCRec, *a_bcoeff[lev]);
+                                                                              doZeroVisc, subBCRec, *a_bcoeff[lev],
+                                                                              addTurbContrib);
 
 #ifdef AMREX_USE_EB
           m_scal_apply_op->setBCoeffs(lev, GetArrOfConstPtrs(bcoeff_ec), MLMG::Location::FaceCentroid);
@@ -601,9 +604,11 @@ void DiffusionOp::computeDiffFluxes(Vector<Array<MultiFab*,AMREX_SPACEDIM>> cons
          }
          component.emplace_back(phi[lev],amrex::make_alias,comp,m_ncomp);
          int doZeroVisc = 1;
+         int addTurbContrib = 1;
          Vector<BCRec> subBCRec = {a_bcrec.begin()+comp,a_bcrec.begin()+comp+m_ncomp};
          Array<MultiFab,AMREX_SPACEDIM> bcoeff_ec = m_pelelm->getDiffusivity(lev, bcoeff_comp+comp, m_ncomp,
-                                                                             doZeroVisc, subBCRec, *a_bcoeff[lev]);
+                                                                             doZeroVisc, subBCRec, *a_bcoeff[lev],
+                                                                             addTurbContrib);
          laps.emplace_back(a_phi[lev]->boxArray(), a_phi[lev]->DistributionMap(),
                            m_ncomp, 1, MFInfo(), a_phi[lev]->Factory());
 #ifdef AMREX_USE_EB
@@ -751,6 +756,11 @@ DiffusionOp::computeGradient(const Vector<Array<MultiFab*,AMREX_SPACEDIM>> &a_gr
    // Do I need the Laplacian out ?
    int need_laplacian = (a_laps.empty()) ? 0 : 1;
 
+   // Force updating the operator
+   for (int lev = 0; lev <= m_pelelm->finestLevel(); ++lev) {
+      m_gradient_op->setBCoeffs(lev,-1.0);
+   }
+
    // Checks: one components only and 1 ghost cell at least
    AMREX_ASSERT(a_phi[0]->nComp() == 1);
    AMREX_ASSERT(a_phi[0]->nGrow() >= 1);
@@ -890,7 +900,54 @@ DiffusionTensorOp::DiffusionTensorOp (PeleLM* a_pelelm)
    m_apply_op->setMaxOrder(m_mg_maxorder);
    m_apply_op->setDomainBC(m_pelelm->getDiffusionTensorOpBC(Orientation::low,bcRecVel),
                            m_pelelm->getDiffusionTensorOpBC(Orientation::high,bcRecVel));
+}
 
+void DiffusionTensorOp::computeGradientTensor (Vector<Array<MultiFab*, AMREX_SPACEDIM>> const& a_velgrad,
+                                               Vector<MultiFab const*> const& a_vel)
+{
+   // This function returns the velocity gradient tensor at faces
+   //
+   // The derivatives are put in the array with the following order:
+   // component: 0    ,  1    ,  2    ,  3    ,  4    , 5    ,  6    ,  7    ,  8
+   // in 2D:     dU/dx,  dV/dx,  dU/dy,  dV/dy
+   // in 3D:     dU/dx,  dV/dx,  dW/dx,  dU/dy,  dV/dy, dW/dy,  dU/dz,  dV/dz,  dW/dz
+
+   int finest_level = m_pelelm->finestLevel();
+
+   // Duplicate vel since it may be modified by the TensorOp
+   Vector<MultiFab> vel(finest_level+1);
+   for (int lev = 0; lev <= finest_level; ++lev) {
+      vel[lev].define(a_vel[lev]->boxArray(), a_vel[lev]->DistributionMap(),
+                     AMREX_SPACEDIM, 1, MFInfo(), a_vel[lev]->Factory());
+      MultiFab::Copy(vel[lev], *a_vel[lev], 0, 0, AMREX_SPACEDIM, 1);
+   }
+
+   // Set up some parameters
+   m_apply_op->setMaxOrder(m_mg_maxorder);
+   m_apply_op->setScalars(0.0,1.0);
+   for (int lev = 0; lev <= finest_level; ++lev) {
+     m_apply_op->setShearViscosity(lev,0.0);
+#ifdef AMREX_USE_EB
+     m_apply_op->setEBShearViscosity(lev, 0.0);
+#endif
+     m_apply_op->setLevelBC(lev, &vel[lev]);
+   }
+
+   // Dummy variable for applying MLMG operator
+   amrex::Vector<amrex::MultiFab> divtau;
+   for (int lev = 0; lev <= finest_level; ++lev) {
+     divtau.emplace_back(a_vel[lev]->boxArray(), a_vel[lev]->DistributionMap(),
+                         AMREX_SPACEDIM, 1, MFInfo(), a_vel[lev]->Factory());
+   }
+
+   // Create MLMG object and apply to setup BCs, etc
+   MLMG mlmg(*m_apply_op);
+   mlmg.apply(GetVecOfPtrs(divtau), GetVecOfPtrs(vel));
+
+   // Compute the velocity gradient on faces
+   for (int lev = 0; lev <= finest_level; ++lev) {
+     m_apply_op->compVelGrad(lev, a_velgrad[lev], vel[lev], MLLinOp::Location::FaceCentroid);
+   }
 }
 
 void DiffusionTensorOp::compute_divtau (Vector<MultiFab*> const& a_divtau,
@@ -929,8 +986,10 @@ void DiffusionTensorOp::compute_divtau (Vector<MultiFab*> const& a_divtau,
           m_apply_op->setACoeffs(lev, *a_density[lev]);
        }
        int doZeroVisc = 0;
+       int addTurbContrib = 1;
        Array<MultiFab,AMREX_SPACEDIM> beta_ec = m_pelelm->getDiffusivity(lev, 0, 1,
-                                                                         doZeroVisc, {a_bcrec}, *a_beta[lev]);
+                                                                         doZeroVisc, {a_bcrec}, *a_beta[lev],
+                                                                         addTurbContrib);
        m_apply_op->setShearViscosity(lev, GetArrOfConstPtrs(beta_ec), MLMG::Location::FaceCentroid);
        m_apply_op->setEBShearViscosity(lev, *a_beta[lev]);
        m_apply_op->setLevelBC(lev, &vel[lev]);
@@ -952,8 +1011,10 @@ void DiffusionTensorOp::compute_divtau (Vector<MultiFab*> const& a_divtau,
           m_apply_op->setACoeffs(lev, *a_density[lev]);
        }
        int doZeroVisc = 0;
+       int addTurbContrib = 1;
        Array<MultiFab,AMREX_SPACEDIM> beta_ec = m_pelelm->getDiffusivity(lev, 0, 1,
-                                                                         doZeroVisc, {a_bcrec}, *a_beta[lev]);
+                                                                         doZeroVisc, {a_bcrec}, *a_beta[lev],
+                                                                         addTurbContrib);
        m_apply_op->setShearViscosity(lev, GetArrOfConstPtrs(beta_ec));
        m_apply_op->setLevelBC(lev, &vel[lev]);
    }
@@ -1006,8 +1067,10 @@ void DiffusionTensorOp::diffuse_velocity (Vector<MultiFab*> const& a_vel,
           m_solve_op->setACoeffs(lev, m_pelelm->m_rho);
        }
        int doZeroVisc = 0;
+       int addTurbContrib = 1;
        Array<MultiFab,AMREX_SPACEDIM> beta_ec = m_pelelm->getDiffusivity(lev, 0, 1,
-                                                                         doZeroVisc, {a_bcrec}, *a_beta[lev]);
+                                                                         doZeroVisc, {a_bcrec}, *a_beta[lev],
+                                                                         addTurbContrib);
 #ifdef AMREX_USE_EB
        m_solve_op->setShearViscosity(lev, GetArrOfConstPtrs(beta_ec), MLMG::Location::FaceCentroid);
        m_solve_op->setEBShearViscosity(lev, *a_beta[lev]);

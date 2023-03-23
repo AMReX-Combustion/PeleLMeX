@@ -10,17 +10,21 @@ public:
 
   enum InterpType {Linear, Quadratic};
 
-  void init(const std::string &a_prefix) override;
+  void init(const std::string &a_prefix,
+            std::string_view a_diagName) override;
 
   void prepare(int a_nlevels,
                const amrex::Vector<amrex::Geometry> &a_geoms,
                const amrex::Vector<amrex::BoxArray> &a_grids,
-               const amrex::Vector<amrex::DistributionMapping> &a_dmap) override;
+               const amrex::Vector<amrex::DistributionMapping> &a_dmap,
+               const amrex::Vector<std::string> &a_varNames) override;
 
   void processDiag(int a_nstep,
                    const amrex::Real &a_time,
                    const amrex::Vector<const amrex::MultiFab*> &a_state,
                    const amrex::Vector<std::string> &a_varNames) override;
+
+  void addVars(amrex::Vector<std::string> &a_varList) override;
 
   void Write2DMultiLevelPlotfile(const std::string &a_pltfile,
                                  int a_nlevels,
@@ -58,12 +62,16 @@ public:
   void close() override {}
 
 private:
+  // Variables output
+  amrex::Vector<std::string> m_fieldNames;
+  amrex::Gpu::DeviceVector<int> m_fieldIndices_d;
+
   // Plane definition
   int m_normal;
   amrex::GpuArray<amrex::Real,AMREX_SPACEDIM> m_center;
 
   // Interpolation data
-  InterpType m_interpType; 
+  InterpType m_interpType;
   amrex::Vector<amrex::GpuArray<amrex::Real,3> > m_intwgt;
   amrex::Vector<int> m_k0;
 

@@ -62,7 +62,8 @@ void PeleLM::predictVelocity(std::unique_ptr<AdvanceAdvData>  &advData)
                                    ebfact,
 #endif
                                    m_Godunov_ppm, m_Godunov_ForceInTrans,
-                                   m_predict_advection_type);
+                                   m_predict_advection_type,
+                                   m_Godunov_ppm_limiter);
    }
 }
 

@@ -11,25 +11,15 @@ void PeleLM::advanceChemistry(std::unique_ptr<AdvanceAdvData> &advData)
    BL_PROFILE("PeleLM::advanceChemistry()");
 
    for (int lev = finest_level; lev >= 0; --lev) {
-
-      // On all but the finest level, average down I_R
       if (lev != finest_level) {
-         std::unique_ptr<MultiFab> avgDownIR;
-         avgDownIR.reset( new MultiFab(grids[lev],dmap[lev],nCompIR(),0));
-         avgDownIR->setVal(0.0);
-         auto ldataRFine_p   = getLevelDataReactPtr(lev+1);
-#ifdef AMREX_USE_EB
-         EB_average_down(ldataRFine_p->I_R,
-                         *avgDownIR,
-                         0,nCompIR(),refRatio(lev));
-#else
-         average_down(ldataRFine_p->I_R,
-                      *avgDownIR,
-                      0,nCompIR(),refRatio(lev));
-#endif
-         advanceChemistry(lev, m_dt, advData->Forcing[lev], avgDownIR.get());
+         advanceChemistryBAChem(lev, m_dt, advData->Forcing[lev]);
       } else {
-         advanceChemistry(lev, m_dt, advData->Forcing[lev]);
+         // If we defined a new BA for chem on finest level, use that instead of the default one
+         if (m_max_grid_size_chem.min() > 0) {
+            advanceChemistryBAChem(lev, m_dt, advData->Forcing[lev]);
+         } else {
+            advanceChemistry(lev, m_dt, advData->Forcing[lev]);
+         }
       }
    }
 }
@@ -108,8 +98,6 @@ void PeleLM::advanceChemistry(int lev,
                        , amrex::Gpu::gpuStream()
 #endif
                        );
-      dt_incr   = a_dt;
-      time_chem = 0;
 
       // Convert CGS -> MKS
       ParallelFor(bx, [rhoY_n, rhoH_n, extF_rhoY, extF_rhoH]
@@ -175,30 +163,22 @@ void PeleLM::advanceChemistry(int lev,
    }
 }
 
-// This advanceChemistry is called on all but the finest level
-// It works with BoxArrays built such that each box is either covered
-// or uncovered and chem. integrator is called only on uncovered boxes
-// the averaged down version of I_R is linearly added to the AD forcing
-// to build the t^{np1} solution on covered boxes.
-void PeleLM::advanceChemistry(int lev,
+// This advanceChemistry works with BoxArrays built such that each box
+// is either covered or uncovered and chem. integrator is called only
+// on uncovered boxes.
+void PeleLM::advanceChemistryBAChem(int lev,
                               const Real &a_dt,
-                              MultiFab &a_extForcing,
-                              MultiFab *a_avgDownIR)
+                              MultiFab &a_extForcing)
 {
    BL_PROFILE("PeleLM::advanceChemistry_Lev"+std::to_string(lev)+"()");
-   AMREX_ASSERT(a_avgDownIR != nullptr);
 
    auto ldataOld_p = getLevelDataPtr(lev,AmrOldTime);
    auto ldataNew_p = getLevelDataPtr(lev,AmrNewTime);
    auto ldataR_p   = getLevelDataReactPtr(lev);
 
-   // Get the entire old state
-   std::unique_ptr<MultiFab> statemf = fillPatchState(lev, getTime(lev,AmrOldTime), 0);
-
    // Set chemistry MFs based on baChem and dmapChem
    MultiFab chemState(*m_baChem[lev],*m_dmapChem[lev],NUM_SPECIES+3,0);
    MultiFab chemForcing(*m_baChem[lev],*m_dmapChem[lev],nCompForcing(),0);
-   MultiFab chemAvgDownIR(*m_baChem[lev],*m_dmapChem[lev],nCompIR(),0);
    MultiFab functC(*m_baChem[lev],*m_dmapChem[lev],1,0);
 #ifdef PELE_USE_EFIELD
    MultiFab chemnE(*m_baChem[lev],*m_dmapChem[lev],1,0);
@@ -209,13 +189,11 @@ void PeleLM::advanceChemistry(int lev,
    mask.setVal(1);
 
    // ParallelCopy into chem MFs
-   chemState.ParallelCopy(*statemf,FIRSTSPEC,0,NUM_SPECIES+3);
+   chemState.ParallelCopy(ldataOld_p->state,FIRSTSPEC,0,NUM_SPECIES+3);
    chemForcing.ParallelCopy(a_extForcing,0,0,nCompForcing());
-   chemAvgDownIR.ParallelCopy(*a_avgDownIR,0,0,nCompIR());
 #ifdef PELE_USE_EFIELD
-   chemnE.ParallelCopy(*statemf,NE,0,1);
+   chemnE.ParallelCopy(ldataOld_p->state,NE,0,1);
 #endif
-   //VisMF::Write(chemAvgDownIR,"avgDownIRNewBA_Level"+std::to_string(lev)+"_step"+std::to_string(m_nstep));
 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -229,39 +207,34 @@ void PeleLM::advanceChemistry(int lev,
       auto const& extF_rhoY  = chemForcing.array(mfi,0);
       auto const& extF_rhoH  = chemForcing.array(mfi,NUM_SPECIES);
       auto const& fcl        = functC.array(mfi);
-      auto const& avgIR      = chemAvgDownIR.array(mfi);
       auto const& mask_arr   = mask.array(mfi);
 
       // Convert MKS -> CGS
-      ParallelFor(bx, [rhoY_o, rhoH_o, extF_rhoY, extF_rhoH, avgIR]
+      ParallelFor(bx, [rhoY_o, rhoH_o, extF_rhoY, extF_rhoH]
       AMREX_GPU_DEVICE (int i, int j, int k) noexcept
       {
          for (int n = 0; n < NUM_SPECIES; n++) {
             rhoY_o(i,j,k,n) *= 1.0e-3;
             extF_rhoY(i,j,k,n) *= 1.0e-3;
-            avgIR(i,j,k,n) *= 1.0e-3;
          }
          rhoH_o(i,j,k) *= 10.0;
          extF_rhoH(i,j,k) *= 10.0;
       });
 
 #ifdef PELE_USE_EFIELD
-      // Pass nE -> rhoY_e, FnE -> FrhoY_e & avgIRnE -> avgIRY_e
+      // Pass nE -> rhoY_e & FnE -> FrhoY_e
       auto const& nE_o    = chemnE.array(mfi);
       auto const& FnE     = chemForcing.array(mfi,NUM_SPECIES+1);
       auto const& rhoYe_o = chemState.array(mfi,E_ID);
       auto const& FrhoYe  = chemForcing.array(mfi,E_ID);
-      auto const& avgIRnE = chemAvgDownIR.array(mfi,NUM_SPECIES);
-      auto const& avgIRYe = chemAvgDownIR.array(mfi,E_ID);
       auto eos = pele::physics::PhysicsType::eos();
       Real mwt[NUM_SPECIES] = {0.0};
       eos.molecular_weight(mwt);
-      ParallelFor(bx, [mwt,nE_o,FnE,rhoYe_o,FrhoYe,avgIRnE,avgIRYe]
+      ParallelFor(bx, [mwt,nE_o,FnE,rhoYe_o,FrhoYe]
       AMREX_GPU_DEVICE (int i, int j, int k) noexcept
       {
          rhoYe_o(i,j,k)  = nE_o(i,j,k) / Na * mwt[E_ID] * 1.0e-6;
          FrhoYe(i,j,k) = FnE(i,j,k) / Na * mwt[E_ID] * 1.0e-6;
-         avgIRYe(i,j,k) = avgIRnE(i,j,k) / Na * mwt[E_ID] * 1.0e-6;
       });
 #endif
 
@@ -281,9 +254,12 @@ void PeleLM::advanceChemistry(int lev,
 #endif
                           );
       } else {
-         // Use forcing and averaged down IR to advance species/rhoH/temp
-         Real dt_incr     = a_dt;
-         linearChemForcing(bx, rhoY_o, extF_rhoY, temp_o, rhoH_o, extF_rhoH, fcl, avgIR, dt_incr);
+         // Just set the function call to 0.0
+         ParallelFor(bx, [fcl]
+         AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+         {
+            fcl(i,j,k) = 0.0;
+         });
       }
 
       // Convert CGS -> MKS
@@ -486,12 +462,10 @@ void PeleLM::getHeatRelease(int a_lev,
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
     {
-        FArrayBox EnthFab;
         for (MFIter mfi(*a_HR,TilingIfNotGPU()); mfi.isValid(); ++mfi)
         {
            const Box& bx = mfi.tilebox();
-           EnthFab.resize(bx,NUM_SPECIES);
-           Elixir  Enthi   = EnthFab.elixir();
+           FArrayBox EnthFab(bx, NUM_SPECIES, The_Async_Arena());
            auto const& react = ldataR_p->I_R.const_array(mfi,0);
            auto const& T     = ldataNew_p->state.const_array(mfi,TEMP);
            auto const& Hi    = EnthFab.array();

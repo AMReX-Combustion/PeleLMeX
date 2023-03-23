@@ -13,9 +13,9 @@
 void
 read_binary(
   const std::string& iname,
-  const size_t nx, 
-  const size_t ny, 
-  const size_t nz, 
+  const size_t nx,
+  const size_t ny,
+  const size_t nz,
   const size_t ncol,
   amrex::Vector<double>& data /*needs to be double*/)
 {
@@ -32,7 +32,7 @@ read_binary(
 
 AMREX_FORCE_INLINE
 std::string
-read_file(std::ifstream& in) 
+read_file(std::ifstream& in)
 {
   return static_cast<std::stringstream const&>(
            std::stringstream() << in.rdbuf())
@@ -170,20 +170,20 @@ void PeleLM::readProbParm()
       amrex::Vector<amrex::Real> winput;
       amrex::Vector<amrex::Real> xdiff;
       amrex::Vector<amrex::Real> xarray;
-      
+
       xinput.resize(nx * ny * nz);
       uinput.resize(nx * ny * nz);
       vinput.resize(nx * ny * nz);
       winput.resize(nx * ny * nz);
-      
+
       for (int i = 0; i < xinput.size(); i++) {
-        xinput[i] = (data[0 + i * 6] + PeleLM::prob_parm->offset) / 
+        xinput[i] = (data[0 + i * 6] + PeleLM::prob_parm->offset) /
                     PeleLM::prob_parm->lscale;
         uinput[i] = data[3 + i * 6] * PeleLM::prob_parm->urms0 / PeleLM::prob_parm->uin_norm;
         vinput[i] = data[4 + i * 6] * PeleLM::prob_parm->urms0 / PeleLM::prob_parm->uin_norm;
         winput[i] = data[5 + i * 6] * PeleLM::prob_parm->urms0 / PeleLM::prob_parm->uin_norm;
       }
-      
+
       // Get the xarray table and the differences.
       xarray.resize(nx);
       for (int i = 0; i < xarray.size(); i++) {
@@ -195,7 +195,7 @@ void PeleLM::readProbParm()
         xarray.end(),
         xdiff.begin());
       xdiff[0] = xdiff[1];
-      
+
       // Make sure the search array is increasing
       if (not std::is_sorted(
             xarray.begin(),
@@ -203,14 +203,14 @@ void PeleLM::readProbParm()
         amrex::Abort("Error: non ascending x-coordinate array.");
       }
       PeleLM::prob_parm->Linput = xarray[nx - 1] + 0.5 * xdiff[nx - 1];
-      
+
       // Initialize PeleLM::prob_parm containers
       PeleLM::prob_parm->d_xarray = (amrex::Real*) amrex::The_Arena()->alloc(nx*sizeof(amrex::Real));
       PeleLM::prob_parm->d_xdiff = (amrex::Real*) amrex::The_Arena()->alloc(nx*sizeof(amrex::Real));
-      PeleLM::prob_parm->d_uinput = (amrex::Real*) amrex::The_Arena()->alloc(nx*ny*nz*sizeof(amrex::Real)); 
+      PeleLM::prob_parm->d_uinput = (amrex::Real*) amrex::The_Arena()->alloc(nx*ny*nz*sizeof(amrex::Real));
       PeleLM::prob_parm->d_vinput = (amrex::Real*) amrex::The_Arena()->alloc(nx*ny*nz*sizeof(amrex::Real));
       PeleLM::prob_parm->d_winput = (amrex::Real*) amrex::The_Arena()->alloc(nx*ny*nz*sizeof(amrex::Real));
-      
+
       // Copy into PeleLM::prob_parm
       amrex::Gpu::copy(amrex::Gpu::hostToDevice,
                                 xarray.begin(),
@@ -233,5 +233,5 @@ void PeleLM::readProbParm()
                                 winput.end(),
                        PeleLM::prob_parm->d_winput);
    }
-   
+
 }

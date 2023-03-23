@@ -20,7 +20,7 @@ void pelelm_derchargedist(PeleLM* /*a_pelelm*/, const Box& bx, FArrayBox& derfab
 
    amrex::GpuArray<amrex::Real,NUM_SPECIES> zk;
    pele::physics::eos::charge_mass(zk.arr);
-   
+
    amrex::ParallelFor(bx,
    [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
    {
@@ -44,10 +44,10 @@ void pelelm_derefx(PeleLM* /*a_pelelm*/, const Box& bx, FArrayBox& derfab, int d
    const auto dxinv = geomdata.InvCellSizeArray();
    const auto domain = geomdata.Domain();
    amrex::Real factor = -0.5*dxinv[0];
-   
+
    const auto bc_lo = bcrec[PHIV].lo(0);
    const auto bc_hi = bcrec[PHIV].hi(0);
-   
+
    amrex::ParallelFor(bx,
    [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
    {
@@ -77,10 +77,10 @@ void pelelm_derLorentzx(PeleLM* /*a_pelelm*/, const Box& bx, FArrayBox& derfab, 
    const auto dxinv = geomdata.InvCellSizeArray();
    const auto domain = geomdata.Domain();
    amrex::Real factor = -0.5*dxinv[0];
-   
+
    const auto bc_lo = bcrec[PHIV].lo(0);
    const auto bc_hi = bcrec[PHIV].hi(0);
-   
+
    amrex::ParallelFor(bx,
    [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
    {
@@ -113,10 +113,10 @@ void pelelm_derefy(PeleLM* /*a_pelelm*/, const Box& bx, FArrayBox& derfab, int d
    const auto dxinv = geomdata.InvCellSizeArray();
    const auto domain = geomdata.Domain();
    amrex::Real factor = -0.5*dxinv[1];
-   
+
    const auto bc_lo = bcrec[PHIV].lo(1);
    const auto bc_hi = bcrec[PHIV].hi(1);
-   
+
    amrex::ParallelFor(bx,
    [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
    {
@@ -146,10 +146,10 @@ void pelelm_derLorentzy(PeleLM* /*a_pelelm*/, const Box& bx, FArrayBox& derfab, 
    const auto dxinv = geomdata.InvCellSizeArray();
    const auto domain = geomdata.Domain();
    amrex::Real factor = -0.5*dxinv[1];
-   
+
    const auto bc_lo = bcrec[PHIV].lo(1);
    const auto bc_hi = bcrec[PHIV].hi(1);
-   
+
    amrex::ParallelFor(bx,
    [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
    {
@@ -182,10 +182,10 @@ void pelelm_derefz(PeleLM* /*a_pelelm*/, const Box& bx, FArrayBox& derfab, int d
    const auto dxinv = geomdata.InvCellSizeArray();
    const auto domain = geomdata.Domain();
    amrex::Real factor = -0.5*dxinv[2];
-   
+
    const auto bc_lo = bcrec[PHIV].lo(2);
    const auto bc_hi = bcrec[PHIV].hi(2);
-   
+
    amrex::ParallelFor(bx,
    [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
    {
@@ -215,10 +215,10 @@ void pelelm_derLorentzz(PeleLM* /*a_pelelm*/, const Box& bx, FArrayBox& derfab, 
    const auto dxinv = geomdata.InvCellSizeArray();
    const auto domain = geomdata.Domain();
    amrex::Real factor = -0.5*dxinv[2];
-   
+
    const auto bc_lo = bcrec[PHIV].lo(2);
    const auto bc_hi = bcrec[PHIV].hi(2);
-   
+
    amrex::ParallelFor(bx,
    [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
    {

@@ -1,0 +1,69 @@
+name: unitTest
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, development ]
+  pull_request:
+    branches: [ main, development ]
+
+concurrency:
+  group: ${{ github.ref }}-${{ github.head_ref }}-unitTest
+  cancel-in-progress: true
+
+jobs:
+  # Build the RegTests/UnitTest
+  UT_FS:
+    name: UnitTest_FS
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+      with:
+          submodules: true
+    - name: System Dependencies
+      run: |
+          .github/workflows/dependencies/dependencies_gcc10.sh
+          sudo apt-get install -y python3-setuptools
+          python3 -m pip install --user numpy
+          python3 -m pip install --user argparse
+          python3 -m pip install --user matplotlib
+    - name: LMeX Reference
+      run: |
+              mkdir buildRef
+              git clone --recursive -b development https://github.com/AMReX-Combustion/PeleLMeX.git buildRef/PeleLMeX
+    - name: Set Environment Variables
+      run: |
+              echo "AMREX_HOME=${{github.workspace}}/buildRef/PeleLMeX/Submodules/amrex" >> $GITHUB_ENV
+              echo "PELE_PHYSICS_HOME=${{github.workspace}}/buildRef/PeleLMeX/Submodules/PelePhysics" >> $GITHUB_ENV
+              echo "AMREX_HYDRO_HOME=${{github.workspace}}/buildRef/PeleLMeX/Submodules/AMReX-Hydro" >> $GITHUB_ENV
+              echo "PELELMEX_HOME=${{github.workspace}}/buildRef/PeleLMeX/" >> $GITHUB_ENV
+    - name: Build Reference PeleLMeX
+      working-directory: ${{env.PELELMEX_HOME}}/Exec/UnitTests/DodecaneLu
+      run: |
+          make -j2 TPL COMP=gnu DEBUG=FALSE
+          make -j2 COMP=gnu DEBUG=FALSE
+    - name: Run Reference Case
+      working-directory: ${{env.PELELMEX_HOME}}/Exec/UnitTests/DodecaneLu
+      run: |
+          ./PeleLMeX3d.gnu.MPI.ex inputs.3d
+    - name: Reset Environment Variables
+      run: |
+              echo "AMREX_HOME=${{github.workspace}}/Submodules/amrex" >> $GITHUB_ENV
+              echo "PELE_PHYSICS_HOME=${{github.workspace}}/Submodules/PelePhysics" >> $GITHUB_ENV
+              echo "AMREX_HYDRO_HOME=${{github.workspace}}/Submodules/AMReX-Hydro" >> $GITHUB_ENV
+              echo "PELELMEX_HOME=${{github.workspace}}" >> $GITHUB_ENV
+    - name: Build AMReX Tools
+      working-directory: ${{env.AMREX_HOME}}/Tools/Plotfile
+      run: |
+          make -j2 VERBOSE=FALSE
+    - name: Build PeleLMeX
+      working-directory: ${{env.PELELMEX_HOME}}/Exec/UnitTests/DodecaneLu
+      run: |
+          make -j2 TPL COMP=gnu DEBUG=FALSE
+          make -j2 COMP=gnu DEBUG=FALSE
+    - name: Run Case
+      working-directory: ${{env.PELELMEX_HOME}}/Exec/UnitTests/DodecaneLu
+      run: |
+          cp ${{env.AMREX_HOME}}/Tools/Plotfile/fcompare.gnu.ex .
+          ./PeleLMeX3d.gnu.MPI.ex inputs.3d
+          ./fcompare.gnu.ex pltEvaluate ${{github.workspace}}/buildRef/PeleLMeX/Exec/UnitTests/DodecaneLu/pltEvaluate

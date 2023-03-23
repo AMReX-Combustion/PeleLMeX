@@ -45,9 +45,9 @@ void pelelm_initdata(int i, int j, int k,
     amrex::Real y1, y2;
 
     pert = 0.0;
-    if (prob_parm.pertmag > 0.0) 
+    if (prob_parm.pertmag > 0.0)
     {
-       pert = prob_parm.pertmag * 
+       pert = prob_parm.pertmag *
              (1.0 * std::sin(2 * Pi * 4 * x / Lx) +
               1.023 * std::sin(2 * Pi * 2 * (x - 0.004598) / Lx) +
               0.945 * std::sin(2 * Pi * 3 * (x - 0.00712435) / Lx) +
@@ -74,8 +74,8 @@ void pelelm_initdata(int i, int j, int k,
     amrex::Real zk[NUM_SPECIES] = {0.0};
     pele::physics::eos::charge_mass(zk);
     for (int n = 0; n < NUM_SPECIES; n++) {
-	    zk[n] *= 1000.0;    // CGS->MKS
-	 }
+        zk[n] *= 1000.0;    // CGS->MKS
+    }
     massfrac[E_ID] = 0.0;
     amrex::Real sum = 0.0;
     for (int n = 0; n < NUM_SPECIES; n++) {
@@ -99,7 +99,7 @@ void pelelm_initdata(int i, int j, int k,
        for (int n = 0; n < NUM_SPECIES; n++) {
           if ( zk[n] > 0.0 ) {
              massfrac[N2_ID] += massfrac[n] / sum_pos_ion * chargeDist / mean_zk_pos_ion * sum_pos_ion;
-             massfrac[n] -= massfrac[n] / sum_pos_ion * chargeDist / mean_zk_pos_ion * sum_pos_ion;   
+             massfrac[n] -= massfrac[n] / sum_pos_ion * chargeDist / mean_zk_pos_ion * sum_pos_ion;
           }
        }
 
@@ -200,7 +200,7 @@ bcnormal(
       } else {          // hi
          s_ext[NE] = 0.0;
          s_ext[PHIV] = prob_parm.phiV_hiy;
-      }   
+      }
    }
 }
 

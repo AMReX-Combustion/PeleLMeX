@@ -14,7 +14,7 @@
 # "Internal" user input
 #   * bsizes : box sizes to test
 
-# Head's up : 
+# Head's up :
 #   * The PeleLM executable is searched for in the current directory.
 
 import sys
@@ -23,7 +23,7 @@ import shutil
 import argparse
 import numpy as np
 
-USAGE = """    
+USAGE = """
     A template script to launch several times PeleLM.
 """
 

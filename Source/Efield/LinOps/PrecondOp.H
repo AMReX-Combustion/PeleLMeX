@@ -73,6 +73,11 @@ class PrecondOp
    std::unique_ptr<amrex::MLABecLaplacian>    m_drift;
    std::unique_ptr<amrex::MLABecLaplacian>    m_Stilda;
 
+   // Associated MLMGs
+   std::unique_ptr<amrex::MLMG> m_mlmg_diff;
+   std::unique_ptr<amrex::MLMG> m_mlmg_drift;
+   std::unique_ptr<amrex::MLMG> m_mlmg_Stilda;
+
    // Verbose for each Ops
    int m_diff_verbose = 0;
    int m_drift_verbose = 0;

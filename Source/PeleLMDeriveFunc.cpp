@@ -12,7 +12,7 @@ using namespace amrex;
 //
 void pelelm_dertemp (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
                      const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
-                     const Geometry& /*geomdata*/,
+                     const Geometry& /*geom*/,
                      Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
 
 {
@@ -34,7 +34,7 @@ void pelelm_dertemp (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dco
 //
 void pelelm_derheatrelease (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
                             const FArrayBox& statefab, const FArrayBox& reactfab, const FArrayBox& /*pressfab*/,
-                            const Geometry& /*geomdata*/,
+                            const Geometry& /*geom*/,
                             Real /*time*/, const Vector<BCRec>& /*bcrec*/, int level)
 
 {
@@ -44,8 +44,7 @@ void pelelm_derheatrelease (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, 
     AMREX_ASSERT(!a_pelelm->m_incompressible);
 
     FArrayBox EnthFab;
-    EnthFab.resize(bx,NUM_SPECIES);
-    Elixir  Enthi   = EnthFab.elixir();
+    EnthFab.resize(bx,NUM_SPECIES,The_Async_Arena());
 
     auto const temp = statefab.const_array(TEMP);
     auto const react = reactfab.const_array(0);
@@ -67,7 +66,7 @@ void pelelm_derheatrelease (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, 
 //
 void pelelm_dermassfrac (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
                          const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
-                         const Geometry& /*geomdata*/,
+                         const Geometry& /*geom*/,
                          Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
 
 {
@@ -92,7 +91,7 @@ void pelelm_dermassfrac (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int
 //
 void pelelm_dermolefrac (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
                          const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
-                         const Geometry& /*geomdata*/,
+                         const Geometry& /*geom*/,
                          Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
 {
     AMREX_ASSERT(derfab.box().contains(bx));
@@ -121,11 +120,38 @@ void pelelm_dermolefrac (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int
 }
 
 //
+// Extract rho - sum rhoY
+//
+void pelelm_derrhomrhoy (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
+                         const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
+                         const Geometry& /*geom*/,
+                         Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
+
+{
+    AMREX_ASSERT(derfab.box().contains(bx));
+    AMREX_ASSERT(statefab.box().contains(bx));
+    AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
+    AMREX_ASSERT(statefab.nComp() >= NUM_SPECIES+1);
+    AMREX_ASSERT(ncomp == NUM_SPECIES);
+    AMREX_ASSERT(!a_pelelm->m_incompressible);
+    auto const in_dat = statefab.array();
+    auto       der = derfab.array(dcomp);
+    amrex::ParallelFor(bx,
+    [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+    {
+        der(i,j,k,0) = in_dat(i,j,k,DENSITY);
+        for (int n = 0; n < NUM_SPECIES; n++) {
+            der(i,j,k,0) -= in_dat(i,j,k,FIRSTSPEC+n);
+        }
+    });
+}
+
+//
 // Compute cell averaged pressure from nodes
 //
 void pelelm_deravgpress (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int /*ncomp*/,
                          const FArrayBox& /*statefab*/, const FArrayBox& /*reactfab*/, const FArrayBox& pressfab,
-                         const Geometry& /*geomdata*/,
+                         const Geometry& /*geom*/,
                          Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
 
 {
@@ -149,18 +175,86 @@ void pelelm_deravgpress (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int
 }
 
 //
+// Compute the velocity magnitude
+//
+void pelelm_dermgvel (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int /*ncomp*/,
+                      const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
+                      const Geometry& /*geom*/,
+                      Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
+
+{
+    AMREX_ASSERT(derfab.box().contains(bx));
+    AMREX_ASSERT(statefab.box().contains(bx));
+    auto const vel = statefab.array(VELX);
+    auto       der = derfab.array(dcomp);
+    amrex::ParallelFor(bx,
+    [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+    {
+        der(i,j,k) = std::sqrt(( AMREX_D_TERM(  vel(i,j,k,0)*vel(i,j,k,0),
+                                              + vel(i,j,k,1)*vel(i,j,k,1),
+                                              + vel(i,j,k,2)*vel(i,j,k,2)) ));
+    });
+}
+
+//
 // Compute vorticity magnitude
 //
 void pelelm_dermgvort (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int /*ncomp*/,
                        const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
-                       const Geometry& geomdata,
+                       const Geometry& geom,
                        Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
 
 {
 
-    AMREX_D_TERM(const amrex::Real idx = geomdata.InvCellSize(0);,
-                 const amrex::Real idy = geomdata.InvCellSize(1);,
-                 const amrex::Real idz = geomdata.InvCellSize(2););
+    AMREX_D_TERM(const amrex::Real idx = geom.InvCellSize(0);,
+                 const amrex::Real idy = geom.InvCellSize(1);,
+                 const amrex::Real idz = geom.InvCellSize(2););
+
+    auto const& dat_arr = statefab.const_array();
+    auto const&vort_arr = derfab.array(dcomp);
+
+    // TODO : EB
+    // TODO : BCs
+
+    {
+        amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+        {
+#if ( AMREX_SPACEDIM == 2 )
+            amrex::Real vx = 0.5 * (dat_arr(i+1,j,k,1) - dat_arr(i-1,j,k,1)) * idx;
+            amrex::Real uy = 0.5 * (dat_arr(i,j+1,k,0) - dat_arr(i,j-1,k,0)) * idy;
+            vort_arr(i,j,k) = std::abs(vx-uy);
+
+#elif ( AMREX_SPACEDIM == 3 )
+            amrex::Real vx = 0.5 * (dat_arr(i+1,j,k,1) - dat_arr(i-1,j,k,1)) * idx;
+            amrex::Real wx = 0.5 * (dat_arr(i+1,j,k,2) - dat_arr(i-1,j,k,2)) * idx;
+
+            amrex::Real uy = 0.5 * (dat_arr(i,j+1,k,0) - dat_arr(i,j-1,k,0)) * idy;
+            amrex::Real wy = 0.5 * (dat_arr(i,j+1,k,2) - dat_arr(i,j-1,k,2)) * idy;
+
+            amrex::Real uz = 0.5 * (dat_arr(i,j,k+1,0) - dat_arr(i,j,k-1,0)) * idz;
+            amrex::Real vz = 0.5 * (dat_arr(i,j,k+1,1) - dat_arr(i,j,k-1,1)) * idz;
+
+            vort_arr(i,j,k) = std::sqrt((wy-vz)*(wy-vz) + (uz-wx)*(uz-wx) + (vx-uy)*(vx-uy));
+#endif
+        });
+    }
+}
+
+//
+// Compute vorticity components
+//
+void pelelm_dervort (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
+                     const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
+                     const Geometry& geom,
+                     Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
+
+{
+    AMREX_ASSERT(derfab.box().contains(bx));
+    AMREX_ASSERT(statefab.box().contains(bx));
+    AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
+    AMREX_D_TERM(const amrex::Real idx = geom.InvCellSize(0);,
+                 const amrex::Real idy = geom.InvCellSize(1);,
+                 const amrex::Real idz = geom.InvCellSize(2););
 
     auto const& dat_arr = statefab.const_array();
     auto const&vort_arr = derfab.array(dcomp);
@@ -186,10 +280,96 @@ void pelelm_dermgvort (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int d
             amrex::Real uz = 0.5 * (dat_arr(i,j,k+1,0) - dat_arr(i,j,k-1,0)) * idz;
             amrex::Real vz = 0.5 * (dat_arr(i,j,k+1,1) - dat_arr(i,j,k-1,1)) * idz;
 
-            vort_arr(i,j,k) = std::sqrt((wy-vz)*(wy-vz) + (uz-wx)*(uz-wx) + (vx-uy)*(vx-uy));
+            vort_arr(i,j,k,0) = (wy-vz)*(wy-vz);
+            vort_arr(i,j,k,1) = (uz-wx)*(uz-wx);
+            vort_arr(i,j,k,2) = (vx-uy)*(vx-uy);
 #endif
         });
     }
+}
+
+//
+// Compute cell-centered coordinates
+//
+void pelelm_dercoord (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
+                      const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
+                      const Geometry& geom,
+                      Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
+
+{
+    AMREX_ASSERT(derfab.box().contains(bx));
+    AMREX_ASSERT(statefab.box().contains(bx));
+    AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
+    AMREX_D_TERM(const amrex::Real dx = geom.CellSize(0);,
+                 const amrex::Real dy = geom.CellSize(1);,
+                 const amrex::Real dz = geom.CellSize(2););
+
+    auto const& coord_arr = derfab.array(dcomp);
+    const auto geomdata = geom.data();
+
+    // TODO : EB
+    amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+    {
+        const amrex::Real* prob_lo = geomdata.ProbLo();
+        AMREX_D_TERM(coord_arr(i,j,k,0) = prob_lo[0] + (i+0.5)*dx;,
+                     coord_arr(i,j,k,1) = prob_lo[1] + (j+0.5)*dy;,
+                     coord_arr(i,j,k,2) = prob_lo[2] + (k+0.5)*dz;);
+    });
+}
+
+//
+// Compute Q-criterion
+//
+void pelelm_derQcrit (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int /*ncomp*/,
+                      const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
+                      const Geometry& geom,
+                      Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
+
+{
+
+#if AMREX_SPACEDIM == 3
+    AMREX_D_TERM(const amrex::Real idx = geom.InvCellSize(0);,
+                 const amrex::Real idy = geom.InvCellSize(1);,
+                 const amrex::Real idz = geom.InvCellSize(2););
+
+    auto const &  dat_arr = statefab.const_array();
+    auto const &qcrit_arr = derfab.array(dcomp);
+
+    // TODO : EB
+    // TODO : BCs
+
+    amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+    {
+      // Strain rate tensor
+      Array2D<Real,0,2,0,2> gradU;
+      gradU(0,0) = 0.5 * (dat_arr(i+1,j,k,0) - dat_arr(i-1,j,k,0)) * idx;
+      gradU(0,1) = 0.5 * (dat_arr(i,j+1,k,0) - dat_arr(i,j-1,k,0)) * idy;
+      gradU(0,2) = 0.5 * (dat_arr(i,j,k+1,0) - dat_arr(i,j,k-1,0)) * idz;
+      gradU(1,0) = 0.5 * (dat_arr(i+1,j,k,1) - dat_arr(i-1,j,k,1)) * idx;
+      gradU(1,1) = 0.5 * (dat_arr(i,j+1,k,1) - dat_arr(i,j-1,k,1)) * idy;
+      gradU(1,2) = 0.5 * (dat_arr(i,j,k+1,1) - dat_arr(i,j,k-1,1)) * idz;
+      gradU(2,0) = 0.5 * (dat_arr(i+1,j,k,2) - dat_arr(i-1,j,k,2)) * idx;
+      gradU(2,1) = 0.5 * (dat_arr(i,j+1,k,2) - dat_arr(i,j-1,k,2)) * idy;
+      gradU(2,2) = 0.5 * (dat_arr(i,j,k+1,2) - dat_arr(i,j,k-1,2)) * idz;
+
+      // Divu
+      amrex::Real divU = gradU(0,0) + gradU(1,1) + gradU(2,2);
+
+      // Directly Assemble Sym. & AntiSym. into Qcrit.
+      // Remove divU (dilatation) from the Sym. tensor (due to mixing/reaction most often)
+      qcrit_arr(i,j,k) = 0.0;
+      for (int dim1 = 0; dim1 < AMREX_SPACEDIM; ++dim1) {
+        for (int dim2 = 0; dim2 < AMREX_SPACEDIM; ++dim2) {
+          Real Ohm = 0.5 * (gradU(dim1,dim2) - gradU(dim2,dim1));
+          Real Sij = 0.5 * (gradU(dim1,dim2) + gradU(dim2,dim1));
+          if (dim1 == dim2) {
+            Sij -= divU/AMREX_SPACEDIM;
+          }
+          qcrit_arr(i,j,k) += Ohm*Ohm - Sij*Sij;
+        }
+      }
+    });
+#endif
 
 }
 
@@ -198,7 +378,7 @@ void pelelm_dermgvort (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int d
 //
 void pelelm_derkineticenergy (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int /*ncomp*/,
                               const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
-                              const Geometry& /*geomdata*/,
+                              const Geometry& /*geom*/,
                               Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
 
 {
@@ -235,14 +415,14 @@ void pelelm_derkineticenergy (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab
 //
 void pelelm_derenstrophy (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int /*ncomp*/,
                           const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
-                          const Geometry& geomdata,
+                          const Geometry& geom,
                           Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
 
 {
 
-    AMREX_D_TERM(const amrex::Real idx = geomdata.InvCellSize(0);,
-                 const amrex::Real idy = geomdata.InvCellSize(1);,
-                 const amrex::Real idz = geomdata.InvCellSize(2););
+    AMREX_D_TERM(const amrex::Real idx = geom.InvCellSize(0);,
+                 const amrex::Real idy = geom.InvCellSize(1);,
+                 const amrex::Real idz = geom.InvCellSize(2););
 
     // TODO : EB
     // TODO : BCs
@@ -304,7 +484,7 @@ void pelelm_derenstrophy (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, in
 //
 void pelelm_dermixfrac (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
                         const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
-                        const Geometry& /*geomdata*/,
+                        const Geometry& /*geom*/,
                         Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
 
 {
@@ -343,7 +523,7 @@ void pelelm_dermixfrac (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int 
 //
 void pelelm_derprogvar (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
                         const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
-                        const Geometry& /*geomdata*/,
+                        const Geometry& /*geom*/,
                         Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
 
 {
@@ -388,7 +568,7 @@ void pelelm_derprogvar (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int 
 //
 void pelelm_dervisc (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
                      const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
-                     const Geometry& /*geomdata*/,
+                     const Geometry& /*geom*/,
                      Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
 {
     AMREX_ASSERT(derfab.box().contains(bx));
@@ -415,14 +595,17 @@ void pelelm_dervisc (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dco
 //
 void pelelm_derdiffc (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
                       const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
-                      const Geometry& /*geomdata*/,
+                      const Geometry& /*geom*/,
                       Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
 {
     AMREX_ASSERT(derfab.box().contains(bx));
     AMREX_ASSERT(statefab.box().contains(bx));
     AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
-    AMREX_ASSERT(ncomp == NUM_SPECIES);
-
+    if (a_pelelm->m_use_soret) {
+      AMREX_ASSERT(ncomp == 2*NUM_SPECIES);
+    } else {
+      AMREX_ASSERT(ncomp == NUM_SPECIES);
+    }
     FArrayBox dummies(bx,2,The_Async_Arena());
     auto const& rhoY = statefab.const_array(FIRSTSPEC);
     auto const& T    = statefab.array(TEMP);
@@ -430,11 +613,30 @@ void pelelm_derdiffc (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dc
     auto     lambda  = dummies.array(0);
     auto         mu  = dummies.array(1);
     auto const* ltransparm = a_pelelm->trans_parms.device_trans_parm();
-    amrex::ParallelFor(bx,
-    [rhoY,T,rhoD,lambda,mu,ltransparm] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
-    {
-        getTransportCoeff(i, j, k, rhoY, T, rhoD, lambda, mu, ltransparm);
-    });
+    if (a_pelelm->m_use_soret) {
+      auto rhotheta = derfab.array(dcomp+NUM_SPECIES);
+      amrex::ParallelFor(bx,
+        [rhoY,T,rhoD,rhotheta,lambda,mu,ltransparm] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+        {
+          getTransportCoeffSoret(i, j, k, rhoY, T, rhoD, rhotheta, lambda, mu, ltransparm);
+        });
+    } else {
+      if (a_pelelm->m_unity_Le) {
+        amrex::Real ScInv = a_pelelm->m_Schmidt_inv;
+        amrex::Real PrInv = a_pelelm->m_Prandtl_inv;
+        amrex::ParallelFor(bx,
+          [rhoY,T,rhoD,lambda,mu,ltransparm,ScInv,PrInv] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+          {
+            getTransportCoeffUnityLe(i, j, k, ScInv, PrInv, rhoY, T, rhoD, lambda, mu, ltransparm);
+          });
+      } else {
+        amrex::ParallelFor(bx,
+          [rhoY,T,rhoD,lambda,mu,ltransparm] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+          {
+            getTransportCoeff(i, j, k, rhoY, T, rhoD, lambda, mu, ltransparm);
+          });
+      }
+    }
 }
 
 //
@@ -442,7 +644,7 @@ void pelelm_derdiffc (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dc
 //
 void pelelm_derlambda (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int ncomp,
                        const FArrayBox& statefab, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
-                       const Geometry& /*geomdata*/,
+                       const Geometry& /*geom*/,
                        Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
 {
     AMREX_ASSERT(derfab.box().contains(bx));
@@ -456,9 +658,17 @@ void pelelm_derlambda (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int d
     auto     lambda  = derfab.array(dcomp);
     auto         mu  = dummies.array(0);
     auto const* ltransparm = a_pelelm->trans_parms.device_trans_parm();
+    amrex::Real ScInv = a_pelelm->m_Schmidt_inv;
+    amrex::Real PrInv = a_pelelm->m_Prandtl_inv;
+    int unity_Le = a_pelelm->m_unity_Le;
     amrex::ParallelFor(bx,
-    [rhoY,T,rhoD,lambda,mu,ltransparm] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+    [rhoY,T,rhoD,lambda,mu,ltransparm,unity_Le,ScInv,PrInv]
+    AMREX_GPU_DEVICE (int i, int j, int k) noexcept
     {
+      if (unity_Le) {
+        getTransportCoeffUnityLe(i, j, k, ScInv, PrInv, rhoY, T, rhoD, lambda, mu, ltransparm);
+      } else {
         getTransportCoeff(i, j, k, rhoY, T, rhoD, lambda, mu, ltransparm);
+      }
     });
 }

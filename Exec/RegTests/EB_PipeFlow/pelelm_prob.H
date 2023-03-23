@@ -102,7 +102,7 @@ void pelelm_initdata(int i, int j, int k,
         //randr = (amrex::Real)rand()/(amrex::Real)(RAND_MAX/1.0);
         //noisefac = sqrt(-2.0*log(randr))*sin(2.0*Pi*randp);
         //u[2] += prob_parm.meanFlowMag * noisefac;
-               
+
         //AMREX_D_TERM(state(i,j,k,VELX) = u[0];,
         //             state(i,j,k,VELY) = u[1];,
         //             state(i,j,k,VELZ) = u[2]);

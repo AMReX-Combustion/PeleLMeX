@@ -515,10 +515,10 @@ struct umacFill
        const int numcomp,
        amrex::GeometryData const& /*geom*/,
        const amrex::Real /*time*/,
-       const amrex::BCRec* bcr, 
+       const amrex::BCRec* bcr,
        const int bcomp,
        const int /*orig_comp*/) const
-    {    
+    {
         // Abort if this function is expected to fill an ext_dir BC.
         for (int n = bcomp; n < bcomp+numcomp; ++n) {
             const amrex::BCRec& bc = bcr[n];
@@ -526,7 +526,7 @@ struct umacFill
                               || bc.lo(1) == amrex::BCType::ext_dir || bc.hi(1) == amrex::BCType::ext_dir,
                               || bc.lo(2) == amrex::BCType::ext_dir || bc.hi(2) == amrex::BCType::ext_dir ) ) {
                amrex::Abort("PeleLM::umacFill: umac should not have BCType::ext_dir");
-            }    
-        }    
-    }    
+            }
+        }
+    }
 };

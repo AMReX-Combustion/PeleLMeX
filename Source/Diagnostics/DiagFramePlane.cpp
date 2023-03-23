@@ -38,9 +38,25 @@ printLowerDimBox(std::ostream &a_File,
 }
 
 void
-DiagFramePlane::init(const std::string &a_prefix)
+DiagFramePlane::init(const std::string &a_prefix,
+                     std::string_view a_diagName)
 {
+    DiagBase::init(a_prefix, a_diagName);
+
+    if (m_filters.size() != 0) {
+        amrex::Print() << " Filters are not available on DiagFramePlane and will be discarded \n";
+    }
+
     amrex::ParmParse pp(a_prefix);
+
+    // Outputed variables
+    int nOutFields = pp.countval("field_names");
+    AMREX_ASSERT(nOutFields > 0);
+    m_fieldNames.resize(nOutFields);
+    m_fieldIndices_d.resize(nOutFields);
+    for (int f{0}; f<nOutFields; ++f) {
+        pp.get("field_names", m_fieldNames[f],f);
+    }
 
     // Plane normal
     pp.get("normal", m_normal);
@@ -56,13 +72,6 @@ DiagFramePlane::init(const std::string &a_prefix)
     } else if (center.size() == 1) {
         m_center[m_normal] = center[0];
     }
-    
-    // IO
-    pp.query("int", m_interval);
-    pp.query("per", m_per);
-    m_diagfile = "DiagFramePlane";
-    pp.query("file",m_diagfile);
-    AMREX_ASSERT(m_interval>0 || m_per>0.0);
 
     // Interpolation
     std::string intType = "Quadratic";
@@ -76,13 +85,22 @@ DiagFramePlane::init(const std::string &a_prefix)
     }
 }
 
-void 
+void
+DiagFramePlane::addVars(amrex::Vector<std::string> &a_varList) {
+    DiagBase::addVars(a_varList);
+    for (const auto& v : m_fieldNames) {
+        a_varList.push_back(v);
+    }
+}
+
+void
 DiagFramePlane::prepare(int a_nlevels,
                         const amrex::Vector<amrex::Geometry> &a_geoms,
                         const amrex::Vector<amrex::BoxArray> &a_grids,
-                        const amrex::Vector<amrex::DistributionMapping> &a_dmap)
+                        const amrex::Vector<amrex::DistributionMapping> &a_dmap,
+                        const amrex::Vector<std::string> &a_varNames)
 {
-    if (first_time) {    
+    if (first_time) {
         // Store the level0 geometry
         auto initDomain  = a_geoms[0].Domain();
         auto initRealBox = a_geoms[0].ProbDomain();
@@ -100,8 +118,17 @@ DiagFramePlane::prepare(int a_nlevels,
         initRealBox.setLo(2,0.0);
         initRealBox.setHi(2,dxlcl[2]);
         m_geomLev0.define(initDomain,initRealBox,a_geoms[0].Coord(),amrex::Array<int,AMREX_SPACEDIM>({AMREX_D_DECL(0,0,0)}));
+
+        int nOutFields = m_fieldIndices_d.size();
+        amrex::Vector<int> m_fieldIndices(nOutFields,0);
+        for (int f{0}; f<nOutFields; ++f) {
+            m_fieldIndices[f] = getFieldIndex(m_fieldNames[f],a_varNames);
+        }
+        amrex::Gpu::copy(amrex::Gpu::hostToDevice,m_fieldIndices.begin(),
+                         m_fieldIndices.end(),m_fieldIndices_d.begin());
+
+        first_time = false;
     }
-    first_time = false;
 
     // Resize internal vectors
     m_intwgt.resize(a_nlevels);
@@ -157,7 +184,7 @@ DiagFramePlane::prepare(int a_nlevels,
                 amrex::Box zNormalBax;
                 int idx = 0;
                 for (int idim = 0; idim < AMREX_SPACEDIM;++idim) {
-                    if (idim != m_normal) { 
+                    if (idim != m_normal) {
                         zNormalBax.setRange(idx,cBox.smallEnd(idim),cBox.length(idim));
                         idx++;
                     }
@@ -183,7 +210,7 @@ DiagFramePlane::processDiag(int a_nstep,
     // Interpolate data to slice
     amrex::Vector<amrex::MultiFab> planeData(a_state.size());
     for (int lev = 0; lev < a_state.size(); ++lev) {
-        planeData[lev].define(m_sliceBA[lev], m_sliceDM[lev], a_state[0]->nComp(), 0);
+        planeData[lev].define(m_sliceBA[lev], m_sliceDM[lev], m_fieldNames.size(), 0);
         int p0 = m_k0[lev];
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
@@ -194,29 +221,33 @@ DiagFramePlane::processDiag(int a_nstep,
             auto const& state = a_state[lev]->const_array(state_idx,0);
             auto const& plane = planeData[lev].array(mfi);
             auto const& intwgt = m_intwgt[lev];
+            auto *idx_d_p = m_fieldIndices_d.dataPtr();
             if (m_normal == 0) {
-                amrex::ParallelFor(bx, a_state[0]->nComp(), [=]
+                amrex::ParallelFor(bx, m_fieldNames.size(), [=]
                 AMREX_GPU_DEVICE (int i, int j, int k, int n) noexcept
                 {
-                    plane(i,j,k,n) = intwgt[0] * state(p0-1,i,j,n) +
-                                     intwgt[1] * state(p0  ,i,j,n) +
-                                     intwgt[2] * state(p0+1,i,j,n);
+                    int stIdx = idx_d_p[n];
+                    plane(i,j,k,n) = intwgt[0] * state(p0-1,i,j,stIdx) +
+                                     intwgt[1] * state(p0  ,i,j,stIdx) +
+                                     intwgt[2] * state(p0+1,i,j,stIdx);
                 });
             } else if (m_normal == 1) {
-                amrex::ParallelFor(bx, a_state[0]->nComp(), [=]
+                amrex::ParallelFor(bx, m_fieldNames.size(), [=]
                 AMREX_GPU_DEVICE (int i, int j, int k, int n) noexcept
                 {
-                    plane(i,j,k,n) = intwgt[0] * state(i,p0-1,j,n) +
-                                     intwgt[1] * state(i,p0  ,j,n) +
-                                     intwgt[2] * state(i,p0+1,j,n);
+                    int stIdx = idx_d_p[n];
+                    plane(i,j,k,n) = intwgt[0] * state(i,p0-1,j,stIdx) +
+                                     intwgt[1] * state(i,p0  ,j,stIdx) +
+                                     intwgt[2] * state(i,p0+1,j,stIdx);
                 });
             } else if (m_normal == 2) {
-                amrex::ParallelFor(bx, a_state[0]->nComp(), [=]
+                amrex::ParallelFor(bx, m_fieldNames.size(), [=]
                 AMREX_GPU_DEVICE (int i, int j, int k, int n) noexcept
                 {
-                    plane(i,j,k,n) = intwgt[0] * state(i,j,p0-1,n) +
-                                     intwgt[1] * state(i,j,p0  ,n) +
-                                     intwgt[2] * state(i,j,p0+1,n);
+                    int stIdx = idx_d_p[n];
+                    plane(i,j,k,n) = intwgt[0] * state(i,j,p0-1,stIdx) +
+                                     intwgt[1] * state(i,j,p0  ,stIdx) +
+                                     intwgt[2] * state(i,j,p0+1,stIdx);
                 });
             }
         }
@@ -247,9 +278,8 @@ DiagFramePlane::processDiag(int a_nstep,
         diagfile = m_diagfile+std::to_string(a_time);
     }
     amrex::Vector<int> step_array(nlevs,a_nstep);
-    Write2DMultiLevelPlotfile(diagfile, nlevs, GetVecOfConstPtrs(planeData), a_stateVar,
-                                   pltGeoms, a_time, step_array, ref_ratio);
-    
+    Write2DMultiLevelPlotfile(diagfile, nlevs, GetVecOfConstPtrs(planeData), m_fieldNames,
+                              pltGeoms, a_time, step_array, ref_ratio);
 }
 
 void
@@ -274,13 +304,13 @@ DiagFramePlane::Write2DMultiLevelPlotfile(const std::string &a_pltfile,
         amrex::Vector<amrex::BoxArray> boxArrays(a_nlevels);
         for(int level(0); level < boxArrays.size(); ++level) {
             boxArrays[level] = a_slice[level]->boxArray();
-        }   
+        }
 
         amrex::VisMF::IO_Buffer io_buffer(amrex::VisMF::IO_Buffer_Size);
         std::string HeaderFileName(a_pltfile + "/Header");
         std::ofstream HeaderFile;
         HeaderFile.rdbuf()->pubsetbuf(io_buffer.dataPtr(), io_buffer.size());
-        HeaderFile.open(HeaderFileName.c_str(), std::ofstream::out   |   
+        HeaderFile.open(HeaderFileName.c_str(), std::ofstream::out   |
                                                 std::ofstream::trunc |
                                                 std::ofstream::binary);
         if( ! HeaderFile.good()) amrex::FileOpenFailed(HeaderFileName);
@@ -291,6 +321,7 @@ DiagFramePlane::Write2DMultiLevelPlotfile(const std::string &a_pltfile,
     for (int level = 0; level < a_nlevels; ++level) {
         VisMF2D(*a_slice[level], amrex::MultiFabFileFullPrefix(level, a_pltfile, levelPrefix, mfPrefix+"2D"));
         amrex::VisMF::Write(*a_slice[level], amrex::MultiFabFileFullPrefix(level, a_pltfile, levelPrefix, mfPrefix));
+        amrex::ParallelDescriptor::Barrier();
         ReWriteLevelVisMFHeader(amrex::MultiFabFileFullPrefix(level, a_pltfile, levelPrefix, ""));
     }
 }
@@ -357,7 +388,7 @@ DiagFramePlane::Write2DPlotfileHeader(std::ostream &HeaderFile,
 
         const amrex::IntVect& domain_lo = geom[level].Domain().smallEnd();
         for (int i = 0; i < bArray[level].size(); ++i)
-        {   
+        {
             // Need to shift because the RealBox ctor we call takes the
             // physical location of index (0,0,0).  This does not affect
             // the usual cases where the domain index starts with 0.
@@ -365,25 +396,25 @@ DiagFramePlane::Write2DPlotfileHeader(std::ostream &HeaderFile,
             amrex::RealBox loc = amrex::RealBox(b, geom[level].CellSize(), geom[level].ProbLo());
             for (int idim = 0; idim < lowerSpaceDim; ++idim) {
                 HeaderFile << loc.lo(idim) << ' ' << loc.hi(idim) << '\n';
-            }   
-        }   
+            }
+        }
         HeaderFile << amrex::MultiFabHeaderPath(level, levelPrefix, mfPrefix) << '\n';
-    }   
+    }
 }
 
 void
-DiagFramePlane::ReWriteLevelVisMFHeader(const std::string &a_HeaderPath) {
-
+DiagFramePlane::ReWriteLevelVisMFHeader(const std::string &a_HeaderPath)
+{
     std::string OldHeaderFileName(a_HeaderPath+ "Cell_H");
     amrex::Vector<char> oldfileCharPtr;
     amrex::ParallelDescriptor::ReadAndBcastFile(OldHeaderFileName, oldfileCharPtr);
-    
+
     if (amrex::ParallelDescriptor::IOProcessor()) {
         amrex::VisMF::IO_Buffer io_buffer_new(amrex::VisMF::IO_Buffer_Size);
         std::string HeaderFileName(a_HeaderPath+ "Cell_temp_H");
         std::ofstream HeaderFile;
         HeaderFile.rdbuf()->pubsetbuf(io_buffer_new.dataPtr(), io_buffer_new.size());
-        HeaderFile.open(HeaderFileName.c_str(), std::ofstream::out   |   
+        HeaderFile.open(HeaderFileName.c_str(), std::ofstream::out   |
                                                 std::ofstream::trunc |
                                                 std::ofstream::binary);
         if( ! HeaderFile.good()) amrex::FileOpenFailed(HeaderFileName);
@@ -391,7 +422,7 @@ DiagFramePlane::ReWriteLevelVisMFHeader(const std::string &a_HeaderPath) {
         std::string fileCharPtrString(oldfileCharPtr.dataPtr());
         std::istringstream is(fileCharPtrString, std::istringstream::in);
         std::string line, word;
-        
+
         // Version, How, nComp, nGrow
         int version, how, nComp, nGrow;
         is >> version;
@@ -480,7 +511,7 @@ DiagFramePlane::ReWriteLevelVisMFHeader(const std::string &a_HeaderPath) {
                 if (w2 == dataFiles[f]) {
                    for (int fa = 0; fa < FabsInFiles[f].size(); ++fa) {
                       if (FabsInFiles[f][fa] == i) {
-                         if (fa > 0) { 
+                         if (fa > 0) {
                              for (int fback = fa-1; fback >= 0; --fback) {
                                  offset -= diff_2D3D_header(fullDimBox[fback],nComp);
                              }
@@ -501,13 +532,14 @@ DiagFramePlane::ReWriteLevelVisMFHeader(const std::string &a_HeaderPath) {
 
         // Replace header file
         std::rename(HeaderFileName.c_str(), OldHeaderFileName.c_str());
+    }
 
-        // Replace 3D data file by 2D ones
-        for (int i = 0; i < dataFiles.size(); ++i) {
-            std::string newname = a_HeaderPath+dataFiles[i];
-            newname = std::regex_replace(newname, std::regex("Cell_"), "Cell2D_");
-            std::rename(newname.c_str(), (a_HeaderPath+dataFiles[i]).c_str());
-        }
+    // Replace 3D data file by 2D ones
+    std::string oldname = amrex::Concatenate(a_HeaderPath+"Cell2D_D_",amrex::ParallelDescriptor::MyProc(),5);
+    if (amrex::FileSystem::Exists(oldname.c_str())) {
+        std::string newname = std::regex_replace(oldname, std::regex("Cell2D_"), "Cell_");
+        std::remove(newname.c_str());
+        std::rename(oldname.c_str(), newname.c_str());
     }
 }
 
@@ -540,13 +572,13 @@ DiagFramePlane::VisMF2D(const amrex::MultiFab& a_mf,
      amrex::Vector<int> procsWithDataVector;
      for(int i(0); i < pmap.size(); ++i) {
          procsWithData.insert(pmap[i]);
-     }    
+     }
      if(static_cast<int>(procsWithData.size()) < nOutFiles) {
          useSparseFPP = true;
          for(std::set<int>::iterator it = procsWithData.begin(); it != procsWithData.end(); ++it) {
              procsWithDataVector.push_back(*it);
-         }    
-     } 
+         }
+     }
 
      if ( useSparseFPP ) {
          nfi.SetSparseFPP(procsWithDataVector);
@@ -612,7 +644,7 @@ DiagFramePlane::VisMF2D(const amrex::MultiFab& a_mf,
                  const amrex::FArrayBox &fab = a_mf[mfi];
                  writeDataItems = fab.box().numPts() * a_mf.nComp();
                  writeDataSize = writeDataItems * whichRDBytes;
-                 std::stringstream hss; 
+                 std::stringstream hss;
                  write_2D_header(hss, fab, fab.nComp());
                  hLength = static_cast<std::streamoff>(hss.tellp());
                  auto tstr = hss.str();
@@ -628,7 +660,7 @@ DiagFramePlane::VisMF2D(const amrex::MultiFab& a_mf,
                                                    fab.size()*sizeof(amrex::Real));
                      amrex::Gpu::streamSynchronize();
                      fabdata = hostfab->dataPtr();
-                 }    
+                 }
 #endif
                  nfi.Stream().write((char *) fabdata, writeDataSize);
                  nfi.Stream().flush();

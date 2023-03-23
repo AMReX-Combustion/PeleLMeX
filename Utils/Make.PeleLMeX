@@ -17,6 +17,12 @@ all: $(executable)
 	$(SILENT) $(RM) AMReX_buildInfo.cpp
 	@echo SUCCESS
 
+ifeq ($(USE_CUDA),TRUE)
+   CXXFLAGS+=-Xptxas --disable-optimizer-constants -Xcompiler=-std=c++17
+endif
+
+CXXFLAGS+=-std=c++17
+
 #---------------
 # PeleLM sources
 #---------------
@@ -43,6 +49,7 @@ ifeq ($(USE_SOOT), TRUE)
    DEFINES += -DNUM_SOOT_MOMENTS=$(NUM_SOOT_MOMENTS)
    LMdirs += Source/Soot
 endif
+
 
 Bpack += $(foreach dir, $(LMdirs), $(PELELMEX_HOME)/$(dir)/Make.package)
 Blocs += $(foreach dir, $(LMdirs), $(PELELMEX_HOME)/$(dir))
@@ -78,6 +85,12 @@ endif
 
 ifeq ($(PELE_USE_KLU), TRUE)
   DEFINES += -DPELE_USE_KLU
+endif
+
+PELE_COMPILE_AJACOBIAN ?= TRUE
+
+ifeq ($(PELE_COMPILE_AJACOBIAN), TRUE)
+  DEFINES += -DPELE_COMPILE_AJACOBIAN
 endif
 
 ChemDir  = Support/Mechanism/Models/$(Chemistry_Model)
@@ -156,10 +169,6 @@ AMReX_buildInfo.cpp:
 #---------------
 include $(AMREX_HOME)/Tools/GNUMake/Make.rules
 
-ifeq ($(USE_CUDA),TRUE)
-   CXXFLAGS+=-Xptxas --disable-optimizer-constants
-endif
-
 # Force TPL as deps. of exec sources
 ##$(objForExecs): TPL
 
@@ -175,12 +184,12 @@ print-%::
 #---------------
 TPL:
 	@echo "==> Building SUNDIALS library"
-	cd $(PELE_PHYSICS_HOME)/ThirdParty; $(MAKE) sundials AMREX_HOME=$(AMREX_HOME) USE_CUDA=$(USE_CUDA) USE_HIP=$(USE_HIP) PELE_USE_KLU=$(PELE_USE_KLU) PELE_USE_MAGMA=$(PELE_USE_MAGMA) DEBUG=$(DEBUG) COMP=$(COMP) NVCC=$(COMP)
+	@cd $(PELE_PHYSICS_HOME)/ThirdParty && $(MAKE) $(MAKEFLAGS) sundials AMREX_HOME=$(AMREX_HOME) USE_CUDA=$(USE_CUDA) USE_HIP=$(USE_HIP) USE_SYCL=$(USE_SYCL) PELE_USE_MAGMA=$(PELE_USE_MAGMA) PELE_USE_KLU=$(PELE_USE_KLU) DEBUG=$(DEBUG) COMP=$(HOSTCC) NVCC=$(COMP)
 
 TPLclean:
 	@echo "==> Removing SUNDIALS library"
-	cd $(PELE_PHYSICS_HOME)/ThirdParty; make AMREX_HOME=$(AMREX_HOME) USE_CUDA=$(USE_CUDA) USE_HIP=$(USE_HIP) PELE_USE_KLU=$(PELE_USE_KLU) PELE_USE_MAGMA=$(PELE_USE_MAGMA) DEBUG=$(DEBUG) COMP=$(HOSTCC) NVCC=$(COMP) clean
+	cd $(PELE_PHYSICS_HOME)/ThirdParty; $(MAKE) $(MAKEFLAGS) AMREX_HOME=$(AMREX_HOME) USE_CUDA=$(USE_CUDA) USE_HIP=$(USE_HIP) USE_SYCL=$(USE_SYCL) PELE_USE_KLU=$(PELE_USE_KLU) PELE_USE_MAGMA=$(PELE_USE_MAGMA) DEBUG=$(DEBUG) COMP=$(HOSTCC) NVCC=$(COMP) clean
 
 TPLrealclean:
 	@echo "==> Removing SUNDIALS library"
-	cd $(PELE_PHYSICS_HOME)/ThirdParty; make AMREX_HOME=$(AMREX_HOME) USE_CUDA=$(USE_CUDA) USE_HIP=$(USE_HIP) PELE_USE_KLU=$(PELE_USE_KLU) PELE_USE_MAGMA=$(PELE_USE_MAGMA) DEBUG=$(DEBUG) COMP=$(HOSTCC) NVCC=$(COMP) realclean
+	cd $(PELE_PHYSICS_HOME)/ThirdParty; $(MAKE) $(MAKEFLAGS) AMREX_HOME=$(AMREX_HOME) USE_CUDA=$(USE_CUDA) USE_HIP=$(USE_HIP) USE_SYCL=$(USE_SYCL) PELE_USE_KLU=$(PELE_USE_KLU) PELE_USE_MAGMA=$(PELE_USE_MAGMA) DEBUG=$(DEBUG) COMP=$(HOSTCC) NVCC=$(COMP) realclean

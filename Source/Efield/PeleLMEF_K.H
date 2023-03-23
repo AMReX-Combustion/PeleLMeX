@@ -16,7 +16,7 @@ getKappaE(int i, int j, int k,
           amrex::GpuArray<amrex::Real,AMREX_SPACEDIM> const& dxinv,
           amrex::Array4<const amrex::Real> const& rhoY,
           amrex::Array4<const amrex::Real> const& phiV,
-          amrex::Array4<const amrex::Real> const& T, 
+          amrex::Array4<const amrex::Real> const& T,
           amrex::Array4<amrex::Real> const& Ke) noexcept
 {
       using namespace amrex::literals;
@@ -30,7 +30,7 @@ getKappaE(int i, int j, int k,
           amrex::Real rho = 0.0_rt;
           for (int n = 0; n < NUM_SPECIES; n++) {
              rho += rhoY(i,j,k,n);
-          }   
+          }
           amrex::Real rhoinv = 1.0_rt / rho;
           amrex::Real y[NUM_SPECIES] = {0.0};
           for (int n = 0; n < NUM_SPECIES; n++) {
@@ -56,7 +56,7 @@ getKappaE(int i, int j, int k,
           amrex::Real keLow = 0.8;
           amrex::Real keHigh = 0.035;
           amrex::Real kappaC = keLow + C * (keHigh-keLow);
-          Ke(i,j,k) = kappaC;  
+          Ke(i,j,k) = kappaC;
       }
 }
 
@@ -118,14 +118,14 @@ ef_edge_state_extdir(int i,int j,int k,
    // Need nothing on high Dirichlet BC
    int  id_l[3] = {i,j,k};
    int  id_h[3] = {i,j,k};
-   if (!on_lo ) { 
-      if ( !on_hi ) { 
+   if (!on_lo ) {
+      if ( !on_hi ) {
          id_l[dir] -= 1;
-      }   
+      }
    } else {
       id_l[dir] -= 1;
       id_h[dir] -= 1;
-   }   
+   }
 
    amrex::Real state_ed;
    if ( effvel(i,j,k) > smallVel) {
@@ -224,7 +224,7 @@ cen2edg_upwind(int i, int j, int k,
 {
    using namespace amrex::literals;
 
- 	// Default behavior: id_l -1 in dir
+   // Default behavior: id_l -1 in dir
    // Handle the BCs
    // Need -1 in id_l and id_h in dir on low Dirichlet BC
    // Need nothing on high Dirichlet BC
@@ -369,8 +369,8 @@ initElecNeutral(int i, int j, int k,
    amrex::Real zk[NUM_SPECIES] = {0.0};
    pele::physics::eos::charge_mass(zk);
    for (int n = 0; n < NUM_SPECIES; n++) {
-	   zk[n] *= 1000.0;    // CGS->MKS
-	}
+       zk[n] *= 1000.0;    // CGS->MKS
+   }
 
    // Get mass fractions
    amrex::Real massfrac[NUM_SPECIES] = {0.0};
@@ -408,7 +408,7 @@ initElecNeutral(int i, int j, int k,
          for (int n = 0; n < NUM_SPECIES; n++) {
             if ( zk[n] > 0.0 ) {
                massfrac[N2_ID] += massfrac[n] / sum_pos_ion * chargeDist / mean_zk_pos_ion * sum_pos_ion;
-               massfrac[n] -= massfrac[n] / sum_pos_ion * chargeDist / mean_zk_pos_ion * sum_pos_ion;   
+               massfrac[n] -= massfrac[n] / sum_pos_ion * chargeDist / mean_zk_pos_ion * sum_pos_ion;
             }
          }
       }

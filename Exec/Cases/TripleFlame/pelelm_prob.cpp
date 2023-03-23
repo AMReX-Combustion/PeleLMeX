@@ -16,11 +16,11 @@ void PeleLM::readProbParm()
 
         PeleLM::prob_parm->splitx = 0.5 * (problo[0] + probhi[0]);
         PeleLM::prob_parm->midtanh = 0.6 * (problo[0] + probhi[0]);
-        PeleLM::prob_parm->widthtanh = 0.05 * (problo[0] + probhi[0]); 
+        PeleLM::prob_parm->widthtanh = 0.05 * (problo[0] + probhi[0]);
 
-        // TODO: somewhat hard coded bath, fuel and oxid IDs 
+        // TODO: somewhat hard coded bath, fuel and oxid IDs
         // should exist somewhere in PeleLM.
-        PeleLM::prob_parm->bathID = N2_ID;  
-        PeleLM::prob_parm->fuelID = CH4_ID;  
-        PeleLM::prob_parm->oxidID = O2_ID;  
+        PeleLM::prob_parm->bathID = N2_ID;
+        PeleLM::prob_parm->fuelID = CH4_ID;
+        PeleLM::prob_parm->oxidID = O2_ID;
 }

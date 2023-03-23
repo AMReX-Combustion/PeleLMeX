@@ -47,7 +47,7 @@ locate(const amrex::Real* xtable, const int n, const amrex::Real& x, int& idxlo)
         idxlo = idxmid;
       } else {
         idxhi = idxmid;
-      }   
+      }
     }
   }
 }
@@ -67,9 +67,9 @@ void pelelm_initdata(int i, int j, int k,
     const amrex::Real* dx      = geomdata.CellSize();
 
     amrex::Real x[3] = {
-      prob_lo[0] + static_cast<amrex::Real>(i + 0.5) * dx[0],
-      prob_lo[1] + static_cast<amrex::Real>(j + 0.5) * dx[1],
-      prob_lo[2] + static_cast<amrex::Real>(k + 0.5) * dx[2]};
+      prob_lo[0] + static_cast<amrex::Real>(i + 0.5) * dx[0] * 100.0,
+      prob_lo[1] + static_cast<amrex::Real>(j + 0.5) * dx[1] * 100.0,
+      prob_lo[2] + static_cast<amrex::Real>(k + 0.5) * dx[2] * 100.0};
 
     // Fill in the velocities
     amrex::Real uinterp[3] = {0.0};
@@ -106,7 +106,7 @@ void pelelm_initdata(int i, int j, int k,
                  + prob_parm.d_uinput[idxp1[0] + inSize * (idxp1[1] + inSize * idx[2])] * f6
                  + prob_parm.d_uinput[idxp1[0] + inSize * (idxp1[1] + inSize * idxp1[2])] * f7;
 
-    uinterp[1] =   prob_parm.d_vinput[idx[0] + inSize * (idx[1] + inSize * idx[2])] * f0 
+    uinterp[1] =   prob_parm.d_vinput[idx[0] + inSize * (idx[1] + inSize * idx[2])] * f0
                  + prob_parm.d_vinput[idxp1[0] + inSize * (idx[1] + inSize * idx[2])] * f1
                  + prob_parm.d_vinput[idx[0] + inSize * (idxp1[1] + inSize * idx[2])] * f2
                  + prob_parm.d_vinput[idx[0] + inSize * (idx[1] + inSize * idxp1[2])] * f3
