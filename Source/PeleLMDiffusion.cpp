@@ -77,69 +77,25 @@ void PeleLM::computeDifferentialDiffusionTerms(const TimeStamp &a_time,
    //----------------------------------------------------------------
    // Compute differential diffusion fluxes including correction velocity and wbar term
    // During initialization, don't bother getting the wbar fluxes separately
+   Vector<std::array<MultiFab*,AMREX_SPACEDIM> > wbarFluxVec = (is_init || !m_use_wbar) ? Vector<std::array<MultiFab*,AMREX_SPACEDIM> >{}
+                                                                                        : GetVecOfArrOfPtrs(diffData->wbar_fluxes);
+   Vector<std::array<MultiFab*,AMREX_SPACEDIM> > soretFluxVec = (m_use_soret) ? GetVecOfArrOfPtrs(diffData->soret_fluxes)
+                                                                              : Vector<std::array<MultiFab*,AMREX_SPACEDIM> >{};
 #ifdef AMREX_USE_EB
    if (m_isothermalEB) {
-      if (is_init || !m_use_wbar) {
-        if (m_use_soret) {
-          computeDifferentialDiffusionFluxes(a_time,
-                                             GetVecOfArrOfPtrs(fluxes),
-                                             GetVecOfPtrs(EBfluxes),
-                                             {},
-                                             GetVecOfArrOfPtrs(diffData->soret_fluxes));
-        } else {
-          computeDifferentialDiffusionFluxes(a_time,
-                                             GetVecOfArrOfPtrs(fluxes),
-                                             GetVecOfPtrs(EBfluxes),
-                                             {},
-                                             {});
-        }
-      } else {
-        if (m_use_soret) {
-          computeDifferentialDiffusionFluxes(a_time,
-                                             GetVecOfArrOfPtrs(fluxes),
-                                             GetVecOfPtrs(EBfluxes),
-                                             GetVecOfArrOfPtrs(diffData->wbar_fluxes),
-                                             GetVecOfArrOfPtrs(diffData->soret_fluxes));
-        } else {
-          computeDifferentialDiffusionFluxes(a_time,
-                                             GetVecOfArrOfPtrs(fluxes),
-                                             GetVecOfPtrs(EBfluxes),
-                                             GetVecOfArrOfPtrs(diffData->wbar_fluxes),
-                                             {});
-        }
-      }
+      computeDifferentialDiffusionFluxes(a_time,
+                                         GetVecOfArrOfPtrs(fluxes),
+                                         GetVecOfPtrs(EBfluxes),
+                                         wbarFluxVec,
+                                         soretFluxVec);
    } else
 #endif
    {
-      if (is_init || !m_use_wbar) {
-        if (m_use_soret) {
-          computeDifferentialDiffusionFluxes(a_time,
-                                             GetVecOfArrOfPtrs(fluxes),
-                                             {},
-                                             {},
-                                             GetVecOfArrOfPtrs(diffData->soret_fluxes));
-        } else {
-          computeDifferentialDiffusionFluxes(a_time,
-                                             GetVecOfArrOfPtrs(fluxes),
-                                             {},
-                                             {},
-                                             {});
-        }
-      } else {
-        if (m_use_soret) {
-          computeDifferentialDiffusionFluxes(a_time,
-                                             GetVecOfArrOfPtrs(fluxes),
-                                             {},
-                                             GetVecOfArrOfPtrs(diffData->wbar_fluxes),
-                                             GetVecOfArrOfPtrs(diffData->soret_fluxes));
-        } else {
-          computeDifferentialDiffusionFluxes(a_time,
-                                             GetVecOfArrOfPtrs(fluxes),
-                                             {},
-                                             GetVecOfArrOfPtrs(diffData->wbar_fluxes),
-                                             {});
-        }
-      }
+      computeDifferentialDiffusionFluxes(a_time,
+                                         GetVecOfArrOfPtrs(fluxes),
+                                         {},
+                                         wbarFluxVec,
+                                         soretFluxVec);
    }
 
    // If doing species balances, compute face domain integrals
