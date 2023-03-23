@@ -41,7 +41,7 @@ void pelelm_initdata(int i, int j, int k,
 
     amrex::Real massfrac[NUM_SPECIES] = {0.0};
 
-    massfrac[CH4_ID] = prob_parm.Y_fuel; 
+    massfrac[CH4_ID] = prob_parm.Y_fuel;
     massfrac[O2_ID] =  prob_parm.Y_o2;
     massfrac[N2_ID] =  1 - massfrac[CH4_ID] - massfrac[O2_ID];
 
@@ -82,7 +82,7 @@ void pelelm_initdata(int i, int j, int k,
 
     if ( x > 0.0  && y < 0.0 ) {
        state(i,j,k,TEMP) = 1800;
-       massfrac[CH4_ID] = 0.0; 
+       massfrac[CH4_ID] = 0.0;
        massfrac[O2_ID] =  0.233;
        massfrac[N2_ID] =  1 - massfrac[CH4_ID] - massfrac[O2_ID];
     } else {
@@ -145,7 +145,7 @@ bcnormal(
             break;
         }
 
-        massfrac[CH4_ID] = prob_parm.Y_fuel; 
+        massfrac[CH4_ID] = prob_parm.Y_fuel;
         massfrac[O2_ID] =  prob_parm.Y_o2;
         massfrac[N2_ID] =  1 - massfrac[CH4_ID] - massfrac[O2_ID];
 

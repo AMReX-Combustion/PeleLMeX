@@ -406,7 +406,7 @@ void PeleLM::getEBState(int a_lev,
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
    for (MFIter mfi(a_EBstate, mfi_info); mfi.isValid(); ++mfi)
-   {   
+   {
       const Box& bx = mfi.tilebox();
       auto const& flagfab = ebfact.getMultiEBCellFlagFab()[mfi];
       auto const& flag    = flagfab.const_array();
@@ -421,7 +421,7 @@ void PeleLM::getEBState(int a_lev,
                        const auto& ebfc_y = faceCentroid[1]->array(mfi);,
                        const auto& ebfc_z = faceCentroid[2]->array(mfi););
          amrex::ParallelFor(bx, [=]
-         AMREX_GPU_DEVICE (int i, int j, int k) noexcept 
+         AMREX_GPU_DEVICE (int i, int j, int k) noexcept
          {
             // Regular/covered cells -> 0.0
             if ( flag(i,j,k).isCovered() ||
