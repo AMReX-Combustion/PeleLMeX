@@ -1329,7 +1329,6 @@ void PeleLM::deltaTIter_update(int a_dtiter,
    auto bcRecTemp = fetchBCRecArray(TEMP,1);
 
    // Fourier: - \lambda \nabla T
-<<<<<<< HEAD
    int do_avgDown = 0;
 #ifdef AMREX_USE_EB
    if (m_isothermalEB) {
@@ -1360,14 +1359,6 @@ void PeleLM::deltaTIter_update(int a_dtiter,
                                           GetVecOfConstPtrs(getDiffusivityVect(AmrNewTime)), NUM_SPECIES, bcRecTemp,
                                           1, -1.0, do_avgDown);
    }
-=======
-   const int do_avgDown = 0;
-   getDiffusionOp()->computeDiffFluxes(a_fluxes, NUM_SPECIES,
-                                       GetVecOfConstPtrs(getTempVect(AmrNewTime)), 0,
-                                       {},
-                                       GetVecOfConstPtrs(getDiffusivityVect(AmrNewTime)), NUM_SPECIES, bcRecTemp,
-                                       1, -1.0, do_avgDown);
->>>>>>> development
 
    // Differential diffusion term: \sum_k ( h_k * \Flux_k )
    computeSpeciesEnthalpyFlux(a_fluxes,
