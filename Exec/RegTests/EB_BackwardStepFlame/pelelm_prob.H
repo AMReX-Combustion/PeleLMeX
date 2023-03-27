@@ -151,11 +151,6 @@ bcnormal(
 
         s_ext[TEMP] = prob_parm.T_mean;
 
-        // Set to the EB-covered temperature on covered faces
-        if (x[1] < 0.0) {
-            s_ext[TEMP] = 1000.0;
-        }
-
         amrex::Real rho_cgs, P_cgs, RhoH_temp;
         P_cgs = prob_parm.P_mean * 10.0;
 
