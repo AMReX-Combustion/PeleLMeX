@@ -585,7 +585,6 @@ DiagFramePlane::Write2DMFHeader(const std::string &a_mf_name,
           amrex::FileOpenFailed(MFHdrFileName);
       }
 
-      std::ios::fmtflags oflags = MFHdrFile.flags();
       MFHdrFile.setf(std::ios::floatfield, std::ios::scientific);
       MFHdrFile << hdr.m_vers        << '\n';
       MFHdrFile << int(hdr.m_how) << '\n';
@@ -646,7 +645,6 @@ DiagFramePlane::Find2FOffsets(const amrex::FabArray<amrex::FArrayBox> &mf,
      }
 
      auto whichRD = amrex::FArrayBox::getDataDescriptor();
-     const amrex::FABio &fio = amrex::FArrayBox::getFABio();
      int whichRDBytes(whichRD->numBytes());
      int nComps(mf.nComp());
 
