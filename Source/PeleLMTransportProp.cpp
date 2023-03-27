@@ -83,9 +83,16 @@ void PeleLM::calcTurbViscosity(const TimeStamp &a_time) {
        auto const& velgrad_arr = GradVel[lev][idim].const_arrays();
        auto const& dens_arr = dens_fc[idim].const_arrays();
        auto const& mut_arr = ldata_p->visc_turb_fc[idim].arrays();
-       const amrex::Real l_scale = std::sqrt(AMREX_D_TERM(geom[lev].CellSize(0)*geom[lev].CellSize(0),
-                                                          + geom[lev].CellSize(1)*geom[lev].CellSize(1),
-                                                          + geom[lev].CellSize(2)*geom[lev].CellSize(2)));
+       const amrex::Real vol = AMREX_D_TERM(  geom[lev].CellSize(0),
+                                            * geom[lev].CellSize(1),
+                                            * geom[lev].CellSize(2));
+       const amrex::Real l_scale = (AMREX_SPACEDIM == 2) ? std::sqrt(vol)
+                                                         : std::cbrt(vol);
+
+#ifdef AMREX_USE_EB
+       auto const& ebfact = EBFactory(lev);
+       auto const vfrac = ebfact.getVolFrac().const_arrays();
+#endif
        if (m_les_model == "Smagorinsky") {
          const amrex::Real prefact = m_les_cs_smag * m_les_cs_smag * l_scale * l_scale;
          amrex::ParallelFor(ldata_p->visc_turb_fc[idim], ldata_p->visc_turb_fc[idim].nGrowVect(), [=]
@@ -95,6 +102,33 @@ void PeleLM::calcTurbViscosity(const TimeStamp &a_time) {
                                                       Array4<Real const>(velgrad_arr[box_no]),
                                                       Array4<Real const>(dens_arr[box_no]),
                                                       Array4<Real      >(mut_arr[box_no]) );
+#ifdef AMREX_USE_EB
+                              if (idim==0) {
+                                 const amrex::Real vfr_m = (AMREX_SPACEDIM==2) ? vfrac[box_no](i-1,j,k)
+                                                                               : std::cbrt(vfrac[box_no](i-1,j,k)) *
+                                                                                 std::cbrt(vfrac[box_no](i-1,j,k));
+                                 const amrex::Real vfr_p = (AMREX_SPACEDIM==2) ? vfrac[box_no](i,j,k)
+                                                                               : std::cbrt(vfrac[box_no](i,j,k)) *
+                                                                                 std::cbrt(vfrac[box_no](i,j,k));
+                                 mut_arr[box_no](i,j,k) *= amrex::min(vfr_m,vfr_p);
+                              } else if (idim==1) {
+                                 const amrex::Real vfr_m = (AMREX_SPACEDIM==2) ? vfrac[box_no](i,j-1,k)
+                                                                               : std::cbrt(vfrac[box_no](i,j-1,k)) *
+                                                                                 std::cbrt(vfrac[box_no](i,j-1,k));
+                                 const amrex::Real vfr_p = (AMREX_SPACEDIM==2) ? vfrac[box_no](i,j,k)
+                                                                               : std::cbrt(vfrac[box_no](i,j,k)) *
+                                                                                 std::cbrt(vfrac[box_no](i,j,k));
+                                 mut_arr[box_no](i,j,k) *= amrex::min(vfr_m,vfr_p);
+                              } else if (idim==2) {
+                                 const amrex::Real vfr_m = (AMREX_SPACEDIM==2) ? vfrac[box_no](i,j,k-1)
+                                                                               : std::cbrt(vfrac[box_no](i,j,k-1)) *
+                                                                                 std::cbrt(vfrac[box_no](i,j,k-1));
+                                 const amrex::Real vfr_p = (AMREX_SPACEDIM==2) ? vfrac[box_no](i,j,k)
+                                                                               : std::cbrt(vfrac[box_no](i,j,k)) *
+                                                                                 std::cbrt(vfrac[box_no](i,j,k));
+                                 mut_arr[box_no](i,j,k) *= amrex::min(vfr_m,vfr_p);
+                              }
+#endif
                             });
        } else if (m_les_model == "WALE") {
          const amrex::Real prefact = m_les_cm_wale * m_les_cm_wale * l_scale * l_scale;
@@ -105,6 +139,33 @@ void PeleLM::calcTurbViscosity(const TimeStamp &a_time) {
                                                 Array4<Real const>(velgrad_arr[box_no]),
                                                 Array4<Real const>(dens_arr[box_no]),
                                                 Array4<Real      >(mut_arr[box_no]) );
+#ifdef AMREX_USE_EB
+                              if (idim==0) {
+                                 const amrex::Real vfr_m = (AMREX_SPACEDIM==2) ? vfrac[box_no](i-1,j,k)
+                                                                               : std::cbrt(vfrac[box_no](i-1,j,k)) *
+                                                                                 std::cbrt(vfrac[box_no](i-1,j,k));
+                                 const amrex::Real vfr_p = (AMREX_SPACEDIM==2) ? vfrac[box_no](i,j,k)
+                                                                               : std::cbrt(vfrac[box_no](i,j,k)) *
+                                                                                 std::cbrt(vfrac[box_no](i,j,k));
+                                 mut_arr[box_no](i,j,k) *= amrex::min(vfr_m,vfr_p);
+                              } else if (idim==1) {
+                                 const amrex::Real vfr_m = (AMREX_SPACEDIM==2) ? vfrac[box_no](i,j-1,k)
+                                                                               : std::cbrt(vfrac[box_no](i,j-1,k)) *
+                                                                                 std::cbrt(vfrac[box_no](i,j-1,k));
+                                 const amrex::Real vfr_p = (AMREX_SPACEDIM==2) ? vfrac[box_no](i,j,k)
+                                                                               : std::cbrt(vfrac[box_no](i,j,k)) *
+                                                                                 std::cbrt(vfrac[box_no](i,j,k));
+                                 mut_arr[box_no](i,j,k) *= amrex::min(vfr_m,vfr_p);
+                              } else if (idim==2) {
+                                 const amrex::Real vfr_m = (AMREX_SPACEDIM==2) ? vfrac[box_no](i,j,k-1)
+                                                                               : std::cbrt(vfrac[box_no](i,j,k-1)) *
+                                                                                 std::cbrt(vfrac[box_no](i,j,k-1));
+                                 const amrex::Real vfr_p = (AMREX_SPACEDIM==2) ? vfrac[box_no](i,j,k)
+                                                                               : std::cbrt(vfrac[box_no](i,j,k)) *
+                                                                                 std::cbrt(vfrac[box_no](i,j,k));
+                                 mut_arr[box_no](i,j,k) *= amrex::min(vfr_m,vfr_p);
+                              }
+#endif
                             });
        } else if (m_les_model == "Sigma") {
          const amrex::Real prefact = m_les_cs_sigma * m_les_cs_sigma * l_scale * l_scale;
@@ -115,6 +176,33 @@ void PeleLM::calcTurbViscosity(const TimeStamp &a_time) {
                                                 Array4<Real const>(velgrad_arr[box_no]),
                                                 Array4<Real const>(dens_arr[box_no]),
                                                 Array4<Real      >(mut_arr[box_no]) );
+#ifdef AMREX_USE_EB
+                              if (idim==0) {
+                                 const amrex::Real vfr_m = (AMREX_SPACEDIM==2) ? vfrac[box_no](i-1,j,k)
+                                                                               : std::cbrt(vfrac[box_no](i-1,j,k)) *
+                                                                                 std::cbrt(vfrac[box_no](i-1,j,k));
+                                 const amrex::Real vfr_p = (AMREX_SPACEDIM==2) ? vfrac[box_no](i,j,k)
+                                                                               : std::cbrt(vfrac[box_no](i,j,k)) *
+                                                                                 std::cbrt(vfrac[box_no](i,j,k));
+                                 mut_arr[box_no](i,j,k) *= amrex::min(vfr_m,vfr_p);
+                              } else if (idim==1) {
+                                 const amrex::Real vfr_m = (AMREX_SPACEDIM==2) ? vfrac[box_no](i,j-1,k)
+                                                                               : std::cbrt(vfrac[box_no](i,j-1,k)) *
+                                                                                 std::cbrt(vfrac[box_no](i,j-1,k));
+                                 const amrex::Real vfr_p = (AMREX_SPACEDIM==2) ? vfrac[box_no](i,j,k)
+                                                                               : std::cbrt(vfrac[box_no](i,j,k)) *
+                                                                                 std::cbrt(vfrac[box_no](i,j,k));
+                                 mut_arr[box_no](i,j,k) *= amrex::min(vfr_m,vfr_p);
+                              } else if (idim==2) {
+                                 const amrex::Real vfr_m = (AMREX_SPACEDIM==2) ? vfrac[box_no](i,j,k-1)
+                                                                               : std::cbrt(vfrac[box_no](i,j,k-1)) *
+                                                                                 std::cbrt(vfrac[box_no](i,j,k-1));
+                                 const amrex::Real vfr_p = (AMREX_SPACEDIM==2) ? vfrac[box_no](i,j,k)
+                                                                               : std::cbrt(vfrac[box_no](i,j,k)) *
+                                                                                 std::cbrt(vfrac[box_no](i,j,k));
+                                 mut_arr[box_no](i,j,k) *= amrex::min(vfr_m,vfr_p);
+                              }
+#endif
                             });
        }
        Gpu::streamSynchronize();
