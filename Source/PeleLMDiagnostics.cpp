@@ -32,6 +32,15 @@ PeleLM::createDiagnostics()
         bool itexists = derive_lst.canDerive(v) || isStateVariable(v) || isReactVariable(v);
         if (!itexists) {
             Abort("Field "+v+" is not available");
+        } else {
+            if (derive_lst.canDerive(v)) {
+                const PeleLMDeriveRec* rec = derive_lst.get(v);
+                if (rec->numDerive() > 1) {
+                    std::string errmsg = "Diagnostics can't handle derived with more than 1 component at the moment.\n";
+                    errmsg += "Add the desired components individually.\n";
+                    Abort(errmsg);
+                }
+            }
         }
     }
 }
