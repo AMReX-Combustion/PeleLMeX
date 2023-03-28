@@ -32,6 +32,15 @@ PeleLM::createDiagnostics()
         bool itexists = derive_lst.canDerive(v) || isStateVariable(v) || isReactVariable(v);
         if (!itexists) {
             Abort("Field "+v+" is not available");
+        } else {
+            if (derive_lst.canDerive(v)) {
+                const PeleLMDeriveRec* rec = derive_lst.get(v);
+                if (rec->variableComp(v) < 0) {
+                    std::string errmsg = "Diagnostics can't handle derived with more than 1 component at the moment.\n";
+                    errmsg += "Add the desired components individually.\n";
+                    Abort(errmsg);
+                }
+            }
         }
     }
 }
@@ -57,16 +66,16 @@ PeleLM::doDiagnostics()
     // Assemble a vector of MF containing the requested data
     Vector<std::unique_ptr<MultiFab> > diagMFVec(finestLevel()+1);
     for (int lev{0}; lev <= finestLevel(); ++lev) {
-        diagMFVec[lev] = std::make_unique<MultiFab>(grids[lev], dmap[lev], m_diagVars.size(), 0);
+        diagMFVec[lev] = std::make_unique<MultiFab>(grids[lev], dmap[lev], m_diagVars.size(), 1);
         for (int v{0}; v < m_diagVars.size(); ++v ) {
             std::unique_ptr<MultiFab> mf;
-            mf = derive(m_diagVars[v], m_cur_time, lev, 0);
+            mf = derive(m_diagVars[v], m_cur_time, lev, 1);
             // If the variable is a derive component, get its index from the derive multifab
             // TODO: if multiple diagVars are components of the same derive, they get redundantly derived each time
             int mf_idx = 0;
             const PeleLMDeriveRec* rec = derive_lst.get(m_diagVars[v]);
             if (rec) mf_idx = rec->variableComp(m_diagVars[v]);
-            MultiFab::Copy(*diagMFVec[lev].get(), *mf, mf_idx, v, 1, 0);
+            MultiFab::Copy(*diagMFVec[lev].get(), *mf, mf_idx, v, 1, 1);
         }
     }
 
