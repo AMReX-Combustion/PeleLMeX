@@ -301,12 +301,13 @@ void PeleLM::computeDifferentialDiffusionFluxes(const TimeStamp &a_time,
       AMREX_ASSERT(have_EBfluxes);
       // Set up EB dirichlet value and diffusivity
       Vector<MultiFab> EBvalue(finest_level+1);
-      Vector<std::unique_ptr<MultiFab> > EBdiff;
+      Vector<MultiFab> EBdiff(finest_level+1);;
       EBdiff.reserve(finest_level+1);
       for (int lev = 0; lev <= finest_level; ++lev) {
          auto ldata_p = getLevelDataPtr(lev,a_time);
          EBvalue[lev].define(grids[lev],dmap[lev], 1, 0, MFInfo(), EBFactory(lev));
-         EBdiff.push_back(std::make_unique<MultiFab> (ldata_p->diff_cc,amrex::make_alias,NUM_SPECIES,1));
+         EBdiff[lev].define(grids[lev],dmap[lev], 1, 0, MFInfo(), EBFactory(lev));
+         getEBDiff(lev, a_time, EBdiff[lev], NUM_SPECIES);
          getEBState(lev,getTime(lev,a_time),EBvalue[lev],TEMP,1);
       }
       getDiffusionOp()->computeDiffFluxes(a_fluxes, NUM_SPECIES,
@@ -1019,12 +1020,12 @@ void PeleLM::differentialDiffusionUpdate(std::unique_ptr<AdvanceAdvData> &advDat
    if (m_isothermalEB) {
       // Set up EB dirichlet value and diffusivity
       Vector<MultiFab> EBvalue(finest_level+1);
-      Vector<std::unique_ptr<MultiFab> > EBdiff;
-      EBdiff.reserve(finest_level+1);
+      Vector<MultiFab> EBdiff(finest_level+1);
       for (int lev = 0; lev <= finest_level; ++lev) {
          auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
          EBvalue[lev].define(grids[lev],dmap[lev], 1, 0, MFInfo(), EBFactory(lev));
-         EBdiff.push_back(std::make_unique<MultiFab> (ldata_p->diff_cc,amrex::make_alias,NUM_SPECIES,1));
+         EBdiff[lev].define(grids[lev],dmap[lev], 1, 0, MFInfo(), EBFactory(lev));
+         getEBDiff(lev, AmrNewTime, EBdiff[lev], NUM_SPECIES);
          getEBState(lev,getTime(lev,AmrNewTime),EBvalue[lev],TEMP,1);
       }
       getDiffusionOp()->computeDiffFluxes(GetVecOfArrOfPtrs(fluxes), NUM_SPECIES,
@@ -1102,12 +1103,12 @@ void PeleLM::differentialDiffusionUpdate(std::unique_ptr<AdvanceAdvData> &advDat
           // Set up EB dirichlet value and diffusivity
           // Dirichlet value is deltaT
           Vector<MultiFab> EBvalue(finest_level+1);
-          Vector<std::unique_ptr<MultiFab> > EBdiff;
-          EBdiff.reserve(finest_level+1);
+          Vector<MultiFab> EBdiff(finest_level+1);
           for (int lev = 0; lev <= finest_level; ++lev) {
              auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
              EBvalue[lev].define(grids[lev],dmap[lev], 1, 0, MFInfo(), EBFactory(lev));
-             EBdiff.push_back(std::make_unique<MultiFab> (ldata_p->diff_cc,amrex::make_alias,NUM_SPECIES,1));
+             EBdiff[lev].define(grids[lev],dmap[lev], 1, 0, MFInfo(), EBFactory(lev));
+             getEBDiff(lev, AmrNewTime, EBdiff[lev], NUM_SPECIES);
              EBvalue[lev].setVal(0.0);
           }
           getDiffusionOp()->diffuse_scalar(GetVecOfPtrs(getTempVect(AmrNewTime)), 0,
@@ -1256,12 +1257,12 @@ void PeleLM::deltaTIter_update(int a_dtiter,
    if (m_isothermalEB) {
       // Set up EB dirichlet value and diffusivity
       Vector<MultiFab> EBvalue(finest_level+1);
-      Vector<std::unique_ptr<MultiFab> > EBdiff;
-      EBdiff.reserve(finest_level+1);
+      Vector<MultiFab> EBdiff(finest_level+1);
       for (int lev = 0; lev <= finest_level; ++lev) {
          auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
          EBvalue[lev].define(grids[lev],dmap[lev], 1, 0, MFInfo(), EBFactory(lev));
-         EBdiff.push_back(std::make_unique<MultiFab> (ldata_p->diff_cc,amrex::make_alias,NUM_SPECIES,1));
+         EBdiff[lev].define(grids[lev],dmap[lev], 1, 0, MFInfo(), EBFactory(lev));
+         getEBDiff(lev, AmrNewTime, EBdiff[lev], NUM_SPECIES);
          getEBState(lev,getTime(lev,AmrNewTime),EBvalue[lev],TEMP,1);
       }
       getDiffusionOp()->computeDiffFluxes(a_fluxes, NUM_SPECIES,
