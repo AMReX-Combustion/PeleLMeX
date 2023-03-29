@@ -209,7 +209,9 @@ void PeleLM::computeDifferentialDiffusionFluxes(const TimeStamp &a_time,
 {
    BL_PROFILE("PeleLM::computeDifferentialDiffusionFluxes()");
 
+#ifdef AMREX_USE_EB
    int have_EBfluxes = (a_EBfluxes.empty()) ? 0 : 1;
+#endif
 
    //----------------------------------------------------------------
    // Species fluxes
