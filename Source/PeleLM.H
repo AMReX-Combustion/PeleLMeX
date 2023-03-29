@@ -825,6 +825,11 @@ class PeleLM : public amrex::AmrCore {
                    int         stateComp,
                    int         nComp);
 
+   void getEBDiff(int a_lev,
+                  const TimeStamp &a_time,
+                  amrex::MultiFab   &a_EBDiff,
+                  int        diffComp);
+
    // static_cast factory into ebfactory
    amrex::EBFArrayBoxFactory const&
    EBFactory (int lev) const noexcept {
