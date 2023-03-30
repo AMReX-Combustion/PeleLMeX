@@ -96,7 +96,7 @@ Refinement controls
 
 Refinement in PeleLMeX is controlled by a set of 'Tagging' criterion listed under the `amr.refinement_indicators`
 key. For each criteriq, the user needs to supply a definition. For example, the following provides a complete
-overview of the available controls: 
+overview of the available controls:
 
 ::
 
@@ -299,7 +299,7 @@ flag:
     peleLM.isothermal_EB = 1
 
 The user is now responsible for providing the wall temperature *on all the EB walls*, but adiabtic wall can still be specified.
-Control over the local EB thermal boundary condition is provided through the `setEBState` and `setEBType` functions, also 
+Control over the local EB thermal boundary condition is provided through the `setEBState` and `setEBType` functions, also
 defined in the `EBUserDefined.H` already used above to provide a user-defined EB geometry. Example of isothermal EBs are provided
 in ``Exec/RegTest/EB_BackwardStepFlame`` and ``Exec/RegTest/EB_FlowPastCylinder`` tests.
 
