@@ -24,8 +24,8 @@ USE_HIP         = FALSE
 CEXE_headers 	+= EBUserDefined.H
 
 # PelePhysics
-Chemistry_Model = air
+Chemistry_Model = drm19
 Eos_Model       = Fuego
-Transport_Model = Constant
+Transport_Model = Simple
 
 include $(PELELMEX_HOME)/Utils/Make.PeleLMeX
