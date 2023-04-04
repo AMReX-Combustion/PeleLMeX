@@ -68,8 +68,9 @@ Time stepping parameters
     amr.dt_shrink     = 0.0001             # [OPT, DEF=1.0] dt factor upon initialization
     amr.dt_change_max = 1.1                # [OPT, DEF=1.1] maximum dt change between consecutive steps
 
-Note that one of `amr.max_step`, `amr.stop_time`, or `amr.max_wall_time` is required, and if more than one is specified,
-the first stopping criterion encountered will lead to termination of the simulation.
+.. note::
+   Note that one of `amr.max_step`, `amr.stop_time`, or `amr.max_wall_time` is required, and if more than one is specified,
+   the first stopping criterion encountered will lead to termination of the simulation.
 
 IO parameters
 -------------
@@ -302,6 +303,9 @@ The user is now responsible for providing the wall temperature *on all the EB wa
 Control over the local EB thermal boundary condition is provided through the `setEBState` and `setEBType` functions, also
 defined in the `EBUserDefined.H` already used above to provide a user-defined EB geometry. Example of isothermal EBs are provided
 in ``Exec/RegTest/EB_BackwardStepFlame`` and ``Exec/RegTest/EB_FlowPastCylinder`` tests.
+
+.. note::
+   Note that when using isothermal EB in combination with LES, the thermal diffusion coefficient employed to compute the EB boundary thermal flux only uses the molecular contribution.
 
 Linear solvers
 --------------
