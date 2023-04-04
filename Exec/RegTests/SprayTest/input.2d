@@ -68,14 +68,14 @@ nodal_proj.verbose = 0
 #--------------------SPRAY PARTICLE DATA-----------------------
 peleLM.do_spray_particles = 1
 particles.derive_plot_vars = 1
+particles.fuel_ref_temp = 298.15
 particles.fuel_species = NC10H22
 # Properties for decane, in MKS
-particles.fuel_crit_temp = 617.8 # K
-particles.fuel_boil_temp = 447.27 # K
-particles.fuel_ref_temp = 298.15
-particles.fuel_latent = 3.5899E5
-particles.fuel_cp = 2.1921E3 # Cp at 298 K
-particles.fuel_rho = 640.
+particles.NC10H22_crit_temp = 617.8 # K
+particles.NC10H22_boil_temp = 447.27 # K
+particles.NC10H22_latent = 3.5899E5
+particles.NC10H22_cp = 2.1921E3 # Cp at 298 K
+particles.NC10H22_rho = 640.
 # Coefficients for saturation pressure using Antoine equation
 # These are from the NIST website
 # Last coefficient converts units, in this case bar, to Pa
@@ -90,7 +90,7 @@ particles.v             = 0
 particles.cfl           = 4.
 particles.mom_transfer  = 1
 particles.mass_transfer = 1
-particles.write_spray_ascii_files = 0
+particles.write_ascii_files = 0
 particles.parcel_size = 10.
 
 amrex.regtest_reduction=1
