@@ -12,7 +12,6 @@
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/doctools.js"></script>
         <script src="_static/sphinx_highlight.js"></script>
@@ -54,9 +53,10 @@
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">PeleLMeX controls</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#computational-domain-definition">Computational domain definition</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#amr-parameters">AMR parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#grid-amr-parameters">Grid/AMR parameters</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#time-stepping-parameters">Time stepping parameters</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#io-parameters">IO parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#refinement-controls">Refinement controls</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#pelelmex-derived-variables">PeleLMeX derived variables</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#pelelmex-algorithm">PeleLMeX algorithm</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#transport-coeffs-and-les">Transport coeffs and LES</a></li>
@@ -109,7 +109,7 @@ This file needs to specified along with the executable as an <cite>argv</cite> o
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">mpirun</span> <span class="o">-</span><span class="n">np</span> <span class="mi">64</span> <span class="o">./</span><span class="n">PeleLMeX2d</span><span class="o">.</span><span class="n">xxx</span><span class="o">.</span><span class="n">ex</span> <span class="n">inputs</span> <span class="n">amr</span><span class="o">.</span><span class="n">max_level</span><span class="o">=</span><span class="mi">2</span>
 </pre></div>
 </div>
-<p>The available options are divided into groups: those that control primarily AMReX are prefaced with <cite>amr.</cite>, those that are specific to the PeleLM are prefaced by <cite>peleLM.</cite>, while those corresponding to the various pieces of the algorithm are prefaced with specific keys, such that <cite>diffusion</cite>, <cite>nodal_proj</cite>, … as described below.</p>
+<p>The available options are divided into groups: those that control primarily AMReX are prefaced with <cite>amr.</cite>, those that are specific to the PeleLMeX are prefaced by <cite>peleLM.</cite>, while those corresponding to the various pieces of the algorithm are prefaced with specific keys, such that <cite>diffusion</cite>, <cite>nodal_proj</cite>, … as described below.</p>
 <section id="computational-domain-definition">
 <h2>Computational domain definition<a class="headerlink" href="#computational-domain-definition" title="Permalink to this heading"></a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1">#--------------------GEOMETRY DEFINITION-----------------------</span>
@@ -127,8 +127,8 @@ This file needs to specified along with the executable as an <cite>argv</cite> o
 </pre></div>
 </div>
 </section>
-<section id="amr-parameters">
-<h2>AMR parameters<a class="headerlink" href="#amr-parameters" title="Permalink to this heading"></a></h2>
+<section id="grid-amr-parameters">
+<h2>Grid/AMR parameters<a class="headerlink" href="#grid-amr-parameters" title="Permalink to this heading"></a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1">#-------------------------AMR CONTROL--------------------------</span>
 <span class="n">amr</span><span class="o">.</span><span class="n">n_cell</span>          <span class="o">=</span> <span class="mi">64</span> <span class="mi">64</span> <span class="mi">128</span>        <span class="c1"># Number of cells on Level 0 in each direction</span>
 <span class="n">amr</span><span class="o">.</span><span class="n">v</span>               <span class="o">=</span> <span class="mi">1</span>                <span class="c1"># [OPT, DEF=0] AMR verbose</span>
@@ -156,8 +156,11 @@ This file needs to specified along with the executable as an <cite>argv</cite> o
 <span class="n">amr</span><span class="o">.</span><span class="n">dt_change_max</span> <span class="o">=</span> <span class="mf">1.1</span>                <span class="c1"># [OPT, DEF=1.1] maximum dt change between consecutive steps</span>
 </pre></div>
 </div>
-<p>Note that one of <cite>max_step</cite>, <cite>stop_time</cite>, or <cite>max_wall_time</cite> is required, and if more than one is specified,
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Note that one of <cite>amr.max_step</cite>, <cite>amr.stop_time</cite>, or <cite>amr.max_wall_time</cite> is required, and if more than one is specified,
 the first stopping criterion encountered will lead to termination of the simulation.</p>
+</div>
 </section>
 <section id="io-parameters">
 <h2>IO parameters<a class="headerlink" href="#io-parameters" title="Permalink to this heading"></a></h2>
@@ -177,6 +180,35 @@ the first stopping criterion encountered will lead to termination of the simulat
 <span class="n">amr</span><span class="o">.</span><span class="n">initDataPlt</span>      <span class="o">=</span> <span class="n">plt01000</span>        <span class="c1"># [OPT, DEF=&quot;&quot;] Provide a plotfile from which to extract initial data</span>
 </pre></div>
 </div>
+</section>
+<section id="refinement-controls">
+<h2>Refinement controls<a class="headerlink" href="#refinement-controls" title="Permalink to this heading"></a></h2>
+<p>Refinement in PeleLMeX is controlled by a set of ‘Tagging’ criterion listed under the <cite>amr.refinement_indicators</cite>
+key. For each criteriq, the user needs to supply a definition. For example, the following provides a complete
+overview of the available controls:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">amr</span><span class="o">.</span><span class="n">refinement_indicators</span> <span class="n">gthan</span> <span class="n">lthan</span> <span class="n">adjd</span> <span class="n">box1</span>
+
+<span class="n">amr</span><span class="o">.</span><span class="n">gthan</span><span class="o">.</span><span class="n">max_level</span>     <span class="o">=</span> <span class="mi">3</span>
+<span class="n">amr</span><span class="o">.</span><span class="n">gthan</span><span class="o">.</span><span class="n">value_greater</span> <span class="o">=</span> <span class="mf">0.005</span>
+<span class="n">amr</span><span class="o">.</span><span class="n">gthan</span><span class="o">.</span><span class="n">field_name</span>    <span class="o">=</span> <span class="n">x_velocity</span>
+
+<span class="n">amr</span><span class="o">.</span><span class="n">lthan</span><span class="o">.</span><span class="n">max_level</span>     <span class="o">=</span> <span class="mi">4</span>
+<span class="n">amr</span><span class="o">.</span><span class="n">lthan</span><span class="o">.</span><span class="n">value_less</span>    <span class="o">=</span> <span class="mf">400.0</span>
+<span class="n">amr</span><span class="o">.</span><span class="n">lthan</span><span class="o">.</span><span class="n">field_name</span>    <span class="o">=</span> <span class="n">temp</span>
+<span class="n">amr</span><span class="o">.</span><span class="n">lthan</span><span class="o">.</span><span class="n">start_time</span>    <span class="o">=</span> <span class="mf">0.001</span>
+<span class="n">amr</span><span class="o">.</span><span class="n">lthan</span><span class="o">.</span><span class="n">end_time</span>      <span class="o">=</span> <span class="mf">0.005</span>
+
+<span class="n">amr</span><span class="o">.</span><span class="n">adjd</span><span class="o">.</span><span class="n">max_level</span>                   <span class="o">=</span> <span class="mi">2</span>
+<span class="n">amr</span><span class="o">.</span><span class="n">adjd</span><span class="o">.</span><span class="n">adjacent_difference_greater</span> <span class="o">=</span> <span class="mf">0.05</span>
+<span class="n">amr</span><span class="o">.</span><span class="n">adjd</span><span class="o">.</span><span class="n">field_name</span>                  <span class="o">=</span> <span class="n">density</span>
+
+<span class="n">amr</span><span class="o">.</span><span class="n">box1</span><span class="o">.</span><span class="n">max_level</span>      <span class="o">=</span> <span class="mi">1</span>
+<span class="n">amr</span><span class="o">.</span><span class="n">box1</span><span class="o">.</span><span class="n">in_box_lo</span>      <span class="o">=</span> <span class="mf">0.0</span> <span class="mf">0.0</span> <span class="mf">0.0</span>
+<span class="n">amr</span><span class="o">.</span><span class="n">box1</span><span class="o">.</span><span class="n">in_box_hi</span>      <span class="o">=</span> <span class="mf">0.01</span> <span class="mf">0.01</span> <span class="mf">0.05</span>
+</pre></div>
+</div>
+<p>The <cite>field_name</cite> can be any of the state or derived variables (see below) component. Additional controls specific
+to embedded boundaries are discussed below.</p>
 </section>
 <section id="pelelmex-derived-variables">
 <h2>PeleLMeX derived variables<a class="headerlink" href="#pelelmex-derived-variables" title="Permalink to this heading"></a></h2>
@@ -332,13 +364,13 @@ For instance, setting up a sphere of radius 5 mm can be achieved:</p>
 <p>The <cite>eb2.small_volfrac</cite> controls volume fraction that are deemed too small and eliminated from the EB representation.
 This operation is done iteratively and the maximum number of iteration is prescribed by <cite>eb2.maxiter</cite>.
 For most applications, a single AMReX object is insufficient to represent the geometry. AMReX enable to combine
-objects using constructive solid geometry (CSG) in order to create complex geometry. It is up to the user to define
-the combination of basic elements leading to its desired geometry. To switch to a user-defined EB definition, one
+objects using constructive solid geometry (CSG) in order to create complex geometry. It is up to users to define
+the combination of basic elements leading to their desired geometry. To switch to a user-defined EB definition, one
 must set:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">eb2</span><span class="o">.</span><span class="n">geom_type</span> <span class="o">=</span> <span class="n">UserDefined</span>
 </pre></div>
 </div>
-<p>and then implement the actual geometry definition in a <cite>EBUserDefined.H</cite> file located in the run folder (and added
+<p>and then implement the actual geometry definition in a <cite>EBUserDefined.H</cite> file located in the run folder (and add
 to the GNUmakefile using <cite>CEXE_headers += EBUserDefined.H</cite>). An example of such implementation is available in the
 <code class="docutils literal notranslate"><span class="pre">Exec/Case/ChallengeProblem</span></code> folder. Example of more generic EB problems are also found in the <code class="docutils literal notranslate"><span class="pre">Exec/RegTest/EB_*</span></code>
 folders.</p>
@@ -352,8 +384,21 @@ folders.</p>
 close to the EB when the physics of interest might be elsewhere. The above lines enable to limit the
 EB-level to level 1 (must be below <cite>amr.max_level</cite>) and a derefinement strategy is adopted to ensure
 that fine-grid patches do not cross the EB boundary. The last parameter set a safety margin to increase
-how far the derefinement is applied in order to account for grid-patches diagonals and proper nesting contraint.
-Note that the parameter do not ensure coarse-fine/EB crossings are avoided and the code will fail when this happens.</p>
+how far the derefinement is applied in order to account for grid-patches diagonals and proper nesting constrains.
+Note that the parameter do not ensure explicitly coarse-fine/EB crossings are avoided and the code will fail when this happens.</p>
+<p>It is also possible to change the default adiabatic EB wall condition to an isothermal EB. To do so, one need to switch the following
+flag:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">peleLM</span><span class="o">.</span><span class="n">isothermal_EB</span> <span class="o">=</span> <span class="mi">1</span>
+</pre></div>
+</div>
+<p>The user is now responsible for providing the wall temperature <em>on all the EB walls</em>, but adiabtic wall can still be specified.
+Control over the local EB thermal boundary condition is provided through the <cite>setEBState</cite> and <cite>setEBType</cite> functions, also
+defined in the <cite>EBUserDefined.H</cite> already used above to provide a user-defined EB geometry. Example of isothermal EBs are provided
+in <code class="docutils literal notranslate"><span class="pre">Exec/RegTest/EB_BackwardStepFlame</span></code> and <code class="docutils literal notranslate"><span class="pre">Exec/RegTest/EB_FlowPastCylinder</span></code> tests.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Note that when using isothermal EB in combination with LES, the thermal diffusion coefficient employed to compute the EB boundary thermal flux only uses the molecular contribution.</p>
+</div>
 </section>
 <section id="linear-solvers">
 <h2>Linear solvers<a class="headerlink" href="#linear-solvers" title="Permalink to this heading"></a></h2>
