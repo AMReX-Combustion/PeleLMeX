@@ -263,8 +263,8 @@ For instance, setting up a sphere of radius 5 mm can be achieved:
 The `eb2.small_volfrac` controls volume fraction that are deemed too small and eliminated from the EB representation.
 This operation is done iteratively and the maximum number of iteration is prescribed by `eb2.maxiter`.
 For most applications, a single AMReX object is insufficient to represent the geometry. AMReX enable to combine
-objects using constructive solid geometry (CSG) in order to create complex geometry. It is up to the user to define
-the combination of basic elements leading to his desired geometry. To switch to a user-defined EB definition, one
+objects using constructive solid geometry (CSG) in order to create complex geometry. It is up to users to define
+the combination of basic elements leading to their desired geometry. To switch to a user-defined EB definition, one
 must set:
 
 ::
