@@ -2,6 +2,7 @@
 #define _DIAGFRAMEPLANE_H_
 
 #include "DiagBase.H"
+#include <AMReX_VisMF.H>
 
 class DiagFramePlane : public DiagBase::Register<DiagFramePlane>
 {
@@ -38,12 +39,21 @@ public:
   void VisMF2D(const amrex::MultiFab &a_mf,
                const std::string& a_mf_name);
 
+  void Write2DMFHeader(const std::string &a_mf_name,
+                       amrex::VisMF::Header &hdr,
+                       int coordinatorProc,
+                       MPI_Comm comm);
+
+  void Find2FOffsets(const amrex::FabArray<amrex::FArrayBox> &mf,
+                     const std::string &filePrefix,
+                     amrex::VisMF::Header &hdr,
+                     amrex::VisMF::Header::Version /*whichVersion*/,
+                     amrex::NFilesIter &nfi,
+                     int nOutFile, MPI_Comm comm);
+
   void write_2D_header(std::ostream &os,
                        const amrex::FArrayBox& f,
                        int                     nvar);
-
-  int diff_2D3D_header(const amrex::Box a_box,
-                       int              nvar);
 
   void Write2DPlotfileHeader(std::ostream &HeaderFile,
                              int nlevels,
@@ -56,8 +66,6 @@ public:
                              const std::string &versionName = "HyperCLaw-V1.1",
                              const std::string &levelPrefix = "Level_",
                              const std::string &mfPrefix = "Cell");
-
-  void ReWriteLevelVisMFHeader(const std::string &a_HeaderPath);
 
   void close() override {}
 

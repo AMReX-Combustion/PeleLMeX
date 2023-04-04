@@ -64,22 +64,38 @@ void PeleLM::computeDifferentialDiffusionTerms(const TimeStamp &a_time,
                                   dmap[lev], NUM_SPECIES+2, nGrow, MFInfo(), factory);
       }
    }
+#ifdef AMREX_USE_EB
+   Vector<MultiFab> EBfluxes(finest_level+1);
+   if (m_isothermalEB) {
+      for (int lev = 0; lev <= finest_level; ++lev) {
+         EBfluxes[lev].define(grids[lev], dmap[lev], 1, nGrow, MFInfo(), Factory(lev));
+      }
+   }
+#endif
+
 
    //----------------------------------------------------------------
    // Compute differential diffusion fluxes including correction velocity and wbar term
    // During initialization, don't bother getting the wbar fluxes separately
-   if (is_init || !m_use_wbar) {
-     if (m_use_soret) {
-       computeDifferentialDiffusionFluxes(a_time, GetVecOfArrOfPtrs(fluxes), {},  GetVecOfArrOfPtrs(diffData->soret_fluxes));
-     } else {
-       computeDifferentialDiffusionFluxes(a_time, GetVecOfArrOfPtrs(fluxes), {}, {});
-     }
-   } else {
-     if (m_use_soret) {
-       computeDifferentialDiffusionFluxes(a_time, GetVecOfArrOfPtrs(fluxes), GetVecOfArrOfPtrs(diffData->wbar_fluxes), GetVecOfArrOfPtrs(diffData->soret_fluxes));
-     } else {
-       computeDifferentialDiffusionFluxes(a_time, GetVecOfArrOfPtrs(fluxes), GetVecOfArrOfPtrs(diffData->wbar_fluxes), {});
-     }
+   Vector<std::array<MultiFab*,AMREX_SPACEDIM> > wbarFluxVec = (is_init || !m_use_wbar) ? Vector<std::array<MultiFab*,AMREX_SPACEDIM> >{}
+                                                                                        : GetVecOfArrOfPtrs(diffData->wbar_fluxes);
+   Vector<std::array<MultiFab*,AMREX_SPACEDIM> > soretFluxVec = (m_use_soret) ? GetVecOfArrOfPtrs(diffData->soret_fluxes)
+                                                                              : Vector<std::array<MultiFab*,AMREX_SPACEDIM> >{};
+#ifdef AMREX_USE_EB
+   if (m_isothermalEB) {
+      computeDifferentialDiffusionFluxes(a_time,
+                                         GetVecOfArrOfPtrs(fluxes),
+                                         GetVecOfPtrs(EBfluxes),
+                                         wbarFluxVec,
+                                         soretFluxVec);
+   } else
+#endif
+   {
+      computeDifferentialDiffusionFluxes(a_time,
+                                         GetVecOfArrOfPtrs(fluxes),
+                                         {},
+                                         wbarFluxVec,
+                                         soretFluxVec);
    }
 
    // If doing species balances, compute face domain integrals
@@ -96,53 +112,43 @@ void PeleLM::computeDifferentialDiffusionTerms(const TimeStamp &a_time,
    // [0:NUM_SPECIES-1] Species           : \nabla \cdot \Flux_k
    // [NUM_SPECIES]     Temperature       : \nabla \cdot (-\lambda \nabla T)
    // [NUM_SPECIES+1]   Differential diff : \nabla \cdot \sum_k ( h_k * \Flux_k )
-   if (a_time == AmrOldTime) {
+   int intensiveFluxes = 1;             // All the fluxes are intensive here
+   Vector<MultiFab*> diffTermVec = (a_time == AmrOldTime) ? GetVecOfPtrs(diffData->Dn)
+                                                          : GetVecOfPtrs(diffData->Dnp1);
 #ifdef AMREX_USE_EB
-      auto bcRecSpec = fetchBCRecArray(FIRSTSPEC,NUM_SPECIES);
-      auto bcRecSpec_d = convertToDeviceVector(bcRecSpec);
-      fluxDivergenceRD(GetVecOfConstPtrs(getSpeciesVect(AmrOldTime)), 0,
-                       GetVecOfPtrs(diffData->Dn), 0,
-                       GetVecOfArrOfPtrs(fluxes), 0,
-                       NUM_SPECIES, 1, bcRecSpec_d.dataPtr(), -1.0, m_dt);
-      auto bcRecTemp = fetchBCRecArray(TEMP,1);
-      auto bcRecTemp_d = convertToDeviceVector(bcRecTemp);
-      fluxDivergenceRD(GetVecOfConstPtrs(getTempVect(AmrOldTime)), 0,
-                       GetVecOfPtrs(diffData->Dn), NUM_SPECIES,
+   auto bcRecSpec = fetchBCRecArray(FIRSTSPEC,NUM_SPECIES);
+   auto bcRecSpec_d = convertToDeviceVector(bcRecSpec);
+   fluxDivergenceRD(GetVecOfConstPtrs(getSpeciesVect(a_time)), 0,
+                    diffTermVec, 0,
+                    GetVecOfArrOfPtrs(fluxes), 0,
+                    {}, 0,
+                    NUM_SPECIES, intensiveFluxes, bcRecSpec_d.dataPtr(), -1.0, m_dt);
+   auto bcRecTemp = fetchBCRecArray(TEMP,1);
+   auto bcRecTemp_d = convertToDeviceVector(bcRecTemp);
+   if (m_isothermalEB) {
+      fluxDivergenceRD(GetVecOfConstPtrs(getTempVect(a_time)), 0,
+                       diffTermVec, NUM_SPECIES,
                        GetVecOfArrOfPtrs(fluxes), NUM_SPECIES,
-                       1, 1, bcRecTemp_d.dataPtr(), -1.0, m_dt);
-      auto bcRecRhoH = fetchBCRecArray(RHOH,1);
-      auto bcRecRhoH_d = convertToDeviceVector(bcRecRhoH);
-      fluxDivergenceRD(GetVecOfConstPtrs(getRhoHVect(AmrOldTime)), 0,
-                       GetVecOfPtrs(diffData->Dn), NUM_SPECIES+1,
-                       GetVecOfArrOfPtrs(fluxes), NUM_SPECIES+1,
-                       1, 1, bcRecRhoH_d.dataPtr(), -1.0, m_dt);
-#else
-      fluxDivergence(GetVecOfPtrs(diffData->Dn), 0, GetVecOfArrOfPtrs(fluxes), 0, NUM_SPECIES+2, 1, -1.0);
-#endif
+                       GetVecOfPtrs(EBfluxes), 0,
+                       1, intensiveFluxes, bcRecTemp_d.dataPtr(), -1.0, m_dt);
    } else {
-#ifdef AMREX_USE_EB
-      auto bcRecSpec = fetchBCRecArray(FIRSTSPEC,NUM_SPECIES);
-      auto bcRecSpec_d = convertToDeviceVector(bcRecSpec);
-      fluxDivergenceRD(GetVecOfConstPtrs(getSpeciesVect(AmrNewTime)), 0,
-                       GetVecOfPtrs(diffData->Dnp1), 0,
-                       GetVecOfArrOfPtrs(fluxes), 0,
-                       NUM_SPECIES, 1, bcRecSpec_d.dataPtr(), -1.0, m_dt);
-      auto bcRecTemp = fetchBCRecArray(TEMP,1);
-      auto bcRecTemp_d = convertToDeviceVector(bcRecTemp);
-      fluxDivergenceRD(GetVecOfConstPtrs(getTempVect(AmrNewTime)), 0,
-                       GetVecOfPtrs(diffData->Dnp1), NUM_SPECIES,
+      fluxDivergenceRD(GetVecOfConstPtrs(getTempVect(a_time)), 0,
+                       diffTermVec, NUM_SPECIES,
                        GetVecOfArrOfPtrs(fluxes), NUM_SPECIES,
-                       1, 1, bcRecTemp_d.dataPtr(), -1.0, m_dt);
-      auto bcRecRhoH = fetchBCRecArray(RHOH,1);
-      auto bcRecRhoH_d = convertToDeviceVector(bcRecRhoH);
-      fluxDivergenceRD(GetVecOfConstPtrs(getRhoHVect(AmrNewTime)), 0,
-                       GetVecOfPtrs(diffData->Dnp1), NUM_SPECIES+1,
-                       GetVecOfArrOfPtrs(fluxes), NUM_SPECIES+1,
-                       1, 1, bcRecRhoH_d.dataPtr(), -1.0, m_dt);
-#else
-      fluxDivergence(GetVecOfPtrs(diffData->Dnp1), 0, GetVecOfArrOfPtrs(fluxes), 0, NUM_SPECIES+2, 1, -1.0);
-#endif
+                       {}, 0,
+                       1, intensiveFluxes, bcRecTemp_d.dataPtr(), -1.0, m_dt);
    }
+   auto bcRecRhoH = fetchBCRecArray(RHOH,1);
+   auto bcRecRhoH_d = convertToDeviceVector(bcRecRhoH);
+   fluxDivergenceRD(GetVecOfConstPtrs(getRhoHVect(a_time)), 0,
+                    diffTermVec, NUM_SPECIES+1,
+                    GetVecOfArrOfPtrs(fluxes), NUM_SPECIES+1,
+                    {}, 0,
+                    1, intensiveFluxes, bcRecRhoH_d.dataPtr(), -1.0, m_dt);
+#else
+   fluxDivergence(diffTermVec, 0, GetVecOfArrOfPtrs(fluxes), 0,
+                  NUM_SPECIES+2, intensiveFluxes, -1.0);
+#endif
 
    // Get the wbar term if appropriate
    if (!is_init && m_use_wbar) {
@@ -152,11 +158,14 @@ void PeleLM::computeDifferentialDiffusionTerms(const TimeStamp &a_time,
       fluxDivergenceRD(GetVecOfConstPtrs(getSpeciesVect(a_time)), 0,
                        GetVecOfPtrs(diffData->Dwbar), 0,
                        GetVecOfArrOfPtrs(diffData->wbar_fluxes), 0,
-                       NUM_SPECIES, 1, bcRecSpec_d.dataPtr(), -1.0, m_dt);
+                       {}, 0,
+                       NUM_SPECIES, intensiveFluxes, bcRecSpec_d.dataPtr(), -1.0, m_dt);
 #else
-      fluxDivergence(GetVecOfPtrs(diffData->Dwbar), 0, GetVecOfArrOfPtrs(diffData->wbar_fluxes), 0, NUM_SPECIES, 1, -1.0);
+      fluxDivergence(GetVecOfPtrs(diffData->Dwbar), 0, GetVecOfArrOfPtrs(diffData->wbar_fluxes), 0,
+                     NUM_SPECIES, intensiveFluxes, -1.0);
 #endif
    }
+
    // Get the Soret term if appropriate
    if (!is_init && m_use_soret) {
 #ifdef AMREX_USE_EB
@@ -165,6 +174,7 @@ void PeleLM::computeDifferentialDiffusionTerms(const TimeStamp &a_time,
       fluxDivergenceRD(GetVecOfConstPtrs(getSpeciesVect(a_time)), 0,
                        GetVecOfPtrs(diffData->DT), 0,
                        GetVecOfArrOfPtrs(diffData->soret_fluxes), 0,
+                       {}, 0,
                        NUM_SPECIES, 1, bcRecSpec_d.dataPtr(), -1.0, m_dt);
 #else
       fluxDivergence(GetVecOfPtrs(diffData->DT), 0, GetVecOfArrOfPtrs(diffData->soret_fluxes), 0, NUM_SPECIES, 1, -1.0);
@@ -193,10 +203,15 @@ void PeleLM::computeDifferentialDiffusionTerms(const TimeStamp &a_time,
 
 void PeleLM::computeDifferentialDiffusionFluxes(const TimeStamp &a_time,
                                                 const Vector<Array<MultiFab*,AMREX_SPACEDIM> > &a_fluxes,
+                                                const Vector<MultiFab*>                        &a_EBfluxes,
                                                 const Vector<Array<MultiFab*,AMREX_SPACEDIM> > &a_wbarfluxes,
                                                 const Vector<Array<MultiFab*,AMREX_SPACEDIM> > &a_soretfluxes)
 {
    BL_PROFILE("PeleLM::computeDifferentialDiffusionFluxes()");
+
+#ifdef AMREX_USE_EB
+   int have_EBfluxes = (a_EBfluxes.empty()) ? 0 : 1;
+#endif
 
    //----------------------------------------------------------------
    // Species fluxes
@@ -283,11 +298,37 @@ void PeleLM::computeDifferentialDiffusionFluxes(const TimeStamp &a_time,
 
    // Fourier: - \lambda \nabla T
    do_avgDown = 0;
-   getDiffusionOp()->computeDiffFluxes(a_fluxes, NUM_SPECIES,
-                                       GetVecOfConstPtrs(getTempVect(a_time)), 0,
-                                       {},
-                                       GetVecOfConstPtrs(getDiffusivityVect(a_time)), NUM_SPECIES, bcRecTemp,
-                                       1, -1.0, do_avgDown);
+#ifdef AMREX_USE_EB
+   if (m_isothermalEB) {
+      AMREX_ASSERT(have_EBfluxes);
+      // Set up EB dirichlet value and diffusivity
+      Vector<MultiFab> EBvalue(finest_level+1);
+      Vector<MultiFab> EBdiff(finest_level+1);;
+      EBdiff.reserve(finest_level+1);
+      for (int lev = 0; lev <= finest_level; ++lev) {
+         auto ldata_p = getLevelDataPtr(lev,a_time);
+         EBvalue[lev].define(grids[lev],dmap[lev], 1, 0, MFInfo(), EBFactory(lev));
+         EBdiff[lev].define(grids[lev],dmap[lev], 1, 0, MFInfo(), EBFactory(lev));
+         getEBDiff(lev, a_time, EBdiff[lev], NUM_SPECIES);
+         getEBState(lev,getTime(lev,a_time),EBvalue[lev],TEMP,1);
+      }
+      getDiffusionOp()->computeDiffFluxes(a_fluxes, NUM_SPECIES,
+                                          a_EBfluxes, 0,
+                                          GetVecOfConstPtrs(getTempVect(a_time)), 0,
+                                          {},
+                                          GetVecOfConstPtrs(getDiffusivityVect(a_time)), NUM_SPECIES,
+                                          GetVecOfConstPtrs(EBvalue),
+                                          GetVecOfConstPtrs(EBdiff),
+                                          bcRecTemp, 1, -1.0, do_avgDown);
+   } else
+#endif
+   {
+      getDiffusionOp()->computeDiffFluxes(a_fluxes, NUM_SPECIES,
+                                          GetVecOfConstPtrs(getTempVect(a_time)), 0,
+                                          {},
+                                          GetVecOfConstPtrs(getDiffusivityVect(a_time)), NUM_SPECIES, bcRecTemp,
+                                          1, -1.0, do_avgDown);
+   }
 
    // Differential diffusion term: \sum_k ( h_k * \Flux_k )
    computeSpeciesEnthalpyFlux(a_fluxes,
@@ -786,6 +827,14 @@ void PeleLM::differentialDiffusionUpdate(std::unique_ptr<AdvanceAdvData> &advDat
                                   dmap[lev], NUM_SPECIES+2, nGrow, MFInfo(), factory);
       }
    }
+#ifdef AMREX_USE_EB
+   Vector<MultiFab> EBfluxes(finest_level+1);
+   if (m_isothermalEB) {
+      for (int lev = 0; lev <= finest_level; ++lev) {
+         EBfluxes[lev].define(grids[lev], dmap[lev], 1, nGrow, MFInfo(), Factory(lev));
+      }
+   }
+#endif
 
    //------------------------------------------------------------------------
    // Convert species forcing into actual solve RHS by *dt and adding rhoY^{n}
@@ -969,11 +1018,35 @@ void PeleLM::differentialDiffusionUpdate(std::unique_ptr<AdvanceAdvData> &advDat
 
    // Fourier: - \lambda \nabla T
    int do_avgDown = 0;
-   getDiffusionOp()->computeDiffFluxes(GetVecOfArrOfPtrs(fluxes), NUM_SPECIES,
-                                       GetVecOfConstPtrs(getTempVect(AmrNewTime)), 0,
-                                       {},
-                                       GetVecOfConstPtrs(getDiffusivityVect(AmrNewTime)), NUM_SPECIES, bcRecTemp,
-                                       1, -1.0, do_avgDown);
+#ifdef AMREX_USE_EB
+   if (m_isothermalEB) {
+      // Set up EB dirichlet value and diffusivity
+      Vector<MultiFab> EBvalue(finest_level+1);
+      Vector<MultiFab> EBdiff(finest_level+1);
+      for (int lev = 0; lev <= finest_level; ++lev) {
+         auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
+         EBvalue[lev].define(grids[lev],dmap[lev], 1, 0, MFInfo(), EBFactory(lev));
+         EBdiff[lev].define(grids[lev],dmap[lev], 1, 0, MFInfo(), EBFactory(lev));
+         getEBDiff(lev, AmrNewTime, EBdiff[lev], NUM_SPECIES);
+         getEBState(lev,getTime(lev,AmrNewTime),EBvalue[lev],TEMP,1);
+      }
+      getDiffusionOp()->computeDiffFluxes(GetVecOfArrOfPtrs(fluxes), NUM_SPECIES,
+                                          GetVecOfPtrs(EBfluxes), 0,
+                                          GetVecOfConstPtrs(getTempVect(AmrNewTime)), 0,
+                                          {},
+                                          GetVecOfConstPtrs(getDiffusivityVect(AmrNewTime)), NUM_SPECIES,
+                                          GetVecOfConstPtrs(EBvalue),
+                                          GetVecOfConstPtrs(EBdiff),
+                                          bcRecTemp, 1, -1.0, do_avgDown);
+   } else
+#endif
+   {
+      getDiffusionOp()->computeDiffFluxes(GetVecOfArrOfPtrs(fluxes), NUM_SPECIES,
+                                          GetVecOfConstPtrs(getTempVect(AmrNewTime)), 0,
+                                          {},
+                                          GetVecOfConstPtrs(getDiffusivityVect(AmrNewTime)), NUM_SPECIES, bcRecTemp,
+                                          1, -1.0, do_avgDown);
+   }
 
    // Differential diffusion term: \sum_k ( h_k * \Flux_k )
    computeSpeciesEnthalpyFlux(GetVecOfArrOfPtrs(fluxes),
@@ -983,7 +1056,17 @@ void PeleLM::differentialDiffusionUpdate(std::unique_ptr<AdvanceAdvData> &advDat
    getDiffusionOp()->avgDownFluxes(GetVecOfArrOfPtrs(fluxes),NUM_SPECIES,2);
 
    // Compute diffusion term D^{np1,kp1} of Fourier and DifferentialDiffusion
-   fluxDivergence(GetVecOfPtrs(diffData->Dhat), NUM_SPECIES, GetVecOfArrOfPtrs(fluxes), NUM_SPECIES, 2, 1, -1.0);
+#ifdef AMREX_USE_EB
+   if (m_isothermalEB) {
+      // Do Fourier with EBflux first then differential diffusion
+      fluxDivergence(GetVecOfPtrs(diffData->Dhat), NUM_SPECIES, GetVecOfArrOfPtrs(fluxes), NUM_SPECIES,
+                     GetVecOfPtrs(EBfluxes), 0, 1, 1, -1.0);
+      fluxDivergence(GetVecOfPtrs(diffData->Dhat), NUM_SPECIES+1, GetVecOfArrOfPtrs(fluxes), NUM_SPECIES+1, 1, 1, -1.0);
+   } else
+#endif
+   {
+      fluxDivergence(GetVecOfPtrs(diffData->Dhat), NUM_SPECIES, GetVecOfArrOfPtrs(fluxes), NUM_SPECIES, 2, 1, -1.0);
+   }
 
    //------------------------------------------------------------------------
    // delta(T) iterations
@@ -1017,23 +1100,61 @@ void PeleLM::differentialDiffusionUpdate(std::unique_ptr<AdvanceAdvData> &advDat
                          advData, diffData);
 
       // Diffuse deltaT
-      getDiffusionOp()->diffuse_scalar(GetVecOfPtrs(getTempVect(AmrNewTime)), 0,
-                                       GetVecOfConstPtrs(rhs), 0,
-                                       GetVecOfArrOfPtrs(fluxes), NUM_SPECIES,
-                                       GetVecOfConstPtrs(RhoCp),
-                                       {},
-                                       GetVecOfConstPtrs(getDiffusivityVect(AmrNewTime)), NUM_SPECIES, bcRecTemp,
-                                       1, 0, m_dt);
+#ifdef AMREX_USE_EB
+      if (m_isothermalEB) {
+          // Set up EB dirichlet value and diffusivity
+          // Dirichlet value is deltaT
+          Vector<MultiFab> EBvalue(finest_level+1);
+          Vector<MultiFab> EBdiff(finest_level+1);
+          for (int lev = 0; lev <= finest_level; ++lev) {
+             auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
+             EBvalue[lev].define(grids[lev],dmap[lev], 1, 0, MFInfo(), EBFactory(lev));
+             EBdiff[lev].define(grids[lev],dmap[lev], 1, 0, MFInfo(), EBFactory(lev));
+             getEBDiff(lev, AmrNewTime, EBdiff[lev], NUM_SPECIES);
+             EBvalue[lev].setVal(0.0);
+          }
+          getDiffusionOp()->diffuse_scalar(GetVecOfPtrs(getTempVect(AmrNewTime)), 0,
+                                           GetVecOfConstPtrs(EBvalue), 0,
+                                           GetVecOfConstPtrs(rhs), 0,
+                                           GetVecOfArrOfPtrs(fluxes), NUM_SPECIES,
+                                           GetVecOfConstPtrs(RhoCp),
+                                           {},
+                                           GetVecOfConstPtrs(getDiffusivityVect(AmrNewTime)), NUM_SPECIES,
+                                           GetVecOfConstPtrs(EBdiff), 0, bcRecTemp,
+                                           1, 0, m_dt);
+      } else
+#endif
+      {
+          getDiffusionOp()->diffuse_scalar(GetVecOfPtrs(getTempVect(AmrNewTime)), 0,
+                                           GetVecOfConstPtrs(rhs), 0,
+                                           GetVecOfArrOfPtrs(fluxes), NUM_SPECIES,
+                                           GetVecOfConstPtrs(RhoCp),
+                                           {},
+                                           GetVecOfConstPtrs(getDiffusivityVect(AmrNewTime)), NUM_SPECIES, bcRecTemp,
+                                           1, 0, m_dt);
+      }
 
       // Post deltaT iteration linear solve
       // -> evaluate deltaT_norm
       // -> add deltaT to T^{np1,kp1}
       // -> recompute enthalpy fluxes
       // -> recompute rhoH
-      deltaTIter_update(dTiter,
-                        GetVecOfArrOfPtrs(fluxes),
-                        GetVecOfConstPtrs(Tsave),
-                        diffData, deltaT_norm);
+#ifdef AMREX_USE_EB
+      if (m_isothermalEB) {
+         deltaTIter_update(dTiter,
+                           GetVecOfArrOfPtrs(fluxes),
+                           GetVecOfPtrs(EBfluxes),
+                           GetVecOfConstPtrs(Tsave),
+                           diffData, deltaT_norm);
+      } else
+#endif
+      {
+         deltaTIter_update(dTiter,
+                           GetVecOfArrOfPtrs(fluxes),
+                           {},
+                           GetVecOfConstPtrs(Tsave),
+                           diffData, deltaT_norm);
+      }
 
       // Check for convergence failure
       if ( (dTiter == m_deltaTIterMax-1) && ( deltaT_norm > m_deltaT_norm_max ) ) {
@@ -1105,6 +1226,7 @@ void PeleLM::deltaTIter_prepare(const Vector<MultiFab*> &a_rhs,
 
 void PeleLM::deltaTIter_update(int a_dtiter,
                                const Vector<Array<MultiFab*,AMREX_SPACEDIM> > &a_fluxes,
+                               const Vector<MultiFab* > &a_ebfluxes,
                                const Vector<MultiFab const*> &a_Tsave,
                                std::unique_ptr<AdvanceDiffData> &diffData,
                                Real &a_deltaT_norm)
@@ -1132,12 +1254,36 @@ void PeleLM::deltaTIter_update(int a_dtiter,
    auto bcRecTemp = fetchBCRecArray(TEMP,1);
 
    // Fourier: - \lambda \nabla T
-   const int do_avgDown = 0;
-   getDiffusionOp()->computeDiffFluxes(a_fluxes, NUM_SPECIES,
-                                       GetVecOfConstPtrs(getTempVect(AmrNewTime)), 0,
-                                       {},
-                                       GetVecOfConstPtrs(getDiffusivityVect(AmrNewTime)), NUM_SPECIES, bcRecTemp,
-                                       1, -1.0, do_avgDown);
+   int do_avgDown = 0;
+#ifdef AMREX_USE_EB
+   if (m_isothermalEB) {
+      // Set up EB dirichlet value and diffusivity
+      Vector<MultiFab> EBvalue(finest_level+1);
+      Vector<MultiFab> EBdiff(finest_level+1);
+      for (int lev = 0; lev <= finest_level; ++lev) {
+         auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
+         EBvalue[lev].define(grids[lev],dmap[lev], 1, 0, MFInfo(), EBFactory(lev));
+         EBdiff[lev].define(grids[lev],dmap[lev], 1, 0, MFInfo(), EBFactory(lev));
+         getEBDiff(lev, AmrNewTime, EBdiff[lev], NUM_SPECIES);
+         getEBState(lev,getTime(lev,AmrNewTime),EBvalue[lev],TEMP,1);
+      }
+      getDiffusionOp()->computeDiffFluxes(a_fluxes, NUM_SPECIES,
+                                          a_ebfluxes, 0,
+                                          GetVecOfConstPtrs(getTempVect(AmrNewTime)), 0,
+                                          {},
+                                          GetVecOfConstPtrs(getDiffusivityVect(AmrNewTime)), NUM_SPECIES,
+                                          GetVecOfConstPtrs(EBvalue),
+                                          GetVecOfConstPtrs(EBdiff),
+                                          bcRecTemp, 1, -1.0, do_avgDown);
+   } else
+#endif
+   {
+      getDiffusionOp()->computeDiffFluxes(a_fluxes, NUM_SPECIES,
+                                          GetVecOfConstPtrs(getTempVect(AmrNewTime)), 0,
+                                          {},
+                                          GetVecOfConstPtrs(getDiffusivityVect(AmrNewTime)), NUM_SPECIES, bcRecTemp,
+                                          1, -1.0, do_avgDown);
+   }
 
    // Differential diffusion term: \sum_k ( h_k * \Flux_k )
    computeSpeciesEnthalpyFlux(a_fluxes,
@@ -1147,7 +1293,17 @@ void PeleLM::deltaTIter_update(int a_dtiter,
    getDiffusionOp()->avgDownFluxes(a_fluxes,NUM_SPECIES,2);
 
    // Compute diffusion term D^{np1,kp1} of Fourier and DifferentialDiffusion
-   fluxDivergence(GetVecOfPtrs(diffData->Dhat), NUM_SPECIES, a_fluxes, NUM_SPECIES, 2, 1, -1.0);
+#ifdef AMREX_USE_EB
+   if (m_isothermalEB) {
+      // Do Fourier with EBflux first then differential diffusion
+      fluxDivergence(GetVecOfPtrs(diffData->Dhat), NUM_SPECIES, a_fluxes, NUM_SPECIES,
+                     a_ebfluxes, 0, 1, 1, -1.0);
+      fluxDivergence(GetVecOfPtrs(diffData->Dhat), NUM_SPECIES+1, a_fluxes, NUM_SPECIES+1, 1, 1, -1.0);
+   } else
+#endif
+   {
+      fluxDivergence(GetVecOfPtrs(diffData->Dhat), NUM_SPECIES, a_fluxes, NUM_SPECIES, 2, 1, -1.0);
+   }
 
    //------------------------------------------------------------------------
    // Recompute RhoH

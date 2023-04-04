@@ -16,7 +16,7 @@ Also, any entry that can be specified in the inputs file can also be specified o
 
     mpirun -np 64 ./PeleLMeX2d.xxx.ex inputs amr.max_level=2
 
-The available options are divided into groups: those that control primarily AMReX are prefaced with `amr.`, those that are specific to the PeleLM are prefaced by `peleLM.`, while those corresponding to the various pieces of the algorithm are prefaced with specific keys, such that `diffusion`, `nodal_proj`, ... as described below.
+The available options are divided into groups: those that control primarily AMReX are prefaced with `amr.`, those that are specific to the PeleLMeX are prefaced by `peleLM.`, while those corresponding to the various pieces of the algorithm are prefaced with specific keys, such that `diffusion`, `nodal_proj`, ... as described below.
 
 Computational domain definition
 -------------------------------
@@ -36,8 +36,8 @@ Computational domain definition
     peleLM.lo_bc = Interior Interior Inflow
     peleLM.hi_bc = Interior Interior Inflow
 
-AMR parameters
---------------
+Grid/AMR parameters
+-------------------
 
 ::
 
@@ -68,8 +68,9 @@ Time stepping parameters
     amr.dt_shrink     = 0.0001             # [OPT, DEF=1.0] dt factor upon initialization
     amr.dt_change_max = 1.1                # [OPT, DEF=1.1] maximum dt change between consecutive steps
 
-Note that one of `max_step`, `stop_time`, or `max_wall_time` is required, and if more than one is specified,
-the first stopping criterion encountered will lead to termination of the simulation.
+.. note::
+   Note that one of `amr.max_step`, `amr.stop_time`, or `amr.max_wall_time` is required, and if more than one is specified,
+   the first stopping criterion encountered will lead to termination of the simulation.
 
 IO parameters
 -------------
@@ -90,6 +91,39 @@ IO parameters
 
     amr.restart          = chk00100        # [OPT, DEF=""] Checkpoint from which to restart the simulation
     amr.initDataPlt      = plt01000        # [OPT, DEF=""] Provide a plotfile from which to extract initial data
+
+Refinement controls
+-------------------
+
+Refinement in PeleLMeX is controlled by a set of 'Tagging' criterion listed under the `amr.refinement_indicators`
+key. For each criteriq, the user needs to supply a definition. For example, the following provides a complete
+overview of the available controls:
+
+::
+
+    amr.refinement_indicators gthan lthan adjd box1
+
+    amr.gthan.max_level     = 3
+    amr.gthan.value_greater = 0.005
+    amr.gthan.field_name    = x_velocity
+
+    amr.lthan.max_level     = 4
+    amr.lthan.value_less    = 400.0
+    amr.lthan.field_name    = temp
+    amr.lthan.start_time    = 0.001
+    amr.lthan.end_time      = 0.005
+
+    amr.adjd.max_level                   = 2
+    amr.adjd.adjacent_difference_greater = 0.05
+    amr.adjd.field_name                  = density
+
+    amr.box1.max_level      = 1
+    amr.box1.in_box_lo      = 0.0 0.0 0.0
+    amr.box1.in_box_hi      = 0.01 0.01 0.05
+
+The `field_name` can be any of the state or derived variables (see below) component. Additional controls specific
+to embedded boundaries are discussed below.
+
 
 PeleLMeX derived variables
 --------------------------
@@ -230,15 +264,15 @@ For instance, setting up a sphere of radius 5 mm can be achieved:
 The `eb2.small_volfrac` controls volume fraction that are deemed too small and eliminated from the EB representation.
 This operation is done iteratively and the maximum number of iteration is prescribed by `eb2.maxiter`.
 For most applications, a single AMReX object is insufficient to represent the geometry. AMReX enable to combine
-objects using constructive solid geometry (CSG) in order to create complex geometry. It is up to the user to define
-the combination of basic elements leading to its desired geometry. To switch to a user-defined EB definition, one
+objects using constructive solid geometry (CSG) in order to create complex geometry. It is up to users to define
+the combination of basic elements leading to their desired geometry. To switch to a user-defined EB definition, one
 must set:
 
 ::
 
     eb2.geom_type = UserDefined
 
-and then implement the actual geometry definition in a `EBUserDefined.H` file located in the run folder (and added
+and then implement the actual geometry definition in a `EBUserDefined.H` file located in the run folder (and add
 to the GNUmakefile using `CEXE_headers += EBUserDefined.H`). An example of such implementation is available in the
 ``Exec/Case/ChallengeProblem`` folder. Example of more generic EB problems are also found in the ``Exec/RegTest/EB_*``
 folders.
@@ -255,8 +289,23 @@ By default, the EB is refined to the `amr.max_level`, which can lead to undesira
 close to the EB when the physics of interest might be elsewhere. The above lines enable to limit the
 EB-level to level 1 (must be below `amr.max_level`) and a derefinement strategy is adopted to ensure
 that fine-grid patches do not cross the EB boundary. The last parameter set a safety margin to increase
-how far the derefinement is applied in order to account for grid-patches diagonals and proper nesting contraint.
-Note that the parameter do not ensure coarse-fine/EB crossings are avoided and the code will fail when this happens.
+how far the derefinement is applied in order to account for grid-patches diagonals and proper nesting constrains.
+Note that the parameter do not ensure explicitly coarse-fine/EB crossings are avoided and the code will fail when this happens.
+
+It is also possible to change the default adiabatic EB wall condition to an isothermal EB. To do so, one need to switch the following
+flag:
+
+::
+
+    peleLM.isothermal_EB = 1
+
+The user is now responsible for providing the wall temperature *on all the EB walls*, but adiabtic wall can still be specified.
+Control over the local EB thermal boundary condition is provided through the `setEBState` and `setEBType` functions, also
+defined in the `EBUserDefined.H` already used above to provide a user-defined EB geometry. Example of isothermal EBs are provided
+in ``Exec/RegTest/EB_BackwardStepFlame`` and ``Exec/RegTest/EB_FlowPastCylinder`` tests.
+
+.. note::
+   Note that when using isothermal EB in combination with LES, the thermal diffusion coefficient employed to compute the EB boundary thermal flux only uses the molecular contribution.
 
 Linear solvers
 --------------

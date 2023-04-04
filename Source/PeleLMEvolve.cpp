@@ -98,7 +98,7 @@ void PeleLM::Evolve() {
    if ( (m_plot_int > 0 || m_plot_per_approx > 0. || m_plot_per_exact > 0.) && !plt_justDidIt ) {
       WritePlotFile();
    }
-   if ( m_check_int > 0 && !chk_justDidIt ) {
+   if ( (m_check_int > 0 || m_check_per > 0.) && !chk_justDidIt ) {
       WriteCheckPointFile();
    }
 }
