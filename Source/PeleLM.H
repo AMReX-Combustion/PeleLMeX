@@ -474,9 +474,9 @@ class PeleLM : public amrex::AmrCore {
    static int num_spray_src;
    static bool do_spray_particles;
    static int plot_spray_src;
-   static SprayParticleContainer* theSprayPC();
-   static SprayParticleContainer* theVirtPC();
-   static SprayParticleContainer* theGhostPC();
+   static std::unique_ptr<SprayParticleContainer> SprayPC;
+   static std::unique_ptr<SprayParticleContainer> VirtPC;
+   static std::unique_ptr<SprayParticleContainer> GhostPC;
    // State used for spray interpolation
    amrex::Vector<std::unique_ptr<amrex::MultiFab> > m_spraysource;
    amrex::Vector<std::unique_ptr<amrex::MultiFab> > m_spraystate;
