@@ -87,7 +87,7 @@ PeleLM::SpraySetup()
   if (SPRAY_FUEL_NUM > NUM_SPECIES) {
     Abort("Cannot have more spray fuel species than fluid species");
   }
-  SprayParticleContainer::spraySetup(sprayData);
+  SprayParticleContainer::spraySetup(sprayData, m_gravity.data());
   // Component indices for conservative variables
   scomps.rhoIndx = DENSITY;
   scomps.momIndx = VELX;
