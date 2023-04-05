@@ -617,8 +617,6 @@ void PeleLM::readIOParameters() {
 void PeleLM::variablesSetup() {
    BL_PROFILE("PeleLM::variablesSetup()");
 
-   std::string PrettyLine = std::string(78, '=') + "\n";
-
    //----------------------------------------------------------------
    // Variables ordering is defined through compiler macro in PeleLM_Index.H
    // Simply print on screen the state layout and append to the stateComponents list

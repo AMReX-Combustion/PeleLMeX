@@ -1017,9 +1017,8 @@ void PeleLM::setTypicalValues(const TimeStamp &a_time, int is_init)
     }
 
     if (is_init || m_verbose > 1) {
-        std::string PrettyLine = std::string(78, '=') + "\n";
         Print() << PrettyLine;
-        Print() << "Typical values: " << '\n';
+        Print() << " Typical values: " << '\n';
         Print() << "\tVelocity: ";
         for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
             Print() << typical_values[idim] << ' ';
