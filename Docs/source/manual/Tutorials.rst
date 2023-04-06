@@ -11,4 +11,5 @@ This sections includes several self-contained tutorials.
 .. toctree::
    :maxdepth: 1
 
+   Tutorials_FlameSheet.rst 
    Tutorials_FlowPastCyl.rst
