@@ -53,7 +53,7 @@ void PeleLM::WritePlotFile() {
    const std::string& plotfilename = amrex::Concatenate(m_plot_file, m_nstep, m_ioDigits);
 
    if (m_verbose) {
-      amrex::Print() << "\n Writting plotfile: " << plotfilename << "\n";
+      amrex::Print() << "\n Writing plotfile: " << plotfilename << "\n";
    }
 
    //----------------------------------------------------------------
