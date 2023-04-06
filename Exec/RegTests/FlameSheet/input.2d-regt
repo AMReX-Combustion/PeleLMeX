@@ -46,11 +46,11 @@ amr.max_step = 20                         # Maximum number of time steps
 amr.stop_time = 0.001                     # final simulation physical time
 amr.max_wall_time = 0.1                   # Maximum simulation run time
 amr.cfl = 0.5                             # CFL number for hyperbolic system
-amr.dt_shrink = 0.0001                    # Scale back initial timestep
+amr.dt_shrink = 0.001                     # Scale back initial timestep
 amr.dt_change_max = 1.1                   # Maximum dt increase btw successive steps
 
 #---------------------- IO CONTROL -------------------------------
-#amr.restart = chk00005                   # Restart checkpoint file
+#amr.restart = chk00050                   # Restart checkpoint file
 #amr.check_int = 2000                     # Frequency of checkpoint output
 amr.plot_int = 100                        # Frequency of pltfile output
 amr.derive_plot_vars = avg_pressure mag_vort mass_fractions mixture_fraction progress_variable
