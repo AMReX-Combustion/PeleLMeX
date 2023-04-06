@@ -35,7 +35,7 @@ Follow the steps listed below to get to this point:
 
     cd PeleLMeX/Exec/RegTests/FlameSheet
 
-Note that the makefile system is set up such that default paths are automatically set to the 
+Note that the makefile system is set up such that default paths are automatically set to the
 submodules obtained with the recursive *git clone*, however the user can set its own dependencies
 in the `GNUmakefile` by updating the top-most lines as follows: ::
 
@@ -75,7 +75,7 @@ later in this tutorial.
 
 The following review the content of the various files required for the flame sheet test case.
 User keys listed in the `input.2d-regt` file are reviewed and linked to the specific aspects
-of the simulation setup. To get additional information about the keywords discussed, 
+of the simulation setup. To get additional information about the keywords discussed,
 the reader is referred to :doc:`LMeXControls`.
 
 Geometry, grid and boundary conditions
@@ -158,13 +158,13 @@ contained in `ProbParm` using AMReX's ParmParse: ::
     void PeleLM::readProbParm()
     {
        amrex::ParmParse pp("prob");
-    
+
        std::string type;
        pp.query("P_mean",   PeleLM::prob_parm->P_mean);
        pp.query("standoff", PeleLM::prob_parm->standoff);
        pp.query("pertmag",  PeleLM::prob_parm->pertmag);
        pp.query("pertlength",  PeleLM::prob_parm->pertlength);
-    
+
        PeleLM::pmf_data.initialize();
     }
 
@@ -208,7 +208,7 @@ version of the function reads:
 
 * Compute the harmonic perturbation.
 
-* Using ``standoff`` and the pertubation, use the ``PMF`` function to get cell-average temperature, mole fractions and 
+* Using ``standoff`` and the pertubation, use the ``PMF`` function to get cell-average temperature, mole fractions and
   velocity from the Cantera solution.
 
 * Use the data from the ``PMF`` to set the state array: velocities, density, rhoYs, rhoH and temperature. Relying on
@@ -216,9 +216,9 @@ version of the function reads:
 
 Some of the arguments of the `bcnormal` should now be familiar. The coordinates of the cell where the function
 is called are now directly passed into the function and the outgoing state vector is now ``s_ext``. The ``idir``
-and ``sgn`` `ints` can be used to easily determine on which domain face the function in called. Once again, the 
-state vector is extracted from the ``PMF`` function to match the operating conditions of the Cantera flame. This 
-function is only called in the direction/orientation where a Dirichlet boundary condition is imposed, i.e. the 
+and ``sgn`` `ints` can be used to easily determine on which domain face the function in called. Once again, the
+state vector is extracted from the ``PMF`` function to match the operating conditions of the Cantera flame. This
+function is only called in the direction/orientation where a Dirichlet boundary condition is imposed, i.e. the
 :math:`y`-low domain face here since the transverse direction is periodic and the outflow is an homogeneous
 Neumann for the state components.
 
@@ -229,7 +229,7 @@ Numerical parameters
 
 The ``PeleLM CONTROL`` block contains a few of the `PeleLMeX` algorithmic parameters. Many more
 unspecified parameters are relying on their default values which can be found in :doc:`LMeXControls`.
-Of particular interest are the ``peleLM.sdc_iterMax`` parameter controlling the number of 
+Of particular interest are the ``peleLM.sdc_iterMax`` parameter controlling the number of
 SDC iterations (see :doc:`Model` for more details on SDC in `PeleLMeX`) and the
 ``peleLM.num_init_iter`` one controlling the number of initial iteration the solver will do
 after initialization to obtain a consistent pressure and velocity field.
@@ -294,7 +294,7 @@ Checking the initial conditions
 -------------------------------
 
 As a first step, we will run the simulation performing only the initialization and visualize the initial
-condition, while varying some of the problem parameters. To do so, we need to update the 
+condition, while varying some of the problem parameters. To do so, we need to update the
 time stepping block to specify the number of time steps.
 
 Open the ``input.2d-regt`` with your favorite editor and update the following parameters ::
@@ -308,7 +308,7 @@ Open the ``input.2d-regt`` with your favorite editor and update the following pa
     amr.dt_change_max = 1.1           # Maximum dt increase btw successive steps
 
 We've specified three condition upon which `PeleLMeX` will end the simulation: a maximum number of time steps,
-a maximum physical simulation time and a maximum wallclock time. As soon as one of these condition is met, the 
+a maximum physical simulation time and a maximum wallclock time. As soon as one of these condition is met, the
 code will exit. The time step size is based on a hydrodynamic CFL set here at 0.5, but this estimated value
 is multiplied by ``amr.dt_shrink`` upon initialization to more smoothly eliminate any numerical noise
 arising from the state vector initial solution. The step size then relax to the CFL-constrained dt at
@@ -322,7 +322,7 @@ listed in the input file. To do so, use: ::
 
 A number of information are printed to the screen:
 
-#. AMReX/SUNDIALs initialization along with the git hashes of the various subrepositories  
+#. AMReX/SUNDIALs initialization along with the git hashes of the various subrepositories
 
 #. A summary of the `PeleLMeX` state components
 
@@ -344,7 +344,7 @@ similar to :numref:`FS_InitSol`.
 
 It is interesting to note that the initial solution has a transverse velocity component
 even though only the axial velocity was extracted from a 1D Cantera solution to initialize
-the solution in the `pelelm_initdata` function. This is because `PeleLMeX` performs an 
+the solution in the `pelelm_initdata` function. This is because `PeleLMeX` performs an
 initial projection (more than one actually). At this point, the `divU` constraint is
 mostly negative, which is counter-intuitive for a flame, but this is the consequence of
 the initialization process and the solution will rapidly relax to adapt to the `PeleLMeX` grid.
@@ -376,7 +376,7 @@ and uncomment the following line to require writting checkpoint files: ::
 
 As soon as this last key is specified, `PeleLMeX` will writte an initial and final checkpoint file.
 Note that checkpoint file and plotfile store different data. A checkpoint file will store all the necessary
-state data to enable a continuous restart of the simulation, i.e. the solution after 50 steps is exactly the 
+state data to enable a continuous restart of the simulation, i.e. the solution after 50 steps is exactly the
 same as the one obtained running 25 steps first, then restarting for another 25 steps. A plotfile will
 not necessarily contains the entire state and also includes a number of `derived` variables of interest
 to analyse the simulation. The content of a plotfile can be controlled by users using: ::
@@ -432,7 +432,7 @@ over the course of the 50 steps.
 Visualizing the `plt00050` file, we can see that the solution has not
 changed much from the initial solution at this point (only a fraction of
 a microsecond runtime has been reached). It is still interesting to
-look more closely at `divU`, `FunctCall`, the thermodynamic pressure and 
+look more closely at `divU`, `FunctCall`, the thermodynamic pressure and
 an intermediate species such as CH3 in :numref:`FS_50steps`.
 
 .. figure:: images/tutorials/FS_50steps.png
@@ -444,9 +444,9 @@ an intermediate species such as CH3 in :numref:`FS_50steps`.
 
 The `divU` is now mostly positive, consistent with the thermal expansion occuring across a
 flame front. The `FunctCall` is the number of calls to the chemical right-hand-side function
-used in the chemical integrator CVODE. Higher values are indicative of locally stiffer 
+used in the chemical integrator CVODE. Higher values are indicative of locally stiffer
 chemical ODE system, concentrated in the reactive layer of the flame. The `RhoRT` variable
-is the thermodynamic pressure: within `PeleLMeX` low Mach number appraoch, this should be 
+is the thermodynamic pressure: within `PeleLMeX` low Mach number appraoch, this should be
 perfectly uniform in space. However to conserve mass and enthalpy, the `PeleLMeX` algorithm allows
 for small deviation from this constraint. In the current case, deviation do not extend 0.0001 Pa,
 but larger deviations (> 100-1000 Pa) can be indicative that more SDC iterations are necessary or that the time step
@@ -500,14 +500,14 @@ trigger refinement up to level 4 with this criteria.
 
 :numref:`FS_120steps` shows the same variables as :numref:`FS_50steps`.
 `divU` is now almost entirely positive and shows lower values near the tip
-of the flame cusps as expected from a lean methane/air flame (the amount of 
+of the flame cusps as expected from a lean methane/air flame (the amount of
 hydrogen in the inlet stream is small). The scale of `FunctCall` increased
 from a maximum of 12 to 35, indicating that as the step size is increased,
-CVODE requires more RHS call to integrate the chemical system. Similarly, 
+CVODE requires more RHS call to integrate the chemical system. Similarly,
 `RhoRT` is found to deviate more from the 1 Atm uniform value, up to 25 Pa. also
 as a consequence of the large time step size (about 10 :math:`\mu s` by the end of the
 simulation). Finally, the CH3 mass fraction field show that the intermediate
-species is now resolved on more than a single cell (but more refienement would be 
+species is now resolved on more than a single cell (but more refienement would be
 necessary if this species was of special interest).
 
 .. figure:: images/tutorials/FS_120steps.png
