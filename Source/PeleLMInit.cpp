@@ -199,6 +199,8 @@ void PeleLM::initData() {
       Print() << " Initial dt: " << dtInit << "\n";
 
       if (m_do_init_proj) {
+
+         Print() << "\n Doing initial projection(s) \n\n";
          // Subcycling IAMR/PeleLM first does a projection with no reaction divU
          // which can make the dt for evaluating I_R better
          if (m_has_divu) {
@@ -217,7 +219,6 @@ void PeleLM::initData() {
          // If gravity is used, do initial pressure projection to get the hydrostatic pressure
          if (std::abs(m_gravity.sum()) > 0.0) {
             initialPressProjection();
-
          }
 
          // Post data init time step estimate
@@ -261,7 +262,6 @@ void PeleLM::initData() {
                           m_nGrowAdv, m_use_wbar, m_use_soret, is_initialization));
                calcDivU(is_initialization,computeDiffusionTerm,do_avgDown,AmrNewTime,diffData);
             }
-
             initialProjection();
          }
 
@@ -271,6 +271,7 @@ void PeleLM::initData() {
                ldataR_p->I_R.setVal(0.0);
             }
          }
+         Print() << PrettyLine;
       } else {
          // If we didn't do the projection, initialize press/gp(/I_R)
          for (int lev = 0; lev <= finest_level; ++lev) {
@@ -300,6 +301,8 @@ void PeleLM::initData() {
       if (m_check_int > 0 || m_check_per > 0.) {
          WriteCheckPointFile();
       }
+
+      Print() << PrettyLine;
 
    } else {
       //----------------------------------------------------------------
@@ -397,7 +400,7 @@ void PeleLM::initialIterations() {
    BL_PROFILE_VAR("PeleLM::initialIterations()", initialIterations);
 
    if (m_verbose > 0 && m_init_iter > 0) {
-      amrex::Print() << " Doing initial pressure iteration(s) \n";
+      amrex::Print() << "\n Doing initial pressure iteration(s) \n";
    }
 
    for (int lev = 0; lev <= finest_level; ++lev) {
