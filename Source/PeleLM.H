@@ -34,6 +34,8 @@ class SprayParticleContainer;
 class SootModel;
 #endif
 
+const std::string PrettyLine = " " + std::string(78, '=') + "\n";
+
 class PeleLM : public amrex::AmrCore {
 
    public:
