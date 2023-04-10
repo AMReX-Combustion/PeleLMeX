@@ -112,7 +112,7 @@ void PeleLM::WritePlotFile() {
    ncomp += deriveEntryCount;
 #ifdef PELELM_USE_SPRAY
    if (do_spray_particles) {
-     ncomp += SprayParticleContainer::spray_derive_vars.size();
+     ncomp += SprayParticleContainer::NumDeriveVars();
    }
 #endif
 
@@ -204,12 +204,12 @@ void PeleLM::WritePlotFile() {
       }
    }
 #ifdef PELELM_USE_SPRAY
-   if (SprayParticleContainer::spray_derive_vars.size() > 0) {
+   if (SprayParticleContainer::NumDeriveVars() > 0) {
      // We need virtual particles for the lower levels
      setupVirtualParticles(0);
-     for (int ivar = 0; ivar < SprayParticleContainer::spray_derive_vars.size();
-          ivar++) {
-       plt_VarsName.push_back(SprayParticleContainer::spray_derive_vars[ivar]);
+     for (const auto& spray_derive_name :
+          SprayParticleContainer::DeriveVarNames()) {
+       plt_VarsName.push_back(spray_derive_name);
      }
    }
 #endif
@@ -293,8 +293,8 @@ void PeleLM::WritePlotFile() {
          cnt += mf->nComp();
       }
 #ifdef PELELM_USE_SPRAY
-      if (SprayParticleContainer::spray_derive_vars.size() > 0) {
-        int num_spray_derive = SprayParticleContainer::spray_derive_vars.size();
+      if (SprayParticleContainer::NumDeriveVars() > 0) {
+        const int num_spray_derive = SprayParticleContainer::NumDeriveVars();
         mf_plt[lev].setVal(0., cnt, num_spray_derive);
         SprayPC->computeDerivedVars(mf_plt[lev], lev, cnt);
         if (lev < finest_level) {
