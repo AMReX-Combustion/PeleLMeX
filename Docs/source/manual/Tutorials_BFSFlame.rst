@@ -356,7 +356,8 @@ the step size is of the order of 10 :math:`\mu s`.
 Visualizing the `plt00250` file, we can see that the solution has eveolved, with a
 vortex propagating downstream along the flame surface, while intermediate species
 can be found. Looking at the heat release rate and the H2 mass fraction, we can see that
-the flame front is very poorly resolved.
+the flame front is very poorly resolved. The density along the isothermal EB also increased under
+the effect of the cold wall.
 
 .. figure:: images/tutorials/BFS_250steps.png
    :name: BFS_250steps
@@ -364,3 +365,233 @@ the flame front is very poorly resolved.
    :figwidth: 95%
 
    : Contour plots of density, H2 mass fraction, :math:`x`-velocity component and heat release rate after 250 steps.
+
+In order to illustrate one of `PeleLMeX` failure mode, we will now continue the simulation for 
+another 50 steps, starting from `chk00250`, while increasing the CFL number to 0.6. Update the 
+following keys in the input file: ::
+
+    #---------------------- Time Stepping CONTROL --------------------
+    amr.max_step = 300                          # Maximum number of time steps
+    ...
+    amr.cfl = 0.6                               # CFL number for hyperbolic system
+
+    ...
+    #---------------------- IO CONTROL -------------------------------
+    amr.restart = chk00250                      # Restart checkpoint file
+
+and restart the simulation: ::
+
+    mpirun -n 4 ./PeleLMeX2d.gnu.MPI.ex input.2d > logFail.dat &
+
+The simulation will proceed, with the step size progressively increasing due to the higher CFL
+and changes to the velocity field, but after ~30 steps `PeleLMeX` will fail with the following error: ::
+
+    ====================   NEW TIME STEP   ====================
+    Est. time step - Conv: 1.550410967e-05, divu: 5.712875519e-05
+    STEP [282] - Time: 0.001701680124, dt 1.550410967e-05
+      SDC iter [1]
+      SDC iter [2]
+    amrex::Abort::3::Aborting from CVODE !!!
+    SIGABRT
+    From CVODE: At t = 1.43329e-05, mxstep steps taken before reaching tout.
+
+The combination of large time step size and poor flame resolution leads to a very stiff chemical system,
+where fuel, oxidizer, intermediate species and heat are mixed within the cell averaged state representation
+associated with finite volume. The CVODE error clearly states that the internal sub-stepping of the ODE
+integrator was not able to integrate past 1.43329e-05. This is an indication that the CFL constraint
+is too loose compared to chemical stiffness, even though a implicit solve is performed. This generally occurs
+in laminar flows with coarse resolution, but could also occurs in midly turbulent flames with stiff
+chemical mechanisms. If you plan on pushing the simulation forward without adding refinement, it is advised
+to reduce CFL to smaller value.
+
+Refine the simulation
+---------------------
+
+Instead, let's add a first level of refinement and keep the CFL at a value of 0.6, while restarting again from
+`chk00250`. Enable AMR refinement by increasing the ``amr.max_level``: ::
+
+    #---------------------- AMR CONTROL ------------------------------
+    ...
+    amr.max_level       = 1                     # maximum level number allowed
+    ...
+
+And increase the maximum number of steps to 500: ::
+
+    #---------------------- Time Stepping CONTROL --------------------
+    amr.max_step = 500                          # Maximum number of time steps
+    ...
+
+Restart the simulation: ::
+
+    mpirun -n 4 ./PeleLMeX2d.gnu.MPI.ex input.2d > log1AMR.dat &
+
+Using 4 MPI ranks, the simulation takes approximately 13 mn, so plenty of time to get 
+a warm beverage. Looking at the solution after 500 steps (~3.2 ms), fine boxes can be found
+around the EB and the along the flame. This is consistent with `PeleLMeX` default behavior which consists
+of refining the EB up to the finest level, and the refinement criterion specified in the 
+`Refinement CONTROL` block near the end of the input file: ::
+
+    #---------------------- Refinement CONTROL------------------------
+    amr.refinement_indicators = gradT
+    amr.gradT.max_level     = 3 
+    amr.gradT.adjacent_difference_greater = 100 
+    amr.gradT.field_name    = temp
+
+This input block triggers cell tagging for refinement if the adjacent cell in any directions has a 
+temperature difference larger than 100 K. Because the of the blocking factor and the grid efficiency
+value, most of the lawer part of the computational is actually refined to Level 1.
+
+.. figure:: images/tutorials/BFS_500steps.png
+   :name: BFS_500steps
+   :align: center
+   :figwidth: 95%
+
+   : Contour plots of temperature, H2 mass fraction, chemistry functCall and heat release rate after 500 steps, using 1 level of AMR.
+
+The `functCall` variable corresponds to the number of time CVODE called the chemical right-hand-side function and is
+a good indicator of the computational cost of the integration of the implicit chemical system. Values up to ~70 can 
+be found in the vicinity of the flame front while values < 10 are found outside of the flame, highligthind the high
+spatial heterogeneity of combustion simulations. Even though a flame has established, the recirculation zone in the
+wake of the backward facing step is still mostly filled with the initial hot air mixture. Let's restart the simulation again
+for another 500 steps using the same setup, only adding a few extra parameters:
+
+* increase `PeleLMeX` verbose ``peleLM.v = 2`` is order to get more information about the advance function.
+
+* add following to the list of derived variables stored in plotfile (``amr.derive_plot_vars``): `mixture_fraction`, `progress_variable`.
+
+In order for the mixture fraction and progress variable to be properly define, users must provide the 
+composition of the `fuel` and `oxidizer` streams, and the `cold` and `hot` mixture states, respectively. To do so,
+update the following block: ::
+
+    #---------------------- Derived CONTROLS -------------------------
+    peleLM.fuel_name = CH4
+    peleLM.mixtureFraction.format = Cantera
+    peleLM.mixtureFraction.type   = mass
+    peleLM.mixtureFraction.oxidTank = O2:0.233 N2:0.767
+    peleLM.mixtureFraction.fuelTank = CH4:1.0
+    peleLM.progressVariable.format = Cantera
+    peleLM.progressVariable.weights = CO:1.0 CO2:1.0
+    peleLM.progressVariable.coldState = CO:0.0 CO2:0.0
+    peleLM.progressVariable.hotState = CO:0.003 CO2:0.122
+
+Update the ``amr.restart`` and ``amr.max_step`` to `chk00500` and `1000`, respectively and restart the simulation: ::
+
+    mpirun -n 4 ./PeleLMeX2d.gnu.MPI.ex input.2d > log1AMRcnt.dat &
+
+Once again, the simulation takes approximately 30 mn to complete. At this point, the flame is fairly well established
+in the downstream part of the domain, but the `mixture_fraction` field can clearly show that hot air is still trapped
+in the recirculation. Because of the cold EB wall, the flame is detached from the EB wall and stabilized by an
+ignition mechanism in the shear layer between the incoming fressh, flammable mixture and the recirculated hot gases.
+A look at the heat release rate field will show that the flame is still highly under-resolved. Let's continue the
+simulation with an additional level of refinement. However, we could now want to keep the next level on the flame
+only. However, AMReX (and thus `PeleLMeX`) does not enable coarse-fine boundaries to intersect the EB. In other
+words, a continuous EB surface must be at the same level. But this level doesn't have to be the finest level
+used in the simulation. In order to control the EB refinement level, let's add the following lines to the 
+`Refinement CONTROL` block: ::
+
+    peleLM.refine_EB_type = Static
+    peleLM.refine_EB_max_level = 1 
+    peleLM.refine_EB_buffer = 2.0
+
+These input keys will initiate a de-refining mechanism where local refinement triggered by other tagging criterions
+will be removed above the level specified (`1` in the present case), preventing coarse-fine boundary from intersecting
+the EB. The last keyword is a factor controlling how far from the EB the de-refining is applied is is useful for deep
+AMR hierarchy with complex geometries where proper nesting of finer levels might extend the reach of an AMR level far
+beyond the region where tagging for that level is triggered. Because `PeleLMeX` operates without subcycling, the 
+step size decreases as we add refinement levels. As such, we can increase slightly the CFL number (but no higher than
+0.9) because we will now advance at a step size much small than the ones where we experienced CVODE integration
+issues earlier in this tutorial. Let's set ``amr.cfl=0.7``, increase the ``amr.max_level=2`` and restart the simulation
+for another 200 steps (updating again the restart file and max step).
+
+The simulation with take about 22 mn on 4 MPI ranks. A typical log file step with regridding will look like: ::
+
+    ====================   NEW TIME STEP   ====================
+    Regridding...
+    Remaking level 1
+    Remaking level 2
+    Resetting fine-covered cells mask
+    Est. time step - Conv: 4.947086647e-06, divu: 3.473512656e-05
+    STEP [1195] - Time: 0.008834263469, dt 4.947086647e-06
+      SDC iter [1]
+      - oneSDC()::MACProjection()   --> Time: 0.241061
+      - oneSDC()::ScalarAdvection() --> Time: 0.141316
+      - oneSDC()::ScalarDiffusion() --> Time: 1.351
+      - oneSDC()::ScalarReaction()  --> Time: 1.368832
+      SDC iter [2]
+      - oneSDC()::Update t^{n+1,k}  --> Time: 0.53102
+      - oneSDC()::MACProjection()   --> Time: 0.136435
+      - oneSDC()::ScalarAdvection() --> Time: 0.1527
+      - oneSDC()::ScalarDiffusion() --> Time: 1.07304
+      - oneSDC()::ScalarReaction()  --> Time: 1.18373
+      - Advance()::VelocityAdvance  --> Time: 0.325139
+    >> PeleLM::Advance() --> Time: 7.528655
+
+The increased verbose explicitly shows the various pieces of `PeleLMeX` advance function and their computational
+cost. In the present case, diffusion and reaction are about the same computational cost, 5 to 10 times more expensive
+than the other parts of the algorithm. Both AMR levels where updated at the beginning of the time steps. With the
+additional refinement, the flame front is now resolved with a few grid cells (but still below DNS requirements).
+
+.. figure:: images/tutorials/BFS_1200steps.png
+   :name: BFS_1200steps
+   :align: center
+   :figwidth: 95%
+
+   : Contour plots of temperature, H2 mass fraction, H2 production rate and heat release rate after 1200 steps, using 2 levels of AMR.
+
+The AMR level 2 is clearly distant from the EB and concentrated mostly on the flame surface (except a small box at the bottom of the 
+recirculation zone which could be alleviated by using a refinement criterion based a flame intermediate species rather
+than temperature difference). Let's conclude this tutorial by adding a final AMR level and provide an example of `PeleLMeX`
+runtime diagnostics. We will restart the simulation for another 50 steps with a ``amr.max_level=3``. increasing the 
+verbose to ``peleLM.v = 3`` and defining a couple of diagnostics.
+
+We are interested in evaluating how much the premixed flame near the EB wall differs from the one further downstream. To provide
+quantitative data, we will compute conditional averaged value of the reaction marker and intermediate species as function of the
+progress variable. We can do this by defining the same diagnostics but extracted on the upstrean and downstream regions of the
+computational domain as follows: ::
+
+   peleLM.diagnostics = CondMeanUp CondMeanDown
+   peleLM.CondMeanUp.type = DiagConditional
+   peleLM.CondMeanUp.int  = 50
+   peleLM.CondMeanUp.filters = lowX
+   peleLM.CondMeanUp.lowX.field_name = x
+   peleLM.CondMeanUp.lowX.value_inrange = 0.011 0.035
+   peleLM.CondMeanUp.conditional_type = Average
+   peleLM.CondMeanUp.nBins = 40
+   peleLM.CondMeanUp.condition_field_name = progress_variable
+   peleLM.CondMeanUp.field_names = HeatRelease Y(H2) Y(CO) I_R(CH4) I_R(H2)
+  
+   peleLM.CondMeanDown.type = DiagConditional
+   peleLM.CondMeanDown.int  = 50
+   peleLM.CondMeanDown.filters = highX
+   peleLM.CondMeanDown.highX.field_name = x
+   peleLM.CondMeanDown.highX.value_inrange = 0.035 0.07
+   peleLM.CondMeanDown.conditional_type = Average
+   peleLM.CondMeanDown.nBins = 40
+   peleLM.CondMeanDown.condition_field_name = progress_variable
+   peleLM.CondMeanDown.field_names = HeatRelease Y(H2) Y(CO) I_R(CH4) I_R(H2)
+
+Using different ``filters`` option, the first diagnostic will extract data from the region comprised in the
+:math:`x` [0.011:0.035] while the second one further downstream in :math:`x` [0.035:0.07].
+
+Let's restart the simulation for another 50 steps (updating the restart file and max step). The additional
+verbose allows to get an idea of the number of cells in the simulation: ::
+
+   ====================   NEW TIME STEP   ====================
+   Regridding...
+   Remaking level 1
+   with 37120 cells, over 56.640625% of the domain
+   Remaking level 2
+   with 53248 cells, over 20.3125% of the domain
+   Making new level 3 from coarse
+   with 90880 cells, over 8.666992188% of the domain
+
+Showing that the finest level contains as many cells as the next two coarser levels on only a fraction
+of the space. Two additional ASCII files containing the conditional averaged data have been created and
+using for example `gnuplot`, the user can compare the conditional averaged heat release rate between
+the upstream and downstream region of the flame.
+
+
+
+
+Note that for this analysis to be relevant, we would need to run the simulation longer to completely
+remove the effect of the initial hot air still trapped in the recirculation zone at this point.
