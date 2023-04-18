@@ -487,6 +487,7 @@ void PeleLM::readParameters() {
 
    if ( max_level > 0 ) {
       ppa.query("regrid_int", m_regrid_int);
+      ppa.query("regrid_on_restart", m_regrid_on_restart);
    }
 
 #ifdef AMREX_USE_EB
