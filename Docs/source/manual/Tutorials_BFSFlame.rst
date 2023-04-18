@@ -56,7 +56,7 @@ Case setup
 
 A `PeleLMeX` case folder generally contains a minimal set of files to enable compilation,
 and the reader is referred to the FlameSheet tutorial :doc:`Tutorials_FlameSheet` for a
-more detailed description of `PeleLMeX` case setup. The case of interest for this 
+more detailed description of `PeleLMeX` case setup. The case of interest for this
 tutorial can be found in `PeleLMeX` Exec folder: ::
 
     Exec/RegTests/EB_BackwardStepFlame
@@ -66,7 +66,7 @@ Geometry, grid and boundary conditions
 
 This simulation is performed on a 0.08x0.02 :math:`m^2` 2D computational domain,
 with the bottom left corner located at (-0.01:-0.01) and the top right corner at (0.07:0.01). The flow
-is primarily aligned with the :math:`x` direction with an ``Inflow`` (dirichlet) boundary on the :math:`x`-low 
+is primarily aligned with the :math:`x` direction with an ``Inflow`` (dirichlet) boundary on the :math:`x`-low
 and ``Outflow`` (0-neumann) boundary on :math:`x`-high. No-slip wall condition are imposed the transverse direction.
 Finally a Cartesian coordinate system is used here. A overview of the computational domain is provided in :numref:`BFS_SetupGeom`.
 
@@ -115,11 +115,11 @@ All of those parameters are specified in the `AMR CONTROL` block: ::
    amr.max_grid_size   = 64               # maximum box size
 
 
-Finally, this case use Embedded Boundaries to represent the backward facing step. The EB is 
-defined as a box on the lower-left corner of the domain. For such an easy geometry, 
+Finally, this case use Embedded Boundaries to represent the backward facing step. The EB is
+defined as a box on the lower-left corner of the domain. For such an easy geometry,
 AMReX native simple CGS are sufficient. The box will extend from a point beyond
 the computational domain bottom left corner to (0.01:0.0). Because the intersection of the
-EB with the computational grid can lead to arbitrarily small cells, AMReX provides 
+EB with the computational grid can lead to arbitrarily small cells, AMReX provides
 ``eb2.small_volfrac`` to set a cell volume fraction limit below which a cell
 is considered fully covered. In the present simulation, we will treat the EB
 as an isothermal boundary, with control over the wall temperature described in the
@@ -191,10 +191,10 @@ geometries (not the case here) and to prescribe EB isothermal wall condition. It
 * ``setEBType()`` : even though ``peleLM.isothermal_EB=1`` is activated, the user can locally decide to use
   an adiabatic wall on part of the EB. To do so, this function takes in the EB face center coordinates
   and return a ``Real`` flag that should be set to 1.0 on isothermal areas and 0.0 on adiabatic areas. The
-  flag is later used to pre-multiply the thermal diffusivity effectively zeroing the thermal flux where the flag 
+  flag is later used to pre-multiply the thermal diffusivity effectively zeroing the thermal flux where the flag
   is 0.0.
 
-In the present case, we set the EB temperature to ``T_wall`` everywhere on the EB in ``setEBState()`` but 
+In the present case, we set the EB temperature to ``T_wall`` everywhere on the EB in ``setEBState()`` but
 the EB flag is only set to 1.0 on the vertical EB faces (:math:`x` normal) such that the top of the EB box
 is adiabatic.
 
@@ -237,7 +237,7 @@ The next few lines specify AMReX compilation options and compiler selection: ::
    USE_HIP         = FALSE
 
 It allows users to specify the number of spatial dimensions (2D), activate the compilation of the EB aware AMReX source code,
-trigger debug compilation and other AMReX options. The compiler (``gnu``) and the parallelism paradigm 
+trigger debug compilation and other AMReX options. The compiler (``gnu``) and the parallelism paradigm
 (in the present case only MPI is used) are then selected. Note that on OSX platform, one should update the compiler to ``llvm``.
 
 The user also need to make sure the additional C++ header employed define the EB state is included in the build: ::
@@ -246,8 +246,8 @@ The user also need to make sure the additional C++ header employed define the EB
    CEXE_headers    += EBUserDefined.H
 
 In `PeleLMeX`, the chemistry model (set of species, their thermodynamic and transport properties as well as the description
-of their of chemical interactions) is specified at compile time. Chemistry models available in 
-`PelePhysics` can used in `PeleLMeX` by specifying the name of the folder in `PelePhysics/Support/Mechanisms/Models` containing 
+of their of chemical interactions) is specified at compile time. Chemistry models available in
+`PelePhysics` can used in `PeleLMeX` by specifying the name of the folder in `PelePhysics/Support/Mechanisms/Models` containing
 the relevant files, for example: ::
 
    Chemistry_Model = drm19
@@ -315,9 +315,9 @@ similar to :numref:`BFS_InitSol`.
 
 Note that in `PeleLMeX`, EB-covered region are set to zero in plotfiles. Hot gases are found in the wake
 of the EB as expected, with a slightly higher O2 mass fraction compared to the upper part of the domain
-where CH4 is present in the mixture. The velocity field results from the initial projection, which uses 
+where CH4 is present in the mixture. The velocity field results from the initial projection, which uses
 the divergence constraint. The later is negative close to the isothermal EB because the cold EB leads
-to an increase of density. `divU` is also non zero at the interface between the incoming fresh gases and 
+to an increase of density. `divU` is also non zero at the interface between the incoming fresh gases and
 the hot ait due to heat diffusion.
 
 Advance the solution on coarse grid
@@ -366,8 +366,8 @@ the effect of the cold wall.
 
    : Contour plots of density, H2 mass fraction, :math:`x`-velocity component and heat release rate after 250 steps.
 
-In order to illustrate one of `PeleLMeX` failure mode, we will now continue the simulation for 
-another 50 steps, starting from `chk00250`, while increasing the CFL number to 0.6. Update the 
+In order to illustrate one of `PeleLMeX` failure mode, we will now continue the simulation for
+another 50 steps, starting from `chk00250`, while increasing the CFL number to 0.6. Update the
 following keys in the input file: ::
 
     #---------------------- Time Stepping CONTROL --------------------
@@ -425,19 +425,19 @@ Restart the simulation: ::
 
     mpirun -n 4 ./PeleLMeX2d.gnu.MPI.ex input.2d > log1AMR.dat &
 
-Using 4 MPI ranks, the simulation takes approximately 13 mn, so plenty of time to get 
+Using 4 MPI ranks, the simulation takes approximately 13 mn, so plenty of time to get
 a warm beverage. Looking at the solution after 500 steps (~3.2 ms), fine boxes can be found
 around the EB and the along the flame. This is consistent with `PeleLMeX` default behavior which consists
-of refining the EB up to the finest level, and the refinement criterion specified in the 
+of refining the EB up to the finest level, and the refinement criterion specified in the
 `Refinement CONTROL` block near the end of the input file: ::
 
     #---------------------- Refinement CONTROL------------------------
     amr.refinement_indicators = gradT
-    amr.gradT.max_level     = 3 
-    amr.gradT.adjacent_difference_greater = 100 
+    amr.gradT.max_level     = 3
+    amr.gradT.adjacent_difference_greater = 100
     amr.gradT.field_name    = temp
 
-This input block triggers cell tagging for refinement if the adjacent cell in any directions has a 
+This input block triggers cell tagging for refinement if the adjacent cell in any directions has a
 temperature difference larger than 100 K. Because the of the blocking factor and the grid efficiency
 value, most of the lawer part of the computational is actually refined to Level 1.
 
@@ -449,7 +449,7 @@ value, most of the lawer part of the computational is actually refined to Level 
    : Contour plots of temperature, H2 mass fraction, chemistry functCall and heat release rate after 500 steps, using 1 level of AMR.
 
 The `functCall` variable corresponds to the number of time CVODE called the chemical right-hand-side function and is
-a good indicator of the computational cost of the integration of the implicit chemical system. Values up to ~70 can 
+a good indicator of the computational cost of the integration of the implicit chemical system. Values up to ~70 can
 be found in the vicinity of the flame front while values < 10 are found outside of the flame, highligthind the high
 spatial heterogeneity of combustion simulations. Even though a flame has established, the recirculation zone in the
 wake of the backward facing step is still mostly filled with the initial hot air mixture. Let's restart the simulation again
@@ -459,7 +459,7 @@ for another 500 steps using the same setup, only adding a few extra parameters:
 
 * add following to the list of derived variables stored in plotfile (``amr.derive_plot_vars``): `mixture_fraction`, `progress_variable`.
 
-In order for the mixture fraction and progress variable to be properly define, users must provide the 
+In order for the mixture fraction and progress variable to be properly define, users must provide the
 composition of the `fuel` and `oxidizer` streams, and the `cold` and `hot` mixture states, respectively. To do so,
 update the following block: ::
 
@@ -486,18 +486,18 @@ A look at the heat release rate field will show that the flame is still highly u
 simulation with an additional level of refinement. However, we could now want to keep the next level on the flame
 only. However, AMReX (and thus `PeleLMeX`) does not enable coarse-fine boundaries to intersect the EB. In other
 words, a continuous EB surface must be at the same level. But this level doesn't have to be the finest level
-used in the simulation. In order to control the EB refinement level, let's add the following lines to the 
+used in the simulation. In order to control the EB refinement level, let's add the following lines to the
 `Refinement CONTROL` block: ::
 
     peleLM.refine_EB_type = Static
-    peleLM.refine_EB_max_level = 1 
+    peleLM.refine_EB_max_level = 1
     peleLM.refine_EB_buffer = 2.0
 
 These input keys will initiate a de-refining mechanism where local refinement triggered by other tagging criterions
 will be removed above the level specified (`1` in the present case), preventing coarse-fine boundary from intersecting
 the EB. The last keyword is a factor controlling how far from the EB the de-refining is applied is is useful for deep
 AMR hierarchy with complex geometries where proper nesting of finer levels might extend the reach of an AMR level far
-beyond the region where tagging for that level is triggered. Because `PeleLMeX` operates without subcycling, the 
+beyond the region where tagging for that level is triggered. Because `PeleLMeX` operates without subcycling, the
 step size decreases as we add refinement levels. As such, we can increase slightly the CFL number (but no higher than
 0.9) because we will now advance at a step size much small than the ones where we experienced CVODE integration
 issues earlier in this tutorial. Let's set ``amr.cfl=0.7``, increase the ``amr.max_level=2`` and restart the simulation
@@ -538,33 +538,37 @@ additional refinement, the flame front is now resolved with a few grid cells (bu
 
    : Contour plots of temperature, H2 mass fraction, H2 production rate and heat release rate after 1200 steps, using 2 levels of AMR.
 
-The AMR level 2 is clearly distant from the EB and concentrated mostly on the flame surface (except a small box at the bottom of the 
+The AMR level 2 is clearly distant from the EB and concentrated mostly on the flame surface (except a small box at the bottom of the
 recirculation zone which could be alleviated by using a refinement criterion based a flame intermediate species rather
-than temperature difference). Let's conclude this tutorial by adding a final AMR level and provide an example of `PeleLMeX`
-runtime diagnostics. We will restart the simulation for another 50 steps with a ``amr.max_level=3``. increasing the 
+than temperature difference). Let's conclude this tutorial by another two AMR levels and provide an example of `PeleLMeX`
+runtime diagnostics. We will restart the simulation for another 10 steps with a ``amr.max_level=3``. increasing the
 verbose to ``peleLM.v = 3`` and defining a couple of diagnostics.
 
 We are interested in evaluating how much the premixed flame near the EB wall differs from the one further downstream. To provide
-quantitative data, we will compute conditional averaged value of the reaction marker and intermediate species as function of the
-progress variable. We can do this by defining the same diagnostics but extracted on the upstrean and downstream regions of the
+quantitative data, we will compute conditional averaged value of reaction markers and intermediate species as function of the
+progress variable. We can do this by defining the same diagnostics but extracted on the upstream and downstream regions of the
 computational domain as follows: ::
 
    peleLM.diagnostics = CondMeanUp CondMeanDown
    peleLM.CondMeanUp.type = DiagConditional
-   peleLM.CondMeanUp.int  = 50
-   peleLM.CondMeanUp.filters = lowX
+   peleLM.CondMeanUp.int  = 10
+   peleLM.CondMeanUp.filters = lowX middleY
    peleLM.CondMeanUp.lowX.field_name = x
    peleLM.CondMeanUp.lowX.value_inrange = 0.011 0.035
+   peleLM.CondMeanUp.middleY.field_name = y
+   peleLM.CondMeanUp.middleY.value_inrange = -0.005 0.005
    peleLM.CondMeanUp.conditional_type = Average
    peleLM.CondMeanUp.nBins = 40
    peleLM.CondMeanUp.condition_field_name = progress_variable
    peleLM.CondMeanUp.field_names = HeatRelease Y(H2) Y(CO) I_R(CH4) I_R(H2)
-  
+
    peleLM.CondMeanDown.type = DiagConditional
-   peleLM.CondMeanDown.int  = 50
-   peleLM.CondMeanDown.filters = highX
+   peleLM.CondMeanDown.int  = 10
+   peleLM.CondMeanDown.filters = highX middleY
    peleLM.CondMeanDown.highX.field_name = x
    peleLM.CondMeanDown.highX.value_inrange = 0.035 0.07
+   peleLM.CondMeanDown.middleY.field_name = y
+   peleLM.CondMeanDown.middleY.value_inrange = -0.005 0.005
    peleLM.CondMeanDown.conditional_type = Average
    peleLM.CondMeanDown.nBins = 40
    peleLM.CondMeanDown.condition_field_name = progress_variable
@@ -573,7 +577,7 @@ computational domain as follows: ::
 Using different ``filters`` option, the first diagnostic will extract data from the region comprised in the
 :math:`x` [0.011:0.035] while the second one further downstream in :math:`x` [0.035:0.07].
 
-Let's restart the simulation for another 50 steps (updating the restart file and max step). The additional
+Let's restart the simulation for another 10 steps (updating the restart file and max step). The additional
 verbose allows to get an idea of the number of cells in the simulation: ::
 
    ====================   NEW TIME STEP   ====================
@@ -581,17 +585,28 @@ verbose allows to get an idea of the number of cells in the simulation: ::
    Remaking level 1
    with 37120 cells, over 56.640625% of the domain
    Remaking level 2
-   with 53248 cells, over 20.3125% of the domain
-   Making new level 3 from coarse
-   with 90880 cells, over 8.666992188% of the domain
+   with 67072 cells, over 25.5859375% of the domain
+   Remaking level 3
+   with 117760 cells, over 11.23046875% of the domain
+   Making new level 4 from coarse
+   with 189696 cells, over 4.522705078% of the domain
+   Resetting fine-covered cells mask
+   Est. time step - Conv: 1.221962099e-06, divu: 3.340072395e-05
+   STEP [1205] - Time: 0.008871299457, dt 1.221962099e-06
+   ...
 
 Showing that the finest level contains as many cells as the next two coarser levels on only a fraction
 of the space. Two additional ASCII files containing the conditional averaged data have been created and
 using for example `gnuplot`, the user can compare the conditional averaged heat release rate between
 the upstream and downstream region of the flame.
 
+.. figure:: images/tutorials/BFS_CondAverage.png
+   :name: BFS_CondAverage
+   :align: center
+   :figwidth: 60%
 
-
+   : Conditional average and standard deviation of heat release rate after 1210 steps, using 4 levels of AMR.
 
 Note that for this analysis to be relevant, we would need to run the simulation longer to completely
-remove the effect of the initial hot air still trapped in the recirculation zone at this point.
+remove the effect of the initial hot air still trapped in the recirculation zone at this point and largely
+affecting the upstream average data.
