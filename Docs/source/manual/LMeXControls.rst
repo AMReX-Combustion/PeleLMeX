@@ -185,8 +185,17 @@ The following list of derived variables are available in PeleLMeX:
     * - `coordinates`
       - AMREX_SPACEDIM
       - Cell-center coordinates
+    * - `DistributionMap`
+      - 1
+      - The MPI-rank of each box
+    * - `derUserDefined`
+      - ?
+      - A user-defined derived which number of components is provided by the user (see below).
 
 Note that `mixture_fraction` and `progress_variable` requires additional inputs from the users as described below.
+The `derUserDefined` allow the user to define its own derived variable which can comprise several components. To do
+so, the user need to copy the Source/DeriveUserDefined.cpp file into his run folder and update the file. The number of
+components is defined based on the size of the vector returned by pelelm_setuserderives().
 
 PeleLMeX algorithm
 ------------------
