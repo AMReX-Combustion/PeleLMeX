@@ -10,11 +10,11 @@ Backward facing step anchored premixed flame
 Introduction
 ------------
 
-`PeleLMeX` primary objective is to enable simulations of reactive flows on platforms ranging
-from small personal computer to Exascale supercomputer. This tutorial describes the case
+The primary objective of `PeleLMeX` is to enable simulations of reactive flows on platforms ranging
+from small personal computers to Exascale supercomputers. This tutorial describes the case
 of a 2D laminar premixed methane/air flame anchored behind a backward facing step.
 
-The goal of this tutorial is to introduce `PeleLMeX` users to more advanced reactive simulations setup as
+The goal of this tutorial is to introduce `PeleLMeX` users to more advanced reactive simulation setup as
 well as embedded boundaries.
 
 ..  _sec:TUTO_BFS::PrepStep:
@@ -25,13 +25,13 @@ Setting-up your environment
 Getting a functioning environment in which to compile and run `PeleLMeX` is the first step of this tutorial.
 Follow the steps listed below to get to this point:
 
-#. The first step consist in getting `PeleLMeX` and its dependencies. To do so, use a recursive *git clone*: ::
+#. The first step is to get `PeleLMeX` and its dependencies. To do so, use a recursive *git clone*: ::
 
     git clone --recursive https://github.com/AMReX-Combustion/PeleLMeX.git
 
-#. Move into the Exec folder containing the ``FlameSheet``. To do so: ::
+#. Move into the Exec folder containing the ``EB_BackwardStepFlame``. To do so: ::
 
-    cd PeleLMeX/Exec/RegTests/FlameSheet
+    cd PeleLMeX/Exec/RegTests/EB_BackwardStepFlame
 
 Note that the makefile system is set up such that default paths are automatically set to the
 submodules obtained with the recursive *git clone*, however the user can set its own dependencies
@@ -67,8 +67,8 @@ Geometry, grid and boundary conditions
 This simulation is performed on a 0.08x0.02 :math:`m^2` 2D computational domain,
 with the bottom left corner located at (-0.01:-0.01) and the top right corner at (0.07:0.01). The flow
 is primarily aligned with the :math:`x` direction with an ``Inflow`` (dirichlet) boundary on the :math:`x`-low
-and ``Outflow`` (0-neumann) boundary on :math:`x`-high. No-slip wall condition are imposed the transverse direction.
-Finally a Cartesian coordinate system is used here. A overview of the computational domain is provided in :numref:`BFS_SetupGeom`.
+and ``Outflow`` (0-neumann) boundary on :math:`x`-high. No-slip wall conditions are imposed the transverse direction.
+Finally a Cartesian coordinate system is used here. An overview of the computational domain is provided in :numref:`BFS_SetupGeom`.
 
 .. figure:: images/tutorials/BFS_SetupSketch.png
    :name: BFS_SetupGeom
@@ -94,13 +94,14 @@ All of the geometrical information can be specified the first two blocks of the 
 .. note::
     Note that when running 2D simulations, it is not necessary to specify entries for the third dimension.
 
-The base grid is decomposed into a 256x64 cells array with AMR initially not activated.
+The base grid is decomposed into a 256x64 cell array with AMR initially not activated.
 
 The refinement ratio between each level is set to 2 and `PeleLMeX` currently does not support
 refinement ratio of 4. Regrid operation will be performed every 5 steps. ``amr.n_error_buf`` specifies,
 for each level, the number of buffer cells used around the cell tagged for refinement, while ``amr.grid_eff``
 describes the grid efficiency, i.e. how much of the new grid contains tagged cells. Higher values lead
-to tighter grids around the tagged cells.
+to tighter grids around the tagged cells. For more information on how these parameters affect grid generation,
+see the `AMReX documentation <https://amrex-codes.github.io/amrex/docs_html/GridCreation.html>`_.
 
 All of those parameters are specified in the `AMR CONTROL` block: ::
 
@@ -115,7 +116,7 @@ All of those parameters are specified in the `AMR CONTROL` block: ::
    amr.max_grid_size   = 64               # maximum box size
 
 
-Finally, this case use Embedded Boundaries to represent the backward facing step. The EB is
+Finally, this case uses Embedded Boundaries to represent the backward facing step. The EB is
 defined as a box on the lower-left corner of the domain. For such an easy geometry,
 AMReX native simple CGS are sufficient. The box will extend from a point beyond
 the computational domain bottom left corner to (0.01:0.0). Because the intersection of the
@@ -137,7 +138,7 @@ next section.
 
 .. note::
     When EBs intersect with the domain boundary, it is important to ensure that
-    the EB definition extend slightly beyond the domain boundaries to provide
+    the EB definition extends slightly beyond the domain boundaries to provide
     EB structure data in the domain ghost cells.
 
 
@@ -174,7 +175,7 @@ The user parameters are gathered in the struct defined in  ``pelelm_prob_parm.H`
 
 * ``meanFlowMag`` : inlet :math:`x` velocity
 
-The initial solution consist of a premixed methane/air mixture in the upper part of the domain
+The initial solution consists of a premixed methane/air mixture in the upper part of the domain
 and pure hot air in the wake of the step. The default parameters provided above are overwritten
 using AMReX ParmParse in ``pelelm_prob.cpp`` and the initial/boundary conditions implemented in
 ``pelelm_prob.H``.
@@ -240,7 +241,7 @@ It allows users to specify the number of spatial dimensions (2D), activate the c
 trigger debug compilation and other AMReX options. The compiler (``gnu``) and the parallelism paradigm
 (in the present case only MPI is used) are then selected. Note that on OSX platform, one should update the compiler to ``llvm``.
 
-The user also need to make sure the additional C++ header employed define the EB state is included in the build: ::
+The user also needs to make sure the additional C++ header employed to define the EB state is included in the build: ::
 
    # PeleLMeX
    CEXE_headers    += EBUserDefined.H
@@ -252,22 +253,20 @@ the relevant files, for example: ::
 
    Chemistry_Model = drm19
 
-Here, the model ``drm19``, contains 21 species and describe the chemical decomposition of methane.
+Here, the model ``drm19`` contains 21 species and describe the chemical decomposition of methane.
 The user is referred to the `PelePhysics <https://pelephysics.readthedocs.io/en/latest/>`_ documentation for a
 list of available mechanisms and more information regarding the EOS, chemistry and transport models specified: ::
 
     Eos_Model       := Fuego
     Transport_Model := Simple
 
-Note that the ``Chemistry_Model`` must be similar to the one used to generate the Cantera solution.
-
-Finally, `PeleLMeX` utilizes the chemical kinetic ODE integrator `CVODE <https://computing.llnl.gov/projects/sundials/cvode>`_. This Third Party Librabry (TPL) is not shipped with the `PeleLMeX` distribution but can be readily installed through the makefile system of `PeleLMeX`. Note that compiling Sundials is necessary even if the simualtion do not involve reactions. To do so, type in the following command: ::
+Finally, `PeleLMeX` utilizes the chemical kinetic ODE integrator `CVODE <https://computing.llnl.gov/projects/sundials/cvode>`_. This Third Party Librabry (TPL) is not shipped with the `PeleLMeX` distribution but can be readily installed through the makefile system of `PeleLMeX`. Note that compiling Sundials is necessary even if the simualtion does not involve reactions. To do so, type in the following command: ::
 
     make -j4 TPL
 
 Note that the installation of `CVODE` requires CMake 3.17.1 or higher.
 
-You are now ready to build your first `PeleLMeX` executable !! Type in: ::
+You are now ready to build your first `PeleLMeX` executable!! Type in: ::
 
     make -j4
 
@@ -293,7 +292,7 @@ listed in the input file. To do so, use: ::
 
     ./PeleLMeX2d.gnu.MPI.ex input.2d-regt
 
-A number of information are printed to the screen:
+A variety of information is printed to the screen:
 
 #. AMReX/SUNDIALs initialization along with the git hashes of the various subrepositories
 
@@ -313,12 +312,12 @@ similar to :numref:`BFS_InitSol`.
 
    : Contour plots of temperature, O2 mass fraction, :math:`x`-velocity component and divergence constraint after initialization.
 
-Note that in `PeleLMeX`, EB-covered region are set to zero in plotfiles. Hot gases are found in the wake
+Note that in `PeleLMeX`, EB-covered regions are set to zero in plotfiles. Hot gases are found in the wake
 of the EB as expected, with a slightly higher O2 mass fraction compared to the upper part of the domain
 where CH4 is present in the mixture. The velocity field results from the initial projection, which uses
 the divergence constraint. The later is negative close to the isothermal EB because the cold EB leads
 to an increase of density. `divU` is also non zero at the interface between the incoming fresh gases and
-the hot ait due to heat diffusion.
+the hot air due to heat diffusion.
 
 Advance the solution on coarse grid
 -----------------------------------
@@ -344,7 +343,7 @@ A typical `PeleLMeX` stdout for a time step now looks like: ::
       SDC iter [2]
     >> PeleLM::Advance() --> Time: 0.877052
 
-clearly showing the use of 2 SDC iterations. The first line at each step provide
+clearly showing the use of 2 SDC iterations. The first line at each step provides
 the time step contraint from the CFL
 condition (``Conv:``) and from the density change condition (``divu:``).
 Since an initial ``dt_shrink`` was applied upon initialization, the
@@ -366,7 +365,7 @@ the effect of the cold wall.
 
    : Contour plots of density, H2 mass fraction, :math:`x`-velocity component and heat release rate after 250 steps.
 
-In order to illustrate one of `PeleLMeX` failure mode, we will now continue the simulation for
+In order to illustrate one of `PeleLMeX` failure modes, we will now continue the simulation for
 another 50 steps, starting from `chk00250`, while increasing the CFL number to 0.6. Update the
 following keys in the input file: ::
 
@@ -427,7 +426,7 @@ Restart the simulation: ::
 
 Using 4 MPI ranks, the simulation takes approximately 13 mn, so plenty of time to get
 a warm beverage. Looking at the solution after 500 steps (~3.2 ms), fine boxes can be found
-around the EB and the along the flame. This is consistent with `PeleLMeX` default behavior which consists
+around the EB and along the flame. This is consistent with `PeleLMeX` default behavior which consists
 of refining the EB up to the finest level, and the refinement criterion specified in the
 `Refinement CONTROL` block near the end of the input file: ::
 
@@ -439,7 +438,7 @@ of refining the EB up to the finest level, and the refinement criterion specifie
 
 This input block triggers cell tagging for refinement if the adjacent cell in any directions has a
 temperature difference larger than 100 K. Because the of the blocking factor and the grid efficiency
-value, most of the lawer part of the computational is actually refined to Level 1.
+value, most of the lower part of the computational domain is actually refined to Level 1.
 
 .. figure:: images/tutorials/BFS_500steps.png
    :name: BFS_500steps
