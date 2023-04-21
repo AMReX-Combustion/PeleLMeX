@@ -52,6 +52,26 @@ Grid/AMR parameters
     amr.blocking_factor = 16               # block factor in grid generation (min box size)
     amr.max_grid_size   = 64               # max box size
 
+    peleLM.max_grid_size_chem = 32         # [OPT, DEF="None"] Max box size for the Chemistry BoxArray
+
+Load balancing
+--------------
+
+*PeleLMeX* relies on two distribution maps (see :doc:`Implementation` for more details).
+
+::
+
+    peleLM.do_load_balancing = 1                    # [OPT, DEF=0] Activate load balancing
+    peleLM.load_balancing_method = sfc              # [OPT, DEF="sfc"] AmrCore dmap load balancing method
+    peleLM.load_balancing_cost_estimate = ncell     # [OPT, DEF="ncell"] AmrCore dmap balancing cost
+    peleLM.chem_load_balancing_method = knapsack    # [OPT, DEF="knapsack"] Chemistry dmap load balancing method
+    peleLM.chem_load_balancing_cost_estimate = chemfunctcall_sum # [OPT, DEF="chemfunctcall_sum"] Chemistry dmap balancing cost
+    peleLM.load_balancing_efficiency_threshold = 1.05  # What constitute a better dmap ?
+
+The balancing method can be one of `sfc`, `roundrobin` or `knapsack`, while the cost estimate can be one of
+`ncell`, `chemfunctcall_avg`, `chemfunctcall_max`, `chemfunctcall_sum`, `userdefined_avg` or `userdefined_sum`. When
+using either of the last to option, the user must provide a definition for the `derUserDefined`.
+
 Time stepping parameters
 ------------------------
 
@@ -123,7 +143,6 @@ overview of the available controls:
 
 The `field_name` can be any of the state or derived variables (see below) component. Additional controls specific
 to embedded boundaries are discussed below.
-
 
 PeleLMeX derived variables
 --------------------------
