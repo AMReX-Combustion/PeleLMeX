@@ -172,9 +172,10 @@ and simplified velocity constraint,
 PeleLMeX Algorithm
 ------------------
 
-An overview of `PeleLMeX` time-advance function is provided in the figure below and details are provided in the following subsections.
+An overview of `PeleLMeX` time-advance function is provided in :numref:`LMeX_Algo` and details are provided in the following subsections.
 
 .. figure:: images/model/PeleLMeX_Algorithm.png
+   :name: LMeX_Algo
    :align: center
    :figwidth: 50%
 
