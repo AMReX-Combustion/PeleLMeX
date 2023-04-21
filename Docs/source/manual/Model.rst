@@ -40,7 +40,7 @@ In a nutshell, `PeleLMeX` features include:
 Mathematical background
 -----------------------
 
-`PeleLMeX` evolves chemically reacting low Mach number flows with block-structured adaptive mesh refinement (AMR). The code depends upon the `AMReX <https://github.com/AMReX-Codes/amrex>`_ library to provide the underlying data structures, and tools to manage and operate on them across massively parallel computing architectures. `PeleLMeX` also utilizes the source code and algorithmic infrastructure of `AMReX-Hydro <https://github.com/AMReX-Codes/AMReX-Hydro>`_. `PeleLMeX` borrows heavily from `PeleLM <https://github.com/AMReX-Combustion/PeleLM>`_. The core algorithms in `PeleLM` are described in the following papers:
+`PeleLMeX` evolves chemically reacting low Mach number flows with block-structured adaptive mesh refinement (AMR). The code depends upon the `AMReX <https://github.com/AMReX-Codes/amrex>`_ library to provide the underlying data structures, and tools to manage and operate on them across massively parallel computing architectures. `PeleLMeX` also utilizes the source code and algorithmic infrastructure of `AMReX-Hydro <https://github.com/AMReX-Codes/AMReX-Hydro>`_. `PeleLMeX` borrows heavily from `PeleLM`_. The core algorithms in `PeleLM` are described in the following papers:
 
 * *A conservative, thermodynamically consistent numerical approach for low Mach number combustion. I. Single-level integration*, A. Nonaka, J. B. Bell, and M. S. Day, *Combust. Theor. Model.*, **22** (1) 156-184 (2018)
 
@@ -178,6 +178,8 @@ An overview of `PeleLMeX` time-advance function is provided in :numref:`LMeX_Alg
    :name: LMeX_Algo
    :align: center
    :figwidth: 50%
+
+   : Flowchart of the *PeleLMeX* advance function.
 
 The three steps of the low Mach number projection scheme described :ref:`below <ssec:projScheme>` are referenced to better
 emphasize how the thermodynamic solve is closely weaved into the fractional step appraoch. Striped boxes indicate where the
@@ -341,7 +343,7 @@ Note that in the presence of EB, only the `Godunov_PLM` variant is available.
 AMR extension
 ^^^^^^^^^^^^^
 
-In contrast with `PeleLM <https://github.com/AMReX-Combustion/PeleLM>`_, `PeleLMeX` do not rely a on subcycling appraoch to advance the AMR hierarchy.
+In contrast with `PeleLM`_, `PeleLMeX` do not rely a on subcycling appraoch to advance the AMR hierarchy.
 This difference is illustrated in the figure below comparing the multi-level time-stepping approach in both codes:
 
 .. figure:: images/model/PeleLMeX_Subcycling.png

@@ -2,8 +2,8 @@
 
 .. _sec:code:
 
-The `PeleLMeX` code
-===================
+Source code
+===========
 
 The following provides an overview of *PeleLMeX* source code, basic information on the data structure and is 
 useful for any user intending to use and/or do some development in the code.
@@ -11,19 +11,20 @@ useful for any user intending to use and/or do some development in the code.
 Overview of source code
 -----------------------
 
-*PeleLMeX* is based upon AMReX's [AmrCore](https://amrex-codes.github.io/amrex/docs_html/AmrCore.html) from which it inherits
+*PeleLMeX* is based upon AMReX's `AmrCore <https://amrex-codes.github.io/amrex/docs_html/AmrCore.html>`_ from which it inherits
 an AMR hierarchy data structure and basic regridding functionnalities. The code is entirely written in C++, with low level
 compute-intensive kernels implemented as lambda functions to seamlessly run on CPU and various GPU backends through AMReX
 high performance portatbility abstraction.
 
 The core of the algorithm is implementation in the ``advance()`` function which acts on all the levels concurrently.
-Projection operators and advection scheme functions are imported the [AMReX-Hydro library](https://amrex-codes.github.io/AMReX-Hydro) 
-while the core of the thermo-chemistry functionalities comes from [PelePhysics](https://amrex-combustion.github.io/PelePhysics/).
+Projection operators and advection scheme functions are imported the `AMReX-Hydro library <https://amrex-codes.github.io/AMReX-Hydro>`_
+while the core of the thermo-chemistry functionalities comes from `PelePhysics <https://amrex-combustion.github.io/PelePhysics/>`_ .
 Users are responsible for providing initial and boundary conditions in the local subfolder implementing their case, i.e. it is
 not possible to compile and run *PeleLMeX* without actually writting a few lines of codes. However, numerous example are provided
 in ``Exec/RegTests`` from which new users can pull for their new case.
 
 The source code contains a few dozen files, organized around the pieces of the algorithm and major functionalities:
+
 * ``PeleLMEvolve``: top level time advance loop, with IO/exit controls
 * ``PeleLMSetup``: setting up the simulation parameters, parsing the input file
 * ``PeleLMInit``: generating the initial solution from scratch or checkpoint file, performing initial projections/iteration(s)
@@ -45,7 +46,7 @@ Data structure and containers
 AMReX 101
 ^^^^^^^^^
 
-The basic AMReX`s data structure is the [MultiFab](https://amrex-codes.github.io/amrex/docs_html/Basics.html#fabarray-multifab-and-imultifab)
+The basic AMReX`s data structure is the `MultiFab <https://amrex-codes.github.io/amrex/docs_html/Basics.html#fabarray-multifab-and-imultifab>`_
 (historically, multi Fortran Array Box (FAB)).
 Within the block-structured AMR approach of AMReX, the domain is decomposed into non-overlapping rectangular `boxes`,
 which can be assembled into a `boxArray`. Each AMR level has a `boxArray` providing the list of `boxes` of that level.
@@ -55,10 +56,10 @@ of the geometrical rectangular object, containing bounds and centering informati
 allocate a FAB for the boxes it owns in the `boxArray`, resulting in a collection of FABs or a MultiFab, distributed
 accross the MPI ranks.
 
-To access the data in a MultiFab, one uses a [MFIter](https://amrex-codes.github.io/amrex/docs_html/Basics.html#mfiter-and-tiling)
+To access the data in a MultiFab, one uses a `MFIter <https://amrex-codes.github.io/amrex/docs_html/Basics.html#mfiter-and-tiling>`_
 (or MultiFab iterator), which provides each MPI rank access to the FABs it owns within the MultiFab. Actual access to the data in
 memory is then provided by the lightweight `Array4` structure and it is strongly advised to rely on AMReX 
-[ParallelFor](https://amrex-codes.github.io/amrex/docs_html/Basics.html#parallelfor) function template to loop through the logical `i,j,k` indexes.
+`ParallelFor <https://amrex-codes.github.io/amrex/docs_html/Basics.html#parallelfor>`_ function template to loop through the logical `i,j,k` indexes.
 For example, to set the velocity data stored in a MultiFab called `NewState` with data from an `OldState` and an increment
 from a third MultiFab `advTerm`: ::
 
@@ -77,7 +78,7 @@ from a third MultiFab `advTerm`: ::
 .. note::
    For the example above to function, all three MultiFabs must have the same `boxArray` and `DistributionMap`
 
-Users are strongly encouraged to review of the content of [AMReX documentation](https://amrex-codes.github.io/amrex/docs_html/Basics.html)
+Users are strongly encouraged to review of the content of `AMReX documentation <https://amrex-codes.github.io/amrex/docs_html/Basics.html>`_
 to get more familiar with AMReX data structures and environment.
 
 *PeleLMeX* state and advance containers
@@ -136,7 +137,7 @@ Parallelism
 
 *PeleLMeX* inherits the MPI+X approach from the AMReX library, where X can be any of CUDA, HIP or SYCL
 (Open-MP is currently unavailable) for heterogeneous architectures. The reader is referred to 
-[AMReX documentation](https://amrex-codes.github.io/amrex/docs_html/GPU.html) for more details on
+`AMReX GPU documentation <https://amrex-codes.github.io/amrex/docs_html/GPU.html>`_ for more details on
 the thread parallelism.
 
 As mentioned above, the top-level spatial decomposition arises from AMReX's block-structured approach. On each level, non-overlapping 
