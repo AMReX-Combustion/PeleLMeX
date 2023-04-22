@@ -347,6 +347,21 @@ void PeleLM::initData() {
       }
 #endif
 
+      // Regrid after restart if requested
+      if (m_regrid_on_restart) {
+         Print() << " Regriding on restart \n";
+         for (int lev{finest_level}; lev < max_level; ++lev) {
+            regrid(0, m_cur_time);
+            // Need to fill the old state to enable regrid on higher levels
+            copyStateNewToOld(1);
+            copyPressNewToOld();
+            if ( m_do_react ) {
+               auto ldataR_p   = getLevelDataReactPtr(lev);
+               ldataR_p->I_R.setVal(0.0);
+            }
+         }
+      }
+
       // Generate the covered cell mask
       m_resetCoveredMask = 1;
       resetCoveredMask();
