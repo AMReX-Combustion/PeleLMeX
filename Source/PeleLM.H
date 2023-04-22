@@ -1232,6 +1232,7 @@ class PeleLM : public amrex::AmrCore {
    int m_max_step = -1;
 
    int m_regrid_int = -1;
+   int m_regrid_on_restart = 0;
 
    // Switch Evolve/Evaluate
    std::string m_run_mode = "normal";

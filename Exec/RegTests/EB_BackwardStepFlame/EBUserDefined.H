@@ -31,9 +31,9 @@ setEBState(const amrex::Real * /*xEBface[AMREX_SPACEDIM]*/,
            amrex::Real s_ext[NVAR],
            const amrex::Real /*time*/,
            amrex::GeometryData const& /*geomdata*/,
-           ProbParm const& /*prob_parm*/)
+           ProbParm const& prob_parm)
 {
-  s_ext[TEMP] = 300.0;
+  s_ext[TEMP] = prob_parm.Twall;
 }
 
 AMREX_GPU_DEVICE
