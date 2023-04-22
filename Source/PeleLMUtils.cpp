@@ -745,14 +745,14 @@ PeleLM::loadBalanceChemLev(int a_lev) {
     int updateDmap = false;
     if ((m_loadBalanceEffRatioThreshold > 0.0)
         && (ParallelDescriptor::MyProc() == ParallelDescriptor::IOProcessorNumber()))
-    {   
+    {
         updateDmap = testEfficiency > m_loadBalanceEffRatioThreshold*currentEfficiency;
     }
     ParallelDescriptor::Bcast(&updateDmap, 1, ParallelDescriptor::IOProcessorNumber());
 
     if ( m_verbose > 2 && updateDmap) {
         Print() << "   Old Chem LoadBalancing efficiency on a_lev " << a_lev << ": " << currentEfficiency << "\n"
-                << "   New Chem LoadBalancing efficiency: " << testEfficiency << " \n"; 
+                << "   New Chem LoadBalancing efficiency: " << testEfficiency << " \n";
     }
 
     // Bcast the test dmap if better

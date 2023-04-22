@@ -5,7 +5,7 @@
 Source code
 ===========
 
-The following provides an overview of *PeleLMeX* source code, basic information on the data structure and is 
+The following provides an overview of *PeleLMeX* source code, basic information on the data structure and is
 useful for any user intending to use and/or do some development in the code.
 
 Overview of source code
@@ -50,7 +50,7 @@ The basic AMReX`s data structure is the `MultiFab <https://amrex-codes.github.io
 (historically, multi Fortran Array Box (FAB)).
 Within the block-structured AMR approach of AMReX, the domain is decomposed into non-overlapping rectangular `boxes`,
 which can be assembled into a `boxArray`. Each AMR level has a `boxArray` providing the list of `boxes` of that level.
-The `boxes` are distributed accross the MPI ranks, the mapping of which is described by a `DistributionMap`. Given a 
+The `boxes` are distributed accross the MPI ranks, the mapping of which is described by a `DistributionMap`. Given a
 `boxArray` and a `DistributionMap`, one can define an actual data container (`boxes` are only lightweight descriptor
 of the geometrical rectangular object, containing bounds and centering information only), where each rank will
 allocate a FAB for the boxes it owns in the `boxArray`, resulting in a collection of FABs or a MultiFab, distributed
@@ -58,7 +58,7 @@ accross the MPI ranks.
 
 To access the data in a MultiFab, one uses a `MFIter <https://amrex-codes.github.io/amrex/docs_html/Basics.html#mfiter-and-tiling>`_
 (or MultiFab iterator), which provides each MPI rank access to the FABs it owns within the MultiFab. Actual access to the data in
-memory is then provided by the lightweight `Array4` structure and it is strongly advised to rely on AMReX 
+memory is then provided by the lightweight `Array4` structure and it is strongly advised to rely on AMReX
 `ParallelFor <https://amrex-codes.github.io/amrex/docs_html/Basics.html#parallelfor>`_ function template to loop through the logical `i,j,k` indexes.
 For example, to set the velocity data stored in a MultiFab called `NewState` with data from an `OldState` and an increment
 from a third MultiFab `advTerm`: ::
@@ -87,10 +87,10 @@ to get more familiar with AMReX data structures and environment.
 The state vector of *PeleLMeX* contains the 2 or 3 components of velocity, the mixture density, species density (rhoYs),
 rhoH, temperature and the thermodynamic pressure. The state components are stored in a cell-centered MultiFab with
 `NVAR` components. Additionnally, the perturbational pressure stored at the nodes is contained in a separate MultiFab.
-Together with the cell-centered pressure gradient, the cell-centered divergence constraint and cell-centered 
+Together with the cell-centered pressure gradient, the cell-centered divergence constraint and cell-centered
 transport properties, these MultiFabs are assembled into a `LevelData` struct.
 
-Each level in the AMR hierarchy have two versions of the `LevelData` at any point during the simulation: one 
+Each level in the AMR hierarchy have two versions of the `LevelData` at any point during the simulation: one
 for the old state and one for the new state. The developer can get a pointer to the `LevelData` struct by
 calling : ::
 
@@ -136,11 +136,11 @@ Parallelism
 -----------
 
 *PeleLMeX* inherits the MPI+X approach from the AMReX library, where X can be any of CUDA, HIP or SYCL
-(Open-MP is currently unavailable) for heterogeneous architectures. The reader is referred to 
+(Open-MP is currently unavailable) for heterogeneous architectures. The reader is referred to
 `AMReX GPU documentation <https://amrex-codes.github.io/amrex/docs_html/GPU.html>`_ for more details on
 the thread parallelism.
 
-As mentioned above, the top-level spatial decomposition arises from AMReX's block-structured approach. On each level, non-overlapping 
+As mentioned above, the top-level spatial decomposition arises from AMReX's block-structured approach. On each level, non-overlapping
 `boxes` are assembled into `boxArray` and distributed accross MPI rank with `DistributionMap` (or `DMap`).
 It is in our best interest to ensure that all the MultiFab in the code use the same `boxArray` and `DMap`,
 such that operation using `MFIter` can be performed and data copy accross MPI ranks is minimized.
@@ -149,10 +149,10 @@ of work, to avoid wasting computational ressource. Reactive flow simulation are 
 integration is very spatially heterogeneous, with stiff ODE integration required within the flame front and non-stiff
 integration of the linearized advection/diffusion required in the cold gases or burnt mixture. Additionnally, because
 a non-subcycling approach is used in *PeleLMeX*, the chemistry doesn't have to be integrated in fine-covered region.
-Two `boxArray` and associated `DMap` are thus available in *PeleLMeX*: 
+Two `boxArray` and associated `DMap` are thus available in *PeleLMeX*:
 
-1. The first one is inherited from `AmrCore` and is availble as ``grid[lev]`` (`boxArray`) and ``dmap[lev]`` (`DMap`) throughout the code. Most 
-   of *PeleLMeX* MultiFabs use these two, and the `boxes` sizes are dictated by the `amr.max_grid_size` and `amr.blocking_factor` from the input 
+1. The first one is inherited from `AmrCore` and is availble as ``grid[lev]`` (`boxArray`) and ``dmap[lev]`` (`DMap`) throughout the code. Most
+   of *PeleLMeX* MultiFabs use these two, and the `boxes` sizes are dictated by the `amr.max_grid_size` and `amr.blocking_factor` from the input
    file. These are employed for all the operations in the code except the chemistry integration. The default load balancing approach is to use
    space curve filling (SCF) with each box weighted by the number of cells in each box. Advanced users can try alternate appraoch using the
    keys listed in :doc:`LMeXControls`.
@@ -176,10 +176,10 @@ GNUmakefile and activate AMReX`s floating point exception traps in the input fil
 
     amrex.fpe_trap_invalid = 1
     amrex.fpe_trap_zero = 1
-    amrex.fpe_trap_overflow = 1 
+    amrex.fpe_trap_overflow = 1
 
 This will slow down the code considerably, but will enable bound checks on all AMReX low-level data structure,
-catch floating point errors (using nans, dividing by zero, ...) and any ``AMREX_ASSERT`` statement added to the 
+catch floating point errors (using nans, dividing by zero, ...) and any ``AMREX_ASSERT`` statement added to the
 code base. It is also often useful to visualize data in order to understand the erroneous results the solver can
 return. Developers can write to disk a single MultiFab using AMReX `VisMF`: ::
 

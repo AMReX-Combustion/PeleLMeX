@@ -19,7 +19,7 @@ void PeleLM::regrid(int lbase,
      if (lbase == 0 && m_doLoadBalance && !initial) {
 
          if ( m_verbose > 0) {
-             Print() << " Load balancing level 0 \n"; 
+             Print() << " Load balancing level 0 \n";
          }
 
          int remakeLevel = false;
@@ -54,14 +54,14 @@ void PeleLM::regrid(int lbase,
          // IO proc determine if the test dmap offers significant improvements
          if ((m_loadBalanceEffRatioThreshold > 0.0)
              && (ParallelDescriptor::MyProc() == ParallelDescriptor::IOProcessorNumber()))
-         {   
+         {
              remakeLevel = remakeLevel || (testEfficiency > m_loadBalanceEffRatioThreshold*currentEfficiency);
          }
          ParallelDescriptor::Bcast(&remakeLevel, 1, ParallelDescriptor::IOProcessorNumber());
 
          if ( m_verbose > 1 && remakeLevel) {
              Print() << " Current LoadBalancing efficiency: " << currentEfficiency << "\n"
-                     << " Test LoadBalancing efficiency: " << testEfficiency << " \n"; 
+                     << " Test LoadBalancing efficiency: " << testEfficiency << " \n";
          }
 
          // Bcast the test dmap and remake level
@@ -160,9 +160,9 @@ void PeleLM::regrid(int lbase,
 
                  // Let's see if we can get a better dmap
                  } else {
-                
+
                      if ( m_verbose > 1) {
-                         Print() << " Load balancing level " << lev << "\n"; 
+                         Print() << " Load balancing level " << lev << "\n";
                      }
 
                      // Try to build a new dmap with the same old grid
@@ -170,7 +170,7 @@ void PeleLM::regrid(int lbase,
                      DistributionMapping test_dmap;
 
                      computeCosts(lev);
-    
+
                      // Use efficiency: average MPI rank cost / max cost
                      amrex::Real currentEfficiency = 0.0;
                      amrex::Real testEfficiency = 0.0;
@@ -198,14 +198,14 @@ void PeleLM::regrid(int lbase,
                      // IO proc determine if the test dmap offers significant improvements
                      if ((m_loadBalanceEffRatioThreshold > 0.0)
                          && (ParallelDescriptor::MyProc() == ParallelDescriptor::IOProcessorNumber()))
-                     {   
+                     {
                          remakeLevel = remakeLevel || (testEfficiency > m_loadBalanceEffRatioThreshold*currentEfficiency);
                      }
                      ParallelDescriptor::Bcast(&remakeLevel, 1, ParallelDescriptor::IOProcessorNumber());
 
                      if ( m_verbose > 1 && remakeLevel) {
                          Print() << " Current LoadBalancing efficiency: " << currentEfficiency << "\n"
-                                 << " Test LoadBalancing efficiency: " << testEfficiency << " \n"; 
+                                 << " Test LoadBalancing efficiency: " << testEfficiency << " \n";
                      }
 
                      // Bcast the test dmap if we plan on remaking the level
@@ -490,7 +490,7 @@ void PeleLM::computeCosts(int a_lev, LayoutData<Real> &a_costs, int a_costMethod
 {
     if (a_costMethod == LoadBalanceCost::Ncell ) {
         for (MFIter mfi(a_costs, false); mfi.isValid(); ++mfi)
-        {   
+        {
             a_costs[mfi] = mfi.validbox().numPts();
         }
     } else if (a_costMethod == LoadBalanceCost::ChemFunctCallAvg ) {
