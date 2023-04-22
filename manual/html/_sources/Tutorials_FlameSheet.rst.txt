@@ -368,7 +368,7 @@ So far, we haven't advanced the solution at all. Restore the problem parameters 
 re-activate the initial projection and let's now run the simulation for 50 steps and save a checkpoint
 file from which to restart from. To do so, ensure that: ::
 
-    amr.amx_step = 50
+    amr.max_step = 50
 
 and uncomment the following line to require writting checkpoint files: ::
 

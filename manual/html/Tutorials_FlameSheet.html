@@ -72,6 +72,7 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="Tutorials_FlowPastCyl.html">Non-reacting flow past a cylinder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Tutorials_BFSFlame.html">Backward facing step anchored premixed flame</a></li>
 </ul>
 </li>
 </ul>
@@ -426,7 +427,7 @@ of the initial solution varying these parameters are displayed in <a class="refe
 <p>So far, we haven’t advanced the solution at all. Restore the problem parameters to their initial values,
 re-activate the initial projection and let’s now run the simulation for 50 steps and save a checkpoint
 file from which to restart from. To do so, ensure that:</p>
-<div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>amr.amx_step = 50
+<div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>amr.max_step = 50
 </pre></div>
 </div>
 <p>and uncomment the following line to require writting checkpoint files:</p>
