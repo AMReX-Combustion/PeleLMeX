@@ -43,45 +43,16 @@ void pelelm_initdata(int i, int j, int k,
 
     massfrac[CH4_ID] = prob_parm.Y_fuel;
     massfrac[O2_ID] =  prob_parm.Y_o2;
-    massfrac[N2_ID] =  1 - massfrac[CH4_ID] - massfrac[O2_ID];
+    massfrac[N2_ID] =  1.0 - massfrac[CH4_ID] - massfrac[O2_ID];
 
-    switch(prob_parm.meanFlowDir) {
-      case 1  :
-         AMREX_D_TERM(state(i,j,k,VELX) = prob_parm.meanFlowMag;,
-                      state(i,j,k,VELY) = 0.0;,
-                      state(i,j,k,VELZ) = 0.0);
-         break;
-      case -1  :
-         AMREX_D_TERM(state(i,j,k,VELX) = -prob_parm.meanFlowMag;,
-                      state(i,j,k,VELY) = 0.0;,
-                      state(i,j,k,VELZ) = 0.0);
-         break;
-      case 2  :
-         AMREX_D_TERM(state(i,j,k,VELX) = 0.0;,
-                      state(i,j,k,VELY) = prob_parm.meanFlowMag;,
-                      state(i,j,k,VELZ) = 0.0);
-         break;
-      case -2  :
-         AMREX_D_TERM(state(i,j,k,VELX) = 0.0;,
-                      state(i,j,k,VELY) = -prob_parm.meanFlowMag;,
-                      state(i,j,k,VELZ) = 0.0);
-         break;
-      case 3  :
-         AMREX_D_TERM(state(i,j,k,VELX) = prob_parm.meanFlowMag;,
-                      state(i,j,k,VELY) = prob_parm.meanFlowMag;,
-                      state(i,j,k,VELZ) = 0.0);
-         break;
-      case -3  :
-         AMREX_D_TERM(state(i,j,k,VELX) = -prob_parm.meanFlowMag;,
-                      state(i,j,k,VELY) = -prob_parm.meanFlowMag;,
-                      state(i,j,k,VELZ) = 0.0);
-         break;
-    }
+    AMREX_D_TERM(state(i,j,k,VELX) = prob_parm.meanFlowMag;,
+                 state(i,j,k,VELY) = 0.0;,
+                 state(i,j,k,VELZ) = 0.0);
 
     if (is_incompressible) return;
 
     if ( x > 0.0  && y < 0.0 ) {
-       state(i,j,k,TEMP) = 1800;
+       state(i,j,k,TEMP) = prob_parm.T_hot;
        massfrac[CH4_ID] = 0.0;
        massfrac[O2_ID] =  0.233;
        massfrac[N2_ID] =  1 - massfrac[CH4_ID] - massfrac[O2_ID];
@@ -127,27 +98,13 @@ bcnormal(
 
         auto eos = pele::physics::PhysicsType::eos();
 
-        switch(prob_parm.meanFlowDir) {
-          case 1  :
-            AMREX_D_TERM(s_ext[VELX] = prob_parm.meanFlowMag;,
-                         s_ext[VELY] = 0.0;,
-                         s_ext[VELZ] = 0.0);
-            break;
-          case 2  :
-            AMREX_D_TERM(s_ext[VELY] = prob_parm.meanFlowMag;,
-                         s_ext[VELX] = 0.0;,
-                         s_ext[VELZ] = 0.0);
-            break;
-          case 3  :
-            AMREX_D_TERM(s_ext[VELZ] = prob_parm.meanFlowMag;,
-                         s_ext[VELX] = 0.0;,
-                         s_ext[VELY] = 0.0);
-            break;
-        }
+        AMREX_D_TERM(s_ext[VELX] = prob_parm.meanFlowMag;,
+                     s_ext[VELY] = 0.0;,
+                     s_ext[VELZ] = 0.0);
 
         massfrac[CH4_ID] = prob_parm.Y_fuel;
         massfrac[O2_ID] =  prob_parm.Y_o2;
-        massfrac[N2_ID] =  1 - massfrac[CH4_ID] - massfrac[O2_ID];
+        massfrac[N2_ID] =  1.0 - massfrac[CH4_ID] - massfrac[O2_ID];
 
         s_ext[TEMP] = prob_parm.T_mean;
 
@@ -165,8 +122,9 @@ bcnormal(
         }
     }
 
+    // Set domain boundary Temp on the y-low face when using NoSlipWallIsotherm
     if (idir == 1 && sgn==1 ) {
-        s_ext[TEMP] = 500.0;
+        s_ext[TEMP] = prob_parm.Twall;
     }
 }
 
