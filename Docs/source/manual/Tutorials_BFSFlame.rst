@@ -118,7 +118,8 @@ All of those parameters are specified in the `AMR CONTROL` block: ::
 
 Finally, this case uses Embedded Boundaries to represent the backward facing step. The EB is
 defined as a box on the lower-left corner of the domain. For such an easy geometry,
-AMReX native simple CGS are sufficient. The box will extend from a point beyond
+a single `AMReX native constructive solid geometry (CSG) <https://amrex-codes.github.io/amrex/docs_html/EB.html#implicit-function>`_ object is sufficient.
+The box will extend from a point beyond
 the computational domain bottom left corner to (0.01:0.0). Because the intersection of the
 EB with the computational grid can lead to arbitrarily small cells, AMReX provides
 ``eb2.small_volfrac`` to set a cell volume fraction limit below which a cell
