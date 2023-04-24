@@ -28,6 +28,7 @@ option(PELELMEX_USE_EB        "Enable Embedded Boundary"     OFF)
 option(PELELMEX_USE_EFIELD    "Enable Electric field module" OFF)
 option(PELELMEX_USE_PARTICLES "Enable Spray module"          OFF)
 option(PELELMEX_USE_SOOT      "Enable Soot module"           OFF)
+option(PELELMEX_USE_DIAG      "Enable LMeX Diagn module"     OFF)
 
 #
 # Misc options
