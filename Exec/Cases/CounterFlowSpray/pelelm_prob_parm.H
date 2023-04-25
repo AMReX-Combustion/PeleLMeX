@@ -17,14 +17,6 @@ struct ProbParm
    amrex::Real jetRadius = 0.004_rt;
    amrex::Real inertRadius = 0.005_rt;
 
-   // Spray params
-   amrex::Real spray_mass_flow_rate = 0.0;
-   amrex::Real spray_vel = 0.0;
-   amrex::Real spray_temp = 300.0;
-
-   amrex::Real floating_injection_mass = 0.0;
-   amrex::Real part_dia_min = 1.0e-7;
-
    // Misc
    int do_ignit = 0;
    amrex::Real ignitSphereRad = 0.003_rt;
