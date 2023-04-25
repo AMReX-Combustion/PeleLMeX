@@ -37,7 +37,7 @@ prob.do_ignition = 0
 prob.ignition_SphT = 2000.0
 prob.ignition_SphRad = 0.006
 
-spray.jet1.jet_cent = 0.01 0.005 0.
+spray.jet1.jet_cent = 0.01 0. 0.
 spray.jet1.jet_norm = -1. 0. 0.
 spray.jet1.mass_flow_rate = 9.8E-4
 spray.jet1.T = 300.
