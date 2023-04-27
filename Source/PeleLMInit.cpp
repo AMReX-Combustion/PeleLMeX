@@ -285,6 +285,10 @@ void PeleLM::initData() {
          }
       }
 
+      // Active control
+      int is_restart = 0;
+      activeControl(is_restart);
+
       //----------------------------------------------------------------
       // Initial pressure iterations
       initialIterations();
@@ -366,6 +370,10 @@ void PeleLM::initData() {
       m_resetCoveredMask = 1;
       resetCoveredMask();
       updateDiagnostics();
+
+      // Active control
+      int is_restart = 1;
+      activeControl(is_restart);
    }
 
 }

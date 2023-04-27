@@ -130,8 +130,8 @@ void PeleLM::getVelForces(int lev,
    const auto  dx       = geom[lev].CellSizeArray();
 
    // Get non-static info for the pseudo gravity forcing
-   int pseudo_gravity    = 0; // TODO ctrl_pseudoGravity;
-   const Real dV_control = 0.0; // TODO ctrl_dV;
+   int pseudo_gravity    = m_ctrl_pseudoGravity;
+   const Real dV_control = m_ctrl_dV;
 
    int is_incomp   = m_incompressible;
    Real rho_incomp = m_rho;

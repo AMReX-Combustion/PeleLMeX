@@ -141,6 +141,9 @@ void PeleLM::Setup() {
 
    // Copy problem parameters into device copy
    Gpu::copy(Gpu::hostToDevice, prob_parm, prob_parm+1,prob_parm_d);
+
+   // Initialize active control
+   initActiveControl();
 }
 
 void PeleLM::readParameters() {
