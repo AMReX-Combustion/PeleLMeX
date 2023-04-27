@@ -40,20 +40,20 @@ peleLM.do_mass_balance = 1                # Compute mass balance
 peleLM.do_species_balance = 1             # Compute species balance
 
 #---------------------- Time Stepping CONTROL --------------------
-amr.max_step = 1500                       # Maximum number of time steps
+amr.max_step = 20                         # Maximum number of time steps
 amr.stop_time = 4.00                      # final simulation physical time
 amr.cfl = 0.2                             # CFL number for hyperbolic system
 amr.dt_shrink = 0.001                     # Scale back initial timestep
 amr.dt_change_max = 1.1                   # Maximum dt increase btw successive steps
 
 #---------------------- IO CONTROL -------------------------------
-amr.restart = chk01000                   # Restart checkpoint file
+#amr.restart = chk01000                   # Restart checkpoint file
 amr.check_int = 2000                      # Frequency of checkpoint output
 amr.plot_int = 20                         # Frequency of pltfile output
 amr.derive_plot_vars = avg_pressure mag_vort mass_fractions mixture_fraction progress_variable
 
 #---------------------- AC CONTROL -------------------------------
-active_control.on = 1                     # Use AC ?
+active_control.on = 0                     # Use AC ?
 active_control.use_temp = 1               # Default in fuel mass, rather use iso-T position ?
 active_control.temperature = 1400.0       # Value of iso-T ?
 active_control.tau = 5.0e-4               # Control tau (should ~ 10 dt)
