@@ -27,6 +27,7 @@ PeleLM::initActiveControl()
     pp.query("velMax",m_ctrl_velMax);
     pp.query("pseudo_gravity",m_ctrl_pseudoGravity);
     pp.query("flow_dir",m_ctrl_flameDir);
+    pp.query("int",m_ctrl_int);
     pp.query("AC_history",m_ctrl_AChistory);
     pp.query("npoints_average",m_ctrl_NavgPts);
     pp.query("method",m_ctrl_method);
@@ -127,7 +128,9 @@ PeleLM::initActiveControl()
 void
 PeleLM::activeControl(int is_restart)
 {
-    if (!m_ctrl_active) return;
+    if (!m_ctrl_active || (m_nstep % m_ctrl_int != 0) ) {
+        return;
+    }
 
     // -------------------------------------------
     // Get the current target state (either amount of fuel or T-iso position)
