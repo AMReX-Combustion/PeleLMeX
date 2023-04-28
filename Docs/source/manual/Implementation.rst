@@ -136,8 +136,8 @@ Parallelism
 -----------
 
 *PeleLMeX* inherits the MPI+X approach from the AMReX library, where X can be any of CUDA, HIP or SYCL
-(Open-MP is currently unavailable) for heterogeneous architectures. The reader is referred to
-`AMReX GPU documentation <https://amrex-codes.github.io/amrex/docs_html/GPU.html>`_ for more details on
+(Open-MP is currently only available for non-reacting/explicit chemistry integrators) for heterogeneous architectures.
+The reader is referred to `AMReX GPU documentation <https://amrex-codes.github.io/amrex/docs_html/GPU.html>`_ for more details on
 the thread parallelism.
 
 As mentioned above, the top-level spatial decomposition arises from AMReX's block-structured approach. On each level, non-overlapping

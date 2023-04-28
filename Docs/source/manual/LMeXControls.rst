@@ -70,7 +70,8 @@ Load balancing
 
 The balancing method can be one of `sfc`, `roundrobin` or `knapsack`, while the cost estimate can be one of
 `ncell`, `chemfunctcall_avg`, `chemfunctcall_max`, `chemfunctcall_sum`, `userdefined_avg` or `userdefined_sum`. When
-using either of the last to option, the user must provide a definition for the `derUserDefined`.
+using either of the last to option, the user must provide a definition for the `derUserDefined`. If multiple components
+are defined in the `derUserDefined` function, the first one is used for load balancing.
 
 Time stepping parameters
 ------------------------
