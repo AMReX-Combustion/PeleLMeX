@@ -409,6 +409,25 @@ void PeleLM::readParameters() {
    }
 
    // -----------------------------------------
+   // Load Balancing
+   // -----------------------------------------
+   pp.query("do_load_balancing",m_doLoadBalance);
+   parseUserKey(pp, "load_balancing_method", lbmethod, m_loadBalanceMethod);
+   parseUserKey(pp, "load_balancing_cost_estimate", lbcost, m_loadBalanceCost);
+   pp.query("load_balancing_efficiency_threshold",m_loadBalanceEffRatioThreshold);
+   parseUserKey(pp, "chem_load_balancing_method", lbmethod, m_loadBalanceMethodChem);
+   parseUserKey(pp, "chem_load_balancing_cost_estimate", lbcost, m_loadBalanceCostChem);
+
+   // Deactivate load balancing for serial runs
+#ifdef AMREX_USE_MPI
+   if (ParallelContext::NProcsSub() == 1) {
+       m_doLoadBalance = 0;
+   }
+#else
+   m_doLoadBalance = 0;
+#endif
+
+   // -----------------------------------------
    // Advection
    // -----------------------------------------
    pp.query("advection_scheme",m_advection_key);
@@ -485,7 +504,7 @@ void PeleLM::readParameters() {
    ppa.query("max_dt", m_max_dt);
    ppa.query("min_dt", m_min_dt);
 
-   if ( max_level > 0 ) {
+   if ( max_level > 0 || m_doLoadBalance) {
       ppa.query("regrid_int", m_regrid_int);
       ppa.query("regrid_on_restart", m_regrid_on_restart);
    }
@@ -858,6 +877,9 @@ void PeleLM::derivedSetup()
 
    }
 
+   // Distribution Map
+   derive_lst.add("DistributionMap",IndexType::TheCellType(),1,pelelm_derdmap,the_same_box);
+
    // Cell average pressure
    derive_lst.add("avg_pressure",IndexType::TheCellType(),1,pelelm_deravgpress,the_same_box);
 
@@ -1125,8 +1147,13 @@ void PeleLM::resizeArray() {
    // Time
    m_t_old.resize(max_level+1);
    m_t_new.resize(max_level+1);
+
 #ifdef PELELM_USE_SPRAY
    m_spraystate.resize(max_level+1);
    m_spraysource.resize(max_level+1);
 #endif
+
+   // Load balancing
+   m_costs.resize(max_level+1);
+   m_loadBalanceEff.resize(max_level+1);
 }

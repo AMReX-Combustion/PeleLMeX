@@ -88,6 +88,9 @@ void PeleLM::MakeNewLevelFromScratch( int lev,
    m_t_new[lev] = time;
    m_t_old[lev] = time - 1.0e200;
 
+   // Load balance
+   m_costs[lev] = std::make_unique<LayoutData<Real>>(ba, dm);
+
    // Mac projector
 #ifdef AMREX_USE_EB
    macproj.reset(new Hydro::MacProjector(Geom(0,finest_level),
@@ -246,6 +249,9 @@ void PeleLM::initData() {
                      } else {
                         advanceChemistry(lev, dtInit/2.0, Forcing);
                      }
+                  }
+                  if (m_doLoadBalance) {
+                     loadBalanceChemLev(lev);
                   }
                }
                // Copy back old -> new

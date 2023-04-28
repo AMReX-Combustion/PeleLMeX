@@ -672,3 +672,22 @@ void pelelm_derlambda (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int d
       }
     });
 }
+
+//
+// Extract Distribution Mapping
+//
+void pelelm_derdmap (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, int dcomp, int /*ncomp*/,
+                     const FArrayBox& /*statefab*/, const FArrayBox& /*reactfab*/, const FArrayBox& /*pressfab*/,
+                     const Geometry& /*geom*/,
+                     Real /*time*/, const Vector<BCRec>& /*bcrec*/, int /*level*/)
+
+{
+    AMREX_ASSERT(derfab.box().contains(bx));
+    auto       der = derfab.array(dcomp);
+    const int myrank = ParallelDescriptor::MyProc();
+    amrex::ParallelFor(bx,
+    [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+    {
+        der(i,j,k) = myrank;
+    });
+}
