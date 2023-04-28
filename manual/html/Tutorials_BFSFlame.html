@@ -45,6 +45,7 @@
               <p class="caption" role="heading"><span class="caption-text">Theory:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="Model.html">The <cite>PeleLMeX</cite> Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Implementation.html">Source code</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Validation.html">PeleLMeX Verification &amp; Validations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Performances.html">Performances</a></li>
 </ul>
@@ -161,11 +162,11 @@ tutorial can be found in <cite>PeleLMeX</cite> Exec folder:</p>
 with the bottom left corner located at (-0.01:-0.01) and the top right corner at (0.07:0.01). The flow
 is primarily aligned with the <span class="math notranslate nohighlight">\(x\)</span> direction with an <code class="docutils literal notranslate"><span class="pre">Inflow</span></code> (dirichlet) boundary on the <span class="math notranslate nohighlight">\(x\)</span>-low
 and <code class="docutils literal notranslate"><span class="pre">Outflow</span></code> (0-neumann) boundary on <span class="math notranslate nohighlight">\(x\)</span>-high. No-slip wall conditions are imposed the transverse direction.
-Finally a Cartesian coordinate system is used here. An overview of the computational domain is provided in <a class="reference internal" href="#bfs-setupgeom"><span class="std std-numref">Fig. 12</span></a>.</p>
+Finally a Cartesian coordinate system is used here. An overview of the computational domain is provided in <a class="reference internal" href="#bfs-setupgeom"><span class="std std-numref">Fig. 13</span></a>.</p>
 <figure class="align-center" id="bfs-setupgeom" style="width: 95%">
 <img alt="_images/BFS_SetupSketch.png" src="_images/BFS_SetupSketch.png" />
 <figcaption>
-<p><span class="caption-number">Fig. 12 </span><span class="caption-text">: Setup of the computational domain for the backward facing step flame case.</span><a class="headerlink" href="#bfs-setupgeom" title="Permalink to this image"></a></p>
+<p><span class="caption-number">Fig. 13 </span><span class="caption-text">: Setup of the computational domain for the backward facing step flame case.</span><a class="headerlink" href="#bfs-setupgeom" title="Permalink to this image"></a></p>
 </figcaption>
 </figure>
 <p>All of the geometrical information can be specified the first two blocks of the input file (<cite>input.2d</cite>):</p>
@@ -371,11 +372,11 @@ listed in the input file. To do so, use:</p>
 <li><p>Saving the initial solution to <cite>plt00000</cite> file.</p></li>
 </ol>
 <p>Use Amrvis, Paraview or yt to visualize the plot file. Using Amrvis, the solution should look
-similar to <a class="reference internal" href="#bfs-initsol"><span class="std std-numref">Fig. 13</span></a>.</p>
+similar to <a class="reference internal" href="#bfs-initsol"><span class="std std-numref">Fig. 14</span></a>.</p>
 <figure class="align-center" id="bfs-initsol" style="width: 95%">
 <img alt="_images/BFS_InitSol.png" src="_images/BFS_InitSol.png" />
 <figcaption>
-<p><span class="caption-number">Fig. 13 </span><span class="caption-text">: Contour plots of temperature, O2 mass fraction, <span class="math notranslate nohighlight">\(x\)</span>-velocity component and divergence constraint after initialization.</span><a class="headerlink" href="#bfs-initsol" title="Permalink to this image"></a></p>
+<p><span class="caption-number">Fig. 14 </span><span class="caption-text">: Contour plots of temperature, O2 mass fraction, <span class="math notranslate nohighlight">\(x\)</span>-velocity component and divergence constraint after initialization.</span><a class="headerlink" href="#bfs-initsol" title="Permalink to this image"></a></p>
 </figcaption>
 </figure>
 <p>Note that in <cite>PeleLMeX</cite>, EB-covered regions are set to zero in plotfiles. Hot gases are found in the wake
@@ -424,7 +425,7 @@ the effect of the cold wall.</p>
 <figure class="align-center" id="bfs-250steps" style="width: 95%">
 <img alt="_images/BFS_250steps.png" src="_images/BFS_250steps.png" />
 <figcaption>
-<p><span class="caption-number">Fig. 14 </span><span class="caption-text">: Contour plots of density, H2 mass fraction, <span class="math notranslate nohighlight">\(x\)</span>-velocity component and heat release rate after 250 steps.</span><a class="headerlink" href="#bfs-250steps" title="Permalink to this image"></a></p>
+<p><span class="caption-number">Fig. 15 </span><span class="caption-text">: Contour plots of density, H2 mass fraction, <span class="math notranslate nohighlight">\(x\)</span>-velocity component and heat release rate after 250 steps.</span><a class="headerlink" href="#bfs-250steps" title="Permalink to this image"></a></p>
 </figcaption>
 </figure>
 <p>In order to illustrate one of <cite>PeleLMeX</cite> failure modes, we will now continue the simulation for
@@ -503,7 +504,7 @@ value, most of the lower part of the computational domain is actually refined to
 <figure class="align-center" id="bfs-500steps" style="width: 95%">
 <img alt="_images/BFS_500steps.png" src="_images/BFS_500steps.png" />
 <figcaption>
-<p><span class="caption-number">Fig. 15 </span><span class="caption-text">: Contour plots of temperature, H2 mass fraction, chemistry functCall and heat release rate after 500 steps, using 1 level of AMR.</span><a class="headerlink" href="#bfs-500steps" title="Permalink to this image"></a></p>
+<p><span class="caption-number">Fig. 16 </span><span class="caption-text">: Contour plots of temperature, H2 mass fraction, chemistry functCall and heat release rate after 500 steps, using 1 level of AMR.</span><a class="headerlink" href="#bfs-500steps" title="Permalink to this image"></a></p>
 </figcaption>
 </figure>
 <p>The <cite>functCall</cite> variable corresponds to the number of time CVODE called the chemical right-hand-side function and is
@@ -589,7 +590,7 @@ additional refinement, the flame front is now resolved with a few grid cells (bu
 <figure class="align-center" id="bfs-1200steps" style="width: 95%">
 <img alt="_images/BFS_1200steps.png" src="_images/BFS_1200steps.png" />
 <figcaption>
-<p><span class="caption-number">Fig. 16 </span><span class="caption-text">: Contour plots of temperature, H2 mass fraction, H2 production rate and heat release rate after 1200 steps, using 2 levels of AMR.</span><a class="headerlink" href="#bfs-1200steps" title="Permalink to this image"></a></p>
+<p><span class="caption-number">Fig. 17 </span><span class="caption-text">: Contour plots of temperature, H2 mass fraction, H2 production rate and heat release rate after 1200 steps, using 2 levels of AMR.</span><a class="headerlink" href="#bfs-1200steps" title="Permalink to this image"></a></p>
 </figcaption>
 </figure>
 <p>The AMR level 2 is clearly distant from the EB and concentrated mostly on the flame surface (except a small box at the bottom of the
@@ -654,7 +655,7 @@ the upstream and downstream region of the flame.</p>
 <figure class="align-center" id="bfs-condaverage" style="width: 60%">
 <img alt="_images/BFS_CondAverage.png" src="_images/BFS_CondAverage.png" />
 <figcaption>
-<p><span class="caption-number">Fig. 17 </span><span class="caption-text">: Conditional average and standard deviation of heat release rate after 1210 steps, using 4 levels of AMR.</span><a class="headerlink" href="#bfs-condaverage" title="Permalink to this image"></a></p>
+<p><span class="caption-number">Fig. 18 </span><span class="caption-text">: Conditional average and standard deviation of heat release rate after 1210 steps, using 4 levels of AMR.</span><a class="headerlink" href="#bfs-condaverage" title="Permalink to this image"></a></p>
 </figcaption>
 </figure>
 <p>Note that for this analysis to be relevant, we would need to run the simulation longer to completely

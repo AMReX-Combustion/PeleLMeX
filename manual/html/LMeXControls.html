@@ -46,6 +46,7 @@
               <p class="caption" role="heading"><span class="caption-text">Theory:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="Model.html">The <cite>PeleLMeX</cite> Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Implementation.html">Source code</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Validation.html">PeleLMeX Verification &amp; Validations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Performances.html">Performances</a></li>
 </ul>
@@ -54,6 +55,7 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">PeleLMeX controls</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#computational-domain-definition">Computational domain definition</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#grid-amr-parameters">Grid/AMR parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#load-balancing">Load balancing</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#time-stepping-parameters">Time stepping parameters</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#io-parameters">IO parameters</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#refinement-controls">Refinement controls</a></li>
@@ -139,8 +141,26 @@ This file needs to specified along with the executable as an <cite>argv</cite> o
 <span class="n">amr</span><span class="o">.</span><span class="n">grid_eff</span>        <span class="o">=</span> <span class="mf">0.7</span>              <span class="c1"># what constitutes an efficient grid</span>
 <span class="n">amr</span><span class="o">.</span><span class="n">blocking_factor</span> <span class="o">=</span> <span class="mi">16</span>               <span class="c1"># block factor in grid generation (min box size)</span>
 <span class="n">amr</span><span class="o">.</span><span class="n">max_grid_size</span>   <span class="o">=</span> <span class="mi">64</span>               <span class="c1"># max box size</span>
+
+<span class="n">peleLM</span><span class="o">.</span><span class="n">max_grid_size_chem</span> <span class="o">=</span> <span class="mi">32</span>         <span class="c1"># [OPT, DEF=&quot;None&quot;] Max box size for the Chemistry BoxArray</span>
 </pre></div>
 </div>
+</section>
+<section id="load-balancing">
+<h2>Load balancing<a class="headerlink" href="#load-balancing" title="Permalink to this heading"></a></h2>
+<p><em>PeleLMeX</em> relies on two distribution maps (see <a class="reference internal" href="Implementation.html"><span class="doc">Source code</span></a> for more details).</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">peleLM</span><span class="o">.</span><span class="n">do_load_balancing</span> <span class="o">=</span> <span class="mi">1</span>                    <span class="c1"># [OPT, DEF=0] Activate load balancing</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">load_balancing_method</span> <span class="o">=</span> <span class="n">sfc</span>              <span class="c1"># [OPT, DEF=&quot;sfc&quot;] AmrCore dmap load balancing method</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">load_balancing_cost_estimate</span> <span class="o">=</span> <span class="n">ncell</span>     <span class="c1"># [OPT, DEF=&quot;ncell&quot;] AmrCore dmap balancing cost</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">chem_load_balancing_method</span> <span class="o">=</span> <span class="n">knapsack</span>    <span class="c1"># [OPT, DEF=&quot;knapsack&quot;] Chemistry dmap load balancing method</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">chem_load_balancing_cost_estimate</span> <span class="o">=</span> <span class="n">chemfunctcall_sum</span> <span class="c1"># [OPT, DEF=&quot;chemfunctcall_sum&quot;] Chemistry dmap balancing cost</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">load_balancing_efficiency_threshold</span> <span class="o">=</span> <span class="mf">1.05</span>  <span class="c1"># What constitute a better dmap ?</span>
+</pre></div>
+</div>
+<p>The balancing method can be one of <cite>sfc</cite>, <cite>roundrobin</cite> or <cite>knapsack</cite>, while the cost estimate can be one of
+<cite>ncell</cite>, <cite>chemfunctcall_avg</cite>, <cite>chemfunctcall_max</cite>, <cite>chemfunctcall_sum</cite>, <cite>userdefined_avg</cite> or <cite>userdefined_sum</cite>. When
+using either of the last to option, the user must provide a definition for the <cite>derUserDefined</cite>. If multiple components
+are defined in the <cite>derUserDefined</cite> function, the first one is used for load balancing.</p>
 </section>
 <section id="time-stepping-parameters">
 <h2>Time stepping parameters<a class="headerlink" href="#time-stepping-parameters" title="Permalink to this heading"></a></h2>
@@ -292,9 +312,20 @@ to embedded boundaries are discussed below.</p>
 <td><p>AMREX_SPACEDIM</p></td>
 <td><p>Cell-center coordinates</p></td>
 </tr>
+<tr class="row-even"><td><p><cite>DistributionMap</cite></p></td>
+<td><p>1</p></td>
+<td><p>The MPI-rank of each box</p></td>
+</tr>
+<tr class="row-odd"><td><p><cite>derUserDefined</cite></p></td>
+<td><p>?</p></td>
+<td><p>A user-defined derived which number of components is provided by the user (see below).</p></td>
+</tr>
 </tbody>
 </table>
-<p>Note that <cite>mixture_fraction</cite> and <cite>progress_variable</cite> requires additional inputs from the users as described below.</p>
+<p>Note that <cite>mixture_fraction</cite> and <cite>progress_variable</cite> requires additional inputs from the users as described below.
+The <cite>derUserDefined</cite> allow the user to define its own derived variable which can comprise several components. To do
+so, the user need to copy the Source/DeriveUserDefined.cpp file into his run folder and update the file. The number of
+components is defined based on the size of the vector returned by pelelm_setuserderives().</p>
 </section>
 <section id="pelelmex-algorithm">
 <h2>PeleLMeX algorithm<a class="headerlink" href="#pelelmex-algorithm" title="Permalink to this heading"></a></h2>

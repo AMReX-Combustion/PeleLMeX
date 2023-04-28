@@ -19,7 +19,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="PeleLMeX Verification &amp; Validations" href="Validation.html" />
+    <link rel="next" title="Source code" href="Implementation.html" />
     <link rel="prev" title="Welcome to PeleLMeX’s documentation!" href="index.html" /> 
 </head>
 
@@ -62,6 +62,7 @@
 </li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="Implementation.html">Source code</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Validation.html">PeleLMeX Verification &amp; Validations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Performances.html">Performances</a></li>
 </ul>
@@ -143,7 +144,7 @@ adaptive mesh refinement (AMR) code that solves the reacting Navier-Stokes equat
 </section>
 <section id="mathematical-background">
 <h2>Mathematical background<a class="headerlink" href="#mathematical-background" title="Permalink to this heading"></a></h2>
-<p><cite>PeleLMeX</cite> evolves chemically reacting low Mach number flows with block-structured adaptive mesh refinement (AMR). The code depends upon the <a class="reference external" href="https://github.com/AMReX-Codes/amrex">AMReX</a> library to provide the underlying data structures, and tools to manage and operate on them across massively parallel computing architectures. <cite>PeleLMeX</cite> also utilizes the source code and algorithmic infrastructure of <a class="reference external" href="https://github.com/AMReX-Codes/AMReX-Hydro">AMReX-Hydro</a>. <cite>PeleLMeX</cite> borrows heavily from <a class="reference external" href="https://github.com/AMReX-Combustion/PeleLM">PeleLM</a>. The core algorithms in <cite>PeleLM</cite> are described in the following papers:</p>
+<p><cite>PeleLMeX</cite> evolves chemically reacting low Mach number flows with block-structured adaptive mesh refinement (AMR). The code depends upon the <a class="reference external" href="https://github.com/AMReX-Codes/amrex">AMReX</a> library to provide the underlying data structures, and tools to manage and operate on them across massively parallel computing architectures. <cite>PeleLMeX</cite> also utilizes the source code and algorithmic infrastructure of <a class="reference external" href="https://github.com/AMReX-Codes/AMReX-Hydro">AMReX-Hydro</a>. <cite>PeleLMeX</cite> borrows heavily from <a class="reference external" href="https://amrex-combustion.github.io/PeleLM/">PeleLM</a>. The core algorithms in <cite>PeleLM</cite> are described in the following papers:</p>
 <ul class="simple">
 <li><p><em>A conservative, thermodynamically consistent numerical approach for low Mach number combustion. I. Single-level integration</em>, A. Nonaka, J. B. Bell, and M. S. Day, <em>Combust. Theor. Model.</em>, <strong>22</strong> (1) 156-184 (2018)</p></li>
 <li><p><em>A Deferred Correction Coupling Strategy for Low Mach Number Flow with Complex Chemistry</em>, A. Nonaka, J. B. Bell, M. S. Day, C. Gilet, A. S. Almgren, and M. L. Minion, <em>Combust. Theory and Model</em>, <strong>16</strong> (6) 1053-1088 (2012)</p></li>
@@ -221,9 +222,12 @@ adaptive mesh refinement (AMR) code that solves the reacting Navier-Stokes equat
 </section>
 <section id="pelelmex-algorithm">
 <h2>PeleLMeX Algorithm<a class="headerlink" href="#pelelmex-algorithm" title="Permalink to this heading"></a></h2>
-<p>An overview of <cite>PeleLMeX</cite> time-advance function is provided in the figure below and details are provided in the following subsections.</p>
-<figure class="align-center" style="width: 50%">
+<p>An overview of <cite>PeleLMeX</cite> time-advance function is provided in <a class="reference internal" href="#lmex-algo"><span class="std std-numref">Fig. 1</span></a> and details are provided in the following subsections.</p>
+<figure class="align-center" id="lmex-algo" style="width: 50%">
 <img alt="_images/PeleLMeX_Algorithm.png" src="_images/PeleLMeX_Algorithm.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 1 </span><span class="caption-text">: Flowchart of the <em>PeleLMeX</em> advance function.</span><a class="headerlink" href="#lmex-algo" title="Permalink to this image"></a></p>
+</figcaption>
 </figure>
 <p>The three steps of the low Mach number projection scheme described <a class="reference internal" href="#ssec-projscheme"><span class="std std-ref">below</span></a> are referenced to better
 emphasize how the thermodynamic solve is closely weaved into the fractional step appraoch. Striped boxes indicate where the
@@ -338,7 +342,7 @@ that they satisfy the constraint.</p>
 </section>
 <section id="amr-extension">
 <h3>AMR extension<a class="headerlink" href="#amr-extension" title="Permalink to this heading"></a></h3>
-<p>In contrast with <a class="reference external" href="https://github.com/AMReX-Combustion/PeleLM">PeleLM</a>, <cite>PeleLMeX</cite> do not rely a on subcycling appraoch to advance the AMR hierarchy.
+<p>In contrast with <a class="reference external" href="https://amrex-combustion.github.io/PeleLM/">PeleLM</a>, <cite>PeleLMeX</cite> do not rely a on subcycling appraoch to advance the AMR hierarchy.
 This difference is illustrated in the figure below comparing the multi-level time-stepping approach in both codes:</p>
 <figure class="align-center" style="width: 60%">
 <img alt="_images/PeleLMeX_Subcycling.png" src="_images/PeleLMeX_Subcycling.png" />
@@ -415,7 +419,7 @@ be used with EFIELD.</p>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="index.html" class="btn btn-neutral float-left" title="Welcome to PeleLMeX’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="Validation.html" class="btn btn-neutral float-right" title="PeleLMeX Verification &amp; Validations" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="Implementation.html" class="btn btn-neutral float-right" title="Source code" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

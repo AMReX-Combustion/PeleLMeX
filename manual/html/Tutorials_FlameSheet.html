@@ -46,6 +46,7 @@
               <p class="caption" role="heading"><span class="caption-text">Theory:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="Model.html">The <cite>PeleLMeX</cite> Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Implementation.html">Source code</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Validation.html">PeleLMeX Verification &amp; Validations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Performances.html">Performances</a></li>
 </ul>
@@ -398,11 +399,11 @@ listed in the input file. To do so, use:</p>
 <li><p>Saving the initial solution to <cite>plt00000</cite> file.</p></li>
 </ol>
 <p>Use Amrvis, Paraview or yt to visualize the plot file. Using Amrvis, the solution should look
-similar to <a class="reference internal" href="#fs-initsol"><span class="std std-numref">Fig. 5</span></a>.</p>
+similar to <a class="reference internal" href="#fs-initsol"><span class="std std-numref">Fig. 6</span></a>.</p>
 <figure class="align-center" id="fs-initsol" style="width: 80%">
 <img alt="_images/FS_InitSolDefault.png" src="_images/FS_InitSolDefault.png" />
 <figcaption>
-<p><span class="caption-number">Fig. 5 </span><span class="caption-text">: Contour plots of density, velocity components and velocity divergence constraint after initialization.</span><a class="headerlink" href="#fs-initsol" title="Permalink to this image"></a></p>
+<p><span class="caption-number">Fig. 6 </span><span class="caption-text">: Contour plots of density, velocity components and velocity divergence constraint after initialization.</span><a class="headerlink" href="#fs-initsol" title="Permalink to this image"></a></p>
 </figcaption>
 </figure>
 <p>It is interesting to note that the initial solution has a transverse velocity component
@@ -414,11 +415,11 @@ the initialization process and the solution will rapidly relax to adapt to the <
 <p>Let’s now play with the problem parameters to see how the initial solution changes. For instance,
 decrease the amplitude of the perturbation, change the <code class="docutils literal notranslate"><span class="pre">standoff</span></code> parameter or deactivate the
 initial projection by adding <code class="docutils literal notranslate"><span class="pre">peleLM.do_init_proj=0</span></code> to the <code class="docutils literal notranslate"><span class="pre">PeleLM</span> <span class="pre">CONTROL</span></code> block. Examples
-of the initial solution varying these parameters are displayed in <a class="reference internal" href="#fs-inittweaks"><span class="std std-numref">Fig. 6</span></a>.</p>
+of the initial solution varying these parameters are displayed in <a class="reference internal" href="#fs-inittweaks"><span class="std std-numref">Fig. 7</span></a>.</p>
 <figure class="align-center" id="fs-inittweaks" style="width: 80%">
 <img alt="_images/FS_InitSolTweaks.png" src="_images/FS_InitSolTweaks.png" />
 <figcaption>
-<p><span class="caption-number">Fig. 6 </span><span class="caption-text">: Contour plots of velocity components without initial projection and temperature using tweaked problem parameter.</span><a class="headerlink" href="#fs-inittweaks" title="Permalink to this image"></a></p>
+<p><span class="caption-number">Fig. 7 </span><span class="caption-text">: Contour plots of velocity components without initial projection and temperature using tweaked problem parameter.</span><a class="headerlink" href="#fs-inittweaks" title="Permalink to this image"></a></p>
 </figcaption>
 </figure>
 </section>
@@ -488,11 +489,11 @@ over the course of the 50 steps.</p>
 changed much from the initial solution at this point (only a fraction of
 a microsecond runtime has been reached). It is still interesting to
 look more closely at <cite>divU</cite>, <cite>FunctCall</cite>, the thermodynamic pressure and
-an intermediate species such as CH3 in <a class="reference internal" href="#fs-50steps"><span class="std std-numref">Fig. 7</span></a>.</p>
+an intermediate species such as CH3 in <a class="reference internal" href="#fs-50steps"><span class="std std-numref">Fig. 8</span></a>.</p>
 <figure class="align-center" id="fs-50steps" style="width: 80%">
 <img alt="_images/FS_50steps.png" src="_images/FS_50steps.png" />
 <figcaption>
-<p><span class="caption-number">Fig. 7 </span><span class="caption-text">: Contour plots of <cite>divU</cite>, <cite>FunctCall</cite>, thermodynamic pressure and CH3 mass fraction after 50 steps.</span><a class="headerlink" href="#fs-50steps" title="Permalink to this image"></a></p>
+<p><span class="caption-number">Fig. 8 </span><span class="caption-text">: Contour plots of <cite>divU</cite>, <cite>FunctCall</cite>, thermodynamic pressure and CH3 mass fraction after 50 steps.</span><a class="headerlink" href="#fs-50steps" title="Permalink to this image"></a></p>
 </figcaption>
 </figure>
 <p>The <cite>divU</cite> is now mostly positive, consistent with the thermal expansion occuring across a
@@ -549,7 +550,7 @@ amr.yH.field_name    = Y(H)
 is other part of the domain. Note also that if we were to add another level
 of refinement, the <code class="docutils literal notranslate"><span class="pre">amr.yH.max_level</span></code> should be increased in order to
 trigger refinement up to level 4 with this criteria.</p>
-<p><a class="reference internal" href="#fs-120steps"><span class="std std-numref">Fig. 8</span></a> shows the same variables as <a class="reference internal" href="#fs-50steps"><span class="std std-numref">Fig. 7</span></a>.
+<p><a class="reference internal" href="#fs-120steps"><span class="std std-numref">Fig. 9</span></a> shows the same variables as <a class="reference internal" href="#fs-50steps"><span class="std std-numref">Fig. 8</span></a>.
 <cite>divU</cite> is now almost entirely positive and shows lower values near the tip
 of the flame cusps as expected from a lean methane/air flame (the amount of
 hydrogen in the inlet stream is small). The scale of <cite>FunctCall</cite> increased
@@ -563,7 +564,7 @@ necessary if this species was of special interest).</p>
 <figure class="align-center" id="fs-120steps" style="width: 80%">
 <img alt="_images/FS_120steps.png" src="_images/FS_120steps.png" />
 <figcaption>
-<p><span class="caption-number">Fig. 8 </span><span class="caption-text">: Contour plots of <cite>divU</cite>, <cite>FunctCall</cite>, thermodynamic pressure and CH3 mass fraction after 120 steps.</span><a class="headerlink" href="#fs-120steps" title="Permalink to this image"></a></p>
+<p><span class="caption-number">Fig. 9 </span><span class="caption-text">: Contour plots of <cite>divU</cite>, <cite>FunctCall</cite>, thermodynamic pressure and CH3 mass fraction after 120 steps.</span><a class="headerlink" href="#fs-120steps" title="Permalink to this image"></a></p>
 </figcaption>
 </figure>
 <p>This is the end of this short tutorial introducing the basics of reactive flow simulations

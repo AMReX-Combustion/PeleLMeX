@@ -20,7 +20,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Performances" href="Performances.html" />
-    <link rel="prev" title="The PeleLMeX Model" href="Model.html" /> 
+    <link rel="prev" title="Source code" href="Implementation.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -46,6 +46,7 @@
               <p class="caption" role="heading"><span class="caption-text">Theory:</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="Model.html">The <cite>PeleLMeX</cite> Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Implementation.html">Source code</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">PeleLMeX Verification &amp; Validations</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#laminar-premixed-flame">Laminar premixed flame</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#laminar-poiseuille-flow">Laminar Poiseuille flow</a></li>
@@ -115,14 +116,14 @@ refined to <span class="math notranslate nohighlight">\(d_{l,0}/\delta_x = 110\)
 about 30 <span class="math notranslate nohighlight">\(\tau_f = d_{l,0} / S_{l,0}\)</span> before adding refinement levels ensuring that initial
 numerical noise introduced by interpolating the Cantera solution onto the cartesian grid is
 completely removed.</p>
-<p>The <cite>PeleLMeX</cite> results obtained with the finest grid are compared to that of Cantera in <a class="reference internal" href="#pmflmexcantera"><span class="std std-numref">Fig. 1</span></a>.
+<p>The <cite>PeleLMeX</cite> results obtained with the finest grid are compared to that of Cantera in <a class="reference internal" href="#pmflmexcantera"><span class="std std-numref">Fig. 2</span></a>.
 Profiles of major and intermediate species as well as temperature across the flame front are
 displayed, with Cantera results shown as black ticked lined underlying each continuous line obtained
 with <cite>PeleLMeX</cite>, demonstrating the solver accuracy.</p>
 <figure class="align-center" id="pmflmexcantera" style="width: 50%">
 <img alt="_images/LMeX_DRM19_Phi0p9.png" src="_images/LMeX_DRM19_Phi0p9.png" />
 <figcaption>
-<p><span class="caption-number">Fig. 1 </span><span class="caption-text">: One-dimentional flame profiles with PeleLMeX and Cantera (underlying black dashed lines)</span><a class="headerlink" href="#pmflmexcantera" title="Permalink to this image"></a></p>
+<p><span class="caption-number">Fig. 2 </span><span class="caption-text">: One-dimentional flame profiles with PeleLMeX and Cantera (underlying black dashed lines)</span><a class="headerlink" href="#pmflmexcantera" title="Permalink to this image"></a></p>
 </figcaption>
 </figure>
 <p>It is interesting to see how resolution affect the prediction of <cite>PeleLMeX</cite>. The <a class="reference internal" href="#pmftableresolution"><span class="std std-numref">Table 1</span></a>
@@ -170,7 +171,7 @@ speed is recovered with an accuracy close to 1.5%.</p>
 </tr>
 </tbody>
 </table>
-<p>Additionally, <a class="reference internal" href="#pmflmexcrsefine"><span class="std std-numref">Fig. 2</span></a> compares profiles of major and intermediate species as well as
+<p>Additionally, <a class="reference internal" href="#pmflmexcrsefine"><span class="std std-numref">Fig. 3</span></a> compares profiles of major and intermediate species as well as
 temperature across the flame front for the coarsest and the finest resolution employed. Results
 indicates that major species (or temperature) are well captured whereas short lived species peak
 values are locally off due to the lack of resolution but are stil reasonably well located within
@@ -178,7 +179,7 @@ the flame front.</p>
 <figure class="align-center" id="pmflmexcrsefine" style="width: 50%">
 <img alt="_images/LMeX_FinevsCoarse.png" src="_images/LMeX_FinevsCoarse.png" />
 <figcaption>
-<p><span class="caption-number">Fig. 2 </span><span class="caption-text">: Comparison of a coarsed and finely resolved 1D flame in PeleLMeX</span><a class="headerlink" href="#pmflmexcrsefine" title="Permalink to this image"></a></p>
+<p><span class="caption-number">Fig. 3 </span><span class="caption-text">: Comparison of a coarsed and finely resolved 1D flame in PeleLMeX</span><a class="headerlink" href="#pmflmexcrsefine" title="Permalink to this image"></a></p>
 </figcaption>
 </figure>
 </section>
@@ -197,11 +198,11 @@ The test case can be found in <code class="docutils literal notranslate"><span c
 the input parameters are very similar to the PeleC counterpart of
 this case.</p>
 <p>The steady-state <span class="math notranslate nohighlight">\(x\)</span>-velocity profiles accross the pipe diameter
-at increasing resolution are plotted along with the theorerical profile in <a class="reference internal" href="#poiseuillevelprof"><span class="std std-numref">Fig. 3</span></a>:</p>
+at increasing resolution are plotted along with the theorerical profile in <a class="reference internal" href="#poiseuillevelprof"><span class="std std-numref">Fig. 4</span></a>:</p>
 <figure class="align-center" id="poiseuillevelprof" style="width: 50%">
 <img alt="_images/PoiseuilleVelProf.png" src="_images/PoiseuilleVelProf.png" />
 <figcaption>
-<p><span class="caption-number">Fig. 3 </span><span class="caption-text">: Axial velocity profile at increasing resolution with PeleLMeX</span><a class="headerlink" href="#poiseuillevelprof" title="Permalink to this image"></a></p>
+<p><span class="caption-number">Fig. 4 </span><span class="caption-text">: Axial velocity profile at increasing resolution with PeleLMeX</span><a class="headerlink" href="#poiseuillevelprof" title="Permalink to this image"></a></p>
 </figcaption>
 </figure>
 <p>A more quantitative evaluation of PeleLMeX results is obtained by calculating
@@ -209,7 +210,7 @@ the L2 norm of the error against the analytical profile:</p>
 <figure class="align-center" id="poiseuilleconvergence" style="width: 50%">
 <img alt="_images/PoiseuilleConvergence.png" src="_images/PoiseuilleConvergence.png" />
 <figcaption>
-<p><span class="caption-number">Fig. 4 </span><span class="caption-text">: L2-norm of the axial velocity profile as function of the number of cells across the pipe diameter</span><a class="headerlink" href="#poiseuilleconvergence" title="Permalink to this image"></a></p>
+<p><span class="caption-number">Fig. 5 </span><span class="caption-text">: L2-norm of the axial velocity profile as function of the number of cells across the pipe diameter</span><a class="headerlink" href="#poiseuilleconvergence" title="Permalink to this image"></a></p>
 </figcaption>
 </figure>
 <p>showing second-order convergence for this diffusion dominated flow.</p>
@@ -472,7 +473,7 @@ of AMR-LES</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="Model.html" class="btn btn-neutral float-left" title="The PeleLMeX Model" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Implementation.html" class="btn btn-neutral float-left" title="Source code" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="Performances.html" class="btn btn-neutral float-right" title="Performances" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
