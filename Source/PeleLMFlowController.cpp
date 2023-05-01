@@ -279,7 +279,7 @@ PeleLM::getActiveControlLowT(Real &a_coft)
         Real AC_Tcross     = m_ctrl_temperature;
 
         if ( lev != finest_level ) {
-            Real lowT = amrex::ReduceMin(ldata_p->state, *m_coveredMask[lev], 0, [geomdata, AC_Tcross, AC_FlameDir]
+            Real lowT = amrex::ReduceMin(ldata_p->state, *m_coveredMask[lev], 0, [=]
                         AMREX_GPU_HOST_DEVICE(Box const& bx, Array4<Real const> const& T_arr,
                                                              Array4<int  const> const& covered_arr) noexcept -> Real
                         {
@@ -313,7 +313,7 @@ PeleLM::getActiveControlLowT(Real &a_coft)
                         });
             a_coft = amrex::min(a_coft,lowT);
         } else {
-            Real lowT = amrex::ReduceMin(ldata_p->state, 0, [geomdata, AC_Tcross, AC_FlameDir]
+            Real lowT = amrex::ReduceMin(ldata_p->state, 0, [=]
                         AMREX_GPU_HOST_DEVICE(Box const& bx, Array4<Real const> const& T_arr) noexcept -> Real
                         {
                             using namespace amrex::literals;
