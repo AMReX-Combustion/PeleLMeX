@@ -367,7 +367,7 @@ Active control
 --------------
 
 `PeleLMeX` includes an active control mechanism to enable statistically steady simulations of flames
-maintaining the flame at a fixed position in the domain. An example of this feature is provided in 
+maintaining the flame at a fixed position in the domain. An example of this feature is provided in
 the triple flame tutorial :doc:`Tutorials_TripleFlame`.
 
 .. note::
@@ -388,8 +388,8 @@ the user to set the inflow velocity. The following options are available when us
     active_control.changeMax = 0.1            # [OPT, DEF=1.0] limit inlet velocity changes (absolute m/s)
     active_control.flow_dir  = 1              # [OPT, DEF=AMREX_SPACEDIM-1] flame main direction
     active_control.AC_history  = AChist       # [OPT, DEF=AC_history] Control history file, read upon restart
-    active_control.npoints_average = 5        # [OPT, DEF=3] Number of previous steps using to estimate new velocity 
-    active_control.pseudo_gravity = 1         # [OPT, DEF=0] add density proportional force to compensate for the acceleration 
+    active_control.npoints_average = 5        # [OPT, DEF=3] Number of previous steps using to estimate new velocity
+    active_control.pseudo_gravity = 1         # [OPT, DEF=0] add density proportional force to compensate for the acceleration
                                               #           of the gas due to inlet velocity changes
 
 Run-time diagnostics
