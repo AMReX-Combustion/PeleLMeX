@@ -367,9 +367,9 @@ with `Amrvis <https://amrex-codes.github.io/amrex/docs_html/Visualization.html>`
 
     amrvis -a plt????0
     
-An animation of the flame evolution during this initial transient is provided in :numref:`TF_InitTransient`.
+An animation of the flame evolution during the entire tutorial, including this initial transient, is provided in :numref:`TF_InitTransient`.
 
-.. figure:: images/tutorials/TF_InitTransient.png
+.. figure:: images/tutorials/TF_Transient.gif
    :name: TF_InitTransient
    :align: center
    :figwidth: 95%
@@ -556,10 +556,7 @@ triple flame propagation velocity, eventually leading to a nearly constant value
 
    : Inlet velocity history during the successive simulations performed during this tutorial.
 
-At this point, the simulation is considered complete and the next section provide some pointer to further analyze the results.
-
-Analysis
------------------------
+At this point, the simulation is considered complete.
 
 .. [PCI2007] S. Chung, Stabilization, propagation and instability of tribrachial triple flames, Proceedings of the Combustion Institute 31 (2007) 877–892
 .. [CF1990] R. Bilger, S. Starner, R. Kee, On reduced mechanisms for methane-air combustion in nonpremixed flames, Combustion and Flames 80 (1990) 135-149
