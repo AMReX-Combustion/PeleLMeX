@@ -25,7 +25,6 @@ USE_EFIELD		 = FALSE
 # PeleMP
 USE_PARTICLES    = TRUE
 SPRAY_FUEL_NUM = 1
-CEXE_sources += SprayParticlesInitInsert.cpp
 
 # PelePhysics
 Chemistry_Model = heptane_fc
