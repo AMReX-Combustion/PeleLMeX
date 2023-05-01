@@ -72,7 +72,7 @@ PeleLM::initActiveControl()
     Real x[AMREX_SPACEDIM] = {AMREX_D_DECL(Geom(0).ProbLo(0),
                                            Geom(0).ProbLo(1),
                                            Geom(0).ProbLo(2))};
-    x[m_ctrl_flameDir] -= 1.0; 
+    x[m_ctrl_flameDir] -= 1.0;
     const int ctrl_flameDir_l = m_ctrl_flameDir;
     const amrex::Real time_l = -1.0;
     const auto geomdata = Geom(0).data();
@@ -149,7 +149,7 @@ PeleLM::activeControl(int is_restart)
 
     // If first time, set old target state
     if ( m_ctrl_coftOld < 0.0 ) m_ctrl_coftOld = coft;
-  
+
     if ( m_nstep == 0 ) m_ctrl_nfilled = m_ctrl_NavgPts+1;
 
     // Manage AC history I/O
@@ -269,15 +269,15 @@ void
 PeleLM::getActiveControlLowT(Real &a_coft)
 {
     for (int lev = 0; lev <= finest_level; lev++) {
-   
+
         // Get t^{n+1} data pointer
         auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
         const auto geomdata = Geom(lev).data();
-   
+
         // local FC data
         int  AC_FlameDir   = m_ctrl_flameDir;
         Real AC_Tcross     = m_ctrl_temperature;
-   
+
         if ( lev != finest_level ) {
             Real lowT = amrex::ReduceMin(ldata_p->state, *m_coveredMask[lev], 0, [geomdata, AC_Tcross, AC_FlameDir]
                         AMREX_GPU_HOST_DEVICE(Box const& bx, Array4<Real const> const& T_arr,

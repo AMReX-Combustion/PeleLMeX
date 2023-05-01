@@ -23,7 +23,7 @@ amr.max_grid_size   = 32                  # max box size
 #---------------------- Problem ----------------------------------
 prob.P_mean = 101325.0
 prob.T_in = 300.0
-prob.V_in = 0.85 
+prob.V_in = 0.85
 prob.Zst = 0.055
 
 #---------------------- PeleLM CONTROL ---------------------------
@@ -63,7 +63,7 @@ active_control.method = 1                 # Controller: 1 - Linear, 2 - Quadrati
 active_control.velMax = 2.0               # Optional: limit inlet velocity
 active_control.changeMax = 0.1            # Optional: limit inlet velocity changes (absolute m/s)
 active_control.flow_dir  = 1              # Optional: flame main direction. Default: AMREX_SPACEDIM-1
-active_control.pseudo_gravity = 1         # Optional: add density proportional force to compensate for the acceleration 
+active_control.pseudo_gravity = 1         # Optional: add density proportional force to compensate for the acceleration
                                           #           of the gas due to inlet velocity changes
 
 #---------------------- Derived CONTROLS -------------------------
@@ -99,7 +99,7 @@ amr.gradT.max_level = 2
 amr.gradT.adjacent_difference_greater = 200
 amr.gradT.field_name = temp
 
-amr.HR.max_level = 2 
+amr.HR.max_level = 2
 amr.HR.value_greater = 0.5e9
 amr.HR.field_name = HeatRelease
 

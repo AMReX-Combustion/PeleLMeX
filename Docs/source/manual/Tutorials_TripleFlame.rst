@@ -10,13 +10,13 @@ A simple triple flame
 Introduction
 ------------
 
-Laminar flames have the potential to reveal the fundamental structure of combustion 
-without the added complexities of turbulence. 
-They also aid in our understanding of the more complex turbulent flames. 
-Depending on the fuel involved and the flow configuration, the laminar flames can take on a number of interesting geometries. 
+Laminar flames have the potential to reveal the fundamental structure of combustion
+without the added complexities of turbulence.
+They also aid in our understanding of the more complex turbulent flames.
+Depending on the fuel involved and the flow configuration, the laminar flames can take on a number of interesting geometries.
 For example, as practical combustion systems often operate in partially premixed mode,
-with one or more fuel injections, a wide range of fresh gas compositions can be observed; 
-and these conditions favor the appearance of edge flames, see Fig. :numref:`TripleFlameIntro`. 
+with one or more fuel injections, a wide range of fresh gas compositions can be observed;
+and these conditions favor the appearance of edge flames, see Fig. :numref:`TripleFlameIntro`.
 
 .. figure:: images/tutorials/TF_Intro.png
    :name: TripleFlameIntro
@@ -28,14 +28,14 @@ and these conditions favor the appearance of edge flames, see Fig. :numref:`Trip
 Edge flames are composed of lean and rich premixed flame wings usually surrounding a central
 anchoring diffusion flame extending from a single point [PCI2007]_. Edge flames play
 an important role in flame stabilization, re-ignition and propagation.
-Simple fuels can exhibit up to three burning branches while diesel fuel, with a low temperature combustion mode, 
+Simple fuels can exhibit up to three burning branches while diesel fuel, with a low temperature combustion mode,
 can exhibit up to 5 branches.
 
-The goal of this tutorial is to setup a simple 2D laminar triple edge flame configuration with `PeleLMeX`. 
-This document provides step by step instructions to properly set-up the domain and boundary conditions, 
+The goal of this tutorial is to setup a simple 2D laminar triple edge flame configuration with `PeleLMeX`.
+This document provides step by step instructions to properly set-up the domain and boundary conditions,
 construct an initial solution, and provides guidance on how to monitor and influence the initial transient to reach
-a final steady-state solution. 
-In a final Section, post-processing tools available in `PeleAnalysis` are used to extract information about 
+a final steady-state solution.
+In a final Section, post-processing tools available in `PeleAnalysis` are used to extract information about
 the triple flame.
 
 ..  _sec:TUTO_TF::PrepStep:
@@ -79,10 +79,10 @@ In this section we review the content of the various input files for the Triple 
 
 Test case and boundary conditions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Direct Numerical Simulations (DNS) are performed on a 2x4 :math:`cm^2` 2D computational domain 
-using a 64x128 base grid and up to 4 levels of refinement (although we will start with a lower number of levels). 
-The refinement ratio between each level is set to 2. With 4 levels, this means that the minimum grid size inside the reaction layer will be just below 20 :math:`μm`. 
-The maximum box size is fixed at 32, and the base (level 0) grid is composed of 8 boxes, 
+Direct Numerical Simulations (DNS) are performed on a 2x4 :math:`cm^2` 2D computational domain
+using a 64x128 base grid and up to 4 levels of refinement (although we will start with a lower number of levels).
+The refinement ratio between each level is set to 2. With 4 levels, this means that the minimum grid size inside the reaction layer will be just below 20 :math:`μm`.
+The maximum box size is fixed at 32, and the base (level 0) grid is composed of 8 boxes,
 as shown in :numref:`TF_SetupGeom`.
 
 Symmetric boundary conditions are used in the transverse (:math:`x`) direction, while ``Inflow`` (dirichlet)
@@ -142,11 +142,11 @@ where :math:`z` is based on the classical elemental composition [CF1990]_:
 .. math::
 
     z =  \frac{\beta - \beta_{ox}}{\beta_{fu} - \beta_{ox}}
-    
+
 where :math:`\beta` is Bilger's coupling function, and subscript :math:`ox` and :math:`fu` correspond
 to oxidizer and fuel streams respectively.
 
-Specifying dirichlet ``Inflow`` conditions in `PeleLMeX` can seem daunting at first. But it is actually a very 
+Specifying dirichlet ``Inflow`` conditions in `PeleLMeX` can seem daunting at first. But it is actually a very
 flexible process. We walk the user through the details of it for the Triple Flame case just described. The files involved are:
 
 - ``pelelm_prob_parm.H``, assemble in a C++ struct ``ProbParm`` the input variables as well as other variables used in the initialization process.
@@ -155,9 +155,9 @@ flexible process. We walk the user through the details of it for the Triple Flam
     #---------------------- Problem ----------------------------------
     prob.P_mean = 101325.0
     prob.T_in = 300.0
-    prob.V_in = 0.85 
+    prob.V_in = 0.85
     prob.Zst = 0.055
-  
+
 - finally, ``pelelm_prob.H`` contains the ``pelelm_initdata`` and ``bcnormal`` functions responsible for generating the initial and boundary conditions, resspectively.
 
 Note that in our specific case, we compute the input value of the mass fractions (Y) *directly* in ``bcnormal``,
@@ -177,11 +177,11 @@ Looking closely at the ``ProbParm`` struct, we can see that an object specific t
         amrex::Real Zst = 0.05;
         amrex::Real T_in = 300.0;
         amrex::Real V_in = 0.4;
-    
+
         int bathID{-1};
         int fuelID{-1};
         int oxidID{-1};
-    
+
         FlowControllerData FCData;
     };
 
@@ -193,13 +193,13 @@ Initial solution
 
 An initial field of the main variables is always required to start a simulation.
 Ideally, you want for this initial solution to approximate the final (steady-state in our case) solution as much as possible.
-This will speed up the initial transient and avoid many convergence issues. 
+This will speed up the initial transient and avoid many convergence issues.
 In the present tutorial, an initial solution is constructed by imposing the same inlet hyperbolic tangent of
 mixture fraction than described in subsection :ref:`sec:TUTO_TF::InflowSpec` everywhere in the domain,
 and reconstructing the species mass fraction profiles from it.
 To ensure ignition of the mixture, a progressively widening Gaussian profile of temperature is added,
 starting from about 1 cm, and stretching until the outlet of the domain. The initial temperature field is
-shown in Fig :numref:`TF_InitialSol`, along with the parameters controlling the shape of the hot spot. 
+shown in Fig :numref:`TF_InitialSol`, along with the parameters controlling the shape of the hot spot.
 
 .. figure:: images/tutorials/TF_InitialSol.png
    :name: TF_InitialSol
@@ -251,7 +251,7 @@ in `PelePhysics` can used in `PeleLMeX` by specifying the name of the folder in 
 the relevant files, for example: ::
 
    Chemistry_Model = drm19
-   
+
 Here, the methane kinetic model ``drm19``, containing 21 species is employed. The user is referred to
 the `PelePhysics <https://pelephysics.readthedocs.io/en/latest/>`_ documentation for a list of available
 mechanisms and more information regarding the EOS, chemistry and transport models specified: ::
@@ -286,7 +286,7 @@ First step: the initial solution
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When performing time-dependent numerical simulations, it is good practice to verify the initial solution. To do so,
-we will run `PeleLMeX` to perform the initialization only, to generate an initial plotfile ``plt00000``. 
+we will run `PeleLMeX` to perform the initialization only, to generate an initial plotfile ``plt00000``.
 
 Time-stepping parameters in ``input.2d-regt`` are specified in the ``Time Stepping`` block: ::
 
@@ -331,7 +331,7 @@ You finally have all the information necessary to run the first of several steps
 If you wish to store the standard output of `PeleLMeX` for later analysis, you can instead use: ::
 
     ./PeleLMeX2d.gnu.MPI.ex input.2d-regt > logCheckInitialSolution.dat &
-    
+
 Whether you have used one or the other command, within 10 s you should obtain a ``plt00000`` file (or even more,
 appended with .old*********** if you used both commands). Use `Amrvis <https://amrex-codes.github.io/amrex/docs_html/Visualization.html>`_
 to vizualize ``plt00000`` and make sure the solution matches the one shown in Fig. :numref:`TF_InitialSol`.
@@ -366,7 +366,7 @@ allow you to visualize and monitor the evolution of the flame. Use the following
 with `Amrvis <https://amrex-codes.github.io/amrex/docs_html/Visualization.html>`_: ::
 
     amrvis -a plt????0
-    
+
 An animation of the flame evolution during the entire tutorial, including this initial transient, is provided in :numref:`TF_InitTransient`.
 
 .. figure:: images/tutorials/TF_Transient.gif
@@ -379,11 +379,11 @@ An animation of the flame evolution during the entire tutorial, including this i
 Steady-state problem: activating the flame control
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The speed of propagation of a triple flame is not easy to determine a-priori. As such it is useful, 
-at least until the flame settles, to have some sort of stabilization mechanism to prevent 
-flame blow-off or flashback. In the present configuration, the position of the flame front can be tracked 
-at each time step (using an isoline of temperature) and the input velocity is adjusted to maintain 
-its location at a fixed distance from the inlet (1 cm in the present case). 
+The speed of propagation of a triple flame is not easy to determine a-priori. As such it is useful,
+at least until the flame settles, to have some sort of stabilization mechanism to prevent
+flame blow-off or flashback. In the present configuration, the position of the flame front can be tracked
+at each time step (using an isoline of temperature) and the input velocity is adjusted to maintain
+its location at a fixed distance from the inlet (1 cm in the present case).
 
 The parameters of the active control are listed in `AC CONTROL` block of ``input.2d-regt``: ::
 
@@ -432,7 +432,7 @@ If `gnuplot` is available on your computer, use the following to obtain the grap
     plot "AC_History.dat" u 1:7 w lp
     plot "AC_History.dat" u 1:3 w lp
     exit
-    
+
 The second plot corresponds to the inlet velocity.
 
 .. figure:: images/tutorials/TF_ACcontrol.png
@@ -447,11 +447,11 @@ At this point, you have a stabilized methane/air triple flame and will now use A
 Refinement of the computation
 -----------------------------
 
-Before going further, it is important to look at the results of the current simulation. The left panel of :numref:`TF_CoarseDetails` 
-displays the temperature field, while a zoom-in of the flame edge region colored by several important variables 
-is provided on the right side. 
+Before going further, it is important to look at the results of the current simulation. The left panel of :numref:`TF_CoarseDetails`
+displays the temperature field, while a zoom-in of the flame edge region colored by several important variables
+is provided on the right side.
 Note that `DivU`, the `HeatRelease` and the `CH4_consumption` are good markers of the reaction/diffusion processes in our case.
-What is striking from these images is the lack of resolution of the triple flame, particularly in the reaction zone. 
+What is striking from these images is the lack of resolution of the triple flame, particularly in the reaction zone.
 We also clearly see square unsmooth shapes in the field of intermediate species, where `Y(HCO)` is found to
 closely match the region of high `CH4_consumption` while `Y(CH3O)` is located closer to the cold gases, on the outer layer of the triple flame.
 
@@ -475,16 +475,16 @@ Then provide a definition of the new refinement critera in the `Refinement CONTR
 
     #---------------------- Refinement CONTROL------------------------
     amr.refinement_indicators = highT gradT flame_tracer   # Declare set of refinement indicators
-    
+
     amr.highT.max_level     = 1
-    amr.highT.value_greater = 800 
+    amr.highT.value_greater = 800
     amr.highT.field_name    = temp
-    
-    amr.gradT.max_level                   = 1 
-    amr.gradT.adjacent_difference_greater = 200 
+
+    amr.gradT.max_level                   = 1
+    amr.gradT.adjacent_difference_greater = 200
     amr.gradT.field_name                  = temp
-    
-    amr.flame_tracer.max_level     = 2 
+
+    amr.flame_tracer.max_level     = 2
     amr.flame_tracer.value_greater = 1.0e-6
     amr.flame_tracer.field_name    = Y(CH3O)
 
@@ -512,19 +512,19 @@ is fairly well captured. We will use the same refinement indicators and simply u
 at which each refinement criteria is used: ::
 
     amr.max_level         = 3          # maximum level number allowed
-    
+
     ...
-    
+
     amr.restart           = chk02300 # Restart from checkpoint ?
-    
+
     ...
-    
+
     amr.gradT.max_level   = 2
 
     ...
-    
+
     amr.flame_tracer.max_level  = 3
-    
+
 and increase the ``amr.max_step`` to 3000. Within `PeleLMeX` non-subcycling time advance, the step size is decreasing as we increase the number of AMR
 levels. We started with a rather small CFL number of 0.2 to avoid numerical issues associated with coarse simulations and large time step size
 (see :doc:`Tutorials_BFSFlame` more a practical example of integration failure). Aditionally, as our step size decreases, the `tau` parameter of the
