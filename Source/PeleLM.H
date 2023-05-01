@@ -8,6 +8,7 @@
 #include "pelelm_prob_parm.H"
 #include "DiffusionOp.H"
 #include "DiagBase.H"
+#include "PeleFlowControllerData.H"
 #ifdef PELE_USE_EFIELD
 #include "PrecondOp.H"
 #endif
