@@ -278,74 +278,75 @@ PeleLM::getActiveControlLowT(Real &a_coft)
         int  AC_FlameDir   = m_ctrl_flameDir;
         Real AC_Tcross     = m_ctrl_temperature;
 
+        Real lowT = 1.e37;
+
         if ( lev != finest_level ) {
-            Real lowT = amrex::ReduceMin(ldata_p->state, *m_coveredMask[lev], 0, [=]
-                        AMREX_GPU_HOST_DEVICE(Box const& bx, Array4<Real const> const& T_arr,
-                                                             Array4<int  const> const& covered_arr) noexcept -> Real
-                        {
-                            using namespace amrex::literals;
-                            const auto lo = amrex::lbound(bx);
-                            const auto hi = amrex::ubound(bx);
-                            amrex::Real tmp_pos = 1.e37_rt;
-                            const amrex::Real* prob_lo = geomdata.ProbLo();
-                            const amrex::Real* dx = geomdata.CellSize();
-                            Real coor[3] = {0.0};
-                            for         (int k = lo.z; k <= hi.z; ++k) {
-                                for     (int j = lo.y; j <= hi.y; ++j) {
-                                    for (int i = lo.x; i <= hi.x; ++i) {
-                                        Real lcl_pos = 1.e37_rt;
-                                        if ( T_arr(i,j,k,TEMP) > AC_Tcross && covered_arr(i,j,k) > 0) {
-                                            int idx[3] = {i,j,k};
-                                            idx[AC_FlameDir] -= 1;
-                                            if ( T_arr(idx[0],idx[1],idx[2],TEMP) < AC_Tcross ) {
-                                                AMREX_D_TERM(coor[0] = prob_lo[0] + (i+0.5)*dx[0];,
-                                                             coor[1] = prob_lo[1] + (j+0.5)*dx[1];,
-                                                             coor[2] = prob_lo[2] + (k+0.5)*dx[2];);
-                                                Real slope = ((T_arr(i,j,k,TEMP) ) - T_arr(idx[0],idx[1],idx[2],TEMP))/dx[AC_FlameDir];
-                                                lcl_pos = coor[AC_FlameDir] - dx[AC_FlameDir] + ( AC_Tcross - T_arr(idx[0],idx[1],idx[2],TEMP) ) / slope;
-                                            }
-                                        }
-                                        tmp_pos = amrex::min(tmp_pos,lcl_pos);
-                                    }
-                                }
-                            }
-                            return tmp_pos;
-                        });
-            a_coft = amrex::min(a_coft,lowT);
+            lowT = amrex::ReduceMin(ldata_p->state, *m_coveredMask[lev], 0, [=]
+                   AMREX_GPU_HOST_DEVICE(Box const& bx, Array4<Real const> const& T_arr,
+                                                        Array4<int  const> const& covered_arr) -> Real
+                   {
+                       using namespace amrex::literals;
+                       const auto lo = amrex::lbound(bx);
+                       const auto hi = amrex::ubound(bx);
+                       Real tmp_pos = 1.e37_rt;
+                       const Real* prob_lo = geomdata.ProbLo();
+                       const Real* dx = geomdata.CellSize();
+                       for         (int k = lo.z; k <= hi.z; ++k) {
+                           for     (int j = lo.y; j <= hi.y; ++j) {
+                               for (int i = lo.x; i <= hi.x; ++i) {
+                                   Real lcl_pos = 1.e37_rt;
+                                   if ( T_arr(i,j,k,TEMP) > AC_Tcross && covered_arr(i,j,k) > 0) {
+                                       int idx[3] = {i,j,k};
+                                       idx[AC_FlameDir] -= 1;
+                                       if ( T_arr(idx[0],idx[1],idx[2],TEMP) < AC_Tcross ) {
+                                           Real coor[3] = {0.0};
+                                           AMREX_D_TERM(coor[0] = prob_lo[0] + (i+0.5)*dx[0];,
+                                                        coor[1] = prob_lo[1] + (j+0.5)*dx[1];,
+                                                        coor[2] = prob_lo[2] + (k+0.5)*dx[2];);
+                                           Real slope = ((T_arr(i,j,k,TEMP) ) - T_arr(idx[0],idx[1],idx[2],TEMP))/dx[AC_FlameDir];
+                                           lcl_pos = coor[AC_FlameDir] - dx[AC_FlameDir] + ( AC_Tcross - T_arr(idx[0],idx[1],idx[2],TEMP) ) / slope;
+                                       }
+                                   }
+                                   tmp_pos = amrex::min(tmp_pos,lcl_pos);
+                               }
+                           }
+                       }
+                       return tmp_pos;
+                   });
         } else {
-            Real lowT = amrex::ReduceMin(ldata_p->state, 0, [=]
-                        AMREX_GPU_HOST_DEVICE(Box const& bx, Array4<Real const> const& T_arr) noexcept -> Real
-                        {
-                            using namespace amrex::literals;
-                            const auto lo = amrex::lbound(bx);
-                            const auto hi = amrex::ubound(bx);
-                            amrex::Real tmp_pos = 1.e37_rt;
-                            const amrex::Real* prob_lo = geomdata.ProbLo();
-                            const amrex::Real* dx = geomdata.CellSize();
-                            Real coor[3] = {0.0};
-                            for         (int k = lo.z; k <= hi.z; ++k) {
-                                for     (int j = lo.y; j <= hi.y; ++j) {
-                                    for (int i = lo.x; i <= hi.x; ++i) {
-                                        Real lcl_pos = 1.e37_rt;
-                                        if ( T_arr(i,j,k,TEMP) > AC_Tcross) {
-                                            int idx[3] = {i,j,k};
-                                            idx[AC_FlameDir] -= 1;
-                                            if ( T_arr(idx[0],idx[1],idx[2],TEMP) < AC_Tcross ) {
-                                                AMREX_D_TERM(coor[0] = prob_lo[0] + (i+0.5)*dx[0];,
-                                                             coor[1] = prob_lo[1] + (j+0.5)*dx[1];,
-                                                             coor[2] = prob_lo[2] + (k+0.5)*dx[2];);
-                                                Real slope = ((T_arr(i,j,k,TEMP) ) - T_arr(idx[0],idx[1],idx[2],TEMP))/dx[AC_FlameDir];
-                                                lcl_pos = coor[AC_FlameDir] - dx[AC_FlameDir] + ( AC_Tcross - T_arr(idx[0],idx[1],idx[2],TEMP) ) / slope;
-                                            }
-                                        }
-                                        tmp_pos = amrex::min(tmp_pos,lcl_pos);
-                                    }
-                                }
-                            }
-                            return tmp_pos;
-                        });
-            a_coft = amrex::min(a_coft,lowT);
+            lowT = amrex::ReduceMin(ldata_p->state, 0, [=]
+                   AMREX_GPU_HOST_DEVICE(Box const& bx, Array4<Real const> const& T_arr) -> Real
+                   {
+                       using namespace amrex::literals;
+                       const auto lo = amrex::lbound(bx);
+                       const auto hi = amrex::ubound(bx);
+                       Real tmp_pos = 1.e37_rt;
+                       const Real* prob_lo = geomdata.ProbLo();
+                       const Real* dx = geomdata.CellSize();
+                       for         (int k = lo.z; k <= hi.z; ++k) {
+                           for     (int j = lo.y; j <= hi.y; ++j) {
+                               for (int i = lo.x; i <= hi.x; ++i) {
+                                   Real lcl_pos = 1.e37_rt;
+                                   if ( T_arr(i,j,k,TEMP) > AC_Tcross) {
+                                       int idx[3] = {i,j,k};
+                                       idx[AC_FlameDir] -= 1;
+                                       if ( T_arr(idx[0],idx[1],idx[2],TEMP) < AC_Tcross ) {
+                                           Real coor[3] = {0.0};
+                                           AMREX_D_TERM(coor[0] = prob_lo[0] + (i+0.5)*dx[0];,
+                                                        coor[1] = prob_lo[1] + (j+0.5)*dx[1];,
+                                                        coor[2] = prob_lo[2] + (k+0.5)*dx[2];);
+                                           Real slope = ((T_arr(i,j,k,TEMP) ) - T_arr(idx[0],idx[1],idx[2],TEMP))/dx[AC_FlameDir];
+                                           lcl_pos = coor[AC_FlameDir] - dx[AC_FlameDir] + ( AC_Tcross - T_arr(idx[0],idx[1],idx[2],TEMP) ) / slope;
+                                       }
+                                   }
+                                   tmp_pos = amrex::min(tmp_pos,lcl_pos);
+                               }
+                           }
+                       }
+                       return tmp_pos;
+                   });
         }
+        a_coft = amrex::min(a_coft,lowT);
     }
     ParallelDescriptor::ReduceRealMin(a_coft);
 }
