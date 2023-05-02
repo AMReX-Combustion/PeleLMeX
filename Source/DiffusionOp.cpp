@@ -1073,7 +1073,7 @@ void DiffusionTensorOp::diffuse_velocity (Vector<MultiFab*> const& a_vel,
    }
 
    Vector<MultiFab> rhs(finest_level+1);
-   for (int lev = 0; lev <= finest_level;DiffusionOp.cpp ++lev) {
+   for (int lev = 0; lev <= finest_level; ++lev) {
        rhs[lev].define(a_vel[lev]->boxArray(),
                        a_vel[lev]->DistributionMap(), AMREX_SPACEDIM, 0);
 #ifdef AMREX_USE_OMP
