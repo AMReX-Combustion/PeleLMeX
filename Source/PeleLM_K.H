@@ -851,7 +851,8 @@ fabMinMax(int i, int j, int k,
    }
 }
 
-// DivuCeiling type 1 est_divu_dt function
+// Type 1 est_divu_dt function
+// Check based on divU
 AMREX_GPU_HOST_DEVICE
 AMREX_FORCE_INLINE
 amrex::Real
@@ -873,6 +874,74 @@ est_divu_dt_1(int i, int j, int k,
    return dtcell;
 }
 
+// Type 2 est_divu_dt function
+// Check based rho * divU + u \cdot grad rho
+AMREX_GPU_HOST_DEVICE
+AMREX_FORCE_INLINE
+amrex::Real
+est_divu_dt_2(int i, int j, int k,
+              amrex::Real                                  const& dtfactor,
+              amrex::Real                                  const& rhomin,
+              amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const dxinv,
+              amrex::Array4<const amrex::Real>             const& rho,
+              amrex::Array4<const amrex::Real>             const& vel,
+              amrex::Array4<const amrex::Real>             const& divu) noexcept
+{
+   using namespace amrex::literals;
+
+   amrex::Real dtcell = 1.0e20_rt;
+   amrex::Real denom  = 0.0_rt;
+   bool rho_is_okay = (rho(i,j,k) > rhomin);
+
+   denom = rho(i,j,k) * divu(i,j,k) +
+           AMREX_D_TERM(  vel(i,j,k,0) * ( rho(i+1,j,k) - rho(i-1,j,k) ) * dxinv[0],
+                        + vel(i,j,k,1) * ( rho(i,j+1,k) - rho(i,j-1,k) ) * dxinv[1],
+                        + vel(i,j,k,2) * ( rho(i,j,k+1) - rho(i,j,k-1) ) * dxinv[2] );
+   if ( denom > 0.0_rt ) {
+      dtcell = (rho_is_okay) ? ( rho(i,j,k) - rhomin ) / denom : std::abs( rho(i,j,k) ) / denom;
+      dtcell *= dtfactor;
+   }
+   return dtcell;
+}
+
+AMREX_GPU_HOST_DEVICE
+AMREX_FORCE_INLINE
+void
+check_divu_dt(int i, int j, int k,
+              int                                          check_type,
+              amrex::Real                                  const& dtfactor,
+              amrex::Real                                  const& rhomin,
+              amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const dxinv,
+              amrex::Array4<const amrex::Real>             const& rho,
+              amrex::Array4<const amrex::Real>             const& vel,
+              amrex::Array4<const amrex::Real>             const& divu,
+              amrex::Real                                  const& a_dt) noexcept
+{
+   using namespace amrex::literals;
+
+   amrex::Real dtcell = 1.0e12_rt;
+   amrex::Real denom  = 0.0_rt;
+   bool rho_is_okay = (rho(i,j,k) > rhomin);
+
+   if ( check_type == 1 ) {                           // Check based on divU
+      if ( divu(i,j,k) > 0.0_rt ) {
+         dtcell = (rho_is_okay) ? ( 1.0_rt - rhomin / rho(i,j,k) ) / divu(i,j,k) : 1.0_rt / divu(i,j,k);
+      }
+   } else if ( check_type == 2 ) {                    // Check based rho * divU + u \cdot grad rho
+      denom = rho(i,j,k) * divu(i,j,k) +
+              AMREX_D_TERM(  vel(i,j,k,0) * ( rho(i+1,j,k) - rho(i-1,j,k) ) * dxinv[0],
+                           + vel(i,j,k,1) * ( rho(i,j+1,k) - rho(i,j-1,k) ) * dxinv[1],
+                           + vel(i,j,k,2) * ( rho(i,j,k+1) - rho(i,j,k-1) ) * dxinv[2] );
+      if ( denom > 0.0_rt ) {
+         dtcell = (rho_is_okay) ? ( rho(i,j,k) - rhomin ) / denom : std::abs( rho(i,j,k) ) / denom;
+      }
+   }
+   if (a_dt>dtcell) {
+       amrex::Abort("Error: divU dtcell larger than actual dt !");
+   } else if (a_dt>dtcell*dtfactor) {
+       amrex::Print() << "Warning: divU dtcell close to actual dt ! \n";
+   }
+}
 
 AMREX_GPU_HOST_DEVICE
 AMREX_FORCE_INLINE

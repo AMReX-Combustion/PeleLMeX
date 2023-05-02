@@ -374,6 +374,9 @@ void PeleLM::readParameters() {
    pp.query("sdc_iterMax",m_nSDCmax);
    pp.query("floor_species",m_floor_species);
    pp.query("memory_checks",m_checkMem);
+   pp.query("divu_dt_factor",m_divu_dtFactor);
+   pp.query("divu_dt_rhoMin",m_divu_rhoMin);
+   pp.query("divu_dt_method",m_divu_checkFlag);
 
    // -----------------------------------------
    // Reaction

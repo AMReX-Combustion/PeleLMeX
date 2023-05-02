@@ -102,7 +102,6 @@ void PeleLM::Advance(int is_initIter) {
       poissonSolveEF(AmrOldTime);
 #endif
    }
-   // TODO : check dt
 
    //----------------------------------------------------------------
    BL_PROFILE_VAR_STOP(PLM_SETUP);
@@ -145,8 +144,6 @@ void PeleLM::Advance(int is_initIter) {
 #endif
    }
    BL_PROFILE_VAR_STOP(PLM_SETUP);
-
-   // TODO : handle reaction ghost cells
    //----------------------------------------------------------------
 
    //----------------------------------------------------------------
@@ -279,6 +276,10 @@ void PeleLM::oneSDC(int sdcIter,
 #ifdef PELE_USE_EFIELD
       ionDriftVelocity(advData);
 #endif
+
+      // Check divU dt based on NewTime
+      checkDt(AmrNewTime,m_dt);
+
       if (m_verbose > 1) {
          Real UpdateEnd = ParallelDescriptor::second() - UpdateStart;
          ParallelDescriptor::ReduceRealMax(UpdateEnd, ParallelDescriptor::IOProcessorNumber());
