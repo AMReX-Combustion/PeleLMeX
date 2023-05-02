@@ -738,7 +738,7 @@ void pelelm_derenstrophy (PeleLM* a_pelelm, const Box& bx, FArrayBox& derfab, in
                  const amrex::Real idz = geom.InvCellSize(2););
 
     auto const&  dat_arr = statefab.const_array(VELX);
-    auto const&  rho_arr = (a_pelelm->m_incompressible) ? Array4<Real>{}
+    auto const&  rho_arr = (a_pelelm->m_incompressible) ? Array4<const Real>{}
                                                         : statefab.const_array(DENSITY);
     auto const&  ens_arr = derfab.array(dcomp);
 
