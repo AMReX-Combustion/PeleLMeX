@@ -363,7 +363,6 @@ class PeleLM : public amrex::AmrCore {
    void addSoretTerm(const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> &a_fluxes,
                     const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> &a_soretfluxes,
                     amrex::Vector<amrex::MultiFab const*> const &a_spec,
-                    amrex::Vector<amrex::MultiFab const*> const &a_rho,
                     amrex::Vector<amrex::MultiFab const*> const &a_temp,
                     amrex::Vector<amrex::MultiFab const*> const &a_beta);
 
