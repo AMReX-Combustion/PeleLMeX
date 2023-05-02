@@ -530,13 +530,9 @@ void DiffusionOp::computeDiffFluxes(Vector<Array<MultiFab*,AMREX_SPACEDIM>> cons
                                     Vector<MultiFab const*> const& a_bcoeff, int bcoeff_comp,
                                     Vector<BCRec> a_bcrec,
                                     int ncomp,
-                                    Real scale,
                                     int do_avgDown)
 {
    BL_PROFILE("DiffusionOp::computeDiffFluxes()");
-
-   // TODO: how come this is not used ?
-   amrex::ignore_unused(scale);
 
    //----------------------------------------------------------------
    // Checks
@@ -647,13 +643,9 @@ void DiffusionOp::computeDiffFluxes(Vector<Array<MultiFab*,AMREX_SPACEDIM>> cons
                                     Vector<MultiFab const*> const& a_EBbcoeff,
                                     Vector<BCRec> a_bcrec,
                                     int ncomp,
-                                    Real scale,
                                     int do_avgDown)
 {
    BL_PROFILE("DiffusionOp::computeDiffFluxes()");
-
-   // TODO: how come this is not used ?
-   amrex::ignore_unused(scale);
 
    //----------------------------------------------------------------
    // Checks

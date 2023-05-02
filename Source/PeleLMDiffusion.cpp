@@ -226,7 +226,7 @@ void PeleLM::computeDifferentialDiffusionFluxes(const TimeStamp &a_time,
                                                              GetVecOfConstPtrs(getSpeciesVect(a_time)), 0,
                                                              GetVecOfConstPtrs(getDensityVect(a_time)),
                                                              GetVecOfConstPtrs(getDiffusivityVect(a_time)), 0, bcRecSpec,
-                                                             NUM_SPECIES-NUM_IONS, -1.0, do_avgDown);
+                                                             NUM_SPECIES-NUM_IONS, do_avgDown);
    // Ions one by one
    for ( int n = 0; n < NUM_IONS; n++) {
       auto bcRecIons = fetchBCRecArray(FIRSTSPEC+NUM_SPECIES-NUM_IONS+n,1);
@@ -234,7 +234,7 @@ void PeleLM::computeDifferentialDiffusionFluxes(const TimeStamp &a_time,
                                           GetVecOfConstPtrs(getSpeciesVect(a_time)), NUM_SPECIES-NUM_IONS+n,
                                           GetVecOfConstPtrs(getDensityVect(a_time)),
                                           GetVecOfConstPtrs(getDiffusivityVect(a_time)), 0, bcRecIons,
-                                          1, -1.0, do_avgDown);
+                                          1, do_avgDown);
    }
 #else
    // Get the species diffusion fluxes from the DiffusionOp
@@ -244,7 +244,7 @@ void PeleLM::computeDifferentialDiffusionFluxes(const TimeStamp &a_time,
                                                     GetVecOfConstPtrs(getSpeciesVect(a_time)), 0,
                                                     GetVecOfConstPtrs(getDensityVect(a_time)),
                                                     GetVecOfConstPtrs(getDiffusivityVect(a_time)), 0, bcRecSpec,
-                                                    NUM_SPECIES, -1.0, do_avgDown);
+                                                    NUM_SPECIES, do_avgDown);
 #endif
 
    // Add the wbar term
@@ -319,7 +319,7 @@ void PeleLM::computeDifferentialDiffusionFluxes(const TimeStamp &a_time,
                                           GetVecOfConstPtrs(getDiffusivityVect(a_time)), NUM_SPECIES,
                                           GetVecOfConstPtrs(EBvalue),
                                           GetVecOfConstPtrs(EBdiff),
-                                          bcRecTemp, 1, -1.0, do_avgDown);
+                                          bcRecTemp, 1, do_avgDown);
    } else
 #endif
    {
@@ -327,7 +327,7 @@ void PeleLM::computeDifferentialDiffusionFluxes(const TimeStamp &a_time,
                                           GetVecOfConstPtrs(getTempVect(a_time)), 0,
                                           {},
                                           GetVecOfConstPtrs(getDiffusivityVect(a_time)), NUM_SPECIES, bcRecTemp,
-                                          1, -1.0, do_avgDown);
+                                          1, do_avgDown);
    }
 
    // Differential diffusion term: \sum_k ( h_k * \Flux_k )
@@ -1037,7 +1037,7 @@ void PeleLM::differentialDiffusionUpdate(std::unique_ptr<AdvanceAdvData> &advDat
                                           GetVecOfConstPtrs(getDiffusivityVect(AmrNewTime)), NUM_SPECIES,
                                           GetVecOfConstPtrs(EBvalue),
                                           GetVecOfConstPtrs(EBdiff),
-                                          bcRecTemp, 1, -1.0, do_avgDown);
+                                          bcRecTemp, 1, do_avgDown);
    } else
 #endif
    {
@@ -1045,7 +1045,7 @@ void PeleLM::differentialDiffusionUpdate(std::unique_ptr<AdvanceAdvData> &advDat
                                           GetVecOfConstPtrs(getTempVect(AmrNewTime)), 0,
                                           {},
                                           GetVecOfConstPtrs(getDiffusivityVect(AmrNewTime)), NUM_SPECIES, bcRecTemp,
-                                          1, -1.0, do_avgDown);
+                                          1, do_avgDown);
    }
 
    // Differential diffusion term: \sum_k ( h_k * \Flux_k )
@@ -1274,7 +1274,7 @@ void PeleLM::deltaTIter_update(int a_dtiter,
                                           GetVecOfConstPtrs(getDiffusivityVect(AmrNewTime)), NUM_SPECIES,
                                           GetVecOfConstPtrs(EBvalue),
                                           GetVecOfConstPtrs(EBdiff),
-                                          bcRecTemp, 1, -1.0, do_avgDown);
+                                          bcRecTemp, 1, do_avgDown);
    } else
 #endif
    {
@@ -1282,7 +1282,7 @@ void PeleLM::deltaTIter_update(int a_dtiter,
                                           GetVecOfConstPtrs(getTempVect(AmrNewTime)), 0,
                                           {},
                                           GetVecOfConstPtrs(getDiffusivityVect(AmrNewTime)), NUM_SPECIES, bcRecTemp,
-                                          1, -1.0, do_avgDown);
+                                          1, do_avgDown);
    }
 
    // Differential diffusion term: \sum_k ( h_k * \Flux_k )

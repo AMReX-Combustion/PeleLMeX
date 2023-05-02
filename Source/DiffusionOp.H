@@ -73,7 +73,6 @@ class DiffusionOp
                            int bcoeff_comp,
                            amrex::Vector<amrex::BCRec> a_bcrec,
                            int ncomp,
-                           amrex::Real scale,
                            int do_avgDown);
 
 #ifdef AMREX_USE_EB
@@ -90,7 +89,6 @@ class DiffusionOp
                            amrex::Vector<amrex::MultiFab const*> const& a_EBbcoeff,
                            amrex::Vector<amrex::BCRec> a_bcrec,
                            int ncomp,
-                           amrex::Real scale,
                            int do_avgDown);
 #endif
 
