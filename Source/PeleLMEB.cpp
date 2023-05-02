@@ -14,7 +14,6 @@ using namespace amrex;
 void PeleLM::makeEBGeometry()
 {
     BL_PROFILE("PeleLM::makeEBGeometry()");
-    // TODO extend
     int max_coarsening_level = 100;
     int req_coarsening_level = geom.size()-1;
 
@@ -95,10 +94,11 @@ void PeleLM::redistributeAofS(int a_lev,
                 // FluxRedistribute
                 Box gbx = bx;
 
-                if (m_adv_redist_type == "StateRedist")
-                  gbx.grow(3);
-                else if (m_adv_redist_type == "FluxRedist")
-                  gbx.grow(2);
+                if (m_adv_redist_type == "StateRedist") {
+                    gbx.grow(3);
+                } else if (m_adv_redist_type == "FluxRedist") {
+                    gbx.grow(2);
+                }
 
                 FArrayBox tmpfab(gbx, ncomp, The_Async_Arena());
                 Array4<Real> scratch = tmpfab.array(0);
@@ -106,7 +106,7 @@ void PeleLM::redistributeAofS(int a_lev,
                 {
                     amrex::ParallelFor(Box(scratch),
                     [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
-                    { scratch(i,j,k) = 1.;});   // TODO might want to test volfrac
+                    { scratch(i,j,k) = 1.;});
                 }
                 Redistribution::Apply( bx, ncomp, aofs_ar, divT_ar,
                                        a_state.const_array(mfi, state_comp), scratch, flag,
@@ -120,6 +120,57 @@ void PeleLM::redistributeAofS(int a_lev,
                 { aofs_ar(i,j,k,n) = divT_ar(i,j,k,n);});
             }
         }
+    }
+}
+
+void PeleLM::getCoveredIMask(int a_lev,
+                             iMultiFab &a_imask)
+{
+    const auto& ebfact = EBFactory(a_lev);
+    const auto& flags = ebfact.getMultiEBCellFlagFab();
+
+    if ((a_imask.boxArray() == flags.boxArray()) &&
+        (a_imask.DistributionMap() == flags.DistributionMap())) {
+
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+        for (MFIter mfi(a_imask,TilingIfNotGPU()); mfi.isValid(); ++mfi)
+        {
+            const Box& bx = mfi.tilebox();
+            const auto& flagarr = flags.const_array(mfi);
+            Array4<int> const& arr = a_imask.array(mfi);
+            AMREX_HOST_DEVICE_PARALLEL_FOR_3D ( bx, i, j, k,
+            {
+                if (flagarr(i,j,k).isCovered()) {
+                    arr(i,j,k) = -1;
+                } else {
+                    arr(i,j,k) = 1;
+                }
+            });
+        }
+    } else {
+
+        iMultiFab mask_tmp(flags.boxArray(),flags.DistributionMap(),1,0);
+
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+        for (MFIter mfi(mask_tmp,TilingIfNotGPU()); mfi.isValid(); ++mfi)
+        {
+            const Box& bx = mfi.tilebox();
+            const auto& flagarr = flags.const_array(mfi);
+            Array4<int> const& arr = mask_tmp.array(mfi);
+            AMREX_HOST_DEVICE_PARALLEL_FOR_3D ( bx, i, j, k,
+            {
+                if (flagarr(i,j,k).isCovered()) {
+                    arr(i,j,k) = -1;
+                } else {
+                    arr(i,j,k) = 1;
+                }
+            });
+        }
+        a_imask.ParallelCopy(mask_tmp,0,0,1);
     }
 }
 
@@ -167,10 +218,11 @@ void PeleLM::redistributeDiff(int a_lev,
                 // FluxRedistribute
                 Box gbx = bx;
 
-                if (m_diff_redist_type == "StateRedist")
-                  gbx.grow(3);
-                else if (m_diff_redist_type == "FluxRedist")
-                  gbx.grow(2);
+                if (m_diff_redist_type == "StateRedist") {
+                    gbx.grow(3);
+                } else if (m_diff_redist_type == "FluxRedist") {
+                    gbx.grow(2);
+                }
 
                 FArrayBox tmpfab(gbx, ncomp, The_Async_Arena());
                 Array4<Real> scratch = tmpfab.array(0);
@@ -178,7 +230,7 @@ void PeleLM::redistributeDiff(int a_lev,
                 {
                     amrex::ParallelFor(Box(scratch),
                     [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
-                    { scratch(i,j,k) = 1.;});   // TODO might want to test volfrac
+                    { scratch(i,j,k) = 1.;});
                 }
                 Redistribution::Apply( bx, ncomp, diff_ar, divT_ar,
                                        a_state.const_array(mfi, state_comp), scratch, flag,
@@ -197,39 +249,31 @@ void PeleLM::redistributeDiff(int a_lev,
 
 void PeleLM::initCoveredState()
 {
-    // TODO use typical values
+    // Zero velocities, typical values on species, 'cold' temperature
     if ( m_incompressible ) {
         coveredState_h.resize(AMREX_SPACEDIM);
-        AMREX_D_TERM(coveredState_h[0] = typical_values[VELX+0];,
-                     coveredState_h[1] = typical_values[VELX+1];,
-                     coveredState_h[2] = typical_values[VELX+2];)
+        AMREX_D_TERM(coveredState_h[0] = 0.0;,
+                     coveredState_h[1] = 0.0;,
+                     coveredState_h[2] = 0.0;)
         coveredState_d.resize(AMREX_SPACEDIM);
-#ifdef AMREX_USE_GPU
-        Gpu::htod_memcpy
-#else
-        std::memcpy
-#endif
-          (coveredState_d.data(),coveredState_h.data(), sizeof(Real)*AMREX_SPACEDIM);
+        Gpu::copy(Gpu::hostToDevice, coveredState_h.begin(),
+                  coveredState_h.end(), coveredState_d.begin());
     } else {
         coveredState_h.resize(NVAR);
-        AMREX_D_TERM(coveredState_h[0] = typical_values[VELX+0];,
-                     coveredState_h[1] = typical_values[VELX+1];,
-                     coveredState_h[2] = typical_values[VELX+2];)
+        AMREX_D_TERM(coveredState_h[0] = 0.0;,
+                     coveredState_h[1] = 0.0;,
+                     coveredState_h[2] = 0.0;)
         coveredState_h[DENSITY] = typical_values[DENSITY];
         for (int n = 0; n < NUM_SPECIES; n++ ) {
            coveredState_h[FIRSTSPEC+n] = typical_values[FIRSTSPEC+n];
         }
         coveredState_h[RHOH] = typical_values[RHOH];
-        coveredState_h[TEMP] = typical_values[TEMP]-10.0;
+        coveredState_h[TEMP] = 300.0;
         coveredState_h[RHORT] = typical_values[RHORT];
 
         coveredState_d.resize(NVAR);
-#ifdef AMREX_USE_GPU
-        Gpu::htod_memcpy
-#else
-        std::memcpy
-#endif
-          (coveredState_d.data(),coveredState_h.data(), sizeof(Real)*NVAR);
+        Gpu::copy(Gpu::hostToDevice, coveredState_h.begin(),
+                  coveredState_h.end(), coveredState_d.begin());
     }
 }
 
