@@ -332,7 +332,9 @@ void PeleLM::WritePlotFile() {
       }
 
 #ifdef AMREX_USE_EB
-      EB_set_covered(mf_plt[lev],0.0);
+      if (m_plot_zeroEBcovered) {
+         EB_set_covered(mf_plt[lev],0.0);
+      }
 #endif
    }
 

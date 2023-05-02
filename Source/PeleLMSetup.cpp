@@ -626,6 +626,7 @@ void PeleLM::readIOParameters() {
          pp.get("derive_plot_vars", m_derivePlotVars[ivar],ivar);
       }
    }
+   pp.query("plot_zeroEBcovered", m_plot_zeroEBcovered);
    pp.query("plot_speciesState" , m_plotStateSpec);
    m_initial_grid_file = "";
    m_regrid_file = "";

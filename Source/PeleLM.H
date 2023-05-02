@@ -874,6 +874,8 @@ class PeleLM : public amrex::AmrCore {
                          const amrex::BCRec * d_bc,
                          const amrex::Geometry &a_geom);
 
+   void getCoveredIMask(int a_lev,
+                        amrex::iMultiFab &a_imask);
 
    void getEBDistance(int a_lev,
                       amrex::MultiFab &a_signDistLev);
@@ -1200,6 +1202,7 @@ class PeleLM : public amrex::AmrCore {
    int m_plotHeatRelease = 0;
    int m_plotStateSpec = 0;
    int m_plot_int = 0;
+   int m_plot_zeroEBcovered = 1;
    amrex::Real m_plot_per_approx = -1.;
    amrex::Real m_plot_per_exact = -1.;
    int m_check_int = 0;
