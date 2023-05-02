@@ -313,9 +313,9 @@ PeleLM::fillPatchState(int lev, Real a_time, int nGrow) {
 
    std::unique_ptr<MultiFab> mf;
    if ( m_incompressible ) {
-      mf.reset(new MultiFab(grids[lev], dmap[lev], AMREX_SPACEDIM, nGrow));
+      mf.reset(new MultiFab(grids[lev], dmap[lev], AMREX_SPACEDIM, nGrow, MFInfo(), Factory(lev)));
    } else {
-      mf.reset(new MultiFab(grids[lev], dmap[lev], NVAR, nGrow));
+      mf.reset(new MultiFab(grids[lev], dmap[lev], NVAR, nGrow, MFInfo(), Factory(lev)));
    }
    fillpatch_state(lev, a_time, *mf, nGrow);
    //TODO Aux

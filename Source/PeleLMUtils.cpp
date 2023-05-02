@@ -796,7 +796,7 @@ PeleLM::derive(const std::string &a_name,
    const PeleLMDeriveRec* rec = derive_lst.get(a_name);
 
    if (rec) {        // This is a derived variable
-      mf.reset(new MultiFab(grids[lev], dmap[lev], rec->numDerive(), nGrow));
+      mf.reset(new MultiFab(grids[lev], dmap[lev], rec->numDerive(), nGrow, MFInfo(), Factory(lev)));
       std::unique_ptr<MultiFab> statemf = fillPatchState(lev, a_time, m_nGrowState);
       // Get pressure: TODO no fillpatch for pressure just yet, simply get new state
       auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
@@ -815,7 +815,7 @@ PeleLM::derive(const std::string &a_name,
           rec->derFunc()(this, bx, derfab, 0, rec->numDerive(), statefab, reactfab, pressfab, geom[lev], a_time, stateBCs, lev);
       }
    } else if (isStateVariable(a_name)) {          // This is a state variable
-      mf.reset(new MultiFab(grids[lev], dmap[lev], 1, nGrow));
+      mf.reset(new MultiFab(grids[lev], dmap[lev], 1, nGrow, MFInfo(), Factory(lev)));
       int idx = stateVariableIndex(a_name);
       std::unique_ptr<MultiFab> statemf = fillPatchState(lev, a_time, nGrow);
       MultiFab::Copy(*mf,*statemf,idx,0,1,nGrow);
@@ -851,7 +851,7 @@ PeleLM::deriveComp(const std::string &a_name,
    const PeleLMDeriveRec* rec = derive_lst.get(a_name);
 
    if (rec) {        // This is a derived variable
-      mf.reset(new MultiFab(grids[lev], dmap[lev], 1, nGrow));
+      mf.reset(new MultiFab(grids[lev], dmap[lev], 1, nGrow, MFInfo(), Factory(lev)));
       std::unique_ptr<MultiFab> statemf = fillPatchState(lev, a_time, m_nGrowState);
       // Get pressure: TODO no fillpatch for pressure just yet, simply get new state
       auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
@@ -879,7 +879,7 @@ PeleLM::deriveComp(const std::string &a_name,
       }
       MultiFab::Copy(*mf,derTemp,derComp,0,1,nGrow);
    } else if (isStateVariable(a_name)) {          // This is a state variable
-      mf.reset(new MultiFab(grids[lev], dmap[lev], 1, nGrow));
+      mf.reset(new MultiFab(grids[lev], dmap[lev], 1, nGrow, MFInfo(), Factory(lev)));
       int idx = stateVariableIndex(a_name);
       std::unique_ptr<MultiFab> statemf = fillPatchState(lev, a_time, nGrow);
       MultiFab::Copy(*mf,*statemf,idx,0,1,nGrow);
