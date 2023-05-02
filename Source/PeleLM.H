@@ -705,7 +705,7 @@ class PeleLM : public amrex::AmrCore {
        }
 
        key = keyT.str2int.at(userkey);
-   };
+   }
 
    // flux divergence
    void fluxDivergence(const amrex::Vector<amrex::MultiFab*> &a_divergence,
