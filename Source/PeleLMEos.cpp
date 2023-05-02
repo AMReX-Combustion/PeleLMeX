@@ -155,11 +155,10 @@ void PeleLM::calcDivU(int is_init,
    }
 
    // fillPatch a_time divu to get properly filled ghost cells
-   int nGrowDivu = 1;
    for (int lev = 0; lev <= finest_level; ++lev) {
       Real time = getTime(lev,a_time);
       auto ldata_p = getLevelDataPtr(lev,a_time);
-      fillpatch_divu(lev,time,ldata_p->divu,nGrowDivu);
+      fillpatch_divu(lev,time,ldata_p->divu,m_nGrowdivu);
    }
 }
 

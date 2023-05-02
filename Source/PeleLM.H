@@ -1357,6 +1357,7 @@ class PeleLM : public amrex::AmrCore {
    int m_nGrowState = 3;
 #endif
    int m_nGrowAdv = 1;
+   int m_nGrowdivu = 1;
    int m_nGrowMAC = 1;
 
    // Initialization
