@@ -35,8 +35,6 @@ The goal of this tutorial is to setup a simple 2D laminar triple edge flame conf
 This document provides step by step instructions to properly set-up the domain and boundary conditions,
 construct an initial solution, and provides guidance on how to monitor and influence the initial transient to reach
 a final steady-state solution.
-In a final Section, post-processing tools available in `PeleAnalysis` are used to extract information about
-the triple flame.
 
 ..  _sec:TUTO_TF::PrepStep:
 
