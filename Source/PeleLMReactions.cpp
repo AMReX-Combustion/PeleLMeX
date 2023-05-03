@@ -38,7 +38,11 @@ void PeleLM::advanceChemistry(int lev,
 
    // Setup EB-covered cells mask
    iMultiFab mask(grids[lev],dmap[lev],1,0);
+#ifdef AMREX_USE_EB
    getCoveredIMask(lev,mask);
+#else
+   mask.setVal(1);
+#endif
 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -185,7 +189,11 @@ void PeleLM::advanceChemistryBAChem(int lev,
 
    // Setup EB covered cells mask
    iMultiFab mask(*m_baChem[lev],*m_dmapChem[lev],1,0);
+#ifdef AMREX_USE_EB
    getCoveredIMask(lev,mask);
+#else
+   mask.setVal(1);
+#endif
 
    // ParallelCopy into chem MFs
    chemState.ParallelCopy(ldataOld_p->state,FIRSTSPEC,0,NUM_SPECIES+3);
