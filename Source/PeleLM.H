@@ -1193,7 +1193,6 @@ class PeleLM : public amrex::AmrCore {
    amrex::Real m_ctrl_velMax{0.0};
    amrex::Real m_ctrl_temperature{-1.0};
    int m_ctrl_verbose{0};
-   int m_ctrl_int{2};
    int m_ctrl_NavgPts{3};
    int m_ctrl_nfilled{-1};
    int m_ctrl_flameDir{AMREX_SPACEDIM-1};
