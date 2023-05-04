@@ -222,9 +222,6 @@ void PeleLM::setBoundaryConditions() {
       }
 #endif
    }
-
-   // Aux
-   //TODO
 }
 
 Vector<BCRec>
@@ -261,7 +258,6 @@ void PeleLM::fillPatchState(int lev, const TimeStamp &a_time) {
          fillpatch_divu(lev, time, ldata_p->divu, ldata_p->divu.nGrow());
       }
    }
-   //TODO Aux
 }
 
 // Fill a state components
@@ -318,7 +314,6 @@ PeleLM::fillPatchState(int lev, Real a_time, int nGrow) {
       mf.reset(new MultiFab(grids[lev], dmap[lev], NVAR, nGrow, MFInfo(), Factory(lev)));
    }
    fillpatch_state(lev, a_time, *mf, nGrow);
-   //TODO Aux
 
    return mf;
 }
