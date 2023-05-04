@@ -7,6 +7,7 @@ CEXE_headers += PeleLMBCfill.H
 CEXE_headers += DiffusionOp.H
 CEXE_headers += PeleLMDeriveFunc.H
 CEXE_headers += EBUserDefined.H
+CEXE_headers += PeleFlowControllerData.H
 
 ## Sources
 CEXE_sources += main.cpp
@@ -39,3 +40,5 @@ CEXE_sources += PeleLMReactions.cpp
 CEXE_sources += PeleLMTemporals.cpp
 CEXE_sources += PeleLMEB.cpp
 CEXE_sources += PeleLMDiagnostics.cpp
+CEXE_sources += PeleLMFlowController.cpp
+CEXE_sources += DeriveUserDefined.cpp

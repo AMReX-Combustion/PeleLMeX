@@ -33,6 +33,24 @@ PeleLM::ErrorEst( int lev,
    }
 
 #ifdef AMREX_USE_EB
+   // Untag covered cells
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+   for (MFIter mfi(tags,TilingIfNotGPU()); mfi.isValid(); ++mfi)
+   {
+       const auto& bx    = mfi.tilebox();
+       auto tag          = tags.array(mfi);
+       auto vfrac        = EBFactory(lev).getVolFrac().const_array(mfi);
+       amrex::ParallelFor(bx,
+       [=] AMREX_GPU_HOST_DEVICE (int i, int j, int k)
+       {
+           if (vfrac(i,j,k) <= 0.0) {
+               tag(i,j,k) = TagBox::CLEAR;
+           }
+       });
+   }
+
    // Untag cell close to EB
    if ( m_EB_refine_type == "Static" && lev >= m_EB_refine_LevMax ) {
       // Get distance function at current level

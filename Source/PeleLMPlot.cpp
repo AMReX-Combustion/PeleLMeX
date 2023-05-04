@@ -53,7 +53,7 @@ void PeleLM::WritePlotFile() {
    const std::string& plotfilename = amrex::Concatenate(m_plot_file, m_nstep, m_ioDigits);
 
    if (m_verbose) {
-      amrex::Print() << " Dumping plotfile: " << plotfilename << "\n";
+      amrex::Print() << "\n Writing plotfile: " << plotfilename << "\n";
    }
 
    //----------------------------------------------------------------
@@ -112,7 +112,7 @@ void PeleLM::WritePlotFile() {
    ncomp += deriveEntryCount;
 #ifdef PELELM_USE_SPRAY
    if (do_spray_particles) {
-     ncomp += SprayParticleContainer::spray_derive_vars.size();
+     ncomp += SprayParticleContainer::NumDeriveVars();
    }
 #endif
 
@@ -121,6 +121,10 @@ void PeleLM::WritePlotFile() {
        ncomp += NUM_IONS * AMREX_SPACEDIM;
    }
 #endif
+
+   if (m_do_les && m_plot_les) {
+     ncomp += 1;
+   }
 
    //----------------------------------------------------------------
    // Plot MultiFabs
@@ -187,7 +191,6 @@ void PeleLM::WritePlotFile() {
       plt_VarsName.push_back("FunctCall");
       // Extras:
       if (m_plotHeatRelease) plt_VarsName.push_back("HeatRelease");
-      //if (m_plotChemDiag) ncomp += 1;     // TODO
    }
 
 #ifdef AMREX_USE_EB
@@ -201,12 +204,12 @@ void PeleLM::WritePlotFile() {
       }
    }
 #ifdef PELELM_USE_SPRAY
-   if (SprayParticleContainer::spray_derive_vars.size() > 0) {
+   if (SprayParticleContainer::NumDeriveVars() > 0) {
      // We need virtual particles for the lower levels
      setupVirtualParticles(0);
-     for (int ivar = 0; ivar < SprayParticleContainer::spray_derive_vars.size();
-          ivar++) {
-       plt_VarsName.push_back(SprayParticleContainer::spray_derive_vars[ivar]);
+     for (const auto& spray_derive_name :
+          SprayParticleContainer::DeriveVarNames()) {
+       plt_VarsName.push_back(spray_derive_name);
      }
    }
 #endif
@@ -222,6 +225,9 @@ void PeleLM::WritePlotFile() {
    }
 #endif
 
+   if (m_do_les && m_plot_les) {
+     plt_VarsName.push_back("viscturb");
+   }
 
    //----------------------------------------------------------------
    // Fill the plot MultiFabs
@@ -287,15 +293,15 @@ void PeleLM::WritePlotFile() {
          cnt += mf->nComp();
       }
 #ifdef PELELM_USE_SPRAY
-      if (SprayParticleContainer::spray_derive_vars.size() > 0) {
-        int num_spray_derive = SprayParticleContainer::spray_derive_vars.size();
+      if (SprayParticleContainer::NumDeriveVars() > 0) {
+        const int num_spray_derive = SprayParticleContainer::NumDeriveVars();
         mf_plt[lev].setVal(0., cnt, num_spray_derive);
-        theSprayPC()->computeDerivedVars(mf_plt[lev], lev, cnt);
+        SprayPC->computeDerivedVars(mf_plt[lev], lev, cnt);
         if (lev < finest_level) {
           MultiFab tmp_plt(
             grids[lev], dmap[lev], num_spray_derive, 0, MFInfo(), Factory(lev));
           tmp_plt.setVal(0.);
-          theVirtPC()->computeDerivedVars(tmp_plt, lev, 0);
+          VirtPC->computeDerivedVars(tmp_plt, lev, 0);
           MultiFab::Add(mf_plt[lev], tmp_plt, 0, cnt, num_spray_derive, 0);
         }
         cnt += num_spray_derive;
@@ -304,8 +310,28 @@ void PeleLM::WritePlotFile() {
 #ifdef PELE_USE_EFIELD
       if (m_do_extraEFdiags) {
           MultiFab::Copy(mf_plt[lev], *m_ionsFluxes[lev], 0, cnt, m_ionsFluxes[lev]->nComp(),0);
+          cnt += m_ionsFluxes[lev]->nComp();
       }
 #endif
+
+      if (m_do_les && m_plot_les) {
+        constexpr amrex::Real fact = 0.5/AMREX_SPACEDIM;
+        auto const& plot_arr = mf_plt[lev].arrays();
+        AMREX_D_TERM(auto const& mut_arr_x = m_leveldata_old[lev]->visc_turb_fc[0].const_arrays();,
+                     auto const& mut_arr_y = m_leveldata_old[lev]->visc_turb_fc[1].const_arrays();,
+                     auto const& mut_arr_z = m_leveldata_old[lev]->visc_turb_fc[2].const_arrays();)
+        // interpolate turbulent viscosity from faces to centers
+        amrex::ParallelFor(mf_plt[lev], [plot_arr, fact, AMREX_D_DECL(mut_arr_x, mut_arr_y, mut_arr_z), cnt]
+                           AMREX_GPU_DEVICE (int box_no, int i, int j, int k) noexcept
+                           {
+                             plot_arr[box_no](i,j,k,cnt) = fact*( AMREX_D_TERM( mut_arr_x[box_no](i,j,k) + mut_arr_x[box_no](i+1,j,k),
+                                                                                + mut_arr_y[box_no](i,j,k) + mut_arr_y[box_no](i,j+1,k),
+                                                                                + mut_arr_z[box_no](i,j,k) + mut_arr_z[box_no](i,j,k+1)));
+                           });
+        Gpu::streamSynchronize();
+        cnt += 1;
+      }
+
 #ifdef AMREX_USE_EB
       EB_set_covered(mf_plt[lev],0.0);
 #endif
@@ -330,8 +356,7 @@ void PeleLM::WritePlotFile() {
    if (do_spray_particles) {
      bool is_spraycheck = false;
      for (int lev = 0; lev <= finest_level; ++lev) {
-       theSprayPC()->SprayParticleIO(
-         lev, is_spraycheck, write_spray_ascii_files, plotfilename);
+       SprayPC->SprayParticleIO(lev, is_spraycheck, write_spray_ascii_files, plotfilename);
        // Remove virtual particles that were made for derived variables
        removeVirtualParticles(lev);
      }
@@ -444,8 +469,7 @@ void PeleLM::WriteCheckPointFile()
      int write_ascii = 0; // Not for checkpoints
      bool is_spraycheck = true;
      for (int lev = 0; lev <= finest_level; ++lev) {
-       theSprayPC()->SprayParticleIO(
-         lev, is_spraycheck, write_ascii, checkpointname);
+       SprayPC->SprayParticleIO(lev, is_spraycheck, write_ascii, checkpointname);
      }
    }
 #endif
@@ -563,6 +587,13 @@ void PeleLM::ReadCheckPointFile()
        // Create distribution mapping
        DistributionMapping dm{ba, ParallelDescriptor::NProcs()};
        MakeNewLevelFromScratch(lev, m_cur_time, ba, dm);
+   }
+
+   for(int lev = finest_level+1; lev <= chk_finest_level; ++lev)
+   {
+       // read dummy level 'lev' BoxArray if restarting with reduced levels
+       BoxArray ba;
+       ba.readFrom(is);
    }
 
    // deal with typval and P_amb

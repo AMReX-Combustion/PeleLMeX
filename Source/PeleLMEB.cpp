@@ -1,5 +1,6 @@
 #include <PeleLM.H>
 #include <PeleLMUtils.H>
+#include <pelelm_prob.H>
 #include <EBUserDefined.H>
 
 #ifdef AMREX_USE_EB
@@ -384,6 +385,139 @@ void PeleLM::getEBDistance(int a_lev,
     }
 }
 
+void PeleLM::getEBState(int a_lev,
+                        const Real &a_time,
+                        MultiFab   &a_EBstate,
+                        int         stateComp,
+                        int         nComp)
+{
+   AMREX_ASSERT(a_EBstate.nComp() >= nComp);
+
+   // Get Geom / EB data
+   ProbParm const* lprobparm = prob_parm_d;
+   const auto geomdata = geom[a_lev].data();
+   const auto &ebfact = EBFactory(a_lev);
+   Array<const MultiCutFab*,AMREX_SPACEDIM> faceCentroid = ebfact.getFaceCent();
+
+   MFItInfo mfi_info;
+   if (Gpu::notInLaunchRegion()) mfi_info.EnableTiling().SetDynamic(true);
+
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+   for (MFIter mfi(a_EBstate, mfi_info); mfi.isValid(); ++mfi)
+   {
+      const Box& bx = mfi.tilebox();
+      auto const& flagfab = ebfact.getMultiEBCellFlagFab()[mfi];
+      auto const& flag    = flagfab.const_array();
+      const auto& ebState = a_EBstate.array(mfi);
+
+      if ( flagfab.getType(bx) == FabType::covered ) {              // Set to zero
+         AMREX_PARALLEL_FOR_4D(bx, nComp, i, j, k, n, {ebState(i,j,k,n) = 0.0;});
+      } else if ( flagfab.getType(bx) == FabType::regular ) {       // Set to zero
+         AMREX_PARALLEL_FOR_4D(bx, nComp, i, j, k, n, {ebState(i,j,k,n) = 0.0;});
+      } else {
+         AMREX_D_TERM( const auto& ebfc_x = faceCentroid[0]->array(mfi);,
+                       const auto& ebfc_y = faceCentroid[1]->array(mfi);,
+                       const auto& ebfc_z = faceCentroid[2]->array(mfi););
+         amrex::ParallelFor(bx, [=]
+         AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+         {
+            // Regular/covered cells -> 0.0
+            if ( flag(i,j,k).isCovered() ||
+                 flag(i,j,k).isRegular()) {
+               for (int n = 0; n < nComp; n++) {
+                  ebState(i,j,k,n) = 0.0;
+               }
+            } else { // cut-cells
+               // Get the EBface centroid coordinates
+               const amrex::Real* dx = geomdata.CellSize();
+               const amrex::Real* prob_lo = geomdata.ProbLo();
+               const amrex::Real xcell[AMREX_SPACEDIM] = {AMREX_D_DECL(prob_lo[0] + (i + 0.5) * dx[0],
+                                                                       prob_lo[1] + (j + 0.5) * dx[1],
+                                                                       prob_lo[2] + (k + 0.5) * dx[2])};
+               const amrex::Real xface[AMREX_SPACEDIM] = {AMREX_D_DECL(xcell[0] + ebfc_x(i,j,k) * dx[0],
+                                                                       xcell[1] + ebfc_y(i,j,k) * dx[1],
+                                                                       xcell[2] + ebfc_z(i,j,k) * dx[2])};
+
+               //TODO : would be practical to have the current state at the EBface ...
+               amrex::Real stateExt[NVAR] = {0.0};
+
+               // User-defined fill function
+               setEBState(xface, stateExt, a_time, geomdata, *lprobparm);
+
+               // Extract requested entries
+               for (int n = 0; n < nComp; n++) {
+                  ebState(i,j,k,n) = stateExt[stateComp+n];
+               }
+            }
+         });
+      }
+   }
+}
+
+void PeleLM::getEBDiff(int a_lev,
+                       const TimeStamp &a_time,
+                       MultiFab   &a_EBDiff,
+                       int        diffComp)
+{
+   // Get Geom / EB data
+   ProbParm const* lprobparm = prob_parm_d;
+   const auto geomdata = geom[a_lev].data();
+   const auto &ebfact = EBFactory(a_lev);
+   Array<const MultiCutFab*,AMREX_SPACEDIM> faceCentroid = ebfact.getFaceCent();
+
+   // Get diffusivity cell-centered
+   auto ldata_p = getLevelDataPtr(a_lev,a_time);
+
+   MFItInfo mfi_info;
+   if (Gpu::notInLaunchRegion()) mfi_info.EnableTiling().SetDynamic(true);
+
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+   for (MFIter mfi(a_EBDiff, mfi_info); mfi.isValid(); ++mfi)
+   {
+      const Box& bx = mfi.tilebox();
+      auto const& flagfab = ebfact.getMultiEBCellFlagFab()[mfi];
+      auto const& flag    = flagfab.const_array();
+      const auto& ebdiff  = a_EBDiff.array(mfi);
+      const auto& diff_cc = ldata_p->diff_cc.const_array(mfi, diffComp);
+
+      if ( flagfab.getType(bx) == FabType::covered ) {              // Set to zero
+         AMREX_PARALLEL_FOR_3D(bx, i, j, k, {ebdiff(i,j,k) = 0.0;});
+      } else if ( flagfab.getType(bx) == FabType::regular ) {       // Set to zero
+         AMREX_PARALLEL_FOR_3D(bx, i, j, k, {ebdiff(i,j,k) = 0.0;});
+      } else {
+         AMREX_D_TERM( const auto& ebfc_x = faceCentroid[0]->array(mfi);,
+                       const auto& ebfc_y = faceCentroid[1]->array(mfi);,
+                       const auto& ebfc_z = faceCentroid[2]->array(mfi););
+         amrex::ParallelFor(bx, [=]
+         AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+         {
+            // Regular/covered cells -> 0.0
+            if ( flag(i,j,k).isCovered() ||
+                 flag(i,j,k).isRegular()) {
+               ebdiff(i,j,k) = 0.0;
+            } else { // cut-cells
+               // Get the EBface centroid coordinates
+               const amrex::Real* dx = geomdata.CellSize();
+               const amrex::Real* prob_lo = geomdata.ProbLo();
+               const amrex::Real xcell[AMREX_SPACEDIM] = {AMREX_D_DECL(prob_lo[0] + (i + 0.5) * dx[0],
+                                                                       prob_lo[1] + (j + 0.5) * dx[1],
+                                                                       prob_lo[2] + (k + 0.5) * dx[2])};
+               const amrex::Real xface[AMREX_SPACEDIM] = {AMREX_D_DECL(xcell[0] + ebfc_x(i,j,k) * dx[0],
+                                                                       xcell[1] + ebfc_y(i,j,k) * dx[1],
+                                                                       xcell[2] + ebfc_z(i,j,k) * dx[2])};
+               amrex::Real ebflagtype = 0.0;
+               setEBType(xface, ebflagtype, geomdata, *lprobparm);
+               ebdiff(i,j,k) = diff_cc(i,j,k) * ebflagtype;
+            }
+         });
+      }
+   }
+}
+
 void
 PeleLM::correct_vel_small_cells (Vector<MultiFab*> const& a_vel,
                                  Vector<Array<MultiFab const*,AMREX_SPACEDIM> > const& a_umac)
@@ -494,5 +628,4 @@ PeleLM::getRestartEBMaxLevel()
         }
     }
 }
-
 #endif

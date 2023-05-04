@@ -7,7 +7,6 @@
 
 #include <PeleLM_Index.H>
 #include <pelelm_prob_parm.H>
-#include <PMF.H>
 #include <PMFData.H>
 #include <PelePhysics.H>
 
@@ -41,15 +40,25 @@ void pelelm_initdata(int i, int j, int k,
     constexpr amrex::Real Pi = 3.14159265358979323846264338327950288;
 
     amrex::Real massfrac[NUM_SPECIES] = {0.0};
-    massfrac[O2_ID] = 0.233;
-    massfrac[N2_ID] = 0.767;
 
+    massfrac[CH4_ID] = prob_parm.Y_fuel;
+    massfrac[O2_ID] =  prob_parm.Y_o2;
+    massfrac[N2_ID] =  1.0 - massfrac[CH4_ID] - massfrac[O2_ID];
 
-    AMREX_D_TERM(state(i,j,k,VELX) = prob_parm.V_in;,
+    AMREX_D_TERM(state(i,j,k,VELX) = prob_parm.meanFlowMag;,
                  state(i,j,k,VELY) = 0.0;,
                  state(i,j,k,VELZ) = 0.0);
 
-    state(i,j,k,TEMP) = prob_parm.T_mean;
+    if (is_incompressible) return;
+
+    if ( x > 0.0  && y < 0.0 ) {
+       state(i,j,k,TEMP) = prob_parm.T_hot;
+       massfrac[CH4_ID] = 0.0;
+       massfrac[O2_ID] =  0.233;
+       massfrac[N2_ID] =  1 - massfrac[CH4_ID] - massfrac[O2_ID];
+    } else {
+       state(i,j,k,TEMP) = prob_parm.T_mean;
+    }
 
     amrex::Real P_cgs = prob_parm.P_mean * 10.0;
 
@@ -84,56 +93,55 @@ bcnormal(
   ProbParm const& prob_parm,
   pele::physics::PMF::PmfData::DataContainer const * /*pmf_data*/)
 {
-  const amrex::Real* prob_lo = geomdata.ProbLo();
-  const amrex::Real* prob_hi = geomdata.ProbHi();
+    if ( sgn==1 ){
+        amrex::Real massfrac[NUM_SPECIES] = {0.0};
 
-  AMREX_D_TERM(const amrex::Real Lx = prob_hi[0] - prob_lo[0];,
-               const amrex::Real Ly = prob_hi[1] - prob_lo[1];,
-               const amrex::Real Lz = prob_hi[2] - prob_lo[2]);
+        auto eos = pele::physics::PhysicsType::eos();
 
-  AMREX_D_TERM(const amrex::Real x_c = prob_lo[0] + 0.5*Lx;,
-               const amrex::Real y_c = prob_lo[1] + 0.5*Ly;,
-               const amrex::Real z_c = prob_lo[2] + 0.5*Lz);
+        AMREX_D_TERM(s_ext[VELX] = prob_parm.meanFlowMag;,
+                     s_ext[VELY] = 0.0;,
+                     s_ext[VELZ] = 0.0);
 
-  amrex::Real massfrac[NUM_SPECIES] = {0.0};
+        massfrac[CH4_ID] = prob_parm.Y_fuel;
+        massfrac[O2_ID] =  prob_parm.Y_o2;
+        massfrac[N2_ID] =  1.0 - massfrac[CH4_ID] - massfrac[O2_ID];
 
-  auto eos = pele::physics::PhysicsType::eos();
-  if (sgn == 1) {
+        s_ext[TEMP] = prob_parm.T_mean;
 
-    AMREX_D_TERM(s_ext[VELX] = prob_parm.V_in;,
-                 s_ext[VELY] = 0.0;,
-                 s_ext[VELZ] = 0.0);
+        amrex::Real rho_cgs, P_cgs, RhoH_temp;
+        P_cgs = prob_parm.P_mean * 10.0;
 
-    massfrac[O2_ID] = 0.233;
-    massfrac[N2_ID] = 0.767;
+        eos.PYT2R(P_cgs, massfrac, s_ext[TEMP], rho_cgs);
+        s_ext[DENSITY] = rho_cgs * 1.0e3;
 
-    s_ext[TEMP] = prob_parm.T_mean;
+        eos.TY2H(s_ext[TEMP], massfrac, RhoH_temp);
+        s_ext[RHOH] = RhoH_temp * 1.0e-4 * s_ext[DENSITY];   // CGS -> MKS conversion
 
-    amrex::Real rho_cgs, P_cgs, RhoH_temp;
-    P_cgs = prob_parm.P_mean * 10.0;
-
-    eos.PYT2R(P_cgs, massfrac, s_ext[TEMP], rho_cgs);
-    s_ext[DENSITY] = rho_cgs * 1.0e3;
-
-    eos.TY2H(s_ext[TEMP], massfrac, RhoH_temp);
-    s_ext[RHOH] = RhoH_temp * 1.0e-4 * s_ext[DENSITY];   // CGS -> MKS conversion
-
-    for (int n = 0; n < NUM_SPECIES; n++) {
-      s_ext[FIRSTSPEC+n] = massfrac[n] * s_ext[DENSITY];
+        for (int n = 0; n < NUM_SPECIES; n++) {
+          s_ext[FIRSTSPEC+n] = massfrac[n] * s_ext[DENSITY];
+        }
     }
-  }
+
+    // Set domain boundary Temp on the y-low face when using NoSlipWallIsotherm
+    if (idir == 1 && sgn==1 ) {
+        s_ext[TEMP] = prob_parm.Twall;
+    }
 }
 
 AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
 void
-zero_visc (int /*i*/, int /*j*/, int /*k*/,
-           amrex::Array4<amrex::Real> const& /*beta*/,
-           amrex::GeometryData const& /*geomdata*/,
-           amrex::Box const& /*dBox*/,
-           const int  /*dir*/,
-           const int  /*state_comp*/,
-           const int  /*nComp*/)
+zero_visc (int i, int j, int k,
+           amrex::Array4<amrex::Real> const& beta,
+           amrex::GeometryData const& geomdata,
+           amrex::Box const& domainBox,
+           const int  dir,
+           const int  beta_comp,
+           const int  nComp)
 {
+     amrex::ignore_unused(i,j,k,beta,geomdata,domainBox,dir,beta_comp,nComp);
+
+    // We treat species when beta_comp == 0 and nComp == NUM_SPECIES
+    // otherwise this routine could be called for other face diffusivity (Temp, velocity, ...)
 }
 #endif

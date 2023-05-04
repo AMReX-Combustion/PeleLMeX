@@ -67,9 +67,9 @@ void pelelm_initdata(int i, int j, int k,
     const amrex::Real* dx      = geomdata.CellSize();
 
     amrex::Real x[3] = {
-      prob_lo[0] + static_cast<amrex::Real>(i + 0.5) * dx[0],
-      prob_lo[1] + static_cast<amrex::Real>(j + 0.5) * dx[1],
-      prob_lo[2] + static_cast<amrex::Real>(k + 0.5) * dx[2]};
+      prob_lo[0] + static_cast<amrex::Real>(i + 0.5) * dx[0] * 100.0,
+      prob_lo[1] + static_cast<amrex::Real>(j + 0.5) * dx[1] * 100.0,
+      prob_lo[2] + static_cast<amrex::Real>(k + 0.5) * dx[2] * 100.0};
 
     // Fill in the velocities
     amrex::Real uinterp[3] = {0.0};

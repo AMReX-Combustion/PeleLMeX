@@ -8,19 +8,6 @@
 using namespace amrex;
 
 namespace {
-//
-// Containers for the real "active" Particles
-//
-SprayParticleContainer* SprayPC = nullptr;
-//
-// Container for temporary, virtual Particles
-//
-SprayParticleContainer* VirtPC = nullptr;
-//
-// Container for temporary, ghost Particles
-//
-SprayParticleContainer* GhostPC = nullptr;
-
 SprayData sprayData;
 // Indices for spray source MultiFab
 int sprayMomSrcIndx = VELX;
@@ -35,16 +22,6 @@ Vector<int> spray_ghost_num;
 Vector<int> prev_state;
 Vector<int> prev_source;
 
-void
-RemoveParticlesOnExit()
-{
-  delete SprayPC;
-  SprayPC = nullptr;
-  delete GhostPC;
-  GhostPC = nullptr;
-  delete VirtPC;
-  VirtPC = nullptr;
-}
 bool mesh_regrid = true;
 std::string init_file;
 int init_function = 1;
@@ -52,6 +29,9 @@ int spray_verbose = 0;
 Real max_spray_cfl = 5.;
 } // namespace
 
+std::unique_ptr<SprayParticleContainer> PeleLM::SprayPC = nullptr;
+std::unique_ptr<SprayParticleContainer> PeleLM::VirtPC = nullptr;
+std::unique_ptr<SprayParticleContainer> PeleLM::GhostPC = nullptr;
 bool PeleLM::do_spray_particles = true;
 // momentum + density + fuel species + enthalpy
 int PeleLM::num_spray_src = AMREX_SPACEDIM + 2 + SPRAY_FUEL_NUM;
@@ -59,34 +39,16 @@ int PeleLM::num_spray_src = AMREX_SPACEDIM + 2 + SPRAY_FUEL_NUM;
 int PeleLM::write_spray_ascii_files = 0;
 int PeleLM::plot_spray_src = 0;
 
-SprayParticleContainer*
-PeleLM::theSprayPC()
-{
-  return SprayPC;
-}
-
-SprayParticleContainer*
-PeleLM::theVirtPC()
-{
-  return VirtPC;
-}
-
-SprayParticleContainer*
-PeleLM::theGhostPC()
-{
-  return GhostPC;
-}
-
 Real
 PeleLM::SprayEstDt()
 {
   Real estdt = 1.0e200;
-  if (!do_spray_particles || theSprayPC() == nullptr) {
+  if (!do_spray_particles || SprayPC == nullptr) {
     return estdt;
   }
   BL_PROFILE("PeleLM::SprayEstDt()");
   for (int lev = 0; lev <= finest_level; ++lev) {
-    Real estdt_lev = theSprayPC()->estTimestep(lev, max_spray_cfl);
+    Real estdt_lev = SprayPC->estTimestep(lev, max_spray_cfl);
     if (estdt_lev > 0. && estdt_lev < estdt) {
       estdt = estdt_lev;
     } else if (lev > 0) {
@@ -123,9 +85,9 @@ PeleLM::SpraySetup()
   // There must be at least as many fuel species in the spray as
   // there are species in the fluid
   if (SPRAY_FUEL_NUM > NUM_SPECIES) {
-    amrex::Abort("Cannot have more spray fuel species than fluid species");
+    Abort("Cannot have more spray fuel species than fluid species");
   }
-  SprayParticleContainer::spraySetup(sprayData);
+  SprayParticleContainer::spraySetup(sprayData, m_gravity.data());
   // Component indices for conservative variables
   scomps.rhoIndx = DENSITY;
   scomps.momIndx = VELX;
@@ -143,15 +105,15 @@ void
 PeleLM::setupVirtualParticles(const int level)
 {
   BL_PROFILE("PeleLM::setupVirtualParticles()");
-  if (theSprayPC() != nullptr) {
+  if (SprayPC != nullptr) {
     if (level < finest_level) {
       SprayParticleContainer::AoS virts;
       setupVirtualParticles(level + 1);
-      theVirtPC()->CreateVirtualParticles(level + 1, virts);
-      theVirtPC()->AddParticlesAtLevel(virts, level);
+      VirtPC->CreateVirtualParticles(level + 1, virts);
+      VirtPC->AddParticlesAtLevel(virts, level);
 
-      theSprayPC()->CreateVirtualParticles(level + 1, virts);
-      theVirtPC()->AddParticlesAtLevel(virts, level);
+      SprayPC->CreateVirtualParticles(level + 1, virts);
+      VirtPC->AddParticlesAtLevel(virts, level);
     }
   }
 }
@@ -159,8 +121,8 @@ PeleLM::setupVirtualParticles(const int level)
 void
 PeleLM::removeVirtualParticles(const int level)
 {
-  if (theVirtPC() != nullptr) {
-    theVirtPC()->RemoveParticlesAtLevel(level);
+  if (VirtPC != nullptr) {
+    VirtPC->RemoveParticlesAtLevel(level);
   }
 }
 
@@ -169,10 +131,10 @@ PeleLM::setupGhostParticles(const int ngrow, const int level)
 {
   BL_PROFILE("PeleLM::setupGhostParticles()");
   AMREX_ASSERT(level < finest_level);
-  if (theSprayPC() != nullptr) {
+  if (SprayPC != nullptr) {
     SprayParticleContainer::AoS ghosts;
-    theSprayPC()->CreateGhostParticles(level, ngrow, ghosts);
-    theGhostPC()->AddParticlesAtLevel(ghosts, level + 1, ngrow);
+    SprayPC->CreateGhostParticles(level, ngrow, ghosts);
+    GhostPC->AddParticlesAtLevel(ghosts, level + 1, ngrow);
   }
 }
 
@@ -187,12 +149,12 @@ PeleLM::removeGhostParticles(const int level)
 void
 PeleLM::SprayCreateData()
 {
-  SprayPC = new SprayParticleContainer(
+  SprayPC = std::make_unique<SprayParticleContainer>(
     this, &m_phys_bc, sprayData, scomps, max_spray_cfl);
-  theSprayPC()->SetVerbose(spray_verbose);
-  VirtPC = new SprayParticleContainer(
+  SprayPC->SetVerbose(spray_verbose);
+  VirtPC = std::make_unique<SprayParticleContainer>(
     this, &m_phys_bc, sprayData, scomps, max_spray_cfl);
-  GhostPC = new SprayParticleContainer(
+  GhostPC = std::make_unique<SprayParticleContainer>(
     this, &m_phys_bc, sprayData, scomps, max_spray_cfl);
 }
 
@@ -200,11 +162,6 @@ void
 PeleLM::SprayInit()
 {
   BL_PROFILE("PeleLM::SprayInit()");
-
-  //
-  // Make sure to call RemoveParticlesOnExit() on exit.
-  //
-  amrex::ExecOnFinalize(RemoveParticlesOnExit);
 
   if (!do_spray_particles) {
     return;
@@ -220,24 +177,24 @@ PeleLM::SprayInit()
     if (!m_restart_chkfile.empty() || !m_restart_pltfile.empty()) {
       std::string warn_msg = "Restart file does not contain particles. "
                              "Particles are being initialized from scratch.";
-      amrex::Warning(warn_msg);
+      Warning(warn_msg);
     }
 
     bool init_part = true;
     if (!init_file.empty()) {
-      theSprayPC()->InitFromAsciiFile(init_file, NSR_SPR + NAR_SPR);
+      SprayPC->InitFromAsciiFile(init_file, NSR_SPR + NAR_SPR);
     }
     if (init_function <= 0) {
       init_part = false;
     }
     ProbParm const* lprobparm = prob_parm;
-    theSprayPC()->InitSprayParticles(init_part, *lprobparm);
+    SprayPC->InitSprayParticles(init_part, *lprobparm);
+    SprayPC->PostInitRestart();
     SprayPostRegrid();
     SprayInjectRedist();
     if (spray_verbose >= 1) {
-      amrex::Print() << "Total number of initial particles "
-                     << theSprayPC()->TotalNumberOfParticles(false, false)
-                     << std::endl;
+      Print() << "Total number of initial particles "
+              << SprayPC->TotalNumberOfParticles(false, false) << std::endl;
     }
   }
 }
@@ -246,16 +203,13 @@ void
 PeleLM::SprayRestart(const std::string& restart_file)
 {
   if (do_spray_particles) {
-    //
-    // Make sure to call RemoveParticlesOnExit() on exit.
-    //
-    amrex::ExecOnFinalize(RemoveParticlesOnExit);
     {
-      theSprayPC()->Restart(restart_file, "particles");
+      SprayPC->Restart(restart_file, "particles");
       ProbParm const* lprobparm = prob_parm;
-      theSprayPC()->InitSprayParticles(false, *lprobparm);
+      SprayPC->InitSprayParticles(false, *lprobparm);
+      SprayPC->PostInitRestart(restart_file);
       SprayPostRegrid();
-      amrex::Gpu::Device::streamSynchronize();
+      Gpu::Device::streamSynchronize();
     }
   }
 }
@@ -283,7 +237,7 @@ PeleLM::SpraySetState(const Real& a_flow_dt)
   for (int lev = 0; lev <= finest_level; ++lev) {
     auto const dx = geom[lev].CellSizeArray();
     // Extract velocity and CFL from a given spray CFL
-    Real spraydt_lev = theSprayPC()->estTimestep(lev, max_spray_cfl);
+    Real spraydt_lev = SprayPC->estTimestep(lev, max_spray_cfl);
     Real vel_lev = max_spray_cfl * dx[0] / spraydt_lev;
     max_vel = amrex::max(max_vel, vel_lev);
     if (spraydt_lev > 0.) {
@@ -351,15 +305,14 @@ PeleLM::SprayMKD(const Real time, const Real dt)
     return;
   }
   if (spray_verbose) {
-    amrex::Print()
-      << "moveKickDrift ... updating particle positions and velocity\n";
+    Print() << "moveKickDrift ... updating particle positions and velocity\n";
   }
   BL_PROFILE("PeleLM::SprayMKD()");
   // Setup the virtual particles that represent particles on finer levels
   setupVirtualParticles(0);
   for (int lev = 0; lev <= finest_level; ++lev) {
     if (spray_verbose > 1) {
-      amrex::Print() << "SprayMKDLevel " << lev << std::endl;
+      Print() << "SprayMKDLevel " << lev << std::endl;
     }
     SprayMKDLevel(lev, time, dt);
     SprayAddSource(lev);
@@ -383,28 +336,28 @@ PeleLM::SprayMKDLevel(const int level, const Real time, const Real dt)
   // the new time
   auto const* ltransparm = PeleLM::trans_parms.device_trans_parm();
 
-  amrex::MultiFab& state = *(m_spraystate[level].get());
-  amrex::MultiFab& source = *(m_spraysource[level].get());
+  MultiFab& state = *(m_spraystate[level].get());
+  MultiFab& source = *(m_spraysource[level].get());
   const int state_ghosts = spray_state_ghosts[level];
   const int source_ghosts = spray_source_ghosts[level];
   bool isVirt = false;
   bool isGhost = false;
   bool doMove = true;
   // Do the valid particles themselves
-  theSprayPC()->moveKickDrift(
+  SprayPC->moveKickDrift(
     state, source, level, dt, time, isVirt, isGhost, state_ghosts,
     source_ghosts, doMove, ltransparm, spray_cfl[level]);
   if (level < finest_level) {
     isVirt = true;
     isGhost = false;
-    theVirtPC()->moveKickDrift(
+    VirtPC->moveKickDrift(
       state, source, level, dt, time, isVirt, isGhost, state_ghosts,
       source_ghosts, doMove, ltransparm, spray_cfl[level]);
   }
-  if (theGhostPC() != nullptr && level != 0) {
+  if (GhostPC != nullptr && level != 0) {
     isVirt = false;
     isGhost = true;
-    theGhostPC()->moveKickDrift(
+    GhostPC->moveKickDrift(
       state, source, level, dt, time, isVirt, isGhost, state_ghosts,
       source_ghosts, doMove, ltransparm, spray_cfl[level]);
   }
@@ -442,7 +395,7 @@ PeleLM::SprayPostRegrid()
       prev_state[lev] = -1;
       prev_source[lev] = -1;
     }
-    theSprayPC()->Redistribute();
+    SprayPC->Redistribute();
   }
 }
 
@@ -452,7 +405,7 @@ PeleLM::SprayInjectRedist()
   BL_PROFILE("PeleLM::SprayInjectRedist");
   Long prev_count = 0;
   if (spray_verbose >= 3) {
-    prev_count = theSprayPC()->TotalNumberOfParticles(true, false);
+    prev_count = SprayPC->TotalNumberOfParticles(true, false);
   }
   bool injected = false;
   for (int lev = 0; lev <= finest_level; ++lev) {
@@ -460,19 +413,18 @@ PeleLM::SprayInjectRedist()
     ProbParm const* lprobparm = prob_parm;
     Real cur_time = m_t_new[lev]; // Still the time from the last time step
     Real dt = m_dt;
-    bool lev_injected = theSprayPC()->injectParticles(
+    bool lev_injected = SprayPC->injectParticles(
       cur_time, dt, nstep, lev, finest_level, *lprobparm);
     if (lev_injected) {
       injected = true;
     }
   }
   // We must redistribute after each time step
-  theSprayPC()->Redistribute();
+  SprayPC->Redistribute();
   if (spray_verbose >= 3 && injected) {
-    Long new_count = theSprayPC()->TotalNumberOfParticles(true, false);
+    Long new_count = SprayPC->TotalNumberOfParticles(true, false);
     Long num_inj = new_count - prev_count;
-    amrex::Print() << "Injected " << num_inj << " particles at time "
-                   << m_t_new[0] << std::endl;
+    Print() << "Injected " << num_inj << " particles at time " << m_t_new[0] << std::endl;
   }
 }
 

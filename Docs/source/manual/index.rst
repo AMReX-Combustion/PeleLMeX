@@ -22,6 +22,7 @@ point your web browser at the file ``${PELELMEX_HOME}/Docs/build/html/index.html
    :caption: Theory:
 
    Model.rst
+   Implementation.rst
    Validation.rst
    Performances.rst
 

@@ -2,6 +2,7 @@
 #define _DIAGFRAMEPLANE_H_
 
 #include "DiagBase.H"
+#include <AMReX_VisMF.H>
 
 class DiagFramePlane : public DiagBase::Register<DiagFramePlane>
 {
@@ -10,17 +11,21 @@ public:
 
   enum InterpType {Linear, Quadratic};
 
-  void init(const std::string &a_prefix) override;
+  void init(const std::string &a_prefix,
+            std::string_view a_diagName) override;
 
   void prepare(int a_nlevels,
                const amrex::Vector<amrex::Geometry> &a_geoms,
                const amrex::Vector<amrex::BoxArray> &a_grids,
-               const amrex::Vector<amrex::DistributionMapping> &a_dmap) override;
+               const amrex::Vector<amrex::DistributionMapping> &a_dmap,
+               const amrex::Vector<std::string> &a_varNames) override;
 
   void processDiag(int a_nstep,
                    const amrex::Real &a_time,
                    const amrex::Vector<const amrex::MultiFab*> &a_state,
                    const amrex::Vector<std::string> &a_varNames) override;
+
+  void addVars(amrex::Vector<std::string> &a_varList) override;
 
   void Write2DMultiLevelPlotfile(const std::string &a_pltfile,
                                  int a_nlevels,
@@ -34,12 +39,21 @@ public:
   void VisMF2D(const amrex::MultiFab &a_mf,
                const std::string& a_mf_name);
 
+  void Write2DMFHeader(const std::string &a_mf_name,
+                       amrex::VisMF::Header &hdr,
+                       int coordinatorProc,
+                       MPI_Comm comm);
+
+  void Find2FOffsets(const amrex::FabArray<amrex::FArrayBox> &mf,
+                     const std::string &filePrefix,
+                     amrex::VisMF::Header &hdr,
+                     amrex::VisMF::Header::Version /*whichVersion*/,
+                     amrex::NFilesIter &nfi,
+                     int nOutFile, MPI_Comm comm);
+
   void write_2D_header(std::ostream &os,
                        const amrex::FArrayBox& f,
                        int                     nvar);
-
-  int diff_2D3D_header(const amrex::Box a_box,
-                       int              nvar);
 
   void Write2DPlotfileHeader(std::ostream &HeaderFile,
                              int nlevels,
@@ -53,11 +67,13 @@ public:
                              const std::string &levelPrefix = "Level_",
                              const std::string &mfPrefix = "Cell");
 
-  void ReWriteLevelVisMFHeader(const std::string &a_HeaderPath);
-
   void close() override {}
 
 private:
+  // Variables output
+  amrex::Vector<std::string> m_fieldNames;
+  amrex::Gpu::DeviceVector<int> m_fieldIndices_d;
+
   // Plane definition
   int m_normal;
   amrex::GpuArray<amrex::Real,AMREX_SPACEDIM> m_center;

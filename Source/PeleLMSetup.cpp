@@ -83,6 +83,12 @@ void PeleLM::Setup() {
    if (!m_incompressible) {
       amrex::Print() << " Initialization of Transport ... \n";
       trans_parms.allocate();
+      if (m_les_verbose and m_do_les)
+        amrex::Print() << "    Using LES in transport with Sc = " << 1.0/m_Schmidt_inv
+                       << " and Pr = " << 1.0/m_Prandtl_inv << std::endl;
+      if (m_verbose and m_unity_Le)
+        amrex::Print() << "    Using Le = 1 transport with Sc = " << 1.0/m_Schmidt_inv
+                       << " and Pr = " << 1.0/m_Prandtl_inv << std::endl;
       if (m_do_react) {
          int reactor_type = 2;
          int ncells_chem = 1;
@@ -98,6 +104,7 @@ void PeleLM::Setup() {
             m_plotChemDiag = 0;
             m_plotHeatRelease = 0;
             m_useTypValChem = 0;
+            reactComponents.clear();
          }
          pp.query("plot_react", m_plot_react);
       }
@@ -134,6 +141,9 @@ void PeleLM::Setup() {
 
    // Copy problem parameters into device copy
    Gpu::copy(Gpu::hostToDevice, prob_parm, prob_parm+1,prob_parm_d);
+
+   // Initialize active control
+   initActiveControl();
 }
 
 void PeleLM::readParameters() {
@@ -303,15 +313,57 @@ void PeleLM::readParameters() {
       m_gravity[idim] = grav[idim];
    }
 
+   // -----------------------------------------
+   // LES
+   // -----------------------------------------
+   pp.query("les_model", m_les_model);
+   if (m_les_model == "None") {
+     m_do_les = false;
+   } else {
+     if (m_les_model == "Smagorinsky") {
+       pp.query("les_cs_smag", m_les_cs_smag);
+     } else if (m_les_model == "WALE") {
+       pp.query("les_cm_wale", m_les_cm_wale);
+     } else if (m_les_model == "Sigma") {
+       pp.query("les_cs_sigma", m_les_cs_sigma);
+       AMREX_ALWAYS_ASSERT(AMREX_SPACEDIM == 3); // Sigma only available in 3D
+     } else {
+       amrex::Abort("LES model must be None, Smagorinsky, WALE or Sigma. Invalid choie: " + m_les_model);
+     }
+     m_do_les = true;
+     m_les_verbose = m_verbose;
+     pp.query("plot_les", m_plot_les);
+     pp.query("les_v", m_les_verbose);
+     for (int lev=0; lev<= max_level ; ++lev) {
+       m_turb_visc_time.push_back(-1.0E200);
+     }
+#ifdef PELE_USE_EFIELD
+     amrex::Abort("LES implementation is not yet compatible with efield/ions");
+#endif
+   }
 
    // -----------------------------------------
    // diffusion
    pp.query("use_wbar",m_use_wbar);
+   pp.query("unity_Le",m_unity_Le);
+   if (m_use_wbar and m_unity_Le) {
+     m_use_wbar = 0;
+     amrex::Print() << "WARNING: use_wbar set to false because unity_Le is true"
+                    << std::endl;
+   }
    pp.query("deltaT_verbose",m_deltaT_verbose);
    pp.query("deltaT_iterMax",m_deltaTIterMax);
    pp.query("deltaT_tol",m_deltaT_norm_max);
    pp.query("deltaT_crashIfFailing",m_crashOnDeltaTFail);
+   ParmParse pptrans("transport");
+   pptrans.query("use_soret",m_use_soret);
 
+   if (m_do_les or m_unity_Le) {
+     amrex::Real Prandtl = 0.7;
+     pp.query("Prandtl", Prandtl);
+     m_Schmidt_inv = 1.0/Prandtl;
+     m_Prandtl_inv = 1.0/Prandtl;
+   }
 
    // -----------------------------------------
    // initialization
@@ -324,6 +376,7 @@ void PeleLM::readParameters() {
    // -----------------------------------------
    pp.query("sdc_iterMax",m_nSDCmax);
    pp.query("floor_species",m_floor_species);
+   pp.query("dPdt_factor",m_dpdtFactor);
    pp.query("memory_checks",m_checkMem);
 
    // -----------------------------------------
@@ -358,6 +411,25 @@ void PeleLM::readParameters() {
          Abort("peleLM.max_grid_size_chem should have 1 or AMREX_SPACEDIM values");
       }
    }
+
+   // -----------------------------------------
+   // Load Balancing
+   // -----------------------------------------
+   pp.query("do_load_balancing",m_doLoadBalance);
+   parseUserKey(pp, "load_balancing_method", lbmethod, m_loadBalanceMethod);
+   parseUserKey(pp, "load_balancing_cost_estimate", lbcost, m_loadBalanceCost);
+   pp.query("load_balancing_efficiency_threshold",m_loadBalanceEffRatioThreshold);
+   parseUserKey(pp, "chem_load_balancing_method", lbmethod, m_loadBalanceMethodChem);
+   parseUserKey(pp, "chem_load_balancing_cost_estimate", lbcost, m_loadBalanceCostChem);
+
+   // Deactivate load balancing for serial runs
+#ifdef AMREX_USE_MPI
+   if (ParallelContext::NProcsSub() == 1) {
+       m_doLoadBalance = 0;
+   }
+#else
+   m_doLoadBalance = 0;
+#endif
 
    // -----------------------------------------
    // Advection
@@ -436,8 +508,9 @@ void PeleLM::readParameters() {
    ppa.query("max_dt", m_max_dt);
    ppa.query("min_dt", m_min_dt);
 
-   if ( max_level > 0 ) {
+   if ( max_level > 0 || m_doLoadBalance) {
       ppa.query("regrid_int", m_regrid_int);
+      ppa.query("regrid_on_restart", m_regrid_on_restart);
    }
 
 #ifdef AMREX_USE_EB
@@ -461,6 +534,7 @@ void PeleLM::readParameters() {
          m_signDistNeeded = 1;
       }
    }
+   pp.query("isothermal_EB",m_isothermalEB);
 #endif
 
    // -----------------------------------------
@@ -568,8 +642,6 @@ void PeleLM::readIOParameters() {
 void PeleLM::variablesSetup() {
    BL_PROFILE("PeleLM::variablesSetup()");
 
-   std::string PrettyLine = std::string(78, '=') + "\n";
-
    //----------------------------------------------------------------
    // Variables ordering is defined through compiler macro in PeleLM_Index.H
    // Simply print on screen the state layout and append to the stateComponents list
@@ -598,6 +670,7 @@ void PeleLM::variablesSetup() {
       pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(names);
       for (int n = 0; n < NUM_SPECIES; n++ ) {
          stateComponents.emplace_back(FIRSTSPEC+n,"rho.Y("+names[n]+")");
+         reactComponents.emplace_back(n,"I_R("+names[n]+")");
       }
       Print() << " Enthalpy: " << RHOH << "\n";
       stateComponents.emplace_back(RHOH,"rhoh");
@@ -696,7 +769,8 @@ void PeleLM::variablesSetup() {
       pp.query("fuel_name",fuel_name);
       fuel_name = "rho.Y("+fuel_name+")";
       if (isStateVariable(fuel_name)) {
-         fuelID = stateVariableIndex(fuel_name) - FIRSTSPEC;
+         fuelID = stateVariableIndex(fuel_name);
+         fuelID -= FIRSTSPEC;
       }
    }
 
@@ -776,10 +850,19 @@ void PeleLM::derivedSetup()
 
       // Species diffusion coefficients
       for (int n = 0 ; n < NUM_SPECIES; n++) {
-         var_names_massfrac[n] = "D_"+spec_names[n];
+        var_names_massfrac[n] = "D_"+spec_names[n];
       }
-      derive_lst.add("diffcoeff",IndexType::TheCellType(),NUM_SPECIES,
-                     var_names_massfrac,pelelm_derdiffc,the_same_box);
+      if (m_use_soret) {
+        var_names_massfrac.resize(2*NUM_SPECIES);
+        for (int n = 0; n < NUM_SPECIES; n++) {
+          var_names_massfrac[n+NUM_SPECIES] = "theta_"+spec_names[n];
+        }
+        derive_lst.add("diffcoeff",IndexType::TheCellType(),2*NUM_SPECIES,
+                       var_names_massfrac,pelelm_derdiffc,the_same_box);
+      } else {
+        derive_lst.add("diffcoeff",IndexType::TheCellType(),NUM_SPECIES,
+                       var_names_massfrac,pelelm_derdiffc,the_same_box);
+      }
 
       // Rho - sum rhoYs
       derive_lst.add("rhominsumrhoY",IndexType::TheCellType(),1,pelelm_derrhomrhoy,the_same_box);
@@ -798,6 +881,9 @@ void PeleLM::derivedSetup()
 
    }
 
+   // Distribution Map
+   derive_lst.add("DistributionMap",IndexType::TheCellType(),1,pelelm_derdmap,the_same_box);
+
    // Cell average pressure
    derive_lst.add("avg_pressure",IndexType::TheCellType(),1,pelelm_deravgpress,the_same_box);
 
@@ -810,15 +896,31 @@ void PeleLM::derivedSetup()
    // Vorticity magnitude
    derive_lst.add("mag_vort",IndexType::TheCellType(),1,pelelm_dermgvort,grow_box_by_two);
 
+   // Spatial coordinates
+   {
+      Vector<std::string> var_names({AMREX_D_DECL("x","y","z")});
+      derive_lst.add("coordinates",IndexType::TheCellType(),AMREX_SPACEDIM,var_names,
+                     pelelm_dercoord,the_same_box);
+   }
+
    // Vorticity components
-   const int vort_ncomp = 2*AMREX_SPACEDIM-3;
+   {
+      const int vort_ncomp = 2*AMREX_SPACEDIM-3;
 #if (AMREX_SPACEDIM == 2)
-   Vector<std::string> var_names({"VortZ"});
+      Vector<std::string> var_names({"VortZ"});
 #elif (AMREX_SPACEDIM == 3)
-   Vector<std::string> var_names({"VortX","VortY","VortZ"});
+      Vector<std::string> var_names({"VortX","VortY","VortZ"});
 #endif
-   derive_lst.add("vorticity",IndexType::TheCellType(),vort_ncomp,var_names,
-                  pelelm_dervort,grow_box_by_two);
+      derive_lst.add("vorticity",IndexType::TheCellType(),vort_ncomp,var_names,
+                     pelelm_dervort,grow_box_by_two);
+   }
+
+   // UserDefined derived
+   {
+       Vector<std::string> var_names = pelelm_setuserderives();
+       derive_lst.add("derUserDefined",IndexType::TheCellType(),var_names.size(),var_names,
+                      pelelm_deruserdef,the_same_box);
+   }
 
 #if (AMREX_SPACEDIM == 3)
    // Q-criterion
@@ -1005,22 +1107,22 @@ void PeleLM::taggingSetup()
          Real value; ppr.get("value_greater",value);
          std::string field; ppr.get("field_name",field);
          errTags.push_back(AMRErrorTag(value,AMRErrorTag::GREATER,field,info));
-         itexists = derive_lst.canDerive(field) || isStateVariable(field);
+         itexists = derive_lst.canDerive(field) || isStateVariable(field) || isReactVariable(field);
       } else if (ppr.countval("value_less")) {
          Real value; ppr.get("value_less",value);
          std::string field; ppr.get("field_name",field);
          errTags.push_back(AMRErrorTag(value,AMRErrorTag::LESS,field,info));
-         itexists = derive_lst.canDerive(field) || isStateVariable(field);
+         itexists = derive_lst.canDerive(field) || isStateVariable(field) || isReactVariable(field);
       } else if (ppr.countval("vorticity_greater")) {
          Real value; ppr.get("vorticity_greater",value);
          const std::string field="mag_vort";
          errTags.push_back(AMRErrorTag(value,AMRErrorTag::VORT,field,info));
-         itexists = derive_lst.canDerive(field) || isStateVariable(field);
+         itexists = derive_lst.canDerive(field) || isStateVariable(field) || isReactVariable(field);
       } else if (ppr.countval("adjacent_difference_greater")) {
          Real value; ppr.get("adjacent_difference_greater",value);
          std::string field; ppr.get("field_name",field);
          errTags.push_back(AMRErrorTag(value,AMRErrorTag::GRAD,field,info));
-         itexists = derive_lst.canDerive(field) || isStateVariable(field);
+         itexists = derive_lst.canDerive(field) || isStateVariable(field) || isReactVariable(field);
       } else if (realbox.ok()) {
         errTags.push_back(AMRErrorTag(info));
         itexists = true;
@@ -1064,8 +1166,13 @@ void PeleLM::resizeArray() {
    // Time
    m_t_old.resize(max_level+1);
    m_t_new.resize(max_level+1);
+
 #ifdef PELELM_USE_SPRAY
    m_spraystate.resize(max_level+1);
    m_spraysource.resize(max_level+1);
 #endif
+
+   // Load balancing
+   m_costs.resize(max_level+1);
+   m_loadBalanceEff.resize(max_level+1);
 }

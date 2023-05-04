@@ -37,7 +37,7 @@ PeleLM::computeSootSource(const PeleLM::TimeStamp &a_timestamp,
   bool pres_term = false; // Do not include change in pressure in energy
   for (int lev = 0; lev <= finest_level; lev++) {
     auto ldata_p = getLevelDataPtr(lev,a_timestamp);
-    amrex::Real time = getTime(lev,a_timestamp);
+    Real time = getTime(lev,a_timestamp);
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
