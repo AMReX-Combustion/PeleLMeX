@@ -65,6 +65,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#chemistry-integrator">Chemistry integrator</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#embedded-geometry">Embedded Geometry</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#linear-solvers">Linear solvers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#active-control">Active control</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#run-time-diagnostics">Run-time diagnostics</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#run-time-control">Run-time control</a></li>
 </ul>
@@ -456,9 +457,38 @@ in <code class="docutils literal notranslate"><span class="pre">Exec/RegTest/EB_
 </pre></div>
 </div>
 </section>
+<section id="active-control">
+<h2>Active control<a class="headerlink" href="#active-control" title="Permalink to this heading"></a></h2>
+<p><cite>PeleLMeX</cite> includes an active control mechanism to enable statistically steady simulations of flames
+maintaining the flame at a fixed position in the domain. An example of this feature is provided in
+the triple flame tutorial <a class="reference internal" href="Tutorials_TripleFlame.html"><span class="doc">A simple triple flame</span></a>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>To enable active control, a <code class="docutils literal notranslate"><span class="pre">FlowControllerData</span> <span class="pre">FCData</span></code> object must be added to the problem <code class="docutils literal notranslate"><span class="pre">ProbParm</span></code>!</p>
+</div>
+<p>During the course of the simulation, the FlowControllerData is updated based on the flame position to allow
+the user to set the inflow velocity. The following options are available when using active control:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1">#---------------------- AC CONTROL -------------------------------</span>
+<span class="n">active_control</span><span class="o">.</span><span class="n">on</span> <span class="o">=</span> <span class="mi">1</span>                     <span class="c1"># [OPT, DEF=0] Use AC ?</span>
+<span class="n">active_control</span><span class="o">.</span><span class="n">use_temp</span> <span class="o">=</span> <span class="mi">1</span>               <span class="c1"># [OPT, DEF=1] Default in fuel mass, rather use iso-T position ?</span>
+<span class="n">active_control</span><span class="o">.</span><span class="n">temperature</span> <span class="o">=</span> <span class="mf">1400.0</span>       <span class="c1"># [OPT, DEF=-1] Value of iso-T ?</span>
+<span class="n">active_control</span><span class="o">.</span><span class="n">tau</span> <span class="o">=</span> <span class="mf">5.0e-4</span>               <span class="c1"># [OPT, DEF=0.0] Control tau (should ~ 10 dt)</span>
+<span class="n">active_control</span><span class="o">.</span><span class="n">height</span> <span class="o">=</span> <span class="mf">0.01</span>              <span class="c1"># [OPT, DEF=0.0] Where is the flame held ?</span>
+<span class="n">active_control</span><span class="o">.</span><span class="n">v</span> <span class="o">=</span> <span class="mi">1</span>                      <span class="c1"># [OPT, DEF=0] verbose</span>
+<span class="n">active_control</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="mi">1</span>                 <span class="c1"># [OPT, DEF=2] Controller: 1 - Linear, 2 - Quadratic, 3 - Weighted quadratic</span>
+<span class="n">active_control</span><span class="o">.</span><span class="n">velMax</span> <span class="o">=</span> <span class="mf">2.0</span>               <span class="c1"># [OPT, DEF=0.0] limit inlet velocity</span>
+<span class="n">active_control</span><span class="o">.</span><span class="n">changeMax</span> <span class="o">=</span> <span class="mf">0.1</span>            <span class="c1"># [OPT, DEF=1.0] limit inlet velocity changes (absolute m/s)</span>
+<span class="n">active_control</span><span class="o">.</span><span class="n">flow_dir</span>  <span class="o">=</span> <span class="mi">1</span>              <span class="c1"># [OPT, DEF=AMREX_SPACEDIM-1] flame main direction</span>
+<span class="n">active_control</span><span class="o">.</span><span class="n">AC_history</span>  <span class="o">=</span> <span class="n">AChist</span>       <span class="c1"># [OPT, DEF=AC_history] Control history file, read upon restart</span>
+<span class="n">active_control</span><span class="o">.</span><span class="n">npoints_average</span> <span class="o">=</span> <span class="mi">5</span>        <span class="c1"># [OPT, DEF=3] Number of previous steps using to estimate new velocity</span>
+<span class="n">active_control</span><span class="o">.</span><span class="n">pseudo_gravity</span> <span class="o">=</span> <span class="mi">1</span>         <span class="c1"># [OPT, DEF=0] add density proportional force to compensate for the acceleration</span>
+                                          <span class="c1">#           of the gas due to inlet velocity changes</span>
+</pre></div>
+</div>
+</section>
 <section id="run-time-diagnostics">
 <h2>Run-time diagnostics<a class="headerlink" href="#run-time-diagnostics" title="Permalink to this heading"></a></h2>
-<p>PeleLMeX provides a few diagnostics to check you simulations while it is running as well as adding basic analysis ingredients.</p>
+<p><cite>PeleLMeX</cite> provides a few diagnostics to check you simulations while it is running as well as adding basic analysis ingredients.</p>
 <p>It is often usefull to have an estimate of integrated quantities (kinetic energy, heat release rate, ,..), state extremas
 or other overall balance information to get a sense of the status and sanity of the simulation. To this end, it is possible
 to activate <cite>temporal</cite> diagnostics performing these reductions at given intervals:</p>
