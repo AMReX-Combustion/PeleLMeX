@@ -224,7 +224,7 @@ void PeleLM::computeDifferentialDiffusionFluxes(const TimeStamp &a_time,
       getDiffusionOp()->computeDiffFluxes(a_fluxes, NUM_SPECIES-NUM_IONS+n,
                                           GetVecOfConstPtrs(getSpeciesVect(a_time)), NUM_SPECIES-NUM_IONS+n,
                                           GetVecOfConstPtrs(getDensityVect(a_time)),
-                                          GetVecOfConstPtrs(getDiffusivityVect(a_time)), 0, bcRecIons,
+                                          GetVecOfConstPtrs(getDiffusivityVect(a_time)), NUM_SPECIES-NUM_IONS+n, bcRecIons,
                                           1, do_avgDown);
    }
 #else

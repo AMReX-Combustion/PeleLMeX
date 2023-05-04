@@ -363,10 +363,39 @@ Linear solvers are a key component of PeleLMeX algorithm, separate controls are 
     tensor_diffusion.rtol = 1.0e-11             # [OPT, DEF=1e-11] Relative tolerance of the velocity tensor diffusion solve
     tensor_diffusion.atol = 1.0e-12             # [OPT, DEF=1e-14] Absolute tolerance of the velocity tensor diffusion solve
 
+Active control
+--------------
+
+`PeleLMeX` includes an active control mechanism to enable statistically steady simulations of flames
+maintaining the flame at a fixed position in the domain. An example of this feature is provided in
+the triple flame tutorial :doc:`Tutorials_TripleFlame`.
+
+.. note::
+   To enable active control, a ``FlowControllerData FCData`` object must be added to the problem ``ProbParm``!
+
+During the course of the simulation, the FlowControllerData is updated based on the flame position to allow
+the user to set the inflow velocity. The following options are available when using active control: ::
+
+    #---------------------- AC CONTROL -------------------------------
+    active_control.on = 1                     # [OPT, DEF=0] Use AC ?
+    active_control.use_temp = 1               # [OPT, DEF=1] Default in fuel mass, rather use iso-T position ?
+    active_control.temperature = 1400.0       # [OPT, DEF=-1] Value of iso-T ?
+    active_control.tau = 5.0e-4               # [OPT, DEF=0.0] Control tau (should ~ 10 dt)
+    active_control.height = 0.01              # [OPT, DEF=0.0] Where is the flame held ?
+    active_control.v = 1                      # [OPT, DEF=0] verbose
+    active_control.method = 1                 # [OPT, DEF=2] Controller: 1 - Linear, 2 - Quadratic, 3 - Weighted quadratic
+    active_control.velMax = 2.0               # [OPT, DEF=0.0] limit inlet velocity
+    active_control.changeMax = 0.1            # [OPT, DEF=1.0] limit inlet velocity changes (absolute m/s)
+    active_control.flow_dir  = 1              # [OPT, DEF=AMREX_SPACEDIM-1] flame main direction
+    active_control.AC_history  = AChist       # [OPT, DEF=AC_history] Control history file, read upon restart
+    active_control.npoints_average = 5        # [OPT, DEF=3] Number of previous steps using to estimate new velocity
+    active_control.pseudo_gravity = 1         # [OPT, DEF=0] add density proportional force to compensate for the acceleration
+                                              #           of the gas due to inlet velocity changes
+
 Run-time diagnostics
 --------------------
 
-PeleLMeX provides a few diagnostics to check you simulations while it is running as well as adding basic analysis ingredients.
+`PeleLMeX` provides a few diagnostics to check you simulations while it is running as well as adding basic analysis ingredients.
 
 It is often usefull to have an estimate of integrated quantities (kinetic energy, heat release rate, ,..), state extremas
 or other overall balance information to get a sense of the status and sanity of the simulation. To this end, it is possible

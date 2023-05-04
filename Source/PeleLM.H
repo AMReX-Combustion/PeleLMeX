@@ -8,6 +8,7 @@
 #include "pelelm_prob_parm.H"
 #include "DiffusionOp.H"
 #include "DiagBase.H"
+#include "PeleFlowControllerData.H"
 #ifdef PELE_USE_EFIELD
 #include "PrecondOp.H"
 #endif
@@ -30,7 +31,6 @@
 #include <AMReX_BC_TYPES.H>
 #include <AMReX_ErrorList.H>
 #include <AMReX_VisMF.H>
-
 
 // Forward declarations
 #ifdef PELELM_USE_SPRAY
@@ -807,6 +807,12 @@ class PeleLM : public amrex::AmrCore {
 
    void resetCoveredMask();
 
+   // Active control
+   void initActiveControl();
+   void activeControl(int is_restart);
+   void loadActiveControlHistory();
+   void getActiveControlLowT(amrex::Real &a_coft);
+
    // Derived variable evaluation
    std::unique_ptr<amrex::MultiFab> derive(const std::string &a_name,
                                            amrex::Real a_time, int lev, int nGrow);
@@ -1169,6 +1175,35 @@ class PeleLM : public amrex::AmrCore {
    SootModel* soot_model = nullptr;
    bool do_soot_solve;
 #endif
+
+   // Active controller
+   int m_ctrl_active{0};
+   int m_ctrl_useTemp{0};
+   amrex::Real m_ctrl_tauControl{-1.0};
+   amrex::Real m_ctrl_cfix{0.0};
+   amrex::Real m_ctrl_coftOld{-1.0};
+   amrex::Real m_ctrl_sest{0.0};
+   amrex::Real m_ctrl_corr{1.0};
+   amrex::Real m_ctrl_V_in{0.0};
+   amrex::Real m_ctrl_V_in_old{0.0};
+   amrex::Real m_ctrl_changeMax{1.0};
+   amrex::Real m_ctrl_tBase{0.0};
+   amrex::Real m_ctrl_dV{0.0};
+   amrex::Real m_ctrl_scale{0.0};
+   amrex::Real m_ctrl_zBase{0.0};
+   amrex::Real m_ctrl_h{0.0};
+   amrex::Real m_ctrl_velMax{0.0};
+   amrex::Real m_ctrl_temperature{-1.0};
+   int m_ctrl_verbose{0};
+   int m_ctrl_NavgPts{3};
+   int m_ctrl_nfilled{-1};
+   int m_ctrl_flameDir{AMREX_SPACEDIM-1};
+   int m_ctrl_pseudoGravity{0};
+   int m_ctrl_method{3};
+   std::string m_ctrl_AChistory{"AC_History.dat"};
+   amrex::Vector<amrex::Real> m_ctrl_time_pts;
+   amrex::Vector<amrex::Real> m_ctrl_velo_pts;
+   amrex::Vector<amrex::Real> m_ctrl_cntl_pts;
 
    // PMF parameters
    pele::physics::PMF::PmfData pmf_data;

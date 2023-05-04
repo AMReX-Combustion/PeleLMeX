@@ -39,6 +39,8 @@ target_sources(pelelmex
         PeleLMUMac.cpp
         PeleLMUtils.H
         PeleLMUtils.cpp
+        PeleFlowControllerData.H
+        PeleLMFlowController.cpp
         Utils.cpp
     )
 
