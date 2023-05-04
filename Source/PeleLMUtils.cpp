@@ -686,7 +686,6 @@ void PeleLM::resetCoveredMask()
 
    //----------------------------------------------------------------------------
    // Need to compute the uncovered volume
-   // TODO Might need to recompute if new levels are added with EB.
    if (m_uncoveredVol < 0.0 ) {
       Vector<MultiFab> dummy(finest_level+1);
       for (int lev = 0; lev <= finest_level; ++lev) {
