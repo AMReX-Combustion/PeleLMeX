@@ -617,6 +617,7 @@ makeVelForce(int i, int j, int k,
              int                                     is_incomp,
              const amrex::Real                     & rho_incomp,
              int                                     pseudo_gravity,
+             int                                     pseudo_gravity_dir,
              const amrex::Real                     & /*time*/,
              amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const gravity,
              amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const gp0,
@@ -641,14 +642,16 @@ makeVelForce(int i, int j, int k,
       rho_lcl = rho(i,j,k);
    }
 
+   // Gravity and background pressure gradient
    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
       force(i,j,k,idim) = -gp0[idim] + gravity[idim] * rho_lcl;
    }
 
-   // TODO direction of pseudo grav should be runtime params
+   // Pseudo-gravity for active control
    if (pseudo_gravity) {
-      force(i,j,k,AMREX_SPACEDIM-1) += dV_control * rho_lcl;
+      force(i,j,k,pseudo_gravity_dir) += dV_control * rho_lcl;
    }
+
    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
      force(i,j,k,idim) += extmom(i,j,k,idim) - vel(i,j,k,idim) * extrho(i,j,k);
    }

@@ -141,6 +141,9 @@ void PeleLM::Setup() {
 
    // Copy problem parameters into device copy
    Gpu::copy(Gpu::hostToDevice, prob_parm, prob_parm+1,prob_parm_d);
+
+   // Initialize active control
+   initActiveControl();
 }
 
 void PeleLM::readParameters() {
@@ -373,6 +376,7 @@ void PeleLM::readParameters() {
    // -----------------------------------------
    pp.query("sdc_iterMax",m_nSDCmax);
    pp.query("floor_species",m_floor_species);
+   pp.query("dPdt_factor",m_dpdtFactor);
    pp.query("memory_checks",m_checkMem);
 
    // -----------------------------------------

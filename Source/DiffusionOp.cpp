@@ -840,6 +840,7 @@ DiffusionOp::readParameters ()
    pp.query("rtol", m_mg_rtol);
    pp.query("max_iter", m_mg_max_iter);
    pp.query("bottom_solver", m_mg_bottom_solver);
+   pp.query("max_order", m_mg_maxorder);
 }
 
 //---------------------------------------------------------------------------------------

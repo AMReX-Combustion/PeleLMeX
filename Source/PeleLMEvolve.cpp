@@ -48,6 +48,10 @@ void PeleLM::Evolve() {
       }
 #endif
 
+      // Active control
+      int is_restart = 0;
+      activeControl(is_restart);
+
       // Temporals
       if (doTemporalsNow()) {
          writeTemporals();
