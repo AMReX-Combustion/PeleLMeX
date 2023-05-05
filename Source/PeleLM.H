@@ -628,7 +628,7 @@ class PeleLM : public amrex::AmrCore {
    * \param a_time state time for velocity, density and viscosity, either Old or New
    * \param a_divtau outgoing divTau term
    * \param use_density flag to scale divTau by 1/rho
-   * \param scale prefactor of divTau, used to weight by num. scheme property (e.g. 0.5 for 
+   * \param scale prefactor of divTau, used to weight by num. scheme property (e.g. 0.5 for
    * Crank Nicholson)
    */
    void computeDivTau(const PeleLM::TimeStamp &a_time,
@@ -726,7 +726,7 @@ class PeleLM : public amrex::AmrCore {
 
    /**
    * \brief Compute the time step sive accross all levels and processes.
-   * \param is_init flag to trigger init-only dt factors 
+   * \param is_init flag to trigger init-only dt factors
    * \param a_time state time to work on, either Old or New
    */
    amrex::Real computeDt(int is_init, const PeleLM::TimeStamp &a_time);
@@ -875,7 +875,7 @@ class PeleLM : public amrex::AmrCore {
                  std::unique_ptr<AdvanceDiffData> &diffData);
 
    /**
-   * \brief Compute the pressure drift term using RhoRT and 
+   * \brief Compute the pressure drift term using RhoRT and
    * state data at a_time, acting on all levels
    * \param a_time state time to work on, either Old or New
    * \param a_dPdt outgoing container
@@ -884,7 +884,7 @@ class PeleLM : public amrex::AmrCore {
                   const amrex::Vector<amrex::MultiFab*> &a_dPdt);
 
    /**
-   * \brief Compute the pressure drift term using RhoRT and 
+   * \brief Compute the pressure drift term using RhoRT and
    * state data at a_time on a given level
    * \param lev level of interest
    * \param a_time state time to work on, either Old or New
