@@ -291,6 +291,9 @@ class PeleLM : public amrex::AmrCore {
    */
    void checkRunParams();
 
+   //-----------------------------------------------------------------------------
+   // REGRID / LOAD BALANCE
+
    /**
    * \brief Compute load balancing cost estimate on a given level
    * filling the PeleLM class LayoutData with default method
@@ -306,6 +309,17 @@ class PeleLM : public amrex::AmrCore {
    */
    void computeCosts(int a_lev, amrex::LayoutData<amrex::Real> &a_costs,
                      int a_costMethod);
+
+   /**
+   * \brief Create/update the DMap used for chemistry on all levels
+   */
+   void loadBalanceChem();
+
+   /**
+   * \brief Create/update the DMap used for chemistry on a given level
+   * \param a_lev level of interest
+   */
+   void loadBalanceChemLev(int a_lev);
 
    //-----------------------------------------------------------------------------
 
@@ -590,6 +604,16 @@ class PeleLM : public amrex::AmrCore {
                            std::unique_ptr<AdvanceAdvData> &advData,
                            std::unique_ptr<AdvanceDiffData> &diffData);
 
+   /**
+   * \brief Restore state, update enthalpy and compute fluxes after deltaT linear solve
+   * within the deltaT iteration scheme
+   * \param a_dtiter deltaT iteration index
+   * \param a_fluxes diffusion fluxes, with updated Fourier and differential species fluxes
+   * \param a_ebfluxes optional temperature fluxes at the EB
+   * \param a_Tsave temporary container to restore state temperature
+   * \param diffData container for diffusion forcing used to build RHS
+   * \param a_deltaT_norm norm of deltaT residual
+   */
    void deltaTIter_update(int a_dtiter,
                           const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> &a_fluxes,
                           const amrex::Vector<amrex::MultiFab*> &a_ebfluxes,
@@ -598,20 +622,39 @@ class PeleLM : public amrex::AmrCore {
                           amrex::Real &a_deltaT_norm);
 
 
-   // Viscous forces
+   /**
+   * \brief Compute the viscous force term in the momentum equation using AMReX
+   * TensorOp
+   * \param a_time state time for velocity, density and viscosity, either Old or New
+   * \param a_divtau outgoing divTau term
+   * \param use_density flag to scale divTau by 1/rho
+   * \param scale prefactor of divTau, used to weight by num. scheme property (e.g. 0.5 for 
+   * Crank Nicholson)
+   */
    void computeDivTau(const PeleLM::TimeStamp &a_time,
                       const amrex::Vector<amrex::MultiFab*> &a_divtau,
                       int use_density, amrex::Real scale = 1.0);
 
-   // Diffuse velocity
+   /**
+   * \brief Implicit diffusion of the of velocity field using AMReX
+   * TensorOp. Always act on New time data and include Crank Nicholson factor
+   */
    void diffuseVelocity();
 
-   // diffusion Linear operator BC
+   /**
+   * \brief Return LinOpBC for the scalar diffusion operator
+   * \param a_side AMReX orientaion
+   * \param a_bc BCRec for the scalar of interest
+   */
    amrex::Array<amrex::LinOpBCType,AMREX_SPACEDIM>
    getDiffusionLinOpBC(amrex::Orientation::Side a_side,
                        const amrex::BCRec &a_bc);
 
-   // diffusion Tensor operator BC
+   /**
+   * \brief Return AMReX_SPACEDIM LinOpBC vector for the velocity tensor operator
+   * \param a_side AMReX orientaion
+   * \param a_bc BCRec for all the velocity components
+   */
    amrex::Vector<amrex::Array<amrex::LinOpBCType,AMREX_SPACEDIM>>
    getDiffusionTensorOpBC(amrex::Orientation::Side a_side,
                           const amrex::Vector<amrex::BCRec> a_bc);
@@ -620,30 +663,84 @@ class PeleLM : public amrex::AmrCore {
    //-----------------------------------------------------------------------------
    // REACTION
 
+   /**
+   * \brief Top-level reaction solve function, performing the chemistry integration
+   * on all the AMR levels.
+   * \param advData container for Forcing, the advection/diffusion component of the
+   * advance function in the SDC context
+   */
    void advanceChemistry(std::unique_ptr<AdvanceAdvData> &advData);
 
+   /**
+   * \brief Performing the chemistry integration on a given level, for a fixed
+   * step length and relying on AmrCore BoxArray/DMap, not masking fine-covered regions
+   * \param lev level of interest
+   * \param a_dt integration length
+   * \param a_extForcing advection/diffusion forcing
+   */
    void advanceChemistry(int lev,
                          const amrex::Real &a_dt,
                          amrex::MultiFab &a_extForcing);
 
+   /**
+   * \brief Performing the chemistry integration on a given level, for a fixed
+   * step length and using the BoxArray/DMap masking fine-covered region and
+   * specifically load balanced for reaction
+   * \param lev level of interest
+   * \param a_dt integration length
+   * \param a_extForcing advection/diffusion forcing
+   */
    void advanceChemistryBAChem(int lev,
                                const amrex::Real &a_dt,
                                amrex::MultiFab &a_extForcing);
 
+   /**
+   * \brief Top-level instantaneous reaction rate function, acting on all levels
+   * \param a_I_R outgoing multi-level container inst. RR container
+   * \param a_time state time used to compute RR, either Old or New
+   */
    void computeInstantaneousReactionRate(const amrex::Vector<amrex::MultiFab*> &a_I_R,
                                          const PeleLM::TimeStamp &a_time);
 
+   /**
+   * \brief Compute instantaneous reaction rate on a given level
+   * \param lev level of interest
+   * \param a_time state time used to compute RR, either Old or New
+   * \param a_I_R outgoing MultiFab for inst. RR container
+   */
    void computeInstantaneousReactionRate(int lev,
                                          const PeleLM::TimeStamp &a_time,
                                          amrex::MultiFab* a_I_R);
+
+   /**
+   * \brief Compute the heat release rate on a given level, using the
+   * LevelDataReact I_R data
+   * \param lev level of interest
+   * \param a_HR outgoing MultiFab
+   */
    void getHeatRelease(int lev, amrex::MultiFab *a_HR);
    //-----------------------------------------------------------------------------
 
    //-----------------------------------------------------------------------------
    // Time step size
 
+   /**
+   * \brief Compute the time step sive accross all levels and processes.
+   * \param is_init flag to trigger init-only dt factors 
+   * \param a_time state time to work on, either Old or New
+   */
    amrex::Real computeDt(int is_init, const PeleLM::TimeStamp &a_time);
+
+   /**
+   * \brief Compute the CFL step size
+   * \param a_time state time to work on, either Old or New
+   */
    amrex::Real estConvectiveDt(const PeleLM::TimeStamp &a_time);
+
+   /**
+   * \brief Compute the divU step size
+   * \param a_time state time to work on, either Old or New
+   */
    amrex::Real estDivUDt(const PeleLM::TimeStamp &a_time);
    //-----------------------------------------------------------------------------
 
@@ -725,34 +822,83 @@ class PeleLM : public amrex::AmrCore {
 
    //-----------------------------------------------------------------------------
 #endif
+
    //-----------------------------------------------------------------------------
    // EOS
 
-   // Thermodynamic pressure
+   /**
+   * \brief Compute thermodynamic pressure (RhoRT) from state on all levels
+   * \param a_time state time to work on, either Old or New
+   */
    void setThermoPress(const PeleLM::TimeStamp &a_time);
+
+   /**
+   * \brief Compute thermodynamic pressure (RhoRT) from state on a single level
+   * \param lev level of interest
+   * \param a_time state time to work on, either Old or New
+   */
    void setThermoPress(int lev, const PeleLM::TimeStamp &a_time);
 
-   // Enforce rho/rhoYs consistency
+   /**
+   * \brief Enforce rho = \sum rhoYs on a given level
+   * \param lev level of interest
+   * \param a_time state time to work on, either Old or New
+   */
    void setRhoToSumRhoY(int lev, const PeleLM::TimeStamp &a_time);
 
-   // update Temperature from rhoY and rhoH
+   /**
+   * \brief Compute temperature from rhoY and rhoH on all levels
+   * \param a_time state time to work on, either Old or New
+   */
    void setTemperature(const PeleLM::TimeStamp &a_time);
+
+   /**
+   * \brief Compute temperature from rhoY and rhoH on a given level
+   * \param lev level of interest
+   * \param a_time state time to work on, either Old or New
+   */
    void setTemperature(int lev, const PeleLM::TimeStamp &a_time);
 
-   // Divergence constraint
+   /**
+   * \brief Compute the divergence constraint from reaction/diffusion
+   * terms
+   * \param is_init flag for init-only checks
+   * \param computeDiff flag to trigger computing the diffusion terms or
+   * using the one already precompute and available in diffData
+   * \param a_time state time to work with
+   * \param diffData container for the diffusion terms
+   */
    void calcDivU(int is_init,
                  int computeDiff,
                  int do_avgDown,
                  const PeleLM::TimeStamp &a_time,
                  std::unique_ptr<AdvanceDiffData> &diffData);
 
-   // Pressure drift
+   /**
+   * \brief Compute the pressure drift term using RhoRT and 
+   * state data at a_time, acting on all levels
+   * \param a_time state time to work on, either Old or New
+   * \param a_dPdt outgoing container
+   */
    void calc_dPdt(const PeleLM::TimeStamp &a_time,
                   const amrex::Vector<amrex::MultiFab*> &a_dPdt);
+
+   /**
+   * \brief Compute the pressure drift term using RhoRT and 
+   * state data at a_time on a given level
+   * \param lev level of interest
+   * \param a_time state time to work on, either Old or New
+   * \param a_dPdt outgoing container
+   */
    void calc_dPdt(int lev, const PeleLM::TimeStamp &a_time,
                   amrex::MultiFab* a_dPdt);
 
-   // Closed Chamber
+   /**
+   * \brief For the closed chamber algorithm, compute averaged
+   * mac_divU and theta, update divU and the spatially averaged
+   * thermodynamic pressure. Return the mean divU.
+   * \param advData container including mac_divu
+   */
    amrex::Real
    adjustPandDivU(std::unique_ptr<AdvanceAdvData> &advData);
    //-----------------------------------------------------------------------------
@@ -867,6 +1013,7 @@ class PeleLM : public amrex::AmrCore {
 
    //-----------------------------------------------------------------------------
    // UTILS
+
    template<class K>
    void parseUserKey(amrex::ParmParse &a_pp,
                      const std::string &a_search_key,
@@ -985,9 +1132,6 @@ class PeleLM : public amrex::AmrCore {
                                  amrex::Real scale);
 
    void floorSpecies(const PeleLM::TimeStamp &a_time);
-
-   void loadBalanceChem();
-   void loadBalanceChemLev(int a_lev);
 
    amrex::Real MLNorm0(const amrex::Vector<const amrex::MultiFab*> &a_MF);
    amrex::Vector<amrex::Real>
@@ -1330,7 +1474,7 @@ class PeleLM : public amrex::AmrCore {
    // External source terms
    amrex::Vector<std::unique_ptr<amrex::MultiFab> >  m_extSource;
 
-   // Covered cells mask
+   // Fine-covered cells mask
    amrex::Vector<std::unique_ptr<amrex::iMultiFab> > m_coveredMask;
    int m_resetCoveredMask;
 
