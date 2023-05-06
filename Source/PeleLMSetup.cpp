@@ -1010,15 +1010,18 @@ void PeleLM::evaluateSetup()
       evaluate_lst.add("diffTerm",IndexType::TheCellType(),NUM_SPECIES+2,var_names,the_same_box);
    }
 
-   // scalar advection term
+   // advection terms
    {
-      // TODO
-      Vector<std::string> var_names(NUM_SPECIES+1);
+      Vector<std::string> var_names(NVAR-2);   // Skip temperature and RhoRT, unused
+      AMREX_D_TERM(var_names[VELX] = "A(VELX)";,
+                   var_names[VELY] = "A(VELY)";,
+                   var_names[VELZ] = "A(VELZ)");
+      var_names[DENSITY] = "A(Rho)";
       for (int n = 0 ; n < NUM_SPECIES; n++) {
-         var_names[n] = "A("+spec_names[n]+")";
+         var_names[FIRSTSPEC+n] = "A("+spec_names[n]+")";
       }
-      var_names[NUM_SPECIES] = "A(RhoH)";
-      evaluate_lst.add("advTerm",IndexType::TheCellType(),NUM_SPECIES+1,var_names,the_same_box);
+      var_names[RHOH] = "A(RhoH)";
+      evaluate_lst.add("advTerm",IndexType::TheCellType(),NVAR-2,var_names,the_same_box);
    }
 
    // Chemical state and external chem. forcing (used in ReactEval)

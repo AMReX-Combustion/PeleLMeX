@@ -1175,6 +1175,7 @@ class PeleLM : public amrex::AmrCore {
                    const std::string &a_var);
 
    void evaluateChemExtForces(const amrex::Vector<amrex::MultiFab*> &a_chemForces);
+   void evaluateAdvectionTerms(const amrex::Vector<amrex::MultiFab*> &a_advTerms);
 
    // Lightweight descriptors access
    bool isStateVariable(std::string_view a_name);
