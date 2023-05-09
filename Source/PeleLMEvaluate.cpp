@@ -18,7 +18,6 @@ void PeleLM::Evaluate() {
       if ( !itexists ) {
          amrex::Error("PeleLM::evaluate(): unknown variable: "+m_evaluatePlotVars[ivar]);
       }
-      Print() << " --> Evaluating " << m_evaluatePlotVars[ivar] << "\n";
       if ( derive_lst.canDerive(m_evaluatePlotVars[ivar]) ) {
          const PeleLMDeriveRec* rec = derive_lst.get(m_evaluatePlotVars[ivar]);
          ncomp += rec->numDerive();
@@ -45,10 +44,18 @@ void PeleLM::Evaluate() {
    }
 
    //----------------------------------------------------------------
+   // Prepare a few things if not restarting from a chkfile
+   if (m_restart_chkfile.empty()) {
+       m_nstep = 0;
+   }
+
+   //----------------------------------------------------------------
    // Fill the outgoing container
    int cnt = 0;
    for (int ivar = 0; ivar < m_evaluatePlotVarCount; ivar++ ) {
       int cntIncr = 0;
+
+      Print() << " --> Evaluating " << m_evaluatePlotVars[ivar] << "\n";
 
       // Evaluate function calls actual PeleLM::Evolve pieces and may require
       // the entire multi-level hierarchy
@@ -72,6 +79,9 @@ void PeleLM::Evaluate() {
    //----------------------------------------------------------------
    // Write the evaluated variables to disc
    Vector<int> istep(finest_level + 1, 0);
+
+   // Override m_cur_time to store the dt in pltEvaluate
+   m_cur_time = m_dt;
 
    std::string plotfilename = "pltEvaluate";
    amrex::WriteMultiLevelPlotfile(plotfilename, finest_level + 1, GetVecOfConstPtrs(mf_plt),
@@ -150,8 +160,30 @@ PeleLM::MLevaluate(const Vector<MultiFab *> &a_MFVec,
         }
         nComp = NUM_SPECIES+2;
     } else if ( a_var == "advTerm" ) {
-        // TODO
-        Abort("advTerm not available yet, soon hopefully");
+        Vector<std::unique_ptr<MultiFab> > aliasMF(finest_level+1);
+        for (int lev = 0; lev <= finest_level; ++lev) {
+            aliasMF[lev] = std::make_unique<MultiFab> (*a_MFVec[lev], amrex::make_alias, a_comp, NVAR-2);
+        }
+        evaluateAdvectionTerms(GetVecOfPtrs(aliasMF));
+        nComp = NVAR-2;
+    } else if ( a_var == "chemTest" ) {
+        // 'Old' chemical state (rhoYs + rhoH + T) and adv/diff forcing for chem. integration
+        // Replicate most of the advance function
+        // Copy the state
+        for (int lev = 0; lev <= finest_level; ++lev) {
+           auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
+           MultiFab::Copy(*a_MFVec[lev],ldata_p->state,FIRSTSPEC,a_comp,NUM_SPECIES+2,0);
+        }
+        // Inital velocity projection
+        if (m_restart_chkfile.empty()) {
+            projectInitSolution();
+        }
+        Vector<std::unique_ptr<MultiFab> > aliasMF(finest_level+1);
+        for (int lev = 0; lev <= finest_level; ++lev) {
+            aliasMF[lev] = std::make_unique<MultiFab> (*a_MFVec[lev], amrex::make_alias, a_comp+NUM_SPECIES+2, NUM_SPECIES+1);
+        }
+        evaluateChemExtForces(GetVecOfPtrs(aliasMF));
+        nComp = 2*(NUM_SPECIES+1)+1;
     } else if ( a_var == "instRR" ) {
         for (int lev = 0; lev <= finest_level; ++lev) {
             std::unique_ptr<MultiFab> I_RR = std::make_unique<MultiFab> (*a_MFVec[lev],amrex::make_alias,a_comp,NUM_SPECIES);
@@ -186,4 +218,195 @@ PeleLM::MLevaluate(const Vector<MultiFab *> &a_MFVec,
         getVelForces(AmrNewTime, {}, GetVecOfPtrs(aliasMFVec), 0, add_gradP);
         nComp = AMREX_SPACEDIM;
     }
+}
+
+void
+PeleLM::evaluateChemExtForces(const amrex::Vector<amrex::MultiFab*> &a_chemForces)
+{
+   //----------------------------------------------------------------
+   // Copy old <- new state
+   copyStateNewToOld(1);
+   copyPressNewToOld();
+
+   //----------------------------------------------------------------
+   // TIME
+   // Compute time-step size
+   m_dt = computeDt(0,AmrOldTime);
+
+   // Update time vectors
+   for(int lev = 0; lev <= finest_level; lev++)
+   {
+       m_t_old[lev] = m_cur_time;
+       m_t_new[lev] = m_cur_time + m_dt;
+   }
+   //----------------------------------------------------------------
+
+   //----------------------------------------------------------------
+   // Data for the advance, only live for the duration of the advance
+   std::unique_ptr<AdvanceDiffData> diffData;
+   diffData.reset(new AdvanceDiffData(finest_level, grids, dmap, m_factory, m_nGrowAdv, m_use_wbar, m_use_soret));
+   std::unique_ptr<AdvanceAdvData> advData;
+   advData.reset(new AdvanceAdvData(finest_level, grids, dmap, m_factory, m_incompressible,
+                                    m_nGrowAdv, m_nGrowMAC));
+
+   //----------------------------------------------------------------
+   // Advance setup
+   // Pre-SDC
+   m_sdcIter = 0;
+
+   // fillpatch the t^{n} data
+   averageDownState(AmrOldTime);
+   fillPatchState(AmrOldTime);
+
+   // compute t^{n} data
+   calcViscosity(AmrOldTime);
+   calcDiffusivity(AmrOldTime);
+
+   floorSpecies(AmrOldTime);
+   setThermoPress(AmrOldTime);
+   computeDifferentialDiffusionTerms(AmrOldTime,diffData);
+
+   // Init SDC iteration
+   copyTransportOldToNew();
+   copyDiffusionOldToNew(diffData);
+
+   // Compute the instantaneous reaction rate
+   // on Old state
+   computeInstantaneousReactionRate(getIRVect(),AmrOldTime);
+
+   //----------------------------------------------------------------
+   // Perform a single SDC iteration
+   m_sdcIter = 1;
+
+   // Predict face velocity with Godunov
+   predictVelocity(advData);
+
+   // Create S^{n+1/2} by fillpatching t^{n} and t^{np1,k}
+   createMACRHS(advData);
+
+   // Re-evaluate thermo. pressure and add chi_increment
+   addChiIncrement(m_sdcIter, AmrNewTime, advData);
+
+   // MAC projection
+   macProject(AmrOldTime,advData,GetVecOfPtrs(advData->mac_divu));
+
+   // Get scalar advection SDC forcing
+   getScalarAdvForce(advData,diffData);
+
+   // Get AofS: (\nabla \cdot (\rho Y Umac))^{n+1/2,k}
+   // and for density = \sum_k AofS_k
+   computeScalarAdvTerms(advData);
+
+   // Compute \rho^{np1,k+1} and fillpatch new density
+   updateDensity(advData);
+   fillPatchDensity(AmrNewTime);
+
+   // Get scalar diffusion SDC RHS (stored in Forcing)
+   getScalarDiffForce(advData,diffData);
+
+   // Diffuse scalars
+   differentialDiffusionUpdate(advData,diffData);
+
+   // Get external forcing for chemistry
+   getScalarReactForce(advData);
+
+   // Copy external forcing for chemistry into outgoing container
+   for (int lev = 0; lev <= finest_level; ++lev) {
+      MultiFab::Copy(*a_chemForces[lev],advData->Forcing[lev],0,0,NUM_SPECIES+1,0);
+   }
+
+   // Reset state
+   copyStateOldToNew();
+}
+
+void
+PeleLM::evaluateAdvectionTerms(const amrex::Vector<amrex::MultiFab*> &a_advTerms)
+{
+   //----------------------------------------------------------------
+   // Copy old <- new state
+   copyStateNewToOld(1);
+   copyPressNewToOld();
+
+   //----------------------------------------------------------------
+   // TIME
+   // Compute time-step size
+   m_dt = computeDt(0,AmrOldTime);
+
+   // Update time vectors
+   for(int lev = 0; lev <= finest_level; lev++)
+   {
+       m_t_old[lev] = m_cur_time;
+       m_t_new[lev] = m_cur_time + m_dt;
+   }
+   //----------------------------------------------------------------
+
+   //----------------------------------------------------------------
+   // Data for the advance, only live for the duration of the advance
+   std::unique_ptr<AdvanceDiffData> diffData;
+   diffData.reset(new AdvanceDiffData(finest_level, grids, dmap, m_factory, m_nGrowAdv, m_use_wbar, m_use_soret));
+   std::unique_ptr<AdvanceAdvData> advData;
+   advData.reset(new AdvanceAdvData(finest_level, grids, dmap, m_factory, m_incompressible,
+                                    m_nGrowAdv, m_nGrowMAC));
+
+   //----------------------------------------------------------------
+   // Advance setup
+   // Pre-SDC
+   m_sdcIter = 0;
+
+   // fillpatch the t^{n} data
+   averageDownState(AmrOldTime);
+   fillPatchState(AmrOldTime);
+
+   // compute t^{n} data
+   calcViscosity(AmrOldTime);
+   calcDiffusivity(AmrOldTime);
+
+   floorSpecies(AmrOldTime);
+   setThermoPress(AmrOldTime);
+   computeDifferentialDiffusionTerms(AmrOldTime,diffData);
+
+   // Init SDC iteration
+   copyTransportOldToNew();
+   copyDiffusionOldToNew(diffData);
+
+   // Compute the instantaneous reaction rate
+   // on Old state
+   computeInstantaneousReactionRate(getIRVect(),AmrOldTime);
+
+   //----------------------------------------------------------------
+   // Perform a single SDC iteration
+   m_sdcIter = 1;
+
+   // Predict face velocity with Godunov
+   predictVelocity(advData);
+
+   // Create S^{n+1/2} by fillpatching t^{n} and t^{np1,k}
+   createMACRHS(advData);
+   WriteDebugPlotFile(GetVecOfConstPtrs(advData->mac_divu),"macdivU");
+
+   // Re-evaluate thermo. pressure and add chi_increment
+   addChiIncrement(m_sdcIter, AmrNewTime, advData);
+   WriteDebugPlotFile(GetVecOfConstPtrs(advData->mac_divu),"macdivUwithIncr");
+
+   // MAC projection
+   macProject(AmrOldTime,advData,GetVecOfPtrs(advData->mac_divu));
+
+   // Get scalar advection SDC forcing
+   getScalarAdvForce(advData,diffData);
+   WriteDebugPlotFile(GetVecOfConstPtrs(advData->Forcing),"advForcing");
+
+   // Get AofS: (\nabla \cdot (\rho Y Umac))^{n+1/2,k}
+   // and for density = \sum_k AofS_k
+   computeScalarAdvTerms(advData);
+
+   // Compute t^{n+1/2} velocity advection term
+   computeVelocityAdvTerm(advData);
+
+   // Copy AofS into outgoing container, skip Temperature and RhoRT
+   for (int lev = 0; lev <= finest_level; ++lev) {
+      MultiFab::Copy(*a_advTerms[lev],advData->AofS[lev],0,0,NVAR-2,0);
+   }
+
+   // Reset state
+   copyStateOldToNew();
 }
