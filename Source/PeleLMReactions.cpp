@@ -45,9 +45,12 @@ void PeleLM::advanceChemistry(int lev,
 #endif
 
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+   const auto tiling = MFItInfo().SetDynamic(true);
+#pragma omp parallel
+#else
+   const bool tiling = TilingIfNotGPU();
 #endif
-   for (MFIter mfi(ldataNew_p->state,amrex::TilingIfNotGPU()); mfi.isValid(); ++mfi)
+   for (MFIter mfi(ldataNew_p->state,tiling); mfi.isValid(); ++mfi)
    {
       const Box& bx          = mfi.tilebox();
       auto const& rhoY_o     = ldataOld_p->state.const_array(mfi,FIRSTSPEC);
@@ -203,9 +206,12 @@ void PeleLM::advanceChemistryBAChem(int lev,
 #endif
 
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+   const auto tiling = MFItInfo().SetDynamic(true);
+#pragma omp parallel
+#else
+   const bool tiling = TilingIfNotGPU();
 #endif
-   for (MFIter mfi(chemState,amrex::TilingIfNotGPU()); mfi.isValid(); ++mfi)
+   for (MFIter mfi(chemState,tiling); mfi.isValid(); ++mfi)
    {
       const Box& bx          = mfi.tilebox();
       auto const& rhoY_o     = chemState.array(mfi,0);
