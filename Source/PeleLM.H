@@ -560,7 +560,6 @@ class PeleLM : public amrex::AmrCore {
    void addSoretTerm(const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> &a_fluxes,
                     const amrex::Vector<amrex::Array<amrex::MultiFab*,AMREX_SPACEDIM>> &a_soretfluxes,
                     amrex::Vector<amrex::MultiFab const*> const &a_spec,
-                    amrex::Vector<amrex::MultiFab const*> const &a_rho,
                     amrex::Vector<amrex::MultiFab const*> const &a_temp,
                     amrex::Vector<amrex::MultiFab const*> const &a_beta);
 
@@ -742,6 +741,7 @@ class PeleLM : public amrex::AmrCore {
    * \param a_time state time to work on, either Old or New
    */
    amrex::Real estDivUDt(const PeleLM::TimeStamp &a_time);
+   void checkDt(const PeleLM::TimeStamp &a_time, const amrex::Real &a_dt);
    //-----------------------------------------------------------------------------
 
    //-----------------------------------------------------------------------------
@@ -965,9 +965,11 @@ class PeleLM : public amrex::AmrCore {
    void fillPatchPhiV(const PeleLM::TimeStamp &a_time);
 #endif
 
-   // FillPatch and return a state MF
+   // FillPatch and return a MF
    std::unique_ptr<amrex::MultiFab>
    fillPatchState(int lev, amrex::Real a_time, int nGrow);
+   std::unique_ptr<amrex::MultiFab>
+   fillPatchReact(int lev, amrex::Real a_time, int nGrow);
 
    // FillPatch state components
    void fillpatch_state(int lev, amrex::Real a_time, amrex::MultiFab& a_state, int nGhost);
@@ -1057,7 +1059,7 @@ class PeleLM : public amrex::AmrCore {
        }
 
        key = keyT.str2int.at(userkey);
-   };
+   }
 
    // flux divergence
    void fluxDivergence(const amrex::Vector<amrex::MultiFab*> &a_divergence,
@@ -1232,6 +1234,8 @@ class PeleLM : public amrex::AmrCore {
                          const amrex::BCRec * d_bc,
                          const amrex::Geometry &a_geom);
 
+   void getCoveredIMask(int a_lev,
+                        amrex::iMultiFab &a_imask);
 
    void getEBDistance(int a_lev,
                       amrex::MultiFab &a_signDistLev);
@@ -1587,6 +1591,7 @@ class PeleLM : public amrex::AmrCore {
    int m_plotHeatRelease = 0;
    int m_plotStateSpec = 0;
    int m_plot_int = 0;
+   int m_plot_zeroEBcovered = 1;
    amrex::Real m_plot_per_approx = -1.;
    amrex::Real m_plot_per_exact = -1.;
    int m_check_int = 0;
@@ -1636,7 +1641,7 @@ class PeleLM : public amrex::AmrCore {
    int m_has_divu = 1;
 
    // DivU dt
-   int m_divu_checkFlag = 1;
+   int m_divu_checkFlag{1};
    amrex::Real m_divu_dtFactor = 0.5;
    amrex::Real m_divu_rhoMin = 0.1;
 
@@ -1744,6 +1749,7 @@ class PeleLM : public amrex::AmrCore {
    int m_nGrowState = 3;
 #endif
    int m_nGrowAdv = 1;
+   int m_nGrowdivu = 1;
    int m_nGrowMAC = 1;
 
    // Initialization

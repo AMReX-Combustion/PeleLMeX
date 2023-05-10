@@ -530,13 +530,9 @@ void DiffusionOp::computeDiffFluxes(Vector<Array<MultiFab*,AMREX_SPACEDIM>> cons
                                     Vector<MultiFab const*> const& a_bcoeff, int bcoeff_comp,
                                     Vector<BCRec> a_bcrec,
                                     int ncomp,
-                                    Real scale,
                                     int do_avgDown)
 {
    BL_PROFILE("DiffusionOp::computeDiffFluxes()");
-
-   // TODO: how come this is not used ?
-   amrex::ignore_unused(scale);
 
    //----------------------------------------------------------------
    // Checks
@@ -647,13 +643,9 @@ void DiffusionOp::computeDiffFluxes(Vector<Array<MultiFab*,AMREX_SPACEDIM>> cons
                                     Vector<MultiFab const*> const& a_EBbcoeff,
                                     Vector<BCRec> a_bcrec,
                                     int ncomp,
-                                    Real scale,
                                     int do_avgDown)
 {
    BL_PROFILE("DiffusionOp::computeDiffFluxes()");
-
-   // TODO: how come this is not used ?
-   amrex::ignore_unused(scale);
 
    //----------------------------------------------------------------
    // Checks
@@ -1081,7 +1073,6 @@ void DiffusionTensorOp::diffuse_velocity (Vector<MultiFab*> const& a_vel,
        m_solve_op->setLevelBC(lev, a_vel[lev]);
    }
 
-   // TODO check Why * rho ??
    Vector<MultiFab> rhs(finest_level+1);
    for (int lev = 0; lev <= finest_level; ++lev) {
        rhs[lev].define(a_vel[lev]->boxArray(),
@@ -1094,7 +1085,7 @@ void DiffusionTensorOp::diffuse_velocity (Vector<MultiFab*> const& a_vel,
            auto const& rhs_a = rhs[lev].array(mfi);
            auto const& vel_a = a_vel[lev]->const_array(mfi);
            auto const& rho_a = (have_density) ? a_density[lev]->const_array(mfi)
-                                              : a_vel[lev]->const_array(mfi);          // Dummy unused Array4
+                                              : Array4<const Real>{};
            amrex::ParallelFor(bx, AMREX_SPACEDIM, [=,rho_incomp=m_pelelm->m_rho,
                                                      is_incomp=m_pelelm->m_incompressible]
            AMREX_GPU_DEVICE (int i, int j, int k, int n) noexcept

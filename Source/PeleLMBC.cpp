@@ -222,9 +222,6 @@ void PeleLM::setBoundaryConditions() {
       }
 #endif
    }
-
-   // Aux
-   //TODO
 }
 
 Vector<BCRec>
@@ -261,7 +258,6 @@ void PeleLM::fillPatchState(int lev, const TimeStamp &a_time) {
          fillpatch_divu(lev, time, ldata_p->divu, ldata_p->divu.nGrow());
       }
    }
-   //TODO Aux
 }
 
 // Fill a state components
@@ -313,12 +309,26 @@ PeleLM::fillPatchState(int lev, Real a_time, int nGrow) {
 
    std::unique_ptr<MultiFab> mf;
    if ( m_incompressible ) {
-      mf.reset(new MultiFab(grids[lev], dmap[lev], AMREX_SPACEDIM, nGrow));
+      mf.reset(new MultiFab(grids[lev], dmap[lev], AMREX_SPACEDIM, nGrow, MFInfo(), Factory(lev)));
    } else {
-      mf.reset(new MultiFab(grids[lev], dmap[lev], NVAR, nGrow));
+      mf.reset(new MultiFab(grids[lev], dmap[lev], NVAR, nGrow, MFInfo(), Factory(lev)));
    }
    fillpatch_state(lev, a_time, *mf, nGrow);
-   //TODO Aux
+
+   return mf;
+}
+
+std::unique_ptr<MultiFab>
+PeleLM::fillPatchReact(int lev, Real a_time, int nGrow) {
+   BL_PROFILE("PeleLM::fillPatchReact()");
+
+   int IRsize = NUM_SPECIES;
+#ifdef PELE_USE_EFIELD
+   IRsize += 1;
+#endif
+   std::unique_ptr<MultiFab> mf;
+   mf.reset(new MultiFab(grids[lev], dmap[lev], IRsize, nGrow, MFInfo(), Factory(lev)));
+   fillpatch_reaction(lev, a_time, *mf, nGrow);
 
    return mf;
 }

@@ -44,10 +44,6 @@ target_sources(pelelmex
         Utils.cpp
     )
 
-if (PELELMEX_USE_DIAGS)
-    add_subdirectory(Diagnostics)
-endif ()
-
 if (PELELMEX_USE_EFIELD)
     add_subdirectory(Efield)
 endif ()

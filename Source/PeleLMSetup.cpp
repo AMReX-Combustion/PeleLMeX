@@ -163,63 +163,17 @@ void PeleLM::readParameters() {
    // Boundary conditions
    // -----------------------------------------
    int isOpenDomain = 0;
-
-   Vector<std::string> lo_bc_char(AMREX_SPACEDIM);
-   Vector<std::string> hi_bc_char(AMREX_SPACEDIM);
-   pp.getarr("lo_bc",lo_bc_char,0,AMREX_SPACEDIM);
-   pp.getarr("hi_bc",hi_bc_char,0,AMREX_SPACEDIM);
-
-   Vector<int> lo_bc(AMREX_SPACEDIM), hi_bc(AMREX_SPACEDIM);
-   for (int dir = 0; dir<AMREX_SPACEDIM; dir++){
-      if (lo_bc_char[dir] == "Interior") {
-         lo_bc[dir] = 0;
-      } else if (lo_bc_char[dir] == "Inflow") {
-         lo_bc[dir] = 1;
-      } else if (lo_bc_char[dir] == "Outflow") {
-         lo_bc[dir] = 2;
-         isOpenDomain = 1;
-      } else if (lo_bc_char[dir] == "Symmetry") {
-         lo_bc[dir] = 3;
-      } else if (lo_bc_char[dir] == "SlipWallAdiab") {
-         lo_bc[dir] = 4;
-      } else if (lo_bc_char[dir] == "NoSlipWallAdiab") {
-         lo_bc[dir] = 5;
-      } else if (lo_bc_char[dir] == "SlipWallIsotherm") {
-         lo_bc[dir] = 6;
-      } else if (lo_bc_char[dir] == "NoSlipWallIsotherm") {
-         lo_bc[dir] = 7;
-      } else {
-         amrex::Abort("Wrong boundary condition word in lo_bc, please use: Interior, Inflow, Outflow, "
-                      "Symmetry, SlipWallAdiab, NoSlipWallAdiab, SlipWallIsotherm, NoSlipWallIsotherm");
-      }
-
-      if (hi_bc_char[dir] == "Interior") {
-         hi_bc[dir] = 0;
-      } else if (hi_bc_char[dir] == "Inflow") {
-         hi_bc[dir] = 1;
-      } else if (hi_bc_char[dir] == "Outflow") {
-         hi_bc[dir] = 2;
-         isOpenDomain = 1;
-      } else if (hi_bc_char[dir] == "Symmetry") {
-         hi_bc[dir] = 3;
-      } else if (hi_bc_char[dir] == "SlipWallAdiab") {
-         hi_bc[dir] = 4;
-      } else if (hi_bc_char[dir] == "NoSlipWallAdiab") {
-         hi_bc[dir] = 5;
-      } else if (hi_bc_char[dir] == "SlipWallIsotherm") {
-         hi_bc[dir] = 6;
-      } else if (hi_bc_char[dir] == "NoSlipWallIsotherm") {
-         hi_bc[dir] = 7;
-      } else {
-         amrex::Abort("Wrong boundary condition word in hi_bc, please use: Interior, Inflow, Outflow, "
-                      "Symmetry, SlipWallAdiab, NoSlipWallAdiab, SlipWallIsotherm, NoSlipWallIsotherm");
-      }
-   }
-
-   // Store BCs in m_phys_bc.
    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
-      m_phys_bc.setLo(idim,lo_bc[idim]);
-      m_phys_bc.setHi(idim,hi_bc[idim]);
+      int lo_bc = BoundaryCondition::BCInterior;
+      int hi_bc = BoundaryCondition::BCInterior;
+      parseUserKey(pp,"lo_bc",boundarycondition,lo_bc,idim);
+      parseUserKey(pp,"hi_bc",boundarycondition,hi_bc,idim);
+      m_phys_bc.setLo(idim,lo_bc);
+      m_phys_bc.setHi(idim,hi_bc);
+      if (lo_bc == BoundaryCondition::BCOutflow ||
+          hi_bc == BoundaryCondition::BCOutflow ) {
+         isOpenDomain = 1;
+      }
    }
 
    // Activate closed chamber if !isOpenDomain
@@ -378,6 +332,9 @@ void PeleLM::readParameters() {
    pp.query("floor_species",m_floor_species);
    pp.query("dPdt_factor",m_dpdtFactor);
    pp.query("memory_checks",m_checkMem);
+   pp.query("divu_dt_factor",m_divu_dtFactor);
+   pp.query("divu_dt_rhoMin",m_divu_rhoMin);
+   pp.query("divu_dt_method",m_divu_checkFlag);
 
    // -----------------------------------------
    // Reaction
@@ -627,6 +584,7 @@ void PeleLM::readIOParameters() {
          pp.get("derive_plot_vars", m_derivePlotVars[ivar],ivar);
       }
    }
+   pp.query("plot_zeroEBcovered", m_plot_zeroEBcovered);
    pp.query("plot_speciesState" , m_plotStateSpec);
    m_initial_grid_file = "";
    m_regrid_file = "";

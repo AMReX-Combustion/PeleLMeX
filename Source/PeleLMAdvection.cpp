@@ -47,13 +47,12 @@ void PeleLM::computeVelocityAdvTerm(std::unique_ptr<AdvanceAdvData> &advData)
 
       //----------------------------------------------------------------
       // Get divU
-      int nGrow_divu = 4;  // Why incflo use 4 ?
-      MultiFab divu(grids[lev],dmap[lev],1,nGrow_divu,MFInfo(),Factory(lev));
+      MultiFab divu(grids[lev],dmap[lev],1,m_nGrowdivu,MFInfo(),Factory(lev));
       if (m_incompressible) {
          divu.setVal(0.0);
       } else {
          Real time  = getTime(lev,AmrOldTime);
-         fillpatch_divu(lev,time,divu,nGrow_divu);
+         fillpatch_divu(lev,time,divu,m_nGrowdivu);
       }
 
       //----------------------------------------------------------------
@@ -132,13 +131,12 @@ void PeleLM::computeVelocityAdvTerm(std::unique_ptr<AdvanceAdvData> &advData)
    // Fluxes divergence to get the velocity advection term
    for (int lev = 0; lev <= finest_level; ++lev) {
 
-      int nGrow_divu = 4;  // Why incflo use 4 ?
-      MultiFab divu(grids[lev],dmap[lev],1,nGrow_divu,MFInfo(),Factory(lev));
+      MultiFab divu(grids[lev],dmap[lev],1,m_nGrowdivu,MFInfo(),Factory(lev));
       if (m_incompressible) {
          divu.setVal(0.0);
       } else {
          Real time  = getTime(lev,AmrOldTime);
-         fillpatch_divu(lev,time,divu,nGrow_divu);
+         fillpatch_divu(lev,time,divu,m_nGrowdivu);
       }
 
       bool fluxes_are_area_weighted = false;
@@ -326,13 +324,11 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
 
       //----------------------------------------------------------------
       // Get divU
-      int nGrow_divu = 1;  // Why incflo use 4 ?
-      MultiFab divu(grids[lev],dmap[lev],1,nGrow_divu,MFInfo(),Factory(lev));
+      MultiFab divu(grids[lev],dmap[lev],1,m_nGrowdivu,MFInfo(),Factory(lev));
       if (m_incompressible) {
          divu.setVal(0.0);
       } else {
-         // TODO: check the number of ghost cells
-         MultiFab::Copy(divu,advData->mac_divu[lev],0,0,1,nGrow_divu);
+         MultiFab::Copy(divu,advData->mac_divu[lev],0,0,1,m_nGrowdivu);
       }
 
       //----------------------------------------------------------------
@@ -667,13 +663,12 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
    auto AdvTypeAll_d = convertToDeviceVector(AdvTypeAll);
    for (int lev = 0; lev <= finest_level; ++lev) {
 
-      int nGrow_divu = 1;  // TODO EB Why incflo use 4 ?
-      MultiFab divu(grids[lev],dmap[lev],1,nGrow_divu,MFInfo(),Factory(lev));
+      MultiFab divu(grids[lev],dmap[lev],1,m_nGrowdivu,MFInfo(),Factory(lev));
       if (m_incompressible) {
          divu.setVal(0.0);
       } else {
          Real time  = getTime(lev,AmrOldTime);
-         fillpatch_divu(lev,time,divu,nGrow_divu);
+         fillpatch_divu(lev,time,divu,m_nGrowdivu);
       }
 
       bool fluxes_are_area_weighted = false;
@@ -730,7 +725,7 @@ void PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData> &advData)
    // Sum over the species AofS to get the density advection term
    for (int lev = 0; lev <= finest_level; ++lev) {
       auto aofsma = advData->AofS[lev].arrays();
-      amrex::ParallelFor(advData->AofS[lev], [=, dt=m_dt]
+      amrex::ParallelFor(advData->AofS[lev], [=]
       AMREX_GPU_DEVICE (int box_no, int i, int j, int k) noexcept
       {
          aofsma[box_no](i,j,k,DENSITY) = 0.0;
@@ -794,13 +789,11 @@ void PeleLM::computePassiveAdvTerms(std::unique_ptr<AdvanceAdvData> &advData,
 
       //----------------------------------------------------------------
       // Get divU
-      int nGrow_divu = 1;  // Why incflo use 4 ?
-      MultiFab divu(grids[lev],dmap[lev],1,nGrow_divu,MFInfo(),Factory(lev));
+      MultiFab divu(grids[lev],dmap[lev],1,m_nGrowdivu,MFInfo(),Factory(lev));
       if (m_incompressible) {
          divu.setVal(0.0);
       } else {
-         // TODO: check the number of ghost cells
-         MultiFab::Copy(divu,advData->mac_divu[lev],0,0,1,nGrow_divu);
+         MultiFab::Copy(divu,advData->mac_divu[lev],0,0,1,m_nGrowdivu);
       }
 
       //----------------------------------------------------------------
@@ -878,13 +871,12 @@ void PeleLM::computePassiveAdvTerms(std::unique_ptr<AdvanceAdvData> &advData,
    auto AdvTypeAll_d = convertToDeviceVector(AdvTypeAll);
    for (int lev = 0; lev <= finest_level; ++lev) {
 
-      int nGrow_divu = 1;  // TODO EB Why incflo use 4 ?
-      MultiFab divu(grids[lev],dmap[lev],1,nGrow_divu,MFInfo(),Factory(lev));
+      MultiFab divu(grids[lev],dmap[lev],1,m_nGrowdivu,MFInfo(),Factory(lev));
       if (m_incompressible) {
          divu.setVal(0.0);
       } else {
          Real time  = getTime(lev,AmrOldTime);
-         fillpatch_divu(lev,time,divu,nGrow_divu);
+         fillpatch_divu(lev,time,divu,m_nGrowdivu);
       }
 
       bool fluxes_are_area_weighted = false;

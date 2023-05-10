@@ -95,7 +95,6 @@ void PeleLM::WritePlotFile() {
       ncomp += 1;
       // Extras:
       if (m_plotHeatRelease) ncomp += 1;
-      //if (m_plotChemDiag) ncomp += 1;     // TODO
    }
 
 #ifdef AMREX_USE_EB
@@ -321,7 +320,7 @@ void PeleLM::WritePlotFile() {
                      auto const& mut_arr_y = m_leveldata_old[lev]->visc_turb_fc[1].const_arrays();,
                      auto const& mut_arr_z = m_leveldata_old[lev]->visc_turb_fc[2].const_arrays();)
         // interpolate turbulent viscosity from faces to centers
-        amrex::ParallelFor(mf_plt[lev], [plot_arr, fact, AMREX_D_DECL(mut_arr_x, mut_arr_y, mut_arr_z), cnt]
+        amrex::ParallelFor(mf_plt[lev], [plot_arr, AMREX_D_DECL(mut_arr_x, mut_arr_y, mut_arr_z), cnt]
                            AMREX_GPU_DEVICE (int box_no, int i, int j, int k) noexcept
                            {
                              plot_arr[box_no](i,j,k,cnt) = fact*( AMREX_D_TERM( mut_arr_x[box_no](i,j,k) + mut_arr_x[box_no](i+1,j,k),
@@ -333,7 +332,9 @@ void PeleLM::WritePlotFile() {
       }
 
 #ifdef AMREX_USE_EB
-      EB_set_covered(mf_plt[lev],0.0);
+      if (m_plot_zeroEBcovered) {
+         EB_set_covered(mf_plt[lev],0.0);
+      }
 #endif
    }
 
@@ -831,8 +832,8 @@ void PeleLM::initLevelDataFromPlt(int a_lev,
    ProbParm const* lprobparm = prob_parm_d;
 
    // Enforce rho and rhoH consistent with temperature and mixture
-   // TODO the above handles species mapping (to some extent), but nothing enforce
-   // sum of Ys = 1
+   // The above handles species mapping (to some extent), but nothing enforce
+   // sum of Ys = 1 -> use N2 in the following if N2 is present
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
@@ -851,11 +852,15 @@ void PeleLM::initLevelDataFromPlt(int a_lev,
           Real sumYs = 0.0;
           for (int n = 0; n < NUM_SPECIES; n++){
              massfrac[n] = rhoY_arr(i,j,k,n);
+#ifdef N2_ID
              if (n != N2_ID) {
                 sumYs += massfrac[n];
              }
+#endif
           }
+#ifdef N2_ID
           massfrac[N2_ID] = 1.0 - sumYs;
+#endif
 
           // Get density
           Real P_cgs = lprobparm->P_mean * 10.0;
@@ -884,7 +889,6 @@ void PeleLM::initLevelDataFromPlt(int a_lev,
 
 void PeleLM::WriteJobInfo(const std::string& path) const
 {
-   std::string PrettyLine = std::string(78, '=') + "\n";
    std::string OtherLine = std::string(78, '-') + "\n";
    std::string SkipSpace = std::string(8, ' ');
 
