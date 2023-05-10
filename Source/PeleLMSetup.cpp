@@ -163,8 +163,6 @@ void PeleLM::readParameters() {
    // Boundary conditions
    // -----------------------------------------
    int isOpenDomain = 0;
-   Vector<int> lo_bc(AMREX_SPACEDIM);
-   Vector<int> hi_bc(AMREX_SPACEDIM);
    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
       int lo_bc = BoundaryCondition::BCInterior;
       int hi_bc = BoundaryCondition::BCInterior;
