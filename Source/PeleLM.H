@@ -965,9 +965,11 @@ class PeleLM : public amrex::AmrCore {
    void fillPatchPhiV(const PeleLM::TimeStamp &a_time);
 #endif
 
-   // FillPatch and return a state MF
+   // FillPatch and return a MF
    std::unique_ptr<amrex::MultiFab>
    fillPatchState(int lev, amrex::Real a_time, int nGrow);
+   std::unique_ptr<amrex::MultiFab>
+   fillPatchReact(int lev, amrex::Real a_time, int nGrow);
 
    // FillPatch state components
    void fillpatch_state(int lev, amrex::Real a_time, amrex::MultiFab& a_state, int nGhost);

@@ -317,6 +317,21 @@ PeleLM::fillPatchState(int lev, Real a_time, int nGrow) {
 
    return mf;
 }
+
+std::unique_ptr<MultiFab>
+PeleLM::fillPatchReact(int lev, Real a_time, int nGrow) {
+   BL_PROFILE("PeleLM::fillPatchReact()");
+
+   int IRsize = NUM_SPECIES;
+#ifdef PELE_USE_EFIELD
+   IRsize += 1;
+#endif
+   std::unique_ptr<MultiFab> mf;
+   mf.reset(new MultiFab(grids[lev], dmap[lev], IRsize, nGrow, MFInfo(), Factory(lev)));
+   fillpatch_reaction(lev, a_time, *mf, nGrow);
+
+   return mf;
+}
 //-----------------------------------------------------------------------------
 
 // Fill the state
