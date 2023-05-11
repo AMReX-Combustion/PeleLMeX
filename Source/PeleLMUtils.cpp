@@ -103,6 +103,8 @@ void PeleLM::fluxDivergenceRD(const Vector<const MultiFab*> &a_state,
     amrex::ignore_unused(state_comp);
     amrex::ignore_unused(state_bc_d);
     amrex::ignore_unused(a_dt);
+    amrex::ignore_unused(a_EBfluxes);
+    amrex::ignore_unused(ebflux_comp);
     fluxDivergence(a_divergence, div_comp, a_fluxes, flux_comp, ncomp, intensiveFluxes, scale);
 #endif
 }
@@ -348,6 +350,8 @@ void PeleLM::intFluxDivergenceLevelEB(int lev,
    Array< const MultiCutFab*,AMREX_SPACEDIM> areafrac;
    areafrac  = ebfact.getAreaFrac();
    const auto* eb_area = &(ebfact.getBndryArea());
+#else
+   amrex::ignore_unused(a_EBfluxes,ebflux_comp);
 #endif
 
 #ifdef AMREX_USE_OMP
@@ -445,6 +449,8 @@ void PeleLM::advFluxDivergence(int a_lev,
         geom[a_lev].GetFaceArea(mf_ax, grids[a_lev], dmap[a_lev], 0, 0);
         geom[a_lev].GetFaceArea(mf_ay, grids[a_lev], dmap[a_lev], 1, 0);
     }
+#else
+    amrex::ignore_unused(a_lev);
 #endif
 
 #ifdef AMREX_USE_EB

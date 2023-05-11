@@ -1,3 +1,5 @@
+#ifndef PELE_BCFILL
+#define PELE_BCFILL
 #include <PeleLM_Index.H>
 #include <pelelm_prob.H>
 #include <PMFData.H>
@@ -530,3 +532,4 @@ struct umacFill
         }
     }
 };
+#endif

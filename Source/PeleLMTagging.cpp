@@ -56,7 +56,6 @@ PeleLM::ErrorEst( int lev,
       // Get distance function at current level
       MultiFab signDist(grids[lev],dmap[lev],1,0,MFInfo(),EBFactory(lev));
       getEBDistance(lev, signDist);
-      //VisMF::Write(signDist,"signDistLev"+std::to_string(lev));
 
       // Estimate how far I need to derefine
       Real diagFac = std::sqrt(2.0) * m_derefineEBBuffer;
@@ -64,7 +63,6 @@ PeleLM::ErrorEst( int lev,
       for (int ilev = m_EB_refine_LevMax+1; ilev <= finest_level; ++ilev) {
           clearTagDist += static_cast<Real>(nErrorBuf(ilev)) * Geom(m_EB_refine_LevMax).CellSize(0) * diagFac;
       }
-      //Print() << " clearTagDist " <<  clearTagDist << "\n";
 
       // Untag cells too close to EB
 #ifdef AMREX_USE_OMP

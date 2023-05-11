@@ -545,9 +545,6 @@ void PeleLM::ReadCheckPointFile()
    is >> m_prev_dt;
    GotoNextLine(is);
 
-   //is >> m_prev_prev_dt;
-   //GotoNextLine(is);
-
    // Low coordinates of domain bounding box
    std::getline(is, line);
    {

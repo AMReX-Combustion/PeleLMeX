@@ -150,8 +150,6 @@ protected:
                     DeriveBoxMap               box_map,
                     amrex::Interpolater*       interp = &amrex::pc_interp);
 
-   //void buildBC (const DescriptorList& d_list);
-
 private:
 
    //! Name of derived quantity.

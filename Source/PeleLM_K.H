@@ -418,6 +418,7 @@ intFluxDivergence_K(int i, int j, int k,
    }
 }
 
+#if (AMREX_SPACEDIM == 2)
 AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
 void
@@ -444,6 +445,7 @@ intFluxDivergence_rz_K(int i, int j, int k,
       div(i,j,k,n) *= factor;
    }
 }
+#endif
 
 AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
