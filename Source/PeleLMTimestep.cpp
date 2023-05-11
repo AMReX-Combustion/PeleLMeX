@@ -231,7 +231,6 @@ PeleLM::checkDt(const TimeStamp &a_time,
         auto ldata_p = getLevelDataPtr(lev, a_time);
 
         const auto dxinv = geom[lev].InvCellSizeArray();
-        const auto dx    = geom[lev].CellSize();
 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())

@@ -202,6 +202,8 @@ void PeleLM::computeDifferentialDiffusionFluxes(const TimeStamp &a_time,
 
 #ifdef AMREX_USE_EB
    int have_EBfluxes = (a_EBfluxes.empty()) ? 0 : 1;
+#else
+   amrex::ignore_unused(a_EBfluxes);
 #endif
 
    //----------------------------------------------------------------
@@ -1215,6 +1217,9 @@ void PeleLM::deltaTIter_update(int a_dtiter,
                                std::unique_ptr<AdvanceDiffData> &diffData,
                                Real &a_deltaT_norm)
 {
+#ifndef AMREX_USE_EB
+    amrex::ignore_unused(a_ebfluxes);
+#endif
 
    //------------------------------------------------------------------------
    // Evaluate deltaT norm and add Tsave back into the new LevelData

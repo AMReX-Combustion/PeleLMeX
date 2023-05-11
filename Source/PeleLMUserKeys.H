@@ -9,6 +9,7 @@
   * \brief struct holding PeleLMeX physical BC options
   */
 struct BoundaryCondition {
+    BoundaryCondition() = default;
     enum {
         BCInterior = 0,
         BCInflow,
@@ -38,6 +39,7 @@ const BoundaryCondition boundarycondition;
            default is LowMachNumber
   */
 struct NSSolver {
+    NSSolver() = default;
     enum {
         LowMachNumber = 0,
         Incompressible
@@ -56,6 +58,7 @@ const NSSolver nssolver;
            default is PiecewiseLinearConserv
   */
 struct Interpolator {
+    Interpolator() = default;
     enum {
         PiecewiseLinearConserv = 0,
         PiecewiseLinearConservMinMax,
@@ -76,6 +79,7 @@ const Interpolator interpolator;
            default is None
   */
 struct LESModel {
+    LESModel() = default;
     enum {
         None = 0,
         Smagorinsky,
@@ -98,6 +102,7 @@ const LESModel lesmodel;
            default is Godunov_PLM
   */
 struct AdvectionScheme {
+    AdvectionScheme() = default;
     enum {
         Godunov_PLM = 0,
         Godunov_PPM,
@@ -122,6 +127,7 @@ const AdvectionScheme advscheme;
            default is Ncell
   */
 struct LoadBalanceCost {
+    LoadBalanceCost() = default;
     enum {
         Ncell = 0,
         ChemFunctCallAvg,
@@ -150,6 +156,7 @@ const LoadBalanceCost lbcost;
            default is SFC
   */
 struct LoadBalanceMethod {
+    LoadBalanceMethod() = default;
     enum {
         SFC = 0,
         Knapsack,

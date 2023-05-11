@@ -500,6 +500,8 @@ PeleLM::scaleProj_RZ(int a_lev,
         });
         Gpu::streamSynchronize();
     }
+#else
+    amrex::ignore_unused(a_lev,a_mf);
 #endif
 }
 
@@ -528,5 +530,7 @@ PeleLM::unscaleProj_RZ(int a_lev,
             }
         });
     }
+#else
+    amrex::ignore_unused(a_lev,a_mf);
 #endif
 }
