@@ -1106,6 +1106,22 @@ class PeleLM : public amrex::AmrCore {
                           const amrex::Geometry &a_geom,
                           amrex::Real scale,
                           bool fluxes_are_area_weighted);
+#ifdef AMREX_USE_EB
+   void advFluxDivergence(int a_lev,
+                          amrex::MultiFab &a_divergence, int div_comp,
+                          amrex::MultiFab &a_divu,
+                          const amrex::Array<const amrex::MultiFab*,AMREX_SPACEDIM> &a_fluxes,
+                          int flux_comp,
+                          const amrex::Array<const amrex::MultiFab*,AMREX_SPACEDIM> &a_faceState,
+                          int face_comp,
+                          const amrex::MultiFab *a_EBvelocity,
+                          const amrex::MultiFab *a_EBvalue,
+                          int ncomp,
+                          int const* l_conserv_d,
+                          const amrex::Geometry &a_geom,
+                          amrex::Real scale,
+                          bool fluxes_are_area_weighted);
+#endif
 
    void extFluxDivergenceLevel(int lev,
                                amrex::MultiFab &a_divergence,
@@ -1248,6 +1264,19 @@ class PeleLM : public amrex::AmrCore {
                    amrex::MultiFab &a_EBstate,
                    int         stateComp,
                    int         nComp);
+
+   amrex::Vector<std::unique_ptr<amrex::MultiFab> >
+   getEBState(int first_comp, int ncomp,
+              const PeleLM::TimeStamp &a_time);
+
+   std::unique_ptr<amrex::MultiFab>
+   getEBState(int a_lev, int first_comp, int ncomp,
+              const PeleLM::TimeStamp &a_time);
+
+   amrex::FArrayBox
+   getEBState(const amrex::MFIter &a_mfi, int a_lev,
+              int first_comp, int ncomp,
+              const PeleLM::TimeStamp &a_time);
 
    void getEBDiff(int a_lev,
                   const TimeStamp &a_time,
@@ -1782,6 +1811,7 @@ class PeleLM : public amrex::AmrCore {
    amrex::Vector<amrex::Real> coveredState_h;
    amrex::Gpu::DeviceVector<amrex::Real> coveredState_d;
    int m_isothermalEB = 0;
+   int m_useEBinflow = 0;
 
    // EB redistribution
    std::string m_adv_redist_type = "StateRedist";
