@@ -30,7 +30,7 @@ void PeleLM::MakeNewLevelFromScratch( int lev,
       if (m_verbose > 2 && lev > 0) {
          auto const dx = geom[lev].CellSizeArray();
          Real vol = AMREX_D_TERM(dx[0],*dx[1],*dx[2]);
-         amrex::Print() << " with " << ba.numPts() << " cells,"
+         amrex::Print() << " with " << ba.numPts() << " cells," << ba.size() << " boxes,"
                         << " over " << ba.numPts() * vol / geom[0].ProbSize() * 100 << "% of the domain \n";
       }
       if (m_verbose > 3 && lev > 0) {
