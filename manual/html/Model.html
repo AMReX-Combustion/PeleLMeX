@@ -116,7 +116,7 @@ adaptive mesh refinement (AMR) code that solves the reacting Navier-Stokes equat
 <li><dl class="simple">
 <dt>Software :</dt><dd><ul>
 <li><p>Written in C++</p></li>
-<li><p>Parallelization using MPI+X appraoch, with X one of OpenMP, CUDA, HIP or SYCL</p></li>
+<li><p>Parallelization using MPI+X approach, with X one of OpenMP, CUDA, HIP or SYCL</p></li>
 <li><p>Parallel I/O</p></li>
 <li><p>Built-in profiling tools</p></li>
 <li><p>Plotfile format supported by <a class="reference external" href="https://github.com/AMReX-Codes/Amrvis/">Amrvis</a>, <a class="reference external" href="http://yt-project.org/">yt</a>, <a class="reference external" href="https://www.paraview.org/">Paraview</a></p></li>
@@ -126,7 +126,7 @@ adaptive mesh refinement (AMR) code that solves the reacting Navier-Stokes equat
 </li>
 <li><dl class="simple">
 <dt>Physics &amp; numerics :</dt><dd><ul>
-<li><p>Finite volume, block-structured AMR appraoch</p></li>
+<li><p>Finite volume, block-structured AMR approach</p></li>
 <li><p>2D-Cartesian, 2D-Axisymmetric and 3D support</p></li>
 <li><p>Combustion (transport, kinetics, thermodynamics) models based on Cantera and EGLib through <a class="reference external" href="https://github.com/AMReX-Combustion/PelePhysics">PelePhysics</a></p></li>
 <li><p>Complex geometries using Embedded Boundaries (EB)</p></li>
@@ -230,14 +230,14 @@ adaptive mesh refinement (AMR) code that solves the reacting Navier-Stokes equat
 </figcaption>
 </figure>
 <p>The three steps of the low Mach number projection scheme described <a class="reference internal" href="#ssec-projscheme"><span class="std std-ref">below</span></a> are referenced to better
-emphasize how the thermodynamic solve is closely weaved into the fractional step appraoch. Striped boxes indicate where the
+emphasize how the thermodynamic solve is closely weaved into the fractional step approach. Striped boxes indicate where the
 <a class="reference internal" href="#ssec-advscheme"><span class="std std-ref">Godunov procedure</span></a> is employed while the four different linear solves are highlighted.</p>
 <section id="low-mach-number-projection-scheme">
 <h3>Low Mach number projection scheme<a class="headerlink" href="#low-mach-number-projection-scheme" title="Permalink to this heading"></a></h3>
 <p id="ssec-projscheme"><cite>PeleLMeX</cite> implements a finite-volume, Cartesian grid discretization approach with constant grid spacing, where
 <span class="math notranslate nohighlight">\(U\)</span>, <span class="math notranslate nohighlight">\(\rho\)</span>, <span class="math notranslate nohighlight">\(\rho Y_m\)</span>, <span class="math notranslate nohighlight">\(\rho h\)</span>, and <span class="math notranslate nohighlight">\(T\)</span> represent cell averages, and the pressure field, <span class="math notranslate nohighlight">\(\pi\)</span>, is defined on the nodes
 of the grid, and is temporally constant on the intervals over the time step.
-The projection scheme is based on a fractional step appraoch where, for purely incompressible flow, the velocity is first advanced in time
+The projection scheme is based on a fractional step approach where, for purely incompressible flow, the velocity is first advanced in time
 using the momentum equation (<strong>Step 1</strong>) and subsequently projected to enforce the divergence constraint (<strong>Step 3</strong>). When considering variable density flows,
 the scalar thermodynamic advance is performed between these two steps (<strong>Step 2</strong>), but within the SDC context, <strong>Step 1</strong> and <strong>Step 2</strong> are effectively interlaced.
 The three major steps of the algorithm (Almgren <em>et al.</em> 1998, Day and Bell, 2000, Nonaka <em>et al.</em> 2012):</p>
@@ -259,7 +259,7 @@ satisfied the equation of state. The solution, <span class="math notranslate noh
 <p>After the <em>MAC</em>-projection, <span class="math notranslate nohighlight">\(U^{\rm ADV}\)</span> is a second-order accurate, staggered (face-centered) grid vector
 field at <span class="math notranslate nohighlight">\(t^{n+1/2}\)</span> that discretely satisfies the constraint. This field is the advection velocity used for computing
 the time-explicit advective fluxes for <span class="math notranslate nohighlight">\(U\)</span>, <span class="math notranslate nohighlight">\(\rho h\)</span>, and <span class="math notranslate nohighlight">\(\rho Y_m\)</span>.</p>
-<p><strong>Step 2</strong>: (<em>Advance thermodynamic variables</em>) Integrate <span class="math notranslate nohighlight">\((\rho Y_m,\rho h)\)</span> over the full time step using a spectral deferred correction (SDC) appraoch, the details of which can be found in <a class="reference external" href="https://amrex-combustion.github.io/PeleLM/manual/html/Model.html#sdc-preliminaries">PeleLM documentation</a>. An even more detailed version of the algorithm is available in Nonaka <em>et al.</em>, 2018.</p>
+<p><strong>Step 2</strong>: (<em>Advance thermodynamic variables</em>) Integrate <span class="math notranslate nohighlight">\((\rho Y_m,\rho h)\)</span> over the full time step using a spectral deferred correction (SDC) approach, the details of which can be found in <a class="reference external" href="https://amrex-combustion.github.io/PeleLM/manual/html/Model.html#sdc-preliminaries">PeleLM documentation</a>. An even more detailed version of the algorithm is available in Nonaka <em>et al.</em>, 2018.</p>
 <ul>
 <li><p>We begin by computing the diffusion terms <span class="math notranslate nohighlight">\(D^n\)</span> at <span class="math notranslate nohighlight">\(t^n\)</span> that will be needed throughout the SDC iterations. Specifically, we evaluate the transport coefficients <span class="math notranslate nohighlight">\((\lambda,C_p,\mathcal D_m,h_m)^n\)</span> from <span class="math notranslate nohighlight">\((Y_m,T)^n\)</span>, and the provisional diffusion fluxes, <span class="math notranslate nohighlight">\(\widetilde{\boldsymbol{\cal F}}_m^n\)</span>.  These fluxes are conservatively corrected (i.e., adjusted to sum to zero by adding a mass-weighted “correction velocity”) to obtain <span class="math notranslate nohighlight">\({\boldsymbol{\cal F}}_m^n\)</span> such that <span class="math notranslate nohighlight">\(\sum {\boldsymbol{\cal F}}_m^n = 0\)</span>. Finally, we copy the transport coefficients, diffusion fluxes and the thermodynamic state from <span class="math notranslate nohighlight">\(t^n\)</span> as starting values for <span class="math notranslate nohighlight">\(t^{n+1,(k=0)}\)</span>, and initialize the reaction terms, <span class="math notranslate nohighlight">\(I_R\)</span> from the values used in the previous step.</p></li>
 <li><p>The following sequence is then repeated for each iteration <span class="math notranslate nohighlight">\(k&lt;k_{max}\)</span> starting at <span class="math notranslate nohighlight">\(k=0\)</span>:</p>
@@ -337,12 +337,12 @@ that they satisfy the constraint.</p>
 </section>
 <section id="advection-schemes">
 <h3>Advection schemes<a class="headerlink" href="#advection-schemes" title="Permalink to this heading"></a></h3>
-<p id="ssec-advscheme"><cite>PeleLMeX</cite> relies on the <a class="reference external" href="https://github.com/AMReX-Codes/AMReX-Hydro">AMReX-Hydro</a> implementation of the 2nd-order Godunov method, with several variants available. The basis of the Godunov appraoch is to extrapolate the cell-centered quantity of interest (<span class="math notranslate nohighlight">\(U\)</span>, <span class="math notranslate nohighlight">\(\rho Y\)</span>, <span class="math notranslate nohighlight">\(\rho h\)</span>) to cell faces using a second-order Taylor series expansion in space and time. As detailed in <a class="reference external" href="https://amrex-codes.github.io/amrex/hydro_html/Schemes.html#godunov-methodsThe">AMReX-Hydro documentation</a>, the choice of the slope order and limiting scheme define the exact variant of the Godunov method. Of particular interest for combustion applications, where sharp gradients of intermediate chemical species are found within flame fronts, the <cite>Godunov_BDS</cite> appraoch provides a bound-preserving advection scheme which greatly limits the appearance of over-/under-shoots, often leading to critical failure of the stiff chemical kinetic integration.</p>
+<p id="ssec-advscheme"><cite>PeleLMeX</cite> relies on the <a class="reference external" href="https://github.com/AMReX-Codes/AMReX-Hydro">AMReX-Hydro</a> implementation of the 2nd-order Godunov method, with several variants available. The basis of the Godunov approach is to extrapolate the cell-centered quantity of interest (<span class="math notranslate nohighlight">\(U\)</span>, <span class="math notranslate nohighlight">\(\rho Y\)</span>, <span class="math notranslate nohighlight">\(\rho h\)</span>) to cell faces using a second-order Taylor series expansion in space and time. As detailed in <a class="reference external" href="https://amrex-codes.github.io/amrex/hydro_html/Schemes.html#godunov-methodsThe">AMReX-Hydro documentation</a>, the choice of the slope order and limiting scheme define the exact variant of the Godunov method. Of particular interest for combustion applications, where sharp gradients of intermediate chemical species are found within flame fronts, the <cite>Godunov_BDS</cite> approach provides a bound-preserving advection scheme which greatly limits the appearance of over-/under-shoots, often leading to critical failure of the stiff chemical kinetic integration.</p>
 <p>Note that in the presence of EB, only the <cite>Godunov_PLM</cite> variant is available.</p>
 </section>
 <section id="amr-extension">
 <h3>AMR extension<a class="headerlink" href="#amr-extension" title="Permalink to this heading"></a></h3>
-<p>In contrast with <a class="reference external" href="https://amrex-combustion.github.io/PeleLM/">PeleLM</a>, <cite>PeleLMeX</cite> do not rely a on subcycling appraoch to advance the AMR hierarchy.
+<p>In contrast with <a class="reference external" href="https://amrex-combustion.github.io/PeleLM/">PeleLM</a>, <cite>PeleLMeX</cite> do not rely a on subcycling approach to advance the AMR hierarchy.
 This difference is illustrated in the figure below comparing the multi-level time-stepping approach in both codes:</p>
 <figure class="align-center" style="width: 60%">
 <img alt="_images/PeleLMeX_Subcycling.png" src="_images/PeleLMeX_Subcycling.png" />
@@ -351,7 +351,7 @@ This difference is illustrated in the figure below comparing the multi-level tim
 <li><p><cite>PeleLM</cite> will recursively advance finer levels, halving the time step size (when using a refinement ratio of 2) at each level. For instance, considering a 3 levels simulation, <cite>PeleLM</cite> advances the coarse <cite>Level0</cite> over a <span class="math notranslate nohighlight">\(\Delta t_0\)</span> step, then <cite>Level1</cite> over a <span class="math notranslate nohighlight">\(\Delta t_1\)</span> step and <cite>Level2</cite> over two <span class="math notranslate nohighlight">\(\Delta t_2\)</span> steps, performing an interpolation of the <cite>Level1</cite> data after the first <cite>Level2</cite> step. At this point, a synchronization step is performed to ensure that the fluxes are conserved at coarse-fine interface and a second <cite>Level1</cite> step is performed, followed by the same two <cite>Level2</cite> steps. At this point, two synchronizations are needed between the two pairs of levels.</p></li>
 <li><p>In order to get to the same physical time, <cite>PeleLMeX</cite> will perform 4 time steps of size similar to <cite>PeleLM</cite>’s <span class="math notranslate nohighlight">\(\Delta t_2\)</span>, advancing all the levels at once. The coarse-fine fluxes consistency is this time ensured by averaging down the face-centered fluxes from fine to coarse levels. Additionnally, the state itself is averaged down at the end of each SDC iteration.</p></li>
 </ul>
-<p>In practice, <cite>PeleLM</cite> will perform a total of 7 single-level advance steps, while <cite>PeleLMeX</cite> will perform 4 multi-level ones to reach the same physical time, advancing the coarser levels at a smaller CFL number whereas <cite>PeleLM</cite> maintain a fixed CFL at all the level. It might seem that <cite>PeleLMeX</cite> is thus performing extra work, but because it ignore fine-covered regions, <cite>PeleLMeX</cite> do not need to perform the expensive (and often very under-resolved) chemistry integration in fine-covered areas. An exact evaluation of the benefits and drawbacks of each appraoch is under way.</p>
+<p>In practice, <cite>PeleLM</cite> will perform a total of 7 single-level advance steps, while <cite>PeleLMeX</cite> will perform 4 multi-level ones to reach the same physical time, advancing the coarser levels at a smaller CFL number whereas <cite>PeleLM</cite> maintain a fixed CFL at all the level. It might seem that <cite>PeleLMeX</cite> is thus performing extra work, but because it ignore fine-covered regions, <cite>PeleLMeX</cite> do not need to perform the expensive (and often very under-resolved) chemistry integration in fine-covered areas. An exact evaluation of the benefits and drawbacks of each approach is under way.</p>
 </section>
 <section id="geometry-with-embedded-boundaries">
 <h3>Geometry with Embedded Boundaries<a class="headerlink" href="#geometry-with-embedded-boundaries" title="Permalink to this heading"></a></h3>
@@ -370,7 +370,7 @@ In particular, explicit advective fluxes <span class="math notranslate nohighlig
 <span class="math notranslate nohighlight">\(D^{n}\)</span> and SDC iteration-lagged <span class="math notranslate nohighlight">\(D^{n+1,(k)}\)</span> are treated with FRD.
 Note that implicit diffusion fluxes are not redistributed as AMReX’s linear operators are EB-aware.</p>
 <p>The use of AMReX’s multigrid linear solver introduces contraint on the complexity of the geometry <cite>PeleLMeX</cite> is able to handle. The
-efficiency of the multigrid appraoch relies on generating coarse version of the linear problem. If the geometry includes thin elements
+efficiency of the multigrid approach relies on generating coarse version of the linear problem. If the geometry includes thin elements
 (such as tube or plate) or narrow channels, coarsening of the geometry is rapidly limited by the occurence of multi-cut cells (not
 supported by AMReX) and the linear solvers are no longer able to robustly tackle projections and implicit diffusion solves. AMReX
 include an interface to HYPRE which can help circumvent the issue by sending the coarse-level geometry directly to HYPRE algebraic
