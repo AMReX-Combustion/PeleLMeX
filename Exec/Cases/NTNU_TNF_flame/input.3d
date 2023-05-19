@@ -1,0 +1,227 @@
+#----------------------TIME STEPING CONTROL----------------------
+amr.max_step        = 0000             # maximum number of time steps
+amr.stop_time       = 5.e-3            # final physical time
+amr.cfl             = 0.1             # cfl number for hyperbolic system
+amr.dt_shrink       = 0.1              # scale back initial timestep
+amr.change_max      = 1.1              # max timestep size increase
+# amr.fixed_dt        = 1.0e-09
+
+#-------------
+geometry.is_periodic = 0 0 0            # Periodicity in each direction: 0 => no, 1 => yes
+geometry.coord_sys   = 0                # 0 => cart, 1 => RZ
+
+# works on 3 and might work on 4 levels
+geometry.prob_lo     =-40.e-3 -40.e-3 -12.5e-3   # x_lo y_lo
+geometry.prob_hi     = 40.e-3  40.e-3  147.5e-3  # x_hi y_hi
+
+# works with 2 levels
+# geometry.prob_lo     =-40.e-3 -40.e-3 -10.15e-3   # x_lo y_lo
+# geometry.prob_hi     = 40.e-3  40.e-3  69.85e-3  # x_hi y_hi
+
+# works with 1 level
+# geometry.prob_lo     =-40.e-3 -40.e-3 -10.2e-3   # x_lo y_lo
+# geometry.prob_hi     = 40.e-3  40.e-3  69.8e-3  # x_hi y_hi
+
+# >>>>>>>>>>>>>  BC FLAGS <<<<<<<<<<<<<<<<
+# Interior, Inflow, Outflow, Symmetry,
+# SlipWallAdiab, NoSlipWallAdiab, SlipWallIsotherm, NoSlipWallIsotherm
+peleLM.lo_bc = NoSlipWallAdiab NoSlipWallAdiab Inflow
+peleLM.hi_bc = NoSlipWallAdiab NoSlipWallAdiab Outflow
+
+#-------------------------AMR CONTROL----------------------------
+amr.n_cell          = 128 128 256  # Level 0 number of cells in each direction
+peleLM.verbose      = 5            # amr verbosity level
+amr.max_level       = 1            # maximum level number allowed
+amr.ref_ratio       = 2 2 2 2      # refinement ratio
+amr.regrid_int      = 5            # how often to regrid
+amr.n_error_buf     = 1 1 1 2      # number of buffer cells in error est
+amr.grid_eff        = 0.9          # what constitutes an efficient grid
+amr.blocking_factor = 16           # block factor in grid generation
+amr.max_grid_size   = 64           # maximum box size
+
+#----------------------- PROBLEM PARAMETERS --------------------
+prob.T_in = 298.0
+prob.P_mean = 101325.
+prob.U_b        = 10.7 # z-velocity
+prob.channel_height = 7.e-3
+prob.moles_NH3      = 0.4
+prob.moles_H2       = 0.45
+prob.moles_N2       = 0.15
+prob.phi_in         = 1.2
+prob.vonKarman      = 0.41
+prob.B              = 5.5
+
+# -- Turbulent inflow
+turbinflows = lowZ
+turbinflow.lowZ.turb_file      = Turb_CamBurner_Ub16
+turbinflow.lowZ.dir            = 2
+turbinflow.lowZ.side           = low
+turbinflow.lowZ.turb_scale_loc = 1.0
+turbinflow.lowZ.turb_scale_vel = 1.0
+turbinflow.lowZ.turb_center    = 0.0 0.0
+turbinflow.lowZ.turb_conv_vel  = 16.
+turbinflow.lowZ.turb_nplane    = 32
+
+# --------------- Mixture fraction definition -----------------------
+# peleLM.fuel_name = H2
+# peleLM.mixtureFraction.format = Cantera
+# peleLM.mixtureFraction.type   = mass
+# peleLM.mixtureFraction.oxidTank = O2:0.233 N2:0.767
+# peleLM.mixtureFraction.fuelTank = H2:0.45
+
+#-------------------------EB CONTROL----------------------------
+eb2.geom_type = UserDefined
+# eb2.geom_type = all_regular
+# eb2.small_volfrac = 1.e-07 #works for 4 AMR levels
+eb2.small_volfrac = 1.e-2
+eb2.maxiter = 500
+
+EB.out_diam         = 19.e-3
+EB.in_diam          = 5.e-3
+EB.bluff_diam       = 13.0e-3
+EB.horizontal_plane = 0.0
+EB.bluff_height     = 4.0e-3
+EB.loc_x            = 6.5e-3
+EB.loc_y            = 0.0e-3
+
+#-------------------------IO CONTROL----------------------------
+# amr.restart             = chk00800
+# amr.initDataPlt         = non_reactive_air/plt02744
+# amr.initDataPlt         = non_reactive_spray/plt02528
+amr.check_file          = chk          # root name of checkpoint file
+amr.check_int           = 50          # number of timesteps between checkpoints
+amr.plot_file           = plt          # root name of plot file
+# amr.plot_int            = 20          # number of timesteps between plot files
+amr.plot_per            = 2.e-4
+amr.derive_plot_vars    = mag_vort avg_pressure mass_fractions mixture_fraction
+amr.grid_log            = grdlog       # name of grid logging file
+
+#-------------------------PeleLM CONTROL----------------------------
+peleLM.v = 1
+peleLM.incompressible = 0
+peleLM.rho = 1.17
+peleLM.mu = 0.0
+peleLM.use_wbar = 1
+peleLM.sdc_iterMax = 1
+peleLM.floor_species = 1
+
+#--------------------REFINEMENT CONTROL------------------------
+
+peleLM.refine_EB_max_level = 1
+eb2.max_level_generation = 1
+
+peleLM.refine_Zdir_max_level = 0
+peleLM.MaxZdir_refine = 30.e-3
+
+amr.refinement_indicators = inBox #HR flame_tracer
+
+amr.HR.max_level = 0
+amr.HR.value_greater = 2.e+08
+amr.HR.field_name = HeatRelease
+
+amr.inBox.max_level     = 1
+amr.inBox.in_box_lo     =   -20.0e-3      -20.0e-3     -12.0e-3
+amr.inBox.in_box_hi     =    20.0e-3       20.0e-3       5.0e-3
+
+amr.lo_temp.max_level = 0
+amr.lo_temp.value_greater = 400
+amr.lo_temp.field_name = temp
+
+amr.fuel_tracer.max_level = 0
+amr.fuel_tracer.value_greater = 2.0e-1
+amr.fuel_tracer.field_name = Y(NXC7H16)
+
+amr.flame_tracer.max_level = 2
+amr.flame_tracer.value_greater = 3.0e-3
+amr.flame_tracer.field_name = Y(OH)
+
+# amr.HR.max_level = 3
+# amr.HR.value_greater = 1.e8
+# amr.HR.field_name = HeatRelease
+
+#amr.flame_tracer2.max_level = 3
+#amr.flame_tracer2.value_greater = 5.e-5
+#amr.flame_tracer2.field_name = Y(CH2O)
+
+# Refinement according to the vorticity, no field_name needed
+# amr.refinement_indicators = magvort
+# amr.magvort.max_level = 3
+# amr.magvort.vorticity_greater = 1000
+
+# --------------- INPUTS TO CHEMISTRY REACTOR ---------------
+# peleLM.chem_integrator = "ReactorCvode"
+peleLM.chem_integrator = "ReactorNull"
+# peleLM.use_typ_vals_chem = 1          # Use species/temp typical values in CVODE
+ode.rtol = 1.0e-6                     # Relative tolerance of the chemical solve
+ode.atol = 1.0e-5                     # Absolute tolerance factor applied on typical values
+# cvode.solve_type = sparse_direct     # CVODE Linear solve type (for Newton direction)
+cvode.solve_type = dense_direct     # CVODE Linear solve type (for Newton direction)
+# cvode.max_order  = 4                  # CVODE max BDF order.
+
+#--------------------------OMP TILE INPUTS-----------------------------
+#fabarray.mfiter_tile_size = 512 512 512
+
+#--------------------------DEBUG/REGTESTS INPUTS-----------------------------
+amrex.regtest_reduction = 1
+amrex.fpe_trap_invalid  = 1
+amrex.fpe_trap_zero     = 1
+amrex.fpe_trap_overflow = 1
+amrex.abort_on_out_of_gpu_memory=1
+amrex.the_arena_is_managed = 1
+
+peleLM.deltaT_verbose = 0
+peleLM.deltaT_crashIfFailing = 0
+nodal_proj.verbose = 0 
+mac_proj.verbose   = 0 
+# nodal_proj.atol = 1.0e-10
+# nodal_proj.rtol = 1.0e-10
+
+# mac_proj.atol = 1.0e-10
+# mac_proj.rtol = 1.0e-10
+
+# #------------------- HYPRE ---------------------
+# nodal_proj.mg_max_coarsening_level = 0
+# # nodal_proj.m_mac_mg_atol = 1.0e-10
+# # nodal_proj.m_mac_mg_rtol = 1.0e-10
+# 
+# nodal_proj.bottom_solver = "hypre"
+# nodal_proj.hypre_namespace = nodal_proj.hypre
+# 
+# nodal_proj.hypre.verbose = 0
+# nodal_proj.hypre.hypre_solver = GMRES
+# nodal_proj.hypre.hypre_preconditioner = BoomerAMG
+# nodal_proj.hypre.num_krylov = 200
+# nodal_proj.hypre.max_iterations = 200
+# 
+# nodal_proj.hypre.bamg_verbose = 0
+# nodal_proj.hypre.bamg_coarsen_type = 8
+# nodal_proj.hypre.bamg_interp_type = 6
+# nodal_proj.hypre.bamg_relax_type = 11
+# nodal_proj.hypre.bamg_num_sweeps = 2
+# nodal_proj.hypre.bamg_cycle_type = 1
+# nodal_proj.hypre.bamg_relax_order = 0
+# nodal_proj.hypre.bamg_keep_transpose = 1
+# nodal_proj.hypre.bamg_trunc_factor = 0.44351885396256086
+# nodal_proj.hypre.bamg_strong_threshold = 0.30015419030906665
+# nodal_proj.hypre.bamg_pmax_elmts = 4
+# nodal_proj.hypre.bamg_max_levels = 6
+# 
+# nodal_proj.hypre.bamg_agg_num_levels = 3
+# nodal_proj.hypre.bamg_agg_interp_type = 5
+# nodal_proj.hypre.bamg_agg_pmax_elmts = 5
+# 
+# nodal_proj.hypre.bamg_smooth_type = 5
+# nodal_proj.hypre.bamg_smooth_num_sweeps = 1
+# nodal_proj.hypre.bamg_smooth_num_levels = 1
+# nodal_proj.hypre.bamg_ilu_type = 0
+# nodal_proj.hypre.bamg_ilu_level = 0
+# nodal_proj.hypre.bamg_ilu_max_iter = 1
+# nodal_proj.hypre.bamg_ilu_reordering_type = 0
+# nodal_proj.hypre.bamg_ilu_tri_solve = 0
+# nodal_proj.hypre.bamg_ilu_lower_jacobi_iters = 13
+# nodal_proj.hypre.bamg_ilu_upper_jacobi_iters = 5
+# 
+# nodal_proj.hypre.recompute_preconditioner = 0
+# nodal_proj.hypre.write_matrix_files = 0
+# nodal_proj.hypre.overwrite_existing_matrix_files = 0
+# nodal_proj.hypre.adjust_singular_matrix = 1
