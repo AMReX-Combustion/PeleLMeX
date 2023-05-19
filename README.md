@@ -45,7 +45,7 @@ The prefered method consist in cloning the *PeleLMeX* and its submodules using a
 ([amrex](https://github.com/AMReX-Codes/amrex), [AMReX-Hydro](https://github.com/AMReX-Codes/AMReX-Hydro) and [PelePhysics](https://github.com/AMReX-Combustion/PelePhysics), [PeleMP](https://github.com/AMReX-Combustion/PeleMP)) using:
 
 ```
-git clone --depth 1 --recursive https://github.com/AMReX-Combustion/PeleLMeX.git
+git clone --recursive https://github.com/AMReX-Combustion/PeleLMeX.git
 ```
 
 Alternatively, you can use separate `git clone` of the each of the submodules.
@@ -86,7 +86,7 @@ cmake -S . -B buildHotBubble -DPELELMEX_MPI=ON -DPELELMEX_CASE=HotBubble
 Then build the executable:
 
 ```
-cmake --build buildHoBubble --parallel 4
+cmake --build buildHotBubble --parallel 4
 ```
 
 ## Contributing
