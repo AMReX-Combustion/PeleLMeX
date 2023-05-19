@@ -135,8 +135,8 @@ are freed at the end of the advance function, and are passed around in the funct
 Parallelism
 -----------
 
-*PeleLMeX* inherits the MPI+X approach from the AMReX library, where X can be any of CUDA, HIP or SYCL
-(Open-MP is currently only available for non-reacting/explicit chemistry integrators) for heterogeneous architectures.
+*PeleLMeX* inherits the MPI+X approach from the AMReX library, where X can be any of OpenMP on many-cores machines,
+and CUDA, HIP or SYCL for heterogeneous architectures.
 The reader is referred to `AMReX GPU documentation <https://amrex-codes.github.io/amrex/docs_html/GPU.html>`_ for more details on
 the thread parallelism.
 

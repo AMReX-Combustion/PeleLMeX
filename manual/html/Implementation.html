@@ -219,8 +219,8 @@ are freed at the end of the advance function, and are passed around in the funct
 </section>
 <section id="parallelism">
 <h2>Parallelism<a class="headerlink" href="#parallelism" title="Permalink to this heading"></a></h2>
-<p><em>PeleLMeX</em> inherits the MPI+X approach from the AMReX library, where X can be any of CUDA, HIP or SYCL
-(Open-MP is currently only available for non-reacting/explicit chemistry integrators) for heterogeneous architectures.
+<p><em>PeleLMeX</em> inherits the MPI+X approach from the AMReX library, where X can be any of OpenMP on many-cores machines,
+and CUDA, HIP or SYCL for heterogeneous architectures.
 The reader is referred to <a class="reference external" href="https://amrex-codes.github.io/amrex/docs_html/GPU.html">AMReX GPU documentation</a> for more details on
 the thread parallelism.</p>
 <p>As mentioned above, the top-level spatial decomposition arises from AMReX’s block-structured approach. On each level, non-overlapping
