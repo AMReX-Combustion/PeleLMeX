@@ -100,7 +100,7 @@ bcnormal(
     // amrex::GpuArray<amrex::Real, NUM_SPECIES+4> vel_from_file = {0.0};
 
     //radius = 0 corresponds to air passage inner wall
-    amrex::Real r = sqrt(pow((0.0-x[0]),2)+pow((0.0-x[1]),2))-prob_parm.bluff_inner_diam;
+    amrex::Real r = sqrt(pow((0.0-x[0]),2)+pow((0.0-x[1]),2))-(prob_parm.bluff_inner_diam/2.0);
 
     //Compute y+ based on radius. Only compute it in the air passage region
     amrex::Real y_plus = 0.0;
@@ -135,7 +135,8 @@ bcnormal(
     amrex::Real rho_cgs, P_cgs, RhoH_temp;
     P_cgs = prob_parm.P_mean * 10.0;
 
-    // printf("T %f \n", );
+    // printf("%e,%f \n",r,z_vel);
+
     eos.PYT2R(P_cgs, massfrac, s_ext[TEMP], rho_cgs);
     s_ext[DENSITY] = rho_cgs * 1.0e3;
 
