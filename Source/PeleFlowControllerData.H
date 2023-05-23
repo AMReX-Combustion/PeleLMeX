@@ -15,7 +15,7 @@ template <typename T, typename = void>
 struct hasFlowControllerData : std::false_type { };
 
 template <typename T>
-struct hasFlowControllerData <T, decltype((void) T::FCData, void())> : std::true_type {};
+struct hasFlowControllerData <T, std::void_t<decltype(T::FCData)>> : std::true_type { };
 
 template <typename T>
 FlowControllerData* getFCDataPtr(const T& a_t, std::false_type) {
