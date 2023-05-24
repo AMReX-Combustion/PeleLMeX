@@ -3,6 +3,7 @@
 #include "EBUserDefined.H"
 #include <PeleLMUtils.H>
 #include <pelelm_prob.H>
+#include "PeleLMBCfillEB.H"
 
 #ifdef AMREX_USE_EB
 #include <AMReX_EB2.H>
@@ -477,6 +478,7 @@ PeleLM::getEBState(MFIter const& a_mfi,
     const auto &ebfact = EBFactory(a_lev);
     auto const& flagfab = ebfact.getMultiEBCellFlagFab()[a_mfi];
     if ( flagfab.getType(bx) == FabType::singlevalued ) {
+         const PeleLMUserFillStateEB<EBhandle,hasEBBCnormal<const EBhandle>::value> EBfiller{lprobparm,EBhandle{}};
          auto const& flag    = flagfab.const_array();
          AMREX_D_TERM( const auto& ebfc_x = ebfact.getFaceCent()[0]->const_array(a_mfi);,
                        const auto& ebfc_y = ebfact.getFaceCent()[1]->const_array(a_mfi);,
@@ -491,8 +493,7 @@ PeleLM::getEBState(MFIter const& a_mfi,
                   ebscal_arr(i,j,k,n) = 0.0;
                }
             } else { // cut-cells
-               addUserDefinedEBstate(i, j, k, first_comp, ncomp,
-                                     ebscal_arr, AMREX_D_DECL(ebfc_x,ebfc_y,ebfc_z), a_time, geomdata, *lprobparm);
+               EBfiller(i, j, k, ebscal_arr, first_comp, ncomp, AMREX_D_DECL(ebfc_x,ebfc_y,ebfc_z), geomdata, a_time);
             }
          });
     } else {
@@ -535,6 +536,7 @@ void PeleLM::getEBState(int a_lev,
       } else if ( flagfab.getType(bx) == FabType::regular ) {       // Set to zero
          AMREX_PARALLEL_FOR_4D(bx, nComp, i, j, k, n, {ebState(i,j,k,n) = 0.0;});
       } else {
+         const PeleLMUserFillStateEB<EBhandle,hasEBBCnormal<const EBhandle>::value> EBfiller{lprobparm,EBhandle{}};
          AMREX_D_TERM( const auto& ebfc_x = faceCentroid[0]->array(mfi);,
                        const auto& ebfc_y = faceCentroid[1]->array(mfi);,
                        const auto& ebfc_z = faceCentroid[2]->array(mfi););
@@ -548,8 +550,7 @@ void PeleLM::getEBState(int a_lev,
                   ebState(i,j,k,n) = 0.0;
                }
             } else { // cut-cells
-               addUserDefinedEBstate(i, j, k, stateComp, nComp,
-                                     ebState, AMREX_D_DECL(ebfc_x,ebfc_y,ebfc_z), a_time, geomdata, *lprobparm);
+               EBfiller(i, j, k, ebState, stateComp, nComp, AMREX_D_DECL(ebfc_x,ebfc_y,ebfc_z), geomdata, a_time);
             }
          });
       }
