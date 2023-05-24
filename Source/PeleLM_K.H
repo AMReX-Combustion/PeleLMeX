@@ -1149,40 +1149,4 @@ getTurbViscSigma(int i, int j, int k,
 
    mu_t(i,j,k) = prefactor * rho(i,j,k) * D_sig;
 }
-
-
-AMREX_GPU_HOST_DEVICE
-AMREX_FORCE_INLINE
-void
-addUserDefinedEBstate(int i, int j, int k,
-                      int stateComp, int ncomp,
-                      amrex::Array4<amrex::Real> const &ebState,
-                      AMREX_D_DECL(amrex::Array4<const amrex::Real> const &ebfc_x,
-                                   amrex::Array4<const amrex::Real> const &ebfc_y,
-                                   amrex::Array4<const amrex::Real> const &ebfc_z),
-                      amrex::Real const& a_time,
-                      amrex::GeometryData const &geomdata,
-                      ProbParm const& prob_parm)
-{
-    // Get the EBface centroid coordinates
-    const amrex::Real* dx = geomdata.CellSize();
-    const amrex::Real* prob_lo = geomdata.ProbLo();
-    const amrex::Real xcell[AMREX_SPACEDIM] = {AMREX_D_DECL(prob_lo[0] + (i + 0.5) * dx[0],
-                                                            prob_lo[1] + (j + 0.5) * dx[1],
-                                                            prob_lo[2] + (k + 0.5) * dx[2])};
-    const amrex::Real xface[AMREX_SPACEDIM] = {AMREX_D_DECL(xcell[0] + ebfc_x(i,j,k) * dx[0],
-                                                            xcell[1] + ebfc_y(i,j,k) * dx[1],
-                                                            xcell[2] + ebfc_z(i,j,k) * dx[2])};
-
-    //TODO : would be practical to have the current state at the EBface ...
-    amrex::Real stateExt[NVAR] = {0.0};
-
-    // User-defined fill function
-    setEBState(xface, stateExt, a_time, geomdata, prob_parm);
-
-    // Extract requested entries
-    for (int n = 0; n < ncomp; n++) {
-       ebState(i,j,k,n) = stateExt[stateComp+n];
-    }
-}
 #endif
