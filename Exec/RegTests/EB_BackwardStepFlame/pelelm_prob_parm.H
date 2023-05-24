@@ -15,5 +15,8 @@ struct ProbParm
    amrex::Real T_hot  = 1800.0_rt;
    amrex::Real Twall  = 300.0_rt;
    amrex::Real meanFlowMag = 0.0;
+   amrex::Real EBinflow_vel = 2.0;
+   amrex::Real EBinflow_Yfuel = 0.5;
+   amrex::Real EBinflow_T = 320.0;
 };
 #endif
