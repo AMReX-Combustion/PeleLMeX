@@ -21,7 +21,7 @@ USE_CUDA        = FALSE
 USE_HIP         = FALSE
 
 # PeleLMeX
-CEXE_headers 	+= EBUserDefined.H
+CEXE_headers 	+= EBUserDefined.H EBUserKernels.H pelelm_prob_EB.H
 
 # PelePhysics
 Chemistry_Model = drm19
