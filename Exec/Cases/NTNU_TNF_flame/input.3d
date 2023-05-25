@@ -1,10 +1,10 @@
 #----------------------TIME STEPING CONTROL----------------------
-amr.max_step        = 10000             # maximum number of time steps
-amr.stop_time       = 10.e-3            # final physical time
-amr.cfl             = 0.3              # cfl number for hyperbolic system
+amr.max_step        = 100000             # maximum number of time steps
+amr.stop_time       = 20.e-3            # final physical time
+amr.cfl             = 0.5              # cfl number for hyperbolic system
 amr.dt_shrink       = 0.1              # scale back initial timestep
 amr.change_max      = 1.1              # max timestep size increase
-amr.max_dt          = 1.5e-6
+amr.max_dt          = 1.e-6
 # amr.fixed_dt        = 1.0e-09
 
 #-------------
@@ -32,13 +32,13 @@ peleLM.hi_bc = Outflow Outflow Outflow
 #-------------------------AMR CONTROL----------------------------
 amr.n_cell          = 128 128 256  # Level 0 number of cells in each direction
 peleLM.verbose      = 5            # amr verbosity level
-amr.max_level       = 1            # maximum level number allowed
+amr.max_level       = 3            # maximum level number allowed
 amr.ref_ratio       = 2 2 2 2      # refinement ratio
 amr.regrid_int      = 5            # how often to regrid
 amr.n_error_buf     = 1 1 1 2      # number of buffer cells in error est
 amr.grid_eff        = 0.9          # what constitutes an efficient grid
 amr.blocking_factor = 16           # block factor in grid generation
-amr.max_grid_size   = 64           # maximum box size
+amr.max_grid_size   = 32           # maximum box size
 
 #----------------------- PROBLEM PARAMETERS --------------------
 prob.T_in = 298.0
@@ -86,7 +86,7 @@ EB.loc_x            = 6.5e-3
 EB.loc_y            = 0.0e-3
 
 #-------------------------IO CONTROL----------------------------
-# amr.restart             = chk02400
+amr.restart             = chk07400
 # amr.initDataPlt         = non_reactive_air/plt02744
 # amr.initDataPlt         = non_reactive_spray/plt02528
 amr.check_file          = chk          # root name of checkpoint file
@@ -108,8 +108,8 @@ peleLM.floor_species = 1
 
 #--------------------REFINEMENT CONTROL------------------------
 
-peleLM.refine_EB_max_level = 1
-eb2.max_level_generation = 1
+peleLM.refine_EB_max_level = 3
+eb2.max_level_generation = 3
 
 peleLM.refine_Zdir_max_level = 0
 peleLM.MaxZdir_refine = 30.e-3
@@ -120,9 +120,9 @@ amr.HR.max_level = 0
 amr.HR.value_greater = 2.e+08
 amr.HR.field_name = HeatRelease
 
-amr.inBox.max_level     = 1
+amr.inBox.max_level     = 4
 amr.inBox.in_box_lo     =   -20.0e-3      -20.0e-3     -12.0e-3
-amr.inBox.in_box_hi     =    20.0e-3       20.0e-3       5.0e-3
+amr.inBox.in_box_hi     =    20.0e-3       20.0e-3      20.0e-3
 
 amr.lo_temp.max_level = 0
 amr.lo_temp.value_greater = 400
