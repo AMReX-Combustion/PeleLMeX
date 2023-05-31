@@ -1,5 +1,9 @@
 #include <PeleLM.H>
 
+#ifdef PELELM_USE_SPRAY
+#include "SprayParticles.H"
+#endif
+
 using namespace amrex;
 
 pele::physics::transport::TransportParams<
