@@ -60,9 +60,9 @@ PeleLM::SprayReadParameters()
   if (!do_spray_particles) {
     return;
   }
-  // Mush change dtmod to 1 since we only do MKD
-  sprayData.dtmod = 1.;
   SprayParticleContainer::readSprayParams(spray_verbose);
+  // Must change dtmod to 1 since we only do MKD
+  SprayParticleContainer::getSprayData()->dtmod = 1.;
 }
 
 void
@@ -77,7 +77,7 @@ PeleLM::SpraySetup()
     Abort("Cannot have more spray fuel species than fluid species");
   }
   SprayParticleContainer::spraySetup(m_gravity.data());
-  SprayData scomps;
+  SprayComps scomps;
   // Component indices for conservative variables
   scomps.rhoIndx = DENSITY;
   scomps.momIndx = VELX;
