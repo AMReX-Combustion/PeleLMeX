@@ -84,7 +84,7 @@ particles.use_splash_model = false
 # particles.init_file = "initspraydata"
 
 particles.v             = 0
-particles.cfl           = 4.
+particles.cfl           = 2.
 particles.mom_transfer  = 1
 particles.mass_transfer = 1
 particles.write_ascii_files = 0
