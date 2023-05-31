@@ -309,7 +309,7 @@ void PeleLM::WritePlotFile() {
           MultiFab::Add(mf_plt[lev], tmp_plt, 0, cnt, num_spray_derive, 0);
         }
         cnt += num_spray_derive;
-        if (plot_spray_src) {
+        if (SprayParticleContainer::plot_spray_src) {
           SprayComps scomps = SprayParticleContainer::getSprayComps();
           MultiFab::Copy(mf_plt[lev], *m_spraysource[lev].get(), scomps.rhoSrcIndx, cnt++, 1, 0);
           MultiFab::Copy(mf_plt[lev], *m_spraysource[lev].get(), scomps.engSrcIndx, cnt++, 1, 0);
@@ -482,7 +482,6 @@ void PeleLM::WriteCheckPointFile()
    }
 #ifdef PELELM_USE_SPRAY
    if (do_spray_particles) {
-     int write_ascii = 0; // Not for checkpoints
      bool is_spraycheck = true;
      for (int lev = 0; lev <= finest_level; ++lev) {
        SprayPC->SprayParticleIO(lev, is_spraycheck, checkpointname);
