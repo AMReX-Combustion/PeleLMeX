@@ -112,8 +112,8 @@ void PeleLM::WritePlotFile() {
 #ifdef PELELM_USE_SPRAY
    if (do_spray_particles) {
      ncomp += SprayParticleContainer::NumDeriveVars();
-     if (plot_spray_src) {
-       ncomp += AMREX_SPACEDIM+2;
+     if (SprayParticleContainer::plot_spray_src) {
+       ncomp += AMREX_SPACEDIM+2+SPRAY_FUEL_NUM;
      }
    }
 #endif
@@ -205,12 +205,15 @@ void PeleLM::WritePlotFile() {
           SprayParticleContainer::DeriveVarNames()) {
        plt_VarsName.push_back(spray_derive_name);
      }
-     if (plot_spray_src) {
+     if (SprayParticleContainer::plot_spray_src) {
        plt_VarsName.push_back("spray_mass_src");
        plt_VarsName.push_back("spray_energy_src");
        AMREX_D_TERM(plt_VarsName.push_back("spray_momentumX_src");,
                     plt_VarsName.push_back("spray_momentumY_src");,
                     plt_VarsName.push_back("spray_momentumZ_src"));
+       for (const auto& spray_fuel_name : SprayParticleContainer::m_sprayDepNames) {
+         plt_VarsName.push_back(spray_fuel_name);
+       }
      }
    }
 #endif
@@ -307,10 +310,14 @@ void PeleLM::WritePlotFile() {
         }
         cnt += num_spray_derive;
         if (plot_spray_src) {
-          MultiFab::Copy(mf_plt[lev], *m_spraysource[lev].get(), DENSITY, cnt, 1, 0);
-          MultiFab::Copy(mf_plt[lev], *m_spraysource[lev].get(), FIRSTSPEC + SPRAY_FUEL_NUM, cnt+1, 1, 0);
-          MultiFab::Copy(mf_plt[lev], *m_spraysource[lev].get(), VELX, cnt+2, AMREX_SPACEDIM, 0);
-          cnt += AMREX_SPACEDIM+2;
+          SprayComps scomps = SprayParticleContainer::getSprayComps();
+          MultiFab::Copy(mf_plt[lev], *m_spraysource[lev].get(), scomps.rhoSrcIndx, cnt++, 1, 0);
+          MultiFab::Copy(mf_plt[lev], *m_spraysource[lev].get(), scomps.engSrcIndx, cnt++, 1, 0);
+          MultiFab::Copy(mf_plt[lev], *m_spraysource[lev].get(), scomps.momSrcIndx, cnt, AMREX_SPACEDIM, 0);
+          cnt += AMREX_SPACEDIM;
+          for (int spf = 0; spf < SPRAY_FUEL_NUM; ++spf) {
+            MultiFab::Copy(mf_plt[lev], *m_spraysource[lev].get(), scomps.specSrcIndx + spf, cnt++, AMREX_SPACEDIM, 0);
+          }
         }
       }
 #endif
@@ -365,7 +372,7 @@ void PeleLM::WritePlotFile() {
    if (do_spray_particles) {
      bool is_spraycheck = false;
      for (int lev = 0; lev <= finest_level; ++lev) {
-       SprayPC->SprayParticleIO(lev, is_spraycheck, write_spray_ascii_files, plotfilename);
+       SprayPC->SprayParticleIO(lev, is_spraycheck, plotfilename);
        // Remove virtual particles that were made for derived variables
        removeVirtualParticles(lev);
      }
@@ -478,7 +485,7 @@ void PeleLM::WriteCheckPointFile()
      int write_ascii = 0; // Not for checkpoints
      bool is_spraycheck = true;
      for (int lev = 0; lev <= finest_level; ++lev) {
-       SprayPC->SprayParticleIO(lev, is_spraycheck, write_ascii, checkpointname);
+       SprayPC->SprayParticleIO(lev, is_spraycheck, checkpointname);
      }
    }
 #endif

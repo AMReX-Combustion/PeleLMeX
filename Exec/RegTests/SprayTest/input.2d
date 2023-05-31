@@ -82,9 +82,7 @@ particles.NC10H22_rho = 640.
 particles.NC10H22_psat = 4.07857 1501.268 -78.67 1.E5
 particles.use_splash_model = false
 
-# particles.init_function = 0
 # particles.init_file = "initspraydata"
-particles.init_function = 1
 
 particles.v             = 0
 particles.cfl           = 4.
