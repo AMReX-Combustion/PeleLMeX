@@ -314,11 +314,11 @@ PeleLM::SprayMKD(const Real time, const Real dt)
     if (spray_verbose > 1) {
       Print() << "SprayMKDLevel " << lev << std::endl;
     }
+    m_spraysource[lev]->setVal(0.);
     SprayMKDLevel(lev, time, dt);
     SprayAddSource(lev);
     removeGhostParticles(lev);
     removeVirtualParticles(lev);
-    m_spraysource[lev]->setVal(0.);
   }
 }
 

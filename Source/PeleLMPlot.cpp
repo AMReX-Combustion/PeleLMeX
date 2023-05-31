@@ -112,6 +112,9 @@ void PeleLM::WritePlotFile() {
 #ifdef PELELM_USE_SPRAY
    if (do_spray_particles) {
      ncomp += SprayParticleContainer::NumDeriveVars();
+     if (plot_spray_src) {
+       ncomp += AMREX_SPACEDIM+2;
+     }
    }
 #endif
 
@@ -138,13 +141,9 @@ void PeleLM::WritePlotFile() {
    pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(names);
 
    Vector<std::string> plt_VarsName;
-   plt_VarsName.push_back("x_velocity");
-#if ( AMREX_SPACEDIM > 1 )
-   plt_VarsName.push_back("y_velocity");
-#if ( AMREX_SPACEDIM > 2 )
-   plt_VarsName.push_back("z_velocity");
-#endif
-#endif
+   AMREX_D_TERM(plt_VarsName.push_back("x_velocity");,
+                plt_VarsName.push_back("y_velocity");,
+                plt_VarsName.push_back("z_velocity"));
    if (!m_incompressible) {
       plt_VarsName.push_back("density");
       if (m_plotStateSpec) {
@@ -171,13 +170,9 @@ void PeleLM::WritePlotFile() {
    }
 
    if (m_plot_grad_p) {
-      plt_VarsName.push_back("gradpx");
-#if ( AMREX_SPACEDIM > 1 )
-      plt_VarsName.push_back("gradpy");
-#if ( AMREX_SPACEDIM > 2 )
-      plt_VarsName.push_back("gradpz");
-#endif
-#endif
+      AMREX_D_TERM(plt_VarsName.push_back("gradpx");,
+                   plt_VarsName.push_back("gradpy");,
+                   plt_VarsName.push_back("gradpz"));
    }
 
    if (m_do_react  && !m_skipInstantRR && m_plot_react) {
@@ -209,6 +204,13 @@ void PeleLM::WritePlotFile() {
      for (const auto& spray_derive_name :
           SprayParticleContainer::DeriveVarNames()) {
        plt_VarsName.push_back(spray_derive_name);
+     }
+     if (plot_spray_src) {
+       plt_VarsName.push_back("spray_mass_src");
+       plt_VarsName.push_back("spray_energy_src");
+       AMREX_D_TERM(plt_VarsName.push_back("spray_momentumX_src");,
+                    plt_VarsName.push_back("spray_momentumY_src");,
+                    plt_VarsName.push_back("spray_momentumZ_src"));
      }
    }
 #endif
@@ -304,6 +306,12 @@ void PeleLM::WritePlotFile() {
           MultiFab::Add(mf_plt[lev], tmp_plt, 0, cnt, num_spray_derive, 0);
         }
         cnt += num_spray_derive;
+        if (plot_spray_src) {
+          MultiFab::Copy(mf_plt[lev], *m_spraysource[lev].get(), DENSITY, cnt, 1, 0);
+          MultiFab::Copy(mf_plt[lev], *m_spraysource[lev].get(), FIRSTSPEC + SPRAY_FUEL_NUM, cnt+1, 1, 0);
+          MultiFab::Copy(mf_plt[lev], *m_spraysource[lev].get(), VELX, cnt+2, AMREX_SPACEDIM, 0);
+          cnt += AMREX_SPACEDIM+2;
+        }
       }
 #endif
 #ifdef PELE_USE_EFIELD
