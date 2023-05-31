@@ -126,9 +126,9 @@ bcnormal(
 
     amrex::Real z_vel = prob_parm.friction_vel*u_plus;
 
-    s_ext[VELX] = 0.0;
-    s_ext[VELY] = 0.0;
-    s_ext[VELZ] = z_vel;
+    // s_ext[VELX] = 0.0;
+    // s_ext[VELY] = 0.0;
+    s_ext[VELZ] += z_vel;
 
     s_ext[TEMP] = prob_parm.T_in;
 
