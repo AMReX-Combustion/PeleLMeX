@@ -34,7 +34,6 @@ prob.P_mean = 101325.0
 prob.init_redist = 1
 prob.init_T      = 500.
 prob.init_vel    = 0.0
-# Particle parameters, only used if particles.init_function = 1
 prob.num_particles = (256, 256, 256)
 prob.part_temp     = 300.
 prob.part_dia      = 1.E-3
