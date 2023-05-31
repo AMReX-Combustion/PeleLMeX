@@ -26,7 +26,7 @@ bool mesh_regrid = true;
 std::string init_file;
 int init_function = 1;
 int spray_verbose = 0;
-Real max_spray_cfl = 5.;
+Real max_spray_cfl = 0.7;
 } // namespace
 
 std::unique_ptr<SprayParticleContainer> PeleLM::SprayPC = nullptr;
