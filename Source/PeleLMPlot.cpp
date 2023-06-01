@@ -213,7 +213,7 @@ void PeleLM::WritePlotFile() {
                   plt_VarsName.push_back("spray_momentumY_src");,
                   plt_VarsName.push_back("spray_momentumZ_src"));
      for (const auto& spray_fuel_name : SprayParticleContainer::m_sprayDepNames) {
-       plt_VarsName.push_back(spray_fuel_name);
+       plt_VarsName.push_back("spray_" + spray_fuel_name + "_src");
      }
    }
 #endif
