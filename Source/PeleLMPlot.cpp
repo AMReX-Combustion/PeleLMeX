@@ -112,6 +112,9 @@ void PeleLM::WritePlotFile() {
 #ifdef PELELM_USE_SPRAY
    if (do_spray_particles) {
      ncomp += SprayParticleContainer::NumDeriveVars();
+     if (SprayParticleContainer::plot_spray_src) {
+       ncomp += AMREX_SPACEDIM+2+SPRAY_FUEL_NUM;
+     }
    }
 #endif
 
@@ -138,13 +141,9 @@ void PeleLM::WritePlotFile() {
    pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(names);
 
    Vector<std::string> plt_VarsName;
-   plt_VarsName.push_back("x_velocity");
-#if ( AMREX_SPACEDIM > 1 )
-   plt_VarsName.push_back("y_velocity");
-#if ( AMREX_SPACEDIM > 2 )
-   plt_VarsName.push_back("z_velocity");
-#endif
-#endif
+   AMREX_D_TERM(plt_VarsName.push_back("x_velocity");,
+                plt_VarsName.push_back("y_velocity");,
+                plt_VarsName.push_back("z_velocity"));
    if (!m_incompressible) {
       plt_VarsName.push_back("density");
       if (m_plotStateSpec) {
@@ -171,13 +170,9 @@ void PeleLM::WritePlotFile() {
    }
 
    if (m_plot_grad_p) {
-      plt_VarsName.push_back("gradpx");
-#if ( AMREX_SPACEDIM > 1 )
-      plt_VarsName.push_back("gradpy");
-#if ( AMREX_SPACEDIM > 2 )
-      plt_VarsName.push_back("gradpz");
-#endif
-#endif
+      AMREX_D_TERM(plt_VarsName.push_back("gradpx");,
+                   plt_VarsName.push_back("gradpy");,
+                   plt_VarsName.push_back("gradpz"));
    }
 
    if (m_do_react  && !m_skipInstantRR && m_plot_react) {
@@ -209,6 +204,16 @@ void PeleLM::WritePlotFile() {
      for (const auto& spray_derive_name :
           SprayParticleContainer::DeriveVarNames()) {
        plt_VarsName.push_back(spray_derive_name);
+     }
+   }
+   if (do_spray_particles && SprayParticleContainer::plot_spray_src) {
+     plt_VarsName.push_back("spray_mass_src");
+     plt_VarsName.push_back("spray_energy_src");
+     AMREX_D_TERM(plt_VarsName.push_back("spray_momentumX_src");,
+                  plt_VarsName.push_back("spray_momentumY_src");,
+                  plt_VarsName.push_back("spray_momentumZ_src"));
+     for (const auto& spray_fuel_name : SprayParticleContainer::m_sprayDepNames) {
+       plt_VarsName.push_back("spray_" + spray_fuel_name + "_src");
      }
    }
 #endif
@@ -305,6 +310,16 @@ void PeleLM::WritePlotFile() {
         }
         cnt += num_spray_derive;
       }
+      if (do_spray_particles && SprayParticleContainer::plot_spray_src) {
+        SprayComps scomps = SprayParticleContainer::getSprayComps();
+        MultiFab::Copy(mf_plt[lev], *m_spraysource[lev].get(), scomps.rhoSrcIndx, cnt++, 1, 0);
+        MultiFab::Copy(mf_plt[lev], *m_spraysource[lev].get(), scomps.engSrcIndx, cnt++, 1, 0);
+        MultiFab::Copy(mf_plt[lev], *m_spraysource[lev].get(), scomps.momSrcIndx, cnt, AMREX_SPACEDIM, 0);
+        cnt += AMREX_SPACEDIM;
+        for (int spf = 0; spf < SPRAY_FUEL_NUM; ++spf) {
+          MultiFab::Copy(mf_plt[lev], *m_spraysource[lev].get(), scomps.specSrcIndx + spf, cnt++, 1, 0);
+        }
+      }
 #endif
 #ifdef PELE_USE_EFIELD
       if (m_do_extraEFdiags) {
@@ -357,7 +372,7 @@ void PeleLM::WritePlotFile() {
    if (do_spray_particles) {
      bool is_spraycheck = false;
      for (int lev = 0; lev <= finest_level; ++lev) {
-       SprayPC->SprayParticleIO(lev, is_spraycheck, write_spray_ascii_files, plotfilename);
+       SprayPC->SprayParticleIO(lev, is_spraycheck, plotfilename);
        // Remove virtual particles that were made for derived variables
        removeVirtualParticles(lev);
      }
@@ -467,10 +482,9 @@ void PeleLM::WriteCheckPointFile()
    }
 #ifdef PELELM_USE_SPRAY
    if (do_spray_particles) {
-     int write_ascii = 0; // Not for checkpoints
      bool is_spraycheck = true;
      for (int lev = 0; lev <= finest_level; ++lev) {
-       SprayPC->SprayParticleIO(lev, is_spraycheck, write_ascii, checkpointname);
+       SprayPC->SprayParticleIO(lev, is_spraycheck, checkpointname);
      }
    }
 #endif
