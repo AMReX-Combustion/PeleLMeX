@@ -1,10 +1,9 @@
-TOP = ../../../..
-AMREX_HOME         ?= ${TOP}/amrex
-PELELMEX_HOME      ?= ${TOP}/PeleLMeX
-PELE_PHYSICS_HOME  ?= ${TOP}/PelePhysics
-AMREX_HYDRO_HOME   ?= ${TOP}/AMReX-Hydro
-PELLEMP_HOME       ?= ${TOP}/PeleMP
-
+TOP = ../../..
+PELELMEX_HOME      ?= ${TOP}
+AMREX_HOME         ?= ${PELELMEX_HOME}/Submodules/amrex
+PELE_PHYSICS_HOME  ?= ${PELELMEX_HOME}/Submodules/PelePhysics
+AMREX_HYDRO_HOME   ?= ${PELELMEX_HOME}/Submodules/AMReX-Hydro
+PELEMP_HOME        ?= ${PELELMEX_HOME}/Submodules/PeleMP
 
 # AMReX
 DIM             = 2
@@ -26,7 +25,6 @@ USE_EFIELD		 = FALSE
 # PeleMP
 USE_PARTICLES    = TRUE
 SPRAY_FUEL_NUM = 1
-CEXE_sources += SprayParticlesInitInsert.cpp
 
 # PelePhysics
 Chemistry_Model = heptane_fc

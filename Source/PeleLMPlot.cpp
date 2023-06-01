@@ -57,7 +57,7 @@ void PeleLM::WritePlotFile() {
    const std::string& plotfilename = amrex::Concatenate(m_plot_file, m_nstep, m_ioDigits);
 
    if (m_verbose) {
-      amrex::Print() << " Dumping plotfile: " << plotfilename << "\n";
+      amrex::Print() << "\n Writing plotfile: " << plotfilename << "\n";
    }
 
    //----------------------------------------------------------------
@@ -99,7 +99,6 @@ void PeleLM::WritePlotFile() {
       ncomp += 1;
       // Extras:
       if (m_plotHeatRelease) ncomp += 1;
-      //if (m_plotChemDiag) ncomp += 1;     // TODO
    }
 
 #ifdef AMREX_USE_EB
@@ -120,7 +119,10 @@ void PeleLM::WritePlotFile() {
    ncomp += deriveEntryCount;
 #ifdef PELELM_USE_SPRAY
    if (do_spray_particles) {
-     ncomp += SprayParticleContainer::spray_derive_vars.size();
+     ncomp += SprayParticleContainer::NumDeriveVars();
+     if (SprayParticleContainer::plot_spray_src) {
+       ncomp += AMREX_SPACEDIM+2+SPRAY_FUEL_NUM;
+     }
    }
 #endif
 
@@ -129,6 +131,10 @@ void PeleLM::WritePlotFile() {
        ncomp += NUM_IONS * AMREX_SPACEDIM;
    }
 #endif
+
+   if (m_do_les && m_plot_les) {
+     ncomp += 1;
+   }
 
    //----------------------------------------------------------------
    // Plot MultiFabs
@@ -143,13 +149,9 @@ void PeleLM::WritePlotFile() {
    pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(names);
 
    Vector<std::string> plt_VarsName;
-   plt_VarsName.push_back("x_velocity");
-#if ( AMREX_SPACEDIM > 1 )
-   plt_VarsName.push_back("y_velocity");
-#if ( AMREX_SPACEDIM > 2 )
-   plt_VarsName.push_back("z_velocity");
-#endif
-#endif
+   AMREX_D_TERM(plt_VarsName.push_back("x_velocity");,
+                plt_VarsName.push_back("y_velocity");,
+                plt_VarsName.push_back("z_velocity"));
    if (!m_incompressible) {
       plt_VarsName.push_back("density");
       if (m_plotStateSpec) {
@@ -183,13 +185,9 @@ void PeleLM::WritePlotFile() {
    }
 
    if (m_plot_grad_p) {
-      plt_VarsName.push_back("gradpx");
-#if ( AMREX_SPACEDIM > 1 )
-      plt_VarsName.push_back("gradpy");
-#if ( AMREX_SPACEDIM > 2 )
-      plt_VarsName.push_back("gradpz");
-#endif
-#endif
+      AMREX_D_TERM(plt_VarsName.push_back("gradpx");,
+                   plt_VarsName.push_back("gradpy");,
+                   plt_VarsName.push_back("gradpz"));
    }
 
    if (m_do_react  && !m_skipInstantRR && m_plot_react) {
@@ -202,7 +200,6 @@ void PeleLM::WritePlotFile() {
       plt_VarsName.push_back("FunctCall");
       // Extras:
       if (m_plotHeatRelease) plt_VarsName.push_back("HeatRelease");
-      //if (m_plotChemDiag) ncomp += 1;     // TODO
    }
 
 #ifdef AMREX_USE_EB
@@ -216,12 +213,22 @@ void PeleLM::WritePlotFile() {
       }
    }
 #ifdef PELELM_USE_SPRAY
-   if (SprayParticleContainer::spray_derive_vars.size() > 0) {
+   if (SprayParticleContainer::NumDeriveVars() > 0) {
      // We need virtual particles for the lower levels
      setupVirtualParticles(0);
-     for (int ivar = 0; ivar < SprayParticleContainer::spray_derive_vars.size();
-          ivar++) {
-       plt_VarsName.push_back(SprayParticleContainer::spray_derive_vars[ivar]);
+     for (const auto& spray_derive_name :
+          SprayParticleContainer::DeriveVarNames()) {
+       plt_VarsName.push_back(spray_derive_name);
+     }
+   }
+   if (do_spray_particles && SprayParticleContainer::plot_spray_src) {
+     plt_VarsName.push_back("spray_mass_src");
+     plt_VarsName.push_back("spray_energy_src");
+     AMREX_D_TERM(plt_VarsName.push_back("spray_momentumX_src");,
+                  plt_VarsName.push_back("spray_momentumY_src");,
+                  plt_VarsName.push_back("spray_momentumZ_src"));
+     for (const auto& spray_fuel_name : SprayParticleContainer::m_sprayDepNames) {
+       plt_VarsName.push_back("spray_" + spray_fuel_name + "_src");
      }
    }
 #endif
@@ -237,6 +244,9 @@ void PeleLM::WritePlotFile() {
    }
 #endif
 
+   if (m_do_les && m_plot_les) {
+     plt_VarsName.push_back("viscturb");
+   }
 
    //----------------------------------------------------------------
    // Fill the plot MultiFabs
@@ -312,27 +322,59 @@ void PeleLM::WritePlotFile() {
          cnt += mf->nComp();
       }
 #ifdef PELELM_USE_SPRAY
-      if (SprayParticleContainer::spray_derive_vars.size() > 0) {
-        int num_spray_derive = SprayParticleContainer::spray_derive_vars.size();
+      if (SprayParticleContainer::NumDeriveVars() > 0) {
+        const int num_spray_derive = SprayParticleContainer::NumDeriveVars();
         mf_plt[lev].setVal(0., cnt, num_spray_derive);
-        theSprayPC()->computeDerivedVars(mf_plt[lev], lev, cnt);
+        SprayPC->computeDerivedVars(mf_plt[lev], lev, cnt);
         if (lev < finest_level) {
           MultiFab tmp_plt(
             grids[lev], dmap[lev], num_spray_derive, 0, MFInfo(), Factory(lev));
           tmp_plt.setVal(0.);
-          theVirtPC()->computeDerivedVars(tmp_plt, lev, 0);
+          VirtPC->computeDerivedVars(tmp_plt, lev, 0);
           MultiFab::Add(mf_plt[lev], tmp_plt, 0, cnt, num_spray_derive, 0);
         }
         cnt += num_spray_derive;
+      }
+      if (do_spray_particles && SprayParticleContainer::plot_spray_src) {
+        SprayComps scomps = SprayParticleContainer::getSprayComps();
+        MultiFab::Copy(mf_plt[lev], *m_spraysource[lev].get(), scomps.rhoSrcIndx, cnt++, 1, 0);
+        MultiFab::Copy(mf_plt[lev], *m_spraysource[lev].get(), scomps.engSrcIndx, cnt++, 1, 0);
+        MultiFab::Copy(mf_plt[lev], *m_spraysource[lev].get(), scomps.momSrcIndx, cnt, AMREX_SPACEDIM, 0);
+        cnt += AMREX_SPACEDIM;
+        for (int spf = 0; spf < SPRAY_FUEL_NUM; ++spf) {
+          MultiFab::Copy(mf_plt[lev], *m_spraysource[lev].get(), scomps.specSrcIndx + spf, cnt++, 1, 0);
+        }
       }
 #endif
 #ifdef PELE_USE_EFIELD
       if (m_do_extraEFdiags) {
           MultiFab::Copy(mf_plt[lev], *m_ionsFluxes[lev], 0, cnt, m_ionsFluxes[lev]->nComp(),0);
+          cnt += m_ionsFluxes[lev]->nComp();
       }
 #endif
+
+      if (m_do_les && m_plot_les) {
+        constexpr amrex::Real fact = 0.5/AMREX_SPACEDIM;
+        auto const& plot_arr = mf_plt[lev].arrays();
+        AMREX_D_TERM(auto const& mut_arr_x = m_leveldata_old[lev]->visc_turb_fc[0].const_arrays();,
+                     auto const& mut_arr_y = m_leveldata_old[lev]->visc_turb_fc[1].const_arrays();,
+                     auto const& mut_arr_z = m_leveldata_old[lev]->visc_turb_fc[2].const_arrays();)
+        // interpolate turbulent viscosity from faces to centers
+        amrex::ParallelFor(mf_plt[lev], [plot_arr, AMREX_D_DECL(mut_arr_x, mut_arr_y, mut_arr_z), cnt]
+                           AMREX_GPU_DEVICE (int box_no, int i, int j, int k) noexcept
+                           {
+                             plot_arr[box_no](i,j,k,cnt) = fact*( AMREX_D_TERM( mut_arr_x[box_no](i,j,k) + mut_arr_x[box_no](i+1,j,k),
+                                                                                + mut_arr_y[box_no](i,j,k) + mut_arr_y[box_no](i,j+1,k),
+                                                                                + mut_arr_z[box_no](i,j,k) + mut_arr_z[box_no](i,j,k+1)));
+                           });
+        Gpu::streamSynchronize();
+        cnt += 1;
+      }
+
 #ifdef AMREX_USE_EB
-      EB_set_covered(mf_plt[lev],0.0);
+      if (m_plot_zeroEBcovered) {
+         EB_set_covered(mf_plt[lev],0.0);
+      }
 #endif
    }
 
@@ -355,8 +397,7 @@ void PeleLM::WritePlotFile() {
    if (do_spray_particles) {
      bool is_spraycheck = false;
      for (int lev = 0; lev <= finest_level; ++lev) {
-       theSprayPC()->SprayParticleIO(
-         lev, is_spraycheck, write_spray_ascii_files, plotfilename);
+       SprayPC->SprayParticleIO(lev, is_spraycheck, plotfilename);
        // Remove virtual particles that were made for derived variables
        removeVirtualParticles(lev);
      }
@@ -466,11 +507,9 @@ void PeleLM::WriteCheckPointFile()
    }
 #ifdef PELELM_USE_SPRAY
    if (do_spray_particles) {
-     int write_ascii = 0; // Not for checkpoints
      bool is_spraycheck = true;
      for (int lev = 0; lev <= finest_level; ++lev) {
-       theSprayPC()->SprayParticleIO(
-         lev, is_spraycheck, write_ascii, checkpointname);
+       SprayPC->SprayParticleIO(lev, is_spraycheck, checkpointname);
      }
    }
 #endif
@@ -545,9 +584,6 @@ void PeleLM::ReadCheckPointFile()
    is >> m_prev_dt;
    GotoNextLine(is);
 
-   //is >> m_prev_prev_dt;
-   //GotoNextLine(is);
-
    // Low coordinates of domain bounding box
    std::getline(is, line);
    {
@@ -588,6 +624,13 @@ void PeleLM::ReadCheckPointFile()
        // Create distribution mapping
        DistributionMapping dm{ba, ParallelDescriptor::NProcs()};
        MakeNewLevelFromScratch(lev, m_cur_time, ba, dm);
+   }
+
+   for(int lev = finest_level+1; lev <= chk_finest_level; ++lev)
+   {
+       // read dummy level 'lev' BoxArray if restarting with reduced levels
+       BoxArray ba;
+       ba.readFrom(is);
    }
 
    // deal with typval and P_amb
@@ -825,8 +868,8 @@ void PeleLM::initLevelDataFromPlt(int a_lev,
    ProbParm const* lprobparm = prob_parm_d;
 
    // Enforce rho and rhoH consistent with temperature and mixture
-   // TODO the above handles species mapping (to some extent), but nothing enforce
-   // sum of Ys = 1
+   // The above handles species mapping (to some extent), but nothing enforce
+   // sum of Ys = 1 -> use N2 in the following if N2 is present
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
@@ -845,11 +888,15 @@ void PeleLM::initLevelDataFromPlt(int a_lev,
           Real sumYs = 0.0;
           for (int n = 0; n < NUM_SPECIES; n++){
              massfrac[n] = rhoY_arr(i,j,k,n);
+#ifdef N2_ID
              if (n != N2_ID) {
                 sumYs += massfrac[n];
              }
+#endif
           }
+#ifdef N2_ID
           massfrac[N2_ID] = 1.0 - sumYs;
+#endif
 
           // Get density
           Real P_cgs = lprobparm->P_mean * 10.0;
@@ -878,7 +925,6 @@ void PeleLM::initLevelDataFromPlt(int a_lev,
 
 void PeleLM::WriteJobInfo(const std::string& path) const
 {
-   std::string PrettyLine = std::string(78, '=') + "\n";
    std::string OtherLine = std::string(78, '-') + "\n";
    std::string SkipSpace = std::string(8, ' ');
 

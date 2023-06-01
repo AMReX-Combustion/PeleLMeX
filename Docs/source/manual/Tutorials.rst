@@ -7,9 +7,11 @@ Tutorials
 =========
 
 This sections includes several self-contained tutorials.
-TODO
 
 .. toctree::
    :maxdepth: 1
 
-
+   Tutorials_FlameSheet.rst
+   Tutorials_FlowPastCyl.rst
+   Tutorials_BFSFlame.rst
+   Tutorials_TripleFlame.rst

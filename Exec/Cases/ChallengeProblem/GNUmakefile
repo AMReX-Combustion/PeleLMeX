@@ -1,10 +1,9 @@
-TOP = ../../../..
-AMREX_HOME         ?= ${TOP}/amrex
-PELELMEX_HOME      ?= ${TOP}/PeleLMeX
-PELE_PHYSICS_HOME  ?= ${TOP}/PelePhysics
-AMREX_HYDRO_HOME   ?= ${TOP}/AMReX-Hydro
-HYPRE_HOME         = /ccs/home/lesclapez/hypre/install
-
+TOP = ../../..
+PELELMEX_HOME      ?= ${TOP}
+AMREX_HOME         ?= ${PELELMEX_HOME}/Submodules/amrex
+PELE_PHYSICS_HOME  ?= ${PELELMEX_HOME}/Submodules/PelePhysics
+AMREX_HYDRO_HOME   ?= ${PELELMEX_HOME}/Submodules/AMReX-Hydro
+HYPRE_HOME         = /ccs/home/lesclapez/hypre/install-2807
 
 # AMReX
 DIM             = 3
@@ -13,7 +12,7 @@ PRECISION       = DOUBLE
 VERBOSE         = FALSE
 TINY_PROFILE    = FALSE
 USE_EB			 = TRUE
-USE_HYPRE		 = TRUE
+USE_HYPRE		 = FALSE
 
 # Compilation
 COMP            = clang

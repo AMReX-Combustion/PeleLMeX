@@ -19,12 +19,4 @@ void PeleLM::readProbParm()
    pp.query("do_ignition",  PeleLM::prob_parm->do_ignit);
    pp.query("ignition_SphRad",  PeleLM::prob_parm->ignitSphereRad);
    pp.query("ignition_SphT",  PeleLM::prob_parm->ignitT);
-
-   // spray params
-   pp.query("mass_flow_rate",PeleLM::prob_parm->mass_flow_rate);
-   pp.query("jet_vel",PeleLM::prob_parm->jet_vel);
-   pp.query("jet_dx_mod",PeleLM::prob_parm->jet_dx_mod);
-   pp.query("part_mean_dia",PeleLM::prob_parm->part_mean_dia);
-   pp.query("part_stdev_dia",PeleLM::prob_parm->part_stdev_dia);
-   pp.query("part_temp",PeleLM::prob_parm->part_temp);
 }

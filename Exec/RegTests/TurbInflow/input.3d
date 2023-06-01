@@ -71,6 +71,7 @@ peleLM.testPlane.type = DiagFramePlane
 peleLM.testPlane.normal = 0
 peleLM.testPlane.center = 0.005
 peleLM.testPlane.int    = 5
+peleLM.testPlane.field_names = x_velocity y_velocity z_velocity mag_vort
 
 #--------------------REFINEMENT CONTROL------------------------
 amr.refinement_indicators = O2

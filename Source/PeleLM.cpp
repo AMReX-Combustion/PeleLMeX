@@ -1,5 +1,9 @@
 #include <PeleLM.H>
 
+#ifdef PELELM_USE_SPRAY
+#include "SprayParticles.H"
+#endif
+
 using namespace amrex;
 
 pele::physics::transport::TransportParams<
@@ -10,10 +14,6 @@ PeleLM::PeleLM() = default;
 
 PeleLM::~PeleLM()
 {
-   for (int lev = 0; lev <= finest_level; ++lev) {
-      ClearLevel(lev);
-   }
-
    if (!m_incompressible) {
       trans_parms.deallocate();
       m_reactor->close();
@@ -26,6 +26,9 @@ PeleLM::~PeleLM()
    The_Arena()->free(prob_parm_d);
    m_initial_ba.clear();
    m_regrid_ba.clear();
+#ifdef PELELM_USE_SPRAY
+   SprayParticleContainer::SprayCleanUp();
+#endif
 #ifdef PELELM_USE_SOOT
    cleanupSootModel();
 #endif
@@ -42,7 +45,7 @@ PeleLM::getLevelDataPtr(int lev, const PeleLM::TimeStamp &a_time, int /*useUMac*
    } else {
       m_leveldata_floating.reset( new LevelData(grids[lev], dmap[lev], *m_factory[lev],
                                   m_incompressible, m_has_divu,
-                                  m_nAux, m_nGrowState));
+                                  m_nAux, m_nGrowState, m_use_soret, m_do_les));
       Real time = getTime(lev,a_time);
       fillpatch_state(lev, time, m_leveldata_floating->state, m_nGrowState);
       //if (useUMac) {

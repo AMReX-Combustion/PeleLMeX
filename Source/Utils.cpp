@@ -5,7 +5,6 @@ using namespace amrex;
 
 void writeBuildInfo ()
 {
-   std::string PrettyLine = std::string(78, '=') + "\n";
    std::string OtherLine = std::string(78, '-') + "\n";
    std::string SkipSpace = std::string(8, ' ');
 

@@ -42,7 +42,5 @@ amr.yH.max_level     = 3
 amr.yH.value_greater = 2.0e-5
 amr.yH.field_name    = Y(H)
 
-amrex.the_arena_is_managed=1
 amrex.abort_on_out_of_gpu_memory = 1
 amrex.signal_handling=0
-amr.loadbalance_with_workestimates = 1

@@ -1,0 +1,66 @@
+#----------------------DOMAIN DEFINITION------------------------
+geometry.is_periodic = 0 0 0             # For each dir, 0: non-perio, 1: periodic
+geometry.coord_sys   = 0                  # 0 => cart, 1 => RZ
+geometry.prob_lo     =  -0.01  -0.01  -0.01        # x_lo y_lo (z_lo)
+geometry.prob_hi     =   0.01   0.01   0.01        # x_hi y_hi (z_hi)
+
+# >>>>>>>>>>>>>  BC FLAGS <<<<<<<<<<<<<<<<
+# Interior, Inflow, Outflow, Symmetry,
+# SlipWallAdiab, NoSlipWallAdiab, SlipWallIsotherm, NoSlipWallIsotherm
+peleLM.lo_bc = NoSlipWallAdiab NoSlipWallAdiab NoSlipWallAdiab
+peleLM.hi_bc = NoSlipWallAdiab NoSlipWallAdiab NoSlipWallAdiab
+
+
+#-------------------------AMR CONTROL----------------------------
+amr.n_cell          = 64 64 64        # Level 0 number of cells in each direction   
+amr.v               = 1               # AMR verbose
+amr.max_level       = 1               # maximum level number allowed
+amr.ref_ratio       = 2 2 2 2 2       # refinement ratio
+amr.regrid_int      = 5               # how often to regrid
+amr.n_error_buf     = 2 2 2 2         # number of buffer cells in error est
+amr.grid_eff        = 0.7             # what constitutes an efficient grid
+amr.blocking_factor = 16              # block factor in grid generation (min box size)
+amr.max_grid_size   = 128             # max box size
+
+
+#--------------------------- Problem -------------------------------
+prob.P_mean = 101325.0
+prob.standoff = -0.002
+prob.pertmag = 0.00000
+pmf.datafile = "drm19_pmf.dat"
+
+#-------------------------PeleLM CONTROL----------------------------
+peleLM.v = 3
+peleLM.gravity = 0.0 -9.81 0.0
+peleLM.run_mode = evaluate
+# Note that the order in which those appears is important: calling velProj will overwrite the 
+# velocity field provided in the initdata function for instance.
+peleLM.evaluate_vars = velProj velForce avg_pressure diffTerm divU temp instRR transportCC divTau
+
+# --------------- INPUTS TO CHEMISTRY REACTOR ---------------
+peleLM.chem_integrator = "ReactorNull"
+
+#------------------------- EB SETUP -----------------------------
+eb2.geom_type = sphere
+eb2.sphere_radius = 0.009
+eb2.sphere_center = 0.0 0.0 0.0
+eb2.sphere_has_fluid_inside = 1
+eb2.small_volfrac = 1.e-4
+peleLM.refine_EB_type = Static
+peleLM.refine_EB_max_level = 0
+peleLM.refine_EB_buffer = 2.0
+
+#--------------------REFINEMENT CONTROL------------------------
+amr.refinement_indicators = yH
+amr.yH.max_level     = 5
+amr.yH.value_greater = 3.0e-7
+amr.yH.field_name    = Y(H)
+
+#--------------------LINEAR SOLVER CONTROL------------------------
+nodal_proj.verbose = 2
+nodal_proj.mg_max_coarsening_level = 4
+nodal_proj.rtol = 5.0e-9
+
+#amrex.fpe_trap_invalid = 1
+#amrex.fpe_trap_zero = 1
+#amrex.fpe_trap_overflow = 1

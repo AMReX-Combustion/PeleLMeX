@@ -7,18 +7,18 @@ on:
    pull_request:
      branches: [ main, development ]
 
+concurrency:
+  group: ${{ github.ref }}-${{ github.head_ref }}-PeleLMeX_linux
+  cancel-in-progress: true
+
 jobs:
-  #Build the 2D FlameSheet RegTest with GNU9.3 and no MPI support
-  FS2D_NoMPI:
-    name: GNU@9.3 NOMPI Comp [FS2D]
+  #Build and run the 3D FlameSheet RegTest with GNU9.3 and no MPI support
+  F32D_NoMPI:
+    name: GNU@9.3 NOMPI Comp [FS3D]
     runs-on: ubuntu-latest
     env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
-    - name: Cancel previous runs
-      uses: styfle/cancel-workflow-action@0.6.0
-      with:
-        access_token: ${{github.token}}
     - uses: actions/checkout@v3
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies_gcc10.sh
@@ -28,26 +28,25 @@ jobs:
       env:
          AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
          PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
-         PELELM_HOME: ${GITHUB_WORKSPACE}
+         PELELMEX_HOME: ${GITHUB_WORKSPACE}
          AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
       run: |
         cd Exec/RegTests/FlameSheet/
         make help
-        mpicxx -v
-        make TPL COMP=gnu USE_MPI=FALSE
-        make -j 2 COMP=gnu USE_MPI=FALSE
+        make TPL DIM=3 COMP=gnu USE_MPI=FALSE
+        make -j 2 DIM=3 COMP=gnu USE_MPI=FALSE
+    - name: Run
+      working-directory: ./Exec/RegTests/FlameSheet/
+      run: |
+        ./PeleLMeX3d.gnu.ex input.3d-regt peleLM.num_init_iter=1 amr.max_step=1 amr.plot_int=-1 amr.check_int=-1
 
-  # Build the 2D FlameSheet RegTest with GNU9.3 and MPI support
+  # Build and Run the 2D FlameSheet RegTest with GNU9.3 and MPI support
   FS2D_MPI:
     name: GNU@9.3 MPI Comp [FS2D]
     runs-on: ubuntu-latest
     env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
-    - name: Cancel previous runs
-      uses: styfle/cancel-workflow-action@0.6.0
-      with:
-        access_token: ${{github.token}}
     - uses: actions/checkout@v3
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies_gcc10.sh
@@ -57,12 +56,24 @@ jobs:
       env:
          AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
          PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
-         PELELM_HOME: ${GITHUB_WORKSPACE}
+         PELELMEX_HOME: ${GITHUB_WORKSPACE}
          AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
       run: |
         cd Exec/RegTests/FlameSheet/
         make TPL COMP=gnu
         make -j 2 COMP=gnu
+    - name: RunBase
+      working-directory: ./Exec/RegTests/FlameSheet/
+      run: |
+        ./PeleLMeX2d.gnu.MPI.ex input.2d-regt amr.max_step=2 amr.plot_int=-1 amr.check_int=-1
+    - name: RunSoret
+      working-directory: ./Exec/RegTests/FlameSheet/
+      run: |
+        ./PeleLMeX2d.gnu.MPI.ex input.2d-regt transport.use_soret=1 amr.max_step=2 amr.plot_int=-1 amr.check_int=-1
+    - name: RunUnityLe
+      working-directory: ./Exec/RegTests/FlameSheet/
+      run: |
+        ./PeleLMeX2d.gnu.MPI.ex input.2d-regt peleLM.unity_Le=1 peleLM.Prandtl=0.75 amr.max_step=2 amr.plot_int=-1 amr.check_int=-1
 
   # Build the 2D FlameSheet RegTest with GNU9.3 and MPI+OMP support
   FS2D_MPIOMP:
@@ -71,10 +82,6 @@ jobs:
     env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
-    - name: Cancel previous runs
-      uses: styfle/cancel-workflow-action@0.6.0
-      with:
-        access_token: ${{github.token}}
     - uses: actions/checkout@v3
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies_gcc10.sh
@@ -84,7 +91,7 @@ jobs:
       env:
          AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
          PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
-         PELELM_HOME: ${GITHUB_WORKSPACE}
+         PELELMEX_HOME: ${GITHUB_WORKSPACE}
          AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
       run: |
         cd Exec/RegTests/FlameSheet/
@@ -98,10 +105,6 @@ jobs:
     env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
-    - name: Cancel previous runs
-      uses: styfle/cancel-workflow-action@0.6.0
-      with:
-        access_token: ${{github.token}}
     - uses: actions/checkout@v3
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies_gcc10.sh
@@ -111,7 +114,7 @@ jobs:
       env:
          AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
          PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
-         PELELM_HOME: ${GITHUB_WORKSPACE}
+         PELELMEX_HOME: ${GITHUB_WORKSPACE}
          AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
       working-directory: ./Exec/RegTests/PeriodicCases/
       run: |
@@ -129,10 +132,6 @@ jobs:
     env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
-    - name: Cancel previous runs
-      uses: styfle/cancel-workflow-action@0.6.0
-      with:
-        access_token: ${{github.token}}
     - uses: actions/checkout@v3
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies_gcc10.sh
@@ -142,7 +141,7 @@ jobs:
       env:
          AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
          PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
-         PELELM_HOME: ${GITHUB_WORKSPACE}
+         PELELMEX_HOME: ${GITHUB_WORKSPACE}
          AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
       working-directory: ./Exec/RegTests/HotBubble/
       run: |
@@ -153,17 +152,13 @@ jobs:
       run: |
         ./PeleLMeX2d.gnu.MPI.ex input.2d-regt amr.max_step=20 amr.plot_int=-1 amr.check_int=-1
 
-  # Build and Run the HoBubble RegTest with GNU9.3 in DEBUG
+  # Build and Run the HotBubble RegTest with GNU9.3 in DEBUG
   HB2D_DBGRun:
     name: GNU@9.3 DEBUG Run [HB2DDBG]
     runs-on: ubuntu-latest
     env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
-    - name: Cancel previous runs
-      uses: styfle/cancel-workflow-action@0.6.0
-      with:
-        access_token: ${{github.token}}
     - uses: actions/checkout@v3
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies_gcc10.sh
@@ -173,7 +168,7 @@ jobs:
       env:
          AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
          PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
-         PELELM_HOME: ${GITHUB_WORKSPACE}
+         PELELMEX_HOME: ${GITHUB_WORKSPACE}
          AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
       working-directory: ./Exec/RegTests/HotBubble/
       run: |
@@ -191,10 +186,6 @@ jobs:
     env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
-    - name: Cancel previous runs
-      uses: styfle/cancel-workflow-action@0.6.0
-      with:
-        access_token: ${{github.token}}
     - uses: actions/checkout@v3
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies_gcc10.sh
@@ -204,7 +195,7 @@ jobs:
       env:
          AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
          PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
-         PELELM_HOME: ${GITHUB_WORKSPACE}
+         PELELMEX_HOME: ${GITHUB_WORKSPACE}
          AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
       working-directory: ./Exec/RegTests/EnclosedFlame/
       run: |
@@ -222,10 +213,6 @@ jobs:
     env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
-    - name: Cancel previous runs
-      uses: styfle/cancel-workflow-action@0.6.0
-      with:
-        access_token: ${{github.token}}
     - uses: actions/checkout@v3
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies_gcc10.sh
@@ -235,7 +222,7 @@ jobs:
       env:
          AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
          PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
-         PELELM_HOME: ${GITHUB_WORKSPACE}
+         PELELMEX_HOME: ${GITHUB_WORKSPACE}
          AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
       working-directory: ./Exec/RegTests/EB_FlowPastCylinder/
       run: |
@@ -254,10 +241,6 @@ jobs:
     env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
-    - name: Cancel previous runs
-      uses: styfle/cancel-workflow-action@0.6.0
-      with:
-        access_token: ${{github.token}}
     - uses: actions/checkout@v3
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies_gcc10.sh
@@ -267,16 +250,24 @@ jobs:
       env:
          AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
          PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
-         PELELM_HOME: ${GITHUB_WORKSPACE}
+         PELELMEX_HOME: ${GITHUB_WORKSPACE}
          AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
       working-directory: ./Exec/RegTests/HITDecay/
       run: |
         make TPL COMP=gnu USE_MPI=TRUE
         make -j 2 COMP=gnu USE_MPI=TRUE
-    - name: Run
+    - name: RunDNS
       working-directory: ./Exec/RegTests/HITDecay/
       run: |
         ./PeleLMeX3d.gnu.MPI.ex input.3d amr.max_step=10 amr.plot_int=-1 amr.check_int=-1
+    - name: RunLES_Smago
+      working-directory: ./Exec/RegTests/HITDecay/
+      run: |
+        ./PeleLMeX3d.gnu.MPI.ex input.3d_les amr.max_step=10 amr.plot_int=-1 amr.check_int=-1
+    - name: RunLES_WALE
+      working-directory: ./Exec/RegTests/HITDecay/
+      run: |
+        ./PeleLMeX3d.gnu.MPI.ex input.3d_les peleLM.les_model="WALE" amr.max_step=10 amr.plot_int=-1 amr.check_int=-1
 
 
   # Build and Run the EB_PipeFlow RegTest with GNU9.3 and MPI support
@@ -286,10 +277,6 @@ jobs:
     env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
-    - name: Cancel previous runs
-      uses: styfle/cancel-workflow-action@0.6.0
-      with:
-        access_token: ${{github.token}}
     - uses: actions/checkout@v3
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies_gcc10.sh
@@ -299,7 +286,7 @@ jobs:
       env:
          AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
          PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
-         PELELM_HOME: ${GITHUB_WORKSPACE}
+         PELELMEX_HOME: ${GITHUB_WORKSPACE}
          AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
       working-directory: ./Exec/RegTests/EB_PipeFlow/
       run: |
@@ -317,10 +304,6 @@ jobs:
     env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
-    - name: Cancel previous runs
-      uses: styfle/cancel-workflow-action@0.6.0
-      with:
-        access_token: ${{github.token}}
     - uses: actions/checkout@v3
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies_gcc10.sh
@@ -330,7 +313,7 @@ jobs:
       env:
          AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
          PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
-         PELELM_HOME: ${GITHUB_WORKSPACE}
+         PELELMEX_HOME: ${GITHUB_WORKSPACE}
          AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
       working-directory: ./Exec/RegTests/TurbInflow/TurbFileHIT
       run: |
@@ -340,7 +323,7 @@ jobs:
       env:
          AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
          PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
-         PELELM_HOME: ${GITHUB_WORKSPACE}
+         PELELMEX_HOME: ${GITHUB_WORKSPACE}
          AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
       working-directory: ./Exec/RegTests/TurbInflow/
       run: |
@@ -361,10 +344,6 @@ jobs:
     env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
-    - name: Cancel previous runs
-      uses: styfle/cancel-workflow-action@0.6.0
-      with:
-        access_token: ${{github.token}}
     - uses: actions/checkout@v3
     - name: System Dependencies
       run: |

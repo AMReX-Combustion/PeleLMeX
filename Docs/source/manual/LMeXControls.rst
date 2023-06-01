@@ -1,6 +1,8 @@
 PeleLMeX controls
 =================
 
+.. _sec:control:
+
 The input file specified on the command line is a free-format text file, one entry per row, that specifies input data processed by the AMReX ``ParmParse`` module.
 This file needs to specified along with the executable as an `argv` option, for example:
 
@@ -14,7 +16,7 @@ Also, any entry that can be specified in the inputs file can also be specified o
 
     mpirun -np 64 ./PeleLMeX2d.xxx.ex inputs amr.max_level=2
 
-The available options are divided into groups: those that control primarily AMReX are prefaced with `amr.`, those that are specific to the PeleLM are prefaced by `peleLM.`, while those corresponding to the various pieces of the algorithm are prefaced with specific keys, such that `diffusion`, `nodal_proj`, ... as described below.
+The available options are divided into groups: those that control primarily AMReX are prefaced with `amr.`, those that are specific to the PeleLMeX are prefaced by `peleLM.`, while those corresponding to the various pieces of the algorithm are prefaced with specific keys, such that `diffusion`, `nodal_proj`, ... as described below.
 
 Computational domain definition
 -------------------------------
@@ -34,8 +36,8 @@ Computational domain definition
     peleLM.lo_bc = Interior Interior Inflow
     peleLM.hi_bc = Interior Interior Inflow
 
-AMR parameters
---------------
+Grid/AMR parameters
+-------------------
 
 ::
 
@@ -49,6 +51,27 @@ AMR parameters
     amr.grid_eff        = 0.7              # what constitutes an efficient grid
     amr.blocking_factor = 16               # block factor in grid generation (min box size)
     amr.max_grid_size   = 64               # max box size
+
+    peleLM.max_grid_size_chem = 32         # [OPT, DEF="None"] Max box size for the Chemistry BoxArray
+
+Load balancing
+--------------
+
+*PeleLMeX* relies on two distribution maps (see :doc:`Implementation` for more details).
+
+::
+
+    peleLM.do_load_balancing = 1                    # [OPT, DEF=0] Activate load balancing
+    peleLM.load_balancing_method = sfc              # [OPT, DEF="sfc"] AmrCore dmap load balancing method
+    peleLM.load_balancing_cost_estimate = ncell     # [OPT, DEF="ncell"] AmrCore dmap balancing cost
+    peleLM.chem_load_balancing_method = knapsack    # [OPT, DEF="knapsack"] Chemistry dmap load balancing method
+    peleLM.chem_load_balancing_cost_estimate = chemfunctcall_sum # [OPT, DEF="chemfunctcall_sum"] Chemistry dmap balancing cost
+    peleLM.load_balancing_efficiency_threshold = 1.05  # What constitute a better dmap ?
+
+The balancing method can be one of `sfc`, `roundrobin` or `knapsack`, while the cost estimate can be one of
+`ncell`, `chemfunctcall_avg`, `chemfunctcall_max`, `chemfunctcall_sum`, `userdefined_avg` or `userdefined_sum`. When
+using either of the last to option, the user must provide a definition for the `derUserDefined`. If multiple components
+are defined in the `derUserDefined` function, the first one is used for load balancing.
 
 Time stepping parameters
 ------------------------
@@ -66,8 +89,9 @@ Time stepping parameters
     amr.dt_shrink     = 0.0001             # [OPT, DEF=1.0] dt factor upon initialization
     amr.dt_change_max = 1.1                # [OPT, DEF=1.1] maximum dt change between consecutive steps
 
-Note that one of `max_step`, `stop_time`, or `max_wall_time` is required, and if more than one is specified,
-the first stopping criterion encountered will lead to termination of the simulation.
+.. note::
+   Note that one of `amr.max_step`, `amr.stop_time`, or `amr.max_wall_time` is required, and if more than one is specified,
+   the first stopping criterion encountered will lead to termination of the simulation.
 
 IO parameters
 -------------
@@ -76,10 +100,11 @@ IO parameters
 
     #--------------------------IO CONTROL--------------------------
     amr.plot_int         = 20              # [OPT, DEF=-1] Frequency (as step #) for writting plot file
-    amr.plot_per         = 002             # [OPT, DEF=-1] Period (time in s) for writting plot file
+    amr.plot_per         = 0.002           # [OPT, DEF=-1] Period (time in s) for writting plot file
     amr.plot_per_exact   = 1               # [OPT, DEF=0] Flag to enforce exactly plt_per by shortening dt
     amr.plot_file        = "plt_"          # [OPT, DEF="plt_"] Plot file prefix
     amr.check_int        = 100             # [OPT, DEF=-1] Frequency (as step #) for writting checkpoint file
+    amr.check_per        = 0.05            # [OPT, DEF=-1] Period (time in s) for writting checkpoint file
     amr.check_file       = "chk"           # [OPT, DEF="chk"] Checkpoint file prefix
     amr.file_stepDigits  = 6               # [OPT, DEF=5] Number of digits when adding nsteps to plt and chk names
     amr.derive_plot_vars = avg_pressure ...# [OPT, DEF=""] List of derived variable included in the plot files
@@ -87,6 +112,39 @@ IO parameters
 
     amr.restart          = chk00100        # [OPT, DEF=""] Checkpoint from which to restart the simulation
     amr.initDataPlt      = plt01000        # [OPT, DEF=""] Provide a plotfile from which to extract initial data
+    amr.regrid_on_restart = 1              # [OPT, DEF="0"] Trigger a regrid after the data from checkpoint are loaded
+
+Refinement controls
+-------------------
+
+Refinement in PeleLMeX is controlled by a set of 'Tagging' criterion listed under the `amr.refinement_indicators`
+key. For each criteriq, the user needs to supply a definition. For example, the following provides a complete
+overview of the available controls:
+
+::
+
+    amr.refinement_indicators gthan lthan adjd box1
+
+    amr.gthan.max_level     = 3
+    amr.gthan.value_greater = 0.005
+    amr.gthan.field_name    = x_velocity
+
+    amr.lthan.max_level     = 4
+    amr.lthan.value_less    = 400.0
+    amr.lthan.field_name    = temp
+    amr.lthan.start_time    = 0.001
+    amr.lthan.end_time      = 0.005
+
+    amr.adjd.max_level                   = 2
+    amr.adjd.adjacent_difference_greater = 0.05
+    amr.adjd.field_name                  = density
+
+    amr.box1.max_level      = 1
+    amr.box1.in_box_lo      = 0.0 0.0 0.0
+    amr.box1.in_box_hi      = 0.01 0.01 0.05
+
+The `field_name` can be any of the state or derived variables (see below) component. Additional controls specific
+to embedded boundaries are discussed below.
 
 PeleLMeX derived variables
 --------------------------
@@ -126,7 +184,13 @@ The following list of derived variables are available in PeleLMeX:
       - Cell-averaged pressure (from the node-centered pressure)
     * - `mag_vort`
       - 1
-      - Vorticity (2D) or vorticity magnitude (3D)
+      - Vorticity magnitude
+    * - `vorticity`
+      - AMREX_SPACEDIM*2-3
+      - VortZ (2D) or VortX, VortY, VortZ (3D)
+    * - `Qcrit`
+      - 1
+      - Q-Criterion : :math:`0.5(|\boldsymbol{\Omega}|^2 - |\boldsymbol{S}|^2)`
     * - `kinetic_energy`
       - 1
       - Kinetic energy: 0.5 * rho * (u^2+v^2+w^2)
@@ -139,8 +203,20 @@ The following list of derived variables are available in PeleLMeX:
     * - `rhominsumrhoY`
       - 1
       - Rho minus sum of rhoYs, for debug purposes
+    * - `coordinates`
+      - AMREX_SPACEDIM
+      - Cell-center coordinates
+    * - `DistributionMap`
+      - 1
+      - The MPI-rank of each box
+    * - `derUserDefined`
+      - ?
+      - A user-defined derived which number of components is provided by the user (see below).
 
 Note that `mixture_fraction` and `progress_variable` requires additional inputs from the users as described below.
+The `derUserDefined` allow the user to define its own derived variable which can comprise several components. To do
+so, the user need to copy the Source/DeriveUserDefined.cpp file into his run folder and update the file. The number of
+components is defined based on the size of the vector returned by pelelm_setuserderives().
 
 PeleLMeX algorithm
 ------------------
@@ -167,6 +243,21 @@ PeleLMeX algorithm
     peleLM.deltaT_iterMax = 5              # [OPT, DEF=10] Maximum number of deltaT iterations
     peleLM.deltaT_tol = 1e-10              # [OPT, DEF=1.e-10] Tolerance of the deltaT solve
     peleLM.evaluate_vars =...              # [OPT, DEF=""] In evaluate mode, list unitTest: diffTerm, divU, instRR, transportCC
+
+Transport coeffs and LES
+------------------------
+
+::
+
+    #-----------------------DIFFUSION AND LES MODEL CONTROL-----------------------
+    peleLM.unity_Le = 0                    # [OPT, DEF=0] Use the unity Lewis number approximation for diffusivities
+    peleLM.Prandtl = 0.7                   # [OPT, DEF=0.7] If unity_Le or doing LES, specifies the Prandtl number
+    peleLM.les_model = "None"              # [OPT, DEF="None"] Model to compute turbulent viscosity: None, Smagorinsky, WALE, Sigma
+    peleLM.les_cs_smag = 0.18              # [OPT, DEF=0.18] If using Smagorinsky LES model, provides model coefficient
+    peleLM.les_cm_wale = 0.60              # [OPT, DEF=0.60] If using WALE LES model, provides model coefficient
+    peleLM.les_cs_sigma = 1.35             # [OPT, DEF=1.35] If using Sigma LES model, provides model coefficient
+    peleLM.les_v = 0                       # [OPT, DEF=0] Verbosity level for LES model
+    peleLM.plot_les = 0                    # [OPT, DEF=0] If doing LES, whether to plot the turbulent viscosity
 
 Chemistry integrator
 --------------------
@@ -203,15 +294,15 @@ For instance, setting up a sphere of radius 5 mm can be achieved:
 The `eb2.small_volfrac` controls volume fraction that are deemed too small and eliminated from the EB representation.
 This operation is done iteratively and the maximum number of iteration is prescribed by `eb2.maxiter`.
 For most applications, a single AMReX object is insufficient to represent the geometry. AMReX enable to combine
-objects using constructive solid geometry (CSG) in order to create complex geometry. It is up to the user to define
-the combination of basic elements leading to its desired geometry. To switch to a user-defined EB definition, one
+objects using constructive solid geometry (CSG) in order to create complex geometry. It is up to users to define
+the combination of basic elements leading to their desired geometry. To switch to a user-defined EB definition, one
 must set:
 
 ::
 
     eb2.geom_type = UserDefined
 
-and then implement the actual geometry definition in a `EBUserDefined.H` file located in the run folder (and added
+and then implement the actual geometry definition in a `EBUserDefined.H` file located in the run folder (and add
 to the GNUmakefile using `CEXE_headers += EBUserDefined.H`). An example of such implementation is available in the
 ``Exec/Case/ChallengeProblem`` folder. Example of more generic EB problems are also found in the ``Exec/RegTest/EB_*``
 folders.
@@ -228,8 +319,23 @@ By default, the EB is refined to the `amr.max_level`, which can lead to undesira
 close to the EB when the physics of interest might be elsewhere. The above lines enable to limit the
 EB-level to level 1 (must be below `amr.max_level`) and a derefinement strategy is adopted to ensure
 that fine-grid patches do not cross the EB boundary. The last parameter set a safety margin to increase
-how far the derefinement is applied in order to account for grid-patches diagonals and proper nesting contraint.
-Note that the parameter do not ensure coarse-fine/EB crossings are avoided and the code will fail when this happens.
+how far the derefinement is applied in order to account for grid-patches diagonals and proper nesting constrains.
+Note that the parameter do not ensure explicitly coarse-fine/EB crossings are avoided and the code will fail when this happens.
+
+It is also possible to change the default adiabatic EB wall condition to an isothermal EB. To do so, one need to switch the following
+flag:
+
+::
+
+    peleLM.isothermal_EB = 1
+
+The user is now responsible for providing the wall temperature *on all the EB walls*, but adiabtic wall can still be specified.
+Control over the local EB thermal boundary condition is provided through the `setEBState` and `setEBType` functions, also
+defined in the `EBUserDefined.H` already used above to provide a user-defined EB geometry. Example of isothermal EBs are provided
+in ``Exec/RegTest/EB_BackwardStepFlame`` and ``Exec/RegTest/EB_FlowPastCylinder`` tests.
+
+.. note::
+   Note that when using isothermal EB in combination with LES, the thermal diffusion coefficient employed to compute the EB boundary thermal flux only uses the molecular contribution.
 
 Linear solvers
 --------------
@@ -257,10 +363,39 @@ Linear solvers are a key component of PeleLMeX algorithm, separate controls are 
     tensor_diffusion.rtol = 1.0e-11             # [OPT, DEF=1e-11] Relative tolerance of the velocity tensor diffusion solve
     tensor_diffusion.atol = 1.0e-12             # [OPT, DEF=1e-14] Absolute tolerance of the velocity tensor diffusion solve
 
+Active control
+--------------
+
+`PeleLMeX` includes an active control mechanism to enable statistically steady simulations of flames
+maintaining the flame at a fixed position in the domain. An example of this feature is provided in
+the triple flame tutorial :doc:`Tutorials_TripleFlame`.
+
+.. note::
+   To enable active control, a ``FlowControllerData FCData`` object must be added to the problem ``ProbParm``!
+
+During the course of the simulation, the FlowControllerData is updated based on the flame position to allow
+the user to set the inflow velocity. The following options are available when using active control: ::
+
+    #---------------------- AC CONTROL -------------------------------
+    active_control.on = 1                     # [OPT, DEF=0] Use AC ?
+    active_control.use_temp = 1               # [OPT, DEF=1] Default in fuel mass, rather use iso-T position ?
+    active_control.temperature = 1400.0       # [OPT, DEF=-1] Value of iso-T ?
+    active_control.tau = 5.0e-4               # [OPT, DEF=0.0] Control tau (should ~ 10 dt)
+    active_control.height = 0.01              # [OPT, DEF=0.0] Where is the flame held ?
+    active_control.v = 1                      # [OPT, DEF=0] verbose
+    active_control.method = 1                 # [OPT, DEF=2] Controller: 1 - Linear, 2 - Quadratic, 3 - Weighted quadratic
+    active_control.velMax = 2.0               # [OPT, DEF=0.0] limit inlet velocity
+    active_control.changeMax = 0.1            # [OPT, DEF=1.0] limit inlet velocity changes (absolute m/s)
+    active_control.flow_dir  = 1              # [OPT, DEF=AMREX_SPACEDIM-1] flame main direction
+    active_control.AC_history  = AChist       # [OPT, DEF=AC_history] Control history file, read upon restart
+    active_control.npoints_average = 5        # [OPT, DEF=3] Number of previous steps using to estimate new velocity
+    active_control.pseudo_gravity = 1         # [OPT, DEF=0] add density proportional force to compensate for the acceleration
+                                              #           of the gas due to inlet velocity changes
+
 Run-time diagnostics
 --------------------
 
-PeleLMeX provides a few diagnostics to check you simulations while it is running as well as adding basic analysis ingredients.
+`PeleLMeX` provides a few diagnostics to check you simulations while it is running as well as adding basic analysis ingredients.
 
 It is often usefull to have an estimate of integrated quantities (kinetic energy, heat release rate, ,..), state extremas
 or other overall balance information to get a sense of the status and sanity of the simulation. To this end, it is possible
@@ -307,28 +442,58 @@ state:
     peleLM.progressVariable.hotState = CO:0.000002 CO2:0.0666
 
 
-A set of diagnostics available at runtime are currently under development. The following provide an example for extracting
-the state variables on a 'x','y' or 'z' aligned plane and writting a 2D plotfile compatible with Amrvis, Paraview or yt:
+Analysing the data a-posteriori can become extremely cumbersome when dealing with extreme datasets.
+PeleLMeX offers a set of diagnostics available at runtime and more are under development.
+Currently, the list of diagnostic contains:
+
+* `DiagFramePlane` : extract a plane aligned in the 'x','y' or 'z' direction across the AMR hierarchy, writing
+  a 2D plotfile compatible with Amrvis, Paraview or yt. Only available for 3D simulations.
+* `DiagPDF` : extract the PDF of a given variable and write it to an ASCII file.
+* `DiagConditional` : extract statistics (average and standard deviation, integral or sum) of a
+  set of variables conditioned on the value of given variable and write it to an ASCII file.
+
+When using `DiagPDF` or `DiagConditional`, it is possible to narrow down the diagnostic to a region of interest
+by specifying a set of filters, defining a range of interest for a variable. Note also the for these two diagnostics,
+fine-covered regions are masked. The following provide examples for each diagnostic:
 
 ::
 
     #--------------------------DIAGNOSTICS------------------------
 
-    peleLM.diagnostics = xnormal ynormal
-    peleLM.xnormal.type = DiagFramePlane
-    peleLM.xnormal.file = xNorm5mm
-    peleLM.xnormal.normal = 0
-    peleLM.xnormal.center = 0.005
-    peleLM.xnormal.int    = 5
-    peleLM.xnormal.interpolation = Linear
+    peleLM.diagnostics = xnormP condT pdfTest
 
-    peleLM.ynormal.type = DiagFramePlane
-    peleLM.ynormal.file = yNormCent
-    peleLM.ynormal.normal = 1
-    peleLM.ynormal.center = 0.0
-    peleLM.ynormal.int    = 10
-    peleLM.ynormal.interpolation = Quadratic
+    peleLM.xnormP.type = DiagFramePlane                             # Diagnostic type
+    peleLM.xnormP.file = xNorm5mm                                   # Output file prefix
+    peleLM.xnormP.normal = 0                                        # Plane normal (0, 1 or 2 for x, y or z)
+    peleLM.xnormP.center = 0.005                                    # Coordinate in the normal direction
+    peleLM.xnormP.int    = 5                                        # Frequency (as step #) for performing the diagnostic
+    peleLM.xnormP.interpolation = Linear                            # [OPT, DEF=Linear] Interpolation type : Linear or Quadratic
+    peleLM.xnormP.field_names = x_velocity mag_vort density         # List of variables outputed to the 2D pltfile
 
+    peleLM.condT.type = DiagConditional                             # Diagnostic type
+    peleLM.condT.file = condTest                                    # Output file prefix
+    peleLM.condT.int  = 5                                           # Frequency (as step #) for performing the diagnostic
+    peleLM.condT.filters = xHigh stoich                             # [OPT, DEF=None] List of filters
+    peleLM.condT.xHigh.field_name = x                               # Filter field
+    peleLM.condT.xHigh.value_greater = 0.006                        # Filter definition : value_greater, value_less, value_inrange
+    peleLM.condT.stoich.field_name = mixture_fraction               # Filter field
+    peleLM.condT.stoich.value_inrange = 0.053 0.055                 # Filter definition : value_greater, value_less, value_inrange
+    peleLM.condT.conditional_type = Average                         # Conditional type : Average, Integral or Sum
+    peleLM.condT.nBins = 50                                         # Number of bins for the conditioning variable
+    peleLM.condT.condition_field_name = temp                        # Conditioning variable name
+    peleLM.condT.field_names = HeatRelease I_R(CH4) I_R(H2)         # List of variables to be treated
+
+    peleLM.pdfTest.type = DiagPDF                                   # Diagnostic type
+    peleLM.pdfTest.file = PDFTest                                   # Output file prefix
+    peleLM.pdfTest.int  = 5                                         # Frequency (as step #) for performing the diagnostic
+    peleLM.pdfTest.filters = innerFlame                             # [OPT, DEF=None] List of filters
+    peleLM.pdfTest.innerFlame.field_name = temp                     # Filter field
+    peleLM.pdfTest.innerFlame.value_inrange = 450.0 1500.0          # Filter definition : value_greater, value_less, value_inrange
+    peleLM.pdfTest.nBins = 50                                       # Number of bins for the PDF
+    peleLM.pdfTest.normalized = 1                                   # [OPT, DEF=1] PDF is normalized (i.e. integral is unity) ?
+    peleLM.pdfTest.volume_weighted = 1                              # [OPT, DEF=1] Computation of the PDF is volume weighted ?
+    peleLM.pdfTest.range = 0.0 2.0                                  # [OPT, DEF=data min/max] Specify the range of the PDF
+    peleLM.pdfTest.field_name = x_velocity                          # Variable of interest
 
 Run-time control
 --------------------

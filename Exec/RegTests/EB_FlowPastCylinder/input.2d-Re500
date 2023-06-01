@@ -1,0 +1,69 @@
+#----------------------DOMAIN DEFINITION-------------------------
+geometry.is_periodic = 0 1                # For each dir, 0: non-perio, 1: periodic
+geometry.coord_sys   = 0                  # 0 => cart, 1 => RZ
+geometry.prob_lo     = -0.02 -0.02        # x_lo y_lo (z_lo)
+geometry.prob_hi     =  0.10  0.02        # x_hi y_hi (z_hi)
+
+#--------------------------BC FLAGS------------------------------
+# Interior, Inflow, Outflow, Symmetry,
+# SlipWallAdiab, NoSlipWallAdiab, SlipWallIsotherm, NoSlipWallIsotherm
+peleLM.lo_bc = Inflow  Interior
+peleLM.hi_bc = Outflow Interior
+
+#-------------------------AMR CONTROL----------------------------
+amr.n_cell          = 192 64           # Level 0 number of cells in each direction
+amr.v               = 1                # AMR verbose
+amr.max_level       = 0                # maximum level number allowed
+amr.ref_ratio       = 2 2 2 2          # refinement ratio
+amr.regrid_int      = 5                # how often to regrid
+amr.n_error_buf     = 2 2 2 2          # number of buffer cells in error est
+amr.grid_eff        = 0.7              # what constitutes an efficient grid
+amr.blocking_factor = 16               # block factor in grid generation (min box size)
+amr.max_grid_size   = 64               # max box size
+
+#--------------------------- Problem ----------------------------
+prob.T_mean = 300.0
+prob.P_mean = 101325.0
+prob.meanFlowMag = 4.255
+prob.meanFlowDir = 1
+
+#-----------------INPUTS TO CONSTANT TRANSPORT ------------------
+transport.units                  = MKS
+transport.const_viscosity        = 0.0001
+transport.const_bulk_viscosity   = 0.0
+transport.const_conductivity     = 0.0
+transport.const_diffusivity      = 0.0
+
+#---------------------------TIME STEPPING------------------------
+amr.max_step = 30000
+amr.stop_time = 0.025
+amr.dt_shrink = 0.1
+amr.dt_change_max = 1.1
+amr.cfl = 0.7
+
+#-------------------------PELELMEX CONTROLS----------------------
+peleLM.v = 1
+
+#---------------------------IO CONTROL---------------------------
+#amr.restart = chk_07136
+amr.check_file = "chk_"
+amr.check_per = 0.05
+amr.plot_file = "plt_"
+amr.plot_per = 0.005
+amr.derive_plot_vars = avg_pressure mag_vort
+
+#------------------------- EB SETUP -----------------------------
+eb2.geom_type = sphere
+eb2.sphere_radius = 0.005
+eb2.sphere_center = 0.0 0.0
+eb2.sphere_has_fluid_inside = 0
+eb2.small_volfrac = 1.0e-4
+
+#--------------------REFINEMENT CONTROL--------------------------
+amr.refinement_indicators = VortL VortH
+amr.VortL.max_level     = 1
+amr.VortL.value_less    = -1000
+amr.VortL.field_name    = mag_vort
+amr.VortH.max_level     = 1
+amr.VortH.value_greater = 1000
+amr.VortH.field_name    = mag_vort

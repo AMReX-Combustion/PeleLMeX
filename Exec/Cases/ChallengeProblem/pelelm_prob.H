@@ -352,7 +352,7 @@ bcnormal(
       vx_in = vr_in * cos(phi_angle);
       vy_in = vr_in * sin(phi_angle);
 
-      s_ext[TEMP] = prob_parm.T_jet;
+      s_ext[TEMP] = prob_parm.T_jet * eta + (1.0-eta) * prob_parm.T_mean;
       eos.PYT2R(p_cgs, massfrac, s_ext[TEMP], rho_cgs);
       s_ext[DENSITY] = rho_cgs * 1.0e3;
       eos.TY2H(s_ext[TEMP], massfrac, RhoH_temp);
@@ -392,5 +392,12 @@ zero_visc (int i, int j, int k,
      amrex::ignore_unused(i,j,k,beta,geomdata,domainBox,dir,beta_comp,nComp);
     // We treat species when beta_comp == 0 and nComp == NUM_SPECIES
     // otherwise this routine could be called for other face diffusivity (Temp, velocity, ...)
+    if (beta_comp == 0 && nComp == NUM_SPECIES) {
+        if (dir == 2 && k >= domainBox.bigEnd(dir)) {
+            for (int n = 0; n < nComp; n++) {
+                beta(i,j,k,n) = 0.0;
+            }
+        }
+    }
 }
 #endif

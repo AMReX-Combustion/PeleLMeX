@@ -28,18 +28,25 @@ prob.P_mean = 101325.0
 prob.T_ox   = 298.0
 prob.T_fuel = 298.0
 prob.massflow = 2.0
-prob.jet_radius = 0.005
+prob.jet_radius = 0.005 # Should be consistent with spray.jet1.jet_dia
 prob.inert_radius = 0.0075
 prob.inert_velocity = 1.5
 prob.pertmag = 0.000
-prob.do_ignition = 1
+
+prob.do_ignition = 0
 prob.ignition_SphT = 2000.0
 prob.ignition_SphRad = 0.006
-prob.mass_flow_rate = 0.00098
-prob.jet_vel = 2.0
-prob.part_mean_dia =  0.000045
-prob.part_stdev_dia = 0.000005
-prob.part_temp = 300.0
+
+spray.jet1.jet_cent = 0.01 0. 0.
+spray.jet1.jet_norm = -1. 0. 0.
+spray.jet1.mass_flow_rate = 9.8E-4
+spray.jet1.T = 300.
+spray.jet1.jet_vel = 2.
+spray.jet1.jet_dia = 0.01
+spray.jet1.dist_type = Uniform
+spray.jet1.diameter = 5.E-5
+spray.jet1.spread_angle = 0. # Unused
+
 
 #--------------------SPRAY PARTICLE DATA-----------------------
 peleLM.do_spray_particles = 1
@@ -49,18 +56,17 @@ particles.mom_transfer = 1
 particles.mass_transfer = 1
 particles.init_function = 1 # Sprays are initialized using SprayParticleInitInsert.cpp
 #particles.init_file = spray00500.p3d
-particles.write_spray_ascii_files = 1
+#particles.write_ascii_files = 1
 particles.parcel_size = 2. # Number of particles per parcel
 particles.fuel_species = NXC7H16
-# Properties for liquid decane
-particles.fuel_crit_temp = 540. # K
-particles.fuel_boil_temp = 371.6 # K
 particles.fuel_ref_temp = 298.15
-particles.fuel_latent = 3.69E5
-particles.fuel_cp = 2.2483E3 # Cp at 298
-#particles.fuel_latent = 3.0294e9
-#particles.fuel_cp = 2.5939e7 # Cp at 298 K
-particles.fuel_rho = 681.43
+
+# Properties for liquid decane
+particles.NXC7H16_crit_temp = 540. # K
+particles.NXC7H16_boil_temp = 371.6 # K
+particles.NXC7H16_latent = 3.69E5
+particles.NXC7H16_cp = 2.2483E3 # Cp at 298
+particles.NXC7H16_rho = 681.43
 # Coefficients for saturation pressure using Antoine equation
 # These are from the NIST website
 # Last coefficient converts units, in this case bar, to Pa
@@ -82,7 +88,7 @@ peleLM.deltaT_verbose = 0
 #amr.regrid_on_restart = 1
 amr.check_int = 50
 amr.plot_int = 20
-amr.max_step = 2000
+amr.max_step = 200
 amr.dt_shrink = 0.01
 amr.init_dt = 1.0e-6
 amr.stop_time = 1.1
