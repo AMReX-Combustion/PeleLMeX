@@ -1608,7 +1608,6 @@ class PeleLM : public amrex::AmrCore {
 	amrex::Vector<amrex::Real> m_ctrl_time_pts;
 	amrex::Vector<amrex::Real> m_ctrl_velo_pts;
 	amrex::Vector<amrex::Real> m_ctrl_cntl_pts;
->>>>>>> development
 
 	// PMF parameters
 	pele::physics::PMF::PmfData pmf_data;
@@ -1801,7 +1800,7 @@ class PeleLM : public amrex::AmrCore {
 #ifdef AMREX_USE_EB
 	int m_nGrowState = 4;
 #else
-int m_nGrowState = 3;
+	int m_nGrowState = 3;
 #endif
 	int m_nGrowAdv = 1;
 	int m_nGrowdivu = 1;
