@@ -830,9 +830,6 @@ class PeleLM : public amrex::AmrCore {
 #endif
 
 #ifdef PELELM_USE_RAD
-	// SetRadIndx
-	void setRadIndx();
-
 	// Compute the radiation source term
 	void computeRadSource(const PeleLM::TimeStamp &a_timestamp,
 			      const amrex::Real a_dt);
