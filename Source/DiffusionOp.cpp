@@ -984,7 +984,11 @@ void DiffusionTensorOp::compute_divtau (Vector<MultiFab*> const& a_divtau,
                                                                          doZeroVisc, {a_bcrec}, *a_beta[lev],
                                                                          addTurbContrib);
        m_apply_op->setShearViscosity(lev, GetArrOfConstPtrs(beta_ec), MLMG::Location::FaceCentroid);
-       m_apply_op->setEBShearViscosity(lev, *a_beta[lev]);
+       if (m_pelelm->m_useEBinflow) {
+           m_apply_op->setEBShearViscosityWithInflow(lev, *a_beta[lev], *(m_pelelm->getEBState(lev,VELX,AMREX_SPACEDIM,m_pelelm->AmrOldTime)));
+       } else {
+           m_apply_op->setEBShearViscosity(lev, *a_beta[lev]);
+       }
        m_apply_op->setLevelBC(lev, &vel[lev]);
    }
 
@@ -1066,7 +1070,11 @@ void DiffusionTensorOp::diffuse_velocity (Vector<MultiFab*> const& a_vel,
                                                                          addTurbContrib);
 #ifdef AMREX_USE_EB
        m_solve_op->setShearViscosity(lev, GetArrOfConstPtrs(beta_ec), MLMG::Location::FaceCentroid);
-       m_solve_op->setEBShearViscosity(lev, *a_beta[lev]);
+       if (m_pelelm->m_useEBinflow) {
+           m_solve_op->setEBShearViscosityWithInflow(lev, *a_beta[lev], *(m_pelelm->getEBState(lev,VELX,AMREX_SPACEDIM,m_pelelm->AmrOldTime)));
+       } else {
+           m_solve_op->setEBShearViscosity(lev, *a_beta[lev]);
+       }
 #else
        m_solve_op->setShearViscosity(lev, GetArrOfConstPtrs(beta_ec));
 #endif

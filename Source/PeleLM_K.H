@@ -1,6 +1,10 @@
 #ifndef PeleLM_K_H_
 #define PeleLM_K_H_
 
+#ifdef AMREX_USE_EB
+#include "EBUserKernels.H"
+#endif
+
 #include <mechanism.H>
 #include <PelePhysics.H>
 
@@ -1145,6 +1149,4 @@ getTurbViscSigma(int i, int j, int k,
 
    mu_t(i,j,k) = prefactor * rho(i,j,k) * D_sig;
 }
-
-
 #endif

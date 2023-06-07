@@ -12,4 +12,7 @@ void PeleLM::readProbParm()
    pp.query("T_hot", prob_parm->T_hot);
    pp.query("T_wall", prob_parm->Twall);
    pp.query("meanFlowMag", prob_parm->meanFlowMag);
+   pp.query("EBinflow_T", prob_parm->EBinflow_T);
+   pp.query("EBinflow_vel", prob_parm->EBinflow_vel);
+   pp.query("EBinflow_Yfuel", prob_parm->EBinflow_Yfuel);
 }
