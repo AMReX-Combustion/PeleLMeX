@@ -3,8 +3,7 @@
 using namespace amrex;
 
 void
-PeleLM::Evolve()
-{
+PeleLM::Evolve() {
   BL_PROFILE("PeleLM::Evolve()");
 
   bool do_not_evolve =
@@ -124,8 +123,7 @@ PeleLM::Evolve()
 }
 
 bool
-PeleLM::writePlotNow()
-{
+PeleLM::writePlotNow() {
   bool write_now = false;
 
   if (m_plot_int > 0 && (m_nstep % m_plot_int == 0)) {
@@ -173,8 +171,7 @@ PeleLM::writePlotNow()
 }
 
 bool
-PeleLM::writeCheckNow()
-{
+PeleLM::writeCheckNow() {
   bool write_now = false;
 
   if (m_check_int > 0 && (m_nstep % m_check_int == 0)) {
@@ -216,8 +213,7 @@ PeleLM::writeCheckNow()
 }
 
 bool
-PeleLM::doTemporalsNow()
-{
+PeleLM::doTemporalsNow() {
   bool write_now = false;
 
   if (m_do_temporals && (m_nstep % m_temp_int == 0)) {
@@ -228,8 +224,7 @@ PeleLM::doTemporalsNow()
 }
 
 bool
-PeleLM::checkMessage(const std::string& a_action)
-{
+PeleLM::checkMessage(const std::string& a_action) {
   bool take_action = false;
 
   std::string action_file = "";

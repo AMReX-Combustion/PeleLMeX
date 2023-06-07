@@ -28,16 +28,14 @@ const std::string level_prefix{"Level_"};
 }
 
 void
-GotoNextLine(std::istream& is)
-{
+GotoNextLine(std::istream& is) {
   constexpr std::streamsize bl_ignore_max{100000};
   is.ignore(bl_ignore_max, '\n');
 }
 
 void
 PeleLM::WriteDebugPlotFile(
-  const Vector<const MultiFab*>& a_MF, const std::string& pltname)
-{
+  const Vector<const MultiFab*>& a_MF, const std::string& pltname) {
   int nComp = a_MF[0]->nComp();
   Vector<std::string> names(nComp);
   for (int n = 0; n < nComp; n++) {
@@ -59,8 +57,7 @@ PeleLM::WriteDebugPlotFile(
 }
 
 void
-PeleLM::WritePlotFile()
-{
+PeleLM::WritePlotFile() {
   BL_PROFILE("PeleLM::WritePlotFile()");
 
   const std::string& plotfilename =
@@ -446,8 +443,7 @@ PeleLM::WritePlotFile()
 }
 
 void
-PeleLM::WriteHeader(const std::string& name, bool is_checkpoint) const
-{
+PeleLM::WriteHeader(const std::string& name, bool is_checkpoint) const {
   if (ParallelDescriptor::IOProcessor()) {
     std::string HeaderFileName(name + "/Header");
     VisMF::IO_Buffer io_buffer(VisMF::IO_Buffer_Size);
@@ -507,8 +503,7 @@ PeleLM::WriteHeader(const std::string& name, bool is_checkpoint) const
 }
 
 void
-PeleLM::WriteCheckPointFile()
-{
+PeleLM::WriteCheckPointFile() {
   BL_PROFILE("PeleLM::WriteCheckPointFile()");
 
   const std::string& checkpointname =
@@ -566,8 +561,7 @@ PeleLM::WriteCheckPointFile()
 }
 
 void
-PeleLM::ReadCheckPointFile()
-{
+PeleLM::ReadCheckPointFile() {
   BL_PROFILE("PeleLM::ReadCheckPointFile()");
 
   amrex::Print() << "Restarting from checkpoint " << m_restart_chkfile << "\n";
@@ -777,8 +771,7 @@ PeleLM::ReadCheckPointFile()
 }
 
 void
-PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
-{
+PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile) {
   if (m_incompressible) {
     Abort(" initializing data from a pltfile only available for "
           "low-Mach simulations");
@@ -994,8 +987,7 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
 }
 
 void
-PeleLM::WriteJobInfo(const std::string& path) const
-{
+PeleLM::WriteJobInfo(const std::string& path) const {
   std::string OtherLine = std::string(78, '-') + "\n";
   std::string SkipSpace = std::string(8, ' ');
 

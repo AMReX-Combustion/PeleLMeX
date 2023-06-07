@@ -7,8 +7,7 @@
 using namespace amrex;
 
 void
-PeleLM::Init()
-{
+PeleLM::Init() {
   BL_PROFILE_VAR("PeleLM::Init()", Init);
 
   // Open temporals file
@@ -26,8 +25,7 @@ PeleLM::MakeNewLevelFromScratch(
   int lev,
   amrex::Real time,
   const amrex::BoxArray& ba,
-  const amrex::DistributionMapping& dm)
-{
+  const amrex::DistributionMapping& dm) {
   BL_PROFILE_VAR("PeleLM::MakeNewLevelFromScratch()", MakeNewLevelFromScratch);
 
   if (m_verbose > 0) {
@@ -164,8 +162,7 @@ PeleLM::MakeNewLevelFromScratch(
 }
 
 void
-PeleLM::initData()
-{
+PeleLM::initData() {
   BL_PROFILE_VAR("PeleLM::initData()", initData);
 
   if (m_restart_chkfile.empty()) {
@@ -356,8 +353,7 @@ PeleLM::initData()
 }
 
 void
-PeleLM::initLevelData(int lev)
-{
+PeleLM::initLevelData(int lev) {
   BL_PROFILE_VAR("PeleLM::initLevelData()", initLevelData);
 
   // Get level data
@@ -401,8 +397,7 @@ PeleLM::initLevelData(int lev)
 }
 
 void
-PeleLM::projectInitSolution()
-{
+PeleLM::projectInitSolution() {
   const int is_init = 1;
 
 #ifdef PELE_USE_EFIELD
@@ -513,8 +508,7 @@ PeleLM::projectInitSolution()
 }
 
 void
-PeleLM::initialIterations()
-{
+PeleLM::initialIterations() {
   BL_PROFILE_VAR("PeleLM::initialIterations()", initialIterations);
 
   if (m_verbose > 0 && m_init_iter > 0) {
@@ -544,8 +538,7 @@ PeleLM::initialIterations()
 }
 
 void
-PeleLM::InitFromGridFile(amrex::Real time)
-{
+PeleLM::InitFromGridFile(amrex::Real time) {
   {
     const amrex::BoxArray& ba = MakeBaseGrids();
     DistributionMapping dm(ba);
@@ -560,8 +553,7 @@ PeleLM::InitFromGridFile(amrex::Real time)
 }
 
 void
-PeleLM::checkRunParams()
-{
+PeleLM::checkRunParams() {
 #ifdef AMREX_USE_EB
   if (geom[0].IsRZ()) {
     Abort("RZ geometry is not available with EB");

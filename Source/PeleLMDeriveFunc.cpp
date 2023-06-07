@@ -132,8 +132,7 @@ pelelm_dermolefrac(
   const Geometry& /*geom*/,
   Real /*time*/,
   const Vector<BCRec>& /*bcrec*/,
-  int /*level*/)
-{
+  int /*level*/) {
   AMREX_ASSERT(derfab.box().contains(bx));
   AMREX_ASSERT(statefab.box().contains(bx));
   AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
@@ -1276,8 +1275,7 @@ pelelm_dervisc(
   const Geometry& /*geom*/,
   Real /*time*/,
   const Vector<BCRec>& /*bcrec*/,
-  int /*level*/)
-{
+  int /*level*/) {
   AMREX_ASSERT(derfab.box().contains(bx));
   AMREX_ASSERT(statefab.box().contains(bx));
   AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
@@ -1313,8 +1311,7 @@ pelelm_derdiffc(
   const Geometry& /*geom*/,
   Real /*time*/,
   const Vector<BCRec>& /*bcrec*/,
-  int /*level*/)
-{
+  int /*level*/) {
   AMREX_ASSERT(derfab.box().contains(bx));
   AMREX_ASSERT(statefab.box().contains(bx));
   AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
@@ -1374,8 +1371,7 @@ pelelm_derlambda(
   const Geometry& /*geom*/,
   Real /*time*/,
   const Vector<BCRec>& /*bcrec*/,
-  int /*level*/)
-{
+  int /*level*/) {
   AMREX_ASSERT(derfab.box().contains(bx));
   AMREX_ASSERT(statefab.box().contains(bx));
   AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);

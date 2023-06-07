@@ -5,8 +5,7 @@
 using namespace amrex;
 
 void
-PeleLM::Advance(int is_initIter)
-{
+PeleLM::Advance(int is_initIter) {
   BL_PROFILE("PeleLM::Advance()");
 
 #ifdef AMREX_MEM_PROFILING
@@ -194,10 +193,9 @@ PeleLM::Advance(int is_initIter)
     }
 #endif
     if (m_has_divu) {
-      int is_initialization = 0; // Not here
-      int computeDiffusionTerm =
-        1;                // Yes, re-evaluate the diffusion term after the
-                          // last chemistry solve
+      int is_initialization = 0;    // Not here
+      int computeDiffusionTerm = 1; // Yes, re-evaluate the diffusion term after
+                                    // the last chemistry solve
       int do_avgDown = 1; // Always
       calcDivU(
         is_initialization, computeDiffusionTerm, do_avgDown, AmrNewTime,
@@ -263,8 +261,7 @@ void
 PeleLM::oneSDC(
   int sdcIter,
   std::unique_ptr<AdvanceAdvData>& advData,
-  std::unique_ptr<AdvanceDiffData>& diffData)
-{
+  std::unique_ptr<AdvanceDiffData>& diffData) {
   BL_PROFILE("PeleLM::oneSDC()");
   m_sdcIter = sdcIter;
 

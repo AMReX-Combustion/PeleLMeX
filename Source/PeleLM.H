@@ -47,8 +47,7 @@ class SootModel;
 
 const std::string PrettyLine = " " + std::string(78, '=') + "\n";
 
-class PeleLM : public amrex::AmrCore
-{
+class PeleLM : public amrex::AmrCore {
 public:
   enum TimeStamp { AmrOldTime, AmrHalfTime, AmrNewTime };
 
@@ -152,8 +151,7 @@ public:
   /**
    * \brief Data container for the state data and long lived derived data
    */
-  struct LevelData
-  {
+  struct LevelData {
     LevelData() = default;
     LevelData(
       amrex::BoxArray const& ba,
@@ -194,8 +192,7 @@ public:
   /**
    * \brief Data container for reaction data
    */
-  struct LevelDataReact
-  {
+  struct LevelDataReact {
     LevelDataReact() = default;
     LevelDataReact(
       const amrex::BoxArray& ba,
@@ -213,8 +210,7 @@ public:
   /**
    * \brief Advance function data container for diffusion term
    */
-  struct AdvanceDiffData
-  {
+  struct AdvanceDiffData {
     AdvanceDiffData() = default;
     AdvanceDiffData(
       int a_finestLevel,
@@ -240,8 +236,7 @@ public:
   /**
    * \brief Advance function data container for advection term
    */
-  struct AdvanceAdvData
-  {
+  struct AdvanceAdvData {
     AdvanceAdvData() = default;
     AdvanceAdvData(
       int a_finestLevel,
@@ -1120,8 +1115,7 @@ public:
     const std::string& a_search_key,
     const K& keyT,
     int& key,
-    int keyIndex = -1)
-  {
+    int keyIndex = -1) {
     std::string userkey = "default";
     if (keyIndex < 0) {
       a_pp.query(a_search_key.c_str(), userkey);
@@ -1379,8 +1373,7 @@ public:
     int diffComp);
 
   // static_cast factory into ebfactory
-  amrex::EBFArrayBoxFactory const& EBFactory(int lev) const noexcept
-  {
+  amrex::EBFArrayBoxFactory const& EBFactory(int lev) const noexcept {
     return static_cast<amrex::EBFArrayBoxFactory const&>(*m_factory[lev]);
   }
 
@@ -1543,8 +1536,7 @@ public:
   // Accessors
   std::string runMode() { return m_run_mode; }
 
-  int nCompIR()
-  {
+  int nCompIR() {
 #ifdef PELE_USE_EFIELD
     return NUM_SPECIES + 1;
 #else
@@ -1552,8 +1544,7 @@ public:
 #endif
   }
 
-  int nCompForcing()
-  {
+  int nCompForcing() {
 #ifdef PELE_USE_EFIELD
     return NUM_SPECIES + 2;
 #else
@@ -1561,8 +1552,7 @@ public:
 #endif
   }
 
-  amrex::FabFactory<amrex::FArrayBox> const& Factory(int lev) const noexcept
-  {
+  amrex::FabFactory<amrex::FArrayBox> const& Factory(int lev) const noexcept {
     return *m_factory[lev];
   }
 
@@ -1570,8 +1560,7 @@ public:
   getLevelDataPtr(int lev, const PeleLM::TimeStamp& a_time, int useUmac = 0);
   LevelDataReact* getLevelDataReactPtr(int lev);
 
-  amrex::Real getTime(int lev, const PeleLM::TimeStamp& a_time) const
-  {
+  amrex::Real getTime(int lev, const PeleLM::TimeStamp& a_time) const {
     AMREX_ASSERT(
       a_time == AmrOldTime || a_time == AmrNewTime || a_time == AmrHalfTime);
     if (a_time == AmrOldTime) {
