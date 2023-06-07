@@ -11,9 +11,18 @@ struct ProbParm
 {
 
   amrex::Real P_mean = 101325.0;
-  amrex::Real T_in = 300.0;
-  amrex::Real U_b = 5;
-  
+  amrex::Real T_in   = 300.0;
+  amrex::Real T_wall  = 300.0_rt;
+  amrex::Real U_b    = 5.0;
+
+  //Crossflow related parameters
+  amrex::Real U_crossflow   = 0.0;
+  amrex::Real z_height_tanh = 0.0;
+  amrex::Real delta         = 1.0;
+
+  amrex::Real U_coflow   = 0.0;
+  amrex::Real coflow_start_diam = 1.0e+10;
+
   amrex::Real one_over_vonKarman = 0.0; // 1/kappa -> one over von Karman constant
   amrex::Real B = 0.0; //constant used to compute turbulent log layer
   amrex::Real bluff_inner_diam = 0.0;

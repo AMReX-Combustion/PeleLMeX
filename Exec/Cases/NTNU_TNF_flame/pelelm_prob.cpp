@@ -15,14 +15,24 @@ void PeleLM::readProbParm()
   amrex::Real moles_NH3      = 0.0;
   amrex::Real moles_H2       = 0.0;
   amrex::Real moles_N2_fuel  = 0.0;
+  amrex::Real zmax           = 0.0;
+  amrex::Real zmin           = 0.0;
   amrex::Real molefrac[NUM_SPECIES] = {{0.0}};
   amrex::Real massfrac[NUM_SPECIES] = {{0.0}};
 
   pp.query("P_mean"       , P_mean);
   pp.query("T_in"         , T_in);
+  pp.query("T_wall"       , PeleLM::prob_parm->T_wall);
   pp.query("U_b"          , U_b);
   pp.query("phi_in"       , phi_in);
   pp.query("channel_height", channel_height);
+  
+  // pp.query("U_crossflow"  ,PeleLM::prob_parm->U_crossflow);
+  // pp.query("z_height_tanh",PeleLM::prob_parm->z_height_tanh);
+  // pp.query("delta"        ,PeleLM::prob_parm->delta);
+
+  pp.query("coflow_start_diam",PeleLM::prob_parm->coflow_start_diam);
+  pp.query("U_coflow"         ,PeleLM::prob_parm->U_coflow);
 
   pp.query("moles_NH3", moles_NH3);
   pp.query("moles_H2" , moles_H2);
@@ -45,7 +55,7 @@ void PeleLM::readProbParm()
   PeleLM::prob_parm->T_in = T_in;
   PeleLM::prob_parm->P_mean = P_mean;
 
-  // ------ Initializing premixed composition -------
+  // ------ Initializing NH3-H2-N2 premixed composition -------
 
   // amrex::Real equivRatio = phi_in;
   // amrex::Real a;
@@ -62,8 +72,14 @@ void PeleLM::readProbParm()
   // molefrac[N2_ID]   = moles_N2  / sum_oxi;
   // molefrac[O2_ID]   = moles_O2  / sum_oxi;
 
-  molefrac[N2_ID]   = 0.79;
-  molefrac[O2_ID]   = 0.21;
+  // ------ Initializing H2 premixed composition -------
+  amrex::Real a = 0.5;
+  molefrac[O2_ID] = 1.0 / ( 1.0 + phi_in / a + 0.79 / 0.21 );
+  molefrac[H2_ID] = phi_in * molefrac[O2_ID] / a;
+  molefrac[N2_ID] = 1.0 - molefrac[O2_ID] - molefrac[H2_ID];
+
+  // molefrac[N2_ID]   = 0.79;
+  // molefrac[O2_ID]   = 0.21;
 
   auto eos = pele::physics::PhysicsType::eos();
 
