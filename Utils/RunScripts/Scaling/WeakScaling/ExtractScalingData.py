@@ -33,7 +33,7 @@ if __name__ == "__main__":
     logprefix = '{}_*'.format(args.test_name)
     nodeCounts = [1,2,4,8,16,32,64,128,256,512,1024,2048,4096,8192]
     #nodeCounts = [1,2,4,8,16,32,64,128,256,512,8192]
-    
+
     caselist = []
     for nCount in nodeCounts:
         caselist.append("{:04d}".format(nCount))

@@ -58,7 +58,7 @@ def parse_args(arg_string=None):
             if (not os.path.exists(files)):
                 sys.exit("Provided extra_files '{}' does not exists!".format(files))
 
-    return args 
+    return args
 
 def getMachines():
     host = socket.getfqdn()
@@ -74,7 +74,7 @@ def getMachines():
             machine = "Cori"
         if "perlmutter" in nersc_host:
             machine = "Perlmutter"
-    
+
     if "olcf" in host:
         site = "OLCF"
         if "ascent" in host:
@@ -85,12 +85,12 @@ def getMachines():
             machine = "Crusher"
         if "frontier" in host:
             machine = "Frontier"
-    
+
     return [site,machine]
 
 def getInitialSize(fileIn):
     ofile=open(fileIn,'r')
-    sizeLine = "" 
+    sizeLine = ""
     for line in ofile:
         if 'geometry.prob_hi' in line:
             sizeLine=line
@@ -98,13 +98,13 @@ def getInitialSize(fileIn):
     sizesStr=sizeLine.split("=")[1]
     sizesStr=sizesStr.split("#")[0]
     sizes=[float(x) for x in sizesStr.strip().split(" ")]
-    
+
     ofile.close()
     return sizes
 
 def getInitialNcell(fileIn):
     ofile=open(fileIn,'r')
-    sizeLine = "" 
+    sizeLine = ""
     for line in ofile:
         if 'amr.n_cell' in line:
             sizeLine=line
@@ -112,7 +112,7 @@ def getInitialNcell(fileIn):
     ncellStr=sizeLine.split("=")[1]
     ncellStr=ncellStr.split("#")[0]
     ncells=[int(x) for x in ncellStr.strip().split(" ")]
-    
+
     ofile.close()
     return ncells
 
@@ -164,7 +164,7 @@ def launchRun(args,host):
 if __name__ == "__main__":
     args = parse_args(arg_string=sys.argv[1:])
 
-    # Setup 
+    # Setup
     # number of system nodes
     nodeCounts = [1,2,4,8,16,32,64,128,256,512,1024,2048,4096,8192]
 #    nodeCounts = [1,2,4,8,16,32]
@@ -207,9 +207,9 @@ if __name__ == "__main__":
     sizes  = initSizes
     ncells = initNcells
     for nCount in range(len(nodeCounts)):
-        case = nodeCounts[nCount]       
+        case = nodeCounts[nCount]
         if case != 1:
-            if (nCount % 2) == 0: 
+            if (nCount % 2) == 0:
                 sizes[0] *= 2
                 ncells[0] *= 2
             else:
