@@ -161,10 +161,11 @@ PeleLM::SprayInit()
   std::string restart_partfile = restart_file + "/particles";
   if (!FileSystem::Exists(restart_partfile)) {
     restart_file = "";
-  } else if (!m_restart_chkfile.empty() || !m_restart_pltfile.empty()) {
-    std::string warn_msg = "Restart file does not contain particles. "
-      "Particles are being initialized from scratch.";
-    Warning(warn_msg);
+    if (!m_restart_chkfile.empty() || !m_restart_pltfile.empty()) {
+      std::string warn_msg = "Restart file does not contain particles. "
+        "Particles are being initialized from scratch.";
+      Warning(warn_msg);
+    }
   }
   ProbParm const* lprobparm = prob_parm;
   SprayPC->SprayInitialize(*lprobparm, restart_file);
