@@ -841,9 +841,17 @@ void PeleLM::initLevelDataFromPlt(int a_lev,
       auto  const &rhoY_arr  = ldata_p->state.array(mfi,FIRSTSPEC);
       auto  const &rhoH_arr  = ldata_p->state.array(mfi,RHOH);
       auto  const &temp_arr  = ldata_p->state.array(mfi,TEMP);
+      const amrex::Real* prob_lo = geom[a_lev].ProbLo();
+      const amrex::Real* dx      = geom[a_lev].CellSize();
+      
       amrex::ParallelFor(bx, [=]
       AMREX_GPU_DEVICE (int i, int j, int k) noexcept
       {
+
+         amrex::Real x = prob_lo[0] + (i+0.5)*dx[0];
+         amrex::Real y = prob_lo[1] + (j+0.5)*dx[1];
+         amrex::Real z = prob_lo[2] + (k+0.5)*dx[2];
+
           auto eos = pele::physics::PhysicsType::eos();
           Real massfrac[NUM_SPECIES] = {0.0};
           Real sumYs = 0.0;
@@ -858,6 +866,69 @@ void PeleLM::initLevelDataFromPlt(int a_lev,
 #ifdef N2_ID
           massfrac[N2_ID] = 1.0 - sumYs;
 #endif
+
+          if(temp_arr(i,j,k) < lprobparm->T_in){
+            temp_arr(i,j,k) = lprobparm->T_in;
+            // massfrac[H2_ID] = (lprobparm->Ys)[H2_ID];
+            // massfrac[N2_ID] = (lprobparm->Ys)[N2_ID];
+            // massfrac[O2_ID] = (lprobparm->Ys)[O2_ID];
+          }
+
+          amrex::Real massfrac_air[NUM_SPECIES] = {0.0};
+          massfrac_air[N2_ID] = 0.767;
+          massfrac_air[O2_ID] = 0.233;
+          // for (int n = 0; n < NUM_SPECIES; n++){
+          //       massfrac[n] = massfrac_air[n];
+          // }
+
+          // if(z > 0.0){
+          //    amrex::Real x0 = 0.0;
+          //    amrex::Real y0 = 0.0;
+          //    amrex::Real H = 0.001;
+          //    amrex::Real cut_off_height = 0.01;
+          //    amrex::Real Do_swirler = 0.0025;
+
+          //    amrex::Real jet_1 = 0.5*(1-((std::tanh((std::sqrt(std::pow(x-x0,2)+std::pow(y-y0,2))-(Do_swirler/2))/(H))))*(tanh((std::sqrt(std::pow(x-x0,2)+std::pow(y-y0,2))+(Do_swirler/2))/(H))));
+          //    amrex::Real jet_2 = 0.5*(1-std::tanh((z-cut_off_height)/H));
+
+          //    amrex::Real jet_total = jet_1 * jet_2;
+
+          //    temp_arr(i,j,k) = (1000.*jet_total) + ((1-jet_total)*(lprobparm->T_in));
+          //    // //Initializing burned composition
+          //    // massfrac[H2_ID]   = 1.466354548792e-07 *jet_total + (1-jet_total)*massfrac_air[H2_ID];
+          //    // massfrac[O2_ID]   = 0.1423617413064752 *jet_total + (1-jet_total)*massfrac_air[O2_ID];
+          //    // massfrac[H2O_ID]  = 0.0992990100606351 *jet_total + (1-jet_total)*massfrac_air[H2O_ID];
+          //    // massfrac[H_ID]    = 2.410917191758e-09 *jet_total + (1-jet_total)*massfrac_air[H_ID];
+          //    // massfrac[O_ID]    = 1.920804014121e-06 *jet_total + (1-jet_total)*massfrac_air[O_ID];
+          //    // massfrac[OH_ID]   = 7.604514590548e-05 *jet_total + (1-jet_total)*massfrac_air[OH_ID];
+          //    // massfrac[HO2_ID]  = 1.510507455556e-07 *jet_total + (1-jet_total)*massfrac_air[HO2_ID];
+          //    // massfrac[H2O2_ID] = 7.166758871329e-08 *jet_total + (1-jet_total)*massfrac_air[H2O2_ID];
+          //    // massfrac[N2_ID]   = 0.7582609109182636 *jet_total + (1-jet_total)*massfrac_air[N2_ID];
+          // }
+          // else{
+          //    temp_arr(i,j,k) = lprobparm->T_in;
+          // }
+
+          // //Fill up the duct upstream of the bluff-body with premixed fuel
+          // if(z < 0.0){
+
+          //    //Initializing premixed composition
+          //    for (int n = 0; n < NUM_SPECIES; n++){
+          //          massfrac[n] = (lprobparm->Ys)[n];
+          //    }
+          // }
+
+          // //Removing flame from the outer shear layer
+          amrex::Real r = sqrt(pow((0.0-x),2)+pow((0.0-y),2));
+          if(r > 19.e-3/2.0){
+
+             //Initializing air composition
+             for (int n = 0; n < NUM_SPECIES; n++){
+                   massfrac[n] = massfrac_air[n];
+             }
+             temp_arr(i,j,k) = lprobparm->T_in;
+          }
+
 
           // Get density
           Real P_cgs = lprobparm->P_mean * 10.0;

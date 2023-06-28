@@ -34,6 +34,10 @@ void PeleLM::readProbParm()
   pp.query("coflow_start_diam",PeleLM::prob_parm->coflow_start_diam);
   pp.query("U_coflow"         ,PeleLM::prob_parm->U_coflow);
 
+  pp.query("z_height_tanh",PeleLM::prob_parm->z_height_tanh);
+  pp.query("delta"        ,PeleLM::prob_parm->delta);
+  pp.query("U_crossflow"  ,PeleLM::prob_parm->U_crossflow);
+
   pp.query("moles_NH3", moles_NH3);
   pp.query("moles_H2" , moles_H2);
   pp.query("moles_N2" , moles_N2_fuel);

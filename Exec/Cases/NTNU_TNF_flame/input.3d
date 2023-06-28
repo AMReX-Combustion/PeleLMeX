@@ -1,10 +1,10 @@
 #----------------------TIME STEPING CONTROL----------------------
-amr.max_step        = 100000             # maximum number of time steps
+amr.max_step        = 1000             # maximum number of time steps
 amr.stop_time       = 20.e-3            # final physical time
-amr.cfl             = 0.5              # cfl number for hyperbolic system
+amr.cfl             = 0.3              # cfl number for hyperbolic system
 amr.dt_shrink       = 0.1              # scale back initial timestep
 amr.change_max      = 1.1              # max timestep size increase
-amr.max_dt          = 1.e-6
+amr.max_dt          = 5.e-7
 # amr.fixed_dt        = 1.0e-09
 
 #-------------
@@ -26,13 +26,13 @@ geometry.prob_hi     = 40.e-3  40.e-3  147.5e-3  # x_hi y_hi
 # >>>>>>>>>>>>>  BC FLAGS <<<<<<<<<<<<<<<<
 # Interior, Inflow, Outflow, Symmetry,
 # SlipWallAdiab, NoSlipWallAdiab, SlipWallIsotherm, NoSlipWallIsotherm
-peleLM.lo_bc = Outflow Outflow Inflow
-peleLM.hi_bc = Outflow Outflow Outflow
+peleLM.lo_bc = Inflow Inflow Inflow
+peleLM.hi_bc = Inflow Inflow Outflow
 
 #-------------------------AMR CONTROL----------------------------
 amr.n_cell          = 128 128 256  # Level 0 number of cells in each direction
 peleLM.verbose      = 5            # amr verbosity level
-amr.max_level       = 3            # maximum level number allowed
+amr.max_level       = 1            # maximum level number allowed
 amr.ref_ratio       = 2 2 2 2      # refinement ratio
 amr.regrid_int      = 5            # how often to regrid
 amr.n_error_buf     = 1 1 1 2      # number of buffer cells in error est
@@ -51,6 +51,11 @@ prob.moles_N2       = 0.15
 prob.phi_in         = 1.2
 prob.vonKarman      = 0.41
 prob.B              = 5.5
+prob.z_height_tanh  = 20.e-3
+prob.delta          = 2.0e-3
+prob.U_crossflow    = 0.2
+# prob.T_wall         = 1200.
+
 
 # -- Turbulent inflow
 turbinflows = lowZ
@@ -76,6 +81,7 @@ eb2.geom_type = UserDefined
 # eb2.small_volfrac = 1.e-07 #works for 4 AMR levels
 eb2.small_volfrac = 1.e-2
 eb2.maxiter = 500
+peleLM.isothermal_EB = 0
 
 EB.out_diam         = 19.e-3
 EB.in_diam          = 5.e-3
@@ -86,15 +92,15 @@ EB.loc_x            = 6.5e-3
 EB.loc_y            = 0.0e-3
 
 #-------------------------IO CONTROL----------------------------
-amr.restart             = chk07400
-# amr.initDataPlt         = non_reactive_air/plt02744
-# amr.initDataPlt         = non_reactive_spray/plt02528
+amr.restart             = chk00750
+# amr.initDataPlt         = plt40747
+# amr.initDataPlt         = restart_plt25388 #results_nonreacting_2levels_Turb_NTNU/plt20005
 amr.check_file          = chk          # root name of checkpoint file
-amr.check_int           = 100          # number of timesteps between checkpoints
+amr.check_int           = 250          # number of timesteps between checkpoints
 amr.plot_file           = plt          # root name of plot file
 # amr.plot_int            = 20          # number of timesteps between plot files
 amr.plot_per            = 2.e-4
-amr.derive_plot_vars    = mag_vort avg_pressure mass_fractions mixture_fraction
+amr.derive_plot_vars    = mag_vort mag_vel avg_pressure mass_fractions mixture_fraction
 amr.grid_log            = grdlog       # name of grid logging file
 
 #-------------------------PeleLM CONTROL----------------------------
@@ -108,8 +114,8 @@ peleLM.floor_species = 1
 
 #--------------------REFINEMENT CONTROL------------------------
 
-peleLM.refine_EB_max_level = 3
-eb2.max_level_generation = 3
+peleLM.refine_EB_max_level = 1
+eb2.max_level_generation = 1
 
 peleLM.refine_Zdir_max_level = 0
 peleLM.MaxZdir_refine = 30.e-3
@@ -121,8 +127,8 @@ amr.HR.value_greater = 2.e+08
 amr.HR.field_name = HeatRelease
 
 amr.inBox.max_level     = 4
-amr.inBox.in_box_lo     =   -20.0e-3      -20.0e-3     -12.0e-3
-amr.inBox.in_box_hi     =    20.0e-3       20.0e-3      20.0e-3
+amr.inBox.in_box_lo     =   -12.0e-3      -12.0e-3     -12.0e-3
+amr.inBox.in_box_hi     =    12.0e-3       12.0e-3      20.0e-3
 
 amr.lo_temp.max_level = 0
 amr.lo_temp.value_greater = 400
@@ -150,8 +156,8 @@ amr.flame_tracer.field_name = Y(OH)
 # amr.magvort.vorticity_greater = 1000
 
 # --------------- INPUTS TO CHEMISTRY REACTOR ---------------
-# peleLM.chem_integrator = "ReactorCvode"
-peleLM.chem_integrator = "ReactorNull"
+peleLM.chem_integrator = "ReactorCvode"
+# peleLM.chem_integrator = "ReactorNull"
 # peleLM.use_typ_vals_chem = 1          # Use species/temp typical values in CVODE
 ode.rtol = 1.0e-6                     # Relative tolerance of the chemical solve
 ode.atol = 1.0e-5                     # Absolute tolerance factor applied on typical values

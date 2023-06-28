@@ -20,7 +20,7 @@ USE_EB          = TRUE
 COMP            = gnu
 USE_MPI         = TRUE
 USE_OMP         = FALSE
-USE_CUDA        = FALSE
+USE_CUDA        = TRUE
 USE_HIP         = FALSE
 
 # PeleLMeX
@@ -28,12 +28,13 @@ USE_EFIELD      = FALSE
 USE_HYPRE       = FALSE
 
 # PelePhysics
-# Chemistry_Model = heptane_fc
+Chemistry_Model = LiDryer
 # Chemistry_Model = H2_ammonia
-Chemistry_Model = air
+# Chemistry_Model = air
 Eos_Model       = Fuego
 Transport_Model = Simple
 
+CEXE_headers    += EBUserDefined.H
 
 include $(PELELMEX_HOME)/Utils/Make.PeleLMeX
 
