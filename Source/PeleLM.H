@@ -127,9 +127,6 @@ class PeleLM : public amrex::AmrCore {
 
    // SprayInit
    void SprayInit();
-
-   // SprayRestart
-   void SprayRestart(const std::string& restart_file);
 #endif
 
    // VariablesSetup
@@ -788,10 +785,8 @@ class PeleLM : public amrex::AmrCore {
    void SprayPostRegrid();
    void SpraySetState(const amrex::Real& a_flow_dt);
    void SprayAddSource(const int level);
-   static int write_spray_ascii_files;
    static int num_spray_src;
    static bool do_spray_particles;
-   static int plot_spray_src;
    static std::unique_ptr<SprayParticleContainer> SprayPC;
    static std::unique_ptr<SprayParticleContainer> VirtPC;
    static std::unique_ptr<SprayParticleContainer> GhostPC;

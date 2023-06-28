@@ -80,8 +80,6 @@ SprayParticleContainer::InitSprayParticles(const bool init_parts,
   std::string jet_name = "jet1";
   m_sprayJets[0] = std::make_unique<CounterFlowJet>(jet_name, Geom(0));
   m_sprayJets[0]->set_inj_proc(0);
-  // This ensures the initial time step size stays reasonable
-  m_injectVel = m_sprayJets[0]->jet_vel();
   // Start without any particles
   return;
 }

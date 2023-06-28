@@ -34,7 +34,6 @@ prob.P_mean = 101325.0
 prob.init_redist = 1
 prob.init_T      = 500.
 prob.init_vel    = 0.0
-# Particle parameters, only used if particles.init_function = 1
 prob.num_particles = (256, 256, 256)
 prob.part_temp     = 300.
 prob.part_dia      = 1.E-3
@@ -82,12 +81,10 @@ particles.NC10H22_rho = 640.
 particles.NC10H22_psat = 4.07857 1501.268 -78.67 1.E5
 particles.use_splash_model = false
 
-# particles.init_function = 0
 # particles.init_file = "initspraydata"
-particles.init_function = 1
 
 particles.v             = 0
-particles.cfl           = 4.
+particles.cfl           = 2.
 particles.mom_transfer  = 1
 particles.mass_transfer = 1
 particles.write_ascii_files = 0
