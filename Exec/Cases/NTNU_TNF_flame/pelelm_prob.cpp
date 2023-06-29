@@ -113,8 +113,10 @@ void PeleLM::readProbParm()
   amrex::Real Ddiag[NUM_SPECIES] = {0.0};
   amrex::Real chi_mix[NUM_SPECIES] = {0.0};
 
-  trans.transport(wtr_get_xi, wtr_get_mu, wtr_get_lam, wtr_get_Ddiag, wtr_get_chi, T_in, rho_cgs, massfrac,
-            Ddiag, chi_mix, muloc, xiloc, lamloc, ltransparm);
+  // trans.transport(wtr_get_xi, wtr_get_mu, wtr_get_lam, wtr_get_Ddiag, wtr_get_chi, T_in, rho_cgs, massfrac,
+  //           Ddiag, chi_mix, muloc, xiloc, lamloc, ltransparm);
+
+  muloc = 1.751067e-04 ;
 
   amrex::Real mu = muloc/rho_cgs*1.e-4;
   PeleLM::prob_parm->mu = mu;
