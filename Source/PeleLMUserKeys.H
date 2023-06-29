@@ -9,7 +9,7 @@
   * \brief struct holding PeleLMeX physical BC options
   */
 struct BoundaryCondition {
-    constexpr BoundaryCondition() = default;
+    BoundaryCondition() = default;
     enum {
         BCInterior = 0,
         BCInflow,
@@ -32,13 +32,14 @@ struct BoundaryCondition {
     };
     const amrex::Array<std::string,2> searchKey{"lo_bc","hi_bc"};
 };
+const BoundaryCondition boundarycondition;
 
 /**
   * \brief struct holding PeleLMeX NS solver options
            default is LowMachNumber
   */
 struct NSSolver {
-    constexpr NSSolver() = default;
+    NSSolver() = default;
     enum {
         LowMachNumber = 0,
         Incompressible
@@ -50,13 +51,14 @@ struct NSSolver {
     };
     const amrex::Array<std::string,1> searchKey{"ns_solver"};
 };
+const NSSolver nssolver;
 
 /**
   * \brief struct holding PeleLMeX interpolator options
            default is PiecewiseLinearConserv
   */
 struct Interpolator {
-    constexpr Interpolator() = default;
+    Interpolator() = default;
     enum {
         PiecewiseLinearConserv = 0,
         PiecewiseLinearConservMinMax,
@@ -70,13 +72,14 @@ struct Interpolator {
     };
     const amrex::Array<std::string,1> searchKey{"regrid_interp_method"};
 };
+const Interpolator interpolator;
 
 /**
   * \brief struct holding PeleLMeX LES SGS model options
            default is None
   */
 struct LESModel {
-    constexpr LESModel() = default;
+    LESModel() = default;
     enum {
         None = 0,
         Smagorinsky,
@@ -92,13 +95,14 @@ struct LESModel {
     };
     const amrex::Array<std::string,1> searchKey{"les_model"};
 };
+const LESModel lesmodel;
 
 /**
   * \brief struct holding PeleLMeX advection scheme options
            default is Godunov_PLM
   */
 struct AdvectionScheme {
-    constexpr AdvectionScheme() = default;
+    AdvectionScheme() = default;
     enum {
         Godunov_PLM = 0,
         Godunov_PPM,
@@ -116,13 +120,14 @@ struct AdvectionScheme {
     };
     const amrex::Array<std::string,1> searchKey{"advection_scheme"};
 };
+const AdvectionScheme advscheme;
 
 /**
   * \brief struct holding PeleLMeX load balancing cost options
            default is Ncell
   */
 struct LoadBalanceCost {
-    constexpr LoadBalanceCost() = default;
+    LoadBalanceCost() = default;
     enum {
         Ncell = 0,
         ChemFunctCallAvg,
@@ -144,13 +149,14 @@ struct LoadBalanceCost {
     const amrex::Array<std::string,2> searchKey{"load_balancing_cost_estimate",
                                                 "chem_load_balancing_cost_estimate"};
 };
+const LoadBalanceCost lbcost;
 
 /**
   * \brief struct holding PeleLMeX load balancing method options
            default is SFC
   */
 struct LoadBalanceMethod {
-    constexpr LoadBalanceMethod() = default;
+    LoadBalanceMethod() = default;
     enum {
         SFC = 0,
         Knapsack,
@@ -165,4 +171,5 @@ struct LoadBalanceMethod {
     const amrex::Array<std::string,2> searchKey{"load_balancing_method",
                                                 "chem_load_balancing_method"};
 };
+const LoadBalanceMethod lbmethod;
 #endif

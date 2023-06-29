@@ -165,8 +165,8 @@ void PeleLM::readParameters() {
    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
       int lo_bc = BoundaryCondition::BCInterior;
       int hi_bc = BoundaryCondition::BCInterior;
-      parseUserKey(pp,"lo_bc",BoundaryCondition{},lo_bc,idim);
-      parseUserKey(pp,"hi_bc",BoundaryCondition{},hi_bc,idim);
+      parseUserKey(pp,"lo_bc",boundarycondition,lo_bc,idim);
+      parseUserKey(pp,"hi_bc",boundarycondition,hi_bc,idim);
       m_phys_bc.setLo(idim,lo_bc);
       m_phys_bc.setHi(idim,hi_bc);
       if (lo_bc == BoundaryCondition::BCOutflow ||
@@ -372,11 +372,11 @@ void PeleLM::readParameters() {
    // Load Balancing
    // -----------------------------------------
    pp.query("do_load_balancing",m_doLoadBalance);
-   parseUserKey(pp, "load_balancing_method", LoadBalanceMethod{}, m_loadBalanceMethod);
-   parseUserKey(pp, "load_balancing_cost_estimate", LoadBalanceCost{}, m_loadBalanceCost);
+   parseUserKey(pp, "load_balancing_method", lbmethod, m_loadBalanceMethod);
+   parseUserKey(pp, "load_balancing_cost_estimate", lbcost, m_loadBalanceCost);
    pp.query("load_balancing_efficiency_threshold",m_loadBalanceEffRatioThreshold);
-   parseUserKey(pp, "chem_load_balancing_method", LoadBalanceMethod{}, m_loadBalanceMethodChem);
-   parseUserKey(pp, "chem_load_balancing_cost_estimate", LoadBalanceCost{}, m_loadBalanceCostChem);
+   parseUserKey(pp, "chem_load_balancing_method", lbmethod, m_loadBalanceMethodChem);
+   parseUserKey(pp, "chem_load_balancing_cost_estimate", lbcost, m_loadBalanceCostChem);
 
    // Deactivate load balancing for serial runs
 #ifdef AMREX_USE_MPI
@@ -491,7 +491,6 @@ void PeleLM::readParameters() {
       }
    }
    pp.query("isothermal_EB",m_isothermalEB);
-   pp.query("EBinflow",m_useEBinflow);
 #endif
 
    // -----------------------------------------
