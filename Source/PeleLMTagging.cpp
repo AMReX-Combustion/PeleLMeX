@@ -83,4 +83,47 @@ PeleLM::ErrorEst( int lev,
       }
    }
 #endif
+
+
+   if (lev >= m_Zdir_refine_LevMax ) {
+      // Untag cells when z is larger than m_MaxZdir_refine
+    
+      const amrex::Real* prob_lo = geom[lev].ProbLo();
+      const amrex::Real* dx = geom[lev].CellSize();
+      const amrex::Real prob_lo0 = prob_lo[0];
+      const amrex::Real dx0 = dx[0];
+      const amrex::Real prob_lo1 = prob_lo[1];
+      const amrex::Real dx1 = dx[1];
+      const amrex::Real prob_lo2 = prob_lo[2];
+      const amrex::Real dx2 = dx[2];
+
+      const amrex::Real MaxZdir_refine = m_MaxZdir_refine;
+
+      // // Get distance function at current level
+      // MultiFab signDist(grids[lev],dmap[lev],1,0,MFInfo(),EBFactory(lev));
+      // getEBDistance(lev, signDist);
+
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+      for (MFIter mfi(tags,TilingIfNotGPU()); mfi.isValid(); ++mfi)
+      {
+          const auto& bx    = mfi.tilebox();
+          auto tag          = tags.array(mfi);
+          // const auto& dist  = signDist.const_array(mfi);
+
+          amrex::ParallelFor(bx,
+          [=] AMREX_GPU_HOST_DEVICE (int i, int j, int k)
+          {
+              const amrex::Real x = prob_lo0 + (i+0.5)*dx0;
+              const amrex::Real y = prob_lo1 + (j+0.5)*dx1;
+              const amrex::Real z = prob_lo2 + (k+0.5)*dx2;
+              const amrex::Real r = sqrt(pow((0.0-x),2)+pow((0.0-y),2));
+
+              if (z > MaxZdir_refine and r < 20.e-3) {
+                  tag(i,j,k) = TagBox::CLEAR;
+              }
+          });
+      }
+   }
 }

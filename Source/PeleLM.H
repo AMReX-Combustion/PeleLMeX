@@ -1782,6 +1782,8 @@ class PeleLM : public amrex::AmrCore {
    std::string m_adv_redist_type = "StateRedist";
    std::string m_diff_redist_type = "FluxRedist";
 #endif
+   int m_Zdir_refine_LevMax = -1;
+   amrex::Real m_MaxZdir_refine = -1.e+200;
    //-----------------------------------------------------------------------------
 
    //-----------------------------------------------------------------------------

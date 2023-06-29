@@ -492,7 +492,9 @@ void PeleLM::readParameters() {
    }
    pp.query("isothermal_EB",m_isothermalEB);
 #endif
-
+   pp.query("refine_Zdir_max_level",m_Zdir_refine_LevMax);
+   pp.query("MaxZdir_refine",m_MaxZdir_refine);
+   
    // -----------------------------------------
    // Evaluate mode variables
    // -----------------------------------------
