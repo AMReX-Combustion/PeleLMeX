@@ -1,10 +1,10 @@
 #----------------------TIME STEPING CONTROL----------------------
-amr.max_step        = 1000             # maximum number of time steps
+amr.max_step        = 100000             # maximum number of time steps
 amr.stop_time       = 20.e-3            # final physical time
-amr.cfl             = 0.3              # cfl number for hyperbolic system
+amr.cfl             = 0.5              # cfl number for hyperbolic system
 amr.dt_shrink       = 0.1              # scale back initial timestep
-amr.change_max      = 1.1              # max timestep size increase
-amr.max_dt          = 5.e-7
+amr.change_max      = 1.05              # max timestep size increase
+amr.max_dt          = 2.e-6
 # amr.fixed_dt        = 1.0e-09
 
 #-------------
@@ -32,10 +32,10 @@ peleLM.hi_bc = Inflow Inflow Outflow
 #-------------------------AMR CONTROL----------------------------
 amr.n_cell          = 128 128 256  # Level 0 number of cells in each direction
 peleLM.verbose      = 5            # amr verbosity level
-amr.max_level       = 1            # maximum level number allowed
+amr.max_level       = 3            # maximum level number allowed
 amr.ref_ratio       = 2 2 2 2      # refinement ratio
-amr.regrid_int      = 5            # how often to regrid
-amr.n_error_buf     = 1 1 1 2      # number of buffer cells in error est
+amr.regrid_int      = 10            # how often to regrid
+amr.n_error_buf     = 5 5 5 5      # number of buffer cells in error est
 amr.grid_eff        = 0.9          # what constitutes an efficient grid
 amr.blocking_factor = 16           # block factor in grid generation
 amr.max_grid_size   = 32           # maximum box size
@@ -45,16 +45,13 @@ prob.T_in = 298.0
 prob.P_mean = 101325.
 prob.U_b        = 5.99 # z-velocity
 prob.channel_height = 7.e-3
-prob.moles_NH3      = 0.4
-prob.moles_H2       = 0.45
-prob.moles_N2       = 0.15
-prob.phi_in         = 1.2
+prob.phi_in         = 0.4
 prob.vonKarman      = 0.41
 prob.B              = 5.5
-prob.z_height_tanh  = 20.e-3
+prob.z_height_tanh  = 100.e-3
 prob.delta          = 2.0e-3
-prob.U_crossflow    = 0.2
-# prob.T_wall         = 1200.
+prob.U_crossflow    = 0.5
+prob.T_wall         = 500.
 
 
 # -- Turbulent inflow
@@ -81,7 +78,7 @@ eb2.geom_type = UserDefined
 # eb2.small_volfrac = 1.e-07 #works for 4 AMR levels
 eb2.small_volfrac = 1.e-2
 eb2.maxiter = 500
-peleLM.isothermal_EB = 0
+peleLM.isothermal_EB = 1
 
 EB.out_diam         = 19.e-3
 EB.in_diam          = 5.e-3
@@ -92,14 +89,15 @@ EB.loc_x            = 6.5e-3
 EB.loc_y            = 0.0e-3
 
 #-------------------------IO CONTROL----------------------------
-amr.restart             = chk00750
-# amr.initDataPlt         = plt40747
+amr.restart             = chk07000
+# amr.initDataPlt         = results_reacting_1levels_Turb_NTNU/plt40747
+# amr.initDataPlt         = results_reacting_2levels_Turb_NTNU/plt03996
 # amr.initDataPlt         = restart_plt25388 #results_nonreacting_2levels_Turb_NTNU/plt20005
 amr.check_file          = chk          # root name of checkpoint file
 amr.check_int           = 250          # number of timesteps between checkpoints
 amr.plot_file           = plt          # root name of plot file
 # amr.plot_int            = 20          # number of timesteps between plot files
-amr.plot_per            = 2.e-4
+amr.plot_per            = 5.e-4
 amr.derive_plot_vars    = mag_vort mag_vel avg_pressure mass_fractions mixture_fraction
 amr.grid_log            = grdlog       # name of grid logging file
 
@@ -114,37 +112,35 @@ peleLM.floor_species = 1
 
 #--------------------REFINEMENT CONTROL------------------------
 
-peleLM.refine_EB_max_level = 1
-eb2.max_level_generation = 1
+peleLM.refine_EB_max_level = 3
+eb2.max_level_generation = 3
 
 peleLM.refine_Zdir_max_level = 0
-peleLM.MaxZdir_refine = 30.e-3
+peleLM.MaxZdir_refine = 40.e-3
 
-amr.refinement_indicators = inBox #HR flame_tracer
+amr.refinement_indicators = inBox HR1 prodSide HR2 # flame_tracer
 
-amr.HR.max_level = 0
-amr.HR.value_greater = 2.e+08
-amr.HR.field_name = HeatRelease
+amr.HR1.max_level = 2
+amr.HR1.value_greater = 5.e+08
+amr.HR1.field_name = HeatRelease
+amr.HR1.start_time = 5.e-3
+
+amr.HR2.max_level = 5
+amr.HR2.value_greater = 5.e+08
+amr.HR2.field_name = HeatRelease
+amr.HR2.start_time = 18.e-3
 
 amr.inBox.max_level     = 4
 amr.inBox.in_box_lo     =   -12.0e-3      -12.0e-3     -12.0e-3
-amr.inBox.in_box_hi     =    12.0e-3       12.0e-3      20.0e-3
+amr.inBox.in_box_hi     =    12.0e-3       12.0e-3      5.0e-3
 
-amr.lo_temp.max_level = 0
-amr.lo_temp.value_greater = 400
-amr.lo_temp.field_name = temp
+amr.prodSide.max_level = 3
+amr.prodSide.value_greater = 1.0e-1
+amr.prodSide.field_name = Y(H2O)
 
-amr.fuel_tracer.max_level = 0
-amr.fuel_tracer.value_greater = 2.0e-1
-amr.fuel_tracer.field_name = Y(NXC7H16)
-
-amr.flame_tracer.max_level = 2
-amr.flame_tracer.value_greater = 3.0e-3
-amr.flame_tracer.field_name = Y(OH)
-
-# amr.HR.max_level = 3
-# amr.HR.value_greater = 1.e8
-# amr.HR.field_name = HeatRelease
+#amr.flame_tracer.max_level = 2
+#amr.flame_tracer.value_greater = 5.0e-3
+#amr.flame_tracer.field_name = Y(OH)
 
 #amr.flame_tracer2.max_level = 3
 #amr.flame_tracer2.value_greater = 5.e-5
@@ -158,21 +154,21 @@ amr.flame_tracer.field_name = Y(OH)
 # --------------- INPUTS TO CHEMISTRY REACTOR ---------------
 peleLM.chem_integrator = "ReactorCvode"
 # peleLM.chem_integrator = "ReactorNull"
-# peleLM.use_typ_vals_chem = 1          # Use species/temp typical values in CVODE
-ode.rtol = 1.0e-6                     # Relative tolerance of the chemical solve
-ode.atol = 1.0e-5                     # Absolute tolerance factor applied on typical values
+peleLM.use_typ_vals_chem = 1          # Use species/temp typical values in CVODE
+# ode.rtol = 1.0e-6                     # Relative tolerance of the chemical solve
+# ode.atol = 1.0e-5                     # Absolute tolerance factor applied on typical values
 # cvode.solve_type = sparse_direct     # CVODE Linear solve type (for Newton direction)
-cvode.solve_type = dense_direct     # CVODE Linear solve type (for Newton direction)
+cvode.solve_type = dense_direct        # CVODE Linear solve type (for Newton direction)
 # cvode.max_order  = 4                  # CVODE max BDF order.
 
 #--------------------------OMP TILE INPUTS-----------------------------
 #fabarray.mfiter_tile_size = 512 512 512
 
 #--------------------------DEBUG/REGTESTS INPUTS-----------------------------
-amrex.regtest_reduction = 1
-amrex.fpe_trap_invalid  = 1
-amrex.fpe_trap_zero     = 1
-amrex.fpe_trap_overflow = 1
+amrex.regtest_reduction = 0
+amrex.fpe_trap_invalid  = 0
+amrex.fpe_trap_zero     = 0
+amrex.fpe_trap_overflow = 0
 amrex.abort_on_out_of_gpu_memory=1
 amrex.the_arena_is_managed = 1
 
