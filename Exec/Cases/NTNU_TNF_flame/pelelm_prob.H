@@ -148,7 +148,7 @@ bcnormal(
   }
 
   else if(idir == 0 or idir == 1){
-    amrex::Real profile = 0.5*(1.0+std::tanh((x[2]-prob_parm.z_height_tanh)/prob_parm.delta));
+    amrex::Real profile = 1.0 - 0.5*(1.0+std::tanh((x[2]-prob_parm.z_height_tanh)/prob_parm.delta));
 
     amrex::Real massfrac_air[NUM_SPECIES] = {0.0};
     massfrac_air[N2_ID] = 0.767;
@@ -159,8 +159,8 @@ bcnormal(
 
     amrex::Real theta  = atan(x[1]/x[0]);
 
-    s_ext[VELX] = -prob_parm.U_crossflow*cos(theta);
-    s_ext[VELY] = -prob_parm.U_crossflow*sin(theta);
+    s_ext[VELX] = -prob_parm.U_crossflow*cos(theta)*profile;
+    s_ext[VELY] = -prob_parm.U_crossflow*sin(theta)*profile;
     s_ext[VELZ] = 0.0;      
 
     s_ext[TEMP] = prob_parm.T_in;
