@@ -87,6 +87,49 @@ EBUserDefined(const Geometry& geom,
 
 }
 
+AMREX_GPU_DEVICE
+AMREX_FORCE_INLINE
+void
+setEBState(const amrex::Real xEBface[AMREX_SPACEDIM],
+           amrex::Real s_ext[NVAR],
+           const amrex::Real /*time*/,
+           amrex::GeometryData const& geomdata,
+           ProbParm const& prob_parm)
+{
+  // Provide the state on the EB centroid provided
+  // by xEBface
+  // Not the entire has to be specified. For instance, if using isothermal
+  // boundary, only s_ext[TEMP] will be used.
+  // Aborting here (message will not show on GPUs)
+  // Abort("Default setEBState called. Copy and edit this file for your needs");
+  
+  amrex::Real r = sqrt(pow((0.0-xEBface[0]),2)+pow((0.0-xEBface[1]),2));
+
+  // printf("setEBState z = %e\n",xEBface[2]);
+  // Set higher temperature only for the EB face in contact with the recirculation zone
+  if (r < 19e-3/2.0 and xEBface[2] > -1.0e-4) {
+     s_ext[TEMP] = prob_parm.T_wall;
+  }
+  else{
+     s_ext[TEMP] = prob_parm.T_in;
+  }
+}
+
+AMREX_GPU_DEVICE
+AMREX_FORCE_INLINE
+void
+setEBType(const amrex::Real * /*xEBface[AMREX_SPACEDIM]*/,
+          amrex::Real & EBflagType,
+          amrex::GeometryData const& /*geomdata*/,
+          ProbParm const& /*prob_parm*/)
+{
+  // Provide a factor applied on the EB face diffusion
+  // coefficient: 0.0 will turn off the diffusion (homogeneous Neumann BC)
+  // while 1.0 will let it unchanged. Intermediate values can be specified
+  // for partially Dirichlet BCs
+  EBflagType = 1.0;
+  // Abort("Default setEBType called. Copy and edit this file for your needs");
+}
 
 #endif
 #endif
