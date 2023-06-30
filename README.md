@@ -5,13 +5,15 @@
 [![Language: C++17](https://img.shields.io/badge/language-C%2B%2B17-blue)](https://isocpp.org/)
 [![JOSS](https://joss.theoj.org/papers/6142eb838783b07fce14450fefe21e07/status.svg)](https://joss.theoj.org/papers/6142eb838783b07fce14450fefe21e07)
 
-## Overview
-
 ![CUDA build](https://github.com/AMReX-Combustion/PeleLMeX/workflows/PeleLMeX_Cuda/badge.svg)
 ![HIP build](https://github.com/AMReX-Combustion/PeleLMeX/workflows/PeleLMeX_Hip/badge.svg)
 ![SYCL build](https://github.com/AMReX-Combustion/PeleLMeX/workflows/PeleLMeX_Intel/badge.svg)
 
-*PeleLMeX* is a non-subcycling version of [*PeleLM*](https://github.com/AMReX-Combustion/PeleLM) based on AMReX's [AmrCore](https://amrex-codes.github.io/amrex/docs_html/AmrCore.html) and borrowing from the incompressible solver [incflo](https://github.com/AMReX-Codes/incflo). It is designed to run efficiently on small workstations as well as the largest ExaScale platforms currently available.
+## Overview
+
+*PeleLMeX* is a solver for high fidelity reactive flow simulations, namely direct numerical simulation (DNS) and large eddy simulation (LES).
+The solver combines a low Mach number approach, adaptive mesh refinement (AMR) and high performance computing (HPC) to provide
+a flexible tool to address research questions on platforms ranging from small workstations to the world's largest GPU-accelerated supercomputers.
 
 *PeleLMeX* is part of the [Pele combustion Suite](https://amrex-combustion.github.io/).
 
@@ -19,7 +21,11 @@
 
 ![Documentation](https://github.com/AMReX-Combustion/PeleLMeX/workflows/PeleLMeX-Docs/badge.svg)
 
-*PeleLMeX* solves of the multispecies reactive Navier-Stokes equations in the low Mach number limit as described in the [documentation](https://amrex-combustion.github.io/PeleLMeX/manual/html/index.html). It inherits most of *PeleLM* algorithmic features, but differs significantly in its implementation stemming from the non-subcycling approach.
+*PeleLMeX* is a non-subcycling version of [*PeleLM*](https://github.com/AMReX-Combustion/PeleLM) based on AMReX's
+[AmrCore](https://amrex-codes.github.io/amrex/docs_html/AmrCore.html) and borrowing from the incompressible
+solver [incflo](https://github.com/AMReX-Codes/incflo). It solves of the multispecies reactive Navier-Stokes equations
+in the low Mach number limit as described in the [documentation](https://amrex-combustion.github.io/PeleLMeX/manual/html/index.html).
+It inherits most of *PeleLM* algorithmic features, but differs significantly in its implementation stemming from the non-subcycling approach.
 
 A overview of *PeleLMeX* controls is provided in the [documentation](https://amrex-combustion.github.io/PeleLMeX/manual/html/LMeXControls.html).
 
@@ -38,6 +44,17 @@ A set of self-contained tutorials describing more complex problems is also provi
 https://amrex-combustion.github.io/PeleLMeX/manual/html/Tutorials.html
 
 ## Installation
+
+### Requirements
+
+The compilations of *PeleLMeX* requires a C++17 compatible compiler (GCC >= 8 or Clang >= 3.6) as
+well as cmake >= 3.23 for compiling the [SUNDIALS](https://github.com/LLNL/sundials) third party library.
+
+Most of the examples provided hereafter and in the [tutorials](https://amrex-combustion.github.io/PeleLMeX/manual/html/Tutorials.html)
+will use MPI. Although not mandatory, it is advised to build *PeleLMeX* with MPI support from the get go if your
+more than a single core is available to you.
+
+Finally, when building with GPU support, CUDA >= 11 is required with NVIDIA GPUs and ROCm >= 5.2 is required with AMD GPUs.
 
 ### Download
 
@@ -89,7 +106,10 @@ Then build the executable:
 cmake --build buildHotBubble --parallel 4
 ```
 
-## Contributing
+## Getting help, contributing
+
+Do you have a question ? Found an issue ? Please use the [GitHub Discussions](https://github.com/AMReX-Combustion/PeleLMeX/discussions) to engage
+with the development team or open a new [GitHub issue](https://github.com/AMReX-Combustion/PeleLMeX/issues) to report a bug.
 
 New contributions to *PeleLMeX* are welcome ! Contributing Guidelines are provided in [CONTRIBUTING.md](CONTRIBUTING.md).
 
