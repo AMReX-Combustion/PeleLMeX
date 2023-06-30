@@ -70,7 +70,7 @@ For instance, to compile the executable for the case of a rising hot bubble,
 move into the `HotBubble` folder:
 
 ```
-cd PeleLMeX/Exec/RegTest/HotBubble
+cd PeleLMeX/Exec/RegTests/HotBubble
 ```
 
 If this is a clean install, you will need to make the third party libraries with: `make TPL` (note: if on macOS, you might need to specify `COMP=llvm` in the `make` statements).
