@@ -7,18 +7,18 @@ on:
    pull_request:
      branches: [ main, development ]
 
+concurrency:
+  group: ${{ github.ref }}-${{ github.head_ref }}-PeleLMeX_linux
+  cancel-in-progress: true
+
 jobs:
-  #Build the 2D FlameSheet RegTest with GNU9.3 and no MPI support
-  FS2D_NoMPI:
-    name: GNU@9.3 NOMPI Comp [FS2D]
+  #Build and run the 3D FlameSheet RegTest with GNU9.3 and no MPI support
+  F32D_NoMPI:
+    name: GNU@9.3 NOMPI Comp [FS3D]
     runs-on: ubuntu-latest
     env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
-    - name: Cancel previous runs
-      uses: styfle/cancel-workflow-action@0.6.0
-      with:
-        access_token: ${{github.token}}
     - uses: actions/checkout@v3
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies_gcc10.sh
@@ -33,9 +33,12 @@ jobs:
       run: |
         cd Exec/RegTests/FlameSheet/
         make help
-        mpicxx -v
-        make TPL COMP=gnu USE_MPI=FALSE
-        make -j 2 COMP=gnu USE_MPI=FALSE
+        make TPL DIM=3 COMP=gnu USE_MPI=FALSE
+        make -j 2 DIM=3 COMP=gnu USE_MPI=FALSE
+    - name: Run
+      working-directory: ./Exec/RegTests/FlameSheet/
+      run: |
+        ./PeleLMeX3d.gnu.ex input.3d-regt peleLM.num_init_iter=1 amr.max_step=1 amr.plot_int=-1 amr.check_int=-1
 
   # Build and Run the 2D FlameSheet RegTest with GNU9.3 and MPI support
   FS2D_MPI:
@@ -44,10 +47,6 @@ jobs:
     env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
-    - name: Cancel previous runs
-      uses: styfle/cancel-workflow-action@0.6.0
-      with:
-        access_token: ${{github.token}}
     - uses: actions/checkout@v3
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies_gcc10.sh
@@ -83,10 +82,6 @@ jobs:
     env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
-    - name: Cancel previous runs
-      uses: styfle/cancel-workflow-action@0.6.0
-      with:
-        access_token: ${{github.token}}
     - uses: actions/checkout@v3
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies_gcc10.sh
@@ -110,10 +105,6 @@ jobs:
     env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
-    - name: Cancel previous runs
-      uses: styfle/cancel-workflow-action@0.6.0
-      with:
-        access_token: ${{github.token}}
     - uses: actions/checkout@v3
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies_gcc10.sh
@@ -141,10 +132,6 @@ jobs:
     env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
-    - name: Cancel previous runs
-      uses: styfle/cancel-workflow-action@0.6.0
-      with:
-        access_token: ${{github.token}}
     - uses: actions/checkout@v3
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies_gcc10.sh
@@ -165,17 +152,13 @@ jobs:
       run: |
         ./PeleLMeX2d.gnu.MPI.ex input.2d-regt amr.max_step=20 amr.plot_int=-1 amr.check_int=-1
 
-  # Build and Run the HoBubble RegTest with GNU9.3 in DEBUG
+  # Build and Run the HotBubble RegTest with GNU9.3 in DEBUG
   HB2D_DBGRun:
     name: GNU@9.3 DEBUG Run [HB2DDBG]
     runs-on: ubuntu-latest
     env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
-    - name: Cancel previous runs
-      uses: styfle/cancel-workflow-action@0.6.0
-      with:
-        access_token: ${{github.token}}
     - uses: actions/checkout@v3
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies_gcc10.sh
@@ -203,10 +186,6 @@ jobs:
     env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
-    - name: Cancel previous runs
-      uses: styfle/cancel-workflow-action@0.6.0
-      with:
-        access_token: ${{github.token}}
     - uses: actions/checkout@v3
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies_gcc10.sh
@@ -234,10 +213,6 @@ jobs:
     env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
-    - name: Cancel previous runs
-      uses: styfle/cancel-workflow-action@0.6.0
-      with:
-        access_token: ${{github.token}}
     - uses: actions/checkout@v3
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies_gcc10.sh
@@ -266,10 +241,6 @@ jobs:
     env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
-    - name: Cancel previous runs
-      uses: styfle/cancel-workflow-action@0.6.0
-      with:
-        access_token: ${{github.token}}
     - uses: actions/checkout@v3
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies_gcc10.sh
@@ -306,10 +277,6 @@ jobs:
     env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
-    - name: Cancel previous runs
-      uses: styfle/cancel-workflow-action@0.6.0
-      with:
-        access_token: ${{github.token}}
     - uses: actions/checkout@v3
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies_gcc10.sh
@@ -337,10 +304,6 @@ jobs:
     env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
-    - name: Cancel previous runs
-      uses: styfle/cancel-workflow-action@0.6.0
-      with:
-        access_token: ${{github.token}}
     - uses: actions/checkout@v3
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies_gcc10.sh
@@ -381,10 +344,6 @@ jobs:
     env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
-    - name: Cancel previous runs
-      uses: styfle/cancel-workflow-action@0.6.0
-      with:
-        access_token: ${{github.token}}
     - uses: actions/checkout@v3
     - name: System Dependencies
       run: |

@@ -344,14 +344,19 @@ void PeleLM::doNodalProject(const Vector<MultiFab*> &a_vel,
                             const Vector<const MultiFab*> &rhs_nd,
                             int incremental,
                             Real scaling_factor) {
+   int has_rhs = 0;
+   int has_rhs_nd = 0;
+   if (!rhs_cc.empty()) has_rhs = 1;
+   if (!rhs_nd.empty()) has_rhs_nd = 1;
 
-   // Asserts TODO
+   // Asserts
+   AMREX_ASSERT(a_vel.size() == a_sigma.size());
+   AMREX_ASSERT(!has_rhs || (a_vel.size() == rhs_cc.size()));
+   AMREX_ASSERT(!has_rhs_nd || (a_vel.size() == rhs_nd.size()));
+   AMREX_ASSERT(a_vel[0]->nComp() == AMREX_SPACEDIM);
 
    LPInfo info;
    info.setMaxCoarseningLevel(m_nodal_mg_max_coarsening_level);
-
-   int has_rhs = 0;
-   if (!rhs_cc.empty()) has_rhs = 1;
 
    // BCs
    std::array<LinOpBCType,AMREX_SPACEDIM> lobc;
@@ -495,6 +500,8 @@ PeleLM::scaleProj_RZ(int a_lev,
         });
         Gpu::streamSynchronize();
     }
+#else
+    amrex::ignore_unused(a_lev,a_mf);
 #endif
 }
 
@@ -523,5 +530,7 @@ PeleLM::unscaleProj_RZ(int a_lev,
             }
         });
     }
+#else
+    amrex::ignore_unused(a_lev,a_mf);
 #endif
 }

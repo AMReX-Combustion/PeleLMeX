@@ -1,5 +1,9 @@
 #include <PeleLM.H>
 
+#ifdef PELELM_USE_SPRAY
+#include "SprayParticles.H"
+#endif
+
 using namespace amrex;
 
 pele::physics::transport::TransportParams<
@@ -22,6 +26,9 @@ PeleLM::~PeleLM()
    The_Arena()->free(prob_parm_d);
    m_initial_ba.clear();
    m_regrid_ba.clear();
+#ifdef PELELM_USE_SPRAY
+   SprayParticleContainer::SprayCleanUp();
+#endif
 #ifdef PELELM_USE_SOOT
    cleanupSootModel();
 #endif

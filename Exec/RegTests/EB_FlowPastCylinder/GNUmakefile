@@ -21,6 +21,7 @@ USE_CUDA        = FALSE
 USE_HIP         = FALSE
 
 # PeleLMeX
+CEXE_headers 	+= EBUserDefined.H
 
 # PelePhysics
 Chemistry_Model = air

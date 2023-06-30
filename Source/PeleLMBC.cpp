@@ -97,6 +97,12 @@ InterpBase* PeleLM::getInterpolator(int a_method) {
 #else
     mapper = &mf_cell_cons_interp;
 #endif
+  } else if (a_method == 2) {
+#ifdef AMREX_USE_EB
+    Abort("Regrid interpolation method = 2 not available with EB !");
+#else
+    mapper = &mf_linear_slope_minmax_interp;
+#endif
   } else {
     Abort("Unknown interpolation method");
   }
@@ -216,9 +222,6 @@ void PeleLM::setBoundaryConditions() {
       }
 #endif
    }
-
-   // Aux
-   //TODO
 }
 
 Vector<BCRec>
@@ -255,7 +258,6 @@ void PeleLM::fillPatchState(int lev, const TimeStamp &a_time) {
          fillpatch_divu(lev, time, ldata_p->divu, ldata_p->divu.nGrow());
       }
    }
-   //TODO Aux
 }
 
 // Fill a state components
@@ -307,12 +309,26 @@ PeleLM::fillPatchState(int lev, Real a_time, int nGrow) {
 
    std::unique_ptr<MultiFab> mf;
    if ( m_incompressible ) {
-      mf.reset(new MultiFab(grids[lev], dmap[lev], AMREX_SPACEDIM, nGrow));
+      mf.reset(new MultiFab(grids[lev], dmap[lev], AMREX_SPACEDIM, nGrow, MFInfo(), Factory(lev)));
    } else {
-      mf.reset(new MultiFab(grids[lev], dmap[lev], NVAR, nGrow));
+      mf.reset(new MultiFab(grids[lev], dmap[lev], NVAR, nGrow, MFInfo(), Factory(lev)));
    }
    fillpatch_state(lev, a_time, *mf, nGrow);
-   //TODO Aux
+
+   return mf;
+}
+
+std::unique_ptr<MultiFab>
+PeleLM::fillPatchReact(int lev, Real a_time, int nGrow) {
+   BL_PROFILE("PeleLM::fillPatchReact()");
+
+   int IRsize = NUM_SPECIES;
+#ifdef PELE_USE_EFIELD
+   IRsize += 1;
+#endif
+   std::unique_ptr<MultiFab> mf;
+   mf.reset(new MultiFab(grids[lev], dmap[lev], IRsize, nGrow, MFInfo(), Factory(lev)));
+   fillpatch_reaction(lev, a_time, *mf, nGrow);
 
    return mf;
 }
@@ -632,6 +648,36 @@ void PeleLM::fillpatch_reaction(int lev,
    }
 }
 
+// Fill functC
+void PeleLM::fillpatch_chemFunctCall(int lev,
+                                     const amrex::Real a_time,
+                                     amrex::MultiFab &a_fctC,
+                                     int nGhost) {
+   ProbParm const* lprobparm = prob_parm_d;
+   if (lev == 0) {
+      PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> bndry_func(geom[lev], {m_bcrec_force},
+                                                                     PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
+      FillPatchSingleLevel(a_fctC, IntVect(nGhost), a_time,
+                           {&(m_leveldatareact[lev]->functC)},{a_time},
+                           0, 0, 1, geom[lev], bndry_func, 0);
+   } else {
+
+      // Interpolator
+      auto* mapper = getInterpolator();
+
+      PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> crse_bndry_func(geom[lev-1], {m_bcrec_force},
+                                                                            PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
+      PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> fine_bndry_func(geom[lev], {m_bcrec_force},
+                                                                            PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
+      FillPatchTwoLevels(a_fctC, IntVect(nGhost), a_time,
+                         {&(m_leveldatareact[lev-1]->functC)},{a_time},
+                         {&(m_leveldatareact[lev]->functC)},{a_time},
+                         0, 0, 1, geom[lev-1], geom[lev],
+                         crse_bndry_func, 0, fine_bndry_func, 0,
+                         refRatio(lev-1), mapper, {m_bcrec_force}, 0);
+   }
+}
+
 // Fill the state
 void PeleLM::fillcoarsepatch_state(int lev,
                                    const amrex::Real a_time,
@@ -723,6 +769,28 @@ void PeleLM::fillcoarsepatch_reaction(int lev,
                          crse_bndry_func,0,fine_bndry_func,0,
                          refRatio(lev-1), mapper, {m_bcrec_force}, 0);
 }
+
+// Fill coarse patch of chem function call
+void PeleLM::fillcoarsepatch_chemFunctCall(int lev,
+                                           const amrex::Real a_time,
+                                           amrex::MultiFab &a_fctC,
+                                           int nGhost) {
+   ProbParm const* lprobparm = prob_parm_d;
+
+   // Interpolator
+   auto* mapper = getInterpolator(m_regrid_interp_method);
+
+   PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> crse_bndry_func(geom[lev-1], {m_bcrec_force},
+                                                                         PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
+   PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> fine_bndry_func(geom[lev], {m_bcrec_force},
+                                                                         PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
+   InterpFromCoarseLevel(a_fctC, IntVect(nGhost), a_time,
+                         m_leveldatareact[lev-1]->functC, 0, 0, 1,
+                         geom[lev-1], geom[lev],
+                         crse_bndry_func, 0, fine_bndry_func, 0,
+                         refRatio(lev-1), mapper, {m_bcrec_force}, 0);
+}
+
 
 // Fill the inflow boundary of a velocity MF
 // used for velocity projection

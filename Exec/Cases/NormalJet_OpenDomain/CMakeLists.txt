@@ -1,11 +1,14 @@
-#set(PELELM_ENABLE_PARTICLES OFF)
-set(PELELM_EOS_MODEL Fuego)
-set(PELELM_CHEMISTRY_MODEL drm19)
-set(PELELM_TRANSPORT_MODEL Simple)
-set(PELELM_REACTOR_MODEL cvode)
+target_include_directories(pelelmex PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>)
 
-#Generic stuff for every executable
-get_filename_component(DIR_NAME ${CMAKE_CURRENT_SOURCE_DIR} NAME)
-set(pelelm_exe_name PeleLM-${DIR_NAME})
-include(BuildPeleLMExe)
-build_pelelm_exe(${pelelm_exe_name})
+set(PELELMEX_CHEMISTRY_MODEL dodecane_lu PARENT_SCOPE)
+set(PELELMEX_EOS_MODEL       Fuego PARENT_SCOPE)
+set(PELELMEX_TRANSPORT_MODEL Simple PARENT_SCOPE)
+set(PELELMEX_DIM "3" PARENT_SCOPE)
+set(PELELMEX_MPI ON PARENT_SCOPE)
+
+target_sources(pelelmex
+    PRIVATE
+        pelelm_prob.cpp
+        pelelm_prob.H
+        pelelm_prob_parm.H
+    )

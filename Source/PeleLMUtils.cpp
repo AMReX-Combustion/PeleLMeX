@@ -29,12 +29,38 @@ void PeleLM::fluxDivergence(const Vector<MultiFab*> &a_divergence,
    }
 }
 
+void PeleLM::fluxDivergence(const Vector<MultiFab*> &a_divergence,
+                            int div_comp,
+                            const Vector<Array<MultiFab*,AMREX_SPACEDIM> > &a_fluxes,
+                            int flux_comp,
+                            const Vector<MultiFab* > &a_EBfluxes,
+                            int ebflux_comp,
+                            int ncomp,
+                            int intensiveFluxes,
+                            Real scale) {
+
+   BL_PROFILE("PeleLM::fluxDivergence()");
+   if (intensiveFluxes) {        // Fluxes are intensive -> need area scaling in div
+      for (int lev = 0; lev <= finest_level; ++lev) {
+         intFluxDivergenceLevelEB(lev,*a_divergence[lev], div_comp, a_fluxes[lev], flux_comp,
+                                  a_EBfluxes[lev], ebflux_comp, ncomp, scale);
+      }
+   } else {                      // Fluxes are extensive
+      for (int lev = 0; lev <= finest_level; ++lev) {
+         extFluxDivergenceLevel(lev,*a_divergence[lev], div_comp, a_fluxes[lev], flux_comp,
+                                ncomp, scale);
+      }
+   }
+}
+
 void PeleLM::fluxDivergenceRD(const Vector<const MultiFab*> &a_state,
                               int state_comp,
                               const Vector<MultiFab*> &a_divergence,
                               int div_comp,
                               const Vector<Array<MultiFab*,AMREX_SPACEDIM> > &a_fluxes,
                               int flux_comp,
+                              const Vector<MultiFab* > &a_EBfluxes,
+                              int ebflux_comp,
                               int ncomp,
                               int intensiveFluxes,
                               const BCRec *state_bc_d,
@@ -43,6 +69,7 @@ void PeleLM::fluxDivergenceRD(const Vector<const MultiFab*> &a_state,
 {
     BL_PROFILE("PeleLM::fluxDivergenceRD()");
 #ifdef AMREX_USE_EB
+    int have_ebfluxes = (a_EBfluxes.empty()) ? 0 : 1;
     for (int lev = 0; lev <= finest_level; ++lev) {
         //----------------------------------------------------------------
         // Use a temporary MF to hold divergence before redistribution
@@ -50,7 +77,11 @@ void PeleLM::fluxDivergenceRD(const Vector<const MultiFab*> &a_state,
         MultiFab divTmp(grids[lev],dmap[lev],ncomp,nGrow_divTmp,MFInfo(),EBFactory(lev));
         divTmp.setVal(0.0);
         if (intensiveFluxes) {        // Fluxes are intensive -> need area scaling in div
-            intFluxDivergenceLevel(lev, divTmp, 0, a_fluxes[lev], flux_comp, ncomp, scale);
+            if (have_ebfluxes) {
+               intFluxDivergenceLevelEB(lev, divTmp, 0, a_fluxes[lev], flux_comp, a_EBfluxes[lev], ebflux_comp, ncomp, scale);
+            } else {
+               intFluxDivergenceLevel(lev, divTmp, 0, a_fluxes[lev], flux_comp, ncomp, scale);
+            }
         } else {                      // Fluxes are extensive
             extFluxDivergenceLevel(lev, divTmp, 0, a_fluxes[lev], flux_comp, ncomp, scale);
         }
@@ -72,6 +103,8 @@ void PeleLM::fluxDivergenceRD(const Vector<const MultiFab*> &a_state,
     amrex::ignore_unused(state_comp);
     amrex::ignore_unused(state_bc_d);
     amrex::ignore_unused(a_dt);
+    amrex::ignore_unused(a_EBfluxes);
+    amrex::ignore_unused(ebflux_comp);
     fluxDivergence(a_divergence, div_comp, a_fluxes, flux_comp, ncomp, intensiveFluxes, scale);
 #endif
 }
@@ -141,9 +174,9 @@ void PeleLM::extFluxDivergenceLevel(int lev,
                }
             }
          });
-      } else {                                                   // Regular boxes
+      } else                                                    // Regular boxes
 #endif
-
+      {
          amrex::ParallelFor(bx, [ncomp, divergence, AMREX_D_DECL(fluxX, fluxY, fluxZ), vol, scale]
          AMREX_GPU_DEVICE (int i, int j, int k) noexcept
          {
@@ -151,9 +184,7 @@ void PeleLM::extFluxDivergenceLevel(int lev,
                                  AMREX_D_DECL(fluxX, fluxY, fluxZ),
                                  vol, scale, divergence);
          });
-#ifdef AMREX_USE_EB
       }
-#endif
    }
 }
 
@@ -189,9 +220,9 @@ void PeleLM::intFluxDivergenceLevel(int lev,
 
    // Get areafrac if EB
 #ifdef AMREX_USE_EB
-      auto const& ebfact = EBFactory(lev);
-      Array< const MultiCutFab*,AMREX_SPACEDIM> areafrac;
-      areafrac  = ebfact.getAreaFrac();
+   auto const& ebfact = EBFactory(lev);
+   Array< const MultiCutFab*,AMREX_SPACEDIM> areafrac;
+   areafrac  = ebfact.getAreaFrac();
 #endif
 
 #ifdef AMREX_USE_OMP
@@ -249,7 +280,7 @@ void PeleLM::intFluxDivergenceLevel(int lev,
                }
             }
          });
-      } else                                                    // Regular boxes
+      } else                                                     // Regular boxes
 #endif
       {
 #if (AMREX_SPACEDIM==2)
@@ -286,6 +317,115 @@ void PeleLM::intFluxDivergenceLevel(int lev,
    }
 }
 
+void PeleLM::intFluxDivergenceLevelEB(int lev,
+                                      MultiFab &a_divergence,
+                                      int div_comp,
+                                      const Array<MultiFab*,AMREX_SPACEDIM> &a_fluxes,
+                                      int flux_comp,
+                                      const MultiFab* a_EBfluxes,
+                                      int ebflux_comp,
+                                      int ncomp,
+                                      Real scale) {
+
+   AMREX_ASSERT(a_divergence.nComp() >= div_comp+ncomp);
+
+   // Get the volume
+   MultiFab volume(grids[lev], dmap[lev], 1, 0);
+   geom[lev].GetVolume(volume);
+
+   // Get area
+   const Real* dx = Geom(lev).CellSize();
+#if ( AMREX_SPACEDIM == 2 )
+   Real areax = dx[1];
+   Real areay = dx[0];
+#elif ( AMREX_SPACEDIM == 3 )
+   Real areax = dx[1]*dx[2];
+   Real areay = dx[0]*dx[2];
+   Real areaz = dx[0]*dx[1];
+#endif
+
+   // Get areafrac if EB
+#ifdef AMREX_USE_EB
+   auto const& ebfact = EBFactory(lev);
+   Array< const MultiCutFab*,AMREX_SPACEDIM> areafrac;
+   areafrac  = ebfact.getAreaFrac();
+   const auto* eb_area = &(ebfact.getBndryArea());
+#else
+   amrex::ignore_unused(a_EBfluxes,ebflux_comp);
+#endif
+
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+   for (MFIter mfi(a_divergence,TilingIfNotGPU()); mfi.isValid(); ++mfi)
+   {
+      const Box& bx = mfi.tilebox();
+      AMREX_D_TERM(auto const& fluxX = a_fluxes[0]->const_array(mfi,flux_comp);,
+                   auto const& fluxY = a_fluxes[1]->const_array(mfi,flux_comp);,
+                   auto const& fluxZ = a_fluxes[2]->const_array(mfi,flux_comp););
+      auto const& divergence   = a_divergence.array(mfi,div_comp);
+      auto const& vol          = volume.const_array(mfi);
+
+#ifdef AMREX_USE_EB
+      auto const& ebflux  = a_EBfluxes->const_array(mfi,ebflux_comp);
+      auto const& flagfab = ebfact.getMultiEBCellFlagFab()[mfi];
+      auto const& flag    = flagfab.const_array();
+
+      if (flagfab.getType(bx) == FabType::covered) {              // Covered boxes
+         amrex::ParallelFor(bx, ncomp, [divergence]
+         AMREX_GPU_DEVICE( int i, int j, int k, int n) noexcept
+         {
+            divergence(i,j,k,n) = 0.0;
+         });
+      } else if (flagfab.getType(bx) != FabType::regular ) {     // EB containing boxes
+         auto vfrac = ebfact.getVolFrac().const_array(mfi);
+         AMREX_D_TERM( const auto& afrac_x = areafrac[0]->array(mfi);,
+                       const auto& afrac_y = areafrac[1]->array(mfi);,
+                       const auto& afrac_z = areafrac[2]->array(mfi););
+         const auto& ebarea = eb_area->array(mfi);
+         amrex::ParallelFor(bx, [=]
+         AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+         {
+            if ( flag(i,j,k).isCovered() ) {
+               for (int n = 0; n < ncomp; n++) {
+                  divergence(i,j,k,n) = 0.0;
+               }
+            } else if ( flag(i,j,k).isRegular() ) {
+               intFluxDivergence_K( i, j, k, ncomp,
+                                    AMREX_D_DECL(fluxX, fluxY, fluxZ),
+                                    AMREX_D_DECL(areax, areay, areaz),
+                                    vol, scale, divergence);
+            } else {
+               Real vfracinv = 1.0/vfrac(i,j,k);
+               EB_intFluxDivergence_K( i, j, k, ncomp,
+                                       AMREX_D_DECL(fluxX, fluxY, fluxZ),
+                                       AMREX_D_DECL(afrac_x, afrac_y, afrac_z),
+                                       AMREX_D_DECL(areax, areay, areaz),
+                                       ebflux, ebarea,
+                                       vol, dx[0], scale, divergence);
+               for (int n = 0; n < ncomp; n++) {
+                  divergence(i,j,k,n) *= vfracinv;
+               }
+            }
+         });
+      } else                                                     // Regular boxes
+#endif
+      {
+         amrex::ParallelFor(bx, [ncomp, divergence,
+                                 AMREX_D_DECL(fluxX, fluxY, fluxZ),
+                                 AMREX_D_DECL(areax, areay, areaz),
+                                 vol, scale]
+         AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+         {
+            intFluxDivergence_K( i, j, k, ncomp,
+                                 AMREX_D_DECL(fluxX, fluxY, fluxZ),
+                                 AMREX_D_DECL(areax, areay, areaz),
+                                 vol, scale, divergence);
+         });
+      }
+   }
+}
+
 void PeleLM::advFluxDivergence(int a_lev,
                                MultiFab &a_divergence, int div_comp,
                                MultiFab &a_divu,
@@ -309,6 +449,8 @@ void PeleLM::advFluxDivergence(int a_lev,
         geom[a_lev].GetFaceArea(mf_ax, grids[a_lev], dmap[a_lev], 0, 0);
         geom[a_lev].GetFaceArea(mf_ay, grids[a_lev], dmap[a_lev], 1, 0);
     }
+#else
+    amrex::ignore_unused(a_lev);
 #endif
 
 #ifdef AMREX_USE_EB
@@ -466,6 +608,7 @@ void PeleLM::resetCoveredMask()
       if (m_verbose) Print() << " Resetting fine-covered cells mask \n";
 
       for (int lev = 0; lev < finest_level; ++lev) {
+         // Set a fine-covered mask
          BoxArray baf = grids[lev+1];
          baf.coarsen(ref_ratio[lev]);
          m_coveredMask[lev]->setVal(1);
@@ -517,25 +660,38 @@ void PeleLM::resetCoveredMask()
          }
          m_baChem[lev].reset(new BoxArray(std::move(bl)));
          m_dmapChem[lev].reset(new DistributionMapping(*m_baChem[lev]));
+
+         // Load balancing of the chemistry DMap
+         if (m_doLoadBalance) {
+             loadBalanceChemLev(lev);
+         }
       }
 
       // Set a BoxArray for the chemistry on the finest level too
       m_baChem[finest_level].reset(new BoxArray(grids[finest_level]));
       if ( m_max_grid_size_chem.min() > 0 ) {
-         m_baChem[finest_level]->maxSize(m_max_grid_size_chem);
+          m_baChem[finest_level]->maxSize(m_max_grid_size_chem);
       }
       m_baChemFlag[finest_level].resize(m_baChem[finest_level]->size());
       std::fill(m_baChemFlag[finest_level].begin(), m_baChemFlag[finest_level].end(), 1);
       m_dmapChem[finest_level].reset(new DistributionMapping(*m_baChem[finest_level]));
 
+      if (m_doLoadBalance && m_max_grid_size_chem.min() > 0) {
+          loadBalanceChemLev(finest_level);
+      }
+
       // Switch off trigger
       m_resetCoveredMask = 0;
-   }
 
+   } else {
+      // Just load balance the chem. distribution map
+      if (m_doLoadBalance) {
+         loadBalanceChem();
+      }
+   }
 
    //----------------------------------------------------------------------------
    // Need to compute the uncovered volume
-   // TODO Might need to recompute if new levels are added with EB.
    if (m_uncoveredVol < 0.0 ) {
       Vector<MultiFab> dummy(finest_level+1);
       for (int lev = 0; lev <= finest_level; ++lev) {
@@ -544,8 +700,83 @@ void PeleLM::resetCoveredMask()
       }
       m_uncoveredVol = MFSum(GetVecOfConstPtrs(dummy),0);
    }
-
 }
+
+void
+PeleLM::loadBalanceChem() {
+
+    for (int lev = 0; lev <= finest_level; ++lev) {
+        // Finest grid uses AmrCore DM unless different max grid size specified.
+        // Keep the AmrCore DM.
+        if ( lev == finest_level && m_max_grid_size_chem.min() < 0 ) {
+            continue;
+        }
+        loadBalanceChemLev(lev);
+    }
+}
+
+void
+PeleLM::loadBalanceChemLev(int a_lev) {
+
+    LayoutData<Real> new_cost(*m_baChem[a_lev],*m_dmapChem[a_lev]);
+    computeCosts(a_lev, new_cost, m_loadBalanceCostChem);
+
+    // Use efficiency: average MPI rank cost / max cost
+    amrex::Real currentEfficiency = 0.0;
+    amrex::Real testEfficiency = 0.0;
+
+    DistributionMapping test_dmap;
+    // Build the test dmap, w/o braodcasting
+    if (m_loadBalanceMethodChem == LoadBalanceMethod::SFC) {
+
+        test_dmap = DistributionMapping::makeSFC(new_cost,
+                                                 currentEfficiency, testEfficiency,
+                                                 false,
+                                                 ParallelDescriptor::IOProcessorNumber());
+
+    } else if (m_loadBalanceMethodChem == LoadBalanceMethod::Knapsack) {
+
+        const amrex::Real navg = static_cast<Real>(m_baChem[a_lev]->size()) /
+                                 static_cast<Real>(ParallelDescriptor::NProcs());
+        const int nmax = static_cast<int>(std::max(std::round(m_loadBalanceKSfactor*navg), std::ceil(navg)));
+        test_dmap = DistributionMapping::makeKnapSack(new_cost,
+                                                      currentEfficiency, testEfficiency,
+                                                      nmax,
+                                                      false,
+                                                      ParallelDescriptor::IOProcessorNumber());
+    }
+
+    // IO proc determine if the test dmap offers significant improvements
+    int updateDmap = false;
+    if ((m_loadBalanceEffRatioThreshold > 0.0)
+        && (ParallelDescriptor::MyProc() == ParallelDescriptor::IOProcessorNumber()))
+    {
+        updateDmap = testEfficiency > m_loadBalanceEffRatioThreshold*currentEfficiency;
+    }
+    ParallelDescriptor::Bcast(&updateDmap, 1, ParallelDescriptor::IOProcessorNumber());
+
+    if ( m_verbose > 2 && updateDmap) {
+        Print() << "   Old Chem LoadBalancing efficiency on a_lev " << a_lev << ": " << currentEfficiency << "\n"
+                << "   New Chem LoadBalancing efficiency: " << testEfficiency << " \n";
+    }
+
+    // Bcast the test dmap if better
+    if (updateDmap) {
+        Vector<int> pmap;
+        if (ParallelDescriptor::MyProc() == ParallelDescriptor::IOProcessorNumber()) {
+            pmap = test_dmap.ProcessorMap();
+        } else {
+            pmap.resize(static_cast<std::size_t>(m_baChem[a_lev]->size()));
+        }
+        ParallelDescriptor::Bcast(pmap.data(), pmap.size(), ParallelDescriptor::IOProcessorNumber());
+
+        if (ParallelDescriptor::MyProc() != ParallelDescriptor::IOProcessorNumber()) {
+            test_dmap = DistributionMapping(pmap);
+        }
+        m_dmapChem[a_lev].reset(new DistributionMapping(test_dmap));
+    }
+}
+
 
 // Return a unique_ptr with the entire derive
 std::unique_ptr<MultiFab>
@@ -559,7 +790,9 @@ PeleLM::derive(const std::string &a_name,
 
    std::unique_ptr<MultiFab> mf;
 
-   bool itexists = derive_lst.canDerive(a_name) || isStateVariable(a_name);
+   bool itexists =    derive_lst.canDerive(a_name)
+                   || isStateVariable(a_name)
+                   || isReactVariable(a_name);
 
    if ( !itexists ) {
       amrex::Error("PeleLM::derive(): unknown variable: "+a_name);
@@ -568,11 +801,11 @@ PeleLM::derive(const std::string &a_name,
    const PeleLMDeriveRec* rec = derive_lst.get(a_name);
 
    if (rec) {        // This is a derived variable
-      mf.reset(new MultiFab(grids[lev], dmap[lev], rec->numDerive(), nGrow));
+      mf.reset(new MultiFab(grids[lev], dmap[lev], rec->numDerive(), nGrow, MFInfo(), Factory(lev)));
       std::unique_ptr<MultiFab> statemf = fillPatchState(lev, a_time, m_nGrowState);
       // Get pressure: TODO no fillpatch for pressure just yet, simply get new state
       auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
-      auto ldataR_p = getLevelDataReactPtr(lev);
+      std::unique_ptr<MultiFab> reactmf = fillPatchReact(lev, a_time, nGrow);
       auto stateBCs = fetchBCRecArray(VELX,NVAR);
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -582,15 +815,20 @@ PeleLM::derive(const std::string &a_name,
           const Box& bx = mfi.growntilebox(nGrow);
           FArrayBox& derfab = (*mf)[mfi];
           FArrayBox const& statefab = (*statemf)[mfi];
-          FArrayBox const& reactfab = (m_incompressible) ? ldata_p->press[mfi] : ldataR_p->I_R[mfi];
+          FArrayBox const& reactfab = (m_incompressible) ? ldata_p->press[mfi] : (*reactmf)[mfi];
           FArrayBox const& pressfab = ldata_p->press[mfi];
           rec->derFunc()(this, bx, derfab, 0, rec->numDerive(), statefab, reactfab, pressfab, geom[lev], a_time, stateBCs, lev);
       }
-   } else {          // This is a state variable
-      mf.reset(new MultiFab(grids[lev], dmap[lev], 1, nGrow));
+   } else if (isStateVariable(a_name)) {          // This is a state variable
+      mf.reset(new MultiFab(grids[lev], dmap[lev], 1, nGrow, MFInfo(), Factory(lev)));
       int idx = stateVariableIndex(a_name);
       std::unique_ptr<MultiFab> statemf = fillPatchState(lev, a_time, nGrow);
       MultiFab::Copy(*mf,*statemf,idx,0,1,nGrow);
+   } else {                                       // This is a reaction variable
+      mf.reset(new MultiFab(grids[lev], dmap[lev], 1, nGrow, MFInfo(), Factory(lev)));
+      int idx = reactVariableIndex(a_name);
+      std::unique_ptr<MultiFab> reactmf = fillPatchReact(lev, a_time, nGrow);
+      MultiFab::Copy(*mf,*reactmf,idx,0,1,nGrow);
    }
 
    return mf;
@@ -608,7 +846,9 @@ PeleLM::deriveComp(const std::string &a_name,
 
    std::unique_ptr<MultiFab> mf;
 
-   bool itexists = derive_lst.canDerive(a_name) || isStateVariable(a_name);
+   bool itexists =    derive_lst.canDerive(a_name)
+                   || isStateVariable(a_name)
+                   || isReactVariable(a_name);
 
    if ( !itexists ) {
       amrex::Error("PeleLM::derive(): unknown variable: "+a_name);
@@ -617,11 +857,11 @@ PeleLM::deriveComp(const std::string &a_name,
    const PeleLMDeriveRec* rec = derive_lst.get(a_name);
 
    if (rec) {        // This is a derived variable
-      mf.reset(new MultiFab(grids[lev], dmap[lev], 1, nGrow));
+      mf.reset(new MultiFab(grids[lev], dmap[lev], 1, nGrow, MFInfo(), Factory(lev)));
       std::unique_ptr<MultiFab> statemf = fillPatchState(lev, a_time, m_nGrowState);
       // Get pressure: TODO no fillpatch for pressure just yet, simply get new state
       auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
-      auto ldataR_p = getLevelDataReactPtr(lev);
+      std::unique_ptr<MultiFab> reactmf = fillPatchReact(lev, a_time, nGrow);
       auto stateBCs = fetchBCRecArray(VELX,NVAR);
 
       // Temp MF for all the derive components
@@ -634,7 +874,7 @@ PeleLM::deriveComp(const std::string &a_name,
           const Box& bx = mfi.growntilebox(nGrow);
           FArrayBox& derfab = derTemp[mfi];
           FArrayBox const& statefab = (*statemf)[mfi];
-          FArrayBox const& reactfab = (m_incompressible) ? ldata_p->press[mfi] : ldataR_p->I_R[mfi];
+          FArrayBox const& reactfab = (m_incompressible) ? ldata_p->press[mfi] : (*reactmf)[mfi];
           FArrayBox const& pressfab = ldata_p->press[mfi];
           rec->derFunc()(this, bx, derfab, 0, rec->numDerive(), statefab, reactfab, pressfab, geom[lev], a_time, stateBCs, lev);
       }
@@ -644,11 +884,16 @@ PeleLM::deriveComp(const std::string &a_name,
          amrex::Error("PeleLM::deriveComp(): unknown derive component: " + a_name + " of " + rec->variableName(1000));
       }
       MultiFab::Copy(*mf,derTemp,derComp,0,1,nGrow);
-   } else {          // This is a state variable
-      mf.reset(new MultiFab(grids[lev], dmap[lev], 1, nGrow));
+   } else if (isStateVariable(a_name)) {          // This is a state variable
+      mf.reset(new MultiFab(grids[lev], dmap[lev], 1, nGrow, MFInfo(), Factory(lev)));
       int idx = stateVariableIndex(a_name);
       std::unique_ptr<MultiFab> statemf = fillPatchState(lev, a_time, nGrow);
       MultiFab::Copy(*mf,*statemf,idx,0,1,nGrow);
+   } else {                                       // This is a reaction variable
+      mf.reset(new MultiFab(grids[lev], dmap[lev], 1, nGrow, MFInfo(), Factory(lev)));
+      int idx = reactVariableIndex(a_name);
+      std::unique_ptr<MultiFab> reactmf = fillPatchReact(lev, a_time, nGrow);
+      MultiFab::Copy(*mf,*reactmf,idx,0,1,nGrow);
    }
 
    return mf;
@@ -796,8 +1041,9 @@ PeleLM::MLNorm0(const Vector<const MultiFab*> &a_MF,
 }
 
 bool
-PeleLM::isStateVariable(const std::string &a_name)
+PeleLM::isStateVariable(std::string_view a_name)
 {
+   // Check state
    for (std::list<std::tuple<int,std::string>>::const_iterator li = stateComponents.begin(),
         End = stateComponents.end(); li != End; ++li)
    {
@@ -808,15 +1054,46 @@ PeleLM::isStateVariable(const std::string &a_name)
    return false;
 }
 
+bool
+PeleLM::isReactVariable(std::string_view a_name)
+{
+   // Check reaction state
+   for (std::list<std::tuple<int,std::string>>::const_iterator li = reactComponents.begin(),
+        End = reactComponents.end(); li != End; ++li)
+   {
+      if (std::get<1>(*li) == a_name) {
+         return true;
+      }
+   }
+   return false;
+}
+
 int
-PeleLM::stateVariableIndex(const std::string &a_name)
+PeleLM::stateVariableIndex(std::string_view a_name)
 {
    int idx = -1;
    if (!isStateVariable(a_name)) {
-      amrex::Error("PeleLM::stateVariableIndex(): unknown State variable: "+a_name);
+      amrex::Error("PeleLM::stateVariableIndex(): unknown State variable: "+static_cast<std::string>(a_name));
    }
    for (std::list<std::tuple<int,std::string>>::const_iterator li = stateComponents.begin(),
         End = stateComponents.end(); li != End; ++li)
+   {
+      if (std::get<1>(*li) == a_name) {
+         idx = std::get<0>(*li);
+      }
+   }
+   return idx;
+}
+
+int
+PeleLM::reactVariableIndex(std::string_view a_name)
+{
+   int idx = -1;
+   if (!isReactVariable(a_name)) {
+      amrex::Error("PeleLM::reactVariableIndex(): unknown Reaction variable: "+static_cast<std::string>(a_name));
+   }
+   for (std::list<std::tuple<int,std::string>>::const_iterator li = reactComponents.begin(),
+        End = reactComponents.end(); li != End; ++li)
    {
       if (std::get<1>(*li) == a_name) {
          idx = std::get<0>(*li);
@@ -973,9 +1250,8 @@ void PeleLM::setTypicalValues(const TimeStamp &a_time, int is_init)
     }
 
     if (is_init || m_verbose > 1) {
-        std::string PrettyLine = std::string(78, '=') + "\n";
         Print() << PrettyLine;
-        Print() << "Typical values: " << '\n';
+        Print() << " Typical values: " << '\n';
         Print() << "\tVelocity: ";
         for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
             Print() << typical_values[idim] << ' ';

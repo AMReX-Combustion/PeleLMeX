@@ -33,25 +33,25 @@ Follow the steps listed below to get to this point:
 
 #. Move into the Exec folder containing the ``FlowPastCylinder``. To do so: ::
 
-   cd PeleLMeX/Exec/RegTests/EB_FlowPastCylinder
+    cd PeleLMeX/Exec/RegTests/EB_FlowPastCylinder
 
 #. Finally, setup the environment variables providing paths to `PeleLMeX` and its dependencies. This can done in
    one of two ways:
 
    #. Directly into the `GNUmakefile` by updating the top-most lines as follows: ::
 
-      PELELMEX_HOME     = <path_to_PeleLMeX>
-      AMREX_HOME        =${PELELMEX_HOME}/Submodules/amrex
-      AMREX_HYDRO_HOME  =${PELELMEX_HOME}/Submodules/AMReX-Hydro
-      PELE_PHYSICS_HOME =${PELELMEX_HOME}/Submodules/PelePhysics
+       PELELMEX_HOME     = <path_to_PeleLMeX>
+       AMREX_HOME        =${PELELMEX_HOME}/Submodules/amrex
+       AMREX_HYDRO_HOME  =${PELELMEX_HOME}/Submodules/AMReX-Hydro
+       PELE_PHYSICS_HOME =${PELELMEX_HOME}/Submodules/PelePhysics
 
 
    #. Exporting shell environement variables (using *bash* for instance): ::
 
-      export PELELMEX_HOME=<path_to_PeleLMeX>
-      export AMREX_HOME=${PELELMEX_HOME}/Submodules/amrex
-      export AMREX_HYDRO_HOME=${PELELMEX_HOME}/Submodules/AMReX-Hydro
-      export PELE_PHYSICS_HOME=${PELELMEX_HOME}/Submodules/PelePhysics
+       export PELELMEX_HOME=<path_to_PeleLMeX>
+       export AMREX_HOME=${PELELMEX_HOME}/Submodules/amrex
+       export AMREX_HYDRO_HOME=${PELELMEX_HOME}/Submodules/AMReX-Hydro
+       export PELE_PHYSICS_HOME=${PELELMEX_HOME}/Submodules/PelePhysics
 
    Both options require to provide the path to where you cloned `PeleLMeX`. Note that using the first option will overwrite any
    environement variables you might have previously defined when using this `GNUmakefile`.
@@ -61,7 +61,7 @@ You're good to go !
 Numerical setup
 ---------------
 
-In this section we review the content of the various input files for the flow past cylinder test case. To get additional information about the keywords discussed, the user is referred to section :ref:`sec:control`.
+In this section we review the content of the various input files for the flow past cylinder test case. To get additional information about the keywords discussed, the user is referred to :doc:`LMeXControls`.
 
 Test case and boundary conditions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -69,22 +69,17 @@ Direct Numerical Simulations (DNS) is performed on a 12x4 :math:`cm^2` 2D comput
 The base grid is decomposed into 192x64 cells and up to 3 levels of refinement (although we will start with a single level).
 The refinement ratio between each level is set to 2.
 The maximum box size is fixed at 64, and the base (level 0) grid is composed of 3 boxes,
-as shown in Fig :numref:`fig:FPC_NumSetup`.
+as shown in :numref:`FPC_Domain`.
 
 Periodic boundary conditions are used in the transverse (:math:`y`) direction, while ``Inflow`` (dirichlet) and ``Outflow`` (neumann) boundary conditions are used in the main flow direction (:math:`x`). The flow goes from left to right.
 A cylinder of radius 0.0035 m is placed in the middle of the flow at (0.0:0.0).
 
-.. |FPC_a| image:: /images/tutorials/FPC_SetupSketch.png
-     :width: 100%
+.. figure:: images/tutorials/FPC_SetupSketch.png
+   :name: FPC_Domain
+   :align: center
+   :figwidth: 80%
 
-.. _fig:FPC_NumSetup:
-
-.. table:: Sketch of the computational domain with level 0 box decomposition.
-     :align: center
-
-     +---------+
-     | |FPC_a| |
-     +---------+
+   : Sketch of the computational domain with level 0 box decomposition.
 
 The geometry of the problem is specified in the first block of the ``input.2d-Re500``: ::
 
@@ -94,7 +89,7 @@ The geometry of the problem is specified in the first block of the ``input.2d-Re
    geometry.prob_lo     = -0.02 -0.02     # x_lo y_lo
    geometry.prob_hi     =  0.10  0.02     # x_hi y_hi
 
-The second block determines the boundary conditions. Note that `Interior` is used to indicate periodic boundary conditions. Refer to Fig :numref:`fig:FPC_NumSetup`: ::
+The second block determines the boundary conditions. Note that `Interior` is used to indicate periodic boundary conditions. Refer to :numref:`FPC_Domain`: ::
 
    #--------------------------BC FLAGS-----------------------------
    # Interior, Inflow, Outflow, Symmetry,
@@ -173,7 +168,7 @@ This initial solution is constructed via the routine ``pelelm_initdata()``, in t
 Numerical scheme
 ^^^^^^^^^^^^^^^^
 
-The ``NUMERICS CONTROL`` block can be modified by the user to increase the number of SDC iterations. Note that there are many other parameters controlling the numerical algorithm that the advanced user can tweak, but we will not talk about them in the present Tutorial. The interested user can refer to section :ref:`sec:control`.
+The ``NUMERICS CONTROL`` block can be modified by the user to increase the number of SDC iterations. Note that there are many other parameters controlling the numerical algorithm that the advanced user can tweak, but we will not talk about them in the present Tutorial. The interested user can refer to :doc:`LMeXControls`.
 
 
 Building the executable
@@ -275,22 +270,17 @@ Whether you have used one or the other command, the computation finishes within 
    amrvis -a plt_?????
 
 
-.. |FPC_b| image:: /images/tutorials/FPC_Coarse_25ms.png
-     :width: 100%
+.. figure:: images/tutorials/FPC_Coarse_25ms.png
+   :name: FPC_Coarse
+   :align: center
+   :figwidth: 80%
 
-.. _fig:FPC_Coarse:
-
-.. table:: Contour plots of velocity components, vorticity, pressure and volume fraction at t = 25 ms on the coarse grid.
-     :align: center
-
-     +---------+
-     | |FPC_b| |
-     +---------+
+   : Contour plots of velocity components, vorticity, pressure and volume fraction at t = 25 ms on the coarse grid.
 
 At this point, you have established a flow with a large recirculation zone in the wake of the cylinder, but the flow has not yet fully transitioned to periodic vortex shedding.
-The flow is depicted in Fig :numref:`fig:FPC_Coarse` showing a few of the available contour plots at 25 ms. Note that the value of the fully covered cells is set to zero.
+The flow is depicted in :numref:`FPC_Coarse` showing a few of the available contour plots at 25 ms. Note that the value of the fully covered cells is set to zero.
 
-As can be seen from Fig :numref:`fig:FPC_Coarse`, the flow has not yet transitioned to the familiar Von-Karman alleys and two aspects of the current simulation can delay or even prevent the onset of vortex shedding:
+As can be seen from :numref:`FPC_Coarse`, the flow has not yet transitioned to the familiar Von-Karman alleys and two aspects of the current simulation can delay or even prevent the onset of vortex shedding:
 
  - the flow is initially symmetric and the transition to the familiar periodic flow is due to the growth of infinitesimal perturbations in the shear layer of the wake. Because the flow is artificially too symmetric, this transition can be delayed until round-off errors sufficiently accumulate.
  - the numerical dissipation introduced by this coarse grid results in an effective Reynolds number probably significantly lower than the value estimated above.
@@ -360,17 +350,12 @@ and since the vorticity refinement criterion only refine up to level 1, the leve
 
     mpirun -n 4 ./PeleLMeX2d.gnu.MPI.ex input.2d-Re500 > log3Levels.dat &
 
-You should obtain a flow with a vorticity field similar to Fig. :numref:`fig:FPC_VortFinal`.
+You should obtain a flow with a vorticity field similar to :numref:`FPC_VortFinal`.
 For the purpose of the present tutorial, this will be our final solution but one can see that the flow has not yet return to a periodic vortex shedding and additinal resolution could be added locally to obtain smoother flow features.
 
-.. |FPC_c| image:: /images/tutorials/FPC_VorticityFinal.png
-     :width: 100%
+.. figure:: images/tutorials/FPC_VorticityFinal.png
+   :name: FPC_VortFinal
+   :align: center
+   :figwidth: 80%
 
-.. _fig:FPC_VortFinal:
-
-.. table:: Contour plots of vorticity at t = 350 ms with 2 levels of refinements.
-     :align: center
-
-     +---------+
-     | |FPC_c| |
-     +---------+
+   : Contour plots of vorticity at t = 350 ms with 2 levels of refinements.

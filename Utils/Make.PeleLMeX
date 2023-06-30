@@ -26,7 +26,7 @@ CXXFLAGS+=-std=c++17
 #---------------
 # PeleLM sources
 #---------------
-LMdirs := Source Source/Diagnostics
+LMdirs := Source
 ifeq ($(USE_EFIELD),TRUE)
    DEFINES += -DPELE_USE_EFIELD
    LMdirs += Source/Efield Source/Efield/GMRES Source/Efield/LinOps
@@ -95,7 +95,8 @@ endif
 
 ChemDir  = Support/Mechanism/Models/$(Chemistry_Model)
 
-PPdirs  := Utility/PMF Utility/TurbInflow Utility/PltFileManager Source $(ChemDir) Reactions Eos Transport
+PPdirs := Utility/PMF Utility/TurbInflow Utility/PltFileManager Utility/Diagnostics
+PPdirs += Source $(ChemDir) Reactions Eos Transport
 
 Bpack += $(foreach dir, $(PPdirs), $(PELE_PHYSICS_HOME)/$(dir)/Make.package)
 Blocs += $(foreach dir, $(PPdirs), $(PELE_PHYSICS_HOME)/$(dir))
@@ -129,10 +130,9 @@ Bpack += $(foreach dir, $(Pdirs), $(AMREX_HOME)/Src/$(dir)/Make.package)
 #---------------
 ifeq ($(USE_PARTICLES), TRUE)
    ifdef SPRAY_FUEL_NUM
-      Bpack += $(PELEMP_HOME)/Source/PP_Spray/Make.package
-      Blocs += $(PELEMP_HOME)/Source/PP_Spray
-      Bpack += $(PELEMP_HOME)/Source/PP_Spray/Distribution/Make.package
-      Blocs += $(PELEMP_HOME)/Source/PP_Spray/Distribution
+      MPdirs := PP_Spray PP_Spray/Distribution
+      Bpack += $(foreach dir, $(MPdirs), $(PELEMP_HOME)/Source/$(dir)/Make.package)
+      Blocs += $(foreach dir, $(MPdirs), $(PELEMP_HOME)/Source/$(dir))
    endif
 endif
 ifeq ($(USE_SOOT), TRUE)

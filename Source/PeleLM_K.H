@@ -353,6 +353,44 @@ EB_intFluxDivergence_K(int i, int j, int k,
 AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
 void
+EB_intFluxDivergence_K(int i, int j, int k,
+                       int ncomp,
+                       AMREX_D_DECL(amrex::Array4<const amrex::Real> const& fluxX,
+                                    amrex::Array4<const amrex::Real> const& fluxY,
+                                    amrex::Array4<const amrex::Real> const& fluxZ),
+                       AMREX_D_DECL(amrex::Array4<const amrex::Real> const& afracX,
+                                    amrex::Array4<const amrex::Real> const& afracY,
+                                    amrex::Array4<const amrex::Real> const& afracZ),
+                       AMREX_D_DECL(amrex::Real areax,
+                                    amrex::Real areay,
+                                    amrex::Real areaz),
+                       amrex::Array4<const amrex::Real> const& ebFlux,
+                       amrex::Array4<const amrex::Real> const& ebAreaFrac,
+                       amrex::Array4<const amrex::Real>              const& vol,
+                       const amrex::Real                                  & a_dx,
+                       const amrex::Real                                  & scaling,
+                       amrex::Array4<      amrex::Real>              const& div) noexcept
+{
+   using namespace amrex::literals;
+
+   amrex::Real factor = scaling / vol(i,j,k);
+   amrex::Real eb_area = AMREX_D_TERM(1.0,*a_dx,*a_dx) * ebAreaFrac(i,j,k);
+
+   for (int n = 0; n < ncomp; n++) {
+      div(i,j,k,n) = AMREX_D_TERM (  (   areax * afracX(i+1,j,k) * fluxX(i+1,j,k,n)
+                                       - areax * afracX(i  ,j,k) * fluxX(i  ,j,k,n) ),
+                                   + (   areay * afracY(i,j+1,k) * fluxY(i,j+1,k,n)
+                                       - areay * afracY(i,j  ,k) * fluxY(i,j  ,k,n) ),
+                                   + (   areaz * afracZ(i,j,k+1) * fluxZ(i,j,k+1,n)
+                                       - areaz * afracZ(i,j,k  ) * fluxZ(i,j,k  ,n) ));
+      div(i,j,k,n) += eb_area * ebFlux(i,j,k,n);
+      div(i,j,k,n) *= factor;
+   }
+}
+
+AMREX_GPU_DEVICE
+AMREX_FORCE_INLINE
+void
 intFluxDivergence_K(int i, int j, int k,
                     int ncomp,
                     AMREX_D_DECL(amrex::Array4<const amrex::Real> const& fluxX,
@@ -380,6 +418,7 @@ intFluxDivergence_K(int i, int j, int k,
    }
 }
 
+#if (AMREX_SPACEDIM == 2)
 AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
 void
@@ -406,6 +445,7 @@ intFluxDivergence_rz_K(int i, int j, int k,
       div(i,j,k,n) *= factor;
    }
 }
+#endif
 
 AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
@@ -579,6 +619,7 @@ makeVelForce(int i, int j, int k,
              int                                     is_incomp,
              const amrex::Real                     & rho_incomp,
              int                                     pseudo_gravity,
+             int                                     pseudo_gravity_dir,
              const amrex::Real                     & /*time*/,
              amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const gravity,
              amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const gp0,
@@ -603,14 +644,16 @@ makeVelForce(int i, int j, int k,
       rho_lcl = rho(i,j,k);
    }
 
+   // Gravity and background pressure gradient
    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
       force(i,j,k,idim) = -gp0[idim] + gravity[idim] * rho_lcl;
    }
 
-   // TODO direction of pseudo grav should be runtime params
+   // Pseudo-gravity for active control
    if (pseudo_gravity) {
-      force(i,j,k,AMREX_SPACEDIM-1) += dV_control * rho_lcl;
+      force(i,j,k,pseudo_gravity_dir) += dV_control * rho_lcl;
    }
+
    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
      force(i,j,k,idim) += extmom(i,j,k,idim) - vel(i,j,k,idim) * extrho(i,j,k);
    }
@@ -813,7 +856,8 @@ fabMinMax(int i, int j, int k,
    }
 }
 
-// DivuCeiling type 1 est_divu_dt function
+// Type 1 est_divu_dt function
+// Check based on divU
 AMREX_GPU_HOST_DEVICE
 AMREX_FORCE_INLINE
 amrex::Real
@@ -835,6 +879,76 @@ est_divu_dt_1(int i, int j, int k,
    return dtcell;
 }
 
+// Type 2 est_divu_dt function
+// Check based rho * divU + u \cdot grad rho
+AMREX_GPU_HOST_DEVICE
+AMREX_FORCE_INLINE
+amrex::Real
+est_divu_dt_2(int i, int j, int k,
+              amrex::Real                                  const& dtfactor,
+              amrex::Real                                  const& rhomin,
+              amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const dxinv,
+              amrex::Array4<const amrex::Real>             const& rho,
+              amrex::Array4<const amrex::Real>             const& vel,
+              amrex::Array4<const amrex::Real>             const& divu) noexcept
+{
+   using namespace amrex::literals;
+
+   amrex::Real dtcell = 1.0e20_rt;
+   amrex::Real denom  = 0.0_rt;
+   bool rho_is_okay = (rho(i,j,k) > rhomin);
+
+   denom = rho(i,j,k) * divu(i,j,k) +
+           AMREX_D_TERM(  vel(i,j,k,0) * ( rho(i+1,j,k) - rho(i-1,j,k) ) * dxinv[0],
+                        + vel(i,j,k,1) * ( rho(i,j+1,k) - rho(i,j-1,k) ) * dxinv[1],
+                        + vel(i,j,k,2) * ( rho(i,j,k+1) - rho(i,j,k-1) ) * dxinv[2] );
+   if ( denom > 0.0_rt ) {
+      dtcell = (rho_is_okay) ? ( rho(i,j,k) - rhomin ) / denom : std::abs( rho(i,j,k) ) / denom;
+      dtcell *= dtfactor;
+   }
+   return dtcell;
+}
+
+AMREX_GPU_HOST_DEVICE
+AMREX_FORCE_INLINE
+void
+check_divu_dt(int i, int j, int k,
+              int                                          check_type,
+              amrex::Real                                  const& dtfactor,
+              amrex::Real                                  const& rhomin,
+              amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const dxinv,
+              amrex::Array4<const amrex::Real>             const& rho,
+              amrex::Array4<const amrex::Real>             const& vel,
+              amrex::Array4<const amrex::Real>             const& divu,
+              amrex::Real                                  const& a_dt) noexcept
+{
+   using namespace amrex::literals;
+
+   amrex::Real dtcell = 1.0e12_rt;
+   amrex::Real denom  = 0.0_rt;
+   bool rho_is_okay = (rho(i,j,k) > rhomin);
+
+   if ( check_type == 1 ) {                           // Check based on divU
+      if ( divu(i,j,k) > 0.0_rt ) {
+         dtcell = (rho_is_okay) ? ( 1.0_rt - rhomin / rho(i,j,k) ) / divu(i,j,k) : 1.0_rt / divu(i,j,k);
+      }
+   } else if ( check_type == 2 ) {                    // Check based rho * divU + u \cdot grad rho
+      denom = rho(i,j,k) * divu(i,j,k) +
+              AMREX_D_TERM(  vel(i,j,k,0) * ( rho(i+1,j,k) - rho(i-1,j,k) ) * dxinv[0],
+                           + vel(i,j,k,1) * ( rho(i,j+1,k) - rho(i,j-1,k) ) * dxinv[1],
+                           + vel(i,j,k,2) * ( rho(i,j,k+1) - rho(i,j,k-1) ) * dxinv[2] );
+      if ( denom > 0.0_rt ) {
+         dtcell = (rho_is_okay) ? ( rho(i,j,k) - rhomin ) / denom : std::abs( rho(i,j,k) ) / denom;
+      }
+   }
+#ifndef AMREX_USE_GPU
+   if (a_dt>dtcell) {
+       amrex::Abort("Error: divU dtcell larger than actual dt !");
+   } else if (a_dt>dtcell*dtfactor) {
+       amrex::Print() << "Warning: divU dtcell close to actual dt ! \n";
+   }
+#endif
+}
 
 AMREX_GPU_HOST_DEVICE
 AMREX_FORCE_INLINE

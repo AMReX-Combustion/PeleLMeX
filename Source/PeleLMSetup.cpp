@@ -17,7 +17,6 @@
 using namespace amrex;
 
 static Box the_same_box (const Box& b)    { return b;                }
-static Box grow_box_by_one (const Box& b) { return amrex::grow(b,1); }
 static Box grow_box_by_two (const Box& b) { return amrex::grow(b,2); }
 
 void PeleLM::Setup() {
@@ -104,6 +103,7 @@ void PeleLM::Setup() {
             m_plotChemDiag = 0;
             m_plotHeatRelease = 0;
             m_useTypValChem = 0;
+            reactComponents.clear();
          }
          pp.query("plot_react", m_plot_react);
       }
@@ -140,6 +140,9 @@ void PeleLM::Setup() {
 
    // Copy problem parameters into device copy
    Gpu::copy(Gpu::hostToDevice, prob_parm, prob_parm+1,prob_parm_d);
+
+   // Initialize active control
+   initActiveControl();
 }
 
 void PeleLM::readParameters() {
@@ -159,63 +162,17 @@ void PeleLM::readParameters() {
    // Boundary conditions
    // -----------------------------------------
    int isOpenDomain = 0;
-
-   Vector<std::string> lo_bc_char(AMREX_SPACEDIM);
-   Vector<std::string> hi_bc_char(AMREX_SPACEDIM);
-   pp.getarr("lo_bc",lo_bc_char,0,AMREX_SPACEDIM);
-   pp.getarr("hi_bc",hi_bc_char,0,AMREX_SPACEDIM);
-
-   Vector<int> lo_bc(AMREX_SPACEDIM), hi_bc(AMREX_SPACEDIM);
-   for (int dir = 0; dir<AMREX_SPACEDIM; dir++){
-      if (lo_bc_char[dir] == "Interior") {
-         lo_bc[dir] = 0;
-      } else if (lo_bc_char[dir] == "Inflow") {
-         lo_bc[dir] = 1;
-      } else if (lo_bc_char[dir] == "Outflow") {
-         lo_bc[dir] = 2;
-         isOpenDomain = 1;
-      } else if (lo_bc_char[dir] == "Symmetry") {
-         lo_bc[dir] = 3;
-      } else if (lo_bc_char[dir] == "SlipWallAdiab") {
-         lo_bc[dir] = 4;
-      } else if (lo_bc_char[dir] == "NoSlipWallAdiab") {
-         lo_bc[dir] = 5;
-      } else if (lo_bc_char[dir] == "SlipWallIsotherm") {
-         lo_bc[dir] = 6;
-      } else if (lo_bc_char[dir] == "NoSlipWallIsotherm") {
-         lo_bc[dir] = 7;
-      } else {
-         amrex::Abort("Wrong boundary condition word in lo_bc, please use: Interior, Inflow, Outflow, "
-                      "Symmetry, SlipWallAdiab, NoSlipWallAdiab, SlipWallIsotherm, NoSlipWallIsotherm");
-      }
-
-      if (hi_bc_char[dir] == "Interior") {
-         hi_bc[dir] = 0;
-      } else if (hi_bc_char[dir] == "Inflow") {
-         hi_bc[dir] = 1;
-      } else if (hi_bc_char[dir] == "Outflow") {
-         hi_bc[dir] = 2;
-         isOpenDomain = 1;
-      } else if (hi_bc_char[dir] == "Symmetry") {
-         hi_bc[dir] = 3;
-      } else if (hi_bc_char[dir] == "SlipWallAdiab") {
-         hi_bc[dir] = 4;
-      } else if (hi_bc_char[dir] == "NoSlipWallAdiab") {
-         hi_bc[dir] = 5;
-      } else if (hi_bc_char[dir] == "SlipWallIsotherm") {
-         hi_bc[dir] = 6;
-      } else if (hi_bc_char[dir] == "NoSlipWallIsotherm") {
-         hi_bc[dir] = 7;
-      } else {
-         amrex::Abort("Wrong boundary condition word in hi_bc, please use: Interior, Inflow, Outflow, "
-                      "Symmetry, SlipWallAdiab, NoSlipWallAdiab, SlipWallIsotherm, NoSlipWallIsotherm");
-      }
-   }
-
-   // Store BCs in m_phys_bc.
    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
-      m_phys_bc.setLo(idim,lo_bc[idim]);
-      m_phys_bc.setHi(idim,hi_bc[idim]);
+      int lo_bc = BoundaryCondition::BCInterior;
+      int hi_bc = BoundaryCondition::BCInterior;
+      parseUserKey(pp,"lo_bc",boundarycondition,lo_bc,idim);
+      parseUserKey(pp,"hi_bc",boundarycondition,hi_bc,idim);
+      m_phys_bc.setLo(idim,lo_bc);
+      m_phys_bc.setHi(idim,hi_bc);
+      if (lo_bc == BoundaryCondition::BCOutflow ||
+          hi_bc == BoundaryCondition::BCOutflow ) {
+         isOpenDomain = 1;
+      }
    }
 
    // Activate closed chamber if !isOpenDomain
@@ -372,7 +329,11 @@ void PeleLM::readParameters() {
    // -----------------------------------------
    pp.query("sdc_iterMax",m_nSDCmax);
    pp.query("floor_species",m_floor_species);
+   pp.query("dPdt_factor",m_dpdtFactor);
    pp.query("memory_checks",m_checkMem);
+   pp.query("divu_dt_factor",m_divu_dtFactor);
+   pp.query("divu_dt_rhoMin",m_divu_rhoMin);
+   pp.query("divu_dt_method",m_divu_checkFlag);
 
    // -----------------------------------------
    // Reaction
@@ -406,6 +367,25 @@ void PeleLM::readParameters() {
          Abort("peleLM.max_grid_size_chem should have 1 or AMREX_SPACEDIM values");
       }
    }
+
+   // -----------------------------------------
+   // Load Balancing
+   // -----------------------------------------
+   pp.query("do_load_balancing",m_doLoadBalance);
+   parseUserKey(pp, "load_balancing_method", lbmethod, m_loadBalanceMethod);
+   parseUserKey(pp, "load_balancing_cost_estimate", lbcost, m_loadBalanceCost);
+   pp.query("load_balancing_efficiency_threshold",m_loadBalanceEffRatioThreshold);
+   parseUserKey(pp, "chem_load_balancing_method", lbmethod, m_loadBalanceMethodChem);
+   parseUserKey(pp, "chem_load_balancing_cost_estimate", lbcost, m_loadBalanceCostChem);
+
+   // Deactivate load balancing for serial runs
+#ifdef AMREX_USE_MPI
+   if (ParallelContext::NProcsSub() == 1) {
+       m_doLoadBalance = 0;
+   }
+#else
+   m_doLoadBalance = 0;
+#endif
 
    // -----------------------------------------
    // Advection
@@ -484,8 +464,9 @@ void PeleLM::readParameters() {
    ppa.query("max_dt", m_max_dt);
    ppa.query("min_dt", m_min_dt);
 
-   if ( max_level > 0 ) {
+   if ( max_level > 0 || m_doLoadBalance) {
       ppa.query("regrid_int", m_regrid_int);
+      ppa.query("regrid_on_restart", m_regrid_on_restart);
    }
 
 #ifdef AMREX_USE_EB
@@ -509,6 +490,7 @@ void PeleLM::readParameters() {
          m_signDistNeeded = 1;
       }
    }
+   pp.query("isothermal_EB",m_isothermalEB);
 #endif
 
    // -----------------------------------------
@@ -601,6 +583,7 @@ void PeleLM::readIOParameters() {
          pp.get("derive_plot_vars", m_derivePlotVars[ivar],ivar);
       }
    }
+   pp.query("plot_zeroEBcovered", m_plot_zeroEBcovered);
    pp.query("plot_speciesState" , m_plotStateSpec);
    m_initial_grid_file = "";
    m_regrid_file = "";
@@ -615,8 +598,6 @@ void PeleLM::readIOParameters() {
 
 void PeleLM::variablesSetup() {
    BL_PROFILE("PeleLM::variablesSetup()");
-
-   std::string PrettyLine = std::string(78, '=') + "\n";
 
    //----------------------------------------------------------------
    // Variables ordering is defined through compiler macro in PeleLM_Index.H
@@ -646,6 +627,7 @@ void PeleLM::variablesSetup() {
       pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(names);
       for (int n = 0; n < NUM_SPECIES; n++ ) {
          stateComponents.emplace_back(FIRSTSPEC+n,"rho.Y("+names[n]+")");
+         reactComponents.emplace_back(n,"I_R("+names[n]+")");
       }
       Print() << " Enthalpy: " << RHOH << "\n";
       stateComponents.emplace_back(RHOH,"rhoh");
@@ -856,6 +838,9 @@ void PeleLM::derivedSetup()
 
    }
 
+   // Distribution Map
+   derive_lst.add("DistributionMap",IndexType::TheCellType(),1,pelelm_derdmap,the_same_box);
+
    // Cell average pressure
    derive_lst.add("avg_pressure",IndexType::TheCellType(),1,pelelm_deravgpress,the_same_box);
 
@@ -868,15 +853,31 @@ void PeleLM::derivedSetup()
    // Vorticity magnitude
    derive_lst.add("mag_vort",IndexType::TheCellType(),1,pelelm_dermgvort,grow_box_by_two);
 
+   // Spatial coordinates
+   {
+      Vector<std::string> var_names({AMREX_D_DECL("x","y","z")});
+      derive_lst.add("coordinates",IndexType::TheCellType(),AMREX_SPACEDIM,var_names,
+                     pelelm_dercoord,the_same_box);
+   }
+
    // Vorticity components
-   const int vort_ncomp = 2*AMREX_SPACEDIM-3;
+   {
+      const int vort_ncomp = 2*AMREX_SPACEDIM-3;
 #if (AMREX_SPACEDIM == 2)
-   Vector<std::string> var_names({"VortZ"});
+      Vector<std::string> var_names({"VortZ"});
 #elif (AMREX_SPACEDIM == 3)
-   Vector<std::string> var_names({"VortX","VortY","VortZ"});
+      Vector<std::string> var_names({"VortX","VortY","VortZ"});
 #endif
-   derive_lst.add("vorticity",IndexType::TheCellType(),vort_ncomp,var_names,
-                  pelelm_dervort,grow_box_by_two);
+      derive_lst.add("vorticity",IndexType::TheCellType(),vort_ncomp,var_names,
+                     pelelm_dervort,grow_box_by_two);
+   }
+
+   // UserDefined derived
+   {
+       Vector<std::string> var_names = pelelm_setuserderives();
+       derive_lst.add("derUserDefined",IndexType::TheCellType(),var_names.size(),var_names,
+                      pelelm_deruserdef,the_same_box);
+   }
 
 #if (AMREX_SPACEDIM == 3)
    // Q-criterion
@@ -966,15 +967,33 @@ void PeleLM::evaluateSetup()
       evaluate_lst.add("diffTerm",IndexType::TheCellType(),NUM_SPECIES+2,var_names,the_same_box);
    }
 
-   // scalar advection term
+   // advection terms
    {
-      // TODO
-      Vector<std::string> var_names(NUM_SPECIES+1);
+      Vector<std::string> var_names(NVAR-2);   // Skip temperature and RhoRT, unused
+      AMREX_D_TERM(var_names[VELX] = "A(VELX)";,
+                   var_names[VELY] = "A(VELY)";,
+                   var_names[VELZ] = "A(VELZ)");
+      var_names[DENSITY] = "A(Rho)";
       for (int n = 0 ; n < NUM_SPECIES; n++) {
-         var_names[n] = "A("+spec_names[n]+")";
+         var_names[FIRSTSPEC+n] = "A("+spec_names[n]+")";
       }
-      var_names[NUM_SPECIES] = "A(RhoH)";
-      evaluate_lst.add("advTerm",IndexType::TheCellType(),NUM_SPECIES+1,var_names,the_same_box);
+      var_names[RHOH] = "A(RhoH)";
+      evaluate_lst.add("advTerm",IndexType::TheCellType(),NVAR-2,var_names,the_same_box);
+   }
+
+   // Chemical state and external chem. forcing (used in ReactEval)
+   {
+      Vector<std::string> var_names(2*(NUM_SPECIES+1)+1);
+      for (int n = 0 ; n < NUM_SPECIES; n++) {
+         var_names[n] = "rhoY("+spec_names[n]+")";
+      }
+      var_names[NUM_SPECIES] = "rhoH";
+      var_names[NUM_SPECIES+1] = "Temp";
+      for (int n = 0 ; n < NUM_SPECIES; n++) {
+         var_names[NUM_SPECIES+2+n] = "F_rhoY("+spec_names[n]+")";
+      }
+      var_names[2*NUM_SPECIES+2] = "F_rhoH";
+      evaluate_lst.add("chemTest",IndexType::TheCellType(),2*(NUM_SPECIES+1)+1,var_names,the_same_box);
    }
 
    // instantaneous reaction rate
@@ -1048,22 +1067,22 @@ void PeleLM::taggingSetup()
          Real value; ppr.get("value_greater",value);
          std::string field; ppr.get("field_name",field);
          errTags.push_back(AMRErrorTag(value,AMRErrorTag::GREATER,field,info));
-         itexists = derive_lst.canDerive(field) || isStateVariable(field);
+         itexists = derive_lst.canDerive(field) || isStateVariable(field) || isReactVariable(field);
       } else if (ppr.countval("value_less")) {
          Real value; ppr.get("value_less",value);
          std::string field; ppr.get("field_name",field);
          errTags.push_back(AMRErrorTag(value,AMRErrorTag::LESS,field,info));
-         itexists = derive_lst.canDerive(field) || isStateVariable(field);
+         itexists = derive_lst.canDerive(field) || isStateVariable(field) || isReactVariable(field);
       } else if (ppr.countval("vorticity_greater")) {
          Real value; ppr.get("vorticity_greater",value);
          const std::string field="mag_vort";
          errTags.push_back(AMRErrorTag(value,AMRErrorTag::VORT,field,info));
-         itexists = derive_lst.canDerive(field) || isStateVariable(field);
+         itexists = derive_lst.canDerive(field) || isStateVariable(field) || isReactVariable(field);
       } else if (ppr.countval("adjacent_difference_greater")) {
          Real value; ppr.get("adjacent_difference_greater",value);
          std::string field; ppr.get("field_name",field);
          errTags.push_back(AMRErrorTag(value,AMRErrorTag::GRAD,field,info));
-         itexists = derive_lst.canDerive(field) || isStateVariable(field);
+         itexists = derive_lst.canDerive(field) || isStateVariable(field) || isReactVariable(field);
       } else if (realbox.ok()) {
         errTags.push_back(AMRErrorTag(info));
         itexists = true;
@@ -1107,8 +1126,13 @@ void PeleLM::resizeArray() {
    // Time
    m_t_old.resize(max_level+1);
    m_t_new.resize(max_level+1);
+
 #ifdef PELELM_USE_SPRAY
    m_spraystate.resize(max_level+1);
    m_spraysource.resize(max_level+1);
 #endif
+
+   // Load balancing
+   m_costs.resize(max_level+1);
+   m_loadBalanceEff.resize(max_level+1);
 }

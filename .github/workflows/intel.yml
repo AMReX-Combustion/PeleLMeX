@@ -32,8 +32,8 @@ jobs:
         set +e
         source /opt/intel/oneapi/setvars.sh
         set -e
-        export CXX=$(which dpcpp)
-        export CC=$(which icc)
+        export CXX=$(which icpx)
+        export CC=$(which icx)
         cd Exec/RegTests/FlameSheet/
         make TPL COMP=intel DIM=3 USE_SYCL=TRUE USE_MPI=FALSE
         make -j $(nproc) COMP=intel DIM=3 USE_SYCL=TRUE USE_MPI=FALSE
@@ -58,9 +58,8 @@ jobs:
         set +e
         source /opt/intel/oneapi/setvars.sh
         set -e
-        dpcpp -v
-        export CXX=$(which dpcpp)
-        export CC=$(which icc)
+        export CXX=$(which icpx)
+        export CC=$(which icx)
         cd Exec/RegTests/EB_EnclosedFlame/
         make TPL COMP=intel DIM=3 USE_SYCL=TRUE USE_MPI=FALSE
         make -j $(nproc) COMP=intel DIM=3 USE_SYCL=TRUE USE_MPI=FALSE

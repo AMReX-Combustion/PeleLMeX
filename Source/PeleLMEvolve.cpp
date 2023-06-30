@@ -48,6 +48,10 @@ void PeleLM::Evolve() {
       }
 #endif
 
+      // Active control
+      int is_restart = 0;
+      activeControl(is_restart);
+
       // Temporals
       if (doTemporalsNow()) {
          writeTemporals();
@@ -95,10 +99,17 @@ void PeleLM::Evolve() {
    if (m_verbose > 0) {
       amrex::Print() << "\n >> Final simulation time: " << m_cur_time << "\n";
    }
-   if ( (m_plot_int > 0 || m_plot_per_approx > 0. || m_plot_per_exact > 0.) && !plt_justDidIt ) {
+   if ( (m_plot_int > 0 ||
+         m_plot_per_approx > 0. ||
+         m_plot_per_exact > 0.) &&
+         !plt_justDidIt &&
+         m_nstep > 0) {
       WritePlotFile();
    }
-   if ( m_check_int > 0 && !chk_justDidIt ) {
+   if ( (m_check_int > 0 ||
+         m_check_per > 0.) &&
+         !chk_justDidIt &&
+         m_nstep > 0) {
       WriteCheckPointFile();
    }
 }

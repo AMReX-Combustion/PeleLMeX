@@ -1,5 +1,0 @@
-CEXE_headers += DiagBase.H
-CEXE_headers += DiagFramePlane.H
-
-CEXE_sources += DiagBase.cpp
-CEXE_sources += DiagFramePlane.cpp

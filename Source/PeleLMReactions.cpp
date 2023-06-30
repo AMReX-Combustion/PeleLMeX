@@ -25,8 +25,7 @@ void PeleLM::advanceChemistry(std::unique_ptr<AdvanceAdvData> &advData)
 }
 
 // This advanceChemistry is called on the finest level
-// It works with the AmrCore BoxArray and do not involve ParallelCopy and averaged down
-// version of I_R
+// It works with the AmrCore BoxArray and do not involve ParallelCopy
 void PeleLM::advanceChemistry(int lev,
                               const Real &a_dt,
                               MultiFab &a_extForcing)
@@ -37,14 +36,20 @@ void PeleLM::advanceChemistry(int lev,
    auto ldataNew_p = getLevelDataPtr(lev,AmrNewTime);
    auto ldataR_p   = getLevelDataReactPtr(lev);
 
-   // TODO Setup covered cells mask
-   FabArray<BaseFab<int>> mask(grids[lev],dmap[lev],1,0);
+   // Setup EB-covered cells mask
+   iMultiFab mask(grids[lev],dmap[lev],1,0);
+#ifdef AMREX_USE_EB
+   getCoveredIMask(lev,mask);
+#else
    mask.setVal(1);
+#endif
 
+   MFItInfo mfi_info;
+   if (Gpu::notInLaunchRegion()) mfi_info.EnableTiling().SetDynamic(true);
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
-   for (MFIter mfi(ldataNew_p->state,amrex::TilingIfNotGPU()); mfi.isValid(); ++mfi)
+   for (MFIter mfi(ldataNew_p->state,mfi_info); mfi.isValid(); ++mfi)
    {
       const Box& bx          = mfi.tilebox();
       auto const& rhoY_o     = ldataOld_p->state.const_array(mfi,FIRSTSPEC);
@@ -184,9 +189,13 @@ void PeleLM::advanceChemistryBAChem(int lev,
    MultiFab chemnE(*m_baChem[lev],*m_dmapChem[lev],1,0);
 #endif
 
-   // TODO EB Setup EB covered cells mask
-   FabArray<BaseFab<int>> mask(*m_baChem[lev],*m_dmapChem[lev],1,0);
+   // Setup EB covered cells mask
+   iMultiFab mask(*m_baChem[lev],*m_dmapChem[lev],1,0);
+#ifdef AMREX_USE_EB
+   getCoveredIMask(lev,mask);
+#else
    mask.setVal(1);
+#endif
 
    // ParallelCopy into chem MFs
    chemState.ParallelCopy(ldataOld_p->state,FIRSTSPEC,0,NUM_SPECIES+3);
@@ -195,10 +204,12 @@ void PeleLM::advanceChemistryBAChem(int lev,
    chemnE.ParallelCopy(ldataOld_p->state,NE,0,1);
 #endif
 
+   MFItInfo mfi_info;
+   if (Gpu::notInLaunchRegion()) mfi_info.EnableTiling().SetDynamic(true);
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
-   for (MFIter mfi(chemState,amrex::TilingIfNotGPU()); mfi.isValid(); ++mfi)
+   for (MFIter mfi(chemState,mfi_info); mfi.isValid(); ++mfi)
    {
       const Box& bx          = mfi.tilebox();
       auto const& rhoY_o     = chemState.array(mfi,0);

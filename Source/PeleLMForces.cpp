@@ -130,17 +130,17 @@ void PeleLM::getVelForces(int lev,
    const auto  dx       = geom[lev].CellSizeArray();
 
    // Get non-static info for the pseudo gravity forcing
-   int pseudo_gravity    = 0; // TODO ctrl_pseudoGravity;
-   const Real dV_control = 0.0; // TODO ctrl_dV;
+   int pseudo_gravity    = m_ctrl_pseudoGravity;
+   const Real dV_control = m_ctrl_dV;
 
    int is_incomp   = m_incompressible;
    Real rho_incomp = m_rho;
 
-   amrex::ParallelFor(bx, [=,grav=m_gravity, gp0=m_background_gp]
+   amrex::ParallelFor(bx, [=,grav=m_gravity, gp0=m_background_gp, ps_dir=m_ctrl_flameDir]
    AMREX_GPU_DEVICE(int i, int j, int k) noexcept
    {
       makeVelForce(i,j,k, is_incomp, rho_incomp,
-                   pseudo_gravity, a_time, grav, gp0, dV_control, dx,
+                   pseudo_gravity, ps_dir, a_time, grav, gp0, dV_control, dx,
                    vel, rho, rhoY, rhoh, temp, extMom, extRho, force);
    });
 }

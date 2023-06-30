@@ -20,7 +20,28 @@ PeleLM::createDiagnostics()
         ParmParse ppd(diag_prefix);
         std::string diag_type; ppd.get("type", diag_type);
         m_diagnostics[n] = DiagBase::create(diag_type);
-        m_diagnostics[n]->init(diag_prefix);
+        m_diagnostics[n]->init(diag_prefix,diags[n]);
+        m_diagnostics[n]->addVars(m_diagVars);
+    }
+
+    // Remove duplicates from m_diagVars and check that all the variables exists
+    std::sort(m_diagVars.begin(), m_diagVars.end());
+    auto last = std::unique(m_diagVars.begin(), m_diagVars.end());
+    m_diagVars.erase(last, m_diagVars.end());
+    for (auto &v : m_diagVars) {
+        bool itexists = derive_lst.canDerive(v) || isStateVariable(v) || isReactVariable(v);
+        if (!itexists) {
+            Abort("Field "+v+" is not available");
+        } else {
+            if (derive_lst.canDerive(v)) {
+                const PeleLMDeriveRec* rec = derive_lst.get(v);
+                if (rec->variableComp(v) < 0) {
+                    std::string errmsg = "Diagnostics can't handle derived with more than 1 component at the moment.\n";
+                    errmsg += "Add the desired components individually.\n";
+                    Abort(errmsg);
+                }
+            }
+        }
     }
 }
 
@@ -33,7 +54,7 @@ PeleLM::updateDiagnostics()
             m_diagnostics[n]->prepare(finestLevel()+1,
                                       Geom(0,finestLevel()),
                                       boxArray(0,finestLevel()),
-                                      dmap);
+                                      dmap, m_diagVars);
         }
     }
 }
@@ -42,7 +63,22 @@ void
 PeleLM::doDiagnostics()
 {
     BL_PROFILE("PeleLM::doDiagnostics()");
-    // At this point, we're only dealing with the state components
+    // Assemble a vector of MF containing the requested data
+    Vector<std::unique_ptr<MultiFab> > diagMFVec(finestLevel()+1);
+    for (int lev{0}; lev <= finestLevel(); ++lev) {
+        diagMFVec[lev] = std::make_unique<MultiFab>(grids[lev], dmap[lev], m_diagVars.size(), 1);
+        for (int v{0}; v < m_diagVars.size(); ++v ) {
+            std::unique_ptr<MultiFab> mf;
+            mf = derive(m_diagVars[v], m_cur_time, lev, 1);
+            // If the variable is a derive component, get its index from the derive multifab
+            // TODO: if multiple diagVars are components of the same derive, they get redundantly derived each time
+            int mf_idx = 0;
+            const PeleLMDeriveRec* rec = derive_lst.get(m_diagVars[v]);
+            if (rec) mf_idx = rec->variableComp(m_diagVars[v]);
+            MultiFab::Copy(*diagMFVec[lev].get(), *mf, mf_idx, v, 1, 1);
+        }
+    }
+
     Vector<std::string> stateNames;
     for (std::list<std::tuple<int,std::string>>::const_iterator li = stateComponents.begin(),
          End = stateComponents.end(); li != End; ++li) {
@@ -51,8 +87,8 @@ PeleLM::doDiagnostics()
     for (int n = 0; n < m_diagnostics.size(); ++n) {
         if ( m_diagnostics[n]->doDiag(m_cur_time, m_nstep) ) {
             m_diagnostics[n]->processDiag(m_nstep, m_cur_time,
-                                          GetVecOfConstPtrs(getStateVect(AmrNewTime)),
-                                          stateNames);
+                                          GetVecOfConstPtrs(diagMFVec),
+                                          m_diagVars);
         }
     }
 }
