@@ -4,7 +4,7 @@
 #include <AMReX_VisMF.H>
 
 #ifdef AMREX_USE_EB
-#include <AMReX_EB_utils.H>
+#include <AMReX_EB_Redistribution.H>
 #include <AMReX_EBFArrayBox.H>
 #endif
 
@@ -1131,4 +1131,3 @@ DiffusionTensorOp::readParameters ()
    pp.query("num_pre_smooth",m_num_pre_smooth);
    pp.query("num_post_smooth",m_num_post_smooth);
 }
-

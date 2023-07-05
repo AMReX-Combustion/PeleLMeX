@@ -17,6 +17,9 @@
 using namespace amrex;
 
 static Box the_same_box (const Box& b)    { return b;                }
+#ifdef PELE_USE_EFIELD
+static Box grow_box_by_one (const Box& b) { return amrex::grow(b,1); }
+#endif
 static Box grow_box_by_two (const Box& b) { return amrex::grow(b,2); }
 
 void PeleLM::Setup() {
@@ -187,6 +190,8 @@ void PeleLM::readParameters() {
    ParmParse ppef("ef");
 
    // Get the phiV bc
+   Vector<std::string> lo_bc_char(AMREX_SPACEDIM);
+   Vector<std::string> hi_bc_char(AMREX_SPACEDIM);
    ppef.getarr("phiV_lo_bc",lo_bc_char,0,AMREX_SPACEDIM);
    ppef.getarr("phiV_hi_bc",hi_bc_char,0,AMREX_SPACEDIM);
    for (int idim = 0; idim < AMREX_SPACEDIM; idim++)
