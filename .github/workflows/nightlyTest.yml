@@ -51,7 +51,7 @@ jobs:
               git checkout development
               cd -
               cd ${{github.workspace}}/Submodules/AMReX-Hydro
-              git checkout main
+              git checkout development
               cd -
               cd ${{github.workspace}}/Submodules/PelePhysics
               git checkout development
