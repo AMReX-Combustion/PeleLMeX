@@ -16,7 +16,7 @@ the case of a 2D laminar methane/hydrogen/air premixed flame, perturbed using ha
 on the initial conditions.
 
 The goal of this tutorial is to demonstrate `PeleLMeX` basic controls when dealing with reactive simulations.
-This document provides step by step instruction reviewing how to set-up the domain and boundary conditions,
+This document provides step by step instructions reviewing how to set-up the domain and boundary conditions,
 and to construct an initial solution.
 
 ..  _sec:TUTO_FS::PrepStep:
@@ -57,7 +57,7 @@ Case setup
 ----------
 
 A `PeleLMeX` case folder generally contains a minimal set of files to enable compilation,
-provide user-defined function defining initial and boundary conditions, input file(s) and
+provide user-defined functions defining initial and boundary conditions, input file(s) and
 any additional files necessary for the simulation (solution of a Cantera 1D flame for instance).
 
 The following three files in particular are necessary: ::
@@ -105,7 +105,7 @@ used here. All of the above information is provided in the first two blocks of t
 The base grid is decomposed into a 32x64 cells array, and initially 2 levels of refinement are used.
 When running serial, a single box is used on the base level as the ``amr.max_grid_size`` exceeds the
 number of cells in each direction. When running parallel, the base grid will be chopped into smaller
-boxes in the limit that no box smaller than the ``amr.blocking_factor`` can be created (16:math:`^3` here).
+boxes in the limit that no box smaller than the ``amr.blocking_factor`` can be created (16 :math:`^2` here).
 
 The refinement ratio between each level is set to 2 and `PeleLMeX` currently does not support
 refinement ratio of 4. Regrid operation will be performed every 5 steps. ``amr.n_error_buf`` specifies,
@@ -152,8 +152,8 @@ periodicity of the initial solution.
 .. note::
    The ``P_mean`` parameters, providing the initial thermodynamic pressure, is always needed in the ProbParm struct.
 
-Looking now into ``pelelm_prob.cpp``, we can see how the user can overwrite the default values of the parameters
-contained in `ProbParm` using AMReX's ParmParse: ::
+Looking now into ``pelelm_prob.cpp``, we can see how the developer can provide access to the `ProbParm` parameters
+to overwrite the default values using AMReX's ParmParse: ::
 
     void PeleLM::readProbParm()
     {
@@ -201,7 +201,7 @@ Finally, ``pelelm_prob.H`` defines the two functions effectively filling the ini
 
 * ``pele::physics::PMF::PmfData::DataContainer const * pmf_data`` : the Cantera solution data struct
 
-The reader is encouraged to look into the body of the `pelelm_initdata` function for more details, a skelettal
+The reader is encouraged to look into the body of the `pelelm_initdata` function for more details, a skeletal
 version of the function reads:
 
 * Compute the coordinate of the cell center using the cell indices and the `geomdata`.
@@ -227,7 +227,7 @@ A last function, ``zero_visc``, is included in ``pelelm_prob.H`` but is not used
 Numerical parameters
 ^^^^^^^^^^^^^^^^^^^^
 
-The ``PeleLM CONTROL`` block contains a few of the `PeleLMeX` algorithmic parameters. Many more
+The ``PeleLMeX CONTROL`` block contains a few of the `PeleLMeX` algorithmic parameters. Many more
 unspecified parameters are relying on their default values which can be found in :doc:`LMeXControls`.
 Of particular interest are the ``peleLM.sdc_iterMax`` parameter controlling the number of
 SDC iterations (see :doc:`Model` for more details on SDC in `PeleLMeX`) and the
@@ -351,7 +351,7 @@ the initialization process and the solution will rapidly relax to adapt to the `
 
 Let's now play with the problem parameters to see how the initial solution changes. For instance,
 decrease the amplitude of the perturbation, change the ``standoff`` parameter or deactivate the
-initial projection by adding ``peleLM.do_init_proj=0`` to the ``PeleLM CONTROL`` block. Examples
+initial projection by adding ``peleLM.do_init_proj=0`` to the ``PeleLMeX CONTROL`` block. Examples
 of the initial solution varying these parameters are displayed in :numref:`FS_InitTweaks`.
 
 .. figure:: images/tutorials/FS_InitSolTweaks.png
