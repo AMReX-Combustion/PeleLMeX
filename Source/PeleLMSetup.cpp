@@ -20,7 +20,7 @@ static Box the_same_box (const Box& b)    { return b;                }
 static Box grow_box_by_two (const Box& b) { return amrex::grow(b,2); }
 
 void PeleLM::Setup() {
-   BL_PROFILE("PeleLM::Setup()");
+   BL_PROFILE("PeleLMeX::Setup()");
 
    m_wall_start = amrex::ParallelDescriptor::second();
 
@@ -45,7 +45,7 @@ void PeleLM::Setup() {
    soot_model = new SootModel{};
 #endif
 
-   // Read PeleLM parameters
+   // Read PeleLMeX parameters
    readParameters();
 
 #ifdef AMREX_USE_EB
@@ -146,7 +146,7 @@ void PeleLM::Setup() {
 }
 
 void PeleLM::readParameters() {
-   BL_PROFILE("PeleLM::readParameters()");
+   BL_PROFILE("PeleLMeX::readParameters()");
 
    readIOParameters();
 
@@ -554,7 +554,7 @@ void PeleLM::readParameters() {
 }
 
 void PeleLM::readIOParameters() {
-   BL_PROFILE_VAR("PeleLM::readIOParameters()", readIOParameters);
+   BL_PROFILE_VAR("PeleLMeX::readIOParameters()", readIOParameters);
 
    ParmParse pp("amr");
 
@@ -597,7 +597,7 @@ void PeleLM::readIOParameters() {
 }
 
 void PeleLM::variablesSetup() {
-   BL_PROFILE("PeleLM::variablesSetup()");
+   BL_PROFILE("PeleLMeX::variablesSetup()");
 
    //----------------------------------------------------------------
    // Variables ordering is defined through compiler macro in PeleLM_Index.H
@@ -783,7 +783,7 @@ void PeleLM::readGridFile(std::string grid_file,
 
 void PeleLM::derivedSetup()
 {
-   BL_PROFILE("PeleLM::derivedSetup()");
+   BL_PROFILE("PeleLMeX::derivedSetup()");
 
    if (!m_incompressible) {
 
@@ -929,7 +929,7 @@ void PeleLM::derivedSetup()
 
 void PeleLM::evaluateSetup()
 {
-   BL_PROFILE("PeleLM::evaluateSetup()");
+   BL_PROFILE("PeleLMeX::evaluateSetup()");
 
    // Get species names
    Vector<std::string> spec_names;
@@ -1020,7 +1020,7 @@ void PeleLM::evaluateSetup()
 
 void PeleLM::taggingSetup()
 {
-   BL_PROFILE("PeleLM::taggingSetup()");
+   BL_PROFILE("PeleLMeX::taggingSetup()");
 
    std::string amr_prefix = "amr";
    ParmParse ppamr(amr_prefix);

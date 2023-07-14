@@ -15,7 +15,7 @@ void PeleLM::fluxDivergence(const Vector<MultiFab*> &a_divergence,
                             int intensiveFluxes,
                             Real scale)
 {
-   BL_PROFILE("PeleLM::fluxDivergence()");
+   BL_PROFILE("PeleLMeX::fluxDivergence()");
    if (intensiveFluxes) {        // Fluxes are intensive -> need area scaling in div
       for (int lev = 0; lev <= finest_level; ++lev) {
          intFluxDivergenceLevel(lev,*a_divergence[lev], div_comp, a_fluxes[lev], flux_comp,
@@ -39,7 +39,7 @@ void PeleLM::fluxDivergence(const Vector<MultiFab*> &a_divergence,
                             int intensiveFluxes,
                             Real scale) {
 
-   BL_PROFILE("PeleLM::fluxDivergence()");
+   BL_PROFILE("PeleLMeX::fluxDivergence()");
    if (intensiveFluxes) {        // Fluxes are intensive -> need area scaling in div
       for (int lev = 0; lev <= finest_level; ++lev) {
          intFluxDivergenceLevelEB(lev,*a_divergence[lev], div_comp, a_fluxes[lev], flux_comp,
@@ -67,7 +67,7 @@ void PeleLM::fluxDivergenceRD(const Vector<const MultiFab*> &a_state,
                               const Real &scale,
                               const Real &a_dt)
 {
-    BL_PROFILE("PeleLM::fluxDivergenceRD()");
+    BL_PROFILE("PeleLMeX::fluxDivergenceRD()");
 #ifdef AMREX_USE_EB
     int have_ebfluxes = (a_EBfluxes.empty()) ? 0 : 1;
     for (int lev = 0; lev <= finest_level; ++lev) {
@@ -437,7 +437,7 @@ void PeleLM::advFluxDivergence(int a_lev,
                                amrex::Real scale,
                                bool fluxes_are_area_weighted)
 {
-    BL_PROFILE("PeleLM::advFluxDivergence()");
+    BL_PROFILE("PeleLMeX::advFluxDivergence()");
 
     AMREX_ASSERT(a_divergence.nComp() >= div_comp+ncomp);
     AMREX_ASSERT(a_fluxes[0]->nComp() >= flux_comp+ncomp);
@@ -561,7 +561,7 @@ void PeleLM::advFluxDivergence(int a_lev,
 void
 PeleLM::floorSpecies(const TimeStamp &a_time)
 {
-   BL_PROFILE("PeleLM::floorSpecies()");
+   BL_PROFILE("PeleLMeX::floorSpecies()");
    AMREX_ASSERT(a_time == AmrOldTime || a_time == AmrNewTime);
    if (!m_floor_species) {
       return;
@@ -602,7 +602,7 @@ PeleLM::floorSpecies(const TimeStamp &a_time)
 
 void PeleLM::resetCoveredMask()
 {
-   BL_PROFILE("PeleLM::resetCoveredMask()");
+   BL_PROFILE("PeleLMeX::resetCoveredMask()");
    if (m_resetCoveredMask) {
 
       if (m_verbose) Print() << " Resetting fine-covered cells mask \n";
@@ -785,7 +785,7 @@ PeleLM::derive(const std::string &a_name,
                int                lev,
                int                nGrow)
 {
-   BL_PROFILE("PeleLM::derive()");
+   BL_PROFILE("PeleLMeX::derive()");
    AMREX_ASSERT(nGrow >= 0);
 
    std::unique_ptr<MultiFab> mf;
@@ -841,7 +841,7 @@ PeleLM::deriveComp(const std::string &a_name,
                    int                lev,
                    int                nGrow)
 {
-   BL_PROFILE("PeleLM::derive()");
+   BL_PROFILE("PeleLMeX::derive()");
    AMREX_ASSERT(nGrow >= 0);
 
    std::unique_ptr<MultiFab> mf;
@@ -1002,7 +1002,7 @@ PeleLM::parseVars(const Vector<std::string> &a_varsNames,
 Real
 PeleLM::MLNorm0(const Vector<const MultiFab*> &a_MF)
 {
-   BL_PROFILE("PeleLM::MLNorm0()");
+   BL_PROFILE("PeleLMeX::MLNorm0()");
    Real r = 0.0;
    for (int lev = 0; lev < a_MF.size(); ++lev) {
       if (lev != finest_level) {
@@ -1019,7 +1019,7 @@ Vector<Real>
 PeleLM::MLNorm0(const Vector<const MultiFab*> &a_MF,
                 int startcomp, int ncomp)
 {
-   BL_PROFILE("PeleLM::MLNorm0()");
+   BL_PROFILE("PeleLMeX::MLNorm0()");
    AMREX_ASSERT(a_MF[0]->nComp() >= startcomp+ncomp);
    Vector<Real> r(ncomp);
    for (int n = 0; n < ncomp; n++) {
@@ -1125,7 +1125,7 @@ PeleLM::fetchDiffTypeArray(int scomp, int ncomp)
 Real
 PeleLM::MFSum (const Vector<const MultiFab*> &a_mf, int comp)
 {
-    BL_PROFILE("PeleLM::MFSum()");
+    BL_PROFILE("PeleLMeX::MFSum()");
     // Get the integral of the MF, not including the fine-covered and
     // EB-covered cells
 
@@ -1307,7 +1307,7 @@ PeleLM::MFmax(const MultiFab *a_MF,
               const iMultiFab &a_mask,
               int comp)
 {
-    BL_PROFILE("PeleLM::MFmax()");
+    BL_PROFILE("PeleLMeX::MFmax()");
     Real mx = std::numeric_limits<Real>::lowest();
 
 #ifdef AMREX_USE_EB
@@ -1397,7 +1397,7 @@ PeleLM::MFmin(const MultiFab *a_MF,
               const iMultiFab &a_mask,
               int comp)
 {
-    BL_PROFILE("PeleLM::MFmin()");
+    BL_PROFILE("PeleLMeX::MFmin()");
     Real mn = std::numeric_limits<Real>::max();
 
 #ifdef AMREX_USE_EB
@@ -1486,7 +1486,7 @@ Vector<Real>
 PeleLM::MLmax(const Vector<const MultiFab*> &a_MF,
       int scomp, int ncomp)
 {
-    BL_PROFILE("PeleLM::MLmax()");
+    BL_PROFILE("PeleLMeX::MLmax()");
     AMREX_ASSERT(a_MF[0]->nComp() >= scomp+ncomp);
 
     Vector<Real> nmax(ncomp,AMREX_REAL_LOWEST);
@@ -1512,7 +1512,7 @@ Vector<Real>
 PeleLM::MLmin(const Vector<const MultiFab*> &a_MF,
       int scomp, int ncomp)
 {
-    BL_PROFILE("PeleLM::MLmin()");
+    BL_PROFILE("PeleLMeX::MLmin()");
     AMREX_ASSERT(a_MF[0]->nComp() >= scomp+ncomp);
 
     Vector<Real> nmin(ncomp,AMREX_REAL_MAX);
@@ -1717,7 +1717,7 @@ PeleLM::parseComposition(Vector<std::string> compositionIn,
 void PeleLM::extendSignedDistance(MultiFab *a_signDist,
                                   Real a_extendFactor)
 {
-     BL_PROFILE("PeleLM::extendSignedDistance()");
+     BL_PROFILE("PeleLMeX::extendSignedDistance()");
      // This is a not-so-pretty piece of code that'll take AMReX cell-averaged
      // signed distance and propagates it manually up to the point where we need to have it
      // for derefining.

@@ -5,7 +5,7 @@
 using namespace amrex;
 
 void PeleLM::Advance(int is_initIter) {
-   BL_PROFILE("PeleLM::Advance()");
+   BL_PROFILE("PeleLMeX::Advance()");
 
 #ifdef AMREX_MEM_PROFILING
    // Memory profiler if compiled
@@ -16,7 +16,7 @@ void PeleLM::Advance(int is_initIter) {
    Real strt_time = ParallelDescriptor::second();
 
    //----------------------------------------------------------------
-   BL_PROFILE_VAR("PeleLM::advance::setup", PLM_SETUP);
+   BL_PROFILE_VAR("PeleLMeX::advance::setup", PLM_SETUP);
    //----------------------------------------------------------------
 
    // Deal with ambient pressure
@@ -121,11 +121,11 @@ void PeleLM::Advance(int is_initIter) {
       floorSpecies(AmrOldTime);
 
       //----------------------------------------------------------------
-      BL_PROFILE_VAR("PeleLM::advance::mac", PLM_MAC);
+      BL_PROFILE_VAR("PeleLMeX::advance::mac", PLM_MAC);
       setThermoPress(AmrOldTime);
       BL_PROFILE_VAR_STOP(PLM_MAC);
       //----------------------------------------------------------------
-      BL_PROFILE_VAR("PeleLM::advance::diffusion", PLM_DIFF);
+      BL_PROFILE_VAR("PeleLMeX::advance::diffusion", PLM_DIFF);
       computeDifferentialDiffusionTerms(AmrOldTime,diffData);
       BL_PROFILE_VAR_STOP(PLM_DIFF);
       //----------------------------------------------------------------
@@ -192,7 +192,7 @@ void PeleLM::Advance(int is_initIter) {
    //----------------------------------------------------------------
 
    //----------------------------------------------------------------
-   BL_PROFILE_VAR("PeleLM::advance::velocity", PLM_VEL);
+   BL_PROFILE_VAR("PeleLMeX::advance::velocity", PLM_VEL);
    // Velocity advance
    Real VelAdvStart = 0.0;
    if (m_verbose > 1) {
@@ -235,7 +235,7 @@ void PeleLM::Advance(int is_initIter) {
    {
       Real run_time = ParallelDescriptor::second() - strt_time;
       ParallelDescriptor::ReduceRealMax(run_time, ParallelDescriptor::IOProcessorNumber());
-      amrex::Print() << " >> PeleLM::Advance() --> Time: " << run_time << "\n";
+      amrex::Print() << " >> PeleLMeX::Advance() --> Time: " << run_time << "\n";
    }
 }
 
@@ -243,7 +243,7 @@ void PeleLM::oneSDC(int sdcIter,
                     std::unique_ptr<AdvanceAdvData> &advData,
                     std::unique_ptr<AdvanceDiffData> &diffData)
 {
-   BL_PROFILE("PeleLM::oneSDC()");
+   BL_PROFILE("PeleLMeX::oneSDC()");
    m_sdcIter = sdcIter;
 
    if (m_verbose > 0) {
@@ -290,7 +290,7 @@ void PeleLM::oneSDC(int sdcIter,
    //----------------------------------------------------------------
    // Get u MAC
    //----------------------------------------------------------------
-   BL_PROFILE_VAR("PeleLM::advance::mac", PLM_MAC);
+   BL_PROFILE_VAR("PeleLMeX::advance::mac", PLM_MAC);
    Real MACStart = 0.0;
    if (m_verbose > 1) {
       MACStart = ParallelDescriptor::second();
@@ -318,7 +318,7 @@ void PeleLM::oneSDC(int sdcIter,
    //----------------------------------------------------------------
    // Scalar advections
    //----------------------------------------------------------------
-   BL_PROFILE_VAR("PeleLM::advance::scalars_adv", PLM_SADV);
+   BL_PROFILE_VAR("PeleLMeX::advance::scalars_adv", PLM_SADV);
    Real ScalAdvStart = 0.0;
    if (m_verbose > 1) {
       ScalAdvStart = ParallelDescriptor::second();
@@ -349,7 +349,7 @@ void PeleLM::oneSDC(int sdcIter,
    //----------------------------------------------------------------
    // Scalar diffusion
    //----------------------------------------------------------------
-   BL_PROFILE_VAR("PeleLM::advance::diffusion", PLM_DIFF);
+   BL_PROFILE_VAR("PeleLMeX::advance::diffusion", PLM_DIFF);
    Real ScalDiffStart = 0.0;
    if (m_verbose > 1) {
       ScalDiffStart = ParallelDescriptor::second();
@@ -378,7 +378,7 @@ void PeleLM::oneSDC(int sdcIter,
    //----------------------------------------------------------------
    // Reaction
    //----------------------------------------------------------------
-   BL_PROFILE_VAR("PeleLM::advance::reactions", PLM_REAC);
+   BL_PROFILE_VAR("PeleLMeX::advance::reactions", PLM_REAC);
    Real ScalReacStart = 0.0;
    if (m_verbose > 1) {
       ScalReacStart = ParallelDescriptor::second();

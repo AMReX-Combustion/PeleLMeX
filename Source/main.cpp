@@ -23,31 +23,31 @@ int main(int argc, char* argv[]) {
    }
 
    // timer for profiling
-   BL_PROFILE_VAR("PeleLM::main()", main);
+   BL_PROFILE_VAR("PeleLMeX::main()", main);
 
    // wallclock time
    const Real strt_total = ParallelDescriptor::second();
 
    {
-       // declare an PeleLM object to manage multilevel data
-       PeleLM pelelm;
+       // declare an PeleLMeX object to manage multilevel data
+       PeleLM pelelmex;
 
        // Description Setup
-       pelelm.Setup();
+       pelelmex.Setup();
 
        // Description Init
-       pelelm.Init();
+       pelelmex.Init();
 
        // Switch between Evolve and UnitTest mode
-       if ( pelelm.runMode() == "normal" ) {
+       if ( pelelmex.runMode() == "normal" ) {
 
           // Advance solution to final time
-          pelelm.Evolve();
+          pelelmex.Evolve();
 
-       } else if ( pelelm.runMode() == "evaluate" ) {
+       } else if ( pelelmex.runMode() == "evaluate" ) {
 
           //
-          pelelm.Evaluate();
+          pelelmex.Evaluate();
 
        } else {
           Abort(" Wrong peleLM.run_mode ! It can only be 'normal' (D) or 'evaluate'");

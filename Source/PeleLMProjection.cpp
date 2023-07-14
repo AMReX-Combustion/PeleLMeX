@@ -4,7 +4,7 @@ using namespace amrex;
 
 void PeleLM::initialProjection()
 {
-   BL_PROFILE_VAR("PeleLM::initialProjection()", initialProjection);
+   BL_PROFILE("PeleLMeX::initialProjection()");
 
    if (m_verbose) {
       Vector<Real> velMax(AMREX_SPACEDIM);
@@ -111,7 +111,7 @@ void PeleLM::initialProjection()
 
 void PeleLM::initialPressProjection()
 {
-   BL_PROFILE_VAR("PeleLM::initialPressProjection()", initialProjection);
+   BL_PROFILE("PeleLMeX::initialPressProjection()");
 
    if (m_verbose) {
       amrex::Print() << " Initial pressure projection \n";
@@ -167,7 +167,7 @@ void PeleLM::velocityProjection(int is_initIter,
                                 const TimeStamp &a_rhoTime,
                                 const Real &a_dt)
 {
-   BL_PROFILE_VAR("PeleLM::velocityProjection()", velocityProjection);
+   BL_PROFILE("PeleLMeX::velocityProjection()");
 
    int nGhost = 0;
    int incremental = (is_initIter) ? 1 : 0;

@@ -12,7 +12,7 @@ void PeleLM::getVelForces(const TimeStamp &a_time,
                           int nGrowForce,
                           int add_gradP)
 {
-   BL_PROFILE("PeleLM::getVelForces()");
+   BL_PROFILE("PeleLMeX::getVelForces()");
    int has_divTau = (!a_divTau.empty());
 
    for (int lev = 0; lev <= finest_level; ++lev) {

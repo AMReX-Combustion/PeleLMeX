@@ -51,7 +51,7 @@ The compilations of *PeleLMeX* requires a C++17 compatible compiler (GCC >= 8 or
 well as cmake >= 3.23 for compiling the [SUNDIALS](https://github.com/LLNL/sundials) third party library.
 
 Most of the examples provided hereafter and in the [tutorials](https://amrex-combustion.github.io/PeleLMeX/manual/html/Tutorials.html)
-will use MPI. Although not mandatory, it is advised to build *PeleLMeX* with MPI support from the get go if your
+will use MPI. Although not mandatory, it is advised to build *PeleLMeX* with MPI support from the get go if
 more than a single core is available to you.
 
 Finally, when building with GPU support, CUDA >= 11 is required with NVIDIA GPUs and ROCm >= 5.2 is required with AMD GPUs.
@@ -66,7 +66,7 @@ git clone --recursive https://github.com/AMReX-Combustion/PeleLMeX.git
 ```
 
 Alternatively, you can use separate `git clone` of the each of the submodules.
-The default location for *PeleLMeX* dependencies is the `Submodule` folder but you optionnally
+The default location for *PeleLMeX* dependencies is the `Submodules` folder but you optionnally
 setup the following environment variables (e.g. using bash) to an other location:
 
 ```
@@ -81,7 +81,7 @@ export PELEMP_HOME=${PELELMEX_HOME}/Submodules/PeleMP
 
 Both GNUmake and CMake can be used to build a *PeleLMeX* executable, but GNUmake is the prefered choice.
 The code handling the initial condition and boundary conditions is unique to each case,
-and subfolders in the `Exec` directory provide a number of example.
+and subfolders in the `Exec` directory provide a number of examples.
 
 For instance, to compile the executable for the case of a rising hot bubble,
 move into the `HotBubble` folder:

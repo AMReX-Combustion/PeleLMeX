@@ -62,7 +62,7 @@ PeleLM::updateDiagnostics()
 void
 PeleLM::doDiagnostics()
 {
-    BL_PROFILE("PeleLM::doDiagnostics()");
+    BL_PROFILE("PeleLMeX::doDiagnostics()");
     // Assemble a vector of MF containing the requested data
     Vector<std::unique_ptr<MultiFab> > diagMFVec(finestLevel()+1);
     for (int lev{0}; lev <= finestLevel(); ++lev) {

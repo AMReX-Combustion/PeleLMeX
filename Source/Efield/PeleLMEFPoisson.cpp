@@ -7,7 +7,7 @@ using namespace amrex;
 
 void PeleLM::poissonSolveEF(const TimeStamp &a_time)
 {
-   BL_PROFILE_VAR("PeleLM::poissonSolveEF()", poissonSolveEF);
+   BL_PROFILE("PeleLMeX::poissonSolveEF()");
    if (ef_verbose) {
       Print() << " EF Poisson solve \n";
    }

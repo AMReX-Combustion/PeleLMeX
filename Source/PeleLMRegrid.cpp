@@ -6,7 +6,7 @@ void PeleLM::regrid(int lbase,
                     amrex::Real time,
                     bool initial)
 {
-  BL_PROFILE("PeleLM::regrid()");
+  BL_PROFILE("PeleLMeX::regrid()");
 
   if (!m_doLoadBalance && lbase >= max_level) return;
 
@@ -260,7 +260,7 @@ void PeleLM::MakeNewLevelFromCoarse( int lev,
                                            amrex::Real time,
                                      const amrex::BoxArray& ba,
                                      const amrex::DistributionMapping& dm) {
-   BL_PROFILE_VAR("PeleLM::MakeNewLevelFromCoarse()", MakeNewLevelFromCoarse);
+   BL_PROFILE("PeleLMeX::MakeNewLevelFromCoarse()");
 
    if (m_verbose > 0) {
       Print() << " Making new level " << lev << " from coarse\n";
@@ -362,7 +362,7 @@ void PeleLM::RemakeLevel( int lev,
                                 amrex::Real time,
                           const amrex::BoxArray& ba,
                           const amrex::DistributionMapping& dm) {
-   BL_PROFILE_VAR("PeleLM::RemakeLevel()", RemakeLevel);
+   BL_PROFILE("PeleLMeX::RemakeLevel()");
 
    if (m_verbose > 0) {
       Print() << " Remaking level " << lev << "\n";
@@ -461,7 +461,7 @@ void PeleLM::RemakeLevel( int lev,
 }
 
 void PeleLM::ClearLevel(int lev) {
-   BL_PROFILE_VAR("PeleLM::ClearLevel()", ClearLevel);
+   BL_PROFILE("PeleLMeX::ClearLevel()");
 
    m_leveldata_old[lev].reset();
    m_leveldata_new[lev].reset();

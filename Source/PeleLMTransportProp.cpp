@@ -9,7 +9,7 @@
 using namespace amrex;
 
 void PeleLM::calcTurbViscosity(const TimeStamp &a_time) {
-   BL_PROFILE("PeleLM::calcTurbViscosity()");
+   BL_PROFILE("PeleLMeX::calcTurbViscosity()");
 
    // We shouldn't be here unless we're doing LES
    AMREX_ALWAYS_ASSERT(m_do_les);
@@ -218,7 +218,7 @@ void PeleLM::calcTurbViscosity(const TimeStamp &a_time) {
 }
 
 void PeleLM::calcViscosity(const TimeStamp &a_time) {
-   BL_PROFILE("PeleLM::calcViscosity()");
+   BL_PROFILE("PeleLMeX::calcViscosity()");
 
    for (int lev = 0; lev <= finest_level; ++lev) {
 
@@ -250,7 +250,7 @@ void PeleLM::calcViscosity(const TimeStamp &a_time) {
 }
 
 void PeleLM::calcDiffusivity(const TimeStamp &a_time) {
-   BL_PROFILE("PeleLM::calcDiffusivity()");
+   BL_PROFILE("PeleLMeX::calcDiffusivity()");
 
    for (int lev = 0; lev <= finest_level; ++lev) {
 
@@ -325,7 +325,7 @@ PeleLM::getDiffusivity(int lev, int beta_comp, int ncomp, int doZeroVisc,
                        MultiFab const& beta_cc,
                        int addTurbContrib)
 {
-   BL_PROFILE("PeleLM::getDiffusivity()");
+   BL_PROFILE("PeleLMeX::getDiffusivity()");
 
    AMREX_ASSERT(bcrec.size() >= ncomp);
    AMREX_ASSERT(beta_cc.nComp() >= beta_comp+ncomp);

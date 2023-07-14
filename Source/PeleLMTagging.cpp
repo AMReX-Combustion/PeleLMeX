@@ -12,7 +12,7 @@ PeleLM::ErrorEst( int lev,
                   Real time,
                   int /*ng*/)
 {
-   BL_PROFILE_VAR("PeleLM::ErrorEst()", ErrorEst);
+   BL_PROFILE("PeleLMeX::ErrorEst()");
 
 #ifdef AMREX_USE_EB
    // Tag EB up to m_EB_refine_LevMax-1 if Static or

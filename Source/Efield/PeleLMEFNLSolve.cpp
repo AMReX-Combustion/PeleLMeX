@@ -20,7 +20,7 @@ void PeleLM::implicitNonLinearSolve(int sdcIter,
                                     std::unique_ptr<AdvanceDiffData> &diffData,
                                     std::unique_ptr<AdvanceAdvData> &advData)
 {
-   BL_PROFILE_VAR("PeleLM::implicitNonLinearSolve()", implicitNonLinearSolve);
+   BL_PROFILE_VAR("PeleLMeX::implicitNonLinearSolve()", implicitNonLinearSolve);
 
    const Real strt_time = ParallelDescriptor::second();
 
@@ -196,7 +196,7 @@ void PeleLM::implicitNonLinearSolve(int sdcIter,
          Real avgGMRES = (float)GMRES_tot_count/(float)NK_tot_count;
          amrex::Print() << "  [" << sdcIter << "] dt: " << a_dt << " - Avg GMRES/Newton: " << avgGMRES << "\n";
       }
-      amrex::Print() << "  >> PeleLM::implicitNLSolve() " << run_time << "\n";
+      amrex::Print() << "  >> PeleLMeX::implicitNLSolve() " << run_time << "\n";
    }
 
    //VisMF::Write(advData->Forcing[0],"ForcingNE");
@@ -813,7 +813,7 @@ void PeleLM::getAdvectionFluxes(int lev,
 void PeleLM::setUpPrecond(const Real &a_dt,
                           const Vector<const MultiFab*> &a_nE)
 {
-   BL_PROFILE("PeleLM::setUpPrecond()");
+   BL_PROFILE("PeleLMeX::setUpPrecond()");
 
    // Udpate LinearOps defs if needed -> done internally by the getPrecondOp() func
 
@@ -1064,7 +1064,7 @@ void PeleLM::jTimesV(const Vector<MultiFab*> &a_v,
 void PeleLM::applyPrecond(const Vector<MultiFab*> &a_v,
                           const Vector<MultiFab*> &a_Pv)
 {
-   BL_PROFILE("PeleLM::applyPrecond()");
+   BL_PROFILE("PeleLMeX::applyPrecond()");
 
    // Setup aliases and temps
    Vector<MultiFab> nE_al;

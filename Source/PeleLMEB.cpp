@@ -13,7 +13,7 @@ using namespace amrex;
 
 void PeleLM::makeEBGeometry()
 {
-    BL_PROFILE("PeleLM::makeEBGeometry()");
+    BL_PROFILE("PeleLMeX::makeEBGeometry()");
     int max_coarsening_level = 100;
     int req_coarsening_level = geom.size()-1;
 
@@ -59,7 +59,7 @@ void PeleLM::redistributeAofS(int a_lev,
                               const BCRec * d_bc,
                               const Geometry &a_geom)
 {
-    BL_PROFILE("PeleLM::redistributeAofS()");
+    BL_PROFILE("PeleLMeX::redistributeAofS()");
     AMREX_ASSERT(a_tmpDiv.nComp() >= div_comp+ncomp);
     AMREX_ASSERT(a_AofS.nComp() >= aofs_comp+ncomp);
     AMREX_ASSERT(a_state.nComp() >= state_comp+ncomp);
@@ -183,7 +183,7 @@ void PeleLM::redistributeDiff(int a_lev,
                               const BCRec * d_bc,
                               const Geometry &a_geom)
 {
-    BL_PROFILE("PeleLM::redistributeDiff()");
+    BL_PROFILE("PeleLMeX::redistributeDiff()");
     AMREX_ASSERT(a_tmpDiv.nComp() >= div_comp+ncomp);
     AMREX_ASSERT(a_diff.nComp() >= diff_comp+ncomp);
     AMREX_ASSERT(a_state.nComp() >= state_comp+ncomp);
@@ -279,7 +279,7 @@ void PeleLM::initCoveredState()
 
 void PeleLM::setCoveredState(const TimeStamp &a_time)
 {
-    BL_PROFILE("PeleLM::setCoveredState()");
+    BL_PROFILE("PeleLMeX::setCoveredState()");
     for (int lev = 0; lev <= finest_level; lev++) {
         setCoveredState(lev,a_time);
     }
@@ -379,7 +379,7 @@ void PeleLM::initialRedistribution()
 void PeleLM::getEBDistance(int a_lev,
                            MultiFab &a_signDistLev) {
 
-    BL_PROFILE("PeleLM::getEBDistance()");
+    BL_PROFILE("PeleLMeX::getEBDistance()");
 
     if (a_lev == 0) {
         MultiFab::Copy(a_signDistLev,*m_signedDist0,0,0,1,0);
@@ -566,7 +566,7 @@ void
 PeleLM::correct_vel_small_cells (Vector<MultiFab*> const& a_vel,
                                  Vector<Array<MultiFab const*,AMREX_SPACEDIM> > const& a_umac)
 {
-    BL_PROFILE("PeleLM::correct_vel_small_cells");
+    BL_PROFILE("PeleLMeX::correct_vel_small_cells");
 
     for (int lev = 0; lev <= finest_level; lev++)
     {
