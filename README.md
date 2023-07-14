@@ -48,11 +48,12 @@ https://amrex-combustion.github.io/PeleLMeX/manual/html/Tutorials.html
 ### Requirements
 
 The compilations of *PeleLMeX* requires a C++17 compatible compiler (GCC >= 8 or Clang >= 3.6) as
-well as cmake >= 3.23 for compiling the [SUNDIALS](https://github.com/LLNL/sundials) third party library.
+well as [CMake](https://cmake.org/download/) >= 3.23 for compiling the [SUNDIALS](https://github.com/LLNL/sundials) third party library.
 
 Most of the examples provided hereafter and in the [tutorials](https://amrex-combustion.github.io/PeleLMeX/manual/html/Tutorials.html)
-will use MPI. Although not mandatory, it is advised to build *PeleLMeX* with MPI support from the get go if
-more than a single core is available to you.
+will use MPI to run in parallel. Although not mandatory, it is advised to build *PeleLMeX* with MPI support from the get go if
+more than a single core is available to you. Any of [mpich](https://www.mpich.org/downloads/) or
+[open-mpi](https://www.open-mpi.org/software/ompi/v4.1/) is a suitable option if MPI is not already available on your platform.
 
 Finally, when building with GPU support, CUDA >= 11 is required with NVIDIA GPUs and ROCm >= 5.2 is required with AMD GPUs.
 
