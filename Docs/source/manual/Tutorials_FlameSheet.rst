@@ -25,7 +25,9 @@ Setting-up your environment
 ---------------------------
 
 Getting a functioning environment in which to compile and run `PeleLMeX` is the first step of this tutorial.
-Follow the steps listed below to get to this point:
+Please review the requirements listed on the `PeleLMeX README <https://github.com/AMReX-Combustion/PeleLMeX/blob/development/README.md>`_ to ensure
+you have a suitable compiler suite to build `PeleLMeX`.
+Follow the steps listed below to get the source code and its dependent libraries:
 
 #. The first step consist in getting `PeleLMeX` and its dependencies. To do so, use a recursive *git clone*: ::
 
@@ -259,7 +261,10 @@ The next few lines specify AMReX compilation options and compiler selection: ::
    USE_CUDA        = FALSE
    USE_HIP         = FALSE
 
-It allows users to specify the number of spatial dimensions (2D), trigger debug compilation and other AMReX options. The compiler (``gnu``) and the parallelism paradigm (in the present case only MPI is used) are then selected. Note that on OSX platform, one should update the compiler to ``llvm``.
+It allows users to specify the number of spatial dimensions (2D), trigger debug compilation and other AMReX options.
+The compiler (``gnu``) and the parallelism paradigm (in the present case only MPI is used) are then selected. If MPI is not available on your
+platform, please set ``USE_MPI = FALSE``.
+Note that on OSX platform, one should update the compiler to ``llvm``.
 
 In `PeleLMeX`, the chemistry model (set of species, their thermodynamic and transport properties as well as the description of their of chemical interactions) is specified at compile time. Chemistry models available in `PelePhysics` can used in `PeleLMeX` by specifying the name of the folder in `PelePhysics/Support/Mechanisms/Models` containing the relevant files, for example: ::
 
@@ -278,7 +283,7 @@ Finally, `PeleLMeX` utilizes the chemical kinetic ODE integrator `CVODE <https:/
 
     make -j4 TPL
 
-Note that the installation of `CVODE` requires CMake 3.17.1 or higher.
+Note that the installation of `CVODE` requires CMake 3.23.1 or higher.
 
 You are now ready to build your first `PeleLMeX` executable !! Type in: ::
 
