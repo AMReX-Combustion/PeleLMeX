@@ -193,6 +193,7 @@ Next comes the build configuration block: ::
    USE_OMP         = FALSE
    USE_CUDA        = FALSE
    USE_HIP         = FALSE
+   USE_SYCL        = FALSE
 
    # MISC options
    DEBUG           = FALSE

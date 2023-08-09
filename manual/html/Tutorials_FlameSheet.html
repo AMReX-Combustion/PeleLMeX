@@ -12,6 +12,8 @@
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
+        <script src="_static/jquery.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/doctools.js"></script>
         <script src="_static/sphinx_highlight.js"></script>
@@ -334,6 +336,7 @@ USE_MPI         = TRUE
 USE_OMP         = FALSE
 USE_CUDA        = FALSE
 USE_HIP         = FALSE
+USE_SYCL        = FALSE
 </pre></div>
 </div>
 <p>It allows users to specify the number of spatial dimensions (2D), trigger debug compilation and other AMReX options. The compiler (<code class="docutils literal notranslate"><span class="pre">gnu</span></code>) and the parallelism paradigm (in the present case only MPI is used) are then selected. Note that on OSX platform, one should update the compiler to <code class="docutils literal notranslate"><span class="pre">llvm</span></code>.</p>

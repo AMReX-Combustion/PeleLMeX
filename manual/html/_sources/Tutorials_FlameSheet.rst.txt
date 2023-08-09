@@ -258,6 +258,7 @@ The next few lines specify AMReX compilation options and compiler selection: ::
    USE_OMP         = FALSE
    USE_CUDA        = FALSE
    USE_HIP         = FALSE
+   USE_SYCL        = FALSE
 
 It allows users to specify the number of spatial dimensions (2D), trigger debug compilation and other AMReX options. The compiler (``gnu``) and the parallelism paradigm (in the present case only MPI is used) are then selected. Note that on OSX platform, one should update the compiler to ``llvm``.
 

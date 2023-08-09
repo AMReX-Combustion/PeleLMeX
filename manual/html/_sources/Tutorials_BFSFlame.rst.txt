@@ -237,6 +237,7 @@ The next few lines specify AMReX compilation options and compiler selection: ::
    USE_OMP         = FALSE
    USE_CUDA        = FALSE
    USE_HIP         = FALSE
+   USE_SYCL        = FALSE
 
 It allows users to specify the number of spatial dimensions (2D), activate the compilation of the EB aware AMReX source code,
 trigger debug compilation and other AMReX options. The compiler (``gnu``) and the parallelism paradigm
