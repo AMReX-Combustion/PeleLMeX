@@ -12,11 +12,11 @@
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="_static/jquery.js"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/sphinx_highlight.js"></script>
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=d09052ea"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
         <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
@@ -108,9 +108,9 @@
            <div itemprop="articleBody">
              
   <section id="backward-facing-step-anchored-premixed-flame">
-<span id="sec-tutorialbfs"></span><h1>Backward facing step anchored premixed flame<a class="headerlink" href="#backward-facing-step-anchored-premixed-flame" title="Permalink to this heading"></a></h1>
+<span id="sec-tutorialbfs"></span><h1>Backward facing step anchored premixed flame<a class="headerlink" href="#backward-facing-step-anchored-premixed-flame" title="Link to this heading"></a></h1>
 <section id="introduction">
-<span id="sec-tuto-bfs-intro"></span><h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this heading"></a></h2>
+<span id="sec-tuto-bfs-intro"></span><h2>Introduction<a class="headerlink" href="#introduction" title="Link to this heading"></a></h2>
 <p>The primary objective of <cite>PeleLMeX</cite> is to enable simulations of reactive flows on platforms ranging
 from small personal computers to Exascale supercomputers. This tutorial describes the case
 of a 2D laminar premixed methane/air flame anchored behind a backward facing step.</p>
@@ -118,7 +118,7 @@ of a 2D laminar premixed methane/air flame anchored behind a backward facing ste
 well as embedded boundaries.</p>
 </section>
 <section id="setting-up-your-environment">
-<span id="sec-tuto-bfs-prepstep"></span><h2>Setting-up your environment<a class="headerlink" href="#setting-up-your-environment" title="Permalink to this heading"></a></h2>
+<span id="sec-tuto-bfs-prepstep"></span><h2>Setting-up your environment<a class="headerlink" href="#setting-up-your-environment" title="Link to this heading"></a></h2>
 <p>Getting a functioning environment in which to compile and run <cite>PeleLMeX</cite> is the first step of this tutorial.
 Follow the steps listed below to get to this point:</p>
 <ol class="arabic">
@@ -152,7 +152,7 @@ export PELE_PHYSICS_HOME=&lt;path_to_MyPelePhysics&gt;
 <p>You’re good to go !</p>
 </section>
 <section id="case-setup">
-<h2>Case setup<a class="headerlink" href="#case-setup" title="Permalink to this heading"></a></h2>
+<h2>Case setup<a class="headerlink" href="#case-setup" title="Link to this heading"></a></h2>
 <p>A <cite>PeleLMeX</cite> case folder generally contains a minimal set of files to enable compilation,
 and the reader is referred to the FlameSheet tutorial <a class="reference internal" href="Tutorials_FlameSheet.html"><span class="doc">Premixed flame sheet with harmonic perturbations</span></a> for a
 more detailed description of <cite>PeleLMeX</cite> case setup. The case of interest for this
@@ -161,7 +161,7 @@ tutorial can be found in <cite>PeleLMeX</cite> Exec folder:</p>
 </pre></div>
 </div>
 <section id="geometry-grid-and-boundary-conditions">
-<h3>Geometry, grid and boundary conditions<a class="headerlink" href="#geometry-grid-and-boundary-conditions" title="Permalink to this heading"></a></h3>
+<h3>Geometry, grid and boundary conditions<a class="headerlink" href="#geometry-grid-and-boundary-conditions" title="Link to this heading"></a></h3>
 <p>This simulation is performed on a 0.08x0.02 <span class="math notranslate nohighlight">\(m^2\)</span> 2D computational domain,
 with the bottom left corner located at (-0.01:-0.01) and the top right corner at (0.07:0.01). The flow
 is primarily aligned with the <span class="math notranslate nohighlight">\(x\)</span> direction with an <code class="docutils literal notranslate"><span class="pre">Inflow</span></code> (dirichlet) boundary on the <span class="math notranslate nohighlight">\(x\)</span>-low
@@ -170,7 +170,7 @@ Finally a Cartesian coordinate system is used here. An overview of the computati
 <figure class="align-center" id="bfs-setupgeom" style="width: 95%">
 <img alt="_images/BFS_SetupSketch.png" src="_images/BFS_SetupSketch.png" />
 <figcaption>
-<p><span class="caption-number">Fig. 13 </span><span class="caption-text">: Setup of the computational domain for the backward facing step flame case.</span><a class="headerlink" href="#bfs-setupgeom" title="Permalink to this image"></a></p>
+<p><span class="caption-number">Fig. 13 </span><span class="caption-text">: Setup of the computational domain for the backward facing step flame case.</span><a class="headerlink" href="#bfs-setupgeom" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <p>All of the geometrical information can be specified the first two blocks of the input file (<cite>input.2d</cite>):</p>
@@ -237,7 +237,7 @@ EB structure data in the domain ghost cells.</p>
 </div>
 </section>
 <section id="problem-specifications">
-<h3>Problem specifications<a class="headerlink" href="#problem-specifications" title="Permalink to this heading"></a></h3>
+<h3>Problem specifications<a class="headerlink" href="#problem-specifications" title="Link to this heading"></a></h3>
 <p id="sec-tuto-bfs-problem">The problem setup is mostly contained in the three C++ source/header files described in <a class="reference internal" href="Tutorials_FlameSheet.html"><span class="doc">Premixed flame sheet with harmonic perturbations</span></a>.
 The user parameters are gathered in the struct defined in  <code class="docutils literal notranslate"><span class="pre">pelelm_prob_parm.H</span></code>:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>struct ProbParm
@@ -283,7 +283,7 @@ the EB flag is only set to 1.0 on the vertical EB faces (<span class="math notra
 is adiabatic.</p>
 </section>
 <section id="numerical-parameters">
-<h3>Numerical parameters<a class="headerlink" href="#numerical-parameters" title="Permalink to this heading"></a></h3>
+<h3>Numerical parameters<a class="headerlink" href="#numerical-parameters" title="Link to this heading"></a></h3>
 <p>The <code class="docutils literal notranslate"><span class="pre">PeleLM</span> <span class="pre">CONTROL</span></code> block contains a few of the <cite>PeleLMeX</cite> algorithmic parameters. Many more
 unspecified parameters are relying on their default values which can be found in <a class="reference internal" href="LMeXControls.html"><span class="doc">PeleLMeX controls</span></a>.
 Of particular interest are the <code class="docutils literal notranslate"><span class="pre">peleLM.sdc_iterMax</span></code> parameter controlling the number of
@@ -293,7 +293,7 @@ after initialization to obtain a consistent pressure and velocity field.</p>
 </section>
 </section>
 <section id="building-the-executable">
-<h2>Building the executable<a class="headerlink" href="#building-the-executable" title="Permalink to this heading"></a></h2>
+<h2>Building the executable<a class="headerlink" href="#building-the-executable" title="Link to this heading"></a></h2>
 <p>Now that we have reviewed the basic ingredients required to setup the case, it is time to build the <cite>PeleLMeX</cite> executable.
 Although both GNUmake and CMake are available, it is advised to use GNUmake. The <code class="docutils literal notranslate"><span class="pre">GNUmakefile</span></code> file provides some compile-time options
 regarding the simulation we want to perform.
@@ -356,7 +356,7 @@ Transport_Model := Simple
 <p>You’re good to go!</p>
 </section>
 <section id="checking-the-initial-conditions">
-<h2>Checking the initial conditions<a class="headerlink" href="#checking-the-initial-conditions" title="Permalink to this heading"></a></h2>
+<h2>Checking the initial conditions<a class="headerlink" href="#checking-the-initial-conditions" title="Link to this heading"></a></h2>
 <p>It is always a good practice to check the initial conditions. To do so, run the simulation specifying
 an <code class="docutils literal notranslate"><span class="pre">amr.max_step</span></code> of 0. Open the <code class="docutils literal notranslate"><span class="pre">input.2d</span></code> with your favorite editor and update the following parameters</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>#---------------------- Time Stepping CONTROL --------------------
@@ -381,7 +381,7 @@ similar to <a class="reference internal" href="#bfs-initsol"><span class="std st
 <figure class="align-center" id="bfs-initsol" style="width: 95%">
 <img alt="_images/BFS_InitSol.png" src="_images/BFS_InitSol.png" />
 <figcaption>
-<p><span class="caption-number">Fig. 14 </span><span class="caption-text">: Contour plots of temperature, O2 mass fraction, <span class="math notranslate nohighlight">\(x\)</span>-velocity component and divergence constraint after initialization.</span><a class="headerlink" href="#bfs-initsol" title="Permalink to this image"></a></p>
+<p><span class="caption-number">Fig. 14 </span><span class="caption-text">: Contour plots of temperature, O2 mass fraction, <span class="math notranslate nohighlight">\(x\)</span>-velocity component and divergence constraint after initialization.</span><a class="headerlink" href="#bfs-initsol" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <p>Note that in <cite>PeleLMeX</cite>, EB-covered regions are set to zero in plotfiles. Hot gases are found in the wake
@@ -392,7 +392,7 @@ to an increase of density. <cite>divU</cite> is also non zero at the interface b
 the hot air due to heat diffusion.</p>
 </section>
 <section id="advance-the-solution-on-coarse-grid">
-<h2>Advance the solution on coarse grid<a class="headerlink" href="#advance-the-solution-on-coarse-grid" title="Permalink to this heading"></a></h2>
+<h2>Advance the solution on coarse grid<a class="headerlink" href="#advance-the-solution-on-coarse-grid" title="Link to this heading"></a></h2>
 <p>Let’s now advance the solution for 250 steps, using only the base grid and the default time stepping
 parameters. To do so, ensure that:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>amr.max_step = 250
@@ -430,7 +430,7 @@ the effect of the cold wall.</p>
 <figure class="align-center" id="bfs-250steps" style="width: 95%">
 <img alt="_images/BFS_250steps.png" src="_images/BFS_250steps.png" />
 <figcaption>
-<p><span class="caption-number">Fig. 15 </span><span class="caption-text">: Contour plots of density, H2 mass fraction, <span class="math notranslate nohighlight">\(x\)</span>-velocity component and heat release rate after 250 steps.</span><a class="headerlink" href="#bfs-250steps" title="Permalink to this image"></a></p>
+<p><span class="caption-number">Fig. 15 </span><span class="caption-text">: Contour plots of density, H2 mass fraction, <span class="math notranslate nohighlight">\(x\)</span>-velocity component and heat release rate after 250 steps.</span><a class="headerlink" href="#bfs-250steps" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <p>In order to illustrate one of <cite>PeleLMeX</cite> failure modes, we will now continue the simulation for
@@ -472,7 +472,7 @@ chemical mechanisms. If you plan on pushing the simulation forward without addin
 to reduce CFL to smaller value.</p>
 </section>
 <section id="refine-the-simulation">
-<h2>Refine the simulation<a class="headerlink" href="#refine-the-simulation" title="Permalink to this heading"></a></h2>
+<h2>Refine the simulation<a class="headerlink" href="#refine-the-simulation" title="Link to this heading"></a></h2>
 <p>Instead, let’s add a first level of refinement and keep the CFL at a value of 0.6, while restarting again from
 <cite>chk00250</cite>. Enable AMR refinement by increasing the <code class="docutils literal notranslate"><span class="pre">amr.max_level</span></code>:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span><span class="gh">#---------------------- AMR CONTROL ------------------------------</span>
@@ -509,7 +509,7 @@ value, most of the lower part of the computational domain is actually refined to
 <figure class="align-center" id="bfs-500steps" style="width: 95%">
 <img alt="_images/BFS_500steps.png" src="_images/BFS_500steps.png" />
 <figcaption>
-<p><span class="caption-number">Fig. 16 </span><span class="caption-text">: Contour plots of temperature, H2 mass fraction, chemistry functCall and heat release rate after 500 steps, using 1 level of AMR.</span><a class="headerlink" href="#bfs-500steps" title="Permalink to this image"></a></p>
+<p><span class="caption-number">Fig. 16 </span><span class="caption-text">: Contour plots of temperature, H2 mass fraction, chemistry functCall and heat release rate after 500 steps, using 1 level of AMR.</span><a class="headerlink" href="#bfs-500steps" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <p>The <cite>functCall</cite> variable corresponds to the number of time CVODE called the chemical right-hand-side function and is
@@ -595,7 +595,7 @@ additional refinement, the flame front is now resolved with a few grid cells (bu
 <figure class="align-center" id="bfs-1200steps" style="width: 95%">
 <img alt="_images/BFS_1200steps.png" src="_images/BFS_1200steps.png" />
 <figcaption>
-<p><span class="caption-number">Fig. 17 </span><span class="caption-text">: Contour plots of temperature, H2 mass fraction, H2 production rate and heat release rate after 1200 steps, using 2 levels of AMR.</span><a class="headerlink" href="#bfs-1200steps" title="Permalink to this image"></a></p>
+<p><span class="caption-number">Fig. 17 </span><span class="caption-text">: Contour plots of temperature, H2 mass fraction, H2 production rate and heat release rate after 1200 steps, using 2 levels of AMR.</span><a class="headerlink" href="#bfs-1200steps" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <p>The AMR level 2 is clearly distant from the EB and concentrated mostly on the flame surface (except a small box at the bottom of the
@@ -660,7 +660,7 @@ the upstream and downstream region of the flame.</p>
 <figure class="align-center" id="bfs-condaverage" style="width: 60%">
 <img alt="_images/BFS_CondAverage.png" src="_images/BFS_CondAverage.png" />
 <figcaption>
-<p><span class="caption-number">Fig. 18 </span><span class="caption-text">: Conditional average and standard deviation of heat release rate after 1210 steps, using 4 levels of AMR.</span><a class="headerlink" href="#bfs-condaverage" title="Permalink to this image"></a></p>
+<p><span class="caption-number">Fig. 18 </span><span class="caption-text">: Conditional average and standard deviation of heat release rate after 1210 steps, using 4 levels of AMR.</span><a class="headerlink" href="#bfs-condaverage" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <p>Note that for this analysis to be relevant, we would need to run the simulation longer to completely

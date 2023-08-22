@@ -12,11 +12,11 @@
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="_static/jquery.js"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/sphinx_highlight.js"></script>
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=d09052ea"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
         <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
@@ -103,14 +103,14 @@
            <div itemprop="articleBody">
              
   <section id="the-pelelmex-model">
-<span id="sec-model"></span><h1>The <cite>PeleLMeX</cite> Model<a class="headerlink" href="#the-pelelmex-model" title="Permalink to this heading"></a></h1>
+<span id="sec-model"></span><h1>The <cite>PeleLMeX</cite> Model<a class="headerlink" href="#the-pelelmex-model" title="Link to this heading"></a></h1>
 <p>In this section, we present the actual model that is evolved numerically by <cite>PeleLMeX</cite>, and the numerical algorithms
 to do it.  There are many control parameters to customize the solution strategy and process, and in order to actually
 set up and run specific problems with <cite>PeleLMeX</cite>, the user must specific the chemical model, and provide routines
 that implement initial and boundary data and refinement criteria for the adaptive mesh refinement.  We discuss
 setup and control of <cite>PeleLMeX</cite> in later sections.</p>
 <section id="overview-of-pelelmex">
-<h2>Overview of <cite>PeleLMeX</cite><a class="headerlink" href="#overview-of-pelelmex" title="Permalink to this heading"></a></h2>
+<h2>Overview of <cite>PeleLMeX</cite><a class="headerlink" href="#overview-of-pelelmex" title="Link to this heading"></a></h2>
 <p><cite>PeleLMeX</cite> is the non-subcycling version of <a class="reference external" href="https://amrex-combustion.github.io/PeleLM/">PeleLM</a> a parallel,
 adaptive mesh refinement (AMR) code that solves the reacting Navier-Stokes equations in the low Mach number regime.</p>
 <p>In a nutshell, <cite>PeleLMeX</cite> features include:</p>
@@ -145,7 +145,7 @@ adaptive mesh refinement (AMR) code that solves the reacting Navier-Stokes equat
 </ul>
 </section>
 <section id="mathematical-background">
-<h2>Mathematical background<a class="headerlink" href="#mathematical-background" title="Permalink to this heading"></a></h2>
+<h2>Mathematical background<a class="headerlink" href="#mathematical-background" title="Link to this heading"></a></h2>
 <p><cite>PeleLMeX</cite> evolves chemically reacting low Mach number flows with block-structured adaptive mesh refinement (AMR). The code depends upon the <a class="reference external" href="https://github.com/AMReX-Codes/amrex">AMReX</a> library to provide the underlying data structures, and tools to manage and operate on them across massively parallel computing architectures. <cite>PeleLMeX</cite> also utilizes the source code and algorithmic infrastructure of <a class="reference external" href="https://github.com/AMReX-Codes/AMReX-Hydro">AMReX-Hydro</a>. <cite>PeleLMeX</cite> borrows heavily from <a class="reference external" href="https://amrex-combustion.github.io/PeleLM/">PeleLM</a>. The core algorithms in <cite>PeleLM</cite> are described in the following papers:</p>
 <ul class="simple">
 <li><p><em>A conservative, thermodynamically consistent numerical approach for low Mach number combustion. I. Single-level integration</em>, A. Nonaka, J. B. Bell, and M. S. Day, <em>Combust. Theor. Model.</em>, <strong>22</strong> (1) 156-184 (2018)</p></li>
@@ -155,7 +155,7 @@ adaptive mesh refinement (AMR) code that solves the reacting Navier-Stokes equat
 <li><p><em>A Conservative Adaptive Projection Method for the Variable Density Incompressible Navier-Stokes Equations,</em> A. S. Almgren, J. B. Bell, P. Colella, L. H. Howell, and M. L. Welcome, <em>J. Comp. Phys.</em>, <strong>142</strong> 1-46 (1998)</p></li>
 </ul>
 <section id="the-low-mach-number-flow-equations">
-<h3>The low Mach number flow equations<a class="headerlink" href="#the-low-mach-number-flow-equations" title="Permalink to this heading"></a></h3>
+<h3>The low Mach number flow equations<a class="headerlink" href="#the-low-mach-number-flow-equations" title="Link to this heading"></a></h3>
 <p><cite>PeleLMeX</cite> solves the reacting Navier-Stokes flow equations in the <em>low Mach number</em> regime, where the characteristic fluid velocity is small compared to the sound speed, and the effect of acoustic wave propagation is unimportant to the overall dynamics of the system. Accordingly, acoustic wave propagation can be mathematically removed from the equations of motion, allowing for a numerical time step based on an advective CFL condition, and this leads to an increase in the allowable time step of order <span class="math notranslate nohighlight">\(1/M\)</span> over an explicit, fully compressible method (<span class="math notranslate nohighlight">\(M\)</span> is the Mach number).  In this mathematical framework, the total pressure is decomposed into the sum of a spatially constant (ambient) thermodynamic pressure <span class="math notranslate nohighlight">\(p_0\)</span> and a perturbational pressure, <span class="math notranslate nohighlight">\(\pi({\vec x})\)</span> that drives the flow.  Under suitable conditions, <span class="math notranslate nohighlight">\(\pi/p_0 = \mathcal{O} (M^2)\)</span>. Note that <span class="math notranslate nohighlight">\(p_0\)</span> is spatially constant, but can be time-dependent as described in the next section.</p>
 <p>The set of conservation equations specialized to the low Mach number regime is a system of PDEs with advection, diffusion and reaction (ADR) processes that are constrained to evolve on the manifold of a spatially constant <span class="math notranslate nohighlight">\(p_0\)</span>:</p>
 <div class="math notranslate nohighlight">
@@ -195,7 +195,7 @@ adaptive mesh refinement (AMR) code that solves the reacting Navier-Stokes equat
 &amp;- \frac{1}{\rho} \sum_m \frac{W}{W_m} \nabla \cdot \boldsymbol{\Gamma_m} + \frac{1}{\rho}\sum_m \left(\frac{W}{W_m} - \frac{h_m}{c_p T} \right) \dot \omega \equiv S .\end{split}\]</div>
 </section>
 <section id="confined-domain-ambient-pressure">
-<h3>Confined domain ambient pressure<a class="headerlink" href="#confined-domain-ambient-pressure" title="Permalink to this heading"></a></h3>
+<h3>Confined domain ambient pressure<a class="headerlink" href="#confined-domain-ambient-pressure" title="Link to this heading"></a></h3>
 <p>In unconfined domains, the ambient pressure will remain constant in time, but for confined domains, this is not the case. Above, we assumed that <span class="math notranslate nohighlight">\(p_0\)</span> was constant. If <span class="math notranslate nohighlight">\(p_0\)</span> is a function of time, the pressure derivative term must be restored in the velocity divergence constraint as:</p>
 <div class="math notranslate nohighlight">
 \[\nabla \cdot \boldsymbol{u} + \theta \frac{dp_0}{dt} = S ,\]</div>
@@ -223,19 +223,19 @@ adaptive mesh refinement (AMR) code that solves the reacting Navier-Stokes equat
 </section>
 </section>
 <section id="pelelmex-algorithm">
-<h2>PeleLMeX Algorithm<a class="headerlink" href="#pelelmex-algorithm" title="Permalink to this heading"></a></h2>
+<h2>PeleLMeX Algorithm<a class="headerlink" href="#pelelmex-algorithm" title="Link to this heading"></a></h2>
 <p>An overview of <cite>PeleLMeX</cite> time-advance function is provided in <a class="reference internal" href="#lmex-algo"><span class="std std-numref">Fig. 1</span></a> and details are provided in the following subsections.</p>
 <figure class="align-center" id="lmex-algo" style="width: 50%">
 <img alt="_images/PeleLMeX_Algorithm.png" src="_images/PeleLMeX_Algorithm.png" />
 <figcaption>
-<p><span class="caption-number">Fig. 1 </span><span class="caption-text">: Flowchart of the <em>PeleLMeX</em> advance function.</span><a class="headerlink" href="#lmex-algo" title="Permalink to this image"></a></p>
+<p><span class="caption-number">Fig. 1 </span><span class="caption-text">: Flowchart of the <em>PeleLMeX</em> advance function.</span><a class="headerlink" href="#lmex-algo" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <p>The three steps of the low Mach number projection scheme described <a class="reference internal" href="#ssec-projscheme"><span class="std std-ref">below</span></a> are referenced to better
 emphasize how the thermodynamic solve is closely weaved into the fractional step approach. Striped boxes indicate where the
 <a class="reference internal" href="#ssec-advscheme"><span class="std std-ref">Godunov procedure</span></a> is employed while the four different linear solves are highlighted.</p>
 <section id="low-mach-number-projection-scheme">
-<h3>Low Mach number projection scheme<a class="headerlink" href="#low-mach-number-projection-scheme" title="Permalink to this heading"></a></h3>
+<h3>Low Mach number projection scheme<a class="headerlink" href="#low-mach-number-projection-scheme" title="Link to this heading"></a></h3>
 <p id="ssec-projscheme"><cite>PeleLMeX</cite> implements a finite-volume, Cartesian grid discretization approach with constant grid spacing, where
 <span class="math notranslate nohighlight">\(U\)</span>, <span class="math notranslate nohighlight">\(\rho\)</span>, <span class="math notranslate nohighlight">\(\rho Y_m\)</span>, <span class="math notranslate nohighlight">\(\rho h\)</span>, and <span class="math notranslate nohighlight">\(T\)</span> represent cell averages, and the pressure field, <span class="math notranslate nohighlight">\(\pi\)</span>, is defined on the nodes
 of the grid, and is temporally constant on the intervals over the time step.
@@ -338,12 +338,12 @@ is used to obtain the provisional new-time velocities. Finally, a <em>nodal</em>
 that they satisfy the constraint.</p>
 </section>
 <section id="advection-schemes">
-<h3>Advection schemes<a class="headerlink" href="#advection-schemes" title="Permalink to this heading"></a></h3>
+<h3>Advection schemes<a class="headerlink" href="#advection-schemes" title="Link to this heading"></a></h3>
 <p id="ssec-advscheme"><cite>PeleLMeX</cite> relies on the <a class="reference external" href="https://github.com/AMReX-Codes/AMReX-Hydro">AMReX-Hydro</a> implementation of the 2nd-order Godunov method, with several variants available. The basis of the Godunov approach is to extrapolate the cell-centered quantity of interest (<span class="math notranslate nohighlight">\(U\)</span>, <span class="math notranslate nohighlight">\(\rho Y\)</span>, <span class="math notranslate nohighlight">\(\rho h\)</span>) to cell faces using a second-order Taylor series expansion in space and time. As detailed in <a class="reference external" href="https://amrex-codes.github.io/amrex/hydro_html/Schemes.html#godunov-methodsThe">AMReX-Hydro documentation</a>, the choice of the slope order and limiting scheme define the exact variant of the Godunov method. Of particular interest for combustion applications, where sharp gradients of intermediate chemical species are found within flame fronts, the <cite>Godunov_BDS</cite> approach provides a bound-preserving advection scheme which greatly limits the appearance of over-/under-shoots, often leading to critical failure of the stiff chemical kinetic integration.</p>
 <p>Note that in the presence of EB, only the <cite>Godunov_PLM</cite> variant is available.</p>
 </section>
 <section id="amr-extension">
-<h3>AMR extension<a class="headerlink" href="#amr-extension" title="Permalink to this heading"></a></h3>
+<h3>AMR extension<a class="headerlink" href="#amr-extension" title="Link to this heading"></a></h3>
 <p>In contrast with <a class="reference external" href="https://amrex-combustion.github.io/PeleLM/">PeleLM</a>, <cite>PeleLMeX</cite> do not rely a on subcycling approach to advance the AMR hierarchy.
 This difference is illustrated in the figure below comparing the multi-level time-stepping approach in both codes:</p>
 <figure class="align-center" style="width: 60%">
@@ -356,7 +356,7 @@ This difference is illustrated in the figure below comparing the multi-level tim
 <p>In practice, <cite>PeleLM</cite> will perform a total of 7 single-level advance steps, while <cite>PeleLMeX</cite> will perform 4 multi-level ones to reach the same physical time, advancing the coarser levels at a smaller CFL number whereas <cite>PeleLM</cite> maintain a fixed CFL at all the level. It might seem that <cite>PeleLMeX</cite> is thus performing extra work, but because it ignore fine-covered regions, <cite>PeleLMeX</cite> do not need to perform the expensive (and often very under-resolved) chemistry integration in fine-covered areas. An exact evaluation of the benefits and drawbacks of each approach is under way.</p>
 </section>
 <section id="geometry-with-embedded-boundaries">
-<h3>Geometry with Embedded Boundaries<a class="headerlink" href="#geometry-with-embedded-boundaries" title="Permalink to this heading"></a></h3>
+<h3>Geometry with Embedded Boundaries<a class="headerlink" href="#geometry-with-embedded-boundaries" title="Link to this heading"></a></h3>
 <p><cite>PeleLMeX</cite> relies on <a class="reference external" href="https://amrex-codes.github.io/amrex/docs_html/EB_Chapter.html">AMReX’s implementation</a> of
 the Embedded Boundaries (EB) approach to represent geometrical objects. In this approach, the underlying computational
 mesh is uniform and block-structured, but the boundary of the irregular-shaped computational domain conceptually cuts
@@ -379,7 +379,7 @@ include an interface to HYPRE which can help circumvent the issue by sending the
 multigrid solvers. More details on how to use HYPRE is provided in control Section.</p>
 </section>
 <section id="large-eddy-simulation">
-<h3>Large Eddy Simulation<a class="headerlink" href="#large-eddy-simulation" title="Permalink to this heading"></a></h3>
+<h3>Large Eddy Simulation<a class="headerlink" href="#large-eddy-simulation" title="Link to this heading"></a></h3>
 <p>To provide closure for the unresolved turbulent stress/flux terms in Large Eddy Simulation (LES), PeleLMeX supports the
 constant-coefficient Smagorinsky, WALE and Sigma models for turbulent transport of momentum, species, and energy. These models are
 based on a gradient transport assumption, resulting in terms analagous to the molecular transport of these quantities, but with

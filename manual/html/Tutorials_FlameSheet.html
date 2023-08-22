@@ -12,11 +12,11 @@
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="_static/jquery.js"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/sphinx_highlight.js"></script>
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=d09052ea"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
         <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
@@ -107,9 +107,9 @@
            <div itemprop="articleBody">
              
   <section id="premixed-flame-sheet-with-harmonic-perturbations">
-<span id="sec-tutorialflamesheet"></span><h1>Premixed flame sheet with harmonic perturbations<a class="headerlink" href="#premixed-flame-sheet-with-harmonic-perturbations" title="Permalink to this heading"></a></h1>
+<span id="sec-tutorialflamesheet"></span><h1>Premixed flame sheet with harmonic perturbations<a class="headerlink" href="#premixed-flame-sheet-with-harmonic-perturbations" title="Link to this heading"></a></h1>
 <section id="introduction">
-<span id="sec-tuto-fs-intro"></span><h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this heading"></a></h2>
+<span id="sec-tuto-fs-intro"></span><h2>Introduction<a class="headerlink" href="#introduction" title="Link to this heading"></a></h2>
 <p><cite>PeleLMeX</cite> primary objective is to enable simulation of reactive flows on platforms ranging
 from small personal computer to Exascale supercomputer. This short tutorial describes
 the case of a 2D laminar methane/hydrogen/air premixed flame, perturbed using harmonic fluctuations
@@ -119,7 +119,7 @@ This document provides step by step instruction reviewing how to set-up the doma
 and to construct an initial solution.</p>
 </section>
 <section id="setting-up-your-environment">
-<span id="sec-tuto-fs-prepstep"></span><h2>Setting-up your environment<a class="headerlink" href="#setting-up-your-environment" title="Permalink to this heading"></a></h2>
+<span id="sec-tuto-fs-prepstep"></span><h2>Setting-up your environment<a class="headerlink" href="#setting-up-your-environment" title="Link to this heading"></a></h2>
 <p>Getting a functioning environment in which to compile and run <cite>PeleLMeX</cite> is the first step of this tutorial.
 Follow the steps listed below to get to this point:</p>
 <ol class="arabic">
@@ -153,7 +153,7 @@ export PELE_PHYSICS_HOME=&lt;path_to_MyPelePhysics&gt;
 <p>You’re good to go !</p>
 </section>
 <section id="case-setup">
-<h2>Case setup<a class="headerlink" href="#case-setup" title="Permalink to this heading"></a></h2>
+<h2>Case setup<a class="headerlink" href="#case-setup" title="Link to this heading"></a></h2>
 <p>A <cite>PeleLMeX</cite> case folder generally contains a minimal set of files to enable compilation,
 provide user-defined function defining initial and boundary conditions, input file(s) and
 any additional files necessary for the simulation (solution of a Cantera 1D flame for instance).</p>
@@ -174,7 +174,7 @@ User keys listed in the <cite>input.2d-regt</cite> file are reviewed and linked 
 of the simulation setup. To get additional information about the keywords discussed,
 the reader is referred to <a class="reference internal" href="LMeXControls.html"><span class="doc">PeleLMeX controls</span></a>.</p>
 <section id="geometry-grid-and-boundary-conditions">
-<h3>Geometry, grid and boundary conditions<a class="headerlink" href="#geometry-grid-and-boundary-conditions" title="Permalink to this heading"></a></h3>
+<h3>Geometry, grid and boundary conditions<a class="headerlink" href="#geometry-grid-and-boundary-conditions" title="Link to this heading"></a></h3>
 <p>This Direct Numerical Simulations (DNS) is performed on a 0.016x0.032 <span class="math notranslate nohighlight">\(m^2\)</span> 2D computational domain,
 with the bottom left corner located at (0.0:0.0) and the top right corner at (0.016:0.032). Periodic boundary
 conditions are used in the transverse (<span class="math notranslate nohighlight">\(x\)</span>) direction, while <code class="docutils literal notranslate"><span class="pre">Inflow</span></code> (dirichlet) and <code class="docutils literal notranslate"><span class="pre">Outflow</span></code> (0-neumann) boundary
@@ -220,7 +220,7 @@ amr.max_grid_size   = 256              # maximum box size
 </div>
 </section>
 <section id="problem-specifications">
-<h3>Problem specifications<a class="headerlink" href="#problem-specifications" title="Permalink to this heading"></a></h3>
+<h3>Problem specifications<a class="headerlink" href="#problem-specifications" title="Link to this heading"></a></h3>
 <p id="sec-tuto-fs-problem">The problem setup is mostly contained in the three C++ source/header files mentioned above. Looking into <code class="docutils literal notranslate"><span class="pre">pelelm_prob_parm.H</span></code> first,
 we can see the set of parameters that will be used to specify the initial and boundary conditions:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>struct ProbParm
@@ -306,7 +306,7 @@ Neumann for the state components.</p>
 <p>A last function, <code class="docutils literal notranslate"><span class="pre">zero_visc</span></code>, is included in <code class="docutils literal notranslate"><span class="pre">pelelm_prob.H</span></code> but is not used in the present case.</p>
 </section>
 <section id="numerical-parameters">
-<h3>Numerical parameters<a class="headerlink" href="#numerical-parameters" title="Permalink to this heading"></a></h3>
+<h3>Numerical parameters<a class="headerlink" href="#numerical-parameters" title="Link to this heading"></a></h3>
 <p>The <code class="docutils literal notranslate"><span class="pre">PeleLM</span> <span class="pre">CONTROL</span></code> block contains a few of the <cite>PeleLMeX</cite> algorithmic parameters. Many more
 unspecified parameters are relying on their default values which can be found in <a class="reference internal" href="LMeXControls.html"><span class="doc">PeleLMeX controls</span></a>.
 Of particular interest are the <code class="docutils literal notranslate"><span class="pre">peleLM.sdc_iterMax</span></code> parameter controlling the number of
@@ -316,7 +316,7 @@ after initialization to obtain a consistent pressure and velocity field.</p>
 </section>
 </section>
 <section id="building-the-executable">
-<h2>Building the executable<a class="headerlink" href="#building-the-executable" title="Permalink to this heading"></a></h2>
+<h2>Building the executable<a class="headerlink" href="#building-the-executable" title="Link to this heading"></a></h2>
 <p>Now that we have reviewed the basic ingredients required to setup the FlameSheet case, it is time to build the <cite>PeleLMeX</cite> executable.
 Although both GNUmake and CMake are available, it is advised to use GNUmake. The <code class="docutils literal notranslate"><span class="pre">GNUmakefile</span></code> file provides some compile-time options
 regarding the simulation we want to perform.
@@ -368,7 +368,7 @@ Transport_Model := Simple
 <p>You’re good to go!</p>
 </section>
 <section id="checking-the-initial-conditions">
-<h2>Checking the initial conditions<a class="headerlink" href="#checking-the-initial-conditions" title="Permalink to this heading"></a></h2>
+<h2>Checking the initial conditions<a class="headerlink" href="#checking-the-initial-conditions" title="Link to this heading"></a></h2>
 <p>As a first step, we will run the simulation performing only the initialization and visualize the initial
 condition, while varying some of the problem parameters. To do so, we need to update the
 time stepping block to specify the number of time steps.</p>
@@ -407,7 +407,7 @@ similar to <a class="reference internal" href="#fs-initsol"><span class="std std
 <figure class="align-center" id="fs-initsol" style="width: 80%">
 <img alt="_images/FS_InitSolDefault.png" src="_images/FS_InitSolDefault.png" />
 <figcaption>
-<p><span class="caption-number">Fig. 6 </span><span class="caption-text">: Contour plots of density, velocity components and velocity divergence constraint after initialization.</span><a class="headerlink" href="#fs-initsol" title="Permalink to this image"></a></p>
+<p><span class="caption-number">Fig. 6 </span><span class="caption-text">: Contour plots of density, velocity components and velocity divergence constraint after initialization.</span><a class="headerlink" href="#fs-initsol" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <p>It is interesting to note that the initial solution has a transverse velocity component
@@ -423,12 +423,12 @@ of the initial solution varying these parameters are displayed in <a class="refe
 <figure class="align-center" id="fs-inittweaks" style="width: 80%">
 <img alt="_images/FS_InitSolTweaks.png" src="_images/FS_InitSolTweaks.png" />
 <figcaption>
-<p><span class="caption-number">Fig. 7 </span><span class="caption-text">: Contour plots of velocity components without initial projection and temperature using tweaked problem parameter.</span><a class="headerlink" href="#fs-inittweaks" title="Permalink to this image"></a></p>
+<p><span class="caption-number">Fig. 7 </span><span class="caption-text">: Contour plots of velocity components without initial projection and temperature using tweaked problem parameter.</span><a class="headerlink" href="#fs-inittweaks" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 </section>
 <section id="advance-the-solution">
-<h2>Advance the solution<a class="headerlink" href="#advance-the-solution" title="Permalink to this heading"></a></h2>
+<h2>Advance the solution<a class="headerlink" href="#advance-the-solution" title="Link to this heading"></a></h2>
 <p>So far, we haven’t advanced the solution at all. Restore the problem parameters to their initial values,
 re-activate the initial projection and let’s now run the simulation for 50 steps and save a checkpoint
 file from which to restart from. To do so, ensure that:</p>
@@ -497,7 +497,7 @@ an intermediate species such as CH3 in <a class="reference internal" href="#fs-5
 <figure class="align-center" id="fs-50steps" style="width: 80%">
 <img alt="_images/FS_50steps.png" src="_images/FS_50steps.png" />
 <figcaption>
-<p><span class="caption-number">Fig. 8 </span><span class="caption-text">: Contour plots of <cite>divU</cite>, <cite>FunctCall</cite>, thermodynamic pressure and CH3 mass fraction after 50 steps.</span><a class="headerlink" href="#fs-50steps" title="Permalink to this image"></a></p>
+<p><span class="caption-number">Fig. 8 </span><span class="caption-text">: Contour plots of <cite>divU</cite>, <cite>FunctCall</cite>, thermodynamic pressure and CH3 mass fraction after 50 steps.</span><a class="headerlink" href="#fs-50steps" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <p>The <cite>divU</cite> is now mostly positive, consistent with the thermal expansion occuring across a
@@ -568,7 +568,7 @@ necessary if this species was of special interest).</p>
 <figure class="align-center" id="fs-120steps" style="width: 80%">
 <img alt="_images/FS_120steps.png" src="_images/FS_120steps.png" />
 <figcaption>
-<p><span class="caption-number">Fig. 9 </span><span class="caption-text">: Contour plots of <cite>divU</cite>, <cite>FunctCall</cite>, thermodynamic pressure and CH3 mass fraction after 120 steps.</span><a class="headerlink" href="#fs-120steps" title="Permalink to this image"></a></p>
+<p><span class="caption-number">Fig. 9 </span><span class="caption-text">: Contour plots of <cite>divU</cite>, <cite>FunctCall</cite>, thermodynamic pressure and CH3 mass fraction after 120 steps.</span><a class="headerlink" href="#fs-120steps" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <p>This is the end of this short tutorial introducing the basics of reactive flow simulations

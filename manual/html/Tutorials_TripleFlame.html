@@ -12,11 +12,11 @@
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="_static/jquery.js"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/sphinx_highlight.js"></script>
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=d09052ea"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
         <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
@@ -112,9 +112,9 @@
            <div itemprop="articleBody">
              
   <section id="a-simple-triple-flame">
-<span id="sec-tutorialtf"></span><h1>A simple triple flame<a class="headerlink" href="#a-simple-triple-flame" title="Permalink to this heading"></a></h1>
+<span id="sec-tutorialtf"></span><h1>A simple triple flame<a class="headerlink" href="#a-simple-triple-flame" title="Link to this heading"></a></h1>
 <section id="introduction">
-<span id="sec-tuto-tf-intro"></span><h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this heading"></a></h2>
+<span id="sec-tuto-tf-intro"></span><h2>Introduction<a class="headerlink" href="#introduction" title="Link to this heading"></a></h2>
 <p>Laminar flames have the potential to reveal the fundamental structure of combustion
 without the added complexities of turbulence.
 They also aid in our understanding of the more complex turbulent flames.
@@ -125,7 +125,7 @@ and these conditions favor the appearance of edge flames, see Fig. <a class="ref
 <figure class="align-center" id="tripleflameintro" style="width: 95%">
 <img alt="_images/TF_Intro.png" src="_images/TF_Intro.png" />
 <figcaption>
-<p><span class="caption-number">Fig. 19 </span><span class="caption-text">: Normalized heat release rate (top) and temperature (bottom) contours of two-dimensional (2D) laminar lifted flames of ethylene.</span><a class="headerlink" href="#tripleflameintro" title="Permalink to this image"></a></p>
+<p><span class="caption-number">Fig. 19 </span><span class="caption-text">: Normalized heat release rate (top) and temperature (bottom) contours of two-dimensional (2D) laminar lifted flames of ethylene.</span><a class="headerlink" href="#tripleflameintro" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <p>Edge flames are composed of lean and rich premixed flame wings usually surrounding a central
@@ -139,7 +139,7 @@ construct an initial solution, and provides guidance on how to monitor and influ
 a final steady-state solution.</p>
 </section>
 <section id="setting-up-your-environment">
-<span id="sec-tuto-tf-prepstep"></span><h2>Setting-up your environment<a class="headerlink" href="#setting-up-your-environment" title="Permalink to this heading"></a></h2>
+<span id="sec-tuto-tf-prepstep"></span><h2>Setting-up your environment<a class="headerlink" href="#setting-up-your-environment" title="Link to this heading"></a></h2>
 <p>Getting a functioning environment in which to compile and run <cite>PeleLMeX</cite> is the first step of this tutorial.
 Follow the steps listed below to get to this point:</p>
 <ol class="arabic">
@@ -173,10 +173,10 @@ export PELE_PHYSICS_HOME=&lt;path_to_MyPelePhysics&gt;
 <p>You’re good to go !</p>
 </section>
 <section id="numerical-setup">
-<h2>Numerical setup<a class="headerlink" href="#numerical-setup" title="Permalink to this heading"></a></h2>
+<h2>Numerical setup<a class="headerlink" href="#numerical-setup" title="Link to this heading"></a></h2>
 <p>In this section we review the content of the various input files for the Triple Flame test case. To get additional information about the keywords discussed, the user is referred to <a class="reference internal" href="LMeXControls.html"><span class="doc">PeleLMeX controls</span></a>.</p>
 <section id="test-case-and-boundary-conditions">
-<h3>Test case and boundary conditions<a class="headerlink" href="#test-case-and-boundary-conditions" title="Permalink to this heading"></a></h3>
+<h3>Test case and boundary conditions<a class="headerlink" href="#test-case-and-boundary-conditions" title="Link to this heading"></a></h3>
 <p>Direct Numerical Simulations (DNS) are performed on a 2x4 <span class="math notranslate nohighlight">\(cm^2\)</span> 2D computational domain
 using a 64x128 base grid and up to 4 levels of refinement (although we will start with a lower number of levels).
 The refinement ratio between each level is set to 2. With 4 levels, this means that the minimum grid size inside the reaction layer will be just below 20 <span class="math notranslate nohighlight">\(μm\)</span>.
@@ -188,7 +188,7 @@ from bottom to top. The specificities of the <code class="docutils literal notra
 <figure class="align-center" id="tf-setupgeom" style="width: 95%">
 <img alt="_images/TF_SetupSketch.png" src="_images/TF_SetupSketch.png" />
 <figcaption>
-<p><span class="caption-number">Fig. 20 </span><span class="caption-text">: Sketch of the computational domain with level 0 box decomposition (left) and input mixture fraction profile (right).</span><a class="headerlink" href="#tf-setupgeom" title="Permalink to this image"></a></p>
+<p><span class="caption-number">Fig. 20 </span><span class="caption-text">: Sketch of the computational domain with level 0 box decomposition (left) and input mixture fraction profile (right).</span><a class="headerlink" href="#tf-setupgeom" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <p>The geometry of the problem is specified in the first block of the <code class="docutils literal notranslate"><span class="pre">input.2d-regt</span></code>:</p>
@@ -221,7 +221,7 @@ amr.max_grid_size   = 32                  # max box size
 </div>
 </section>
 <section id="problem-specifications">
-<span id="sec-tuto-tf-inflowspec"></span><h3>Problem specifications<a class="headerlink" href="#problem-specifications" title="Permalink to this heading"></a></h3>
+<span id="sec-tuto-tf-inflowspec"></span><h3>Problem specifications<a class="headerlink" href="#problem-specifications" title="Link to this heading"></a></h3>
 <p>The edge flame is stabilized against an incoming mixing layer with a uniform velocity profile. The mixing
 layer is prescribed using an hyperbolic tangent of mixture fraction <span class="math notranslate nohighlight">\(z\)</span> between 0 and 1,
 as can be seen in <a class="reference internal" href="#tf-setupgeom"><span class="std std-numref">Fig. 20</span></a>:</p>
@@ -275,7 +275,7 @@ The interested reader can look at the function <code class="docutils literal not
 As the simulation proceeds, the data in that container will be updated and used in <code class="docutils literal notranslate"><span class="pre">bcnormal</span></code> to modify the inlet velocity.</p>
 </section>
 <section id="initial-solution">
-<h3>Initial solution<a class="headerlink" href="#initial-solution" title="Permalink to this heading"></a></h3>
+<h3>Initial solution<a class="headerlink" href="#initial-solution" title="Link to this heading"></a></h3>
 <p>An initial field of the main variables is always required to start a simulation.
 Ideally, you want for this initial solution to approximate the final (steady-state in our case) solution as much as possible.
 This will speed up the initial transient and avoid many convergence issues.
@@ -288,13 +288,13 @@ shown in Fig <a class="reference internal" href="#tf-initialsol"><span class="st
 <figure class="align-center" id="tf-initialsol" style="width: 95%">
 <img alt="_images/TF_InitialSol.png" src="_images/TF_InitialSol.png" />
 <figcaption>
-<p><span class="caption-number">Fig. 21 </span><span class="caption-text">: Initial temperature field (left) as well as widening gaussian 1D y-profiles (right) and associated parameters. The initial solution contains 2 levels.</span><a class="headerlink" href="#tf-initialsol" title="Permalink to this image"></a></p>
+<p><span class="caption-number">Fig. 21 </span><span class="caption-text">: Initial temperature field (left) as well as widening gaussian 1D y-profiles (right) and associated parameters. The initial solution contains 2 levels.</span><a class="headerlink" href="#tf-initialsol" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <p>This initial solution is constructed via the routine <code class="docutils literal notranslate"><span class="pre">pelelm_initdata()</span></code>, in the file <code class="docutils literal notranslate"><span class="pre">pelelm_prob.H</span></code>. Additional information is provided as comments in this file for the eager reader, but nothing is required from the user at this point.</p>
 </section>
 <section id="numerical-scheme">
-<h3>Numerical scheme<a class="headerlink" href="#numerical-scheme" title="Permalink to this heading"></a></h3>
+<h3>Numerical scheme<a class="headerlink" href="#numerical-scheme" title="Link to this heading"></a></h3>
 <p>The <code class="docutils literal notranslate"><span class="pre">PeleLM</span> <span class="pre">CONTROL</span></code> block contains a few of the <cite>PeleLMeX</cite> algorithmic parameters. Many more
 unspecified parameters are relying on their default values which can be found in <a class="reference internal" href="LMeXControls.html"><span class="doc">PeleLMeX controls</span></a>.
 Of particular interest are the <code class="docutils literal notranslate"><span class="pre">peleLM.sdc_iterMax</span></code> parameter controlling the number of
@@ -304,7 +304,7 @@ after initialization to obtain a consistent pressure and velocity field.</p>
 </section>
 </section>
 <section id="building-the-executable">
-<h2>Building the executable<a class="headerlink" href="#building-the-executable" title="Permalink to this heading"></a></h2>
+<h2>Building the executable<a class="headerlink" href="#building-the-executable" title="Link to this heading"></a></h2>
 <p>Now that we have reviewed the basic ingredients required to setup the case, it is time to build the <cite>PeleLMeX</cite> executable.
 Although both GNUmake and CMake are available, it is advised to use GNUmake. The <code class="docutils literal notranslate"><span class="pre">GNUmakefile</span></code> file provides some compile-time options
 regarding the simulation we want to perform.
@@ -361,9 +361,9 @@ This step should generate the following file (providing that the build configura
 <p>You’re good to go !</p>
 </section>
 <section id="initial-transient-phase">
-<h2>Initial transient phase<a class="headerlink" href="#initial-transient-phase" title="Permalink to this heading"></a></h2>
+<h2>Initial transient phase<a class="headerlink" href="#initial-transient-phase" title="Link to this heading"></a></h2>
 <section id="first-step-the-initial-solution">
-<h3>First step: the initial solution<a class="headerlink" href="#first-step-the-initial-solution" title="Permalink to this heading"></a></h3>
+<h3>First step: the initial solution<a class="headerlink" href="#first-step-the-initial-solution" title="Link to this heading"></a></h3>
 <p>When performing time-dependent numerical simulations, it is good practice to verify the initial solution. To do so,
 we will run <cite>PeleLMeX</cite> to perform the initialization only, to generate an initial plotfile <code class="docutils literal notranslate"><span class="pre">plt00000</span></code>.</p>
 <p>Time-stepping parameters in <code class="docutils literal notranslate"><span class="pre">input.2d-regt</span></code> are specified in the <code class="docutils literal notranslate"><span class="pre">Time</span> <span class="pre">Stepping</span></code> block:</p>
@@ -413,7 +413,7 @@ appended with .old*********** if you used both commands). Use <a class="referenc
 to vizualize <code class="docutils literal notranslate"><span class="pre">plt00000</span></code> and make sure the solution matches the one shown in Fig. <a class="reference internal" href="#tf-initialsol"><span class="std std-numref">Fig. 21</span></a>.</p>
 </section>
 <section id="running-the-problem-on-a-coarse-grid">
-<h3>Running the problem on a coarse grid<a class="headerlink" href="#running-the-problem-on-a-coarse-grid" title="Permalink to this heading"></a></h3>
+<h3>Running the problem on a coarse grid<a class="headerlink" href="#running-the-problem-on-a-coarse-grid" title="Link to this heading"></a></h3>
 <p>As mentioned above, the initial solution is relatively far from the steady-state triple flame we wish to obtain.
 An inexpensive and rapid way to transition from the initial solution to an established triple flame is to perform
 a coarse (using only 2 AMR levels) simulation using a single SDC iteration for a few initial number of time steps
@@ -446,12 +446,12 @@ with <a class="reference external" href="https://amrex-codes.github.io/amrex/doc
 <figure class="align-center" id="tf-inittransient" style="width: 95%">
 <img alt="_images/TF_Transient.gif" src="_images/TF_Transient.gif" />
 <figcaption>
-<p><span class="caption-number">Fig. 22 </span><span class="caption-text">: Temperature (left) and divu (right) fields from 0 to 2000 time steps (0-?? ms).</span><a class="headerlink" href="#tf-inittransient" title="Permalink to this image"></a></p>
+<p><span class="caption-number">Fig. 22 </span><span class="caption-text">: Temperature (left) and divu (right) fields from 0 to 2000 time steps (0-?? ms).</span><a class="headerlink" href="#tf-inittransient" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 </section>
 <section id="steady-state-problem-activating-the-flame-control">
-<h3>Steady-state problem: activating the flame control<a class="headerlink" href="#steady-state-problem-activating-the-flame-control" title="Permalink to this heading"></a></h3>
+<h3>Steady-state problem: activating the flame control<a class="headerlink" href="#steady-state-problem-activating-the-flame-control" title="Link to this heading"></a></h3>
 <p>The speed of propagation of a triple flame is not easy to determine a-priori. As such it is useful,
 at least until the flame settles, to have some sort of stabilization mechanism to prevent
 flame blow-off or flashback. In the present configuration, the position of the flame front can be tracked
@@ -508,14 +508,14 @@ exit
 <figure class="align-center" id="tf-accontrol" style="width: 95%">
 <img alt="_images/TF_ACcontrol.png" src="_images/TF_ACcontrol.png" />
 <figcaption>
-<p><span class="caption-number">Fig. 23 </span><span class="caption-text">: Flame tip position (left) and inlet velocity (right) as function of time step count from 1000 to 2000 step using the inlet velocity control.</span><a class="headerlink" href="#tf-accontrol" title="Permalink to this image"></a></p>
+<p><span class="caption-number">Fig. 23 </span><span class="caption-text">: Flame tip position (left) and inlet velocity (right) as function of time step count from 1000 to 2000 step using the inlet velocity control.</span><a class="headerlink" href="#tf-accontrol" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <p>At this point, you have a stabilized methane/air triple flame and will now use AMR features to improve the quality of your simulation.</p>
 </section>
 </section>
 <section id="refinement-of-the-computation">
-<h2>Refinement of the computation<a class="headerlink" href="#refinement-of-the-computation" title="Permalink to this heading"></a></h2>
+<h2>Refinement of the computation<a class="headerlink" href="#refinement-of-the-computation" title="Link to this heading"></a></h2>
 <p>Before going further, it is important to look at the results of the current simulation. The left panel of <a class="reference internal" href="#tf-coarsedetails"><span class="std std-numref">Fig. 24</span></a>
 displays the temperature field, while a zoom-in of the flame edge region colored by several important variables
 is provided on the right side.
@@ -526,7 +526,7 @@ closely match the region of high <cite>CH4_consumption</cite> while <cite>Y(CH3O
 <figure class="align-center" id="tf-coarsedetails" style="width: 95%">
 <img alt="_images/TF_CoarseDetails.png" src="_images/TF_CoarseDetails.png" />
 <figcaption>
-<p><span class="caption-number">Fig. 24 </span><span class="caption-text">: Details of the triple flame tip obtained with the initial coarse 2-level mesh.</span><a class="headerlink" href="#tf-coarsedetails" title="Permalink to this image"></a></p>
+<p><span class="caption-number">Fig. 24 </span><span class="caption-text">: Details of the triple flame tip obtained with the initial coarse 2-level mesh.</span><a class="headerlink" href="#tf-coarsedetails" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <p>Our additional level of refinement must specifically target the reactive layer of the flame. As seen
@@ -617,7 +617,7 @@ triple flame propagation velocity, eventually leading to a nearly constant value
 <figure class="align-center" id="tf-accomplete" style="width: 95%">
 <img alt="_images/TF_ACcomplete.png" src="_images/TF_ACcomplete.png" />
 <figcaption>
-<p><span class="caption-number">Fig. 25 </span><span class="caption-text">: Inlet velocity history during the successive simulations performed during this tutorial.</span><a class="headerlink" href="#tf-accomplete" title="Permalink to this image"></a></p>
+<p><span class="caption-number">Fig. 25 </span><span class="caption-text">: Inlet velocity history during the successive simulations performed during this tutorial.</span><a class="headerlink" href="#tf-accomplete" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <p>At this point, the simulation is considered complete.</p>

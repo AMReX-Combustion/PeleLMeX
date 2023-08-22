@@ -12,11 +12,11 @@
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="_static/jquery.js"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/sphinx_highlight.js"></script>
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=d09052ea"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
         <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
@@ -101,7 +101,7 @@
            <div itemprop="articleBody">
              
   <section id="performances">
-<h1>Performances<a class="headerlink" href="#performances" title="Permalink to this heading"></a></h1>
+<h1>Performances<a class="headerlink" href="#performances" title="Link to this heading"></a></h1>
 <p><cite>PeleLMeX</cite> development was driven by the need to create a simulation code efficiently
 leveraging the computational power of ExaScale super-computers. As mentioned earlier,
 <cite>PeleLMeX</cite> is built upon the AMR library <cite>AMReX</cite> and inherits most of its High Performance Computing
@@ -112,9 +112,9 @@ gain of using accelerator within <cite>PeleLMeX</cite> is a moving target as bot
 continously improving. In the following we demonstrate the gain at a given time (specified and
 subject to updates) and on selected platforms.</p>
 <section id="single-node-performances-flamesheet-case">
-<h2>Single node performances: FlameSheet case<a class="headerlink" href="#single-node-performances-flamesheet-case" title="Permalink to this heading"></a></h2>
+<h2>Single node performances: FlameSheet case<a class="headerlink" href="#single-node-performances-flamesheet-case" title="Link to this heading"></a></h2>
 <section id="case-description">
-<h3>Case description<a class="headerlink" href="#case-description" title="Permalink to this heading"></a></h3>
+<h3>Case description<a class="headerlink" href="#case-description" title="Link to this heading"></a></h3>
 <p>The simple case of a laminar premixed flame with harmonic perturbation can be found in
 <cite>Exec/RegTests/FlameSheet</cite>. For the following test, the mixture is composed of
 dodecane and air at ambient temperature and pressure. The chemical mechanism used consist
@@ -147,7 +147,7 @@ using the MAGMA dense-direct solver to solve for the Newton direction within CVO
 of memory available on the different platform and will be specified later on.</p>
 </section>
 <section id="results-on-perlmutter-nersc">
-<h3>Results on Perlmutter (NERSC)<a class="headerlink" href="#results-on-perlmutter-nersc" title="Permalink to this heading"></a></h3>
+<h3>Results on Perlmutter (NERSC)<a class="headerlink" href="#results-on-perlmutter-nersc" title="Link to this heading"></a></h3>
 <p>Perlmutter’s <a class="reference external" href="https://docs.nersc.gov/systems/perlmutter/architecture/#gpu-nodes">GPU nodes</a> consists of a single AMD EPYC 7763 (Milan)
 CPU connected to 4 NVIDIA A100 GPUs. The <a class="reference external" href="https://docs.nersc.gov/systems/perlmutter/architecture/#cpu-nodes">CPU nodes</a> consists of
 two of the same AMD EPYC, 64-cores CPUs. When running on the GPU node, <cite>PeleLMeX</cite> will use 4 MPI ranks with each access to one A100, while
@@ -182,7 +182,7 @@ the most performant to date. The detailed distribution of the computational time
 of the stiff chemistry integration, especially on the GPU.</p>
 </section>
 <section id="results-on-crusher-ornl">
-<h3>Results on Crusher (ORNL)<a class="headerlink" href="#results-on-crusher-ornl" title="Permalink to this heading"></a></h3>
+<h3>Results on Crusher (ORNL)<a class="headerlink" href="#results-on-crusher-ornl" title="Link to this heading"></a></h3>
 <p>Crusher is the testbed for DOE’s first ExaScale platform Frontier. <a class="reference external" href="https://docs.olcf.ornl.gov/systems/crusher_quick_start_guide.html#crusher-compute-nodes">Crusher’s nodes</a> consists of a single AMD EPYC 7A53 (Trento), 64 cores CPU connected to 4 AMD MI250X,
 each containing 2 Graphics Compute Dies (GCDs) for a total of 8 GCDs per node. When running with GPU acceleration, <cite>PeleLMeX</cite> will use 8 MPI ranks with each access to one GCD, while when running on flat MPI, we will use 64 MPI-ranks.</p>
 <p>The FlameSheet case is ran using 2 levels of refinement (3 levels total) and the following domain size and cell count:</p>
@@ -215,7 +215,7 @@ The detailed distribution of the computational time within each run highlight th
 of the stiff chemistry integration, especially on the GPU.</p>
 </section>
 <section id="results-on-summit-ornl">
-<h3>Results on Summit (ORNL)<a class="headerlink" href="#results-on-summit-ornl" title="Permalink to this heading"></a></h3>
+<h3>Results on Summit (ORNL)<a class="headerlink" href="#results-on-summit-ornl" title="Link to this heading"></a></h3>
 <p>Summit was launched in 2018 as the first DOE’s fully GPU-accelerated platform.
 <a class="reference external" href="https://docs.olcf.ornl.gov/systems/summit_user_guide.html#summit-nodes">Summit’s nodes</a> consists
 of a two IBM Power9 CPU connected to 6 NVIDIA V100 GPUs. When running with GPU acceleration, <cite>PeleLMeX</cite> will
@@ -256,7 +256,7 @@ The detailed distribution of the computational time within each run highlight th
 of the stiff chemistry integration,</p>
 </section>
 <section id="system-comparison">
-<h3>System comparison<a class="headerlink" href="#system-comparison" title="Permalink to this heading"></a></h3>
+<h3>System comparison<a class="headerlink" href="#system-comparison" title="Link to this heading"></a></h3>
 <p>It is interesting to compare the performances of each system on a node basis, normalizing by the number of cells
 to provide a node time / million of cells.</p>
 <figure class="align-center" style="width: 60%">
@@ -267,9 +267,9 @@ Perlmutter or Crusher, respectively.</p>
 </section>
 </section>
 <section id="weak-scaling-performances-flamesheet-case">
-<h2>Weak scaling performances: FlameSheet case<a class="headerlink" href="#weak-scaling-performances-flamesheet-case" title="Permalink to this heading"></a></h2>
+<h2>Weak scaling performances: FlameSheet case<a class="headerlink" href="#weak-scaling-performances-flamesheet-case" title="Link to this heading"></a></h2>
 <section id="id3">
-<h3>Case description<a class="headerlink" href="#id3" title="Permalink to this heading"></a></h3>
+<h3>Case description<a class="headerlink" href="#id3" title="Link to this heading"></a></h3>
 <p>Once again the case of a laminar premixed flame with harmonic perturbations is employed. On
 a single node, the case is similar to the one used in the previous section. To perform the
 weak scaling study (characterising the ability of the solver to scale up while keeping the

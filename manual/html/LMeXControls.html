@@ -12,11 +12,11 @@
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="_static/jquery.js"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/sphinx_highlight.js"></script>
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=d09052ea"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
         <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
@@ -104,7 +104,7 @@
            <div itemprop="articleBody">
              
   <section id="pelelmex-controls">
-<h1>PeleLMeX controls<a class="headerlink" href="#pelelmex-controls" title="Permalink to this heading"></a></h1>
+<h1>PeleLMeX controls<a class="headerlink" href="#pelelmex-controls" title="Link to this heading"></a></h1>
 <p id="sec-control">The input file specified on the command line is a free-format text file, one entry per row, that specifies input data processed by the AMReX <code class="docutils literal notranslate"><span class="pre">ParmParse</span></code> module.
 This file needs to specified along with the executable as an <cite>argv</cite> option, for example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">mpirun</span> <span class="o">-</span><span class="n">np</span> <span class="mi">64</span> <span class="o">./</span><span class="n">PeleLMeX2d</span><span class="o">.</span><span class="n">xxx</span><span class="o">.</span><span class="n">ex</span> <span class="n">inputs</span>
@@ -116,7 +116,7 @@ This file needs to specified along with the executable as an <cite>argv</cite> o
 </div>
 <p>The available options are divided into groups: those that control primarily AMReX are prefaced with <cite>amr.</cite>, those that are specific to the PeleLMeX are prefaced by <cite>peleLM.</cite>, while those corresponding to the various pieces of the algorithm are prefaced with specific keys, such that <cite>diffusion</cite>, <cite>nodal_proj</cite>, … as described below.</p>
 <section id="computational-domain-definition">
-<h2>Computational domain definition<a class="headerlink" href="#computational-domain-definition" title="Permalink to this heading"></a></h2>
+<h2>Computational domain definition<a class="headerlink" href="#computational-domain-definition" title="Link to this heading"></a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1">#--------------------GEOMETRY DEFINITION-----------------------</span>
 <span class="n">geometry</span><span class="o">.</span><span class="n">is_periodic</span> <span class="o">=</span> <span class="mi">1</span> <span class="mi">1</span> <span class="mi">0</span>              <span class="c1"># For each dir, 0: non-perio, 1: periodic</span>
 <span class="n">geometry</span><span class="o">.</span><span class="n">coord_sys</span>   <span class="o">=</span> <span class="mi">0</span>                  <span class="c1"># 0 =&gt; cart, 1 =&gt; RZ</span>
@@ -133,7 +133,7 @@ This file needs to specified along with the executable as an <cite>argv</cite> o
 </div>
 </section>
 <section id="grid-amr-parameters">
-<h2>Grid/AMR parameters<a class="headerlink" href="#grid-amr-parameters" title="Permalink to this heading"></a></h2>
+<h2>Grid/AMR parameters<a class="headerlink" href="#grid-amr-parameters" title="Link to this heading"></a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1">#-------------------------AMR CONTROL--------------------------</span>
 <span class="n">amr</span><span class="o">.</span><span class="n">n_cell</span>          <span class="o">=</span> <span class="mi">64</span> <span class="mi">64</span> <span class="mi">128</span>        <span class="c1"># Number of cells on Level 0 in each direction</span>
 <span class="n">amr</span><span class="o">.</span><span class="n">v</span>               <span class="o">=</span> <span class="mi">1</span>                <span class="c1"># [OPT, DEF=0] AMR verbose</span>
@@ -150,7 +150,7 @@ This file needs to specified along with the executable as an <cite>argv</cite> o
 </div>
 </section>
 <section id="load-balancing">
-<h2>Load balancing<a class="headerlink" href="#load-balancing" title="Permalink to this heading"></a></h2>
+<h2>Load balancing<a class="headerlink" href="#load-balancing" title="Link to this heading"></a></h2>
 <p><em>PeleLMeX</em> relies on two distribution maps (see <a class="reference internal" href="Implementation.html"><span class="doc">Source code</span></a> for more details).</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">peleLM</span><span class="o">.</span><span class="n">do_load_balancing</span> <span class="o">=</span> <span class="mi">1</span>                    <span class="c1"># [OPT, DEF=0] Activate load balancing</span>
 <span class="n">peleLM</span><span class="o">.</span><span class="n">load_balancing_method</span> <span class="o">=</span> <span class="n">sfc</span>              <span class="c1"># [OPT, DEF=&quot;sfc&quot;] AmrCore dmap load balancing method</span>
@@ -166,7 +166,7 @@ using either of the last to option, the user must provide a definition for the <
 are defined in the <cite>derUserDefined</cite> function, the first one is used for load balancing.</p>
 </section>
 <section id="time-stepping-parameters">
-<h2>Time stepping parameters<a class="headerlink" href="#time-stepping-parameters" title="Permalink to this heading"></a></h2>
+<h2>Time stepping parameters<a class="headerlink" href="#time-stepping-parameters" title="Link to this heading"></a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1">#-------------------------TIME STEPPING------------------------</span>
 <span class="n">amr</span><span class="o">.</span><span class="n">max_step</span>      <span class="o">=</span> <span class="mi">20</span>                 <span class="c1"># Maximum number of steps</span>
 <span class="n">amr</span><span class="o">.</span><span class="n">stop_time</span>     <span class="o">=</span> <span class="mf">0.001</span>              <span class="c1"># Maximum simulation time [s]</span>
@@ -186,7 +186,7 @@ the first stopping criterion encountered will lead to termination of the simulat
 </div>
 </section>
 <section id="io-parameters">
-<h2>IO parameters<a class="headerlink" href="#io-parameters" title="Permalink to this heading"></a></h2>
+<h2>IO parameters<a class="headerlink" href="#io-parameters" title="Link to this heading"></a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1">#--------------------------IO CONTROL--------------------------</span>
 <span class="n">amr</span><span class="o">.</span><span class="n">plot_int</span>         <span class="o">=</span> <span class="mi">20</span>              <span class="c1"># [OPT, DEF=-1] Frequency (as step #) for writting plot file</span>
 <span class="n">amr</span><span class="o">.</span><span class="n">plot_per</span>         <span class="o">=</span> <span class="mf">0.002</span>           <span class="c1"># [OPT, DEF=-1] Period (time in s) for writting plot file</span>
@@ -206,7 +206,7 @@ the first stopping criterion encountered will lead to termination of the simulat
 </div>
 </section>
 <section id="refinement-controls">
-<h2>Refinement controls<a class="headerlink" href="#refinement-controls" title="Permalink to this heading"></a></h2>
+<h2>Refinement controls<a class="headerlink" href="#refinement-controls" title="Link to this heading"></a></h2>
 <p>Refinement in PeleLMeX is controlled by a set of ‘Tagging’ criterion listed under the <cite>amr.refinement_indicators</cite>
 key. For each criteriq, the user needs to supply a definition. For example, the following provides a complete
 overview of the available controls:</p>
@@ -235,10 +235,10 @@ overview of the available controls:</p>
 to embedded boundaries are discussed below.</p>
 </section>
 <section id="pelelmex-derived-variables">
-<h2>PeleLMeX derived variables<a class="headerlink" href="#pelelmex-derived-variables" title="Permalink to this heading"></a></h2>
+<h2>PeleLMeX derived variables<a class="headerlink" href="#pelelmex-derived-variables" title="Link to this heading"></a></h2>
 <p>The following list of derived variables are available in PeleLMeX:</p>
 <table class="docutils align-default" id="id1">
-<caption><span class="caption-number">Table 7 </span><span class="caption-text">PeleLMeX derived variables</span><a class="headerlink" href="#id1" title="Permalink to this table"></a></caption>
+<caption><span class="caption-number">Table 7 </span><span class="caption-text">PeleLMeX derived variables</span><a class="headerlink" href="#id1" title="Link to this table"></a></caption>
 <colgroup>
 <col style="width: 17%" />
 <col style="width: 17%" />
@@ -331,7 +331,7 @@ so, the user need to copy the Source/DeriveUserDefined.cpp file into his run fol
 components is defined based on the size of the vector returned by pelelm_setuserderives().</p>
 </section>
 <section id="pelelmex-algorithm">
-<h2>PeleLMeX algorithm<a class="headerlink" href="#pelelmex-algorithm" title="Permalink to this heading"></a></h2>
+<h2>PeleLMeX algorithm<a class="headerlink" href="#pelelmex-algorithm" title="Link to this heading"></a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1">#-----------------------PELELMEX CONTROL-----------------------</span>
 <span class="n">peleLM</span><span class="o">.</span><span class="n">v</span> <span class="o">=</span> <span class="mi">1</span>                           <span class="c1"># [OPT, DEF=0] Verbose</span>
 <span class="n">peleLM</span><span class="o">.</span><span class="n">run_mode</span> <span class="o">=</span> <span class="n">normal</span>               <span class="c1"># [OPT, DEF=normal] Switch between time-advance mode (normal) or UnitTest (evaluate)</span>
@@ -356,7 +356,7 @@ components is defined based on the size of the vector returned by pelelm_setuser
 </div>
 </section>
 <section id="transport-coeffs-and-les">
-<h2>Transport coeffs and LES<a class="headerlink" href="#transport-coeffs-and-les" title="Permalink to this heading"></a></h2>
+<h2>Transport coeffs and LES<a class="headerlink" href="#transport-coeffs-and-les" title="Link to this heading"></a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1">#-----------------------DIFFUSION AND LES MODEL CONTROL-----------------------</span>
 <span class="n">peleLM</span><span class="o">.</span><span class="n">unity_Le</span> <span class="o">=</span> <span class="mi">0</span>                    <span class="c1"># [OPT, DEF=0] Use the unity Lewis number approximation for diffusivities</span>
 <span class="n">peleLM</span><span class="o">.</span><span class="n">Prandtl</span> <span class="o">=</span> <span class="mf">0.7</span>                   <span class="c1"># [OPT, DEF=0.7] If unity_Le or doing LES, specifies the Prandtl number</span>
@@ -370,7 +370,7 @@ components is defined based on the size of the vector returned by pelelm_setuser
 </div>
 </section>
 <section id="chemistry-integrator">
-<h2>Chemistry integrator<a class="headerlink" href="#chemistry-integrator" title="Permalink to this heading"></a></h2>
+<h2>Chemistry integrator<a class="headerlink" href="#chemistry-integrator" title="Link to this heading"></a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1">#-----------------------CHEMISTRY CONTROL----------------------</span>
 <span class="n">peleLM</span><span class="o">.</span><span class="n">chem_integrator</span>   <span class="o">=</span> <span class="s2">&quot;ReactorCvode&quot;</span>   <span class="c1"># Chemistry integrator, from PelePhysics available list</span>
 <span class="n">peleLM</span><span class="o">.</span><span class="n">use_typ_vals_chem</span> <span class="o">=</span> <span class="mi">1</span>                <span class="c1"># [OPT, DEF=1] Use Typical values to scale components in the reactors</span>
@@ -384,7 +384,7 @@ components is defined based on the size of the vector returned by pelelm_setuser
 <p>Note that the last four parameters belong to the Reactor class of PelePhysics but are specified here for completeness. In particular, CVODE is the adequate choice of integrator to tackle PeleLMeX large time step sizes. Several linear solvers are available depending on whether or not GPU are employed: on CPU, <cite>dense_direct</cite> is a finite-difference direct solver, <cite>denseAJ_direct</cite> is an analytical-jacobian direct solver (preferred choice), <cite>sparse_direct</cite> is an analytical-jacobian sparse direct solver based on the KLU library and <cite>GMRES</cite> is a matrix-free iterative solver; on GPU <cite>GMRES</cite> is a matrix-free iterative solver (available on all the platforms), <cite>sparse_direct</cite> is a batched block-sparse direct solve based on NVIDIA’s cuSparse (only with CUDA), <cite>magma_direct</cite> is a batched block-dense direct solve based on the MAGMA library (available with CUDA and HIP.</p>
 </section>
 <section id="embedded-geometry">
-<h2>Embedded Geometry<a class="headerlink" href="#embedded-geometry" title="Permalink to this heading"></a></h2>
+<h2>Embedded Geometry<a class="headerlink" href="#embedded-geometry" title="Link to this heading"></a></h2>
 <p><cite>PeleLMeX</cite> geomtry relies on AMReX implementation of the EB method. Simple geometrical objects
 can thus be constructed using <a class="reference external" href="https://amrex-codes.github.io/amrex/docs_html/EB.html">AMReX internal parser</a>.
 For instance, setting up a sphere of radius 5 mm can be achieved:</p>
@@ -436,7 +436,7 @@ in <code class="docutils literal notranslate"><span class="pre">Exec/RegTest/EB_
 </div>
 </section>
 <section id="linear-solvers">
-<h2>Linear solvers<a class="headerlink" href="#linear-solvers" title="Permalink to this heading"></a></h2>
+<h2>Linear solvers<a class="headerlink" href="#linear-solvers" title="Link to this heading"></a></h2>
 <p>Linear solvers are a key component of PeleLMeX algorithm, separate controls are dedicated to the various solver (MAC projection, nodal projection, diffusion, …)</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1">#-------------------------LINEAR SOLVERS-----------------------</span>
 <span class="n">nodal_proj</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="mi">1</span>                      <span class="c1"># [OPT, DEF=0] Verbose of the nodal projector</span>
@@ -460,7 +460,7 @@ in <code class="docutils literal notranslate"><span class="pre">Exec/RegTest/EB_
 </div>
 </section>
 <section id="active-control">
-<h2>Active control<a class="headerlink" href="#active-control" title="Permalink to this heading"></a></h2>
+<h2>Active control<a class="headerlink" href="#active-control" title="Link to this heading"></a></h2>
 <p><cite>PeleLMeX</cite> includes an active control mechanism to enable statistically steady simulations of flames
 maintaining the flame at a fixed position in the domain. An example of this feature is provided in
 the triple flame tutorial <a class="reference internal" href="Tutorials_TripleFlame.html"><span class="doc">A simple triple flame</span></a>.</p>
@@ -478,7 +478,7 @@ the user to set the inflow velocity. The following options are available when us
 <span class="n">active_control</span><span class="o">.</span><span class="n">height</span> <span class="o">=</span> <span class="mf">0.01</span>              <span class="c1"># [OPT, DEF=0.0] Where is the flame held ?</span>
 <span class="n">active_control</span><span class="o">.</span><span class="n">v</span> <span class="o">=</span> <span class="mi">1</span>                      <span class="c1"># [OPT, DEF=0] verbose</span>
 <span class="n">active_control</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="mi">1</span>                 <span class="c1"># [OPT, DEF=2] Controller: 1 - Linear, 2 - Quadratic, 3 - Weighted quadratic</span>
-<span class="n">active_control</span><span class="o">.</span><span class="n">velMax</span> <span class="o">=</span> <span class="mf">2.0</span>               <span class="c1"># [OPT, DEF=0.0] limit inlet velocity</span>
+<span class="n">active_control</span><span class="o">.</span><span class="n">velMax</span> <span class="o">=</span> <span class="mf">2.0</span>               <span class="c1"># [OPT, DEF=-1.0] limit inlet velocity, only used when positive</span>
 <span class="n">active_control</span><span class="o">.</span><span class="n">changeMax</span> <span class="o">=</span> <span class="mf">0.1</span>            <span class="c1"># [OPT, DEF=1.0] limit inlet velocity changes (absolute m/s)</span>
 <span class="n">active_control</span><span class="o">.</span><span class="n">flow_dir</span>  <span class="o">=</span> <span class="mi">1</span>              <span class="c1"># [OPT, DEF=AMREX_SPACEDIM-1] flame main direction</span>
 <span class="n">active_control</span><span class="o">.</span><span class="n">AC_history</span>  <span class="o">=</span> <span class="n">AChist</span>       <span class="c1"># [OPT, DEF=AC_history] Control history file, read upon restart</span>
@@ -489,7 +489,7 @@ the user to set the inflow velocity. The following options are available when us
 </div>
 </section>
 <section id="run-time-diagnostics">
-<h2>Run-time diagnostics<a class="headerlink" href="#run-time-diagnostics" title="Permalink to this heading"></a></h2>
+<h2>Run-time diagnostics<a class="headerlink" href="#run-time-diagnostics" title="Link to this heading"></a></h2>
 <p><cite>PeleLMeX</cite> provides a few diagnostics to check you simulations while it is running as well as adding basic analysis ingredients.</p>
 <p>It is often usefull to have an estimate of integrated quantities (kinetic energy, heat release rate, ,..), state extremas
 or other overall balance information to get a sense of the status and sanity of the simulation. To this end, it is possible
@@ -583,7 +583,7 @@ fine-covered regions are masked. The following provide examples for each diagnos
 </div>
 </section>
 <section id="run-time-control">
-<h2>Run-time control<a class="headerlink" href="#run-time-control" title="Permalink to this heading"></a></h2>
+<h2>Run-time control<a class="headerlink" href="#run-time-control" title="Link to this heading"></a></h2>
 <p>Following some of AMReX’s AmrLevel class implementation, PeleLMeX provides a couple of triggers to interact with the code while
 it is running. This can be done by adding an empty file to the folder where the simulation is currently running using for
 example:</p>
@@ -592,7 +592,7 @@ example:</p>
 </div>
 <p>The list of available triggers is:</p>
 <table class="docutils align-default" id="id2">
-<caption><span class="caption-number">Table 8 </span><span class="caption-text">PeleLMeX run-time triggers</span><a class="headerlink" href="#id2" title="Permalink to this table"></a></caption>
+<caption><span class="caption-number">Table 8 </span><span class="caption-text">PeleLMeX run-time triggers</span><a class="headerlink" href="#id2" title="Link to this table"></a></caption>
 <colgroup>
 <col style="width: 33%" />
 <col style="width: 67%" />

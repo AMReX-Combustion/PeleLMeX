@@ -12,11 +12,11 @@
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="_static/jquery.js"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/sphinx_highlight.js"></script>
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=d09052ea"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
         <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
@@ -97,11 +97,11 @@
            <div itemprop="articleBody">
              
   <section id="source-code">
-<span id="sec-code"></span><h1>Source code<a class="headerlink" href="#source-code" title="Permalink to this heading"></a></h1>
+<span id="sec-code"></span><h1>Source code<a class="headerlink" href="#source-code" title="Link to this heading"></a></h1>
 <p>The following provides an overview of <em>PeleLMeX</em> source code, basic information on the data structure and is
 useful for any user intending to use and/or do some development in the code.</p>
 <section id="overview-of-source-code">
-<h2>Overview of source code<a class="headerlink" href="#overview-of-source-code" title="Permalink to this heading"></a></h2>
+<h2>Overview of source code<a class="headerlink" href="#overview-of-source-code" title="Link to this heading"></a></h2>
 <p><em>PeleLMeX</em> is based upon AMReX’s <a class="reference external" href="https://amrex-codes.github.io/amrex/docs_html/AmrCore.html">AmrCore</a> from which it inherits
 an AMR hierarchy data structure and basic regridding functionnalities. The code is entirely written in C++, with low level
 compute-intensive kernels implemented as lambda functions to seamlessly run on CPU and various GPU backends through AMReX
@@ -131,9 +131,9 @@ in <code class="docutils literal notranslate"><span class="pre">Exec/RegTests</s
 </ul>
 </section>
 <section id="data-structure-and-containers">
-<h2>Data structure and containers<a class="headerlink" href="#data-structure-and-containers" title="Permalink to this heading"></a></h2>
+<h2>Data structure and containers<a class="headerlink" href="#data-structure-and-containers" title="Link to this heading"></a></h2>
 <section id="amrex-101">
-<h3>AMReX 101<a class="headerlink" href="#amrex-101" title="Permalink to this heading"></a></h3>
+<h3>AMReX 101<a class="headerlink" href="#amrex-101" title="Link to this heading"></a></h3>
 <p>The basic AMReX`s data structure is the <a class="reference external" href="https://amrex-codes.github.io/amrex/docs_html/Basics.html#fabarray-multifab-and-imultifab">MultiFab</a>
 (historically, multi Fortran Array Box (FAB)).
 Within the block-structured AMR approach of AMReX, the domain is decomposed into non-overlapping rectangular <cite>boxes</cite>,
@@ -170,7 +170,7 @@ from a third MultiFab <cite>advTerm</cite>:</p>
 to get more familiar with AMReX data structures and environment.</p>
 </section>
 <section id="pelelmex-state-and-advance-containers">
-<h3><em>PeleLMeX</em> state and advance containers<a class="headerlink" href="#pelelmex-state-and-advance-containers" title="Permalink to this heading"></a></h3>
+<h3><em>PeleLMeX</em> state and advance containers<a class="headerlink" href="#pelelmex-state-and-advance-containers" title="Link to this heading"></a></h3>
 <p>The state vector of <em>PeleLMeX</em> contains the 2 or 3 components of velocity, the mixture density, species density (rhoYs),
 rhoH, temperature and the thermodynamic pressure. The state components are stored in a cell-centered MultiFab with
 <cite>NVAR</cite> components. Additionnally, the perturbational pressure stored at the nodes is contained in a separate MultiFab.
@@ -220,7 +220,7 @@ are freed at the end of the advance function, and are passed around in the funct
 </section>
 </section>
 <section id="parallelism">
-<h2>Parallelism<a class="headerlink" href="#parallelism" title="Permalink to this heading"></a></h2>
+<h2>Parallelism<a class="headerlink" href="#parallelism" title="Link to this heading"></a></h2>
 <p><em>PeleLMeX</em> inherits the MPI+X approach from the AMReX library, where X can be any of OpenMP on many-cores machines,
 and CUDA, HIP or SYCL for heterogeneous architectures.
 The reader is referred to <a class="reference external" href="https://amrex-codes.github.io/amrex/docs_html/GPU.html">AMReX GPU documentation</a> for more details on
@@ -254,7 +254,7 @@ only if a significantly better new <cite>DMap</cite> can be obtained, with the t
 <cite>peleLM.load_balancing_efficiency_threshold</cite>.</p>
 </section>
 <section id="debugging">
-<h2>Debugging<a class="headerlink" href="#debugging" title="Permalink to this heading"></a></h2>
+<h2>Debugging<a class="headerlink" href="#debugging" title="Link to this heading"></a></h2>
 <p>The first step to debug anyh addition or undefined behavior of <em>PeleLMeX</em> is to turn the <code class="docutils literal notranslate"><span class="pre">DEBUG</span></code> flag <code class="docutils literal notranslate"><span class="pre">ON</span></code> in the
 GNUmakefile and activate AMReX`s floating point exception traps in the input file:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>amrex.fpe_trap_invalid = 1
