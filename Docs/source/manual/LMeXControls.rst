@@ -384,7 +384,7 @@ the user to set the inflow velocity. The following options are available when us
     active_control.height = 0.01              # [OPT, DEF=0.0] Where is the flame held ?
     active_control.v = 1                      # [OPT, DEF=0] verbose
     active_control.method = 1                 # [OPT, DEF=2] Controller: 1 - Linear, 2 - Quadratic, 3 - Weighted quadratic
-    active_control.velMax = 2.0               # [OPT, DEF=0.0] limit inlet velocity
+    active_control.velMax = 2.0               # [OPT, DEF=-1.0] limit inlet velocity, only used when positive
     active_control.changeMax = 0.1            # [OPT, DEF=1.0] limit inlet velocity changes (absolute m/s)
     active_control.flow_dir  = 1              # [OPT, DEF=AMREX_SPACEDIM-1] flame main direction
     active_control.AC_history  = AChist       # [OPT, DEF=AC_history] Control history file, read upon restart
