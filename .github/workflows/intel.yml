@@ -28,6 +28,7 @@ jobs:
          PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
          PELELMEX_HOME: ${GITHUB_WORKSPACE}
          AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
+         SUNDIALS_HOME: ${GITHUB_WORKSPACE}/build/sundials
       run: |
         set +e
         source /opt/intel/oneapi/setvars.sh
@@ -54,6 +55,7 @@ jobs:
          PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
          PELELMEX_HOME: ${GITHUB_WORKSPACE}
          AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
+         SUNDIALS_HOME: ${GITHUB_WORKSPACE}/build/sundials
       run: |
         set +e
         source /opt/intel/oneapi/setvars.sh
