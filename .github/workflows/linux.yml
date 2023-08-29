@@ -30,6 +30,7 @@ jobs:
          PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
          PELELMEX_HOME: ${GITHUB_WORKSPACE}
          AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
+         SUNDIALS_HOME : ${GITHUB_WORKSPACE}/build/sundials
       run: |
         cd Exec/RegTests/FlameSheet/
         make help
@@ -58,6 +59,7 @@ jobs:
          PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
          PELELMEX_HOME: ${GITHUB_WORKSPACE}
          AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
+         SUNDIALS_HOME : ${GITHUB_WORKSPACE}/build/sundials
       run: |
         cd Exec/RegTests/FlameSheet/
         make TPL COMP=gnu
@@ -93,6 +95,7 @@ jobs:
          PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
          PELELMEX_HOME: ${GITHUB_WORKSPACE}
          AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
+         SUNDIALS_HOME : ${GITHUB_WORKSPACE}/build/sundials
       run: |
         cd Exec/RegTests/FlameSheet/
         make TPL COMP=gnu USE_OMP=TRUE
@@ -116,6 +119,7 @@ jobs:
          PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
          PELELMEX_HOME: ${GITHUB_WORKSPACE}
          AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
+         SUNDIALS_HOME : ${GITHUB_WORKSPACE}/build/sundials
       working-directory: ./Exec/RegTests/PeriodicCases/
       run: |
         make TPL COMP=gnu USE_MPI=FALSE
@@ -143,6 +147,7 @@ jobs:
          PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
          PELELMEX_HOME: ${GITHUB_WORKSPACE}
          AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
+         SUNDIALS_HOME : ${GITHUB_WORKSPACE}/build/sundials
       working-directory: ./Exec/RegTests/HotBubble/
       run: |
         make TPL COMP=gnu USE_MPI=TRUE
@@ -170,6 +175,7 @@ jobs:
          PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
          PELELMEX_HOME: ${GITHUB_WORKSPACE}
          AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
+         SUNDIALS_HOME : ${GITHUB_WORKSPACE}/build/sundials
       working-directory: ./Exec/RegTests/HotBubble/
       run: |
         make TPL COMP=gnu DEBUG=TRUE USE_MPI=FALSE
@@ -197,6 +203,7 @@ jobs:
          PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
          PELELMEX_HOME: ${GITHUB_WORKSPACE}
          AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
+         SUNDIALS_HOME : ${GITHUB_WORKSPACE}/build/sundials
       working-directory: ./Exec/RegTests/EnclosedFlame/
       run: |
         make TPL COMP=gnu USE_MPI=TRUE
@@ -224,6 +231,7 @@ jobs:
          PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
          PELELMEX_HOME: ${GITHUB_WORKSPACE}
          AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
+         SUNDIALS_HOME : ${GITHUB_WORKSPACE}/build/sundials
       working-directory: ./Exec/RegTests/EB_FlowPastCylinder/
       run: |
         make TPL COMP=gnu USE_MPI=TRUE DEBUG=TRUE
@@ -252,6 +260,7 @@ jobs:
          PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
          PELELMEX_HOME: ${GITHUB_WORKSPACE}
          AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
+         SUNDIALS_HOME : ${GITHUB_WORKSPACE}/build/sundials
       working-directory: ./Exec/RegTests/HITDecay/
       run: |
         make TPL COMP=gnu USE_MPI=TRUE
@@ -288,6 +297,7 @@ jobs:
          PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
          PELELMEX_HOME: ${GITHUB_WORKSPACE}
          AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
+         SUNDIALS_HOME : ${GITHUB_WORKSPACE}/build/sundials
       working-directory: ./Exec/RegTests/EB_PipeFlow/
       run: |
         make TPL COMP=gnu USE_MPI=TRUE
@@ -315,6 +325,7 @@ jobs:
          PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
          PELELMEX_HOME: ${GITHUB_WORKSPACE}
          AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
+         SUNDIALS_HOME : ${GITHUB_WORKSPACE}/build/sundials
       working-directory: ./Exec/RegTests/TurbInflow/TurbFileHIT
       run: |
         make -j 2 COMP=gnu
@@ -325,6 +336,7 @@ jobs:
          PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
          PELELMEX_HOME: ${GITHUB_WORKSPACE}
          AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
+         SUNDIALS_HOME : ${GITHUB_WORKSPACE}/build/sundials
       working-directory: ./Exec/RegTests/TurbInflow/
       run: |
         make TPL COMP=gnu USE_MPI=TRUE DEBUG=TRUE
@@ -365,6 +377,7 @@ jobs:
          PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
          PELELMEX_HOME: ${GITHUB_WORKSPACE}
          AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
+         SUNDIALS_HOME : ${GITHUB_WORKSPACE}/build/sundials
          PELEMP_HOME: ${GITHUB_WORKSPACE}/build/PeleMP
       working-directory: ./Exec/RegTests/SprayTest/
       run: |
