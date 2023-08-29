@@ -1,5 +1,5 @@
 PELELMEX_HOME ?= ../
-AMREX_HOME ?= $(abspath $(lastword $(PELELMEX_HOME)/Submodules/AMReX))
+AMREX_HOME ?= $(abspath $(lastword $(PELELMEX_HOME)/Submodules/amrex))
 PELE_PHYSICS_HOME ?= $(abspath $(lastword $(PELELMEX_HOME)/Submodules/PelePhysics))
 AMREX_HYDRO_HOME ?= $(abspath $(lastword $(PELELMEX_HOME)/Submodules/AMReX-Hydro))
 SUNDIALS_HOME ?= $(abspath $(lastword $(PELELMEX_HOME)/Submodules/sundials))

@@ -11,3 +11,5 @@ git clone https://github.com/AMReX-Codes/AMReX-Hydro.git build/AMReX-Hydro
 export AMREX_HYDRO_HOME=${PWD}/build/AMReX-Hydro
 git clone https://github.com/AMReX-Combustion/PeleMP.git build/PeleMP
 export PELEMP_HOME=${PWD}/build/PeleMP
+git clone https://github.com/LLNL/sundials.git build/sundials
+export SUNDIALS_HOME=${PWD}/build/sundials
