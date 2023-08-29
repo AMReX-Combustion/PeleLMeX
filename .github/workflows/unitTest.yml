@@ -36,6 +36,7 @@ jobs:
               echo "AMREX_HOME=${{github.workspace}}/buildRef/PeleLMeX/Submodules/amrex" >> $GITHUB_ENV
               echo "PELE_PHYSICS_HOME=${{github.workspace}}/buildRef/PeleLMeX/Submodules/PelePhysics" >> $GITHUB_ENV
               echo "AMREX_HYDRO_HOME=${{github.workspace}}/buildRef/PeleLMeX/Submodules/AMReX-Hydro" >> $GITHUB_ENV
+              echo "SUNDIALS_HOME=${{github.workspace}}/buildRef/PeleLMeX/Submodules/sundials" >> $GITHUB_ENV
               echo "PELELMEX_HOME=${{github.workspace}}/buildRef/PeleLMeX/" >> $GITHUB_ENV
     - name: Build Reference PeleLMeX
       working-directory: ${{env.PELELMEX_HOME}}/Exec/UnitTests/DodecaneLu
@@ -51,6 +52,7 @@ jobs:
               echo "AMREX_HOME=${{github.workspace}}/Submodules/amrex" >> $GITHUB_ENV
               echo "PELE_PHYSICS_HOME=${{github.workspace}}/Submodules/PelePhysics" >> $GITHUB_ENV
               echo "AMREX_HYDRO_HOME=${{github.workspace}}/Submodules/AMReX-Hydro" >> $GITHUB_ENV
+              echo "SUNDIALS_HOME=${{github.workspace}}/Submodules/sundials" >> $GITHUB_ENV
               echo "PELELMEX_HOME=${{github.workspace}}" >> $GITHUB_ENV
     - name: Build AMReX Tools
       working-directory: ${{env.AMREX_HOME}}/Tools/Plotfile

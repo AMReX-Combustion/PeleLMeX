@@ -28,6 +28,7 @@ jobs:
          PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
          PELELMEX_HOME: ${GITHUB_WORKSPACE}
          AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
+         SUNDIALS_HOME: ${GITHUB_WORKSPACE}/build/sundials
       run: |
         source /etc/profile.d/rocm.sh
         hipcc --version
@@ -51,6 +52,7 @@ jobs:
          PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
          PELELMEX_HOME: ${GITHUB_WORKSPACE}
          AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
+         SUNDIALS_HOME: ${GITHUB_WORKSPACE}/build/sundials
       run: |
         source /etc/profile.d/rocm.sh
         hipcc --version
