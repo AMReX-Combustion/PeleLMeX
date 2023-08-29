@@ -242,6 +242,7 @@ The next few lines specify AMReX compilation options and compiler selection: ::
    USE_OMP         = FALSE
    USE_CUDA        = FALSE
    USE_HIP         = FALSE
+   USE_SYCL        = FALSE
 
 In `PeleLMeX`, the chemistry model (set of species, their thermodynamic and transport properties as well as the
 description of their of chemical interactions) is specified at compile time. Chemistry models available

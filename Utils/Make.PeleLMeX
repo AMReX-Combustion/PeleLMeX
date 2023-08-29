@@ -105,9 +105,9 @@ include $(PELE_PHYSICS_HOME)/ThirdParty/Make.ThirdParty
 #---------------
 # AMReX-Hydro sources
 #---------------
-Hdirs := Slopes Godunov MOL Utils Projections BDS
+Hdirs := Godunov MOL Utils Projections BDS
 ifeq ($(USE_EB), TRUE)
-    Hdirs += Redistribution EBGodunov EBMOL
+    Hdirs += EBGodunov EBMOL
 endif
 Bpack += $(foreach dir, $(Hdirs), $(AMREX_HYDRO_HOME)/$(dir)/Make.package)
 Blocs += $(foreach dir, $(Hdirs), $(AMREX_HYDRO_HOME)/$(dir))

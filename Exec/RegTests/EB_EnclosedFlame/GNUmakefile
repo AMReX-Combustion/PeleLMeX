@@ -10,8 +10,8 @@ DEBUG           = FALSE
 PRECISION       = DOUBLE
 VERBOSE         = FALSE
 TINY_PROFILE    = FALSE
-USE_EB 			= TRUE
-USE_HYPRE		= FALSE
+USE_EB 		= TRUE
+USE_HYPRE	= FALSE
 
 # Compilation
 COMP            = gnu
@@ -19,6 +19,7 @@ USE_MPI         = TRUE
 USE_OMP         = FALSE
 USE_CUDA        = FALSE
 USE_HIP         = FALSE
+USE_SYCL        = FALSE
 
 # PeleLMeX
 

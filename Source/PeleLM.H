@@ -1541,7 +1541,7 @@ class PeleLM : public amrex::AmrCore {
    amrex::Real m_ctrl_scale{0.0};
    amrex::Real m_ctrl_zBase{0.0};
    amrex::Real m_ctrl_h{0.0};
-   amrex::Real m_ctrl_velMax{0.0};
+   amrex::Real m_ctrl_velMax{-1.0};
    amrex::Real m_ctrl_temperature{-1.0};
    int m_ctrl_verbose{0};
    int m_ctrl_NavgPts{3};

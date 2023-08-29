@@ -6,7 +6,7 @@
 #ifdef AMREX_USE_EB
 #include <AMReX_EB2.H>
 #include <AMReX_EB2_IF.H>
-#include <hydro_redistribution.H>
+#include <AMReX_EB_Redistribution.H>
 #include <AMReX_EBMFInterpolater.H>
 
 using namespace amrex;
@@ -108,11 +108,11 @@ void PeleLM::redistributeAofS(int a_lev,
                     [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
                     { scratch(i,j,k) = 1.;});
                 }
-                Redistribution::Apply( bx, ncomp, aofs_ar, divT_ar,
-                                       a_state.const_array(mfi, state_comp), scratch, flag,
-                                       AMREX_D_DECL(apx,apy,apz), vfrac_arr,
-                                       AMREX_D_DECL(fcx,fcy,fcz), ccc, d_bc,
-                                       a_geom, a_dt, m_adv_redist_type );
+                ApplyRedistribution( bx, ncomp, aofs_ar, divT_ar,
+                                     a_state.const_array(mfi, state_comp), scratch, flag,
+                                     AMREX_D_DECL(apx,apy,apz), vfrac_arr,
+                                     AMREX_D_DECL(fcx,fcy,fcz), ccc, d_bc,
+                                     a_geom, a_dt, m_adv_redist_type );
             } else {
                 // Move data to AofS for regular bx
                 amrex::ParallelFor(bx, ncomp, [=]
@@ -232,11 +232,11 @@ void PeleLM::redistributeDiff(int a_lev,
                     [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
                     { scratch(i,j,k) = 1.;});
                 }
-                Redistribution::Apply( bx, ncomp, diff_ar, divT_ar,
-                                       a_state.const_array(mfi, state_comp), scratch, flag,
-                                       AMREX_D_DECL(apx,apy,apz), vfrac_arr,
-                                       AMREX_D_DECL(fcx,fcy,fcz), ccc, d_bc,
-                                       a_geom, a_dt, m_diff_redist_type );
+                ApplyRedistribution( bx, ncomp, diff_ar, divT_ar,
+                                     a_state.const_array(mfi, state_comp), scratch, flag,
+                                     AMREX_D_DECL(apx,apy,apz), vfrac_arr,
+                                     AMREX_D_DECL(fcx,fcy,fcz), ccc, d_bc,
+                                     a_geom, a_dt, m_diff_redist_type );
             } else {
                 // Move data to AofS for regular bx
                 amrex::ParallelFor(bx, ncomp, [=]
@@ -353,19 +353,19 @@ void PeleLM::initialRedistribution()
                     if ( m_incompressible ) {
                         auto bcRec = fetchBCRecArray(0,AMREX_SPACEDIM);
                         auto bcRec_d = convertToDeviceVector(bcRec);
-                        Redistribution::ApplyToInitialData( bx, AMREX_SPACEDIM,
-                                                            ldataNew_p->state.array(mfi,0), ldataOld_p->state.array(mfi,0),
-                                                            flag, AMREX_D_DECL(apx, apy, apz), vfrac,
-                                                            AMREX_D_DECL(fcx, fcy, fcz), ccc,
-                                                            bcRec_d.dataPtr(), geom[lev], m_adv_redist_type);
+                        ApplyInitialRedistribution( bx, AMREX_SPACEDIM,
+                                                    ldataNew_p->state.array(mfi,0), ldataOld_p->state.array(mfi,0),
+                                                    flag, AMREX_D_DECL(apx, apy, apz), vfrac,
+                                                    AMREX_D_DECL(fcx, fcy, fcz), ccc,
+                                                    bcRec_d.dataPtr(), geom[lev], m_adv_redist_type);
                     } else {
                         auto bcRec = fetchBCRecArray(0,NVAR);
                         auto bcRec_d = convertToDeviceVector(bcRec);
-                        Redistribution::ApplyToInitialData( bx, NVAR,
-                                                            ldataNew_p->state.array(mfi,0), ldataOld_p->state.array(mfi,0),
-                                                            flag, AMREX_D_DECL(apx, apy, apz), vfrac,
-                                                            AMREX_D_DECL(fcx, fcy, fcz), ccc,
-                                                            bcRec_d.dataPtr(), geom[lev], m_adv_redist_type);
+                        ApplyInitialRedistribution( bx, NVAR,
+                                                    ldataNew_p->state.array(mfi,0), ldataOld_p->state.array(mfi,0),
+                                                    flag, AMREX_D_DECL(apx, apy, apz), vfrac,
+                                                    AMREX_D_DECL(fcx, fcy, fcz), ccc,
+                                                    bcRec_d.dataPtr(), geom[lev], m_adv_redist_type);
                     }
                 }
             }
