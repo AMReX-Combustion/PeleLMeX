@@ -53,13 +53,14 @@ Follow the steps listed below to get to this point:
     cd PeleLMeX/Exec/RegTests/TripleFLame
 
 Note that the makefile system is set up such that default paths are automatically set to the
-submodules obtained with the recursive *git clone*, however the user can set its own dependencies
+submodules obtained with the recursive *git clone*, however the user can set their own dependencies
 in the `GNUmakefile` by updating the top-most lines as follows: ::
 
        PELELMEX_HOME     = <path_to_PeleLMeX>
        AMREX_HOME        = <path_to_MyAMReX>
        AMREX_HYDRO_HOME  = <path_to_MyAMReXHydro>
        PELE_PHYSICS_HOME = <path_to_MyPelePhysics>
+       SUNDIALS_HOME     = <path_to_MySUNDIALS>
 
 or directly through shell environement variables (using *bash* for instance): ::
 
@@ -67,6 +68,10 @@ or directly through shell environement variables (using *bash* for instance): ::
        export AMREX_HOME=<path_to_MyAMReX>
        export AMREX_HYDRO_HOME=<path_to_MyAMReXHydro>
        export PELE_PHYSICS_HOME=<path_to_MyPelePhysics>
+       export SUNDIALS_HOME=<path_to_MySUNDIALS>
+
+Note that using the first option will overwrite any
+environement variables you might have previously defined when using this `GNUmakefile`.
 
 You're good to go !
 
@@ -560,4 +565,3 @@ At this point, the simulation is considered complete.
 .. [PCI2007] S. Chung, Stabilization, propagation and instability of tribrachial triple flames, Proceedings of the Combustion Institute 31 (2007) 877–892
 .. [CF1990] R. Bilger, S. Starner, R. Kee, On reduced mechanisms for methane-air combustion in nonpremixed flames, Combustion and Flames 80 (1990) 135-149
 .. [CAMCS2006] J. Bell, M. Day, J. Grcar, M. Lijewski, Active Control for Statistically Stationary Turbulent PremixedFlame Simulations, Communications in Applied Mathematics and Computational Science 1 (2006) 29-51
-

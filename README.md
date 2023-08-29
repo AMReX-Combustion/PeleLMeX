@@ -60,7 +60,7 @@ Finally, when building with GPU support, CUDA >= 11 is required with NVIDIA GPUs
 ### Download
 
 The prefered method consist in cloning the *PeleLMeX* and its submodules using a recursive `git clone`:
-([amrex](https://github.com/AMReX-Codes/amrex), [AMReX-Hydro](https://github.com/AMReX-Codes/AMReX-Hydro) and [PelePhysics](https://github.com/AMReX-Combustion/PelePhysics), [PeleMP](https://github.com/AMReX-Combustion/PeleMP)) using:
+([amrex](https://github.com/AMReX-Codes/amrex), [AMReX-Hydro](https://github.com/AMReX-Codes/AMReX-Hydro), [PelePhysics](https://github.com/AMReX-Combustion/PelePhysics), [PeleMP](https://github.com/AMReX-Combustion/PeleMP)), and [SUNDIALS](https://github.com/LLNL/sundials) using:
 
 ```
 git clone --recursive https://github.com/AMReX-Combustion/PeleLMeX.git
@@ -76,6 +76,7 @@ export AMREX_HOME=${PELELMEX_HOME}/Submodules/amrex
 export AMREX_HYDRO_HOME=${PELELMEX_HOME}/Submodules/AMReX-Hydro
 export PELE_PHYSICS_HOME=${PELELMEX_HOME}/Submodules/PelePhysics
 export PELEMP_HOME=${PELELMEX_HOME}/Submodules/PeleMP
+export SUNDIALS_HOME=${PELELMEX_HOME}/Submodules/sundials
 ```
 
 ### Compilation
