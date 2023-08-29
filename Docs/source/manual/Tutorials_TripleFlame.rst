@@ -62,7 +62,7 @@ in the `GNUmakefile` by updating the top-most lines as follows: ::
        PELE_PHYSICS_HOME = <path_to_MyPelePhysics>
        SUNDIALS_HOME     = <path_to_MySUNDIALS>
 
-or directly through shell environement variables (using *bash* for instance): ::
+or directly through shell environment variables (using *bash* for instance): ::
 
        export PELELMEX_HOME=<path_to_PeleLMeX>
        export AMREX_HOME=<path_to_MyAMReX>
@@ -71,7 +71,7 @@ or directly through shell environement variables (using *bash* for instance): ::
        export SUNDIALS_HOME=<path_to_MySUNDIALS>
 
 Note that using the first option will overwrite any
-environement variables you might have previously defined when using this `GNUmakefile`.
+environment variables you might have previously defined when using this `GNUmakefile`.
 
 You're good to go !
 
@@ -264,12 +264,12 @@ mechanisms and more information regarding the EOS, chemistry and transport model
     Transport_Model := Simple
 
 Finally, `PeleLMeX` utilizes the chemical kinetic ODE integrator `CVODE <https://computing.llnl.gov/projects/sundials/cvode>`_. This
-Third Party Librabry (TPL) is not shipped with the `PeleLMeX` distribution but can be readily installed through the makefile system
+Third Party Librabry (TPL) is shipped as a submodule of the `PeleLMeX` distribution and can be readily installed through the makefile system
 of `PeleLMeX`. To do so, type in the following command: ::
 
     make TPL
 
-Note that the installation of `CVODE` requires CMake 3.17.1 or higher.
+Note that the installation of `CVODE` requires CMake 3.23.1 or higher.
 
 You are now ready to build your first `PeleLMeX` executable !! Type in: ::
 

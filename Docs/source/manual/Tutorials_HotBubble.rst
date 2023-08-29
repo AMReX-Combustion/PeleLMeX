@@ -41,7 +41,7 @@ in the `GNUmakefile` by updating the top-most lines as follows: ::
        PELE_PHYSICS_HOME = <path_to_MyPelePhysics>
        SUNDIALS_HOME     = <path_to_MySUNDIALS>
 
-or directly through shell environement variables (using *bash* for instance): ::
+or directly through shell environment variables (using *bash* for instance): ::
 
        export PELELMEX_HOME=<path_to_PeleLMeX>
        export AMREX_HOME=<path_to_MyAMReX>
@@ -50,7 +50,7 @@ or directly through shell environement variables (using *bash* for instance): ::
        export SUNDIALS_HOME=<path_to_MySUNDIALS>
 
 Note that using the first option will overwrite any
-environement variables you might have previously defined when using this `GNUmakefile`.
+environment variables you might have previously defined when using this `GNUmakefile`.
 
 You're good to go !
 
@@ -154,21 +154,21 @@ The initial solution consists of air at the pressure/temperature specified by th
 of a different temperature/mixture intended to be lighter such that the bubble will rise under the
 influence of gravity. Note that the user can easily reverse the problem with a heavier bubble.
 The default parameters provided above are overwritten using AMReX ParmParse in ``pelelm_prob.cpp``
-and the initial/boundary conditions implemented in ``pelelm_prob.H``. Because this case do not feature
+and the initial/boundary conditions implemented in ``pelelm_prob.H``. Because this case does not feature
 any dirichlet BC on the state variables, the ``bcnormal`` function in ``pelelm_prob.H`` will not be called
 and can thus be left empty (but its definition is still required).
 
-The interesting aspect of this case reside in the inclusion of buoyancy effects in the presence of gravity.
+The interesting aspect of this case is the inclusion of buoyancy effects in the presence of gravity.
 To trigger gravity the following input key is required: ::
 
     peleLM.gravity = 0.0 -9.81 0.0
 
 
-which in this case define an usual Earth-like gravity oriented towards :math:`y`-low.
+which in this case defines an usual Earth-like gravity oriented towards :math:`y`-low.
 
 .. note::
-    At the moment, the hydrostatic outflow boundqry conditions qre not qvqilqble in PeleLMeX such Outflow should not be
-    employed in the direction trqnsverse to the grqvity vector !
+    At the moment, the hydrostatic outflow boundqry conditions are not available in PeleLMeX, so Outflow should not be
+    employed in the direction transverse to the gravity vector !
 
 
 Numerical parameters
@@ -227,11 +227,13 @@ list of available mechanisms and more information regarding the EOS, chemistry a
     Eos_Model       := Fuego
     Transport_Model := Constant
 
-Finally, `PeleLMeX` utilizes the chemical kinetic ODE integrator `CVODE <https://computing.llnl.gov/projects/sundials/cvode>`_. This Third Party Librabry (TPL) is not shipped with the `PeleLMeX` distribution but can be readily installed through the makefile system of `PeleLMeX`. Note that compiling Sundials is necessary even if the simualtion does not involve reactions. To do so, type in the following command: ::
+Finally, `PeleLMeX` utilizes the chemical kinetic ODE integrator `CVODE <https://computing.llnl.gov/projects/sundials/cvode>`_. This
+Third Party Librabry (TPL) is shipped as a submodule of the `PeleLMeX` distribution and can be readily installed through the makefile system
+of `PeleLMeX`. To do so, type in the following command: ::
 
     make -j4 TPL
 
-Note that the installation of `CVODE` requires CMake 3.17.1 or higher.
+Note that the installation of `CVODE` requires CMake 3.23.1 or higher.
 
 You are now ready to build your first `PeleLMeX` executable!! Type in: ::
 
@@ -305,7 +307,7 @@ A typical `PeleLMeX` stdout for a time step now looks like: ::
       SDC iter [1]
     >> PeleLMeX::Advance() --> Time: 0.2141339779
 
-clearly showing the use of 1 SDC iterations. The first line at each step provides
+clearly showing the use of 1 SDC iteration. The first line at each step provides
 the time step contraint from the CFL
 condition (``Conv:``) and from the density change condition (``divu:``).
 In the absence of reaction and diffusion, the ``divu:`` constraint is irrelevant and set to a
@@ -314,7 +316,7 @@ large value.
 Visualizing the `plt00400` file, we can see that the solution has evolved. The light bubble started rising
 under the effect of buoyancy, resulting in a shear layer at the interface of between the hot and cold gases.
 Vorticies appears in the shear layer, wrinking the interface. Smearing of the temperature gradient at the interface
-is induced by the numerical scheme diffusion, but appearances of local extremas are very limited.
+is induced by the numerical scheme diffusion, but appearances of local extrema are very limited.
 
 .. figure:: images/tutorials/HB_400steps2lvl.png
    :name: HB_400steps2lvl
@@ -338,14 +340,14 @@ then start the 2D-RZ run: ::
 
     mpirun -n 4 ./PeleLMeX2d.gnu.MPI.ex input.2d-regt_symRZ > logInitRZ.dat &
 
-The 2D-RZ simulation is found to have smaller time step size resulting from the stronger acceleration of the bubble. Indeed,
-in the 2D-cartesian case, the hot region is actually a infinitely long cylinder which inertia is larger than that of the
+The 2D-RZ simulation is found to have a smaller time step size resulting from the stronger acceleration of the bubble. Indeed,
+in the 2D-cartesian case, the hot region is actually an infinitely long cylinder which has inertia larger than that of the
 bubble effectively represented in the 2D-RZ case.
 
 This is end of the guided section of this tutorial. Interested users can explore the effects of the following parameters
 on the simulation results since the computational time is minimal:
 
-* Spatial resolution: increase the maximum number of AMR levels, ensuring that the simulation final time match that of the initial run. What is the effect on the bubble rising velocity and shape ?
+* Spatial resolution: increase the maximum number of AMR levels, ensuring that the simulation final time matches that of the initial run. What is the effect on the rising bubble's velocity and shape ?
 
 * Switch to a mixture composition change instead of a temperature one or reverse the problem by using a bubble temperature lower than that of the ambient air.
 

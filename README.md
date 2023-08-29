@@ -12,7 +12,8 @@
 ## Overview
 
 *PeleLMeX* is a solver for high fidelity reactive flow simulations, namely direct numerical simulation (DNS) and large eddy simulation (LES).
-The solver combines a low Mach number approach, adaptive mesh refinement (AMR) and high performance computing (HPC) to provide
+The solver combines a low Mach number approach, adaptive mesh refinement (AMR), embedded boundary (EB) geometry treatment and high performance
+computing (HPC) to provide
 a flexible tool to address research questions on platforms ranging from small workstations to the world's largest GPU-accelerated supercomputers.
 
 *PeleLMeX* is part of the [Pele combustion Suite](https://amrex-combustion.github.io/).
@@ -26,6 +27,9 @@ a flexible tool to address research questions on platforms ranging from small wo
 solver [incflo](https://github.com/AMReX-Codes/incflo). It solves of the multispecies reactive Navier-Stokes equations
 in the low Mach number limit as described in the [documentation](https://amrex-combustion.github.io/PeleLMeX/manual/html/index.html).
 It inherits most of *PeleLM* algorithmic features, but differs significantly in its implementation stemming from the non-subcycling approach.
+*PeleLM* is no longer under active development; *PeleLMeX* should be used for simulations of low Mach number reacting flows and
+[*PeleC*](https://github.com/AMReX-Combustion/PeleC) for simulations of flows with higher Mach numbers where compressibility effects are
+significant.
 
 A overview of *PeleLMeX* controls is provided in the [documentation](https://amrex-combustion.github.io/PeleLMeX/manual/html/LMeXControls.html).
 
@@ -59,16 +63,16 @@ Finally, when building with GPU support, CUDA >= 11 is required with NVIDIA GPUs
 
 ### Download
 
-The prefered method consist in cloning the *PeleLMeX* and its submodules using a recursive `git clone`:
-([amrex](https://github.com/AMReX-Codes/amrex), [AMReX-Hydro](https://github.com/AMReX-Codes/AMReX-Hydro), [PelePhysics](https://github.com/AMReX-Combustion/PelePhysics), [PeleMP](https://github.com/AMReX-Combustion/PeleMP)), and [SUNDIALS](https://github.com/LLNL/sundials) using:
+The prefered method consists of cloning *PeleLMeX* and its submodules
+([amrex](https://github.com/AMReX-Codes/amrex), [AMReX-Hydro](https://github.com/AMReX-Codes/AMReX-Hydro), [PelePhysics](https://github.com/AMReX-Combustion/PelePhysics), [PeleMP](https://github.com/AMReX-Combustion/PeleMP)), and [SUNDIALS](https://github.com/LLNL/sundials) using a recursive `git clone`:
 
 ```
 git clone --recursive https://github.com/AMReX-Combustion/PeleLMeX.git
 ```
 
-Alternatively, you can use separate `git clone` of the each of the submodules.
+Alternatively, you can use a separate `git clone` of the each of the submodules.
 The default location for *PeleLMeX* dependencies is the `Submodules` folder but you optionnally
-setup the following environment variables (e.g. using bash) to an other location:
+setup the following environment variables (e.g. using bash) to any other location:
 
 ```
 export PELELMEX_HOME=<path_to_PeleLMeX>
@@ -94,7 +98,7 @@ cd PeleLMeX/Exec/RegTests/HotBubble
 
 If this is a clean install, you will need to make the third party libraries with: `make TPL` (note: if on macOS, you might need to specify `COMP=llvm` in the `make` statements).
 
-Finally, make with: `make -j`, or if on macOS: `make -j COMP=llvm`. To clean the installation, use either `make clean` or `make realclean`. If running into compile errors after changing compile time options in PeleLMeX (e.g., the chemical mechanism), the first thing to try is to clean your build by running `make TPLrealclean && make realclean`, then try to rebuild the third party libraries and PeleLMeX with `make TPL && make -j`.
+Finally, make with: `make -j`, or if on macOS: `make -j COMP=llvm`. To clean the installation, use either `make clean` or `make realclean`. If running into compile errors after changing compile time options in PeleLMeX (e.g., the chemical mechanism), the first thing to try is to clean your build by running `make TPLrealclean && make realclean`, then try to rebuild the third party libraries and PeleLMeX with `make TPL && make -j`. See the [Tutorial](https://amrex-combustion.github.io/PeleLMeX/manual/html/Tutorials_HotBubble.html) for this case for instructions on how to compile with different options (for example, to compile without MPI support or to compile for GPUs) and how to run the code once compiled.
 
 When using CMake (cmake version >= 3.23 is required), first configure CMake directly in *PeleLMeX* root folder:
 
@@ -111,7 +115,10 @@ cmake --build buildHotBubble --parallel 4
 ## Getting help, contributing
 
 Do you have a question ? Found an issue ? Please use the [GitHub Discussions](https://github.com/AMReX-Combustion/PeleLMeX/discussions) to engage
-with the development team or open a new [GitHub issue](https://github.com/AMReX-Combustion/PeleLMeX/issues) to report a bug.
+with the development team or open a new [GitHub issue](https://github.com/AMReX-Combustion/PeleLMeX/issues) to report a bug. The developmemt team
+also encourages users to take an active role in respectfully answering each other's questions in these spaces. When reporting a bug, it is helpful
+to provide as much detail as possible, including a case description and the major compile and runtime options being used. Though not required,
+it is most effective to create a fork of this repository and share a branch of that fork with a case that minimally reproduces the error.
 
 New contributions to *PeleLMeX* are welcome ! Contributing Guidelines are provided in [CONTRIBUTING.md](CONTRIBUTING.md).
 

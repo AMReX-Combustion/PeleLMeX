@@ -9,7 +9,6 @@ Premixed flame sheet with harmonic perturbations
 
 Introduction
 ------------
-
 `PeleLMeX` primary objective is to enable simulation of reactive flows on platforms ranging
 from small personal computer to Exascale supercomputer. This short tutorial describes
 the case of a 2D laminar methane/hydrogen/air premixed flame, perturbed using harmonic fluctuations
@@ -17,7 +16,7 @@ on the initial conditions.
 
 The goal of this tutorial is to demonstrate `PeleLMeX` basic controls when dealing with reactive simulations.
 This document provides step by step instructions reviewing how to set-up the domain and boundary conditions,
-and to construct an initial solution.
+and how to construct an initial solution.
 
 ..  _sec:TUTO_FS::PrepStep:
 
@@ -47,7 +46,7 @@ in the `GNUmakefile` by updating the top-most lines as follows: ::
        PELE_PHYSICS_HOME = <path_to_MyPelePhysics>
        SUNDIALS_HOME     = <path_to_MySUNDIALS>
 
-or directly through shell environement variables (using *bash* for instance): ::
+or directly through shell environment variables (using *bash* for instance): ::
 
        export PELELMEX_HOME=<path_to_PeleLMeX>
        export AMREX_HOME=<path_to_MyAMReX>
@@ -56,7 +55,7 @@ or directly through shell environement variables (using *bash* for instance): ::
        export SUNDIALS_HOME=<path_to_MySUNDIALS>
 
 Note that using the first option will overwrite any
-environement variables you might have previously defined when using this `GNUmakefile`.
+environment variables you might have previously defined when using this `GNUmakefile`.
 
 You're good to go !
 
@@ -285,7 +284,9 @@ list of available mechanisms and more information regarding the EOS, chemistry a
 
 Note that the ``Chemistry_Model`` must be similar to the one used to generate the Cantera solution.
 
-Finally, `PeleLMeX` utilizes the chemical kinetic ODE integrator `CVODE <https://computing.llnl.gov/projects/sundials/cvode>`_. This Third Party Librabry (TPL) is not shipped with the `PeleLMeX` distribution but can be readily installed through the makefile system of `PeleLMeX`. Note that compiling Sundials is necessary even if the simualtion do not involve reactions. To do so, type in the following command: ::
+Finally, `PeleLMeX` utilizes the chemical kinetic ODE integrator `CVODE <https://computing.llnl.gov/projects/sundials/cvode>`_. This
+Third Party Librabry (TPL) is shipped as a submodule of the `PeleLMeX` distribution and can be readily installed through the makefile system
+of `PeleLMeX`. To do so, type in the following command: ::
 
     make -j4 TPL
 
