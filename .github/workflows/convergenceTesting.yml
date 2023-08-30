@@ -39,6 +39,7 @@ jobs:
          AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
          PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
          AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
+         SUNDIALS_HOME: ${GITHUB_WORKSPACE}/build/sundials
          PELELMEX_HOME: ${GITHUB_WORKSPACE}
       working-directory: ./Exec/RegTests/PeriodicCases
       run: |

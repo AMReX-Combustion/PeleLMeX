@@ -3,7 +3,7 @@
 
 #include <PeleLMEF_Constants.H>
 #include <PelePhysics.H>
-#include <hydro_slopes_K.H>
+#include <AMReX_Slopes_K.H>
 #include <EOS_Extension.H>
 #include <mechanism.H>
 
