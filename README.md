@@ -70,7 +70,7 @@ The prefered method consists of cloning *PeleLMeX* and its submodules
 git clone --recursive https://github.com/AMReX-Combustion/PeleLMeX.git
 ```
 
-Alternatively, you can use a separate `git clone` of the each of the submodules.
+Alternatively, you can use a separate `git clone` of each of the submodules.
 The default location for *PeleLMeX* dependencies is the `Submodules` folder but you optionnally
 setup the following environment variables (e.g. using bash) to any other location:
 
