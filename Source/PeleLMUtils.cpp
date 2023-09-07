@@ -335,6 +335,7 @@ void PeleLM::intFluxDivergenceLevelEB(int lev,
 
    // Get area
    const Real* dx = Geom(lev).CellSize();
+   const Real tmp_dx = dx[0];
 #if ( AMREX_SPACEDIM == 2 )
    Real areax = dx[1];
    Real areay = dx[0];
@@ -402,7 +403,7 @@ void PeleLM::intFluxDivergenceLevelEB(int lev,
                                        AMREX_D_DECL(afrac_x, afrac_y, afrac_z),
                                        AMREX_D_DECL(areax, areay, areaz),
                                        ebflux, ebarea,
-                                       vol, dx[0], scale, divergence);
+                                       vol, tmp_dx, scale, divergence);
                for (int n = 0; n < ncomp; n++) {
                   divergence(i,j,k,n) *= vfracinv;
                }
