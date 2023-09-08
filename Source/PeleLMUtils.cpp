@@ -334,7 +334,7 @@ void PeleLM::intFluxDivergenceLevelEB(int lev,
    geom[lev].GetVolume(volume);
 
    // Get area
-   const Real* dx = Geom(lev).CellSize();
+   const GpuArray<Real, AMREX_SPACEDIM> dx = Geom(lev).CellSizeArray();
 #if ( AMREX_SPACEDIM == 2 )
    Real areax = dx[1];
    Real areay = dx[0];
