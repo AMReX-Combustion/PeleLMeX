@@ -15,6 +15,9 @@
 The solver combines a low Mach number approach, adaptive mesh refinement (AMR), embedded boundary (EB) geometry treatment and high performance
 computing (HPC) to provide
 a flexible tool to address research questions on platforms ranging from small workstations to the world's largest GPU-accelerated supercomputers.
+*PeleLMeX* has been used to study complex flame/turbulence interactions in [RCCI engines](https://gfm.aps.org/meetings/dfd-2022/63236765199e4c2c0873f9f6) and
+[hydrogen combustion](https://www.sciencedirect.com/science/article/pii/S001021802300192X) or [the effect of sustainable aviation fuel
+on gas turbine combustion](https://www.osti.gov/biblio/1995457).
 
 *PeleLMeX* is part of the [Pele combustion Suite](https://amrex-combustion.github.io/).
 
