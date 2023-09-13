@@ -31,10 +31,13 @@ authors:
   - name: Landon Owen
     affiliation: 3
   - name: Bruce Perry
+    orcid: 0000-0002-9150-8103
     affiliation: 1
   - name: Jon Rood
     affiliation: 1
+    orcid: 0000-0002-7513-3225
   - name: Nicolas Wimer
+    orcid: 0000-0001-5083-0799
     affiliation: 1
   - name: Weiqun Zhang
     affiliation: 2
@@ -53,11 +56,12 @@ bibliography: paper.bib
 
 # Summary
 
-PeleLMeX evolves chemically reacting low Mach number flows with block-structured adaptive mesh refinement (AMR). 
-The code is built upon the AMReX [@AMReX] library which provides the underlying data structures and tools to manage 
-and operate on them across massively parallel computing architectures. Together with its compressible flow counterpart 
-PeleC [@PeleC], the thermo-chemistry library PelePhysics and the multi-physics library PeleMP, it forms the Pele suite of 
-open-source reactive flow simulation codes.
+PeleLMeX evolves chemically reacting low Mach number flows with block-structured adaptive mesh refinement (AMR).
+The code is built upon the AMReX [@AMReX] library which provides the underlying data structures and tools to manage
+and operate on them across massively parallel computing architectures. PeleLMeX algorithmic features are inherited from its
+predecessor PeleLM [@PeleLM] but key improvements allow representation of more complex physical processes. Together with its compressible
+flow counterpart PeleC [@PeleC], the thermo-chemistry library PelePhysics and the multi-physics library PeleMP, it forms
+the Pele suite of open-source reactive flow simulation codes.
 
 PeleLMeX uses a finite volume approach to solve the multi-species reacting Navier-Stokes equations in 
 their low Mach number limit [@Day:2000], where the characteristic fluid velocity is small compared to the speed of sound, 
@@ -76,9 +80,10 @@ semi-implicitly with a Crank-Nicholson scheme and the often stiffer reaction ter
 Backward Differentiation Formula schemes (specifically, the CVODE integrator [@balos2021enabling] of the Sundials
 suite [@SUNDIALS;@gardner2022sundials]). The resolution of the linear systems arising in the implicit diffusion and velocity projections are
 handled using AMReX's native geometric multigrid (GMG) solver, but can also be transferred to HYPRE [@Hypre2002] if GMG fails.
-PeleLMeX relies on a non-subcycling approach to advance the numerical solution on an AMR hierarchy, where all the levels
-are advanced together using the same time step, the size of which is prescribed by a CFL condition across all the levels. The consistency of
-the numerical fluxes at coarse/fine interfaces is ensured by averaging down fluxes from fine to coarse levels.
+In contrast with PeleLM, PeleLMeX relies on a non-subcycling approach to advance the numerical solution on an AMR hierarchy,
+where all the levels are advanced together using the same time step, the size of which is prescribed by a CFL condition across all the levels.
+This distinctive feature drove the development of PeleLMeX as it enable extending the closed chamber algorithm described in
+[@Nonaka18] to an AMR hierarchy and to incorporate more complex physical processes such as flame/plasma interactions [@Esclapez:2019].
 
 In addition, PeleLMeX uses an Embedded Boundary (EB) approach to represent complex geometries: an arbitrary surface can 
 be intersected with the Cartesian matrix of uniform cells, and the numerical stencils are modified near cells that are cut 
@@ -93,7 +98,7 @@ on GPU-accelerated machines.
 
 # Statement of Need
 
-While there exist several reactive flow Direct Numerical Simulation codes, PeleLMeX presents a unique set of features. 
+While there exist several reactive flow Direct Numerical Simulation codes, PeleLMeX presents a unique set of features.
 From its inception, under the name LMC in the early 2000, the motivation was to combine an AMR approach with a low Mach number 
 formulation to achieve high performances from a small desktop station to the world largest supercomputer, and to this day
 it remains the only publicly available code to offers these features. Recent code developments focused on enabling
