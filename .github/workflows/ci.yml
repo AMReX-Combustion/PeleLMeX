@@ -32,7 +32,7 @@ jobs:
         with:
           submodules: true
       - name: Setup
-        working-directory: ./Exec/RegTests/PMF
+        working-directory: ./Exec/RegTests/FlameSheet
         run: |
           echo "NPROCS=$(nproc)" >> $GITHUB_ENV
           echo "CCACHE_COMPRESS=1" >> $GITHUB_ENV
