@@ -73,9 +73,8 @@ pelelm_initdata(
               std::sin(2 * Pi * (z - 0.00712435) / pertLz) +
             0.983 * std::sin(11 * (angle - 0.63578)) *
               0.982 /* std::sin(2 * Pi * 3 * (z - 0.0014234)  / pertLz)*/
-            +
-            1.022 * std::sin(7 * angle) * 0.945 *
-              std::sin(2 * Pi * 2 * (z - 0.0039765) / pertLz));
+            + 1.022 * std::sin(7 * angle) * 0.945 *
+                std::sin(2 * Pi * 2 * (z - 0.0039765) / pertLz));
   }
 
   amrex::Real y1 =
