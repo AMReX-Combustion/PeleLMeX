@@ -28,15 +28,15 @@ public:
 
 bool
 CounterFlowJet::get_new_particle(
-    const Real time,
-    const Real& phi_radial,
-    const Real& cur_radius,
-    Real& umag,
-    Real& theta_spread,
-    Real& phi_swirl,
-    Real& dia_part,
-    Real& T_part,
-    Real* Y_part)
+  const Real time,
+  const Real& phi_radial,
+  const Real& cur_radius,
+  Real& umag,
+  Real& theta_spread,
+  Real& phi_swirl,
+  Real& dia_part,
+  Real& T_part,
+  Real* Y_part)
 {
   umag = m_jetVel;
   T_part = m_jetT;
@@ -53,15 +53,16 @@ CounterFlowJet::get_new_particle(
 }
 
 bool
-SprayParticleContainer::injectParticles(Real time,
-                                        Real dt,
-                                        int nstep,
-                                        int lev,
-                                        int finest_level,
-                                        ProbParm const& prob_parm)
+SprayParticleContainer::injectParticles(
+  Real time,
+  Real dt,
+  int nstep,
+  int lev,
+  int finest_level,
+  ProbParm const& prob_parm)
 {
   if (lev != 0) {
-      return false;
+    return false;
   }
   SprayJet* js = m_sprayJets[0].get();
   if (!js->jet_active(time)) {
@@ -73,8 +74,8 @@ SprayParticleContainer::injectParticles(Real time,
 }
 
 void
-SprayParticleContainer::InitSprayParticles(const bool init_parts,
-                                           ProbParm const& prob_parm)
+SprayParticleContainer::InitSprayParticles(
+  const bool init_parts, ProbParm const& prob_parm)
 {
   m_sprayJets.resize(1);
   std::string jet_name = "jet1";

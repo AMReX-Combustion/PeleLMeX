@@ -12,16 +12,21 @@
 
 AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
-void pelelm_initdata(int i, int j, int k, int is_incompressible,
-                     amrex::Array4<amrex::Real> const &state,
-                     amrex::Array4<amrex::Real> const &aux,
-                     amrex::GeometryData const &geomdata,
-                     ProbParm const &prob_parm,
-                     pele::physics::PMF::PmfData::DataContainer const * /*pmf_data*/)
+void
+pelelm_initdata(
+  int i,
+  int j,
+  int k,
+  int is_incompressible,
+  amrex::Array4<amrex::Real> const& state,
+  amrex::Array4<amrex::Real> const& aux,
+  amrex::GeometryData const& geomdata,
+  ProbParm const& prob_parm,
+  pele::physics::PMF::PmfData::DataContainer const* /*pmf_data*/)
 {
-  const amrex::Real *prob_lo = geomdata.ProbLo();
-  const amrex::Real *prob_hi = geomdata.ProbHi();
-  const amrex::Real *dx = geomdata.CellSize();
+  const amrex::Real* prob_lo = geomdata.ProbLo();
+  const amrex::Real* prob_hi = geomdata.ProbHi();
+  const amrex::Real* dx = geomdata.CellSize();
 
   AMREX_D_TERM(const amrex::Real x = prob_lo[0] + (i + 0.5) * dx[0];
                , const amrex::Real y = prob_lo[1] + (j + 0.5) * dx[1];
@@ -49,32 +54,30 @@ void pelelm_initdata(int i, int j, int k, int is_incompressible,
   amrex::Real z_velocity = 0.0;
   amrex::Real V_in = prob_parm.V_in;
 
-
 #if (AMREX_SPACEDIM == 2)
   x_velocity = 0.0;
   y_velocity = 0.0;
 #elif (AMREX_SPACEDIM == 3)
-  x_velocity =
-      V_in + prob_parm.pertmag_cf * V_in *
-                 (sin(2 * Pi * 4 * x / Lx) * sin(2 * Pi * 5 * y / Ly) *
-                      sin(2 * Pi * 3 * z / Lz) +
-                  1.017 * sin(2 * Pi * 3 * x / Lx) * sin(2 * Pi * 7 * y / Ly) *
-                      sin(2 * Pi * 5 * z / Lz));
+  x_velocity = V_in + prob_parm.pertmag_cf * V_in *
+                        (sin(2 * Pi * 4 * x / Lx) * sin(2 * Pi * 5 * y / Ly) *
+                           sin(2 * Pi * 3 * z / Lz) +
+                         1.017 * sin(2 * Pi * 3 * x / Lx) *
+                           sin(2 * Pi * 7 * y / Ly) * sin(2 * Pi * 5 * z / Lz));
   y_velocity = prob_parm.pertmag_cf * V_in *
                (sin(2 * Pi * 5 * x / Lx) * sin(2 * Pi * 3 * y / Ly) *
-                    sin(2 * Pi * 7 * z / Lz) +
+                  sin(2 * Pi * 7 * z / Lz) +
                 1.017 * sin(2 * Pi * 9 * x / Lx) * sin(2 * Pi * 4 * y / Ly) *
-                    sin(2 * Pi * 2 * z / Lz));
+                  sin(2 * Pi * 2 * z / Lz));
   z_velocity = prob_parm.pertmag_cf * V_in *
                (sin(2 * Pi * 2 * x / Lx) * sin(2 * Pi * 6 * y / Ly) *
-                    sin(2 * Pi * 5 * z / Lz) +
+                  sin(2 * Pi * 5 * z / Lz) +
                 1.017 * sin(2 * Pi * 7 * x / Lx) * sin(2 * Pi * 4 * y / Ly) *
-                    sin(2 * Pi * 3 * z / Lz));
+                  sin(2 * Pi * 3 * z / Lz));
 #endif
 
-  AMREX_D_TERM(state(i, j, k, VELX) = x_velocity;,
-               state(i, j, k, VELY) = y_velocity;,
-               state(i, j, k, VELZ) = z_velocity);
+  AMREX_D_TERM(state(i, j, k, VELX) = x_velocity;
+               , state(i, j, k, VELY) = y_velocity;
+               , state(i, j, k, VELZ) = z_velocity);
 
   amrex::Real P_cgs = prob_parm.P_mean * 10.0;
 
@@ -91,21 +94,27 @@ void pelelm_initdata(int i, int j, int k, int is_incompressible,
 
   // Species mass
   for (int n = 0; n < NUM_SPECIES; n++) {
-    state(i, j, k, FIRSTSPEC+n) = massfrac[n] * state(i, j, k, DENSITY);
+    state(i, j, k, FIRSTSPEC + n) = massfrac[n] * state(i, j, k, DENSITY);
   }
 }
 
 AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
-void bcnormal(const amrex::Real x[AMREX_SPACEDIM], const int m_nAux,
-              amrex::Real s_ext[NVAR], const int idir, const int sgn,
-              const amrex::Real time, amrex::GeometryData const &geomdata,
-              ProbParm const &prob_parm,
-              pele::physics::PMF::PmfData::DataContainer const * /*pmf_data*/)
+void
+bcnormal(
+  const amrex::Real x[AMREX_SPACEDIM],
+  const int m_nAux,
+  amrex::Real s_ext[NVAR],
+  const int idir,
+  const int sgn,
+  const amrex::Real time,
+  amrex::GeometryData const& geomdata,
+  ProbParm const& prob_parm,
+  pele::physics::PMF::PmfData::DataContainer const* /*pmf_data*/)
 {
-  const amrex::Real *prob_lo = geomdata.ProbLo();
-  const amrex::Real *prob_hi = geomdata.ProbHi();
-  const amrex::Real *dx = geomdata.CellSize();
+  const amrex::Real* prob_lo = geomdata.ProbLo();
+  const amrex::Real* prob_hi = geomdata.ProbHi();
+  const amrex::Real* dx = geomdata.CellSize();
   constexpr amrex::Real Pi = 3.14159265358979323846264338327950288;
 
   amrex::GpuArray<amrex::Real, NUM_SPECIES + 4> pmf_vals = {0.0};
@@ -190,7 +199,9 @@ void bcnormal(const amrex::Real x[AMREX_SPACEDIM], const int m_nAux,
   if (idir == jet_dir and (prob_parm.double_jet == 1 or sgn == 1)) {
 
     radsq = x[other_dir] * x[other_dir] + x[cf_dir] * x[cf_dir];
-    factor = 0.5 * (1.0 - tanh((sqrt(radsq) - jet_rad) / (prob_parm.bl_thickness / 4.0)));
+    factor =
+      0.5 *
+      (1.0 - tanh((sqrt(radsq) - jet_rad) / (prob_parm.bl_thickness / 4.0)));
 
     for (int n = 0; n < NUM_SPECIES; n++) {
       molefrac[n] = factor * X_jet[n] + (1.0 - factor) * X_air[n];
@@ -200,7 +211,8 @@ void bcnormal(const amrex::Real x[AMREX_SPACEDIM], const int m_nAux,
     amrex::Real rho_cgs, P_cgs, RhoH_temp;
     P_cgs = prob_parm.P_mean * 10.0;
 
-    s_ext[TEMP] = factor * prob_parm.jet_temp + (1.0 - factor) * prob_parm.ox_temp;
+    s_ext[TEMP] =
+      factor * prob_parm.jet_temp + (1.0 - factor) * prob_parm.ox_temp;
 
     eos.PYT2R(P_cgs, massfrac, s_ext[TEMP], rho_cgs);
     s_ext[DENSITY] = rho_cgs * 1.0e3;
@@ -219,12 +231,12 @@ void bcnormal(const amrex::Real x[AMREX_SPACEDIM], const int m_nAux,
     } else {
       time_factor = 1.0;
     }
-    s_ext[VELX] = (1 - 0.5 * prob_parm.double_jet) * sgn * time_factor *
-                  factor * U_jet[0];
-    s_ext[VELY] = (1 - 0.5 * prob_parm.double_jet) * sgn * time_factor *
-                  factor * U_jet[1];
-    s_ext[VELZ] = (1 - 0.5 * prob_parm.double_jet) * sgn * time_factor *
-                  factor * U_jet[2];
+    s_ext[VELX] =
+      (1 - 0.5 * prob_parm.double_jet) * sgn * time_factor * factor * U_jet[0];
+    s_ext[VELY] =
+      (1 - 0.5 * prob_parm.double_jet) * sgn * time_factor * factor * U_jet[1];
+    s_ext[VELZ] =
+      (1 - 0.5 * prob_parm.double_jet) * sgn * time_factor * factor * U_jet[2];
   }
 
   if ((idir == cf_dir) and (sgn == 1)) {
@@ -247,20 +259,24 @@ void bcnormal(const amrex::Real x[AMREX_SPACEDIM], const int m_nAux,
   }
 }
 
-
 AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
 void
-zero_visc (int i, int j, int k,
-           amrex::Array4<amrex::Real> const& beta,
-           amrex::GeometryData const& geomdata,
-           amrex::Box const& domainBox,
-           const int  dir,
-           const int  beta_comp,
-           const int  nComp)
+zero_visc(
+  int i,
+  int j,
+  int k,
+  amrex::Array4<amrex::Real> const& beta,
+  amrex::GeometryData const& geomdata,
+  amrex::Box const& domainBox,
+  const int dir,
+  const int beta_comp,
+  const int nComp)
 {
-     amrex::ignore_unused(i,j,k,beta,geomdata,domainBox,dir,beta_comp,nComp);
-    // We treat species when beta_comp == 0 and nComp == NUM_SPECIES
-    // otherwise this routine could be called for other face diffusivity (Temp, velocity, ...)
+  amrex::ignore_unused(
+    i, j, k, beta, geomdata, domainBox, dir, beta_comp, nComp);
+  // We treat species when beta_comp == 0 and nComp == NUM_SPECIES
+  // otherwise this routine could be called for other face diffusivity (Temp,
+  // velocity, ...)
 }
 #endif

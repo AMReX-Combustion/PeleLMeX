@@ -1,35 +1,39 @@
-TOP = ../../..
-PELELMEX_HOME      ?= ${TOP}
-AMREX_HOME         ?= ${PELELMEX_HOME}/Submodules/amrex
-PELE_PHYSICS_HOME  ?= ${PELELMEX_HOME}/Submodules/PelePhysics
-AMREX_HYDRO_HOME   ?= ${PELELMEX_HOME}/Submodules/AMReX-Hydro
-HYPRE_HOME         = /ccs/home/lesclapez/hypre/install-2807
-
 # AMReX
-DIM             = 3
-DEBUG           = FALSE
-PRECISION       = DOUBLE
-VERBOSE         = FALSE
-TINY_PROFILE    = FALSE
-USE_EB	        = TRUE
-USE_HYPRE       = FALSE
+DIM = 3
+COMP = clang
+PRECISION = DOUBLE
+VERBOSE = FALSE
+USE_EB = TRUE
+USE_HYPRE = FALSE
 
-# Compilation
-COMP            = clang
-USE_MPI         = TRUE
-USE_OMP         = FALSE
-USE_CUDA        = FALSE
-USE_HIP         = TRUE
-USE_SYCL        = FALSE
+# Profiling
+PROFILE = FALSE
+TINY_PROFILE = FALSE
+COMM_PROFILE = FALSE
+TRACE_PROFILE = FALSE
+MEM_PROFILE = FALSE
+USE_GPROF = FALSE
+
+# Performance
+USE_MPI = TRUE
+USE_OMP = FALSE
+USE_CUDA = FALSE
+USE_HIP = FALSE
+USE_SYCL = FALSE
+
+# Debugging
+DEBUG = FALSE
+FSANITIZER = FALSE
+THREAD_SANITIZER = FALSE
 
 # PeleLMeX
-CEXE_headers 	+= EBUserDefined.H
-
-PELE_USE_MAGMA  = TRUE
+CEXE_headers += EBUserDefined.H
+PELE_USE_MAGMA = TRUE
 
 # PelePhysics
 Chemistry_Model = dodecane_lu_qss
-Eos_Model		 = Fuego
+Eos_Model = Fuego
 Transport_Model = Simple
 
-include $(PELELMEX_HOME)/Utils/Make.PeleLMeX
+PELELMEX_HOME ?= ../../..
+include $(PELELMEX_HOME)/Exec/Make.PeleLMeX

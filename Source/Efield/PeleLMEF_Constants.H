@@ -4,11 +4,11 @@
 
 #include <AMReX_REAL.H>
 
-#define eps0       8.854187817e-12
-#define epsr       1.0
+#define eps0 8.854187817e-12
+#define epsr 1.0
 #define elemCharge 1.60217662e-19
-#define Na         6.022e23
-#define smallVel   1.e-10
-#define PP_RU_MKS  8.31446261815324e0
+#define Na 6.022e23
+#define smallVel 1.e-10
+#define PP_RU_MKS 8.31446261815324e0
 
 #endif

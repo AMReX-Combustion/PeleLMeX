@@ -13,45 +13,49 @@
 
 AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
-void pelelm_initdata(int i, int j, int k,
-                     int /*is_incompressible*/,
-                     amrex::Array4<amrex::Real> const& state,
-                     amrex::Array4<amrex::Real> const& /*aux*/,
-                     amrex::GeometryData const& /*geomdata*/,
-                     ProbParm const& prob_parm,
-                     pele::physics::PMF::PmfData::DataContainer const * /*pmf_data*/)
+void
+pelelm_initdata(
+  int i,
+  int j,
+  int k,
+  int /*is_incompressible*/,
+  amrex::Array4<amrex::Real> const& state,
+  amrex::Array4<amrex::Real> const& /*aux*/,
+  amrex::GeometryData const& /*geomdata*/,
+  ProbParm const& prob_parm,
+  pele::physics::PMF::PmfData::DataContainer const* /*pmf_data*/)
 {
 
-    auto eos = pele::physics::PhysicsType::eos();
-    amrex::Real massfrac[NUM_SPECIES] = {0.0};
-    massfrac[N2_ID] = prob_parm.Y_N2;
-    massfrac[O2_ID] = prob_parm.Y_O2;
-    state(i,j,k,TEMP) = prob_parm.T0;
+  auto eos = pele::physics::PhysicsType::eos();
+  amrex::Real massfrac[NUM_SPECIES] = {0.0};
+  massfrac[N2_ID] = prob_parm.Y_N2;
+  massfrac[O2_ID] = prob_parm.Y_O2;
+  state(i, j, k, TEMP) = prob_parm.T0;
 
-    state(i,j,k,VELX) = prob_parm.vel;
-#if ( AMREX_SPACEDIM == 2 )
-    state(i,j,k,VELY) = 0.0;
-#elif ( AMREX_SPACEDIM == 3 )
-    state(i,j,k,VELY) = 0.0;
-    state(i,j,k,VELZ) = 0.0;
+  state(i, j, k, VELX) = prob_parm.vel;
+#if (AMREX_SPACEDIM == 2)
+  state(i, j, k, VELY) = 0.0;
+#elif (AMREX_SPACEDIM == 3)
+  state(i, j, k, VELY) = 0.0;
+  state(i, j, k, VELZ) = 0.0;
 #endif
 
-    amrex::Real P_cgs = prob_parm.P_mean * 10.0;
+  amrex::Real P_cgs = prob_parm.P_mean * 10.0;
 
-    // Density
-    amrex::Real rho_cgs = 0.0;
-    eos.PYT2R(P_cgs, massfrac, state(i,j,k,TEMP), rho_cgs);
-    state(i,j,k,DENSITY) = rho_cgs * 1.0e3;
+  // Density
+  amrex::Real rho_cgs = 0.0;
+  eos.PYT2R(P_cgs, massfrac, state(i, j, k, TEMP), rho_cgs);
+  state(i, j, k, DENSITY) = rho_cgs * 1.0e3;
 
-    // Enthalpy
-    amrex::Real h_cgs = 0.0;
-    eos.TY2H(state(i,j,k,TEMP), massfrac, h_cgs);
-    state(i,j,k,RHOH) = h_cgs * 1.0e-4 * state(i,j,k,DENSITY);
+  // Enthalpy
+  amrex::Real h_cgs = 0.0;
+  eos.TY2H(state(i, j, k, TEMP), massfrac, h_cgs);
+  state(i, j, k, RHOH) = h_cgs * 1.0e-4 * state(i, j, k, DENSITY);
 
-    // Species mass
-    for (int n = 0; n < NUM_SPECIES; n++) {
-       state(i,j,k,FIRSTSPEC+n) = massfrac[n] * state(i,j,k,DENSITY);
-    }
+  // Species mass
+  for (int n = 0; n < NUM_SPECIES; n++) {
+    state(i, j, k, FIRSTSPEC + n) = massfrac[n] * state(i, j, k, DENSITY);
+  }
 }
 
 AMREX_GPU_DEVICE
@@ -92,16 +96,21 @@ bcnormal(
 AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
 void
-zero_visc (int i, int j, int k,
-           amrex::Array4<amrex::Real> const& beta,
-           amrex::GeometryData const& geomdata,
-           amrex::Box const& domainBox,
-           const int  dir,
-           const int  beta_comp,
-           const int  nComp)
+zero_visc(
+  int i,
+  int j,
+  int k,
+  amrex::Array4<amrex::Real> const& beta,
+  amrex::GeometryData const& geomdata,
+  amrex::Box const& domainBox,
+  const int dir,
+  const int beta_comp,
+  const int nComp)
 {
-     amrex::ignore_unused(i,j,k,beta,geomdata,domainBox,dir,beta_comp,nComp);
-    // We treat species when beta_comp == 0 and nComp == NUM_SPECIES
-    // otherwise this routine could be called for other face diffusivity (Temp, velocity, ...)
+  amrex::ignore_unused(
+    i, j, k, beta, geomdata, domainBox, dir, beta_comp, nComp);
+  // We treat species when beta_comp == 0 and nComp == NUM_SPECIES
+  // otherwise this routine could be called for other face diffusivity (Temp,
+  // velocity, ...)
 }
 #endif

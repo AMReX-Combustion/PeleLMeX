@@ -16,8 +16,7 @@ SprayParticleContainer::injectParticles(
 
 void
 SprayParticleContainer::InitSprayParticles(
-  const bool init_parts,
-  ProbParm const& prob_parm)
+  const bool init_parts, ProbParm const& prob_parm)
 {
   if (!init_parts) {
     return;

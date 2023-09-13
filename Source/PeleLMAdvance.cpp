@@ -8,117 +8,118 @@ void PeleLM::Advance(int is_initIter) {
    BL_PROFILE("PeleLMeX::Advance()");
 
 #ifdef AMREX_MEM_PROFILING
-   // Memory profiler if compiled
-   MemProfiler::report("STEP ["+std::to_string(m_nstep)+"]");
+  // Memory profiler if compiled
+  MemProfiler::report("STEP [" + std::to_string(m_nstep) + "]");
 #endif
 
-   // Start timing current time step
-   Real strt_time = ParallelDescriptor::second();
+  // Start timing current time step
+  Real strt_time = ParallelDescriptor::second();
 
    //----------------------------------------------------------------
    BL_PROFILE_VAR("PeleLMeX::advance::setup", PLM_SETUP);
    //----------------------------------------------------------------
 
-   // Deal with ambient pressure
-   if (m_closed_chamber) {
-      m_pNew = m_pOld;
-   }
+  // Deal with ambient pressure
+  if (m_closed_chamber) {
+    m_pNew = m_pOld;
+  }
 
-   // Put together new typical values
-   if (!is_initIter && m_nstep > 0 &&
-       m_nstep%m_resetTypValInt == 0) {
-       setTypicalValues(AmrNewTime);
-   }
+  // Put together new typical values
+  if (!is_initIter && m_nstep > 0 && m_nstep % m_resetTypValInt == 0) {
+    setTypicalValues(AmrNewTime);
+  }
 
-   //----------------------------------------------------------------
-   // Copy old <- new state
-   copyStateNewToOld(1);
-   copyPressNewToOld();
-   //----------------------------------------------------------------
+  //----------------------------------------------------------------
+  // Copy old <- new state
+  copyStateNewToOld(1);
+  copyPressNewToOld();
+  //----------------------------------------------------------------
 
-   //----------------------------------------------------------------
-   // TIME
-   // Compute time-step size
-   m_dt = computeDt(is_initIter,AmrOldTime);
+  //----------------------------------------------------------------
+  // TIME
+  // Compute time-step size
+  m_dt = computeDt(is_initIter, AmrOldTime);
 
 #ifdef PELELM_USE_SPRAY
-   // Create the state MF used for spray interpolation
-   SpraySetState(m_dt);
+  // Create the state MF used for spray interpolation
+  SpraySetState(m_dt);
 #endif
 
-   // Update time vectors
-   for(int lev = 0; lev <= finest_level; lev++)
-   {
-       m_t_old[lev] = m_cur_time;
-       m_t_new[lev] = m_cur_time + m_dt;
-   }
-   //----------------------------------------------------------------
+  // Update time vectors
+  for (int lev = 0; lev <= finest_level; lev++) {
+    m_t_old[lev] = m_cur_time;
+    m_t_new[lev] = m_cur_time + m_dt;
+  }
+  //----------------------------------------------------------------
 
-   if ( m_verbose ) {
-      amrex::Print() << " STEP [" << m_nstep << "] - Time: " << m_cur_time << ", dt " << m_dt << "\n";
-   }
+  if (m_verbose) {
+    amrex::Print() << " STEP [" << m_nstep << "] - Time: " << m_cur_time
+                   << ", dt " << m_dt << "\n";
+  }
 
-   checkMemory("Adv. start");
+  checkMemory("Adv. start");
 
-   //----------------------------------------------------------------
-   // Data for the advance, only live for the duration of the advance
-   std::unique_ptr<AdvanceDiffData> diffData;
-   diffData.reset(new AdvanceDiffData(finest_level, grids, dmap, m_factory, m_nGrowAdv, m_use_wbar, m_use_soret));
-   std::unique_ptr<AdvanceAdvData> advData;
-   advData.reset(new AdvanceAdvData(finest_level, grids, dmap, m_factory, m_incompressible,
-                                    m_nGrowAdv, m_nGrowMAC));
+  //----------------------------------------------------------------
+  // Data for the advance, only live for the duration of the advance
+  std::unique_ptr<AdvanceDiffData> diffData;
+  diffData.reset(new AdvanceDiffData(
+    finest_level, grids, dmap, m_factory, m_nGrowAdv, m_use_wbar, m_use_soret));
+  std::unique_ptr<AdvanceAdvData> advData;
+  advData.reset(new AdvanceAdvData(
+    finest_level, grids, dmap, m_factory, m_incompressible, m_nGrowAdv,
+    m_nGrowMAC));
 
-   for (int lev = 0; lev <= finest_level; lev++) {
-     m_extSource[lev]->setVal(0.);
-   }
-   //----------------------------------------------------------------
+  for (int lev = 0; lev <= finest_level; lev++) {
+    m_extSource[lev]->setVal(0.);
+  }
+  //----------------------------------------------------------------
 
-   //----------------------------------------------------------------
-   // Advance setup
-   // Pre-SDC
-   m_sdcIter = 0;
+  //----------------------------------------------------------------
+  // Advance setup
+  // Pre-SDC
+  m_sdcIter = 0;
 
-   // initiliaze temporals
-   initTemporals();
+  // initiliaze temporals
+  initTemporals();
 
-   // Reset velocity flux on boundary faces if doing closed chamber
-   if (m_closed_chamber) {
-      for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
-         m_domainUmacFlux[2*idim] = 0.0;
-         m_domainUmacFlux[2*idim+1] = 0.0;
-      }
-   }
+  // Reset velocity flux on boundary faces if doing closed chamber
+  if (m_closed_chamber) {
+    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+      m_domainUmacFlux[2 * idim] = 0.0;
+      m_domainUmacFlux[2 * idim + 1] = 0.0;
+    }
+  }
 
-   // fillpatch the t^{n} data
-   averageDownState(AmrOldTime);
-   fillPatchState(AmrOldTime);
+  // fillpatch the t^{n} data
+  averageDownState(AmrOldTime);
+  fillPatchState(AmrOldTime);
 
-   // compute t^{n} data
-   calcViscosity(AmrOldTime);
-   if (! m_incompressible ) {
-      calcDiffusivity(AmrOldTime);
+  // compute t^{n} data
+  calcViscosity(AmrOldTime);
+  if (!m_incompressible) {
+    calcDiffusivity(AmrOldTime);
 #ifdef PELE_USE_EFIELD
-      poissonSolveEF(AmrOldTime);
+    poissonSolveEF(AmrOldTime);
 #endif
-   }
+  }
 
-   //----------------------------------------------------------------
-   BL_PROFILE_VAR_STOP(PLM_SETUP);
-   //----------------------------------------------------------------
+  //----------------------------------------------------------------
+  BL_PROFILE_VAR_STOP(PLM_SETUP);
+  //----------------------------------------------------------------
 
 #ifdef PELELM_USE_SPRAY
-   if (!is_initIter) {
-     SprayMKD(m_cur_time, m_dt);
-   }
+  if (!is_initIter) {
+    SprayMKD(m_cur_time, m_dt);
+  }
 #endif
 #ifdef PELELM_USE_SOOT
-   if (do_soot_solve) {
-     computeSootSource(AmrOldTime, m_dt);
-   }
+  if (do_soot_solve) {
+    computeSootSource(AmrOldTime, m_dt);
+  }
 #endif
 
-   if (! m_incompressible ) {
-      floorSpecies(AmrOldTime);
+  if (!m_incompressible) {
+    floorSpecies(AmrOldTime);
 
       //----------------------------------------------------------------
       BL_PROFILE_VAR("PeleLMeX::advance::mac", PLM_MAC);
@@ -131,19 +132,19 @@ void PeleLM::Advance(int is_initIter) {
       //----------------------------------------------------------------
    }
 
-   // Initialize terms t^{np1,k} from t^{n}
-   //----------------------------------------------------------------
-   BL_PROFILE_VAR_START(PLM_SETUP);
-   //----------------------------------------------------------------
-   copyTransportOldToNew();
-   if (! m_incompressible ) {
-      copyDiffusionOldToNew(diffData);
+  // Initialize terms t^{np1,k} from t^{n}
+  //----------------------------------------------------------------
+  BL_PROFILE_VAR_START(PLM_SETUP);
+  //----------------------------------------------------------------
+  copyTransportOldToNew();
+  if (!m_incompressible) {
+    copyDiffusionOldToNew(diffData);
 #ifdef PELE_USE_EFIELD
-      ionDriftVelocity(advData);
+    ionDriftVelocity(advData);
 #endif
-   }
-   BL_PROFILE_VAR_STOP(PLM_SETUP);
-   //----------------------------------------------------------------
+  }
+  BL_PROFILE_VAR_STOP(PLM_SETUP);
+  //----------------------------------------------------------------
 
    //----------------------------------------------------------------
    // Scalar advance
@@ -294,26 +295,33 @@ void PeleLM::oneSDC(int sdcIter,
    Real MACStart = 0.0;
    if (m_verbose > 1) {
       MACStart = ParallelDescriptor::second();
-   }
-   // Predict face velocity with Godunov
-   predictVelocity(advData);
+    }
 
-   // Create S^{n+1/2} by fillpatching t^{n} and t^{np1,k}
-   createMACRHS(advData);
+    // Still need to get face velocities ...
+    predictVelocity(advData);
 
-   // Re-evaluate thermo. pressure and add chi_increment
-   addChiIncrement(sdcIter, AmrNewTime, advData);
+    // ... and MAC-project face velocities, but no divu
+    macProject(AmrOldTime, advData, {});
 
-   // MAC projection
-   macProject(AmrOldTime,advData,GetVecOfPtrs(advData->mac_divu));
-   if (m_verbose > 1) {
+    if (m_verbose > 1) {
       Real MACEnd = ParallelDescriptor::second() - MACStart;
-      ParallelDescriptor::ReduceRealMax(MACEnd, ParallelDescriptor::IOProcessorNumber());
-      amrex::Print() << "   - oneSDC()::MACProjection()   --> Time: " << MACEnd << "\n";
-   }
-   checkMemory("MAC-Proj");
-   BL_PROFILE_VAR_STOP(PLM_MAC);
-   //----------------------------------------------------------------
+      ParallelDescriptor::ReduceRealMax(
+        MACEnd, ParallelDescriptor::IOProcessorNumber());
+      amrex::Print() << "   - Advance()::MACProjection()  --> Time: " << MACEnd
+                     << "\n";
+    }
+    checkMemory("MAC-Proj");
+
+  } else {
+
+    // SDC iterations
+    for (int sdc_iter = 1; sdc_iter <= m_nSDCmax; ++sdc_iter) {
+      oneSDC(sdc_iter, advData, diffData);
+    }
+
+    // Post SDC
+    averageDownScalars(AmrNewTime);
+    fillPatchState(AmrNewTime);
 
    //----------------------------------------------------------------
    // Scalar advections
@@ -324,27 +332,35 @@ void PeleLM::oneSDC(int sdcIter,
       ScalAdvStart = ParallelDescriptor::second();
    }
 #ifdef PELELM_USE_SOOT
-   // Compute and update passive advective terms
-   computePassiveAdvTerms(advData, FIRSTSOOT, NUMSOOTVAR);
+    if (do_soot_solve) {
+      clipSootMoments();
+    }
 #endif
-   // Get scalar advection SDC forcing
-   getScalarAdvForce(advData,diffData);
+    if (m_has_divu) {
+      int is_initialization = 0; // Not here
+      int computeDiffusionTerm =
+        1; // Yes, re-evaluate the diffusion term after the last chemistry solve
+      int do_avgDown = 1; // Always
+      calcDivU(
+        is_initialization, computeDiffusionTerm, do_avgDown, AmrNewTime,
+        diffData);
+    }
+  }
+  //----------------------------------------------------------------
 
-   // Get AofS: (\nabla \cdot (\rho Y Umac))^{n+1/2,k}
-   // and for density = \sum_k AofS_k
-   computeScalarAdvTerms(advData);
+  //----------------------------------------------------------------
+  BL_PROFILE_VAR("PeleLM::advance::velocity", PLM_VEL);
+  // Velocity advance
+  Real VelAdvStart = 0.0;
+  if (m_verbose > 1) {
+    VelAdvStart = ParallelDescriptor::second();
+  }
+  // Re-evaluate viscosity only if scalar updated
+  if (!m_incompressible)
+    calcViscosity(AmrNewTime);
 
-   // Compute \rho^{np1,k+1} and fillpatch new density
-   updateDensity(advData);
-   fillPatchDensity(AmrNewTime);
-   if (m_verbose > 1) {
-      Real ScalAdvEnd = ParallelDescriptor::second() - ScalAdvStart;
-      ParallelDescriptor::ReduceRealMax(ScalAdvEnd, ParallelDescriptor::IOProcessorNumber());
-      amrex::Print() << "   - oneSDC()::ScalarAdvection() --> Time: " << ScalAdvEnd << "\n";
-   }
-   checkMemory("ScalAdv");
-   BL_PROFILE_VAR_STOP(PLM_SADV);
-   //----------------------------------------------------------------
+  // Compute t^{n+1/2} velocity advection term
+  computeVelocityAdvTerm(advData);
 
    //----------------------------------------------------------------
    // Scalar diffusion
@@ -357,22 +373,185 @@ void PeleLM::oneSDC(int sdcIter,
    // Get scalar diffusion SDC RHS (stored in Forcing)
    getScalarDiffForce(advData,diffData);
 
-   // Diffuse scalars
-   differentialDiffusionUpdate(advData,diffData);
-   if (m_verbose > 1) {
-      Real ScalDiffEnd = ParallelDescriptor::second() - ScalDiffStart;
-      ParallelDescriptor::ReduceRealMax(ScalDiffEnd, ParallelDescriptor::IOProcessorNumber());
-      amrex::Print() << "   - oneSDC()::ScalarDiffusion() --> Time: " << ScalDiffEnd << "\n";
-   }
-   checkMemory("ScalDiff");
-   BL_PROFILE_VAR_STOP(PLM_DIFF);
-   //----------------------------------------------------------------
+  // Semi-implicit CN diffusion solve to get U^{np1*}
+  diffuseVelocity();
+
+  // Nodal projection to get constrained U^{np1} and new pressure \pi^{n+1/2}
+  const TimeStamp rhoTime = AmrHalfTime;
+  velocityProjection(is_initIter, rhoTime, m_dt);
+  if (m_verbose > 1) {
+    Real VelAdvEnd = ParallelDescriptor::second() - VelAdvStart;
+    ParallelDescriptor::ReduceRealMax(
+      VelAdvEnd, ParallelDescriptor::IOProcessorNumber());
+    amrex::Print() << "   - Advance()::VelocityAdvance  --> Time: " << VelAdvEnd
+                   << "\n";
+  }
+  checkMemory("Nodal-Proj");
+  BL_PROFILE_VAR_STOP(PLM_VEL);
+  //----------------------------------------------------------------
+
+  // Deal with ambient pressure
+  if (m_closed_chamber && !is_initIter) {
+    m_pOld = m_pNew;
+  }
+
+  //----------------------------------------------------------------
+  // Wrapup advance
+  // Timing current time step
+  if (m_verbose > 0) {
+    Real run_time = ParallelDescriptor::second() - strt_time;
+    ParallelDescriptor::ReduceRealMax(
+      run_time, ParallelDescriptor::IOProcessorNumber());
+    amrex::Print() << " >> PeleLM::Advance() --> Time: " << run_time << "\n";
+  }
+}
+
+void
+PeleLM::oneSDC(
+  int sdcIter,
+  std::unique_ptr<AdvanceAdvData>& advData,
+  std::unique_ptr<AdvanceDiffData>& diffData)
+{
+  BL_PROFILE("PeleLM::oneSDC()");
+  m_sdcIter = sdcIter;
+
+  if (m_verbose > 0) {
+    amrex::Print() << "   SDC iter [" << sdcIter << "] \n";
+  }
+
+  //----------------------------------------------------------------
+  // Update t^{n+1,k} transport/Dnp1/divU
+  //----------------------------------------------------------------
+  // At the first SDC, we already copied old -> new
+  if (sdcIter > 1) {
+
+    Real UpdateStart = 0.0;
+    if (m_verbose > 1) {
+      UpdateStart = ParallelDescriptor::second();
+    }
+    // fillpatch the new state
+    averageDownScalars(AmrNewTime);
+    fillPatchState(AmrNewTime);
+
+    calcDiffusivity(AmrNewTime);
+    computeDifferentialDiffusionTerms(AmrNewTime, diffData);
+    if (m_has_divu) {
+      int is_initialization = 0;    // Not here
+      int computeDiffusionTerm = 0; // Nope, we just did that
+      int do_avgDown = 1;           // Always
+      calcDivU(
+        is_initialization, computeDiffusionTerm, do_avgDown, AmrNewTime,
+        diffData);
+    }
+#ifdef PELE_USE_EFIELD
+    ionDriftVelocity(advData);
+#endif
+
+    // Check divU dt based on NewTime
+    checkDt(AmrNewTime, m_dt);
+
+    if (m_verbose > 1) {
+      Real UpdateEnd = ParallelDescriptor::second() - UpdateStart;
+      ParallelDescriptor::ReduceRealMax(
+        UpdateEnd, ParallelDescriptor::IOProcessorNumber());
+      amrex::Print() << "   - oneSDC()::Update t^{n+1,k}  --> Time: "
+                     << UpdateEnd << "\n";
+    }
+  }
+  //----------------------------------------------------------------
+
+  //----------------------------------------------------------------
+  // Get u MAC
+  //----------------------------------------------------------------
+  BL_PROFILE_VAR("PeleLM::advance::mac", PLM_MAC);
+  Real MACStart = 0.0;
+  if (m_verbose > 1) {
+    MACStart = ParallelDescriptor::second();
+  }
+  // Predict face velocity with Godunov
+  predictVelocity(advData);
+
+  // Create S^{n+1/2} by fillpatching t^{n} and t^{np1,k}
+  createMACRHS(advData);
+
+  // Re-evaluate thermo. pressure and add chi_increment
+  addChiIncrement(sdcIter, AmrNewTime, advData);
+
+  // MAC projection
+  macProject(AmrOldTime, advData, GetVecOfPtrs(advData->mac_divu));
+  if (m_verbose > 1) {
+    Real MACEnd = ParallelDescriptor::second() - MACStart;
+    ParallelDescriptor::ReduceRealMax(
+      MACEnd, ParallelDescriptor::IOProcessorNumber());
+    amrex::Print() << "   - oneSDC()::MACProjection()   --> Time: " << MACEnd
+                   << "\n";
+  }
+  checkMemory("MAC-Proj");
+  BL_PROFILE_VAR_STOP(PLM_MAC);
+  //----------------------------------------------------------------
+
+  //----------------------------------------------------------------
+  // Scalar advections
+  //----------------------------------------------------------------
+  BL_PROFILE_VAR("PeleLM::advance::scalars_adv", PLM_SADV);
+  Real ScalAdvStart = 0.0;
+  if (m_verbose > 1) {
+    ScalAdvStart = ParallelDescriptor::second();
+  }
+#ifdef PELELM_USE_SOOT
+  // Compute and update passive advective terms
+  computePassiveAdvTerms(advData, FIRSTSOOT, NUMSOOTVAR);
+#endif
+  // Get scalar advection SDC forcing
+  getScalarAdvForce(advData, diffData);
+
+  // Get AofS: (\nabla \cdot (\rho Y Umac))^{n+1/2,k}
+  // and for density = \sum_k AofS_k
+  computeScalarAdvTerms(advData);
+
+  // Compute \rho^{np1,k+1} and fillpatch new density
+  updateDensity(advData);
+  fillPatchDensity(AmrNewTime);
+  if (m_verbose > 1) {
+    Real ScalAdvEnd = ParallelDescriptor::second() - ScalAdvStart;
+    ParallelDescriptor::ReduceRealMax(
+      ScalAdvEnd, ParallelDescriptor::IOProcessorNumber());
+    amrex::Print() << "   - oneSDC()::ScalarAdvection() --> Time: "
+                   << ScalAdvEnd << "\n";
+  }
+  checkMemory("ScalAdv");
+  BL_PROFILE_VAR_STOP(PLM_SADV);
+  //----------------------------------------------------------------
+
+  //----------------------------------------------------------------
+  // Scalar diffusion
+  //----------------------------------------------------------------
+  BL_PROFILE_VAR("PeleLM::advance::diffusion", PLM_DIFF);
+  Real ScalDiffStart = 0.0;
+  if (m_verbose > 1) {
+    ScalDiffStart = ParallelDescriptor::second();
+  }
+  // Get scalar diffusion SDC RHS (stored in Forcing)
+  getScalarDiffForce(advData, diffData);
+
+  // Diffuse scalars
+  differentialDiffusionUpdate(advData, diffData);
+  if (m_verbose > 1) {
+    Real ScalDiffEnd = ParallelDescriptor::second() - ScalDiffStart;
+    ParallelDescriptor::ReduceRealMax(
+      ScalDiffEnd, ParallelDescriptor::IOProcessorNumber());
+    amrex::Print() << "   - oneSDC()::ScalarDiffusion() --> Time: "
+                   << ScalDiffEnd << "\n";
+  }
+  checkMemory("ScalDiff");
+  BL_PROFILE_VAR_STOP(PLM_DIFF);
+  //----------------------------------------------------------------
 
 #ifdef PELE_USE_EFIELD
-   //----------------------------------------------------------------
-   // Solve for implicit non-linear nE/PhiV system
-   //----------------------------------------------------------------
-   implicitNonLinearSolve(sdcIter, m_dt, diffData, advData);
+  //----------------------------------------------------------------
+  // Solve for implicit non-linear nE/PhiV system
+  //----------------------------------------------------------------
+  implicitNonLinearSolve(sdcIter, m_dt, diffData, advData);
 #endif
 
    //----------------------------------------------------------------
@@ -386,22 +565,24 @@ void PeleLM::oneSDC(int sdcIter,
    // Get external forcing for chemistry
    getScalarReactForce(advData);
 
-   // Integrate chemistry
-   advanceChemistry(advData);
-   if (m_verbose > 1) {
-      Real ScalReacEnd = ParallelDescriptor::second() - ScalReacStart;
-      ParallelDescriptor::ReduceRealMax(ScalReacEnd, ParallelDescriptor::IOProcessorNumber());
-      amrex::Print() << "   - oneSDC()::ScalarReaction()  --> Time: " << ScalReacEnd << "\n";
-   }
-   checkMemory("ScalReact");
-   BL_PROFILE_VAR_STOP(PLM_REAC);
-   //----------------------------------------------------------------
+  // Integrate chemistry
+  advanceChemistry(advData);
+  if (m_verbose > 1) {
+    Real ScalReacEnd = ParallelDescriptor::second() - ScalReacStart;
+    ParallelDescriptor::ReduceRealMax(
+      ScalReacEnd, ParallelDescriptor::IOProcessorNumber());
+    amrex::Print() << "   - oneSDC()::ScalarReaction()  --> Time: "
+                   << ScalReacEnd << "\n";
+  }
+  checkMemory("ScalReact");
+  BL_PROFILE_VAR_STOP(PLM_REAC);
+  //----------------------------------------------------------------
 
-   //----------------------------------------------------------------
-   // Wrap it up
-   //----------------------------------------------------------------
-   // Re-evaluate derived state entries
-   setTemperature(AmrNewTime);
-   floorSpecies(AmrNewTime);
-   setThermoPress(AmrNewTime);
+  //----------------------------------------------------------------
+  // Wrap it up
+  //----------------------------------------------------------------
+  // Re-evaluate derived state entries
+  setTemperature(AmrNewTime);
+  floorSpecies(AmrNewTime);
+  setThermoPress(AmrNewTime);
 }
