@@ -19,9 +19,9 @@ endif
 
 all: $(executable)
 ifneq ($(KEEP_BUILDINFO_CPP),TRUE)
-        $(SILENT) $(RM) AMReX_buildInfo.cpp
+	$(SILENT) $(RM) AMReX_buildInfo.cpp
 endif
-        @echo SUCCESS
+	@echo SUCCESS
 
 ifeq ($(USE_CUDA),TRUE)
    CXXFLAGS += -Xptxas --disable-optimizer-constants -Xcompiler=-std=c++17
