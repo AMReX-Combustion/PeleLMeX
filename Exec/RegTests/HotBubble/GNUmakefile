@@ -32,4 +32,5 @@ Chemistry_Model = air
 Eos_Model = Fuego
 Transport_Model = Constant
 
-include $(PELELMEX_HOME)/Utils/Make.PeleLMeX
+PELELMEX_HOME ?= ../../..
+include $(PELELMEX_HOME)/Exec/Make.PeleLMeX
