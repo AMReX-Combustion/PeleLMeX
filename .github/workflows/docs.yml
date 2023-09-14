@@ -45,5 +45,5 @@ jobs:
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BRANCH: gh-pages
-          FOLDER: ${{runner.workspace}}/build-docs/sphinx/html
+          FOLDER: ${{runner.workspace}}/build-docs/html
           SINGLE_COMMIT: true
