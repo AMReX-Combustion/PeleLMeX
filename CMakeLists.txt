@@ -25,9 +25,10 @@ option(PELELMEX_ENABLE_HYPRE "Enable Offload to Hypre" OFF)
 set(PELELMEX_PRECISION "DOUBLE" CACHE STRING "Floating point precision SINGLE or DOUBLE")
 
 # Physics options
-option(PELELMEX_ENABLE_EB "Enable Embedded Boundary" ON)
+option(PELELMEX_ENABLE_EB "Enable Embedded Boundary" OFF)
 option(PELELMEX_ENABLE_EFIELD "Enable Electric field module" OFF)
 option(PELELMEX_ENABLE_SOOT "Enable Soot module" OFF)
+option(PELELMEX_ENABLE_PARTICLE "Enable particles" OFF)
 
 # HPC options
 option(PELELMEX_ENABLE_MPI "Enable MPI" OFF)

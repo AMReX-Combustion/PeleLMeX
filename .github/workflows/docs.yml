@@ -1,31 +1,33 @@
 name: PeleLMeX-Docs
 
 on:
+  workflow_dispatch:
   push:
     branches: [development]
     paths:
        - 'Docs/**'
-       - 'README.md'
        - '.github/workflows/docs.yml'
   pull_request:
     branches: [development]
     paths:
        - 'Docs/**'
-       - 'README.md'
        - '.github/workflows/docs.yml'
 
 jobs:
   Docs:
     runs-on: ubuntu-latest
     steps:
-      - name: Clone
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
       - name: Python
         uses: actions/setup-python@v3
         with:
           python-version: '3.x'
       - name: Dependencies
         run: |
+          #Currently ignoring doxygen
+          #export DEBIAN_FRONTEND=noninteractive
+          #sudo apt-get update
+          #sudo apt-get install -y --no-install-recommends doxygen graphviz
           python -m pip install --upgrade pip
           pip install sphinx sphinx_rtd_theme
       - name: Configure
@@ -38,7 +40,7 @@ jobs:
            echo "::remove-matcher owner=sphinx-problem-matcher-loose-no-severity::"
            echo "::remove-matcher owner=sphinx-problem-matcher-loose::"
            echo "::remove-matcher owner=sphinx-problem-matcher::"
-           touch ${{runner.workspace}}/build-docs/html/.nojekyll
+           touch ${{runner.workspace}}/build-docs/html/manual/html/.nojekyll
       - name: Deploy
         if: github.event_name == 'push' && github.ref == 'refs/heads/development'
         uses: JamesIves/github-pages-deploy-action@releases/v4

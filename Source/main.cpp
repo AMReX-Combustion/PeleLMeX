@@ -1,5 +1,11 @@
 #include <PeleLM.H>
 
+// Defined and initialized when in gnumake, but not defined in cmake and
+// initialization done manually
+#ifndef AMREX_USE_SUNDIALS
+#include <AMReX_Sundials.H>
+#endif
+
 using namespace amrex;
 
 int
@@ -18,6 +24,12 @@ main(int argc, char* argv[])
 
   // in AMReX.cpp
   Initialize(argc, argv);
+
+// Defined and initialized when in gnumake, but not defined in cmake and
+// initialization done manually
+#ifndef AMREX_USE_SUNDIALS
+  amrex::sundials::Initialize(amrex::OpenMP::get_max_threads());
+#endif
 
   // Refuse to continue if we did not provide an inputs file.
   if (argc <= 1) {
@@ -67,6 +79,12 @@ main(int argc, char* argv[])
 
   // destroy timer for profiling
   BL_PROFILE_VAR_STOP(main);
+
+// Defined and finalized when in gnumake, but not defined in cmake and
+// finalization done manually
+#ifndef AMREX_USE_SUNDIALS
+  amrex::sundials::Finalize();
+#endif
 
   // in AMReX.cpp
   Finalize();
