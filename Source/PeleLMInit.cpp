@@ -7,7 +7,7 @@
 using namespace amrex;
 
 void PeleLM::Init() {
-   BL_PROFILE_VAR("PeleLM::Init()", Init);
+   BL_PROFILE("PeleLMeX::Init()");
 
    // Open temporals file
    openTempFile();
@@ -23,7 +23,7 @@ void PeleLM::MakeNewLevelFromScratch( int lev,
                                             amrex::Real time,
                                       const amrex::BoxArray& ba,
                                       const amrex::DistributionMapping& dm) {
-   BL_PROFILE_VAR("PeleLM::MakeNewLevelFromScratch()", MakeNewLevelFromScratch);
+   BL_PROFILE("PeleLMeX::MakeNewLevelFromScratch()");
 
    if (m_verbose > 0) {
       amrex::Print() << " Making new level " << lev << " from scratch" << std::endl;
@@ -147,7 +147,7 @@ void PeleLM::MakeNewLevelFromScratch( int lev,
 }
 
 void PeleLM::initData() {
-   BL_PROFILE_VAR("PeleLM::initData()", initData);
+   BL_PROFILE("PeleLMeX::initData()");
 
    if (m_restart_chkfile.empty()) {
       //----------------------------------------------------------------
@@ -289,7 +289,7 @@ void PeleLM::initData() {
 }
 
 void PeleLM::initLevelData(int lev) {
-   BL_PROFILE_VAR("PeleLM::initLevelData()", initLevelData);
+   BL_PROFILE("PeleLMeX::initLevelData()");
 
    // Get level data
    auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
@@ -434,7 +434,7 @@ void PeleLM::projectInitSolution()
 }
 
 void PeleLM::initialIterations() {
-   BL_PROFILE_VAR("PeleLM::initialIterations()", initialIterations);
+   BL_PROFILE("PeleLMeX::initialIterations()");
 
    if (m_verbose > 0 && m_init_iter > 0) {
       amrex::Print() << "\n Doing initial pressure iteration(s) \n";

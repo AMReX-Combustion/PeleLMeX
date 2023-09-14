@@ -48,7 +48,7 @@ void PeleLM::WriteDebugPlotFile(const Vector<const MultiFab*> &a_MF,
 }
 
 void PeleLM::WritePlotFile() {
-   BL_PROFILE("PeleLM::WritePlotFile()");
+   BL_PROFILE("PeleLMeX::WritePlotFile()");
 
    const std::string& plotfilename = amrex::Concatenate(m_plot_file, m_nstep, m_ioDigits);
 
@@ -443,7 +443,7 @@ void PeleLM::WriteHeader(const std::string& name, bool is_checkpoint) const
 
 void PeleLM::WriteCheckPointFile()
 {
-   BL_PROFILE("PeleLM::WriteCheckPointFile()");
+   BL_PROFILE("PeleLMeX::WriteCheckPointFile()");
 
    const std::string& checkpointname = amrex::Concatenate(m_check_file, m_nstep, m_ioDigits);
 
@@ -492,7 +492,7 @@ void PeleLM::WriteCheckPointFile()
 
 void PeleLM::ReadCheckPointFile()
 {
-   BL_PROFILE("PeleLM::ReadCheckPointFile()");
+   BL_PROFILE("PeleLMeX::ReadCheckPointFile()");
 
    amrex::Print() << "Restarting from checkpoint " << m_restart_chkfile << "\n";
 
@@ -501,7 +501,7 @@ void PeleLM::ReadCheckPointFile()
 
    /***************************************************************************
    ** Load header: set up problem domain (including BoxArray)                 *
-   **              allocate PeleLM memory (PeleLM::AllocateArrays)            *
+   **              allocate PeleLMeX memory (PeleLM::AllocateArrays)            *
    **              (by calling MakeNewLevelFromScratch)                       *
    ****************************************************************************/
 

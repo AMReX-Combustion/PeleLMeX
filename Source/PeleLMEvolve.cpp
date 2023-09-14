@@ -3,7 +3,7 @@
 using namespace amrex;
 
 void PeleLM::Evolve() {
-   BL_PROFILE("PeleLM::Evolve()");
+   BL_PROFILE("PeleLMeX::Evolve()");
 
    bool do_not_evolve = ( (m_max_step == 0) ||
                           ((m_stop_time >= 0.) && (m_cur_time > m_stop_time)) );

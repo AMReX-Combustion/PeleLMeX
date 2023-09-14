@@ -7,7 +7,7 @@ Real
 PeleLM::computeDt(int is_init,
                   const TimeStamp &a_time)
 {
-   BL_PROFILE("PeleLM::computeDt()");
+   BL_PROFILE("PeleLMeX::computeDt()");
 
    Real estdt = 1.0e200;
 
@@ -220,7 +220,7 @@ void
 PeleLM::checkDt(const TimeStamp &a_time,
                 const Real &a_dt)
 {
-    BL_PROFILE("PeleLM::checkDt()");
+    BL_PROFILE("PeleLMeX::checkDt()");
 
     if (m_fixed_dt > 0.0 || !m_divu_checkFlag) {
         return;

@@ -36,7 +36,7 @@ void PeleLM::computeDifferentialDiffusionTerms(const TimeStamp &a_time,
                                                std::unique_ptr<AdvanceDiffData> &diffData,
                                                int is_init)
 {
-   BL_PROFILE("PeleLM::computeDifferentialDiffusionTerms()");
+   BL_PROFILE("PeleLMeX::computeDifferentialDiffusionTerms()");
 
    //----------------------------------------------------------------
    // Checks
@@ -198,7 +198,7 @@ void PeleLM::computeDifferentialDiffusionFluxes(const TimeStamp &a_time,
                                                 const Vector<Array<MultiFab*,AMREX_SPACEDIM> > &a_wbarfluxes,
                                                 const Vector<Array<MultiFab*,AMREX_SPACEDIM> > &a_soretfluxes)
 {
-   BL_PROFILE("PeleLM::computeDifferentialDiffusionFluxes()");
+   BL_PROFILE("PeleLMeX::computeDifferentialDiffusionFluxes()");
 
 #ifdef AMREX_USE_EB
    int have_EBfluxes = (a_EBfluxes.empty()) ? 0 : 1;
@@ -614,7 +614,7 @@ void PeleLM::adjustSpeciesFluxes(const Vector<Array<MultiFab*,AMREX_SPACEDIM> > 
                                  Vector<MultiFab const*> const &a_spec)
 {
 
-   BL_PROFILE("PeleLM::adjustSpeciesFluxes()");
+   BL_PROFILE("PeleLMeX::adjustSpeciesFluxes()");
 
    // Get the species BCRec
    auto bcRecSpec = fetchBCRecArray(FIRSTSPEC,NUM_SPECIES);
@@ -710,7 +710,7 @@ void PeleLM::computeSpeciesEnthalpyFlux(const Vector<Array<MultiFab*,AMREX_SPACE
                                         Vector<MultiFab const*> const &a_temp)
 {
 
-   BL_PROFILE("PeleLM::computeSpeciesEnthalpyFlux()");
+   BL_PROFILE("PeleLMeX::computeSpeciesEnthalpyFlux()");
 
    // Get the species BCRec
    auto bcRecSpec = fetchBCRecArray(FIRSTSPEC,NUM_SPECIES);
@@ -798,7 +798,7 @@ void PeleLM::computeSpeciesEnthalpyFlux(const Vector<Array<MultiFab*,AMREX_SPACE
 void PeleLM::differentialDiffusionUpdate(std::unique_ptr<AdvanceAdvData> &advData,
                                          std::unique_ptr<AdvanceDiffData> &diffData)
 {
-   BL_PROFILE("PeleLM::differentialDiffusionUpdate()");
+   BL_PROFILE("PeleLMeX::differentialDiffusionUpdate()");
 
    //------------------------------------------------------------------------
    // Setup fluxes
@@ -1374,7 +1374,7 @@ void PeleLM::computeDivTau(const TimeStamp &a_time,
                            int use_density,
                            Real scale)
 {
-   BL_PROFILE("PeleLM::computeDivTau()");
+   BL_PROFILE("PeleLMeX::computeDivTau()");
    // Get the density component BCRec to get viscosity on faces
    auto bcRec = fetchBCRecArray(DENSITY,1);
 
@@ -1395,7 +1395,7 @@ void PeleLM::computeDivTau(const TimeStamp &a_time,
 
 void PeleLM::diffuseVelocity()
 {
-   BL_PROFILE("PeleLM::diffuseVelocity()");
+   BL_PROFILE("PeleLMeX::diffuseVelocity()");
    // Get the density component BCRec to get viscosity on faces
    auto bcRec = fetchBCRecArray(DENSITY,1);
 

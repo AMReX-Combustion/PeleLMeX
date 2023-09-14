@@ -26,6 +26,4 @@ Chemistry_Model = air
 Eos_Model       = Fuego
 Transport_Model = Constant
 
-USE_SUNDIALS_PP = TRUE
-
 include $(PELELMEX_HOME)/Utils/Make.PeleLMeX

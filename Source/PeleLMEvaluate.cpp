@@ -4,7 +4,7 @@
 using namespace amrex;
 
 void PeleLM::Evaluate() {
-   BL_PROFILE("PeleLM::Evaluate()");
+   BL_PROFILE("PeleLMeX::Evaluate()");
 
    //----------------------------------------------------------------
    // Check that requested evaluate entries exist and determine the size

@@ -8,7 +8,7 @@ using namespace amrex;
 
 void PeleLM::predictVelocity(std::unique_ptr<AdvanceAdvData>  &advData)
 {
-   BL_PROFILE("PeleLM::predictVelocity()");
+   BL_PROFILE("PeleLMeX::predictVelocity()");
 
    // set umac boundaries to zero
    if ( advData->umac[0][0].nGrow() > 0 ) {
@@ -69,7 +69,7 @@ void PeleLM::predictVelocity(std::unique_ptr<AdvanceAdvData>  &advData)
 
 void PeleLM::createMACRHS(std::unique_ptr<AdvanceAdvData>  &advData)
 {
-   BL_PROFILE("PeleLM::createMACRHS()");
+   BL_PROFILE("PeleLMeX::createMACRHS()");
 
    for (int lev = 0; lev <= finest_level; ++lev) {
       Real halftime = 0.5 * (m_t_old[lev] + m_t_new[lev]);
@@ -81,7 +81,7 @@ void PeleLM::addChiIncrement(int a_sdcIter,
                              const TimeStamp &a_time,
                              std::unique_ptr<AdvanceAdvData>  &advData)
 {
-   BL_PROFILE("PeleLM::addChiIncrement()");
+   BL_PROFILE("PeleLMeX::addChiIncrement()");
 
    int nGrow = m_nGrowAdv;
    Vector<MultiFab> chiIncr(finest_level+1);
@@ -125,7 +125,7 @@ void PeleLM::macProject(const TimeStamp &a_time,
                         std::unique_ptr<AdvanceAdvData>  &advData,
                         const Vector<MultiFab*> &a_divu)
 {
-   BL_PROFILE("PeleLM::macProject()");
+   BL_PROFILE("PeleLMeX::macProject()");
 
    int has_divu = (!a_divu.empty());
 

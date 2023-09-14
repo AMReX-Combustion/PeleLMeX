@@ -4,7 +4,7 @@
 using namespace amrex;
 
 void PeleLM::calcEFTransport(const TimeStamp &a_time) {
-   BL_PROFILE("PeleLM::calcEFTransport()");
+   BL_PROFILE("PeleLMeX::calcEFTransport()");
 
    for (int lev = 0; lev <= finest_level; ++lev) {
 

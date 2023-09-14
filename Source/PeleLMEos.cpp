@@ -4,7 +4,7 @@
 using namespace amrex;
 
 void PeleLM::setThermoPress(const TimeStamp &a_time) {
-   BL_PROFILE("PeleLM::setThermoPress()");
+   BL_PROFILE("PeleLMeX::setThermoPress()");
 
    AMREX_ASSERT(a_time == AmrOldTime || a_time == AmrNewTime);
 
@@ -38,7 +38,7 @@ void PeleLM::calcDivU(int is_init,
                       const TimeStamp &a_time,
                       std::unique_ptr<AdvanceDiffData> &diffData)
 {
-   BL_PROFILE("PeleLM::calcDivU()");
+   BL_PROFILE("PeleLMeX::calcDivU()");
 
    AMREX_ASSERT(a_time == AmrOldTime || a_time == AmrNewTime);
 
@@ -181,7 +181,7 @@ void PeleLM::setRhoToSumRhoY(int lev, const TimeStamp &a_time) {
 }
 
 void PeleLM::setTemperature(const TimeStamp &a_time) {
-   BL_PROFILE_VAR("PeleLM::setTemperature()", setTemperature);
+   BL_PROFILE_VAR("PeleLMeX::setTemperature()", setTemperature);
 
    AMREX_ASSERT(a_time == AmrOldTime || a_time == AmrNewTime);
 
@@ -213,7 +213,7 @@ void PeleLM::setTemperature(int lev, const TimeStamp &a_time) {
 void PeleLM::calc_dPdt(const TimeStamp &a_time,
                        const Vector<MultiFab*> &a_dPdt)
 {
-   BL_PROFILE("PeleLM::calc_dPdt()");
+   BL_PROFILE("PeleLMeX::calc_dPdt()");
 
    AMREX_ASSERT(a_time == AmrOldTime || a_time == AmrNewTime);
 
@@ -253,7 +253,7 @@ void PeleLM::calc_dPdt(int lev,
 Real
 PeleLM::adjustPandDivU(std::unique_ptr<AdvanceAdvData> &advData)
 {
-    BL_PROFILE("PeleLM::adjustPandDivU()");
+    BL_PROFILE("PeleLMeX::adjustPandDivU()");
 
     Vector<std::unique_ptr<MultiFab>> ThetaHalft(finest_level+1);
 
