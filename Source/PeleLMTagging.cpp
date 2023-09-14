@@ -9,7 +9,7 @@ using namespace amrex;
 void
 PeleLM::ErrorEst(int lev, TagBoxArray& tags, Real time, int /*ng*/)
 {
-   BL_PROFILE("PeleLMeX::ErrorEst()");
+  BL_PROFILE("PeleLMeX::ErrorEst()");
 
 #ifdef AMREX_USE_EB
   // Tag EB up to m_EB_refine_LevMax-1 if Static or

@@ -14,8 +14,8 @@ PeleLM::getVelForces(
   int nGrowForce,
   int add_gradP)
 {
-   BL_PROFILE("PeleLMeX::getVelForces()");
-   int has_divTau = (!a_divTau.empty());
+  BL_PROFILE("PeleLMeX::getVelForces()");
+  int has_divTau = (!a_divTau.empty());
 
   for (int lev = 0; lev <= finest_level; ++lev) {
     if (has_divTau) {

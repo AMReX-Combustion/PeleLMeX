@@ -53,8 +53,10 @@ PeleLM::WriteDebugPlotFile(
   }
 }
 
-void PeleLM::WritePlotFile() {
-   BL_PROFILE("PeleLMeX::WritePlotFile()");
+void
+PeleLM::WritePlotFile()
+{
+  BL_PROFILE("PeleLMeX::WritePlotFile()");
 
   const std::string& plotfilename =
     amrex::Concatenate(m_plot_file, m_nstep, m_ioDigits);
@@ -412,61 +414,71 @@ void PeleLM::WritePlotFile() {
       // Remove virtual particles that were made for derived variables
       removeVirtualParticles(lev);
     }
-}
+  }
 
-void PeleLM::WriteCheckPointFile()
-{
-   BL_PROFILE("PeleLMeX::WriteCheckPointFile()");
+  void PeleLM::WriteCheckPointFile()
+  {
+    BL_PROFILE("PeleLMeX::WriteCheckPointFile()");
 
-   const std::string& checkpointname = amrex::Concatenate(m_check_file, m_nstep, m_ioDigits);
+    const std::string& checkpointname =
+      amrex::Concatenate(m_check_file, m_nstep, m_ioDigits);
 
-   if (m_verbose) {
-      amrex::Print() << "\n Writting checkpoint file: " << checkpointname << "\n";
-   }
+    if (m_verbose) {
+      amrex::Print() << "\n Writting checkpoint file: " << checkpointname
+                     << "\n";
+    }
 
-   amrex::PreBuildDirectorHierarchy(checkpointname, level_prefix, finest_level + 1, true);
+    amrex::PreBuildDirectorHierarchy(
+      checkpointname, level_prefix, finest_level + 1, true);
 
-   bool is_checkpoint = true;
-   WriteHeader(checkpointname, is_checkpoint);
-   WriteJobInfo(checkpointname);
+    bool is_checkpoint = true;
+    WriteHeader(checkpointname, is_checkpoint);
+    WriteJobInfo(checkpointname);
 
-   for(int lev = 0; lev <= finest_level; ++lev)
-   {
-      VisMF::Write(m_leveldata_new[lev]->state,
-                   amrex::MultiFabFileFullPrefix(lev, checkpointname, level_prefix, "state"));
+    for (int lev = 0; lev <= finest_level; ++lev) {
+      VisMF::Write(
+        m_leveldata_new[lev]->state,
+        amrex::MultiFabFileFullPrefix(
+          lev, checkpointname, level_prefix, "state"));
 
-      VisMF::Write(m_leveldata_new[lev]->gp,
-                   amrex::MultiFabFileFullPrefix(lev, checkpointname, level_prefix, "gradp"));
+      VisMF::Write(
+        m_leveldata_new[lev]->gp,
+        amrex::MultiFabFileFullPrefix(
+          lev, checkpointname, level_prefix, "gradp"));
 
-      VisMF::Write(m_leveldata_new[lev]->press,
-                   amrex::MultiFabFileFullPrefix(lev, checkpointname, level_prefix, "p"));
+      VisMF::Write(
+        m_leveldata_new[lev]->press,
+        amrex::MultiFabFileFullPrefix(lev, checkpointname, level_prefix, "p"));
 
       if (!m_incompressible) {
-         if (m_has_divu) {
-            VisMF::Write(m_leveldata_new[lev]->divu,
-                         amrex::MultiFabFileFullPrefix(lev, checkpointname, level_prefix, "divU"));
-         }
+        if (m_has_divu) {
+          VisMF::Write(
+            m_leveldata_new[lev]->divu,
+            amrex::MultiFabFileFullPrefix(
+              lev, checkpointname, level_prefix, "divU"));
+        }
 
-         if (m_do_react) {
-            VisMF::Write(m_leveldatareact[lev]->I_R,
-                         amrex::MultiFabFileFullPrefix(lev, checkpointname, level_prefix, "I_R"));
-         }
+        if (m_do_react) {
+          VisMF::Write(
+            m_leveldatareact[lev]->I_R,
+            amrex::MultiFabFileFullPrefix(
+              lev, checkpointname, level_prefix, "I_R"));
+        }
       }
-   }
+    }
 #ifdef PELELM_USE_SPRAY
-   if (do_spray_particles) {
-     bool is_spraycheck = true;
-     for (int lev = 0; lev <= finest_level; ++lev) {
-       SprayPC->SprayParticleIO(lev, is_spraycheck, checkpointname);
-     }
-   }
+    if (do_spray_particles) {
+      bool is_spraycheck = true;
+      for (int lev = 0; lev <= finest_level; ++lev) {
+        SprayPC->SprayParticleIO(lev, is_spraycheck, checkpointname);
+      }
+    }
 #endif
-}
+  }
 
-void
-PeleLM::WriteHeader(const std::string& name, bool is_checkpoint) const
-{
-   BL_PROFILE("PeleLMeX::ReadCheckPointFile()");
+  void PeleLM::WriteHeader(const std::string& name, bool is_checkpoint) const
+  {
+    BL_PROFILE("PeleLMeX::ReadCheckPointFile()");
 
     HeaderFile.rdbuf()->pubsetbuf(io_buffer.dataPtr(), io_buffer.size());
 
@@ -474,11 +486,11 @@ PeleLM::WriteHeader(const std::string& name, bool is_checkpoint) const
       HeaderFileName.c_str(),
       std::ofstream::out | std::ofstream::trunc | std::ofstream::binary);
 
-   /***************************************************************************
-   ** Load header: set up problem domain (including BoxArray)                 *
-   **              allocate PeleLMeX memory (PeleLM::AllocateArrays)            *
-   **              (by calling MakeNewLevelFromScratch)                       *
-   ****************************************************************************/
+    /***************************************************************************
+    ** Load header: set up problem domain (including BoxArray)                 *
+    **              allocate PeleLMeX memory (PeleLM::AllocateArrays) *
+    **              (by calling MakeNewLevelFromScratch)                       *
+    ****************************************************************************/
 
     HeaderFile.precision(17);
     if (is_checkpoint) {

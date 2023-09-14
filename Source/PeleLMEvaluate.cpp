@@ -3,89 +3,94 @@
 
 using namespace amrex;
 
-void PeleLM::Evaluate() {
-   BL_PROFILE("PeleLMeX::Evaluate()");
+void
+PeleLM::Evaluate()
+{
+  BL_PROFILE("PeleLMeX::Evaluate()");
 
-   //----------------------------------------------------------------
-   // Check that requested evaluate entries exist and determine the size
-   // of the container and entries names
-   int ncomp = 0;
-   Vector<std::string> plt_VarsName;
-   for (int ivar = 0; ivar < m_evaluatePlotVarCount; ivar++ ) {
-      bool itexists =    derive_lst.canDerive(m_evaluatePlotVars[ivar])
-                      || evaluate_lst.canDerive(m_evaluatePlotVars[ivar])
-                      || isStateVariable(m_evaluatePlotVars[ivar]);
-      if ( !itexists ) {
-         amrex::Error("PeleLM::evaluate(): unknown variable: "+m_evaluatePlotVars[ivar]);
+  //----------------------------------------------------------------
+  // Check that requested evaluate entries exist and determine the size
+  // of the container and entries names
+  int ncomp = 0;
+  Vector<std::string> plt_VarsName;
+  for (int ivar = 0; ivar < m_evaluatePlotVarCount; ivar++) {
+    bool itexists = derive_lst.canDerive(m_evaluatePlotVars[ivar]) ||
+                    evaluate_lst.canDerive(m_evaluatePlotVars[ivar]) ||
+                    isStateVariable(m_evaluatePlotVars[ivar]);
+    if (!itexists) {
+      amrex::Error(
+        "PeleLM::evaluate(): unknown variable: " + m_evaluatePlotVars[ivar]);
+    }
+    if (derive_lst.canDerive(m_evaluatePlotVars[ivar])) {
+      const PeleLMDeriveRec* rec = derive_lst.get(m_evaluatePlotVars[ivar]);
+      ncomp += rec->numDerive();
+      for (int dvar = 0; dvar < rec->numDerive(); dvar++) {
+        plt_VarsName.push_back(rec->variableName(dvar));
       }
-      if ( derive_lst.canDerive(m_evaluatePlotVars[ivar]) ) {
-         const PeleLMDeriveRec* rec = derive_lst.get(m_evaluatePlotVars[ivar]);
-         ncomp += rec->numDerive();
-         for (int dvar = 0; dvar < rec->numDerive(); dvar++ ) {
-            plt_VarsName.push_back(rec->variableName(dvar));
-         }
-      } else if ( evaluate_lst.canDerive(m_evaluatePlotVars[ivar]) ) {
-         const PeleLMDeriveRec* rec = evaluate_lst.get(m_evaluatePlotVars[ivar]);
-         ncomp += rec->numDerive();
-         for (int dvar = 0; dvar < rec->numDerive(); dvar++ ) {
-            plt_VarsName.push_back(rec->variableName(dvar));
-         }
-      } else if ( isStateVariable(m_evaluatePlotVars[ivar]) ) {
-         ncomp += 1;
-         plt_VarsName.push_back(m_evaluatePlotVars[ivar]);
+    } else if (evaluate_lst.canDerive(m_evaluatePlotVars[ivar])) {
+      const PeleLMDeriveRec* rec = evaluate_lst.get(m_evaluatePlotVars[ivar]);
+      ncomp += rec->numDerive();
+      for (int dvar = 0; dvar < rec->numDerive(); dvar++) {
+        plt_VarsName.push_back(rec->variableName(dvar));
       }
-   }
+    } else if (isStateVariable(m_evaluatePlotVars[ivar])) {
+      ncomp += 1;
+      plt_VarsName.push_back(m_evaluatePlotVars[ivar]);
+    }
+  }
 
-   //----------------------------------------------------------------
-   // Define the outgoing container
-   Vector<MultiFab> mf_plt(finest_level + 1);
-   for (int lev = 0; lev <= finest_level; ++lev) {
-      mf_plt[lev].define(grids[lev], dmap[lev], ncomp, 0, MFInfo(), Factory(lev));
-   }
+  //----------------------------------------------------------------
+  // Define the outgoing container
+  Vector<MultiFab> mf_plt(finest_level + 1);
+  for (int lev = 0; lev <= finest_level; ++lev) {
+    mf_plt[lev].define(grids[lev], dmap[lev], ncomp, 0, MFInfo(), Factory(lev));
+  }
 
-   //----------------------------------------------------------------
-   // Prepare a few things if not restarting from a chkfile
-   if (m_restart_chkfile.empty()) {
-       m_nstep = 0;
-   }
+  //----------------------------------------------------------------
+  // Prepare a few things if not restarting from a chkfile
+  if (m_restart_chkfile.empty()) {
+    m_nstep = 0;
+  }
 
-   //----------------------------------------------------------------
-   // Fill the outgoing container
-   int cnt = 0;
-   for (int ivar = 0; ivar < m_evaluatePlotVarCount; ivar++ ) {
-      int cntIncr = 0;
+  //----------------------------------------------------------------
+  // Fill the outgoing container
+  int cnt = 0;
+  for (int ivar = 0; ivar < m_evaluatePlotVarCount; ivar++) {
+    int cntIncr = 0;
 
-      Print() << " --> Evaluating " << m_evaluatePlotVars[ivar] << "\n";
+    Print() << " --> Evaluating " << m_evaluatePlotVars[ivar] << "\n";
 
-      // Evaluate function calls actual PeleLM::Evolve pieces and may require
-      // the entire multi-level hierarchy
-      if ( evaluate_lst.canDerive(m_evaluatePlotVars[ivar]) ) {
-         MLevaluate(GetVecOfPtrs(mf_plt),cnt,cntIncr,m_evaluatePlotVars[ivar]);
+    // Evaluate function calls actual PeleLM::Evolve pieces and may require
+    // the entire multi-level hierarchy
+    if (evaluate_lst.canDerive(m_evaluatePlotVars[ivar])) {
+      MLevaluate(GetVecOfPtrs(mf_plt), cnt, cntIncr, m_evaluatePlotVars[ivar]);
 
-      // Regular derived functions and State entries are called on a per level basis
-      // derive function can handle both derived and state entries
-      } else if (    derive_lst.canDerive(m_evaluatePlotVars[ivar])
-                  || isStateVariable(m_evaluatePlotVars[ivar]) ) {
-         for (int lev = 0; lev <= finest_level; ++lev) {
-            std::unique_ptr<MultiFab> mf;
-            mf = derive(m_evaluatePlotVars[ivar], m_cur_time, lev, 0);
-            MultiFab::Copy(mf_plt[lev], *mf, 0, cnt, mf->nComp(), 0);
-            cntIncr = mf->nComp();
-         }
+      // Regular derived functions and State entries are called on a per level
+      // basis derive function can handle both derived and state entries
+    } else if (
+      derive_lst.canDerive(m_evaluatePlotVars[ivar]) ||
+      isStateVariable(m_evaluatePlotVars[ivar])) {
+      for (int lev = 0; lev <= finest_level; ++lev) {
+        std::unique_ptr<MultiFab> mf;
+        mf = derive(m_evaluatePlotVars[ivar], m_cur_time, lev, 0);
+        MultiFab::Copy(mf_plt[lev], *mf, 0, cnt, mf->nComp(), 0);
+        cntIncr = mf->nComp();
       }
-      cnt += cntIncr;
-   }
+    }
+    cnt += cntIncr;
+  }
 
-   //----------------------------------------------------------------
-   // Write the evaluated variables to disc
-   Vector<int> istep(finest_level + 1, 0);
+  //----------------------------------------------------------------
+  // Write the evaluated variables to disc
+  Vector<int> istep(finest_level + 1, 0);
 
-   // Override m_cur_time to store the dt in pltEvaluate
-   m_cur_time = m_dt;
+  // Override m_cur_time to store the dt in pltEvaluate
+  m_cur_time = m_dt;
 
-   std::string plotfilename = "pltEvaluate";
-   amrex::WriteMultiLevelPlotfile(plotfilename, finest_level + 1, GetVecOfConstPtrs(mf_plt),
-                                  plt_VarsName, Geom(), m_cur_time, istep, refRatio());
+  std::string plotfilename = "pltEvaluate";
+  amrex::WriteMultiLevelPlotfile(
+    plotfilename, finest_level + 1, GetVecOfConstPtrs(mf_plt), plt_VarsName,
+    Geom(), m_cur_time, istep, refRatio());
 }
 
 void

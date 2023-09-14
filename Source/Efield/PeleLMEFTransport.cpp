@@ -3,8 +3,10 @@
 
 using namespace amrex;
 
-void PeleLM::calcEFTransport(const TimeStamp &a_time) {
-   BL_PROFILE("PeleLMeX::calcEFTransport()");
+void
+PeleLM::calcEFTransport(const TimeStamp& a_time)
+{
+  BL_PROFILE("PeleLMeX::calcEFTransport()");
 
   for (int lev = 0; lev <= finest_level; ++lev) {
 

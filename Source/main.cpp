@@ -24,32 +24,32 @@ main(int argc, char* argv[])
     Abort("Error: no inputs file provided on command line.");
   }
 
-   // timer for profiling
-   BL_PROFILE_VAR("PeleLMeX::main()", main);
+  // timer for profiling
+  BL_PROFILE_VAR("PeleLMeX::main()", main);
 
   // wallclock time
   const Real strt_total = ParallelDescriptor::second();
 
-   {
-       // declare an PeleLMeX object to manage multilevel data
-       PeleLM pelelmex;
+  {
+    // declare an PeleLMeX object to manage multilevel data
+    PeleLM pelelmex;
 
-       // Description Setup
-       pelelmex.Setup();
+    // Description Setup
+    pelelmex.Setup();
 
-       // Description Init
-       pelelmex.Init();
+    // Description Init
+    pelelmex.Init();
 
-       // Switch between Evolve and UnitTest mode
-       if ( pelelmex.runMode() == "normal" ) {
+    // Switch between Evolve and UnitTest mode
+    if (pelelmex.runMode() == "normal") {
 
-          // Advance solution to final time
-          pelelmex.Evolve();
+      // Advance solution to final time
+      pelelmex.Evolve();
 
-       } else if ( pelelmex.runMode() == "evaluate" ) {
+    } else if (pelelmex.runMode() == "evaluate") {
 
-          //
-          pelelmex.Evaluate();
+      //
+      pelelmex.Evaluate();
 
     } else {
       Abort(

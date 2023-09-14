@@ -64,35 +64,40 @@ PeleLM::updateDiagnostics()
 void
 PeleLM::doDiagnostics()
 {
-    BL_PROFILE("PeleLMeX::doDiagnostics()");
-    // Assemble a vector of MF containing the requested data
-    Vector<std::unique_ptr<MultiFab> > diagMFVec(finestLevel()+1);
-    for (int lev{0}; lev <= finestLevel(); ++lev) {
-        diagMFVec[lev] = std::make_unique<MultiFab>(grids[lev], dmap[lev], m_diagVars.size(), 1);
-        for (int v{0}; v < m_diagVars.size(); ++v ) {
-            std::unique_ptr<MultiFab> mf;
-            mf = derive(m_diagVars[v], m_cur_time, lev, 1);
-            // If the variable is a derive component, get its index from the derive multifab
-            // TODO: if multiple diagVars are components of the same derive, they get redundantly derived each time
-            int mf_idx = 0;
-            const PeleLMDeriveRec* rec = derive_lst.get(m_diagVars[v]);
-            if (rec) mf_idx = rec->variableComp(m_diagVars[v]);
-            MultiFab::Copy(*diagMFVec[lev].get(), *mf, mf_idx, v, 1, 1);
-        }
+  BL_PROFILE("PeleLMeX::doDiagnostics()");
+  // Assemble a vector of MF containing the requested data
+  Vector<std::unique_ptr<MultiFab>> diagMFVec(finestLevel() + 1);
+  for (int lev{0}; lev <= finestLevel(); ++lev) {
+    diagMFVec[lev] =
+      std::make_unique<MultiFab>(grids[lev], dmap[lev], m_diagVars.size(), 1);
+    for (int v{0}; v < m_diagVars.size(); ++v) {
+      std::unique_ptr<MultiFab> mf;
+      mf = derive(m_diagVars[v], m_cur_time, lev, 1);
+      // If the variable is a derive component, get its index from the derive
+      // multifab
+      // TODO: if multiple diagVars are components of the same derive, they get
+      // redundantly derived each time
+      int mf_idx = 0;
+      const PeleLMDeriveRec* rec = derive_lst.get(m_diagVars[v]);
+      if (rec)
+        mf_idx = rec->variableComp(m_diagVars[v]);
+      MultiFab::Copy(*diagMFVec[lev].get(), *mf, mf_idx, v, 1, 1);
     }
   }
+}
 
-  Vector<std::string> stateNames;
-  for (std::list<std::tuple<int, std::string>>::const_iterator
-         li = stateComponents.begin(),
-         End = stateComponents.end();
-       li != End; ++li) {
-    stateNames.push_back(get<1>(*li));
+Vector<std::string> stateNames;
+for (std::list<std::tuple<int, std::string>>::const_iterator
+       li = stateComponents.begin(),
+       End = stateComponents.end();
+     li != End;
+     ++li) {
+  stateNames.push_back(get<1>(*li));
+}
+for (int n = 0; n < m_diagnostics.size(); ++n) {
+  if (m_diagnostics[n]->doDiag(m_cur_time, m_nstep)) {
+    m_diagnostics[n]->processDiag(
+      m_nstep, m_cur_time, GetVecOfConstPtrs(diagMFVec), m_diagVars);
   }
-  for (int n = 0; n < m_diagnostics.size(); ++n) {
-    if (m_diagnostics[n]->doDiag(m_cur_time, m_nstep)) {
-      m_diagnostics[n]->processDiag(
-        m_nstep, m_cur_time, GetVecOfConstPtrs(diagMFVec), m_diagVars);
-    }
-  }
+}
 }

@@ -9,7 +9,7 @@ using namespace amrex;
 void
 PeleLM::advanceChemistry(std::unique_ptr<AdvanceAdvData>& advData)
 {
-   BL_PROFILE("PeleLMeX::advanceChemistry()");
+  BL_PROFILE("PeleLMeX::advanceChemistry()");
 
   for (int lev = finest_level; lev >= 0; --lev) {
     if (lev != finest_level) {
@@ -31,7 +31,7 @@ PeleLM::advanceChemistry(std::unique_ptr<AdvanceAdvData>& advData)
 void
 PeleLM::advanceChemistry(int lev, const Real& a_dt, MultiFab& a_extForcing)
 {
-   BL_PROFILE("PeleLMeX::advanceChemistry_Lev"+std::to_string(lev)+"()");
+  BL_PROFILE("PeleLMeX::advanceChemistry_Lev" + std::to_string(lev) + "()");
 
   auto ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
   auto ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
@@ -180,7 +180,7 @@ void
 PeleLM::advanceChemistryBAChem(
   int lev, const Real& a_dt, MultiFab& a_extForcing)
 {
-   BL_PROFILE("PeleLMeX::advanceChemistry_Lev"+std::to_string(lev)+"()");
+  BL_PROFILE("PeleLMeX::advanceChemistry_Lev" + std::to_string(lev) + "()");
 
   auto ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
   auto ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
@@ -381,8 +381,8 @@ void
 PeleLM::computeInstantaneousReactionRate(
   int lev, const TimeStamp& a_time, MultiFab* a_I_R)
 {
-   BL_PROFILE("PeleLMeX::computeInstantaneousReactionRate()");
-   auto ldata_p = getLevelDataPtr(lev,a_time);
+  BL_PROFILE("PeleLMeX::computeInstantaneousReactionRate()");
+  auto ldata_p = getLevelDataPtr(lev, a_time);
 
 #ifdef AMREX_USE_EB
   auto const& ebfact = EBFactory(lev);

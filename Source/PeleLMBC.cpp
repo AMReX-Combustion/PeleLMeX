@@ -209,16 +209,20 @@ PeleLM::fetchBCRecArray(int scomp, int ncomp)
 // The following work directly on the leveldata
 
 // Fill the entire class state at once
-void PeleLM::fillPatchState(const TimeStamp &a_time) {
-   BL_PROFILE("PeleLMeX::fillPatchState()");
-   for (int lev = 0; lev <= finest_level; lev++) {
-      fillPatchState(lev,a_time);
-   }
+void
+PeleLM::fillPatchState(const TimeStamp& a_time)
+{
+  BL_PROFILE("PeleLMeX::fillPatchState()");
+  for (int lev = 0; lev <= finest_level; lev++) {
+    fillPatchState(lev, a_time);
+  }
 }
 
 // Fill the a given level class state
-void PeleLM::fillPatchState(int lev, const TimeStamp &a_time) {
-   BL_PROFILE("PeleLMeX::fillPatchStateLev()");
+void
+PeleLM::fillPatchState(int lev, const TimeStamp& a_time)
+{
+  BL_PROFILE("PeleLMeX::fillPatchStateLev()");
 
   auto ldata_p = getLevelDataPtr(lev, a_time);
   Real time = getTime(lev, a_time);
@@ -232,41 +236,49 @@ void PeleLM::fillPatchState(int lev, const TimeStamp &a_time) {
 }
 
 // Fill a state components
-void PeleLM::fillPatchDensity(const TimeStamp &a_time) {
-   BL_PROFILE("PeleLMeX::fillPatchDensity()");
-   for (int lev = 0; lev <= finest_level; lev++) {
-      auto ldata_p = getLevelDataPtr(lev,a_time);
-      Real time = getTime(lev, a_time);
-      fillpatch_density(lev, time, ldata_p->state, DENSITY, m_nGrowState);
-   }
+void
+PeleLM::fillPatchDensity(const TimeStamp& a_time)
+{
+  BL_PROFILE("PeleLMeX::fillPatchDensity()");
+  for (int lev = 0; lev <= finest_level; lev++) {
+    auto ldata_p = getLevelDataPtr(lev, a_time);
+    Real time = getTime(lev, a_time);
+    fillpatch_density(lev, time, ldata_p->state, DENSITY, m_nGrowState);
+  }
 }
 
-void PeleLM::fillPatchSpecies(const TimeStamp &a_time) {
-   BL_PROFILE("PeleLMeX::fillPatchSpecies()");
-   for (int lev = 0; lev <= finest_level; lev++) {
-      auto ldata_p = getLevelDataPtr(lev,a_time);
-      Real time = getTime(lev, a_time);
-      fillpatch_species(lev, time, ldata_p->state, FIRSTSPEC, m_nGrowState);
-   }
+void
+PeleLM::fillPatchSpecies(const TimeStamp& a_time)
+{
+  BL_PROFILE("PeleLMeX::fillPatchSpecies()");
+  for (int lev = 0; lev <= finest_level; lev++) {
+    auto ldata_p = getLevelDataPtr(lev, a_time);
+    Real time = getTime(lev, a_time);
+    fillpatch_species(lev, time, ldata_p->state, FIRSTSPEC, m_nGrowState);
+  }
 }
 
-void PeleLM::fillPatchTemp(const TimeStamp &a_time) {
-   BL_PROFILE("PeleLMeX::fillPatchTemp()");
-   for (int lev = 0; lev <= finest_level; lev++) {
-      auto ldata_p = getLevelDataPtr(lev,a_time);
-      Real time = getTime(lev, a_time);
-      fillpatch_temp(lev, time, ldata_p->state, TEMP, m_nGrowState);
-   }
+void
+PeleLM::fillPatchTemp(const TimeStamp& a_time)
+{
+  BL_PROFILE("PeleLMeX::fillPatchTemp()");
+  for (int lev = 0; lev <= finest_level; lev++) {
+    auto ldata_p = getLevelDataPtr(lev, a_time);
+    Real time = getTime(lev, a_time);
+    fillpatch_temp(lev, time, ldata_p->state, TEMP, m_nGrowState);
+  }
 }
 
 #ifdef PELE_USE_EFIELD
-void PeleLM::fillPatchPhiV(const TimeStamp &a_time) {
-   BL_PROFILE("PeleLMeX::fillPatchPhiV()");
-   for (int lev = 0; lev <= finest_level; lev++) {
-      auto ldata_p = getLevelDataPtr(lev,a_time);
-      Real time = getTime(lev, a_time);
-      fillpatch_phiV(lev, time, ldata_p->state, PHIV, m_nGrowState);
-   }
+void
+PeleLM::fillPatchPhiV(const TimeStamp& a_time)
+{
+  BL_PROFILE("PeleLMeX::fillPatchPhiV()");
+  for (int lev = 0; lev <= finest_level; lev++) {
+    auto ldata_p = getLevelDataPtr(lev, a_time);
+    Real time = getTime(lev, a_time);
+    fillpatch_phiV(lev, time, ldata_p->state, PHIV, m_nGrowState);
+  }
 }
 #endif
 //-----------------------------------------------------------------------------
@@ -275,8 +287,9 @@ void PeleLM::fillPatchPhiV(const TimeStamp &a_time) {
 // The following return a fillpatched MF ptr at a given level
 // Fill the entire state at once
 std::unique_ptr<MultiFab>
-PeleLM::fillPatchState(int lev, Real a_time, int nGrow) {
-   BL_PROFILE("PeleLMeX::fillPatchState()");
+PeleLM::fillPatchState(int lev, Real a_time, int nGrow)
+{
+  BL_PROFILE("PeleLMeX::fillPatchState()");
 
   std::unique_ptr<MultiFab> mf;
   if (m_incompressible) {
@@ -292,8 +305,9 @@ PeleLM::fillPatchState(int lev, Real a_time, int nGrow) {
 }
 
 std::unique_ptr<MultiFab>
-PeleLM::fillPatchReact(int lev, Real a_time, int nGrow) {
-   BL_PROFILE("PeleLMeX::fillPatchReact()");
+PeleLM::fillPatchReact(int lev, Real a_time, int nGrow)
+{
+  BL_PROFILE("PeleLMeX::fillPatchReact()");
 
   int IRsize = NUM_SPECIES;
 #ifdef PELE_USE_EFIELD
@@ -813,10 +827,10 @@ PeleLM::fillcoarsepatch_chemFunctCall(
 
 // Fill the inflow boundary of a velocity MF
 // used for velocity projection
-void PeleLM::setInflowBoundaryVel(MultiFab &a_vel,
-                                 int lev,
-                                 TimeStamp a_time) {
-   BL_PROFILE("PeleLMeX::setInflowBoundaryVel()");
+void
+PeleLM::setInflowBoundaryVel(MultiFab& a_vel, int lev, TimeStamp a_time)
+{
+  BL_PROFILE("PeleLMeX::setInflowBoundaryVel()");
 
   Real time = getTime(lev, a_time);
 
