@@ -313,179 +313,6 @@ PeleLM::oneSDC(
   if (m_verbose > 1) {
     MACStart = ParallelDescriptor::second();
   }
-
-  // Still need to get face velocities ...
-  predictVelocity(advData);
-
-  // ... and MAC-project face velocities, but no divu
-  macProject(AmrOldTime, advData, {});
-
-  if (m_verbose > 1) {
-    Real MACEnd = ParallelDescriptor::second() - MACStart;
-    ParallelDescriptor::ReduceRealMax(
-      MACEnd, ParallelDescriptor::IOProcessorNumber());
-    amrex::Print() << "   - Advance()::MACProjection()  --> Time: " << MACEnd
-                   << "\n";
-  }
-  checkMemory("MAC-Proj");
-}
-else
-{
-
-  // SDC iterations
-  for (int sdc_iter = 1; sdc_iter <= m_nSDCmax; ++sdc_iter) {
-    oneSDC(sdc_iter, advData, diffData);
-  }
-
-  // Post SDC
-  averageDownScalars(AmrNewTime);
-  fillPatchState(AmrNewTime);
-
-  //----------------------------------------------------------------
-  // Scalar advections
-  //----------------------------------------------------------------
-  BL_PROFILE_VAR("PeleLMeX::advance::scalars_adv", PLM_SADV);
-  Real ScalAdvStart = 0.0;
-  if (m_verbose > 1) {
-    ScalAdvStart = ParallelDescriptor::second();
-  }
-#ifdef PELELM_USE_SOOT
-  if (do_soot_solve) {
-    clipSootMoments();
-  }
-#endif
-  if (m_has_divu) {
-    int is_initialization = 0; // Not here
-    int computeDiffusionTerm =
-      1; // Yes, re-evaluate the diffusion term after the last chemistry solve
-    int do_avgDown = 1; // Always
-    calcDivU(
-      is_initialization, computeDiffusionTerm, do_avgDown, AmrNewTime,
-      diffData);
-  }
-}
-//----------------------------------------------------------------
-
-//----------------------------------------------------------------
-BL_PROFILE_VAR("PeleLM::advance::velocity", PLM_VEL);
-// Velocity advance
-Real VelAdvStart = 0.0;
-if (m_verbose > 1) {
-  VelAdvStart = ParallelDescriptor::second();
-}
-// Re-evaluate viscosity only if scalar updated
-if (!m_incompressible)
-  calcViscosity(AmrNewTime);
-
-// Compute t^{n+1/2} velocity advection term
-computeVelocityAdvTerm(advData);
-
-//----------------------------------------------------------------
-// Scalar diffusion
-//----------------------------------------------------------------
-BL_PROFILE_VAR("PeleLMeX::advance::diffusion", PLM_DIFF);
-Real ScalDiffStart = 0.0;
-if (m_verbose > 1) {
-  ScalDiffStart = ParallelDescriptor::second();
-}
-// Get scalar diffusion SDC RHS (stored in Forcing)
-getScalarDiffForce(advData, diffData);
-
-// Semi-implicit CN diffusion solve to get U^{np1*}
-diffuseVelocity();
-
-// Nodal projection to get constrained U^{np1} and new pressure \pi^{n+1/2}
-const TimeStamp rhoTime = AmrHalfTime;
-velocityProjection(is_initIter, rhoTime, m_dt);
-if (m_verbose > 1) {
-  Real VelAdvEnd = ParallelDescriptor::second() - VelAdvStart;
-  ParallelDescriptor::ReduceRealMax(
-    VelAdvEnd, ParallelDescriptor::IOProcessorNumber());
-  amrex::Print() << "   - Advance()::VelocityAdvance  --> Time: " << VelAdvEnd
-                 << "\n";
-}
-checkMemory("Nodal-Proj");
-BL_PROFILE_VAR_STOP(PLM_VEL);
-//----------------------------------------------------------------
-
-// Deal with ambient pressure
-if (m_closed_chamber && !is_initIter) {
-  m_pOld = m_pNew;
-}
-
-//----------------------------------------------------------------
-// Wrapup advance
-// Timing current time step
-if (m_verbose > 0) {
-  Real run_time = ParallelDescriptor::second() - strt_time;
-  ParallelDescriptor::ReduceRealMax(
-    run_time, ParallelDescriptor::IOProcessorNumber());
-  amrex::Print() << " >> PeleLM::Advance() --> Time: " << run_time << "\n";
-}
-}
-
-void
-PeleLM::oneSDC(
-  int sdcIter,
-  std::unique_ptr<AdvanceAdvData>& advData,
-  std::unique_ptr<AdvanceDiffData>& diffData)
-{
-  BL_PROFILE("PeleLM::oneSDC()");
-  m_sdcIter = sdcIter;
-
-  if (m_verbose > 0) {
-    amrex::Print() << "   SDC iter [" << sdcIter << "] \n";
-  }
-
-  //----------------------------------------------------------------
-  // Update t^{n+1,k} transport/Dnp1/divU
-  //----------------------------------------------------------------
-  // At the first SDC, we already copied old -> new
-  if (sdcIter > 1) {
-
-    Real UpdateStart = 0.0;
-    if (m_verbose > 1) {
-      UpdateStart = ParallelDescriptor::second();
-    }
-    // fillpatch the new state
-    averageDownScalars(AmrNewTime);
-    fillPatchState(AmrNewTime);
-
-    calcDiffusivity(AmrNewTime);
-    computeDifferentialDiffusionTerms(AmrNewTime, diffData);
-    if (m_has_divu) {
-      int is_initialization = 0;    // Not here
-      int computeDiffusionTerm = 0; // Nope, we just did that
-      int do_avgDown = 1;           // Always
-      calcDivU(
-        is_initialization, computeDiffusionTerm, do_avgDown, AmrNewTime,
-        diffData);
-    }
-#ifdef PELE_USE_EFIELD
-    ionDriftVelocity(advData);
-#endif
-
-    // Check divU dt based on NewTime
-    checkDt(AmrNewTime, m_dt);
-
-    if (m_verbose > 1) {
-      Real UpdateEnd = ParallelDescriptor::second() - UpdateStart;
-      ParallelDescriptor::ReduceRealMax(
-        UpdateEnd, ParallelDescriptor::IOProcessorNumber());
-      amrex::Print() << "   - oneSDC()::Update t^{n+1,k}  --> Time: "
-                     << UpdateEnd << "\n";
-    }
-  }
-  //----------------------------------------------------------------
-
-  //----------------------------------------------------------------
-  // Get u MAC
-  //----------------------------------------------------------------
-  BL_PROFILE_VAR("PeleLM::advance::mac", PLM_MAC);
-  Real MACStart = 0.0;
-  if (m_verbose > 1) {
-    MACStart = ParallelDescriptor::second();
-  }
   // Predict face velocity with Godunov
   predictVelocity(advData);
 
@@ -511,7 +338,7 @@ PeleLM::oneSDC(
   //----------------------------------------------------------------
   // Scalar advections
   //----------------------------------------------------------------
-  BL_PROFILE_VAR("PeleLM::advance::scalars_adv", PLM_SADV);
+  BL_PROFILE_VAR("PeleLMeX::advance::scalars_adv", PLM_SADV);
   Real ScalAdvStart = 0.0;
   if (m_verbose > 1) {
     ScalAdvStart = ParallelDescriptor::second();
@@ -544,7 +371,7 @@ PeleLM::oneSDC(
   //----------------------------------------------------------------
   // Scalar diffusion
   //----------------------------------------------------------------
-  BL_PROFILE_VAR("PeleLM::advance::diffusion", PLM_DIFF);
+  BL_PROFILE_VAR("PeleLMeX::advance::diffusion", PLM_DIFF);
   Real ScalDiffStart = 0.0;
   if (m_verbose > 1) {
     ScalDiffStart = ParallelDescriptor::second();

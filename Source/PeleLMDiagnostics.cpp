@@ -84,20 +84,18 @@ PeleLM::doDiagnostics()
       MultiFab::Copy(*diagMFVec[lev].get(), *mf, mf_idx, v, 1, 1);
     }
   }
-}
 
-Vector<std::string> stateNames;
-for (std::list<std::tuple<int, std::string>>::const_iterator
-       li = stateComponents.begin(),
-       End = stateComponents.end();
-     li != End;
-     ++li) {
-  stateNames.push_back(get<1>(*li));
-}
-for (int n = 0; n < m_diagnostics.size(); ++n) {
-  if (m_diagnostics[n]->doDiag(m_cur_time, m_nstep)) {
-    m_diagnostics[n]->processDiag(
-      m_nstep, m_cur_time, GetVecOfConstPtrs(diagMFVec), m_diagVars);
+  Vector<std::string> stateNames;
+  for (std::list<std::tuple<int, std::string>>::const_iterator
+         li = stateComponents.begin(),
+         End = stateComponents.end();
+       li != End; ++li) {
+    stateNames.push_back(get<1>(*li));
   }
-}
+  for (int n = 0; n < m_diagnostics.size(); ++n) {
+    if (m_diagnostics[n]->doDiag(m_cur_time, m_nstep)) {
+      m_diagnostics[n]->processDiag(
+        m_nstep, m_cur_time, GetVecOfConstPtrs(diagMFVec), m_diagVars);
+    }
+  }
 }

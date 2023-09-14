@@ -48,44 +48,6 @@ PeleLM::calcDivU(
 
   AMREX_ASSERT(a_time == AmrOldTime || a_time == AmrNewTime);
 
-  for (int lev = 0; lev <= finest_level; ++lev) {
-    setThermoPress(lev, a_time);
-  }
-}
-
-void
-PeleLM::setThermoPress(int lev, const TimeStamp& a_time)
-{
-
-  AMREX_ASSERT(a_time == AmrOldTime || a_time == AmrNewTime);
-
-  auto ldata_p = getLevelDataPtr(lev, a_time);
-  auto const& sma = ldata_p->state.arrays();
-
-  amrex::ParallelFor(
-    ldata_p->state,
-    [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
-      getPGivenRTY(
-        i, j, k, Array4<Real const>(sma[box_no], DENSITY),
-        Array4<Real const>(sma[box_no], FIRSTSPEC),
-        Array4<Real const>(sma[box_no], TEMP),
-        Array4<Real>(sma[box_no], RHORT));
-    });
-  Gpu::streamSynchronize();
-}
-
-void
-PeleLM::calcDivU(
-  int is_init,
-  int computeDiff,
-  int do_avgDown,
-  const TimeStamp& a_time,
-  std::unique_ptr<AdvanceDiffData>& diffData)
-{
-  BL_PROFILE("PeleLM::calcDivU()");
-
-  AMREX_ASSERT(a_time == AmrOldTime || a_time == AmrNewTime);
-
   // If requested, compute diffusion terms
   // otherwise assumes it has already been computed and stored in the proper
   // container of diffData
@@ -272,39 +234,6 @@ void
 PeleLM::calc_dPdt(const TimeStamp& a_time, const Vector<MultiFab*>& a_dPdt)
 {
   BL_PROFILE("PeleLMeX::calc_dPdt()");
-
-  AMREX_ASSERT(a_time == AmrOldTime || a_time == AmrNewTime);
-
-  for (int lev = 0; lev <= finest_level; ++lev) {
-    setTemperature(lev, a_time);
-  }
-  Gpu::streamSynchronize();
-}
-
-void
-PeleLM::setTemperature(int lev, const TimeStamp& a_time)
-{
-
-  AMREX_ASSERT(a_time == AmrOldTime || a_time == AmrNewTime);
-
-  auto ldata_p = getLevelDataPtr(lev, a_time);
-  auto const& sma = ldata_p->state.arrays();
-
-  amrex::ParallelFor(
-    ldata_p->state,
-    [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
-      getTfromHY(
-        i, j, k, Array4<Real const>(sma[box_no], DENSITY),
-        Array4<Real const>(sma[box_no], FIRSTSPEC),
-        Array4<Real const>(sma[box_no], RHOH), Array4<Real>(sma[box_no], TEMP));
-    });
-  Gpu::streamSynchronize();
-}
-
-void
-PeleLM::calc_dPdt(const TimeStamp& a_time, const Vector<MultiFab*>& a_dPdt)
-{
-  BL_PROFILE("PeleLM::calc_dPdt()");
 
   AMREX_ASSERT(a_time == AmrOldTime || a_time == AmrNewTime);
 

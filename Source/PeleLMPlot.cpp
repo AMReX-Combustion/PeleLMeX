@@ -415,70 +415,16 @@ PeleLM::WritePlotFile()
       removeVirtualParticles(lev);
     }
   }
-
-  void PeleLM::WriteCheckPointFile()
-  {
-    BL_PROFILE("PeleLMeX::WriteCheckPointFile()");
-
-    const std::string& checkpointname =
-      amrex::Concatenate(m_check_file, m_nstep, m_ioDigits);
-
-    if (m_verbose) {
-      amrex::Print() << "\n Writting checkpoint file: " << checkpointname
-                     << "\n";
-    }
-
-    amrex::PreBuildDirectorHierarchy(
-      checkpointname, level_prefix, finest_level + 1, true);
-
-    bool is_checkpoint = true;
-    WriteHeader(checkpointname, is_checkpoint);
-    WriteJobInfo(checkpointname);
-
-    for (int lev = 0; lev <= finest_level; ++lev) {
-      VisMF::Write(
-        m_leveldata_new[lev]->state,
-        amrex::MultiFabFileFullPrefix(
-          lev, checkpointname, level_prefix, "state"));
-
-      VisMF::Write(
-        m_leveldata_new[lev]->gp,
-        amrex::MultiFabFileFullPrefix(
-          lev, checkpointname, level_prefix, "gradp"));
-
-      VisMF::Write(
-        m_leveldata_new[lev]->press,
-        amrex::MultiFabFileFullPrefix(lev, checkpointname, level_prefix, "p"));
-
-      if (!m_incompressible) {
-        if (m_has_divu) {
-          VisMF::Write(
-            m_leveldata_new[lev]->divu,
-            amrex::MultiFabFileFullPrefix(
-              lev, checkpointname, level_prefix, "divU"));
-        }
-
-        if (m_do_react) {
-          VisMF::Write(
-            m_leveldatareact[lev]->I_R,
-            amrex::MultiFabFileFullPrefix(
-              lev, checkpointname, level_prefix, "I_R"));
-        }
-      }
-    }
-#ifdef PELELM_USE_SPRAY
-    if (do_spray_particles) {
-      bool is_spraycheck = true;
-      for (int lev = 0; lev <= finest_level; ++lev) {
-        SprayPC->SprayParticleIO(lev, is_spraycheck, checkpointname);
-      }
-    }
 #endif
-  }
+}
 
-  void PeleLM::WriteHeader(const std::string& name, bool is_checkpoint) const
-  {
-    BL_PROFILE("PeleLMeX::ReadCheckPointFile()");
+void
+PeleLM::WriteHeader(const std::string& name, bool is_checkpoint) const
+{
+  if (ParallelDescriptor::IOProcessor()) {
+    std::string HeaderFileName(name + "/Header");
+    VisMF::IO_Buffer io_buffer(VisMF::IO_Buffer_Size);
+    std::ofstream HeaderFile;
 
     HeaderFile.rdbuf()->pubsetbuf(io_buffer.dataPtr(), io_buffer.size());
 
@@ -486,11 +432,9 @@ PeleLM::WritePlotFile()
       HeaderFileName.c_str(),
       std::ofstream::out | std::ofstream::trunc | std::ofstream::binary);
 
-    /***************************************************************************
-    ** Load header: set up problem domain (including BoxArray)                 *
-    **              allocate PeleLMeX memory (PeleLM::AllocateArrays) *
-    **              (by calling MakeNewLevelFromScratch)                       *
-    ****************************************************************************/
+    if (!HeaderFile.good()) {
+      amrex::FileOpenFailed(HeaderFileName);
+    }
 
     HeaderFile.precision(17);
     if (is_checkpoint) {
@@ -538,7 +482,7 @@ PeleLM::WritePlotFile()
 void
 PeleLM::WriteCheckPointFile()
 {
-  BL_PROFILE("PeleLM::WriteCheckPointFile()");
+  BL_PROFILE("PeleLMeX::WriteCheckPointFile()");
 
   const std::string& checkpointname =
     amrex::Concatenate(m_check_file, m_nstep, m_ioDigits);
@@ -597,7 +541,7 @@ PeleLM::WriteCheckPointFile()
 void
 PeleLM::ReadCheckPointFile()
 {
-  BL_PROFILE("PeleLM::ReadCheckPointFile()");
+  BL_PROFILE("PeleLMeX::ReadCheckPointFile()");
 
   amrex::Print() << "Restarting from checkpoint " << m_restart_chkfile << "\n";
 
@@ -606,7 +550,7 @@ PeleLM::ReadCheckPointFile()
 
   /***************************************************************************
   ** Load header: set up problem domain (including BoxArray)                 *
-  **              allocate PeleLM memory (PeleLM::AllocateArrays)            *
+  **              allocate PeleLMeX memory (PeleLM::AllocateArrays)            *
   **              (by calling MakeNewLevelFromScratch)                       *
   ****************************************************************************/
 

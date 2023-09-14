@@ -42,3 +42,11 @@ CEXE_sources += PeleLMEB.cpp
 CEXE_sources += PeleLMDiagnostics.cpp
 CEXE_sources += PeleLMFlowController.cpp
 CEXE_sources += DeriveUserDefined.cpp
+
+ifeq ($(USE_SOOT), TRUE)
+  CEXE_sources += PeleLMSoot.cpp
+endif
+
+ifeq ($(USE_PARTICLES), TRUE)
+  CEXE_sources += PeleLMSprayParticles.cpp
+endif
