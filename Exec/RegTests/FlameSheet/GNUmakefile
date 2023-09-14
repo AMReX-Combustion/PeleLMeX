@@ -1,5 +1,5 @@
 # AMReX
-DIM = 3
+DIM = 2
 COMP = gnu
 PRECISION = DOUBLE
 USE_EB = FALSE

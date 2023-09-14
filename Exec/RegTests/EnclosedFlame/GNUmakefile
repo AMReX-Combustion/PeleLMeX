@@ -2,7 +2,7 @@
 DIM = 2
 COMP = clang
 PRECISION = DOUBLE
-USE_EB = TRUE
+USE_EB = FALSE
 USE_HYPRE = FALSE
 
 # Profiling
