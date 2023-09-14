@@ -18,7 +18,7 @@ cmake -DCMAKE_INSTALL_PREFIX:PATH=./install \
       -DAMReX_CUDA_ARCH=Volta \
       -DPYTHON_EXECUTABLE=$(which python3) \
       -DPELELMEX_PRECISION:STRING=DOUBLE \
-      .. 
+      ..
 #make
 cmake --build . --parallel $(sysctl -n hw.ncpu) #&> output.txt
 #ctest -j $(sysctl -n hw.ncpu)
