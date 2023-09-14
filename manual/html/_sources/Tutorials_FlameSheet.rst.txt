@@ -9,15 +9,14 @@ Premixed flame sheet with harmonic perturbations
 
 Introduction
 ------------
-
 `PeleLMeX` primary objective is to enable simulation of reactive flows on platforms ranging
 from small personal computer to Exascale supercomputer. This short tutorial describes
 the case of a 2D laminar methane/hydrogen/air premixed flame, perturbed using harmonic fluctuations
 on the initial conditions.
 
 The goal of this tutorial is to demonstrate `PeleLMeX` basic controls when dealing with reactive simulations.
-This document provides step by step instruction reviewing how to set-up the domain and boundary conditions,
-and to construct an initial solution.
+This document provides step by step instructions reviewing how to set-up the domain and boundary conditions,
+and how to construct an initial solution.
 
 ..  _sec:TUTO_FS::PrepStep:
 
@@ -25,7 +24,9 @@ Setting-up your environment
 ---------------------------
 
 Getting a functioning environment in which to compile and run `PeleLMeX` is the first step of this tutorial.
-Follow the steps listed below to get to this point:
+Please review the requirements listed on the `PeleLMeX README <https://github.com/AMReX-Combustion/PeleLMeX/blob/development/README.md>`_ to ensure
+you have a suitable compiler suite to build `PeleLMeX`.
+Follow the steps listed below to get the source code and its dependent libraries:
 
 #. The first step consist in getting `PeleLMeX` and its dependencies. To do so, use a recursive *git clone*: ::
 
@@ -36,20 +37,25 @@ Follow the steps listed below to get to this point:
     cd PeleLMeX/Exec/RegTests/FlameSheet
 
 Note that the makefile system is set up such that default paths are automatically set to the
-submodules obtained with the recursive *git clone*, however the user can set its own dependencies
+submodules obtained with the recursive *git clone*, however the user can set their own dependencies
 in the `GNUmakefile` by updating the top-most lines as follows: ::
 
        PELELMEX_HOME     = <path_to_PeleLMeX>
        AMREX_HOME        = <path_to_MyAMReX>
        AMREX_HYDRO_HOME  = <path_to_MyAMReXHydro>
        PELE_PHYSICS_HOME = <path_to_MyPelePhysics>
+       SUNDIALS_HOME     = <path_to_MySUNDIALS>
 
-or directly through shell environement variables (using *bash* for instance): ::
+or directly through shell environment variables (using *bash* for instance): ::
 
        export PELELMEX_HOME=<path_to_PeleLMeX>
        export AMREX_HOME=<path_to_MyAMReX>
        export AMREX_HYDRO_HOME=<path_to_MyAMReXHydro>
        export PELE_PHYSICS_HOME=<path_to_MyPelePhysics>
+       export SUNDIALS_HOME=<path_to_MySUNDIALS>
+
+Note that using the first option will overwrite any
+environment variables you might have previously defined when using this `GNUmakefile`.
 
 You're good to go !
 
@@ -57,7 +63,7 @@ Case setup
 ----------
 
 A `PeleLMeX` case folder generally contains a minimal set of files to enable compilation,
-provide user-defined function defining initial and boundary conditions, input file(s) and
+provide user-defined functions defining initial and boundary conditions, input file(s) and
 any additional files necessary for the simulation (solution of a Cantera 1D flame for instance).
 
 The following three files in particular are necessary: ::
@@ -105,7 +111,7 @@ used here. All of the above information is provided in the first two blocks of t
 The base grid is decomposed into a 32x64 cells array, and initially 2 levels of refinement are used.
 When running serial, a single box is used on the base level as the ``amr.max_grid_size`` exceeds the
 number of cells in each direction. When running parallel, the base grid will be chopped into smaller
-boxes in the limit that no box smaller than the ``amr.blocking_factor`` can be created (16:math:`^3` here).
+boxes in the limit that no box smaller than the ``amr.blocking_factor`` can be created (16 :math:`^2` here).
 
 The refinement ratio between each level is set to 2 and `PeleLMeX` currently does not support
 refinement ratio of 4. Regrid operation will be performed every 5 steps. ``amr.n_error_buf`` specifies,
@@ -152,8 +158,8 @@ periodicity of the initial solution.
 .. note::
    The ``P_mean`` parameters, providing the initial thermodynamic pressure, is always needed in the ProbParm struct.
 
-Looking now into ``pelelm_prob.cpp``, we can see how the user can overwrite the default values of the parameters
-contained in `ProbParm` using AMReX's ParmParse: ::
+Looking now into ``pelelm_prob.cpp``, we can see how the developer can provide access to the `ProbParm` parameters
+to overwrite the default values using AMReX's ParmParse: ::
 
     void PeleLM::readProbParm()
     {
@@ -201,7 +207,7 @@ Finally, ``pelelm_prob.H`` defines the two functions effectively filling the ini
 
 * ``pele::physics::PMF::PmfData::DataContainer const * pmf_data`` : the Cantera solution data struct
 
-The reader is encouraged to look into the body of the `pelelm_initdata` function for more details, a skelettal
+The reader is encouraged to look into the body of the `pelelm_initdata` function for more details, a skeletal
 version of the function reads:
 
 * Compute the coordinate of the cell center using the cell indices and the `geomdata`.
@@ -227,7 +233,7 @@ A last function, ``zero_visc``, is included in ``pelelm_prob.H`` but is not used
 Numerical parameters
 ^^^^^^^^^^^^^^^^^^^^
 
-The ``PeleLM CONTROL`` block contains a few of the `PeleLMeX` algorithmic parameters. Many more
+The ``PeleLMeX CONTROL`` block contains a few of the `PeleLMeX` algorithmic parameters. Many more
 unspecified parameters are relying on their default values which can be found in :doc:`LMeXControls`.
 Of particular interest are the ``peleLM.sdc_iterMax`` parameter controlling the number of
 SDC iterations (see :doc:`Model` for more details on SDC in `PeleLMeX`) and the
@@ -260,7 +266,10 @@ The next few lines specify AMReX compilation options and compiler selection: ::
    USE_HIP         = FALSE
    USE_SYCL        = FALSE
 
-It allows users to specify the number of spatial dimensions (2D), trigger debug compilation and other AMReX options. The compiler (``gnu``) and the parallelism paradigm (in the present case only MPI is used) are then selected. Note that on OSX platform, one should update the compiler to ``llvm``.
+It allows users to specify the number of spatial dimensions (2D), trigger debug compilation and other AMReX options.
+The compiler (``gnu``) and the parallelism paradigm (in the present case only MPI is used) are then selected. If MPI is not available on your
+platform, please set ``USE_MPI = FALSE``.
+Note that on OSX platform, one should update the compiler to ``llvm``.
 
 In `PeleLMeX`, the chemistry model (set of species, their thermodynamic and transport properties as well as the description of their of chemical interactions) is specified at compile time. Chemistry models available in `PelePhysics` can used in `PeleLMeX` by specifying the name of the folder in `PelePhysics/Support/Mechanisms/Models` containing the relevant files, for example: ::
 
@@ -275,11 +284,13 @@ list of available mechanisms and more information regarding the EOS, chemistry a
 
 Note that the ``Chemistry_Model`` must be similar to the one used to generate the Cantera solution.
 
-Finally, `PeleLMeX` utilizes the chemical kinetic ODE integrator `CVODE <https://computing.llnl.gov/projects/sundials/cvode>`_. This Third Party Librabry (TPL) is not shipped with the `PeleLMeX` distribution but can be readily installed through the makefile system of `PeleLMeX`. Note that compiling Sundials is necessary even if the simualtion do not involve reactions. To do so, type in the following command: ::
+Finally, `PeleLMeX` utilizes the chemical kinetic ODE integrator `CVODE <https://computing.llnl.gov/projects/sundials/cvode>`_. This
+Third Party Librabry (TPL) is shipped as a submodule of the `PeleLMeX` distribution and can be readily installed through the makefile system
+of `PeleLMeX`. To do so, type in the following command: ::
 
     make -j4 TPL
 
-Note that the installation of `CVODE` requires CMake 3.17.1 or higher.
+Note that the installation of `CVODE` requires CMake 3.23.1 or higher.
 
 You are now ready to build your first `PeleLMeX` executable !! Type in: ::
 
@@ -352,7 +363,7 @@ the initialization process and the solution will rapidly relax to adapt to the `
 
 Let's now play with the problem parameters to see how the initial solution changes. For instance,
 decrease the amplitude of the perturbation, change the ``standoff`` parameter or deactivate the
-initial projection by adding ``peleLM.do_init_proj=0`` to the ``PeleLM CONTROL`` block. Examples
+initial projection by adding ``peleLM.do_init_proj=0`` to the ``PeleLMeX CONTROL`` block. Examples
 of the initial solution varying these parameters are displayed in :numref:`FS_InitTweaks`.
 
 .. figure:: images/tutorials/FS_InitSolTweaks.png

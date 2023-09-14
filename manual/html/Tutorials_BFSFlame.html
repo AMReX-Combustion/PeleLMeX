@@ -60,6 +60,7 @@
 <p class="caption" role="heading"><span class="caption-text">Tutorials:</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="Tutorials.html">Tutorials</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="Tutorials_HotBubble.html">Rising light bubble</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Tutorials_FlameSheet.html">Premixed flame sheet with harmonic perturbations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Tutorials_FlowPastCyl.html">Non-reacting flow past a cylinder</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Backward facing step anchored premixed flame</a><ul>
@@ -134,21 +135,25 @@ Follow the steps listed below to get to this point:</p>
 </li>
 </ol>
 <p>Note that the makefile system is set up such that default paths are automatically set to the
-submodules obtained with the recursive <em>git clone</em>, however the user can set its own dependencies
+submodules obtained with the recursive <em>git clone</em>, however the user can set their own dependencies
 in the <cite>GNUmakefile</cite> by updating the top-most lines as follows:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>PELELMEX_HOME     = &lt;path_to_PeleLMeX&gt;
 AMREX_HOME        = &lt;path_to_MyAMReX&gt;
 AMREX_HYDRO_HOME  = &lt;path_to_MyAMReXHydro&gt;
 PELE_PHYSICS_HOME = &lt;path_to_MyPelePhysics&gt;
+SUNDIALS_HOME     = &lt;path_to_MySUNDIALS&gt;
 </pre></div>
 </div>
-<p>or directly through shell environement variables (using <em>bash</em> for instance):</p>
+<p>or directly through shell environment variables (using <em>bash</em> for instance):</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>export PELELMEX_HOME=&lt;path_to_PeleLMeX&gt;
 export AMREX_HOME=&lt;path_to_MyAMReX&gt;
 export AMREX_HYDRO_HOME=&lt;path_to_MyAMReXHydro&gt;
 export PELE_PHYSICS_HOME=&lt;path_to_MyPelePhysics&gt;
+export SUNDIALS_HOME=&lt;path_to_MySUNDIALS&gt;
 </pre></div>
 </div>
+<p>Note that using the first option will overwrite any
+environment variables you might have previously defined when using this <cite>GNUmakefile</cite>.</p>
 <p>You’re good to go !</p>
 </section>
 <section id="case-setup">
@@ -166,11 +171,11 @@ tutorial can be found in <cite>PeleLMeX</cite> Exec folder:</p>
 with the bottom left corner located at (-0.01:-0.01) and the top right corner at (0.07:0.01). The flow
 is primarily aligned with the <span class="math notranslate nohighlight">\(x\)</span> direction with an <code class="docutils literal notranslate"><span class="pre">Inflow</span></code> (dirichlet) boundary on the <span class="math notranslate nohighlight">\(x\)</span>-low
 and <code class="docutils literal notranslate"><span class="pre">Outflow</span></code> (0-neumann) boundary on <span class="math notranslate nohighlight">\(x\)</span>-high. No-slip wall conditions are imposed the transverse direction.
-Finally a Cartesian coordinate system is used here. An overview of the computational domain is provided in <a class="reference internal" href="#bfs-setupgeom"><span class="std std-numref">Fig. 13</span></a>.</p>
+Finally a Cartesian coordinate system is used here. An overview of the computational domain is provided in <a class="reference internal" href="#bfs-setupgeom"><span class="std std-numref">Fig. 15</span></a>.</p>
 <figure class="align-center" id="bfs-setupgeom" style="width: 95%">
 <img alt="_images/BFS_SetupSketch.png" src="_images/BFS_SetupSketch.png" />
 <figcaption>
-<p><span class="caption-number">Fig. 13 </span><span class="caption-text">: Setup of the computational domain for the backward facing step flame case.</span><a class="headerlink" href="#bfs-setupgeom" title="Link to this image"></a></p>
+<p><span class="caption-number">Fig. 15 </span><span class="caption-text">: Setup of the computational domain for the backward facing step flame case.</span><a class="headerlink" href="#bfs-setupgeom" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <p>All of the geometrical information can be specified the first two blocks of the input file (<cite>input.2d</cite>):</p>
@@ -340,11 +345,13 @@ list of available mechanisms and more information regarding the EOS, chemistry a
 Transport_Model := Simple
 </pre></div>
 </div>
-<p>Finally, <cite>PeleLMeX</cite> utilizes the chemical kinetic ODE integrator <a class="reference external" href="https://computing.llnl.gov/projects/sundials/cvode">CVODE</a>. This Third Party Librabry (TPL) is not shipped with the <cite>PeleLMeX</cite> distribution but can be readily installed through the makefile system of <cite>PeleLMeX</cite>. Note that compiling Sundials is necessary even if the simualtion does not involve reactions. To do so, type in the following command:</p>
+<p>Finally, <cite>PeleLMeX</cite> utilizes the chemical kinetic ODE integrator <a class="reference external" href="https://computing.llnl.gov/projects/sundials/cvode">CVODE</a>. This
+Third Party Librabry (TPL) is shipped as a submodule of the <cite>PeleLMeX</cite> distribution and can be readily installed through the makefile system
+of <cite>PeleLMeX</cite>. To do so, type in the following command:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>make -j4 TPL
 </pre></div>
 </div>
-<p>Note that the installation of <cite>CVODE</cite> requires CMake 3.17.1 or higher.</p>
+<p>Note that the installation of <cite>CVODE</cite> requires CMake 3.23.1 or higher.</p>
 <p>You are now ready to build your first <cite>PeleLMeX</cite> executable!! Type in:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>make -j4
 </pre></div>
@@ -377,11 +384,11 @@ listed in the input file. To do so, use:</p>
 <li><p>Saving the initial solution to <cite>plt00000</cite> file.</p></li>
 </ol>
 <p>Use Amrvis, Paraview or yt to visualize the plot file. Using Amrvis, the solution should look
-similar to <a class="reference internal" href="#bfs-initsol"><span class="std std-numref">Fig. 14</span></a>.</p>
+similar to <a class="reference internal" href="#bfs-initsol"><span class="std std-numref">Fig. 16</span></a>.</p>
 <figure class="align-center" id="bfs-initsol" style="width: 95%">
 <img alt="_images/BFS_InitSol.png" src="_images/BFS_InitSol.png" />
 <figcaption>
-<p><span class="caption-number">Fig. 14 </span><span class="caption-text">: Contour plots of temperature, O2 mass fraction, <span class="math notranslate nohighlight">\(x\)</span>-velocity component and divergence constraint after initialization.</span><a class="headerlink" href="#bfs-initsol" title="Link to this image"></a></p>
+<p><span class="caption-number">Fig. 16 </span><span class="caption-text">: Contour plots of temperature, O2 mass fraction, <span class="math notranslate nohighlight">\(x\)</span>-velocity component and divergence constraint after initialization.</span><a class="headerlink" href="#bfs-initsol" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <p>Note that in <cite>PeleLMeX</cite>, EB-covered regions are set to zero in plotfiles. Hot gases are found in the wake
@@ -430,7 +437,7 @@ the effect of the cold wall.</p>
 <figure class="align-center" id="bfs-250steps" style="width: 95%">
 <img alt="_images/BFS_250steps.png" src="_images/BFS_250steps.png" />
 <figcaption>
-<p><span class="caption-number">Fig. 15 </span><span class="caption-text">: Contour plots of density, H2 mass fraction, <span class="math notranslate nohighlight">\(x\)</span>-velocity component and heat release rate after 250 steps.</span><a class="headerlink" href="#bfs-250steps" title="Link to this image"></a></p>
+<p><span class="caption-number">Fig. 17 </span><span class="caption-text">: Contour plots of density, H2 mass fraction, <span class="math notranslate nohighlight">\(x\)</span>-velocity component and heat release rate after 250 steps.</span><a class="headerlink" href="#bfs-250steps" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <p>In order to illustrate one of <cite>PeleLMeX</cite> failure modes, we will now continue the simulation for
@@ -509,7 +516,7 @@ value, most of the lower part of the computational domain is actually refined to
 <figure class="align-center" id="bfs-500steps" style="width: 95%">
 <img alt="_images/BFS_500steps.png" src="_images/BFS_500steps.png" />
 <figcaption>
-<p><span class="caption-number">Fig. 16 </span><span class="caption-text">: Contour plots of temperature, H2 mass fraction, chemistry functCall and heat release rate after 500 steps, using 1 level of AMR.</span><a class="headerlink" href="#bfs-500steps" title="Link to this image"></a></p>
+<p><span class="caption-number">Fig. 18 </span><span class="caption-text">: Contour plots of temperature, H2 mass fraction, chemistry functCall and heat release rate after 500 steps, using 1 level of AMR.</span><a class="headerlink" href="#bfs-500steps" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <p>The <cite>functCall</cite> variable corresponds to the number of time CVODE called the chemical right-hand-side function and is
@@ -595,7 +602,7 @@ additional refinement, the flame front is now resolved with a few grid cells (bu
 <figure class="align-center" id="bfs-1200steps" style="width: 95%">
 <img alt="_images/BFS_1200steps.png" src="_images/BFS_1200steps.png" />
 <figcaption>
-<p><span class="caption-number">Fig. 17 </span><span class="caption-text">: Contour plots of temperature, H2 mass fraction, H2 production rate and heat release rate after 1200 steps, using 2 levels of AMR.</span><a class="headerlink" href="#bfs-1200steps" title="Link to this image"></a></p>
+<p><span class="caption-number">Fig. 19 </span><span class="caption-text">: Contour plots of temperature, H2 mass fraction, H2 production rate and heat release rate after 1200 steps, using 2 levels of AMR.</span><a class="headerlink" href="#bfs-1200steps" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <p>The AMR level 2 is clearly distant from the EB and concentrated mostly on the flame surface (except a small box at the bottom of the
@@ -660,7 +667,7 @@ the upstream and downstream region of the flame.</p>
 <figure class="align-center" id="bfs-condaverage" style="width: 60%">
 <img alt="_images/BFS_CondAverage.png" src="_images/BFS_CondAverage.png" />
 <figcaption>
-<p><span class="caption-number">Fig. 18 </span><span class="caption-text">: Conditional average and standard deviation of heat release rate after 1210 steps, using 4 levels of AMR.</span><a class="headerlink" href="#bfs-condaverage" title="Link to this image"></a></p>
+<p><span class="caption-number">Fig. 20 </span><span class="caption-text">: Conditional average and standard deviation of heat release rate after 1210 steps, using 4 levels of AMR.</span><a class="headerlink" href="#bfs-condaverage" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <p>Note that for this analysis to be relevant, we would need to run the simulation longer to completely

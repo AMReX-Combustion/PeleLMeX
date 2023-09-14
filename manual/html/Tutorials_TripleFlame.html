@@ -59,6 +59,7 @@
 <p class="caption" role="heading"><span class="caption-text">Tutorials:</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="Tutorials.html">Tutorials</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="Tutorials_HotBubble.html">Rising light bubble</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Tutorials_FlameSheet.html">Premixed flame sheet with harmonic perturbations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Tutorials_FlowPastCyl.html">Non-reacting flow past a cylinder</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Tutorials_BFSFlame.html">Backward facing step anchored premixed flame</a></li>
@@ -121,11 +122,11 @@ They also aid in our understanding of the more complex turbulent flames.
 Depending on the fuel involved and the flow configuration, the laminar flames can take on a number of interesting geometries.
 For example, as practical combustion systems often operate in partially premixed mode,
 with one or more fuel injections, a wide range of fresh gas compositions can be observed;
-and these conditions favor the appearance of edge flames, see Fig. <a class="reference internal" href="#tripleflameintro"><span class="std std-numref">Fig. 19</span></a>.</p>
+and these conditions favor the appearance of edge flames, see Fig. <a class="reference internal" href="#tripleflameintro"><span class="std std-numref">Fig. 21</span></a>.</p>
 <figure class="align-center" id="tripleflameintro" style="width: 95%">
 <img alt="_images/TF_Intro.png" src="_images/TF_Intro.png" />
 <figcaption>
-<p><span class="caption-number">Fig. 19 </span><span class="caption-text">: Normalized heat release rate (top) and temperature (bottom) contours of two-dimensional (2D) laminar lifted flames of ethylene.</span><a class="headerlink" href="#tripleflameintro" title="Link to this image"></a></p>
+<p><span class="caption-number">Fig. 21 </span><span class="caption-text">: Normalized heat release rate (top) and temperature (bottom) contours of two-dimensional (2D) laminar lifted flames of ethylene.</span><a class="headerlink" href="#tripleflameintro" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <p>Edge flames are composed of lean and rich premixed flame wings usually surrounding a central
@@ -155,21 +156,25 @@ Follow the steps listed below to get to this point:</p>
 </li>
 </ol>
 <p>Note that the makefile system is set up such that default paths are automatically set to the
-submodules obtained with the recursive <em>git clone</em>, however the user can set its own dependencies
+submodules obtained with the recursive <em>git clone</em>, however the user can set their own dependencies
 in the <cite>GNUmakefile</cite> by updating the top-most lines as follows:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>PELELMEX_HOME     = &lt;path_to_PeleLMeX&gt;
 AMREX_HOME        = &lt;path_to_MyAMReX&gt;
 AMREX_HYDRO_HOME  = &lt;path_to_MyAMReXHydro&gt;
 PELE_PHYSICS_HOME = &lt;path_to_MyPelePhysics&gt;
+SUNDIALS_HOME     = &lt;path_to_MySUNDIALS&gt;
 </pre></div>
 </div>
-<p>or directly through shell environement variables (using <em>bash</em> for instance):</p>
+<p>or directly through shell environment variables (using <em>bash</em> for instance):</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>export PELELMEX_HOME=&lt;path_to_PeleLMeX&gt;
 export AMREX_HOME=&lt;path_to_MyAMReX&gt;
 export AMREX_HYDRO_HOME=&lt;path_to_MyAMReXHydro&gt;
 export PELE_PHYSICS_HOME=&lt;path_to_MyPelePhysics&gt;
+export SUNDIALS_HOME=&lt;path_to_MySUNDIALS&gt;
 </pre></div>
 </div>
+<p>Note that using the first option will overwrite any
+environment variables you might have previously defined when using this <cite>GNUmakefile</cite>.</p>
 <p>You’re good to go !</p>
 </section>
 <section id="numerical-setup">
@@ -181,14 +186,14 @@ export PELE_PHYSICS_HOME=&lt;path_to_MyPelePhysics&gt;
 using a 64x128 base grid and up to 4 levels of refinement (although we will start with a lower number of levels).
 The refinement ratio between each level is set to 2. With 4 levels, this means that the minimum grid size inside the reaction layer will be just below 20 <span class="math notranslate nohighlight">\(μm\)</span>.
 The maximum box size is fixed at 32, and the base (level 0) grid is composed of 8 boxes,
-as shown in <a class="reference internal" href="#tf-setupgeom"><span class="std std-numref">Fig. 20</span></a>.</p>
+as shown in <a class="reference internal" href="#tf-setupgeom"><span class="std std-numref">Fig. 22</span></a>.</p>
 <p>Symmetric boundary conditions are used in the transverse (<span class="math notranslate nohighlight">\(x\)</span>) direction, while <code class="docutils literal notranslate"><span class="pre">Inflow</span></code> (dirichlet)
 and <code class="docutils literal notranslate"><span class="pre">Outflow</span></code> (neumann) boundary conditions are used in the main flow direction (<span class="math notranslate nohighlight">\(y\)</span>). The flow goes
 from bottom to top. The specificities of the <code class="docutils literal notranslate"><span class="pre">Inflow</span></code> boundary condition are explained in hereafter.</p>
 <figure class="align-center" id="tf-setupgeom" style="width: 95%">
 <img alt="_images/TF_SetupSketch.png" src="_images/TF_SetupSketch.png" />
 <figcaption>
-<p><span class="caption-number">Fig. 20 </span><span class="caption-text">: Sketch of the computational domain with level 0 box decomposition (left) and input mixture fraction profile (right).</span><a class="headerlink" href="#tf-setupgeom" title="Link to this image"></a></p>
+<p><span class="caption-number">Fig. 22 </span><span class="caption-text">: Sketch of the computational domain with level 0 box decomposition (left) and input mixture fraction profile (right).</span><a class="headerlink" href="#tf-setupgeom" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <p>The geometry of the problem is specified in the first block of the <code class="docutils literal notranslate"><span class="pre">input.2d-regt</span></code>:</p>
@@ -199,7 +204,7 @@ geometry.prob_lo     = 0.0 0.0 0.0        # x_lo y_lo (z_lo)
 geometry.prob_hi     = 0.02 0.04 0.0      # x_hi y_hi (z_hi)
 </pre></div>
 </div>
-<p>The second block determines the boundary conditions. Refer to Fig <a class="reference internal" href="#tf-setupgeom"><span class="std std-numref">Fig. 20</span></a>:</p>
+<p>The second block determines the boundary conditions. Refer to Fig <a class="reference internal" href="#tf-setupgeom"><span class="std std-numref">Fig. 22</span></a>:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>#---------------------- BC FLAGS ---------------------------------
 # Interior, Inflow, Outflow, Symmetry,
 # SlipWallAdiab, NoSlipWallAdiab, SlipWallIsotherm, NoSlipWallIsotherm
@@ -224,7 +229,7 @@ amr.max_grid_size   = 32                  # max box size
 <span id="sec-tuto-tf-inflowspec"></span><h3>Problem specifications<a class="headerlink" href="#problem-specifications" title="Link to this heading"></a></h3>
 <p>The edge flame is stabilized against an incoming mixing layer with a uniform velocity profile. The mixing
 layer is prescribed using an hyperbolic tangent of mixture fraction <span class="math notranslate nohighlight">\(z\)</span> between 0 and 1,
-as can be seen in <a class="reference internal" href="#tf-setupgeom"><span class="std std-numref">Fig. 20</span></a>:</p>
+as can be seen in <a class="reference internal" href="#tf-setupgeom"><span class="std std-numref">Fig. 22</span></a>:</p>
 <div class="math notranslate nohighlight">
 \[z(x) = 0.5 \Big(1 + tanh \Big( \frac{x - 0.6(x_{hi} + x_{lo})}{0.05(x_{hi} - x_{lo})} \Big) \Big)\]</div>
 <p>where <span class="math notranslate nohighlight">\(z\)</span> is based on the classical elemental composition <a class="reference internal" href="#cf1990" id="id2"><span>[CF1990]</span></a>:</p>
@@ -284,11 +289,11 @@ mixture fraction than described in subsection <a class="reference internal" href
 and reconstructing the species mass fraction profiles from it.
 To ensure ignition of the mixture, a progressively widening Gaussian profile of temperature is added,
 starting from about 1 cm, and stretching until the outlet of the domain. The initial temperature field is
-shown in Fig <a class="reference internal" href="#tf-initialsol"><span class="std std-numref">Fig. 21</span></a>, along with the parameters controlling the shape of the hot spot.</p>
+shown in Fig <a class="reference internal" href="#tf-initialsol"><span class="std std-numref">Fig. 23</span></a>, along with the parameters controlling the shape of the hot spot.</p>
 <figure class="align-center" id="tf-initialsol" style="width: 95%">
 <img alt="_images/TF_InitialSol.png" src="_images/TF_InitialSol.png" />
 <figcaption>
-<p><span class="caption-number">Fig. 21 </span><span class="caption-text">: Initial temperature field (left) as well as widening gaussian 1D y-profiles (right) and associated parameters. The initial solution contains 2 levels.</span><a class="headerlink" href="#tf-initialsol" title="Link to this image"></a></p>
+<p><span class="caption-number">Fig. 23 </span><span class="caption-text">: Initial temperature field (left) as well as widening gaussian 1D y-profiles (right) and associated parameters. The initial solution contains 2 levels.</span><a class="headerlink" href="#tf-initialsol" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <p>This initial solution is constructed via the routine <code class="docutils literal notranslate"><span class="pre">pelelm_initdata()</span></code>, in the file <code class="docutils literal notranslate"><span class="pre">pelelm_prob.H</span></code>. Additional information is provided as comments in this file for the eager reader, but nothing is required from the user at this point.</p>
@@ -342,12 +347,12 @@ Transport_Model := Simple
 </pre></div>
 </div>
 <p>Finally, <cite>PeleLMeX</cite> utilizes the chemical kinetic ODE integrator <a class="reference external" href="https://computing.llnl.gov/projects/sundials/cvode">CVODE</a>. This
-Third Party Librabry (TPL) is not shipped with the <cite>PeleLMeX</cite> distribution but can be readily installed through the makefile system
+Third Party Librabry (TPL) is shipped as a submodule of the <cite>PeleLMeX</cite> distribution and can be readily installed through the makefile system
 of <cite>PeleLMeX</cite>. To do so, type in the following command:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>make TPL
 </pre></div>
 </div>
-<p>Note that the installation of <cite>CVODE</cite> requires CMake 3.17.1 or higher.</p>
+<p>Note that the installation of <cite>CVODE</cite> requires CMake 3.23.1 or higher.</p>
 <p>You are now ready to build your first <cite>PeleLMeX</cite> executable !! Type in:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>make -j4
 </pre></div>
@@ -410,7 +415,7 @@ by appending their names to the <code class="docutils literal notranslate"><span
 </div>
 <p>Whether you have used one or the other command, within 10 s you should obtain a <code class="docutils literal notranslate"><span class="pre">plt00000</span></code> file (or even more,
 appended with .old*********** if you used both commands). Use <a class="reference external" href="https://amrex-codes.github.io/amrex/docs_html/Visualization.html">Amrvis</a>
-to vizualize <code class="docutils literal notranslate"><span class="pre">plt00000</span></code> and make sure the solution matches the one shown in Fig. <a class="reference internal" href="#tf-initialsol"><span class="std std-numref">Fig. 21</span></a>.</p>
+to vizualize <code class="docutils literal notranslate"><span class="pre">plt00000</span></code> and make sure the solution matches the one shown in Fig. <a class="reference internal" href="#tf-initialsol"><span class="std std-numref">Fig. 23</span></a>.</p>
 </section>
 <section id="running-the-problem-on-a-coarse-grid">
 <h3>Running the problem on a coarse grid<a class="headerlink" href="#running-the-problem-on-a-coarse-grid" title="Link to this heading"></a></h3>
@@ -442,11 +447,11 @@ with <a class="reference external" href="https://amrex-codes.github.io/amrex/doc
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>amrvis -a plt????0
 </pre></div>
 </div>
-<p>An animation of the flame evolution during the entire tutorial, including this initial transient, is provided in <a class="reference internal" href="#tf-inittransient"><span class="std std-numref">Fig. 22</span></a>.</p>
+<p>An animation of the flame evolution during the entire tutorial, including this initial transient, is provided in <a class="reference internal" href="#tf-inittransient"><span class="std std-numref">Fig. 24</span></a>.</p>
 <figure class="align-center" id="tf-inittransient" style="width: 95%">
 <img alt="_images/TF_Transient.gif" src="_images/TF_Transient.gif" />
 <figcaption>
-<p><span class="caption-number">Fig. 22 </span><span class="caption-text">: Temperature (left) and divu (right) fields from 0 to 2000 time steps (0-?? ms).</span><a class="headerlink" href="#tf-inittransient" title="Link to this image"></a></p>
+<p><span class="caption-number">Fig. 24 </span><span class="caption-text">: Temperature (left) and divu (right) fields from 0 to 2000 time steps (0-?? ms).</span><a class="headerlink" href="#tf-inittransient" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 </section>
@@ -497,7 +502,7 @@ amr.max_step          = 2000          # maximum number of time steps
 <p>As the simulation proceeds, an ASCII file tracking the flame position and inlet velocity
 (as well as other control variables) is generated: <code class="docutils literal notranslate"><span class="pre">AC_History</span></code>. You can follow the motion of
 the flame tip by plotting the seventh column against the first one (flame tip vs. time step count).
-If <cite>gnuplot</cite> is available on your computer, use the following to obtain the graphs of <a class="reference internal" href="#tf-accontrol"><span class="std std-numref">Fig. 23</span></a>:</p>
+If <cite>gnuplot</cite> is available on your computer, use the following to obtain the graphs of <a class="reference internal" href="#tf-accontrol"><span class="std std-numref">Fig. 25</span></a>:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>gnuplot
 plot &quot;AC_History.dat&quot; u 1:7 w lp
 plot &quot;AC_History.dat&quot; u 1:3 w lp
@@ -508,7 +513,7 @@ exit
 <figure class="align-center" id="tf-accontrol" style="width: 95%">
 <img alt="_images/TF_ACcontrol.png" src="_images/TF_ACcontrol.png" />
 <figcaption>
-<p><span class="caption-number">Fig. 23 </span><span class="caption-text">: Flame tip position (left) and inlet velocity (right) as function of time step count from 1000 to 2000 step using the inlet velocity control.</span><a class="headerlink" href="#tf-accontrol" title="Link to this image"></a></p>
+<p><span class="caption-number">Fig. 25 </span><span class="caption-text">: Flame tip position (left) and inlet velocity (right) as function of time step count from 1000 to 2000 step using the inlet velocity control.</span><a class="headerlink" href="#tf-accontrol" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <p>At this point, you have a stabilized methane/air triple flame and will now use AMR features to improve the quality of your simulation.</p>
@@ -516,7 +521,7 @@ exit
 </section>
 <section id="refinement-of-the-computation">
 <h2>Refinement of the computation<a class="headerlink" href="#refinement-of-the-computation" title="Link to this heading"></a></h2>
-<p>Before going further, it is important to look at the results of the current simulation. The left panel of <a class="reference internal" href="#tf-coarsedetails"><span class="std std-numref">Fig. 24</span></a>
+<p>Before going further, it is important to look at the results of the current simulation. The left panel of <a class="reference internal" href="#tf-coarsedetails"><span class="std std-numref">Fig. 26</span></a>
 displays the temperature field, while a zoom-in of the flame edge region colored by several important variables
 is provided on the right side.
 Note that <cite>DivU</cite>, the <cite>HeatRelease</cite> and the <cite>CH4_consumption</cite> are good markers of the reaction/diffusion processes in our case.
@@ -526,11 +531,11 @@ closely match the region of high <cite>CH4_consumption</cite> while <cite>Y(CH3O
 <figure class="align-center" id="tf-coarsedetails" style="width: 95%">
 <img alt="_images/TF_CoarseDetails.png" src="_images/TF_CoarseDetails.png" />
 <figcaption>
-<p><span class="caption-number">Fig. 24 </span><span class="caption-text">: Details of the triple flame tip obtained with the initial coarse 2-level mesh.</span><a class="headerlink" href="#tf-coarsedetails" title="Link to this image"></a></p>
+<p><span class="caption-number">Fig. 26 </span><span class="caption-text">: Details of the triple flame tip obtained with the initial coarse 2-level mesh.</span><a class="headerlink" href="#tf-coarsedetails" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <p>Our additional level of refinement must specifically target the reactive layer of the flame. As seen
-from <a class="reference internal" href="#tf-coarsedetails"><span class="std std-numref">Fig. 24</span></a>, one can choose from several variables to reach that goal. In the following,
+from <a class="reference internal" href="#tf-coarsedetails"><span class="std std-numref">Fig. 26</span></a>, one can choose from several variables to reach that goal. In the following,
 we will use the CH3O species as a tracer of the flame position. Start by increasing the number of AMR levels by one
 in the <cite>AMR CONTROL</cite> block:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span><span class="gh">#---------------------- AMR CONTROL ------------------------------</span>
@@ -611,13 +616,13 @@ active_control.tau = 1.0e-4            # Control tau (should ~ 10 dt)
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>mpirun -n 4 ./PeleLM2d.gnu.MPI.ex inputs.2d-regt &gt; log4Levels.dat &amp;
 </pre></div>
 </div>
-<p>Figure <a class="reference internal" href="#tf-accomplete"><span class="std std-numref">Fig. 25</span></a> shows the entire history of the inlet velocity starting when
+<p>Figure <a class="reference internal" href="#tf-accomplete"><span class="std std-numref">Fig. 27</span></a> shows the entire history of the inlet velocity starting when
 the AC was activated (1000th time step). We can see that every change in the numerical setup induced a slight change in the
 triple flame propagation velocity, eventually leading to a nearly constant value, sufficient for the purpose of this tutorial.</p>
 <figure class="align-center" id="tf-accomplete" style="width: 95%">
 <img alt="_images/TF_ACcomplete.png" src="_images/TF_ACcomplete.png" />
 <figcaption>
-<p><span class="caption-number">Fig. 25 </span><span class="caption-text">: Inlet velocity history during the successive simulations performed during this tutorial.</span><a class="headerlink" href="#tf-accomplete" title="Link to this image"></a></p>
+<p><span class="caption-number">Fig. 27 </span><span class="caption-text">: Inlet velocity history during the successive simulations performed during this tutorial.</span><a class="headerlink" href="#tf-accomplete" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <p>At this point, the simulation is considered complete.</p>

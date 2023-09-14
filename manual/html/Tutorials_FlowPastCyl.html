@@ -60,6 +60,7 @@
 <p class="caption" role="heading"><span class="caption-text">Tutorials:</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="Tutorials.html">Tutorials</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="Tutorials_HotBubble.html">Rising light bubble</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Tutorials_FlameSheet.html">Premixed flame sheet with harmonic perturbations</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Non-reacting flow past a cylinder</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#introduction">Introduction</a></li>
@@ -134,30 +135,27 @@ Follow the steps listed below to get to this point:</p>
 </pre></div>
 </div>
 </li>
-<li><p>Finally, setup the environment variables providing paths to <cite>PeleLMeX</cite> and its dependencies. This can done in
-one of two ways:</p>
-<ol class="arabic">
-<li><p>Directly into the <cite>GNUmakefile</cite> by updating the top-most lines as follows:</p>
+</ol>
+<p>Note that the makefile system is set up such that default paths are automatically set to the
+submodules obtained with the recursive <em>git clone</em>, however the user can set their own dependencies
+in the <cite>GNUmakefile</cite> by updating the top-most lines as follows:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>PELELMEX_HOME     = &lt;path_to_PeleLMeX&gt;
-AMREX_HOME        =${PELELMEX_HOME}/Submodules/amrex
-AMREX_HYDRO_HOME  =${PELELMEX_HOME}/Submodules/AMReX-Hydro
-PELE_PHYSICS_HOME =${PELELMEX_HOME}/Submodules/PelePhysics
+AMREX_HOME        = &lt;path_to_MyAMReX&gt;
+AMREX_HYDRO_HOME  = &lt;path_to_MyAMReXHydro&gt;
+PELE_PHYSICS_HOME = &lt;path_to_MyPelePhysics&gt;
+SUNDIALS_HOME     = &lt;path_to_MySUNDIALS&gt;
 </pre></div>
 </div>
-</li>
-<li><p>Exporting shell environement variables (using <em>bash</em> for instance):</p>
+<p>or directly through shell environment variables (using <em>bash</em> for instance):</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>export PELELMEX_HOME=&lt;path_to_PeleLMeX&gt;
-export AMREX_HOME=${PELELMEX_HOME}/Submodules/amrex
-export AMREX_HYDRO_HOME=${PELELMEX_HOME}/Submodules/AMReX-Hydro
-export PELE_PHYSICS_HOME=${PELELMEX_HOME}/Submodules/PelePhysics
+export AMREX_HOME=&lt;path_to_MyAMReX&gt;
+export AMREX_HYDRO_HOME=&lt;path_to_MyAMReXHydro&gt;
+export PELE_PHYSICS_HOME=&lt;path_to_MyPelePhysics&gt;
+export SUNDIALS_HOME=&lt;path_to_MySUNDIALS&gt;
 </pre></div>
 </div>
-</li>
-</ol>
-<p>Both options require to provide the path to where you cloned <cite>PeleLMeX</cite>. Note that using the first option will overwrite any
-environement variables you might have previously defined when using this <cite>GNUmakefile</cite>.</p>
-</li>
-</ol>
+<p>Note that using the first option will overwrite any
+environment variables you might have previously defined when using this <cite>GNUmakefile</cite>.</p>
 <p>You’re good to go !</p>
 </section>
 <section id="numerical-setup">
@@ -169,13 +167,13 @@ environement variables you might have previously defined when using this <cite>G
 The base grid is decomposed into 192x64 cells and up to 3 levels of refinement (although we will start with a single level).
 The refinement ratio between each level is set to 2.
 The maximum box size is fixed at 64, and the base (level 0) grid is composed of 3 boxes,
-as shown in <a class="reference internal" href="#fpc-domain"><span class="std std-numref">Fig. 10</span></a>.</p>
+as shown in <a class="reference internal" href="#fpc-domain"><span class="std std-numref">Fig. 12</span></a>.</p>
 <p>Periodic boundary conditions are used in the transverse (<span class="math notranslate nohighlight">\(y\)</span>) direction, while <code class="docutils literal notranslate"><span class="pre">Inflow</span></code> (dirichlet) and <code class="docutils literal notranslate"><span class="pre">Outflow</span></code> (neumann) boundary conditions are used in the main flow direction (<span class="math notranslate nohighlight">\(x\)</span>). The flow goes from left to right.
 A cylinder of radius 0.0035 m is placed in the middle of the flow at (0.0:0.0).</p>
 <figure class="align-center" id="fpc-domain" style="width: 80%">
 <img alt="_images/FPC_SetupSketch.png" src="_images/FPC_SetupSketch.png" />
 <figcaption>
-<p><span class="caption-number">Fig. 10 </span><span class="caption-text">: Sketch of the computational domain with level 0 box decomposition.</span><a class="headerlink" href="#fpc-domain" title="Link to this image"></a></p>
+<p><span class="caption-number">Fig. 12 </span><span class="caption-text">: Sketch of the computational domain with level 0 box decomposition.</span><a class="headerlink" href="#fpc-domain" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <p>The geometry of the problem is specified in the first block of the <code class="docutils literal notranslate"><span class="pre">input.2d-Re500</span></code>:</p>
@@ -186,7 +184,7 @@ geometry.prob_lo     = -0.02 -0.02     # x_lo y_lo
 geometry.prob_hi     =  0.10  0.02     # x_hi y_hi
 </pre></div>
 </div>
-<p>The second block determines the boundary conditions. Note that <cite>Interior</cite> is used to indicate periodic boundary conditions. Refer to <a class="reference internal" href="#fpc-domain"><span class="std std-numref">Fig. 10</span></a>:</p>
+<p>The second block determines the boundary conditions. Note that <cite>Interior</cite> is used to indicate periodic boundary conditions. Refer to <a class="reference internal" href="#fpc-domain"><span class="std std-numref">Fig. 12</span></a>:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>#--------------------------BC FLAGS-----------------------------
 # Interior, Inflow, Outflow, Symmetry,
 # SlipWallAdiab, NoSlipWallAdiab, SlipWallIsotherm, NoSlipWallIsotherm
@@ -297,11 +295,13 @@ TINY_PROFILE    = FALSE
 Transport_Model := Constant
 </pre></div>
 </div>
-<p>Finally, <cite>PeleLMeX</cite> utilizes the chemical kinetic ODE integrator <a class="reference external" href="https://computing.llnl.gov/projects/sundials/cvode">CVODE</a>. This Third Party Librabry (TPL) is not shipped with the <cite>PeleLMeX</cite> distribution but can be readily installed through the makefile system of <cite>PeleLMeX</cite>. Note that compiling Sundials is necessary even if the simualtion do not involve reactions. To do so, type in the following command:</p>
+<p>Finally, <cite>PeleLMeX</cite> utilizes the chemical kinetic ODE integrator <a class="reference external" href="https://computing.llnl.gov/projects/sundials/cvode">CVODE</a>. This
+Third Party Librabry (TPL) is shipped as a submodule of the <cite>PeleLMeX</cite> distribution and can be readily installed through the makefile system
+of <cite>PeleLMeX</cite>. To do so, type in the following command:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>make -j4 TPL
 </pre></div>
 </div>
-<p>Note that the installation of <cite>CVODE</cite> requires CMake 3.12.1 or higher.</p>
+<p>Note that the installation of <cite>CVODE</cite> requires CMake 3.23.1 or higher.</p>
 <p>You are now ready to build your first <cite>PeleLMeX</cite> executable !! Type in:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>make -j4
 </pre></div>
@@ -353,12 +353,12 @@ We have specified here that a checkpoint file will be generated every 50 ms and 
 <figure class="align-center" id="fpc-coarse" style="width: 80%">
 <img alt="_images/FPC_Coarse_25ms.png" src="_images/FPC_Coarse_25ms.png" />
 <figcaption>
-<p><span class="caption-number">Fig. 11 </span><span class="caption-text">: Contour plots of velocity components, vorticity, pressure and volume fraction at t = 25 ms on the coarse grid.</span><a class="headerlink" href="#fpc-coarse" title="Link to this image"></a></p>
+<p><span class="caption-number">Fig. 13 </span><span class="caption-text">: Contour plots of velocity components, vorticity, pressure and volume fraction at t = 25 ms on the coarse grid.</span><a class="headerlink" href="#fpc-coarse" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <p>At this point, you have established a flow with a large recirculation zone in the wake of the cylinder, but the flow has not yet fully transitioned to periodic vortex shedding.
-The flow is depicted in <a class="reference internal" href="#fpc-coarse"><span class="std std-numref">Fig. 11</span></a> showing a few of the available contour plots at 25 ms. Note that the value of the fully covered cells is set to zero.</p>
-<p>As can be seen from <a class="reference internal" href="#fpc-coarse"><span class="std std-numref">Fig. 11</span></a>, the flow has not yet transitioned to the familiar Von-Karman alleys and two aspects of the current simulation can delay or even prevent the onset of vortex shedding:</p>
+The flow is depicted in <a class="reference internal" href="#fpc-coarse"><span class="std std-numref">Fig. 13</span></a> showing a few of the available contour plots at 25 ms. Note that the value of the fully covered cells is set to zero.</p>
+<p>As can be seen from <a class="reference internal" href="#fpc-coarse"><span class="std std-numref">Fig. 13</span></a>, the flow has not yet transitioned to the familiar Von-Karman alleys and two aspects of the current simulation can delay or even prevent the onset of vortex shedding:</p>
 <blockquote>
 <div><ul class="simple">
 <li><p>the flow is initially symmetric and the transition to the familiar periodic flow is due to the growth of infinitesimal perturbations in the shear layer of the wake. Because the flow is artificially too symmetric, this transition can be delayed until round-off errors sufficiently accumulate.</p></li>
@@ -427,12 +427,12 @@ As a final step, we will add another level of refinement, only at the vicinity o
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>mpirun -n 4 ./PeleLMeX2d.gnu.MPI.ex input.2d-Re500 &gt; log3Levels.dat &amp;
 </pre></div>
 </div>
-<p>You should obtain a flow with a vorticity field similar to <a class="reference internal" href="#fpc-vortfinal"><span class="std std-numref">Fig. 12</span></a>.
+<p>You should obtain a flow with a vorticity field similar to <a class="reference internal" href="#fpc-vortfinal"><span class="std std-numref">Fig. 14</span></a>.
 For the purpose of the present tutorial, this will be our final solution but one can see that the flow has not yet return to a periodic vortex shedding and additinal resolution could be added locally to obtain smoother flow features.</p>
 <figure class="align-center" id="fpc-vortfinal" style="width: 80%">
 <img alt="_images/FPC_VorticityFinal.png" src="_images/FPC_VorticityFinal.png" />
 <figcaption>
-<p><span class="caption-number">Fig. 12 </span><span class="caption-text">: Contour plots of vorticity at t = 350 ms with 2 levels of refinements.</span><a class="headerlink" href="#fpc-vortfinal" title="Link to this image"></a></p>
+<p><span class="caption-number">Fig. 14 </span><span class="caption-text">: Contour plots of vorticity at t = 350 ms with 2 levels of refinements.</span><a class="headerlink" href="#fpc-vortfinal" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 </section>
