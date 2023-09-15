@@ -582,7 +582,7 @@ jobs:
           echo "::add-matcher::.github/problem-matchers/gcc.json"
           cat clang-tidy-warnings.txt
           export return=$(tail -n 1 clang-tidy-warnings.txt | awk '{print $2}')
-          #exit ${return}
+          exit ${return}
   Lint-codeql:
     needs: Formatting
     runs-on: ubuntu-latest
