@@ -3,7 +3,6 @@
 
 #include <AMReX_FArrayBox.H>
 
-
 AMREX_FORCE_INLINE
 std::string
 read_file(std::ifstream& in)
@@ -69,6 +68,5 @@ locate(const amrex::Real* xtable, const int n, const amrex::Real& x, int& idxlo)
     }
   }
 }
-
 
 #endif

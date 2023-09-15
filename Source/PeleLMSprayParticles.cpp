@@ -163,7 +163,7 @@ PeleLM::SprayInit()
     restart_file = "";
     if (!m_restart_chkfile.empty() || !m_restart_pltfile.empty()) {
       std::string warn_msg = "Restart file does not contain particles. "
-        "Particles are being initialized from scratch.";
+                             "Particles are being initialized from scratch.";
       Warning(warn_msg);
     }
   }
@@ -257,7 +257,8 @@ PeleLM::SprayAddSource(const int level)
     extsource, source, scomps.momSrcIndx, scomps.momIndx, AMREX_SPACEDIM,
     eghosts);
   for (int n = 0; n < SPRAY_FUEL_NUM; ++n) {
-    const int dstcomp = scomps.specIndx + SprayParticleContainer::getFuelIndx(n);
+    const int dstcomp =
+      scomps.specIndx + SprayParticleContainer::getFuelIndx(n);
     MultiFab::Add(
       extsource, source, scomps.specSrcIndx + n, dstcomp, 1, eghosts);
   }
@@ -389,7 +390,8 @@ PeleLM::SprayInjectRedist()
   if (spray_verbose >= 3 && injected) {
     Long new_count = SprayPC->TotalNumberOfParticles(true, false);
     Long num_inj = new_count - prev_count;
-    Print() << "Injected " << num_inj << " particles at time " << m_t_new[0] << std::endl;
+    Print() << "Injected " << num_inj << " particles at time " << m_t_new[0]
+            << std::endl;
   }
 }
 

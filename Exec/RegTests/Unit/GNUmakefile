@@ -1,30 +1,37 @@
-TOP = ../../../..
-AMREX_HOME         ?= ${TOP}/amrex
-PELELMEX_HOME      ?= ${TOP}/PeleLMeX
-PELE_PHYSICS_HOME  ?= ${TOP}/PelePhysics
-
-
 # AMReX
-DIM             = 2
-DEBUG           = FALSE
-PRECISION       = DOUBLE
-VERBOSE         = FALSE
-TINY_PROFILE    = FALSE
+DIM = 2
+COMP = clang
+PRECISION = DOUBLE
+USE_EB = FALSE
+USE_HYPRE = FALSE
 
-# Compilation
-COMP            = gnu
-USE_MPI         = TRUE
-USE_OMP         = FALSE
-USE_CUDA        = FALSE
-USE_HIP         = FALSE
-USE_SYCL        = FALSE
+# Profiling
+PROFILE = FALSE
+TINY_PROFILE = FALSE
+COMM_PROFILE = FALSE
+TRACE_PROFILE = FALSE
+MEM_PROFILE = FALSE
+USE_GPROF = FALSE
+
+# Performance
+USE_MPI = TRUE
+USE_OMP = FALSE
+USE_CUDA = FALSE
+USE_HIP = FALSE
+USE_SYCL = FALSE
+
+# Debugging
+DEBUG = FALSE
+FSANITIZER = FALSE
+THREAD_SANITIZER = FALSE
 
 # PeleLMeX
 
 # PelePhysics
 Chemistry_Model = air
-Reactions_Model	 = Null
-Eos_Model			 = Fuego
-Transport_Model   = Constant
+Reactions_Model = Null
+Eos_Model = Fuego
+Transport_Model = Constant
 
-include $(PELELMEX_HOME)/Utils/Make.PeleLMeX
+PELELMEX_HOME ?= ../../..
+include $(PELELMEX_HOME)/Exec/Make.PeleLMeX

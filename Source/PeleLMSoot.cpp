@@ -31,22 +31,23 @@ PeleLM::cleanupSootModel()
 }
 
 void
-PeleLM::computeSootSource(const PeleLM::TimeStamp &a_timestamp,
-                          const Real a_dt)
+PeleLM::computeSootSource(const PeleLM::TimeStamp& a_timestamp, const Real a_dt)
 {
   bool pres_term = false; // Do not include change in pressure in energy
   for (int lev = 0; lev <= finest_level; lev++) {
-    auto ldata_p = getLevelDataPtr(lev,a_timestamp);
-    Real time = getTime(lev,a_timestamp);
+    auto ldata_p = getLevelDataPtr(lev, a_timestamp);
+    Real time = getTime(lev, a_timestamp);
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
-    for (MFIter mfi(*(m_extSource[lev]),TilingIfNotGPU()); mfi.isValid(); ++mfi) {
+    for (MFIter mfi(*(m_extSource[lev]), TilingIfNotGPU()); mfi.isValid();
+         ++mfi) {
       Box const& gbx = mfi.growntilebox();
-      auto const& state_arr = ldata_p->state.const_array(mfi,DENSITY);
+      auto const& state_arr = ldata_p->state.const_array(mfi, DENSITY);
       auto const& mu = ldata_p->visc_cc.const_array(mfi, 0);
-      auto const& source_arr = m_extSource[lev]->array(mfi,DENSITY);
-      soot_model->computeSootSourceTerm(gbx, state_arr, mu, source_arr, time, a_dt, pres_term);
+      auto const& source_arr = m_extSource[lev]->array(mfi, DENSITY);
+      soot_model->computeSootSourceTerm(
+        gbx, state_arr, mu, source_arr, time, a_dt, pres_term);
     }
   }
 }
@@ -55,24 +56,25 @@ void
 PeleLM::clipSootMoments()
 {
   for (int lev = 0; lev <= finest_level; lev++) {
-    auto ldata_p = getLevelDataPtr(lev,AmrNewTime);
+    auto ldata_p = getLevelDataPtr(lev, AmrNewTime);
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
-    for (MFIter mfi(ldata_p->state,TilingIfNotGPU()); mfi.isValid(); ++mfi) {
+    for (MFIter mfi(ldata_p->state, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
       Box const& gbx = mfi.tilebox();
-      auto const& state_arr = ldata_p->state.array(mfi,FIRSTSOOT);
+      auto const& state_arr = ldata_p->state.array(mfi, FIRSTSOOT);
       SootData* sd = soot_model->getSootData_d();
-      amrex::ParallelFor(gbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-        GpuArray<Real, NUM_SOOT_MOMENTS+1> moments;
-        for (int mom = 0; mom < NUM_SOOT_MOMENTS+1; mom++) {
-          moments[mom] = state_arr(i,j,k,mom);
-        }
-        sd->momConvClipConv(moments.data());
-        for (int mom = 0; mom < NUM_SOOT_MOMENTS+1; mom++) {
-          state_arr(i,j,k,mom) = moments[mom];
-        }
-      });
+      amrex::ParallelFor(
+        gbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          GpuArray<Real, NUM_SOOT_MOMENTS + 1> moments;
+          for (int mom = 0; mom < NUM_SOOT_MOMENTS + 1; mom++) {
+            moments[mom] = state_arr(i, j, k, mom);
+          }
+          sd->momConvClipConv(moments.data());
+          for (int mom = 0; mom < NUM_SOOT_MOMENTS + 1; mom++) {
+            state_arr(i, j, k, mom) = moments[mom];
+          }
+        });
     }
   }
 }

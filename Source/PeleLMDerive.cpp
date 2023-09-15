@@ -2,119 +2,122 @@
 
 using namespace amrex;
 
-PeleLMDeriveRec::PeleLMDeriveRec (const std::string& a_name,
-                                  IndexType          result_type,
-                                  int                nvar_derive,
-                                  PeleLMDeriveFunc   der_func,
-                                  DeriveBoxMap       box_map,
-                                  Interpolater*      a_interp)
-    :
-    derive_name(a_name),
+PeleLMDeriveRec::PeleLMDeriveRec(
+  const std::string& a_name,
+  IndexType result_type,
+  int nvar_derive,
+  PeleLMDeriveFunc der_func,
+  DeriveBoxMap box_map,
+  Interpolater* a_interp)
+  : derive_name(a_name),
     variable_names(),
     der_type(result_type),
     n_derive(nvar_derive),
     func(der_func),
     mapper(a_interp),
     bx_map(box_map)
-{}
-
-PeleLMDeriveRec::PeleLMDeriveRec (const std::string&   a_name,
-                                  IndexType            result_type,
-                                  int                  nvar_derive,
-                                  Vector<std::string>& var_names,
-                                  PeleLMDeriveFunc     der_func,
-                                  DeriveBoxMap         box_map,
-                                  Interpolater*        a_interp)
-    :
-    derive_name(a_name),
-    variable_names(var_names),
-    der_type(result_type),
-    n_derive(nvar_derive),
-    func(der_func),
-    mapper(a_interp),
-    bx_map(box_map)
-{}
-
-PeleLMDeriveRec::PeleLMDeriveRec (const std::string& a_name,
-                                  IndexType          result_type,
-                                  int                nvar_derive,
-                                  DeriveBoxMap       box_map,
-                                  Interpolater*      a_interp)
-    :
-    derive_name(a_name),
-    variable_names(),
-    der_type(result_type),
-    n_derive(nvar_derive),
-    func(nullptr),
-    mapper(a_interp),
-    bx_map(box_map)
-{}
-
-PeleLMDeriveRec::PeleLMDeriveRec (const std::string&   a_name,
-                                  IndexType            result_type,
-                                  int                  nvar_derive,
-                                  Vector<std::string>& var_names,
-                                  DeriveBoxMap         box_map,
-                                  Interpolater*        a_interp)
-    :
-    derive_name(a_name),
-    variable_names(var_names),
-    der_type(result_type),
-    n_derive(nvar_derive),
-    func(nullptr),
-    mapper(a_interp),
-    bx_map(box_map)
-{}
-
-PeleLMDeriveRec::~PeleLMDeriveRec ()
 {
-   func     = nullptr;
-   mapper   = 0;
-   bx_map   = 0;
+}
+
+PeleLMDeriveRec::PeleLMDeriveRec(
+  const std::string& a_name,
+  IndexType result_type,
+  int nvar_derive,
+  Vector<std::string>& var_names,
+  PeleLMDeriveFunc der_func,
+  DeriveBoxMap box_map,
+  Interpolater* a_interp)
+  : derive_name(a_name),
+    variable_names(var_names),
+    der_type(result_type),
+    n_derive(nvar_derive),
+    func(der_func),
+    mapper(a_interp),
+    bx_map(box_map)
+{
+}
+
+PeleLMDeriveRec::PeleLMDeriveRec(
+  const std::string& a_name,
+  IndexType result_type,
+  int nvar_derive,
+  DeriveBoxMap box_map,
+  Interpolater* a_interp)
+  : derive_name(a_name),
+    variable_names(),
+    der_type(result_type),
+    n_derive(nvar_derive),
+    func(nullptr),
+    mapper(a_interp),
+    bx_map(box_map)
+{
+}
+
+PeleLMDeriveRec::PeleLMDeriveRec(
+  const std::string& a_name,
+  IndexType result_type,
+  int nvar_derive,
+  Vector<std::string>& var_names,
+  DeriveBoxMap box_map,
+  Interpolater* a_interp)
+  : derive_name(a_name),
+    variable_names(var_names),
+    der_type(result_type),
+    n_derive(nvar_derive),
+    func(nullptr),
+    mapper(a_interp),
+    bx_map(box_map)
+{
+}
+
+PeleLMDeriveRec::~PeleLMDeriveRec()
+{
+  func = nullptr;
+  mapper = 0;
+  bx_map = 0;
 }
 
 const std::string&
-PeleLMDeriveRec::name () const noexcept
+PeleLMDeriveRec::name() const noexcept
 {
-    return derive_name;
+  return derive_name;
 }
 
 IndexType
-PeleLMDeriveRec::deriveType () const noexcept
+PeleLMDeriveRec::deriveType() const noexcept
 {
-    return der_type;
+  return der_type;
 }
 
 PeleLMDeriveFunc
-PeleLMDeriveRec::derFunc () const noexcept
+PeleLMDeriveRec::derFunc() const noexcept
 {
-    return func;
+  return func;
 }
 
 PeleLMDeriveRec::DeriveBoxMap
-PeleLMDeriveRec::boxMap () const noexcept
+PeleLMDeriveRec::boxMap() const noexcept
 {
-    return bx_map;
+  return bx_map;
 }
 
 Interpolater*
-PeleLMDeriveRec::interp () const noexcept
+PeleLMDeriveRec::interp() const noexcept
 {
-    return mapper;
+  return mapper;
 }
 
 int
-PeleLMDeriveRec::numDerive () const noexcept
+PeleLMDeriveRec::numDerive() const noexcept
 {
-    return n_derive;
+  return n_derive;
 }
 
-const
-std::string&
+const std::string&
 PeleLMDeriveRec::variableName(int comp) const noexcept
 {
   if (comp < variable_names.size())
-     return variable_names[comp];
+    return variable_names[comp];
 
   return derive_name;
 }
@@ -134,94 +137,99 @@ PeleLMDeriveRec::variableComp(const std::string& a_name) const noexcept
   return -1;
 }
 
-PeleLMDeriveList::PeleLMDeriveList () {}
+PeleLMDeriveList::PeleLMDeriveList() {}
 
 void
-PeleLMDeriveList::add (const std::string&            name,
-                       IndexType                     result_type,
-                       int                           nvar_der,
-                       PeleLMDeriveFunc              der_func,
-                       PeleLMDeriveRec::DeriveBoxMap bx_map,
-                       Interpolater*                 interp)
+PeleLMDeriveList::add(
+  const std::string& name,
+  IndexType result_type,
+  int nvar_der,
+  PeleLMDeriveFunc der_func,
+  PeleLMDeriveRec::DeriveBoxMap bx_map,
+  Interpolater* interp)
 {
-    lst.push_back(PeleLMDeriveRec(name,result_type,nvar_der,der_func,bx_map,interp));
+  lst.push_back(
+    PeleLMDeriveRec(name, result_type, nvar_der, der_func, bx_map, interp));
 }
 
 void
-PeleLMDeriveList::add (const std::string&            name,
-                       IndexType                     result_type,
-                       int                           nvar_der,
-                       Vector<std::string>&          vars,
-                       PeleLMDeriveFunc              der_func,
-                       PeleLMDeriveRec::DeriveBoxMap bx_map,
-                       Interpolater*                 interp)
+PeleLMDeriveList::add(
+  const std::string& name,
+  IndexType result_type,
+  int nvar_der,
+  Vector<std::string>& vars,
+  PeleLMDeriveFunc der_func,
+  PeleLMDeriveRec::DeriveBoxMap bx_map,
+  Interpolater* interp)
 {
-    lst.push_back(PeleLMDeriveRec(name,result_type,nvar_der,vars,der_func,bx_map,interp));
+  lst.push_back(PeleLMDeriveRec(
+    name, result_type, nvar_der, vars, der_func, bx_map, interp));
 }
 
 void
-PeleLMDeriveList::add (const std::string&            name,
-                       IndexType                     result_type,
-                       int                           nvar_der,
-                       PeleLMDeriveRec::DeriveBoxMap bx_map,
-                       Interpolater*                 interp)
+PeleLMDeriveList::add(
+  const std::string& name,
+  IndexType result_type,
+  int nvar_der,
+  PeleLMDeriveRec::DeriveBoxMap bx_map,
+  Interpolater* interp)
 {
-    lst.push_back(PeleLMDeriveRec(name,result_type,nvar_der,bx_map,interp));
+  lst.push_back(PeleLMDeriveRec(name, result_type, nvar_der, bx_map, interp));
 }
 
 void
-PeleLMDeriveList::add (const std::string&            name,
-                       IndexType                     result_type,
-                       int                           nvar_der,
-                       Vector<std::string>&          vars,
-                       PeleLMDeriveRec::DeriveBoxMap bx_map,
-                       Interpolater*                 interp)
+PeleLMDeriveList::add(
+  const std::string& name,
+  IndexType result_type,
+  int nvar_der,
+  Vector<std::string>& vars,
+  PeleLMDeriveRec::DeriveBoxMap bx_map,
+  Interpolater* interp)
 {
-    lst.push_back(PeleLMDeriveRec(name,result_type,nvar_der,vars,bx_map,interp));
+  lst.push_back(
+    PeleLMDeriveRec(name, result_type, nvar_der, vars, bx_map, interp));
 }
 
 std::list<PeleLMDeriveRec>&
-PeleLMDeriveList::dlist ()
+PeleLMDeriveList::dlist()
 {
-    return lst;
+  return lst;
 }
 
 bool
-PeleLMDeriveList::canDerive (const std::string& name) const
+PeleLMDeriveList::canDerive(const std::string& name) const
 {
-    for (std::list<PeleLMDeriveRec>::const_iterator li = lst.begin(), End = lst.end();
-         li != End;
-         ++li)
-    {
-        // Can be either a component name ...
-        for (int i = 0; i < li->numDerive(); i++) {
-           if (li->variableName(i) == name)
-               return true;
-        }
-        // ... or a derive name
-        if (li->derive_name == name) {
-           return true;
-        }
+  for (std::list<PeleLMDeriveRec>::const_iterator li = lst.begin(),
+                                                  End = lst.end();
+       li != End; ++li) {
+    // Can be either a component name ...
+    for (int i = 0; i < li->numDerive(); i++) {
+      if (li->variableName(i) == name)
+        return true;
     }
-    return false;
+    // ... or a derive name
+    if (li->derive_name == name) {
+      return true;
+    }
+  }
+  return false;
 }
 
 const PeleLMDeriveRec*
-PeleLMDeriveList::get (const std::string& name) const
+PeleLMDeriveList::get(const std::string& name) const
 {
-    for (std::list<PeleLMDeriveRec>::const_iterator li = lst.begin(), End = lst.end();
-         li != End;
-         ++li)
-    {
-        // Can be either a component name ...
-        for (int i = 0; i < li->numDerive(); i++) {
-           if (li->variableName(i) == name)
-               return &(*li);
-        }
-        // ... or a derive name
-        if (li->derive_name == name) {
-            return &(*li);
-        }
+  for (std::list<PeleLMDeriveRec>::const_iterator li = lst.begin(),
+                                                  End = lst.end();
+       li != End; ++li) {
+    // Can be either a component name ...
+    for (int i = 0; i < li->numDerive(); i++) {
+      if (li->variableName(i) == name)
+        return &(*li);
     }
-    return 0;
+    // ... or a derive name
+    if (li->derive_name == name) {
+      return &(*li);
+    }
+  }
+  return 0;
 }

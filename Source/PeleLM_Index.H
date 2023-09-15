@@ -24,6 +24,6 @@
 #endif
 #define FIRSTAUX RHORT + NUMEFIELD + NUMSOOTVAR + 1
 #define NVAR FIRSTAUX + 0
-//TODO: handle NAUX
+// TODO: handle NAUX
 
 #endif
