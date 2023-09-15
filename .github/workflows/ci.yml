@@ -69,7 +69,7 @@ jobs:
           du -hs ${HOME}/.cache/ccache
       - name: FlameSheet debug test
         working-directory: ./Exec/RegTests/FlameSheet
-        run: ./PeleLMeX3d.gnu.DEBUG.ex flamesheet-drm19.inp amr.max_step=1 amr.plot_int=-1 amr.check_int=-1
+        run: ./PeleLMeX3d.gnu.DEBUG.ex flamesheet-drm19-3d.inp amr.max_step=1 amr.plot_int=-1 amr.check_int=-1
       - name: FlameSheet debug report
         working-directory: ./Exec/RegTests/FlameSheet
         run: |
