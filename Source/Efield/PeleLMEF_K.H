@@ -1,5 +1,5 @@
-#ifndef PeleLMEF_K_H_
-#define PeleLMEF_K_H_
+#ifndef PeleLMEF_K_H
+#define PeleLMEF_K_H
 
 #include <PeleLMEF_Constants.H>
 #include <PelePhysics.H>

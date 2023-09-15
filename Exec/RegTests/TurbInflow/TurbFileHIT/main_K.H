@@ -1,5 +1,5 @@
-#ifndef MAIN_K_H_
-#define MAIN_K_H_
+#ifndef MAIN_K_H
+#define MAIN_K_H
 
 #include <AMReX_Geometry.H>
 #include <AMReX_FArrayBox.H>

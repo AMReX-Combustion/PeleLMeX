@@ -1,5 +1,5 @@
-#ifndef AMREX_MLABECCECLAP_3D_K_H_
-#define AMREX_MLABECCECLAP_3D_K_H_
+#ifndef AMREX_MLABECCECLAP_3D_K_H
+#define AMREX_MLABECCECLAP_3D_K_H
 
 namespace amrex {
 

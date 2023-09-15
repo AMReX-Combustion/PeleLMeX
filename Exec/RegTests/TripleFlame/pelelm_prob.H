@@ -1,5 +1,5 @@
-#ifndef PELELM_PROB_H_
-#define PELELM_PROB_H_
+#ifndef PELELM_PROB_H
+#define PELELM_PROB_H
 
 #include "PeleLM_Index.H"
 #include "pelelm_prob_parm.H"

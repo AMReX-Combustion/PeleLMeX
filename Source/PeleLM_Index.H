@@ -1,5 +1,5 @@
-#ifndef PELELM_INDEX_H_
-#define PELELM_INDEX_H_
+#ifndef PELELM_INDEX_H
+#define PELELM_INDEX_H
 
 #define VELX 0
 #define VELY 1

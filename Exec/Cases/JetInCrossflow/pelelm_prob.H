@@ -1,5 +1,5 @@
-#ifndef PELELM_PROB_H_
-#define PELELM_PROB_H_
+#ifndef PELELM_PROB_H
+#define PELELM_PROB_H
 
 #include <AMReX_FArrayBox.H>
 #include <AMReX_Geometry.H>

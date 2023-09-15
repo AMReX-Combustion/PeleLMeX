@@ -1,5 +1,5 @@
-#ifndef _EBUSERDEFINED_H_
-#define _EBUSERDEFINED_H_
+#ifndef _EBUSERDEFINED_H
+#define _EBUSERDEFINED_H
 
 using namespace amrex;
 

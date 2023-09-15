@@ -1,5 +1,5 @@
-#ifndef PeleLMEF_Constants_H_
-#define PeleLMEF_Constants_H_
+#ifndef PeleLMEF_Constants_H
+#define PeleLMEF_Constants_H
 #include <AMReX_Config.H>
 
 #include <AMReX_REAL.H>

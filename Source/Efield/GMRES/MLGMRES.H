@@ -1,5 +1,5 @@
-#ifndef MLGMRES_H_
-#define MLGMRES_H_
+#ifndef MLGMRES_H
+#define MLGMRES_H
 #include <AMReX_REAL.H>
 #include <PeleLM.H>
 #include <AMReX_MultiFab.H>

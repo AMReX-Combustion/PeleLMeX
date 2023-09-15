@@ -1,5 +1,5 @@
-#ifndef PeleLM_K_H_
-#define PeleLM_K_H_
+#ifndef PeleLM_K_H
+#define PeleLM_K_H
 
 #include <mechanism.H>
 #include <PelePhysics.H>

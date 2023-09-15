@@ -1,5 +1,5 @@
-#ifndef _UTILITIES_H_
-#define _UTILITIES_H_
+#ifndef _UTILITIES_H
+#define _UTILITIES_H
 
 #include <AMReX_FArrayBox.H>
 

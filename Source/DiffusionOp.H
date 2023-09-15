@@ -1,5 +1,5 @@
-#ifndef DIFFUSION_OP_H_
-#define DIFFUSION_OP_H_
+#ifndef DIFFUSION_OP_H
+#define DIFFUSION_OP_H
 
 #include <AMReX_MLMG.H>
 #include <AMReX_BC_TYPES.H>
