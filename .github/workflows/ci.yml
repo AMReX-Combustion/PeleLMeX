@@ -61,7 +61,7 @@ jobs:
           echo "::add-matcher::.github/problem-matchers/gcc.json"
           set -eu -o pipefail
           ccache -z
-          make -j ${{env.NPROCS}} KEEP_BUILDINFO_CPP=TRUE USE_CCACHE=TRUE COMP=gnu USE_MPI=FALSE DEBUG=TRUE 2>&1 | tee -a build-output.txt
+          make -j ${{env.NPROCS}} DIM=3 KEEP_BUILDINFO_CPP=TRUE USE_CCACHE=TRUE COMP=gnu USE_MPI=FALSE DEBUG=TRUE 2>&1 | tee -a build-output.txt
       - name: FlameSheet ccache report
         working-directory: ./Exec/RegTests/FlameSheet
         run: |
