@@ -1,5 +1,5 @@
 #ifndef _PeleLM_H_
-#define _PeleLM_H_
+#define PeleLM_H_
 
 // PeleLMeX includes
 #include "PeleLMUserKeys.H"
