@@ -223,7 +223,7 @@ PeleLM::checkMessage(const std::string& a_action)
 {
   bool take_action = false;
 
-  std::string action_file = "";
+  std::string action_file;
   if (a_action == "dump_and_stop") {
     action_file = "dump_and_stop";
   } else if (a_action == "plt_and_continue") {

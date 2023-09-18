@@ -1730,8 +1730,8 @@ public:
   int m_verbose = 0;
 
   // IO options
-  std::string m_restart_chkfile{""};
-  std::string m_restart_pltfile{""};
+  std::string m_restart_chkfile;
+  std::string m_restart_pltfile;
   std::string pltfileSource{"LM"};
   std::string m_plot_file{"plt"};
   std::string m_check_file{"chk"};

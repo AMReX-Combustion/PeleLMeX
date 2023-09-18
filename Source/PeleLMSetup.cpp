@@ -765,7 +765,7 @@ PeleLM::variablesSetup()
     // Combustion
     // -----------------------------------------
     ParmParse pp("peleLM");
-    std::string fuel_name = "";
+    std::string fuel_name;
     pp.query("fuel_name", fuel_name);
     fuel_name = "rho.Y(" + fuel_name + ")";
     if (isStateVariable(fuel_name)) {
