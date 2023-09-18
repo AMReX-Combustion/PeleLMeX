@@ -816,7 +816,7 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
           << plt_vars[idY] << "\n";
 
   // Get level data
-  auto ldata_p = getLevelDataPtr(a_lev, AmrNewTime);
+  auto* ldata_p = getLevelDataPtr(a_lev, AmrNewTime);
 
   // Velocity
   pltData.fillPatchFromPlt(

@@ -587,7 +587,7 @@ PeleLM::floorSpecies(const TimeStamp& a_time)
 
   for (int lev = 0; lev <= finest_level; ++lev) {
 
-    auto ldata_p = getLevelDataPtr(lev, a_time);
+    auto* ldata_p = getLevelDataPtr(lev, a_time);
     auto const& sma = ldata_p->state.arrays();
 
     amrex::ParallelFor(
@@ -834,7 +834,7 @@ PeleLM::derive(const std::string& a_name, Real a_time, int lev, int nGrow)
       fillPatchState(lev, a_time, m_nGrowState);
     // Get pressure: TODO no fillpatch for pressure just yet, simply get new
     // state
-    auto ldata_p = getLevelDataPtr(lev, AmrNewTime);
+    auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
     std::unique_ptr<MultiFab> reactmf = fillPatchReact(lev, a_time, nGrow);
     auto stateBCs = fetchBCRecArray(VELX, NVAR);
 #ifdef AMREX_USE_OMP
@@ -893,7 +893,7 @@ PeleLM::deriveComp(const std::string& a_name, Real a_time, int lev, int nGrow)
       fillPatchState(lev, a_time, m_nGrowState);
     // Get pressure: TODO no fillpatch for pressure just yet, simply get new
     // state
-    auto ldata_p = getLevelDataPtr(lev, AmrNewTime);
+    auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
     std::unique_ptr<MultiFab> reactmf = fillPatchReact(lev, a_time, nGrow);
     auto stateBCs = fetchBCRecArray(VELX, NVAR);
 

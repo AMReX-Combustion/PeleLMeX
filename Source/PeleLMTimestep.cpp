@@ -109,7 +109,7 @@ PeleLM::estConvectiveDt(const TimeStamp& a_time)
 
     //----------------------------------------------------------------
     // Get level data ptr
-    auto ldata_p = getLevelDataPtr(lev, a_time);
+    auto* ldata_p = getLevelDataPtr(lev, a_time);
 
     auto const dx = geom[lev].CellSizeArray();
 
@@ -166,7 +166,7 @@ PeleLM::estDivUDt(const TimeStamp& a_time)
 
   for (int lev = 0; lev <= finest_level; ++lev) {
 
-    auto ldata_p = getLevelDataPtr(lev, a_time);
+    auto* ldata_p = getLevelDataPtr(lev, a_time);
     std::unique_ptr<MultiFab> density =
       std::make_unique<MultiFab>(ldata_p->state, amrex::make_alias, DENSITY, 1);
 
@@ -238,7 +238,7 @@ PeleLM::checkDt(const TimeStamp& a_time, const Real& a_dt)
 
   for (int lev = 0; lev <= finest_level; ++lev) {
 
-    auto ldata_p = getLevelDataPtr(lev, a_time);
+    auto* ldata_p = getLevelDataPtr(lev, a_time);
 
     const auto dxinv = geom[lev].InvCellSizeArray();
 

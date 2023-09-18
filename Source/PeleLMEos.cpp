@@ -21,7 +21,7 @@ PeleLM::setThermoPress(int lev, const TimeStamp& a_time)
 
   AMREX_ASSERT(a_time == AmrOldTime || a_time == AmrNewTime);
 
-  auto ldata_p = getLevelDataPtr(lev, a_time);
+  auto* ldata_p = getLevelDataPtr(lev, a_time);
   auto const& sma = ldata_p->state.arrays();
 
   amrex::ParallelFor(
@@ -59,13 +59,13 @@ PeleLM::calcDivU(
   // Assemble divU on each level
   for (int lev = 0; lev <= finest_level; lev++) {
 
-    auto ldata_p = getLevelDataPtr(lev, a_time);
+    auto* ldata_p = getLevelDataPtr(lev, a_time);
 
     MultiFab RhoYdot;
     if (m_do_react && !m_skipInstantRR) {
       if (is_init) {      // Either pre-divU, divU or press initial iterations
         if (m_dt > 0.0) { // divU ite   -> use I_R
-          auto ldataR_p = getLevelDataReactPtr(lev);
+          auto* ldataR_p = getLevelDataReactPtr(lev);
           RhoYdot.define(grids[lev], dmap[lev], nCompIR(), 0);
           MultiFab::Copy(RhoYdot, ldataR_p->I_R, 0, 0, nCompIR(), 0);
         } else { // press ite  -> set to zero
@@ -157,8 +157,8 @@ PeleLM::calcDivU(
   // Average down divU
   if (do_avgDown) {
     for (int lev = finest_level; lev > 0; --lev) {
-      auto ldataFine_p = getLevelDataPtr(lev, a_time);
-      auto ldataCrse_p = getLevelDataPtr(lev - 1, a_time);
+      auto* ldataFine_p = getLevelDataPtr(lev, a_time);
+      auto* ldataCrse_p = getLevelDataPtr(lev - 1, a_time);
 #ifdef AMREX_USE_EB
       EB_average_down(
         ldataFine_p->divu, ldataCrse_p->divu, 0, 1, refRatio(lev - 1));
@@ -172,7 +172,7 @@ PeleLM::calcDivU(
   // fillPatch a_time divu to get properly filled ghost cells
   for (int lev = 0; lev <= finest_level; ++lev) {
     Real time = getTime(lev, a_time);
-    auto ldata_p = getLevelDataPtr(lev, a_time);
+    auto* ldata_p = getLevelDataPtr(lev, a_time);
     fillpatch_divu(lev, time, ldata_p->divu, m_nGrowdivu);
   }
 }
@@ -183,7 +183,7 @@ PeleLM::setRhoToSumRhoY(int lev, const TimeStamp& a_time)
 
   AMREX_ASSERT(a_time == AmrOldTime || a_time == AmrNewTime);
 
-  auto ldata_p = getLevelDataPtr(lev, a_time);
+  auto* ldata_p = getLevelDataPtr(lev, a_time);
   auto const& sma = ldata_p->state.arrays();
 
   amrex::ParallelFor(
@@ -216,7 +216,7 @@ PeleLM::setTemperature(int lev, const TimeStamp& a_time)
 
   AMREX_ASSERT(a_time == AmrOldTime || a_time == AmrNewTime);
 
-  auto ldata_p = getLevelDataPtr(lev, a_time);
+  auto* ldata_p = getLevelDataPtr(lev, a_time);
   auto const& sma = ldata_p->state.arrays();
 
   amrex::ParallelFor(

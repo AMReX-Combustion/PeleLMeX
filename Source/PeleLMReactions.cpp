@@ -33,9 +33,9 @@ PeleLM::advanceChemistry(int lev, const Real& a_dt, MultiFab& a_extForcing)
 {
   BL_PROFILE("PeleLMeX::advanceChemistry_Lev" + std::to_string(lev) + "()");
 
-  auto ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
-  auto ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
-  auto ldataR_p = getLevelDataReactPtr(lev);
+  auto* ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
+  auto* ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
+  auto* ldataR_p = getLevelDataReactPtr(lev);
 
   // Setup EB-covered cells mask
   iMultiFab mask(grids[lev], dmap[lev], 1, 0);
@@ -182,9 +182,9 @@ PeleLM::advanceChemistryBAChem(
 {
   BL_PROFILE("PeleLMeX::advanceChemistry_Lev" + std::to_string(lev) + "()");
 
-  auto ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
-  auto ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
-  auto ldataR_p = getLevelDataReactPtr(lev);
+  auto* ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
+  auto* ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
+  auto* ldataR_p = getLevelDataReactPtr(lev);
 
   // Set chemistry MFs based on baChem and dmapChem
   MultiFab chemState(*m_baChem[lev], *m_dmapChem[lev], NUM_SPECIES + 3, 0);
@@ -382,7 +382,7 @@ PeleLM::computeInstantaneousReactionRate(
   int lev, const TimeStamp& a_time, MultiFab* a_I_R)
 {
   BL_PROFILE("PeleLMeX::computeInstantaneousReactionRate()");
-  auto ldata_p = getLevelDataPtr(lev, a_time);
+  auto* ldata_p = getLevelDataPtr(lev, a_time);
 
 #ifdef AMREX_USE_EB
   auto const& ebfact = EBFactory(lev);
@@ -439,9 +439,9 @@ PeleLM::getScalarReactForce(std::unique_ptr<AdvanceAdvData>& advData)
   for (int lev = 0; lev <= finest_level; ++lev) {
 
     // Get t^{n} t^{np1} data pointer
-    auto ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
-    auto ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
-    auto ldataR_p = getLevelDataReactPtr(lev);
+    auto* ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
+    auto* ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
+    auto* ldataR_p = getLevelDataReactPtr(lev);
 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -474,8 +474,8 @@ PeleLM::getScalarReactForce(std::unique_ptr<AdvanceAdvData>& advData)
 void
 PeleLM::getHeatRelease(int a_lev, MultiFab* a_HR)
 {
-  auto ldataNew_p = getLevelDataPtr(a_lev, AmrNewTime);
-  auto ldataR_p = getLevelDataReactPtr(a_lev);
+  auto* ldataNew_p = getLevelDataPtr(a_lev, AmrNewTime);
+  auto* ldataR_p = getLevelDataReactPtr(a_lev);
 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())

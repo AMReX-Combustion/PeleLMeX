@@ -299,7 +299,7 @@ PeleLM::getActiveControlLowT(Real& a_coft)
   for (int lev = 0; lev <= finest_level; lev++) {
 
     // Get t^{n+1} data pointer
-    auto ldata_p = getLevelDataPtr(lev, AmrNewTime);
+    auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
     const auto geomdata = Geom(lev).data();
 
     // local FC data

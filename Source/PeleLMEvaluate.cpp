@@ -118,7 +118,7 @@ PeleLM::MLevaluate(
       is_initialization, computeDiffusionTerm, do_avgDown, AmrNewTime,
       diffData);
     for (int lev = 0; lev <= finest_level; ++lev) {
-      auto ldata_p = getLevelDataPtr(lev, AmrNewTime);
+      auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
       MultiFab::Copy(*a_MFVec[lev], ldata_p->divu, 0, a_comp, 1, 0);
     }
     nComp = 1;
@@ -142,7 +142,7 @@ PeleLM::MLevaluate(
 
     // Copy into outgoing data holder
     for (int lev = 0; lev <= finest_level; ++lev) {
-      auto ldata_p = getLevelDataPtr(lev, AmrNewTime);
+      auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
       MultiFab::Copy(
         *a_MFVec[lev], ldata_p->state, VELX, a_comp, AMREX_SPACEDIM, 0);
     }
@@ -188,7 +188,7 @@ PeleLM::MLevaluate(
     // 'Old' chemical state (rhoYs + rhoH + T) and adv/diff forcing for chem.
     // integration Replicate most of the advance function Copy the state
     for (int lev = 0; lev <= finest_level; ++lev) {
-      auto ldata_p = getLevelDataPtr(lev, AmrNewTime);
+      auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
       MultiFab::Copy(
         *a_MFVec[lev], ldata_p->state, FIRSTSPEC, a_comp, NUM_SPECIES + 2, 0);
     }
@@ -217,7 +217,7 @@ PeleLM::MLevaluate(
     calcViscosity(AmrNewTime);
     calcDiffusivity(AmrNewTime);
     for (int lev = 0; lev <= finest_level; ++lev) {
-      auto ldata_p = getLevelDataPtr(lev, AmrNewTime);
+      auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
       MultiFab::Copy(
         *a_MFVec[lev], ldata_p->diff_cc, 0, a_comp, NUM_SPECIES + 1, 0);
       MultiFab::Copy(

@@ -49,7 +49,7 @@ PeleLM::predictVelocity(std::unique_ptr<AdvanceAdvData>& advData)
   auto bcRecVel_d = convertToDeviceVector(bcRecVel);
   for (int lev = 0; lev <= finest_level; ++lev) {
 
-    auto ldata_p = getLevelDataPtr(lev, AmrOldTime);
+    auto* ldata_p = getLevelDataPtr(lev, AmrOldTime);
 
     //----------------------------------------------------------------
 #ifdef AMREX_USE_EB
@@ -151,7 +151,7 @@ PeleLM::macProject(
         rho_inv[lev][idim].setVal(rhoInv);
       }
     } else {
-      auto ldata_p = getLevelDataPtr(lev, a_time);
+      auto* ldata_p = getLevelDataPtr(lev, a_time);
       int doZeroVisc = 0;
       rho_inv[lev] =
         getDiffusivity(lev, DENSITY, 1, doZeroVisc, {bcRec}, ldata_p->state);
@@ -204,7 +204,7 @@ PeleLM::macProject(
       // We need to fill the MAC velocities outside the fine region so we can
       // use them in the Godunov method
       IntVect rr = geom[lev].Domain().size() / geom[lev - 1].Domain().size();
-      auto divu_lev = (has_divu) ? a_divu[lev] : nullptr;
+      auto* divu_lev = (has_divu) ? a_divu[lev] : nullptr;
       create_constrained_umac_grown(
         lev, m_nGrowMAC, &geom[lev - 1], &geom[lev],
         GetArrOfPtrs(advData->umac[lev - 1]), GetArrOfPtrs(advData->umac[lev]),

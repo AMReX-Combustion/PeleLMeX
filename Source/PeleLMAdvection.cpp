@@ -51,7 +51,7 @@ PeleLM::computeVelocityAdvTerm(std::unique_ptr<AdvanceAdvData>& advData)
   auto AdvTypeVel_d = convertToDeviceVector(AdvTypeVel);
   for (int lev = 0; lev <= finest_level; ++lev) {
 
-    auto ldata_p = getLevelDataPtr(lev, AmrOldTime);
+    auto* ldata_p = getLevelDataPtr(lev, AmrOldTime);
 
     //----------------------------------------------------------------
     // Get divU
@@ -205,8 +205,8 @@ PeleLM::updateVelocity(std::unique_ptr<AdvanceAdvData>& advData)
   for (int lev = 0; lev <= finest_level; ++lev) {
 
     // Get both old and new level_data
-    auto ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
-    auto ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
+    auto* ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
+    auto* ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
 
     //----------------------------------------------------------------
     // Compute provisional new velocity
@@ -243,8 +243,8 @@ PeleLM::getScalarAdvForce(
   for (int lev = 0; lev <= finest_level; ++lev) {
 
     // Get t^{n} data pointer
-    auto ldata_p = getLevelDataPtr(lev, AmrOldTime);
-    auto ldataR_p = getLevelDataReactPtr(lev);
+    auto* ldata_p = getLevelDataPtr(lev, AmrOldTime);
+    auto* ldataR_p = getLevelDataReactPtr(lev);
 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -317,7 +317,7 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
   for (int lev = 0; lev <= finest_level; ++lev) {
 
     // Get level data ptr Old
-    auto ldata_p = getLevelDataPtr(lev, AmrOldTime);
+    auto* ldata_p = getLevelDataPtr(lev, AmrOldTime);
 
     // Define edge state: Density + Species + RhoH + Temp
     int nGrow = 0;
@@ -792,7 +792,7 @@ PeleLM::computePassiveAdvTerms(
   // Loop over levels and get the fluxes
   for (int lev = 0; lev <= finest_level; ++lev) {
     // Get level data ptr Old
-    auto ldata_p = getLevelDataPtr(lev, AmrOldTime);
+    auto* ldata_p = getLevelDataPtr(lev, AmrOldTime);
 
     //----------------------------------------------------------------
     // Get divU
@@ -923,8 +923,8 @@ PeleLM::updateScalarComp(
   for (int lev = 0; lev <= finest_level; ++lev) {
 
     // Get level data ptr
-    auto ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
-    auto ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
+    auto* ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
+    auto* ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
