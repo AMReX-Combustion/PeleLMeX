@@ -1,5 +1,5 @@
-#ifndef PRECOND_OP_H_
-#define PRECOND_OP_H_
+#ifndef PRECOND_OP_H
+#define PRECOND_OP_H
 
 #include <AMReX_MLMG.H>
 #include <AMReX_BC_TYPES.H>

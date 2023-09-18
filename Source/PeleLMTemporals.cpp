@@ -5,8 +5,9 @@ using namespace amrex;
 void
 PeleLM::initTemporals(const PeleLM::TimeStamp& a_time)
 {
-  if (!m_do_temporals && !(m_nstep % m_temp_int == 0))
+  if (!m_do_temporals && !(m_nstep % m_temp_int == 0)) {
     return;
+  }
 
   // Reset mass fluxes integrals on domain boundaries
   if (m_do_massBalance && !m_incompressible) {
@@ -96,8 +97,9 @@ PeleLM::addMassFluxes(
 
   // Do when m_nstep is -1 since m_nstep is increased by one before
   // the writeTemporals
-  if (!(m_nstep % m_temp_int == m_temp_int - 1))
+  if (!(m_nstep % m_temp_int == m_temp_int - 1)) {
     return;
+  }
 
   // Get the face areas
   const Real* dx = a_geom.CellSize();
@@ -309,8 +311,9 @@ PeleLM::addRhoHFluxes(
 
   // Do when m_nstep is -1 since m_nstep is increased by one before
   // the writeTemporals
-  if (!(m_nstep % m_temp_int == m_temp_int - 1))
+  if (!(m_nstep % m_temp_int == m_temp_int - 1)) {
     return;
+  }
 
   // Get the face areas
   const Real* dx = a_geom.CellSize();
@@ -405,8 +408,9 @@ PeleLM::addRhoYFluxes(
 
   // Do when m_nstep is -1 since m_nstep is increased by one before
   // the writeTemporals
-  if (!(m_nstep % m_temp_int == m_temp_int - 1))
+  if (!(m_nstep % m_temp_int == m_temp_int - 1)) {
     return;
+  }
 
   // Get the face areas
   const Real* dx = a_geom.CellSize();
@@ -572,8 +576,9 @@ PeleLM::writeTemporals()
 void
 PeleLM::openTempFile()
 {
-  if (!m_do_temporals)
+  if (!m_do_temporals) {
     return;
+  }
 
   // Create the temporal directory
   UtilCreateDirectory("temporals", 0755);
@@ -620,8 +625,9 @@ PeleLM::openTempFile()
 void
 PeleLM::closeTempFile()
 {
-  if (!m_do_temporals)
+  if (!m_do_temporals) {
     return;
+  }
 
   if (ParallelDescriptor::IOProcessor()) {
     tmpStateFile.flush();

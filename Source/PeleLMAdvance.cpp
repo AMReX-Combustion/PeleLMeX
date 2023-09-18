@@ -207,8 +207,9 @@ PeleLM::Advance(int is_initIter)
     VelAdvStart = ParallelDescriptor::second();
   }
   // Re-evaluate viscosity only if scalar updated
-  if (!m_incompressible)
+  if (!m_incompressible) {
     calcViscosity(AmrNewTime);
+  }
 
   // Compute t^{n+1/2} velocity advection term
   computeVelocityAdvTerm(advData);

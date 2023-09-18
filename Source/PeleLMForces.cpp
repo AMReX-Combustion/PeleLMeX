@@ -42,12 +42,12 @@ PeleLM::getVelForces(
 
   // Get level data
   // TODO: the 1 here bypass getting halftime vel and return oldtime vel
-  auto ldata_p = getLevelDataPtr(lev, a_time, 1);
+  auto* ldata_p = getLevelDataPtr(lev, a_time, 1);
 
   // Get gradp: if m_t_old < 0.0, we are during initialization -> only NewTime
   // data initialized at this point
-  auto ldataGP_p = (m_t_old[lev] < 0.0) ? getLevelDataPtr(lev, AmrNewTime)
-                                        : getLevelDataPtr(lev, AmrOldTime);
+  auto* ldataGP_p = (m_t_old[lev] < 0.0) ? getLevelDataPtr(lev, AmrNewTime)
+                                         : getLevelDataPtr(lev, AmrOldTime);
 
   Real time = getTime(lev, a_time);
 
@@ -101,18 +101,22 @@ PeleLM::getVelForces(
          divTau_arr, force_arr] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           if (is_incomp) {
             for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
-              if (add_gradP)
+              if (add_gradP) {
                 force_arr(i, j, k, idim) -= gp_arr(i, j, k, idim);
-              if (has_divTau)
+              }
+              if (has_divTau) {
                 force_arr(i, j, k, idim) += divTau_arr(i, j, k, idim);
+              }
               force_arr(i, j, k, idim) *= incomp_rho_inv;
             }
           } else {
             for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
-              if (add_gradP)
+              if (add_gradP) {
                 force_arr(i, j, k, idim) -= gp_arr(i, j, k, idim);
-              if (has_divTau)
+              }
+              if (has_divTau) {
                 force_arr(i, j, k, idim) += divTau_arr(i, j, k, idim);
+              }
               force_arr(i, j, k, idim) /= rho_arr(i, j, k);
             }
           }

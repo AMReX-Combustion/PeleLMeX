@@ -289,7 +289,7 @@ PeleLM::initData()
         copyStateNewToOld(1);
         copyPressNewToOld();
         if (m_do_react) {
-          auto ldataR_p = getLevelDataReactPtr(lev);
+          auto* ldataR_p = getLevelDataReactPtr(lev);
           ldataR_p->I_R.setVal(0.0);
         }
       }
@@ -312,7 +312,7 @@ PeleLM::initLevelData(int lev)
   BL_PROFILE("PeleLMeX::initLevelData()");
 
   // Get level data
-  auto ldata_p = getLevelDataPtr(lev, AmrNewTime);
+  auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
   const auto geomdata = geom[lev].data();
 
   // Pressure and pressure gradients to zero
@@ -444,7 +444,7 @@ PeleLM::projectInitSolution()
 
     if (m_numDivuIter == 0 && m_do_react) {
       for (int lev = 0; lev <= finest_level; ++lev) {
-        auto ldataR_p = getLevelDataReactPtr(lev);
+        auto* ldataR_p = getLevelDataReactPtr(lev);
         ldataR_p->I_R.setVal(0.0);
       }
     }
@@ -453,10 +453,10 @@ PeleLM::projectInitSolution()
     // If we didn't do the projection, initialize press/gp(/I_R)
     for (int lev = 0; lev <= finest_level; ++lev) {
       if (m_do_react) {
-        auto ldataR_p = getLevelDataReactPtr(lev);
+        auto* ldataR_p = getLevelDataReactPtr(lev);
         ldataR_p->I_R.setVal(0.0);
       }
-      auto ldata_p = getLevelDataPtr(lev, AmrNewTime);
+      auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
       ldata_p->press.setVal(0.0);
       ldata_p->gp.setVal(0.0);
     }

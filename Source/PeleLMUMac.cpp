@@ -49,7 +49,7 @@ PeleLM::predictVelocity(std::unique_ptr<AdvanceAdvData>& advData)
   auto bcRecVel_d = convertToDeviceVector(bcRecVel);
   for (int lev = 0; lev <= finest_level; ++lev) {
 
-    auto ldata_p = getLevelDataPtr(lev, AmrOldTime);
+    auto* ldata_p = getLevelDataPtr(lev, AmrOldTime);
 
     //----------------------------------------------------------------
 #ifdef AMREX_USE_EB
@@ -151,7 +151,7 @@ PeleLM::macProject(
         rho_inv[lev][idim].setVal(rhoInv);
       }
     } else {
-      auto ldata_p = getLevelDataPtr(lev, a_time);
+      auto* ldata_p = getLevelDataPtr(lev, a_time);
       int doZeroVisc = 0;
       rho_inv[lev] =
         getDiffusivity(lev, DENSITY, 1, doZeroVisc, {bcRec}, ldata_p->state);
@@ -185,8 +185,9 @@ PeleLM::macProject(
   // set MAC velocity and projection RHS
   macproj->getLinOp().setMaxOrder(m_mac_max_order);
   macproj->setUMAC(GetVecOfArrOfPtrs(advData->umac));
-  if (has_divu)
+  if (has_divu) {
     macproj->setDivU(GetVecOfConstPtrs(a_divu));
+  }
 
   // Project
   macproj->project(m_mac_mg_rtol, m_mac_mg_atol);
@@ -204,7 +205,7 @@ PeleLM::macProject(
       // We need to fill the MAC velocities outside the fine region so we can
       // use them in the Godunov method
       IntVect rr = geom[lev].Domain().size() / geom[lev - 1].Domain().size();
-      auto divu_lev = (has_divu) ? a_divu[lev] : nullptr;
+      auto* divu_lev = (has_divu) ? a_divu[lev] : nullptr;
       create_constrained_umac_grown(
         lev, m_nGrowMAC, &geom[lev - 1], &geom[lev],
         GetArrOfPtrs(advData->umac[lev - 1]), GetArrOfPtrs(advData->umac[lev]),
@@ -400,14 +401,16 @@ PeleLM::create_constrained_umac_grown(
                 umac_arr[idim](i, j, k) =
                   umac_arr[idim](idxp1[0], idxp1[1], idxp1[2]) +
                   dx[idim] * transverseTerm;
-                if (has_divu)
+                if (has_divu) {
                   umac_arr[idim](i, j, k) -= dx[idim] * divuarr(i, j, k);
+                }
               } else if (idx[idim] > bx.bigEnd(idim)) {
                 umac_arr[idim](idxp1[0], idxp1[1], idxp1[2]) =
                   umac_arr[idim](i, j, k) - dx[idim] * transverseTerm;
-                if (has_divu)
+                if (has_divu) {
                   umac_arr[idim](idxp1[0], idxp1[1], idxp1[2]) +=
                     dx[idim] * divuarr(i, j, k);
+                }
               }
             }
           });

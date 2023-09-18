@@ -587,7 +587,7 @@ PeleLM::floorSpecies(const TimeStamp& a_time)
 
   for (int lev = 0; lev <= finest_level; ++lev) {
 
-    auto ldata_p = getLevelDataPtr(lev, a_time);
+    auto* ldata_p = getLevelDataPtr(lev, a_time);
     auto const& sma = ldata_p->state.arrays();
 
     amrex::ParallelFor(
@@ -628,8 +628,9 @@ PeleLM::resetCoveredMask()
   BL_PROFILE("PeleLMeX::resetCoveredMask()");
   if (m_resetCoveredMask) {
 
-    if (m_verbose)
+    if (m_verbose) {
       Print() << " Resetting fine-covered cells mask \n";
+    }
 
     for (int lev = 0; lev < finest_level; ++lev) {
       // Set a fine-covered mask
@@ -834,7 +835,7 @@ PeleLM::derive(const std::string& a_name, Real a_time, int lev, int nGrow)
       fillPatchState(lev, a_time, m_nGrowState);
     // Get pressure: TODO no fillpatch for pressure just yet, simply get new
     // state
-    auto ldata_p = getLevelDataPtr(lev, AmrNewTime);
+    auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
     std::unique_ptr<MultiFab> reactmf = fillPatchReact(lev, a_time, nGrow);
     auto stateBCs = fetchBCRecArray(VELX, NVAR);
 #ifdef AMREX_USE_OMP
@@ -893,7 +894,7 @@ PeleLM::deriveComp(const std::string& a_name, Real a_time, int lev, int nGrow)
       fillPatchState(lev, a_time, m_nGrowState);
     // Get pressure: TODO no fillpatch for pressure just yet, simply get new
     // state
-    auto ldata_p = getLevelDataPtr(lev, AmrNewTime);
+    auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
     std::unique_ptr<MultiFab> reactmf = fillPatchReact(lev, a_time, nGrow);
     auto stateBCs = fetchBCRecArray(VELX, NVAR);
 
@@ -1349,8 +1350,9 @@ void
 PeleLM::updateTypicalValuesChem()
 {
   if (m_useTypValChem && m_do_react) {
-    if (m_verbose > 2)
+    if (m_verbose > 2) {
       Print() << " Update chemistry typical values \n";
+    }
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
@@ -1603,8 +1605,9 @@ PeleLM::MLmin(const Vector<const MultiFab*>& a_MF, int scomp, int ncomp)
 void
 PeleLM::checkMemory(const std::string& a_message)
 {
-  if (!m_checkMem)
+  if (!m_checkMem) {
     return;
+  }
 
   const int IOProc = ParallelDescriptor::IOProcessorNumber();
 #ifdef AMREX_USE_GPU
@@ -1633,12 +1636,15 @@ PeleLM::initMixtureFraction()
   for (int i = 0; i < NUM_SPECIES; ++i) {
     YF[i] = 0.0;
     YO[i] = 0.0;
-    if (!specNames[i].compare("O2"))
+    if (!specNames[i].compare("O2")) {
       YO[i] = 0.233;
-    if (!specNames[i].compare("N2"))
+    }
+    if (!specNames[i].compare("N2")) {
       YO[i] = 0.767;
-    if (i == fuelID)
+    }
+    if (i == fuelID) {
       YF[i] = 1.0;
+    }
   }
 
   auto eos = pele::physics::PhysicsType::eos();

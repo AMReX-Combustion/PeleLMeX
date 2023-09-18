@@ -7,8 +7,9 @@ PeleLM::regrid(int lbase, amrex::Real time, bool initial)
 {
   BL_PROFILE("PeleLMeX::regrid()");
 
-  if (!m_doLoadBalance && lbase >= max_level)
+  if (!m_doLoadBalance && lbase >= max_level) {
     return;
+  }
 
   if (!m_regrid_file.empty()) {
     regridFromGridFile(lbase, time, initial);
@@ -93,8 +94,9 @@ PeleLM::regrid(int lbase, amrex::Real time, bool initial)
       }
     }
 
-    if (lbase >= max_level)
+    if (lbase >= max_level) {
       return;
+    }
 
     int new_finest;
     Vector<BoxArray> new_grids(finest_level + 2);
@@ -511,10 +513,12 @@ PeleLM::ClearLevel(int lev)
 
   m_leveldata_old[lev].reset();
   m_leveldata_new[lev].reset();
-  if (m_do_react)
+  if (m_do_react) {
     m_leveldatareact[lev].reset();
-  if (max_level > 0 && lev != max_level)
+  }
+  if (max_level > 0 && lev != max_level) {
     m_coveredMask[lev].reset();
+  }
   m_baChem[lev].reset();
   m_dmapChem[lev].reset();
   m_factory[lev].reset();

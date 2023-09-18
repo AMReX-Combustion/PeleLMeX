@@ -1,5 +1,5 @@
-#ifndef AMREX_MLCELLABECCECLAP_K_H_
-#define AMREX_MLCELLABECCECLAP_K_H_
+#ifndef AMREX_MLCELLABECCECLAP_K_H
+#define AMREX_MLCELLABECCECLAP_K_H
 #include <AMReX_Config.H>
 
 #include <AMReX_FArrayBox.H>

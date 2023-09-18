@@ -1,5 +1,5 @@
-#ifndef PELELM_PROB_PARM_H_
-#define PELELM_PROB_PARM_H_
+#ifndef PELELM_PROB_PARM_H
+#define PELELM_PROB_PARM_H
 
 #include <AMReX_REAL.H>
 

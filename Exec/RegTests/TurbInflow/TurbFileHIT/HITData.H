@@ -1,5 +1,5 @@
-#ifndef HITDATA_H_
-#define HITDATA_H_
+#ifndef HITDATA_H
+#define HITDATA_H
 
 #include <AMReX_REAL.H>
 #include <AMReX_GpuMemory.H>

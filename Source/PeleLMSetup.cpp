@@ -100,14 +100,16 @@ PeleLM::Setup()
   if (!m_incompressible) {
     amrex::Print() << " Initialization of Transport ... \n";
     trans_parms.allocate();
-    if (m_les_verbose and m_do_les)
+    if (m_les_verbose and m_do_les) {
       amrex::Print() << "    Using LES in transport with Sc = "
                      << 1.0 / m_Schmidt_inv
                      << " and Pr = " << 1.0 / m_Prandtl_inv << std::endl;
-    if (m_verbose and m_unity_Le)
+    }
+    if (m_verbose and m_unity_Le) {
       amrex::Print() << "    Using Le = 1 transport with Sc = "
                      << 1.0 / m_Schmidt_inv
                      << " and Pr = " << 1.0 / m_Prandtl_inv << std::endl;
+    }
     if (m_do_react) {
       int reactor_type = 2;
       int ncells_chem = 1;
@@ -763,7 +765,7 @@ PeleLM::variablesSetup()
     // Combustion
     // -----------------------------------------
     ParmParse pp("peleLM");
-    std::string fuel_name = "";
+    std::string fuel_name;
     pp.query("fuel_name", fuel_name);
     fuel_name = "rho.Y(" + fuel_name + ")";
     if (isStateVariable(fuel_name)) {
@@ -1236,8 +1238,9 @@ PeleLM::resizeArray()
   m_leveldata_new.resize(max_level + 1);
   m_leveldatareact.resize(max_level + 1);
   m_halfTimeDensity.resize(max_level + 1);
-  if (max_level > 0)
+  if (max_level > 0) {
     m_coveredMask.resize(max_level);
+  }
   m_baChem.resize(max_level + 1);
   m_dmapChem.resize(max_level + 1);
   m_baChemFlag.resize(max_level + 1);

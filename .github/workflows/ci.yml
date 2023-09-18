@@ -570,7 +570,7 @@ jobs:
           #set -eu -o pipefail
           cmake --build . --parallel ${{env.NPROCS}} 2>&1 | tee -a clang-tidy-full-report.txt
           egrep "warning:|error:" clang-tidy-full-report.txt \
-            | egrep -v "Submodules/amrex|Submodules/sundials" \
+            | egrep -v "Submodules/amrex|Submodules/sundials|Submodules/AMReX-Hydro" \
             | egrep -v "ld: warning:" | sort | uniq \
             | awk 'BEGIN{i=0}{print $0}{i++}END{print "Warnings: "i}' > clang-tidy-warnings.txt
       - name: Full report
@@ -582,7 +582,7 @@ jobs:
           echo "::add-matcher::.github/problem-matchers/gcc.json"
           cat clang-tidy-warnings.txt
           export return=$(tail -n 1 clang-tidy-warnings.txt | awk '{print $2}')
-          #exit ${return}
+          exit ${return}
   Lint-codeql:
     needs: Formatting
     runs-on: ubuntu-latest

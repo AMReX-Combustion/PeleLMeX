@@ -29,7 +29,7 @@ PeleLM::initialProjection()
       sigma[lev].reset(new MultiFab(
         grids[lev], dmap[lev], 1, nGhost, MFInfo(), *m_factory[lev]));
 
-      auto ldata_p = getLevelDataPtr(lev, AmrNewTime);
+      auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -88,7 +88,7 @@ PeleLM::initialProjection()
   // Set back press and gpress to zero and restore divu
   // and rescale velocity if 2D-RZ
   for (int lev = 0; lev <= finest_level; lev++) {
-    auto ldata_p = getLevelDataPtr(lev, AmrNewTime);
+    auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
     ldata_p->press.setVal(0.0);
     ldata_p->gp.setVal(0.0);
     if (!m_incompressible && m_has_divu) {
@@ -140,7 +140,7 @@ PeleLM::initialPressProjection()
       sigma[lev].reset(new MultiFab(
         grids[lev], dmap[lev], 1, nGhost, MFInfo(), *m_factory[lev]));
 
-      auto ldata_p = getLevelDataPtr(lev, AmrNewTime);
+      auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -218,12 +218,13 @@ PeleLM::velocityProjection(
 
   if (!incremental) {
     Vector<std::unique_ptr<MultiFab>> rhoHalf(finest_level + 1);
-    if (!m_incompressible)
+    if (!m_incompressible) {
       rhoHalf = getDensityVect(a_rhoTime);
+    }
     for (int lev = 0; lev <= finest_level; ++lev) {
 
-      auto ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
-      auto ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
+      auto* ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
+      auto* ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -255,8 +256,8 @@ PeleLM::velocityProjection(
   // define "vel" to be U^{np1*} - U^{n} rather than U^{np1*}
   if (incremental) {
     for (int lev = 0; lev <= finest_level; ++lev) {
-      auto ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
-      auto ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
+      auto* ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
+      auto* ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
       MultiFab::Subtract(
         ldataNew_p->state, ldataOld_p->state, VELX, VELX, AMREX_SPACEDIM, 0);
     }
@@ -271,8 +272,9 @@ PeleLM::velocityProjection(
     EB_set_covered(*vel[lev], 0.0);
 #endif
     vel[lev]->setBndry(0.0);
-    if (!incremental)
+    if (!incremental) {
       setInflowBoundaryVel(*vel[lev], lev, AmrNewTime);
+    }
     scaleProj_RZ(lev, *vel[lev]);
   }
 
@@ -294,7 +296,7 @@ PeleLM::velocityProjection(
     rhs_cc.resize(finest_level + 1);
     for (int lev = 0; lev <= finest_level; ++lev) {
       if (!incremental) {
-        auto ldata_p = getLevelDataPtr(lev, AmrNewTime);
+        auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
         rhs_cc[lev].define(
           grids[lev], dmap[lev], 1, ldata_p->divu.nGrow(), MFInfo(),
           *m_factory[lev]);
@@ -305,8 +307,8 @@ PeleLM::velocityProjection(
         }
         rhs_cc[lev].mult(-1.0, 0, 1, ldata_p->divu.nGrow());
       } else {
-        auto ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
-        auto ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
+        auto* ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
+        auto* ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
         rhs_cc[lev].define(
           grids[lev], dmap[lev], 1, ldataOld_p->divu.nGrow(), MFInfo(),
           *m_factory[lev]);
@@ -347,8 +349,8 @@ PeleLM::velocityProjection(
   // and handles scaling if 2D-RZ
   if (incremental) {
     for (int lev = 0; lev <= finest_level; ++lev) {
-      auto ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
-      auto ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
+      auto* ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
+      auto* ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
       unscaleProj_RZ(
         lev, *vel[lev]); // Unscaling New vel before adding back old one
       MultiFab::Add(
@@ -379,10 +381,12 @@ PeleLM::doNodalProject(
 {
   int has_rhs = 0;
   int has_rhs_nd = 0;
-  if (!rhs_cc.empty())
+  if (!rhs_cc.empty()) {
     has_rhs = 1;
-  if (!rhs_nd.empty())
+  }
+  if (!rhs_nd.empty()) {
     has_rhs_nd = 1;
+  }
 
   // Asserts
   AMREX_ASSERT(a_vel.size() == a_sigma.size());
@@ -449,7 +453,7 @@ PeleLM::doNodalProject(
 
   for (int lev = 0; lev <= finest_level; lev++) {
 
-    auto ldata_p = getLevelDataPtr(lev, AmrNewTime);
+    auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -491,8 +495,8 @@ PeleLM::doNodalProject(
 
   // Average down grap P
   for (int lev = finest_level - 1; lev >= 0; --lev) {
-    auto ldataFine_p = getLevelDataPtr(lev + 1, AmrNewTime);
-    auto ldataCrse_p = getLevelDataPtr(lev, AmrNewTime);
+    auto* ldataFine_p = getLevelDataPtr(lev + 1, AmrNewTime);
+    auto* ldataCrse_p = getLevelDataPtr(lev, AmrNewTime);
 #ifdef AMREX_USE_EB
     amrex::EB_average_down(
       ldataFine_p->gp, ldataCrse_p->gp, 0, AMREX_SPACEDIM, refRatio(lev));

@@ -281,8 +281,8 @@ PeleLM::averageDownState(const PeleLM::TimeStamp& a_time)
 {
   int nCompState = (m_incompressible) ? AMREX_SPACEDIM : NVAR;
   for (int lev = finest_level; lev > 0; --lev) {
-    auto ldataFine_p = getLevelDataPtr(lev, a_time);
-    auto ldataCrse_p = getLevelDataPtr(lev - 1, a_time);
+    auto* ldataFine_p = getLevelDataPtr(lev, a_time);
+    auto* ldataCrse_p = getLevelDataPtr(lev - 1, a_time);
 #ifdef AMREX_USE_EB
     EB_average_down(
       ldataFine_p->state, ldataCrse_p->state, 0, nCompState, refRatio(lev - 1));
@@ -301,8 +301,8 @@ PeleLM::averageDownScalars(const PeleLM::TimeStamp& a_time)
   nScal += 2; // rhoRT, nE
 #endif
   for (int lev = finest_level; lev > 0; --lev) {
-    auto ldataFine_p = getLevelDataPtr(lev, a_time);
-    auto ldataCrse_p = getLevelDataPtr(lev - 1, a_time);
+    auto* ldataFine_p = getLevelDataPtr(lev, a_time);
+    auto* ldataCrse_p = getLevelDataPtr(lev - 1, a_time);
 #ifdef AMREX_USE_EB
     EB_average_down(
       ldataFine_p->state, ldataCrse_p->state, DENSITY, nScal,
@@ -320,8 +320,8 @@ PeleLM::averageDown(
   const PeleLM::TimeStamp& a_time, const int state_comp, const int ncomp)
 {
   for (int lev = finest_level; lev > 0; --lev) {
-    auto ldataFine_p = getLevelDataPtr(lev, a_time);
-    auto ldataCrse_p = getLevelDataPtr(lev - 1, a_time);
+    auto* ldataFine_p = getLevelDataPtr(lev, a_time);
+    auto* ldataCrse_p = getLevelDataPtr(lev - 1, a_time);
 #ifdef AMREX_USE_EB
     EB_average_down(
       ldataFine_p->state, ldataCrse_p->state, state_comp, ncomp,
@@ -338,8 +338,8 @@ void
 PeleLM::averageDownVelocity(const PeleLM::TimeStamp& a_time)
 {
   for (int lev = finest_level; lev > 0; --lev) {
-    auto ldataFine_p = getLevelDataPtr(lev, a_time);
-    auto ldataCrse_p = getLevelDataPtr(lev - 1, a_time);
+    auto* ldataFine_p = getLevelDataPtr(lev, a_time);
+    auto* ldataCrse_p = getLevelDataPtr(lev - 1, a_time);
 #ifdef AMREX_USE_EB
     EB_average_down(
       ldataFine_p->state, ldataCrse_p->state, VELX, AMREX_SPACEDIM,
@@ -356,8 +356,8 @@ void
 PeleLM::averageDownReaction()
 {
   for (int lev = finest_level; lev > 0; --lev) {
-    auto ldataRFine_p = getLevelDataReactPtr(lev);
-    auto ldataRCrse_p = getLevelDataReactPtr(lev - 1);
+    auto* ldataRFine_p = getLevelDataReactPtr(lev);
+    auto* ldataRCrse_p = getLevelDataReactPtr(lev - 1);
 #ifdef AMREX_USE_EB
     EB_average_down(
       ldataRFine_p->I_R, ldataRCrse_p->I_R, 0, nCompIR(), refRatio(lev - 1));

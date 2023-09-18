@@ -26,7 +26,7 @@ PeleLM::calcTurbViscosity(const TimeStamp& a_time)
   amrex::Vector<amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>> GradVel(
     finest_level + 1);
   for (int lev = 0; lev <= finest_level; ++lev) {
-    auto ldata_p = getLevelDataPtr(lev, a_time);
+    auto* ldata_p = getLevelDataPtr(lev, a_time);
     const auto& ba = ldata_p->state.boxArray();
     const auto& dm = ldata_p->state.DistributionMap();
     const auto& factory = ldata_p->state.Factory();
@@ -43,7 +43,7 @@ PeleLM::calcTurbViscosity(const TimeStamp& a_time)
     GetVecOfArrOfPtrs(GradVel), GetVecOfConstPtrs(getVelocityVect(a_time)));
 
   for (int lev = 0; lev <= finest_level; ++lev) {
-    auto ldata_p = getLevelDataPtr(lev, a_time);
+    auto* ldata_p = getLevelDataPtr(lev, a_time);
 
     // Get density and cp (if needed) at faces for computing turbulent transport
     // properties
@@ -255,7 +255,7 @@ PeleLM::calcViscosity(const TimeStamp& a_time)
 
   for (int lev = 0; lev <= finest_level; ++lev) {
 
-    auto ldata_p = getLevelDataPtr(lev, a_time);
+    auto* ldata_p = getLevelDataPtr(lev, a_time);
 
     if (m_incompressible) {
       ldata_p->visc_cc.setVal(m_mu);
@@ -288,7 +288,7 @@ PeleLM::calcDiffusivity(const TimeStamp& a_time)
 
   for (int lev = 0; lev <= finest_level; ++lev) {
 
-    auto ldata_p = getLevelDataPtr(lev, a_time);
+    auto* ldata_p = getLevelDataPtr(lev, a_time);
 
     // Transport data pointer
     auto const* ltransparm = trans_parms.device_trans_parm();
@@ -444,7 +444,7 @@ PeleLM::getDiffusivity(
     } else {
       tstamp = AmrOldTime;
     }
-    auto ldata_p = getLevelDataPtr(lev, tstamp);
+    auto* ldata_p = getLevelDataPtr(lev, tstamp);
 
     // Identify and add the correct turbulent contribution
     for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
@@ -453,10 +453,11 @@ PeleLM::getDiffusivity(
           beta_ec[idim], ldata_p->visc_turb_fc[idim], 0, 0, 1, 0);
       } else if ((ncomp == NUM_SPECIES) and (beta_comp == 0)) { // Species
                                                                 // diffusivity
-        for (int ispec = 0; ispec < NUM_SPECIES; ispec++)
+        for (int ispec = 0; ispec < NUM_SPECIES; ispec++) {
           amrex::MultiFab::Saxpy(
             beta_ec[idim], m_Schmidt_inv, ldata_p->visc_turb_fc[idim], 0, ispec,
             1, 0);
+        }
       } else if ((ncomp == 1) and (beta_comp == NUM_SPECIES)) { // Thermal
                                                                 // conductivity
         amrex::MultiFab::Add(

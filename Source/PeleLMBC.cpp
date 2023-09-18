@@ -224,7 +224,7 @@ PeleLM::fillPatchState(int lev, const TimeStamp& a_time)
 {
   BL_PROFILE("PeleLMeX::fillPatchStateLev()");
 
-  auto ldata_p = getLevelDataPtr(lev, a_time);
+  auto* ldata_p = getLevelDataPtr(lev, a_time);
   Real time = getTime(lev, a_time);
 
   fillpatch_state(lev, time, ldata_p->state, m_nGrowState);
@@ -241,7 +241,7 @@ PeleLM::fillPatchDensity(const TimeStamp& a_time)
 {
   BL_PROFILE("PeleLMeX::fillPatchDensity()");
   for (int lev = 0; lev <= finest_level; lev++) {
-    auto ldata_p = getLevelDataPtr(lev, a_time);
+    auto* ldata_p = getLevelDataPtr(lev, a_time);
     Real time = getTime(lev, a_time);
     fillpatch_density(lev, time, ldata_p->state, DENSITY, m_nGrowState);
   }
@@ -252,7 +252,7 @@ PeleLM::fillPatchSpecies(const TimeStamp& a_time)
 {
   BL_PROFILE("PeleLMeX::fillPatchSpecies()");
   for (int lev = 0; lev <= finest_level; lev++) {
-    auto ldata_p = getLevelDataPtr(lev, a_time);
+    auto* ldata_p = getLevelDataPtr(lev, a_time);
     Real time = getTime(lev, a_time);
     fillpatch_species(lev, time, ldata_p->state, FIRSTSPEC, m_nGrowState);
   }
@@ -263,7 +263,7 @@ PeleLM::fillPatchTemp(const TimeStamp& a_time)
 {
   BL_PROFILE("PeleLMeX::fillPatchTemp()");
   for (int lev = 0; lev <= finest_level; lev++) {
-    auto ldata_p = getLevelDataPtr(lev, a_time);
+    auto* ldata_p = getLevelDataPtr(lev, a_time);
     Real time = getTime(lev, a_time);
     fillpatch_temp(lev, time, ldata_p->state, TEMP, m_nGrowState);
   }
@@ -899,8 +899,9 @@ PeleLM::fillTurbInflow(
           // Create box with ghost cells and set them to zero
           amrex::IntVect growVect(amrex::IntVect::TheUnitVector());
           int Grow = 4; // Being conservative
-          for (int n = 0; n < AMREX_SPACEDIM; n++)
+          for (int n = 0; n < AMREX_SPACEDIM; n++) {
             growVect[n] = Grow;
+          }
           growVect[dir] = 0;
           amrex::Box modDom = geom[lev].Domain();
           modDom.grow(growVect);
@@ -920,8 +921,9 @@ PeleLM::fillTurbInflow(
           // Create box with ghost cells and set them to zero
           amrex::IntVect growVect(amrex::IntVect::TheUnitVector());
           int Grow = 4;
-          for (int n = 0; n < AMREX_SPACEDIM; n++)
+          for (int n = 0; n < AMREX_SPACEDIM; n++) {
             growVect[n] = Grow;
+          }
           growVect[dir] = 0;
           amrex::Box modDom = geom[lev].Domain();
           modDom.grow(growVect);

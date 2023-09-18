@@ -14,24 +14,27 @@ using namespace amrex;
 DiffusionOp*
 PeleLM::getDiffusionOp()
 {
-  if (!m_diffusion_op)
+  if (!m_diffusion_op) {
     m_diffusion_op.reset(new DiffusionOp(this));
+  }
   return m_diffusion_op.get();
 }
 
 DiffusionOp*
 PeleLM::getMCDiffusionOp(int ncomp)
 {
-  if (!m_mcdiffusion_op || m_mcdiffusion_op->m_ncomp != ncomp)
+  if (!m_mcdiffusion_op || m_mcdiffusion_op->m_ncomp != ncomp) {
     m_mcdiffusion_op.reset(new DiffusionOp(this, ncomp));
+  }
   return m_mcdiffusion_op.get();
 }
 
 DiffusionTensorOp*
 PeleLM::getDiffusionTensorOp()
 {
-  if (!m_diffusionTensor_op)
+  if (!m_diffusionTensor_op) {
     m_diffusionTensor_op.reset(new DiffusionTensorOp(this));
+  }
   return m_diffusionTensor_op.get();
 }
 
@@ -881,7 +884,7 @@ PeleLM::differentialDiffusionUpdate(
   for (int lev = 0; lev <= finest_level; ++lev) {
 
     // Get t^{n} data pointer
-    auto ldata_p = getLevelDataPtr(lev, AmrOldTime);
+    auto* ldata_p = getLevelDataPtr(lev, AmrOldTime);
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
@@ -958,7 +961,7 @@ PeleLM::differentialDiffusionUpdate(
   if (m_use_wbar) {
     for (int lev = 0; lev <= finest_level; ++lev) {
 
-      auto ldata_p = getLevelDataPtr(lev, AmrNewTime);
+      auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -981,7 +984,7 @@ PeleLM::differentialDiffusionUpdate(
   }
   if (m_use_soret) {
     for (int lev = 0; lev <= finest_level; ++lev) {
-      auto ldata_p = getLevelDataPtr(lev, AmrNewTime);
+      auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -1023,7 +1026,7 @@ PeleLM::differentialDiffusionUpdate(
   // forcing.
   for (int lev = 0; lev <= finest_level; ++lev) {
 
-    auto ldata_p = getLevelDataPtr(lev, AmrNewTime);
+    auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -1230,8 +1233,8 @@ PeleLM::deltaTIter_prepare(
 {
   for (int lev = 0; lev <= finest_level; ++lev) {
 
-    auto ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
-    auto ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
+    auto* ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
+    auto* ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -1296,7 +1299,7 @@ PeleLM::deltaTIter_update(
   // Evaluate deltaT norm and add Tsave back into the new LevelData
   a_deltaT_norm = -1.0e12;
   for (int lev = 0; lev <= finest_level; ++lev) {
-    auto ldata_p = getLevelDataPtr(lev, AmrNewTime);
+    auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
     a_deltaT_norm =
       std::max(a_deltaT_norm, ldata_p->state.norm0(TEMP, 0, false, true));
     MultiFab::Add(ldata_p->state, *a_Tsave[lev], 0, TEMP, 1, 0);
@@ -1372,7 +1375,7 @@ PeleLM::deltaTIter_update(
   //------------------------------------------------------------------------
   // Recompute RhoH
   for (int lev = 0; lev <= finest_level; ++lev) {
-    auto ldata_p = getLevelDataPtr(lev, AmrNewTime);
+    auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
     auto const& sma = ldata_p->state.arrays();
     amrex::ParallelFor(
       ldata_p->state,
@@ -1395,7 +1398,7 @@ PeleLM::getScalarDiffForce(
   for (int lev = 0; lev <= finest_level; ++lev) {
 
     // Get t^{n} data pointer
-    auto ldataR_p = getLevelDataReactPtr(lev);
+    auto* ldataR_p = getLevelDataReactPtr(lev);
 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())

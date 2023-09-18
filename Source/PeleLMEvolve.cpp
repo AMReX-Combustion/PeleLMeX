@@ -25,11 +25,13 @@ PeleLM::Evolve()
 
     bool regridded = false;
     if ((m_regrid_int > 0) && (m_nstep > 0) && (m_nstep % m_regrid_int == 0)) {
-      if (m_verbose > 0)
+      if (m_verbose > 0) {
         amrex::Print() << " Regridding...\n";
+      }
       // Average down I_R to have proper values in newly uncovered areas
-      if (!m_incompressible)
+      if (!m_incompressible) {
         averageDownReaction();
+      }
       regrid(0, m_cur_time);
       resetMacProjector();
       resetCoveredMask();
@@ -221,7 +223,7 @@ PeleLM::checkMessage(const std::string& a_action)
 {
   bool take_action = false;
 
-  std::string action_file = "";
+  std::string action_file;
   if (a_action == "dump_and_stop") {
     action_file = "dump_and_stop";
   } else if (a_action == "plt_and_continue") {
