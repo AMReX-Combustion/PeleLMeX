@@ -57,7 +57,7 @@ PeleLM::computeVelocityAdvTerm(std::unique_ptr<AdvanceAdvData>& advData)
     // Get divU
     MultiFab divu(
       grids[lev], dmap[lev], 1, m_nGrowdivu, MFInfo(), Factory(lev));
-    if (m_incompressible) {
+    if (m_incompressible != 0) {
       divu.setVal(0.0);
     } else {
       Real time = getTime(lev, AmrOldTime);
@@ -101,7 +101,7 @@ PeleLM::computeVelocityAdvTerm(std::unique_ptr<AdvanceAdvData>& advData)
 #ifdef AMREX_USE_EB
         ebfact,
 #endif
-        m_Godunov_ppm, m_Godunov_ForceInTrans, is_velocity,
+        m_Godunov_ppm != 0, m_Godunov_ForceInTrans != 0, is_velocity,
         fluxes_are_area_weighted, m_advection_type, m_Godunov_ppm_limiter);
     }
 #ifdef AMREX_USE_EB
@@ -136,7 +136,7 @@ PeleLM::computeVelocityAdvTerm(std::unique_ptr<AdvanceAdvData>& advData)
 
     MultiFab divu(
       grids[lev], dmap[lev], 1, m_nGrowdivu, MFInfo(), Factory(lev));
-    if (m_incompressible) {
+    if (m_incompressible != 0) {
       divu.setVal(0.0);
     } else {
       Real time = getTime(lev, AmrOldTime);
@@ -338,7 +338,7 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
     // Get divU
     MultiFab divu(
       grids[lev], dmap[lev], 1, m_nGrowdivu, MFInfo(), Factory(lev));
-    if (m_incompressible) {
+    if (m_incompressible != 0) {
       divu.setVal(0.0);
     } else {
       MultiFab::Copy(divu, advData->mac_divu[lev], 0, 0, 1, m_nGrowdivu);
@@ -440,7 +440,7 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
 #ifdef AMREX_USE_EB
         ebfact,
 #endif
-        m_Godunov_ppm, m_Godunov_ForceInTrans, is_velocity,
+        m_Godunov_ppm != 0, m_Godunov_ForceInTrans != 0, is_velocity,
         fluxes_are_area_weighted, m_advection_type, m_Godunov_ppm_limiter);
 #endif
     }
@@ -528,7 +528,7 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
 #ifdef AMREX_USE_EB
         ebfact,
 #endif
-        m_Godunov_ppm, m_Godunov_ForceInTrans, is_velocity,
+        m_Godunov_ppm != 0, m_Godunov_ForceInTrans != 0, is_velocity,
         fluxes_are_area_weighted, m_advection_type, m_Godunov_ppm_limiter);
     }
 
@@ -613,7 +613,7 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
 #ifdef AMREX_USE_EB
         ebfact,
 #endif
-        m_Godunov_ppm, m_Godunov_ForceInTrans, is_velocity,
+        m_Godunov_ppm != 0, m_Godunov_ForceInTrans != 0, is_velocity,
         fluxes_are_area_weighted, m_advection_type, m_Godunov_ppm_limiter);
     }
 #ifdef AMREX_USE_EB
@@ -639,13 +639,13 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
   // If balances are required, compute face domain integrals
   // using level 0 since we've averaged down the fluxes already
   if (m_sdcIter == m_nSDCmax) {
-    if (m_do_massBalance) {
+    if (m_do_massBalance != 0) {
       addMassFluxes(GetArrOfConstPtrs(fluxes[0]), geom[0]);
     }
-    if (m_do_energyBalance) {
+    if (m_do_energyBalance != 0) {
       addRhoHFluxes(GetArrOfConstPtrs(fluxes[0]), geom[0]);
     }
-    if (m_do_speciesBalance) {
+    if (m_do_speciesBalance != 0) {
       addRhoYFluxes(GetArrOfConstPtrs(fluxes[0]), geom[0]);
     }
   }
@@ -678,7 +678,7 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
 
     MultiFab divu(
       grids[lev], dmap[lev], 1, m_nGrowdivu, MFInfo(), Factory(lev));
-    if (m_incompressible) {
+    if (m_incompressible != 0) {
       divu.setVal(0.0);
     } else {
       Real time = getTime(lev, AmrOldTime);
@@ -801,7 +801,7 @@ PeleLM::computePassiveAdvTerms(
     // Get divU
     MultiFab divu(
       grids[lev], dmap[lev], 1, m_nGrowdivu, MFInfo(), Factory(lev));
-    if (m_incompressible) {
+    if (m_incompressible != 0) {
       divu.setVal(0.0);
     } else {
       MultiFab::Copy(divu, advData->mac_divu[lev], 0, 0, 1, m_nGrowdivu);
@@ -846,7 +846,7 @@ PeleLM::computePassiveAdvTerms(
 #ifdef AMREX_USE_EB
         ebfact,
 #endif
-        m_Godunov_ppm, m_Godunov_ForceInTrans, is_velocity,
+        m_Godunov_ppm != 0, m_Godunov_ForceInTrans != 0, is_velocity,
         fluxes_are_area_weighted, m_advection_type, m_Godunov_ppm_limiter);
     }
 #ifdef AMREX_USE_EB
@@ -880,7 +880,7 @@ PeleLM::computePassiveAdvTerms(
 
     MultiFab divu(
       grids[lev], dmap[lev], 1, m_nGrowdivu, MFInfo(), Factory(lev));
-    if (m_incompressible) {
+    if (m_incompressible != 0) {
       divu.setVal(0.0);
     } else {
       Real time = getTime(lev, AmrOldTime);

@@ -22,12 +22,12 @@ PeleLM::Advance(int is_initIter)
   //----------------------------------------------------------------
 
   // Deal with ambient pressure
-  if (m_closed_chamber) {
+  if (m_closed_chamber != 0) {
     m_pNew = m_pOld;
   }
 
   // Put together new typical values
-  if (!is_initIter && m_nstep > 0 && m_nstep % m_resetTypValInt == 0) {
+  if ((is_initIter == 0) && m_nstep > 0 && m_nstep % m_resetTypValInt == 0) {
     setTypicalValues(AmrNewTime);
   }
 
@@ -54,7 +54,7 @@ PeleLM::Advance(int is_initIter)
   }
   //----------------------------------------------------------------
 
-  if (m_verbose) {
+  if (m_verbose != 0) {
     amrex::Print() << " STEP [" << m_nstep << "] - Time: " << m_cur_time
                    << ", dt " << m_dt << "\n";
   }
@@ -85,7 +85,7 @@ PeleLM::Advance(int is_initIter)
   initTemporals();
 
   // Reset velocity flux on boundary faces if doing closed chamber
-  if (m_closed_chamber) {
+  if (m_closed_chamber != 0) {
     for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
       m_domainUmacFlux[2 * idim] = 0.0;
       m_domainUmacFlux[2 * idim + 1] = 0.0;
@@ -98,7 +98,7 @@ PeleLM::Advance(int is_initIter)
 
   // compute t^{n} data
   calcViscosity(AmrOldTime);
-  if (!m_incompressible) {
+  if (m_incompressible == 0) {
     calcDiffusivity(AmrOldTime);
 #ifdef PELE_USE_EFIELD
     poissonSolveEF(AmrOldTime);
@@ -120,7 +120,7 @@ PeleLM::Advance(int is_initIter)
   }
 #endif
 
-  if (!m_incompressible) {
+  if (m_incompressible == 0) {
     floorSpecies(AmrOldTime);
 
     //----------------------------------------------------------------
@@ -139,7 +139,7 @@ PeleLM::Advance(int is_initIter)
   BL_PROFILE_VAR_START(PLM_SETUP);
   //----------------------------------------------------------------
   copyTransportOldToNew();
-  if (!m_incompressible) {
+  if (m_incompressible == 0) {
     copyDiffusionOldToNew(diffData);
 #ifdef PELE_USE_EFIELD
     ionDriftVelocity(advData);
@@ -150,7 +150,7 @@ PeleLM::Advance(int is_initIter)
 
   //----------------------------------------------------------------
   // Scalar advance
-  if (m_incompressible) {
+  if (m_incompressible != 0) {
     Real MACStart = 0.0;
     if (m_verbose > 1) {
       MACStart = ParallelDescriptor::second();
@@ -187,7 +187,7 @@ PeleLM::Advance(int is_initIter)
       clipSootMoments();
     }
 #endif
-    if (m_has_divu) {
+    if (m_has_divu != 0) {
       int is_initialization = 0; // Not here
       int computeDiffusionTerm =
         1; // Yes, re-evaluate the diffusion term after the last chemistry solve
@@ -207,7 +207,7 @@ PeleLM::Advance(int is_initIter)
     VelAdvStart = ParallelDescriptor::second();
   }
   // Re-evaluate viscosity only if scalar updated
-  if (!m_incompressible) {
+  if (m_incompressible == 0) {
     calcViscosity(AmrNewTime);
   }
 
@@ -237,7 +237,7 @@ PeleLM::Advance(int is_initIter)
   //----------------------------------------------------------------
 
   // Deal with ambient pressure
-  if (m_closed_chamber && !is_initIter) {
+  if ((m_closed_chamber != 0) && (is_initIter == 0)) {
     m_pOld = m_pNew;
   }
 
@@ -281,7 +281,7 @@ PeleLM::oneSDC(
 
     calcDiffusivity(AmrNewTime);
     computeDifferentialDiffusionTerms(AmrNewTime, diffData);
-    if (m_has_divu) {
+    if (m_has_divu != 0) {
       int is_initialization = 0;    // Not here
       int computeDiffusionTerm = 0; // Nope, we just did that
       int do_avgDown = 1;           // Always

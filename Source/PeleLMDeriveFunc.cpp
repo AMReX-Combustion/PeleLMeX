@@ -897,7 +897,7 @@ pelelm_derkineticenergy(
 {
   AMREX_ASSERT(derfab.box().contains(bx));
   AMREX_ASSERT(statefab.box().contains(bx));
-  if (a_pelelm->m_incompressible) {
+  if (a_pelelm->m_incompressible != 0) {
     auto const vel = statefab.array(VELX);
     auto der = derfab.array(dcomp);
     amrex::ParallelFor(
@@ -947,7 +947,7 @@ pelelm_derenstrophy(
                , const amrex::Real idz = geom.InvCellSize(2););
 
   auto const& dat_arr = statefab.const_array(VELX);
-  auto const& rho_arr = (a_pelelm->m_incompressible)
+  auto const& rho_arr = (a_pelelm->m_incompressible) != 0
                           ? Array4<const Real>{}
                           : statefab.const_array(DENSITY);
   auto const& ens_arr = derfab.array(dcomp);
@@ -1120,7 +1120,7 @@ pelelm_derenstrophy(
       [=, incomp = a_pelelm->m_incompressible,
        rho = a_pelelm->m_rho] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
         Real l_rho = rho;
-        if (!incomp) {
+        if (incomp == 0) {
           l_rho = rho_arr(i, j, k);
         }
 #if (AMREX_SPACEDIM == 2)
@@ -1254,7 +1254,7 @@ pelelm_derprogvar(
         prog_var(i, j, k) += (rhoY(i, j, k, n) * Cweights[n]) * rho_inv;
       }
       prog_var(i, j, k) += temp(i, j, k) * Cweights[NUM_SPECIES];
-      if (revert) {
+      if (revert != 0) {
         prog_var(i, j, k) = 1.0 - (prog_var(i, j, k) - C0_lcl) * denom_inv;
       } else {
         prog_var(i, j, k) = (prog_var(i, j, k) - C0_lcl) * denom_inv;
@@ -1284,7 +1284,7 @@ pelelm_dervisc(
   AMREX_ASSERT(statefab.box().contains(bx));
   AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
 
-  if (a_pelelm->m_incompressible) {
+  if (a_pelelm->m_incompressible != 0) {
     derfab.setVal<RunOn::Device>(a_pelelm->m_mu, bx, dcomp, 1);
   } else {
     auto const& rhoY = statefab.const_array(FIRSTSPEC);
@@ -1320,7 +1320,7 @@ pelelm_derdiffc(
   AMREX_ASSERT(derfab.box().contains(bx));
   AMREX_ASSERT(statefab.box().contains(bx));
   AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
-  if (a_pelelm->m_use_soret) {
+  if (a_pelelm->m_use_soret != 0) {
     AMREX_ASSERT(ncomp == 2 * NUM_SPECIES);
   } else {
     AMREX_ASSERT(ncomp == NUM_SPECIES);
@@ -1332,7 +1332,7 @@ pelelm_derdiffc(
   auto lambda = dummies.array(0);
   auto mu = dummies.array(1);
   auto const* ltransparm = a_pelelm->trans_parms.device_trans_parm();
-  if (a_pelelm->m_use_soret) {
+  if (a_pelelm->m_use_soret != 0) {
     auto rhotheta = derfab.array(dcomp + NUM_SPECIES);
     amrex::ParallelFor(
       bx, [rhoY, T, rhoD, rhotheta, lambda, mu,
@@ -1341,7 +1341,7 @@ pelelm_derdiffc(
           i, j, k, rhoY, T, rhoD, rhotheta, lambda, mu, ltransparm);
       });
   } else {
-    if (a_pelelm->m_unity_Le) {
+    if (a_pelelm->m_unity_Le != 0) {
       amrex::Real ScInv = a_pelelm->m_Schmidt_inv;
       amrex::Real PrInv = a_pelelm->m_Prandtl_inv;
       amrex::ParallelFor(
@@ -1395,7 +1395,7 @@ pelelm_derlambda(
   amrex::ParallelFor(
     bx, [rhoY, T, rhoD, lambda, mu, ltransparm, unity_Le, ScInv,
          PrInv] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-      if (unity_Le) {
+      if (unity_Le != 0) {
         getTransportCoeffUnityLe(
           i, j, k, ScInv, PrInv, rhoY, T, rhoD, lambda, mu, ltransparm);
       } else {
