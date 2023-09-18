@@ -53,7 +53,7 @@ public:
   PeleLM();
 
   // destructor
-  virtual ~PeleLM();
+  ~PeleLM() override;
 
   // Setup function
   void Setup();
@@ -72,31 +72,30 @@ public:
 
   //-----------------------------------------------------------------------------
   // Virtual AmrCore functions
-  virtual void
-  regrid(int lbase, amrex::Real time, bool initial = false) override;
+  void regrid(int lbase, amrex::Real time, bool initial = false) override;
 
-  virtual void MakeNewLevelFromScratch(
+  void MakeNewLevelFromScratch(
     int lev,
     amrex::Real time,
     const amrex::BoxArray& ba,
     const amrex::DistributionMapping& dm) override;
 
-  virtual void ErrorEst(
+  void ErrorEst(
     int lev, amrex::TagBoxArray& tags, amrex::Real time, int ng) override;
 
-  virtual void MakeNewLevelFromCoarse(
+  void MakeNewLevelFromCoarse(
     int lev,
     amrex::Real time,
     const amrex::BoxArray& ba,
     const amrex::DistributionMapping& dm) override;
 
-  virtual void RemakeLevel(
+  void RemakeLevel(
     int lev,
     amrex::Real time,
     const amrex::BoxArray& ba,
     const amrex::DistributionMapping& dm) override;
 
-  virtual void ClearLevel(int lev) override;
+  void ClearLevel(int lev) override;
   //-----------------------------------------------------------------------------
 
   //-----------------------------------------------------------------------------
