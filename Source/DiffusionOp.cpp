@@ -2,7 +2,6 @@
 #include <DiffusionOp.H>
 #include <AMReX_ParmParse.H>
 #include <AMReX_VisMF.H>
-#include <memory>
 
 #ifdef AMREX_USE_EB
 #include <AMReX_EB_Redistribution.H>
@@ -46,11 +45,11 @@ DiffusionOp::DiffusionOp(PeleLM* a_pelelm, int ncomp)
     m_pelelm->DistributionMap(0, m_pelelm->finestLevel()), info_apply,
     ebfactVec, m_ncomp));
 #else
-  m_scal_apply_op = std::make_unique<MLABecLaplacian>(
+  m_scal_apply_op.reset(new MLABecLaplacian(
     m_pelelm->Geom(0, m_pelelm->finestLevel()),
     m_pelelm->boxArray(0, m_pelelm->finestLevel()),
     m_pelelm->DistributionMap(0, m_pelelm->finestLevel()), info_apply, {},
-    m_ncomp);
+    m_ncomp));
 #endif
   m_scal_apply_op->setMaxOrder(m_mg_maxorder);
 
@@ -62,11 +61,11 @@ DiffusionOp::DiffusionOp(PeleLM* a_pelelm, int ncomp)
     m_pelelm->DistributionMap(0, m_pelelm->finestLevel()), info_solve,
     ebfactVec, m_ncomp));
 #else
-  m_scal_solve_op = std::make_unique<MLABecLaplacian>(
+  m_scal_solve_op.reset(new MLABecLaplacian(
     m_pelelm->Geom(0, m_pelelm->finestLevel()),
     m_pelelm->boxArray(0, m_pelelm->finestLevel()),
     m_pelelm->DistributionMap(0, m_pelelm->finestLevel()), info_solve, {},
-    m_ncomp);
+    m_ncomp));
 #endif
   m_scal_solve_op->setMaxOrder(m_mg_maxorder);
 
@@ -78,11 +77,11 @@ DiffusionOp::DiffusionOp(PeleLM* a_pelelm, int ncomp)
     m_pelelm->DistributionMap(0, m_pelelm->finestLevel()), info_apply,
     ebfactVec, m_ncomp));
 #else
-  m_gradient_op = std::make_unique<MLABecLaplacian>(
+  m_gradient_op.reset(new MLABecLaplacian(
     m_pelelm->Geom(0, m_pelelm->finestLevel()),
     m_pelelm->boxArray(0, m_pelelm->finestLevel()),
     m_pelelm->DistributionMap(0, m_pelelm->finestLevel()), info_apply, {},
-    m_ncomp);
+    m_ncomp));
 #endif
   m_gradient_op->setMaxOrder(m_mg_maxorder);
   m_gradient_op->setScalars(0.0, 1.0);
@@ -966,9 +965,9 @@ DiffusionTensorOp::DiffusionTensorOp(PeleLM* a_pelelm) : m_pelelm(a_pelelm)
     m_pelelm->Geom(0, finest_level), m_pelelm->boxArray(0, finest_level),
     m_pelelm->DistributionMap(0, finest_level), info_solve, ebfactVec));
 #else
-  m_solve_op = std::make_unique<MLTensorOp>(
+  m_solve_op.reset(new MLTensorOp(
     m_pelelm->Geom(0, finest_level), m_pelelm->boxArray(0, finest_level),
-    m_pelelm->DistributionMap(0, finest_level), info_solve);
+    m_pelelm->DistributionMap(0, finest_level), info_solve));
 #endif
   m_solve_op->setMaxOrder(m_mg_maxorder);
   m_solve_op->setDomainBC(
@@ -984,9 +983,9 @@ DiffusionTensorOp::DiffusionTensorOp(PeleLM* a_pelelm) : m_pelelm(a_pelelm)
     m_pelelm->Geom(0, finest_level), m_pelelm->boxArray(0, finest_level),
     m_pelelm->DistributionMap(0, finest_level), info_apply, ebfactVec));
 #else
-  m_apply_op = std::make_unique<MLTensorOp>(
+  m_apply_op.reset(new MLTensorOp(
     m_pelelm->Geom(0, finest_level), m_pelelm->boxArray(0, finest_level),
-    m_pelelm->DistributionMap(0, finest_level), info_apply);
+    m_pelelm->DistributionMap(0, finest_level), info_apply));
 #endif
   m_apply_op->setMaxOrder(m_mg_maxorder);
   m_apply_op->setDomainBC(
