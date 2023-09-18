@@ -185,8 +185,9 @@ PeleLM::macProject(
   // set MAC velocity and projection RHS
   macproj->getLinOp().setMaxOrder(m_mac_max_order);
   macproj->setUMAC(GetVecOfArrOfPtrs(advData->umac));
-  if (has_divu)
+  if (has_divu) {
     macproj->setDivU(GetVecOfConstPtrs(a_divu));
+  }
 
   // Project
   macproj->project(m_mac_mg_rtol, m_mac_mg_atol);
@@ -400,14 +401,16 @@ PeleLM::create_constrained_umac_grown(
                 umac_arr[idim](i, j, k) =
                   umac_arr[idim](idxp1[0], idxp1[1], idxp1[2]) +
                   dx[idim] * transverseTerm;
-                if (has_divu)
+                if (has_divu) {
                   umac_arr[idim](i, j, k) -= dx[idim] * divuarr(i, j, k);
+                }
               } else if (idx[idim] > bx.bigEnd(idim)) {
                 umac_arr[idim](idxp1[0], idxp1[1], idxp1[2]) =
                   umac_arr[idim](i, j, k) - dx[idim] * transverseTerm;
-                if (has_divu)
+                if (has_divu) {
                   umac_arr[idim](idxp1[0], idxp1[1], idxp1[2]) +=
                     dx[idim] * divuarr(i, j, k);
+                }
               }
             }
           });

@@ -317,8 +317,9 @@ compute_divu(
     (specEnthDiff(i, j, k) + tempDiff(i, j, k) + extRhoH(i, j, k)) * denominv;
   for (int n = 0; n < NUM_SPECIES; n++) {
     amrex::Real specTerm = specDiff(i, j, k, n) + extRhoY(i, j, k, n);
-    if (do_react)
+    if (do_react) {
       specTerm += rhoYdot(i, j, k, n);
+    }
     divu(i, j, k) += specTerm * (mwtinv[n] * Wbar * rhoinv - hi[n] * denominv);
   }
 }
@@ -642,10 +643,12 @@ repair_flux_eb(
     for (int n = 0; n < NUM_SPECIES; n++) {
       sumFlux += flux(i, j, k, n);
       RhoYe[n] = rhoYed(i, j, k, n);
-      if (on_lo)
+      if (on_lo) {
         RhoYe[n] = rhoY(id_l[0], id_l[1], id_l[2], n);
-      if (on_hi)
+      }
+      if (on_hi) {
         RhoYe[n] = rhoY(i, j, k, n);
+      }
       sumRhoYe += RhoYe[n];
     }
     sumRhoYe = 1.0_rt / sumRhoYe;
@@ -844,8 +847,9 @@ buildAdvectionForcing(
   for (int n = 0; n < NUM_SPECIES; n++) {
     y[n] = rhoY(i, j, k, n) * rhoinv;    // get y
     forceY(i, j, k, n) = dn(i, j, k, n); // forceY = Dnk
-    if (do_react)
+    if (do_react) {
       forceY(i, j, k, n) += r(i, j, k, n); //         + Rk
+    }
     forceT(i, j, k) -= forceY(i, j, k, n) * hi_spec[n] *
                        0.0001_rt; // forceT -= Sum{ hk. (Rk + Dnk) } with CGS ->
                                   // MKS conversion of hk
@@ -853,8 +857,9 @@ buildAdvectionForcing(
   }
 
   forceT(i, j, k) += extRhoH(i, j, k);
-  if (closed_chamber == 1)
+  if (closed_chamber == 1) {
     forceT(i, j, k) += dp0dt; // Add dp0/dt
+  }
 
   amrex::Real cpmix = 0.0_rt;
   eos.TY2Cp(T(i, j, k), y, cpmix);
@@ -886,15 +891,17 @@ buildDiffusionForcing(
   for (int n = 0; n < NUM_SPECIES; n++) {
     forceY(i, j, k, n) =
       a(i, j, k, n) + 0.5_rt * (dn(i, j, k, n) - dnp1k(i, j, k, n));
-    if (do_react)
+    if (do_react) {
       forceY(i, j, k, n) += r(i, j, k, n);
+    }
   }
   forceT(i, j, k) = a(i, j, k, NUM_SPECIES) +
                     0.5_rt * (dn(i, j, k, NUM_SPECIES) + ddn(i, j, k) -
                               dnp1k(i, j, k, NUM_SPECIES) - ddnp1k(i, j, k));
 
-  if (closed_chamber == 1)
+  if (closed_chamber == 1) {
     forceT(i, j, k) += dp0dt;
+  }
 }
 
 AMREX_GPU_DEVICE

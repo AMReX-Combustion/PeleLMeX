@@ -90,8 +90,9 @@ PeleLM::WritePlotFile()
       ncomp = NVAR;
     }
     // Make the plot lighter by dropping species by default
-    if (!m_plotStateSpec)
+    if (!m_plotStateSpec) {
       ncomp -= NUM_SPECIES;
+    }
     if (m_has_divu) {
       ncomp += 1;
     }
@@ -104,8 +105,9 @@ PeleLM::WritePlotFile()
     // FunctCall
     ncomp += 1;
     // Extras:
-    if (m_plotHeatRelease)
+    if (m_plotHeatRelease) {
       ncomp += 1;
+    }
   }
 
 #ifdef AMREX_USE_EB
@@ -195,8 +197,9 @@ PeleLM::WritePlotFile()
 #endif
     plt_VarsName.push_back("FunctCall");
     // Extras:
-    if (m_plotHeatRelease)
+    if (m_plotHeatRelease) {
       plt_VarsName.push_back("HeatRelease");
+    }
   }
 
 #ifdef AMREX_USE_EB
@@ -461,8 +464,9 @@ PeleLM::WriteHeader(const std::string& name, bool is_checkpoint) const
     }
     HeaderFile << '\n';
 
-    for (int i = 0; i < AMREX_SPACEDIM; ++i)
+    for (int i = 0; i < AMREX_SPACEDIM; ++i) {
       HeaderFile << Geom(0).ProbHi(i) << ' ';
+    }
     HeaderFile << '\n';
 
     // BoxArray
@@ -782,20 +786,24 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
     std::string firstChars = plt_vars[i].substr(0, 2);
 
     if (pltfileSource == "LM") {
-      if (plt_vars[i] == "temp")
+      if (plt_vars[i] == "temp") {
         idT = i;
+      }
     } else if (pltfileSource == "C") {
-      if (plt_vars[i] == "Temp")
+      if (plt_vars[i] == "Temp") {
         idT = i;
+      }
     }
-    if (plt_vars[i] == "x_velocity")
+    if (plt_vars[i] == "x_velocity") {
       idV = i;
+    }
     if (firstChars == "Y(" && idY < 0) { // species might not be ordered in the
                                          // order of the current mech.
       idY = i;
     }
-    if (firstChars == "Y(")
+    if (firstChars == "Y(") {
       nSpecPlt += 1;
+    }
 #ifdef PELE_USE_EFIELD
     if (plt_vars[i] == "nE")
       inE = i;
@@ -839,8 +847,9 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
         foundSpec = 1;
       }
     }
-    if (!foundSpec)
+    if (!foundSpec) {
       ldata_p->state.setVal(0.0, FIRSTSPEC + i, 1);
+    }
   }
 
   // Converting units when pltfile is coming from PeleC solution

@@ -453,10 +453,11 @@ PeleLM::getDiffusivity(
           beta_ec[idim], ldata_p->visc_turb_fc[idim], 0, 0, 1, 0);
       } else if ((ncomp == NUM_SPECIES) and (beta_comp == 0)) { // Species
                                                                 // diffusivity
-        for (int ispec = 0; ispec < NUM_SPECIES; ispec++)
+        for (int ispec = 0; ispec < NUM_SPECIES; ispec++) {
           amrex::MultiFab::Saxpy(
             beta_ec[idim], m_Schmidt_inv, ldata_p->visc_turb_fc[idim], 0, ispec,
             1, 0);
+        }
       } else if ((ncomp == 1) and (beta_comp == NUM_SPECIES)) { // Thermal
                                                                 // conductivity
         amrex::MultiFab::Add(

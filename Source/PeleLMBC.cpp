@@ -899,8 +899,9 @@ PeleLM::fillTurbInflow(
           // Create box with ghost cells and set them to zero
           amrex::IntVect growVect(amrex::IntVect::TheUnitVector());
           int Grow = 4; // Being conservative
-          for (int n = 0; n < AMREX_SPACEDIM; n++)
+          for (int n = 0; n < AMREX_SPACEDIM; n++) {
             growVect[n] = Grow;
+          }
           growVect[dir] = 0;
           amrex::Box modDom = geom[lev].Domain();
           modDom.grow(growVect);
@@ -920,8 +921,9 @@ PeleLM::fillTurbInflow(
           // Create box with ghost cells and set them to zero
           amrex::IntVect growVect(amrex::IntVect::TheUnitVector());
           int Grow = 4;
-          for (int n = 0; n < AMREX_SPACEDIM; n++)
+          for (int n = 0; n < AMREX_SPACEDIM; n++) {
             growVect[n] = Grow;
+          }
           growVect[dir] = 0;
           amrex::Box modDom = geom[lev].Domain();
           modDom.grow(growVect);

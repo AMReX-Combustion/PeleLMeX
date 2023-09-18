@@ -100,8 +100,9 @@ PeleLM::initActiveControl()
     // Compute some active control parameters
     Real area_tot = 1.0;
     for (int idim{0}; idim < AMREX_SPACEDIM; idim++) {
-      if (idim != m_ctrl_flameDir)
+      if (idim != m_ctrl_flameDir) {
         area_tot *= (Geom(0).ProbHi(idim) - Geom(0).ProbLo(idim));
+      }
     }
 
     m_ctrl_scale = area_tot * s_ext[FIRSTSPEC + fuelID];
@@ -156,11 +157,13 @@ PeleLM::activeControl(int is_restart)
   }
 
   // If first time, set old target state
-  if (m_ctrl_coftOld < 0.0)
+  if (m_ctrl_coftOld < 0.0) {
     m_ctrl_coftOld = coft;
+  }
 
-  if (m_nstep == 0)
+  if (m_nstep == 0) {
     m_ctrl_nfilled = m_ctrl_NavgPts + 1;
+  }
 
   // Manage AC history I/O
   if (is_restart) {

@@ -14,24 +14,27 @@ using namespace amrex;
 DiffusionOp*
 PeleLM::getDiffusionOp()
 {
-  if (!m_diffusion_op)
+  if (!m_diffusion_op) {
     m_diffusion_op.reset(new DiffusionOp(this));
+  }
   return m_diffusion_op.get();
 }
 
 DiffusionOp*
 PeleLM::getMCDiffusionOp(int ncomp)
 {
-  if (!m_mcdiffusion_op || m_mcdiffusion_op->m_ncomp != ncomp)
+  if (!m_mcdiffusion_op || m_mcdiffusion_op->m_ncomp != ncomp) {
     m_mcdiffusion_op.reset(new DiffusionOp(this, ncomp));
+  }
   return m_mcdiffusion_op.get();
 }
 
 DiffusionTensorOp*
 PeleLM::getDiffusionTensorOp()
 {
-  if (!m_diffusionTensor_op)
+  if (!m_diffusionTensor_op) {
     m_diffusionTensor_op.reset(new DiffusionTensorOp(this));
+  }
   return m_diffusionTensor_op.get();
 }
 

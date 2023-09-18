@@ -79,8 +79,9 @@ PeleLM::doDiagnostics()
       // redundantly derived each time
       int mf_idx = 0;
       const PeleLMDeriveRec* rec = derive_lst.get(m_diagVars[v]);
-      if (rec)
+      if (rec) {
         mf_idx = rec->variableComp(m_diagVars[v]);
+      }
       MultiFab::Copy(*diagMFVec[lev].get(), *mf, mf_idx, v, 1, 1);
     }
   }

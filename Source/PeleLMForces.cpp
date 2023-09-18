@@ -101,18 +101,22 @@ PeleLM::getVelForces(
          divTau_arr, force_arr] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           if (is_incomp) {
             for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
-              if (add_gradP)
+              if (add_gradP) {
                 force_arr(i, j, k, idim) -= gp_arr(i, j, k, idim);
-              if (has_divTau)
+              }
+              if (has_divTau) {
                 force_arr(i, j, k, idim) += divTau_arr(i, j, k, idim);
+              }
               force_arr(i, j, k, idim) *= incomp_rho_inv;
             }
           } else {
             for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
-              if (add_gradP)
+              if (add_gradP) {
                 force_arr(i, j, k, idim) -= gp_arr(i, j, k, idim);
-              if (has_divTau)
+              }
+              if (has_divTau) {
                 force_arr(i, j, k, idim) += divTau_arr(i, j, k, idim);
+              }
               force_arr(i, j, k, idim) /= rho_arr(i, j, k);
             }
           }

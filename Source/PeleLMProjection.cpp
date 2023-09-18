@@ -218,8 +218,9 @@ PeleLM::velocityProjection(
 
   if (!incremental) {
     Vector<std::unique_ptr<MultiFab>> rhoHalf(finest_level + 1);
-    if (!m_incompressible)
+    if (!m_incompressible) {
       rhoHalf = getDensityVect(a_rhoTime);
+    }
     for (int lev = 0; lev <= finest_level; ++lev) {
 
       auto* ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
@@ -271,8 +272,9 @@ PeleLM::velocityProjection(
     EB_set_covered(*vel[lev], 0.0);
 #endif
     vel[lev]->setBndry(0.0);
-    if (!incremental)
+    if (!incremental) {
       setInflowBoundaryVel(*vel[lev], lev, AmrNewTime);
+    }
     scaleProj_RZ(lev, *vel[lev]);
   }
 
@@ -379,10 +381,12 @@ PeleLM::doNodalProject(
 {
   int has_rhs = 0;
   int has_rhs_nd = 0;
-  if (!rhs_cc.empty())
+  if (!rhs_cc.empty()) {
     has_rhs = 1;
-  if (!rhs_nd.empty())
+  }
+  if (!rhs_nd.empty()) {
     has_rhs_nd = 1;
+  }
 
   // Asserts
   AMREX_ASSERT(a_vel.size() == a_sigma.size());

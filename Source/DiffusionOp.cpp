@@ -702,8 +702,9 @@ DiffusionOp::computeDiffFluxes(
   }
 
   // Average down if requested
-  if (do_avgDown)
+  if (do_avgDown) {
     avgDownFluxes(a_flux, flux_comp, ncomp);
+  }
 }
 
 #ifdef AMREX_USE_EB
@@ -884,8 +885,9 @@ DiffusionOp::computeGradient(
 #else
   mlmg.getFluxes(a_grad, GetVecOfPtrs(phi), MLMG::Location::FaceCenter);
 #endif
-  if (do_avgDown)
+  if (do_avgDown) {
     avgDownFluxes(a_grad, 0, 1);
+  }
 }
 
 void

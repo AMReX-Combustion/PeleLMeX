@@ -1177,8 +1177,9 @@ pelelm_dermixfrac(
   AMREX_ASSERT(statefab.box().contains(bx));
   AMREX_ASSERT(ncomp == 1);
 
-  if (a_pelelm->Zfu < 0.0)
+  if (a_pelelm->Zfu < 0.0) {
     amrex::Abort("Mixture fraction not initialized");
+  }
 
   auto const density = statefab.array(DENSITY);
   auto const rhoY = statefab.array(FIRSTSPEC);
@@ -1227,8 +1228,9 @@ pelelm_derprogvar(
   AMREX_ASSERT(statefab.box().contains(bx));
   AMREX_ASSERT(ncomp == 1);
 
-  if (a_pelelm->m_C0 < 0.0)
+  if (a_pelelm->m_C0 < 0.0) {
     amrex::Abort("Progress variable not initialized");
+  }
 
   auto const density = statefab.array(DENSITY);
   auto const rhoY = statefab.array(FIRSTSPEC);

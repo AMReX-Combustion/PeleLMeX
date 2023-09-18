@@ -46,8 +46,9 @@ PeleLM::advanceChemistry(int lev, const Real& a_dt, MultiFab& a_extForcing)
 #endif
 
   MFItInfo mfi_info;
-  if (Gpu::notInLaunchRegion())
+  if (Gpu::notInLaunchRegion()) {
     mfi_info.EnableTiling().SetDynamic(true);
+  }
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
@@ -210,8 +211,9 @@ PeleLM::advanceChemistryBAChem(
 #endif
 
   MFItInfo mfi_info;
-  if (Gpu::notInLaunchRegion())
+  if (Gpu::notInLaunchRegion()) {
     mfi_info.EnableTiling().SetDynamic(true);
+  }
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
