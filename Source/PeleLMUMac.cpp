@@ -64,7 +64,7 @@ PeleLM::predictVelocity(std::unique_ptr<AdvanceAdvData>& advData)
 #ifdef AMREX_USE_EB
       ebfact,
 #endif
-      m_Godunov_ppm, m_Godunov_ForceInTrans, m_predict_advection_type,
+      m_Godunov_ppm != 0, m_Godunov_ForceInTrans != 0, m_predict_advection_type,
       m_Godunov_ppm_limiter);
   }
 }
@@ -136,13 +136,13 @@ PeleLM::macProject(
 {
   BL_PROFILE("PeleLMeX::macProject()");
 
-  int has_divu = (!a_divu.empty());
+  int has_divu = static_cast<int>(!a_divu.empty());
 
   // Get face rho inv
   auto bcRec = fetchBCRecArray(DENSITY, 1);
   Vector<Array<MultiFab, AMREX_SPACEDIM>> rho_inv(finest_level + 1);
   for (int lev = 0; lev <= finest_level; ++lev) {
-    if (m_incompressible) {
+    if (m_incompressible != 0) {
       Real rhoInv = m_dt / (2.0 * m_rho);
       for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
         rho_inv[lev][idim].define(
@@ -164,7 +164,7 @@ PeleLM::macProject(
 
   // For closed chamber, compute change in chamber pressure
   Real Sbar = 0.0;
-  if (m_closed_chamber && !m_incompressible) {
+  if ((m_closed_chamber != 0) && (m_incompressible == 0)) {
     Sbar = adjustPandDivU(advData);
   }
 
@@ -185,7 +185,7 @@ PeleLM::macProject(
   // set MAC velocity and projection RHS
   macproj->getLinOp().setMaxOrder(m_mac_max_order);
   macproj->setUMAC(GetVecOfArrOfPtrs(advData->umac));
-  if (has_divu) {
+  if (has_divu != 0) {
     macproj->setDivU(GetVecOfConstPtrs(a_divu));
   }
 
@@ -193,7 +193,7 @@ PeleLM::macProject(
   macproj->project(m_mac_mg_rtol, m_mac_mg_atol);
 
   // Restore mac_divu
-  if (m_closed_chamber && !m_incompressible) {
+  if ((m_closed_chamber != 0) && (m_incompressible == 0)) {
     for (int lev = 0; lev <= finest_level; ++lev) {
       a_divu[lev]->plus(Sbar, 0, 1);
     }
@@ -205,7 +205,7 @@ PeleLM::macProject(
       // We need to fill the MAC velocities outside the fine region so we can
       // use them in the Godunov method
       IntVect rr = geom[lev].Domain().size() / geom[lev - 1].Domain().size();
-      auto* divu_lev = (has_divu) ? a_divu[lev] : nullptr;
+      auto* divu_lev = (has_divu) != 0 ? a_divu[lev] : nullptr;
       create_constrained_umac_grown(
         lev, m_nGrowMAC, &geom[lev - 1], &geom[lev],
         GetArrOfPtrs(advData->umac[lev - 1]), GetArrOfPtrs(advData->umac[lev]),
@@ -230,7 +230,7 @@ PeleLM::create_constrained_umac_grown(
   const MultiFab* divu,
   const IntVect& crse_ratio)
 {
-  int has_divu = (divu != nullptr);
+  int has_divu = static_cast<int>(divu != nullptr);
 
   // Divergence preserving interp
   Interpolater* mapper = &face_divfree_interp;
@@ -309,7 +309,7 @@ PeleLM::create_constrained_umac_grown(
   for (MFIter mfi(mask, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
     const Box& bx = mfi.tilebox();
     auto const& divuarr =
-      (has_divu) ? divu->const_array(mfi) : u_mac_fine[0]->array(mfi);
+      (has_divu) != 0 ? divu->const_array(mfi) : u_mac_fine[0]->array(mfi);
     auto const& maskarr = mask.const_array(mfi);
     Array<Array4<Real>, AMREX_SPACEDIM> const& umac_arr = {AMREX_D_DECL(
       u_mac_fine[0]->array(mfi), u_mac_fine[1]->array(mfi),
@@ -351,7 +351,7 @@ PeleLM::create_constrained_umac_grown(
                     areas_arr[idim](idxp1[0], idxp1[1], idxp1[2]) /
                     areas_arr[idim](i, j, k) +
                   vol_arr(i, j, k) / areas_arr[idim](i, j, k) * transverseTerm;
-                if (has_divu)
+                if (has_divu != 0)
                   umac_arr[idim](i, j, k) -= vol_arr(i, j, k) /
                                              areas_arr[idim](i, j, k) *
                                              divuarr(i, j, k);
@@ -362,7 +362,7 @@ PeleLM::create_constrained_umac_grown(
                   vol_arr(i, j, k) /
                     areas_arr[idim](idxp1[0], idxp1[1], idxp1[2]) *
                     transverseTerm;
-                if (has_divu)
+                if (has_divu != 0)
                   umac_arr[idim](idxp1[0], idxp1[1], idxp1[2]) +=
                     vol_arr(i, j, k) /
                     areas_arr[idim](idxp1[0], idxp1[1], idxp1[2]) *
@@ -401,13 +401,13 @@ PeleLM::create_constrained_umac_grown(
                 umac_arr[idim](i, j, k) =
                   umac_arr[idim](idxp1[0], idxp1[1], idxp1[2]) +
                   dx[idim] * transverseTerm;
-                if (has_divu) {
+                if (has_divu != 0) {
                   umac_arr[idim](i, j, k) -= dx[idim] * divuarr(i, j, k);
                 }
               } else if (idx[idim] > bx.bigEnd(idim)) {
                 umac_arr[idim](idxp1[0], idxp1[1], idxp1[2]) =
                   umac_arr[idim](i, j, k) - dx[idim] * transverseTerm;
-                if (has_divu) {
+                if (has_divu != 0) {
                   umac_arr[idim](idxp1[0], idxp1[1], idxp1[2]) +=
                     dx[idim] * divuarr(i, j, k);
                 }

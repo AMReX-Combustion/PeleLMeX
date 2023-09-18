@@ -101,7 +101,7 @@ pelelm_initdata(
       break;
     }
 
-    if (is_incompressible)
+    if (is_incompressible != 0)
       return;
 
     state(i, j, k, TEMP) = prob_parm.T_mean;
@@ -138,7 +138,7 @@ pelelm_initdata(
       break;
     }
 
-    if (is_incompressible)
+    if (is_incompressible != 0)
       return;
 
     state(i, j, k, TEMP) = prob_parm.T_mean;
@@ -189,7 +189,7 @@ pelelm_initdata(
       break;
     }
 
-    if (is_incompressible)
+    if (is_incompressible != 0)
       return;
 
     state(i, j, k, TEMP) = prob_parm.T_mean;
@@ -214,7 +214,7 @@ pelelm_initdata(
     AMREX_D_TERM(state(i, j, k, VELX) = 0.0;, state(i, j, k, VELY) = 0.0;
                  , state(i, j, k, VELZ) = 0.0);
 
-    if (is_incompressible)
+    if (is_incompressible != 0)
       return;
 
     state(i, j, k, TEMP) = prob_parm.T_mean;

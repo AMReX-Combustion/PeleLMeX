@@ -140,7 +140,7 @@ bcnormal(
 
   if (sgn == 1) {
 
-    if (!prob_parm.FCData.ctrl_active || time <= 0.0) {
+    if ((prob_parm.FCData.ctrl_active == 0u) || time <= 0.0) {
       s_ext[VELX] = 0.0;
 #if (AMREX_SPACEDIM == 2)
       s_ext[VELY] = prob_parm.V_in;
