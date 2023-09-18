@@ -317,7 +317,7 @@ compute_divu(
     (specEnthDiff(i, j, k) + tempDiff(i, j, k) + extRhoH(i, j, k)) * denominv;
   for (int n = 0; n < NUM_SPECIES; n++) {
     amrex::Real specTerm = specDiff(i, j, k, n) + extRhoY(i, j, k, n);
-    if (do_react) {
+    if (do_react != 0) {
       specTerm += rhoYdot(i, j, k, n);
     }
     divu(i, j, k) += specTerm * (mwtinv[n] * Wbar * rhoinv - hi[n] * denominv);
@@ -711,7 +711,7 @@ makeVelForce(
 
   // Switch between incompressible/low-Mach rhos
   amrex::Real rho_lcl = 0.0;
-  if (is_incomp) {
+  if (is_incomp != 0) {
     rho_lcl = rho_incomp;
   } else {
     rho_lcl = rho(i, j, k);
@@ -723,7 +723,7 @@ makeVelForce(
   }
 
   // Pseudo-gravity for active control
-  if (pseudo_gravity) {
+  if (pseudo_gravity != 0) {
     force(i, j, k, pseudo_gravity_dir) += dV_control * rho_lcl;
   }
 
@@ -847,7 +847,7 @@ buildAdvectionForcing(
   for (int n = 0; n < NUM_SPECIES; n++) {
     y[n] = rhoY(i, j, k, n) * rhoinv;    // get y
     forceY(i, j, k, n) = dn(i, j, k, n); // forceY = Dnk
-    if (do_react) {
+    if (do_react != 0) {
       forceY(i, j, k, n) += r(i, j, k, n); //         + Rk
     }
     forceT(i, j, k) -= forceY(i, j, k, n) * hi_spec[n] *
@@ -891,7 +891,7 @@ buildDiffusionForcing(
   for (int n = 0; n < NUM_SPECIES; n++) {
     forceY(i, j, k, n) =
       a(i, j, k, n) + 0.5_rt * (dn(i, j, k, n) - dnp1k(i, j, k, n));
-    if (do_react) {
+    if (do_react != 0) {
       forceY(i, j, k, n) += r(i, j, k, n);
     }
   }
