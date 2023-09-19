@@ -25,7 +25,7 @@ struct hasFlowControllerData<T, decltype((void)T::FCData, void())>
 
 template <typename T>
 FlowControllerData*
-getFCDataPtr(const T& a_t, std::false_type)
+getFCDataPtr(const T& a_t, std::false_type /*unused*/)
 {
   amrex::ignore_unused(a_t);
   return nullptr;
@@ -33,7 +33,7 @@ getFCDataPtr(const T& a_t, std::false_type)
 
 template <typename T>
 FlowControllerData*
-getFCDataPtr(T& a_t, std::true_type)
+getFCDataPtr(T& a_t, std::true_type /*unused*/)
 {
   return &(a_t.FCData);
 }
