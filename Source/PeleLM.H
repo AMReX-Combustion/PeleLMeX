@@ -987,7 +987,7 @@ public:
 
   //-----------------------------------------------------------------------------
   // BOUNDARY CONDITIONS / FILLPATCH
-  static amrex::InterpBase* getInterpolator(int a_method = 1);
+  amrex::InterpBase* getInterpolator(int a_method = 1);
 
   // Interpolation method for regrid (default to cell cons interp)
   int m_regrid_interp_method = 1;
