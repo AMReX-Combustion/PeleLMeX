@@ -308,8 +308,8 @@ compute_divu(
   amrex::Real hi[NUM_SPECIES] = {0.0};
   eos.T2Hi(T(i, j, k), hi);
   cpmix *= 1.0e-4_rt; // CGS -> MKS conversion
-  for (int n = 0; n < NUM_SPECIES; n++) {
-    hi[n] *= 1.0e-4_rt; // CGS -> MKS conversion
+  for (double& n : hi) {
+    n *= 1.0e-4_rt; // CGS -> MKS conversion
   }
 
   amrex::Real denominv = 1.0_rt / (rho * cpmix * T(i, j, k));
