@@ -1096,11 +1096,8 @@ bool
 PeleLM::isStateVariable(std::string_view a_name)
 {
   // Check state
-  for (std::list<std::tuple<int, std::string>>::const_iterator
-         li = stateComponents.begin(),
-         End = stateComponents.end();
-       li != End; ++li) {
-    if (std::get<1>(*li) == a_name) {
+  for (const auto& stateComponent : stateComponents) {
+    if (std::get<1>(stateComponent) == a_name) {
       return true;
     }
   }
@@ -1111,11 +1108,8 @@ bool
 PeleLM::isReactVariable(std::string_view a_name)
 {
   // Check reaction state
-  for (std::list<std::tuple<int, std::string>>::const_iterator
-         li = reactComponents.begin(),
-         End = reactComponents.end();
-       li != End; ++li) {
-    if (std::get<1>(*li) == a_name) {
+  for (const auto& reactComponent : reactComponents) {
+    if (std::get<1>(reactComponent) == a_name) {
       return true;
     }
   }
@@ -1131,12 +1125,9 @@ PeleLM::stateVariableIndex(std::string_view a_name)
       "PeleLM::stateVariableIndex(): unknown State variable: " +
       static_cast<std::string>(a_name));
   }
-  for (std::list<std::tuple<int, std::string>>::const_iterator
-         li = stateComponents.begin(),
-         End = stateComponents.end();
-       li != End; ++li) {
-    if (std::get<1>(*li) == a_name) {
-      idx = std::get<0>(*li);
+  for (const auto& stateComponent : stateComponents) {
+    if (std::get<1>(stateComponent) == a_name) {
+      idx = std::get<0>(stateComponent);
     }
   }
   return idx;
@@ -1151,12 +1142,9 @@ PeleLM::reactVariableIndex(std::string_view a_name)
       "PeleLM::reactVariableIndex(): unknown Reaction variable: " +
       static_cast<std::string>(a_name));
   }
-  for (std::list<std::tuple<int, std::string>>::const_iterator
-         li = reactComponents.begin(),
-         End = reactComponents.end();
-       li != End; ++li) {
-    if (std::get<1>(*li) == a_name) {
-      idx = std::get<0>(*li);
+  for (const auto& reactComponent : reactComponents) {
+    if (std::get<1>(reactComponent) == a_name) {
+      idx = std::get<0>(reactComponent);
     }
   }
   return idx;
@@ -1790,11 +1778,11 @@ PeleLM::parseComposition(
 
   // Ensure that it sums to 1.0:
   Real sum = 0.0;
-  for (int k = 0; k < NUM_SPECIES; k++) {
-    sum += compoIn[k];
+  for (double k : compoIn) {
+    sum += k;
   }
-  for (int k = 0; k < NUM_SPECIES; k++) {
-    compoIn[k] /= sum;
+  for (double& k : compoIn) {
+    k /= sum;
   }
 
   // Fill the massFrac array, convert from mole fraction if necessary

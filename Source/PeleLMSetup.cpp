@@ -1137,8 +1137,8 @@ PeleLM::taggingSetup()
   ppamr.queryarr(
     "refinement_indicators", refinement_indicators, 0,
     ppamr.countval("refinement_indicators"));
-  for (int n = 0; n < refinement_indicators.size(); ++n) {
-    std::string ref_prefix = amr_prefix + "." + refinement_indicators[n];
+  for (const auto& refinement_indicator : refinement_indicators) {
+    std::string ref_prefix = amr_prefix + "." + refinement_indicator;
     ParmParse ppr(ref_prefix);
 
     // Tag a given box
@@ -1211,16 +1211,15 @@ PeleLM::taggingSetup()
       errTags.push_back(AMRErrorTag(info));
       itexists = true;
     } else {
-      Abort(
-        std::string(
-          "Unrecognized refinement indicator for " + refinement_indicators[n])
-          .c_str());
+      Abort(std::string(
+              "Unrecognized refinement indicator for " + refinement_indicator)
+              .c_str());
     }
 
     if (!itexists) {
       amrex::Error(
         "PeleLM::taggingSetup(): unknown variable field for criteria " +
-        refinement_indicators[n]);
+        refinement_indicator);
     }
   }
 }
