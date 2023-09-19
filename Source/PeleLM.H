@@ -941,11 +941,11 @@ public:
   //-----------------------------------------------------------------------------
   // I/O
   void WritePlotFile();
-  bool writePlotNow();
-  bool checkMessage(const std::string& a_action);
+  bool writePlotNow() const;
+  bool checkMessage(const std::string& a_action) const;
   void WriteCheckPointFile();
   void ReadCheckPointFile();
-  bool writeCheckNow();
+  bool writeCheckNow() const;
   void WriteJobInfo(const std::string& path) const;
   void WriteHeader(const std::string& name, bool is_checkpoint) const;
   void WriteDebugPlotFile(
@@ -982,7 +982,7 @@ public:
     std::unique_ptr<AdvanceAdvData>& advData, const amrex::Geometry& a_geom);
   void openTempFile();
   void closeTempFile();
-  bool doTemporalsNow();
+  bool doTemporalsNow() const;
   //-----------------------------------------------------------------------------
 
   //-----------------------------------------------------------------------------
@@ -1291,7 +1291,7 @@ public:
   void setTypicalValues(const PeleLM::TimeStamp& a_time, int is_init = 0);
   void updateTypicalValuesChem();
 
-  void checkMemory(const std::string& a_message);
+  void checkMemory(const std::string& a_message) const;
 
   // Mixture fraction & Progress variable
   void initMixtureFraction();
@@ -1529,7 +1529,7 @@ public:
 
   //-----------------------------------------------------------------------------
   // Accessors
-  std::string runMode() { return m_run_mode; }
+  std::string runMode() const { return m_run_mode; }
 
   static int nCompIR()
   {

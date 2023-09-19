@@ -117,7 +117,7 @@ PeleLM::Evolve()
 }
 
 bool
-PeleLM::writePlotNow()
+PeleLM::writePlotNow() const
 {
   bool write_now = false;
 
@@ -165,7 +165,7 @@ PeleLM::writePlotNow()
 }
 
 bool
-PeleLM::writeCheckNow()
+PeleLM::writeCheckNow() const
 {
   bool write_now = false;
 
@@ -207,7 +207,7 @@ PeleLM::writeCheckNow()
 }
 
 bool
-PeleLM::doTemporalsNow()
+PeleLM::doTemporalsNow() const
 {
   bool write_now = false;
 
@@ -219,7 +219,7 @@ PeleLM::doTemporalsNow()
 }
 
 bool
-PeleLM::checkMessage(const std::string& a_action)
+PeleLM::checkMessage(const std::string& a_action) const
 {
   bool take_action = false;
 

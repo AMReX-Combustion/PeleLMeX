@@ -1603,7 +1603,7 @@ PeleLM::MLmin(const Vector<const MultiFab*>& a_MF, int scomp, int ncomp)
 }
 
 void
-PeleLM::checkMemory(const std::string& a_message)
+PeleLM::checkMemory(const std::string& a_message) const
 {
   if (!m_checkMem) {
     return;
