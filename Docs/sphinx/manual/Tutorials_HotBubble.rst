@@ -123,7 +123,7 @@ Problem specifications
 ..  _sec:TUTO_HB::Problem:
 
 The problem setup is mostly contained in the three C++ source/header files described in :doc:`Tutorials_FlameSheet`.
-The user parameters are gathered in the struct defined in  ``pelelm_prob_parm.H``: ::
+The user parameters are gathered in the struct defined in  ``pelelmex_prob_parm.H``: ::
 
     struct ProbParm
     {
@@ -153,9 +153,9 @@ The user parameters are gathered in the struct defined in  ``pelelm_prob_parm.H`
 The initial solution consists of air at the pressure/temperature specified by the user, with a bubble
 of a different temperature/mixture intended to be lighter such that the bubble will rise under the
 influence of gravity. Note that the user can easily reverse the problem with a heavier bubble.
-The default parameters provided above are overwritten using AMReX ParmParse in ``pelelm_prob.cpp``
-and the initial/boundary conditions implemented in ``pelelm_prob.H``. Because this case does not feature
-any dirichlet BC on the state variables, the ``bcnormal`` function in ``pelelm_prob.H`` will not be called
+The default parameters provided above are overwritten using AMReX ParmParse in ``pelelmex_prob.cpp``
+and the initial/boundary conditions implemented in ``pelelmex_prob.H``. Because this case does not feature
+any dirichlet BC on the state variables, the ``bcnormal`` function in ``pelelmex_prob.H`` will not be called
 and can thus be left empty (but its definition is still required).
 
 The interesting aspect of this case is the inclusion of buoyancy effects in the presence of gravity.

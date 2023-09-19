@@ -11,9 +11,9 @@ function(build_pelelmex_exe pelelmex_exe_name pelelmex_lib_name)
 
   target_sources(${pelelmex_exe_name}
      PRIVATE
-       pelelm_prob_parm.H
-       pelelm_prob.H
-       pelelm_prob.cpp
+       pelelmex_prob_parm.H
+       pelelmex_prob.H
+       pelelmex_prob.cpp
   )
   
   #PeleLMeX include directories
@@ -29,7 +29,7 @@ function(build_pelelmex_exe pelelmex_exe_name pelelmex_lib_name)
     target_compile_definitions(${pelelmex_exe_name} PRIVATE SPRAY_FUEL_NUM=${PELEMP_SPRAY_FUEL_NUM})
     target_sources(${pelelmex_exe_name} PRIVATE
 	           SprayParticlesInitInsert.cpp
-                   ${SRC_DIR}/PeleLMSprayParticles.cpp
+                   ${SRC_DIR}/PeleLMeX_SprayParticles.cpp
                    ${PELEMP_SRC_DIR}/PP_Spray/SprayParticles.cpp
                    ${PELEMP_SRC_DIR}/PP_Spray/SprayParticles.H
                    ${PELEMP_SRC_DIR}/PP_Spray/SprayFuelData.H
@@ -56,7 +56,7 @@ function(build_pelelmex_exe pelelmex_exe_name pelelmex_lib_name)
       message(FATAL_ERROR "NUM_SOOT_MOMENTS must be either 3 or 6")
     endif()
     target_sources(${pelelmex_exe_name} PRIVATE
-                   ${SRC_DIR}/Soot.cpp
+                   ${SRC_DIR}/PeleLMeX_Soot.cpp
                    ${PELEMP_SRC_DIR}/Soot_Models/SootModel.cpp
                    ${PELEMP_SRC_DIR}/Soot_Models/SootModel_react.cpp
                    ${PELEMP_SRC_DIR}/Soot_Models/SootModel_derive.cpp
@@ -65,53 +65,52 @@ function(build_pelelmex_exe pelelmex_exe_name pelelmex_lib_name)
                    ${PELEMP_SRC_DIR}/Soot_Models/SootReactions.H
                    ${PELEMP_SRC_DIR}/Soot_Models/SootModel.H
                    ${PELEMP_SRC_DIR}/Soot_Models/SootModel_derive.H
-                   ${SRC_DIR}/PeleLMSoot.cpp)
+                   ${SRC_DIR}/PeleLMeXSoot.cpp)
     target_include_directories(${pelelmex_exe_name} PRIVATE ${PELEMP_SRC_DIR}/Soot_Models)
   endif()
 
   target_sources(${pelelmex_exe_name}
      PRIVATE
-       ${SRC_DIR}/DeriveUserDefined.cpp
-       ${SRC_DIR}/DiffusionOp.H
-       ${SRC_DIR}/DiffusionOp.cpp
-       ${SRC_DIR}/EBUserDefined.H
-       ${SRC_DIR}/PeleFlowControllerData.H
-       ${SRC_DIR}/PeleLM.H
-       ${SRC_DIR}/PeleLM.cpp
-       ${SRC_DIR}/PeleLMAdvance.cpp
-       ${SRC_DIR}/PeleLMAdvection.cpp
-       ${SRC_DIR}/PeleLMBC.cpp
-       ${SRC_DIR}/PeleLMBCfill.H
-       ${SRC_DIR}/PeleLMData.cpp
-       ${SRC_DIR}/PeleLMDerive.H
-       ${SRC_DIR}/PeleLMDerive.cpp
-       ${SRC_DIR}/PeleLMDeriveFunc.H
-       ${SRC_DIR}/PeleLMDeriveFunc.cpp
-       ${SRC_DIR}/PeleLMDiagnostics.cpp
-       ${SRC_DIR}/PeleLMDiffusion.cpp
-       ${SRC_DIR}/PeleLMEB.cpp
-       ${SRC_DIR}/PeleLMEos.cpp
-       ${SRC_DIR}/PeleLMEvaluate.cpp
-       ${SRC_DIR}/PeleLMEvolve.cpp
-       ${SRC_DIR}/PeleLMFlowController.cpp
-       ${SRC_DIR}/PeleLMForces.cpp
-       ${SRC_DIR}/PeleLMInit.cpp
-       ${SRC_DIR}/PeleLMPlot.cpp
-       ${SRC_DIR}/PeleLMProjection.cpp
-       ${SRC_DIR}/PeleLMReactions.cpp
-       ${SRC_DIR}/PeleLMRegrid.cpp
-       ${SRC_DIR}/PeleLMSetup.cpp
-       ${SRC_DIR}/PeleLMTagging.cpp
-       ${SRC_DIR}/PeleLMTemporals.cpp
-       ${SRC_DIR}/PeleLMTimestep.cpp
-       ${SRC_DIR}/PeleLMTransportProp.cpp
-       ${SRC_DIR}/PeleLMUMac.cpp
-       ${SRC_DIR}/PeleLMUserKeys.H
-       ${SRC_DIR}/PeleLMUtils.H
-       ${SRC_DIR}/PeleLMUtils.cpp
-       ${SRC_DIR}/PeleLM_Index.H
-       ${SRC_DIR}/PeleLM_K.H
-       ${SRC_DIR}/Utils.cpp
+       ${SRC_DIR}/PeleLMeX_DeriveUserDefined.cpp
+       ${SRC_DIR}/PeleLMeX_DiffusionOp.H
+       ${SRC_DIR}/PeleLMeX_DiffusionOp.cpp
+       ${SRC_DIR}/PeleLMeX_EBUserDefined.H
+       ${SRC_DIR}/PeleLMeX_FlowControllerData.H
+       ${SRC_DIR}/PeleLMeX.H
+       ${SRC_DIR}/PeleLMeX.cpp
+       ${SRC_DIR}/PeleLMeX_Advance.cpp
+       ${SRC_DIR}/PeleLMeX_Advection.cpp
+       ${SRC_DIR}/PeleLMeX_BC.cpp
+       ${SRC_DIR}/PeleLMeX_BCfill.H
+       ${SRC_DIR}/PeleLMeX_Data.cpp
+       ${SRC_DIR}/PeleLMeX_Derive.H
+       ${SRC_DIR}/PeleLMeX_Derive.cpp
+       ${SRC_DIR}/PeleLMeX_DeriveFunc.H
+       ${SRC_DIR}/PeleLMeX_DeriveFunc.cpp
+       ${SRC_DIR}/PeleLMeX_Diagnostics.cpp
+       ${SRC_DIR}/PeleLMeX_Diffusion.cpp
+       ${SRC_DIR}/PeleLMeX_EB.cpp
+       ${SRC_DIR}/PeleLMeX_Eos.cpp
+       ${SRC_DIR}/PeleLMeX_Evaluate.cpp
+       ${SRC_DIR}/PeleLMeX_Evolve.cpp
+       ${SRC_DIR}/PeleLMeX_FlowController.cpp
+       ${SRC_DIR}/PeleLMeX_Forces.cpp
+       ${SRC_DIR}/PeleLMeX_Init.cpp
+       ${SRC_DIR}/PeleLMeX_Plot.cpp
+       ${SRC_DIR}/PeleLMeX_Projection.cpp
+       ${SRC_DIR}/PeleLMeX_Reactions.cpp
+       ${SRC_DIR}/PeleLMeX_Regrid.cpp
+       ${SRC_DIR}/PeleLMeX_Setup.cpp
+       ${SRC_DIR}/PeleLMeX_Tagging.cpp
+       ${SRC_DIR}/PeleLMeX_Temporals.cpp
+       ${SRC_DIR}/PeleLMeX_Timestep.cpp
+       ${SRC_DIR}/PeleLMeX_TransportProp.cpp
+       ${SRC_DIR}/PeleLMeX_UMac.cpp
+       ${SRC_DIR}/PeleLMeX_UserKeys.H
+       ${SRC_DIR}/PeleLMeX_Utils.H
+       ${SRC_DIR}/PeleLMeX_Utils.cpp
+       ${SRC_DIR}/PeleLMeX_Index.H
+       ${SRC_DIR}/PeleLMeX_K.H
        ${SRC_DIR}/main.cpp
   )
 

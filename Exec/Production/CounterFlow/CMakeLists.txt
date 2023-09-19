@@ -8,7 +8,7 @@ set(PELELMEX_MPI ON PARENT_SCOPE)
 
 target_sources(pelelmex
     PRIVATE
-        pelelm_prob.cpp
-        pelelm_prob.H
-        pelelm_prob_parm.H
+        pelelmex_prob.cpp
+        pelelmex_prob.H
+        pelelmex_prob_parm.H
     )
