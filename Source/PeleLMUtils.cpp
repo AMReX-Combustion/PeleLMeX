@@ -1,6 +1,7 @@
 #include <PeleLM.H>
 #include <PeleLM_K.H>
 #include <hydro_utils.H>
+#include <memory>
 #ifdef PELE_USE_EFIELD
 #include <PeleLMEF_Constants.H>
 #endif
@@ -684,8 +685,8 @@ PeleLM::resetCoveredMask()
         m_baChemFlag[lev][bxIdx] = 0;
         bxIdx += 1;
       }
-      m_baChem[lev].reset(new BoxArray(std::move(bl)));
-      m_dmapChem[lev].reset(new DistributionMapping(*m_baChem[lev]));
+      m_baChem[lev] = std::make_unique<BoxArray>(std::move(bl));
+      m_dmapChem[lev] = std::make_unique<DistributionMapping>(*m_baChem[lev]);
 
       // Load balancing of the chemistry DMap
       if (m_doLoadBalance != 0) {
@@ -694,15 +695,15 @@ PeleLM::resetCoveredMask()
     }
 
     // Set a BoxArray for the chemistry on the finest level too
-    m_baChem[finest_level].reset(new BoxArray(grids[finest_level]));
+    m_baChem[finest_level] = std::make_unique<BoxArray>(grids[finest_level]);
     if (m_max_grid_size_chem.min() > 0) {
       m_baChem[finest_level]->maxSize(m_max_grid_size_chem);
     }
     m_baChemFlag[finest_level].resize(m_baChem[finest_level]->size());
     std::fill(
       m_baChemFlag[finest_level].begin(), m_baChemFlag[finest_level].end(), 1);
-    m_dmapChem[finest_level].reset(
-      new DistributionMapping(*m_baChem[finest_level]));
+    m_dmapChem[finest_level] =
+      std::make_unique<DistributionMapping>(*m_baChem[finest_level]);
 
     if ((m_doLoadBalance != 0) && m_max_grid_size_chem.min() > 0) {
       loadBalanceChemLev(finest_level);
@@ -808,7 +809,7 @@ PeleLM::loadBalanceChemLev(int a_lev)
       ParallelDescriptor::MyProc() != ParallelDescriptor::IOProcessorNumber()) {
       test_dmap = DistributionMapping(pmap);
     }
-    m_dmapChem[a_lev].reset(new DistributionMapping(test_dmap));
+    m_dmapChem[a_lev] = std::make_unique<DistributionMapping>(test_dmap);
   }
 }
 
@@ -831,8 +832,8 @@ PeleLM::derive(const std::string& a_name, Real a_time, int lev, int nGrow)
   const PeleLMDeriveRec* rec = derive_lst.get(a_name);
 
   if (rec != nullptr) { // This is a derived variable
-    mf.reset(new MultiFab(
-      grids[lev], dmap[lev], rec->numDerive(), nGrow, MFInfo(), Factory(lev)));
+    mf = std::make_unique<MultiFab>(
+      grids[lev], dmap[lev], rec->numDerive(), nGrow, MFInfo(), Factory(lev));
     std::unique_ptr<MultiFab> statemf =
       fillPatchState(lev, a_time, m_nGrowState);
     // Get pressure: TODO no fillpatch for pressure just yet, simply get new
@@ -855,14 +856,14 @@ PeleLM::derive(const std::string& a_name, Real a_time, int lev, int nGrow)
         geom[lev], a_time, stateBCs, lev);
     }
   } else if (isStateVariable(a_name)) { // This is a state variable
-    mf.reset(
-      new MultiFab(grids[lev], dmap[lev], 1, nGrow, MFInfo(), Factory(lev)));
+    mf = std::make_unique<MultiFab>(
+      grids[lev], dmap[lev], 1, nGrow, MFInfo(), Factory(lev));
     int idx = stateVariableIndex(a_name);
     std::unique_ptr<MultiFab> statemf = fillPatchState(lev, a_time, nGrow);
     MultiFab::Copy(*mf, *statemf, idx, 0, 1, nGrow);
   } else { // This is a reaction variable
-    mf.reset(
-      new MultiFab(grids[lev], dmap[lev], 1, nGrow, MFInfo(), Factory(lev)));
+    mf = std::make_unique<MultiFab>(
+      grids[lev], dmap[lev], 1, nGrow, MFInfo(), Factory(lev));
     int idx = reactVariableIndex(a_name);
     std::unique_ptr<MultiFab> reactmf = fillPatchReact(lev, a_time, nGrow);
     MultiFab::Copy(*mf, *reactmf, idx, 0, 1, nGrow);
@@ -890,8 +891,8 @@ PeleLM::deriveComp(const std::string& a_name, Real a_time, int lev, int nGrow)
   const PeleLMDeriveRec* rec = derive_lst.get(a_name);
 
   if (rec != nullptr) { // This is a derived variable
-    mf.reset(
-      new MultiFab(grids[lev], dmap[lev], 1, nGrow, MFInfo(), Factory(lev)));
+    mf = std::make_unique<MultiFab>(
+      grids[lev], dmap[lev], 1, nGrow, MFInfo(), Factory(lev));
     std::unique_ptr<MultiFab> statemf =
       fillPatchState(lev, a_time, m_nGrowState);
     // Get pressure: TODO no fillpatch for pressure just yet, simply get new
@@ -925,14 +926,14 @@ PeleLM::deriveComp(const std::string& a_name, Real a_time, int lev, int nGrow)
     }
     MultiFab::Copy(*mf, derTemp, derComp, 0, 1, nGrow);
   } else if (isStateVariable(a_name)) { // This is a state variable
-    mf.reset(
-      new MultiFab(grids[lev], dmap[lev], 1, nGrow, MFInfo(), Factory(lev)));
+    mf = std::make_unique<MultiFab>(
+      grids[lev], dmap[lev], 1, nGrow, MFInfo(), Factory(lev));
     int idx = stateVariableIndex(a_name);
     std::unique_ptr<MultiFab> statemf = fillPatchState(lev, a_time, nGrow);
     MultiFab::Copy(*mf, *statemf, idx, 0, 1, nGrow);
   } else { // This is a reaction variable
-    mf.reset(
-      new MultiFab(grids[lev], dmap[lev], 1, nGrow, MFInfo(), Factory(lev)));
+    mf = std::make_unique<MultiFab>(
+      grids[lev], dmap[lev], 1, nGrow, MFInfo(), Factory(lev));
     int idx = reactVariableIndex(a_name);
     std::unique_ptr<MultiFab> reactmf = fillPatchReact(lev, a_time, nGrow);
     MultiFab::Copy(*mf, *reactmf, idx, 0, 1, nGrow);

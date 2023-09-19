@@ -1,4 +1,5 @@
 #include <PeleLM.H>
+#include <memory>
 
 using namespace amrex;
 
@@ -26,8 +27,8 @@ PeleLM::initialProjection()
   if (m_incompressible == 0) {
     for (int lev = 0; lev <= finest_level; ++lev) {
 
-      sigma[lev].reset(new MultiFab(
-        grids[lev], dmap[lev], 1, nGhost, MFInfo(), *m_factory[lev]));
+      sigma[lev] = std::make_unique<MultiFab>(
+        grids[lev], dmap[lev], 1, nGhost, MFInfo(), *m_factory[lev]);
 
       auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
 
@@ -137,8 +138,8 @@ PeleLM::initialPressProjection()
   if (m_incompressible == 0) {
     for (int lev = 0; lev <= finest_level; ++lev) {
 
-      sigma[lev].reset(new MultiFab(
-        grids[lev], dmap[lev], 1, nGhost, MFInfo(), *m_factory[lev]));
+      sigma[lev] = std::make_unique<MultiFab>(
+        grids[lev], dmap[lev], 1, nGhost, MFInfo(), *m_factory[lev]);
 
       auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
 
@@ -193,8 +194,8 @@ PeleLM::velocityProjection(
     rhoHalf = getDensityVect(a_rhoTime);
     for (int lev = 0; lev <= finest_level; ++lev) {
 
-      sigma[lev].reset(new MultiFab(
-        grids[lev], dmap[lev], 1, nGhost, MFInfo(), *m_factory[lev]));
+      sigma[lev] = std::make_unique<MultiFab>(
+        grids[lev], dmap[lev], 1, nGhost, MFInfo(), *m_factory[lev]);
 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -426,16 +427,16 @@ PeleLM::doNodalProject(
 
   if (m_incompressible != 0) {
     Real constant_sigma = scaling_factor / m_rho;
-    nodal_projector.reset(new Hydro::NodalProjector(
-      a_vel, constant_sigma, Geom(0, finest_level), info));
+    nodal_projector = std::make_unique<Hydro::NodalProjector>(
+      a_vel, constant_sigma, Geom(0, finest_level), info);
   } else {
     if (has_rhs != 0) {
-      nodal_projector.reset(new Hydro::NodalProjector(
+      nodal_projector = std::make_unique<Hydro::NodalProjector>(
         a_vel, GetVecOfConstPtrs(a_sigma), Geom(0, finest_level), info, rhs_cc,
-        rhs_nd));
+        rhs_nd);
     } else {
-      nodal_projector.reset(new Hydro::NodalProjector(
-        a_vel, GetVecOfConstPtrs(a_sigma), Geom(0, finest_level), info));
+      nodal_projector = std::make_unique<Hydro::NodalProjector>(
+        a_vel, GetVecOfConstPtrs(a_sigma), Geom(0, finest_level), info);
     }
   }
 

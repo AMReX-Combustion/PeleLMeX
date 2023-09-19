@@ -1,5 +1,6 @@
 #include <PeleLM.H>
 #include <AMReX_PlotFileUtil.H>
+#include <memory>
 
 using namespace amrex;
 
@@ -111,9 +112,9 @@ PeleLM::MLevaluate(
 
     // Light version of the diffusion data container
     std::unique_ptr<AdvanceDiffData> diffData;
-    diffData.reset(new AdvanceDiffData(
+    diffData = std::make_unique<AdvanceDiffData>(
       finest_level, grids, dmap, m_factory, m_nGrowAdv, m_use_wbar, m_use_soret,
-      is_initialization));
+      is_initialization);
     calcDivU(
       is_initialization, computeDiffusionTerm, do_avgDown, AmrNewTime,
       diffData);
@@ -130,9 +131,9 @@ PeleLM::MLevaluate(
 
     // Light version of the diffusion data container
     std::unique_ptr<AdvanceDiffData> diffData;
-    diffData.reset(new AdvanceDiffData(
+    diffData = std::make_unique<AdvanceDiffData>(
       finest_level, grids, dmap, m_factory, m_nGrowAdv, m_use_wbar,
-      is_initialization));
+      is_initialization);
     calcDivU(
       is_initialization, computeDiffusionTerm, do_avgDown, AmrNewTime,
       diffData);
@@ -166,9 +167,9 @@ PeleLM::MLevaluate(
     // Use the diffusion data holder, get diffusivity and calc D
     // Finally, copy into a_MFVec
     std::unique_ptr<AdvanceDiffData> diffData;
-    diffData.reset(new AdvanceDiffData(
+    diffData = std::make_unique<AdvanceDiffData>(
       finest_level, grids, dmap, m_factory, m_nGrowAdv, m_use_wbar,
-      m_use_soret));
+      m_use_soret);
     calcDiffusivity(AmrNewTime);
     computeDifferentialDiffusionTerms(AmrNewTime, diffData);
     for (int lev = 0; lev <= finest_level; ++lev) {
@@ -270,12 +271,12 @@ PeleLM::evaluateChemExtForces(
   //----------------------------------------------------------------
   // Data for the advance, only live for the duration of the advance
   std::unique_ptr<AdvanceDiffData> diffData;
-  diffData.reset(new AdvanceDiffData(
-    finest_level, grids, dmap, m_factory, m_nGrowAdv, m_use_wbar, m_use_soret));
+  diffData = std::make_unique<AdvanceDiffData>(
+    finest_level, grids, dmap, m_factory, m_nGrowAdv, m_use_wbar, m_use_soret);
   std::unique_ptr<AdvanceAdvData> advData;
-  advData.reset(new AdvanceAdvData(
+  advData = std::make_unique<AdvanceAdvData>(
     finest_level, grids, dmap, m_factory, m_incompressible, m_nGrowAdv,
-    m_nGrowMAC));
+    m_nGrowMAC);
 
   //----------------------------------------------------------------
   // Advance setup
@@ -372,12 +373,12 @@ PeleLM::evaluateAdvectionTerms(
   //----------------------------------------------------------------
   // Data for the advance, only live for the duration of the advance
   std::unique_ptr<AdvanceDiffData> diffData;
-  diffData.reset(new AdvanceDiffData(
-    finest_level, grids, dmap, m_factory, m_nGrowAdv, m_use_wbar, m_use_soret));
+  diffData = std::make_unique<AdvanceDiffData>(
+    finest_level, grids, dmap, m_factory, m_nGrowAdv, m_use_wbar, m_use_soret);
   std::unique_ptr<AdvanceAdvData> advData;
-  advData.reset(new AdvanceAdvData(
+  advData = std::make_unique<AdvanceAdvData>(
     finest_level, grids, dmap, m_factory, m_incompressible, m_nGrowAdv,
-    m_nGrowMAC));
+    m_nGrowMAC);
 
   //----------------------------------------------------------------
   // Advance setup
