@@ -547,6 +547,14 @@ jobs:
   Lint-clang-tidy:
     needs: Formatting
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        enableeb: [EB-OFF, EB-ON]
+        include:
+          - enableeb: EB-OFF
+            useeb: OFF
+          - enableeb: EB-ON
+            useeb: ON
     steps:
       - name: Clone
         uses: actions/checkout@v3
@@ -559,6 +567,7 @@ jobs:
           -DCMAKE_BUILD_TYPE:STRING=Debug \
           -DCMAKE_CXX_COMPILER:STRING=clang++ \
           -DCMAKE_C_COMPILER:STRING=clang \
+          -DPELELMEX_ENABLE_EB:BOOL=${{matrix.useeb}} \
           -DPELELMEX_ENABLE_MPI:BOOL=OFF \
           -DPELELMEX_ENABLE_FCOMPARE_FOR_TESTS:BOOL=OFF \
           -DPELELMEX_ENABLE_MASA:BOOL=OFF \
