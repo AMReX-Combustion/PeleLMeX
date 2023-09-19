@@ -29,7 +29,7 @@ prob.pertlength = 0.016
 pmf.datafile = "drm19_pmf.dat"
 
 #---------------------- PeleLMeX CONTROL -------------------------
-peleLM.v = 1                              # PeleLMeX version
+peleLM.v = 1                              # PeleLMeX verbose
 peleLM.use_wbar = 1                       # Include Wbar term in species diffusion fluxes
 peleLM.sdc_iterMax = 2                    # Number of SDC iterations
 peleLM.num_init_iter = 3                  # Number of initial iterations
