@@ -80,7 +80,7 @@ PeleLM::readProbParm()
     amrex::Abort();
   }
 
-  if (!m_incompressible) {
+  if (m_incompressible == 0) {
     auto& trans_parm = PeleLM::trans_parms.host_trans_parm();
     amrex::ParmParse pptr("transport");
     pp.query("const_viscosity", trans_parm.const_viscosity);

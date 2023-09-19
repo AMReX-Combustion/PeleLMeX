@@ -7,7 +7,7 @@ PeleLM::regrid(int lbase, amrex::Real time, bool initial)
 {
   BL_PROFILE("PeleLMeX::regrid()");
 
-  if (!m_doLoadBalance && lbase >= max_level) {
+  if ((m_doLoadBalance == 0) && lbase >= max_level) {
     return;
   }
 
@@ -17,13 +17,13 @@ PeleLM::regrid(int lbase, amrex::Real time, bool initial)
   } else {
 
     // Load balance base grid
-    if (lbase == 0 && m_doLoadBalance && !initial) {
+    if (lbase == 0 && (m_doLoadBalance != 0) && !initial) {
 
       if (m_verbose > 0) {
         Print() << " Load balancing level 0 \n";
       }
 
-      int remakeLevel = false;
+      int remakeLevel = 0;
 
       computeCosts(0);
 
@@ -56,14 +56,15 @@ PeleLM::regrid(int lbase, amrex::Real time, bool initial)
         (m_loadBalanceEffRatioThreshold > 0.0) &&
         (ParallelDescriptor::MyProc() ==
          ParallelDescriptor::IOProcessorNumber())) {
-        remakeLevel =
-          remakeLevel ||
-          (testEfficiency > m_loadBalanceEffRatioThreshold * currentEfficiency);
+        remakeLevel = static_cast<int>(
+          (static_cast<int>(remakeLevel != 0) != 0) ||
+          (testEfficiency >
+           m_loadBalanceEffRatioThreshold * currentEfficiency));
       }
       ParallelDescriptor::Bcast(
         &remakeLevel, 1, ParallelDescriptor::IOProcessorNumber());
 
-      if (m_verbose > 1 && remakeLevel) {
+      if (m_verbose > 1 && (remakeLevel != 0)) {
         Print() << " Current LoadBalancing efficiency: " << currentEfficiency
                 << "\n"
                 << " Test LoadBalancing efficiency: " << testEfficiency
@@ -71,7 +72,7 @@ PeleLM::regrid(int lbase, amrex::Real time, bool initial)
       }
 
       // Bcast the test dmap and remake level
-      if (remakeLevel) {
+      if (remakeLevel != 0) {
         Vector<int> pmap;
         if (
           ParallelDescriptor::MyProc() ==
@@ -112,7 +113,7 @@ PeleLM::regrid(int lbase, amrex::Real time, bool initial)
 
         // If initial grid generation or not doing load balancing,
         // remake level only if the grid changed using the default DMap strategy
-        if (initial || !m_doLoadBalance) {
+        if (initial || (m_doLoadBalance == 0)) {
           if (ba_changed || coarse_ba_changed) {
             BoxArray level_grids = grids[lev];
             DistributionMapping level_dmap = dmap[lev];
@@ -132,7 +133,7 @@ PeleLM::regrid(int lbase, amrex::Real time, bool initial)
           // dmap can be obtained
         } else {
 
-          int remakeLevel = false;
+          int remakeLevel = 0;
 
           BoxArray new_ba;
           DistributionMapping new_dmap;
@@ -140,7 +141,7 @@ PeleLM::regrid(int lbase, amrex::Real time, bool initial)
           // If the grid changed, let's build a new dmap
           if (ba_changed) {
 
-            remakeLevel = true;
+            remakeLevel = 1;
 
             new_ba = new_grids[lev];
             new_dmap = DistributionMapping(new_ba);
@@ -220,14 +221,15 @@ PeleLM::regrid(int lbase, amrex::Real time, bool initial)
               (m_loadBalanceEffRatioThreshold > 0.0) &&
               (ParallelDescriptor::MyProc() ==
                ParallelDescriptor::IOProcessorNumber())) {
-              remakeLevel = remakeLevel ||
-                            (testEfficiency > m_loadBalanceEffRatioThreshold *
-                                                currentEfficiency);
+              remakeLevel = static_cast<int>(
+                (static_cast<int>(remakeLevel != 0) != 0) ||
+                (testEfficiency >
+                 m_loadBalanceEffRatioThreshold * currentEfficiency));
             }
             ParallelDescriptor::Bcast(
               &remakeLevel, 1, ParallelDescriptor::IOProcessorNumber());
 
-            if (m_verbose > 1 && remakeLevel) {
+            if (m_verbose > 1 && (remakeLevel != 0)) {
               Print() << " Current LoadBalancing efficiency: "
                       << currentEfficiency << "\n"
                       << " Test LoadBalancing efficiency: " << testEfficiency
@@ -235,7 +237,7 @@ PeleLM::regrid(int lbase, amrex::Real time, bool initial)
             }
 
             // Bcast the test dmap if we plan on remaking the level
-            if (remakeLevel) {
+            if (remakeLevel != 0) {
               Vector<int> pmap;
               if (
                 ParallelDescriptor::MyProc() ==
@@ -257,7 +259,7 @@ PeleLM::regrid(int lbase, amrex::Real time, bool initial)
             }
           }
 
-          if (remakeLevel) {
+          if (remakeLevel != 0) {
             const auto old_num_setdm = num_setdm;
             RemakeLevel(lev, time, new_ba, new_dmap);
             SetBoxArray(lev, new_ba);
@@ -323,19 +325,19 @@ PeleLM::MakeNewLevelFromCoarse(
   // New leveldatas
   std::unique_ptr<LevelData> n_leveldata_old(new LevelData(
     ba, dm, *new_fact, m_incompressible, m_has_divu, m_nAux, m_nGrowState,
-    m_use_soret, m_do_les));
+    m_use_soret, static_cast<int>(m_do_les)));
 
   std::unique_ptr<LevelData> n_leveldata_new(new LevelData(
     ba, dm, *new_fact, m_incompressible, m_has_divu, m_nAux, m_nGrowState,
-    m_use_soret, m_do_les));
+    m_use_soret, static_cast<int>(m_do_les)));
 
   // Fill the leveldata_new
   fillcoarsepatch_state(lev, time, n_leveldata_new->state, m_nGrowState);
   fillcoarsepatch_gradp(lev, time, n_leveldata_new->gp, 0);
   n_leveldata_new->press.setVal(0.0);
 
-  if (!m_incompressible) {
-    if (m_has_divu) {
+  if (m_incompressible == 0) {
+    if (m_has_divu != 0) {
       fillcoarsepatch_divu(lev, time, n_leveldata_new->divu, 0);
     }
   }
@@ -345,7 +347,7 @@ PeleLM::MakeNewLevelFromCoarse(
   m_leveldata_new[lev] = std::move(n_leveldata_new);
   m_factory[lev] = std::move(new_fact);
 
-  if (m_do_react) {
+  if (m_do_react != 0) {
     std::unique_ptr<LevelDataReact> n_leveldatareact(
       new LevelDataReact(ba, dm, *m_factory[lev]));
     fillcoarsepatch_reaction(lev, time, n_leveldatareact->I_R, 0);
@@ -353,7 +355,7 @@ PeleLM::MakeNewLevelFromCoarse(
     m_leveldatareact[lev] = std::move(n_leveldatareact);
   }
 
-  if (!m_incompressible) {
+  if (m_incompressible == 0) {
     // Enforce density / species density consistency
     // only usefull when using cell cons interp
     if (m_regrid_interp_method == 1) {
@@ -432,19 +434,19 @@ PeleLM::RemakeLevel(
   // New leveldatas
   std::unique_ptr<LevelData> n_leveldata_old(new LevelData(
     ba, dm, *new_fact, m_incompressible, m_has_divu, m_nAux, m_nGrowState,
-    m_use_soret, m_do_les));
+    m_use_soret, static_cast<int>(m_do_les)));
 
   std::unique_ptr<LevelData> n_leveldata_new(new LevelData(
     ba, dm, *new_fact, m_incompressible, m_has_divu, m_nAux, m_nGrowState,
-    m_use_soret, m_do_les));
+    m_use_soret, static_cast<int>(m_do_les)));
 
   // Fill the leveldata_new
   fillpatch_state(lev, time, n_leveldata_new->state, m_nGrowState);
   fillpatch_gradp(lev, time, n_leveldata_new->gp, 0);
   n_leveldata_new->press.setVal(0.0);
 
-  if (!m_incompressible) {
-    if (m_has_divu) {
+  if (m_incompressible == 0) {
+    if (m_has_divu != 0) {
       fillpatch_divu(lev, time, n_leveldata_new->divu, 1);
     }
   }
@@ -454,7 +456,7 @@ PeleLM::RemakeLevel(
   m_leveldata_new[lev] = std::move(n_leveldata_new);
   m_factory[lev] = std::move(new_fact);
 
-  if (m_do_react) {
+  if (m_do_react != 0) {
     std::unique_ptr<LevelDataReact> n_leveldatareact(
       new LevelDataReact(ba, dm, *m_factory[lev]));
     fillpatch_reaction(lev, time, n_leveldatareact->I_R, 0);
@@ -467,7 +469,7 @@ PeleLM::RemakeLevel(
   }
   m_resetCoveredMask = 1;
 
-  if (!m_incompressible) {
+  if (m_incompressible == 0) {
     // Enforce density / species density consistency
     // only usefull when using cell cons interp
     if (m_regrid_interp_method == 1) {
@@ -513,7 +515,7 @@ PeleLM::ClearLevel(int lev)
 
   m_leveldata_old[lev].reset();
   m_leveldata_new[lev].reset();
-  if (m_do_react) {
+  if (m_do_react != 0) {
     m_leveldatareact[lev].reset();
   }
   if (max_level > 0 && lev != max_level) {
@@ -598,7 +600,7 @@ void
 PeleLM::resetMacProjector()
 {
   // If nothing has changed, just go back
-  if (!m_macProjNeedReset && (m_macProjOldSize == finest_level + 1)) {
+  if ((m_macProjNeedReset == 0) && (m_macProjOldSize == finest_level + 1)) {
     return;
   }
 

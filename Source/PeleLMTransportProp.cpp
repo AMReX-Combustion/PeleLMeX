@@ -53,7 +53,7 @@ PeleLM::calcTurbViscosity(const TimeStamp& a_time)
     const auto& ba = ldata_p->state.boxArray();
     const auto& dm = ldata_p->state.DistributionMap();
     const auto& factory = ldata_p->state.Factory();
-    if (m_incompressible) {
+    if (m_incompressible != 0) {
       // just set density as a constant; don't need to worry about cp
       for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
         dens_fc[idim].define(
@@ -236,7 +236,7 @@ PeleLM::calcTurbViscosity(const TimeStamp& a_time)
       Gpu::streamSynchronize();
 
       // Compute lambda_turb = alpha_t * cp = mu_t / Pr_t * cp
-      if (!m_incompressible) {
+      if (m_incompressible == 0) {
         amrex::MultiFab::Copy(
           ldata_p->lambda_turb_fc[idim], ldata_p->visc_turb_fc[idim], 0, 0, 1,
           0);
@@ -257,7 +257,7 @@ PeleLM::calcViscosity(const TimeStamp& a_time)
 
     auto* ldata_p = getLevelDataPtr(lev, a_time);
 
-    if (m_incompressible) {
+    if (m_incompressible != 0) {
       ldata_p->visc_cc.setVal(m_mu);
     } else {
 
@@ -312,7 +312,7 @@ PeleLM::calcDiffusivity(const TimeStamp& a_time)
     amrex::ParallelFor(
       ldata_p->diff_cc, ldata_p->diff_cc.nGrowVect(),
       [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
-        if (do_soret) {
+        if (do_soret != 0) {
           getTransportCoeffSoret(
             i, j, k, Array4<Real const>(sma[box_no], FIRSTSPEC),
             Array4<Real const>(sma[box_no], TEMP), Array4<Real>(dma[box_no], 0),
@@ -321,7 +321,7 @@ PeleLM::calcDiffusivity(const TimeStamp& a_time)
             Array4<Real>(dma[box_no], NUM_SPECIES + 1), ltransparm);
 
         } else {
-          if (do_unity_le) {
+          if (do_unity_le != 0) {
             getTransportCoeffUnityLe(
               i, j, k, Sc_inv, Pr_inv,
               Array4<Real const>(sma[box_no], FIRSTSPEC),
@@ -387,7 +387,7 @@ PeleLM::getDiffusivity(
   EB_set_covered_faces(GetArrOfPtrs(beta_ec), 1.234e40);
 #else
   // NON-EB : use cen2edg_cpp
-  bool use_harmonic_avg = m_harm_avg_cen2edge ? true : false;
+  bool use_harmonic_avg = m_harm_avg_cen2edge != 0 ? true : false;
 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -425,7 +425,7 @@ PeleLM::getDiffusivity(
   // CONDUCTIVITY ncomp = 1          , beta_comp = 0           --> VISCOSITY If
   // PELE_USE_EFIELD is active, these relationships will not hold and LES is not
   // supported
-  if (addTurbContrib and m_do_les) {
+  if ((addTurbContrib != 0) and m_do_les) {
 
     // If initializing the simulation, always recompute turbulent viscosity
     // otherwise, only recompute once per level per timestep (at old time)
@@ -470,7 +470,7 @@ PeleLM::getDiffusivity(
   }
 
   // Enable zeroing diffusivity on faces to produce walls
-  if (doZeroVisc) {
+  if (doZeroVisc != 0) {
     const auto geomdata = geom[lev].data();
     for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
       const Box& edomain = amrex::surroundingNodes(domain, idim);

@@ -45,14 +45,14 @@ pelelm_initdata(
   massfrac[N2_ID] = 0.767;
 
   state(i, j, k, TEMP) = prob_parm.T_mean;
-  amrex::Real x_c = prob_parm.is_sym ? prob_lo[0] : prob_lo[0] + 0.5 * Lx;
+  amrex::Real x_c = prob_parm.is_sym != 0 ? prob_lo[0] : prob_lo[0] + 0.5 * Lx;
 #if AMREX_SPACEDIM == 3
   amrex::Real z_c = prob_parm.is_sym ? prob_lo[2] : prob_lo[2] + 0.5 * Lz;
 #endif
   amrex::Real rad = std::sqrt(AMREX_D_TERM(
     (y - prob_parm.bubble_y0) * (y - prob_parm.bubble_y0),
     +(x - x_c) * (x - x_c), +(z - z_c) * (z - z_c)));
-  if (prob_parm.bubble_is_mix) {
+  if (prob_parm.bubble_is_mix != 0) {
     if (rad <= prob_parm.bubble_rad) {
       massfrac[O2_ID] = 0.0;
       massfrac[N2_ID] = 1.0;

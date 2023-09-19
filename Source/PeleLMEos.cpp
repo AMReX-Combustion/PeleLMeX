@@ -51,7 +51,7 @@ PeleLM::calcDivU(
   // If requested, compute diffusion terms
   // otherwise assumes it has already been computed and stored in the proper
   // container of diffData
-  if (computeDiff) {
+  if (computeDiff != 0) {
     calcDiffusivity(a_time);
     computeDifferentialDiffusionTerms(a_time, diffData, is_init);
   }
@@ -62,8 +62,8 @@ PeleLM::calcDivU(
     auto* ldata_p = getLevelDataPtr(lev, a_time);
 
     MultiFab RhoYdot;
-    if (m_do_react && !m_skipInstantRR) {
-      if (is_init) {      // Either pre-divU, divU or press initial iterations
+    if ((m_do_react != 0) && (m_skipInstantRR == 0)) {
+      if (is_init != 0) { // Either pre-divU, divU or press initial iterations
         if (m_dt > 0.0) { // divU ite   -> use I_R
           auto* ldataR_p = getLevelDataReactPtr(lev);
           RhoYdot.define(grids[lev], dmap[lev], nCompIR(), 0);
@@ -113,13 +113,13 @@ PeleLM::calcDivU(
           ? diffData->Dn[lev].const_array(mfi, NUM_SPECIES + 1)
           : diffData->Dnp1[lev].const_array(mfi, NUM_SPECIES + 1);
       auto const& r =
-        (m_do_react && !m_skipInstantRR)
+        ((m_do_react != 0) && (m_skipInstantRR == 0))
           ? RhoYdot.const_array(mfi)
           : ldata_p->state.const_array(mfi, FIRSTSPEC); // Dummy unused Array4
       auto const& extRhoY = m_extSource[lev]->const_array(mfi, FIRSTSPEC);
       auto const& extRhoH = m_extSource[lev]->const_array(mfi, RHOH);
       auto const& divu = ldata_p->divu.array(mfi);
-      int use_react = (m_do_react && !m_skipInstantRR) ? 1 : 0;
+      int use_react = ((m_do_react != 0) && (m_skipInstantRR == 0)) ? 1 : 0;
 
 #ifdef AMREX_USE_EB
       if (flagfab.getType(bx) == FabType::covered) { // Covered boxes
@@ -155,7 +155,7 @@ PeleLM::calcDivU(
   }
 
   // Average down divU
-  if (do_avgDown) {
+  if (do_avgDown != 0) {
     for (int lev = finest_level; lev > 0; --lev) {
       auto* ldataFine_p = getLevelDataPtr(lev, a_time);
       auto* ldataCrse_p = getLevelDataPtr(lev - 1, a_time);

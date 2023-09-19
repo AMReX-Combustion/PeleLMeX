@@ -140,7 +140,7 @@ pelelm_initdata(
   state(i, j, k, VELY) = uinterp[1];
   state(i, j, k, VELZ) = uinterp[2];
 
-  if (is_incompressible) {
+  if (is_incompressible != 0) {
     return;
   }
 
