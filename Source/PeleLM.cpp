@@ -42,7 +42,8 @@ PeleLM::getLevelDataPtr(
     a_time == AmrOldTime || a_time == AmrNewTime || a_time == AmrHalfTime);
   if (a_time == AmrOldTime) {
     return m_leveldata_old[lev].get();
-  } if (a_time == AmrNewTime) {
+  }
+  if (a_time == AmrNewTime) {
     return m_leveldata_new[lev].get();
   } else {
     m_leveldata_floating.reset(new LevelData(
@@ -66,8 +67,8 @@ PeleLM::getLevelDataReactPtr(int lev)
 {
   if (m_do_react != 0) {
     return m_leveldatareact[lev].get();
-  }     return nullptr;
- 
+  }
+  return nullptr;
 }
 
 Vector<std::unique_ptr<MultiFab>>
