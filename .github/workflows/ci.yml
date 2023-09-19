@@ -417,12 +417,12 @@ jobs:
           source /etc/profile.d/rocm.sh
           which clang
           which clang++
+          which hipcc
           cmake -B${{runner.workspace}}/build-hip \
           -DCMAKE_BUILD_TYPE:STRING=Release \
           -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
-          -DCMAKE_CXX_COMPILER:STRING=$(which clang++) \
+          -DCMAKE_CXX_COMPILER:STRING=$(which hipcc) \
           -DCMAKE_C_COMPILER:STRING=$(which clang) \
-          -DCMAKE_CXX_STANDARD:STRING=17 \
           -DPELELMEX_ENABLE_MPI:BOOL=OFF \
           -DPELELMEX_ENABLE_HIP:BOOL=ON \
           -DAMReX_AMD_ARCH:STRING=gfx90a \
@@ -431,7 +431,6 @@ jobs:
           -DGPU_TARGETS:STRING=gfx90a \
           -DAMReX_GPU_RDC:BOOL=OFF \
           -DPELELMEX_ENABLE_FCOMPARE_FOR_TESTS:BOOL=OFF \
-          -DPELELMEX_ENABLE_MASA:BOOL=OFF \
           -DCMAKE_CXX_COMPILER_LAUNCHER:STRING=ccache \
           ${{github.workspace}}
       - name: Build
