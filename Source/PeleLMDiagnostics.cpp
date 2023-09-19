@@ -52,9 +52,9 @@ void
 PeleLM::updateDiagnostics()
 {
   // Might need to update some internal data as the grid changes
-  for (int n = 0; n < m_diagnostics.size(); ++n) {
-    if (m_diagnostics[n]->needUpdate()) {
-      m_diagnostics[n]->prepare(
+  for (const auto& m_diagnostic : m_diagnostics) {
+    if (m_diagnostic->needUpdate()) {
+      m_diagnostic->prepare(
         finestLevel() + 1, Geom(0, finestLevel()), boxArray(0, finestLevel()),
         dmap, m_diagVars);
     }
@@ -87,15 +87,12 @@ PeleLM::doDiagnostics()
   }
 
   Vector<std::string> stateNames;
-  for (std::list<std::tuple<int, std::string>>::const_iterator
-         li = stateComponents.begin(),
-         End = stateComponents.end();
-       li != End; ++li) {
-    stateNames.push_back(get<1>(*li));
+  for (const auto& stateComponent : stateComponents) {
+    stateNames.push_back(get<1>(stateComponent));
   }
-  for (int n = 0; n < m_diagnostics.size(); ++n) {
-    if (m_diagnostics[n]->doDiag(m_cur_time, m_nstep)) {
-      m_diagnostics[n]->processDiag(
+  for (const auto& m_diagnostic : m_diagnostics) {
+    if (m_diagnostic->doDiag(m_cur_time, m_nstep)) {
+      m_diagnostic->processDiag(
         m_nstep, m_cur_time, GetVecOfConstPtrs(diagMFVec), m_diagVars);
     }
   }

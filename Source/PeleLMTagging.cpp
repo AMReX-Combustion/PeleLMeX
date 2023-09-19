@@ -22,13 +22,12 @@ PeleLM::ErrorEst(int lev, TagBoxArray& tags, Real time, int /*ng*/)
   }
 #endif
 
-  for (int n = 0; n < errTags.size(); ++n) {
+  for (const auto& errTag : errTags) {
     std::unique_ptr<MultiFab> mf;
-    if (errTags[n].Field() != std::string()) {
-      mf = deriveComp(errTags[n].Field(), time, lev, errTags[n].NGrow());
+    if (errTag.Field() != std::string()) {
+      mf = deriveComp(errTag.Field(), time, lev, errTag.NGrow());
     }
-    errTags[n](
-      tags, mf.get(), TagBox::CLEAR, TagBox::SET, time, lev, geom[lev]);
+    errTag(tags, mf.get(), TagBox::CLEAR, TagBox::SET, time, lev, geom[lev]);
   }
 
 #ifdef AMREX_USE_EB

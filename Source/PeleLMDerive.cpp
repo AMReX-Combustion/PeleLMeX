@@ -200,17 +200,15 @@ PeleLMDeriveList::dlist()
 bool
 PeleLMDeriveList::canDerive(const std::string& name) const
 {
-  for (std::list<PeleLMDeriveRec>::const_iterator li = lst.begin(),
-                                                  End = lst.end();
-       li != End; ++li) {
+  for (const auto& li : lst) {
     // Can be either a component name ...
-    for (int i = 0; i < li->numDerive(); i++) {
-      if (li->variableName(i) == name) {
+    for (int i = 0; i < li.numDerive(); i++) {
+      if (li.variableName(i) == name) {
         return true;
       }
     }
     // ... or a derive name
-    if (li->derive_name == name) {
+    if (li.derive_name == name) {
       return true;
     }
   }
@@ -220,18 +218,16 @@ PeleLMDeriveList::canDerive(const std::string& name) const
 const PeleLMDeriveRec*
 PeleLMDeriveList::get(const std::string& name) const
 {
-  for (std::list<PeleLMDeriveRec>::const_iterator li = lst.begin(),
-                                                  End = lst.end();
-       li != End; ++li) {
+  for (const auto& li : lst) {
     // Can be either a component name ...
-    for (int i = 0; i < li->numDerive(); i++) {
-      if (li->variableName(i) == name) {
-        return &(*li);
+    for (int i = 0; i < li.numDerive(); i++) {
+      if (li.variableName(i) == name) {
+        return &li;
       }
     }
     // ... or a derive name
-    if (li->derive_name == name) {
-      return &(*li);
+    if (li.derive_name == name) {
+      return &li;
     }
   }
   return 0;
