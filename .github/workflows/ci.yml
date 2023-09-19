@@ -552,9 +552,9 @@ jobs:
         enableeb: [EB-OFF, EB-ON]
         include:
           - enableeb: EB-OFF
-            useeb: OFF
+            useeb: "OFF"
           - enableeb: EB-ON
-            useeb: ON
+            useeb: "ON"
     steps:
       - name: Clone
         uses: actions/checkout@v3
