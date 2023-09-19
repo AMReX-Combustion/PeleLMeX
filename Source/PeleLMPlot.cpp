@@ -383,7 +383,6 @@ PeleLM::WritePlotFile()
               +mut_arr_z[box_no](i, j, k) + mut_arr_z[box_no](i, j, k + 1)));
         });
       Gpu::streamSynchronize();
-      cnt += 1;
     }
 
 #ifdef AMREX_USE_EB
