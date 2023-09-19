@@ -390,14 +390,14 @@ public:
    * \param a_lev level index
    * \param a_mf  MultiFab to act upon
    */
-  void scaleProj_RZ(int a_lev, amrex::MultiFab& a_mf);
+  static void scaleProj_RZ(int a_lev, amrex::MultiFab& a_mf);
 
   /**
    * \brief For 2D-RZ, unscale multifab components by radius
    * \param a_lev level index
    * \param a_mf  MultiFab to act upon
    */
-  void unscaleProj_RZ(int a_lev, amrex::MultiFab& a_mf);
+  static void unscaleProj_RZ(int a_lev, amrex::MultiFab& a_mf);
   //-----------------------------------------------------------------------------
 
   //-----------------------------------------------------------------------------
@@ -987,7 +987,7 @@ public:
 
   //-----------------------------------------------------------------------------
   // BOUNDARY CONDITIONS / FILLPATCH
-  amrex::InterpBase* getInterpolator(int a_method = 1);
+  static amrex::InterpBase* getInterpolator(int a_method = 1);
 
   // Interpolation method for regrid (default to cell cons interp)
   int m_regrid_interp_method = 1;
@@ -1190,7 +1190,7 @@ public:
     const amrex::Real& scale,
     const amrex::Real& a_dt);
 
-  void advFluxDivergence(
+  static void advFluxDivergence(
     int a_lev,
     amrex::MultiFab& a_divergence,
     int div_comp,
@@ -1244,9 +1244,9 @@ public:
 
   amrex::Real
   MFSum(const amrex::Vector<const amrex::MultiFab*>& a_MF, int comp);
-  amrex::Real
+  static amrex::Real
   MFmax(const amrex::MultiFab* a_MF, const amrex::iMultiFab& a_mask, int comp);
-  amrex::Real
+  static amrex::Real
   MFmin(const amrex::MultiFab* a_MF, const amrex::iMultiFab& a_mask, int comp);
 
   amrex::Vector<amrex::Real> MLmax(
@@ -1295,11 +1295,11 @@ public:
 
   // Mixture fraction & Progress variable
   void initMixtureFraction();
-  void parseComposition(
+  static void parseComposition(
     amrex::Vector<std::string> compositionIn,
     std::string compositionType,
     amrex::Real* massFrac);
-  void parseVars(
+  static void parseVars(
     const amrex::Vector<std::string>& a_varNames,
     const amrex::Vector<std::string>& a_stringIn,
     amrex::Vector<amrex::Real>& a_rVars);
@@ -1531,7 +1531,7 @@ public:
   // Accessors
   std::string runMode() { return m_run_mode; }
 
-  int nCompIR()
+  static int nCompIR()
   {
 #ifdef PELE_USE_EFIELD
     return NUM_SPECIES + 1;
@@ -1540,7 +1540,7 @@ public:
 #endif
   }
 
-  int nCompForcing()
+  static int nCompForcing()
   {
 #ifdef PELE_USE_EFIELD
     return NUM_SPECIES + 2;
