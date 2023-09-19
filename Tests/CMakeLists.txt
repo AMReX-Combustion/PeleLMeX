@@ -210,8 +210,11 @@ endfunction(add_test_spray)
 #=============================================================================
 
 # Run in CI
+add_test_r(flamesheet-drm19-${PELELMEX_DIM}d FlameSheet)
+add_test_re(covo-${PELELMEX_DIM}d PeriodicCases)
+add_test_re(hotbubble-${PELELMEX_DIM}d HotBubble)
+add_test_re(enclosedflame-${PELELMEX_DIM}d EnclosedFlame)
 if(PELELMEX_DIM EQUAL 3)
-  add_test_r(flamesheet-drm19-3d FlameSheet)
-elseif(PELELMEX_DIM EQUAL 2)
-  add_test_r(flamesheet-drm19-2d FlameSheet)
+  add_test_re(hit-${PELELMEX_DIM}d HITDecay)
+  add_test_re(hit-les-${PELELMEX_DIM}d HITDecay)
 endif()
