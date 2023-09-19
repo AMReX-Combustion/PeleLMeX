@@ -86,10 +86,6 @@ PeleLM::doDiagnostics()
     }
   }
 
-  Vector<std::string> stateNames;
-  for (const auto& stateComponent : stateComponents) {
-    stateNames.push_back(get<1>(stateComponent));
-  }
   for (const auto& m_diagnostic : m_diagnostics) {
     if (m_diagnostic->doDiag(m_cur_time, m_nstep)) {
       m_diagnostic->processDiag(
