@@ -51,7 +51,7 @@ PeleLM::initActiveControl()
   }
 
   // Initialize flow controller
-  if (hasFlowControllerData<ProbParm>::value == false) {
+  if (!hasFlowControllerData<ProbParm>::value) {
     Abort("ProbParm doesn't have a FCData FlowControllerData member variable");
   }
 

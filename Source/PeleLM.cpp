@@ -42,7 +42,7 @@ PeleLM::getLevelDataPtr(
     a_time == AmrOldTime || a_time == AmrNewTime || a_time == AmrHalfTime);
   if (a_time == AmrOldTime) {
     return m_leveldata_old[lev].get();
-  } else if (a_time == AmrNewTime) {
+  } if (a_time == AmrNewTime) {
     return m_leveldata_new[lev].get();
   } else {
     m_leveldata_floating.reset(new LevelData(
@@ -66,9 +66,8 @@ PeleLM::getLevelDataReactPtr(int lev)
 {
   if (m_do_react != 0) {
     return m_leveldatareact[lev].get();
-  } else {
-    return nullptr;
-  }
+  }     return nullptr;
+ 
 }
 
 Vector<std::unique_ptr<MultiFab>>
@@ -166,7 +165,7 @@ PeleLM::getDensityVect(const TimeStamp& a_time)
       Real time = getTime(lev, a_time);
       r.push_back(
         std::make_unique<MultiFab>(grids[lev], dmap[lev], 1, m_nGrowState));
-      fillpatch_density(lev, time, *(r[lev].get()), 0, m_nGrowState);
+      fillpatch_density(lev, time, *(r[lev]), 0, m_nGrowState);
     }
   }
   return r;

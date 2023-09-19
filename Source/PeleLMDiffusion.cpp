@@ -417,7 +417,7 @@ PeleLM::addWbarTerm(
       lev, 0, NUM_SPECIES, doZeroVisc, bcRecSpec, *a_beta[lev], addTurbContrib);
 
     const Box& domain = geom[lev].Domain();
-    bool use_harmonic_avg = m_harm_avg_cen2edge != 0 ? true : false;
+    bool use_harmonic_avg = m_harm_avg_cen2edge != 0;
 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -541,7 +541,7 @@ PeleLM::addSoretTerm(
       lev, NUM_SPECIES + 2, NUM_SPECIES, doZeroVisc, bcRecSpec, *a_beta[lev]);
 
     const Box& domain = geom[lev].Domain();
-    bool use_harmonic_avg = m_harm_avg_cen2edge != 0 ? true : false;
+    bool use_harmonic_avg = m_harm_avg_cen2edge != 0;
 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
