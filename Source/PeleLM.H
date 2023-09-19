@@ -1190,7 +1190,7 @@ public:
     const amrex::Real& scale,
     const amrex::Real& a_dt);
 
-  static void advFluxDivergence(
+  void advFluxDivergence(
     int a_lev,
     amrex::MultiFab& a_divergence,
     int div_comp,
