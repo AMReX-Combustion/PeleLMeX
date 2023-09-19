@@ -421,7 +421,7 @@ jobs:
           cmake -B${{runner.workspace}}/build-hip \
           -DCMAKE_BUILD_TYPE:STRING=Release \
           -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
-          -DCMAKE_CXX_COMPILER:STRING=$(which hipcc) \
+          -DCMAKE_CXX_COMPILER:STRING=$(which clang++) \
           -DCMAKE_C_COMPILER:STRING=$(which clang) \
           -DPELELMEX_ENABLE_MPI:BOOL=OFF \
           -DPELELMEX_ENABLE_HIP:BOOL=ON \
