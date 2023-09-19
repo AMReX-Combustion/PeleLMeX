@@ -102,7 +102,7 @@ protected:
    * \param interp
    */
   PeleLMDeriveRec(
-    const std::string& name,
+    std::string name,
     amrex::IndexType result_type,
     int nvar_derive,
     PeleLMDeriveFunc der_func,
@@ -121,7 +121,7 @@ protected:
    * \param interp
    */
   PeleLMDeriveRec(
-    const std::string& name,
+    std::string name,
     amrex::IndexType result_type,
     int nvar_derive,
     amrex::Vector<std::string>& var_names,
@@ -140,7 +140,7 @@ protected:
    * \param interp
    */
   PeleLMDeriveRec(
-    const std::string& name,
+    std::string name,
     amrex::IndexType result_type,
     int nvar_derive,
     DeriveBoxMap box_map,
@@ -158,7 +158,7 @@ protected:
    * \param interp
    */
   PeleLMDeriveRec(
-    const std::string& name,
+    std::string name,
     amrex::IndexType result_type,
     int nvar_derive,
     amrex::Vector<std::string>& var_names,

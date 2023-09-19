@@ -1,15 +1,16 @@
 #include <PeleLMDerive.H>
+#include <utility>
 
 using namespace amrex;
 
 PeleLMDeriveRec::PeleLMDeriveRec(
-  const std::string& a_name,
+  std::string a_name,
   IndexType result_type,
   int nvar_derive,
   PeleLMDeriveFunc der_func,
   DeriveBoxMap box_map,
   Interpolater* a_interp)
-  : derive_name(a_name),
+  : derive_name(std::move(a_name)),
     variable_names(),
     der_type(result_type),
     n_derive(nvar_derive),
@@ -20,14 +21,14 @@ PeleLMDeriveRec::PeleLMDeriveRec(
 }
 
 PeleLMDeriveRec::PeleLMDeriveRec(
-  const std::string& a_name,
+  std::string a_name,
   IndexType result_type,
   int nvar_derive,
   Vector<std::string>& var_names,
   PeleLMDeriveFunc der_func,
   DeriveBoxMap box_map,
   Interpolater* a_interp)
-  : derive_name(a_name),
+  : derive_name(std::move(a_name)),
     variable_names(var_names),
     der_type(result_type),
     n_derive(nvar_derive),
@@ -38,33 +39,33 @@ PeleLMDeriveRec::PeleLMDeriveRec(
 }
 
 PeleLMDeriveRec::PeleLMDeriveRec(
-  const std::string& a_name,
+  std::string a_name,
   IndexType result_type,
   int nvar_derive,
   DeriveBoxMap box_map,
   Interpolater* a_interp)
-  : derive_name(a_name),
+  : derive_name(std::move(a_name)),
     variable_names(),
     der_type(result_type),
     n_derive(nvar_derive),
-    func(nullptr),
+
     mapper(a_interp),
     bx_map(box_map)
 {
 }
 
 PeleLMDeriveRec::PeleLMDeriveRec(
-  const std::string& a_name,
+  std::string a_name,
   IndexType result_type,
   int nvar_derive,
   Vector<std::string>& var_names,
   DeriveBoxMap box_map,
   Interpolater* a_interp)
-  : derive_name(a_name),
+  : derive_name(std::move(a_name)),
     variable_names(var_names),
     der_type(result_type),
     n_derive(nvar_derive),
-    func(nullptr),
+
     mapper(a_interp),
     bx_map(box_map)
 {
@@ -73,8 +74,8 @@ PeleLMDeriveRec::PeleLMDeriveRec(
 PeleLMDeriveRec::~PeleLMDeriveRec()
 {
   func = nullptr;
-  mapper = 0;
-  bx_map = 0;
+  mapper = nullptr;
+  bx_map = nullptr;
 }
 
 const std::string&
@@ -230,5 +231,5 @@ PeleLMDeriveList::get(const std::string& name) const
       return &li;
     }
   }
-  return 0;
+  return nullptr;
 }
