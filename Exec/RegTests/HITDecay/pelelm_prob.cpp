@@ -131,7 +131,7 @@ PeleLM::readProbParm()
   const size_t nz = prob_parm.input_resolution;
   amrex::Vector<amrex::Real> data(
     nx * ny * nz * 6); /* this needs to be double */
-  if (binfmt) {
+  if (binfmt != 0) {
     read_binary(datafile, nx, ny, nz, 6, data);
   } else {
     read_csv(datafile, nx, ny, nz, data);

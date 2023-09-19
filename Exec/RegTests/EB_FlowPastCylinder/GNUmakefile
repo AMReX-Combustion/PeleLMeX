@@ -27,18 +27,11 @@ THREAD_SANITIZER = FALSE
 
 # PeleLMeX
 USE_EFIELD = FALSE
-
-# PelePhysics
-Chemistry_Model = drm19
-Eos_Model = Fuego
-Transport_Model = Simple
-
-# PeleLMeX
-CEXE_headers 	+= EBUserDefined.H
+CEXE_headers += EBUserDefined.H
 
 # PelePhysics
 Chemistry_Model = air
-Eos_Model       = Fuego
+Eos_Model = Fuego
 Transport_Model = Constant
 
 PELELMEX_HOME ?= ../../..

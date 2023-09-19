@@ -61,16 +61,16 @@ PeleLM::MakeNewLevelFromScratch(
   // Initialize the LevelData
   m_leveldata_old[lev].reset(new LevelData(
     grids[lev], dmap[lev], *m_factory[lev], m_incompressible, m_has_divu,
-    m_nAux, m_nGrowState, m_use_soret, m_do_les));
+    m_nAux, m_nGrowState, m_use_soret, static_cast<int>(m_do_les)));
   m_leveldata_new[lev].reset(new LevelData(
     grids[lev], dmap[lev], *m_factory[lev], m_incompressible, m_has_divu,
-    m_nAux, m_nGrowState, m_use_soret, m_do_les));
+    m_nAux, m_nGrowState, m_use_soret, static_cast<int>(m_do_les)));
 
   if (max_level > 0 && lev != max_level) {
     m_coveredMask[lev].reset(new iMultiFab(grids[lev], dmap[lev], 1, 0));
     m_resetCoveredMask = 1;
   }
-  if (m_do_react) {
+  if (m_do_react != 0) {
     m_leveldatareact[lev].reset(
       new LevelDataReact(grids[lev], dmap[lev], *m_factory[lev]));
     m_leveldatareact[lev]->functC.setVal(0.0);
@@ -224,7 +224,7 @@ PeleLM::initData()
 
     m_nstep = 0;
 
-    if (m_do_temporals) {
+    if (m_do_temporals != 0) {
       writeTemporals();
     }
 
@@ -281,14 +281,14 @@ PeleLM::initData()
 #endif
 
     // Regrid after restart if requested
-    if (m_regrid_on_restart) {
+    if (m_regrid_on_restart != 0) {
       Print() << " Regriding on restart \n";
       for (int lev{finest_level}; lev < max_level; ++lev) {
         regrid(0, m_cur_time);
         // Need to fill the old state to enable regrid on higher levels
         copyStateNewToOld(1);
         copyPressNewToOld();
-        if (m_do_react) {
+        if (m_do_react != 0) {
           auto* ldataR_p = getLevelDataReactPtr(lev);
           ldataR_p->I_R.setVal(0.0);
         }
@@ -342,10 +342,10 @@ PeleLM::initLevelData(int lev)
       });
   }
 
-  if (!m_incompressible) {
+  if (m_incompressible == 0) {
     // Initialize thermodynamic pressure
     setThermoPress(lev, AmrNewTime);
-    if (m_has_divu) {
+    if (m_has_divu != 0) {
       ldata_p->divu.setVal(0.0);
     }
   }
@@ -365,12 +365,12 @@ PeleLM::projectInitSolution()
   Real dtInit = computeDt(is_init, AmrNewTime);
   Print() << " Initial dt: " << dtInit << "\n";
 
-  if (m_do_init_proj) {
+  if (m_do_init_proj != 0) {
 
     Print() << "\n Doing initial projection(s) \n\n";
     // Subcycling IAMR/PeleLM first does a projection with no reaction divU
     // which can make the dt for evaluating I_R better
-    if (m_has_divu) {
+    if (m_has_divu != 0) {
       int is_initialization = 1;    // Yes we are
       int computeDiffusionTerm = 1; // Needed here
       int do_avgDown = 1;           // Always
@@ -399,7 +399,7 @@ PeleLM::projectInitSolution()
     //----------------------------------------------------------------
     // Initial velocity projection iterations
     for (int iter = 0; iter < m_numDivuIter; iter++) {
-      if (m_do_react) {
+      if (m_do_react != 0) {
         // The new level data has been filled above
         // Copy new -> old since old used in advanceChemistry
         copyStateNewToOld();
@@ -418,14 +418,14 @@ PeleLM::projectInitSolution()
               advanceChemistry(lev, dtInit / 2.0, Forcing);
             }
           }
-          if (m_doLoadBalance) {
+          if (m_doLoadBalance != 0) {
             loadBalanceChemLev(lev);
           }
         }
         // Copy back old -> new
         copyStateOldToNew();
       }
-      if (m_has_divu) {
+      if (m_has_divu != 0) {
         int is_initialization = 1;    // Yes we are
         int computeDiffusionTerm = 1; // Needed here
         int do_avgDown = 1;           // Always
@@ -442,7 +442,7 @@ PeleLM::projectInitSolution()
       initialProjection();
     }
 
-    if (m_numDivuIter == 0 && m_do_react) {
+    if (m_numDivuIter == 0 && (m_do_react != 0)) {
       for (int lev = 0; lev <= finest_level; ++lev) {
         auto* ldataR_p = getLevelDataReactPtr(lev);
         ldataR_p->I_R.setVal(0.0);
@@ -452,7 +452,7 @@ PeleLM::projectInitSolution()
   } else {
     // If we didn't do the projection, initialize press/gp(/I_R)
     for (int lev = 0; lev <= finest_level; ++lev) {
-      if (m_do_react) {
+      if (m_do_react != 0) {
         auto* ldataR_p = getLevelDataReactPtr(lev);
         ldataR_p->I_R.setVal(0.0);
       }

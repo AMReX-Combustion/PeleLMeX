@@ -18,7 +18,8 @@ PeleLM::fluxDivergence(
   Real scale)
 {
   BL_PROFILE("PeleLMeX::fluxDivergence()");
-  if (intensiveFluxes) { // Fluxes are intensive -> need area scaling in div
+  if (intensiveFluxes != 0) { // Fluxes are intensive -> need area scaling in
+                              // div
     for (int lev = 0; lev <= finest_level; ++lev) {
       intFluxDivergenceLevel(
         lev, *a_divergence[lev], div_comp, a_fluxes[lev], flux_comp, ncomp,
@@ -47,7 +48,8 @@ PeleLM::fluxDivergence(
 {
 
   BL_PROFILE("PeleLMeX::fluxDivergence()");
-  if (intensiveFluxes) { // Fluxes are intensive -> need area scaling in div
+  if (intensiveFluxes != 0) { // Fluxes are intensive -> need area scaling in
+                              // div
     for (int lev = 0; lev <= finest_level; ++lev) {
       intFluxDivergenceLevelEB(
         lev, *a_divergence[lev], div_comp, a_fluxes[lev], flux_comp,
@@ -540,7 +542,7 @@ PeleLM::advFluxDivergence(
         Array4<Real const> const& ay = mf_ay.const_array(mfi);
         ParallelFor(
           bx, ncomp, [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
-            if (!l_conserv_d[n]) {
+            if (l_conserv_d[n] == 0) {
               Real qavg = AMREX_D_TERM(
                 ax(i, j, k) * facex(i, j, k, n) +
                   ax(i + 1, j, k) * facex(i + 1, j, k, n),
@@ -560,7 +562,7 @@ PeleLM::advFluxDivergence(
       {
         ParallelFor(
           bx, ncomp, [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
-            if (!l_conserv_d[n]) {
+            if (l_conserv_d[n] == 0) {
               Real qavg = AMREX_D_TERM(
                 facex(i, j, k, n) + facex(i + 1, j, k, n),
                 +facey(i, j, k, n) + facey(i, j + 1, k, n),
@@ -581,7 +583,7 @@ PeleLM::floorSpecies(const TimeStamp& a_time)
 {
   BL_PROFILE("PeleLMeX::floorSpecies()");
   AMREX_ASSERT(a_time == AmrOldTime || a_time == AmrNewTime);
-  if (!m_floor_species) {
+  if (m_floor_species == 0) {
     return;
   }
 
@@ -626,9 +628,9 @@ void
 PeleLM::resetCoveredMask()
 {
   BL_PROFILE("PeleLMeX::resetCoveredMask()");
-  if (m_resetCoveredMask) {
+  if (m_resetCoveredMask != 0) {
 
-    if (m_verbose) {
+    if (m_verbose != 0) {
       Print() << " Resetting fine-covered cells mask \n";
     }
 
@@ -686,7 +688,7 @@ PeleLM::resetCoveredMask()
       m_dmapChem[lev].reset(new DistributionMapping(*m_baChem[lev]));
 
       // Load balancing of the chemistry DMap
-      if (m_doLoadBalance) {
+      if (m_doLoadBalance != 0) {
         loadBalanceChemLev(lev);
       }
     }
@@ -702,7 +704,7 @@ PeleLM::resetCoveredMask()
     m_dmapChem[finest_level].reset(
       new DistributionMapping(*m_baChem[finest_level]));
 
-    if (m_doLoadBalance && m_max_grid_size_chem.min() > 0) {
+    if ((m_doLoadBalance != 0) && m_max_grid_size_chem.min() > 0) {
       loadBalanceChemLev(finest_level);
     }
 
@@ -711,7 +713,7 @@ PeleLM::resetCoveredMask()
 
   } else {
     // Just load balance the chem. distribution map
-    if (m_doLoadBalance) {
+    if (m_doLoadBalance != 0) {
       loadBalanceChem();
     }
   }
@@ -773,17 +775,17 @@ PeleLM::loadBalanceChemLev(int a_lev)
   }
 
   // IO proc determine if the test dmap offers significant improvements
-  int updateDmap = false;
+  int updateDmap = 0;
   if (
     (m_loadBalanceEffRatioThreshold > 0.0) &&
     (ParallelDescriptor::MyProc() == ParallelDescriptor::IOProcessorNumber())) {
-    updateDmap =
-      testEfficiency > m_loadBalanceEffRatioThreshold * currentEfficiency;
+    updateDmap = static_cast<int>(
+      testEfficiency > m_loadBalanceEffRatioThreshold * currentEfficiency);
   }
   ParallelDescriptor::Bcast(
     &updateDmap, 1, ParallelDescriptor::IOProcessorNumber());
 
-  if (m_verbose > 2 && updateDmap) {
+  if (m_verbose > 2 && (updateDmap != 0)) {
     Print() << "   Old Chem LoadBalancing efficiency on a_lev " << a_lev << ": "
             << currentEfficiency << "\n"
             << "   New Chem LoadBalancing efficiency: " << testEfficiency
@@ -791,7 +793,7 @@ PeleLM::loadBalanceChemLev(int a_lev)
   }
 
   // Bcast the test dmap if better
-  if (updateDmap) {
+  if (updateDmap != 0) {
     Vector<int> pmap;
     if (
       ParallelDescriptor::MyProc() == ParallelDescriptor::IOProcessorNumber()) {
@@ -828,7 +830,7 @@ PeleLM::derive(const std::string& a_name, Real a_time, int lev, int nGrow)
 
   const PeleLMDeriveRec* rec = derive_lst.get(a_name);
 
-  if (rec) { // This is a derived variable
+  if (rec != nullptr) { // This is a derived variable
     mf.reset(new MultiFab(
       grids[lev], dmap[lev], rec->numDerive(), nGrow, MFInfo(), Factory(lev)));
     std::unique_ptr<MultiFab> statemf =
@@ -846,7 +848,7 @@ PeleLM::derive(const std::string& a_name, Real a_time, int lev, int nGrow)
       FArrayBox& derfab = (*mf)[mfi];
       FArrayBox const& statefab = (*statemf)[mfi];
       FArrayBox const& reactfab =
-        (m_incompressible) ? ldata_p->press[mfi] : (*reactmf)[mfi];
+        (m_incompressible) != 0 ? ldata_p->press[mfi] : (*reactmf)[mfi];
       FArrayBox const& pressfab = ldata_p->press[mfi];
       rec->derFunc()(
         this, bx, derfab, 0, rec->numDerive(), statefab, reactfab, pressfab,
@@ -887,7 +889,7 @@ PeleLM::deriveComp(const std::string& a_name, Real a_time, int lev, int nGrow)
 
   const PeleLMDeriveRec* rec = derive_lst.get(a_name);
 
-  if (rec) { // This is a derived variable
+  if (rec != nullptr) { // This is a derived variable
     mf.reset(
       new MultiFab(grids[lev], dmap[lev], 1, nGrow, MFInfo(), Factory(lev)));
     std::unique_ptr<MultiFab> statemf =
@@ -908,7 +910,7 @@ PeleLM::deriveComp(const std::string& a_name, Real a_time, int lev, int nGrow)
       FArrayBox& derfab = derTemp[mfi];
       FArrayBox const& statefab = (*statemf)[mfi];
       FArrayBox const& reactfab =
-        (m_incompressible) ? ldata_p->press[mfi] : (*reactmf)[mfi];
+        (m_incompressible) != 0 ? ldata_p->press[mfi] : (*reactmf)[mfi];
       FArrayBox const& pressfab = ldata_p->press[mfi];
       rec->derFunc()(
         this, bx, derfab, 0, rec->numDerive(), statefab, reactfab, pressfab,
@@ -949,11 +951,11 @@ PeleLM::initProgressVariable()
 
   ParmParse pp("peleLM");
   std::string Cformat;
-  int hasUserC = pp.contains("progressVariable.format");
-  if (hasUserC) {
+  int hasUserC = static_cast<int>(pp.contains("progressVariable.format"));
+  if (hasUserC != 0) {
     pp.query("progressVariable.format", Cformat);
-    if (!Cformat.compare("Cantera")) { // use a Cantera-like format with
-                                       // <entry>:<weight>, default to 0.0
+    if (Cformat.compare("Cantera") == 0) { // use a Cantera-like format with
+                                           // <entry>:<weight>, default to 0.0
       // Weights
       Vector<std::string> stringIn;
       Vector<Real> weightsIn(NUM_SPECIES + 1, 0.0);
@@ -980,9 +982,9 @@ PeleLM::initProgressVariable()
         m_C0 += coldState[i] * m_Cweights[i];
         m_C1 += hotState[i] * m_Cweights[i];
       }
-    } else if (!Cformat.compare(
-                 "RealList")) { // use a list of Real. MUST contains an entry
-                                // for each species+Temp
+    } else if (Cformat.compare("RealList") == 0) { // use a list of Real. MUST
+                                                   // contains an entry
+                                                   // for each species+Temp
       // Weights
       Vector<Real> weightsIn;
       int entryCount = pp.countval("progressVariable.weights");
@@ -1041,7 +1043,7 @@ PeleLM::parseVars(
         foundIt = 1;
       }
     }
-    if (!foundIt) {
+    if (foundIt == 0) {
       Abort(
         "Error parsing '" + a_stringIn[i] +
         "' --> unable to match to any provided variable name");
@@ -1271,11 +1273,11 @@ PeleLM::setTypicalValues(const TimeStamp& a_time, int is_init)
 {
   // Get state Max/Min
   auto stateMax =
-    (m_incompressible)
+    (m_incompressible) != 0
       ? MLmax(GetVecOfConstPtrs(getStateVect(a_time)), 0, AMREX_SPACEDIM)
       : MLmax(GetVecOfConstPtrs(getStateVect(a_time)), 0, NVAR);
   auto stateMin =
-    (m_incompressible)
+    (m_incompressible) != 0
       ? MLmin(GetVecOfConstPtrs(getStateVect(a_time)), 0, AMREX_SPACEDIM)
       : MLmin(GetVecOfConstPtrs(getStateVect(a_time)), 0, NVAR);
 
@@ -1285,7 +1287,7 @@ PeleLM::setTypicalValues(const TimeStamp& a_time, int is_init)
       std::max(stateMax[VELX + idim], std::abs(stateMin[VELX + idim]));
   }
 
-  if (!m_incompressible) {
+  if (m_incompressible == 0) {
     // Average between max/min
     typical_values[DENSITY] = 0.5 * (stateMax[DENSITY] + stateMin[DENSITY]);
     for (int n = 0; n < NUM_SPECIES; n++) {
@@ -1305,7 +1307,7 @@ PeleLM::setTypicalValues(const TimeStamp& a_time, int is_init)
     updateTypicalValuesChem();
   }
 
-  if (is_init || m_verbose > 1) {
+  if ((is_init != 0) || m_verbose > 1) {
     Print() << PrettyLine;
     Print() << " Typical values: " << '\n';
     Print() << "\tVelocity: ";
@@ -1313,7 +1315,7 @@ PeleLM::setTypicalValues(const TimeStamp& a_time, int is_init)
       Print() << typical_values[idim] << ' ';
     }
     Print() << '\n';
-    if (!m_incompressible) {
+    if (m_incompressible == 0) {
       Print() << "\tDensity:  " << typical_values[DENSITY] << '\n';
       Print() << "\tTemp:     " << typical_values[TEMP] << '\n';
       Print() << "\tH:        " << typical_values[RHOH] << '\n';
@@ -1337,7 +1339,7 @@ PeleLM::setTypicalValues(const TimeStamp& a_time, int is_init)
 void
 PeleLM::updateTypicalValuesChem()
 {
-  if (m_useTypValChem && m_do_react) {
+  if ((m_useTypValChem != 0) && (m_do_react != 0)) {
     if (m_verbose > 2) {
       Print() << " Update chemistry typical values \n";
     }
@@ -1593,7 +1595,7 @@ PeleLM::MLmin(const Vector<const MultiFab*>& a_MF, int scomp, int ncomp)
 void
 PeleLM::checkMemory(const std::string& a_message)
 {
-  if (!m_checkMem) {
+  if (m_checkMem == 0) {
     return;
   }
 
@@ -1624,10 +1626,10 @@ PeleLM::initMixtureFraction()
   for (int i = 0; i < NUM_SPECIES; ++i) {
     YF[i] = 0.0;
     YO[i] = 0.0;
-    if (!specNames[i].compare("O2")) {
+    if (specNames[i].compare("O2") == 0) {
       YO[i] = 0.233;
     }
-    if (!specNames[i].compare("N2")) {
+    if (specNames[i].compare("N2") == 0) {
       YO[i] = 0.767;
     }
     if (i == fuelID) {
@@ -1639,11 +1641,11 @@ PeleLM::initMixtureFraction()
   // Overwrite with user-defined value if provided in input file
   ParmParse pp("peleLM");
   std::string MFformat;
-  int hasUserMF = pp.contains("mixtureFraction.format");
-  if (hasUserMF) {
+  int hasUserMF = static_cast<int>(pp.contains("mixtureFraction.format"));
+  if (hasUserMF != 0) {
     pp.query("mixtureFraction.format", MFformat);
-    if (!MFformat.compare("Cantera")) { // use a Cantera-like format with
-                                        // <SpeciesName>:<Value>, default in 0.0
+    if (MFformat.compare("Cantera") == 0) { // use a Cantera-like format with
+      // <SpeciesName>:<Value>, default in 0.0
       std::string MFCompoType;
       pp.query("mixtureFraction.type", MFCompoType);
       Vector<std::string> compositionIn;
@@ -1655,12 +1657,12 @@ PeleLM::initMixtureFraction()
       compositionIn.resize(entryCount);
       pp.getarr("mixtureFraction.fuelTank", compositionIn, 0, entryCount);
       parseComposition(compositionIn, MFCompoType, YF);
-    } else if (!MFformat.compare(
-                 "RealList")) { // use a list of Real. MUST contains an entry
-                                // for each species in the mixture
+    } else if (MFformat.compare("RealList") == 0) { // use a list of Real. MUST
+                                                    // contains an entry
+      // for each species in the mixture
       std::string MFCompoType;
       pp.query("mixtureFraction.type", MFCompoType);
-      if (!MFCompoType.compare("mass")) {
+      if (MFCompoType.compare("mass") == 0) {
         int entryCount = pp.countval("mixtureFraction.oxidTank");
         AMREX_ALWAYS_ASSERT(entryCount == NUM_SPECIES);
         Vector<amrex::Real> compositionIn(NUM_SPECIES);
@@ -1674,7 +1676,7 @@ PeleLM::initMixtureFraction()
         for (int i = 0; i < NUM_SPECIES; ++i) {
           YF[i] = compositionIn[i];
         }
-      } else if (!MFCompoType.compare("mole")) {
+      } else if (MFCompoType.compare("mole") == 0) {
         amrex::Real XF[NUM_SPECIES], XO[NUM_SPECIES];
         int entryCount = pp.countval("mixtureFraction.oxidTank");
         AMREX_ALWAYS_ASSERT(entryCount == NUM_SPECIES);
@@ -1700,7 +1702,7 @@ PeleLM::initMixtureFraction()
         "Unknown mixtureFraction.format ! Should be 'Cantera' or 'RealList'");
     }
   }
-  if (fuelID < 0 && hasUserMF) {
+  if (fuelID < 0 && (hasUserMF != 0)) {
     Print() << " Mixture fraction definition lacks fuelID: consider using "
                "peleLM.fuel_name keyword \n";
   }
@@ -1767,7 +1769,7 @@ PeleLM::parseComposition(
         foundIt = 1;
       }
     }
-    if (!foundIt) {
+    if (foundIt == 0) {
       Abort(
         "Error parsing '" + compositionIn[i] +
         "' --> unable to match to any species name");

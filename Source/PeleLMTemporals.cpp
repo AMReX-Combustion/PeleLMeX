@@ -5,19 +5,19 @@ using namespace amrex;
 void
 PeleLM::initTemporals(const PeleLM::TimeStamp& a_time)
 {
-  if (!m_do_temporals && !(m_nstep % m_temp_int == 0)) {
+  if ((m_do_temporals == 0) && !(m_nstep % m_temp_int == 0)) {
     return;
   }
 
   // Reset mass fluxes integrals on domain boundaries
-  if (m_do_massBalance && !m_incompressible) {
+  if ((m_do_massBalance != 0) && (m_incompressible == 0)) {
     m_massOld = MFSum(GetVecOfConstPtrs(getDensityVect(a_time)), 0);
     for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
       m_domainMassFlux[2 * idim] = 0.0;
       m_domainMassFlux[2 * idim + 1] = 0.0;
     }
   }
-  if (m_do_energyBalance && !m_incompressible) {
+  if ((m_do_energyBalance != 0) && (m_incompressible == 0)) {
     m_RhoHOld = MFSum(GetVecOfConstPtrs(getRhoHVect(a_time)), 0);
     for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
       m_domainRhoHFlux[2 * idim] = 0.0;
@@ -25,7 +25,7 @@ PeleLM::initTemporals(const PeleLM::TimeStamp& a_time)
     }
   }
 
-  if (m_do_speciesBalance && !m_incompressible) {
+  if ((m_do_speciesBalance != 0) && (m_incompressible == 0)) {
     for (int n = 0; n < NUM_SPECIES; n++) {
       m_RhoYOld[n] = MFSum(GetVecOfConstPtrs(getSpeciesVect(a_time)), n);
       for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
@@ -506,13 +506,13 @@ PeleLM::writeTemporals()
 {
   //----------------------------------------------------------------
   // Mass balance
-  if (m_do_massBalance && !m_incompressible) {
+  if ((m_do_massBalance != 0) && (m_incompressible == 0)) {
     massBalance();
   }
 
   //----------------------------------------------------------------
   // Species balance
-  if (m_do_speciesBalance && !m_incompressible) {
+  if ((m_do_speciesBalance != 0) && (m_incompressible == 0)) {
     speciesBalance();
   }
 
@@ -550,11 +550,11 @@ PeleLM::writeTemporals()
 
   // Get min/max for state components
   auto stateMax =
-    (m_incompressible)
+    (m_incompressible) != 0
       ? MLmax(GetVecOfConstPtrs(getStateVect(AmrNewTime)), 0, AMREX_SPACEDIM)
       : MLmax(GetVecOfConstPtrs(getStateVect(AmrNewTime)), 0, NVAR);
   auto stateMin =
-    (m_incompressible)
+    (m_incompressible) != 0
       ? MLmin(GetVecOfConstPtrs(getStateVect(AmrNewTime)), 0, AMREX_SPACEDIM)
       : MLmin(GetVecOfConstPtrs(getStateVect(AmrNewTime)), 0, NVAR);
 
@@ -576,7 +576,7 @@ PeleLM::writeTemporals()
 void
 PeleLM::openTempFile()
 {
-  if (!m_do_temporals) {
+  if (m_do_temporals == 0) {
     return;
   }
 
@@ -589,21 +589,21 @@ PeleLM::openTempFile()
       tempFileName.c_str(),
       std::ios::out | std::ios::app | std::ios_base::binary);
     tmpStateFile.precision(12);
-    if (m_do_massBalance) {
+    if (m_do_massBalance != 0) {
       tempFileName = "temporals/tempMass";
       tmpMassFile.open(
         tempFileName.c_str(),
         std::ios::out | std::ios::app | std::ios_base::binary);
       tmpMassFile.precision(12);
     }
-    if (m_do_speciesBalance) {
+    if (m_do_speciesBalance != 0) {
       tempFileName = "temporals/tempSpecies";
       tmpSpecFile.open(
         tempFileName.c_str(),
         std::ios::out | std::ios::app | std::ios_base::binary);
       tmpSpecFile.precision(12);
     }
-    if (m_do_extremas) {
+    if (m_do_extremas != 0) {
       tempFileName = "temporals/tempExtremas";
       tmpExtremasFile.open(
         tempFileName.c_str(),
@@ -625,22 +625,22 @@ PeleLM::openTempFile()
 void
 PeleLM::closeTempFile()
 {
-  if (!m_do_temporals) {
+  if (m_do_temporals == 0) {
     return;
   }
 
   if (ParallelDescriptor::IOProcessor()) {
     tmpStateFile.flush();
     tmpStateFile.close();
-    if (m_do_massBalance) {
+    if (m_do_massBalance != 0) {
       tmpMassFile.flush();
       tmpMassFile.close();
     }
-    if (m_do_speciesBalance) {
+    if (m_do_speciesBalance != 0) {
       tmpSpecFile.flush();
       tmpSpecFile.close();
     }
-    if (m_do_extremas) {
+    if (m_do_extremas != 0) {
       tmpExtremasFile.flush();
       tmpExtremasFile.close();
     }

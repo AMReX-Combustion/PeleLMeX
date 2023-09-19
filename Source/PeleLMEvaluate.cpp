@@ -222,13 +222,13 @@ PeleLM::MLevaluate(
         *a_MFVec[lev], ldata_p->diff_cc, 0, a_comp, NUM_SPECIES + 1, 0);
       MultiFab::Copy(
         *a_MFVec[lev], ldata_p->visc_cc, 0, a_comp + NUM_SPECIES + 1, 1, 0);
-      if (m_use_soret) {
+      if (m_use_soret != 0) {
         MultiFab::Copy(
           *a_MFVec[lev], ldata_p->diff_cc, NUM_SPECIES + 2,
           a_comp + NUM_SPECIES + 2, NUM_SPECIES, 0);
       }
     }
-    if (m_use_soret) {
+    if (m_use_soret != 0) {
       nComp = 2 * NUM_SPECIES + 2;
     } else {
       nComp = NUM_SPECIES + 2;

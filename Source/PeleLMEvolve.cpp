@@ -29,7 +29,7 @@ PeleLM::Evolve()
         amrex::Print() << " Regridding...\n";
       }
       // Average down I_R to have proper values in newly uncovered areas
-      if (!m_incompressible) {
+      if (m_incompressible == 0) {
         averageDownReaction();
       }
       regrid(0, m_cur_time);
@@ -108,10 +108,12 @@ PeleLM::Evolve()
   }
   if (
     (m_plot_int > 0 || m_plot_per_approx > 0. || m_plot_per_exact > 0.) &&
-    !plt_justDidIt && m_nstep > 0) {
+    (plt_justDidIt == 0) && m_nstep > 0) {
     WritePlotFile();
   }
-  if ((m_check_int > 0 || m_check_per > 0.) && !chk_justDidIt && m_nstep > 0) {
+  if (
+    (m_check_int > 0 || m_check_per > 0.) && (chk_justDidIt == 0) &&
+    m_nstep > 0) {
     WriteCheckPointFile();
   }
 }
@@ -211,7 +213,7 @@ PeleLM::doTemporalsNow()
 {
   bool write_now = false;
 
-  if (m_do_temporals && (m_nstep % m_temp_int == 0)) {
+  if ((m_do_temporals != 0) && (m_nstep % m_temp_int == 0)) {
     write_now = true;
   }
 
@@ -248,7 +250,7 @@ PeleLM::checkMessage(const std::string& a_action)
     packed_data[0] = action_flag;
     ParallelDescriptor::Bcast(
       packed_data, 1, ParallelDescriptor::IOProcessorNumber());
-    take_action = packed_data[0];
+    take_action = (packed_data[0] != 0);
   }
   return take_action;
 }

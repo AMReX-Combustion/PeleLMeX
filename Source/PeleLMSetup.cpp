@@ -97,20 +97,20 @@ PeleLM::Setup()
   resizeArray();
 
   // Initialize EOS and others
-  if (!m_incompressible) {
+  if (m_incompressible == 0) {
     amrex::Print() << " Initialization of Transport ... \n";
     trans_parms.allocate();
-    if (m_les_verbose and m_do_les) {
+    if ((m_les_verbose != 0) and m_do_les) {
       amrex::Print() << "    Using LES in transport with Sc = "
                      << 1.0 / m_Schmidt_inv
                      << " and Pr = " << 1.0 / m_Prandtl_inv << std::endl;
     }
-    if (m_verbose and m_unity_Le) {
+    if ((m_verbose != 0) and (m_unity_Le != 0)) {
       amrex::Print() << "    Using Le = 1 transport with Sc = "
                      << 1.0 / m_Schmidt_inv
                      << " and Pr = " << 1.0 / m_Prandtl_inv << std::endl;
     }
-    if (m_do_react) {
+    if (m_do_react != 0) {
       int reactor_type = 2;
       int ncells_chem = 1;
       amrex::Print() << " Initialization of chemical reactor ... \n";
@@ -203,9 +203,9 @@ PeleLM::readParameters()
 
   // Activate closed chamber if !isOpenDomain
   // enable overwriting
-  m_closed_chamber = (isOpenDomain) ? 0 : 1;
+  m_closed_chamber = (isOpenDomain) != 0 ? 0 : 1;
   pp.query("closed_chamber", m_closed_chamber);
-  if (verbose && m_closed_chamber) {
+  if ((verbose != 0) && (m_closed_chamber != 0)) {
     Print() << " Simulation performed with the closed chamber algorithm \n";
   }
 
@@ -277,7 +277,7 @@ PeleLM::readParameters()
   // incompressible vs. low Mach
   pp.query("use_divu", m_has_divu);
   pp.query("incompressible", m_incompressible);
-  if (m_incompressible) {
+  if (m_incompressible != 0) {
     m_has_divu = 0;
     m_do_react = 0;
     pp.query("rho", m_rho);
@@ -331,7 +331,7 @@ PeleLM::readParameters()
   // diffusion
   pp.query("use_wbar", m_use_wbar);
   pp.query("unity_Le", m_unity_Le);
-  if (m_use_wbar and m_unity_Le) {
+  if ((m_use_wbar != 0) and (m_unity_Le != 0)) {
     m_use_wbar = 0;
     amrex::Print() << "WARNING: use_wbar set to false because unity_Le is true"
                    << std::endl;
@@ -343,7 +343,7 @@ PeleLM::readParameters()
   ParmParse pptrans("transport");
   pptrans.query("use_soret", m_use_soret);
 
-  if (m_do_les or m_unity_Le) {
+  if (m_do_les or (m_unity_Le != 0)) {
     amrex::Real Prandtl = 0.7;
     pp.query("Prandtl", Prandtl);
     m_Schmidt_inv = 1.0 / Prandtl;
@@ -374,7 +374,7 @@ PeleLM::readParameters()
   pp.query("use_typ_vals_chem", m_useTypValChem);
   pp.query("typical_values_reset_int", m_resetTypValInt);
   pp.query("typical_values_Ymin", m_typicalYvalMin);
-  if (m_do_react) {
+  if (m_do_react != 0) {
     m_plotChemDiag = 0;
     m_plotHeatRelease = 1;
     pp.query("plot_chemDiagnostics", m_plotChemDiag);
@@ -479,7 +479,7 @@ PeleLM::readParameters()
   // Temporals
   // -----------------------------------------
   pp.query("do_temporals", m_do_temporals);
-  if (m_do_temporals) {
+  if (m_do_temporals != 0) {
     pp.query("temporal_int", m_temp_int);
     pp.query("do_extremas", m_do_extremas);
     pp.query("do_mass_balance", m_do_massBalance);
@@ -502,7 +502,7 @@ PeleLM::readParameters()
   ppa.query("max_dt", m_max_dt);
   ppa.query("min_dt", m_min_dt);
 
-  if (max_level > 0 || m_doLoadBalance) {
+  if (max_level > 0 || (m_doLoadBalance != 0)) {
     ppa.query("regrid_int", m_regrid_int);
     ppa.query("regrid_on_restart", m_regrid_on_restart);
   }
@@ -608,7 +608,7 @@ PeleLM::readIOParameters()
   if (pp.contains("plot_per")) {
     int do_exact = 0;
     pp.query("plot_per_exact", do_exact);
-    if (do_exact) {
+    if (do_exact != 0) {
       pp.query("plot_per", m_plot_per_exact);
     } else {
       pp.query("plot_per", m_plot_per_approx);
@@ -660,7 +660,7 @@ PeleLM::variablesSetup()
 #endif
   Print() << " \n";
 
-  if (!m_incompressible) {
+  if (m_incompressible == 0) {
     Print() << " Density: " << DENSITY << "\n";
     stateComponents.emplace_back(DENSITY, "density");
     Print() << " First species: " << FIRSTSPEC << "\n";
@@ -700,7 +700,7 @@ PeleLM::variablesSetup()
     }
   }
 
-  if (m_incompressible) {
+  if (m_incompressible != 0) {
     Print() << " => Total number of state variables: " << AMREX_SPACEDIM
             << "\n";
   } else {
@@ -711,7 +711,7 @@ PeleLM::variablesSetup()
 
   //----------------------------------------------------------------
   // Set advection/diffusion types
-  if (m_incompressible) {
+  if (m_incompressible != 0) {
     m_AdvTypeState.resize(AMREX_SPACEDIM);
     m_DiffTypeState.resize(AMREX_SPACEDIM);
   } else {
@@ -725,7 +725,7 @@ PeleLM::variablesSetup()
     m_DiffTypeState[VELX + idim] = 1; // Diffusive
   }
 
-  if (!m_incompressible) {
+  if (m_incompressible == 0) {
     m_AdvTypeState[DENSITY] = 1;
     m_DiffTypeState[DENSITY] = 0;
     for (int n = 0; n < NUM_SPECIES; ++n) {
@@ -754,13 +754,13 @@ PeleLM::variablesSetup()
 
   //----------------------------------------------------------------
   // Typical values container
-  if (m_incompressible) {
+  if (m_incompressible != 0) {
     typical_values.resize(AMREX_SPACEDIM, -1.0);
   } else {
     typical_values.resize(NVAR, -1.0);
   }
 
-  if (!m_incompressible) {
+  if (m_incompressible == 0) {
     // -----------------------------------------
     // Combustion
     // -----------------------------------------
@@ -835,7 +835,7 @@ PeleLM::derivedSetup()
 {
   BL_PROFILE("PeleLMeX::derivedSetup()");
 
-  if (!m_incompressible) {
+  if (m_incompressible == 0) {
 
     // Get species names
     Vector<std::string> spec_names;
@@ -862,7 +862,7 @@ PeleLM::derivedSetup()
     for (int n = 0; n < NUM_SPECIES; n++) {
       var_names_massfrac[n] = "D_" + spec_names[n];
     }
-    if (m_use_soret) {
+    if (m_use_soret != 0) {
       var_names_massfrac.resize(2 * NUM_SPECIES);
       for (int n = 0; n < NUM_SPECIES; n++) {
         var_names_massfrac[n + NUM_SPECIES] = "theta_" + spec_names[n];
@@ -1143,7 +1143,7 @@ PeleLM::taggingSetup()
 
     // Tag a given box
     RealBox realbox;
-    if (ppr.countval("in_box_lo")) {
+    if (ppr.countval("in_box_lo") != 0) {
       Vector<Real> box_lo(AMREX_SPACEDIM);
       Vector<Real> box_hi(AMREX_SPACEDIM);
       ppr.getarr("in_box_lo", box_lo, 0, box_lo.size());
@@ -1176,7 +1176,7 @@ PeleLM::taggingSetup()
     }
 
     bool itexists = false;
-    if (ppr.countval("value_greater")) {
+    if (ppr.countval("value_greater") != 0) {
       Real value;
       ppr.get("value_greater", value);
       std::string field;
@@ -1184,7 +1184,7 @@ PeleLM::taggingSetup()
       errTags.push_back(AMRErrorTag(value, AMRErrorTag::GREATER, field, info));
       itexists = derive_lst.canDerive(field) || isStateVariable(field) ||
                  isReactVariable(field);
-    } else if (ppr.countval("value_less")) {
+    } else if (ppr.countval("value_less") != 0) {
       Real value;
       ppr.get("value_less", value);
       std::string field;
@@ -1192,14 +1192,14 @@ PeleLM::taggingSetup()
       errTags.push_back(AMRErrorTag(value, AMRErrorTag::LESS, field, info));
       itexists = derive_lst.canDerive(field) || isStateVariable(field) ||
                  isReactVariable(field);
-    } else if (ppr.countval("vorticity_greater")) {
+    } else if (ppr.countval("vorticity_greater") != 0) {
       Real value;
       ppr.get("vorticity_greater", value);
       const std::string field = "mag_vort";
       errTags.push_back(AMRErrorTag(value, AMRErrorTag::VORT, field, info));
       itexists = derive_lst.canDerive(field) || isStateVariable(field) ||
                  isReactVariable(field);
-    } else if (ppr.countval("adjacent_difference_greater")) {
+    } else if (ppr.countval("adjacent_difference_greater") != 0) {
       Real value;
       ppr.get("adjacent_difference_greater", value);
       std::string field;
@@ -1228,7 +1228,7 @@ void
 PeleLM::resizeArray()
 {
 
-  if (m_verbose) {
+  if (m_verbose != 0) {
     Print() << " Initializing data for " << max_level + 1 << " levels \n";
   }
 
