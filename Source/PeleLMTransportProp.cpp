@@ -387,7 +387,7 @@ PeleLM::getDiffusivity(
   EB_set_covered_faces(GetArrOfPtrs(beta_ec), 1.234e40);
 #else
   // NON-EB : use cen2edg_cpp
-  bool use_harmonic_avg = m_harm_avg_cen2edge != 0 ? true : false;
+  bool use_harmonic_avg = m_harm_avg_cen2edge != 0;
 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())

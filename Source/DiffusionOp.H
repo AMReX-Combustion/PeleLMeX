@@ -108,13 +108,13 @@ public:
     const amrex::Vector<amrex::MultiFab*>& a_laps,
     const amrex::Vector<amrex::MultiFab const*>& a_phi,
     const amrex::BCRec& a_bcrec,
-    int do_avgDown);
+    int do_avgDown) const;
 
   void avgDownFluxes(
     amrex::Vector<amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>> const&
       a_fluxes,
     int flux_comp,
-    int ncomp);
+    int ncomp) const;
 
   void readParameters();
 

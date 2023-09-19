@@ -129,13 +129,13 @@ PeleLMDeriveRec::variableComp(const std::string& a_name) const noexcept
 {
   if (n_derive == 1) {
     return 0;
-  } else {
-    for (int comp = 0; comp < n_derive; comp++) {
-      if (variable_names[comp] == a_name) {
-        return comp;
-      }
+  }
+  for (int comp = 0; comp < n_derive; comp++) {
+    if (variable_names[comp] == a_name) {
+      return comp;
     }
   }
+
   return -1;
 }
 

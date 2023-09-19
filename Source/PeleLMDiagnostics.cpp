@@ -82,7 +82,7 @@ PeleLM::doDiagnostics()
       if (rec != nullptr) {
         mf_idx = rec->variableComp(m_diagVars[v]);
       }
-      MultiFab::Copy(*diagMFVec[lev].get(), *mf, mf_idx, v, 1, 1);
+      MultiFab::Copy(*diagMFVec[lev], *mf, mf_idx, v, 1, 1);
     }
   }
 
