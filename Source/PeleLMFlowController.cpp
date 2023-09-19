@@ -12,7 +12,7 @@ PeleLM::initActiveControl()
 
   pp.query("on", m_ctrl_active);
 
-  if (!m_ctrl_active) {
+  if (m_ctrl_active == 0) {
     return;
   }
 
@@ -32,12 +32,12 @@ PeleLM::initActiveControl()
   pp.query("method", m_ctrl_method);
 
   // Active control checks
-  if (m_ctrl_useTemp && (m_ctrl_temperature <= 0.0)) {
+  if ((m_ctrl_useTemp != 0) && (m_ctrl_temperature <= 0.0)) {
     amrex::Error("active_control.temperature MUST be set with "
                  "active_control.use_temp = 1");
   }
 
-  if (m_ctrl_active && (m_ctrl_tauControl <= 0.0)) {
+  if ((m_ctrl_active != 0) && (m_ctrl_tauControl <= 0.0)) {
     amrex::Error("active_control.tau MUST be set when using active_control");
   }
 
@@ -90,7 +90,7 @@ PeleLM::initActiveControl()
   Vector<Real> s_ext(NVAR);
   Gpu::copy(Gpu::deviceToHost, s_ext_v.begin(), s_ext_v.end(), s_ext.begin());
 
-  if (!m_ctrl_useTemp) {
+  if (m_ctrl_useTemp == 0) {
     // Get the fuel rhoY
     if (fuelID < 0) {
       Abort(
@@ -121,8 +121,8 @@ PeleLM::initActiveControl()
   fcdata_host->ctrl_active = 1;
   fcdata_host->ctrl_V_in = m_ctrl_V_in;
 
-  if (m_ctrl_verbose) {
-    if (m_ctrl_useTemp) {
+  if (m_ctrl_verbose != 0) {
+    if (m_ctrl_useTemp != 0) {
       Print() << " Active control based on temperature iso-level activated."
               << " Maintaining the flame at " << m_ctrl_h << " in "
               << m_ctrl_flameDir << " direction. \n";
@@ -137,7 +137,7 @@ PeleLM::initActiveControl()
 void
 PeleLM::activeControl(int is_restart)
 {
-  if (!m_ctrl_active) {
+  if (m_ctrl_active == 0) {
     return;
   }
 
@@ -145,7 +145,7 @@ PeleLM::activeControl(int is_restart)
   // Get the current target state (either amount of fuel or T-iso position)
   // -------------------------------------------
   Real coft = 0.0;
-  if (!m_ctrl_useTemp) {
+  if (m_ctrl_useTemp == 0) {
     // Compute the integral of the fuel mass in the domain
     coft = MFSum(GetVecOfConstPtrs(getSpeciesVect(AmrNewTime)), fuelID);
     ;
@@ -166,7 +166,7 @@ PeleLM::activeControl(int is_restart)
   }
 
   // Manage AC history I/O
-  if (is_restart) {
+  if (is_restart != 0) {
     loadActiveControlHistory();
   }
 
@@ -182,7 +182,7 @@ PeleLM::activeControl(int is_restart)
   // Get s_est averaged from previous N steps
   // -------------------------------------------
   // Update m_ctrl_* Vectors if not restarting
-  if (!is_restart) {
+  if (is_restart == 0) {
     m_ctrl_time_pts.insert(m_ctrl_time_pts.begin(), m_cur_time);
     m_ctrl_velo_pts.insert(m_ctrl_velo_pts.begin(), m_ctrl_V_in);
     m_ctrl_cntl_pts.insert(m_ctrl_cntl_pts.begin(), coft);
@@ -251,7 +251,7 @@ PeleLM::activeControl(int is_restart)
     Vnew = std::min(Vnew, m_ctrl_velMax);
   }
 
-  if (!is_restart && m_nstep > 0) {
+  if ((is_restart == 0) && m_nstep > 0) {
     m_ctrl_tBase = m_cur_time;
 
     // Compute
@@ -274,7 +274,7 @@ PeleLM::activeControl(int is_restart)
   // Update Device version
   Gpu::copy(Gpu::hostToDevice, fcdata_h, fcdata_h + 1, fcdata_d);
 
-  if (m_ctrl_verbose && !is_restart) {
+  if ((m_ctrl_verbose != 0) && (is_restart == 0)) {
     Print()
       << "\n------------------------AC CONTROL------------------------ \n";
     Print() << " |     Time: " << m_cur_time << " -     dt: " << m_dt << "\n";
@@ -286,7 +286,7 @@ PeleLM::activeControl(int is_restart)
   }
 
   // Append to (or create) AC history file
-  if (!is_restart) {
+  if (is_restart == 0) {
     std::ofstream ACfile(
       m_ctrl_AChistory.c_str(), std::ofstream::out | std::ofstream::app);
     Print(ACfile).SetPrecision(15)
@@ -401,7 +401,7 @@ PeleLM::loadActiveControlHistory()
   struct stat buffer;
   bool have_history = (stat(m_ctrl_AChistory.c_str(), &buffer) == 0);
   if (have_history) {
-    if (m_ctrl_verbose) {
+    if (m_ctrl_verbose != 0) {
       Print() << " Setting AC from history from " << m_ctrl_AChistory << "\n";
     }
     std::fstream ACfile(m_ctrl_AChistory.c_str(), std::fstream::in);
@@ -431,7 +431,7 @@ PeleLM::loadActiveControlHistory()
       }
       ACfile.close();
     }
-    if (m_ctrl_verbose) {
+    if (m_ctrl_verbose != 0) {
       Print() << " AC history arrays: \n";
       for (long int n = 0; n < m_ctrl_time_pts.size(); n++) {
         Print() << "  [" << n << "] time: " << m_ctrl_time_pts[n]
@@ -440,7 +440,7 @@ PeleLM::loadActiveControlHistory()
       }
     }
   } else {
-    if (m_ctrl_verbose) {
+    if (m_ctrl_verbose != 0) {
       Print() << " AC history file " << m_ctrl_AChistory
               << " not found, restarting from scratch \n";
     }

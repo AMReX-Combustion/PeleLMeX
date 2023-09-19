@@ -19,13 +19,13 @@ PeleLM::computeDt(int is_init, const TimeStamp& a_time)
   if (m_fixed_dt > 0.0) {
     estdt = m_fixed_dt;
   } else {
-    if ((is_init || m_nstep == 0) && m_init_dt > 0.0) {
+    if (((is_init != 0) || m_nstep == 0) && m_init_dt > 0.0) {
       estdt = m_init_dt;
     } else {
       Real dtconv = estConvectiveDt(a_time);
       estdt = std::min(estdt, dtconv);
       Real dtdivU = 1.0e200;
-      if (!m_incompressible && m_has_divu) {
+      if ((m_incompressible == 0) && (m_has_divu != 0)) {
         dtdivU = estDivUDt(a_time);
         estdt = std::min(estdt, dtdivU);
       }
@@ -37,7 +37,7 @@ PeleLM::computeDt(int is_init, const TimeStamp& a_time)
       Real dtspray = SprayEstDt();
       estdt = std::min(estdt, dtspray);
 #endif
-      if (m_verbose) {
+      if (m_verbose != 0) {
         Print() << " Est. time step - Conv: " << dtconv << ", divu: " << dtdivU
 #ifdef PELE_USE_EFIELD
                 << ", ions: " << dtions
@@ -52,7 +52,7 @@ PeleLM::computeDt(int is_init, const TimeStamp& a_time)
 
   //----------------------------------------------------------------
   // Limit dt
-  if (is_init || m_nstep == 0) {
+  if ((is_init != 0) || m_nstep == 0) {
     estdt *= m_dtshrink;
   } else {
     estdt = std::min(estdt, m_prev_dt * m_dtChangeMax);
@@ -232,7 +232,7 @@ PeleLM::checkDt(const TimeStamp& a_time, const Real& a_dt)
 {
   BL_PROFILE("PeleLMeX::checkDt()");
 
-  if (m_fixed_dt > 0.0 || !m_divu_checkFlag) {
+  if (m_fixed_dt > 0.0 || (m_divu_checkFlag == 0)) {
     return;
   }
 

@@ -15,10 +15,10 @@ PeleLM::getVelForces(
   int add_gradP)
 {
   BL_PROFILE("PeleLMeX::getVelForces()");
-  int has_divTau = (!a_divTau.empty());
+  int has_divTau = static_cast<int>(!a_divTau.empty());
 
   for (int lev = 0; lev <= finest_level; ++lev) {
-    if (has_divTau) {
+    if (has_divTau != 0) {
       getVelForces(a_time, lev, a_divTau[lev], a_velForce[lev], add_gradP);
     } else {
       getVelForces(a_time, lev, nullptr, a_velForce[lev], add_gradP);
@@ -51,7 +51,7 @@ PeleLM::getVelForces(
 
   Real time = getTime(lev, a_time);
 
-  int has_divTau = (a_divTau != nullptr);
+  int has_divTau = static_cast<int>(a_divTau != nullptr);
 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -60,16 +60,16 @@ PeleLM::getVelForces(
     const auto& bx = mfi.tilebox();
     FArrayBox DummyFab(bx, 1);
     const auto& vel_arr = ldata_p->state.const_array(mfi, VELX);
-    const auto& rho_arr = (m_incompressible)
+    const auto& rho_arr = (m_incompressible) != 0
                             ? DummyFab.array()
                             : ldata_p->state.const_array(mfi, DENSITY);
-    const auto& rhoY_arr = (m_incompressible)
+    const auto& rhoY_arr = (m_incompressible) != 0
                              ? DummyFab.array()
                              : ldata_p->state.const_array(mfi, FIRSTSPEC);
-    const auto& rhoh_arr = (m_incompressible)
+    const auto& rhoh_arr = (m_incompressible) != 0
                              ? DummyFab.array()
                              : ldata_p->state.const_array(mfi, RHOH);
-    const auto& temp_arr = (m_incompressible)
+    const auto& temp_arr = (m_incompressible) != 0
                              ? DummyFab.array()
                              : ldata_p->state.const_array(mfi, TEMP);
     const auto& extmom_arr = m_extSource[lev]->const_array(mfi, VELX);
@@ -90,31 +90,31 @@ PeleLM::getVelForces(
     // Add pressure gradient and viscous forces (if req.) and scale by density.
     int is_incomp = m_incompressible;
     Real incomp_rho_inv = 1.0 / m_rho;
-    if (add_gradP || has_divTau) {
+    if ((add_gradP != 0) || (has_divTau != 0)) {
       const auto& gp_arr =
-        (add_gradP) ? ldataGP_p->gp.const_array(mfi) : DummyFab.array();
+        (add_gradP) != 0 ? ldataGP_p->gp.const_array(mfi) : DummyFab.array();
       const auto& divTau_arr =
-        (has_divTau) ? a_divTau->const_array(mfi) : DummyFab.array();
+        (has_divTau) != 0 ? a_divTau->const_array(mfi) : DummyFab.array();
       amrex::ParallelFor(
         bx,
         [incomp_rho_inv, is_incomp, add_gradP, has_divTau, rho_arr, gp_arr,
          divTau_arr, force_arr] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          if (is_incomp) {
+          if (is_incomp != 0) {
             for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
-              if (add_gradP) {
+              if (add_gradP != 0) {
                 force_arr(i, j, k, idim) -= gp_arr(i, j, k, idim);
               }
-              if (has_divTau) {
+              if (has_divTau != 0) {
                 force_arr(i, j, k, idim) += divTau_arr(i, j, k, idim);
               }
               force_arr(i, j, k, idim) *= incomp_rho_inv;
             }
           } else {
             for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
-              if (add_gradP) {
+              if (add_gradP != 0) {
                 force_arr(i, j, k, idim) -= gp_arr(i, j, k, idim);
               }
-              if (has_divTau) {
+              if (has_divTau != 0) {
                 force_arr(i, j, k, idim) += divTau_arr(i, j, k, idim);
               }
               force_arr(i, j, k, idim) /= rho_arr(i, j, k);
@@ -125,7 +125,7 @@ PeleLM::getVelForces(
       amrex::ParallelFor(
         bx, [incomp_rho_inv, is_incomp, rho_arr,
              force_arr] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          if (is_incomp) {
+          if (is_incomp != 0) {
             for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
               force_arr(i, j, k, idim) *= incomp_rho_inv;
             }
