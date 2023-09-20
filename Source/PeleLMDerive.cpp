@@ -139,7 +139,7 @@ PeleLMDeriveRec::variableComp(const std::string& a_name) const noexcept
   return -1;
 }
 
-PeleLMDeriveList::PeleLMDeriveList() {}
+PeleLMDeriveList::PeleLMDeriveList() = default;
 
 void
 PeleLMDeriveList::add(

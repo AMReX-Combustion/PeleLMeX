@@ -954,8 +954,8 @@ PeleLM::initProgressVariable()
   int hasUserC = static_cast<int>(pp.contains("progressVariable.format"));
   if (hasUserC != 0) {
     pp.query("progressVariable.format", Cformat);
-    if (Cformat.compare("Cantera") == 0) { // use a Cantera-like format with
-                                           // <entry>:<weight>, default to 0.0
+    if (Cformat == "Cantera") { // use a Cantera-like format with
+                                // <entry>:<weight>, default to 0.0
       // Weights
       Vector<std::string> stringIn;
       Vector<Real> weightsIn(NUM_SPECIES + 1, 0.0);
@@ -982,9 +982,9 @@ PeleLM::initProgressVariable()
         m_C0 += coldState[i] * m_Cweights[i];
         m_C1 += hotState[i] * m_Cweights[i];
       }
-    } else if (Cformat.compare("RealList") == 0) { // use a list of Real. MUST
-                                                   // contains an entry
-                                                   // for each species+Temp
+    } else if (Cformat == "RealList") { // use a list of Real. MUST
+                                        // contains an entry
+                                        // for each species+Temp
       // Weights
       Vector<Real> weightsIn;
       int entryCount = pp.countval("progressVariable.weights");
@@ -1626,10 +1626,10 @@ PeleLM::initMixtureFraction()
   for (int i = 0; i < NUM_SPECIES; ++i) {
     YF[i] = 0.0;
     YO[i] = 0.0;
-    if (specNames[i].compare("O2") == 0) {
+    if (specNames[i] == "O2") {
       YO[i] = 0.233;
     }
-    if (specNames[i].compare("N2") == 0) {
+    if (specNames[i] == "N2") {
       YO[i] = 0.767;
     }
     if (i == fuelID) {
@@ -1644,7 +1644,7 @@ PeleLM::initMixtureFraction()
   int hasUserMF = static_cast<int>(pp.contains("mixtureFraction.format"));
   if (hasUserMF != 0) {
     pp.query("mixtureFraction.format", MFformat);
-    if (MFformat.compare("Cantera") == 0) { // use a Cantera-like format with
+    if (MFformat == "Cantera") { // use a Cantera-like format with
       // <SpeciesName>:<Value>, default in 0.0
       std::string MFCompoType;
       pp.query("mixtureFraction.type", MFCompoType);
@@ -1657,12 +1657,12 @@ PeleLM::initMixtureFraction()
       compositionIn.resize(entryCount);
       pp.getarr("mixtureFraction.fuelTank", compositionIn, 0, entryCount);
       parseComposition(compositionIn, MFCompoType, YF);
-    } else if (MFformat.compare("RealList") == 0) { // use a list of Real. MUST
-                                                    // contains an entry
+    } else if (MFformat == "RealList") { // use a list of Real. MUST
+                                         // contains an entry
       // for each species in the mixture
       std::string MFCompoType;
       pp.query("mixtureFraction.type", MFCompoType);
-      if (MFCompoType.compare("mass") == 0) {
+      if (MFCompoType == "mass") {
         int entryCount = pp.countval("mixtureFraction.oxidTank");
         AMREX_ALWAYS_ASSERT(entryCount == NUM_SPECIES);
         Vector<amrex::Real> compositionIn(NUM_SPECIES);
@@ -1676,7 +1676,7 @@ PeleLM::initMixtureFraction()
         for (int i = 0; i < NUM_SPECIES; ++i) {
           YF[i] = compositionIn[i];
         }
-      } else if (MFCompoType.compare("mole") == 0) {
+      } else if (MFCompoType == "mole") {
         amrex::Real XF[NUM_SPECIES], XO[NUM_SPECIES];
         int entryCount = pp.countval("mixtureFraction.oxidTank");
         AMREX_ALWAYS_ASSERT(entryCount == NUM_SPECIES);
