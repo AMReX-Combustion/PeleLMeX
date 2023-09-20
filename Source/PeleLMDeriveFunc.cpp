@@ -672,8 +672,9 @@ pelelm_derQcrit(
   int /*ncomp*/,
   const FArrayBox&
 #if AMREX_SPACEDIM == 3
-    statefab,
+    statefab
 #endif
+  ,
   const FArrayBox& /*reactfab*/,
   const FArrayBox& /*pressfab*/,
   const Geometry& geom,
