@@ -1,4 +1,5 @@
 #include <PeleLM.H>
+#include <memory>
 
 using namespace amrex;
 
@@ -370,7 +371,7 @@ PeleLM::MakeNewLevelFromCoarse(
   }
 
   if (max_level > 0 && lev != max_level) {
-    m_coveredMask[lev].reset(new iMultiFab(ba, dm, 1, 0));
+    m_coveredMask[lev] = std::make_unique<iMultiFab>(ba, dm, 1, 0);
   }
   m_resetCoveredMask = 1;
 
@@ -393,9 +394,9 @@ PeleLM::MakeNewLevelFromCoarse(
 
   // Trigger MacProj reset
   m_macProjNeedReset = 1;
-  m_extSource[lev].reset(new MultiFab(
+  m_extSource[lev] = std::make_unique<MultiFab>(
     ba, dm, NVAR, amrex::max(m_nGrowAdv, m_nGrowMAC), MFInfo(),
-    *m_factory[lev]));
+    *m_factory[lev]);
   m_extSource[lev]->setVal(0.);
 }
 
@@ -465,7 +466,7 @@ PeleLM::RemakeLevel(
   }
 
   if (max_level > 0 && lev != max_level) {
-    m_coveredMask[lev].reset(new iMultiFab(ba, dm, 1, 0));
+    m_coveredMask[lev] = std::make_unique<iMultiFab>(ba, dm, 1, 0);
   }
   m_resetCoveredMask = 1;
 
@@ -502,9 +503,9 @@ PeleLM::RemakeLevel(
 
   // Trigger MacProj reset
   m_macProjNeedReset = 1;
-  m_extSource[lev].reset(new MultiFab(
+  m_extSource[lev] = std::make_unique<MultiFab>(
     ba, dm, NVAR, amrex::max(m_nGrowAdv, m_nGrowMAC), MFInfo(),
-    *m_factory[lev]));
+    *m_factory[lev]);
   m_extSource[lev]->setVal(0.);
 }
 
@@ -612,7 +613,7 @@ PeleLM::resetMacProjector()
     MLMG::Location::FaceCentroid, // Location of beta
     MLMG::Location::CellCenter)); // Location of solution variable phi
 #else
-  macproj.reset(new Hydro::MacProjector(Geom(0, finest_level)));
+  macproj = std::make_unique<Hydro::MacProjector>(Geom(0, finest_level));
 #endif
 
   // Store the old MacProj size and switch off reset flag

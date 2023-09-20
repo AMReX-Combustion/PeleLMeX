@@ -1,4 +1,5 @@
 #include <PeleLM.H>
+#include <memory>
 #include <pelelm_prob.H>
 #ifdef AMREX_USE_EB
 #include <AMReX_EB_utils.H>
@@ -55,24 +56,25 @@ PeleLM::MakeNewLevelFromScratch(
   m_factory[lev] = makeEBFabFactory(
     geom[lev], grids[lev], dmap[lev], {6, 6, 6}, EBSupport::full);
 #else
-  m_factory[lev].reset(new FArrayBoxFactory());
+  m_factory[lev] = std::make_unique<FArrayBoxFactory>();
 #endif
 
   // Initialize the LevelData
-  m_leveldata_old[lev].reset(new LevelData(
+  m_leveldata_old[lev] = std::make_unique<LevelData>(
     grids[lev], dmap[lev], *m_factory[lev], m_incompressible, m_has_divu,
-    m_nAux, m_nGrowState, m_use_soret, static_cast<int>(m_do_les)));
-  m_leveldata_new[lev].reset(new LevelData(
+    m_nAux, m_nGrowState, m_use_soret, static_cast<int>(m_do_les));
+  m_leveldata_new[lev] = std::make_unique<LevelData>(
     grids[lev], dmap[lev], *m_factory[lev], m_incompressible, m_has_divu,
-    m_nAux, m_nGrowState, m_use_soret, static_cast<int>(m_do_les)));
+    m_nAux, m_nGrowState, m_use_soret, static_cast<int>(m_do_les));
 
   if (max_level > 0 && lev != max_level) {
-    m_coveredMask[lev].reset(new iMultiFab(grids[lev], dmap[lev], 1, 0));
+    m_coveredMask[lev] =
+      std::make_unique<iMultiFab>(grids[lev], dmap[lev], 1, 0);
     m_resetCoveredMask = 1;
   }
   if (m_do_react != 0) {
-    m_leveldatareact[lev].reset(
-      new LevelDataReact(grids[lev], dmap[lev], *m_factory[lev]));
+    m_leveldatareact[lev] =
+      std::make_unique<LevelDataReact>(grids[lev], dmap[lev], *m_factory[lev]);
     m_leveldatareact[lev]->functC.setVal(0.0);
   }
 
@@ -109,12 +111,12 @@ PeleLM::MakeNewLevelFromScratch(
     MLMG::Location::FaceCentroid, // Location of beta
     MLMG::Location::CellCenter)); // Location of solution variable phi
 #else
-  macproj.reset(new Hydro::MacProjector(Geom(0, finest_level)));
+  macproj = std::make_unique<Hydro::MacProjector>(Geom(0, finest_level));
 #endif
   m_macProjOldSize = finest_level + 1;
-  m_extSource[lev].reset(new MultiFab(
+  m_extSource[lev] = std::make_unique<MultiFab>(
     grids[lev], dmap[lev], NVAR, amrex::max(m_nGrowAdv, m_nGrowMAC), MFInfo(),
-    *m_factory[lev]));
+    *m_factory[lev]);
   m_extSource[lev]->setVal(0.);
 
 #ifdef AMREX_USE_EB
@@ -377,9 +379,9 @@ PeleLM::projectInitSolution()
 
       // Light version of the diffusion data container
       std::unique_ptr<AdvanceDiffData> diffData;
-      diffData.reset(new AdvanceDiffData(
+      diffData = std::make_unique<AdvanceDiffData>(
         finest_level, grids, dmap, m_factory, m_nGrowAdv, m_use_wbar,
-        m_use_soret, is_initialization));
+        m_use_soret, is_initialization);
       calcDivU(
         is_initialization, computeDiffusionTerm, do_avgDown, AmrNewTime,
         diffData);
@@ -432,9 +434,9 @@ PeleLM::projectInitSolution()
 
         // Light version of the diffusion data container
         std::unique_ptr<AdvanceDiffData> diffData;
-        diffData.reset(new AdvanceDiffData(
+        diffData = std::make_unique<AdvanceDiffData>(
           finest_level, grids, dmap, m_factory, m_nGrowAdv, m_use_wbar,
-          m_use_soret, is_initialization));
+          m_use_soret, is_initialization);
         calcDivU(
           is_initialization, computeDiffusionTerm, do_avgDown, AmrNewTime,
           diffData);

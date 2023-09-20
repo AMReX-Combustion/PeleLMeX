@@ -1,6 +1,7 @@
 #include <PeleLM.H>
 #include <PeleLMBCfill.H>
 #include <AMReX_FillPatchUtil.H>
+#include <memory>
 #ifdef AMREX_USE_EB
 #include <AMReX_EBInterpolater.H>
 #endif
@@ -293,11 +294,11 @@ PeleLM::fillPatchState(int lev, Real a_time, int nGrow)
 
   std::unique_ptr<MultiFab> mf;
   if (m_incompressible != 0) {
-    mf.reset(new MultiFab(
-      grids[lev], dmap[lev], AMREX_SPACEDIM, nGrow, MFInfo(), Factory(lev)));
+    mf = std::make_unique<MultiFab>(
+      grids[lev], dmap[lev], AMREX_SPACEDIM, nGrow, MFInfo(), Factory(lev));
   } else {
-    mf.reset(
-      new MultiFab(grids[lev], dmap[lev], NVAR, nGrow, MFInfo(), Factory(lev)));
+    mf = std::make_unique<MultiFab>(
+      grids[lev], dmap[lev], NVAR, nGrow, MFInfo(), Factory(lev));
   }
   fillpatch_state(lev, a_time, *mf, nGrow);
 
@@ -314,8 +315,8 @@ PeleLM::fillPatchReact(int lev, Real a_time, int nGrow)
   IRsize += 1;
 #endif
   std::unique_ptr<MultiFab> mf;
-  mf.reset(
-    new MultiFab(grids[lev], dmap[lev], IRsize, nGrow, MFInfo(), Factory(lev)));
+  mf = std::make_unique<MultiFab>(
+    grids[lev], dmap[lev], IRsize, nGrow, MFInfo(), Factory(lev));
   fillpatch_reaction(lev, a_time, *mf, nGrow);
 
   return mf;

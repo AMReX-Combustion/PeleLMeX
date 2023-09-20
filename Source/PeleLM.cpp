@@ -1,4 +1,5 @@
 #include <PeleLM.H>
+#include <memory>
 
 #ifdef PELELM_USE_SPRAY
 #include "SprayParticles.H"
@@ -46,9 +47,9 @@ PeleLM::getLevelDataPtr(
   if (a_time == AmrNewTime) {
     return m_leveldata_new[lev].get();
   } else {
-    m_leveldata_floating.reset(new LevelData(
+    m_leveldata_floating = std::make_unique<LevelData>(
       grids[lev], dmap[lev], *m_factory[lev], m_incompressible, m_has_divu,
-      m_nAux, m_nGrowState, m_use_soret, static_cast<int>(m_do_les)));
+      m_nAux, m_nGrowState, m_use_soret, static_cast<int>(m_do_les));
     Real time = getTime(lev, a_time);
     fillpatch_state(lev, time, m_leveldata_floating->state, m_nGrowState);
     // if (useUMac) {

@@ -1,5 +1,6 @@
 #include <PeleLM.H>
 #include <PeleLM_K.H>
+#include <memory>
 
 using namespace amrex;
 
@@ -280,8 +281,8 @@ PeleLM::adjustPandDivU(std::unique_ptr<AdvanceAdvData>& advData)
   // Get theta = 1 / (\Gamma * P_amb) at half time
   for (int lev = 0; lev <= finest_level; ++lev) {
 
-    ThetaHalft[lev].reset(
-      new MultiFab(grids[lev], dmap[lev], 1, 0, MFInfo(), *m_factory[lev]));
+    ThetaHalft[lev] = std::make_unique<MultiFab>(
+      grids[lev], dmap[lev], 1, 0, MFInfo(), *m_factory[lev]);
     auto const& tma = ThetaHalft[lev]->arrays();
     auto const& sma_o = getLevelDataPtr(lev, AmrOldTime)->state.const_arrays();
     auto const& sma_n = getLevelDataPtr(lev, AmrNewTime)->state.const_arrays();

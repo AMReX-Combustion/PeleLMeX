@@ -1,6 +1,7 @@
 #include <PeleLM.H>
 #include <PeleLMUtils.H>
 #include <AMReX_MemProfiler.H>
+#include <memory>
 
 using namespace amrex;
 
@@ -64,12 +65,12 @@ PeleLM::Advance(int is_initIter)
   //----------------------------------------------------------------
   // Data for the advance, only live for the duration of the advance
   std::unique_ptr<AdvanceDiffData> diffData;
-  diffData.reset(new AdvanceDiffData(
-    finest_level, grids, dmap, m_factory, m_nGrowAdv, m_use_wbar, m_use_soret));
+  diffData = std::make_unique<AdvanceDiffData>(
+    finest_level, grids, dmap, m_factory, m_nGrowAdv, m_use_wbar, m_use_soret);
   std::unique_ptr<AdvanceAdvData> advData;
-  advData.reset(new AdvanceAdvData(
+  advData = std::make_unique<AdvanceAdvData>(
     finest_level, grids, dmap, m_factory, m_incompressible, m_nGrowAdv,
-    m_nGrowMAC));
+    m_nGrowMAC);
 
   for (int lev = 0; lev <= finest_level; lev++) {
     m_extSource[lev]->setVal(0.);

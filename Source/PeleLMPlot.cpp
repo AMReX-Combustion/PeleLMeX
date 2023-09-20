@@ -6,6 +6,7 @@
 #include <AMReX_ParmParse.H>
 #include <PeleLMBCfill.H>
 #include <AMReX_FillPatchUtil.H>
+#include <memory>
 #ifdef AMREX_USE_EB
 #include <AMReX_EBInterpolater.H>
 #endif
@@ -304,7 +305,7 @@ PeleLM::WritePlotFile()
 
       if (m_plotHeatRelease != 0) {
         std::unique_ptr<MultiFab> mf;
-        mf.reset(new MultiFab(grids[lev], dmap[lev], 1, 0));
+        mf = std::make_unique<MultiFab>(grids[lev], dmap[lev], 1, 0);
         getHeatRelease(lev, mf.get());
         MultiFab::Copy(mf_plt[lev], *mf, 0, cnt, 1, 0);
         cnt += 1;
