@@ -35,7 +35,9 @@ PeleLM::Evolve()
       regrid(0, m_cur_time);
       resetMacProjector();
       resetCoveredMask();
+#ifdef PELELM_USE_SPRAY
       regridded = true;
+#endif
       updateDiagnostics();
     }
 #ifdef PELELM_USE_SPRAY
