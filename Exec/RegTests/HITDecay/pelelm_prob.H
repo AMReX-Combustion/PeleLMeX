@@ -61,13 +61,12 @@ pelelm_initdata(
   int k,
   int is_incompressible,
   amrex::Array4<amrex::Real> const& state,
-  amrex::Array4<amrex::Real> const& aux,
+  amrex::Array4<amrex::Real> const& /*aux*/,
   amrex::GeometryData const& geomdata,
   ProbParm const& prob_parm,
-  pele::physics::PMF::PmfData::DataContainer const* pmf_data)
+  pele::physics::PMF::PmfData::DataContainer const* /*pmf_data*/)
 {
   const amrex::Real* prob_lo = geomdata.ProbLo();
-  const amrex::Real* prob_hi = geomdata.ProbHi();
   const amrex::Real* dx = geomdata.CellSize();
 
   amrex::Real x[3] = {
@@ -171,34 +170,31 @@ AMREX_FORCE_INLINE
 void
 bcnormal(
   const amrex::Real* /*x[AMREX_SPACEDIM]*/,
-  const int m_nAux,
-  amrex::Real s_ext[NVAR],
-  const int idir,
-  const int sgn,
-  const amrex::Real time,
-  amrex::GeometryData const& geomdata,
-  ProbParm const& prob_parm,
-  pele::physics::PMF::PmfData::DataContainer const* pmf_data)
+  const int /*m_nAux*/,
+  amrex::Real[NVAR] /*s_ext[NVAR]*/,
+  const int /*idir*/,
+  const int /*sgn*/,
+  const amrex::Real /*time*/,
+  amrex::GeometryData const& /*geomdata*/,
+  ProbParm const& /*prob_parm*/,
+  pele::physics::PMF::PmfData::DataContainer const* /*pmf_data*/)
 {
-  const amrex::Real* prob_lo = geomdata.ProbLo();
 }
 
 AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
 void
 zero_visc(
-  int i,
-  int j,
-  int k,
-  amrex::Array4<amrex::Real> const& beta,
-  amrex::GeometryData const& geomdata,
-  amrex::Box const& domainBox,
-  const int dir,
-  const int beta_comp,
-  const int nComp)
+  int /*i*/,
+  int /*j*/,
+  int /*k*/,
+  amrex::Array4<amrex::Real> const& /*beta*/,
+  amrex::GeometryData const& /*geomdata*/,
+  amrex::Box const& /*domainBox*/,
+  const int /*dir*/,
+  const int /*beta_comp*/,
+  const int /*nComp*/)
 {
-  amrex::ignore_unused(
-    i, j, k, beta, geomdata, domainBox, dir, beta_comp, nComp);
   // We treat species when beta_comp == 0 and nComp == NUM_SPECIES
   // otherwise this routine could be called for other face diffusivity (Temp,
   // velocity, ...)
