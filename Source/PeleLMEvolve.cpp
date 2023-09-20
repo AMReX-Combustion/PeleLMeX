@@ -23,7 +23,9 @@ PeleLM::Evolve()
         << "\n ====================   NEW TIME STEP   ==================== \n";
     }
 
+#ifdef PELELM_USE_SPRAY
     bool regridded = false;
+#endif
     if ((m_regrid_int > 0) && (m_nstep > 0) && (m_nstep % m_regrid_int == 0)) {
       if (m_verbose > 0) {
         amrex::Print() << " Regridding...\n";

@@ -31,6 +31,7 @@ pelelm_dertemp(
   int /*level*/)
 
 {
+  amrex::ignore_unused(a_pelelm, ncomp);
   AMREX_ASSERT(derfab.box().contains(bx));
   AMREX_ASSERT(statefab.box().contains(bx));
   AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
@@ -61,6 +62,7 @@ pelelm_derheatrelease(
   int /*level*/)
 
 {
+  amrex::ignore_unused(a_pelelm, ncomp);
   AMREX_ASSERT(derfab.box().contains(bx));
   AMREX_ASSERT(statefab.box().contains(bx));
   AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
@@ -101,6 +103,7 @@ pelelm_dermassfrac(
   int /*level*/)
 
 {
+  amrex::ignore_unused(a_pelelm, ncomp);
   AMREX_ASSERT(derfab.box().contains(bx));
   AMREX_ASSERT(statefab.box().contains(bx));
   AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
@@ -134,6 +137,7 @@ pelelm_dermolefrac(
   const Vector<BCRec>& /*bcrec*/,
   int /*level*/)
 {
+  amrex::ignore_unused(a_pelelm, ncomp);
   AMREX_ASSERT(derfab.box().contains(bx));
   AMREX_ASSERT(statefab.box().contains(bx));
   AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
@@ -176,6 +180,7 @@ pelelm_derrhomrhoy(
   int /*level*/)
 
 {
+  amrex::ignore_unused(a_pelelm, ncomp);
   AMREX_ASSERT(derfab.box().contains(bx));
   AMREX_ASSERT(statefab.box().contains(bx));
   AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
@@ -436,6 +441,7 @@ pelelm_dervort(
   int /*level*/)
 
 {
+  amrex::ignore_unused(ncomp, bx);
   AMREX_ASSERT(derfab.box().contains(bx));
   AMREX_ASSERT(statefab.box().contains(bx));
   AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
@@ -605,6 +611,7 @@ pelelm_dercoord(
   int /*level*/)
 
 {
+  amrex::ignore_unused(ncomp);
   AMREX_ASSERT(derfab.box().contains(bx));
   AMREX_ASSERT(statefab.box().contains(bx));
   AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
@@ -663,7 +670,10 @@ pelelm_derQcrit(
   FArrayBox& derfab,
   int dcomp,
   int /*ncomp*/,
-  const FArrayBox& statefab,
+  const FArrayBox&
+#if AMREX_SPACEDIM == 3
+    statefab,
+#endif
   const FArrayBox& /*reactfab*/,
   const FArrayBox& /*pressfab*/,
   const Geometry& geom,
@@ -1171,8 +1181,8 @@ pelelm_dermixfrac(
   Real /*time*/,
   const Vector<BCRec>& /*bcrec*/,
   int /*level*/)
-
 {
+  amrex::ignore_unused(ncomp);
   AMREX_ASSERT(derfab.box().contains(bx));
   AMREX_ASSERT(statefab.box().contains(bx));
   AMREX_ASSERT(ncomp == 1);
