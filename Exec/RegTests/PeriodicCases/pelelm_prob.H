@@ -24,7 +24,7 @@ pelelm_initdata(
   ProbParm const& prob_parm,
   pele::physics::PMF::PmfData::DataContainer const* /*pmf_data*/)
 {
-  // const amrex::Real* prob_lo = geomdata.ProbLo();
+  const amrex::Real* prob_lo = geomdata.ProbLo();
   // const amrex::Real* prob_hi = geomdata.ProbHi();
   const amrex::Real* dx = geomdata.CellSize();
   AMREX_D_TERM(const amrex::Real x = prob_lo[0] + (i + 0.5) * dx[0];
