@@ -114,20 +114,20 @@ not possible to compile and run <em>PeleLMeX</em> without actually writting a fe
 in <code class="docutils literal notranslate"><span class="pre">Exec/RegTests</span></code> from which new users can pull for their new case.</p>
 <p>The source code contains a few dozen files, organized around the pieces of the algorithm and major functionalities:</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">PeleLMEvolve</span></code>: top level time advance loop, with IO/exit controls</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">PeleLMSetup</span></code>: setting up the simulation parameters, parsing the input file</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">PeleLMInit</span></code>: generating the initial solution from scratch or checkpoint file, performing initial projections/iteration(s)</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">PeleLMAdvance</span></code>: top level implementation of the time step algorithm</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">PeleLMProjection</span></code>: implement the various flavors of the nodal projection</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">PeleLMUmac</span></code>: implement the construction and projection of MAC-velocities</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">PeleLMAdvection</span></code>: functions to compute the explicit advection terms</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">PeleLMDiffusion</span></code>: functions to compute the diffusion terms, using the operators defined in <code class="docutils literal notranslate"><span class="pre">DiffusionOp</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">PeleLMReaction</span></code>: function using <em>PelePhysics</em> reactors to integrate the chemistry and linearized advection/diffusion</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">PeleLMPlot</span></code>: implementation of plotfile and checkpoint file IOs</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">PeleLMBC</span></code>: functions filling the ghost cells (at fine/fine, coarse/fine and domain boundaries)</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">PeleLMRegrid</span></code>: creating new AMR level or remaking modified AMR level during adaptive refinement</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">PeleLMTagging</span></code>: mark cells for refinement</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">PeleLM_K.H</span></code>: low-level kernel functions</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PeleLMeX_Evolve</span></code>: top level time advance loop, with IO/exit controls</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PeleLMeX_Setup</span></code>: setting up the simulation parameters, parsing the input file</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PeleLMeX_Init</span></code>: generating the initial solution from scratch or checkpoint file, performing initial projections/iteration(s)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PeleLMeX_Advance</span></code>: top level implementation of the time step algorithm</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PeleLMeX_Projection</span></code>: implement the various flavors of the nodal projection</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PeleLMeX_Umac</span></code>: implement the construction and projection of MAC-velocities</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PeleLMeX_Advection</span></code>: functions to compute the explicit advection terms</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PeleLMeX_Diffusion</span></code>: functions to compute the diffusion terms, using the operators defined in <code class="docutils literal notranslate"><span class="pre">PeleLMex_DiffusionOp</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PeleLMeX_Reaction</span></code>: function using <em>PelePhysics</em> reactors to integrate the chemistry and linearized advection/diffusion</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PeleLMeX_Plot</span></code>: implementation of plotfile and checkpoint file IOs</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PeleLMeX_BC</span></code>: functions filling the ghost cells (at fine/fine, coarse/fine and domain boundaries)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PeleLMeX_Regrid</span></code>: creating new AMR level or remaking modified AMR level during adaptive refinement</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PeleLMeX_Tagging</span></code>: mark cells for refinement</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PeleLMeX__K.H</span></code>: low-level kernel functions</p></li>
 </ul>
 </section>
 <section id="data-structure-and-containers">

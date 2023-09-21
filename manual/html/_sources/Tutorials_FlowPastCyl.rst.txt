@@ -129,8 +129,8 @@ Problem specifications
 This very simple problem only has three user-defined problem parameters: the inflow velocity magnitude, the pressure and the temperature.
 Specifying dirichlet ``Inflow`` conditions in `PeleLMeX` can seem daunting at first. But it is actually a very flexible process. We walk the user through the details which involve the following files:
 
-- ``pelelm_prob_parm.H``, assemble in a C++ struct ``ProbParm`` the input variables as well as other variables used in the initialization process.
-- ``pelelm_prob.cpp``, initialize and provide default values to the entries of ``ProbParm`` and allow the user to pass run-time value using the `AMReX` parser (``ParmParse``). In the present case, the parser will read the parameters in the ``Problem`` block: ::
+- ``pelelmex_prob_parm.H``, assemble in a C++ struct ``ProbParm`` the input variables as well as other variables used in the initialization process.
+- ``pelelmex_prob.cpp``, initialize and provide default values to the entries of ``ProbParm`` and allow the user to pass run-time value using the `AMReX` parser (``ParmParse``). In the present case, the parser will read the parameters in the ``Problem`` block: ::
 
     #--------------------------- Problem -------------------------------
     prob.T_mean = 300.0
@@ -138,7 +138,7 @@ Specifying dirichlet ``Inflow`` conditions in `PeleLMeX` can seem daunting at fi
     prob.meanFlowMag = 4.255
     prob.meanFlowDir = 1
 
-- finally, ``pelelm_prob.H`` contains the ``pelelm_initdata`` and ``bcnormal`` functions responsible for generating the initial and boundary conditions, respectively.
+- finally, ``pelelmex_prob.H`` contains the ``pelelmex_initdata`` and ``bcnormal`` functions responsible for generating the initial and boundary conditions, respectively.
 
 Finally, this test uses a constant set of transport parameters rather relying on the Simple library. These transport parameters are specified in the ``CONSTANT TRANSPORT`` block: ::
 
@@ -162,7 +162,7 @@ Initial solution
 
 An initial field of the main variables is always required to start a simulation. In the present case, the computational domain is filled with air in the condition of pressure and temperature provided by the user (or the default ones). An initial constant velocity of ``meanFlowMag`` is used, but note that `PeleLMeX` performs an initial velocity projection to enforce the low Mach number constraint which overwrite this initial velocity.
 
-This initial solution is constructed via the routine ``pelelm_initdata()``, in the file ``pelelm_prob.H``. Additional information is provided as comments in this file for the eager reader, but nothing is required from the user at this point.
+This initial solution is constructed via the routine ``pelelmex_initdata()``, in the file ``pelelmex_prob.H``. Additional information is provided as comments in this file for the eager reader, but nothing is required from the user at this point.
 
 
 Numerical scheme

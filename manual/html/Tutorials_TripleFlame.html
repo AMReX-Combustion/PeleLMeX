@@ -240,8 +240,8 @@ to oxidizer and fuel streams respectively.</p>
 <p>Specifying dirichlet <code class="docutils literal notranslate"><span class="pre">Inflow</span></code> conditions in <cite>PeleLMeX</cite> can seem daunting at first. But it is actually a very
 flexible process. We walk the user through the details of it for the Triple Flame case just described. The files involved are:</p>
 <ul>
-<li><p><code class="docutils literal notranslate"><span class="pre">pelelm_prob_parm.H</span></code>, assemble in a C++ struct <code class="docutils literal notranslate"><span class="pre">ProbParm</span></code> the input variables as well as other variables used in the initialization process.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">pelelm_prob.cpp</span></code>, initialize and provide default values to the entries of <code class="docutils literal notranslate"><span class="pre">ProbParm</span></code> and allow the user to pass run-time value using the <cite>AMReX</cite> parser (<code class="docutils literal notranslate"><span class="pre">ParmParse</span></code>). In the present case, the parser will read the parameters in the <code class="docutils literal notranslate"><span class="pre">Problem</span></code> block:</p>
+<li><p><code class="docutils literal notranslate"><span class="pre">pelelmex_prob_parm.H</span></code>, assemble in a C++ struct <code class="docutils literal notranslate"><span class="pre">ProbParm</span></code> the input variables as well as other variables used in the initialization process.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pelelmex_prob.cpp</span></code>, initialize and provide default values to the entries of <code class="docutils literal notranslate"><span class="pre">ProbParm</span></code> and allow the user to pass run-time value using the <cite>AMReX</cite> parser (<code class="docutils literal notranslate"><span class="pre">ParmParse</span></code>). In the present case, the parser will read the parameters in the <code class="docutils literal notranslate"><span class="pre">Problem</span></code> block:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>#---------------------- Problem ----------------------------------
 prob.P_mean = 101325.0
 prob.T_in = 300.0
@@ -250,12 +250,12 @@ prob.Zst = 0.055
 </pre></div>
 </div>
 </li>
-<li><p>finally, <code class="docutils literal notranslate"><span class="pre">pelelm_prob.H</span></code> contains the <code class="docutils literal notranslate"><span class="pre">pelelm_initdata</span></code> and <code class="docutils literal notranslate"><span class="pre">bcnormal</span></code> functions responsible for generating the initial and boundary conditions, resspectively.</p></li>
+<li><p>finally, <code class="docutils literal notranslate"><span class="pre">pelelmex_prob.H</span></code> contains the <code class="docutils literal notranslate"><span class="pre">pelelmex_initdata</span></code> and <code class="docutils literal notranslate"><span class="pre">bcnormal</span></code> functions responsible for generating the initial and boundary conditions, resspectively.</p></li>
 </ul>
 <p>Note that in our specific case, we compute the input value of the mass fractions (Y) <em>directly</em> in <code class="docutils literal notranslate"><span class="pre">bcnormal</span></code>,
 using the <code class="docutils literal notranslate"><span class="pre">ProbParm</span></code> variables. We do not need any additional information, because we hard coded the hyperbolic
 tangent profile of <span class="math notranslate nohighlight">\(z\)</span> (see previous formula) and there is a direct relation with the mass fraction profiles.
-The interested reader can look at the function <code class="docutils literal notranslate"><span class="pre">set_Y_from_Ksi</span></code> and <code class="docutils literal notranslate"><span class="pre">set_Y_from_Phi</span></code> in <code class="docutils literal notranslate"><span class="pre">pelelm_prob.H</span></code>.</p>
+The interested reader can look at the function <code class="docutils literal notranslate"><span class="pre">set_Y_from_Ksi</span></code> and <code class="docutils literal notranslate"><span class="pre">set_Y_from_Phi</span></code> in <code class="docutils literal notranslate"><span class="pre">pelelmex_prob.H</span></code>.</p>
 <p>Looking closely at the <code class="docutils literal notranslate"><span class="pre">ProbParm</span></code> struct, we can see that an object specific to
 <cite>PeleLMeX</cite> is present, a <code class="docutils literal notranslate"><span class="pre">FlowControllerData</span></code> named <code class="docutils literal notranslate"><span class="pre">FCData</span></code>:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>struct ProbParm
@@ -296,7 +296,7 @@ shown in Fig <a class="reference internal" href="#tf-initialsol"><span class="st
 <p><span class="caption-number">Fig. 23 </span><span class="caption-text">: Initial temperature field (left) as well as widening gaussian 1D y-profiles (right) and associated parameters. The initial solution contains 2 levels.</span><a class="headerlink" href="#tf-initialsol" title="Link to this image"></a></p>
 </figcaption>
 </figure>
-<p>This initial solution is constructed via the routine <code class="docutils literal notranslate"><span class="pre">pelelm_initdata()</span></code>, in the file <code class="docutils literal notranslate"><span class="pre">pelelm_prob.H</span></code>. Additional information is provided as comments in this file for the eager reader, but nothing is required from the user at this point.</p>
+<p>This initial solution is constructed via the routine <code class="docutils literal notranslate"><span class="pre">pelelmex_initdata()</span></code>, in the file <code class="docutils literal notranslate"><span class="pre">pelelmex_prob.H</span></code>. Additional information is provided as comments in this file for the eager reader, but nothing is required from the user at this point.</p>
 </section>
 <section id="numerical-scheme">
 <h3>Numerical scheme<a class="headerlink" href="#numerical-scheme" title="Link to this heading"></a></h3>

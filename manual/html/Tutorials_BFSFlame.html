@@ -244,7 +244,7 @@ EB structure data in the domain ghost cells.</p>
 <section id="problem-specifications">
 <h3>Problem specifications<a class="headerlink" href="#problem-specifications" title="Link to this heading"></a></h3>
 <p id="sec-tuto-bfs-problem">The problem setup is mostly contained in the three C++ source/header files described in <a class="reference internal" href="Tutorials_FlameSheet.html"><span class="doc">Premixed flame sheet with harmonic perturbations</span></a>.
-The user parameters are gathered in the struct defined in  <code class="docutils literal notranslate"><span class="pre">pelelm_prob_parm.H</span></code>:</p>
+The user parameters are gathered in the struct defined in  <code class="docutils literal notranslate"><span class="pre">pelelmex_prob_parm.H</span></code>:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>struct ProbParm
 {
     amrex::Real T_mean = 298.0_rt;
@@ -268,8 +268,8 @@ The user parameters are gathered in the struct defined in  <code class="docutils
 </ul>
 <p>The initial solution consists of a premixed methane/air mixture in the upper part of the domain
 and pure hot air in the wake of the step. The default parameters provided above are overwritten
-using AMReX ParmParse in <code class="docutils literal notranslate"><span class="pre">pelelm_prob.cpp</span></code> and the initial/boundary conditions implemented in
-<code class="docutils literal notranslate"><span class="pre">pelelm_prob.H</span></code>.</p>
+using AMReX ParmParse in <code class="docutils literal notranslate"><span class="pre">pelelmex_prob.cpp</span></code> and the initial/boundary conditions implemented in
+<code class="docutils literal notranslate"><span class="pre">pelelmex_prob.H</span></code>.</p>
 <p>In addition to these three C++ files, an extra header is needed in the present case compared to
 <a class="reference internal" href="Tutorials_FlameSheet.html"><span class="doc">Premixed flame sheet with harmonic perturbations</span></a> : <code class="docutils literal notranslate"><span class="pre">EBUserDefined.H</span></code>. This file is necessary to specify more complex EB
 geometries (not the case here) and to prescribe EB isothermal wall condition. It contains three functions:</p>

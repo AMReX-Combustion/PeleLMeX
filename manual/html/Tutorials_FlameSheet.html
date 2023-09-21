@@ -165,15 +165,15 @@ environment variables you might have previously defined when using this <cite>GN
 provide user-defined functions defining initial and boundary conditions, input file(s) and
 any additional files necessary for the simulation (solution of a Cantera 1D flame for instance).</p>
 <p>The following three files in particular are necessary:</p>
-<div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>pelelm_prob_parm.H
-pelelm_prob.H
-pelelm_prob.cpp
+<div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>pelelmex_prob_parm.H
+pelelmex_prob.H
+pelelmex_prob.cpp
 </pre></div>
 </div>
 <p>The first file provides a C++ struct <cite>ProbParm</cite> containing the set of user-defined variables
 used during the simulation (value of inlet temperature, amplitude of the initial
 perturbation, …). The <cite>.cpp</cite> file uses AMReX <cite>ParmParse</cite> to read these run-time
-parameter and initialize the <cite>ProbParm</cite> container values. Finally, <cite>pelelm_prob.H</cite>
+parameter and initialize the <cite>ProbParm</cite> container values. Finally, <cite>pelelmex_prob.H</cite>
 provides C++ kernels for the initial and boundary conditions and will be detailed
 later in this tutorial.</p>
 <p>The following review the content of the various files required for the flame sheet test case.
@@ -228,7 +228,7 @@ amr.max_grid_size   = 256              # maximum box size
 </section>
 <section id="problem-specifications">
 <h3>Problem specifications<a class="headerlink" href="#problem-specifications" title="Link to this heading"></a></h3>
-<p id="sec-tuto-fs-problem">The problem setup is mostly contained in the three C++ source/header files mentioned above. Looking into <code class="docutils literal notranslate"><span class="pre">pelelm_prob_parm.H</span></code> first,
+<p id="sec-tuto-fs-problem">The problem setup is mostly contained in the three C++ source/header files mentioned above. Looking into <code class="docutils literal notranslate"><span class="pre">pelelmex_prob_parm.H</span></code> first,
 we can see the set of parameters that will be used to specify the initial and boundary conditions:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>struct ProbParm
 {
@@ -250,7 +250,7 @@ periodicity of the initial solution.</p>
 <p class="admonition-title">Note</p>
 <p>The <code class="docutils literal notranslate"><span class="pre">P_mean</span></code> parameters, providing the initial thermodynamic pressure, is always needed in the ProbParm struct.</p>
 </div>
-<p>Looking now into <code class="docutils literal notranslate"><span class="pre">pelelm_prob.cpp</span></code>, we can see how the developer can provide access to the <cite>ProbParm</cite> parameters
+<p>Looking now into <code class="docutils literal notranslate"><span class="pre">pelelmex_prob.cpp</span></code>, we can see how the developer can provide access to the <cite>ProbParm</cite> parameters
 to overwrite the default values using AMReX’s ParmParse:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>void PeleLM::readProbParm()
 {
@@ -282,8 +282,8 @@ ASCII file in the input file:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>pmf.datafile = &quot;drm19_pmf.dat&quot;
 </pre></div>
 </div>
-<p>Finally, <code class="docutils literal notranslate"><span class="pre">pelelm_prob.H</span></code> defines the two functions effectively filling the initial solution and boundary conditions:
-<cite>pelelm_initdata</cite> and <cite>bcnormal</cite>. The arguments of the <cite>pelelm_initdata</cite> function are as follows:</p>
+<p>Finally, <code class="docutils literal notranslate"><span class="pre">pelelmex_prob.H</span></code> defines the two functions effectively filling the initial solution and boundary conditions:
+<cite>pelelmex_initdata</cite> and <cite>bcnormal</cite>. The arguments of the <cite>pelelmex_initdata</cite> function are as follows:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">int</span> <span class="pre">i,</span> <span class="pre">int</span> <span class="pre">j,</span> <span class="pre">int</span> <span class="pre">k,</span></code> : indices of the current grid cell the function is called to fill</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">int</span> <span class="pre">/*is_incompressible*/,</span></code> : flag indicating if <cite>PeleLMeX</cite> is running a pure incompressible case</p></li>
@@ -293,7 +293,7 @@ ASCII file in the input file:</p>
 <li><p><code class="docutils literal notranslate"><span class="pre">ProbParm</span> <span class="pre">const&amp;</span> <span class="pre">prob_parm,</span></code> : the <cite>ProbParm</cite> struct</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">pele::physics::PMF::PmfData::DataContainer</span> <span class="pre">const</span> <span class="pre">*</span> <span class="pre">pmf_data</span></code> : the Cantera solution data struct</p></li>
 </ul>
-<p>The reader is encouraged to look into the body of the <cite>pelelm_initdata</cite> function for more details, a skeletal
+<p>The reader is encouraged to look into the body of the <cite>pelelmex_initdata</cite> function for more details, a skeletal
 version of the function reads:</p>
 <ul class="simple">
 <li><p>Compute the coordinate of the cell center using the cell indices and the <cite>geomdata</cite>.</p></li>
@@ -310,7 +310,7 @@ state vector is extracted from the <code class="docutils literal notranslate"><s
 function is only called in the direction/orientation where a Dirichlet boundary condition is imposed, i.e. the
 <span class="math notranslate nohighlight">\(y\)</span>-low domain face here since the transverse direction is periodic and the outflow is an homogeneous
 Neumann for the state components.</p>
-<p>A last function, <code class="docutils literal notranslate"><span class="pre">zero_visc</span></code>, is included in <code class="docutils literal notranslate"><span class="pre">pelelm_prob.H</span></code> but is not used in the present case.</p>
+<p>A last function, <code class="docutils literal notranslate"><span class="pre">zero_visc</span></code>, is included in <code class="docutils literal notranslate"><span class="pre">pelelmex_prob.H</span></code> but is not used in the present case.</p>
 </section>
 <section id="numerical-parameters">
 <h3>Numerical parameters<a class="headerlink" href="#numerical-parameters" title="Link to this heading"></a></h3>
@@ -424,7 +424,7 @@ similar to <a class="reference internal" href="#fs-initsol"><span class="std std
 </figure>
 <p>It is interesting to note that the initial solution has a transverse velocity component
 even though only the axial velocity was extracted from a 1D Cantera solution to initialize
-the solution in the <cite>pelelm_initdata</cite> function. This is because <cite>PeleLMeX</cite> performs an
+the solution in the <cite>pelelmex_initdata</cite> function. This is because <cite>PeleLMeX</cite> performs an
 initial projection (more than one actually). At this point, the <cite>divU</cite> constraint is
 mostly negative, which is counter-intuitive for a flame, but this is the consequence of
 the initialization process and the solution will rapidly relax to adapt to the <cite>PeleLMeX</cite> grid.</p>

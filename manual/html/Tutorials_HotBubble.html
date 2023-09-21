@@ -215,7 +215,7 @@ amr.max_grid_size   = 128            # max box size
 <section id="problem-specifications">
 <h3>Problem specifications<a class="headerlink" href="#problem-specifications" title="Link to this heading"></a></h3>
 <p id="sec-tuto-hb-problem">The problem setup is mostly contained in the three C++ source/header files described in <a class="reference internal" href="Tutorials_FlameSheet.html"><span class="doc">Premixed flame sheet with harmonic perturbations</span></a>.
-The user parameters are gathered in the struct defined in  <code class="docutils literal notranslate"><span class="pre">pelelm_prob_parm.H</span></code>:</p>
+The user parameters are gathered in the struct defined in  <code class="docutils literal notranslate"><span class="pre">pelelmex_prob_parm.H</span></code>:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>struct ProbParm
 {
     amrex::Real P_mean        = 101325.0_rt;
@@ -240,9 +240,9 @@ The user parameters are gathered in the struct defined in  <code class="docutils
 <p>The initial solution consists of air at the pressure/temperature specified by the user, with a bubble
 of a different temperature/mixture intended to be lighter such that the bubble will rise under the
 influence of gravity. Note that the user can easily reverse the problem with a heavier bubble.
-The default parameters provided above are overwritten using AMReX ParmParse in <code class="docutils literal notranslate"><span class="pre">pelelm_prob.cpp</span></code>
-and the initial/boundary conditions implemented in <code class="docutils literal notranslate"><span class="pre">pelelm_prob.H</span></code>. Because this case does not feature
-any dirichlet BC on the state variables, the <code class="docutils literal notranslate"><span class="pre">bcnormal</span></code> function in <code class="docutils literal notranslate"><span class="pre">pelelm_prob.H</span></code> will not be called
+The default parameters provided above are overwritten using AMReX ParmParse in <code class="docutils literal notranslate"><span class="pre">pelelmex_prob.cpp</span></code>
+and the initial/boundary conditions implemented in <code class="docutils literal notranslate"><span class="pre">pelelmex_prob.H</span></code>. Because this case does not feature
+any dirichlet BC on the state variables, the <code class="docutils literal notranslate"><span class="pre">bcnormal</span></code> function in <code class="docutils literal notranslate"><span class="pre">pelelmex_prob.H</span></code> will not be called
 and can thus be left empty (but its definition is still required).</p>
 <p>The interesting aspect of this case is the inclusion of buoyancy effects in the presence of gravity.
 To trigger gravity the following input key is required:</p>

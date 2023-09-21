@@ -216,7 +216,7 @@ The following list of derived variables are available in PeleLMeX:
 Note that `mixture_fraction` and `progress_variable` requires additional inputs from the users as described below.
 The `derUserDefined` allow the user to define its own derived variable which can comprise several components. To do
 so, the user need to copy the Source/DeriveUserDefined.cpp file into his run folder and update the file. The number of
-components is defined based on the size of the vector returned by pelelm_setuserderives().
+components is defined based on the size of the vector returned by pelelmex_setuserderives().
 
 PeleLMeX algorithm
 ------------------

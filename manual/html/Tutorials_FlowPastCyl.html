@@ -221,8 +221,8 @@ amr.max_grid_size   = 64         # maximum box size
 <p id="sec-tuto-fpc-inflowspec">This very simple problem only has three user-defined problem parameters: the inflow velocity magnitude, the pressure and the temperature.
 Specifying dirichlet <code class="docutils literal notranslate"><span class="pre">Inflow</span></code> conditions in <cite>PeleLMeX</cite> can seem daunting at first. But it is actually a very flexible process. We walk the user through the details which involve the following files:</p>
 <ul>
-<li><p><code class="docutils literal notranslate"><span class="pre">pelelm_prob_parm.H</span></code>, assemble in a C++ struct <code class="docutils literal notranslate"><span class="pre">ProbParm</span></code> the input variables as well as other variables used in the initialization process.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">pelelm_prob.cpp</span></code>, initialize and provide default values to the entries of <code class="docutils literal notranslate"><span class="pre">ProbParm</span></code> and allow the user to pass run-time value using the <cite>AMReX</cite> parser (<code class="docutils literal notranslate"><span class="pre">ParmParse</span></code>). In the present case, the parser will read the parameters in the <code class="docutils literal notranslate"><span class="pre">Problem</span></code> block:</p>
+<li><p><code class="docutils literal notranslate"><span class="pre">pelelmex_prob_parm.H</span></code>, assemble in a C++ struct <code class="docutils literal notranslate"><span class="pre">ProbParm</span></code> the input variables as well as other variables used in the initialization process.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pelelmex_prob.cpp</span></code>, initialize and provide default values to the entries of <code class="docutils literal notranslate"><span class="pre">ProbParm</span></code> and allow the user to pass run-time value using the <cite>AMReX</cite> parser (<code class="docutils literal notranslate"><span class="pre">ParmParse</span></code>). In the present case, the parser will read the parameters in the <code class="docutils literal notranslate"><span class="pre">Problem</span></code> block:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>#--------------------------- Problem -------------------------------
 prob.T_mean = 300.0
 prob.P_mean = 101325.0
@@ -231,7 +231,7 @@ prob.meanFlowDir = 1
 </pre></div>
 </div>
 </li>
-<li><p>finally, <code class="docutils literal notranslate"><span class="pre">pelelm_prob.H</span></code> contains the <code class="docutils literal notranslate"><span class="pre">pelelm_initdata</span></code> and <code class="docutils literal notranslate"><span class="pre">bcnormal</span></code> functions responsible for generating the initial and boundary conditions, respectively.</p></li>
+<li><p>finally, <code class="docutils literal notranslate"><span class="pre">pelelmex_prob.H</span></code> contains the <code class="docutils literal notranslate"><span class="pre">pelelmex_initdata</span></code> and <code class="docutils literal notranslate"><span class="pre">bcnormal</span></code> functions responsible for generating the initial and boundary conditions, respectively.</p></li>
 </ul>
 <p>Finally, this test uses a constant set of transport parameters rather relying on the Simple library. These transport parameters are specified in the <code class="docutils literal notranslate"><span class="pre">CONSTANT</span> <span class="pre">TRANSPORT</span></code> block:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>#------------  INPUTS TO CONSTANT TRANSPORT -----------------
@@ -250,7 +250,7 @@ transport.const_diffusivity      = 0.0
 <section id="initial-solution">
 <h3>Initial solution<a class="headerlink" href="#initial-solution" title="Link to this heading"></a></h3>
 <p>An initial field of the main variables is always required to start a simulation. In the present case, the computational domain is filled with air in the condition of pressure and temperature provided by the user (or the default ones). An initial constant velocity of <code class="docutils literal notranslate"><span class="pre">meanFlowMag</span></code> is used, but note that <cite>PeleLMeX</cite> performs an initial velocity projection to enforce the low Mach number constraint which overwrite this initial velocity.</p>
-<p>This initial solution is constructed via the routine <code class="docutils literal notranslate"><span class="pre">pelelm_initdata()</span></code>, in the file <code class="docutils literal notranslate"><span class="pre">pelelm_prob.H</span></code>. Additional information is provided as comments in this file for the eager reader, but nothing is required from the user at this point.</p>
+<p>This initial solution is constructed via the routine <code class="docutils literal notranslate"><span class="pre">pelelmex_initdata()</span></code>, in the file <code class="docutils literal notranslate"><span class="pre">pelelmex_prob.H</span></code>. Additional information is provided as comments in this file for the eager reader, but nothing is required from the user at this point.</p>
 </section>
 <section id="numerical-scheme">
 <h3>Numerical scheme<a class="headerlink" href="#numerical-scheme" title="Link to this heading"></a></h3>
