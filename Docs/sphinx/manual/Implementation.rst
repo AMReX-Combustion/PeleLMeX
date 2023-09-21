@@ -25,20 +25,20 @@ in ``Exec/RegTests`` from which new users can pull for their new case.
 
 The source code contains a few dozen files, organized around the pieces of the algorithm and major functionalities:
 
-* ``PeleLMEvolve``: top level time advance loop, with IO/exit controls
-* ``PeleLMSetup``: setting up the simulation parameters, parsing the input file
-* ``PeleLMInit``: generating the initial solution from scratch or checkpoint file, performing initial projections/iteration(s)
-* ``PeleLMAdvance``: top level implementation of the time step algorithm
-* ``PeleLMProjection``: implement the various flavors of the nodal projection
-* ``PeleLMUmac``: implement the construction and projection of MAC-velocities
-* ``PeleLMAdvection``: functions to compute the explicit advection terms
-* ``PeleLMDiffusion``: functions to compute the diffusion terms, using the operators defined in ``DiffusionOp``
-* ``PeleLMReaction``: function using *PelePhysics* reactors to integrate the chemistry and linearized advection/diffusion
-* ``PeleLMPlot``: implementation of plotfile and checkpoint file IOs
-* ``PeleLMBC``: functions filling the ghost cells (at fine/fine, coarse/fine and domain boundaries)
-* ``PeleLMRegrid``: creating new AMR level or remaking modified AMR level during adaptive refinement
-* ``PeleLMTagging``: mark cells for refinement
-* ``PeleLM_K.H``: low-level kernel functions
+* ``PeleLMeX_Evolve``: top level time advance loop, with IO/exit controls
+* ``PeleLMeX_Setup``: setting up the simulation parameters, parsing the input file
+* ``PeleLMeX_Init``: generating the initial solution from scratch or checkpoint file, performing initial projections/iteration(s)
+* ``PeleLMeX_Advance``: top level implementation of the time step algorithm
+* ``PeleLMeX_Projection``: implement the various flavors of the nodal projection
+* ``PeleLMeX_Umac``: implement the construction and projection of MAC-velocities
+* ``PeleLMeX_Advection``: functions to compute the explicit advection terms
+* ``PeleLMeX_Diffusion``: functions to compute the diffusion terms, using the operators defined in ``PeleLMex_DiffusionOp``
+* ``PeleLMeX_Reaction``: function using *PelePhysics* reactors to integrate the chemistry and linearized advection/diffusion
+* ``PeleLMeX_Plot``: implementation of plotfile and checkpoint file IOs
+* ``PeleLMeX_BC``: functions filling the ghost cells (at fine/fine, coarse/fine and domain boundaries)
+* ``PeleLMeX_Regrid``: creating new AMR level or remaking modified AMR level during adaptive refinement
+* ``PeleLMeX_Tagging``: mark cells for refinement
+* ``PeleLMeX__K.H``: low-level kernel functions
 
 Data structure and containers
 -----------------------------

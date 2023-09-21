@@ -1,4 +1,4 @@
-#include <PeleLM.H>
+#include <PeleLMeX.H>
 
 // Defined and initialized when in gnumake, but not defined in cmake and
 // initialization done manually

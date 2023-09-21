@@ -8,8 +8,8 @@ target_sources(pelelmex
         DiffusionOp.cpp
         PeleLM.cpp
         PeleLM.H
-        PeleLM_Index.H
-        PeleLM_K.H
+        PeleLMeX_Index.H
+        PeleLMeX_K.H
         PeleLMAdvance.cpp
         PeleLMAdvection.cpp
         PeleLMBC.cpp

@@ -68,14 +68,14 @@ any additional files necessary for the simulation (solution of a Cantera 1D flam
 
 The following three files in particular are necessary: ::
 
-        pelelm_prob_parm.H
-        pelelm_prob.H
-        pelelm_prob.cpp
+        pelelmex_prob_parm.H
+        pelelmex_prob.H
+        pelelmex_prob.cpp
 
 The first file provides a C++ struct `ProbParm` containing the set of user-defined variables
 used during the simulation (value of inlet temperature, amplitude of the initial
 perturbation, ...). The `.cpp` file uses AMReX `ParmParse` to read these run-time
-parameter and initialize the `ProbParm` container values. Finally, `pelelm_prob.H`
+parameter and initialize the `ProbParm` container values. Finally, `pelelmex_prob.H`
 provides C++ kernels for the initial and boundary conditions and will be detailed
 later in this tutorial.
 
@@ -136,7 +136,7 @@ Problem specifications
 
 ..  _sec:TUTO_FS::Problem:
 
-The problem setup is mostly contained in the three C++ source/header files mentioned above. Looking into ``pelelm_prob_parm.H`` first,
+The problem setup is mostly contained in the three C++ source/header files mentioned above. Looking into ``pelelmex_prob_parm.H`` first,
 we can see the set of parameters that will be used to specify the initial and boundary conditions: ::
 
     struct ProbParm
@@ -158,7 +158,7 @@ periodicity of the initial solution.
 .. note::
    The ``P_mean`` parameters, providing the initial thermodynamic pressure, is always needed in the ProbParm struct.
 
-Looking now into ``pelelm_prob.cpp``, we can see how the developer can provide access to the `ProbParm` parameters
+Looking now into ``pelelmex_prob.cpp``, we can see how the developer can provide access to the `ProbParm` parameters
 to overwrite the default values using AMReX's ParmParse: ::
 
     void PeleLM::readProbParm()
@@ -190,8 +190,8 @@ ASCII file in the input file: ::
 
     pmf.datafile = "drm19_pmf.dat"
 
-Finally, ``pelelm_prob.H`` defines the two functions effectively filling the initial solution and boundary conditions:
-`pelelm_initdata` and `bcnormal`. The arguments of the `pelelm_initdata` function are as follows:
+Finally, ``pelelmex_prob.H`` defines the two functions effectively filling the initial solution and boundary conditions:
+`pelelmex_initdata` and `bcnormal`. The arguments of the `pelelmex_initdata` function are as follows:
 
 * ``int i, int j, int k,`` : indices of the current grid cell the function is called to fill
 
@@ -207,7 +207,7 @@ Finally, ``pelelm_prob.H`` defines the two functions effectively filling the ini
 
 * ``pele::physics::PMF::PmfData::DataContainer const * pmf_data`` : the Cantera solution data struct
 
-The reader is encouraged to look into the body of the `pelelm_initdata` function for more details, a skeletal
+The reader is encouraged to look into the body of the `pelelmex_initdata` function for more details, a skeletal
 version of the function reads:
 
 * Compute the coordinate of the cell center using the cell indices and the `geomdata`.
@@ -228,7 +228,7 @@ function is only called in the direction/orientation where a Dirichlet boundary 
 :math:`y`-low domain face here since the transverse direction is periodic and the outflow is an homogeneous
 Neumann for the state components.
 
-A last function, ``zero_visc``, is included in ``pelelm_prob.H`` but is not used in the present case.
+A last function, ``zero_visc``, is included in ``pelelmex_prob.H`` but is not used in the present case.
 
 Numerical parameters
 ^^^^^^^^^^^^^^^^^^^^
@@ -356,7 +356,7 @@ similar to :numref:`FS_InitSol`.
 
 It is interesting to note that the initial solution has a transverse velocity component
 even though only the axial velocity was extracted from a 1D Cantera solution to initialize
-the solution in the `pelelm_initdata` function. This is because `PeleLMeX` performs an
+the solution in the `pelelmex_initdata` function. This is because `PeleLMeX` performs an
 initial projection (more than one actually). At this point, the `divU` constraint is
 mostly negative, which is counter-intuitive for a flame, but this is the consequence of
 the initialization process and the solution will rapidly relax to adapt to the `PeleLMeX` grid.

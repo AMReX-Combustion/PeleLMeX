@@ -152,8 +152,8 @@ to oxidizer and fuel streams respectively.
 Specifying dirichlet ``Inflow`` conditions in `PeleLMeX` can seem daunting at first. But it is actually a very
 flexible process. We walk the user through the details of it for the Triple Flame case just described. The files involved are:
 
-- ``pelelm_prob_parm.H``, assemble in a C++ struct ``ProbParm`` the input variables as well as other variables used in the initialization process.
-- ``pelelm_prob.cpp``, initialize and provide default values to the entries of ``ProbParm`` and allow the user to pass run-time value using the `AMReX` parser (``ParmParse``). In the present case, the parser will read the parameters in the ``Problem`` block: ::
+- ``pelelmex_prob_parm.H``, assemble in a C++ struct ``ProbParm`` the input variables as well as other variables used in the initialization process.
+- ``pelelmex_prob.cpp``, initialize and provide default values to the entries of ``ProbParm`` and allow the user to pass run-time value using the `AMReX` parser (``ParmParse``). In the present case, the parser will read the parameters in the ``Problem`` block: ::
 
     #---------------------- Problem ----------------------------------
     prob.P_mean = 101325.0
@@ -161,12 +161,12 @@ flexible process. We walk the user through the details of it for the Triple Flam
     prob.V_in = 0.85
     prob.Zst = 0.055
 
-- finally, ``pelelm_prob.H`` contains the ``pelelm_initdata`` and ``bcnormal`` functions responsible for generating the initial and boundary conditions, resspectively.
+- finally, ``pelelmex_prob.H`` contains the ``pelelmex_initdata`` and ``bcnormal`` functions responsible for generating the initial and boundary conditions, resspectively.
 
 Note that in our specific case, we compute the input value of the mass fractions (Y) *directly* in ``bcnormal``,
 using the ``ProbParm`` variables. We do not need any additional information, because we hard coded the hyperbolic
 tangent profile of :math:`z` (see previous formula) and there is a direct relation with the mass fraction profiles.
-The interested reader can look at the function ``set_Y_from_Ksi`` and ``set_Y_from_Phi`` in ``pelelm_prob.H``.
+The interested reader can look at the function ``set_Y_from_Ksi`` and ``set_Y_from_Phi`` in ``pelelmex_prob.H``.
 
 Looking closely at the ``ProbParm`` struct, we can see that an object specific to
 `PeleLMeX` is present, a ``FlowControllerData`` named ``FCData``: ::
@@ -211,7 +211,7 @@ shown in Fig :numref:`TF_InitialSol`, along with the parameters controlling the 
 
    : Initial temperature field (left) as well as widening gaussian 1D y-profiles (right) and associated parameters. The initial solution contains 2 levels.
 
-This initial solution is constructed via the routine ``pelelm_initdata()``, in the file ``pelelm_prob.H``. Additional information is provided as comments in this file for the eager reader, but nothing is required from the user at this point.
+This initial solution is constructed via the routine ``pelelmex_initdata()``, in the file ``pelelmex_prob.H``. Additional information is provided as comments in this file for the eager reader, but nothing is required from the user at this point.
 
 Numerical scheme
 ^^^^^^^^^^^^^^^^

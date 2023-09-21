@@ -1,4 +1,4 @@
-#include <PeleLM.H>
+#include <PeleLMeX.H>
 #include <PrecondOp.H>
 #include <AMReX_ParmParse.H>
 #include <AMReX_VisMF.H>
