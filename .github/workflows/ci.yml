@@ -554,6 +554,7 @@ jobs:
             useeb: "OFF"
           - enableeb: EB-ON
             useeb: "ON"
+      fail-fast: false
     steps:
       - name: Clone
         uses: actions/checkout@v3
