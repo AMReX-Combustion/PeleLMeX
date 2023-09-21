@@ -1,7 +1,7 @@
 
 #include "SprayParticles.H"
 #include "SprayInjection.H"
-#include "pelelm_prob.H"
+#include "pelelmex_prob.H"
 
 using namespace amrex;
 

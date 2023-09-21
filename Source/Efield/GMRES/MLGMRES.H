@@ -1,7 +1,7 @@
 #ifndef MLGMRES_H
 #define MLGMRES_H
 #include <AMReX_REAL.H>
-#include <PeleLM.H>
+#include <PeleLMeX.H>
 #include <AMReX_MultiFab.H>
 #include <AMReX_Geometry.H>
 #include <AMReX_VisMF.H>

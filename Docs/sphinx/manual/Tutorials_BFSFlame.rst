@@ -154,7 +154,7 @@ Problem specifications
 ..  _sec:TUTO_BFS::Problem:
 
 The problem setup is mostly contained in the three C++ source/header files described in :doc:`Tutorials_FlameSheet`.
-The user parameters are gathered in the struct defined in  ``pelelm_prob_parm.H``: ::
+The user parameters are gathered in the struct defined in  ``pelelmex_prob_parm.H``: ::
 
     struct ProbParm
     {
@@ -183,8 +183,8 @@ The user parameters are gathered in the struct defined in  ``pelelm_prob_parm.H`
 
 The initial solution consists of a premixed methane/air mixture in the upper part of the domain
 and pure hot air in the wake of the step. The default parameters provided above are overwritten
-using AMReX ParmParse in ``pelelm_prob.cpp`` and the initial/boundary conditions implemented in
-``pelelm_prob.H``.
+using AMReX ParmParse in ``pelelmex_prob.cpp`` and the initial/boundary conditions implemented in
+``pelelmex_prob.H``.
 
 In addition to these three C++ files, an extra header is needed in the present case compared to
 :doc:`Tutorials_FlameSheet` : ``EBUserDefined.H``. This file is necessary to specify more complex EB

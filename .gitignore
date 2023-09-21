@@ -1,6 +1,8 @@
 # Compilation/Executable
 *.ex
 tmp_build*
+compile_commands.json
+.ccls-cache
 
 # Run output
 *.p3d
