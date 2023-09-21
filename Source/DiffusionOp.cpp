@@ -836,7 +836,7 @@ DiffusionOp::computeGradient(
   const Vector<MultiFab*>& a_laps,
   const Vector<MultiFab const*>& a_phi,
   const BCRec& a_bcrec,
-  int do_avgDown)
+  int do_avgDown) const
 {
   BL_PROFILE("DiffusionOp::computeGradient()");
 
@@ -894,7 +894,7 @@ void
 DiffusionOp::avgDownFluxes(
   const Vector<Array<MultiFab*, AMREX_SPACEDIM>>& a_fluxes,
   int flux_comp,
-  int ncomp)
+  int ncomp) const
 {
 
   int finest_level = m_pelelm->finestLevel();

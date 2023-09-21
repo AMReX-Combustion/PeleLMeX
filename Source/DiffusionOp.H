@@ -108,13 +108,13 @@ public:
     const amrex::Vector<amrex::MultiFab*>& a_laps,
     const amrex::Vector<amrex::MultiFab const*>& a_phi,
     const amrex::BCRec& a_bcrec,
-    int do_avgDown);
+    int do_avgDown) const;
 
   void avgDownFluxes(
     amrex::Vector<amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>> const&
       a_fluxes,
     int flux_comp,
-    int ncomp);
+    int ncomp) const;
 
   void readParameters();
 
@@ -141,7 +141,6 @@ public:
   std::unique_ptr<amrex::MLABecLaplacian> m_gradient_op;
 #endif
 
-  int m_verbose = 0;
   int m_ncomp = 1;
 
   // Options to control MLMG behavior
@@ -202,8 +201,6 @@ private:
   std::unique_ptr<amrex::MLTensorOp> m_apply_op;
   std::unique_ptr<amrex::MLTensorOp> m_solve_op;
 #endif
-
-  int m_verbose = 0;
 
   // Options to control MLMG behavior
   int m_mg_verbose = 0;

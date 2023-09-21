@@ -3,6 +3,7 @@
 #include <PeleLM_K.H>
 #include <DiffusionOp.H>
 #include <AMReX_PlotFileUtil.H>
+#include <memory>
 
 #ifdef AMREX_USE_EB
 #include <AMReX_EB_utils.H>
@@ -15,7 +16,7 @@ DiffusionOp*
 PeleLM::getDiffusionOp()
 {
   if (!m_diffusion_op) {
-    m_diffusion_op.reset(new DiffusionOp(this));
+    m_diffusion_op = std::make_unique<DiffusionOp>(this);
   }
   return m_diffusion_op.get();
 }
@@ -24,7 +25,7 @@ DiffusionOp*
 PeleLM::getMCDiffusionOp(int ncomp)
 {
   if (!m_mcdiffusion_op || m_mcdiffusion_op->m_ncomp != ncomp) {
-    m_mcdiffusion_op.reset(new DiffusionOp(this, ncomp));
+    m_mcdiffusion_op = std::make_unique<DiffusionOp>(this, ncomp);
   }
   return m_mcdiffusion_op.get();
 }
@@ -33,7 +34,7 @@ DiffusionTensorOp*
 PeleLM::getDiffusionTensorOp()
 {
   if (!m_diffusionTensor_op) {
-    m_diffusionTensor_op.reset(new DiffusionTensorOp(this));
+    m_diffusionTensor_op = std::make_unique<DiffusionTensorOp>(this);
   }
   return m_diffusionTensor_op.get();
 }
@@ -417,7 +418,7 @@ PeleLM::addWbarTerm(
       lev, 0, NUM_SPECIES, doZeroVisc, bcRecSpec, *a_beta[lev], addTurbContrib);
 
     const Box& domain = geom[lev].Domain();
-    bool use_harmonic_avg = m_harm_avg_cen2edge != 0 ? true : false;
+    bool use_harmonic_avg = m_harm_avg_cen2edge != 0;
 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -541,7 +542,7 @@ PeleLM::addSoretTerm(
       lev, NUM_SPECIES + 2, NUM_SPECIES, doZeroVisc, bcRecSpec, *a_beta[lev]);
 
     const Box& domain = geom[lev].Domain();
-    bool use_harmonic_avg = m_harm_avg_cen2edge != 0 ? true : false;
+    bool use_harmonic_avg = m_harm_avg_cen2edge != 0;
 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())

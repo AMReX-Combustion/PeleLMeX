@@ -1,4 +1,5 @@
 #include <PeleLM.H>
+#include <memory>
 
 using namespace amrex;
 
@@ -7,7 +8,7 @@ PeleLM::initialProjection()
 {
   BL_PROFILE("PeleLMeX::initialProjection()");
 
-  if (m_verbose) {
+  if (m_verbose != 0) {
     Vector<Real> velMax(AMREX_SPACEDIM);
     velMax = MLNorm0(
       GetVecOfConstPtrs(getVelocityVect(AmrNewTime)), 0, AMREX_SPACEDIM);
@@ -23,11 +24,11 @@ PeleLM::initialProjection()
 
   // Get sigma : density if not incompressible
   Vector<std::unique_ptr<MultiFab>> sigma(finest_level + 1);
-  if (!m_incompressible) {
+  if (m_incompressible == 0) {
     for (int lev = 0; lev <= finest_level; ++lev) {
 
-      sigma[lev].reset(new MultiFab(
-        grids[lev], dmap[lev], 1, nGhost, MFInfo(), *m_factory[lev]));
+      sigma[lev] = std::make_unique<MultiFab>(
+        grids[lev], dmap[lev], 1, nGhost, MFInfo(), *m_factory[lev]);
 
       auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
 
@@ -61,9 +62,9 @@ PeleLM::initialProjection()
   // Get RHS cc: - divU (- \int{divU})
   Real Sbar = 0.0;
   Vector<MultiFab> rhs_cc(finest_level + 1);
-  if (!m_incompressible && m_has_divu) {
+  if ((m_incompressible == 0) && (m_has_divu != 0)) {
     // Ensure integral of RHS is zero for closed chamber
-    if (m_closed_chamber) {
+    if (m_closed_chamber != 0) {
       Sbar = MFSum(GetVecOfConstPtrs(getDivUVect(AmrNewTime)), 0);
       Sbar /= m_uncoveredVol; // Transform in Mean.
     }
@@ -73,7 +74,7 @@ PeleLM::initialProjection()
       MultiFab::Copy(
         rhs_cc[lev], m_leveldata_new[lev]->divu, 0, 0, 1,
         m_leveldata_new[lev]->divu.nGrow());
-      if (m_closed_chamber) {
+      if (m_closed_chamber != 0) {
         rhs_cc[lev].plus(-Sbar, 0, 1);
       }
       scaleProj_RZ(lev, rhs_cc[lev]);
@@ -91,10 +92,10 @@ PeleLM::initialProjection()
     auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
     ldata_p->press.setVal(0.0);
     ldata_p->gp.setVal(0.0);
-    if (!m_incompressible && m_has_divu) {
+    if ((m_incompressible == 0) && (m_has_divu != 0)) {
       m_leveldata_new[lev]->divu.mult(-1.0, 0, 1, rhs_cc[lev].nGrow());
       // Restore divU integral
-      if (m_closed_chamber) {
+      if (m_closed_chamber != 0) {
         m_leveldata_new[lev]->divu.plus(Sbar, 0, 1);
       }
     }
@@ -108,7 +109,7 @@ PeleLM::initialProjection()
     averageDownVelocity(AmrNewTime);
   }
 
-  if (m_verbose) {
+  if (m_verbose != 0) {
     Vector<Real> velMax(AMREX_SPACEDIM);
     velMax = MLNorm0(
       GetVecOfConstPtrs(getVelocityVect(AmrNewTime)), 0, AMREX_SPACEDIM);
@@ -124,7 +125,7 @@ PeleLM::initialPressProjection()
 {
   BL_PROFILE("PeleLMeX::initialPressProjection()");
 
-  if (m_verbose) {
+  if (m_verbose != 0) {
     amrex::Print() << " Initial pressure projection \n";
   }
 
@@ -134,11 +135,11 @@ PeleLM::initialPressProjection()
 
   // Get sigma : density if not incompressible
   Vector<std::unique_ptr<MultiFab>> sigma(finest_level + 1);
-  if (!m_incompressible) {
+  if (m_incompressible == 0) {
     for (int lev = 0; lev <= finest_level; ++lev) {
 
-      sigma[lev].reset(new MultiFab(
-        grids[lev], dmap[lev], 1, nGhost, MFInfo(), *m_factory[lev]));
+      sigma[lev] = std::make_unique<MultiFab>(
+        grids[lev], dmap[lev], 1, nGhost, MFInfo(), *m_factory[lev]);
 
       auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
 
@@ -184,17 +185,17 @@ PeleLM::velocityProjection(
   BL_PROFILE("PeleLMeX::velocityProjection()");
 
   int nGhost = 0;
-  int incremental = (is_initIter) ? 1 : 0;
+  int incremental = (is_initIter) != 0 ? 1 : 0;
 
   // Get sigma : scaled density inv. if not incompressible
   Vector<std::unique_ptr<MultiFab>> sigma(finest_level + 1);
-  if (!m_incompressible) {
+  if (m_incompressible == 0) {
     Vector<std::unique_ptr<MultiFab>> rhoHalf(finest_level + 1);
     rhoHalf = getDensityVect(a_rhoTime);
     for (int lev = 0; lev <= finest_level; ++lev) {
 
-      sigma[lev].reset(new MultiFab(
-        grids[lev], dmap[lev], 1, nGhost, MFInfo(), *m_factory[lev]));
+      sigma[lev] = std::make_unique<MultiFab>(
+        grids[lev], dmap[lev], 1, nGhost, MFInfo(), *m_factory[lev]);
 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -216,9 +217,9 @@ PeleLM::velocityProjection(
     }
   }
 
-  if (!incremental) {
+  if (incremental == 0) {
     Vector<std::unique_ptr<MultiFab>> rhoHalf(finest_level + 1);
-    if (!m_incompressible) {
+    if (m_incompressible == 0) {
       rhoHalf = getDensityVect(a_rhoTime);
     }
     for (int lev = 0; lev <= finest_level; ++lev) {
@@ -234,7 +235,7 @@ PeleLM::velocityProjection(
         Box const& bx = mfi.tilebox();
         auto const& vel_arr = ldataNew_p->state.array(mfi, VELX);
         auto const& gp_arr = ldataOld_p->gp.const_array(mfi);
-        auto const& rho_arr = (m_incompressible)
+        auto const& rho_arr = (m_incompressible) != 0
                                 ? Array4<Real const>()
                                 : rhoHalf[lev]->const_array(mfi);
         amrex::ParallelFor(
@@ -242,7 +243,7 @@ PeleLM::velocityProjection(
           [vel_arr, gp_arr, rho_arr, a_dt, incompressible = m_incompressible,
            rho = m_rho] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             Real soverrho =
-              (incompressible) ? a_dt / rho : a_dt / rho_arr(i, j, k);
+              (incompressible) != 0 ? a_dt / rho : a_dt / rho_arr(i, j, k);
             AMREX_D_TERM(vel_arr(i, j, k, 0) += gp_arr(i, j, k, 0) * soverrho;
                          , vel_arr(i, j, k, 1) += gp_arr(i, j, k, 1) * soverrho;
                          ,
@@ -254,7 +255,7 @@ PeleLM::velocityProjection(
 
   // If incremental
   // define "vel" to be U^{np1*} - U^{n} rather than U^{np1*}
-  if (incremental) {
+  if (incremental != 0) {
     for (int lev = 0; lev <= finest_level; ++lev) {
       auto* ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
       auto* ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
@@ -272,7 +273,7 @@ PeleLM::velocityProjection(
     EB_set_covered(*vel[lev], 0.0);
 #endif
     vel[lev]->setBndry(0.0);
-    if (!incremental) {
+    if (incremental == 0) {
       setInflowBoundaryVel(*vel[lev], lev, AmrNewTime);
     }
     scaleProj_RZ(lev, *vel[lev]);
@@ -281,10 +282,10 @@ PeleLM::velocityProjection(
   // To ensure integral of RHS is zero for closed chamber, get mean divU
   Real SbarOld = 0.0;
   Real SbarNew = 0.0;
-  if (m_closed_chamber && !m_incompressible) {
+  if ((m_closed_chamber != 0) && (m_incompressible == 0)) {
     SbarNew = MFSum(GetVecOfConstPtrs(getDivUVect(AmrNewTime)), 0);
     SbarNew /= m_uncoveredVol; // Transform in Mean.
-    if (incremental) {
+    if (incremental != 0) {
       SbarOld = MFSum(GetVecOfConstPtrs(getDivUVect(AmrOldTime)), 0);
       SbarOld /= m_uncoveredVol; // Transform in Mean.
     }
@@ -292,17 +293,17 @@ PeleLM::velocityProjection(
 
   // Get RHS cc
   Vector<MultiFab> rhs_cc;
-  if (!m_incompressible && m_has_divu) {
+  if ((m_incompressible == 0) && (m_has_divu != 0)) {
     rhs_cc.resize(finest_level + 1);
     for (int lev = 0; lev <= finest_level; ++lev) {
-      if (!incremental) {
+      if (incremental == 0) {
         auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
         rhs_cc[lev].define(
           grids[lev], dmap[lev], 1, ldata_p->divu.nGrow(), MFInfo(),
           *m_factory[lev]);
         MultiFab::Copy(
           rhs_cc[lev], ldata_p->divu, 0, 0, 1, ldata_p->divu.nGrow());
-        if (m_closed_chamber) {
+        if (m_closed_chamber != 0) {
           rhs_cc[lev].plus(-SbarNew, 0, 1);
         }
         rhs_cc[lev].mult(-1.0, 0, 1, ldata_p->divu.nGrow());
@@ -326,7 +327,7 @@ PeleLM::velocityProjection(
              is_closed_ch =
                m_closed_chamber] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
               rhs(i, j, k) = -(divu_n(i, j, k) - divu_o(i, j, k));
-              if (is_closed_ch) {
+              if (is_closed_ch != 0) {
                 rhs(i, j, k) +=
                   SbarNew - SbarOld; // subtract the mean, but rhs's already -
               }
@@ -347,7 +348,7 @@ PeleLM::velocityProjection(
   // If incremental
   // define back to be U^{np1} by adding U^{n}
   // and handles scaling if 2D-RZ
-  if (incremental) {
+  if (incremental != 0) {
     for (int lev = 0; lev <= finest_level; ++lev) {
       auto* ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
       auto* ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
@@ -424,18 +425,18 @@ PeleLM::doNodalProject(
   // Setup NodalProjector
   std::unique_ptr<Hydro::NodalProjector> nodal_projector;
 
-  if (m_incompressible) {
+  if (m_incompressible != 0) {
     Real constant_sigma = scaling_factor / m_rho;
-    nodal_projector.reset(new Hydro::NodalProjector(
-      a_vel, constant_sigma, Geom(0, finest_level), info));
+    nodal_projector = std::make_unique<Hydro::NodalProjector>(
+      a_vel, constant_sigma, Geom(0, finest_level), info);
   } else {
-    if (has_rhs) {
-      nodal_projector.reset(new Hydro::NodalProjector(
+    if (has_rhs != 0) {
+      nodal_projector = std::make_unique<Hydro::NodalProjector>(
         a_vel, GetVecOfConstPtrs(a_sigma), Geom(0, finest_level), info, rhs_cc,
-        rhs_nd));
+        rhs_nd);
     } else {
-      nodal_projector.reset(new Hydro::NodalProjector(
-        a_vel, GetVecOfConstPtrs(a_sigma), Geom(0, finest_level), info));
+      nodal_projector = std::make_unique<Hydro::NodalProjector>(
+        a_vel, GetVecOfConstPtrs(a_sigma), Geom(0, finest_level), info);
     }
   }
 
@@ -465,7 +466,7 @@ PeleLM::doNodalProject(
       auto const& gp_lev_arr = ldata_p->gp.array(mfi);
       auto const& p_proj_arr = phi[lev]->const_array(mfi);
       auto const& gp_proj_arr = gphi[lev]->const_array(mfi);
-      if (incremental) {
+      if (incremental != 0) {
         amrex::ParallelFor(
           tbx, AMREX_SPACEDIM,
           [gp_lev_arr,

@@ -1,4 +1,5 @@
 #include <PeleLM.H>
+#include <memory>
 
 #ifdef PELELM_USE_SPRAY
 #include "SprayParticles.H"
@@ -42,12 +43,13 @@ PeleLM::getLevelDataPtr(
     a_time == AmrOldTime || a_time == AmrNewTime || a_time == AmrHalfTime);
   if (a_time == AmrOldTime) {
     return m_leveldata_old[lev].get();
-  } else if (a_time == AmrNewTime) {
+  }
+  if (a_time == AmrNewTime) {
     return m_leveldata_new[lev].get();
   } else {
-    m_leveldata_floating.reset(new LevelData(
+    m_leveldata_floating = std::make_unique<LevelData>(
       grids[lev], dmap[lev], *m_factory[lev], m_incompressible, m_has_divu,
-      m_nAux, m_nGrowState, m_use_soret, static_cast<int>(m_do_les)));
+      m_nAux, m_nGrowState, m_use_soret, static_cast<int>(m_do_les));
     Real time = getTime(lev, a_time);
     fillpatch_state(lev, time, m_leveldata_floating->state, m_nGrowState);
     // if (useUMac) {
@@ -66,9 +68,8 @@ PeleLM::getLevelDataReactPtr(int lev)
 {
   if (m_do_react != 0) {
     return m_leveldatareact[lev].get();
-  } else {
-    return nullptr;
   }
+  return nullptr;
 }
 
 Vector<std::unique_ptr<MultiFab>>
@@ -166,7 +167,7 @@ PeleLM::getDensityVect(const TimeStamp& a_time)
       Real time = getTime(lev, a_time);
       r.push_back(
         std::make_unique<MultiFab>(grids[lev], dmap[lev], 1, m_nGrowState));
-      fillpatch_density(lev, time, *(r[lev].get()), 0, m_nGrowState);
+      fillpatch_density(lev, time, *(r[lev]), 0, m_nGrowState);
     }
   }
   return r;

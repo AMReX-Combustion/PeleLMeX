@@ -6,6 +6,7 @@
 #include <AMReX_ParmParse.H>
 #include <PeleLMBCfill.H>
 #include <AMReX_FillPatchUtil.H>
+#include <memory>
 #ifdef AMREX_USE_EB
 #include <AMReX_EBInterpolater.H>
 #endif
@@ -61,7 +62,7 @@ PeleLM::WritePlotFile()
   const std::string& plotfilename =
     amrex::Concatenate(m_plot_file, m_nstep, m_ioDigits);
 
-  if (m_verbose) {
+  if (m_verbose != 0) {
     amrex::Print() << "\n Writing plotfile: " << plotfilename << "\n";
   }
 
@@ -70,7 +71,7 @@ PeleLM::WritePlotFile()
   averageDownState(AmrNewTime);
 
   // Get consistent reaction data across level
-  if (m_do_react && !m_skipInstantRR && m_plot_react) {
+  if ((m_do_react != 0) && (m_skipInstantRR == 0) && (m_plot_react != 0)) {
     averageDownReaction();
   }
 
@@ -79,33 +80,33 @@ PeleLM::WritePlotFile()
   int ncomp = 0;
 
   // State
-  if (m_incompressible) {
+  if (m_incompressible != 0) {
     // Velocity + pressure gradients
     ncomp = 2 * AMREX_SPACEDIM;
   } else {
     // State + pressure gradients
-    if (m_plot_grad_p) {
+    if (m_plot_grad_p != 0) {
       ncomp = NVAR + AMREX_SPACEDIM;
     } else {
       ncomp = NVAR;
     }
     // Make the plot lighter by dropping species by default
-    if (!m_plotStateSpec) {
+    if (m_plotStateSpec == 0) {
       ncomp -= NUM_SPECIES;
     }
-    if (m_has_divu) {
+    if (m_has_divu != 0) {
       ncomp += 1;
     }
   }
 
   // Reactions
-  if (m_do_react && !m_skipInstantRR && m_plot_react) {
+  if ((m_do_react != 0) && (m_skipInstantRR == 0) && (m_plot_react != 0)) {
     // Cons Rate
     ncomp += nCompIR();
     // FunctCall
     ncomp += 1;
     // Extras:
-    if (m_plotHeatRelease) {
+    if (m_plotHeatRelease != 0) {
       ncomp += 1;
     }
   }
@@ -157,9 +158,9 @@ PeleLM::WritePlotFile()
   AMREX_D_TERM(plt_VarsName.push_back("x_velocity");
                , plt_VarsName.push_back("y_velocity");
                , plt_VarsName.push_back("z_velocity"));
-  if (!m_incompressible) {
+  if (m_incompressible == 0) {
     plt_VarsName.push_back("density");
-    if (m_plotStateSpec) {
+    if (m_plotStateSpec != 0) {
       for (int n = 0; n < NUM_SPECIES; n++) {
         plt_VarsName.push_back("rho.Y(" + names[n] + ")");
       }
@@ -177,18 +178,18 @@ PeleLM::WritePlotFile()
       plt_VarsName.push_back(sootname);
     }
 #endif
-    if (m_has_divu) {
+    if (m_has_divu != 0) {
       plt_VarsName.push_back("divu");
     }
   }
 
-  if (m_plot_grad_p) {
+  if (m_plot_grad_p != 0) {
     AMREX_D_TERM(plt_VarsName.push_back("gradpx");
                  , plt_VarsName.push_back("gradpy");
                  , plt_VarsName.push_back("gradpz"));
   }
 
-  if (m_do_react && !m_skipInstantRR && m_plot_react) {
+  if ((m_do_react != 0) && (m_skipInstantRR == 0) && (m_plot_react != 0)) {
     for (int n = 0; n < NUM_SPECIES; n++) {
       plt_VarsName.push_back("I_R(" + names[n] + ")");
     }
@@ -197,7 +198,7 @@ PeleLM::WritePlotFile()
 #endif
     plt_VarsName.push_back("FunctCall");
     // Extras:
-    if (m_plotHeatRelease) {
+    if (m_plotHeatRelease != 0) {
       plt_VarsName.push_back("HeatRelease");
     }
   }
@@ -254,7 +255,7 @@ PeleLM::WritePlotFile()
   // Fill the plot MultiFabs
   for (int lev = 0; lev <= finest_level; ++lev) {
     int cnt = 0;
-    if (m_incompressible) {
+    if (m_incompressible != 0) {
       MultiFab::Copy(
         mf_plt[lev], m_leveldata_new[lev]->state, 0, cnt, AMREX_SPACEDIM, 0);
       cnt += AMREX_SPACEDIM;
@@ -265,7 +266,7 @@ PeleLM::WritePlotFile()
         0);
       cnt += AMREX_SPACEDIM + 1;
       // Species only if requested
-      if (m_plotStateSpec) {
+      if (m_plotStateSpec != 0) {
         MultiFab::Copy(
           mf_plt[lev], m_leveldata_new[lev]->state, FIRSTSPEC, cnt, NUM_SPECIES,
           0);
@@ -283,18 +284,18 @@ PeleLM::WritePlotFile()
         0);
       cnt += NUMSOOTVAR;
 #endif
-      if (m_has_divu) {
+      if (m_has_divu != 0) {
         MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->divu, 0, cnt, 1, 0);
         cnt += 1;
       }
     }
-    if (m_plot_grad_p) {
+    if (m_plot_grad_p != 0) {
       MultiFab::Copy(
         mf_plt[lev], m_leveldata_new[lev]->gp, 0, cnt, AMREX_SPACEDIM, 0);
       cnt += AMREX_SPACEDIM;
     }
 
-    if (m_do_react && !m_skipInstantRR && m_plot_react) {
+    if ((m_do_react != 0) && (m_skipInstantRR == 0) && (m_plot_react != 0)) {
       MultiFab::Copy(
         mf_plt[lev], m_leveldatareact[lev]->I_R, 0, cnt, nCompIR(), 0);
       cnt += nCompIR();
@@ -302,9 +303,9 @@ PeleLM::WritePlotFile()
       MultiFab::Copy(mf_plt[lev], m_leveldatareact[lev]->functC, 0, cnt, 1, 0);
       cnt += 1;
 
-      if (m_plotHeatRelease) {
+      if (m_plotHeatRelease != 0) {
         std::unique_ptr<MultiFab> mf;
-        mf.reset(new MultiFab(grids[lev], dmap[lev], 1, 0));
+        mf = std::make_unique<MultiFab>(grids[lev], dmap[lev], 1, 0);
         getHeatRelease(lev, mf.get());
         MultiFab::Copy(mf_plt[lev], *mf, 0, cnt, 1, 0);
         cnt += 1;
@@ -383,7 +384,6 @@ PeleLM::WritePlotFile()
               +mut_arr_z[box_no](i, j, k) + mut_arr_z[box_no](i, j, k + 1)));
         });
       Gpu::streamSynchronize();
-      cnt += 1;
     }
 
 #ifdef AMREX_USE_EB
@@ -477,8 +477,8 @@ PeleLM::WriteHeader(const std::string& name, bool is_checkpoint) const
 
     // Ambient pressure and typvals
     HeaderFile << m_pNew << "\n";
-    for (int n = 0; n < typical_values.size(); n++) {
-      HeaderFile << typical_values[n] << "\n";
+    for (double typical_value : typical_values) {
+      HeaderFile << typical_value << "\n";
     }
   }
 }
@@ -491,7 +491,7 @@ PeleLM::WriteCheckPointFile()
   const std::string& checkpointname =
     amrex::Concatenate(m_check_file, m_nstep, m_ioDigits);
 
-  if (m_verbose) {
+  if (m_verbose != 0) {
     amrex::Print() << "\n Writting checkpoint file: " << checkpointname << "\n";
   }
 
@@ -516,15 +516,15 @@ PeleLM::WriteCheckPointFile()
       m_leveldata_new[lev]->press,
       amrex::MultiFabFileFullPrefix(lev, checkpointname, level_prefix, "p"));
 
-    if (!m_incompressible) {
-      if (m_has_divu) {
+    if (m_incompressible == 0) {
+      if (m_has_divu != 0) {
         VisMF::Write(
           m_leveldata_new[lev]->divu,
           amrex::MultiFabFileFullPrefix(
             lev, checkpointname, level_prefix, "divU"));
       }
 
-      if (m_do_react) {
+      if (m_do_react != 0) {
         VisMF::Write(
           m_leveldatareact[lev]->I_R,
           amrex::MultiFabFileFullPrefix(
@@ -663,8 +663,8 @@ PeleLM::ReadCheckPointFile()
   is >> m_pNew;
   GotoNextLine(is);
   m_pOld = m_pNew;
-  for (int n = 0; n < typical_values.size(); n++) {
-    is >> typical_values[n];
+  for (double& typical_value : typical_values) {
+    is >> typical_value;
     GotoNextLine(is);
   }
 
@@ -705,8 +705,8 @@ PeleLM::ReadCheckPointFile()
       m_leveldata_new[lev]->press,
       amrex::MultiFabFileFullPrefix(lev, m_restart_chkfile, level_prefix, "p"));
 
-    if (!m_incompressible) {
-      if (m_has_divu) {
+    if (m_incompressible == 0) {
+      if (m_has_divu != 0) {
         VisMF::Read(
           m_leveldata_new[lev]->divu,
           amrex::MultiFabFileFullPrefix(
@@ -737,7 +737,7 @@ PeleLM::ReadCheckPointFile()
         m_leveldata_new[lev]->state.setVal(0.0, NE, 2, m_nGrowState);
       }
 #else
-      if (m_do_react) {
+      if (m_do_react != 0) {
         VisMF::Read(
           m_leveldatareact[lev]->I_R,
           amrex::MultiFabFileFullPrefix(
@@ -746,7 +746,7 @@ PeleLM::ReadCheckPointFile()
 #endif
     }
   }
-  if (m_verbose) {
+  if (m_verbose != 0) {
     amrex::Print() << "Restart complete" << std::endl;
   }
 }
@@ -754,7 +754,7 @@ PeleLM::ReadCheckPointFile()
 void
 PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
 {
-  if (m_incompressible) {
+  if (m_incompressible != 0) {
     Abort(" initializing data from a pltfile only available for low-Mach "
           "simulations");
   }
@@ -847,7 +847,7 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
         foundSpec = 1;
       }
     }
-    if (!foundSpec) {
+    if (foundSpec == 0) {
       ldata_p->state.setVal(0.0, FIRSTSPEC + i, 1);
     }
   }
@@ -967,7 +967,7 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
 
   // Initialize thermodynamic pressure
   setThermoPress(a_lev, AmrNewTime);
-  if (m_has_divu) {
+  if (m_has_divu != 0) {
     ldata_p->divu.setVal(0.0);
   }
 }

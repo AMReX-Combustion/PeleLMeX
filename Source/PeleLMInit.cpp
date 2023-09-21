@@ -1,4 +1,5 @@
 #include <PeleLM.H>
+#include <memory>
 #include <pelelm_prob.H>
 #ifdef AMREX_USE_EB
 #include <AMReX_EB_utils.H>
@@ -55,24 +56,25 @@ PeleLM::MakeNewLevelFromScratch(
   m_factory[lev] = makeEBFabFactory(
     geom[lev], grids[lev], dmap[lev], {6, 6, 6}, EBSupport::full);
 #else
-  m_factory[lev].reset(new FArrayBoxFactory());
+  m_factory[lev] = std::make_unique<FArrayBoxFactory>();
 #endif
 
   // Initialize the LevelData
-  m_leveldata_old[lev].reset(new LevelData(
+  m_leveldata_old[lev] = std::make_unique<LevelData>(
     grids[lev], dmap[lev], *m_factory[lev], m_incompressible, m_has_divu,
-    m_nAux, m_nGrowState, m_use_soret, m_do_les));
-  m_leveldata_new[lev].reset(new LevelData(
+    m_nAux, m_nGrowState, m_use_soret, static_cast<int>(m_do_les));
+  m_leveldata_new[lev] = std::make_unique<LevelData>(
     grids[lev], dmap[lev], *m_factory[lev], m_incompressible, m_has_divu,
-    m_nAux, m_nGrowState, m_use_soret, m_do_les));
+    m_nAux, m_nGrowState, m_use_soret, static_cast<int>(m_do_les));
 
   if (max_level > 0 && lev != max_level) {
-    m_coveredMask[lev].reset(new iMultiFab(grids[lev], dmap[lev], 1, 0));
+    m_coveredMask[lev] =
+      std::make_unique<iMultiFab>(grids[lev], dmap[lev], 1, 0);
     m_resetCoveredMask = 1;
   }
-  if (m_do_react) {
-    m_leveldatareact[lev].reset(
-      new LevelDataReact(grids[lev], dmap[lev], *m_factory[lev]));
+  if (m_do_react != 0) {
+    m_leveldatareact[lev] =
+      std::make_unique<LevelDataReact>(grids[lev], dmap[lev], *m_factory[lev]);
     m_leveldatareact[lev]->functC.setVal(0.0);
   }
 
@@ -109,12 +111,12 @@ PeleLM::MakeNewLevelFromScratch(
     MLMG::Location::FaceCentroid, // Location of beta
     MLMG::Location::CellCenter)); // Location of solution variable phi
 #else
-  macproj.reset(new Hydro::MacProjector(Geom(0, finest_level)));
+  macproj = std::make_unique<Hydro::MacProjector>(Geom(0, finest_level));
 #endif
   m_macProjOldSize = finest_level + 1;
-  m_extSource[lev].reset(new MultiFab(
+  m_extSource[lev] = std::make_unique<MultiFab>(
     grids[lev], dmap[lev], NVAR, amrex::max(m_nGrowAdv, m_nGrowMAC), MFInfo(),
-    *m_factory[lev]));
+    *m_factory[lev]);
   m_extSource[lev]->setVal(0.);
 
 #ifdef AMREX_USE_EB
@@ -224,7 +226,7 @@ PeleLM::initData()
 
     m_nstep = 0;
 
-    if (m_do_temporals) {
+    if (m_do_temporals != 0) {
       writeTemporals();
     }
 
@@ -281,14 +283,14 @@ PeleLM::initData()
 #endif
 
     // Regrid after restart if requested
-    if (m_regrid_on_restart) {
+    if (m_regrid_on_restart != 0) {
       Print() << " Regriding on restart \n";
       for (int lev{finest_level}; lev < max_level; ++lev) {
         regrid(0, m_cur_time);
         // Need to fill the old state to enable regrid on higher levels
         copyStateNewToOld(1);
         copyPressNewToOld();
-        if (m_do_react) {
+        if (m_do_react != 0) {
           auto* ldataR_p = getLevelDataReactPtr(lev);
           ldataR_p->I_R.setVal(0.0);
         }
@@ -342,10 +344,10 @@ PeleLM::initLevelData(int lev)
       });
   }
 
-  if (!m_incompressible) {
+  if (m_incompressible == 0) {
     // Initialize thermodynamic pressure
     setThermoPress(lev, AmrNewTime);
-    if (m_has_divu) {
+    if (m_has_divu != 0) {
       ldata_p->divu.setVal(0.0);
     }
   }
@@ -365,21 +367,21 @@ PeleLM::projectInitSolution()
   Real dtInit = computeDt(is_init, AmrNewTime);
   Print() << " Initial dt: " << dtInit << "\n";
 
-  if (m_do_init_proj) {
+  if (m_do_init_proj != 0) {
 
     Print() << "\n Doing initial projection(s) \n\n";
     // Subcycling IAMR/PeleLM first does a projection with no reaction divU
     // which can make the dt for evaluating I_R better
-    if (m_has_divu) {
+    if (m_has_divu != 0) {
       int is_initialization = 1;    // Yes we are
       int computeDiffusionTerm = 1; // Needed here
       int do_avgDown = 1;           // Always
 
       // Light version of the diffusion data container
       std::unique_ptr<AdvanceDiffData> diffData;
-      diffData.reset(new AdvanceDiffData(
+      diffData = std::make_unique<AdvanceDiffData>(
         finest_level, grids, dmap, m_factory, m_nGrowAdv, m_use_wbar,
-        m_use_soret, is_initialization));
+        m_use_soret, is_initialization);
       calcDivU(
         is_initialization, computeDiffusionTerm, do_avgDown, AmrNewTime,
         diffData);
@@ -399,7 +401,7 @@ PeleLM::projectInitSolution()
     //----------------------------------------------------------------
     // Initial velocity projection iterations
     for (int iter = 0; iter < m_numDivuIter; iter++) {
-      if (m_do_react) {
+      if (m_do_react != 0) {
         // The new level data has been filled above
         // Copy new -> old since old used in advanceChemistry
         copyStateNewToOld();
@@ -418,23 +420,23 @@ PeleLM::projectInitSolution()
               advanceChemistry(lev, dtInit / 2.0, Forcing);
             }
           }
-          if (m_doLoadBalance) {
+          if (m_doLoadBalance != 0) {
             loadBalanceChemLev(lev);
           }
         }
         // Copy back old -> new
         copyStateOldToNew();
       }
-      if (m_has_divu) {
+      if (m_has_divu != 0) {
         int is_initialization = 1;    // Yes we are
         int computeDiffusionTerm = 1; // Needed here
         int do_avgDown = 1;           // Always
 
         // Light version of the diffusion data container
         std::unique_ptr<AdvanceDiffData> diffData;
-        diffData.reset(new AdvanceDiffData(
+        diffData = std::make_unique<AdvanceDiffData>(
           finest_level, grids, dmap, m_factory, m_nGrowAdv, m_use_wbar,
-          m_use_soret, is_initialization));
+          m_use_soret, is_initialization);
         calcDivU(
           is_initialization, computeDiffusionTerm, do_avgDown, AmrNewTime,
           diffData);
@@ -442,7 +444,7 @@ PeleLM::projectInitSolution()
       initialProjection();
     }
 
-    if (m_numDivuIter == 0 && m_do_react) {
+    if (m_numDivuIter == 0 && (m_do_react != 0)) {
       for (int lev = 0; lev <= finest_level; ++lev) {
         auto* ldataR_p = getLevelDataReactPtr(lev);
         ldataR_p->I_R.setVal(0.0);
@@ -452,7 +454,7 @@ PeleLM::projectInitSolution()
   } else {
     // If we didn't do the projection, initialize press/gp(/I_R)
     for (int lev = 0; lev <= finest_level; ++lev) {
-      if (m_do_react) {
+      if (m_do_react != 0) {
         auto* ldataR_p = getLevelDataReactPtr(lev);
         ldataR_p->I_R.setVal(0.0);
       }

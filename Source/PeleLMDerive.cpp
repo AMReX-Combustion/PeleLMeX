@@ -1,15 +1,16 @@
 #include <PeleLMDerive.H>
+#include <utility>
 
 using namespace amrex;
 
 PeleLMDeriveRec::PeleLMDeriveRec(
-  const std::string& a_name,
+  std::string a_name,
   IndexType result_type,
   int nvar_derive,
   PeleLMDeriveFunc der_func,
   DeriveBoxMap box_map,
   Interpolater* a_interp)
-  : derive_name(a_name),
+  : derive_name(std::move(a_name)),
     variable_names(),
     der_type(result_type),
     n_derive(nvar_derive),
@@ -20,14 +21,14 @@ PeleLMDeriveRec::PeleLMDeriveRec(
 }
 
 PeleLMDeriveRec::PeleLMDeriveRec(
-  const std::string& a_name,
+  std::string a_name,
   IndexType result_type,
   int nvar_derive,
   Vector<std::string>& var_names,
   PeleLMDeriveFunc der_func,
   DeriveBoxMap box_map,
   Interpolater* a_interp)
-  : derive_name(a_name),
+  : derive_name(std::move(a_name)),
     variable_names(var_names),
     der_type(result_type),
     n_derive(nvar_derive),
@@ -38,33 +39,33 @@ PeleLMDeriveRec::PeleLMDeriveRec(
 }
 
 PeleLMDeriveRec::PeleLMDeriveRec(
-  const std::string& a_name,
+  std::string a_name,
   IndexType result_type,
   int nvar_derive,
   DeriveBoxMap box_map,
   Interpolater* a_interp)
-  : derive_name(a_name),
+  : derive_name(std::move(a_name)),
     variable_names(),
     der_type(result_type),
     n_derive(nvar_derive),
-    func(nullptr),
+
     mapper(a_interp),
     bx_map(box_map)
 {
 }
 
 PeleLMDeriveRec::PeleLMDeriveRec(
-  const std::string& a_name,
+  std::string a_name,
   IndexType result_type,
   int nvar_derive,
   Vector<std::string>& var_names,
   DeriveBoxMap box_map,
   Interpolater* a_interp)
-  : derive_name(a_name),
+  : derive_name(std::move(a_name)),
     variable_names(var_names),
     der_type(result_type),
     n_derive(nvar_derive),
-    func(nullptr),
+
     mapper(a_interp),
     bx_map(box_map)
 {
@@ -73,8 +74,8 @@ PeleLMDeriveRec::PeleLMDeriveRec(
 PeleLMDeriveRec::~PeleLMDeriveRec()
 {
   func = nullptr;
-  mapper = 0;
-  bx_map = 0;
+  mapper = nullptr;
+  bx_map = nullptr;
 }
 
 const std::string&
@@ -128,17 +129,17 @@ PeleLMDeriveRec::variableComp(const std::string& a_name) const noexcept
 {
   if (n_derive == 1) {
     return 0;
-  } else {
-    for (int comp = 0; comp < n_derive; comp++) {
-      if (variable_names[comp] == a_name) {
-        return comp;
-      }
+  }
+  for (int comp = 0; comp < n_derive; comp++) {
+    if (variable_names[comp] == a_name) {
+      return comp;
     }
   }
+
   return -1;
 }
 
-PeleLMDeriveList::PeleLMDeriveList() {}
+PeleLMDeriveList::PeleLMDeriveList() = default;
 
 void
 PeleLMDeriveList::add(
@@ -200,17 +201,15 @@ PeleLMDeriveList::dlist()
 bool
 PeleLMDeriveList::canDerive(const std::string& name) const
 {
-  for (std::list<PeleLMDeriveRec>::const_iterator li = lst.begin(),
-                                                  End = lst.end();
-       li != End; ++li) {
+  for (const auto& li : lst) {
     // Can be either a component name ...
-    for (int i = 0; i < li->numDerive(); i++) {
-      if (li->variableName(i) == name) {
+    for (int i = 0; i < li.numDerive(); i++) {
+      if (li.variableName(i) == name) {
         return true;
       }
     }
     // ... or a derive name
-    if (li->derive_name == name) {
+    if (li.derive_name == name) {
       return true;
     }
   }
@@ -220,19 +219,17 @@ PeleLMDeriveList::canDerive(const std::string& name) const
 const PeleLMDeriveRec*
 PeleLMDeriveList::get(const std::string& name) const
 {
-  for (std::list<PeleLMDeriveRec>::const_iterator li = lst.begin(),
-                                                  End = lst.end();
-       li != End; ++li) {
+  for (const auto& li : lst) {
     // Can be either a component name ...
-    for (int i = 0; i < li->numDerive(); i++) {
-      if (li->variableName(i) == name) {
-        return &(*li);
+    for (int i = 0; i < li.numDerive(); i++) {
+      if (li.variableName(i) == name) {
+        return &li;
       }
     }
     // ... or a derive name
-    if (li->derive_name == name) {
-      return &(*li);
+    if (li.derive_name == name) {
+      return &li;
     }
   }
-  return 0;
+  return nullptr;
 }

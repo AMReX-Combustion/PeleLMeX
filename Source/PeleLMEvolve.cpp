@@ -23,19 +23,23 @@ PeleLM::Evolve()
         << "\n ====================   NEW TIME STEP   ==================== \n";
     }
 
+#ifdef PELELM_USE_SPRAY
     bool regridded = false;
+#endif
     if ((m_regrid_int > 0) && (m_nstep > 0) && (m_nstep % m_regrid_int == 0)) {
       if (m_verbose > 0) {
         amrex::Print() << " Regridding...\n";
       }
       // Average down I_R to have proper values in newly uncovered areas
-      if (!m_incompressible) {
+      if (m_incompressible == 0) {
         averageDownReaction();
       }
       regrid(0, m_cur_time);
       resetMacProjector();
       resetCoveredMask();
+#ifdef PELELM_USE_SPRAY
       regridded = true;
+#endif
       updateDiagnostics();
     }
 #ifdef PELELM_USE_SPRAY
@@ -108,16 +112,18 @@ PeleLM::Evolve()
   }
   if (
     (m_plot_int > 0 || m_plot_per_approx > 0. || m_plot_per_exact > 0.) &&
-    !plt_justDidIt && m_nstep > 0) {
+    (plt_justDidIt == 0) && m_nstep > 0) {
     WritePlotFile();
   }
-  if ((m_check_int > 0 || m_check_per > 0.) && !chk_justDidIt && m_nstep > 0) {
+  if (
+    (m_check_int > 0 || m_check_per > 0.) && (chk_justDidIt == 0) &&
+    m_nstep > 0) {
     WriteCheckPointFile();
   }
 }
 
 bool
-PeleLM::writePlotNow()
+PeleLM::writePlotNow() const
 {
   bool write_now = false;
 
@@ -165,7 +171,7 @@ PeleLM::writePlotNow()
 }
 
 bool
-PeleLM::writeCheckNow()
+PeleLM::writeCheckNow() const
 {
   bool write_now = false;
 
@@ -207,11 +213,11 @@ PeleLM::writeCheckNow()
 }
 
 bool
-PeleLM::doTemporalsNow()
+PeleLM::doTemporalsNow() const
 {
   bool write_now = false;
 
-  if (m_do_temporals && (m_nstep % m_temp_int == 0)) {
+  if ((m_do_temporals != 0) && (m_nstep % m_temp_int == 0)) {
     write_now = true;
   }
 
@@ -219,7 +225,7 @@ PeleLM::doTemporalsNow()
 }
 
 bool
-PeleLM::checkMessage(const std::string& a_action)
+PeleLM::checkMessage(const std::string& a_action) const
 {
   bool take_action = false;
 
@@ -238,7 +244,7 @@ PeleLM::checkMessage(const std::string& a_action)
     int action_flag = 0;
     if (ParallelDescriptor::IOProcessor()) {
       FILE* fp;
-      if ((fp = fopen(action_file.c_str(), "r")) != 0) {
+      if ((fp = fopen(action_file.c_str(), "r")) != nullptr) {
         remove(action_file.c_str());
         action_flag = 1;
         fclose(fp);
@@ -248,7 +254,7 @@ PeleLM::checkMessage(const std::string& a_action)
     packed_data[0] = action_flag;
     ParallelDescriptor::Bcast(
       packed_data, 1, ParallelDescriptor::IOProcessorNumber());
-    take_action = packed_data[0];
+    take_action = (packed_data[0] != 0);
   }
   return take_action;
 }

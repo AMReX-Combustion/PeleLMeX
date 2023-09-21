@@ -941,11 +941,11 @@ public:
   //-----------------------------------------------------------------------------
   // I/O
   void WritePlotFile();
-  bool writePlotNow();
-  bool checkMessage(const std::string& a_action);
+  bool writePlotNow() const;
+  bool checkMessage(const std::string& a_action) const;
   void WriteCheckPointFile();
   void ReadCheckPointFile();
-  bool writeCheckNow();
+  bool writeCheckNow() const;
   void WriteJobInfo(const std::string& path) const;
   void WriteHeader(const std::string& name, bool is_checkpoint) const;
   void WriteDebugPlotFile(
@@ -982,7 +982,7 @@ public:
     std::unique_ptr<AdvanceAdvData>& advData, const amrex::Geometry& a_geom);
   void openTempFile();
   void closeTempFile();
-  bool doTemporalsNow();
+  bool doTemporalsNow() const;
   //-----------------------------------------------------------------------------
 
   //-----------------------------------------------------------------------------
@@ -1244,9 +1244,9 @@ public:
 
   amrex::Real
   MFSum(const amrex::Vector<const amrex::MultiFab*>& a_MF, int comp);
-  amrex::Real
+  static amrex::Real
   MFmax(const amrex::MultiFab* a_MF, const amrex::iMultiFab& a_mask, int comp);
-  amrex::Real
+  static amrex::Real
   MFmin(const amrex::MultiFab* a_MF, const amrex::iMultiFab& a_mask, int comp);
 
   amrex::Vector<amrex::Real> MLmax(
@@ -1291,15 +1291,15 @@ public:
   void setTypicalValues(const PeleLM::TimeStamp& a_time, int is_init = 0);
   void updateTypicalValuesChem();
 
-  void checkMemory(const std::string& a_message);
+  void checkMemory(const std::string& a_message) const;
 
   // Mixture fraction & Progress variable
   void initMixtureFraction();
-  void parseComposition(
+  static void parseComposition(
     amrex::Vector<std::string> compositionIn,
     std::string compositionType,
     amrex::Real* massFrac);
-  void parseVars(
+  static void parseVars(
     const amrex::Vector<std::string>& a_varNames,
     const amrex::Vector<std::string>& a_stringIn,
     amrex::Vector<amrex::Real>& a_rVars);
@@ -1529,9 +1529,9 @@ public:
 
   //-----------------------------------------------------------------------------
   // Accessors
-  std::string runMode() { return m_run_mode; }
+  std::string runMode() const { return m_run_mode; }
 
-  int nCompIR()
+  static int nCompIR()
   {
 #ifdef PELE_USE_EFIELD
     return NUM_SPECIES + 1;
@@ -1540,7 +1540,7 @@ public:
 #endif
   }
 
-  int nCompForcing()
+  static int nCompForcing()
   {
 #ifdef PELE_USE_EFIELD
     return NUM_SPECIES + 2;
@@ -1564,11 +1564,11 @@ public:
       a_time == AmrOldTime || a_time == AmrNewTime || a_time == AmrHalfTime);
     if (a_time == AmrOldTime) {
       return m_t_old[lev];
-    } else if (a_time == AmrNewTime) {
-      return m_t_new[lev];
-    } else {
-      return 0.5 * (m_t_old[lev] + m_t_new[lev]);
     }
+    if (a_time == AmrNewTime) {
+      return m_t_new[lev];
+    }
+    return 0.5 * (m_t_old[lev] + m_t_new[lev]);
   }
 
   amrex::Vector<std::unique_ptr<amrex::MultiFab>>

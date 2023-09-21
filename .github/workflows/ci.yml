@@ -61,7 +61,7 @@ jobs:
           echo "::add-matcher::.github/problem-matchers/gcc.json"
           set -eu -o pipefail
           ccache -z
-          make -j ${{env.NPROCS}} DIM=3 KEEP_BUILDINFO_CPP=TRUE USE_CCACHE=TRUE COMP=gnu USE_MPI=FALSE DEBUG=TRUE 2>&1 | tee -a build-output.txt
+          make -j ${{env.NPROCS}} DIM=2 KEEP_BUILDINFO_CPP=TRUE USE_CCACHE=TRUE COMP=gnu USE_MPI=FALSE DEBUG=TRUE 2>&1 | tee -a build-output.txt
       - name: FlameSheet ccache report
         working-directory: ./Exec/RegTests/FlameSheet
         run: |
@@ -69,12 +69,12 @@ jobs:
           du -hs ${HOME}/.cache/ccache
       - name: FlameSheet debug test
         working-directory: ./Exec/RegTests/FlameSheet
-        run: ./PeleLMeX3d.gnu.DEBUG.ex flamesheet-drm19-3d.inp amr.max_step=1 amr.plot_int=-1 amr.check_int=-1
+        run: ./PeleLMeX2d.gnu.DEBUG.ex flamesheet-drm19-2d.inp amr.max_step=1 amr.plot_int=-1 amr.check_int=-1
       - name: FlameSheet debug report
         working-directory: ./Exec/RegTests/FlameSheet
         run: |
           egrep "warning:|error:" build-output.txt \
-            | egrep -v "Submodules/amrex|Submodules/sundials|GNUmakefile" \
+            | egrep -v "Submodules/amrex|Submodules/sundials|Submodules/AMReX-Hydro|GNUmakefile" \
             | egrep -v "ld: warning:" | sort | uniq \
             | awk 'BEGIN{i=0}{print $0}{i++}END{print "Warnings: "i}' > warnings.txt
           cat warnings.txt
@@ -99,7 +99,7 @@ jobs:
       #  working-directory: ./Exec/RegTests/EB-C10
       #  run: |
       #    egrep "warning:|error:" build-output.txt \
-      #      | egrep -v "Submodules/amrex|Submodules/sundials|GNUmakefile" \
+      #      | egrep -v "Submodules/amrex|Submodules/sundials|Submodules/AMReX-Hydro|GNUmakefile" \
       #      | egrep -v "ld: warning:" | sort | uniq \
       #      | awk 'BEGIN{i=0}{print $0}{i++}END{print "Warnings: "i}' > warnings.txt
       #    cat warnings.txt
@@ -124,7 +124,7 @@ jobs:
       #  working-directory: ./Exec/RegTests/TG
       #  run: |
       #    egrep "warning:|error:" build-output.txt \
-      #      | egrep -v "Submodules/amrex|Submodules/sundials|GNUmakefile" \
+      #      | egrep -v "Submodules/amrex|Submodules/sundials|Submodules/AMReX-Hydro|GNUmakefile" \
       #      | egrep -v "ld: warning:" | sort | uniq \
       #      | awk 'BEGIN{i=0}{print $0}{i++}END{print "Warnings: "i}' > warnings.txt
       #    cat warnings.txt
@@ -146,7 +146,7 @@ jobs:
       #  working-directory: ./Exec/RegTests/Soot-Flame
       #  run: |
       #    egrep "warning:|error:" build-output.txt \
-      #      | egrep -v "Submodules/amrex|Submodules/sundials|GNUmakefile|Submodules/PeleMP" \
+      #      | egrep -v "Submodules/amrex|Submodules/sundials|GNUmakefile|Submodules/PeleMP|Submodules/AMReX-Hydro" \
       #      | egrep -v "Submodules/PelePhysics/Support/Mechanism/Models" | sort | uniq \
       #      | awk 'BEGIN{i=0}{print $0}{i++}END{print "Warnings: "i}' > warnings.txt
       #    cat warnings.txt
@@ -168,7 +168,7 @@ jobs:
       #  working-directory: ./Exec/RegTests/Spray-Conv
       #  run: |
       #    egrep "warning:|error:" build-output.txt \
-      #      | egrep -v "Submodules/amrex|Submodules/sundials|GNUmakefile|Submodules/PeleMP" \
+      #      | egrep -v "Submodules/amrex|Submodules/sundials|GNUmakefile|Submodules/PeleMP|Submodules/AMReX-Hydro" \
       #      | egrep -v "Submodules/PelePhysics/Support/Mechanism/Models" | sort | uniq \
       #      | awk 'BEGIN{i=0}{print $0}{i++}END{print "Warnings: "i}' > warnings.txt
       #    cat warnings.txt
@@ -293,7 +293,7 @@ jobs:
         run: |
           echo "::add-matcher::.github/problem-matchers/gcc.json"
           egrep "warning:|error:" ${{runner.workspace}}/build-output.txt \
-            | egrep -v "Submodules/amrex|Submodules/sundials" \
+            | egrep -v "Submodules/amrex|Submodules/sundials|Submodules/AMReX-Hydro" \
             | egrep -v "ld: warning:" | egrep -v "lto-wrapper: warning:" | sort | uniq \
             | awk 'BEGIN{i=0}{print $0}{i++}END{print "Warnings: "i}' > ${{runner.workspace}}/build-output-warnings.txt
           cat ${{runner.workspace}}/build-output-warnings.txt
@@ -394,12 +394,12 @@ jobs:
         run: |
           curl -O https://repo.radeon.com/rocm/rocm.gpg.key
           sudo apt-key add rocm.gpg.key
-          echo 'deb [arch=amd64] https://repo.radeon.com/rocm/apt/debian/ ubuntu main' \
+          echo 'deb [arch=amd64] https://repo.radeon.com/rocm/apt/5.6.1 ubuntu main' \
               | sudo tee /etc/apt/sources.list.d/rocm.list
           echo 'export PATH=/opt/rocm/llvm/bin:/opt/rocm/bin:/opt/rocm/profiler/bin:/opt/rocm/opencl/bin:$PATH' \
               | sudo tee -a /etc/profile.d/rocm.sh
           sudo apt-get update
-          sudo apt-get install -y rocm-dev roctracer-dev rocprofiler-dev rocrand-dev rocprim-dev rocm-libs
+          sudo apt-get install -y rocm-dev rocrand-dev rocprim-dev
       - name: Install Ccache
         run: |
           wget https://github.com/ccache/ccache/releases/download/v4.8/ccache-4.8-linux-x86_64.tar.xz
@@ -416,13 +416,13 @@ jobs:
         run: |
           source /etc/profile.d/rocm.sh
           which clang
+          which clang++
           which hipcc
           cmake -B${{runner.workspace}}/build-hip \
           -DCMAKE_BUILD_TYPE:STRING=Release \
           -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
-          -DCMAKE_CXX_COMPILER:STRING=$(which hipcc) \
+          -DCMAKE_CXX_COMPILER:STRING=$(which clang++) \
           -DCMAKE_C_COMPILER:STRING=$(which clang) \
-          -DCMAKE_CXX_STANDARD:STRING=17 \
           -DPELELMEX_ENABLE_MPI:BOOL=OFF \
           -DPELELMEX_ENABLE_HIP:BOOL=ON \
           -DAMReX_AMD_ARCH:STRING=gfx90a \
@@ -431,7 +431,6 @@ jobs:
           -DGPU_TARGETS:STRING=gfx90a \
           -DAMReX_GPU_RDC:BOOL=OFF \
           -DPELELMEX_ENABLE_FCOMPARE_FOR_TESTS:BOOL=OFF \
-          -DPELELMEX_ENABLE_MASA:BOOL=OFF \
           -DCMAKE_CXX_COMPILER_LAUNCHER:STRING=ccache \
           ${{github.workspace}}
       - name: Build
