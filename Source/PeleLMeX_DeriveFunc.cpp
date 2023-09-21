@@ -674,7 +674,7 @@ pelelmex_derQcrit(
 #if AMREX_SPACEDIM == 3
     statefab
 #endif
-  ,
+  /*unused*/,
   const FArrayBox& /*reactfab*/,
   const FArrayBox& /*pressfab*/,
   const Geometry& geom,

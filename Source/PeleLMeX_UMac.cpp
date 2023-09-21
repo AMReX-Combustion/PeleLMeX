@@ -351,10 +351,11 @@ PeleLM::create_constrained_umac_grown(
                     areas_arr[idim](idxp1[0], idxp1[1], idxp1[2]) /
                     areas_arr[idim](i, j, k) +
                   vol_arr(i, j, k) / areas_arr[idim](i, j, k) * transverseTerm;
-                if (has_divu != 0)
+                if (has_divu != 0) {
                   umac_arr[idim](i, j, k) -= vol_arr(i, j, k) /
                                              areas_arr[idim](i, j, k) *
                                              divuarr(i, j, k);
+                }
               } else if (idx[idim] > bx.bigEnd(idim)) {
                 umac_arr[idim](idxp1[0], idxp1[1], idxp1[2]) =
                   umac_arr[idim](i, j, k) * areas_arr[idim](i, j, k) /
@@ -362,11 +363,12 @@ PeleLM::create_constrained_umac_grown(
                   vol_arr(i, j, k) /
                     areas_arr[idim](idxp1[0], idxp1[1], idxp1[2]) *
                     transverseTerm;
-                if (has_divu != 0)
+                if (has_divu != 0) {
                   umac_arr[idim](idxp1[0], idxp1[1], idxp1[2]) +=
                     vol_arr(i, j, k) /
                     areas_arr[idim](idxp1[0], idxp1[1], idxp1[2]) *
                     divuarr(i, j, k);
+                }
               }
             }
           });
