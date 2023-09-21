@@ -390,14 +390,14 @@ public:
    * \param a_lev level index
    * \param a_mf  MultiFab to act upon
    */
-  void scaleProj_RZ(int a_lev, amrex::MultiFab& a_mf);
+  static void scaleProj_RZ(int a_lev, amrex::MultiFab& a_mf);
 
   /**
    * \brief For 2D-RZ, unscale multifab components by radius
    * \param a_lev level index
    * \param a_mf  MultiFab to act upon
    */
-  void unscaleProj_RZ(int a_lev, amrex::MultiFab& a_mf);
+  static void unscaleProj_RZ(int a_lev, amrex::MultiFab& a_mf);
   //-----------------------------------------------------------------------------
 
   //-----------------------------------------------------------------------------
@@ -987,7 +987,7 @@ public:
 
   //-----------------------------------------------------------------------------
   // BOUNDARY CONDITIONS / FILLPATCH
-  amrex::InterpBase* getInterpolator(int a_method = 1);
+  static amrex::InterpBase* getInterpolator(int a_method = 1);
 
   // Interpolation method for regrid (default to cell cons interp)
   int m_regrid_interp_method = 1;
@@ -1190,7 +1190,7 @@ public:
     const amrex::Real& scale,
     const amrex::Real& a_dt);
 
-  void advFluxDivergence(
+  static void advFluxDivergence(
     int a_lev,
     amrex::MultiFab& a_divergence,
     int div_comp,
