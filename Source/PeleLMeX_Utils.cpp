@@ -155,8 +155,9 @@ PeleLM::fluxDivergenceRD(
     MultiFab divTmp(
       grids[lev], dmap[lev], ncomp, nGrow_divTmp, MFInfo(), EBFactory(lev));
     divTmp.setVal(0.0);
-    if (intensiveFluxes) { // Fluxes are intensive -> need area scaling in div
-      if (have_ebfluxes) {
+    if (intensiveFluxes != 0) { // Fluxes are intensive -> need area scaling in
+                                // div
+      if (have_ebfluxes != 0) {
         intFluxDivergenceLevelEB(
           lev, divTmp, 0, a_fluxes[lev], flux_comp, a_EBfluxes[lev],
           ebflux_comp, ncomp, scale);
@@ -581,7 +582,7 @@ PeleLM::advFluxDivergence(
         , auto const& apz_arr = ebfact.getAreaFrac()[2]->const_array(mfi););
       ParallelFor(
         bx, ncomp, [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
-          if (!l_conserv_d[n] && vfrac_arr(i, j, k) > 0.) {
+          if ((l_conserv_d[n] == 0) && vfrac_arr(i, j, k) > 0.) {
             Real qwsum = AMREX_D_TERM(
               apx_arr(i, j, k) * facex(i, j, k, n) +
                 apx_arr(i + 1, j, k) * facex(i + 1, j, k, n),

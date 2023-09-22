@@ -986,7 +986,7 @@ pelelmex_derenstrophy(
           ens_arr(i, j, k) = 0.0;
         } else {
           Real l_rho = rho;
-          if (!incomp) {
+          if (incomp == 0) {
             l_rho = rho_arr(i, j, k);
           }
           // Define interpolation lambda

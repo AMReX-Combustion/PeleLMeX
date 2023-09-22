@@ -387,7 +387,7 @@ PeleLM::WritePlotFile()
     }
 
 #ifdef AMREX_USE_EB
-    if (m_plot_zeroEBcovered) {
+    if (m_plot_zeroEBcovered != 0) {
       EB_set_covered(mf_plt[lev], 0.0);
     }
 #endif

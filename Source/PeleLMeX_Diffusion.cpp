@@ -76,7 +76,7 @@ PeleLM::computeDifferentialDiffusionTerms(
   }
 #ifdef AMREX_USE_EB
   Vector<MultiFab> EBfluxes(finest_level + 1);
-  if (m_isothermalEB) {
+  if (m_isothermalEB != 0) {
     for (int lev = 0; lev <= finest_level; ++lev) {
       EBfluxes[lev].define(
         grids[lev], dmap[lev], 1, nGrow, MFInfo(), Factory(lev));
@@ -96,7 +96,7 @@ PeleLM::computeDifferentialDiffusionTerms(
     (m_use_soret) != 0 ? GetVecOfArrOfPtrs(diffData->soret_fluxes)
                        : Vector<std::array<MultiFab*, AMREX_SPACEDIM>>{};
 #ifdef AMREX_USE_EB
-  if (m_isothermalEB) {
+  if (m_isothermalEB != 0) {
     computeDifferentialDiffusionFluxes(
       a_time, GetVecOfArrOfPtrs(fluxes), GetVecOfPtrs(EBfluxes), wbarFluxVec,
       soretFluxVec);
@@ -136,7 +136,7 @@ PeleLM::computeDifferentialDiffusionTerms(
   auto bcRecTemp = fetchBCRecArray(TEMP, 1);
   auto bcRecTemp_d = convertToDeviceVector(bcRecTemp);
   Vector<MultiFab*> EBFluxesVec =
-    (m_isothermalEB) ? GetVecOfPtrs(EBfluxes) : Vector<MultiFab*>{};
+    (m_isothermalEB) != 0 ? GetVecOfPtrs(EBfluxes) : Vector<MultiFab*>{};
   fluxDivergenceRD(
     GetVecOfConstPtrs(getTempVect(a_time)), 0, diffTermVec, NUM_SPECIES,
     GetVecOfArrOfPtrs(fluxes), NUM_SPECIES, EBFluxesVec, 0, 1, intensiveFluxes,
@@ -193,10 +193,10 @@ PeleLM::computeDifferentialDiffusionTerms(
     } else {
       EB_set_covered(diffData->Dnp1[lev], 0.0);
     }
-    if (!is_init && m_use_wbar) {
+    if ((is_init == 0) && (m_use_wbar != 0)) {
       EB_set_covered(diffData->Dwbar[lev], 0.0);
     }
-    if (!is_init && m_use_soret) {
+    if ((is_init == 0) && (m_use_soret != 0)) {
       EB_set_covered(diffData->DT[lev], 0.0);
     }
   }
@@ -300,7 +300,7 @@ PeleLM::computeDifferentialDiffusionFluxes(
   // Fourier: - \lambda \nabla T
   do_avgDown = 0;
 #ifdef AMREX_USE_EB
-  if (m_isothermalEB) {
+  if (m_isothermalEB != 0) {
     AMREX_ASSERT(have_EBfluxes);
     // Set up EB dirichlet value and diffusivity
     Vector<MultiFab> EBvalue(finest_level + 1);
@@ -872,7 +872,7 @@ PeleLM::differentialDiffusionUpdate(
   }
 #ifdef AMREX_USE_EB
   Vector<MultiFab> EBfluxes(finest_level + 1);
-  if (m_isothermalEB) {
+  if (m_isothermalEB != 0) {
     for (int lev = 0; lev <= finest_level; ++lev) {
       EBfluxes[lev].define(
         grids[lev], dmap[lev], 1, nGrow, MFInfo(), Factory(lev));
@@ -1081,7 +1081,7 @@ PeleLM::differentialDiffusionUpdate(
   // Fourier: - \lambda \nabla T
   int do_avgDown = 0;
 #ifdef AMREX_USE_EB
-  if (m_isothermalEB) {
+  if (m_isothermalEB != 0) {
     // Set up EB dirichlet value and diffusivity
     Vector<MultiFab> EBvalue(finest_level + 1);
     Vector<MultiFab> EBdiff(finest_level + 1);
@@ -1117,7 +1117,7 @@ PeleLM::differentialDiffusionUpdate(
 
   // Compute diffusion term D^{np1,kp1} of Fourier and DifferentialDiffusion
 #ifdef AMREX_USE_EB
-  if (m_isothermalEB) {
+  if (m_isothermalEB != 0) {
     // Do Fourier with EBflux first then differential diffusion
     fluxDivergence(
       GetVecOfPtrs(diffData->Dhat), NUM_SPECIES, GetVecOfArrOfPtrs(fluxes),
@@ -1168,7 +1168,7 @@ PeleLM::differentialDiffusionUpdate(
 
     // Diffuse deltaT
 #ifdef AMREX_USE_EB
-    if (m_isothermalEB) {
+    if (m_isothermalEB != 0) {
       // Set up EB dirichlet value and diffusivity
       // Dirichlet value is deltaT
       Vector<MultiFab> EBvalue(finest_level + 1);
@@ -1203,7 +1203,7 @@ PeleLM::differentialDiffusionUpdate(
     // -> recompute enthalpy fluxes
     // -> recompute rhoH
 #ifdef AMREX_USE_EB
-    if (m_isothermalEB) {
+    if (m_isothermalEB != 0) {
       deltaTIter_update(
         dTiter, GetVecOfArrOfPtrs(fluxes), GetVecOfPtrs(EBfluxes),
         GetVecOfConstPtrs(Tsave), diffData, deltaT_norm);
@@ -1325,7 +1325,7 @@ PeleLM::deltaTIter_update(
   // Fourier: - \lambda \nabla T
   int do_avgDown = 0;
 #ifdef AMREX_USE_EB
-  if (m_isothermalEB) {
+  if (m_isothermalEB != 0) {
     // Set up EB dirichlet value and diffusivity
     Vector<MultiFab> EBvalue(finest_level + 1);
     Vector<MultiFab> EBdiff(finest_level + 1);
@@ -1360,7 +1360,7 @@ PeleLM::deltaTIter_update(
 
   // Compute diffusion term D^{np1,kp1} of Fourier and DifferentialDiffusion
 #ifdef AMREX_USE_EB
-  if (m_isothermalEB) {
+  if (m_isothermalEB != 0) {
     // Do Fourier with EBflux first then differential diffusion
     fluxDivergence(
       GetVecOfPtrs(diffData->Dhat), NUM_SPECIES, a_fluxes, NUM_SPECIES,
