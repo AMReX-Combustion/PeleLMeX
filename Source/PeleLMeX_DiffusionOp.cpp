@@ -332,10 +332,10 @@ DiffusionOp::diffuse_scalar(
   AMREX_ASSERT(m_ncomp == 1 || m_ncomp == ncomp);
   AMREX_ASSERT(a_phi[0]->nComp() >= phi_comp + ncomp);
   AMREX_ASSERT(a_rhs[0]->nComp() >= rhs_comp + ncomp);
-  if (have_fluxes) {
+  if (have_fluxes != 0) {
     AMREX_ASSERT(a_flux[0][0]->nComp() >= flux_comp + ncomp);
   }
-  if (have_bcoeff) {
+  if (have_bcoeff != 0) {
     AMREX_ASSERT(a_bcoeff[0]->nComp() >= bcoeff_comp + ncomp);
     AMREX_ASSERT(a_bcrec.size() >= ncomp);
   }
@@ -361,7 +361,7 @@ DiffusionOp::diffuse_scalar(
       const Box& gbx = mfi.growntilebox();
       auto const& a_phi_arr = a_phi[lev]->const_array(mfi, phi_comp);
       auto const& a_rho_arr =
-        (have_density)
+        (have_density) != 0
           ? a_density[lev]->const_array(mfi)
           : a_phi[lev]->const_array(mfi); // Get dummy Array4 if no density
       auto const& phi_arr = phi[lev].array(mfi);
@@ -369,7 +369,7 @@ DiffusionOp::diffuse_scalar(
         gbx, ncomp,
         [a_phi_arr, a_rho_arr, phi_arr,
          have_density] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
-          if (have_density) {
+          if (have_density != 0) {
             phi_arr(i, j, k, n) = a_phi_arr(i, j, k, n) / a_rho_arr(i, j, k);
           } else {
             phi_arr(i, j, k, n) = a_phi_arr(i, j, k, n);
@@ -384,11 +384,11 @@ DiffusionOp::diffuse_scalar(
   // => \alpha = 1.0, A is a_acoeff if provided, 1.0 otherwise
   // => \beta = a_dt, B face centered diffusivity bcoeff^{np1,k}
 
-  Real alpha = (isPoissonSolve) ? 0.0 : 1.0;
+  Real alpha = (isPoissonSolve) != 0 ? 0.0 : 1.0;
   Real beta = a_dt;
   m_scal_solve_op->setScalars(alpha, beta);
   for (int lev = 0; lev <= finest_level; ++lev) {
-    if (have_acoeff) {
+    if (have_acoeff != 0) {
       m_scal_solve_op->setACoeffs(lev, *a_acoeff[lev]);
     } else {
       m_scal_solve_op->setACoeffs(lev, 1.0);
@@ -411,14 +411,14 @@ DiffusionOp::diffuse_scalar(
 
     // Set aliases and bcoeff comp
     for (int lev = 0; lev <= finest_level; ++lev) {
-      if (have_fluxes) {
+      if (have_fluxes != 0) {
         for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
           fluxes[lev][idim] = new MultiFab(
             *a_flux[lev][idim], amrex::make_alias, flux_comp + comp, m_ncomp);
         }
       }
 
-      if (have_bcoeff) {
+      if (have_bcoeff != 0) {
         int doZeroVisc = 1;
         Vector<BCRec> subBCRec = {
           a_bcrec.begin() + comp, a_bcrec.begin() + comp + m_ncomp};
@@ -462,7 +462,7 @@ DiffusionOp::diffuse_scalar(
       GetVecOfPtrs(component), GetVecOfConstPtrs(rhs), m_mg_rtol, m_mg_atol);
 
     // Need to get the fluxes
-    if (have_fluxes) {
+    if (have_fluxes != 0) {
 #ifdef AMREX_USE_EB
       mlmg.getFluxes(fluxes, MLMG::Location::FaceCentroid);
 #else
@@ -489,7 +489,7 @@ DiffusionOp::diffuse_scalar(
       const Box& bx = mfi.tilebox();
       auto const& a_phi_arr = a_phi[lev]->array(mfi, phi_comp);
       auto const& a_rho_arr =
-        (have_density)
+        (have_density) != 0
           ? a_density[lev]->const_array(mfi)
           : a_phi[lev]->const_array(mfi); // Get dummy Array4 if no density
       auto const& phi_arr = phi[lev].const_array(mfi);
@@ -497,7 +497,7 @@ DiffusionOp::diffuse_scalar(
         bx, ncomp,
         [a_phi_arr, a_rho_arr, phi_arr,
          have_density] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
-          if (have_density) {
+          if (have_density != 0) {
             a_phi_arr(i, j, k, n) = phi_arr(i, j, k, n) * a_rho_arr(i, j, k);
           } else {
             a_phi_arr(i, j, k, n) = phi_arr(i, j, k, n);
@@ -753,7 +753,7 @@ DiffusionOp::computeDiffFluxes(
       const Box& gbx = mfi.growntilebox();
       auto const& a_phi_arr = a_phi[lev]->const_array(mfi, phi_comp);
       auto const& a_rho_arr =
-        (have_density)
+        (have_density) != 0
           ? a_density[lev]->const_array(mfi)
           : a_phi[lev]->const_array(mfi); // Get dummy Array4 if no density
       auto const& phi_arr = phi[lev].array(mfi);
@@ -761,7 +761,7 @@ DiffusionOp::computeDiffFluxes(
         gbx, ncomp,
         [a_phi_arr, a_rho_arr, phi_arr,
          have_density] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
-          if (have_density) {
+          if (have_density != 0) {
             phi_arr(i, j, k, n) = a_phi_arr(i, j, k, n) / a_rho_arr(i, j, k);
           } else {
             phi_arr(i, j, k, n) = a_phi_arr(i, j, k, n);
@@ -825,7 +825,7 @@ DiffusionOp::computeDiffFluxes(
   }
 
   // Average down if requested
-  if (do_avgDown)
+  if (do_avgDown != 0)
     avgDownFluxes(a_flux, flux_comp, ncomp);
 }
 #endif
@@ -1083,7 +1083,8 @@ DiffusionTensorOp::compute_divtau(
 
   m_apply_op->setScalars(0.0, -scale);
   for (int lev = 0; lev <= finest_level; ++lev) {
-    if (have_density) { // alpha being zero, not sure that this does anything.
+    if (have_density != 0) { // alpha being zero, not sure that this does
+                             // anything.
       m_apply_op->setACoeffs(lev, *a_density[lev]);
     }
     int doZeroVisc = 0;

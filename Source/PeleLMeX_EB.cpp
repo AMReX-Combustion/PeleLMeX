@@ -269,7 +269,7 @@ void
 PeleLM::initCoveredState()
 {
   // Zero velocities, typical values on species, 'cold' temperature
-  if (m_incompressible) {
+  if (m_incompressible != 0) {
     coveredState_h.resize(AMREX_SPACEDIM);
     AMREX_D_TERM(coveredState_h[0] = 0.0;, coveredState_h[1] = 0.0;
                  , coveredState_h[2] = 0.0;)
@@ -312,7 +312,7 @@ PeleLM::setCoveredState(int lev, const TimeStamp& a_time)
 
   auto ldata_p = getLevelDataPtr(lev, a_time);
 
-  if (m_incompressible) {
+  if (m_incompressible != 0) {
     EB_set_covered(ldata_p->state, 0, AMREX_SPACEDIM, coveredState_h);
   } else {
     EB_set_covered(ldata_p->state, 0, NVAR, coveredState_h);
@@ -339,7 +339,7 @@ PeleLM::initialRedistribution()
       auto const& fact = EBFactory(lev);
 
       // State
-      if (m_incompressible) {
+      if (m_incompressible != 0) {
         Vector<Real> stateCovered(AMREX_SPACEDIM, 0.0);
         EB_set_covered(ldataNew_p->state, 0, AMREX_SPACEDIM, stateCovered);
         ldataNew_p->state.FillBoundary(geom[lev].periodicity());
@@ -377,7 +377,7 @@ PeleLM::initialRedistribution()
                        , apz = fact.getAreaFrac()[2]->const_array(mfi););
           vfrac = fact.getVolFrac().const_array(mfi);
 
-          if (m_incompressible) {
+          if (m_incompressible != 0) {
             auto bcRec = fetchBCRecArray(0, AMREX_SPACEDIM);
             auto bcRec_d = convertToDeviceVector(bcRec);
             ApplyInitialRedistribution(

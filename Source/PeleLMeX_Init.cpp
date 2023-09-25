@@ -120,7 +120,7 @@ PeleLM::MakeNewLevelFromScratch(
   m_extSource[lev]->setVal(0.);
 
 #ifdef AMREX_USE_EB
-  if (lev == 0 && m_signDistNeeded) {
+  if (lev == 0 && (m_signDistNeeded != 0)) {
     // Set up CC signed distance container to control EB refinement
     m_signedDist0.reset(
       new MultiFab(grids[lev], dmap[lev], 1, 1, MFInfo(), *m_factory[lev]));
