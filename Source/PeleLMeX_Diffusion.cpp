@@ -601,7 +601,7 @@ PeleLM::addSoretTerm(
                 Ted_arr);
             });
 
-          auto const& rhoY = rhoY_ed.const_array(0);
+          // auto const& rhoY = rhoY_ed.const_array(0);
           auto const& T = T_ed.const_array(0);
           auto const& gradT_ar = gradT[lev][idim].const_array(mfi);
           auto const& beta_ar = beta_ec[idim].const_array(mfi);
@@ -615,7 +615,7 @@ PeleLM::addSoretTerm(
           // with beta_m = \rho (* Y?) * theta_m below
           amrex::ParallelFor(
             ebx,
-            [need_soret_fluxes, gradT_ar, beta_ar, rhoY, T, spFlux_ar,
+            [need_soret_fluxes, gradT_ar, beta_ar, T, spFlux_ar,
              spsoretFlux_ar] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
               for (int n = 0; n < NUM_SPECIES; n++) {
                 spFlux_ar(i, j, k, n) -=
