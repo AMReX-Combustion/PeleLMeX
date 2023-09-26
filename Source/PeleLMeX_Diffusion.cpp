@@ -622,10 +622,6 @@ PeleLM::addSoretTerm(
                 rho += rhoY(i, j, k, n);
               }
               amrex::Real rho_inv = 1.0 / rho;
-              amrex::Real y[NUM_SPECIES];
-              for (int n = 0; n < NUM_SPECIES; n++) {
-                y[n] = rhoY(i, j, k, n) * rho_inv;
-              }
               for (int n = 0; n < NUM_SPECIES; n++) {
                 spFlux_ar(i, j, k, n) -=
                   beta_ar(i, j, k, n) * gradT_ar(i, j, k) / T(i, j, k);
