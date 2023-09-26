@@ -79,7 +79,7 @@ jobs:
             | awk 'BEGIN{i=0}{print $0}{i++}END{print "Warnings: "i}' > warnings.txt
           cat warnings.txt
           export return=$(tail -n 1 warnings.txt | awk '{print $2}')
-          #exit ${return}
+          exit ${return}
       #- name: EB debug build
       #  working-directory: ./Exec/RegTests/EB-C10
       #  run: |
@@ -298,7 +298,7 @@ jobs:
             | awk 'BEGIN{i=0}{print $0}{i++}END{print "Warnings: "i}' > ${{runner.workspace}}/build-output-warnings.txt
           cat ${{runner.workspace}}/build-output-warnings.txt
           export return=$(tail -n 1 ${{runner.workspace}}/build-output-warnings.txt | awk '{print $2}')
-          #exit ${return}
+          exit ${return}
       - name: Test
         run: |
           (for DIM in 2 3; do \
@@ -542,7 +542,7 @@ jobs:
           awk 'BEGIN{i=0}{print $0}{i++}END{print "Warnings: "i}' < cppcheck-report.txt > cppcheck-warnings.txt
           cat cppcheck-warnings.txt
           export return=$(tail -n 1 cppcheck-warnings.txt | awk '{print $2}')
-          #exit ${return}
+          exit ${return}
   Lint-clang-tidy:
     needs: Formatting
     runs-on: ubuntu-latest
