@@ -382,8 +382,8 @@ PeleLM::doNodalProject(
 {
   // Asserts
   AMREX_ASSERT(a_vel.size() == a_sigma.size());
-  AMREX_ASSERT(!rhs_cc.empty() || (a_vel.size() == rhs_cc.size()));
-  AMREX_ASSERT(!rhs_nd.empty() || (a_vel.size() == rhs_nd.size()));
+  AMREX_ASSERT(rhs_cc.empty() || (a_vel.size() == rhs_cc.size()));
+  AMREX_ASSERT(rhs_nd.empty() || (a_vel.size() == rhs_nd.size()));
   AMREX_ASSERT(a_vel[0]->nComp() == AMREX_SPACEDIM);
 
   LPInfo info;
