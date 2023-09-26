@@ -207,7 +207,11 @@ void
 PeleLM::computeDifferentialDiffusionFluxes(
   const TimeStamp& a_time,
   const Vector<Array<MultiFab*, AMREX_SPACEDIM>>& a_fluxes,
-  const Vector<MultiFab*>& a_EBfluxes,
+  const Vector<MultiFab*>&
+#ifdef AMREX_USE_EB
+    a_EBfluxes
+#endif
+  ,
   const Vector<Array<MultiFab*, AMREX_SPACEDIM>>& a_wbarfluxes,
   const Vector<Array<MultiFab*, AMREX_SPACEDIM>>& a_soretfluxes)
 {
@@ -618,7 +622,7 @@ PeleLM::addSoretTerm(
                 rho += rhoY(i, j, k, n);
               }
               amrex::Real rho_inv = 1.0 / rho;
-              amrex::Real y[NUM_SPECIES] = {0.0};
+              amrex::Real y[NUM_SPECIES];
               for (int n = 0; n < NUM_SPECIES; n++) {
                 y[n] = rhoY(i, j, k, n) * rho_inv;
               }

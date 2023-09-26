@@ -668,9 +668,7 @@ pelelmex_derQcrit(
   PeleLM* /*a_pelelm*/,
   const Box&
 #if AMREX_SPACEDIM == 3
-#ifdef AMREX_USE_EB
     bx
-#endif
 #endif
   ,
   FArrayBox&
