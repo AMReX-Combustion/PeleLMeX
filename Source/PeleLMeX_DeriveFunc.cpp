@@ -666,7 +666,11 @@ pelelmex_dercoord(
 void
 pelelmex_derQcrit(
   PeleLM* /*a_pelelm*/,
-  const Box& bx,
+  const Box&
+#ifdef AMREX_USE_EB
+    bx
+#endif
+  ,
   FArrayBox& derfab,
   int dcomp,
   int /*ncomp*/,
@@ -1291,6 +1295,7 @@ pelelmex_dervisc(
   const Vector<BCRec>& /*bcrec*/,
   int /*level*/)
 {
+  amrex::ignore_unused(ncomp);
   AMREX_ASSERT(derfab.box().contains(bx));
   AMREX_ASSERT(statefab.box().contains(bx));
   AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
@@ -1328,6 +1333,7 @@ pelelmex_derdiffc(
   const Vector<BCRec>& /*bcrec*/,
   int /*level*/)
 {
+  amrex::ignore_unused(ncomp);
   AMREX_ASSERT(derfab.box().contains(bx));
   AMREX_ASSERT(statefab.box().contains(bx));
   AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
@@ -1389,6 +1395,7 @@ pelelmex_derlambda(
   const Vector<BCRec>& /*bcrec*/,
   int /*level*/)
 {
+  amrex::ignore_unused(ncomp);
   AMREX_ASSERT(derfab.box().contains(bx));
   AMREX_ASSERT(statefab.box().contains(bx));
   AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);

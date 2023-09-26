@@ -213,12 +213,6 @@ PeleLM::computeDifferentialDiffusionFluxes(
 {
   BL_PROFILE("PeleLMeX::computeDifferentialDiffusionFluxes()");
 
-#ifdef AMREX_USE_EB
-  int have_EBfluxes = (a_EBfluxes.empty()) ? 0 : 1;
-#else
-  amrex::ignore_unused(a_EBfluxes);
-#endif
-
   //----------------------------------------------------------------
   // Species fluxes
   // Get the species BCRec
@@ -301,7 +295,7 @@ PeleLM::computeDifferentialDiffusionFluxes(
   do_avgDown = 0;
 #ifdef AMREX_USE_EB
   if (m_isothermalEB != 0) {
-    AMREX_ASSERT(have_EBfluxes);
+    AMREX_ASSERT(!a_EBfluxes.empty());
     // Set up EB dirichlet value and diffusivity
     Vector<MultiFab> EBvalue(finest_level + 1);
     Vector<MultiFab> EBdiff(finest_level + 1);

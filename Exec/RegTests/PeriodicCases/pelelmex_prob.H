@@ -99,8 +99,9 @@ pelelmex_initdata(
       break;
     }
 
-    if (is_incompressible != 0)
+    if (is_incompressible != 0) {
       return;
+    }
 
     state(i, j, k, TEMP) = prob_parm.T_mean;
   } else if (prob_parm.probType == 1) { // CoGau
@@ -136,8 +137,9 @@ pelelmex_initdata(
       break;
     }
 
-    if (is_incompressible != 0)
+    if (is_incompressible != 0) {
       return;
+    }
 
     state(i, j, k, TEMP) = prob_parm.T_mean;
     const amrex::Real deltax = x - prob_parm.xgauss;
@@ -187,8 +189,9 @@ pelelmex_initdata(
       break;
     }
 
-    if (is_incompressible != 0)
+    if (is_incompressible != 0) {
       return;
+    }
 
     state(i, j, k, TEMP) = prob_parm.T_mean;
     const amrex::Real deltax = x - prob_parm.xgauss;
@@ -212,8 +215,9 @@ pelelmex_initdata(
     AMREX_D_TERM(state(i, j, k, VELX) = 0.0;, state(i, j, k, VELY) = 0.0;
                  , state(i, j, k, VELZ) = 0.0);
 
-    if (is_incompressible != 0)
+    if (is_incompressible != 0) {
       return;
+    }
 
     state(i, j, k, TEMP) = prob_parm.T_mean;
     // Set up the Gaussian as the solution of the diffusion of a delta dirac
@@ -221,7 +225,7 @@ pelelmex_initdata(
     // constant diffusion coeff. gaussDiff. Use ampgauss to avoid
     // undershoot/overshoot of the 2-species mixture.
     const amrex::Real deltax = x - prob_parm.xgauss;
-    const amrex::Real deltay = y - prob_parm.ygauss;
+    // const amrex::Real deltay = y - prob_parm.ygauss;
     amrex::Real denom_inv =
       prob_parm.ampgauss /
       std::sqrt(4 * Pi * prob_parm.gaussTime * prob_parm.gaussDiff);

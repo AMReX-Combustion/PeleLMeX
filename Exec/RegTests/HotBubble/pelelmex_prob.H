@@ -19,10 +19,10 @@ pelelmex_initdata(
   int k,
   int is_incompressible,
   amrex::Array4<amrex::Real> const& state,
-  amrex::Array4<amrex::Real> const& aux,
+  amrex::Array4<amrex::Real> const& /*aux*/,
   amrex::GeometryData const& geomdata,
   ProbParm const& prob_parm,
-  pele::physics::PMF::PmfData::DataContainer const* pmf_data)
+  pele::physics::PMF::PmfData::DataContainer const* /*pmf_data*/)
 {
   const amrex::Real* prob_lo = geomdata.ProbLo();
   const amrex::Real* prob_hi = geomdata.ProbHi();
@@ -47,7 +47,7 @@ pelelmex_initdata(
   state(i, j, k, TEMP) = prob_parm.T_mean;
   amrex::Real x_c = prob_parm.is_sym != 0 ? prob_lo[0] : prob_lo[0] + 0.5 * Lx;
 #if AMREX_SPACEDIM == 3
-  amrex::Real z_c = prob_parm.is_sym ? prob_lo[2] : prob_lo[2] + 0.5 * Lz;
+  amrex::Real z_c = prob_parm.is_sym != 0 ? prob_lo[2] : prob_lo[2] + 0.5 * Lz;
 #endif
   amrex::Real rad = std::sqrt(AMREX_D_TERM(
     (y - prob_parm.bubble_y0) * (y - prob_parm.bubble_y0),

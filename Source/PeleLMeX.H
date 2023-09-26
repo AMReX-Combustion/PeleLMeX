@@ -281,7 +281,7 @@ public:
    * using the data from a pltfile
    * \param a_pltFile path to PeleLMeX plot file
    */
-  void initLevelDataFromPlt(int a_lev, const std::string& a_pltFile);
+  void initLevelDataFromPlt(int a_lev, const std::string& a_datPltFile);
 
   /**
    * \brief Project the initial solution velocity field,
@@ -588,9 +588,9 @@ public:
    */
   void addSoretTerm(
     const amrex::Vector<amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>>&
-      a_fluxes,
+      a_spfluxes,
     const amrex::Vector<amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>>&
-      a_soretfluxes,
+      a_spsoretfluxes,
     amrex::Vector<amrex::MultiFab const*> const& a_spec,
     amrex::Vector<amrex::MultiFab const*> const& a_temp,
     amrex::Vector<amrex::MultiFab const*> const& a_beta);
@@ -1019,7 +1019,7 @@ public:
   void fillpatch_density(
     int lev,
     amrex::Real a_time,
-    amrex::MultiFab& a_rhoY,
+    amrex::MultiFab& a_density,
     int rho_comp,
     int nGhost);
   void fillpatch_species(
@@ -1300,7 +1300,7 @@ public:
     std::string compositionType,
     amrex::Real* massFrac);
   static void parseVars(
-    const amrex::Vector<std::string>& a_varNames,
+    const amrex::Vector<std::string>& a_varsNames,
     const amrex::Vector<std::string>& a_stringIn,
     amrex::Vector<amrex::Real>& a_rVars);
   void initProgressVariable();
@@ -1338,8 +1338,8 @@ public:
     const amrex::Real& a_dt,
     amrex::MultiFab& a_tmpDiv,
     int div_comp,
-    amrex::MultiFab& a_AofS,
-    int aofs_comp,
+    amrex::MultiFab& a_diff,
+    int diff_comp,
     const amrex::MultiFab& a_state,
     int state_comp,
     int ncomp,

@@ -50,8 +50,9 @@ pelelmex_initdata(
                , state(i, j, k, VELZ) = 0.0);
   state(i, j, k, VELX + prob_parm.meanFlowDir) = prob_parm.meanFlowMag;
 
-  if (is_incompressible)
+  if (is_incompressible != 0) {
     return;
+  }
 
   state(i, j, k, TEMP) = prob_parm.T_mean;
 
@@ -104,7 +105,7 @@ bcnormal(
 
   // When using PELE_USE_TURBINFLOW, s_ext comes in with
   // turbulence data. Only add the mean flow here.
-  if (prob_parm.bothSides) {
+  if (prob_parm.bothSides != 0) {
     if (sgn == 1) {
       s_ext[prob_parm.meanFlowDir] += std::abs(prob_parm.meanFlowMag);
     } else {

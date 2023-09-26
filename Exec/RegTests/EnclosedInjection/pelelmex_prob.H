@@ -91,9 +91,9 @@ bcnormal(
   amrex::Real eta = 0.0;
   amrex::Real p_int;
 
-  const amrex::Real* prob_lo = geomdata.ProbLo();
-  const amrex::Real* prob_hi = geomdata.ProbHi();
-  const amrex::Real* dx = geomdata.CellSize();
+  // const amrex::Real* prob_lo = geomdata.ProbLo();
+  // const amrex::Real* prob_hi = geomdata.ProbHi();
+  // const amrex::Real* dx = geomdata.CellSize();
 
   // Simple, air into air injection
   X_air[O2_ID] = 0.21;
@@ -162,9 +162,9 @@ zero_visc(
   // velocity, ...)
   if (beta_comp == 0 && nComp == NUM_SPECIES) {
     if (dir == 2 && k <= domainBox.smallEnd(dir)) {
-      const amrex::Real* prob_lo = geomdata.ProbLo();
-      const amrex::Real* prob_hi = geomdata.ProbHi();
-      const amrex::Real* dx = geomdata.CellSize();
+      // const amrex::Real* prob_lo = geomdata.ProbLo();
+      // const amrex::Real* prob_hi = geomdata.ProbHi();
+      // const amrex::Real* dx = geomdata.CellSize();
 
       // Just over whole inlet
       for (int n = 0; n < nComp; n++) {
