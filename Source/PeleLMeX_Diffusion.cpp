@@ -617,11 +617,6 @@ PeleLM::addSoretTerm(
             ebx,
             [need_soret_fluxes, gradT_ar, beta_ar, rhoY, T, spFlux_ar,
              spsoretFlux_ar] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-              amrex::Real rho = 0.0;
-              for (int n = 0; n < NUM_SPECIES; n++) {
-                rho += rhoY(i, j, k, n);
-              }
-              amrex::Real rho_inv = 1.0 / rho;
               for (int n = 0; n < NUM_SPECIES; n++) {
                 spFlux_ar(i, j, k, n) -=
                   beta_ar(i, j, k, n) * gradT_ar(i, j, k) / T(i, j, k);
