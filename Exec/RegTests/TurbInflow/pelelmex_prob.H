@@ -19,8 +19,8 @@ pelelmex_initdata(
   int k,
   int is_incompressible,
   amrex::Array4<amrex::Real> const& state,
-  amrex::Array4<amrex::Real> const& aux,
-  amrex::GeometryData const& geomdata,
+  amrex::Array4<amrex::Real> const& /*aux*/,
+  amrex::GeometryData const& /*geomdata*/,
   ProbParm const& prob_parm,
   pele::physics::PMF::PmfData::DataContainer const* /*pmf_data*/)
 {
@@ -79,11 +79,11 @@ AMREX_FORCE_INLINE
 void
 bcnormal(
   const amrex::Real x[AMREX_SPACEDIM],
-  const int m_nAux,
+  const int /*m_nAux*/,
   amrex::Real s_ext[NVAR],
-  const int idir,
+  const int /*idir*/,
   const int sgn,
-  const amrex::Real time,
+  const amrex::Real /*time*/,
   amrex::GeometryData const& geomdata,
   ProbParm const& prob_parm,
   pele::physics::PMF::PmfData::DataContainer const* /*pmf_data*/)

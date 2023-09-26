@@ -72,24 +72,22 @@ AMREX_FORCE_INLINE
 void
 bcnormal(
   const amrex::Real x[AMREX_SPACEDIM],
-  const int m_nAux,
+  const int /*m_nAux*/,
   amrex::Real s_ext[NVAR],
   const int idir,
   const int sgn,
   const amrex::Real time,
-  amrex::GeometryData const& geomdata,
+  amrex::GeometryData const& /*geomdata*/,
   ProbParm const& prob_parm,
   pele::physics::PMF::PmfData::DataContainer const* /*pmf_data*/)
 {
   auto eos = pele::physics::PhysicsType::eos();
   amrex::Real massfrac[NUM_SPECIES] = {0.0};
-  amrex::Real molefrac[NUM_SPECIES] = {0.0};
   amrex::Real X_air[NUM_SPECIES] = {0.0};
   amrex::Real Y_air[NUM_SPECIES] = {0.0};
   amrex::Real X_jet[NUM_SPECIES] = {0.0};
   amrex::Real Y_jet[NUM_SPECIES] = {0.0};
   amrex::Real eta = 0.0;
-  amrex::Real p_int;
 
   // const amrex::Real* prob_lo = geomdata.ProbLo();
   // const amrex::Real* prob_hi = geomdata.ProbHi();
@@ -150,7 +148,7 @@ zero_visc(
   int j,
   int k,
   amrex::Array4<amrex::Real> const& beta,
-  amrex::GeometryData const& geomdata,
+  amrex::GeometryData const& /*geomdata*/,
   amrex::Box const& domainBox,
   const int dir,
   const int beta_comp,

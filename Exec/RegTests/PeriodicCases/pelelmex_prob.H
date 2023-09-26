@@ -28,8 +28,8 @@ pelelmex_initdata(
   // const amrex::Real* prob_hi = geomdata.ProbHi();
   const amrex::Real* dx = geomdata.CellSize();
   AMREX_D_TERM(const amrex::Real x = prob_lo[0] + (i + 0.5) * dx[0];
-               , const amrex::Real y = prob_lo[1] + (j + 0.5) * dx[1];
-               , const amrex::Real z = prob_lo[2] + (k + 0.5) * dx[2];);
+               , const amrex::Real y = prob_lo[1] + (j + 0.5) * dx[1];,
+               /*const amrex::Real z = prob_lo[2] + (k + 0.5) * dx[2];*/);
   /*
     AMREX_D_TERM(const amrex::Real Lx = prob_hi[0] - prob_lo[0];
                  , const amrex::Real Ly = prob_hi[1] - prob_lo[1];
@@ -64,7 +64,6 @@ pelelmex_initdata(
       -prob_parm.forcevort * deltay / r_sq * exp(-d_sq / r_sq / 2.);
     const amrex::Real v_vort =
       prob_parm.forcevort * deltax / r_sq * exp(-d_sq / r_sq / 2.);
-    const amrex::Real w_vort = 0.;
 
     switch (prob_parm.meanFlowDir) {
     case 1:

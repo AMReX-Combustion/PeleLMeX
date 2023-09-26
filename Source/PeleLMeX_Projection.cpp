@@ -380,19 +380,10 @@ PeleLM::doNodalProject(
   int incremental,
   Real scaling_factor)
 {
-  int has_rhs = 0;
-  int has_rhs_nd = 0;
-  if (!rhs_cc.empty()) {
-    has_rhs = 1;
-  }
-  if (!rhs_nd.empty()) {
-    has_rhs_nd = 1;
-  }
-
   // Asserts
   AMREX_ASSERT(a_vel.size() == a_sigma.size());
-  AMREX_ASSERT(!has_rhs || (a_vel.size() == rhs_cc.size()));
-  AMREX_ASSERT(!has_rhs_nd || (a_vel.size() == rhs_nd.size()));
+  AMREX_ASSERT(!rhs_cc.empty() || (a_vel.size() == rhs_cc.size()));
+  AMREX_ASSERT(!rhs_nd.empty() || (a_vel.size() == rhs_nd.size()));
   AMREX_ASSERT(a_vel[0]->nComp() == AMREX_SPACEDIM);
 
   LPInfo info;
@@ -430,7 +421,7 @@ PeleLM::doNodalProject(
     nodal_projector = std::make_unique<Hydro::NodalProjector>(
       a_vel, constant_sigma, Geom(0, finest_level), info);
   } else {
-    if (has_rhs != 0) {
+    if (!rhs_cc.empty()) {
       nodal_projector = std::make_unique<Hydro::NodalProjector>(
         a_vel, GetVecOfConstPtrs(a_sigma), Geom(0, finest_level), info, rhs_cc,
         rhs_nd);

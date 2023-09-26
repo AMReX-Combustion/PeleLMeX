@@ -667,12 +667,22 @@ void
 pelelmex_derQcrit(
   PeleLM* /*a_pelelm*/,
   const Box&
+#if AMREX_SPACEDIM == 3
 #ifdef AMREX_USE_EB
     bx
 #endif
+#endif
   ,
-  FArrayBox& derfab,
-  int dcomp,
+  FArrayBox&
+#if AMREX_SPACEDIM == 3
+    derfab
+#endif
+  ,
+  int
+#if AMREX_SPACEDIM == 3
+    dcomp
+#endif
+  ,
   int /*ncomp*/,
   const FArrayBox&
 #if AMREX_SPACEDIM == 3
@@ -681,7 +691,11 @@ pelelmex_derQcrit(
   ,
   const FArrayBox& /*reactfab*/,
   const FArrayBox& /*pressfab*/,
-  const Geometry& geom,
+  const Geometry&
+#if AMREX_SPACEDIM == 3
+    geom
+#endif
+  ,
   Real /*time*/,
   const Vector<BCRec>& /*bcrec*/,
   int /*level*/)
@@ -1239,6 +1253,7 @@ pelelmex_derprogvar(
   int /*level*/)
 
 {
+  amrex::ignore_unused(ncomp);
   AMREX_ASSERT(derfab.box().contains(bx));
   AMREX_ASSERT(statefab.box().contains(bx));
   AMREX_ASSERT(ncomp == 1);
