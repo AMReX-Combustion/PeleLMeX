@@ -307,7 +307,9 @@ PeleLM::MakeNewLevelFromCoarse(
       Real vol = AMREX_D_TERM(dx[0], *dx[1], *dx[2]);
       amrex::Print() << " with " << ba.numPts() << " cells, " << ba.size()
                      << " boxes,"
-                     << " over " << ba.numPts() * vol / geom[0].ProbSize() * 100
+                     << " over "
+                     << static_cast<amrex::Real>(ba.numPts()) * vol /
+                          geom[0].ProbSize() * 100
                      << "% of the domain \n";
     }
     if (m_verbose > 3) {
@@ -416,7 +418,9 @@ PeleLM::RemakeLevel(
       Real vol = AMREX_D_TERM(dx[0], *dx[1], *dx[2]);
       amrex::Print() << " with " << ba.numPts() << " cells," << ba.size()
                      << " boxes,"
-                     << " over " << ba.numPts() * vol / geom[0].ProbSize() * 100
+                     << " over "
+                     << static_cast<amrex::Real>(ba.numPts()) * vol /
+                          geom[0].ProbSize() * 100
                      << "% of the domain \n";
     }
     if (m_verbose > 3) {
@@ -546,14 +550,14 @@ PeleLM::computeCosts(int a_lev, LayoutData<Real>& a_costs, int a_costMethod)
 {
   if (a_costMethod == LoadBalanceCost::Ncell) {
     for (MFIter mfi(a_costs, false); mfi.isValid(); ++mfi) {
-      a_costs[mfi] = mfi.validbox().numPts();
+      a_costs[mfi] = static_cast<amrex::Real>(mfi.validbox().numPts());
     }
   } else if (a_costMethod == LoadBalanceCost::ChemFunctCallAvg) {
     MultiFab costMF(a_costs.boxArray(), a_costs.DistributionMap(), 1, 0);
     fillpatch_chemFunctCall(a_lev, m_cur_time, costMF, 0);
     for (MFIter mfi(costMF, false); mfi.isValid(); ++mfi) {
       a_costs[mfi] = costMF[mfi].sum<RunOn::Device>(mfi.validbox(), 0) /
-                     mfi.validbox().numPts();
+                     static_cast<amrex::Real>(mfi.validbox().numPts());
     }
   } else if (a_costMethod == LoadBalanceCost::ChemFunctCallMax) {
     MultiFab costMF(a_costs.boxArray(), a_costs.DistributionMap(), 1, 0);
@@ -575,7 +579,7 @@ PeleLM::computeCosts(int a_lev, LayoutData<Real>& a_costs, int a_costMethod)
     costMF.ParallelCopy(*mf, 0, 0, 1);
     for (MFIter mfi(costMF, false); mfi.isValid(); ++mfi) {
       a_costs[mfi] = costMF[mfi].sum<RunOn::Device>(mfi.validbox(), 0) /
-                     mfi.validbox().numPts();
+                     static_cast<amrex::Real>(mfi.validbox().numPts());
     }
   } else if (a_costMethod == LoadBalanceCost::UserDefinedDerivedSum) {
     MultiFab costMF(a_costs.boxArray(), a_costs.DistributionMap(), 1, 0);
@@ -624,7 +628,7 @@ PeleLM::resetMacProjector()
 void
 PeleLM::regridFromGridFile(int lbase, amrex::Real time, bool /*initial*/)
 {
-  int new_finest = m_regrid_ba.size();
+  const int new_finest = static_cast<int>(m_regrid_ba.size());
   Vector<BoxArray> new_grids(finest_level + 2);
   BL_ASSERT(new_finest <= finest_level + 1);
 

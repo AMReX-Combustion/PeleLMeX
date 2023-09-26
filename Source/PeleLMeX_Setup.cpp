@@ -949,8 +949,9 @@ PeleLM::derivedSetup()
   {
     Vector<std::string> var_names = pelelmex_setuserderives();
     derive_lst.add(
-      "derUserDefined", IndexType::TheCellType(), var_names.size(), var_names,
-      pelelmex_deruserdef, the_same_box);
+      "derUserDefined", IndexType::TheCellType(),
+      static_cast<int>(var_names.size()), var_names, pelelmex_deruserdef,
+      the_same_box);
   }
 
 #if (AMREX_SPACEDIM == 3)
@@ -1014,7 +1015,7 @@ PeleLM::derivedSetup()
       it++;
     }
   }
-  m_derivePlotVarCount = m_derivePlotVars.size();
+  m_derivePlotVarCount = static_cast<int>(m_derivePlotVars.size());
 }
 
 void
@@ -1147,8 +1148,8 @@ PeleLM::taggingSetup()
     if (ppr.countval("in_box_lo") != 0) {
       Vector<Real> box_lo(AMREX_SPACEDIM);
       Vector<Real> box_hi(AMREX_SPACEDIM);
-      ppr.getarr("in_box_lo", box_lo, 0, box_lo.size());
-      ppr.getarr("in_box_hi", box_hi, 0, box_hi.size());
+      ppr.getarr("in_box_lo", box_lo, 0, static_cast<int>(box_lo.size()));
+      ppr.getarr("in_box_hi", box_hi, 0, static_cast<int>(box_hi.size()));
       realbox = RealBox(box_lo.data(), box_hi.data());
     }
 

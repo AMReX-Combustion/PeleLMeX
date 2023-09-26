@@ -210,6 +210,8 @@ PeleLM::computeDifferentialDiffusionFluxes(
   const Vector<MultiFab*>&
 #ifdef AMREX_USE_EB
     a_EBfluxes
+#else
+/*unused*/
 #endif
   ,
   const Vector<Array<MultiFab*, AMREX_SPACEDIM>>& a_wbarfluxes,

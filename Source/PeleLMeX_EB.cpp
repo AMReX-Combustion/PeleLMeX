@@ -16,7 +16,7 @@ PeleLM::makeEBGeometry()
 {
   BL_PROFILE("PeleLMeX::makeEBGeometry()");
   int max_coarsening_level = 100;
-  int req_coarsening_level = geom.size() - 1;
+  int req_coarsening_level = static_cast<int>(geom.size()) - 1;
 
   // Read the geometry type and act accordingly
   ParmParse ppeb2("eb2");
@@ -466,8 +466,9 @@ PeleLM::getEBState(
   Array<const MultiCutFab*, AMREX_SPACEDIM> faceCentroid = ebfact.getFaceCent();
 
   MFItInfo mfi_info;
-  if (Gpu::notInLaunchRegion())
+  if (Gpu::notInLaunchRegion()) {
     mfi_info.EnableTiling().SetDynamic(true);
+  }
 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -538,8 +539,9 @@ PeleLM::getEBDiff(
   auto ldata_p = getLevelDataPtr(a_lev, a_time);
 
   MFItInfo mfi_info;
-  if (Gpu::notInLaunchRegion())
+  if (Gpu::notInLaunchRegion()) {
     mfi_info.EnableTiling().SetDynamic(true);
+  }
 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -664,38 +666,36 @@ PeleLM::getRestartEBMaxLevel()
 {
   if (m_restart_chkfile.empty()) {
     return -1;
-  } else {
-    // Go and parse the line we need
-    std::string File(m_restart_chkfile + "/Header");
-
-    VisMF::IO_Buffer io_buffer(VisMF::GetIOBufferSize());
-
-    Vector<char> fileCharPtr;
-    ParallelDescriptor::ReadAndBcastFile(File, fileCharPtr);
-    std::string fileCharPtrString(fileCharPtr.dataPtr());
-    std::istringstream is(fileCharPtrString, std::istringstream::in);
-
-    std::string line, word;
-
-    // Title line
-    std::getline(is, line);
-
-    // Finest level
-    std::getline(is, line);
-
-    // Step count
-    std::getline(is, line);
-
-    // Either what we're looking for or m_cur_time
-    std::getline(is, line);
-
-    if (line.find('.') != std::string::npos) {
-      return -1;
-    } else {
-      int max_eb_rst = -1;
-      max_eb_rst = std::stoi(line);
-      return max_eb_rst;
-    }
   }
+  // Go and parse the line we need
+  std::string File(m_restart_chkfile + "/Header");
+
+  VisMF::IO_Buffer io_buffer(VisMF::GetIOBufferSize());
+
+  Vector<char> fileCharPtr;
+  ParallelDescriptor::ReadAndBcastFile(File, fileCharPtr);
+  std::string fileCharPtrString(fileCharPtr.dataPtr());
+  std::istringstream is(fileCharPtrString, std::istringstream::in);
+
+  std::string line, word;
+
+  // Title line
+  std::getline(is, line);
+
+  // Finest level
+  std::getline(is, line);
+
+  // Step count
+  std::getline(is, line);
+
+  // Either what we're looking for or m_cur_time
+  std::getline(is, line);
+
+  if (line.find('.') != std::string::npos) {
+    return -1;
+  }
+  int max_eb_rst = -1;
+  max_eb_rst = std::stoi(line);
+  return max_eb_rst;
 }
 #endif

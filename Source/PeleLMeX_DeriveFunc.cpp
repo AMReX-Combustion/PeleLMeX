@@ -602,7 +602,11 @@ pelelmex_dercoord(
   FArrayBox& derfab,
   int dcomp,
   int ncomp,
-  const FArrayBox& statefab,
+  const FArrayBox&
+#ifdef AMREX_USE_EB
+    statefab
+#endif
+  ,
   const FArrayBox& /*reactfab*/,
   const FArrayBox& /*pressfab*/,
   const Geometry& geom,
@@ -613,7 +617,6 @@ pelelmex_dercoord(
 {
   amrex::ignore_unused(ncomp);
   AMREX_ASSERT(derfab.box().contains(bx));
-  AMREX_ASSERT(statefab.box().contains(bx));
   AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
   AMREX_D_TERM(const amrex::Real dx = geom.CellSize(0);
                , const amrex::Real dy = geom.CellSize(1);
@@ -623,6 +626,7 @@ pelelmex_dercoord(
   const auto geomdata = geom.data();
 
 #ifdef AMREX_USE_EB
+  AMREX_ASSERT(statefab.box().contains(bx));
   const EBFArrayBox& ebfab = static_cast<EBFArrayBox const&>(statefab);
   const EBCellFlagFab& flags = ebfab.getEBCellFlagFab();
 

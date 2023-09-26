@@ -825,8 +825,9 @@ DiffusionOp::computeDiffFluxes(
   }
 
   // Average down if requested
-  if (do_avgDown != 0)
+  if (do_avgDown != 0) {
     avgDownFluxes(a_flux, flux_comp, ncomp);
+  }
 }
 #endif
 

@@ -39,7 +39,9 @@ PeleLM::MakeNewLevelFromScratch(
       Real vol = AMREX_D_TERM(dx[0], *dx[1], *dx[2]);
       amrex::Print() << " with " << ba.numPts() << " cells," << ba.size()
                      << " boxes,"
-                     << " over " << ba.numPts() * vol / geom[0].ProbSize() * 100
+                     << " over "
+                     << static_cast<amrex::Real>(ba.numPts()) * vol /
+                          geom[0].ProbSize() * 100
                      << "% of the domain \n";
     }
     if (m_verbose > 3 && lev > 0) {
@@ -505,7 +507,7 @@ PeleLM::InitFromGridFile(amrex::Real time)
     DistributionMapping dm(ba);
     MakeNewLevelFromScratch(0, time, ba, dm);
   }
-  finest_level = m_initial_ba.size();
+  finest_level = static_cast<int>(m_initial_ba.size());
   for (int lev = 1; lev <= finest_level; lev++) {
     const amrex::BoxArray ba = m_initial_ba[lev - 1];
     DistributionMapping dm(ba);
