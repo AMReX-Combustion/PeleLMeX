@@ -53,7 +53,8 @@ PeleLM::computeDifferentialDiffusionTerms(
   if (a_time == AmrOldTime) {
     AMREX_ASSERT(diffData->Dn.size() == finest_level + 1);
     AMREX_ASSERT(diffData->Dn[0].nComp() >= NUM_SPECIES + 2);
-  } else {
+  }
+  if (a_time != AmrOldTime) {
     AMREX_ASSERT(diffData->Dnp1.size() == finest_level + 1);
     AMREX_ASSERT(diffData->Dnp1[0].nComp() >= NUM_SPECIES + 2);
   }

@@ -2,7 +2,7 @@
 #include <AMReX_ParmParse.H>
 
 void
-PeleLM::readProbParm()
+PeleLM::readProbParm() // NOLINT(readability-make-member-function-const)
 {
   amrex::ParmParse pp("prob");
 

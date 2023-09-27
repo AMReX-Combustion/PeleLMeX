@@ -500,7 +500,9 @@ PeleLM::doNodalProject(
 }
 
 void
-PeleLM::scaleProj_RZ(int a_lev, MultiFab& a_mf)
+PeleLM::scaleProj_RZ( // NOLINT(readability-convert-member-functions-to-static)
+  int a_lev,
+  MultiFab& a_mf)
 {
 #if AMREX_SPACEDIM == 2
   // Scale nodal projection cell-centered mfs by radius
@@ -540,7 +542,10 @@ PeleLM::scaleProj_RZ(int a_lev, MultiFab& a_mf)
 }
 
 void
-PeleLM::unscaleProj_RZ(int a_lev, MultiFab& a_mf)
+PeleLM::
+  unscaleProj_RZ( // NOLINT(readability-convert-member-functions-to-static)
+    int a_lev,
+    MultiFab& a_mf)
 {
 #if AMREX_SPACEDIM == 2
   // Unscale nodal projection cell-centered mfs by radius
