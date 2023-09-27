@@ -481,8 +481,9 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
                 }
               }
             });
-        } else { // Regular boxes
+        } else // Regular boxes
 #endif
+        {
           amrex::ParallelFor(
             ebx,
             [rho_ed, rhoY_ed] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
@@ -630,9 +631,9 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
       GetArrOfConstPtrs(fluxes[lev]), GetArrOfPtrs(fluxes[lev - 1]),
       refRatio(lev - 1), geom[lev - 1]);
 #else
-  average_down_faces(
-    GetArrOfConstPtrs(fluxes[lev]), GetArrOfPtrs(fluxes[lev - 1]),
-    refRatio(lev - 1), geom[lev - 1]);
+    average_down_faces(
+      GetArrOfConstPtrs(fluxes[lev]), GetArrOfPtrs(fluxes[lev - 1]),
+      refRatio(lev - 1), geom[lev - 1]);
 #endif
   }
 
@@ -715,14 +716,14 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
       RHOH, 1, bcRecRhoH_d.dataPtr(), geom[lev]);
     EB_set_covered(advData->AofS[lev], 0.0);
 #else
-  //----------------------------------------------------------------
-  // Otherwise go directly into AofS
-  advFluxDivergence(
-    lev, advData->AofS[lev], FIRSTSPEC, divu, GetArrOfConstPtrs(fluxes[lev]), 0,
-    GetArrOfConstPtrs(fluxes[lev]),
-    0, // This will not be used since none of rhoY/rhoH in convective
-    NUM_SPECIES + 1, AdvTypeAll_d.dataPtr(), geom[lev], -1.0,
-    fluxes_are_area_weighted);
+    //----------------------------------------------------------------
+    // Otherwise go directly into AofS
+    advFluxDivergence(
+      lev, advData->AofS[lev], FIRSTSPEC, divu, GetArrOfConstPtrs(fluxes[lev]),
+      0, GetArrOfConstPtrs(fluxes[lev]),
+      0, // This will not be used since none of rhoY/rhoH in convective
+      NUM_SPECIES + 1, AdvTypeAll_d.dataPtr(), geom[lev], -1.0,
+      fluxes_are_area_weighted);
 #endif
   }
 
