@@ -602,7 +602,11 @@ pelelmex_dercoord(
   FArrayBox& derfab,
   int dcomp,
   int ncomp,
-  const FArrayBox& statefab,
+  const FArrayBox&
+#ifdef AMREX_USE_EB
+    statefab
+#endif
+  ,
   const FArrayBox& /*reactfab*/,
   const FArrayBox& /*pressfab*/,
   const Geometry& geom,
@@ -613,7 +617,6 @@ pelelmex_dercoord(
 {
   amrex::ignore_unused(ncomp);
   AMREX_ASSERT(derfab.box().contains(bx));
-  AMREX_ASSERT(statefab.box().contains(bx));
   AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
   AMREX_D_TERM(const amrex::Real dx = geom.CellSize(0);
                , const amrex::Real dy = geom.CellSize(1);
@@ -623,6 +626,7 @@ pelelmex_dercoord(
   const auto geomdata = geom.data();
 
 #ifdef AMREX_USE_EB
+  AMREX_ASSERT(statefab.box().contains(bx));
   const EBFArrayBox& ebfab = static_cast<EBFArrayBox const&>(statefab);
   const EBCellFlagFab& flags = ebfab.getEBCellFlagFab();
 
@@ -666,9 +670,21 @@ pelelmex_dercoord(
 void
 pelelmex_derQcrit(
   PeleLM* /*a_pelelm*/,
-  const Box& bx,
-  FArrayBox& derfab,
-  int dcomp,
+  const Box&
+#if AMREX_SPACEDIM == 3
+    bx
+#endif
+  ,
+  FArrayBox&
+#if AMREX_SPACEDIM == 3
+    derfab
+#endif
+  ,
+  int
+#if AMREX_SPACEDIM == 3
+    dcomp
+#endif
+  ,
   int /*ncomp*/,
   const FArrayBox&
 #if AMREX_SPACEDIM == 3
@@ -677,7 +693,11 @@ pelelmex_derQcrit(
   ,
   const FArrayBox& /*reactfab*/,
   const FArrayBox& /*pressfab*/,
-  const Geometry& geom,
+  const Geometry&
+#if AMREX_SPACEDIM == 3
+    geom
+#endif
+  ,
   Real /*time*/,
   const Vector<BCRec>& /*bcrec*/,
   int /*level*/)
@@ -1235,6 +1255,7 @@ pelelmex_derprogvar(
   int /*level*/)
 
 {
+  amrex::ignore_unused(ncomp);
   AMREX_ASSERT(derfab.box().contains(bx));
   AMREX_ASSERT(statefab.box().contains(bx));
   AMREX_ASSERT(ncomp == 1);
@@ -1291,6 +1312,7 @@ pelelmex_dervisc(
   const Vector<BCRec>& /*bcrec*/,
   int /*level*/)
 {
+  amrex::ignore_unused(ncomp);
   AMREX_ASSERT(derfab.box().contains(bx));
   AMREX_ASSERT(statefab.box().contains(bx));
   AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
@@ -1328,6 +1350,7 @@ pelelmex_derdiffc(
   const Vector<BCRec>& /*bcrec*/,
   int /*level*/)
 {
+  amrex::ignore_unused(ncomp);
   AMREX_ASSERT(derfab.box().contains(bx));
   AMREX_ASSERT(statefab.box().contains(bx));
   AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
@@ -1389,6 +1412,7 @@ pelelmex_derlambda(
   const Vector<BCRec>& /*bcrec*/,
   int /*level*/)
 {
+  amrex::ignore_unused(ncomp);
   AMREX_ASSERT(derfab.box().contains(bx));
   AMREX_ASSERT(statefab.box().contains(bx));
   AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);

@@ -207,17 +207,17 @@ void
 PeleLM::computeDifferentialDiffusionFluxes(
   const TimeStamp& a_time,
   const Vector<Array<MultiFab*, AMREX_SPACEDIM>>& a_fluxes,
-  const Vector<MultiFab*>& a_EBfluxes,
+  const Vector<MultiFab*>&
+#ifdef AMREX_USE_EB
+    a_EBfluxes
+#else
+/*unused*/
+#endif
+  ,
   const Vector<Array<MultiFab*, AMREX_SPACEDIM>>& a_wbarfluxes,
   const Vector<Array<MultiFab*, AMREX_SPACEDIM>>& a_soretfluxes)
 {
   BL_PROFILE("PeleLMeX::computeDifferentialDiffusionFluxes()");
-
-#ifdef AMREX_USE_EB
-  int have_EBfluxes = (a_EBfluxes.empty()) ? 0 : 1;
-#else
-  amrex::ignore_unused(a_EBfluxes);
-#endif
 
   //----------------------------------------------------------------
   // Species fluxes
@@ -301,7 +301,7 @@ PeleLM::computeDifferentialDiffusionFluxes(
   do_avgDown = 0;
 #ifdef AMREX_USE_EB
   if (m_isothermalEB != 0) {
-    AMREX_ASSERT(have_EBfluxes);
+    AMREX_ASSERT(!a_EBfluxes.empty());
     // Set up EB dirichlet value and diffusivity
     Vector<MultiFab> EBvalue(finest_level + 1);
     Vector<MultiFab> EBdiff(finest_level + 1);
@@ -603,7 +603,7 @@ PeleLM::addSoretTerm(
                 Ted_arr);
             });
 
-          auto const& rhoY = rhoY_ed.const_array(0);
+          // auto const& rhoY = rhoY_ed.const_array(0);
           auto const& T = T_ed.const_array(0);
           auto const& gradT_ar = gradT[lev][idim].const_array(mfi);
           auto const& beta_ar = beta_ec[idim].const_array(mfi);
@@ -617,17 +617,8 @@ PeleLM::addSoretTerm(
           // with beta_m = \rho (* Y?) * theta_m below
           amrex::ParallelFor(
             ebx,
-            [need_soret_fluxes, gradT_ar, beta_ar, rhoY, T, spFlux_ar,
+            [need_soret_fluxes, gradT_ar, beta_ar, T, spFlux_ar,
              spsoretFlux_ar] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-              amrex::Real rho = 0.0;
-              for (int n = 0; n < NUM_SPECIES; n++) {
-                rho += rhoY(i, j, k, n);
-              }
-              amrex::Real rho_inv = 1.0 / rho;
-              amrex::Real y[NUM_SPECIES] = {0.0};
-              for (int n = 0; n < NUM_SPECIES; n++) {
-                y[n] = rhoY(i, j, k, n) * rho_inv;
-              }
               for (int n = 0; n < NUM_SPECIES; n++) {
                 spFlux_ar(i, j, k, n) -=
                   beta_ar(i, j, k, n) * gradT_ar(i, j, k) / T(i, j, k);

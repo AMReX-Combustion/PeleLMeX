@@ -739,13 +739,14 @@ PeleLM::resetCoveredMask()
       bl.reserve(baUnCovered.size() + baf.size());
       m_baChemFlag[lev].resize(baUnCovered.size() + baf.size());
       int bxIdx = 0;
-      for (int i = 0, n = baUnCovered.size(); i < n;
+      for (int i = 0, n = static_cast<int>(baUnCovered.size()); i < n;
            ++i) { // Append uncovered boxes
         bl.push_back(baUnCovered[i]);
         m_baChemFlag[lev][bxIdx] = 1;
         bxIdx += 1;
       }
-      for (int i = 0, n = baf.size(); i < n; ++i) { // Append covered boxes
+      for (int i = 0, n = static_cast<int>(baf.size()); i < n;
+           ++i) { // Append covered boxes
         bl.push_back(baf[i]);
         m_baChemFlag[lev][bxIdx] = 0;
         bxIdx += 1;
@@ -1089,7 +1090,7 @@ PeleLM::parseVars(
   const Vector<std::string>& a_stringIn,
   Vector<Real>& a_rVars)
 {
-  int varCountIn = a_stringIn.size();
+  const int varCountIn = static_cast<int>(a_stringIn.size());
 
   // For each entry in the user-provided composition, parse name and value
   std::string delimiter = ":";
@@ -1817,7 +1818,7 @@ PeleLM::parseComposition(
 
   // For each entry in the user-provided composition, parse name and value
   std::string delimiter = ":";
-  int specCountIn = compositionIn.size();
+  const int specCountIn = static_cast<int>(compositionIn.size());
   for (int i = 0; i < specCountIn; i++) {
     long unsigned sep = compositionIn[i].find(delimiter);
     if (sep == std::string::npos) {

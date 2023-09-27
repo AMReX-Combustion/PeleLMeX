@@ -127,14 +127,11 @@ PeleLM::writePlotNow() const
 {
   bool write_now = false;
 
-  if (m_plot_int > 0 && (m_nstep % m_plot_int == 0)) {
+  if (
+    (m_plot_int > 0 && (m_nstep % m_plot_int == 0)) ||
+    (m_plot_per_exact > 0.0 &&
+     (std::abs(std::remainder(m_cur_time, m_plot_per_exact)) < 1.e-12))) {
     write_now = true;
-
-  } else if (
-    m_plot_per_exact > 0.0 &&
-    (std::abs(std::remainder(m_cur_time, m_plot_per_exact)) < 1.e-12)) {
-    write_now = true;
-
   } else if (m_plot_per_approx > 0.0) {
     // Check to see if we've crossed a plot_per interval by comparing
     // the number of intervals that have elapsed for both the current
