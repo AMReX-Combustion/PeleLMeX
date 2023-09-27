@@ -390,14 +390,14 @@ public:
    * \param a_lev level index
    * \param a_mf  MultiFab to act upon
    */
-  static void scaleProj_RZ(int a_lev, amrex::MultiFab& a_mf);
+  void scaleProj_RZ(int a_lev, amrex::MultiFab& a_mf);
 
   /**
    * \brief For 2D-RZ, unscale multifab components by radius
    * \param a_lev level index
    * \param a_mf  MultiFab to act upon
    */
-  static void unscaleProj_RZ(int a_lev, amrex::MultiFab& a_mf);
+  void unscaleProj_RZ(int a_lev, amrex::MultiFab& a_mf);
   //-----------------------------------------------------------------------------
 
   //-----------------------------------------------------------------------------
