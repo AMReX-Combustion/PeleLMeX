@@ -1356,7 +1356,8 @@ pelelmex_derdiffc(
   AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
   if (a_pelelm->m_use_soret != 0) {
     AMREX_ASSERT(ncomp == 2 * NUM_SPECIES);
-  } else {
+  }
+  if (a_pelelm->m_use_soret == 0) {
     AMREX_ASSERT(ncomp == NUM_SPECIES);
   }
   FArrayBox dummies(bx, 2, The_Async_Arena());

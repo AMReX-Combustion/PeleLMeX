@@ -381,7 +381,7 @@ public:
     const amrex::Vector<amrex::MultiFab*>& a_sigma,
     const amrex::Vector<amrex::MultiFab*>& rhs_cc,
     const amrex::Vector<const amrex::MultiFab*>& rhs_nd,
-    int increment_gp,
+    int incremental,
     amrex::Real scaling_factor);
 
   /**
@@ -390,14 +390,14 @@ public:
    * \param a_lev level index
    * \param a_mf  MultiFab to act upon
    */
-  void scaleProj_RZ(int a_lev, amrex::MultiFab& a_mf);
+  static void scaleProj_RZ(int a_lev, amrex::MultiFab& a_mf);
 
   /**
    * \brief For 2D-RZ, unscale multifab components by radius
    * \param a_lev level index
    * \param a_mf  MultiFab to act upon
    */
-  void unscaleProj_RZ(int a_lev, amrex::MultiFab& a_mf);
+  static void unscaleProj_RZ(int a_lev, amrex::MultiFab& a_mf);
   //-----------------------------------------------------------------------------
 
   //-----------------------------------------------------------------------------
@@ -522,8 +522,8 @@ public:
     int beta_comp,
     int ncomp,
     int doZeroVisc,
-    amrex::Vector<amrex::BCRec> a_bcrec,
-    const amrex::MultiFab& a_diff_cc,
+    amrex::Vector<amrex::BCRec> bcrec,
+    const amrex::MultiFab& beta_cc,
     int addTurbContrib = 0);
 
   /**
@@ -1025,7 +1025,7 @@ public:
   void fillpatch_species(
     int lev,
     amrex::Real a_time,
-    amrex::MultiFab& a_rhoY,
+    amrex::MultiFab& a_species,
     int rhoY_comp,
     int nGhost);
   void fillpatch_temp(
@@ -1042,7 +1042,7 @@ public:
     int lev, amrex::Real a_time, amrex::MultiFab& a_I_R, int nGhost);
   void fillpatch_forces(
     amrex::Real a_time,
-    amrex::Vector<amrex::MultiFab*> const& a_velForces,
+    amrex::Vector<amrex::MultiFab*> const& a_force,
     int nGrowForce);
   void fillpatch_chemFunctCall(
     int lev, amrex::Real a_time, amrex::MultiFab& a_fctC, int nGhost);

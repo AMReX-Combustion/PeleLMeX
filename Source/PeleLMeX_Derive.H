@@ -66,7 +66,7 @@ public:
    *
    * \param name
    */
-  int variableComp(const std::string& variableName) const noexcept;
+  int variableComp(const std::string& a_name) const noexcept;
 
   /**
    * \brief The IndexType of the derived type.
@@ -232,9 +232,9 @@ public:
   void add(
     const std::string& name,
     amrex::IndexType result_type,
-    int nvar_derive,
+    int nvar_der,
     PeleLMDeriveFunc der_func,
-    PeleLMDeriveRec::DeriveBoxMap box_map,
+    PeleLMDeriveRec::DeriveBoxMap bx_map,
     amrex::Interpolater* interp = &amrex::pc_interp);
 
   /**
@@ -251,10 +251,10 @@ public:
   void add(
     const std::string& name,
     amrex::IndexType result_type,
-    int nvar_derive,
-    amrex::Vector<std::string>& var_names,
+    int nvar_der,
+    amrex::Vector<std::string>& vars,
     PeleLMDeriveFunc der_func,
-    PeleLMDeriveRec::DeriveBoxMap box_map,
+    PeleLMDeriveRec::DeriveBoxMap bx_map,
     amrex::Interpolater* interp = &amrex::pc_interp);
 
   /**
@@ -270,8 +270,8 @@ public:
   void add(
     const std::string& name,
     amrex::IndexType result_type,
-    int nvar_derive,
-    PeleLMDeriveRec::DeriveBoxMap box_map,
+    int nvar_der,
+    PeleLMDeriveRec::DeriveBoxMap bx_map,
     amrex::Interpolater* interp = &amrex::pc_interp);
 
   /**
@@ -288,9 +288,9 @@ public:
   void add(
     const std::string& name,
     amrex::IndexType result_type,
-    int nvar_derive,
-    amrex::Vector<std::string>& var_names,
-    PeleLMDeriveRec::DeriveBoxMap box_map,
+    int nvar_der,
+    amrex::Vector<std::string>& vars,
+    PeleLMDeriveRec::DeriveBoxMap bx_map,
     amrex::Interpolater* interp = &amrex::pc_interp);
 
   std::list<PeleLMDeriveRec>& dlist();
