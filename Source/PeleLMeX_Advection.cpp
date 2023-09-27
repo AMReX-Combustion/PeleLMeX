@@ -145,7 +145,7 @@ PeleLM::computeVelocityAdvTerm(std::unique_ptr<AdvanceAdvData>& advData)
 
     bool fluxes_are_area_weighted = false;
 #ifdef AMREX_USE_EB
-    auto ldata_p = getLevelDataPtr(lev, AmrOldTime);
+    auto* ldata_p = getLevelDataPtr(lev, AmrOldTime);
     //----------------------------------------------------------------
     // Use a temporary MF to hold divergence before redistribution
     int nGrow_divT = 3;
@@ -687,7 +687,7 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
 
     bool fluxes_are_area_weighted = false;
 #ifdef AMREX_USE_EB
-    auto ldata_p = getLevelDataPtr(lev, AmrOldTime);
+    auto* ldata_p = getLevelDataPtr(lev, AmrOldTime);
     //----------------------------------------------------------------
     // Use a temporary MF to hold divergence before redistribution
     int nGrow_divTmp = 3;
@@ -889,7 +889,7 @@ PeleLM::computePassiveAdvTerms(
 
     bool fluxes_are_area_weighted = false;
 #ifdef AMREX_USE_EB
-    auto ldata_p = getLevelDataPtr(lev, AmrOldTime);
+    auto* ldata_p = getLevelDataPtr(lev, AmrOldTime);
     //----------------------------------------------------------------
     // Use a temporary MF to hold divergence before redistribution
     int nGrow_divTmp = 3;
