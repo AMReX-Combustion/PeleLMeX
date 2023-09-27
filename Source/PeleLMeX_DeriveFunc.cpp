@@ -291,7 +291,7 @@ pelelmex_dermgvort(
   auto const& vort_arr = derfab.array(dcomp);
 
 #ifdef AMREX_USE_EB
-  const EBFArrayBox& ebfab = static_cast<EBFArrayBox const&>(statefab);
+  const auto& ebfab = static_cast<EBFArrayBox const&>(statefab);
   const EBCellFlagFab& flags = ebfab.getEBCellFlagFab();
 
   auto typ = flags.getType(bx);
@@ -453,7 +453,7 @@ pelelmex_dervort(
   auto const& vort_arr = derfab.array(dcomp);
 
 #ifdef AMREX_USE_EB
-  const EBFArrayBox& ebfab = static_cast<EBFArrayBox const&>(statefab);
+  const auto& ebfab = static_cast<EBFArrayBox const&>(statefab);
   const EBCellFlagFab& flags = ebfab.getEBCellFlagFab();
 
   auto typ = flags.getType(bx);
@@ -627,7 +627,7 @@ pelelmex_dercoord(
 
 #ifdef AMREX_USE_EB
   AMREX_ASSERT(statefab.box().contains(bx));
-  const EBFArrayBox& ebfab = static_cast<EBFArrayBox const&>(statefab);
+  const auto& ebfab = static_cast<EBFArrayBox const&>(statefab);
   const EBCellFlagFab& flags = ebfab.getEBCellFlagFab();
 
   auto typ = flags.getType(bx);
@@ -712,7 +712,7 @@ pelelmex_derQcrit(
   auto const& qcrit_arr = derfab.array(dcomp);
 
 #ifdef AMREX_USE_EB
-  const EBFArrayBox& ebfab = static_cast<EBFArrayBox const&>(statefab);
+  const auto& ebfab = static_cast<EBFArrayBox const&>(statefab);
   const EBCellFlagFab& flags = ebfab.getEBCellFlagFab();
 
   auto typ = flags.getType(bx);
@@ -984,7 +984,7 @@ pelelmex_derenstrophy(
   auto const& ens_arr = derfab.array(dcomp);
 
 #ifdef AMREX_USE_EB
-  const EBFArrayBox& ebfab = static_cast<EBFArrayBox const&>(statefab);
+  const auto& ebfab = static_cast<EBFArrayBox const&>(statefab);
   const EBCellFlagFab& flags = ebfab.getEBCellFlagFab();
 
   auto typ = flags.getType(bx);
@@ -1356,7 +1356,8 @@ pelelmex_derdiffc(
   AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
   if (a_pelelm->m_use_soret != 0) {
     AMREX_ASSERT(ncomp == 2 * NUM_SPECIES);
-  } else {
+  }
+  if (a_pelelm->m_use_soret == 0) {
     AMREX_ASSERT(ncomp == NUM_SPECIES);
   }
   FArrayBox dummies(bx, 2, The_Async_Arena());

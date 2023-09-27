@@ -425,12 +425,8 @@ DiffusionOp::diffuse_scalar(
         Array<MultiFab, AMREX_SPACEDIM> bcoeff_ec = m_pelelm->getDiffusivity(
           lev, bcoeff_comp + comp, m_ncomp, doZeroVisc, subBCRec,
           *a_bcoeff[lev]);
-#ifdef AMREX_USE_EB
         m_scal_solve_op->setBCoeffs(
           lev, GetArrOfConstPtrs(bcoeff_ec), MLMG::Location::FaceCentroid);
-#else
-        m_scal_solve_op->setBCoeffs(lev, GetArrOfConstPtrs(bcoeff_ec));
-#endif
       } else {
         m_scal_solve_op->setBCoeffs(lev, 1.0);
       }
@@ -463,11 +459,7 @@ DiffusionOp::diffuse_scalar(
 
     // Need to get the fluxes
     if (have_fluxes != 0) {
-#ifdef AMREX_USE_EB
       mlmg.getFluxes(fluxes, MLMG::Location::FaceCentroid);
-#else
-      mlmg.getFluxes(fluxes, MLMG::Location::FaceCenter);
-#endif
 
       for (int lev = 0; lev <= finest_level; ++lev) {
         for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {

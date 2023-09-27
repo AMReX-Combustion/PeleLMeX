@@ -310,7 +310,7 @@ PeleLM::setCoveredState(int lev, const TimeStamp& a_time)
 {
   AMREX_ASSERT(a_time == AmrOldTime || a_time == AmrNewTime);
 
-  auto ldata_p = getLevelDataPtr(lev, a_time);
+  auto* ldata_p = getLevelDataPtr(lev, a_time);
 
   if (m_incompressible != 0) {
     EB_set_covered(ldata_p->state, 0, AMREX_SPACEDIM, coveredState_h);
@@ -333,8 +333,8 @@ PeleLM::initialRedistribution()
 
       // Jungle with Old/New states: fillPatch old and redistribute
       // from Old->New to end up with proper New state
-      auto ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
-      auto ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
+      auto* ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
+      auto* ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
 
       auto const& fact = EBFactory(lev);
 
@@ -536,7 +536,7 @@ PeleLM::getEBDiff(
   Array<const MultiCutFab*, AMREX_SPACEDIM> faceCentroid = ebfact.getFaceCent();
 
   // Get diffusivity cell-centered
-  auto ldata_p = getLevelDataPtr(a_lev, a_time);
+  auto* ldata_p = getLevelDataPtr(a_lev, a_time);
 
   MFItInfo mfi_info;
   if (Gpu::notInLaunchRegion()) {

@@ -11,36 +11,36 @@
 // Forward declaration of PeleLM
 class PeleLM;
 
-typedef void (*PeleLMDeriveFunc)(
-  PeleLM* a_pelelm,
-  const amrex::Box& bx,
-  amrex::FArrayBox& derfab,
-  int dcomp,
-  int ncomp,
-  const amrex::FArrayBox& statefab,
-  const amrex::FArrayBox& reactfab,
-  const amrex::FArrayBox& pressfab,
-  const amrex::Geometry& geomdata,
-  amrex::Real time,
-  const amrex::Vector<amrex::BCRec>& bcrec,
-  int level);
+using PeleLMDeriveFunc = void (*)(
+  PeleLM*,
+  const amrex::Box&,
+  amrex::FArrayBox&,
+  int,
+  int,
+  const amrex::FArrayBox&,
+  const amrex::FArrayBox&,
+  const amrex::FArrayBox&,
+  const amrex::Geometry&,
+  amrex::Real,
+  const amrex::Vector<amrex::BCRec>&,
+  int);
 
-typedef void (*PeleLMMFVecDeriveFunc)(
-  amrex::Vector<amrex::MultiFab*> derfab,
-  int dcomp,
-  int ncomp,
-  amrex::Vector<const amrex::MultiFab*> statefab,
-  amrex::Vector<const amrex::MultiFab*> reactfab,
-  amrex::Vector<const amrex::MultiFab*> pressfab,
-  const amrex::Geometry& geomdata,
-  amrex::Real time,
-  const amrex::Vector<amrex::BCRec>& bcrec);
+using PeleLMMFVecDeriveFunc = void (*)(
+  amrex::Vector<amrex::MultiFab*>,
+  int,
+  int,
+  amrex::Vector<const amrex::MultiFab*>,
+  amrex::Vector<const amrex::MultiFab*>,
+  amrex::Vector<const amrex::MultiFab*>,
+  const amrex::Geometry&,
+  amrex::Real,
+  const amrex::Vector<amrex::BCRec>&);
 class PeleLMDeriveRec
 {
   friend class PeleLMDeriveList;
 
 public:
-  typedef amrex::Box (*DeriveBoxMap)(const amrex::Box&);
+  using DeriveBoxMap = amrex::Box (*)(const amrex::Box&);
   static amrex::Box TheSameBox(const amrex::Box& box) noexcept;
   static amrex::Box GrowBoxByOne(const amrex::Box& box) noexcept;
 
@@ -66,7 +66,7 @@ public:
    *
    * \param name
    */
-  int variableComp(const std::string& variableName) const noexcept;
+  int variableComp(const std::string& a_name) const noexcept;
 
   /**
    * \brief The IndexType of the derived type.
@@ -232,9 +232,9 @@ public:
   void add(
     const std::string& name,
     amrex::IndexType result_type,
-    int nvar_derive,
+    int nvar_der,
     PeleLMDeriveFunc der_func,
-    PeleLMDeriveRec::DeriveBoxMap box_map,
+    PeleLMDeriveRec::DeriveBoxMap bx_map,
     amrex::Interpolater* interp = &amrex::pc_interp);
 
   /**
@@ -251,10 +251,10 @@ public:
   void add(
     const std::string& name,
     amrex::IndexType result_type,
-    int nvar_derive,
-    amrex::Vector<std::string>& var_names,
+    int nvar_der,
+    amrex::Vector<std::string>& vars,
     PeleLMDeriveFunc der_func,
-    PeleLMDeriveRec::DeriveBoxMap box_map,
+    PeleLMDeriveRec::DeriveBoxMap bx_map,
     amrex::Interpolater* interp = &amrex::pc_interp);
 
   /**
@@ -270,8 +270,8 @@ public:
   void add(
     const std::string& name,
     amrex::IndexType result_type,
-    int nvar_derive,
-    PeleLMDeriveRec::DeriveBoxMap box_map,
+    int nvar_der,
+    PeleLMDeriveRec::DeriveBoxMap bx_map,
     amrex::Interpolater* interp = &amrex::pc_interp);
 
   /**
@@ -288,9 +288,9 @@ public:
   void add(
     const std::string& name,
     amrex::IndexType result_type,
-    int nvar_derive,
-    amrex::Vector<std::string>& var_names,
-    PeleLMDeriveRec::DeriveBoxMap box_map,
+    int nvar_der,
+    amrex::Vector<std::string>& vars,
+    PeleLMDeriveRec::DeriveBoxMap bx_map,
     amrex::Interpolater* interp = &amrex::pc_interp);
 
   std::list<PeleLMDeriveRec>& dlist();
