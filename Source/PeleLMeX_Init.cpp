@@ -107,11 +107,11 @@ PeleLM::MakeNewLevelFromScratch(
 
   // Mac projector
 #ifdef AMREX_USE_EB
-  macproj.reset(new Hydro::MacProjector(
+  macproj = std::make_unique<Hydro::MacProjector>(
     Geom(0, finest_level),
     MLMG::Location::FaceCentroid, // Location of mac velocity
     MLMG::Location::FaceCentroid, // Location of beta
-    MLMG::Location::CellCenter)); // Location of solution variable phi
+    MLMG::Location::CellCenter);  // Location of solution variable phi
 #else
   macproj = std::make_unique<Hydro::MacProjector>(Geom(0, finest_level));
 #endif
@@ -124,8 +124,8 @@ PeleLM::MakeNewLevelFromScratch(
 #ifdef AMREX_USE_EB
   if (lev == 0 && (m_signDistNeeded != 0)) {
     // Set up CC signed distance container to control EB refinement
-    m_signedDist0.reset(
-      new MultiFab(grids[lev], dmap[lev], 1, 1, MFInfo(), *m_factory[lev]));
+    m_signedDist0 = std::make_unique<MultiFab>(
+      grids[lev], dmap[lev], 1, 1, MFInfo(), *m_factory[lev]);
 
     // Estimate the maximum distance we need in terms of level 0 dx:
     Real extentFactor = static_cast<Real>(nErrorBuf(0));

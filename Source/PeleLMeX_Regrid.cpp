@@ -611,11 +611,11 @@ PeleLM::resetMacProjector()
 
   // MacProj
 #ifdef AMREX_USE_EB
-  macproj.reset(new Hydro::MacProjector(
+  macproj = std::make_unique<Hydro::MacProjector>(
     Geom(0, finest_level),
     MLMG::Location::FaceCentroid, // Location of mac velocity
     MLMG::Location::FaceCentroid, // Location of beta
-    MLMG::Location::CellCenter)); // Location of solution variable phi
+    MLMG::Location::CellCenter);  // Location of solution variable phi
 #else
   macproj = std::make_unique<Hydro::MacProjector>(Geom(0, finest_level));
 #endif

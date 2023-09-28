@@ -150,8 +150,7 @@ PeleLMDeriveList::add(
   PeleLMDeriveRec::DeriveBoxMap bx_map,
   Interpolater* interp)
 {
-  lst.push_back(
-    PeleLMDeriveRec(name, result_type, nvar_der, der_func, bx_map, interp));
+  lst.emplace_back(name, result_type, nvar_der, der_func, bx_map, interp);
 }
 
 void
@@ -164,8 +163,7 @@ PeleLMDeriveList::add(
   PeleLMDeriveRec::DeriveBoxMap bx_map,
   Interpolater* interp)
 {
-  lst.push_back(PeleLMDeriveRec(
-    name, result_type, nvar_der, vars, der_func, bx_map, interp));
+  lst.emplace_back(name, result_type, nvar_der, vars, der_func, bx_map, interp);
 }
 
 void
@@ -176,7 +174,7 @@ PeleLMDeriveList::add(
   PeleLMDeriveRec::DeriveBoxMap bx_map,
   Interpolater* interp)
 {
-  lst.push_back(PeleLMDeriveRec(name, result_type, nvar_der, bx_map, interp));
+  lst.emplace_back(name, result_type, nvar_der, bx_map, interp);
 }
 
 void
@@ -188,8 +186,7 @@ PeleLMDeriveList::add(
   PeleLMDeriveRec::DeriveBoxMap bx_map,
   Interpolater* interp)
 {
-  lst.push_back(
-    PeleLMDeriveRec(name, result_type, nvar_der, vars, bx_map, interp));
+  lst.emplace_back(name, result_type, nvar_der, vars, bx_map, interp);
 }
 
 std::list<PeleLMDeriveRec>&
