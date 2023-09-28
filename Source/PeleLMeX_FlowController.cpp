@@ -59,77 +59,79 @@ PeleLM::initActiveControl()
   FlowControllerData* fcdata_host{nullptr};
   fcdata_host = getFCDataPtr(*prob_parm, hasFlowControllerData<ProbParm>{});
 
-  // Resize vector for temporal average
-  m_ctrl_time_pts.resize(m_ctrl_NavgPts + 1, -1.0);
-  m_ctrl_velo_pts.resize(m_ctrl_NavgPts + 1, -1.0);
-  m_ctrl_cntl_pts.resize(m_ctrl_NavgPts + 1, -1.0);
+  if (fcdata_host) {
+    // Resize vector for temporal average
+    m_ctrl_time_pts.resize(m_ctrl_NavgPts + 1, -1.0);
+    m_ctrl_velo_pts.resize(m_ctrl_NavgPts + 1, -1.0);
+    m_ctrl_cntl_pts.resize(m_ctrl_NavgPts + 1, -1.0);
 
-  // Extract data from BC: assumes flow comes in from lo side of ctrl_flameDir
-  ProbParm const* lprobparm = prob_parm_d;
-  pele::physics::PMF::PmfData::DataContainer const* lpmfdata =
-    pmf_data.getDeviceData();
+    // Extract data from BC: assumes flow comes in from lo side of ctrl_flameDir
+    ProbParm const* lprobparm = prob_parm_d;
+    pele::physics::PMF::PmfData::DataContainer const* lpmfdata =
+      pmf_data.getDeviceData();
 
-  Gpu::DeviceVector<Real> s_ext_v(NVAR);
-  Real* s_ext_d = s_ext_v.data();
-  Real x[AMREX_SPACEDIM] = {
-    AMREX_D_DECL(Geom(0).ProbLo(0), Geom(0).ProbLo(1), Geom(0).ProbLo(2))};
-  x[m_ctrl_flameDir] -= 1.0;
-  const int ctrl_flameDir_l = m_ctrl_flameDir;
-  const amrex::Real time_l = -1.0;
-  const auto geomdata = Geom(0).data();
+    Gpu::DeviceVector<Real> s_ext_v(NVAR);
+    Real* s_ext_d = s_ext_v.data();
+    Real x[AMREX_SPACEDIM] = {
+      AMREX_D_DECL(Geom(0).ProbLo(0), Geom(0).ProbLo(1), Geom(0).ProbLo(2))};
+    x[m_ctrl_flameDir] -= 1.0;
+    const int ctrl_flameDir_l = m_ctrl_flameDir;
+    const amrex::Real time_l = -1.0;
+    const auto geomdata = Geom(0).data();
 
-  Box dumbx({AMREX_D_DECL(0, 0, 0)}, {AMREX_D_DECL(0, 0, 0)});
-  amrex::ParallelFor(
-    dumbx,
-    [x, nAux = m_nAux, s_ext_d, ctrl_flameDir_l, time_l, geomdata, lprobparm,
-     lpmfdata] AMREX_GPU_DEVICE(int /*i*/, int /*j*/, int /*k*/) noexcept {
-      bcnormal(
-        x, nAux, s_ext_d, ctrl_flameDir_l, 1, time_l, geomdata, *lprobparm,
-        lpmfdata);
-    });
-  Vector<Real> s_ext(NVAR);
-  Gpu::copy(Gpu::deviceToHost, s_ext_v.begin(), s_ext_v.end(), s_ext.begin());
+    Box dumbx({AMREX_D_DECL(0, 0, 0)}, {AMREX_D_DECL(0, 0, 0)});
+    amrex::ParallelFor(
+      dumbx,
+      [x, nAux = m_nAux, s_ext_d, ctrl_flameDir_l, time_l, geomdata, lprobparm,
+       lpmfdata] AMREX_GPU_DEVICE(int /*i*/, int /*j*/, int /*k*/) noexcept {
+        bcnormal(
+          x, nAux, s_ext_d, ctrl_flameDir_l, 1, time_l, geomdata, *lprobparm,
+          lpmfdata);
+      });
+    Vector<Real> s_ext(NVAR);
+    Gpu::copy(Gpu::deviceToHost, s_ext_v.begin(), s_ext_v.end(), s_ext.begin());
 
-  if (m_ctrl_useTemp == 0) {
-    // Get the fuel rhoY
-    if (fuelID < 0) {
-      Abort(
-        "Using activeControl based on fuel mass requires peleLM.fuelName !");
-    }
-
-    // Compute some active control parameters
-    Real area_tot = 1.0;
-    for (int idim{0}; idim < AMREX_SPACEDIM; idim++) {
-      if (idim != m_ctrl_flameDir) {
-        area_tot *= (Geom(0).ProbHi(idim) - Geom(0).ProbLo(idim));
+    if (m_ctrl_useTemp == 0) {
+      // Get the fuel rhoY
+      if (fuelID < 0) {
+        Abort(
+          "Using activeControl based on fuel mass requires peleLM.fuelName !");
       }
+
+      // Compute some active control parameters
+      Real area_tot = 1.0;
+      for (int idim{0}; idim < AMREX_SPACEDIM; idim++) {
+        if (idim != m_ctrl_flameDir) {
+          area_tot *= (Geom(0).ProbHi(idim) - Geom(0).ProbLo(idim));
+        }
+      }
+
+      m_ctrl_scale = area_tot * s_ext[FIRSTSPEC + fuelID];
+      m_ctrl_cfix = m_ctrl_h * m_ctrl_scale;
+    } else {
+      // If using temp, scale is 1.0
+      m_ctrl_scale = 1.0;
+      m_ctrl_cfix = m_ctrl_h;
     }
 
-    m_ctrl_scale = area_tot * s_ext[FIRSTSPEC + fuelID];
-    m_ctrl_cfix = m_ctrl_h * m_ctrl_scale;
-  } else {
-    // If using temp, scale is 1.0
-    m_ctrl_scale = 1.0;
-    m_ctrl_cfix = m_ctrl_h;
-  }
+    // Extract initial ctrl_V_in from bc
+    m_ctrl_V_in = s_ext[m_ctrl_flameDir];
+    m_ctrl_V_in_old = m_ctrl_V_in;
 
-  // Extract initial ctrl_V_in from bc
-  m_ctrl_V_in = s_ext[m_ctrl_flameDir];
-  m_ctrl_V_in_old = m_ctrl_V_in;
+    // Fill host ProbParm FCData
+    fcdata_host->ctrl_active = 1;
+    fcdata_host->ctrl_V_in = m_ctrl_V_in;
 
-  // Fill host ProbParm FCData
-  fcdata_host->ctrl_active = 1;
-  fcdata_host->ctrl_V_in = m_ctrl_V_in;
-
-  if (m_ctrl_verbose != 0) {
-    if (m_ctrl_useTemp != 0) {
-      Print() << " Active control based on temperature iso-level activated."
-              << " Maintaining the flame at " << m_ctrl_h << " in "
-              << m_ctrl_flameDir << " direction. \n";
-    } else {
-      Print() << " Active control based on fuel mass activated."
-              << " Maintaining the flame at " << m_ctrl_h << " in "
-              << m_ctrl_flameDir << " direction. \n";
+    if (m_ctrl_verbose != 0) {
+      if (m_ctrl_useTemp != 0) {
+        Print() << " Active control based on temperature iso-level activated."
+                << " Maintaining the flame at " << m_ctrl_h << " in "
+                << m_ctrl_flameDir << " direction. \n";
+      } else {
+        Print() << " Active control based on fuel mass activated."
+                << " Maintaining the flame at " << m_ctrl_h << " in "
+                << m_ctrl_flameDir << " direction. \n";
+      }
     }
   }
 }
