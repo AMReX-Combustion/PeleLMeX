@@ -24,6 +24,9 @@ authors:
     affiliation: 4
   - name: Ray Grout
     affiliation: 1
+  - name: Marc Henry de Frahan
+    orcid: 0000-0001-7742-1565
+    affiliation: 1
   - name: Emmanuel Motheau
     affiliation: 2
   - name: Andy Nonaka
@@ -83,7 +86,7 @@ handled using AMReX's native geometric multigrid (GMG) solver, but can also be t
 In contrast with PeleLM, PeleLMeX relies on a non-subcycling approach to advance the numerical solution on an AMR hierarchy,
 where all the levels are advanced together using the same time step, the size of which is prescribed by a CFL condition across all the levels.
 This distinctive feature drove the development of PeleLMeX as it enable extending the closed chamber algorithm described in
-[@Nonaka18] to an AMR hierarchy and to incorporate more complex physical processes such as flame/plasma interactions [@Esclapez:2019].
+[@Nonaka18] to an AMR hierarchy and to incorporate more complex physical processes such as flame/plasma interactions [@Esclapez:2020].
 
 In addition, PeleLMeX uses an Embedded Boundary (EB) approach to represent complex geometries: an arbitrary surface can 
 be intersected with the Cartesian matrix of uniform cells, and the numerical stencils are modified near cells that are cut 
