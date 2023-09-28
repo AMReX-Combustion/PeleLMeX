@@ -268,7 +268,7 @@ PeleLM::activeControl(int is_restart)
   fcdata_h = getFCDataPtr(*prob_parm, hasFlowControllerData<ProbParm>{});
   fcdata_d = getFCDataPtr(*prob_parm_d, hasFlowControllerData<ProbParm>{});
 
-  if ((fcdata_host) && (fcdata_d)) {
+  if ((fcdata_h) && (fcdata_d)) {
     // Pass dV and ctrl_V_in to FCData
     fcdata_h->ctrl_V_in = m_ctrl_V_in;
     fcdata_h->ctrl_dV = m_ctrl_dV;
