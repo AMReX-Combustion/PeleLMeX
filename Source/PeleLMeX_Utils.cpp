@@ -1164,24 +1164,22 @@ bool
 PeleLM::isStateVariable(std::string_view a_name)
 {
   // Check state
-  for (const auto& stateComponent : stateComponents) {
-    if (std::get<1>(stateComponent) == a_name) {
-      return true;
-    }
-  }
-  return false;
+  return std::any_of(
+    stateComponents.begin(), stateComponents.end(),
+    [=](const auto& stateComponent) {
+      return std::get<1>(stateComponent) == a_name;
+    });
 }
 
 bool
 PeleLM::isReactVariable(std::string_view a_name)
 {
   // Check reaction state
-  for (const auto& reactComponent : reactComponents) {
-    if (std::get<1>(reactComponent) == a_name) {
-      return true;
-    }
-  }
-  return false;
+  return std::any_of(
+    reactComponents.begin(), reactComponents.end(),
+    [=](const auto& reactComponent) {
+      return std::get<1>(reactComponent) == a_name;
+    });
 }
 
 int
