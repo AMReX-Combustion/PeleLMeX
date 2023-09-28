@@ -240,8 +240,8 @@ PeleLM::checkMessage(const std::string& a_action) const
   if (m_nstep % m_message_int == 0) {
     int action_flag = 0;
     if (ParallelDescriptor::IOProcessor()) {
-      FILE* fp;
-      if ((fp = fopen(action_file.c_str(), "r")) != nullptr) {
+      FILE* fp = fopen(action_file.c_str(), "r");
+      if (fp != nullptr) {
         remove(action_file.c_str());
         action_flag = 1;
         fclose(fp);

@@ -605,6 +605,8 @@ pelelmex_dercoord(
   const FArrayBox&
 #ifdef AMREX_USE_EB
     statefab
+#else
+/*unused*/
 #endif
   ,
   const FArrayBox& /*reactfab*/,
@@ -613,7 +615,6 @@ pelelmex_dercoord(
   Real /*time*/,
   const Vector<BCRec>& /*bcrec*/,
   int /*level*/)
-
 {
   amrex::ignore_unused(ncomp);
   AMREX_ASSERT(derfab.box().contains(bx));

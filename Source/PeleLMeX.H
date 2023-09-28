@@ -281,7 +281,7 @@ public:
    * using the data from a pltfile
    * \param a_pltFile path to PeleLMeX plot file
    */
-  void initLevelDataFromPlt(int a_lev, const std::string& a_datPltFile);
+  void initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile);
 
   /**
    * \brief Project the initial solution velocity field,
@@ -570,9 +570,9 @@ public:
    */
   void addWbarTerm(
     const amrex::Vector<amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>>&
-      a_fluxes,
+      a_spfluxes,
     const amrex::Vector<amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>>&
-      a_wbarfluxes,
+      a_spwbarfluxes,
     amrex::Vector<amrex::MultiFab const*> const& a_spec,
     amrex::Vector<amrex::MultiFab const*> const& a_rho,
     amrex::Vector<amrex::MultiFab const*> const& a_beta);
@@ -602,7 +602,7 @@ public:
    */
   void adjustSpeciesFluxes(
     const amrex::Vector<amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>>&
-      a_fluxes,
+      a_spfluxes,
     amrex::Vector<amrex::MultiFab const*> const& a_spec);
 
   /**
@@ -987,7 +987,7 @@ public:
 
   //-----------------------------------------------------------------------------
   // BOUNDARY CONDITIONS / FILLPATCH
-  amrex::InterpBase* getInterpolator(int a_method = 1);
+  amrex::InterpBase* getInterpolator(int a_method = 1) const;
 
   // Interpolation method for regrid (default to cell cons interp)
   int m_regrid_interp_method = 1;
@@ -1203,7 +1203,7 @@ public:
     int const* l_conserv_d,
     const amrex::Geometry& a_geom,
     amrex::Real scale,
-    bool fluxes_are_area_weighted);
+    bool fluxes_are_area_weighted) const;
 
   void extFluxDivergenceLevel(
     int lev,
@@ -1312,7 +1312,7 @@ public:
 
   void makeEBGeometry();
 
-  int getRestartEBMaxLevel();
+  int getRestartEBMaxLevel() const;
 
   void initialRedistribution();
 
@@ -1331,7 +1331,7 @@ public:
     int state_comp,
     int ncomp,
     const amrex::BCRec* d_bc,
-    const amrex::Geometry& a_geom);
+    const amrex::Geometry& a_geom) const;
 
   void redistributeDiff(
     int a_lev,
@@ -1344,9 +1344,9 @@ public:
     int state_comp,
     int ncomp,
     const amrex::BCRec* d_bc,
-    const amrex::Geometry& a_geom);
+    const amrex::Geometry& a_geom) const;
 
-  void getCoveredIMask(int a_lev, amrex::iMultiFab& a_imask);
+  void getCoveredIMask(int a_lev, amrex::iMultiFab& a_imask) const;
 
   void getEBDistance(int a_lev, amrex::MultiFab& a_signDistLev);
 

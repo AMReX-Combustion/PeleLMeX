@@ -67,7 +67,7 @@ PeleLM::redistributeAofS(
   int state_comp,
   int ncomp,
   const BCRec* d_bc,
-  const Geometry& a_geom)
+  const Geometry& a_geom) const
 {
   BL_PROFILE("PeleLMeX::redistributeAofS()");
   AMREX_ASSERT(a_tmpDiv.nComp() >= div_comp + ncomp);
@@ -137,7 +137,7 @@ PeleLM::redistributeAofS(
 }
 
 void
-PeleLM::getCoveredIMask(int a_lev, iMultiFab& a_imask)
+PeleLM::getCoveredIMask(int a_lev, iMultiFab& a_imask) const
 {
   const auto& ebfact = EBFactory(a_lev);
   const auto& flags = ebfact.getMultiEBCellFlagFab();
@@ -196,7 +196,7 @@ PeleLM::redistributeDiff(
   int state_comp,
   int ncomp,
   const BCRec* d_bc,
-  const Geometry& a_geom)
+  const Geometry& a_geom) const
 {
   BL_PROFILE("PeleLMeX::redistributeDiff()");
   AMREX_ASSERT(a_tmpDiv.nComp() >= div_comp + ncomp);
@@ -425,7 +425,7 @@ PeleLM::getEBDistance(int a_lev, MultiFab& a_signDistLev)
 
     // Get signDist on coarsen fineBA
     BoxArray coarsenBA(grids[lev].size());
-    for (int j = 0, N = coarsenBA.size(); j < N; ++j) {
+    for (int j = 0, N = static_cast<int>(coarsenBA.size()); j < N; ++j) {
       coarsenBA.set(
         j, interpolater.CoarseBox(grids[lev][j], refRatio(lev - 1)));
     }
@@ -609,17 +609,12 @@ PeleLM::correct_vel_small_cells(
                    ,
                    const auto& wmac_fab = (a_umac[lev][2])->const_array(mfi););
 
-      if (flags.getType(amrex::grow(bx, 0)) == FabType::covered) {
-        // do nothing
-      }
-
       // No cut cells in this FAB
-      else if (flags.getType(amrex::grow(bx, 1)) == FabType::regular) {
+      if (
+        (flags.getType(amrex::grow(bx, 0)) == FabType::covered) ||
+        (flags.getType(amrex::grow(bx, 1)) == FabType::regular)) {
         // do nothing
-      }
-
-      // Cut cells in this FAB
-      else {
+      } else { // Cut cells in this FAB
         // Face-centered areas
         AMREX_D_TERM(const auto& apx_fab =
                        EBFactory(lev).getAreaFrac()[0]->const_array(mfi);
@@ -662,7 +657,7 @@ PeleLM::correct_vel_small_cells(
 }
 
 int
-PeleLM::getRestartEBMaxLevel()
+PeleLM::getRestartEBMaxLevel() const
 {
   if (m_restart_chkfile.empty()) {
     return -1;

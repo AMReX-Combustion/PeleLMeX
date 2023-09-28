@@ -500,20 +500,21 @@ PeleLM::intFluxDivergenceLevelEB(
 }
 
 void
-PeleLM::advFluxDivergence(
-  int a_lev,
-  MultiFab& a_divergence,
-  int div_comp,
-  MultiFab& a_divu,
-  const Array<const MultiFab*, AMREX_SPACEDIM>& a_fluxes,
-  int flux_comp,
-  const Array<const MultiFab*, AMREX_SPACEDIM>& a_faceState,
-  int face_comp,
-  int ncomp,
-  int const* l_conserv_d,
-  const Geometry& a_geom,
-  amrex::Real scale,
-  bool fluxes_are_area_weighted)
+PeleLM::
+  advFluxDivergence( // NOLINT(readability-convert-member-functions-to-static)
+    int a_lev,
+    MultiFab& a_divergence,
+    int div_comp,
+    MultiFab& a_divu,
+    const Array<const MultiFab*, AMREX_SPACEDIM>& a_fluxes,
+    int flux_comp,
+    const Array<const MultiFab*, AMREX_SPACEDIM>& a_faceState,
+    int face_comp,
+    int ncomp,
+    int const* l_conserv_d,
+    const Geometry& a_geom,
+    amrex::Real scale,
+    bool fluxes_are_area_weighted) const
 {
   BL_PROFILE("PeleLMeX::advFluxDivergence()");
 

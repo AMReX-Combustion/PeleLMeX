@@ -49,9 +49,10 @@ int soot_bc[] = {INT_DIR,      EXT_DIR,      FOEXTRAP, REFLECT_EVEN,
 #endif
 
 InterpBase*
-PeleLM::getInterpolator(int a_method)
+PeleLM::
+  getInterpolator( // NOLINT(readability-convert-member-functions-to-static)
+    int a_method) const
 {
-
   InterpBase* mapper = nullptr;
 
   if (a_method == 0) {
