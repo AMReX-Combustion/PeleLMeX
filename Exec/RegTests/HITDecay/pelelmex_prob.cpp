@@ -97,7 +97,7 @@ read_csv(
 }
 
 void
-PeleLM::readProbParm()
+PeleLM::readProbParm() // NOLINT(readability-make-member-function-const)
 {
   amrex::ParmParse pp("prob");
 
