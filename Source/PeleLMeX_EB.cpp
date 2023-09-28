@@ -437,8 +437,8 @@ PeleLM::getEBDistance(int a_lev, MultiFab& a_signDistLev)
     // Interpolate on current lev
     MultiFab* currentSignDist;
     if (lev < a_lev) {
-      MFpair[1].reset(
-        new MultiFab(grids[lev], dmap[lev], 1, 0, MFInfo(), EBFactory(lev)));
+      MFpair[1] = std::make_unique<MultiFab>(
+        grids[lev], dmap[lev], 1, 0, MFInfo(), EBFactory(lev));
     }
     currentSignDist = (lev == a_lev) ? &a_signDistLev : MFpair[1].get();
 
