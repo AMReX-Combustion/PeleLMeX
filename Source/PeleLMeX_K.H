@@ -1231,7 +1231,7 @@ getTurbViscSigma(
   amrex::Array4<amrex::Real> const& mu_t) noexcept
 {
 #if (AMREX_SPACEDIM == 2)
-  amrex::ignore_unused(i, j, k, prefactor, velgrad, rho, mut);
+  amrex::ignore_unused(i, j, k, prefactor, velgrad, rho, mu_t);
   amrex::Abort("getTurbViscSigma not implemented in 2D");
 #elif (AMREX_SPACEDIM == 3)
   using namespace amrex::literals;
