@@ -268,13 +268,15 @@ PeleLM::activeControl(int is_restart)
   fcdata_h = getFCDataPtr(*prob_parm, hasFlowControllerData<ProbParm>{});
   fcdata_d = getFCDataPtr(*prob_parm_d, hasFlowControllerData<ProbParm>{});
 
-  // Pass dV and ctrl_V_in to FCData
-  fcdata_h->ctrl_V_in = m_ctrl_V_in;
-  fcdata_h->ctrl_dV = m_ctrl_dV;
-  fcdata_h->ctrl_tBase = m_ctrl_tBase;
+  if ((fcdata_host) && (fcdata_d)) {
+    // Pass dV and ctrl_V_in to FCData
+    fcdata_h->ctrl_V_in = m_ctrl_V_in;
+    fcdata_h->ctrl_dV = m_ctrl_dV;
+    fcdata_h->ctrl_tBase = m_ctrl_tBase;
 
-  // Update Device version
-  Gpu::copy(Gpu::hostToDevice, fcdata_h, fcdata_h + 1, fcdata_d);
+    // Update Device version
+    Gpu::copy(Gpu::hostToDevice, fcdata_h, fcdata_h + 1, fcdata_d);
+  }
 
   if ((m_ctrl_verbose != 0) && (is_restart == 0)) {
     Print()
