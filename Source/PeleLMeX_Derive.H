@@ -90,7 +90,6 @@ public:
    */
   int numDerive() const noexcept;
 
-protected:
   /**
    * \brief Constructor.
    *
