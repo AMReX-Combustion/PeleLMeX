@@ -59,7 +59,7 @@ PeleLM::initActiveControl()
   FlowControllerData* fcdata_host{nullptr};
   fcdata_host = getFCDataPtr(*prob_parm, hasFlowControllerData<ProbParm>{});
 
-  if (fcdata_host) {
+  if (fcdata_host != nullptr) {
     // Resize vector for temporal average
     m_ctrl_time_pts.resize(m_ctrl_NavgPts + 1, -1.0);
     m_ctrl_velo_pts.resize(m_ctrl_NavgPts + 1, -1.0);
@@ -268,7 +268,7 @@ PeleLM::activeControl(int is_restart)
   fcdata_h = getFCDataPtr(*prob_parm, hasFlowControllerData<ProbParm>{});
   fcdata_d = getFCDataPtr(*prob_parm_d, hasFlowControllerData<ProbParm>{});
 
-  if ((fcdata_h) && (fcdata_d)) {
+  if ((fcdata_h != nullptr) && (fcdata_d != nullptr)) {
     // Pass dV and ctrl_V_in to FCData
     fcdata_h->ctrl_V_in = m_ctrl_V_in;
     fcdata_h->ctrl_dV = m_ctrl_dV;
