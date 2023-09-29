@@ -268,7 +268,7 @@ to overwrite the default values using AMReX’s ParmParse:</p>
 </div>
 <p>The <cite>PeleLMeX</cite> has its own <cite>ProbParm</cite> instance, the values of which are set by the <code class="docutils literal notranslate"><span class="pre">query</span></code> function calls. Note that because a
 <code class="docutils literal notranslate"><span class="pre">query</span></code> function is employed, the solver will use the default values of the <code class="docutils literal notranslate"><span class="pre">ProbParm</span></code> parameters if they are not provided
-in the input file. Use a <code class="docutils literal notranslate"><span class="pre">pp.get</span></code> to throw an error if overwritting the default value is desirable (see AMReX’s ParmParse
+in the input file. Use a <code class="docutils literal notranslate"><span class="pre">pp.get</span></code> to throw an error if overwriting the default value is desirable (see AMReX’s ParmParse
 documentation for more information). Users can now add the corresponding keys to their input file:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>prob.P_mean = 101325.0
 prob.standoff = -.023
@@ -276,7 +276,7 @@ prob.pertmag = 0.00045
 prob.pertlength = 0.016
 </pre></div>
 </div>
-<p>Additionnaly, the <cite>readProbParm()</cite> function initialize another data structure designed to handle the Cantera solution
+<p>Additionally, the <cite>readProbParm()</cite> function initialize another data structure designed to handle the Cantera solution
 (not detailed here). When this function is called, users must provide the path to the Cantera solution stored as an
 ASCII file in the input file:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>pmf.datafile = &quot;drm19_pmf.dat&quot;
@@ -298,7 +298,7 @@ version of the function reads:</p>
 <ul class="simple">
 <li><p>Compute the coordinate of the cell center using the cell indices and the <cite>geomdata</cite>.</p></li>
 <li><p>Compute the harmonic perturbation.</p></li>
-<li><p>Using <code class="docutils literal notranslate"><span class="pre">standoff</span></code> and the pertubation, use the <code class="docutils literal notranslate"><span class="pre">PMF</span></code> function to get cell-average temperature, mole fractions and
+<li><p>Using <code class="docutils literal notranslate"><span class="pre">standoff</span></code> and the perturbation, use the <code class="docutils literal notranslate"><span class="pre">PMF</span></code> function to get cell-average temperature, mole fractions and
 velocity from the Cantera solution.</p></li>
 <li><p>Use the data from the <code class="docutils literal notranslate"><span class="pre">PMF</span></code> to set the state array: velocities, density, rhoYs, rhoH and temperature. Relying on
 EOS calls and using <cite>ProbParm::P_mean</cite>.</p></li>
@@ -327,7 +327,7 @@ after initialization to obtain a consistent pressure and velocity field.</p>
 <p>Now that we have reviewed the basic ingredients required to setup the FlameSheet case, it is time to build the <cite>PeleLMeX</cite> executable.
 Although both GNUmake and CMake are available, it is advised to use GNUmake. The <code class="docutils literal notranslate"><span class="pre">GNUmakefile</span></code> file provides some compile-time options
 regarding the simulation we want to perform.
-The first few lines specify the paths towards the source codes of <cite>PeleLMeX</cite>, <cite>AMReX</cite>, <cite>AMReX-Hydro</cite> and <cite>PelePhysics</cite>, overwritting
+The first few lines specify the paths towards the source codes of <cite>PeleLMeX</cite>, <cite>AMReX</cite>, <cite>AMReX-Hydro</cite> and <cite>PelePhysics</cite>, overwriting
 any environment variable if necessary, and might have been already updated in <a class="reference internal" href="#sec-tuto-fs-prepstep"><span class="std std-ref">Setting-up your environment</span></a> earlier.</p>
 <p>The next few lines specify AMReX compilation options and compiler selection:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span># AMREX
@@ -363,7 +363,7 @@ Transport_Model := Simple
 </div>
 <p>Note that the <code class="docutils literal notranslate"><span class="pre">Chemistry_Model</span></code> must be similar to the one used to generate the Cantera solution.</p>
 <p>Finally, <cite>PeleLMeX</cite> utilizes the chemical kinetic ODE integrator <a class="reference external" href="https://computing.llnl.gov/projects/sundials/cvode">CVODE</a>. This
-Third Party Librabry (TPL) is shipped as a submodule of the <cite>PeleLMeX</cite> distribution and can be readily installed through the makefile system
+Third Party Library (TPL) is shipped as a submodule of the <cite>PeleLMeX</cite> distribution and can be readily installed through the makefile system
 of <cite>PeleLMeX</cite>. To do so, type in the following command:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>make -j4 TPL
 </pre></div>
@@ -447,11 +447,11 @@ file from which to restart from. To do so, ensure that:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>amr.max_step = 50
 </pre></div>
 </div>
-<p>and uncomment the following line to require writting checkpoint files:</p>
+<p>and uncomment the following line to require writing checkpoint files:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>amr.check_int = 2000
 </pre></div>
 </div>
-<p>As soon as this last key is specified, <cite>PeleLMeX</cite> will writte an initial and final checkpoint file.
+<p>As soon as this last key is specified, <cite>PeleLMeX</cite> will write an initial and final checkpoint file.
 Note that checkpoint file and plotfile store different data. A checkpoint file will store all the necessary
 state data to enable a continuous restart of the simulation, i.e. the solution after 50 steps is exactly the
 same as the one obtained running 25 steps first, then restarting for another 25 steps. A plotfile will
@@ -463,7 +463,7 @@ to analyse the simulation. The content of a plotfile can be controlled by users 
 <p>Here we require the cell-averaged pressure, the vorticity, species mass fraction (remember that
 <cite>PeleLMeX</cite> state contains rhoYs not Ys), mixture fraction and progress variable to be added to the
 plotfile. For a complete list of <cite>PeleLMeX</cite> available <cite>derived</cite>, see the adequate section in <a class="reference internal" href="LMeXControls.html"><span class="doc">PeleLMeX controls</span></a>.</p>
-<p>Additionnally, increase <cite>PeleLMeX</cite> verbose in order to better see the various steps of the
+<p>Additionally, increase <cite>PeleLMeX</cite> verbose in order to better see the various steps of the
 algorithm:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>peleLM.v = 3
 </pre></div>
@@ -494,9 +494,9 @@ STEP [10] - Time: 1.892958943e-09, dt 3.080703507e-10
 </div>
 <p>clearly showing the use of 2 SDC iterations and the time spent
 performing projection, computing scalar advection, diffusion and reaction,
-and finally perfoming the velocity advance. The reader is referred to
+and finally performing the velocity advance. The reader is referred to
 <a class="reference internal" href="Model.html"><span class="doc">The PeleLMeX Model</span></a> for a detailed description of all of these steps.</p>
-<p>The first line at each step provide the time step contraint from the CFL
+<p>The first line at each step provide the time step constraint from the CFL
 condition (<code class="docutils literal notranslate"><span class="pre">Conv:</span></code>) and from the density change condition (<code class="docutils literal notranslate"><span class="pre">divu:</span></code>).
 Since an initial <code class="docutils literal notranslate"><span class="pre">dt_shrink</span></code> was applied upon initialization, the
 current step is much smaller than the CFL but progressively increases
@@ -512,11 +512,11 @@ an intermediate species such as CH3 in <a class="reference internal" href="#fs-5
 <p><span class="caption-number">Fig. 10 </span><span class="caption-text">: Contour plots of <cite>divU</cite>, <cite>FunctCall</cite>, thermodynamic pressure and CH3 mass fraction after 50 steps.</span><a class="headerlink" href="#fs-50steps" title="Link to this image"></a></p>
 </figcaption>
 </figure>
-<p>The <cite>divU</cite> is now mostly positive, consistent with the thermal expansion occuring across a
+<p>The <cite>divU</cite> is now mostly positive, consistent with the thermal expansion occurring across a
 flame front. The <cite>FunctCall</cite> is the number of calls to the chemical right-hand-side function
 used in the chemical integrator CVODE. Higher values are indicative of locally stiffer
 chemical ODE system, concentrated in the reactive layer of the flame. The <cite>RhoRT</cite> variable
-is the thermodynamic pressure: within <cite>PeleLMeX</cite> low Mach number appraoch, this should be
+is the thermodynamic pressure: within <cite>PeleLMeX</cite> low Mach number approach, this should be
 perfectly uniform in space. However to conserve mass and enthalpy, the <cite>PeleLMeX</cite> algorithm allows
 for small deviation from this constraint. In the current case, deviation do not extend 0.0001 Pa,
 but larger deviations (&gt; 100-1000 Pa) can be indicative that more SDC iterations are necessary or that the time step
@@ -527,7 +527,7 @@ of refinement. To do so, uncomment the following line:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>amr.restart = chk00050
 </pre></div>
 </div>
-<p>Increase the <code class="docutils literal notranslate"><span class="pre">max_step</span></code> to 120 and increse the maximum level to 3:</p>
+<p>Increase the <code class="docutils literal notranslate"><span class="pre">max_step</span></code> to 120 and increase the maximum level to 3:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>amr.max_level       = 3
 </pre></div>
 </div>

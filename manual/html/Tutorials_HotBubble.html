@@ -271,7 +271,7 @@ after initialization to obtain a consistent pressure and velocity field.</p>
 <p>Now that we have reviewed the basic ingredients required to setup the case, it is time to build the <cite>PeleLMeX</cite> executable.
 Although both GNUmake and CMake are available, it is advised to use GNUmake. The <code class="docutils literal notranslate"><span class="pre">GNUmakefile</span></code> file provides some compile-time options
 regarding the simulation we want to perform.
-The first few lines specify the paths towards the source codes of <cite>PeleLMeX</cite>, <cite>AMReX</cite>, <cite>AMReX-Hydro</cite> and <cite>PelePhysics</cite>, overwritting
+The first few lines specify the paths towards the source codes of <cite>PeleLMeX</cite>, <cite>AMReX</cite>, <cite>AMReX-Hydro</cite> and <cite>PelePhysics</cite>, overwriting
 any environment variable if necessary, and might have been already updated in <a class="reference internal" href="#sec-tuto-hb-prepstep"><span class="std std-ref">Setting-up your environment</span></a> earlier.</p>
 <p>The next few lines specify AMReX compilation options and compiler selection:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span># AMREX
@@ -310,7 +310,7 @@ Transport_Model := Constant
 </pre></div>
 </div>
 <p>Finally, <cite>PeleLMeX</cite> utilizes the chemical kinetic ODE integrator <a class="reference external" href="https://computing.llnl.gov/projects/sundials/cvode">CVODE</a>. This
-Third Party Librabry (TPL) is shipped as a submodule of the <cite>PeleLMeX</cite> distribution and can be readily installed through the makefile system
+Third Party Library (TPL) is shipped as a submodule of the <cite>PeleLMeX</cite> distribution and can be readily installed through the makefile system
 of <cite>PeleLMeX</cite>. To do so, type in the following command:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>make -j4 TPL
 </pre></div>
@@ -381,7 +381,7 @@ STEP [384] - Time: 0.05931322581, dt 7.249645299e-05
 </pre></div>
 </div>
 <p>clearly showing the use of 1 SDC iteration. The first line at each step provides
-the time step contraint from the CFL
+the time step constraint from the CFL
 condition (<code class="docutils literal notranslate"><span class="pre">Conv:</span></code>) and from the density change condition (<code class="docutils literal notranslate"><span class="pre">divu:</span></code>).
 In the absence of reaction and diffusion, the <code class="docutils literal notranslate"><span class="pre">divu:</span></code> constraint is irrelevant and set to a
 large value.</p>

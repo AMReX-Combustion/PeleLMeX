@@ -103,14 +103,14 @@ useful for any user intending to use and/or do some development in the code.</p>
 <section id="overview-of-source-code">
 <h2>Overview of source code<a class="headerlink" href="#overview-of-source-code" title="Link to this heading"></a></h2>
 <p><em>PeleLMeX</em> is based upon AMReX’s <a class="reference external" href="https://amrex-codes.github.io/amrex/docs_html/AmrCore.html">AmrCore</a> from which it inherits
-an AMR hierarchy data structure and basic regridding functionnalities. The code is entirely written in C++, with low level
+an AMR hierarchy data structure and basic regridding functionalities. The code is entirely written in C++, with low level
 compute-intensive kernels implemented as lambda functions to seamlessly run on CPU and various GPU backends through AMReX
 high performance portatbility abstraction.</p>
 <p>The core of the algorithm is implementation in the <code class="docutils literal notranslate"><span class="pre">advance()</span></code> function which acts on all the levels concurrently.
 Projection operators and advection scheme functions are imported the <a class="reference external" href="https://amrex-codes.github.io/AMReX-Hydro">AMReX-Hydro library</a>
 while the core of the thermo-chemistry functionalities comes from <a class="reference external" href="https://amrex-combustion.github.io/PelePhysics/">PelePhysics</a> .
 Users are responsible for providing initial and boundary conditions in the local subfolder implementing their case, i.e. it is
-not possible to compile and run <em>PeleLMeX</em> without actually writting a few lines of codes. However, numerous example are provided
+not possible to compile and run <em>PeleLMeX</em> without actually writing a few lines of codes. However, numerous example are provided
 in <code class="docutils literal notranslate"><span class="pre">Exec/RegTests</span></code> from which new users can pull for their new case.</p>
 <p>The source code contains a few dozen files, organized around the pieces of the algorithm and major functionalities:</p>
 <ul class="simple">
@@ -138,11 +138,11 @@ in <code class="docutils literal notranslate"><span class="pre">Exec/RegTests</s
 (historically, multi Fortran Array Box (FAB)).
 Within the block-structured AMR approach of AMReX, the domain is decomposed into non-overlapping rectangular <cite>boxes</cite>,
 which can be assembled into a <cite>boxArray</cite>. Each AMR level has a <cite>boxArray</cite> providing the list of <cite>boxes</cite> of that level.
-The <cite>boxes</cite> are distributed accross the MPI ranks, the mapping of which is described by a <cite>DistributionMap</cite>. Given a
+The <cite>boxes</cite> are distributed across the MPI ranks, the mapping of which is described by a <cite>DistributionMap</cite>. Given a
 <cite>boxArray</cite> and a <cite>DistributionMap</cite>, one can define an actual data container (<cite>boxes</cite> are only lightweight descriptor
 of the geometrical rectangular object, containing bounds and centering information only), where each rank will
 allocate a FAB for the boxes it owns in the <cite>boxArray</cite>, resulting in a collection of FABs or a MultiFab, distributed
-accross the MPI ranks.</p>
+across the MPI ranks.</p>
 <p>To access the data in a MultiFab, one uses a <a class="reference external" href="https://amrex-codes.github.io/amrex/docs_html/Basics.html#mfiter-and-tiling">MFIter</a>
 (or MultiFab iterator), which provides each MPI rank access to the FABs it owns within the MultiFab. Actual access to the data in
 memory is then provided by the lightweight <cite>Array4</cite> structure and it is strongly advised to rely on AMReX
@@ -173,7 +173,7 @@ to get more familiar with AMReX data structures and environment.</p>
 <h3><em>PeleLMeX</em> state and advance containers<a class="headerlink" href="#pelelmex-state-and-advance-containers" title="Link to this heading"></a></h3>
 <p>The state vector of <em>PeleLMeX</em> contains the 2 or 3 components of velocity, the mixture density, species density (rhoYs),
 rhoH, temperature and the thermodynamic pressure. The state components are stored in a cell-centered MultiFab with
-<cite>NVAR</cite> components. Additionnally, the perturbational pressure stored at the nodes is contained in a separate MultiFab.
+<cite>NVAR</cite> components. Additionally, the perturbational pressure stored at the nodes is contained in a separate MultiFab.
 Together with the cell-centered pressure gradient, the cell-centered divergence constraint and cell-centered
 transport properties, these MultiFabs are assembled into a <cite>LevelData</cite> struct.</p>
 <p>Each level in the AMR hierarchy have two versions of the <cite>LevelData</cite> at any point during the simulation: one
@@ -182,10 +182,10 @@ calling :</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>auto ldata_p = getLevelDataPtr(lev,AmrOldTime);
 </pre></div>
 </div>
-<p>with either <cite>AmrOldTime</cite> or <cite>AmrNewTime</cite> on level <cite>lev</cite>. Additionnally, calling this function with
+<p>with either <cite>AmrOldTime</cite> or <cite>AmrNewTime</cite> on level <cite>lev</cite>. Additionally, calling this function with
 <cite>AmrHalfTime</cite> with return a <cite>LevelData</cite> struct whose <cite>state</cite> is a linearly interpolated between the old and new
 states (but the other MultiFab in <cite>LevelData</cite> are empty !).
-It is also often useful to have access to a vector of a state component accross the entire AMR hierarchy. To do so, <em>PeleLMeX</em>
+It is also often useful to have access to a vector of a state component across the entire AMR hierarchy. To do so, <em>PeleLMeX</em>
 provides a set of functions returning a vector of MultiFab <cite>std::unique_ptr</cite> aliased into the <cite>LevelData</cite>
 MultiFab on each level:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>getStateVect(time);         # Return the entire state (ncomp: NVAR)
@@ -201,7 +201,7 @@ getViscosityVect(time);     # Return viscosity (ncomp: 1)
 </div>
 <p>where <code class="docutils literal notranslate"><span class="pre">time</span></code> can either be <cite>AmrOldTime</cite> or <cite>AmrNewTime</cite>.
 Also available at any point during the simulation is the <cite>LevelDataReact</cite> which contains the species
-chemical source terms. A single version of the container is avaible on each level and can be accessed
+chemical source terms. A single version of the container is available on each level and can be accessed
 using:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>auto ldataR_p = getLevelDataReactPtr(lev);
 </pre></div>
@@ -226,30 +226,30 @@ and CUDA, HIP or SYCL for heterogeneous architectures.
 The reader is referred to <a class="reference external" href="https://amrex-codes.github.io/amrex/docs_html/GPU.html">AMReX GPU documentation</a> for more details on
 the thread parallelism.</p>
 <p>As mentioned above, the top-level spatial decomposition arises from AMReX’s block-structured approach. On each level, non-overlapping
-<cite>boxes</cite> are assembled into <cite>boxArray</cite> and distributed accross MPI rank with <cite>DistributionMap</cite> (or <cite>DMap</cite>).
+<cite>boxes</cite> are assembled into <cite>boxArray</cite> and distributed across MPI rank with <cite>DistributionMap</cite> (or <cite>DMap</cite>).
 It is in our best interest to ensure that all the MultiFab in the code use the same <cite>boxArray</cite> and <cite>DMap</cite>,
-such that operation using <cite>MFIter</cite> can be performed and data copy accross MPI ranks is minimized.
+such that operation using <cite>MFIter</cite> can be performed and data copy across MPI ranks is minimized.
 However, it is also important to maintain a good load balancing, i.e. ensure that each MPI rank has the same amount
-of work, to avoid wasting computational ressource. Reactive flow simulation are challenging, because the chemistry
+of work, to avoid wasting computational resource. Reactive flow simulation are challenging, because the chemistry
 integration is very spatially heterogeneous, with stiff ODE integration required within the flame front and non-stiff
-integration of the linearized advection/diffusion required in the cold gases or burnt mixture. Additionnally, because
+integration of the linearized advection/diffusion required in the cold gases or burnt mixture. Additionally, because
 a non-subcycling approach is used in <em>PeleLMeX</em>, the chemistry doesn’t have to be integrated in fine-covered region.
 Two <cite>boxArray</cite> and associated <cite>DMap</cite> are thus available in <em>PeleLMeX</em>:</p>
 <ol class="arabic simple">
-<li><p>The first one is inherited from <cite>AmrCore</cite> and is availble as <code class="docutils literal notranslate"><span class="pre">grid[lev]</span></code> (<cite>boxArray</cite>) and <code class="docutils literal notranslate"><span class="pre">dmap[lev]</span></code> (<cite>DMap</cite>) throughout the code. Most
+<li><p>The first one is inherited from <cite>AmrCore</cite> and is available as <code class="docutils literal notranslate"><span class="pre">grid[lev]</span></code> (<cite>boxArray</cite>) and <code class="docutils literal notranslate"><span class="pre">dmap[lev]</span></code> (<cite>DMap</cite>) throughout the code. Most
 of <em>PeleLMeX</em> MultiFabs use these two, and the <cite>boxes</cite> sizes are dictated by the <cite>amr.max_grid_size</cite> and <cite>amr.blocking_factor</cite> from the input
 file. These are employed for all the operations in the code except the chemistry integration. The default load balancing approach is to use
-space curve filling (SCF) with each box weighted by the number of cells in each box. Advanced users can try alternate appraoch using the
+space curve filling (SCF) with each box weighted by the number of cells in each box. Advanced users can try alternate approach using the
 keys listed in <a class="reference internal" href="LMeXControls.html"><span class="doc">PeleLMeX controls</span></a>.</p></li>
 <li><p>A second one is created, masking fine-covered regions and updated during regrid operations. It is used to perform the chemistry integration,
 and because this is a purely local integration (in contrast with implicit diffusion solve for instance, which require communications
 to solve the linear problem using GMG), a Knapsack load balancing approach is used by default, where the weight of each box is based
 on the total number of chemistry RHS calls in the box. The size of the <cite>boxes</cite> in the chemistry <cite>boxArray</cite> (accessible with <code class="docutils literal notranslate"><span class="pre">m_baChem[lev]</span></code>)
-is controled by the <cite>peleLM.max_grid_size_chem</cite> in the input file. Once again, advanced users can try alternate approaches to load
+is controlled by the <cite>peleLM.max_grid_size_chem</cite> in the input file. Once again, advanced users can try alternate approaches to load
 balancing the chemistry <cite>DMap</cite> using the keys described in <a class="reference internal" href="LMeXControls.html"><span class="doc">PeleLMeX controls</span></a>.</p></li>
 </ol>
 <p>After each regrid operation, even if the grids did not actually change, <em>PeleLMeX</em> will try to find a better load balancing for the
-<cite>AmrCore</cite> <cite>DMap</cite>. Because changing the load balancing requires copying data accross MPI ranks, we only want to change the <cite>DMap</cite>
+<cite>AmrCore</cite> <cite>DMap</cite>. Because changing the load balancing requires copying data across MPI ranks, we only want to change the <cite>DMap</cite>
 only if a significantly better new <cite>DMap</cite> can be obtained, with the threshold for a better <cite>DMap</cite> defined based on the value of
 <cite>peleLM.load_balancing_efficiency_threshold</cite>.</p>
 </section>

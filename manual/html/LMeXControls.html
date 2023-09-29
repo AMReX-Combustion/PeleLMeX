@@ -188,12 +188,12 @@ the first stopping criterion encountered will lead to termination of the simulat
 <section id="io-parameters">
 <h2>IO parameters<a class="headerlink" href="#io-parameters" title="Link to this heading"></a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1">#--------------------------IO CONTROL--------------------------</span>
-<span class="n">amr</span><span class="o">.</span><span class="n">plot_int</span>         <span class="o">=</span> <span class="mi">20</span>              <span class="c1"># [OPT, DEF=-1] Frequency (as step #) for writting plot file</span>
-<span class="n">amr</span><span class="o">.</span><span class="n">plot_per</span>         <span class="o">=</span> <span class="mf">0.002</span>           <span class="c1"># [OPT, DEF=-1] Period (time in s) for writting plot file</span>
+<span class="n">amr</span><span class="o">.</span><span class="n">plot_int</span>         <span class="o">=</span> <span class="mi">20</span>              <span class="c1"># [OPT, DEF=-1] Frequency (as step #) for writing plot file</span>
+<span class="n">amr</span><span class="o">.</span><span class="n">plot_per</span>         <span class="o">=</span> <span class="mf">0.002</span>           <span class="c1"># [OPT, DEF=-1] Period (time in s) for writing plot file</span>
 <span class="n">amr</span><span class="o">.</span><span class="n">plot_per_exact</span>   <span class="o">=</span> <span class="mi">1</span>               <span class="c1"># [OPT, DEF=0] Flag to enforce exactly plt_per by shortening dt</span>
 <span class="n">amr</span><span class="o">.</span><span class="n">plot_file</span>        <span class="o">=</span> <span class="s2">&quot;plt_&quot;</span>          <span class="c1"># [OPT, DEF=&quot;plt_&quot;] Plot file prefix</span>
-<span class="n">amr</span><span class="o">.</span><span class="n">check_int</span>        <span class="o">=</span> <span class="mi">100</span>             <span class="c1"># [OPT, DEF=-1] Frequency (as step #) for writting checkpoint file</span>
-<span class="n">amr</span><span class="o">.</span><span class="n">check_per</span>        <span class="o">=</span> <span class="mf">0.05</span>            <span class="c1"># [OPT, DEF=-1] Period (time in s) for writting checkpoint file</span>
+<span class="n">amr</span><span class="o">.</span><span class="n">check_int</span>        <span class="o">=</span> <span class="mi">100</span>             <span class="c1"># [OPT, DEF=-1] Frequency (as step #) for writing checkpoint file</span>
+<span class="n">amr</span><span class="o">.</span><span class="n">check_per</span>        <span class="o">=</span> <span class="mf">0.05</span>            <span class="c1"># [OPT, DEF=-1] Period (time in s) for writing checkpoint file</span>
 <span class="n">amr</span><span class="o">.</span><span class="n">check_file</span>       <span class="o">=</span> <span class="s2">&quot;chk&quot;</span>           <span class="c1"># [OPT, DEF=&quot;chk&quot;] Checkpoint file prefix</span>
 <span class="n">amr</span><span class="o">.</span><span class="n">file_stepDigits</span>  <span class="o">=</span> <span class="mi">6</span>               <span class="c1"># [OPT, DEF=5] Number of digits when adding nsteps to plt and chk names</span>
 <span class="n">amr</span><span class="o">.</span><span class="n">derive_plot_vars</span> <span class="o">=</span> <span class="n">avg_pressure</span> <span class="o">...</span><span class="c1"># [OPT, DEF=&quot;&quot;] List of derived variable included in the plot files</span>
@@ -376,7 +376,7 @@ components is defined based on the size of the vector returned by pelelmex_setus
 <span class="n">peleLM</span><span class="o">.</span><span class="n">use_typ_vals_chem</span> <span class="o">=</span> <span class="mi">1</span>                <span class="c1"># [OPT, DEF=1] Use Typical values to scale components in the reactors</span>
 <span class="n">peleLM</span><span class="o">.</span><span class="n">typical_values_reset_int</span> <span class="o">=</span> <span class="mi">5</span>         <span class="c1"># [OPT, DEF=10] Frequency at which the typical values are updated</span>
 <span class="n">ode</span><span class="o">.</span><span class="n">rtol</span> <span class="o">=</span> <span class="mf">1.0e-6</span>                           <span class="c1"># [OPT, DEF=1e-10] Relative tolerance of the chem. reactor</span>
-<span class="n">ode</span><span class="o">.</span><span class="n">atol</span> <span class="o">=</span> <span class="mf">1.0e-6</span>                           <span class="c1"># [OPT, DEF=1e-10] Aboslute tolerance of the chem. reactor, or pre-factor of the typical values when used</span>
+<span class="n">ode</span><span class="o">.</span><span class="n">atol</span> <span class="o">=</span> <span class="mf">1.0e-6</span>                           <span class="c1"># [OPT, DEF=1e-10] Absolute tolerance of the chem. reactor, or pre-factor of the typical values when used</span>
 <span class="n">cvode</span><span class="o">.</span><span class="n">solve_type</span> <span class="o">=</span> <span class="n">denseAJ_direct</span>           <span class="c1"># [OPT, DEF=GMRES] Linear solver employed for CVODE Newton direction</span>
 <span class="n">cvode</span><span class="o">.</span><span class="n">max_order</span>  <span class="o">=</span> <span class="mi">4</span>                        <span class="c1"># [OPT, DEF=2] Maximum order of the BDF method in CVODE</span>
 </pre></div>
@@ -385,7 +385,7 @@ components is defined based on the size of the vector returned by pelelmex_setus
 </section>
 <section id="embedded-geometry">
 <h2>Embedded Geometry<a class="headerlink" href="#embedded-geometry" title="Link to this heading"></a></h2>
-<p><cite>PeleLMeX</cite> geomtry relies on AMReX implementation of the EB method. Simple geometrical objects
+<p><cite>PeleLMeX</cite> geometry relies on AMReX implementation of the EB method. Simple geometrical objects
 can thus be constructed using <a class="reference external" href="https://amrex-codes.github.io/amrex/docs_html/EB.html">AMReX internal parser</a>.
 For instance, setting up a sphere of radius 5 mm can be achieved:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">eb2</span><span class="o">.</span><span class="n">geom_type</span> <span class="o">=</span> <span class="n">sphere</span>
@@ -491,7 +491,7 @@ the user to set the inflow velocity. The following options are available when us
 <section id="run-time-diagnostics">
 <h2>Run-time diagnostics<a class="headerlink" href="#run-time-diagnostics" title="Link to this heading"></a></h2>
 <p><cite>PeleLMeX</cite> provides a few diagnostics to check you simulations while it is running as well as adding basic analysis ingredients.</p>
-<p>It is often usefull to have an estimate of integrated quantities (kinetic energy, heat release rate, ,..), state extremas
+<p>It is often useful to have an estimate of integrated quantities (kinetic energy, heat release rate, ,..), state extremas
 or other overall balance information to get a sense of the status and sanity of the simulation. To this end, it is possible
 to activate <cite>temporal</cite> diagnostics performing these reductions at given intervals:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1">#-------------------------TEMPORALS---------------------------</span>
@@ -504,7 +504,7 @@ to activate <cite>temporal</cite> diagnostics performing these reductions at giv
 </div>
 <p>The <cite>do_temporal</cite> flag will trigger the creation of a <cite>temporals</cite> folder in your run directory and the following entries
 will be appended to an ASCII <cite>temporals/tempState</cite> file: step, time, dt, kin. energy integral, enstrophy integral, mean pressure
-, fuel consumption rate integral, heat release rate integral. Additionnally, if the <cite>do_temporal</cite> flag is activated, one can
+, fuel consumption rate integral, heat release rate integral. Additionally, if the <cite>do_temporal</cite> flag is activated, one can
 turn on state extremas (stored in <cite>temporals/tempExtremas</cite> as min/max for each state entry), mass balance (stored in
 <cite>temporals/tempMass</cite>) computing the total mass, dMdt and advective mass fluxes across the domain boundaries as well as the error in
 the balance (dMdt - sum of fluxes), and species balance (stored in <cite>temporals/tempSpec</cite>) computing each species total mass, dM_Ydt,
@@ -553,7 +553,7 @@ fine-covered regions are masked. The following provide examples for each diagnos
 <span class="n">peleLM</span><span class="o">.</span><span class="n">xnormP</span><span class="o">.</span><span class="n">center</span> <span class="o">=</span> <span class="mf">0.005</span>                                    <span class="c1"># Coordinate in the normal direction</span>
 <span class="n">peleLM</span><span class="o">.</span><span class="n">xnormP</span><span class="o">.</span><span class="n">int</span>    <span class="o">=</span> <span class="mi">5</span>                                        <span class="c1"># Frequency (as step #) for performing the diagnostic</span>
 <span class="n">peleLM</span><span class="o">.</span><span class="n">xnormP</span><span class="o">.</span><span class="n">interpolation</span> <span class="o">=</span> <span class="n">Linear</span>                            <span class="c1"># [OPT, DEF=Linear] Interpolation type : Linear or Quadratic</span>
-<span class="n">peleLM</span><span class="o">.</span><span class="n">xnormP</span><span class="o">.</span><span class="n">field_names</span> <span class="o">=</span> <span class="n">x_velocity</span> <span class="n">mag_vort</span> <span class="n">density</span>         <span class="c1"># List of variables outputed to the 2D pltfile</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">xnormP</span><span class="o">.</span><span class="n">field_names</span> <span class="o">=</span> <span class="n">x_velocity</span> <span class="n">mag_vort</span> <span class="n">density</span>         <span class="c1"># List of variables outputted to the 2D pltfile</span>
 
 <span class="n">peleLM</span><span class="o">.</span><span class="n">condT</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="n">DiagConditional</span>                             <span class="c1"># Diagnostic type</span>
 <span class="n">peleLM</span><span class="o">.</span><span class="n">condT</span><span class="o">.</span><span class="n">file</span> <span class="o">=</span> <span class="n">condTest</span>                                    <span class="c1"># Output file prefix</span>

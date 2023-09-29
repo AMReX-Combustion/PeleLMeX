@@ -115,7 +115,7 @@ The second block determines the boundary conditions. Refer to Fig :numref:`TF_Se
    peleLM.lo_bc = Symmetry Inflow            # bc in x_lo y_lo (z_lo)
    peleLM.hi_bc = Symmetry Outflow           # bc in x_hi y_hi (z_hi)
 
-The number of levels, refinement ratio between levels, maximium grid size as well as other related refinement parameters are set under the third block  : ::
+The number of levels, refinement ratio between levels, maximum grid size as well as other related refinement parameters are set under the third block  : ::
 
    #---------------------- AMR CONTROL ------------------------------
    amr.n_cell          = 64 128              # Level 0 number of cells in each direction
@@ -229,7 +229,7 @@ Building the executable
 Now that we have reviewed the basic ingredients required to setup the case, it is time to build the `PeleLMeX` executable.
 Although both GNUmake and CMake are available, it is advised to use GNUmake. The ``GNUmakefile`` file provides some compile-time options
 regarding the simulation we want to perform.
-The first few lines specify the paths towards the source codes of `PeleLMeX`, `AMReX`, `AMReX-Hydro` and `PelePhysics`, overwritting
+The first few lines specify the paths towards the source codes of `PeleLMeX`, `AMReX`, `AMReX-Hydro` and `PelePhysics`, overwriting
 any environment variable if necessary, and might have been already updated in :ref:`sec:TUTO_TF::PrepStep` earlier.
 
 The next few lines specify AMReX compilation options and compiler selection: ::
@@ -264,7 +264,7 @@ mechanisms and more information regarding the EOS, chemistry and transport model
     Transport_Model := Simple
 
 Finally, `PeleLMeX` utilizes the chemical kinetic ODE integrator `CVODE <https://computing.llnl.gov/projects/sundials/cvode>`_. This
-Third Party Librabry (TPL) is shipped as a submodule of the `PeleLMeX` distribution and can be readily installed through the makefile system
+Third Party Library (TPL) is shipped as a submodule of the `PeleLMeX` distribution and can be readily installed through the makefile system
 of `PeleLMeX`. To do so, type in the following command: ::
 
     make TPL
@@ -308,7 +308,7 @@ but only the advection term is treated explicitly and thus it constrains the max
 :math:`dt_{CFL}`. This constraint is formulated with a classical Courant-Friedrich-Levy (CFL) number,
 specified via the keyword ``amr.cfl``. Additionally, as it is the case here, the initial solution is often made-up by
 the user and local mixture composition and temperature can result in the introduction of unreasonably fast chemical scales.
-To ease the numerical integration of this initial transient, the parameter ``amr.dt_shrink`` allows to shrink the inital `dt`
+To ease the numerical integration of this initial transient, the parameter ``amr.dt_shrink`` allows to shrink the initial `dt`
 (evaluated from the CFL constraint) by a factor (usually smaller than 1), and let it relax towards :math:`dt_{CFL}` at
 a rate given by ``amr.dt_change_max`` as the simulation proceeds.
 
@@ -338,7 +338,7 @@ If you wish to store the standard output of `PeleLMeX` for later analysis, you c
 
 Whether you have used one or the other command, within 10 s you should obtain a ``plt00000`` file (or even more,
 appended with .old*********** if you used both commands). Use `Amrvis <https://amrex-codes.github.io/amrex/docs_html/Visualization.html>`_
-to vizualize ``plt00000`` and make sure the solution matches the one shown in Fig. :numref:`TF_InitialSol`.
+to visualize ``plt00000`` and make sure the solution matches the one shown in Fig. :numref:`TF_InitialSol`.
 
 Running the problem on a coarse grid
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -412,7 +412,7 @@ triple flame should settle, ``changeMax`` and ``velMax`` control the maximum vel
 The user is referred to [CAMCS2006]_ for an overview of the method and corresponding parameters.
 The ``pseudo_gravity`` triggers a manufactured force added to the momemtum equation to compensate for the acceleration of different density gases.
 
-Once these paremeters are set, you continue the previous simulation by uncommenting the first line of the ``IO CONTROL`` block in the input file: ::
+Once these parameters are set, you continue the previous simulation by uncommenting the first line of the ``IO CONTROL`` block in the input file: ::
 
     amr.restart           = chk01000 # Restart checkpoint file
 
@@ -475,7 +475,7 @@ in the `AMR CONTROL` block: ::
     ...
     amr.max_level       = 2          # maximum level number allowed
 
-Then provide a definition of the new refinement critera in the `Refinement CONTROL` block: ::
+Then provide a definition of the new refinement criteria in the `Refinement CONTROL` block: ::
 
     #---------------------- Refinement CONTROL------------------------
     amr.refinement_indicators = highT gradT flame_tracer   # Declare set of refinement indicators
@@ -508,7 +508,7 @@ and increase the ``amr.max_step`` to 2500 and start the simulation again ! ::
 
     mpirun -n 4 ./PeleLMeX2d.gnu.MPI.ex input.2d-regt > log3Levels.dat &
 
-Visualization of the 3-levels simulation results indicates that the flame front is now better repesented on the fine grid,
+Visualization of the 3-levels simulation results indicates that the flame front is now better represented on the fine grid,
 but there are still only a couple of cells across the flame front thickness. The flame tip velocity, captured in the `AC_history`, also
 exhibits a significant change with the addition of the third level (even past the initial transient). In the present case,
 the flame tip velocity is our main quantity of interest and we will now add another refinement level to ensure that this quantity
@@ -531,7 +531,7 @@ at which each refinement criteria is used: ::
 
 and increase the ``amr.max_step`` to 3000. Within `PeleLMeX` non-subcycling time advance, the step size is decreasing as we increase the number of AMR
 levels. We started with a rather small CFL number of 0.2 to avoid numerical issues associated with coarse simulations and large time step size
-(see :doc:`Tutorials_BFSFlame` more a practical example of integration failure). Aditionally, as our step size decreases, the `tau` parameter of the
+(see :doc:`Tutorials_BFSFlame` more a practical example of integration failure). Additionally, as our step size decreases, the `tau` parameter of the
 active control becomes comparatively larger, resulting in slower response of the adapted inlet velocity to flame position changes. Let's increase the
 CFL number of 0.3, reduce `tau` and add a second SDC iteration to tighten the coupling between the various processes: ::
 

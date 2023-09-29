@@ -99,12 +99,12 @@ IO parameters
 ::
 
     #--------------------------IO CONTROL--------------------------
-    amr.plot_int         = 20              # [OPT, DEF=-1] Frequency (as step #) for writting plot file
-    amr.plot_per         = 0.002           # [OPT, DEF=-1] Period (time in s) for writting plot file
+    amr.plot_int         = 20              # [OPT, DEF=-1] Frequency (as step #) for writing plot file
+    amr.plot_per         = 0.002           # [OPT, DEF=-1] Period (time in s) for writing plot file
     amr.plot_per_exact   = 1               # [OPT, DEF=0] Flag to enforce exactly plt_per by shortening dt
     amr.plot_file        = "plt_"          # [OPT, DEF="plt_"] Plot file prefix
-    amr.check_int        = 100             # [OPT, DEF=-1] Frequency (as step #) for writting checkpoint file
-    amr.check_per        = 0.05            # [OPT, DEF=-1] Period (time in s) for writting checkpoint file
+    amr.check_int        = 100             # [OPT, DEF=-1] Frequency (as step #) for writing checkpoint file
+    amr.check_per        = 0.05            # [OPT, DEF=-1] Period (time in s) for writing checkpoint file
     amr.check_file       = "chk"           # [OPT, DEF="chk"] Checkpoint file prefix
     amr.file_stepDigits  = 6               # [OPT, DEF=5] Number of digits when adding nsteps to plt and chk names
     amr.derive_plot_vars = avg_pressure ...# [OPT, DEF=""] List of derived variable included in the plot files
@@ -269,7 +269,7 @@ Chemistry integrator
     peleLM.use_typ_vals_chem = 1                # [OPT, DEF=1] Use Typical values to scale components in the reactors
     peleLM.typical_values_reset_int = 5         # [OPT, DEF=10] Frequency at which the typical values are updated
     ode.rtol = 1.0e-6                           # [OPT, DEF=1e-10] Relative tolerance of the chem. reactor
-    ode.atol = 1.0e-6                           # [OPT, DEF=1e-10] Aboslute tolerance of the chem. reactor, or pre-factor of the typical values when used
+    ode.atol = 1.0e-6                           # [OPT, DEF=1e-10] Absolute tolerance of the chem. reactor, or pre-factor of the typical values when used
     cvode.solve_type = denseAJ_direct           # [OPT, DEF=GMRES] Linear solver employed for CVODE Newton direction
     cvode.max_order  = 4                        # [OPT, DEF=2] Maximum order of the BDF method in CVODE
 
@@ -278,7 +278,7 @@ Note that the last four parameters belong to the Reactor class of PelePhysics bu
 Embedded Geometry
 -----------------
 
-`PeleLMeX` geomtry relies on AMReX implementation of the EB method. Simple geometrical objects
+`PeleLMeX` geometry relies on AMReX implementation of the EB method. Simple geometrical objects
 can thus be constructed using `AMReX internal parser <https://amrex-codes.github.io/amrex/docs_html/EB.html>`_.
 For instance, setting up a sphere of radius 5 mm can be achieved:
 
@@ -397,7 +397,7 @@ Run-time diagnostics
 
 `PeleLMeX` provides a few diagnostics to check you simulations while it is running as well as adding basic analysis ingredients.
 
-It is often usefull to have an estimate of integrated quantities (kinetic energy, heat release rate, ,..), state extremas
+It is often useful to have an estimate of integrated quantities (kinetic energy, heat release rate, ,..), state extremas
 or other overall balance information to get a sense of the status and sanity of the simulation. To this end, it is possible
 to activate `temporal` diagnostics performing these reductions at given intervals:
 
@@ -412,7 +412,7 @@ to activate `temporal` diagnostics performing these reductions at given interval
 
 The `do_temporal` flag will trigger the creation of a `temporals` folder in your run directory and the following entries
 will be appended to an ASCII `temporals/tempState` file: step, time, dt, kin. energy integral, enstrophy integral, mean pressure
-, fuel consumption rate integral, heat release rate integral. Additionnally, if the `do_temporal` flag is activated, one can
+, fuel consumption rate integral, heat release rate integral. Additionally, if the `do_temporal` flag is activated, one can
 turn on state extremas (stored in `temporals/tempExtremas` as min/max for each state entry), mass balance (stored in
 `temporals/tempMass`) computing the total mass, dMdt and advective mass fluxes across the domain boundaries as well as the error in
 the balance (dMdt - sum of fluxes), and species balance (stored in `temporals/tempSpec`) computing each species total mass, dM_Ydt,
@@ -468,7 +468,7 @@ fine-covered regions are masked. The following provide examples for each diagnos
     peleLM.xnormP.center = 0.005                                    # Coordinate in the normal direction
     peleLM.xnormP.int    = 5                                        # Frequency (as step #) for performing the diagnostic
     peleLM.xnormP.interpolation = Linear                            # [OPT, DEF=Linear] Interpolation type : Linear or Quadratic
-    peleLM.xnormP.field_names = x_velocity mag_vort density         # List of variables outputed to the 2D pltfile
+    peleLM.xnormP.field_names = x_velocity mag_vort density         # List of variables outputted to the 2D pltfile
 
     peleLM.condT.type = DiagConditional                             # Diagnostic type
     peleLM.condT.file = condTest                                    # Output file prefix

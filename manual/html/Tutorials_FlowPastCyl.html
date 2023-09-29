@@ -192,7 +192,7 @@ peleLM.lo_bc = Inflow   Interior
 peleLM.hi_bc = Outflow  Interior
 </pre></div>
 </div>
-<p>In the present case, the EB geometry is a simple cylinder (or sphere) which is readily available from the <cite>AMReX</cite> library and only a few paremeters need to be specified by the user. This is done further down in the input file:</p>
+<p>In the present case, the EB geometry is a simple cylinder (or sphere) which is readily available from the <cite>AMReX</cite> library and only a few parameters need to be specified by the user. This is done further down in the input file:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>#------------------------- EB SETUP -----------------------------
 eb2.geom_type                    = sphere
 eb2.sphere_radius                = 0.005
@@ -202,7 +202,7 @@ eb2.small_volfrac                = 1.0e-4
 </pre></div>
 </div>
 <p>Note that the last parameter is used to specify a volume fraction (ratio of the uncovered surface (2D) or volume (3D) over the cell surface or volume) threshold below which a cell is considered fully covered. This prevents the appearance of extremely small partially covered cells which are numerically unstable.</p>
-<p>The number of levels, refinement ratio between levels, maximium grid size as well as other related refinement parameters are set under the third block  :</p>
+<p>The number of levels, refinement ratio between levels, maximum grid size as well as other related refinement parameters are set under the third block  :</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>#-------------------------AMR CONTROL----------------------------
 amr.n_cell          = 192 64     # Level 0 number of cells in each direction
 amr.v               = 1          # amr verbosity level
@@ -270,7 +270,7 @@ The first few lines specify the paths towards the source code of <cite>PeleLMeX<
 DIM             = 2
 USE_EB          = TRUE
 
-# Compiler / parrallel paradigms
+# Compiler / parallel paradigms
 COMP            = gnu
 USE_MPI         = TRUE
 USE_OMP         = FALSE
@@ -296,7 +296,7 @@ Transport_Model := Constant
 </pre></div>
 </div>
 <p>Finally, <cite>PeleLMeX</cite> utilizes the chemical kinetic ODE integrator <a class="reference external" href="https://computing.llnl.gov/projects/sundials/cvode">CVODE</a>. This
-Third Party Librabry (TPL) is shipped as a submodule of the <cite>PeleLMeX</cite> distribution and can be readily installed through the makefile system
+Third Party Library (TPL) is shipped as a submodule of the <cite>PeleLMeX</cite> distribution and can be readily installed through the makefile system
 of <cite>PeleLMeX</cite>. To do so, type in the following command:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>make -j4 TPL
 </pre></div>
@@ -326,7 +326,7 @@ amr.dt_change_max = 1.1           # maximum dt change
 </div>
 <p>The final simulation time is set to 0.025 s. <cite>PeleLMeX</cite> solves for the advection, diffusion and reaction processes in time, but only the advection term is treated explicitly and thus it constrains the maximum time step size <span class="math notranslate nohighlight">\(dt_{CFL}\)</span>. This constraint is formulated with a classical Courant-Friedrich-Levy (CFL) number, specified via the keyword <code class="docutils literal notranslate"><span class="pre">amr.cfl</span></code>.
 Additionally, as it is the case here, the initial solution is often made-up by the user and local mixture composition and temperature can result in the introduction of unreasonably fast chemical scales.
-To ease the numerical integration of this initial transient, the parameter <code class="docutils literal notranslate"><span class="pre">amr.dt_shrink</span></code> allows to shrink the inital <cite>dt</cite> (evaluated from the CFL constraint) by a factor (usually smaller than 1), and let it relax towards <span class="math notranslate nohighlight">\(dt_{CFL}\)</span> at a rate given by <code class="docutils literal notranslate"><span class="pre">amr.dt_change_max</span></code> as the simulation proceeds. Since the present case does not involve complex chemical processes, <code class="docutils literal notranslate"><span class="pre">amr.dt_shrink</span></code> is kept to relatively high value of 0.1.</p>
+To ease the numerical integration of this initial transient, the parameter <code class="docutils literal notranslate"><span class="pre">amr.dt_shrink</span></code> allows to shrink the initial <cite>dt</cite> (evaluated from the CFL constraint) by a factor (usually smaller than 1), and let it relax towards <span class="math notranslate nohighlight">\(dt_{CFL}\)</span> at a rate given by <code class="docutils literal notranslate"><span class="pre">amr.dt_change_max</span></code> as the simulation proceeds. Since the present case does not involve complex chemical processes, <code class="docutils literal notranslate"><span class="pre">amr.dt_shrink</span></code> is kept to relatively high value of 0.1.</p>
 <p>Input/output from <cite>PeleLMeX</cite> are specified in the <code class="docutils literal notranslate"><span class="pre">IO</span> <span class="pre">CONTROL</span></code> block:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>#-------------------------IO CONTROL----------------------------
 amr.check_file       = &quot;chk_&quot;      # root name of checkpoint file
@@ -346,7 +346,7 @@ We have specified here that a checkpoint file will be generated every 50 ms and 
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>./PeleLMeX2d.gnu.MPI.ex input.2d-Re500 &gt; logCoarseRun.dat &amp;
 </pre></div>
 </div>
-<p>Whether you have used one or the other command, the computation finishes within a couple of minutes and you should obtain a set of <code class="docutils literal notranslate"><span class="pre">plt_****</span></code> files (and maybe a set appended with .old*********** if you used both commands). Use <a class="reference external" href="https://amrex-codes.github.io/amrex/docs_html/Visualization.html">Amrvis</a> to vizualize the results. Use the following command to open the entire set of solutions:</p>
+<p>Whether you have used one or the other command, the computation finishes within a couple of minutes and you should obtain a set of <code class="docutils literal notranslate"><span class="pre">plt_****</span></code> files (and maybe a set appended with .old*********** if you used both commands). Use <a class="reference external" href="https://amrex-codes.github.io/amrex/docs_html/Visualization.html">Amrvis</a> to visualize the results. Use the following command to open the entire set of solutions:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>amrvis -a plt_?????
 </pre></div>
 </div>
@@ -381,7 +381,7 @@ stop_time      = 0.20            # final physical time
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>./PeleLMeX2d.gnu.MPI.ex input.2d-Re500 &gt; logCoarseRun2.dat &amp;
 </pre></div>
 </div>
-<p>The flow has now fully transition and you can use Amrvis to visualize the serie of vortex in the wake of the cylinder. In the next step, we will add finer grid patches around the EB geometry and in high vorticity regions.</p>
+<p>The flow has now fully transition and you can use Amrvis to visualize the series of vortex in the wake of the cylinder. In the next step, we will add finer grid patches around the EB geometry and in high vorticity regions.</p>
 </section>
 <section id="refinement-of-the-computation">
 <h2>Refinement of the computation<a class="headerlink" href="#refinement-of-the-computation" title="Link to this heading"></a></h2>
@@ -391,7 +391,7 @@ Start by increasing the number of AMR levels to one in the <code class="docutils
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>amr.max_level       = 1          # maximum level number allowed
 </pre></div>
 </div>
-<p>Then provide a definition of the new refinement critera in the <code class="docutils literal notranslate"><span class="pre">REFINEMENT</span> <span class="pre">CONTROL</span></code> block:</p>
+<p>Then provide a definition of the new refinement criteria in the <code class="docutils literal notranslate"><span class="pre">REFINEMENT</span> <span class="pre">CONTROL</span></code> block:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>#--------------------REFINEMENT CONTROL------------------------
 # Refinement according to the vorticity, no field_name needed
 amr.refinement_indicators     = VortL VortH
@@ -428,7 +428,7 @@ As a final step, we will add another level of refinement, only at the vicinity o
 </pre></div>
 </div>
 <p>You should obtain a flow with a vorticity field similar to <a class="reference internal" href="#fpc-vortfinal"><span class="std std-numref">Fig. 14</span></a>.
-For the purpose of the present tutorial, this will be our final solution but one can see that the flow has not yet return to a periodic vortex shedding and additinal resolution could be added locally to obtain smoother flow features.</p>
+For the purpose of the present tutorial, this will be our final solution but one can see that the flow has not yet return to a periodic vortex shedding and additional resolution could be added locally to obtain smoother flow features.</p>
 <figure class="align-center" id="fpc-vortfinal" style="width: 80%">
 <img alt="_images/FPC_VorticityFinal.png" src="_images/FPC_VorticityFinal.png" />
 <figcaption>

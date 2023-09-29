@@ -151,7 +151,7 @@ Solving for :math:`dp_0/dt` yields an evolution equation of :math:`p_0`:
 
     \frac{dp_0}{dt} = \frac{1}{\overline \theta} \left(\overline S - \frac{1}{V} \int_A \boldsymbol{u} dA \right) ,
 
-where we have used the divergence theorem to convert the volume integral into a surface integral over the domain boundaries: :math:`\int_V \nabla \cdot \boldsymbol{u} dV = \int_A \boldsymbol{u} dA`. The above pressure evolution is accomponied by a modified velocity constraint:
+where we have used the divergence theorem to convert the volume integral into a surface integral over the domain boundaries: :math:`\int_V \nabla \cdot \boldsymbol{u} dV = \int_A \boldsymbol{u} dA`. The above pressure evolution is accompanied by a modified velocity constraint:
 
 .. math::
 
@@ -351,7 +351,7 @@ This difference is illustrated in the figure below comparing the multi-level tim
    :figwidth: 60%
 
 * `PeleLM` will recursively advance finer levels, halving the time step size (when using a refinement ratio of 2) at each level. For instance, considering a 3 levels simulation, `PeleLM` advances the coarse `Level0` over a :math:`\Delta t_0` step, then `Level1` over a :math:`\Delta t_1` step and `Level2` over two :math:`\Delta t_2` steps, performing an interpolation of the `Level1` data after the first `Level2` step. At this point, a synchronization step is performed to ensure that the fluxes are conserved at coarse-fine interface and a second `Level1` step is performed, followed by the same two `Level2` steps. At this point, two synchronizations are needed between the two pairs of levels.
-* In order to get to the same physical time, `PeleLMeX` will perform 4 time steps of size similar to `PeleLM`'s :math:`\Delta t_2`, advancing all the levels at once. The coarse-fine fluxes consistency is this time ensured by averaging down the face-centered fluxes from fine to coarse levels. Additionnally, the state itself is averaged down at the end of each SDC iteration.
+* In order to get to the same physical time, `PeleLMeX` will perform 4 time steps of size similar to `PeleLM`'s :math:`\Delta t_2`, advancing all the levels at once. The coarse-fine fluxes consistency is this time ensured by averaging down the face-centered fluxes from fine to coarse levels. Additionally, the state itself is averaged down at the end of each SDC iteration.
 
 In practice, `PeleLM` will perform a total of 7 single-level advance steps, while `PeleLMeX` will perform 4 multi-level ones to reach the same physical time, advancing the coarser levels at a smaller CFL number whereas `PeleLM` maintain a fixed CFL at all the level. It might seem that `PeleLMeX` is thus performing extra work, but because it ignore fine-covered regions, `PeleLMeX` do not need to perform the expensive (and often very under-resolved) chemistry integration in fine-covered areas. An exact evaluation of the benefits and drawbacks of each approach is under way.
 
@@ -365,7 +365,7 @@ through this mesh. Each cell in the mesh becomes labeled as regular, cut or cove
 based discretization methods traditionally used in AMReX applications need to be modified to incorporate these cell shapes.
 AMReX provides the necessary EB data structures, including volume and area fractions, surface normals and centroids,
 as well as local connectivity information. The fluxes described in :ref:`the projection scheme section <ssec:projScheme>` are then modified to account
-for the apperture opening between adjacent cells and the additional EB-fluxes are included when constructing the cell flux divergences.
+for the aperture opening between adjacent cells and the additional EB-fluxes are included when constructing the cell flux divergences.
 
 A common problem arising with EB is the presence of the small cut-cells which can either introduce undesirable constraint on
 the explicit time step size or lead to numerical instabilities if not accounterd for. `PeleLMeX` relies on a combination of
@@ -374,9 +374,9 @@ In particular, explicit advective fluxes :math:`A^{n+1/2,(k+1)}` are treated usi
 :math:`D^{n}` and SDC iteration-lagged :math:`D^{n+1,(k)}` are treated with FRD.
 Note that implicit diffusion fluxes are not redistributed as AMReX's linear operators are EB-aware.
 
-The use of AMReX's multigrid linear solver introduces contraint on the complexity of the geometry `PeleLMeX` is able to handle. The
+The use of AMReX's multigrid linear solver introduces constraint on the complexity of the geometry `PeleLMeX` is able to handle. The
 efficiency of the multigrid approach relies on generating coarse version of the linear problem. If the geometry includes thin elements
-(such as tube or plate) or narrow channels, coarsening of the geometry is rapidly limited by the occurence of multi-cut cells (not
+(such as tube or plate) or narrow channels, coarsening of the geometry is rapidly limited by the occurrence of multi-cut cells (not
 supported by AMReX) and the linear solvers are no longer able to robustly tackle projections and implicit diffusion solves. AMReX
 include an interface to HYPRE which can help circumvent the issue by sending the coarse-level geometry directly to HYPRE algebraic
 multigrid solvers. More details on how to use HYPRE is provided in control Section.
@@ -386,7 +386,7 @@ Large Eddy Simulation
 
 To provide closure for the unresolved turbulent stress/flux terms in Large Eddy Simulation (LES), PeleLMeX supports the
 constant-coefficient Smagorinsky, WALE and Sigma models for turbulent transport of momentum, species, and energy. These models are
-based on a gradient transport assumption, resulting in terms analagous to the molecular transport of these quantities, but with
+based on a gradient transport assumption, resulting in terms analogous to the molecular transport of these quantities, but with
 modified turbulent transport coefficients. The basis of all these algebraic closures is to model the subgrid scale (sgs) viscosity with:
 
 .. math::
@@ -428,7 +428,7 @@ The total diffusive transport of momentum from both viscous and turbulent stress
 The thermal conducivity and species diffusivities are similarly modified with turbulent contributions, :math:`\lambda_t = \mu_t \widetilde{c_p} / Pr_t` and :math:`(\rho D)_t = \mu_t/Sc_t`. The solution algorithm is unchanged other than the addition of these turbulent coefficients to the corresponding molecular transport properties. Nominal values for the model coefficient :math:`Sc_t = Pr_t = 0.7`.
 
 **Limitations**: Because the turbulent transport coefficients are nonlinear functions of the velocity field, the treatment of
-the diffusion terms is not fully implicity when LES models are active. While the implicit solves as described above are kept
+the diffusion terms is not fully implicit when LES models are active. While the implicit solves as described above are kept
 in place to ensure numerical stability, the turbulent transport coefficients are evaluated only at the old timestep, with the
 old turbulent values also used to approximate the values at the new timestep. Additionally, the present implementation cannot
 be used with EFIELD.

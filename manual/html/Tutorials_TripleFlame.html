@@ -212,7 +212,7 @@ peleLM.lo_bc = Symmetry Inflow            # bc in x_lo y_lo (z_lo)
 peleLM.hi_bc = Symmetry Outflow           # bc in x_hi y_hi (z_hi)
 </pre></div>
 </div>
-<p>The number of levels, refinement ratio between levels, maximium grid size as well as other related refinement parameters are set under the third block  :</p>
+<p>The number of levels, refinement ratio between levels, maximum grid size as well as other related refinement parameters are set under the third block  :</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>#---------------------- AMR CONTROL ------------------------------
 amr.n_cell          = 64 128              # Level 0 number of cells in each direction
 amr.max_level       = 1                   # maximum level number allowed
@@ -313,7 +313,7 @@ after initialization to obtain a consistent pressure and velocity field.</p>
 <p>Now that we have reviewed the basic ingredients required to setup the case, it is time to build the <cite>PeleLMeX</cite> executable.
 Although both GNUmake and CMake are available, it is advised to use GNUmake. The <code class="docutils literal notranslate"><span class="pre">GNUmakefile</span></code> file provides some compile-time options
 regarding the simulation we want to perform.
-The first few lines specify the paths towards the source codes of <cite>PeleLMeX</cite>, <cite>AMReX</cite>, <cite>AMReX-Hydro</cite> and <cite>PelePhysics</cite>, overwritting
+The first few lines specify the paths towards the source codes of <cite>PeleLMeX</cite>, <cite>AMReX</cite>, <cite>AMReX-Hydro</cite> and <cite>PelePhysics</cite>, overwriting
 any environment variable if necessary, and might have been already updated in <a class="reference internal" href="#sec-tuto-tf-prepstep"><span class="std std-ref">Setting-up your environment</span></a> earlier.</p>
 <p>The next few lines specify AMReX compilation options and compiler selection:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span># AMREX
@@ -347,7 +347,7 @@ Transport_Model := Simple
 </pre></div>
 </div>
 <p>Finally, <cite>PeleLMeX</cite> utilizes the chemical kinetic ODE integrator <a class="reference external" href="https://computing.llnl.gov/projects/sundials/cvode">CVODE</a>. This
-Third Party Librabry (TPL) is shipped as a submodule of the <cite>PeleLMeX</cite> distribution and can be readily installed through the makefile system
+Third Party Library (TPL) is shipped as a submodule of the <cite>PeleLMeX</cite> distribution and can be readily installed through the makefile system
 of <cite>PeleLMeX</cite>. To do so, type in the following command:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>make TPL
 </pre></div>
@@ -387,7 +387,7 @@ but only the advection term is treated explicitly and thus it constrains the max
 <span class="math notranslate nohighlight">\(dt_{CFL}\)</span>. This constraint is formulated with a classical Courant-Friedrich-Levy (CFL) number,
 specified via the keyword <code class="docutils literal notranslate"><span class="pre">amr.cfl</span></code>. Additionally, as it is the case here, the initial solution is often made-up by
 the user and local mixture composition and temperature can result in the introduction of unreasonably fast chemical scales.
-To ease the numerical integration of this initial transient, the parameter <code class="docutils literal notranslate"><span class="pre">amr.dt_shrink</span></code> allows to shrink the inital <cite>dt</cite>
+To ease the numerical integration of this initial transient, the parameter <code class="docutils literal notranslate"><span class="pre">amr.dt_shrink</span></code> allows to shrink the initial <cite>dt</cite>
 (evaluated from the CFL constraint) by a factor (usually smaller than 1), and let it relax towards <span class="math notranslate nohighlight">\(dt_{CFL}\)</span> at
 a rate given by <code class="docutils literal notranslate"><span class="pre">amr.dt_change_max</span></code> as the simulation proceeds.</p>
 <p>Input/output from <cite>PeleLMeX</cite> are specified in the <code class="docutils literal notranslate"><span class="pre">IO</span> <span class="pre">CONTROL</span></code> block:</p>
@@ -415,7 +415,7 @@ by appending their names to the <code class="docutils literal notranslate"><span
 </div>
 <p>Whether you have used one or the other command, within 10 s you should obtain a <code class="docutils literal notranslate"><span class="pre">plt00000</span></code> file (or even more,
 appended with .old*********** if you used both commands). Use <a class="reference external" href="https://amrex-codes.github.io/amrex/docs_html/Visualization.html">Amrvis</a>
-to vizualize <code class="docutils literal notranslate"><span class="pre">plt00000</span></code> and make sure the solution matches the one shown in Fig. <a class="reference internal" href="#tf-initialsol"><span class="std std-numref">Fig. 23</span></a>.</p>
+to visualize <code class="docutils literal notranslate"><span class="pre">plt00000</span></code> and make sure the solution matches the one shown in Fig. <a class="reference internal" href="#tf-initialsol"><span class="std std-numref">Fig. 23</span></a>.</p>
 </section>
 <section id="running-the-problem-on-a-coarse-grid">
 <h3>Running the problem on a coarse grid<a class="headerlink" href="#running-the-problem-on-a-coarse-grid" title="Link to this heading"></a></h3>
@@ -484,7 +484,7 @@ that should be of the order of ten times the simulation time-step. <code class="
 triple flame should settle, <code class="docutils literal notranslate"><span class="pre">changeMax</span></code> and <code class="docutils literal notranslate"><span class="pre">velMax</span></code> control the maximum velocity increment and maximum inlet velocity, respectively.
 The user is referred to <a class="reference internal" href="#camcs2006" id="id4"><span>[CAMCS2006]</span></a> for an overview of the method and corresponding parameters.
 The <code class="docutils literal notranslate"><span class="pre">pseudo_gravity</span></code> triggers a manufactured force added to the momemtum equation to compensate for the acceleration of different density gases.</p>
-<p>Once these paremeters are set, you continue the previous simulation by uncommenting the first line of the <code class="docutils literal notranslate"><span class="pre">IO</span> <span class="pre">CONTROL</span></code> block in the input file:</p>
+<p>Once these parameters are set, you continue the previous simulation by uncommenting the first line of the <code class="docutils literal notranslate"><span class="pre">IO</span> <span class="pre">CONTROL</span></code> block in the input file:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>amr.restart           = chk01000 # Restart checkpoint file
 </pre></div>
 </div>
@@ -543,7 +543,7 @@ in the <cite>AMR CONTROL</cite> block:</p>
 amr.max_level       = 2          # maximum level number allowed
 </pre></div>
 </div>
-<p>Then provide a definition of the new refinement critera in the <cite>Refinement CONTROL</cite> block:</p>
+<p>Then provide a definition of the new refinement criteria in the <cite>Refinement CONTROL</cite> block:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>#---------------------- Refinement CONTROL------------------------
 amr.refinement_indicators = highT gradT flame_tracer   # Declare set of refinement indicators
 
@@ -575,7 +575,7 @@ to add level 2 grid patches at location where the flame tracer (<cite>Y(CH3O)</c
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>mpirun -n 4 ./PeleLMeX2d.gnu.MPI.ex input.2d-regt &gt; log3Levels.dat &amp;
 </pre></div>
 </div>
-<p>Visualization of the 3-levels simulation results indicates that the flame front is now better repesented on the fine grid,
+<p>Visualization of the 3-levels simulation results indicates that the flame front is now better represented on the fine grid,
 but there are still only a couple of cells across the flame front thickness. The flame tip velocity, captured in the <cite>AC_history</cite>, also
 exhibits a significant change with the addition of the third level (even past the initial transient). In the present case,
 the flame tip velocity is our main quantity of interest and we will now add another refinement level to ensure that this quantity
@@ -598,7 +598,7 @@ amr.flame_tracer.max_level  = 3
 </div>
 <p>and increase the <code class="docutils literal notranslate"><span class="pre">amr.max_step</span></code> to 3000. Within <cite>PeleLMeX</cite> non-subcycling time advance, the step size is decreasing as we increase the number of AMR
 levels. We started with a rather small CFL number of 0.2 to avoid numerical issues associated with coarse simulations and large time step size
-(see <a class="reference internal" href="Tutorials_BFSFlame.html"><span class="doc">Backward facing step anchored premixed flame</span></a> more a practical example of integration failure). Aditionally, as our step size decreases, the <cite>tau</cite> parameter of the
+(see <a class="reference internal" href="Tutorials_BFSFlame.html"><span class="doc">Backward facing step anchored premixed flame</span></a> more a practical example of integration failure). Additionally, as our step size decreases, the <cite>tau</cite> parameter of the
 active control becomes comparatively larger, resulting in slower response of the adapted inlet velocity to flame position changes. Let’s increase the
 CFL number of 0.3, reduce <cite>tau</cite> and add a second SDC iteration to tighten the coupling between the various processes:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>peleLM.sdc_iterMax = 2
