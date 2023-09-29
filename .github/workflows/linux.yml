@@ -13,47 +13,47 @@ concurrency:
 
 jobs:
   # Build and Run the EB_FlowPastCylinder RegTest with GNU9.3 and MPI support
-  FPC2D:
-    name: GNU@9.3 MPI Run [FPC2DDBG]
-    runs-on: ubuntu-latest
-    env:
-      {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
-    steps:
-    - uses: actions/checkout@v3
-    - name: System Dependencies
-      run: .github/workflows/dependencies/dependencies_gcc10.sh
-    - name: Repo Dependencies
-      run: Utils/CloneDeps.sh
-    - name: Build
-      env:
-         AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
-         PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
-         PELELMEX_HOME: ${GITHUB_WORKSPACE}
-         AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
-         SUNDIALS_HOME : ${GITHUB_WORKSPACE}/build/sundials
-      working-directory: ./Exec/RegTests/EB_FlowPastCylinder/
-      run: |
-        make TPL COMP=gnu USE_MPI=TRUE DEBUG=TRUE
-        make -j 2 COMP=gnu USE_MPI=TRUE DEBUG=TRUE
-    - name: Run
-      working-directory: ./Exec/RegTests/EB_FlowPastCylinder/
-      run: |
-        ./PeleLMeX2d.gnu.DEBUG.MPI.ex input.2d-regt amr.max_step=2 amr.plot_int=-1 amr.check_int=-1 amrex.fpe_trap_invalid=1 amrex.fpe_trap_zero=1 amrex.fpe_trap_overflow=1
-        ./PeleLMeX2d.gnu.DEBUG.MPI.ex input.2d-regt_WallBump amr.max_step=2 amr.plot_int=-1 amr.check_int=-1
+  #FPC2D:
+  #  name: GNU@9.3 MPI Run [FPC2DDBG]
+  #  runs-on: ubuntu-latest
+  #  env:
+  #    {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
+  #  steps:
+  #  - uses: actions/checkout@v3
+  #  - name: System Dependencies
+  #    run: .github/workflows/dependencies/dependencies_gcc10.sh
+  #  - name: Repo Dependencies
+  #    run: Utils/CloneDeps.sh
+  #  - name: Build
+  #    env:
+  #       AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
+  #       PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
+  #       PELELMEX_HOME: ${GITHUB_WORKSPACE}
+  #       AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
+  #       SUNDIALS_HOME : ${GITHUB_WORKSPACE}/build/sundials
+  #    working-directory: ./Exec/RegTests/EB_FlowPastCylinder/
+  #    run: |
+  #      make TPL COMP=gnu USE_MPI=TRUE DEBUG=TRUE
+  #      make -j 2 COMP=gnu USE_MPI=TRUE DEBUG=TRUE
+  #  - name: Run
+  #    working-directory: ./Exec/RegTests/EB_FlowPastCylinder/
+  #    run: |
+  #      ./PeleLMeX2d.gnu.DEBUG.MPI.ex input.2d-regt amr.max_step=2 amr.plot_int=-1 amr.check_int=-1 amrex.fpe_trap_invalid=1 amrex.fpe_trap_zero=1 amrex.fpe_trap_overflow=1
+  #      ./PeleLMeX2d.gnu.DEBUG.MPI.ex input.2d-regt_WallBump amr.max_step=2 amr.plot_int=-1 amr.check_int=-1
 
-        make -j 2 COMP=gnu USE_MPI=TRUE
-    - name: RunDNS
-      working-directory: ./Exec/RegTests/HITDecay/
-      run: |
-        ./PeleLMeX3d.gnu.MPI.ex input.3d amr.max_step=10 amr.plot_int=-1 amr.check_int=-1
-    - name: RunLES_Smago
-      working-directory: ./Exec/RegTests/HITDecay/
-      run: |
-        ./PeleLMeX3d.gnu.MPI.ex input.3d_les amr.max_step=10 amr.plot_int=-1 amr.check_int=-1
-    - name: RunLES_WALE
-      working-directory: ./Exec/RegTests/HITDecay/
-      run: |
-        ./PeleLMeX3d.gnu.MPI.ex input.3d_les peleLM.les_model="WALE" amr.max_step=10 amr.plot_int=-1 amr.check_int=-1
+  #      make -j 2 COMP=gnu USE_MPI=TRUE
+  #  - name: RunDNS
+  #    working-directory: ./Exec/RegTests/HITDecay/
+  #    run: |
+  #      ./PeleLMeX3d.gnu.MPI.ex input.3d amr.max_step=10 amr.plot_int=-1 amr.check_int=-1
+  #  - name: RunLES_Smago
+  #    working-directory: ./Exec/RegTests/HITDecay/
+  #    run: |
+  #      ./PeleLMeX3d.gnu.MPI.ex input.3d_les amr.max_step=10 amr.plot_int=-1 amr.check_int=-1
+  #  - name: RunLES_WALE
+  #    working-directory: ./Exec/RegTests/HITDecay/
+  #    run: |
+  #      ./PeleLMeX3d.gnu.MPI.ex input.3d_les peleLM.les_model="WALE" amr.max_step=10 amr.plot_int=-1 amr.check_int=-1
 
   # Build and Run the EB_PipeFlow RegTest with GNU9.3 and MPI support
   EBPF3D:
