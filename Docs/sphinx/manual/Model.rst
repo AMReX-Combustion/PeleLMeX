@@ -428,7 +428,7 @@ The total diffusive transport of momentum from both viscous and turbulent stress
 The thermal conducivity and species diffusivities are similarly modified with turbulent contributions, :math:`\lambda_t = \mu_t \widetilde{c_p} / Pr_t` and :math:`(\rho D)_t = \mu_t/Sc_t`. The solution algorithm is unchanged other than the addition of these turbulent coefficients to the corresponding molecular transport properties. Nominal values for the model coefficient :math:`Sc_t = Pr_t = 0.7`.
 
 **Limitations**: Because the turbulent transport coefficients are nonlinear functions of the velocity field, the treatment of
-the diffusion terms is not fully implicity when LES models are active. While the implicit solves as described above are kept
+the diffusion terms is not fully implicit when LES models are active. While the implicit solves as described above are kept
 in place to ensure numerical stability, the turbulent transport coefficients are evaluated only at the old timestep, with the
 old turbulent values also used to approximate the values at the new timestep. Additionally, the present implementation cannot
 be used with EFIELD.

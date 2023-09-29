@@ -758,7 +758,7 @@ public:
   // Time step size
 
   /**
-   * \brief Compute the time step sive across all levels and processes.
+   * \brief Compute the time step across all levels and processes.
    * \param is_init flag to trigger init-only dt factors
    * \param a_time state time to work on, either Old or New
    */

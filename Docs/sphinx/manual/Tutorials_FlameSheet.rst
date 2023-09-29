@@ -386,7 +386,7 @@ and uncomment the following line to require writing checkpoint files: ::
 
     amr.check_int = 2000
 
-As soon as this last key is specified, `PeleLMeX` will writte an initial and final checkpoint file.
+As soon as this last key is specified, `PeleLMeX` will write an initial and final checkpoint file.
 Note that checkpoint file and plotfile store different data. A checkpoint file will store all the necessary
 state data to enable a continuous restart of the simulation, i.e. the solution after 50 steps is exactly the
 same as the one obtained running 25 steps first, then restarting for another 25 steps. A plotfile will

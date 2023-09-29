@@ -1416,7 +1416,7 @@ PeleLM::getScalarDiffForce(
       auto const& dwbar =
         (m_use_wbar) != 0
           ? diffData->Dwbar[lev].const_array(mfi, 0)
-          : diffData->Dn[lev].const_array(mfi, 0); // Dummy unsed Array4
+          : diffData->Dn[lev].const_array(mfi, 0); // Dummy unused Array4
       auto const& dT = (m_use_soret) != 0
                          ? diffData->DT[lev].const_array(mfi, 0)
                          : diffData->Dn[lev].const_array(mfi, 0);

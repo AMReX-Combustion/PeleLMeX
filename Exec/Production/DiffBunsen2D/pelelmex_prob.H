@@ -246,7 +246,7 @@ bcnormal(
 
     case 3: // Oxidizer inflow
     {
-      // The speed in tha oxidizer inflow has an hyperbolic profile. This is due
+      // The speed in the oxidizer inflow has an hyperbolic profile. This is due
       // to the boundary layer of the extruded tube a=in the real experiment.
       delta = 5e-5;
       eta = tanh((x[0] - prob_parm.Xf - prob_parm.Xe) / delta);
