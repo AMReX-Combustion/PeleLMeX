@@ -63,7 +63,7 @@ pelelmex_initdata(
   ProbParm const& prob_parm,
   pele::physics::PMF::PmfData::DataContainer const* pmf_data)
 {
-  // Initialisation of some varibales for the cell, the geometry and the initial
+  // Initialisation of some variables for the cell, the geometry and the initial
   // values
   const amrex::Real* prob_lo = geomdata.ProbLo();
   const amrex::Real* prob_hi = geomdata.ProbHi();
@@ -246,7 +246,7 @@ bcnormal(
 
     case 3: // Oxidizer inflow
     {
-      // The speed in tha oxidizer inflow has an hyperbolic profile. This is due
+      // The speed in the oxidizer inflow has an hyperbolic profile. This is due
       // to the boundary layer of the extruded tube a=in the real experiment.
       delta = 5e-5;
       eta = tanh((x[0] - prob_parm.Xf - prob_parm.Xe) / delta);

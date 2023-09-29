@@ -1066,7 +1066,7 @@ DiffusionTensorOp::compute_divtau(
   }
 
 #ifdef AMREX_USE_EB
-  // Need a tempory divTau to apply redistribution
+  // Need a temporary divTau to apply redistribution
   Vector<MultiFab> divtau_tmp(finest_level + 1);
   for (int lev = 0; lev <= finest_level; ++lev) {
     divtau_tmp[lev].define(

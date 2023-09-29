@@ -143,10 +143,10 @@ PeleLM::Setup()
   initMixtureFraction();
   initProgressVariable();
 
-  // Initiliaze turbulence injection
+  // Initialize turbulence injection
   turb_inflow.init(Geom(0));
 
-  // Initiliaze BCs
+  // Initialize BCs
   setBoundaryConditions();
 
   // Problem parameters
@@ -157,7 +157,7 @@ PeleLM::Setup()
   readProbParm();
 
   // Initialize ambient pressure
-  // Will be overwriten on restart.
+  // Will be overwritten on restart.
   m_pOld = prob_parm->P_mean;
   m_pNew = prob_parm->P_mean;
 
@@ -457,7 +457,7 @@ PeleLM::readParameters()
           "Godunov_PPM or Godunov_BDS");
   }
   m_predict_advection_type =
-    "Godunov"; // Only option at this point. This will disapear when
+    "Godunov"; // Only option at this point. This will disappear when
                // predict_velocity support BDS.
 
   // -----------------------------------------

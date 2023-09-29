@@ -35,7 +35,7 @@ pelelmex_derchargedist(
     der(i, j, k) = -nE(i, j, k) * elemCharge;
     for (int n = 0; n < NUM_SPECIES; ++n) {
       der(i, j, k) +=
-        zk[n] * 1000.0 * rhoY(i, j, k, n); // CGS->MKS convertion of zk
+        zk[n] * 1000.0 * rhoY(i, j, k, n); // CGS->MKS conversion of zk
     }
   });
 }
@@ -128,7 +128,7 @@ pelelmex_derLorentzx(
     der(i, j, k) = -nE(i, j, k) * elemCharge * EFx;
     for (int n = 0; n < NUM_SPECIES; ++n) {
       der(i, j, k) +=
-        zk[n] * 1000.0 * rhoY(i, j, k, n) * EFx; // CGS->MKS convertion of zk
+        zk[n] * 1000.0 * rhoY(i, j, k, n) * EFx; // CGS->MKS conversion of zk
     }
   });
 }
@@ -222,7 +222,7 @@ pelelmex_derLorentzy(
     der(i, j, k) = -nE(i, j, k) * elemCharge * EFy;
     for (int n = 0; n < NUM_SPECIES; ++n) {
       der(i, j, k) +=
-        zk[n] * 1000.0 * rhoY(i, j, k, n) * EFy; // CGS->MKS convertion of zk
+        zk[n] * 1000.0 * rhoY(i, j, k, n) * EFy; // CGS->MKS conversion of zk
     }
   });
 }
@@ -316,7 +316,7 @@ pelelmex_derLorentzz(
     der(i, j, k) = -nE(i, j, k) * elemCharge * EFz;
     for (int n = 0; n < NUM_SPECIES; ++n) {
       der(i, j, k) +=
-        zk[n] * 1000.0 * rhoY(i, j, k, n) * EFz; // CGS->MKS convertion of zk
+        zk[n] * 1000.0 * rhoY(i, j, k, n) * EFz; // CGS->MKS conversion of zk
     }
   });
 }

@@ -155,7 +155,7 @@ peleLM.refine_EB_type = Static
 peleLM.refine_EB_max_level = 0
 peleLM.refine_EB_buffer = 2.0
 
-# Field paramters
+# Field parameters
 amr.refinement_indicators = boxHZ fuel loTemp hiTemp yOH
 amr.boxHZ.max_level     = 1
 amr.boxHZ.in_box_lo = -0.003 -0.003 0.004

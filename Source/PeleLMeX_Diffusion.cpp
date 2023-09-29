@@ -335,7 +335,7 @@ PeleLM::computeDifferentialDiffusionFluxes(
   //----------------------------------------------------------------
 
   //----------------------------------------------------------------
-  // Get fluxes consistent accross levels by averaging down all components
+  // Get fluxes consistent across levels by averaging down all components
   getDiffusionOp()->avgDownFluxes(a_fluxes, 0, NUM_SPECIES + 2);
   //----------------------------------------------------------------
 
@@ -388,7 +388,7 @@ PeleLM::addWbarTerm(
 
   //------------------------------------------------------------------------
   // Compute Wbar gradients and do average down to get gradients consistent
-  // accross levels Get the species BCRec
+  // across levels Get the species BCRec
   int do_avgDown = 1;
   auto bcRecSpec = fetchBCRecArray(FIRSTSPEC, NUM_SPECIES);
 
@@ -511,7 +511,7 @@ PeleLM::addSoretTerm(
   int need_soret_fluxes = (a_spsoretfluxes.empty()) ? 0 : 1;
 
   //------------------------------------------------------------------------
-  // Compute T gradients and do average down to get gradients consistent accross
+  // Compute T gradients and do average down to get gradients consistent across
   // levels Get the temperature BCRec
   int do_avgDown = 1;
   auto bcRecTemp = fetchBCRecArray(TEMP, 1);
@@ -693,7 +693,7 @@ PeleLM::adjustSpeciesFluxes(
         auto const& flagfab = ebfact.getMultiEBCellFlagFab()[mfi];
 
         if (flagfab.getType(amrex::grow(ebx, 0)) != FabType::covered) {
-          // No cut cells in tile + nghost-cell witdh halo -> use non-eb routine
+          // No cut cells in tile + nghost-cell width halo -> use non-eb routine
           if (flagfab.getType(amrex::grow(ebx, nGrow)) == FabType::regular) {
             amrex::ParallelFor(
               ebx, [idim, rhoY, flux_dir, edomain, bc_lo,
@@ -1416,7 +1416,7 @@ PeleLM::getScalarDiffForce(
       auto const& dwbar =
         (m_use_wbar) != 0
           ? diffData->Dwbar[lev].const_array(mfi, 0)
-          : diffData->Dn[lev].const_array(mfi, 0); // Dummy unsed Array4
+          : diffData->Dn[lev].const_array(mfi, 0); // Dummy unused Array4
       auto const& dT = (m_use_soret) != 0
                          ? diffData->DT[lev].const_array(mfi, 0)
                          : diffData->Dn[lev].const_array(mfi, 0);

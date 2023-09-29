@@ -193,7 +193,7 @@ PeleLM::MLevaluate(
       MultiFab::Copy(
         *a_MFVec[lev], ldata_p->state, FIRSTSPEC, a_comp, NUM_SPECIES + 2, 0);
     }
-    // Inital velocity projection
+    // Initial velocity projection
     if (m_restart_chkfile.empty()) {
       projectInitSolution();
     }

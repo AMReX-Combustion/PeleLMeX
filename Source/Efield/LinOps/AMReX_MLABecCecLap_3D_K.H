@@ -997,7 +997,7 @@ abeccec_getnetfcoeff(
 {
   auto lo = amrex::lbound(box);
   auto hi = amrex::ubound(box);
-  // Gettting face coefficient
+  // Getting face coefficient
   if (dir == 0) {
     for (int n = 0; n < nc; ++n) {
       for (int k = lo.z; k <= hi.z; ++k) {

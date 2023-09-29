@@ -15,7 +15,7 @@ head by 3.92 mm. The geometry is generated within the EBUserDefined.H file.
 
 ## Chamber initial conditions
 
-The initial conditions in the chamber are controled by the following parameters (SI units):
+The initial conditions in the chamber are controlled by the following parameters (SI units):
 ```
   prob.P_mean        = 6079500.0
   prob.T_mean        = 900.0
@@ -26,7 +26,7 @@ with the remainder of the mixture made up of nitrogen. These default conditions 
 mixture of CH4 in viciated air at an equivalence ratio of 0.5.
 
 Velocity in the chamber is initialized from a precursor HIT simulation. Data are stored in a binary
-fine and interpolated onto the AMReX grid. A set of paramter control the position as well as the
+fine and interpolated onto the AMReX grid. A set of parameter control the position as well as the
 scaling of this velocity field and it is advised not to modify those parameters:
 
 ```
@@ -98,11 +98,11 @@ desynchronize the jets.
 
 ## Refinement
 
-The placement of AMR levels is finely tune to ensure an efficient use of the available ressources.
+The placement of AMR levels is finely tune to ensure an efficient use of the available resources.
 At the beginning of the simulation, fixed refinement is added near the jet injection to ensure
 sufficient resolution of the jet turbulence. Subsequently, refinement based on temperature is used
 to focus on the comparatively cold jets (*T* < 850 K) and any onset of ignition (*T* > 925 K).
-Additionnally, the EB is initially kept at the base level and the following set of parameters
+Additionally, the EB is initially kept at the base level and the following set of parameters
 ensure that AMR patches do not cross the EB:
 
 ```

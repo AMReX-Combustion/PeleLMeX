@@ -66,7 +66,7 @@ Finally, when building with GPU support, CUDA >= 11 is required with NVIDIA GPUs
 
 ### Download
 
-The prefered method consists of cloning *PeleLMeX* and its submodules
+The preferred method consists of cloning *PeleLMeX* and its submodules
 ([amrex](https://github.com/AMReX-Codes/amrex), [AMReX-Hydro](https://github.com/AMReX-Codes/AMReX-Hydro), [PelePhysics](https://github.com/AMReX-Combustion/PelePhysics), [PeleMP](https://github.com/AMReX-Combustion/PeleMP)), and [SUNDIALS](https://github.com/LLNL/sundials) using a recursive `git clone`:
 
 ```
@@ -74,7 +74,7 @@ git clone --recursive https://github.com/AMReX-Combustion/PeleLMeX.git
 ```
 
 Alternatively, you can use a separate `git clone` of each of the submodules.
-The default location for *PeleLMeX* dependencies is the `Submodules` folder but you optionnally
+The default location for *PeleLMeX* dependencies is the `Submodules` folder but you optionally
 setup the following environment variables (e.g. using bash) to any other location:
 
 ```
@@ -88,7 +88,7 @@ export SUNDIALS_HOME=${PELELMEX_HOME}/Submodules/sundials
 
 ### Compilation
 
-Both GNUmake and CMake can be used to build a *PeleLMeX* executable, but GNUmake is the prefered choice.
+Both GNUmake and CMake can be used to build a *PeleLMeX* executable, but GNUmake is the preferred choice.
 The code handling the initial condition and boundary conditions is unique to each case,
 and subfolders in the `Exec` directory provide a number of examples.
 
@@ -118,7 +118,7 @@ cmake --build buildHotBubble --parallel 4
 ## Getting help, contributing
 
 Do you have a question ? Found an issue ? Please use the [GitHub Discussions](https://github.com/AMReX-Combustion/PeleLMeX/discussions) to engage
-with the development team or open a new [GitHub issue](https://github.com/AMReX-Combustion/PeleLMeX/issues) to report a bug. The developmemt team
+with the development team or open a new [GitHub issue](https://github.com/AMReX-Combustion/PeleLMeX/issues) to report a bug. The development team
 also encourages users to take an active role in respectfully answering each other's questions in these spaces. When reporting a bug, it is helpful
 to provide as much detail as possible, including a case description and the major compile and runtime options being used. Though not required,
 it is most effective to create a fork of this repository and share a branch of that fork with a case that minimally reproduces the error.

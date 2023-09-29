@@ -193,7 +193,7 @@ PeleLM::initData()
     int is_init = 1;
     setTypicalValues(AmrNewTime, is_init);
 
-    // initiliaze temporals
+    // initialize temporals
     initTemporals(AmrNewTime);
 
 #ifdef AMREX_USE_EB
@@ -323,7 +323,7 @@ PeleLM::initLevelData(int lev)
   ldata_p->press.setVal(0.0);
   ldata_p->gp.setVal(0.0);
 
-  // Prob/PMF datas
+  // Prob/PMF data
   ProbParm const* lprobparm = prob_parm_d;
   pele::physics::PMF::PmfData::DataContainer const* lpmfdata =
     pmf_data.getDeviceData();

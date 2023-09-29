@@ -97,7 +97,7 @@ The second block determines the boundary conditions. Note that `Interior` is use
    peleLM.lo_bc = Inflow   Interior
    peleLM.hi_bc = Outflow  Interior
 
-In the present case, the EB geometry is a simple cylinder (or sphere) which is readily available from the `AMReX` library and only a few paremeters need to be specified by the user. This is done further down in the input file: ::
+In the present case, the EB geometry is a simple cylinder (or sphere) which is readily available from the `AMReX` library and only a few parameters need to be specified by the user. This is done further down in the input file: ::
 
    #------------------------- EB SETUP -----------------------------
    eb2.geom_type                    = sphere
@@ -108,7 +108,7 @@ In the present case, the EB geometry is a simple cylinder (or sphere) which is r
 
 Note that the last parameter is used to specify a volume fraction (ratio of the uncovered surface (2D) or volume (3D) over the cell surface or volume) threshold below which a cell is considered fully covered. This prevents the appearance of extremely small partially covered cells which are numerically unstable.
 
-The number of levels, refinement ratio between levels, maximium grid size as well as other related refinement parameters are set under the third block  : ::
+The number of levels, refinement ratio between levels, maximum grid size as well as other related refinement parameters are set under the third block  : ::
 
    #-------------------------AMR CONTROL----------------------------
    amr.n_cell          = 192 64     # Level 0 number of cells in each direction
@@ -187,7 +187,7 @@ Next comes the build configuration block: ::
    DIM             = 2
    USE_EB          = TRUE
 
-   # Compiler / parrallel paradigms
+   # Compiler / parallel paradigms
    COMP            = gnu
    USE_MPI         = TRUE
    USE_OMP         = FALSE
@@ -213,7 +213,7 @@ Here, the model ``air``, only contains 2 species (O2 and N2). The user is referr
     Transport_Model := Constant
 
 Finally, `PeleLMeX` utilizes the chemical kinetic ODE integrator `CVODE <https://computing.llnl.gov/projects/sundials/cvode>`_. This
-Third Party Librabry (TPL) is shipped as a submodule of the `PeleLMeX` distribution and can be readily installed through the makefile system
+Third Party Library (TPL) is shipped as a submodule of the `PeleLMeX` distribution and can be readily installed through the makefile system
 of `PeleLMeX`. To do so, type in the following command: ::
 
     make -j4 TPL
@@ -246,7 +246,7 @@ Time-stepping parameters in ``input.2d-Re500`` are specified in the ``TIME STEPP
 
 The final simulation time is set to 0.025 s. `PeleLMeX` solves for the advection, diffusion and reaction processes in time, but only the advection term is treated explicitly and thus it constrains the maximum time step size :math:`dt_{CFL}`. This constraint is formulated with a classical Courant-Friedrich-Levy (CFL) number, specified via the keyword ``amr.cfl``.
 Additionally, as it is the case here, the initial solution is often made-up by the user and local mixture composition and temperature can result in the introduction of unreasonably fast chemical scales.
-To ease the numerical integration of this initial transient, the parameter ``amr.dt_shrink`` allows to shrink the inital `dt` (evaluated from the CFL constraint) by a factor (usually smaller than 1), and let it relax towards :math:`dt_{CFL}` at a rate given by ``amr.dt_change_max`` as the simulation proceeds. Since the present case does not involve complex chemical processes, ``amr.dt_shrink`` is kept to relatively high value of 0.1.
+To ease the numerical integration of this initial transient, the parameter ``amr.dt_shrink`` allows to shrink the initial `dt` (evaluated from the CFL constraint) by a factor (usually smaller than 1), and let it relax towards :math:`dt_{CFL}` at a rate given by ``amr.dt_change_max`` as the simulation proceeds. Since the present case does not involve complex chemical processes, ``amr.dt_shrink`` is kept to relatively high value of 0.1.
 
 Input/output from `PeleLMeX` are specified in the ``IO CONTROL`` block: ::
 
@@ -268,7 +268,7 @@ Some information is printed directly on the screen during a `PeleLMeX` simulatio
 
     ./PeleLMeX2d.gnu.MPI.ex input.2d-Re500 > logCoarseRun.dat &
 
-Whether you have used one or the other command, the computation finishes within a couple of minutes and you should obtain a set of ``plt_****`` files (and maybe a set appended with .old*********** if you used both commands). Use `Amrvis <https://amrex-codes.github.io/amrex/docs_html/Visualization.html>`_ to vizualize the results. Use the following command to open the entire set of solutions: ::
+Whether you have used one or the other command, the computation finishes within a couple of minutes and you should obtain a set of ``plt_****`` files (and maybe a set appended with .old*********** if you used both commands). Use `Amrvis <https://amrex-codes.github.io/amrex/docs_html/Visualization.html>`_ to visualize the results. Use the following command to open the entire set of solutions: ::
 
    amrvis -a plt_?????
 
@@ -305,7 +305,7 @@ and restart the simulation ::
     ./PeleLMeX2d.gnu.MPI.ex input.2d-Re500 > logCoarseRun2.dat &
 
 
-The flow has now fully transition and you can use Amrvis to visualize the serie of vortex in the wake of the cylinder. In the next step, we will add finer grid patches around the EB geometry and in high vorticity regions.
+The flow has now fully transition and you can use Amrvis to visualize the series of vortex in the wake of the cylinder. In the next step, we will add finer grid patches around the EB geometry and in high vorticity regions.
 
 Refinement of the computation
 -----------------------------
@@ -316,7 +316,7 @@ Start by increasing the number of AMR levels to one in the ``AMR CONTROL`` block
 
     amr.max_level       = 1          # maximum level number allowed
 
-Then provide a definition of the new refinement critera in the ``REFINEMENT CONTROL`` block: ::
+Then provide a definition of the new refinement criteria in the ``REFINEMENT CONTROL`` block: ::
 
     #--------------------REFINEMENT CONTROL------------------------
     # Refinement according to the vorticity, no field_name needed
@@ -354,7 +354,7 @@ and since the vorticity refinement criterion only refine up to level 1, the leve
     mpirun -n 4 ./PeleLMeX2d.gnu.MPI.ex input.2d-Re500 > log3Levels.dat &
 
 You should obtain a flow with a vorticity field similar to :numref:`FPC_VortFinal`.
-For the purpose of the present tutorial, this will be our final solution but one can see that the flow has not yet return to a periodic vortex shedding and additinal resolution could be added locally to obtain smoother flow features.
+For the purpose of the present tutorial, this will be our final solution but one can see that the flow has not yet return to a periodic vortex shedding and additional resolution could be added locally to obtain smoother flow features.
 
 .. figure:: images/tutorials/FPC_VorticityFinal.png
    :name: FPC_VortFinal

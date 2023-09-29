@@ -176,7 +176,7 @@ to overwrite the default values using AMReX's ParmParse: ::
 
 The `PeleLMeX` has its own `ProbParm` instance, the values of which are set by the ``query`` function calls. Note that because a
 ``query`` function is employed, the solver will use the default values of the ``ProbParm`` parameters if they are not provided
-in the input file. Use a ``pp.get`` to throw an error if overwritting the default value is desirable (see AMReX's ParmParse
+in the input file. Use a ``pp.get`` to throw an error if overwriting the default value is desirable (see AMReX's ParmParse
 documentation for more information). Users can now add the corresponding keys to their input file: ::
 
     prob.P_mean = 101325.0
@@ -184,7 +184,7 @@ documentation for more information). Users can now add the corresponding keys to
     prob.pertmag = 0.00045
     prob.pertlength = 0.016
 
-Additionnaly, the `readProbParm()` function initialize another data structure designed to handle the Cantera solution
+Additionally, the `readProbParm()` function initialize another data structure designed to handle the Cantera solution
 (not detailed here). When this function is called, users must provide the path to the Cantera solution stored as an
 ASCII file in the input file: ::
 
@@ -214,7 +214,7 @@ version of the function reads:
 
 * Compute the harmonic perturbation.
 
-* Using ``standoff`` and the pertubation, use the ``PMF`` function to get cell-average temperature, mole fractions and
+* Using ``standoff`` and the perturbation, use the ``PMF`` function to get cell-average temperature, mole fractions and
   velocity from the Cantera solution.
 
 * Use the data from the ``PMF`` to set the state array: velocities, density, rhoYs, rhoH and temperature. Relying on
@@ -246,7 +246,7 @@ Building the executable
 Now that we have reviewed the basic ingredients required to setup the FlameSheet case, it is time to build the `PeleLMeX` executable.
 Although both GNUmake and CMake are available, it is advised to use GNUmake. The ``GNUmakefile`` file provides some compile-time options
 regarding the simulation we want to perform.
-The first few lines specify the paths towards the source codes of `PeleLMeX`, `AMReX`, `AMReX-Hydro` and `PelePhysics`, overwritting
+The first few lines specify the paths towards the source codes of `PeleLMeX`, `AMReX`, `AMReX-Hydro` and `PelePhysics`, overwriting
 any environment variable if necessary, and might have been already updated in :ref:`sec:TUTO_FS::PrepStep` earlier.
 
 The next few lines specify AMReX compilation options and compiler selection: ::
@@ -285,7 +285,7 @@ list of available mechanisms and more information regarding the EOS, chemistry a
 Note that the ``Chemistry_Model`` must be similar to the one used to generate the Cantera solution.
 
 Finally, `PeleLMeX` utilizes the chemical kinetic ODE integrator `CVODE <https://computing.llnl.gov/projects/sundials/cvode>`_. This
-Third Party Librabry (TPL) is shipped as a submodule of the `PeleLMeX` distribution and can be readily installed through the makefile system
+Third Party Library (TPL) is shipped as a submodule of the `PeleLMeX` distribution and can be readily installed through the makefile system
 of `PeleLMeX`. To do so, type in the following command: ::
 
     make -j4 TPL
@@ -382,11 +382,11 @@ file from which to restart from. To do so, ensure that: ::
 
     amr.max_step = 50
 
-and uncomment the following line to require writting checkpoint files: ::
+and uncomment the following line to require writing checkpoint files: ::
 
     amr.check_int = 2000
 
-As soon as this last key is specified, `PeleLMeX` will writte an initial and final checkpoint file.
+As soon as this last key is specified, `PeleLMeX` will write an initial and final checkpoint file.
 Note that checkpoint file and plotfile store different data. A checkpoint file will store all the necessary
 state data to enable a continuous restart of the simulation, i.e. the solution after 50 steps is exactly the
 same as the one obtained running 25 steps first, then restarting for another 25 steps. A plotfile will
@@ -399,7 +399,7 @@ Here we require the cell-averaged pressure, the vorticity, species mass fraction
 `PeleLMeX` state contains rhoYs not Ys), mixture fraction and progress variable to be added to the
 plotfile. For a complete list of `PeleLMeX` available `derived`, see the adequate section in :doc:`LMeXControls`.
 
-Additionnally, increase `PeleLMeX` verbose in order to better see the various steps of the
+Additionally, increase `PeleLMeX` verbose in order to better see the various steps of the
 algorithm: ::
 
     peleLM.v = 3
@@ -432,10 +432,10 @@ A typical `PeleLMeX` stdout for a time step now looks like: ::
 
 clearly showing the use of 2 SDC iterations and the time spent
 performing projection, computing scalar advection, diffusion and reaction,
-and finally perfoming the velocity advance. The reader is referred to
+and finally performing the velocity advance. The reader is referred to
 :doc:`Model` for a detailed description of all of these steps.
 
-The first line at each step provide the time step contraint from the CFL
+The first line at each step provide the time step constraint from the CFL
 condition (``Conv:``) and from the density change condition (``divu:``).
 Since an initial ``dt_shrink`` was applied upon initialization, the
 current step is much smaller than the CFL but progressively increases
@@ -454,11 +454,11 @@ an intermediate species such as CH3 in :numref:`FS_50steps`.
 
    : Contour plots of `divU`, `FunctCall`, thermodynamic pressure and CH3 mass fraction after 50 steps.
 
-The `divU` is now mostly positive, consistent with the thermal expansion occuring across a
+The `divU` is now mostly positive, consistent with the thermal expansion occurring across a
 flame front. The `FunctCall` is the number of calls to the chemical right-hand-side function
 used in the chemical integrator CVODE. Higher values are indicative of locally stiffer
 chemical ODE system, concentrated in the reactive layer of the flame. The `RhoRT` variable
-is the thermodynamic pressure: within `PeleLMeX` low Mach number appraoch, this should be
+is the thermodynamic pressure: within `PeleLMeX` low Mach number approach, this should be
 perfectly uniform in space. However to conserve mass and enthalpy, the `PeleLMeX` algorithm allows
 for small deviation from this constraint. In the current case, deviation do not extend 0.0001 Pa,
 but larger deviations (> 100-1000 Pa) can be indicative that more SDC iterations are necessary or that the time step
@@ -470,7 +470,7 @@ of refinement. To do so, uncomment the following line: ::
 
     amr.restart = chk00050
 
-Increase the ``max_step`` to 120 and increse the maximum level to 3: ::
+Increase the ``max_step`` to 120 and increase the maximum level to 3: ::
 
     amr.max_level       = 3
 

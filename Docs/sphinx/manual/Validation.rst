@@ -2,7 +2,7 @@ PeleLMeX Verification & Validations
 ===================================
 
 This section assembles results of `PeleLMeX` simulations on a set a test cases
-for which a reference solution can be obtained from the litterature or an
+for which a reference solution can be obtained from the literature or an
 analytical solution exists.
 
 Laminar premixed flame
@@ -69,7 +69,7 @@ speed is recovered with an accuracy close to 1.5%.
 Additionally, :numref:`PMFLMeXCrseFine` compares profiles of major and intermediate species as well as
 temperature across the flame front for the coarsest and the finest resolution employed. Results
 indicates that major species (or temperature) are well captured whereas short lived species peak
-values are locally off due to the lack of resolution but are stil reasonably well located within
+values are locally off due to the lack of resolution but are still reasonably well located within
 the flame front.
 
 .. figure:: images/validations/PremixedFlame/LMeX_FinevsCoarse.png
@@ -98,7 +98,7 @@ The test case can be found in ``Exec/RegTests/EB_PipeFlow``, where
 the input parameters are very similar to the PeleC counterpart of
 this case.
 
-The steady-state :math:`x`-velocity profiles accross the pipe diameter
+The steady-state :math:`x`-velocity profiles across the pipe diameter
 at increasing resolution are plotted along with the theorerical profile in :numref:`PoiseuilleVelProf`:
 
 .. figure:: images/validations/Poiseuille3D/PoiseuilleVelProf.png
@@ -167,7 +167,7 @@ accuracy compared to the spectral results is obtained when the resolution is suf
 
 |TGEnstrophy|
 
-Additionnally, it is interesting to compare the different advection schemes
+Additionally, it is interesting to compare the different advection schemes
 available in `PeleLMeX` (namely, *Godunov_PLM*, *Godunov_PPM*, *Godunov_BDS*,
 *Godunov_PPM_WENOZ*) at a fixed 256^3 spatial resolution:
 

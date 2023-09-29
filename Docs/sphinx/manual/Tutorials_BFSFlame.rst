@@ -222,7 +222,7 @@ Building the executable
 Now that we have reviewed the basic ingredients required to setup the case, it is time to build the `PeleLMeX` executable.
 Although both GNUmake and CMake are available, it is advised to use GNUmake. The ``GNUmakefile`` file provides some compile-time options
 regarding the simulation we want to perform.
-The first few lines specify the paths towards the source codes of `PeleLMeX`, `AMReX`, `AMReX-Hydro` and `PelePhysics`, overwritting
+The first few lines specify the paths towards the source codes of `PeleLMeX`, `AMReX`, `AMReX-Hydro` and `PelePhysics`, overwriting
 any environment variable if necessary, and might have been already updated in :ref:`sec:TUTO_BFS::PrepStep` earlier.
 
 The next few lines specify AMReX compilation options and compiler selection: ::
@@ -268,7 +268,7 @@ list of available mechanisms and more information regarding the EOS, chemistry a
     Transport_Model := Simple
 
 Finally, `PeleLMeX` utilizes the chemical kinetic ODE integrator `CVODE <https://computing.llnl.gov/projects/sundials/cvode>`_. This
-Third Party Librabry (TPL) is shipped as a submodule of the `PeleLMeX` distribution and can be readily installed through the makefile system
+Third Party Library (TPL) is shipped as a submodule of the `PeleLMeX` distribution and can be readily installed through the makefile system
 of `PeleLMeX`. To do so, type in the following command: ::
 
     make -j4 TPL
@@ -353,7 +353,7 @@ A typical `PeleLMeX` stdout for a time step now looks like: ::
     >> PeleLM::Advance() --> Time: 0.877052
 
 clearly showing the use of 2 SDC iterations. The first line at each step provides
-the time step contraint from the CFL
+the time step constraint from the CFL
 condition (``Conv:``) and from the density change condition (``divu:``).
 Since an initial ``dt_shrink`` was applied upon initialization, the
 current step is smaller than the CFL but progressively increases
@@ -361,7 +361,7 @@ over the course of the simulation, eventually reaching the CFL constrained
 step size after 133 steps. After 250 steps, the simulation time is around 1.25 ms and
 the step size is of the order of 10 :math:`\mu s`.
 
-Visualizing the `plt00250` file, we can see that the solution has eveolved, with a
+Visualizing the `plt00250` file, we can see that the solution has evolved, with a
 vortex propagating downstream along the flame surface, while intermediate species
 can be found. Looking at the heat release rate and the H2 mass fraction, we can see that
 the flame front is very poorly resolved. The density along the isothermal EB also increased under
