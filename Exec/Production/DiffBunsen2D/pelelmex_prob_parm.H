@@ -9,7 +9,7 @@ struct ProbParm
 {
 
   // Definition of the geometry (in meters)
-  amrex::Real Xmax = 0.015; // Maximum size in x direction of the calcuation
+  amrex::Real Xmax = 0.015; // Maximum size in x direction of the calculation
                             // zone
   amrex::Real Xf = 0.0011;  // Radius of the fuel pipe
   amrex::Real Xe = 0.0001;  // Thickness of the extruded tube

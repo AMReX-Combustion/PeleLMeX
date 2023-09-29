@@ -82,7 +82,7 @@ PeleLM::Advance(int is_initIter)
   // Pre-SDC
   m_sdcIter = 0;
 
-  // initiliaze temporals
+  // initialize temporals
   initTemporals();
 
   // Reset velocity flux on boundary faces if doing closed chamber

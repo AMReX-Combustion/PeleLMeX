@@ -96,7 +96,7 @@ PeleLM::Evolve()
         over_max_wall_time = true;
         if (m_verbose > 0) {
           amrex::Print() << std::endl
-                         << "Reached maxmimum allowed wall time, stopping ..."
+                         << "Reached maximum allowed wall time, stopping ..."
                          << std::endl;
         }
       }

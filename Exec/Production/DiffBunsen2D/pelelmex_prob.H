@@ -63,7 +63,7 @@ pelelmex_initdata(
   ProbParm const& prob_parm,
   pele::physics::PMF::PmfData::DataContainer const* pmf_data)
 {
-  // Initialisation of some varibales for the cell, the geometry and the initial
+  // Initialisation of some variables for the cell, the geometry and the initial
   // values
   const amrex::Real* prob_lo = geomdata.ProbLo();
   const amrex::Real* prob_hi = geomdata.ProbHi();

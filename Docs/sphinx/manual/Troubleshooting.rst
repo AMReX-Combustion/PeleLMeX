@@ -38,7 +38,7 @@ prone to failure than the diffusion ones. You can then restart the simulation
 again and identify if the code is failing in the nodal projection, either during the
 initial projection (following *Initial velocity projection*) or during the time step
 one (following *- oneSDC()::ScalarReaction()  -->*), or in the MAC-projection (right after
-*SDC iter [1]*). Then, the linear solver verbose is usefull to understand how the solver
+*SDC iter [1]*). Then, the linear solver verbose is useful to understand how the solver
 fails. If the solver hangs around a small value following an initial reduction of the
 residual:
 
@@ -71,7 +71,7 @@ residual:
 
 it generally means that the required solver tolerance is too small for the problem. The
 default relative tolerances of all solvers in PeleLMeX is `1e-11`, but increasing the
-resolution, using a small `amr.blocking_factor` (<16) or large flow divergence accross
+resolution, using a small `amr.blocking_factor` (<16) or large flow divergence across
 coarse-fine interfaces can lead to the example above. In this case, one can increase the
 tolerance of the faulty solver using one of:
 
@@ -125,7 +125,7 @@ that the state given to CVODE was wrong. If this happens right at the start of t
 initial solution is most likely erroneous.
 
 In the case of the second message, the system was integrated up to 2.459e-6 s, but CVODE was not able
-to proceed any further as its internal step size droped to a small value. This could indicates that your
+to proceed any further as its internal step size dropped to a small value. This could indicates that your
 CFL condition is too loose and the chemical stifness can't be properly handled by
 CVODE. You can consider reduce your CFL number:
 

@@ -1895,7 +1895,7 @@ PeleLM::extendSignedDistance(MultiFab* a_signDist, Real a_extendFactor)
     });
   }
 
-  // Iteratively compute the distance function in boxes, propagating accross
+  // Iteratively compute the distance function in boxes, propagating across
   // boxes using ghost cells If needed, increase the number of loop to extend
   // the reach of the distance function
   int nMaxLoop = 4;

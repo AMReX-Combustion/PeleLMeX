@@ -360,7 +360,7 @@ PeleLM::MakeNewLevelFromCoarse(
 
   if (m_incompressible == 0) {
     // Enforce density / species density consistency
-    // only usefull when using cell cons interp
+    // only useful when using cell cons interp
     if (m_regrid_interp_method == 1) {
       setRhoToSumRhoY(lev, AmrNewTime);
     }
@@ -476,7 +476,7 @@ PeleLM::RemakeLevel(
 
   if (m_incompressible == 0) {
     // Enforce density / species density consistency
-    // only usefull when using cell cons interp
+    // only useful when using cell cons interp
     if (m_regrid_interp_method == 1) {
       setRhoToSumRhoY(lev, AmrNewTime);
     }

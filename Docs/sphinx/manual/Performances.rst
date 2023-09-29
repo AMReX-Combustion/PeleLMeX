@@ -6,10 +6,10 @@ leveraging the computational power of ExaScale super-computers. As mentioned ear
 `PeleLMeX` is built upon the AMR library `AMReX` and inherits most of its High Performance Computing
 features.
 
-`PeleLMeX` parallel paradigm is based on an MPI+`X` appraoch, where `X` can be OpenMP, or any of
+`PeleLMeX` parallel paradigm is based on an MPI+`X` approach, where `X` can be OpenMP, or any of
 CUDA, HIP or SYCL, for Nvidia, AMD and Intel GPUs vendor, respectively. The actual performances
 gain of using accelerator within `PeleLMeX` is a moving target as both hardware and software are
-continously improving. In the following we demonstrate the gain at a given time (specified and
+continuously improving. In the following we demonstrate the gain at a given time (specified and
 subject to updates) and on selected platforms.
 
 
@@ -42,7 +42,7 @@ the time step size usually employed to remove artifacts from the initial data:
     amr.dt_shrink = 1.0
     amr.fixed_dt = 2.5e-7
 
-Additionnaly, unless otherwise specified, all the tests on GPUs are conducted
+Additionally, unless otherwise specified, all the tests on GPUs are conducted
 using the MAGMA dense-direct solver to solve for the Newton direction within CVODE's non-linear integration.
 
 ::
@@ -219,7 +219,7 @@ Case description
 Once again the case of a laminar premixed flame with harmonic perturbations is employed. On
 a single node, the case is similar to the one used in the previous section. To perform the
 weak scaling study (characterising the ability of the solver to scale up while keeping the
-same amount of work per compute unit), the dimentions of the computational domain are
+same amount of work per compute unit), the dimensions of the computational domain are
 increased by a factor 2 in :math:`x` and :math:`y` alternatively as the number of
 compute nodes is doubled. The periodicity of the initial conditions allow to ensure
 that the amount of work per node remains constant.

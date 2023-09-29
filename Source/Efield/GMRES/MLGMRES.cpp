@@ -150,7 +150,7 @@ MLGMRESSolver::solve(
 void
 MLGMRESSolver::prepareForSolve()
 {
-  // Initilize or cleanup GMRES data
+  // Initialize or cleanup GMRES data
   for (int k = 0; k <= m_krylovSize; ++k) {
     g[k] = 0.0;
     y[k] = 0.0;

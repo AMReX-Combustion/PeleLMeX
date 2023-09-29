@@ -434,7 +434,7 @@ PeleLM::nonLinearResidual(
         fba, dmap[lev], 1, 0, MFInfo(), Factory(lev));
     }
   }
-  int do_avgDown = 0; // TODO or shoud I ?
+  int do_avgDown = 0; // TODO or should I ?
   auto bcRecPhiV = fetchBCRecArray(PHIV, 1);
   getDiffusionOp()->computeGradient(
     GetVecOfArrOfPtrs(gradPhiVCur), GetVecOfPtrs(laplacian),
@@ -862,7 +862,7 @@ PeleLM::setUpPrecond(const Real& a_dt, const Vector<const MultiFab*>& a_nE)
 {
   BL_PROFILE("PeleLMeX::setUpPrecond()");
 
-  // Udpate LinearOps defs if needed -> done internally by the getPrecondOp()
+  // Update LinearOps defs if needed -> done internally by the getPrecondOp()
   // func
 
   // nE BCRec

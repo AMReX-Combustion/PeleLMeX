@@ -204,7 +204,7 @@ PeleLM::addLorentzVelForces(
 void
 PeleLM::initializeElectronNeutral()
 {
-  // Prob/PMF datas
+  // Prob/PMF data
   ProbParm const* lprobparm = prob_parm_d;
 
   for (int lev = 0; lev <= finest_level; ++lev) {

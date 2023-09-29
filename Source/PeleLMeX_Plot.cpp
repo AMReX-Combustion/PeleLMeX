@@ -492,7 +492,7 @@ PeleLM::WriteCheckPointFile()
     amrex::Concatenate(m_check_file, m_nstep, m_ioDigits);
 
   if (m_verbose != 0) {
-    amrex::Print() << "\n Writting checkpoint file: " << checkpointname << "\n";
+    amrex::Print() << "\n Writing checkpoint file: " << checkpointname << "\n";
   }
 
   amrex::PreBuildDirectorHierarchy(
@@ -816,9 +816,9 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
 #endif
   }
   if (idY < 0) {
-    Abort("Coudn't find species mass fractions in pltfile");
+    Abort("Couldn't find species mass fractions in pltfile");
   } else if (idT < 0) {
-    Abort("Coudn't find temperature in pltfile");
+    Abort("Couldn't find temperature in pltfile");
   }
   Print() << " " << nSpecPlt << " species found in pltfile, starting with "
           << plt_vars[idY] << "\n";

@@ -251,7 +251,7 @@ public:
     amrex::Vector<amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>>
       umac;                              // MAC face velocity
     amrex::Vector<amrex::MultiFab> AofS; // Scalar advection term at t^(n+1/2)
-    amrex::Vector<amrex::MultiFab> chi;  // Thermodynamic contraint
+    amrex::Vector<amrex::MultiFab> chi;  // Thermodynamic constraint
     amrex::Vector<amrex::MultiFab>
       Forcing; // Scalar forcing for both advection and diffusion
     amrex::Vector<amrex::MultiFab> mac_divu; // divu used in MAC projection
@@ -561,7 +561,7 @@ public:
 
   /**
    * \brief Add the Wbar contribution to the face-centered species diffusion
-   * fluxes on all levels optionnally returning that contribution in a separate
+   * fluxes on all levels optionally returning that contribution in a separate
    * container \param a_fluxes diffusion fluxes to be updated \param
    * a_wbarfluxes optional container to return the Wbar contribution \param
    * a_spec species rhoYs state data on all levels \param a_rho density state
@@ -579,7 +579,7 @@ public:
 
   /**
    * \brief Add the Soret contribution to the face-centered species diffusion
-   * fluxes on all levels optionnally returning that contribution in a separate
+   * fluxes on all levels optionally returning that contribution in a separate
    * container \param a_fluxes diffusion fluxes to be updated \param
    * a_soretfluxes optional container to return the Soret contribution \param
    * a_spec species rhoYs state data on all levels \param a_rho density state
@@ -680,7 +680,7 @@ public:
 
   /**
    * \brief Return LinOpBC for the scalar diffusion operator
-   * \param a_side AMReX orientaion
+   * \param a_side AMReX orientation
    * \param a_bc BCRec for the scalar of interest
    */
   amrex::Array<amrex::LinOpBCType, AMREX_SPACEDIM> getDiffusionLinOpBC(
@@ -688,7 +688,7 @@ public:
 
   /**
    * \brief Return AMReX_SPACEDIM LinOpBC vector for the velocity tensor
-   * operator \param a_side AMReX orientaion \param a_bc BCRec for all the
+   * operator \param a_side AMReX orientation \param a_bc BCRec for all the
    * velocity components
    */
   amrex::Vector<amrex::Array<amrex::LinOpBCType, AMREX_SPACEDIM>>
@@ -758,7 +758,7 @@ public:
   // Time step size
 
   /**
-   * \brief Compute the time step sive accross all levels and processes.
+   * \brief Compute the time step sive across all levels and processes.
    * \param is_init flag to trigger init-only dt factors
    * \param a_time state time to work on, either Old or New
    */

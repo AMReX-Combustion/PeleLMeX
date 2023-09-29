@@ -35,7 +35,7 @@ You are now free to modify your own fork of *PeleLMeX*. To add a new feature to 
         git commit -m "Developed AmazingNewFeature"
 
 3. Alongside your development, regularly merge changes from the main repo `development` branch into your `AmazingNewFeature` branch,
-fix any conficts, and push your changes to your GitHub fork :
+fix any conflicts, and push your changes to your GitHub fork :
    
         git push -u origin AmazingNewFeature
 
