@@ -101,17 +101,24 @@ on GPU-accelerated machines.
 
 # Statement of Need
 
-While there exist several reactive flow Direct Numerical Simulation codes, PeleLMeX presents a unique set of features.
-From its inception, under the name LMC in the early 2000, the motivation was to combine an AMR approach with a low Mach number 
-formulation to achieve high performances from a small desktop station to the world largest supercomputer, and to this day
-it remains the only publicly available code to offers these features. Recent code developments focused on enabling
-massively parallel simulations at scale on high-performance accelerated computer architectures to tackle the challenging
-requirements of fundamental and applied combustion research, as well as extending the solver modeling capabilities by including
-Large Eddy Simulation (LES) closure models and support for data-driven combustion models [@Perry:2022].
+Several softwares for reactive flow simulations can found online (often with limited access), including unstructured body-fitted
+solvers based on OpenFOAM [@Hassanaly:2018], the structured solver NGA2 [@NGA2] or the Sierra/Fuego solver [@Domingo:2003].
+In contrast with the aforementioned solvers, PeleLMeX is fully publicly available and documented.
+Its unique features consist in combining an AMR approach with a low
+Mach number formulation to achieve high performances from a small desktop station to the world largest supercomputer.
+Recent code developments focused on enabling massively parallel simulations at scale on high-performance accelerated computer
+architectures to tackle the challenging requirements of fundamental and applied combustion research, as well as extending
+the solver modeling capabilities by including Large Eddy Simulation (LES) closure models and support for data-driven
+combustion models [@Perry:2022].
 
-PeleLMeX is predominantly used to study the fine scale interactions between turbulence and chemical reactions occurring in many
-combustion applications. A better understanding of these interactions is the basis for developing accurate modeling approaches
-that can be used to design the next generation of low-emission combustion devices.
+PeleLMeX is intended for students, researchers and engineers interested in understanding complex combustion processes
+by performing high fidelity simulations. Although it can be used to study laminar flames, its distinctive features make it
+particularly attractive for studying the fine scale flame/turbulence interactions in combustion applications where AMR is necessary
+to tackle the large scale separation and the computational ressources available on the lastest heterogeneous exascale
+platform can be leveraged. In order to achieve energy, transport and industry decarbonization, fuel-flexible combustion devices
+must be designed and deployed to accomodate hydrogen, amonia and a wide range of biofuels. In this context, PeleLMeX can prove a
+valuable tool to study alternative fuels combustion characteristics, flame dynamics or pollutant formation mechanisms,
+both in academic idealized case [@Howarth:2023] as well as in device scale simulations [@Appukuttan:2023].
 
 # Acknowledgments
 
