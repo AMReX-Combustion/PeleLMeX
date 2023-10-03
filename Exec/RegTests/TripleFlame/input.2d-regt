@@ -27,7 +27,7 @@ prob.V_in = 0.85
 prob.Zst = 0.055
 
 #---------------------- PeleLM CONTROL ---------------------------
-peleLM.v = 1                              # PeleLMeX version
+peleLM.v = 1                              # PeleLMeX verbose
 peleLM.use_wbar = 1                       # Include Wbar term in species diffusion fluxes
 peleLM.sdc_iterMax = 1                    # Number of SDC iterations
 peleLM.num_init_iter = 3                  # Number of initial iterations

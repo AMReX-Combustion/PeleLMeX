@@ -1,44 +1,51 @@
 ## Header
-CEXE_headers += PeleLM.H
-CEXE_headers += PeleLM_Index.H
-CEXE_headers += PeleLMDerive.H
-CEXE_headers += PeleLM_K.H
-CEXE_headers += PeleLMBCfill.H
-CEXE_headers += DiffusionOp.H
-CEXE_headers += PeleLMDeriveFunc.H
-CEXE_headers += EBUserDefined.H
-CEXE_headers += PeleFlowControllerData.H
+CEXE_headers += PeleLMeX.H
+CEXE_headers += PeleLMeX_Index.H
+CEXE_headers += PeleLMeX_Derive.H
+CEXE_headers += PeleLMeX_K.H
+CEXE_headers += PeleLMeX_BCfill.H
+CEXE_headers += PeleLMeX_DiffusionOp.H
+CEXE_headers += PeleLMeX_DeriveFunc.H
+CEXE_headers += PeleLMeX_EBUserDefined.H
+CEXE_headers += PeleLMeX_FlowControllerData.H
 
 ## Sources
 CEXE_sources += main.cpp
-CEXE_sources += Utils.cpp
-CEXE_sources += PeleLM.cpp
-CEXE_sources += pelelm_prob.cpp
-CEXE_sources += PeleLMDerive.cpp
-CEXE_sources += PeleLMUtils.cpp
-CEXE_sources += PeleLMInit.cpp
-CEXE_sources += PeleLMRegrid.cpp
-CEXE_sources += PeleLMTagging.cpp
-CEXE_sources += PeleLMSetup.cpp
-CEXE_sources += PeleLMBC.cpp
-CEXE_sources += PeleLMPlot.cpp
-CEXE_sources += PeleLMAdvance.cpp
-CEXE_sources += PeleLMAdvection.cpp
-CEXE_sources += PeleLMEvolve.cpp
-CEXE_sources += PeleLMEvaluate.cpp
-CEXE_sources += PeleLMTransportProp.cpp
-CEXE_sources += DiffusionOp.cpp
-CEXE_sources += PeleLMDiffusion.cpp
-CEXE_sources += PeleLMProjection.cpp
-CEXE_sources += PeleLMEos.cpp
-CEXE_sources += PeleLMData.cpp
-CEXE_sources += PeleLMDeriveFunc.cpp
-CEXE_sources += PeleLMTimestep.cpp
-CEXE_sources += PeleLMForces.cpp
-CEXE_sources += PeleLMUMac.cpp
-CEXE_sources += PeleLMReactions.cpp
-CEXE_sources += PeleLMTemporals.cpp
-CEXE_sources += PeleLMEB.cpp
-CEXE_sources += PeleLMDiagnostics.cpp
-CEXE_sources += PeleLMFlowController.cpp
-CEXE_sources += DeriveUserDefined.cpp
+CEXE_sources += PeleLMeX.cpp
+CEXE_sources += pelelmex_prob.cpp
+CEXE_sources += PeleLMeX_Derive.cpp
+CEXE_sources += PeleLMeX_Utils.cpp
+CEXE_sources += PeleLMeX_Init.cpp
+CEXE_sources += PeleLMeX_Regrid.cpp
+CEXE_sources += PeleLMeX_Tagging.cpp
+CEXE_sources += PeleLMeX_Setup.cpp
+CEXE_sources += PeleLMeX_BC.cpp
+CEXE_sources += PeleLMeX_Plot.cpp
+CEXE_sources += PeleLMeX_Advance.cpp
+CEXE_sources += PeleLMeX_Advection.cpp
+CEXE_sources += PeleLMeX_Evolve.cpp
+CEXE_sources += PeleLMeX_Evaluate.cpp
+CEXE_sources += PeleLMeX_TransportProp.cpp
+CEXE_sources += PeleLMeX_DiffusionOp.cpp
+CEXE_sources += PeleLMeX_Diffusion.cpp
+CEXE_sources += PeleLMeX_Projection.cpp
+CEXE_sources += PeleLMeX_Eos.cpp
+CEXE_sources += PeleLMeX_Data.cpp
+CEXE_sources += PeleLMeX_DeriveFunc.cpp
+CEXE_sources += PeleLMeX_Timestep.cpp
+CEXE_sources += PeleLMeX_Forces.cpp
+CEXE_sources += PeleLMeX_UMac.cpp
+CEXE_sources += PeleLMeX_Reactions.cpp
+CEXE_sources += PeleLMeX_Temporals.cpp
+CEXE_sources += PeleLMeX_EB.cpp
+CEXE_sources += PeleLMeX_Diagnostics.cpp
+CEXE_sources += PeleLMeX_FlowController.cpp
+CEXE_sources += PeleLMeX_DeriveUserDefined.cpp
+
+ifeq ($(USE_SOOT), TRUE)
+  CEXE_sources += PeleLMeX_Soot.cpp
+endif
+
+ifeq ($(USE_PARTICLES), TRUE)
+  CEXE_sources += PeleLMeX_SprayParticles.cpp
+endif

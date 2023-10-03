@@ -12,275 +12,51 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  #Build and run the 3D FlameSheet RegTest with GNU9.3 and no MPI support
-  F32D_NoMPI:
-    name: GNU@9.3 NOMPI Comp [FS3D]
-    runs-on: ubuntu-latest
-    env:
-      {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
-    steps:
-    - uses: actions/checkout@v3
-    - name: System Dependencies
-      run: .github/workflows/dependencies/dependencies_gcc10.sh
-    - name: Repo Dependencies
-      run: Utils/CloneDeps.sh
-    - name: Build
-      env:
-         AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
-         PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
-         PELELMEX_HOME: ${GITHUB_WORKSPACE}
-         AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
-         SUNDIALS_HOME : ${GITHUB_WORKSPACE}/build/sundials
-      run: |
-        cd Exec/RegTests/FlameSheet/
-        make help
-        make TPL DIM=3 COMP=gnu USE_MPI=FALSE
-        make -j 2 DIM=3 COMP=gnu USE_MPI=FALSE
-    - name: Run
-      working-directory: ./Exec/RegTests/FlameSheet/
-      run: |
-        ./PeleLMeX3d.gnu.ex input.3d-regt peleLM.num_init_iter=1 amr.max_step=1 amr.plot_int=-1 amr.check_int=-1
-
-  # Build and Run the 2D FlameSheet RegTest with GNU9.3 and MPI support
-  FS2D_MPI:
-    name: GNU@9.3 MPI Comp [FS2D]
-    runs-on: ubuntu-latest
-    env:
-      {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
-    steps:
-    - uses: actions/checkout@v3
-    - name: System Dependencies
-      run: .github/workflows/dependencies/dependencies_gcc10.sh
-    - name: Repo Dependencies
-      run: Utils/CloneDeps.sh
-    - name: Build
-      env:
-         AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
-         PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
-         PELELMEX_HOME: ${GITHUB_WORKSPACE}
-         AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
-         SUNDIALS_HOME : ${GITHUB_WORKSPACE}/build/sundials
-      run: |
-        cd Exec/RegTests/FlameSheet/
-        make TPL COMP=gnu
-        make -j 2 COMP=gnu
-    - name: RunBase
-      working-directory: ./Exec/RegTests/FlameSheet/
-      run: |
-        ./PeleLMeX2d.gnu.MPI.ex input.2d-regt amr.max_step=2 amr.plot_int=-1 amr.check_int=-1
-    - name: RunSoret
-      working-directory: ./Exec/RegTests/FlameSheet/
-      run: |
-        ./PeleLMeX2d.gnu.MPI.ex input.2d-regt transport.use_soret=1 amr.max_step=2 amr.plot_int=-1 amr.check_int=-1
-    - name: RunUnityLe
-      working-directory: ./Exec/RegTests/FlameSheet/
-      run: |
-        ./PeleLMeX2d.gnu.MPI.ex input.2d-regt peleLM.unity_Le=1 peleLM.Prandtl=0.75 amr.max_step=2 amr.plot_int=-1 amr.check_int=-1
-
-  # Build the 2D FlameSheet RegTest with GNU9.3 and MPI+OMP support
-  FS2D_MPIOMP:
-    name: GNU@9.3 MPI OMP Comp [FS2D]
-    runs-on: ubuntu-latest
-    env:
-      {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
-    steps:
-    - uses: actions/checkout@v3
-    - name: System Dependencies
-      run: .github/workflows/dependencies/dependencies_gcc10.sh
-    - name: Repo Dependencies
-      run: Utils/CloneDeps.sh
-    - name: Build
-      env:
-         AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
-         PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
-         PELELMEX_HOME: ${GITHUB_WORKSPACE}
-         AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
-         SUNDIALS_HOME : ${GITHUB_WORKSPACE}/build/sundials
-      run: |
-        cd Exec/RegTests/FlameSheet/
-        make TPL COMP=gnu USE_OMP=TRUE
-        make -j 2 COMP=gnu USE_OMP=TRUE
-
-  # Build and Run the CoVo RegTest with GNU9.3 and no MPI support
-  COVO2D_NoMPIRun:
-    name: GNU@9.3 NOMPI Run [COVO2D]
-    runs-on: ubuntu-latest
-    env:
-      {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
-    steps:
-    - uses: actions/checkout@v3
-    - name: System Dependencies
-      run: .github/workflows/dependencies/dependencies_gcc10.sh
-    - name: Repo Dependencies
-      run: Utils/CloneDeps.sh
-    - name: Build
-      env:
-         AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
-         PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
-         PELELMEX_HOME: ${GITHUB_WORKSPACE}
-         AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
-         SUNDIALS_HOME : ${GITHUB_WORKSPACE}/build/sundials
-      working-directory: ./Exec/RegTests/PeriodicCases/
-      run: |
-        make TPL COMP=gnu USE_MPI=FALSE
-        make -j 2 COMP=gnu USE_MPI=FALSE
-    - name: Run
-      working-directory: ./Exec/RegTests/PeriodicCases/
-      run: |
-        ./PeleLMeX2d.gnu.ex input.2d_CoVo amr.max_step=2 amr.plot_int=-1 amr.check_int=-1
-
-  # Build and Run the HoBubble RegTest with GNU9.3 and MPI support
-  HB2D_MPIRun:
-    name: GNU@9.3 MPI Run [HB2D]
-    runs-on: ubuntu-latest
-    env:
-      {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
-    steps:
-    - uses: actions/checkout@v3
-    - name: System Dependencies
-      run: .github/workflows/dependencies/dependencies_gcc10.sh
-    - name: Repo Dependencies
-      run: Utils/CloneDeps.sh
-    - name: Build
-      env:
-         AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
-         PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
-         PELELMEX_HOME: ${GITHUB_WORKSPACE}
-         AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
-         SUNDIALS_HOME : ${GITHUB_WORKSPACE}/build/sundials
-      working-directory: ./Exec/RegTests/HotBubble/
-      run: |
-        make TPL COMP=gnu USE_MPI=TRUE
-        make -j 2 COMP=gnu USE_MPI=TRUE
-    - name: Run
-      working-directory: ./Exec/RegTests/HotBubble/
-      run: |
-        ./PeleLMeX2d.gnu.MPI.ex input.2d-regt amr.max_step=20 amr.plot_int=-1 amr.check_int=-1
-
-  # Build and Run the HotBubble RegTest with GNU9.3 in DEBUG
-  HB2D_DBGRun:
-    name: GNU@9.3 DEBUG Run [HB2DDBG]
-    runs-on: ubuntu-latest
-    env:
-      {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
-    steps:
-    - uses: actions/checkout@v3
-    - name: System Dependencies
-      run: .github/workflows/dependencies/dependencies_gcc10.sh
-    - name: Repo Dependencies
-      run: Utils/CloneDeps.sh
-    - name: Build
-      env:
-         AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
-         PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
-         PELELMEX_HOME: ${GITHUB_WORKSPACE}
-         AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
-         SUNDIALS_HOME : ${GITHUB_WORKSPACE}/build/sundials
-      working-directory: ./Exec/RegTests/HotBubble/
-      run: |
-        make TPL COMP=gnu DEBUG=TRUE USE_MPI=FALSE
-        make -j 2 COMP=gnu DEBUG=TRUE USE_MPI=FALSE
-    - name: Run
-      working-directory: ./Exec/RegTests/HotBubble/
-      run: |
-        ./PeleLMeX2d.gnu.DEBUG.ex input.2d-regt amr.max_step=20 amr.plot_int=-1 amr.check_int=-1
-
-  # Build and Run the EnclosedFlame RegTest with GNU9.3 and MPI support
-  EF2D_MPIRun:
-    name: GNU@9.3 MPI Run [EF2D]
-    runs-on: ubuntu-latest
-    env:
-      {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
-    steps:
-    - uses: actions/checkout@v3
-    - name: System Dependencies
-      run: .github/workflows/dependencies/dependencies_gcc10.sh
-    - name: Repo Dependencies
-      run: Utils/CloneDeps.sh
-    - name: Build
-      env:
-         AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
-         PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
-         PELELMEX_HOME: ${GITHUB_WORKSPACE}
-         AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
-         SUNDIALS_HOME : ${GITHUB_WORKSPACE}/build/sundials
-      working-directory: ./Exec/RegTests/EnclosedFlame/
-      run: |
-        make TPL COMP=gnu USE_MPI=TRUE
-        make -j 2 COMP=gnu USE_MPI=TRUE
-    - name: Run
-      working-directory: ./Exec/RegTests/EnclosedFlame/
-      run: |
-        ./PeleLMeX2d.gnu.MPI.ex input.2d-regt amr.max_step=2 amr.plot_int=-1 amr.check_int=-1
-
   # Build and Run the EB_FlowPastCylinder RegTest with GNU9.3 and MPI support
-  FPC2D_MPIRun:
-    name: GNU@9.3 MPI Run [FPC2DDBG]
-    runs-on: ubuntu-latest
-    env:
-      {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
-    steps:
-    - uses: actions/checkout@v3
-    - name: System Dependencies
-      run: .github/workflows/dependencies/dependencies_gcc10.sh
-    - name: Repo Dependencies
-      run: Utils/CloneDeps.sh
-    - name: Build
-      env:
-         AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
-         PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
-         PELELMEX_HOME: ${GITHUB_WORKSPACE}
-         AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
-         SUNDIALS_HOME : ${GITHUB_WORKSPACE}/build/sundials
-      working-directory: ./Exec/RegTests/EB_FlowPastCylinder/
-      run: |
-        make TPL COMP=gnu USE_MPI=TRUE DEBUG=TRUE
-        make -j 2 COMP=gnu USE_MPI=TRUE DEBUG=TRUE
-    - name: Run
-      working-directory: ./Exec/RegTests/EB_FlowPastCylinder/
-      run: |
-        ./PeleLMeX2d.gnu.DEBUG.MPI.ex input.2d-regt amr.max_step=2 amr.plot_int=-1 amr.check_int=-1 amrex.fpe_trap_invalid=1 amrex.fpe_trap_zero=1 amrex.fpe_trap_overflow=1
-        ./PeleLMeX2d.gnu.DEBUG.MPI.ex input.2d-regt_WallBump amr.max_step=2 amr.plot_int=-1 amr.check_int=-1
+  #FPC2D:
+  #  name: GNU@9.3 MPI Run [FPC2DDBG]
+  #  runs-on: ubuntu-latest
+  #  env:
+  #    {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
+  #  steps:
+  #  - uses: actions/checkout@v3
+  #  - name: System Dependencies
+  #    run: .github/workflows/dependencies/dependencies_gcc10.sh
+  #  - name: Repo Dependencies
+  #    run: Utils/CloneDeps.sh
+  #  - name: Build
+  #    env:
+  #       AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
+  #       PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
+  #       PELELMEX_HOME: ${GITHUB_WORKSPACE}
+  #       AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
+  #       SUNDIALS_HOME : ${GITHUB_WORKSPACE}/build/sundials
+  #    working-directory: ./Exec/RegTests/EB_FlowPastCylinder/
+  #    run: |
+  #      make TPL COMP=gnu USE_MPI=TRUE DEBUG=TRUE
+  #      make -j 2 COMP=gnu USE_MPI=TRUE DEBUG=TRUE
+  #  - name: Run
+  #    working-directory: ./Exec/RegTests/EB_FlowPastCylinder/
+  #    run: |
+  #      ./PeleLMeX2d.gnu.DEBUG.MPI.ex input.2d-regt amr.max_step=2 amr.plot_int=-1 amr.check_int=-1 amrex.fpe_trap_invalid=1 amrex.fpe_trap_zero=1 amrex.fpe_trap_overflow=1
+  #      ./PeleLMeX2d.gnu.DEBUG.MPI.ex input.2d-regt_WallBump amr.max_step=2 amr.plot_int=-1 amr.check_int=-1
 
-  # Build and Run the HIT RegTest with GNU9.3 and MPI support
-  HIT3D_MPIRun:
-    name: GNU@9.3 MPI Run [HIT3D]
-    runs-on: ubuntu-latest
-    env:
-      {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
-    steps:
-    - uses: actions/checkout@v3
-    - name: System Dependencies
-      run: .github/workflows/dependencies/dependencies_gcc10.sh
-    - name: Repo Dependencies
-      run: Utils/CloneDeps.sh
-    - name: Build
-      env:
-         AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
-         PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
-         PELELMEX_HOME: ${GITHUB_WORKSPACE}
-         AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
-         SUNDIALS_HOME : ${GITHUB_WORKSPACE}/build/sundials
-      working-directory: ./Exec/RegTests/HITDecay/
-      run: |
-        make TPL COMP=gnu USE_MPI=TRUE
-        make -j 2 COMP=gnu USE_MPI=TRUE
-    - name: RunDNS
-      working-directory: ./Exec/RegTests/HITDecay/
-      run: |
-        ./PeleLMeX3d.gnu.MPI.ex input.3d amr.max_step=10 amr.plot_int=-1 amr.check_int=-1
-    - name: RunLES_Smago
-      working-directory: ./Exec/RegTests/HITDecay/
-      run: |
-        ./PeleLMeX3d.gnu.MPI.ex input.3d_les amr.max_step=10 amr.plot_int=-1 amr.check_int=-1
-    - name: RunLES_WALE
-      working-directory: ./Exec/RegTests/HITDecay/
-      run: |
-        ./PeleLMeX3d.gnu.MPI.ex input.3d_les peleLM.les_model="WALE" amr.max_step=10 amr.plot_int=-1 amr.check_int=-1
-
+  #      make -j 2 COMP=gnu USE_MPI=TRUE
+  #  - name: RunDNS
+  #    working-directory: ./Exec/RegTests/HITDecay/
+  #    run: |
+  #      ./PeleLMeX3d.gnu.MPI.ex input.3d amr.max_step=10 amr.plot_int=-1 amr.check_int=-1
+  #  - name: RunLES_Smago
+  #    working-directory: ./Exec/RegTests/HITDecay/
+  #    run: |
+  #      ./PeleLMeX3d.gnu.MPI.ex input.3d_les amr.max_step=10 amr.plot_int=-1 amr.check_int=-1
+  #  - name: RunLES_WALE
+  #    working-directory: ./Exec/RegTests/HITDecay/
+  #    run: |
+  #      ./PeleLMeX3d.gnu.MPI.ex input.3d_les peleLM.les_model="WALE" amr.max_step=10 amr.plot_int=-1 amr.check_int=-1
 
   # Build and Run the EB_PipeFlow RegTest with GNU9.3 and MPI support
-  EBPF3D_MPIRun:
+  EBPF3D:
     name: GNU@9.3 MPI Run [EBPF3D]
     runs-on: ubuntu-latest
     env:
@@ -308,7 +84,7 @@ jobs:
         mpirun -n 2 ./PeleLMeX3d.gnu.MPI.ex input.3d-regt amr.max_step=2 amr.plot_int=-1 amr.check_int=-1 amr.n_cell=128 32 32
 
   # Build and Run the TurbInflow RegTest in DEBUG with GNU9.3 and MPI support
-  TI3D_MPIRun:
+  TI3D:
     name: GNU@9.3 MPI Run [TI3DDBG]
     runs-on: ubuntu-latest
     env:
@@ -350,7 +126,7 @@ jobs:
         mpirun -n 2 ./PeleLMeX3d.gnu.DEBUG.MPI.ex input.3d_BoxLoZ peleLM.num_init_iter=1 amr.n_cell=32 32 32 amr.max_step=2 amr.plot_int=-1 amr.check_int=-1
 
   # Build and Run the SprayTest RegTest with GNU9.3 and MPI support
-  SPRAY_MPIRun:
+  SPRAY:
     name: GNU@9.3 MPI Run [SPRAY]
     runs-on: ubuntu-latest
     env:

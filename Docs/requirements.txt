@@ -1,9 +1,0 @@
-# Copyright 2022 PeleTeam
-#
-# This file is part of PeleLMeX.
-#
-# License: BSD-3-Clause-LBNL
-
-docutils<=0.16
-sphinx>=2.0
-sphinx_rtd_theme>=0.3.1

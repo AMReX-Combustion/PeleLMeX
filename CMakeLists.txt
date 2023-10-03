@@ -1,207 +1,115 @@
-cmake_minimum_required(VERSION 3.23)
+cmake_minimum_required(VERSION 3.23 FATAL_ERROR)
 
-project( PeleLMeX
-         DESCRIPTION "An AMR Low Mach Number Reactive Flow Simulation Code Without Level Sub-cycling"
-         HOMEPAGE_URL "https://github.com/AMReX-Combustion/PeleLMeX"
-         VERSION 23.03
-         LANGUAGES CXX
-       )
+project(PeleLMeX LANGUAGES CXX)
 
-message(STATUS "CMake version: ${CMAKE_VERSION}")
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE INTERNAL "")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake")
+include(CMakePackageConfigHelpers)
+include(PeleLMeXUtils)
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/Utils/CMake")
+set(PELELMEX_DIM "3" CACHE STRING "Number of physical dimensions")
+option(PELELMEX_ENABLE_AMREX_PARTICLES "Enable particles in AMReX library" OFF)
+option(PELELMEX_ENABLE_CLANG_TIDY "Enable clang-tidy analysis" OFF)
+option(PELELMEX_ENABLE_CPPCHECK "Enable cppcheck analysis" OFF)
+option(PELELMEX_ENABLE_MASA "Enable tests that require MASA" OFF)
+option(PELELMEX_ENABLE_FCOMPARE "Enable building fcompare when not testing" OFF)
+option(PELELMEX_ENABLE_FCOMPARE_FOR_TESTS "Check test plots against gold files" OFF)
+option(PELELMEX_SAVE_GOLDS "Enable saving of gold files to a specified directory" OFF)
+option(PELELMEX_ENABLE_SANITIZE_FOR_TESTS "Currently only disables certain long running MMS tests if set" OFF)
+option(PELELMEX_ENABLE_FPE_TRAP_FOR_TESTS "Enable FPE trapping in tests" ON)
+option(PELELMEX_ENABLE_TINY_PROFILE "Enable tiny profiler in AMReX" OFF)
+option(PELELMEX_ENABLE_HDF5 "Enable plot file output using HDF5" OFF)
+option(PELELMEX_ENABLE_HDF5_ZFP "Enable ZFP compression in HDF5" OFF)
+option(PELELMEX_ENABLE_ASCENT "Enable Ascent in-situ visualization" OFF)
+option(PELELMEX_ENABLE_HYPRE "Enable Offload to Hypre" OFF)
+set(PELELMEX_PRECISION "DOUBLE" CACHE STRING "Floating point precision SINGLE or DOUBLE")
 
-#
-# Base options
-#
-set(PELELMEX_DIM             "3"        CACHE STRING "Number of physical dimensions")
-set(PELELMEX_PRECISION       "DOUBLE"   CACHE STRING "Floating point precision SINGLE or DOUBLE")
-set(PELELMEX_CHEMISTRY_MODEL drm19      CACHE STRING "Chemical mechanism")
-set(PELELMEX_EOS_MODEL       Fuego      CACHE STRING "Equation of state model")
-set(PELELMEX_TRANSPORT_MODEL Simple     CACHE STRING "Transport model")
-set(PELELMEX_CASE            FlameSheet CACHE STRING "Case folder")
-
-#
 # Physics options
-#
-option(PELELMEX_USE_EB        "Enable Embedded Boundary"     OFF)
-option(PELELMEX_USE_EFIELD    "Enable Electric field module" OFF)
-option(PELELMEX_USE_PARTICLES "Enable Spray module"          OFF)
-option(PELELMEX_USE_SOOT      "Enable Soot module"           OFF)
+option(PELELMEX_ENABLE_EB "Enable Embedded Boundary" OFF)
+option(PELELMEX_ENABLE_EFIELD "Enable Electric field module" OFF)
+option(PELELMEX_ENABLE_SOOT "Enable Soot module" OFF)
+option(PELELMEX_ENABLE_PARTICLES "Enable particles" OFF)
 
-#
-# Misc options
-#
-option(PELELMEX_ENABLE_HYPRE        "Enable Offload to Hypre"    OFF)
-option(PELELMEX_ENABLE_TINY_PROFILE "Enable AMReX tiny profiler" OFF)
-option(PELELMEX_ENABLE_HDF5         "Enable HDF5 PlotFiles"      OFF)
-
-#
 # HPC options
-#
-option(PELELMEX_MPI    "Enable MPI"    OFF)
-option(PELELMEX_OPENMP "Enable OpenMP" OFF)
-option(PELELMEX_CUDA   "Enable CUDA"   OFF)
-option(PELELMEX_HIP    "Enable HIP"    OFF)
-option(PELELMEX_SYCL   "Enable SyCL"   OFF)
+option(PELELMEX_ENABLE_MPI "Enable MPI" OFF)
+option(PELELMEX_ENABLE_OPENMP "Enable OpenMP" OFF)
+option(PELELMEX_ENABLE_CUDA "Enable CUDA" OFF)
+option(PELELMEX_ENABLE_HIP "Enable HIP" OFF)
+option(PELELMEX_ENABLE_SYCL "Enable SyCL" OFF)
 
 # C++ Options
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-#
-# Setup Languages
-#
-if (PELELMEX_CUDA)
-   enable_language(CUDA)
-endif ()
-if (PELELMEX_HIP)
+if(PELELMEX_ENABLE_CUDA)
+  enable_language(CUDA)
+  if(CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "10.0")
+    message(FATAL_ERROR "Your nvcc version is ${CMAKE_CUDA_COMPILER_VERSION} which is unsupported."
+      "Please use CUDA toolkit version 10.0 or newer.")
+  endif()
+  if(PELELMEX_ENABLE_MASA)
+    message(FATAL_ERROR "MASA enabled with CUDA is unsupported.")
+  endif()
+  if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
+    set(CMAKE_CUDA_ARCHITECTURES 70)
+  endif()
+endif()
+
+if(PELELMEX_ENABLE_HIP)
    enable_language(HIP)
 endif ()
 
-# Checks
 if(PELELMEX_DIM EQUAL 1)
     message(FATAL_ERROR "PeleLMeX does not support 1D.")
 endif()
 
-#
-# Cases
-#
-set(PELELMEX_EXEC_SUBDIRS Exec/RegTests Exec/Cases)
-list(TRANSFORM PELELMEX_EXEC_SUBDIRS PREPEND "${CMAKE_CURRENT_LIST_DIR}/")
-set(EXEC_DIR "")
-foreach(subdir ${PELELMEX_EXEC_SUBDIRS})
-    FILE(GLOB caselist ${subdir}/*)
-    foreach(case ${caselist})
-        if(IS_DIRECTORY ${case})
-            get_filename_component( case_dir ${case} NAME)
-            LIST(APPEND PELELMEX_CASE_LIST ${case_dir})
-            if( ${PELELMEX_CASE} STREQUAL ${case_dir})
-                set(EXEC_DIR ${case})
-            endif()
-        endif()
-    endforeach()
-endforeach()
-if (NOT EXEC_DIR)
-    message(FATAL_ERROR "PELELMEX_CASE=${PELELMEX_CASE} is not a valid case !")
-endif()
-
-########################### PeleLMeX ##################################
-add_executable(pelelmex "")
-set_target_properties(pelelmex PROPERTIES OUTPUT_NAME "PeleLMeX${PELELMEX_DIM}d.exe")
-
-set(SRC_DIR ${CMAKE_SOURCE_DIR}/Source)
-add_subdirectory(${SRC_DIR})
-add_subdirectory(${EXEC_DIR})
-set(PELEPHYSICS_LIB PelePhysics-${PELELMEX_CHEMISTRY_MODEL}-${PELELMEX_EOS_MODEL}-${PELELMEX_TRANSPORT_MODEL})
-include(SetRpath)
-
-if ( NOT CMAKE_CXX_FLAGS )
-  target_link_libraries(pelelmex PUBLIC AMReX::Flags_CXX)
-endif ()
-
 ########################### AMReX #####################################
-
 message(STATUS "AMReX Configure Section")
 set(AMREX_SUBMOD_LOCATION "${CMAKE_SOURCE_DIR}/Submodules/amrex")
-include(SetAMReXOptions)
+include(SetAmrexOptions)
 list(APPEND CMAKE_MODULE_PATH "${AMREX_SUBMOD_LOCATION}/Tools/CMake")
 add_subdirectory(${AMREX_SUBMOD_LOCATION})
-include(AMReXBuildInfo)
-generate_buildinfo(pelelmex ${CMAKE_SOURCE_DIR})
-target_include_directories(pelelmex SYSTEM PUBLIC ${AMREX_SUBMOD_LOCATION}/Tools/C_scripts)
-# NOTE: the amrex lib link is already provided through PelePhysics dependence on amrex.
+include(SetAmrexCompileFlags)
 
 ########################### AMReX-Hydro ###############################
-
 message(STATUS "AMReX-Hydro Configure Section")
 set(AMREX_HYDRO_SUBMOD_LOCATION "${CMAKE_SOURCE_DIR}/Submodules/AMReX-Hydro")
 include(SetAmrexHydroOptions)
 add_subdirectory(${AMREX_HYDRO_SUBMOD_LOCATION})
-target_link_libraries(pelelmex
-    PUBLIC
-        amrex_hydro)
 
 ########################### SUNDIALS ##################################
-
 message(STATUS "Sundials Configure Section")
 set(SUNDIALS_SUBMOD_LOCATION "${CMAKE_SOURCE_DIR}/Submodules/sundials")
 include(SetSundialsOptions)
+#BUILD_TESTING is an old CMake keyword so don't clear it in sundials configure
+set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 add_subdirectory(${SUNDIALS_SUBMOD_LOCATION})
-target_link_libraries(pelelmex
-    PUBLIC
-        SUNDIALS::cvode
-        SUNDIALS::arkode)
-if (PELELMEX_CUDA)
-    target_link_libraries(pelelmex
-        PUBLIC
-            SUNDIALS::nveccuda
-            SUNDIALS::sunlinsolcusolversp
-            SUNDIALS::sunmatrixcusparse)
-endif ()
 
-########################### PelePhysics ###############################
+########################### PeleLMeX ##################################
+if(PELELMEX_ENABLE_MPI)
+  message(STATUS "MPI Configure Section")
+  find_package(MPI REQUIRED CXX)
+endif()
 
-message(STATUS "PelePhysics Configure Section")
-set(PELE_PHYSICS_SUBMOD_LOCATION "${CMAKE_SOURCE_DIR}/Submodules/PelePhysics")
-include(SetPelePhysicsOptions)
-add_subdirectory(${PELE_PHYSICS_SUBMOD_LOCATION})
-target_link_libraries(pelelmex
-    PUBLIC
-        ${PELEPHYSICS_LIB})
+# General information about machine, compiler, and build type
+message(STATUS "PeleLMeX Information:")
+message(STATUS "CMAKE_SYSTEM_NAME = ${CMAKE_SYSTEM_NAME}")
+message(STATUS "CMAKE_CXX_COMPILER_ID = ${CMAKE_CXX_COMPILER_ID}")
+message(STATUS "CMAKE_CXX_COMPILER_VERSION = ${CMAKE_CXX_COMPILER_VERSION}")
+message(STATUS "CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE}")
 
-if (PELELMEX_CUDA)
-    setup_target_for_cuda_compilation(pelelmex)
-    target_compile_features(pelelmex PUBLIC cuda_std_17)
-    set_target_properties(pelelmex PROPERTIES
-        CUDA_EXTENSIONS OFF
-        CUDA_STANDARD_REQUIRED ON
-    )
-endif ()
+message(STATUS "PELELMEX_PRECISION = ${PELELMEX_PRECISION}")
+if("${PELELMEX_PRECISION}" STREQUAL "SINGLE" AND PELELMEX_ENABLE_MASA)
+  message(FATAL_ERROR "Single precision currently not allowed in AMReX with MASA enabled")
+endif()
 
-########################### Summary ##################################
-include(AMReXGenexHelpers)
-include(AMReXTargetHelpers)
+init_code_checks()
 
-get_target_properties_flattened(pelelmex  _includes _defines _flags _link_line)
-set(_lang CXX)
-set(_prop _includes _defines _flags _link_line)
+include(SetRpath)
 
-# Loop over all combinations of language and property and extract
-# what you need
-foreach( _p IN LISTS _prop )
-   foreach( _l IN LISTS _lang )
+add_subdirectory(Exec)
 
-      string(TOLOWER ${_l} _ll) # Lower case language name
-
-      # _${_ll}${_p} is a variable named as _lang_property,
-      # both lower case.
-      set(_${_ll}${_p} "${${_p}}")
-      eval_genex( _${_ll}${_p} ${_l} ${CMAKE_${_l}_COMPILER_ID}
-         COMP_VERSION ${CMAKE_${_l}_COMPILER_VERSION}
-         CONFIG       ${CMAKE_BUILD_TYPE}
-         INTERFACE    BUILD)
-
-      if (_${_ll}${_p})
-
-         list(REMOVE_DUPLICATES _${_ll}${_p})
-
-         if ("${_p}" STREQUAL "_defines")
-            string(REPLACE ";" " -D" _${_ll}${_p} "-D${_${_ll}${_p}}")
-         elseif ("${_p}" STREQUAL "_includes")
-            string(REPLACE ";" " -I" _${_ll}${_p} "-I${_${_ll}${_p}}")
-         else()
-            string(REPLACE ";" " " _${_ll}${_p} "${_${_ll}${_p}}")
-         endif ()
-
-      endif ()
-
-   endforeach()
-endforeach ()
-
-string ( TOUPPER "${CMAKE_BUILD_TYPE}"  AMREX_BUILD_TYPE )
-set(_cxx_flags "${CMAKE_CXX_FLAGS_${AMREX_BUILD_TYPE}} ${CMAKE_CXX_FLAGS} ${_cxx_flags}")
-message( STATUS "   C++ flags                = ${_cxx_flags}")
-message( STATUS "   Link line                = ${_cxx_link_line}")
-message( STATUS "   C++ include paths        = ${_cxx_includes}")
+enable_testing()
+include(CTest)
+add_subdirectory(Tests)

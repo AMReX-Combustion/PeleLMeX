@@ -1,0 +1,41 @@
+# AMReX
+DIM = 2
+COMP = clang
+PRECISION = DOUBLE
+USE_EB = TRUE
+USE_HYPRE = FALSE
+
+# Profiling
+PROFILE = FALSE
+TINY_PROFILE = FALSE
+COMM_PROFILE = FALSE
+TRACE_PROFILE = FALSE
+MEM_PROFILE = FALSE
+USE_GPROF = FALSE
+
+# Performance
+USE_MPI = TRUE
+USE_OMP = FALSE
+USE_CUDA = FALSE
+USE_HIP = FALSE
+USE_SYCL = FALSE
+
+# Debugging
+DEBUG = FALSE
+FSANITIZER = FALSE
+THREAD_SANITIZER = FALSE
+
+# PeleLMeX
+USE_EFIELD = FALSE
+
+# PeleMP
+USE_PARTICLES = TRUE
+SPRAY_FUEL_NUM = 1
+
+# PelePhysics
+Chemistry_Model = heptane_fc
+Eos_Model = Fuego
+Transport_Model = Simple
+
+PELELMEX_HOME ?= ../../..
+include $(PELELMEX_HOME)/Exec/Make.PeleLMeX

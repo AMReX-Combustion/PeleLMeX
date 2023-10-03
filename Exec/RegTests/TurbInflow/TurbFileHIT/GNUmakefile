@@ -8,7 +8,6 @@ EBASE = PeleTurb
 DIM             = 3
 DEBUG           = FALSE
 PRECISION       = DOUBLE
-VERBOSE         = FALSE
 TINY_PROFILE    = FALSE
 
 # Compilation

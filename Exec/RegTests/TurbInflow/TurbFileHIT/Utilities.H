@@ -1,8 +1,7 @@
-#ifndef _UTILITIES_H_
-#define _UTILITIES_H_
+#ifndef _UTILITIES_H
+#define _UTILITIES_H
 
 #include <AMReX_FArrayBox.H>
-
 
 AMREX_FORCE_INLINE
 std::string
@@ -69,6 +68,5 @@ locate(const amrex::Real* xtable, const int n, const amrex::Real& x, int& idxlo)
     }
   }
 }
-
 
 #endif

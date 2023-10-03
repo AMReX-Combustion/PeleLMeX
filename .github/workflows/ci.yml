@@ -1,0 +1,675 @@
+name: PeleLMeX-CI
+
+on:
+  push:
+    branches: [development]
+  pull_request:
+    branches: [development]
+
+concurrency:
+  group: ${{github.ref}}-${{github.head_ref}}-ci
+  cancel-in-progress: true
+
+jobs:
+  Formatting:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Clone
+      uses: actions/checkout@v3
+    - name: Check formatting
+      uses: DoozyX/clang-format-lint-action@v0.16.2
+      with:
+        source: './Source ./Exec'
+        exclude: '.'
+        extensions: 'H,h,cpp'
+        clangFormatVersion: 16
+  CPU-GNUmake:
+    needs: Formatting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone
+        uses: actions/checkout@v3
+        with:
+          submodules: true
+      - name: Setup
+        working-directory: ./Exec/RegTests/FlameSheet
+        run: |
+          echo "NPROCS=$(nproc)" >> $GITHUB_ENV
+          echo "CCACHE_COMPRESS=1" >> $GITHUB_ENV
+          echo "CCACHE_COMPRESSLEVEL=5" >> $GITHUB_ENV
+          echo "CCACHE_LOGFILE=${{github.workspace}}/ccache.log.txt" >> $GITHUB_ENV
+          echo "CCACHE_MAXSIZE=1G" >> $GITHUB_ENV
+          #printf "CC=gcc-10\nCXX=g++-10\nFC=gfortran-10\nF90=gfortran-10" \
+          # >> ${{github.workspace}}/Submodules/amrex/Tools/GNUMake/Make.local
+          make COMP=gnu USE_MPI=FALSE DEBUG=TRUE TPL
+          make COMP=llvm USE_MPI=FALSE DEBUG=TRUE PRECISION=FLOAT TPL
+      - name: Install Ccache
+        run: |
+          wget https://github.com/ccache/ccache/releases/download/v4.8/ccache-4.8-linux-x86_64.tar.xz
+          tar xvf ccache-4.8-linux-x86_64.tar.xz
+          sudo cp -f ccache-4.8-linux-x86_64/ccache /usr/local/bin/
+      - name: Set Up Ccache
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/ccache
+          key: ccache-${{github.workflow}}-${{github.job}}-git-${{github.sha}}
+          restore-keys: |
+               ccache-${{github.workflow}}-${{github.job}}-git-
+      - name: FlameSheet debug make
+        working-directory: ./Exec/RegTests/FlameSheet
+        run: |
+          echo "::add-matcher::.github/problem-matchers/gcc.json"
+          set -eu -o pipefail
+          ccache -z
+          make -j ${{env.NPROCS}} DIM=2 KEEP_BUILDINFO_CPP=TRUE USE_CCACHE=TRUE COMP=gnu USE_MPI=FALSE DEBUG=TRUE 2>&1 | tee -a build-output.txt
+      - name: FlameSheet ccache report
+        working-directory: ./Exec/RegTests/FlameSheet
+        run: |
+          ccache -s
+          du -hs ${HOME}/.cache/ccache
+      - name: FlameSheet debug test
+        working-directory: ./Exec/RegTests/FlameSheet
+        run: ./PeleLMeX2d.gnu.DEBUG.ex flamesheet-drm19-2d.inp amr.max_step=1 amr.plot_int=-1 amr.check_int=-1
+      - name: FlameSheet debug report
+        working-directory: ./Exec/RegTests/FlameSheet
+        run: |
+          egrep "warning:|error:" build-output.txt \
+            | egrep -v "Submodules/amrex|Submodules/sundials|Submodules/AMReX-Hydro|GNUmakefile" \
+            | egrep -v "ld: warning:" | sort | uniq \
+            | awk 'BEGIN{i=0}{print $0}{i++}END{print "Warnings: "i}' > warnings.txt
+          cat warnings.txt
+          export return=$(tail -n 1 warnings.txt | awk '{print $2}')
+          exit ${return}
+      #- name: EB debug build
+      #  working-directory: ./Exec/RegTests/EB-C10
+      #  run: |
+      #    echo "::add-matcher::.github/problem-matchers/gcc.json"
+      #    set -eu -o pipefail
+      #    ccache -z
+      #    make -j ${{env.NPROCS}} KEEP_BUILDINFO_CPP=TRUE USE_CCACHE=TRUE COMP=gnu USE_MPI=FALSE DEBUG=TRUE 2>&1 | tee -a build-output.txt
+      #- name: EB debug ccache report
+      #  working-directory: ./Exec/RegTests/EB-C10
+      #  run: |
+      #    ccache -s
+      #    du -hs ${HOME}/.cache/ccache
+      #- name: EB debug test
+      #  working-directory: ./Exec/RegTests/EB-C10
+      #  run: ./PeleLMeX3d.gnu.DEBUG.ex eb-c10.inp max_step=2 amr.plot_files_output=0 amr.checkpoint_files_output=0
+      #- name: EB debug report
+      #  working-directory: ./Exec/RegTests/EB-C10
+      #  run: |
+      #    egrep "warning:|error:" build-output.txt \
+      #      | egrep -v "Submodules/amrex|Submodules/sundials|Submodules/AMReX-Hydro|GNUmakefile" \
+      #      | egrep -v "ld: warning:" | sort | uniq \
+      #      | awk 'BEGIN{i=0}{print $0}{i++}END{print "Warnings: "i}' > warnings.txt
+      #    cat warnings.txt
+      #    export return=$(tail -n 1 warnings.txt | awk '{print $2}')
+      #    exit ${return}
+      #- name: TG debug single precision build
+      #  working-directory: ./Exec/RegTests/TG
+      #  run: |
+      #    echo "::add-matcher::.github/problem-matchers/gcc.json"
+      #    set -eu -o pipefail
+      #    ccache -z
+      #    make -j ${{env.NPROCS}} KEEP_BUILDINFO_CPP=TRUE USE_CCACHE=TRUE COMP=llvm USE_MPI=FALSE DEBUG=TRUE PRECISION=FLOAT 2>&1 | tee -a build-output.txt
+      #- name: TG debug single precision ccache report
+      #  working-directory: ./Exec/RegTests/TG
+      #  run: |
+      #    ccache -s
+      #    du -hs ${HOME}/.cache/ccache
+      #- name: TG debug single precision test
+      #  working-directory: ./Exec/RegTests/TG
+      #  run: ./PeleLMeX3d.llvm.FLOAT.DEBUG.ex tg-2.inp max_step=2 amr.plot_files_output=0 amr.checkpoint_files_output=0
+      #- name: TG debug single precision report
+      #  working-directory: ./Exec/RegTests/TG
+      #  run: |
+      #    egrep "warning:|error:" build-output.txt \
+      #      | egrep -v "Submodules/amrex|Submodules/sundials|Submodules/AMReX-Hydro|GNUmakefile" \
+      #      | egrep -v "ld: warning:" | sort | uniq \
+      #      | awk 'BEGIN{i=0}{print $0}{i++}END{print "Warnings: "i}' > warnings.txt
+      #    cat warnings.txt
+      #    export return=$(tail -n 1 warnings.txt | awk '{print $2}')
+      #    exit ${return}
+      #- name: Soot debug build
+      #  working-directory: ./Exec/RegTests/Soot-Flame
+      #  run: |
+      #    echo "::add-matcher::.github/problem-matchers/gcc.json"
+      #    set -eu -o pipefail
+      #    ccache -z
+      #    make -j ${{env.NPROCS}} KEEP_BUILDINFO_CPP=TRUE USE_CCACHE=TRUE COMP=gnu USE_MPI=FALSE DEBUG=TRUE 2>&1 | tee -a build-output.txt
+      #- name: Soot debug ccache report
+      #  working-directory: ./Exec/RegTests/Soot-Flame
+      #  run: |
+      #    ccache -s
+      #    du -hs ${HOME}/.cache/ccache
+      #- name: Soot debug report
+      #  working-directory: ./Exec/RegTests/Soot-Flame
+      #  run: |
+      #    egrep "warning:|error:" build-output.txt \
+      #      | egrep -v "Submodules/amrex|Submodules/sundials|GNUmakefile|Submodules/PeleMP|Submodules/AMReX-Hydro" \
+      #      | egrep -v "Submodules/PelePhysics/Support/Mechanism/Models" | sort | uniq \
+      #      | awk 'BEGIN{i=0}{print $0}{i++}END{print "Warnings: "i}' > warnings.txt
+      #    cat warnings.txt
+      #    export return=$(tail -n 1 warnings.txt | awk '{print $2}')
+      #    exit ${return}
+      #- name: Spray debug build
+      #  working-directory: ./Exec/RegTests/Spray-Conv
+      #  run: |
+      #    echo "::add-matcher::.github/problem-matchers/gcc.json"
+      #    set -eu -o pipefail
+      #    ccache -z
+      #    make -j ${{env.NPROCS}} KEEP_BUILDINFO_CPP=TRUE USE_CCACHE=TRUE COMP=gnu USE_MPI=FALSE DEBUG=TRUE 2>&1 | tee -a build-output.txt
+      #- name: Spray debug ccache report
+      #  working-directory: ./Exec/RegTests/Soot-Flame
+      #  run: |
+      #    ccache -s
+      #    du -hs ${HOME}/.cache/ccache
+      #- name: Spray debug report
+      #  working-directory: ./Exec/RegTests/Spray-Conv
+      #  run: |
+      #    egrep "warning:|error:" build-output.txt \
+      #      | egrep -v "Submodules/amrex|Submodules/sundials|GNUmakefile|Submodules/PeleMP|Submodules/AMReX-Hydro" \
+      #      | egrep -v "Submodules/PelePhysics/Support/Mechanism/Models" | sort | uniq \
+      #      | awk 'BEGIN{i=0}{print $0}{i++}END{print "Warnings: "i}' > warnings.txt
+      #    cat warnings.txt
+      #    export return=$(tail -n 1 warnings.txt | awk '{print $2}')
+      #    exit ${return}
+  CPU-CMake:
+    needs: Formatting
+    runs-on: ${{matrix.os}}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        build_type: [Release, Debug]
+        include:
+          - os: macos-latest
+            install_deps: brew install mpich automake ccache
+            comp: llvm
+            procs: $(sysctl -n hw.ncpu)
+            ccache_cache: /Users/runner/Library/Caches/ccache
+          - os: ubuntu-latest
+            install_deps: sudo apt-get update && sudo apt-get install mpich libmpich-dev
+            comp: gnu
+            procs: $(nproc)
+            ccache_cache: ~/.cache/ccache
+          - build_type: Release
+            ctest_args: -LE no-ci
+          - build_type: Debug
+            ctest_args: -R eb-c12
+        exclude:
+          - os: macos-latest
+            build_type: Debug
+    steps:
+      - name: Clone
+        uses: actions/checkout@v3
+        with:
+          submodules: true
+      - name: Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+      - name: Setup
+        run: |
+          echo "NPROCS=${{matrix.procs}}" >> $GITHUB_ENV
+          echo "CCACHE_COMPRESS=1" >> $GITHUB_ENV
+          echo "CCACHE_COMPRESSLEVEL=5" >> $GITHUB_ENV
+          echo "CCACHE_LOGFILE=${{github.workspace}}/ccache.log.txt" >> $GITHUB_ENV
+          echo "CCACHE_MAXSIZE=1G" >> $GITHUB_ENV
+          cmake -E make_directory ${{runner.workspace}}/deps
+      - name: Dependencies
+        run: |
+          # Install MPI
+          ${{matrix.install_deps}}
+          # Install Python packages
+          python -m pip install --upgrade pip
+          pip install nose numpy pandas
+      - name: Install Ccache
+        run: |
+          if [ "${RUNNER_OS}" != "macOS" ]; then
+            wget https://github.com/ccache/ccache/releases/download/v4.8/ccache-4.8-linux-x86_64.tar.xz
+            tar xvf ccache-4.8-linux-x86_64.tar.xz
+            sudo cp -f ccache-4.8-linux-x86_64/ccache /usr/local/bin/
+          fi
+      - name: Set Up Ccache
+        uses: actions/cache@v3
+        with:
+          path: ${{matrix.ccache_cache}}
+          key: ccache-${{github.workflow}}-${{github.job}}-${{matrix.os}}-${{matrix.build_type}}-git-${{github.sha}}
+          restore-keys: |
+               ccache-${{github.workflow}}-${{github.job}}-${{matrix.os}}-${{matrix.build_type}}-git-
+      - name: MASA
+        run: |
+          # Install MetaPhysicL
+          cd ${{runner.workspace}}/deps
+          git clone --recursive https://github.com/roystgnr/MetaPhysicL.git ${{runner.workspace}}/deps/MetaPhysicL
+          cd ${{runner.workspace}}/deps/MetaPhysicL
+          ./bootstrap
+          ./configure --prefix="${{runner.workspace}}/deps/install/MetaPhysicL"
+          make -j ${{env.NPROCS}}
+          make install
+          # Install MASA
+          cd ${{runner.workspace}}/deps
+          git clone --recursive https://github.com/manufactured-solutions/MASA.git ${{runner.workspace}}/deps/MASA
+          cd ${{runner.workspace}}/deps/MASA
+          ./bootstrap
+          ./configure CXX='mpicxx -std=c++11' CC=mpicc \
+            METAPHYSICL_DIR="${{runner.workspace}}/deps/install/MetaPhysicL" \
+            --prefix="${{runner.workspace}}/deps/install/MASA"
+          make -j ${{env.NPROCS}}
+          make install
+      - name: Configure
+        run: |
+          (for DIM in 2 3; do \
+            printf "\n-------- Configuring ${DIM}D --------\n"; \
+            cmake -B${{runner.workspace}}/build-${DIM}d-${{matrix.os}}-${{matrix.build_type}} \
+            -DCMAKE_INSTALL_PREFIX:PATH=${{runner.workspace}}/install-${DIM}d-${{matrix.os}}-${{matrix.build_type}} \
+            -DCMAKE_BUILD_TYPE:STRING=${{matrix.build_type}} \
+            -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
+            -DPELELMEX_DIM:STRING=${DIM} \
+            -DPELELMEX_ENABLE_MPI:BOOL=ON \
+            -DPELELMEX_ENABLE_FCOMPARE_FOR_TESTS:BOOL=OFF \
+            -DPELELMEX_ENABLE_MASA:BOOL=OFF \
+            -DMASA_ROOT:PATH=${{runner.workspace}}/deps/install/MASA \
+            -DCMAKE_CXX_COMPILER_LAUNCHER:STRING=ccache \
+            ${{github.workspace}}; \
+            if [ $? -ne 0 ]; then exit 1; fi \
+          done)
+      - name: Build
+        run: |
+          ccache -z
+          (for DIM in 2 3; do \
+            printf "\n-------- Building ${DIM}D --------\n"; \
+            cmake --build ${{runner.workspace}}/build-${DIM}d-${{matrix.os}}-${{matrix.build_type}} \
+              --parallel ${{env.NPROCS}} 2>&1 | tee -a ${{runner.workspace}}/build-output.txt; \
+            if [ ${PIPESTATUS[0]} -ne 0 ]; then exit 1; fi \
+          done)
+      - name: Ccache Report
+        run: |
+          ccache -s
+          if [ "${RUNNER_OS}" != "macOS" ]; then
+            du -hs ${HOME}/.cache/ccache
+          fi
+      - name: Report
+        run: |
+          echo "::add-matcher::.github/problem-matchers/gcc.json"
+          egrep "warning:|error:" ${{runner.workspace}}/build-output.txt \
+            | egrep -v "Submodules/amrex|Submodules/sundials|Submodules/AMReX-Hydro" \
+            | egrep -v "ld: warning:" | egrep -v "lto-wrapper: warning:" | sort | uniq \
+            | awk 'BEGIN{i=0}{print $0}{i++}END{print "Warnings: "i}' > ${{runner.workspace}}/build-output-warnings.txt
+          cat ${{runner.workspace}}/build-output-warnings.txt
+          export return=$(tail -n 1 ${{runner.workspace}}/build-output-warnings.txt | awk '{print $2}')
+          exit ${return}
+      - name: Test
+        run: |
+          (for DIM in 2 3; do \
+            printf "\n-------- Testing ${DIM}D --------\n"; \
+            cd ${{runner.workspace}}/build-${DIM}d-${{matrix.os}}-${{matrix.build_type}}; \
+            ctest -j ${{env.NPROCS}} ${{matrix.ctest_args}} --output-on-failure; \
+            if [ $? -ne 0 ]; then exit 1; fi \
+          done)
+  GPU-Nvidia:
+    name: GPU-CUDA
+    needs: [Formatting, CPU-GNUmake]
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        cuda_ver: [11.4]
+        include:
+          - cuda_ver: "11.4"
+            cuda_pkg: 11-4
+    steps:
+      - name: Clone
+        uses: actions/checkout@v3
+        with:
+          submodules: true
+      - name: Setup
+        run: |
+          echo "NPROCS=$(nproc)" >> $GITHUB_ENV
+          echo "CCACHE_COMPRESS=1" >> $GITHUB_ENV
+          echo "CCACHE_COMPRESSLEVEL=5" >> $GITHUB_ENV
+          echo "CCACHE_LOGFILE=${{github.workspace}}/ccache.log.txt" >> $GITHUB_ENV
+          echo "CCACHE_MAXSIZE=1G" >> $GITHUB_ENV
+      - name: Dependencies
+        run: |
+          curl -O https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-keyring_1.0-1_all.deb
+          sudo dpkg -i cuda-keyring_1.0-1_all.deb
+          sudo apt-get update
+          sudo apt-get install -y \
+              cuda-command-line-tools-${{matrix.cuda_pkg}} \
+              cuda-compiler-${{matrix.cuda_pkg}} cuda-minimal-build-${{matrix.cuda_pkg}} \
+              cuda-nvml-dev-${{matrix.cuda_pkg}} cuda-nvtx-${{matrix.cuda_pkg}} \
+              libcurand-dev-${{matrix.cuda_pkg}} cuda-cupti-dev-${{matrix.cuda_pkg}} \
+              libcusolver-dev-${{matrix.cuda_pkg}} libcusparse-dev-${{matrix.cuda_pkg}} \
+              libcublas-dev-${{matrix.cuda_pkg}}
+      - name: Install Ccache
+        run: |
+          wget https://github.com/ccache/ccache/releases/download/v4.8/ccache-4.8-linux-x86_64.tar.xz
+          tar xvf ccache-4.8-linux-x86_64.tar.xz
+          sudo cp -f ccache-4.8-linux-x86_64/ccache /usr/local/bin/
+      - name: Set Up Ccache
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/ccache
+          key: ccache-${{github.workflow}}-${{github.job}}-git-${{github.sha}}
+          restore-keys: |
+               ccache-${{github.workflow}}-${{github.job}}-git-
+      - name: Configure
+        run: |
+          export PATH=/usr/local/nvidia/bin:/usr/local/cuda-${{matrix.cuda_ver}}/bin:${PATH}
+          export LD_LIBRARY_PATH=/usr/local/nvidia/lib:/usr/local/nvidia/lib64:/usr/local/cuda-${{matrix.cuda_ver}}/lib:${LD_LIBRARY_PATH}
+          cmake -Bbuild-${{matrix.cuda_pkg}} \
+            -DCMAKE_BUILD_TYPE:STRING=Release \
+            -DPELELMEX_ENABLE_MPI:BOOL=OFF \
+            -DPELELMEX_ENABLE_CUDA:BOOL=ON \
+            -DAMReX_CUDA_ERROR_CAPTURE_THIS:BOOL=ON \
+            -DCMAKE_CUDA_ARCHITECTURES:STRING=70 \
+            -DCMAKE_CUDA_COMPILER_LAUNCHER:STRING=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER:STRING=ccache \
+            ${{github.workspace}}
+      - name: Build
+        run: |
+          ccache -z
+          cmake --build build-${{matrix.cuda_pkg}} --parallel ${{env.NPROCS}}
+      - name: Ccache Report
+        run: |
+          ccache -s
+          du -hs ${HOME}/.cache/ccache
+  GPU-AMD:
+    name: GPU-HIP
+    needs: [Formatting, CPU-GNUmake]
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Clone
+        uses: actions/checkout@v3
+        with:
+          submodules: true
+      - name: Setup
+        run: |
+          echo "NPROCS=$(nproc)" >> $GITHUB_ENV
+          echo "CCACHE_COMPRESS=1" >> $GITHUB_ENV
+          echo "CCACHE_COMPRESSLEVEL=5" >> $GITHUB_ENV
+          echo "CCACHE_LOGFILE=${{github.workspace}}/ccache.log.txt" >> $GITHUB_ENV
+          echo "CCACHE_MAXSIZE=1G" >> $GITHUB_ENV
+      - name: Dependencies
+        run: |
+          curl -O https://repo.radeon.com/rocm/rocm.gpg.key
+          sudo apt-key add rocm.gpg.key
+          echo 'deb [arch=amd64] https://repo.radeon.com/rocm/apt/5.6.1 ubuntu main' \
+              | sudo tee /etc/apt/sources.list.d/rocm.list
+          echo 'export PATH=/opt/rocm/llvm/bin:/opt/rocm/bin:/opt/rocm/profiler/bin:/opt/rocm/opencl/bin:$PATH' \
+              | sudo tee -a /etc/profile.d/rocm.sh
+          sudo apt-get update
+          sudo apt-get install -y rocm-dev rocrand-dev rocprim-dev
+      - name: Install Ccache
+        run: |
+          wget https://github.com/ccache/ccache/releases/download/v4.8/ccache-4.8-linux-x86_64.tar.xz
+          tar xvf ccache-4.8-linux-x86_64.tar.xz
+          sudo cp -f ccache-4.8-linux-x86_64/ccache /usr/local/bin/
+      - name: Set Up Ccache
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/ccache
+          key: ccache-${{github.workflow}}-${{github.job}}-git-${{github.sha}}
+          restore-keys: |
+               ccache-${{github.workflow}}-${{github.job}}-git-
+      - name: Configure
+        run: |
+          source /etc/profile.d/rocm.sh
+          which clang
+          which clang++
+          which hipcc
+          cmake -B${{runner.workspace}}/build-hip \
+          -DCMAKE_BUILD_TYPE:STRING=Release \
+          -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
+          -DCMAKE_CXX_COMPILER:STRING=$(which clang++) \
+          -DCMAKE_C_COMPILER:STRING=$(which clang) \
+          -DPELELMEX_ENABLE_MPI:BOOL=OFF \
+          -DPELELMEX_ENABLE_HIP:BOOL=ON \
+          -DAMReX_AMD_ARCH:STRING=gfx90a \
+          -DCMAKE_HIP_ARCHITECTURES:STRING=gfx90a \
+          -DAMDGPU_TARGETS:STRING=gfx90a \
+          -DGPU_TARGETS:STRING=gfx90a \
+          -DAMReX_GPU_RDC:BOOL=OFF \
+          -DPELELMEX_ENABLE_FCOMPARE_FOR_TESTS:BOOL=OFF \
+          -DCMAKE_CXX_COMPILER_LAUNCHER:STRING=ccache \
+          ${{github.workspace}}
+      - name: Build
+        run: |
+          echo "::add-matcher::.github/problem-matchers/gcc.json"
+          source /etc/profile.d/rocm.sh
+          ccache -z
+          cmake --build ${{runner.workspace}}/build-hip --parallel ${{env.NPROCS}}
+      - name: Ccache Report
+        run: |
+          ccache -s
+          du -hs ${HOME}/.cache/ccache
+  GPU-Intel:
+    name: GPU-SYCL
+    needs: [Formatting, CPU-GNUmake]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone
+        uses: actions/checkout@v3
+        with:
+          submodules: true
+      - name: Setup
+        run: |
+          echo "NPROCS=$(nproc)" >> $GITHUB_ENV
+          echo "CCACHE_COMPRESS=1" >> $GITHUB_ENV
+          echo "CCACHE_COMPRESSLEVEL=5" >> $GITHUB_ENV
+          echo "CCACHE_LOGFILE=${{github.workspace}}/ccache.log.txt" >> $GITHUB_ENV
+          echo "CCACHE_MAXSIZE=1G" >> $GITHUB_ENV
+          echo "CCACHE_DEPEND=1" >> $GITHUB_ENV
+      - name: Dependencies
+        run: |
+          sudo wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
+          sudo apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
+          echo "deb https://apt.repos.intel.com/oneapi all main" \
+              | sudo tee /etc/apt/sources.list.d/oneAPI.list
+          sudo apt-get update
+          sudo apt-get install -y intel-oneapi-compiler-dpcpp-cpp intel-oneapi-mkl-devel
+      - name: Install Ccache
+        run: |
+          wget https://github.com/ccache/ccache/releases/download/v4.8/ccache-4.8-linux-x86_64.tar.xz
+          tar xvf ccache-4.8-linux-x86_64.tar.xz
+          sudo cp -f ccache-4.8-linux-x86_64/ccache /usr/local/bin/
+      - name: Set Up Ccache
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/ccache
+          key: ccache-${{github.workflow}}-${{github.job}}-git-${{github.sha}}
+          restore-keys: |
+               ccache-${{github.workflow}}-${{github.job}}-git-
+      - name: Configure
+        run: |
+          set +e
+          source /opt/intel/oneapi/setvars.sh
+          set -e
+          cmake -B${{runner.workspace}}/build-sycl \
+            -DCMAKE_BUILD_TYPE:STRING=Release \
+            -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
+            -DCMAKE_CXX_COMPILER:STRING=$(which icpx) \
+            -DCMAKE_C_COMPILER:STRING=$(which icx) \
+            -DCMAKE_CXX_FLAGS:STRING=-fsycl \
+            -DPELELMEX_ENABLE_MPI:BOOL=OFF \
+            -DPELELMEX_ENABLE_MASA:BOOL=OFF \
+            -DPELELMEX_ENABLE_FCOMPARE_FOR_TESTS:BOOL=OFF \
+            -DPELELMEX_ENABLE_SYCL:BOOL=ON \
+            -DCMAKE_CXX_COMPILER_LAUNCHER:STRING=ccache \
+            ${{github.workspace}}
+      - name: Build
+        run: |
+          set +e
+          source /opt/intel/oneapi/setvars.sh
+          set -e
+          ccache -z
+          cmake --build ${{runner.workspace}}/build-sycl --parallel ${{env.NPROCS}}
+      - name: Ccache Report
+        run: |
+          ccache -s
+          du -hs ${HOME}/.cache/ccache
+  Lint-cppcheck:
+    needs: Formatting
+    runs-on: macos-12
+    steps:
+      - name: Clone
+        uses: actions/checkout@v3
+        with:
+          submodules: true
+      - name: Dependencies
+        run: |
+          export HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=TRUE
+          wget https://raw.githubusercontent.com/Homebrew/homebrew-core/9b0e3d32f590458ae9e5dbf01943b39845b5315e/Formula/cppcheck.rb
+          brew install cppcheck.rb
+      - name: Configure
+        run: |
+          cmake -B${{runner.workspace}}/build-cppcheck \
+          -DPELELMEX_ENABLE_MPI:BOOL=OFF \
+          -DPELELMEX_ENABLE_FCOMPARE_FOR_TESTS:BOOL=OFF \
+          -DPELELMEX_ENABLE_MASA:BOOL=OFF \
+          -DPELELMEX_ENABLE_CPPCHECK:BOOL=ON \
+          ${{github.workspace}}
+      - name: Check
+        working-directory: ${{runner.workspace}}/build-cppcheck
+        run: make cppcheck
+      - name: Full report
+        working-directory: ${{runner.workspace}}/build-cppcheck/cppcheck
+        run: cat cppcheck-full-report.txt
+      - name: Short report
+        working-directory: ${{runner.workspace}}/build-cppcheck/cppcheck
+        run: |
+          echo "::add-matcher::.github/problem-matchers/cppcheck.json"
+          awk 'BEGIN{i=0}{print $0}{i++}END{print "Warnings: "i}' < cppcheck-report.txt > cppcheck-warnings.txt
+          cat cppcheck-warnings.txt
+          export return=$(tail -n 1 cppcheck-warnings.txt | awk '{print $2}')
+          exit ${return}
+  Lint-clang-tidy:
+    needs: Formatting
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        enableeb: [EB-OFF, EB-ON]
+        include:
+          - enableeb: EB-OFF
+            useeb: "OFF"
+          - enableeb: EB-ON
+            useeb: "ON"
+      fail-fast: false
+    steps:
+      - name: Clone
+        uses: actions/checkout@v3
+        with:
+          submodules: true
+      - name: Configure
+        run: |
+          echo "NPROCS=$(nproc)" >> $GITHUB_ENV
+          cmake -B${{runner.workspace}}/build-clang-tidy \
+          -DCMAKE_BUILD_TYPE:STRING=Debug \
+          -DCMAKE_CXX_COMPILER:STRING=clang++ \
+          -DCMAKE_C_COMPILER:STRING=clang \
+          -DPELELMEX_ENABLE_EB:BOOL=${{matrix.useeb}} \
+          -DPELELMEX_ENABLE_MPI:BOOL=OFF \
+          -DPELELMEX_ENABLE_FCOMPARE_FOR_TESTS:BOOL=OFF \
+          -DPELELMEX_ENABLE_MASA:BOOL=OFF \
+          -DPELELMEX_ENABLE_CLANG_TIDY:BOOL=ON \
+          ${{github.workspace}}
+      - name: Check
+        working-directory: ${{runner.workspace}}/build-clang-tidy
+        run: |
+          #set -eu -o pipefail
+          cmake --build . --parallel ${{env.NPROCS}} 2>&1 | tee -a clang-tidy-full-report.txt
+          egrep "warning:|error:" clang-tidy-full-report.txt \
+            | egrep -v "Submodules/amrex|Submodules/sundials|Submodules/AMReX-Hydro" \
+            | egrep -v "ld: warning:" | sort | uniq \
+            | awk 'BEGIN{i=0}{print $0}{i++}END{print "Warnings: "i}' > clang-tidy-warnings.txt
+      - name: Full report
+        working-directory: ${{runner.workspace}}/build-clang-tidy
+        run: cat clang-tidy-full-report.txt
+      - name: Short report
+        working-directory: ${{runner.workspace}}/build-clang-tidy
+        run: |
+          echo "::add-matcher::.github/problem-matchers/gcc.json"
+          cat clang-tidy-warnings.txt
+          export return=$(tail -n 1 clang-tidy-warnings.txt | awk '{print $2}')
+          exit ${return}
+  Lint-codeql:
+    needs: Formatting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone
+        uses: actions/checkout@v3
+        with:
+          submodules: true
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: cpp
+          queries: +security-and-quality
+          config-file: ./.github/codeql/codeql-config.yml
+      - name: Configure
+        run: |
+          echo "NPROCS=$(nproc)" >> $GITHUB_ENV
+          cmake -B${{runner.workspace}}/build-codeql \
+          -DCMAKE_BUILD_TYPE:STRING=Debug \
+          -DCMAKE_CXX_COMPILER:STRING=clang++ \
+          -DCMAKE_C_COMPILER:STRING=clang \
+          -DPELELMEX_ENABLE_MPI:BOOL=OFF \
+          -DPELELMEX_ENABLE_FCOMPARE_FOR_TESTS:BOOL=OFF \
+          -DPELELMEX_ENABLE_MASA:BOOL=OFF \
+          -DPELELMEX_ENABLE_CLANG_TIDY:BOOL=OFF \
+          ${{github.workspace}}
+      - name: Build
+        run: |
+          cmake --build ${{runner.workspace}}/build-codeql --parallel ${{env.NPROCS}}
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+        with:
+          category: "/language:cpp"
+          upload: False
+          output: sarif-results
+      - name: Filter CodeQL sarif
+        uses: advanced-security/filter-sarif@v1
+        with:
+          patterns: |
+            -**/Submodules/sundials/**
+            -**/Submodules/amrex/**
+            -**/Submodules/AMReX-Hydro/**
+          input: sarif-results/cpp.sarif
+          output: sarif-results/cpp.sarif
+      - name: Upload CodeQL sarif
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: sarif-results/cpp.sarif
+  Lint-codespell:
+    needs: Formatting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone
+        uses: actions/checkout@v3
+        with:
+          submodules: false
+      - name: Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Dependencies
+        run: |
+          # Install Python packages
+          python -m pip install --upgrade pip
+          pip install codespell
+      - name: Run codespell
+        run: codespell
+  Save-PR-Number:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Save PR number
+        env:
+          PR_NUMBER: ${{ github.event.number }}
+        run: |
+          echo $PR_NUMBER > pr_number.txt
+      - uses: actions/upload-artifact@v3
+        with:
+          name: pr_number
+          path: pr_number.txt
+          retention-days: 1

@@ -1,69 +1,91 @@
-#include <PeleLM.H>
+#include <PeleLMeX.H>
+
+// Defined and initialized when in gnumake, but not defined in cmake and
+// initialization done manually
+#ifndef AMREX_USE_SUNDIALS
+#include <AMReX_Sundials.H>
+#endif
 
 using namespace amrex;
 
-int main(int argc, char* argv[]) {
+int
+main(int argc, char* argv[])
+{
 
-   // check to see if it contains --describe
-   if (argc >= 2) {
-      for (auto i = 1; i < argc; i++) {
-         if (std::string(argv[i]) == "--describe") {
-            writeBuildInfo();
-            return 0;
-         }
+  // check to see if it contains --describe
+  if (argc >= 2) {
+    for (auto i = 1; i < argc; i++) {
+      if (std::string(argv[i]) == "--describe") {
+        writeBuildInfo();
+        return 0;
       }
-   }
+    }
+  }
 
-   // in AMReX.cpp
-   Initialize(argc, argv);
+  // in AMReX.cpp
+  Initialize(argc, argv);
 
-   // Refuse to continue if we did not provide an inputs file.
-   if (argc <= 1) {
-       Abort("Error: no inputs file provided on command line.");
-   }
+// Defined and initialized when in gnumake, but not defined in cmake and
+// initialization done manually
+#ifndef AMREX_USE_SUNDIALS
+  amrex::sundials::Initialize(amrex::OpenMP::get_max_threads());
+#endif
 
-   // timer for profiling
-   BL_PROFILE_VAR("PeleLM::main()", main);
+  // Refuse to continue if we did not provide an inputs file.
+  if (argc <= 1) {
+    Abort("Error: no inputs file provided on command line.");
+  }
 
-   // wallclock time
-   const Real strt_total = ParallelDescriptor::second();
+  // timer for profiling
+  BL_PROFILE_VAR("PeleLMeX::main()", main);
 
-   {
-       // declare an PeleLM object to manage multilevel data
-       PeleLM pelelm;
+  // wallclock time
+  const Real strt_total = ParallelDescriptor::second();
 
-       // Description Setup
-       pelelm.Setup();
+  {
+    // declare an PeleLMeX object to manage multilevel data
+    PeleLM pelelmex;
 
-       // Description Init
-       pelelm.Init();
+    // Description Setup
+    pelelmex.Setup();
 
-       // Switch between Evolve and UnitTest mode
-       if ( pelelm.runMode() == "normal" ) {
+    // Description Init
+    pelelmex.Init();
 
-          // Advance solution to final time
-          pelelm.Evolve();
+    // Switch between Evolve and UnitTest mode
+    if (pelelmex.runMode() == "normal") {
 
-       } else if ( pelelm.runMode() == "evaluate" ) {
+      // Advance solution to final time
+      pelelmex.Evolve();
 
-          //
-          pelelm.Evaluate();
+    } else if (pelelmex.runMode() == "evaluate") {
 
-       } else {
-          Abort(" Wrong peleLM.run_mode ! It can only be 'normal' (D) or 'evaluate'");
-       }
+      //
+      pelelmex.Evaluate();
 
-       // wallclock time
-       Real end_total = ParallelDescriptor::second() - strt_total;
+    } else {
+      Abort(
+        " Wrong peleLM.run_mode ! It can only be 'normal' (D) or 'evaluate'");
+    }
 
-       // print wallclock time
-       ParallelDescriptor::ReduceRealMax( end_total, ParallelDescriptor::IOProcessorNumber());
-       Print() << "\nTotal Time: " << end_total << '\n';
-   }
+    // wallclock time
+    Real end_total = ParallelDescriptor::second() - strt_total;
 
-   // destroy timer for profiling
-   BL_PROFILE_VAR_STOP(main);
+    // print wallclock time
+    ParallelDescriptor::ReduceRealMax(
+      end_total, ParallelDescriptor::IOProcessorNumber());
+    Print() << "\nTotal Time: " << end_total << '\n';
+  }
 
-   // in AMReX.cpp
-   Finalize();
+  // destroy timer for profiling
+  BL_PROFILE_VAR_STOP(main);
+
+// Defined and finalized when in gnumake, but not defined in cmake and
+// finalization done manually
+#ifndef AMREX_USE_SUNDIALS
+  amrex::sundials::Finalize();
+#endif
+
+  // in AMReX.cpp
+  Finalize();
 }

@@ -74,27 +74,27 @@ if __name__ == "__main__":
         currRunTime = procRunTime.communicate()[0].decode("utf-8").strip()
         runTimes.append(currRunTime)
         # Get component times: reaction, diffusion, MacProj, NodalProj, ScalAdv, VelAdv, Sync
-        cmd = "cat {}".format(logfile)+" | grep 'PeleLM::advance::reactions' | awk 'NR%2==0' | awk 'NR%2!=0' | awk '{print $4}'"
+        cmd = "cat {}".format(logfile)+" | grep 'PeleLMeX::advance::reactions' | awk 'NR%2==0' | awk 'NR%2!=0' | awk '{print $4}'"
         procRunTime = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE)
         currReactTime = procRunTime.communicate()[0].decode("utf-8").strip()
         reactionTimes.append(currReactTime)
-        cmd = "cat {}".format(logfile)+" | grep 'PeleLM::advance::diffusion' | awk 'NR%2==0' | awk 'NR%2!=0' | awk '{print $4}'"
+        cmd = "cat {}".format(logfile)+" | grep 'PeleLMeX::advance::diffusion' | awk 'NR%2==0' | awk 'NR%2!=0' | awk '{print $4}'"
         procRunTime = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE)
         currDiffTime = procRunTime.communicate()[0].decode("utf-8").strip()
         diffusionTimes.append(currDiffTime)
-        cmd = "cat {}".format(logfile)+" | grep 'PeleLM::advance::mac' | awk 'NR%2==0' | awk 'NR%2!=0' | awk '{print $4}'"
+        cmd = "cat {}".format(logfile)+" | grep 'PeleLMeX::advance::mac' | awk 'NR%2==0' | awk 'NR%2!=0' | awk '{print $4}'"
         procRunTime = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE)
         currMACTime = procRunTime.communicate()[0].decode("utf-8").strip()
         MacProjTimes.append(currMACTime)
-        cmd = "cat {}".format(logfile)+" | grep 'PeleLM::velocityProjection()' | awk 'NR%2==0' | awk 'NR%2!=0' | awk '{print $4}'"
+        cmd = "cat {}".format(logfile)+" | grep 'PeleLMeX::velocityProjection()' | awk 'NR%2==0' | awk 'NR%2!=0' | awk '{print $4}'"
         procRunTime = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE)
         currProjTime = procRunTime.communicate()[0].decode("utf-8").strip()
         NodalProjTimes.append(currProjTime)
-        cmd = "cat {}".format(logfile)+" | grep 'PeleLM::advance::scalars_adv' | awk 'NR%2==0' | awk 'NR%2!=0' | awk '{print $4}'"
+        cmd = "cat {}".format(logfile)+" | grep 'PeleLMeX::advance::scalars_adv' | awk 'NR%2==0' | awk 'NR%2!=0' | awk '{print $4}'"
         procRunTime = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE)
         currScalAdvTime = procRunTime.communicate()[0].decode("utf-8").strip()
         ScalAdvTimes.append(currScalAdvTime)
-        cmd = "cat {}".format(logfile)+" | grep 'PeleLM::advance::velocity' | awk 'NR%2==0' | awk 'NR%2!=0' | awk '{print $4}'"
+        cmd = "cat {}".format(logfile)+" | grep 'PeleLMeX::advance::velocity' | awk 'NR%2==0' | awk 'NR%2!=0' | awk '{print $4}'"
         procRunTime = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE)
         currVelAdvTime = procRunTime.communicate()[0].decode("utf-8").strip()
         VelAdvTimes.append(currVelAdvTime)

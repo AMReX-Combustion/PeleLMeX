@@ -1,0 +1,198 @@
+PELELMEX_HOME      ?= ../
+AMREX_HOME         ?= $(abspath $(lastword ${PELELMEX_HOME}/Submodules/amrex))
+PELE_PHYSICS_HOME  ?= $(abspath $(lastword ${PELELMEX_HOME}/Submodules/PelePhysics))
+AMREX_HYDRO_HOME   ?= $(abspath $(lastword ${PELELMEX_HOME}/Submodules/AMReX-Hydro))
+SUNDIALS_HOME      ?= $(abspath $(lastword ${PELELMEX_HOME}/Submodules/sundials))
+PELEMP_HOME        ?= $(abspath $(lastword ${PELELMEX_HOME}/Submodules/PeleMP))
+
+USE_SUNDIALS = TRUE
+BL_NO_FORT = TRUE
+
+# AMReX definitions
+include $(AMREX_HOME)/Tools/GNUMake/Make.defs
+
+EBASE := PeleLMeX
+
+ifeq ($(USE_EFIELD),TRUE)
+   USERSuffix += .EF
+endif
+
+all: $(executable)
+ifneq ($(KEEP_BUILDINFO_CPP),TRUE)
+	$(SILENT) $(RM) AMReX_buildInfo.cpp
+endif
+	@echo SUCCESS
+
+ifeq ($(USE_CUDA),TRUE)
+   CXXFLAGS += -Xptxas --disable-optimizer-constants -Xcompiler=-std=c++17
+endif
+
+CXXFLAGS += -std=c++17
+
+#---------------
+# PeleLM sources
+#---------------
+LMdirs := Source
+ifeq ($(USE_EFIELD),TRUE)
+   DEFINES += -DPELE_USE_EFIELD
+   LMdirs += Source/Efield Source/Efield/GMRES Source/Efield/LinOps
+endif
+ifeq ($(USE_PARTICLES), TRUE)
+   ifdef SPRAY_FUEL_NUM
+      # This tells PeleMP that PeleC is not being used
+      DEFINES += -DPELELM_USE_SPRAY
+      DEFINES += -DSPRAY_FUEL_NUM=$(SPRAY_FUEL_NUM)
+   endif
+endif
+ifeq ($(USE_SOOT), TRUE)
+   # Ensure the number of soot moments is correct
+   ifeq (,$(filter $(NUM_SOOT_MOMENTS),3 6))
+       $(error NUM_SOOT_MOMENTS must be 3 or 6)
+   endif
+   # This tells PeleMP that PeleC is not being used
+   DEFINES += -DPELELM_USE_SOOT
+   DEFINES += -DNUM_SOOT_MOMENTS=$(NUM_SOOT_MOMENTS)
+endif
+
+Bpack += $(foreach dir, $(LMdirs), $(PELELMEX_HOME)/$(dir)/Make.package)
+Blocs += $(foreach dir, $(LMdirs), $(PELELMEX_HOME)/$(dir))
+
+#---------------
+# PelePhysics sources
+#---------------
+# EOS models switches
+ifeq ($(Eos_Model),$(filter $(Eos_Model),GammaLaw))
+   DEFINES += -DUSE_GAMMALAW_EOS
+endif
+ifeq ($(Eos_Model),$(filter $(Eos_Model),Fuego))
+   DEFINES += -DUSE_FUEGO_EOS
+endif
+ifeq ($(Eos_Model),$(filter $(Eos_Model),Soave-Redlich-Kwong))
+   DEFINES += -DUSE_SRK_EOS
+endif
+
+# Transport model switches
+ifeq ($(Transport_Model), Simple)
+  DEFINES += -DUSE_SIMPLE_TRANSPORT
+endif
+ifeq ($(Transport_Model), EGLib)
+  DEFINES += -DEGLIB_TRANSPORT
+  USE_FUEGO = TRUE
+endif
+ifeq ($(Transport_Model), Constant)
+  DEFINES += -DUSE_CONSTANT_TRANSPORT
+endif
+ifeq ($(Transport_Model), Sutherland)
+  DEFINES += -DUSE_SUTHERLAND_TRANSPORT
+endif
+
+ifeq ($(PELE_USE_KLU), TRUE)
+  DEFINES += -DPELE_USE_KLU
+endif
+
+PELE_COMPILE_AJACOBIAN ?= TRUE
+
+ifeq ($(PELE_COMPILE_AJACOBIAN), TRUE)
+  DEFINES += -DPELE_COMPILE_AJACOBIAN
+endif
+
+ChemDir  = Support/Mechanism/Models/$(Chemistry_Model)
+
+PPdirs := Utility/PMF Utility/TurbInflow Utility/PltFileManager Utility/Diagnostics
+PPdirs += Source $(ChemDir) Reactions Eos Transport
+
+Bpack += $(foreach dir, $(PPdirs), $(PELE_PHYSICS_HOME)/$(dir)/Make.package)
+Blocs += $(foreach dir, $(PPdirs), $(PELE_PHYSICS_HOME)/$(dir))
+include $(PELE_PHYSICS_HOME)/ThirdParty/Make.ThirdParty
+
+#---------------
+# AMReX-Hydro sources
+#---------------
+Hdirs := Godunov MOL Utils Projections BDS
+ifeq ($(USE_EB), TRUE)
+    Hdirs += EBGodunov EBMOL
+endif
+Bpack += $(foreach dir, $(Hdirs), $(AMREX_HYDRO_HOME)/$(dir)/Make.package)
+Blocs += $(foreach dir, $(Hdirs), $(AMREX_HYDRO_HOME)/$(dir))
+
+#---------------
+# AMReX sources
+#---------------
+Pdirs := Base Boundary AmrCore LinearSolvers/MLMG
+ifeq ($(USE_EB), TRUE)
+    Pdirs += EB
+endif
+ifeq ($(USE_PARTICLES), TRUE)
+  Pdirs += Particle
+endif
+
+Bpack += $(foreach dir, $(Pdirs), $(AMREX_HOME)/Src/$(dir)/Make.package)
+
+#---------------
+# PeleMP sources
+#---------------
+ifeq ($(USE_PARTICLES), TRUE)
+   ifdef SPRAY_FUEL_NUM
+      MPdirs := PP_Spray PP_Spray/Distribution
+      Bpack += $(foreach dir, $(MPdirs), $(PELEMP_HOME)/Source/$(dir)/Make.package)
+      Blocs += $(foreach dir, $(MPdirs), $(PELEMP_HOME)/Source/$(dir))
+   endif
+endif
+ifeq ($(USE_SOOT), TRUE)
+   Bpack += $(PELEMP_HOME)/Source/Soot_Models/Make.package
+   Blocs += $(PELEMP_HOME)/Source/Soot_Models
+endif
+
+#---------------
+# Includes
+#---------------
+include $(Bpack)
+
+INCLUDE_LOCATIONS += $(Blocs)
+VPATH_LOCATIONS   += $(Blocs)
+
+#---------------
+# job_info support
+#---------------
+CEXE_sources += AMReX_buildInfo.cpp
+CEXE_headers += $(AMREX_HOME)/Tools/C_scripts/AMReX_buildInfo.H
+INCLUDE_LOCATIONS +=  $(AMREX_HOME)/Tools/C_scripts
+
+#---------------
+# Build
+#---------------
+AMReX_buildInfo.cpp:
+	$(AMREX_HOME)/Tools/C_scripts/makebuildinfo_C.py \
+      --amrex_home "$(AMREX_HOME)" \
+      --COMP "$(COMP)" --COMP_VERSION "$(COMP_VERSION)" \
+      --GIT "$(PELELMEX_HOME) $(AMREX_HOME) $(PELE_PHYSICS_HOME) $(AMREX_HYDRO_HOME) $(SUNDIALS_HOME)"
+
+#---------------
+# Rules
+#---------------
+include $(AMREX_HOME)/Tools/GNUMake/Make.rules
+
+# Force TPL as deps. of exec sources
+##$(objForExecs): TPL
+
+clean::
+	$(SILENT) $(RM) AMReX_buildInfo.cpp
+
+print-%::
+	@echo "$* is $($*)"
+	@$(RM) AMReX_buildInfo.cpp
+
+#---------------
+# TPL
+#---------------
+TPL:
+	@echo "==> Building SUNDIALS library"
+	@cd $(PELE_PHYSICS_HOME)/ThirdParty && $(MAKE) $(MAKEFLAGS) sundials SUNDIALS_HOME=$(SUNDIALS_HOME) AMREX_HOME=$(AMREX_HOME) USE_CUDA=$(USE_CUDA) USE_HIP=$(USE_HIP) USE_SYCL=$(USE_SYCL) PELE_USE_MAGMA=$(PELE_USE_MAGMA) PELE_USE_KLU=$(PELE_USE_KLU) DEBUG=$(DEBUG) COMP=$(HOSTCC) NVCC=$(COMP)
+
+TPLclean:
+	@echo "==> Removing SUNDIALS library"
+	cd $(PELE_PHYSICS_HOME)/ThirdParty; $(MAKE) $(MAKEFLAGS) SUNDIALS_HOME=$(SUNDIALS_HOME) AMREX_HOME=$(AMREX_HOME) USE_CUDA=$(USE_CUDA) USE_HIP=$(USE_HIP) USE_SYCL=$(USE_SYCL) PELE_USE_KLU=$(PELE_USE_KLU) PELE_USE_MAGMA=$(PELE_USE_MAGMA) DEBUG=$(DEBUG) COMP=$(HOSTCC) NVCC=$(COMP) clean
+
+TPLrealclean:
+	@echo "==> Removing SUNDIALS library"
+	cd $(PELE_PHYSICS_HOME)/ThirdParty; $(MAKE) $(MAKEFLAGS) SUNDIALS_HOME=$(SUNDIALS_HOME) AMREX_HOME=$(AMREX_HOME) USE_CUDA=$(USE_CUDA) USE_HIP=$(USE_HIP) USE_SYCL=$(USE_SYCL) PELE_USE_KLU=$(PELE_USE_KLU) PELE_USE_MAGMA=$(PELE_USE_MAGMA) DEBUG=$(DEBUG) COMP=$(HOSTCC) NVCC=$(COMP) realclean
