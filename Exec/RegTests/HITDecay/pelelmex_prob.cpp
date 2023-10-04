@@ -139,7 +139,7 @@ PeleLM::readProbParm() // NOLINT(readability-make-member-function-const)
 
   // Extract position and velocities
   amrex::Vector<amrex::Real> xinput(nx * ny * nz);
-  amrex::Vector<amrex::Real> uinput(nx * ny * nz)(nx * ny * nz);
+  amrex::Vector<amrex::Real> uinput(nx * ny * nz);
   amrex::Vector<amrex::Real> vinput(nx * ny * nz);
   amrex::Vector<amrex::Real> winput(nx * ny * nz);
   amrex::Vector<amrex::Real> xdiff(nx);
