@@ -604,7 +604,6 @@ PeleLM::addSoretTerm(
                 Ted_arr);
             });
 
-          // auto const& rhoY = rhoY_ed.const_array(0);
           auto const& T = T_ed.const_array(0);
           auto const& gradT_ar = gradT[lev][idim].const_array(mfi);
           auto const& beta_ar = beta_ec[idim].const_array(mfi);

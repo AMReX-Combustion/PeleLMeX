@@ -1002,11 +1002,6 @@ PeleLM::derivedSetup()
 #endif
 #endif
 #endif
-#ifdef PELELM_USE_SOOT
-  // if (do_soot_solve) {
-  //   addSootDerivePlotVars(derive_lst);
-  // }
-#endif
   auto it = m_derivePlotVars.begin();
   while (it != m_derivePlotVars.end()) {
     if (!derive_lst.canDerive(*it)) {
