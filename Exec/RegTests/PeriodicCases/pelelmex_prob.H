@@ -27,8 +27,7 @@ pelelmex_initdata(
   const amrex::Real* prob_lo = geomdata.ProbLo();
   const amrex::Real* dx = geomdata.CellSize();
   AMREX_D_TERM(const amrex::Real x = prob_lo[0] + (i + 0.5) * dx[0];
-               , const amrex::Real y = prob_lo[1] + (j + 0.5) * dx[1];,
-               );
+               , const amrex::Real y = prob_lo[1] + (j + 0.5) * dx[1];, );
   auto eos = pele::physics::PhysicsType::eos();
   constexpr amrex::Real Pi = 3.14159265358979323846264338327950288;
 
