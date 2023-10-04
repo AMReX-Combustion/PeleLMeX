@@ -181,11 +181,11 @@ PeleLM::readProbParm() // NOLINT(readability-make-member-function-const)
   local_prob_parm.d_winput =
     (amrex::Real*)amrex::The_Arena()->alloc(nx * ny * nz * sizeof(amrex::Real));
 
-  for (int i = 0; i < nx; i++) {
+  for (unsigned long i = 0; i < nx; i++) {
     local_prob_parm.d_xarray[i] = xarray[i];
     local_prob_parm.d_xdiff[i] = xdiff[i];
   }
-  for (int i = 0; i < nx * ny * nz; i++) {
+  for (unsigned long i = 0; i < nx * ny * nz; i++) {
     local_prob_parm.d_uinput[i] = uinput[i];
     local_prob_parm.d_vinput[i] = vinput[i];
     local_prob_parm.d_winput[i] = winput[i];
