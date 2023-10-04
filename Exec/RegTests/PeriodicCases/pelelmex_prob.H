@@ -25,19 +25,10 @@ pelelmex_initdata(
   pele::physics::PMF::PmfData::DataContainer const* /*pmf_data*/)
 {
   const amrex::Real* prob_lo = geomdata.ProbLo();
-  // const amrex::Real* prob_hi = geomdata.ProbHi();
   const amrex::Real* dx = geomdata.CellSize();
   AMREX_D_TERM(const amrex::Real x = prob_lo[0] + (i + 0.5) * dx[0];
                , const amrex::Real y = prob_lo[1] + (j + 0.5) * dx[1];,
-               /*const amrex::Real z = prob_lo[2] + (k + 0.5) * dx[2];*/);
-  /*
-    AMREX_D_TERM(const amrex::Real Lx = prob_hi[0] - prob_lo[0];
-                 , const amrex::Real Ly = prob_hi[1] - prob_lo[1];
-                 , const amrex::Real Lz = prob_hi[2] - prob_lo[2]);
-    AMREX_D_TERM(const amrex::Real x_c = prob_lo[0] + 0.5 * Lx;
-                 , const amrex::Real y_c = prob_lo[1] + 0.5 * Ly;
-                 , const amrex::Real z_c = prob_lo[2] + 0.5 * Lz);
-  */
+               );
   auto eos = pele::physics::PhysicsType::eos();
   constexpr amrex::Real Pi = 3.14159265358979323846264338327950288;
 
@@ -224,7 +215,6 @@ pelelmex_initdata(
     // constant diffusion coeff. gaussDiff. Use ampgauss to avoid
     // undershoot/overshoot of the 2-species mixture.
     const amrex::Real deltax = x - prob_parm.xgauss;
-    // const amrex::Real deltay = y - prob_parm.ygauss;
     amrex::Real denom_inv =
       prob_parm.ampgauss /
       std::sqrt(4 * Pi * prob_parm.gaussTime * prob_parm.gaussDiff);
