@@ -114,9 +114,9 @@ combustion models [@Perry:2022].
 PeleLMeX is intended for students, researchers and engineers interested in understanding complex combustion processes
 by performing high fidelity simulations. Although it can be used to study laminar flames, its distinctive features make it
 particularly attractive for studying the fine scale flame/turbulence interactions in combustion applications where AMR is necessary
-to tackle the large scale separation and the computational ressources available on the lastest heterogeneous exascale
+to tackle the large scale separation and the computational resources available on the latest heterogeneous exascale
 platform can be leveraged. In order to achieve energy, transport and industrial decarbonization, fuel-flexible combustion devices
-must be designed and deployed to accomodate hydrogen, amonia and a wide range of biofuels. In this context, PeleLMeX can prove a
+must be designed and deployed to accommodate hydrogen, ammonia and a wide range of biofuels. In this context, PeleLMeX can prove a
 valuable tool to study alternative fuels combustion characteristics, flame dynamics or pollutant formation mechanisms,
 both in academic idealized cases [@Howarth:2023] as well as in device scale simulations [@Appukuttan:2023].
 
