@@ -556,10 +556,29 @@ jobs:
             useeb: "ON"
       fail-fast: false
     steps:
+      - name: Setup
+        run: |
+          echo "NPROCS=$(nproc)" >> $GITHUB_ENV
+          echo "CCACHE_COMPRESS=1" >> $GITHUB_ENV
+          echo "CCACHE_COMPRESSLEVEL=5" >> $GITHUB_ENV
+          echo "CCACHE_LOGFILE=${{github.workspace}}/ccache.log.txt" >> $GITHUB_ENV
+          echo "CCACHE_MAXSIZE=1G" >> $GITHUB_ENV
       - name: Clone
         uses: actions/checkout@v3
         with:
           submodules: true
+      - name: Install Ccache
+        run: |
+          wget https://github.com/ccache/ccache/releases/download/v4.8/ccache-4.8-linux-x86_64.tar.xz
+          tar xvf ccache-4.8-linux-x86_64.tar.xz
+          sudo cp -f ccache-4.8-linux-x86_64/ccache /usr/local/bin/
+      - name: Set Up Ccache
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/ccache
+          key: ccache-${{github.workflow}}-${{github.job}}-${{matrix.useeb}}-git-${{github.sha}}
+          restore-keys: |
+               ccache-${{github.workflow}}-${{github.job}}-${{matrix.useeb}}-git-
       - name: Configure
         run: |
           echo "NPROCS=$(nproc)" >> $GITHUB_ENV
@@ -572,6 +591,7 @@ jobs:
           -DPELELMEX_ENABLE_FCOMPARE_FOR_TESTS:BOOL=OFF \
           -DPELELMEX_ENABLE_MASA:BOOL=OFF \
           -DPELELMEX_ENABLE_CLANG_TIDY:BOOL=ON \
+          -DCMAKE_CXX_COMPILER_LAUNCHER:STRING=ccache \
           ${{github.workspace}}
       - name: Check
         working-directory: ${{runner.workspace}}/build-clang-tidy
@@ -582,6 +602,10 @@ jobs:
             | egrep -v "Submodules/amrex|Submodules/sundials|Submodules/AMReX-Hydro" \
             | egrep -v "ld: warning:" | sort | uniq \
             | awk 'BEGIN{i=0}{print $0}{i++}END{print "Warnings: "i}' > clang-tidy-warnings.txt
+      - name: Ccache Report
+        run: |
+          ccache -s
+          du -hs ${HOME}/.cache/ccache
       - name: Full report
         working-directory: ${{runner.workspace}}/build-clang-tidy
         run: cat clang-tidy-full-report.txt
