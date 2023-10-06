@@ -410,7 +410,7 @@ control the relaxation of the inlet velocity to the steady state velocity of the
 that should be of the order of ten times the simulation time-step. ``height`` is the user-defined location where the
 triple flame should settle, ``changeMax`` and ``velMax`` control the maximum velocity increment and maximum inlet velocity, respectively.
 The user is referred to [CAMCS2006]_ for an overview of the method and corresponding parameters.
-The ``pseudo_gravity`` triggers a manufactured force added to the momemtum equation to compensate for the acceleration of different density gases.
+The ``pseudo_gravity`` triggers a manufactured force added to the momentum equation to compensate for the acceleration of different density gases.
 
 Once these parameters are set, you continue the previous simulation by uncommenting the first line of the ``IO CONTROL`` block in the input file: ::
 
