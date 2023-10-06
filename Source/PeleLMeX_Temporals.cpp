@@ -534,7 +534,7 @@ PeleLM::writeTemporals()
   if (fuelID >= 0 && !(m_chem_integrator == "ReactorNull")) {
     fuelConsumptionInt = MFSum(GetVecOfConstPtrs(getIRVect()), fuelID);
     for (int lev = 0; lev <= finest_level; ++lev) {
-      getHeatRelease(lev, kinEnergy[lev].get()); // Re-use kinEnergy container
+      getHeatRelease(lev, kinEnergy[lev].get()); // Reuse kinEnergy container
     }
     heatReleaseRateInt = MFSum(GetVecOfConstPtrs(kinEnergy), 0);
   }

@@ -126,9 +126,9 @@ PeleLM::readProbParm() // NOLINT(readability-make-member-function-const)
   ofs.close();
 
   // Read initial velocity field
-  const int nx = local_prob_parm.input_resolution;
-  const int ny = local_prob_parm.input_resolution;
-  const int nz = local_prob_parm.input_resolution;
+  const size_t nx = local_prob_parm.input_resolution;
+  const size_t ny = local_prob_parm.input_resolution;
+  const size_t nz = local_prob_parm.input_resolution;
   amrex::Vector<amrex::Real> data(
     nx * ny * nz * 6); /* this needs to be double */
   if (binfmt != 0) {
@@ -138,17 +138,12 @@ PeleLM::readProbParm() // NOLINT(readability-make-member-function-const)
   }
 
   // Extract position and velocities
-  amrex::Vector<amrex::Real> xinput;
-  amrex::Vector<amrex::Real> uinput;
-  amrex::Vector<amrex::Real> vinput;
-  amrex::Vector<amrex::Real> winput;
-  amrex::Vector<amrex::Real> xdiff;
-  amrex::Vector<amrex::Real> xarray;
-
-  xinput.resize(nx * ny * nz);
-  uinput.resize(nx * ny * nz);
-  vinput.resize(nx * ny * nz);
-  winput.resize(nx * ny * nz);
+  amrex::Vector<amrex::Real> xinput(nx * ny * nz);
+  amrex::Vector<amrex::Real> uinput(nx * ny * nz);
+  amrex::Vector<amrex::Real> vinput(nx * ny * nz);
+  amrex::Vector<amrex::Real> winput(nx * ny * nz);
+  amrex::Vector<amrex::Real> xdiff(nx);
+  amrex::Vector<amrex::Real> xarray(nx);
 
   for (long i = 0; i < xinput.size(); i++) {
     xinput[i] = data[0 + i * 6];
@@ -161,11 +156,9 @@ PeleLM::readProbParm() // NOLINT(readability-make-member-function-const)
   }
 
   // Get the xarray table and the differences.
-  xarray.resize(nx);
   for (long i = 0; i < xarray.size(); i++) {
     xarray[i] = xinput[i];
   }
-  xdiff.resize(nx);
   std::adjacent_difference(xarray.begin(), xarray.end(), xdiff.begin());
   xdiff[0] = xdiff[1];
 
@@ -188,11 +181,11 @@ PeleLM::readProbParm() // NOLINT(readability-make-member-function-const)
   local_prob_parm.d_winput =
     (amrex::Real*)amrex::The_Arena()->alloc(nx * ny * nz * sizeof(amrex::Real));
 
-  for (int i = 0; i < nx; i++) {
+  for (unsigned long i = 0; i < nx; i++) {
     local_prob_parm.d_xarray[i] = xarray[i];
     local_prob_parm.d_xdiff[i] = xdiff[i];
   }
-  for (int i = 0; i < nx * ny * nz; i++) {
+  for (unsigned long i = 0; i < nx * ny * nz; i++) {
     local_prob_parm.d_uinput[i] = uinput[i];
     local_prob_parm.d_vinput[i] = vinput[i];
     local_prob_parm.d_winput[i] = winput[i];

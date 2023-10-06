@@ -13,7 +13,6 @@ using namespace amrex;
 Vector<std::string>
 pelelmex_setuserderives()
 {
-  // Vector<std::string> var_names({"derUserDefine_null"});
   return {"derUserDefine_null"}; // var_names;
 }
 
