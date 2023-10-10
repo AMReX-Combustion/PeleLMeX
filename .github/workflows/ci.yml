@@ -38,7 +38,7 @@ jobs:
           echo "CCACHE_COMPRESS=1" >> $GITHUB_ENV
           echo "CCACHE_COMPRESSLEVEL=1" >> $GITHUB_ENV
           echo "CCACHE_LOGFILE=${{github.workspace}}/ccache.log.txt" >> $GITHUB_ENV
-          echo "CCACHE_MAXSIZE=160M" >> $GITHUB_ENV
+          echo "CCACHE_MAXSIZE=200M" >> $GITHUB_ENV
           #printf "CC=gcc-10\nCXX=g++-10\nFC=gfortran-10\nF90=gfortran-10" \
           # >> ${{github.workspace}}/Submodules/amrex/Tools/GNUMake/Make.local
           make COMP=gnu USE_MPI=FALSE DEBUG=TRUE TPL
@@ -194,7 +194,7 @@ jobs:
             ccache_cache: ~/.cache/ccache
           - build_type: Release
             ctest_args: -LE no-ci
-            ccache_size: 500M
+            ccache_size: 100M
           - build_type: Debug
             ctest_args: -R eb-c12
             ccache_size: 500M
@@ -239,26 +239,6 @@ jobs:
           key: ccache-${{github.workflow}}-${{github.job}}-${{matrix.os}}-${{matrix.build_type}}-git-${{github.sha}}
           restore-keys: |
                ccache-${{github.workflow}}-${{github.job}}-${{matrix.os}}-${{matrix.build_type}}-git-
-      - name: MASA
-        run: |
-          # Install MetaPhysicL
-          cd ${{runner.workspace}}/deps
-          git clone --recursive https://github.com/roystgnr/MetaPhysicL.git ${{runner.workspace}}/deps/MetaPhysicL
-          cd ${{runner.workspace}}/deps/MetaPhysicL
-          ./bootstrap
-          ./configure --prefix="${{runner.workspace}}/deps/install/MetaPhysicL"
-          make -j ${{env.NPROCS}}
-          make install
-          # Install MASA
-          cd ${{runner.workspace}}/deps
-          git clone --recursive https://github.com/manufactured-solutions/MASA.git ${{runner.workspace}}/deps/MASA
-          cd ${{runner.workspace}}/deps/MASA
-          ./bootstrap
-          ./configure CXX='mpicxx -std=c++11' CC=mpicc \
-            METAPHYSICL_DIR="${{runner.workspace}}/deps/install/MetaPhysicL" \
-            --prefix="${{runner.workspace}}/deps/install/MASA"
-          make -j ${{env.NPROCS}}
-          make install
       - name: Configure
         run: |
           (for DIM in 2 3; do \
@@ -328,7 +308,7 @@ jobs:
           echo "CCACHE_COMPRESS=1" >> $GITHUB_ENV
           echo "CCACHE_COMPRESSLEVEL=1" >> $GITHUB_ENV
           echo "CCACHE_LOGFILE=${{github.workspace}}/ccache.log.txt" >> $GITHUB_ENV
-          echo "CCACHE_MAXSIZE=800M" >> $GITHUB_ENV
+          echo "CCACHE_MAXSIZE=300M" >> $GITHUB_ENV
       - name: Dependencies
         run: |
           curl -O https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-keyring_1.0-1_all.deb
@@ -389,7 +369,7 @@ jobs:
           echo "CCACHE_COMPRESS=1" >> $GITHUB_ENV
           echo "CCACHE_COMPRESSLEVEL=1" >> $GITHUB_ENV
           echo "CCACHE_LOGFILE=${{github.workspace}}/ccache.log.txt" >> $GITHUB_ENV
-          echo "CCACHE_MAXSIZE=200M" >> $GITHUB_ENV
+          echo "CCACHE_MAXSIZE=80M" >> $GITHUB_ENV
       - name: Dependencies
         run: |
           curl -O https://repo.radeon.com/rocm/rocm.gpg.key
@@ -458,7 +438,7 @@ jobs:
           echo "CCACHE_COMPRESS=1" >> $GITHUB_ENV
           echo "CCACHE_COMPRESSLEVEL=1" >> $GITHUB_ENV
           echo "CCACHE_LOGFILE=${{github.workspace}}/ccache.log.txt" >> $GITHUB_ENV
-          echo "CCACHE_MAXSIZE=600M" >> $GITHUB_ENV
+          echo "CCACHE_MAXSIZE=80M" >> $GITHUB_ENV
           echo "CCACHE_DEPEND=1" >> $GITHUB_ENV
       - name: Dependencies
         run: |
@@ -562,7 +542,7 @@ jobs:
           echo "CCACHE_COMPRESS=1" >> $GITHUB_ENV
           echo "CCACHE_COMPRESSLEVEL=1" >> $GITHUB_ENV
           echo "CCACHE_LOGFILE=${{github.workspace}}/ccache.log.txt" >> $GITHUB_ENV
-          echo "CCACHE_MAXSIZE=500M" >> $GITHUB_ENV
+          echo "CCACHE_MAXSIZE=80M" >> $GITHUB_ENV
       - name: Clone
         uses: actions/checkout@v3
         with:
