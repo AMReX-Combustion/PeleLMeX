@@ -218,6 +218,9 @@ jobs:
           echo "CCACHE_LOGFILE=${{github.workspace}}/ccache.log.txt" >> $GITHUB_ENV
           echo "CCACHE_MAXSIZE=${{matrix.ccache_size}}" >> $GITHUB_ENV
           cmake -E make_directory ${{runner.workspace}}/deps
+          if [ "${RUNNER_OS}" != "macOS" ]; then
+            ${{github.workspace}}/Submodules/AMReX/.github/workflows/dependencies/ubuntu_free_disk_space.sh
+          fi
       - name: Dependencies
         run: |
           # Install MPI
@@ -311,6 +314,7 @@ jobs:
           echo "CCACHE_MAXSIZE=300M" >> $GITHUB_ENV
       - name: Dependencies
         run: |
+          ${{github.workspace}}/Submodules/AMReX/.github/workflows/dependencies/ubuntu_free_disk_space.sh
           curl -O https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-keyring_1.0-1_all.deb
           sudo dpkg -i cuda-keyring_1.0-1_all.deb
           sudo apt-get update
@@ -372,6 +376,7 @@ jobs:
           echo "CCACHE_MAXSIZE=80M" >> $GITHUB_ENV
       - name: Dependencies
         run: |
+          ${{github.workspace}}/Submodules/AMReX/.github/workflows/dependencies/ubuntu_free_disk_space.sh
           curl -O https://repo.radeon.com/rocm/rocm.gpg.key
           sudo apt-key add rocm.gpg.key
           echo 'deb [arch=amd64] https://repo.radeon.com/rocm/apt/5.6.1 ubuntu main' \
@@ -442,6 +447,7 @@ jobs:
           echo "CCACHE_DEPEND=1" >> $GITHUB_ENV
       - name: Dependencies
         run: |
+          ${{github.workspace}}/Submodules/AMReX/.github/workflows/dependencies/ubuntu_free_disk_space.sh
           sudo wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
           sudo apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
           echo "deb https://apt.repos.intel.com/oneapi all main" \
