@@ -1,10 +1,10 @@
 #ifndef PeleLMEF_K_H
 #define PeleLMEF_K_H
 
-#include <PeleLMEF_Constants.H>
+#include <PeleLMeX_EF_Constants.H>
 #include <PelePhysics.H>
 #include <AMReX_Slopes_K.H>
-#include <EOS_Extension.H>
+#include <PeleLMeX_EOS_Extension.H>
 #include <mechanism.H>
 
 AMREX_GPU_HOST_DEVICE

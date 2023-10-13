@@ -1,8 +1,8 @@
 #include <PeleLMeX_DeriveFunc.H>
-#include <PeleLMEF_Constants.H>
+#include <PeleLMeX_EF_Constants.H>
 #include <PeleLMeX_Index.H>
 #include <PelePhysics.H>
-#include <EOS_Extension.H>
+#include <PeleLMeX_EOS_Extension.H>
 #include <mechanism.H>
 
 using namespace amrex;

@@ -1,6 +1,6 @@
 #include <PeleLMeX.H>
 #include <PeleLMeX_K.H>
-#include <PeleLMEF_K.H>
+#include <PeleLMeX_EF_K.H>
 #include <PeleLMeX_BCfill.H>
 #include <AMReX_FillPatchUtil.H>
 

@@ -3,7 +3,7 @@
 #include <pelelmex_prob.H>
 #include <PeleLMeX_DiffusionOp.H>
 #ifdef PELE_USE_EFIELD
-#include <PeleLMEF_K.H>
+#include <PeleLMeX_EF_K.H>
 #endif
 
 using namespace amrex;

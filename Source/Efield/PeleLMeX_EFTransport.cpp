@@ -1,5 +1,5 @@
 #include <PeleLMeX.H>
-#include <PeleLMEF_K.H>
+#include <PeleLMeX_EF_K.H>
 
 using namespace amrex;
 

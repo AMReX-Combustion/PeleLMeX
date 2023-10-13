@@ -1,6 +1,6 @@
 #include <PeleLMeX.H>
 #include <PeleLMeX_K.H>
-#include <PeleLMEF_K.H>
+#include <PeleLMeX_EF_K.H>
 #include <MLGMRES.H>
 #include <PeleLMeX_DiffusionOp.H>
 #include <PeleLMeX_Utils.H>

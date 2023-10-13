@@ -4,7 +4,7 @@
 #include "PelePhysics.H"
 #include <AMReX_buildInfo.H>
 #ifdef PELE_USE_EFIELD
-#include "EOS_Extension.H"
+#include "PeleLMeX_EOS_Extension.H"
 #endif
 
 #ifdef AMREX_USE_GPU
