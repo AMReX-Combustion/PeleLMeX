@@ -4,7 +4,7 @@
 #include <hydro_utils.H>
 #include <memory>
 #ifdef PELE_USE_EFIELD
-#include <PeleLMEF_Constants.H>
+#include <PeleLMeX_EF_Constants.H>
 #endif
 
 using namespace amrex;

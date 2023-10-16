@@ -1,6 +1,6 @@
 #include <PeleLMeX.H>
 #include <PeleLMeX_K.H>
-#include <PeleLMEF_K.H>
+#include <PeleLMeX_EF_K.H>
 #include <MLGMRES.H>
 #include <PeleLMeX_DiffusionOp.H>
 #include <PeleLMeX_Utils.H>
@@ -700,8 +700,11 @@ PeleLM::getAdvectionFluxesMOL(
         bx, 1, mfi, nE_arr, AMREX_D_DECL(fx, fy, fz),
         AMREX_D_DECL(xstate, ystate, zstate), knownEdgeState,
         AMREX_D_DECL(ueff, veff, weff), divu_arr, force_arr, geom[lev], m_dt,
-        {bcrec}, bcRec_d.dataPtr(), AdvType_d.dataPtr(), 0, 0, is_velocity,
-        fluxes_are_area_weighted, mol);
+        {bcrec}, bcRec_d.dataPtr(), AdvType_d.dataPtr(),
+#ifdef AMREX_USE_EB
+        EBFactory(lev),
+#endif
+        0, 0, is_velocity, fluxes_are_area_weighted, mol);
     }
   }
 }

@@ -10,8 +10,8 @@
 #include <PMF.H>
 #include <PMFData.H>
 #include <PelePhysics.H>
-#include <EOS_Extension.H>
-#include <PeleLMEF_Constants.H>
+#include <PeleLMeX_EOS_Extension.H>
+#include <PeleLMeX_EF_Constants.H>
 
 AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE

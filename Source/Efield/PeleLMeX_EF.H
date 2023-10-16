@@ -1,5 +1,11 @@
 // included in the PeleLM.H
 
+// E-field with EB capability is not fully implemented
+static_assert(
+  !(PELE_USE_EFIELD and AMREX_USE_EB),
+  "E-field with EB capability is not fully implemented; cannot compile with "
+  "both EFIELD and EB");
+
 // Algorithm int/real data holder
 int ef_verbose = 1;
 int ef_substep = 1;       // number of sub time steps

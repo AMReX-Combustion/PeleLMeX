@@ -1,6 +1,6 @@
 #include <PeleLMeX.H>
 #include <PeleLMeX_K.H>
-#include <PeleLMEF_Constants.H>
+#include <PeleLMeX_EF_Constants.H>
 #include <PeleLMeX_DiffusionOp.H>
 
 using namespace amrex;
