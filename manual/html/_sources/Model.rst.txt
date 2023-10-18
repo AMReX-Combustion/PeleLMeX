@@ -298,7 +298,7 @@ gradient, by solving
     \frac{1}{2}\left(\nabla\cdot\tau^n
     + \nabla\cdot\tau^{n+1,*}\right) - \nabla\pi^{n-1/2} + \frac{1}{2}(F^n + F^{n+1}),
 
-where :math:`\tau^{n+1,*} = \mu^{n+1}[\nabla U^{n+1,*} +(\nabla U^{n+1,*})^T - 2\mathcal{I}\widehat S^{n+1}/3]` and
+where :math:`\tau^{n+1,*} = \mu^{n+1}[\nabla U^{n+1,*} +(\nabla U^{n+1,*})^T - \frac{2}{3} \mathcal{I} \, \nabla \cdot U^{n+1,*}]` and
 :math:`\rho^{n+1/2} = (\rho^n + \rho^{n+1})/2`, and :math:`F` is the velocity forcing.  This is a semi-implicit discretization for :math:`U`, requiring
 a linear solve that couples together all velocity components.  The time-centered velocity in the advective derivative,
 :math:`U^{n+1/2}`, is computed in the same way as :math:`U^{{\rm ADV},*}`, but also includes the viscous stress tensor

@@ -310,7 +310,7 @@ gradient, by solving</p>
 + \rho^{n+1/2}\left(U^{\rm ADV}\cdot\nabla U\right)^{n+1/2} = \\
 \frac{1}{2}\left(\nabla\cdot\tau^n
 + \nabla\cdot\tau^{n+1,*}\right) - \nabla\pi^{n-1/2} + \frac{1}{2}(F^n + F^{n+1}),\end{split}\]</div>
-<p>where <span class="math notranslate nohighlight">\(\tau^{n+1,*} = \mu^{n+1}[\nabla U^{n+1,*} +(\nabla U^{n+1,*})^T - 2\mathcal{I}\widehat S^{n+1}/3]\)</span> and
+<p>where <span class="math notranslate nohighlight">\(\tau^{n+1,*} = \mu^{n+1}[\nabla U^{n+1,*} +(\nabla U^{n+1,*})^T - \frac{2}{3} \mathcal{I} \, \nabla \cdot U^{n+1,*}]\)</span> and
 <span class="math notranslate nohighlight">\(\rho^{n+1/2} = (\rho^n + \rho^{n+1})/2\)</span>, and <span class="math notranslate nohighlight">\(F\)</span> is the velocity forcing.  This is a semi-implicit discretization for <span class="math notranslate nohighlight">\(U\)</span>, requiring
 a linear solve that couples together all velocity components.  The time-centered velocity in the advective derivative,
 <span class="math notranslate nohighlight">\(U^{n+1/2}\)</span>, is computed in the same way as <span class="math notranslate nohighlight">\(U^{{\rm ADV},*}\)</span>, but also includes the viscous stress tensor
