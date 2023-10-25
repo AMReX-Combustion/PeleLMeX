@@ -28,8 +28,8 @@ struct BoundaryCondition
     {"symmetry", BCSymmetry},
     {"slipwalladiab", BCSlipWallAdiab},
     {"noslipwalladiab", BCNoSlipWallAdiab},
-    {"bcslipwallisotherm", BCSlipWallIsotherm},
-    {"bcnoslipwallisotherm", BCNoSlipWallIsotherm}};
+    {"slipwallisotherm", BCSlipWallIsotherm},
+    {"noslipwallisotherm", BCNoSlipWallIsotherm}};
   const amrex::Array<std::string, 2> searchKey{"lo_bc", "hi_bc"};
 };
 const BoundaryCondition boundarycondition;
