@@ -1,6 +1,6 @@
 # AMReX
 DIM = 2
-COMP = clang
+COMP = gnu
 PRECISION = DOUBLE
 USE_EB = TRUE
 USE_HYPRE = FALSE
