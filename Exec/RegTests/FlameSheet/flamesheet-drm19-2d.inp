@@ -2,7 +2,7 @@
 geometry.is_periodic = 1 0                # For each dir, 0: non-perio, 1: periodic
 geometry.coord_sys   = 0                  # 0 => cart, 1 => RZ
 geometry.prob_lo     = 0.0 0.0 0.0        # x_lo y_lo (z_lo)
-geometry.prob_hi     = 0.016 0.032 0.016  # x_hi y_hi (z_hi)
+geometry.prob_hi     = 0.008 0.032 0.008  # x_hi y_hi (z_hi)
 
 #---------------------- BC FLAGS ---------------------------------
 # Interior, Inflow, Outflow, Symmetry,
@@ -12,13 +12,13 @@ peleLM.hi_bc = Interior Outflow           # bc in x_hi y_hi (z_hi)
 
 
 #---------------------- AMR CONTROL ------------------------------
-amr.n_cell          = 32 64 32            # Level 0 number of cells in each direction
+amr.n_cell          = 16 64 16            # Level 0 number of cells in each direction
 amr.max_level       = 2                   # maximum level number allowed
 amr.ref_ratio       = 2 2 2 2             # refinement ratio
 amr.regrid_int      = 5                   # how often to regrid
 amr.n_error_buf     = 1 1 2 2             # number of buffer cells in error est
 amr.grid_eff        = 0.7                 # what constitutes an efficient grid
-amr.blocking_factor = 16                  # block factor in grid generation (min box size)
+amr.blocking_factor = 8                   # block factor in grid generation (min box size)
 amr.max_grid_size   = 256                 # max box size
 
 #---------------------- Problem ----------------------------------
@@ -29,7 +29,7 @@ prob.pertlength = 0.016
 pmf.datafile = "drm19_pmf.dat"
 
 #---------------------- PeleLMeX CONTROL -------------------------
-peleLM.v = 1                              # PeleLMeX version
+peleLM.v = 1                              # PeleLMeX verbose
 peleLM.use_wbar = 1                       # Include Wbar term in species diffusion fluxes
 peleLM.sdc_iterMax = 2                    # Number of SDC iterations
 peleLM.num_init_iter = 3                  # Number of initial iterations
