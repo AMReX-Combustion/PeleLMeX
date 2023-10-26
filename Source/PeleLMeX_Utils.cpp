@@ -906,7 +906,10 @@ PeleLM::derive(const std::string& a_name, Real a_time, int lev, int nGrow)
     // Get pressure: TODO no fillpatch for pressure just yet, simply get new
     // state
     auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
-    std::unique_ptr<MultiFab> reactmf = fillPatchReact(lev, a_time, nGrow);
+    std::unique_ptr<MultiFab> reactmf;
+    if (m_do_react != 0) {
+      reactmf = fillPatchReact(lev, a_time, nGrow);
+    }
     auto stateBCs = fetchBCRecArray(VELX, NVAR);
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
