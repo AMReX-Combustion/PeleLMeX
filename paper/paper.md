@@ -6,6 +6,7 @@ tags:
   - hydrodynamics
   - combustion
   - reactions
+  - ExaScale
   - CFD
   - low-Mach number
 authors:
@@ -19,17 +20,21 @@ authors:
     orcid: 0000-0002-5749-334X
     affiliation: 2
   - name: Anne Felden
+    orcid: 0009-0006-2724-4461
     affiliation: 2
   - name: Candace Gilet
     affiliation: 4
   - name: Ray Grout
+    orcid: 0000-0002-1760-8747
     affiliation: 1
   - name: Marc Henry de Frahan
     orcid: 0000-0001-7742-1565
     affiliation: 1
   - name: Emmanuel Motheau
+    orcid: 0000-0003-1968-1611
     affiliation: 2
-  - name: Andy Nonaka
+  - name: Andrew Nonaka
+    orcid: 0000-0003-1791-0265
     affiliation: 2
   - name: Landon Owen
     affiliation: 3
@@ -37,12 +42,13 @@ authors:
     orcid: 0000-0002-9150-8103
     affiliation: 1
   - name: Jon Rood
-    affiliation: 1
     orcid: 0000-0002-7513-3225
+    affiliation: 1
   - name: Nicolas Wimer
     orcid: 0000-0001-5083-0799
     affiliation: 1
   - name: Weiqun Zhang
+    orcid: 0000-0001-8092-1974
     affiliation: 2
 affiliations:
   - name: High Performance Algorithms and Complex Fluids, National Renewable Energy Laboratory, USA
@@ -53,7 +59,7 @@ affiliations:
     index: 3
   - name: Independent Researcher, USA
     index: 4
-date: 28 December 2022
+date: 30 October 2023
 bibliography: paper.bib
 ---
 
