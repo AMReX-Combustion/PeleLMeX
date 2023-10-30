@@ -14,7 +14,7 @@ Then step into the *PeleLMeX* folder and add the main *PeleLMeX* repository as t
 
        git add remote upstream https://github.com/AMReX-Combustion/PeleLMeX
 
-At any point, you can update the `developement` branch of your local repository with changes implemented in the main *PeleLMeX* repo by pulling from `upstream` : 
+At any point, you can update the `development` branch of your local repository with changes implemented in the main *PeleLMeX* repo by pulling from `upstream` : 
 
         git checkout development
         git pull upstream development

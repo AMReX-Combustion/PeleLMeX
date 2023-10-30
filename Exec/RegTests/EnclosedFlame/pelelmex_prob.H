@@ -41,8 +41,6 @@ pelelmex_initdata(
                , const amrex::Real yc = prob_lo[1] + 0.5 * Ly;
                , const amrex::Real zc = prob_lo[2] + 0.5 * Lz;);
 
-  // constexpr amrex::Real Pi = 3.14159265358979323846264338327950288;
-
   auto eos = pele::physics::PhysicsType::eos();
   amrex::GpuArray<amrex::Real, NUM_SPECIES + 4> pmf_vals = {0.0};
   amrex::Real molefrac[NUM_SPECIES] = {0.0};

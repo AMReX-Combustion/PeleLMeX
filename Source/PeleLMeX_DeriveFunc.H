@@ -291,7 +291,7 @@ void pelelmex_deruserdef(
   int level);
 
 #ifdef PELE_USE_EFIELD
-#include <PeleLMEFDeriveFunc.H>
+#include <PeleLMeX_EFDeriveFunc.H>
 #endif
 
 #endif

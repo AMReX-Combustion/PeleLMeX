@@ -52,13 +52,6 @@ PeleLM::getLevelDataPtr(
     m_nAux, m_nGrowState, m_use_soret, static_cast<int>(m_do_les));
   Real time = getTime(lev, a_time);
   fillpatch_state(lev, time, m_leveldata_floating->state, m_nGrowState);
-  // if (useUMac) {
-  //    // TODO: find a way to get U^{n+1/2} from Umac
-  //    // For now get old time
-  //    Real oldtime = getTime(lev,AmrOldTime);
-  //    fillpatch_velocity(lev, oldtime, m_leveldata_floating->state, VELX,
-  //    m_nGrowState);
-  // }
   return m_leveldata_floating.get();
 }
 

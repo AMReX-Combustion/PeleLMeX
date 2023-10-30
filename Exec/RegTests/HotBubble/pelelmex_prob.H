@@ -33,8 +33,7 @@ pelelmex_initdata(
                , const amrex::Real z = prob_lo[2] + (k + 0.5) * dx[2];);
 
   AMREX_D_TERM(const amrex::Real Lx = prob_hi[0] - prob_lo[0];
-               , /*const amrex::Real Ly = prob_hi[1] - prob_lo[1];*/
-               , const amrex::Real Lz = prob_hi[2] - prob_lo[2]);
+               , , const amrex::Real Lz = prob_hi[2] - prob_lo[2]);
 
   auto eos = pele::physics::PhysicsType::eos();
   amrex::Real massfrac[NUM_SPECIES] = {0.0};

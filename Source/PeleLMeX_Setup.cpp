@@ -4,7 +4,7 @@
 #include "PelePhysics.H"
 #include <AMReX_buildInfo.H>
 #ifdef PELE_USE_EFIELD
-#include "EOS_Extension.H"
+#include "PeleLMeX_EOS_Extension.H"
 #endif
 
 #ifdef AMREX_USE_GPU
@@ -1001,11 +1001,6 @@ PeleLM::derivedSetup()
     grow_box_by_one);
 #endif
 #endif
-#endif
-#ifdef PELELM_USE_SOOT
-  // if (do_soot_solve) {
-  //   addSootDerivePlotVars(derive_lst);
-  // }
 #endif
   auto it = m_derivePlotVars.begin();
   while (it != m_derivePlotVars.end()) {
