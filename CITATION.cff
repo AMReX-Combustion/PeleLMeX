@@ -1,0 +1,102 @@
+cff-version: "1.2.0"
+authors:
+- family-names: Esclapez
+  given-names: Lucas
+  orcid: "https://orcid.org/0000-0002-2438-7292"
+- family-names: Day
+  given-names: Marc
+  orcid: "https://orcid.org/0000-0002-1711-3963"
+- family-names: Bell
+  given-names: John
+  orcid: "https://orcid.org/0000-0002-5749-334X"
+- family-names: Felden
+  given-names: Anne
+  orcid: "https://orcid.org/0009-0006-2724-4461"
+- family-names: Gilet
+  given-names: Candace
+- family-names: Grout
+  given-names: Ray
+  orcid: "https://orcid.org/0000-0002-1760-8747"
+- family-names: {Henry de Frahan}
+  given-names: Marc
+  orcid: "https://orcid.org/0000-0001-7742-1565"
+- family-names: Motheau
+  given-names: Emmanuel
+  orcid: "https://orcid.org/0000-0003-1968-1611"
+- family-names: Nonaka
+  given-names: Andrew
+  orcid: "https://orcid.org/0000-0003-1791-0265"
+- family-names: Owen
+  given-names: Landon
+- family-names: Perry
+  given-names: Bruce
+  orcid: "https://orcid.org/0000-0002-9150-8103"
+- family-names: Rood
+  given-names: Jon
+  orcid: "https://orcid.org/0000-0002-7513-3225"
+- family-names: Wimer
+  given-names: Nicolas
+  orcid: "https://orcid.org/0000-0001-5083-0799"
+- family-names: Zhang
+  given-names: Weiqun
+  orcid: "https://orcid.org/0000-0001-8092-1974"
+doi: 10.5281/zenodo.10056232
+message: If you use this software, please cite our article in the
+  Journal of Open Source Software.
+preferred-citation:
+  authors:
+  - family-names: Esclapez
+    given-names: Lucas
+    orcid: "https://orcid.org/0000-0002-2438-7292"
+  - family-names: Day
+    given-names: Marc
+    orcid: "https://orcid.org/0000-0002-1711-3963"
+  - family-names: Bell
+    given-names: John
+    orcid: "https://orcid.org/0000-0002-5749-334X"
+  - family-names: Felden
+    given-names: Anne
+    orcid: "https://orcid.org/0009-0006-2724-4461"
+  - family-names: Gilet
+    given-names: Candace
+  - family-names: Grout
+    given-names: Ray
+    orcid: "https://orcid.org/0000-0002-1760-8747"
+  - family-names: {Henry de Frahan}
+    given-names: Marc
+    orcid: "https://orcid.org/0000-0001-7742-1565"
+  - family-names: Motheau
+    given-names: Emmanuel
+    orcid: "https://orcid.org/0000-0003-1968-1611"
+  - family-names: Nonaka
+    given-names: Andrew
+    orcid: "https://orcid.org/0000-0003-1791-0265"
+  - family-names: Owen
+    given-names: Landon
+  - family-names: Perry
+    given-names: Bruce
+    orcid: "https://orcid.org/0000-0002-9150-8103"
+  - family-names: Rood
+    given-names: Jon
+    orcid: "https://orcid.org/0000-0002-7513-3225"
+  - family-names: Wimer
+    given-names: Nicolas
+    orcid: "https://orcid.org/0000-0001-5083-0799"
+  - family-names: Zhang
+    given-names: Weiqun
+    orcid: "https://orcid.org/0000-0001-8092-1974"
+  date-published: 2023-10-31
+  doi: 10.21105/joss.05450
+  issn: 2475-9066
+  issue: 90
+  journal: Journal of Open Source Software
+  publisher:
+    name: Open Journals
+  start: 5450
+  title: "PeleLMeX: an AMR Low Mach Number Reactive Flow Simulation Code
+    without level sub-cycling"
+  type: article
+  url: "https://joss.theoj.org/papers/10.21105/joss.05450"
+  volume: 8
+title: "PeleLMeX: an AMR Low Mach Number Reactive Flow Simulation Code
+  without level sub-cycling"

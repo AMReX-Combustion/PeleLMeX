@@ -3,11 +3,10 @@
 [![AMReX Badge](https://img.shields.io/static/v1?label=%22powered%20by%22&message=%22AMReX%22&color=%22blue%22)](https://amrex-codes.github.io/amrex/)
 [![Exascale Computing Project](https://img.shields.io/badge/supported%20by-ECP-blue)](https://www.exascaleproject.org/research-project/combustion-pele/)
 [![Language: C++17](https://img.shields.io/badge/language-C%2B%2B17-blue)](https://isocpp.org/)
-[![JOSS](https://joss.theoj.org/papers/6142eb838783b07fce14450fefe21e07/status.svg)](https://joss.theoj.org/papers/6142eb838783b07fce14450fefe21e07)
+[![Citing](https://joss.theoj.org/papers/10.21105/joss.05450/status.svg)](https://joss.theoj.org/papers/10.21105/joss.05450)
+[![Archive](https://zenodo.org/badge/DOI/10.5281/zenodo.10056232.svg)](https://doi.org/10.5281/zenodo.10056232)
 
-![CUDA build](https://github.com/AMReX-Combustion/PeleLMeX/workflows/PeleLMeX_Cuda/badge.svg)
-![HIP build](https://github.com/AMReX-Combustion/PeleLMeX/workflows/PeleLMeX_Hip/badge.svg)
-![SYCL build](https://github.com/AMReX-Combustion/PeleLMeX/workflows/PeleLMeX_Intel/badge.svg)
+![CI](https://github.com/AMReX-Combustion/PeleLMeX/workflows/PeleLMeX-CI/badge.svg)
 
 ## Overview
 
@@ -134,3 +133,22 @@ responsible for the planning and preparation of a capable exascale ecosystem --
 including software, applications, hardware, advanced system engineering, and
 early testbed platforms -- to support the nation's exascale computing
 imperative.
+
+## Citation
+
+To cite PeleLMeX, please use [![Citing](https://joss.theoj.org/papers/10.21105/joss.05450/status.svg)](https://joss.theoj.org/papers/10.21105/joss.05450)
+
+```
+@article{PeleLMeX_JOSS,
+  doi = {10.21105/joss.05450},
+  url = {https://doi.org/10.21105/joss.05450},
+  year = {2023},
+  month = october,
+  publisher = {The Open Journal},
+  volume = {8},
+  number = {90},
+  pages = {5450},
+  author = {Lucas Esclapez and Marc Day and John Bell and Anne Felden and Candace Gilet and Ray Grout and Marc Henry de Frahan and Emmanuel Motheau and Andrew Nonaka and Landon Owen and Bruce Perry and Jon Rood and Nicolas Wimer and Weiqun Zhang},
+  journal = {Journal of Open Source Software}
+}
+```
