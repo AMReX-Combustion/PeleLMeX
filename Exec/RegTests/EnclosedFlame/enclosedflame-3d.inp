@@ -12,9 +12,9 @@ peleLM.hi_bc = NoSlipWallAdiab NoSlipWallAdiab NoSlipWallAdiab
 
 
 #-------------------------AMR CONTROL----------------------------
-amr.n_cell          = 128 128 128      # Level 0 number of cells in each direction   
+amr.n_cell          = 32 32 32      # Level 0 number of cells in each direction
 amr.v               = 1                # AMR verbose
-amr.max_level       = 1                # maximum level number allowed
+amr.max_level       = 0                # maximum level number allowed
 amr.ref_ratio       = 2 2 2 2 2         # refinement ratio
 amr.regrid_int      = 5                # how often to regrid
 amr.n_error_buf     = 2 2 2 2          # number of buffer cells in error est
@@ -47,7 +47,7 @@ peleLM.do_mass_balance = 1
 amr.check_int = 5
 amr.plot_int = 100
 amr.max_step = 10
-amr.dt_shrink = 0.0001
+amr.dt_shrink = 0.01
 amr.stop_time = 1.0
 #amr.stop_time = 1.00
 amr.cfl = 0.15
@@ -58,8 +58,8 @@ peleLM.chem_integrator = "ReactorCvode"
 #peleLM.use_typ_vals_chem = 1          # Use species/temp typical values in CVODE
 #ode.rtol = 1.0e-6                     # Relative tolerance of the chemical solve
 #ode.atol = 1.0e-5                     # Absolute tolerance factor applied on typical values
-cvode.solve_type = denseAJ_direct     # CVODE Linear solve type (for Newton direction) 
-cvode.max_order  = 4                  # CVODE max BDF order. 
+cvode.solve_type = denseAJ_direct     # CVODE Linear solve type (for Newton direction)
+cvode.max_order  = 4                  # CVODE max BDF order.
 
 #--------------------REFINEMENT CONTROL------------------------
 #amr.refinement_indicators = temp
