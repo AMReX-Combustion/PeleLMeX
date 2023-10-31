@@ -2,7 +2,7 @@
 #define PELELM_PROB_PARM_H
 
 #include <AMReX_REAL.H>
-#include <PeleFlowControllerData.H>
+#include <PeleLMeX_FlowControllerData.H>
 
 using namespace amrex::literals;
 
