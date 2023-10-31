@@ -1,10 +1,12 @@
 // included in the PeleLM.H
 
 // E-field with EB capability is not fully implemented
+#ifdef AMREX_USE_EB
 static_assert(
-  !(PELE_USE_EFIELD and AMREX_USE_EB),
+  !(PELE_USE_EFIELD),
   "E-field with EB capability is not fully implemented; cannot compile with "
   "both EFIELD and EB");
+#endif
 
 // Algorithm int/real data holder
 int ef_verbose = 1;
