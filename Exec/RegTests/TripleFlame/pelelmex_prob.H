@@ -10,7 +10,7 @@
 #include <AMReX_FArrayBox.H>
 #include <AMReX_SPACE.H>
 
-AMREX_GPU_DEVICE
+AMREX_GPU_HOST_DEVICE
 AMREX_FORCE_INLINE
 void
 set_Y_from_Phi(
@@ -29,7 +29,7 @@ set_Y_from_Phi(
   eos.X2Y(Xt, Y);
 }
 
-AMREX_GPU_DEVICE
+AMREX_GPU_HOST_DEVICE
 AMREX_FORCE_INLINE
 void
 set_Y_from_Ksi(
@@ -56,7 +56,6 @@ pelelmex_initdata(
   pele::physics::PMF::PmfData::DataContainer const* /*pmf_data*/)
 {
   const amrex::Real* prob_lo = geomdata.ProbLo();
-  const amrex::Real* prob_hi = geomdata.ProbHi();
   const amrex::Real* dx = geomdata.CellSize();
 
   AMREX_D_TERM(const amrex::Real x = prob_lo[0] + (i + 0.5) * dx[0];
