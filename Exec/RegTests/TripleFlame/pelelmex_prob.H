@@ -53,18 +53,15 @@ pelelmex_initdata(
   amrex::Array4<amrex::Real> const& /*aux*/,
   amrex::GeometryData const& geomdata,
   ProbParm const& prob_parm,
-  pele::physics::PMF::PmfData::DataContainer const* pmf_data)
+  pele::physics::PMF::PmfData::DataContainer const* /*pmf_data*/)
 {
   const amrex::Real* prob_lo = geomdata.ProbLo();
   const amrex::Real* prob_hi = geomdata.ProbHi();
   const amrex::Real* dx = geomdata.CellSize();
 
   AMREX_D_TERM(const amrex::Real x = prob_lo[0] + (i + 0.5) * dx[0];
-               , const amrex::Real y = prob_lo[1] + (j + 0.5) * dx[1];
-               , const amrex::Real z = prob_lo[2] + (k + 0.5) * dx[2];);
-
-  AMREX_D_TERM(, const amrex::Real L_x = prob_hi[0] - prob_lo[0];
-               , const amrex::Real L_y = prob_hi[1] - prob_lo[1]);
+               , const amrex::Real y = prob_lo[1] + (j + 0.5) * dx[1];,
+               /*const amrex::Real z = prob_lo[2] + (k + 0.5) * dx[2];*/);
 
   auto eos = pele::physics::PhysicsType::eos();
   amrex::Real massfrac[NUM_SPECIES] = {0.0};
@@ -128,19 +125,19 @@ bcnormal(
   const amrex::Real x[AMREX_SPACEDIM],
   const int /*m_nAux*/,
   amrex::Real s_ext[NVAR],
-  const int idir,
+  const int /*idir*/,
   const int sgn,
   const amrex::Real time,
-  amrex::GeometryData const& geomdata,
+  amrex::GeometryData const& /*geomdata*/,
   ProbParm const& prob_parm,
-  pele::physics::PMF::PmfData::DataContainer const* pmf_data)
+  pele::physics::PMF::PmfData::DataContainer const* /*pmf_data*/)
 {
   auto eos = pele::physics::PhysicsType::eos();
   amrex::Real massfrac[NUM_SPECIES] = {0.0};
 
   if (sgn == 1) {
 
-    if ((prob_parm.FCData.ctrl_active == 0u) || time <= 0.0) {
+    if ((prob_parm.FCData.ctrl_active == 0U) || time <= 0.0) {
       s_ext[VELX] = 0.0;
 #if (AMREX_SPACEDIM == 2)
       s_ext[VELY] = prob_parm.V_in;
