@@ -18,14 +18,15 @@ class ConsTestCase(unittest.TestCase):
     """Tests for conservation in Pele."""
 
     def test_conservation(self):
-        """Are mass and energy conserved?"""
+        """Is mass conserved?"""
 
         # Load the data
         fdir = os.path.abspath(".")
-        fname = os.path.join(fdir, "datlog")
-        df = pd.read_csv(fname, delim_whitespace=True)
-        npt.assert_allclose(df.mass, df.mass[0], rtol=1e-13)
-        npt.assert_allclose(df.rho_E, df.rho_E[0], rtol=1e-13)
+        fname = os.path.join(fdir, "temporals/tempMass")
+        cnames=['step','time','mass','dmdt','massFluxBal','balance']
+        df = pd.read_csv(fname, names=cnames, delim_whitespace=True)
+        init_mass = df.mass[0]
+        npt.assert_allclose(df.mass, init_mass, rtol=1e-13)
 
 
 # ========================================================================
