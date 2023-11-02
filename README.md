@@ -148,7 +148,7 @@ To cite PeleLMeX, please use [![Citing](https://joss.theoj.org/papers/10.21105/j
   volume = {8},
   number = {90},
   pages = {5450},
-  author = {Lucas Esclapez and Marc Day and John Bell and Anne Felden and Candace Gilet and Ray Grout and Marc Henry de Frahan and Emmanuel Motheau and Andrew Nonaka and Landon Owen and Bruce Perry and Jon Rood and Nicolas Wimer and Weiqun Zhang},
+  author = {Lucas Esclapez and Marc Day and John Bell and Anne Felden and Candace Gilet and Ray Grout and Marc {Henry de Frahan} and Emmanuel Motheau and Andrew Nonaka and Landon Owen and Bruce Perry and Jon Rood and Nicolas Wimer and Weiqun Zhang},
   journal = {Journal of Open Source Software}
 }
 ```

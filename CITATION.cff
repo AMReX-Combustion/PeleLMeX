@@ -17,7 +17,7 @@ authors:
 - family-names: Grout
   given-names: Ray
   orcid: "https://orcid.org/0000-0002-1760-8747"
-- family-names: {Henry de Frahan}
+- family-names: Henry de Frahan
   given-names: Marc
   orcid: "https://orcid.org/0000-0001-7742-1565"
 - family-names: Motheau
@@ -62,7 +62,7 @@ preferred-citation:
   - family-names: Grout
     given-names: Ray
     orcid: "https://orcid.org/0000-0002-1760-8747"
-  - family-names: {Henry de Frahan}
+  - family-names: Henry de Frahan
     given-names: Marc
     orcid: "https://orcid.org/0000-0001-7742-1565"
   - family-names: Motheau
