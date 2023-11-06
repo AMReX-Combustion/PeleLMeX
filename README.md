@@ -66,7 +66,7 @@ Finally, when building with GPU support, CUDA >= 11 is required with NVIDIA GPUs
 ### Download
 
 The preferred method consists of cloning *PeleLMeX* and its submodules
-([amrex](https://github.com/AMReX-Codes/amrex), [AMReX-Hydro](https://github.com/AMReX-Codes/AMReX-Hydro), [PelePhysics](https://github.com/AMReX-Combustion/PelePhysics), [PeleMP](https://github.com/AMReX-Combustion/PeleMP)), and [SUNDIALS](https://github.com/LLNL/sundials) using a recursive `git clone`:
+([amrex](https://github.com/AMReX-Codes/amrex), [AMReX-Hydro](https://github.com/AMReX-Fluids/AMReX-Hydro), [PelePhysics](https://github.com/AMReX-Combustion/PelePhysics), [PeleMP](https://github.com/AMReX-Combustion/PeleMP)), and [SUNDIALS](https://github.com/LLNL/sundials) using a recursive `git clone`:
 
 ```
 git clone --recursive https://github.com/AMReX-Combustion/PeleLMeX.git

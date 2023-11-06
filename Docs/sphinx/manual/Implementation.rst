@@ -17,7 +17,7 @@ compute-intensive kernels implemented as lambda functions to seamlessly run on C
 high performance portatbility abstraction.
 
 The core of the algorithm is implementation in the ``advance()`` function which acts on all the levels concurrently.
-Projection operators and advection scheme functions are imported the `AMReX-Hydro library <https://amrex-codes.github.io/AMReX-Hydro>`_
+Projection operators and advection scheme functions are imported the `AMReX-Hydro library <https://amrex-fluids.github.io/amrex-hydro/docs_html/index.html>`_
 while the core of the thermo-chemistry functionalities comes from `PelePhysics <https://amrex-combustion.github.io/PelePhysics/>`_ .
 Users are responsible for providing initial and boundary conditions in the local subfolder implementing their case, i.e. it is
 not possible to compile and run *PeleLMeX* without actually writing a few lines of codes. However, numerous example are provided

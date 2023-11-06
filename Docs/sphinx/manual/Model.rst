@@ -40,7 +40,7 @@ In a nutshell, `PeleLMeX` features include:
 Mathematical background
 -----------------------
 
-`PeleLMeX` evolves chemically reacting low Mach number flows with block-structured adaptive mesh refinement (AMR). The code depends upon the `AMReX <https://github.com/AMReX-Codes/amrex>`_ library to provide the underlying data structures, and tools to manage and operate on them across massively parallel computing architectures. `PeleLMeX` also utilizes the source code and algorithmic infrastructure of `AMReX-Hydro <https://github.com/AMReX-Codes/AMReX-Hydro>`_. `PeleLMeX` borrows heavily from `PeleLM`_. The core algorithms in `PeleLM` are described in the following papers:
+`PeleLMeX` evolves chemically reacting low Mach number flows with block-structured adaptive mesh refinement (AMR). The code depends upon the `AMReX <https://github.com/AMReX-Codes/amrex>`_ library to provide the underlying data structures, and tools to manage and operate on them across massively parallel computing architectures. `PeleLMeX` also utilizes the source code and algorithmic infrastructure of `AMReX-Hydro <https://github.com/AMReX-Fluids/AMReX-Hydro>`_. `PeleLMeX` borrows heavily from `PeleLM`_. The core algorithms in `PeleLM` are described in the following papers:
 
 * *A conservative, thermodynamically consistent numerical approach for low Mach number combustion. I. Single-level integration*, A. Nonaka, J. B. Bell, and M. S. Day, *Combust. Theor. Model.*, **22** (1) 156-184 (2018)
 
@@ -336,7 +336,7 @@ Advection schemes
 ^^^^^^^^^^^^^^^^^
 .. _ssec:advScheme:
 
-`PeleLMeX` relies on the `AMReX-Hydro <https://github.com/AMReX-Codes/AMReX-Hydro>`_ implementation of the 2nd-order Godunov method, with several variants available. The basis of the Godunov approach is to extrapolate the cell-centered quantity of interest (:math:`U`, :math:`\rho Y`, :math:`\rho h`) to cell faces using a second-order Taylor series expansion in space and time. As detailed in `AMReX-Hydro documentation <https://amrex-codes.github.io/amrex/hydro_html/Schemes.html#godunov-methodsThe>`_, the choice of the slope order and limiting scheme define the exact variant of the Godunov method. Of particular interest for combustion applications, where sharp gradients of intermediate chemical species are found within flame fronts, the `Godunov_BDS` approach provides a bound-preserving advection scheme which greatly limits the appearance of over-/under-shoots, often leading to critical failure of the stiff chemical kinetic integration.
+`PeleLMeX` relies on the `AMReX-Hydro <https://github.com/AMReX-Fluids/AMReX-Hydro>`_ implementation of the 2nd-order Godunov method, with several variants available. The basis of the Godunov approach is to extrapolate the cell-centered quantity of interest (:math:`U`, :math:`\rho Y`, :math:`\rho h`) to cell faces using a second-order Taylor series expansion in space and time. As detailed in `AMReX-Hydro documentation <https://amrex-fluids.github.io/amrex-hydro/docs_html/Schemes.html#godunov-methods>`_, the choice of the slope order and limiting scheme define the exact variant of the Godunov method. Of particular interest for combustion applications, where sharp gradients of intermediate chemical species are found within flame fronts, the `Godunov_BDS` approach provides a bound-preserving advection scheme which greatly limits the appearance of over-/under-shoots, often leading to critical failure of the stiff chemical kinetic integration.
 
 Note that in the presence of EB, only the `Godunov_PLM` variant is available.
 
