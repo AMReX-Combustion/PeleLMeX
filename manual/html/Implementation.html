@@ -107,7 +107,7 @@ an AMR hierarchy data structure and basic regridding functionalities. The code i
 compute-intensive kernels implemented as lambda functions to seamlessly run on CPU and various GPU backends through AMReX
 high performance portatbility abstraction.</p>
 <p>The core of the algorithm is implementation in the <code class="docutils literal notranslate"><span class="pre">advance()</span></code> function which acts on all the levels concurrently.
-Projection operators and advection scheme functions are imported the <a class="reference external" href="https://amrex-codes.github.io/AMReX-Hydro">AMReX-Hydro library</a>
+Projection operators and advection scheme functions are imported the <a class="reference external" href="https://amrex-fluids.github.io/amrex-hydro/docs_html/index.html">AMReX-Hydro library</a>
 while the core of the thermo-chemistry functionalities comes from <a class="reference external" href="https://amrex-combustion.github.io/PelePhysics/">PelePhysics</a> .
 Users are responsible for providing initial and boundary conditions in the local subfolder implementing their case, i.e. it is
 not possible to compile and run <em>PeleLMeX</em> without actually writing a few lines of codes. However, numerous example are provided
