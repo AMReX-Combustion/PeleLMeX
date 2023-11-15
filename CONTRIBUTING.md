@@ -4,21 +4,21 @@ New contributions to *PeleLMeX* are welcome !
 
 The *PeleLMeX* contributions workflow follows these steps:
 1. Fork the main repository
-2. Create an `AmazingNewFeature` branch implementing your changes 
+2. Create an `AmazingNewFeature` branch implementing your changes
 3. Open a Pull Request (PR) from `AmazingNewFeature` on your fork to branch `development` of the main *PeleLMeX* repository
 
-Follow [GitHub directions](https://docs.github.com/en/free-pro-team@latest/github/getting-started-with-github/fork-a-repo) 
+Follow [GitHub directions](https://docs.github.com/en/free-pro-team@latest/github/getting-started-with-github/fork-a-repo)
 to fork *PeleLMeX* main repo on your GitHub account, and use a recursive `git clone` to get your fork of *PeleLMeX* and its dependencies.
 
 Then step into the *PeleLMeX* folder and add the main *PeleLMeX* repository as the `upstream` remote in order to keep track of the main repo :
 
        git add remote upstream https://github.com/AMReX-Combustion/PeleLMeX
 
-At any point, you can update the `development` branch of your local repository with changes implemented in the main *PeleLMeX* repo by pulling from `upstream` : 
+At any point, you can update the `development` branch of your local repository with changes implemented in the main *PeleLMeX* repo by pulling from `upstream` :
 
         git checkout development
         git pull upstream development
-        
+
 We recommend setting your development branch to track the upstream one instead of your fork:
 
         git branch -u upstream/development
@@ -27,16 +27,16 @@ You are now free to modify your own fork of *PeleLMeX*. To add a new feature to 
 
 1. Create a branch for the new feature from the `development` branch (locally) :
 
-        git checkout development 
+        git checkout development
         git checkout -b AmazingNewFeature
 
-2. and commit your changes to your local repo : 
+2. and commit your changes to your local repo :
 
         git commit -m "Developed AmazingNewFeature"
 
 3. Alongside your development, regularly merge changes from the main repo `development` branch into your `AmazingNewFeature` branch,
 fix any conflicts, and push your changes to your GitHub fork :
-   
+
         git push -u origin AmazingNewFeature
 
 4. When you are ready to propose your new feature/improvement/bug fix to the main *PeleLMeX* repo, reiterate Step 3 and submit a PR through the GitHub page from your fork onto the `development` branch of the main repo:
@@ -55,5 +55,11 @@ If you want to fix a bug, make a small pull request that only fixes a bug.
 
 ## PeleLMeX Coding Style Guide
 
-As much as possible, `PeleLMeX` adhere to [AMReX Coding Style](https://github.com/AMReX-Codes/amrex/blob/development/CONTRIBUTING.md#amrex-coding-style-guide)
+Source code files can be automatically formatted to adhere to the appropriate formatting rules using ``clang-format``. To format all files, use the command:
+
+        find Source Exec \( -name "*.cpp" -o -name "*.H" \) -exec clang-format -i {} +
+
+from within the PeleLMeX base directory. You can also format files individually using ``clang-format -i /path/to/file``. Adherence to this format is checked for all PRs.
+
+Beyond that, as much as possible, `PeleLMeX` adheres to [AMReX Coding Style](https://github.com/AMReX-Codes/amrex/blob/development/CONTRIBUTING.md#amrex-coding-style-guide)
 and we are encouraging contributors to follow those guidelines.
