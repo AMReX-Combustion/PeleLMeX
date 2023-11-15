@@ -69,8 +69,11 @@ The preferred method consists of cloning *PeleLMeX* and its submodules
 ([amrex](https://github.com/AMReX-Codes/amrex), [AMReX-Hydro](https://github.com/AMReX-Fluids/AMReX-Hydro), [PelePhysics](https://github.com/AMReX-Combustion/PelePhysics), [PeleMP](https://github.com/AMReX-Combustion/PeleMP)), and [SUNDIALS](https://github.com/LLNL/sundials) using a recursive `git clone`:
 
 ```
-git clone --recursive https://github.com/AMReX-Combustion/PeleLMeX.git
+git clone --recursive --shallow-submodules --single-branch https://github.com/AMReX-Combustion/PeleLMeX.git
 ```
+
+The `--shallow-submodules` and `--single-branch` commands are recommended for most users as they substantially reduce the size of the download by
+skipping extraneous parts of the git history.   
 
 Alternatively, you can use a separate `git clone` of each of the submodules.
 The default location for *PeleLMeX* dependencies is the `Submodules` folder but you optionally
