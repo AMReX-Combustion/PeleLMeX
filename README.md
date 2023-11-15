@@ -72,8 +72,9 @@ The preferred method consists of cloning *PeleLMeX* and its submodules
 git clone --recursive --shallow-submodules --single-branch https://github.com/AMReX-Combustion/PeleLMeX.git
 ```
 
-The `--shallow-submodules` and `--single-branch` commands are recommended for most users as they substantially reduce the size of the download by
-skipping extraneous parts of the git history.   
+The `--shallow-submodules` and `--single-branch` flags are recommended for most users as they substantially reduce the size of the download by
+skipping extraneous parts of the git history. Developers may wish to omit these flags in order download the complete git history of PeleLMeX
+and its submodules, though standard `git` commands may also be used after a shallow clone to optain the skipped portions if needed.
 
 Alternatively, you can use a separate `git clone` of each of the submodules.
 The default location for *PeleLMeX* dependencies is the `Submodules` folder but you optionally
