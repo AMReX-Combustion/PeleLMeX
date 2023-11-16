@@ -12,7 +12,7 @@ Follow the steps listed below to get to this point:
    substantially reduce the size of the download by skipping extraneous parts of the git history.
    Developers may wish to omit these flags in order download the complete git history of PeleLMeX
    and its submodules, though standard ``git`` commands may also be used after a shallow clone to
-   optain the skipped portions if needed.
+   obtain the skipped portions if needed.
 
 #. Move into the Exec folder containing your tutorial. To do so: ::
 
@@ -26,7 +26,7 @@ You're good to go!
 .. Note::
 
    The makefile system is set up such that default paths are automatically set to the
-   submodules obtained with the recursive *git clone*, however the user can set their own dependencies
+   submodules obtained with the recursive *git clone*, however advanced users can set their own dependencies
    in the `GNUmakefile` for each case by updating the top-most lines as follows: ::
 
        PELELMEX_HOME     = <path_to_PeleLMeX>

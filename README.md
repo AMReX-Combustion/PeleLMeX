@@ -74,7 +74,7 @@ git clone --recursive --shallow-submodules --single-branch https://github.com/AM
 
 The `--shallow-submodules` and `--single-branch` flags are recommended for most users as they substantially reduce the size of the download by
 skipping extraneous parts of the git history. Developers may wish to omit these flags in order download the complete git history of PeleLMeX
-and its submodules, though standard `git` commands may also be used after a shallow clone to optain the skipped portions if needed.
+and its submodules, though standard `git` commands may also be used after a shallow clone to obtain the skipped portions if needed.
 
 Alternatively, you can use a separate `git clone` of each of the submodules.
 The default location for *PeleLMeX* dependencies is the `Submodules` folder but you optionally
