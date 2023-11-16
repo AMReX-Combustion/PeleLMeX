@@ -3,13 +3,12 @@
 
 #include <AMReX_Geometry.H>
 #include <AMReX_FArrayBox.H>
-#include <AMReX_ParmParse.H>
 #include <AMReX_SPACE.H>
 
 #include <PeleLMeX_Index.H>
 #include <pelelmex_prob_parm.H>
 #include <PMFData.H>
-#include <PelePhysics.H>
+#include <mechanism.H>
 
 AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
@@ -115,7 +114,7 @@ bcnormal(
     }
     enthalpy = eta * prob_parm.H_fuel + (1.0 - eta) * prob_parm.H_ox;
 
-    GET_T_GIVEN_HY(&enthalpy, massfrac, &s_ext[TEMP], &ierr);
+    GET_T_GIVEN_HY(enthalpy, massfrac, s_ext[TEMP], ierr);
 
     amrex::Real rho_cgs, P_cgs, RhoH_temp;
     P_cgs = prob_parm.P_mean * 10.0;
