@@ -32,6 +32,10 @@
 #include <AMReX_ErrorList.H>
 #include <AMReX_VisMF.H>
 
+#ifdef PELELM_USE_RAD
+#include <PeleLMRad.hpp>
+#endif
+
 // Forward declarations
 #ifdef PELELM_USE_SPRAY
 class SprayParticleContainer;
@@ -857,6 +861,15 @@ public:
   //-----------------------------------------------------------------------------
 #endif
 
+#ifdef PELELM_USE_RAD
+  // Initialize the radiation module
+  void RadInit();
+
+  // Compute the radiation source term
+  void computeRadSource(
+    const PeleLM::TimeStamp& a_timestamp, const amrex::Real a_dt);
+#endif
+
   //-----------------------------------------------------------------------------
   // EOS
 
@@ -1677,6 +1690,12 @@ public:
   // Soot parameters
   SootModel* soot_model = nullptr;
   bool do_soot_solve;
+#endif
+
+#ifdef PELELM_USE_RAD
+  // Radiation parameters
+  std::unique_ptr<PeleRad::Radiation> rad_model;
+  bool do_rad_solve;
 #endif
 
   // Active controller
