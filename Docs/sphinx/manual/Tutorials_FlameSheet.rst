@@ -10,7 +10,7 @@ Premixed flame sheet with harmonic perturbations
 Introduction
 ------------
 `PeleLMeX` primary objective is to enable simulation of reactive flows on platforms ranging
-from small personal computer to Exascale supercomputer. This short tutorial describes
+from small personal computer to Exascale supercomputer. This short ``FlameSheet`` tutorial describes
 the case of a 2D laminar methane/hydrogen/air premixed flame, perturbed using harmonic fluctuations
 on the initial conditions.
 
@@ -19,45 +19,7 @@ This document provides step by step instructions reviewing how to set-up the dom
 and how to construct an initial solution.
 
 ..  _sec:TUTO_FS::PrepStep:
-
-Setting-up your environment
----------------------------
-
-Getting a functioning environment in which to compile and run `PeleLMeX` is the first step of this tutorial.
-Please review the requirements listed on the `PeleLMeX README <https://github.com/AMReX-Combustion/PeleLMeX/blob/development/README.md>`_ to ensure
-you have a suitable compiler suite to build `PeleLMeX`.
-Follow the steps listed below to get the source code and its dependent libraries:
-
-#. The first step consist in getting `PeleLMeX` and its dependencies. To do so, use a recursive *git clone*: ::
-
-    git clone --recursive https://github.com/AMReX-Combustion/PeleLMeX.git
-
-#. Move into the Exec folder containing the ``FlameSheet``. To do so: ::
-
-    cd PeleLMeX/Exec/RegTests/FlameSheet
-
-Note that the makefile system is set up such that default paths are automatically set to the
-submodules obtained with the recursive *git clone*, however the user can set their own dependencies
-in the `GNUmakefile` by updating the top-most lines as follows: ::
-
-       PELELMEX_HOME     = <path_to_PeleLMeX>
-       AMREX_HOME        = <path_to_MyAMReX>
-       AMREX_HYDRO_HOME  = <path_to_MyAMReXHydro>
-       PELE_PHYSICS_HOME = <path_to_MyPelePhysics>
-       SUNDIALS_HOME     = <path_to_MySUNDIALS>
-
-or directly through shell environment variables (using *bash* for instance): ::
-
-       export PELELMEX_HOME=<path_to_PeleLMeX>
-       export AMREX_HOME=<path_to_MyAMReX>
-       export AMREX_HYDRO_HOME=<path_to_MyAMReXHydro>
-       export PELE_PHYSICS_HOME=<path_to_MyPelePhysics>
-       export SUNDIALS_HOME=<path_to_MySUNDIALS>
-
-Note that using the first option will overwrite any
-environment variables you might have previously defined when using this `GNUmakefile`.
-
-You're good to go !
+.. include:: Tutorials_SettingUp.rst
 
 Case setup
 ----------

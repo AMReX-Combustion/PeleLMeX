@@ -6,15 +6,28 @@ Follow the steps listed below to get to this point:
 
 #. The first step is to get `PeleLMeX` and its dependencies. To do so, use a recursive *git clone*: ::
 
-    git clone --recursive https://github.com/AMReX-Combustion/PeleLMeX.git
+    git clone --recursive --shallow-submodules --single-branch https://github.com/AMReX-Combustion/PeleLMeX.git
 
-#. Move into the Exec folder containing the ``EB_BackwardStepFlame``. To do so: ::
+   The ``--shallow-submodules`` and ``--single-branch`` flags are recommended for most users as they
+   substantially reduce the size of the download by skipping extraneous parts of the git history.
+   Developers may wish to omit these flags in order download the complete git history of PeleLMeX
+   and its submodules, though standard ``git`` commands may also be used after a shallow clone to
+   optain the skipped portions if needed.
 
-    cd PeleLMeX/Exec/RegTests/EB_BackwardStepFlame
+#. Move into the Exec folder containing your tutorial. To do so: ::
 
-Note that the makefile system is set up such that default paths are automatically set to the
-submodules obtained with the recursive *git clone*, however the user can set their own dependencies
-in the `GNUmakefile` by updating the top-most lines as follows: ::
+    cd PeleLMeX/Exec/RegTests/<CaseName>
+
+   where <CaseName> is the name of your tutorial, e.g. ``HotBubble``, ``FlameSheet``,
+   ``EB_BackwardStepFlame``, ``EB_FlowPastCylinder``, or ``TripleFlame``.
+
+You're good to go!
+
+.. Note::
+
+   The makefile system is set up such that default paths are automatically set to the
+   submodules obtained with the recursive *git clone*, however the user can set their own dependencies
+   in the `GNUmakefile` for each case by updating the top-most lines as follows: ::
 
        PELELMEX_HOME     = <path_to_PeleLMeX>
        AMREX_HOME        = <path_to_MyAMReX>
@@ -22,7 +35,7 @@ in the `GNUmakefile` by updating the top-most lines as follows: ::
        PELE_PHYSICS_HOME = <path_to_MyPelePhysics>
        SUNDIALS_HOME     = <path_to_MySUNDIALS>
 
-or directly through shell environment variables (using *bash* for instance): ::
+   or directly through shell environment variables (using *bash* for instance): ::
 
        export PELELMEX_HOME=<path_to_PeleLMeX>
        export AMREX_HOME=<path_to_MyAMReX>
@@ -30,7 +43,5 @@ or directly through shell environment variables (using *bash* for instance): ::
        export PELE_PHYSICS_HOME=<path_to_MyPelePhysics>
        export SUNDIALS_HOME=<path_to_MySUNDIALS>
 
-Note that using the first option will overwrite any
-environment variables you might have previously defined when using this `GNUmakefile`.
-
-You're good to go !
+   Note that using the first option will overwrite any
+   environment variables you might have previously defined when using this `GNUmakefile`.

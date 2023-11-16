@@ -11,14 +11,13 @@ Introduction
 ------------
 
 The primary objective of `PeleLMeX` is to enable simulations of reactive flows on platforms ranging
-from small personal computers to Exascale supercomputers. This tutorial describes the case
+from small personal computers to Exascale supercomputers. This ``EB_BackwardStepFlame`` tutorial describes the case
 of a 2D laminar premixed methane/air flame anchored behind a backward facing step.
 
 The goal of this tutorial is to introduce `PeleLMeX` users to more advanced reactive simulation setup as
 well as embedded boundaries.
 
-..  _sec:TUTO_BFS::PrepStep:
-
+.. _sec:TUTO_BFS::PrepStep:
 .. include:: Tutorials_SettingUp.rst
 
 Case setup
