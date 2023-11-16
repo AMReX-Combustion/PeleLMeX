@@ -164,7 +164,7 @@ The following list of derived variables are available in PeleLMeX:
     * - `mole_fractions`
       - NUM_SPECIES
       - Species mole fractions
-    * - `diffcoeffs`
+    * - `diffcoeff`
       - NUM_SPECIES
       - Species mixture-averaged diffusion coefficients
     * - `lambda`
@@ -527,4 +527,3 @@ frequency using:
 ::
 
     amr.message_int      = 20                # [OPT, DEF=10] Frequency for checking the presence of trigger files
-
