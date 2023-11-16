@@ -1,6 +1,8 @@
 #ifndef PELELM_INDEX_H
 #define PELELM_INDEX_H
 
+#define TRASH_NUMBER -6
+
 #define VELX 0
 #define VELY 1
 #define VELZ 2

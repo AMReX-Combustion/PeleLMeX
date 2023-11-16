@@ -11,6 +11,8 @@
 #include <PMFData.H>
 #include <PelePhysics.H>
 
+#define SHOULD_MAKE_AN_ERROR -6
+
 AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
 void
