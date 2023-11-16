@@ -2,7 +2,7 @@
 DIM = 2
 COMP = gnu
 PRECISION = DOUBLE
-USE_EB = TRUE
+USE_EB = FALSE
 USE_HYPRE = FALSE
 
 # Profiling
