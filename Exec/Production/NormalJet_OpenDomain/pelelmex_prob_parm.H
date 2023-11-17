@@ -3,6 +3,7 @@
 
 #include <AMReX_REAL.H>
 #include <AMReX_GpuMemory.H>
+#include <PelePhysics.H>
 
 using namespace amrex::literals;
 
