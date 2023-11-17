@@ -21,7 +21,7 @@ Checks: 'bugprone-*,
          -readability-function-cognitive-complexity,
          -readability-function-size'
 WarningsAsErrors: ''
-HeaderFilterRegex: '.*'
+HeaderFilterRegex: 'PeleLMeX\/Source|PeleLMeX\/Exec|PeleLMeX\/Submodules\/Pele'
 AnalyzeTemporaryDtors: false
 FormatStyle:     none
 User:            user
