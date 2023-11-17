@@ -56,8 +56,8 @@ PeleLM::readProbParm()
       prob_parm->Z * Y_pure_fuel[n] + (1. - prob_parm->Z) * prob_parm->Y_ox[n];
   }
 
-  CKHBMS(&prob_parm->T_fu, prob_parm->Y_fuel, &prob_parm->H_fuel);
-  CKHBMS(&prob_parm->T_ox, prob_parm->Y_ox, &prob_parm->H_ox);
+  CKHBMS(prob_parm->T_fu, prob_parm->Y_fuel, prob_parm->H_fuel);
+  CKHBMS(prob_parm->T_ox, prob_parm->Y_ox, prob_parm->H_ox);
 
   auto problo = geom[0].ProbLo();
   auto probhi = geom[0].ProbHi();
