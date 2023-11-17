@@ -116,7 +116,7 @@
 geometries using an embedded boundary (EB) method. This method relies on intersecting an
 arbitrary surface with the Cartesian matrix of uniform cells, and modifies the numerical stencils
 near cells that are cut by the EB.</p>
-<p>The goal of this tutorial is to setup a simple 2-dimentional flow past cylinder case in <cite>PeleLMeX</cite>.
+<p>The goal of this <code class="docutils literal notranslate"><span class="pre">EB_FlowPastCylinder</span></code> tutorial is to setup a simple 2-dimentional flow past cylinder case in <cite>PeleLMeX</cite>.
 This document provides step by step instructions to properly set-up the domain and boundary conditions,
 construct an initial solution.</p>
 </section>
@@ -125,20 +125,30 @@ construct an initial solution.</p>
 <p>Getting a functioning environment in which to compile and run <cite>PeleLMeX</cite> is the first step of this tutorial.
 Follow the steps listed below to get to this point:</p>
 <ol class="arabic">
-<li><p>The first step consist in getting <cite>PeleLMeX</cite> and its dependencies. To do so, use a recursive <em>git clone</em>:</p>
-<div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>git clone --recursive https://github.com/AMReX-Combustion/PeleLMeX.git
+<li><p>The first step is to get <cite>PeleLMeX</cite> and its dependencies. To do so, use a recursive <em>git clone</em>:</p>
+<div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>git clone --recursive --shallow-submodules --single-branch https://github.com/AMReX-Combustion/PeleLMeX.git
 </pre></div>
 </div>
+<p>The <code class="docutils literal notranslate"><span class="pre">--shallow-submodules</span></code> and <code class="docutils literal notranslate"><span class="pre">--single-branch</span></code> flags are recommended for most users as they
+substantially reduce the size of the download by skipping extraneous parts of the git history.
+Developers may wish to omit these flags in order download the complete git history of PeleLMeX
+and its submodules, though standard <code class="docutils literal notranslate"><span class="pre">git</span></code> commands may also be used after a shallow clone to
+obtain the skipped portions if needed.</p>
 </li>
-<li><p>Move into the Exec folder containing the <code class="docutils literal notranslate"><span class="pre">FlowPastCylinder</span></code>. To do so:</p>
-<div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>cd PeleLMeX/Exec/RegTests/EB_FlowPastCylinder
+<li><p>Move into the Exec folder containing your tutorial. To do so:</p>
+<div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>cd PeleLMeX/Exec/RegTests/&lt;CaseName&gt;
 </pre></div>
 </div>
+<p>where &lt;CaseName&gt; is the name of your tutorial, e.g. <code class="docutils literal notranslate"><span class="pre">HotBubble</span></code>, <code class="docutils literal notranslate"><span class="pre">FlameSheet</span></code>,
+<code class="docutils literal notranslate"><span class="pre">EB_BackwardStepFlame</span></code>, <code class="docutils literal notranslate"><span class="pre">EB_FlowPastCylinder</span></code>, or <code class="docutils literal notranslate"><span class="pre">TripleFlame</span></code>.</p>
 </li>
 </ol>
-<p>Note that the makefile system is set up such that default paths are automatically set to the
-submodules obtained with the recursive <em>git clone</em>, however the user can set their own dependencies
-in the <cite>GNUmakefile</cite> by updating the top-most lines as follows:</p>
+<p>You’re good to go!</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The makefile system is set up such that default paths are automatically set to the
+submodules obtained with the recursive <em>git clone</em>, however advanced users can set their own dependencies
+in the <cite>GNUmakefile</cite> for each case by updating the top-most lines as follows:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>PELELMEX_HOME     = &lt;path_to_PeleLMeX&gt;
 AMREX_HOME        = &lt;path_to_MyAMReX&gt;
 AMREX_HYDRO_HOME  = &lt;path_to_MyAMReXHydro&gt;
@@ -156,7 +166,7 @@ export SUNDIALS_HOME=&lt;path_to_MySUNDIALS&gt;
 </div>
 <p>Note that using the first option will overwrite any
 environment variables you might have previously defined when using this <cite>GNUmakefile</cite>.</p>
-<p>You’re good to go !</p>
+</div>
 </section>
 <section id="numerical-setup">
 <h2>Numerical setup<a class="headerlink" href="#numerical-setup" title="Link to this heading"></a></h2>

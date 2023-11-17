@@ -25,7 +25,7 @@
     </noscript>
   </head>
   <body class="landing">
-    
+
     <!-- Header -->
     <header id="header">
       <nav id="nav">
@@ -67,13 +67,13 @@
 	    <pre>
               git clone --recursive https://github.com/AMReX-Combustion/PeleLMeX.git
               cd Exec/RegTests/FlameSheet/
-              make -j 12
+              make TPL && make -j 12
               mpiexec -np 8 ./PeleLMeX2d.gnu.MPI.ex input.2d-regt
             </pre>
             <p>
               The <a href="manual/html/index.html">PeleLMeX Documentation</a>
               continues to be the best place to learn more about the code.
-              You can also ask for help by opening up an issue on the 
+              You can also ask for help by opening up an issue on the
               <a href="https://github.com/AMReX-Combustion/PeleLMeX">PeleLMeX GitHub webpage</a>.
             </p>
 	    </li>

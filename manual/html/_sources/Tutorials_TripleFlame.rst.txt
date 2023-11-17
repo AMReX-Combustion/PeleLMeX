@@ -16,7 +16,7 @@ They also aid in our understanding of the more complex turbulent flames.
 Depending on the fuel involved and the flow configuration, the laminar flames can take on a number of interesting geometries.
 For example, as practical combustion systems often operate in partially premixed mode,
 with one or more fuel injections, a wide range of fresh gas compositions can be observed;
-and these conditions favor the appearance of edge flames, see Fig. :numref:`TripleFlameIntro`.
+and these conditions favor the appearance of edge flames, see :numref:`TripleFlameIntro`.
 
 .. figure:: images/tutorials/TF_Intro.png
    :name: TripleFlameIntro
@@ -31,54 +31,13 @@ an important role in flame stabilization, re-ignition and propagation.
 Simple fuels can exhibit up to three burning branches while diesel fuel, with a low temperature combustion mode,
 can exhibit up to 5 branches.
 
-The goal of this tutorial is to setup a simple 2D laminar triple edge flame configuration with `PeleLMeX`.
+The goal of this ``TripleFlame`` tutorial is to setup a simple 2D laminar triple edge flame configuration with `PeleLMeX`.
 This document provides step by step instructions to properly set-up the domain and boundary conditions,
 construct an initial solution, and provides guidance on how to monitor and influence the initial transient to reach
 a final steady-state solution.
 
 ..  _sec:TUTO_TF::PrepStep:
-
-Setting-up your environment
----------------------------
-
-Getting a functioning environment in which to compile and run `PeleLMeX` is the first step of this tutorial.
-Follow the steps listed below to get to this point:
-
-#. The first step is to get `PeleLMeX` and its dependencies. To do so, use a recursive *git clone*: ::
-
-    git clone --recursive https://github.com/AMReX-Combustion/PeleLMeX.git
-
-#. Move into the Exec folder containing the ``TripleFLame``. To do so: ::
-
-    cd PeleLMeX/Exec/RegTests/TripleFLame
-
-Note that the makefile system is set up such that default paths are automatically set to the
-submodules obtained with the recursive *git clone*, however the user can set their own dependencies
-in the `GNUmakefile` by updating the top-most lines as follows: ::
-
-       PELELMEX_HOME     = <path_to_PeleLMeX>
-       AMREX_HOME        = <path_to_MyAMReX>
-       AMREX_HYDRO_HOME  = <path_to_MyAMReXHydro>
-       PELE_PHYSICS_HOME = <path_to_MyPelePhysics>
-       SUNDIALS_HOME     = <path_to_MySUNDIALS>
-
-or directly through shell environment variables (using *bash* for instance): ::
-
-       export PELELMEX_HOME=<path_to_PeleLMeX>
-       export AMREX_HOME=<path_to_MyAMReX>
-       export AMREX_HYDRO_HOME=<path_to_MyAMReXHydro>
-       export PELE_PHYSICS_HOME=<path_to_MyPelePhysics>
-       export SUNDIALS_HOME=<path_to_MySUNDIALS>
-
-Note that using the first option will overwrite any
-environment variables you might have previously defined when using this `GNUmakefile`.
-
-You're good to go !
-
-Numerical setup
----------------
-
-In this section we review the content of the various input files for the Triple Flame test case. To get additional information about the keywords discussed, the user is referred to :doc:`LMeXControls`.
+.. include:: Tutorials_SettingUp.rst
 
 Test case and boundary conditions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

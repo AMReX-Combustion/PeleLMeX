@@ -65,8 +65,7 @@
 <li class="toctree-l2"><a class="reference internal" href="Tutorials_BFSFlame.html">Backward facing step anchored premixed flame</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">A simple triple flame</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#introduction">Introduction</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#setting-up-your-environment">Setting-up your environment</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#numerical-setup">Numerical setup</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#setting-up-your-environment">Setting-up your environment</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#test-case-and-boundary-conditions">Test case and boundary conditions</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#problem-specifications">Problem specifications</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#initial-solution">Initial solution</a></li>
@@ -122,7 +121,7 @@ They also aid in our understanding of the more complex turbulent flames.
 Depending on the fuel involved and the flow configuration, the laminar flames can take on a number of interesting geometries.
 For example, as practical combustion systems often operate in partially premixed mode,
 with one or more fuel injections, a wide range of fresh gas compositions can be observed;
-and these conditions favor the appearance of edge flames, see Fig. <a class="reference internal" href="#tripleflameintro"><span class="std std-numref">Fig. 21</span></a>.</p>
+and these conditions favor the appearance of edge flames, see <a class="reference internal" href="#tripleflameintro"><span class="std std-numref">Fig. 21</span></a>.</p>
 <figure class="align-center" id="tripleflameintro" style="width: 95%">
 <img alt="_images/TF_Intro.png" src="_images/TF_Intro.png" />
 <figcaption>
@@ -134,7 +133,7 @@ anchoring diffusion flame extending from a single point <a class="reference inte
 an important role in flame stabilization, re-ignition and propagation.
 Simple fuels can exhibit up to three burning branches while diesel fuel, with a low temperature combustion mode,
 can exhibit up to 5 branches.</p>
-<p>The goal of this tutorial is to setup a simple 2D laminar triple edge flame configuration with <cite>PeleLMeX</cite>.
+<p>The goal of this <code class="docutils literal notranslate"><span class="pre">TripleFlame</span></code> tutorial is to setup a simple 2D laminar triple edge flame configuration with <cite>PeleLMeX</cite>.
 This document provides step by step instructions to properly set-up the domain and boundary conditions,
 construct an initial solution, and provides guidance on how to monitor and influence the initial transient to reach
 a final steady-state solution.</p>
@@ -145,19 +144,29 @@ a final steady-state solution.</p>
 Follow the steps listed below to get to this point:</p>
 <ol class="arabic">
 <li><p>The first step is to get <cite>PeleLMeX</cite> and its dependencies. To do so, use a recursive <em>git clone</em>:</p>
-<div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>git clone --recursive https://github.com/AMReX-Combustion/PeleLMeX.git
+<div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>git clone --recursive --shallow-submodules --single-branch https://github.com/AMReX-Combustion/PeleLMeX.git
 </pre></div>
 </div>
+<p>The <code class="docutils literal notranslate"><span class="pre">--shallow-submodules</span></code> and <code class="docutils literal notranslate"><span class="pre">--single-branch</span></code> flags are recommended for most users as they
+substantially reduce the size of the download by skipping extraneous parts of the git history.
+Developers may wish to omit these flags in order download the complete git history of PeleLMeX
+and its submodules, though standard <code class="docutils literal notranslate"><span class="pre">git</span></code> commands may also be used after a shallow clone to
+obtain the skipped portions if needed.</p>
 </li>
-<li><p>Move into the Exec folder containing the <code class="docutils literal notranslate"><span class="pre">TripleFLame</span></code>. To do so:</p>
-<div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>cd PeleLMeX/Exec/RegTests/TripleFLame
+<li><p>Move into the Exec folder containing your tutorial. To do so:</p>
+<div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>cd PeleLMeX/Exec/RegTests/&lt;CaseName&gt;
 </pre></div>
 </div>
+<p>where &lt;CaseName&gt; is the name of your tutorial, e.g. <code class="docutils literal notranslate"><span class="pre">HotBubble</span></code>, <code class="docutils literal notranslate"><span class="pre">FlameSheet</span></code>,
+<code class="docutils literal notranslate"><span class="pre">EB_BackwardStepFlame</span></code>, <code class="docutils literal notranslate"><span class="pre">EB_FlowPastCylinder</span></code>, or <code class="docutils literal notranslate"><span class="pre">TripleFlame</span></code>.</p>
 </li>
 </ol>
-<p>Note that the makefile system is set up such that default paths are automatically set to the
-submodules obtained with the recursive <em>git clone</em>, however the user can set their own dependencies
-in the <cite>GNUmakefile</cite> by updating the top-most lines as follows:</p>
+<p>You’re good to go!</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The makefile system is set up such that default paths are automatically set to the
+submodules obtained with the recursive <em>git clone</em>, however advanced users can set their own dependencies
+in the <cite>GNUmakefile</cite> for each case by updating the top-most lines as follows:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>PELELMEX_HOME     = &lt;path_to_PeleLMeX&gt;
 AMREX_HOME        = &lt;path_to_MyAMReX&gt;
 AMREX_HYDRO_HOME  = &lt;path_to_MyAMReXHydro&gt;
@@ -175,11 +184,7 @@ export SUNDIALS_HOME=&lt;path_to_MySUNDIALS&gt;
 </div>
 <p>Note that using the first option will overwrite any
 environment variables you might have previously defined when using this <cite>GNUmakefile</cite>.</p>
-<p>You’re good to go !</p>
-</section>
-<section id="numerical-setup">
-<h2>Numerical setup<a class="headerlink" href="#numerical-setup" title="Link to this heading"></a></h2>
-<p>In this section we review the content of the various input files for the Triple Flame test case. To get additional information about the keywords discussed, the user is referred to <a class="reference internal" href="LMeXControls.html"><span class="doc">PeleLMeX controls</span></a>.</p>
+</div>
 <section id="test-case-and-boundary-conditions">
 <h3>Test case and boundary conditions<a class="headerlink" href="#test-case-and-boundary-conditions" title="Link to this heading"></a></h3>
 <p>Direct Numerical Simulations (DNS) are performed on a 2x4 <span class="math notranslate nohighlight">\(cm^2\)</span> 2D computational domain
