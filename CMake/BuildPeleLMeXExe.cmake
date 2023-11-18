@@ -64,8 +64,7 @@ function(build_pelelmex_exe pelelmex_exe_name pelelmex_lib_name)
                    ${PELEMP_SRC_DIR}/Soot_Models/SootData.H
                    ${PELEMP_SRC_DIR}/Soot_Models/SootReactions.H
                    ${PELEMP_SRC_DIR}/Soot_Models/SootModel.H
-                   ${PELEMP_SRC_DIR}/Soot_Models/SootModel_derive.H
-                   ${SRC_DIR}/PeleLMeXSoot.cpp)
+                   ${PELEMP_SRC_DIR}/Soot_Models/SootModel_derive.H)
     target_include_directories(${pelelmex_exe_name} PRIVATE ${PELEMP_SRC_DIR}/Soot_Models)
   endif()
 
