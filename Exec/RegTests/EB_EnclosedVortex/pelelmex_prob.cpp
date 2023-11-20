@@ -2,7 +2,7 @@
 #include <AMReX_ParmParse.H>
 
 void
-PeleLM::readProbParm()
+PeleLM::readProbParm() // NOLINT(readability-make-member-function-const)
 {
   amrex::ParmParse pp("prob");
 
@@ -13,7 +13,7 @@ PeleLM::readProbParm()
   pp.query("yvort", PeleLM::prob_parm->yvort);
   pp.query("forcevort", PeleLM::prob_parm->forcevort);
 
-  if (!m_incompressible) {
+  if (m_incompressible == 0) {
     auto& trans_parm = PeleLM::trans_parms.host_trans_parm();
     amrex::ParmParse pptr("transport");
     pp.query("const_viscosity", trans_parm.const_viscosity);

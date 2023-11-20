@@ -19,7 +19,7 @@ pelelmex_initdata(
   int k,
   int is_incompressible,
   amrex::Array4<amrex::Real> const& state,
-  amrex::Array4<amrex::Real> const& aux,
+  amrex::Array4<amrex::Real> const& /*aux*/,
   amrex::GeometryData const& geomdata,
   ProbParm const& prob_parm,
   pele::physics::PMF::PmfData::DataContainer const* /*pmf_data*/)
@@ -35,10 +35,6 @@ pelelmex_initdata(
   AMREX_D_TERM(const amrex::Real Lx = prob_hi[0] - prob_lo[0];
                , const amrex::Real Ly = prob_hi[1] - prob_lo[1];
                , const amrex::Real Lz = prob_hi[2] - prob_lo[2]);
-
-  AMREX_D_TERM(const amrex::Real x_c = prob_lo[0] + 0.5 * Lx;
-               , const amrex::Real y_c = prob_lo[1] + 0.5 * Ly;
-               , const amrex::Real z_c = prob_lo[2] + 0.5 * Lz);
 
   auto eos = pele::physics::PhysicsType::eos();
   constexpr amrex::Real Pi = 3.14159265358979323846264338327950288;
@@ -131,8 +127,9 @@ pelelmex_initdata(
              std::sin(2 * Pi * 9 * (x - 0.00779) / Lx)));
   }
 
-  if (is_incompressible)
+  if (!(is_incompressible == 0)) {
     return;
+  }
 
   state(i, j, k, TEMP) = prob_parm.T_mean;
 
@@ -159,16 +156,15 @@ AMREX_FORCE_INLINE
 void
 bcnormal(
   const amrex::Real* /*x[AMREX_SPACEDIM]*/,
-  const int m_nAux,
+  const int /*m_nAux*/,
   amrex::Real s_ext[NVAR],
-  const int idir,
-  const int sgn,
-  const amrex::Real time,
-  amrex::GeometryData const& geomdata,
+  const int /*idir*/,
+  const int /*sgn*/,
+  const amrex::Real /*time*/,
+  amrex::GeometryData const& /*geomdata*/,
   ProbParm const& prob_parm,
   pele::physics::PMF::PmfData::DataContainer const* /*pmf_data*/)
 {
-  const amrex::Real* prob_lo = geomdata.ProbLo();
   // amrex::GpuArray<amrex::Real, NUM_SPECIES + 4> pmf_vals = {0.0};
   amrex::Real massfrac[NUM_SPECIES] = {0.0};
 
