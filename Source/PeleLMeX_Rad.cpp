@@ -73,7 +73,6 @@ PeleLM::computeRadSource(
 
   BL_PROFILE_VAR("PeleLM::advance::rad::solve", PLM_RAD_SOLV);
   rad_model->evaluateRad();
-  BL_PROFILE_VAR_STOP(PLM_RAD_SOLV);
 
   for (int lev = 0; lev <= finest_level; lev++) {
 #ifdef AMREX_USE_OMP
@@ -85,4 +84,5 @@ PeleLM::computeRadSource(
       rad_model->calcRadSource(mfi, source_arr, lev);
     }
   }
+  BL_PROFILE_VAR_STOP(PLM_RAD_SOLV);
 }

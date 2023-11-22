@@ -15,10 +15,6 @@
 #include "SootModel.H"
 #endif
 
-#ifdef PELELM_USE_RAD
-#include <PeleLMRad.hpp>
-#endif
-
 using namespace amrex;
 
 static Box
