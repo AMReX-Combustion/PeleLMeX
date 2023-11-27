@@ -96,11 +96,6 @@ jobs:
     - name: Repo Dependencies
       run: |
         Utils/CloneDeps.sh
-        cd ${GITHUB_WORKSPACE}/build/amrex
-        git remote add wzhang https://github.com/WeiqunZhang/amrex.git
-        git fetch wzhang eb_robin
-        git checkout eb_robin
-        cd -
         git clone --branch main https://github.com/AMReX-Combustion/PeleRad.git build/PeleRad
     - name: Build Release
       env:
