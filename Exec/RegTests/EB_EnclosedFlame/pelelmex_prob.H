@@ -18,7 +18,7 @@ pelelmex_initdata(
   int i,
   int j,
   int k,
-  int is_incompressible,
+  int /*is_incompressible*/,
   amrex::Array4<amrex::Real> const& state,
   amrex::Array4<amrex::Real> const& /*aux*/,
   amrex::GeometryData const& geomdata,
@@ -38,8 +38,7 @@ pelelmex_initdata(
                , const amrex::Real Lz = prob_hi[2] - prob_lo[2]);
 
   AMREX_D_TERM(const amrex::Real xc = prob_lo[0] + 0.5 * Lx;
-               , const amrex::Real yc = prob_lo[1] + 0.5 * Ly;
-               , const amrex::Real zc = prob_lo[2] + 0.5 * Lz;);
+               , const amrex::Real yc = prob_lo[1] + 0.5 * Ly;, );
 
   constexpr amrex::Real Pi = 3.14159265358979323846264338327950288;
 
@@ -62,8 +61,8 @@ pelelmex_initdata(
 
   amrex::Real y1 =
     3.6 - (radius - prob_parm.standoff - 1.42 * dx[1] + pert) * 100;
-  amrex::Real y2 =
-    3.6 - (radius - prob_parm.standoff + 1.42 * dx[1] + pert) * 100;
+  // amrex::Real y2 =
+  //   3.6 - (radius - prob_parm.standoff + 1.42 * dx[1] + pert) * 100;
 
 #elif (AMREX_SPACEDIM == 3)
     amrex::Real pertLz = (prob_parm.pertLz > 0.0) ? prob_parm.pertLz : Lz;
@@ -79,8 +78,8 @@ pelelmex_initdata(
 
   amrex::Real y1 =
     3.6 - (radius - prob_parm.standoff - 1.42 * dx[1] + pert) * 100;
-  amrex::Real y2 =
-    3.6 - (radius - prob_parm.standoff + 1.42 * dx[1] + pert) * 100;
+  // amrex::Real y2 =
+  //     3.6 - (radius - prob_parm.standoff + 1.42 * dx[1] + pert) * 100;
 #endif
 
   pele::physics::PMF::pmf(pmf_data, y1, y1, pmf_vals);
@@ -124,16 +123,16 @@ AMREX_FORCE_INLINE
 void
 bcnormal(
   const amrex::Real* /*x[AMREX_SPACEDIM]*/,
-  const int m_nAux,
-  amrex::Real s_ext[NVAR],
-  const int idir,
-  const int sgn,
-  const amrex::Real time,
-  amrex::GeometryData const& geomdata,
-  ProbParm const& prob_parm,
-  pele::physics::PMF::PmfData::DataContainer const* pmf_data)
+  const int /*m_nAux*/,
+  amrex::Real* /*s_ext[NVAR]*/,
+  const int /*idir*/,
+  const int /*sgn*/,
+  const amrex::Real /*time*/,
+  amrex::GeometryData const& /*geomdata*/,
+  ProbParm const& /*prob_parm*/,
+  pele::physics::PMF::PmfData::DataContainer const* /*pmf_data*/)
 {
-  const amrex::Real* prob_lo = geomdata.ProbLo();
+  amrex::Abort("Shouldn't ever be here");
 }
 
 AMREX_GPU_DEVICE

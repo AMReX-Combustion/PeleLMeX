@@ -47,7 +47,7 @@ AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
 void
 setEBType(
-  const amrex::Real xEBface[AMREX_SPACEDIM],
+  const amrex::Real* /*xEBface[AMREX_SPACEDIM]*/,
   amrex::Real& EBflagType,
   amrex::GeometryData const& /*geomdata*/,
   ProbParm const& /*prob_parm*/)
