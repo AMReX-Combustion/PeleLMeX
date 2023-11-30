@@ -121,7 +121,8 @@ PeleLM::WritePlotFile()
 #endif
 
 #ifdef PELELM_USE_RAD
-  ncomp += 3;
+  if (do_rad_solve)
+    ncomp += 3;
 #endif
 
   // Derive
