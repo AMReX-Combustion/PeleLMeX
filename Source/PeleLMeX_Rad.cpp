@@ -35,8 +35,7 @@ PeleLM::RadInit()
 }
 
 void
-PeleLM::computeRadSource(
-  const PeleLM::TimeStamp& a_timestamp, const amrex::Real a_dt)
+PeleLM::computeRadSource(const PeleLM::TimeStamp& a_timestamp)
 {
   int const co2Indx = rad_model->readRadIndices().co2Indx;
   int const h2oIndx = rad_model->readRadIndices().h2oIndx;

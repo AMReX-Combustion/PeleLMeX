@@ -866,8 +866,7 @@ public:
   void RadInit();
 
   // Compute the radiation source term
-  void computeRadSource(
-    const PeleLM::TimeStamp& a_timestamp, const amrex::Real a_dt);
+  void computeRadSource(const PeleLM::TimeStamp& a_timestamp);
 #endif
 
   //-----------------------------------------------------------------------------
