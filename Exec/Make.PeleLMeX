@@ -55,10 +55,8 @@ ifeq ($(USE_SOOT), TRUE)
 endif
 
 ifeq ($(USE_PELERAD), TRUE)
-   $(info ******** Radiation model is activated ********)
    DEFINES += -DPELELM_USE_RAD
    ifeq ($(USE_HIP), TRUE)
-       $(info ******** Radiation module is using hip ********)
        DEFINES += -DPELERAD_USE_HIP
    endif
 endif

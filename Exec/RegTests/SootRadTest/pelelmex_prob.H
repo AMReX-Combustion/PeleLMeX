@@ -1,5 +1,5 @@
-#ifndef PELELM_PROB_H
-#define PELELM_PROB_H
+#ifndef PELELMEX_PROB_H
+#define PELELMEX_PROB_H
 
 #include <AMReX_Geometry.H>
 #include <AMReX_FArrayBox.H>
@@ -51,8 +51,8 @@ pelelmex_initdata(
   }
   AMREX_D_TERM(state(i, j, k, VELX) = pmf_vals[0] * 1.E-2;
                , state(i, j, k, VELY) = 0.;, state(i, j, k, VELZ) = 0.;);
-  amrex::Real rho_cgs, P_cgs;
-  P_cgs = prob_parm.P_mean * 10.;
+  amrex::Real rho_cgs;
+  auto P_cgs = prob_parm.P_mean * 10.;
 
   auto eos = pele::physics::PhysicsType::eos();
   eos.PYT2R(P_cgs, massfrac.data(), state(i, j, k, TEMP), rho_cgs);

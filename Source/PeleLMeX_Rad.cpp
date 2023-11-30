@@ -6,8 +6,7 @@
 void
 PeleLM::RadInit()
 {
-  amrex::Print() << "Radiation model is activated "
-                 << "\n";
+  amrex::Print() << "Radiation model is activated " << '\n';
   PeleRad::RadComps rc;
   amrex::Vector<std::string> names;
   pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(names);

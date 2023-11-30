@@ -110,3 +110,4 @@ pelerad.max_fmg_iter = 0
 pelerad.lo_bc = Robin Periodic Periodic
 pelerad.hi_bc = Robin Periodic Periodic
 #please set the pelerad.kppath
+pelerad.kppath = /lustre/orion/cmb138/proj-shared/w0g/PR/PeleRad/data/kpDB/

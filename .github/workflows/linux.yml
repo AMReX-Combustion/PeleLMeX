@@ -116,7 +116,7 @@ jobs:
       working-directory: ./Exec/RegTests/SootRadTest/
       run: |
         eval DATA_PATH=$PELERAD_HOME
-        mpirun -n 2 ./PeleLMeX2d.gnu.MPI.ex first-input amr.max_step=2 amr.plot_int=2 amr.check_int=2 pelerad.kppath="$DATA_PATH/data/kpDB/"
+        mpirun -n 2 ./PeleLMeX2d.gnu.MPI.ex first-input.inp amr.max_step=2 amr.plot_int=2 amr.check_int=2 pelerad.kppath="$DATA_PATH/data/kpDB/"
     - name: Build Debug
       env:
          AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
@@ -136,7 +136,7 @@ jobs:
       working-directory: ./Exec/RegTests/SootRadTest/
       run: |
         eval DATA_PATH=$PELERAD_HOME
-        mpirun -n 2 ./PeleLMeX2d.gnu.DEBUG.MPI.ex first-input amr.max_step=2 amr.plot_int=2 amr.check_int=2 pelerad.kppath="$DATA_PATH/data/kpDB/"
+        mpirun -n 2 ./PeleLMeX2d.gnu.DEBUG.MPI.ex first-input.inp amr.max_step=2 amr.plot_int=2 amr.check_int=2 pelerad.kppath="$DATA_PATH/data/kpDB/"
 
   # Build and Run the EB_BackwardStepFlame RegTest with GNU9.3 and MPI support
   EBBFS:
