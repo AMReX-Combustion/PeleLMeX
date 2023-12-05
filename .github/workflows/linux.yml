@@ -68,12 +68,6 @@ jobs:
     - name: Repo Dependencies
       run: Utils/CloneDeps.sh
     - name: Build
-      env:
-         AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
-         PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
-         PELELMEX_HOME: ${GITHUB_WORKSPACE}
-         AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
-         SUNDIALS_HOME : ${GITHUB_WORKSPACE}/build/sundials
       working-directory: ./Exec/RegTests/EB_PipeFlow/
       run: |
         make TPL COMP=gnu USE_MPI=TRUE
@@ -97,12 +91,6 @@ jobs:
     - name: Repo Dependencies
       run: Utils/CloneDeps.sh
     - name: Build
-      env:
-         AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
-         PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
-         PELELMEX_HOME: ${GITHUB_WORKSPACE}
-         AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
-         SUNDIALS_HOME : ${GITHUB_WORKSPACE}/build/sundials
       working-directory: ./Exec/RegTests/EB_BackwardStepFlame/
       run: |
         make TPL COMP=gnu USE_MPI=TRUE
@@ -125,12 +113,6 @@ jobs:
     - name: Repo Dependencies
       run: Utils/CloneDeps.sh
     - name: Build
-      env:
-         AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
-         PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
-         PELELMEX_HOME: ${GITHUB_WORKSPACE}
-         AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
-         SUNDIALS_HOME : ${GITHUB_WORKSPACE}/build/sundials
       working-directory: ./Exec/Efield/FlameSheetIons
       run: |
         make TPL COMP=gnu USE_MPI=TRUE
@@ -154,22 +136,12 @@ jobs:
       run: Utils/CloneDeps.sh
     - name: GenerateTurbFile
       env:
-         AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
-         PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
-         PELELMEX_HOME: ${GITHUB_WORKSPACE}
-         AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
-         SUNDIALS_HOME : ${GITHUB_WORKSPACE}/build/sundials
+         AMREX_HOME: ${GITHUB_WORKSPACE}/Submodules/amrex
       working-directory: ./Exec/RegTests/TurbInflow/TurbFileHIT
       run: |
         make -j 2 COMP=gnu
         ./PeleTurb3d.gnu.ex input hit_file=../../HITDecay/hit_ic_4_32.dat input_ncell=32
     - name: Build
-      env:
-         AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
-         PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
-         PELELMEX_HOME: ${GITHUB_WORKSPACE}
-         AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
-         SUNDIALS_HOME : ${GITHUB_WORKSPACE}/build/sundials
       working-directory: ./Exec/RegTests/TurbInflow/
       run: |
         make TPL COMP=gnu USE_MPI=TRUE DEBUG=TRUE
@@ -200,18 +172,11 @@ jobs:
       run: Utils/CloneDeps.sh
     - name: Build AMReX Tools
       env:
-         AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
-      working-directory: ./build/amrex/Tools/Plotfile
+         AMREX_HOME: ${GITHUB_WORKSPACE}/Submodules/amrex
+      working-directory: ./Submodules/amrex/Tools/Plotfile
       run: |
         make
     - name: Build PeleLMeX
-      env:
-         AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
-         PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
-         PELELMEX_HOME: ${GITHUB_WORKSPACE}
-         AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
-         SUNDIALS_HOME : ${GITHUB_WORKSPACE}/build/sundials
-         PELEMP_HOME: ${GITHUB_WORKSPACE}/build/PeleMP
       working-directory: ./Exec/RegTests/SprayTest/
       run: |
         make TPL COMP=gnu USE_MPI=TRUE
@@ -219,7 +184,7 @@ jobs:
     - name: Run
       working-directory: ./Exec/RegTests/SprayTest/
       run: |
-        cp ${GITHUB_WORKSPACE}/build/amrex/Tools/Plotfile/fcompare.gnu.ex .
+        cp ${GITHUB_WORKSPACE}/Submodules/amrex/Tools/Plotfile/fcompare.gnu.ex .
         sed -i "s/mpiexec -n 1/mpiexec -n 2/g" multiRuns.py
         ./multiRuns.py
         ./compareOutput.py
