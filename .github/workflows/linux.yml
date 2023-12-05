@@ -90,43 +90,31 @@ jobs:
     - name: Repo Dependencies
       run: |
         Utils/CloneDeps.sh
-        git clone --branch main https://github.com/AMReX-Combustion/PeleRad.git build/PeleRad
+        git clone --branch main https://github.com/AMReX-Combustion/PeleRad.git Submodules/PeleRad
     - name: Build Release
       env:
-         AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
-         PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
-         PELERAD_HOME: ${GITHUB_WORKSPACE}/build/PeleRad
-         PELEMP_HOME: ${GITHUB_WORKSPACE}/build/PeleMP
-         PELELMEX_HOME: ${GITHUB_WORKSPACE}
-         AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
-         SUNDIALS_HOME : ${GITHUB_WORKSPACE}/build/sundials
+         PELERAD_HOME: ${GITHUB_WORKSPACE}/Submodules/PeleRad
       working-directory: ./Exec/RegTests/SootRadTest/
       run: |
         make TPL COMP=gnu USE_MPI=TRUE TINY_PROFILE=FALSE
         make -j 2 COMP=gnu USE_MPI=TRUE TINY_PROFILE=FALSE
     - name: Run Release
       env:
-         PELERAD_HOME: ${GITHUB_WORKSPACE}/build/PeleRad
+         PELERAD_HOME: ${GITHUB_WORKSPACE}/Submodules/PeleRad
       working-directory: ./Exec/RegTests/SootRadTest/
       run: |
         eval DATA_PATH=$PELERAD_HOME
         mpirun -n 2 ./PeleLMeX2d.gnu.MPI.ex first-input.inp amr.max_step=2 amr.plot_int=2 amr.check_int=2 pelerad.kppath="$DATA_PATH/data/kpDB/"
     - name: Build Debug
       env:
-         AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
-         PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
-         PELERAD_HOME: ${GITHUB_WORKSPACE}/build/PeleRad
-         PELEMP_HOME: ${GITHUB_WORKSPACE}/build/PeleMP
-         PELELMEX_HOME: ${GITHUB_WORKSPACE}
-         AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
-         SUNDIALS_HOME : ${GITHUB_WORKSPACE}/build/sundials
+         PELERAD_HOME: ${GITHUB_WORKSPACE}/Submodules/PeleRad
       working-directory: ./Exec/RegTests/SootRadTest/
       run: |
         make TPL COMP=gnu USE_MPI=TRUE DEBUG=TRUE TINY_PROFILE=FALSE
         make -j 2 COMP=gnu USE_MPI=TRUE DEBUG=TRUE TINY_PROFILE=FALSE
     - name: Run Debug
       env:
-         PELERAD_HOME: ${GITHUB_WORKSPACE}/build/PeleRad
+         PELERAD_HOME: ${GITHUB_WORKSPACE}/Submodules/PeleRad
       working-directory: ./Exec/RegTests/SootRadTest/
       run: |
         eval DATA_PATH=$PELERAD_HOME
