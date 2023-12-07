@@ -187,6 +187,11 @@ PeleLM::initData()
 #ifdef PELELM_USE_SPRAY
     SprayInit();
 #endif
+#ifdef PELELM_USE_RAD
+    if (do_rad_solve) {
+      RadInit();
+    }
+#endif
 
     //----------------------------------------------------------------
     // Set typical values
@@ -248,6 +253,11 @@ PeleLM::initData()
 
 #ifdef PELELM_USE_SPRAY
     SprayInit();
+#endif
+#ifdef PELELM_USE_RAD
+    if (do_rad_solve) {
+      RadInit();
+    }
 #endif
 #ifdef PELE_USE_EFIELD
     // If restarting from a non efield simulation

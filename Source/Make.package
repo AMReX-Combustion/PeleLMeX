@@ -46,6 +46,12 @@ ifeq ($(USE_SOOT), TRUE)
   CEXE_sources += PeleLMeX_Soot.cpp
 endif
 
+ifeq ($(USE_PELERAD), TRUE)
+  CEXE_sources += PeleLMeX_Rad.cpp
+endif
+
 ifeq ($(USE_PARTICLES), TRUE)
   CEXE_sources += PeleLMeX_SprayParticles.cpp
 endif
+
+

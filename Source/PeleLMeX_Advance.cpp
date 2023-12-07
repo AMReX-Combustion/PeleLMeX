@@ -120,6 +120,13 @@ PeleLM::Advance(int is_initIter)
     computeSootSource(AmrOldTime, m_dt);
   }
 #endif
+#ifdef PELELM_USE_RAD
+  if (do_rad_solve) {
+    BL_PROFILE_VAR("PeleLM::advance::rad", PLM_RAD);
+    computeRadSource(AmrOldTime);
+    BL_PROFILE_VAR_STOP(PLM_RAD);
+  }
+#endif
 
   if (m_incompressible == 0) {
     floorSpecies(AmrOldTime);

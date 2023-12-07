@@ -17,6 +17,10 @@
 #ifdef PELELM_USE_SOOT
 #include "SootModel.H"
 #endif
+#ifdef PELELM_USE_RAD
+#include "PeleLMRad.hpp"
+#endif
+
 using namespace amrex;
 
 namespace {
@@ -116,6 +120,11 @@ PeleLM::WritePlotFile()
   ncomp += 1;
 #endif
 
+#ifdef PELELM_USE_RAD
+  if (do_rad_solve)
+    ncomp += 3;
+#endif
+
   // Derive
   int deriveEntryCount = 0;
   for (int ivar = 0; ivar < m_derivePlotVarCount; ivar++) {
@@ -176,6 +185,13 @@ PeleLM::WritePlotFile()
     for (int mom = 0; mom < NUMSOOTVAR; mom++) {
       std::string sootname = soot_model->sootVariableName(mom);
       plt_VarsName.push_back(sootname);
+    }
+#endif
+#ifdef PELELM_USE_RAD
+    if (do_rad_solve) {
+      plt_VarsName.push_back("rad.G");
+      plt_VarsName.push_back("rad.kappa");
+      plt_VarsName.push_back("rad.emis");
     }
 #endif
     if (m_has_divu != 0) {
@@ -283,6 +299,16 @@ PeleLM::WritePlotFile()
         mf_plt[lev], m_leveldata_new[lev]->state, FIRSTSOOT, cnt, NUMSOOTVAR,
         0);
       cnt += NUMSOOTVAR;
+#endif
+#ifdef PELELM_USE_RAD
+      if (do_rad_solve) {
+        MultiFab::Copy(mf_plt[lev], rad_model->G()[lev], 0, cnt, 1, 0);
+        cnt += 1;
+        MultiFab::Copy(mf_plt[lev], rad_model->kappa()[lev], 0, cnt, 1, 0);
+        cnt += 1;
+        MultiFab::Copy(mf_plt[lev], rad_model->emis()[lev], 0, cnt, 1, 0);
+        cnt += 1;
+      }
 #endif
       if (m_has_divu != 0) {
         MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->divu, 0, cnt, 1, 0);

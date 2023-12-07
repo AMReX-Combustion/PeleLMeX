@@ -1,0 +1,113 @@
+#----------------------DOMAIN DEFINITION------------------------
+geometry.is_periodic = 0 1 1               # For each dir, 0: non-perio, 1: periodic
+geometry.coord_sys   = 0                  # 0 => cart, 1 => RZ
+geometry.prob_lo     = 0.0 0.0 0.0        # x_lo y_lo (z_lo)
+geometry.prob_hi     = 0.04 0.0025 0.0025        # x_hi y_hi (z_hi)
+
+# >>>>>>>>>>>>>  BC FLAGS <<<<<<<<<<<<<<<<
+# Interior, Inflow, Outflow, Symmetry,
+# SlipWallAdiab, NoSlipWallAdiab, SlipWallIsotherm, NoSlipWallIsotherm
+peleLM.lo_bc = Inflow Interior Interior
+peleLM.hi_bc = Outflow Interior Interior
+
+#-------------------------AMR CONTROL----------------------------
+amr.n_cell          = 128 8 8      # Level 0 number of cells in each direction
+amr.v               = 1                # AMR verbose
+amr.max_level       = 2                # maximum level number allowed
+amr.regrid_int      = 4                # how often to regrid
+amr.n_error_buf     = 1 1 2 2          # number of buffer cells in error est
+amr.grid_eff        = 0.7              # what constitutes an efficient grid
+amr.ref_ratio = 2 2 2
+amr.blocking_factor = 8
+amr.max_grid_size = 128
+
+#--------------------------- Problem -------------------------------
+prob.P_mean = 98700.
+prob.standoff = 0.0
+pmf.datafile = "datafile_init/mueller_burner.dat"
+pmf.do_cellAverage = 0
+
+#--------------------SOOT MODELING------------------------
+peleLM.do_soot_solve = 1
+soot.incept_pah = A2 # Soot inception species
+soot.v = 0
+soot.temp_cutoff = 290.
+soot.conserve_mass = false
+soot.num_subcycles = 10
+soot.max_subcycles = 1000
+
+#-------------------------PeleLM CONTROL----------------------------
+peleLM.v = 1
+peleLM.incompressible = 0
+peleLM.use_wbar = 0
+peleLM.sdc_iterMax = 1
+peleLM.floor_species = 0
+peleLM.advection_scheme = Godunov_BDS
+
+peleLM.do_temporals = 0
+peleLM.temporal_int = 2
+peleLM.mass_balance = 1
+peleLM.num_init_iter = 1
+peleLM.plot_react = 0
+
+#amr.restart = chk00005
+#amr.check_int = 2000
+amr.plot_per = 1.E-3
+amr.dt_shrink = 0.1
+amr.max_step = 10000
+amr.stop_time = 0.022
+amr.cfl = 0.3
+amr.derive_plot_vars = rhoRT mass_fractions rhominsumrhoY
+#amr.fixed_dt = 0.008
+#amr.fixed_dt = 1.E-6
+
+# --------------- INPUTS TO CHEMISTRY REACTOR ---------------
+peleLM.chem_integrator = "ReactorCvode"
+peleLM.use_typ_vals_chem = 0          # Use species/temp typical values in CVODE
+# ode.rtol = 1.0e-6                     # Relative tolerance of the chemical solve
+# ode.atol = 1.0e-5                     # Absolute tolerance factor applied on typical values
+#cvode.solve_type = GMRES
+cvode.solve_type = dense_direct     # CVODE Linear solve type (for Newton direction)
+#cvode.solve_type = magma_direct     # CVODE Linear solve type (for Newton direction)
+#cvode.max_order  = 4                  # CVODE max BDF order.
+#ode.atol = 1.E-12
+
+mac_proj.verbose = 0
+mac_proj.atol = 1.E-14
+mac_proj.rtol = 1.E-11
+nodal_proj.verbose = 0
+nodal_proj.atol        = 6.0e-14     # tolerance for projections
+nodal_proj.rtol        = 6.0e-11
+
+#--------------------REFINEMENT CONTROL------------------------
+amr.refinement_indicators = gradT
+amr.gradT.max_level     = 2
+amr.gradT.adjacent_difference_greater = 30.
+amr.gradT.field_name    = temp
+
+amrex.regtest_reduction = 1
+amrex.fpe_trap_invalid = 1
+amrex.fpe_trap_zero = 1
+amrex.fpe_trap_overflow = 1
+
+#--------------------RADIATION MODELING------------------------
+peleLM.do_rad_solve = 1
+pelerad.composite_solve = 1
+pelerad.use_hypre = 0
+pelerad.verbose = 0
+pelerad.max_iter = 200
+pelerad.max_coarsening_level = 10
+pelerad.reltol = 1.0e-3
+pelerad.abstol = 1.0e-3
+pelerad.bottom_reltol = 1.0e-6
+pelerad.bottom_abstol = 1.0e-6
+pelerad.agglomeration = 1
+pelerad.consolidation = 0
+pelerad.bottom_verbose = 0
+pelerad.maxorder = 2
+pelerad.linop_maxorder = 2
+pelerad.max_fmg_iter = 0
+pelerad.lo_bc = Robin Periodic Periodic
+pelerad.hi_bc = Robin Periodic Periodic
+#please set the pelerad.kppath
+pelerad.kppath = /lustre/orion/cmb138/proj-shared/w0g/PR/PeleRad/data/kpDB/
