@@ -31,7 +31,7 @@ jobs:
       - name: Clone
         uses: actions/checkout@v3
         with:
-          submodules: true
+          submodules: recursive
       - name: Setup
         working-directory: ./Exec/RegTests/FlameSheet
         run: |
@@ -112,7 +112,7 @@ jobs:
       - name: Clone
         uses: actions/checkout@v3
         with:
-          submodules: true
+          submodules: recursive
       - name: Python
         uses: actions/setup-python@v4
         with:
@@ -211,7 +211,7 @@ jobs:
       - name: Clone
         uses: actions/checkout@v3
         with:
-          submodules: true
+          submodules: recursive
       - name: Setup
         run: |
           echo "NPROCS=$(nproc)" >> $GITHUB_ENV
@@ -344,7 +344,7 @@ jobs:
       - name: Clone
         uses: actions/checkout@v3
         with:
-          submodules: true
+          submodules: recursive
       - name: Setup
         run: |
           echo "NPROCS=$(nproc)" >> $GITHUB_ENV
@@ -425,7 +425,7 @@ jobs:
       - name: Clone
         uses: actions/checkout@v3
         with:
-          submodules: true
+          submodules: recursive
       - name: Install Ccache
         run: |
           wget https://github.com/ccache/ccache/releases/download/v4.8/ccache-4.8-linux-x86_64.tar.xz
@@ -483,7 +483,7 @@ jobs:
       - name: Clone
         uses: actions/checkout@v3
         with:
-          submodules: true
+          submodules: recursive
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v2
         with:
