@@ -1,6 +1,7 @@
 name: PeleLMeX-CI
 
 on:
+  workflow_dispatch:
   push:
     branches: [development]
   pull_request:
