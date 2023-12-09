@@ -233,7 +233,7 @@ The compiler (``gnu``) and the parallelism paradigm (in the present case only MP
 platform, please set ``USE_MPI = FALSE``.
 Note that on OSX platform, one should update the compiler to ``llvm``.
 
-In `PeleLMeX`, the chemistry model (set of species, their thermodynamic and transport properties as well as the description of their of chemical interactions) is specified at compile time. Chemistry models available in `PelePhysics` can used in `PeleLMeX` by specifying the name of the folder in `PelePhysics/Support/Mechanisms/Models` containing the relevant files, for example: ::
+In `PeleLMeX`, the chemistry model (set of species, their thermodynamic and transport properties as well as the description of their of chemical interactions) is specified at compile time. Chemistry models available in `PelePhysics` can used in `PeleLMeX` by specifying the name of the folder in `PelePhysics/Mechanisms` containing the relevant files, for example: ::
 
    Chemistry_Model = drm19
 
