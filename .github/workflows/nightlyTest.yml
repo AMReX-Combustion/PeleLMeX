@@ -17,7 +17,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
       with:
-          submodules: true
+          submodules: recursive
     - name: System Dependencies
       run: |
           .github/workflows/dependencies/dependencies_gcc10.sh
@@ -28,53 +28,42 @@ jobs:
     - name: LMeX Reference
       run: |
               mkdir buildRef
-              git clone --recursive -b development https://github.com/AMReX-Combustion/PeleLMeX.git buildRef/PeleLMeX
-    - name: Set Environment Variables
-      run: |
-              echo "AMREX_HOME=${{github.workspace}}/buildRef/PeleLMeX/Submodules/amrex" >> $GITHUB_ENV
-              echo "PELE_PHYSICS_HOME=${{github.workspace}}/buildRef/PeleLMeX/Submodules/PelePhysics" >> $GITHUB_ENV
-              echo "AMREX_HYDRO_HOME=${{github.workspace}}/buildRef/PeleLMeX/Submodules/AMReX-Hydro" >> $GITHUB_ENV
-              echo "SUNDIALS_HOME=${{github.workspace}}/buildRef/PeleLMeX/Submodules/sundials" >> $GITHUB_ENV
-              echo "PELELMEX_HOME=${{github.workspace}}/buildRef/PeleLMeX/" >> $GITHUB_ENV
+              git clone --recursive --single-branch --shallow-submodules -b development https://github.com/AMReX-Combustion/PeleLMeX.git buildRef/PeleLMeX
     - name: Build Reference PeleLMeX
-      working-directory: ${{env.PELELMEX_HOME}}/Exec/UnitTests/DodecaneLu
+      working-directory: ${{github.workspace}}/buildRef/PeleLMeX/Exec/UnitTests/DodecaneLu
       run: |
           make -j2 TPL COMP=gnu DEBUG=FALSE
           make -j2 COMP=gnu DEBUG=FALSE
     - name: Run Reference Case
-      working-directory: ${{env.PELELMEX_HOME}}/Exec/UnitTests/DodecaneLu
+      working-directory: ${{github.workspace}}/buildRef/PeleLMeX/Exec/UnitTests/DodecaneLu
       run: |
           ./PeleLMeX3d.gnu.MPI.ex inputs.3d
     - name: Update PeleLMeX Submodules
       working-directory: ${{github.workspace}}
       run: |
-              cd ${{github.workspace}}/Submodules/amrex
-              git checkout development
-              cd -
               cd ${{github.workspace}}/Submodules/AMReX-Hydro
               git checkout development
               cd -
               cd ${{github.workspace}}/Submodules/PelePhysics
               git checkout development
               cd -
+              cd ${{github.workspace}}/Submodules/PelePhysics/Submodules/amrex
+              git checkout development
+              cd -
     - name: Reset Environment Variables
       run: |
-              echo "AMREX_HOME=${{github.workspace}}/Submodules/amrex" >> $GITHUB_ENV
-              echo "PELE_PHYSICS_HOME=${{github.workspace}}/Submodules/PelePhysics" >> $GITHUB_ENV
-              echo "AMREX_HYDRO_HOME=${{github.workspace}}/Submodules/AMReX-Hydro" >> $GITHUB_ENV
-              echo "SUNDIALS_HOME=${{github.workspace}}/Submodules/sundials" >> $GITHUB_ENV
-              echo "PELELMEX_HOME=${{github.workspace}}" >> $GITHUB_ENV
+              echo "AMREX_HOME=${{github.workspace}}/Submodules/PelePhysics/Submodules/amrex" >> $GITHUB_ENV
     - name: Build AMReX Tools
       working-directory: ${{env.AMREX_HOME}}/Tools/Plotfile
       run: |
           make -j2 VERBOSE=FALSE
     - name: Build PeleLMeX
-      working-directory: ${{env.PELELMEX_HOME}}/Exec/UnitTests/DodecaneLu
+      working-directory:  ${{github.workspace}}/Exec/UnitTests/DodecaneLu
       run: |
           make -j2 TPL COMP=gnu DEBUG=FALSE
           make -j2 COMP=gnu DEBUG=FALSE
     - name: Run Case
-      working-directory: ${{env.PELELMEX_HOME}}/Exec/UnitTests/DodecaneLu
+      working-directory:  ${{github.workspace}}/Exec/UnitTests/DodecaneLu
       run: |
           cp ${{env.AMREX_HOME}}/Tools/Plotfile/fcompare.gnu.ex .
           ./PeleLMeX3d.gnu.MPI.ex inputs.3d
