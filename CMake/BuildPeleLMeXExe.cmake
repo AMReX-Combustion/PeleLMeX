@@ -5,7 +5,7 @@ function(build_pelelmex_exe pelelmex_exe_name pelelmex_lib_name)
   add_executable(${pelelmex_exe_name} "")
 
   if(CLANG_TIDY_EXE)
-    set_target_properties(${pelelmex_exe_name} PROPERTIES CXX_CLANG_TIDY 
+    set_target_properties(${pelelmex_exe_name} PROPERTIES CXX_CLANG_TIDY
                           "${CLANG_TIDY_EXE};--config-file=${CMAKE_SOURCE_DIR}/.clang-tidy")
   endif()
 
@@ -15,39 +15,48 @@ function(build_pelelmex_exe pelelmex_exe_name pelelmex_lib_name)
        pelelmex_prob.H
        pelelmex_prob.cpp
   )
-  
+
   #PeleLMeX include directories
   target_include_directories(${pelelmex_exe_name} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
   target_include_directories(${pelelmex_exe_name} PRIVATE ${SRC_DIR})
   target_include_directories(${pelelmex_exe_name} PRIVATE ${CMAKE_BINARY_DIR})
   #target_include_directories(${pelelmex_exe_name} PRIVATE ${CMAKE_SOURCE_DIR}/Source/Params/param_includes)
 
-  # Set PeleMP flags
-  set(PELEMP_SRC_DIR ${CMAKE_SOURCE_DIR}/Submodules/PeleMP/Source)
-  if(PELELMEX_ENABLE_AMREX_PARTICLES AND PELEMP_SPRAY_FUEL_NUM GREATER 0)
-    target_compile_definitions(${pelelmex_exe_name} PRIVATE PELELMEX_USE_SPRAY)
-    target_compile_definitions(${pelelmex_exe_name} PRIVATE SPRAY_FUEL_NUM=${PELEMP_SPRAY_FUEL_NUM})
-    target_sources(${pelelmex_exe_name} PRIVATE
-	           SprayParticlesInitInsert.cpp
-                   ${SRC_DIR}/PeleLMeX_SprayParticles.cpp
-                   ${PELEMP_SRC_DIR}/PP_Spray/SprayParticles.cpp
-                   ${PELEMP_SRC_DIR}/PP_Spray/SprayParticles.H
-                   ${PELEMP_SRC_DIR}/PP_Spray/SprayFuelData.H
-                   ${PELEMP_SRC_DIR}/PP_Spray/SprayInterpolation.H
-                   ${PELEMP_SRC_DIR}/PP_Spray/Drag.H
-                   ${PELEMP_SRC_DIR}/PP_Spray/SprayInjection.H
-                   ${PELEMP_SRC_DIR}/PP_Spray/SpraySetup.cpp
-                   ${PELEMP_SRC_DIR}/PP_Spray/SprayDerive.cpp
-                   ${PELEMP_SRC_DIR}/PP_Spray/SprayJet.H
-                   ${PELEMP_SRC_DIR}/PP_Spray/SprayJet.cpp
-                   ${PELEMP_SRC_DIR}/PP_Spray/SprayIO.cpp
-                   ${PELEMP_SRC_DIR}/PP_Spray/WallFunctions.H
-                   ${PELEMP_SRC_DIR}/PP_Spray/Distribution/DistBase.H
-                   ${PELEMP_SRC_DIR}/PP_Spray/Distribution/Distributions.H
-                   ${PELEMP_SRC_DIR}/PP_Spray/Distribution/Distributions.cpp)
-    target_include_directories(${pelelmex_exe_name} PRIVATE ${PELEMP_SRC_DIR}/PP_Spray)
-    target_include_directories(${pelelmex_exe_name} PRIVATE ${PELEMP_SRC_DIR}/PP_Spray/Distribution)
+  # Spray
+  set(PELE_PHYSICS_SPRAY_DIR ${CMAKE_SOURCE_DIR}/Submodules/PelePhysics/Source/Spray)
+
+  if(PELELMEX_ENABLE_AMREX_PARTICLES AND PELE_SPRAY_FUEL_NUM GREATER 0)
+     target_compile_definitions(${pelelmex_exe_name} PRIVATE PELELMEX_USE_SPRAY)
+     target_compile_definitions(${pelelmex_exe_name} PRIVATE SPRAY_FUEL_NUM=${PELE_SPRAY_FUEL_NUM})
+     target_sources(${pelelmex_exe_name} PRIVATE
+                    SprayParticlesInitInsert.cpp
+                    ${SRC_DIR}/Particle.cpp
+                    ${PELE_PHYSICS_SPRAY_DIR}/Drag.H
+                    ${PELE_PHYSICS_SPRAY_DIR}/SprayDerive.cpp
+                    ${PELE_PHYSICS_SPRAY_DIR}/SprayFuelData.H
+                    ${PELE_PHYSICS_SPRAY_DIR}/SprayIO.cpp
+                    ${PELE_PHYSICS_SPRAY_DIR}/SprayInjection.H
+                    ${PELE_PHYSICS_SPRAY_DIR}/SprayInterpolation.H
+                    ${PELE_PHYSICS_SPRAY_DIR}/SprayJet.H
+                    ${PELE_PHYSICS_SPRAY_DIR}/SprayJet.cpp
+                    ${PELE_PHYSICS_SPRAY_DIR}/SprayParticles.H
+                    ${PELE_PHYSICS_SPRAY_DIR}/SprayParticles.cpp
+                    ${PELE_PHYSICS_SPRAY_DIR}/SpraySB.cpp
+                    ${PELE_PHYSICS_SPRAY_DIR}/SpraySetup.cpp
+                    ${PELE_PHYSICS_SPRAY_DIR}/WallFunctions.H
+                    ${PELE_PHYSICS_SPRAY_DIR}/BreakupSplash/AhamedSplash.H
+                    ${PELE_PHYSICS_SPRAY_DIR}/BreakupSplash/ReitzKHRT.H
+                    ${PELE_PHYSICS_SPRAY_DIR}/BreakupSplash/SBData.H
+                    ${PELE_PHYSICS_SPRAY_DIR}/BreakupSplash/TABBreakup.H
+                    ${PELE_PHYSICS_SPRAY_DIR}/BreakupSplash/WallFilm.H
+                    ${PELE_PHYSICS_SPRAY_DIR}/Distribution/DistBase.H
+                    ${PELE_PHYSICS_SPRAY_DIR}/Distribution/Distributions.H
+                    ${PELE_PHYSICS_SPRAY_DIR}/Distribution/Distributions.cpp)
+     target_include_directories(${pelelmex_exe_name} PUBLIC ${PELE_PHYSICS_SPRAY_DIR})
+     target_include_directories(${pelelmex_exe_name} PUBLIC ${PELE_PHYSICS_SPRAY_DIR}/Distribution)
+     target_include_directories(${pelelmex_exe_name} PUBLIC ${PELE_PHYSICS_SPRAY_DIR}/BreakupSplash)
   endif()
+
   if(PELELMEX_ENABLE_SOOT)
     target_compile_definitions(${pelelmex_exe_name} PRIVATE PELELMEX_USE_SOOT)
     target_compile_definitions(${pelelmex_exe_name} PRIVATE NUM_SOOT_MOMENTS=${PELEMP_NUM_SOOT_MOMENTS})
@@ -147,10 +156,10 @@ function(build_pelelmex_exe pelelmex_exe_name pelelmex_lib_name)
     set_target_properties(${pelelmex_exe_name} PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
     target_compile_options(${pelelmex_exe_name} PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:-Xptxas --disable-optimizer-constants>)
   endif()
- 
+
   target_link_libraries(${pelelmex_exe_name} PRIVATE ${pelelmex_lib_name} AMReX-Hydro::amrex_hydro_api AMReX::amrex)
 
-  #Define what we want to be installed during a make install 
+  #Define what we want to be installed during a make install
   install(TARGETS ${pelelmex_exe_name}
           RUNTIME DESTINATION bin
           ARCHIVE DESTINATION lib
