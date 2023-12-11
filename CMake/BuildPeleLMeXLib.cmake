@@ -143,6 +143,25 @@ function(build_pelelmex_lib pelelmex_lib_name)
     )
     target_include_directories(${pelelmex_lib_name} PUBLIC ${PELE_PHYSICS_REACTIONS_DIR})
 
+    if(PELELMEX_ENABLE_SOOT)
+       target_compile_definitions(${pelelmex_lib_name} PUBLIC PELELMEX_USE_SOOT)
+       target_compile_definitions(${pelelmex_lib_name} PUBLIC NUM_SOOT_MOMENTS=${PELE_NUM_SOOT_MOMENTS})
+       set(SOOT_MOMENTS_VALUES 3 6)
+       if(NOT PELE_NUM_SOOT_MOMENTS IN_LIST SOOT_MOMENTS_VALUES)
+         message(FATAL_ERROR "NUM_SOOT_MOMENTS must be either 3 or 6")
+       endif()
+       target_sources(${pelelmex_lib_name} PRIVATE
+                      ${PELE_PHYSICS_SOOT_DIR}/SootModel.H
+                      ${PELE_PHYSICS_SOOT_DIR}/SootModel.cpp
+                      ${PELE_PHYSICS_SOOT_DIR}/SootModel_react.cpp
+                      ${PELE_PHYSICS_SOOT_DIR}/SootModel_derive.H
+                      ${PELE_PHYSICS_SOOT_DIR}/SootModel_derive.cpp
+                      ${PELE_PHYSICS_SOOT_DIR}/Constants_Soot.H
+                      ${PELE_PHYSICS_SOOT_DIR}/SootData.H
+                      ${PELE_PHYSICS_SOOT_DIR}/SootReactions.H)
+       target_include_directories(${pele=lmex_lib_name} PUBLIC ${PELE_PHYSICS_SOOT_DIR})
+    endif()
+
     include(AMReXBuildInfo)
     generate_buildinfo(${pelelmex_lib_name} ${CMAKE_SOURCE_DIR})
     target_include_directories(${pelelmex_lib_name} SYSTEM PUBLIC ${AMREX_SUBMOD_LOCATION}/Tools/C_scripts)

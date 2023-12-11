@@ -57,26 +57,6 @@ function(build_pelelmex_exe pelelmex_exe_name pelelmex_lib_name)
      target_include_directories(${pelelmex_exe_name} PUBLIC ${PELE_PHYSICS_SPRAY_DIR}/BreakupSplash)
   endif()
 
-  if(PELELMEX_ENABLE_SOOT)
-    target_compile_definitions(${pelelmex_exe_name} PRIVATE PELELMEX_USE_SOOT)
-    target_compile_definitions(${pelelmex_exe_name} PRIVATE NUM_SOOT_MOMENTS=${PELEMP_NUM_SOOT_MOMENTS})
-    set(SOOT_MOMENTS_VALUES 3 6)
-    if(NOT PELEMP_NUM_SOOT_MOMENTS IN_LIST SOOT_MOMENTS_VALUES)
-      message(FATAL_ERROR "NUM_SOOT_MOMENTS must be either 3 or 6")
-    endif()
-    target_sources(${pelelmex_exe_name} PRIVATE
-                   ${SRC_DIR}/PeleLMeX_Soot.cpp
-                   ${PELEMP_SRC_DIR}/Soot_Models/SootModel.cpp
-                   ${PELEMP_SRC_DIR}/Soot_Models/SootModel_react.cpp
-                   ${PELEMP_SRC_DIR}/Soot_Models/SootModel_derive.cpp
-                   ${PELEMP_SRC_DIR}/Soot_Models/Constants_Soot.H
-                   ${PELEMP_SRC_DIR}/Soot_Models/SootData.H
-                   ${PELEMP_SRC_DIR}/Soot_Models/SootReactions.H
-                   ${PELEMP_SRC_DIR}/Soot_Models/SootModel.H
-                   ${PELEMP_SRC_DIR}/Soot_Models/SootModel_derive.H)
-    target_include_directories(${pelelmex_exe_name} PRIVATE ${PELEMP_SRC_DIR}/Soot_Models)
-  endif()
-
   target_sources(${pelelmex_exe_name}
      PRIVATE
        ${SRC_DIR}/PeleLMeX_DeriveUserDefined.cpp
@@ -121,6 +101,13 @@ function(build_pelelmex_exe pelelmex_exe_name pelelmex_lib_name)
        ${SRC_DIR}/PeleLMeX_K.H
        ${SRC_DIR}/main.cpp
   )
+
+  # Soot
+  if(PELELMEX_ENABLE_SOOT)
+    target_sources(${pelelmex_exe_name}
+      PRIVATE
+        ${SRC_DIR}/Soot.cpp)
+  endif()
 
   #if(PELELMEX_ENABLE_ASCENT)
   #  target_sources(${pelelmex_exe_name}
