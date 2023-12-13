@@ -1,7 +1,6 @@
 #include <PeleLMeX.H>
 #include <PeleLMeX_Derive.H>
-
-#include <PeleLMRad.hpp>
+#include <PeleLMRad.H>
 
 void
 PeleLM::RadInit()

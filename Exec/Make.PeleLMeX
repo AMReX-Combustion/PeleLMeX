@@ -55,9 +55,6 @@ endif
 
 ifeq ($(USE_PELERAD), TRUE)
    DEFINES += -DPELELM_USE_RAD
-   ifeq ($(USE_HIP), TRUE)
-       DEFINES += -DPELERAD_USE_HIP
-   endif
 endif
 
 Bpack += $(foreach dir, $(LMdirs), $(PELELMEX_HOME)/$(dir)/Make.package)
@@ -127,7 +124,9 @@ ifeq ($(USE_SOOT), TRUE)
    Blocs += $(SOOT_HOME)/Source/Soot_Models
 endif
 ifeq ($(USE_PELERAD), TRUE)
-   Blocs += $(PELERAD_HOME)/src
+   PELERAD_HOME = $(PELE_PHYSICS_HOME)/Source/Radiation
+   Bpack += $(PELERAD_HOME)/Make.package
+   Blocs += $(PELERAD_HOME)
 endif
 
 #---------------

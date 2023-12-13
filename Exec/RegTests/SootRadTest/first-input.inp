@@ -19,7 +19,7 @@ amr.n_error_buf     = 1 1 2 2          # number of buffer cells in error est
 amr.grid_eff        = 0.7              # what constitutes an efficient grid
 amr.ref_ratio = 2 2 2
 amr.blocking_factor = 8
-amr.max_grid_size = 128
+amr.max_grid_size = 64
 
 #--------------------------- Problem -------------------------------
 prob.P_mean = 98700.
@@ -109,5 +109,4 @@ pelerad.linop_maxorder = 2
 pelerad.max_fmg_iter = 0
 pelerad.lo_bc = Robin Periodic Periodic
 pelerad.hi_bc = Robin Periodic Periodic
-#please set the pelerad.kppath
-pelerad.kppath = /lustre/orion/cmb138/proj-shared/w0g/PR/PeleRad/data/kpDB/
+pelerad.kppath = kpDB

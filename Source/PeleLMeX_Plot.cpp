@@ -18,7 +18,7 @@
 #include "SootModel.H"
 #endif
 #ifdef PELELM_USE_RAD
-#include "PeleLMRad.hpp"
+#include "PeleLMRad.H"
 #endif
 
 using namespace amrex;

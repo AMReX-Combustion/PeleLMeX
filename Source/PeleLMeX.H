@@ -33,7 +33,7 @@
 #include <AMReX_VisMF.H>
 
 #ifdef PELELM_USE_RAD
-#include <PeleLMRad.hpp>
+#include <PeleLMRad.H>
 #endif
 
 // Forward declarations

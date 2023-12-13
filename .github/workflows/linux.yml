@@ -85,40 +85,27 @@ jobs:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
     - uses: actions/checkout@v3
-    - name: System Dependencies
-      run: .github/workflows/dependencies/dependencies_gcc10.sh
     - name: Repo Dependencies
       run: |
         Utils/CloneDeps.sh
-        git clone --branch main https://github.com/AMReX-Combustion/PeleRad.git Submodules/PeleRad
     - name: Build Release
-      env:
-         PELERAD_HOME: ${GITHUB_WORKSPACE}/Submodules/PeleRad
       working-directory: ./Exec/RegTests/SootRadTest/
       run: |
         make TPL COMP=gnu USE_MPI=TRUE TINY_PROFILE=FALSE
         make -j 2 COMP=gnu USE_MPI=TRUE TINY_PROFILE=FALSE
     - name: Run Release
-      env:
-         PELERAD_HOME: ${GITHUB_WORKSPACE}/Submodules/PeleRad
       working-directory: ./Exec/RegTests/SootRadTest/
       run: |
-        eval DATA_PATH=$PELERAD_HOME
-        mpirun -n 2 ./PeleLMeX2d.gnu.MPI.ex first-input.inp amr.max_step=2 amr.plot_int=2 amr.check_int=2 pelerad.kppath="$DATA_PATH/data/kpDB/"
+        mpirun -n 2 ./PeleLMeX2d.gnu.MPI.ex first-input.inp amr.max_step=2 amr.plot_int=2 amr.check_int=2
     - name: Build Debug
-      env:
-         PELERAD_HOME: ${GITHUB_WORKSPACE}/Submodules/PeleRad
       working-directory: ./Exec/RegTests/SootRadTest/
       run: |
         make TPL COMP=gnu USE_MPI=TRUE DEBUG=TRUE TINY_PROFILE=FALSE
         make -j 2 COMP=gnu USE_MPI=TRUE DEBUG=TRUE TINY_PROFILE=FALSE
     - name: Run Debug
-      env:
-         PELERAD_HOME: ${GITHUB_WORKSPACE}/Submodules/PeleRad
       working-directory: ./Exec/RegTests/SootRadTest/
       run: |
-        eval DATA_PATH=$PELERAD_HOME
-        mpirun -n 2 ./PeleLMeX2d.gnu.DEBUG.MPI.ex first-input.inp amr.max_step=2 amr.plot_int=2 amr.check_int=2 pelerad.kppath="$DATA_PATH/data/kpDB/"
+        mpirun -n 2 ./PeleLMeX2d.gnu.DEBUG.MPI.ex first-input.inp amr.max_step=2 amr.plot_int=2 amr.check_int=2
 
   # Build and Run the EB_BackwardStepFlame RegTest with GNU9.3 and MPI support
   EBBFS:
