@@ -55,7 +55,7 @@ set(CTEST_BUILD_COMMAND "${MAKE} ${CTEST_BUILD_FLAGS}")
 # -----------------------------------------------------------
 
 #ctest_empty_binary_directory(${CTEST_BINARY_DIRECTORY})
- 
+
 message("\n -- Start dashboard - ${CTEST_BUILD_NAME} --")
 ctest_start("Nightly" TRACK "Nightly")
 
@@ -69,15 +69,15 @@ if(USE_LATEST_AMREX)
   message("\n -- Update AMReX- ${CTEST_BUILD_NAME} --")
   execute_process (
     COMMAND ${CTEST_GIT_COMMAND} checkout development
-    WORKING_DIRECTORY ${CTEST_SOURCE_DIRECTORY}/Submodules/amrex
+    WORKING_DIRECTORY ${CTEST_SOURCE_DIRECTORY}/Submodules/PelePhysics/Submodules/amrex
   )
   execute_process (
     COMMAND ${CTEST_GIT_COMMAND} pull origin development
-    WORKING_DIRECTORY ${CTEST_SOURCE_DIRECTORY}/Submodules/amrex
+    WORKING_DIRECTORY ${CTEST_SOURCE_DIRECTORY}/Submodules/PelePhysics/Submodules/amrex
   )
   execute_process (
     COMMAND ${CTEST_GIT_COMMAND} log -1 --pretty=oneline
-    WORKING_DIRECTORY ${CTEST_SOURCE_DIRECTORY}/Submodules/amrex
+    WORKING_DIRECTORY ${CTEST_SOURCE_DIRECTORY}/Submodules/PelePhysics/Submodules/amrex
   )
 endif()
 

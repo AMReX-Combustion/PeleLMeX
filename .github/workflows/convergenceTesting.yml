@@ -19,6 +19,8 @@ jobs:
       with:
         access_token: ${{github.token}}
     - uses: actions/checkout@v3
+      with:
+          submodules: recursive
     - name: System Dependencies
       run: |
          .github/workflows/dependencies/dependencies.sh
@@ -26,21 +28,11 @@ jobs:
          python3 -m pip install --user numpy
          python3 -m pip install --user argparse
          python3 -m pip install --user matplotlib
-    - name: Repo Dependencies
-      run: Utils/CloneDeps.sh
     - name: Build AMReX Tools
-      env:
-         AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
-      working-directory: ./build/amrex/Tools/Plotfile
+      working-directory: ./Submodules/PelePhysics/Submodules/amrex/Tools/Plotfile
       run: |
         make
     - name: Build PeleLMeX
-      env:
-         AMREX_HOME: ${GITHUB_WORKSPACE}/build/amrex
-         PELE_PHYSICS_HOME: ${GITHUB_WORKSPACE}/build/PelePhysics
-         AMREX_HYDRO_HOME: ${GITHUB_WORKSPACE}/build/AMReX-Hydro
-         SUNDIALS_HOME: ${GITHUB_WORKSPACE}/build/sundials
-         PELELMEX_HOME: ${GITHUB_WORKSPACE}
       working-directory: ./Exec/RegTests/PeriodicCases
       run: |
         make -j 2 TPL COMP=gnu
@@ -48,7 +40,7 @@ jobs:
     - name: Run
       working-directory: ./Exec/RegTests/PeriodicCases
       run: |
-        cp ${GITHUB_WORKSPACE}/build/amrex/Tools/Plotfile/fcompare.gnu.ex .
+        cp ${GITHUB_WORKSPACE}/Submodules/PelePhysics/Submodules/amrex/Tools/Plotfile/fcompare.gnu.ex .
         sed -i "34s/.*/    resolution = [32,64,128,256,512]/" multiRuns.py
         sed -i "s/mpiexec -n 1/mpiexec -n 4 --oversubscribe/g" multiRuns.py
         ./multiRuns.py --test_name GH_CI_CoVo --input_file input.2d_CoVo

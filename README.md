@@ -66,7 +66,10 @@ Finally, when building with GPU support, CUDA >= 11 is required with NVIDIA GPUs
 ### Download
 
 The preferred method consists of cloning *PeleLMeX* and its submodules
-([amrex](https://github.com/AMReX-Codes/amrex), [AMReX-Hydro](https://github.com/AMReX-Fluids/AMReX-Hydro), [PelePhysics](https://github.com/AMReX-Combustion/PelePhysics), [PeleMP](https://github.com/AMReX-Combustion/PeleMP)), and [SUNDIALS](https://github.com/LLNL/sundials) using a recursive `git clone`:
+([PelePhysics](https://github.com/AMReX-Combustion/PelePhysics),
+[amrex](https://github.com/AMReX-Codes/amrex),
+[AMReX-Hydro](https://github.com/AMReX-Fluids/AMReX-Hydro), and
+[SUNDIALS](https://github.com/LLNL/sundials) using a recursive `git clone`:
 
 ```
 git clone --recursive --shallow-submodules --single-branch https://github.com/AMReX-Combustion/PeleLMeX.git
@@ -82,11 +85,10 @@ setup the following environment variables (e.g. using bash) to any other locatio
 
 ```
 export PELELMEX_HOME=<path_to_PeleLMeX>
-export AMREX_HOME=${PELELMEX_HOME}/Submodules/amrex
 export AMREX_HYDRO_HOME=${PELELMEX_HOME}/Submodules/AMReX-Hydro
 export PELE_PHYSICS_HOME=${PELELMEX_HOME}/Submodules/PelePhysics
-export PELEMP_HOME=${PELELMEX_HOME}/Submodules/PeleMP
-export SUNDIALS_HOME=${PELELMEX_HOME}/Submodules/sundials
+export AMREX_HOME=${PELE_PHYSICS_HOME}/Submodules/amrex
+export SUNDIALS_HOME=${PELE_PHYSICS_HOME}/Submodules/sundials
 ```
 
 ### Compilation

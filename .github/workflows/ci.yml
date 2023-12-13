@@ -31,7 +31,7 @@ jobs:
       - name: Clone
         uses: actions/checkout@v3
         with:
-          submodules: true
+          submodules: recursive
       - name: Setup
         working-directory: ./Exec/RegTests/FlameSheet
         run: |
@@ -40,8 +40,6 @@ jobs:
           echo "CCACHE_COMPRESSLEVEL=1" >> $GITHUB_ENV
           echo "CCACHE_LOGFILE=${{github.workspace}}/ccache.log.txt" >> $GITHUB_ENV
           echo "CCACHE_MAXSIZE=200M" >> $GITHUB_ENV
-          #printf "CC=gcc-10\nCXX=g++-10\nFC=gfortran-10\nF90=gfortran-10" \
-          # >> ${{github.workspace}}/Submodules/amrex/Tools/GNUMake/Make.local
           make COMP=gnu USE_MPI=FALSE DEBUG=TRUE TPL
           make COMP=llvm USE_MPI=FALSE DEBUG=TRUE PRECISION=FLOAT TPL
       - name: Install Ccache
@@ -81,100 +79,6 @@ jobs:
           cat warnings.txt
           export return=$(tail -n 1 warnings.txt | awk '{print $2}')
           exit ${return}
-      #- name: EB debug build
-      #  working-directory: ./Exec/RegTests/EB-C10
-      #  run: |
-      #    echo "::add-matcher::.github/problem-matchers/gcc.json"
-      #    set -eu -o pipefail
-      #    ccache -z
-      #    make -j ${{env.NPROCS}} KEEP_BUILDINFO_CPP=TRUE USE_CCACHE=TRUE COMP=gnu USE_MPI=FALSE DEBUG=TRUE 2>&1 | tee -a build-output.txt
-      #- name: EB debug ccache report
-      #  working-directory: ./Exec/RegTests/EB-C10
-      #  run: |
-      #    ccache -s
-      #    du -hs ~/.cache/ccache
-      #- name: EB debug test
-      #  working-directory: ./Exec/RegTests/EB-C10
-      #  run: ./PeleLMeX3d.gnu.DEBUG.ex eb-c10.inp max_step=2 amr.plot_files_output=0 amr.checkpoint_files_output=0
-      #- name: EB debug report
-      #  working-directory: ./Exec/RegTests/EB-C10
-      #  run: |
-      #    egrep "warning:|error:" build-output.txt \
-      #      | egrep -v "Submodules/amrex|Submodules/sundials|Submodules/AMReX-Hydro|GNUmakefile" \
-      #      | egrep -v "ld: warning:" | sort | uniq \
-      #      | awk 'BEGIN{i=0}{print $0}{i++}END{print "Warnings: "i}' > warnings.txt
-      #    cat warnings.txt
-      #    export return=$(tail -n 1 warnings.txt | awk '{print $2}')
-      #    exit ${return}
-      #- name: TG debug single precision build
-      #  working-directory: ./Exec/RegTests/TG
-      #  run: |
-      #    echo "::add-matcher::.github/problem-matchers/gcc.json"
-      #    set -eu -o pipefail
-      #    ccache -z
-      #    make -j ${{env.NPROCS}} KEEP_BUILDINFO_CPP=TRUE USE_CCACHE=TRUE COMP=llvm USE_MPI=FALSE DEBUG=TRUE PRECISION=FLOAT 2>&1 | tee -a build-output.txt
-      #- name: TG debug single precision ccache report
-      #  working-directory: ./Exec/RegTests/TG
-      #  run: |
-      #    ccache -s
-      #    du -hs ~/.cache/ccache
-      #- name: TG debug single precision test
-      #  working-directory: ./Exec/RegTests/TG
-      #  run: ./PeleLMeX3d.llvm.FLOAT.DEBUG.ex tg-2.inp max_step=2 amr.plot_files_output=0 amr.checkpoint_files_output=0
-      #- name: TG debug single precision report
-      #  working-directory: ./Exec/RegTests/TG
-      #  run: |
-      #    egrep "warning:|error:" build-output.txt \
-      #      | egrep -v "Submodules/amrex|Submodules/sundials|Submodules/AMReX-Hydro|GNUmakefile" \
-      #      | egrep -v "ld: warning:" | sort | uniq \
-      #      | awk 'BEGIN{i=0}{print $0}{i++}END{print "Warnings: "i}' > warnings.txt
-      #    cat warnings.txt
-      #    export return=$(tail -n 1 warnings.txt | awk '{print $2}')
-      #    exit ${return}
-      #- name: Soot debug build
-      #  working-directory: ./Exec/RegTests/Soot-Flame
-      #  run: |
-      #    echo "::add-matcher::.github/problem-matchers/gcc.json"
-      #    set -eu -o pipefail
-      #    ccache -z
-      #    make -j ${{env.NPROCS}} KEEP_BUILDINFO_CPP=TRUE USE_CCACHE=TRUE COMP=gnu USE_MPI=FALSE DEBUG=TRUE 2>&1 | tee -a build-output.txt
-      #- name: Soot debug ccache report
-      #  working-directory: ./Exec/RegTests/Soot-Flame
-      #  run: |
-      #    ccache -s
-      #    du -hs ~/.cache/ccache
-      #- name: Soot debug report
-      #  working-directory: ./Exec/RegTests/Soot-Flame
-      #  run: |
-      #    egrep "warning:|error:" build-output.txt \
-      #      | egrep -v "Submodules/amrex|Submodules/sundials|GNUmakefile|Submodules/PeleMP|Submodules/AMReX-Hydro" \
-      #      | egrep -v "Submodules/PelePhysics/Support/Mechanism/Models" | sort | uniq \
-      #      | awk 'BEGIN{i=0}{print $0}{i++}END{print "Warnings: "i}' > warnings.txt
-      #    cat warnings.txt
-      #    export return=$(tail -n 1 warnings.txt | awk '{print $2}')
-      #    exit ${return}
-      #- name: Spray debug build
-      #  working-directory: ./Exec/RegTests/Spray-Conv
-      #  run: |
-      #    echo "::add-matcher::.github/problem-matchers/gcc.json"
-      #    set -eu -o pipefail
-      #    ccache -z
-      #    make -j ${{env.NPROCS}} KEEP_BUILDINFO_CPP=TRUE USE_CCACHE=TRUE COMP=gnu USE_MPI=FALSE DEBUG=TRUE 2>&1 | tee -a build-output.txt
-      #- name: Spray debug ccache report
-      #  working-directory: ./Exec/RegTests/Soot-Flame
-      #  run: |
-      #    ccache -s
-      #    du -hs ~/.cache/ccache
-      #- name: Spray debug report
-      #  working-directory: ./Exec/RegTests/Spray-Conv
-      #  run: |
-      #    egrep "warning:|error:" build-output.txt \
-      #      | egrep -v "Submodules/amrex|Submodules/sundials|GNUmakefile|Submodules/PeleMP|Submodules/AMReX-Hydro" \
-      #      | egrep -v "Submodules/PelePhysics/Support/Mechanism/Models" | sort | uniq \
-      #      | awk 'BEGIN{i=0}{print $0}{i++}END{print "Warnings: "i}' > warnings.txt
-      #    cat warnings.txt
-      #    export return=$(tail -n 1 warnings.txt | awk '{print $2}')
-      #    exit ${return}
   CPU-CMake:
     needs: Formatting
     runs-on: ${{matrix.os}}
@@ -206,7 +110,7 @@ jobs:
       - name: Clone
         uses: actions/checkout@v3
         with:
-          submodules: true
+          submodules: recursive
       - name: Python
         uses: actions/setup-python@v4
         with:
@@ -220,7 +124,7 @@ jobs:
           echo "CCACHE_MAXSIZE=${{matrix.ccache_size}}" >> $GITHUB_ENV
           cmake -E make_directory ${{runner.workspace}}/deps
           if [ "${RUNNER_OS}" != "macOS" ]; then
-            ${{github.workspace}}/Submodules/amrex/.github/workflows/dependencies/ubuntu_free_disk_space.sh
+            ${{github.workspace}}/Submodules/PelePhysics/Submodules/amrex/.github/workflows/dependencies/ubuntu_free_disk_space.sh
           fi
       - name: Dependencies
         run: |
@@ -305,7 +209,7 @@ jobs:
       - name: Clone
         uses: actions/checkout@v3
         with:
-          submodules: true
+          submodules: recursive
       - name: Setup
         run: |
           echo "NPROCS=$(nproc)" >> $GITHUB_ENV
@@ -315,7 +219,7 @@ jobs:
           echo "CCACHE_MAXSIZE=300M" >> $GITHUB_ENV
       - name: Dependencies
         run: |
-          ${{github.workspace}}/Submodules/amrex/.github/workflows/dependencies/ubuntu_free_disk_space.sh
+          ${{github.workspace}}/Submodules/PelePhysics/Submodules/amrex/.github/workflows/dependencies/ubuntu_free_disk_space.sh
           curl -O https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-keyring_1.0-1_all.deb
           sudo dpkg -i cuda-keyring_1.0-1_all.deb
           sudo apt-get update
@@ -368,7 +272,7 @@ jobs:
       - name: Clone
         uses: actions/checkout@v3
         with:
-          submodules: true
+          submodules: recursive
       - name: Setup
         run: |
           echo "NPROCS=$(nproc)" >> $GITHUB_ENV
@@ -378,7 +282,7 @@ jobs:
           echo "CCACHE_MAXSIZE=80M" >> $GITHUB_ENV
       - name: Dependencies
         run: |
-          ${{github.workspace}}/Submodules/amrex/.github/workflows/dependencies/ubuntu_free_disk_space.sh
+          ${{github.workspace}}/Submodules/PelePhysics/Submodules/amrex/.github/workflows/dependencies/ubuntu_free_disk_space.sh
           curl -O https://repo.radeon.com/rocm/rocm.gpg.key
           sudo apt-key add rocm.gpg.key
           echo 'deb [arch=amd64] https://repo.radeon.com/rocm/apt/5.6.1 ubuntu main' \
@@ -438,7 +342,7 @@ jobs:
       - name: Clone
         uses: actions/checkout@v3
         with:
-          submodules: true
+          submodules: recursive
       - name: Setup
         run: |
           echo "NPROCS=$(nproc)" >> $GITHUB_ENV
@@ -449,7 +353,7 @@ jobs:
           echo "CCACHE_DEPEND=1" >> $GITHUB_ENV
       - name: Dependencies
         run: |
-          ${{github.workspace}}/Submodules/amrex/.github/workflows/dependencies/ubuntu_free_disk_space.sh
+          ${{github.workspace}}/Submodules/PelePhysics/Submodules/amrex/.github/workflows/dependencies/ubuntu_free_disk_space.sh
           sudo wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
           sudo apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
           echo "deb https://apt.repos.intel.com/oneapi all main" \
@@ -496,41 +400,6 @@ jobs:
         run: |
           ccache -s
           du -hs ~/.cache/ccache
-#  Lint-cppcheck:
-#    needs: Formatting
-#    runs-on: macos-12
-#    steps:
-#      - name: Clone
-#        uses: actions/checkout@v3
-#        with:
-#          submodules: true
-#      - name: Dependencies
-#        run: |
-#          export HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=TRUE
-#          wget https://raw.githubusercontent.com/Homebrew/homebrew-core/9b0e3d32f590458ae9e5dbf01943b39845b5315e/Formula/cppcheck.rb
-#          brew install cppcheck.rb
-#      - name: Configure
-#        run: |
-#          cmake -B${{runner.workspace}}/build-cppcheck \
-#          -DPELELMEX_ENABLE_MPI:BOOL=OFF \
-#          -DPELELMEX_ENABLE_FCOMPARE_FOR_TESTS:BOOL=OFF \
-#          -DPELELMEX_ENABLE_MASA:BOOL=OFF \
-#          -DPELELMEX_ENABLE_CPPCHECK:BOOL=ON \
-#          ${{github.workspace}}
-#      - name: Check
-#        working-directory: ${{runner.workspace}}/build-cppcheck
-#        run: make cppcheck
-#      - name: Full report
-#        working-directory: ${{runner.workspace}}/build-cppcheck/cppcheck
-#        run: cat cppcheck-full-report.txt
-#      - name: Short report
-#        working-directory: ${{runner.workspace}}/build-cppcheck/cppcheck
-#        run: |
-#          echo "::add-matcher::.github/problem-matchers/cppcheck.json"
-#          awk 'BEGIN{i=0}{print $0}{i++}END{print "Warnings: "i}' < cppcheck-report.txt > cppcheck-warnings.txt
-#          cat cppcheck-warnings.txt
-#          export return=$(tail -n 1 cppcheck-warnings.txt | awk '{print $2}')
-#          exit ${return}
   Lint-clang-tidy:
     needs: Formatting
     runs-on: ubuntu-latest
@@ -554,7 +423,7 @@ jobs:
       - name: Clone
         uses: actions/checkout@v3
         with:
-          submodules: true
+          submodules: recursive
       - name: Install Ccache
         run: |
           wget https://github.com/ccache/ccache/releases/download/v4.8/ccache-4.8-linux-x86_64.tar.xz
@@ -586,7 +455,7 @@ jobs:
         working-directory: ${{runner.workspace}}/build-clang-tidy
         run: |
           #set -eu -o pipefail
-          cmake --build . --parallel ${{env.NPROCS}} 2>&1 | tee -a clang-tidy-full-report.txt
+          cmake --build . --parallel 2 2>&1 | tee -a clang-tidy-full-report.txt
           egrep "warning:|error:" clang-tidy-full-report.txt \
             | egrep -v "Submodules/amrex|Submodules/sundials|Submodules/AMReX-Hydro" \
             | egrep -v "ld: warning:" | sort | uniq \
@@ -612,7 +481,7 @@ jobs:
       - name: Clone
         uses: actions/checkout@v3
         with:
-          submodules: true
+          submodules: recursive
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v2
         with:

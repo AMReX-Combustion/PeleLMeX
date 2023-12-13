@@ -35,7 +35,7 @@ In a nutshell, `PeleLMeX` features include:
    * Several higher-order Godunov integration schemes for advection
    * Temporally implicit viscosity, species mass diffusion, thermal conductivity, chemical kinetics
    * Closed chamber algorithm enable time-varying background pressure changes
-   * Lagrangian spray description using `PeleMP <https://github.com/AMReX-Combustion/PeleMP>`_
+   * Lagrangian spray description and Hybrid Method of Moments Soot modeling using `PelePhysics <https://github.com/AMReX-Combustion/PelePhysics>`_ (formerly these were part of `PeleMP <https://github.com/AMReX-Combustion/PeleMP>`_).
 
 Mathematical background
 -----------------------

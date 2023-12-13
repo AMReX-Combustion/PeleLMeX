@@ -178,7 +178,7 @@ jobs:
       run: Utils/CloneDeps.sh
     - name: GenerateTurbFile
       env:
-         AMREX_HOME: ${GITHUB_WORKSPACE}/Submodules/amrex
+         AMREX_HOME: ${GITHUB_WORKSPACE}/Submodules/PelePhysics/Submodules/amrex
       working-directory: ./Exec/RegTests/TurbInflow/TurbFileHIT
       run: |
         make -j 2 COMP=gnu
@@ -214,8 +214,8 @@ jobs:
       run: Utils/CloneDeps.sh
     - name: Build AMReX Tools
       env:
-         AMREX_HOME: ${GITHUB_WORKSPACE}/Submodules/amrex
-      working-directory: ./Submodules/amrex/Tools/Plotfile
+         AMREX_HOME: ${GITHUB_WORKSPACE}/Submodules/PelePhysics/Submodules/amrex
+      working-directory: ./Submodules/PelePhysics/Submodules/amrex/Tools/Plotfile
       run: |
         make
     - name: Build PeleLMeX
@@ -226,7 +226,7 @@ jobs:
     - name: Run
       working-directory: ./Exec/RegTests/SprayTest/
       run: |
-        cp ${GITHUB_WORKSPACE}/Submodules/amrex/Tools/Plotfile/fcompare.gnu.ex .
+        cp ${GITHUB_WORKSPACE}/Submodules/PelePhysics/Submodules/amrex/Tools/Plotfile/fcompare.gnu.ex .
         sed -i "s/mpiexec -n 1/mpiexec -n 2/g" multiRuns.py
         ./multiRuns.py
         ./compareOutput.py
