@@ -2,7 +2,6 @@
 DIM             = 2
 DEBUG           = FALSE
 PRECISION       = DOUBLE
-VERBOSE         = FALSE
 TINY_PROFILE    = FALSE
 
 # Compilation
