@@ -88,6 +88,8 @@ jobs:
     - name: Repo Dependencies
       run: |
         Utils/CloneDeps.sh
+    - name: System Dependencies
+      run: .github/workflows/dependencies/dependencies_gcc10.sh
     - name: Build Release
       working-directory: ./Exec/RegTests/SootRadTest/
       run: |
