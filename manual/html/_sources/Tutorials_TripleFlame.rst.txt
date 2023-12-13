@@ -210,7 +210,7 @@ The next few lines specify AMReX compilation options and compiler selection: ::
 
 In `PeleLMeX`, the chemistry model (set of species, their thermodynamic and transport properties as well as the
 description of their of chemical interactions) is specified at compile time. Chemistry models available
-in `PelePhysics` can used in `PeleLMeX` by specifying the name of the folder in `PelePhysics/Support/Mechanisms/Models` containing
+in `PelePhysics` can used in `PeleLMeX` by specifying the name of the folder in `PelePhysics/Mechanisms` containing
 the relevant files, for example: ::
 
    Chemistry_Model = drm19
