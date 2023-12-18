@@ -1,6 +1,6 @@
 get_filename_component(DIR_NAME ${CMAKE_CURRENT_SOURCE_DIR} NAME)
 set(pelelmex_lib_name PelePhysics-Lib-${PELELMEX_EOS_MODEL}-${PELELMEX_CHEMISTRY_MODEL}-${PELELMEX_TRANSPORT_MODEL})
-set(pelelmex_exe_name PeleLMeX-${DIR_NAME})
+set(pelelmex_exe_name ${PROJECT_NAME}-${DIR_NAME})
 include(BuildPeleLMeXLib)
 include(BuildPeleLMeXExe)
 build_pelelmex_lib(${pelelmex_lib_name})

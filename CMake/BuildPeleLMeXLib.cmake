@@ -2,14 +2,14 @@ function(build_pelelmex_lib pelelmex_lib_name)
   if (NOT (TARGET ${pelelmex_lib_name}))
     add_library(${pelelmex_lib_name} OBJECT)
 
-    set(PELE_PHYSICS_SRC_DIR ${CMAKE_SOURCE_DIR}/Submodules/PelePhysics)
+    set(PELE_PHYSICS_SRC_DIR "${CMAKE_SOURCE_DIR}/Submodules/PelePhysics")
     set(PELE_PHYSICS_TRANSPORT_DIR "${PELE_PHYSICS_SRC_DIR}/Source/Transport")
     set(PELE_PHYSICS_EOS_DIR "${PELE_PHYSICS_SRC_DIR}/Source/Eos")
     set(PELE_PHYSICS_MECHANISM_DIR "${PELE_PHYSICS_SRC_DIR}/Mechanisms/${PELELMEX_CHEMISTRY_MODEL}")
     set(PELE_PHYSICS_UTILITY_DIR "${PELE_PHYSICS_SRC_DIR}/Source/Utility")
     set(PELE_PHYSICS_REACTIONS_DIR "${PELE_PHYSICS_SRC_DIR}/Source/Reactions")
     set(PELE_PHYSICS_SOOT_DIR "${PELE_PHYSICS_SRC_DIR}/Source/Soot")
-    set(AMREX_SUNDIALS_DIR ${AMREX_SUBMOD_LOCATION}/Src/Extern/SUNDIALS)
+    set(AMREX_SUNDIALS_DIR "${AMREX_SUBMOD_LOCATION}/Src/Extern/SUNDIALS")
 
     if(CLANG_TIDY_EXE)
       set_target_properties(${pelelmex_lib_name} PROPERTIES CXX_CLANG_TIDY
@@ -159,7 +159,7 @@ function(build_pelelmex_lib pelelmex_lib_name)
                       ${PELE_PHYSICS_SOOT_DIR}/Constants_Soot.H
                       ${PELE_PHYSICS_SOOT_DIR}/SootData.H
                       ${PELE_PHYSICS_SOOT_DIR}/SootReactions.H)
-       target_include_directories(${pele=lmex_lib_name} PUBLIC ${PELE_PHYSICS_SOOT_DIR})
+       target_include_directories(${pelelmex_lib_name} PUBLIC ${PELE_PHYSICS_SOOT_DIR})
     endif()
 
     include(AMReXBuildInfo)
