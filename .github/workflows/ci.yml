@@ -86,6 +86,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
         build_type: [Release, Debug]
+        enable_eb: [EB-OFF, EB-ON]
         include:
           - os: macos-latest
             install_deps: brew install mpich automake ccache
@@ -103,6 +104,10 @@ jobs:
           - build_type: Debug
             ctest_args: -LE no-ci
             ccache_size: 500M
+          - enable_eb: EB-OFF
+            use_eb: "OFF"
+          - enable_eb: EB-ON
+            use_eb: "ON"
         exclude:
           - os: macos-latest
             build_type: Debug
@@ -144,22 +149,22 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ${{matrix.ccache_cache}}
-          key: ccache-${{github.workflow}}-${{github.job}}-${{matrix.os}}-${{matrix.build_type}}-git-${{github.sha}}
+          key: ccache-${{github.workflow}}-${{github.job}}-${{matrix.os}}-${{matrix.build_type}}-${{matrix.enable_eb}}-git-${{github.sha}}
           restore-keys: |
-               ccache-${{github.workflow}}-${{github.job}}-${{matrix.os}}-${{matrix.build_type}}-git-
+               ccache-${{github.workflow}}-${{github.job}}-${{matrix.os}}-${{matrix.build_type}}-${{matrix.enable_eb}}-git-
       - name: Configure
         run: |
           (for DIM in 2 3; do \
             printf "\n-------- Configuring ${DIM}D --------\n"; \
-            cmake -B${{runner.workspace}}/build-${DIM}d-${{matrix.os}}-${{matrix.build_type}} \
-            -DCMAKE_INSTALL_PREFIX:PATH=${{runner.workspace}}/install-${DIM}d-${{matrix.os}}-${{matrix.build_type}} \
+            cmake -B${{runner.workspace}}/build-${DIM}d-${{matrix.os}}-${{matrix.build_type}}-${{matrix.enable_eb}} \
+            -DCMAKE_INSTALL_PREFIX:PATH=${{runner.workspace}}/install-${DIM}d-${{matrix.os}}-${{matrix.build_type}}-${{matrix.enable_eb}} \
             -DCMAKE_BUILD_TYPE:STRING=${{matrix.build_type}} \
             -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
             -DPELELMEX_DIM:STRING=${DIM} \
             -DPELELMEX_ENABLE_MPI:BOOL=ON \
+            -DPELELMEX_ENABLE_EB:BOOL=${{matrix.use_eb}} \
             -DPELELMEX_ENABLE_FCOMPARE_FOR_TESTS:BOOL=OFF \
             -DPELELMEX_ENABLE_MASA:BOOL=OFF \
-            -DMASA_ROOT:PATH=${{runner.workspace}}/deps/install/MASA \
             -DCMAKE_CXX_COMPILER_LAUNCHER:STRING=ccache \
             ${{github.workspace}}; \
             if [ $? -ne 0 ]; then exit 1; fi \
@@ -169,7 +174,7 @@ jobs:
           ccache -z
           (for DIM in 2 3; do \
             printf "\n-------- Building ${DIM}D --------\n"; \
-            cmake --build ${{runner.workspace}}/build-${DIM}d-${{matrix.os}}-${{matrix.build_type}} \
+            cmake --build ${{runner.workspace}}/build-${DIM}d-${{matrix.os}}-${{matrix.build_type}}-${{matrix.enable_eb}} \
               --parallel ${{env.NPROCS}} 2>&1 | tee -a ${{runner.workspace}}/build-output.txt; \
             if [ ${PIPESTATUS[0]} -ne 0 ]; then exit 1; fi \
           done)
@@ -191,7 +196,7 @@ jobs:
         run: |
           (for DIM in 2 3; do \
             printf "\n-------- Testing ${DIM}D --------\n"; \
-            cd ${{runner.workspace}}/build-${DIM}d-${{matrix.os}}-${{matrix.build_type}}; \
+            cd ${{runner.workspace}}/build-${DIM}d-${{matrix.os}}-${{matrix.build_type}}-${{matrix.enable_eb}}; \
             ctest -j ${{env.NPROCS}} ${{matrix.ctest_args}} --output-on-failure; \
             if [ $? -ne 0 ]; then exit 1; fi \
           done)
@@ -405,12 +410,12 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        enableeb: [EB-OFF, EB-ON]
+        enable_eb: [EB-OFF, EB-ON]
         include:
-          - enableeb: EB-OFF
-            useeb: "OFF"
-          - enableeb: EB-ON
-            useeb: "ON"
+          - enable_eb: EB-OFF
+            use_eb: "OFF"
+          - enable_eb: EB-ON
+            use_eb: "ON"
       fail-fast: false
     steps:
       - name: Setup
@@ -433,9 +438,9 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.cache/ccache
-          key: ccache-${{github.workflow}}-${{github.job}}-${{matrix.useeb}}-git-${{github.sha}}
+          key: ccache-${{github.workflow}}-${{github.job}}-${{matrix.enable_eb}}-git-${{github.sha}}
           restore-keys: |
-               ccache-${{github.workflow}}-${{github.job}}-${{matrix.useeb}}-git-
+               ccache-${{github.workflow}}-${{github.job}}-${{matrix.enable_eb}}-git-
       - name: Configure
         run: |
           echo "NPROCS=$(nproc)" >> $GITHUB_ENV
@@ -444,7 +449,7 @@ jobs:
           -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
           -DCMAKE_CXX_COMPILER:STRING=clang++ \
           -DCMAKE_C_COMPILER:STRING=clang \
-          -DPELELMEX_ENABLE_EB:BOOL=${{matrix.useeb}} \
+          -DPELELMEX_ENABLE_EB:BOOL=${{matrix.use_eb}} \
           -DPELELMEX_ENABLE_MPI:BOOL=OFF \
           -DPELELMEX_ENABLE_FCOMPARE_FOR_TESTS:BOOL=OFF \
           -DPELELMEX_ENABLE_MASA:BOOL=OFF \
