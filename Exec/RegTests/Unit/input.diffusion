@@ -88,6 +88,6 @@ amr.yo2.max_level     = 1
 amr.yo2.value_greater = 0.24
 amr.yo2.field_name    = Y(O2)
 
-amrex.fpe_trap_invalid = 1
-amrex.fpe_trap_zero = 1
-amrex.fpe_trap_overflow = 1
+#amrex.fpe_trap_invalid = 1
+#amrex.fpe_trap_zero = 1
+#amrex.fpe_trap_overflow = 1

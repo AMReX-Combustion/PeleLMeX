@@ -87,9 +87,9 @@ amr.gradT.field_name    = temp
 
 amrex.regtest_reduction = 1
 amrex.signal_handling = 0
-amrex.fpe_trap_invalid = 0
-amrex.fpe_trap_zero = 0
-amrex.fpe_trap_overflow = 0
+#amrex.fpe_trap_invalid = 0
+#amrex.fpe_trap_zero = 0
+#amrex.fpe_trap_overflow = 0
 
 #--------------------RADIATION MODELING------------------------
 peleLM.do_rad_solve = 1
