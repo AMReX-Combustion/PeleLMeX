@@ -101,7 +101,7 @@ jobs:
             ctest_args: -LE no-ci
             ccache_size: 100M
           - build_type: Debug
-            ctest_args: -R eb-c12
+            ctest_args: -LE no-ci
             ccache_size: 500M
         exclude:
           - os: macos-latest
