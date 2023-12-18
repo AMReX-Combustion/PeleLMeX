@@ -47,7 +47,7 @@ ifeq ($(USE_SOOT), TRUE)
 endif
 
 ifeq ($(USE_RADIATION), TRUE)
-  CEXE_sources += PeleLMeX_Rad.cpp
+  CEXE_sources += PeleLMeX_Radiation.cpp
 endif
 
 ifeq ($(USE_PARTICLES), TRUE)

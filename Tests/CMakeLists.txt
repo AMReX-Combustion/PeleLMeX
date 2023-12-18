@@ -211,6 +211,9 @@ endfunction(add_test_spray)
 
 # Run in CI
 if(NOT PELELMEX_ENABLE_EB)
+  if(PELELMEX_ENABLE_RADIATION)
+    add_test_r(soot-rad-${PELELMEX_DIM}d SootRadTest)
+  endif()
   add_test_r(flamesheet-drm19-${PELELMEX_DIM}d FlameSheet)
   add_test_rv(covo-${PELELMEX_DIM}d PeriodicCases)
   add_test_r(hotbubble-${PELELMEX_DIM}d HotBubble)

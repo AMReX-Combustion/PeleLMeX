@@ -98,7 +98,7 @@ jobs:
     - name: Run Release
       working-directory: ./Exec/RegTests/SootRadTest/
       run: |
-        mpirun -n 2 ./PeleLMeX2d.gnu.MPI.ex first-input.inp amr.max_step=2 amr.plot_int=2 amr.check_int=2
+        mpirun -n 2 ./PeleLMeX2d.gnu.MPI.ex soot-rad-2d.inp amr.max_step=2 amr.plot_int=2 amr.check_int=2
     - name: Build Debug
       working-directory: ./Exec/RegTests/SootRadTest/
       run: |
@@ -107,7 +107,7 @@ jobs:
     - name: Run Debug
       working-directory: ./Exec/RegTests/SootRadTest/
       run: |
-        mpirun -n 2 ./PeleLMeX2d.gnu.DEBUG.MPI.ex first-input.inp amr.max_step=2 amr.plot_int=2 amr.check_int=2
+        mpirun -n 2 ./PeleLMeX2d.gnu.DEBUG.MPI.ex soot-rad-2d.inp amr.max_step=2 amr.plot_int=2 amr.check_int=2
 
   # Build and Run the EB_BackwardStepFlame RegTest with GNU9.3 and MPI support
   EBBFS:

@@ -9,6 +9,7 @@ function(build_pelelmex_lib pelelmex_lib_name)
     set(PELE_PHYSICS_UTILITY_DIR "${PELE_PHYSICS_SRC_DIR}/Source/Utility")
     set(PELE_PHYSICS_REACTIONS_DIR "${PELE_PHYSICS_SRC_DIR}/Source/Reactions")
     set(PELE_PHYSICS_SOOT_DIR "${PELE_PHYSICS_SRC_DIR}/Source/Soot")
+    set(PELE_PHYSICS_RADIATION_DIR "${PELE_PHYSICS_SRC_DIR}/Source/Radiation")
     set(AMREX_SUNDIALS_DIR "${AMREX_SUBMOD_LOCATION}/Src/Extern/SUNDIALS")
 
     if(CLANG_TIDY_EXE)
@@ -144,12 +145,12 @@ function(build_pelelmex_lib pelelmex_lib_name)
     target_include_directories(${pelelmex_lib_name} PUBLIC ${PELE_PHYSICS_REACTIONS_DIR})
 
     if(PELELMEX_ENABLE_SOOT)
-       target_compile_definitions(${pelelmex_lib_name} PUBLIC PELELMEX_USE_SOOT)
-       target_compile_definitions(${pelelmex_lib_name} PUBLIC NUM_SOOT_MOMENTS=${PELE_NUM_SOOT_MOMENTS})
        set(SOOT_MOMENTS_VALUES 3 6)
        if(NOT PELE_NUM_SOOT_MOMENTS IN_LIST SOOT_MOMENTS_VALUES)
          message(FATAL_ERROR "NUM_SOOT_MOMENTS must be either 3 or 6")
        endif()
+       target_compile_definitions(${pelelmex_lib_name} PUBLIC PELELM_USE_SOOT)
+       target_compile_definitions(${pelelmex_lib_name} PUBLIC NUM_SOOT_MOMENTS=${PELE_NUM_SOOT_MOMENTS})
        target_sources(${pelelmex_lib_name} PRIVATE
                       ${PELE_PHYSICS_SOOT_DIR}/SootModel.H
                       ${PELE_PHYSICS_SOOT_DIR}/SootModel.cpp
@@ -160,6 +161,23 @@ function(build_pelelmex_lib pelelmex_lib_name)
                       ${PELE_PHYSICS_SOOT_DIR}/SootData.H
                       ${PELE_PHYSICS_SOOT_DIR}/SootReactions.H)
        target_include_directories(${pelelmex_lib_name} PUBLIC ${PELE_PHYSICS_SOOT_DIR})
+       if(PELELMEX_ENABLE_RADIATION)
+         target_sources(${pelelmex_lib_name} PRIVATE
+                        ${PELE_PHYSICS_RADIATION_DIR}/AMRParam.H
+                        ${PELE_PHYSICS_RADIATION_DIR}/Constants.H
+                        ${PELE_PHYSICS_RADIATION_DIR}/MLMGParam.H
+                        ${PELE_PHYSICS_RADIATION_DIR}/POneMulti.H
+                        ${PELE_PHYSICS_RADIATION_DIR}/POneMultiEB.H
+                        ${PELE_PHYSICS_RADIATION_DIR}/POneMultiLevbyLev.H
+                        ${PELE_PHYSICS_RADIATION_DIR}/POneSingle.H
+                        ${PELE_PHYSICS_RADIATION_DIR}/POneSingleEB.H
+                        ${PELE_PHYSICS_RADIATION_DIR}/PeleCRad.H
+                        ${PELE_PHYSICS_RADIATION_DIR}/PeleLMRad.H
+                        ${PELE_PHYSICS_RADIATION_DIR}/PlanckMean.H
+                        ${PELE_PHYSICS_RADIATION_DIR}/SpectralModels.H)
+         target_include_directories(${pelelmex_lib_name} PUBLIC ${PELE_PHYSICS_RADIATION_DIR})
+         target_compile_definitions(${pelelmex_lib_name} PUBLIC PELELM_USE_RADIATION)
+       endif()
     endif()
 
     include(AMReXBuildInfo)
