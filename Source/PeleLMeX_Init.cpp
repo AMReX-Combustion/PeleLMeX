@@ -187,7 +187,7 @@ PeleLM::initData()
 #ifdef PELELM_USE_SPRAY
     SprayInit();
 #endif
-#ifdef PELELM_USE_RAD
+#ifdef PELELM_USE_RADIATION
     if (do_rad_solve) {
       RadInit();
     }
@@ -254,7 +254,7 @@ PeleLM::initData()
 #ifdef PELELM_USE_SPRAY
     SprayInit();
 #endif
-#ifdef PELELM_USE_RAD
+#ifdef PELELM_USE_RADIATION
     if (do_rad_solve) {
       RadInit();
     }

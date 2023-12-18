@@ -20,7 +20,7 @@ Chemistry_Model = SootReaction
 Eos_Model	= Fuego
 Transport_Model = Simple
 
-USE_PELERAD = TRUE
+USE_RADIATION = TRUE
 USE_SOOT = TRUE
 NUM_SOOT_MOMENTS = 3
 
