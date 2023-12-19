@@ -40,8 +40,6 @@ pelelmex_initdata(
   AMREX_D_TERM(const amrex::Real xc = prob_lo[0] + 0.5 * Lx;
                , const amrex::Real yc = prob_lo[1] + 0.5 * Ly;, );
 
-  constexpr amrex::Real Pi = 3.14159265358979323846264338327950288;
-
   auto eos = pele::physics::PhysicsType::eos();
   amrex::GpuArray<amrex::Real, NUM_SPECIES + 4> pmf_vals = {0.0};
   amrex::Real molefrac[NUM_SPECIES] = {0.0};
@@ -65,6 +63,7 @@ pelelmex_initdata(
   //   3.6 - (radius - prob_parm.standoff + 1.42 * dx[1] + pert) * 100;
 
 #elif (AMREX_SPACEDIM == 3)
+    constexpr amrex::Real Pi = 3.14159265358979323846264338327950288;
     amrex::Real pertLz = (prob_parm.pertLz > 0.0) ? prob_parm.pertLz : Lz;
     amrex::Real angle = std::atan2((y - yc), (x - xc));
     pert = prob_parm.pertmag *
