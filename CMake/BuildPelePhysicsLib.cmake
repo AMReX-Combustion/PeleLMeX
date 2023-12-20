@@ -146,11 +146,11 @@ function(build_pele_physics_lib pele_physics_lib_name)
 
     if(PELE_PHYSICS_ENABLE_SOOT)
        set(SOOT_MOMENTS_VALUES 3 6)
-       if(NOT PELE_NUM_SOOT_MOMENTS IN_LIST SOOT_MOMENTS_VALUES)
+       if(NOT PELE_PHYSICS_NUM_SOOT_MOMENTS IN_LIST SOOT_MOMENTS_VALUES)
          message(FATAL_ERROR "NUM_SOOT_MOMENTS must be either 3 or 6")
        endif()
        target_compile_definitions(${pele_physics_lib_name} PUBLIC PELELM_USE_SOOT)
-       target_compile_definitions(${pele_physics_lib_name} PUBLIC NUM_SOOT_MOMENTS=${PELE_NUM_SOOT_MOMENTS})
+       target_compile_definitions(${pele_physics_lib_name} PUBLIC NUM_SOOT_MOMENTS=${PELE_PHYSICS_NUM_SOOT_MOMENTS})
        target_sources(${pele_physics_lib_name} PRIVATE
                       ${PELE_PHYSICS_SOOT_DIR}/SootModel.H
                       ${PELE_PHYSICS_SOOT_DIR}/SootModel.cpp

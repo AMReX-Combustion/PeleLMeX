@@ -11,7 +11,6 @@ set(PELE_DIM "3" CACHE STRING "Number of physical dimensions")
 option(PELE_ENABLE_AMREX_PARTICLES "Enable particles in AMReX library" OFF)
 option(PELE_ENABLE_CLANG_TIDY "Enable clang-tidy analysis" OFF)
 option(PELE_ENABLE_CPPCHECK "Enable cppcheck analysis" OFF)
-option(PELE_ENABLE_MASA "Enable tests that require MASA" OFF)
 option(PELE_ENABLE_FCOMPARE "Enable building fcompare when not testing" OFF)
 option(PELE_ENABLE_FCOMPARE_FOR_TESTS "Check test plots against gold files" OFF)
 option(PELE_SAVE_GOLDS "Enable saving of gold files to a specified directory" OFF)
@@ -26,11 +25,7 @@ set(PELE_PRECISION "DOUBLE" CACHE STRING "Floating point precision SINGLE or DOU
 
 # Physics options
 option(PELE_ENABLE_EB "Enable Embedded Boundary" OFF)
-option(PELE_ENABLE_EFIELD "Enable Electric field module" OFF)
-option(PELE_ENABLE_SOOT "Enable Soot module" OFF)
-option(PELE_ENABLE_PARTICLES "Enable particles" OFF)
-option(PELE_ENABLE_RADIATION "Enable radiation" OFF)
-set(PELE_NUM_SOOT_MOMENTS "3" CACHE STRING "Number of soot moments: 3 or 6")
+option(PELE_ENABLE_PARTICLES "Enable particles and spray" OFF)
 
 # HPC options
 option(PELE_ENABLE_MPI "Enable MPI" OFF)
@@ -49,9 +44,6 @@ if(PELE_ENABLE_CUDA)
   if(CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "10.0")
     message(FATAL_ERROR "Your nvcc version is ${CMAKE_CUDA_COMPILER_VERSION} which is unsupported."
       "Please use CUDA toolkit version 10.0 or newer.")
-  endif()
-  if(PELE_ENABLE_MASA)
-    message(FATAL_ERROR "MASA enabled with CUDA is unsupported.")
   endif()
   if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
     set(CMAKE_CUDA_ARCHITECTURES 70)
@@ -100,11 +92,7 @@ message(STATUS "CMAKE_SYSTEM_NAME = ${CMAKE_SYSTEM_NAME}")
 message(STATUS "CMAKE_CXX_COMPILER_ID = ${CMAKE_CXX_COMPILER_ID}")
 message(STATUS "CMAKE_CXX_COMPILER_VERSION = ${CMAKE_CXX_COMPILER_VERSION}")
 message(STATUS "CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE}")
-
 message(STATUS "PELE_PRECISION = ${PELE_PRECISION}")
-if("${PELE_PRECISION}" STREQUAL "SINGLE" AND PELE_ENABLE_MASA)
-  message(FATAL_ERROR "Single precision currently not allowed in AMReX with MASA enabled")
-endif()
 
 init_code_checks()
 
