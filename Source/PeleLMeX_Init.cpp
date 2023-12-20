@@ -78,6 +78,9 @@ PeleLM::MakeNewLevelFromScratch(
     m_leveldatareact[lev] =
       std::make_unique<LevelDataReact>(grids[lev], dmap[lev], *m_factory[lev]);
     m_leveldatareact[lev]->functC.setVal(0.0);
+    // Make sure this is initialized - may get used for ErrorEst when setting
+    // up levels but before reactions are actually computed
+    m_leveldatareact[lev]->I_R.setVal(0.0);
   }
 
 #ifdef PELE_USE_EFIELD
