@@ -8,15 +8,13 @@ SprayParticleContainer::injectParticles(
   amrex::Real /*dt*/,
   int /*nstep*/,
   int /*lev*/,
-  int /*finest_level*/,
-  ProbParm const& /*prob_parm*/)
+  int /*finest_level*/)
 {
   return false;
 }
 
 void
-SprayParticleContainer::InitSprayParticles(
-  const bool init_parts, ProbParm const& prob_parm)
+SprayParticleContainer::InitSprayParticles(const bool init_parts)
 {
   if (!init_parts) {
     return;

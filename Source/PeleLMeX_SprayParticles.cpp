@@ -167,8 +167,7 @@ PeleLM::SprayInit()
       Warning(warn_msg);
     }
   }
-  ProbParm const* lprobparm = prob_parm;
-  SprayPC->SprayInitialize(*lprobparm, restart_file);
+  SprayPC->SprayInitialize(restart_file);
   SprayPostRegrid();
   SprayInjectRedist();
   if (spray_verbose >= 1) {
@@ -375,12 +374,11 @@ PeleLM::SprayInjectRedist()
   }
   bool injected = false;
   for (int lev = 0; lev <= finest_level; ++lev) {
-    int nstep = 0; // Unused
-    ProbParm const* lprobparm = prob_parm;
+    int nstep = 0;                // Unused
     Real cur_time = m_t_new[lev]; // Still the time from the last time step
     Real dt = m_dt;
-    bool lev_injected = SprayPC->injectParticles(
-      cur_time, dt, nstep, lev, finest_level, *lprobparm);
+    bool lev_injected =
+      SprayPC->injectParticles(cur_time, dt, nstep, lev, finest_level);
     if (lev_injected) {
       injected = true;
     }
