@@ -1,0 +1,4 @@
+set(PELELMEX_EOS_MODEL Fuego)
+set(PELELMEX_CHEMISTRY_MODEL SootReaction)
+set(PELELMEX_TRANSPORT_MODEL Simple)
+include(BuildExeAndLib)

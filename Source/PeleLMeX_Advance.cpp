@@ -120,7 +120,7 @@ PeleLM::Advance(int is_initIter)
     computeSootSource(AmrOldTime, m_dt);
   }
 #endif
-#ifdef PELELM_USE_RAD
+#ifdef PELELM_USE_RADIATION
   if (do_rad_solve) {
     BL_PROFILE_VAR("PeleLM::advance::rad", PLM_RAD);
     computeRadSource(AmrOldTime);

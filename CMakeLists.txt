@@ -29,6 +29,8 @@ option(PELELMEX_ENABLE_EB "Enable Embedded Boundary" OFF)
 option(PELELMEX_ENABLE_EFIELD "Enable Electric field module" OFF)
 option(PELELMEX_ENABLE_SOOT "Enable Soot module" OFF)
 option(PELELMEX_ENABLE_PARTICLES "Enable particles" OFF)
+option(PELELMEX_ENABLE_RADIATION "Enable radiation" OFF)
+set(PELE_NUM_SOOT_MOMENTS "3" CACHE STRING "Number of soot moments: 3 or 6")
 
 # HPC options
 option(PELELMEX_ENABLE_MPI "Enable MPI" OFF)
@@ -113,3 +115,4 @@ add_subdirectory(Exec)
 enable_testing()
 include(CTest)
 add_subdirectory(Tests)
+add_subdirectory(${CMAKE_SOURCE_DIR}/Submodules/PelePhysics/Testing/Exec/Radiation)

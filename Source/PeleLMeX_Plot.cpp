@@ -17,8 +17,8 @@
 #ifdef PELELM_USE_SOOT
 #include "SootModel.H"
 #endif
-#ifdef PELELM_USE_RAD
-#include "PeleLMRad.hpp"
+#ifdef PELELM_USE_RADIATION
+#include "PeleLMRad.H"
 #endif
 
 using namespace amrex;
@@ -120,7 +120,7 @@ PeleLM::WritePlotFile()
   ncomp += 1;
 #endif
 
-#ifdef PELELM_USE_RAD
+#ifdef PELELM_USE_RADIATION
   if (do_rad_solve)
     ncomp += 3;
 #endif
@@ -187,7 +187,7 @@ PeleLM::WritePlotFile()
       plt_VarsName.push_back(sootname);
     }
 #endif
-#ifdef PELELM_USE_RAD
+#ifdef PELELM_USE_RADIATION
     if (do_rad_solve) {
       plt_VarsName.push_back("rad.G");
       plt_VarsName.push_back("rad.kappa");
@@ -300,7 +300,7 @@ PeleLM::WritePlotFile()
         0);
       cnt += NUMSOOTVAR;
 #endif
-#ifdef PELELM_USE_RAD
+#ifdef PELELM_USE_RADIATION
       if (do_rad_solve) {
         MultiFab::Copy(mf_plt[lev], rad_model->G()[lev], 0, cnt, 1, 0);
         cnt += 1;

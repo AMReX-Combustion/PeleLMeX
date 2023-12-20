@@ -589,7 +589,7 @@ PeleLM::readParameters()
   }
   soot_model->readSootParams();
 #endif
-#ifdef PELELM_USE_RAD
+#ifdef PELELM_USE_RADIATION
   do_rad_solve = false;
   pp.query("do_rad_solve", do_rad_solve);
   if (m_verbose && do_rad_solve) {

@@ -19,7 +19,7 @@ amr.n_error_buf     = 1 1 2 2          # number of buffer cells in error est
 amr.grid_eff        = 0.7              # what constitutes an efficient grid
 amr.ref_ratio = 2 2 2
 amr.blocking_factor = 8
-amr.max_grid_size = 128
+amr.max_grid_size = 64
 
 #--------------------------- Problem -------------------------------
 prob.P_mean = 98700.
@@ -86,9 +86,10 @@ amr.gradT.adjacent_difference_greater = 30.
 amr.gradT.field_name    = temp
 
 amrex.regtest_reduction = 1
-amrex.fpe_trap_invalid = 1
-amrex.fpe_trap_zero = 1
-amrex.fpe_trap_overflow = 1
+amrex.signal_handling = 0
+#amrex.fpe_trap_invalid = 0
+#amrex.fpe_trap_zero = 0
+#amrex.fpe_trap_overflow = 0
 
 #--------------------RADIATION MODELING------------------------
 peleLM.do_rad_solve = 1
@@ -109,5 +110,5 @@ pelerad.linop_maxorder = 2
 pelerad.max_fmg_iter = 0
 pelerad.lo_bc = Robin Periodic Periodic
 pelerad.hi_bc = Robin Periodic Periodic
-#please set the pelerad.kppath
-pelerad.kppath = /lustre/orion/cmb138/proj-shared/w0g/PR/PeleRad/data/kpDB/
+#The trailing / might matter here:
+pelerad.kppath = kpDB/

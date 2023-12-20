@@ -32,8 +32,8 @@
 #include <AMReX_ErrorList.H>
 #include <AMReX_VisMF.H>
 
-#ifdef PELELM_USE_RAD
-#include <PeleLMRad.hpp>
+#ifdef PELELM_USE_RADIATION
+#include <PeleLMRad.H>
 #endif
 
 // Forward declarations
@@ -861,7 +861,7 @@ public:
   //-----------------------------------------------------------------------------
 #endif
 
-#ifdef PELELM_USE_RAD
+#ifdef PELELM_USE_RADIATION
   // Initialize the radiation module
   void RadInit();
 
@@ -1691,7 +1691,7 @@ public:
   bool do_soot_solve;
 #endif
 
-#ifdef PELELM_USE_RAD
+#ifdef PELELM_USE_RADIATION
   // Radiation parameters
   std::unique_ptr<PeleRad::Radiation> rad_model;
   bool do_rad_solve;

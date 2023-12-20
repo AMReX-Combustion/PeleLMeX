@@ -106,7 +106,12 @@ function(build_pelelmex_exe pelelmex_exe_name pelelmex_lib_name)
   if(PELELMEX_ENABLE_SOOT)
     target_sources(${pelelmex_exe_name}
       PRIVATE
-        ${SRC_DIR}/Soot.cpp)
+        ${SRC_DIR}/PeleLMeX_Soot.cpp)
+    if(PELELMEX_ENABLE_RADIATION)
+      target_sources(${pelelmex_exe_name}
+        PRIVATE
+          ${SRC_DIR}/PeleLMeX_Radiation.cpp)
+    endif()
   endif()
 
   #if(PELELMEX_ENABLE_ASCENT)
