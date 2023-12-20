@@ -1,5 +1,5 @@
-#ifndef PELE_DERIVEFUNC_H
-#define PELE_DERIVEFUNC_H
+#ifndef PELELM_DERIVEFUNC_H
+#define PELELM_DERIVEFUNC_H
 
 #include <AMReX_FArrayBox.H>
 #include <AMReX_Geometry.H>

@@ -1,5 +1,5 @@
-#ifndef PELE_BCFILL
-#define PELE_BCFILL
+#ifndef PELELM_BCFILL
+#define PELELM_BCFILL
 #include <PeleLMeX_Index.H>
 #include <pelelmex_prob.H>
 #include <PMFData.H>
