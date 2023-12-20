@@ -209,16 +209,17 @@ endfunction(add_test_spray)
 # Regression tests
 #=============================================================================
 
-# Run in CI
 if(NOT PELELMEX_ENABLE_EB)
-  if(PELELMEX_ENABLE_RADIATION)
-    add_test_r(soot-rad-${PELELMEX_DIM}d SootRadTest)
-  endif()
   add_test_r(flamesheet-drm19-${PELELMEX_DIM}d FlameSheet)
-  add_test_r(tripleflame-${PELELMEX_DIM}d TripleFlame)
   add_test_rv(covo-${PELELMEX_DIM}d PeriodicCases)
   add_test_r(hotbubble-${PELELMEX_DIM}d HotBubble)
   add_test_rv(enclosedflame-${PELELMEX_DIM}d EnclosedFlame)
+  if(PELELMEX_ENABLE_RADIATION)
+    add_test_r(soot-rad-${PELELMEX_DIM}d SootRadTest)
+  endif()
+  if(PELELMEX_DIM EQUAL 2)
+    add_test_r(tripleflame-${PELELMEX_DIM}d TripleFlame)
+  endif()
   if(PELELMEX_DIM EQUAL 3)
     add_test_r(hit-${PELELMEX_DIM}d HITDecay)
     add_test_r(hit-les-${PELELMEX_DIM}d HITDecay)
