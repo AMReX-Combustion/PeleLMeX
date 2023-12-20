@@ -9,6 +9,7 @@ function(build_pele_physics_lib pele_physics_lib_name)
     set(PELE_PHYSICS_UTILITY_DIR "${PELE_PHYSICS_SRC_DIR}/Source/Utility")
     set(PELE_PHYSICS_REACTIONS_DIR "${PELE_PHYSICS_SRC_DIR}/Source/Reactions")
     set(PELE_PHYSICS_SOOT_DIR "${PELE_PHYSICS_SRC_DIR}/Source/Soot")
+    set(PELE_PHYSICS_SPRAY_DIR "${PELE_PHYSICS_SRC_DIR}/Source/Spray")
     set(PELE_PHYSICS_RADIATION_DIR "${PELE_PHYSICS_SRC_DIR}/Source/Radiation")
     set(AMREX_SUNDIALS_DIR "${AMREX_SUBMOD_LOCATION}/Src/Extern/SUNDIALS")
 
@@ -144,12 +145,45 @@ function(build_pele_physics_lib pele_physics_lib_name)
     )
     target_include_directories(${pele_physics_lib_name} PUBLIC ${PELE_PHYSICS_REACTIONS_DIR})
 
+    if(PELE_PHYSICS_ENABLE_SPRAY)
+       if(PELE_PHYSICS_SPRAY_FUEL_NUM LESS 1)
+         message(FATAL_ERROR "SPRAY_FUEL_NUM must be greater than 0")
+       endif()
+       target_compile_definitions(${pele_physics_lib_name} PUBLIC PELE_USE_SPRAY PELELM_USE_SPRAY)
+       target_compile_definitions(${pele_physics_lib_name} PUBLIC SPRAY_FUEL_NUM=${PELE_PHYSICS_SPRAY_FUEL_NUM})
+       target_sources(${pele_physics_lib_name} PRIVATE
+                      ${PELE_PHYSICS_SPRAY_DIR}/Drag.H
+                      ${PELE_PHYSICS_SPRAY_DIR}/SprayDerive.cpp
+                      ${PELE_PHYSICS_SPRAY_DIR}/SprayFuelData.H
+                      ${PELE_PHYSICS_SPRAY_DIR}/SprayIO.cpp
+                      ${PELE_PHYSICS_SPRAY_DIR}/SprayInjection.H
+                      ${PELE_PHYSICS_SPRAY_DIR}/SprayInterpolation.H
+                      ${PELE_PHYSICS_SPRAY_DIR}/SprayJet.H
+                      ${PELE_PHYSICS_SPRAY_DIR}/SprayJet.cpp
+                      ${PELE_PHYSICS_SPRAY_DIR}/SprayParticles.H
+                      ${PELE_PHYSICS_SPRAY_DIR}/SprayParticles.cpp
+                      ${PELE_PHYSICS_SPRAY_DIR}/SpraySB.cpp
+                      ${PELE_PHYSICS_SPRAY_DIR}/SpraySetup.cpp
+                      ${PELE_PHYSICS_SPRAY_DIR}/WallFunctions.H
+                      ${PELE_PHYSICS_SPRAY_DIR}/BreakupSplash/AhamedSplash.H
+                      ${PELE_PHYSICS_SPRAY_DIR}/BreakupSplash/ReitzKHRT.H
+                      ${PELE_PHYSICS_SPRAY_DIR}/BreakupSplash/SBData.H
+                      ${PELE_PHYSICS_SPRAY_DIR}/BreakupSplash/TABBreakup.H
+                      ${PELE_PHYSICS_SPRAY_DIR}/BreakupSplash/WallFilm.H
+                      ${PELE_PHYSICS_SPRAY_DIR}/Distribution/DistBase.H
+                      ${PELE_PHYSICS_SPRAY_DIR}/Distribution/Distributions.H
+                      ${PELE_PHYSICS_SPRAY_DIR}/Distribution/Distributions.cpp)
+       target_include_directories(${pele_physics_lib_name} PUBLIC ${PELE_PHYSICS_SPRAY_DIR})
+       target_include_directories(${pele_physics_lib_name} PUBLIC ${PELE_PHYSICS_SPRAY_DIR}/Distribution)
+       target_include_directories(${pele_physics_lib_name} PUBLIC ${PELE_PHYSICS_SPRAY_DIR}/BreakupSplash)
+    endif()
+
     if(PELE_PHYSICS_ENABLE_SOOT)
        set(SOOT_MOMENTS_VALUES 3 6)
        if(NOT PELE_PHYSICS_NUM_SOOT_MOMENTS IN_LIST SOOT_MOMENTS_VALUES)
          message(FATAL_ERROR "NUM_SOOT_MOMENTS must be either 3 or 6")
        endif()
-       target_compile_definitions(${pele_physics_lib_name} PUBLIC PELELM_USE_SOOT)
+       target_compile_definitions(${pele_physics_lib_name} PUBLIC PELE_USE_SOOT PELELM_USE_SOOT)
        target_compile_definitions(${pele_physics_lib_name} PUBLIC NUM_SOOT_MOMENTS=${PELE_PHYSICS_NUM_SOOT_MOMENTS})
        target_sources(${pele_physics_lib_name} PRIVATE
                       ${PELE_PHYSICS_SOOT_DIR}/SootModel.H
@@ -161,6 +195,7 @@ function(build_pele_physics_lib pele_physics_lib_name)
                       ${PELE_PHYSICS_SOOT_DIR}/SootData.H
                       ${PELE_PHYSICS_SOOT_DIR}/SootReactions.H)
        target_include_directories(${pele_physics_lib_name} PUBLIC ${PELE_PHYSICS_SOOT_DIR})
+
        if(PELE_PHYSICS_ENABLE_RADIATION)
          target_sources(${pele_physics_lib_name} PRIVATE
                         ${PELE_PHYSICS_RADIATION_DIR}/AMRParam.H
@@ -176,7 +211,7 @@ function(build_pele_physics_lib pele_physics_lib_name)
                         ${PELE_PHYSICS_RADIATION_DIR}/PlanckMean.H
                         ${PELE_PHYSICS_RADIATION_DIR}/SpectralModels.H)
          target_include_directories(${pele_physics_lib_name} PUBLIC ${PELE_PHYSICS_RADIATION_DIR})
-         target_compile_definitions(${pele_physics_lib_name} PUBLIC PELELM_USE_RADIATION)
+         target_compile_definitions(${pele_physics_lib_name} PUBLIC PELE_USE_RADIATION)
        endif()
     endif()
 

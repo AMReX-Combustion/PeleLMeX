@@ -8,7 +8,6 @@ include(CMakePackageConfigHelpers)
 include(PeleUtils)
 
 set(PELE_DIM "3" CACHE STRING "Number of physical dimensions")
-option(PELE_ENABLE_AMREX_PARTICLES "Enable particles in AMReX library" OFF)
 option(PELE_ENABLE_CLANG_TIDY "Enable clang-tidy analysis" OFF)
 option(PELE_ENABLE_CPPCHECK "Enable cppcheck analysis" OFF)
 option(PELE_ENABLE_FCOMPARE "Enable building fcompare when not testing" OFF)
@@ -25,7 +24,7 @@ set(PELE_PRECISION "DOUBLE" CACHE STRING "Floating point precision SINGLE or DOU
 
 # Physics options
 option(PELE_ENABLE_EB "Enable Embedded Boundary" OFF)
-option(PELE_ENABLE_PARTICLES "Enable particles and spray" OFF)
+option(PELE_ENABLE_PARTICLES "Enable particles and spray" ON)
 
 # HPC options
 option(PELE_ENABLE_MPI "Enable MPI" OFF)

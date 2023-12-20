@@ -16,46 +16,9 @@ function(build_pele_exe pele_exe_name pele_physics_lib_name)
        pelelmex_prob.cpp
   )
 
-  #PeleLMeX include directories
   target_include_directories(${pele_exe_name} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
   target_include_directories(${pele_exe_name} PRIVATE ${SRC_DIR})
   target_include_directories(${pele_exe_name} PRIVATE ${CMAKE_BINARY_DIR})
-  #target_include_directories(${pele_exe_name} PRIVATE ${CMAKE_SOURCE_DIR}/Source/Params/param_includes)
-
-  # Spray
-  set(PELE_PHYSICS_SPRAY_DIR ${CMAKE_SOURCE_DIR}/Submodules/PelePhysics/Source/Spray)
-
-  if(PELE_ENABLE_AMREX_PARTICLES AND PELE_SPRAY_FUEL_NUM GREATER 0)
-     target_compile_definitions(${pele_exe_name} PRIVATE PELE_USE_SPRAY)
-     target_compile_definitions(${pele_exe_name} PRIVATE SPRAY_FUEL_NUM=${PELE_SPRAY_FUEL_NUM})
-     target_sources(${pele_exe_name} PRIVATE
-                    SprayParticlesInitInsert.cpp
-                    ${SRC_DIR}/Particle.cpp
-                    ${PELE_PHYSICS_SPRAY_DIR}/Drag.H
-                    ${PELE_PHYSICS_SPRAY_DIR}/SprayDerive.cpp
-                    ${PELE_PHYSICS_SPRAY_DIR}/SprayFuelData.H
-                    ${PELE_PHYSICS_SPRAY_DIR}/SprayIO.cpp
-                    ${PELE_PHYSICS_SPRAY_DIR}/SprayInjection.H
-                    ${PELE_PHYSICS_SPRAY_DIR}/SprayInterpolation.H
-                    ${PELE_PHYSICS_SPRAY_DIR}/SprayJet.H
-                    ${PELE_PHYSICS_SPRAY_DIR}/SprayJet.cpp
-                    ${PELE_PHYSICS_SPRAY_DIR}/SprayParticles.H
-                    ${PELE_PHYSICS_SPRAY_DIR}/SprayParticles.cpp
-                    ${PELE_PHYSICS_SPRAY_DIR}/SpraySB.cpp
-                    ${PELE_PHYSICS_SPRAY_DIR}/SpraySetup.cpp
-                    ${PELE_PHYSICS_SPRAY_DIR}/WallFunctions.H
-                    ${PELE_PHYSICS_SPRAY_DIR}/BreakupSplash/AhamedSplash.H
-                    ${PELE_PHYSICS_SPRAY_DIR}/BreakupSplash/ReitzKHRT.H
-                    ${PELE_PHYSICS_SPRAY_DIR}/BreakupSplash/SBData.H
-                    ${PELE_PHYSICS_SPRAY_DIR}/BreakupSplash/TABBreakup.H
-                    ${PELE_PHYSICS_SPRAY_DIR}/BreakupSplash/WallFilm.H
-                    ${PELE_PHYSICS_SPRAY_DIR}/Distribution/DistBase.H
-                    ${PELE_PHYSICS_SPRAY_DIR}/Distribution/Distributions.H
-                    ${PELE_PHYSICS_SPRAY_DIR}/Distribution/Distributions.cpp)
-     target_include_directories(${pele_exe_name} PUBLIC ${PELE_PHYSICS_SPRAY_DIR})
-     target_include_directories(${pele_exe_name} PUBLIC ${PELE_PHYSICS_SPRAY_DIR}/Distribution)
-     target_include_directories(${pele_exe_name} PUBLIC ${PELE_PHYSICS_SPRAY_DIR}/BreakupSplash)
-  endif()
 
   target_sources(${pele_exe_name}
      PRIVATE
@@ -108,6 +71,13 @@ function(build_pele_exe pele_exe_name pele_physics_lib_name)
         ${SRC_DIR}/PeleLMeX_Soot.cpp)
   endif()
 
+  if(PELE_PHYSICS_ENABLE_SPRAY)
+    target_sources(${pele_exe_name}
+      PRIVATE
+        ${SRC_DIR}/PeleLMeX_SprayParticles.cpp
+        SprayParticlesInitInsert.cpp)
+  endif()
+
   if(PELE_PHYSICS_ENABLE_RADIATION)
     target_sources(${pele_exe_name}
       PRIVATE
@@ -134,7 +104,6 @@ function(build_pele_exe pele_exe_name pele_physics_lib_name)
 
   target_link_libraries(${pele_exe_name} PRIVATE ${pele_physics_lib_name} AMReX-Hydro::amrex_hydro_api AMReX::amrex)
 
-  #Define what we want to be installed during a make install
   install(TARGETS ${pele_exe_name}
           RUNTIME DESTINATION bin
           ARCHIVE DESTINATION lib
