@@ -56,7 +56,7 @@ PeleLM::computeRadSource(const PeleLM::TimeStamp& a_timestamp)
         ldata_p->state.const_array(mfi, FIRSTSPEC + coIndx);
       auto const& q_Tin = ldata_p->state.const_array(mfi, TEMP);
       auto const& q_Pin = ldata_p->state.const_array(mfi, RHORT);
-#ifdef PELELM_USE_SOOT
+#ifdef PELE_USE_SOOT
       auto const& q_fvin = ldata_p->state.const_array(mfi, FIRSTSOOT + 1);
       rad_model->updateSpecProp(
         mfi, q_yin_co2, q_yin_h2o, q_yin_co, q_Tin, q_Pin, q_fvin, lev);

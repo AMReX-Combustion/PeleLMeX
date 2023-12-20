@@ -23,7 +23,7 @@ PeleLM::Evolve()
         << "\n ====================   NEW TIME STEP   ==================== \n";
     }
 
-#ifdef PELELM_USE_SPRAY
+#ifdef PELE_USE_SPRAY
     bool regridded = false;
 #endif
     if ((m_regrid_int > 0) && (m_nstep > 0) && (m_nstep % m_regrid_int == 0)) {
@@ -37,12 +37,12 @@ PeleLM::Evolve()
       regrid(0, m_cur_time);
       resetMacProjector();
       resetCoveredMask();
-#ifdef PELELM_USE_SPRAY
+#ifdef PELE_USE_SPRAY
       regridded = true;
 #endif
       updateDiagnostics();
     }
-#ifdef PELELM_USE_SPRAY
+#ifdef PELE_USE_SPRAY
     // Inject and redistribute spray particles
     if (do_spray_particles && regridded) {
       SprayPostRegrid();
@@ -53,7 +53,7 @@ PeleLM::Evolve()
     m_nstep++;
     m_cur_time += m_dt;
 
-#ifdef PELELM_USE_SPRAY
+#ifdef PELE_USE_SPRAY
     if (do_spray_particles) {
       SprayInjectRedist();
     }

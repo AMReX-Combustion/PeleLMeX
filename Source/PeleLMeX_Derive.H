@@ -1,5 +1,5 @@
-#ifndef PELELM_Derive_H
-#define PELELM_Derive_H
+#ifndef PELE_Derive_H
+#define PELE_Derive_H
 #include <list>
 #include <AMReX_REAL.H>
 #include <AMReX_Box.H>

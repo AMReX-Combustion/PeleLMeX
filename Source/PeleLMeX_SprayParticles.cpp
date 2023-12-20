@@ -1,7 +1,7 @@
 
 #include <PeleLMeX.H>
 
-#ifdef PELELM_USE_SPRAY
+#ifdef PELE_USE_SPRAY
 #include "SprayParticles.H"
 #include <AMReX_FillPatchUtil.H>
 

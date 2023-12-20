@@ -1,15 +1,15 @@
-function(build_pelelmex_exe pelelmex_exe_name pelelmex_lib_name)
+function(build_pele_exe pele_exe_name pele_physics_lib_name)
 
   set(SRC_DIR ${CMAKE_SOURCE_DIR}/Source)
 
-  add_executable(${pelelmex_exe_name} "")
+  add_executable(${pele_exe_name} "")
 
   if(CLANG_TIDY_EXE)
-    set_target_properties(${pelelmex_exe_name} PROPERTIES CXX_CLANG_TIDY
+    set_target_properties(${pele_exe_name} PROPERTIES CXX_CLANG_TIDY
                           "${CLANG_TIDY_EXE};--config-file=${CMAKE_SOURCE_DIR}/.clang-tidy")
   endif()
 
-  target_sources(${pelelmex_exe_name}
+  target_sources(${pele_exe_name}
      PRIVATE
        pelelmex_prob_parm.H
        pelelmex_prob.H
@@ -17,18 +17,18 @@ function(build_pelelmex_exe pelelmex_exe_name pelelmex_lib_name)
   )
 
   #PeleLMeX include directories
-  target_include_directories(${pelelmex_exe_name} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-  target_include_directories(${pelelmex_exe_name} PRIVATE ${SRC_DIR})
-  target_include_directories(${pelelmex_exe_name} PRIVATE ${CMAKE_BINARY_DIR})
-  #target_include_directories(${pelelmex_exe_name} PRIVATE ${CMAKE_SOURCE_DIR}/Source/Params/param_includes)
+  target_include_directories(${pele_exe_name} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+  target_include_directories(${pele_exe_name} PRIVATE ${SRC_DIR})
+  target_include_directories(${pele_exe_name} PRIVATE ${CMAKE_BINARY_DIR})
+  #target_include_directories(${pele_exe_name} PRIVATE ${CMAKE_SOURCE_DIR}/Source/Params/param_includes)
 
   # Spray
   set(PELE_PHYSICS_SPRAY_DIR ${CMAKE_SOURCE_DIR}/Submodules/PelePhysics/Source/Spray)
 
-  if(PELELMEX_ENABLE_AMREX_PARTICLES AND PELE_SPRAY_FUEL_NUM GREATER 0)
-     target_compile_definitions(${pelelmex_exe_name} PRIVATE PELELMEX_USE_SPRAY)
-     target_compile_definitions(${pelelmex_exe_name} PRIVATE SPRAY_FUEL_NUM=${PELE_SPRAY_FUEL_NUM})
-     target_sources(${pelelmex_exe_name} PRIVATE
+  if(PELE_ENABLE_AMREX_PARTICLES AND PELE_SPRAY_FUEL_NUM GREATER 0)
+     target_compile_definitions(${pele_exe_name} PRIVATE PELE_USE_SPRAY)
+     target_compile_definitions(${pele_exe_name} PRIVATE SPRAY_FUEL_NUM=${PELE_SPRAY_FUEL_NUM})
+     target_sources(${pele_exe_name} PRIVATE
                     SprayParticlesInitInsert.cpp
                     ${SRC_DIR}/Particle.cpp
                     ${PELE_PHYSICS_SPRAY_DIR}/Drag.H
@@ -52,12 +52,12 @@ function(build_pelelmex_exe pelelmex_exe_name pelelmex_lib_name)
                     ${PELE_PHYSICS_SPRAY_DIR}/Distribution/DistBase.H
                     ${PELE_PHYSICS_SPRAY_DIR}/Distribution/Distributions.H
                     ${PELE_PHYSICS_SPRAY_DIR}/Distribution/Distributions.cpp)
-     target_include_directories(${pelelmex_exe_name} PUBLIC ${PELE_PHYSICS_SPRAY_DIR})
-     target_include_directories(${pelelmex_exe_name} PUBLIC ${PELE_PHYSICS_SPRAY_DIR}/Distribution)
-     target_include_directories(${pelelmex_exe_name} PUBLIC ${PELE_PHYSICS_SPRAY_DIR}/BreakupSplash)
+     target_include_directories(${pele_exe_name} PUBLIC ${PELE_PHYSICS_SPRAY_DIR})
+     target_include_directories(${pele_exe_name} PUBLIC ${PELE_PHYSICS_SPRAY_DIR}/Distribution)
+     target_include_directories(${pele_exe_name} PUBLIC ${PELE_PHYSICS_SPRAY_DIR}/BreakupSplash)
   endif()
 
-  target_sources(${pelelmex_exe_name}
+  target_sources(${pele_exe_name}
      PRIVATE
        ${SRC_DIR}/PeleLMeX_DeriveUserDefined.cpp
        ${SRC_DIR}/PeleLMeX_DiffusionOp.H
@@ -102,57 +102,40 @@ function(build_pelelmex_exe pelelmex_exe_name pelelmex_lib_name)
        ${SRC_DIR}/main.cpp
   )
 
-  # Soot
-  if(PELELMEX_ENABLE_SOOT)
-    target_sources(${pelelmex_exe_name}
+  if(PELE_PHYSICS_ENABLE_SOOT)
+    target_sources(${pele_exe_name}
       PRIVATE
         ${SRC_DIR}/PeleLMeX_Soot.cpp)
-    if(PELELMEX_ENABLE_RADIATION)
-      target_sources(${pelelmex_exe_name}
-        PRIVATE
-          ${SRC_DIR}/PeleLMeX_Radiation.cpp)
-    endif()
   endif()
 
-  #if(PELELMEX_ENABLE_ASCENT)
-  #  target_sources(${pelelmex_exe_name}
-  #    PRIVATE
-  #      ${SRC_DIR}/PeleAscent.H
-  #      ${SRC_DIR}/PeleAscent.cpp
-  #  )
-  #endif()
+  if(PELE_PHYSICS_ENABLE_RADIATION)
+    target_sources(${pele_exe_name}
+      PRIVATE
+        ${SRC_DIR}/PeleLMeX_Radiation.cpp)
+  endif()
 
-  #if(PELELMEX_ENABLE_MASA)
-  #  target_compile_definitions(${pelelmex_exe_name} PRIVATE PELELMEX_USE_MASA)
-  #  target_sources(${pelelmex_exe_name} PRIVATE ${SRC_DIR}/MMS.cpp)
-  #  target_link_libraries(${pelelmex_exe_name} PRIVATE MASA::MASA)
-  #  if(PELELMEX_ENABLE_FPE_TRAP_FOR_TESTS)
-  #    set_source_files_properties(${SRC_DIR}/PeleLMeX.cpp PROPERTIES COMPILE_DEFINITIONS PELELMEX_ENABLE_FPE_TRAP)
-  #  endif()
-  #endif()
-
-  if(NOT "${pelelmex_exe_name}" STREQUAL "PeleLMeX-UnitTests")
-    target_sources(${pelelmex_exe_name}
+  if(NOT "${pele_exe_name}" STREQUAL "${PROJECT_NAME}-UnitTests")
+    target_sources(${pele_exe_name}
        PRIVATE
          ${CMAKE_SOURCE_DIR}/Source/main.cpp
     )
   endif()
 
-  if(PELELMEX_ENABLE_CUDA)
-    set(pctargets "${pelelmex_exe_name};${pelelmex_lib_name}")
+  if(PELE_ENABLE_CUDA)
+    set(pctargets "${pele_exe_name};${pele_physics_lib_name}")
     foreach(tgt IN LISTS pctargets)
-      get_target_property(PELELMEX_SOURCES ${tgt} SOURCES)
-      list(FILTER PELELMEX_SOURCES INCLUDE REGEX "\\.cpp")
-      set_source_files_properties(${PELELMEX_SOURCES} PROPERTIES LANGUAGE CUDA)
+      get_target_property(PELE_SOURCES ${tgt} SOURCES)
+      list(FILTER PELE_SOURCES INCLUDE REGEX "\\.cpp")
+      set_source_files_properties(${PELE_SOURCES} PROPERTIES LANGUAGE CUDA)
     endforeach()
-    set_target_properties(${pelelmex_exe_name} PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
-    target_compile_options(${pelelmex_exe_name} PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:-Xptxas --disable-optimizer-constants>)
+    set_target_properties(${pele_exe_name} PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+    target_compile_options(${pele_exe_name} PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:-Xptxas --disable-optimizer-constants>)
   endif()
 
-  target_link_libraries(${pelelmex_exe_name} PRIVATE ${pelelmex_lib_name} AMReX-Hydro::amrex_hydro_api AMReX::amrex)
+  target_link_libraries(${pele_exe_name} PRIVATE ${pele_physics_lib_name} AMReX-Hydro::amrex_hydro_api AMReX::amrex)
 
   #Define what we want to be installed during a make install
-  install(TARGETS ${pelelmex_exe_name}
+  install(TARGETS ${pele_exe_name}
           RUNTIME DESTINATION bin
           ARCHIVE DESTINATION lib
           LIBRARY DESTINATION lib)

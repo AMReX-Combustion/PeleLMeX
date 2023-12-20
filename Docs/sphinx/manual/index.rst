@@ -11,11 +11,11 @@ code for reacting flows. If you need help or have questions, please use the `Git
 The documentation pages appearing here are distributed with the code in the ``Docs`` folder as "restructured text" files.  The html is built
 automatically with certain pushes to the `PeleLMeX` GibHub repository. A local version can also be built as follows ::
 
-    cd ${PELELMEX_HOME}/Docs
+    cd ${PELE_HOME}/Docs
     make html
 
-where ``PELELMEX_HOME`` is the location of your clone of the `PeleLMeX` repository.  To view the local pages,
-point your web browser at the file ``${PELELMEX_HOME}/Docs/build/html/index.html``.
+where ``PELE_HOME`` is the location of your clone of the `PeleLMeX` repository.  To view the local pages,
+point your web browser at the file ``${PELE_HOME}/Docs/build/html/index.html``.
 
 .. toctree::
    :maxdepth: 2

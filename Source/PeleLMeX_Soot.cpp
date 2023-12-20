@@ -1,5 +1,5 @@
 
-#ifdef PELELM_USE_SOOT
+#ifdef PELE_USE_SOOT
 #include <PeleLMeX.H>
 #include <PeleLMeX_Derive.H>
 #include "SootModel.H"

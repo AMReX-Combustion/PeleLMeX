@@ -11,7 +11,7 @@
 #include <AMReX_SUNMemory.H>
 #endif
 
-#ifdef PELELM_USE_SOOT
+#ifdef PELE_USE_SOOT
 #include "SootModel.H"
 #endif
 
@@ -60,7 +60,7 @@ PeleLM::Setup()
   amrex::Print() << " AMReX-Hydro git hash: " << githash4 << "\n";
   amrex::Print() << " ===============================================\n";
 
-#ifdef PELELM_USE_SOOT
+#ifdef PELE_USE_SOOT
   soot_model = new SootModel{};
 #endif
 
@@ -83,10 +83,10 @@ PeleLM::Setup()
   // Tagging setup
   taggingSetup();
 
-#ifdef PELELM_USE_SPRAY
+#ifdef PELE_USE_SPRAY
   SpraySetup();
 #endif
-#ifdef PELELM_USE_SOOT
+#ifdef PELE_USE_SOOT
   if (do_soot_solve) {
     soot_model->define();
   }
@@ -578,10 +578,10 @@ PeleLM::readParameters()
   }
 #endif
 
-#ifdef PELELM_USE_SPRAY
+#ifdef PELE_USE_SPRAY
   SprayReadParameters();
 #endif
-#ifdef PELELM_USE_SOOT
+#ifdef PELE_USE_SOOT
   do_soot_solve = true;
   pp.query("do_soot_solve", do_soot_solve);
   if (m_verbose && do_soot_solve) {
@@ -589,7 +589,7 @@ PeleLM::readParameters()
   }
   soot_model->readSootParams();
 #endif
-#ifdef PELELM_USE_RADIATION
+#ifdef PELE_USE_RADIATION
   do_rad_solve = false;
   pp.query("do_rad_solve", do_rad_solve);
   if (m_verbose && do_rad_solve) {
@@ -691,7 +691,7 @@ PeleLM::variablesSetup()
     Print() << " PhiV: " << PHIV << "\n";
     stateComponents.emplace_back(PHIV, "PhiV");
 #endif
-#ifdef PELELM_USE_SOOT
+#ifdef PELE_USE_SOOT
     for (int mom = 0; mom < NUMSOOTVAR; mom++) {
       std::string sootname = soot_model->sootVariableName(mom);
       Print() << " " << sootname << ": " << FIRSTSOOT + mom << "\n";
@@ -752,7 +752,7 @@ PeleLM::variablesSetup()
     m_AdvTypeState[PHIV] = 0;
     m_DiffTypeState[PHIV] = 0;
 #endif
-#ifdef PELELM_USE_SOOT
+#ifdef PELE_USE_SOOT
     for (int mom = 0; mom < NUMSOOTVAR; mom++) {
       m_AdvTypeState[FIRSTSOOT + mom] = 0;
       m_DiffTypeState[FIRSTSOOT + mom] = 0;
@@ -1264,7 +1264,7 @@ PeleLM::resizeArray()
   m_t_old.resize(max_level + 1);
   m_t_new.resize(max_level + 1);
 
-#ifdef PELELM_USE_SPRAY
+#ifdef PELE_USE_SPRAY
   m_spraystate.resize(max_level + 1);
   m_spraysource.resize(max_level + 1);
 #endif

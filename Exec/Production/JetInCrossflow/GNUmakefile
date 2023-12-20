@@ -30,5 +30,5 @@ Chemistry_Model = LiDryer
 Eos_Model = Fuego
 Transport_Model = Simple
 
-PELELMEX_HOME ?= ../../..
-include $(PELELMEX_HOME)/Exec/Make.PeleLMeX
+PELE_HOME ?= ../../..
+include $(PELE_HOME)/Exec/Make.PeleLMeX

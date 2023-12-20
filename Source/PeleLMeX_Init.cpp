@@ -187,10 +187,10 @@ PeleLM::initData()
     resetCoveredMask();
     updateDiagnostics();
 
-#ifdef PELELM_USE_SPRAY
+#ifdef PELE_USE_SPRAY
     SprayInit();
 #endif
-#ifdef PELELM_USE_RADIATION
+#ifdef PELE_USE_RADIATION
     if (do_rad_solve) {
       RadInit();
     }
@@ -254,10 +254,10 @@ PeleLM::initData()
     // Read starting configuration from chk file.
     ReadCheckPointFile();
 
-#ifdef PELELM_USE_SPRAY
+#ifdef PELE_USE_SPRAY
     SprayInit();
 #endif
-#ifdef PELELM_USE_RADIATION
+#ifdef PELE_USE_RADIATION
     if (do_rad_solve) {
       RadInit();
     }

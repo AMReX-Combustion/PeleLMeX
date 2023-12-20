@@ -32,16 +32,16 @@
 #include <AMReX_ErrorList.H>
 #include <AMReX_VisMF.H>
 
-#ifdef PELELM_USE_RADIATION
+#ifdef PELE_USE_RADIATION
 #include <PeleLMRad.H>
 #endif
 
 // Forward declarations
-#ifdef PELELM_USE_SPRAY
+#ifdef PELE_USE_SPRAY
 class SprayParticleContainer;
 #endif
 
-#ifdef PELELM_USE_SOOT
+#ifdef PELE_USE_SOOT
 class SootModel;
 #endif
 
@@ -118,7 +118,7 @@ public:
   void
   readGridFile(std::string grid_file, amrex::Vector<amrex::BoxArray>& input_ba);
 
-#ifdef PELELM_USE_SPRAY
+#ifdef PELE_USE_SPRAY
   // ReadSprayParameters
   void SprayReadParameters();
 
@@ -813,7 +813,7 @@ public:
     amrex::Array4<const amrex::Real> const& extRho);
   //-----------------------------------------------------------------------------
 
-#ifdef PELELM_USE_SPRAY
+#ifdef PELE_USE_SPRAY
   //-----------------------------------------------------------------------------
   // Sprays
   void setupVirtualParticles(const int level);
@@ -838,7 +838,7 @@ public:
   amrex::Vector<std::unique_ptr<amrex::MultiFab>> m_spraystate;
   //-----------------------------------------------------------------------------
 #endif
-#ifdef PELELM_USE_SOOT
+#ifdef PELE_USE_SOOT
   //-----------------------------------------------------------------------------
   // Soot
 
@@ -861,7 +861,7 @@ public:
   //-----------------------------------------------------------------------------
 #endif
 
-#ifdef PELELM_USE_RADIATION
+#ifdef PELE_USE_RADIATION
   // Initialize the radiation module
   void RadInit();
 
@@ -1685,13 +1685,13 @@ public:
   ProbParm* prob_parm = nullptr;
   ProbParm* prob_parm_d = nullptr;
 
-#ifdef PELELM_USE_SOOT
+#ifdef PELE_USE_SOOT
   // Soot parameters
   SootModel* soot_model = nullptr;
   bool do_soot_solve;
 #endif
 
-#ifdef PELELM_USE_RADIATION
+#ifdef PELE_USE_RADIATION
   // Radiation parameters
   std::unique_ptr<PeleRad::Radiation> rad_model;
   bool do_rad_solve;

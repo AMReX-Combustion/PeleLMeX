@@ -33,7 +33,7 @@ PeleLM::computeDt(int is_init, const TimeStamp& a_time)
       Real dtions = estEFIonsDt(a_time);
       estdt = std::min(estdt, dtions);
 #endif
-#ifdef PELELM_USE_SPRAY
+#ifdef PELE_USE_SPRAY
       Real dtspray = SprayEstDt();
       estdt = std::min(estdt, dtspray);
 #endif
@@ -42,7 +42,7 @@ PeleLM::computeDt(int is_init, const TimeStamp& a_time)
 #ifdef PELE_USE_EFIELD
                 << ", ions: " << dtions
 #endif
-#ifdef PELELM_USE_SPRAY
+#ifdef PELE_USE_SPRAY
                 << ", sprays: " << dtspray
 #endif
                 << "\n";
