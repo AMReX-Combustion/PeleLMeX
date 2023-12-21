@@ -7,7 +7,7 @@
 using namespace amrex;
 
 void
-PeleLM::setSootIndx()
+PeleLM::setSootIndx() const
 {
   const int ndim = AMREX_SPACEDIM;
   SootComps sootComps;
@@ -25,7 +25,7 @@ PeleLM::setSootIndx()
 }
 
 void
-PeleLM::cleanupSootModel()
+PeleLM::cleanupSootModel() const
 {
   delete soot_model;
 }

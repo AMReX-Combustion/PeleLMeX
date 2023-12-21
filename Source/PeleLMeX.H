@@ -120,7 +120,7 @@ public:
 
 #ifdef PELE_USE_SPRAY
   // ReadSprayParameters
-  void SprayReadParameters();
+  static void SprayReadParameters();
 
   // SpraySetup
   void SpraySetup();
@@ -817,9 +817,9 @@ public:
   //-----------------------------------------------------------------------------
   // Sprays
   void setupVirtualParticles(const int level);
-  void removeVirtualParticles(const int level);
-  void setupGhostParticles(const int ngrow, const int level);
-  void removeGhostParticles(const int level);
+  static void removeVirtualParticles(const int level);
+  static void setupGhostParticles(const int ngrow, const int level);
+  static void removeGhostParticles(const int level);
   amrex::Real SprayEstDt();
   void SprayMKD(const amrex::Real time, const amrex::Real dt);
   void
@@ -843,10 +843,10 @@ public:
   // Soot
 
   // SetSootIndx
-  void setSootIndx();
+  void setSootIndx() const;
 
   // CleanupSootModel
-  void cleanupSootModel();
+  void cleanupSootModel() const;
 
   // AddSootDerivePlotVars
   // void addSootDerivePlotVars(PeleLMDeriveList& derive_lst);

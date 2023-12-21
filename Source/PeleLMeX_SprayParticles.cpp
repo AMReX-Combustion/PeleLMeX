@@ -4,6 +4,7 @@
 #ifdef PELE_USE_SPRAY
 #include "SprayParticles.H"
 #include <AMReX_FillPatchUtil.H>
+#include <memory>
 
 using namespace amrex;
 
@@ -229,11 +230,11 @@ PeleLM::SpraySetState(const Real& a_flow_dt)
     if (
       mesh_regrid || prev_state[lev] != state_ghosts ||
       prev_source[lev] != source_ghosts) {
-      m_spraystate[lev].reset(new MultiFab(
-        grids[lev], dmap[lev], NVAR, state_ghosts, MFInfo(), *m_factory[lev]));
-      m_spraysource[lev].reset(new MultiFab(
+      m_spraystate[lev] = std::make_unique<MultiFab>(
+        grids[lev], dmap[lev], NVAR, state_ghosts, MFInfo(), *m_factory[lev]);
+      m_spraysource[lev] = std::make_unique<MultiFab>(
         grids[lev], dmap[lev], num_spray_src, source_ghosts, MFInfo(),
-        *m_factory[lev]));
+        *m_factory[lev]);
     }
     fillpatch_state(lev, m_cur_time, *(m_spraystate[lev]), state_ghosts);
     m_spraysource[lev]->setVal(0.);
