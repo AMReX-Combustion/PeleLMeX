@@ -843,10 +843,10 @@ public:
   // Soot
 
   // SetSootIndx
-  void setSootIndx() const;
+  void setSootIndx();
 
   // CleanupSootModel
-  void cleanupSootModel() const;
+  void cleanupSootModel();
 
   // AddSootDerivePlotVars
   // void addSootDerivePlotVars(PeleLMDeriveList& derive_lst);
