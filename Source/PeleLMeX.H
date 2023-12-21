@@ -817,9 +817,9 @@ public:
   //-----------------------------------------------------------------------------
   // Sprays
   void setupVirtualParticles(const int level);
-  static void removeVirtualParticles(const int level);
+  void removeVirtualParticles(const int level);
   void setupGhostParticles(const int ngrow, const int level);
-  static void removeGhostParticles(const int level);
+  void removeGhostParticles(const int level);
   amrex::Real SprayEstDt();
   void SprayMKD(const amrex::Real time, const amrex::Real dt);
   void
