@@ -367,17 +367,17 @@ PeleLM::WritePlotFile()
     if (do_spray_particles && SprayParticleContainer::plot_spray_src) {
       SprayComps scomps = SprayParticleContainer::getSprayComps();
       MultiFab::Copy(
-        mf_plt[lev], *m_spraysource[lev].get(), scomps.rhoSrcIndx, cnt++, 1, 0);
+        mf_plt[lev], *m_spraysource[lev], scomps.rhoSrcIndx, cnt++, 1, 0);
       MultiFab::Copy(
-        mf_plt[lev], *m_spraysource[lev].get(), scomps.engSrcIndx, cnt++, 1, 0);
+        mf_plt[lev], *m_spraysource[lev], scomps.engSrcIndx, cnt++, 1, 0);
       MultiFab::Copy(
-        mf_plt[lev], *m_spraysource[lev].get(), scomps.momSrcIndx, cnt,
+        mf_plt[lev], *m_spraysource[lev], scomps.momSrcIndx, cnt,
         AMREX_SPACEDIM, 0);
       cnt += AMREX_SPACEDIM;
       for (int spf = 0; spf < SPRAY_FUEL_NUM; ++spf) {
         MultiFab::Copy(
-          mf_plt[lev], *m_spraysource[lev].get(), scomps.specSrcIndx + spf,
-          cnt++, 1, 0);
+          mf_plt[lev], *m_spraysource[lev], scomps.specSrcIndx + spf, cnt++, 1,
+          0);
       }
     }
 #endif

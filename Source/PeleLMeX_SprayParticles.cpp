@@ -235,7 +235,7 @@ PeleLM::SpraySetState(const Real& a_flow_dt)
         grids[lev], dmap[lev], num_spray_src, source_ghosts, MFInfo(),
         *m_factory[lev]));
     }
-    fillpatch_state(lev, m_cur_time, *(m_spraystate[lev].get()), state_ghosts);
+    fillpatch_state(lev, m_cur_time, *(m_spraystate[lev]), state_ghosts);
     m_spraysource[lev]->setVal(0.);
   }
   mesh_regrid = false;
@@ -244,8 +244,8 @@ PeleLM::SpraySetState(const Real& a_flow_dt)
 void
 PeleLM::SprayAddSource(const int level)
 {
-  MultiFab& source = *(m_spraysource[level].get());
-  MultiFab& extsource = *(m_extSource[level].get());
+  MultiFab& source = *(m_spraysource[level]);
+  MultiFab& extsource = *(m_extSource[level]);
   const int eghosts = extsource.nGrow();
   SprayComps scomps = SprayParticleContainer::getSprayComps();
   MultiFab::Add(
@@ -301,8 +301,8 @@ PeleLM::SprayMKDLevel(const int level, const Real time, const Real dt)
   // the new time
   auto const* ltransparm = PeleLM::trans_parms.device_trans_parm();
 
-  MultiFab& state = *(m_spraystate[level].get());
-  MultiFab& source = *(m_spraysource[level].get());
+  MultiFab& state = *(m_spraystate[level]);
+  MultiFab& source = *(m_spraysource[level]);
   const int state_ghosts = spray_state_ghosts[level];
   const int source_ghosts = spray_source_ghosts[level];
   bool isVirt = false;
