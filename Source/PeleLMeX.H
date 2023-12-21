@@ -120,7 +120,7 @@ public:
 
 #ifdef PELE_USE_SPRAY
   // ReadSprayParameters
-  static void SprayReadParameters();
+  void SprayReadParameters();
 
   // SpraySetup
   void SpraySetup();
