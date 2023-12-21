@@ -111,7 +111,7 @@ PeleLM::Advance(int is_initIter)
   //----------------------------------------------------------------
 
 #ifdef PELE_USE_SPRAY
-  if (!is_initIter) {
+  if (is_initIter == 0) {
     SprayMKD(m_cur_time, m_dt);
   }
 #endif

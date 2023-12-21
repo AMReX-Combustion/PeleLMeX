@@ -121,8 +121,9 @@ PeleLM::WritePlotFile()
 #endif
 
 #ifdef PELE_USE_RADIATION
-  if (do_rad_solve)
+  if (do_rad_solve) {
     ncomp += 3;
+  }
 #endif
 
   // Derive
@@ -837,8 +838,9 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
       iPhiV = i;
 #endif
 #ifdef PELE_USE_SOOT
-    if (plt_vars[i] == "soot_N")
+    if (plt_vars[i] == "soot_N") {
       inSoot = i;
+    }
 #endif
   }
   if (idY < 0) {

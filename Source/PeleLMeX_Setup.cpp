@@ -584,7 +584,7 @@ PeleLM::readParameters()
 #ifdef PELE_USE_SOOT
   do_soot_solve = true;
   pp.query("do_soot_solve", do_soot_solve);
-  if (m_verbose && do_soot_solve) {
+  if ((m_verbose != 0) && do_soot_solve) {
     Print() << "Simulation performed with soot modeling \n";
   }
   soot_model->readSootParams();
@@ -592,7 +592,7 @@ PeleLM::readParameters()
 #ifdef PELE_USE_RADIATION
   do_rad_solve = false;
   pp.query("do_rad_solve", do_rad_solve);
-  if (m_verbose && do_rad_solve) {
+  if ((m_verbose != 0) && do_rad_solve) {
     Print() << "Simulation performed with radiation modeling \n";
   }
 #endif

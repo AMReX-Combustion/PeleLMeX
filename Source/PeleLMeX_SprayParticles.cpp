@@ -269,7 +269,7 @@ PeleLM::SprayMKD(const Real time, const Real dt)
   if (!do_spray_particles) {
     return;
   }
-  if (spray_verbose) {
+  if (spray_verbose != 0) {
     Print() << "moveKickDrift ... updating particle positions and velocity\n";
   }
   BL_PROFILE("PeleLMeX::SprayMKD()");
