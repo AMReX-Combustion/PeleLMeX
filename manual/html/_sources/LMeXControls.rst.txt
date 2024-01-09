@@ -223,7 +223,7 @@ PeleLMeX algorithm
 
 ::
 
-    #-----------------------PELELMEX CONTROL-----------------------
+    #-----------------------PELE CONTROL-----------------------
     peleLM.v = 1                           # [OPT, DEF=0] Verbose
     peleLM.run_mode = normal               # [OPT, DEF=normal] Switch between time-advance mode (normal) or UnitTest (evaluate)
     peleLM.use_wbar = 1                    # [OPT, DEF=1] Enable Wbar correction in diffusion fluxes
