@@ -1,9 +1,10 @@
 
 #include <PeleLMeX.H>
 
-#ifdef PELELM_USE_SPRAY
+#ifdef PELE_USE_SPRAY
 #include "SprayParticles.H"
 #include <AMReX_FillPatchUtil.H>
+#include <memory>
 
 using namespace amrex;
 
@@ -229,13 +230,13 @@ PeleLM::SpraySetState(const Real& a_flow_dt)
     if (
       mesh_regrid || prev_state[lev] != state_ghosts ||
       prev_source[lev] != source_ghosts) {
-      m_spraystate[lev].reset(new MultiFab(
-        grids[lev], dmap[lev], NVAR, state_ghosts, MFInfo(), *m_factory[lev]));
-      m_spraysource[lev].reset(new MultiFab(
+      m_spraystate[lev] = std::make_unique<MultiFab>(
+        grids[lev], dmap[lev], NVAR, state_ghosts, MFInfo(), *m_factory[lev]);
+      m_spraysource[lev] = std::make_unique<MultiFab>(
         grids[lev], dmap[lev], num_spray_src, source_ghosts, MFInfo(),
-        *m_factory[lev]));
+        *m_factory[lev]);
     }
-    fillpatch_state(lev, m_cur_time, *(m_spraystate[lev].get()), state_ghosts);
+    fillpatch_state(lev, m_cur_time, *(m_spraystate[lev]), state_ghosts);
     m_spraysource[lev]->setVal(0.);
   }
   mesh_regrid = false;
@@ -244,8 +245,8 @@ PeleLM::SpraySetState(const Real& a_flow_dt)
 void
 PeleLM::SprayAddSource(const int level)
 {
-  MultiFab& source = *(m_spraysource[level].get());
-  MultiFab& extsource = *(m_extSource[level].get());
+  MultiFab& source = *(m_spraysource[level]);
+  MultiFab& extsource = *(m_extSource[level]);
   const int eghosts = extsource.nGrow();
   SprayComps scomps = SprayParticleContainer::getSprayComps();
   MultiFab::Add(
@@ -269,7 +270,7 @@ PeleLM::SprayMKD(const Real time, const Real dt)
   if (!do_spray_particles) {
     return;
   }
-  if (spray_verbose) {
+  if (spray_verbose != 0) {
     Print() << "moveKickDrift ... updating particle positions and velocity\n";
   }
   BL_PROFILE("PeleLMeX::SprayMKD()");
@@ -301,8 +302,8 @@ PeleLM::SprayMKDLevel(const int level, const Real time, const Real dt)
   // the new time
   auto const* ltransparm = PeleLM::trans_parms.device_trans_parm();
 
-  MultiFab& state = *(m_spraystate[level].get());
-  MultiFab& source = *(m_spraysource[level].get());
+  MultiFab& state = *(m_spraystate[level]);
+  MultiFab& source = *(m_spraysource[level]);
   const int state_ghosts = spray_state_ghosts[level];
   const int source_ghosts = spray_source_ghosts[level];
   bool isVirt = false;

@@ -1,3 +1,5 @@
+#ifndef PELELM_EF_H
+#define PELELM_EF_H
 // included in the PeleLM.H
 
 // E-field with EB capability is not fully implemented
@@ -94,3 +96,4 @@ std::ofstream tmpIonsFile;
 // Extra diagnostics
 int m_do_extraEFdiags = 0;
 amrex::Vector<std::unique_ptr<amrex::MultiFab>> m_ionsFluxes;
+#endif

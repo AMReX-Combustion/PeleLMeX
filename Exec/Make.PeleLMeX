@@ -1,6 +1,6 @@
-PELELMEX_HOME      ?= ../
-AMREX_HYDRO_HOME   ?= $(abspath $(lastword ${PELELMEX_HOME}/Submodules/AMReX-Hydro))
-PELE_PHYSICS_HOME  ?= $(abspath $(lastword ${PELELMEX_HOME}/Submodules/PelePhysics))
+PELE_HOME      ?= ../
+AMREX_HYDRO_HOME   ?= $(abspath $(lastword ${PELE_HOME}/Submodules/AMReX-Hydro))
+PELE_PHYSICS_HOME  ?= $(abspath $(lastword ${PELE_HOME}/Submodules/PelePhysics))
 AMREX_HOME         ?= $(abspath $(lastword ${PELE_PHYSICS_HOME}/Submodules/amrex))
 SUNDIALS_HOME      ?= $(abspath $(lastword ${PELE_PHYSICS_HOME}/Submodules/sundials))
 
@@ -39,7 +39,7 @@ endif
 ifeq ($(USE_PARTICLES), TRUE)
    ifdef SPRAY_FUEL_NUM
       # This tells PeleMP that PeleC is not being used
-      DEFINES += -DPELELM_USE_SPRAY
+      DEFINES += -DPELE_USE_SPRAY -DPELELM_USE_SPRAY
       DEFINES += -DSPRAY_FUEL_NUM=$(SPRAY_FUEL_NUM)
    endif
 endif
@@ -49,16 +49,16 @@ ifeq ($(USE_SOOT), TRUE)
        $(error NUM_SOOT_MOMENTS must be 3 or 6)
    endif
    # This tells PeleMP that PeleC is not being used
-   DEFINES += -DPELELM_USE_SOOT
+   DEFINES += -DPELE_USE_SOOT -DPELELM_USE_SOOT
    DEFINES += -DNUM_SOOT_MOMENTS=$(NUM_SOOT_MOMENTS)
 endif
 
 ifeq ($(USE_RADIATION), TRUE)
-   DEFINES += -DPELELM_USE_RADIATION
+   DEFINES += -DPELE_USE_RADIATION
 endif
 
-Bpack += $(foreach dir, $(LMdirs), $(PELELMEX_HOME)/$(dir)/Make.package)
-Blocs += $(foreach dir, $(LMdirs), $(PELELMEX_HOME)/$(dir))
+Bpack += $(foreach dir, $(LMdirs), $(PELE_HOME)/$(dir)/Make.package)
+Blocs += $(foreach dir, $(LMdirs), $(PELE_HOME)/$(dir))
 
 #---------------
 # PelePhysics sources
@@ -174,7 +174,7 @@ AMReX_buildInfo.cpp:
 	$(AMREX_HOME)/Tools/C_scripts/makebuildinfo_C.py \
       --amrex_home "$(AMREX_HOME)" \
       --COMP "$(COMP)" --COMP_VERSION "$(COMP_VERSION)" \
-      --GIT "$(PELELMEX_HOME) $(AMREX_HOME) $(PELE_PHYSICS_HOME) $(AMREX_HYDRO_HOME) $(SUNDIALS_HOME)"
+      --GIT "$(PELE_HOME) $(AMREX_HOME) $(PELE_PHYSICS_HOME) $(AMREX_HYDRO_HOME) $(SUNDIALS_HOME)"
 
 #---------------
 # Rules

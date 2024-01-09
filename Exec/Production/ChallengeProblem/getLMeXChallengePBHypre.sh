@@ -99,7 +99,7 @@ fi
 cd -
 
 # Build LMeX KPP2 Challenge Problem case
-export PELELMEX_HOME="${MYPWD}/PeleLMeX"
+export PELE_HOME="${MYPWD}/PeleLMeX"
 export AMREX_HOME="${MYPWD}/PeleLMeX/Submodules/amrex"
 export AMREX_HYDRO_HOME="${MYPWD}/PeleLMeX/Submodules/AMReX-Hydro"
 export PELE_PHYSICS_HOME="${MYPWD}/PeleLMeX/Submodules/PelePhysics"

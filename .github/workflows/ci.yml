@@ -160,11 +160,10 @@ jobs:
             -DCMAKE_INSTALL_PREFIX:PATH=${{runner.workspace}}/install-${DIM}d-${{matrix.os}}-${{matrix.build_type}}-${{matrix.enable_eb}} \
             -DCMAKE_BUILD_TYPE:STRING=${{matrix.build_type}} \
             -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
-            -DPELELMEX_DIM:STRING=${DIM} \
-            -DPELELMEX_ENABLE_MPI:BOOL=ON \
-            -DPELELMEX_ENABLE_EB:BOOL=${{matrix.use_eb}} \
-            -DPELELMEX_ENABLE_FCOMPARE_FOR_TESTS:BOOL=OFF \
-            -DPELELMEX_ENABLE_MASA:BOOL=OFF \
+            -DPELE_DIM:STRING=${DIM} \
+            -DPELE_ENABLE_MPI:BOOL=ON \
+            -DPELE_ENABLE_EB:BOOL=${{matrix.use_eb}} \
+            -DPELE_ENABLE_FCOMPARE_FOR_TESTS:BOOL=OFF \
             -DCMAKE_CXX_COMPILER_LAUNCHER:STRING=ccache \
             ${{github.workspace}}; \
             if [ $? -ne 0 ]; then exit 1; fi \
@@ -254,8 +253,8 @@ jobs:
           cmake -Bbuild-${{matrix.cuda_pkg}} \
             -DCMAKE_BUILD_TYPE:STRING=Release \
             -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
-            -DPELELMEX_ENABLE_MPI:BOOL=OFF \
-            -DPELELMEX_ENABLE_CUDA:BOOL=ON \
+            -DPELE_ENABLE_MPI:BOOL=OFF \
+            -DPELE_ENABLE_CUDA:BOOL=ON \
             -DAMReX_CUDA_ERROR_CAPTURE_THIS:BOOL=ON \
             -DCMAKE_CUDA_ARCHITECTURES:STRING=70 \
             -DCMAKE_CUDA_COMPILER_LAUNCHER:STRING=ccache \
@@ -319,14 +318,14 @@ jobs:
           -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
           -DCMAKE_CXX_COMPILER:STRING=$(which clang++) \
           -DCMAKE_C_COMPILER:STRING=$(which clang) \
-          -DPELELMEX_ENABLE_MPI:BOOL=OFF \
-          -DPELELMEX_ENABLE_HIP:BOOL=ON \
+          -DPELE_ENABLE_MPI:BOOL=OFF \
+          -DPELE_ENABLE_HIP:BOOL=ON \
           -DAMReX_AMD_ARCH:STRING=gfx90a \
           -DCMAKE_HIP_ARCHITECTURES:STRING=gfx90a \
           -DAMDGPU_TARGETS:STRING=gfx90a \
           -DGPU_TARGETS:STRING=gfx90a \
           -DAMReX_GPU_RDC:BOOL=OFF \
-          -DPELELMEX_ENABLE_FCOMPARE_FOR_TESTS:BOOL=OFF \
+          -DPELE_ENABLE_FCOMPARE_FOR_TESTS:BOOL=OFF \
           -DCMAKE_CXX_COMPILER_LAUNCHER:STRING=ccache \
           ${{github.workspace}}
       - name: Build
@@ -388,10 +387,9 @@ jobs:
             -DCMAKE_CXX_COMPILER:STRING=$(which icpx) \
             -DCMAKE_C_COMPILER:STRING=$(which icx) \
             -DCMAKE_CXX_FLAGS:STRING=-fsycl \
-            -DPELELMEX_ENABLE_MPI:BOOL=OFF \
-            -DPELELMEX_ENABLE_MASA:BOOL=OFF \
-            -DPELELMEX_ENABLE_FCOMPARE_FOR_TESTS:BOOL=OFF \
-            -DPELELMEX_ENABLE_SYCL:BOOL=ON \
+            -DPELE_ENABLE_MPI:BOOL=OFF \
+            -DPELE_ENABLE_FCOMPARE_FOR_TESTS:BOOL=OFF \
+            -DPELE_ENABLE_SYCL:BOOL=ON \
             -DCMAKE_CXX_COMPILER_LAUNCHER:STRING=ccache \
             ${{github.workspace}}
       - name: Build
@@ -447,11 +445,10 @@ jobs:
           -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
           -DCMAKE_CXX_COMPILER:STRING=clang++ \
           -DCMAKE_C_COMPILER:STRING=clang \
-          -DPELELMEX_ENABLE_EB:BOOL=${{matrix.use_eb}} \
-          -DPELELMEX_ENABLE_MPI:BOOL=OFF \
-          -DPELELMEX_ENABLE_FCOMPARE_FOR_TESTS:BOOL=OFF \
-          -DPELELMEX_ENABLE_MASA:BOOL=OFF \
-          -DPELELMEX_ENABLE_CLANG_TIDY:BOOL=ON \
+          -DPELE_ENABLE_EB:BOOL=${{matrix.use_eb}} \
+          -DPELE_ENABLE_MPI:BOOL=OFF \
+          -DPELE_ENABLE_FCOMPARE_FOR_TESTS:BOOL=OFF \
+          -DPELE_ENABLE_CLANG_TIDY:BOOL=ON \
           -DCMAKE_CXX_COMPILER_LAUNCHER:STRING=ccache \
           ${{github.workspace}}
       - name: Check
@@ -499,10 +496,9 @@ jobs:
           -DCMAKE_BUILD_TYPE:STRING=Debug \
           -DCMAKE_CXX_COMPILER:STRING=clang++ \
           -DCMAKE_C_COMPILER:STRING=clang \
-          -DPELELMEX_ENABLE_MPI:BOOL=OFF \
-          -DPELELMEX_ENABLE_FCOMPARE_FOR_TESTS:BOOL=OFF \
-          -DPELELMEX_ENABLE_MASA:BOOL=OFF \
-          -DPELELMEX_ENABLE_CLANG_TIDY:BOOL=OFF \
+          -DPELE_ENABLE_MPI:BOOL=OFF \
+          -DPELE_ENABLE_FCOMPARE_FOR_TESTS:BOOL=OFF \
+          -DPELE_ENABLE_CLANG_TIDY:BOOL=OFF \
           ${{github.workspace}}
       - name: Build
         run: |

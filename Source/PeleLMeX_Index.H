@@ -16,7 +16,7 @@
 #else
 #define NUMEFIELD 0
 #endif
-#ifdef PELELM_USE_SOOT
+#ifdef PELE_USE_SOOT
 #define FIRSTSOOT (RHORT + NUMEFIELD + 1)
 #define NUMSOOTVAR (NUM_SOOT_MOMENTS + 1)
 #else

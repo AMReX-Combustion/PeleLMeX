@@ -34,5 +34,5 @@ Chemistry_Model = CH4Ion_LuSk
 Eos_Model = Fuego
 Transport_Model = Simple
 
-PELELMEX_HOME ?= ../../..
-include $(PELELMEX_HOME)/Exec/Make.PeleLMeX
+PELE_HOME ?= ../../..
+include $(PELE_HOME)/Exec/Make.PeleLMeX

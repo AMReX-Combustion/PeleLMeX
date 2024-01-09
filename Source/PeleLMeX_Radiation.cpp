@@ -18,8 +18,9 @@ PeleLM::RadInit()
       rc.h2oIndx = i;
       continue;
     }
-    if (names[i] == "CO")
+    if (names[i] == "CO") {
       rc.coIndx = i;
+    }
   }
   amrex::ParmParse mlmgpp("pelerad");
 
@@ -42,7 +43,7 @@ PeleLM::computeRadSource(const PeleLM::TimeStamp& a_timestamp)
 
   BL_PROFILE_VAR("PeleLM::advance::rad::spec", PLM_RAD_SPEC);
   for (int lev = 0; lev <= finest_level; lev++) {
-    auto ldata_p = PeleLM::getLevelDataPtr(lev, a_timestamp);
+    auto* ldata_p = PeleLM::getLevelDataPtr(lev, a_timestamp);
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
@@ -56,7 +57,7 @@ PeleLM::computeRadSource(const PeleLM::TimeStamp& a_timestamp)
         ldata_p->state.const_array(mfi, FIRSTSPEC + coIndx);
       auto const& q_Tin = ldata_p->state.const_array(mfi, TEMP);
       auto const& q_Pin = ldata_p->state.const_array(mfi, RHORT);
-#ifdef PELELM_USE_SOOT
+#ifdef PELE_USE_SOOT
       auto const& q_fvin = ldata_p->state.const_array(mfi, FIRSTSOOT + 1);
       rad_model->updateSpecProp(
         mfi, q_yin_co2, q_yin_h2o, q_yin_co, q_Tin, q_Pin, q_fvin, lev);

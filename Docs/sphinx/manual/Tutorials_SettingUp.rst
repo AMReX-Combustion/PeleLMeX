@@ -29,7 +29,7 @@ You're good to go!
    submodules obtained with the recursive *git clone*, however advanced users can set their own dependencies
    in the `GNUmakefile` for each case by updating the top-most lines as follows: ::
 
-       PELELMEX_HOME     = <path_to_PeleLMeX>
+       PELE_HOME     = <path_to_PeleLMeX>
        AMREX_HOME        = <path_to_MyAMReX>
        AMREX_HYDRO_HOME  = <path_to_MyAMReXHydro>
        PELE_PHYSICS_HOME = <path_to_MyPelePhysics>
@@ -37,7 +37,7 @@ You're good to go!
 
    or directly through shell environment variables (using *bash* for instance): ::
 
-       export PELELMEX_HOME=<path_to_PeleLMeX>
+       export PELE_HOME=<path_to_PeleLMeX>
        export AMREX_HOME=<path_to_MyAMReX>
        export AMREX_HYDRO_HOME=<path_to_MyAMReXHydro>
        export PELE_PHYSICS_HOME=<path_to_MyPelePhysics>

@@ -11,13 +11,13 @@
 #include <AMReX_EBInterpolater.H>
 #endif
 
-#ifdef PELELM_USE_SPRAY
+#ifdef PELE_USE_SPRAY
 #include "SprayParticles.H"
 #endif
-#ifdef PELELM_USE_SOOT
+#ifdef PELE_USE_SOOT
 #include "SootModel.H"
 #endif
-#ifdef PELELM_USE_RADIATION
+#ifdef PELE_USE_RADIATION
 #include "PeleLMRad.H"
 #endif
 
@@ -120,9 +120,10 @@ PeleLM::WritePlotFile()
   ncomp += 1;
 #endif
 
-#ifdef PELELM_USE_RADIATION
-  if (do_rad_solve)
+#ifdef PELE_USE_RADIATION
+  if (do_rad_solve) {
     ncomp += 3;
+  }
 #endif
 
   // Derive
@@ -132,7 +133,7 @@ PeleLM::WritePlotFile()
     deriveEntryCount += rec->numDerive();
   }
   ncomp += deriveEntryCount;
-#ifdef PELELM_USE_SPRAY
+#ifdef PELE_USE_SPRAY
   if (do_spray_particles) {
     ncomp += SprayParticleContainer::NumDeriveVars();
     if (SprayParticleContainer::plot_spray_src) {
@@ -181,13 +182,13 @@ PeleLM::WritePlotFile()
     plt_VarsName.push_back("nE");
     plt_VarsName.push_back("phiV");
 #endif
-#ifdef PELELM_USE_SOOT
+#ifdef PELE_USE_SOOT
     for (int mom = 0; mom < NUMSOOTVAR; mom++) {
       std::string sootname = soot_model->sootVariableName(mom);
       plt_VarsName.push_back(sootname);
     }
 #endif
-#ifdef PELELM_USE_RADIATION
+#ifdef PELE_USE_RADIATION
     if (do_rad_solve) {
       plt_VarsName.push_back("rad.G");
       plt_VarsName.push_back("rad.kappa");
@@ -229,7 +230,7 @@ PeleLM::WritePlotFile()
       plt_VarsName.push_back(rec->variableName(dvar));
     }
   }
-#ifdef PELELM_USE_SPRAY
+#ifdef PELE_USE_SPRAY
   if (SprayParticleContainer::NumDeriveVars() > 0) {
     // We need virtual particles for the lower levels
     setupVirtualParticles(0);
@@ -294,13 +295,13 @@ PeleLM::WritePlotFile()
       MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->state, NE, cnt, 2, 0);
       cnt += 2;
 #endif
-#ifdef PELELM_USE_SOOT
+#ifdef PELE_USE_SOOT
       MultiFab::Copy(
         mf_plt[lev], m_leveldata_new[lev]->state, FIRSTSOOT, cnt, NUMSOOTVAR,
         0);
       cnt += NUMSOOTVAR;
 #endif
-#ifdef PELELM_USE_RADIATION
+#ifdef PELE_USE_RADIATION
       if (do_rad_solve) {
         MultiFab::Copy(mf_plt[lev], rad_model->G()[lev], 0, cnt, 1, 0);
         cnt += 1;
@@ -349,7 +350,7 @@ PeleLM::WritePlotFile()
       MultiFab::Copy(mf_plt[lev], *mf, 0, cnt, mf->nComp(), 0);
       cnt += mf->nComp();
     }
-#ifdef PELELM_USE_SPRAY
+#ifdef PELE_USE_SPRAY
     if (SprayParticleContainer::NumDeriveVars() > 0) {
       const int num_spray_derive = SprayParticleContainer::NumDeriveVars();
       mf_plt[lev].setVal(0., cnt, num_spray_derive);
@@ -366,17 +367,17 @@ PeleLM::WritePlotFile()
     if (do_spray_particles && SprayParticleContainer::plot_spray_src) {
       SprayComps scomps = SprayParticleContainer::getSprayComps();
       MultiFab::Copy(
-        mf_plt[lev], *m_spraysource[lev].get(), scomps.rhoSrcIndx, cnt++, 1, 0);
+        mf_plt[lev], *m_spraysource[lev], scomps.rhoSrcIndx, cnt++, 1, 0);
       MultiFab::Copy(
-        mf_plt[lev], *m_spraysource[lev].get(), scomps.engSrcIndx, cnt++, 1, 0);
+        mf_plt[lev], *m_spraysource[lev], scomps.engSrcIndx, cnt++, 1, 0);
       MultiFab::Copy(
-        mf_plt[lev], *m_spraysource[lev].get(), scomps.momSrcIndx, cnt,
+        mf_plt[lev], *m_spraysource[lev], scomps.momSrcIndx, cnt,
         AMREX_SPACEDIM, 0);
       cnt += AMREX_SPACEDIM;
       for (int spf = 0; spf < SPRAY_FUEL_NUM; ++spf) {
         MultiFab::Copy(
-          mf_plt[lev], *m_spraysource[lev].get(), scomps.specSrcIndx + spf,
-          cnt++, 1, 0);
+          mf_plt[lev], *m_spraysource[lev], scomps.specSrcIndx + spf, cnt++, 1,
+          0);
       }
     }
 #endif
@@ -435,7 +436,7 @@ PeleLM::WritePlotFile()
       Geom(), m_cur_time, istep, refRatio());
   }
 
-#ifdef PELELM_USE_SPRAY
+#ifdef PELE_USE_SPRAY
   if (do_spray_particles) {
     bool is_spraycheck = false;
     for (int lev = 0; lev <= finest_level; ++lev) {
@@ -558,7 +559,7 @@ PeleLM::WriteCheckPointFile()
       }
     }
   }
-#ifdef PELELM_USE_SPRAY
+#ifdef PELE_USE_SPRAY
   if (do_spray_particles) {
     bool is_spraycheck = true;
     for (int lev = 0; lev <= finest_level; ++lev) {
@@ -805,7 +806,7 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
 #ifdef PELE_USE_EFIELD
   int inE = -1, iPhiV = -1;
 #endif
-#ifdef PELELM_USE_SOOT
+#ifdef PELE_USE_SOOT
   int inSoot = -1;
 #endif
   for (int i = 0; i < plt_vars.size(); ++i) {
@@ -836,9 +837,10 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
     if (plt_vars[i] == "phiV")
       iPhiV = i;
 #endif
-#ifdef PELELM_USE_SOOT
-    if (plt_vars[i] == "soot_N")
+#ifdef PELE_USE_SOOT
+    if (plt_vars[i] == "soot_N") {
       inSoot = i;
+    }
 #endif
   }
   if (idY < 0) {
@@ -903,7 +905,7 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
   // phiV
   pltData.fillPatchFromPlt(a_lev, geom[a_lev], iPhiV, PHIV, 1, ldata_p->state);
 #endif
-#ifdef PELELM_USE_SOOT
+#ifdef PELE_USE_SOOT
   if (do_soot_solve) {
     if (inSoot >= 0) {
       pltData.fillPatchFromPlt(

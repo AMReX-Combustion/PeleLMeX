@@ -24,5 +24,5 @@ USE_RADIATION = TRUE
 USE_SOOT = TRUE
 NUM_SOOT_MOMENTS = 3
 
-PELELMEX_HOME ?= ../../..
-include $(PELELMEX_HOME)/Exec/Make.PeleLMeX
+PELE_HOME ?= ../../..
+include $(PELE_HOME)/Exec/Make.PeleLMeX

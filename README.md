@@ -84,16 +84,16 @@ The default location for *PeleLMeX* dependencies is the `Submodules` folder but 
 setup the following environment variables (e.g. using bash) to any other location:
 
 ```
-export PELELMEX_HOME=<path_to_PeleLMeX>
-export AMREX_HYDRO_HOME=${PELELMEX_HOME}/Submodules/AMReX-Hydro
-export PELE_PHYSICS_HOME=${PELELMEX_HOME}/Submodules/PelePhysics
+export PELE_HOME=<path_to_PeleLMeX>
+export AMREX_HYDRO_HOME=${PELE_HOME}/Submodules/AMReX-Hydro
+export PELE_PHYSICS_HOME=${PELE_HOME}/Submodules/PelePhysics
 export AMREX_HOME=${PELE_PHYSICS_HOME}/Submodules/amrex
 export SUNDIALS_HOME=${PELE_PHYSICS_HOME}/Submodules/sundials
 ```
 
 ### Compilation
 
-Both GNUmake and CMake can be used to build a *PeleLMeX* executable, but GNUmake is the preferred choice.
+Both GNUmake and CMake can be used to build *PeleLMeX* executables. GNUmake is the preferred choice for single executables when running production simulations. While CMake is the preferred method for automatically building and testing most available executables.
 The code handling the initial condition and boundary conditions is unique to each case,
 and subfolders in the `Exec` directory provide a number of examples.
 
@@ -108,17 +108,7 @@ If this is a clean install, you will need to make the third party libraries with
 
 Finally, make with: `make -j`, or if on macOS: `make -j COMP=llvm`. To clean the installation, use either `make clean` or `make realclean`. If running into compile errors after changing compile time options in PeleLMeX (e.g., the chemical mechanism), the first thing to try is to clean your build by running `make TPLrealclean && make realclean`, then try to rebuild the third party libraries and PeleLMeX with `make TPL && make -j`. See the [Tutorial](https://amrex-combustion.github.io/PeleLMeX/manual/html/Tutorials_HotBubble.html) for this case for instructions on how to compile with different options (for example, to compile without MPI support or to compile for GPUs) and how to run the code once compiled.
 
-When using CMake (cmake version >= 3.23 is required), first configure CMake directly in *PeleLMeX* root folder:
-
-```
-cmake -S . -B buildHotBubble -DPELELMEX_MPI=ON -DPELELMEX_CASE=HotBubble
-```
-
-Then build the executable:
-
-```
-cmake --build buildHotBubble --parallel 4
-```
+To compile and test using CMake, refer to the example `cmake.sh` script in the `Build` directory, or reference the GitHub Actions workflows in the `.github/workflows` directory.
 
 ## Getting help, contributing
 
