@@ -1,5 +1,5 @@
-#ifndef PELE_PROB_PARM_H
-#define PELE_PROB_PARM_H
+#ifndef PELELMEX_PROB_PARM_H
+#define PELELMEX_PROB_PARM_H
 
 #include <AMReX_REAL.H>
 #include <AMReX_GpuMemory.H>

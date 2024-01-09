@@ -196,23 +196,24 @@ function(build_pele_physics_lib pele_physics_lib_name)
                       ${PELE_PHYSICS_SOOT_DIR}/SootReactions.H)
        target_include_directories(${pele_physics_lib_name} PUBLIC ${PELE_PHYSICS_SOOT_DIR})
 
-       if(PELE_PHYSICS_ENABLE_RADIATION)
-         target_sources(${pele_physics_lib_name} PRIVATE
-                        ${PELE_PHYSICS_RADIATION_DIR}/AMRParam.H
-                        ${PELE_PHYSICS_RADIATION_DIR}/Constants.H
-                        ${PELE_PHYSICS_RADIATION_DIR}/MLMGParam.H
-                        ${PELE_PHYSICS_RADIATION_DIR}/POneMulti.H
-                        ${PELE_PHYSICS_RADIATION_DIR}/POneMultiEB.H
-                        ${PELE_PHYSICS_RADIATION_DIR}/POneMultiLevbyLev.H
-                        ${PELE_PHYSICS_RADIATION_DIR}/POneSingle.H
-                        ${PELE_PHYSICS_RADIATION_DIR}/POneSingleEB.H
-                        ${PELE_PHYSICS_RADIATION_DIR}/PeleCRad.H
-                        ${PELE_PHYSICS_RADIATION_DIR}/PeleLMRad.H
-                        ${PELE_PHYSICS_RADIATION_DIR}/PlanckMean.H
-                        ${PELE_PHYSICS_RADIATION_DIR}/SpectralModels.H)
-         target_include_directories(${pele_physics_lib_name} PUBLIC ${PELE_PHYSICS_RADIATION_DIR})
-         target_compile_definitions(${pele_physics_lib_name} PUBLIC PELE_USE_RADIATION)
-       endif()
+    endif()
+
+    if(PELE_PHYSICS_ENABLE_RADIATION)
+      target_sources(${pele_physics_lib_name} PRIVATE
+                     ${PELE_PHYSICS_RADIATION_DIR}/AMRParam.H
+                     ${PELE_PHYSICS_RADIATION_DIR}/Constants.H
+                     ${PELE_PHYSICS_RADIATION_DIR}/MLMGParam.H
+                     ${PELE_PHYSICS_RADIATION_DIR}/POneMulti.H
+                     ${PELE_PHYSICS_RADIATION_DIR}/POneMultiEB.H
+                     ${PELE_PHYSICS_RADIATION_DIR}/POneMultiLevbyLev.H
+                     ${PELE_PHYSICS_RADIATION_DIR}/POneSingle.H
+                     ${PELE_PHYSICS_RADIATION_DIR}/POneSingleEB.H
+                     ${PELE_PHYSICS_RADIATION_DIR}/PeleCRad.H
+                     ${PELE_PHYSICS_RADIATION_DIR}/PeleLMRad.H
+                     ${PELE_PHYSICS_RADIATION_DIR}/PlanckMean.H
+                     ${PELE_PHYSICS_RADIATION_DIR}/SpectralModels.H)
+      target_include_directories(${pele_physics_lib_name} PUBLIC ${PELE_PHYSICS_RADIATION_DIR})
+      target_compile_definitions(${pele_physics_lib_name} PUBLIC PELE_USE_RADIATION)
     endif()
 
     include(AMReXBuildInfo)

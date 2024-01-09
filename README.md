@@ -93,7 +93,7 @@ export SUNDIALS_HOME=${PELE_PHYSICS_HOME}/Submodules/sundials
 
 ### Compilation
 
-Both GNUmake and CMake can be used to build a *PeleLMeX* executable, but GNUmake is the preferred choice.
+Both GNUmake and CMake can be used to build *PeleLMeX* executables. GNUmake is the preferred choice for single executables when running production simulations. While CMake is the preferred method for automatically building and testing most available executables.
 The code handling the initial condition and boundary conditions is unique to each case,
 and subfolders in the `Exec` directory provide a number of examples.
 
@@ -107,6 +107,8 @@ cd PeleLMeX/Exec/RegTests/HotBubble
 If this is a clean install, you will need to make the third party libraries with: `make TPL` (note: if on macOS, you might need to specify `COMP=llvm` in the `make` statements).
 
 Finally, make with: `make -j`, or if on macOS: `make -j COMP=llvm`. To clean the installation, use either `make clean` or `make realclean`. If running into compile errors after changing compile time options in PeleLMeX (e.g., the chemical mechanism), the first thing to try is to clean your build by running `make TPLrealclean && make realclean`, then try to rebuild the third party libraries and PeleLMeX with `make TPL && make -j`. See the [Tutorial](https://amrex-combustion.github.io/PeleLMeX/manual/html/Tutorials_HotBubble.html) for this case for instructions on how to compile with different options (for example, to compile without MPI support or to compile for GPUs) and how to run the code once compiled.
+
+To compile and test using CMake, refer to the example `cmake.sh` script in the `Build` directory, or reference the GitHub Actions workflows in the `.github/workflows` directory.
 
 ## Getting help, contributing
 
