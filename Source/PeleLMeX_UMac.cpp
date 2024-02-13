@@ -435,7 +435,7 @@ PeleLM::getMACProjectionBC(Orientation::Side a_side)
     } else {
       auto physbc =
         (a_side == Orientation::low) ? m_phys_bc.lo(idim) : m_phys_bc.hi(idim);
-      if (physbc == Outflow) {
+      if (physbc == amrex::PhysBCType::outflow) {
         r[idim] = LinOpBCType::Dirichlet;
       } else {
         r[idim] = LinOpBCType::Neumann;
