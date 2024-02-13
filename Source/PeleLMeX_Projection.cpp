@@ -396,7 +396,7 @@ PeleLM::doNodalProject(
     if (Geom(0).isPeriodic(idim)) {
       lobc[idim] = hibc[idim] = LinOpBCType::Periodic;
     } else {
-        if (m_phys_bc.lo(idim) == amrex::PhysBCType::outflow) {
+      if (m_phys_bc.lo(idim) == amrex::PhysBCType::outflow) {
         lobc[idim] = LinOpBCType::Dirichlet;
       } else if (m_phys_bc.lo(idim) == amrex::PhysBCType::inflow) {
         lobc[idim] = LinOpBCType::inflow;
