@@ -569,8 +569,8 @@ struct PeleLMCCFillExtDirDummy
 //
 // A dummy function because FillPatch requires something to exist for filling
 // dirichlet boundary conditions, even if we know we cannot have an ext_dir BC.
-// u_mac BCs are only either periodic (INT_DIR) or first order extrapolation
-// (FOEXTRAP).
+// u_mac BCs are only either periodic (amrex::BCType::int_dir) or first order
+// extrapolation (amrex::BCType::foextrap).
 //
 struct umacFill
 {

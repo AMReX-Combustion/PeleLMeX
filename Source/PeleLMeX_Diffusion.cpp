@@ -1510,12 +1510,14 @@ PeleLM::getDiffusionLinOpBC(Orientation::Side a_side, const BCRec& a_bc)
     } else {
       auto amrexbc =
         (a_side == Orientation::low) ? a_bc.lo(idim) : a_bc.hi(idim);
-      if (amrexbc == EXT_DIR) {
+      if (amrexbc == amrex::BCType::ext_dir) {
         r[idim] = LinOpBCType::Dirichlet;
       } else if (
-        amrexbc == FOEXTRAP || amrexbc == HOEXTRAP || amrexbc == REFLECT_EVEN) {
+        amrexbc == amrex::BCType::foextrap ||
+        amrexbc == amrex::BCType::hoextrap ||
+        amrexbc == amrex::BCType::reflect_even) {
         r[idim] = LinOpBCType::Neumann;
-      } else if (amrexbc == REFLECT_ODD) {
+      } else if (amrexbc == amrex::BCType::reflect_odd) {
         r[idim] = LinOpBCType::reflect_odd;
       } else {
         r[idim] = LinOpBCType::bogus;
@@ -1540,13 +1542,14 @@ PeleLM::getDiffusionTensorOpBC(
       for (int dir = 0; dir < AMREX_SPACEDIM; dir++) {
         auto amrexbc = (a_side == Orientation::low) ? a_bc[dir].lo(idim)
                                                     : a_bc[dir].hi(idim);
-        if (amrexbc == EXT_DIR) {
+        if (amrexbc == amrex::BCType::ext_dir) {
           r[dir][idim] = LinOpBCType::Dirichlet;
         } else if (
-          amrexbc == FOEXTRAP || amrexbc == HOEXTRAP ||
-          amrexbc == REFLECT_EVEN) {
+          amrexbc == amrex::BCType::foextrap ||
+          amrexbc == amrex::BCType::hoextrap ||
+          amrexbc == amrex::BCType::reflect_even) {
           r[dir][idim] = LinOpBCType::Neumann;
-        } else if (amrexbc == REFLECT_ODD) {
+        } else if (amrexbc == amrex::BCType::reflect_odd) {
           r[dir][idim] = LinOpBCType::reflect_odd;
         } else {
           r[dir][idim] = LinOpBCType::bogus;
