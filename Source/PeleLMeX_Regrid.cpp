@@ -288,6 +288,16 @@ PeleLM::regrid(int lbase, amrex::Real time, bool initial)
     }
 
     finest_level = new_finest;
+
+#ifdef PELE_USE_RADIATION
+    if (do_rad_solve) {
+#ifdef AMREX_USE_EB
+      rad_model->initVars(grids, dmap, m_factory);
+#else
+      rad_model->initVars(grids, dmap);
+#endif
+    }
+#endif
   }
 }
 
