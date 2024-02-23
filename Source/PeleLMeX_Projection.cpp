@@ -396,16 +396,16 @@ PeleLM::doNodalProject(
     if (Geom(0).isPeriodic(idim)) {
       lobc[idim] = hibc[idim] = LinOpBCType::Periodic;
     } else {
-      if (m_phys_bc.lo(idim) == Outflow) {
+      if (m_phys_bc.lo(idim) == amrex::PhysBCType::outflow) {
         lobc[idim] = LinOpBCType::Dirichlet;
-      } else if (m_phys_bc.lo(idim) == Inflow) {
+      } else if (m_phys_bc.lo(idim) == amrex::PhysBCType::inflow) {
         lobc[idim] = LinOpBCType::inflow;
       } else {
         lobc[idim] = LinOpBCType::Neumann;
       }
-      if (m_phys_bc.hi(idim) == Outflow) {
+      if (m_phys_bc.hi(idim) == amrex::PhysBCType::outflow) {
         hibc[idim] = LinOpBCType::Dirichlet;
-      } else if (m_phys_bc.hi(idim) == Inflow) {
+      } else if (m_phys_bc.hi(idim) == amrex::PhysBCType::inflow) {
         hibc[idim] = LinOpBCType::inflow;
       } else {
         hibc[idim] = LinOpBCType::Neumann;
