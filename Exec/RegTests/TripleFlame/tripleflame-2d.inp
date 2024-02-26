@@ -54,17 +54,17 @@ amr.derive_plot_vars = avg_pressure mag_vort mass_fractions mixture_fraction pro
 
 #---------------------- AC CONTROL -------------------------------
 active_control.on = 0                     # Use AC ?
-active_control.use_temp = 1               # Default in fuel mass, rather use iso-T position ?
-active_control.temperature = 1400.0       # Value of iso-T ?
-active_control.tau = 5.0e-4               # Control tau (should ~ 10 dt)
-active_control.height = 0.01              # Where is the flame held ? Default assumes coordinate along Y in 2D or Z in 3D.
-active_control.v = 1                      # verbose
-active_control.method = 1                 # Controller: 1 - Linear, 2 - Quadratic, 3 - Weighted quadratic
-active_control.velMax = 2.0               # Optional: limit inlet velocity
-active_control.changeMax = 0.1            # Optional: limit inlet velocity changes (absolute m/s)
-active_control.flow_dir  = 1              # Optional: flame main direction. Default: AMREX_SPACEDIM-1
-active_control.pseudo_gravity = 1         # Optional: add density proportional force to compensate for the acceleration
-                                          #           of the gas due to inlet velocity changes
+# active_control.use_temp = 1               # Default in fuel mass, rather use iso-T position ?
+# active_control.temperature = 1400.0       # Value of iso-T ?
+# active_control.tau = 5.0e-4               # Control tau (should ~ 10 dt)
+# active_control.height = 0.01              # Where is the flame held ? Default assumes coordinate along Y in 2D or Z in 3D.
+# active_control.v = 1                      # verbose
+# active_control.method = 1                 # Controller: 1 - Linear, 2 - Quadratic, 3 - Weighted quadratic
+# active_control.velMax = 2.0               # Optional: limit inlet velocity
+# active_control.changeMax = 0.1            # Optional: limit inlet velocity changes (absolute m/s)
+# active_control.flow_dir  = 1              # Optional: flame main direction. Default: AMREX_SPACEDIM-1
+# active_control.pseudo_gravity = 1         # Optional: add density proportional force to compensate for the acceleration
+                                            #           of the gas due to inlet velocity changes
 
 #---------------------- Derived CONTROLS -------------------------
 peleLM.fuel_name = CH4

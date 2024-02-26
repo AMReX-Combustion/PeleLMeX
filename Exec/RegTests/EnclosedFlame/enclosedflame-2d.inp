@@ -33,8 +33,6 @@ pmf.do_cellAverage = 0
 #-------------------------PeleLM CONTROL----------------------------
 peleLM.v = 1
 peleLM.incompressible = 0
-peleLM.rho = 1.17
-peleLM.mu = 0.0
 peleLM.use_wbar = 1
 peleLM.sdc_iterMax = 2
 peleLM.floor_species = 0
