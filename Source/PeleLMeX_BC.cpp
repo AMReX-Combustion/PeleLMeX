@@ -10,26 +10,40 @@
 // Components are  Interior, Inflow, Outflow, Symmetry, &
 // SlipWallAdiab, NoSlipWallAdiab, SlipWallIsoTherm, NoSlipWallIsoTherm.
 
-int norm_vel_bc[] = {INT_DIR, EXT_DIR, FOEXTRAP, REFLECT_ODD,
-                     EXT_DIR, EXT_DIR, EXT_DIR,  EXT_DIR};
+int norm_vel_bc[] = {amrex::BCType::int_dir,  amrex::BCType::ext_dir,
+                     amrex::BCType::foextrap, amrex::BCType::reflect_odd,
+                     amrex::BCType::ext_dir,  amrex::BCType::ext_dir,
+                     amrex::BCType::ext_dir,  amrex::BCType::ext_dir};
 
-int tang_vel_bc[] = {INT_DIR,  EXT_DIR, FOEXTRAP, REFLECT_EVEN,
-                     HOEXTRAP, EXT_DIR, HOEXTRAP, EXT_DIR};
+int tang_vel_bc[] = {amrex::BCType::int_dir,  amrex::BCType::ext_dir,
+                     amrex::BCType::foextrap, amrex::BCType::reflect_even,
+                     amrex::BCType::hoextrap, amrex::BCType::ext_dir,
+                     amrex::BCType::hoextrap, amrex::BCType::ext_dir};
 
-int density_bc[] = {INT_DIR,  EXT_DIR,  FOEXTRAP, REFLECT_EVEN,
-                    FOEXTRAP, FOEXTRAP, FOEXTRAP, FOEXTRAP};
+int density_bc[] = {amrex::BCType::int_dir,  amrex::BCType::ext_dir,
+                    amrex::BCType::foextrap, amrex::BCType::reflect_even,
+                    amrex::BCType::foextrap, amrex::BCType::foextrap,
+                    amrex::BCType::foextrap, amrex::BCType::foextrap};
 
-int species_bc[] = {INT_DIR,  EXT_DIR,  FOEXTRAP, REFLECT_EVEN,
-                    FOEXTRAP, FOEXTRAP, EXT_DIR,  EXT_DIR};
+int species_bc[] = {amrex::BCType::int_dir,  amrex::BCType::ext_dir,
+                    amrex::BCType::foextrap, amrex::BCType::reflect_even,
+                    amrex::BCType::foextrap, amrex::BCType::foextrap,
+                    amrex::BCType::ext_dir,  amrex::BCType::ext_dir};
 
-int rhoh_bc[] = {INT_DIR,  EXT_DIR,  FOEXTRAP, REFLECT_EVEN,
-                 FOEXTRAP, FOEXTRAP, EXT_DIR,  EXT_DIR};
+int rhoh_bc[] = {amrex::BCType::int_dir,  amrex::BCType::ext_dir,
+                 amrex::BCType::foextrap, amrex::BCType::reflect_even,
+                 amrex::BCType::foextrap, amrex::BCType::foextrap,
+                 amrex::BCType::ext_dir,  amrex::BCType::ext_dir};
 
-int temp_bc[] = {INT_DIR,  EXT_DIR,  FOEXTRAP, REFLECT_EVEN,
-                 FOEXTRAP, FOEXTRAP, EXT_DIR,  EXT_DIR};
+int temp_bc[] = {amrex::BCType::int_dir,  amrex::BCType::ext_dir,
+                 amrex::BCType::foextrap, amrex::BCType::reflect_even,
+                 amrex::BCType::foextrap, amrex::BCType::foextrap,
+                 amrex::BCType::ext_dir,  amrex::BCType::ext_dir};
 
-int divu_bc[] = {INT_DIR,      REFLECT_EVEN, REFLECT_EVEN, REFLECT_EVEN,
-                 REFLECT_EVEN, REFLECT_EVEN, REFLECT_EVEN, REFLECT_EVEN};
+int divu_bc[] = {amrex::BCType::int_dir,      amrex::BCType::reflect_even,
+                 amrex::BCType::reflect_even, amrex::BCType::reflect_even,
+                 amrex::BCType::reflect_even, amrex::BCType::reflect_even,
+                 amrex::BCType::reflect_even, amrex::BCType::reflect_even};
 
 // Following incflo rather than IAMR here
 int force_bc[] = {BCType::int_dir,  BCType::foextrap, BCType::foextrap,
@@ -37,15 +51,20 @@ int force_bc[] = {BCType::int_dir,  BCType::foextrap, BCType::foextrap,
                   BCType::foextrap, BCType::foextrap};
 
 #ifdef PELE_USE_EFIELD
-int nE_bc[] = {INT_DIR,      EXT_DIR,      FOEXTRAP, REFLECT_EVEN,
-               REFLECT_EVEN, REFLECT_EVEN, EXT_DIR,  EXT_DIR};
+int nE_bc[] = {amrex::BCType::int_dir,      amrex::BCType::ext_dir,
+               amrex::BCType::foextrap,     amrex::BCType::reflect_even,
+               amrex::BCType::reflect_even, amrex::BCType::reflect_even,
+               amrex::BCType::ext_dir,      amrex::BCType::ext_dir};
 
-int phiV_bc[] = {INT_DIR, EXT_DIR, REFLECT_EVEN};
+int phiV_bc[] = {
+  amrex::BCType::int_dir, amrex::BCType::ext_dir, amrex::BCType::reflect_even};
 #endif
 
 #ifdef PELE_USE_SOOT
-int soot_bc[] = {INT_DIR,      EXT_DIR,      FOEXTRAP, REFLECT_EVEN,
-                 REFLECT_EVEN, REFLECT_EVEN, EXT_DIR,  EXT_DIR};
+int soot_bc[] = {amrex::BCType::int_dir,      amrex::BCType::ext_dir,
+                 amrex::BCType::foextrap,     amrex::BCType::reflect_even,
+                 amrex::BCType::reflect_even, amrex::BCType::reflect_even,
+                 amrex::BCType::ext_dir,      amrex::BCType::ext_dir};
 #endif
 
 InterpBase*
@@ -903,7 +922,8 @@ PeleLM::fillTurbInflow(
 
         auto bndryBoxLO =
           amrex::Box(amrex::adjCellLo(geom[lev].Domain(), dir, 4) & bx);
-        if (velBCRec[0].lo()[dir] == EXT_DIR && bndryBoxLO.ok()) {
+        if (
+          velBCRec[0].lo()[dir] == amrex::BCType::ext_dir && bndryBoxLO.ok()) {
           // Create box with ghost cells and set them to zero
           amrex::IntVect growVect(amrex::IntVect::TheUnitVector());
           int Grow = 4; // Being conservative
@@ -925,7 +945,8 @@ PeleLM::fillTurbInflow(
 
         auto bndryBoxHI =
           amrex::Box(amrex::adjCellHi(geom[lev].Domain(), dir, 4) & bx);
-        if (velBCRec[0].hi()[dir] == EXT_DIR && bndryBoxHI.ok()) {
+        if (
+          velBCRec[0].hi()[dir] == amrex::BCType::ext_dir && bndryBoxHI.ok()) {
           // Create box with ghost cells and set them to zero
           amrex::IntVect growVect(amrex::IntVect::TheUnitVector());
           int Grow = 4;

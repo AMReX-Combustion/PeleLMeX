@@ -161,11 +161,12 @@ main(int argc, char* argv[])
     Real xhi = data.d_xarray[ncell - 1];
 
     Box box_turb(
-      IntVect(D_DECL(0, 0, 0)),
-      IntVect(D_DECL(ncell - 1, ncell - 1, ncell - 1)));
-    RealBox rb_turb({D_DECL(xlo, xlo, xlo)}, {D_DECL(xhi, xhi, xhi)});
+      IntVect(AMREX_D_DECL(0, 0, 0)),
+      IntVect(AMREX_D_DECL(ncell - 1, ncell - 1, ncell - 1)));
+    RealBox rb_turb(
+      {AMREX_D_DECL(xlo, xlo, xlo)}, {AMREX_D_DECL(xhi, xhi, xhi)});
     int coord_turb(0);
-    Array<int, AMREX_SPACEDIM> per_turb = {D_DECL(1, 1, 1)};
+    Array<int, AMREX_SPACEDIM> per_turb = {AMREX_D_DECL(1, 1, 1)};
     Geometry geom_turb(box_turb, rb_turb, coord_turb, per_turb);
     const Real* dx_turb = geom_turb.CellSize();
 

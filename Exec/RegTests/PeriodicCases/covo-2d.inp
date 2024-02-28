@@ -12,11 +12,11 @@ peleLM.hi_bc = Interior Interior
 
 
 #-------------------------AMR CONTROL----------------------------
-amr.n_cell          = 64 64 64         # Level 0 number of cells in each direction   
+amr.n_cell          = 64 64 64         # Level 0 number of cells in each direction
 amr.v               = 1                # AMR verbose
 amr.max_level       = 0                # maximum level number allowed
-amr.ref_ratio       = 2 2 2 2          # refinement ratio
-amr.regrid_int      = 2                # how often to regrid
+# amr.ref_ratio       = 2 2 2 2          # refinement ratio
+# amr.regrid_int      = 2                # how often to regrid
 amr.n_error_buf     = 1 1 2 2          # number of buffer cells in error est
 amr.grid_eff        = 0.7              # what constitutes an efficient grid
 amr.blocking_factor = 16               # block factor in grid generation (min box size)
@@ -33,19 +33,18 @@ prob.rvort       = 0.07
 prob.forcevort   = 6.0
 
 #------------  INPUTS TO CONSTANT TRANSPORT -----------------
-transport.const_viscosity        = 0.0 
-transport.const_bulk_viscosity   = 0.0 
-transport.const_conductivity     = 0.0 
-transport.const_diffusivity      = 0.0 
+transport.const_viscosity        = 0.0
+transport.const_bulk_viscosity   = 0.0
+transport.const_conductivity     = 0.0
+transport.const_diffusivity      = 0.0
 
 #-------------------------PeleLM CONTROL----------------------------
 peleLM.v = 1
 peleLM.incompressible = 0
-peleLM.rho = 1.17
-peleLM.mu = 0.0
+# peleLM.rho = 1.17
+# peleLM.mu = 0.0
 peleLM.sdc_iterMax = 1
 peleLM.num_init_iter = 5
-godunov.use_ppm = 0
 mac_proj.verbose = 0
 nodal_proj.verbose = 0
 mac_proj.rtol = 5e-13
