@@ -14,7 +14,6 @@
 #ifdef PELE_USE_SOOT
 #include "SootModel.H"
 #endif
-
 using namespace amrex;
 
 static Box
@@ -101,15 +100,23 @@ PeleLM::Setup()
   if (m_incompressible == 0) {
     amrex::Print() << " Initialization of Transport ... \n";
     trans_parms.allocate();
-    if ((m_les_verbose != 0) and m_do_les) {
-      amrex::Print() << "    Using LES in transport with Sc = "
-                     << 1.0 / m_Schmidt_inv
-                     << " and Pr = " << 1.0 / m_Prandtl_inv << std::endl;
-    }
-    if ((m_verbose != 0) and (m_unity_Le != 0)) {
-      amrex::Print() << "    Using Le = 1 transport with Sc = "
-                     << 1.0 / m_Schmidt_inv
-                     << " and Pr = " << 1.0 / m_Prandtl_inv << std::endl;
+    if ((m_les_verbose != 0) and m_do_les) { //Say what transport model we're going to use  
+      amrex::Print() << "    Using LES in transport with Sc = " << 1.0 / m_Schmidt_inv << " and Pr = " << 1.0 / m_Prandtl_inv << std::endl;
+    } else if (m_verbose != 0) {
+      if (m_fixed_Le == 0 && m_fixed_Pr == 0) {
+	if (m_use_soret == 0) {
+	  amrex::Print() << "    Using mixture-averaged transport" << std::endl;
+	} else {
+	  amrex::Print() << "    Using mixture-averaged transport with Soret effects" << std::endl;
+	}
+      } else {
+	if (m_fixed_Le != 0) {
+	  amrex::Print() << "    Using fixed Le = " << 1.0/m_Lewis_inv << std::endl;
+	}
+	if (m_fixed_Pr != 0) {
+	  amrex::Print() << "    Using fixed Pr = " << 1.0/m_Prandtl_inv << std::endl;    
+	}
+      }
     }
     if (m_do_react != 0) {
       int reactor_type = 2;
@@ -296,7 +303,13 @@ PeleLM::readParameters()
     m_background_gp[idim] = gp0[idim];
     m_gravity[idim] = grav[idim];
   }
-
+  
+  //Will automatically add pressure gradient for channel flow to maintain mass flow rate of initial condition
+  pp.query("do_periodic_channel",m_do_periodic_channel);
+  if (m_do_channel != 0) {
+    pp.get("periodic_channel_dir",m_periodic_channel_dir);	     
+  }
+  
   // -----------------------------------------
   // LES
   // -----------------------------------------
@@ -330,27 +343,47 @@ PeleLM::readParameters()
 
   // -----------------------------------------
   // diffusion
+  ParmParse pptrans("transport");
+  pptrans.query("use_soret", m_use_soret);
   pp.query("use_wbar", m_use_wbar);
-  pp.query("unity_Le", m_unity_Le);
-  if ((m_use_wbar != 0) and (m_unity_Le != 0)) {
-    m_use_wbar = 0;
-    amrex::Print() << "WARNING: use_wbar set to false because unity_Le is true"
-                   << std::endl;
+  pp.query("fixed_Le", m_fixed_Le);
+  pp.query("fixed_Pr", m_fixed_Pr);
+  if (m_do_les != 0) { //For LES, Prandtl and Schmidt numbers are fixed
+    m_fixed_Le = 1;
+    m_fixed_Pr = 1;
+    amrex::Real Schmidt = 0.7;
+    pp.query("Schmidt",Schmidt);
+    m_Schmidt_inv = 1.0/Schmidt;
   }
+  if (m_fixed_Le != 0 && m_do_les == 0) { //Only ask for Lewis number when not LES, determined by Prandtl and Schmidt outside of this
+    amrex::Real Lewis = 1.0;
+    pp.query("Lewis",Lewis);
+    m_Lewis_inv = 1.0/Lewis;
+  }
+  if (m_fixed_Pr != 0) { 
+    amrex::Real Prandtl = 0.7;
+    pp.query("Prandtl",Prandtl);
+    m_Prandtl_inv = 1.0/Prandtl;
+  }
+  if (m_fixed_Le != 0 && m_fixed_Pr != 0 && m_do_les == 0) { //calculate Schmidt in case of no LES from Lewis and Prandtl
+    m_Schmidt_inv = m_Lewis_inv*m_Prandtl_inv;
+  }
+  if (m_do_les != 0) { // calculate Lewis in case of LES
+    m_Lewis_inv = m_Prandtl_inv / m_Schmidt_inv;
+  }
+  
+  if ((m_use_wbar != 0 || m_use_soret != 0) && (m_fixed_Le != 0 || m_fixed_Pr != 0)) {
+    m_use_wbar = 0;
+    m_use_soret = 0;
+    amrex::Print() << "WARNING: use_wbar and use_soret set to false because fixed_Pr or fixed_Le is true" << std::endl;
+  }
+  
+  
   pp.query("deltaT_verbose", m_deltaT_verbose);
   pp.query("deltaT_iterMax", m_deltaTIterMax);
   pp.query("deltaT_tol", m_deltaT_norm_max);
   pp.query("deltaT_crashIfFailing", m_crashOnDeltaTFail);
-  ParmParse pptrans("transport");
-  pptrans.query("use_soret", m_use_soret);
-
-  if (m_do_les or (m_unity_Le != 0)) {
-    amrex::Real Prandtl = 0.7;
-    pp.query("Prandtl", Prandtl);
-    m_Schmidt_inv = 1.0 / Prandtl;
-    m_Prandtl_inv = 1.0 / Prandtl;
-  }
-
+  
   // -----------------------------------------
   // initialization
   pp.query("num_divu_iter", m_numDivuIter);

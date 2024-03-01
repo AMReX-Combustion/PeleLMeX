@@ -185,7 +185,7 @@ pelelmex_derrhomrhoy(
   AMREX_ASSERT(statefab.box().contains(bx));
   AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
   AMREX_ASSERT(statefab.nComp() >= NUM_SPECIES + 1);
-  AMREX_ASSERT(ncomp == 1);
+  AMREX_ASSERT(ncomp == NUM_SPECIES);
   AMREX_ASSERT(!a_pelelm->m_incompressible);
   auto const in_dat = statefab.array();
   auto der = derfab.array(dcomp);
@@ -1361,39 +1361,22 @@ pelelmex_derdiffc(
   if (a_pelelm->m_use_soret == 0) {
     AMREX_ASSERT(ncomp == NUM_SPECIES);
   }
-  FArrayBox dummies(bx, 2, The_Async_Arena());
+  bool do_fixed_Le = (a_pelelm->m_fixed_Le != 0);
+  bool do_fixed_Pr = (a_pelelm->m_fixed_Pr != 0);
+  bool do_soret = (a_pelelm->m_use_soret != 0);  
+  FArrayBox dummies(bx, NUM_SPECIES+2, The_Async_Arena());
   auto const& rhoY = statefab.const_array(FIRSTSPEC);
   auto const& T = statefab.array(TEMP);
   auto rhoD = derfab.array(dcomp);
   auto lambda = dummies.array(0);
   auto mu = dummies.array(1);
   auto const* ltransparm = a_pelelm->trans_parms.device_trans_parm();
-  if (a_pelelm->m_use_soret != 0) {
-    auto rhotheta = derfab.array(dcomp + NUM_SPECIES);
-    amrex::ParallelFor(
-      bx, [rhoY, T, rhoD, rhotheta, lambda, mu,
-           ltransparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-        getTransportCoeffSoret(
-          i, j, k, rhoY, T, rhoD, rhotheta, lambda, mu, ltransparm);
-      });
-  } else {
-    if (a_pelelm->m_unity_Le != 0) {
-      amrex::Real ScInv = a_pelelm->m_Schmidt_inv;
-      amrex::Real PrInv = a_pelelm->m_Prandtl_inv;
-      amrex::ParallelFor(
-        bx, [rhoY, T, rhoD, lambda, mu, ltransparm, ScInv,
-             PrInv] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          getTransportCoeffUnityLe(
-            i, j, k, ScInv, PrInv, rhoY, T, rhoD, lambda, mu, ltransparm);
-        });
-    } else {
-      amrex::ParallelFor(
-        bx, [rhoY, T, rhoD, lambda, mu,
-             ltransparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          getTransportCoeff(i, j, k, rhoY, T, rhoD, lambda, mu, ltransparm);
-        });
-    }
-  }
+  auto rhotheta = do_soret ? derfab.array(dcomp + NUM_SPECIES) : dummies.array(2); //dummy for no soret    
+  amrex::Real LeInv = a_pelelm->m_Lewis_inv;
+  amrex::Real PrInv = a_pelelm->m_Prandtl_inv;
+  amrex::ParallelFor(bx, [do_fixed_Le, do_fixed_Pr, do_soret, LeInv, PrInv, rhoY, T, rhoD, rhotheta, lambda, mu, ltransparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+			   getTransportCoeff(i, j, k, do_fixed_Le, do_fixed_Pr, do_soret, LeInv, PrInv, rhoY, T, rhoD, rhotheta, lambda, mu, ltransparm);
+			 });
 }
 
 //
@@ -1418,27 +1401,22 @@ pelelmex_derlambda(
   AMREX_ASSERT(derfab.box().contains(bx));
   AMREX_ASSERT(statefab.box().contains(bx));
   AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
-
-  FArrayBox dummies(bx, NUM_SPECIES + 1, The_Async_Arena());
+  bool do_fixed_Le = (a_pelelm->m_fixed_Le != 0);
+  bool do_fixed_Pr = (a_pelelm->m_fixed_Pr != 0);
+  bool do_soret = (a_pelelm->m_use_soret != 0);
+  FArrayBox dummies(bx, 2*NUM_SPECIES + 1, The_Async_Arena());
   auto const& rhoY = statefab.const_array(FIRSTSPEC);
   auto const& T = statefab.array(TEMP);
   auto rhoD = dummies.array(1);
   auto lambda = derfab.array(dcomp);
   auto mu = dummies.array(0);
+  auto rhotheta = dummies.array(NUM_SPECIES+1);
   auto const* ltransparm = a_pelelm->trans_parms.device_trans_parm();
-  amrex::Real ScInv = a_pelelm->m_Schmidt_inv;
+  amrex::Real LeInv = a_pelelm->m_Lewis_inv;
   amrex::Real PrInv = a_pelelm->m_Prandtl_inv;
-  int unity_Le = a_pelelm->m_unity_Le;
-  amrex::ParallelFor(
-    bx, [rhoY, T, rhoD, lambda, mu, ltransparm, unity_Le, ScInv,
-         PrInv] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-      if (unity_Le != 0) {
-        getTransportCoeffUnityLe(
-          i, j, k, ScInv, PrInv, rhoY, T, rhoD, lambda, mu, ltransparm);
-      } else {
-        getTransportCoeff(i, j, k, rhoY, T, rhoD, lambda, mu, ltransparm);
-      }
-    });
+  amrex::ParallelFor(bx, [do_fixed_Le,do_fixed_Pr,do_soret,LeInv, PrInv,rhoY, T, rhoD,rhotheta, lambda, mu, ltransparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+			   getTransportCoeff(i, j, k, do_fixed_Le, do_fixed_Pr, do_soret, LeInv, PrInv, rhoY, T, rhoD, rhotheta, lambda, mu, ltransparm);
+			 });
 }
 
 //

@@ -1690,7 +1690,7 @@ public:
   SootModel* soot_model = nullptr;
   bool do_soot_solve;
 #endif
-
+  
 #ifdef PELE_USE_RADIATION
   // Radiation parameters
   std::unique_ptr<PeleRad::Radiation> rad_model;
@@ -1807,6 +1807,9 @@ public:
   amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> m_background_gp{
     AMREX_D_DECL(0.0, 0.0, 0.0)};
 
+  int m_do_periodic_channel = 0;
+  int m_periodic_channel_dir = -1;
+  
   // DivU ? default ON when not incompressible
   int m_has_divu = 1;
 
@@ -1825,9 +1828,13 @@ public:
   int m_harm_avg_cen2edge = 0;
 
   // Diffusion
-  int m_unity_Le = 0;
-  amrex::Real m_Schmidt_inv = 1.0 / 0.7;
+  int m_fixed_Pr = 0;
+  int m_fixed_Le = 0;
+
+  amrex::Real m_Lewis_inv = 1.0;
   amrex::Real m_Prandtl_inv = 1.0 / 0.7;
+  amrex::Real m_Schmidt_inv = 1.0 / 0.7;
+  
   int m_use_wbar = 1;
   int m_use_soret = 0;
 
