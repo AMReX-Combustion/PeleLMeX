@@ -37,15 +37,17 @@ PeleLM::computeVelocityAdvTerm(std::unique_ptr<AdvanceAdvData>& advData)
   int use_density = 0;
   computeDivTau(AmrOldTime, GetVecOfPtrs(divtau), use_density);
 
-  //Add compensating pressure gradient for periodic channel flow
+  // Add compensating pressure gradient for periodic channel flow
   if (m_do_periodic_channel) {
-    m_background_gp[m_periodic_channel_dir] = MFSum(GetVecOfConstPtrs(divtau),m_periodic_channel_dir)/m_uncoveredVol;
+    m_background_gp[m_periodic_channel_dir] =
+      MFSum(GetVecOfConstPtrs(divtau), m_periodic_channel_dir) / m_uncoveredVol;
     if (m_verbose > 2) {
-      amrex::Print() << "   ... Adding background pressure gradient in dir " << m_periodic_channel_dir << ": " << m_background_gp[m_periodic_channel_dir] << "\n";
+      amrex::Print() << "   ... Adding background pressure gradient in dir "
+                     << m_periodic_channel_dir << ": "
+                     << m_background_gp[m_periodic_channel_dir] << "\n";
     }
   }
 
-  
   //----------------------------------------------------------------
   // Gather all the velocity forces
   // F = [ (gravity+...) - gradP + divTau ] / rho

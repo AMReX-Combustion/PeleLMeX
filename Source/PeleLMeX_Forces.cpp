@@ -52,10 +52,10 @@ PeleLM::getVelForces(
   Real time = getTime(lev, a_time);
 
   int has_divTau = static_cast<int>(a_divTau != nullptr);
-  
+
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif  
+#endif
   for (MFIter mfi(*a_velForce, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
     const auto& bx = mfi.tilebox();
     FArrayBox DummyFab(bx, 1);

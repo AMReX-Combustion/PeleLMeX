@@ -54,8 +54,8 @@ getTransportCoeff(
   amrex::Real chi_loc[NUM_SPECIES] = {0.0};
   amrex::Real Tloc = T(i, j, k);
 
-  bool get_xi = false; //always ignore bulk viscosity
-  bool get_mu = true; //always get dynamic viscosity
+  bool get_xi = false; // always ignore bulk viscosity
+  bool get_mu = true;  // always get dynamic viscosity
   bool get_lam = !do_fixed_Pr;
   bool get_Ddiag = !do_fixed_Le;
   bool get_chi = do_soret;
@@ -65,49 +65,51 @@ getTransportCoeff(
     chi_loc, mu_cgs, dummy_xi, lambda_cgs, trans_parm);
 
   // Do CGS -> MKS conversions
-  mu(i, j, k) = mu_cgs * 1.0e-1_rt;  
-  if (do_fixed_Pr && do_fixed_Le) { //fixed Pr and Le, transport all dependent on visc
+  mu(i, j, k) = mu_cgs * 1.0e-1_rt;
+  if (do_fixed_Pr && do_fixed_Le) { // fixed Pr and Le, transport all dependent
+                                    // on visc
     amrex::Real cpmix = 0.0_rt;
     eos.TY2Cp(T(i, j, k), y, cpmix);
     lambda(i, j, k) = PrInv * cpmix * mu_cgs * 1.0e-5_rt;
     amrex::Real ScInv = PrInv * LeInv;
     for (int n = 0; n < NUM_SPECIES; n++) {
-      rhoDi(i,j,k,n) = ScInv * mu_cgs * 1.0e-1_rt;
+      rhoDi(i, j, k, n) = ScInv * mu_cgs * 1.0e-1_rt;
     }
-  } else if (do_fixed_Pr) { //fixed Pr, still use species diffs
+  } else if (do_fixed_Pr) { // fixed Pr, still use species diffs
     amrex::Real cpmix = 0.0_rt;
     eos.TY2Cp(T(i, j, k), y, cpmix);
-    lambda(i, j, k) = PrInv * cpmix * mu_cgs * 1.0e-5_rt;    
+    lambda(i, j, k) = PrInv * cpmix * mu_cgs * 1.0e-5_rt;
     for (int n = 0; n < NUM_SPECIES; n++) {
       rhoDi(i, j, k, n) = rhoDi_cgs[n] * Wbar * mwtinv[n] * 1.0e-1_rt;
     }
-  } else if (do_fixed_Le) { //fixed Le, still use thermal cond
+  } else if (do_fixed_Le) { // fixed Le, still use thermal cond
     lambda(i, j, k) = lambda_cgs * 1.0e-5_rt;
     amrex::Real cpmix = 0.0_rt;
     eos.TY2Cp(T(i, j, k), y, cpmix);
     for (int n = 0; n < NUM_SPECIES; n++) {
       rhoDi(i, j, k, n) = lambda_cgs * 1.0e-1_rt * LeInv / cpmix;
     }
-  } else { //full MA model, with Soret if needed
+  } else { // full MA model, with Soret if needed
     lambda(i, j, k) = lambda_cgs * 1.0e-5_rt;
     for (int n = 0; n < NUM_SPECIES; n++) {
       rhoDi(i, j, k, n) = rhoDi_cgs[n] * Wbar * mwtinv[n] * 1.0e-1_rt;
       if (do_soret) {
-	rhotheta(i, j, k, n) = -rhoDi_cgs[n] * 1.0e-1_rt * chi_loc[n];
+        rhotheta(i, j, k, n) = -rhoDi_cgs[n] * 1.0e-1_rt * chi_loc[n];
       }
     }
     if (do_soret) {
-#if defined(H2_ID) && defined(H_ID) //Soret coefficient scaling, see Howarth, Day, Pitsch & Aspden
-      rhotheta(i,j,k,H2_ID) *= 0.664; 
-      rhotheta(i,j,k,H_ID) *= 0.58;
+#if defined(H2_ID) && \
+  defined(            \
+    H_ID) // Soret coefficient scaling, see Howarth, Day, Pitsch & Aspden
+      rhotheta(i, j, k, H2_ID) *= 0.664;
+      rhotheta(i, j, k, H_ID) *= 0.58;
 #else
-      amrex::Abort("Running with Soret without light species, waste of time and memory...");
-#endif  
-	}
+      amrex::Abort("Running with Soret without light species, waste of time "
+                   "and memory...");
+#endif
+    }
   }
 }
-
-
 
 AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
@@ -650,9 +652,6 @@ makeVelForce(
     force(i, j, k, idim) +=
       extmom(i, j, k, idim) - vel(i, j, k, idim) * extrho(i, j, k);
   }
-
-  
-  
 }
 
 // This kernel returns directly rhoHmix
