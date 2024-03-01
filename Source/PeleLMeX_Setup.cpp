@@ -306,7 +306,7 @@ PeleLM::readParameters()
   
   //Will automatically add pressure gradient for channel flow to maintain mass flow rate of initial condition
   pp.query("do_periodic_channel",m_do_periodic_channel);
-  if (m_do_channel != 0) {
+  if (m_do_periodic_channel != 0) {
     pp.get("periodic_channel_dir",m_periodic_channel_dir);	     
   }
   
