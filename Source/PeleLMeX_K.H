@@ -101,7 +101,7 @@ getTransportCoeff(
       rhotheta(i,j,k,H2_ID) *= 0.664; 
       rhotheta(i,j,k,H_ID) *= 0.58;
 #else
-      amrex::Abort("Running with Soret without light species, waste of time and memory...")
+      amrex::Abort("Running with Soret without light species, waste of time and memory...");
 #endif  
 	}
   }
