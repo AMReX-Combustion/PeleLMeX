@@ -11,11 +11,11 @@ peleLM.lo_bc = Inflow  NoSlipWallAdiab      # bc in x_lo y_lo (z_lo)
 peleLM.hi_bc = Outflow NoSlipWallAdiab      # bc in x_hi y_hi (z_hi)
 
 #---------------------- AMR CONTROL ------------------------------
-amr.n_cell          = 256 64                # Level 0 number of cells in each direction   
+amr.n_cell          = 256 64                # Level 0 number of cells in each direction
 amr.v               = 1                     # AMR verbose
 amr.max_level       = 0                     # maximum level number allowed
-amr.ref_ratio       = 2 2 2 2               # refinement ratio
-amr.regrid_int      = 5                     # how often to regrid
+# amr.ref_ratio       = 2 2 2 2               # refinement ratio
+# amr.regrid_int      = 5                     # how often to regrid
 amr.n_error_buf     = 2 2 2 2               # number of buffer cells in error est
 amr.grid_eff        = 0.7                   # what constitutes an efficient grid
 amr.blocking_factor = 16                    # block factor in grid generation (min box size)
@@ -35,7 +35,7 @@ peleLM.v = 1                                # PeleLMeX verbose
 peleLM.use_wbar = 1                         # Include Wbar term in species diffusion fluxes
 peleLM.sdc_iterMax = 2                      # Number of SDC iterations
 peleLM.num_init_iter = 3                    # Number of initial iterations
-peleLM.floor_species = 0                    # Enforce species positivity (non-conservative !)            
+peleLM.floor_species = 0                    # Enforce species positivity (non-conservative !)
 
 #---------------------- Temporal CONTROL -------------------------
 peleLM.do_temporals = 1                     # Turn temporals ON/OFF
@@ -74,8 +74,8 @@ peleLM.use_typ_vals_chem = 1                # Use species/temp typical values in
 ode.rtol = 1.0e-6                           # Relative tolerance of the chemical solve
 ode.atol = 1.0e-5                           # Absolute tolerance factor applied on typical values
 ode.clean_init_massfrac = 0                 # Reaction computed as an increment
-cvode.solve_type = denseAJ_direct           # CVODE Linear solve type (for Newton direction) 
-cvode.max_order  = 4                        # CVODE max BDF order. 
+cvode.solve_type = denseAJ_direct           # CVODE Linear solve type (for Newton direction)
+cvode.max_order  = 4                        # CVODE max BDF order.
 
 #---------------------- EB SETUP ---------------------------------
 eb2.geom_type = box
@@ -92,7 +92,7 @@ mac_proj.verbose = 0                        # MAC projection verbose
 #---------------------- Refinement CONTROL------------------------
 amr.refinement_indicators = gradT
 amr.gradT.max_level     = 3
-amr.gradT.adjacent_difference_greater = 100 
+amr.gradT.adjacent_difference_greater = 100
 amr.gradT.field_name    = temp
 
 #---------------------- Debug/HPC CONTROL-------------------------
