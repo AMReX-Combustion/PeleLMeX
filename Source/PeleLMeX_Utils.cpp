@@ -969,7 +969,7 @@ PeleLM::deriveComp(const std::string& a_name, Real a_time, int lev, int nGrow)
     // state
     auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
     std::unique_ptr<MultiFab> reactmf;
-    if (m_incompressible == 0) {
+    if (m_do_react != 0) {
       reactmf = fillPatchReact(lev, a_time, nGrow);
     }
     auto stateBCs = fetchBCRecArray(VELX, NVAR);
