@@ -1828,6 +1828,7 @@ public:
   int m_harm_avg_cen2edge = 0;
 
   // Diffusion
+  int m_unity_Le = 0;
   int m_fixed_Pr = 0;
   int m_fixed_Le = 0;
 

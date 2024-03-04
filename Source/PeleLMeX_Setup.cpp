@@ -354,18 +354,25 @@ PeleLM::readParameters()
   ParmParse pptrans("transport");
   pptrans.query("use_soret", m_use_soret);
   pp.query("use_wbar", m_use_wbar);
+  pp.query("unity_Le", m_unity_Le);
   pp.query("fixed_Le", m_fixed_Le);
   pp.query("fixed_Pr", m_fixed_Pr);
-  if (m_do_les != 0) { // For LES, Prandtl and Schmidt numbers are fixed
+  if (m_unity_Le != 0) {
+    m_fixed_Le = 1;
+    amrex::Print() << "WARNING: unity_Le is deprecated and will be removed in "
+                      "future version, use fixed_Le instead"
+                   << std::endl;
+  }
+  if (m_do_les) { // For LES, Prandtl and Schmidt numbers are fixed
     m_fixed_Le = 1;
     m_fixed_Pr = 1;
     amrex::Real Schmidt = 0.7;
     pp.query("Schmidt", Schmidt);
     m_Schmidt_inv = 1.0 / Schmidt;
   }
-  if (m_fixed_Le != 0 && m_do_les == 0) { // Only ask for Lewis number when not
-                                          // LES, determined by Prandtl and
-                                          // Schmidt outside of this
+  if (m_fixed_Le != 0 && !m_do_les) { // Only ask for Lewis number when not
+                                      // LES, determined by Prandtl and
+                                      // Schmidt outside of this
     amrex::Real Lewis = 1.0;
     pp.query("Lewis", Lewis);
     m_Lewis_inv = 1.0 / Lewis;
@@ -375,13 +382,12 @@ PeleLM::readParameters()
     pp.query("Prandtl", Prandtl);
     m_Prandtl_inv = 1.0 / Prandtl;
   }
-  if (
-    m_fixed_Le != 0 && m_fixed_Pr != 0 &&
-    m_do_les ==
-      0) { // calculate Schmidt in case of no LES from Lewis and Prandtl
+  if (m_fixed_Le != 0 && m_fixed_Pr != 0 && !m_do_les) { // calculate Schmidt in
+                                                         // case of no LES from
+                                                         // Lewis and Prandtl
     m_Schmidt_inv = m_Lewis_inv * m_Prandtl_inv;
   }
-  if (m_do_les != 0) { // calculate Lewis in case of LES
+  if (m_do_les) { // calculate Lewis in case of LES
     m_Lewis_inv = m_Prandtl_inv / m_Schmidt_inv;
   }
 
