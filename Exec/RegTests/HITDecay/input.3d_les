@@ -30,7 +30,6 @@ prob.input_binaryformat = 0
 prob.urms0            = 2.0
 
 #-----------------------DIFFUSION AND LES MODEL CONTROL-----------------------
-peleLM.fixed_Pr = 1		  # [OPT, DEF=0] Use the fixed Prandtl number approximation for thermal diffusivity
 peleLM.Prandtl = 0.7                   # [OPT, DEF=0.7] If fixed_Pr or doing LES, specifies the Prandtl number
 peleLM.Schmidt = 0.7                   # [OPT, DEF=0.7] If doing LES, specifies the Schmidt number
 peleLM.les_model = "Smagorinsky"              # [OPT, DEF="None"] Model to compute turbulent viscosity: None, Smagorinsky, WALE
