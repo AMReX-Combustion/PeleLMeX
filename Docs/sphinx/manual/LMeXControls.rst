@@ -237,6 +237,8 @@ PeleLMeX algorithm
     peleLM.m_mu = 1.8e-5                   # [OPT, DEF=-1] If incompressible, kinematic visc. value [MKS]
     peleLM.gravity = 0.0 0.0 -9.81         # [OPT, DEF=Vec{0.0}] Gravity vector [MKS]
     peleLM.gradP0 = 0.0 0.0 10.0           # [OPT, DEF=Vec{0.0}] Average background pressure gradient [Pa/m]
+    peleLM.do_periodic_channel = 0         # [OPT, DEF= 0] Add an automatic pressure gradient to maintain initial condition mass flow rate in periodic channel
+    peleLM.periodic_channel_dir = 2        # [OPT, DEF= -1] Required if do_periodic_channel != 0. Direction to apply pressure gradient.    
     peleLM.closed_chamber = 0              # [OPT] Override the automatic detection of closed chamber (based on Outflow(s))
     peleLM.floor_species = 0               # [OPT, DEF=0] Crudely enforce mass fraction positivity
     peleLM.deltaT_verbose = 0              # [OPT, DEF=0] Verbose of the deltaT iterative solve algorithm
@@ -250,8 +252,12 @@ Transport coeffs and LES
 ::
 
     #-----------------------DIFFUSION AND LES MODEL CONTROL-----------------------
-    peleLM.unity_Le = 0                    # [OPT, DEF=0] Use the unity Lewis number approximation for diffusivities
-    peleLM.Prandtl = 0.7                   # [OPT, DEF=0.7] If unity_Le or doing LES, specifies the Prandtl number
+    peleLM.fixed_Le = 0                    # [OPT, DEF=0] Use a fixed Lewis number approximation for species diffusivities
+    peleLM.fixed_Pr = 0                    # [OPT, DEF=0] Use a fixed Prandtl number approximation for thermal diffusivity
+    peleLM.Prandtl = 0.7                   # [OPT, DEF=0.7] If fixed_Pr or doing LES, specifies the Prandtl number
+    peleLM.Schmidt = 0.7                   # [OPT, DEF=0.7] If doing LES, specifies the Schmidt number
+    peleLM.Lewis = 1.0                     # [OPT, DEF=1.0] If fixed_Le, specifies the Lewis number
+    
     peleLM.les_model = "None"              # [OPT, DEF="None"] Model to compute turbulent viscosity: None, Smagorinsky, WALE, Sigma
     peleLM.les_cs_smag = 0.18              # [OPT, DEF=0.18] If using Smagorinsky LES model, provides model coefficient
     peleLM.les_cm_wale = 0.60              # [OPT, DEF=0.60] If using WALE LES model, provides model coefficient
