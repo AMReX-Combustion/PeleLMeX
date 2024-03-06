@@ -45,8 +45,8 @@ peleLM.floor_species = 0
 peleLM.advection_scheme = Godunov_BDS
 
 peleLM.do_temporals = 0
-peleLM.temporal_int = 2
-peleLM.mass_balance = 1
+# peleLM.temporal_int = 2
+# peleLM.mass_balance = 1
 peleLM.num_init_iter = 1
 peleLM.plot_react = 0
 
@@ -105,7 +105,6 @@ pelerad.bottom_abstol = 1.0e-6
 pelerad.agglomeration = 1
 pelerad.consolidation = 0
 pelerad.bottom_verbose = 0
-pelerad.maxorder = 2
 pelerad.linop_maxorder = 2
 pelerad.max_fmg_iter = 0
 pelerad.lo_bc = Robin Periodic Periodic

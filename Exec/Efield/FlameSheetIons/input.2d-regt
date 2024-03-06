@@ -12,7 +12,7 @@ peleLM.hi_bc = Interior Outflow
 
 
 #-------------------------AMR CONTROL----------------------------
-amr.n_cell          = 64 128 32      # Level 0 number of cells in each direction   
+amr.n_cell          = 64 128 32      # Level 0 number of cells in each direction
 amr.v               = 1                # AMR verbose
 amr.max_level       = 2                # maximum level number allowed
 amr.ref_ratio       = 2 2 2 2          # refinement ratio
@@ -34,8 +34,6 @@ prob.PhiV_y_hi = 1000.0
 #-------------------------PeleLM CONTROL----------------------------
 peleLM.v = 2
 peleLM.incompressible = 0
-peleLM.rho = 1.17
-peleLM.mu = 0.0
 peleLM.use_wbar = 1
 peleLM.sdc_iterMax = 2
 peleLM.floor_species = 0
@@ -49,14 +47,14 @@ amr.max_step = 20
 amr.dt_shrink = 0.1
 amr.stop_time = 0.001
 amr.cfl = 0.95
-amr.derive_plot_vars = avg_pressure mag_vort mass_fractions chargedistrib efieldx efieldy LorentzFx LorentzFy 
+amr.derive_plot_vars = avg_pressure mag_vort mass_fractions chargedistrib efieldx efieldy LorentzFx LorentzFy
 
 peleLM.chem_integrator = "ReactorCvode"
 peleLM.use_typ_vals_chem = 1          # Use species/temp typical values in CVODE
 ode.rtol = 1.0e-7                     # Relative tolerance of the chemical solve
 ode.atol = 1.0e-6                     # Absolute tolerance factor applied on typical values
-cvode.solve_type = denseAJ_direct     # CVODE Linear solve type (for Newton direction) 
-cvode.max_order  = 4                  # CVODE max BDF order. 
+cvode.solve_type = denseAJ_direct     # CVODE Linear solve type (for Newton direction)
+cvode.max_order  = 4                  # CVODE max BDF order.
 
 #--------------------REFINEMENT CONTROL------------------------
 ef.phiV_lo_bc = Interior Dirichlet
