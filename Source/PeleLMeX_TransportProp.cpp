@@ -305,39 +305,24 @@ PeleLM::calcDiffusivity(const TimeStamp& a_time)
     }
 #endif
 
-    const amrex::Real Sc_inv = m_Schmidt_inv;
     const amrex::Real Pr_inv = m_Prandtl_inv;
-    const int do_unity_le = m_unity_Le;
-    const int do_soret = m_use_soret;
+    const amrex::Real Le_inv = m_Lewis_inv;
+    const bool do_fixed_Le = (m_fixed_Le != 0);
+    const bool do_fixed_Pr = (m_fixed_Pr != 0);
+    const bool do_soret = (m_use_soret != 0);
+    const int soret_idx =
+      do_soret ? 1
+               : 0; // pass soret array, or pass mu as dummy (won't do anything)
     amrex::ParallelFor(
       ldata_p->diff_cc, ldata_p->diff_cc.nGrowVect(),
       [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
-        if (do_soret != 0) {
-          getTransportCoeffSoret(
-            i, j, k, Array4<Real const>(sma[box_no], FIRSTSPEC),
-            Array4<Real const>(sma[box_no], TEMP), Array4<Real>(dma[box_no], 0),
-            Array4<Real>(dma[box_no], NUM_SPECIES + 2),
-            Array4<Real>(dma[box_no], NUM_SPECIES),
-            Array4<Real>(dma[box_no], NUM_SPECIES + 1), ltransparm);
-
-        } else {
-          if (do_unity_le != 0) {
-            getTransportCoeffUnityLe(
-              i, j, k, Sc_inv, Pr_inv,
-              Array4<Real const>(sma[box_no], FIRSTSPEC),
-              Array4<Real const>(sma[box_no], TEMP),
-              Array4<Real>(dma[box_no], 0),
-              Array4<Real>(dma[box_no], NUM_SPECIES),
-              Array4<Real>(dma[box_no], NUM_SPECIES + 1), ltransparm);
-          } else {
-            getTransportCoeff(
-              i, j, k, Array4<Real const>(sma[box_no], FIRSTSPEC),
-              Array4<Real const>(sma[box_no], TEMP),
-              Array4<Real>(dma[box_no], 0),
-              Array4<Real>(dma[box_no], NUM_SPECIES),
-              Array4<Real>(dma[box_no], NUM_SPECIES + 1), ltransparm);
-          }
-        }
+        getTransportCoeff(
+          i, j, k, do_fixed_Le, do_fixed_Pr, do_soret, Le_inv, Pr_inv,
+          Array4<Real const>(sma[box_no], FIRSTSPEC),
+          Array4<Real const>(sma[box_no], TEMP), Array4<Real>(dma[box_no], 0),
+          Array4<Real>(dma[box_no], NUM_SPECIES + 1 + soret_idx),
+          Array4<Real>(dma[box_no], NUM_SPECIES),
+          Array4<Real>(dma[box_no], NUM_SPECIES + 1), ltransparm);
 #ifdef PELE_USE_EFIELD
         getKappaSp(
           i, j, k, mwt.arr, zk, Array4<Real const>(sma[box_no], FIRSTSPEC),

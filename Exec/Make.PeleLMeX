@@ -99,6 +99,10 @@ ifeq ($(PELE_COMPILE_AJACOBIAN), TRUE)
   DEFINES += -DPELE_COMPILE_AJACOBIAN
 endif
 
+ifeq ($(PELE_CVODE_FORCE_YCORDER), TRUE)
+  DEFINES += -DPELE_CVODE_FORCE_YCORDER
+endif
+
 ChemDir  = Mechanisms/$(Chemistry_Model)
 
 PPdirs := Source/Utility/PMF Source/Utility/TurbInflow Source/Utility/PltFileManager Source/Utility/Diagnostics
