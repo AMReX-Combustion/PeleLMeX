@@ -132,7 +132,7 @@ imperative.
 
 ## Citation
 
-To cite PeleLMeX, please use [![Citing](https://joss.theoj.org/papers/10.21105/joss.05450/status.svg)](https://joss.theoj.org/papers/10.21105/joss.05450) and [the Pele software suite](https://doi.org/10.1137/1.9781611977967)
+To cite PeleLMeX, please use [![Citing](https://joss.theoj.org/papers/10.21105/joss.05450/status.svg)](https://joss.theoj.org/papers/10.21105/joss.05450) and [the Pele software suite](https://doi.org/10.1137/1.9781611977967.2)
 
 ```
 @article{PeleLMeX_JOSS,
