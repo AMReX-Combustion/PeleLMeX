@@ -114,6 +114,7 @@ IO parameters
     amr.initDataPlt      = plt01000        # [OPT, DEF=""] Provide a plotfile from which to extract initial data
     amr.regrid_on_restart = 1              # [OPT, DEF="0"] Trigger a regrid after the data from checkpoint are loaded
     amr.n_files          = 64              # [OPT, DEF="min(256,NProcs)"] Number of files to write per level
+    
 Refinement controls
 -------------------
 
