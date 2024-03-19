@@ -1097,37 +1097,3 @@ PeleLM::WriteJobInfo(const std::string& path) const
     jobInfoFile.close();
   }
 }
-
-/*
-void
-PeleLM::dumpFAB() {
-
-  AMREX_ALWAYS_ASSERT(m_fab_slice_dir >= 0 m_fab_slice_dir < AMREX_SPACEDIM);
-  Vector<Box> sliceBoxes(finest_level-1);
-
-
-  IntVect sliceLo = geom[finest_level].ProbLo();
-  IntVect sliceHi = geom[finest_level].ProbHi();
-
-  sliceLo[m_fab_slice_dir] = m_fab_slice_loc;
-  sliceHi[m_fab_slice_dir] = m_fab_slice_hi;
-
-  Box sliceBox(sliceLo,sliceHi);
-  FArrayBox(sliceBox,AMREX_SPACEDIM,true);
-
-  int refRatio = 1;
-  for (int lev = finest_level; lev >= 0; lev--) {
-    auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
-
-    for (MFIter mfi(ldata_p->state, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
-      const Box& bx = mfi.tilebox();
-      if(sliceBox.intersects(bx)) {
-
-      }
-
-    }
-  }
-
-
-}
-*/
