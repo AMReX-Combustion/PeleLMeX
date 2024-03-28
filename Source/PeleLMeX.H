@@ -1790,6 +1790,7 @@ public:
   amrex::Real m_max_wall_time = -1.0;
   int m_nstep = -1;
   int m_max_step = -1;
+  int m_nfiles = 1;
 
   int m_regrid_int = -1;
   int m_regrid_on_restart = 0;
