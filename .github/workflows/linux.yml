@@ -166,12 +166,12 @@ jobs:
     - name: Repo Dependencies
       run: Utils/CloneDeps.sh
     - name: GenerateTurbFile
-      env:
-         AMREX_HOME: ${GITHUB_WORKSPACE}/Submodules/PelePhysics/Submodules/amrex
-      working-directory: ./Exec/RegTests/TurbInflow/TurbFileHIT
+      working-directory: ./Submodules/PelePhysics/Support/TurbFileHIT
       run: |
         make -j 2 COMP=gnu
-        ./PeleTurb3d.gnu.ex input hit_file=../../HITDecay/hit_ic_4_32.dat input_ncell=32 amrex.abort_on_unused_inputs=1
+        ./PeleTurb3d.gnu.ex input hit_file=${GITHUB_WORKSPACE}/Exec/RegTests/HITDecay/hit_ic_4_32.dat input_ncell=32 amrex.abort_on_unused_inputs=1
+        mkdir ${GITHUB_WORKSPACE}/Exec/RegTests/TurbInflow/TurbFileHIT
+        cp -r TurbTEST ${GITHUB_WORKSPACE}/Exec/RegTests/TurbInflow/TurbFileHIT
     - name: Build
       working-directory: ./Exec/RegTests/TurbInflow/
       run: |
