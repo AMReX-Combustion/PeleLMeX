@@ -113,7 +113,8 @@ IO parameters
     amr.restart          = chk00100        # [OPT, DEF=""] Checkpoint from which to restart the simulation
     amr.initDataPlt      = plt01000        # [OPT, DEF=""] Provide a plotfile from which to extract initial data
     amr.regrid_on_restart = 1              # [OPT, DEF="0"] Trigger a regrid after the data from checkpoint are loaded
-
+    amr.n_files          = 64              # [OPT, DEF="min(256,NProcs)"] Number of files to write per level
+    
 Refinement controls
 -------------------
 
@@ -476,6 +477,7 @@ fine-covered regions are masked. The following provide examples for each diagnos
     peleLM.xnormP.int    = 5                                        # Frequency (as step #) for performing the diagnostic
     peleLM.xnormP.interpolation = Linear                            # [OPT, DEF=Linear] Interpolation type : Linear or Quadratic
     peleLM.xnormP.field_names = x_velocity mag_vort density         # List of variables outputted to the 2D pltfile
+    peleLM.xnormP.n_files = 2                                       # [OPT, DEF="min(256,NProcs)"] Number of files to write per level
 
     peleLM.condT.type = DiagConditional                             # Diagnostic type
     peleLM.condT.file = condTest                                    # Output file prefix
