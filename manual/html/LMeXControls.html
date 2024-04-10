@@ -204,6 +204,7 @@ the first stopping criterion encountered will lead to termination of the simulat
 <span class="n">amr</span><span class="o">.</span><span class="n">restart</span>          <span class="o">=</span> <span class="n">chk00100</span>        <span class="c1"># [OPT, DEF=&quot;&quot;] Checkpoint from which to restart the simulation</span>
 <span class="n">amr</span><span class="o">.</span><span class="n">initDataPlt</span>      <span class="o">=</span> <span class="n">plt01000</span>        <span class="c1"># [OPT, DEF=&quot;&quot;] Provide a plotfile from which to extract initial data</span>
 <span class="n">amr</span><span class="o">.</span><span class="n">regrid_on_restart</span> <span class="o">=</span> <span class="mi">1</span>              <span class="c1"># [OPT, DEF=&quot;0&quot;] Trigger a regrid after the data from checkpoint are loaded</span>
+<span class="n">amr</span><span class="o">.</span><span class="n">n_files</span>          <span class="o">=</span> <span class="mi">64</span>              <span class="c1"># [OPT, DEF=&quot;min(256,NProcs)&quot;] Number of files to write per level</span>
 </pre></div>
 </div>
 </section>
@@ -563,6 +564,7 @@ fine-covered regions are masked. The following provide examples for each diagnos
 <span class="n">peleLM</span><span class="o">.</span><span class="n">xnormP</span><span class="o">.</span><span class="n">int</span>    <span class="o">=</span> <span class="mi">5</span>                                        <span class="c1"># Frequency (as step #) for performing the diagnostic</span>
 <span class="n">peleLM</span><span class="o">.</span><span class="n">xnormP</span><span class="o">.</span><span class="n">interpolation</span> <span class="o">=</span> <span class="n">Linear</span>                            <span class="c1"># [OPT, DEF=Linear] Interpolation type : Linear or Quadratic</span>
 <span class="n">peleLM</span><span class="o">.</span><span class="n">xnormP</span><span class="o">.</span><span class="n">field_names</span> <span class="o">=</span> <span class="n">x_velocity</span> <span class="n">mag_vort</span> <span class="n">density</span>         <span class="c1"># List of variables outputted to the 2D pltfile</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">xnormP</span><span class="o">.</span><span class="n">n_files</span> <span class="o">=</span> <span class="mi">2</span>                                       <span class="c1"># [OPT, DEF=&quot;min(256,NProcs)&quot;] Number of files to write per level</span>
 
 <span class="n">peleLM</span><span class="o">.</span><span class="n">condT</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="n">DiagConditional</span>                             <span class="c1"># Diagnostic type</span>
 <span class="n">peleLM</span><span class="o">.</span><span class="n">condT</span><span class="o">.</span><span class="n">file</span> <span class="o">=</span> <span class="n">condTest</span>                                    <span class="c1"># Output file prefix</span>
