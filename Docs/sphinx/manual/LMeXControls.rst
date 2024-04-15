@@ -36,6 +36,15 @@ Computational domain definition
     peleLM.lo_bc = Interior Interior Inflow
     peleLM.hi_bc = Interior Interior Inflow
 
+If specifying boundaries as ``Inflow``, the bcnormal function must be defined
+in the ``pelelmex_prob.H`` file for the case to define the inflow conditions.
+``Inflow`` boundaries may also be augmented with spatially and temporally
+varying turbulent fluctuations using the ``TurbInflow`` utility from
+PelePhysics. See the ``Exec/RegTests/TurbInflow`` test for an example of how
+to use this capability and the
+`PelePhysics  documentation <https://amrex-combustion.github.io/PelePhysics/Utility.html#turbulent-inflows>`_
+for the relevant input file flags.
+
 Grid/AMR parameters
 -------------------
 
@@ -239,7 +248,7 @@ PeleLMeX algorithm
     peleLM.gravity = 0.0 0.0 -9.81         # [OPT, DEF=Vec{0.0}] Gravity vector [MKS]
     peleLM.gradP0 = 0.0 0.0 10.0           # [OPT, DEF=Vec{0.0}] Average background pressure gradient [Pa/m]
     peleLM.do_periodic_channel = 0         # [OPT, DEF= 0] Add an automatic pressure gradient to maintain initial condition mass flow rate in periodic channel
-    peleLM.periodic_channel_dir = 2        # [OPT, DEF= -1] Required if do_periodic_channel != 0. Direction to apply pressure gradient.    
+    peleLM.periodic_channel_dir = 2        # [OPT, DEF= -1] Required if do_periodic_channel != 0. Direction to apply pressure gradient.
     peleLM.closed_chamber = 0              # [OPT] Override the automatic detection of closed chamber (based on Outflow(s))
     peleLM.floor_species = 0               # [OPT, DEF=0] Crudely enforce mass fraction positivity
     peleLM.deltaT_verbose = 0              # [OPT, DEF=0] Verbose of the deltaT iterative solve algorithm
@@ -258,7 +267,7 @@ Transport coeffs and LES
     peleLM.Prandtl = 0.7                   # [OPT, DEF=0.7] If fixed_Pr or doing LES, specifies the Prandtl number
     peleLM.Schmidt = 0.7                   # [OPT, DEF=0.7] If doing LES, specifies the Schmidt number
     peleLM.Lewis = 1.0                     # [OPT, DEF=1.0] If fixed_Le, specifies the Lewis number
-    
+
     peleLM.les_model = "None"              # [OPT, DEF="None"] Model to compute turbulent viscosity: None, Smagorinsky, WALE, Sigma
     peleLM.les_cs_smag = 0.18              # [OPT, DEF=0.18] If using Smagorinsky LES model, provides model coefficient
     peleLM.les_cm_wale = 0.60              # [OPT, DEF=0.60] If using WALE LES model, provides model coefficient
@@ -280,7 +289,7 @@ Chemistry integrator
     cvode.solve_type = denseAJ_direct           # [OPT, DEF=GMRES] Linear solver employed for CVODE Newton direction
     cvode.max_order  = 4                        # [OPT, DEF=2] Maximum order of the BDF method in CVODE
     cvode.max_substeps = 10000                  # [OPT, DEF=10000] Maximum number of substeps for the linear solver in CVODE
-    
+
 Note that the last five parameters belong to the Reactor class of PelePhysics but are specified here for completeness. In particular, CVODE is the adequate choice of integrator to tackle PeleLMeX large time step sizes. Several linear solvers are available depending on whether or not GPU are employed: on CPU, `dense_direct` is a finite-difference direct solver, `denseAJ_direct` is an analytical-jacobian direct solver (preferred choice), `sparse_direct` is an analytical-jacobian sparse direct solver based on the KLU library and `GMRES` is a matrix-free iterative solver; on GPU `GMRES` is a matrix-free iterative solver (available on all the platforms), `sparse_direct` is a batched block-sparse direct solve based on NVIDIA's cuSparse (only with CUDA), `magma_direct` is a batched block-dense direct solve based on the MAGMA library (available with CUDA and HIP. Different `cvode.solve_type` should be tried before increasing the `cvode.max_substeps`.
 
 Embedded Geometry

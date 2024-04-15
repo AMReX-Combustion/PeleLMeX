@@ -162,16 +162,22 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: System Dependencies
-      run: .github/workflows/dependencies/dependencies_gcc10.sh
+      run: |
+        .github/workflows/dependencies/dependencies_gcc10.sh
+         sudo apt-get install -y python3-setuptools
+         python3 -m pip install --user scipy
+         python3 -m pip install --user matplotlib
+         python3 -m pip install --user numpy
     - name: Repo Dependencies
       run: Utils/CloneDeps.sh
     - name: GenerateTurbFile
-      env:
-         AMREX_HOME: ${GITHUB_WORKSPACE}/Submodules/PelePhysics/Submodules/amrex
-      working-directory: ./Exec/RegTests/TurbInflow/TurbFileHIT
+      working-directory: ./Submodules/PelePhysics/Support/TurbFileHIT
       run: |
+        ./gen_hit_ic.py -k0 4 -N 32 -Nk 256
         make -j 2 COMP=gnu
-        ./PeleTurb3d.gnu.ex input hit_file=../../HITDecay/hit_ic_4_32.dat input_ncell=32 amrex.abort_on_unused_inputs=1
+        ./PeleTurb3d.gnu.ex input hit_file=hit_ic_4_32.dat input_ncell=32 amrex.abort_on_unused_inputs=1
+        mkdir ${GITHUB_WORKSPACE}/Exec/RegTests/TurbInflow/TurbFileHIT
+        cp -r TurbTEST ${GITHUB_WORKSPACE}/Exec/RegTests/TurbInflow/TurbFileHIT
     - name: Build
       working-directory: ./Exec/RegTests/TurbInflow/
       run: |

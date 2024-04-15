@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 
 echo "Getting PeleLMeX dependencies - tests ... "
-git submodule update --init --recursive
+git submodule update --init --recursive --recommend-shallow
