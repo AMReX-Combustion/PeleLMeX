@@ -133,6 +133,14 @@ This file needs to specified along with the executable as an <cite>argv</cite> o
 <span class="n">peleLM</span><span class="o">.</span><span class="n">hi_bc</span> <span class="o">=</span> <span class="n">Interior</span> <span class="n">Interior</span> <span class="n">Inflow</span>
 </pre></div>
 </div>
+<p>If specifying boundaries as <code class="docutils literal notranslate"><span class="pre">Inflow</span></code>, the bcnormal function must be defined
+in the <code class="docutils literal notranslate"><span class="pre">pelelmex_prob.H</span></code> file for the case to define the inflow conditions.
+<code class="docutils literal notranslate"><span class="pre">Inflow</span></code> boundaries may also be augmented with spatially and temporally
+varying turbulent fluctuations using the <code class="docutils literal notranslate"><span class="pre">TurbInflow</span></code> utility from
+PelePhysics. See the <code class="docutils literal notranslate"><span class="pre">Exec/RegTests/TurbInflow</span></code> test for an example of how
+to use this capability and the
+<a class="reference external" href="https://amrex-combustion.github.io/PelePhysics/Utility.html#turbulent-inflows">PelePhysics  documentation</a>
+for the relevant input file flags.</p>
 </section>
 <section id="grid-amr-parameters">
 <h2>Grid/AMR parameters<a class="headerlink" href="#grid-amr-parameters" title="Link to this heading"></a></h2>
