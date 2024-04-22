@@ -998,13 +998,13 @@ public:
     const amrex::Geometry& a_geom,
     const amrex::Real& a_factor = 1.0);
   void addRhoYFluxesA74(
-      const amrex::Array<const amrex::MultiFab*, AMREX_SPACEDIM>& a_fluxes,
-      const amrex::Geometry& a_geom,
-      const amrex::Real& a_factor = 1.0);
+    const amrex::Array<const amrex::MultiFab*, AMREX_SPACEDIM>& a_fluxes,
+    const amrex::Geometry& a_geom,
+    const amrex::Real& a_factor = 1.0);
   void addRhoYFluxesPatch(
-        const amrex::Array<const amrex::MultiFab*, AMREX_SPACEDIM>& a_fluxes,
-        const amrex::Geometry& a_geom,
-        const amrex::Real& a_factor = 1.0);
+    const amrex::Array<const amrex::MultiFab*, AMREX_SPACEDIM>& a_fluxes,
+    const amrex::Geometry& a_geom,
+    const amrex::Real& a_factor = 1.0);
   void addUmacFluxes(
     std::unique_ptr<AdvanceAdvData>& advData, const amrex::Geometry& a_geom);
   void openTempFile();
@@ -1700,7 +1700,7 @@ public:
   ProbParm* prob_parm = nullptr;
   ProbParm* prob_parm_d = nullptr;
 
-  //Patch parameters
+  // Patch parameters
   BPatch* boundary_patches = nullptr;
   BPatch* boundary_patches_d = nullptr;
 
@@ -1919,7 +1919,7 @@ public:
 
   // Temporals
   int m_do_temporals = 0;
-  int m_do_patch_mfr=0;
+  int m_do_patch_mfr = 0;
   amrex::Vector<std::unique_ptr<BPatch>> m_bPatches;
   int m_temp_int = 5;
   int m_do_extremas = 0;

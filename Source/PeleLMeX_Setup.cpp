@@ -45,9 +45,10 @@ PeleLM::Setup()
   // Ensure grid is isotropic
   {
     auto const dx = geom[0].CellSizeArray();
-    amrex::Print()<<"\n Dx = "<<dx[0]<<" "<<dx[1]<<" "<<dx[2];
+    amrex::Print() << "\n Dx = " << dx[0] << " " << dx[1] << " " << dx[2];
     AMREX_ALWAYS_ASSERT(AMREX_D_TERM(
-      , amrex::almostEqual(dx[0], dx[1],10), &&amrex::almostEqual(dx[1], dx[2],10)));
+      , amrex::almostEqual(dx[0], dx[1], 10),
+      &&amrex::almostEqual(dx[1], dx[2], 10)));
   }
   // Print build info to screen
   const char* githash1 = buildInfoGetGitHash(1);
@@ -95,11 +96,10 @@ PeleLM::Setup()
   // Diagnostics setup
   createDiagnostics();
 
-  //Boundary Patch Setup
-  if(m_do_patch_mfr){
-	  initBPatches(Geom(0));
+  // Boundary Patch Setup
+  if (m_do_patch_mfr) {
+    initBPatches(Geom(0));
   }
-
 
   // Initialize Level Hierarchy data
   resizeArray();
