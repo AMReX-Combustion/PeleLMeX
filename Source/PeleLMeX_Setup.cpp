@@ -1,6 +1,7 @@
 #include <PeleLMeX.H>
 #include <AMReX_ParmParse.H>
 #include <PeleLMeX_DeriveFunc.H>
+#include <PeleLMeX_BPatch.H>
 #include "PelePhysics.H"
 #include <AMReX_buildInfo.H>
 #ifdef PELE_USE_EFIELD
@@ -44,8 +45,9 @@ PeleLM::Setup()
   // Ensure grid is isotropic
   {
     auto const dx = geom[0].CellSizeArray();
+    amrex::Print()<<"\n Dx = "<<dx[0]<<" "<<dx[1]<<" "<<dx[2];
     AMREX_ALWAYS_ASSERT(AMREX_D_TERM(
-      , amrex::almostEqual(dx[0], dx[1]), &&amrex::almostEqual(dx[1], dx[2])));
+      , amrex::almostEqual(dx[0], dx[1],10), &&amrex::almostEqual(dx[1], dx[2],10)));
   }
   // Print build info to screen
   const char* githash1 = buildInfoGetGitHash(1);
@@ -92,6 +94,12 @@ PeleLM::Setup()
 #endif
   // Diagnostics setup
   createDiagnostics();
+
+  //Boundary Patch Setup
+  if(m_do_patch_mfr){
+	  initBPatches(Geom(0));
+  }
+
 
   // Initialize Level Hierarchy data
   resizeArray();
@@ -540,6 +548,7 @@ PeleLM::readParameters()
     pp.query("do_extremas", m_do_extremas);
     pp.query("do_mass_balance", m_do_massBalance);
     pp.query("do_species_balance", m_do_speciesBalance);
+    pp.query("do_patch_mfr", m_do_patch_mfr);
   }
 
   // -----------------------------------------
