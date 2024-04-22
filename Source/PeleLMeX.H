@@ -997,10 +997,6 @@ public:
     const amrex::Array<const amrex::MultiFab*, AMREX_SPACEDIM>& a_fluxes,
     const amrex::Geometry& a_geom,
     const amrex::Real& a_factor = 1.0);
-  void addRhoYFluxesA74(
-    const amrex::Array<const amrex::MultiFab*, AMREX_SPACEDIM>& a_fluxes,
-    const amrex::Geometry& a_geom,
-    const amrex::Real& a_factor = 1.0);
   void addRhoYFluxesPatch(
     const amrex::Array<const amrex::MultiFab*, AMREX_SPACEDIM>& a_fluxes,
     const amrex::Geometry& a_geom,
