@@ -56,35 +56,37 @@ public:
       amrex::Real xp, yp, zp;
 
       point_coordinate[m_boundary_dir] = 0.0;
+#if (AMREX_SPACEDIM == 2)
       xp = point_coordinate[0];
       yp = point_coordinate[1];
-
-#if (AMREX_SPACEDIM == 3)
+      if (m_patchtype_num == 0) {
+        inside = true;
+      } else if (m_patchtype_num == 1) {
+        amrex::Real patch_line_radius_touse = m_patch_circle_radius + dx / 2.0;
+        amrex::Real rad = sqrt(
+          (xp - m_patch_circle_center[0]) * (xp - m_patch_circle_center[0]) +
+          (yp - m_patch_circle_center[1]) * (yp - m_patch_circle_center[1]));
+        if (rad <= patch_line_radius_touse) {
+          inside = true;
+        }
+      }
+#elif (AMREX_SPACEDIM == 3)
+      xp = point_coordinate[0];
+      yp = point_coordinate[1];
       zp = point_coordinate[2];
-#endif
 
       if (m_patchtype_num == 0) {
         inside = true;
       } else if (m_patchtype_num == 1) {
-        if (AMREX_SPACEDIM == 2) {
-          amrex::Real patch_line_radius_touse =
-            m_patch_circle_radius + dx / 2.0;
-          amrex::Real rad = sqrt(
-            (xp - m_patch_circle_center[0]) * (xp - m_patch_circle_center[0]) +
-            (yp - m_patch_circle_center[1]) * (yp - m_patch_circle_center[1]));
-          if (rad <= patch_line_radius_touse) {
-            inside = true;
-          }
-        } else {
-          amrex::Real patch_circle_radius_touse =
-            m_patch_circle_radius + dx * sqrt2 / 2.0;
-          amrex::Real rad = sqrt(
-            (xp - m_patch_circle_center[0]) * (xp - m_patch_circle_center[0]) +
-            (yp - m_patch_circle_center[1]) * (yp - m_patch_circle_center[1]) +
-            (zp - m_patch_circle_center[2]) * (zp - m_patch_circle_center[2]));
-          if (rad <= patch_circle_radius_touse) {
-            inside = true;
-          }
+
+        amrex::Real patch_circle_radius_touse =
+          m_patch_circle_radius + dx * sqrt2 / 2.0;
+        amrex::Real rad = sqrt(
+          (xp - m_patch_circle_center[0]) * (xp - m_patch_circle_center[0]) +
+          (yp - m_patch_circle_center[1]) * (yp - m_patch_circle_center[1]) +
+          (zp - m_patch_circle_center[2]) * (zp - m_patch_circle_center[2]));
+        if (rad <= patch_circle_radius_touse) {
+          inside = true;
         }
 
       } else if (m_patchtype_num == 2) {
@@ -168,6 +170,7 @@ public:
           inside = true;
         }
       }
+#endif
 
       return inside;
     }

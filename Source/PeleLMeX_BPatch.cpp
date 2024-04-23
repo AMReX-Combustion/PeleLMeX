@@ -8,7 +8,6 @@ BPatch::BPatch(const std::string& patch_name, const amrex::Geometry& geom)
   std::string ppbpatch = "bpatch." + m_patchname;
   amrex::ParmParse ps(ppbpatch);
 
-  const auto dx = geom.CellSizeArray();
   auto prob_lo = geom.ProbLoArray();
   auto prob_hi = geom.ProbHiArray();
 
