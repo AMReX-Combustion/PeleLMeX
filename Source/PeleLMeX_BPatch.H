@@ -51,9 +51,9 @@ public:
       amrex::Real dx) const
     {
       bool inside = false;
-      const amrex::Real sqrt2 = sqrt(2.0);
+
       // auto dx = geom.CellSizeArray();
-      amrex::Real xp, yp, zp;
+      amrex::Real xp, yp;
 
       point_coordinate[m_boundary_dir] = 0.0;
 #if (AMREX_SPACEDIM == 2)
@@ -71,6 +71,9 @@ public:
         }
       }
 #elif (AMREX_SPACEDIM == 3)
+      amrex::Real zp;
+      const amrex::Real sqrt2 = sqrt(2.0);
+
       xp = point_coordinate[0];
       yp = point_coordinate[1];
       zp = point_coordinate[2];
