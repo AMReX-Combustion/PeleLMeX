@@ -21,7 +21,6 @@ public:
     int* speciesIndex = nullptr;
     amrex::Real* speciesFlux = nullptr;
 
-
     // In 2D, a boundary patch is a line
     amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> m_patch_line_center;
     amrex::Real m_patch_line_radius;
@@ -67,38 +66,38 @@ public:
       if (m_patchtype_num == 0) {
         inside = true;
       } else if (m_patchtype_num == 1) {
-    	  if(AMREX_SPACEDIM==2){
-    		  amrex::Real patch_line_radius_touse =
-    		            m_patch_circle_radius + dx / 2.0;
-    		  amrex::Real rad = sqrt(
-    		            (xp - m_patch_circle_center[0]) * (xp - m_patch_circle_center[0]) +
-    		            (yp - m_patch_circle_center[1]) * (yp - m_patch_circle_center[1]));
-    		  if (rad <= patch_line_radius_touse) {
-    		            inside = true;
-    		          }
-    	  } else {
-    		  amrex::Real patch_circle_radius_touse =
-    		            m_patch_circle_radius + dx * sqrt2 / 2.0;
-    		          amrex::Real rad = sqrt(
-    		            (xp - m_patch_circle_center[0]) * (xp - m_patch_circle_center[0]) +
-    		            (yp - m_patch_circle_center[1]) * (yp - m_patch_circle_center[1]) +
-    		            (zp - m_patch_circle_center[2]) * (zp - m_patch_circle_center[2]));
-    		          if (rad <= patch_circle_radius_touse) {
-    		                    inside = true;
-    		                  }
-
-    	  }
-
+        if (AMREX_SPACEDIM == 2) {
+          amrex::Real patch_line_radius_touse =
+            m_patch_circle_radius + dx / 2.0;
+          amrex::Real rad = sqrt(
+            (xp - m_patch_circle_center[0]) * (xp - m_patch_circle_center[0]) +
+            (yp - m_patch_circle_center[1]) * (yp - m_patch_circle_center[1]));
+          if (rad <= patch_line_radius_touse) {
+            inside = true;
+          }
+        } else {
+          amrex::Real patch_circle_radius_touse =
+            m_patch_circle_radius + dx * sqrt2 / 2.0;
+          amrex::Real rad = sqrt(
+            (xp - m_patch_circle_center[0]) * (xp - m_patch_circle_center[0]) +
+            (yp - m_patch_circle_center[1]) * (yp - m_patch_circle_center[1]) +
+            (zp - m_patch_circle_center[2]) * (zp - m_patch_circle_center[2]));
+          if (rad <= patch_circle_radius_touse) {
+            inside = true;
+          }
+        }
 
       } else if (m_patchtype_num == 2) {
         amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> patch_rectangle_lo_touse =
-          {AMREX_D_DECL(m_patch_rectangle_lo[0] - dx / 2.0,
-           m_patch_rectangle_lo[1] - dx / 2.0,
-           m_patch_rectangle_lo[2] - dx / 2.0)};
+          {AMREX_D_DECL(
+            m_patch_rectangle_lo[0] - dx / 2.0,
+            m_patch_rectangle_lo[1] - dx / 2.0,
+            m_patch_rectangle_lo[2] - dx / 2.0)};
         amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> patch_rectangle_hi_touse =
-          {AMREX_D_DECL(m_patch_rectangle_hi[0] + dx / 2.0,
-           m_patch_rectangle_hi[1] + dx / 2.0,
-           m_patch_rectangle_hi[2] + dx / 2.0)};
+          {AMREX_D_DECL(
+            m_patch_rectangle_hi[0] + dx / 2.0,
+            m_patch_rectangle_hi[1] + dx / 2.0,
+            m_patch_rectangle_hi[2] + dx / 2.0)};
         patch_rectangle_hi_touse[m_boundary_dir] = 0.0;
         patch_rectangle_lo_touse[m_boundary_dir] = 0.0;
         if (
@@ -210,7 +209,9 @@ public:
   BpatchDataContainer* getDeviceData() { return m_bpdata_d; }
 
   std::string m_patchname;
-  std::string m_patchtype; // values: "fullboundary","circle","rectangle","annular-circle","annular-rectangle"
+  std::string
+    m_patchtype; // values:
+                 // "fullboundary","circle","rectangle","annular-circle","annular-rectangle"
   amrex::Vector<std::string> speciesList;
 
 protected:

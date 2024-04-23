@@ -25,7 +25,8 @@ BPatch::BPatch(const std::string& patch_name, const amrex::Geometry& geom)
   }
 #elif (AMREX_SPACEDIM == 2)
   if (m_patchtype != "line" && m_patchtype != "full-boundary") {
-    amrex::Abort("\nPatch type for 2-D domains should be line or full-boundary\n");
+    amrex::Abort(
+      "\nPatch type for 2-D domains should be line or full-boundary\n");
   }
 #else
   if (
@@ -60,7 +61,7 @@ BPatch::BPatch(const std::string& patch_name, const amrex::Geometry& geom)
   } else if (m_patchtype == "line") {
     m_bpdata_h.m_patchtype_num = 1;
   } else if (m_patchtype == "circle") {
-	m_bpdata_h.m_patchtype_num = 1;
+    m_bpdata_h.m_patchtype_num = 1;
   } else if (m_patchtype == "rectangle") {
     m_bpdata_h.m_patchtype_num = 2;
   } else if (m_patchtype == "circle-annular") {
@@ -73,15 +74,15 @@ BPatch::BPatch(const std::string& patch_name, const amrex::Geometry& geom)
 
   // Define patch variables
   if (m_patchtype == "line") {
-	  for (int n = 0; n < 2; ++n) {
-	    ps.get("patch_line_center", m_bpdata_h.m_patch_line_center[n], n);
-	  }
-      m_bpdata_h.m_patch_line_center[m_bpdata_h.m_boundary_dir] = 0.0;
-      ps.get("patch_line_radius", m_bpdata_h.m_patch_line_radius);
-      if (m_bpdata_h.m_patch_line_radius <= 0.0) {
-        amrex::Abort("\nPatch radius for line should be greater than 0");
-      }
-    } else if (m_patchtype == "full-boundary") {
+    for (int n = 0; n < 2; ++n) {
+      ps.get("patch_line_center", m_bpdata_h.m_patch_line_center[n], n);
+    }
+    m_bpdata_h.m_patch_line_center[m_bpdata_h.m_boundary_dir] = 0.0;
+    ps.get("patch_line_radius", m_bpdata_h.m_patch_line_radius);
+    if (m_bpdata_h.m_patch_line_radius <= 0.0) {
+      amrex::Abort("\nPatch radius for line should be greater than 0");
+    }
+  } else if (m_patchtype == "full-boundary") {
     for (int n = 0; n < AMREX_SPACEDIM; ++n) {
       m_bpdata_h.m_patch_rectangle_lo[n] = prob_lo[n];
       m_bpdata_h.m_patch_rectangle_hi[n] = prob_hi[n];

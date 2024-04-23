@@ -597,9 +597,10 @@ PeleLM::addRhoYFluxesPatch(
               (bpdevice->m_boundary_lo_hi == 0 ? faceDomain.smallEnd(idim)
                                                : faceDomain.bigEnd(idim));
 
-            amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> point_coordinates{AMREX_D_DECL(
-              prob_lo[0] + (i + 0.5) * dx[0], prob_lo[1] + (j + 0.5) * dx[1],
-              prob_lo[2] + (k + 0.5) * dx[2])};
+            amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> point_coordinates{
+              AMREX_D_DECL(
+                prob_lo[0] + (i + 0.5) * dx[0], prob_lo[1] + (j + 0.5) * dx[1],
+                prob_lo[2] + (k + 0.5) * dx[2])};
 
             Real sum_species_flux = 0.0;
             Real dummy = 0.0;
