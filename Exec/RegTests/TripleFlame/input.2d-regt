@@ -107,3 +107,16 @@ amr.HR.field_name = HeatRelease
 #amrex.fpe_trap_invalid = 1
 #amrex.fpe_trap_zero = 1
 #amrex.fpe_trap_overflow = 1
+
+peleLM.do_temporals = 1
+peleLM.temporal_int = 1
+peleLM.do_patch_mfr=1
+
+peleLM.bpatch.patchnames= outlet
+
+bpatch.outlet.patchtype=line  #(full-boundary,circle,rectangle,circle-annular,rectangle-annular)
+bpatch.outlet.patch_line_radius = 0.005
+bpatch.outlet.patch_line_center = 0.005 0
+bpatch.outlet.boundary_direction=1
+bpatch.outlet.boundary_lo_or_hi=0
+bpatch.outlet.species= O2 N2 CH4 

@@ -426,6 +426,8 @@ to activate `temporal` diagnostics performing these reductions at given interval
     peleLM.do_extremas = 1                      # [OPT, DEF=0] Trigger extremas, if temporals activated
     peleLM.do_mass_balance = 1                  # [OPT, DEF=0] Compute mass balance, if temporals activated
     peleLM.do_species_balance = 1               # [OPT, DEF=0] Compute species mass balance, if temporals activated
+    peleLM.do_patch_mfr=1                       # [OPT, DEF=0] Activate patch based species flux diagbostics
+    peleLM.bpatch.patchnames= <patch_name1 patch_name2 ..> # List of patchnames
 
 The `do_temporal` flag will trigger the creation of a `temporals` folder in your run directory and the following entries
 will be appended to an ASCII `temporals/tempState` file: step, time, dt, kin. energy integral, enstrophy integral, mean pressure

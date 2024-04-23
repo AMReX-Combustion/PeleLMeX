@@ -58,3 +58,11 @@ amr.derive_plot_vars = avg_pressure mag_vort
 #amrex.fpe_trap_invalid = 1
 #amrex.fpe_trap_zero = 1
 #amrex.fpe_trap_overflow = 1
+
+peleLM.do_patch_mfr=1
+peleLM.bpatch.patchnames= full_z
+
+bpatch.full_z.patchtype=full-boundary  #(full-boundary,circle,rectangle,circle-annular,rectangle-annular)
+bpatch.full_z.boundary_direction=2
+bpatch.full_z.boundary_lo_or_hi=0
+bpatch.full_z.species= O2 N2 
