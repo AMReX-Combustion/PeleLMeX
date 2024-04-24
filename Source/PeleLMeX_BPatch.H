@@ -105,6 +105,7 @@ public:
             m_patch_rectangle_hi[2] + dx / 2.0)};
         patch_rectangle_hi_touse[m_boundary_dir] = 0.0;
         patch_rectangle_lo_touse[m_boundary_dir] = 0.0;
+
         if (
           (xp >= patch_rectangle_lo_touse[0] &&
            xp <= patch_rectangle_hi_touse[0]) &&
@@ -133,6 +134,8 @@ public:
           inside = true;
         }
       } else if (m_patchtype_num == 4) {
+        bool inside_outer = false;
+        bool inside_inner = false;
         amrex::GpuArray<amrex::Real, AMREX_SPACEDIM>
           patch_rect_ann_inner_lo_touse = {AMREX_D_DECL(
             m_patch_rect_ann_inner_lo[0] + dx / 2.0,
@@ -157,19 +160,24 @@ public:
         patch_rect_ann_inner_hi_touse[m_boundary_dir] = 0.0;
         patch_rect_ann_outer_lo_touse[m_boundary_dir] = 0.0;
         patch_rect_ann_outer_hi_touse[m_boundary_dir] = 0.0;
-        if (
-          ((xp >= patch_rect_ann_outer_lo_touse[0] &&
-            xp <= patch_rect_ann_outer_hi_touse[0]) &&
-           (yp >= patch_rect_ann_outer_lo_touse[1] &&
-            yp <= patch_rect_ann_outer_hi_touse[1]) &&
-           (zp >= patch_rect_ann_outer_lo_touse[2] &&
-            zp <= patch_rect_ann_outer_hi_touse[2])) &&
-          !((xp >= patch_rect_ann_inner_lo_touse[0] &&
-             xp <= patch_rect_ann_inner_hi_touse[0]) &&
-            (yp >= patch_rect_ann_inner_lo_touse[1] &&
-             yp <= patch_rect_ann_inner_hi_touse[1]) &&
-            (zp >= patch_rect_ann_inner_lo_touse[2] &&
-             zp <= patch_rect_ann_inner_hi_touse[2]))) {
+
+        if (((xp >= patch_rect_ann_outer_lo_touse[0] &&
+              xp <= patch_rect_ann_outer_hi_touse[0]) &&
+             (yp >= patch_rect_ann_outer_lo_touse[1] &&
+              yp <= patch_rect_ann_outer_hi_touse[1]) &&
+             (zp >= patch_rect_ann_outer_lo_touse[2] &&
+              zp <= patch_rect_ann_outer_hi_touse[2]))) {
+          inside_outer = true;
+        }
+        if (((xp >= patch_rect_ann_inner_lo_touse[0] &&
+              xp <= patch_rect_ann_inner_hi_touse[0]) &&
+             (yp >= patch_rect_ann_inner_lo_touse[1] &&
+              yp <= patch_rect_ann_inner_hi_touse[1]) &&
+             (zp >= patch_rect_ann_inner_lo_touse[2] &&
+              zp <= patch_rect_ann_inner_hi_touse[2]))) {
+          inside_inner = true;
+        }
+        if (inside_outer && !inside_inner) {
           inside = true;
         }
       }

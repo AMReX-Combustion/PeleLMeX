@@ -97,7 +97,7 @@ PeleLM::Setup()
   createDiagnostics();
 
   // Boundary Patch Setup
-  if (m_do_patch_mfr) {
+  if (m_do_patch_mfr != 0) {
     initBPatches(Geom(0));
   }
 

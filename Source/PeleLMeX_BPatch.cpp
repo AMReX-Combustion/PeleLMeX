@@ -57,9 +57,7 @@ BPatch::BPatch(const std::string& patch_name, const amrex::Geometry& geom)
   // Define patch_num
   if (m_patchtype == "full-boundary") {
     m_bpdata_h.m_patchtype_num = 0;
-  } else if (m_patchtype == "line") {
-    m_bpdata_h.m_patchtype_num = 1;
-  } else if (m_patchtype == "circle") {
+  } else if (m_patchtype == "line" || m_patchtype == "circle") {
     m_bpdata_h.m_patchtype_num = 1;
   } else if (m_patchtype == "rectangle") {
     m_bpdata_h.m_patchtype_num = 2;
