@@ -557,6 +557,9 @@ PeleLM::addRhoYFluxesPatch(
 #if (AMREX_SPACEDIM == 1)
   area[0] = 1.0;
 #elif (AMREX_SPACEDIM == 2)
+  if (geom[0].IsRZ() && m_bPatches.size() > 0) {
+    Abort("Bpatches not supported in RZ coordinates");
+  }
   area[0] = dx[1];
   area[1] = dx[0];
 #else
