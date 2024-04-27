@@ -61,10 +61,9 @@ PeleLM::speciesBalancePatch()
 {
   tmppatchmfrFile << m_nstep << " " << m_cur_time; // Time info
   for (int n = 0; n < m_bPatches.size(); n++) {
-    BPatch* patch = m_bPatches[n].get();
-    BPatch::BpatchDataContainer bphost = patch->getHostData();
-    for (int i = 0; i < bphost.num_species; i++) {
-      tmppatchmfrFile << " " << bphost.speciesFlux[i];
+    BPatch::BpatchDataContainer* bphost = m_bPatches[n].get()->getHostDataPtr();
+    for (int i = 0; i < bphost->num_species; i++) {
+      tmppatchmfrFile << " " << bphost->speciesFlux[i];
     }
   }
   tmppatchmfrFile << "\n";
@@ -524,8 +523,6 @@ PeleLM::initBPatches(Geometry& a_geom)
   ParmParse pp(pele_prefix);
   int num_bPatches = 0;
   num_bPatches = pp.countval("patchnames");
-  // amrex::Print()<<"\nThere are "<<num_bPatches<<" boundary patches in the
-  // input file.\n";
 
   Vector<std::string> bpatch_name;
   if (num_bPatches > 0) {
@@ -536,6 +533,9 @@ PeleLM::initBPatches(Geometry& a_geom)
   for (int n = 0; n < num_bPatches; ++n) {
     pp.get("patchnames", bpatch_name[n], n);
     m_bPatches[n] = std::make_unique<BPatch>(bpatch_name[n], a_geom);
+    if (m_verbose > 0) {
+      Print() << " Initializing boundary patch: " << bpatch_name[n] << std::endl;
+    }
   }
 }
 
@@ -570,15 +570,15 @@ PeleLM::addRhoYFluxesPatch(
 
     BPatch* patch = m_bPatches[n].get();
     BPatch::BpatchDataContainer const* bpdevice = patch->getDeviceData();
-
-    int idim = bpdevice->m_boundary_dir;
+    BPatch::BpatchDataContainer const* bphost   = patch->getHostDataPtr();
+    const int idim = bphost->m_boundary_dir;
 
     auto faceDomain =
       amrex::convert(a_geom.Domain(), IntVect::TheDimensionVector(idim));
     auto const& fma = a_fluxes[idim]->const_arrays();
 
     // Loop through species specified by user
-    for (int m = 0; m < bpdevice->num_species; m++) {
+    for (int m = 0; m < bphost->num_species; m++) {
 
       Real sum_species_flux_global = 0.0;
 
@@ -617,7 +617,7 @@ PeleLM::addRhoYFluxesPatch(
 
         ParallelAllReduce::Sum<Real>(
           {sum_species_flux_global}, ParallelContext::CommunicatorSub());
-        bpdevice->speciesFlux[m] = a_factor * sum_species_flux_global;
+        bphost->speciesFlux[m] = a_factor * sum_species_flux_global;
         // amrex::Print()<<"\nNew func = "<<a_factor * sum_species_flux_global;
       }
     }
