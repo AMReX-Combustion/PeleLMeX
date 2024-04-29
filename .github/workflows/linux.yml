@@ -19,7 +19,7 @@ jobs:
   #  env:
   #    {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
   #  steps:
-  #  - uses: actions/checkout@v3
+  #  - uses: actions/checkout@v4
   #  - name: System Dependencies
   #    run: .github/workflows/dependencies/dependencies_gcc10.sh
   #  - name: Repo Dependencies
@@ -62,7 +62,7 @@ jobs:
     env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies_gcc10.sh
     - name: Repo Dependencies
@@ -84,7 +84,7 @@ jobs:
     env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Repo Dependencies
       run: |
         Utils/CloneDeps.sh
@@ -116,7 +116,7 @@ jobs:
     env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies_gcc10.sh
     - name: Repo Dependencies
@@ -138,7 +138,7 @@ jobs:
     env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies_gcc10.sh
     - name: Repo Dependencies
@@ -160,7 +160,7 @@ jobs:
     env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: System Dependencies
       run: |
         .github/workflows/dependencies/dependencies_gcc10.sh
@@ -198,7 +198,7 @@ jobs:
     env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: System Dependencies
       run: |
          .github/workflows/dependencies/dependencies_gcc10.sh
