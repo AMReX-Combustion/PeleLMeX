@@ -534,7 +534,8 @@ PeleLM::initBPatches(Geometry& a_geom)
     pp.get("patchnames", bpatch_name[n], n);
     m_bPatches[n] = std::make_unique<BPatch>(bpatch_name[n], a_geom);
     if (m_verbose > 0) {
-      Print() << " Initializing boundary patch: " << bpatch_name[n] << std::endl;
+      Print() << " Initializing boundary patch: " << bpatch_name[n]
+              << std::endl;
     }
   }
 }
@@ -573,7 +574,7 @@ PeleLM::addRhoYFluxesPatch(
 
     BPatch* patch = m_bPatches[n].get();
     BPatch::BpatchDataContainer const* bpdevice = patch->getDeviceData();
-    BPatch::BpatchDataContainer const* bphost   = patch->getHostDataPtr();
+    BPatch::BpatchDataContainer const* bphost = patch->getHostDataPtr();
     const int idim = bphost->m_boundary_dir;
 
     auto faceDomain =
