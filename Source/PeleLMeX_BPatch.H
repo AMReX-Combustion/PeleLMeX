@@ -220,6 +220,7 @@ public:
 
   // Accessors
   BpatchDataContainer getHostData() { return m_bpdata_h; }
+  BpatchDataContainer* getHostDataPtr() { return &m_bpdata_h; }
   BpatchDataContainer* getDeviceData() { return m_bpdata_d; }
 
   std::string m_patchname;
