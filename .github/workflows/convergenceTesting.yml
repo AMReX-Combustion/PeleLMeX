@@ -5,6 +5,9 @@ on:
    schedule:
       - cron: '0 2 * * *'
 
+concurrency:
+  group: ${{ github.ref }}-${{ github.head_ref }}-ConvergenceTesting
+  cancel-in-progress: true
 
 jobs:
   #Run the convergence test on CoVo
@@ -14,11 +17,7 @@ jobs:
     env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
-    - name: Cancel previous runs
-      uses: styfle/cancel-workflow-action@0.6.0
-      with:
-        access_token: ${{github.token}}
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
           submodules: recursive
     - name: System Dependencies

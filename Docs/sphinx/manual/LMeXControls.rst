@@ -472,10 +472,10 @@ turn on state extremas (stored in `temporals/tempExtremas` as min/max for each s
 `temporals/tempMass`) computing the total mass, dMdt and advective mass fluxes across the domain boundaries as well as the error in
 the balance (dMdt - sum of fluxes), and species balance (stored in `temporals/tempSpec`) computing each species total mass, dM_Ydt,
 advective \& diffusive fluxes across the domain boundaries, consumption rate integral and the error (dMdt - sum of fluxes - reaction).
-Users can also monitor specific specifies advective fluxes through specific regions of the domain boundaries (called as boundary patches).
+Users can also monitor species advective fluxes through specific regions of the domain boundaries (called as boundary patches).
 Patches can be defined on the low or high sides of non-embedded boundaries through the use of pre-defined shapes such as `circle`,
-`rectangle`,`circle-annular`, `rectangle-annular` and `full-buondary`. The level-0, advective fluxes of each of the user-specified species will be 
-reported in the ASCII `temppatchmfr` file in temporals folder. 
+`rectangle`,`circle-annular`, `rectangle-annular` and `full-boundary`. The zero AMR level, advective fluxes of each of the user-specified species will be 
+reported in the ASCII `temppatchmfr` file in the temporals folder. 
 
 Combustion diagnostics often involve the use of a mixture fraction and/or a progress variable, both of which can be defined
 at run time and added to the derived variables included in the plotfile. If `mixture_fraction` or `progress_variable` is
