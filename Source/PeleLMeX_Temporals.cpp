@@ -61,7 +61,7 @@ PeleLM::speciesBalancePatch()
 {
   tmppatchmfrFile << m_nstep << " " << m_cur_time; // Time info
   for (int n = 0; n < m_bPatches.size(); n++) {
-    BPatch::BpatchDataContainer* bphost = m_bPatches[n].get()->getHostDataPtr();
+    BPatch::BpatchDataContainer* bphost = m_bPatches[n]->getHostDataPtr();
     for (int i = 0; i < bphost->num_species; i++) {
       tmppatchmfrFile << " " << bphost->speciesFlux[i];
     }
