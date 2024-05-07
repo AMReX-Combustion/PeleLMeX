@@ -16,3 +16,10 @@ temporals
 # OSX files
 .DS_Store
 .AppleDouble
+
+#Eclipse file
+.cproject
+.project
+Exec/**/*.cproject
+Exec/**/*.project
+

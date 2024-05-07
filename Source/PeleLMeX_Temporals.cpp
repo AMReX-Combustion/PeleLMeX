@@ -1,4 +1,5 @@
 #include <PeleLMeX.H>
+#include <PeleLMeX_BPatch.H>
 
 using namespace amrex;
 
@@ -53,6 +54,20 @@ PeleLM::massBalance()
               << " " << massFluxBalance       // domain boundaries mass fluxes
               << " " << std::abs(dmdt - massFluxBalance) << " \n"; // balance
   tmpMassFile.flush();
+}
+
+void
+PeleLM::speciesBalancePatch()
+{
+  tmppatchmfrFile << m_nstep << " " << m_cur_time; // Time info
+  for (int n = 0; n < m_bPatches.size(); n++) {
+    BPatch::BpatchDataContainer* bphost = m_bPatches[n]->getHostDataPtr();
+    for (int i = 0; i < bphost->num_species; i++) {
+      tmppatchmfrFile << " " << bphost->speciesFlux[i];
+    }
+  }
+  tmppatchmfrFile << "\n";
+  tmppatchmfrFile.flush();
 }
 
 void
@@ -502,6 +517,118 @@ PeleLM::addRhoYFluxes(
 }
 
 void
+PeleLM::initBPatches(Geometry& a_geom)
+{
+  std::string pele_prefix = "peleLM.bpatch";
+  ParmParse pp(pele_prefix);
+  int num_bPatches = 0;
+  num_bPatches = pp.countval("patchnames");
+
+  Vector<std::string> bpatch_name;
+  if (num_bPatches > 0) {
+
+    m_bPatches.resize(num_bPatches);
+    bpatch_name.resize(num_bPatches);
+  }
+  for (int n = 0; n < num_bPatches; ++n) {
+    pp.get("patchnames", bpatch_name[n], n);
+    m_bPatches[n] = std::make_unique<BPatch>(bpatch_name[n], a_geom);
+    if (m_verbose > 0) {
+      Print() << " Initializing boundary patch: " << bpatch_name[n]
+              << std::endl;
+    }
+  }
+}
+
+void
+PeleLM::addRhoYFluxesPatch(
+  const Array<const MultiFab*, AMREX_SPACEDIM>& a_fluxes,
+  const Geometry& a_geom,
+  const Real& a_factor)
+{
+
+  if (!(m_nstep % m_temp_int == m_temp_int - 1)) {
+    return;
+  }
+
+  const auto dx = a_geom.CellSizeArray();
+  auto prob_lo = a_geom.ProbLoArray();
+  amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> area;
+
+#if (AMREX_SPACEDIM == 1)
+  area[0] = 1.0;
+#elif (AMREX_SPACEDIM == 2)
+  if (geom[0].IsRZ() && m_bPatches.size() > 0) {
+    Abort("Bpatches not supported in RZ coordinates");
+  }
+  area[0] = dx[1];
+  area[1] = dx[0];
+#else
+  area[0] = dx[1] * dx[2];
+  area[1] = dx[0] * dx[2];
+  area[2] = dx[0] * dx[1];
+#endif
+
+  // Loop through all patches
+  for (int n = 0; n < m_bPatches.size(); n++) {
+
+    BPatch* patch = m_bPatches[n].get();
+    BPatch::BpatchDataContainer const* bpdevice = patch->getDeviceData();
+    BPatch::BpatchDataContainer const* bphost = patch->getHostDataPtr();
+    const int idim = bphost->m_boundary_dir;
+
+    auto faceDomain =
+      amrex::convert(a_geom.Domain(), IntVect::TheDimensionVector(idim));
+    auto const& fma = a_fluxes[idim]->const_arrays();
+
+    // Loop through species specified by user
+    for (int m = 0; m < bphost->num_species; m++) {
+
+      Real sum_species_flux_global = 0.0;
+
+      {
+        auto r = amrex::ParReduce(
+          TypeList<ReduceOpSum, ReduceOpSum>{}, TypeList<Real, Real>{},
+          *a_fluxes[idim], IntVect(0),
+          [=] AMREX_GPU_DEVICE(
+            int box_no, int i, int j, int k) noexcept -> GpuTuple<Real, Real> {
+            Array4<const Real> const& flux = fma[box_no];
+            int idx =
+              (bpdevice->m_boundary_dir == 0
+                 ? i
+                 : (bpdevice->m_boundary_dir == 1 ? j : k));
+            int idx_lo_hi =
+              (bpdevice->m_boundary_lo_hi == 0 ? faceDomain.smallEnd(idim)
+                                               : faceDomain.bigEnd(idim));
+
+            amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> point_coordinates{
+              AMREX_D_DECL(
+                prob_lo[0] + (i + 0.5) * dx[0], prob_lo[1] + (j + 0.5) * dx[1],
+                prob_lo[2] + (k + 0.5) * dx[2])};
+
+            Real sum_species_flux = 0.0;
+            Real dummy = 0.0;
+            const bool ifinside =
+              bpdevice->CheckifPointInside(point_coordinates, dx[0]);
+
+            if (idx == idx_lo_hi and ifinside) {
+              int species_idx = bpdevice->speciesIndex[m];
+              sum_species_flux += flux(i, j, k, species_idx) * area[idim];
+            }
+            return {sum_species_flux, dummy};
+          });
+        sum_species_flux_global = amrex::get<0>(r);
+
+        ParallelAllReduce::Sum<Real>(
+          {sum_species_flux_global}, ParallelContext::CommunicatorSub());
+        bphost->speciesFlux[m] = a_factor * sum_species_flux_global;
+        // amrex::Print()<<"\nNew func = "<<a_factor * sum_species_flux_global;
+      }
+    }
+  }
+}
+
+void
 PeleLM::writeTemporals()
 {
   //----------------------------------------------------------------
@@ -514,6 +641,11 @@ PeleLM::writeTemporals()
   // Species balance
   if ((m_do_speciesBalance != 0) && (m_incompressible == 0)) {
     speciesBalance();
+  }
+
+  // Species balance
+  if ((m_do_patch_mfr != 0) && (m_incompressible == 0)) {
+    speciesBalancePatch();
   }
 
   //----------------------------------------------------------------
@@ -610,6 +742,23 @@ PeleLM::openTempFile()
         std::ios::out | std::ios::app | std::ios_base::binary);
       tmpExtremasFile.precision(12);
     }
+    if (m_do_patch_mfr != 0) {
+      tempFileName = "temporals/temppatchmfr";
+      tmppatchmfrFile.open(
+        tempFileName.c_str(),
+        std::ios::out | std::ios::app | std::ios_base::binary);
+      tmppatchmfrFile.precision(12);
+      tmppatchmfrFile << "#Variables=iter,time";
+      for (int n = 0; n < m_bPatches.size(); n++) {
+        BPatch* patch = m_bPatches[n].get();
+        BPatch::BpatchDataContainer bphost = patch->getHostData();
+        for (int i = 0; i < bphost.num_species; i++) {
+          tmppatchmfrFile << ","
+                          << patch->m_patchname + "_" + patch->speciesList[i];
+        }
+      }
+      tmppatchmfrFile << "\n";
+    }
 #ifdef PELE_USE_EFIELD
     if (m_do_ionsBalance) {
       tempFileName = "temporals/tempIons";
@@ -643,6 +792,10 @@ PeleLM::closeTempFile()
     if (m_do_extremas != 0) {
       tmpExtremasFile.flush();
       tmpExtremasFile.close();
+    }
+    if (m_do_patch_mfr != 0) {
+      tmppatchmfrFile.flush();
+      tmppatchmfrFile.close();
     }
 #ifdef PELE_USE_EFIELD
     if (m_do_ionsBalance) {
