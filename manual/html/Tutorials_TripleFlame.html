@@ -590,15 +590,15 @@ is fairly well captured. We will use the same refinement indicators and simply u
 at which each refinement criteria is used:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>amr.max_level         = 3          # maximum level number allowed
 
-<span class="cp">...</span>
+<span class="c">...</span>
 
 amr.restart           = chk02300 # Restart from checkpoint ?
 
-<span class="cp">...</span>
+<span class="c">...</span>
 
 amr.gradT.max_level   = 2
 
-<span class="cp">...</span>
+<span class="c">...</span>
 
 amr.flame_tracer.max_level  = 3
 </pre></div>
@@ -610,11 +610,11 @@ active control becomes comparatively larger, resulting in slower response of the
 CFL number of 0.3, reduce <cite>tau</cite> and add a second SDC iteration to tighten the coupling between the various processes:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>peleLM.sdc_iterMax = 2
 
-<span class="cp">...</span>
+<span class="c">...</span>
 
 amr.cfl = 0.3
 
-<span class="cp">...</span>
+<span class="c">...</span>
 
 active_control.tau = 1.0e-4            # Control tau (should ~ 10 dt)
 </pre></div>
