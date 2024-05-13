@@ -48,7 +48,7 @@ A cylinder of radius 0.0035 m is placed in the middle of the flow at (0.0:0.0).
 The geometry of the problem is specified in the first block of the ``input.2d-Re500``: ::
 
    #----------------------DOMAIN DEFINITION------------------------
-   geometry.is_periodic = 0 0             # Periodicity in each direction: 0 => no, 1 => yes
+   geometry.is_periodic = 0 1             # Periodicity in each direction: 0 => no, 1 => yes
    geometry.coord_sys   = 0               # 0 => cart, 1 => RZ
    geometry.prob_lo     = -0.02 -0.02     # x_lo y_lo
    geometry.prob_hi     =  0.10  0.02     # x_hi y_hi
