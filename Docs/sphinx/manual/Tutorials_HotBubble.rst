@@ -12,7 +12,7 @@ Introduction
 
 At the core of `PeleLMeX` algorithm is a variable-density, low Mach number Navier-Stokes solver based
 on a fractional step approach. This short ``HotBubble`` tutorial presents the case of a rising light bubble under
-the influence of a gravity field, which exercice this algorithm without the added complexity
+the influence of a gravity field, which exercise this algorithm without the added complexity
 of chemical reactions or embedded boundaries.
 
 ..  _sec:TUTO_HB::PrepStep:
