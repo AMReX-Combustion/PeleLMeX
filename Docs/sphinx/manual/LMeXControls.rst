@@ -257,7 +257,7 @@ PeleLMeX algorithm
     peleLM.evaluate_vars =...              # [OPT, DEF=""] In evaluate mode, list unitTest: diffTerm, divU, instRR, transportCC
 
 Transport coefficients and LES
-------------------------
+------------------------------
 
 ::
 
