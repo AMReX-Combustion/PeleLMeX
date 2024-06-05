@@ -485,7 +485,7 @@ PeleLM::doNodalProject(
     }
   }
 
-  // Average down grap P
+  // Average down grad P
   for (int lev = finest_level - 1; lev >= 0; --lev) {
     auto* ldataFine_p = getLevelDataPtr(lev + 1, AmrNewTime);
     auto* ldataCrse_p = getLevelDataPtr(lev, AmrNewTime);

@@ -73,7 +73,7 @@ jobs:
         working-directory: ./Exec/RegTests/FlameSheet
         run: |
           egrep "warning:|error:" build-output.txt \
-            | egrep -v "Submodules/amrex|Submodules/sundials|Submodules/AMReX-Hydro|GNUmakefile" \
+            | egrep -v "Submodules/amrex|Submodules/sundials|Submodules/AMReX-Hydro|GNUmakefile|ThirdParty" \
             | egrep -v "ld: warning:" | sort | uniq \
             | awk 'BEGIN{i=0}{print $0}{i++}END{print "Warnings: "i}' > warnings.txt
           cat warnings.txt
