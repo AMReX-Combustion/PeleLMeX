@@ -256,7 +256,7 @@ PeleLMeX algorithm
     peleLM.deltaT_tol = 1e-10              # [OPT, DEF=1.e-10] Tolerance of the deltaT solve
     peleLM.evaluate_vars =...              # [OPT, DEF=""] In evaluate mode, list unitTest: diffTerm, divU, instRR, transportCC
 
-Transport coeffs and LES
+Transport coefficients and LES
 ------------------------
 
 ::
@@ -291,6 +291,9 @@ Chemistry integrator
     cvode.max_substeps = 10000                  # [OPT, DEF=10000] Maximum number of substeps for the linear solver in CVODE
 
 Note that the last five parameters belong to the Reactor class of PelePhysics but are specified here for completeness. In particular, CVODE is the adequate choice of integrator to tackle PeleLMeX large time step sizes. Several linear solvers are available depending on whether or not GPU are employed: on CPU, `dense_direct` is a finite-difference direct solver, `denseAJ_direct` is an analytical-jacobian direct solver (preferred choice), `sparse_direct` is an analytical-jacobian sparse direct solver based on the KLU library and `GMRES` is a matrix-free iterative solver; on GPU `GMRES` is a matrix-free iterative solver (available on all the platforms), `sparse_direct` is a batched block-sparse direct solve based on NVIDIA's cuSparse (only with CUDA), `magma_direct` is a batched block-dense direct solve based on the MAGMA library (available with CUDA and HIP. Different `cvode.solve_type` should be tried before increasing the `cvode.max_substeps`.
+
+.. note::
+   The default chemistry integrator is 'ReactorNull' which do not include the chemical source terms.
 
 Embedded Geometry
 -----------------
@@ -338,6 +341,27 @@ EB-level to level 1 (must be below `amr.max_level`) and a derefinement strategy 
 that fine-grid patches do not cross the EB boundary. The last parameter set a safety margin to increase
 how far the derefinement is applied in order to account for grid-patches diagonals and proper nesting constrains.
 Note that the parameter do not ensure explicitly coarse-fine/EB crossings are avoided and the code will fail when this happens.
+
+AMReX generates the EB at the finest level (specified by `amr.max_level`) and subsequently coarsen the resulting
+EB data to coarser AMR levels (as well as multigrid levels) in order to ensure consistency across levels. As a consequence,
+increasing `amr.max_level` during the course of a simulation can lead in small changes to the EB, potentially uncovering
+previously covered regions for which the solver cannot provide initial conditions upon restart. It is thus advised to
+set `amr.max_level` to the desired maximum level you ever plan to use in the simulation, and limit the level at which
+the EB is refined (with `peleLM.refine_EB_max_level`) and refinement criteria are applied (with `amr.*****.max_level`)
+to a lower value while starting the simulation. A side effect of this process is that the generation of the EB can
+be excessively long if `amr.max_level` is large. To speed up the EB generation, one can use the following keys:
+
+::
+
+    eb2.num_coarsen_opt = 3
+    eb2.max_grid_size = 64
+
+Setting `eb2.num_coarsen_opt = 3` effectively speed the EB generation by coarsening the level at which the recursive EB intersection
+algorithm starts by a factor 2^3. A large value of this parameter can lead to an erroneous EB representation, missing small features,
+and should thus be kept at or below 4. The EB intersection algorithm relies on chopping the domain into boxes and finding those
+fully or partially covered. The size of these boxes can be controlled with `eb2.max_grid_size`, and can be adjusted to better
+match the number of MPI ranks used in the simulation.
+
 
 It is also possible to change the default adiabatic EB wall condition to an isothermal EB. To do so, one need to switch the following
 flag:
