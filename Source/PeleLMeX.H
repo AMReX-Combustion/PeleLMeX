@@ -1742,11 +1742,13 @@ public:
   amrex::Vector<amrex::Real> m_ctrl_cntl_pts;
 
   // PMF parameters
-  pele::physics::PMF::PmfData pmf_data;
+  pele::physics::PeleParams<pele::physics::PMF::PmfData::DataContainer>
+    pmf_data;
 
   // Transport pointer
-  static pele::physics::transport::TransportParams<
-    pele::physics::PhysicsType::transport_type>
+  static pele::physics::PeleParams<pele::physics::transport::TransParm<
+    pele::physics::PhysicsType::eos_type,
+    pele::physics::PhysicsType::transport_type>>
     trans_parms;
 
   // Reactor pointer

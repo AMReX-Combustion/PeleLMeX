@@ -349,8 +349,7 @@ PeleLM::fillpatch_state(
   int lev, const amrex::Real a_time, amrex::MultiFab& a_state, int nGhost)
 {
   ProbParm const* lprobparm = prob_parm_d;
-  pele::physics::PMF::PmfData::DataContainer const* lpmfdata =
-    pmf_data.getDeviceData();
+  auto const* lpmfdata = pmf_data.device_parm();
 
   int nCompState = (m_incompressible) != 0 ? AMREX_SPACEDIM : NVAR;
 
@@ -404,8 +403,7 @@ PeleLM::fillpatch_density(
   int nGhost)
 {
   ProbParm const* lprobparm = prob_parm_d;
-  pele::physics::PMF::PmfData::DataContainer const* lpmfdata =
-    pmf_data.getDeviceData();
+  auto const* lpmfdata = pmf_data.device_parm();
   if (lev == 0) {
 
     // Density
@@ -451,8 +449,7 @@ PeleLM::fillpatch_species(
   int nGhost)
 {
   ProbParm const* lprobparm = prob_parm_d;
-  pele::physics::PMF::PmfData::DataContainer const* lpmfdata =
-    pmf_data.getDeviceData();
+  auto const* lpmfdata = pmf_data.device_parm();
   if (lev == 0) {
 
     // Species
@@ -497,8 +494,7 @@ PeleLM::fillpatch_temp(
   int nGhost)
 {
   ProbParm const* lprobparm = prob_parm_d;
-  pele::physics::PMF::PmfData::DataContainer const* lpmfdata =
-    pmf_data.getDeviceData();
+  auto const* lpmfdata = pmf_data.device_parm();
   if (lev == 0) {
     PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirTemp>> bndry_func(
       geom[lev], fetchBCRecArray(TEMP, 1),
@@ -541,8 +537,7 @@ PeleLM::fillpatch_phiV(
   int nGhost)
 {
   ProbParm const* lprobparm = prob_parm_d;
-  pele::physics::PMF::PmfData::DataContainer const* lpmfdata =
-    pmf_data.getDeviceData();
+  auto const* lpmfdata = pmf_data.device_parm();
   if (lev == 0) {
     PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirPhiV>> bndry_func(
       geom[lev], fetchBCRecArray(PHIV, 1),
@@ -745,8 +740,7 @@ PeleLM::fillcoarsepatch_state(
 {
   AMREX_ASSERT(lev > 0);
   ProbParm const* lprobparm = prob_parm_d;
-  pele::physics::PMF::PmfData::DataContainer const* lpmfdata =
-    pmf_data.getDeviceData();
+  auto const* lpmfdata = pmf_data.device_parm();
 
   int nCompState = (m_incompressible) != 0 ? AMREX_SPACEDIM : NVAR;
 
@@ -882,8 +876,7 @@ PeleLM::setInflowBoundaryVel(MultiFab& a_vel, int lev, TimeStamp a_time)
   fillTurbInflow(a_vel, 0, lev, time);
 
   ProbParm const* lprobparm = prob_parm_d;
-  pele::physics::PMF::PmfData::DataContainer const* lpmfdata =
-    pmf_data.getDeviceData();
+  auto const* lpmfdata = pmf_data.device_parm();
   PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirState>> bndry_func(
     geom[lev], dummyVelBCRec,
     PeleLMCCFillExtDirState{
