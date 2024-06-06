@@ -37,7 +37,7 @@ PeleLM::readProbParm() // NOLINT(readability-make-member-function-const)
   // Transport
   amrex::Real cpmix_cgs;
   eos.TY2Cp(prob_parm->T_mean, massfrac, cpmix_cgs);
-  auto& trans_parm = PeleLM::trans_parms.host_trans_parm();
+  auto& trans_parm = PeleLM::trans_parms.host_parm();
   trans_parm.const_bulk_viscosity = 0.0;
   trans_parm.const_diffusivity = 0.0;
   trans_parm.const_viscosity =
