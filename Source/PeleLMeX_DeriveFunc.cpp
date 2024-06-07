@@ -1324,7 +1324,7 @@ pelelmex_dervisc(
     auto const& rhoY = statefab.const_array(FIRSTSPEC);
     auto const& T = statefab.array(TEMP);
     auto der = derfab.array(dcomp);
-    auto const* ltransparm = a_pelelm->trans_parms.device_trans_parm();
+    auto const* ltransparm = a_pelelm->trans_parms.device_parm();
     amrex::ParallelFor(
       bx, [rhoY, T, der,
            ltransparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
@@ -1370,7 +1370,7 @@ pelelmex_derdiffc(
   auto rhoD = derfab.array(dcomp);
   auto lambda = dummies.array(0);
   auto mu = dummies.array(1);
-  auto const* ltransparm = a_pelelm->trans_parms.device_trans_parm();
+  auto const* ltransparm = a_pelelm->trans_parms.device_parm();
   auto rhotheta = do_soret ? derfab.array(dcomp + NUM_SPECIES)
                            : dummies.array(2); // dummy for no soret
   amrex::Real LeInv = a_pelelm->m_Lewis_inv;
@@ -1417,7 +1417,7 @@ pelelmex_derlambda(
   auto lambda = derfab.array(dcomp);
   auto mu = dummies.array(0);
   auto rhotheta = dummies.array(NUM_SPECIES + 1);
-  auto const* ltransparm = a_pelelm->trans_parms.device_trans_parm();
+  auto const* ltransparm = a_pelelm->trans_parms.device_parm();
   amrex::Real LeInv = a_pelelm->m_Lewis_inv;
   amrex::Real PrInv = a_pelelm->m_Prandtl_inv;
   amrex::ParallelFor(

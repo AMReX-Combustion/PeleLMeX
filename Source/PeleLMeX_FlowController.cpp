@@ -67,8 +67,7 @@ PeleLM::initActiveControl()
 
     // Extract data from BC: assumes flow comes in from lo side of ctrl_flameDir
     ProbParm const* lprobparm = prob_parm_d;
-    pele::physics::PMF::PmfData::DataContainer const* lpmfdata =
-      pmf_data.getDeviceData();
+    auto const* lpmfdata = pmf_data.device_parm();
 
     Gpu::DeviceVector<Real> s_ext_v(NVAR);
     Real* s_ext_d = s_ext_v.data();

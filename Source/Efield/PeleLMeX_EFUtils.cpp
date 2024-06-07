@@ -290,8 +290,7 @@ void
 PeleLM::fillPatchNLnE(Real a_time, Vector<MultiFab*> const& a_nE, int a_nGrow)
 {
   ProbParm const* lprobparm = prob_parm_d;
-  pele::physics::PMF::PmfData::DataContainer const* lpmfdata =
-    pmf_data.getDeviceData();
+  auto const* lpmfdata = pmf_data.device_parm();
 
   int lev = 0;
   {
@@ -324,8 +323,7 @@ PeleLM::fillPatchNLphiV(
   Real a_time, Vector<MultiFab*> const& a_phiV, int a_nGrow)
 {
   ProbParm const* lprobparm = prob_parm_d;
-  pele::physics::PMF::PmfData::DataContainer const* lpmfdata =
-    pmf_data.getDeviceData();
+  auto const* lpmfdata = pmf_data.device_parm();
 
   int lev = 0;
   {

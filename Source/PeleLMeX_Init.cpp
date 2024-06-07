@@ -338,8 +338,7 @@ PeleLM::initLevelData(int lev)
 
   // Prob/PMF data
   ProbParm const* lprobparm = prob_parm_d;
-  pele::physics::PMF::PmfData::DataContainer const* lpmfdata =
-    pmf_data.getDeviceData();
+  auto const* lpmfdata = pmf_data.device_parm();
 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())

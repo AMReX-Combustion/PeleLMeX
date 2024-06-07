@@ -262,7 +262,7 @@ PeleLM::calcViscosity(const TimeStamp& a_time)
     } else {
 
       // Transport data pointer
-      auto const* ltransparm = trans_parms.device_trans_parm();
+      auto const* ltransparm = trans_parms.device_parm();
 
       // MultiArrays
       auto const& sma = ldata_p->state.const_arrays();
@@ -291,7 +291,7 @@ PeleLM::calcDiffusivity(const TimeStamp& a_time)
     auto* ldata_p = getLevelDataPtr(lev, a_time);
 
     // Transport data pointer
-    auto const* ltransparm = trans_parms.device_trans_parm();
+    auto const* ltransparm = trans_parms.device_parm();
 
     // MultiArrays
     auto const& sma = ldata_p->state.const_arrays();

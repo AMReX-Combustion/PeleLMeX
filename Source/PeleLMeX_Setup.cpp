@@ -107,7 +107,7 @@ PeleLM::Setup()
   // Initialize EOS and others
   if (m_incompressible == 0) {
     amrex::Print() << " Initialization of Transport ... \n";
-    trans_parms.allocate();
+    trans_parms.initialize();
     if ((m_les_verbose != 0) and m_do_les) { // Say what transport model we're
                                              // going to use
       amrex::Print() << "    Using LES in transport with Sc = "
