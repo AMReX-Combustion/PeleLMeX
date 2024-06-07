@@ -300,7 +300,7 @@ PeleLM::SprayMKDLevel(const int level, const Real time, const Real dt)
 
   // Advance the particle velocities to the half-time and the positions to
   // the new time
-  auto const* ltransparm = PeleLM::trans_parms.device_trans_parm();
+  auto const* ltransparm = PeleLM::trans_parms.device_parm();
 
   MultiFab& state = *(m_spraystate[level]);
   MultiFab& source = *(m_spraysource[level]);
