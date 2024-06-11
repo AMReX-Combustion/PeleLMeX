@@ -65,7 +65,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#refinement-controls">Refinement controls</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#pelelmex-derived-variables">PeleLMeX derived variables</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#pelelmex-algorithm">PeleLMeX algorithm</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#transport-coeffs-and-les">Transport coeffs and LES</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#transport-coefficients-and-les">Transport coefficients and LES</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#chemistry-integrator">Chemistry integrator</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#embedded-geometry">Embedded Geometry</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#linear-solvers">Linear solvers</a></li>
@@ -368,8 +368,8 @@ components is defined based on the size of the vector returned by pelelmex_setus
 </pre></div>
 </div>
 </section>
-<section id="transport-coeffs-and-les">
-<h2>Transport coeffs and LES<a class="headerlink" href="#transport-coeffs-and-les" title="Link to this heading"></a></h2>
+<section id="transport-coefficients-and-les">
+<h2>Transport coefficients and LES<a class="headerlink" href="#transport-coefficients-and-les" title="Link to this heading"></a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1">#-----------------------DIFFUSION AND LES MODEL CONTROL-----------------------</span>
 <span class="n">peleLM</span><span class="o">.</span><span class="n">fixed_Le</span> <span class="o">=</span> <span class="mi">0</span>                    <span class="c1"># [OPT, DEF=0] Use a fixed Lewis number approximation for species diffusivities</span>
 <span class="n">peleLM</span><span class="o">.</span><span class="n">fixed_Pr</span> <span class="o">=</span> <span class="mi">0</span>                    <span class="c1"># [OPT, DEF=0] Use a fixed Prandtl number approximation for thermal diffusivity</span>
@@ -400,6 +400,10 @@ components is defined based on the size of the vector returned by pelelmex_setus
 </pre></div>
 </div>
 <p>Note that the last five parameters belong to the Reactor class of PelePhysics but are specified here for completeness. In particular, CVODE is the adequate choice of integrator to tackle PeleLMeX large time step sizes. Several linear solvers are available depending on whether or not GPU are employed: on CPU, <cite>dense_direct</cite> is a finite-difference direct solver, <cite>denseAJ_direct</cite> is an analytical-jacobian direct solver (preferred choice), <cite>sparse_direct</cite> is an analytical-jacobian sparse direct solver based on the KLU library and <cite>GMRES</cite> is a matrix-free iterative solver; on GPU <cite>GMRES</cite> is a matrix-free iterative solver (available on all the platforms), <cite>sparse_direct</cite> is a batched block-sparse direct solve based on NVIDIA’s cuSparse (only with CUDA), <cite>magma_direct</cite> is a batched block-dense direct solve based on the MAGMA library (available with CUDA and HIP. Different <cite>cvode.solve_type</cite> should be tried before increasing the <cite>cvode.max_substeps</cite>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The default chemistry integrator is ‘ReactorNull’ which do not include the chemical source terms.</p>
+</div>
 </section>
 <section id="embedded-geometry">
 <h2>Embedded Geometry<a class="headerlink" href="#embedded-geometry" title="Link to this heading"></a></h2>
@@ -439,6 +443,23 @@ EB-level to level 1 (must be below <cite>amr.max_level</cite>) and a derefinemen
 that fine-grid patches do not cross the EB boundary. The last parameter set a safety margin to increase
 how far the derefinement is applied in order to account for grid-patches diagonals and proper nesting constrains.
 Note that the parameter do not ensure explicitly coarse-fine/EB crossings are avoided and the code will fail when this happens.</p>
+<p>AMReX generates the EB at the finest level (specified by <cite>amr.max_level</cite>) and subsequently coarsen the resulting
+EB data to coarser AMR levels (as well as multigrid levels) in order to ensure consistency across levels. As a consequence,
+increasing <cite>amr.max_level</cite> during the course of a simulation can lead in small changes to the EB, potentially uncovering
+previously covered regions for which the solver cannot provide initial conditions upon restart. It is thus advised to
+set <cite>amr.max_level</cite> to the desired maximum level you ever plan to use in the simulation, and limit the level at which
+the EB is refined (with <cite>peleLM.refine_EB_max_level</cite>) and refinement criteria are applied (with <cite>amr.*****.max_level</cite>)
+to a lower value while starting the simulation. A side effect of this process is that the generation of the EB can
+be excessively long if <cite>amr.max_level</cite> is large. To speed up the EB generation, one can use the following keys:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">eb2</span><span class="o">.</span><span class="n">num_coarsen_opt</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="n">eb2</span><span class="o">.</span><span class="n">max_grid_size</span> <span class="o">=</span> <span class="mi">64</span>
+</pre></div>
+</div>
+<p>Setting <cite>eb2.num_coarsen_opt = 3</cite> effectively speed the EB generation by coarsening the level at which the recursive EB intersection
+algorithm starts by a factor 2^3. A large value of this parameter can lead to an erroneous EB representation, missing small features,
+and should thus be kept at or below 4. The EB intersection algorithm relies on chopping the domain into boxes and finding those
+fully or partially covered. The size of these boxes can be controlled with <cite>eb2.max_grid_size</cite>, and can be adjusted to better
+match the number of MPI ranks used in the simulation.</p>
 <p>It is also possible to change the default adiabatic EB wall condition to an isothermal EB. To do so, one need to switch the following
 flag:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">peleLM</span><span class="o">.</span><span class="n">isothermal_EB</span> <span class="o">=</span> <span class="mi">1</span>
