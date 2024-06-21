@@ -993,7 +993,7 @@ PeleLM::differentialDiffusionUpdate(
       GetVecOfConstPtrs(
         getDensityVect(AmrNewTime)), // this triggers proper scaling by density
       GetVecOfConstPtrs(getDiffusivityVect(AmrNewTime)), 0, bcRecSpec,
-      NUM_SPECIES - NUM_IONS, 0, m_dt,GetVecOfConstPtrs(spec_boundary));
+      NUM_SPECIES - NUM_IONS, 0, m_dt, GetVecOfConstPtrs(spec_boundary));
   // Ions one by one
   for (int n = 0; n < NUM_IONS; n++) {
     auto bcRecIons = fetchBCRecArray(FIRSTSPEC + NUM_SPECIES - NUM_IONS + n, 1);
@@ -1006,7 +1006,7 @@ PeleLM::differentialDiffusionUpdate(
       GetVecOfConstPtrs(
         getDensityVect(AmrNewTime)), // this triggers proper scaling by density
       GetVecOfConstPtrs(getDiffusivityVect(AmrNewTime)), 0, bcRecIons, 1, 0,
-      m_dt,{});
+      m_dt, {});
   }
 #else
   // Solve for \widetilda{rhoY^{np1,kp1}}
