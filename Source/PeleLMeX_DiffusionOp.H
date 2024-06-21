@@ -37,7 +37,7 @@ public:
     int ncomp,
     int isPoissonSolve,
     amrex::Real dt,
-    amrex::Vector<amrex::MultiFab*> a_boundary = {nullptr});
+    amrex::Vector<amrex::MultiFab const*> const& a_boundary);
 
 #ifdef AMREX_USE_EB
   void diffuse_scalar(

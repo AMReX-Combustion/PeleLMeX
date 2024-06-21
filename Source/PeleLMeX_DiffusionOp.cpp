@@ -107,7 +107,7 @@ DiffusionOp::diffuse_scalar(
   int ncomp,
   int isPoissonSolve,
   Real a_dt,
-  Vector<MultiFab*> a_boundary)
+  Vector<MultiFab const*> const& a_boundary)
 {
   BL_PROFILE("DiffusionOp::diffuse_scalar()");
 
@@ -117,6 +117,7 @@ DiffusionOp::diffuse_scalar(
   int have_fluxes = (a_flux.empty()) ? 0 : 1;
   int have_acoeff = (a_acoeff.empty()) ? 0 : 1;
   int have_bcoeff = (a_bcoeff.empty()) ? 0 : 1;
+  int have_boundary = (a_boundary.empty()) ? 0 : 1;
 
   //----------------------------------------------------------------
   // Checks
@@ -231,7 +232,7 @@ DiffusionOp::diffuse_scalar(
       component.emplace_back(phi[lev], amrex::make_alias, comp, m_ncomp);
       rhs.emplace_back(
         *a_rhs[lev], amrex::make_alias, rhs_comp + comp, m_ncomp);
-      if (a_boundary[lev] != nullptr) {
+      if (have_boundary != 0) {
         boundary.emplace_back(
           *a_boundary[lev], amrex::make_alias, comp, m_ncomp);
       } else {
