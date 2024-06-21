@@ -122,7 +122,7 @@ PeleLM::Setup()
             << "    Using mixture-averaged transport with Soret effects"
             << std::endl;
           if (m_soret_boundary_override) {
-            amrex::Print() << "    Imposing inhomogenous Neumann conditions "
+            amrex::Print() << "    Imposing inhomogeneous Neumann conditions "
                               "for species on isothermal walls"
                            << std::endl;
           }
