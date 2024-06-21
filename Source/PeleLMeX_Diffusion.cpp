@@ -176,8 +176,8 @@ PeleLM::computeDifferentialDiffusionTerms(
 #ifdef AMREX_USE_EB
     fluxDivergenceRD(
       GetVecOfConstPtrs(getSpeciesVect(a_time)), 0, GetVecOfPtrs(diffData->DT),
-      0, GetVecOfArrOfPtrs(diffData->soret_fluxes), 0, {}, 0, NUM_SPECIES, intensiveFluxes,
-      bcRecSpec_d.dataPtr(), -1.0, m_dt);
+      0, GetVecOfArrOfPtrs(diffData->soret_fluxes), 0, {}, 0, NUM_SPECIES,
+      intensiveFluxes, bcRecSpec_d.dataPtr(), -1.0, m_dt);
 #else
     fluxDivergence(
       GetVecOfPtrs(diffData->DT), 0, GetVecOfArrOfPtrs(diffData->soret_fluxes),
@@ -944,7 +944,7 @@ PeleLM::differentialDiffusionUpdate(
         const Box& ebx = mfi.nodaltilebox(idim);
         auto const& flux_soret =
           diffData->soret_fluxes[lev][idim].const_array(mfi);
-        auto const& flux_wbar = 
+        auto const& flux_wbar =
           diffData->wbar_fluxes[lev][idim].const_array(mfi);
         auto const& rhoD_ec = beta_ec[idim].const_array(mfi);
         auto const& boundary_ar = spec_boundary[lev]->array(mfi);
