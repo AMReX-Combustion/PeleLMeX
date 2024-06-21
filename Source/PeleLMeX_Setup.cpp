@@ -121,6 +121,11 @@ PeleLM::Setup()
           amrex::Print()
             << "    Using mixture-averaged transport with Soret effects"
             << std::endl;
+          if (m_soret_boundary_override) {
+            amrex::Print() << "    Imposing inhomogenous Neumann conditions "
+                              "for species on isothermal walls"
+                           << std::endl;
+          }
         }
       } else {
         if (m_fixed_Le != 0) {
@@ -361,6 +366,19 @@ PeleLM::readParameters()
   // diffusion
   ParmParse pptrans("transport");
   pptrans.query("use_soret", m_use_soret);
+  if (m_use_soret != 0) {
+    bool isothermal = false;
+    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+      isothermal |=
+        (m_phys_bc.lo(idim) == BoundaryCondition::BCSlipWallIsotherm ||
+         m_phys_bc.lo(idim) == BoundaryCondition::BCNoSlipWallIsotherm ||
+         m_phys_bc.hi(idim) == BoundaryCondition::BCSlipWallIsotherm ||
+         m_phys_bc.hi(idim) == BoundaryCondition::BCNoSlipWallIsotherm);
+    }
+    if (isothermal) {
+      m_soret_boundary_override = 1;
+    }
+  }
   pp.query("use_wbar", m_use_wbar);
   pp.query("unity_Le", m_unity_Le);
   pp.query("fixed_Le", m_fixed_Le);

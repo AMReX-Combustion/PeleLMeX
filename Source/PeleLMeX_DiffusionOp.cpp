@@ -106,7 +106,8 @@ DiffusionOp::diffuse_scalar(
   Vector<BCRec> a_bcrec,
   int ncomp,
   int isPoissonSolve,
-  Real a_dt)
+  Real a_dt,
+  Vector<MultiFab*> a_boundary)
 {
   BL_PROFILE("DiffusionOp::diffuse_scalar()");
 
@@ -193,6 +194,7 @@ DiffusionOp::diffuse_scalar(
     Vector<Array<MultiFab*, AMREX_SPACEDIM>> fluxes(finest_level + 1);
     Vector<MultiFab> component;
     Vector<MultiFab> rhs;
+    Vector<MultiFab> boundary;
 
     // Allow for component specific LinOp BC
     m_scal_solve_op->setDomainBC(
@@ -229,7 +231,13 @@ DiffusionOp::diffuse_scalar(
       component.emplace_back(phi[lev], amrex::make_alias, comp, m_ncomp);
       rhs.emplace_back(
         *a_rhs[lev], amrex::make_alias, rhs_comp + comp, m_ncomp);
-      m_scal_solve_op->setLevelBC(lev, &component[lev]);
+      if (a_boundary[lev] != nullptr) {
+        boundary.emplace_back(
+          *a_boundary[lev], amrex::make_alias, comp, m_ncomp);
+      } else {
+        boundary.emplace_back(phi[lev], amrex::make_alias, comp, m_ncomp);
+      }
+      m_scal_solve_op->setLevelBC(lev, &boundary[lev]);
     }
 
     // Setup linear solver

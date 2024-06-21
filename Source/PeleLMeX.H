@@ -1856,7 +1856,7 @@ public:
 
   int m_use_wbar = 1;
   int m_use_soret = 0;
-
+  int m_soret_boundary_override = 0;
   // LES Model
   bool m_do_les = false;
   bool m_plot_les = false;
