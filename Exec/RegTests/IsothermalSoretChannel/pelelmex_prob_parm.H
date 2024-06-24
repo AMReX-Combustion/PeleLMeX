@@ -13,6 +13,5 @@ struct ProbParm
   int bathID{-1};
   int fuelID{-1};
   int oxidID{-1};
-
 };
 #endif

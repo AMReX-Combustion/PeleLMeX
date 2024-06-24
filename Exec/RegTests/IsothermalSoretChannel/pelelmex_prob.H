@@ -93,7 +93,6 @@ bcnormal(
   } else if (sgn == -1) {
     s_ext[TEMP] = 700;
   }
-  
 }
 
 AMREX_GPU_DEVICE
