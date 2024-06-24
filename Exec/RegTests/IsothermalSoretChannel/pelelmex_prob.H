@@ -10,6 +10,39 @@
 #include <AMReX_FArrayBox.H>
 #include <AMReX_SPACE.H>
 
+AMREX_GPU_HOST_DEVICE
+AMREX_FORCE_INLINE
+void
+set_Y_from_Phi(ProbParm const& prob_parm, amrex::Real Y[])
+{
+  amrex::Real phi = prob_parm.phi;
+  auto eos = pele::physics::PhysicsType::eos();
+  amrex::Real Xt[NUM_SPECIES] = {0.0};
+  amrex::Real a = 0.0;
+  amrex::Print() << prob_parm.fuelID << std::endl;
+  amrex::Print() << H2_ID << std::endl;
+  switch (prob_parm.fuelID) {
+#if defined(H2_ID)
+  case H2_ID:
+    a = 0.5;
+    break;
+#endif
+#if defined(CH4_ID)
+  case CH4_ID:
+    a = 2.0;
+    break;
+#endif
+  default:
+    amrex::Abort("fuelID not defined");
+  }
+
+  Xt[prob_parm.oxidID] = 1.0 / (1.0 + phi / a + 0.79 / 0.21);
+  Xt[prob_parm.fuelID] = phi * Xt[prob_parm.oxidID] / a;
+  Xt[prob_parm.bathID] = 1.0 - Xt[prob_parm.oxidID] - Xt[prob_parm.fuelID];
+
+  eos.X2Y(Xt, Y);
+}
+
 AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
 void
@@ -38,22 +71,14 @@ pelelmex_initdata(
   auto eos = pele::physics::PhysicsType::eos();
   amrex::Real massfrac[NUM_SPECIES] = {0.0};
 
-  // Define air
-  amrex::Real air_Y[NUM_SPECIES] = {0.0};
-  air_Y[prob_parm.bathID] = 0.717;
-  air_Y[prob_parm.oxidID] = 0.183;
-  air_Y[prob_parm.fuelID] = 0.1;
+  set_Y_from_Phi(prob_parm, massfrac);
 
-  const amrex::Real T_low = 300.0;
-  const amrex::Real T_high = 700.0;
+  const amrex::Real T_low = prob_parm.Tlow;
+  const amrex::Real T_high = prob_parm.Thigh;
 
   state(i, j, k, TEMP) = (y - y_low) / (Ly) * (T_high - T_low) + T_low;
 
-  for (int n = 0; n < NUM_SPECIES; ++n) {
-    massfrac[n] = air_Y[n];
-  }
-
-  state(i, j, k, VELX) = 10.0;
+  state(i, j, k, VELX) = prob_parm.Vin;
   state(i, j, k, VELY) = 0.0;
 
   amrex::Real rho_cgs, P_cgs;
@@ -89,9 +114,9 @@ bcnormal(
   amrex::Real massfrac[NUM_SPECIES] = {0.0};
 
   if (sgn == 1) {
-    s_ext[TEMP] = 300;
+    s_ext[TEMP] = prob_parm.Tlow;
   } else if (sgn == -1) {
-    s_ext[TEMP] = 700;
+    s_ext[TEMP] = prob_parm.Thigh;
   }
 }
 
