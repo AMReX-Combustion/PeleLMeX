@@ -1,6 +1,8 @@
 [submodule "Submodules/AMReX-Hydro"]
 	path = Submodules/AMReX-Hydro
 	url = https://github.com/AMReX-Fluids/AMReX-Hydro.git
+	shallow = true
 [submodule "Submodules/PelePhysics"]
 	path = Submodules/PelePhysics
 	url = https://github.com/AMReX-Combustion/PelePhysics.git
+	shallow = true
