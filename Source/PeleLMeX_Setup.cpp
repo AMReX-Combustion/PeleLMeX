@@ -377,6 +377,9 @@ PeleLM::readParameters()
     }
     if (isothermal) {
       m_soret_boundary_override = 1;
+#if PELE_USE_EFIELD
+      amrex::Abort("Isothermal walls with Soret incompatible with Efield");
+#endif
     }
   }
   pp.query("use_wbar", m_use_wbar);
