@@ -19,8 +19,6 @@ set_Y_from_Phi(ProbParm const& prob_parm, amrex::Real Y[])
   auto eos = pele::physics::PhysicsType::eos();
   amrex::Real Xt[NUM_SPECIES] = {0.0};
   amrex::Real a = 0.0;
-  amrex::Print() << prob_parm.fuelID << std::endl;
-  amrex::Print() << H2_ID << std::endl;
   switch (prob_parm.fuelID) {
 #if defined(H2_ID)
   case H2_ID:

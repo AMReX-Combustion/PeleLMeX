@@ -17,7 +17,6 @@ PeleLM::readProbParm()
   amrex::ParmParse pp_pele("peleLM");
   std::string fuelName = "";
   pp_pele.get("fuel_name", fuelName);
-  amrex::Print() << "H2_ID 1 " << H2_ID << std::endl;
 #if defined(H2_ID)
   if (fuelName == "H2") {
     PeleLM::prob_parm->fuelID = H2_ID;
