@@ -105,7 +105,8 @@ endif
 
 ChemDir  = Mechanisms/$(Chemistry_Model)
 
-PPdirs := Source/Utility/PMF Source/Utility/TurbInflow Source/Utility/PltFileManager Source/Utility/Diagnostics
+PPdirs := Source/Utility/PMF Source/Utility/TurbInflow Source/Utility/PltFileManager
+PPdirs += Source/Utility/Diagnostics Source/Utility/BlackBoxFunction
 PPdirs += Source $(ChemDir) Source/Reactions Source/Eos Source/Transport
 Bpack += $(foreach dir, $(PPdirs), $(PELE_PHYSICS_HOME)/$(dir)/Make.package)
 Blocs += $(foreach dir, $(PPdirs), $(PELE_PHYSICS_HOME)/$(dir))
