@@ -951,6 +951,14 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
 
   ProbParm const* lprobparm = prob_parm_d;
 
+  if(lprobparm->ignite_flow)
+  {
+	  Patch_Ignition_Source(geom[a_lev],ldata_p->state);
+
+  }
+  else
+  {
+
   // Enforce rho and rhoH consistent with temperature and mixture
   // The above handles species mapping (to some extent), but nothing enforce
   // sum of Ys = 1 -> use N2 in the following if N2 is present
@@ -995,6 +1003,7 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
         rhoY_arr(i, j, k, n) = massfrac[n] * rho_arr(i, j, k);
       }
     });
+  }
   }
 
   // Initialize thermodynamic pressure

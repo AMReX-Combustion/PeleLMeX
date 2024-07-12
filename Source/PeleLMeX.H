@@ -118,6 +118,8 @@ public:
   // ReadProblemParameters
   void readProbParm();
 
+  void Patch_Ignition_Source(const amrex::Geometry& geom, amrex::MultiFab& a_mf);
+
   // ReadGridFile
   void
   readGridFile(std::string grid_file, amrex::Vector<amrex::BoxArray>& input_ba);
