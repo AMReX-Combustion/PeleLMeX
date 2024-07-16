@@ -118,7 +118,10 @@ public:
   // ReadProblemParameters
   void readProbParm();
 
-  void Patch_Ignition_Source(const amrex::Geometry& geom, ProbParm const& prob_parm, amrex::MultiFab& a_mf);
+  void Patch_Ignition_Source(
+    const amrex::Geometry& geom,
+    ProbParm const& prob_parm,
+    amrex::MultiFab& a_mf);
 
   // ReadGridFile
   void
