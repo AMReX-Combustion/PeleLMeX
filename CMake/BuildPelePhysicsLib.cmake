@@ -52,6 +52,17 @@ function(build_pele_physics_lib pele_physics_lib_name)
 
     target_sources(${pele_physics_lib_name}
       PRIVATE
+      ${PELE_PHYSICS_UTILITY_DIR}/BlackBoxFunction/BlackBoxFunction.cpp
+      ${PELE_PHYSICS_UTILITY_DIR}/BlackBoxFunction/BlackBoxFunction.H
+      ${PELE_PHYSICS_UTILITY_DIR}/BlackBoxFunction/BlackBoxFunctionFactory.H
+      ${PELE_PHYSICS_UTILITY_DIR}/BlackBoxFunction/NeuralNetHomerolled.H
+      ${PELE_PHYSICS_UTILITY_DIR}/BlackBoxFunction/NeuralNetLayerDef.H
+      ${PELE_PHYSICS_UTILITY_DIR}/BlackBoxFunction/NeuralNetModelDef.H
+      ${PELE_PHYSICS_UTILITY_DIR}/BlackBoxFunction/Table.H)
+    target_include_directories(${pele_physics_lib_name} PUBLIC ${PELE_PHYSICS_UTILITY_DIR}/BlackBoxFunction)
+
+    target_sources(${pele_physics_lib_name}
+      PRIVATE
         ${PELE_PHYSICS_UTILITY_DIR}/PMF/PMF.H
         ${PELE_PHYSICS_UTILITY_DIR}/PMF/PMFData.cpp
         ${PELE_PHYSICS_UTILITY_DIR}/PMF/PMFData.H
