@@ -129,6 +129,9 @@ The user parameters are gathered in the struct defined in  ``pelelmex_prob_parm.
         amrex::Real T_hot  = 1800.0_rt;
         amrex::Real Twall  = 300.0_rt;
         amrex::Real meanFlowMag = 0.0;
+        
+        bool ignite_flow = false;
+        amrex::Real ignition_temperature = 1700.0;
     };
 
 * ``T_mean`` : inlet and initial gas temperature
@@ -145,10 +148,17 @@ The user parameters are gathered in the struct defined in  ``pelelmex_prob_parm.
 
 * ``meanFlowMag`` : inlet :math:`x` velocity
 
+* ``ignite_flow`` : enable ignition after reading a plot solution file
+
+* ``ignition_temperature`` :  The temperature of the ignition kernel. The user is expected to include other ignition parameters. 
+
+
+
 The initial solution consists of a premixed methane/air mixture in the upper part of the domain
 and pure hot air in the wake of the step. The default parameters provided above are overwritten
 using AMReX ParmParse in ``pelelmex_prob.cpp`` and the initial/boundary conditions implemented in
-``pelelmex_prob.H``.
+``pelelmex_prob.H``. Alternatively, the user can write a custom ignition kernel patch function in the ``Patch_Ignition_Source`` function in pelelmex_prob.cpp file. 
+This will patch the ignition kernel conditions after reading a plot solution file.
 
 In addition to these three C++ files, an extra header is needed in the present case compared to
 :doc:`Tutorials_FlameSheet` : ``EBUserDefined.H``. This file is necessary to specify more complex EB
