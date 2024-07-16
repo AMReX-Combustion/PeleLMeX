@@ -23,10 +23,12 @@ PeleLM::computeDt(int is_init, const TimeStamp& a_time)
       estdt = m_init_dt;
     } else {
       Real dtconv = estConvectiveDt(a_time);
+      amrex::Print()<<"\nConvective DT = "<<dtconv;
       estdt = std::min(estdt, dtconv);
       Real dtdivU = 1.0e200;
       if ((m_incompressible == 0) && (m_has_divu != 0)) {
         dtdivU = estDivUDt(a_time);
+        amrex::Print()<<"\nDivergence DT = "<<dtdivU;
         estdt = std::min(estdt, dtdivU);
       }
 #ifdef PELE_USE_EFIELD
@@ -138,10 +140,12 @@ PeleLM::estConvectiveDt(const TimeStamp& a_time)
     for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
       if (u_max[idim] > small) {
         estdt_lev = std::min(estdt_lev, dx[idim] / u_max[idim]);
+        amrex::Print()<<"\n   estdt_lev with vel = "<<estdt_lev;
       }
       if (f_max[idim] > small) {
         estdt_lev =
           std::min(estdt_lev, std::sqrt(2.0 * dx[idim] / f_max[idim]));
+        amrex::Print()<<"\n   estdt_lev with force = "<<estdt_lev;
       }
     }
 
