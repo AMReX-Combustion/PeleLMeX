@@ -118,11 +118,6 @@ public:
   // ReadProblemParameters
   void readProbParm();
 
-  void Patch_Ignition_Source(
-    const amrex::Geometry& geom,
-    ProbParm const& prob_parm,
-    amrex::MultiFab& a_mf);
-
   // ReadGridFile
   void
   readGridFile(std::string grid_file, amrex::Vector<amrex::BoxArray>& input_ba);
@@ -1792,6 +1787,7 @@ public:
   int m_ioDigits = 5;
   amrex::Vector<std::string> m_evaluatePlotVars;
   bool m_write_hdf5_pltfile = false;
+  bool m_do_patch_flow_variables = false;
 
   //-----------------------------------------------------------------------------
   // ALGORITHM
