@@ -953,8 +953,7 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
 
   if(lprobparm->ignite_flow)
   {
-	  Patch_Ignition_Source(geom[a_lev],ldata_p->state);
-
+	  Patch_Ignition_Source(geom[a_lev],*lprobparm,ldata_p->state);
   }
   else
   {
