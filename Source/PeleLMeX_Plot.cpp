@@ -952,7 +952,8 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
 
   ProbParm const* lprobparm = prob_parm_d;
 
-  // If m_do_patch_flow_variables is set as true, call user-defined function to patch flow variables
+  // If m_do_patch_flow_variables is set as true, call user-defined function to
+  // patch flow variables
   if (m_do_patch_flow_variables) {
     patchFlowVariables(geom[a_lev], *lprobparm, ldata_p->state);
   } else {

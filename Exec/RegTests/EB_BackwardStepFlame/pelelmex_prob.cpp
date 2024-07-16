@@ -2,38 +2,6 @@
 #include <AMReX_ParmParse.H>
 
 void
-PeleLM::Patch_Ignition_Source(
-  const amrex::Geometry& geom, ProbParm const& lprobparm, amrex::MultiFab& a_mf)
-{
-  // Patch ignition kernel
-  if (lprobparm.ignite_flow) {
-    amrex::Print() << "\nCalling Ignition kernel patching..\n";
-    const amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> prob_lo =
-      geom.ProbLoArray();
-    const amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> dx =
-      geom.CellSizeArray();
-
-    for (amrex::MFIter mfi(a_mf, amrex::TilingIfNotGPU()); mfi.isValid();
-         ++mfi) {
-      const amrex::Box& bx = mfi.tilebox();
-      auto const& rho_arr = a_mf.array(mfi, DENSITY);
-      auto const& rhoY_arr = a_mf.array(mfi, FIRSTSPEC);
-      auto const& rhoH_arr = a_mf.array(mfi, RHOH);
-      auto const& temp_arr = a_mf.array(mfi, TEMP);
-      amrex::ParallelFor(
-        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          auto eos = pele::physics::PhysicsType::eos();
-          const amrex::Real x[AMREX_SPACEDIM] = {AMREX_D_DECL(
-            prob_lo[0] + (i + 0.5) * dx[0], prob_lo[1] + (j + 0.5) * dx[1],
-            prob_lo[2] + (k + 0.5) * dx[2])};
-          /*Patch ignition kernel here.*/
-        });
-    }
-    amrex::Print() << "Done\n";
-  }
-}
-
-void
 PeleLM::readProbParm() // NOLINT(readability-make-member-function-const)
 {
   amrex::ParmParse pp("prob");

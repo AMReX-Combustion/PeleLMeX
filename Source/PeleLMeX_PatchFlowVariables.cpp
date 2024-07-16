@@ -4,11 +4,10 @@
 
 using namespace amrex;
 
-void patchFlowVariables(
-  const amrex::Geometry& geom,
-  ProbParm const& prob_parm,
-  amrex::MultiFab& a_mf)
+void
+patchFlowVariables(
+  const amrex::Geometry& geom, ProbParm const& prob_parm, amrex::MultiFab& a_mf)
 {
-	Abort("Using patchFlowVariables requires providing a definition in local "
-	        "PatchFlowVariables.cpp");
+  Abort("Using patchFlowVariables requires providing a definition in local "
+        "PatchFlowVariables.cpp");
 }
