@@ -951,6 +951,8 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
 
   ProbParm const* lprobparm = prob_parm_d;
 
+  // If do_ignite is set as true, call user-defined function to patch an
+  // ignition kernel
   if (lprobparm->ignite_flow) {
     Patch_Ignition_Source(geom[a_lev], *lprobparm, ldata_p->state);
   } else {

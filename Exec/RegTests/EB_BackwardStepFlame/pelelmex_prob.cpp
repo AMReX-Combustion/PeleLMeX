@@ -7,9 +7,11 @@ PeleLM::Patch_Ignition_Source(
 {
   // Patch ignition kernel
   if (lprobparm.ignite_flow) {
-    amrex::Print() << "\nIgniting\n";
-    const amrex::GpuArray<amrex::Real, 3> prob_lo = geom.ProbLoArray();
-    const amrex::GpuArray<amrex::Real, 3> dx = geom.CellSizeArray();
+    amrex::Print() << "\nCalling Ignition kernel patching..\n";
+    const amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> prob_lo =
+      geom.ProbLoArray();
+    const amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> dx =
+      geom.CellSizeArray();
 
     for (amrex::MFIter mfi(a_mf, amrex::TilingIfNotGPU()); mfi.isValid();
          ++mfi) {
@@ -25,23 +27,9 @@ PeleLM::Patch_Ignition_Source(
             prob_lo[0] + (i + 0.5) * dx[0], prob_lo[1] + (j + 0.5) * dx[1],
             prob_lo[2] + (k + 0.5) * dx[2])};
           /*Patch ignition kernel here.*/
-
-          amrex::Real P_cgs = lprobparm.P_mean * 10.0;
-          amrex::Real rho_cgs = 0.0;
-          eos.PYT2R(P_cgs, massfrac, temp_arr(i, j, k), rho_cgs);
-          rho_arr(i, j, k) = rho_cgs * 1.0e3;
-
-          // Get enthalpy
-          amrex::Real h_cgs = 0.0;
-          eos.TY2H(temp_arr(i, j, k), massfrac, h_cgs);
-          rhoH_arr(i, j, k) = h_cgs * 1.0e-4 * rho_arr(i, j, k);
-
-          // Fill rhoYs
-          for (int n = 0; n < NUM_SPECIES; n++) {
-            rhoY_arr(i, j, k, n) = massfrac[n] * rho_arr(i, j, k);
-          }
         });
     }
+    amrex::Print() << "Done\n";
   }
 }
 
