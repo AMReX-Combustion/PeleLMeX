@@ -69,7 +69,7 @@ peleLM.progressVariable.coldState = CO:0.0 CO2:0.0
 peleLM.progressVariable.hotState = CO:0.000002 CO2:0.0666
 
 #---------------------- Reactor CONTROL --------------------------
-peleLM.chem_integrator = "ReactorNull"
+peleLM.chem_integrator = "ReactorCvode"
 peleLM.use_typ_vals_chem = 1                # Use species/temp typical values in CVODE
 ode.rtol = 1.0e-6                           # Relative tolerance of the chemical solve
 ode.atol = 1.0e-5                           # Absolute tolerance factor applied on typical values
