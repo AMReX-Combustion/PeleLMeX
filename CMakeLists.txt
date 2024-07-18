@@ -6,6 +6,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE INTERNAL "")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake")
 include(CMakePackageConfigHelpers)
 include(PeleUtils)
+enable_testing()
+include(CTest)
 
 set(PELE_DIM "3" CACHE STRING "Number of physical dimensions")
 option(PELE_ENABLE_CLANG_TIDY "Enable clang-tidy analysis" OFF)
@@ -98,8 +100,5 @@ init_code_checks()
 include(SetRpath)
 
 add_subdirectory(Exec)
-
-enable_testing()
-include(CTest)
 add_subdirectory(Tests)
 add_subdirectory(${CMAKE_SOURCE_DIR}/Submodules/PelePhysics/Testing/Exec/Radiation)
