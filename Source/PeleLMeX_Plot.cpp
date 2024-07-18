@@ -956,7 +956,8 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
   // patch flow variables
   if (m_do_patch_flow_variables) {
     patchFlowVariables(geom[a_lev], *lprobparm, ldata_p->state);
-  } else {
+  }
+
 
     // Enforce rho and rhoH consistent with temperature and mixture
     // The above handles species mapping (to some extent), but nothing enforce
@@ -1003,7 +1004,6 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
             rhoY_arr(i, j, k, n) = massfrac[n] * rho_arr(i, j, k);
           }
         });
-    }
   }
 
   // Initialize thermodynamic pressure

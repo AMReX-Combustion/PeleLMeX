@@ -38,7 +38,7 @@ PeleLM::MakeNewLevelFromScratch(
       auto const dx = geom[lev].CellSizeArray();
       Real vol = AMREX_D_TERM(dx[0], *dx[1], *dx[2]);
       amrex::Print() << " with " << ba.numPts() << " cells," << ba.size()
-                     << " boxes," 
+                     << " boxes,"
                      << " over "
                      << static_cast<amrex::Real>(ba.numPts()) * vol /
                           geom[0].ProbSize() * 100

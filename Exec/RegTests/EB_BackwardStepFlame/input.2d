@@ -35,7 +35,7 @@ peleLM.use_wbar = 1                         # Include Wbar term in species diffu
 peleLM.sdc_iterMax = 2                      # Number of SDC iterations
 peleLM.num_init_iter = 3                    # Number of initial iterations
 peleLM.floor_species = 0                    # Enforce species positivity (non-conservative !)
-peleLM.do_patch_flow_variables = true
+peleLM.do_patch_flow_variables = false      # Enable flow variable patching after reading a plot solution file
 #---------------------- Temporal CONTROL -------------------------
 peleLM.do_temporals = 1                     # Turn temporals ON/OFF
 peleLM.temporal_int = 10                    # Frequency of temporals
