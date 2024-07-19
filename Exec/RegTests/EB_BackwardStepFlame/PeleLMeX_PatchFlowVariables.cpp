@@ -14,9 +14,6 @@ patchFlowVariables(
 
   for (amrex::MFIter mfi(a_mf, amrex::TilingIfNotGPU()); mfi.isValid(); ++mfi) {
     const amrex::Box& bx = mfi.tilebox();
-    auto const& rho_arr = a_mf.array(mfi, DENSITY);
-    auto const& rhoY_arr = a_mf.array(mfi, FIRSTSPEC);
-    auto const& rhoH_arr = a_mf.array(mfi, RHOH);
     auto const& temp_arr = a_mf.array(mfi, TEMP);
     amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
       amrex::Real x[3] = {
@@ -24,7 +21,9 @@ patchFlowVariables(
         prob_lo[1] + static_cast<amrex::Real>(j + 0.5) * dx[1],
         prob_lo[2] + static_cast<amrex::Real>(k + 0.5) * dx[2]};
 
+      amrex::ignore_unused(x);
       /*User can define how to patch flow variables here.*/
+      temp_arr(i, j, k) = lprobparm.T_mean;
     });
   }
 
