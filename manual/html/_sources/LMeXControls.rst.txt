@@ -255,6 +255,7 @@ PeleLMeX algorithm
     peleLM.deltaT_iterMax = 5              # [OPT, DEF=10] Maximum number of deltaT iterations
     peleLM.deltaT_tol = 1e-10              # [OPT, DEF=1.e-10] Tolerance of the deltaT solve
     peleLM.evaluate_vars =...              # [OPT, DEF=""] In evaluate mode, list unitTest: diffTerm, divU, instRR, transportCC
+    peleLM.do_patch_flow_variables = false # [OPT, DEF=false] Enable user-defined flow variable patching after reading a plot solution file
 
 Transport coefficients and LES
 ------------------------------

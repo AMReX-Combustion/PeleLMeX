@@ -266,6 +266,7 @@ The user parameters are gathered in the struct defined in  <code class="docutils
     amrex::Real T_hot  = 1800.0_rt;
     amrex::Real Twall  = 300.0_rt;
     amrex::Real meanFlowMag = 0.0;
+
 };
 </pre></div>
 </div>
@@ -281,7 +282,8 @@ The user parameters are gathered in the struct defined in  <code class="docutils
 <p>The initial solution consists of a premixed methane/air mixture in the upper part of the domain
 and pure hot air in the wake of the step. The default parameters provided above are overwritten
 using AMReX ParmParse in <code class="docutils literal notranslate"><span class="pre">pelelmex_prob.cpp</span></code> and the initial/boundary conditions implemented in
-<code class="docutils literal notranslate"><span class="pre">pelelmex_prob.H</span></code>.</p>
+<code class="docutils literal notranslate"><span class="pre">pelelmex_prob.H</span></code>. Alternatively, the user can write a custom function to enforce an ignition kernel through the <code class="docutils literal notranslate"><span class="pre">patchFlowVariables</span></code> function in the problem-specific <code class="docutils literal notranslate"><span class="pre">PeleLMeX_PatchFlowVariables.cpp</span></code> file.
+It should be kept in mind that the <code class="docutils literal notranslate"><span class="pre">patchFlowVariables</span></code> function can be used if the user wants to patch certain flow variables after reading an existing solution from a plot file ( <code class="docutils literal notranslate"><span class="pre">peleLM.do_patch_flow_variables</span></code> should be set to true).</p>
 <p>In addition to these three C++ files, an extra header is needed in the present case compared to
 <a class="reference internal" href="Tutorials_FlameSheet.html"><span class="doc">Premixed flame sheet with harmonic perturbations</span></a> : <code class="docutils literal notranslate"><span class="pre">EBUserDefined.H</span></code>. This file is necessary to specify more complex EB
 geometries (not the case here) and to prescribe EB isothermal wall condition. It contains three functions:</p>
