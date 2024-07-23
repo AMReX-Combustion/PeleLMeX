@@ -424,6 +424,9 @@ PeleLM::readParameters()
   // advance
   // -----------------------------------------
   pp.query("sdc_iterMax", m_nSDCmax);
+  m_print_chi_convergence = m_verbose > 1;
+  pp.query("print_chi_convergence", m_print_chi_convergence);
+  parseUserKey(pp, "chi_correction_type", chicorr, m_chi_correction_type);
   pp.query("floor_species", m_floor_species);
   pp.query("dPdt_factor", m_dpdtFactor);
   pp.query("memory_checks", m_checkMem);
