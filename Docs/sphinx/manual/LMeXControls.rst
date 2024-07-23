@@ -242,7 +242,8 @@ PeleLMeX algorithm
     peleLM.num_divu_iter = 1                    # [OPT, DEF=1] Number of divU iterations to get initial dt estimate
     peleLM.do_init_proj = 1                     # [OPT, DEF=1] Control over initial projection
     peleLM.advection_scheme = Godunov_BDS       # [OPT, DEF=Godunov_PLM] Advection scheme: Godunov_PLM, Godunov_PPM or Godunov_BDS
-    peleLM.chi_convergence_type = DivuFirstIter # [OPT, DEF=DivuEveryIter] When to compute divu for MAC proj divu constraint [DivuEveryIter, DivuFirstIter, NoDivu]
+    peleLM.chi_correction_type = DivuFirstIter  # [OPT, DEF=DivuEveryIter] When to compute divu for MAC proj divu constraint [DivuEveryIter, DivuFirstIter, NoDivu]
+    peleLM.print_chi_convergence = 1            # [OPT, DEF=(peleLM.v > 1)] Boolean flag on whether to print size of chi correction on each SDC iter
     peleLM.incompressible = 0                   # [OPT, DEF=0] Enable to run fully incompressible, scalar advance is bypassed
     peleLM.m_rho = 1.17                         # [OPT, DEF=-1] If incompressible, density value [MKS]
     peleLM.m_mu = 1.8e-5                        # [OPT, DEF=-1] If incompressible, kinematic visc. value [MKS]
