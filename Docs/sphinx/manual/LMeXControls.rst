@@ -234,29 +234,30 @@ PeleLMeX algorithm
 ::
 
     #-----------------------PELE CONTROL-----------------------
-    peleLM.v = 1                                # [OPT, DEF=0] Verbose
-    peleLM.run_mode = normal                    # [OPT, DEF=normal] Switch between time-advance mode (normal) or UnitTest (evaluate)
-    peleLM.use_wbar = 1                         # [OPT, DEF=1] Enable Wbar correction in diffusion fluxes
-    peleLM.sdc_iterMax = 2                      # [OPT, DEF=1] Number of SDC iterations
-    peleLM.num_init_iter = 2                    # [OPT, DEF=3] Number of iterations to get initial pressure
-    peleLM.num_divu_iter = 1                    # [OPT, DEF=1] Number of divU iterations to get initial dt estimate
-    peleLM.do_init_proj = 1                     # [OPT, DEF=1] Control over initial projection
-    peleLM.advection_scheme = Godunov_BDS       # [OPT, DEF=Godunov_PLM] Advection scheme: Godunov_PLM, Godunov_PPM or Godunov_BDS
+    peleLM.v = 1                           # [OPT, DEF=0] Verbose
+    peleLM.run_mode = normal               # [OPT, DEF=normal] Switch between time-advance mode (normal) or UnitTest (evaluate)
+    peleLM.use_wbar = 1                    # [OPT, DEF=1] Enable Wbar correction in diffusion fluxes
+    peleLM.sdc_iterMax = 2                 # [OPT, DEF=1] Number of SDC iterations
+    peleLM.num_init_iter = 2               # [OPT, DEF=3] Number of iterations to get initial pressure
+    peleLM.num_divu_iter = 1               # [OPT, DEF=1] Number of divU iterations to get initial dt estimate
+    peleLM.do_init_proj = 1                # [OPT, DEF=1] Control over initial projection
+    peleLM.advection_scheme = Godunov_BDS  # [OPT, DEF=Godunov_PLM] Advection scheme: Godunov_PLM, Godunov_PPM or Godunov_BDS
     peleLM.chi_correction_type = DivuFirstIter  # [OPT, DEF=DivuEveryIter] When to compute divu for MAC proj divu constraint [DivuEveryIter, DivuFirstIter, NoDivu]
     peleLM.print_chi_convergence = 1            # [OPT, DEF=(peleLM.v > 1)] Boolean flag on whether to print size of chi correction on each SDC iter
-    peleLM.incompressible = 0                   # [OPT, DEF=0] Enable to run fully incompressible, scalar advance is bypassed
-    peleLM.m_rho = 1.17                         # [OPT, DEF=-1] If incompressible, density value [MKS]
-    peleLM.m_mu = 1.8e-5                        # [OPT, DEF=-1] If incompressible, kinematic visc. value [MKS]
-    peleLM.gravity = 0.0 0.0 -9.81              # [OPT, DEF=Vec{0.0}] Gravity vector [MKS]
-    peleLM.gradP0 = 0.0 0.0 10.0                # [OPT, DEF=Vec{0.0}] Average background pressure gradient [Pa/m]
-    peleLM.do_periodic_channel = 0              # [OPT, DEF= 0] Add an automatic pressure gradient to maintain initial condition mass flow rate in periodic channel
-    peleLM.periodic_channel_dir = 2             # [OPT, DEF= -1] Required if do_periodic_channel != 0. Direction to apply pressure gradient.
-    peleLM.closed_chamber = 0                   # [OPT] Override the automatic detection of closed chamber (based on Outflow(s))
-    peleLM.floor_species = 0                    # [OPT, DEF=0] Crudely enforce mass fraction positivity
-    peleLM.deltaT_verbose = 0                   # [OPT, DEF=0] Verbose of the deltaT iterative solve algorithm
-    peleLM.deltaT_iterMax = 5                   # [OPT, DEF=10] Maximum number of deltaT iterations
-    peleLM.deltaT_tol = 1e-10                   # [OPT, DEF=1.e-10] Tolerance of the deltaT solve
-    peleLM.evaluate_vars =...                   # [OPT, DEF=""] In evaluate mode, list unitTest: diffTerm, divU, instRR, transportCC
+    peleLM.incompressible = 0              # [OPT, DEF=0] Enable to run fully incompressible, scalar advance is bypassed
+    peleLM.m_rho = 1.17                    # [OPT, DEF=-1] If incompressible, density value [MKS]
+    peleLM.m_mu = 1.8e-5                   # [OPT, DEF=-1] If incompressible, kinematic visc. value [MKS]
+    peleLM.gravity = 0.0 0.0 -9.81         # [OPT, DEF=Vec{0.0}] Gravity vector [MKS]
+    peleLM.gradP0 = 0.0 0.0 10.0           # [OPT, DEF=Vec{0.0}] Average background pressure gradient [Pa/m]
+    peleLM.do_periodic_channel = 0         # [OPT, DEF= 0] Add an automatic pressure gradient to maintain initial condition mass flow rate in periodic channel
+    peleLM.periodic_channel_dir = 2        # [OPT, DEF= -1] Required if do_periodic_channel != 0. Direction to apply pressure gradient.
+    peleLM.closed_chamber = 0              # [OPT] Override the automatic detection of closed chamber (based on Outflow(s))
+    peleLM.floor_species = 0               # [OPT, DEF=0] Crudely enforce mass fraction positivity
+    peleLM.deltaT_verbose = 0              # [OPT, DEF=0] Verbose of the deltaT iterative solve algorithm
+    peleLM.deltaT_iterMax = 5              # [OPT, DEF=10] Maximum number of deltaT iterations
+    peleLM.deltaT_tol = 1e-10              # [OPT, DEF=1.e-10] Tolerance of the deltaT solve
+    peleLM.evaluate_vars =...              # [OPT, DEF=""] In evaluate mode, list unitTest: diffTerm, divU, instRR, transportCC
+    peleLM.do_patch_flow_variables = false # [OPT, DEF=false] Enable user-defined flow variable patching after reading a plot solution file
 
 Transport coefficients and LES
 ------------------------------

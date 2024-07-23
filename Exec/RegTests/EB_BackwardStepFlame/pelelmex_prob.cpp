@@ -13,4 +13,9 @@ PeleLM::readProbParm() // NOLINT(readability-make-member-function-const)
   pp.query("T_hot", prob_parm->T_hot);
   pp.query("T_wall", prob_parm->Twall);
   pp.query("meanFlowMag", prob_parm->meanFlowMag);
+  pp.query("do_ignite", prob_parm->ignite_flow);
+
+  if (prob_parm->ignite_flow) {
+    pp.query("ignition_temperature", prob_parm->ignition_temperature);
+  }
 }

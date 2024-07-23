@@ -27,6 +27,7 @@ THREAD_SANITIZER = FALSE
 
 # PeleLMeX
 CEXE_headers += EBUserDefined.H
+CEXE_sources += PeleLMeX_PatchFlowVariables.cpp
 
 # PelePhysics
 Chemistry_Model = drm19

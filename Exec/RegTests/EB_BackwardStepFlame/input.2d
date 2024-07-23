@@ -29,14 +29,13 @@ prob.T_wall = 300
 prob.meanFlowMag = 10.0
 prob.Y_fuel = 0.0445269
 prob.Y_oxid = 0.2226345
-
 #---------------------- PeleLM CONTROL ---------------------------
 peleLM.v = 1                                # PeleLMeX verbose
 peleLM.use_wbar = 1                         # Include Wbar term in species diffusion fluxes
 peleLM.sdc_iterMax = 2                      # Number of SDC iterations
 peleLM.num_init_iter = 3                    # Number of initial iterations
 peleLM.floor_species = 0                    # Enforce species positivity (non-conservative !)
-
+peleLM.do_patch_flow_variables = false      # Enable flow variable patching after reading a plot solution file
 #---------------------- Temporal CONTROL -------------------------
 peleLM.do_temporals = 1                     # Turn temporals ON/OFF
 peleLM.temporal_int = 10                    # Frequency of temporals
@@ -52,6 +51,7 @@ amr.dt_shrink = 0.001                       # Scale back initial timestep
 amr.dt_change_max = 1.1                     # Maximum dt increase btw successive steps
 
 #---------------------- IO CONTROL -------------------------------
+#amr.initDataPlt = plt_cold
 #amr.restart = chk00250                     # Restart checkpoint file
 amr.check_int = 100                         # Frequency of checkpoint output
 amr.plot_int = 50                           # Frequency of pltfile output
