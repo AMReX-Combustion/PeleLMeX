@@ -123,7 +123,7 @@ IO parameters
     amr.initDataPlt      = plt01000        # [OPT, DEF=""] Provide a plotfile from which to extract initial data
     amr.regrid_on_restart = 1              # [OPT, DEF="0"] Trigger a regrid after the data from checkpoint are loaded
     amr.n_files          = 64              # [OPT, DEF="min(256,NProcs)"] Number of files to write per level
-    
+
 Refinement controls
 -------------------
 
@@ -234,27 +234,28 @@ PeleLMeX algorithm
 ::
 
     #-----------------------PELE CONTROL-----------------------
-    peleLM.v = 1                           # [OPT, DEF=0] Verbose
-    peleLM.run_mode = normal               # [OPT, DEF=normal] Switch between time-advance mode (normal) or UnitTest (evaluate)
-    peleLM.use_wbar = 1                    # [OPT, DEF=1] Enable Wbar correction in diffusion fluxes
-    peleLM.sdc_iterMax = 2                 # [OPT, DEF=1] Number of SDC iterations
-    peleLM.num_init_iter = 2               # [OPT, DEF=3] Number of iterations to get initial pressure
-    peleLM.num_divu_iter = 1               # [OPT, DEF=1] Number of divU iterations to get initial dt estimate
-    peleLM.do_init_proj = 1                # [OPT, DEF=1] Control over initial projection
-    peleLM.advection_scheme = Godunov_BDS  # [OPT, DEF=Godunov_PLM] Advection scheme: Godunov_PLM, Godunov_PPM or Godunov_BDS
-    peleLM.incompressible = 0              # [OPT, DEF=0] Enable to run fully incompressible, scalar advance is bypassed
-    peleLM.m_rho = 1.17                    # [OPT, DEF=-1] If incompressible, density value [MKS]
-    peleLM.m_mu = 1.8e-5                   # [OPT, DEF=-1] If incompressible, kinematic visc. value [MKS]
-    peleLM.gravity = 0.0 0.0 -9.81         # [OPT, DEF=Vec{0.0}] Gravity vector [MKS]
-    peleLM.gradP0 = 0.0 0.0 10.0           # [OPT, DEF=Vec{0.0}] Average background pressure gradient [Pa/m]
-    peleLM.do_periodic_channel = 0         # [OPT, DEF= 0] Add an automatic pressure gradient to maintain initial condition mass flow rate in periodic channel
-    peleLM.periodic_channel_dir = 2        # [OPT, DEF= -1] Required if do_periodic_channel != 0. Direction to apply pressure gradient.
-    peleLM.closed_chamber = 0              # [OPT] Override the automatic detection of closed chamber (based on Outflow(s))
-    peleLM.floor_species = 0               # [OPT, DEF=0] Crudely enforce mass fraction positivity
-    peleLM.deltaT_verbose = 0              # [OPT, DEF=0] Verbose of the deltaT iterative solve algorithm
-    peleLM.deltaT_iterMax = 5              # [OPT, DEF=10] Maximum number of deltaT iterations
-    peleLM.deltaT_tol = 1e-10              # [OPT, DEF=1.e-10] Tolerance of the deltaT solve
-    peleLM.evaluate_vars =...              # [OPT, DEF=""] In evaluate mode, list unitTest: diffTerm, divU, instRR, transportCC
+    peleLM.v = 1                                # [OPT, DEF=0] Verbose
+    peleLM.run_mode = normal                    # [OPT, DEF=normal] Switch between time-advance mode (normal) or UnitTest (evaluate)
+    peleLM.use_wbar = 1                         # [OPT, DEF=1] Enable Wbar correction in diffusion fluxes
+    peleLM.sdc_iterMax = 2                      # [OPT, DEF=1] Number of SDC iterations
+    peleLM.num_init_iter = 2                    # [OPT, DEF=3] Number of iterations to get initial pressure
+    peleLM.num_divu_iter = 1                    # [OPT, DEF=1] Number of divU iterations to get initial dt estimate
+    peleLM.do_init_proj = 1                     # [OPT, DEF=1] Control over initial projection
+    peleLM.advection_scheme = Godunov_BDS       # [OPT, DEF=Godunov_PLM] Advection scheme: Godunov_PLM, Godunov_PPM or Godunov_BDS
+    peleLM.chi_convergence_type = DivuFirstIter # [OPT, DEF=DivuEveryIter] When to compute divu for MAC proj divu constraint [DivuEveryIter, DivuFirstIter, NoDivu]
+    peleLM.incompressible = 0                   # [OPT, DEF=0] Enable to run fully incompressible, scalar advance is bypassed
+    peleLM.m_rho = 1.17                         # [OPT, DEF=-1] If incompressible, density value [MKS]
+    peleLM.m_mu = 1.8e-5                        # [OPT, DEF=-1] If incompressible, kinematic visc. value [MKS]
+    peleLM.gravity = 0.0 0.0 -9.81              # [OPT, DEF=Vec{0.0}] Gravity vector [MKS]
+    peleLM.gradP0 = 0.0 0.0 10.0                # [OPT, DEF=Vec{0.0}] Average background pressure gradient [Pa/m]
+    peleLM.do_periodic_channel = 0              # [OPT, DEF= 0] Add an automatic pressure gradient to maintain initial condition mass flow rate in periodic channel
+    peleLM.periodic_channel_dir = 2             # [OPT, DEF= -1] Required if do_periodic_channel != 0. Direction to apply pressure gradient.
+    peleLM.closed_chamber = 0                   # [OPT] Override the automatic detection of closed chamber (based on Outflow(s))
+    peleLM.floor_species = 0                    # [OPT, DEF=0] Crudely enforce mass fraction positivity
+    peleLM.deltaT_verbose = 0                   # [OPT, DEF=0] Verbose of the deltaT iterative solve algorithm
+    peleLM.deltaT_iterMax = 5                   # [OPT, DEF=10] Maximum number of deltaT iterations
+    peleLM.deltaT_tol = 1e-10                   # [OPT, DEF=1.e-10] Tolerance of the deltaT solve
+    peleLM.evaluate_vars =...                   # [OPT, DEF=""] In evaluate mode, list unitTest: diffTerm, divU, instRR, transportCC
 
 Transport coefficients and LES
 ------------------------------
@@ -452,41 +453,41 @@ to activate `temporal` diagnostics performing these reductions at given interval
     peleLM.do_species_balance = 1               # [OPT, DEF=0] Compute species mass balance, if temporals activated
     peleLM.do_patch_mfr=1                       # [OPT, DEF=0] Activate patch based species flux diagbostics
     peleLM.bpatch.patchnames= <patch_name1 patch_name2 ..> # List of patchnames
-    
-    bpatch.patch_name1.patchtype=full-boundary             # patchtype one of "full-boundary", "circle, "rectangle", "circle-annular" or "rectangle-annular"	 
-    bpatch.patch_name1.boundary_direction=2                # patch normal direction 
-    bpatch.patch_name1.boundary_lo_or_hi=0                 # patch in low or high side of boundary    
+
+    bpatch.patch_name1.patchtype=full-boundary             # patchtype one of "full-boundary", "circle, "rectangle", "circle-annular" or "rectangle-annular"
+    bpatch.patch_name1.boundary_direction=2                # patch normal direction
+    bpatch.patch_name1.boundary_lo_or_hi=0                 # patch in low or high side of boundary
     bpatch.patch_name1.species= O2 N2                      # list of species names
-    
-    bpatch.patch_name2.patchtype=circle                    # patchtype one of "full-boundary", "circle, "rectangle", "circle-annular" or "rectangle-annular"	 
-    bpatch.patch_name2.boundary_direction=2                # patch normal direction 
-    bpatch.patch_name2.boundary_lo_or_hi=0                 # patch in low or high side of boundary   
+
+    bpatch.patch_name2.patchtype=circle                    # patchtype one of "full-boundary", "circle, "rectangle", "circle-annular" or "rectangle-annular"
+    bpatch.patch_name2.boundary_direction=2                # patch normal direction
+    bpatch.patch_name2.boundary_lo_or_hi=0                 # patch in low or high side of boundary
     bpatch.patch_name2.patch_circle_radius=0.1             # radius of the patch
-    bpatch.patch_name2.patch_circle_center=0.0 0.0 0.0     # coordinates of patch center 
+    bpatch.patch_name2.patch_circle_center=0.0 0.0 0.0     # coordinates of patch center
     bpatch.patch_name2.species= O2 N2                      # list of species names
-    
-    bpatch.patch_name3.patchtype=rectangle      	 
-    bpatch.patch_name3.boundary_direction=2                # patch normal direction 
-    bpatch.patch_name3.boundary_lo_or_hi=0                 # patch in low or high side of boundary   
+
+    bpatch.patch_name3.patchtype=rectangle
+    bpatch.patch_name3.boundary_direction=2                # patch normal direction
+    bpatch.patch_name3.boundary_lo_or_hi=0                 # patch in low or high side of boundary
     bpatch.patch_name3.patch_rectangle_lo=0.0 0.0 0.0      # coordinates of low corner of rectangle
     bpatch.patch_name3.patch_rectangle_hi=1.0 1.0 1.0      # coordinates of high corner of rectangle
     bpatch.patch_name3.species= O2 N2                      # list of species names
-    
-    bpatch.patch_name4.patchtype=circle-annular  	 
-    bpatch.patch_name4.boundary_direction=2                # patch normal direction 
-    bpatch.patch_name4.boundary_lo_or_hi=0                 # patch in low or high side of boundary   
+
+    bpatch.patch_name4.patchtype=circle-annular
+    bpatch.patch_name4.boundary_direction=2                # patch normal direction
+    bpatch.patch_name4.boundary_lo_or_hi=0                 # patch in low or high side of boundary
     bpatch.patch_name4.patch_circ_ann_center= 0.0 0.0 0.0  # center of annular circle
     bpatch.patch_name4.patch_circ_ann_inner_radius=0.1     # coordinates of patch center
-    bpatch.patch_name4.patch_circ_ann_outer_radius=0.2     # coordinates of patch center 
+    bpatch.patch_name4.patch_circ_ann_outer_radius=0.2     # coordinates of patch center
     bpatch.patch_name4.species= O2 N2                      # list of species names
-    
-    bpatch.patch_name5.patchtype=rectangle-annular         
-    bpatch.patch_name5.boundary_direction=2                     # patch normal direction 
-    bpatch.patch_name5.boundary_lo_or_hi=0                      # patch in low or high side of boundary   
-    bpatch.patch_name5.patch_rect_ann_outer_lo = -1.0 -1.0 -1.0 # coordinates of low corner of outer rectangle 
-    bpatch.patch_name5.patch_rect_ann_outer_hi =  1.0  1.0  1.0 # coordinates of high corner of outer rectangle  
-    bpatch.patch_name5.patch_rect_ann_inner_lo = -0.5 -0.5 -0.5 # coordinates of low corner of inner rectangle 
-    bpatch.patch_name5.patch_rect_ann_inner_hi =  0.5  0.5  0.5 # coordinates of high corner of inner rectangle 
+
+    bpatch.patch_name5.patchtype=rectangle-annular
+    bpatch.patch_name5.boundary_direction=2                     # patch normal direction
+    bpatch.patch_name5.boundary_lo_or_hi=0                      # patch in low or high side of boundary
+    bpatch.patch_name5.patch_rect_ann_outer_lo = -1.0 -1.0 -1.0 # coordinates of low corner of outer rectangle
+    bpatch.patch_name5.patch_rect_ann_outer_hi =  1.0  1.0  1.0 # coordinates of high corner of outer rectangle
+    bpatch.patch_name5.patch_rect_ann_inner_lo = -0.5 -0.5 -0.5 # coordinates of low corner of inner rectangle
+    bpatch.patch_name5.patch_rect_ann_inner_hi =  0.5  0.5  0.5 # coordinates of high corner of inner rectangle
     bpatch.patch_name5.species= O2 N2                           # list of species names
 
 The `do_temporal` flag will trigger the creation of a `temporals` folder in your run directory and the following entries
@@ -498,8 +499,8 @@ the balance (dMdt - sum of fluxes), and species balance (stored in `temporals/te
 advective \& diffusive fluxes across the domain boundaries, consumption rate integral and the error (dMdt - sum of fluxes - reaction).
 Users can also monitor species advective fluxes through specific regions of the domain boundaries (called as boundary patches).
 Patches can be defined on the low or high sides of non-embedded boundaries through the use of pre-defined shapes such as `circle`,
-`rectangle`,`circle-annular`, `rectangle-annular` and `full-boundary`. The zero AMR level, advective fluxes of each of the user-specified species will be 
-reported in the ASCII `temppatchmfr` file in the temporals folder. 
+`rectangle`,`circle-annular`, `rectangle-annular` and `full-boundary`. The zero AMR level, advective fluxes of each of the user-specified species will be
+reported in the ASCII `temppatchmfr` file in the temporals folder.
 
 Combustion diagnostics often involve the use of a mixture fraction and/or a progress variable, both of which can be defined
 at run time and added to the derived variables included in the plotfile. If `mixture_fraction` or `progress_variable` is
