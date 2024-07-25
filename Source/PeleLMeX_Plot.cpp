@@ -802,6 +802,10 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
   // Use PelePhysics PltFileManager
   pele::physics::pltfilemanager::PltFileManager pltData(a_dataPltFile);
   Vector<std::string> plt_vars = pltData.getVariableList();
+  if (m_do_reset_time == 0) {
+    m_cur_time = pltData.getTime();
+    m_nstep = pltData.getNsteps();
+  }
 
   // Find required data in pltfile
   Vector<std::string> spec_names;

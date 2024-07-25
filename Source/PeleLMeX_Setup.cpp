@@ -419,6 +419,7 @@ PeleLM::readParameters()
   pp.query("do_init_proj", m_do_init_proj);
   pp.query("num_init_iter", m_init_iter);
   pp.query("do_patch_flow_variables", m_do_patch_flow_variables);
+  pp.query("do_reset_time", m_do_reset_time);
 
   // -----------------------------------------
   // advance
