@@ -469,13 +469,11 @@ public:
    * crse_ratio refinement ratio with the next coarser level
    */
   void create_constrained_umac_grown(
-    int a_lev,
     int a_nGrow,
     const amrex::Geometry* crse_geom,
     const amrex::Geometry* fine_geom,
     amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM> u_mac_crse,
     amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM> u_mac_fine,
-    const amrex::MultiFab* divu,
     const amrex::IntVect& crse_ratio);
 
   /**

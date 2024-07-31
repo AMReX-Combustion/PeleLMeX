@@ -205,11 +205,10 @@ PeleLM::macProject(
       // We need to fill the MAC velocities outside the fine region so we can
       // use them in the Godunov method
       IntVect rr = geom[lev].Domain().size() / geom[lev - 1].Domain().size();
-      auto* divu_lev = (has_divu) != 0 ? a_divu[lev] : nullptr;
       create_constrained_umac_grown(
-        lev, m_nGrowMAC, &geom[lev - 1], &geom[lev],
+        m_nGrowMAC, &geom[lev - 1], &geom[lev],
         GetArrOfPtrs(advData->umac[lev - 1]), GetArrOfPtrs(advData->umac[lev]),
-        divu_lev, rr);
+        rr);
     } else {
       AMREX_D_TERM(
         advData->umac[lev][0].FillBoundary(geom[lev].periodicity());
@@ -221,17 +220,13 @@ PeleLM::macProject(
 
 void
 PeleLM::create_constrained_umac_grown(
-  int a_lev,
   int a_nGrow,
   const Geometry* crse_geom,
   const Geometry* fine_geom,
   Array<MultiFab*, AMREX_SPACEDIM> u_mac_crse,
   Array<MultiFab*, AMREX_SPACEDIM> u_mac_fine,
-  const MultiFab* divu,
   const IntVect& crse_ratio)
 {
-  int has_divu = static_cast<int>(divu != nullptr);
-
   // Divergence preserving interp
   Interpolater* mapper = &face_divfree_interp;
 
