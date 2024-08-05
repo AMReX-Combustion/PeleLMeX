@@ -211,6 +211,8 @@ the first stopping criterion encountered will lead to termination of the simulat
 
 <span class="n">amr</span><span class="o">.</span><span class="n">restart</span>          <span class="o">=</span> <span class="n">chk00100</span>        <span class="c1"># [OPT, DEF=&quot;&quot;] Checkpoint from which to restart the simulation</span>
 <span class="n">amr</span><span class="o">.</span><span class="n">initDataPlt</span>      <span class="o">=</span> <span class="n">plt01000</span>        <span class="c1"># [OPT, DEF=&quot;&quot;] Provide a plotfile from which to extract initial data</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">initDataPlt_reset_time</span> <span class="o">=</span> <span class="mi">1</span>               <span class="c1"># [OPT, DEF=1] Resets time and nsteps to 0 after restarting from a plot file. (Warning: plot file will be rewritten if not renamed and argument value = 0)</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">initDataPlt_patch_flow_variables</span> <span class="o">=</span> <span class="n">false</span> <span class="c1"># [OPT, DEF=false] Enable user-defined flow variable patching after reading a plot solution file</span>
 <span class="n">amr</span><span class="o">.</span><span class="n">regrid_on_restart</span> <span class="o">=</span> <span class="mi">1</span>              <span class="c1"># [OPT, DEF=&quot;0&quot;] Trigger a regrid after the data from checkpoint are loaded</span>
 <span class="n">amr</span><span class="o">.</span><span class="n">n_files</span>          <span class="o">=</span> <span class="mi">64</span>              <span class="c1"># [OPT, DEF=&quot;min(256,NProcs)&quot;] Number of files to write per level</span>
 </pre></div>
@@ -365,7 +367,6 @@ components is defined based on the size of the vector returned by pelelmex_setus
 <span class="n">peleLM</span><span class="o">.</span><span class="n">deltaT_iterMax</span> <span class="o">=</span> <span class="mi">5</span>              <span class="c1"># [OPT, DEF=10] Maximum number of deltaT iterations</span>
 <span class="n">peleLM</span><span class="o">.</span><span class="n">deltaT_tol</span> <span class="o">=</span> <span class="mf">1e-10</span>              <span class="c1"># [OPT, DEF=1.e-10] Tolerance of the deltaT solve</span>
 <span class="n">peleLM</span><span class="o">.</span><span class="n">evaluate_vars</span> <span class="o">=...</span>              <span class="c1"># [OPT, DEF=&quot;&quot;] In evaluate mode, list unitTest: diffTerm, divU, instRR, transportCC</span>
-<span class="n">peleLM</span><span class="o">.</span><span class="n">do_patch_flow_variables</span> <span class="o">=</span> <span class="n">false</span> <span class="c1"># [OPT, DEF=false] Enable user-defined flow variable patching after reading a plot solution file</span>
 </pre></div>
 </div>
 </section>

@@ -121,9 +121,11 @@ IO parameters
 
     amr.restart          = chk00100        # [OPT, DEF=""] Checkpoint from which to restart the simulation
     amr.initDataPlt      = plt01000        # [OPT, DEF=""] Provide a plotfile from which to extract initial data
+    peleLM.initDataPlt_reset_time = 1               # [OPT, DEF=1] Resets time and nsteps to 0 after restarting from a plot file. (Warning: plot file will be rewritten if not renamed and argument value = 0)
+    peleLM.initDataPlt_patch_flow_variables = false # [OPT, DEF=false] Enable user-defined flow variable patching after reading a plot solution file
     amr.regrid_on_restart = 1              # [OPT, DEF="0"] Trigger a regrid after the data from checkpoint are loaded
     amr.n_files          = 64              # [OPT, DEF="min(256,NProcs)"] Number of files to write per level
-    
+
 Refinement controls
 -------------------
 
@@ -255,7 +257,6 @@ PeleLMeX algorithm
     peleLM.deltaT_iterMax = 5              # [OPT, DEF=10] Maximum number of deltaT iterations
     peleLM.deltaT_tol = 1e-10              # [OPT, DEF=1.e-10] Tolerance of the deltaT solve
     peleLM.evaluate_vars =...              # [OPT, DEF=""] In evaluate mode, list unitTest: diffTerm, divU, instRR, transportCC
-    peleLM.do_patch_flow_variables = false # [OPT, DEF=false] Enable user-defined flow variable patching after reading a plot solution file
 
 Transport coefficients and LES
 ------------------------------
@@ -453,41 +454,41 @@ to activate `temporal` diagnostics performing these reductions at given interval
     peleLM.do_species_balance = 1               # [OPT, DEF=0] Compute species mass balance, if temporals activated
     peleLM.do_patch_mfr=1                       # [OPT, DEF=0] Activate patch based species flux diagbostics
     peleLM.bpatch.patchnames= <patch_name1 patch_name2 ..> # List of patchnames
-    
-    bpatch.patch_name1.patchtype=full-boundary             # patchtype one of "full-boundary", "circle, "rectangle", "circle-annular" or "rectangle-annular"	 
-    bpatch.patch_name1.boundary_direction=2                # patch normal direction 
-    bpatch.patch_name1.boundary_lo_or_hi=0                 # patch in low or high side of boundary    
+
+    bpatch.patch_name1.patchtype=full-boundary             # patchtype one of "full-boundary", "circle, "rectangle", "circle-annular" or "rectangle-annular"
+    bpatch.patch_name1.boundary_direction=2                # patch normal direction
+    bpatch.patch_name1.boundary_lo_or_hi=0                 # patch in low or high side of boundary
     bpatch.patch_name1.species= O2 N2                      # list of species names
-    
-    bpatch.patch_name2.patchtype=circle                    # patchtype one of "full-boundary", "circle, "rectangle", "circle-annular" or "rectangle-annular"	 
-    bpatch.patch_name2.boundary_direction=2                # patch normal direction 
-    bpatch.patch_name2.boundary_lo_or_hi=0                 # patch in low or high side of boundary   
+
+    bpatch.patch_name2.patchtype=circle                    # patchtype one of "full-boundary", "circle, "rectangle", "circle-annular" or "rectangle-annular"
+    bpatch.patch_name2.boundary_direction=2                # patch normal direction
+    bpatch.patch_name2.boundary_lo_or_hi=0                 # patch in low or high side of boundary
     bpatch.patch_name2.patch_circle_radius=0.1             # radius of the patch
-    bpatch.patch_name2.patch_circle_center=0.0 0.0 0.0     # coordinates of patch center 
+    bpatch.patch_name2.patch_circle_center=0.0 0.0 0.0     # coordinates of patch center
     bpatch.patch_name2.species= O2 N2                      # list of species names
-    
-    bpatch.patch_name3.patchtype=rectangle      	 
-    bpatch.patch_name3.boundary_direction=2                # patch normal direction 
-    bpatch.patch_name3.boundary_lo_or_hi=0                 # patch in low or high side of boundary   
+
+    bpatch.patch_name3.patchtype=rectangle
+    bpatch.patch_name3.boundary_direction=2                # patch normal direction
+    bpatch.patch_name3.boundary_lo_or_hi=0                 # patch in low or high side of boundary
     bpatch.patch_name3.patch_rectangle_lo=0.0 0.0 0.0      # coordinates of low corner of rectangle
     bpatch.patch_name3.patch_rectangle_hi=1.0 1.0 1.0      # coordinates of high corner of rectangle
     bpatch.patch_name3.species= O2 N2                      # list of species names
-    
-    bpatch.patch_name4.patchtype=circle-annular  	 
-    bpatch.patch_name4.boundary_direction=2                # patch normal direction 
-    bpatch.patch_name4.boundary_lo_or_hi=0                 # patch in low or high side of boundary   
+
+    bpatch.patch_name4.patchtype=circle-annular
+    bpatch.patch_name4.boundary_direction=2                # patch normal direction
+    bpatch.patch_name4.boundary_lo_or_hi=0                 # patch in low or high side of boundary
     bpatch.patch_name4.patch_circ_ann_center= 0.0 0.0 0.0  # center of annular circle
     bpatch.patch_name4.patch_circ_ann_inner_radius=0.1     # coordinates of patch center
-    bpatch.patch_name4.patch_circ_ann_outer_radius=0.2     # coordinates of patch center 
+    bpatch.patch_name4.patch_circ_ann_outer_radius=0.2     # coordinates of patch center
     bpatch.patch_name4.species= O2 N2                      # list of species names
-    
-    bpatch.patch_name5.patchtype=rectangle-annular         
-    bpatch.patch_name5.boundary_direction=2                     # patch normal direction 
-    bpatch.patch_name5.boundary_lo_or_hi=0                      # patch in low or high side of boundary   
-    bpatch.patch_name5.patch_rect_ann_outer_lo = -1.0 -1.0 -1.0 # coordinates of low corner of outer rectangle 
-    bpatch.patch_name5.patch_rect_ann_outer_hi =  1.0  1.0  1.0 # coordinates of high corner of outer rectangle  
-    bpatch.patch_name5.patch_rect_ann_inner_lo = -0.5 -0.5 -0.5 # coordinates of low corner of inner rectangle 
-    bpatch.patch_name5.patch_rect_ann_inner_hi =  0.5  0.5  0.5 # coordinates of high corner of inner rectangle 
+
+    bpatch.patch_name5.patchtype=rectangle-annular
+    bpatch.patch_name5.boundary_direction=2                     # patch normal direction
+    bpatch.patch_name5.boundary_lo_or_hi=0                      # patch in low or high side of boundary
+    bpatch.patch_name5.patch_rect_ann_outer_lo = -1.0 -1.0 -1.0 # coordinates of low corner of outer rectangle
+    bpatch.patch_name5.patch_rect_ann_outer_hi =  1.0  1.0  1.0 # coordinates of high corner of outer rectangle
+    bpatch.patch_name5.patch_rect_ann_inner_lo = -0.5 -0.5 -0.5 # coordinates of low corner of inner rectangle
+    bpatch.patch_name5.patch_rect_ann_inner_hi =  0.5  0.5  0.5 # coordinates of high corner of inner rectangle
     bpatch.patch_name5.species= O2 N2                           # list of species names
 
 The `do_temporal` flag will trigger the creation of a `temporals` folder in your run directory and the following entries
@@ -499,8 +500,8 @@ the balance (dMdt - sum of fluxes), and species balance (stored in `temporals/te
 advective \& diffusive fluxes across the domain boundaries, consumption rate integral and the error (dMdt - sum of fluxes - reaction).
 Users can also monitor species advective fluxes through specific regions of the domain boundaries (called as boundary patches).
 Patches can be defined on the low or high sides of non-embedded boundaries through the use of pre-defined shapes such as `circle`,
-`rectangle`,`circle-annular`, `rectangle-annular` and `full-boundary`. The zero AMR level, advective fluxes of each of the user-specified species will be 
-reported in the ASCII `temppatchmfr` file in the temporals folder. 
+`rectangle`,`circle-annular`, `rectangle-annular` and `full-boundary`. The zero AMR level, advective fluxes of each of the user-specified species will be
+reported in the ASCII `temppatchmfr` file in the temporals folder.
 
 Combustion diagnostics often involve the use of a mixture fraction and/or a progress variable, both of which can be defined
 at run time and added to the derived variables included in the plotfile. If `mixture_fraction` or `progress_variable` is
