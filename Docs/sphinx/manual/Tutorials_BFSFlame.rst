@@ -151,7 +151,7 @@ The initial solution consists of a premixed methane/air mixture in the upper par
 and pure hot air in the wake of the step. The default parameters provided above are overwritten
 using AMReX ParmParse in ``pelelmex_prob.cpp`` and the initial/boundary conditions implemented in
 ``pelelmex_prob.H``. Alternatively, the user can write a custom function to enforce an ignition kernel through the ``patchFlowVariables`` function in the problem-specific ``PeleLMeX_PatchFlowVariables.cpp`` file. 
-It should be kept in mind that the ``patchFlowVariables`` function can be used if the user wants to patch certain flow variables after reading an existing solution from a plot file ( ``peleLM.do_patch_flow_variables`` should be set to true).
+It should be kept in mind that the ``patchFlowVariables`` function can be used if the user wants to patch certain flow variables after reading an existing solution from a plot file ( ``peleLM.initDataPlt_patch_flow_variables`` should be set to true).
 
 In addition to these three C++ files, an extra header is needed in the present case compared to
 :doc:`Tutorials_FlameSheet` : ``EBUserDefined.H``. This file is necessary to specify more complex EB

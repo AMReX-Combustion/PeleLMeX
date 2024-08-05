@@ -1812,6 +1812,7 @@ public:
 
   int m_regrid_int = -1;
   int m_regrid_on_restart = 0;
+  int m_do_reset_time = 1;
 
   // Switch Evolve/Evaluate
   std::string m_run_mode = "normal";
