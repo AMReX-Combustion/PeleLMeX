@@ -583,7 +583,8 @@ public:
       a_spwbarfluxes,
     amrex::Vector<amrex::MultiFab const*> const& a_spec,
     amrex::Vector<amrex::MultiFab const*> const& a_rho,
-    amrex::Vector<amrex::MultiFab const*> const& a_beta);
+    amrex::Vector<amrex::MultiFab const*> const& a_beta, 
+    amrex::Vector<amrex::MultiFab const*> const& a_boundary);
 
   /**
    * \brief Add the Soret contribution to the face-centered species diffusion
