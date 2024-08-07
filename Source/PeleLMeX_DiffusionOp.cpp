@@ -660,7 +660,7 @@ DiffusionOp::computeDiffFluxes(
     Vector<MultiFab> component;
     Vector<MultiFab> laps;
     Vector<MultiFab> boundary;
-    
+
     // Allow for component specific LinOp BC
     m_scal_apply_op->setDomainBC(
       m_pelelm->getDiffusionLinOpBC(Orientation::low, a_bcrec[comp]),
@@ -679,7 +679,6 @@ DiffusionOp::computeDiffFluxes(
         boundary.emplace_back(phi[lev], amrex::make_alias, comp, m_ncomp);
       }
 
-
       int doZeroVisc = 1;
       int addTurbContrib = 1;
       Vector<BCRec> subBCRec = {
@@ -697,7 +696,6 @@ DiffusionOp::computeDiffFluxes(
       m_scal_apply_op->setBCoeffs(lev, GetArrOfConstPtrs(bcoeff_ec));
 #endif
       m_scal_apply_op->setLevelBC(lev, &boundary[lev]);
-      
     }
 
     MLMG mlmg(*m_scal_apply_op);
@@ -866,10 +864,10 @@ DiffusionOp::computeGradient(
   // Checks: one components only and 1 ghost cell at least
   AMREX_ASSERT(a_phi[0]->nComp() == 1);
   AMREX_ASSERT(a_phi[0]->nGrow() >= 1);
-  
+
   int finest_level = m_pelelm->finestLevel();
   int have_boundary = (a_boundary.empty()) ? 0 : 1;
-  
+
   // Set domainBCs
   m_gradient_op->setDomainBC(
     m_pelelm->getDiffusionLinOpBC(Orientation::low, a_bcrec),
@@ -888,14 +886,14 @@ DiffusionOp::computeGradient(
       a_phi[lev]->boxArray(), a_phi[lev]->DistributionMap(), 1, 1, MFInfo(),
       a_phi[lev]->Factory());
 
-    MultiFab::Copy(phi[lev],*a_phi[lev],0,0,1,1);
+    MultiFab::Copy(phi[lev], *a_phi[lev], 0, 0, 1, 1);
 
     if (have_boundary != 0) {
       MultiFab::Copy(boundary[lev], *a_boundary[lev], 0, 0, 1, 1);
     } else {
       MultiFab::Copy(boundary[lev], *a_phi[lev], 0, 0, 1, 1);
     }
-    
+
     m_gradient_op->setLevelBC(lev, &boundary[lev]);
     if (need_laplacian != 0) {
       laps.emplace_back(*a_laps[lev], amrex::make_alias, 0, 1);
