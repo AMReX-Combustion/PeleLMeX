@@ -338,7 +338,7 @@ DiffusionOp::diffuse_scalar(
   int have_acoeff = (a_acoeff.empty()) ? 0 : 1;
   int have_bcoeff = (a_bcoeff.empty()) ? 0 : 1;
   int have_boundary = (a_boundary.empty()) ? 0 : 1;
-  
+
   //----------------------------------------------------------------
   // Checks
   AMREX_ASSERT(m_ncomp == 1 || m_ncomp == ncomp);
@@ -448,7 +448,8 @@ DiffusionOp::diffuse_scalar(
       rhs.emplace_back(
         *a_rhs[lev], amrex::make_alias, rhs_comp + comp, m_ncomp);
       if (have_boundary != 0) {
-        boundary.emplace_back(*a_boundary[lev], amrex::make_alias, comp, m_ncomp);
+        boundary.emplace_back(
+          *a_boundary[lev], amrex::make_alias, comp, m_ncomp);
       } else {
         boundary.emplace_back(phi[lev], amrex::make_alias, comp, m_ncomp);
       }
@@ -811,7 +812,7 @@ DiffusionOp::computeDiffFluxes(
     Vector<MultiFab> component;
     Vector<MultiFab> laps;
     Vector<MultiFab> boundary;
-    
+
     // Allow for component specific LinOp BC
     m_scal_apply_op->setDomainBC(
       m_pelelm->getDiffusionLinOpBC(Orientation::low, a_bcrec[comp]),
