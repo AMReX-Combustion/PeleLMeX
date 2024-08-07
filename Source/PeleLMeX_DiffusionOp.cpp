@@ -326,7 +326,8 @@ DiffusionOp::diffuse_scalar(
   Vector<BCRec> a_bcrec,
   int ncomp,
   int isPoissonSolve,
-  Real a_dt)
+  Real a_dt,
+  Vector<MultiFab const*> const& a_boundary)
 {
   BL_PROFILE("DiffusionOp::diffuse_scalar()");
 
@@ -336,7 +337,8 @@ DiffusionOp::diffuse_scalar(
   int have_fluxes = (a_flux.empty()) ? 0 : 1;
   int have_acoeff = (a_acoeff.empty()) ? 0 : 1;
   int have_bcoeff = (a_bcoeff.empty()) ? 0 : 1;
-
+  int have_boundary = (a_boundary.empty()) ? 0 : 1;
+  
   //----------------------------------------------------------------
   // Checks
   AMREX_ASSERT(m_ncomp == 1 || m_ncomp == ncomp);
@@ -413,6 +415,7 @@ DiffusionOp::diffuse_scalar(
     Vector<Array<MultiFab*, AMREX_SPACEDIM>> fluxes(finest_level + 1);
     Vector<MultiFab> component;
     Vector<MultiFab> rhs;
+    Vector<MultiFab> boundary;
 
     // Allow for component specific LinOp BC
     m_scal_solve_op->setDomainBC(
@@ -444,7 +447,12 @@ DiffusionOp::diffuse_scalar(
       component.emplace_back(phi[lev], amrex::make_alias, comp, m_ncomp);
       rhs.emplace_back(
         *a_rhs[lev], amrex::make_alias, rhs_comp + comp, m_ncomp);
-      m_scal_solve_op->setLevelBC(lev, &component[lev]);
+      if (have_boundary != 0) {
+        boundary.emplace_back(*a_boundary[lev], amrex::make_alias, comp, m_ncomp);
+      } else {
+        boundary.emplace_back(phi[lev], amrex::make_alias, comp, m_ncomp);
+      }
+      m_scal_solve_op->setLevelBC(lev, &boundary[lev]);
       m_scal_solve_op->setEBDirichlet(lev, *a_phiEB[lev], *a_bcoeffEB[lev]);
     }
 
@@ -735,7 +743,8 @@ DiffusionOp::computeDiffFluxes(
   Vector<MultiFab const*> const& a_EBbcoeff,
   Vector<BCRec> a_bcrec,
   int ncomp,
-  int do_avgDown)
+  int do_avgDown,
+  Vector<MultiFab const*> const& a_boundary)
 {
   BL_PROFILE("DiffusionOp::computeDiffFluxes()");
 
@@ -750,6 +759,7 @@ DiffusionOp::computeDiffFluxes(
   int finest_level = m_pelelm->finestLevel();
 
   int have_density = (a_density.empty()) ? 0 : 1;
+  int have_boundary = (a_boundary.empty()) ? 0 : 1;
 
   // Duplicate phi since it is modified by the LinOp
   // and if have_density -> divide by density
@@ -800,7 +810,8 @@ DiffusionOp::computeDiffFluxes(
     Vector<std::unique_ptr<MultiFab>> ebfluxes;
     Vector<MultiFab> component;
     Vector<MultiFab> laps;
-
+    Vector<MultiFab> boundary;
+    
     // Allow for component specific LinOp BC
     m_scal_apply_op->setDomainBC(
       m_pelelm->getDiffusionLinOpBC(Orientation::low, a_bcrec[comp]),
@@ -814,6 +825,12 @@ DiffusionOp::computeDiffFluxes(
       ebfluxes.push_back(std::make_unique<MultiFab>(
         *a_EBflux[lev], amrex::make_alias, ebflux_comp + comp, m_ncomp));
       component.emplace_back(phi[lev], amrex::make_alias, comp, m_ncomp);
+      if (have_boundary != 0) {
+        boundary.emplace_back(
+          *a_boundary[lev], amrex::make_alias, comp, m_ncomp);
+      } else {
+        boundary.emplace_back(phi[lev], amrex::make_alias, comp, m_ncomp);
+      }
       int doZeroVisc = 1;
       Vector<BCRec> subBCRec = {
         a_bcrec.begin() + comp, a_bcrec.begin() + comp + m_ncomp};
@@ -824,7 +841,7 @@ DiffusionOp::computeDiffFluxes(
         MFInfo(), a_phi[lev]->Factory());
       m_scal_apply_op->setBCoeffs(
         lev, GetArrOfConstPtrs(bcoeff_ec), MLMG::Location::FaceCentroid);
-      m_scal_apply_op->setLevelBC(lev, &component[lev]);
+      m_scal_apply_op->setLevelBC(lev, &boundary[lev]);
       m_scal_apply_op->setEBDirichlet(lev, *a_EBvalue[lev], *a_EBbcoeff[lev]);
     }
 
