@@ -622,7 +622,6 @@ PeleLM::addRhoYFluxesPatch(
         ParallelAllReduce::Sum<Real>(
           {sum_species_flux_global}, ParallelContext::CommunicatorSub());
         bphost->speciesFlux[m] = a_factor * sum_species_flux_global;
-        // amrex::Print()<<"\nNew func = "<<a_factor * sum_species_flux_global;
       }
     }
   }

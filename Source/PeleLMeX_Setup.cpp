@@ -45,7 +45,6 @@ PeleLM::Setup()
   // Ensure grid is isotropic
   {
     auto const dx = geom[0].CellSizeArray();
-    amrex::Print() << "\n Dx = " << dx[0] << " " << dx[1] << " " << dx[2];
     AMREX_ALWAYS_ASSERT(AMREX_D_TERM(
       , amrex::almostEqual(dx[0], dx[1], 10),
       &&amrex::almostEqual(dx[1], dx[2], 10)));
@@ -440,6 +439,8 @@ PeleLM::readParameters()
   pp.query("num_divu_iter", m_numDivuIter);
   pp.query("do_init_proj", m_do_init_proj);
   pp.query("num_init_iter", m_init_iter);
+  pp.query("initDataPlt_patch_flow_variables", m_do_patch_flow_variables);
+  pp.query("initDataPlt_reset_time", m_do_reset_time);
 
   // -----------------------------------------
   // advance
