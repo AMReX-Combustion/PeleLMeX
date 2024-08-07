@@ -507,12 +507,6 @@ PeleLM::addWbarTerm(
               }
             }
           }
-          /*
-          std::cout << "Wbar" << std::endl;
-          std::cout << Wbar_arr(i,j,k) << std::endl;
-          std::cout << "gradWbar" << std::endl;
-          std::cout << gradWbar_arr(i,j,k) << std::endl;
-          */
         });
     }
   }
