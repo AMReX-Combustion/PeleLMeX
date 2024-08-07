@@ -59,7 +59,8 @@ public:
     amrex::Vector<amrex::BCRec> a_bcrec,
     int ncomp,
     int isPoissonSolve,
-    amrex::Real dt);
+    amrex::Real dt,
+    amrex::Vector<amrex::MultiFab const*> const& a_boundary);
 #endif
 
   void computeDiffLap(
@@ -102,7 +103,8 @@ public:
     amrex::Vector<amrex::MultiFab const*> const& a_EBbcoeff,
     amrex::Vector<amrex::BCRec> a_bcrec,
     int ncomp,
-    int do_avgDown);
+    int do_avgDown,
+    amrex::Vector<amrex::MultiFab const*> const& a_boundary);
 #endif
 
   void computeGradient(
