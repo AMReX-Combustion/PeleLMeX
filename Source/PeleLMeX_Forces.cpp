@@ -214,7 +214,7 @@ PeleLM::addSpark(const int lev, const TimeStamp& a_timestamp)
       amrex::ParallelFor(
         src_bx, [spark_duration = m_spark_duration[n], spark_idx,
                  spark_temp = m_spark_temp[n], spark_radius = m_spark_radius[n],
-                 rho_a, rhoY_a, temp_src_a, rhoh_src_a, n, eos,
+                 rho_a, rhoY_a, temp_src_a, rhoh_src_a, eos,
                  dx] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           Real dist_to_center = std::sqrt(AMREX_D_TERM(
             (i - spark_idx[0]) * (i - spark_idx[0]) * dx[0] * dx[0],
