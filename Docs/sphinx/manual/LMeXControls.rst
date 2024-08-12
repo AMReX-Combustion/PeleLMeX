@@ -258,6 +258,15 @@ PeleLMeX algorithm
     peleLM.deltaT_tol = 1e-10              # [OPT, DEF=1.e-10] Tolerance of the deltaT solve
     peleLM.evaluate_vars =...              # [OPT, DEF=""] In evaluate mode, list unitTest: diffTerm, divU, instRR, transportCC
 
+    peleLM.spark_verbose = 0               # [OPT, DEF=0] Verbosity of spark ignition
+    peleLM.sparks = spark1 spark2 ...      # [OPT] List of spark names - multiple can be given
+    peleLM.spark1.location = 0.0 0.0 0.0   # [OPT] Spark location (in x,y,z coordinates) [m]
+    peleLM.spark1.temp = 2000.0            # [OPT] Temperature of the spark [K]
+    peleLM.spark1.radius = 1e-3            # [OPT] Radius of the spark [m]
+    peleLM.spark1.duration = 1e-3          # [OPT] Duration of the spark [s]
+    peleLM.spark1.time = 1e-2              # [OPT] Time when spark starts [s]
+    
+    
 Transport coefficients and LES
 ------------------------------
 
