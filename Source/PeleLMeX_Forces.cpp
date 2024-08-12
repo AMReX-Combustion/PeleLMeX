@@ -183,23 +183,24 @@ PeleLM::addSpark(const int lev, const TimeStamp& a_timestamp)
     Real time = getTime(lev, a_timestamp);
     if (
       time < m_spark_time[n] || time > m_spark_time[n] + m_spark_duration[n]) {
-      if (m_spark_verbose > 1) {
+      if (m_spark_verbose > 1 && lev == 0 && a_timestamp == AmrOldTime) {
         Print() << m_spark[n] << " not active" << std::endl;
       }
       continue;
     }
-    if (m_spark_verbose > 1) {
+    if (m_spark_verbose > 1 && lev == 0 && a_timestamp == AmrOldTime) {
       Print() << m_spark[n] << " active" << std::endl;
     }
     for (int d = 0; d < AMREX_SPACEDIM; d++) {
       spark_idx[d] = (int)((m_spark_location[n][d] - probLo[d]) / dx[d]);
     }
     Box domainBox = geom[lev].Domain();
-    if (!domainBox.contains(spark_idx)) { // just a check
+    // just a check
+    if (
+      !domainBox.contains(spark_idx) && lev == 0 && a_timestamp == AmrOldTime) {
       Warning(m_spark[n] + " not in domain!");
       continue;
     }
-
     auto ldata_p = getLevelDataPtr(lev, a_timestamp);
     auto eos = pele::physics::PhysicsType::eos();
     for (MFIter mfi(*(m_extSource[lev]), TilingIfNotGPU()); mfi.isValid();
@@ -220,9 +221,9 @@ PeleLM::addSpark(const int lev, const TimeStamp& a_timestamp)
             +(j - spark_idx[1]) * (j - spark_idx[1]) * dx[1] * dx[1],
             +(k - spark_idx[2]) * (k - spark_idx[2]) * dx[2] * dx[2]));
           if (dist_to_center < spark_radius[n]) {
-            temp_src_a(i, j, k) =
-              spark_temp[n] / spark_duration[n]; // probably doesn't actually
-                                                 // contribute to anything
+            // probably doesn't actually
+            // contribute to anything
+            temp_src_a(i, j, k) = spark_temp[n] / spark_duration[n];
             Real rhoh_src_loc = 0;
             Real rho = rho_a(i, j, k);
             Real Y[NUM_SPECIES];
