@@ -205,11 +205,10 @@ PeleLM::macProject(
       // We need to fill the MAC velocities outside the fine region so we can
       // use them in the Godunov method
       IntVect rr = geom[lev].Domain().size() / geom[lev - 1].Domain().size();
-      auto* divu_lev = (has_divu) != 0 ? a_divu[lev] : nullptr;
       create_constrained_umac_grown(
-        lev, m_nGrowMAC, &geom[lev - 1], &geom[lev],
+        m_nGrowMAC, &geom[lev - 1], &geom[lev],
         GetArrOfPtrs(advData->umac[lev - 1]), GetArrOfPtrs(advData->umac[lev]),
-        divu_lev, rr);
+        rr);
     } else {
       AMREX_D_TERM(
         advData->umac[lev][0].FillBoundary(geom[lev].periodicity());
@@ -221,17 +220,13 @@ PeleLM::macProject(
 
 void
 PeleLM::create_constrained_umac_grown(
-  int a_lev,
   int a_nGrow,
   const Geometry* crse_geom,
   const Geometry* fine_geom,
   Array<MultiFab*, AMREX_SPACEDIM> u_mac_crse,
   Array<MultiFab*, AMREX_SPACEDIM> u_mac_fine,
-  const MultiFab* divu,
   const IntVect& crse_ratio)
 {
-  int has_divu = static_cast<int>(divu != nullptr);
-
   // Divergence preserving interp
   Interpolater* mapper = &face_divfree_interp;
 
@@ -266,162 +261,6 @@ PeleLM::create_constrained_umac_grown(
     u_mac_fine, IntVect(a_nGrow), dummy, {u_mac_crse}, {dummy}, {u_mac_fine},
     {dummy}, 0, 0, 1, *crse_geom, *fine_geom, cbndyFuncArr, 0, fbndyFuncArr, 0,
     crse_ratio, mapper, bcrecArr, 0);
-
-  // Fill boundary before going further
-  for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
-    u_mac_fine[idim]->FillBoundary(fine_geom->periodicity());
-  }
-
-  // When FillPatching the umac divergence of the first ghost cell was
-  // modified. Correct this first ghost cell outer (w.r. to the valid region)
-  // face velocity to recover the divu at CF boundary.
-
-  // Use mask to flgg C-F boundary ghost cells.
-  iMultiFab mask(
-    grids[a_lev], u_mac_fine[0]->DistributionMap(), 1, 1, MFInfo(),
-    DefaultFabFactory<IArrayBox>());
-  // Flags
-  int finebnd = 0;
-  int crsebnd = 1;
-  int physbnd = 0;
-  int interior = 0;
-  mask.BuildMask(
-    fine_geom->Domain(), fine_geom->periodicity(), finebnd, crsebnd, physbnd,
-    interior);
-
-  const GpuArray<Real, AMREX_SPACEDIM> dxinv = fine_geom->InvCellSizeArray();
-  const GpuArray<Real, AMREX_SPACEDIM> dx = fine_geom->CellSizeArray();
-
-  // Get areas
-#if (AMREX_SPACEDIM == 2)
-  MultiFab mf_ax, mf_ay, volume;
-  if (fine_geom->IsRZ()) {
-    fine_geom->GetFaceArea(mf_ax, grids[a_lev], dmap[a_lev], 0, 1);
-    fine_geom->GetFaceArea(mf_ay, grids[a_lev], dmap[a_lev], 1, 1);
-    volume.define(grids[a_lev], dmap[a_lev], 1, 1);
-    fine_geom->GetVolume(volume);
-  }
-#endif
-
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
-  for (MFIter mfi(mask, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
-    const Box& bx = mfi.tilebox();
-    auto const& divuarr =
-      (has_divu) != 0 ? divu->const_array(mfi) : u_mac_fine[0]->array(mfi);
-    auto const& maskarr = mask.const_array(mfi);
-    Array<Array4<Real>, AMREX_SPACEDIM> const& umac_arr = {AMREX_D_DECL(
-      u_mac_fine[0]->array(mfi), u_mac_fine[1]->array(mfi),
-      u_mac_fine[2]->array(mfi))};
-    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
-#if AMREX_SPACEDIM == 2
-      if (fine_geom->IsRZ()) {
-        Array<Array4<const Real>, AMREX_SPACEDIM> const& areas_arr = {
-          mf_ax.const_array(mfi), mf_ay.const_array(mfi)};
-        auto const& vol_arr = volume.const_array(mfi);
-        // Grow the box in the direction of the faces we will correct
-        const Box& gbx = mfi.growntilebox(IntVect::TheDimensionVector(idim));
-        amrex::ParallelFor(
-          gbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-            // Only works on ghost cells flagged as C-F boundaries
-            if (!bx.contains(i, j, k) && (maskarr(i, j, k) == crsebnd)) {
-              // Get the divU components from the transverse velocities (!=
-              // idim)
-              GpuArray<int, 3> idx = {AMREX_D_DECL(i, j, k)};
-              Real transverseTerm = 0.0;
-              for (int trdim = 0; trdim < AMREX_SPACEDIM; trdim++) {
-                if (trdim != idim) {
-                  GpuArray<int, 3> idxp1 = {AMREX_D_DECL(i, j, k)};
-                  idxp1[trdim]++;
-                  transverseTerm +=
-                    (umac_arr[trdim](idxp1[0], idxp1[1], idxp1[2]) *
-                       areas_arr[trdim](idxp1[0], idxp1[1], idxp1[2]) -
-                     umac_arr[trdim](idx[0], idx[1], idx[2]) *
-                       areas_arr[trdim](idx[0], idx[1], idx[2])) /
-                    vol_arr(i, j, k);
-                }
-              }
-              // Correct the outer umac face
-              GpuArray<int, 3> idxp1 = {AMREX_D_DECL(i, j, k)};
-              idxp1[idim]++;
-              if (idx[idim] < bx.smallEnd(idim)) {
-                umac_arr[idim](i, j, k) =
-                  umac_arr[idim](idxp1[0], idxp1[1], idxp1[2]) *
-                    areas_arr[idim](idxp1[0], idxp1[1], idxp1[2]) /
-                    areas_arr[idim](i, j, k) +
-                  vol_arr(i, j, k) / areas_arr[idim](i, j, k) * transverseTerm;
-                if (has_divu != 0)
-                  umac_arr[idim](i, j, k) -= vol_arr(i, j, k) /
-                                             areas_arr[idim](i, j, k) *
-                                             divuarr(i, j, k);
-              } else if (idx[idim] > bx.bigEnd(idim)) {
-                umac_arr[idim](idxp1[0], idxp1[1], idxp1[2]) =
-                  umac_arr[idim](i, j, k) * areas_arr[idim](i, j, k) /
-                    areas_arr[idim](idxp1[0], idxp1[1], idxp1[2]) -
-                  vol_arr(i, j, k) /
-                    areas_arr[idim](idxp1[0], idxp1[1], idxp1[2]) *
-                    transverseTerm;
-                if (has_divu != 0)
-                  umac_arr[idim](idxp1[0], idxp1[1], idxp1[2]) +=
-                    vol_arr(i, j, k) /
-                    areas_arr[idim](idxp1[0], idxp1[1], idxp1[2]) *
-                    divuarr(i, j, k);
-              }
-            }
-          });
-      } else
-#endif
-      {
-        // Grow the box in the direction of the faces we will correct
-        const Box& gbx = mfi.growntilebox(IntVect::TheDimensionVector(idim));
-        amrex::ParallelFor(
-          gbx, [idim, bx, divuarr, maskarr, crsebnd, umac_arr, dx, dxinv,
-                has_divu] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-            // Only works on ghost cells flagged as C-F boundaries
-            if (!bx.contains(i, j, k) && (maskarr(i, j, k) == crsebnd)) {
-              // Get the divU components from the transverse velocities (!=
-              // idim)
-              GpuArray<int, 3> idx = {AMREX_D_DECL(i, j, k)};
-              Real transverseTerm = 0.0;
-              for (int trdim = 0; trdim < AMREX_SPACEDIM; trdim++) {
-                if (trdim != idim) {
-                  GpuArray<int, 3> idxp1 = {AMREX_D_DECL(i, j, k)};
-                  idxp1[trdim]++;
-                  transverseTerm +=
-                    (umac_arr[trdim](idxp1[0], idxp1[1], idxp1[2]) -
-                     umac_arr[trdim](idx[0], idx[1], idx[2])) *
-                    dxinv[trdim];
-                }
-              }
-              // Correct the outer umac face
-              GpuArray<int, 3> idxp1 = {AMREX_D_DECL(i, j, k)};
-              idxp1[idim]++;
-              if (idx[idim] < bx.smallEnd(idim)) {
-                umac_arr[idim](i, j, k) =
-                  umac_arr[idim](idxp1[0], idxp1[1], idxp1[2]) +
-                  dx[idim] * transverseTerm;
-                if (has_divu != 0) {
-                  umac_arr[idim](i, j, k) -= dx[idim] * divuarr(i, j, k);
-                }
-              } else if (idx[idim] > bx.bigEnd(idim)) {
-                umac_arr[idim](idxp1[0], idxp1[1], idxp1[2]) =
-                  umac_arr[idim](i, j, k) - dx[idim] * transverseTerm;
-                if (has_divu != 0) {
-                  umac_arr[idim](idxp1[0], idxp1[1], idxp1[2]) +=
-                    dx[idim] * divuarr(i, j, k);
-                }
-              }
-            }
-          });
-      }
-    }
-  }
-
-  // Fill boundary for all the levels
-  for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
-    u_mac_fine[idim]->FillBoundary(fine_geom->periodicity());
-  }
 }
 
 Array<LinOpBCType, AMREX_SPACEDIM>
