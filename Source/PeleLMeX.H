@@ -813,6 +813,9 @@ public:
     amrex::Array4<const amrex::Real> const& temp,
     amrex::Array4<const amrex::Real> const& extMom,
     amrex::Array4<const amrex::Real> const& extRho);
+
+  void addSpark(const int lev, const PeleLM::TimeStamp& a_time);
+
   //-----------------------------------------------------------------------------
 
 #ifdef PELE_USE_SPRAY
@@ -1827,6 +1830,15 @@ public:
 
   int m_do_periodic_channel = 0;
   int m_periodic_channel_dir = -1;
+
+  int m_n_sparks = 0;
+  int m_spark_verbose = 0;
+  amrex::Vector<std::string> m_spark;
+  amrex::Vector<amrex::Real> m_spark_time;
+  amrex::Vector<amrex::Real> m_spark_duration;
+  amrex::Vector<amrex::Vector<amrex::Real>> m_spark_location;
+  amrex::Vector<amrex::Real> m_spark_temp;
+  amrex::Vector<amrex::Real> m_spark_radius;
 
   // DivU ? default ON when not incompressible
   int m_has_divu = 1;

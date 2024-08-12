@@ -171,3 +171,69 @@ PeleLM::getVelForces(
         gp0, dV_control, dx, vel, rho, rhoY, rhoh, temp, extMom, extRho, force);
     });
 }
+
+void
+PeleLM::addSpark(const int lev, const TimeStamp& a_timestamp)
+{
+
+  const Real* probLo = geom[lev].ProbLo();
+  auto const dx = geom[lev].CellSizeArray();
+  for (int n = 0; n < m_n_sparks; n++) {
+    IntVect spark_idx;
+    Real time = getTime(lev, a_timestamp);
+    if (
+      time < m_spark_time[n] || time > m_spark_time[n] + m_spark_duration[n]) {
+      if (m_spark_verbose > 1) {
+        Print() << m_spark[n] << " not active" << std::endl;
+      }
+      continue;
+    }
+    if (m_spark_verbose > 1) {
+      Print() << m_spark[n] << " active" << std::endl;
+    }
+    for (int d = 0; d < AMREX_SPACEDIM; d++) {
+      spark_idx[d] = (int)((m_spark_location[n][d] - probLo[d]) / dx[d]);
+    }
+    Box domainBox = geom[lev].Domain();
+    if (!domainBox.contains(spark_idx)) { // just a check
+      Warning(m_spark[n] + " not in domain!");
+      continue;
+    }
+
+    auto ldata_p = getLevelDataPtr(lev, a_timestamp);
+    auto eos = pele::physics::PhysicsType::eos();
+    for (MFIter mfi(*(m_extSource[lev]), TilingIfNotGPU()); mfi.isValid();
+         ++mfi) {
+      const Box& src_bx = mfi.growntilebox();
+      auto const& rho_a = ldata_p->state.const_array(
+        mfi, DENSITY); // need to convert temp to rhoH
+      auto const& rhoY_a = ldata_p->state.const_array(mfi, FIRSTSPEC);
+      auto const& temp_src_a = m_extSource[lev]->array(mfi, TEMP);
+      auto const& rhoh_src_a = m_extSource[lev]->array(mfi, RHOH);
+      amrex::ParallelFor(
+        src_bx, [spark_duration = m_spark_duration, spark_idx,
+                 spark_temp = m_spark_temp, spark_radius = m_spark_radius,
+                 rho_a, rhoY_a, temp_src_a, rhoh_src_a, n, eos,
+                 dx] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          Real dist_to_center = std::sqrt(AMREX_D_TERM(
+            (i - spark_idx[0]) * (i - spark_idx[0]) * dx[0] * dx[0],
+            +(j - spark_idx[1]) * (j - spark_idx[1]) * dx[1] * dx[1],
+            +(k - spark_idx[2]) * (k - spark_idx[2]) * dx[2] * dx[2]));
+          if (dist_to_center < spark_radius[n]) {
+            temp_src_a(i, j, k) =
+              spark_temp[n] / spark_duration[n]; // probably doesn't actually
+                                                 // contribute to anything
+            Real rhoh_src_loc = 0;
+            Real rho = rho_a(i, j, k);
+            Real Y[NUM_SPECIES];
+            for (int ns = 0; ns < NUM_SPECIES; ns++) {
+              Y[ns] = rhoY_a(i, j, k, ns) / rho;
+            }
+            eos.TY2H(spark_temp[n], Y, rhoh_src_loc);
+            rhoh_src_loc *= rho * 1e-4 / spark_duration[n];
+            rhoh_src_a(i, j, k) = rhoh_src_loc;
+          }
+        });
+    }
+  }
+}
