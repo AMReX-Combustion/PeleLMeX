@@ -201,7 +201,7 @@ PeleLM::addSpark(const int lev, const TimeStamp& a_timestamp)
       Warning(m_spark[n] + " not in domain!");
       continue;
     }
-    auto ldata_p = getLevelDataPtr(lev, a_timestamp);
+    auto* ldata_p = getLevelDataPtr(lev, a_timestamp);
     auto eos = pele::physics::PhysicsType::eos();
     for (MFIter mfi(*(m_extSource[lev]), TilingIfNotGPU()); mfi.isValid();
          ++mfi) {
@@ -212,26 +212,26 @@ PeleLM::addSpark(const int lev, const TimeStamp& a_timestamp)
       auto const& temp_src_a = m_extSource[lev]->array(mfi, TEMP);
       auto const& rhoh_src_a = m_extSource[lev]->array(mfi, RHOH);
       amrex::ParallelFor(
-        src_bx, [spark_duration = m_spark_duration, spark_idx,
-                 spark_temp = m_spark_temp, spark_radius = m_spark_radius,
+        src_bx, [spark_duration = m_spark_duration[n], spark_idx,
+                 spark_temp = m_spark_temp[n], spark_radius = m_spark_radius[n],
                  rho_a, rhoY_a, temp_src_a, rhoh_src_a, n, eos,
                  dx] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           Real dist_to_center = std::sqrt(AMREX_D_TERM(
             (i - spark_idx[0]) * (i - spark_idx[0]) * dx[0] * dx[0],
             +(j - spark_idx[1]) * (j - spark_idx[1]) * dx[1] * dx[1],
             +(k - spark_idx[2]) * (k - spark_idx[2]) * dx[2] * dx[2]));
-          if (dist_to_center < spark_radius[n]) {
+          if (dist_to_center < spark_radius) {
             // probably doesn't actually
             // contribute to anything
-            temp_src_a(i, j, k) = spark_temp[n] / spark_duration[n];
+            temp_src_a(i, j, k) = spark_temp / spark_duration;
             Real rhoh_src_loc = 0;
             Real rho = rho_a(i, j, k);
             Real Y[NUM_SPECIES];
             for (int ns = 0; ns < NUM_SPECIES; ns++) {
               Y[ns] = rhoY_a(i, j, k, ns) / rho;
             }
-            eos.TY2H(spark_temp[n], Y, rhoh_src_loc);
-            rhoh_src_loc *= rho * 1e-4 / spark_duration[n];
+            eos.TY2H(spark_temp, Y, rhoh_src_loc);
+            rhoh_src_loc *= rho * 1e-4 / spark_duration;
             rhoh_src_a(i, j, k) = rhoh_src_loc;
           }
         });
