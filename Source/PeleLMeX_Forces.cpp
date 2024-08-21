@@ -178,17 +178,18 @@ PeleLM::addSpark(const int lev, const TimeStamp& a_timestamp)
 
   const Real* probLo = geom[lev].ProbLo();
   auto const dx = geom[lev].CellSizeArray();
+  bool verb = m_spark_verbose > 1 && lev == 0 && a_timestep == AmrOldTime;
   for (int n = 0; n < m_n_sparks; n++) {
     IntVect spark_idx;
     Real time = getTime(lev, a_timestamp);
     if (
       time < m_spark_time[n] || time > m_spark_time[n] + m_spark_duration[n]) {
-      if (m_spark_verbose > 1 && lev == 0 && a_timestamp == AmrOldTime) {
+      if (verb) {
         Print() << m_spark[n] << " not active" << std::endl;
       }
       continue;
     }
-    if (m_spark_verbose > 1 && lev == 0 && a_timestamp == AmrOldTime) {
+    if (verb) {
       Print() << m_spark[n] << " active" << std::endl;
     }
     for (int d = 0; d < AMREX_SPACEDIM; d++) {
@@ -196,8 +197,7 @@ PeleLM::addSpark(const int lev, const TimeStamp& a_timestamp)
     }
     Box domainBox = geom[lev].Domain();
     // just a check
-    if (
-      !domainBox.contains(spark_idx) && lev == 0 && a_timestamp == AmrOldTime) {
+    if (!domainBox.contains(spark_idx)) {
       Warning(m_spark[n] + " not in domain!");
       continue;
     }
