@@ -178,7 +178,7 @@ PeleLM::addSpark(const int lev, const TimeStamp& a_timestamp)
 
   const Real* probLo = geom[lev].ProbLo();
   auto const dx = geom[lev].CellSizeArray();
-  bool verb = m_spark_verbose > 1 && lev == 0 && a_timestep == AmrOldTime;
+  bool verb = m_spark_verbose > 1 && lev == 0 && a_timestamp == AmrOldTime;
   for (int n = 0; n < m_n_sparks; n++) {
     IntVect spark_idx;
     Real time = getTime(lev, a_timestamp);
