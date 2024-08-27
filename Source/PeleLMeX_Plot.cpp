@@ -71,6 +71,16 @@ PeleLM::WritePlotFile()
     amrex::Print() << "\n Writing plotfile: " << plotfilename << "\n";
   }
 
+  //----------------------------------------------------------------
+  // Delete plotfiles if present and requested (and have same name)
+  if (m_plot_overwrite) {
+    if (amrex::ParallelContext::IOProcessorSub()) {
+      if (amrex::FileExists(plotfilename)) {
+        amrex::FileSystem::RemoveAll(plotfilename);
+      }
+    }
+  }
+
   VisMF::SetNOutFiles(m_nfiles);
 
   //----------------------------------------------------------------

@@ -680,6 +680,7 @@ PeleLM::readIOParameters()
   pp.query("initDataPltSource", pltfileSource);
   pp.query("plot_file", m_plot_file);
   pp.query("plot_int", m_plot_int);
+  pp.query("plot_overwrite", m_plot_overwrite);
   if (pp.contains("plot_per")) {
     int do_exact = 0;
     pp.query("plot_per_exact", do_exact);
