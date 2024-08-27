@@ -674,6 +674,7 @@ PeleLM::readIOParameters()
 
   pp.query("check_file", m_check_file);
   pp.query("check_int", m_check_int);
+  pp.query("check_overwrite", m_check_overwrite);
   pp.query("check_per", m_check_per);
   pp.query("restart", m_restart_chkfile);
   pp.query("initDataPlt", m_restart_pltfile);

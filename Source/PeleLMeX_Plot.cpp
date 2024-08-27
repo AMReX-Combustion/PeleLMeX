@@ -535,6 +535,16 @@ PeleLM::WriteCheckPointFile()
     amrex::Print() << "\n Writing checkpoint file: " << checkpointname << "\n";
   }
 
+  //----------------------------------------------------------------
+  // Delete checkfiles if present and requested (and have same name)
+  if (m_check_overwrite) {
+    if (amrex::ParallelContext::IOProcessorSub()) {
+      if (amrex::FileExists(checkpointname)) {
+        amrex::FileSystem::RemoveAll(checkpointname);
+      }
+    }
+  }
+
   VisMF::SetNOutFiles(m_nfiles);
 
   amrex::PreBuildDirectorHierarchy(

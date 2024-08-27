@@ -1779,6 +1779,7 @@ public:
   amrex::Real m_plot_per_approx = -1.;
   amrex::Real m_plot_per_exact = -1.;
   int m_check_int = 0;
+  bool m_check_overwrite = false;
   amrex::Real m_check_per = -1.;
   int m_message_int = 10;
   int m_evaluatePlotVarCount = 0;
