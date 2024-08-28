@@ -109,10 +109,12 @@ IO parameters
 
     #--------------------------IO CONTROL--------------------------
     amr.plot_int         = 20              # [OPT, DEF=-1] Frequency (as step #) for writing plot file
+    amr.plot_overwrite   = false           # [OPT, DEF=false] Overwrite plot files with same name if present
     amr.plot_per         = 0.002           # [OPT, DEF=-1] Period (time in s) for writing plot file
     amr.plot_per_exact   = 1               # [OPT, DEF=0] Flag to enforce exactly plt_per by shortening dt
     amr.plot_file        = "plt_"          # [OPT, DEF="plt_"] Plot file prefix
     amr.check_int        = 100             # [OPT, DEF=-1] Frequency (as step #) for writing checkpoint file
+    amr.check_overwrite  = false           # [OPT, DEF=false] Overwrite checkpoint files with same name if present
     amr.check_per        = 0.05            # [OPT, DEF=-1] Period (time in s) for writing checkpoint file
     amr.check_file       = "chk"           # [OPT, DEF="chk"] Checkpoint file prefix
     amr.file_stepDigits  = 6               # [OPT, DEF=5] Number of digits when adding nsteps to plt and chk names
