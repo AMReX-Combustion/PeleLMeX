@@ -71,6 +71,16 @@ PeleLM::WritePlotFile()
     amrex::Print() << "\n Writing plotfile: " << plotfilename << "\n";
   }
 
+  //----------------------------------------------------------------
+  // Delete plotfiles if present and requested (and have same name)
+  if (m_plot_overwrite) {
+    if (amrex::ParallelContext::IOProcessorSub()) {
+      if (amrex::FileExists(plotfilename)) {
+        amrex::FileSystem::RemoveAll(plotfilename);
+      }
+    }
+  }
+
   VisMF::SetNOutFiles(m_nfiles);
 
   //----------------------------------------------------------------
@@ -523,6 +533,16 @@ PeleLM::WriteCheckPointFile()
 
   if (m_verbose != 0) {
     amrex::Print() << "\n Writing checkpoint file: " << checkpointname << "\n";
+  }
+
+  //----------------------------------------------------------------
+  // Delete checkfiles if present and requested (and have same name)
+  if (m_check_overwrite) {
+    if (amrex::ParallelContext::IOProcessorSub()) {
+      if (amrex::FileExists(checkpointname)) {
+        amrex::FileSystem::RemoveAll(checkpointname);
+      }
+    }
   }
 
   VisMF::SetNOutFiles(m_nfiles);
