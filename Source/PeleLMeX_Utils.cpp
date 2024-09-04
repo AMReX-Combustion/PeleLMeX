@@ -1205,6 +1205,24 @@ PeleLM::stateVariableIndex(std::string_view a_name)
   return idx;
 }
 
+std::string
+PeleLM::stateVariableName(int a_index)
+{
+  if (a_index < 0 || a_index >= NVAR) {
+    amrex::Error(
+      "PeleLM::stateVariableName(): invalod state index: " +
+      std::to_string(a_index));
+  }
+
+  std::string var_name = "";
+  for (const auto& stateComponent : stateComponents) {
+    if (std::get<0>(stateComponent) == a_index) {
+      var_name = std::get<1>(stateComponent);
+    }
+  }
+  return var_name;
+}
+
 int
 PeleLM::reactVariableIndex(std::string_view a_name)
 {
