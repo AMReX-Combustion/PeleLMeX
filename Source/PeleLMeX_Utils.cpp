@@ -1214,7 +1214,7 @@ PeleLM::stateVariableName(int a_index)
       std::to_string(a_index));
   }
 
-  std::string var_name = "";
+  std::string var_name;
   for (const auto& stateComponent : stateComponents) {
     if (std::get<0>(stateComponent) == a_index) {
       var_name = std::get<1>(stateComponent);
