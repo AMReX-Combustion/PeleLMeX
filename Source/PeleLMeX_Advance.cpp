@@ -74,9 +74,6 @@ PeleLM::Advance(int is_initIter)
 
   for (int lev = 0; lev <= finest_level; lev++) {
     m_extSource[lev]->setVal(0.);
-    if (m_n_sparks > 0) {
-      addSpark(lev, AmrNewTime);
-    }
   }
   //----------------------------------------------------------------
 
@@ -114,9 +111,7 @@ PeleLM::Advance(int is_initIter)
   //----------------------------------------------------------------
 
   if (m_n_sparks > 0) {
-    for (int lev = 0; lev <= finest_level; lev++) {
-      addSpark(lev, AmrOldTime);
-    }
+    addSpark(AmrOldTime);
   }
 
 #ifdef PELE_USE_SPRAY

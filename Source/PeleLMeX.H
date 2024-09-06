@@ -814,7 +814,7 @@ public:
     amrex::Array4<const amrex::Real> const& extMom,
     amrex::Array4<const amrex::Real> const& extRho);
 
-  void addSpark(const int lev, const PeleLM::TimeStamp& a_time);
+  void addSpark(const PeleLM::TimeStamp& a_time);
 
   //-----------------------------------------------------------------------------
 
