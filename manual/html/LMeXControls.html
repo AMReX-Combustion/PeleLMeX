@@ -369,6 +369,14 @@ components is defined based on the size of the vector returned by pelelmex_setus
 <span class="n">peleLM</span><span class="o">.</span><span class="n">deltaT_iterMax</span> <span class="o">=</span> <span class="mi">5</span>              <span class="c1"># [OPT, DEF=10] Maximum number of deltaT iterations</span>
 <span class="n">peleLM</span><span class="o">.</span><span class="n">deltaT_tol</span> <span class="o">=</span> <span class="mf">1e-10</span>              <span class="c1"># [OPT, DEF=1.e-10] Tolerance of the deltaT solve</span>
 <span class="n">peleLM</span><span class="o">.</span><span class="n">evaluate_vars</span> <span class="o">=...</span>              <span class="c1"># [OPT, DEF=&quot;&quot;] In evaluate mode, list unitTest: diffTerm, divU, instRR, transportCC</span>
+
+<span class="n">peleLM</span><span class="o">.</span><span class="n">spark_verbose</span> <span class="o">=</span> <span class="mi">0</span>               <span class="c1"># [OPT, DEF=0] Verbosity of spark ignition</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">sparks</span> <span class="o">=</span> <span class="n">spark1</span> <span class="n">spark2</span> <span class="o">...</span>      <span class="c1"># [OPT] List of spark names - multiple can be given</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">spark1</span><span class="o">.</span><span class="n">location</span> <span class="o">=</span> <span class="mf">0.0</span> <span class="mf">0.0</span> <span class="mf">0.0</span>   <span class="c1"># [OPT] Spark location (in x,y,z coordinates) [m]</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">spark1</span><span class="o">.</span><span class="n">temp</span> <span class="o">=</span> <span class="mf">2000.0</span>            <span class="c1"># [OPT] Temperature of the spark [K]</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">spark1</span><span class="o">.</span><span class="n">radius</span> <span class="o">=</span> <span class="mf">1e-3</span>            <span class="c1"># [OPT] Radius of the spark [m]</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">spark1</span><span class="o">.</span><span class="n">duration</span> <span class="o">=</span> <span class="mf">1e-3</span>          <span class="c1"># [OPT] Duration of the spark [s]</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">spark1</span><span class="o">.</span><span class="n">time</span> <span class="o">=</span> <span class="mf">1e-2</span>              <span class="c1"># [OPT] Time when spark starts [s]</span>
 </pre></div>
 </div>
 </section>
