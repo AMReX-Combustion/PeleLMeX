@@ -1210,7 +1210,7 @@ PeleLM::stateVariableName(int a_index)
 {
   if (a_index < 0 || a_index >= NVAR) {
     amrex::Error(
-      "PeleLM::stateVariableName(): invalod state index: " +
+      "PeleLM::stateVariableName(): invalid state index: " +
       std::to_string(a_index));
   }
 
