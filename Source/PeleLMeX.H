@@ -1310,6 +1310,7 @@ public:
   bool isReactVariable(std::string_view a_name);
   int stateVariableIndex(std::string_view a_name);
   int reactVariableIndex(std::string_view a_name);
+  std::string stateVariableName(int a_index);
 
   // Typical values
   void setTypicalValues(const PeleLM::TimeStamp& a_time, int is_init = 0);
