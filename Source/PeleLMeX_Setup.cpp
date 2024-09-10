@@ -325,6 +325,47 @@ PeleLM::readParameters()
     pp.get("periodic_channel_dir", m_periodic_channel_dir);
   }
 
+  // Add a "spark", i.e. sphere of heat source to energy equation
+  m_n_sparks = pp.countval("sparks");
+  if (m_n_sparks > 0) {
+    m_spark.resize(m_n_sparks);
+    m_spark_time.resize(m_n_sparks);
+    m_spark_duration.resize(m_n_sparks);
+    m_spark_location.resize(m_n_sparks);
+    m_spark_temp.resize(m_n_sparks);
+    m_spark_radius.resize(m_n_sparks);
+    pp.query("spark_verbose", m_spark_verbose);
+    for (int n = 0; n < m_n_sparks; n++) {
+      pp.get("sparks", m_spark[n], n);
+      std::string spark_prefix = "peleLM." + m_spark[n];
+      ParmParse pps(spark_prefix);
+      pps.get("time", m_spark_time[n]);
+      pps.get("duration", m_spark_duration[n]);
+      m_spark_location[n].resize(AMREX_SPACEDIM);
+      pps.getarr("location", m_spark_location[n], 0, AMREX_SPACEDIM);
+      pps.get("temp", m_spark_temp[n]);
+      pps.get("radius", m_spark_radius[n]);
+    }
+    if (m_spark_verbose > 0) {
+      Print() << "Spark list:" << std::endl;
+      for (int n = 0; n < m_n_sparks; n++) {
+        Print() << "Spark " << n << " name: " << m_spark[n] << std::endl;
+        Print() << "Spark " << n << " time: " << m_spark_time[n] << std::endl;
+        Print() << "Spark " << n << " duration: " << m_spark_duration[n]
+                << std::endl;
+        Print() << "Spark " << n << " location: ";
+        for (int d = 0; d < AMREX_SPACEDIM; d++) {
+          Print() << m_spark_location[n][d] << " ";
+        }
+        Print() << std::endl;
+        Print() << "Spark " << n << " temperature: " << m_spark_temp[n]
+                << std::endl;
+        Print() << "Spark " << n << " radius: " << m_spark_radius[n]
+                << std::endl;
+      }
+    }
+  }
+
   // -----------------------------------------
   // LES
   // -----------------------------------------
@@ -418,7 +459,8 @@ PeleLM::readParameters()
   pp.query("num_divu_iter", m_numDivuIter);
   pp.query("do_init_proj", m_do_init_proj);
   pp.query("num_init_iter", m_init_iter);
-  pp.query("do_patch_flow_variables", m_do_patch_flow_variables);
+  pp.query("initDataPlt_patch_flow_variables", m_do_patch_flow_variables);
+  pp.query("initDataPlt_reset_time", m_do_reset_time);
 
   // -----------------------------------------
   // advance
@@ -676,12 +718,14 @@ PeleLM::readIOParameters()
 
   pp.query("check_file", m_check_file);
   pp.query("check_int", m_check_int);
+  pp.query("check_overwrite", m_check_overwrite);
   pp.query("check_per", m_check_per);
   pp.query("restart", m_restart_chkfile);
   pp.query("initDataPlt", m_restart_pltfile);
   pp.query("initDataPltSource", pltfileSource);
   pp.query("plot_file", m_plot_file);
   pp.query("plot_int", m_plot_int);
+  pp.query("plot_overwrite", m_plot_overwrite);
   if (pp.contains("plot_per")) {
     int do_exact = 0;
     pp.query("plot_per_exact", do_exact);

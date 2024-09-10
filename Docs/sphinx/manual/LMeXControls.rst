@@ -109,10 +109,12 @@ IO parameters
 
     #--------------------------IO CONTROL--------------------------
     amr.plot_int         = 20              # [OPT, DEF=-1] Frequency (as step #) for writing plot file
+    amr.plot_overwrite   = false           # [OPT, DEF=false] Overwrite plot files with same name if present
     amr.plot_per         = 0.002           # [OPT, DEF=-1] Period (time in s) for writing plot file
     amr.plot_per_exact   = 1               # [OPT, DEF=0] Flag to enforce exactly plt_per by shortening dt
     amr.plot_file        = "plt_"          # [OPT, DEF="plt_"] Plot file prefix
     amr.check_int        = 100             # [OPT, DEF=-1] Frequency (as step #) for writing checkpoint file
+    amr.check_overwrite  = false           # [OPT, DEF=false] Overwrite checkpoint files with same name if present
     amr.check_per        = 0.05            # [OPT, DEF=-1] Period (time in s) for writing checkpoint file
     amr.check_file       = "chk"           # [OPT, DEF="chk"] Checkpoint file prefix
     amr.file_stepDigits  = 6               # [OPT, DEF=5] Number of digits when adding nsteps to plt and chk names
@@ -121,6 +123,8 @@ IO parameters
 
     amr.restart          = chk00100        # [OPT, DEF=""] Checkpoint from which to restart the simulation
     amr.initDataPlt      = plt01000        # [OPT, DEF=""] Provide a plotfile from which to extract initial data
+    peleLM.initDataPlt_reset_time = 1               # [OPT, DEF=1] Resets time and nsteps to 0 after restarting from a plot file. (Warning: plot file will be rewritten if not renamed and argument value = 0)
+    peleLM.initDataPlt_patch_flow_variables = false # [OPT, DEF=false] Enable user-defined flow variable patching after reading a plot solution file
     amr.regrid_on_restart = 1              # [OPT, DEF="0"] Trigger a regrid after the data from checkpoint are loaded
     amr.n_files          = 64              # [OPT, DEF="min(256,NProcs)"] Number of files to write per level
 
@@ -257,8 +261,16 @@ PeleLMeX algorithm
     peleLM.deltaT_iterMax = 5              # [OPT, DEF=10] Maximum number of deltaT iterations
     peleLM.deltaT_tol = 1e-10              # [OPT, DEF=1.e-10] Tolerance of the deltaT solve
     peleLM.evaluate_vars =...              # [OPT, DEF=""] In evaluate mode, list unitTest: diffTerm, divU, instRR, transportCC
-    peleLM.do_patch_flow_variables = false # [OPT, DEF=false] Enable user-defined flow variable patching after reading a plot solution file
 
+    peleLM.spark_verbose = 0               # [OPT, DEF=0] Verbosity of spark ignition
+    peleLM.sparks = spark1 spark2 ...      # [OPT] List of spark names - multiple can be given
+    peleLM.spark1.location = 0.0 0.0 0.0   # [OPT] Spark location (in x,y,z coordinates) [m]
+    peleLM.spark1.temp = 2000.0            # [OPT] Temperature of the spark [K]
+    peleLM.spark1.radius = 1e-3            # [OPT] Radius of the spark [m]
+    peleLM.spark1.duration = 1e-3          # [OPT] Duration of the spark [s]
+    peleLM.spark1.time = 1e-2              # [OPT] Time when spark starts [s]
+    
+    
 Transport coefficients and LES
 ------------------------------
 

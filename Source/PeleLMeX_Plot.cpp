@@ -71,6 +71,16 @@ PeleLM::WritePlotFile()
     amrex::Print() << "\n Writing plotfile: " << plotfilename << "\n";
   }
 
+  //----------------------------------------------------------------
+  // Delete plotfiles if present and requested (and have same name)
+  if (m_plot_overwrite) {
+    if (amrex::ParallelContext::IOProcessorSub()) {
+      if (amrex::FileExists(plotfilename)) {
+        amrex::FileSystem::RemoveAll(plotfilename);
+      }
+    }
+  }
+
   VisMF::SetNOutFiles(m_nfiles);
 
   //----------------------------------------------------------------
@@ -525,6 +535,16 @@ PeleLM::WriteCheckPointFile()
     amrex::Print() << "\n Writing checkpoint file: " << checkpointname << "\n";
   }
 
+  //----------------------------------------------------------------
+  // Delete checkfiles if present and requested (and have same name)
+  if (m_check_overwrite) {
+    if (amrex::ParallelContext::IOProcessorSub()) {
+      if (amrex::FileExists(checkpointname)) {
+        amrex::FileSystem::RemoveAll(checkpointname);
+      }
+    }
+  }
+
   VisMF::SetNOutFiles(m_nfiles);
 
   amrex::PreBuildDirectorHierarchy(
@@ -802,6 +822,10 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
   // Use PelePhysics PltFileManager
   pele::physics::pltfilemanager::PltFileManager pltData(a_dataPltFile);
   Vector<std::string> plt_vars = pltData.getVariableList();
+  if (m_do_reset_time == 0) {
+    m_cur_time = pltData.getTime();
+    m_nstep = pltData.getNsteps();
+  }
 
   // Find required data in pltfile
   Vector<std::string> spec_names;

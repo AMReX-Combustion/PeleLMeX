@@ -469,13 +469,11 @@ public:
    * crse_ratio refinement ratio with the next coarser level
    */
   void create_constrained_umac_grown(
-    int a_lev,
     int a_nGrow,
     const amrex::Geometry* crse_geom,
     const amrex::Geometry* fine_geom,
     amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM> u_mac_crse,
     amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM> u_mac_fine,
-    const amrex::MultiFab* divu,
     const amrex::IntVect& crse_ratio);
 
   /**
@@ -815,6 +813,9 @@ public:
     amrex::Array4<const amrex::Real> const& temp,
     amrex::Array4<const amrex::Real> const& extMom,
     amrex::Array4<const amrex::Real> const& extRho);
+
+  void addSpark(const PeleLM::TimeStamp& a_time);
+
   //-----------------------------------------------------------------------------
 
 #ifdef PELE_USE_SPRAY
@@ -1309,6 +1310,7 @@ public:
   bool isReactVariable(std::string_view a_name);
   int stateVariableIndex(std::string_view a_name);
   int reactVariableIndex(std::string_view a_name);
+  std::string stateVariableName(int a_index);
 
   // Typical values
   void setTypicalValues(const PeleLM::TimeStamp& a_time, int is_init = 0);
@@ -1776,10 +1778,12 @@ public:
   int m_plotHeatRelease = 0;
   int m_plotStateSpec = 0;
   int m_plot_int = 0;
+  bool m_plot_overwrite = false;
   int m_plot_zeroEBcovered = 1;
   amrex::Real m_plot_per_approx = -1.;
   amrex::Real m_plot_per_exact = -1.;
   int m_check_int = 0;
+  bool m_check_overwrite = false;
   amrex::Real m_check_per = -1.;
   int m_message_int = 10;
   int m_evaluatePlotVarCount = 0;
@@ -1812,6 +1816,7 @@ public:
 
   int m_regrid_int = -1;
   int m_regrid_on_restart = 0;
+  int m_do_reset_time = 1;
 
   // Switch Evolve/Evaluate
   std::string m_run_mode = "normal";
@@ -1828,6 +1833,15 @@ public:
 
   int m_do_periodic_channel = 0;
   int m_periodic_channel_dir = -1;
+
+  int m_n_sparks = 0;
+  int m_spark_verbose = 0;
+  amrex::Vector<std::string> m_spark;
+  amrex::Vector<amrex::Real> m_spark_time;
+  amrex::Vector<amrex::Real> m_spark_duration;
+  amrex::Vector<amrex::Vector<amrex::Real>> m_spark_location;
+  amrex::Vector<amrex::Real> m_spark_temp;
+  amrex::Vector<amrex::Real> m_spark_radius;
 
   // DivU ? default ON when not incompressible
   int m_has_divu = 1;

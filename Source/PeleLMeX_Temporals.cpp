@@ -48,22 +48,22 @@ PeleLM::massBalance()
     +m_domainMassFlux[2] + m_domainMassFlux[3],
     +m_domainMassFlux[4] + m_domainMassFlux[5]);
 
-  tmpMassFile << m_nstep << " " << m_cur_time // Time info
-              << " " << m_massNew             // mass
-              << " " << dmdt                  // mass temporal derivative
-              << " " << massFluxBalance       // domain boundaries mass fluxes
-              << " " << std::abs(dmdt - massFluxBalance) << " \n"; // balance
+  tmpMassFile << m_nstep << "," << m_cur_time // Time info
+              << "," << m_massNew             // mass
+              << "," << dmdt                  // mass temporal derivative
+              << "," << massFluxBalance       // domain boundaries mass fluxes
+              << "," << std::abs(dmdt - massFluxBalance) << "\n"; // balance
   tmpMassFile.flush();
 }
 
 void
 PeleLM::speciesBalancePatch()
 {
-  tmppatchmfrFile << m_nstep << " " << m_cur_time; // Time info
+  tmppatchmfrFile << m_nstep << "," << m_cur_time; // Time info
   for (int n = 0; n < m_bPatches.size(); n++) {
     BPatch::BpatchDataContainer* bphost = m_bPatches[n]->getHostDataPtr();
     for (int i = 0; i < bphost->num_species; i++) {
-      tmppatchmfrFile << " " << bphost->speciesFlux[i];
+      tmppatchmfrFile << "," << bphost->speciesFlux[i];
     }
   }
   tmppatchmfrFile << "\n";
@@ -90,13 +90,13 @@ PeleLM::speciesBalance()
         m_domainRhoYFlux[2 * n * AMREX_SPACEDIM + 5]);
   }
 
-  tmpSpecFile << m_nstep << " " << m_cur_time; // Time info
+  tmpSpecFile << m_nstep << "," << m_cur_time; // Time info
   for (int n = 0; n < NUM_SPECIES; n++) {
-    tmpSpecFile << " " << m_RhoYNew[n]        // mass of Y
-                << " " << dmYdt[n]            // mass temporal derivative
-                << " " << massYFluxBalance[n] // domain boundaries mass fluxes
-                << " " << rhoYdots[n]         // integrated consumption rate
-                << " "
+    tmpSpecFile << "," << m_RhoYNew[n]        // mass of Y
+                << "," << dmYdt[n]            // mass temporal derivative
+                << "," << massYFluxBalance[n] // domain boundaries mass fluxes
+                << "," << rhoYdots[n]         // integrated consumption rate
+                << ","
                 << std::abs(
                      dmYdt[n] - massYFluxBalance[n] - rhoYdots[n]); // balance
   }
@@ -310,11 +310,11 @@ PeleLM::rhoHBalance()
     +m_domainRhoHFlux[2] + m_domainRhoHFlux[3],
     +m_domainRhoHFlux[4] + m_domainRhoHFlux[5]);
 
-  tmpMassFile << m_nstep << " " << m_cur_time // Time info
-              << " " << m_RhoHNew             // RhoH
-              << " " << dRhoHdt               // RhoH temporal derivative
-              << " " << rhoHFluxBalance       // domain boundaries RhoH fluxes
-              << " " << std::abs(dRhoHdt - rhoHFluxBalance) << " \n"; // balance
+  tmpMassFile << m_nstep << "," << m_cur_time // Time info
+              << "," << m_RhoHNew             // RhoH
+              << "," << dRhoHdt               // RhoH temporal derivative
+              << "," << rhoHFluxBalance       // domain boundaries RhoH fluxes
+              << "," << std::abs(dRhoHdt - rhoHFluxBalance) << "\n"; // balance
   tmpMassFile.flush();
 }
 
@@ -670,13 +670,13 @@ PeleLM::writeTemporals()
     heatReleaseRateInt = MFSum(GetVecOfConstPtrs(kinEnergy), 0);
   }
 
-  tmpStateFile << m_nstep << " " << m_cur_time << " " << m_dt // Time
-               << " " << kinenergy_int                        // Kinetic energy
-               << " " << enstrophy_int                        // Enstrophy
-               << " " << m_pNew             // Thermo. pressure
-               << " " << fuelConsumptionInt // Integ fuel burning rate
-               << " " << heatReleaseRateInt // Integ heat release rate
-               << " \n";
+  tmpStateFile << m_nstep << "," << m_cur_time << "," << m_dt // Time
+               << "," << kinenergy_int                        // Kinetic energy
+               << "," << enstrophy_int                        // Enstrophy
+               << "," << m_pNew             // Thermo. pressure
+               << "," << fuelConsumptionInt // Integ fuel burning rate
+               << "," << heatReleaseRateInt // Integ heat release rate
+               << "\n";
   tmpStateFile.flush();
 
   // Get min/max for state components
@@ -689,12 +689,12 @@ PeleLM::writeTemporals()
       ? MLmin(GetVecOfConstPtrs(getStateVect(AmrNewTime)), 0, AMREX_SPACEDIM)
       : MLmin(GetVecOfConstPtrs(getStateVect(AmrNewTime)), 0, NVAR);
 
-  tmpExtremasFile << m_nstep << " " << m_cur_time; // Time
+  tmpExtremasFile << m_nstep << "," << m_cur_time; // Time
   for (int n = 0; n < stateMax.size();
        ++n) { // Min & max of each state variable
-    tmpExtremasFile << " " << stateMin[n] << " " << stateMax[n];
+    tmpExtremasFile << "," << stateMin[n] << "," << stateMax[n];
   }
-  tmpExtremasFile << " \n";
+  tmpExtremasFile << "\n";
   tmpExtremasFile.flush();
 
 #ifdef PELE_USE_EFIELD
@@ -720,12 +720,15 @@ PeleLM::openTempFile()
       tempFileName.c_str(),
       std::ios::out | std::ios::app | std::ios_base::binary);
     tmpStateFile.precision(12);
+    tmpStateFile << "iter,time,dt,kinEnergy,enstrophy,pressure,fuelConsumption,"
+                    "heatRelease\n";
     if (m_do_massBalance != 0) {
       tempFileName = "temporals/tempMass";
       tmpMassFile.open(
         tempFileName.c_str(),
         std::ios::out | std::ios::app | std::ios_base::binary);
       tmpMassFile.precision(12);
+      tmpMassFile << "iter,time,massNew,dmdt,netMassFlux,balance\n";
     }
     if (m_do_speciesBalance != 0) {
       tempFileName = "temporals/tempSpecies";
@@ -733,6 +736,15 @@ PeleLM::openTempFile()
         tempFileName.c_str(),
         std::ios::out | std::ios::app | std::ios_base::binary);
       tmpSpecFile.precision(12);
+      tmpSpecFile << "iter,time";
+      for (int n = 0; n < NUM_SPECIES; n++) {
+        tmpSpecFile << ",rhoYnew_" << PeleLM::stateVariableName(FIRSTSPEC + n);
+        tmpSpecFile << ",drhoYdt_" << PeleLM::stateVariableName(FIRSTSPEC + n);
+        tmpSpecFile << ",netFlux_" << PeleLM::stateVariableName(FIRSTSPEC + n);
+        tmpSpecFile << ",rxnCons_" << PeleLM::stateVariableName(FIRSTSPEC + n);
+        tmpSpecFile << ",balance_" << PeleLM::stateVariableName(FIRSTSPEC + n);
+      }
+      tmpSpecFile << "\n";
     }
     if (m_do_extremas != 0) {
       tempFileName = "temporals/tempExtremas";
@@ -740,6 +752,12 @@ PeleLM::openTempFile()
         tempFileName.c_str(),
         std::ios::out | std::ios::app | std::ios_base::binary);
       tmpExtremasFile.precision(12);
+      tmpExtremasFile << "iter,time";
+      for (int n = 0; n < NVAR; ++n) {
+        tmpExtremasFile << ",min_" << PeleLM::stateVariableName(n) << ",max_"
+                        << PeleLM::stateVariableName(n);
+      }
+      tmpExtremasFile << "\n";
     }
     if (m_do_patch_mfr != 0) {
       tempFileName = "temporals/temppatchmfr";
@@ -747,7 +765,7 @@ PeleLM::openTempFile()
         tempFileName.c_str(),
         std::ios::out | std::ios::app | std::ios_base::binary);
       tmppatchmfrFile.precision(12);
-      tmppatchmfrFile << "#Variables=iter,time";
+      tmppatchmfrFile << "iter,time";
       for (int n = 0; n < m_bPatches.size(); n++) {
         BPatch* patch = m_bPatches[n].get();
         BPatch::BpatchDataContainer bphost = patch->getHostData();
@@ -765,6 +783,11 @@ PeleLM::openTempFile()
         tempFileName.c_str(),
         std::ios::out | std::ios::app | std::ios_base::binary);
       tmpIonsFile.precision(12);
+      tmpIonsFile << "iter,time";
+      for (int i = 0; i < AMREX_SPACEDIM; i++) {
+        tmpIonsFile << ",curr_" << i << "_low,curr_" << i << "_hi";
+      }
+      tmpIonsFile << "\n";
     }
 #endif
   }

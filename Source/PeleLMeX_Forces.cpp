@@ -171,3 +171,65 @@ PeleLM::getVelForces(
         gp0, dV_control, dx, vel, rho, rhoY, rhoh, temp, extMom, extRho, force);
     });
 }
+
+void
+PeleLM::addSpark(const TimeStamp& a_timestamp)
+{
+  for (int lev = 0; lev <= finest_level; lev++) {
+    for (int n = 0; n < m_n_sparks; n++) {
+      // Do the checks first
+      Real time = getTime(lev, a_timestamp);
+      bool verb = m_spark_verbose > 1 && lev == 0;
+      if (
+        time < m_spark_time[n] ||
+        time > m_spark_time[n] + m_spark_duration[n]) {
+        if (verb) {
+          Print() << m_spark[n] << " not active" << std::endl;
+        }
+        continue;
+      }
+      const Real* probLo = geom[lev].ProbLo();
+      auto const dx = geom[lev].CellSizeArray();
+      IntVect spark_idx;
+      for (int d = 0; d < AMREX_SPACEDIM; d++) {
+        spark_idx[d] = (int)((m_spark_location[n][d] - probLo[d]) / dx[d]);
+      }
+      Box domainBox = geom[lev].Domain();
+      // just a check
+      if (!domainBox.contains(spark_idx)) {
+        Warning(m_spark[n] + " not in domain!");
+        continue;
+      }
+      if (verb) {
+        Print() << m_spark[n] << " active" << std::endl;
+      }
+
+      auto eos = pele::physics::PhysicsType::eos();
+      auto statema = getLevelDataPtr(lev, a_timestamp)->state.const_arrays();
+      auto extma = m_extSource[lev]->arrays();
+
+      amrex::ParallelFor(
+        *m_extSource[lev],
+        [=, spark_duration = m_spark_duration[n], spark_temp = m_spark_temp[n],
+         spark_radius = m_spark_radius
+           [n]] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+          Real dist_to_center = std::sqrt(AMREX_D_TERM(
+            (i - spark_idx[0]) * (i - spark_idx[0]) * dx[0] * dx[0],
+            +(j - spark_idx[1]) * (j - spark_idx[1]) * dx[1] * dx[1],
+            +(k - spark_idx[2]) * (k - spark_idx[2]) * dx[2] * dx[2]));
+          if (dist_to_center < spark_radius) {
+            Real rhoh_src_loc = 0;
+            Real rho = statema[box_no](i, j, k, DENSITY);
+            Real Y[NUM_SPECIES];
+            for (int ns = 0; ns < NUM_SPECIES; ns++) {
+              Y[ns] = statema[box_no](i, j, k, FIRSTSPEC + ns) / rho;
+            }
+            eos.TY2H(spark_temp, Y, rhoh_src_loc);
+            rhoh_src_loc *= rho * 1e-4 / spark_duration;
+            extma[box_no](i, j, k, RHOH) = rhoh_src_loc;
+          }
+        });
+      Gpu::streamSynchronize();
+    }
+  }
+}

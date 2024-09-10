@@ -234,7 +234,9 @@ PeleLM::initData()
     // Do initial pressure iterations
     initialIterations();
 
-    m_nstep = 0;
+    if (m_do_reset_time != 0) {
+      m_nstep = 0;
+    }
 
     if (m_do_temporals != 0) {
       writeTemporals();
