@@ -110,6 +110,10 @@ PeleLM::Advance(int is_initIter)
   BL_PROFILE_VAR_STOP(PLM_SETUP);
   //----------------------------------------------------------------
 
+  if (m_n_sparks > 0) {
+    addSpark(AmrOldTime);
+  }
+
 #ifdef PELE_USE_SPRAY
   if (is_initIter == 0) {
     SprayMKD(m_cur_time, m_dt);

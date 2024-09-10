@@ -362,9 +362,9 @@ PeleLM::ionsBalance()
     }
   }
 
-  tmpIonsFile << m_nstep << " " << m_cur_time; // Time info
+  tmpIonsFile << m_nstep << "," << m_cur_time; // Time info
   for (int i = 0; i < 2 * AMREX_SPACEDIM; i++) {
-    tmpIonsFile << " " << ionsCurrent[i]; // ions current as xlo, xhi, ylo, ...
+    tmpIonsFile << "," << ionsCurrent[i]; // ions current as xlo, xhi, ylo, ...
   }
   tmpIonsFile << "\n";
   tmpIonsFile.flush();
