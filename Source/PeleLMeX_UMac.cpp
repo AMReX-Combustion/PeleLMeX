@@ -114,17 +114,47 @@ PeleLM::addChiIncrement(
       auto const& chiInc_ar = chiIncr[lev].const_array(mfi);
       auto const& chi_ar = advData->chi[lev].array(mfi);
       auto const& mac_divu_ar = advData->mac_divu[lev].array(mfi);
-      amrex::ParallelFor(
-        gbx, [chi_ar, chiInc_ar, mac_divu_ar,
-              a_sdcIter] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          if (a_sdcIter == 1) {
-            chi_ar(i, j, k) = chiInc_ar(i, j, k);
-          } else {
-            chi_ar(i, j, k) += chiInc_ar(i, j, k);
-          }
-          mac_divu_ar(i, j, k) += chi_ar(i, j, k);
-        });
+      if (m_chi_correction_type == ChiCorrectionType::DivuFirstIter) {
+        amrex::ParallelFor(
+          gbx, [chi_ar, chiInc_ar, mac_divu_ar,
+                a_sdcIter] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+            if (a_sdcIter == 1) {
+              chi_ar(i, j, k) = chiInc_ar(i, j, k) + mac_divu_ar(i, j, k);
+            } else {
+              chi_ar(i, j, k) += chiInc_ar(i, j, k);
+            }
+            mac_divu_ar(i, j, k) = chi_ar(i, j, k);
+          });
+      } else if (m_chi_correction_type == ChiCorrectionType::NoDivu) {
+        amrex::ParallelFor(
+          gbx, [chi_ar, chiInc_ar, mac_divu_ar,
+                a_sdcIter] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+            if (a_sdcIter == 1) {
+              chi_ar(i, j, k) = chiInc_ar(i, j, k);
+            } else {
+              chi_ar(i, j, k) += chiInc_ar(i, j, k);
+            }
+            mac_divu_ar(i, j, k) = chi_ar(i, j, k);
+          });
+      } else { // Default: use updated divu every iteration
+        amrex::ParallelFor(
+          gbx, [chi_ar, chiInc_ar, mac_divu_ar,
+                a_sdcIter] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+            if (a_sdcIter == 1) {
+              chi_ar(i, j, k) = chiInc_ar(i, j, k);
+            } else {
+              chi_ar(i, j, k) += chiInc_ar(i, j, k);
+            }
+            mac_divu_ar(i, j, k) += chi_ar(i, j, k);
+          });
+      }
     }
+  }
+  if (m_print_chi_convergence) {
+    amrex::Real max_corr =
+      MLNorm0(GetVecOfConstPtrs(chiIncr)) * m_dt / m_dpdtFactor;
+    amrex::Print() << "      Before SDC " << a_sdcIter
+                   << ": max relative P mismatch is " << max_corr << std::endl;
   }
 }
 

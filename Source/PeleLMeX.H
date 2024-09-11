@@ -1906,6 +1906,8 @@ public:
   // SDC
   int m_nSDCmax = 1;
   int m_sdcIter = 0;
+  bool m_print_chi_convergence = false;
+  int m_chi_correction_type{ChiCorrectionType::DivuEveryIter};
 
   // DeltaT iterations
   int m_deltaT_verbose = 0;

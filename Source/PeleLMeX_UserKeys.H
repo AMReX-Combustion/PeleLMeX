@@ -160,4 +160,22 @@ struct LoadBalanceMethod
     "load_balancing_method", "chem_load_balancing_method"};
 };
 const LoadBalanceMethod lbmethod;
+
+/**
+  * \brief struct holding PeleLMeX DivU/chi constraint options
+           default is DivuEveryIter
+  */
+struct ChiCorrectionType
+{
+  ChiCorrectionType() = default;
+  enum { DivuEveryIter = 0, DivuFirstIter, NoDivu };
+  const std::map<const std::string, int> str2int = {
+    {"divueveryiter", DivuEveryIter},
+    {"divufirstiter", DivuFirstIter},
+    {"nodivu", NoDivu},
+    {"default", DivuEveryIter}};
+  const amrex::Array<std::string, 1> searchKey{"chi_correction_type"};
+};
+const ChiCorrectionType chicorr;
+
 #endif
