@@ -606,6 +606,7 @@ public:
    * velocity, ensuring they sum up to zero. \param a_fluxes diffusion fluxes to
    * be updated \param a_spec species rhoYs state data on all levels
    */
+  template <typename EOSType>
   void adjustSpeciesFluxes(
     const amrex::Vector<amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>>&
       a_spfluxes,
@@ -1752,6 +1753,11 @@ public:
     pele::physics::PhysicsType::eos_type,
     pele::physics::PhysicsType::transport_type>>
     trans_parms;
+
+  // EOS pointer
+  static pele::physics::PeleParams<
+    pele::physics::eos::EosParm<pele::physics::PhysicsType::eos_type>>
+    eos_parms;
 
   // Reactor pointer
   std::string m_chem_integrator;

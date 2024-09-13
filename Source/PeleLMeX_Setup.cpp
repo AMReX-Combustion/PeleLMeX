@@ -105,7 +105,14 @@ PeleLM::Setup()
 
   // Initialize EOS and others
   if (m_incompressible == 0) {
+    amrex::Print() << " Initialization of Eos ... \n";
+    eos_parms.initialize();
+
     amrex::Print() << " Initialization of Transport ... \n";
+#ifdef USE_MANIFOLD_EOS
+    trans_parms.host_only_parm().manfunc_par =
+      eos_parms.host_only_parm().manfunc_par;
+#endif
     trans_parms.initialize();
     if ((m_les_verbose != 0) and m_do_les) { // Say what transport model we're
                                              // going to use
@@ -142,6 +149,7 @@ PeleLM::Setup()
       m_reactor =
         pele::physics::reactions::ReactorBase::create(m_chem_integrator);
       m_reactor->init(reactor_type, ncells_chem);
+      m_reactor->set_eos_parm(eos_parms.device_parm());
       // For ReactorNull, we need to also skip instantaneous RR used in divU
       if (m_chem_integrator == "ReactorNull") {
         m_skipInstantRR = 1;

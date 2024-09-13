@@ -290,7 +290,8 @@ PeleLM::computeDifferentialDiffusionFluxes(
   }
 
   // Adjust species diffusion fluxes to ensure their sum is zero
-  adjustSpeciesFluxes(a_fluxes, GetVecOfConstPtrs(getSpeciesVect(a_time)));
+  adjustSpeciesFluxes<pele::physics::PhysicsType::eos_type>(
+    a_fluxes, GetVecOfConstPtrs(getSpeciesVect(a_time)));
   //----------------------------------------------------------------
 
   //----------------------------------------------------------------
@@ -637,6 +638,7 @@ PeleLM::addSoretTerm(
   }
 }
 
+template <typename EOSType>
 void
 PeleLM::adjustSpeciesFluxes(
   const Vector<Array<MultiFab*, AMREX_SPACEDIM>>& a_spfluxes,
@@ -743,6 +745,17 @@ PeleLM::adjustSpeciesFluxes(
       }
     }
   }
+}
+
+template <>
+void
+PeleLM::adjustSpeciesFluxes<pele::physics::eos::Manifold>(
+  const Vector<Array<MultiFab*, AMREX_SPACEDIM>>& /*a_spfluxes*/,
+  Vector<MultiFab const*> const& /*a_spec*/)
+{
+  // Manifold Model: "Species" don't sum to unity, so no need to adjust the
+  // fluxes
+  BL_PROFILE("PeleLM::adjustSpeciesFluxes()");
 }
 
 void
@@ -1004,7 +1017,7 @@ PeleLM::differentialDiffusionUpdate(
   fillPatchSpecies(AmrNewTime);
 
   // Adjust species diffusion fluxes to ensure their sum is zero
-  adjustSpeciesFluxes(
+  adjustSpeciesFluxes<pele::physics::PhysicsType::eos_type>(
     GetVecOfArrOfPtrs(fluxes), GetVecOfConstPtrs(getSpeciesVect(AmrNewTime)));
 
   // Average down fluxes^{np1,kp1}
