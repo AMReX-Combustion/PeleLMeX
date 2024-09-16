@@ -24,11 +24,13 @@ getTransportCoeff(
   amrex::Array4<amrex::Real> const& mu,
   pele::physics::transport::TransParm<
     pele::physics::PhysicsType::eos_type,
-    pele::physics::PhysicsType::transport_type> const* trans_parm) noexcept
+    pele::physics::PhysicsType::transport_type> const* trans_parm,
+  pele::physics::eos::EosParm<pele::physics::PhysicsType::eos_type> const*
+    eosparm) noexcept
 {
   using namespace amrex::literals;
 
-  auto eos = pele::physics::PhysicsType::eos();
+  auto eos = pele::physics::PhysicsType::eos(eosparm);
   amrex::Real mwtinv[NUM_SPECIES] = {0.0};
   eos.inv_molecular_weight(mwtinv);
 
@@ -170,11 +172,13 @@ getPGivenRTY(
   amrex::Array4<const amrex::Real> const& rho,
   amrex::Array4<const amrex::Real> const& rhoY,
   amrex::Array4<const amrex::Real> const& T,
-  amrex::Array4<amrex::Real> const& P) noexcept
+  amrex::Array4<amrex::Real> const& P,
+  pele::physics::eos::EosParm<pele::physics::PhysicsType::eos_type> const*
+    eosparm) noexcept
 {
   using namespace amrex::literals;
 
-  auto eos = pele::physics::PhysicsType::eos();
+  auto eos = pele::physics::PhysicsType::eos(eosparm);
   amrex::Real rhoinv = 1.0_rt / rho(i, j, k);
   amrex::Real rho_cgs = rho(i, j, k) * 0.001_rt;
 
@@ -203,11 +207,13 @@ compute_divu(
   amrex::Array4<const amrex::Real> const& extRhoY,
   amrex::Array4<const amrex::Real> const& extRhoH,
   amrex::Array4<amrex::Real> const& divu,
-  int do_react) noexcept
+  int do_react,
+  pele::physics::eos::EosParm<pele::physics::PhysicsType::eos_type> const*
+    eosparm) noexcept
 {
   using namespace amrex::literals;
 
-  auto eos = pele::physics::PhysicsType::eos();
+  auto eos = pele::physics::PhysicsType::eos(eosparm);
   amrex::Real mwtinv[NUM_SPECIES] = {0.0};
   eos.inv_molecular_weight(mwtinv);
 
@@ -425,11 +431,13 @@ getMwmixGivenRY(
   int k,
   amrex::Array4<const amrex::Real> const& rho,
   amrex::Array4<const amrex::Real> const& rhoY,
-  amrex::Array4<amrex::Real> const& Mwmix) noexcept
+  amrex::Array4<amrex::Real> const& Mwmix,
+  pele::physics::eos::EosParm<pele::physics::PhysicsType::eos_type> const*
+    eosparm) noexcept
 {
   using namespace amrex::literals;
 
-  auto eos = pele::physics::PhysicsType::eos();
+  auto eos = pele::physics::PhysicsType::eos(eosparm);
   amrex::Real rhoinv = 1.0_rt / rho(i, j, k);
   amrex::Real y[NUM_SPECIES] = {0.0_rt};
   for (int n = 0; n < NUM_SPECIES; n++) {
@@ -591,11 +599,13 @@ getHGivenT(
   int j,
   int k,
   amrex::Array4<const amrex::Real> const& T,
-  amrex::Array4<amrex::Real> const& Hi) noexcept
+  amrex::Array4<amrex::Real> const& Hi,
+  pele::physics::eos::EosParm<pele::physics::PhysicsType::eos_type> const*
+    eosparm) noexcept
 {
   using namespace amrex::literals;
 
-  auto eos = pele::physics::PhysicsType::eos();
+  auto eos = pele::physics::PhysicsType::eos(eosparm);
   amrex::Real hi_spec[NUM_SPECIES] = {0.0_rt};
   eos.T2Hi(T(i, j, k), hi_spec);
   for (int n = 0; n < NUM_SPECIES; n++) {
@@ -665,11 +675,13 @@ getRHmixGivenTY(
   amrex::Array4<const amrex::Real> const& rho,
   amrex::Array4<const amrex::Real> const& rhoY,
   amrex::Array4<const amrex::Real> const& T,
-  amrex::Array4<amrex::Real> const& Hmix) noexcept
+  amrex::Array4<amrex::Real> const& Hmix,
+  pele::physics::eos::EosParm<pele::physics::PhysicsType::eos_type> const*
+    eosparm) noexcept
 {
   using namespace amrex::literals;
 
-  auto eos = pele::physics::PhysicsType::eos();
+  auto eos = pele::physics::PhysicsType::eos(eosparm);
   amrex::Real rhoinv = 1.0_rt / rho(i, j, k);
   amrex::Real y[NUM_SPECIES] = {0.0_rt};
   for (int n = 0; n < NUM_SPECIES; n++) {
@@ -691,11 +703,13 @@ getTfromHY(
   amrex::Array4<const amrex::Real> const& rho,
   amrex::Array4<const amrex::Real> const& rhoY,
   amrex::Array4<const amrex::Real> const& rhoH,
-  amrex::Array4<amrex::Real> const& T) noexcept
+  amrex::Array4<amrex::Real> const& T,
+  pele::physics::eos::EosParm<pele::physics::PhysicsType::eos_type> const*
+    eosparm) noexcept
 {
   using namespace amrex::literals;
 
-  auto eos = pele::physics::PhysicsType::eos();
+  auto eos = pele::physics::PhysicsType::eos(eosparm);
   amrex::Real rhoinv = 1.0_rt / rho(i, j, k);
   amrex::Real y[NUM_SPECIES] = {0.0};
   for (int n = 0; n < NUM_SPECIES; n++) {
@@ -717,11 +731,13 @@ getCpmixGivenRYT(
   amrex::Array4<const amrex::Real> const& rho,
   amrex::Array4<const amrex::Real> const& rhoY,
   amrex::Array4<const amrex::Real> const& T,
-  amrex::Array4<amrex::Real> const& cpmix) noexcept
+  amrex::Array4<amrex::Real> const& cpmix,
+  pele::physics::eos::EosParm<pele::physics::PhysicsType::eos_type> const*
+    eosparm) noexcept
 {
   using namespace amrex::literals;
 
-  auto eos = pele::physics::PhysicsType::eos();
+  auto eos = pele::physics::PhysicsType::eos(eosparm);
   amrex::Real rhoinv = 1.0_rt / rho(i, j, k);
   amrex::Real y[NUM_SPECIES] = {0.0};
   for (int n = 0; n < NUM_SPECIES; n++) {
@@ -751,11 +767,13 @@ buildAdvectionForcing(
   int const& closed_chamber,
   int do_react,
   amrex::Array4<amrex::Real> const& forceY,
-  amrex::Array4<amrex::Real> const& forceT) noexcept
+  amrex::Array4<amrex::Real> const& forceT,
+  pele::physics::eos::EosParm<pele::physics::PhysicsType::eos_type> const*
+    eosparm) noexcept
 {
   using namespace amrex::literals;
 
-  auto eos = pele::physics::PhysicsType::eos();
+  auto eos = pele::physics::PhysicsType::eos(eosparm);
   // Get species enthalpy
   amrex::Real hi_spec[NUM_SPECIES] = {0.0};
   eos.T2Hi(T(i, j, k), hi_spec);
@@ -835,11 +853,13 @@ reactionRateRhoY(
   amrex::Array4<const amrex::Real> const& rhoY,
   amrex::Array4<const amrex::Real> const& rhoH,
   amrex::Array4<const amrex::Real> const& T,
-  amrex::Array4<amrex::Real> const& rhoYdot) noexcept
+  amrex::Array4<amrex::Real> const& rhoYdot,
+  pele::physics::eos::EosParm<pele::physics::PhysicsType::eos_type> const*
+    eosparm) noexcept
 {
   using namespace amrex::literals;
 
-  auto eos = pele::physics::PhysicsType::eos();
+  auto eos = pele::physics::PhysicsType::eos(eosparm);
 
   // Get rho & Ys from rhoYs.
   amrex::Real rho = 0.0_rt;
@@ -1005,11 +1025,13 @@ getGammaInv(
   int j,
   int k,
   amrex::Array4<const amrex::Real> const& rhoY,
-  amrex::Array4<const amrex::Real> const& T) noexcept
+  amrex::Array4<const amrex::Real> const& T,
+  pele::physics::eos::EosParm<pele::physics::PhysicsType::eos_type> const*
+    eosparm) noexcept
 {
   using namespace amrex::literals;
 
-  auto eos = pele::physics::PhysicsType::eos();
+  auto eos = pele::physics::PhysicsType::eos(eosparm);
   // Get rho & Y from rhoY
   amrex::Real rho = 0.0_rt;
   for (int n = 0; n < NUM_SPECIES; n++) {

@@ -64,6 +64,7 @@ PeleLM::calcTurbViscosity(const TimeStamp& a_time)
     } else {
       // get cp_cc (valid in 1 grow cell for interpolation to FCs)
       int ngrow = 1;
+      auto const* leosparm = eos_parms.device_parm();
       cp_cc.define(ba, dm, 1, ngrow, MFInfo(), factory);
       auto const& state_arr = ldata_p->state.const_arrays();
       auto const& cp_arr = cp_cc.arrays();
@@ -74,7 +75,7 @@ PeleLM::calcTurbViscosity(const TimeStamp& a_time)
             i, j, k, Array4<Real const>(state_arr[box_no], DENSITY),
             Array4<Real const>(state_arr[box_no], FIRSTSPEC),
             Array4<Real const>(state_arr[box_no], TEMP),
-            Array4<Real>(cp_arr[box_no]));
+            Array4<Real>(cp_arr[box_no]), leosparm);
         });
       Gpu::streamSynchronize();
 
@@ -292,6 +293,7 @@ PeleLM::calcDiffusivity(const TimeStamp& a_time)
 
     // Transport data pointer
     auto const* ltransparm = trans_parms.device_parm();
+    auto const* leosparm = eos_parms.device_parm();
 
     // MultiArrays
     auto const& sma = ldata_p->state.const_arrays();
@@ -322,7 +324,7 @@ PeleLM::calcDiffusivity(const TimeStamp& a_time)
           Array4<Real const>(sma[box_no], TEMP), Array4<Real>(dma[box_no], 0),
           Array4<Real>(dma[box_no], NUM_SPECIES + 1 + soret_idx),
           Array4<Real>(dma[box_no], NUM_SPECIES),
-          Array4<Real>(dma[box_no], NUM_SPECIES + 1), ltransparm);
+          Array4<Real>(dma[box_no], NUM_SPECIES + 1), ltransparm, leosparm);
 #ifdef PELE_USE_EFIELD
         getKappaSp(
           i, j, k, mwt.arr, zk, Array4<Real const>(sma[box_no], FIRSTSPEC),

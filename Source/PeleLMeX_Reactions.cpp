@@ -385,6 +385,7 @@ PeleLM::computeInstantaneousReactionRate(
 {
   BL_PROFILE("PeleLMeX::computeInstantaneousReactionRate()");
   auto* ldata_p = getLevelDataPtr(lev, a_time);
+  auto const* leosparm = eos_parms.device_parm();
 
 #ifdef AMREX_USE_EB
   auto const& ebfact = EBFactory(lev);
@@ -411,23 +412,23 @@ PeleLM::computeInstantaneousReactionRate(
         });
     } else if (flagfab.getType(bx) != FabType::regular) { // EB containing boxes
       amrex::ParallelFor(
-        bx, [rhoY, rhoH, T, rhoYdot,
-             flag] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        bx, [rhoY, rhoH, T, rhoYdot, flag,
+             leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           if (flag(i, j, k).isCovered()) {
             for (int n = 0; n < NUM_SPECIES; n++) {
               rhoYdot(i, j, k, n) = 0.0;
             }
           } else {
-            reactionRateRhoY(i, j, k, rhoY, rhoH, T, rhoYdot);
+            reactionRateRhoY(i, j, k, rhoY, rhoH, T, rhoYdot, leosparm);
           }
         });
     } else
 #endif
     {
       amrex::ParallelFor(
-        bx, [rhoY, rhoH, T,
-             rhoYdot] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          reactionRateRhoY(i, j, k, rhoY, rhoH, T, rhoYdot);
+        bx, [rhoY, rhoH, T, rhoYdot,
+             leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          reactionRateRhoY(i, j, k, rhoY, rhoH, T, rhoYdot, leosparm);
         });
     }
   }
@@ -478,6 +479,7 @@ PeleLM::getHeatRelease(int a_lev, MultiFab* a_HR)
 {
   auto* ldataNew_p = getLevelDataPtr(a_lev, AmrNewTime);
   auto* ldataR_p = getLevelDataReactPtr(a_lev);
+  auto const* leosparm = eos_parms.device_parm();
 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -491,8 +493,9 @@ PeleLM::getHeatRelease(int a_lev, MultiFab* a_HR)
       auto const& Hi = EnthFab.array();
       auto const& HRR = a_HR->array(mfi);
       amrex::ParallelFor(
-        bx, [T, Hi, HRR, react] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          getHGivenT(i, j, k, T, Hi);
+        bx, [T, Hi, HRR, react,
+             leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          getHGivenT(i, j, k, T, Hi, leosparm);
           HRR(i, j, k) = 0.0;
           for (int n = 0; n < NUM_SPECIES; n++) {
             HRR(i, j, k) -= Hi(i, j, k, n) * react(i, j, k, n);
