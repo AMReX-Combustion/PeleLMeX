@@ -147,6 +147,7 @@ pelelmex_dermolefrac(
   AMREX_ASSERT(!a_pelelm->m_incompressible);
   auto const in_dat = statefab.array();
   auto der = derfab.array(dcomp);
+  auto const* leosparm = a_pelelm->eos_parms.device_parm();
   amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
     amrex::Real Yt[NUM_SPECIES] = {0.0};
     amrex::Real Xt[NUM_SPECIES] = {0.0};
@@ -154,7 +155,7 @@ pelelmex_dermolefrac(
     for (int n = 0; n < NUM_SPECIES; n++) {
       Yt[n] = in_dat(i, j, k, FIRSTSPEC + n) * rhoinv;
     }
-    auto eos = pele::physics::PhysicsType::eos();
+    auto eos = pele::physics::PhysicsType::eos(leosparm);
     eos.Y2X(Yt, Xt);
     for (int n = 0; n < NUM_SPECIES; n++) {
       der(i, j, k, n) = Xt[n];

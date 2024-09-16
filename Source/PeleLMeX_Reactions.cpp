@@ -84,7 +84,7 @@ PeleLM::advanceChemistry(int lev, const Real& a_dt, MultiFab& a_extForcing)
     auto const& FnE = a_extForcing.array(mfi, NUM_SPECIES + 1);
     auto const& rhoYe_n = ldataNew_p->state.array(mfi, FIRSTSPEC + E_ID);
     auto const& FrhoYe = a_extForcing.array(mfi, E_ID);
-    auto eos = pele::physics::PhysicsType::eos();
+    auto eos = pele::physics::PhysicsType::eos(&eos_parms.host_parm());
     Real mwt[NUM_SPECIES] = {0.0};
     eos.molecular_weight(mwt);
     ParallelFor(
@@ -245,7 +245,7 @@ PeleLM::advanceChemistryBAChem(
     auto const& FnE = chemForcing.array(mfi, NUM_SPECIES + 1);
     auto const& rhoYe_o = chemState.array(mfi, E_ID);
     auto const& FrhoYe = chemForcing.array(mfi, E_ID);
-    auto eos = pele::physics::PhysicsType::eos();
+    auto eos = pele::physics::PhysicsType::eos(&eos_parms.host_parm());
     Real mwt[NUM_SPECIES] = {0.0};
     eos.molecular_weight(mwt);
     ParallelFor(
