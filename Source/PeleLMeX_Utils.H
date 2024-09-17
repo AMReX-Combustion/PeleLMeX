@@ -1,5 +1,6 @@
 #ifndef PELELM_UTILS_H
 #define PELELM_UTILS_H
+
 template <class T>
 amrex::Gpu::DeviceVector<T>
 convertToDeviceVector(amrex::Vector<T> v)
@@ -13,4 +14,16 @@ convertToDeviceVector(amrex::Vector<T> v)
 #endif
   return v_d;
 }
+
+template <typename T = amrex::Real, unsigned int N = NUM_SPECIES>
+AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE amrex::GpuArray<T, N>
+array4_to_array(int i, int j, int k, amrex::Array4<T> array, int start_comp = 0)
+{
+  amrex::GpuArray<T, N> celldata;
+  for (unsigned int n = start_comp; n < N; i++) {
+    celldata[n] = array(i, j, k, n);
+  }
+  return celldata;
+}
+
 #endif
