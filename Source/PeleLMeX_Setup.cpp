@@ -170,8 +170,10 @@ PeleLM::Setup()
   }
 
   // Mixture fraction & Progress variable
-  initMixtureFraction();
-  initProgressVariable();
+  if (pele::physics::PhysicsType::eos_type::identifier() != "Manifold") {
+    initMixtureFraction();
+    initProgressVariable();
+  }
 
   // Initialize turbulence injection
   turb_inflow.init(Geom(0));
@@ -238,12 +240,12 @@ PeleLM::readParameters()
   if ((verbose != 0) && (m_closed_chamber != 0)) {
     Print() << " Simulation performed with the closed chamber algorithm \n";
   }
-#ifdef USE_MANIFOLD_EOS
-  if (m_closed_chamber) {
+  if (
+    m_closed_chamber &&
+    pele::physics::PhysicsType::eos_type::identifier() == "Manifold") {
     amrex::Abort(
       "Simulation with closed chamber not supported for Manifold EOS");
   }
-#endif
 
 #ifdef PELE_USE_EFIELD
   ParmParse ppef("ef");
@@ -461,6 +463,11 @@ PeleLM::readParameters()
     amrex::Print() << "WARNING: use_wbar and use_soret set to false because "
                       "fixed_Pr or fixed_Le is true"
                    << std::endl;
+  }
+  if (
+    m_use_wbar != 0 &&
+    pele::physics::PhysicsType::eos_type::identifier() == "Manifold") {
+    amrex::Abort("Use of Wbar fluxes is not compatible with Manifold EOS");
   }
 
   pp.query("deltaT_verbose", m_deltaT_verbose);
