@@ -27,6 +27,7 @@ PeleLM::setSootIndx()
 void
 PeleLM::cleanupSootModel()
 {
+  soot_model->cleanup();
   delete soot_model;
 }
 
