@@ -73,6 +73,20 @@ endif
 ifeq ($(Eos_Model),$(filter $(Eos_Model),Soave-Redlich-Kwong))
    DEFINES += -DUSE_SRK_EOS
 endif
+ifeq ($(Eos_Model),$(filter $(Eos_Model),Manifold))
+   DEFINES += -DUSE_MANIFOLD_EOS
+   DEFINES += -DUSE_MANIFOLD_EOS
+   DEFINES += -DMANIFOLD_DIM=$(Manifold_Dim)
+   ifeq ($(Manifold_Type),Table)
+      DEFINES += -DMANIFOLD_EOS_TYPE=1
+   else
+      ifeq ($(Manifold_Type),Network)
+         DEFINES += -DMANIFOLD_EOS_TYPE=2
+      else
+         DEFINES += -DMANIFOLD_EOS_TYPE=0
+      endif
+   endif
+endif
 
 # Transport model switches
 ifeq ($(Transport_Model), Simple)
@@ -87,6 +101,9 @@ ifeq ($(Transport_Model), Constant)
 endif
 ifeq ($(Transport_Model), Sutherland)
   DEFINES += -DUSE_SUTHERLAND_TRANSPORT
+endif
+ifeq ($(Transport_Model), Manifold)
+   DEFINES += -DUSE_MANIFOLD_TRANSPORT
 endif
 
 ifeq ($(PELE_USE_KLU), TRUE)
