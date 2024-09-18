@@ -340,9 +340,9 @@ PeleLM::correctIsothermalBoundary(
             auto const& flux_soret = soretfluxes[lev][idim]->const_array(mfi);
             auto const& boundary_ar = a_spec_boundary[lev]->array(mfi);
             amrex::ParallelFor(
-              ebx, [flux_soret, flux_wbar, rhoD_ec, boundary_ar, idim, edomain,
-                    bc_lo, bc_hi,
-                    iter] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+              ebx,
+              [flux_soret, flux_wbar, rhoD_ec, boundary_ar, idim, edomain,
+               bc_lo, bc_hi] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
                 int idx[3] = {i, j, k};
                 bool on_lo =
                   (bc_lo == BoundaryCondition::BCNoSlipWallIsotherm ||
@@ -826,9 +826,9 @@ PeleLM::addSoretTerm(
           // with beta_m = rho * D_m * chi_m below
           Real dev = 0.0;
           amrex::ParallelFor(
-            ebx, [need_soret_fluxes, gradT_ar, beta_ar, T, spFlux_ar, domain,
-                  spsoretFlux_ar, phys_bc = m_phys_bc,
-                  dev] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+            ebx,
+            [need_soret_fluxes, gradT_ar, beta_ar, T, spFlux_ar,
+             spsoretFlux_ar] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
               for (int n = 0; n < NUM_SPECIES; n++) {
                 spFlux_ar(i, j, k, n) -=
                   beta_ar(i, j, k, n) * gradT_ar(i, j, k) / T(i, j, k);
