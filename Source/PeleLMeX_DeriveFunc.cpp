@@ -2,6 +2,7 @@
 #include "PeleLMeX.H"
 #include "PeleLMeX_K.H"
 #include "PeleLMeX_DeriveFunc.H"
+#include "PeleLMeX_Utils.H"
 
 #include <PelePhysics.H>
 #include <mechanism.H>
@@ -1382,7 +1383,7 @@ pelelmex_derdiffc(
     bx, [do_fixed_Le, do_fixed_Pr, do_soret, LeInv, PrInv, rhoY, T, rhoD,
          rhotheta, lambda, mu, ltransparm,
          leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-      getTransportCoeff(
+      getTransportCoeff<pele::physics::PhysicsType::eos_type>(
         i, j, k, do_fixed_Le, do_fixed_Pr, do_soret, LeInv, PrInv, rhoY, T,
         rhoD, rhotheta, lambda, mu, ltransparm, leosparm);
     });
@@ -1428,7 +1429,7 @@ pelelmex_derlambda(
     bx, [do_fixed_Le, do_fixed_Pr, do_soret, LeInv, PrInv, rhoY, T, rhoD,
          rhotheta, lambda, mu, ltransparm,
          leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-      getTransportCoeff(
+      getTransportCoeff<pele::physics::PhysicsType::eos_type>(
         i, j, k, do_fixed_Le, do_fixed_Pr, do_soret, LeInv, PrInv, rhoY, T,
         rhoD, rhotheta, lambda, mu, ltransparm, leosparm);
     });
@@ -1451,7 +1452,6 @@ pelelmex_derdmap(
   Real /*time*/,
   const Vector<BCRec>& /*bcrec*/,
   int /*level*/)
-
 {
   AMREX_ASSERT(derfab.box().contains(bx));
   auto der = derfab.array(dcomp);
@@ -1460,3 +1460,52 @@ pelelmex_derdmap(
     der(i, j, k) = myrank;
   });
 }
+
+//
+// Derive manifold output quantities
+//
+#ifdef USE_MANIFOLD_EOS
+void
+pelelmex_dermaniout(
+  PeleLM* a_pelelm,
+  const Box& bx,
+  FArrayBox& derfab,
+  int dcomp,
+  int ncomp,
+  const FArrayBox& statefab,
+  const FArrayBox& /*reactfab*/,
+  const FArrayBox& /*pressfab*/,
+  const Geometry& /*geom*/,
+  Real /*time*/,
+  const Vector<BCRec>& /*bcrec*/,
+  int /*level*/)
+{
+  auto& h_manf_data =
+    a_pelelm->eos_parms.host_only_parm().manfunc_par->host_parm();
+  auto* d_manf_data =
+    a_pelelm->eos_parms.host_only_parm().manfunc_par->device_parm();
+  int nmanivar = h_manf_data.Nvar;
+
+  amrex::ignore_unused(ncomp);
+  AMREX_ASSERT(derfab.box().contains(bx));
+  AMREX_ASSERT(statefab.box().contains(bx));
+  AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
+  AMREX_ASSERT(statefab.nComp() >= NUM_SPECIES + 1);
+  AMREX_ASSERT(ncomp == nmanivar);
+  AMREX_ASSERT(!a_pelelm->m_incompressible);
+
+  auto const in_dat = statefab.array();
+  auto der = derfab.array(dcomp);
+  amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+    amrex::Real rho, rhoinv, maniparm[NUM_SPECIES];
+    // pele::physics::PhysicsType::eos_type::RY2RRinvY(array4_to_array(i, j, k,
+    // in_dat, FIRSTSPEC).data(), rho, rhoinv, maniparm);
+    pele::physics::PhysicsType::eos_type::RY2RRinvY(
+      in_dat.ptr(i, j, k, FIRSTSPEC), rho, rhoinv, maniparm);
+    pele::physics::BlackBoxFunctionFactory<
+      pele::physics::eos::ManifoldFunctionType>
+      manfunc{d_manf_data};
+    manfunc.get_func()->get_all_values(maniparm, der.ptr(i, j, k));
+  });
+}
+#endif
