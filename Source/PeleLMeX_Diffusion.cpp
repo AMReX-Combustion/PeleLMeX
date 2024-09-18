@@ -824,7 +824,6 @@ PeleLM::addSoretTerm(
 
           // Soret flux is : - rho * D_m * chi_m * \nabla T / T
           // with beta_m = rho * D_m * chi_m below
-          Real dev = 0.0;
           amrex::ParallelFor(
             ebx,
             [need_soret_fluxes, gradT_ar, beta_ar, T, spFlux_ar,
