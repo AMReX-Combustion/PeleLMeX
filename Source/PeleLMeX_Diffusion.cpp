@@ -308,7 +308,7 @@ PeleLM::correctIsothermalBoundary(
     }
     int iter_max = 10;
     for (int iter = 0; iter < iter_max; iter++) {
-      // based on existing flux, compute required wbar flux
+      // based on existing gradient, compute the wbar flux
       addWbarTerm(
         GetVecOfArrOfPtrs(wbarfluxes), GetVecOfArrOfPtrs(wbarfluxes),
         GetVecOfConstPtrs(getSpeciesVect(a_time)),
@@ -317,7 +317,6 @@ PeleLM::correctIsothermalBoundary(
         GetVecOfConstPtrs(a_spec_boundary));
       for (int lev = 0; lev <= finest_level; ++lev) {
         auto* ldata_p = getLevelDataPtr(lev, a_time);
-
         MultiFab& ldata_beta_cc = ldata_p->diff_cc;
         const Box& domain = geom[lev].Domain();
         int doZeroVisc = 1;
@@ -685,8 +684,9 @@ PeleLM::addWbarTerm(
               ? a_spwbarfluxes[lev][idim]->array(mfi)
               : a_spfluxes[lev][idim]->array(mfi); // Dummy unused Array4
 
-          // Wbar flux is : - \rho Y_m / \overline{W} * D_m * \nabla
-          // \overline{W} with beta_m = \rho * D_m below
+          // Wbar flux is : - \rho Y_m / W_k * D_m * \nabla
+          // \overline{W} with beta_m = \rho * D_m * overline(W) / W_k below
+          // need to divide by \overline(W)
           amrex::ParallelFor(
             ebx,
             [need_wbar_fluxes, gradWbar_ar, beta_ar, rhoY, spFlux_ar,
@@ -702,17 +702,17 @@ PeleLM::addWbarTerm(
               for (int n = 0; n < NUM_SPECIES; n++) {
                 y[n] = rhoY(i, j, k, n) * rho_inv;
               }
-	      amrex::Real WBAR = 0.0;
-	      eos.Y2WBAR(y, WBAR);
-	      WBAR *= 0.001;
+              amrex::Real WBAR = 0.0;
+              eos.Y2WBAR(y, WBAR);
+              WBAR *= 0.001;
               for (int n = 0; n < NUM_SPECIES; n++) {
-                 spFlux_ar(i, j, k, n) -=
-                   y[n] / WBAR * beta_ar(i, j, k, n) * gradWbar_ar(i, j, k);
+                spFlux_ar(i, j, k, n) -=
+                  y[n] / WBAR * beta_ar(i, j, k, n) * gradWbar_ar(i, j, k);
               }
               if (need_wbar_fluxes != 0) {
                 for (int n = 0; n < NUM_SPECIES; n++) {
-		  spwbarFlux_ar(i, j, k, n) =
-		    -y[n] / WBAR * beta_ar(i, j, k, n) * gradWbar_ar(i, j, k);
+                  spwbarFlux_ar(i, j, k, n) =
+                    -y[n] / WBAR * beta_ar(i, j, k, n) * gradWbar_ar(i, j, k);
                 }
               }
             });
@@ -783,7 +783,7 @@ PeleLM::addSoretTerm(
 
           // Get edge centered temps
           T_ed.resize(ebx, 1);
-          Elixir T_el = T_ed.elixir(); // point of this?
+          Elixir T_el = T_ed.elixir();
 
           auto const& T_arr = a_temp[lev]->const_array(mfi);
           const auto& Ted_arr = T_ed.array(0);
