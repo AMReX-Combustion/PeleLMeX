@@ -702,24 +702,17 @@ PeleLM::addWbarTerm(
               for (int n = 0; n < NUM_SPECIES; n++) {
                 y[n] = rhoY(i, j, k, n) * rho_inv;
               }
-              amrex::Real imw[NUM_SPECIES] = {0.0};
-              eos.inv_molecular_weight(imw);
-              // amrex::Real WBAR = 0.0;
-              // eos.Y2WBAR(y, WBAR);
-              // WBAR *= 0.001;
+	      amrex::Real WBAR = 0.0;
+	      eos.Y2WBAR(y, WBAR);
+	      WBAR *= 0.001;
               for (int n = 0; n < NUM_SPECIES; n++) {
-                // imw[n] *= 1000.0;
-                // spFlux_ar(i, j, k, n) -=
-                //   y[n] / WBAR * beta_ar(i, j, k, n) * gradWbar_ar(i, j, k);
-                spFlux_ar(i, j, k, n) -=
-                  y[n] * imw[n] * beta_ar(i, j, k, n) * gradWbar_ar(i, j, k);
+                 spFlux_ar(i, j, k, n) -=
+                   y[n] / WBAR * beta_ar(i, j, k, n) * gradWbar_ar(i, j, k);
               }
               if (need_wbar_fluxes != 0) {
                 for (int n = 0; n < NUM_SPECIES; n++) {
-                  // spwbarFlux_ar(i, j, k, n) =
-                  // -y[n] / WBAR * beta_ar(i, j, k, n) * gradWbar_ar(i, j, k);
-                  spwbarFlux_ar(i, j, k, n) =
-                    -y[n] * imw[n] * beta_ar(i, j, k, n) * gradWbar_ar(i, j, k);
+		  spwbarFlux_ar(i, j, k, n) =
+		    -y[n] / WBAR * beta_ar(i, j, k, n) * gradWbar_ar(i, j, k);
                 }
               }
             });
