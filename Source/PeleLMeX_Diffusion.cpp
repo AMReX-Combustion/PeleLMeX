@@ -227,8 +227,7 @@ PeleLM::correctIsothermalBoundary(
       }
     }
     addSoretTerm(
-      soretfluxes, soretfluxes, GetVecOfConstPtrs(getSpeciesVect(a_time)),
-      GetVecOfConstPtrs(getTempVect(a_time)),
+      soretfluxes, soretfluxes, GetVecOfConstPtrs(getTempVect(a_time)),
       GetVecOfConstPtrs(getDiffusivityVect(a_time)));
   } else { // have the lagged ones, alias to to them
     for (int lev = 0; lev <= finest_level; lev++) {
@@ -472,13 +471,11 @@ PeleLM::computeDifferentialDiffusionFluxes(
     int need_soret_fluxes = (a_soretfluxes.empty()) ? 0 : 1;
     if (need_soret_fluxes == 0) {
       addSoretTerm(
-        a_fluxes, {}, GetVecOfConstPtrs(getSpeciesVect(a_time)),
-        GetVecOfConstPtrs(getTempVect(a_time)),
+        a_fluxes, {}, GetVecOfConstPtrs(getTempVect(a_time)),
         GetVecOfConstPtrs(getDiffusivityVect(a_time)));
     } else {
       addSoretTerm(
-        a_fluxes, a_soretfluxes, GetVecOfConstPtrs(getSpeciesVect(a_time)),
-        GetVecOfConstPtrs(getTempVect(a_time)),
+        a_fluxes, a_soretfluxes, GetVecOfConstPtrs(getTempVect(a_time)),
         GetVecOfConstPtrs(getDiffusivityVect(a_time)));
     }
   }
@@ -737,7 +734,6 @@ void
 PeleLM::addSoretTerm(
   const Vector<Array<MultiFab*, AMREX_SPACEDIM>>& a_spfluxes,
   const Vector<Array<MultiFab*, AMREX_SPACEDIM>>& a_spsoretfluxes,
-  Vector<MultiFab const*> const& a_spec,
   Vector<MultiFab const*> const& a_temp,
   Vector<MultiFab const*> const& a_beta)
 {
@@ -833,7 +829,6 @@ PeleLM::addSoretTerm(
             ebx, [need_soret_fluxes, gradT_ar, beta_ar, T, spFlux_ar, domain,
                   spsoretFlux_ar, phys_bc = m_phys_bc,
                   dev] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-              int idx[3] = {i, j, k};
               for (int n = 0; n < NUM_SPECIES; n++) {
                 spFlux_ar(i, j, k, n) -=
                   beta_ar(i, j, k, n) * gradT_ar(i, j, k) / T(i, j, k);
