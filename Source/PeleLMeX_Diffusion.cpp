@@ -466,7 +466,6 @@ PeleLM::computeDifferentialDiffusionFluxes(
   }
 
   // Add the Soret term
-  // std::cout << "Calculating afterwards" << std::endl;
   if (m_use_soret != 0) {
     int need_soret_fluxes = (a_soretfluxes.empty()) ? 0 : 1;
     if (need_soret_fluxes == 0) {
