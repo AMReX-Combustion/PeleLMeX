@@ -458,7 +458,7 @@ getGradMwmixGivengradYMwmix(
   eos.inv_molecular_weight(imw);
   gradMwmix(i, j, k) = 0.0;
   for (int n = 0; n < NUM_SPECIES; n++) {
-    imw[n] *= 1000.0; // CGS -> MKS
+    // imw[n] *= 1000.0; // CGS -> MKS
     gradMwmix(i, j, k) += gradY(i, j, k, n) * imw[n];
   }
   // gradWbar = -Wbar^2 * sum(grad Y_k / W_k)

@@ -217,6 +217,7 @@ PeleLM::correctIsothermalBoundary(
   auto bcRecSpec = fetchBCRecArray(FIRSTSPEC, NUM_SPECIES);
 
   bool need_explicit_fluxes = a_soretfluxes.empty();
+
   Vector<Array<MultiFab*, AMREX_SPACEDIM>> soretfluxes(finest_level + 1);
   if (need_explicit_fluxes) { // need to fill the soret fluxes ourselves
     for (int lev = 0; lev <= finest_level; lev++) {
@@ -237,12 +238,10 @@ PeleLM::correctIsothermalBoundary(
       }
     }
   }
-
   for (int lev = 0; lev <= finest_level; ++lev) {
     auto* ldata_p = getLevelDataPtr(lev, a_time);
     // Lets overwrite the boundaries with the fluxes for the inhomogeneous
     // Neumann solve
-
     // Get the edge centered diffusivities
     MultiFab& ldata_beta_cc = ldata_p->diff_cc;
     const Box& domain = geom[lev].Domain();
@@ -296,17 +295,24 @@ PeleLM::correctIsothermalBoundary(
       }
     }
   }
+
   if (need_explicit_fluxes && m_use_wbar != 0) { // need to iterate to get the
                                                  // proper wbar flux
+    // check that we really don't have any wbar fluxes coming in
+    AMREX_ALWAYS_ASSERT(a_wbarfluxes.empty());
     Vector<Array<MultiFab, AMREX_SPACEDIM>> wbarfluxes(finest_level + 1);
+    Vector<MultiFab> residual(finest_level + 1);
+    const int iter_max = 10;
+    const Real tol = 1e-10;
     for (int lev = 0; lev <= finest_level; lev++) {
+      // residual over all species
+      residual[lev].define(grids[lev], dmap[lev], 1, 1, MFInfo(), Factory(lev));
       for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
         wbarfluxes[lev][idim].define(
           grids[lev], dmap[lev], NUM_SPECIES, 1, MFInfo(), Factory(lev));
         wbarfluxes[lev][idim].setVal(0.0);
       }
     }
-    int iter_max = 10;
     for (int iter = 0; iter < iter_max; iter++) {
       // based on existing gradient, compute the wbar flux
       addWbarTerm(
@@ -316,6 +322,7 @@ PeleLM::correctIsothermalBoundary(
         GetVecOfConstPtrs(getDiffusivityVect(a_time)),
         GetVecOfConstPtrs(a_spec_boundary));
       for (int lev = 0; lev <= finest_level; ++lev) {
+        residual[lev].setVal(0.0);
         auto* ldata_p = getLevelDataPtr(lev, a_time);
         MultiFab& ldata_beta_cc = ldata_p->diff_cc;
         const Box& domain = geom[lev].Domain();
@@ -327,7 +334,7 @@ PeleLM::correctIsothermalBoundary(
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
-        for (MFIter mfi(ldata_beta_cc, TilingIfNotGPU()); mfi.isValid();
+        for (MFIter mfi(*a_spec_boundary[lev], TilingIfNotGPU()); mfi.isValid();
              ++mfi) {
           for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
             const auto bc_lo = m_phys_bc.lo(idim);
@@ -338,10 +345,12 @@ PeleLM::correctIsothermalBoundary(
             auto const& flux_wbar = wbarfluxes[lev][idim].const_array(mfi);
             auto const& flux_soret = soretfluxes[lev][idim]->const_array(mfi);
             auto const& boundary_ar = a_spec_boundary[lev]->array(mfi);
+            auto const& residual_ar = residual[lev].array(mfi);
             amrex::ParallelFor(
               ebx,
               [flux_soret, flux_wbar, rhoD_ec, boundary_ar, idim, edomain,
-               bc_lo, bc_hi] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+               bc_lo, bc_hi,
+               residual_ar] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
                 int idx[3] = {i, j, k};
                 bool on_lo =
                   (bc_lo == BoundaryCondition::BCNoSlipWallIsotherm ||
@@ -356,14 +365,25 @@ PeleLM::correctIsothermalBoundary(
                     idx[idim] -= 1;
                   }
                   for (int n = 0; n < NUM_SPECIES; n++) {
+                    // hold the old value
+                    Real b_old = boundary_ar(idx[0], idx[1], idx[2], n);
+                    // update the value
                     boundary_ar(idx[0], idx[1], idx[2], n) =
                       (flux_soret(i, j, k, n) + flux_wbar(i, j, k, n)) /
                       rhoD_ec(i, j, k, n);
+                    // compute residual error
+                    Real res =
+                      std::abs(boundary_ar(idx[0], idx[1], idx[2], n) - b_old);
+                    residual_ar(idx[0], idx[1], idx[2]) =
+                      std::max(residual_ar(idx[0], idx[1], idx[2]), res);
                   }
                 }
               });
           }
         }
+      }
+      if (residual[finest_level].norm0(0, 1) < tol) {
+        break;
       }
     }
   }
@@ -576,18 +596,19 @@ PeleLM::addWbarTerm(
       auto const& Wbar_arr = Wbar[lev].array(mfi);
       auto const& gradY_arr =
         (have_boundary != 0) ? a_boundary[lev]->const_array(mfi) : Wbar_arr;
-      auto const& gradWbar_arr =
+      auto const& Wbar_boundary_arr =
         (have_boundary != 0) ? Wbar_boundary[lev].array(mfi) : Wbar_arr;
 
       amrex::ParallelFor(
         gbx,
-        [rho_arr, rhoY_arr, Wbar_arr, gradY_arr, gradWbar_arr, domain,
+        [rho_arr, rhoY_arr, Wbar_arr, gradY_arr, Wbar_boundary_arr, domain,
          have_boundary,
          phys_bc = m_phys_bc] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           getMwmixGivenRY(i, j, k, rho_arr, rhoY_arr, Wbar_arr);
           if (have_boundary != 0) { // need to impose gradWbar on boundary for
-                                    // computeGradient
-            gradWbar_arr(i, j, k) = Wbar_arr(i, j, k);
+            // computeGradient
+            // for dirichlet boundaries, we'll overwrite inhomog neumann ones
+            Wbar_boundary_arr(i, j, k) = Wbar_arr(i, j, k);
             int idx[3] = {i, j, k};
             for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
               const auto bc_lo = phys_bc.lo(idim);
@@ -600,7 +621,7 @@ PeleLM::addWbarTerm(
                            (idx[idim] > domain.bigEnd(idim));
               if (on_lo || on_hi) {
                 getGradMwmixGivengradYMwmix(
-                  i, j, k, gradY_arr, Wbar_arr, gradWbar_arr);
+                  i, j, k, gradY_arr, Wbar_arr, Wbar_boundary_arr);
               }
             }
           }
@@ -772,7 +793,6 @@ PeleLM::addSoretTerm(
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
     {
-      // FArrayBox rhoY_ed;
       FArrayBox T_ed;
       for (MFIter mfi(*a_beta[lev], TilingIfNotGPU()); mfi.isValid(); ++mfi) {
         for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {

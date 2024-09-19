@@ -406,6 +406,7 @@ PeleLM::readParameters()
   // diffusion
   ParmParse pptrans("transport");
   pptrans.query("use_soret", m_use_soret);
+  pp.query("use_wbar", m_use_wbar);
   if (m_use_soret != 0) {
     bool isothermal = false;
     for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
@@ -422,7 +423,6 @@ PeleLM::readParameters()
 #endif
     }
   }
-  pp.query("use_wbar", m_use_wbar);
   pp.query("unity_Le", m_unity_Le);
   pp.query("fixed_Le", m_fixed_Le);
   pp.query("fixed_Pr", m_fixed_Pr);
