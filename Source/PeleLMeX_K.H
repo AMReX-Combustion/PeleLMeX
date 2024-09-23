@@ -443,6 +443,31 @@ getMwmixGivenRY(
 AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
 void
+getGradMwmixGivengradYMwmix(
+  int i,
+  int j,
+  int k,
+  amrex::Array4<const amrex::Real> const& gradY,
+  amrex::Array4<const amrex::Real> const& Mwmix,
+  amrex::Array4<amrex::Real> const& gradMwmix) noexcept
+{
+  using namespace amrex::literals;
+
+  auto eos = pele::physics::PhysicsType::eos();
+  amrex::Real imw[NUM_SPECIES] = {0.0_rt};
+  eos.inv_molecular_weight(imw);
+  gradMwmix(i, j, k) = 0.0;
+  for (int n = 0; n < NUM_SPECIES; n++) {
+    // imw[n] *= 1000.0; // CGS -> MKS
+    gradMwmix(i, j, k) += gradY(i, j, k, n) * imw[n];
+  }
+  // gradWbar = -Wbar^2 * sum(grad Y_k / W_k)
+  gradMwmix(i, j, k) *= -Mwmix(i, j, k) * Mwmix(i, j, k);
+}
+
+AMREX_GPU_DEVICE
+AMREX_FORCE_INLINE
+void
 cen2edg_cpp(
   int i,
   int j,

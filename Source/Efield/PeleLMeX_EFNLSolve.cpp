@@ -53,7 +53,7 @@ PeleLM::implicitNonLinearSolve(
   auto bcRecPhiV = fetchBCRecArray(PHIV, 1);
   getDiffusionOp()->computeGradient(
     getNLgradPhiVVect(), {}, // don't need the laplacian out
-    GetVecOfConstPtrs(getPhiVVect(AmrOldTime)), bcRecPhiV[0], do_avgDown);
+    GetVecOfConstPtrs(getPhiVVect(AmrOldTime)), {}, bcRecPhiV[0], do_avgDown);
 
   // Stash away a copy of umac
   for (int lev = 0; lev <= finest_level; ++lev) {
@@ -438,7 +438,7 @@ PeleLM::nonLinearResidual(
   auto bcRecPhiV = fetchBCRecArray(PHIV, 1);
   getDiffusionOp()->computeGradient(
     GetVecOfArrOfPtrs(gradPhiVCur), GetVecOfPtrs(laplacian),
-    GetVecOfConstPtrs(phiV), bcRecPhiV[0], do_avgDown);
+    GetVecOfConstPtrs(phiV), {}, bcRecPhiV[0], do_avgDown);
 
   // Get nE diffusion term
   Vector<MultiFab> diffnE(finest_level + 1);
