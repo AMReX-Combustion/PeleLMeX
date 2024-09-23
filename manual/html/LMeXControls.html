@@ -487,6 +487,11 @@ in <code class="docutils literal notranslate"><span class="pre">Exec/RegTest/EB_
 <p class="admonition-title">Note</p>
 <p>Note that when using isothermal EB in combination with LES, the thermal diffusion coefficient employed to compute the EB boundary thermal flux only uses the molecular contribution.</p>
 </div>
+<p>Lastly, it is possible to change the default redistribution scheme described in the <a class="reference internal" href="Model.html#ssec-geoeb"><span class="std std-ref">geometry with embedded boundaries section:</span></a></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">peleLM</span><span class="o">.</span><span class="n">adv_redist_type</span> <span class="o">=</span> <span class="n">StateRedist</span>  <span class="c1"># [OPT, DEF=StateRedist] Redistribution scheme for advection [StateRedist, FluxRedist, NoRedist]</span>
+<span class="n">peleLM</span><span class="o">.</span><span class="n">diff_redist_type</span> <span class="o">=</span> <span class="n">FluxRedist</span>  <span class="c1"># [OPT, DEF=FluxRedist]  Redistribution scheme for diffusion [StateRedist, FluxRedist, NoRedist]</span>
+</pre></div>
+</div>
 </section>
 <section id="linear-solvers">
 <h2>Linear solvers<a class="headerlink" href="#linear-solvers" title="Link to this heading"></a></h2>
