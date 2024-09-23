@@ -358,6 +358,7 @@ In practice, `PeleLM` will perform a total of 7 single-level advance steps, whil
 
 Geometry with Embedded Boundaries
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. _ssec:geoEB:
 
 `PeleLMeX` relies on `AMReX's implementation <https://amrex-codes.github.io/amrex/docs_html/EB_Chapter.html>`_ of
 the Embedded Boundaries (EB) approach to represent geometrical objects. In this approach, the underlying computational
