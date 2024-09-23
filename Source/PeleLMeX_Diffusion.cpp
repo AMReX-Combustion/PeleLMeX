@@ -366,6 +366,7 @@ PeleLM::addWbarTerm(
   // Compute Wbar on all the levels
   int nGrow = 1; // Need one ghost cell to compute gradWbar
   Vector<MultiFab> Wbar(finest_level + 1);
+  auto const* leosparm = eos_parms.device_parm();
   for (int lev = 0; lev <= finest_level; ++lev) {
 
     Wbar[lev].define(grids[lev], dmap[lev], 1, nGrow, MFInfo(), Factory(lev));
@@ -379,9 +380,9 @@ PeleLM::addWbarTerm(
       auto const& rhoY_arr = a_spec[lev]->const_array(mfi);
       auto const& Wbar_arr = Wbar[lev].array(mfi);
       amrex::ParallelFor(
-        gbx, [rho_arr, rhoY_arr,
-              Wbar_arr] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          getMwmixGivenRY(i, j, k, rho_arr, rhoY_arr, Wbar_arr);
+        gbx, [rho_arr, rhoY_arr, Wbar_arr,
+              leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          getMwmixGivenRY(i, j, k, rho_arr, rhoY_arr, Wbar_arr, leosparm);
         });
     }
   }
@@ -464,10 +465,11 @@ PeleLM::addWbarTerm(
           // Wbar flux is : - \rho Y_m / \overline{W} * D_m * \nabla
           // \overline{W} with beta_m = \rho * D_m below
           amrex::ParallelFor(
-            ebx,
-            [need_wbar_fluxes, gradWbar_ar, beta_ar, rhoY, spFlux_ar,
-             spwbarFlux_ar] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-              auto eos = pele::physics::PhysicsType::eos();
+            ebx, [need_wbar_fluxes, gradWbar_ar, beta_ar, rhoY, spFlux_ar,
+                  spwbarFlux_ar,
+                  eosparm =
+                    leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+              auto eos = pele::physics::PhysicsType::eos(eosparm);
               // Get Wbar from rhoYs
               amrex::Real rho = 0.0;
               for (int n = 0; n < NUM_SPECIES; n++) {
@@ -755,6 +757,7 @@ PeleLM::computeSpeciesEnthalpyFlux(
 
   // Get the species BCRec
   auto bcRecSpec = fetchBCRecArray(FIRSTSPEC, NUM_SPECIES);
+  auto const* leosparm = eos_parms.device_parm();
 
   for (int lev = 0; lev <= finest_level; ++lev) {
 
@@ -786,21 +789,21 @@ PeleLM::computeSpeciesEnthalpyFlux(
       } else if (flagfab.getType(gbx) != FabType::regular) { // EB containing
                                                              // boxes
         amrex::ParallelFor(
-          gbx, [Temp_arr, Hi_arr,
-                flag] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          gbx, [Temp_arr, Hi_arr, flag,
+                leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             if (flag(i, j, k).isCovered()) {
               Hi_arr(i, j, k) = 0.0;
             } else {
-              getHGivenT(i, j, k, Temp_arr, Hi_arr);
+              getHGivenT(i, j, k, Temp_arr, Hi_arr, leosparm);
             }
           });
       } else
 #endif
       {
         amrex::ParallelFor(
-          gbx,
-          [Temp_arr, Hi_arr] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-            getHGivenT(i, j, k, Temp_arr, Hi_arr);
+          gbx, [Temp_arr, Hi_arr,
+                leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+            getHGivenT(i, j, k, Temp_arr, Hi_arr, leosparm);
           });
       }
     }
@@ -1226,6 +1229,7 @@ PeleLM::deltaTIter_prepare(
   std::unique_ptr<AdvanceAdvData>& advData,
   std::unique_ptr<AdvanceDiffData>& diffData)
 {
+  auto const* leosparm = eos_parms.device_parm();
   for (int lev = 0; lev <= finest_level; ++lev) {
 
     auto* ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
@@ -1263,7 +1267,7 @@ PeleLM::deltaTIter_prepare(
                   fourier(i, j, k) + diffDiff(i, j, k));
 
           // Get \rho * Cp_{mix}
-          getCpmixGivenRYT(i, j, k, rho, rhoY, T, rhocp);
+          getCpmixGivenRYT(i, j, k, rho, rhoY, T, rhocp, leosparm);
           rhocp(i, j, k) *= rho(i, j, k);
 
           // Save T
@@ -1370,6 +1374,7 @@ PeleLM::deltaTIter_update(
   //------------------------------------------------------------------------
   // Recompute RhoH
   for (int lev = 0; lev <= finest_level; ++lev) {
+    auto const* leosparm = eos_parms.device_parm();
     auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
     auto const& sma = ldata_p->state.arrays();
     amrex::ParallelFor(
@@ -1379,7 +1384,7 @@ PeleLM::deltaTIter_update(
           i, j, k, Array4<Real const>(sma[box_no], DENSITY),
           Array4<Real const>(sma[box_no], FIRSTSPEC),
           Array4<Real const>(sma[box_no], TEMP),
-          Array4<Real>(sma[box_no], RHOH));
+          Array4<Real>(sma[box_no], RHOH), leosparm);
       });
   }
   Gpu::streamSynchronize();
