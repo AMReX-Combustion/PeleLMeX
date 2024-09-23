@@ -648,6 +648,8 @@ PeleLM::readParameters()
     }
   }
   pp.query("isothermal_EB", m_isothermalEB);
+  pp.query("adv_redist_type", m_adv_redist_type);
+  pp.query("diff_redist_type", m_diff_redist_type);
 #endif
 
   // -----------------------------------------
