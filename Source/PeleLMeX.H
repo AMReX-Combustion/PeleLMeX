@@ -874,6 +874,10 @@ public:
   void computeRadSource(const PeleLM::TimeStamp& a_timestamp);
 #endif
 
+#if NUM_ODE > 0
+  //  Compute the ode source term
+  void computeODESource(const PeleLM::TimeStamp& a_timestamp);
+#endif
   //-----------------------------------------------------------------------------
   // EOS
 
@@ -1850,6 +1854,11 @@ public:
   int m_divu_checkFlag{1};
   amrex::Real m_divu_dtFactor = 0.5;
   amrex::Real m_divu_rhoMin = 0.1;
+
+  // ODE variable names
+  #if NUM_ODE > 0
+    amrex::Vector<std::string> m_ode_names;
+  #endif
 
   // Aux data size
   int m_nAux = 0;

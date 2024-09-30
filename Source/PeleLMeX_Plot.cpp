@@ -201,6 +201,11 @@ PeleLM::WritePlotFile()
       plt_VarsName.push_back(sootname);
     }
 #endif
+#if NUM_ODE > 0
+    for (int n = 0; n < NUM_ODE; n++) {
+      plt_VarsName.push_back(m_ode_names[n]);
+    }
+#endif
 #ifdef PELE_USE_RADIATION
     if (do_rad_solve) {
       plt_VarsName.push_back("rad.G");

@@ -131,6 +131,9 @@ PeleLM::Advance(int is_initIter)
     BL_PROFILE_VAR_STOP(PLM_RAD);
   }
 #endif
+#if NUM_ODE > 0
+  //computeODESource(AmrOldTime);
+#endif
 
   if (m_incompressible == 0) {
     floorSpecies(AmrOldTime);

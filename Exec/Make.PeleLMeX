@@ -57,6 +57,10 @@ ifeq ($(USE_RADIATION), TRUE)
    DEFINES += -DPELE_USE_RADIATION
 endif
 
+ifeq ($(shell test 0$(NUM_ODE) -gt 0; echo $$?), 0)
+   DEFINES += -DNUM_ODE=$(NUM_ODE)
+endif
+
 Bpack += $(foreach dir, $(LMdirs), $(PELE_HOME)/$(dir)/Make.package)
 Blocs += $(foreach dir, $(LMdirs), $(PELE_HOME)/$(dir))
 

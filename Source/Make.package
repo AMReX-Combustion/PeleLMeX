@@ -10,6 +10,7 @@ CEXE_headers += PeleLMeX_EBUserDefined.H
 CEXE_headers += PeleLMeX_FlowControllerData.H
 CEXE_headers += PeleLMeX_BPatch.H
 CEXE_headers += PeleLMeX_PatchFlowVariables.H
+CEXE_headers += PeleLMeX_ProblemSpecificFunctions.H
 
 ## Sources
 CEXE_sources += main.cpp

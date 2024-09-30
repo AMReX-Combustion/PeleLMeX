@@ -4,6 +4,8 @@
 #include <PeleLMeX_BPatch.H>
 #include "PelePhysics.H"
 #include <AMReX_buildInfo.H>
+#include <PeleLMeX_ProblemSpecificFunctions.H>
+
 #ifdef PELE_USE_EFIELD
 #include "PeleLMeX_EOS_Extension.H"
 #endif
@@ -15,6 +17,7 @@
 #ifdef PELE_USE_SOOT
 #include "SootModel.H"
 #endif
+
 using namespace amrex;
 
 static Box
@@ -814,6 +817,13 @@ PeleLM::variablesSetup()
     }
     setSootIndx();
 #endif
+#if NUM_ODE > 0
+    Print() << " First ODE: " << FIRSTODE << "\n";
+    set_ode_names(m_ode_names);
+    for (int n = 0; n < NUM_ODE; n++) {
+      stateComponents.emplace_back(FIRSTODE + n, m_ode_names[n]);
+    }
+#endif
   }
 
   if (m_nAux > 0) {
@@ -871,6 +881,12 @@ PeleLM::variablesSetup()
     for (int mom = 0; mom < NUMSOOTVAR; mom++) {
       m_AdvTypeState[FIRSTSOOT + mom] = 0;
       m_DiffTypeState[FIRSTSOOT + mom] = 0;
+    }
+#endif
+#if NUM_ODE > 0
+    for (int n = 0; n < NUM_ODE; n++) {
+      m_AdvTypeState[FIRSTODE + n] = 0;
+      m_DiffTypeState[FIRSTODE + n] = 0;
     }
 #endif
   }
