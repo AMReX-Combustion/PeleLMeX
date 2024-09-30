@@ -1757,6 +1757,11 @@ public:
     pele::physics::PhysicsType::transport_type>>
     trans_parms;
 
+  // EOS pointer
+  static pele::physics::PeleParams<
+    pele::physics::eos::EosParm<pele::physics::PhysicsType::eos_type>>
+    eos_parms;
+
   // Reactor pointer
   std::string m_chem_integrator;
   std::unique_ptr<pele::physics::reactions::ReactorBase> m_reactor;

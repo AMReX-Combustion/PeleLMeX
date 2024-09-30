@@ -204,15 +204,17 @@ PeleLM::addSpark(const TimeStamp& a_timestamp)
         Print() << m_spark[n] << " active" << std::endl;
       }
 
-      auto eos = pele::physics::PhysicsType::eos();
       auto statema = getLevelDataPtr(lev, a_timestamp)->state.const_arrays();
       auto extma = m_extSource[lev]->arrays();
+      auto const* leosparm = eos_parms.device_parm();
 
       amrex::ParallelFor(
         *m_extSource[lev],
         [=, spark_duration = m_spark_duration[n], spark_temp = m_spark_temp[n],
+         eosparm = leosparm,
          spark_radius = m_spark_radius
            [n]] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+          auto eos = pele::physics::PhysicsType::eos(eosparm);
           Real dist_to_center = std::sqrt(AMREX_D_TERM(
             (i - spark_idx[0]) * (i - spark_idx[0]) * dx[0] * dx[0],
             +(j - spark_idx[1]) * (j - spark_idx[1]) * dx[1] * dx[1],
