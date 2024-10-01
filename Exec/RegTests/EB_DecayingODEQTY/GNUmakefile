@@ -28,7 +28,7 @@ THREAD_SANITIZER = FALSE
 # PeleLMeX
 CEXE_headers += EBUserDefined.H
 CEXE_headers += ProblemSpecificcFunctions.H
-NUM_ODE = 1
+NUM_ODE = 3
 
 # PelePhysics
 Chemistry_Model = air

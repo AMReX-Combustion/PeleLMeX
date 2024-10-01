@@ -236,7 +236,7 @@ PeleLM::addSpark(const TimeStamp& a_timestamp)
   }
 }
 
-
+#if NUM_ODE > 0
 void
 PeleLM::computeODESource(const TimeStamp& a_timestamp)
 {
@@ -255,3 +255,4 @@ PeleLM::computeODESource(const TimeStamp& a_timestamp)
     }
   }
 }
+#endif

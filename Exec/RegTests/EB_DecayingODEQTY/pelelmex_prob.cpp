@@ -11,4 +11,7 @@ PeleLM::readProbParm() // NOLINT(readability-make-member-function-const)
   pp.query("meanFlowDir", prob_parm->meanFlowDir);
   pp.query("meanFlowMag", prob_parm->meanFlowMag);
   pp.query("ode_IC", prob_parm->ode_IC);
+  pp.query("ode_xy_lo", prob_parm->ode_xy_lo);
+  pp.query("ode_length", prob_parm->ode_length);
+  pp.query("ode_height", prob_parm->ode_height);
 }

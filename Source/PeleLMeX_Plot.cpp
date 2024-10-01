@@ -201,11 +201,6 @@ PeleLM::WritePlotFile()
       plt_VarsName.push_back(sootname);
     }
 #endif
-#if NUM_ODE > 0
-    for (int n = 0; n < NUM_ODE; n++) {
-      plt_VarsName.push_back(m_ode_names[n]);
-    }
-#endif
 #ifdef PELE_USE_RADIATION
     if (do_rad_solve) {
       plt_VarsName.push_back("rad.G");
@@ -285,6 +280,20 @@ PeleLM::WritePlotFile()
   if (m_do_les && m_plot_les) {
     plt_VarsName.push_back("viscturb");
   }
+
+#if NUM_ODE > 0
+    for (int n = 0; n < NUM_ODE; n++) {
+      plt_VarsName.push_back(m_ode_names[n]);
+    }
+#endif
+
+Print() << PrettyLine;
+Print() << "Plotting debugging" << std::endl;
+Print() << "ncomp = " << ncomp << std::endl;
+Print() << "plt_VarsName.size() = " << plt_VarsName.size() << std::endl;
+for(int n = 0; n < plt_VarsName.size(); n++){
+  Print() << "plt_VarsName[" << n << "] = " << plt_VarsName[n] << std::endl;
+}
 
   //----------------------------------------------------------------
   // Fill the plot MultiFabs
@@ -405,6 +414,13 @@ PeleLM::WritePlotFile()
         mf_plt[lev], *m_ionsFluxes[lev], 0, cnt, m_ionsFluxes[lev]->nComp(), 0);
       cnt += m_ionsFluxes[lev]->nComp();
     }
+#endif
+#if NUM_ODE > 0
+      MultiFab::Copy(
+        mf_plt[lev], m_leveldata_new[lev]->state, FIRSTODE, cnt, NUM_ODE,
+        0);
+      cnt += NUM_ODE;
+      Print() << "cnt = " << cnt << std::endl;
 #endif
 
     if (m_do_les && m_plot_les) {

@@ -26,7 +26,10 @@ prob.T_mean = 300.0
 prob.P_mean = 101325.0
 prob.meanFlowMag = 4.255
 prob.meanFlowDir = 1
-prob.ode_IC = 100.0
+prob.ode_IC = 10.0
+prob.ode_xy_lo = -0.01
+prob.ode_length = 0.01
+prob.ode_height = 0.02
 
 #-----------------INPUTS TO CONSTANT TRANSPORT ------------------
 transport.units                  = MKS

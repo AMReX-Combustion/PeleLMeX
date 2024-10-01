@@ -86,10 +86,10 @@ pelelmex_initdata(
 
   // Initial ODE quantity
 #if NUM_ODE > 0
-  for (int n = 0; n < NUM_ODE; n++) {
-    state(i, j, k, FIRSTODE + n) = prob_parm.ode_IC;
-  }
-  /*
+  //for (int n = 0; n < NUM_ODE; n++) {
+  //  state(i, j, k, FIRSTODE + n) = prob_parm.ode_IC;
+  //}
+  
   amrex::Real ode_qty[NUM_ODE] = {0.0};
 
   // Initial state for ode quantities
@@ -122,7 +122,7 @@ pelelmex_initdata(
   for (int n = 0; n < NUM_ODE; n++) {
     state(i, j, k, FIRSTODE + n) = ode_qty[n];
   }
-  */
+  
 #endif
 }
 
