@@ -132,7 +132,7 @@ PeleLM::Advance(int is_initIter)
   }
 #endif
 #if NUM_ODE > 0
-  //computeODESource(AmrOldTime);
+  computeODESource(AmrOldTime);
 #endif
 
   if (m_incompressible == 0) {

@@ -85,47 +85,45 @@ pelelmex_initdata(
   }
 
   // Initial ODE quantity
-  {
 #if NUM_ODE > 0
-    for (int n = 0; n < NUM_ODE; n++) {
-      state(i, j, k, FIRSTODE + n) = 10.0;
-    }
-    /*
-    amrex::Real ode_qty[NUM_ODE] = {0.0};
+  for (int n = 0; n < NUM_ODE; n++) {
+    state(i, j, k, FIRSTODE + n) = prob_parm.ode_IC;
+  }
+  /*
+  amrex::Real ode_qty[NUM_ODE] = {0.0};
 
-    // Initial state for ode quantities
-    amrex::Real ode_qty_0[NUM_ODE] = {0.0};
-    for (int n = 0; n < NUM_ODE; n++) {
-      ode_qty_0[n] = (n + 1) * prob_parm.ode_IC;
-    }
+  // Initial state for ode quantities
+  amrex::Real ode_qty_0[NUM_ODE] = {0.0};
+  for (int n = 0; n < NUM_ODE; n++) {
+    ode_qty_0[n] = (n + 1) * prob_parm.ode_IC;
+  }
 
-    // Current x,y,z locations
-    const amrex::Real* prob_lo = geomdata.ProbLo();
-    const amrex::Real* dx = geomdata.CellSize();
-    const amrex::Real x[AMREX_SPACEDIM] = {AMREX_D_DECL(
-      prob_lo[0] + static_cast<amrex::Real>(i + 0.5) * dx[0],
-      prob_lo[1] + static_cast<amrex::Real>(j + 0.5) * dx[1],
-      prob_lo[2] + static_cast<amrex::Real>(k + 0.5) * dx[2])};
+  // Current x,y,z locations
+  const amrex::Real* prob_lo = geomdata.ProbLo();
+  const amrex::Real* dx = geomdata.CellSize();
+  const amrex::Real x[AMREX_SPACEDIM] = {AMREX_D_DECL(
+    prob_lo[0] + static_cast<amrex::Real>(i + 0.5) * dx[0],
+    prob_lo[1] + static_cast<amrex::Real>(j + 0.5) * dx[1],
+    prob_lo[2] + static_cast<amrex::Real>(k + 0.5) * dx[2])};
 
-    // Create NUM_ODE boxes from (x_strt,y_strt) to (x_end,y_end)
-    for (int n = 0; n < NUM_ODE; n++) {
-      amrex::Real x_strt = prob_parm.ode_xy_lo + n * 4. * prob_parm.ode_length;
-      amrex::Real x_end = x_strt + prob_parm.ode_length;
-      amrex::Real y_strt = prob_parm.ode_xy_lo;
-      amrex::Real y_end = y_strt + prob_parm.ode_height;
-      if ((x[0] > x_strt) && (x[1] > y_strt)) {
-        if ((x[0] < x_end) && (x[1] < y_end)) {
-          ode_qty[n] = ode_qty_0[n];
-        }
+  // Create NUM_ODE boxes from (x_strt,y_strt) to (x_end,y_end)
+  for (int n = 0; n < NUM_ODE; n++) {
+    amrex::Real x_strt = prob_parm.ode_xy_lo + n * 4. * prob_parm.ode_length;
+    amrex::Real x_end = x_strt + prob_parm.ode_length;
+    amrex::Real y_strt = prob_parm.ode_xy_lo;
+    amrex::Real y_end = y_strt + prob_parm.ode_height;
+    if ((x[0] > x_strt) && (x[1] > y_strt)) {
+      if ((x[0] < x_end) && (x[1] < y_end)) {
+        ode_qty[n] = ode_qty_0[n];
       }
     }
-    // Add to state variable
-    for (int n = 0; n < NUM_ODE; n++) {
-      state(i, j, k, FIRSTODE + n) = ode_qty[n];
-    }
-    */
-#endif
   }
+  // Add to state variable
+  for (int n = 0; n < NUM_ODE; n++) {
+    state(i, j, k, FIRSTODE + n) = ode_qty[n];
+  }
+  */
+#endif
 }
 
 AMREX_GPU_DEVICE

@@ -891,12 +891,6 @@ PeleLM::variablesSetup()
       m_DiffTypeState[FIRSTSOOT + mom] = 0;
     }
 #endif
-#if NUM_ODE > 0
-    for (int n = 0; n < NUM_ODE; n++) {
-      m_AdvTypeState[FIRSTODE + n] = 0;
-      m_DiffTypeState[FIRSTODE + n] = 0;
-    }
-#endif
   }
 
   //----------------------------------------------------------------
