@@ -44,6 +44,8 @@ amr.cfl = 0.7
 
 #-------------------------PELE CONTROLS----------------------
 peleLM.v = 1
+#peleLM.num_init_iter = 0
+#peleLM.do_init_proj = 0
 
 #---------------------------IO CONTROL---------------------------
 #amr.restart = chk_07136

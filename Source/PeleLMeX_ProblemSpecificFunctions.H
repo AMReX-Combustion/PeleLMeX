@@ -8,8 +8,8 @@ using namespace amrex;
 
 void set_ode_names(amrex::Vector<std::string>& a_ode_names)
 {
-    a_ode_names.resize(NUM_ODE);
 #if NUM_ODE > 0
+    a_ode_names.resize(NUM_ODE);
     for (int n = 0; n < NUM_ODE; n++) {
       a_ode_names[n] = "ODE_" + std::to_string(n);
     }
