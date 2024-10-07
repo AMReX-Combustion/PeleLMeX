@@ -22,14 +22,13 @@
 #else
 #define NUMSOOTVAR 0
 #endif
-
 #ifndef NUM_ODE  
 #define NUM_ODE 0
 #endif
 #define FIRSTODE (RHORT + NUMEFIELD + NUMSOOTVAR + 1)
-
-#define FIRSTAUX (FIRSTODE + NUM_ODE + 1)
-#define NVAR (FIRSTAUX + 0)
+#define FIRSTAUX (RHORT + NUMEFIELD + NUMSOOTVAR + NUM_ODE + 1)
+#define NUM_AUX 0
+#define NVAR (RHORT + NUMEFIELD + NUMSOOTVAR + NUM_ODE + NUM_AUX + 1)
 // TODO: handle NAUX
 
 #endif
