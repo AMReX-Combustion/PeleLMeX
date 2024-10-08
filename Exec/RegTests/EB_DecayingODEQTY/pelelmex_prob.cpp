@@ -14,4 +14,5 @@ PeleLM::readProbParm() // NOLINT(readability-make-member-function-const)
   pp.query("ode_xy_lo", prob_parm->ode_xy_lo);
   pp.query("ode_length", prob_parm->ode_length);
   pp.query("ode_height", prob_parm->ode_height);
+  pp.query("ode_srcstrength", prob_parm->ode_srcstrength);
 }

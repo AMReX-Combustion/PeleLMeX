@@ -28,10 +28,10 @@ static void problem_modify_ext_sources(
     Real /*dt*/,
     int lev,
     MultiArray4<const Real> const& state_old,
-    MultiArray4<const Real> const& state_new,
+    MultiArray4<const Real> const& /*state_new*/,
     Vector<std::unique_ptr<MultiFab>>& a_extSource,
     const GeometryData& /*geomdata*/,
-    ProbParm const& prob_parm)
+    ProbParm const& /*prob_parm*/)
 {
   /* 
   Notes: 
@@ -40,8 +40,7 @@ static void problem_modify_ext_sources(
     2) Requires compilation with USE_MODIFIED_SOURCES = TRUE
      
   TODO: 
-    1) Test geomdata, prob_parm
-    2) Add and test capabilities with species, velocity and enthalpy.
+    1) Add and test capabilities with species, velocity and enthalpy.
   */
 
   auto ext_source_arr = a_extSource[lev]->arrays();
@@ -50,7 +49,7 @@ static void problem_modify_ext_sources(
     [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
       for (int n = 0; n < NUM_ODE; n++){
         amrex::Real B_n = state_old[box_no](i, j, k, FIRSTODE + n);
-        ext_source_arr[box_no](i, j, k, FIRSTODE + n) += -1000.*B_n;
+        ext_source_arr[box_no](i, j, k, FIRSTODE + n) += prob_parm.ode_srcstrength.*B_n;
       }
     });
   amrex::Gpu::streamSynchronize();

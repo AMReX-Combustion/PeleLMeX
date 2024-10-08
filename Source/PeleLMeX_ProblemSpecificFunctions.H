@@ -40,8 +40,7 @@ static void problem_modify_ext_sources(
     2) Requires compilation with USE_MODIFIED_SOURCES = TRUE
      
   TODO: 
-    1) Test geomdata, prob_parm
-    2) Add and test capabilities with species, velocity and enthalpy.
+    1) Add and test capabilities with species, velocity and enthalpy.
 
   // Example: adding a exponential decay source term to an ode_qty 
   auto ext_source_arr = a_extSource[lev]->arrays();
