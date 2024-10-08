@@ -235,24 +235,3 @@ PeleLM::addSpark(const TimeStamp& a_timestamp)
     }
   }
 }
-
-#if NUM_ODE > 0
-void
-PeleLM::computeODESource(const TimeStamp& a_timestamp)
-{
-  for (int lev = 0; lev <= finest_level; lev++) {
-    for (int n = 0; n <= NUM_ODE; n++){
-      //Real time = getTime(lev, a_timestamp);
-      //auto statema = getLevelDataPtr(lev, a_timestamp)->state.const_arrays();
-      auto extma = m_extSource[lev]->arrays();
-
-      amrex::ParallelFor(
-        *m_extSource[lev], 
-        [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
-          extma[box_no](i, j, k, FIRSTODE + n) = 0.0;
-        });
-      Gpu::streamSynchronize();
-    }
-  }
-}
-#endif

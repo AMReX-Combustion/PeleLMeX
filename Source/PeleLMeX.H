@@ -874,10 +874,6 @@ public:
   void computeRadSource(const PeleLM::TimeStamp& a_timestamp);
 #endif
 
-#if NUM_ODE > 0
-  //  Compute the ode source term
-  void computeODESource(const PeleLM::TimeStamp& a_timestamp);
-#endif
   //-----------------------------------------------------------------------------
   // EOS
 

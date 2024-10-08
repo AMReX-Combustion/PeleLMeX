@@ -1,12 +1,12 @@
 #ifndef PROBLEMSPECIFICFUNCTIONS_H
 #define PROBLEMSPECIFICFUNCTIONS_H
 
-using namespace amrex;
-
 #include <PeleLMeX_Index.H>
 #include <PeleLMeX.H>
 
-void set_ode_names(amrex::Vector<std::string>& a_ode_names)
+using namespace amrex;
+
+static void set_ode_names(Vector<std::string>& a_ode_names)
 {
 #if NUM_ODE > 0
     a_ode_names.resize(NUM_ODE);
@@ -14,6 +14,34 @@ void set_ode_names(amrex::Vector<std::string>& a_ode_names)
       a_ode_names[n] = "MY_ODE_" + std::to_string(n);
     }
 #endif
+}
+
+static void problem_modify_ext_sources(
+    Real /*time*/,
+    Real /*dt*/,
+    int lev,
+    MultiArray4<const Real> const& state_old,
+    MultiArray4<const Real> const& state_new,
+    Vector<std::unique_ptr<MultiFab>>& a_extSource,
+    const GeometryData& /*geomdata*/,
+    ProbParm const& prob_parm)
+{
+  /* Notes: a_extSource contains sources from velocity forcing coming in
+      This function should add to rather than overwrite a_extSource.
+     
+     TODO: Add and test capabilities with species, velocity and enthalpy.
+  */
+
+  auto ext_source_arr = a_extSource[lev]->arrays();
+  amrex::ParallelFor(
+    *a_extSource[lev], 
+    [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+      for (int n = 0; n < NUM_ODE; n++){
+        amrex::Real B_n = state_old[box_no](i, j, k, FIRSTODE + n);
+        ext_source_arr[box_no](i, j, k, FIRSTODE + n) += -1000.*B_n;
+      }
+    });
+  amrex::Gpu::streamSynchronize();
 }
 
 #endif

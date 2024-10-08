@@ -1,5 +1,6 @@
 #include <PeleLMeX.H>
 #include <PeleLMeX_Utils.H>
+#include <PeleLMeX_ProblemSpecificFunctions.H>
 #include <AMReX_MemProfiler.H>
 #include <memory>
 
@@ -131,9 +132,30 @@ PeleLM::Advance(int is_initIter)
     BL_PROFILE_VAR_STOP(PLM_RAD);
   }
 #endif
-#if NUM_ODE > 0
-  computeODESource(AmrOldTime);
-#endif
+
+// Additional user defined source terms
+for (int lev = 0; lev <= finest_level; lev++) {
+  problem_modify_ext_sources(getTime(lev, AmrNewTime), m_dt, lev, 
+      getLevelDataPtr(lev, AmrOldTime)->state.const_arrays(),
+      getLevelDataPtr(lev, AmrNewTime)->state.const_arrays(), 
+      m_extSource, geom[lev].data(), *prob_parm_d);
+  
+  // !Test the call for modify ext_sources
+  /*
+  auto extma = m_extSource[lev]->arrays();
+  amrex::ParallelFor(
+    *m_extSource[lev],
+    [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+      for(int n = 0; n < NUM_ODE; n++){
+        if(extma[box_no](i, j, k, FIRSTODE + n) < 0){
+          Print() << "extma[lev = "<<lev<<"][FIRSTODE + "<< n <<"] = " << extma[box_no](i, j, k, FIRSTODE + n) << std::endl;
+        }     
+      }
+    });
+  */
+  // !End of test
+}
+
 
   if (m_incompressible == 0) {
     floorSpecies(AmrOldTime);

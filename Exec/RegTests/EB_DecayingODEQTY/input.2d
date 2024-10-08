@@ -11,7 +11,7 @@ peleLM.lo_bc = Inflow  Interior
 peleLM.hi_bc = Outflow Interior
 
 #-------------------------AMR CONTROL----------------------------
-amr.n_cell          = 192 64           # Level 0 number of cells in each direction
+amr.n_cell          = 96 32           # Level 0 number of cells in each direction
 amr.v               = 1                # AMR verbose
 amr.max_level       = 0                # maximum level number allowed
 amr.ref_ratio       = 2 2 2 2          # refinement ratio
