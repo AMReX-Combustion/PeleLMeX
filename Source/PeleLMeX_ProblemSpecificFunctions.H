@@ -6,6 +6,13 @@
 
 using namespace amrex;
 
+/* 
+Problem specific functions:
+- This file must be copied locally to the case directory
+- Add the following to GNUmakefile: CEXE_headers += ProblemSpecificFunctions.H
+- Only copy the functions you want to use
+*/
+
 static void set_ode_names(Vector<std::string>& a_ode_names)
 {
 #if NUM_ODE > 0
@@ -27,14 +34,15 @@ static void problem_modify_ext_sources(
     ProbParm const& /*prob_parm*/)
 {
   /*
-  Notes: a_extSource contains sources from velocity forcing coming in
-      This function should add to rather than overwrite a_extSource.
+  Notes: 
+    1) a_extSource contains sources from velocity forcing coming in.
+       This function should add to rather than overwrite a_extSource.
+    2) Requires compilation with USE_MODIFIED_SOURCES = TRUE
      
   TODO: 
-    1) Test gemdata, prob_parm
+    1) Test geomdata, prob_parm
     2) Add and test capabilities with species, velocity and enthalpy.
-  */
-  /*
+
   // Example: adding a exponential decay source term to an ode_qty 
   auto ext_source_arr = a_extSource[lev]->arrays();
   amrex::ParallelFor(

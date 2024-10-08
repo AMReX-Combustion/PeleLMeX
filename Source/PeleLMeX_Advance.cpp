@@ -134,6 +134,7 @@ PeleLM::Advance(int is_initIter)
 #endif
 
 // Additional user defined source terms
+#ifdef PELE_USE_MODIFIED_SOURCES
 for (int lev = 0; lev <= finest_level; lev++) {
   problem_modify_ext_sources(getTime(lev, AmrNewTime), m_dt, lev, 
       getLevelDataPtr(lev, AmrOldTime)->state.const_arrays(),
@@ -141,20 +142,20 @@ for (int lev = 0; lev <= finest_level; lev++) {
       m_extSource, geom[lev].data(), *prob_parm_d);
   
   // !Test the call for modify ext_sources
-  /*
-  auto extma = m_extSource[lev]->arrays();
+  auto ext_src = m_extSource[lev]->arrays();
   amrex::ParallelFor(
     *m_extSource[lev],
     [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
       for(int n = 0; n < NUM_ODE; n++){
-        if(extma[box_no](i, j, k, FIRSTODE + n) < 0){
-          Print() << "extma[lev = "<<lev<<"][FIRSTODE + "<< n <<"] = " << extma[box_no](i, j, k, FIRSTODE + n) << std::endl;
+        if(ext_src[box_no](i, j, k, FIRSTODE + n) < 0){
+          Print() << "ext_src[lev = "<<lev<<"][FIRSTODE + "<< n <<"] = " << ext_src[box_no](i, j, k, FIRSTODE + n) << std::endl;
         }     
       }
     });
-  */
+  
   // !End of test
 }
+#endif
 
 
   if (m_incompressible == 0) {
