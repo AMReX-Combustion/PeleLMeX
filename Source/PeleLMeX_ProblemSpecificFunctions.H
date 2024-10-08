@@ -19,18 +19,20 @@ static void set_ode_names(Vector<std::string>& a_ode_names)
 static void problem_modify_ext_sources(
     Real /*time*/,
     Real /*dt*/,
-    int lev,
-    MultiArray4<const Real> const& state_old,
-    MultiArray4<const Real> const& state_new,
-    Vector<std::unique_ptr<MultiFab>>& a_extSource,
+    int /*lev*/,
+    MultiArray4<const Real> const& /*state_old*/,
+    MultiArray4<const Real> const& /*state_new*/,
+    Vector<std::unique_ptr<MultiFab>>& /*a_extSource*/,
     const GeometryData& /*geomdata*/,
-    ProbParm const& prob_parm)
+    ProbParm const& /*prob_parm*/)
 {
   /*
   Notes: a_extSource contains sources from velocity forcing coming in
       This function should add to rather than overwrite a_extSource.
      
-  TODO: Add and test capabilities with species, velocity and enthalpy.
+  TODO: 
+    1) Test gemdata, prob_parm
+    2) Add and test capabilities with species, velocity and enthalpy.
   */
   /*
   // Example: adding a exponential decay source term to an ode_qty 
