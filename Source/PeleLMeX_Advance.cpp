@@ -133,7 +133,7 @@ PeleLM::Advance(int is_initIter)
   }
 #endif
 
-// Additional user defined source terms
+// Additional user defined source terms (only for ode qty currently)
 #ifdef PELE_USE_MODIFIED_SOURCES
 for (int lev = 0; lev <= finest_level; lev++) {
   problem_modify_ext_sources(getTime(lev, AmrNewTime), m_dt, lev, 
@@ -141,7 +141,7 @@ for (int lev = 0; lev <= finest_level; lev++) {
       getLevelDataPtr(lev, AmrNewTime)->state.const_arrays(), 
       m_extSource, geom[lev].data(), *prob_parm_d);
   
-  // !Test the call for modify ext_sources
+  // Debugging: Test the call for modify ext_sources
   auto ext_src = m_extSource[lev]->arrays();
   amrex::ParallelFor(
     *m_extSource[lev],
@@ -152,8 +152,7 @@ for (int lev = 0; lev <= finest_level; lev++) {
         }     
       }
     });
-  
-  // !End of test
+  // Debugging: End of test
 }
 #endif
 
