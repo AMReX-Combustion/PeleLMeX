@@ -288,12 +288,13 @@ PeleLM::WritePlotFile()
 #endif
 
 Print() << PrettyLine;
-Print() << "Plotting debugging" << std::endl;
-Print() << "ncomp = " << ncomp << std::endl;
-Print() << "plt_VarsName.size() = " << plt_VarsName.size() << std::endl;
-for(int n = 0; n < plt_VarsName.size(); n++){
-  Print() << "plt_VarsName[" << n << "] = " << plt_VarsName[n] << std::endl;
-}
+// Debugging:
+//Print() << "Plotting debugging" << std::endl;
+//Print() << "ncomp = " << ncomp << std::endl;
+//Print() << "plt_VarsName.size() = " << plt_VarsName.size() << std::endl;
+//for(int n = 0; n < plt_VarsName.size(); n++){
+//  Print() << "plt_VarsName[" << n << "] = " << plt_VarsName[n] << std::endl;
+//}
 
   //----------------------------------------------------------------
   // Fill the plot MultiFabs

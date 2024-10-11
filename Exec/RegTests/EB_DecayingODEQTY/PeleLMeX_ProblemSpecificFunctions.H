@@ -27,8 +27,8 @@ static void problem_modify_ext_sources(
     Real /*time*/,
     Real /*dt*/,
     int lev,
-    MultiArray4<const Real> const& state_old,
-    MultiArray4<const Real> const& /*state_new*/,
+    MultiArray4<const Real> const& state_old_arr,
+    MultiArray4<const Real> const& /*state_new_arr*/,
     Vector<std::unique_ptr<MultiFab>>& a_extSource,
     const GeometryData& /*geomdata*/,
     ProbParm const& prob_parm)
@@ -48,7 +48,7 @@ static void problem_modify_ext_sources(
     *a_extSource[lev], 
     [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
       for (int n = 0; n < NUM_ODE; n++){
-        amrex::Real B_n = state_old[box_no](i, j, k, FIRSTODE + n);
+        amrex::Real B_n = state_old_arr[box_no](i, j, k, FIRSTODE + n);
         ext_source_arr[box_no](i, j, k, FIRSTODE + n) += prob_parm.ode_srcstrength*B_n;
       }
     });

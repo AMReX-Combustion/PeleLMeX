@@ -147,9 +147,9 @@ PeleLM::Advance(int is_initIter)
         *m_extSource[lev],
         [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
           for(int n = 0; n < NUM_ODE; n++){
-            if(ext_src[box_no](i, j, k, FIRSTODE + n) < 0){
-              Print() << "ext_src[lev = "<<lev<<"][FIRSTODE + "<< n <<"] = " << ext_src[box_no](i, j, k, FIRSTODE + n) << std::endl;
-            }     
+            //if(ext_src[box_no](i, j, k, FIRSTODE + n) < 0){
+            //  Print() << "ext_src[lev = "<<lev<<"][FIRSTODE + "<< n <<"] = " << ext_src[box_no](i, j, k, FIRSTODE + n) << std::endl;
+            //}     
           }
         });
       // Debugging: End of test
@@ -224,6 +224,14 @@ PeleLM::Advance(int is_initIter)
       clipSootMoments();
     }
 #endif
+
+#if NUM_ODE > 0
+    // Euler step for updating ode source terms
+    if(m_user_defined_ext_sources && !m_ext_sources_SDC){
+      advanceODEQty();
+    }
+#endif
+
     if (m_has_divu != 0) {
       int is_initialization = 0; // Not here
       int computeDiffusionTerm =
@@ -469,3 +477,4 @@ PeleLM::oneSDC(
   floorSpecies(AmrNewTime);
   setThermoPress(AmrNewTime);
 }
+
