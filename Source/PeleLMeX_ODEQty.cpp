@@ -4,9 +4,10 @@
 
 using namespace amrex;
 
-void PeleLM::advanceODEQty()
+void PeleLM::predictODEQty()
 {
-  // Uses forward Euler to advance the ODE quantities forward from tn to tnp1
+  // Uses forward Euler to predict values for ODE qty at tnp1
+  // If m_ext_sources_SDC = false, no SDC corrections used
   for (int lev = 0; lev <= finest_level; lev++) {
     auto const& state_arrs = getLevelDataPtr(lev, AmrNewTime)->state.arrays();
     auto const& ext_src_arrs = m_extSource[lev]->arrays();

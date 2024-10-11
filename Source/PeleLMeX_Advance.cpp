@@ -182,6 +182,13 @@ PeleLM::Advance(int is_initIter)
     ionDriftVelocity(advData);
 #endif
   }
+
+#if NUM_ODE > 0
+    // Euler step for predicting ode qty at tnp1
+    if(m_user_defined_ext_sources){
+      predictODEQty();
+    }
+#endif
   BL_PROFILE_VAR_STOP(PLM_SETUP);
   //----------------------------------------------------------------
 
@@ -222,13 +229,6 @@ PeleLM::Advance(int is_initIter)
 #ifdef PELE_USE_SOOT
     if (do_soot_solve) {
       clipSootMoments();
-    }
-#endif
-
-#if NUM_ODE > 0
-    // Euler step for updating ode source terms
-    if(m_user_defined_ext_sources && !m_ext_sources_SDC){
-      advanceODEQty();
     }
 #endif
 
