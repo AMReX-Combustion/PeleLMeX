@@ -65,10 +65,6 @@ ifeq ($(shell test 0$(NUM_AUX) -gt 0; echo $$?), 0)
    DEFINES += -DNUM_AUX=$(NUM_AUX)
 endif
 
-ifeq ($(USE_MODIFIED_SOURCES), TRUE)
-   DEFINES += -DPELE_USE_MODIFIED_SOURCES
-endif
-
 Bpack += $(foreach dir, $(LMdirs), $(PELE_HOME)/$(dir)/Make.package)
 Blocs += $(foreach dir, $(LMdirs), $(PELE_HOME)/$(dir))
 

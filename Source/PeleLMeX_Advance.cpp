@@ -133,28 +133,28 @@ PeleLM::Advance(int is_initIter)
   }
 #endif
 
-// Additional user defined source terms (only for ode qty currently)
-#ifdef PELE_USE_MODIFIED_SOURCES
-for (int lev = 0; lev <= finest_level; lev++) {
-  problem_modify_ext_sources(getTime(lev, AmrNewTime), m_dt, lev, 
-      getLevelDataPtr(lev, AmrOldTime)->state.const_arrays(),
-      getLevelDataPtr(lev, AmrNewTime)->state.const_arrays(), 
-      m_extSource, geom[lev].data(), *prob_parm_d);
-  
-  // Debugging: Test the call for modify ext_sources
-  auto ext_src = m_extSource[lev]->arrays();
-  amrex::ParallelFor(
-    *m_extSource[lev],
-    [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
-      for(int n = 0; n < NUM_ODE; n++){
-        if(ext_src[box_no](i, j, k, FIRSTODE + n) < 0){
-          Print() << "ext_src[lev = "<<lev<<"][FIRSTODE + "<< n <<"] = " << ext_src[box_no](i, j, k, FIRSTODE + n) << std::endl;
-        }     
-      }
-    });
-  // Debugging: End of test
-}
-#endif
+// Compute user defined external sources
+  if(m_user_defined_ext_sources){
+    for (int lev = 0; lev <= finest_level; lev++) {
+      problem_modify_ext_sources(getTime(lev, AmrNewTime), m_dt, lev, 
+          getLevelDataPtr(lev, AmrOldTime)->state.const_arrays(),
+          getLevelDataPtr(lev, AmrNewTime)->state.const_arrays(), 
+          m_extSource, geom[lev].data(), *prob_parm_d);
+      
+      // Debugging: Test the call for modify ext_sources
+      auto ext_src = m_extSource[lev]->arrays();
+      amrex::ParallelFor(
+        *m_extSource[lev],
+        [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+          for(int n = 0; n < NUM_ODE; n++){
+            if(ext_src[box_no](i, j, k, FIRSTODE + n) < 0){
+              Print() << "ext_src[lev = "<<lev<<"][FIRSTODE + "<< n <<"] = " << ext_src[box_no](i, j, k, FIRSTODE + n) << std::endl;
+            }     
+          }
+        });
+      // Debugging: End of test
+    }
+  }
 
 
   if (m_incompressible == 0) {

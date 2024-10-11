@@ -37,7 +37,7 @@ static void problem_modify_ext_sources(
   Notes: 
     1) a_extSource contains sources from velocity forcing coming in.
        This function should add to rather than overwrite a_extSource.
-    2) Requires compilation with USE_MODIFIED_SOURCES = TRUE
+    2) Requires peleLM.user_defined_ext_sources = true in input file
      
   TODO: 
     1) Add and test capabilities with species, velocity and enthalpy.

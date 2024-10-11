@@ -720,6 +720,13 @@ PeleLM::readParameters()
     Print() << "Simulation performed with radiation modeling \n";
   }
 #endif
+
+  // -----------------------------------------
+  // External Sources
+  // -----------------------------------------
+  m_user_defined_ext_sources = false;
+  m_ext_sources_SDC = false; // TODO: add capability to update ext_srcs in SDC
+  pp.query("user_defined_ext_sources", m_user_defined_ext_sources);
 }
 
 void
