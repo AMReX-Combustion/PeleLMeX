@@ -51,6 +51,7 @@ function(build_pele_exe pele_exe_name pele_physics_lib_name)
        ${SRC_DIR}/PeleLMeX_Init.cpp
        ${SRC_DIR}/PeleLMeX_Plot.cpp
        ${SRC_DIR}/PeleLMeX_ProblemSpecificFunctions.H
+       ${SRC_DIR}/PeleLMeX_ProblemSpecificFunctions.cpp
        ${SRC_DIR}/PeleLMeX_Projection.cpp
        ${SRC_DIR}/PeleLMeX_Reactions.cpp
        ${SRC_DIR}/PeleLMeX_Regrid.cpp

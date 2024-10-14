@@ -1,19 +1,17 @@
-#ifndef PROBLEMSPECIFICFUNCTIONS_H
-#define PROBLEMSPECIFICFUNCTIONS_H
-
-#include <PeleLMeX_Index.H>
 #include <PeleLMeX.H>
+#include <PeleLMeX_K.H>
+#include <PeleLMeX_ProblemSpecificFunctions.H>
 
 using namespace amrex;
 
 /* 
 Problem specific functions:
 - This file must be copied locally to the case directory
-- Add the following to GNUmakefile: CEXE_headers += ProblemSpecificFunctions.H
-- Only copy the functions you want to use
+- Add the following to GNUmakefile: CEXE_sources += PeleLMeX_ProblemSpecificFunctions.cpp
 */
 
-static void set_ode_names(Vector<std::string>& a_ode_names)
+
+void set_ode_names(Vector<std::string>& a_ode_names)
 {
 #if NUM_ODE > 0
     a_ode_names.resize(NUM_ODE);
@@ -23,7 +21,7 @@ static void set_ode_names(Vector<std::string>& a_ode_names)
 #endif
 }
 
-static void problem_modify_ext_sources(
+void problem_modify_ext_sources(
     Real /*time*/,
     Real /*dt*/,
     int lev,
@@ -54,5 +52,3 @@ static void problem_modify_ext_sources(
     });
   amrex::Gpu::streamSynchronize();
 }
-
-#endif

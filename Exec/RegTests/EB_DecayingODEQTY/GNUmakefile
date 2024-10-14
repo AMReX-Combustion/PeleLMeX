@@ -27,7 +27,7 @@ THREAD_SANITIZER = FALSE
 
 # PeleLMeX
 CEXE_headers += EBUserDefined.H
-CEXE_headers += ProblemSpecificFunctions.H
+CEXE_sources += PeleLMeX_ProblemSpecificFunctions.cpp
 NUM_ODE = 3
 
 # PelePhysics
