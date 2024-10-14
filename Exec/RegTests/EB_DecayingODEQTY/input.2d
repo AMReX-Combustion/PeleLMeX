@@ -30,6 +30,7 @@ prob.ode_IC = 10.0
 prob.ode_xy_lo = -0.01
 prob.ode_length = 0.01
 prob.ode_height = 0.02
+prob.ode_srcstrength = -100.0
 
 #-----------------INPUTS TO CONSTANT TRANSPORT ------------------
 transport.units                  = MKS
@@ -39,8 +40,8 @@ transport.const_conductivity     = 0.0
 transport.const_diffusivity      = 0.0
 
 #---------------------------TIME STEPPING------------------------
-amr.max_step = 1
-amr.stop_time = 0.025
+#amr.max_step = 1
+amr.stop_time = 0.06
 amr.dt_shrink = 0.1
 amr.dt_change_max = 1.1
 amr.cfl = 0.7
@@ -56,7 +57,7 @@ peleLM.user_defined_ext_sources = 1
 amr.check_file = "chk_"
 amr.check_per = -1
 amr.plot_file = "plt_"
-amr.plot_per = 0.005
+amr.plot_per = 0.001
 amr.derive_plot_vars = avg_pressure mag_vort
 
 #------------------------- EB SETUP -----------------------------
