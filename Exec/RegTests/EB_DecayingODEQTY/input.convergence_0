@@ -40,12 +40,8 @@ transport.const_conductivity     = 0.0
 transport.const_diffusivity      = 0.0
 
 #---------------------------TIME STEPPING------------------------
-#amr.max_step = 1
-amr.stop_time = 0.06
-#amr.fixed_dt = 0.0001
-amr.dt_shrink = 0.1
-amr.dt_change_max = 1.1
-amr.cfl = 0.9
+amr.stop_time = 0.05
+amr.fixed_dt = 0.001
 
 #-------------------------PELE CONTROLS----------------------
 peleLM.v = 1
@@ -57,9 +53,14 @@ peleLM.user_defined_ext_sources = 1
 #amr.restart = chk_07136
 amr.check_file = "chk_"
 amr.check_per = -1
-amr.plot_file = "plt_"
+amr.plot_file = "plt_conv0_"
 amr.plot_per = 0.001
 amr.derive_plot_vars = avg_pressure mag_vort
+
+#---------------------- Temporal CONTROL -------------------------
+peleLM.do_temporals = 1                     # Turn temporals ON/OFF
+peleLM.temporal_int = 1
+peleLM.do_extremas = 1                      # Compute state extremas
 
 #------------------------- EB SETUP -----------------------------
 eb2.geom_type = sphere

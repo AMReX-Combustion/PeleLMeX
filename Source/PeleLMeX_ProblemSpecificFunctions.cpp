@@ -6,9 +6,9 @@ using namespace amrex;
 
 /* 
 Problem specific functions:
-- This file must be copied in its entirety locally
+- This file must be copied locally to the case directory
 - Add the following to GNUmakefile: CEXE_sources += PeleLMeX_ProblemSpecificFunctions.cpp
-- Modify functions as needed
+- Modify as needed
 */
 
 void set_ode_names(Vector<std::string>& a_ode_names)

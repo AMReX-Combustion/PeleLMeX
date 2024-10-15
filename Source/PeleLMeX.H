@@ -1866,6 +1866,7 @@ public:
   #if NUM_ODE > 0
     amrex::Vector<std::string> m_ode_names;
     void predictODEQty();
+    void advanceODEQty();
   #endif
 
   // Aux data size
