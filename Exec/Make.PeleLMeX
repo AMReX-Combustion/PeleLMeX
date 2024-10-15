@@ -61,10 +61,6 @@ ifeq ($(shell test 0$(NUM_ODE) -gt 0; echo $$?), 0)
    DEFINES += -DNUM_ODE=$(NUM_ODE)
 endif
 
-ifeq ($(shell test 0$(NUM_AUX) -gt 0; echo $$?), 0)
-   DEFINES += -DNUM_AUX=$(NUM_AUX)
-endif
-
 Bpack += $(foreach dir, $(LMdirs), $(PELE_HOME)/$(dir)/Make.package)
 Blocs += $(foreach dir, $(LMdirs), $(PELE_HOME)/$(dir))
 
