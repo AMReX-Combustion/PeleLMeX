@@ -23,7 +23,7 @@ set_ode_names(Vector<std::string>& a_ode_names)
 #endif
 }
 
-static void
+void
 problem_modify_ext_sources(
   Real /*time*/,
   Real /*dt*/,

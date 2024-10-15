@@ -240,6 +240,7 @@ PeleLM::addSpark(const TimeStamp& a_timestamp)
 // Calculate additional external sources (soot, radiation, user defined, etc.)
 void
 PeleLM::getExternalSources(
+  int is_initIter,
   const PeleLM::TimeStamp& a_timestamp_old,
   const PeleLM::TimeStamp& a_timestamp_new)
 {

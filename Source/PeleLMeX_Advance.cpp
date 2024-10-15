@@ -111,7 +111,7 @@ PeleLM::Advance(int is_initIter)
   //----------------------------------------------------------------
 
   // External sources (soot, radiation, user defined, etc.)
-  getExternalSources(AmrOldTime, AmrNewTime);
+  getExternalSources(is_initIter, AmrOldTime, AmrNewTime);
 
   if (m_incompressible == 0) {
     floorSpecies(AmrOldTime);

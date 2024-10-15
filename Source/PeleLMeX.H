@@ -879,6 +879,7 @@ public:
   bool m_user_defined_ext_sources;
   bool m_ext_sources_SDC;
   void getExternalSources(
+    int is_initIter,
     const PeleLM::TimeStamp& a_timestamp_old,
     const PeleLM::TimeStamp& a_timestamp_new);
 
