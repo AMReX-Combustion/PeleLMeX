@@ -7,7 +7,8 @@ using namespace amrex;
 /* 
 Problem specific functions:
 - This file must be copied locally to the case directory
-- Add the following to GNUmakefile: CEXE_sources += PeleLMeX_ProblemSpecificFunctions.cpp
+- Add the following to GNUmakefile: 
+          CEXE_sources += PeleLMeX_ProblemSpecificFunctions.cpp
 - Modify as needed
 */
 
@@ -41,20 +42,15 @@ void problem_modify_ext_sources(
 
   auto ext_source_arr = a_extSource[lev]->arrays();
 
-  const amrex::Real* prob_lo = geomdata.ProbLo();
-  const amrex::Real* prob_hi = geomdata.ProbHi();
-  const amrex::Real* dx = geomdata.CellSize();
-  const amrex::Real Lx = prob_hi[0] - prob_lo[0];
-  
-
-  amrex::ParallelFor(
+  ParallelFor(
     *a_extSource[lev], 
     [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
       for (int n = 0; n < NUM_ODE; n++){
-        amrex::Real B_n = state_old_arr[box_no](i, j, k, FIRSTODE + n);
-        amrex::Real src = prob_parm.ode_srcstrength * pow(10.0,n+1) * B_n;
+        Real B_n = state_old_arr[box_no](i, j, k, FIRSTODE + n);
+        Real src = prob_parm.ode_srcstrength * pow(10.0,n+1) * B_n;
         ext_source_arr[box_no](i, j, k, FIRSTODE + n) += src;
       }
     });
-  amrex::Gpu::streamSynchronize();
+  Gpu::streamSynchronize();
+
 }

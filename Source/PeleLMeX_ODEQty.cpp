@@ -24,8 +24,3 @@ void PeleLM::predictODEQty()
     Gpu::streamSynchronize();
   }
 }
-
-void PeleLM::advanceODEQty()
-{
-  // To do: If m_ext_sources_SDC = true, update with MISDC
-}

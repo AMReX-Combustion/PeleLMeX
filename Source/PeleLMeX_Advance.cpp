@@ -1,6 +1,5 @@
 #include <PeleLMeX.H>
 #include <PeleLMeX_Utils.H>
-#include <PeleLMeX_ProblemSpecificFunctions.H>
 #include <AMReX_MemProfiler.H>
 #include <memory>
 
@@ -111,38 +110,8 @@ PeleLM::Advance(int is_initIter)
   BL_PROFILE_VAR_STOP(PLM_SETUP);
   //----------------------------------------------------------------
 
-  if (m_n_sparks > 0) {
-    addSpark(AmrOldTime);
-  }
-
-#ifdef PELE_USE_SPRAY
-  if (is_initIter == 0) {
-    SprayMKD(m_cur_time, m_dt);
-  }
-#endif
-#ifdef PELE_USE_SOOT
-  if (do_soot_solve) {
-    computeSootSource(AmrOldTime, m_dt);
-  }
-#endif
-#ifdef PELE_USE_RADIATION
-  if (do_rad_solve) {
-    BL_PROFILE_VAR("PeleLM::advance::rad", PLM_RAD);
-    computeRadSource(AmrOldTime);
-    BL_PROFILE_VAR_STOP(PLM_RAD);
-  }
-#endif
-
-// Compute user defined external sources
-  if(m_user_defined_ext_sources){
-    for (int lev = 0; lev <= finest_level; lev++) {
-      problem_modify_ext_sources(getTime(lev, AmrNewTime), m_dt, lev, 
-          getLevelDataPtr(lev, AmrOldTime)->state.const_arrays(),
-          getLevelDataPtr(lev, AmrNewTime)->state.const_arrays(), 
-          m_extSource, geom[lev].data(), *prob_parm_d);
-    }
-  }
-
+  // External sources (soot, radiation, user defined, etc.)
+  getExternalSources(AmrOldTime,AmrNewTime);
 
   if (m_incompressible == 0) {
     floorSpecies(AmrOldTime);
