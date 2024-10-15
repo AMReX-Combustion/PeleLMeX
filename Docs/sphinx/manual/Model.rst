@@ -118,7 +118,7 @@ For the standard ideal gas EOS, the divergence constraint on velocity becomes:
     \nabla \cdot \boldsymbol{u} &= \frac{1}{\rho c_p T} \left(\nabla \cdot \lambda\nabla T - \sum_m \boldsymbol{\Gamma_m} \cdot \nabla h_m \right) \\
     &- \frac{1}{\rho} \sum_m \frac{W}{W_m} \nabla \cdot \boldsymbol{\Gamma_m} + \frac{1}{\rho}\sum_m \left(\frac{W}{W_m} - \frac{h_m}{c_p T} \right) \dot \omega \equiv S .
 
-In addition to the flow equations, `PeleLMeX` can also solve for a set of quantities that are neither advected nor diffused, satifying:
+In addition to the flow equations, `PeleLMeX` can also solve for a set of quantities that are neither advected nor diffused, satisfying:
 
 .. math::
 
