@@ -12,7 +12,6 @@ Problem specific functions:
 - Modify as needed
 */
 
-
 void set_ode_names(Vector<std::string>& a_ode_names)
 {
 #if NUM_ODE > 0

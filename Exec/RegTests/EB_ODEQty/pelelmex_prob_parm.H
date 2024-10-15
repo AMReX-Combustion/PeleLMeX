@@ -16,7 +16,7 @@ struct ProbParm : amrex::Gpu::Managed
   amrex::Real ode_xy_lo = -0.01;
   amrex::Real ode_length = 0.01;
   amrex::Real ode_height = 0.020;
-  amrex::Real ode_srcstrength = -100.0;
+  amrex::Real ode_srcstrength = -10.0;
   int meanFlowDir = 1;
 };
 #endif

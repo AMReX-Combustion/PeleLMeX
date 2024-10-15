@@ -136,7 +136,6 @@ bcnormal(
   ProbParm const& prob_parm,
   pele::physics::PMF::PmfData::DataContainer const* /*pmf_data*/)
 {
-  // amrex::GpuArray<amrex::Real, NUM_SPECIES + 4> pmf_vals = {0.0};
   amrex::Real massfrac[NUM_SPECIES] = {0.0};
 
   auto eos = pele::physics::PhysicsType::eos();
