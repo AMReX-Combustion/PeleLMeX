@@ -882,7 +882,6 @@ public:
     const PeleLM::TimeStamp& a_timestamp_old,
     const PeleLM::TimeStamp& a_timestamp_new);
 
-
   //-----------------------------------------------------------------------------
   // EOS
 
@@ -1865,11 +1864,11 @@ public:
   amrex::Real m_divu_dtFactor = 0.5;
   amrex::Real m_divu_rhoMin = 0.1;
 
-  // ODE variable names
-  #if NUM_ODE > 0
-    amrex::Vector<std::string> m_ode_names;
-    void predictODEQty();
-  #endif
+// ODE variable names
+#if NUM_ODE > 0
+  amrex::Vector<std::string> m_ode_names;
+  void predictODEQty();
+#endif
 
   // Aux data size
   int m_nAux = 0;

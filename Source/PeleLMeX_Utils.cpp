@@ -1430,11 +1430,11 @@ PeleLM::setTypicalValues(const TimeStamp& a_time, int is_init)
 #endif
 #if NUM_ODE > 0
       for (int n = 0; n < NUM_ODE; n++) {
-            Print() << "\t" << m_ode_names[n] 
-                    << std::setw(
-                        std::max(0, static_cast<int>(10 - m_ode_names[n].length())))
-                    << std::left << ":" << typical_values[FIRSTODE + n] <<'\n';
-          }
+        Print() << "\t" << m_ode_names[n]
+                << std::setw(std::max(
+                     0, static_cast<int>(10 - m_ode_names[n].length())))
+                << std::left << ":" << typical_values[FIRSTODE + n] << '\n';
+      }
 #endif
     }
     Print() << PrettyLine;

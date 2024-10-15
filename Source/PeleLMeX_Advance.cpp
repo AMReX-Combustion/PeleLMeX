@@ -111,7 +111,7 @@ PeleLM::Advance(int is_initIter)
   //----------------------------------------------------------------
 
   // External sources (soot, radiation, user defined, etc.)
-  getExternalSources(AmrOldTime,AmrNewTime);
+  getExternalSources(AmrOldTime, AmrNewTime);
 
   if (m_incompressible == 0) {
     floorSpecies(AmrOldTime);
@@ -140,10 +140,10 @@ PeleLM::Advance(int is_initIter)
   }
 
 #if NUM_ODE > 0
-    // Euler step for predicting ode qty at tnp1
-    if(m_user_defined_ext_sources){
-      predictODEQty();
-    }
+  // Euler step for predicting ode qty at tnp1
+  if (m_user_defined_ext_sources) {
+    predictODEQty();
+  }
 #endif
   BL_PROFILE_VAR_STOP(PLM_SETUP);
   //----------------------------------------------------------------
@@ -433,4 +433,3 @@ PeleLM::oneSDC(
   floorSpecies(AmrNewTime);
   setThermoPress(AmrNewTime);
 }
-

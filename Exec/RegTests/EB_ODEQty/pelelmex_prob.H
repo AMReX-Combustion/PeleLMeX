@@ -118,7 +118,7 @@ pelelmex_initdata(
   for (int n = 0; n < NUM_ODE; n++) {
     state(i, j, k, FIRSTODE + n) = ode_qty[n];
   }
-  
+
 #endif
 }
 

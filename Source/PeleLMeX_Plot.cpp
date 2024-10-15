@@ -282,12 +282,12 @@ PeleLM::WritePlotFile()
   }
 
 #if NUM_ODE > 0
-    for (int n = 0; n < NUM_ODE; n++) {
-      plt_VarsName.push_back(m_ode_names[n]);
-    }
+  for (int n = 0; n < NUM_ODE; n++) {
+    plt_VarsName.push_back(m_ode_names[n]);
+  }
 #endif
 
-Print() << PrettyLine;
+  Print() << PrettyLine;
 
   //----------------------------------------------------------------
   // Fill the plot MultiFabs
@@ -410,11 +410,10 @@ Print() << PrettyLine;
     }
 #endif
 #if NUM_ODE > 0
-      MultiFab::Copy(
-        mf_plt[lev], m_leveldata_new[lev]->state, FIRSTODE, cnt, NUM_ODE,
-        0);
-      cnt += NUM_ODE;
-      Print() << "cnt = " << cnt << std::endl;
+    MultiFab::Copy(
+      mf_plt[lev], m_leveldata_new[lev]->state, FIRSTODE, cnt, NUM_ODE, 0);
+    cnt += NUM_ODE;
+    Print() << "cnt = " << cnt << std::endl;
 #endif
 
     if (m_do_les && m_plot_les) {

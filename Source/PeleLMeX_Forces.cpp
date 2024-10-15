@@ -238,7 +238,8 @@ PeleLM::addSpark(const TimeStamp& a_timestamp)
 }
 
 // Calculate additional external sources (soot, radiation, user defined, etc.)
-void PeleLM::getExternalSources(
+void
+PeleLM::getExternalSources(
   const PeleLM::TimeStamp& a_timestamp_old,
   const PeleLM::TimeStamp& a_timestamp_new)
 {
@@ -264,18 +265,14 @@ void PeleLM::getExternalSources(
   }
 #endif
 
-// User defined external sources
-  if(m_user_defined_ext_sources){
+  // User defined external sources
+  if (m_user_defined_ext_sources) {
     for (int lev = 0; lev <= finest_level; lev++) {
       problem_modify_ext_sources(
-        getTime(lev, a_timestamp_new), 
-        m_dt, 
-        lev, 
+        getTime(lev, a_timestamp_new), m_dt, lev,
         getLevelDataPtr(lev, a_timestamp_old)->state.const_arrays(),
-        getLevelDataPtr(lev, a_timestamp_new)->state.const_arrays(), 
-        m_extSource, 
-        geom[lev].data(), 
-        *prob_parm_d);
+        getLevelDataPtr(lev, a_timestamp_new)->state.const_arrays(),
+        m_extSource, geom[lev].data(), *prob_parm_d);
     }
   }
 }
