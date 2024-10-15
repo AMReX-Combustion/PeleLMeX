@@ -140,19 +140,6 @@ PeleLM::Advance(int is_initIter)
           getLevelDataPtr(lev, AmrOldTime)->state.const_arrays(),
           getLevelDataPtr(lev, AmrNewTime)->state.const_arrays(), 
           m_extSource, geom[lev].data(), *prob_parm_d);
-      
-      // Debugging: Test the call for modify ext_sources
-      auto ext_src = m_extSource[lev]->arrays();
-      amrex::ParallelFor(
-        *m_extSource[lev],
-        [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
-          for(int n = 0; n < NUM_ODE; n++){
-            //if(ext_src[box_no](i, j, k, FIRSTODE + n) < 0){
-            //  Print() << "ext_src[lev = "<<lev<<"][FIRSTODE + "<< n <<"] = " << ext_src[box_no](i, j, k, FIRSTODE + n) << std::endl;
-            //}     
-          }
-        });
-      // Debugging: End of test
     }
   }
 

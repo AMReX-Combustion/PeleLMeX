@@ -35,36 +35,43 @@ def run_PeleLMeX(input_file,num_proc):
     else:
         os.system(f'./PeleLMeX2d.gnu.MPI.ex {input_file}')
 
-def soln(t,IC):
-    k = -100.0
-    return IC*np.exp(k*t)
-
-def dataAnalysis(vars,file_name):
+def dataAnalysis(vars, file_name):
     data = pd.read_csv(file_name)
     data_vars = data[vars].values
     time = data.time.values
-    IC = data_vars[0,:]
+    IC = data_vars[0, :]
     
-    approx = data_vars[-1,:]
-    exact = soln(time[-1],IC)
-    abs_error = abs(exact - approx)
-
-    return abs_error.reshape(1,len(vars))
+    # Numerical solution at final time
+    approx = data_vars[-1, :]
+    
+    # Exact solution
+    n = np.arange(len(IC))
+    k = -10.0 * 10**(n + 1)
+    exact = IC * np.exp(k * time[-1])
+    
+    # Absolute error
+    abs_error = np.abs(exact - approx)
+    
+    return abs_error.reshape(1, len(vars))
 
 
 def removeAllPrevData():
     os.system('rm -r plt* temporals/*')
 
+# -----------------------------------------------------------------------------
+# Parameters
+# -----------------------------------------------------------------------------
 
-# Number of runs for convergence test
-startWithNewData = 0
-nRuns = 4
-num_proc = 6
-dt_vec = [1e-3, 1e-4, 1e-5, 1e-6]
-final_time = 0.05
-num_temporal_write = 60
-temporals_directory = 'temporals_simpleDecay_SDC0'
+startWithNewData = 1              # erase all plt files and temporals if true
+nRuns = 4                         # number of tests
+num_proc = 2                      # number of processors to run tests
+dt_vec = [1e-4, 1e-5, 1e-6, 1e-7] # dt for each test
+final_time = 0.001                 # final time for simulation 
+
+# Parameters for temporal files
+temporals_directory = 'temporals'
 temporals_filename = temporals_directory+'/tempExtremas'
+num_temporal_write = 2
 
 NUM_ODE = 3
 vars = [f"max_MY_ODE_{i}" for i in range(0,NUM_ODE)]
@@ -101,9 +108,8 @@ print("\n=======================================================================
 
 plt.figure()
 for j in range(NUM_ODE):
-    
 
-    # Fit a line to the log-log data
+    # Fit a log-log line to the data
     log_dt_vec = np.log(dt_vec[:nRuns])
     log_errors = np.log(errors[:,j])
     slope, intercept = np.polyfit(log_dt_vec, log_errors, 1)
@@ -113,16 +119,13 @@ for j in range(NUM_ODE):
     plt.scatter(dt_vec[:nRuns], errors[:,j], label=f'ODE {j} (rate: {slope:.2f})', marker='o')
     plt.plot(dt_vec[:nRuns], best_fit_line, '--')
 
-    # Reset the color cycle
-    #plt.gca().set_prop_cycle(None)
-
 # Set x and y scales to log-log
 plt.xscale("log")
 plt.yscale("log")
 
 # Add labels and legend
 plt.xlabel('$\Delta t$')
-plt.ylabel('Error')
+plt.ylabel('$\ell_\infty(approx - exact)$')
 plt.legend()
 
 plt.show()

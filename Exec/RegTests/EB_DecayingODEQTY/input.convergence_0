@@ -11,26 +11,26 @@ peleLM.lo_bc = Inflow  Interior
 peleLM.hi_bc = Outflow Interior
 
 #-------------------------AMR CONTROL----------------------------
-amr.n_cell          = 96 32           # Level 0 number of cells in each direction
+amr.n_cell          = 48 16             # Level 0 number of cells in each direction
 amr.v               = 1                # AMR verbose
 amr.max_level       = 0                # maximum level number allowed
 amr.ref_ratio       = 2 2 2 2          # refinement ratio
 amr.regrid_int      = 5                # how often to regrid
 amr.n_error_buf     = 2 2 2 2          # number of buffer cells in error est
 amr.grid_eff        = 0.7              # what constitutes an efficient grid
-amr.blocking_factor = 16               # block factor in grid generation (min box size)
+amr.blocking_factor = 8                # block factor in grid generation (min box size)
 amr.max_grid_size   = 64               # max box size
 
 #--------------------------- Problem ----------------------------
 prob.T_mean = 300.0
 prob.P_mean = 101325.0
-prob.meanFlowMag = 4.255
+prob.meanFlowMag = 1.0
 prob.meanFlowDir = 1
 prob.ode_IC = 10.0
 prob.ode_xy_lo = -0.01
 prob.ode_length = 0.01
 prob.ode_height = 0.02
-prob.ode_srcstrength = -100.0
+prob.ode_srcstrength = -10.0
 
 #-----------------INPUTS TO CONSTANT TRANSPORT ------------------
 transport.units                  = MKS
@@ -40,14 +40,12 @@ transport.const_conductivity     = 0.0
 transport.const_diffusivity      = 0.0
 
 #---------------------------TIME STEPPING------------------------
-amr.stop_time = 0.05
-amr.fixed_dt = 0.001
+amr.stop_time = 0.001
+amr.fixed_dt = 0.0001
 
 #-------------------------PELE CONTROLS----------------------
 peleLM.v = 1
 peleLM.user_defined_ext_sources = 1
-#peleLM.num_init_iter = 0
-#peleLM.do_init_proj = 0
 
 #---------------------------IO CONTROL---------------------------
 #amr.restart = chk_07136
@@ -59,11 +57,12 @@ amr.derive_plot_vars = avg_pressure mag_vort
 
 #---------------------- Temporal CONTROL -------------------------
 peleLM.do_temporals = 1                     # Turn temporals ON/OFF
-peleLM.temporal_int = 1
+peleLM.temporal_int = 5
 peleLM.do_extremas = 1                      # Compute state extremas
 
 #------------------------- EB SETUP -----------------------------
-eb2.geom_type = sphere
+eb2.geom_type = "all_regular"
+#eb2.geom_type = sphere
 eb2.sphere_radius = 0.005
 eb2.sphere_center = 0.03 0.0
 eb2.sphere_has_fluid_inside = 0
