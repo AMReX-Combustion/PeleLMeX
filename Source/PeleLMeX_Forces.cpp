@@ -244,7 +244,8 @@ PeleLM::getExternalSources(
   const PeleLM::TimeStamp& a_timestamp_old,
   const PeleLM::TimeStamp& a_timestamp_new)
 {
-
+  amrex::ignore_unused(is_initIter);
+  
   if (m_n_sparks > 0) {
     addSpark(a_timestamp_old);
   }
@@ -253,8 +254,6 @@ PeleLM::getExternalSources(
   if (is_initIter == 0) {
     SprayMKD(m_cur_time, m_dt);
   }
-#else
-  (void)is_initIter;
 #endif
 #ifdef PELE_USE_SOOT
   if (do_soot_solve) {
