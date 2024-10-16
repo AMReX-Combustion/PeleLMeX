@@ -102,6 +102,7 @@ PeleLM::calcDivU(
 #endif
 
       auto const& rhoY = ldata_p->state.const_array(mfi, FIRSTSPEC);
+      auto const& rhoH = ldata_p->state.const_array(mfi, RHOH);
       auto const& T = ldata_p->state.const_array(mfi, TEMP);
       auto const& SpecD = (a_time == AmrOldTime)
                             ? diffData->Dn[lev].const_array(mfi, 0)
@@ -118,6 +119,7 @@ PeleLM::calcDivU(
         ((m_do_react != 0) && (m_skipInstantRR == 0))
           ? RhoYdot.const_array(mfi)
           : ldata_p->state.const_array(mfi, FIRSTSPEC); // Dummy unused Array4
+      auto const& extRho = m_extSource[lev]->const_array(mfi, DENSITY);
       auto const& extRhoY = m_extSource[lev]->const_array(mfi, FIRSTSPEC);
       auto const& extRhoH = m_extSource[lev]->const_array(mfi, RHOH);
       auto const& divu = ldata_p->divu.array(mfi);
@@ -133,14 +135,14 @@ PeleLM::calcDivU(
       } else if (flagfab.getType(bx) != FabType::regular) { // EB containing
                                                             // boxes
         amrex::ParallelFor(
-          bx, [rhoY, T, SpecD, Fourier, DiffDiff, r, extRhoY, extRhoH, divu,
+          bx, [rhoY, rhoH, T, SpecD, Fourier, DiffDiff, r, extRho, extRhoY, extRhoH, divu,
                use_react, flag,
                leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             if (flag(i, j, k).isCovered()) {
               divu(i, j, k) = 0.0;
             } else {
               compute_divu(
-                i, j, k, rhoY, T, SpecD, Fourier, DiffDiff, r, extRhoY, extRhoH,
+                i, j, k, rhoY, rhoH, T, SpecD, Fourier, DiffDiff, r, extRho, extRhoY, extRhoH,
                 divu, use_react, leosparm);
             }
           });
@@ -149,10 +151,10 @@ PeleLM::calcDivU(
       {
         amrex::ParallelFor(
           bx,
-          [rhoY, T, SpecD, Fourier, DiffDiff, r, extRhoY, extRhoH, divu,
+          [rhoY, rhoH, T, SpecD, Fourier, DiffDiff, r, extRho, extRhoY, extRhoH, divu,
            use_react, leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             compute_divu(
-              i, j, k, rhoY, T, SpecD, Fourier, DiffDiff, r, extRhoY, extRhoH,
+              i, j, k, rhoY, rhoH, T, SpecD, Fourier, DiffDiff, r, extRho, extRhoY, extRhoH,
               divu, use_react, leosparm);
           });
       }
