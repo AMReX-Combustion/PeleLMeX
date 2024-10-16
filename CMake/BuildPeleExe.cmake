@@ -90,6 +90,12 @@ function(build_pele_exe pele_exe_name pele_physics_lib_name)
         ${SRC_DIR}/PeleLMeX_Radiation.cpp)
   endif()
 
+  if(PELELM_NUM_ODE GREATER 0)
+    target_sources(${pele_exe_name}
+      PRIVATE
+        NUM_ODE=${PELELM_NUM_ODE})
+  endif()
+
   if(NOT "${pele_exe_name}" STREQUAL "${PROJECT_NAME}-UnitTests")
     target_sources(${pele_exe_name}
        PRIVATE

@@ -287,8 +287,6 @@ PeleLM::WritePlotFile()
   }
 #endif
 
-  Print() << PrettyLine;
-
   //----------------------------------------------------------------
   // Fill the plot MultiFabs
   for (int lev = 0; lev <= finest_level; ++lev) {
@@ -413,7 +411,6 @@ PeleLM::WritePlotFile()
     MultiFab::Copy(
       mf_plt[lev], m_leveldata_new[lev]->state, FIRSTODE, cnt, NUM_ODE, 0);
     cnt += NUM_ODE;
-    Print() << "cnt = " << cnt << std::endl;
 #endif
 
     if (m_do_les && m_plot_les) {

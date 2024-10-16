@@ -52,7 +52,7 @@ ifeq ($(USE_SOOT), TRUE)
   CEXE_sources += PeleLMeX_Soot.cpp
 endif
 
-ifeq ($(shell test 0$(NUM_ODE) -gt 0; echo $$?), 0)
+ifeq ($(shell test 0$(PELELM_NUM_ODE) -gt 0; echo $$?), 0)
   CEXE_sources += PeleLMeX_ODEQty.cpp
 endif
 
