@@ -245,7 +245,7 @@ PeleLM::getExternalSources(
   const PeleLM::TimeStamp& a_timestamp_new)
 {
   amrex::ignore_unused(is_initIter);
-  
+
   if (m_n_sparks > 0) {
     addSpark(a_timestamp_old);
   }
