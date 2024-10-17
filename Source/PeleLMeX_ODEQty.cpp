@@ -3,6 +3,7 @@
 
 using namespace amrex;
 
+#if NUM_ODE > 0
 void
 PeleLM::predictODEQty()
 {
@@ -23,3 +24,4 @@ PeleLM::predictODEQty()
     Gpu::streamSynchronize();
   }
 }
+#endif
