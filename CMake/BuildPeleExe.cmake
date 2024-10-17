@@ -97,6 +97,10 @@ function(build_pele_exe pele_exe_name pele_physics_lib_name)
     )
   endif()
 
+  if (PELELM_NUM_ODE GREATER 0)
+    target_compile_definitions(${pele_exe_name} PRIVATE NUM_ODE=${PELELM_NUM_ODE})
+  endif()
+
   if(PELE_ENABLE_CUDA)
     set(pctargets "${pele_exe_name};${pele_physics_lib_name}")
     foreach(tgt IN LISTS pctargets)
