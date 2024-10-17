@@ -63,16 +63,16 @@ The set of conservation equations specialized to the low Mach number regime is a
 
     &\frac{\partial (\rho \boldsymbol{u})}{\partial t} +
     \nabla \cdot \left(\rho  \boldsymbol{u} \boldsymbol{u} + \tau \right)
-    = -\nabla \pi + \rho \boldsymbol{F},\\
+    = -\nabla \pi + \boldsymbol{S}_{\text{ext},\rho\boldsymbol{u}},\\
     &\frac{\partial (\rho Y_m)}{\partial t} +
     \nabla \cdot \left( \rho Y_m \boldsymbol{u}
     + \boldsymbol{\mathcal{F}}_{m} \right)
-    = \rho \dot{\omega}_m,\\
+    = \rho \dot{\omega}_m + S_{\text{ext},\rho\boldsymbol{Y_m}},\\
     &\frac{ \partial (\rho h)}{ \partial t} +
     \nabla \cdot \left( \rho h \boldsymbol{u}
-    + \boldsymbol{\mathcal{Q}} \right) = 0 ,
+    + \boldsymbol{\mathcal{Q}} \right) = S_{\text{ext},\rho\boldsymbol{h}} ,
 
-where :math:`\rho` is the density, :math:`\boldsymbol{u}` is the velocity, :math:`h` is the mass-weighted enthalpy, :math:`T` is temperature and :math:`Y_m` is the mass fraction of species :math:`m`. :math:`\dot{\omega}_m` is the molar production rate for species :math:`m`, the modeling of which will be described later in this section. :math:`\tau` is the stress tensor, :math:`\boldsymbol{\mathcal{Q}}` is the heat flux and :math:`\boldsymbol{\mathcal{F}}_m` are the species diffusion fluxes. These transport fluxes require the evaluation of transport coefficients (e.g., the viscosity :math:`\mu`, the conductivity :math:`\lambda` and the diffusivity matrix :math:`D`) which are computed using the library EGLIB, as will be described in more depth in the diffusion section. The momentum source, :math:`\boldsymbol{F}`, is an external forcing term.  For example, we have used :math:`\boldsymbol{F}` to implement a long-wavelength time-dependent force to establish and maintain quasi-stationary turbulence.
+where :math:`\rho` is the density, :math:`\boldsymbol{u}` is the velocity, :math:`h` is the mass-weighted enthalpy, :math:`T` is temperature and :math:`Y_m` is the mass fraction of species :math:`m`. :math:`\dot{\omega}_m` is the molar production rate for species :math:`m`, the modeling of which will be described later in this section. :math:`\tau` is the stress tensor, :math:`\boldsymbol{\mathcal{Q}}` is the heat flux and :math:`\boldsymbol{\mathcal{F}}_m` are the species diffusion fluxes. These transport fluxes require the evaluation of transport coefficients (e.g., the viscosity :math:`\mu`, the conductivity :math:`\lambda` and the diffusivity matrix :math:`D`) which are computed using the library EGLIB, as will be described in more depth in the diffusion section. The source terms, :math:`S_{\text{ext}}`, are user defined external forcing terms.  For example, we have used :math:`\boldsymbol{S}_{\text{ext},\rho\boldsymbol{u}} = \rho\boldsymbol{F}` to implement a long-wavelength time-dependent force to establish and maintain quasi-stationary turbulence.
 
 These evolution equations are supplemented by an equation of state for the thermodynamic pressure.  For example, the ideal gas law,
 
@@ -94,7 +94,7 @@ Neither species diffusion nor reactions redistribute the total mass, hence we ha
 
 .. math::
 
-    \frac{\partial \rho}{\partial t} + \nabla \cdot \rho \boldsymbol{u} = 0
+    \frac{\partial \rho}{\partial t} + \nabla \cdot \rho \boldsymbol{u} = S_{\text{ext},\rho}
 
 This, together with the conservation equations form a differential-algebraic equation (DAE) system that describes an evolution subject to a constraint.  A standard approach to attacking such a system computationally is to differentiate the constraint until it can be recast as an initial value problem.  Following this procedure, we set the thermodynamic pressure constant in the frame of the fluid,
 
@@ -107,16 +107,24 @@ and observe that if the initial conditions satisfy the constraint, an evolution 
 .. math::
 
     \nabla \cdot \boldsymbol{u} = \frac{1}{T}\frac{DT}{Dt}
-    + W \sum_m \frac{1}{W_m} \frac{DY_m}{Dt} = S
+    + W \sum_m \frac{1}{W_m} \frac{DY_m}{Dt} + \frac{1}{\rho}S_{\text{ext},\rho} = S
 
 The constraint here take the form of a condition on the divergence of the flow.  Note that the actual expressions to use here will depend upon the chosen models for evaluating the transport fluxes.
 
-For the standard ideal gas EOS, the divergence constraint on velocity becomes:
+For the standard ideal gas EOS, 
 
 .. math::
 
-    \nabla \cdot \boldsymbol{u} &= \frac{1}{\rho c_p T} \left(\nabla \cdot \lambda\nabla T - \sum_m \boldsymbol{\Gamma_m} \cdot \nabla h_m \right) \\
-    &- \frac{1}{\rho} \sum_m \frac{W}{W_m} \nabla \cdot \boldsymbol{\Gamma_m} + \frac{1}{\rho}\sum_m \left(\frac{W}{W_m} - \frac{h_m}{c_p T} \right) \dot \omega \equiv S .
+    \frac{DT}{Dt} &= \frac{1}{\rho}\left[ - \nabla \cdot \boldsymbol{Q} + S_{\text{ext},\rho h} - h S_{\text{ext},\rho}\right] - \sum_m \frac{h_m}{ c_p} \frac{DY_m}{Dt}, \\
+    \frac{DY_m}{Dt} &= \frac{1}{\rho}\left[ - \nabla \cdot \boldsymbol{\mathcal{F_m}} + \rho \dot \omega_m + S_{\text{ext},\rho Y_m} - Y_m S_{\text{ext},\rho}\right].
+
+Therefore, the divergence constraint on velocity becomes:
+
+.. math::
+
+    \nabla \cdot \boldsymbol{u} &= \frac{1}{\rho c_p T} \left(-\nabla \cdot \boldsymbol{Q} + S_{\text{ext},\rho h} - h S_{\text{ext},\rho} \right) 
+    - \sum_m \frac{h_m}{\rho c_p T} \left( - \nabla \cdot \boldsymbol{\mathcal{F}}_m + \rho \dot \omega_m + S_{\text{ext},Y_m} - Y_m S_{\text{ext},\rho}\right) \\
+    &\;\;\;+ \frac{1}{\rho} \sum_m \frac{W}{W_m} \left( - \nabla \cdot \boldsymbol{\mathcal{F}}_m + \rho \dot \omega_m + S_{\text{ext},Y_m} - Y_m S_{\text{ext},\rho}\right) + \frac{1}{\rho}S_{\text{ext},\rho}\equiv S .
 
 Confined domain ambient pressure
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
