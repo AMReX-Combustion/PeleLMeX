@@ -135,27 +135,27 @@ PeleLM::calcDivU(
       } else if (flagfab.getType(bx) != FabType::regular) { // EB containing
                                                             // boxes
         amrex::ParallelFor(
-          bx, [rhoY, rhoH, T, SpecD, Fourier, DiffDiff, r, extRho, extRhoY, extRhoH, divu,
-               use_react, flag,
+          bx, [rhoY, rhoH, T, SpecD, Fourier, DiffDiff, r, extRho, extRhoY,
+               extRhoH, divu, use_react, flag,
                leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             if (flag(i, j, k).isCovered()) {
               divu(i, j, k) = 0.0;
             } else {
               compute_divu(
-                i, j, k, rhoY, rhoH, T, SpecD, Fourier, DiffDiff, r, extRho, extRhoY, extRhoH,
-                divu, use_react, leosparm);
+                i, j, k, rhoY, rhoH, T, SpecD, Fourier, DiffDiff, r, extRho,
+                extRhoY, extRhoH, divu, use_react, leosparm);
             }
           });
       } else
 #endif
       {
         amrex::ParallelFor(
-          bx,
-          [rhoY, rhoH, T, SpecD, Fourier, DiffDiff, r, extRho, extRhoY, extRhoH, divu,
-           use_react, leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          bx, [rhoY, rhoH, T, SpecD, Fourier, DiffDiff, r, extRho, extRhoY,
+               extRhoH, divu, use_react,
+               leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             compute_divu(
-              i, j, k, rhoY, rhoH, T, SpecD, Fourier, DiffDiff, r, extRho, extRhoY, extRhoH,
-              divu, use_react, leosparm);
+              i, j, k, rhoY, rhoH, T, SpecD, Fourier, DiffDiff, r, extRho,
+              extRhoY, extRhoH, divu, use_react, leosparm);
           });
       }
     }

@@ -242,24 +242,23 @@ compute_divu(
   }
 
   // Additional terms related to external forcing on density
-  amrex::Real hExtRho = rhoinv * rhoH(i,j,k) * extRho(i, j, k);
+  amrex::Real hExtRho = rhoinv * rhoH(i, j, k) * extRho(i, j, k);
   amrex::Real yExtRho[NUM_SPECIES] = {0.0};
   for (int n = 0; n < NUM_SPECIES; n++) {
     yExtRho[n] = y[n] * extRho(i, j, k);
-  }   
+  }
 
   amrex::Real denominv = 1.0_rt / (rho * cpmix * T(i, j, k));
-  divu(i, j, k) =
-    denominv * (specEnthDiff(i, j, k) + tempDiff(i, j, k) 
-    + extRhoH(i, j, k) - hExtRho);
+  divu(i, j, k) = denominv * (specEnthDiff(i, j, k) + tempDiff(i, j, k) +
+                              extRhoH(i, j, k) - hExtRho);
   for (int n = 0; n < NUM_SPECIES; n++) {
-    amrex::Real specTerm = 
+    amrex::Real specTerm =
       specDiff(i, j, k, n) + extRhoY(i, j, k, n) - yExtRho[n];
     if (do_react != 0) {
       specTerm += rhoYdot(i, j, k, n);
     }
-    divu(i, j, k) += specTerm * (mwtinv[n] * Wbar * rhoinv - hi[n] * denominv)
-                  + rhoinv * extRho(i, j, k);
+    divu(i, j, k) += specTerm * (mwtinv[n] * Wbar * rhoinv - hi[n] * denominv) +
+                     rhoinv * extRho(i, j, k);
   }
 }
 
