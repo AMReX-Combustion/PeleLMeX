@@ -46,9 +46,10 @@ function(build_pele_exe pele_exe_name pele_physics_lib_name)
        ${SRC_DIR}/PeleLMeX_Evolve.cpp
        ${SRC_DIR}/PeleLMeX_FlowController.cpp
        ${SRC_DIR}/PeleLMeX_Forces.cpp
+       ${SRC_DIR}/PeleLMeX_Init.cpp
+       ${SRC_DIR}/PeleLMeX_ODEQty.cpp
        ${SRC_DIR}/PeleLMeX_PatchFlowVariables.H
        ${SRC_DIR}/PeleLMeX_PatchFlowVariables.cpp
-       ${SRC_DIR}/PeleLMeX_Init.cpp
        ${SRC_DIR}/PeleLMeX_Plot.cpp
        ${SRC_DIR}/PeleLMeX_ProblemSpecificFunctions.H
        ${SRC_DIR}/PeleLMeX_ProblemSpecificFunctions.cpp
