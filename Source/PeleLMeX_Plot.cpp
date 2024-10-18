@@ -281,6 +281,12 @@ PeleLM::WritePlotFile()
     plt_VarsName.push_back("viscturb");
   }
 
+#if NUM_ODE > 0
+  for (int n = 0; n < NUM_ODE; n++) {
+    plt_VarsName.push_back(m_ode_names[n]);
+  }
+#endif
+
   //----------------------------------------------------------------
   // Fill the plot MultiFabs
   for (int lev = 0; lev <= finest_level; ++lev) {
@@ -400,6 +406,11 @@ PeleLM::WritePlotFile()
         mf_plt[lev], *m_ionsFluxes[lev], 0, cnt, m_ionsFluxes[lev]->nComp(), 0);
       cnt += m_ionsFluxes[lev]->nComp();
     }
+#endif
+#if NUM_ODE > 0
+    MultiFab::Copy(
+      mf_plt[lev], m_leveldata_new[lev]->state, FIRSTODE, cnt, NUM_ODE, 0);
+    cnt += NUM_ODE;
 #endif
 
     if (m_do_les && m_plot_les) {

@@ -1,5 +1,6 @@
 #include <PeleLMeX.H>
 #include <PeleLMeX_K.H>
+#include <PeleLMeX_ProblemSpecificFunctions.H>
 
 using namespace amrex;
 
@@ -232,6 +233,49 @@ PeleLM::addSpark(const TimeStamp& a_timestamp)
           }
         });
       Gpu::streamSynchronize();
+    }
+  }
+}
+
+// Calculate additional external sources (soot, radiation, user defined, etc.)
+void
+PeleLM::getExternalSources(
+  int is_initIter,
+  const PeleLM::TimeStamp& a_timestamp_old,
+  const PeleLM::TimeStamp& a_timestamp_new)
+{
+  amrex::ignore_unused(is_initIter);
+
+  if (m_n_sparks > 0) {
+    addSpark(a_timestamp_old);
+  }
+
+#ifdef PELE_USE_SPRAY
+  if (is_initIter == 0) {
+    SprayMKD(m_cur_time, m_dt);
+  }
+#endif
+#ifdef PELE_USE_SOOT
+  if (do_soot_solve) {
+    computeSootSource(a_timestamp_old, m_dt);
+  }
+#endif
+#ifdef PELE_USE_RADIATION
+  if (do_rad_solve) {
+    BL_PROFILE_VAR("PeleLM::advance::rad", PLM_RAD);
+    computeRadSource(a_timestamp_old);
+    BL_PROFILE_VAR_STOP(PLM_RAD);
+  }
+#endif
+
+  // User defined external sources
+  if (m_user_defined_ext_sources) {
+    for (int lev = 0; lev <= finest_level; lev++) {
+      problem_modify_ext_sources(
+        getTime(lev, a_timestamp_new), m_dt, lev,
+        getLevelDataPtr(lev, a_timestamp_old)->state.const_arrays(),
+        getLevelDataPtr(lev, a_timestamp_new)->state.const_arrays(),
+        m_extSource, geom[lev].data(), *prob_parm_d);
     }
   }
 }
