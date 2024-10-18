@@ -75,34 +75,6 @@ PeleLM::Setup()
   // Setup the state variables
   variablesSetup();
 
-  // Derived variables
-  derivedSetup();
-
-  // Evaluate variables
-  evaluateSetup();
-
-  // Tagging setup
-  taggingSetup();
-
-#ifdef PELE_USE_SPRAY
-  SpraySetup();
-#endif
-#ifdef PELE_USE_SOOT
-  if (do_soot_solve) {
-    soot_model->define();
-  }
-#endif
-  // Diagnostics setup
-  createDiagnostics();
-
-  // Boundary Patch Setup
-  if (m_do_patch_mfr != 0) {
-    initBPatches(Geom(0));
-  }
-
-  // Initialize Level Hierarchy data
-  resizeArray();
-
   // Initialize EOS and others
   if (m_incompressible == 0) {
     amrex::Print() << " Initialization of Eos ... \n";
@@ -169,9 +141,39 @@ PeleLM::Setup()
 #endif
   }
 
+  // Derived variables
+  derivedSetup();
+
+  // Evaluate variables
+  evaluateSetup();
+
+  // Tagging setup
+  taggingSetup();
+
+#ifdef PELE_USE_SPRAY
+  SpraySetup();
+#endif
+#ifdef PELE_USE_SOOT
+  if (do_soot_solve) {
+    soot_model->define();
+  }
+#endif
+  // Diagnostics setup
+  createDiagnostics();
+
+  // Boundary Patch Setup
+  if (m_do_patch_mfr != 0) {
+    initBPatches(Geom(0));
+  }
+
+  // Initialize Level Hierarchy data
+  resizeArray();
+
   // Mixture fraction & Progress variable
-  initMixtureFraction();
-  initProgressVariable();
+  if (pele::physics::PhysicsType::eos_type::identifier() != "Manifold") {
+    initMixtureFraction();
+    initProgressVariable();
+  }
 
   // Initialize turbulence injection
   turb_inflow.init(Geom(0));
@@ -237,6 +239,12 @@ PeleLM::readParameters()
   pp.query("closed_chamber", m_closed_chamber);
   if ((verbose != 0) && (m_closed_chamber != 0)) {
     Print() << " Simulation performed with the closed chamber algorithm \n";
+  }
+  if (
+    (m_closed_chamber != 0) &&
+    (pele::physics::PhysicsType::eos_type::identifier() == "Manifold")) {
+    amrex::Abort(
+      "Simulation with closed chamber not supported for Manifold EOS");
   }
 
 #ifdef PELE_USE_EFIELD
@@ -455,6 +463,11 @@ PeleLM::readParameters()
     amrex::Print() << "WARNING: use_wbar and use_soret set to false because "
                       "fixed_Pr or fixed_Le is true"
                    << std::endl;
+  }
+  if (
+    m_use_wbar != 0 &&
+    pele::physics::PhysicsType::eos_type::identifier() == "Manifold") {
+    amrex::Abort("Use of Wbar fluxes is not compatible with Manifold EOS");
   }
 
   pp.query("deltaT_verbose", m_deltaT_verbose);
@@ -1100,6 +1113,20 @@ PeleLM::derivedSetup()
   derive_lst.add(
     "enstrophy", IndexType::TheCellType(), 1, pelelmex_derenstrophy,
     grow_box_by_two);
+
+#ifdef USE_MANIFOLD_EOS
+  auto& mani_data = eos_parms.host_only_parm().manfunc_par->host_parm();
+  int nmanivar = mani_data.Nvar;
+  Vector<std::string> var_names_maniout(nmanivar);
+  for (int n = 0; n < nmanivar; n++) {
+    std::string nametmp = std::string(
+      &(mani_data.varnames)[n * mani_data.len_str], mani_data.len_str);
+    var_names_maniout[n] = "MANI_" + amrex::trim(nametmp);
+  }
+  derive_lst.add(
+    "maniout", IndexType::TheCellType(), nmanivar, var_names_maniout,
+    pelelmex_dermaniout, the_same_box);
+#endif
 
 #ifdef PELE_USE_EFIELD
   // Charge distribution

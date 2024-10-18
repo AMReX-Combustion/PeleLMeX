@@ -606,6 +606,7 @@ public:
    * velocity, ensuring they sum up to zero. \param a_fluxes diffusion fluxes to
    * be updated \param a_spec species rhoYs state data on all levels
    */
+  template <typename EOSType>
   void adjustSpeciesFluxes(
     const amrex::Vector<amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>>&
       a_spfluxes,

@@ -290,6 +290,22 @@ void pelelmex_deruserdef(
   const amrex::Vector<amrex::BCRec>& bcrec,
   int level);
 
+#ifdef USE_MANIFOLD_EOS
+void pelelmex_dermaniout(
+  PeleLM* a_pelelm,
+  const amrex::Box& bx,
+  amrex::FArrayBox& derfab,
+  int dcomp,
+  int ncomp,
+  const amrex::FArrayBox& statefab,
+  const amrex::FArrayBox& reactfab,
+  const amrex::FArrayBox& pressfab,
+  const amrex::Geometry& geom,
+  amrex::Real time,
+  const amrex::Vector<amrex::BCRec>& bcrec,
+  int level);
+#endif
+
 #ifdef PELE_USE_EFIELD
 #include <PeleLMeX_EFDeriveFunc.H>
 #endif
