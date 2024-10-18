@@ -26,7 +26,6 @@ FSANITIZER = FALSE
 THREAD_SANITIZER = FALSE
 
 # PeleLMeX
-CEXE_headers += EBUserDefined.H
 CEXE_sources += PeleLMeX_ProblemSpecificFunctions.cpp
 PELELM_NUM_ODE = 3
 

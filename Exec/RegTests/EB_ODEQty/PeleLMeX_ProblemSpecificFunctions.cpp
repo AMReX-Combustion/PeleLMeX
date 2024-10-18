@@ -31,7 +31,7 @@ problem_modify_ext_sources(
   MultiArray4<const Real> const& state_old_arr,
   MultiArray4<const Real> const& /*state_new_arr*/,
   Vector<std::unique_ptr<MultiFab>>& a_extSource,
-  const GeometryData& geomdata,
+  const GeometryData& /*geomdata*/,
   ProbParm const& prob_parm)
 {
   /*
