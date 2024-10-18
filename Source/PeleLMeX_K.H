@@ -257,9 +257,9 @@ compute_divu(
     if (do_react != 0) {
       specTerm += rhoYdot(i, j, k, n);
     }
-    divu(i, j, k) += specTerm * (mwtinv[n] * Wbar * rhoinv - hi[n] * denominv) +
-                     rhoinv * extRho(i, j, k);
+    divu(i, j, k) += specTerm * (mwtinv[n] * Wbar * rhoinv - hi[n] * denominv);
   }
+  divu(i, j, k) += rhoinv * extRho(i, j, k);
 }
 
 AMREX_GPU_DEVICE
