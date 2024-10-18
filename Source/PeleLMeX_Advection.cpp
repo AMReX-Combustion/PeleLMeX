@@ -489,7 +489,7 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
               rho_ed(i, j, k) = 0.0;
               if (afrac(i, j, k) > 0.0) { // Uncovered faces
                 pele::physics::PhysicsType::eos_type::RY2R(
-                  array4_to_array(i, j, k, rhoY_ed).data(), rho_ed(i, j, k));
+                  rhoY_ed.cellData(i, j, k), rho_ed(i, j, k));
               }
             });
         } else // Regular boxes
@@ -499,7 +499,7 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
             ebx,
             [rho_ed, rhoY_ed] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
               pele::physics::PhysicsType::eos_type::RY2R(
-                array4_to_array(i, j, k, rhoY_ed).data(), rho_ed(i, j, k));
+                rhoY_ed.cellData(i, j, k), rho_ed(i, j, k));
             });
         }
       }
@@ -749,8 +749,8 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
       advData->AofS[lev],
       [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
         pele::physics::PhysicsType::eos_type::RY2R(
-          array4_to_array(i, j, k, aofsma[box_no], FIRSTSPEC).data(),
-          aofsma[box_no](i, j, k, DENSITY));
+          aofsma[box_no].cellData(i, j, k), aofsma[box_no](i, j, k, DENSITY),
+          FIRSTSPEC);
       });
   }
   Gpu::streamSynchronize();
