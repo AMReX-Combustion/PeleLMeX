@@ -28,11 +28,11 @@ problem_modify_ext_sources(
   Real /*time*/,
   Real /*dt*/,
   int lev,
-  MultiArray4<const Real> const& state_old_arr,
-  MultiArray4<const Real> const& /*state_new_arr*/,
+  const MultiFab& state_old,
+  const MultiFab& /*state_new*/,
   Vector<std::unique_ptr<MultiFab>>& a_extSource,
   const GeometryData& /*geomdata*/,
-  ProbParm const& prob_parm)
+  const ProbParm& prob_parm)
 {
   /*
   Notes:
@@ -42,6 +42,7 @@ problem_modify_ext_sources(
   */
 
   auto ext_source_arr = a_extSource[lev]->arrays();
+  auto const& state_old_arr = state_old.const_arrays();
 
   ParallelFor(
     *a_extSource[lev],

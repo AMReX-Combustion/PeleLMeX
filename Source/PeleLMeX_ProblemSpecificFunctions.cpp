@@ -28,11 +28,11 @@ problem_modify_ext_sources(
   Real /*time*/,
   Real /*dt*/,
   int /*lev*/,
-  MultiArray4<const Real> const& /*state_old_arr*/,
-  MultiArray4<const Real> const& /*state_new_arr*/,
+  const MultiFab& /*state_old*/,
+  const MultiFab& /*state_new*/,
   Vector<std::unique_ptr<MultiFab>>& /*a_extSource*/,
   const GeometryData& /*geomdata*/,
-  ProbParm const& /*prob_parm*/)
+  const ProbParm& /*prob_parm*/)
 {
   /*
   Notes:
@@ -42,13 +42,15 @@ problem_modify_ext_sources(
 
   // Example: Exponential decay ode quantity
   auto ext_source_arr = a_extSource[lev]->arrays();
+  auto const& state_old_arr = state_old.const_arrays();
+
   ParallelFor(
     *a_extSource[lev],
     [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
-      for (int n = 0; n < NUM_ODE; n++){
+      for (int n = 0; n < NUM_ODE; n++) {
         Real B_n = state_old_arr[box_no](i, j, k, FIRSTODE + n);
         Real src_strength = -1.0 * pow(10.0,n+1);
-        ext_source_arr[box_no](i, j, k, FIRSTODE + n) += src_strength * B_n;
+        ext_source_arr[box_no](i, j, k, FIRSTODE + n) += src;
       }
     });
   Gpu::streamSynchronize();

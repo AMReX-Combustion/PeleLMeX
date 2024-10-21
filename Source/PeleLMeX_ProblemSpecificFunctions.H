@@ -11,9 +11,9 @@ void problem_modify_ext_sources(
   Real time,
   Real dt,
   int lev,
-  MultiArray4<const Real> const& state_old,
-  MultiArray4<const Real> const& state_new,
+  const MultiFab& state_old,
+  const MultiFab& state_new,
   Vector<std::unique_ptr<MultiFab>>& a_extSource,
   const GeometryData& geomdata,
-  ProbParm const& prob_parm);
+  const ProbParm& prob_parm);
 #endif
