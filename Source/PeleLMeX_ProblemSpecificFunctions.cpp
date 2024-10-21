@@ -50,7 +50,7 @@ problem_modify_ext_sources(
       for (int n = 0; n < NUM_ODE; n++) {
         Real B_n = state_old_arr[box_no](i, j, k, FIRSTODE + n);
         Real src_strength = -1.0 * pow(10.0,n+1);
-        ext_source_arr[box_no](i, j, k, FIRSTODE + n) += src;
+        ext_source_arr[box_no](i, j, k, FIRSTODE + n) += src_strength * B_n;
       }
     });
   Gpu::streamSynchronize();
