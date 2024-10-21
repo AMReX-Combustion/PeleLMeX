@@ -115,34 +115,33 @@ For the standard ideal gas EOS,
 
 .. math::
 
-    \frac{DT}{Dt} &= \frac{1}{\rho}\left[ - \nabla \cdot \boldsymbol{Q} + S_{\text{ext},\rho h} - h S_{\text{ext},\rho}\right] - \sum_m \frac{h_m}{ c_p} \frac{DY_m}{Dt}, \\
-    \frac{DY_m}{Dt} &= \frac{1}{\rho}\left[ - \nabla \cdot \boldsymbol{\mathcal{F_m}} + \rho \dot \omega_m + S_{\text{ext},\rho Y_m} - Y_m S_{\text{ext},\rho}\right].
+    \frac{DT}{Dt} &= \frac{1}{\rho}\Big[ - \nabla \cdot \boldsymbol{Q} + S_{\text{ext},\rho h} - h S_{\text{ext},\rho}\Big] - \sum_m \frac{h_m}{ c_p} \frac{DY_m}{Dt}, \\
+    \frac{DY_m}{Dt} &= \frac{1}{\rho}\Big[ - \nabla \cdot \boldsymbol{\mathcal{F_m}} + \rho \dot \omega_m + S_{\text{ext},\rho Y_m} - Y_m S_{\text{ext},\rho}\Big].
 
 Therefore, the divergence constraint on velocity becomes:
 
 .. math::
 
-    \nabla \cdot \boldsymbol{u} &= \frac{1}{\rho c_p T} \left(-\nabla \cdot \boldsymbol{Q} + S_{\text{ext},\rho h} - h S_{\text{ext},\rho} \right) 
-    - \sum_m \frac{h_m}{\rho c_p T} \left( - \nabla \cdot \boldsymbol{\mathcal{F}}_m + \rho \dot \omega_m + S_{\text{ext},Y_m} - Y_m S_{\text{ext},\rho}\right) \\
-    &\;\;\;+ \frac{1}{\rho} \sum_m \frac{W}{W_m} \left( - \nabla \cdot \boldsymbol{\mathcal{F}}_m + \rho \dot \omega_m + S_{\text{ext},Y_m} - Y_m S_{\text{ext},\rho}\right) + \frac{1}{\rho}S_{\text{ext},\rho}\equiv S .
+    \nabla \cdot \boldsymbol{u} &= \frac{1}{\rho c_p T} \Big(-\nabla \cdot \boldsymbol{Q} + S_{\text{ext},\rho h} - h S_{\text{ext},\rho}\Big) \\
+    &\;\;\;\; +  \sum_m \bigg( \frac{W}{\rho W_m} -  \frac{h_m}{\rho c_p T}\bigg)\bigg( - \nabla \cdot \boldsymbol{\mathcal{F}}_m + \rho \dot \omega_m + S_{\text{ext},\rho Y_m} - Y_m S_{\text{ext},\rho}\bigg) + \frac{1}{\rho} S_{\text{ext},\rho}\equiv S .
 
 However, it can be shown that 
 
 .. math::
-    \sum_m h_m Y_m S_{\text{ext},\rho} = h S_{\text{ext},\rho}
+
+    \sum_m \frac{W}{\rho W_m} Y_m S_{\text{ext},\rho} = \frac{1}{\rho}S_{\text{ext},\rho}
 
 and 
 
 .. math::
+    \sum_m h_m Y_m S_{\text{ext},\rho} = h S_{\text{ext},\rho}.
 
-    \sum_m \frac{W}{\rho W_m} Y_m S_{\text{ext},\rho} = \frac{1}{\rho}S_{\text{ext},\rho}. 
-
-Thus, the terms containing :math:`S_{\text{ext},\rho}` cancel and the divergence constraint for the standard ideal gas EOS simplifies to 
+Thus, the terms containing :math:`S_{\text{ext},\rho}` cancel and the divergence constraint for the standard ideal gas EOS simplifies to: 
 
 .. math::
 
     \nabla \cdot \boldsymbol{u} = \frac{1}{\rho c_p T} \Big(-\nabla \cdot \boldsymbol{Q} + S_{\text{ext},\rho h} \Big) 
-    +  \sum_m \bigg( \frac{W}{\rho W_m} -  \frac{h_m}{\rho c_p T}\bigg)\bigg( - \nabla \cdot \boldsymbol{\mathcal{F}}_m + \rho \dot \omega_m + S_{\text{ext},Y_m} \bigg) \equiv S .
+    +  \sum_m \bigg( \frac{W}{\rho W_m} -  \frac{h_m}{\rho c_p T}\bigg)\bigg( - \nabla \cdot \boldsymbol{\mathcal{F}}_m + \rho \dot \omega_m + S_{\text{ext},\rho Y_m} \bigg) \equiv S .
 
 Confined domain ambient pressure
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
