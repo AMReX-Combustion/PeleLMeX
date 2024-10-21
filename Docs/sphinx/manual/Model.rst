@@ -107,9 +107,9 @@ and observe that if the initial conditions satisfy the constraint, an evolution 
 .. math::
 
     \nabla \cdot \boldsymbol{u} = \frac{1}{T}\frac{DT}{Dt}
-    + W \sum_m \frac{1}{W_m} \frac{DY_m}{Dt} + \frac{1}{\rho}S_{\text{ext},\rho} = S
+    + W \sum_m \frac{1}{W_m} \frac{DY_m}{Dt} + \frac{1}{\rho}S_{\text{ext},\rho} = S.
 
-The constraint here take the form of a condition on the divergence of the flow.  Note that the actual expressions to use here will depend upon the chosen models for evaluating the transport fluxes.
+The constraint here takes the form of a condition on the divergence of the flow.  Note that the actual expressions to use here will depend upon the chosen models for evaluating the transport fluxes.
 
 For the standard ideal gas EOS, 
 
@@ -125,6 +125,24 @@ Therefore, the divergence constraint on velocity becomes:
     \nabla \cdot \boldsymbol{u} &= \frac{1}{\rho c_p T} \left(-\nabla \cdot \boldsymbol{Q} + S_{\text{ext},\rho h} - h S_{\text{ext},\rho} \right) 
     - \sum_m \frac{h_m}{\rho c_p T} \left( - \nabla \cdot \boldsymbol{\mathcal{F}}_m + \rho \dot \omega_m + S_{\text{ext},Y_m} - Y_m S_{\text{ext},\rho}\right) \\
     &\;\;\;+ \frac{1}{\rho} \sum_m \frac{W}{W_m} \left( - \nabla \cdot \boldsymbol{\mathcal{F}}_m + \rho \dot \omega_m + S_{\text{ext},Y_m} - Y_m S_{\text{ext},\rho}\right) + \frac{1}{\rho}S_{\text{ext},\rho}\equiv S .
+
+However, it can be shown that 
+
+.. math::
+    \sum_m h_m Y_m S_{\text{ext},\rho} = h S_{\text{ext},\rho}
+
+and 
+
+.. math::
+
+    \sum_m \frac{W}{\rho W_m} Y_m S_{\text{ext},\rho} = \frac{1}{\rho}S_{\text{ext},\rho}. 
+
+Thus, the terms containing :math:`S_{\text{ext},\rho}` cancel and the divergence constraint for the standard ideal gas EOS simplifies to 
+
+.. math::
+
+    \nabla \cdot \boldsymbol{u} = \frac{1}{\rho c_p T} \Big(-\nabla \cdot \boldsymbol{Q} + S_{\text{ext},\rho h} \Big) 
+    +  \sum_m \bigg( \frac{W}{\rho W_m} -  \frac{h_m}{\rho c_p T}\bigg)\bigg( - \nabla \cdot \boldsymbol{\mathcal{F}}_m + \rho \dot \omega_m + S_{\text{ext},Y_m} \bigg) \equiv S .
 
 Confined domain ambient pressure
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -147,7 +165,7 @@ where :math:`\overline \theta` and :math:`\overline S` are the mean values of :m
 
     \int_V \nabla \cdot \boldsymbol{u} dV + \int_V (\overline \theta + \delta \theta)\frac{dp_0}{dt} dV = \int_V (\overline S + \delta S) dV
 
-Since the perturbations integrate to zero over the domain volume, the mean values are constants, and :math:`p_0` is only a function of time, the above simplifies to:
+Since the perturbations integrate to zero over the domain volume, the mean values are constants, and :math:`p_0` is only a function of time, the above simplifies:
 
 .. math::
 
