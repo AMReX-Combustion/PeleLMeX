@@ -199,13 +199,11 @@ compute_divu(
   int j,
   int k,
   amrex::Array4<const amrex::Real> const& rhoY,
-  amrex::Array4<const amrex::Real> const& rhoH,
   amrex::Array4<const amrex::Real> const& T,
   amrex::Array4<const amrex::Real> const& specDiff,
   amrex::Array4<const amrex::Real> const& tempDiff,
   amrex::Array4<const amrex::Real> const& specEnthDiff,
   amrex::Array4<const amrex::Real> const& rhoYdot,
-  amrex::Array4<const amrex::Real> const& extRho,
   amrex::Array4<const amrex::Real> const& extRhoY,
   amrex::Array4<const amrex::Real> const& extRhoH,
   amrex::Array4<amrex::Real> const& divu,
@@ -241,25 +239,16 @@ compute_divu(
     n *= 1.0e-4_rt; // CGS -> MKS conversion
   }
 
-  // Additional terms related to external forcing on density
-  amrex::Real hExtRho = rhoinv * rhoH(i, j, k) * extRho(i, j, k);
-  amrex::Real yExtRho[NUM_SPECIES] = {0.0};
-  for (int n = 0; n < NUM_SPECIES; n++) {
-    yExtRho[n] = y[n] * extRho(i, j, k);
-  }
-
   amrex::Real denominv = 1.0_rt / (rho * cpmix * T(i, j, k));
-  divu(i, j, k) = denominv * (specEnthDiff(i, j, k) + tempDiff(i, j, k) +
-                              extRhoH(i, j, k) - hExtRho);
+  divu(i, j, k) =
+    (specEnthDiff(i, j, k) + tempDiff(i, j, k) + extRhoH(i, j, k)) * denominv;
   for (int n = 0; n < NUM_SPECIES; n++) {
-    amrex::Real specTerm =
-      specDiff(i, j, k, n) + extRhoY(i, j, k, n) - yExtRho[n];
+    amrex::Real specTerm = specDiff(i, j, k, n) + extRhoY(i, j, k, n);
     if (do_react != 0) {
       specTerm += rhoYdot(i, j, k, n);
     }
     divu(i, j, k) += specTerm * (mwtinv[n] * Wbar * rhoinv - hi[n] * denominv);
   }
-  divu(i, j, k) += rhoinv * extRho(i, j, k);
 }
 
 AMREX_GPU_DEVICE
