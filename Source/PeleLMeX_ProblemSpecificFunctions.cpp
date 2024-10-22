@@ -35,8 +35,8 @@ problem_modify_ext_sources(
 {
   /*
   Notes:
-    1) a_extSource contains sources from velocity forcing coming in.
-       This function should add to rather than overwrite a_extSource.
+    1) ext_src contains sources from velocity forcing coming in.
+       This function should add to rather than overwrite ext_src.
     2) Requires peleLM.user_defined_ext_sources = true in input file
 
   // Example: Exponential decay ode quantity
