@@ -273,9 +273,10 @@ PeleLM::getExternalSources(
     for (int lev = 0; lev <= finest_level; lev++) {
       auto* ldata_p_old = getLevelDataPtr(lev, a_timestamp_old);
       auto* ldata_p_new = getLevelDataPtr(lev, a_timestamp_new);
+      auto& ext_src = m_extSource[lev];
       problem_modify_ext_sources(
-        getTime(lev, a_timestamp_new), m_dt, lev, ldata_p_old->state,
-        ldata_p_new->state, m_extSource, geom[lev].data(), *prob_parm_d);
+        getTime(lev, a_timestamp_new), m_dt, ldata_p_old->state,
+        ldata_p_new->state, ext_src, geom[lev].data(), *prob_parm_d);
     }
   }
 }

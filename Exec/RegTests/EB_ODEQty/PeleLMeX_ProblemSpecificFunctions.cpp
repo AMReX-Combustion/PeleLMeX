@@ -27,30 +27,28 @@ void
 problem_modify_ext_sources(
   Real /*time*/,
   Real /*dt*/,
-  int lev,
   const MultiFab& state_old,
   const MultiFab& /*state_new*/,
-  Vector<std::unique_ptr<MultiFab>>& a_extSource,
+  std::unique_ptr<MultiFab>& ext_src,
   const GeometryData& /*geomdata*/,
   const ProbParm& prob_parm)
 {
   /*
   Notes:
-    1) a_extSource contains sources from velocity forcing coming in.
-       This function should add to rather than overwrite a_extSource.
+    1) ext_src contains sources from velocity forcing coming in.
+       This function should add to rather than overwrite ext_src.
     2) Requires "peleLM.user_defined_ext_sources = true" in input file
   */
 
-  auto ext_source_arr = a_extSource[lev]->arrays();
+  auto ext_src_arr = ext_src->arrays();
   auto const& state_old_arr = state_old.const_arrays();
 
   ParallelFor(
-    *a_extSource[lev],
-    [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+    *ext_src, [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
       for (int n = 0; n < NUM_ODE; n++) {
         Real B_n = state_old_arr[box_no](i, j, k, FIRSTODE + n);
         Real src = prob_parm.ode_srcstrength * pow(10.0, n + 1) * B_n;
-        ext_source_arr[box_no](i, j, k, FIRSTODE + n) += src;
+        ext_src_arr[box_no](i, j, k, FIRSTODE + n) += src;
       }
     });
   Gpu::streamSynchronize();
