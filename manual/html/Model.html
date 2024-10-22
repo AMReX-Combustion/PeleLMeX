@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" data-content_root="./">
 <head>
@@ -6,20 +8,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>The PeleLMeX Model &mdash; PeleLMeX 22.12 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
-      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="_static/theme.css?v=df66b05f" />
 
   
-  <!--[if lt IE 9]>
-    <script src="_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script src="_static/jquery.js?v=5d32c60e"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="_static/documentation_options.js?v=d09052ea"></script>
-        <script src="_static/doctools.js?v=9a2dae69"></script>
-        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
-        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=d09052ea"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -163,15 +161,15 @@ adaptive mesh refinement (AMR) code that solves the reacting Navier-Stokes equat
 <div class="math notranslate nohighlight">
 \[\begin{split}&amp;\frac{\partial (\rho \boldsymbol{u})}{\partial t} +
 \nabla \cdot \left(\rho  \boldsymbol{u} \boldsymbol{u} + \tau \right)
-= -\nabla \pi + \rho \boldsymbol{F},\\
+= -\nabla \pi + \boldsymbol{S}_{\text{ext},\rho\boldsymbol{u}},\\
 &amp;\frac{\partial (\rho Y_m)}{\partial t} +
 \nabla \cdot \left( \rho Y_m \boldsymbol{u}
 + \boldsymbol{\mathcal{F}}_{m} \right)
-= \rho \dot{\omega}_m,\\
+= \rho \dot{\omega}_m + S_{\text{ext},\rho\boldsymbol{Y_m}},\\
 &amp;\frac{ \partial (\rho h)}{ \partial t} +
 \nabla \cdot \left( \rho h \boldsymbol{u}
-+ \boldsymbol{\mathcal{Q}} \right) = 0 ,\end{split}\]</div>
-<p>where <span class="math notranslate nohighlight">\(\rho\)</span> is the density, <span class="math notranslate nohighlight">\(\boldsymbol{u}\)</span> is the velocity, <span class="math notranslate nohighlight">\(h\)</span> is the mass-weighted enthalpy, <span class="math notranslate nohighlight">\(T\)</span> is temperature and <span class="math notranslate nohighlight">\(Y_m\)</span> is the mass fraction of species <span class="math notranslate nohighlight">\(m\)</span>. <span class="math notranslate nohighlight">\(\dot{\omega}_m\)</span> is the molar production rate for species <span class="math notranslate nohighlight">\(m\)</span>, the modeling of which will be described later in this section. <span class="math notranslate nohighlight">\(\tau\)</span> is the stress tensor, <span class="math notranslate nohighlight">\(\boldsymbol{\mathcal{Q}}\)</span> is the heat flux and <span class="math notranslate nohighlight">\(\boldsymbol{\mathcal{F}}_m\)</span> are the species diffusion fluxes. These transport fluxes require the evaluation of transport coefficients (e.g., the viscosity <span class="math notranslate nohighlight">\(\mu\)</span>, the conductivity <span class="math notranslate nohighlight">\(\lambda\)</span> and the diffusivity matrix <span class="math notranslate nohighlight">\(D\)</span>) which are computed using the library EGLIB, as will be described in more depth in the diffusion section. The momentum source, <span class="math notranslate nohighlight">\(\boldsymbol{F}\)</span>, is an external forcing term.  For example, we have used <span class="math notranslate nohighlight">\(\boldsymbol{F}\)</span> to implement a long-wavelength time-dependent force to establish and maintain quasi-stationary turbulence.</p>
++ \boldsymbol{\mathcal{Q}} \right) = S_{\text{ext},\rho\boldsymbol{h}} ,\end{split}\]</div>
+<p>where <span class="math notranslate nohighlight">\(\rho\)</span> is the density, <span class="math notranslate nohighlight">\(\boldsymbol{u}\)</span> is the velocity, <span class="math notranslate nohighlight">\(h\)</span> is the mass-weighted enthalpy, <span class="math notranslate nohighlight">\(T\)</span> is temperature and <span class="math notranslate nohighlight">\(Y_m\)</span> is the mass fraction of species <span class="math notranslate nohighlight">\(m\)</span>. <span class="math notranslate nohighlight">\(\dot{\omega}_m\)</span> is the molar production rate for species <span class="math notranslate nohighlight">\(m\)</span>, the modeling of which will be described later in this section. <span class="math notranslate nohighlight">\(\tau\)</span> is the stress tensor, <span class="math notranslate nohighlight">\(\boldsymbol{\mathcal{Q}}\)</span> is the heat flux and <span class="math notranslate nohighlight">\(\boldsymbol{\mathcal{F}}_m\)</span> are the species diffusion fluxes. These transport fluxes require the evaluation of transport coefficients (e.g., the viscosity <span class="math notranslate nohighlight">\(\mu\)</span>, the conductivity <span class="math notranslate nohighlight">\(\lambda\)</span> and the diffusivity matrix <span class="math notranslate nohighlight">\(D\)</span>) which are computed using the library EGLIB, as will be described in more depth in the diffusion section. The source terms, <span class="math notranslate nohighlight">\(S_{\text{ext}}\)</span>, are user defined external forcing terms.  For example, we have used <span class="math notranslate nohighlight">\(\boldsymbol{S}_{\text{ext},\rho\boldsymbol{u}} = \rho\boldsymbol{F}\)</span> to implement a long-wavelength time-dependent force to establish and maintain quasi-stationary turbulence.</p>
 <p>These evolution equations are supplemented by an equation of state for the thermodynamic pressure.  For example, the ideal gas law,</p>
 <div class="math notranslate nohighlight">
 \[p_0(\rho,Y_m,T)=\frac{\rho \mathcal{R} T}{W}=\rho \mathcal{R} T
@@ -182,19 +180,33 @@ adaptive mesh refinement (AMR) code that solves the reacting Navier-Stokes equat
 <p>where <span class="math notranslate nohighlight">\(h_m\)</span> is the species <span class="math notranslate nohighlight">\(m\)</span> enthalpy.  Note that expressions for <span class="math notranslate nohighlight">\(h_m(T)\)</span> see &lt;section on thermo properties&gt; incorporate the heat of formation for each species.</p>
 <p>Neither species diffusion nor reactions redistribute the total mass, hence we have <span class="math notranslate nohighlight">\(\sum_m \boldsymbol{\mathcal{F}}_m = 0\)</span> and <span class="math notranslate nohighlight">\(\sum_m \dot{\omega}_m = 0\)</span>. Thus, summing the species equations and using the definition <span class="math notranslate nohighlight">\(\sum_m Y_m = 1\)</span> we obtain the continuity equation:</p>
 <div class="math notranslate nohighlight">
-\[\frac{\partial \rho}{\partial t} + \nabla \cdot \rho \boldsymbol{u} = 0\]</div>
+\[\frac{\partial \rho}{\partial t} + \nabla \cdot \rho \boldsymbol{u} = S_{\text{ext},\rho}\]</div>
 <p>This, together with the conservation equations form a differential-algebraic equation (DAE) system that describes an evolution subject to a constraint.  A standard approach to attacking such a system computationally is to differentiate the constraint until it can be recast as an initial value problem.  Following this procedure, we set the thermodynamic pressure constant in the frame of the fluid,</p>
 <div class="math notranslate nohighlight">
 \[\frac{Dp_0}{Dt} = 0\]</div>
 <p>and observe that if the initial conditions satisfy the constraint, an evolution satisfying the above will continue to satisfy the constraint over all time.  Expanding this expression via the chain rule and continuity:</p>
 <div class="math notranslate nohighlight">
 \[\nabla \cdot \boldsymbol{u} = \frac{1}{T}\frac{DT}{Dt}
-+ W \sum_m \frac{1}{W_m} \frac{DY_m}{Dt} = S\]</div>
-<p>The constraint here take the form of a condition on the divergence of the flow.  Note that the actual expressions to use here will depend upon the chosen models for evaluating the transport fluxes.</p>
-<p>For the standard ideal gas EOS, the divergence constraint on velocity becomes:</p>
++ W \sum_m \frac{1}{W_m} \frac{DY_m}{Dt} + \frac{1}{\rho}S_{\text{ext},\rho} = S.\]</div>
+<p>The constraint here takes the form of a condition on the divergence of the flow.  Note that the actual expressions to use here will depend upon the chosen models for evaluating the transport fluxes.</p>
+<p>For the standard ideal gas EOS,</p>
 <div class="math notranslate nohighlight">
-\[\begin{split}\nabla \cdot \boldsymbol{u} &amp;= \frac{1}{\rho c_p T} \left(\nabla \cdot \lambda\nabla T - \sum_m \boldsymbol{\Gamma_m} \cdot \nabla h_m \right) \\
-&amp;- \frac{1}{\rho} \sum_m \frac{W}{W_m} \nabla \cdot \boldsymbol{\Gamma_m} + \frac{1}{\rho}\sum_m \left(\frac{W}{W_m} - \frac{h_m}{c_p T} \right) \dot \omega \equiv S .\end{split}\]</div>
+\[\begin{split}\frac{DT}{Dt} &amp;= \frac{1}{\rho}\Big[ - \nabla \cdot \boldsymbol{Q} + S_{\text{ext},\rho h} - h S_{\text{ext},\rho}\Big] - \sum_m \frac{h_m}{ c_p} \frac{DY_m}{Dt}, \\
+\frac{DY_m}{Dt} &amp;= \frac{1}{\rho}\Big[ - \nabla \cdot \boldsymbol{\mathcal{F_m}} + \rho \dot \omega_m + S_{\text{ext},\rho Y_m} - Y_m S_{\text{ext},\rho}\Big].\end{split}\]</div>
+<p>Therefore, the divergence constraint on velocity becomes:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\nabla \cdot \boldsymbol{u} &amp;= \frac{1}{\rho c_p T} \Big(-\nabla \cdot \boldsymbol{Q} + S_{\text{ext},\rho h} - h S_{\text{ext},\rho}\Big) \\
+&amp;\;\;\;\; +  \sum_m \bigg( \frac{W}{\rho W_m} -  \frac{h_m}{\rho c_p T}\bigg)\bigg( - \nabla \cdot \boldsymbol{\mathcal{F}}_m + \rho \dot \omega_m + S_{\text{ext},\rho Y_m} - Y_m S_{\text{ext},\rho}\bigg) + \frac{1}{\rho} S_{\text{ext},\rho}\equiv S .\end{split}\]</div>
+<p>However, it can be shown that</p>
+<div class="math notranslate nohighlight">
+\[\sum_m \frac{W}{\rho W_m} Y_m S_{\text{ext},\rho} = \frac{1}{\rho}S_{\text{ext},\rho}\]</div>
+<p>and</p>
+<div class="math notranslate nohighlight">
+\[\sum_m h_m Y_m S_{\text{ext},\rho} = h S_{\text{ext},\rho}.\]</div>
+<p>Thus, the terms containing <span class="math notranslate nohighlight">\(S_{\text{ext},\rho}\)</span> cancel and the divergence constraint for the standard ideal gas EOS simplifies to:</p>
+<div class="math notranslate nohighlight">
+\[\nabla \cdot \boldsymbol{u} = \frac{1}{\rho c_p T} \Big(-\nabla \cdot \boldsymbol{Q} + S_{\text{ext},\rho h} \Big)
++  \sum_m \bigg( \frac{W}{\rho W_m} -  \frac{h_m}{\rho c_p T}\bigg)\bigg( - \nabla \cdot \boldsymbol{\mathcal{F}}_m + \rho \dot \omega_m + S_{\text{ext},\rho Y_m} \bigg) \equiv S .\]</div>
 </section>
 <section id="confined-domain-ambient-pressure">
 <h3>Confined domain ambient pressure<a class="headerlink" href="#confined-domain-ambient-pressure" title="Link to this heading"></a></h3>
