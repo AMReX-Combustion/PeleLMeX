@@ -207,6 +207,9 @@ adaptive mesh refinement (AMR) code that solves the reacting Navier-Stokes equat
 <div class="math notranslate nohighlight">
 \[\nabla \cdot \boldsymbol{u} = \frac{1}{\rho c_p T} \Big(-\nabla \cdot \boldsymbol{Q} + S_{\text{ext},\rho h} \Big)
 +  \sum_m \bigg( \frac{W}{\rho W_m} -  \frac{h_m}{\rho c_p T}\bigg)\bigg( - \nabla \cdot \boldsymbol{\mathcal{F}}_m + \rho \dot \omega_m + S_{\text{ext},\rho Y_m} \bigg) \equiv S .\]</div>
+<p>In addition to the flow equations, <cite>PeleLMeX</cite> can also solve for a set of quantities that are neither advected nor diffused, satisfying:</p>
+<div class="math notranslate nohighlight">
+\[\frac{\partial B_k}{\partial t} = S_{\text{ext},B_k}.\]</div>
 </section>
 <section id="confined-domain-ambient-pressure">
 <h3>Confined domain ambient pressure<a class="headerlink" href="#confined-domain-ambient-pressure" title="Link to this heading"></a></h3>
