@@ -143,6 +143,12 @@ Thus, the terms containing :math:`S_{\text{ext},\rho}` cancel and the divergence
     \nabla \cdot \boldsymbol{u} = \frac{1}{\rho c_p T} \Big(-\nabla \cdot \boldsymbol{Q} + S_{\text{ext},\rho h} \Big) 
     +  \sum_m \bigg( \frac{W}{\rho W_m} -  \frac{h_m}{\rho c_p T}\bigg)\bigg( - \nabla \cdot \boldsymbol{\mathcal{F}}_m + \rho \dot \omega_m + S_{\text{ext},\rho Y_m} \bigg) \equiv S .
 
+In addition to the flow equations, `PeleLMeX` can also solve for a set of quantities that are neither advected nor diffused, satisfying:
+
+.. math::
+
+    \frac{\partial B_k}{\partial t} = S_{\text{ext},B_k}.
+
 Confined domain ambient pressure
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
