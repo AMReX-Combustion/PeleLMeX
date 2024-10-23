@@ -1494,11 +1494,12 @@ pelelmex_dermaniout(
   AMREX_ASSERT(ncomp == nmanivar);
   AMREX_ASSERT(!a_pelelm->m_incompressible);
 
-  auto const in_spec = statefab.array(FIRST_SPEC);
+  auto const in_spec = statefab.array(FIRSTSPEC);
   auto der = derfab.array(dcomp);
   amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
     amrex::Real rho, rhoinv, maniparm[NUM_SPECIES];
-    pele::physics::PhysicsType::eos_type::RY2RRinvY(in_spec.cellData(i, j, k) FIRSTSPEC), rho, rhoinv, maniparm);
+    pele::physics::PhysicsType::eos_type::RY2RRinvY(
+      in_spec.cellData(i, j, k), rho, rhoinv, maniparm);
     pele::physics::BlackBoxFunctionFactory<
       pele::physics::eos::ManifoldFunctionType>
       manfunc{d_manf_data};
