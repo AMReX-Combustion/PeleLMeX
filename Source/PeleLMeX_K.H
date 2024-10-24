@@ -974,7 +974,7 @@ reactionRateRhoY(
 
   // Get rho & Ys from rhoYs.
   amrex::Real rho = 0.0, rhoinv = 0.0, y[NUM_SPECIES] = {0.0};
-  eos.RY2RRinvY(rhoY.cellData(i,j,k), rho, rhoinv, y);
+  eos.RY2RRinvY(rhoY.cellData(i, j, k), rho, rhoinv, y);
 
   // Get T from Y/H.
   amrex::Real Tloc = T(i, j, k);
