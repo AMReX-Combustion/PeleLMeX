@@ -81,7 +81,7 @@ PeleLM::Setup()
     eos_parms.initialize();
 
     amrex::Print() << " Initialization of Transport ... \n";
-#ifdef USE_MANIFOLD_EOS
+#ifdef USE_MANIFOLD_TRANSPORT
     trans_parms.host_only_parm().manfunc_par =
       eos_parms.host_only_parm().manfunc_par;
 #endif
