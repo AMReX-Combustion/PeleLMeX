@@ -1503,7 +1503,11 @@ pelelmex_dermaniout(
     pele::physics::BlackBoxFunctionFactory<
       pele::physics::eos::ManifoldFunctionType>
       manfunc{d_manf_data};
-    manfunc.get_func()->get_all_values(maniparm, der.ptr(i, j, k));
+
+    // TODO: use get_all_values instead
+    for (int n = 0; n < nmanivar; ++n) {
+      manfunc.get_func()->get_value(n, maniparm, der(i, j, k, n));
+    }
   });
 }
 #endif
