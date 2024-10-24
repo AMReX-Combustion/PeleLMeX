@@ -973,15 +973,8 @@ reactionRateRhoY(
   auto eos = pele::physics::PhysicsType::eos(eosparm);
 
   // Get rho & Ys from rhoYs.
-  amrex::Real rho = 0.0_rt;
-  for (int n = 0; n < NUM_SPECIES; n++) {
-    rho += rhoY(i, j, k, n);
-  }
-  amrex::Real rhoinv = 1.0_rt / rho;
-  amrex::Real y[NUM_SPECIES] = {0.0_rt};
-  for (int n = 0; n < NUM_SPECIES; n++) {
-    y[n] = rhoY(i, j, k, n) * rhoinv;
-  }
+  amrex::Real rho = 0.0, rhoinv = 0.0, y[NUM_SPECIES] = {0.0};
+  eos.RY2RRinvY(rhoY.cellData(i,j,k), rho, rhoinv, y);
 
   // Get T from Y/H.
   amrex::Real Tloc = T(i, j, k);
