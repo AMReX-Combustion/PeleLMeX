@@ -298,6 +298,7 @@ compute_divu(
     n *= 1.0e-4_rt; // CGS -> MKS conversion
   }
 
+  // Note: divu does not depend on extRho. See docs and PR #428 for details.
   amrex::Real denominv = 1.0_rt / (rho * cpmix * T(i, j, k));
   divu(i, j, k) =
     (specEnthDiff(i, j, k) + tempDiff(i, j, k) + extRhoH(i, j, k)) * denominv;
