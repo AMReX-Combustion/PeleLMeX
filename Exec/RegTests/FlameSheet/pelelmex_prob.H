@@ -45,7 +45,6 @@ pelelmex_initdata(
   amrex::Real pert = 0.0;
 
   if (prob_parm.pertmag > 0.0) {
-
 #if (AMREX_SPACEDIM == 2)
     amrex::GpuArray<amrex::Real, AMREX_SPACEDIM - 1> lpert{Lx};
     if (prob_parm.pertlength > 0.0) {
@@ -58,10 +57,8 @@ pelelmex_initdata(
             1.017 * std::sin(2 * Pi * 5 * (x - 0.0033) / lpert[0]) +
             0.982 * std::sin(2 * Pi * 5 * (x - 0.014234) / lpert[0]));
   }
-
   amrex::Real y1 = (y - prob_parm.standoff - 0.5 * dx[1] + pert) * 100;
   amrex::Real y2 = (y - prob_parm.standoff + 0.5 * dx[1] + pert) * 100;
-
 #elif (AMREX_SPACEDIM == 3)
     amrex::GpuArray<amrex::Real, AMREX_SPACEDIM - 1> lpert{Lx, Ly};
     if (prob_parm.pertlength > 0.0) {
@@ -80,28 +77,35 @@ pelelmex_initdata(
               std::sin(2 * Pi * 6 * (y - 0.018) / lpert[1]) +
             0.982 * std::sin(2 * Pi * 5 * (x - 0.014234) / lpert[0]));
   }
-
   amrex::Real y1 = (z - prob_parm.standoff - 0.5 * dx[2] + pert) * 100;
   amrex::Real y2 = (z - prob_parm.standoff + 0.5 * dx[2] + pert) * 100;
 #endif
 
   pele::physics::PMF::pmf(pmf_data, y1, y2, pmf_vals);
-
   state(i, j, k, TEMP) = pmf_vals[0];
-  ;
+  for (int dim = 0; dim < AMREX_SPACEDIM - 1; dim++) {
+    state(i, j, k, VELX + dim) = 0.0;
+  }
+  state(i, j, k, VELX + AMREX_SPACEDIM - 1) = pmf_vals[1] * 1e-2;
 
+#ifdef USE_MANIFOLD_EOS
+  for (int n = 0; n < NUM_SPECIES - 1; n++) {
+    massfrac[n] = pmf_vals[3 + n];
+  }
+  amrex::Real rho_temp, tmp1, tmp2;
+  eos.PYT2R(tmp1, massfrac, tmp2, rho_temp);
+  rho_temp *= 1.0e3;
+  state(i, j, k, DENSITY) = rho_temp; // CGS -> MKS conversion
+  state(i, j, k, RHOH) = 0.0;         // No RhoH transport in manifold model
+  for (int n = 0; n < NUM_SPECIES - 1; n++) {
+    state(i, j, k, FIRSTSPEC + n) = massfrac[n] * rho_temp;
+  }
+  state(i, j, k, FIRSTSPEC + NUM_SPECIES - 1) = rho_temp;
+#else
   for (int n = 0; n < NUM_SPECIES; n++) {
     molefrac[n] = pmf_vals[3 + n];
   }
   eos.X2Y(molefrac, massfrac);
-
-  state(i, j, k, VELX) = 0.0;
-#if (AMREX_SPACEDIM == 2)
-  state(i, j, k, VELY) = pmf_vals[1] * 1e-2;
-#elif (AMREX_SPACEDIM == 3)
-  state(i, j, k, VELY) = 0.0;
-  state(i, j, k, VELZ) = pmf_vals[1] * 1e-2;
-#endif
 
   amrex::Real P_cgs = prob_parm.P_mean * 10.0;
 
@@ -119,6 +123,7 @@ pelelmex_initdata(
   for (int n = 0; n < NUM_SPECIES; n++) {
     state(i, j, k, FIRSTSPEC + n) = massfrac[n] * state(i, j, k, DENSITY);
   }
+#endif
 }
 
 AMREX_GPU_DEVICE
@@ -144,15 +149,25 @@ bcnormal(
   if (sgn == 1) {
     pele::physics::PMF::pmf(pmf_data, prob_lo[idir], prob_lo[idir], pmf_vals);
 
-    s_ext[VELX] = 0.0;
-#if (AMREX_SPACEDIM == 2)
-    s_ext[VELY] = pmf_vals[1] * 1e-2;
-#elif (AMREX_SPACEDIM == 3)
-    s_ext[VELY] = 0.0;
-    s_ext[VELZ] = pmf_vals[1] * 1e-2;
-#endif
-
+    for (int dim = 0; dim < AMREX_SPACEDIM - 1; dim++) {
+      s_ext[VELX + dim] = 0.0;
+    }
+    s_ext[VELX + AMREX_SPACEDIM - 1] = pmf_vals[1] * 1e-2;
     s_ext[TEMP] = pmf_vals[0];
+
+#ifdef USE_MANIFOLD_EOS
+    for (int n = 0; n < NUM_SPECIES; n++) {
+      massfrac[n] = pmf_vals[3 + n];
+    }
+    amrex::Real P_dummy, rho_cgs;
+    eos.PYT2R(P_dummy, massfrac, s_ext[TEMP], rho_cgs);
+    s_ext[DENSITY] = rho_cgs * 1.0e3;
+    s_ext[RHOH] = 0.0;
+    for (int n = 0; n < NUM_SPECIES - 1; n++) {
+      s_ext[FIRSTSPEC + n] = massfrac[n] * s_ext[DENSITY];
+    }
+    s_ext[FIRSTSPEC + NUM_SPECIES - 1] = s_ext[DENSITY];
+#else
     for (int n = 0; n < NUM_SPECIES; n++) {
       molefrac[n] = pmf_vals[3 + n];
     }
@@ -170,6 +185,7 @@ bcnormal(
     for (int n = 0; n < NUM_SPECIES; n++) {
       s_ext[FIRSTSPEC + n] = massfrac[n] * s_ext[DENSITY];
     }
+#endif
   }
 }
 
