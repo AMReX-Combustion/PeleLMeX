@@ -735,8 +735,7 @@ makeVelForce(
   const amrex::Real& rho_incomp,
   int pseudo_gravity,
   int pseudo_gravity_dir,
-  const amrex::Real& /*time*/
-  ,
+  const amrex::Real& /*time*/,
   amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const gravity,
   amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const gp0,
   const amrex::Real& dV_control,

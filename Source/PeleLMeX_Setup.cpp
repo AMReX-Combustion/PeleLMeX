@@ -468,8 +468,8 @@ PeleLM::readParameters()
                    << std::endl;
   }
   if (
-    m_use_wbar != 0 &&
-    pele::physics::PhysicsType::eos_type::identifier() == "Manifold") {
+    (m_use_wbar != 0) &&
+    (pele::physics::PhysicsType::eos_type::identifier() == "Manifold")) {
     amrex::Abort("Use of Wbar fluxes is not compatible with Manifold EOS");
   }
 
