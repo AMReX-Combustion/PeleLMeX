@@ -1133,7 +1133,7 @@ PeleLM::derivedSetup()
 
 #ifdef USE_MANIFOLD_EOS
   auto& mani_data = eos_parms.host_only_parm().manfunc_par->host_parm();
-  int nmanivar = mani_data.Nvar;
+  const int nmanivar = mani_data.Nvar;
   Vector<std::string> var_names_maniout(nmanivar);
   for (int n = 0; n < nmanivar; n++) {
     std::string nametmp = std::string(
