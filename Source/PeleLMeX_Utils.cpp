@@ -1738,7 +1738,8 @@ PeleLM::initMixtureFraction()
     // error will be raised if user tries to derive mixfrac because Zfu is
     // negative
     return;
-  } else if (pele::physics::PhysicsType::eos_type::identifier() == "Manifold") {
+  }
+  if (pele::physics::PhysicsType::eos_type::identifier() == "Manifold") {
     // Just take a mixture fraction if it is a manifold parameter
     // otherwise do nothing (an error will later be raised if the user tries to
     // derive it) also raise an error if the user requests it and it is not
