@@ -4,6 +4,9 @@
 #include <mechanism.H>
 #include <PelePhysics.H>
 
+namespace m2c = pele::physics::utilities::mks2cgs;
+namespace c2m = pele::physics::utilities::cgs2mks;
+
 template <typename EOSType>
 AMREX_GPU_DEVICE AMREX_FORCE_INLINE void
 getTransportCoeff(
@@ -47,7 +50,7 @@ getTransportCoeff(
   amrex::Real Wbar = 0.0_rt;
   eos.Y2WBAR(y, Wbar);
 
-  rho *= 1.0e-3_rt; // MKS -> CGS conversion
+  rho = m2c::Rho(rho); // MKS -> CGS conversion
   amrex::Real rhoDi_cgs[NUM_SPECIES] = {0.0};
   amrex::Real lambda_cgs = 0.0_rt;
   amrex::Real mu_cgs = 0.0_rt;
@@ -66,32 +69,32 @@ getTransportCoeff(
     chi_loc, mu_cgs, dummy_xi, lambda_cgs, trans_parm);
 
   // Do CGS -> MKS conversions
-  mu(i, j, k) = mu_cgs * 1.0e-1_rt;
+  mu(i, j, k) = c2m::Mu(mu_cgs);
   if (do_fixed_Pr && do_fixed_Le) { // fixed Pr and Le, transport all dependent
                                     // on visc
     amrex::Real cpmix = 0.0_rt;
     eos.TY2Cp(T(i, j, k), y, cpmix);
-    lambda(i, j, k) = PrInv * cpmix * mu_cgs * 1.0e-5_rt;
+    lambda(i, j, k) = PrInv * c2m::Cp(cpmix) * c2m::Mu(mu_cgs);
     amrex::Real ScInv = PrInv * LeInv;
     for (int n = 0; n < NUM_SPECIES; n++) {
-      rhoDi(i, j, k, n) = ScInv * mu_cgs * 1.0e-1_rt;
+      rhoDi(i, j, k, n) = ScInv * c2m::Mu(mu_cgs);
     }
   } else if (do_fixed_Pr) { // fixed Pr, still use species diffs
     amrex::Real cpmix = 0.0_rt;
     eos.TY2Cp(T(i, j, k), y, cpmix);
-    lambda(i, j, k) = PrInv * cpmix * mu_cgs * 1.0e-5_rt;
+    lambda(i, j, k) = PrInv * c2m::Cp(cpmix) * c2m::Mu(mu_cgs);
     for (int n = 0; n < NUM_SPECIES; n++) {
       rhoDi(i, j, k, n) = rhoDi_cgs[n] * Wbar * mwtinv[n] * 1.0e-1_rt;
     }
   } else if (do_fixed_Le) { // fixed Le, still use thermal cond
-    lambda(i, j, k) = lambda_cgs * 1.0e-5_rt;
+    lambda(i, j, k) = c2m::Lambda(lambda_cgs);
     amrex::Real cpmix = 0.0_rt;
     eos.TY2Cp(T(i, j, k), y, cpmix);
     for (int n = 0; n < NUM_SPECIES; n++) {
       rhoDi(i, j, k, n) = lambda_cgs * 1.0e-1_rt * LeInv / cpmix;
     }
   } else { // full MA model, with Soret if needed
-    lambda(i, j, k) = lambda_cgs * 1.0e-5_rt;
+    lambda(i, j, k) = c2m::Lambda(lambda_cgs);
     for (int n = 0; n < NUM_SPECIES; n++) {
       rhoDi(i, j, k, n) = rhoDi_cgs[n] * Wbar * mwtinv[n] * 1.0e-1_rt;
       if (do_soret) {
