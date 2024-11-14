@@ -10,9 +10,16 @@ PeleLM::readProbParm() // NOLINT(readability-make-member-function-const)
   pp.query("P_mean", prob_parm->P_mean);
   pp.query("meanFlowDir", prob_parm->meanFlowDir);
   pp.query("meanFlowMag", prob_parm->meanFlowMag);
+  pp.query("ode_qty_test", prob_parm->ode_qty_test);
   pp.query("ode_IC", prob_parm->ode_IC);
   pp.query("ode_xy_lo", prob_parm->ode_xy_lo);
   pp.query("ode_length", prob_parm->ode_length);
   pp.query("ode_height", prob_parm->ode_height);
   pp.query("ode_srcstrength", prob_parm->ode_srcstrength);
+  pp.query("composition_test", prob_parm->composition_test);
+  pp.query("Y_CO2_0", prob_parm->Y_CO2_0);
+  pp.query("Y_N2_0" , prob_parm->Y_N2_0);     
+  pp.query("Y_AR_0" , prob_parm->Y_AR_0);     
+  pp.query("extRhoYCO2", prob_parm->extRhoYCO2);
+  pp.query("extRhoYCO2_ts",prob_parm->extRhoYCO2_ts);
 }

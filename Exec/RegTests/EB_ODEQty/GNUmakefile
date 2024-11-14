@@ -30,9 +30,9 @@ CEXE_sources += PeleLMeX_ProblemSpecificFunctions.cpp
 PELELM_NUM_ODE = 3
 
 # PelePhysics
-Chemistry_Model = air
+Chemistry_Model = Davis
 Eos_Model = Fuego
-Transport_Model = Constant
+Transport_Model = Simple
 
 PELE_HOME ?= ../../..
 include $(PELE_HOME)/Exec/Make.PeleLMeX

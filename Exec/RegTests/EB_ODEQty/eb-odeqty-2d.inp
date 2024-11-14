@@ -26,18 +26,12 @@ prob.T_mean = 300.0
 prob.P_mean = 101325.0
 prob.meanFlowMag = 4.255
 prob.meanFlowDir = 1
+prob.ode_qty_test = true
 prob.ode_IC = 10.0
 prob.ode_xy_lo = -0.01
 prob.ode_length = 0.01
 prob.ode_height = 0.02
 prob.ode_srcstrength = -10.0
-
-#-----------------INPUTS TO CONSTANT TRANSPORT ------------------
-transport.units                  = MKS
-transport.const_viscosity        = 0.0001
-transport.const_bulk_viscosity   = 0.0
-transport.const_conductivity     = 0.0
-transport.const_diffusivity      = 0.0
 
 #---------------------------TIME STEPPING------------------------
 #amr.max_step = 1
@@ -51,7 +45,6 @@ peleLM.v = 1
 peleLM.user_defined_ext_sources = 1
 
 #---------------------------IO CONTROL---------------------------
-#amr.restart = chk_07136
 amr.check_file = "chk_"
 amr.check_per = -1
 amr.plot_file = "plt_"

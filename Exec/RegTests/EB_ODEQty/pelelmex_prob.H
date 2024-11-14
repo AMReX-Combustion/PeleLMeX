@@ -27,8 +27,9 @@ pelelmex_initdata(
   auto eos = pele::physics::PhysicsType::eos();
 
   amrex::Real massfrac[NUM_SPECIES] = {0.0};
-  massfrac[O2_ID] = 0.233;
-  massfrac[N2_ID] = 0.767;
+  massfrac[CO2_ID] = prob_parm.Y_CO2_0;
+  massfrac[N2_ID]  = prob_parm.Y_N2_0;
+  massfrac[AR_ID]  = prob_parm.Y_AR_0;
 
   switch (prob_parm.meanFlowDir) {
   case 1:
@@ -88,29 +89,31 @@ pelelmex_initdata(
 #if NUM_ODE > 0
   amrex::Real ode_qty[NUM_ODE] = {0.0};
 
-  // Initial state for ode quantities
-  amrex::Real ode_qty_0[NUM_ODE] = {0.0};
-  for (int n = 0; n < NUM_ODE; n++) {
-    ode_qty_0[n] = (n + 1) * prob_parm.ode_IC;
-  }
+  if(prob_parm.ode_qty_test){
+    // Initial state for ode quantities
+    amrex::Real ode_qty_0[NUM_ODE] = {0.0};
+    for (int n = 0; n < NUM_ODE; n++) {
+      ode_qty_0[n] = (n + 1) * prob_parm.ode_IC;
+    }
 
-  // Current x,y,z locations
-  const amrex::Real* prob_lo = geomdata.ProbLo();
-  const amrex::Real* dx = geomdata.CellSize();
-  const amrex::Real x[AMREX_SPACEDIM] = {AMREX_D_DECL(
-    prob_lo[0] + static_cast<amrex::Real>(i + 0.5) * dx[0],
-    prob_lo[1] + static_cast<amrex::Real>(j + 0.5) * dx[1],
-    prob_lo[2] + static_cast<amrex::Real>(k + 0.5) * dx[2])};
+    // Current x,y,z locations
+    const amrex::Real* prob_lo = geomdata.ProbLo();
+    const amrex::Real* dx = geomdata.CellSize();
+    const amrex::Real x[AMREX_SPACEDIM] = {AMREX_D_DECL(
+      prob_lo[0] + static_cast<amrex::Real>(i + 0.5) * dx[0],
+      prob_lo[1] + static_cast<amrex::Real>(j + 0.5) * dx[1],
+      prob_lo[2] + static_cast<amrex::Real>(k + 0.5) * dx[2])};
 
-  // Create NUM_ODE boxes from (x_strt,y_strt) to (x_end,y_end)
-  for (int n = 0; n < NUM_ODE; n++) {
-    amrex::Real x_strt = prob_parm.ode_xy_lo + n * 4. * prob_parm.ode_length;
-    amrex::Real x_end = x_strt + prob_parm.ode_length;
-    amrex::Real y_strt = prob_parm.ode_xy_lo;
-    amrex::Real y_end = y_strt + prob_parm.ode_height;
-    if ((x[0] > x_strt) && (x[1] > y_strt)) {
-      if ((x[0] < x_end) && (x[1] < y_end)) {
-        ode_qty[n] = ode_qty_0[n];
+    // Create NUM_ODE boxes from (x_strt,y_strt) to (x_end,y_end)
+    for (int n = 0; n < NUM_ODE; n++) {
+      amrex::Real x_strt = prob_parm.ode_xy_lo + n * 4. * prob_parm.ode_length;
+      amrex::Real x_end = x_strt + prob_parm.ode_length;
+      amrex::Real y_strt = prob_parm.ode_xy_lo;
+      amrex::Real y_end = y_strt + prob_parm.ode_height;
+      if ((x[0] > x_strt) && (x[1] > y_strt)) {
+        if ((x[0] < x_end) && (x[1] < y_end)) {
+          ode_qty[n] = ode_qty_0[n];
+        }
       }
     }
   }
@@ -118,7 +121,7 @@ pelelmex_initdata(
   for (int n = 0; n < NUM_ODE; n++) {
     state(i, j, k, FIRSTODE + n) = ode_qty[n];
   }
-
+  
 #endif
 }
 
@@ -137,6 +140,9 @@ bcnormal(
   pele::physics::PMF::PmfData::DataContainer const* /*pmf_data*/)
 {
   amrex::Real massfrac[NUM_SPECIES] = {0.0};
+  massfrac[CO2_ID] = prob_parm.Y_CO2_0;
+  massfrac[N2_ID]  = prob_parm.Y_N2_0;
+  massfrac[AR_ID]  = prob_parm.Y_AR_0;
 
   auto eos = pele::physics::PhysicsType::eos();
 
@@ -154,9 +160,6 @@ bcnormal(
                  , s_ext[VELY] = 0.0);
     break;
   }
-
-  massfrac[O2_ID] = 0.333;
-  massfrac[N2_ID] = 0.667;
 
   s_ext[TEMP] = prob_parm.T_mean;
 
