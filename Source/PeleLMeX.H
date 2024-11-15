@@ -21,6 +21,7 @@
 #include <PMFData.H>
 #include <turbinflow.H>
 #include <ReactorBase.H>
+#include <Utilities.H>
 
 // AMReX-Hydro lib
 #include <hydro_MacProjector.H>
@@ -614,6 +615,7 @@ public:
    * velocity, ensuring they sum up to zero. \param a_fluxes diffusion fluxes to
    * be updated \param a_spec species rhoYs state data on all levels
    */
+  template <typename EOSType>
   void adjustSpeciesFluxes(
     const amrex::Vector<amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>>&
       a_spfluxes,
@@ -881,6 +883,15 @@ public:
   // Compute the radiation source term
   void computeRadSource(const PeleLM::TimeStamp& a_timestamp);
 #endif
+
+  //-----------------------------------------------------------------------------
+  // External Sources
+  bool m_user_defined_ext_sources;
+  bool m_ext_sources_SDC;
+  void getExternalSources(
+    int is_initIter,
+    const PeleLM::TimeStamp& a_timestamp_old,
+    const PeleLM::TimeStamp& a_timestamp_new);
 
   //-----------------------------------------------------------------------------
   // EOS
@@ -1761,6 +1772,11 @@ public:
     pele::physics::PhysicsType::transport_type>>
     trans_parms;
 
+  // EOS pointer
+  static pele::physics::PeleParams<
+    pele::physics::eos::EosParm<pele::physics::PhysicsType::eos_type>>
+    eos_parms;
+
   // Reactor pointer
   std::string m_chem_integrator;
   std::unique_ptr<pele::physics::reactions::ReactorBase> m_reactor;
@@ -1858,6 +1874,12 @@ public:
   int m_divu_checkFlag{1};
   amrex::Real m_divu_dtFactor = 0.5;
   amrex::Real m_divu_rhoMin = 0.1;
+
+// ODE variable names
+#if NUM_ODE > 0
+  amrex::Vector<std::string> m_ode_names;
+  void predictODEQty();
+#endif
 
   // Aux data size
   int m_nAux = 0;

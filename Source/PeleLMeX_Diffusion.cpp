@@ -206,6 +206,126 @@ PeleLM::computeDifferentialDiffusionTerms(
 #endif
 }
 
+template <typename EOSType>
+void
+PeleLM::adjustSpeciesFluxes(
+  const Vector<Array<MultiFab*, AMREX_SPACEDIM>>& a_spfluxes,
+  Vector<MultiFab const*> const& a_spec)
+{
+
+  BL_PROFILE("PeleLMeX::adjustSpeciesFluxes()");
+
+  // Get the species BCRec
+  auto bcRecSpec = fetchBCRecArray(FIRSTSPEC, NUM_SPECIES);
+
+  for (int lev = 0; lev <= finest_level; ++lev) {
+
+    const Box& domain = geom[lev].Domain();
+
+#ifdef AMREX_USE_EB
+    //------------------------------------------------------------------------
+    // Get the edge species state needed for EB
+    int nGrow = 1;
+    const auto& ba = a_spec[lev]->boxArray();
+    const auto& dm = a_spec[lev]->DistributionMap();
+    const auto& ebfact = EBFactory(lev);
+    Array<MultiFab, AMREX_SPACEDIM> edgstate{AMREX_D_DECL(
+      MultiFab(
+        amrex::convert(ba, IntVect::TheDimensionVector(0)), dm, NUM_SPECIES,
+        nGrow, MFInfo(), ebfact),
+      MultiFab(
+        amrex::convert(ba, IntVect::TheDimensionVector(1)), dm, NUM_SPECIES,
+        nGrow, MFInfo(), ebfact),
+      MultiFab(
+        amrex::convert(ba, IntVect::TheDimensionVector(2)), dm, NUM_SPECIES,
+        nGrow, MFInfo(), ebfact))};
+    EB_interp_CellCentroid_to_FaceCentroid(
+      *a_spec[lev], GetArrOfPtrs(edgstate), 0, 0, NUM_SPECIES, geom[lev],
+      bcRecSpec);
+    auto const& areafrac = ebfact.getAreaFrac();
+#endif
+
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+    for (MFIter mfi(*a_spec[lev], TilingIfNotGPU()); mfi.isValid(); ++mfi) {
+      for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
+        const Box& ebx = mfi.nodaltilebox(idim);
+        const Box& edomain = amrex::surroundingNodes(domain, idim);
+        auto const& rhoY = a_spec[lev]->const_array(mfi);
+        auto const& flux_dir = a_spfluxes[lev][idim]->array(mfi);
+
+        const auto bc_lo = bcRecSpec[0].lo(idim);
+        const auto bc_hi = bcRecSpec[0].hi(idim);
+
+#ifdef AMREX_USE_EB
+        auto const& flagfab = ebfact.getMultiEBCellFlagFab()[mfi];
+
+        if (flagfab.getType(amrex::grow(ebx, 0)) != FabType::covered) {
+          // No cut cells in tile + nghost-cell width halo -> use non-eb routine
+          if (flagfab.getType(amrex::grow(ebx, nGrow)) == FabType::regular) {
+            amrex::ParallelFor(
+              ebx, [idim, rhoY, flux_dir, edomain, bc_lo,
+                    bc_hi] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+                int idx[3] = {i, j, k};
+                bool on_lo =
+                  ((bc_lo == amrex::BCType::ext_dir) &&
+                   (idx[idim] <= edomain.smallEnd(idim)));
+                bool on_hi =
+                  ((bc_hi == amrex::BCType::ext_dir) &&
+                   (idx[idim] >= edomain.bigEnd(idim)));
+                repair_flux(i, j, k, idim, on_lo, on_hi, rhoY, flux_dir);
+              });
+          } else {
+            auto const& rhoYed_ar = edgstate[idim].const_array(mfi);
+            auto const& areafrac_ar = areafrac[idim]->const_array(mfi);
+            amrex::ParallelFor(
+              ebx,
+              [idim, rhoY, flux_dir, rhoYed_ar, areafrac_ar, edomain, bc_lo,
+               bc_hi] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+                int idx[3] = {i, j, k};
+                bool on_lo =
+                  ((bc_lo == amrex::BCType::ext_dir) &&
+                   (idx[idim] <= edomain.smallEnd(idim)));
+                bool on_hi =
+                  ((bc_hi == amrex::BCType::ext_dir) &&
+                   (idx[idim] >= edomain.bigEnd(idim)));
+                repair_flux_eb(
+                  i, j, k, idim, on_lo, on_hi, rhoY, rhoYed_ar, areafrac_ar,
+                  flux_dir);
+              });
+          }
+        }
+#else
+        amrex::ParallelFor(
+          ebx, [idim, rhoY, flux_dir, edomain, bc_lo,
+                bc_hi] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+            int idx[3] = {i, j, k};
+            bool on_lo =
+              ((bc_lo == amrex::BCType::ext_dir) &&
+               (idx[idim] <= edomain.smallEnd(idim)));
+            bool on_hi =
+              ((bc_hi == amrex::BCType::ext_dir) &&
+               (idx[idim] >= edomain.bigEnd(idim)));
+            repair_flux(i, j, k, idim, on_lo, on_hi, rhoY, flux_dir);
+          });
+#endif
+      }
+    }
+  }
+}
+
+template <>
+void
+PeleLM::adjustSpeciesFluxes<pele::physics::eos::Manifold>(
+  const Vector<Array<MultiFab*, AMREX_SPACEDIM>>& /*a_spfluxes*/,
+  Vector<MultiFab const*> const& /*a_spec*/)
+{
+  // Manifold Model: "Species" don't sum to unity, so no need to adjust the
+  // fluxes
+  BL_PROFILE("PeleLM::adjustSpeciesFluxes()");
+}
+
 void
 PeleLM::correctIsothermalBoundary(
   const TimeStamp& a_time,
@@ -407,7 +527,8 @@ PeleLM::computeDifferentialDiffusionFluxes(
   }
 
   // Adjust species diffusion fluxes to ensure their sum is zero
-  adjustSpeciesFluxes(a_fluxes, GetVecOfConstPtrs(getSpeciesVect(a_time)));
+  adjustSpeciesFluxes<pele::physics::PhysicsType::eos_type>(
+    a_fluxes, GetVecOfConstPtrs(getSpeciesVect(a_time)));
   //----------------------------------------------------------------
 
   //----------------------------------------------------------------
@@ -494,7 +615,6 @@ PeleLM::addWbarTerm(
       Wbar_boundary[lev].define(
         grids[lev], dmap[lev], 1, nGrow, MFInfo(), Factory(lev));
     }
-    auto const* leosparm = eos_parms.device_parm();
     const Box& domain = geom[lev].Domain();
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -510,6 +630,7 @@ PeleLM::addWbarTerm(
         (have_boundary != 0) ? Wbar_boundary[lev].array(mfi) : Wbar_arr;
 
       amrex::ParallelFor(
+
         gbx,
         [rho_arr, rhoY_arr, Wbar_arr, gradY_arr, Wbar_boundary_arr, domain,
          have_boundary,
@@ -620,10 +741,11 @@ PeleLM::addWbarTerm(
           // \overline{W} with beta_m = \rho * D_m * overline(W) / W_k below
           // need to divide by \overline(W)
           amrex::ParallelFor(
-            ebx,
-            [need_wbar_fluxes, gradWbar_ar, beta_ar, rhoY, spFlux_ar,
-             spwbarFlux_ar] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-              auto eos = pele::physics::PhysicsType::eos();
+            ebx, [need_wbar_fluxes, gradWbar_ar, beta_ar, rhoY, spFlux_ar,
+                  spwbarFlux_ar,
+                  eosparm =
+                    leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+              auto eos = pele::physics::PhysicsType::eos(eosparm);
               // Get Wbar from rhoYs
               amrex::Real rho = 0.0;
               for (int n = 0; n < NUM_SPECIES; n++) {
@@ -770,114 +892,6 @@ PeleLM::addSoretTerm(
 }
 
 void
-PeleLM::adjustSpeciesFluxes(
-  const Vector<Array<MultiFab*, AMREX_SPACEDIM>>& a_spfluxes,
-  Vector<MultiFab const*> const& a_spec)
-{
-
-  BL_PROFILE("PeleLMeX::adjustSpeciesFluxes()");
-
-  // Get the species BCRec
-  auto bcRecSpec = fetchBCRecArray(FIRSTSPEC, NUM_SPECIES);
-
-  for (int lev = 0; lev <= finest_level; ++lev) {
-
-    const Box& domain = geom[lev].Domain();
-
-#ifdef AMREX_USE_EB
-    //------------------------------------------------------------------------
-    // Get the edge species state needed for EB
-    int nGrow = 1;
-    const auto& ba = a_spec[lev]->boxArray();
-    const auto& dm = a_spec[lev]->DistributionMap();
-    const auto& ebfact = EBFactory(lev);
-    Array<MultiFab, AMREX_SPACEDIM> edgstate{AMREX_D_DECL(
-      MultiFab(
-        amrex::convert(ba, IntVect::TheDimensionVector(0)), dm, NUM_SPECIES,
-        nGrow, MFInfo(), ebfact),
-      MultiFab(
-        amrex::convert(ba, IntVect::TheDimensionVector(1)), dm, NUM_SPECIES,
-        nGrow, MFInfo(), ebfact),
-      MultiFab(
-        amrex::convert(ba, IntVect::TheDimensionVector(2)), dm, NUM_SPECIES,
-        nGrow, MFInfo(), ebfact))};
-    EB_interp_CellCentroid_to_FaceCentroid(
-      *a_spec[lev], GetArrOfPtrs(edgstate), 0, 0, NUM_SPECIES, geom[lev],
-      bcRecSpec);
-    auto const& areafrac = ebfact.getAreaFrac();
-#endif
-
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
-    for (MFIter mfi(*a_spec[lev], TilingIfNotGPU()); mfi.isValid(); ++mfi) {
-      for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
-        const Box& ebx = mfi.nodaltilebox(idim);
-        const Box& edomain = amrex::surroundingNodes(domain, idim);
-        auto const& rhoY = a_spec[lev]->const_array(mfi);
-        auto const& flux_dir = a_spfluxes[lev][idim]->array(mfi);
-
-        const auto bc_lo = bcRecSpec[0].lo(idim);
-        const auto bc_hi = bcRecSpec[0].hi(idim);
-
-#ifdef AMREX_USE_EB
-        auto const& flagfab = ebfact.getMultiEBCellFlagFab()[mfi];
-
-        if (flagfab.getType(amrex::grow(ebx, 0)) != FabType::covered) {
-          // No cut cells in tile + nghost-cell width halo -> use non-eb routine
-          if (flagfab.getType(amrex::grow(ebx, nGrow)) == FabType::regular) {
-            amrex::ParallelFor(
-              ebx, [idim, rhoY, flux_dir, edomain, bc_lo,
-                    bc_hi] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-                int idx[3] = {i, j, k};
-                bool on_lo =
-                  ((bc_lo == amrex::BCType::ext_dir) &&
-                   (idx[idim] <= edomain.smallEnd(idim)));
-                bool on_hi =
-                  ((bc_hi == amrex::BCType::ext_dir) &&
-                   (idx[idim] >= edomain.bigEnd(idim)));
-                repair_flux(i, j, k, idim, on_lo, on_hi, rhoY, flux_dir);
-              });
-          } else {
-            auto const& rhoYed_ar = edgstate[idim].const_array(mfi);
-            auto const& areafrac_ar = areafrac[idim]->const_array(mfi);
-            amrex::ParallelFor(
-              ebx,
-              [idim, rhoY, flux_dir, rhoYed_ar, areafrac_ar, edomain, bc_lo,
-               bc_hi] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-                int idx[3] = {i, j, k};
-                bool on_lo =
-                  ((bc_lo == amrex::BCType::ext_dir) &&
-                   (idx[idim] <= edomain.smallEnd(idim)));
-                bool on_hi =
-                  ((bc_hi == amrex::BCType::ext_dir) &&
-                   (idx[idim] >= edomain.bigEnd(idim)));
-                repair_flux_eb(
-                  i, j, k, idim, on_lo, on_hi, rhoY, rhoYed_ar, areafrac_ar,
-                  flux_dir);
-              });
-          }
-        }
-#else
-        amrex::ParallelFor(
-          ebx, [idim, rhoY, flux_dir, edomain, bc_lo,
-                bc_hi] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-            int idx[3] = {i, j, k};
-            bool on_lo =
-              ((bc_lo == amrex::BCType::ext_dir) &&
-               (idx[idim] <= edomain.smallEnd(idim)));
-            bool on_hi =
-              ((bc_hi == amrex::BCType::ext_dir) &&
-               (idx[idim] >= edomain.bigEnd(idim)));
-            repair_flux(i, j, k, idim, on_lo, on_hi, rhoY, flux_dir);
-          });
-#endif
-      }
-    }
-  }
-}
-
-void
 PeleLM::computeSpeciesEnthalpyFlux(
   const Vector<Array<MultiFab*, AMREX_SPACEDIM>>& a_fluxes,
   Vector<MultiFab const*> const& a_temp)
@@ -887,6 +901,7 @@ PeleLM::computeSpeciesEnthalpyFlux(
 
   // Get the species BCRec
   auto bcRecSpec = fetchBCRecArray(FIRSTSPEC, NUM_SPECIES);
+  auto const* leosparm = eos_parms.device_parm();
 
   for (int lev = 0; lev <= finest_level; ++lev) {
 
@@ -918,21 +933,21 @@ PeleLM::computeSpeciesEnthalpyFlux(
       } else if (flagfab.getType(gbx) != FabType::regular) { // EB containing
                                                              // boxes
         amrex::ParallelFor(
-          gbx, [Temp_arr, Hi_arr,
-                flag] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          gbx, [Temp_arr, Hi_arr, flag,
+                leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             if (flag(i, j, k).isCovered()) {
               Hi_arr(i, j, k) = 0.0;
             } else {
-              getHGivenT(i, j, k, Temp_arr, Hi_arr);
+              getHGivenT(i, j, k, Temp_arr, Hi_arr, leosparm);
             }
           });
       } else
 #endif
       {
         amrex::ParallelFor(
-          gbx,
-          [Temp_arr, Hi_arr] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-            getHGivenT(i, j, k, Temp_arr, Hi_arr);
+          gbx, [Temp_arr, Hi_arr,
+                leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+            getHGivenT(i, j, k, Temp_arr, Hi_arr, leosparm);
           });
       }
     }
@@ -1162,7 +1177,7 @@ PeleLM::differentialDiffusionUpdate(
   fillPatchSpecies(AmrNewTime);
 
   // Adjust species diffusion fluxes to ensure their sum is zero
-  adjustSpeciesFluxes(
+  adjustSpeciesFluxes<pele::physics::PhysicsType::eos_type>(
     GetVecOfArrOfPtrs(fluxes), GetVecOfConstPtrs(getSpeciesVect(AmrNewTime)));
 
   // Average down fluxes^{np1,kp1}
@@ -1384,6 +1399,7 @@ PeleLM::deltaTIter_prepare(
   std::unique_ptr<AdvanceAdvData>& advData,
   std::unique_ptr<AdvanceDiffData>& diffData)
 {
+  auto const* leosparm = eos_parms.device_parm();
   for (int lev = 0; lev <= finest_level; ++lev) {
 
     auto* ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
@@ -1421,7 +1437,7 @@ PeleLM::deltaTIter_prepare(
                   fourier(i, j, k) + diffDiff(i, j, k));
 
           // Get \rho * Cp_{mix}
-          getCpmixGivenRYT(i, j, k, rho, rhoY, T, rhocp);
+          getCpmixGivenRYT(i, j, k, rho, rhoY, T, rhocp, leosparm);
           rhocp(i, j, k) *= rho(i, j, k);
 
           // Save T
@@ -1528,6 +1544,7 @@ PeleLM::deltaTIter_update(
   //------------------------------------------------------------------------
   // Recompute RhoH
   for (int lev = 0; lev <= finest_level; ++lev) {
+    auto const* leosparm = eos_parms.device_parm();
     auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
     auto const& sma = ldata_p->state.arrays();
     amrex::ParallelFor(
@@ -1537,7 +1554,7 @@ PeleLM::deltaTIter_update(
           i, j, k, Array4<Real const>(sma[box_no], DENSITY),
           Array4<Real const>(sma[box_no], FIRSTSPEC),
           Array4<Real const>(sma[box_no], TEMP),
-          Array4<Real>(sma[box_no], RHOH));
+          Array4<Real>(sma[box_no], RHOH), leosparm);
       });
   }
   Gpu::streamSynchronize();

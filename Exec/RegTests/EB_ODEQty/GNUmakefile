@@ -2,7 +2,7 @@
 DIM = 2
 COMP = gnu
 PRECISION = DOUBLE
-USE_EB = FALSE
+USE_EB = TRUE
 USE_HYPRE = FALSE
 
 # Profiling
@@ -26,21 +26,13 @@ FSANITIZER = FALSE
 THREAD_SANITIZER = FALSE
 
 # PeleLMeX
-USE_EFIELD = FALSE
+CEXE_sources += PeleLMeX_ProblemSpecificFunctions.cpp
+PELELM_NUM_ODE = 3
 
 # PelePhysics
-USE_MANIFOLD = FALSE
-ifeq ($(USE_MANIFOLD), TRUE)
-  Eos_Model       = Manifold
-  Chemistry_Model = Null
-  Transport_Model = Manifold
-  Manifold_Dim = 1
- # Manifold_Type = Table
-else
-  Chemistry_Model = drm19
-  Eos_Model = Fuego
-  Transport_Model = Simple
-endif
+Chemistry_Model = air
+Eos_Model = Fuego
+Transport_Model = Constant
 
 PELE_HOME ?= ../../..
 include $(PELE_HOME)/Exec/Make.PeleLMeX

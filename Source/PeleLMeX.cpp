@@ -12,12 +12,17 @@ pele::physics::PeleParams<pele::physics::transport::TransParm<
   pele::physics::PhysicsType::transport_type>>
   PeleLM::trans_parms;
 
+pele::physics::PeleParams<
+  pele::physics::eos::EosParm<pele::physics::PhysicsType::eos_type>>
+  PeleLM::eos_parms;
+
 PeleLM::PeleLM() = default;
 
 PeleLM::~PeleLM()
 {
   if (m_incompressible == 0) {
     trans_parms.deallocate();
+    eos_parms.deallocate();
     m_reactor->close();
   }
 

@@ -25,7 +25,6 @@ function(build_pele_exe pele_exe_name pele_physics_lib_name)
        ${SRC_DIR}/PeleLMeX_DeriveUserDefined.cpp
        ${SRC_DIR}/PeleLMeX_DiffusionOp.H
        ${SRC_DIR}/PeleLMeX_DiffusionOp.cpp
-       ${SRC_DIR}/PeleLMeX_EBUserDefined.H
        ${SRC_DIR}/PeleLMeX_FlowControllerData.H
        ${SRC_DIR}/PeleLMeX.H
        ${SRC_DIR}/PeleLMeX.cpp
@@ -46,10 +45,12 @@ function(build_pele_exe pele_exe_name pele_physics_lib_name)
        ${SRC_DIR}/PeleLMeX_Evolve.cpp
        ${SRC_DIR}/PeleLMeX_FlowController.cpp
        ${SRC_DIR}/PeleLMeX_Forces.cpp
+       ${SRC_DIR}/PeleLMeX_Init.cpp
+       ${SRC_DIR}/PeleLMeX_ODEQty.cpp
        ${SRC_DIR}/PeleLMeX_PatchFlowVariables.H
        ${SRC_DIR}/PeleLMeX_PatchFlowVariables.cpp
-       ${SRC_DIR}/PeleLMeX_Init.cpp
        ${SRC_DIR}/PeleLMeX_Plot.cpp
+       ${SRC_DIR}/PeleLMeX_ProblemSpecificFunctions.H
        ${SRC_DIR}/PeleLMeX_Projection.cpp
        ${SRC_DIR}/PeleLMeX_Reactions.cpp
        ${SRC_DIR}/PeleLMeX_Regrid.cpp
@@ -69,6 +70,26 @@ function(build_pele_exe pele_exe_name pele_physics_lib_name)
        ${SRC_DIR}/main.cpp
   )
 
+  if(PELE_EB_USER_DEFINED)
+    target_sources(${pele_exe_name}
+      PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}/PeleLMeX_EBUserDefined.H)
+  else()
+    target_sources(${pele_exe_name}
+      PRIVATE
+        ${SRC_DIR}/PeleLMeX_EBUserDefined.H)
+  endif()
+
+  if(PELELM_USER_DEFINED_EXT_SRC)
+    target_sources(${pele_exe_name}
+      PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}/PeleLMeX_ProblemSpecificFunctions.cpp)
+  else()
+    target_sources(${pele_exe_name}
+      PRIVATE
+        ${SRC_DIR}/PeleLMeX_ProblemSpecificFunctions.cpp)
+  endif()
+  
   if(PELE_PHYSICS_ENABLE_SOOT)
     target_sources(${pele_exe_name}
       PRIVATE
@@ -86,6 +107,10 @@ function(build_pele_exe pele_exe_name pele_physics_lib_name)
     target_sources(${pele_exe_name}
       PRIVATE
         ${SRC_DIR}/PeleLMeX_Radiation.cpp)
+  endif()
+
+  if (PELELM_NUM_ODE GREATER 0)
+    target_compile_definitions(${pele_exe_name} PRIVATE NUM_ODE=${PELELM_NUM_ODE})
   endif()
 
   if(NOT "${pele_exe_name}" STREQUAL "${PROJECT_NAME}-UnitTests")

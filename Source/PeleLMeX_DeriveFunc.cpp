@@ -2,6 +2,7 @@
 #include "PeleLMeX.H"
 #include "PeleLMeX_K.H"
 #include "PeleLMeX_DeriveFunc.H"
+#include "PeleLMeX_Utils.H"
 
 #include <PelePhysics.H>
 #include <mechanism.H>
@@ -75,8 +76,9 @@ pelelmex_derheatrelease(
   auto const react = reactfab.const_array(0);
   auto const& Hi = EnthFab.array();
   auto HRR = derfab.array(dcomp);
+  auto const* leosparm = a_pelelm->eos_parms.device_parm();
   amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-    getHGivenT(i, j, k, temp, Hi);
+    getHGivenT(i, j, k, temp, Hi, leosparm);
     HRR(i, j, k) = 0.0;
     for (int n = 0; n < NUM_SPECIES; n++) {
       HRR(i, j, k) -= Hi(i, j, k, n) * react(i, j, k, n);
@@ -146,6 +148,7 @@ pelelmex_dermolefrac(
   AMREX_ASSERT(!a_pelelm->m_incompressible);
   auto const in_dat = statefab.array();
   auto der = derfab.array(dcomp);
+  auto const* leosparm = a_pelelm->eos_parms.device_parm();
   amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
     amrex::Real Yt[NUM_SPECIES] = {0.0};
     amrex::Real Xt[NUM_SPECIES] = {0.0};
@@ -153,7 +156,7 @@ pelelmex_dermolefrac(
     for (int n = 0; n < NUM_SPECIES; n++) {
       Yt[n] = in_dat(i, j, k, FIRSTSPEC + n) * rhoinv;
     }
-    auto eos = pele::physics::PhysicsType::eos();
+    auto eos = pele::physics::PhysicsType::eos(leosparm);
     eos.Y2X(Yt, Xt);
     for (int n = 0; n < NUM_SPECIES; n++) {
       der(i, j, k, n) = Xt[n];
@@ -1371,17 +1374,18 @@ pelelmex_derdiffc(
   auto lambda = dummies.array(0);
   auto mu = dummies.array(1);
   auto const* ltransparm = a_pelelm->trans_parms.device_parm();
+  auto const* leosparm = a_pelelm->eos_parms.device_parm();
   auto rhotheta = do_soret ? derfab.array(dcomp + NUM_SPECIES)
                            : dummies.array(2); // dummy for no soret
   amrex::Real LeInv = a_pelelm->m_Lewis_inv;
   amrex::Real PrInv = a_pelelm->m_Prandtl_inv;
   amrex::ParallelFor(
-    bx,
-    [do_fixed_Le, do_fixed_Pr, do_soret, LeInv, PrInv, rhoY, T, rhoD, rhotheta,
-     lambda, mu, ltransparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-      getTransportCoeff(
+    bx, [do_fixed_Le, do_fixed_Pr, do_soret, LeInv, PrInv, rhoY, T, rhoD,
+         rhotheta, lambda, mu, ltransparm,
+         leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+      getTransportCoeff<pele::physics::PhysicsType::eos_type>(
         i, j, k, do_fixed_Le, do_fixed_Pr, do_soret, LeInv, PrInv, rhoY, T,
-        rhoD, rhotheta, lambda, mu, ltransparm);
+        rhoD, rhotheta, lambda, mu, ltransparm, leosparm);
     });
 }
 
@@ -1418,15 +1422,16 @@ pelelmex_derlambda(
   auto mu = dummies.array(0);
   auto rhotheta = dummies.array(NUM_SPECIES + 1);
   auto const* ltransparm = a_pelelm->trans_parms.device_parm();
+  auto const* leosparm = a_pelelm->eos_parms.device_parm();
   amrex::Real LeInv = a_pelelm->m_Lewis_inv;
   amrex::Real PrInv = a_pelelm->m_Prandtl_inv;
   amrex::ParallelFor(
-    bx,
-    [do_fixed_Le, do_fixed_Pr, do_soret, LeInv, PrInv, rhoY, T, rhoD, rhotheta,
-     lambda, mu, ltransparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-      getTransportCoeff(
+    bx, [do_fixed_Le, do_fixed_Pr, do_soret, LeInv, PrInv, rhoY, T, rhoD,
+         rhotheta, lambda, mu, ltransparm,
+         leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+      getTransportCoeff<pele::physics::PhysicsType::eos_type>(
         i, j, k, do_fixed_Le, do_fixed_Pr, do_soret, LeInv, PrInv, rhoY, T,
-        rhoD, rhotheta, lambda, mu, ltransparm);
+        rhoD, rhotheta, lambda, mu, ltransparm, leosparm);
     });
 }
 
@@ -1447,7 +1452,6 @@ pelelmex_derdmap(
   Real /*time*/,
   const Vector<BCRec>& /*bcrec*/,
   int /*level*/)
-
 {
   AMREX_ASSERT(derfab.box().contains(bx));
   auto der = derfab.array(dcomp);
@@ -1456,3 +1460,54 @@ pelelmex_derdmap(
     der(i, j, k) = myrank;
   });
 }
+
+//
+// Derive manifold output quantities
+//
+#ifdef USE_MANIFOLD_EOS
+void
+pelelmex_dermaniout(
+  PeleLM* a_pelelm,
+  const Box& bx,
+  FArrayBox& derfab,
+  int dcomp,
+  int ncomp,
+  const FArrayBox& statefab,
+  const FArrayBox& /*reactfab*/,
+  const FArrayBox& /*pressfab*/,
+  const Geometry& /*geom*/,
+  Real /*time*/,
+  const Vector<BCRec>& /*bcrec*/,
+  int /*level*/)
+{
+  auto& h_manf_data =
+    a_pelelm->eos_parms.host_only_parm().manfunc_par->host_parm();
+  auto* d_manf_data =
+    a_pelelm->eos_parms.host_only_parm().manfunc_par->device_parm();
+  int nmanivar = h_manf_data.Nvar;
+
+  amrex::ignore_unused(ncomp);
+  AMREX_ASSERT(derfab.box().contains(bx));
+  AMREX_ASSERT(statefab.box().contains(bx));
+  AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
+  AMREX_ASSERT(statefab.nComp() >= NUM_SPECIES + 1);
+  AMREX_ASSERT(ncomp == nmanivar);
+  AMREX_ASSERT(!a_pelelm->m_incompressible);
+
+  auto const in_spec = statefab.array(FIRSTSPEC);
+  auto der = derfab.array(dcomp);
+  amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+    amrex::Real rho, rhoinv, maniparm[NUM_SPECIES];
+    pele::physics::PhysicsType::eos_type::RY2RRinvY(
+      in_spec.cellData(i, j, k), rho, rhoinv, maniparm);
+    pele::physics::BlackBoxFunctionFactory<
+      pele::physics::eos::ManifoldFunctionType>
+      manfunc{d_manf_data};
+
+    // TODO: use get_all_values instead
+    for (int n = 0; n < nmanivar; ++n) {
+      manfunc.get_func()->get_value(n, maniparm, der(i, j, k, n));
+    }
+  });
+}
+#endif

@@ -281,6 +281,12 @@ PeleLM::WritePlotFile()
     plt_VarsName.push_back("viscturb");
   }
 
+#if NUM_ODE > 0
+  for (int n = 0; n < NUM_ODE; n++) {
+    plt_VarsName.push_back(m_ode_names[n]);
+  }
+#endif
+
   //----------------------------------------------------------------
   // Fill the plot MultiFabs
   for (int lev = 0; lev <= finest_level; ++lev) {
@@ -400,6 +406,11 @@ PeleLM::WritePlotFile()
         mf_plt[lev], *m_ionsFluxes[lev], 0, cnt, m_ionsFluxes[lev]->nComp(), 0);
       cnt += m_ionsFluxes[lev]->nComp();
     }
+#endif
+#if NUM_ODE > 0
+    MultiFab::Copy(
+      mf_plt[lev], m_leveldata_new[lev]->state, FIRSTODE, cnt, NUM_ODE, 0);
+    cnt += NUM_ODE;
 #endif
 
     if (m_do_les && m_plot_les) {
@@ -975,6 +986,7 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
   ldata_p->gp.setVal(0.0);
 
   ProbParm const* lprobparm = prob_parm_d;
+  auto const* leosparm = eos_parms.device_parm();
 
   // If m_do_patch_flow_variables is set as true, call user-defined function to
   // patch flow variables
@@ -994,38 +1006,40 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
     auto const& rhoY_arr = ldata_p->state.array(mfi, FIRSTSPEC);
     auto const& rhoH_arr = ldata_p->state.array(mfi, RHOH);
     auto const& temp_arr = ldata_p->state.array(mfi, TEMP);
-    amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-      auto eos = pele::physics::PhysicsType::eos();
-      Real massfrac[NUM_SPECIES] = {0.0};
-      Real sumYs = 0.0;
-      for (int n = 0; n < NUM_SPECIES; n++) {
-        massfrac[n] = rhoY_arr(i, j, k, n);
+    amrex::ParallelFor(
+      bx,
+      [=, eosparm = leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        auto eos = pele::physics::PhysicsType::eos(eosparm);
+        Real massfrac[NUM_SPECIES] = {0.0};
+        Real sumYs = 0.0;
+        for (int n = 0; n < NUM_SPECIES; n++) {
+          massfrac[n] = rhoY_arr(i, j, k, n);
 #ifdef N2_ID
-        if (n != N2_ID) {
-          sumYs += massfrac[n];
+          if (n != N2_ID) {
+            sumYs += massfrac[n];
+          }
+#endif
         }
-#endif
-      }
 #ifdef N2_ID
-      massfrac[N2_ID] = 1.0 - sumYs;
+        massfrac[N2_ID] = 1.0 - sumYs;
 #endif
 
-      // Get density
-      Real P_cgs = lprobparm->P_mean * 10.0;
-      Real rho_cgs = 0.0;
-      eos.PYT2R(P_cgs, massfrac, temp_arr(i, j, k), rho_cgs);
-      rho_arr(i, j, k) = rho_cgs * 1.0e3;
+        // Get density
+        Real P_cgs = lprobparm->P_mean * 10.0;
+        Real rho_cgs = 0.0;
+        eos.PYT2R(P_cgs, massfrac, temp_arr(i, j, k), rho_cgs);
+        rho_arr(i, j, k) = rho_cgs * 1.0e3;
 
-      // Get enthalpy
-      Real h_cgs = 0.0;
-      eos.TY2H(temp_arr(i, j, k), massfrac, h_cgs);
-      rhoH_arr(i, j, k) = h_cgs * 1.0e-4 * rho_arr(i, j, k);
+        // Get enthalpy
+        Real h_cgs = 0.0;
+        eos.TY2H(temp_arr(i, j, k), massfrac, h_cgs);
+        rhoH_arr(i, j, k) = h_cgs * 1.0e-4 * rho_arr(i, j, k);
 
-      // Fill rhoYs
-      for (int n = 0; n < NUM_SPECIES; n++) {
-        rhoY_arr(i, j, k, n) = massfrac[n] * rho_arr(i, j, k);
-      }
-    });
+        // Fill rhoYs
+        for (int n = 0; n < NUM_SPECIES; n++) {
+          rhoY_arr(i, j, k, n) = massfrac[n] * rho_arr(i, j, k);
+        }
+      });
   }
 
   // Initialize thermodynamic pressure

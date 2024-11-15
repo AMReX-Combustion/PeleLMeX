@@ -4,6 +4,8 @@
 #include <PeleLMeX_BPatch.H>
 #include "PelePhysics.H"
 #include <AMReX_buildInfo.H>
+#include <PeleLMeX_ProblemSpecificFunctions.H>
+
 #ifdef PELE_USE_EFIELD
 #include "PeleLMeX_EOS_Extension.H"
 #endif
@@ -15,6 +17,7 @@
 #ifdef PELE_USE_SOOT
 #include "SootModel.H"
 #endif
+
 using namespace amrex;
 
 static Box
@@ -75,37 +78,16 @@ PeleLM::Setup()
   // Setup the state variables
   variablesSetup();
 
-  // Derived variables
-  derivedSetup();
-
-  // Evaluate variables
-  evaluateSetup();
-
-  // Tagging setup
-  taggingSetup();
-
-#ifdef PELE_USE_SPRAY
-  SpraySetup();
-#endif
-#ifdef PELE_USE_SOOT
-  if (do_soot_solve) {
-    soot_model->define();
-  }
-#endif
-  // Diagnostics setup
-  createDiagnostics();
-
-  // Boundary Patch Setup
-  if (m_do_patch_mfr != 0) {
-    initBPatches(Geom(0));
-  }
-
-  // Initialize Level Hierarchy data
-  resizeArray();
-
   // Initialize EOS and others
   if (m_incompressible == 0) {
+    amrex::Print() << " Initialization of Eos ... \n";
+    eos_parms.initialize();
+
     amrex::Print() << " Initialization of Transport ... \n";
+#ifdef USE_MANIFOLD_TRANSPORT
+    trans_parms.host_only_parm().manfunc_par =
+      eos_parms.host_only_parm().manfunc_par;
+#endif
     trans_parms.initialize();
     if ((m_les_verbose != 0) and m_do_les) { // Say what transport model we're
                                              // going to use
@@ -147,6 +129,7 @@ PeleLM::Setup()
       m_reactor =
         pele::physics::reactions::ReactorBase::create(m_chem_integrator);
       m_reactor->init(reactor_type, ncells_chem);
+      m_reactor->set_eos_parm(eos_parms.device_parm());
       // For ReactorNull, we need to also skip instantaneous RR used in divU
       if (m_chem_integrator == "ReactorNull") {
         m_skipInstantRR = 1;
@@ -166,9 +149,39 @@ PeleLM::Setup()
 #endif
   }
 
+  // Derived variables
+  derivedSetup();
+
+  // Evaluate variables
+  evaluateSetup();
+
+  // Tagging setup
+  taggingSetup();
+
+#ifdef PELE_USE_SPRAY
+  SpraySetup();
+#endif
+#ifdef PELE_USE_SOOT
+  if (do_soot_solve) {
+    soot_model->define();
+  }
+#endif
+  // Diagnostics setup
+  createDiagnostics();
+
+  // Boundary Patch Setup
+  if (m_do_patch_mfr != 0) {
+    initBPatches(Geom(0));
+  }
+
+  // Initialize Level Hierarchy data
+  resizeArray();
+
   // Mixture fraction & Progress variable
-  initMixtureFraction();
-  initProgressVariable();
+  if (pele::physics::PhysicsType::eos_type::identifier() != "Manifold") {
+    initMixtureFraction();
+    initProgressVariable();
+  }
 
   // Initialize turbulence injection
   turb_inflow.init(Geom(0));
@@ -234,6 +247,12 @@ PeleLM::readParameters()
   pp.query("closed_chamber", m_closed_chamber);
   if ((verbose != 0) && (m_closed_chamber != 0)) {
     Print() << " Simulation performed with the closed chamber algorithm \n";
+  }
+  if (
+    (m_closed_chamber != 0) &&
+    (pele::physics::PhysicsType::eos_type::identifier() == "Manifold")) {
+    amrex::Abort(
+      "Simulation with closed chamber not supported for Manifold EOS");
   }
 
 #ifdef PELE_USE_EFIELD
@@ -469,6 +488,11 @@ PeleLM::readParameters()
                       "fixed_Pr or fixed_Le is true"
                    << std::endl;
   }
+  if (
+    (m_use_wbar != 0) &&
+    (pele::physics::PhysicsType::eos_type::identifier() == "Manifold")) {
+    amrex::Abort("Use of Wbar fluxes is not compatible with Manifold EOS");
+  }
 
   pp.query("deltaT_verbose", m_deltaT_verbose);
   pp.query("deltaT_iterMax", m_deltaTIterMax);
@@ -661,6 +685,8 @@ PeleLM::readParameters()
     }
   }
   pp.query("isothermal_EB", m_isothermalEB);
+  pp.query("adv_redist_type", m_adv_redist_type);
+  pp.query("diff_redist_type", m_diff_redist_type);
 #endif
 
   // -----------------------------------------
@@ -728,6 +754,13 @@ PeleLM::readParameters()
     Print() << "Simulation performed with radiation modeling \n";
   }
 #endif
+
+  // -----------------------------------------
+  // External Sources
+  // -----------------------------------------
+  m_user_defined_ext_sources = false;
+  m_ext_sources_SDC = false; // TODO: add capability to update ext_srcs in SDC
+  pp.query("user_defined_ext_sources", m_user_defined_ext_sources);
 }
 
 void
@@ -832,6 +865,13 @@ PeleLM::variablesSetup()
       stateComponents.emplace_back(FIRSTSOOT + mom, sootname);
     }
     setSootIndx();
+#endif
+#if NUM_ODE > 0
+    Print() << " First ODE: " << FIRSTODE << "\n";
+    set_ode_names(m_ode_names);
+    for (int n = 0; n < NUM_ODE; n++) {
+      stateComponents.emplace_back(FIRSTODE + n, m_ode_names[n]);
+    }
 #endif
   }
 
@@ -1111,6 +1151,20 @@ PeleLM::derivedSetup()
   derive_lst.add(
     "enstrophy", IndexType::TheCellType(), 1, pelelmex_derenstrophy,
     grow_box_by_two);
+
+#ifdef USE_MANIFOLD_EOS
+  auto& mani_data = eos_parms.host_only_parm().manfunc_par->host_parm();
+  const int nmanivar = mani_data.Nvar;
+  Vector<std::string> var_names_maniout(nmanivar);
+  for (int n = 0; n < nmanivar; n++) {
+    std::string nametmp = std::string(
+      &(mani_data.varnames)[n * mani_data.len_str], mani_data.len_str);
+    var_names_maniout[n] = "MANI_" + amrex::trim(nametmp);
+  }
+  derive_lst.add(
+    "maniout", IndexType::TheCellType(), nmanivar, var_names_maniout,
+    pelelmex_dermaniout, the_same_box);
+#endif
 
 #ifdef PELE_USE_EFIELD
   // Charge distribution

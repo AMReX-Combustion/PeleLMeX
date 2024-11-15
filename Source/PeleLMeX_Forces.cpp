@@ -1,5 +1,6 @@
 #include <PeleLMeX.H>
 #include <PeleLMeX_K.H>
+#include <PeleLMeX_ProblemSpecificFunctions.H>
 
 using namespace amrex;
 
@@ -204,15 +205,17 @@ PeleLM::addSpark(const TimeStamp& a_timestamp)
         Print() << m_spark[n] << " active" << std::endl;
       }
 
-      auto eos = pele::physics::PhysicsType::eos();
       auto statema = getLevelDataPtr(lev, a_timestamp)->state.const_arrays();
       auto extma = m_extSource[lev]->arrays();
+      auto const* leosparm = eos_parms.device_parm();
 
       amrex::ParallelFor(
         *m_extSource[lev],
         [=, spark_duration = m_spark_duration[n], spark_temp = m_spark_temp[n],
+         eosparm = leosparm,
          spark_radius = m_spark_radius
            [n]] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+          auto eos = pele::physics::PhysicsType::eos(eosparm);
           Real dist_to_center = std::sqrt(AMREX_D_TERM(
             (i - spark_idx[0]) * (i - spark_idx[0]) * dx[0] * dx[0],
             +(j - spark_idx[1]) * (j - spark_idx[1]) * dx[1] * dx[1],
@@ -230,6 +233,50 @@ PeleLM::addSpark(const TimeStamp& a_timestamp)
           }
         });
       Gpu::streamSynchronize();
+    }
+  }
+}
+
+// Calculate additional external sources (soot, radiation, user defined, etc.)
+void
+PeleLM::getExternalSources(
+  int is_initIter,
+  const PeleLM::TimeStamp& a_timestamp_old,
+  const PeleLM::TimeStamp& a_timestamp_new)
+{
+  amrex::ignore_unused(is_initIter);
+
+  if (m_n_sparks > 0) {
+    addSpark(a_timestamp_old);
+  }
+
+#ifdef PELE_USE_SPRAY
+  if (is_initIter == 0) {
+    SprayMKD(m_cur_time, m_dt);
+  }
+#endif
+#ifdef PELE_USE_SOOT
+  if (do_soot_solve) {
+    computeSootSource(a_timestamp_old, m_dt);
+  }
+#endif
+#ifdef PELE_USE_RADIATION
+  if (do_rad_solve) {
+    BL_PROFILE_VAR("PeleLM::advance::rad", PLM_RAD);
+    computeRadSource(a_timestamp_old);
+    BL_PROFILE_VAR_STOP(PLM_RAD);
+  }
+#endif
+
+  // User defined external sources
+  if (m_user_defined_ext_sources) {
+    for (int lev = 0; lev <= finest_level; lev++) {
+      auto* ldata_p_old = getLevelDataPtr(lev, a_timestamp_old);
+      auto* ldata_p_new = getLevelDataPtr(lev, a_timestamp_new);
+      auto& ext_src = m_extSource[lev];
+      problem_modify_ext_sources(
+        getTime(lev, a_timestamp_new), m_dt, ldata_p_old->state,
+        ldata_p_new->state, ext_src, geom[lev].data(), *prob_parm_d);
     }
   }
 }

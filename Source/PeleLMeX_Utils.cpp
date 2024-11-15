@@ -658,6 +658,7 @@ PeleLM::floorSpecies(const TimeStamp& a_time)
 
     auto* ldata_p = getLevelDataPtr(lev, a_time);
     auto const& sma = ldata_p->state.arrays();
+    auto const* leosparm = eos_parms.device_parm();
 
     amrex::ParallelFor(
       ldata_p->state,
@@ -676,7 +677,7 @@ PeleLM::floorSpecies(const TimeStamp& a_time)
         }
 
         // ... as well as rhoh
-        auto eos = pele::physics::PhysicsType::eos();
+        auto eos = pele::physics::PhysicsType::eos(leosparm);
         Real massfrac[NUM_SPECIES] = {0.0};
         Real rhoinv = Real(1.0) / sma[box_no](i, j, k, DENSITY);
         for (int n = 0; n < NUM_SPECIES; n++) {
@@ -1392,6 +1393,12 @@ PeleLM::setTypicalValues(const TimeStamp& a_time, int is_init)
 #ifdef PELE_USE_EFIELD
     typical_values[NE] = 0.5 * (stateMax[NE] + stateMin[NE]);
 #endif
+#if NUM_ODE > 0
+    for (int n = 0; n < NUM_ODE; n++) {
+      typical_values[FIRSTODE + n] =
+        0.5 * (stateMax[FIRSTODE + n] + stateMin[FIRSTODE + n]);
+    }
+#endif
 
     // Pass into chemsitry if requested
     updateTypicalValuesChem();
@@ -1421,6 +1428,14 @@ PeleLM::setTypicalValues(const TimeStamp& a_time, int is_init)
 #ifdef PELE_USE_EFIELD
       Print() << "\tnE:       " << typical_values[NE] << '\n';
 #endif
+#if NUM_ODE > 0
+      for (int n = 0; n < NUM_ODE; n++) {
+        Print() << "\t" << m_ode_names[n]
+                << std::setw(std::max(
+                     0, static_cast<int>(10 - m_ode_names[n].length())))
+                << std::left << ":" << typical_values[FIRSTODE + n] << '\n';
+      }
+#endif
     }
     Print() << PrettyLine;
   }
@@ -1447,7 +1462,8 @@ PeleLM::updateTypicalValuesChem()
       }
       typical_values_chem[NUM_SPECIES] = typical_values[TEMP];
 #ifdef PELE_USE_EFIELD
-      auto eos = pele::physics::PhysicsType::eos();
+      auto const* leosparm = &eos_parms.host_parm();
+      auto eos = pele::physics::PhysicsType::eos(leosparm);
       Real mwt[NUM_SPECIES] = {0.0};
       eos.molecular_weight(mwt);
       typical_values_chem[E_ID] =
@@ -1727,7 +1743,8 @@ PeleLM::initMixtureFraction()
     }
   }
 
-  auto eos = pele::physics::PhysicsType::eos();
+  auto const* leosparm = &eos_parms.host_parm();
+  auto eos = pele::physics::PhysicsType::eos(leosparm);
   // Overwrite with user-defined value if provided in input file
   ParmParse pp("peleLM");
   std::string MFformat;
@@ -1881,7 +1898,8 @@ PeleLM::parseComposition(
       massFrac[i] = compoIn[i];
     }
   } else if (compositionType == "mole") { // mole
-    auto eos = pele::physics::PhysicsType::eos();
+    auto const* leosparm = &eos_parms.host_parm();
+    auto eos = pele::physics::PhysicsType::eos(leosparm);
     eos.X2Y(compoIn, massFrac);
   } else {
     Abort("Unknown mixtureFraction.type ! Should be 'mass' or 'mole'");
