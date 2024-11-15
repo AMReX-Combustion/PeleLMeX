@@ -1052,9 +1052,6 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
 void
 PeleLM::WriteJobInfo(const std::string& path) const
 {
-  std::string OtherLine = std::string(78, '-') + "\n";
-  std::string SkipSpace = std::string(8, ' ');
-
   if (ParallelDescriptor::IOProcessor()) {
     // job_info file with details about the run
     std::ofstream jobInfoFile;
