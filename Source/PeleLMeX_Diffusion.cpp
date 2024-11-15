@@ -414,7 +414,7 @@ PeleLM::correctIsothermalBoundary(
       }
     }
   }
-  //TODO: wbar fluxes disabled for this case - boundary system becomes complex
+  // TODO: wbar fluxes disabled for this case - boundary system becomes complex
 }
 
 void
@@ -631,18 +631,18 @@ PeleLM::addWbarTerm(
 
       amrex::ParallelFor(
 
-        gbx,
-        [rho_arr, rhoY_arr, Wbar_arr, gradY_arr, Wbar_boundary_arr, domain,
-         have_boundary,
-         phys_bc = m_phys_bc,leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          getMwmixGivenRY(i, j, k, rho_arr, rhoY_arr, Wbar_arr,leosparm);
+        gbx, [rho_arr, rhoY_arr, Wbar_arr, gradY_arr, Wbar_boundary_arr, domain,
+              have_boundary, phys_bc = m_phys_bc,
+              leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          getMwmixGivenRY(i, j, k, rho_arr, rhoY_arr, Wbar_arr, leosparm);
           if (have_boundary != 0) { // need to impose gradWbar on boundary for
             // computeGradient
             // for dirichlet boundaries, we'll overwrite inhomog neumann ones
-	    // NOTE: for now, this is skipped since wbar disabled for isothermal/soret
+            // NOTE: for now, this is skipped since wbar disabled for
+            // isothermal/soret
             Wbar_boundary_arr(i, j, k) = Wbar_arr(i, j, k);
             int idx[3] = {i, j, k};
-	    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+            for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
               const auto bc_lo = phys_bc.lo(idim);
               const auto bc_hi = phys_bc.hi(idim);
               bool on_lo = (bc_lo == BoundaryCondition::BCNoSlipWallIsotherm ||
@@ -651,9 +651,10 @@ PeleLM::addWbarTerm(
               bool on_hi = (bc_hi == BoundaryCondition::BCNoSlipWallIsotherm ||
                             bc_hi == BoundaryCondition::BCSlipWallIsotherm) &&
                            (idx[idim] > domain.bigEnd(idim));
-	      
+
               if (on_lo || on_hi) {
-		getGradMwmixGivengradYMwmix(i, j, k, gradY_arr, Wbar_arr, Wbar_boundary_arr,leosparm);
+                getGradMwmixGivengradYMwmix(
+                  i, j, k, gradY_arr, Wbar_arr, Wbar_boundary_arr, leosparm);
               }
             }
           }
