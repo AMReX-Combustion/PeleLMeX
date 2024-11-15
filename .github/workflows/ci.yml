@@ -99,10 +99,8 @@ jobs:
             procs: $(nproc)
             ccache_cache: ~/.cache/ccache
           - build_type: Release
-            ctest_args: -LE no-ci
             ccache_size: 100M
           - build_type: Debug
-            ctest_args: -LE no-ci
             ccache_size: 500M
           - enable_eb: EB-OFF
             use_eb: "OFF"
@@ -196,7 +194,7 @@ jobs:
           (for DIM in 2 3; do \
             printf "\n-------- Testing ${DIM}D --------\n"; \
             cd ${{runner.workspace}}/build-${DIM}d-${{matrix.os}}-${{matrix.build_type}}-${{matrix.enable_eb}}; \
-            ctest {{matrix.ctest_args}} --output-on-failure; \
+            ctest -LE no-ci --output-on-failure; \
             if [ $? -ne 0 ]; then exit 1; fi \
           done)
   GPU-Nvidia:
