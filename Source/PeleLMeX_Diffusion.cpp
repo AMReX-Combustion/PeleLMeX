@@ -215,7 +215,6 @@ PeleLM::correctIsothermalBoundary(
 {
   BL_PROFILE("PeleLMeX::correctIsothermalBoundary()");
   auto bcRecSpec = fetchBCRecArray(FIRSTSPEC, NUM_SPECIES);
-
   bool need_explicit_fluxes = a_soretfluxes.empty();
 
   Vector<Array<MultiFab*, AMREX_SPACEDIM>> soretfluxes(finest_level + 1);
@@ -230,7 +229,7 @@ PeleLM::correctIsothermalBoundary(
     addSoretTerm(
       soretfluxes, soretfluxes, GetVecOfConstPtrs(getTempVect(a_time)),
       GetVecOfConstPtrs(getDiffusivityVect(a_time)));
-  } else { // have the lagged ones, alias to to them
+  } else { // have the lagged ones, alias to them
     for (int lev = 0; lev <= finest_level; lev++) {
       for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
         soretfluxes[lev][idim] = new MultiFab(
@@ -295,98 +294,7 @@ PeleLM::correctIsothermalBoundary(
       }
     }
   }
-
-  if (need_explicit_fluxes && m_use_wbar != 0) { // need to iterate to get the
-                                                 // proper wbar flux
-    // check that we really don't have any wbar fluxes coming in
-    AMREX_ALWAYS_ASSERT(a_wbarfluxes.empty());
-    Vector<Array<MultiFab, AMREX_SPACEDIM>> wbarfluxes(finest_level + 1);
-    Vector<MultiFab> residual(finest_level + 1);
-    const int iter_max = 10;
-    const Real tol = 1e-10;
-    for (int lev = 0; lev <= finest_level; lev++) {
-      // residual over all species
-      residual[lev].define(grids[lev], dmap[lev], 1, 1, MFInfo(), Factory(lev));
-      for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
-        wbarfluxes[lev][idim].define(
-          grids[lev], dmap[lev], NUM_SPECIES, 1, MFInfo(), Factory(lev));
-        wbarfluxes[lev][idim].setVal(0.0);
-      }
-    }
-    for (int iter = 0; iter < iter_max; iter++) {
-      // based on existing gradient, compute the wbar flux
-      addWbarTerm(
-        GetVecOfArrOfPtrs(wbarfluxes), GetVecOfArrOfPtrs(wbarfluxes),
-        GetVecOfConstPtrs(getSpeciesVect(a_time)),
-        GetVecOfConstPtrs(getDensityVect(a_time)),
-        GetVecOfConstPtrs(getDiffusivityVect(a_time)),
-        GetVecOfConstPtrs(a_spec_boundary));
-      for (int lev = 0; lev <= finest_level; ++lev) {
-        residual[lev].setVal(0.0);
-        auto* ldata_p = getLevelDataPtr(lev, a_time);
-        MultiFab& ldata_beta_cc = ldata_p->diff_cc;
-        const Box& domain = geom[lev].Domain();
-        int doZeroVisc = 1;
-        int addTurbContribution = 0;
-        Array<MultiFab, AMREX_SPACEDIM> beta_ec = getDiffusivity(
-          lev, 0, NUM_SPECIES, doZeroVisc, bcRecSpec, ldata_beta_cc,
-          addTurbContribution);
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
-        for (MFIter mfi(*a_spec_boundary[lev], TilingIfNotGPU()); mfi.isValid();
-             ++mfi) {
-          for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
-            const auto bc_lo = m_phys_bc.lo(idim);
-            const auto bc_hi = m_phys_bc.hi(idim);
-            const Box& edomain = amrex::surroundingNodes(domain, idim);
-            const Box& ebx = mfi.nodaltilebox(idim);
-            auto const& rhoD_ec = beta_ec[idim].const_array(mfi);
-            auto const& flux_wbar = wbarfluxes[lev][idim].const_array(mfi);
-            auto const& flux_soret = soretfluxes[lev][idim]->const_array(mfi);
-            auto const& boundary_ar = a_spec_boundary[lev]->array(mfi);
-            auto const& residual_ar = residual[lev].array(mfi);
-            amrex::ParallelFor(
-              ebx,
-              [flux_soret, flux_wbar, rhoD_ec, boundary_ar, idim, edomain,
-               bc_lo, bc_hi,
-               residual_ar] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-                int idx[3] = {i, j, k};
-                bool on_lo =
-                  (bc_lo == BoundaryCondition::BCNoSlipWallIsotherm ||
-                   bc_lo == BoundaryCondition::BCSlipWallIsotherm) &&
-                  (idx[idim] <= edomain.smallEnd(idim));
-                bool on_hi =
-                  (bc_hi == BoundaryCondition::BCNoSlipWallIsotherm ||
-                   bc_hi == BoundaryCondition::BCSlipWallIsotherm) &&
-                  (idx[idim] >= edomain.bigEnd(idim));
-                if (on_lo || on_hi) {
-                  if (on_lo) { // need to move -1 for lo boundary
-                    idx[idim] -= 1;
-                  }
-                  for (int n = 0; n < NUM_SPECIES; n++) {
-                    // hold the old value
-                    Real b_old = boundary_ar(idx[0], idx[1], idx[2], n);
-                    // update the value
-                    boundary_ar(idx[0], idx[1], idx[2], n) =
-                      (flux_soret(i, j, k, n) + flux_wbar(i, j, k, n)) /
-                      rhoD_ec(i, j, k, n);
-                    // compute residual error
-                    Real res =
-                      std::abs(boundary_ar(idx[0], idx[1], idx[2], n) - b_old);
-                    residual_ar(idx[0], idx[1], idx[2]) =
-                      std::max(residual_ar(idx[0], idx[1], idx[2]), res);
-                  }
-                }
-              });
-          }
-        }
-      }
-      if (residual[finest_level].norm0(0, 1) < tol) {
-        break;
-      }
-    }
-  }
+  //TODO: wbar fluxes disabled for this case - boundary system becomes complex
 }
 
 void
@@ -579,12 +487,14 @@ PeleLM::addWbarTerm(
   if (have_boundary != 0) {
     Wbar_boundary.resize(finest_level + 1);
   }
+  auto const* leosparm = eos_parms.device_parm();
   for (int lev = 0; lev <= finest_level; ++lev) {
     Wbar[lev].define(grids[lev], dmap[lev], 1, nGrow, MFInfo(), Factory(lev));
     if (have_boundary != 0) {
       Wbar_boundary[lev].define(
         grids[lev], dmap[lev], 1, nGrow, MFInfo(), Factory(lev));
     }
+    auto const* leosparm = eos_parms.device_parm();
     const Box& domain = geom[lev].Domain();
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -603,14 +513,15 @@ PeleLM::addWbarTerm(
         gbx,
         [rho_arr, rhoY_arr, Wbar_arr, gradY_arr, Wbar_boundary_arr, domain,
          have_boundary,
-         phys_bc = m_phys_bc] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          getMwmixGivenRY(i, j, k, rho_arr, rhoY_arr, Wbar_arr);
+         phys_bc = m_phys_bc,leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          getMwmixGivenRY(i, j, k, rho_arr, rhoY_arr, Wbar_arr,leosparm);
           if (have_boundary != 0) { // need to impose gradWbar on boundary for
             // computeGradient
             // for dirichlet boundaries, we'll overwrite inhomog neumann ones
+	    // NOTE: for now, this is skipped since wbar disabled for isothermal/soret
             Wbar_boundary_arr(i, j, k) = Wbar_arr(i, j, k);
             int idx[3] = {i, j, k};
-            for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+	    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
               const auto bc_lo = phys_bc.lo(idim);
               const auto bc_hi = phys_bc.hi(idim);
               bool on_lo = (bc_lo == BoundaryCondition::BCNoSlipWallIsotherm ||
@@ -619,9 +530,9 @@ PeleLM::addWbarTerm(
               bool on_hi = (bc_hi == BoundaryCondition::BCNoSlipWallIsotherm ||
                             bc_hi == BoundaryCondition::BCSlipWallIsotherm) &&
                            (idx[idim] > domain.bigEnd(idim));
+	      
               if (on_lo || on_hi) {
-                getGradMwmixGivengradYMwmix(
-                  i, j, k, gradY_arr, Wbar_arr, Wbar_boundary_arr);
+		getGradMwmixGivengradYMwmix(i, j, k, gradY_arr, Wbar_arr, Wbar_boundary_arr,leosparm);
               }
             }
           }
