@@ -81,7 +81,7 @@ PeleLM::clipSootMoments()
 }
 
 // TODO: This isn't working yet
-#if 0
+/*
 void
 PeleLM::addSootDerivePlotVars(PeleLMDeriveList& derive_lst)
 {
@@ -97,5 +97,5 @@ PeleLM::addSootDerivePlotVars(PeleLMDeriveList& derive_lst)
     "soot_large_particles", IndexType::TheCellType(), large_part_names.size(),
     large_part_names, soot_largeparticledata, PeleLMDeriveRec::TheSameBox);
 }
-#endif
+*/
 #endif

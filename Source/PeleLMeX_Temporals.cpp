@@ -60,8 +60,8 @@ void
 PeleLM::speciesBalancePatch()
 {
   tmppatchmfrFile << m_nstep << "," << m_cur_time; // Time info
-  for (int n = 0; n < m_bPatches.size(); n++) {
-    BPatch::BpatchDataContainer* bphost = m_bPatches[n]->getHostDataPtr();
+  for (const auto& m_bPatche : m_bPatches) {
+    BPatch::BpatchDataContainer* bphost = m_bPatche->getHostDataPtr();
     for (int i = 0; i < bphost->num_species; i++) {
       tmppatchmfrFile << "," << bphost->speciesFlux[i];
     }
@@ -570,9 +570,9 @@ PeleLM::addRhoYFluxesPatch(
 #endif
 
   // Loop through all patches
-  for (int n = 0; n < m_bPatches.size(); n++) {
+  for (const auto& m_bPatche : m_bPatches) {
 
-    BPatch* patch = m_bPatches[n].get();
+    BPatch* patch = m_bPatche.get();
     BPatch::BpatchDataContainer const* bpdevice = patch->getDeviceData();
     BPatch::BpatchDataContainer const* bphost = patch->getHostDataPtr();
     const int idim = bphost->m_boundary_dir;
@@ -766,8 +766,8 @@ PeleLM::openTempFile()
         std::ios::out | std::ios::app | std::ios_base::binary);
       tmppatchmfrFile.precision(12);
       tmppatchmfrFile << "iter,time";
-      for (int n = 0; n < m_bPatches.size(); n++) {
-        BPatch* patch = m_bPatches[n].get();
+      for (const auto& m_bPatche : m_bPatches) {
+        BPatch* patch = m_bPatche.get();
         BPatch::BpatchDataContainer bphost = patch->getHostData();
         for (int i = 0; i < bphost.num_species; i++) {
           tmppatchmfrFile << ","
