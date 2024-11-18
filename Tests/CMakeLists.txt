@@ -219,10 +219,10 @@ endfunction(add_test_spray)
 #=============================================================================
 
 if(NOT PELE_ENABLE_EB)
-  add_test_re(flamesheet-drm19-${PELE_DIM}d FlameSheet)
-  add_test_rv(covo-${PELE_DIM}d PeriodicCases)
+  add_test_r(flamesheet-drm19-${PELE_DIM}d FlameSheet)
   add_test_r(hotbubble-${PELE_DIM}d HotBubble)
-  add_test_rev(enclosedflame-${PELE_DIM}d EnclosedFlame)
+  add_test_rv(covo-${PELE_DIM}d PeriodicCases)
+  add_test_rv(enclosedflame-${PELE_DIM}d EnclosedFlame)
   if(PELE_ENABLE_RADIATION)
     add_test_r(soot-rad-${PELE_DIM}d SootRadTest)
   endif()
