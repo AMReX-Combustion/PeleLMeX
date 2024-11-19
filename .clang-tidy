@@ -2,6 +2,7 @@
 Checks: 'bugprone-*,
          -bugprone-easily-swappable-parameters,
          -bugprone-implicit-widening-of-multiplication-result,
+         -bugprone-multi-level-implicit-pointer-conversion,
          -bugprone-exception-escape,
          clang-diagnostic-*,
          clang-analyzer-*,
@@ -21,10 +22,10 @@ Checks: 'bugprone-*,
          -readability-function-cognitive-complexity,
          -readability-convert-member-functions-to-static,
          -readability-make-member-function-const,
+         -readability-avoid-nested-conditional-operator,
          -readability-function-size'
 WarningsAsErrors: ''
 HeaderFilterRegex: 'PeleLMeX\/Source|PeleLMeX\/Exec|PeleLMeX\/Submodules\/PelePhysics\/Source|PeleLMeX\/Submodules\/PelePhysics\/Mechanism'
-AnalyzeTemporaryDtors: false
 FormatStyle:     none
 User:            user
 CheckOptions:

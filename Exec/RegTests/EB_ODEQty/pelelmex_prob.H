@@ -59,6 +59,8 @@ pelelmex_initdata(
                  , state(i, j, k, VELY) = -prob_parm.meanFlowMag;
                  , state(i, j, k, VELZ) = 0.0);
     break;
+  default:
+    break;
   }
 
   if (!(is_incompressible == 0)) {
@@ -152,6 +154,8 @@ bcnormal(
   case 3:
     AMREX_D_TERM(s_ext[VELZ] = prob_parm.meanFlowMag;, s_ext[VELX] = 0.0;
                  , s_ext[VELY] = 0.0);
+    break;
+  default:
     break;
   }
 
