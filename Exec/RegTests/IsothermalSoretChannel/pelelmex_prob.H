@@ -59,11 +59,8 @@ pelelmex_initdata(
   const amrex::Real* prob_hi = geomdata.ProbHi();
   const amrex::Real* dx = geomdata.CellSize();
 
-  const amrex::Real x = prob_lo[0] + (i + 0.5) * dx[0];
   const amrex::Real y = prob_lo[1] + (j + 0.5) * dx[1];
   const amrex::Real y_low = prob_lo[1];
-
-  const amrex::Real Lx = prob_hi[0] - prob_lo[0];
   const amrex::Real Ly = prob_hi[1] - prob_lo[1];
 
   auto eos = pele::physics::PhysicsType::eos();
@@ -98,19 +95,16 @@ AMREX_GPU_HOST_DEVICE
 AMREX_FORCE_INLINE
 void
 bcnormal(
-  const amrex::Real x[AMREX_SPACEDIM],
+  const amrex::Real* /*x[AMREX_SPACEDIM]*/,
   const int /*m_nAux*/,
   amrex::Real s_ext[NVAR],
   const int /*idir*/,
   const int sgn,
-  const amrex::Real time,
+  const amrex::Real /*time*/,
   amrex::GeometryData const& /*geomdata*/,
   ProbParm const& prob_parm,
   pele::physics::PMF::PmfData::DataContainer const* /*pmf_data*/)
 {
-  auto eos = pele::physics::PhysicsType::eos();
-  amrex::Real massfrac[NUM_SPECIES] = {0.0};
-
   if (sgn == 1) {
     s_ext[TEMP] = prob_parm.Tlow;
   } else if (sgn == -1) {
