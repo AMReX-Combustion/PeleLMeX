@@ -11,12 +11,12 @@ peleLM.lo_bc = Interior  Interior
 peleLM.hi_bc = Interior  Interior
 
 #-------------------------AMR CONTROL----------------------------
-amr.n_cell          = 12 12          # Level 0 number of cells in each direction
+amr.n_cell          = 1 1          # Level 0 number of cells in each direction
 amr.v               = 0                # AMR verbose
 amr.max_level       = 0                # maximum level number allowed
 amr.n_error_buf     = 2 2 2 2          # number of buffer cells in error est
 amr.grid_eff        = 0.7              # what constitutes an efficient grid
-amr.blocking_factor = 4               # block factor in grid generation (min box size)
+amr.blocking_factor = 1               # block factor in grid generation (min box size)
 amr.max_grid_size   = 64               # max box size
 
 #--------------------------- Problem ----------------------------
@@ -25,19 +25,19 @@ prob.P_mean = 101325.0
 prob.meanFlowMag = 0.0
 prob.meanFlowDir = 1       
 prob.composition_test = true
-prob.Y_CO2_0  = 0.0  # Initial CO2 mass frac contribution
+prob.Y_CO2_0  = 0.15  # Initial CO2 mass frac contribution
 prob.Y_N2_0   = 0.25 # Initial N2 mass frac contribution
-prob.Y_AR_0   = 0.75 # Initial AR mass frac contribution
-prob.extRhoYCO2 = 1.0  # Source strength for rhoYCO2
-prob.extRhoYCO2_ts = 0.5 # time when source starts
+prob.Y_AR_0   = 0.6 # Initial AR mass frac contribution
+prob.extRhoYCO2 = 145.0  # Source strength for rhoYCO2
+prob.extRhoYCO2_ts = 0.003 # time when source starts
 
 #---------------------- Temporal CONTROL -------------------------
-peleLM.do_temporals = 1                     # Turn temporals ON/OFF
-peleLM.temporal_int = 5
+peleLM.do_temporals = 1   
+peleLM.temporal_int = 1                 
 peleLM.do_extremas = 1                      
 
 #---------------------------TIME STEPPING------------------------
-amr.stop_time = 2
+amr.stop_time = 0.01
 amr.fixed_dt = 0.001
 
 #-------------------------PELE CONTROLS----------------------
@@ -48,7 +48,6 @@ peleLM.sdc_iterMax = 2
 peleLM.user_defined_ext_sources = true
 
 #---------------------------IO CONTROL---------------------------
-#amr.restart = chkSS
 amr.check_file = "chk"
 amr.check_per = -1
 amr.plot_file = "plt"

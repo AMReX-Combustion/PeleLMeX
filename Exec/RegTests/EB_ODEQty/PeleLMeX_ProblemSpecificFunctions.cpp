@@ -64,7 +64,8 @@ problem_modify_ext_sources(
 
         if(time >= prob_parm.extRhoYCO2_ts)
         {
-          src = prob_parm.extRhoYCO2;
+          Real CO2 = state_old_arr[box_no](i, j, k, FIRSTSPEC + CO2_ID);
+          src = prob_parm.extRhoYCO2 * CO2;
         }
 
         ext_src_arr[box_no](i,j,k,FIRSTSPEC+CO2_ID) += src; 
