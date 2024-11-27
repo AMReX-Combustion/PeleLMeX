@@ -86,6 +86,8 @@ pelelmex_initdata(
                    , state(i, j, k, VELY) = -prob_parm.meanFlowMag + v_vort;
                    , state(i, j, k, VELZ) = 0.0);
       break;
+    default:
+      break;
     }
 
     if (is_incompressible != 0) {
@@ -123,6 +125,8 @@ pelelmex_initdata(
       AMREX_D_TERM(state(i, j, k, VELX) = -prob_parm.meanFlowMag;
                    , state(i, j, k, VELY) = -prob_parm.meanFlowMag;
                    , state(i, j, k, VELZ) = 0.0);
+      break;
+    default:
       break;
     }
 
@@ -175,6 +179,8 @@ pelelmex_initdata(
       AMREX_D_TERM(state(i, j, k, VELX) = -prob_parm.meanFlowMag;
                    , state(i, j, k, VELY) = -prob_parm.meanFlowMag;
                    , state(i, j, k, VELZ) = 0.0);
+      break;
+    default:
       break;
     }
 

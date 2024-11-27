@@ -184,8 +184,11 @@ PeleLM::activeControl(int is_restart)
   // -------------------------------------------
   // Update m_ctrl_* Vectors if not restarting
   if (is_restart == 0) {
+#pragma GCC diagnostic ignored "-Wnull-dereference"
     m_ctrl_time_pts.insert(m_ctrl_time_pts.begin(), m_cur_time);
+#pragma GCC diagnostic ignored "-Wnull-dereference"
     m_ctrl_velo_pts.insert(m_ctrl_velo_pts.begin(), m_ctrl_V_in);
+#pragma GCC diagnostic ignored "-Wnull-dereference"
     m_ctrl_cntl_pts.insert(m_ctrl_cntl_pts.begin(), coft);
     if (m_ctrl_time_pts.size() > m_ctrl_NavgPts) { // Pop_back only if it's
                                                    // filled

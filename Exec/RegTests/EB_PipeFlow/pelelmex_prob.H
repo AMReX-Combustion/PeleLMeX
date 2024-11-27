@@ -77,6 +77,8 @@ pelelmex_initdata(
                    , state(i, j, k, VELY) = -prob_parm.meanFlowMag;
                    , state(i, j, k, VELZ) = 0.0);
       break;
+    default:
+      break;
     }
   } else if (prob_parm.flowType == 2) {
     const amrex::Real dpdx = 709.79; // Pa/m
@@ -183,6 +185,8 @@ bcnormal(
     case 3:
       AMREX_D_TERM(s_ext[VELZ] = prob_parm.meanFlowMag;, s_ext[VELX] = 0.0;
                    , s_ext[VELY] = 0.0);
+      break;
+    default:
       break;
     }
 

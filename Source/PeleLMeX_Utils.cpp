@@ -12,9 +12,6 @@ using namespace amrex;
 void
 writeBuildInfo()
 {
-  std::string OtherLine = std::string(78, '-') + "\n";
-  std::string SkipSpace = std::string(8, ' ');
-
   // build information
   std::cout << PrettyLine;
   std::cout << " PeleLMeX Build Information\n";
@@ -868,6 +865,7 @@ PeleLM::loadBalanceChemLev(int a_lev)
       ParallelDescriptor::MyProc() == ParallelDescriptor::IOProcessorNumber()) {
       pmap = test_dmap.ProcessorMap();
     } else {
+#pragma GCC diagnostic ignored "-Wnull-dereference"
       pmap.resize(static_cast<std::size_t>(m_baChem[a_lev]->size()));
     }
     ParallelDescriptor::Bcast(

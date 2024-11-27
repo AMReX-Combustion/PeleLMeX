@@ -672,7 +672,7 @@ PeleLM::getRestartEBMaxLevel() const
   std::string fileCharPtrString(fileCharPtr.dataPtr());
   std::istringstream is(fileCharPtrString, std::istringstream::in);
 
-  std::string line, word;
+  std::string line;
 
   // Title line
   std::getline(is, line);
