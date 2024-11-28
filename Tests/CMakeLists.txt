@@ -110,6 +110,14 @@ function(add_test_rev TEST_NAME TEST_EXE_DIR)
     set_tests_properties(${TEST_NAME} PROPERTIES LABELS "regression;verification;no-ci")
 endfunction(add_test_rev)
 
+# Regression test with case-specific verification test.py
+function(add_test_rt TEST_NAME TEST_EXE_DIR)
+    setup_test()
+    set(RUNTIME_OPTIONS "amr.max_step=10 peleLM.do_temporals=1 peleLM.do_extremas=1 peleLM.temporal_int=1 ${RUNTIME_OPTIONS}")
+    add_test(${TEST_NAME} sh -c "${MPI_COMMANDS} ${CURRENT_TEST_EXE} ${MPIEXEC_POSTFLAGS} ${CURRENT_TEST_BINARY_DIR}/${TEST_NAME}.inp ${RUNTIME_OPTIONS} > ${TEST_NAME}.log ${SAVE_GOLDS_COMMAND} ${FCOMPARE_COMMAND} && nosetests ${CURRENT_TEST_BINARY_DIR}/test.py")
+    set_tests_properties(${TEST_NAME} PROPERTIES TIMEOUT 18000 PROCESSORS ${PELE_NP} WORKING_DIRECTORY "${CURRENT_TEST_BINARY_DIR}/" LABELS "regression;verification" ATTACHED_FILES_ON_FAIL "${CURRENT_TEST_BINARY_DIR}/${TEST_NAME}.log")
+endfunction(add_test_rt)
+
 # Regression tests excluded from CI
 function(add_test_re TEST_NAME TEST_EXE_DIR)
     add_test_r(${TEST_NAME} ${TEST_EXE_DIR})
@@ -234,5 +242,8 @@ if(NOT PELE_ENABLE_EB)
     add_test_r(hit-les-${PELE_DIM}d HITDecay)
   endif()
 else()
+  if(PELE_DIM EQUAL 2)
+    add_test_rt(composition-test-${PELE_DIM}d EB_ODEQty)
+  endif()
   add_test_r(eb-odeqty-${PELE_DIM}d EB_ODEQty)
 endif()

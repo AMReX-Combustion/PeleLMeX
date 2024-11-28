@@ -5,7 +5,7 @@ import pandas as pd
 import unittest
 
 class CompTestCase(unittest.TestCase):
-    """Tests composition of species with external sources"""
+    """Test composition of species with external sources"""
 
     def test_composition(self):
         """Are the number of moles, mass fractions, and density correct?"""
@@ -14,11 +14,11 @@ class CompTestCase(unittest.TestCase):
         molar_masses = {"AR": 0.040, "N2": 0.028, "CO2": 0.044}
 
         # Load the data
-        file_dir = os.path.dirname(os.path.abspath(__file__))
+        file_dir = os.path.abspath(".")
         file_name = os.path.join(file_dir, "temporals/tempExtremas")
         col_names = ["time", "max_density", "max_rho.Y(AR)", "max_rho.Y(N2)", "max_rho.Y(CO2)"]
         var_names = ["AR", "N2", "CO2"]
-        data = pd.read_csv(file_name, usecols=col_names)
+        data = pd.read_csv(file_name, usecols=col_names, delimiter=',')
         time = data["time"]
 
         # Parse input file for necessary solution parameters
@@ -35,6 +35,10 @@ class CompTestCase(unittest.TestCase):
         data_rho = data["max_density"]
         data_rhoY = data.iloc[:, 2:].copy()
         data_rhoY.columns = var_names
+
+        # Ensure numeric types for all data columns
+        data_rho = pd.to_numeric(data_rho, errors="coerce")
+        data_rhoY = data_rhoY.apply(pd.to_numeric, errors="coerce")
 
         # Initial values
         AR_0, N2_0, CO2_0 = data_rhoY.iloc[0].to_dict().values()
@@ -88,7 +92,6 @@ class CompTestCase(unittest.TestCase):
             np.array([expected_error_rho]),
             err_msg="Maximum density error exceeds specified tolerance."
         )
-
 
 if __name__ == "__main__":
     unittest.main()
