@@ -11,7 +11,7 @@ input_file = os.path.join(file_dir, "composition-test-2d.inp")
 
 # Load data
 col_names = ["time", "max_density", "max_rho.Y(AR)", "max_rho.Y(N2)", "max_rho.Y(CO2)"]
-data = pd.read_csv(data_file, usecols=col_names)
+data = pd.read_csv(data_file, usecols=col_names, delimiter=',')
 var_names = ["AR", "N2", "CO2"]
 time = data['time']
 
@@ -73,7 +73,7 @@ for species in max_error_moles.index:
 print("=====================================================\n")
 
 # Plot results
-fig, axs = plt.subplots(1, 3, figsize=(16, 5))
+fig, axs = plt.subplots(1, 3, figsize=(16, 4.5))
 xticks = np.linspace(time.min(), time.max(), 5)
 
 # Plot 1: Mass fractions

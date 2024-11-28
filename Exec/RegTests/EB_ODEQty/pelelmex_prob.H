@@ -28,8 +28,8 @@ pelelmex_initdata(
 
   amrex::Real massfrac[NUM_SPECIES] = {0.0};
   massfrac[CO2_ID] = prob_parm.Y_CO2_0;
-  massfrac[N2_ID]  = prob_parm.Y_N2_0;
-  massfrac[AR_ID]  = prob_parm.Y_AR_0;
+  massfrac[N2_ID] = prob_parm.Y_N2_0;
+  massfrac[AR_ID] = prob_parm.Y_AR_0;
 
   switch (prob_parm.meanFlowDir) {
   case 1:
@@ -91,7 +91,7 @@ pelelmex_initdata(
 #if NUM_ODE > 0
   amrex::Real ode_qty[NUM_ODE] = {0.0};
 
-  if(prob_parm.ode_qty_test){
+  if (prob_parm.ode_qty_test) {
     // Initial state for ode quantities
     amrex::Real ode_qty_0[NUM_ODE] = {0.0};
     for (int n = 0; n < NUM_ODE; n++) {
@@ -123,7 +123,7 @@ pelelmex_initdata(
   for (int n = 0; n < NUM_ODE; n++) {
     state(i, j, k, FIRSTODE + n) = ode_qty[n];
   }
-  
+
 #endif
 }
 
@@ -143,8 +143,8 @@ bcnormal(
 {
   amrex::Real massfrac[NUM_SPECIES] = {0.0};
   massfrac[CO2_ID] = prob_parm.Y_CO2_0;
-  massfrac[N2_ID]  = prob_parm.Y_N2_0;
-  massfrac[AR_ID]  = prob_parm.Y_AR_0;
+  massfrac[N2_ID] = prob_parm.Y_N2_0;
+  massfrac[AR_ID] = prob_parm.Y_AR_0;
 
   auto eos = pele::physics::PhysicsType::eos();
 

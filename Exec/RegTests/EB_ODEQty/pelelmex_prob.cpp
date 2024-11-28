@@ -18,8 +18,8 @@ PeleLM::readProbParm() // NOLINT(readability-make-member-function-const)
   pp.query("ode_srcstrength", prob_parm->ode_srcstrength);
   pp.query("composition_test", prob_parm->composition_test);
   pp.query("Y_CO2_0", prob_parm->Y_CO2_0);
-  pp.query("Y_N2_0" , prob_parm->Y_N2_0);     
-  pp.query("Y_AR_0" , prob_parm->Y_AR_0);     
+  pp.query("Y_N2_0", prob_parm->Y_N2_0);
+  pp.query("Y_AR_0", prob_parm->Y_AR_0);
   pp.query("extRhoYCO2", prob_parm->extRhoYCO2);
-  pp.query("extRhoYCO2_ts",prob_parm->extRhoYCO2_ts);
+  pp.query("extRhoYCO2_ts", prob_parm->extRhoYCO2_ts);
 }

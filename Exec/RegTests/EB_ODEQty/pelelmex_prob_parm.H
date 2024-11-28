@@ -20,10 +20,10 @@ struct ProbParm : amrex::Gpu::Managed
   amrex::Real ode_height = 0.0;
   amrex::Real ode_srcstrength = 0.0;
   bool composition_test = false;
-  amrex::Real Y_CO2_0  = 0.0; 
-  amrex::Real Y_N2_0   = 0.25; 
-  amrex::Real Y_AR_0   = 0.75; 
-  amrex::Real extRhoYCO2 = 0.0;  
-  amrex::Real extRhoYCO2_ts = 0.0; 
+  amrex::Real Y_CO2_0 = 0.0;
+  amrex::Real Y_N2_0 = 0.25;
+  amrex::Real Y_AR_0 = 0.75;
+  amrex::Real extRhoYCO2 = 0.0;
+  amrex::Real extRhoYCO2_ts = 0.0;
 };
 #endif
