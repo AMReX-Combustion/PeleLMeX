@@ -25,7 +25,7 @@ prob.P_mean = 101325.0
 prob.Vin = 10.0
 prob.Tlow = 400.0
 prob.Thigh = 800.0
-prob.phi = 0.5
+prob.phi = 1.0
 #---------------------- Transport --------------------------------
 transport.use_soret = 1
 
@@ -46,7 +46,7 @@ peleLM.do_species_balance = 1             # Compute species balance
 amr.max_step = 2000                       # Maximum number of time steps
 amr.stop_time = 4.00                      # final simulation physical time [s]
 amr.max_wall_time = 1                     # Maximum simulation run time [h]
-amr.cfl = 0.5                             # CFL number for hyperbolic system 
+amr.cfl = 0.5                             # CFL number for hyperbolic system
 amr.dt_shrink = 0.01                     # Scale back initial timestep
 amr.dt_change_max = 1.1                   # Maximum dt increase btw successive steps
 
