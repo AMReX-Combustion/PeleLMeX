@@ -86,6 +86,6 @@ amr.gradT.adjacent_difference_greater = 200
 amr.gradT.field_name = temp
 
 #---------------------- Debug/HPC CONTROL-------------------------
-amrex.fpe_trap_invalid = 1
-amrex.fpe_trap_zero = 1
-amrex.fpe_trap_overflow = 1
+#amrex.fpe_trap_invalid = 1
+#amrex.fpe_trap_zero = 1
+#amrex.fpe_trap_overflow = 1
