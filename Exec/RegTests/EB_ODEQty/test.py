@@ -22,10 +22,12 @@ class CompTestCase(unittest.TestCase):
         
         # Ensure numeric types for all data columns
         data = data.apply(pd.to_numeric, errors="coerce")
+        print("Raw Data:\n", data)
 
         # Check for NaN values and raise an error if found
         if data.isnull().any().any():
-            raise ValueError("Data contains NaN values after conversion. Please check the input file format.")
+            print("\nNull data:\n", data.isnull())
+            raise ValueError("Data contains NaN values after conversion.\n",data)
         
         time = data["time"]
 
