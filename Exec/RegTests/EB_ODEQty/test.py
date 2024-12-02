@@ -19,6 +19,14 @@ class CompTestCase(unittest.TestCase):
         col_names = ["time", "max_density", "max_rho.Y(AR)", "max_rho.Y(N2)", "max_rho.Y(CO2)"]
         var_names = ["AR", "N2", "CO2"]
         data = pd.read_csv(file_name, usecols=col_names, delimiter=',')
+        
+        # Ensure numeric types for all data columns
+        data = data.apply(pd.to_numeric, errors="coerce")
+
+        # Check for NaN values and raise an error if found
+        if data.isnull().any().any():
+            raise ValueError("Data contains NaN values after conversion. Please check the input file format.")
+        
         time = data["time"]
 
         # Parse input file for necessary solution parameters
