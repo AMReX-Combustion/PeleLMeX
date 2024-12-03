@@ -114,7 +114,7 @@ endfunction(add_test_rev)
 function(add_test_rt TEST_NAME TEST_EXE_DIR)
     setup_test()
     set(RUNTIME_OPTIONS "amr.max_step=10 peleLM.do_temporals=1 peleLM.do_extremas=1 peleLM.temporal_int=1 ${RUNTIME_OPTIONS}")
-    add_test(${TEST_NAME} sh -c "${MPI_COMMANDS} ${CURRENT_TEST_EXE} ${MPIEXEC_POSTFLAGS} ${CURRENT_TEST_BINARY_DIR}/${TEST_NAME}.inp ${RUNTIME_OPTIONS} > ${TEST_NAME}.log ${SAVE_GOLDS_COMMAND} ${FCOMPARE_COMMAND} && nosetests ${CURRENT_TEST_BINARY_DIR}/test.py")
+    add_test(${TEST_NAME} sh -c "${CURRENT_TEST_EXE} ${MPIEXEC_POSTFLAGS} ${CURRENT_TEST_BINARY_DIR}/${TEST_NAME}.inp ${RUNTIME_OPTIONS} > ${TEST_NAME}.log ${SAVE_GOLDS_COMMAND} ${FCOMPARE_COMMAND} && nosetests ${CURRENT_TEST_BINARY_DIR}/test.py")
     set_tests_properties(${TEST_NAME} PROPERTIES TIMEOUT 18000 PROCESSORS ${PELE_NP} WORKING_DIRECTORY "${CURRENT_TEST_BINARY_DIR}/" LABELS "regression;verification" ATTACHED_FILES_ON_FAIL "${CURRENT_TEST_BINARY_DIR}/${TEST_NAME}.log")
 endfunction(add_test_rt)
 
