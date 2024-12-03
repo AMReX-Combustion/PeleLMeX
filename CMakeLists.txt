@@ -101,4 +101,4 @@ include(SetRpath)
 
 add_subdirectory(Exec)
 add_subdirectory(Tests)
-#add_subdirectory(${CMAKE_SOURCE_DIR}/Submodules/PelePhysics/Testing/Exec/Radiation)
+add_subdirectory(${CMAKE_SOURCE_DIR}/Submodules/PelePhysics/Testing/Exec/Radiation)

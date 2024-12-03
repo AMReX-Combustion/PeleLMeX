@@ -23,7 +23,6 @@ class CompTestCase(unittest.TestCase):
 
         # Ensure numeric types for all data columns
         data = data.apply(pd.to_numeric, errors="coerce")
-        print("Numeric only data:\n", data)
 
         # Check for NaN values and raise an error if found
         if data.isnull().any().any():
