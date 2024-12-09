@@ -41,10 +41,10 @@ PeleLM::ionDriftVelocity(std::unique_ptr<AdvanceAdvData>& advData)
   auto bcRecPhiV = fetchBCRecArray(PHIV, 1);
   getDiffusionOp()->computeGradient(
     GetVecOfArrOfPtrs(gphiVOld), {}, // don't need the laplacian out
-    GetVecOfConstPtrs(getPhiVVect(AmrOldTime)), bcRecPhiV[0], do_avgDown);
+    GetVecOfConstPtrs(getPhiVVect(AmrOldTime)), {}, bcRecPhiV[0], do_avgDown);
   getDiffusionOp()->computeGradient(
     GetVecOfArrOfPtrs(gphiVNew), {}, // don't need the laplacian out
-    GetVecOfConstPtrs(getPhiVVect(AmrNewTime)), bcRecPhiV[0], do_avgDown);
+    GetVecOfConstPtrs(getPhiVVect(AmrNewTime)), {}, bcRecPhiV[0], do_avgDown);
 
   //----------------------------------------------------------------
   // TODO : this assumes that all the ions are grouped together at th end ...
