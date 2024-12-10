@@ -84,7 +84,7 @@ jobs:
     runs-on: ${{matrix.os}}
     strategy:
       matrix:
-        os: [ubuntu-24.04, macos-latest]
+        os: [ubuntu-latest, macos-latest]
         build_type: [Release, Debug]
         enable_eb: [EB-OFF, EB-ON]
         include:
@@ -93,7 +93,7 @@ jobs:
             comp: llvm
             procs: $(sysctl -n hw.ncpu)
             ccache_cache: /Users/runner/Library/Caches/ccache
-          - os: ubuntu-24.04
+          - os: ubuntu-latest
             install_deps: sudo apt-get update && sudo apt-get install mpich libmpich-dev
             comp: gnu
             procs: $(nproc)
