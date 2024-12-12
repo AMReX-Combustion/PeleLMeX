@@ -209,6 +209,9 @@ PeleLM::Setup()
 
   // Initialize active control
   initActiveControl();
+
+  // Check setup parameters
+  checkSetupParams();
 }
 
 void
@@ -748,6 +751,18 @@ PeleLM::readParameters()
   }
 #endif
 
+  // -----------------------------------------
+  // External Sources
+  // -----------------------------------------
+  m_user_defined_ext_sources = false;
+  m_ext_sources_SDC = false; // TODO: add capability to update ext_srcs in SDC
+  pp.query("user_defined_ext_sources", m_user_defined_ext_sources);
+}
+
+void
+PeleLM::checkSetupParams()
+{
+  BL_PROFILE("PeleLMeX::checkSetupParams()");
   // Ensure unsupported physics is not used with manifiold models
   if (pele::physics::PhysicsType::eos_type::identifier() == "Manifold") {
     if (m_closed_chamber != 0) {
@@ -773,14 +788,17 @@ PeleLM::readParameters()
 #ifdef PELE_USE_EFIELD
     amrex::Abort("Efield models are not yet supported for Manifold EOS");
 #endif
+#ifdef USE_MANIFOLD_EOS
+    if (
+      std::abs(
+        (0.1 * eos_parms.host_parm().Pnom_cgs - prob_parm->P_mean) /
+        prob_parm->P_mean) > 1e-6) {
+      amrex::Abort("For Manifold EOS, pressure in manifold model "
+                   "(manifold.nominal_pressure_cgs) and pressure in PeleLMeX "
+                   "(prob.Pmean) must match");
+    }
+#endif
   }
-
-  // -----------------------------------------
-  // External Sources
-  // -----------------------------------------
-  m_user_defined_ext_sources = false;
-  m_ext_sources_SDC = false; // TODO: add capability to update ext_srcs in SDC
-  pp.query("user_defined_ext_sources", m_user_defined_ext_sources);
 }
 
 void
