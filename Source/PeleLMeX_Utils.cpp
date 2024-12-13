@@ -1019,7 +1019,7 @@ PeleLM::initProgressVariable()
 {
   Vector<std::string> varNames;
   pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(
-    varNames);
+    varNames, &(eos_parms.host_parm()));
   varNames.push_back("temp");
 
   ParmParse pp("peleLM");
@@ -1416,7 +1416,7 @@ PeleLM::setTypicalValues(const TimeStamp& a_time, int is_init)
       Print() << "\tH:        " << typical_values[RHOH] << '\n';
       Vector<std::string> spec_names;
       pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(
-        spec_names);
+        spec_names, &(eos_parms.host_parm()));
       for (int n = 0; n < NUM_SPECIES; n++) {
         Print() << "\tY_" << spec_names[n]
                 << std::setw(
@@ -1722,10 +1722,56 @@ PeleLM::checkMemory(const std::string& a_message) const
 void
 PeleLM::initMixtureFraction()
 {
-  // Get default fuel and oxy tank composition: pure fuel vs air
+  // set up a few variables
+  auto const* leosparm = &eos_parms.host_parm();
+  auto eos = pele::physics::PhysicsType::eos(leosparm);
   Vector<std::string> specNames;
   pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(
-    specNames);
+    specNames, leosparm);
+  ParmParse pp("peleLM");
+
+  // Do simpler things for some EOS
+  if (pele::physics::PhysicsType::eos_type::identifier() == "GammaLaw") {
+    // Do nothing - Bilger mixture fraction has no meaning here
+    // error will be raised if user tries to derive mixfrac because Zfu is
+    // negative
+    return;
+  }
+  if (pele::physics::PhysicsType::eos_type::identifier() == "Manifold") {
+    // Just take a mixture fraction if it is a manifold parameter
+    // otherwise do nothing (an error will later be raised if the user tries to
+    // derive it) also raise an error if the user requests it and it is not
+    // found
+    std::string mixfrac_name = "ZMIX";
+    bool requested_mixfrac =
+      pp.contains("mixtureFraction.manifoldParameterName");
+    pp.query("mixtureFraction.manifoldParameterName", mixfrac_name);
+    bool found = false;
+    for (int n = 0; n < NUM_SPECIES; ++n) {
+      if (specNames[n] == mixfrac_name) {
+        if (!found) {
+          found = true;
+          spec_Bilger_fact[n] = 1.0;
+        } else {
+          amrex::Abort("initMixtureFraction: requested manifold parameter "
+                       "found multiple times");
+        }
+      } else {
+        spec_Bilger_fact[n] = 0.0;
+      }
+    }
+    if (found) {
+      Zfu = 1.0;
+      Zox = 0.0;
+    } else if (requested_mixfrac) {
+      amrex::Abort(
+        "initMixtureFraction: requested manifold parameter not found");
+    }
+    return;
+  }
+
+  // Otherwise - compute Bilger weights for detailed chemistry
+
   amrex::Real YF[NUM_SPECIES], YO[NUM_SPECIES];
   for (int i = 0; i < NUM_SPECIES; ++i) {
     YF[i] = 0.0;
@@ -1741,10 +1787,7 @@ PeleLM::initMixtureFraction()
     }
   }
 
-  auto const* leosparm = &eos_parms.host_parm();
-  auto eos = pele::physics::PhysicsType::eos(leosparm);
   // Overwrite with user-defined value if provided in input file
-  ParmParse pp("peleLM");
   std::string MFformat;
   int hasUserMF = static_cast<int>(pp.contains("mixtureFraction.format"));
   if (hasUserMF != 0) {
@@ -1796,7 +1839,6 @@ PeleLM::initMixtureFraction()
         for (int i = 0; i < NUM_SPECIES; ++i) {
           XF[i] = compositionIn[i];
         }
-
         eos.X2Y(XO, YO);
         eos.X2Y(XF, YF);
       } else {
@@ -1812,6 +1854,7 @@ PeleLM::initMixtureFraction()
                "peleLM.fuel_name keyword \n";
   }
 
+  // Detailed chem - compute Bilger coefficients
   // Only interested in CHON -in that order. Compute Bilger weights
   amrex::Real atwCHON[4] = {0.0};
   pele::physics::eos::atomic_weightsCHON<pele::physics::PhysicsType::eos_type>(
@@ -1852,7 +1895,7 @@ PeleLM::parseComposition(
   // Get species names
   Vector<std::string> specNames;
   pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(
-    specNames);
+    specNames, &(eos_parms.host_parm()));
 
   // For each entry in the user-provided composition, parse name and value
   std::string delimiter = ":";

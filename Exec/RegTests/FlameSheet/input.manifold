@@ -51,7 +51,12 @@ amr.dt_shrink = 0.01
 amr.stop_time = 0.01
 #amr.stop_time = 1.00
 amr.cfl = 0.5
-amr.derive_plot_vars = avg_pressure mag_vort mass_fractions maniout
+amr.derive_plot_vars = avg_pressure mag_vort mass_fractions maniout progress_variable
+
+peleLM.progressVariable.format = Cantera
+peleLM.progressVariable.weights = "PROG:1"
+peleLM.progressVariable.coldState = "PROG:0"
+peleLM.progressVariable.hotState = "PROG:1"
 
 # ------------------- INPUTS DERIVED DIAGS ------------------
 peleLM.fuel_name = CH4

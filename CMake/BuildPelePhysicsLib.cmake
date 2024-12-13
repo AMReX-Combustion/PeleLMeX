@@ -113,7 +113,6 @@ function(build_pele_physics_lib pele_physics_lib_name)
 
     target_sources(${pele_physics_lib_name}
       PRIVATE
-        ${PELE_PHYSICS_EOS_DIR}/EOS.cpp
         ${PELE_PHYSICS_EOS_DIR}/EOS.H
         ${PELE_PHYSICS_EOS_DIR}/GammaLaw.H
         ${PELE_PHYSICS_EOS_DIR}/Fuego.H

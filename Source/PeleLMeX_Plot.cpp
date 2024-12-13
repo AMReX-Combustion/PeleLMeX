@@ -175,7 +175,8 @@ PeleLM::WritePlotFile()
   //----------------------------------------------------------------
   // Components names
   Vector<std::string> names;
-  pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(names);
+  pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(
+    names, &(eos_parms.host_parm()));
 
   Vector<std::string> plt_VarsName;
   AMREX_D_TERM(plt_VarsName.push_back("x_velocity");
@@ -841,7 +842,7 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
   // Find required data in pltfile
   Vector<std::string> spec_names;
   pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(
-    spec_names);
+    spec_names, &(eos_parms.host_parm()));
   int idT = -1, idV = -1, idY = -1, nSpecPlt = 0;
 #ifdef PELE_USE_EFIELD
   int inE = -1, iPhiV = -1;
