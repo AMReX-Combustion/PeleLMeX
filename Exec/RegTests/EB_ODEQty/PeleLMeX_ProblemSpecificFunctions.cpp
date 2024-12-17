@@ -53,8 +53,6 @@ problem_modify_ext_sources(
           Real src = prob_parm.ode_srcstrength * pow(10.0, n + 1) * B_n;
           ext_src_arr[box_no](i, j, k, FIRSTODE + n) += src;
         }
-        // Ignore time as it is only used if composition_test = 1
-        amrex::ignore_unused(time);
       }
 
       // Source terms for composition test
@@ -68,9 +66,6 @@ problem_modify_ext_sources(
 
         ext_src_arr[box_no](i, j, k, FIRSTSPEC + CO2_ID) += src;
         ext_src_arr[box_no](i, j, k, DENSITY) += src;
-
-        // Ignore state_old_arr as it is only used if ode_qty_test = 1
-        amrex::ignore_unused(state_old_arr);
       }
     });
   Gpu::streamSynchronize();
