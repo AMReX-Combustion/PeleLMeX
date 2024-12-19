@@ -345,13 +345,13 @@ compute_divu<pele::physics::eos::Manifold>(
 
   auto eos = pele::physics::PhysicsType::eos(eosparm);
   eos.RY2RRinvY(massdens, rho, rhoinv, y);
-  amrex::Real derivs[NUM_SPECIES - 1] = {0.0};
+  amrex::Real derivs[MANIFOLD_DIM] = {0.0};
   rho /= 1.0e3; // Unit conversion MKS -> CGS
   eos.RY2dRdY(rho, y, derivs);
 
   divu(i, j, k) = 0.0;
 
-  for (int n = 0; n < NUM_SPECIES - 1; n++) {
+  for (int n = 0; n < MANIFOLD_DIM; n++) {
     derivs[n] *= 1.0e3; // Unit conversion CGS -> MKS
     divu(i, j, k) += derivs[n] * specDiff(i, j, k, n);
     if (do_react != 0) {
