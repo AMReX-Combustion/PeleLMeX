@@ -291,7 +291,7 @@ Transport coefficients and LES
     peleLM.les_cs_sigma = 1.35             # [OPT, DEF=1.35] If using Sigma LES model, provides model coefficient
     peleLM.les_v = 0                       # [OPT, DEF=0] Verbosity level for LES model
     peleLM.plot_les = 0                    # [OPT, DEF=0] If doing LES, whether to plot the turbulent viscosity
-    transport.use_soret = 0                # [OPT, DEF=0] Computute diffusion includsing the Soret effect (note, this option is inherited from PelePhysics)
+    transport.use_soret = 0                # [OPT, DEF=0] Compute diffusion including the Soret effect (note, this option is inherited from PelePhysics)
 
 .. note::
    When using the Soret effect, boundary condition corrections are needed at isothermal boundaries,
