@@ -1,11 +1,10 @@
 import os
-import re
 import numpy.testing as npt
 import pandas as pd
 import unittest
 
 class SpeciesBalTestCase(unittest.TestCase):
-    """Test composition of species with external sources"""
+    """Test species balance with isothermal walls and soret"""
 
     def test_composition(self):
         """Verify species conservation"""
