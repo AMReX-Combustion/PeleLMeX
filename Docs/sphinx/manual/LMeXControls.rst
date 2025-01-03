@@ -297,7 +297,7 @@ Transport coefficients and LES
    When using the Soret effect, boundary condition corrections are needed at isothermal boundaries,
    which are not fully supported. Currently a correction for all terms except the wbar term
    is applied at isothermal domain boundaries (this is likely sufficient), while no corrections are applied
-   at isothemral embedded boundaries (so use caution for isothermal EBs with Soret diffusion active).
+   at isothermal embedded boundaries (so use caution for isothermal EBs with Soret diffusion active).
 
 Chemistry integrator
 --------------------
