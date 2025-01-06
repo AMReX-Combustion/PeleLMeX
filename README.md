@@ -163,3 +163,9 @@ To cite PeleLMeX, please use [![Citing](https://joss.theoj.org/papers/10.21105/j
   publisher = {Proceedings of the 2024 SIAM Conference on Parallel Processing for Scientific Computing}
 }
 ```
+
+A full list of publications documenting the development of the Pele suite and its
+application to various reacting flow and other simulations is available on the main
+[Pele suite page](https://amrex-combustion.github.io/pubs.html). After publication,
+if you'd like your work to be included on that list, you can request to have it added
+[here](https://github.com/AMReX-Combustion/AMReX-Combustion.github.io/discussions/3).
