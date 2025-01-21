@@ -1918,11 +1918,10 @@ public:
 
   // Aux data size
   int m_nAux = 0;
-  int m_aux_verbose = 0;
   amrex::Vector<std::string> m_aux_names;
   amrex::Vector<int> m_AdvTypeAux;
   amrex::Vector<int> m_DiffTypeAux;
-  amrex::Vector<amrex::Real> m_aux_diff_coeff;
+  amrex::Vector<amrex::Real> m_aux_Schmidt;
   amrex::Vector<int> m_aux_advect;
   // R-z
   int m_rz_correction = 0;

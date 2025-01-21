@@ -399,8 +399,7 @@ PeleLM::readParameters()
     m_AdvTypeAux.resize(m_nAux);
     m_aux_advect.resize(m_nAux);
     m_DiffTypeAux.resize(m_nAux);
-    m_aux_diff_coeff.resize(m_nAux);
-    pp.query("aux_verbose", m_aux_verbose);
+    m_aux_Schmidt.resize(m_nAux);
     for (int n = 0; n < m_nAux; n++) {
       pp.get("aux_vars", m_aux_names[n], n);
       std::string aux_prefix = "peleLM." + m_aux_names[n];
@@ -408,10 +407,13 @@ PeleLM::readParameters()
       ppa.get("advect", m_aux_advect[n]);
       // Assume conservative
       m_AdvTypeAux[n] = 1;
-      ppa.get("diff_coeff", m_aux_diff_coeff[n]);
-      // check diffusion coefficient isn't negative
-      m_aux_diff_coeff[n] = std::max(0.0, m_aux_diff_coeff[n]);
-      m_DiffTypeAux[n] = (m_aux_diff_coeff[n] > 0.0) ? 1 : 0;
+      m_aux_Schmidt[n] = -1.0;
+      ppa.query("Schmidt",m_aux_Schmidt[n]);
+      if (m_aux_Schmidt[n] < 0) {
+	m_DiffTypeAux[n] = 0;
+      } else {
+	m_DiffTypeAux[n] = 1;
+      }
     }
   }
 
@@ -948,6 +950,9 @@ PeleLM::variablesSetup()
     for (int n = 0; n < m_nAux; n++) {
       Print() << " Auxiliary " + std::to_string(n + 1) + ": " << m_aux_names[n]
               << "\n";
+      if (m_aux_Schmidt[n] < 0) {
+	Print() << "   Did not specify Schmidt number - assuming no diffusivity" << "\n";
+      }
     }
     Print() << " => Total number of auxiliary variables: " << m_nAux << "\n";
   }

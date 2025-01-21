@@ -30,7 +30,7 @@ THREAD_SANITIZER = FALSE
 # PelePhysics
 Chemistry_Model = air
 Eos_Model = Fuego
-Transport_Model = Constant
+Transport_Model = Simple
 
 PELE_HOME ?= ../../..
 include $(PELE_HOME)/Exec/Make.PeleLMeX

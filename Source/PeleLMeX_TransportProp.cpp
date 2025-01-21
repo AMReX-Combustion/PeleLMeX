@@ -287,6 +287,15 @@ PeleLM::calcDiffusivity(const TimeStamp& a_time)
 {
   BL_PROFILE("PeleLMeX::calcDiffusivity()");
 
+
+  const amrex::Real Pr_inv = m_Prandtl_inv;
+  const amrex::Real Le_inv = m_Lewis_inv;
+  const bool do_fixed_Le = (m_fixed_Le != 0);
+  const bool do_fixed_Pr = (m_fixed_Pr != 0);
+  const bool do_soret = (m_use_soret != 0);
+  // pass soret array, or pass mu as dummy (won't do anything)
+  const int soret_idx = do_soret ? 1 : 0;  
+  
   for (int lev = 0; lev <= finest_level; ++lev) {
 
     auto* ldata_p = getLevelDataPtr(lev, a_time);
@@ -306,19 +315,7 @@ PeleLM::calcDiffusivity(const TimeStamp& a_time)
       eos.molecular_weight(mwt.arr);
     }
 #endif
-    // Fill the diff_aux MF with user input
-    // TODO: add ability to use species/thermal diffusivity or viscosity
-    for (int n = 0; n < m_nAux; n++) {
-      ldata_p->diff_aux_cc.setVal(m_aux_diff_coeff[n], n, 1);
-    }
 
-    const amrex::Real Pr_inv = m_Prandtl_inv;
-    const amrex::Real Le_inv = m_Lewis_inv;
-    const bool do_fixed_Le = (m_fixed_Le != 0);
-    const bool do_fixed_Pr = (m_fixed_Pr != 0);
-    const bool do_soret = (m_use_soret != 0);
-    // pass soret array, or pass mu as dummy (won't do anything)
-    const int soret_idx = do_soret ? 1 : 0;
     amrex::ParallelFor(
       ldata_p->diff_cc, ldata_p->diff_cc.nGrowVect(),
       [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
@@ -336,6 +333,17 @@ PeleLM::calcDiffusivity(const TimeStamp& a_time)
           Array4<Real>(kma[box_no], 0));
 #endif
       });
+    
+    // Fill the diff_aux MF with specified Schmidt number
+    for (int n = 0; n < m_nAux; n++) {
+      if (m_aux_Schmidt[n] > 0) {
+	MultiFab::Copy(ldata_p->diff_aux_cc,ldata_p->diff_cc,NUM_SPECIES + 1, n, 1, ldata_p->diff_cc.nGrowVect());
+	ldata_p->diff_aux_cc.mult(1.0/m_aux_Schmidt[n],n,1,ldata_p->diff_cc.nGrow());
+      } else {
+	ldata_p->diff_aux_cc.setVal(0.0,n,1);
+      }
+    }
+    
   }
   Gpu::streamSynchronize();
 }

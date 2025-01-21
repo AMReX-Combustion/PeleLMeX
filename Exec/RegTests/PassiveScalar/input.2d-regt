@@ -28,14 +28,12 @@ peleLM.v = 1
 peleLM.aux_vars = a b c
 
 peleLM.a.advect = 1
-peleLM.a.diff_coeff = 0
 
 peleLM.b.advect = 0
-peleLM.b.diff_coeff = 1e-2
+peleLM.b.Schmidt = 0.001
 
 peleLM.c.advect = 1
-peleLM.c.diff_coeff = 1e-2
-
+peleLM.c.Schmidt = 0.001
 
 #amr.restart = chk00005
 #amr.check_int = 2000
