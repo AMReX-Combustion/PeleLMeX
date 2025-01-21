@@ -408,11 +408,11 @@ PeleLM::readParameters()
       // Assume conservative
       m_AdvTypeAux[n] = 1;
       m_aux_Schmidt[n] = -1.0;
-      ppa.query("Schmidt",m_aux_Schmidt[n]);
+      ppa.query("Schmidt", m_aux_Schmidt[n]);
       if (m_aux_Schmidt[n] < 0) {
-	m_DiffTypeAux[n] = 0;
+        m_DiffTypeAux[n] = 0;
       } else {
-	m_DiffTypeAux[n] = 1;
+        m_DiffTypeAux[n] = 1;
       }
     }
   }
@@ -951,7 +951,8 @@ PeleLM::variablesSetup()
       Print() << " Auxiliary " + std::to_string(n + 1) + ": " << m_aux_names[n]
               << "\n";
       if (m_aux_Schmidt[n] < 0) {
-	Print() << "   Did not specify Schmidt number - assuming no diffusivity" << "\n";
+        Print() << "   Did not specify Schmidt number - assuming no diffusivity"
+                << "\n";
       }
     }
     Print() << " => Total number of auxiliary variables: " << m_nAux << "\n";
