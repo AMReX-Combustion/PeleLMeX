@@ -18,7 +18,6 @@ pelelmex_initdata(
   int j,
   int k,
   int is_incompressible,
-  int nAux,
   amrex::Array4<amrex::Real> const& state,
   amrex::Array4<amrex::Real> const& aux,
   amrex::GeometryData const& geomdata,
@@ -72,7 +71,7 @@ pelelmex_initdata(
   const amrex::Real sigma = Lx / 3.0;
 
   // impose radial Gaussian profile in all auxiliaries
-  for (int n = 0; n < nAux; n++) {
+  for (int n = 0; n < aux.nComp(); n++) {
     aux(i, j, k, n) = std::exp(-r * r / (sigma * sigma));
   }
 

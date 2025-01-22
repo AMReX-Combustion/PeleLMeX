@@ -360,7 +360,7 @@ PeleLM::initLevelData(int lev)
       bx, [=, m_incompressible = m_incompressible,
            m_nAux = m_nAux] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
         pelelmex_initdata(
-          i, j, k, m_incompressible, m_nAux, state_arr, aux_arr, geomdata,
+          i, j, k, m_incompressible, state_arr, aux_arr, geomdata,
           *lprobparm, lpmfdata);
       });
   }

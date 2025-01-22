@@ -18,7 +18,6 @@ pelelmex_initdata(
   int j,
   int k,
   int /*is_incompressible*/,
-  int /*nAux*/,
   amrex::Array4<amrex::Real> const& state,
   amrex::Array4<amrex::Real> const& /*aux*/,
   amrex::GeometryData const& /*geomdata*/,

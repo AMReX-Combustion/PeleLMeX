@@ -18,9 +18,8 @@ pelelmex_initdata(
   int j,
   int k,
   int is_incompressible,
-  int /*nAux*/,
   amrex::Array4<amrex::Real> const& state,
-  amrex::Array4<amrex::Real> const& aux,
+  amrex::Array4<amrex::Real> const& /*aux*/,
   amrex::GeometryData const& geomdata,
   ProbParm const& prob_parm,
   pele::physics::PMF::PmfData::DataContainer const* /*pmf_data*/)

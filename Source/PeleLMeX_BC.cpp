@@ -320,7 +320,7 @@ PeleLM::fillPatchAux(const TimeStamp& a_time)
   for (int lev = 0; lev <= finest_level; lev++) {
     auto* ldata_p = getLevelDataPtr(lev, a_time);
     Real time = getTime(lev, a_time);
-    fillpatch_aux(lev, time, ldata_p->auxiliaries, 0, m_nAux);
+    fillpatch_aux(lev, time, ldata_p->auxiliaries, 0, m_nGrowState);
   }
 }
 
