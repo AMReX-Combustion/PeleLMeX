@@ -357,8 +357,8 @@ PeleLM::initLevelData(int lev)
     auto const& aux_arr =
       (m_nAux > 0) ? ldata_p->auxiliaries.array(mfi) : DummyFab.array();
     amrex::ParallelFor(
-      bx, [=, m_incompressible = m_incompressible,
-           m_nAux = m_nAux] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+      bx, [=, m_incompressible = m_incompressible] AMREX_GPU_DEVICE(
+            int i, int j, int k) noexcept {
         pelelmex_initdata(
           i, j, k, m_incompressible, state_arr, aux_arr, geomdata, *lprobparm,
           lpmfdata);
