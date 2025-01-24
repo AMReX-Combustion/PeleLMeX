@@ -10,7 +10,6 @@ geometry.prob_hi     = 1.0 1.0 1.0        # x_hi y_hi (z_hi)
 peleLM.lo_bc = Interior Interior Interior
 peleLM.hi_bc = Interior Interior Interior
 
-
 #-------------------------AMR CONTROL----------------------------
 amr.n_cell          = 64 64 64      # Level 0 number of cells in each direction   
 amr.v               = 1                # AMR verbose
@@ -28,13 +27,12 @@ peleLM.v = 1
 peleLM.aux_vars = a b c
 
 peleLM.a.advect = 1
-peleLM.a.diff_coeff = 0
 
 peleLM.b.advect = 0
-peleLM.b.diff_coeff = 1e-2
+peleLM.b.Schmidt = 0.001
 
 peleLM.c.advect = 1
-peleLM.c.diff_coeff = 1e-2
+peleLM.c.Schmidt = 0.001
 
 
 #amr.restart = chk00005
