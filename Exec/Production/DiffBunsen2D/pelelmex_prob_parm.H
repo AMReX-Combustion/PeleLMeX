@@ -16,7 +16,7 @@ struct ProbParm
   amrex::Real Xc = 0.0113;  // Size of the oxidizer fuel
   amrex::Real Ymax =
     0.037; // Maximum size in y direction of the calculation zone == Position of
-           // the electrode ine the experiment
+           // the electrode in the experiment
   amrex::Real Zmax = 0.015; // Maximum size in z direction of the calculation
                             // zone : set equal to Xmax
 
