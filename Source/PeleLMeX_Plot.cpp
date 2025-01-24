@@ -165,6 +165,11 @@ PeleLM::WritePlotFile()
     ncomp += 1;
   }
 
+  if (m_plot_extSource) {
+    // Plot state
+    ncomp += NVAR;
+  }
+
   //----------------------------------------------------------------
   // Plot MultiFabs
   Vector<MultiFab> mf_plt(finest_level + 1);
@@ -287,6 +292,13 @@ PeleLM::WritePlotFile()
     plt_VarsName.push_back(m_ode_names[n]);
   }
 #endif
+
+  // External source terms
+  if (m_plot_extSource) {
+    for (int ivar = 0; ivar < NVAR; ++ivar) {
+      plt_VarsName.push_back("extsource_" + stateVariableName(ivar));
+    }
+  }
 
   //----------------------------------------------------------------
   // Fill the plot MultiFabs
@@ -436,6 +448,12 @@ PeleLM::WritePlotFile()
               +mut_arr_z[box_no](i, j, k) + mut_arr_z[box_no](i, j, k + 1)));
         });
       Gpu::streamSynchronize();
+    }
+
+    cnt += 1;
+
+    if (m_plot_extSource) {
+      MultiFab::Copy(mf_plt[lev], *m_extSource[lev], 0, cnt, NVAR, 0);
     }
 
 #ifdef AMREX_USE_EB

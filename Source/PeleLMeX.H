@@ -888,6 +888,7 @@ public:
   //-----------------------------------------------------------------------------
   // External Sources
   bool m_user_defined_ext_sources;
+  bool m_plot_extSource;
   bool m_ext_sources_SDC;
   void getExternalSources(
     int is_initIter,

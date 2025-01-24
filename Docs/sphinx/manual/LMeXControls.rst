@@ -120,6 +120,7 @@ IO parameters
     amr.file_stepDigits  = 6               # [OPT, DEF=5] Number of digits when adding nsteps to plt and chk names
     amr.derive_plot_vars = avg_pressure ...# [OPT, DEF=""] List of derived variable included in the plot files
     amr.plot_speciesState = 0              # [OPT, DEF=0] Force adding state rhoYs to the plot files
+    peleLM.plot_extSource = false          # [OPT, DEF=false] Force adding state external sources to the plot files
 
     amr.restart          = chk00100        # [OPT, DEF=""] Checkpoint from which to restart the simulation
     amr.initDataPlt      = plt01000        # [OPT, DEF=""] Provide a plotfile from which to extract initial data
@@ -229,8 +230,9 @@ The following list of derived variables are available in PeleLMeX:
 
 Note that `mixture_fraction` and `progress_variable` requires additional inputs from the users as described below.
 The `derUserDefined` allow the user to define its own derived variable which can comprise several components. To do
-so, the user need to copy the Source/DeriveUserDefined.cpp file into his run folder and update the file. The number of
-components is defined based on the size of the vector returned by pelelmex_setuserderives().
+so, the user need to copy the Source/DeriveUserDefined.cpp file into their run folder and update the file. The number of
+components is defined based on the size of the vector returned by `pelelmex_setuserderives()`.  Be sure to add the 
+user derived variables to the input file via `amr.derive_plot_vars`.  
 
 PeleLMeX algorithm
 ------------------
