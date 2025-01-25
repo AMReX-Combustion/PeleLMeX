@@ -448,9 +448,8 @@ PeleLM::WritePlotFile()
               +mut_arr_z[box_no](i, j, k) + mut_arr_z[box_no](i, j, k + 1)));
         });
       Gpu::streamSynchronize();
+      cnt += 1;
     }
-
-    cnt += 1;
 
     if (m_plot_extSource) {
       MultiFab::Copy(mf_plt[lev], *m_extSource[lev], 0, cnt, NVAR, 0);
