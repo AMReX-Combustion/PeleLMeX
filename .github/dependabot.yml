@@ -3,7 +3,7 @@ version: 2
 updates:
   - package-ecosystem: gitsubmodule
     schedule:
-        interval: "weekly"
+        interval: "monthly"
     directory: /
     allow:
       - dependency-name: "Submodules/AMReX-Hydro"
