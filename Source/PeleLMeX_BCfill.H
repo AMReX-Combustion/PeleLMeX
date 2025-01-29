@@ -68,7 +68,7 @@ struct PeleLMCCFillExtDirState
           // If using TurbInflow, pass in the turbulent data. User can overwrite
           // if needed
           if (m_do_turbInflow != 0) {
-            if (n >= VELX && n < DENSITY) {
+            if ((start_fill + n >= VELX) && (start_fill + n < DENSITY)) {
               if (!isnan(
                     state(iv, VELX + n))) { // During fillcoarsepatch, get here
                                             // with nan. TODO: find a better fix
@@ -79,7 +79,7 @@ struct PeleLMCCFillExtDirState
           // bcnormal() is defined in pelelmex_prob.H in problem directory in
           // /Exec
           bcnormal(x, m_nAux, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
-          state(iv, n) = s_ext[n];
+          state(iv, dcomp + n) = s_ext[start_fill + n];
         }
       }
 
@@ -99,7 +99,7 @@ struct PeleLMCCFillExtDirState
           // If using TurbInflow, pass in the turbulent data. User can overwrite
           // if needed
           if (m_do_turbInflow != 0) {
-            if (start_fill + n >= VELX && start_fill + n < DENSITY) {
+            if ((start_fill + n >= VELX) && (start_fill + n < DENSITY)) {
               if (!isnan(
                     state(iv, VELX + n))) { // During fillcoarsepatch, get here
                                             // with nan. TODO: find a better fix
