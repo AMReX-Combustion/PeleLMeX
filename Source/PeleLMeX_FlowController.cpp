@@ -68,6 +68,7 @@ PeleLM::initActiveControl()
     // Extract data from BC: assumes flow comes in from lo side of ctrl_flameDir
     ProbParm const* lprobparm = prob_parm_d;
     auto const* lpmfdata = pmf_data.device_parm();
+    ProbIBC const lprobIBC = ProbIBC{};
 
     Gpu::DeviceVector<Real> s_ext_v(NVAR);
     Real* s_ext_d = s_ext_v.data();
@@ -82,8 +83,8 @@ PeleLM::initActiveControl()
     amrex::ParallelFor(
       dumbx,
       [x, nAux = m_nAux, s_ext_d, ctrl_flameDir_l, time_l, geomdata, lprobparm,
-       lpmfdata] AMREX_GPU_DEVICE(int /*i*/, int /*j*/, int /*k*/) noexcept {
-        bcnormal(
+       lpmfdata, lprobIBC] AMREX_GPU_DEVICE(int /*i*/, int /*j*/, int /*k*/) noexcept {
+        lprobIBC.bcnormal(
           x, nAux, s_ext_d, ctrl_flameDir_l, 1, time_l, geomdata, *lprobparm,
           lpmfdata);
       });

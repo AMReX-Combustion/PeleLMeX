@@ -5,7 +5,7 @@
 #include "PeleLMeX_UserKeys.H"
 #include "PeleLMeX_Index.H"
 #include "PeleLMeX_Derive.H"
-#include "pelelmex_prob_parm.H"
+#include "pelelmex_prob.H"
 #include "PeleLMeX_DiffusionOp.H"
 #include "DiagBase.H"
 #include "PeleLMeX_FlowControllerData.H"
