@@ -70,9 +70,7 @@ PeleLM::initActiveControl()
     auto const* lpmfdata = pmf_data.device_parm();
 
     Gpu::DeviceVector<Real> s_ext_v(NVAR);
-    Gpu::DeviceVector<Real> s_aux_v(NVAR);
     Real* s_ext_d = s_ext_v.data();
-    Real* s_aux_d = s_aux_v.data();
     Real x[AMREX_SPACEDIM] = {
       AMREX_D_DECL(Geom(0).ProbLo(0), Geom(0).ProbLo(1), Geom(0).ProbLo(2))};
     x[m_ctrl_flameDir] -= 1.0;
@@ -83,12 +81,11 @@ PeleLM::initActiveControl()
     Box dumbx({AMREX_D_DECL(0, 0, 0)}, {AMREX_D_DECL(0, 0, 0)});
     amrex::ParallelFor(
       dumbx,
-      [x, nAux = m_nAux, s_ext_d, s_aux_d, ctrl_flameDir_l, time_l, geomdata,
-       lprobparm,
+      [x, nAux = m_nAux, s_ext_d, ctrl_flameDir_l, time_l, geomdata, lprobparm,
        lpmfdata] AMREX_GPU_DEVICE(int /*i*/, int /*j*/, int /*k*/) noexcept {
         bcnormal(
-          x, nAux, s_ext_d, s_aux_d, ctrl_flameDir_l, 1, time_l, geomdata,
-          *lprobparm, lpmfdata);
+          x, nAux, s_ext_d, ctrl_flameDir_l, 1, time_l, geomdata, *lprobparm,
+          lpmfdata);
       });
     Vector<Real> s_ext(NVAR);
     Gpu::copy(Gpu::deviceToHost, s_ext_v.begin(), s_ext_v.end(), s_ext.begin());

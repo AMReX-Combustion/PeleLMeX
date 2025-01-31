@@ -65,7 +65,6 @@ bcnormal(
   const amrex::Real* /*x[AMREX_SPACEDIM]*/,
   const int /*m_nAux*/,
   amrex::Real s_ext[NVAR],
-  amrex::Real* /*s_aux[NVAR]*/,
   const int /*idir*/,
   const int /*sgn*/,
   const amrex::Real /*time*/,
@@ -92,6 +91,25 @@ bcnormal(
   for (int n = 0; n < NUM_SPECIES; n++) {
     s_ext[FIRSTSPEC + n] = massfrac[n] * rho_mks;
   }
+}
+
+AMREX_GPU_DEVICE
+AMREX_FORCE_INLINE
+void
+bcnormal_aux(
+  const amrex::Real x[AMREX_SPACEDIM],
+  amrex::CellData<amrex::Real>& aux_ext,
+  const int idir,
+  const int sgn,
+  const amrex::Real time,
+  amrex::GeometryData const& geomdata,
+  ProbParm const& prob_parm,
+  pele::physics::PMF::PmfData::DataContainer const* pmf_data)
+{
+  amrex::ignore_unused(
+    x, aux_ext, idir, sgn, time, geomdata, prob_parm, pmf_data);
+  // For filling auxiliary boundary conditions
+  // Retrieve nAux with aux_ext.ncomp, then aux_ext[n] = ...
 }
 
 AMREX_GPU_DEVICE

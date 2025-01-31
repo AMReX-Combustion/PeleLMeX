@@ -20,7 +20,7 @@ pelelmex_initdata(
   int k,
   int /*is_incompressible*/,
   amrex::Array4<amrex::Real> const& state,
-  amrex::Array4<amrex::Real> const& /*aux*/,
+  amrex::Array4<amrex::Real> const& aux,
   amrex::GeometryData const& geomdata,
   ProbParm const& prob_parm,
   pele::physics::PMF::PmfData::DataContainer const* pmf_data)
@@ -124,6 +124,9 @@ pelelmex_initdata(
     state(i, j, k, FIRSTSPEC + n) = massfrac[n] * state(i, j, k, DENSITY);
   }
 #endif
+  for (int n = 0; n < aux.nComp(); n++) {
+    aux(i, j, k, n) = 0.0;
+  }
 }
 
 AMREX_GPU_DEVICE
@@ -133,7 +136,6 @@ bcnormal(
   const amrex::Real* /*x[AMREX_SPACEDIM]*/,
   const int /*m_nAux*/,
   amrex::Real s_ext[NVAR],
-  amrex::Real* /*s_aux[NVAR]*/,
   const int idir,
   const int sgn,
   const amrex::Real /*time*/,
@@ -188,6 +190,25 @@ bcnormal(
     }
 #endif
   }
+}
+
+AMREX_GPU_DEVICE
+AMREX_FORCE_INLINE
+void
+bcnormal_aux(
+  const amrex::Real x[AMREX_SPACEDIM],
+  amrex::CellData<amrex::Real>& aux_ext,
+  const int idir,
+  const int sgn,
+  const amrex::Real time,
+  amrex::GeometryData const& geomdata,
+  ProbParm const& prob_parm,
+  pele::physics::PMF::PmfData::DataContainer const* pmf_data)
+{
+  amrex::ignore_unused(
+    x, aux_ext, idir, sgn, time, geomdata, prob_parm, pmf_data);
+  // For filling auxiliary boundary conditions
+  // Retrieve nAux with aux_ext.ncomp, then aux_ext[n] = ...
 }
 
 AMREX_GPU_DEVICE
