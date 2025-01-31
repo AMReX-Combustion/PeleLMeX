@@ -159,7 +159,7 @@ struct PeleLMCCFillExtDirAux
     for (int idir = 0; idir < AMREX_SPACEDIM; idir++) {
 
       // Low
-      for (int n = 0; n < std::min(numcomp, m_nAux); n++) {
+      for (int n = 0; n < m_nAux; n++) {
 
         // Get current state component BC
         const int* bc = bcr[n].data();
@@ -172,7 +172,7 @@ struct PeleLMCCFillExtDirAux
       }
 
       // High
-      for (int n = 0; n < std::min(numcomp, m_nAux); n++) {
+      for (int n = 0; n < m_nAux; n++) {
 
         // Get current state component BC
         const int* bc = bcr[n].data();
