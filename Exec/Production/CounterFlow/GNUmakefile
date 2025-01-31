@@ -29,7 +29,7 @@ THREAD_SANITIZER = FALSE
 USE_EFIELD = FALSE
 
 # PelePhysics
-Chemistry_Model = drm19
+Chemistry_Model = dodecane_lu
 Eos_Model = Fuego
 Transport_Model = Simple
 

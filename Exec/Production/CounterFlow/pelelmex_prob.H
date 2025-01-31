@@ -44,11 +44,17 @@ pelelmex_initdata(
 
   auto eos = pele::physics::PhysicsType::eos();
   amrex::Real massfrac[NUM_SPECIES] = {0.0};
+  amrex::Real massfrac_cold[NUM_SPECIES] = {0.0};
+  amrex::Real massfrac_hot[NUM_SPECIES] = {0.0};
 
-  massfrac[N2_ID] = 0.767;
-  massfrac[O2_ID] = 0.233;
+  massfrac_cold[NC12H26_ID] = 0.05;
+  massfrac_cold[H2O_ID] = 0.0;
+  massfrac_cold[CO2_ID] = 0.0;
+  massfrac_cold[O2_ID] = 0.233 * (1.0 - massfrac_cold[NC12H26_ID]);
+  ;
+  massfrac_cold[N2_ID] = 1.0 - massfrac_cold[NC12H26_ID] - massfrac_cold[O2_ID];
 
-  state(i, j, k, TEMP) = 298.0;
+  state(i, j, k, TEMP) = prob_parm.T_inert;
 
   if (prob_parm.do_ignit) {
     amrex::Real radiusSq = AMREX_D_TERM(
@@ -58,14 +64,35 @@ pelelmex_initdata(
     amrex::Real mixingFunction =
       0.5 *
       (1.0 + std::tanh((prob_parm.ignitSphereRad - radius) / mixingWidth));
-    state(i, j, k, TEMP) =
-      mixingFunction * prob_parm.ignitT + (1.0 - mixingFunction) * 298.0;
-    massfrac[CH4_ID] = 0.02;
-    massfrac[O2_ID] = 0.233 * (1.0 - massfrac[CH4_ID]);
-    massfrac[N2_ID] = 1.0 - massfrac[CH4_ID] - massfrac[O2_ID];
+    state(i, j, k, TEMP) = mixingFunction * prob_parm.ignitT +
+                           (1.0 - mixingFunction) * prob_parm.T_inert;
+    massfrac_hot[NC12H26_ID] = 0.00;
+    massfrac_hot[H2O_ID] = prob_parm.Y_H2O_ign;
+    massfrac_hot[CO2_ID] = prob_parm.Y_CO2_ign;
+    massfrac_hot[O2_ID] =
+      0.233 * (1.0 - massfrac_hot[H2O_ID] - massfrac_hot[CO2_ID]);
+    massfrac_hot[N2_ID] =
+      1.0 - massfrac_hot[H2O_ID] - massfrac_hot[CO2_ID] - massfrac_hot[O2_ID];
+
+    massfrac[NC12H26_ID] = mixingFunction * massfrac_hot[NC12H26_ID] +
+                           (1.0 - mixingFunction) * massfrac_cold[NC12H26_ID];
+    massfrac[H2O_ID] = mixingFunction * massfrac_hot[H2O_ID] +
+                       (1.0 - mixingFunction) * massfrac_cold[H2O_ID];
+    massfrac[CO2_ID] = mixingFunction * massfrac_hot[CO2_ID] +
+                       (1.0 - mixingFunction) * massfrac_cold[CO2_ID];
+    massfrac[O2_ID] = mixingFunction * massfrac_hot[O2_ID] +
+                      (1.0 - mixingFunction) * massfrac_cold[O2_ID];
+    massfrac[N2_ID] = mixingFunction * massfrac_hot[N2_ID] +
+                      (1.0 - mixingFunction) * massfrac_cold[N2_ID];
+  } else {
+    massfrac[NC12H26_ID] = massfrac_cold[NC12H26_ID];
+    massfrac[H2O_ID] = massfrac_cold[H2O_ID];
+    massfrac[CO2_ID] = massfrac_cold[CO2_ID];
+    massfrac[O2_ID] = massfrac_cold[O2_ID];
+    massfrac[N2_ID] = massfrac_cold[N2_ID];
   }
 
-  AMREX_D_TERM(state(i, j, k, VELX) = 0.0;, state(i, j, k, VELY) = 0.1;
+  AMREX_D_TERM(state(i, j, k, VELX) = 0.0;, state(i, j, k, VELY) = 0.0;
                , state(i, j, k, VELZ) = 0.0);
 
   amrex::Real P_cgs = prob_parm.P_mean * 10.0;
@@ -115,9 +142,10 @@ bcnormal(
   amrex::Real massfrac_inert[NUM_SPECIES] = {0.0};
   amrex::Real massfrac_mix[NUM_SPECIES] = {0.0};
 
-  massfrac_ox[N2_ID] = 0.767;
-  massfrac_ox[O2_ID] = 0.233;
-  massfrac_fuel[CH4_ID] = 1.0;
+  massfrac_ox[N2_ID] = prob_parm.Y_N2_ox;
+  massfrac_ox[O2_ID] = prob_parm.Y_O2_ox;
+  massfrac_fuel[NC12H26_ID] = prob_parm.Y_fuel; // Replace ID with gas fuel
+  massfrac_fuel[N2_ID] = prob_parm.Y_N2_fuel;
   massfrac_inert[N2_ID] = 1.0;
 
   auto eos = pele::physics::PhysicsType::eos();
@@ -151,8 +179,8 @@ bcnormal(
     rhoFuel *= 1.0e3;
   }
   if (zone == 1) {
-    s_ext[TEMP] =
-      prob_parm.T_ox * mixingFunction + 298.0 * (1.0 - mixingFunction);
+    s_ext[TEMP] = prob_parm.T_ox * mixingFunction +
+                  prob_parm.T_inert * (1.0 - mixingFunction);
     for (int n = 0; n < NUM_SPECIES; n++) {
       massfrac_mix[n] = massfrac_ox[n] * mixingFunction +
                         massfrac_inert[n] * (1.0 - mixingFunction);
@@ -167,8 +195,8 @@ bcnormal(
       s_ext[FIRSTSPEC + n] = massfrac_mix[n] * s_ext[DENSITY];
     }
   } else if (zone == 2) {
-    s_ext[TEMP] =
-      prob_parm.T_fuel * mixingFunction + 298.0 * (1.0 - mixingFunction);
+    s_ext[TEMP] = prob_parm.T_fuel * mixingFunction +
+                  prob_parm.T_inert * (1.0 - mixingFunction);
     for (int n = 0; n < NUM_SPECIES; n++) {
       massfrac_mix[n] = massfrac_fuel[n] * mixingFunction +
                         massfrac_inert[n] * (1.0 - mixingFunction);
@@ -186,14 +214,14 @@ bcnormal(
 
   s_ext[VELY] = 0.0;
   if (zone == 1) {
-    amrex::Real vel =
-      (prob_parm.mdot / rhoOx) * mixingFunction +
-      prob_parm.inertVel /* (1.0 + (radius/0.025))*/ * (1.0 - mixingFunction);
+    amrex::Real vel = (prob_parm.mdot_ox / rhoOx) * mixingFunction +
+                      prob_parm.inertVel_ox /* (1.0 + (radius/0.025))*/ *
+                        (1.0 - mixingFunction);
     s_ext[VELX] = vel;
   } else if (zone == 2) {
-    amrex::Real vel =
-      (prob_parm.mdot / rhoFuel) * mixingFunction +
-      prob_parm.inertVel /* (1.0 + (radius/0.025))*/ * (1.0 - mixingFunction);
+    amrex::Real vel = (prob_parm.mdot_fuel / rhoFuel) * mixingFunction +
+                      prob_parm.inertVel_fuel /* (1.0 + (radius/0.025))*/ *
+                        (1.0 - mixingFunction);
     s_ext[VELX] = -vel;
   }
 }
