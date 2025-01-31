@@ -274,7 +274,7 @@ PeleLMeX algorithm
 
     peleLM.aux_vars = a b ...              # [OPT] Names of auxiliary variables
     peleLM.a.advect = 1                    # [OPT] Flag whether this variable is advected
-    peleLM.a.Schmidt = 1e-4                # [OPT] Schmidt number for auxiliary variable. If unspecified, assumed to not diffuse.
+    peleLM.a.Schmidt = 0.7                 # [OPT] Schmidt number for auxiliary variable. If unspecified, assumed to not diffuse.
     
     peleLM.user_defined_ext_sources = 0    # [OPT, DEF=0] Enable user defined source terms. Requires local ProblemSpecificFunctions.cpp.
 

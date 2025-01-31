@@ -20,7 +20,7 @@ pelelmex_initdata(
   int k,
   int /*is_incompressible*/,
   amrex::Array4<amrex::Real> const& state,
-  amrex::Array4<amrex::Real> const& aux,
+  amrex::Array4<amrex::Real> const& /*aux*/,
   amrex::GeometryData const& geomdata,
   ProbParm const& prob_parm,
   pele::physics::PMF::PmfData::DataContainer const* pmf_data)
@@ -124,9 +124,6 @@ pelelmex_initdata(
     state(i, j, k, FIRSTSPEC + n) = massfrac[n] * state(i, j, k, DENSITY);
   }
 #endif
-  for (int n = 0; n < aux.nComp(); n++) {
-    aux(i, j, k, n) = 0.0;
-  }
 }
 
 AMREX_GPU_DEVICE
