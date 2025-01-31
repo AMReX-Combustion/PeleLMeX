@@ -180,7 +180,6 @@ bcnormal(
   }
 }
 
-
 AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
 void
@@ -199,7 +198,6 @@ bcnormal_aux(
   // For filling auxiliary boundary conditions
   // Retrieve nAux with aux_ext.ncomp, then aux_ext[n] = ...
 }
-
 
 AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
