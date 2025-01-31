@@ -137,7 +137,7 @@ struct PeleLMCCFillExtDirAux
     const amrex::IntVect& iv,
     amrex::Array4<amrex::Real> const& aux,
     const int /*dcomp*/,
-    const int numcomp,
+    const int /*numcomp*/,
     amrex::GeometryData const& geom,
     const amrex::Real time,
     const amrex::BCRec* bcr,
