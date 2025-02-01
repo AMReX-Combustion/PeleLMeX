@@ -392,9 +392,6 @@ PeleLM::readParameters()
 
   m_nAux = pp.countval("aux_vars");
   if (m_nAux > 0) {
-    if (m_nAux > NVAR) {
-      Abort("Too many auxiliary variables (m_nAux > NVAR)");
-    }
     m_aux_names.resize(m_nAux);
     m_AdvTypeAux.resize(m_nAux);
     m_aux_advect.resize(m_nAux);
@@ -404,9 +401,10 @@ PeleLM::readParameters()
       pp.get("aux_vars", m_aux_names[n], n);
       std::string aux_prefix = "peleLM." + m_aux_names[n];
       ParmParse ppa(aux_prefix);
-      ppa.get("advect", m_aux_advect[n]);
-      // Assume conservative
+      m_aux_advect[n] = 1;
+      ppa.query("advect", m_aux_advect[n]);
       m_AdvTypeAux[n] = 1;
+      ppa.query("conservative", m_AdvTypeAux[n]);
       m_aux_Schmidt[n] = -1.0;
       ppa.query("Schmidt", m_aux_Schmidt[n]);
       if (m_aux_Schmidt[n] < 0) {
@@ -952,10 +950,13 @@ PeleLM::variablesSetup()
     for (int n = 0; n < m_nAux; n++) {
       Print() << " Auxiliary " + std::to_string(n + 1) + ": " << m_aux_names[n]
               << "\n";
-      if (m_aux_Schmidt[n] < 0) {
-        Print() << "   Did not specify Schmidt number - assuming no diffusivity"
-                << "\n";
+      Print() << "   Advective: " << m_aux_advect[n] << "\n";
+      Print() << "   Conservative: " << m_AdvTypeAux[n] << "\n";
+      Print() << "   Diffusive: " << m_DiffTypeAux[n];
+      if (m_aux_Schmidt[n] > 0) {
+        Print() << " - Schmidt number: " << m_aux_Schmidt[n];
       }
+      Print() << "\n";
     }
     Print() << " => Total number of auxiliary variables: " << m_nAux << "\n";
   }
