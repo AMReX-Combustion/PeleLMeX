@@ -420,11 +420,6 @@ PeleLM::WritePlotFile()
       cnt += m_ionsFluxes[lev]->nComp();
     }
 #endif
-#if NUM_ODE > 0
-    MultiFab::Copy(
-      mf_plt[lev], m_leveldata_new[lev]->state, FIRSTODE, cnt, NUM_ODE, 0);
-    cnt += NUM_ODE;
-#endif
 
     if (m_do_les && m_plot_les) {
       constexpr amrex::Real fact = 0.5 / AMREX_SPACEDIM;
@@ -450,6 +445,12 @@ PeleLM::WritePlotFile()
       Gpu::streamSynchronize();
       cnt += 1;
     }
+
+#if NUM_ODE > 0
+    MultiFab::Copy(
+      mf_plt[lev], m_leveldata_new[lev]->state, FIRSTODE, cnt, NUM_ODE, 0);
+    cnt += NUM_ODE;
+#endif
 
     if (m_plot_extSource) {
       MultiFab::Copy(mf_plt[lev], *m_extSource[lev], 0, cnt, NVAR, 0);
