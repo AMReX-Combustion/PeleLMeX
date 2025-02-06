@@ -63,6 +63,16 @@ PeleLM::Evolve()
     int is_restart = 0;
     activeControl(is_restart);
 
+    // Active prob parms
+    bool update_prob_parm = checkMessage("update_prob_parm");
+    if (update_prob_parm) {
+      if (m_verbose > 0) {
+        amrex::Print() << " Update prob_parm \n";
+      }
+      updateProbParm();
+      Gpu::copy(Gpu::hostToDevice, prob_parm, prob_parm + 1, prob_parm_d);
+    }
+
     // Temporals
     if (doTemporalsNow()) {
       writeTemporals();
@@ -233,6 +243,8 @@ PeleLM::checkMessage(const std::string& a_action) const
     action_file = "plt_and_continue";
   } else if (a_action == "chk_and_continue") {
     action_file = "chk_and_continue";
+  } else if (a_action == "update_prob_parm") {
+    action_file = "update_prob_parm";  
   } else {
     Abort("Unknown action in checkMessage()");
   }
