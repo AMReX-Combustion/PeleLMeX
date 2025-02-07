@@ -102,6 +102,7 @@ bcnormal(
   // Periodic boundaries
 }
 
+#define PELE_CUSTOM_BCNORMAL_AUX
 AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
 void
