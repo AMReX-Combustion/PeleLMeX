@@ -513,7 +513,7 @@ PeleLM::getEBState(
             amrex::Real stateExt[NVAR] = {0.0};
 
             // User-defined fill function
-            setEBState(xface, stateExt, a_time, geomdata, *lprobparm);
+            ProbIBC::setEBState(xface, stateExt, a_time, geomdata, *lprobparm);
 
             // Extract requested entries
             for (int n = 0; n < nComp; n++) {
@@ -578,7 +578,7 @@ PeleLM::getEBDiff(
               xcell[1] + ebfc_y(i, j, k) * dx[1],
               xcell[2] + ebfc_z(i, j, k) * dx[2])};
             amrex::Real ebflagtype = 0.0;
-            setEBType(xface, ebflagtype, geomdata, *lprobparm);
+            ProbIBC::setEBType(xface, ebflagtype, geomdata, *lprobparm);
             ebdiff(i, j, k) = diff_cc(i, j, k) * ebflagtype;
           }
         });

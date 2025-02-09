@@ -128,6 +128,53 @@ struct DefaultProbIBC
      */
   }
 
+  /**
+   * \brief Set the embedded boundary type
+   *
+   * \param x                 the EB face center coordinates.
+   * \param EBflagType        the outgoing embedded boundary type.
+   * \param geomdata          geometry data.
+   * \param prob_parm         problem specific parameters.
+   */
+  AMREX_GPU_DEVICE
+  AMREX_FORCE_INLINE
+  static void
+  setEBType(
+    const amrex::Real /*xEBface[AMREX_SPACEDIM]*/,
+    amrex::Real& /*EBflagType*/,
+    amrex::GeometryData const& /*geomdata*/,
+    ProbParmDefault const& /*prob_parm*/)
+  {
+    /** Notes:
+     *   This function is under development and will be updated in the
+     *   near future.
+     */
+  }
+
+  /**
+   * \brief Set the embedded boundary state value
+   *
+   * \param x                 the EB face center coordinates.
+   * \param s_ext             outgoing state (as a standard C++ array).
+   * \param time              current time.
+   * \param geomdata          geometry data.
+   * \param prob_parm         problem specific parameters.
+   */
+  AMREX_GPU_DEVICE
+  AMREX_FORCE_INLINE
+  static void
+  setEBState(
+    const amrex::Real* /*xEBface[AMREX_SPACEDIM]*/,
+    amrex::Real /*s_ext[NVAR]*/,
+    const amrex::Real /*time*/,
+    amrex::GeometryData const& /*geomdata*/,
+    ProbParmDefault const& /*prob_parm*/)
+  {
+    /** Notes:
+     *   This function is under development and will be updated in the
+     *   near future.
+     */
+  }
 }; // namespace DefaultProbIBC
 
 #endif
