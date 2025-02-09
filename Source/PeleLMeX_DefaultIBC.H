@@ -56,8 +56,7 @@ struct DefaultProbIBC
    * \brief Define the domain face boundary conditions
    *
    * \param x                 the face center coordinates.
-   * \param m_nAux            number of auxiliary variables.
-   * \param s_in              incoming state in first cell(as a standard C++ array)
+   * \param s_in              state in first cell (as ptr into Array4)
    * \param s_ext             outgoing state (as a standard C++ array)
    * \param idir              direction of the face.
    * \param sgn               sign of the face normal.
@@ -71,7 +70,7 @@ struct DefaultProbIBC
   static void
   bcnormal(
     const amrex::Real* /*x[AMREX_SPACEDIM]*/,
-    const int /*m_nAux*/,
+    const amrex::CellData<amrex::Real>& /*s_in*/,
     amrex::Real* /*s_ext[NVAR]*/,
     const int /*idir*/,
     const int /*sgn*/,
