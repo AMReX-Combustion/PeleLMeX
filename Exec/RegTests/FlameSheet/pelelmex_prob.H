@@ -141,7 +141,7 @@ struct MyProbIBC : public DefaultProbIBC {
   static void
   bcnormal(
     const amrex::Real* /*x[AMREX_SPACEDIM]*/,
-    const int /*m_nAux*/,
+    const amrex::CellData<amrex::Real>& /*s_in*/,
     amrex::Real s_ext[NVAR],
     const int idir,
     const int sgn,
