@@ -341,7 +341,6 @@ PeleLM::initLevelData(int lev)
   // Prob/PMF data
   ProbParm const* lprobparm = prob_parm_d;
   auto const* lpmfdata = pmf_data.device_parm();
-  ProbIBC const lprobIBC = ProbIBC{};
 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -355,7 +354,7 @@ PeleLM::initLevelData(int lev)
     amrex::ParallelFor(
       bx, [=, m_incompressible = m_incompressible] AMREX_GPU_DEVICE(
             int i, int j, int k) noexcept {
-        lprobIBC.initdata(
+      ProbIBC::initdata(
           i, j, k, m_incompressible, state_arr, aux_arr, geomdata, *lprobparm,
           lpmfdata);
       });
