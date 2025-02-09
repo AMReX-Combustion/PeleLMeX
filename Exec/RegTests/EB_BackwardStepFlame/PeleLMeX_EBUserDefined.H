@@ -25,34 +25,5 @@ EBUserDefined(
   Abort("In default EBUserDefined function! Shouldn't be here. Copy and edit "
         "this file for your needs");
 }
-
-AMREX_GPU_DEVICE
-AMREX_FORCE_INLINE
-void
-setEBState(
-  const amrex::Real* /*xEBface[AMREX_SPACEDIM]*/,
-  amrex::Real s_ext[NVAR],
-  const amrex::Real /*time*/,
-  amrex::GeometryData const& /*geomdata*/,
-  ProbParm const& prob_parm)
-{
-  s_ext[TEMP] = prob_parm.Twall;
-}
-
-AMREX_GPU_DEVICE
-AMREX_FORCE_INLINE
-void
-setEBType(
-  const amrex::Real xEBface[AMREX_SPACEDIM],
-  amrex::Real& EBflagType,
-  amrex::GeometryData const& /*geomdata*/,
-  ProbParm const& /*prob_parm*/)
-{
-  if (xEBface[0] > 0.0098) {
-    EBflagType = 1.0;
-  } else {
-    EBflagType = 0.0;
-  }
-}
 #endif
 #endif
