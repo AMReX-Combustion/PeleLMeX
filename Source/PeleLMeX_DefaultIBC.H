@@ -1,4 +1,4 @@
-// Problem-specific Default Initial Boundary Conditions (IBC)
+// Problem-specific Default Initial Boundary Conditions struct (IBC)
 #ifndef PROBLEM_IBC_H
 #define PROBLEM_IBC_H
 
@@ -10,6 +10,9 @@
 
 struct ProbParmDefault
 {
+  /**
+   * PeleLMeX always needs a mean thermodynamic pressure
+   */
   amrex::Real P_mean = 101325.0;
 };
 
@@ -50,7 +53,7 @@ struct DefaultProbIBC
   }
 
   /**
-   * \brief Define the domain boundary conditions
+   * \brief Define the domain face boundary conditions
    *
    * \param x                 the face center coordinates.
    * \param m_nAux            number of auxiliary variables.
@@ -85,6 +88,19 @@ struct DefaultProbIBC
   }
 
 
+  /**
+   * \brief Alter the scalars face-centered diffusion coefficients
+   *
+   * \param i                 i index.
+   * \param j                 j index.
+   * \param k                 k index.
+   * \param beta              face-centered Beta Array4.
+   * \param geomdata          geometry data.
+   * \param domainBox         the computational domain box.
+   * \param dir               direction of the face.
+   * \param beta_comp         first components in Beta MultiFab.
+   * \param nComp             number of components to change.
+   */
   AMREX_GPU_DEVICE
   AMREX_FORCE_INLINE
   static void
@@ -108,6 +124,8 @@ struct DefaultProbIBC
      *       - if beta_comp == 0 and nComp == NUM_SPECIES => call for species
      *       - if beta_comp == 0 and nComp == 1 => call for temperature
      *   3. The default implementation does nothing
+     *   4. To only modify at the domain faces, one need to use the i, j or k
+     *      index matching the idir direction against the domainBox
      */
   }
 
