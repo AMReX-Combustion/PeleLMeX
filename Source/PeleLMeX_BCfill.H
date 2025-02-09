@@ -13,7 +13,6 @@ struct PeleLMCCFillExtDirState
 {
 
   ProbParm const* lprobparm;
-  T const prob_ibc = T{};
   pele::physics::PMF::PmfData::DataContainer const* lpmfdata;
   const int m_nAux;
   int m_do_turbInflow = 0;
@@ -79,7 +78,7 @@ struct PeleLMCCFillExtDirState
           }
           // bcnormal() is defined in pelelmex_prob.H in problem directory in
           // /Exec
-          prob_ibc.bcnormal(x, m_nAux, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
+          T::bcnormal(x, m_nAux, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
           state(iv, n) = s_ext[n];
         }
       }
@@ -110,7 +109,7 @@ struct PeleLMCCFillExtDirState
           }
           // bcnormal() is defined in pelelmex_prob.H in problem directory in
           // /Exec
-          prob_ibc.bcnormal(
+          T::bcnormal(
             x, m_nAux, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
           state(iv, n) = s_ext[n];
         }
@@ -124,7 +123,6 @@ struct PeleLMCCFillExtDirSpec
 {
 
   ProbParm const* lprobparm;
-  T const prob_ibc = T{};
   pele::physics::PMF::PmfData::DataContainer const* lpmfdata;
   const int m_nAux;
 
@@ -174,7 +172,7 @@ struct PeleLMCCFillExtDirSpec
 
           // bcnormal() is defined in pelelmex_prob.H in problem directory in
           // /Exec
-          prob_ibc.bcnormal(x, m_nAux, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
+          T::bcnormal(x, m_nAux, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
 
           rhoY(iv, dcomp + n) = s_ext[FIRSTSPEC + n];
 
@@ -185,7 +183,7 @@ struct PeleLMCCFillExtDirSpec
 
           // bcnormal() is defined in pelelmex_prob.H in problem directory in
           // /Exec
-          prob_ibc.bcnormal(
+          T::bcnormal(
             x, m_nAux, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
 
           rhoY(iv, dcomp + n) = s_ext[FIRSTSPEC + n];
@@ -200,7 +198,6 @@ struct PeleLMCCFillExtDirDens
 {
 
   ProbParm const* lprobparm;
-  T const prob_ibc = T{};
   pele::physics::PMF::PmfData::DataContainer const* lpmfdata;
   const int m_nAux;
 
@@ -248,7 +245,7 @@ struct PeleLMCCFillExtDirDens
 
         // bcnormal() is defined in pelelmex_prob.H in problem directory in
         // /Exec
-        prob_ibc.bcnormal(x, m_nAux, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
+        T::bcnormal(x, m_nAux, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
 
         state(iv, dcomp) = s_ext[DENSITY];
 
@@ -259,7 +256,7 @@ struct PeleLMCCFillExtDirDens
 
         // bcnormal() is defined in pelelmex_prob.H in problem directory in
         // /Exec
-        prob_ibc.bcnormal(x, m_nAux, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
+        T::bcnormal(x, m_nAux, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
 
         state(iv, dcomp) = s_ext[DENSITY];
       }
@@ -272,7 +269,6 @@ struct PeleLMCCFillExtDirRhoH
 {
 
   ProbParm const* lprobparm;
-  T const prob_ibc = T{};
   pele::physics::PMF::PmfData::DataContainer const* lpmfdata;
   const int m_nAux;
 
@@ -320,7 +316,7 @@ struct PeleLMCCFillExtDirRhoH
 
         // bcnormal() is defined in pelelmex_prob.H in problem directory in
         // /Exec
-        prob_ibc.bcnormal(x, m_nAux, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
+        T::bcnormal(x, m_nAux, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
 
         rhoH(iv) = s_ext[RHOH];
 
@@ -331,7 +327,7 @@ struct PeleLMCCFillExtDirRhoH
 
         // bcnormal() is defined in pelelmex_prob.H in problem directory in
         // /Exec
-        prob_ibc.bcnormal(x, m_nAux, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
+        T::bcnormal(x, m_nAux, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
 
         rhoH(iv) = s_ext[RHOH];
       }
@@ -344,7 +340,6 @@ struct PeleLMCCFillExtDirTemp
 {
 
   ProbParm const* lprobparm;
-  T const prob_ibc = T{};
   pele::physics::PMF::PmfData::DataContainer const* lpmfdata;
   const int m_nAux;
 
@@ -392,7 +387,7 @@ struct PeleLMCCFillExtDirTemp
 
         // bcnormal() is defined in pelelmex_prob.H in problem directory in
         // /Exec
-        prob_ibc.bcnormal(x, m_nAux, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
+        T::bcnormal(x, m_nAux, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
 
         state(iv, dcomp) = s_ext[TEMP];
 
@@ -403,7 +398,7 @@ struct PeleLMCCFillExtDirTemp
 
         // bcnormal() is defined in pelelmex_prob.H in problem directory in
         // /Exec
-        prob_ibc.bcnormal(x, m_nAux, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
+        T::bcnormal(x, m_nAux, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
 
         state(iv, dcomp) = s_ext[TEMP];
       }
@@ -417,7 +412,6 @@ struct PeleLMCCFillExtDirnE
 {
 
   ProbParm const* lprobparm;
-  T const prob_ibc = T{};
   pele::physics::PMF::PmfData::DataContainer const* lpmfdata;
   const int m_nAux;
 
@@ -465,7 +459,7 @@ struct PeleLMCCFillExtDirnE
 
         // bcnormal() is defined in pelelmex_prob.H in problem directory in
         // /Exec
-        prob_ibc.bcnormal(x, m_nAux, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
+        T::bcnormal(x, m_nAux, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
 
         nE(iv) = s_ext[NE];
 
@@ -476,7 +470,7 @@ struct PeleLMCCFillExtDirnE
 
         // bcnormal() is defined in pelelmex_prob.H in problem directory in
         // /Exec
-        prob_ibc.bcnormal(x, m_nAux, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
+        T::bcnormal(x, m_nAux, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
 
         nE(iv) = s_ext[NE];
       }
@@ -491,7 +485,6 @@ struct PeleLMCCFillExtDirPhiV
 {
 
   ProbParm const* lprobparm;
-  T const prob_ibc = T{};
   pele::physics::PMF::PmfData::DataContainer const* lpmfdata;
   const int m_nAux;
 
@@ -539,7 +532,7 @@ struct PeleLMCCFillExtDirPhiV
 
         // bcnormal() is defined in pelelmex_prob.H in problem directory in
         // /Exec
-        prob_ibc.bcnormal(x, m_nAux, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
+        T::bcnormal(x, m_nAux, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
 
         phiV(iv, dcomp) = s_ext[PHIV];
 
@@ -550,7 +543,7 @@ struct PeleLMCCFillExtDirPhiV
 
         // bcnormal() is defined in pelelmex_prob.H in problem directory in
         // /Exec
-        prob_ibc.bcnormal(x, m_nAux, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
+        T::bcnormal(x, m_nAux, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
 
         phiV(iv, dcomp) = s_ext[PHIV];
       }
