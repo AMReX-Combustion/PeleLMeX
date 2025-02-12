@@ -200,7 +200,6 @@ PeleLM::readProbParm() // NOLINT(readability-make-member-function-const)
 void
 PeleLM::freeProbParm()
 {
-  amrex::Print() << "Freeing prob parm" << std::endl;
   amrex::The_Arena()->free(PeleLM::prob_parm->d_xarray);
   amrex::The_Arena()->free(PeleLM::prob_parm->d_xdiff);
   amrex::The_Arena()->free(PeleLM::prob_parm->d_uinput);
