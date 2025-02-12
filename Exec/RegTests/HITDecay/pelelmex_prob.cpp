@@ -196,3 +196,14 @@ PeleLM::readProbParm() // NOLINT(readability-make-member-function-const)
     amrex::Gpu::hostToDevice, winput.begin(), winput.end(),
     PeleLM::prob_parm->d_winput);
 }
+
+void
+PeleLM::freeProbParm()
+{
+  amrex::Print() << "Freeing prob parm" << std::endl;
+  amrex::The_Arena()->free(PeleLM::prob_parm->d_xarray);
+  amrex::The_Arena()->free(PeleLM::prob_parm->d_xdiff);
+  amrex::The_Arena()->free(PeleLM::prob_parm->d_uinput);
+  amrex::The_Arena()->free(PeleLM::prob_parm->d_vinput);
+  amrex::The_Arena()->free(PeleLM::prob_parm->d_winput);
+}

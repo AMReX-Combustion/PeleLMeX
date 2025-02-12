@@ -118,6 +118,7 @@ public:
 
   // ReadProblemParameters
   void readProbParm();
+  void freeProbParm();
 
   // ReadGridFile
   void
