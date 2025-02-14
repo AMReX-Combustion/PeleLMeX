@@ -347,8 +347,8 @@ PeleLM::getActiveControlLowT(Real& a_coft)
                     AMREX_D_TERM(coor[0] = prob_lo[0] + (i + 0.5) * dx[0];
                                  , coor[1] = prob_lo[1] + (j + 0.5) * dx[1];
                                  , coor[2] = prob_lo[2] + (k + 0.5) * dx[2];);
-                    Real slope = ((T_arr(i, j, k, TEMP))-T_arr(
-                                   idx[0], idx[1], idx[2], TEMP)) /
+                    Real slope = ((T_arr(i, j, k, TEMP)) -
+                                  T_arr(idx[0], idx[1], idx[2], TEMP)) /
                                  dx[AC_FlameDir];
                     lcl_pos =
                       coor[AC_FlameDir] - dx[AC_FlameDir] +
@@ -384,8 +384,8 @@ PeleLM::getActiveControlLowT(Real& a_coft)
                     AMREX_D_TERM(coor[0] = prob_lo[0] + (i + 0.5) * dx[0];
                                  , coor[1] = prob_lo[1] + (j + 0.5) * dx[1];
                                  , coor[2] = prob_lo[2] + (k + 0.5) * dx[2];);
-                    Real slope = ((T_arr(i, j, k, TEMP))-T_arr(
-                                   idx[0], idx[1], idx[2], TEMP)) /
+                    Real slope = ((T_arr(i, j, k, TEMP)) -
+                                  T_arr(idx[0], idx[1], idx[2], TEMP)) /
                                  dx[AC_FlameDir];
                     lcl_pos =
                       coor[AC_FlameDir] - dx[AC_FlameDir] +
