@@ -5,7 +5,7 @@
 // E-field with EB capability is not fully implemented
 #ifdef AMREX_USE_EB
 static_assert(
-  !(PELE_USE_EFIELD),
+  !(PELE_USE_PLASMA),
   "E-field with EB capability is not fully implemented; cannot compile with "
   "both EFIELD and EB");
 #endif

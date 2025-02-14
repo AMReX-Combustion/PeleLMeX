@@ -9,7 +9,7 @@
 #define RHOH (FIRSTSPEC + NUM_SPECIES)
 #define TEMP (RHOH + 1)
 #define RHORT (TEMP + 1)
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
 #define NE (RHORT + 1)
 #define PHIV (NE + 1)
 #define NUMEFIELD 2

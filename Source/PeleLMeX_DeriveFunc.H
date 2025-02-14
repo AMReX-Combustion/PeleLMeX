@@ -306,7 +306,7 @@ void pelelmex_dermaniout(
   int level);
 #endif
 
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
 #include <PeleLMeX_EFDeriveFunc.H>
 #endif
 

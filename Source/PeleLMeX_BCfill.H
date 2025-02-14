@@ -397,7 +397,7 @@ struct PeleLMCCFillExtDirTemp
   }
 };
 
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
 struct PeleLMCCFillExtDirnE
 {
 
@@ -468,7 +468,7 @@ struct PeleLMCCFillExtDirnE
 };
 #endif
 
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
 struct PeleLMCCFillExtDirPhiV
 {
 

@@ -6,7 +6,7 @@
 #include <AMReX_buildInfo.H>
 #include <PeleLMeX_ProblemSpecificFunctions.H>
 
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
 #include "PeleLMeX_EOS_Extension.H"
 #endif
 
@@ -25,7 +25,7 @@ the_same_box(const Box& b)
 {
   return b;
 }
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
 static Box
 grow_box_by_one(const Box& b)
 {
@@ -146,7 +146,7 @@ PeleLM::Setup()
       pp.query("plot_react", m_plot_react);
     }
 
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
     pele::physics::eos::charge_mass(zk.arr);
     for (int n = 0; n < NUM_SPECIES; n++) {
       zk[n] *= 1000.0; // CGS->MKS
@@ -255,7 +255,7 @@ PeleLM::readParameters()
     Print() << " Simulation performed with the closed chamber algorithm \n";
   }
 
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
   ParmParse ppef("ef");
 
   // Get the phiV bc
@@ -416,7 +416,7 @@ PeleLM::readParameters()
     for (int lev = 0; lev <= max_level; ++lev) {
       m_turb_visc_time.push_back(-1.0E200);
     }
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
     amrex::Abort("LES implementation is not yet compatible with efield/ions");
 #endif
   }
@@ -438,7 +438,7 @@ PeleLM::readParameters()
     if (isothermal) {
       m_soret_boundary_override = 1;
       m_use_wbar = 0;
-#if PELE_USE_EFIELD
+#if PELE_USE_PLASMA
       amrex::Abort("Isothermal walls with Soret incompatible with Efield");
 #endif
     }
@@ -698,7 +698,7 @@ PeleLM::readParameters()
     }
   }
 
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
   // -----------------------------------------
   // EFIELD
   // -----------------------------------------
@@ -787,7 +787,7 @@ PeleLM::checkSetupParams()
 #ifdef PELE_USE_SPRAY
     amrex::Abort("Spray models are not yet supported for Manifold EOS");
 #endif
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
     amrex::Abort("Efield models are not yet supported for Manifold EOS");
 #endif
 #ifdef USE_MANIFOLD_EOS
@@ -892,7 +892,7 @@ PeleLM::variablesSetup()
     stateComponents.emplace_back(TEMP, "temp");
     Print() << " thermo. pressure: " << RHORT << "\n";
     stateComponents.emplace_back(RHORT, "RhoRT");
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
     Print() << " nE: " << NE << "\n";
     stateComponents.emplace_back(NE, "nE");
     Print() << " PhiV: " << PHIV << "\n";
@@ -968,7 +968,7 @@ PeleLM::variablesSetup()
     m_DiffTypeState[TEMP] = 0;
     m_AdvTypeState[RHORT] = 0;
     m_DiffTypeState[RHORT] = 0;
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
     m_AdvTypeState[NE] = 0;
     m_DiffTypeState[NE] = 0;
     m_AdvTypeState[PHIV] = 0;
@@ -1214,7 +1214,7 @@ PeleLM::derivedSetup()
     pelelmex_dermaniout, the_same_box);
 #endif
 
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
   // Charge distribution
   derive_lst.add(
     "chargedistrib", IndexType::TheCellType(), 1, pelelmex_derchargedist,
@@ -1485,7 +1485,7 @@ PeleLM::resizeArray()
   m_dmapChem.resize(max_level + 1);
   m_baChemFlag.resize(max_level + 1);
 
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
   m_leveldatanlsolve.resize(max_level + 1);
   m_ionsFluxes.resize(max_level + 1);
 #endif
