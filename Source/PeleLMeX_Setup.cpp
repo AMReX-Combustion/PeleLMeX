@@ -909,10 +909,14 @@ PeleLM::variablesSetup()
 #if NUM_ODE > 0
     Print() << " First ODE: " << FIRSTODE << "\n";
     set_ode_names(m_ode_names);
-    for (int n = 0; n < NUM_ODE; n++) {
-      if (m_ode_names[n].length() < 1) {
+    if (m_ode_names.size() != NUM_ODE) {
+      Abort("ODEQty names improperly set. Adjust set_ode_names in "
+            "ProblemSpecificFunctions or NUM_ODE in GNUMakefile");
+    }
+    for (int n = 0; n < NUM_ODE; ++n) {
+      if (m_ode_names[n].empty()) {
         Abort("ODEQty names improperly set. Adjust set_ode_names in "
-              "ProblemSpecifcFunctions or NUM_ODE in GNUMakefile");
+              "ProblemSpecificFunctions or NUM_ODE in GNUMakefile");
       }
       stateComponents.emplace_back(FIRSTODE + n, m_ode_names[n]);
     }
