@@ -11,7 +11,8 @@
 #include <PMFData.H>
 #include <PelePhysics.H>
 
-struct MyProbParm : public ProbParmDefault {
+struct MyProbParm : public ProbParmDefault
+{
   amrex::Real standoff = 0.0;
   amrex::Real pertmag = 0.0004;
   amrex::Real pertlength = 0.008;
@@ -20,11 +21,11 @@ struct MyProbParm : public ProbParmDefault {
     eosparm;
 };
 
-struct MyProbIBC : public DefaultProbIBC {
+struct MyProbIBC : public DefaultProbIBC
+{
   AMREX_GPU_DEVICE
   AMREX_FORCE_INLINE
-  static void
-  initdata(
+  static void initdata(
     int i,
     int j,
     int k,
@@ -38,11 +39,11 @@ struct MyProbIBC : public DefaultProbIBC {
     const amrex::Real* prob_lo = geomdata.ProbLo();
     const amrex::Real* prob_hi = geomdata.ProbHi();
     const amrex::Real* dx = geomdata.CellSize();
-  
+
     AMREX_D_TERM(const amrex::Real x = prob_lo[0] + (i + 0.5) * dx[0];
                  , const amrex::Real y = prob_lo[1] + (j + 0.5) * dx[1];
                  , const amrex::Real z = prob_lo[2] + (k + 0.5) * dx[2];);
-  
+
     AMREX_D_TERM(, const amrex::Real Lx = prob_hi[0] - prob_lo[0];
                  , const amrex::Real Ly = prob_hi[1] - prob_lo[1]);
 
@@ -138,8 +139,7 @@ struct MyProbIBC : public DefaultProbIBC {
 
   AMREX_GPU_DEVICE
   AMREX_FORCE_INLINE
-  static void
-  bcnormal(
+  static void bcnormal(
     const amrex::Real* /*x[AMREX_SPACEDIM]*/,
     const amrex::CellData<amrex::Real>& /*s_in*/,
     amrex::Real s_ext[NVAR],
@@ -154,17 +154,17 @@ struct MyProbIBC : public DefaultProbIBC {
     amrex::GpuArray<amrex::Real, NUM_SPECIES + 4> pmf_vals = {0.0};
     amrex::Real molefrac[NUM_SPECIES] = {0.0};
     amrex::Real massfrac[NUM_SPECIES] = {0.0};
-  
+
     auto eos = pele::physics::PhysicsType::eos(prob_parm.eosparm);
     if (sgn == 1) {
       pele::physics::PMF::pmf(pmf_data, prob_lo[idir], prob_lo[idir], pmf_vals);
-  
+
       for (int dim = 0; dim < AMREX_SPACEDIM - 1; dim++) {
         s_ext[VELX + dim] = 0.0;
       }
       s_ext[VELX + AMREX_SPACEDIM - 1] = pmf_vals[1] * 1e-2;
       s_ext[TEMP] = pmf_vals[0];
-  
+
 #ifdef USE_MANIFOLD_EOS
       for (int n = 0; n < NUM_SPECIES; n++) {
         massfrac[n] = pmf_vals[3 + n];
@@ -182,16 +182,17 @@ struct MyProbIBC : public DefaultProbIBC {
         molefrac[n] = pmf_vals[3 + n];
       }
       eos.X2Y(molefrac, massfrac);
-  
+
       amrex::Real rho_cgs, P_cgs, RhoH_temp;
       P_cgs = prob_parm.P_mean * 10.0;
-  
+
       eos.PYT2R(P_cgs, massfrac, s_ext[TEMP], rho_cgs);
       s_ext[DENSITY] = rho_cgs * 1.0e3;
-  
+
       eos.TY2H(s_ext[TEMP], massfrac, RhoH_temp);
-      s_ext[RHOH] = RhoH_temp * 1.0e-4 * s_ext[DENSITY]; // CGS -> MKS conversion
-  
+      s_ext[RHOH] =
+        RhoH_temp * 1.0e-4 * s_ext[DENSITY]; // CGS -> MKS conversion
+
       for (int n = 0; n < NUM_SPECIES; n++) {
         s_ext[FIRSTSPEC + n] = massfrac[n] * s_ext[DENSITY];
       }

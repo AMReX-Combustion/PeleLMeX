@@ -33,8 +33,7 @@ struct DefaultProbIBC
    */
   AMREX_GPU_DEVICE
   AMREX_FORCE_INLINE
-  static void
-  initdata(
+  static void initdata(
     int /*i*/,
     int /*j*/,
     int /*k*/,
@@ -67,8 +66,7 @@ struct DefaultProbIBC
    */
   AMREX_GPU_DEVICE
   AMREX_FORCE_INLINE
-  static void
-  bcnormal(
+  static void bcnormal(
     const amrex::Real* /*x[AMREX_SPACEDIM]*/,
     const amrex::CellData<amrex::Real>& /*s_in*/,
     amrex::Real* /*s_ext[NVAR]*/,
@@ -86,7 +84,6 @@ struct DefaultProbIBC
      */
   }
 
-
   /**
    * \brief Alter the scalars face-centered diffusion coefficients
    *
@@ -102,8 +99,7 @@ struct DefaultProbIBC
    */
   AMREX_GPU_DEVICE
   AMREX_FORCE_INLINE
-  static void
-  zero_visc(
+  static void zero_visc(
     int /*i*/,
     int /*j*/,
     int /*k*/,
@@ -138,8 +134,7 @@ struct DefaultProbIBC
    */
   AMREX_GPU_DEVICE
   AMREX_FORCE_INLINE
-  static void
-  setEBType(
+  static void setEBType(
     const amrex::Real /*xEBface[AMREX_SPACEDIM]*/,
     amrex::Real& /*EBflagType*/,
     amrex::GeometryData const& /*geomdata*/,
@@ -162,8 +157,7 @@ struct DefaultProbIBC
    */
   AMREX_GPU_DEVICE
   AMREX_FORCE_INLINE
-  static void
-  setEBState(
+  static void setEBState(
     const amrex::Real* /*xEBface[AMREX_SPACEDIM]*/,
     amrex::Real /*s_ext[NVAR]*/,
     const amrex::Real /*time*/,

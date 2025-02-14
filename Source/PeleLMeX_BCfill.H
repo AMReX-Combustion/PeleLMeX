@@ -54,9 +54,7 @@ struct PeleLMCCFillExtDirState
 
     // Get a 3D version of iv to access first cell in domain
     auto iv_3d = amrex::IntVectND<3>(0);
-    AMREX_D_TERM(iv_3d[0] = iv[0];,
-                 iv_3d[1] = iv[1];,
-                 iv_3d[2] = iv[2];);
+    AMREX_D_TERM(iv_3d[0] = iv[0];, iv_3d[1] = iv[1];, iv_3d[2] = iv[2];);
 
     for (int idir = 0; idir < AMREX_SPACEDIM; idir++) {
 
@@ -89,7 +87,8 @@ struct PeleLMCCFillExtDirState
           }
           // bcnormal() is defined in pelelmex_prob.H in problem directory in
           // /Exec
-          T::bcnormal(x, s_in, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
+          T::bcnormal(
+            x, s_in, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
           state(iv, n) = s_ext[n];
         }
       }
@@ -125,7 +124,8 @@ struct PeleLMCCFillExtDirState
           }
           // bcnormal() is defined in pelelmex_prob.H in problem directory in
           // /Exec
-          T::bcnormal(x, s_in, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
+          T::bcnormal(
+            x, s_in, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
           state(iv, n) = s_ext[n];
         }
       }
@@ -146,8 +146,7 @@ struct PeleLMCCFillExtDirSpec
     ProbParm const* a_prob_parm,
     pele::physics::PMF::PmfData::DataContainer const* a_pmf_data,
     int a_nAux)
-    : lprobparm(a_prob_parm),
-      lpmfdata(a_pmf_data), m_nAux(a_nAux)
+    : lprobparm(a_prob_parm), lpmfdata(a_pmf_data), m_nAux(a_nAux)
   {
   }
 
@@ -175,9 +174,7 @@ struct PeleLMCCFillExtDirSpec
 
     // Get a 3D version of iv to access first cell in domain
     auto iv_3d = amrex::IntVectND<3>(0);
-    AMREX_D_TERM(iv_3d[0] = iv[0];,
-                 iv_3d[1] = iv[1];,
-                 iv_3d[2] = iv[2];);
+    AMREX_D_TERM(iv_3d[0] = iv[0];, iv_3d[1] = iv[1];, iv_3d[2] = iv[2];);
 
     for (int n = 0; n < NUM_SPECIES; n++) {
 
@@ -198,7 +195,8 @@ struct PeleLMCCFillExtDirSpec
 
           // bcnormal() is defined in pelelmex_prob.H in problem directory in
           // /Exec
-          T::bcnormal(x, s_in, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
+          T::bcnormal(
+            x, s_in, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
 
           rhoY(iv, dcomp + n) = s_ext[FIRSTSPEC + n];
 
@@ -237,8 +235,7 @@ struct PeleLMCCFillExtDirDens
     ProbParm const* a_prob_parm,
     pele::physics::PMF::PmfData::DataContainer const* a_pmf_data,
     int a_nAux)
-    : lprobparm(a_prob_parm),
-      lpmfdata(a_pmf_data), m_nAux(a_nAux)
+    : lprobparm(a_prob_parm), lpmfdata(a_pmf_data), m_nAux(a_nAux)
   {
   }
 
@@ -266,9 +263,7 @@ struct PeleLMCCFillExtDirDens
 
     // Get a 3D version of iv to access first cell in domain
     auto iv_3d = amrex::IntVectND<3>(0);
-    AMREX_D_TERM(iv_3d[0] = iv[0];,
-                 iv_3d[1] = iv[1];,
-                 iv_3d[2] = iv[2];);
+    AMREX_D_TERM(iv_3d[0] = iv[0];, iv_3d[1] = iv[1];, iv_3d[2] = iv[2];);
 
     // Get the first species component BC
     const int* bc = bcr->data();
@@ -324,8 +319,7 @@ struct PeleLMCCFillExtDirRhoH
     ProbParm const* a_prob_parm,
     pele::physics::PMF::PmfData::DataContainer const* a_pmf_data,
     int a_nAux)
-    : lprobparm(a_prob_parm),
-      lpmfdata(a_pmf_data), m_nAux(a_nAux)
+    : lprobparm(a_prob_parm), lpmfdata(a_pmf_data), m_nAux(a_nAux)
   {
   }
 
@@ -353,10 +347,7 @@ struct PeleLMCCFillExtDirRhoH
 
     // Get a 3D version of iv to access first cell in domain
     auto iv_3d = amrex::IntVectND<3>(0);
-    AMREX_D_TERM(iv_3d[0] = iv[0];,
-                 iv_3d[1] = iv[1];,
-                 iv_3d[2] = iv[2];);
-
+    AMREX_D_TERM(iv_3d[0] = iv[0];, iv_3d[1] = iv[1];, iv_3d[2] = iv[2];);
 
     // Get the first species component BC
     const int* bc = bcr->data();
@@ -412,8 +403,7 @@ struct PeleLMCCFillExtDirTemp
     ProbParm const* a_prob_parm,
     pele::physics::PMF::PmfData::DataContainer const* a_pmf_data,
     int a_nAux)
-    : lprobparm(a_prob_parm),
-      lpmfdata(a_pmf_data), m_nAux(a_nAux)
+    : lprobparm(a_prob_parm), lpmfdata(a_pmf_data), m_nAux(a_nAux)
   {
   }
 
@@ -441,9 +431,7 @@ struct PeleLMCCFillExtDirTemp
 
     // Get a 3D version of iv to access first cell in domain
     auto iv_3d = amrex::IntVectND<3>(0);
-    AMREX_D_TERM(iv_3d[0] = iv[0];,
-                 iv_3d[1] = iv[1];,
-                 iv_3d[2] = iv[2];);
+    AMREX_D_TERM(iv_3d[0] = iv[0];, iv_3d[1] = iv[1];, iv_3d[2] = iv[2];);
 
     // Get the first species component BC
     const int* bc = bcr->data();
@@ -500,8 +488,7 @@ struct PeleLMCCFillExtDirnE
     ProbParm const* a_prob_parm,
     pele::physics::PMF::PmfData::DataContainer const* a_pmf_data,
     int a_nAux)
-    : lprobparm(a_prob_parm),
-      lpmfdata(a_pmf_data), m_nAux(a_nAux)
+    : lprobparm(a_prob_parm), lpmfdata(a_pmf_data), m_nAux(a_nAux)
   {
   }
 
@@ -529,9 +516,7 @@ struct PeleLMCCFillExtDirnE
 
     // Get a 3D version of iv to access first cell in domain
     auto iv_3d = amrex::IntVectND<3>(0);
-    AMREX_D_TERM(iv_3d[0] = iv[0];,
-                 iv_3d[1] = iv[1];,
-                 iv_3d[2] = iv[2];);
+    AMREX_D_TERM(iv_3d[0] = iv[0];, iv_3d[1] = iv[1];, iv_3d[2] = iv[2];);
 
     // Get the first species component BC
     const int* bc = bcr->data();
@@ -589,8 +574,7 @@ struct PeleLMCCFillExtDirPhiV
     ProbParm const* a_prob_parm,
     pele::physics::PMF::PmfData::DataContainer const* a_pmf_data,
     int a_nAux)
-    : lprobparm(a_prob_parm),
-      lpmfdata(a_pmf_data), m_nAux(a_nAux)
+    : lprobparm(a_prob_parm), lpmfdata(a_pmf_data), m_nAux(a_nAux)
   {
   }
 
@@ -618,9 +602,7 @@ struct PeleLMCCFillExtDirPhiV
 
     // Get a 3D version of iv to access first cell in domain
     auto iv_3d = amrex::IntVectND<3>(0);
-    AMREX_D_TERM(iv_3d[0] = iv[0];,
-                 iv_3d[1] = iv[1];,
-                 iv_3d[2] = iv[2];);
+    AMREX_D_TERM(iv_3d[0] = iv[0];, iv_3d[1] = iv[1];, iv_3d[2] = iv[2];);
 
     // Get the first species component BC
     const int* bc = bcr->data();
@@ -669,11 +651,7 @@ struct PeleLMCCFillExtDirDummy
   const int m_nAux;
 
   AMREX_GPU_HOST
-  constexpr PeleLMCCFillExtDirDummy(
-    int a_nAux)
-    : m_nAux(a_nAux)
-  {
-  }
+  constexpr PeleLMCCFillExtDirDummy(int a_nAux) : m_nAux(a_nAux) {}
 
   AMREX_GPU_DEVICE
   void operator()(

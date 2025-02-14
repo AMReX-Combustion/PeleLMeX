@@ -354,7 +354,7 @@ PeleLM::initLevelData(int lev)
     amrex::ParallelFor(
       bx, [=, m_incompressible = m_incompressible] AMREX_GPU_DEVICE(
             int i, int j, int k) noexcept {
-      ProbIBC::initdata(
+        ProbIBC::initdata(
           i, j, k, m_incompressible, state_arr, aux_arr, geomdata, *lprobparm,
           lpmfdata);
       });

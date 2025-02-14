@@ -9,12 +9,13 @@
 #include <PeleLMeX_Index.H>
 #include <PelePhysics.H>
 
-struct MyProbParm : public ProbParmDefault {
+struct MyProbParm : public ProbParmDefault
+{
   int probType = 0;
   amrex::Real T_mean = 298.0;
-  amrex::Real rvort  = 0.07;
-  amrex::Real xvort  = 0.5;
-  amrex::Real yvort  = 0.5;
+  amrex::Real rvort = 0.07;
+  amrex::Real xvort = 0.5;
+  amrex::Real yvort = 0.5;
   amrex::Real forcevort = 6.0;
   int meanFlowDir = 1;
   amrex::Real meanFlowMag = 0.0;
@@ -27,11 +28,11 @@ struct MyProbParm : public ProbParmDefault {
   amrex::Real gaussDiff = 0.000001;
 };
 
-struct MyProbIBC : public DefaultProbIBC {
+struct MyProbIBC : public DefaultProbIBC
+{
   AMREX_GPU_DEVICE
   AMREX_FORCE_INLINE
-  static void
-  initdata(
+  static void initdata(
     int i,
     int j,
     int k,
@@ -48,9 +49,9 @@ struct MyProbIBC : public DefaultProbIBC {
                  , const amrex::Real y = prob_lo[1] + (j + 0.5) * dx[1];, );
     auto eos = pele::physics::PhysicsType::eos();
     constexpr amrex::Real Pi = 3.14159265358979323846264338327950288;
-  
+
     amrex::Real massfrac[NUM_SPECIES] = {0.0};
-  
+
     // Species IDs
 #ifdef O2_ID
     int sp1_ID = O2_ID;
@@ -59,10 +60,10 @@ struct MyProbIBC : public DefaultProbIBC {
     int sp1_ID = N2a_ID;
 #endif
     int sp2_ID = N2_ID;
-  
+
     massfrac[sp1_ID] = 0.233;
     massfrac[sp2_ID] = 0.767;
-  
+
     if (prob_parm.probType == 0) { // CoVo
       const amrex::Real deltax = x - prob_parm.xvort;
       const amrex::Real deltay = y - prob_parm.yvort;
@@ -72,7 +73,7 @@ struct MyProbIBC : public DefaultProbIBC {
         -prob_parm.forcevort * deltay / r_sq * exp(-d_sq / r_sq / 2.);
       const amrex::Real v_vort =
         prob_parm.forcevort * deltax / r_sq * exp(-d_sq / r_sq / 2.);
-  
+
       switch (prob_parm.meanFlowDir) {
       case 1:
         AMREX_D_TERM(state(i, j, k, VELX) = prob_parm.meanFlowMag + u_vort;
@@ -107,14 +108,14 @@ struct MyProbIBC : public DefaultProbIBC {
       default:
         break;
       }
-  
+
       if (is_incompressible != 0) {
         return;
       }
-  
+
       state(i, j, k, TEMP) = prob_parm.T_mean;
     } else if (prob_parm.probType == 1) { // CoGau
-  
+
       switch (prob_parm.meanFlowDir) {
       case 1:
         AMREX_D_TERM(state(i, j, k, VELX) = prob_parm.meanFlowMag;
@@ -147,11 +148,11 @@ struct MyProbIBC : public DefaultProbIBC {
       default:
         break;
       }
-  
+
       if (is_incompressible != 0) {
         return;
       }
-  
+
       state(i, j, k, TEMP) = prob_parm.T_mean;
       const amrex::Real deltax = x - prob_parm.xgauss;
       const amrex::Real deltay = y - prob_parm.ygauss;
@@ -163,12 +164,13 @@ struct MyProbIBC : public DefaultProbIBC {
         massfrac[sp2_ID] = 1.0 - massfrac[sp1_ID];
       } else if (prob_parm.gauss_type == 1) { // Temp
         state(i, j, k, TEMP) =
-          prob_parm.T_mean * (1.0 + prob_parm.ampgauss * std::exp(-d_sq / r_sq));
+          prob_parm.T_mean *
+          (1.0 + prob_parm.ampgauss * std::exp(-d_sq / r_sq));
       } else {
         amrex::Abort("Unknown gauss_type: should be either Temp or Spec");
       }
     } else if (prob_parm.probType == 3) { // CoTanH
-  
+
       switch (prob_parm.meanFlowDir) {
       case 1:
         AMREX_D_TERM(state(i, j, k, VELX) = prob_parm.meanFlowMag;
@@ -201,11 +203,11 @@ struct MyProbIBC : public DefaultProbIBC {
       default:
         break;
       }
-  
+
       if (is_incompressible != 0) {
         return;
       }
-  
+
       state(i, j, k, TEMP) = prob_parm.T_mean;
       const amrex::Real deltax = x - prob_parm.xgauss;
       const amrex::Real deltay = y - prob_parm.ygauss;
@@ -224,14 +226,14 @@ struct MyProbIBC : public DefaultProbIBC {
         amrex::Abort("Unknown tanh_type: should be either Temp or Spec");
       }
     } else if (prob_parm.probType == 2) { // DiffGau
-  
+
       AMREX_D_TERM(state(i, j, k, VELX) = 0.0;, state(i, j, k, VELY) = 0.0;
                    , state(i, j, k, VELZ) = 0.0);
-  
+
       if (is_incompressible != 0) {
         return;
       }
-  
+
       state(i, j, k, TEMP) = prob_parm.T_mean;
       // Set up the Gaussian as the solution of the diffusion of a delta dirac
       // initial distribution after time gaussTime of a diffusion process with
@@ -249,24 +251,25 @@ struct MyProbIBC : public DefaultProbIBC {
       } else if (prob_parm.gauss_type == 1) { // Temp
         // TODO: find a better way, one with an analytical solution
         state(i, j, k, TEMP) =
-          prob_parm.T_mean * (1.0 + prob_parm.ampgauss * std::exp(-d_sq / r_sq));
+          prob_parm.T_mean *
+          (1.0 + prob_parm.ampgauss * std::exp(-d_sq / r_sq));
       } else {
         amrex::Abort("Unknown gauss_type: should be either Temp or Spec");
       }
     }
-  
+
     amrex::Real P_cgs = prob_parm.P_mean * 10.0;
-  
+
     // Density
     amrex::Real rho_cgs = 0.0;
     eos.PYT2R(P_cgs, massfrac, state(i, j, k, TEMP), rho_cgs);
     state(i, j, k, DENSITY) = rho_cgs * 1.0e3;
-  
+
     // Enthalpy
     amrex::Real h_cgs = 0.0;
     eos.TY2H(state(i, j, k, TEMP), massfrac, h_cgs);
     state(i, j, k, RHOH) = h_cgs * 1.0e-4 * state(i, j, k, DENSITY);
-  
+
     // Species mass
     for (int n = 0; n < NUM_SPECIES; n++) {
       state(i, j, k, FIRSTSPEC + n) = massfrac[n] * state(i, j, k, DENSITY);
