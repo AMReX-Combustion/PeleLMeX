@@ -1805,6 +1805,7 @@ public:
   int m_plotStateSpec = 0;
   int m_plot_int = 0;
   bool m_plot_overwrite = false;
+  bool m_plot_init_state = false;
   int m_plot_zeroEBcovered = 1;
   amrex::Real m_plot_per_approx = -1.;
   amrex::Real m_plot_per_exact = -1.;
