@@ -8,27 +8,6 @@
 
 using namespace amrex;
 
-#ifndef PELE_CUSTOM_BCNORMAL_AUX
-AMREX_GPU_DEVICE
-AMREX_FORCE_INLINE
-void
-bcnormal_aux(
-  const amrex::Real x[AMREX_SPACEDIM],
-  amrex::CellData<amrex::Real>& aux_ext,
-  const int idir,
-  const int sgn,
-  const amrex::Real time,
-  amrex::GeometryData const& geomdata,
-  ProbParm const& prob_parm,
-  pele::physics::PMF::PmfData::DataContainer const* pmf_data)
-{
-  amrex::ignore_unused(
-    x, aux_ext, idir, sgn, time, geomdata, prob_parm, pmf_data);
-  // For filling auxiliary boundary conditions
-  // Retrieve nAux with aux_ext.ncomp, then aux_ext[n] = ...
-}
-#endif
-
 struct PeleLMCCFillExtDirState
 {
 
@@ -165,7 +144,6 @@ struct PeleLMCCFillExtDirAux
     const int /*bcomp*/,
     const int /*orig_comp*/) const
   {
-
     // Get geometry data
     const int* domlo = geom.Domain().loVect();
     const int* domhi = geom.Domain().hiVect();
@@ -175,7 +153,7 @@ struct PeleLMCCFillExtDirAux
       prob_lo[0] + (iv[0] + 0.5) * dx[0], prob_lo[1] + (iv[1] + 0.5) * dx[1],
       prob_lo[2] + (iv[2] + 0.5) * dx[2])};
 
-    amrex::CellData<amrex::Real> aux_ext(aux.ptr(iv), aux.nstride, m_nAux);
+    auto aux_ext = aux.cellData(iv[0], iv[1], iv[2]);
 
     for (int idir = 0; idir < AMREX_SPACEDIM; idir++) {
 
@@ -188,7 +166,12 @@ struct PeleLMCCFillExtDirAux
         if ((bc[idir] == amrex::BCType::ext_dir) and (iv[idir] < domlo[idir])) {
           // bcnormal() is defined in pelelmex_prob.H in problem directory in
           // /Exec
+#ifdef PELE_CUSTOM_BCNORMAL_AUX
           bcnormal_aux(x, aux_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
+#else
+          amrex::Abort("Auxiliary variable with Dirichlet boundary with no "
+                       "bcnormal_aux function...");
+#endif
         }
       }
 
@@ -203,7 +186,12 @@ struct PeleLMCCFillExtDirAux
           (iv[idir] > domhi[idir])) {
 
           // /Exec
+#ifdef PELE_CUSTOM_BCNORMAL_AUX
           bcnormal_aux(x, aux_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
+#else
+          amrex::Abort("Auxiliary variable with Dirichlet boundary with no "
+                       "bcnormal_aux function...");
+#endif
         }
       }
     }
