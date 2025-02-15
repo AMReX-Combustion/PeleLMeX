@@ -64,15 +64,15 @@ struct PeleLMCCFillExtDirState
         // bcnormal handles all the state components at once
         amrex::Real s_ext[NVAR] = {0.0};
 
-        // Get the state in the first cell in the domain
-        auto iv_in = iv_3d;
-        iv_in[idir] = iv_in[idir] + 1;
-        const auto s_in = state.cellData(iv_in[0], iv_in[1], iv_in[2]);
-
         // Get current state component BC
         const int* bc = bcr[n].data();
 
         if ((bc[idir] == amrex::BCType::ext_dir) and (iv[idir] < domlo[idir])) {
+
+          // Get the state in the first cell in the domain
+          auto iv_in = iv_3d;
+          iv_in[idir] = iv_in[idir] + 1;
+          const auto s_in = state.cellData(iv_in[0], iv_in[1], iv_in[2]);
 
           // If using TurbInflow, pass in the turbulent data. User can overwrite
           // if needed
@@ -99,17 +99,17 @@ struct PeleLMCCFillExtDirState
         // bcnormal handles all the state components at once
         amrex::Real s_ext[NVAR] = {0.0};
 
-        // Get the state in the first cell in the domain
-        auto iv_in = iv_3d;
-        iv_in[idir] = iv_in[idir] - 1;
-        const auto s_in = state.cellData(iv_in[0], iv_in[1], iv_in[2]);
-
         // Get current state component BC
         const int* bc = bcr[n].data();
 
         if (
           (bc[idir + AMREX_SPACEDIM] == amrex::BCType::ext_dir) and
           (iv[idir] > domhi[idir])) {
+
+          // Get the state in the first cell in the domain
+          auto iv_in = iv_3d;
+          iv_in[idir] = iv_in[idir] - 1;
+          const auto s_in = state.cellData(iv_in[0], iv_in[1], iv_in[2]);
 
           // If using TurbInflow, pass in the turbulent data. User can overwrite
           // if needed
