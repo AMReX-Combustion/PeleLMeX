@@ -455,7 +455,11 @@ PeleLM::getEBDistance(int a_lev, MultiFab& a_signDistLev)
 
 void
 PeleLM::getEBState(
-  int a_lev, const PeleLM::TimeStamp &a_time, MultiFab& a_EBstate, int stateComp, int nComp)
+  int a_lev,
+  const PeleLM::TimeStamp& a_time,
+  MultiFab& a_EBstate,
+  int stateComp,
+  int nComp)
 {
   AMREX_ASSERT(a_EBstate.nComp() >= nComp);
 
@@ -513,16 +517,15 @@ PeleLM::getEBState(
               xcell[1] + ebfc_y(i, j, k) * dx[1],
               xcell[2] + ebfc_z(i, j, k) * dx[2])};
             const amrex::Real bcnorm[AMREX_SPACEDIM] = {AMREX_D_DECL(
-              ebnorm(i,j,k,0),
-              ebnorm(i,j,k,1),
-              ebnorm(i,j,k,2))};
+              ebnorm(i, j, k, 0), ebnorm(i, j, k, 1), ebnorm(i, j, k, 2))};
 
             // State in the cell the EBface belongs to
             auto const stateIn = state.cellData(i, j, k);
             amrex::Real stateExt[NVAR] = {0.0};
 
             // User-defined fill function
-            ProbIBC::setEBState(xface, bcnorm, stateIn, stateExt, time, geomdata, *lprobparm);
+            ProbIBC::setEBState(
+              xface, bcnorm, stateIn, stateExt, time, geomdata, *lprobparm);
 
             // Extract requested entries
             for (int n = 0; n < nComp; n++) {
@@ -589,7 +592,8 @@ PeleLM::getEBDiff(
             // This is temporary, will be replaced with Inflow on EB update.
             int ebflagtype = 0;
             ProbIBC::setEBType(xface, ebflagtype, geomdata, *lprobparm);
-            ebdiff(i, j, k) = diff_cc(i, j, k) * static_cast<amrex::Real>(ebflagtype);
+            ebdiff(i, j, k) =
+              diff_cc(i, j, k) * static_cast<amrex::Real>(ebflagtype);
           }
         });
     }

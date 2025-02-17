@@ -152,7 +152,7 @@ struct MyProbIBC : public DefaultProbIBC
   AMREX_FORCE_INLINE
   static void setEBType(
     const amrex::Real xEBface[AMREX_SPACEDIM],
-    int &EBflagType,
+    int& EBflagType,
     amrex::GeometryData const& /*geomdata*/,
     MyProbParm const& /*prob_parm*/)
   {
