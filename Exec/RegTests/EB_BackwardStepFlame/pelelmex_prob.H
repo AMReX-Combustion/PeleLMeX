@@ -138,6 +138,8 @@ struct MyProbIBC : public DefaultProbIBC
   AMREX_FORCE_INLINE
   static void setEBState(
     const amrex::Real* /*xEBface[AMREX_SPACEDIM]*/,
+    const amrex::Real* /*xEBfaceNormal[AMREX_SPACEDIM]*/,
+    const amrex::CellData<const amrex::Real>& /*s_in*/,
     amrex::Real s_ext[NVAR],
     const amrex::Real /*time*/,
     amrex::GeometryData const& /*geomdata*/,
@@ -150,14 +152,14 @@ struct MyProbIBC : public DefaultProbIBC
   AMREX_FORCE_INLINE
   static void setEBType(
     const amrex::Real xEBface[AMREX_SPACEDIM],
-    amrex::Real& EBflagType,
+    int &EBflagType,
     amrex::GeometryData const& /*geomdata*/,
     MyProbParm const& /*prob_parm*/)
   {
     if (xEBface[0] > 0.0098) {
-      EBflagType = 1.0;
+      EBflagType = 1;
     } else {
-      EBflagType = 0.0;
+      EBflagType = 0;
     }
   }
 };
