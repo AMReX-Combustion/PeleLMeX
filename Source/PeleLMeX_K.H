@@ -152,7 +152,7 @@ getTransportCoeff<pele::physics::eos::Manifold>(
   auto eos = pele::physics::PhysicsType::eos(eosparm);
   eos.RY2RRinvY(massdens, rho, rhoinv, y);
 
-  rho *= 1.0e-3_rt; // MKS -> CGS conversion
+  rho = m2c::Rho(rho); // MKS -> CGS conversion
   amrex::Real rhoDi_cgs[NUM_SPECIES] = {0.0};
   amrex::Real lambda_cgs = 0.0_rt;
   amrex::Real mu_cgs = 0.0_rt;
