@@ -13,7 +13,7 @@ include $(AMREX_HOME)/Tools/GNUMake/Make.defs
 EBASE := PeleLMeX
 
 ifeq ($(USE_PLASMA),TRUE)
-   USERSuffix += .EF
+   USERSuffix += .PLASMA
 endif
 
 all: $(executable)
