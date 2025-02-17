@@ -135,7 +135,7 @@ struct DefaultProbIBC
   AMREX_GPU_DEVICE
   AMREX_FORCE_INLINE
   static void setEBType(
-    const amrex::Real /*xEBface[AMREX_SPACEDIM]*/,
+    const amrex::Real* /*xEBface[AMREX_SPACEDIM]*/,
     int& /*EBflagType*/,
     amrex::GeometryData const& /*geomdata*/,
     ProbParmDefault const& /*prob_parm*/)
