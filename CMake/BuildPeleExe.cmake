@@ -11,7 +11,6 @@ function(build_pele_exe pele_exe_name pele_physics_lib_name)
 
   target_sources(${pele_exe_name}
      PRIVATE
-       pelelmex_prob_parm.H
        pelelmex_prob.H
        pelelmex_prob.cpp
   )
