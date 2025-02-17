@@ -455,7 +455,7 @@ PeleLM::getEBDistance(int a_lev, MultiFab& a_signDistLev)
 
 void
 PeleLM::getEBState(
-  int a_lev, const Real& a_time, MultiFab& a_EBstate, int stateComp, int nComp)
+  int a_lev, const PeleLM::TimeStamp &a_time, MultiFab& a_EBstate, int stateComp, int nComp)
 {
   AMREX_ASSERT(a_EBstate.nComp() >= nComp);
 
@@ -464,6 +464,9 @@ PeleLM::getEBState(
   const auto geomdata = geom[a_lev].data();
   const auto& ebfact = EBFactory(a_lev);
   Array<const MultiCutFab*, AMREX_SPACEDIM> faceCentroid = ebfact.getFaceCent();
+
+  auto* ldata_p = getLevelDataPtr(a_lev, a_time);
+  auto time = getTime(a_lev, a_time);
 
   MFItInfo mfi_info;
   if (Gpu::notInLaunchRegion()) {
@@ -489,6 +492,8 @@ PeleLM::getEBState(
       AMREX_D_TERM(const auto& ebfc_x = faceCentroid[0]->array(mfi);
                    , const auto& ebfc_y = faceCentroid[1]->array(mfi);
                    , const auto& ebfc_z = faceCentroid[2]->array(mfi););
+      const auto& ebnorm = ebfact.getBndryNormal().const_array(mfi);
+      const auto& state = ldata_p->state.const_array(mfi);
       amrex::ParallelFor(
         bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           // Regular/covered cells -> 0.0
@@ -507,13 +512,17 @@ PeleLM::getEBState(
               xcell[0] + ebfc_x(i, j, k) * dx[0],
               xcell[1] + ebfc_y(i, j, k) * dx[1],
               xcell[2] + ebfc_z(i, j, k) * dx[2])};
+            const amrex::Real bcnorm[AMREX_SPACEDIM] = {AMREX_D_DECL(
+              ebnorm(i,j,k,0),
+              ebnorm(i,j,k,1),
+              ebnorm(i,j,k,2))};
 
-            // TODO : would be practical to have the current state at the EBface
-            // ...
+            // State in the cell the EBface belongs to
+            auto const stateIn = state.cellData(i, j, k);
             amrex::Real stateExt[NVAR] = {0.0};
 
             // User-defined fill function
-            ProbIBC::setEBState(xface, stateExt, a_time, geomdata, *lprobparm);
+            ProbIBC::setEBState(xface, bcnorm, stateIn, stateExt, time, geomdata, *lprobparm);
 
             // Extract requested entries
             for (int n = 0; n < nComp; n++) {
@@ -577,9 +586,10 @@ PeleLM::getEBDiff(
               xcell[0] + ebfc_x(i, j, k) * dx[0],
               xcell[1] + ebfc_y(i, j, k) * dx[1],
               xcell[2] + ebfc_z(i, j, k) * dx[2])};
-            amrex::Real ebflagtype = 0.0;
+            // This is temporary, will be replaced with Inflow on EB update.
+            int ebflagtype = 0;
             ProbIBC::setEBType(xface, ebflagtype, geomdata, *lprobparm);
-            ebdiff(i, j, k) = diff_cc(i, j, k) * ebflagtype;
+            ebdiff(i, j, k) = diff_cc(i, j, k) * static_cast<amrex::Real>(ebflagtype);
           }
         });
     }

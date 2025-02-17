@@ -136,7 +136,7 @@ struct DefaultProbIBC
   AMREX_FORCE_INLINE
   static void setEBType(
     const amrex::Real /*xEBface[AMREX_SPACEDIM]*/,
-    amrex::Real& /*EBflagType*/,
+    int& /*EBflagType*/,
     amrex::GeometryData const& /*geomdata*/,
     ProbParmDefault const& /*prob_parm*/)
   {
@@ -149,7 +149,9 @@ struct DefaultProbIBC
   /**
    * \brief Set the embedded boundary state value
    *
-   * \param x                 the EB face center coordinates.
+   * \param xEBface           the EB face center coordinates.
+   * \param xEBfaceNormal     the EB face normal vector components.
+   * \param s_in              the state in the cell the face belong to.
    * \param s_ext             outgoing state (as a standard C++ array).
    * \param time              current time.
    * \param geomdata          geometry data.
@@ -159,7 +161,9 @@ struct DefaultProbIBC
   AMREX_FORCE_INLINE
   static void setEBState(
     const amrex::Real* /*xEBface[AMREX_SPACEDIM]*/,
-    amrex::Real /*s_ext[NVAR]*/,
+    const amrex::Real* /*xEBfaceNormal[AMREX_SPACEDIM]*/,
+    const amrex::CellData<const amrex::Real>& /*s_in*/,
+    amrex::Real* /*s_ext[NVAR]*/,
     const amrex::Real /*time*/,
     amrex::GeometryData const& /*geomdata*/,
     ProbParmDefault const& /*prob_parm*/)

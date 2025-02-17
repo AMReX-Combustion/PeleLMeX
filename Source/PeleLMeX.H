@@ -1401,7 +1401,7 @@ public:
 
   void getEBState(
     int a_lev,
-    const amrex::Real& a_time,
+    const PeleLM::TimeStamp &a_time,
     amrex::MultiFab& a_EBstate,
     int stateComp,
     int nComp);
