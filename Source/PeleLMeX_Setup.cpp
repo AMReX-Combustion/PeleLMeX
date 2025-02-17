@@ -820,6 +820,7 @@ PeleLM::readIOParameters()
   pp.query("plot_file", m_plot_file);
   pp.query("plot_int", m_plot_int);
   pp.query("plot_overwrite", m_plot_overwrite);
+  pp.query("plot_init_state", m_plot_init_state);
   if (pp.contains("plot_per")) {
     int do_exact = 0;
     pp.query("plot_per_exact", do_exact);
@@ -909,7 +910,15 @@ PeleLM::variablesSetup()
 #if NUM_ODE > 0
     Print() << " First ODE: " << FIRSTODE << "\n";
     set_ode_names(m_ode_names);
-    for (int n = 0; n < NUM_ODE; n++) {
+    if (m_ode_names.size() != NUM_ODE) {
+      Abort("ODEQty names improperly set. Adjust set_ode_names in "
+            "ProblemSpecificFunctions or NUM_ODE in GNUMakefile");
+    }
+    for (int n = 0; n < NUM_ODE; ++n) {
+      if (m_ode_names[n].empty()) {
+        Abort("ODEQty names improperly set. Adjust set_ode_names in "
+              "ProblemSpecificFunctions or NUM_ODE in GNUMakefile");
+      }
       stateComponents.emplace_back(FIRSTODE + n, m_ode_names[n]);
     }
 #endif
