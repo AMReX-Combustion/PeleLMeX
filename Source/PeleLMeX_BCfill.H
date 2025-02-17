@@ -158,7 +158,7 @@ struct PeleLMCCFillExtDirAux
 #else
     auto aux_ext = aux.cellData(iv[0], iv[1], iv[2]);
 #endif
-    
+
 #ifndef PELE_CUSTOM_BCNORMAL_AUX
     amrex::ignore_unused(x, time, aux_ext);
 #endif

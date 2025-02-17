@@ -56,7 +56,8 @@ pelelmex_initdata(
 
   // want a cubic domain for ease
 #if AMREX_SPACEDIM > 1
-  AMREX_ALWAYS_ASSERT(AMREX_D_TERM(, (Lx == Ly), &&(Ly == Lz)));
+  AMREX_ALWAYS_ASSERT(
+    AMREX_D_TERM(, amrex::almostEqual(Lx, Ly), &&amrex::almostEqual(Ly, Lz)));
 #endif
   // find the centre of the domain
   const amrex::Real cen[AMREX_SPACEDIM] = {AMREX_D_DECL(
