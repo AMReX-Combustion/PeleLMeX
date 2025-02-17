@@ -152,8 +152,13 @@ struct PeleLMCCFillExtDirAux
     const amrex::Real x[AMREX_SPACEDIM] = {AMREX_D_DECL(
       prob_lo[0] + (iv[0] + 0.5) * dx[0], prob_lo[1] + (iv[1] + 0.5) * dx[1],
       prob_lo[2] + (iv[2] + 0.5) * dx[2])};
-    auto aux_ext = aux.cellData(iv[0], iv[1], iv[2]);
 
+#if AMREX_SPACEDIM == 2
+    auto aux_ext = aux.cellData(iv[0], iv[1], 0);
+#else
+    auto aux_ext = aux.cellData(iv[0], iv[1], iv[2]);
+#endif
+    
 #ifndef PELE_CUSTOM_BCNORMAL_AUX
     amrex::ignore_unused(x, time, aux_ext);
 #endif
