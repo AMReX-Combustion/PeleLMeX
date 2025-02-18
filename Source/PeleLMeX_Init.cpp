@@ -216,7 +216,6 @@ PeleLM::initData()
     averageDownState(AmrNewTime);
     fillPatchState(AmrNewTime);
 
-
     if (m_nAux > 0) {
       averageDownAux(AmrNewTime);
       fillPatchAux(AmrNewTime);
