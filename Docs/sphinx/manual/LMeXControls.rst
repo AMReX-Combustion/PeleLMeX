@@ -110,6 +110,7 @@ IO parameters
     #--------------------------IO CONTROL--------------------------
     amr.plot_int         = 20              # [OPT, DEF=-1] Frequency (as step #) for writing plot file
     amr.plot_overwrite   = false           # [OPT, DEF=false] Overwrite plot files with same name if present
+    amr.plot_init_state  = false           # [OPT, DEF=false] Create a plot file during initialization before the initial projections
     amr.plot_per         = 0.002           # [OPT, DEF=-1] Period (time in s) for writing plot file
     amr.plot_per_exact   = 1               # [OPT, DEF=0] Flag to enforce exactly plt_per by shortening dt
     amr.plot_file        = "plt_"          # [OPT, DEF="plt_"] Plot file prefix
