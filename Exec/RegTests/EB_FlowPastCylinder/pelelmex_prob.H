@@ -29,7 +29,7 @@ struct MyProbIBC : public DefaultProbIBC
     amrex::Array4<amrex::Real> const& state,
     amrex::Array4<amrex::Real> const& /*aux*/,
     amrex::GeometryData const& geomdata,
-    MyProbParm const& prob_parm,
+    MyProbParm const& /*prob_parm*/,
     pele::physics::PMF::PmfData::DataContainer const* /*pmf_data*/)
   {
     auto eos = pele::physics::PhysicsType::eos();
@@ -101,8 +101,8 @@ struct MyProbIBC : public DefaultProbIBC
     const amrex::Real* /*x[AMREX_SPACEDIM]*/,
     const amrex::CellData<amrex::Real>& /*s_in*/,
     amrex::Real s_ext[NVAR],
-    const int idir,
-    const int sgn,
+    const int /*idir*/,
+    const int /*sgn*/,
     const amrex::Real /*time*/,
     amrex::GeometryData const& /*geomdata*/,
     MyProbParm const& prob_parm,
@@ -157,7 +157,7 @@ struct MyProbIBC : public DefaultProbIBC
     amrex::Real s_ext[NVAR],
     const amrex::Real /*time*/,
     amrex::GeometryData const& /*geomdata*/,
-    MyProbParm const& prob_parm)
+    MyProbParm const& /*prob_parm*/)
   {
     if (xEBface[1] > 0.02) {
       s_ext[TEMP] = 500.0;

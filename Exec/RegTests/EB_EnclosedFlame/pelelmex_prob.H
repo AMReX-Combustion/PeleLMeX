@@ -26,7 +26,7 @@ struct MyProbIBC : public DefaultProbIBC
     int i,
     int j,
     int k,
-    int is_incompressible,
+    int /*is_incompressible*/,
     amrex::Array4<amrex::Real> const& state,
     amrex::Array4<amrex::Real> const& /*aux*/,
     amrex::GeometryData const& geomdata,

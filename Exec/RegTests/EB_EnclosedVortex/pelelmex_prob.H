@@ -32,7 +32,7 @@ struct MyProbIBC : public DefaultProbIBC
     amrex::Array4<amrex::Real> const& /*aux*/,
     amrex::GeometryData const& geomdata,
     MyProbParm const& prob_parm,
-    pele::physics::PMF::PmfData::DataContainer const* pmf_data)
+    pele::physics::PMF::PmfData::DataContainer const* /*pmf_data*/)
   {
     const amrex::Real* prob_lo = geomdata.ProbLo();
     const amrex::Real* prob_hi = geomdata.ProbHi();

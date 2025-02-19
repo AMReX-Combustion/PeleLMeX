@@ -229,7 +229,7 @@ struct MyProbIBC : public DefaultProbIBC
     amrex::Real s_ext[NVAR],
     const amrex::Real /*time*/,
     amrex::GeometryData const& /*geomdata*/,
-    MyProbParm const& prob_parm)
+    MyProbParm const& /*prob_parm*/)
   {
     if (xEBface[1] > 0.0) {
       s_ext[TEMP] = 800.0;
