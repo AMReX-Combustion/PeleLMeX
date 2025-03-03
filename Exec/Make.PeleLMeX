@@ -34,7 +34,7 @@ CXXFLAGS += -std=c++17
 LMdirs := Source
 ifeq ($(USE_PLASMA),TRUE)
    DEFINES += -DPELE_USE_PLASMA
-   LMdirs += Source/Efield Source/Efield/GMRES Source/Efield/LinOps
+   LMdirs += Source/Plasma Source/Plasma/GMRES Source/Plasma/LinOps
 endif
 ifeq ($(USE_PARTICLES), TRUE)
    ifdef SPRAY_FUEL_NUM
