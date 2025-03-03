@@ -417,7 +417,7 @@ PeleLM::readParameters()
       m_turb_visc_time.push_back(-1.0E200);
     }
 #ifdef PELE_USE_PLASMA
-    amrex::Abort("LES implementation is not yet compatible with efield/ions");
+    amrex::Abort("LES implementation is not yet compatible with plasma/ions");
 #endif
   }
 
@@ -439,7 +439,7 @@ PeleLM::readParameters()
       m_soret_boundary_override = 1;
       m_use_wbar = 0;
 #if PELE_USE_PLASMA
-      amrex::Abort("Isothermal walls with Soret incompatible with Efield");
+      amrex::Abort("Isothermal walls with Soret incompatible with plasma");
 #endif
     }
   }
@@ -700,7 +700,7 @@ PeleLM::readParameters()
 
 #ifdef PELE_USE_PLASMA
   // -----------------------------------------
-  // EFIELD
+  // PLASMA
   // -----------------------------------------
   ppef.query("JFNK_newtonTol", m_ef_newtonTol);
   ppef.query("JFNK_maxNewton", m_ef_maxNewtonIter);
@@ -788,7 +788,7 @@ PeleLM::checkSetupParams()
     amrex::Abort("Spray models are not yet supported for Manifold EOS");
 #endif
 #ifdef PELE_USE_PLASMA
-    amrex::Abort("Efield models are not yet supported for Manifold EOS");
+    amrex::Abort("Plasma models are not yet supported for Manifold EOS");
 #endif
 #ifdef USE_MANIFOLD_EOS
     if (

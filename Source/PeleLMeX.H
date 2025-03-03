@@ -1463,7 +1463,7 @@ public:
 #ifdef PELE_USE_PLASMA
 #include <PeleLMeX_EF.H>
   //-----------------------------------------------------------------------------
-  // EFIELD
+  // PLASMA
 
   void poissonSolveEF(const PeleLM::TimeStamp& a_time);
 
