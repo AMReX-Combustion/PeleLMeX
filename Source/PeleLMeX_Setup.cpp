@@ -79,6 +79,12 @@ PeleLM::Setup()
   if (m_incompressible == 0) {
     amrex::Print() << " Initialization of Eos ... \n";
     eos_parms.initialize();
+    // TODO: this is a bit of a hack so the host eos_parm has access to
+    // the host blackboxfunction data (manfunc_data)
+#ifdef USE_MANIFOLD_EOS
+    eos_parms.host_parm().manf_data =
+      &(eos_parms.host_only_parm().manfunc_par->host_parm());
+#endif
   }
 
   // Setup the state variables
@@ -820,6 +826,7 @@ PeleLM::readIOParameters()
   pp.query("plot_file", m_plot_file);
   pp.query("plot_int", m_plot_int);
   pp.query("plot_overwrite", m_plot_overwrite);
+  pp.query("plot_init_state", m_plot_init_state);
   if (pp.contains("plot_per")) {
     int do_exact = 0;
     pp.query("plot_per_exact", do_exact);
