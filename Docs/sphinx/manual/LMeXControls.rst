@@ -422,12 +422,21 @@ Linear solvers are a key component of PeleLMeX algorithm, separate controls are 
     nodal_proj.verbose = 1                      # [OPT, DEF=0] Verbose of the nodal projector
     nodal_proj.rtol = 1.0e-11                   # [OPT, DEF=1e-11] Relative tolerance of the nodal projection
     nodal_proj.atol = 1.0e-12                   # [OPT, DEF=1e-14] Absolute tolerance of the nodal projection
+    nodal_proj.maxiter = 50                     # [OPT, DEF=] Maximum number of iterations of the nodal projection
     nodal_proj.mg_max_coarsening_level = 5      # [OPT, DEF=100] Maximum number of MG levels (useful when using EB)
+    nodal_proj.bottom_verbose = 1               # [OPT, DEF=0] Verbose of the bottom solve for nodal projector
+    nodal_proj.bottom_rtol = 1e-3               # [OPT, DEF=1e-4] Relative tolerance of the bottom solve for nodal projection
+    nodal_proj.bottom_atol = 1e-10              # [OPT, DEF=0] Absolute tolerance of the bottom solve for nodal projection
+    nodal_proj.bottom_maxiter = 200             # [OPT, DEF=100] Maximum number of iterations of the bottom solve for nodal projection
 
     mac_proj.verbose = 1                        # [OPT, DEF=0] Verbose of the MAC projector
     mac_proj.rtol = 1.0e-11                     # [OPT, DEF=1e-11] Relative tolerance of the MAC projection
     mac_proj.atol = 1.0e-12                     # [OPT, DEF=1e-14] Absolute tolerance of the MAC projection
     mac_proj.mg_max_coarsening_level = 5        # [OPT, DEF=100] Maximum number of MG levels (useful when using EB)
+    mac_proj.bottom_verbose = 1               # [OPT, DEF=0] Verbose of the bottom solve for nodal projector
+    mac_proj.bottom_rtol = 1e-3               # [OPT, DEF=1e-4] Relative tolerance of the bottom solve for nodal projection
+    mac_proj.bottom_atol = 1e-10              # [OPT, DEF=0] Absolute tolerance of the bottom solve for nodal projection
+    mac_proj.bottom_maxiter = 200             # [OPT, DEF=100] Maximum number of iterations of the bottom solve for nodal projection
 
     diffusion.verbose = 1                       # [OPT, DEF=0] Verbose of the scalar diffusion solve
     diffusion.rtol = 1.0e-11                    # [OPT, DEF=1e-11] Relative tolerance of the scalar diffusion solve
@@ -436,6 +445,51 @@ Linear solvers are a key component of PeleLMeX algorithm, separate controls are 
     tensor_diffusion.verbose = 1                # [OPT, DEF=0] Verbose of the velocity tensor diffusion solve
     tensor_diffusion.rtol = 1.0e-11             # [OPT, DEF=1e-11] Relative tolerance of the velocity tensor diffusion solve
     tensor_diffusion.atol = 1.0e-12             # [OPT, DEF=1e-14] Absolute tolerance of the velocity tensor diffusion solve
+
+External solvers
+^^^^^^^^^^^^^^^^
+
+Through AMReX, PeleLMeX provides interfaces to the `Hypre <https://github.com/hypre-space/hypre>`_ preconditioners and solvers. 
+These can be called as bottom solvers for both cell-centered and node-based problems, and
+are particularly useful if the geometry includes thin elements (such as tube or plate) 
+or narrow channels, as coarsening of the geometry is rapidly limited by the occurrence of 
+multi-cut cells (not supported by AMReX) and the linear solvers are no longer able to robustly 
+tackle projections and implicit diffusion solves.   
+
+To build Hypre, follow the steps outlined below. For details on building Hypre with CUDA, 
+see the documentation in `AMReX <git clone https://github.com/hypre-space/hypre.git>`_. 
+
+::
+
+    git clone https://github.com/hypre-space/hypre.git
+    cd hypre/src
+    ./configure
+    make install
+    export HYPRE_DIR = /path_to_hypre_dir/hypre/src/hypre
+
+Next, in the ``GNUmakefile``, enable Hypre and define the path to the `HYPRE_DIR`:
+
+::
+
+    USE_HYPRE = TRUE
+    HYPRE_HOME = /path_to_hypre_dir/hypre/src/hypre
+
+
+
+Select input file controls are provided below for the ``mac_proj`` bottom solver, which 
+can be applied similarly for the ``nodal_proj``. Additional information on the Hypre 
+solvers and parameters can be found in the `Hypre documentation <https://hypre.readthedocs.io/en/latest/>`_.
+
+::
+
+    #----------------------HYPRE LINEAR SOLVERS--------------------
+    mac_proj.bottom_solver = "hypre"
+    mac_proj.hypre_namespace = mac_proj.hypre
+    mac_proj.hypre.verbose = 1
+    mac_proj.hypre.hypre_solver = GMRES
+    mac_proj.hypre.hypre_preconditioner = BoomerAMG
+
+    
 
 Active control
 --------------
