@@ -298,7 +298,7 @@ void
 PeleLM::averageDownScalars(const PeleLM::TimeStamp& a_time)
 {
   int nScal = NUM_SPECIES + 3; // rho, rhoYs, rhoH, Temp
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
   nScal += 2; // rhoRT, nE
 #endif
   for (int lev = finest_level; lev > 0; --lev) {
@@ -369,7 +369,7 @@ PeleLM::averageDownReaction()
   }
 }
 
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
 Vector<std::unique_ptr<MultiFab>>
 PeleLM::getPhiVVect(const TimeStamp& a_time)
 {

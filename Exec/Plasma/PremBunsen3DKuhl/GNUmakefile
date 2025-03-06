@@ -1,5 +1,5 @@
 # AMReX
-DIM = 2
+DIM = 3
 COMP = gnu
 PRECISION = DOUBLE
 USE_EB = FALSE
@@ -26,10 +26,11 @@ FSANITIZER = FALSE
 THREAD_SANITIZER = FALSE
 
 # PeleLMeX
-USE_EFIELD = TRUE
+USE_PLASMA = TRUE
+PELE_USE_MAGMA = FALSE
 
 # PelePhysics
-Chemistry_Model = methaneIons_diRenzo
+Chemistry_Model = CH4Ion_LuSk
 Eos_Model = Fuego
 Transport_Model = Simple
 
