@@ -71,34 +71,34 @@ struct MyProbIBC : public DefaultProbIBC
     const amrex::Real* prob_lo = geomdata.ProbLo();
     const amrex::Real* prob_hi = geomdata.ProbHi();
     const amrex::Real* dx = geomdata.CellSize();
-  
+
     const amrex::Real y = prob_lo[1] + (j + 0.5) * dx[1];
     const amrex::Real y_low = prob_lo[1];
     const amrex::Real Ly = prob_hi[1] - prob_lo[1];
-  
+
     auto eos = pele::physics::PhysicsType::eos();
     amrex::Real massfrac[NUM_SPECIES] = {0.0};
-  
+
     set_Y_from_Phi(prob_parm, massfrac);
-  
+
     const amrex::Real T_low = prob_parm.Tlow;
     const amrex::Real T_high = prob_parm.Thigh;
-  
+
     state(i, j, k, TEMP) = (y - y_low) / (Ly) * (T_high - T_low) + T_low;
-  
+
     state(i, j, k, VELX) = prob_parm.Vin;
     state(i, j, k, VELY) = 0.0;
-  
+
     amrex::Real rho_cgs, P_cgs;
     P_cgs = prob_parm.P_mean * 10.0;
-  
+
     eos.PYT2R(P_cgs, massfrac, state(i, j, k, TEMP), rho_cgs);
     state(i, j, k, DENSITY) = rho_cgs * 1.0e3; // CGS -> MKS conversion
-  
+
     eos.TY2H(state(i, j, k, TEMP), massfrac, state(i, j, k, RHOH));
     state(i, j, k, RHOH) *=
       1.0e-4 * state(i, j, k, DENSITY); // CGS -> MKS conversion
-  
+
     for (int n = 0; n < NUM_SPECIES; n++) {
       state(i, j, k, FIRSTSPEC + n) = massfrac[n] * state(i, j, k, DENSITY);
     }

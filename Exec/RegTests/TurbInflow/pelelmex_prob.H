@@ -34,33 +34,33 @@ struct MyProbIBC : public DefaultProbIBC
     pele::physics::PMF::PmfData::DataContainer const* /*pmf_data*/)
   {
     auto eos = pele::physics::PhysicsType::eos();
-  
+
     amrex::Real massfrac[NUM_SPECIES] = {0.0};
     massfrac[O2_ID] = 0.233;
     massfrac[N2_ID] = 0.767;
-  
+
     AMREX_D_TERM(state(i, j, k, VELX) = 0.0;, state(i, j, k, VELY) = 0.0;
                  , state(i, j, k, VELZ) = 0.0);
     state(i, j, k, VELX + prob_parm.meanFlowDir) = prob_parm.meanFlowMag;
-  
+
     if (is_incompressible != 0) {
       return;
     }
-  
+
     state(i, j, k, TEMP) = prob_parm.T_mean;
-  
+
     amrex::Real P_cgs = prob_parm.P_mean * 10.0;
-  
+
     // Density
     amrex::Real rho_cgs = 0.0;
     eos.PYT2R(P_cgs, massfrac, state(i, j, k, TEMP), rho_cgs);
     state(i, j, k, DENSITY) = rho_cgs * 1.0e3;
-  
+
     // Enthalpy
     amrex::Real h_cgs = 0.0;
     eos.TY2H(state(i, j, k, TEMP), massfrac, h_cgs);
     state(i, j, k, RHOH) = h_cgs * 1.0e-4 * state(i, j, k, DENSITY);
-  
+
     // Species mass
     for (int n = 0; n < NUM_SPECIES; n++) {
       state(i, j, k, FIRSTSPEC + n) = massfrac[n] * state(i, j, k, DENSITY);
@@ -82,19 +82,19 @@ struct MyProbIBC : public DefaultProbIBC
   {
     const amrex::Real* prob_lo = geomdata.ProbLo();
     const amrex::Real* prob_hi = geomdata.ProbHi();
-  
+
     AMREX_D_TERM(const amrex::Real Lx = prob_hi[0] - prob_lo[0];
                  , const amrex::Real Ly = prob_hi[1] - prob_lo[1];
                  , const amrex::Real Lz = prob_hi[2] - prob_lo[2]);
-  
+
     AMREX_D_TERM(const amrex::Real x_c = prob_lo[0] + 0.5 * Lx;
                  , const amrex::Real y_c = prob_lo[1] + 0.5 * Ly;
                  , const amrex::Real z_c = prob_lo[2] + 0.5 * Lz);
-  
+
     amrex::Real massfrac[NUM_SPECIES] = {0.0};
-  
+
     auto eos = pele::physics::PhysicsType::eos();
-  
+
     // When using PELE_USE_TURBINFLOW, s_ext comes in with
     // turbulence data. Only add the mean flow here.
     if (prob_parm.bothSides != 0) {
@@ -106,35 +106,38 @@ struct MyProbIBC : public DefaultProbIBC
     } else {
       s_ext[prob_parm.meanFlowDir] += prob_parm.meanFlowMag;
     }
-  
+
     massfrac[O2_ID] = 0.233;
     massfrac[N2_ID] = 0.767;
-  
+
     amrex::Real rad = 0.0;
     if (prob_parm.meanFlowDir == 0) {
-      rad = std::sqrt((x[1] - y_c) * (x[1] - y_c) + (x[2] - z_c) * (x[2] - z_c));
+      rad =
+        std::sqrt((x[1] - y_c) * (x[1] - y_c) + (x[2] - z_c) * (x[2] - z_c));
     } else if (prob_parm.meanFlowDir == 1) {
-      rad = std::sqrt((x[0] - x_c) * (x[0] - x_c) + (x[2] - z_c) * (x[2] - z_c));
+      rad =
+        std::sqrt((x[0] - x_c) * (x[0] - x_c) + (x[2] - z_c) * (x[2] - z_c));
     } else if (prob_parm.meanFlowDir == 2) {
-      rad = std::sqrt((x[0] - x_c) * (x[0] - x_c) + (x[1] - y_c) * (x[1] - y_c));
+      rad =
+        std::sqrt((x[0] - x_c) * (x[0] - x_c) + (x[1] - y_c) * (x[1] - y_c));
     }
-  
+
     if (rad < 0.15 * Lx) {
       massfrac[O2_ID] = 0.5;
       massfrac[N2_ID] = 0.5;
     }
-  
+
     s_ext[TEMP] = prob_parm.T_mean;
-  
+
     amrex::Real rho_cgs, P_cgs, RhoH_temp;
     P_cgs = prob_parm.P_mean * 10.0;
-  
+
     eos.PYT2R(P_cgs, massfrac, s_ext[TEMP], rho_cgs);
     s_ext[DENSITY] = rho_cgs * 1.0e3;
-  
+
     eos.TY2H(s_ext[TEMP], massfrac, RhoH_temp);
     s_ext[RHOH] = RhoH_temp * 1.0e-4 * s_ext[DENSITY]; // CGS -> MKS conversion
-  
+
     for (int n = 0; n < NUM_SPECIES; n++) {
       s_ext[FIRSTSPEC + n] = massfrac[n] * s_ext[DENSITY];
     }

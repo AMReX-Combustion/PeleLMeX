@@ -39,7 +39,7 @@ struct MyProbIBC : public DefaultProbIBC
     massfrac[N2_ID] = prob_parm.Y_N2;
     massfrac[O2_ID] = prob_parm.Y_O2;
     state(i, j, k, TEMP) = prob_parm.T0;
-  
+
     state(i, j, k, VELX) = prob_parm.vel;
 #if (AMREX_SPACEDIM == 2)
     state(i, j, k, VELY) = 0.0;
@@ -49,17 +49,17 @@ struct MyProbIBC : public DefaultProbIBC
 #endif
 
     amrex::Real P_cgs = prob_parm.P_mean * 10.0;
-  
+
     // Density
     amrex::Real rho_cgs = 0.0;
     eos.PYT2R(P_cgs, massfrac, state(i, j, k, TEMP), rho_cgs);
     state(i, j, k, DENSITY) = rho_cgs * 1.0e3;
-  
+
     // Enthalpy
     amrex::Real h_cgs = 0.0;
     eos.TY2H(state(i, j, k, TEMP), massfrac, h_cgs);
     state(i, j, k, RHOH) = h_cgs * 1.0e-4 * state(i, j, k, DENSITY);
-  
+
     // Species mass
     for (int n = 0; n < NUM_SPECIES; n++) {
       state(i, j, k, FIRSTSPEC + n) = massfrac[n] * state(i, j, k, DENSITY);
@@ -87,7 +87,7 @@ struct MyProbIBC : public DefaultProbIBC
     s_ext[TEMP] = prob_parm.T0;
     amrex::Real rho_cgs, P_cgs;
     P_cgs = prob_parm.P_mean * 10.;
-  
+
     auto eos = pele::physics::PhysicsType::eos();
     eos.PYT2R(P_cgs, massfrac.data(), prob_parm.T0, rho_cgs);
     amrex::Real rho_mks = rho_cgs * 1.0e3; // CGS -> MKS conversion

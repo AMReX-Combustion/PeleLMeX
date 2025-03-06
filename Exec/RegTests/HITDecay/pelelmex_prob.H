@@ -87,15 +87,15 @@ struct MyProbIBC : public DefaultProbIBC
   {
     const amrex::Real* prob_lo = geomdata.ProbLo();
     const amrex::Real* dx = geomdata.CellSize();
-  
+
     amrex::Real x[3] = {
       prob_lo[0] + static_cast<amrex::Real>(i + 0.5) * dx[0] * 100.0,
       prob_lo[1] + static_cast<amrex::Real>(j + 0.5) * dx[1] * 100.0,
       prob_lo[2] + static_cast<amrex::Real>(k + 0.5) * dx[2] * 100.0};
-  
+
     // Fill in the velocities
     amrex::Real uinterp[3] = {0.0};
-  
+
     // Interpolation factors
     amrex::Real mod[3] = {0.0};
     int idx[3] = {0};
@@ -109,9 +109,9 @@ struct MyProbIBC : public DefaultProbIBC
       slp[idim] = (mod[idim] - prob_parm.d_xarray[idx[idim]]) /
                   prob_parm.d_xdiff[idx[idim]];
     }
-  
+
     int inSize = prob_parm.input_resolution;
-  
+
     const amrex::Real f0 = (1 - slp[0]) * (1 - slp[1]) * (1 - slp[2]);
     const amrex::Real f1 = slp[0] * (1 - slp[1]) * (1 - slp[2]);
     const amrex::Real f2 = (1 - slp[0]) * slp[1] * (1 - slp[2]);
@@ -120,65 +120,77 @@ struct MyProbIBC : public DefaultProbIBC
     const amrex::Real f5 = (1 - slp[0]) * slp[1] * slp[2];
     const amrex::Real f6 = slp[0] * slp[1] * (1 - slp[2]);
     const amrex::Real f7 = slp[0] * slp[1] * slp[2];
-  
+
     uinterp[0] =
       prob_parm.d_uinput[idx[0] + inSize * (idx[1] + inSize * idx[2])] * f0 +
       prob_parm.d_uinput[idxp1[0] + inSize * (idx[1] + inSize * idx[2])] * f1 +
       prob_parm.d_uinput[idx[0] + inSize * (idxp1[1] + inSize * idx[2])] * f2 +
       prob_parm.d_uinput[idx[0] + inSize * (idx[1] + inSize * idxp1[2])] * f3 +
-      prob_parm.d_uinput[idxp1[0] + inSize * (idx[1] + inSize * idxp1[2])] * f4 +
-      prob_parm.d_uinput[idx[0] + inSize * (idxp1[1] + inSize * idxp1[2])] * f5 +
-      prob_parm.d_uinput[idxp1[0] + inSize * (idxp1[1] + inSize * idx[2])] * f6 +
-      prob_parm.d_uinput[idxp1[0] + inSize * (idxp1[1] + inSize * idxp1[2])] * f7;
-  
+      prob_parm.d_uinput[idxp1[0] + inSize * (idx[1] + inSize * idxp1[2])] *
+        f4 +
+      prob_parm.d_uinput[idx[0] + inSize * (idxp1[1] + inSize * idxp1[2])] *
+        f5 +
+      prob_parm.d_uinput[idxp1[0] + inSize * (idxp1[1] + inSize * idx[2])] *
+        f6 +
+      prob_parm.d_uinput[idxp1[0] + inSize * (idxp1[1] + inSize * idxp1[2])] *
+        f7;
+
     uinterp[1] =
       prob_parm.d_vinput[idx[0] + inSize * (idx[1] + inSize * idx[2])] * f0 +
       prob_parm.d_vinput[idxp1[0] + inSize * (idx[1] + inSize * idx[2])] * f1 +
       prob_parm.d_vinput[idx[0] + inSize * (idxp1[1] + inSize * idx[2])] * f2 +
       prob_parm.d_vinput[idx[0] + inSize * (idx[1] + inSize * idxp1[2])] * f3 +
-      prob_parm.d_vinput[idxp1[0] + inSize * (idx[1] + inSize * idxp1[2])] * f4 +
-      prob_parm.d_vinput[idx[0] + inSize * (idxp1[1] + inSize * idxp1[2])] * f5 +
-      prob_parm.d_vinput[idxp1[0] + inSize * (idxp1[1] + inSize * idx[2])] * f6 +
-      prob_parm.d_vinput[idxp1[0] + inSize * (idxp1[1] + inSize * idxp1[2])] * f7;
-  
+      prob_parm.d_vinput[idxp1[0] + inSize * (idx[1] + inSize * idxp1[2])] *
+        f4 +
+      prob_parm.d_vinput[idx[0] + inSize * (idxp1[1] + inSize * idxp1[2])] *
+        f5 +
+      prob_parm.d_vinput[idxp1[0] + inSize * (idxp1[1] + inSize * idx[2])] *
+        f6 +
+      prob_parm.d_vinput[idxp1[0] + inSize * (idxp1[1] + inSize * idxp1[2])] *
+        f7;
+
     uinterp[2] =
       prob_parm.d_winput[idx[0] + inSize * (idx[1] + inSize * idx[2])] * f0 +
       prob_parm.d_winput[idxp1[0] + inSize * (idx[1] + inSize * idx[2])] * f1 +
       prob_parm.d_winput[idx[0] + inSize * (idxp1[1] + inSize * idx[2])] * f2 +
       prob_parm.d_winput[idx[0] + inSize * (idx[1] + inSize * idxp1[2])] * f3 +
-      prob_parm.d_winput[idxp1[0] + inSize * (idx[1] + inSize * idxp1[2])] * f4 +
-      prob_parm.d_winput[idx[0] + inSize * (idxp1[1] + inSize * idxp1[2])] * f5 +
-      prob_parm.d_winput[idxp1[0] + inSize * (idxp1[1] + inSize * idx[2])] * f6 +
-      prob_parm.d_winput[idxp1[0] + inSize * (idxp1[1] + inSize * idxp1[2])] * f7;
-  
+      prob_parm.d_winput[idxp1[0] + inSize * (idx[1] + inSize * idxp1[2])] *
+        f4 +
+      prob_parm.d_winput[idx[0] + inSize * (idxp1[1] + inSize * idxp1[2])] *
+        f5 +
+      prob_parm.d_winput[idxp1[0] + inSize * (idxp1[1] + inSize * idx[2])] *
+        f6 +
+      prob_parm.d_winput[idxp1[0] + inSize * (idxp1[1] + inSize * idxp1[2])] *
+        f7;
+
     //
     // Fill Velocity
     //
     state(i, j, k, VELX) = uinterp[0];
     state(i, j, k, VELY) = uinterp[1];
     state(i, j, k, VELZ) = uinterp[2];
-  
+
     if (is_incompressible != 0) {
       return;
     }
-  
+
     state(i, j, k, TEMP) = prob_parm.T_mean;
-  
+
     amrex::Real Yt[NUM_SPECIES];
     Yt[O2_ID] = 0.233;
     Yt[N2_ID] = 0.767;
-  
+
     amrex::Real rho_cgs, P_cgs;
     P_cgs = prob_parm.P_mean * 10.0;
-  
+
     auto eos = pele::physics::PhysicsType::eos();
     eos.PYT2R(P_cgs, Yt, state(i, j, k, TEMP), rho_cgs);
     state(i, j, k, DENSITY) = rho_cgs * 1.0e3; // CGS -> MKS conversion
-  
+
     eos.TY2H(state(i, j, k, TEMP), Yt, state(i, j, k, RHOH));
     state(i, j, k, RHOH) *=
       1.0e-4 * state(i, j, k, DENSITY); // CGS -> MKS conversion
-  
+
     for (int n = 0; n < NUM_SPECIES; n++) {
       state(i, j, k, FIRSTSPEC + n) = Yt[n] * state(i, j, k, DENSITY);
     }
