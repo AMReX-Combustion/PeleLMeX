@@ -33,56 +33,56 @@ EBUserDefined(
   scaleFact *= 0.01;     // MKS conversion
 
   if (!useFlatHead) {
-    p = amrex::RealVect(D_DECL(
+    p = amrex::RealVect(AMREX_D_DECL(
       radius * 1.1 * 0.1 * scaleFact, (7.8583 + zoffset) * 0.1 * scaleFact,
       0.0));
     lnpts.push_back(p);
-    p = amrex::RealVect(D_DECL(
+    p = amrex::RealVect(AMREX_D_DECL(
       36.193 * 0.1 * scaleFact, (7.8583 + zoffset) * 0.1 * scaleFact, 0.0));
     lnpts.push_back(p);
     Piston.addLineElement(lnpts);
     lnpts.clear();
 
-    p = amrex::RealVect(D_DECL(
+    p = amrex::RealVect(AMREX_D_DECL(
       36.193 * 0.1 * scaleFact, (7.8583 + zoffset) * 0.1 * scaleFact, 0.0));
     lnpts.push_back(p);
-    p = amrex::RealVect(D_DECL(
+    p = amrex::RealVect(AMREX_D_DECL(
       24.035 * 0.1 * scaleFact, (-7.8586 + zoffset) * 0.1 * scaleFact, 0.0));
     lnpts.push_back(p);
     Piston.addLineElement(lnpts);
     lnpts.clear();
 
-    p = amrex::RealVect(D_DECL(
+    p = amrex::RealVect(AMREX_D_DECL(
       24.035 * 0.1 * scaleFact, (-7.8586 + zoffset) * 0.1 * scaleFact, 0.0));
     lnpts.push_back(p);
-    p = amrex::RealVect(D_DECL(
+    p = amrex::RealVect(AMREX_D_DECL(
       20.0 * 0.1 * scaleFact, (-7.8586 + zoffset) * 0.1 * scaleFact, 0.0));
     lnpts.push_back(p);
     Piston.addLineElement(lnpts);
     lnpts.clear();
 
-    p = amrex::RealVect(D_DECL(
+    p = amrex::RealVect(AMREX_D_DECL(
       20.0 * 0.1 * scaleFact, (-7.8586 + zoffset) * 0.1 * scaleFact, 0.0));
     lnpts.push_back(p);
-    p = amrex::RealVect(D_DECL(
+    p = amrex::RealVect(AMREX_D_DECL(
       1.9934 * 0.1 * scaleFact, (3.464 + zoffset) * 0.1 * scaleFact, 0.0));
     lnpts.push_back(p);
     Piston.addLineElement(lnpts);
     lnpts.clear();
 
-    p = amrex::RealVect(D_DECL(
+    p = amrex::RealVect(AMREX_D_DECL(
       1.9934 * 0.1 * scaleFact, (3.464 + zoffset) * 0.1 * scaleFact, 0.0));
     lnpts.push_back(p);
-    p = amrex::RealVect(D_DECL(
+    p = amrex::RealVect(AMREX_D_DECL(
       0.09061 * 0.1 * scaleFact, (3.464 + zoffset) * 0.1 * scaleFact, 0.0));
     lnpts.push_back(p);
     Piston.addLineElement(lnpts);
   } else {
-    p = amrex::RealVect(D_DECL(
+    p = amrex::RealVect(AMREX_D_DECL(
       radius * 1.1 * 0.1 * scaleFact, (-7.8586 + zoffset) * 0.1 * scaleFact,
       0.0));
     lnpts.push_back(p);
-    p = amrex::RealVect(D_DECL(
+    p = amrex::RealVect(AMREX_D_DECL(
       0.0 * 0.1 * scaleFact, (-7.8586 + zoffset) * 0.1 * scaleFact, 0.0));
     lnpts.push_back(p);
     Piston.addLineElement(lnpts);

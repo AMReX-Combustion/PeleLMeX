@@ -27,7 +27,7 @@ PeleLM::readProbParm()
     amrex::Abort("Not a valid equivalence_ratio");
   }
 
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
   pp.query("electrode_radius", PeleLM::prob_parm->electrode_radius);
   pp.query("electrode_width", PeleLM::prob_parm->electrode_width);
   pp.query("electrode_phiV", PeleLM::prob_parm->electrode_phiV);

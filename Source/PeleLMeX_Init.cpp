@@ -83,7 +83,7 @@ PeleLM::MakeNewLevelFromScratch(
     m_leveldatareact[lev]->I_R.setVal(0.0);
   }
 
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
   m_leveldatanlsolve[lev].reset(
     new LevelDataNLSolve(grids[lev], dmap[lev], *m_factory[lev], m_nGrowState));
   if (m_do_extraEFdiags) {
@@ -216,6 +216,9 @@ PeleLM::initData()
     averageDownState(AmrNewTime);
     fillPatchState(AmrNewTime);
 
+    if (m_plot_init_state) {
+      WritePlotFile();
+    }
     //----------------------------------------------------------------
     // If performing UnitTest, let's stop here
     if (runMode() != "normal") {
@@ -264,8 +267,8 @@ PeleLM::initData()
       RadInit();
     }
 #endif
-#ifdef PELE_USE_EFIELD
-    // If restarting from a non efield simulation
+#ifdef PELE_USE_PLASMA
+    // If restarting from a non plasma simulation
     if (m_restart_nonEF) {
       // either pass Y_ne -> nE or initialize nE for electro-neutral
       if (m_restart_electroneutral) {
@@ -374,7 +377,7 @@ PeleLM::projectInitSolution()
 {
   const int is_init = 1;
 
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
   poissonSolveEF(AmrNewTime);
   fillPatchPhiV(AmrNewTime);
 #endif

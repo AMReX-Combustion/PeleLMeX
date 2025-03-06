@@ -39,7 +39,7 @@ PeleLM::readProbParm()
   // Definition of the fuel parameters
   pp.query("dilution", prob_parm->dilution);
 
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
   pp.query("PhiV_y_hi", PeleLM::prob_parm->phiV_hiy);
   pp.query("PhiV_y_lo", PeleLM::prob_parm->phiV_loy);
 #endif

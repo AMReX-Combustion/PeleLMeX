@@ -12,8 +12,8 @@ include $(AMREX_HOME)/Tools/GNUMake/Make.defs
 
 EBASE := PeleLMeX
 
-ifeq ($(USE_EFIELD),TRUE)
-   USERSuffix += .EF
+ifeq ($(USE_PLASMA),TRUE)
+   USERSuffix += .PLASMA
 endif
 
 all: $(executable)
@@ -32,9 +32,9 @@ CXXFLAGS += -std=c++17
 # PeleLM sources
 #---------------
 LMdirs := Source
-ifeq ($(USE_EFIELD),TRUE)
-   DEFINES += -DPELE_USE_EFIELD
-   LMdirs += Source/Efield Source/Efield/GMRES Source/Efield/LinOps
+ifeq ($(USE_PLASMA),TRUE)
+   DEFINES += -DPELE_USE_PLASMA
+   LMdirs += Source/Plasma Source/Plasma/GMRES Source/Plasma/LinOps
 endif
 ifeq ($(USE_PARTICLES), TRUE)
    ifdef SPRAY_FUEL_NUM

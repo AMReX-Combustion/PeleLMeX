@@ -26,7 +26,7 @@ FSANITIZER = FALSE
 THREAD_SANITIZER = FALSE
 
 # PeleLMeX
-USE_EFIELD = TRUE
+USE_PLASMA = TRUE
 
 # PelePhysics
 Chemistry_Model = IonizedAir

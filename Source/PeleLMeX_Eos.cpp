@@ -76,7 +76,7 @@ PeleLM::calcDivU(
         }
       } else { // Regular    -> use instantaneous RR
         RhoYdot.define(grids[lev], dmap[lev], nCompIR(), 0);
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
         computeInstantaneousReactionRateEF(lev, a_time, &RhoYdot);
 #else
         computeInstantaneousReactionRate(lev, a_time, &RhoYdot);

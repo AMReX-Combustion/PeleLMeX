@@ -44,7 +44,7 @@ PeleLM::LevelData::LevelData(
       diff_cc.define(ba, dm, NUM_SPECIES + 2, 1, MFInfo(), factory);
     }
 
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
     diffE_cc.define(ba, dm, 1, 1, MFInfo(), factory);
     mobE_cc.define(ba, dm, 1, 1, MFInfo(), factory);
     mob_cc.define(ba, dm, NUM_IONS, 1, MFInfo(), factory);
@@ -61,14 +61,14 @@ PeleLM::LevelDataReact::LevelDataReact(
   const amrex::FabFactory<FArrayBox>& factory)
 {
   int IRsize = NUM_SPECIES;
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
   IRsize += 1;
 #endif
   I_R.define(ba, dm, IRsize, 0, MFInfo(), factory);
   functC.define(ba, dm, 1, 0, MFInfo(), factory);
 }
 
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
 PeleLM::LevelDataNLSolve::LevelDataNLSolve(
   amrex::BoxArray const& ba,
   amrex::DistributionMapping const& dm,
@@ -170,7 +170,7 @@ PeleLM::AdvanceAdvData::AdvanceAdvData(
     Forcing.resize(a_finestLevel + 1);
     mac_divu.resize(a_finestLevel + 1);
   }
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
   uDrift.resize(a_finestLevel + 1);
 #endif
 
@@ -181,7 +181,7 @@ PeleLM::AdvanceAdvData::AdvanceAdvData(
         amrex::convert(ba[lev], IntVect::TheDimensionVector(idim));
       umac[lev][idim].define(
         faceba, dm[lev], 1, nGrowMAC, MFInfo(), *factory[lev]);
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
       uDrift[lev][idim].define(
         faceba, dm[lev], NUM_IONS, nGrowMAC, MFInfo(), *factory[lev]);
 #endif
@@ -192,7 +192,7 @@ PeleLM::AdvanceAdvData::AdvanceAdvData(
     } else {
       AofS[lev].define(ba[lev], dm[lev], NVAR, 0, MFInfo(), *factory[lev]);
       chi[lev].define(ba[lev], dm[lev], 1, 1, MFInfo(), *factory[lev]);
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
       Forcing[lev].define(
         ba[lev], dm[lev], NUM_SPECIES + 2, nGrowAdv, MFInfo(),
         *factory[lev]); // Species + TEMP + nE
@@ -273,7 +273,7 @@ PeleLM::copyTransportOldToNew()
       MultiFab::Copy(
         m_leveldata_new[lev]->diff_cc, m_leveldata_old[lev]->diff_cc, 0, 0,
         NUM_SPECIES + 2, 1);
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
       MultiFab::Copy(
         m_leveldata_new[lev]->diffE_cc, m_leveldata_old[lev]->diffE_cc, 0, 0, 1,
         1);

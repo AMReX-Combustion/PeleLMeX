@@ -462,7 +462,7 @@ PeleLM::computeDifferentialDiffusionFluxes(
   // Get the species BCRec
   auto bcRecSpec = fetchBCRecArray(FIRSTSPEC, NUM_SPECIES);
 
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
   // Get the species diffusion fluxes from the DiffusionOp
   // Don't average down just yet
   int do_avgDown = 0;
@@ -1077,7 +1077,7 @@ PeleLM::differentialDiffusionUpdate(
       GetVecOfArrOfPtrs(diffData->soret_fluxes));
   }
 
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
   // Solve for \widetilda{rhoY^{np1,kp1}}
   // -> return the uncorrected fluxes^{np1,kp1}
   // -> and the partially updated species (not including wbar or flux

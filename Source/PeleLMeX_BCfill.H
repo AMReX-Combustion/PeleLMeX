@@ -474,7 +474,7 @@ struct PeleLMCCFillExtDirTemp
   }
 };
 
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
 template <typename T>
 struct PeleLMCCFillExtDirnE
 {
@@ -560,7 +560,7 @@ struct PeleLMCCFillExtDirnE
 };
 #endif
 
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
 template <typename T>
 struct PeleLMCCFillExtDirPhiV
 {

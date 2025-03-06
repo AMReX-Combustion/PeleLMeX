@@ -4,6 +4,8 @@
 #include <AMReX_REAL.H>
 #include <AMReX_GpuMemory.H>
 
+#define PELE_PROB_PARM_NEEDS_FREEING
+
 using namespace amrex::literals;
 
 struct ProbParm
