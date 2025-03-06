@@ -266,7 +266,7 @@ PeleLM::fillPatchExtrap(Real a_time, Vector<MultiFab*> const& a_MF, int a_nGrow)
   int lev = 0;
   {
     PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> bndry_func(
-      geom[lev], {m_bcrec_force}, PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
+      geom[lev], {m_bcrec_force}, PeleLMCCFillExtDirDummy{m_nAux});
     FillPatchSingleLevel(
       *a_MF[lev], IntVect(a_nGrow), a_time, {a_MF[lev]}, {a_time}, 0, 0, nComp,
       geom[lev], bndry_func, 0);
@@ -274,9 +274,9 @@ PeleLM::fillPatchExtrap(Real a_time, Vector<MultiFab*> const& a_MF, int a_nGrow)
   for (lev = 1; lev <= finest_level; ++lev) {
     PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> crse_bndry_func(
       geom[lev - 1], {m_bcrec_force},
-      PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
+      PeleLMCCFillExtDirDummy{m_nAux});
     PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirDummy>> fine_bndry_func(
-      geom[lev], {m_bcrec_force}, PeleLMCCFillExtDirDummy{lprobparm, m_nAux});
+      geom[lev], {m_bcrec_force}, PeleLMCCFillExtDirDummy{m_nAux});
     auto* mapper = getInterpolator();
     FillPatchTwoLevels(
       *a_MF[lev], IntVect(a_nGrow), a_time, {a_MF[lev - 1]}, {a_time},
@@ -294,20 +294,20 @@ PeleLM::fillPatchNLnE(Real a_time, Vector<MultiFab*> const& a_nE, int a_nGrow)
 
   int lev = 0;
   {
-    PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirnE>> bndry_func(
+    PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirnE<ProbIBC>>> bndry_func(
       geom[lev], fetchBCRecArray(NE, 1),
-      PeleLMCCFillExtDirnE{lprobparm, lpmfdata, m_nAux});
+      PeleLMCCFillExtDirnE<ProbIBC>{lprobparm, lpmfdata, m_nAux});
     FillPatchSingleLevel(
       *a_nE[lev], IntVect(a_nGrow), a_time, {a_nE[lev]}, {a_time}, 0, 0, 1,
       geom[lev], bndry_func, 0);
   }
   for (lev = 1; lev <= finest_level; ++lev) {
-    PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirnE>> crse_bndry_func(
+    PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirnE<ProbIBC>>> crse_bndry_func(
       geom[lev - 1], fetchBCRecArray(NE, 1),
-      PeleLMCCFillExtDirnE{lprobparm, lpmfdata, m_nAux});
-    PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirnE>> fine_bndry_func(
+      PeleLMCCFillExtDirnE<ProbIBC>{lprobparm, lpmfdata, m_nAux});
+    PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirnE<ProbIBC>>> fine_bndry_func(
       geom[lev], fetchBCRecArray(NE, 1),
-      PeleLMCCFillExtDirnE{lprobparm, lpmfdata, m_nAux});
+      PeleLMCCFillExtDirnE<ProbIBC>{lprobparm, lpmfdata, m_nAux});
 
     auto* mapper = getInterpolator();
     FillPatchTwoLevels(
@@ -327,20 +327,20 @@ PeleLM::fillPatchNLphiV(
 
   int lev = 0;
   {
-    PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirPhiV>> bndry_func(
+    PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirPhiV<ProbIBC>>> bndry_func(
       geom[lev], fetchBCRecArray(PHIV, 1),
-      PeleLMCCFillExtDirPhiV{lprobparm, lpmfdata, m_nAux});
+      PeleLMCCFillExtDirPhiV<ProbIBC>{lprobparm, lpmfdata, m_nAux});
     FillPatchSingleLevel(
       *a_phiV[lev], IntVect(a_nGrow), a_time, {a_phiV[lev]}, {a_time}, 0, 0, 1,
       geom[lev], bndry_func, 0);
   }
   for (lev = 1; lev <= finest_level; ++lev) {
-    PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirPhiV>> crse_bndry_func(
+    PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirPhiV<ProbIBC>>> crse_bndry_func(
       geom[lev - 1], fetchBCRecArray(PHIV, 1),
-      PeleLMCCFillExtDirPhiV{lprobparm, lpmfdata, m_nAux});
-    PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirPhiV>> fine_bndry_func(
+      PeleLMCCFillExtDirPhiV<ProbIBC>{lprobparm, lpmfdata, m_nAux});
+    PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirPhiV<ProbIBC>>> fine_bndry_func(
       geom[lev], fetchBCRecArray(PHIV, 1),
-      PeleLMCCFillExtDirPhiV{lprobparm, lpmfdata, m_nAux});
+      PeleLMCCFillExtDirPhiV<ProbIBC>{lprobparm, lpmfdata, m_nAux});
 
     auto* mapper = getInterpolator();
     FillPatchTwoLevels(
