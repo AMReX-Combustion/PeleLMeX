@@ -30,7 +30,7 @@ USE_PLASMA = TRUE
 PELE_USE_MAGMA = FALSE
 
 # PelePhysics
-Chemistry_Model = CH4Ion_LuSk
+Chemistry_Model = methaneIons_diRenzo
 Eos_Model = Fuego
 Transport_Model = Simple
 
