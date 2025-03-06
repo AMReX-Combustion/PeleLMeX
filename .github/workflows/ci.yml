@@ -101,7 +101,7 @@ jobs:
             ccache_cache: ~/.cache/ccache
           - build_type: Release
             ctest_args: -LE no-ci
-            ccache_size: 100M
+            ccache_size: 200M
           - build_type: Debug
             ctest_args: -R covo
             ccache_size: 400M
@@ -278,7 +278,7 @@ jobs:
           echo "CCACHE_COMPRESS=1" >> $GITHUB_ENV
           echo "CCACHE_COMPRESSLEVEL=10" >> $GITHUB_ENV
           echo "CCACHE_LOGFILE=${{github.workspace}}/ccache.log.txt" >> $GITHUB_ENV
-          echo "CCACHE_MAXSIZE=100M" >> $GITHUB_ENV
+          echo "CCACHE_MAXSIZE=200M" >> $GITHUB_ENV
       - name: Dependencies
         run: |
           ${{github.workspace}}/Submodules/PelePhysics/Submodules/amrex/.github/workflows/dependencies/ubuntu_free_disk_space.sh
@@ -349,7 +349,7 @@ jobs:
           echo "CCACHE_COMPRESS=1" >> $GITHUB_ENV
           echo "CCACHE_COMPRESSLEVEL=10" >> $GITHUB_ENV
           echo "CCACHE_LOGFILE=${{github.workspace}}/ccache.log.txt" >> $GITHUB_ENV
-          echo "CCACHE_MAXSIZE=100M" >> $GITHUB_ENV
+          echo "CCACHE_MAXSIZE=200M" >> $GITHUB_ENV
           echo "CCACHE_DEPEND=1" >> $GITHUB_ENV
       - name: Dependencies
         run: |
