@@ -446,19 +446,19 @@ Linear solvers are a key component of PeleLMeX algorithm, separate controls are 
     tensor_diffusion.rtol = 1.0e-11             # [OPT, DEF=1e-11] Relative tolerance of the velocity tensor diffusion solve
     tensor_diffusion.atol = 1.0e-12             # [OPT, DEF=1e-14] Absolute tolerance of the velocity tensor diffusion solve
 
-External solvers
-^^^^^^^^^^^^^^^^
+Hypre support
+^^^^^^^^^^^^^
 
-Through AMReX, PeleLMeX provides interfaces to the `Hypre <https://github.com/hypre-space/hypre>`_ preconditioners and solvers. 
-These can be called as bottom solvers for both cell-centered and node-based problems, and
-are particularly useful if the geometry includes thin elements (such as tube or plate) 
-or narrow channels, as coarsening of the geometry is rapidly limited by the occurrence of 
-multi-cut cells (not supported by AMReX) and the linear solvers are no longer able to robustly 
+Through AMReX, PeleLMeX provides interfaces to the `Hypre <https://github.com/hypre-space/hypre>`_ 
+preconditioners and solvers. These can be called as bottom solvers for the MLMG linear 
+solvers, for both cell-centered and node-based problems.  The Hypre solvers are particularly 
+useful if the geometry includes thin elements (such as tube or plate) or narrow channels, 
+as coarsening of the geometry is rapidly limited by the occurrence of multi-cut cells 
+(not supported by AMReX) and the linear solvers are no longer able to robustly 
 tackle projections and implicit diffusion solves.   
 
 To build Hypre, follow the steps outlined below. For details on building Hypre with CUDA, 
-see the documentation in `AMReX <git clone https://github.com/hypre-space/hypre.git>`_. 
-
+see the documentation in `AMReX <https://amrex-codes.github.io/amrex/docs_html/LinearSolvers.html#external-solvers>`_.
 ::
 
     git clone https://github.com/hypre-space/hypre.git
