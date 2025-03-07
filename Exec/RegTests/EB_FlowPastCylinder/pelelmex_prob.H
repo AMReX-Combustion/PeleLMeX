@@ -28,7 +28,7 @@ struct MyProbIBC : public DefaultProbIBC
     int is_incompressible,
     amrex::Array4<amrex::Real> const& state,
     amrex::Array4<amrex::Real> const& /*aux*/,
-    amrex::GeometryData const& geomdata,
+    amrex::GeometryData const& /*geomdata*/,
     MyProbParm const& prob_parm,
     pele::physics::PMF::PmfData::DataContainer const* /*pmf_data*/)
   {
