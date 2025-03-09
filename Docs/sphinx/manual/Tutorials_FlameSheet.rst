@@ -99,7 +99,7 @@ Problem specifications
 ..  _sec:TUTO_FS::Problem:
 
 The problem setup is mostly contained in the two C++ source/header files mentioned above.
-Looking into ``pelelmex_prob.H`` first, this file contains two structs used throughtout
+Looking into ``pelelmex_prob.H`` first, this file contains two structs used throughout
 the code to define problem-specific parameters (such as initial and boundary conditions).
 We can see the set of parameters that will be used to specify the initial and boundary conditions: ::
 
