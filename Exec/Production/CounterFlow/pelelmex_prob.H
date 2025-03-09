@@ -56,35 +56,36 @@ struct MyProbIBC : public DefaultProbIBC
     const amrex::Real* prob_lo = geomdata.ProbLo();
     const amrex::Real* prob_hi = geomdata.ProbHi();
     const amrex::Real* dx = geomdata.CellSize();
-  
+
     AMREX_D_TERM(const amrex::Real x = prob_lo[0] + (i + 0.5) * dx[0];
                  , const amrex::Real y = prob_lo[1] + (j + 0.5) * dx[1];
                  , const amrex::Real z = prob_lo[2] + (k + 0.5) * dx[2];);
-  
+
     AMREX_D_TERM(const amrex::Real Lx = prob_hi[0] - prob_lo[0];
                  , const amrex::Real Ly = prob_hi[1] - prob_lo[1];
                  , const amrex::Real Lz = prob_hi[2] - prob_lo[2]);
-  
+
     AMREX_D_TERM(const amrex::Real xc = prob_lo[0] + Lx / 2.0;
                  , const amrex::Real yc = prob_lo[1] + Ly / 2.0;
                  , const amrex::Real zc = prob_lo[2] + Lz / 2.0);
-  
+
     constexpr amrex::Real Pi = 3.14159265358979323846264338327950288;
-  
+
     auto eos = pele::physics::PhysicsType::eos();
     amrex::Real massfrac[NUM_SPECIES] = {0.0};
     amrex::Real massfrac_cold[NUM_SPECIES] = {0.0};
     amrex::Real massfrac_hot[NUM_SPECIES] = {0.0};
-  
+
     massfrac_cold[NC12H26_ID] = 0.05;
     massfrac_cold[H2O_ID] = 0.0;
     massfrac_cold[CO2_ID] = 0.0;
     massfrac_cold[O2_ID] = 0.233 * (1.0 - massfrac_cold[NC12H26_ID]);
     ;
-    massfrac_cold[N2_ID] = 1.0 - massfrac_cold[NC12H26_ID] - massfrac_cold[O2_ID];
-  
+    massfrac_cold[N2_ID] =
+      1.0 - massfrac_cold[NC12H26_ID] - massfrac_cold[O2_ID];
+
     state(i, j, k, TEMP) = prob_parm.T_inert;
-  
+
     if (prob_parm.do_ignit) {
       amrex::Real radiusSq = AMREX_D_TERM(
         (x - xc) * (x - xc), +(y - yc) * (y - yc), +(z - zc) * (z - zc));
@@ -102,7 +103,7 @@ struct MyProbIBC : public DefaultProbIBC
         0.233 * (1.0 - massfrac_hot[H2O_ID] - massfrac_hot[CO2_ID]);
       massfrac_hot[N2_ID] =
         1.0 - massfrac_hot[H2O_ID] - massfrac_hot[CO2_ID] - massfrac_hot[O2_ID];
-  
+
       massfrac[NC12H26_ID] = mixingFunction * massfrac_hot[NC12H26_ID] +
                              (1.0 - mixingFunction) * massfrac_cold[NC12H26_ID];
       massfrac[H2O_ID] = mixingFunction * massfrac_hot[H2O_ID] +
@@ -120,22 +121,22 @@ struct MyProbIBC : public DefaultProbIBC
       massfrac[O2_ID] = massfrac_cold[O2_ID];
       massfrac[N2_ID] = massfrac_cold[N2_ID];
     }
-  
+
     AMREX_D_TERM(state(i, j, k, VELX) = 0.0;, state(i, j, k, VELY) = 0.0;
                  , state(i, j, k, VELZ) = 0.0);
-  
+
     amrex::Real P_cgs = prob_parm.P_mean * 10.0;
-  
+
     // Density
     amrex::Real rho_cgs = 0.0;
     eos.PYT2R(P_cgs, massfrac, state(i, j, k, TEMP), rho_cgs);
     state(i, j, k, DENSITY) = rho_cgs * 1.0e3;
-  
+
     // Enthalpy
     amrex::Real h_cgs = 0.0;
     eos.TY2H(state(i, j, k, TEMP), massfrac, h_cgs);
     state(i, j, k, RHOH) = h_cgs * 1.0e-4 * state(i, j, k, DENSITY);
-  
+
     // Species mass
     for (int n = 0; n < NUM_SPECIES; n++) {
       state(i, j, k, FIRSTSPEC + n) = massfrac[n] * state(i, j, k, DENSITY);
@@ -157,31 +158,31 @@ struct MyProbIBC : public DefaultProbIBC
   {
     const amrex::Real* prob_lo = geomdata.ProbLo();
     const amrex::Real* prob_hi = geomdata.ProbHi();
-  
+
     AMREX_D_TERM(const amrex::Real Lx = prob_hi[0] - prob_lo[0];
                  , const amrex::Real Ly = prob_hi[1] - prob_lo[1];
                  , const amrex::Real Lz = prob_hi[2] - prob_lo[2]);
-  
+
     amrex::Real splitx = prob_lo[0] + 0.5 * Lx;
     amrex::Real splity = prob_lo[1] + 0.5 * Ly;
-  
+
     amrex::Real massfrac_ox[NUM_SPECIES] = {0.0};
     amrex::Real massfrac_fuel[NUM_SPECIES] = {0.0};
     amrex::Real massfrac_inert[NUM_SPECIES] = {0.0};
     amrex::Real massfrac_mix[NUM_SPECIES] = {0.0};
-  
+
     massfrac_ox[N2_ID] = prob_parm.Y_N2_ox;
     massfrac_ox[O2_ID] = prob_parm.Y_O2_ox;
     massfrac_fuel[NC12H26_ID] = prob_parm.Y_fuel; // Replace ID with gas fuel
     massfrac_fuel[N2_ID] = prob_parm.Y_N2_fuel;
     massfrac_inert[N2_ID] = 1.0;
-  
+
     auto eos = pele::physics::PhysicsType::eos();
-  
+
     for (int n = 0; n < NVAR; n++) {
       s_ext[n] = 0.0;
     }
-  
+
     // Get zone
     int zone = -1;
     if (x[0] < splitx) {
@@ -193,7 +194,7 @@ struct MyProbIBC : public DefaultProbIBC
     amrex::Real mixingWidth = 0.1 * prob_parm.jetRadius;
     amrex::Real mixingFunction =
       0.5 * (1.0 + std::tanh((prob_parm.jetRadius - radius) / mixingWidth));
-  
+
     amrex::Real P_cgs = prob_parm.P_mean * 10.0;
     amrex::Real rho_cgs, RhoH_temp;
     amrex::Real rhoOx = -1.0;
@@ -215,10 +216,10 @@ struct MyProbIBC : public DefaultProbIBC
       }
       eos.PYT2R(P_cgs, massfrac_mix, s_ext[TEMP], rho_cgs);
       s_ext[DENSITY] = rho_cgs * 1.0e3;
-  
+
       eos.TY2H(s_ext[TEMP], massfrac_mix, RhoH_temp);
       s_ext[RHOH] = RhoH_temp * 1.0e-4 * s_ext[DENSITY];
-  
+
       for (int n = 0; n < NUM_SPECIES; n++) {
         s_ext[FIRSTSPEC + n] = massfrac_mix[n] * s_ext[DENSITY];
       }
@@ -231,15 +232,15 @@ struct MyProbIBC : public DefaultProbIBC
       }
       eos.PYT2R(P_cgs, massfrac_mix, s_ext[TEMP], rho_cgs);
       s_ext[DENSITY] = rho_cgs * 1.0e3;
-  
+
       eos.TY2H(s_ext[TEMP], massfrac_mix, RhoH_temp);
       s_ext[RHOH] = RhoH_temp * 1.0e-4 * s_ext[DENSITY];
-  
+
       for (int n = 0; n < NUM_SPECIES; n++) {
         s_ext[FIRSTSPEC + n] = massfrac_mix[n] * s_ext[DENSITY];
       }
     }
-  
+
     s_ext[VELY] = 0.0;
     if (zone == 1) {
       amrex::Real vel = (prob_parm.mdot_ox / rhoOx) * mixingFunction +

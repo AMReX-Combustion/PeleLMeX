@@ -82,31 +82,31 @@ struct MyProbIBC : public DefaultProbIBC
     const amrex::Real* prob_lo = geomdata.ProbLo();
     const amrex::Real* prob_hi = geomdata.ProbHi();
     const amrex::Real* dx = geomdata.CellSize();
-  
+
     AMREX_D_TERM(const amrex::Real x = prob_lo[0] + (i + 0.5) * dx[0];
                  , const amrex::Real y = prob_lo[1] + (j + 0.5) * dx[1];
                  , const amrex::Real z = prob_lo[2] + (k + 0.5) * dx[2];);
-  
+
     AMREX_D_TERM(, const amrex::Real Lx = prob_hi[0] - prob_lo[0];
                  , const amrex::Real Ly = prob_hi[1] - prob_lo[1]);
-  
+
     constexpr amrex::Real Pi = 3.14159265358979323846264338327950288;
-  
+
     auto eos = pele::physics::PhysicsType::eos();
     amrex::GpuArray<amrex::Real, NUM_SPECIES + 4> pmf_vals = {0.0};
     amrex::Real pert = 0.0;
     amrex::Real y1, y2, z1, z2;
     amrex::Real massfrac_eq[NUM_SPECIES] = {0.0};
-  
+
     amrex::Real massfrac_fuel[NUM_SPECIES] = {0.0};
     amrex::Real massfrac_air[NUM_SPECIES] = {0.0};
     amrex::Real massfrac[NUM_SPECIES] = {0.0};
     amrex::Real molefrac[NUM_SPECIES] = {0.0};
     amrex::Real molefrac_air[NUM_SPECIES] = {0.0};
-  
+
     amrex::Real Do_swirler = 0.0324;
     amrex::Real Di_swirler = 0.0202;
-  
+
     amrex::Real Ro_swirler = Do_swirler / 2;
     amrex::Real Ri_swirler = Di_swirler / 2;
     amrex::Real R = Ri_swirler / Ro_swirler;
@@ -122,30 +122,30 @@ struct MyProbIBC : public DefaultProbIBC
     amrex::Real A = 0.0096;
     amrex::Real B = -3.869e-11;
     amrex::Real F_theta = -7.1884e5;
-  
+
     massfrac_air[prob_parm.oxidID] = 0.233;
     massfrac_air[prob_parm.bathID] = 0.767;
-  
+
     molefrac_air[prob_parm.oxidID] = 0.21;
     molefrac_air[prob_parm.bathID] = 0.79;
-  
+
     amrex::Real y0_1;
     amrex::Real z0_1 = 0.0;
     amrex::Real c1_1 = 50;
     amrex::Real c2_1 = 50;
-  
+
     amrex::Real y0_2;
     amrex::Real z0_2 = 0.01;
     amrex::Real c1_2 = 150;
     amrex::Real c2_2 = 150;
-  
+
     y0_1 = 0.112;
     y0_2 = 0.112;
-  
+
     amrex::Real delta = 0.02;
-  
+
     amrex::Real cut_off_height = 0.04;
-  
+
     amrex::Real jet_1 =
       0.5 * (1 - ((std::tanh(
                    (std::sqrt(std::pow(x - x0, 2) + std::pow(y - y0, 2)) -
@@ -155,39 +155,42 @@ struct MyProbIBC : public DefaultProbIBC
                      (std::sqrt(std::pow(x - x0, 2) + std::pow(y - y0, 2)) +
                       (Do_swirler / 2)) /
                      (H))));
-  
+
     amrex::Real jet_2 = 0.5 * (1 - std::tanh((z - cut_off_height) / H));
-  
+
     amrex::Real jet_total = jet_1 * jet_2;
-  
-    z1 = (z - prob_parm.standoff - 0.5 * dx[2] + pert) * prob_parm.amplification;
-    z2 = (z - prob_parm.standoff + 0.5 * dx[2] + pert) * prob_parm.amplification;
-  
+
+    z1 =
+      (z - prob_parm.standoff - 0.5 * dx[2] + pert) * prob_parm.amplification;
+    z2 =
+      (z - prob_parm.standoff + 0.5 * dx[2] + pert) * prob_parm.amplification;
+
     pele::physics::PMF::pmf(pmf_data, z1, z2, pmf_vals);
-  
-    state(i, j, k, TEMP) = (pmf_vals[0] * jet_total) + ((1 - jet_total) * (310));
-  
+
+    state(i, j, k, TEMP) =
+      (pmf_vals[0] * jet_total) + ((1 - jet_total) * (310));
+
     for (int n = 0; n < NUM_SPECIES; ++n) {
       molefrac[n] =
         (pmf_vals[3 + n] * jet_total) + ((1 - jet_total) * (molefrac_air[n]));
     }
-  
+
     eos.X2Y(molefrac, massfrac);
-  
+
     state(i, j, k, VELX) = 0;
     state(i, j, k, VELY) = 0;
     state(i, j, k, VELZ) = 1.;
-  
+
     amrex::Real rho_cgs, P_cgs;
     P_cgs = prob_parm.P_mean * 10.0;
-  
+
     eos.PYT2R(P_cgs, massfrac, state(i, j, k, TEMP), rho_cgs);
     state(i, j, k, DENSITY) = rho_cgs * 1.0e3; // CGS -> MKS conversion
-  
+
     eos.TY2H(state(i, j, k, TEMP), massfrac, state(i, j, k, RHOH));
     state(i, j, k, RHOH) *=
       1.0e-4 * state(i, j, k, DENSITY); // CGS -> MKS conversion
-  
+
     for (int n = 0; n < NUM_SPECIES; n++) {
       state(i, j, k, FIRSTSPEC + n) = massfrac[n] * state(i, j, k, DENSITY);
     }
@@ -209,7 +212,7 @@ struct MyProbIBC : public DefaultProbIBC
     const amrex::Real* prob_lo = geomdata.ProbLo();
     const amrex::Real* prob_hi = geomdata.ProbHi();
     constexpr amrex::Real Pi = 3.14159265358979323846264338327950288;
-  
+
     amrex::Real Ro_swirler = 0.0162;
     amrex::Real Ri_swirler = 0.0101;
     amrex::Real R = Ri_swirler / Ro_swirler;
@@ -228,21 +231,21 @@ struct MyProbIBC : public DefaultProbIBC
     amrex::Real A = 0.0096;
     amrex::Real B = -3.869e-11;
     amrex::Real F_theta = -7.1884e5;
-  
+
     amrex::Real massfrac[NUM_SPECIES] = {0.0};
     amrex::Real massfrac_fuel[NUM_SPECIES] = {0.0};
     amrex::Real massfrac_air[NUM_SPECIES] = {0.0};
     massfrac_air[prob_parm.oxidID] = 0.233;
     massfrac_air[prob_parm.bathID] = 0.767;
-  
+
     amrex::Real dt = 2e-5;
-  
+
     int refresh_freq = 10;
-  
+
     int n_const = 5;
-  
+
     amrex::Real t0 = 0.0;
-  
+
     amrex::Real A_fluctuation[200] = {
       -0.101095, 0.329953,   0.321893,   -0.508907,  0.267847,   0.239758,
       0.243639,  0.173476,   0.837604,   0.524968,   0.780876,   0.428267,
@@ -278,7 +281,7 @@ struct MyProbIBC : public DefaultProbIBC
       -0.926867, -0.59766,   -0.115793,  0.655646,   -0.713353,  -0.319403,
       0.671457,  0.366417,   0.682373,   -0.168658,  0.386472,   0.601211,
       0.810855,  0.462648};
-  
+
     amrex::Real B_fluctuation[200] = {
       -0.101095, 0.329953,   0.321893,   -0.508907,  0.267847,   0.239758,
       0.243639,  0.173476,   0.837604,   0.524968,   0.780876,   0.428267,
@@ -314,20 +317,20 @@ struct MyProbIBC : public DefaultProbIBC
       -0.926867, -0.59766,   -0.115793,  0.655646,   -0.713353,  -0.319403,
       0.671457,  0.366417,   0.682373,   -0.168658,  0.386472,   0.601211,
       0.810855,  0.462648};
-  
+
     int n = abs(time - t0) / (dt);
     int n_skip_lines = floor(n / refresh_freq);
-  
+
     amrex::Real C[5];
     amrex::Real D[5];
-  
+
     for (int i = 0; i < 5; i++) {
       C[i] = abs(A_fluctuation[i + (n_skip_lines * n_const)]);
       D[i] = B_fluctuation[i + (n_skip_lines * n_const)];
     }
-  
+
     amrex::Real amp = 2;
-  
+
     amrex::Real fluctuation =
       amp *
       ((std::sin(
@@ -350,7 +353,7 @@ struct MyProbIBC : public DefaultProbIBC
          2 * Pi *
          (std::sqrt(std::pow(x[0] - x0, 2) + std::pow(x[1] - y0, 2)) - D[4]) *
          0.95 / Ro_swirler)));
-  
+
     amrex::Real vel_swirler_x =
       3 * 0.25 *
       (1 - ((std::tanh(
@@ -376,8 +379,9 @@ struct MyProbIBC : public DefaultProbIBC
            (std::sqrt(std::pow(x[0] - x0, 2) + std::pow(x[1] - y0, 2))), 2)) /
          3) +
         (c1 * (std::sqrt(std::pow(x[0] - x0, 2) + std::pow(x[1] - y0, 2)))) +
-        ((c2) / ((std::sqrt(std::pow(x[0] - x0, 2) + std::pow(x[1] - y0, 2)))))));
-  
+        ((c2) /
+         ((std::sqrt(std::pow(x[0] - x0, 2) + std::pow(x[1] - y0, 2)))))));
+
     amrex::Real vel_fluctuation_swirler_x =
       fluctuation * 0.25 *
       (1 - ((std::tanh(
@@ -398,7 +402,7 @@ struct MyProbIBC : public DefaultProbIBC
                (H)))) *
       (((x[1] - y0) /
         (std::sqrt(std::pow(x[0] - x0, 2) + std::pow(x[1] - y0, 2)))));
-  
+
     amrex::Real vel_swirler_y =
       3 * 0.25 *
       (1 - ((std::tanh(
@@ -425,7 +429,7 @@ struct MyProbIBC : public DefaultProbIBC
         3) +
        (c1 * (std::sqrt(std::pow(x[0] - x0, 2) + std::pow(x[1] - y0, 2)))) +
        ((c2) / ((std::sqrt(std::pow(x[0] - x0, 2) + std::pow(x[1] - y0, 2))))));
-  
+
     amrex::Real vel_fluctuation_swirler_y =
       fluctuation * 0.25 *
       (1 - ((std::tanh(
@@ -448,28 +452,30 @@ struct MyProbIBC : public DefaultProbIBC
         (std::sqrt(std::pow(x[0] - x0, 2) + std::pow(x[1] - y0, 2)))));
     amrex::Real vel_jet_x =
       (fluctuation) *
-      (1 - (0.5 *
-            (1 + (std::tanh(
-                   (std::sqrt(std::pow(x[0] - x0, 2) + std::pow(x[1] - y0, 2)) -
-                    (D_jet / 2)) /
-                   (H))) *
-                   (tanh(
-                     (std::sqrt(std::pow(x[0] - x0, 2) + std::pow(x[1] - y0, 2)) +
-                      (D_jet / 2)) /
-                     (H))))));
-  
+      (1 -
+       (0.5 *
+        (1 + (std::tanh(
+               (std::sqrt(std::pow(x[0] - x0, 2) + std::pow(x[1] - y0, 2)) -
+                (D_jet / 2)) /
+               (H))) *
+               (tanh(
+                 (std::sqrt(std::pow(x[0] - x0, 2) + std::pow(x[1] - y0, 2)) +
+                  (D_jet / 2)) /
+                 (H))))));
+
     amrex::Real vel_jet_y =
       (fluctuation) *
-      (1 - (0.5 *
-            (1 + (std::tanh(
-                   (std::sqrt(std::pow(x[0] - x0, 2) + std::pow(x[1] - y0, 2)) -
-                    (D_jet / 2)) /
-                   (H))) *
-                   (tanh(
-                     (std::sqrt(std::pow(x[0] - x0, 2) + std::pow(x[1] - y0, 2)) +
-                      (D_jet / 2)) /
-                     (H))))));
-  
+      (1 -
+       (0.5 *
+        (1 + (std::tanh(
+               (std::sqrt(std::pow(x[0] - x0, 2) + std::pow(x[1] - y0, 2)) -
+                (D_jet / 2)) /
+               (H))) *
+               (tanh(
+                 (std::sqrt(std::pow(x[0] - x0, 2) + std::pow(x[1] - y0, 2)) +
+                  (D_jet / 2)) /
+                 (H))))));
+
     amrex::Real vel_swirler_z =
       0.25 *
       (1 - ((std::tanh(
@@ -498,7 +504,7 @@ struct MyProbIBC : public DefaultProbIBC
           (std::sqrt(std::pow(x[0] - x0, 2) + std::pow(x[1] - y0, 2))) /
           Ro_swirler)) -
        1);
-  
+
     amrex::Real vel_fluctuation_swirler_z =
       fluctuation * 0.25 *
       (1 - ((std::tanh(
@@ -517,7 +523,7 @@ struct MyProbIBC : public DefaultProbIBC
                (std::sqrt(std::pow(x[0] - x0, 2) + std::pow(x[1] - y0, 2)) +
                 (Di_swirler / 2)) /
                (H))));
-  
+
     amrex::Real vel_coflow_z =
       prob_parm.U_c * 0.5 *
       (1 + ((std::tanh(
@@ -528,60 +534,62 @@ struct MyProbIBC : public DefaultProbIBC
                (std::sqrt(std::pow(x[0] - x0, 2) + std::pow(x[1] - y0, 2)) +
                 (D_coflow / 2)) /
                (H))));
-  
+
     amrex::Real vel_jet_z =
       (0.8 * prob_parm.U_b + fluctuation) *
-      (1 - (0.5 *
-            (1 + (std::tanh(
-                   (std::sqrt(std::pow(x[0] - x0, 2) + std::pow(x[1] - y0, 2)) -
-                    (D_jet / 2)) /
-                   (H))) *
-                   (tanh(
-                     (std::sqrt(std::pow(x[0] - x0, 2) + std::pow(x[1] - y0, 2)) +
-                      (D_jet / 2)) /
-                     (H))))));
-  
+      (1 -
+       (0.5 *
+        (1 + (std::tanh(
+               (std::sqrt(std::pow(x[0] - x0, 2) + std::pow(x[1] - y0, 2)) -
+                (D_jet / 2)) /
+               (H))) *
+               (tanh(
+                 (std::sqrt(std::pow(x[0] - x0, 2) + std::pow(x[1] - y0, 2)) +
+                  (D_jet / 2)) /
+                 (H))))));
+
     s_ext[VELX] = -vel_swirler_x + vel_jet_x + vel_fluctuation_swirler_x;
     s_ext[VELY] = vel_swirler_y + vel_jet_y + vel_fluctuation_swirler_y;
     s_ext[VELZ] =
       (vel_swirler_z + vel_coflow_z + vel_jet_z + vel_fluctuation_swirler_z) *
       std::tanh(x[1] * 200);
-  
+
     s_ext[TEMP] = prob_parm.T_in;
-  
+
     // Phi: 0.4 , X[CH4] = 0.3, X[H2] = 0.7
-  
+
     massfrac_fuel[CH4_ID] = 0.01447;
     massfrac_fuel[H2_ID] = 0.004244;
     massfrac_fuel[N2_ID] = 0.752786;
     massfrac_fuel[O2_ID] = 0.2285;
-  
+
     amrex::Real Exponential_Spec =
-      0.5 * (1 - ((std::tanh(
-                   (std::sqrt(std::pow(x[0] - x0, 2) + std::pow(x[1] - y0, 2)) -
-                    (Do_swirler / 2)) /
-                   (H)))) *
-                   (tanh(
-                     (std::sqrt(std::pow(x[0] - x0, 2) + std::pow(x[1] - y0, 2)) +
-                      (Do_swirler / 2)) /
-                     (H))));
-  
+      0.5 *
+      (1 - ((std::tanh(
+             (std::sqrt(std::pow(x[0] - x0, 2) + std::pow(x[1] - y0, 2)) -
+              (Do_swirler / 2)) /
+             (H)))) *
+             (tanh(
+               (std::sqrt(std::pow(x[0] - x0, 2) + std::pow(x[1] - y0, 2)) +
+                (Do_swirler / 2)) /
+               (H))));
+
     for (int n = 0; n < NUM_SPECIES; ++n) {
       massfrac[n] = (1.0 - Exponential_Spec) * massfrac_air[n] +
                     Exponential_Spec * massfrac_fuel[n];
     }
-  
+
     amrex::Real rho_cgs, P_cgs, RhoH_temp;
     P_cgs = prob_parm.P_mean * 10.0;
-  
+
     auto eos = pele::physics::PhysicsType::eos();
-  
+
     eos.PYT2R(P_cgs, massfrac, s_ext[TEMP], rho_cgs);
     s_ext[DENSITY] = rho_cgs * 1.0e3;
-  
+
     eos.TY2H(s_ext[TEMP], massfrac, RhoH_temp);
     s_ext[RHOH] = RhoH_temp * 1.0e-4 * s_ext[DENSITY]; // CGS -> MKS conversion
-  
+
     for (int n = 0; n < NUM_SPECIES; n++) {
       s_ext[FIRSTSPEC + n] = massfrac[n] * s_ext[DENSITY];
     }
