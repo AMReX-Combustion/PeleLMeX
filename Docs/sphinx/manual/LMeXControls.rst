@@ -457,23 +457,15 @@ as coarsening of the geometry is rapidly limited by the occurrence of multi-cut 
 (not supported by AMReX) and the linear solvers are no longer able to robustly 
 tackle projections and implicit diffusion solves.   
 
-To build Hypre, follow the steps outlined below. For details on building Hypre with CUDA, 
-see the documentation in `AMReX <https://amrex-codes.github.io/amrex/docs_html/LinearSolvers.html#external-solvers>`_.
-::
+To build Hypre, follow the steps outlined in the 
+`AMReX documentation <https://amrex-codes.github.io/amrex/docs_html/LinearSolvers.html#external-solvers>`_.
 
-    git clone https://github.com/hypre-space/hypre.git
-    cd hypre/src
-    ./configure
-    make install
-    export HYPRE_DIR = /path_to_hypre_dir/hypre/src/hypre
-
-Next, in the ``GNUmakefile``, enable Hypre and define the path to the `HYPRE_DIR`:
+Next, in the ``GNUmakefile``, enable Hypre and define the path to the Hypre directory:
 
 ::
 
     USE_HYPRE = TRUE
     HYPRE_HOME = /path_to_hypre_dir/hypre/src/hypre
-
 
 
 Select input file controls are provided below for the ``mac_proj`` bottom solver, which 
@@ -488,8 +480,11 @@ solvers and parameters can be found in the `Hypre documentation <https://hypre.r
     mac_proj.hypre.verbose = 1
     mac_proj.hypre.hypre_solver = GMRES
     mac_proj.hypre.hypre_preconditioner = BoomerAMG
+    mac_proj.hypre.bamg_verbose = 0
+    mac_proj.hypre.bamg_coarsen_type = 9
+    mac_proj.hypre.bamg_interp_type = 4
+    mac_proj.hypre.bamg_relax_type = 7
 
-    
 
 Active control
 --------------
