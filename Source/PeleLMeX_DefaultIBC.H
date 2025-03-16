@@ -42,9 +42,10 @@ struct DefaultProbIBC
     amrex::Array4<amrex::Real> const& /*aux*/,
     amrex::GeometryData const& /*geomdata*/,
     ProbParmDefault const& /*prob_parm*/,
-    pele::physics::PMF::PmfData::DataContainer const* /*pmf_data*/)
-  {
-    amrex::Abort("Default empty initdata called, please override in your problem specific struct !")
+    pele::physics::PMF::PmfData::DataContainer const* /*pmf_data*/){
+    amrex::Abort(
+      "Default empty initdata called, please override in your problem specific "
+      "struct !")
     /** Notes:
      *   1. This function is called at the beginning of the simulation
      *   2. The default implementation does nothing
@@ -65,9 +66,7 @@ struct DefaultProbIBC
    * \param prob_parm         problem specific parameters.
    * \param pmf_data          PMF (Premixed Flame) data
    */
-  AMREX_GPU_DEVICE
-  AMREX_FORCE_INLINE
-  static void bcnormal(
+  AMREX_GPU_DEVICE AMREX_FORCE_INLINE static void bcnormal(
     const amrex::Real* /*x[AMREX_SPACEDIM]*/,
     const amrex::CellData<amrex::Real>& /*s_in*/,
     amrex::Real* /*s_ext[NVAR]*/,
@@ -76,9 +75,10 @@ struct DefaultProbIBC
     const amrex::Real /*time*/,
     amrex::GeometryData const& /*geomdata*/,
     ProbParmDefault const& /*prob_parm*/,
-    pele::physics::PMF::PmfData::DataContainer const* /*pmf_data*/)
-  {
-    amrex::Abort("Default empty bcnormal called, please override in your problem specific struct !")
+    pele::physics::PMF::PmfData::DataContainer const* /*pmf_data*/){
+    amrex::Abort(
+      "Default empty bcnormal called, please override in your problem specific "
+      "struct !")
     /** Notes:
      *   1. This function handles the boundary conditions on the domain faces
      *   2. The default implementation does nothing
@@ -100,9 +100,7 @@ struct DefaultProbIBC
    * \param nComp             number of components to change.
    * \param prob_parm         problem specific parameters.
    */
-  AMREX_GPU_DEVICE
-  AMREX_FORCE_INLINE
-  static void zero_visc(
+  AMREX_GPU_DEVICE AMREX_FORCE_INLINE static void zero_visc(
     int /*i*/,
     int /*j*/,
     int /*k*/,
@@ -123,8 +121,8 @@ struct DefaultProbIBC
      *       - if beta_comp == 0 and nComp == NUM_SPECIES => call for species
      *       - if beta_comp == 0 and nComp == 1 => call for temperature
      *   3. The default implementation does nothing
-     *   4. To only modify at the domain faces, one needs to compare the i, j or k
-     *      index matching the idir direction against the domainBox
+     *   4. To only modify at the domain faces, one needs to compare the i, j or
+     * k index matching the idir direction against the domainBox
      */
   }
 

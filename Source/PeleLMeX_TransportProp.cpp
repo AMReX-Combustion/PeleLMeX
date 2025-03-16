@@ -450,8 +450,9 @@ PeleLM::getDiffusivity(
         amrex::MultiFab::Add(
           beta_ec[idim], ldata_p->lambda_turb_fc[idim], 0, 0, 1, 0);
       } else { // Invalid
-        amrex::Abort("getDiffusivity(): LES model is on but cannot provide a "
-                     "turbulent transport coefficient");
+        amrex::Abort(
+          "getDiffusivity(): LES model is on but cannot provide a "
+          "turbulent transport coefficient");
       }
     }
   }
@@ -471,7 +472,8 @@ PeleLM::getDiffusivity(
         amrex::ParallelFor(
           ebx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             ProbIBC::zero_visc(
-              i, j, k, diff_ec, geomdata, edomain, idim, beta_comp, ncomp, *lprobparm);
+              i, j, k, diff_ec, geomdata, edomain, idim, beta_comp, ncomp,
+              *lprobparm);
           });
       }
     }
