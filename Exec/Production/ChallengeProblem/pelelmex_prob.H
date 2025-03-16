@@ -419,7 +419,8 @@ struct MyProbIBC : public DefaultProbIBC
     amrex::Box const& domainBox,
     const int dir,
     const int beta_comp,
-    const int nComp)
+    const int nComp,
+    MyProbParm const& /*prob_parm*/)
   {
     // We treat species when beta_comp == 0 and nComp == NUM_SPECIES
     // otherwise this routine could be called for other face diffusivity (Temp,

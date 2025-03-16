@@ -342,7 +342,8 @@ struct MyProbIBC : public DefaultProbIBC
     amrex::Box const& domainBox,
     const int dir,
     const int beta_comp,
-    const int nComp)
+    const int nComp,
+    MyProbParm const& /*prob_parm*/)
   {
     amrex::ignore_unused(
       i, j, k, beta, geomdata, domainBox, dir, beta_comp, nComp);

@@ -96,6 +96,7 @@ struct DefaultProbIBC
    * \param dir               direction of the face.
    * \param beta_comp         first components in Beta MultiFab.
    * \param nComp             number of components to change.
+   * \param prob_parm         problem specific parameters.
    */
   AMREX_GPU_DEVICE
   AMREX_FORCE_INLINE
@@ -108,7 +109,8 @@ struct DefaultProbIBC
     amrex::Box const& /*domainBox*/,
     const int /*dir*/,
     const int /*beta_comp*/,
-    const int /*nComp*/)
+    const int /*nComp*/,
+    ProbParmDefault const& /*prob_parm*/)
   {
     /** Notes:
      *   1. This function can modify the diffusion coefficient

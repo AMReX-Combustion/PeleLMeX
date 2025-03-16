@@ -458,7 +458,7 @@ PeleLM::getDiffusivity(
 
   // Enable zeroing diffusivity on faces to produce walls
   if (doZeroVisc != 0) {
-    ProbIBC const lprobIBC = ProbIBC{};
+    ProbParm const* lprobparm = prob_parm_d;
     const auto geomdata = geom[lev].data();
     for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
       const Box& edomain = amrex::surroundingNodes(domain, idim);
@@ -470,8 +470,8 @@ PeleLM::getDiffusivity(
         const auto& diff_ec = beta_ec[idim].array(mfi);
         amrex::ParallelFor(
           ebx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-            lprobIBC::zero_visc(
-              i, j, k, diff_ec, geomdata, edomain, idim, beta_comp, ncomp);
+            ProbIBC::zero_visc(
+              i, j, k, diff_ec, geomdata, edomain, idim, beta_comp, ncomp, *lprobparm);
           });
       }
     }
