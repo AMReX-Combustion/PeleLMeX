@@ -42,10 +42,11 @@ struct DefaultProbIBC
     amrex::Array4<amrex::Real> const& /*aux*/,
     amrex::GeometryData const& /*geomdata*/,
     ProbParmDefault const& /*prob_parm*/,
-    pele::physics::PMF::PmfData::DataContainer const* /*pmf_data*/){
+    pele::physics::PMF::PmfData::DataContainer const* /*pmf_data*/)
+  {
     amrex::Abort(
       "Default empty initdata called, please override in your problem specific "
-      "struct !")
+      "struct !");
     /** Notes:
      *   1. This function is called at the beginning of the simulation
      *   2. The default implementation does nothing
@@ -75,10 +76,11 @@ struct DefaultProbIBC
     const amrex::Real /*time*/,
     amrex::GeometryData const& /*geomdata*/,
     ProbParmDefault const& /*prob_parm*/,
-    pele::physics::PMF::PmfData::DataContainer const* /*pmf_data*/){
+    pele::physics::PMF::PmfData::DataContainer const* /*pmf_data*/)
+  {
     amrex::Abort(
       "Default empty bcnormal called, please override in your problem specific "
-      "struct !")
+      "struct !");
     /** Notes:
      *   1. This function handles the boundary conditions on the domain faces
      *   2. The default implementation does nothing
