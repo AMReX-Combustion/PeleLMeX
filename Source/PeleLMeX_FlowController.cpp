@@ -68,7 +68,6 @@ PeleLM::initActiveControl()
     // Extract data from BC: assumes flow comes in from lo side of ctrl_flameDir
     ProbParm const* lprobparm = prob_parm_d;
     auto const* lpmfdata = pmf_data.device_parm();
-    ProbIBC const lprobIBC = ProbIBC{};
 
     Gpu::DeviceVector<Real> s_ext_v(NVAR);
     Real* s_ext_d = s_ext_v.data();
@@ -87,7 +86,7 @@ PeleLM::initActiveControl()
        lpmfdata,
        lprobIBC] AMREX_GPU_DEVICE(int /*i*/, int /*j*/, int /*k*/) noexcept {
         const auto s_in = fake_state.cellData(0, 0, 0);
-        lprobIBC.bcnormal(
+        ProbIBC::bcnormal(
           x, s_in, s_ext_d, ctrl_flameDir_l, 1, time_l, geomdata, *lprobparm,
           lpmfdata);
       });
