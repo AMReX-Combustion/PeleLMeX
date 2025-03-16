@@ -44,6 +44,7 @@ struct DefaultProbIBC
     ProbParmDefault const& /*prob_parm*/,
     pele::physics::PMF::PmfData::DataContainer const* /*pmf_data*/)
   {
+    amrex::Abort("Default empty initdata called, please override in your problem specific struct !")
     /** Notes:
      *   1. This function is called at the beginning of the simulation
      *   2. The default implementation does nothing
@@ -77,6 +78,7 @@ struct DefaultProbIBC
     ProbParmDefault const& /*prob_parm*/,
     pele::physics::PMF::PmfData::DataContainer const* /*pmf_data*/)
   {
+    amrex::Abort("Default empty bcnormal called, please override in your problem specific struct !")
     /** Notes:
      *   1. This function handles the boundary conditions on the domain faces
      *   2. The default implementation does nothing
@@ -121,7 +123,7 @@ struct DefaultProbIBC
      *       - if beta_comp == 0 and nComp == NUM_SPECIES => call for species
      *       - if beta_comp == 0 and nComp == 1 => call for temperature
      *   3. The default implementation does nothing
-     *   4. To only modify at the domain faces, one need to use the i, j or k
+     *   4. To only modify at the domain faces, one needs to compare the i, j or k
      *      index matching the idir direction against the domainBox
      */
   }
