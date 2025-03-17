@@ -72,8 +72,9 @@ PeleLM::MakeNewLevelFromScratch(
   if (max_level > 0 && lev != max_level) {
     m_coveredMask[lev] =
       std::make_unique<iMultiFab>(grids[lev], dmap[lev], 1, 0);
-    m_resetCoveredMask = 1;
   }
+  m_resetCoveredMask = 1;
+
   if (m_do_react != 0) {
     m_leveldatareact[lev] =
       std::make_unique<LevelDataReact>(grids[lev], dmap[lev], *m_factory[lev]);
