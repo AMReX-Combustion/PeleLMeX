@@ -1,6 +1,6 @@
-// Problem-specific Default Initial Boundary Conditions struct (IBC)
-#ifndef PROBLEM_IBC_H
-#define PROBLEM_IBC_H
+// Problem-specific functions (PSF)
+#ifndef PROBLEM_FUNC_H
+#define PROBLEM_FUNC_H
 
 #include <AMReX_Geometry.H>
 #include <AMReX_FArrayBox.H>
@@ -15,7 +15,7 @@ struct ProbParmDefault
   amrex::Real P_mean = 101325.0;
 };
 
-struct DefaultProbIBC
+struct DefaultProblemSpecificFunctions
 {
   /**
    * \brief Initialize data at the beginning of the simulation
@@ -178,7 +178,7 @@ struct DefaultProbIBC
   }
 
   /**
-   * \brief Set the ODE Qtt names
+   * \brief Set the ODE Qty names
    *
    * \param a_ode_names       the vector of ODE names to fill.
    */
@@ -189,6 +189,8 @@ struct DefaultProbIBC
     for (int n = 0; n < NUM_ODE; n++) {
       a_ode_names[n] = "ODE_" + std::to_string(n);
     }
+# else
+    amrex::ignore_unused(a_ode_names);
 #endif
   }
 
@@ -232,6 +234,6 @@ struct DefaultProbIBC
      * Gpu::streamSynchronize();
      */
   }
-}; // namespace DefaultProbIBC
+}; // namespace DefaultProblemSpecificFunctions
 
 #endif

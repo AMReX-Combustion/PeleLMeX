@@ -470,7 +470,7 @@ PeleLM::getDiffusivity(
         const auto& diff_ec = beta_ec[idim].array(mfi);
         amrex::ParallelFor(
           ebx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-            ProbIBC::zero_visc(
+            ProblemSpecificFunctions::zero_visc(
               i, j, k, diff_ec, geomdata, edomain, idim, beta_comp, ncomp,
               *lprobparm);
           });

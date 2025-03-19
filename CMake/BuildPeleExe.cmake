@@ -64,6 +64,7 @@ function(build_pele_exe pele_exe_name pele_physics_lib_name)
        ${SRC_DIR}/PeleLMeX_Utils.H
        ${SRC_DIR}/PeleLMeX_Utils.cpp
        ${SRC_DIR}/PeleLMeX_Index.H
+       ${SRC_DIR}/PeleLMeX_ProblemSpecificFunctions.H
        ${SRC_DIR}/PeleLMeX_K.H
        ${SRC_DIR}/main.cpp
   )

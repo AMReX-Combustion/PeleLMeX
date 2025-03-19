@@ -5,7 +5,7 @@
 #include <AMReX_FArrayBox.H>
 #include <AMReX_SPACE.H>
 
-#include <PeleLMeX_DefaultIBC.H>
+#include <PeleLMeX_ProblemSpecificFunctions.H>
 #include "PeleLMeX_Index.H"
 #include "PMFData.H"
 #include "PelePhysics.H"
@@ -53,7 +53,7 @@ set_Y_from_Phi(MyProbParm const& prob_parm, amrex::Real Y[])
   eos.X2Y(Xt, Y);
 }
 
-struct MyProbIBC : public DefaultProbIBC
+struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
 {
   AMREX_GPU_DEVICE
   AMREX_FORCE_INLINE
@@ -125,6 +125,6 @@ struct MyProbIBC : public DefaultProbIBC
   }
 };
 
-using ProbIBC = MyProbIBC;
+using ProblemSpecificFunctions = MyProblemSpecificFunctions;
 using ProbParm = MyProbParm;
 #endif

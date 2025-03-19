@@ -524,7 +524,7 @@ PeleLM::getEBState(
             amrex::Real stateExt[NVAR] = {0.0};
 
             // User-defined fill function
-            ProbIBC::setEBState(
+            ProblemSpecificFunctions::setEBState(
               xface, bcnorm, stateIn, stateExt, time, geomdata, *lprobparm);
 
             // Extract requested entries
@@ -591,7 +591,7 @@ PeleLM::getEBDiff(
               xcell[2] + ebfc_z(i, j, k) * dx[2])};
             // This is temporary, will be replaced with Inflow on EB update.
             int ebflagtype = 0;
-            ProbIBC::setEBType(xface, ebflagtype, geomdata, *lprobparm);
+            ProblemSpecificFunctions::setEBType(xface, ebflagtype, geomdata, *lprobparm);
             ebdiff(i, j, k) =
               diff_cc(i, j, k) * static_cast<amrex::Real>(ebflagtype);
           }

@@ -7,7 +7,7 @@
 
 #include "PMFData.H"
 #include "PelePhysics.H"
-#include <PeleLMeX_DefaultIBC.H>
+#include <PeleLMeX_ProblemSpecificFunctions.H>
 #include "PeleLMeX_Index.H"
 #include <PeleLMeX_FlowControllerData.H>
 
@@ -58,7 +58,7 @@ set_Y_from_Ksi(
   set_Y_from_Phi(prob_parm, phi, Y);
 }
 
-struct MyProbIBC : public DefaultProbIBC
+struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
 {
   AMREX_GPU_DEVICE
   AMREX_FORCE_INLINE
@@ -201,6 +201,6 @@ struct MyProbIBC : public DefaultProbIBC
   }
 };
 
-using ProbIBC = MyProbIBC;
+using ProblemSpecificFunctions = MyProblemSpecificFunctions;
 using ProbParm = MyProbParm;
 #endif

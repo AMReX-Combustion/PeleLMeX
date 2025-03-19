@@ -5,7 +5,7 @@
 #include <AMReX_FArrayBox.H>
 #include <AMReX_SPACE.H>
 
-#include <PeleLMeX_DefaultIBC.H>
+#include <PeleLMeX_ProblemSpecificFunctions.H>
 #include <PeleLMeX_Index.H>
 #include <PMF.H>
 #include <PMFData.H>
@@ -19,7 +19,7 @@ struct MyProbParm : public ProbParmDefault
   amrex::Real vel = 0.;
 };
 
-struct MyProbIBC : public DefaultProbIBC
+struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
 {
   AMREX_GPU_DEVICE
   AMREX_FORCE_INLINE
@@ -101,6 +101,6 @@ struct MyProbIBC : public DefaultProbIBC
   }
 };
 
-using ProbIBC = MyProbIBC;
+using ProblemSpecificFunctions = MyProblemSpecificFunctions;
 using ProbParm = MyProbParm;
 #endif

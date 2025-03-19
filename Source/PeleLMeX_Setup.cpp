@@ -914,7 +914,7 @@ PeleLM::variablesSetup()
 #endif
 #if NUM_ODE > 0
     Print() << " First ODE: " << FIRSTODE << "\n";
-    ProbIBC::set_ode_names(m_ode_names);
+    ProblemSpecificFunctions::set_ode_names(m_ode_names);
     if (m_ode_names.size() != NUM_ODE) {
       Abort("ODEQty names improperly set. Adjust set_ode_names in "
             "ProblemSpecificFunctions or NUM_ODE in GNUMakefile");
