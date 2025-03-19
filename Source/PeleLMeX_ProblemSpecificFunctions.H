@@ -189,7 +189,7 @@ struct DefaultProblemSpecificFunctions
     for (int n = 0; n < NUM_ODE; n++) {
       a_ode_names[n] = "ODE_" + std::to_string(n);
     }
-# else
+#else
     amrex::ignore_unused(a_ode_names);
 #endif
   }
