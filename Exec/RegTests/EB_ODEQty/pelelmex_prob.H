@@ -170,16 +170,19 @@ struct MyProbIBC : public DefaultProbIBC
 
     switch (prob_parm.meanFlowDir) {
     case 1:
-      AMREX_D_TERM(s_ext[VELX] = prob_parm.meanFlowMag;, s_ext[VELY] = 0.0;
-                   , s_ext[VELZ] = 0.0);
+      AMREX_D_TERM(
+        s_ext[VELX] = prob_parm.meanFlowMag;, s_ext[VELY] = 0.0;
+        , s_ext[VELZ] = 0.0);
       break;
     case 2:
-      AMREX_D_TERM(s_ext[VELY] = prob_parm.meanFlowMag;, s_ext[VELX] = 0.0;
-                   , s_ext[VELZ] = 0.0);
+      AMREX_D_TERM(
+        s_ext[VELY] = prob_parm.meanFlowMag;, s_ext[VELX] = 0.0;
+        , s_ext[VELZ] = 0.0);
       break;
     case 3:
-      AMREX_D_TERM(s_ext[VELZ] = prob_parm.meanFlowMag;, s_ext[VELX] = 0.0;
-                   , s_ext[VELY] = 0.0);
+      AMREX_D_TERM(
+        s_ext[VELZ] = prob_parm.meanFlowMag;, s_ext[VELX] = 0.0;
+        , s_ext[VELY] = 0.0);
       break;
     default:
       break;
@@ -199,6 +202,63 @@ struct MyProbIBC : public DefaultProbIBC
     for (int n = 0; n < NUM_SPECIES; n++) {
       s_ext[FIRSTSPEC + n] = massfrac[n] * s_ext[DENSITY];
     }
+  }
+
+  static void set_ode_names(amrex::Vector<std::string>& a_ode_names)
+  {
+    a_ode_names.resize(NUM_ODE);
+    for (int n = 0; n < NUM_ODE; n++) {
+      a_ode_names[n] = "MY_ODE_" + std::to_string(n);
+    }
+  }
+
+  static void problem_modify_ext_sources(
+    amrex::Real time,
+    amrex::Real /*dt*/,
+    const amrex::MultiFab& state_old,
+    const amrex::MultiFab& /*state_new*/,
+    std::unique_ptr<amrex::MultiFab>& ext_src,
+    const amrex::GeometryData& /*geomdata*/,
+    const MyProbParm& prob_parm)
+  {
+    /*
+    Notes:
+      1) ext_src contains sources from velocity forcing coming in.
+         This function should add to rather than overwrite ext_src.
+      2) Requires "peleLM.user_defined_ext_sources = true" in input file
+    */
+
+    auto ext_src_arr = ext_src->arrays();
+    auto const& state_old_arr = state_old.const_arrays();
+
+    ParallelFor(
+      *ext_src, [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+        if (prob_parm.ode_qty_test) {
+          for (int n = 0; n < NUM_ODE; n++) {
+            // Source terms for ODE qty test
+
+            amrex::Real B_n = state_old_arr[box_no](i, j, k, FIRSTODE + n);
+            amrex::Real src =
+              prob_parm.ode_srcstrength * pow(10.0, n + 1) * B_n;
+            ext_src_arr[box_no](i, j, k, FIRSTODE + n) += src;
+          }
+        }
+
+        // Source terms for composition test
+        if (prob_parm.composition_test) {
+          amrex::Real src = 0.0;
+
+          if (time >= prob_parm.extRhoYCO2_ts) {
+            amrex::Real CO2 =
+              state_old_arr[box_no](i, j, k, FIRSTSPEC + CO2_ID);
+            src = prob_parm.extRhoYCO2 * CO2;
+          }
+
+          ext_src_arr[box_no](i, j, k, FIRSTSPEC + CO2_ID) += src;
+          ext_src_arr[box_no](i, j, k, DENSITY) += src;
+        }
+      });
+    amrex::Gpu::streamSynchronize();
   }
 };
 

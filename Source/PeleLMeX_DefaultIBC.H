@@ -5,7 +5,6 @@
 #include <AMReX_Geometry.H>
 #include <AMReX_FArrayBox.H>
 #include <AMReX_REAL.H>
-
 #include <PMFData.H>
 
 struct ProbParmDefault
@@ -175,6 +174,62 @@ struct DefaultProbIBC
     /** Notes:
      *   This function is under development and will be updated in the
      *   near future.
+     */
+  }
+
+  /**
+   * \brief Set the ODE Qtt names
+   *
+   * \param a_ode_names       the vector of ODE names to fill.
+   */
+  static void set_ode_names(amrex::Vector<std::string>& a_ode_names)
+  {
+#if NUM_ODE > 0
+    a_ode_names.resize(NUM_ODE);
+    for (int n = 0; n < NUM_ODE; n++) {
+      a_ode_names[n] = "ODE_" + std::to_string(n);
+    }
+#endif
+  }
+
+  /**
+   * \brief Modify the external source term in the state conservation eq.
+   *
+   * \param time              current time.
+   * \param dt                current time-step.
+   * \param state_old         the old state multifab.
+   * \param state_new         the new state multifab.
+   * \param ext_src           a pointer to the external src term multifab.
+   * \param geomdata          geometry data.
+   * \param prob_parm         problem specific parameters.
+   */
+  static void modify_ext_sources(
+    amrex::Real /*time*/,
+    amrex::Real /*dt*/,
+    const amrex::MultiFab& /*state_old*/,
+    const amrex::MultiFab& /*state_new*/,
+    std::unique_ptr<amrex::MultiFab>& /*ext_src*/,
+    const amrex::GeometryData& /*geomdata*/,
+    const ProbParmDefault& /*prob_parm*/)
+  {
+    /** Notes:
+     *   1. ext_src contains sources from velocity forcing coming in.
+     *      This function should add to rather than overwrite ext_src.
+     *   2. Requires peleLM.user_defined_ext_sources = true in input file
+     *
+     * // Example: Exponential decay ode quantity
+     * auto ext_src_arr = ext_src->arrays();
+     * auto const& state_old_arr = state_old.const_arrays();
+     * ParallelFor(
+     *   *ext_src,
+     *   [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+     *     for (int n = 0; n < NUM_ODE; n++) {
+     *       Real B_n = state_old_arr[box_no](i, j, k, FIRSTODE + n);
+     *       Real src = -1.0 * pow(10.0, n + 1) * B_n;
+     *       ext_src_arr[box_no](i, j, k, FIRSTODE + n) += src;
+     *     }
+     *   });
+     * Gpu::streamSynchronize();
      */
   }
 }; // namespace DefaultProbIBC

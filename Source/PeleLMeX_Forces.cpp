@@ -1,6 +1,5 @@
 #include <PeleLMeX.H>
 #include <PeleLMeX_K.H>
-#include <PeleLMeX_ProblemSpecificFunctions.H>
 
 using namespace amrex;
 
@@ -274,7 +273,7 @@ PeleLM::getExternalSources(
       auto* ldata_p_old = getLevelDataPtr(lev, a_timestamp_old);
       auto* ldata_p_new = getLevelDataPtr(lev, a_timestamp_new);
       auto& ext_src = m_extSource[lev];
-      problem_modify_ext_sources(
+      ProbIBC::modify_ext_sources(
         getTime(lev, a_timestamp_old), m_dt, ldata_p_old->state,
         ldata_p_new->state, ext_src, geom[lev].data(), *prob_parm_d);
     }
