@@ -38,17 +38,20 @@ struct MyProbIBC : public DefaultProbIBC
     const amrex::Real* prob_hi = geomdata.ProbHi();
     const amrex::Real* dx = geomdata.CellSize();
 
-    AMREX_D_TERM(const amrex::Real x = prob_lo[0] + (i + 0.5) * dx[0];
-                 , const amrex::Real y = prob_lo[1] + (j + 0.5) * dx[1];
-                 , const amrex::Real z = prob_lo[2] + (k + 0.5) * dx[2];);
+    AMREX_D_TERM(
+      const amrex::Real x = prob_lo[0] + (i + 0.5) * dx[0];
+      , const amrex::Real y = prob_lo[1] + (j + 0.5) * dx[1];
+      , const amrex::Real z = prob_lo[2] + (k + 0.5) * dx[2];);
 
-    AMREX_D_TERM(const amrex::Real Lx = prob_hi[0] - prob_lo[0];
-                 , const amrex::Real Ly = prob_hi[1] - prob_lo[1];
-                 , const amrex::Real Lz = prob_hi[2] - prob_lo[2]);
+    AMREX_D_TERM(
+      const amrex::Real Lx = prob_hi[0] - prob_lo[0];
+      , const amrex::Real Ly = prob_hi[1] - prob_lo[1];
+      , const amrex::Real Lz = prob_hi[2] - prob_lo[2]);
 
-    AMREX_D_TERM(const amrex::Real xc = prob_lo[0] + 0.5 * Lx;
-                 , const amrex::Real yc = prob_lo[1] + 0.5 * Ly;
-                 , const amrex::Real zc = prob_lo[2] + 0.5 * Lz;);
+    AMREX_D_TERM(
+      const amrex::Real xc = prob_lo[0] + 0.5 * Lx;
+      , const amrex::Real yc = prob_lo[1] + 0.5 * Ly;
+      , const amrex::Real zc = prob_lo[2] + 0.5 * Lz;);
 
     auto eos = pele::physics::PhysicsType::eos();
     amrex::GpuArray<amrex::Real, NUM_SPECIES + 4> pmf_vals = {0.0};
@@ -126,6 +129,23 @@ struct MyProbIBC : public DefaultProbIBC
     for (int n = 0; n < NUM_SPECIES; n++) {
       state(i, j, k, FIRSTSPEC + n) = massfrac[n] * state(i, j, k, DENSITY);
     }
+  }
+
+  AMREX_GPU_DEVICE
+  AMREX_FORCE_INLINE
+  static void bcnormal(
+    const amrex::Real* /*x[AMREX_SPACEDIM]*/,
+    const amrex::CellData<amrex::Real>& /*s_in*/,
+    amrex::Real s_ext[NVAR],
+    const int /*idir*/,
+    const int /*sgn*/,
+    const amrex::Real /*time*/,
+    amrex::GeometryData const& /*geomdata*/,
+    MyProbParm const& /*prob_parm*/,
+    pele::physics::PMF::PmfData::DataContainer const* /*pmf_data*/)
+  {
+    // NoSlipWallAdiab is ext_dir on velocity.
+    AMREX_D_TERM(s_ext[VELX] = 0.0;, s_ext[VELY] = 0.0;, s_ext[VELZ] = 0.0;)
   }
 };
 
