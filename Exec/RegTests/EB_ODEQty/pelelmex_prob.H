@@ -170,19 +170,16 @@ struct MyProbIBC : public DefaultProbIBC
 
     switch (prob_parm.meanFlowDir) {
     case 1:
-      AMREX_D_TERM(
-        s_ext[VELX] = prob_parm.meanFlowMag;, s_ext[VELY] = 0.0;
-        , s_ext[VELZ] = 0.0);
+      AMREX_D_TERM(s_ext[VELX] = prob_parm.meanFlowMag;, s_ext[VELY] = 0.0;
+                   , s_ext[VELZ] = 0.0);
       break;
     case 2:
-      AMREX_D_TERM(
-        s_ext[VELY] = prob_parm.meanFlowMag;, s_ext[VELX] = 0.0;
-        , s_ext[VELZ] = 0.0);
+      AMREX_D_TERM(s_ext[VELY] = prob_parm.meanFlowMag;, s_ext[VELX] = 0.0;
+                   , s_ext[VELZ] = 0.0);
       break;
     case 3:
-      AMREX_D_TERM(
-        s_ext[VELZ] = prob_parm.meanFlowMag;, s_ext[VELX] = 0.0;
-        , s_ext[VELY] = 0.0);
+      AMREX_D_TERM(s_ext[VELZ] = prob_parm.meanFlowMag;, s_ext[VELX] = 0.0;
+                   , s_ext[VELY] = 0.0);
       break;
     default:
       break;
