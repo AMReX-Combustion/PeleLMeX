@@ -93,6 +93,23 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
       state(i, j, k, FIRSTSPEC + n) = massfrac[n] * state(i, j, k, DENSITY);
     }
   }
+
+  AMREX_GPU_DEVICE
+  AMREX_FORCE_INLINE
+  static void bcnormal(
+    const amrex::Real* /*x[AMREX_SPACEDIM]*/,
+    const amrex::CellData<amrex::Real>& /*s_in*/,
+    amrex::Real s_ext[NVAR],
+    const int /*idir*/,
+    const int /*sgn*/,
+    const amrex::Real /*time*/,
+    amrex::GeometryData const& /*geomdata*/,
+    MyProbParm const& /*prob_parm*/,
+    pele::physics::PMF::PmfData::DataContainer const* /*pmf_data*/)
+  {
+    // NoSlipWallAdiab is ext_dir on velocity.
+    AMREX_D_TERM(s_ext[VELX] = 0.0;, s_ext[VELY] = 0.0;, s_ext[VELZ] = 0.0;)
+  }
 };
 
 using ProblemSpecificFunctions = MyProblemSpecificFunctions;
