@@ -440,8 +440,7 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
     }
   }
 
-  static void
-  EBUserDefined(
+  static void EBUserDefined(
     const amrex::Geometry& geom,
     const int required_coarsening_level,
     const int max_coarsening_level)
@@ -449,22 +448,22 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
     // ParmParse your geometry parameters
     // --> fixed geometry of the challenge problem
     amrex::ParmParse pp("eb2");
-  
+
     amrex::Real radius = 48.0;
     pp.query("cylinder_radius", radius);
     amrex::Real zoffset = 0.0;
     pp.query("head_offset", zoffset);
     int useFlatHead = 0;
     pp.query("head_isFlat", useFlatHead);
-  
+
     // Build geometry pieces using EB2::* methods
     amrex::EB2::SplineIF Piston;
     std::vector<amrex::RealVect> lnpts;
     amrex::RealVect p;
-  
+
     amrex::Real scaleFact = 0.25; // Geometry scaled by a factor 1/4
-    scaleFact *= 0.01;     // MKS conversion
-  
+    scaleFact *= 0.01;            // MKS conversion
+
     if (!useFlatHead) {
       p = amrex::RealVect(AMREX_D_DECL(
         radius * 1.1 * 0.1 * scaleFact, (7.8583 + zoffset) * 0.1 * scaleFact,
@@ -475,7 +474,7 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
       lnpts.push_back(p);
       Piston.addLineElement(lnpts);
       lnpts.clear();
-  
+
       p = amrex::RealVect(AMREX_D_DECL(
         36.193 * 0.1 * scaleFact, (7.8583 + zoffset) * 0.1 * scaleFact, 0.0));
       lnpts.push_back(p);
@@ -484,7 +483,7 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
       lnpts.push_back(p);
       Piston.addLineElement(lnpts);
       lnpts.clear();
-  
+
       p = amrex::RealVect(AMREX_D_DECL(
         24.035 * 0.1 * scaleFact, (-7.8586 + zoffset) * 0.1 * scaleFact, 0.0));
       lnpts.push_back(p);
@@ -493,7 +492,7 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
       lnpts.push_back(p);
       Piston.addLineElement(lnpts);
       lnpts.clear();
-  
+
       p = amrex::RealVect(AMREX_D_DECL(
         20.0 * 0.1 * scaleFact, (-7.8586 + zoffset) * 0.1 * scaleFact, 0.0));
       lnpts.push_back(p);
@@ -502,7 +501,7 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
       lnpts.push_back(p);
       Piston.addLineElement(lnpts);
       lnpts.clear();
-  
+
       p = amrex::RealVect(AMREX_D_DECL(
         1.9934 * 0.1 * scaleFact, (3.464 + zoffset) * 0.1 * scaleFact, 0.0));
       lnpts.push_back(p);
@@ -520,19 +519,20 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
       lnpts.push_back(p);
       Piston.addLineElement(lnpts);
     }
-  
+
     amrex::EB2::CylinderIF cylinder(
       radius * 0.1 * scaleFact, 100.0 * 0.1 * scaleFact, 2,
       {0.0, 0.0, -20.0 * 0.1 * scaleFact}, true);
-  
+
     auto revolvePiston = amrex::EB2::lathe(Piston);
     auto PistonCylinder = amrex::EB2::makeUnion(revolvePiston, cylinder);
-  
+
     // Build your geometry shop using EB2::makeShop
     auto gshop = amrex::EB2::makeShop(PistonCylinder);
-  
+
     // Build geom using EB2::Build
-    amrex::EB2::Build(gshop, geom, required_coarsening_level, max_coarsening_level);
+    amrex::EB2::Build(
+      gshop, geom, required_coarsening_level, max_coarsening_level);
   }
 };
 
