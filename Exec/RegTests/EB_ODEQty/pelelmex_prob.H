@@ -209,7 +209,7 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
     }
   }
 
-  static void problem_modify_ext_sources(
+  static void modify_ext_sources(
     amrex::Real time,
     amrex::Real /*dt*/,
     const amrex::MultiFab& state_old,
