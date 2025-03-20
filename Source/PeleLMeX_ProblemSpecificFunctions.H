@@ -178,6 +178,29 @@ struct DefaultProblemSpecificFunctions
   }
 
   /**
+   * \brief Generate a custom Embedded Boundary geometry
+   *
+   * \param geom                        level at which to generate the geometry
+   * \param required_coarsening_level   the minimum number of coarse levels needed
+   * \param max_coarsening_level        the maximum number of coarse levels
+   */
+  static void
+  EBUserDefined(
+    const amrex::Geometry& /*geom*/,
+    const int /*required_coarsening_level*/,
+    const int /*max_coarsening_level*/)
+  {
+    amrex::Abort("Default EBUserDefined function called! Redefine it in your "
+                 "local ProblemSpecificFunctions struct !");
+    /** Notes:
+     *   1. ParmParse any parameter for your geometry
+     *   2. Construct your geometry assembling EB2::* methods
+     *   3. Build the geometry shop using EB2::makeShop
+     *   4. Build the geometry using EB2::Build
+     */
+  }
+
+  /**
    * \brief Set the ODE Qty names
    *
    * \param a_ode_names       the vector of ODE names to fill.

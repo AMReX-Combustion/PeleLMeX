@@ -1,7 +1,6 @@
 #include <PeleLMeX.H>
 #include <PeleLMeX_Utils.H>
 #include <pelelmex_prob.H>
-#include <PeleLMeX_EBUserDefined.H>
 
 #ifdef AMREX_USE_EB
 #include <AMReX_EB2.H>
@@ -42,7 +41,7 @@ PeleLM::makeEBGeometry()
   // Generate the EB data at prev_max_lvl_eb and create consistent coarse
   // version from there.
   if (geom_type == "UserDefined") {
-    EBUserDefined(
+    ProblemSpecificFunctions::EBUserDefined(
       geom[prev_max_lvl_eb], req_coarsening_level, max_coarsening_level);
   } else {
     // If geom_type is not an AMReX recognized type, it'll crash.

@@ -69,16 +69,6 @@ function(build_pele_exe pele_exe_name pele_physics_lib_name)
        ${SRC_DIR}/main.cpp
   )
 
-  if(PELE_EB_USER_DEFINED)
-    target_sources(${pele_exe_name}
-      PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}/PeleLMeX_EBUserDefined.H)
-  else()
-    target_sources(${pele_exe_name}
-      PRIVATE
-        ${SRC_DIR}/PeleLMeX_EBUserDefined.H)
-  endif()
-
   if(PELE_PHYSICS_ENABLE_SOOT)
     target_sources(${pele_exe_name}
       PRIVATE
