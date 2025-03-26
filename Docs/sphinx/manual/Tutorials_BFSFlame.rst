@@ -150,7 +150,7 @@ The user parameters are gathered in the struct defined in  ``pelelmex_prob_parm.
 The initial solution consists of a premixed methane/air mixture in the upper part of the domain
 and pure hot air in the wake of the step. The default parameters provided above are overwritten
 using AMReX ParmParse in ``pelelmex_prob.cpp`` and the initial/boundary conditions implemented in
-``pelelmex_prob.H``. Alternatively, the user can write a custom function to enforce an ignition kernel through the ``patchFlowVariables`` function in the problem-specific ``PeleLMeX_PatchFlowVariables.cpp`` file. 
+``pelelmex_prob.H``. Alternatively, the user can write a custom function to enforce an ignition kernel through the ``patchFlowVariables`` function in the problem-specific ``PeleLMeX_PatchFlowVariables.cpp`` file.
 It should be kept in mind that the ``patchFlowVariables`` function can be used if the user wants to patch certain flow variables after reading an existing solution from a plot file ( ``peleLM.initDataPlt_patch_flow_variables`` should be set to true).
 
 In addition to these three C++ files, an extra header is needed in the present case compared to
@@ -266,7 +266,7 @@ Since we've set the maximum number of steps to 0, the solver will exit after
 the initial solution is obtained. Let's run the simulation with the default problem parameter
 listed in the input file. To do so, use: ::
 
-    ./PeleLMeX2d.gnu.MPI.ex input.2d-regt
+    ./PeleLMeX2d.gnu.MPI.ex input.2d
 
 A variety of information is printed to the screen:
 
@@ -383,11 +383,15 @@ Refine the simulation
 ---------------------
 
 Instead, let's add a first level of refinement and keep the CFL at a value of 0.6, while restarting again from
-`chk00250`. Enable AMR refinement by increasing the ``amr.max_level``: ::
+`chk00250`. Enable AMR refinement by increasing the ``amr.max_level``. It is also necessary to uncomment the
+``amr.ref_ratio`` and ``amr.regrid_int`` lines, which  specify the refinement ratio for the new grid level
+(should be left at 2) and the interval between regridding steps while AMR is turned on, respectively. ::
 
     #---------------------- AMR CONTROL ------------------------------
     ...
     amr.max_level       = 1                     # maximum level number allowed
+    amr.ref_ratio       = 2 2 2 2               # refinement ratio
+    amr.regrid_int      = 5                     # how often to regrid
     ...
 
 And increase the maximum number of steps to 500: ::

@@ -72,8 +72,9 @@ PeleLM::MakeNewLevelFromScratch(
   if (max_level > 0 && lev != max_level) {
     m_coveredMask[lev] =
       std::make_unique<iMultiFab>(grids[lev], dmap[lev], 1, 0);
-    m_resetCoveredMask = 1;
   }
+  m_resetCoveredMask = 1;
+
   if (m_do_react != 0) {
     m_leveldatareact[lev] =
       std::make_unique<LevelDataReact>(grids[lev], dmap[lev], *m_factory[lev]);
@@ -83,7 +84,7 @@ PeleLM::MakeNewLevelFromScratch(
     m_leveldatareact[lev]->I_R.setVal(0.0);
   }
 
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
   m_leveldatanlsolve[lev].reset(
     new LevelDataNLSolve(grids[lev], dmap[lev], *m_factory[lev], m_nGrowState));
   if (m_do_extraEFdiags) {
@@ -272,8 +273,8 @@ PeleLM::initData()
       RadInit();
     }
 #endif
-#ifdef PELE_USE_EFIELD
-    // If restarting from a non efield simulation
+#ifdef PELE_USE_PLASMA
+    // If restarting from a non plasma simulation
     if (m_restart_nonEF) {
       // either pass Y_ne -> nE or initialize nE for electro-neutral
       if (m_restart_electroneutral) {
@@ -382,7 +383,7 @@ PeleLM::projectInitSolution()
 {
   const int is_init = 1;
 
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
   poissonSolveEF(AmrNewTime);
   fillPatchPhiV(AmrNewTime);
 #endif

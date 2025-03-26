@@ -11,7 +11,7 @@
 #include <PMFData.H>
 #include <PelePhysics.H>
 
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
 #include <EOS_Extension.H>
 #include <PeleLMEF_Constants.H>
 #endif

@@ -1,6 +1,6 @@
 #include <PeleLMeX.H>
 #include <PeleLMeX_K.H>
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
 #include <PeleLMeX_EF_Constants.H>
 #endif
 
@@ -78,7 +78,7 @@ PeleLM::advanceChemistry(int lev, const Real& a_dt, MultiFab& a_extForcing)
         extF_rhoH(i, j, k) *= 10.0;
       });
 
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
     // Pass nE -> rhoY_e & FnE -> FrhoY_e
     auto const& nE_o = ldataOld_p->state.const_array(mfi, NE);
     auto const& FnE = a_extForcing.array(mfi, NUM_SPECIES + 1);
@@ -119,7 +119,7 @@ PeleLM::advanceChemistry(int lev, const Real& a_dt, MultiFab& a_extForcing)
         extF_rhoH(i, j, k) *= 0.1;
       });
 
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
     // rhoY_e -> nE and set rhoY_e to zero
     auto const& nE_n = ldataNew_p->state.array(mfi, NE);
     Real invmwt[NUM_SPECIES] = {0.0};
@@ -159,7 +159,7 @@ PeleLM::advanceChemistry(int lev, const Real& a_dt, MultiFab& a_extForcing)
           extF_rhoY(i, j, k, n);
       });
 
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
     auto const& nE_o = ldataOld_p->state.const_array(mfi, NE);
     auto const& nE_n = ldataNew_p->state.const_array(mfi, NE);
     auto const& FnE = a_extForcing.const_array(mfi, NUM_SPECIES + 1);
@@ -191,7 +191,7 @@ PeleLM::advanceChemistryBAChem(
   MultiFab chemState(*m_baChem[lev], *m_dmapChem[lev], NUM_SPECIES + 3, 0);
   MultiFab chemForcing(*m_baChem[lev], *m_dmapChem[lev], nCompForcing(), 0);
   MultiFab functC(*m_baChem[lev], *m_dmapChem[lev], 1, 0);
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
   MultiFab chemnE(*m_baChem[lev], *m_dmapChem[lev], 1, 0);
 #endif
 
@@ -206,7 +206,7 @@ PeleLM::advanceChemistryBAChem(
   // ParallelCopy into chem MFs
   chemState.ParallelCopy(ldataOld_p->state, FIRSTSPEC, 0, NUM_SPECIES + 3);
   chemForcing.ParallelCopy(a_extForcing, 0, 0, nCompForcing());
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
   chemnE.ParallelCopy(ldataOld_p->state, NE, 0, 1);
 #endif
 
@@ -239,7 +239,7 @@ PeleLM::advanceChemistryBAChem(
         extF_rhoH(i, j, k) *= 10.0;
       });
 
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
     // Pass nE -> rhoY_e & FnE -> FrhoY_e
     auto const& nE_o = chemnE.array(mfi);
     auto const& FnE = chemForcing.array(mfi, NUM_SPECIES + 1);
@@ -288,7 +288,7 @@ PeleLM::advanceChemistryBAChem(
         rhoH_o(i, j, k) *= 0.1;
       });
 
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
     // rhoY_e -> nE and set rhoY_e to zero
     Real invmwt[NUM_SPECIES] = {0.0};
     eos.inv_molecular_weight(invmwt);
@@ -310,7 +310,7 @@ PeleLM::advanceChemistryBAChem(
   MultiFab StateTemp(grids[lev], dmap[lev], NUM_SPECIES + 3, 0);
   StateTemp.ParallelCopy(chemState, 0, 0, NUM_SPECIES + 3);
   ldataR_p->functC.ParallelCopy(functC, 0, 0, 1);
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
   MultiFab nETemp(grids[lev], dmap[lev], 1, 0);
   nETemp.ParallelCopy(chemnE, 0, 0, 1);
 #endif
@@ -347,7 +347,7 @@ PeleLM::advanceChemistryBAChem(
         }
       });
 
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
     auto const& nE_arr = nETemp.const_array(mfi);
     auto const& nE_o = ldataOld_p->state.const_array(mfi, NE);
     auto const& nE_n = ldataNew_p->state.array(mfi, NE);
@@ -371,7 +371,7 @@ PeleLM::computeInstantaneousReactionRate(
   const Vector<MultiFab*>& I_R, const TimeStamp& a_time)
 {
   for (int lev = 0; lev <= finest_level; ++lev) {
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
     computeInstantaneousReactionRateEF(lev, a_time, I_R[lev]);
 #else
     computeInstantaneousReactionRate(lev, a_time, I_R[lev]);

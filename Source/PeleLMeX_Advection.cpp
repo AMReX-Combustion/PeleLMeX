@@ -373,7 +373,7 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
       }
     }
 
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
     //----------------------------------------------------------------
     // Assemble drift and mac velocities
     ionDriftAddUmac(lev, advData);
@@ -417,7 +417,7 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
       auto const& rhoY_arr = ldata_p->state.const_array(mfi, FIRSTSPEC);
       auto const& force_arr = advData->Forcing[lev].const_array(mfi, 0);
 
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
       // Uncharged species all at once
       bool is_velocity = false;
       bool fluxes_are_area_weighted = false;
@@ -756,7 +756,7 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
   // Compute face domain integral for U at every SDC iteration
   addUmacFluxes(advData, geom[0]);
 
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
   if (m_do_extraEFdiags) {
     for (int lev = 0; lev <= finest_level; ++lev) {
       for (int n = 0; n < NUM_IONS; ++n) {
