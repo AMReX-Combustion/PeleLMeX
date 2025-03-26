@@ -1065,11 +1065,8 @@ public:
   void fillPatchDensity(const PeleLM::TimeStamp& a_time);
   void fillPatchSpecies(const PeleLM::TimeStamp& a_time);
   void fillPatchTemp(const PeleLM::TimeStamp& a_time);
-<<<<<<< HEAD
   void fillPatchAux(const PeleLM::TimeStamp& a_time);
 
-=======
->>>>>>> upstream/development
 #ifdef PELE_USE_PLASMA
   void fillPatchPhiV(const PeleLM::TimeStamp& a_time);
 #endif
@@ -1664,14 +1661,11 @@ public:
   amrex::Vector<amrex::MultiFab*>
   getViscosityVect(const PeleLM::TimeStamp& a_time);
   amrex::Vector<amrex::MultiFab*> getIRVect();
-<<<<<<< HEAD
   amrex::Vector<std::unique_ptr<amrex::MultiFab>>
   getAuxVect(const PeleLM::TimeStamp& a_time);
   amrex::Vector<amrex::MultiFab*>
   getAuxDiffusivityVect(const PeleLM::TimeStamp& a_time);
 
-=======
->>>>>>> upstream/development
 #ifdef PELE_USE_PLASMA
   amrex::Vector<std::unique_ptr<amrex::MultiFab>>
   getPhiVVect(const PeleLM::TimeStamp& a_time);
