@@ -17,8 +17,6 @@
 #include <PMFData.H>
 #include <PelePhysics.H>
 
-#define PELE_PROB_PARM_NEEDS_FREEING
-
 // -----------------------------------------------------------
 // Search for the closest index in an array to a given value
 // using the bisection technique.

@@ -19,3 +19,8 @@ PeleLM::readProbParm() // NOLINT(readability-make-member-function-const)
     pp.query("ignition_temperature", prob_parm->ignition_temperature);
   }
 }
+
+void
+PeleLM::freeProbParm()
+{
+}
