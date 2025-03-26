@@ -192,7 +192,7 @@ bcnormal(
     }
   }
 
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
   if (idir == 2 && sgn == 1) { // Burner side
     amrex::Real dampWidth = 0.0005;
     amrex::Real lipFunction =
