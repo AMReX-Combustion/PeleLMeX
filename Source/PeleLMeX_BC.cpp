@@ -55,7 +55,7 @@ int force_bc[] = {BCType::int_dir,  BCType::foextrap, BCType::foextrap,
                   BCType::foextrap, BCType::foextrap, BCType::foextrap,
                   BCType::foextrap, BCType::foextrap};
 
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
 int nE_bc[] = {amrex::BCType::int_dir,      amrex::BCType::ext_dir,
                amrex::BCType::foextrap,     amrex::BCType::reflect_even,
                amrex::BCType::reflect_even, amrex::BCType::reflect_even,
@@ -187,7 +187,7 @@ PeleLM::setBoundaryConditions()
       }
     }
 
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
     // nE
     for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
       m_bcrec_state[NE].setLo(idim, nE_bc[lo_bc[idim]]);
@@ -324,7 +324,7 @@ PeleLM::fillPatchAux(const TimeStamp& a_time)
   }
 }
 
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
 void
 PeleLM::fillPatchPhiV(const TimeStamp& a_time)
 {
@@ -365,7 +365,7 @@ PeleLM::fillPatchReact(int lev, Real a_time, int nGrow)
   BL_PROFILE("PeleLMeX::fillPatchReact()");
 
   int IRsize = NUM_SPECIES;
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
   IRsize += 1;
 #endif
   std::unique_ptr<MultiFab> mf;
@@ -609,7 +609,7 @@ PeleLM::fillpatch_aux(
   a_aux.EnforcePeriodicity(geom[lev].periodicity());
 }
 
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
 // Fill electro-static potential
 void
 PeleLM::fillpatch_phiV(
