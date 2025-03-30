@@ -23,3 +23,8 @@ PeleLM::readProbParm()
   pp.query("jet_dir", PeleLM::prob_parm->jet_dir);
   pp.query("cf_dir", PeleLM::prob_parm->cf_dir);
 }
+
+void
+PeleLM::freeProbParm()
+{
+}

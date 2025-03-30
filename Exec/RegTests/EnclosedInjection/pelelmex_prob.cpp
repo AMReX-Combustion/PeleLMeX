@@ -13,3 +13,8 @@ PeleLM::readProbParm() // NOLINT(readability-make-member-function-const)
   pp.query("jet_rad", prob_parm->jet_rad);
   pp.query("bl_thickness", prob_parm->bl_thickness);
 }
+
+void
+PeleLM::freeProbParm()
+{
+}

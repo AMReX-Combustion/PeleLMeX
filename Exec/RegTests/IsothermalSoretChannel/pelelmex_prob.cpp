@@ -32,3 +32,8 @@ PeleLM::readProbParm()
     amrex::Abort("fuel_name not recognised!");
   }
 }
+
+void
+PeleLM::freeProbParm()
+{
+}
