@@ -52,7 +52,7 @@ PeleLM::LevelData::LevelData(
   }
   if (a_nAux > 0) {
     auxiliaries.define(ba, dm, a_nAux, a_nGrowState, MFInfo(), factory);
-    diff_aux_cc.define(ba, dm, a_nAux, a_nGrowState, MFInfo(), factory);
+    diff_aux_cc.define(ba, dm, a_nAux, 1, MFInfo(), factory);
   }
 }
 
