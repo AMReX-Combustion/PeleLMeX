@@ -939,9 +939,8 @@ PeleLM::computePassiveAdvTerms(
 
     //----------------------------------------------------------------
 #ifdef AMREX_USE_EB
-    // Get EBFact & areafrac
+    // Get EBFact
     const auto& ebfact = EBFactory(lev);
-    Array<const MultiCutFab*, AMREX_SPACEDIM> areafrac = ebfact.getAreaFrac();
 #endif
 
     // Get the passive variables edge state and advection term
