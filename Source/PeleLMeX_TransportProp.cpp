@@ -344,8 +344,6 @@ PeleLM::calcDiffusivity(const TimeStamp& a_time)
         ldata_p->diff_aux_cc.mult(
           1.0 / m_aux_Schmidt[n], n, 1, ldata_p->diff_cc.nGrow());
       } else {
-
-        // ldata_p->diff_aux_cc.setVal(0.0, n, 1);
         MultiFab::Copy(
           ldata_p->diff_aux_cc, ldata_p->diff_cc, NUM_SPECIES, n, 1,
           ldata_p->diff_cc.nGrowVect()); // lambda
@@ -356,7 +354,6 @@ PeleLM::calcDiffusivity(const TimeStamp& a_time)
 
         amrex::MultiFab cp_cc;
         int ngrow = ldata_p->diff_cc.nGrow();
-        // auto const* leosparm = eos_parms.device_parm();
         cp_cc.define(ba, dm, 1, ngrow, MFInfo(), factory);
         auto const& state_arr = ldata_p->state.const_arrays();
         auto const& cp_arr = cp_cc.arrays();
