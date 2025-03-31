@@ -368,8 +368,7 @@ PeleLM::calcDiffusivity(const TimeStamp& a_time)
               Array4<Real>(cp_arr[box_no]), leosparm);
           });
 
-        ldata_p->diff_aux_cc.divide(
-          cp_cc, n, 1, ldata_p->diff_cc.nGrow());
+        ldata_p->diff_aux_cc.divide(cp_cc, n, 1, ldata_p->diff_cc.nGrow());
       }
     }
   }

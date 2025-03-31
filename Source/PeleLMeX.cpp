@@ -59,7 +59,11 @@ PeleLM::getLevelDataPtr(
     grids[lev], dmap[lev], *m_factory[lev], m_incompressible, m_has_divu,
     m_nAux, m_nGrowState, m_use_soret, static_cast<int>(m_do_les));
   Real time = getTime(lev, a_time);
-  fillpatch_state(lev, time, m_leveldata_floating->state, m_nGrowState);
+  if (aux == 0) {
+    fillpatch_state(lev, time, m_leveldata_floating->state, m_nGrowState);
+  } else {
+    fillpatch_aux(lev, time, m_leveldata_floating->auxiliaries, m_nGrowState);
+  }
   return m_leveldata_floating.get();
 }
 
