@@ -848,6 +848,34 @@ PeleLM::fillcoarsepatch_state(
     0, refRatio(lev - 1), mapper, fetchBCRecArray(0, nCompState), 0);
 }
 
+// Fill the auxiliaries
+void
+PeleLM::fillcoarsepatch_aux(
+  int lev, const amrex::Real a_time, amrex::MultiFab& a_aux, int nGhost)
+{
+  AMREX_ASSERT(lev > 0);
+  ProbParm const* lprobparm = prob_parm_d;
+  auto const* lpmfdata = pmf_data.device_parm();
+
+
+  // Interpolator
+  auto* mapper = getInterpolator(m_regrid_interp_method);
+
+  PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirAux>> crse_bndry_func(
+    geom[lev - 1], fetchBCRecAuxArray(0, m_nAux),
+    PeleLMCCFillExtDirAux{
+      lprobparm, lpmfdata, m_nAux});
+  PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirAux>> fine_bndry_func(
+    geom[lev], fetchBCRecAuxArray(0, m_nAux),
+    PeleLMCCFillExtDirAux{
+      lprobparm, lpmfdata, m_nAux});
+  InterpFromCoarseLevel(
+    a_aux, IntVect(nGhost), a_time, m_leveldata_new[lev - 1]->auxiliaries, 0, 0,
+    m_nAux, geom[lev - 1], geom[lev], crse_bndry_func, 0, fine_bndry_func,
+    0, refRatio(lev - 1), mapper, fetchBCRecAuxArray(0, m_nAux), 0);
+
+}
+
 // Fill the grad P
 void
 PeleLM::fillcoarsepatch_gradp(

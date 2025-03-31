@@ -63,6 +63,26 @@ PeleLM::getLevelDataPtr(
   return m_leveldata_floating.get();
 }
 
+PeleLM::LevelData*
+PeleLM::getLevelDataAuxPtr(
+  int lev, const PeleLM::TimeStamp& a_time, int /*useUMac*/)
+{
+  AMREX_ASSERT(
+    a_time == AmrOldTime || a_time == AmrNewTime || a_time == AmrHalfTime);
+  if (a_time == AmrOldTime) {
+    return m_leveldata_old[lev].get();
+  }
+  if (a_time == AmrNewTime) {
+    return m_leveldata_new[lev].get();
+  }
+  m_leveldata_floating = std::make_unique<LevelData>(
+    grids[lev], dmap[lev], *m_factory[lev], m_incompressible, m_has_divu,
+    m_nAux, m_nGrowState, m_use_soret, static_cast<int>(m_do_les));
+  Real time = getTime(lev, a_time);
+  fillpatch_aux(lev, time, m_leveldata_floating->state, 0, m_nGrowState);
+  return m_leveldata_floating.get();
+}
+
 PeleLM::LevelDataReact*
 PeleLM::getLevelDataReactPtr(int lev)
 {
@@ -358,8 +378,8 @@ void
 PeleLM::averageDownAux(const PeleLM::TimeStamp& a_time)
 {
   for (int lev = finest_level; lev > 0; --lev) {
-    auto* ldataFine_p = getLevelDataPtr(lev, a_time);
-    auto* ldataCrse_p = getLevelDataPtr(lev - 1, a_time);
+    auto* ldataFine_p = getLevelDataAuxPtr(lev, a_time);
+    auto* ldataCrse_p = getLevelDataAuxPtr(lev - 1, a_time);
 #ifdef AMREX_USE_EB
     EB_average_down(
       ldataFine_p->auxiliaries, ldataCrse_p->auxiliaries, 0, m_nAux,

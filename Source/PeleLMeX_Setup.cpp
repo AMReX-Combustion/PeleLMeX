@@ -413,7 +413,9 @@ PeleLM::readParameters()
       ppa.query("conservative", m_AdvTypeAux[n]);
       m_aux_Schmidt[n] = -1.0;
       ppa.query("Schmidt", m_aux_Schmidt[n]);
-      if (m_aux_Schmidt[n] < 0) {
+      int diffuse = 1;
+      ppa.query("diffuse", diffuse);
+      if (diffuse == 0) {
         m_DiffTypeAux[n] = 0;
       } else {
         m_DiffTypeAux[n] = 1;

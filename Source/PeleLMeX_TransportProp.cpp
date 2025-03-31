@@ -342,7 +342,34 @@ PeleLM::calcDiffusivity(const TimeStamp& a_time)
         ldata_p->diff_aux_cc.mult(
           1.0 / m_aux_Schmidt[n], n, 1, ldata_p->diff_cc.nGrow());
       } else {
-        ldata_p->diff_aux_cc.setVal(0.0, n, 1);
+
+        // ldata_p->diff_aux_cc.setVal(0.0, n, 1);
+        MultiFab::Copy(
+          ldata_p->diff_aux_cc, ldata_p->diff_cc, NUM_SPECIES, n, 1,
+          ldata_p->diff_cc.nGrowVect()); // lambda
+
+        const auto& ba = ldata_p->diff_cc.boxArray();
+        const auto& dm = ldata_p->diff_cc.DistributionMap();
+        const auto& factory = ldata_p->diff_cc.Factory();
+
+        amrex::MultiFab cp_cc;
+        int ngrow = ldata_p->diff_cc.nGrow();
+        auto const* leosparm = eos_parms.device_parm();
+        cp_cc.define(ba, dm, 1, ngrow, MFInfo(), factory);
+        auto const& state_arr = ldata_p->state.const_arrays();
+        auto const& cp_arr = cp_cc.arrays();
+        amrex::ParallelFor(
+          cp_cc, cp_cc.nGrowVect(),
+          [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+            getCpmixGivenRYT(
+              i, j, k, Array4<Real const>(state_arr[box_no], DENSITY),
+              Array4<Real const>(state_arr[box_no], FIRSTSPEC),
+              Array4<Real const>(state_arr[box_no], TEMP),
+              Array4<Real>(cp_arr[box_no]), leosparm);
+          });
+
+        ldata_p->diff_aux_cc.divide(
+          cp_cc, n, 1, ldata_p->diff_cc.nGrow());
       }
     }
   }
