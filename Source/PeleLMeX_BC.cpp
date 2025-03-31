@@ -320,7 +320,7 @@ PeleLM::fillPatchAux(const TimeStamp& a_time)
   for (int lev = 0; lev <= finest_level; lev++) {
     auto* ldata_p = getLevelDataPtr(lev, a_time);
     Real time = getTime(lev, a_time);
-    fillpatch_aux(lev, time, ldata_p->auxiliaries, 0, m_nGrowState);
+    fillpatch_aux(lev, time, ldata_p->auxiliaries, m_nGrowState);
   }
 }
 
@@ -563,11 +563,7 @@ PeleLM::fillpatch_temp(
 // Fill the auxiliaries
 void
 PeleLM::fillpatch_aux(
-  int lev,
-  const amrex::Real a_time,
-  amrex::MultiFab& a_aux,
-  int aux_comp,
-  int nGhost)
+  int lev, const amrex::Real a_time, amrex::MultiFab& a_aux, int nGhost)
 {
 
   ProbParm const* lprobparm = prob_parm_d;
@@ -581,8 +577,7 @@ PeleLM::fillpatch_aux(
       a_aux, IntVect(nGhost), a_time,
       {&(m_leveldata_old[lev]->auxiliaries),
        &(m_leveldata_new[lev]->auxiliaries)},
-      {m_t_old[lev], m_t_new[lev]}, 0, aux_comp, m_nAux, geom[lev], bndry_func,
-      0);
+      {m_t_old[lev], m_t_new[lev]}, 0, 0, m_nAux, geom[lev], bndry_func, 0);
   } else {
 
     // Interpolator
@@ -601,9 +596,9 @@ PeleLM::fillpatch_aux(
       {m_t_old[lev - 1], m_t_new[lev - 1]},
       {&(m_leveldata_old[lev]->auxiliaries),
        &(m_leveldata_new[lev]->auxiliaries)},
-      {m_t_old[lev], m_t_new[lev]}, 0, aux_comp, m_nAux, geom[lev - 1],
-      geom[lev], crse_bndry_func, 0, fine_bndry_func, 0, refRatio(lev - 1),
-      mapper, fetchBCRecAuxArray(0, m_nAux), 0);
+      {m_t_old[lev], m_t_new[lev]}, 0, 0, m_nAux, geom[lev - 1], geom[lev],
+      crse_bndry_func, 0, fine_bndry_func, 0, refRatio(lev - 1), mapper,
+      fetchBCRecAuxArray(0, m_nAux), 0);
   }
 
   a_aux.EnforcePeriodicity(geom[lev].periodicity());

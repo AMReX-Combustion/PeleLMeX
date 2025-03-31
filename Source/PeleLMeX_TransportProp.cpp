@@ -295,24 +295,26 @@ PeleLM::calcDiffusivity(const TimeStamp& a_time)
   // pass soret array, or pass mu as dummy (won't do anything)
   const int soret_idx = do_soret ? 1 : 0;
 
+  // Transport data pointer
+  auto const* ltransparm = trans_parms.device_parm();
+  auto const* leosparm = eos_parms.device_parm();
+#ifdef PELE_USE_PLASMA
+  GpuArray<Real, NUM_SPECIES> mwt{0.0};
+  {
+    auto eos = pele::physics::PhysicsType::eos(leosparm);
+    eos.molecular_weight(mwt.arr);
+  }
+#endif
+
   for (int lev = 0; lev <= finest_level; ++lev) {
 
     auto* ldata_p = getLevelDataPtr(lev, a_time);
-
-    // Transport data pointer
-    auto const* ltransparm = trans_parms.device_parm();
-    auto const* leosparm = eos_parms.device_parm();
 
     // MultiArrays
     auto const& sma = ldata_p->state.const_arrays();
     auto const& dma = ldata_p->diff_cc.arrays();
 #ifdef PELE_USE_PLASMA
     auto const& kma = ldata_p->mob_cc.arrays();
-    GpuArray<Real, NUM_SPECIES> mwt{0.0};
-    {
-      auto eos = pele::physics::PhysicsType::eos(leosparm);
-      eos.molecular_weight(mwt.arr);
-    }
 #endif
 
     amrex::ParallelFor(
@@ -354,7 +356,7 @@ PeleLM::calcDiffusivity(const TimeStamp& a_time)
 
         amrex::MultiFab cp_cc;
         int ngrow = ldata_p->diff_cc.nGrow();
-        auto const* leosparm = eos_parms.device_parm();
+        // auto const* leosparm = eos_parms.device_parm();
         cp_cc.define(ba, dm, 1, ngrow, MFInfo(), factory);
         auto const& state_arr = ldata_p->state.const_arrays();
         auto const& cp_arr = cp_cc.arrays();

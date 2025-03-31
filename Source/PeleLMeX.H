@@ -1099,11 +1099,7 @@ public:
     int temp_comp,
     int nGhost);
   void fillpatch_aux(
-    int lev,
-    amrex::Real a_time,
-    amrex::MultiFab& a_aux,
-    int aux_comp,
-    int nGhost);
+    int lev, amrex::Real a_time, amrex::MultiFab& a_aux, int nGhost);
   void fillpatch_divu(
     int lev, amrex::Real a_time, amrex::MultiFab& a_divu, int nGhost);
   void fillpatch_gradp(
@@ -1630,8 +1626,6 @@ public:
 
   LevelData*
   getLevelDataPtr(int lev, const PeleLM::TimeStamp& a_time, int useUmac = 0);
-  LevelData*
-  getLevelDataAuxPtr(int lev, const PeleLM::TimeStamp& a_time, int useUmac = 0);
   LevelDataReact* getLevelDataReactPtr(int lev);
 
   amrex::Real getTime(int lev, const PeleLM::TimeStamp& a_time) const
