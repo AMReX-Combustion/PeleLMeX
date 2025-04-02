@@ -593,8 +593,7 @@ PeleLM::getEBDiff(
             amrex::Real ebfacefrac = 1.0;
             ProblemSpecificFunctions::setEBType(
               xface, ebflagtype, ebfacefrac, geomdata, *lprobparm);
-            ebdiff(i, j, k) =
-              diff_cc(i, j, k) * ebfacefrac;
+            ebdiff(i, j, k) = diff_cc(i, j, k) * ebfacefrac;
           }
         });
     }
