@@ -949,6 +949,8 @@ buildAdvectionForcing(
   for (int n = 0; n < nAux; n++) {
     if (aux_diffuse[n] != 0) {
       forceAux(i, j, k, n) = dn_aux(i, j, k, n);
+    } else {
+      forceAux(i, j, k, n) = 0.0;
     }
     // TO DO: source terms for Aux
   }
