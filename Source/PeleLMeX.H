@@ -1675,7 +1675,7 @@ public:
 
   // Fine-covered cells mask
   amrex::Vector<std::unique_ptr<amrex::iMultiFab>> m_coveredMask;
-  int m_resetCoveredMask;
+  int m_resetCoveredMask{0};
 
   // Chemistry BA & DM
   amrex::Vector<std::unique_ptr<amrex::BoxArray>> m_baChem;

@@ -216,7 +216,7 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
     const amrex::MultiFab& /*state_new*/,
     std::unique_ptr<amrex::MultiFab>& ext_src,
     const amrex::GeometryData& /*geomdata*/,
-    const MyProbParm& prob_parm)
+    const MyProbParm* prob_parm_d)
   {
     /*
     Notes:
@@ -230,25 +230,25 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
 
     ParallelFor(
       *ext_src, [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
-        if (prob_parm.ode_qty_test) {
+        if (prob_parm_d->ode_qty_test) {
           for (int n = 0; n < NUM_ODE; n++) {
             // Source terms for ODE qty test
 
             amrex::Real B_n = state_old_arr[box_no](i, j, k, FIRSTODE + n);
             amrex::Real src =
-              prob_parm.ode_srcstrength * pow(10.0, n + 1) * B_n;
+              prob_parm_d->ode_srcstrength * pow(10.0, n + 1) * B_n;
             ext_src_arr[box_no](i, j, k, FIRSTODE + n) += src;
           }
         }
 
         // Source terms for composition test
-        if (prob_parm.composition_test) {
+        if (prob_parm_d->composition_test) {
           amrex::Real src = 0.0;
 
-          if (time >= prob_parm.extRhoYCO2_ts) {
+          if (time >= prob_parm_d->extRhoYCO2_ts) {
             amrex::Real CO2 =
               state_old_arr[box_no](i, j, k, FIRSTSPEC + CO2_ID);
-            src = prob_parm.extRhoYCO2 * CO2;
+            src = prob_parm_d->extRhoYCO2 * CO2;
           }
 
           ext_src_arr[box_no](i, j, k, FIRSTSPEC + CO2_ID) += src;

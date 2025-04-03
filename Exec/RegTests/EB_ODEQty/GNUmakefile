@@ -26,7 +26,6 @@ FSANITIZER = FALSE
 THREAD_SANITIZER = FALSE
 
 # PeleLMeX
-CEXE_sources += PeleLMeX_ProblemSpecificFunctions.cpp
 PELELM_NUM_ODE = 3
 
 # PelePhysics
