@@ -154,6 +154,13 @@ PeleLM::computeDifferentialDiffusionTerms(
     GetVecOfArrOfPtrs(fluxes), 0, {}, 0, NUM_SPECIES, intensiveFluxes,
     bcRecSpec_d.dataPtr(), -1.0, m_dt);
 
+  auto bcRecAux = fetchBCRecAuxArray(0, m_nAux);
+  auto bcRecAux_d = convertToDeviceVector(bcRecAux);
+  fluxDivergenceRD(
+    GetVecOfConstPtrs(getAuxVect(a_time)), 0, diffTermAuxVec, 0,
+    GetVecOfArrOfPtrs(fluxes_aux), 0, {}, 0, m_nAux, intensiveFluxes,
+    bcRecAux_d.dataPtr(), -1.0, m_dt);
+
   auto bcRecTemp = fetchBCRecArray(TEMP, 1);
   auto bcRecTemp_d = convertToDeviceVector(bcRecTemp);
   Vector<MultiFab*> EBFluxesVec =
@@ -610,6 +617,7 @@ PeleLM::computeDifferentialDiffusionFluxes(
   //----------------------------------------------------------------
   // Get fluxes consistent across levels by averaging down all components
   getDiffusionOp()->avgDownFluxes(a_fluxes, 0, NUM_SPECIES + 2);
+  getDiffusionOp()->avgDownFluxes(a_auxfluxes, 0, m_nAux);
   //----------------------------------------------------------------
 
 #ifdef AMREX_USE_EB
