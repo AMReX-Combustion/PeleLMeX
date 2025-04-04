@@ -31,7 +31,7 @@ problem_modify_ext_sources(
   const MultiFab& /*state_new*/,
   std::unique_ptr<MultiFab>& /*ext_src*/,
   const GeometryData& /*geomdata*/,
-  const ProbParm& /*prob_parm*/)
+  const ProbParm* /*prob_parm_d*/)
 {
   /*
   Notes:
