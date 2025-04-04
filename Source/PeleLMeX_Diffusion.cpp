@@ -154,12 +154,14 @@ PeleLM::computeDifferentialDiffusionTerms(
     GetVecOfArrOfPtrs(fluxes), 0, {}, 0, NUM_SPECIES, intensiveFluxes,
     bcRecSpec_d.dataPtr(), -1.0, m_dt);
 
-  auto bcRecAux = fetchBCRecAuxArray(0, m_nAux);
-  auto bcRecAux_d = convertToDeviceVector(bcRecAux);
-  fluxDivergenceRD(
-    GetVecOfConstPtrs(getAuxVect(a_time)), 0, diffTermAuxVec, 0,
-    GetVecOfArrOfPtrs(fluxes_aux), 0, {}, 0, m_nAux, intensiveFluxes,
-    bcRecAux_d.dataPtr(), -1.0, m_dt);
+  if (m_nAux > 0) {
+    auto bcRecAux = fetchBCRecAuxArray(0, m_nAux);
+    auto bcRecAux_d = convertToDeviceVector(bcRecAux);
+    fluxDivergenceRD(
+      GetVecOfConstPtrs(getAuxVect(a_time)), 0, diffTermAuxVec, 0,
+      GetVecOfArrOfPtrs(fluxes_aux), 0, {}, 0, m_nAux, intensiveFluxes,
+      bcRecAux_d.dataPtr(), -1.0, m_dt);
+  }
 
   auto bcRecTemp = fetchBCRecArray(TEMP, 1);
   auto bcRecTemp_d = convertToDeviceVector(bcRecTemp);
