@@ -18,3 +18,9 @@ PeleLM::readProbParm()
 
   PeleLM::pmf_data.initialize();
 }
+
+void
+PeleLM::freeProbParm()
+{
+  PeleLM::pmf_data.deallocate();
+}

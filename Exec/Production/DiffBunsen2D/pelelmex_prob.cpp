@@ -44,3 +44,8 @@ PeleLM::readProbParm()
   pp.query("PhiV_y_lo", PeleLM::prob_parm->phiV_loy);
 #endif
 }
+
+void
+PeleLM::freeProbParm()
+{
+}

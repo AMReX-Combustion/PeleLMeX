@@ -14,3 +14,9 @@ PeleLM::readProbParm()
   PeleLM::prob_parm->eosparm = PeleLM::eos_parms.device_parm();
   PeleLM::pmf_data.initialize();
 }
+
+void
+PeleLM::freeProbParm()
+{
+  PeleLM::pmf_data.deallocate();
+}

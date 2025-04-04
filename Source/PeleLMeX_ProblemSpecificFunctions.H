@@ -152,6 +152,7 @@ struct DefaultProblemSpecificFunctions
    *
    * \param x                 the EB face center coordinates.
    * \param EBflagType        the outgoing embedded boundary type.
+   * \param EBfaceFrac        the fraction of the EB face of the above type.
    * \param geomdata          geometry data.
    * \param prob_parm         problem specific parameters.
    */
@@ -160,6 +161,7 @@ struct DefaultProblemSpecificFunctions
   static void setEBType(
     const amrex::Real* /*xEBface[AMREX_SPACEDIM]*/,
     int& /*EBflagType*/,
+    amrex::Real& /*EBfaceFrac*/,
     amrex::GeometryData const& /*geomdata*/,
     ProbParmDefault const& /*prob_parm*/)
   {

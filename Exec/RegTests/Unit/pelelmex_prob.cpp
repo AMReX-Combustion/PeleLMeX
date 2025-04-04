@@ -61,3 +61,8 @@ PeleLM::readProbParm()
     amrex::Abort();
   }
 }
+
+void
+PeleLM::freeProbParm()
+{
+}

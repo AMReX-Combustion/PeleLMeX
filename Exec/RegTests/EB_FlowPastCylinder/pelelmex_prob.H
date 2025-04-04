@@ -171,10 +171,12 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
   static void setEBType(
     const amrex::Real* /*xEBface[AMREX_SPACEDIM]*/,
     int& EBflagType,
+    amrex::Real& EBfaceFrac,
     amrex::GeometryData const& /*geomdata*/,
     MyProbParm const& /*prob_parm*/)
   {
     EBflagType = 1;
+    EBfaceFrac = 1.0;
   }
 };
 

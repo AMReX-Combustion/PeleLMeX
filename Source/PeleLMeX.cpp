@@ -28,9 +28,7 @@ PeleLM::~PeleLM()
 
   closeTempFile();
   typical_values.clear();
-#ifdef PELE_PROB_PARM_NEEDS_FREEING
   freeProbParm();
-#endif
   delete prob_parm;
   The_Arena()->free(prob_parm_d);
   m_initial_ba.clear();
