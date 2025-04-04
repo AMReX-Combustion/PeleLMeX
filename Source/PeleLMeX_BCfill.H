@@ -185,9 +185,10 @@ struct PeleLMCCFillExtDirAux
         const int* bc = bcr[n].data();
 
         if ((bc[idir] == amrex::BCType::ext_dir) and (iv[idir] < domlo[idir])) {
-          // bcnormal_aux() is defined in pelelmex_prob.H in problem directory in
-          // /Exec
-            T::bcnormal_aux(x, aux_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
+          // bcnormal_aux() is defined in pelelmex_prob.H in problem directory
+          // in /Exec
+          T::bcnormal_aux(
+            x, aux_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
         }
       }
       // High
@@ -199,7 +200,8 @@ struct PeleLMCCFillExtDirAux
         if (
           (bc[idir + AMREX_SPACEDIM] == amrex::BCType::ext_dir) and
           (iv[idir] > domhi[idir])) {
-            T::bcnormal_aux(x, aux_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
+          T::bcnormal_aux(
+            x, aux_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
         }
       }
     }
