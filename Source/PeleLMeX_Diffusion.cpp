@@ -617,7 +617,9 @@ PeleLM::computeDifferentialDiffusionFluxes(
   //----------------------------------------------------------------
   // Get fluxes consistent across levels by averaging down all components
   getDiffusionOp()->avgDownFluxes(a_fluxes, 0, NUM_SPECIES + 2);
-  getDiffusionOp()->avgDownFluxes(a_auxfluxes, 0, m_nAux);
+  if (m_nAux > 0) {
+    getDiffusionOp()->avgDownFluxes(a_auxfluxes, 0, m_nAux);
+  }
   //----------------------------------------------------------------
 
 #ifdef AMREX_USE_EB
