@@ -174,7 +174,7 @@ public:
 
     // cell-centered state multifabs
     amrex::MultiFab
-      state; // Stqte data: velocity, density, rhoYs, rhoH, Temp, RhoRT
+      state; // State data: velocity, density, rhoYs, rhoH, Temp, RhoRT
     amrex::MultiFab auxiliaries; // Auxiliary variables (passive scalars and
                                  // others) (dim:m_nAux)
     amrex::MultiFab gp;          // pressure gradient (dim:AMREX_SPACEDIM)
@@ -188,8 +188,9 @@ public:
     amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>
       visc_turb_fc; // Turbulent Viscosity (dim:)
     amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>
-      lambda_turb_fc;        // Turbulent thermal conductivity (dim:)
-    amrex::MultiFab diff_cc; // Diffusivity (dim:NUM_SPECIES+2)
+      lambda_turb_fc;            // Turbulent thermal conductivity (dim:)
+    amrex::MultiFab diff_cc;     // Diffusivity (dim:NUM_SPECIES+2)
+    amrex::MultiFab diff_aux_cc; // Diffusivity of auxiliaries (dim:m_nAux)
 #ifdef PELE_USE_PLASMA
     amrex::MultiFab diffE_cc; // Electron diffusivity (dim:1)
     amrex::MultiFab mobE_cc;  // Electron mobility (dim:1)
@@ -231,10 +232,17 @@ public:
       int a_nGrowAdv,
       int a_use_wbar,
       int a_use_soret,
+      int a_nAux,
       int is_init = 0);
     amrex::Vector<amrex::MultiFab> Dn;   // Diffusion term t^n
     amrex::Vector<amrex::MultiFab> Dnp1; // Diffusion term t^(n+1,k)
     amrex::Vector<amrex::MultiFab> Dhat; // Diffusion term t^(n+1,k+1)
+
+    amrex::Vector<amrex::MultiFab> Dn_aux; // Diffusion term t^n for auxiliaries
+    amrex::Vector<amrex::MultiFab>
+      Dnp1_aux; // Diffusion term t^(n+1,k) for auxiliaries
+    amrex::Vector<amrex::MultiFab>
+      Dhat_aux; // Diffusion term t^(n+1,k+1) for auxiliaries
 
     amrex::Vector<amrex::MultiFab> Dwbar; // Diffusion term of Wbar
     amrex::Vector<amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>>
@@ -256,14 +264,20 @@ public:
       const amrex::Vector<std::unique_ptr<amrex::FabFactory<amrex::FArrayBox>>>&
         factory,
       int a_incompressible,
+      int a_nAux,
       int a_nGrowAdv,
       int a_nGrowMAC);
     amrex::Vector<amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>>
       umac;                              // MAC face velocity
     amrex::Vector<amrex::MultiFab> AofS; // Scalar advection term at t^(n+1/2)
-    amrex::Vector<amrex::MultiFab> chi;  // Thermodynamic constraint
+    amrex::Vector<amrex::MultiFab>
+      AofS_aux; // Scalar advection term for auxiliaries at t^(n+1/2)
+    amrex::Vector<amrex::MultiFab> chi; // Thermodynamic constraint
     amrex::Vector<amrex::MultiFab>
       Forcing; // Scalar forcing for both advection and diffusion
+    amrex::Vector<amrex::MultiFab>
+      Forcing_aux; // Scalar forcing for auxiliaries for both advection and
+                   // diffusion
     amrex::Vector<amrex::MultiFab> mac_divu; // divu used in MAC projection
 #ifdef PELE_USE_PLASMA
     amrex::Vector<amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>>
@@ -553,7 +567,9 @@ public:
     const amrex::Vector<amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>>&
       a_wbarfluxes,
     const amrex::Vector<amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>>&
-      a_soretfluxes);
+      a_soretfluxes,
+    const amrex::Vector<amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>>&
+      a_auxfluxes);
 
   void correctIsothermalBoundary(
     const TimeStamp& a_time,
@@ -1049,6 +1065,8 @@ public:
   void fillPatchDensity(const PeleLM::TimeStamp& a_time);
   void fillPatchSpecies(const PeleLM::TimeStamp& a_time);
   void fillPatchTemp(const PeleLM::TimeStamp& a_time);
+  void fillPatchAux(const PeleLM::TimeStamp& a_time);
+
 #ifdef PELE_USE_PLASMA
   void fillPatchPhiV(const PeleLM::TimeStamp& a_time);
 #endif
@@ -1080,6 +1098,8 @@ public:
     amrex::MultiFab& a_temp,
     int temp_comp,
     int nGhost);
+  void fillpatch_aux(
+    int lev, amrex::Real a_time, amrex::MultiFab& a_aux, int nGhost);
   void fillpatch_divu(
     int lev, amrex::Real a_time, amrex::MultiFab& a_divu, int nGhost);
   void fillpatch_gradp(
@@ -1116,6 +1136,8 @@ public:
   // FillCoarsePatch state components
   void fillcoarsepatch_state(
     int lev, amrex::Real a_time, amrex::MultiFab& a_state, int nGhost);
+  void fillcoarsepatch_aux(
+    int lev, amrex::Real a_time, amrex::MultiFab& a_aux, int nGhost);
   void fillcoarsepatch_divu(
     int lev, amrex::Real a_time, amrex::MultiFab& a_divu, int nGhost);
   void fillcoarsepatch_gradp(
@@ -1136,6 +1158,7 @@ public:
   void averageDownState(const PeleLM::TimeStamp& a_time);
   void averageDownScalars(const PeleLM::TimeStamp& a_time);
   void averageDownVelocity(const PeleLM::TimeStamp& a_time);
+  void averageDownAux(const PeleLM::TimeStamp& a_time);
   void averageDown(
     const PeleLM::TimeStamp& a_time, const int state_comp, const int ncomp);
   void averageDownReaction();
@@ -1636,6 +1659,11 @@ public:
   amrex::Vector<amrex::MultiFab*>
   getViscosityVect(const PeleLM::TimeStamp& a_time);
   amrex::Vector<amrex::MultiFab*> getIRVect();
+  amrex::Vector<std::unique_ptr<amrex::MultiFab>>
+  getAuxVect(const PeleLM::TimeStamp& a_time);
+  amrex::Vector<amrex::MultiFab*>
+  getAuxDiffusivityVect(const PeleLM::TimeStamp& a_time);
+
 #ifdef PELE_USE_PLASMA
   amrex::Vector<std::unique_ptr<amrex::MultiFab>>
   getPhiVVect(const PeleLM::TimeStamp& a_time);
@@ -1646,8 +1674,11 @@ public:
 #endif
 
   amrex::Vector<amrex::BCRec> fetchBCRecArray(int scomp, int ncomp);
+  amrex::Vector<amrex::BCRec> fetchBCRecAuxArray(int scomp, int ncomp);
   amrex::Vector<int> fetchAdvTypeArray(int scomp, int ncomp);
   amrex::Vector<int> fetchDiffTypeArray(int scomp, int ncomp);
+  amrex::Vector<int> fetchAdvTypeAuxArray(int scomp, int ncomp);
+  amrex::Vector<int> fetchDiffTypeAuxArray(int scomp, int ncomp);
   DiffusionOp* getDiffusionOp();
   DiffusionOp* getMCDiffusionOp(int ncomp = 1);
   DiffusionTensorOp* getDiffusionTensorOp();
@@ -1696,6 +1727,7 @@ public:
   amrex::Vector<amrex::BCRec> m_bcrec_state;
   amrex::BCRec m_bcrec_divu;
   amrex::Vector<amrex::BCRec> m_bcrec_force;
+  amrex::Vector<amrex::BCRec> m_bcrec_aux;
 
   // Advection/Diffusion types
   amrex::Vector<int>
@@ -1887,7 +1919,11 @@ public:
 
   // Aux data size
   int m_nAux = 0;
-
+  amrex::Vector<std::string> m_aux_names;
+  amrex::Vector<int> m_AdvTypeAux;
+  amrex::Vector<int> m_DiffTypeAux;
+  amrex::Vector<amrex::Real> m_aux_Schmidt;
+  amrex::Vector<int> m_aux_advect;
   // R-z
   int m_rz_correction = 0;
 

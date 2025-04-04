@@ -395,6 +395,33 @@ PeleLM::readParameters()
     }
   }
 
+  m_nAux = pp.countval("aux_vars");
+  if (m_nAux > 0) {
+    m_aux_names.resize(m_nAux);
+    m_AdvTypeAux.resize(m_nAux);
+    m_aux_advect.resize(m_nAux);
+    m_DiffTypeAux.resize(m_nAux);
+    m_aux_Schmidt.resize(m_nAux);
+    for (int n = 0; n < m_nAux; n++) {
+      pp.get("aux_vars", m_aux_names[n], n);
+      std::string aux_prefix = "peleLM." + m_aux_names[n];
+      ParmParse ppa(aux_prefix);
+      m_aux_advect[n] = 1;
+      ppa.query("advect", m_aux_advect[n]);
+      m_AdvTypeAux[n] = 1;
+      ppa.query("conservative", m_AdvTypeAux[n]);
+      m_aux_Schmidt[n] = -1.0;
+      ppa.query("Schmidt", m_aux_Schmidt[n]);
+      int diffuse = 1;
+      ppa.query("diffuse", diffuse);
+      if (diffuse == 0) {
+        m_DiffTypeAux[n] = 0;
+      } else {
+        m_DiffTypeAux[n] = 1;
+      }
+    }
+  }
+
   // -----------------------------------------
   // LES
   // -----------------------------------------
@@ -929,18 +956,25 @@ PeleLM::variablesSetup()
 #endif
   }
 
-  if (m_nAux > 0) {
-    Print() << " First passive scalar: " << FIRSTAUX << "\n";
-    for (int n = 0; n < m_nAux; n++) {
-      stateComponents.emplace_back(FIRSTAUX + n, "Aux_" + std::to_string(n));
-    }
-  }
-
   if (m_incompressible != 0) {
     Print() << " => Total number of state variables: " << AMREX_SPACEDIM
             << "\n";
   } else {
     Print() << " => Total number of state variables: " << NVAR << "\n";
+  }
+  if (m_nAux > 0) {
+    for (int n = 0; n < m_nAux; n++) {
+      Print() << " Auxiliary " + std::to_string(n + 1) + ": " << m_aux_names[n]
+              << "\n";
+      Print() << "   Advective: " << m_aux_advect[n] << "\n";
+      Print() << "   Conservative: " << m_AdvTypeAux[n] << "\n";
+      Print() << "   Diffusive: " << m_DiffTypeAux[n];
+      if (m_aux_Schmidt[n] > 0) {
+        Print() << " - Schmidt number: " << m_aux_Schmidt[n];
+      }
+      Print() << "\n";
+    }
+    Print() << " => Total number of auxiliary variables: " << m_nAux << "\n";
   }
   Print() << PrettyLine;
   Print() << "\n";

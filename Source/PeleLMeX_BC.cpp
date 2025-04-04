@@ -40,6 +40,11 @@ int temp_bc[] = {amrex::BCType::int_dir,  amrex::BCType::ext_dir,
                  amrex::BCType::foextrap, amrex::BCType::foextrap,
                  amrex::BCType::ext_dir,  amrex::BCType::ext_dir};
 
+int aux_bc[] = {amrex::BCType::int_dir,  amrex::BCType::ext_dir,
+                amrex::BCType::foextrap, amrex::BCType::reflect_even,
+                amrex::BCType::foextrap, amrex::BCType::foextrap,
+                amrex::BCType::ext_dir,  amrex::BCType::ext_dir};
+
 int divu_bc[] = {amrex::BCType::int_dir,      amrex::BCType::reflect_even,
                  amrex::BCType::reflect_even, amrex::BCType::reflect_even,
                  amrex::BCType::reflect_even, amrex::BCType::reflect_even,
@@ -106,6 +111,7 @@ PeleLM::setBoundaryConditions()
   m_bcrec_state.resize(NVAR);
   int sizeForceBC = std::max(AMREX_SPACEDIM, NUM_SPECIES + 2);
   m_bcrec_force.resize(sizeForceBC);
+  m_bcrec_aux.resize(m_nAux);
 
   // Convert m_phys_bc into field BCs
   // Get m_phys_bc
@@ -173,6 +179,13 @@ PeleLM::setBoundaryConditions()
         m_bcrec_divu.setHi(idim, divu_bc[hi_bc[idim]]);
       }
     }
+    // auxiliaries - assumed to be the same as species
+    for (int n = 0; n < m_nAux; n++) {
+      for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+        m_bcrec_aux[n].setLo(idim, aux_bc[lo_bc[idim]]);
+        m_bcrec_aux[n].setHi(idim, aux_bc[hi_bc[idim]]);
+      }
+    }
 
 #ifdef PELE_USE_PLASMA
     // nE
@@ -222,6 +235,16 @@ PeleLM::fetchBCRecArray(int scomp, int ncomp)
   Vector<BCRec> bc(ncomp);
   for (int comp = 0; comp < ncomp; comp++) {
     bc[comp] = m_bcrec_state[scomp + comp];
+  }
+  return bc;
+}
+
+Vector<BCRec>
+PeleLM::fetchBCRecAuxArray(int scomp, int ncomp)
+{
+  Vector<BCRec> bc(ncomp);
+  for (int comp = 0; comp < ncomp; comp++) {
+    bc[comp] = m_bcrec_aux[scomp + comp];
   }
   return bc;
 }
@@ -287,6 +310,17 @@ PeleLM::fillPatchTemp(const TimeStamp& a_time)
     auto* ldata_p = getLevelDataPtr(lev, a_time);
     Real time = getTime(lev, a_time);
     fillpatch_temp(lev, time, ldata_p->state, TEMP, m_nGrowState);
+  }
+}
+
+void
+PeleLM::fillPatchAux(const TimeStamp& a_time)
+{
+  BL_PROFILE("PeleLMeX::fillPatchAux()");
+  for (int lev = 0; lev <= finest_level; lev++) {
+    auto* ldata_p = getLevelDataPtr(lev, a_time);
+    Real time = getTime(lev, a_time);
+    fillpatch_aux(lev, time, ldata_p->auxiliaries, m_nGrowState);
   }
 }
 
@@ -559,6 +593,59 @@ PeleLM::fillpatch_temp(
   }
 }
 
+// Fill the auxiliaries
+void
+PeleLM::fillpatch_aux(
+  int lev, const amrex::Real a_time, amrex::MultiFab& a_aux, int nGhost)
+{
+
+  ProbParm const* lprobparm = prob_parm_d;
+  auto const* lpmfdata = pmf_data.device_parm();
+
+  if (lev == 0) {
+    PhysBCFunct<
+      GpuBndryFuncFab<PeleLMCCFillExtDirAux<ProblemSpecificFunctions>>>
+      bndry_func(
+        geom[lev], fetchBCRecAuxArray(0, m_nAux),
+        PeleLMCCFillExtDirAux<ProblemSpecificFunctions>{
+          lprobparm, lpmfdata, m_nAux});
+    FillPatchSingleLevel(
+      a_aux, IntVect(nGhost), a_time,
+      {&(m_leveldata_old[lev]->auxiliaries),
+       &(m_leveldata_new[lev]->auxiliaries)},
+      {m_t_old[lev], m_t_new[lev]}, 0, 0, m_nAux, geom[lev], bndry_func, 0);
+  } else {
+
+    // Interpolator
+    auto* mapper = getInterpolator();
+
+    PhysBCFunct<
+      GpuBndryFuncFab<PeleLMCCFillExtDirAux<ProblemSpecificFunctions>>>
+      crse_bndry_func(
+        geom[lev - 1], fetchBCRecAuxArray(0, m_nAux),
+        PeleLMCCFillExtDirAux<ProblemSpecificFunctions>{
+          lprobparm, lpmfdata, m_nAux});
+    PhysBCFunct<
+      GpuBndryFuncFab<PeleLMCCFillExtDirAux<ProblemSpecificFunctions>>>
+      fine_bndry_func(
+        geom[lev], fetchBCRecAuxArray(0, m_nAux),
+        PeleLMCCFillExtDirAux<ProblemSpecificFunctions>{
+          lprobparm, lpmfdata, m_nAux});
+    FillPatchTwoLevels(
+      a_aux, IntVect(nGhost), a_time,
+      {&(m_leveldata_old[lev - 1]->auxiliaries),
+       &(m_leveldata_new[lev - 1]->auxiliaries)},
+      {m_t_old[lev - 1], m_t_new[lev - 1]},
+      {&(m_leveldata_old[lev]->auxiliaries),
+       &(m_leveldata_new[lev]->auxiliaries)},
+      {m_t_old[lev], m_t_new[lev]}, 0, 0, m_nAux, geom[lev - 1], geom[lev],
+      crse_bndry_func, 0, fine_bndry_func, 0, refRatio(lev - 1), mapper,
+      fetchBCRecAuxArray(0, m_nAux), 0);
+  }
+
+  a_aux.EnforcePeriodicity(geom[lev].periodicity());
+}
+
 #ifdef PELE_USE_PLASMA
 // Fill electro-static potential
 void
@@ -799,6 +886,34 @@ PeleLM::fillcoarsepatch_state(
     a_state, IntVect(nGhost), a_time, m_leveldata_new[lev - 1]->state, 0, 0,
     nCompState, geom[lev - 1], geom[lev], crse_bndry_func, 0, fine_bndry_func,
     0, refRatio(lev - 1), mapper, fetchBCRecArray(0, nCompState), 0);
+}
+
+// Fill the auxiliaries
+void
+PeleLM::fillcoarsepatch_aux(
+  int lev, const amrex::Real a_time, amrex::MultiFab& a_aux, int nGhost)
+{
+  AMREX_ASSERT(lev > 0);
+  ProbParm const* lprobparm = prob_parm_d;
+  auto const* lpmfdata = pmf_data.device_parm();
+
+  // Interpolator
+  auto* mapper = getInterpolator(m_regrid_interp_method);
+
+  PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirAux<ProblemSpecificFunctions>>>
+    crse_bndry_func(
+      geom[lev - 1], fetchBCRecAuxArray(0, m_nAux),
+      PeleLMCCFillExtDirAux<ProblemSpecificFunctions>{
+        lprobparm, lpmfdata, m_nAux});
+  PhysBCFunct<GpuBndryFuncFab<PeleLMCCFillExtDirAux<ProblemSpecificFunctions>>>
+    fine_bndry_func(
+      geom[lev], fetchBCRecAuxArray(0, m_nAux),
+      PeleLMCCFillExtDirAux<ProblemSpecificFunctions>{
+        lprobparm, lpmfdata, m_nAux});
+  InterpFromCoarseLevel(
+    a_aux, IntVect(nGhost), a_time, m_leveldata_new[lev - 1]->auxiliaries, 0, 0,
+    m_nAux, geom[lev - 1], geom[lev], crse_bndry_func, 0, fine_bndry_func, 0,
+    refRatio(lev - 1), mapper, fetchBCRecAuxArray(0, m_nAux), 0);
 }
 
 // Fill the grad P

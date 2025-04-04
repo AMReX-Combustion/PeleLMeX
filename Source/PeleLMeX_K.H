@@ -50,7 +50,7 @@ getTransportCoeff(
   amrex::Real Wbar = 0.0_rt;
   eos.Y2WBAR(y, Wbar);
 
-  rho = m2c::Rho(rho); // MKS -> CGS conversion
+  amrex::Real rho_cgs = m2c::Rho(rho); // MKS -> CGS conversion
   amrex::Real rhoDi_cgs[NUM_SPECIES] = {0.0};
   amrex::Real lambda_cgs = 0.0_rt;
   amrex::Real mu_cgs = 0.0_rt;
@@ -58,53 +58,52 @@ getTransportCoeff(
   amrex::Real chi_loc[NUM_SPECIES] = {0.0};
   amrex::Real Tloc = T(i, j, k);
 
-  bool get_xi = false; // always ignore bulk viscosity
-  bool get_mu = true;  // always get dynamic viscosity
+  constexpr bool get_xi = false; // always ignore bulk viscosity
+  constexpr bool get_mu = true;  // always get dynamic viscosity
   bool get_lam = !do_fixed_Pr;
   bool get_Ddiag = !do_fixed_Le;
   bool get_chi = do_soret;
   auto trans = pele::physics::PhysicsType::transport();
   trans.transport(
-    get_xi, get_mu, get_lam, get_Ddiag, get_chi, Tloc, rho, y, rhoDi_cgs,
+    get_xi, get_mu, get_lam, get_Ddiag, get_chi, Tloc, rho_cgs, y, rhoDi_cgs,
     chi_loc, mu_cgs, dummy_xi, lambda_cgs, trans_parm);
 
   // Do CGS -> MKS conversions
   mu(i, j, k) = c2m::Mu(mu_cgs);
   if (do_fixed_Pr && do_fixed_Le) { // fixed Pr and Le, transport all dependent
                                     // on visc
-    amrex::Real cpmix = 0.0_rt;
-    eos.TY2Cp(T(i, j, k), y, cpmix);
-    lambda(i, j, k) = PrInv * c2m::Cp(cpmix) * c2m::Mu(mu_cgs);
+    amrex::Real cpmix_cgs = 0.0_rt;
+    eos.TY2Cp(T(i, j, k), y, cpmix_cgs);
+    lambda(i, j, k) = PrInv * c2m::Cp(cpmix_cgs) * mu(i, j, k);
     amrex::Real ScInv = PrInv * LeInv;
     for (int n = 0; n < NUM_SPECIES; n++) {
-      rhoDi(i, j, k, n) = ScInv * c2m::Mu(mu_cgs);
+      rhoDi(i, j, k, n) = ScInv * mu(i, j, k);
     }
   } else if (do_fixed_Pr) { // fixed Pr, still use species diffs
-    amrex::Real cpmix = 0.0_rt;
-    eos.TY2Cp(T(i, j, k), y, cpmix);
-    lambda(i, j, k) = PrInv * c2m::Cp(cpmix) * c2m::Mu(mu_cgs);
+    amrex::Real cpmix_cgs = 0.0_rt;
+    eos.TY2Cp(T(i, j, k), y, cpmix_cgs);
+    lambda(i, j, k) = PrInv * c2m::Cp(cpmix_cgs) * mu(i, j, k);
     for (int n = 0; n < NUM_SPECIES; n++) {
       rhoDi(i, j, k, n) = rhoDi_cgs[n] * Wbar * mwtinv[n] * 1.0e-1_rt;
     }
   } else if (do_fixed_Le) { // fixed Le, still use thermal cond
     lambda(i, j, k) = c2m::Lambda(lambda_cgs);
-    amrex::Real cpmix = 0.0_rt;
-    eos.TY2Cp(T(i, j, k), y, cpmix);
+    amrex::Real cpmix_cgs = 0.0_rt;
+    eos.TY2Cp(T(i, j, k), y, cpmix_cgs);
     for (int n = 0; n < NUM_SPECIES; n++) {
-      rhoDi(i, j, k, n) = lambda_cgs * 1.0e-1_rt * LeInv / cpmix;
+      rhoDi(i, j, k, n) = lambda_cgs * 1.0e-1_rt * LeInv / cpmix_cgs;
     }
   } else { // full MA model, with Soret if needed
     lambda(i, j, k) = c2m::Lambda(lambda_cgs);
     for (int n = 0; n < NUM_SPECIES; n++) {
       rhoDi(i, j, k, n) = rhoDi_cgs[n] * Wbar * mwtinv[n] * 1.0e-1_rt;
       if (do_soret) {
-        rhotheta(i, j, k, n) = -rhoDi_cgs[n] * 1.0e-1_rt * chi_loc[n];
+        rhotheta(i, j, k, n) = -rhoDi_cgs[n] * chi_loc[n] * 1.0e-1_rt;
       }
     }
     if (do_soret) {
-#if defined(H2_ID) && \
-  defined(            \
-    H_ID) // Soret coefficient scaling, see Howarth, Day, Pitsch & Aspden
+#if defined(H2_ID) && defined(H_ID)
+      // Soret coefficient scaling, see Howarth, Day, Pitsch & Aspden
       rhotheta(i, j, k, H2_ID) *= 0.664;
       rhotheta(i, j, k, H_ID) *= 0.58;
 #else
@@ -153,7 +152,7 @@ getTransportCoeff<pele::physics::eos::Manifold>(
   auto eos = pele::physics::PhysicsType::eos(eosparm);
   eos.RY2RRinvY(massdens, rho, rhoinv, y);
 
-  rho *= 1.0e-3_rt; // MKS -> CGS conversion
+  amrex::Real rho_cgs = m2c::Rho(rho); // MKS -> CGS conversion
   amrex::Real rhoDi_cgs[NUM_SPECIES] = {0.0};
   amrex::Real lambda_cgs = 0.0_rt;
   amrex::Real mu_cgs = 0.0_rt;
@@ -161,14 +160,14 @@ getTransportCoeff<pele::physics::eos::Manifold>(
   amrex::Real* dummy_chi = nullptr;
   amrex::Real Tloc = T(i, j, k);
 
-  bool get_xi = false;
-  bool get_mu = true;
-  bool get_lam = false;
-  bool get_Ddiag = true;
+  constexpr bool get_xi = false;
+  constexpr bool get_mu = true;
+  constexpr bool get_lam = false;
+  constexpr bool get_Ddiag = true;
   bool get_chi = do_soret;
   auto trans = pele::physics::PhysicsType::transport();
   trans.transport(
-    get_xi, get_mu, get_lam, get_Ddiag, get_chi, Tloc, rho, y, rhoDi_cgs,
+    get_xi, get_mu, get_lam, get_Ddiag, get_chi, Tloc, rho_cgs, y, rhoDi_cgs,
     dummy_chi, mu_cgs, dummy_xi, lambda_cgs, trans_parm);
 
   // Do CGS -> MKS conversions
@@ -176,7 +175,7 @@ getTransportCoeff<pele::physics::eos::Manifold>(
     rhoDi(i, j, k, n) = rhoDi_cgs[n] * 1.0e-1_rt;
   }
   lambda(i, j, k) = 0.0; // No need to carry lambda for manifold
-  mu(i, j, k) = mu_cgs * 1.0e-1_rt;
+  mu(i, j, k) = c2m::Mu(mu_cgs);
 }
 
 AMREX_GPU_DEVICE
@@ -203,7 +202,7 @@ getVelViscosity(
   amrex::Real rho = 0.0_rt, rhoinv = 0.0_rt, y[NUM_SPECIES] = {0.0};
   pele::physics::PhysicsType::eos_type::RY2RRinvY(massdens, rho, rhoinv, y);
 
-  rho *= 1.0e-3_rt; // MKS -> CGS conversion
+  amrex::Real rho_cgs = m2c::Rho(rho); // MKS -> CGS conversion
   amrex::Real temp = T(i, j, k);
   amrex::Real dummy_rhoDi[NUM_SPECIES] = {0.0};
   amrex::Real dummy_chi[NUM_SPECIES] = {0.0};
@@ -211,18 +210,18 @@ getVelViscosity(
   amrex::Real mu_cgs = 0.0_rt;
   amrex::Real dummy_xi = 0.0_rt;
 
-  bool get_xi = false;
-  bool get_mu = true;
-  bool get_lam = false;
-  bool get_Ddiag = false;
-  bool get_chi = false;
+  constexpr bool get_xi = false;
+  constexpr bool get_mu = true;
+  constexpr bool get_lam = false;
+  constexpr bool get_Ddiag = false;
+  constexpr bool get_chi = false;
   auto trans = pele::physics::PhysicsType::transport();
   trans.transport(
-    get_xi, get_mu, get_lam, get_Ddiag, get_chi, temp, rho, y, dummy_rhoDi,
+    get_xi, get_mu, get_lam, get_Ddiag, get_chi, temp, rho_cgs, y, dummy_rhoDi,
     dummy_chi, mu_cgs, dummy_xi, dummy_lambda, trans_parm);
 
   // Do CGS -> MKS conversions
-  mu(i, j, k) = mu_cgs * 1.0e-1_rt;
+  mu(i, j, k) = c2m::Mu(mu_cgs);
 }
 
 AMREX_GPU_DEVICE
@@ -243,15 +242,15 @@ getPGivenRTY(
 
   auto eos = pele::physics::PhysicsType::eos(eosparm);
   amrex::Real rhoinv = 1.0_rt / rho(i, j, k);
-  amrex::Real rho_cgs = rho(i, j, k) * 0.001_rt;
+  amrex::Real rho_cgs = m2c::Rho(rho(i, j, k));
 
   amrex::Real y[NUM_SPECIES] = {0.0_rt};
   for (int n = 0; n < NUM_SPECIES; n++) {
     y[n] = rhoY(i, j, k, n) * rhoinv;
   }
-
-  eos.RTY2P(rho_cgs, T(i, j, k), y, P(i, j, k));
-  P(i, j, k) = P(i, j, k) * 0.1_rt; // CGS -> MKS conversion
+  amrex::Real P_cgs = 0.0;
+  eos.RTY2P(rho_cgs, T(i, j, k), y, P_cgs);
+  P(i, j, k) = c2m::P(P_cgs); // CGS -> MKS conversion
 }
 
 template <typename EOSType>
@@ -290,15 +289,16 @@ compute_divu(
     y[n] = rhoY(i, j, k, n) * rhoinv;
   }
 
-  amrex::Real cpmix = 0.0_rt;
-  eos.TY2Cp(T(i, j, k), y, cpmix);
+  amrex::Real cpmix_cgs = 0.0_rt;
+  eos.TY2Cp(T(i, j, k), y, cpmix_cgs);
   amrex::Real Wbar = 0.0_rt;
   eos.Y2WBAR(y, Wbar);
+  amrex::Real hi_cgs[NUM_SPECIES] = {0.0};
+  eos.T2Hi(T(i, j, k), hi_cgs);
+  amrex::Real cpmix = c2m::Cp(cpmix_cgs); // CGS -> MKS conversion
   amrex::Real hi[NUM_SPECIES] = {0.0};
-  eos.T2Hi(T(i, j, k), hi);
-  cpmix *= 1.0e-4_rt; // CGS -> MKS conversion
-  for (double& n : hi) {
-    n *= 1.0e-4_rt; // CGS -> MKS conversion
+  for (int n = 0; n < NUM_SPECIES; n++) {
+    hi[n] = c2m::H(hi_cgs[n]); // CGS -> MKS conversion
   }
 
   // Note: divu does not depend on extRho. See docs and PR #428 for details.
@@ -346,8 +346,9 @@ compute_divu<pele::physics::eos::Manifold>(
   auto eos = pele::physics::PhysicsType::eos(eosparm);
   eos.RY2RRinvY(massdens, rho, rhoinv, y);
   amrex::Real derivs[MANIFOLD_DIM] = {0.0};
-  rho /= 1.0e3; // Unit conversion MKS -> CGS
-  eos.RY2dRdY(rho, y, derivs);
+  amrex::Real rho_cgs = m2c::Rho(rho);
+
+  eos.RY2dRdY(rho_cgs, y, derivs);
 
   divu(i, j, k) = 0.0;
 
@@ -828,10 +829,9 @@ getRHmixGivenTY(
   for (int n = 0; n < NUM_SPECIES; n++) {
     y[n] = rhoY(i, j, k, n) * rhoinv;
   }
-
-  eos.TY2H(T(i, j, k), y, Hmix(i, j, k));
-  Hmix(i, j, k) =
-    Hmix(i, j, k) * 1.0e-4_rt * rho(i, j, k); // CGS -> MKS conversion
+  amrex::Real hmix_cgs = 0.0;
+  eos.TY2H(T(i, j, k), y, hmix_cgs);
+  Hmix(i, j, k) = c2m::H(hmix_cgs) * rho(i, j, k); // CGS -> MKS conversion
 }
 
 AMREX_GPU_DEVICE
@@ -856,7 +856,7 @@ getTfromHY(
   for (int n = 0; n < NUM_SPECIES; n++) {
     y[n] = rhoY(i, j, k, n) * rhoinv;
   }
-  amrex::Real h_cgs = rhoH(i, j, k) * rhoinv * 1.0e4_rt;
+  amrex::Real h_cgs = m2c::H(rhoH(i, j, k) * rhoinv);
   amrex::Real T_loc = T(i, j, k);
   eos.HY2T(h_cgs, y, T_loc);
   T(i, j, k) = T_loc;
@@ -884,9 +884,9 @@ getCpmixGivenRYT(
   for (int n = 0; n < NUM_SPECIES; n++) {
     y[n] = rhoY(i, j, k, n) * rhoinv;
   }
-
-  eos.TY2Cp(T(i, j, k), y, cpmix(i, j, k));
-  cpmix(i, j, k) *= 0.0001_rt; // CGS -> MKS conversion
+  amrex::Real cpmix_cgs = 0.0;
+  eos.TY2Cp(T(i, j, k), y, cpmix_cgs);
+  cpmix(i, j, k) = c2m::Cp(cpmix_cgs); // CGS -> MKS conversion
 }
 
 AMREX_GPU_DEVICE
@@ -909,6 +909,10 @@ buildAdvectionForcing(
   int do_react,
   amrex::Array4<amrex::Real> const& forceY,
   amrex::Array4<amrex::Real> const& forceT,
+  amrex::Array4<amrex::Real> const& forceAux,
+  amrex::Array4<const amrex::Real> const& dn_aux,
+  const int* aux_diffuse,
+  int nAux,
   pele::physics::eos::EosParm<pele::physics::PhysicsType::eos_type> const*
     eosparm) noexcept
 {
@@ -916,8 +920,8 @@ buildAdvectionForcing(
 
   auto eos = pele::physics::PhysicsType::eos(eosparm);
   // Get species enthalpy
-  amrex::Real hi_spec[NUM_SPECIES] = {0.0};
-  eos.T2Hi(T(i, j, k), hi_spec);
+  amrex::Real hi_spec_cgs[NUM_SPECIES] = {0.0};
+  eos.T2Hi(T(i, j, k), hi_spec_cgs);
 
   // For species mass fractions
   amrex::Real rhoinv = 1.0_rt / rho(i, j, k);
@@ -930,9 +934,10 @@ buildAdvectionForcing(
     if (do_react != 0) {
       forceY(i, j, k, n) += r(i, j, k, n); //         + Rk
     }
-    forceT(i, j, k) -= forceY(i, j, k, n) * hi_spec[n] *
-                       0.0001_rt; // forceT -= Sum{ hk. (Rk + Dnk) } with CGS ->
-                                  // MKS conversion of hk
+    forceT(i, j, k) -=
+      forceY(i, j, k, n) *
+      c2m::H(hi_spec_cgs[n]); // forceT -= Sum{ hk. (Rk + Dnk) } with CGS ->
+                              // MKS conversion of hk
     forceY(i, j, k, n) += extRhoY(i, j, k, n);
   }
 
@@ -941,9 +946,18 @@ buildAdvectionForcing(
     forceT(i, j, k) += dp0dt; // Add dp0/dt
   }
 
-  amrex::Real cpmix = 0.0_rt;
-  eos.TY2Cp(T(i, j, k), y, cpmix);
-  amrex::Real cpmixinv = 1.0_rt / cpmix * 1.0e4_rt; // CGS -> MKS conversion
+  for (int n = 0; n < nAux; n++) {
+    if (aux_diffuse[n] != 0) {
+      forceAux(i, j, k, n) = dn_aux(i, j, k, n);
+    } else {
+      forceAux(i, j, k, n) = 0.0;
+    }
+    // TO DO: source terms for Aux
+  }
+
+  amrex::Real cpmix_cgs = 0.0_rt;
+  eos.TY2Cp(T(i, j, k), y, cpmix_cgs);
+  amrex::Real cpmixinv = 1.0_rt / c2m::Cp(cpmix_cgs); // CGS -> MKS conversion
   forceT(i, j, k) *= rhoinv * cpmixinv;
 }
 
@@ -964,23 +978,56 @@ buildDiffusionForcing(
   int const& closed_chamber,
   int do_react,
   amrex::Array4<amrex::Real> const& forceY,
-  amrex::Array4<amrex::Real> const& forceT) noexcept
+  amrex::Array4<amrex::Real> const& forceT,
+  amrex::Array4<const amrex::Real> const& dwbar,
+  amrex::Array4<const amrex::Real> const& dT,
+  amrex::Array4<const amrex::Real> const& extRhoY,
+  amrex::Array4<const amrex::Real> const& extRhoH,
+  int use_wbar,
+  int use_soret,
+  amrex::Array4<amrex::Real> const& forceAux,
+  amrex::Array4<const amrex::Real> const& a_aux,
+  amrex::Array4<const amrex::Real> const& dn_aux,
+  amrex::Array4<const amrex::Real> const& dnp1k_aux,
+  const int* aux_advect,
+  const int* aux_diffuse,
+  int nAux) noexcept
 {
   using namespace amrex::literals;
 
   for (int n = 0; n < NUM_SPECIES; n++) {
-    forceY(i, j, k, n) =
-      a(i, j, k, n) + 0.5_rt * (dn(i, j, k, n) - dnp1k(i, j, k, n));
+    forceY(i, j, k, n) = a(i, j, k, n) +
+                         0.5_rt * (dn(i, j, k, n) - dnp1k(i, j, k, n)) +
+                         extRhoY(i, j, k, n);
     if (do_react != 0) {
       forceY(i, j, k, n) += r(i, j, k, n);
+    }
+    if (use_wbar != 0) {
+      forceY(i, j, k, n) += dwbar(i, j, k, n);
+    }
+    if (use_soret != 0) {
+      forceY(i, j, k, n) += dT(i, j, k, n);
     }
   }
   forceT(i, j, k) = a(i, j, k, NUM_SPECIES) +
                     0.5_rt * (dn(i, j, k, NUM_SPECIES) + ddn(i, j, k) -
-                              dnp1k(i, j, k, NUM_SPECIES) - ddnp1k(i, j, k));
+                              dnp1k(i, j, k, NUM_SPECIES) - ddnp1k(i, j, k)) +
+                    extRhoH(i, j, k);
 
   if (closed_chamber == 1) {
     forceT(i, j, k) += dp0dt;
+  }
+
+  for (int n = 0; n < nAux; n++) {
+    forceAux(i, j, k, n) = 0.0;
+    if (aux_diffuse[n] != 0) {
+      forceAux(i, j, k, n) +=
+        0.5_rt * (dn_aux(i, j, k, n) - dnp1k_aux(i, j, k, n));
+    }
+    if (aux_advect[n] != 0) {
+      forceAux(i, j, k, n) += a_aux(i, j, k, n);
+    }
+    // To do: source terms for aux
   }
 }
 
@@ -1008,14 +1055,14 @@ reactionRateRhoY(
 
   // Get T from Y/H.
   amrex::Real Tloc = T(i, j, k);
-  amrex::Real H =
-    rhoH(i, j, k) * rhoinv * 1.0e4_rt; // Include MKS -> CGS conversion
-  eos.HY2T(H, y, Tloc);
+  amrex::Real h_cgs =
+    m2c::H(rhoH(i, j, k) * rhoinv); // Include MKS -> CGS conversion
+  eos.HY2T(h_cgs, y, Tloc);
 
   // Get wdot.
-  rho = rho * 0.001_rt; // rho MKS -> CGS
+  amrex::Real rho_cgs = m2c::Rho(rho); // rho MKS -> CGS
   amrex::Real wdot[NUM_SPECIES] = {0.0_rt};
-  eos.RTY2WDOT(rho, Tloc, y, wdot);
+  eos.RTY2WDOT(rho_cgs, Tloc, y, wdot);
   for (int n = 0; n < NUM_SPECIES; n++) {
     rhoYdot(i, j, k, n) = wdot[n] * 1000.0_rt; // CGS -> MKS conversion
   }
@@ -1057,7 +1104,7 @@ est_divu_dt_1(
   using namespace amrex::literals;
 
   amrex::Real dtcell = 1.0e20_rt;
-  bool rho_is_okay = (rho(i, j, k) > rhomin);
+  const bool rho_is_okay = (rho(i, j, k) > rhomin);
 
   if (divu(i, j, k) > 0.0_rt) {
     dtcell = (rho_is_okay) ? (1.0_rt - rhomin / rho(i, j, k)) / divu(i, j, k)

@@ -348,6 +348,9 @@ PeleLM::MakeNewLevelFromCoarse(
 
   // Fill the leveldata_new
   fillcoarsepatch_state(lev, time, n_leveldata_new->state, m_nGrowState);
+  if (m_nAux > 0) {
+    fillcoarsepatch_aux(lev, time, n_leveldata_new->auxiliaries, m_nGrowState);
+  }
   fillcoarsepatch_gradp(lev, time, n_leveldata_new->gp, 0);
   n_leveldata_new->press.setVal(0.0);
 
@@ -459,6 +462,9 @@ PeleLM::RemakeLevel(
 
   // Fill the leveldata_new
   fillpatch_state(lev, time, n_leveldata_new->state, m_nGrowState);
+  if (m_nAux > 0) {
+    fillpatch_aux(lev, time, n_leveldata_new->auxiliaries, m_nGrowState);
+  }
   fillpatch_gradp(lev, time, n_leveldata_new->gp, 0);
   n_leveldata_new->press.setVal(0.0);
 

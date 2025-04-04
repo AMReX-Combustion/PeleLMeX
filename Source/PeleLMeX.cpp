@@ -60,6 +60,9 @@ PeleLM::getLevelDataPtr(
     m_nAux, m_nGrowState, m_use_soret, static_cast<int>(m_do_les));
   Real time = getTime(lev, a_time);
   fillpatch_state(lev, time, m_leveldata_floating->state, m_nGrowState);
+  if (m_nAux > 0) {
+    fillpatch_aux(lev, time, m_leveldata_floating->auxiliaries, m_nGrowState);
+  }
   return m_leveldata_floating.get();
 }
 
@@ -277,6 +280,44 @@ PeleLM::getIRVect()
   return r;
 }
 
+Vector<std::unique_ptr<MultiFab>>
+PeleLM::getAuxVect(const TimeStamp& a_time)
+{
+  AMREX_ASSERT(m_nAux > 0);
+  Vector<std::unique_ptr<MultiFab>> r;
+  r.reserve(finest_level + 1);
+  if (a_time == AmrOldTime) {
+    for (int lev = 0; lev <= finest_level; ++lev) {
+      r.push_back(std::make_unique<MultiFab>(
+        m_leveldata_old[lev]->auxiliaries, amrex::make_alias, 0, m_nAux));
+    }
+  } else {
+    for (int lev = 0; lev <= finest_level; ++lev) {
+      r.push_back(std::make_unique<MultiFab>(
+        m_leveldata_new[lev]->auxiliaries, amrex::make_alias, 0, m_nAux));
+    }
+  }
+  return r;
+}
+
+Vector<MultiFab*>
+PeleLM::getAuxDiffusivityVect(const TimeStamp& a_time)
+{
+  AMREX_ASSERT(m_nAux > 0);
+  Vector<MultiFab*> r;
+  r.reserve(finest_level + 1);
+  if (a_time == AmrOldTime) {
+    for (int lev = 0; lev <= finest_level; ++lev) {
+      r.push_back(&(m_leveldata_old[lev]->diff_aux_cc));
+    }
+  } else {
+    for (int lev = 0; lev <= finest_level; ++lev) {
+      r.push_back(&(m_leveldata_new[lev]->diff_aux_cc));
+    }
+  }
+  return r;
+}
+
 void
 PeleLM::averageDownState(const PeleLM::TimeStamp& a_time)
 {
@@ -311,6 +352,24 @@ PeleLM::averageDownScalars(const PeleLM::TimeStamp& a_time)
 #else
     average_down(
       ldataFine_p->state, ldataCrse_p->state, DENSITY, nScal,
+      refRatio(lev - 1));
+#endif
+  }
+}
+
+void
+PeleLM::averageDownAux(const PeleLM::TimeStamp& a_time)
+{
+  for (int lev = finest_level; lev > 0; --lev) {
+    auto* ldataFine_p = getLevelDataPtr(lev, a_time);
+    auto* ldataCrse_p = getLevelDataPtr(lev - 1, a_time);
+#ifdef AMREX_USE_EB
+    EB_average_down(
+      ldataFine_p->auxiliaries, ldataCrse_p->auxiliaries, 0, m_nAux,
+      refRatio(lev - 1));
+#else
+    average_down(
+      ldataFine_p->auxiliaries, ldataCrse_p->auxiliaries, 0, m_nAux,
       refRatio(lev - 1));
 #endif
   }

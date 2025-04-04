@@ -87,6 +87,26 @@ struct DefaultProblemSpecificFunctions
      */
   }
 
+  AMREX_GPU_DEVICE
+  AMREX_FORCE_INLINE
+  static void bcnormal_aux(
+    const amrex::Real x[AMREX_SPACEDIM],
+    amrex::CellData<amrex::Real>& aux_ext,
+    const int idir,
+    const int sgn,
+    const amrex::Real time,
+    amrex::GeometryData const& geomdata,
+    ProbParmDefault const& prob_parm,
+    pele::physics::PMF::PmfData::DataContainer const* pmf_data)
+  {
+    amrex::ignore_unused(
+      x, aux_ext, idir, sgn, time, geomdata, prob_parm, pmf_data);
+    amrex::Abort("Default empty bcnormal called, please override in your "
+                 "problem specific struct !");
+    // For filling auxiliary variable boundary conditions
+    // Retrieve nAux with aux_ext.ncomp, then aux_ext[n] = ...
+  }
+
   /**
    * \brief Alter the scalars face-centered diffusion coefficients
    *

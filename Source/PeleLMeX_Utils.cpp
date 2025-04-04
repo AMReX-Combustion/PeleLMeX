@@ -1259,6 +1259,26 @@ PeleLM::fetchDiffTypeArray(int scomp, int ncomp)
   return types;
 }
 
+Vector<int>
+PeleLM::fetchAdvTypeAuxArray(int scomp, int ncomp)
+{
+  Vector<int> types(ncomp);
+  for (int comp = 0; comp < ncomp; comp++) {
+    types[comp] = m_AdvTypeAux[scomp + comp];
+  }
+  return types;
+}
+
+Vector<int>
+PeleLM::fetchDiffTypeAuxArray(int scomp, int ncomp)
+{
+  Vector<int> types(ncomp);
+  for (int comp = 0; comp < ncomp; comp++) {
+    types[comp] = m_DiffTypeAux[scomp + comp];
+  }
+  return types;
+}
+
 Real
 PeleLM::MFSum(const Vector<const MultiFab*>& a_mf, int comp)
 {

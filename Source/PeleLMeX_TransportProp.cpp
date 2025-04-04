@@ -287,34 +287,36 @@ PeleLM::calcDiffusivity(const TimeStamp& a_time)
 {
   BL_PROFILE("PeleLMeX::calcDiffusivity()");
 
+  const amrex::Real Pr_inv = m_Prandtl_inv;
+  const amrex::Real Le_inv = m_Lewis_inv;
+  const bool do_fixed_Le = (m_fixed_Le != 0);
+  const bool do_fixed_Pr = (m_fixed_Pr != 0);
+  const bool do_soret = (m_use_soret != 0);
+  // pass soret array, or pass mu as dummy (won't do anything)
+  const int soret_idx = do_soret ? 1 : 0;
+
+  // Transport data pointer
+  auto const* ltransparm = trans_parms.device_parm();
+  auto const* leosparm = eos_parms.device_parm();
+#ifdef PELE_USE_PLASMA
+  GpuArray<Real, NUM_SPECIES> mwt{0.0};
+  {
+    auto eos = pele::physics::PhysicsType::eos(leosparm);
+    eos.molecular_weight(mwt.arr);
+  }
+#endif
+
   for (int lev = 0; lev <= finest_level; ++lev) {
 
     auto* ldata_p = getLevelDataPtr(lev, a_time);
-
-    // Transport data pointer
-    auto const* ltransparm = trans_parms.device_parm();
-    auto const* leosparm = eos_parms.device_parm();
 
     // MultiArrays
     auto const& sma = ldata_p->state.const_arrays();
     auto const& dma = ldata_p->diff_cc.arrays();
 #ifdef PELE_USE_PLASMA
     auto const& kma = ldata_p->mob_cc.arrays();
-    GpuArray<Real, NUM_SPECIES> mwt{0.0};
-    {
-      auto eos = pele::physics::PhysicsType::eos(leosparm);
-      eos.molecular_weight(mwt.arr);
-    }
 #endif
 
-    const amrex::Real Pr_inv = m_Prandtl_inv;
-    const amrex::Real Le_inv = m_Lewis_inv;
-    const bool do_fixed_Le = (m_fixed_Le != 0);
-    const bool do_fixed_Pr = (m_fixed_Pr != 0);
-    const bool do_soret = (m_use_soret != 0);
-    const int soret_idx =
-      do_soret ? 1
-               : 0; // pass soret array, or pass mu as dummy (won't do anything)
     amrex::ParallelFor(
       ldata_p->diff_cc, ldata_p->diff_cc.nGrowVect(),
       [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
@@ -332,6 +334,42 @@ PeleLM::calcDiffusivity(const TimeStamp& a_time)
           Array4<Real>(kma[box_no], 0));
 #endif
       });
+
+    // Fill the diff_aux MF with specified Schmidt number
+    for (int n = 0; n < m_nAux; n++) {
+      if (m_aux_Schmidt[n] > 0) {
+        MultiFab::Copy(
+          ldata_p->diff_aux_cc, ldata_p->diff_cc, NUM_SPECIES + 1, n, 1,
+          ldata_p->diff_cc.nGrowVect());
+        ldata_p->diff_aux_cc.mult(
+          1.0 / m_aux_Schmidt[n], n, 1, ldata_p->diff_cc.nGrow());
+      } else {
+        MultiFab::Copy(
+          ldata_p->diff_aux_cc, ldata_p->diff_cc, NUM_SPECIES, n, 1,
+          ldata_p->diff_cc.nGrowVect()); // lambda
+
+        const auto& ba = ldata_p->diff_cc.boxArray();
+        const auto& dm = ldata_p->diff_cc.DistributionMap();
+        const auto& factory = ldata_p->diff_cc.Factory();
+
+        amrex::MultiFab cp_cc;
+        int ngrow = ldata_p->diff_cc.nGrow();
+        cp_cc.define(ba, dm, 1, ngrow, MFInfo(), factory);
+        auto const& state_arr = ldata_p->state.const_arrays();
+        auto const& cp_arr = cp_cc.arrays();
+        amrex::ParallelFor(
+          cp_cc, cp_cc.nGrowVect(),
+          [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+            getCpmixGivenRYT(
+              i, j, k, Array4<Real const>(state_arr[box_no], DENSITY),
+              Array4<Real const>(state_arr[box_no], FIRSTSPEC),
+              Array4<Real const>(state_arr[box_no], TEMP),
+              Array4<Real>(cp_arr[box_no]), leosparm);
+          });
+
+        ldata_p->diff_aux_cc.divide(cp_cc, n, 1, ldata_p->diff_cc.nGrow());
+      }
+    }
   }
   Gpu::streamSynchronize();
 }

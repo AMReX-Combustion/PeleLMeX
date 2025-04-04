@@ -273,6 +273,12 @@ PeleLMeX algorithm
     peleLM.spark1.duration = 1e-3          # [OPT] Duration of the spark [s]
     peleLM.spark1.time = 1e-2              # [OPT] Time when spark starts [s]
 
+    peleLM.aux_vars = a b ...              # [OPT] Names of auxiliary variables
+    peleLM.a.advect = 1                    # [OPT, DEF = 1] Flag whether this variable is advected
+    peleLM.a.conservative = 1              # [OPT, DEF = 1] Flag whether this variable is conservative
+    peleLM.a.diffuse = 0                   # [OPT, DEF = 1] Flag whether this variable is diffused
+    peleLM.a.Schmidt = 0.7                 # [OPT, DEF = -1] Schmidt number for auxiliary variable. If unspecified or negative, assumed to diffuse with unity Lewis number.
+    
     peleLM.user_defined_ext_sources = 0    # [OPT, DEF=0] Enable user defined source terms. Requires local ProblemSpecificFunctions.cpp.
 
 
