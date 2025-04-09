@@ -38,6 +38,10 @@ Computational domain definition
 
 If specifying boundaries as ``Inflow``, the bcnormal function must be defined
 in the ``pelelmex_prob.H`` file for the case to define the inflow conditions.
+Note that the ``bcnormal`` function is also called for wall boundaries but should
+not modify them (except setting temperature on isothermal walls). Therefore, if
+there are a mixture of inflows with other boundary types, the bcnormal function
+should check which face is being set when applying the inflow boundary condition.
 ``Inflow`` boundaries may also be augmented with spatially and temporally
 varying turbulent fluctuations using the ``TurbInflow`` utility from
 PelePhysics. See the ``Exec/RegTests/TurbInflow`` test for an example of how
@@ -232,8 +236,8 @@ The following list of derived variables are available in PeleLMeX:
 Note that `mixture_fraction` and `progress_variable` requires additional inputs from the users as described below.
 The `derUserDefined` allow the user to define its own derived variable which can comprise several components. To do
 so, the user need to copy the Source/DeriveUserDefined.cpp file into their run folder and update the file. The number of
-components is defined based on the size of the vector returned by `pelelmex_setuserderives()`.  Be sure to add the 
-user derived variables to the input file via `amr.derive_plot_vars`.  
+components is defined based on the size of the vector returned by `pelelmex_setuserderives()`.  Be sure to add the
+user derived variables to the input file via `amr.derive_plot_vars`.
 
 PeleLMeX algorithm
 ------------------
@@ -278,7 +282,7 @@ PeleLMeX algorithm
     peleLM.a.conservative = 1              # [OPT, DEF = 1] Flag whether this variable is conservative
     peleLM.a.diffuse = 0                   # [OPT, DEF = 1] Flag whether this variable is diffused
     peleLM.a.Schmidt = 0.7                 # [OPT, DEF = -1] Schmidt number for auxiliary variable. If unspecified or negative, assumed to diffuse with unity Lewis number.
-    
+
     peleLM.user_defined_ext_sources = 0    # [OPT, DEF=0] Enable user defined source terms. Requires local ProblemSpecificFunctions.cpp.
 
 
@@ -455,15 +459,15 @@ Linear solvers are a key component of PeleLMeX algorithm, separate controls are 
 Hypre support
 ^^^^^^^^^^^^^
 
-Through AMReX, PeleLMeX provides interfaces to the `Hypre <https://github.com/hypre-space/hypre>`_ 
-preconditioners and solvers. These can be called as bottom solvers for the MLMG linear 
-solvers, for both cell-centered and node-based problems.  The Hypre solvers are particularly 
-useful if the geometry includes thin elements (such as tube or plate) or narrow channels, 
-as coarsening of the geometry is rapidly limited by the occurrence of multi-cut cells 
-(not supported by AMReX) and the linear solvers are no longer able to robustly 
-tackle projections and implicit diffusion solves.   
+Through AMReX, PeleLMeX provides interfaces to the `Hypre <https://github.com/hypre-space/hypre>`_
+preconditioners and solvers. These can be called as bottom solvers for the MLMG linear
+solvers, for both cell-centered and node-based problems.  The Hypre solvers are particularly
+useful if the geometry includes thin elements (such as tube or plate) or narrow channels,
+as coarsening of the geometry is rapidly limited by the occurrence of multi-cut cells
+(not supported by AMReX) and the linear solvers are no longer able to robustly
+tackle projections and implicit diffusion solves.
 
-To build Hypre, follow the steps outlined in the 
+To build Hypre, follow the steps outlined in the
 `AMReX documentation <https://amrex-codes.github.io/amrex/docs_html/LinearSolvers.html#external-solvers>`_.
 
 Next, in the ``GNUmakefile``, enable Hypre and define the path to the Hypre directory:
@@ -474,8 +478,8 @@ Next, in the ``GNUmakefile``, enable Hypre and define the path to the Hypre dire
     HYPRE_HOME = /path_to_hypre_dir/hypre/src/hypre
 
 
-Select input file controls are provided below for the ``mac_proj`` bottom solver, which 
-can be applied similarly for the ``nodal_proj``. Additional information on the Hypre 
+Select input file controls are provided below for the ``mac_proj`` bottom solver, which
+can be applied similarly for the ``nodal_proj``. Additional information on the Hypre
 solvers and parameters can be found in the `Hypre documentation <https://hypre.readthedocs.io/en/latest/>`_.
 
 ::
