@@ -129,7 +129,7 @@ the following convention. Given a version number MAJOR.MINOR.PATCH:
 2. MINOR version for when a significant feature is added (in a backward compatible manner), accumulation of smaller features, or changes to input file compatibility for less central aspects of the solver (e.g., post-processing) or aspects not affecting all cases
 3. PATCH version for backward compatible bug fixes
 
-PeleLMeX previously used YY.MM formatting for versions. These should be intepreted as version 0 subversions,
+PeleLMeX previously used YY.MM formatting for versions. These should be interpreted as version 0 subversions,
 e.g. v25.4 is equivalent to v0.25.4. Significant breaking changes were added for the release of v1.0.0. See
 [CHANGES.md](CHANGES.md) for updates needed to transition case files designed for earlier versions of PeleLMeX
 to this newer version.
