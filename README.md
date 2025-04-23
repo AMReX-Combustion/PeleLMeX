@@ -120,6 +120,20 @@ it is most effective to create a fork of this repository and share a branch of t
 
 New contributions to *PeleLMeX* are welcome ! Contributing Guidelines are provided in [CONTRIBUTING.md](CONTRIBUTING.md).
 
+## Versioning
+
+PeleLMeX now uses uses a type of semantic versioning to help users navigate different versions of the code,
+which are labeled with GitHub tags. These tagged versions are not exhaustive, and they adhere to
+the following convention. Given a version number MAJOR.MINOR.PATCH:
+1. MAJOR version for changes to key aspects of the solver affecting input/source files for all cases, when a key model is changed to significantly affect results of simulations, when a major new capability is added
+2. MINOR version for when a significant feature is added (in a backward compatible manner), accumulation of smaller features, or changes to input file compatibility for less central aspects of the solver (e.g., post-processing) or aspects not affecting all cases
+3. PATCH version for backward compatible bug fixes
+
+PeleLMeX previously used YY.MM formatting for versions. These should be intepreted as version 0 subversions,
+e.g. v25.4 is equivalent to v0.25.4. Significant breaking changes were added for the release of v1.0.0. See
+[CHANGES.md](CHANGES.md) for updates needed to transition case files designed for earlier versions of PeleLMeX
+to this newer version.
+
 ## Acknowledgment
 
 This research was supported by the Exascale Computing Project (ECP), Project
