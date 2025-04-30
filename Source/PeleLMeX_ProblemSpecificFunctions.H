@@ -279,6 +279,17 @@ struct DefaultProblemSpecificFunctions
      * Gpu::streamSynchronize();
      */
   }
+
+  static void patchFlowVariables(
+    const amrex::Geometry& geom,
+    ProbParmDefault const& prob_parm,
+    amrex::MultiFab& a_mf)
+  {
+    amrex::Abort(
+      "Using patchFlowVariables requires providing a definition in local "
+      "ProblemSpecificFunctions in pelelmex_prob.H");
+  }
+
 }; // namespace DefaultProblemSpecificFunctions
 
 #endif

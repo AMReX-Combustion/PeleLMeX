@@ -6,7 +6,6 @@
 #include <AMReX_ParmParse.H>
 #include <PeleLMeX_BCfill.H>
 #include <AMReX_FillPatchUtil.H>
-#include <PeleLMeX_PatchFlowVariables.H>
 #include <memory>
 #ifdef AMREX_USE_EB
 #include <AMReX_EBInterpolater.H>
@@ -1040,7 +1039,8 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
   // If m_do_patch_flow_variables is set as true, call user-defined function to
   // patch flow variables
   if (m_do_patch_flow_variables) {
-    patchFlowVariables(geom[a_lev], *lprobparm, ldata_p->state);
+    ProblemSpecificFunctions::patchFlowVariables(
+      geom[a_lev], *lprobparm, ldata_p->state);
   }
 
   // Enforce rho and rhoH consistent with temperature and mixture

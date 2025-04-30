@@ -119,6 +119,10 @@ non-trivial `modify_ext_sources` or `set_ode_names` functions, move these functi
 definitions to also be `static` members of the `MyProblemSpecificFunctions` struct and
 delete the `PeleLMeX_ProblemSpecificFunctions.cpp` file.
 
+8. If your case has a `PeleLMeX_PatchFlowVariables.cpp` file that defines the
+`patchFlowVaraibvles` function, move this function to be a static member of the
+`MyProblemSpecificFunctions` struct and delete the `PeleLMeX_PatchFlowVariables.cpp` file.
+
 Feel free to open a discussion on the PeleLMeX GitHub page if you run into issues. You can
 also view changes in PeleLMeX Pull Request #477 to see how these changes were implemented
 for the standard cases in PeleLMeX.
