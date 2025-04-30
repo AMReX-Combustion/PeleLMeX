@@ -1,11 +1,11 @@
 ## v1.0.0
 
 Version 1.0.0 is meant to be the first stable release of PeleLMeX. This version
-includes changes relative to prior versions (the latest being v0.25.4) that
+includes changes relative to prior versions (the latest being v0.25.4/v25.04) that
 require modification of case files for compatibility. The major change is that
 many user-defined functions have been gathered into a single `ProblemSpecificFunctions`
 struct, which allows for defaults to be used without redefining these functions
-for each new case. To update a case files from v0.25.4 to v0.1.0, the following
+for each new case. To update a case files from v0.25.04 to v1.0.0, the following
 steps are required:
 
 1. Define the `PeleLM::freeProbParm()` function in `pelelmex_prob.cpp`. This function

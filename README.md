@@ -130,7 +130,7 @@ the following convention. Given a version number MAJOR.MINOR.PATCH:
 3. PATCH version for backward compatible bug fixes
 
 PeleLMeX previously used YY.MM formatting for versions. These should be interpreted as version 0 subversions,
-e.g. v25.4 is equivalent to v0.25.4. Significant breaking changes were added for the release of v1.0.0. See
+e.g. v25.04 is equivalent to v0.25.04. Significant breaking changes were added for the release of v1.0.0. See
 [CHANGES.md](CHANGES.md) for updates needed to transition case files designed for earlier versions of PeleLMeX
 to this newer version.
 
