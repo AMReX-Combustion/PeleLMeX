@@ -149,12 +149,13 @@ The user parameters are gathered in the struct defined in ``pelelmex_prob.H``: :
 The initial solution consists of a premixed methane/air mixture in the upper part of the domain
 and pure hot air in the wake of the step. The default parameters provided above are overwritten
 using AMReX ParmParse in ``pelelmex_prob.cpp`` and the initial/boundary conditions implemented
-in the `MyProbIBC` struct of ``pelelmex_prob.H``. Alternatively, the user can write a custom
+in the `MyProblemSpecificFunctions` struct of ``pelelmex_prob.H``. Alternatively, the user can write a custom
 function to enforce an ignition kernel through the ``patchFlowVariables`` function in the
-problem-specific ``PeleLMeX_PatchFlowVariables.cpp`` file.
-It should be kept in mind that the ``patchFlowVariables`` function can be used if the user wants to patch certain flow variables after reading an existing solution from a plot file ( ``peleLM.initDataPlt_patch_flow_variables`` should be set to true).
+problem-specific functions struct.
+It should be kept in mind that the ``patchFlowVariables`` function can be used if the user wants to patch certain
+flow variables after reading an existing solution from a plot file ( ``peleLM.initDataPlt_patch_flow_variables`` should be set to true).
 
-In ``pelelmex_prob.H``, the `MyProbIBC` struct contains several functions in addition to
+In ``pelelmex_prob.H``, the `MyProblemSpecificFunctions` struct contains several functions in addition to
 `initdata` and `bcnormal` previously described in the :doc:`Tutorials_FlameSheet`:
 
 * ``setEBState()`` : takes in the EB face center coordinates and return a vector

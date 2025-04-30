@@ -33,7 +33,7 @@ The following two files in particular are necessary: ::
         pelelmex_prob.H
         pelelmex_prob.cpp
 
-The first file provides two C++ structs: `MyProbParm` and `MyProbIBC`. The former
+The first file provides two C++ structs: `MyProbParm` and `MyProblemSpecificFunctions`. The former
 contains the set of user-defined variables
 used during the simulation (value of inlet temperature, amplitude of the initial
 perturbation, ...), while the latter provides C++ kernels for applying the initial and
@@ -123,9 +123,9 @@ periodicity of the initial solution.
    Note that `MyProbParm` inherits from a default `ProbParmDefault` struct, which already contains the
    thermodynamic pressure `P_mean` parameter, since this parameter is always needed in PeleLMeX.
 
-The second struct, `MyProbIBC` here defines the two functions effectively filling the
+The second struct, `MyProblemSpecificFunctions` here defines the two functions effectively filling the
 initial solution and boundary conditions: `initdata` and `bcnormal`. The arguments of the
-`MyProbIBC::initdata` function are as follows:
+`MyProblemSpecificFunctions::initdata` function are as follows:
 
 * ``int i, int j, int k,`` : indices of the current grid cell the function is called to fill
 
@@ -141,7 +141,7 @@ initial solution and boundary conditions: `initdata` and `bcnormal`. The argumen
 
 * ``pele::physics::PMF::PmfData::DataContainer const * pmf_data`` : the Cantera solution data struct
 
-The reader is encouraged to look into the body of the `MyProbIBC::initdata` function for more details, a skeletal
+The reader is encouraged to look into the body of the `MyProblemSpecificFunctions::initdata` function for more details, a skeletal
 version of the function reads:
 
 * Compute the coordinate of the cell center using the cell indices and the `geomdata`.
@@ -163,7 +163,7 @@ function is only called in the direction/orientation where a Dirichlet boundary 
 Neumann for the state components.
 
 .. note::
-   Note that `MyProbIBC` inherits from a default `DefaultProbIBC` struct, effectively overriding
+   Note that `MyProblemSpecificFunctions` inherits from a default `DefaultProblemSpecificFunctions` struct, effectively overriding
    the default (empty) definition of the `initdata`, `bcnormal` and other functions. This allows,
    for example, to not have to provide a `bcnormal` function for a fully periodic case.
 
@@ -325,7 +325,7 @@ similar to :numref:`FS_InitSol`.
 
 It is interesting to note that the initial solution has a transverse velocity component
 even though only the axial velocity was extracted from a 1D Cantera solution to initialize
-the solution in the `MyProbIBC::initdata` function. This is because `PeleLMeX` performs an
+the solution in the `MyProblemSpecificFunctions::initdata` function. This is because `PeleLMeX` performs an
 initial projection (more than one actually). At this point, the `divU` constraint is
 mostly negative, which is counter-intuitive for a flame, but this is the consequence of
 the initialization process and the solution will rapidly relax to adapt to the `PeleLMeX` grid.

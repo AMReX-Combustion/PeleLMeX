@@ -120,7 +120,7 @@ influence of gravity. Note that the user can easily reverse the problem with a h
 The default parameters provided above are overwritten using AMReX ParmParse in ``pelelmex_prob.cpp``
 and the initial/boundary conditions implemented in ``pelelmex_prob.H``. Because this case does not feature
 any dirichlet BC on the state variables, the default ``bcnormal`` function is not overridden in
-the `MyProbIBC` struct defined in ``pelelmex_prob.H``.
+the `MyProblemSpecificFunctions` struct defined in ``pelelmex_prob.H``.
 
 The interesting aspect of this case is the inclusion of buoyancy effects in the presence of gravity.
 To trigger gravity the following input key is required: ::

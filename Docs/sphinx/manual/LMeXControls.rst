@@ -36,7 +36,7 @@ Computational domain definition
     peleLM.lo_bc = Interior Interior Inflow
     peleLM.hi_bc = Interior Interior Inflow
 
-If specifying boundaries as ``Inflow``, the `MyProbIBC::bcnormal` function must be defined
+If specifying boundaries as ``Inflow``, the `MyProblemSpecificFunctions::bcnormal` function must be defined
 in the ``pelelmex_prob.H`` file for the case to define the inflow conditions.
 Note that the ``bcnormal`` function is also called for wall boundaries but should
 not modify them (except setting temperature on isothermal walls). Therefore, if
