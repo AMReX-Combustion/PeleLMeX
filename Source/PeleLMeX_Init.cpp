@@ -260,6 +260,9 @@ PeleLM::initData()
 
     Print() << PrettyLine;
 
+    // Diagnostics
+    doDiagnostics();
+
   } else {
     //----------------------------------------------------------------
     // Read starting configuration from chk file.
