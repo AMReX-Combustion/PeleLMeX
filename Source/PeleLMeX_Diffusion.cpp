@@ -453,6 +453,11 @@ PeleLM::correctIsothermalBoundary(
     }
   }
   // TODO: wbar fluxes disabled for this case - boundary system becomes complex
+  for (int lev = 0; lev <= finest_level; lev++) {
+    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+      delete soretfluxes[lev][idim];
+    }
+  }
 }
 
 void
