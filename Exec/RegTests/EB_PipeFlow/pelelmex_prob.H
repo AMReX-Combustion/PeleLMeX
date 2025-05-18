@@ -219,37 +219,6 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
       }
     }
   }
-
-  AMREX_GPU_DEVICE
-  AMREX_FORCE_INLINE
-  static void setEBState(
-    const amrex::Real xEBface[AMREX_SPACEDIM],
-    const amrex::Real* /*xEBfaceNormal[AMREX_SPACEDIM]*/,
-    const amrex::CellData<const amrex::Real>& /*s_in*/,
-    amrex::Real s_ext[NVAR],
-    const amrex::Real /*time*/,
-    amrex::GeometryData const& /*geomdata*/,
-    MyProbParm const& /*prob_parm*/)
-  {
-    if (xEBface[1] > 0.0) {
-      s_ext[TEMP] = 800.0;
-    } else {
-      s_ext[TEMP] = 300.0;
-    }
-  }
-
-  AMREX_GPU_DEVICE
-  AMREX_FORCE_INLINE
-  static void setEBType(
-    const amrex::Real* /*xEBface[AMREX_SPACEDIM]*/,
-    int& EBflagType,
-    amrex::Real& EBfaceFrac,
-    amrex::GeometryData const& /*geomdata*/,
-    MyProbParm const& /*prob_parm*/)
-  {
-    EBflagType = 1;
-    EBfaceFrac = 1.0;
-  }
 };
 
 using ProblemSpecificFunctions = MyProblemSpecificFunctions;

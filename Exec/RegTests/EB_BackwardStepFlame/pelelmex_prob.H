@@ -136,7 +136,7 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
 
   AMREX_GPU_DEVICE
   AMREX_FORCE_INLINE
-  static void setEBState(
+  static void bcnormal_eb(
     const amrex::Real* /*xEBface[AMREX_SPACEDIM]*/,
     const amrex::Real* /*xEBfaceNormal[AMREX_SPACEDIM]*/,
     const amrex::CellData<const amrex::Real>& /*s_in*/,
@@ -150,7 +150,7 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
 
   AMREX_GPU_DEVICE
   AMREX_FORCE_INLINE
-  static void setEBType(
+  static void bctype_eb(
     const amrex::Real xEBface[AMREX_SPACEDIM],
     int& EBflagType,
     amrex::Real& EBfaceFrac,
@@ -158,10 +158,10 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
     MyProbParm const& /*prob_parm*/)
   {
     if (xEBface[0] > 0.0098) {
-      EBflagType = 1;
+      EBflagType = EBflagType = pelelmex::BCTypeEB::wall_isot;
       EBfaceFrac = 1.0;
     } else {
-      EBflagType = 0;
+      EBflagType = EBflagType = pelelmex::BCTypeEB::wall_adiab;
       EBfaceFrac = 0.0;
     }
   }

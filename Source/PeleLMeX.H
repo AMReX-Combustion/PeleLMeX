@@ -49,7 +49,6 @@ class SootModel;
 #endif
 
 class BPatch;
-struct EBhandle;
 
 const std::string PrettyLine = " " + std::string(78, '=') + "\n";
 
@@ -1287,8 +1286,8 @@ public:
     int flux_comp,
     const amrex::Array<const amrex::MultiFab*, AMREX_SPACEDIM>& a_faceState,
     int face_comp,
-    const amrex::MultiFab *a_EBvelocity,
-    const amrex::MultiFab *a_EBvalue,
+    const amrex::MultiFab* a_EBvelocity,
+    const amrex::MultiFab* a_EBvalue,
     int ncomp,
     int const* l_conserv_d,
     const amrex::Geometry& a_geom,
@@ -1447,28 +1446,23 @@ public:
 
   void getEBState(
     int a_lev,
-    const PeleLM::TimeStamp &a_time,
+    const PeleLM::TimeStamp& a_time,
     amrex::MultiFab& a_EBstate,
     int stateComp,
     int nComp);
 
-  amrex::Vector<std::unique_ptr<amrex::MultiFab> > getEBState(
-    int first_comp,
-    int ncomp,
-    const PeleLM::TimeStamp &a_time);
+  amrex::Vector<std::unique_ptr<amrex::MultiFab>>
+  getEBState(int first_comp, int ncomp, const PeleLM::TimeStamp& a_time);
 
   std::unique_ptr<amrex::MultiFab> getEBState(
-    int a_lev,
-    int first_comp,
-    int ncomp,
-    const PeleLM::TimeStamp &a_time);
+    int a_lev, int first_comp, int ncomp, const PeleLM::TimeStamp& a_time);
 
   amrex::FArrayBox getEBState(
-    const amrex::MFIter &a_mfi,
+    const amrex::MFIter& a_mfi,
     int a_lev,
     int first_comp,
     int ncomp,
-    const PeleLM::TimeStamp &a_time);
+    const PeleLM::TimeStamp& a_time);
 
   void getEBDiff(
     int a_lev,
