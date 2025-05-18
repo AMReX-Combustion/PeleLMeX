@@ -142,60 +142,63 @@ zero_visc(
   // velocity, ...)
 }
 
-struct EBhandle {
-    AMREX_GPU_DEVICE
-    AMREX_FORCE_INLINE
-    void bctype_eb(const amrex::Real xEBface[AMREX_SPACEDIM],
-                   int & EBflagType,
-                   amrex::GeometryData const& /*geomdata*/,
-                   ProbParm const& /*prob_parm*/) const
-    {
-        if ( xEBface[0] > 0.0098 ) {
-          EBflagType = pelelmex::BCTypeEB::wall_isot;
-        } else {
-          if (std::abs(xEBface[0]) <= 0.0015) {
-            EBflagType = pelelmex::BCTypeEB::inflow;
-          }
-        }
+struct EBhandle
+{
+  AMREX_GPU_DEVICE
+  AMREX_FORCE_INLINE
+  void bctype_eb(
+    const amrex::Real xEBface[AMREX_SPACEDIM],
+    int& EBflagType,
+    amrex::GeometryData const& /*geomdata*/,
+    ProbParm const& /*prob_parm*/) const
+  {
+    if (xEBface[0] > 0.0098) {
+      EBflagType = pelelmex::BCTypeEB::wall_isot;
+    } else {
+      if (std::abs(xEBface[0]) <= 0.0015) {
+        EBflagType = pelelmex::BCTypeEB::inflow;
+      }
     }
+  }
 
-    AMREX_GPU_DEVICE
-    AMREX_FORCE_INLINE
-    void bcnormal_eb(const amrex::Real xEBface[AMREX_SPACEDIM],
-                     const amrex::Real EBfaceNormal[AMREX_SPACEDIM], // Outward normal
-                     const amrex::Real s_in[NVAR],
-                     amrex::Real s_ext[NVAR],
-                     const amrex::Real /*time*/,
-                     amrex::GeometryData const& /*geomdata*/,
-                     ProbParm const& prob_parm) const
-    {
-        // Isothermal wall
-        s_ext[TEMP] = prob_parm.Twall;
+  AMREX_GPU_DEVICE
+  AMREX_FORCE_INLINE
+  void bcnormal_eb(
+    const amrex::Real xEBface[AMREX_SPACEDIM],
+    const amrex::Real EBfaceNormal[AMREX_SPACEDIM], // Outward normal
+    const amrex::Real s_in[NVAR],
+    amrex::Real s_ext[NVAR],
+    const amrex::Real /*time*/,
+    amrex::GeometryData const& /*geomdata*/,
+    ProbParm const& prob_parm) const
+  {
+    // Isothermal wall
+    s_ext[TEMP] = prob_parm.Twall;
 
-        // Inflow
-        if (std::abs(xEBface[0]) <= 0.0015) {
-            auto eos = pele::physics::PhysicsType::eos();
-            s_ext[VELX] = 0.0;
-            s_ext[VELY] = prob_parm.EBinflow_vel;
-            amrex::Real massfrac[NUM_SPECIES] = {0.0};
-            massfrac[CH4_ID] = prob_parm.EBinflow_Yfuel;
-            massfrac[O2_ID] = (1.0 - massfrac[CH4_ID]) * 0.233;
-            massfrac[N2_ID] =  1.0 - massfrac[CH4_ID] - massfrac[O2_ID];
+    // Inflow
+    if (std::abs(xEBface[0]) <= 0.0015) {
+      auto eos = pele::physics::PhysicsType::eos();
+      s_ext[VELX] = 0.0;
+      s_ext[VELY] = prob_parm.EBinflow_vel;
+      amrex::Real massfrac[NUM_SPECIES] = {0.0};
+      massfrac[CH4_ID] = prob_parm.EBinflow_Yfuel;
+      massfrac[O2_ID] = (1.0 - massfrac[CH4_ID]) * 0.233;
+      massfrac[N2_ID] = 1.0 - massfrac[CH4_ID] - massfrac[O2_ID];
 
-            amrex::Real P_cgs = prob_parm.P_mean * 10.0;
+      amrex::Real P_cgs = prob_parm.P_mean * 10.0;
 
-            s_ext[TEMP] = prob_parm.EBinflow_T;
-            amrex::Real rho_cgs, RhoH_temp;
-            eos.PYT2R(P_cgs, massfrac, s_ext[TEMP], rho_cgs);
-            s_ext[DENSITY] = rho_cgs * 1.0e3;
+      s_ext[TEMP] = prob_parm.EBinflow_T;
+      amrex::Real rho_cgs, RhoH_temp;
+      eos.PYT2R(P_cgs, massfrac, s_ext[TEMP], rho_cgs);
+      s_ext[DENSITY] = rho_cgs * 1.0e3;
 
-            eos.TY2H(s_ext[TEMP], massfrac, RhoH_temp);
-            s_ext[RHOH] = RhoH_temp * 1.0e-4 * s_ext[DENSITY];
+      eos.TY2H(s_ext[TEMP], massfrac, RhoH_temp);
+      s_ext[RHOH] = RhoH_temp * 1.0e-4 * s_ext[DENSITY];
 
-            for (int n = 0; n < NUM_SPECIES; n++) {
-                s_ext[FIRSTSPEC+n] = massfrac[n] * s_ext[DENSITY];
-            }
-        }
+      for (int n = 0; n < NUM_SPECIES; n++) {
+        s_ext[FIRSTSPEC + n] = massfrac[n] * s_ext[DENSITY];
+      }
     }
+  }
 };
 #endif

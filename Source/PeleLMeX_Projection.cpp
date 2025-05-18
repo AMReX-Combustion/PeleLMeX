@@ -435,8 +435,9 @@ PeleLM::doNodalProject(
 
 #ifdef AMREX_USE_EB
   if (m_useEBinflow) {
-    for(int lev = 0; lev <= finest_level; ++lev) {
-      nodal_projector->getLinOp().setEBInflowVelocity(lev, *getEBState(lev,VELX,AMREX_SPACEDIM,AmrNewTime));
+    for (int lev = 0; lev <= finest_level; ++lev) {
+      nodal_projector->getLinOp().setEBInflowVelocity(
+        lev, *getEBState(lev, VELX, AMREX_SPACEDIM, AmrNewTime));
     }
   }
 #endif

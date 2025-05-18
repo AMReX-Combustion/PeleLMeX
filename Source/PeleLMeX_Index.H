@@ -32,13 +32,13 @@
 
 #ifdef AMREX_USE_EB
 namespace pelelmex {
-  enum BCTypeEB {
-    wall_adiab = 0,
-    wall_isot,
-    wallslip_adiab,
-    wallslip_isot,
-    inflow
-  };
+enum BCTypeEB {
+  wall_adiab = 0,
+  wall_isot,
+  wallslip_adiab,
+  wallslip_isot,
+  inflow
+};
 }
 #endif
 

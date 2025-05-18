@@ -602,8 +602,8 @@ PeleLM::computeDifferentialDiffusionFluxes(
       a_fluxes, NUM_SPECIES, a_EBfluxes, 0,
       GetVecOfConstPtrs(getTempVect(a_time)), 0, {},
       GetVecOfConstPtrs(getDiffusivityVect(a_time)), NUM_SPECIES,
-      GetVecOfConstPtrs(getEBState(TEMP,1,a_time)), GetVecOfConstPtrs(EBdiff), bcRecTemp, 1,
-      do_avgDown, {});
+      GetVecOfConstPtrs(getEBState(TEMP, 1, a_time)), GetVecOfConstPtrs(EBdiff),
+      bcRecTemp, 1, do_avgDown, {});
   } else
 #endif
   {
@@ -1357,8 +1357,8 @@ PeleLM::differentialDiffusionUpdate(
       GetVecOfArrOfPtrs(fluxes), NUM_SPECIES, GetVecOfPtrs(EBfluxes), 0,
       GetVecOfConstPtrs(getTempVect(AmrNewTime)), 0, {},
       GetVecOfConstPtrs(getDiffusivityVect(AmrNewTime)), NUM_SPECIES,
-      GetVecOfConstPtrs(getEBState(TEMP,1,AmrNewTime)), GetVecOfConstPtrs(EBdiff), bcRecTemp, 1,
-          do_avgDown, {});
+      GetVecOfConstPtrs(getEBState(TEMP, 1, AmrNewTime)),
+      GetVecOfConstPtrs(EBdiff), bcRecTemp, 1, do_avgDown, {});
   } else
 #endif
   {
@@ -1598,8 +1598,8 @@ PeleLM::deltaTIter_update(
       a_fluxes, NUM_SPECIES, a_ebfluxes, 0,
       GetVecOfConstPtrs(getTempVect(AmrNewTime)), 0, {},
       GetVecOfConstPtrs(getDiffusivityVect(AmrNewTime)), NUM_SPECIES,
-      GetVecOfConstPtrs(getEBState(TEMP,1,AmrNewTime)), GetVecOfConstPtrs(EBdiff), bcRecTemp, 1,
-          do_avgDown, {});
+      GetVecOfConstPtrs(getEBState(TEMP, 1, AmrNewTime)),
+      GetVecOfConstPtrs(EBdiff), bcRecTemp, 1, do_avgDown, {});
   } else
 #endif
   {
