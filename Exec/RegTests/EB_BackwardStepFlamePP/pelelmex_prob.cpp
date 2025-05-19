@@ -17,3 +17,8 @@ PeleLM::readProbParm() // NOLINT(readability-make-member-function-const)
   pp.query("EBinflow_vel", prob_parm->EBinflow_vel);
   pp.query("EBinflow_Yfuel", prob_parm->EBinflow_Yfuel);
 }
+
+void
+PeleLM::freeProbParm()
+{
+}
