@@ -717,7 +717,7 @@ PeleLM::advFluxDivergence(
         , auto const& apz_arr = ebfact.getAreaFrac()[2]->const_array(mfi););
       ParallelFor(
         bx, ncomp, [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
-          if (!l_conserv_d[n] && vfrac_arr(i, j, k) > 0.) {
+          if (l_conserv_d[n] == 0 && vfrac_arr(i, j, k) > 0.) {
             Real qwsum = AMREX_D_TERM(
               apx_arr(i, j, k) * facex(i, j, k, n) +
                 apx_arr(i + 1, j, k) * facex(i + 1, j, k, n),

@@ -434,7 +434,7 @@ PeleLM::doNodalProject(
   nodal_projector->setDomainBC(lobc, hibc);
 
 #ifdef AMREX_USE_EB
-  if (m_useEBinflow) {
+  if (m_useEBinflow != 0) {
     for (int lev = 0; lev <= finest_level; ++lev) {
       nodal_projector->getLinOp().setEBInflowVelocity(
         lev, *getEBState(lev, VELX, AMREX_SPACEDIM, AmrNewTime));

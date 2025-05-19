@@ -111,7 +111,7 @@ PeleLM::computeVelocityAdvTerm(std::unique_ptr<AdvanceAdvData>& advData)
         bcRecVel, bcRecVel_d.dataPtr(), AdvTypeVel_d.dataPtr(),
 #ifdef AMREX_USE_EB
         ebfact,
-        m_useEBinflow
+        (m_useEBinflow != 0)
           ? getEBState(mfi, lev, VELX, AMREX_SPACEDIM, AmrOldTime).const_array()
           : Array4<Real const>{},
 #endif
@@ -167,7 +167,7 @@ PeleLM::computeVelocityAdvTerm(std::unique_ptr<AdvanceAdvData>& advData)
       grids[lev], dmap[lev], AMREX_SPACEDIM, nGrow_divT, MFInfo(),
       EBFactory(lev));
     divTmp.setVal(0.0);
-    if (m_useEBinflow) {
+    if (m_useEBinflow != 0) {
       advFluxDivergence(
         lev, divTmp, 0, divu, GetArrOfConstPtrs(fluxes[lev]), 0,
         GetArrOfConstPtrs(faces[lev]), 0,
@@ -440,7 +440,7 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
         bcRecSpec, bcRecSpec_d.dataPtr(), AdvTypeSpec_d.dataPtr(),
 #ifdef AMREX_USE_EB
         ebfact,
-        m_useEBinflow
+        (m_useEBinflow != 0)
           ? getEBState(mfi, lev, FIRSTSPEC, NUM_SPECIES - NUM_IONS, AmrOldTime)
               .const_array()
           : Array4<Real const>{},
@@ -479,7 +479,7 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
           AdvTypeIons_d.dataPtr(),
 #ifdef AMREX_USE_EB
           ebfact,
-          m_useEBinflow
+          (m_useEBinflow != 0)
             ? getEBState(mfi, lev, FIRSTSPEC + ion_idx, 1, AmrOldTime)
                 .const_array()
             : Array4<Real const>{},
@@ -498,9 +498,10 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
         bcRecSpec, bcRecSpec_d.dataPtr(), AdvTypeSpec_d.dataPtr(),
 #ifdef AMREX_USE_EB
         ebfact,
-        m_useEBinflow ? getEBState(mfi, lev, FIRSTSPEC, NUM_SPECIES, AmrOldTime)
-                          .const_array()
-                      : Array4<Real const>{},
+        (m_useEBinflow != 0)
+          ? getEBState(mfi, lev, FIRSTSPEC, NUM_SPECIES, AmrOldTime)
+              .const_array()
+          : Array4<Real const>{},
 #endif
         m_Godunov_ppm != 0, m_Godunov_ForceInTrans != 0, is_velocity,
         fluxes_are_area_weighted, m_advection_type, m_Godunov_ppm_limiter);
@@ -634,8 +635,9 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
         bcRecTemp, bcRecTemp_d.dataPtr(), AdvTypeTemp_d.dataPtr(),
 #ifdef AMREX_USE_EB
         ebfact,
-        m_useEBinflow ? getEBState(mfi, lev, TEMP, 1, AmrOldTime).const_array()
-                      : Array4<Real const>{},
+        (m_useEBinflow != 0)
+          ? getEBState(mfi, lev, TEMP, 1, AmrOldTime).const_array()
+          : Array4<Real const>{},
 #endif
         m_Godunov_ppm != 0, m_Godunov_ForceInTrans != 0, is_velocity,
         fluxes_are_area_weighted, m_advection_type, m_Godunov_ppm_limiter);
@@ -722,8 +724,9 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
         bcRecRhoH, bcRecRhoH_d.dataPtr(), AdvTypeRhoH_d.dataPtr(),
 #ifdef AMREX_USE_EB
         ebfact,
-        m_useEBinflow ? getEBState(mfi, lev, RHOH, 1, AmrOldTime).const_array()
-                      : Array4<Real const>{},
+        (m_useEBinflow != 0)
+          ? getEBState(mfi, lev, RHOH, 1, AmrOldTime).const_array()
+          : Array4<Real const>{},
 #endif
         m_Godunov_ppm != 0, m_Godunov_ForceInTrans != 0, is_velocity,
         fluxes_are_area_weighted, m_advection_type, m_Godunov_ppm_limiter);
@@ -821,7 +824,7 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
       grids[lev], dmap[lev], NUM_SPECIES + 1, nGrow_divTmp, MFInfo(),
       EBFactory(lev));
     divTmp.setVal(0.0);
-    if (m_useEBinflow) {
+    if (m_useEBinflow != 0) {
       advFluxDivergence(
         lev, divTmp, 0, divu, GetArrOfConstPtrs(fluxes[lev]), 0,
         GetArrOfConstPtrs(fluxes[lev]),

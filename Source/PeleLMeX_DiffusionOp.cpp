@@ -1137,7 +1137,7 @@ DiffusionTensorOp::compute_divtau(
       lev, 0, 1, doZeroVisc, {a_bcrec}, *a_beta[lev], addTurbContrib);
     m_apply_op->setShearViscosity(
       lev, GetArrOfConstPtrs(beta_ec), MLMG::Location::FaceCentroid);
-    if (m_pelelm->m_useEBinflow) {
+    if (m_pelelm->m_useEBinflow != 0) {
       m_apply_op->setEBShearViscosityWithInflow(
         lev, *a_beta[lev],
         *(m_pelelm->getEBState(
@@ -1228,7 +1228,7 @@ DiffusionTensorOp::diffuse_velocity(
 #ifdef AMREX_USE_EB
     m_solve_op->setShearViscosity(
       lev, GetArrOfConstPtrs(beta_ec), MLMG::Location::FaceCentroid);
-    if (m_pelelm->m_useEBinflow) {
+    if (m_pelelm->m_useEBinflow != 0) {
       m_solve_op->setEBShearViscosityWithInflow(
         lev, *a_beta[lev],
         *(m_pelelm->getEBState(

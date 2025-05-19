@@ -716,7 +716,7 @@ PeleLM::readParameters()
   pp.query("adv_redist_type", m_adv_redist_type);
   pp.query("diff_redist_type", m_diff_redist_type);
   pp.query("EBinflow", m_useEBinflow);
-  if (m_isothermalEB == 1 || m_useEBinflow == 1) {
+  if (m_isothermalEB != 0 || m_useEBinflow != 0) {
     checkEBInflowFunctions();
   }
 #endif
