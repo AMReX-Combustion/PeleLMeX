@@ -158,10 +158,10 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
     MyProbParm const& /*prob_parm*/)
   {
     if (xEBface[0] > 0.0098) {
-      EBflagType = EBflagType = pelelmex::BCTypeEB::wall_isot;
+      EBflagType = pelelmex::BCTypeEB::wall_isot;
       EBfaceFrac = 1.0;
     } else {
-      EBflagType = EBflagType = pelelmex::BCTypeEB::wall_adiab;
+      EBflagType = pelelmex::BCTypeEB::wall_adiab;
       EBfaceFrac = 0.0;
     }
   }
