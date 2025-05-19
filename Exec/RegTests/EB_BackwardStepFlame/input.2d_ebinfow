@@ -14,8 +14,8 @@ peleLM.hi_bc = Outflow NoSlipWallAdiab      # bc in x_hi y_hi (z_hi)
 amr.n_cell          = 256 64                # Level 0 number of cells in each direction
 amr.v               = 1                     # AMR verbose
 amr.max_level       = 0                     # maximum level number allowed
-amr.ref_ratio       = 2 2 2 2               # refinement ratio
-amr.regrid_int      = 5                     # how often to regrid
+# amr.ref_ratio       = 2 2 2 2               # refinement ratio
+# amr.regrid_int      = 5                     # how often to regrid
 amr.n_error_buf     = 2 2 2 2               # number of buffer cells in error est
 amr.grid_eff        = 0.7                   # what constitutes an efficient grid
 amr.blocking_factor = 16                    # block factor in grid generation (min box size)
@@ -30,6 +30,7 @@ prob.meanFlowMag = 10.0
 prob.Y_fuel = 0.0
 prob.Y_oxid = 0.23
 prob.EBinflow_Yfuel = 0.1
+peleLM.EBinflow = 1
 
 #---------------------- PeleLM CONTROL ---------------------------
 peleLM.v = 1                                # PeleLMeX verbose
@@ -37,6 +38,8 @@ peleLM.use_wbar = 1                         # Include Wbar term in species diffu
 peleLM.sdc_iterMax = 2                      # Number of SDC iterations
 peleLM.num_init_iter = 3                    # Number of initial iterations
 peleLM.floor_species = 0                    # Enforce species positivity (non-conservative !)
+peleLM.initDataPlt_patch_flow_variables = false      # Enable flow variable patching after reading a plot solution file
+
 
 #---------------------- Temporal CONTROL -------------------------
 peleLM.do_temporals = 1                     # Turn temporals ON/OFF
@@ -46,16 +49,17 @@ peleLM.do_mass_balance = 1                  # Compute mass balance
 peleLM.do_species_balance = 1               # Compute species balance
 
 #---------------------- Time Stepping CONTROL --------------------
-amr.max_step = 200                          # Maximum number of time steps
+amr.max_step = 250                          # Maximum number of time steps
 amr.stop_time = 0.1                         # final simulation physical time
 amr.cfl = 0.4                               # CFL number for hyperbolic system
 amr.dt_shrink = 0.001                       # Scale back initial timestep
 amr.dt_change_max = 1.1                     # Maximum dt increase btw successive steps
 
 #---------------------- IO CONTROL -------------------------------
-#amr.restart = chk00200                     # Restart checkpoint file
+#amr.initDataPlt = plt_cold
+#amr.restart = chk00250                     # Restart checkpoint file
 amr.check_int = 100                         # Frequency of checkpoint output
-amr.plot_int = 10                           # Frequency of pltfile output
+amr.plot_int = 50                           # Frequency of pltfile output
 amr.derive_plot_vars = avg_pressure mag_vort mass_fractions
 
 #---------------------- Derived CONTROLS -------------------------
@@ -85,7 +89,6 @@ eb2.box_hi =     0.01     0.0
 eb2.box_has_fluid_inside = 0
 eb2.small_volfrac   = 1.0e-4
 peleLM.isothermal_EB = 1
-peleLM.EBinflow = 1
 
 #---------------------- Linear solver CONTROL --------------------
 nodal_proj.verbose = 0                      # Nodal projection verbose
