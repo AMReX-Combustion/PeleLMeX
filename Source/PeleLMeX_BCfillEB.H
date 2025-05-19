@@ -28,7 +28,7 @@ private:
   template <typename>
   static constexpr std::false_type check(...);
 
-  typedef decltype(check<T>(0)) type;
+  using type = decltype(check<T>(nullptr));
 
 public:
   static constexpr bool value = type::value;
@@ -53,7 +53,7 @@ private:
   template <typename>
   static constexpr std::false_type check(...);
 
-  typedef decltype(check<T>(0)) type;
+  using type = decltype(check<T>(nullptr));
 
 public:
   static constexpr bool value = type::value;
@@ -170,7 +170,7 @@ private:
   template <typename>
   static constexpr std::false_type check(...);
 
-  typedef decltype(check<T>(0)) type;
+  using type = decltype(check<T>(nullptr));
 
 public:
   static constexpr bool value = type::value;
@@ -192,7 +192,7 @@ private:
   template <typename>
   static constexpr std::false_type check(...);
 
-  typedef decltype(check<T>(0)) type;
+  using type = decltype(check<T>(nullptr));
 
 public:
   static constexpr bool value = type::value;

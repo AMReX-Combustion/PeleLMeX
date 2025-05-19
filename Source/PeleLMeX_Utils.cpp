@@ -737,7 +737,7 @@ PeleLM::advFluxDivergence(
     } else {
       ParallelFor(
         bx, ncomp, [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
-          if (!l_conserv_d[n]) {
+          if (l_conserv_d[n] == 0) {
             Real qavg = AMREX_D_TERM(
               facex(i, j, k, n) + facex(i + 1, j, k, n),
               +facey(i, j, k, n) + facey(i, j + 1, k, n),
