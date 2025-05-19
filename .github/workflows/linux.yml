@@ -129,7 +129,7 @@ jobs:
     - name: Run
       working-directory: ./Exec/RegTests/EB_BackwardStepFlame/
       run: |
-        mpirun -n 2 ./PeleLMeX2d.gnu.MPI.ex input.2d amr.max_step=2 amr.plot_int=-1 amr.check_int=-1 amrex.abort_on_unused_inputs=1
+        mpirun -n 2 ./PeleLMeX2d.gnu.MPI.ex eb_bfs.inp amr.max_step=2 amr.plot_int=-1 amr.check_int=-1 amrex.abort_on_unused_inputs=1
 
   # Build and Run the Plasma flamesheet with GNU9.3 and MPI support
   PLASMA:
