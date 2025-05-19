@@ -75,20 +75,20 @@ struct PeleLMFillBCStateEB
 
   AMREX_GPU_DEVICE
   void operator()(
-    int i,
-    int j,
-    int k,
-    amrex::Array4<const amrex::Real> const& state,
-    amrex::Array4<amrex::Real> const& ebState,
-    const int firstcomp,
-    const int numcomp,
+    int /*i*/,
+    int /*j*/,
+    int /*k*/,
+    amrex::Array4<const amrex::Real> const& /*state*/,
+    amrex::Array4<amrex::Real> const& /*ebState*/,
+    const int /*firstcomp*/,
+    const int /*numcomp*/,
     AMREX_D_DECL(
-      amrex::Array4<const amrex::Real> const& ebfc_x,
-      amrex::Array4<const amrex::Real> const& ebfc_y,
-      amrex::Array4<const amrex::Real> const& ebfc_z),
-    amrex::Array4<amrex::Real const> const& ebnorm,
-    amrex::GeometryData const& geom,
-    const amrex::Real time) const
+      amrex::Array4<const amrex::Real> const& /*ebfc_x*/,
+      amrex::Array4<const amrex::Real> const& /*ebfc_y*/,
+      amrex::Array4<const amrex::Real> const& /*ebfc_z*/),
+    amrex::Array4<amrex::Real const> const& /*ebnorm*/,
+    amrex::GeometryData const& /*geom*/,
+    const amrex::Real /*time*/) const
   {
   }
 };
@@ -214,17 +214,17 @@ struct PeleLMFillBCTypeEB
 
   AMREX_GPU_DEVICE
   void operator()(
-    int i,
-    int j,
-    int k,
-    int& EBFlagType,
-    amrex::Real& EBfaceFrac,
+    int /*i*/,
+    int /*j*/,
+    int /*k*/,
+    int& /*EBFlagType*/,
+    amrex::Real& /*EBfaceFrac*/,
     AMREX_D_DECL(
-      amrex::Array4<const amrex::Real> const& ebfc_x,
-      amrex::Array4<const amrex::Real> const& ebfc_y,
-      amrex::Array4<const amrex::Real> const& ebfc_z),
-    amrex::GeometryData const& geom,
-    ProbParm const& prob_parm) const
+      amrex::Array4<const amrex::Real> const& /*ebfc_x*/,
+      amrex::Array4<const amrex::Real> const& /*ebfc_y*/,
+      amrex::Array4<const amrex::Real> const& /*ebfc_z*/),
+    amrex::GeometryData const& /*geom*/,
+    ProbParm const& /*prob_parm*/) const
   {
   }
 };
@@ -253,7 +253,7 @@ struct PeleLMFillBCTypeEB<T, true>
       amrex::Array4<const amrex::Real> const& ebfc_y,
       amrex::Array4<const amrex::Real> const& ebfc_z),
     amrex::GeometryData const& geom,
-    ProbParm const& prob_parm) const
+    ProbParm const& /*prob_parm*/) const
   {
     // Get the EBface centroid coordinates
     const amrex::Real* dx = geom.CellSize();
