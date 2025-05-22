@@ -1,11 +1,12 @@
-## Changes since last release
+## v1.1.0
 
-EB-Inflow capability is being added in PR #515. To enable this capability, the optional
+EB-Inflow capability was added in PR #515. To enable this capability, the optional
 `setEBState` and `setEBType` problem-specific functions are being renamed and having the
 interfaces updated, becoming `bcnormal_eb` and `bctype_eb`, respectively. See the
 `pelelmex_prob.H` file in the EB_BackwardStepFlame case for examples and the new required
 interface. Errors will be raised if isothermal EBs or EB inflows are used without the
-new functions being properly defined.
+new functions being properly defined. Note this capability is still under development and
+may be subject to further change/enhancements.
 
 ## v1.0.0
 
