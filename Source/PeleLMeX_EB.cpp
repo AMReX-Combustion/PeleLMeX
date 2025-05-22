@@ -783,7 +783,7 @@ PeleLM::checkEBInflowFunctions()
     Abort("Provided ProblemSpecificFunctions doesn't have a viable bctype_eb "
           "function");
   }
-  if (m_verbose != 0 && m_useEBinflow) {
+  if (m_verbose != 0 && m_useEBinflow != 0) {
     Print() << "WARNING: EB-inflow capability is experimental. Scalar "
                "diffusion is not supported at these boundaries and future "
                "interface changes are possible!"
