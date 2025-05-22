@@ -423,8 +423,13 @@ Inflow boundaries on EB surfaces may also be specified through experimental capa
    peleLM.EBinflow = 1
 
 Similarly to isothermal boundaries, the user is responsible for specifying the inflow conditions using the `bcnormal_eb` function,
-but this function must not specify all state variables in the region of th einflow. Again, an example is provided in the
+but this function must not specify all state variables in the region of the inflow. Again, an example is provided in the
 ``Exec/RegTest/EB_BackwardStepFlame`` test case.
+
+.. note::
+   EB inflow capability is still experimental. Scalar diffusion at these boundaries is not yet supported. This capability and the user interface
+   are subject to potential change in the future and bugs/unanticipated behavior are more likely with this capability for now. Potential changes
+   may also impact the isothermal EB capability.
 
 Lastly, it is possible to change the default redistribution scheme described in the :ref:`geometry with embedded boundaries section: <ssec:geoEB>`
 ::
