@@ -784,9 +784,10 @@ PeleLM::checkEBInflowFunctions()
           "function");
   }
   if (m_verbose != 0 && m_useEBinflow) {
-    Print() << "WANRING: EB-inflow capability is experimental. Scalar "
+    Print() << "WARNING: EB-inflow capability is experimental. Scalar "
                "diffusion is not supported at these boundaries and future "
                "interface changes are possible!"
+            << std::endl;
   }
 }
 #endif
