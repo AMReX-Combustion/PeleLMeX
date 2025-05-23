@@ -10,6 +10,10 @@
 #include <PMF.H>
 #include <PMFData.H>
 #include <PelePhysics.H>
+#include <Utilities.H>
+
+namespace m2c = pele::physics::utilities::mks2cgs;
+namespace c2m = pele::physics::utilities::cgs2mks;
 
 struct MyProbParm : public ProbParmDefault
 {
@@ -17,6 +21,7 @@ struct MyProbParm : public ProbParmDefault
   amrex::Real Y_O2 = 0.233;
   amrex::Real Y_N2 = 0.767;
   amrex::Real vel = 0.;
+  amrex::Real part_Re = -1.;
 };
 
 struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
@@ -39,7 +44,6 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
     massfrac[N2_ID] = prob_parm.Y_N2;
     massfrac[O2_ID] = prob_parm.Y_O2;
     state(i, j, k, TEMP) = prob_parm.T0;
-
     state(i, j, k, VELX) = prob_parm.vel;
 #if (AMREX_SPACEDIM == 2)
     state(i, j, k, VELY) = 0.0;
@@ -48,17 +52,17 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
     state(i, j, k, VELZ) = 0.0;
 #endif
 
-    amrex::Real P_cgs = prob_parm.P_mean * 10.0;
+    amrex::Real P_cgs = m2c::P(prob_parm.P_mean);
 
     // Density
     amrex::Real rho_cgs = 0.0;
     eos.PYT2R(P_cgs, massfrac, state(i, j, k, TEMP), rho_cgs);
-    state(i, j, k, DENSITY) = rho_cgs * 1.0e3;
+    state(i, j, k, DENSITY) = c2m::Rho(rho_cgs);
 
     // Enthalpy
     amrex::Real h_cgs = 0.0;
     eos.TY2H(state(i, j, k, TEMP), massfrac, h_cgs);
-    state(i, j, k, RHOH) = h_cgs * 1.0e-4 * state(i, j, k, DENSITY);
+    state(i, j, k, RHOH) = c2m::H(h_cgs) * state(i, j, k, DENSITY);
 
     // Species mass
     for (int n = 0; n < NUM_SPECIES; n++) {
@@ -86,17 +90,17 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
     massfrac[O2_ID] = prob_parm.Y_O2;
     s_ext[TEMP] = prob_parm.T0;
     amrex::Real rho_cgs, P_cgs;
-    P_cgs = prob_parm.P_mean * 10.;
+    P_cgs = m2c::P(prob_parm.P_mean);
 
     auto eos = pele::physics::PhysicsType::eos();
     eos.PYT2R(P_cgs, massfrac.data(), prob_parm.T0, rho_cgs);
-    amrex::Real rho_mks = rho_cgs * 1.0e3; // CGS -> MKS conversion
-    s_ext[DENSITY] = rho_mks;
-    amrex::Real rhoH;
-    eos.TY2H(prob_parm.T0, massfrac.data(), rhoH);
-    s_ext[RHOH] = rhoH * 1.0e-4 * rho_mks;
+
+    s_ext[DENSITY] = c2m::Rho(rho_cgs);
+    amrex::Real h_cgs;
+    eos.TY2H(prob_parm.T0, massfrac.data(), h_cgs);
+    s_ext[RHOH] = c2m::H(h_cgs) * s_ext[DENSITY];
     for (int n = 0; n < NUM_SPECIES; n++) {
-      s_ext[FIRSTSPEC + n] = massfrac[n] * rho_mks;
+      s_ext[FIRSTSPEC + n] = massfrac[n] * s_ext[DENSITY];
     }
   }
 };

@@ -2,75 +2,64 @@
 geometry.is_periodic = 1 0               # For each dir, 0: non-perio, 1: periodic
 geometry.coord_sys   = 0                  # 0 => cart, 1 => RZ
 geometry.prob_lo     = 0.0 0.0 0.0        # x_lo y_lo (z_lo)
-geometry.prob_hi     = 1. 1. 1.        # x_hi y_hi (z_hi)
+geometry.prob_hi     = 1. 0.1 0.1        # x_hi y_hi (z_hi)
 
-# >>>>>>>>>>>>>  BC FLAGS <<<<<<<<<<<<<<<<
+#--------------------------BC FLAGS------------------------------
 # Interior, Inflow, Outflow, Symmetry,
 # SlipWallAdiab, NoSlipWallAdiab, SlipWallIsotherm, NoSlipWallIsotherm
-peleLM.lo_bc = Interior SlipWallAdiab
-peleLM.hi_bc = Interior SlipWallAdiab
+peleLM.lo_bc = Inflow SlipWallAdiab
+peleLM.hi_bc = Outflow SlipWallAdiab
 
 #-------------------------AMR CONTROL----------------------------
-amr.n_cell          = 128 128 128         # Level 0 number of cells in each direction
+amr.n_cell          = 160 16 16         # Level 0 number of cells in each direction
 amr.v               = 1                # AMR verbose
 amr.max_level       = 0                # maximum level number allowed
-amr.regrid_int      = 4                # how often to regrid
-amr.n_error_buf     = 1 1 2 2          # number of buffer cells in error est
-amr.grid_eff        = 0.7              # what constitutes an efficient grid
-amr.ref_ratio       = 2 2 2 2
-
 amr.blocking_factor = 16               # block factor in grid generation (min box size)
 amr.max_grid_size   = 64               # max box size
 
-# amr.blocking_factor = 64               # block factor in grid generation (min box size)
-# amr.max_grid_size   = 64               # max box size
-# amr.initial_grid_file = two_d_gridfiles/gridfile_64_1
-# amr.regrid_file = two_d_gridfiles/gridfile_64_2
-
-#--------------------------- Problem -------------------------------
-prob.P_mean = 1.e6 # 10 bar
-prob.init_redist = 1
-prob.init_T      = 1500.
-prob.init_vel    = 0.0
+#--------------------------Problem--------------------------------
+prob.P_mean        = 101325.
+prob.init_redist   = 0
+prob.init_T        = 1000 # K
+prob.init_vel      = 0.119945
 prob.num_particles = (1, 1, 1)
-prob.part_temp     = 300.
-prob.part_dia      = 1.e-4
-prob.part_vel      = 15. 0. 0.
+prob.part_temp     = 315.
+prob.part_dia      = 1.961E-3
+prob.part_vel      = 0. 0. 0.
+prob.part_Re       = -1
 
-#-------------------------PeleLM CONTROL----------------------------
+#------------------------PeleLM CONTROL-----------------------------
 peleLM.v = 1
-peleLM.sdc_iterMax = 3
-peleLM.deltaT_verbose = 2
-#peleLM.deltaT_iterMax = 10
-#peleLM.deltaT_tol = 1e-10
-#peleLM.deltaT_crashIfFailing = 0
+peleLM.deltaT_verbose = 1
+peleLM.deltaT_iterMax = 1000
 
 peleLM.do_temporals = 0
 peleLM.num_init_iter = 0
 
-amr.plot_int = 100
+#------------------------TIME STEPPING------------------------------
 #amr.max_step = 5
-#amr.dt_shrink = 1e-15
-amr.stop_time = 0.01
-#amr.cfl = 0.01
-amr.fixed_dt = 1e-5
+amr.stop_time = 4.5 
+amr.fixed_dt = 1e-3
+
+#--------------------------IO CONTROL-------------------------------
+amr.plot_int = 100
 amr.plot_speciesState = 1
 amr.plot_grad_p = 0
 amr.derive_plot_vars = mass_fractions
 
-# --------------- INPUTS TO CHEMISTRY REACTOR ---------------
-peleLM.chem_integrator = "ReactorNull"
-
-mac_proj.verbose = 0
-nodal_proj.verbose = 0
+# -----------------------LINEAR SOLVERS-----------------------------
+mac_proj.verbose = 2
+mac_proj.maxiter = 1000
+mac_proj.rtol = 1.0e-11
+nodal_proj.verbose = 1
 diffusion.verbose = 0
-diffusion.max_iter = 100
-#diffusion.rtol = 1e-2
-diffusion.bottom_maxiter = 200
+
+
+# ------------------INPUTS TO CHEMISTRY REACTOR---------------------
+peleLM.chem_integrator = "ReactorNull"
 
 #--------------------SPRAY PARTICLE DATA-----------------------
 peleLM.do_spray_particles = 1
-particles.use_splash_model = false
 particles.derive_plot_vars = 1
 particles.write_ascii_files = 1
 particles.v             = 0
@@ -78,7 +67,6 @@ particles.cfl           = 1.
 particles.fixed_parts   = 1
 particles.mom_transfer  = 1
 particles.mass_transfer = 1
-particles.parcel_size = 1.
 
 particles.fuel_species = NC10H22
 particles.fuel_ref_temp = 298.15

@@ -21,11 +21,12 @@ amr.max_grid_size   = 64               # max box size
 prob.P_mean        = 101325.
 prob.init_redist   = 0
 prob.init_T        = 1000 # K
-prob.init_vel      = 0.119945
+prob.init_vel      = 0. #0.3828 #0.119945
 prob.num_particles = (1, 1, 1)
 prob.part_temp     = 315.
 prob.part_dia      = 1.961E-3
 prob.part_vel      = 0. 0. 0.
+prob.part_Re = 17
 
 #------------------------PeleLM CONTROL-----------------------------
 peleLM.v = 1
@@ -38,8 +39,8 @@ peleLM.do_temporals = 0
 peleLM.num_init_iter = 0
 
 #------------------------TIME STEPPING------------------------------
-#amr.max_step = 5
-amr.stop_time = 4.5 # K
+#amr.max_step = 1
+amr.stop_time = 4 # K
 amr.fixed_dt = 1e-3
 
 #--------------------------IO CONTROL-------------------------------
@@ -51,8 +52,8 @@ amr.derive_plot_vars = mass_fractions
 
 # -----------------------LINEAR SOLVERS-----------------------------
 mac_proj.verbose = 2
-mac_proj.maxiter = 1000
-mac_proj.rtol = 1.0e-9
+mac_proj.maxiter = 2000
+mac_proj.rtol = 1.0e-8
 nodal_proj.verbose = 1
 diffusion.verbose = 0
 
