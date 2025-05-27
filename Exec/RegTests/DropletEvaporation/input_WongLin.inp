@@ -2,7 +2,7 @@
 geometry.is_periodic = 1 0               # For each dir, 0: non-perio, 1: periodic
 geometry.coord_sys   = 0                  # 0 => cart, 1 => RZ
 geometry.prob_lo     = 0.0 0.0 0.0        # x_lo y_lo (z_lo)
-geometry.prob_hi     = 2. 0.1 0.1        # x_hi y_hi (z_hi)
+geometry.prob_hi     = 1. 1. 1.        # x_hi y_hi (z_hi)
 
 #--------------------------BC FLAGS------------------------------
 # Interior, Inflow, Outflow, Symmetry,
@@ -11,7 +11,7 @@ peleLM.lo_bc = Inflow SlipWallAdiab
 peleLM.hi_bc = Outflow SlipWallAdiab
 
 #-------------------------AMR CONTROL----------------------------
-amr.n_cell          = 320 16 16         # Level 0 number of cells in each direction
+amr.n_cell          = 128 128 128         # Level 0 number of cells in each direction
 amr.v               = 1                # AMR verbose
 amr.max_level       = 0                # maximum level number allowed
 amr.blocking_factor = 16               # block factor in grid generation (min box size)
@@ -21,12 +21,12 @@ amr.max_grid_size   = 64               # max box size
 prob.P_mean        = 101325.
 prob.init_redist   = 0
 prob.init_T        = 1000 # K
-prob.init_vel      = 0. #0.3828 #0.119945
+prob.init_vel      = 0.
 prob.num_particles = (1, 1, 1)
 prob.part_temp     = 315.
 prob.part_dia      = 1.961E-3
 prob.part_vel      = 0. 0. 0.
-prob.part_Re = 17
+prob.part_Re       = 17
 
 #------------------------PeleLM CONTROL-----------------------------
 peleLM.v = 1
@@ -41,7 +41,7 @@ peleLM.num_init_iter = 0
 #------------------------TIME STEPPING------------------------------
 #amr.max_step = 1
 amr.stop_time = 4 # K
-amr.fixed_dt = 1e-3
+amr.fixed_dt = 1e-2
 
 #--------------------------IO CONTROL-------------------------------
 amr.plot_file = "WongLin/plt"
@@ -53,7 +53,7 @@ amr.derive_plot_vars = mass_fractions
 # -----------------------LINEAR SOLVERS-----------------------------
 mac_proj.verbose = 2
 mac_proj.maxiter = 2000
-mac_proj.rtol = 1.0e-8
+mac_proj.rtol = 1.0e-9
 nodal_proj.verbose = 1
 diffusion.verbose = 0
 
