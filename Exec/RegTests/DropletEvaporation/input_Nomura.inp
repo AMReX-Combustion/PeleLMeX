@@ -29,10 +29,10 @@ prob.part_vel      = 0. 0. 0.
 
 #------------------------PeleLM CONTROL-----------------------------
 peleLM.v = 1
-peleLM.sdc_iterMax = 3
+#peleLM.sdc_iterMax = 3
 peleLM.deltaT_verbose = 2
-peleLM.deltaT_iterMax = 10
-peleLM.deltaT_crashIfFailing = 0
+peleLM.deltaT_iterMax = 100
+#peleLM.deltaT_crashIfFailing = 1
 
 peleLM.do_temporals = 0
 peleLM.num_init_iter = 0
@@ -67,7 +67,8 @@ particles.fixed_parts   = 1
 particles.mom_transfer  = 1
 particles.mass_transfer = 1
 
-particles.fuel_species = NC7H16
+particles.fuel_species = NC7H16 NC10H22
+prob.Y_drop = 1. 0.
 particles.fuel_ref_temp = 298.15
 
 # Properties for Heptane in MKS
@@ -81,5 +82,13 @@ particles.NC7H16_rho = 681.43 # kg/m^3 @ 298 K
 # Last coefficient converts units, in this case bar, to Pa
 particles.NC7H16_psat = 4.02832 1268.636 -56.199 1.E5
 
-
-
+# Properties for decane, in MKS
+particles.NC10H22_crit_temp = 617.8 # K
+particles.NC10H22_boil_temp = 447.27 # K
+particles.NC10H22_latent = 3.5899E5
+particles.NC10H22_cp = 2.1921E3 # Cp at 298 K
+particles.NC10H22_rho = 726.53
+# Coefficients for saturation pressure using Antoine equation
+# These are from the NIST website
+# Last coefficient converts units, in this case bar, to Pa
+particles.NC10H22_psat = 4.07857 1501.268 -78.67 1.E5

@@ -2,7 +2,7 @@
 geometry.is_periodic = 1 0               # For each dir, 0: non-perio, 1: periodic
 geometry.coord_sys   = 0                  # 0 => cart, 1 => RZ
 geometry.prob_lo     = 0.0 0.0 0.0        # x_lo y_lo (z_lo)
-geometry.prob_hi     = 1. 0.1 0.1        # x_hi y_hi (z_hi)
+geometry.prob_hi     = 1. 1. 1.        # x_hi y_hi (z_hi)
 
 #--------------------------BC FLAGS------------------------------
 # Interior, Inflow, Outflow, Symmetry,
@@ -11,49 +11,47 @@ peleLM.lo_bc = Inflow SlipWallAdiab
 peleLM.hi_bc = Outflow SlipWallAdiab
 
 #-------------------------AMR CONTROL----------------------------
-amr.n_cell          = 160 16 16         # Level 0 number of cells in each direction
+amr.n_cell          = 128 128 128         # Level 0 number of cells in each direction
 amr.v               = 1                # AMR verbose
 amr.max_level       = 0                # maximum level number allowed
 amr.blocking_factor = 16               # block factor in grid generation (min box size)
 amr.max_grid_size   = 64               # max box size
 
 #--------------------------Problem--------------------------------
-prob.P_mean        = 101325.
+prob.P_mean        = 100000.    # Pa
 prob.init_redist   = 0
-prob.T0_gas        = 1000 # K
-prob.vel_gas      = 0.119945
-prob.num_particles = (1, 1, 1)
-prob.part_temp     = 315.
-prob.part_dia      = 1.961E-3
-prob.part_vel      = 0. 0. 0.
-prob.part_Re       = -1
+prob.T0_gas        = 1000.      # K
+prob.vel_gas      = 0.0         # m/s
+prob.num_particles = (1, 1, 1)  
+prob.part_temp     = 298.       # K
+prob.part_dia      = 1E-4       # m
+prob.part_vel      = 0. 0. 0.   # m/s
+prob.part_Re       = 0.         # Slip Reynolds number
 
 #------------------------PeleLM CONTROL-----------------------------
 peleLM.v = 1
-peleLM.deltaT_verbose = 1
-peleLM.deltaT_iterMax = 1000
+peleLM.deltaT_verbose = 2
+peleLM.deltaT_iterMax = 100
 
 peleLM.do_temporals = 0
 peleLM.num_init_iter = 0
 
 #------------------------TIME STEPPING------------------------------
-#amr.max_step = 5
-amr.stop_time = 4.5 
-amr.fixed_dt = 1e-3
+#amr.max_step = 1
+amr.stop_time = 1
+amr.fixed_dt = 1e-2
 
 #--------------------------IO CONTROL-------------------------------
-amr.plot_int = 100
+amr.plot_file = "plt"
+amr.plot_int = 10
 amr.plot_speciesState = 1
 amr.plot_grad_p = 0
 amr.derive_plot_vars = mass_fractions
 
 # -----------------------LINEAR SOLVERS-----------------------------
-mac_proj.verbose = 2
-mac_proj.maxiter = 1000
-mac_proj.rtol = 1.0e-11
-nodal_proj.verbose = 1
+mac_proj.verbose = 0
+nodal_proj.verbose = 0
 diffusion.verbose = 0
-
 
 # ------------------INPUTS TO CHEMISTRY REACTOR---------------------
 peleLM.chem_integrator = "ReactorNull"
@@ -68,7 +66,8 @@ particles.fixed_parts   = 1
 particles.mom_transfer  = 1
 particles.mass_transfer = 1
 
-particles.fuel_species = NC10H22
+particles.fuel_species = NC7H16 NC10H22
+prob.Y_drop = 1. 0.
 particles.fuel_ref_temp = 298.15
 
 # Properties for Heptane in MKS

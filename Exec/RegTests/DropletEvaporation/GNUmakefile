@@ -28,10 +28,9 @@ THREAD_SANITIZER = FALSE
 # PeleLMeX
 USE_PLASMA = FALSE
 USE_PARTICLES = TRUE
-SPRAY_FUEL_NUM = 1
+SPRAY_FUEL_NUM = 2
 
 # PelePhysics
-##Chemistry_Model = decane_3sp
 Chemistry_Model = multi_dechep
 Eos_Model = Fuego
 Transport_Model = Simple
