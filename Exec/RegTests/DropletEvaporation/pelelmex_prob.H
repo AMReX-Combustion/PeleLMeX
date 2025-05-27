@@ -17,10 +17,10 @@ namespace c2m = pele::physics::utilities::cgs2mks;
 
 struct MyProbParm : public ProbParmDefault
 {
-  amrex::Real T0 = 500.;
+  amrex::Real T0_gas = 500.;
   amrex::Real Y_O2 = 0.233;
   amrex::Real Y_N2 = 0.767;
-  amrex::Real vel = 0.;
+  amrex::Real vel_gas = 0.;
   amrex::Real part_Re = -1.;
 };
 
@@ -43,8 +43,8 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
     amrex::Real massfrac[NUM_SPECIES] = {0.0};
     massfrac[N2_ID] = prob_parm.Y_N2;
     massfrac[O2_ID] = prob_parm.Y_O2;
-    state(i, j, k, TEMP) = prob_parm.T0;
-    state(i, j, k, VELX) = prob_parm.vel;
+    state(i, j, k, TEMP) = prob_parm.T0_gas;
+    state(i, j, k, VELX) = prob_parm.vel_gas;
 #if (AMREX_SPACEDIM == 2)
     state(i, j, k, VELY) = 0.0;
 #elif (AMREX_SPACEDIM == 3)
@@ -83,21 +83,21 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
     MyProbParm const& prob_parm,
     pele::physics::PMF::PmfData::DataContainer const* /*pmf_data*/)
   {
-    AMREX_D_TERM(s_ext[VELX] = prob_parm.vel;, s_ext[VELY] = 0.;
+    AMREX_D_TERM(s_ext[VELX] = prob_parm.vel_gas;, s_ext[VELY] = 0.;
                  , s_ext[VELZ] = 0.;);
     amrex::GpuArray<amrex::Real, NUM_SPECIES> massfrac = {{0.0}};
     massfrac[N2_ID] = prob_parm.Y_N2;
     massfrac[O2_ID] = prob_parm.Y_O2;
-    s_ext[TEMP] = prob_parm.T0;
+    s_ext[TEMP] = prob_parm.T0_gas;
     amrex::Real rho_cgs, P_cgs;
     P_cgs = m2c::P(prob_parm.P_mean);
 
     auto eos = pele::physics::PhysicsType::eos();
-    eos.PYT2R(P_cgs, massfrac.data(), prob_parm.T0, rho_cgs);
+    eos.PYT2R(P_cgs, massfrac.data(), prob_parm.T0_gas, rho_cgs);
 
     s_ext[DENSITY] = c2m::Rho(rho_cgs);
     amrex::Real h_cgs;
-    eos.TY2H(prob_parm.T0, massfrac.data(), h_cgs);
+    eos.TY2H(prob_parm.T0_gas, massfrac.data(), h_cgs);
     s_ext[RHOH] = c2m::H(h_cgs) * s_ext[DENSITY];
     for (int n = 0; n < NUM_SPECIES; n++) {
       s_ext[FIRSTSPEC + n] = massfrac[n] * s_ext[DENSITY];
