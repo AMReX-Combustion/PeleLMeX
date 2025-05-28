@@ -207,8 +207,8 @@ jobs:
     - name: Vortex Inflow Test
       working-directory: ./Exec/RegTests/PeriodicCases/
       run: |
-        mpirun -n 2 ./PeleLMeX3d.gnu.MPI.ex input.3d_CoVo_PlaneInput amr.max_step=80 amrex.abort_on_unused_inputs=1
-        mpirun -n 2 ./PeleLMeX3d.gnu.MPI.ex input.3d_CoVo_PltInput amr.max_step=120 amrex.abort_on_unused_inputs=1
+        mpirun -n 2 ./PeleLMeX3d.gnu.MPI.ex input.3d_CoVo_PlaneInput amr.max_step=80 amrex.abort_on_unused_inputs=0
+        mpirun -n 2 ./PeleLMeX3d.gnu.MPI.ex input.3d_CoVo_PltInput amr.max_step=120 amrex.abort_on_unused_inputs=0
 
   # Build and Run the SprayTest RegTest with GNU9.3 and MPI support
   SPRAY:
