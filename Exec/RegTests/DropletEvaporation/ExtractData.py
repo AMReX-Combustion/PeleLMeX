@@ -2,23 +2,26 @@ import os
 import csv
 import numpy as np
 
+
 def ExtractData(case, outfile):
     FILE_PATH = os.path.dirname(os.path.abspath(__file__))
-    CASE_PATH = os.path.join(FILE_PATH,case.name)
+    CASE_PATH = os.path.join(FILE_PATH, case.name)
     pltfiles = []
     sprayfiles = []
     for x in os.listdir(CASE_PATH):
-        if (x.startswith("plt")):
+        if x.startswith("plt"):
             pltfiles.append(case.name + "/" + x)
-        if (x.endswith(".p3d")):
+        if x.endswith(".p3d"):
             sprayfiles.append(case.name + "/" + x)
+
     def get_step(fn):
         x = fn.split()
         res = []
         for i in x:
-            if (i.isnumeric()):
+            if i.isnumeric():
                 res.append(i)
         return [fn, res]
+
     pltfiles = sorted(pltfiles, key=get_step)
     sprayfiles = sorted(sprayfiles, key=get_step)
     alltime = []
@@ -26,14 +29,14 @@ def ExtractData(case, outfile):
     for cf in pltfiles:
         curfile = cf + "/Header"
         Lines = []
-        with open(curfile, 'r') as fn:
+        with open(curfile, "r") as fn:
             Lines = fn.readlines()
             numcomp = int(Lines[1])
             timeline = numcomp + 3
         alltime.append(float(Lines[timeline]))
     # Column designations in the spray*.p3d files
-    numspec = len(case.droplet.Y) # Liquid fuel components
-    dims = 2 # Solution dimensions
+    numspec = len(case.droplet.Y)  # Liquid fuel components
+    dims = 2  # Solution dimensions
     loccols = dims - 1
     velcols = loccols + 1
     tcol = velcols + dims
@@ -46,7 +49,7 @@ def ExtractData(case, outfile):
     for i, cf in enumerate(sprayfiles):
         with open(cf, "r") as fn:
             Lines = fn.readlines()
-            if (len(Lines) >= crow+1):
+            if len(Lines) >= crow + 1:
                 timevals.append(alltime[i])
                 sline = Lines[crow].split()
                 for col in range(numcol):
@@ -57,49 +60,52 @@ def ExtractData(case, outfile):
     modvals = []
     with open(outfile, "w+") as new_file:
         new_file.write("t, dd0, T, Y1, Y2\n")
-        csv_writer = csv.writer(new_file, delimiter=',', lineterminator='\n')
+        csv_writer = csv.writer(new_file, delimiter=",", lineterminator="\n")
         for k, tv in enumerate(timevals):
             dia = vals[k][dcol]
-            dd0 = (dia * yconv)**yexp
+            dd0 = (dia * yconv) ** yexp
             T = vals[k][tcol]
             Y1 = vals[k][mfcol]
             if len(case.droplet.Y) == 2:
-                Y2 = vals[k][mfcol+1]
-                outvals = [tv*xconv, dd0, T, Y1, Y2]
+                Y2 = vals[k][mfcol + 1]
+                outvals = [tv * xconv, dd0, T, Y1, Y2]
             else:
-                outvals = [tv*xconv, dd0, T, Y1]
+                outvals = [tv * xconv, dd0, T, Y1]
             modvals.append(outvals)
             csv_writer.writerow(outvals)
     modvals = np.array(modvals)
     return modvals
 
+
 def ExtractRefVals(case):
     FILE_PATH = os.path.dirname(os.path.abspath(__file__))
 
-    ldir = os.path.join(FILE_PATH,f"ref_files/{case.name}")
+    ldir = os.path.join(FILE_PATH, f"ref_files/{case.name}")
     fnames = ["refdvals.csv", "refTvals.csv", "refYvals.csv"]
     reffiles = []
+
     def getdata(fname):
         vals = []
-        with open(fname, 'r') as rf:
+        with open(fname, "r") as rf:
             line0 = rf.readline()
             lines = rf.readlines()
             for line in lines:
-                sline = line.split(',')
+                sline = line.split(",")
                 ovals = [float(sline[0]), float(sline[1])]
                 vals.append(ovals)
         vals = np.array(vals)
         return vals
+
     dvals = None
     tvals = None
     yvals = None
     cname = fnames[0]
-    if (cname in os.listdir(ldir)):
-        dvals = getdata(os.path.join(ldir,cname))
+    if cname in os.listdir(ldir):
+        dvals = getdata(os.path.join(ldir, cname))
     cname = fnames[1]
-    if (cname in os.listdir(ldir)):
-        tvals = getdata(os.path.join(ldir,cname))
+    if cname in os.listdir(ldir):
+        tvals = getdata(os.path.join(ldir, cname))
     cname = fnames[2]
-    if (cname in os.listdir(ldir)):
-        yvals = getdata(os.path.join(ldir,cname))
+    if cname in os.listdir(ldir):
+        yvals = getdata(os.path.join(ldir, cname))
     return [dvals, tvals, yvals]
