@@ -15,6 +15,6 @@ Compile the PeleLMeX case:
 make TPL && make -j
 ~~~
 
-The input file `input_general.inp` is set up for the `WongLin` case.  All other cases can be run by building different `case` objects in the `Validate.py` script.  Options include:
+The input file `input_general.inp` is set up for the `WongLin` case.  All other cases can be run by building different `case` objects in the `Validate.py` script, and running `python Validate.py`.  Options include:
 * `case = Nomura(471)`, `case = Nomura(741)`
 * `case = WongLin()` 
