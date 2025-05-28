@@ -275,6 +275,55 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
       state(i, j, k, FIRSTSPEC + n) = massfrac[n] * state(i, j, k, DENSITY);
     }
   }
+
+  // Only used in non-periodic inflow cases
+  AMREX_GPU_DEVICE
+  AMREX_FORCE_INLINE
+  static void bcnormal(
+    const amrex::Real* /*x[AMREX_SPACEDIM]*/,
+    const amrex::CellData<amrex::Real>& /*s_in*/,
+    amrex::Real s_ext[NVAR],
+    const int idir,
+    const int sgn,
+    const amrex::Real /*time*/,
+    amrex::GeometryData const& /*geomdata*/,
+    MyProbParm const& prob_parm,
+    pele::physics::PMF::PmfData::DataContainer const* /*pmf_data*/)
+  {
+    if (idir == (prob_parm.meanFlowDir - 1) && sgn == 1) {
+
+      auto eos = pele::physics::PhysicsType::eos();
+      // Species IDs
+#ifdef O2_ID
+      int sp1_ID = O2_ID;
+#endif
+#ifdef N2a_ID
+      int sp1_ID = N2a_ID;
+#endif
+      int sp2_ID = N2_ID;
+
+      amrex::Real massfrac[NUM_SPECIES] = {0.0};
+      massfrac[sp1_ID] = 0.233;
+      massfrac[sp2_ID] = 0.767;
+
+      s_ext[TEMP] = prob_parm.T_mean;
+      amrex::Real P_cgs = prob_parm.P_mean * 10.0;
+      // Density
+      amrex::Real rho_cgs = 0.0;
+      eos.PYT2R(P_cgs, massfrac, s_ext[TEMP], rho_cgs);
+      s_ext[DENSITY] = rho_cgs * 1.0e3;
+
+      // Enthalpy
+      amrex::Real h_cgs = 0.0;
+      eos.TY2H(s_ext[TEMP], massfrac, h_cgs);
+      s_ext[RHOH] = h_cgs * 1.0e-4 * s_ext[DENSITY];
+
+      // Species mass
+      for (int n = 0; n < NUM_SPECIES; n++) {
+        s_ext[FIRSTSPEC + n] = massfrac[n] * s_ext[DENSITY];
+      }
+    }
+  }
 };
 
 using ProblemSpecificFunctions = MyProblemSpecificFunctions;
