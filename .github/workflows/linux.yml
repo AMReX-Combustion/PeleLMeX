@@ -198,7 +198,7 @@ jobs:
     - name: Periodic Vortex for Inflow
       working-directory: ./Exec/RegTests/PeriodicCases/
       run: |
-        mpirun -n 2 ./PeleLMeX3d.gnu.MPI.ex input.3d_Covo_InflowGen amr.max_step=100 amrex.abort_on_unused_inputs=1
+        mpirun -n 2 ./PeleLMeX3d.gnu.MPI.ex input.3d_CoVo_InflowGen amr.max_step=100 amrex.abort_on_unused_inputs=1
     - name: Vortex Inflow Generation
       working-directory: ./Exec/RegTests/PeriodicCases/
       run: |
