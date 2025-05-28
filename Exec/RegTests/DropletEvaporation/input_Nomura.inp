@@ -1,5 +1,5 @@
 #----------------------DOMAIN DEFINITION------------------------
-geometry.is_periodic = 1 0               # For each dir, 0: non-perio, 1: periodic
+geometry.is_periodic = 0 1               # For each dir, 0: non-perio, 1: periodic
 geometry.coord_sys   = 0                  # 0 => cart, 1 => RZ
 geometry.prob_lo     = 0.0 0.0 0.0        # x_lo y_lo (z_lo)
 geometry.prob_hi     = 1. 1. 1.        # x_hi y_hi (z_hi)
@@ -7,8 +7,8 @@ geometry.prob_hi     = 1. 1. 1.        # x_hi y_hi (z_hi)
 #--------------------------BC FLAGS------------------------------
 # Interior, Inflow, Outflow, Symmetry,
 # SlipWallAdiab, NoSlipWallAdiab, SlipWallIsotherm, NoSlipWallIsotherm
-peleLM.lo_bc = Inflow SlipWallAdiab
-peleLM.hi_bc = Outflow SlipWallAdiab
+peleLM.lo_bc = Inflow Interior
+peleLM.hi_bc = Outflow Interior
 
 #-------------------------AMR CONTROL----------------------------
 amr.n_cell          = 128 128 128         # Level 0 number of cells in each direction
@@ -21,18 +21,17 @@ amr.max_grid_size   = 64               # max box size
 prob.P_mean        = 100000.
 prob.init_redist   = 0
 prob.T0_gas        = 741. # 471 or 741 K
-prob.vel_gas      = 0.0
+prob.vel_gas       = 0.0
 prob.num_particles = (1, 1, 1)
 prob.part_temp     = 298.
 prob.part_dia      = 7E-4
 prob.part_vel      = 0. 0. 0.
+prob.part_Re = 0.0
 
 #------------------------PeleLM CONTROL-----------------------------
 peleLM.v = 1
-#peleLM.sdc_iterMax = 3
 peleLM.deltaT_verbose = 2
 peleLM.deltaT_iterMax = 100
-#peleLM.deltaT_crashIfFailing = 1
 
 peleLM.do_temporals = 0
 peleLM.num_init_iter = 0

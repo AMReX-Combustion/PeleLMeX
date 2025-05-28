@@ -1,5 +1,5 @@
 #----------------------DOMAIN DEFINITION------------------------
-geometry.is_periodic = 1 0               # For each dir, 0: non-perio, 1: periodic
+geometry.is_periodic = 0 1               # For each dir, 0: non-perio, 1: periodic
 geometry.coord_sys   = 0                  # 0 => cart, 1 => RZ
 geometry.prob_lo     = 0.0 0.0 0.0        # x_lo y_lo (z_lo)
 geometry.prob_hi     = 1. 1. 1.        # x_hi y_hi (z_hi)
@@ -7,8 +7,8 @@ geometry.prob_hi     = 1. 1. 1.        # x_hi y_hi (z_hi)
 #--------------------------BC FLAGS------------------------------
 # Interior, Inflow, Outflow, Symmetry,
 # SlipWallAdiab, NoSlipWallAdiab, SlipWallIsotherm, NoSlipWallIsotherm
-peleLM.lo_bc = Inflow SlipWallAdiab
-peleLM.hi_bc = Outflow SlipWallAdiab
+peleLM.lo_bc = Inflow Interior
+peleLM.hi_bc = Outflow Interior
 
 #-------------------------AMR CONTROL----------------------------
 amr.n_cell          = 128 128 128         # Level 0 number of cells in each direction
@@ -18,31 +18,31 @@ amr.blocking_factor = 16               # block factor in grid generation (min bo
 amr.max_grid_size   = 64               # max box size
 
 #--------------------------Problem--------------------------------
-prob.P_mean        = 100000.    # Pa
+prob.P_mean        = 101325.
 prob.init_redist   = 0
-prob.T0_gas        = 1000.      # K
-prob.vel_gas      = 0.0         # m/s
-prob.num_particles = (1, 1, 1)  
-prob.part_temp     = 298.       # K
-prob.part_dia      = 1E-4       # m
-prob.part_vel      = 0. 0. 0.   # m/s
-prob.part_Re       = 0.         # Slip Reynolds number
+prob.T0_gas        = 1000 # K
+prob.vel_gas       = 0.
+prob.num_particles = (1, 1, 1)
+prob.part_temp     = 315.
+prob.part_dia      = 1.961E-3
+prob.part_vel      = 0. 0. 0.
+prob.part_Re       = 17
 
 #------------------------PeleLM CONTROL-----------------------------
 peleLM.v = 1
 peleLM.deltaT_verbose = 2
-peleLM.deltaT_iterMax = 100
+peleLM.deltaT_iterMax = 20
 
 peleLM.do_temporals = 0
 peleLM.num_init_iter = 0
 
 #------------------------TIME STEPPING------------------------------
 #amr.max_step = 1
-amr.stop_time = 1
+amr.stop_time = 4 
 amr.fixed_dt = 1e-2
 
 #--------------------------IO CONTROL-------------------------------
-amr.plot_file = "plt"
+amr.plot_file = "WongLin/plt"
 amr.plot_int = 10
 amr.plot_speciesState = 1
 amr.plot_grad_p = 0
@@ -67,7 +67,7 @@ particles.mom_transfer  = 1
 particles.mass_transfer = 1
 
 particles.fuel_species = NC7H16 NC10H22
-prob.Y_drop = 1. 0.
+prob.Y_drop = 0. 1.
 particles.fuel_ref_temp = 298.15
 
 # Properties for Heptane in MKS

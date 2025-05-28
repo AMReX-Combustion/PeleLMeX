@@ -3,9 +3,11 @@ import csv
 import numpy as np
 
 def ExtractData(case, outfile):
+    FILE_PATH = os.path.dirname(os.path.abspath(__file__))
+    CASE_PATH = os.path.join(FILE_PATH,case.name)
     pltfiles = []
     sprayfiles = []
-    for x in os.listdir("./" + case.name + "/"):
+    for x in os.listdir(CASE_PATH):
         if (x.startswith("plt")):
             pltfiles.append(case.name + "/" + x)
         if (x.endswith(".p3d")):
@@ -72,7 +74,9 @@ def ExtractData(case, outfile):
     return modvals
 
 def ExtractRefVals(case):
-    ldir = "ref_files/" + case.name + "/"
+    FILE_PATH = os.path.dirname(os.path.abspath(__file__))
+
+    ldir = os.path.join(FILE_PATH,f"ref_files/{case.name}")
     fnames = ["refdvals.csv", "refTvals.csv", "refYvals.csv"]
     reffiles = []
     def getdata(fname):
@@ -91,11 +95,11 @@ def ExtractRefVals(case):
     yvals = None
     cname = fnames[0]
     if (cname in os.listdir(ldir)):
-        dvals = getdata(ldir + cname)
+        dvals = getdata(os.path.join(ldir,cname))
     cname = fnames[1]
     if (cname in os.listdir(ldir)):
-        tvals = getdata(ldir + cname)
+        tvals = getdata(os.path.join(ldir,cname))
     cname = fnames[2]
     if (cname in os.listdir(ldir)):
-        yvals = getdata(ldir + cname)
+        yvals = getdata(os.path.join(ldir,cname))
     return [dvals, tvals, yvals]

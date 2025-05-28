@@ -3,37 +3,59 @@ from CaseInfo import *
 from PP_ExtractData import *
 import matplotlib.pyplot as plt
 
+# Select test case:
+# Nomura at 471 K -> case = Nomura(471)
+# Nomura at 741 K -> case = Nomura(741)
+# Wong and Lin with Decane and Re=17 -> case = WongLin()
+
 #case = Nomura(471)
-case = WongLin(17)
+case = WongLin()
+
+# Run new or plot old?
+run_new = True
 
 # Plotting parameters
 marker_s = 15
 line_w = 3
 font_s = 16
 
+# Get reference values from experiments
 [refdvals, reftvals, refyvals] = ExtractRefVals(case)
+
 # Set end time based on reference values
 time = refdvals[-1, 0] / case.xconv
 case.set_end_time(time)
 
-# Create a new directory for plt and spray files
-#os.system("mkdir -p {}".format(case.name))
-#os.system("rm -r {}/plt*".format(case.name))
-params = CreateInputParams(case)
+if run_new:
+    # Create a new directory for plt and spray files
+    FILE_PATH = os.path.dirname(os.path.abspath(__file__))
+    if not os.path.exists(case.case_dir):
+        os.makedirs(case.case_dir)
+    
+    # Remove existing plt and .p3d files
+    else:
+        os.system(f"rm -rf {case.name}/plt* {case.name}/*.p3d {case.name}/pele_vals.csv")
 
-executable = "None"
-for f in os.listdir("./"):
-    if (f.startswith("Pele") and f.endswith(".ex")):
-        executable = f
-if (not os.path.exists(executable)):
-    error = "Pele executable not found"
-    raise ValueError(error)
+    # Create case-specific input file
+    CreateInputFile(case)
 
-#input_file = "gen-input.inp"
-#run_cmd = "mpiexec -np 6 ./"
-#os.system("{}{} {} {}".format(run_cmd, executable, input_file, params))
+    exe = ""
+    for f in os.listdir(FILE_PATH):
+        if (f.startswith("Pele") and f.endswith(".ex")):
+            exe = f
+    if (not os.path.exists(exe)):
+        error = "Pele executable not found"
+        raise ValueError(error)
 
-outfile = case.name + "/pele_vals.csv"
+    # Run the case
+    #os.system(f"mpiexec -np 4 ./{exe} input_Nomura.inp")
+    os.system(f"mpiexec -np 4 ./{exe} {case.input_file}")
+else:
+    # Check that the case directory exists
+    if not os.path.exists(case.case_dir):
+        raise ValueError(f"Case directory not found: {case.case_dir}")
+
+outfile = os.path.join(case.case_dir,"pele_vals.csv")
 pele_vals = ExtractData(case, outfile)
 
 numplots = 1
@@ -85,5 +107,5 @@ else:
     
 
 plt.tight_layout()    
-plt.savefig(case.name + "/results.png")
+plt.savefig(os.path.join(case.case_dir,"results.png"))
 plt.show()
