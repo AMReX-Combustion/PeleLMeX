@@ -1,11 +1,11 @@
 ## Single Droplet Evaporation Validation
 This case compares results from PeleLMeX against experimental literature data.
 
-| Test Case Name | $\bf{T_g}$ [K] | $\bf{p_g}$ [bar] | $\bf{T_d}$ [K] | $\bf{d_d}$ [μm] | Source |
-| -------------- | --------- | ----------- | --------- | --------------- | ------ |
-| Nomura         | 471, 741  | 1           | 298       | 700             | [1](https://doi.org/10.1016/S0082-0784(96)80344-4) |
-| WongLin        | 1000      | 1.01325     | 315       | 1961            | [2](https://doi.org/10.1017/S0022112092003574)
-| Daif           | 348       | 1.01325     | 291.4     | 1334            | [3](https://doi.org/10.1016/S0894-1777(98)10035-3)
+| Test Case Name | $\bf{T_g}$ [K] | $\bf{p_g}$ [bar] | $\bf{T_d}$ [K] | $\bf{d_d}$ [μm] | $\bf{\Delta u}$ [m/s] | Source |
+| -------------- | -------------- | ---------------- | -------------- | --------------- | ------------------- | ------ |
+| Nomura         | 471, 741  | 1           | 298       | 700   | 0.0   | [1](https://doi.org/10.1016/S0082-0784(96)80344-4) |
+| WongLin        | 1000      | 1.01325     | 315       | 1961  | 0.385 | [2](https://doi.org/10.1017/S0022112092003574)
+| Daif           | 348       | 1.01325     | 291.4     | 1334  | 3.1   | [3](https://doi.org/10.1016/S0894-1777(98)10035-3)
 
 
 ### Running Validation Cases
