@@ -7,14 +7,15 @@ import matplotlib.pyplot as plt
 # Nomura at 471 K -> case = Nomura(471)
 # Nomura at 741 K -> case = Nomura(741)
 # Wong and Lin with Decane and Re=17 -> case = WongLin()
+# Daif with heptane/decane mix -> case = Daif()
 
-case = Nomura(471)
+case = WongLin()
 
 # Run new or extract existing simulation data?
 run_new = True
 
 # Plotting parameters
-marker_s = 15
+marker_s = 40
 line_w = 3
 font_s = 16
 
@@ -50,7 +51,7 @@ if run_new:
         raise ValueError(error)
 
     # Run the case
-    os.system(f"mpiexec -np 4 ./{exe} {case.input_file}")
+    os.system(f"mpiexec -np 6 ./{exe} {case.input_file}")
 else:
     # Check that the case directory exists
     if not os.path.exists(case.case_dir):
@@ -78,7 +79,7 @@ if numplots == 1:
                 refarr[:, 0],
                 refarr[:, 1],
                 marker="o",
-                s=80,
+                s=marker_s,
                 facecolor="none",
                 edgecolor="black",
                 label="Ref",
@@ -117,7 +118,7 @@ else:
                     refarr[:, 0],
                     refarr[:, 1],
                     marker="o",
-                    s=80,
+                    s=marker_s,
                     facecolor="none",
                     edgecolor="black",
                     label="Ref",

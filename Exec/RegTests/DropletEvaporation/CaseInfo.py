@@ -134,6 +134,12 @@ def WongLin():
     case = CaseInfo("WongLin", drop, gas, xyunits=["s", "dd0"], end_time=end_time)
     return case
 
+def Daif():
+    drop = Droplet(279.2, 1.334E-3, ["NC7H16", "NC10H22"], [0.667, 0.333])
+    gas = GasPhase(348., 1.01325e5, vel = 3.1)
+    case = CaseInfo("Daif", drop, gas, xyunits = ["s", "r2_mm"], dt=1e-3)
+    return case
+
 
 def CreateInputFile(case):
     FILE_PATH = os.path.dirname(os.path.abspath(__file__))
