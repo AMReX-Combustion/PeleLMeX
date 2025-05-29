@@ -42,7 +42,7 @@ private:
   static constexpr auto check(T*)
     -> matchBCNormEB_sign<
       T,
-      AMREX_GPU_DEVICE void(
+      void(
         const amrex::Real*,                        // Face center coordinate
         const amrex::Real*,                        // Face normal (Outward)
         const amrex::CellData<const amrex::Real>&, // Cell-centered state (in)
@@ -183,7 +183,7 @@ private:
   template <typename C>
   static constexpr auto check(T*) -> matchBCTypeEB_sign<
                                     T,
-                                    AMREX_GPU_DEVICE void(
+                                    void(
                                       const amrex::Real*,
                                       int&,
                                       amrex::Real&,
