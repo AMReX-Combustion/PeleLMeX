@@ -56,7 +56,7 @@ macro(setup_test)
     file(COPY ${TEST_FILES} DESTINATION "${CURRENT_TEST_BINARY_DIR}/")
     # Set some default runtime options for all tests
     set(RUNTIME_OPTIONS "amrex.abort_on_unused_inputs=1 amrex.the_arena_is_managed=0 amr.plot_per=-1 amr.check_per=-1 amr.plot_int=-1 amr.check_int=-1")
-    if(PELE_ENABLE_FCOMPARE_FOR_TESTS)
+    if(PELE_ENABLE_FCOMPARE_FOR_TESTS OR PELE_SAVE_GOLDS)
       set(RUNTIME_OPTIONS "${RUNTIME_OPTIONS} amr.plot_file=plt amr.plot_int=10")
     endif()
     if(PELE_ENABLE_FPE_TRAP_FOR_TESTS AND (NOT APPLE))
