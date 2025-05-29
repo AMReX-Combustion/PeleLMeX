@@ -38,6 +38,7 @@ class CaseInfo:
     def __init__(
         self,
         name,
+        dname,
         droplet: Droplet,
         gas: GasPhase,
         xyunits,
@@ -50,6 +51,7 @@ class CaseInfo:
     ):
         FILE_PATH = os.path.dirname(os.path.abspath(__file__))
         self.name = name
+        self.dname = dname
         self.case_dir = os.path.join(FILE_PATH, name)
         self.input_file = os.path.join(self.case_dir, f"input_{name}.inp")
         self.droplet = droplet
@@ -122,7 +124,12 @@ def Nomura(temp):
     drop = Droplet(298.0, 7.0e-4, ["NC7H16", "NC10H22"], [1.0, 0.0])
     gas = GasPhase(temp, 1.0e5, vel=0.0)
     case = CaseInfo(
-        f"Nomura_{int(temp)}", drop, gas, xyunits=["s/mm2", "dd02"], end_time=end_time
+        f"Nomura_{int(temp)}",
+        "Nomura et al.",
+        drop,
+        gas,
+        xyunits=["s/mm2", "dd02"],
+        end_time=end_time,
     )
     return case
 
@@ -130,14 +137,17 @@ def Nomura(temp):
 def WongLin():
     end_time = 4
     drop = Droplet(315.0, 1.961e-3, ["NC7H16", "NC10H22"], [0.0, 1.0], Reyn=17)
-    gas = GasPhase(1000, 1.01325e5)
-    case = CaseInfo("WongLin", drop, gas, xyunits=["s", "dd0"], end_time=end_time)
+    gas = GasPhase(1000.0, 1.01325e5)
+    case = CaseInfo(
+        "WongLin", "Wong & Lin", drop, gas, xyunits=["s", "dd0"], end_time=end_time
+    )
     return case
 
+
 def Daif():
-    drop = Droplet(279.2, 1.334E-3, ["NC7H16", "NC10H22"], [0.667, 0.333])
-    gas = GasPhase(348., 1.01325e5, vel = 3.1)
-    case = CaseInfo("Daif", drop, gas, xyunits = ["s", "r2_mm"], dt=1e-3)
+    drop = Droplet(291.4, 1.334e-3, ["NC7H16", "NC10H22"], [0.7375, 0.2625])
+    gas = GasPhase(348.0, 1.01325e5, vel=3.10)
+    case = CaseInfo("Daif", "Daif et al.", drop, gas, xyunits=["s", "r2_mm"], dt=1e-3)
     return case
 
 

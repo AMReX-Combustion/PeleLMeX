@@ -3,12 +3,18 @@ from CaseInfo import *
 from ExtractData import *
 import matplotlib.pyplot as plt
 
-# Select test case:
-# Nomura at 471 K -> case = Nomura(471)
-# Nomura at 741 K -> case = Nomura(741)
-# Wong and Lin with Decane and Re=17 -> case = WongLin()
-# Daif with heptane/decane mix -> case = Daif()
+"""
+Script for validating PelePhysics spray model
+Test cases:
+| Case        | T_g [K] | p_g [bar] | T_d [K] | d_d [um]] | Fuel           |
+| ----------- | ------- | --------- | ------- | --------- | -------------- |
+| Nomura(471) | 471     | 1         | 298     | 700       | heptane        |
+| Nomura(741) | 741     | 1         | 298     | 700       | heptane        |
+| WongLin()   | 1000    | 1.01325   | 315     | 1961      | decane         |
+| Daif()      | 348     | 1.01325   | 291.4   | 1334      | heptane/decane |
+"""
 
+# Case object
 case = WongLin()
 
 # Run new or extract existing simulation data?
@@ -82,9 +88,32 @@ if numplots == 1:
                 s=marker_s,
                 facecolor="none",
                 edgecolor="black",
-                label="Ref",
+                label=case.dname,
                 linewidth=round(line_w / 2),
             )
+            # Plot uncertainty if available
+            if refarr.shape[1] == 4:
+                uncrt = refarr[~np.isnan(refarr).any(axis=1)]
+                plt.scatter(
+                    uncrt[:, 0],
+                    uncrt[:, 2],
+                    marker="_",
+                    color="black",
+                    label=None,
+                    linewidth=round(line_w / 2),
+                )
+                plt.scatter(
+                    uncrt[:, 0],
+                    uncrt[:, 3],
+                    marker="_",
+                    color="black",
+                    label=None,
+                    linewidth=round(line_w / 2),
+                )
+                for k in range(len(uncrt)):
+                    tval = [uncrt[k, 0], uncrt[k, 0]]
+                    uline = [uncrt[k, 2], uncrt[k, 3]]
+                    plt.plot(tval, uline, "k-", linewidth=round(line_w / 2))
         else:
             plt.plot(
                 refarr[:, 0], refarr[:, 1], label="Ref", color="black", linewidth=line_w
@@ -121,14 +150,37 @@ else:
                     s=marker_s,
                     facecolor="none",
                     edgecolor="black",
-                    label="Ref",
+                    label=case.dname,
                     linewidth=round(line_w / 2),
                 )
+                # Plot uncertainty if available
+                if refarr.shape[1] == 4:
+                    uncrt = refarr[~np.isnan(refarr).any(axis=1)]
+                    axs[i].scatter(
+                        uncrt[:, 0],
+                        uncrt[:, 2],
+                        marker="_",
+                        color="black",
+                        label=None,
+                        linewidth=round(line_w / 2),
+                    )
+                    axs[i].scatter(
+                        uncrt[:, 0],
+                        uncrt[:, 3],
+                        marker="_",
+                        color="black",
+                        label=None,
+                        linewidth=round(line_w / 2),
+                    )
+                    for k in range(len(uncrt)):
+                        tval = [uncrt[k, 0], uncrt[k, 0]]
+                        uline = [uncrt[k, 2], uncrt[k, 3]]
+                        axs[i].plot(tval, uline, "k-", linewidth=round(line_w / 2))
             else:
                 axs[i].plot(
                     refarr[:, 0],
                     refarr[:, 1],
-                    label="Ref",
+                    label=case.dname,
                     color="black",
                     linewidth=line_w,
                 )

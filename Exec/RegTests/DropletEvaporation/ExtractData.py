@@ -1,6 +1,7 @@
 import os
 import csv
 import numpy as np
+import pandas as pd
 
 
 def ExtractData(case, outfile):
@@ -34,6 +35,7 @@ def ExtractData(case, outfile):
             numcomp = int(Lines[1])
             timeline = numcomp + 3
         alltime.append(float(Lines[timeline]))
+
     # Column designations in the spray*.p3d files
     numspec = len(case.droplet.Y)  # Liquid fuel components
     dims = 2  # Solution dimensions
@@ -54,9 +56,12 @@ def ExtractData(case, outfile):
                 sline = Lines[crow].split()
                 for col in range(numcol):
                     vals[i][col] = float(sline[col])
+
+    # Unit conversions for plotting
     xconv = case.xconv
     yconv = case.yconv
     yexp = case.yexp
+
     modvals = []
     with open(outfile, "w+") as new_file:
         new_file.write("t, dd0, T, Y1, Y2\n")
@@ -85,16 +90,8 @@ def ExtractRefVals(case):
     reffiles = []
 
     def getdata(fname):
-        vals = []
-        with open(fname, "r") as rf:
-            line0 = rf.readline()
-            lines = rf.readlines()
-            for line in lines:
-                sline = line.split(",")
-                ovals = [float(sline[0]), float(sline[1])]
-                vals.append(ovals)
-        vals = np.array(vals)
-        return vals
+        df = pd.read_csv(fname)
+        return df.to_numpy()
 
     dvals = None
     tvals = None
