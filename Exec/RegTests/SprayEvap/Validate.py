@@ -6,12 +6,16 @@ import matplotlib.pyplot as plt
 """
 Script for validating PelePhysics spray model
 Test cases:
-| Case        | T_g [K] | p_g [bar] | T_d [K] | d_d [um]] | Fuel           |
-| ----------- | ------- | --------- | ------- | --------- | -------------- |
-| Nomura(471) | 471     | 1         | 298     | 700       | heptane        |
-| Nomura(741) | 741     | 1         | 298     | 700       | heptane        |
-| WongLin()   | 1000    | 1.01325   | 315     | 1961      | decane         |
-| Daif()      | 348     | 1.01325   | 291.4   | 1334      | heptane/decane |
+| Case         | Fuel           |
+| ------------ | -------------- |
+| Nomura(471)  | heptane        |
+| Nomura(741)  | heptane        |
+| WongLin()    | decane         |
+| Daif()       | heptane/decane |
+| RungeHep()   | heptane        |
+| RungeDec()   | decane         |
+| RungeMix()   | heptane/decane |
+| RungeJP8()   | POSF10264      |
 """
 
 # Case object

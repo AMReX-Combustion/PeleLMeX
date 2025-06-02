@@ -2,6 +2,7 @@ import os
 import csv
 import numpy as np
 import pandas as pd
+import re
 
 
 def ExtractData(case, outfile):
@@ -16,12 +17,8 @@ def ExtractData(case, outfile):
             sprayfiles.append(case.name + "/" + x)
 
     def get_step(fn):
-        x = fn.split()
-        res = []
-        for i in x:
-            if i.isnumeric():
-                res.append(i)
-        return [fn, res]
+        match = re.search(r"(?:plt|spray)(\d+)", fn)
+        return int(match.group(1)) if match else -1
 
     pltfiles = sorted(pltfiles, key=get_step)
     sprayfiles = sorted(sprayfiles, key=get_step)

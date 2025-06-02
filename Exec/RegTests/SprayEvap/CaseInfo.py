@@ -73,6 +73,14 @@ class CaseInfo:
         elif xyunits[0] == "ms":
             self.xconv = 1.0e3
             self.xlabel = "$t$ [ms]"
+        elif xyunits[0] == "runge":
+            # This is nu_gas / r_0**2 * 1E-2
+            if self.droplet.T == 273.15:
+                nu_gas = 1.346452e-05
+            else:
+                nu_gas = 1.469687e-05
+            self.xconv = 10 ** (-2) * nu_gas / (self.droplet.dia / 2.0) ** 2
+            self.xlabel = r"$(t \nu / r_0^2) \times 10^{-2}$"
         else:
             self.xconv = 1.0
             self.xlabel = "$t$ [s]"
@@ -121,7 +129,7 @@ def Nomura(temp):
         end_time = 1.225
     else:
         end_time = None
-    drop = Droplet(298.0, 7.0e-4, ["NC7H16", "NC10H22"], [1.0, 0.0])
+    drop = Droplet(298.0, 7.0e-4, ["NC7H16", "NC10H22", "POSF10264"], [1.0, 0.0, 0.0])
     gas = GasPhase(temp, 1.0e5, vel=0.0)
     case = CaseInfo(
         f"Nomura_{int(temp)}",
@@ -136,7 +144,9 @@ def Nomura(temp):
 
 def WongLin():
     end_time = 4
-    drop = Droplet(315.0, 1.961e-3, ["NC7H16", "NC10H22"], [0.0, 1.0], Reyn=17)
+    drop = Droplet(
+        315.0, 1.961e-3, ["NC7H16", "NC10H22", "POSF10264"], [0.0, 1.0, 0.0], Reyn=17
+    )
     gas = GasPhase(1000.0, 1.01325e5)
     case = CaseInfo(
         "WongLin", "Wong & Lin", drop, gas, xyunits=["s", "dd0"], end_time=end_time
@@ -145,9 +155,75 @@ def WongLin():
 
 
 def Daif():
-    drop = Droplet(291.4, 1.334e-3, ["NC7H16", "NC10H22"], [0.7375, 0.2625])
+    drop = Droplet(
+        291.4, 1.334e-3, ["NC7H16", "NC10H22", "POSF10264"], [0.7375, 0.2625, 0.0]
+    )
     gas = GasPhase(348.0, 1.01325e5, vel=3.10)
     case = CaseInfo("Daif", "Daif et al.", drop, gas, xyunits=["s", "r2_mm"], dt=1e-3)
+    return case
+
+
+def RungeMix():
+    drop = Droplet(272, 5.94e-4, ["NC7H16", "NC10H22", "POSF10264"], [0.5, 0.5, 0.0])
+    gas = GasPhase(272, 1.01325e5, vel=2.5)
+    case = CaseInfo(
+        "RungeMix",
+        "Runge et al.",
+        drop,
+        gas,
+        xyunits=["runge", "dd02"],
+        dt=1e-3,
+        plot_per=1,
+        cell_num=[64, 64],
+    )
+    return case
+
+
+def RungeDec():
+    drop = Droplet(272, 5.88e-4, ["NC7H16", "NC10H22", "POSF10264"], [0.0, 1.0, 0.0])
+    gas = GasPhase(272, 1.01325e5, vel=2.5)
+    case = CaseInfo(
+        "RungeDec",
+        "Runge et al.",
+        drop,
+        gas,
+        xyunits=["runge", "dd02"],
+        dt=1e-3,
+        plot_per=1,
+        cell_num=[64, 64],
+    )
+    return case
+
+
+def RungeHep():
+    drop = Droplet(272, 5.7e-4, ["NC7H16", "NC10H22", "POSF10264"], [1.0, 0.0, 0.0])
+    gas = GasPhase(272, 1.01325e5, vel=2.5)
+    case = CaseInfo(
+        "RungeHep",
+        "Runge et al.",
+        drop,
+        gas,
+        xyunits=["runge", "dd02"],
+        dt=1e-3,
+        plot_per=0.25,
+        cell_num=[64, 64],
+    )
+    return case
+
+
+def RungeJP8():
+    drop = Droplet(294.15, 6.36e-4, ["NC7H16", "NC10H22", "POSF10264"], [0.0, 0.0, 1.0])
+    gas = GasPhase(294.15, 1.01325e5, vel=3.0)
+    case = CaseInfo(
+        "RungeJP8",
+        "Runge et al.",
+        drop,
+        gas,
+        xyunits=["runge", "dd02"],
+        dt=1e-3,
+        plot_per=1,
+        cell_num=[64, 64],
+    )
     return case
 
 

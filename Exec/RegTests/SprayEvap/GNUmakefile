@@ -28,10 +28,10 @@ THREAD_SANITIZER = FALSE
 # PeleLMeX
 USE_PLASMA = FALSE
 USE_PARTICLES = TRUE
-SPRAY_FUEL_NUM = 2
+SPRAY_FUEL_NUM = 3
 
 # PelePhysics
-Chemistry_Model = multi_dechep
+Chemistry_Model = fuels_nonreacting
 Eos_Model = Fuego
 Transport_Model = Simple
 
