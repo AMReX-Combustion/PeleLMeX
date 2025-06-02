@@ -22,7 +22,7 @@ def ExtractData(case, outfile):
 
     pltfiles = sorted(pltfiles, key=get_step)
     sprayfiles = sorted(sprayfiles, key=get_step)
-    alltime = []
+    time = []
     # Open Header in the plt files and extract the solution time
     for cf in pltfiles:
         curfile = cf + "/Header"
@@ -31,7 +31,7 @@ def ExtractData(case, outfile):
             Lines = fn.readlines()
             numcomp = int(Lines[1])
             timeline = numcomp + 3
-        alltime.append(float(Lines[timeline]))
+        time.append(float(Lines[timeline]))
 
     # Column designations in the spray*.p3d files
     numspec = len(case.droplet.Y)  # Liquid fuel components
@@ -49,7 +49,7 @@ def ExtractData(case, outfile):
         with open(cf, "r") as fn:
             Lines = fn.readlines()
             if len(Lines) >= crow + 1:
-                timevals.append(alltime[i])
+                timevals.append(time[i])
                 sline = Lines[crow].split()
                 for col in range(numcol):
                     vals[i][col] = float(sline[col])
