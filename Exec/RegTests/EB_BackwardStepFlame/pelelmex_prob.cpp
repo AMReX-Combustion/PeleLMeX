@@ -18,6 +18,13 @@ PeleLM::readProbParm() // NOLINT(readability-make-member-function-const)
   if (prob_parm->ignite_flow) {
     pp.query("ignition_temperature", prob_parm->ignition_temperature);
   }
+
+  pp.query("EBinflow_T", prob_parm->EBinflow_T);
+  pp.query("EBinflow_vel", prob_parm->EBinflow_vel);
+  pp.query("EBinflow_Yfuel", prob_parm->EBinflow_Yfuel);
+
+  amrex::ParmParse pplm("peleLM");
+  pplm.query("EBinflow", prob_parm->do_EBinflow);
 }
 
 void

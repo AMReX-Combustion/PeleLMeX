@@ -359,8 +359,8 @@ must set:
 
     eb2.geom_type = UserDefined
 
-and then implement the actual geometry definition in a `EBUserDefined.H` file located in the run folder (and add
-to the GNUmakefile using `CEXE_headers += EBUserDefined.H`). An example of such implementation is available in the
+and then implement the actual geometry definition in the `EBUserDefined` member function of the `ProblemSpecificFunctions` struct in
+``pelelmex_prob.H``. An example of such implementation is available in the
 ``Exec/Case/ChallengeProblem`` folder. Example of more generic EB problems are also found in the ``Exec/RegTest/EB_*``
 folders.
 
@@ -408,12 +408,28 @@ flag:
     peleLM.isothermal_EB = 1
 
 The user is now responsible for providing the wall temperature *on all the EB walls*, but adiabtic wall can still be specified.
-Control over the local EB thermal boundary condition is provided through the `setEBState` and `setEBType` functions, also
-defined in the `EBUserDefined.H` already used above to provide a user-defined EB geometry. Example of isothermal EBs are provided
+Control over the local EB thermal boundary condition is provided through the `bcnormal_eb` and `bctype_eb` functions, also
+defined in the `ProblemSpecificFunctions` struct in ``pelelmex_prob.H`` already used above to provide a user-defined EB geometry.
+Examples of isothermal EBs are provided
 in ``Exec/RegTest/EB_BackwardStepFlame`` and ``Exec/RegTest/EB_FlowPastCylinder`` tests.
 
 .. note::
    Note that when using isothermal EB in combination with LES, the thermal diffusion coefficient employed to compute the EB boundary thermal flux only uses the molecular contribution.
+
+Inflow boundaries on EB surfaces may also be specified through experimental capability by setting the following flag:
+
+::
+
+   peleLM.EBinflow = 1
+
+Similarly to isothermal boundaries, the user is responsible for specifying the inflow conditions using the `bcnormal_eb` function,
+but this function must not specify all state variables in the region of the inflow. Again, an example is provided in the
+``Exec/RegTest/EB_BackwardStepFlame`` test case.
+
+.. note::
+   EB inflow capability is still experimental. Scalar diffusion at these boundaries is not yet supported. This capability and the user interface
+   are subject to potential change in the future and bugs/unanticipated behavior are more likely with this capability for now. Potential changes
+   may also impact the isothermal EB capability.
 
 Lastly, it is possible to change the default redistribution scheme described in the :ref:`geometry with embedded boundaries section: <ssec:geoEB>`
 ::

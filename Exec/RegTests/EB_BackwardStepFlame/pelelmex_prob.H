@@ -21,6 +21,11 @@ struct MyProbParm : public ProbParmDefault
 
   bool ignite_flow = false;
   amrex::Real ignition_temperature = 1700.0;
+
+  bool do_EBinflow = false;
+  amrex::Real EBinflow_T = 320.0;
+  amrex::Real EBinflow_vel = 2.0;
+  amrex::Real EBinflow_Yfuel = 0.5;
 };
 
 struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
@@ -136,8 +141,8 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
 
   AMREX_GPU_DEVICE
   AMREX_FORCE_INLINE
-  static void setEBState(
-    const amrex::Real* /*xEBface[AMREX_SPACEDIM]*/,
+  static void bcnormal_eb(
+    const amrex::Real xEBface[AMREX_SPACEDIM],
     const amrex::Real* /*xEBfaceNormal[AMREX_SPACEDIM]*/,
     const amrex::CellData<const amrex::Real>& /*s_in*/,
     amrex::Real s_ext[NVAR],
@@ -145,24 +150,55 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
     amrex::GeometryData const& /*geomdata*/,
     MyProbParm const& prob_parm)
   {
+    // Isothermal wall
     s_ext[TEMP] = prob_parm.Twall;
+
+    // Inflow if requested
+    if (prob_parm.do_EBinflow && std::abs(xEBface[0]) <= 0.0015) {
+      auto eos = pele::physics::PhysicsType::eos();
+      s_ext[VELX] = 0.0;
+      s_ext[VELY] = prob_parm.EBinflow_vel;
+      amrex::Real massfrac[NUM_SPECIES] = {0.0};
+      massfrac[CH4_ID] = prob_parm.EBinflow_Yfuel;
+      massfrac[O2_ID] = (1.0 - massfrac[CH4_ID]) * 0.233;
+      massfrac[N2_ID] = 1.0 - massfrac[CH4_ID] - massfrac[O2_ID];
+
+      amrex::Real P_cgs = prob_parm.P_mean * 10.0;
+
+      s_ext[TEMP] = prob_parm.EBinflow_T;
+      amrex::Real rho_cgs, RhoH_temp;
+      eos.PYT2R(P_cgs, massfrac, s_ext[TEMP], rho_cgs);
+      s_ext[DENSITY] = rho_cgs * 1.0e3;
+
+      eos.TY2H(s_ext[TEMP], massfrac, RhoH_temp);
+      s_ext[RHOH] = RhoH_temp * 1.0e-4 * s_ext[DENSITY];
+
+      for (int n = 0; n < NUM_SPECIES; n++) {
+        s_ext[FIRSTSPEC + n] = massfrac[n] * s_ext[DENSITY];
+      }
+    }
   }
 
   AMREX_GPU_DEVICE
   AMREX_FORCE_INLINE
-  static void setEBType(
+  static void bctype_eb(
     const amrex::Real xEBface[AMREX_SPACEDIM],
     int& EBflagType,
     amrex::Real& EBfaceFrac,
     amrex::GeometryData const& /*geomdata*/,
-    MyProbParm const& /*prob_parm*/)
+    MyProbParm const& prob_parm)
   {
     if (xEBface[0] > 0.0098) {
-      EBflagType = 1;
+      EBflagType = pelelmex::BCTypeEB::wall_isot;
       EBfaceFrac = 1.0;
     } else {
-      EBflagType = 0;
-      EBfaceFrac = 0.0;
+      if (prob_parm.do_EBinflow && std::abs(xEBface[0]) <= 0.0015) {
+        EBflagType = pelelmex::BCTypeEB::inflow;
+        EBfaceFrac = 1.0;
+      } else {
+        EBflagType = pelelmex::BCTypeEB::wall_adiab;
+        EBfaceFrac = 0.0;
+      }
     }
   }
 

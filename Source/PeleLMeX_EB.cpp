@@ -1,8 +1,10 @@
 #include <PeleLMeX.H>
+#include <PeleLMeX_K.H>
 #include <PeleLMeX_Utils.H>
 #include <pelelmex_prob.H>
 
 #ifdef AMREX_USE_EB
+#include <PeleLMeX_BCfillEB.H>
 #include <AMReX_EB2.H>
 #include <AMReX_EB2_IF.H>
 #include <AMReX_EB_Redistribution.H>
@@ -452,6 +454,88 @@ PeleLM::getEBDistance(int a_lev, MultiFab& a_signDistLev)
   }
 }
 
+Vector<std::unique_ptr<MultiFab>>
+PeleLM::getEBState(int first_comp, int ncomp, const PeleLM::TimeStamp& a_time)
+{
+  AMREX_ASSERT(first_comp >= VELX);
+  AMREX_ASSERT(first_comp + ncomp <= NVAR);
+  Vector<std::unique_ptr<MultiFab>> r;
+  r.reserve(finest_level + 1);
+  for (int lev = 0; lev <= finest_level; ++lev) {
+    r.push_back(std::make_unique<MultiFab>(
+      grids[lev], dmap[lev], ncomp, m_nGrowState, MFInfo(), Factory(lev)));
+    getEBState(lev, a_time, *r[lev], first_comp, ncomp);
+  }
+  return r;
+}
+
+std::unique_ptr<MultiFab>
+PeleLM::getEBState(
+  int a_lev, int first_comp, int ncomp, const PeleLM::TimeStamp& a_time)
+{
+  AMREX_ASSERT(first_comp >= VELX);
+  AMREX_ASSERT(first_comp + ncomp <= NVAR);
+  std::unique_ptr<MultiFab> r = std::make_unique<MultiFab>(
+    grids[a_lev], dmap[a_lev], ncomp, m_nGrowState, MFInfo(), Factory(a_lev));
+  getEBState(a_lev, a_time, *r, first_comp, ncomp);
+
+  return r;
+}
+
+FArrayBox
+PeleLM::getEBState(
+  MFIter const& a_mfi,
+  int a_lev,
+  int first_comp,
+  int ncomp,
+  const PeleLM::TimeStamp& a_time)
+{
+  AMREX_ASSERT(first_comp >= VELX);
+  AMREX_ASSERT(first_comp + ncomp <= NVAR);
+
+  ProbParm const* lprobparm = prob_parm_d;
+  const auto geomdata = geom[a_lev].data();
+  auto time = getTime(a_lev, a_time);
+
+  auto* ldata_p = getLevelDataPtr(a_lev, a_time);
+
+  const auto bx = a_mfi.growntilebox(m_nGrowState);
+  FArrayBox r(bx, ncomp, The_Async_Arena());
+  auto ebscal_arr = r.array();
+  const auto& ebfact = EBFactory(a_lev);
+  auto const& flagfab = ebfact.getMultiEBCellFlagFab()[a_mfi];
+  if (flagfab.getType(bx) == FabType::singlevalued) {
+    const PeleLMFillBCStateEB<
+      ProblemSpecificFunctions,
+      hasBCNormalEB<const ProblemSpecificFunctions>::value>
+      EBfiller{lprobparm, ProblemSpecificFunctions{}};
+    auto const& flag = flagfab.const_array();
+    const auto& state = ldata_p->state.const_array(a_mfi);
+    AMREX_D_TERM(
+      const auto& ebfc_x = ebfact.getFaceCent()[0]->const_array(a_mfi);
+      , const auto& ebfc_y = ebfact.getFaceCent()[1]->const_array(a_mfi);
+      , const auto& ebfc_z = ebfact.getFaceCent()[2]->const_array(a_mfi););
+    const auto& ebnorm = ebfact.getBndryNormal().const_array(a_mfi);
+    amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+      // Regular/covered cells -> 0.0
+      if (flag(i, j, k).isCovered() || flag(i, j, k).isRegular()) {
+        for (int n = 0; n < ncomp; n++) {
+          ebscal_arr(i, j, k, n) = 0.0;
+        }
+      } else { // cut-cells
+        EBfiller(
+          i, j, k, state, ebscal_arr, first_comp, ncomp,
+          AMREX_D_DECL(ebfc_x, ebfc_y, ebfc_z), ebnorm, geomdata, time);
+      }
+    });
+  } else {
+    AMREX_PARALLEL_FOR_4D(
+      bx, ncomp, i, j, k, n, { ebscal_arr(i, j, k, n) = 0.0; });
+  }
+
+  return r;
+}
+
 void
 PeleLM::getEBState(
   int a_lev,
@@ -467,9 +551,8 @@ PeleLM::getEBState(
   const auto geomdata = geom[a_lev].data();
   const auto& ebfact = EBFactory(a_lev);
   Array<const MultiCutFab*, AMREX_SPACEDIM> faceCentroid = ebfact.getFaceCent();
-
-  auto* ldata_p = getLevelDataPtr(a_lev, a_time);
   auto time = getTime(a_lev, a_time);
+  auto* ldata_p = getLevelDataPtr(a_lev, a_time);
 
   MFItInfo mfi_info;
   if (Gpu::notInLaunchRegion()) {
@@ -480,7 +563,7 @@ PeleLM::getEBState(
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
   for (MFIter mfi(a_EBstate, mfi_info); mfi.isValid(); ++mfi) {
-    const Box& bx = mfi.tilebox();
+    const Box& bx = mfi.growntilebox();
     auto const& flagfab = ebfact.getMultiEBCellFlagFab()[mfi];
     auto const& flag = flagfab.const_array();
     const auto& ebState = a_EBstate.array(mfi);
@@ -492,11 +575,15 @@ PeleLM::getEBState(
       AMREX_PARALLEL_FOR_4D(
         bx, nComp, i, j, k, n, { ebState(i, j, k, n) = 0.0; });
     } else {
+      const PeleLMFillBCStateEB<
+        ProblemSpecificFunctions,
+        hasBCNormalEB<const ProblemSpecificFunctions>::value>
+        EBfiller{lprobparm, ProblemSpecificFunctions{}};
+      const auto& state = ldata_p->state.const_array(mfi);
       AMREX_D_TERM(const auto& ebfc_x = faceCentroid[0]->array(mfi);
                    , const auto& ebfc_y = faceCentroid[1]->array(mfi);
                    , const auto& ebfc_z = faceCentroid[2]->array(mfi););
       const auto& ebnorm = ebfact.getBndryNormal().const_array(mfi);
-      const auto& state = ldata_p->state.const_array(mfi);
       amrex::ParallelFor(
         bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           // Regular/covered cells -> 0.0
@@ -505,31 +592,9 @@ PeleLM::getEBState(
               ebState(i, j, k, n) = 0.0;
             }
           } else { // cut-cells
-            // Get the EBface centroid coordinates
-            const amrex::Real* dx = geomdata.CellSize();
-            const amrex::Real* prob_lo = geomdata.ProbLo();
-            const amrex::Real xcell[AMREX_SPACEDIM] = {AMREX_D_DECL(
-              prob_lo[0] + (i + 0.5) * dx[0], prob_lo[1] + (j + 0.5) * dx[1],
-              prob_lo[2] + (k + 0.5) * dx[2])};
-            const amrex::Real xface[AMREX_SPACEDIM] = {AMREX_D_DECL(
-              xcell[0] + ebfc_x(i, j, k) * dx[0],
-              xcell[1] + ebfc_y(i, j, k) * dx[1],
-              xcell[2] + ebfc_z(i, j, k) * dx[2])};
-            const amrex::Real bcnorm[AMREX_SPACEDIM] = {AMREX_D_DECL(
-              ebnorm(i, j, k, 0), ebnorm(i, j, k, 1), ebnorm(i, j, k, 2))};
-
-            // State in the cell the EBface belongs to
-            auto const stateIn = state.cellData(i, j, k);
-            amrex::Real stateExt[NVAR] = {0.0};
-
-            // User-defined fill function
-            ProblemSpecificFunctions::setEBState(
-              xface, bcnorm, stateIn, stateExt, time, geomdata, *lprobparm);
-
-            // Extract requested entries
-            for (int n = 0; n < nComp; n++) {
-              ebState(i, j, k, n) = stateExt[stateComp + n];
-            }
+            EBfiller(
+              i, j, k, state, ebState, stateComp, nComp,
+              AMREX_D_DECL(ebfc_x, ebfc_y, ebfc_z), ebnorm, geomdata, time);
           }
         });
     }
@@ -569,6 +634,10 @@ PeleLM::getEBDiff(
     } else if (flagfab.getType(bx) == FabType::regular) { // Set to zero
       AMREX_PARALLEL_FOR_3D(bx, i, j, k, { ebdiff(i, j, k) = 0.0; });
     } else {
+      const PeleLMFillBCTypeEB<
+        ProblemSpecificFunctions,
+        hasBCTypeEB<const ProblemSpecificFunctions>::value>
+        EBTypfiller{lprobparm, ProblemSpecificFunctions{}};
       AMREX_D_TERM(const auto& ebfc_x = faceCentroid[0]->array(mfi);
                    , const auto& ebfc_y = faceCentroid[1]->array(mfi);
                    , const auto& ebfc_z = faceCentroid[2]->array(mfi););
@@ -578,22 +647,17 @@ PeleLM::getEBDiff(
           if (flag(i, j, k).isCovered() || flag(i, j, k).isRegular()) {
             ebdiff(i, j, k) = 0.0;
           } else { // cut-cells
-            // Get the EBface centroid coordinates
-            const amrex::Real* dx = geomdata.CellSize();
-            const amrex::Real* prob_lo = geomdata.ProbLo();
-            const amrex::Real xcell[AMREX_SPACEDIM] = {AMREX_D_DECL(
-              prob_lo[0] + (i + 0.5) * dx[0], prob_lo[1] + (j + 0.5) * dx[1],
-              prob_lo[2] + (k + 0.5) * dx[2])};
-            const amrex::Real xface[AMREX_SPACEDIM] = {AMREX_D_DECL(
-              xcell[0] + ebfc_x(i, j, k) * dx[0],
-              xcell[1] + ebfc_y(i, j, k) * dx[1],
-              xcell[2] + ebfc_z(i, j, k) * dx[2])};
-            // This is temporary, will be replaced with Inflow on EB update.
-            int ebflagtype = 0;
-            amrex::Real ebfacefrac = 1.0;
-            ProblemSpecificFunctions::setEBType(
-              xface, ebflagtype, ebfacefrac, geomdata, *lprobparm);
-            ebdiff(i, j, k) = diff_cc(i, j, k) * ebfacefrac;
+            int ebflagtype = pelelmex::BCTypeEB::wall_adiab;
+            Real ebfacefrac = 0.0;
+            EBTypfiller(
+              i, j, k, ebflagtype, ebfacefrac,
+              AMREX_D_DECL(ebfc_x, ebfc_y, ebfc_z), geomdata, *lprobparm);
+            // TODO: this only works for temperature at this point
+            if (ebflagtype == pelelmex::BCTypeEB::wall_adiab) {
+              ebdiff(i, j, k) = 0.0;
+            } else {
+              ebdiff(i, j, k) = ebfacefrac * diff_cc(i, j, k);
+            }
           }
         });
     }
@@ -706,5 +770,24 @@ PeleLM::getRestartEBMaxLevel() const
   int max_eb_rst = -1;
   max_eb_rst = std::stoi(line);
   return max_eb_rst;
+}
+
+void
+PeleLM::checkEBInflowFunctions()
+{
+  if (!hasBCNormalEB<const ProblemSpecificFunctions>::value) {
+    Abort("Provided ProblemSpecificFunctions doesn't have a viable bcnormal_eb "
+          "function");
+  }
+  if (!hasBCTypeEB<const ProblemSpecificFunctions>::value) {
+    Abort("Provided ProblemSpecificFunctions doesn't have a viable bctype_eb "
+          "function");
+  }
+  if (m_verbose != 0 && m_useEBinflow != 0) {
+    Print() << "WARNING: EB-inflow capability is experimental. Scalar "
+               "diffusion is not supported at these boundaries and future "
+               "interface changes are possible!"
+            << std::endl;
+  }
 }
 #endif

@@ -1,0 +1,23 @@
+# See if we can add two 1/2 strength turbinflows to equal a half strength
+
+FILE = input.3d
+amr.plot_file = pltoverlap
+turbinflows = lowZ1 lowZ2
+
+turbinflow.lowZ1.turb_file      = TurbFileHIT/TurbTEST
+turbinflow.lowZ1.dir            = 2
+turbinflow.lowZ1.side           = low
+turbinflow.lowZ1.turb_scale_loc = 628.319
+turbinflow.lowZ1.turb_scale_vel = 0.25
+turbinflow.lowZ1.turb_center    = 0.005 0.005
+turbinflow.lowZ1.turb_conv_vel  = 5.
+turbinflow.lowZ1.turb_nplane    = 32
+
+turbinflow.lowZ2.turb_file      = TurbFileHIT/TurbTEST
+turbinflow.lowZ2.dir            = 2
+turbinflow.lowZ2.side           = low
+turbinflow.lowZ2.turb_scale_loc = 628.319
+turbinflow.lowZ2.turb_scale_vel = 0.25
+turbinflow.lowZ2.turb_center    = 0.005 0.005
+turbinflow.lowZ2.turb_conv_vel  = 5.
+turbinflow.lowZ2.turb_nplane    = 32

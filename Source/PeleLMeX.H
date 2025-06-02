@@ -297,6 +297,7 @@ public:
   /**
    * \brief Fill the initial level data container
    * using the user defined init function
+   * \param lev the target level index
    */
   void initLevelData(int lev);
 
@@ -595,11 +596,12 @@ public:
   /**
    * \brief Add the Wbar contribution to the face-centered species diffusion
    * fluxes on all levels optionally returning that contribution in a separate
-   * container \param a_fluxes diffusion fluxes to be updated \param
-   * a_wbarfluxes optional container to return the Wbar contribution \param
-   * a_spec species rhoYs state data on all levels \param a_rho density state
-   * data on all levels \param a_beta cell-centered species diffusivity on all
-   * levels
+   * container
+   * \param a_fluxes diffusion fluxes to be updated
+   * \param a_wbarfluxes optional container to return the Wbar contribution
+   * \param a_spec species rhoYs state data on all levels
+   * \param a_rho density state data on all levels
+   * \param a_beta cell-centered species diffusivity on all levels
    */
   void addWbarTerm(
     const amrex::Vector<amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>>&
@@ -1274,6 +1276,25 @@ public:
     amrex::Real scale,
     bool fluxes_are_area_weighted) const;
 
+#ifdef AMREX_USE_EB
+  void advFluxDivergence(
+    int a_lev,
+    amrex::MultiFab& a_divergence,
+    int div_comp,
+    amrex::MultiFab& a_divu,
+    const amrex::Array<const amrex::MultiFab*, AMREX_SPACEDIM>& a_fluxes,
+    int flux_comp,
+    const amrex::Array<const amrex::MultiFab*, AMREX_SPACEDIM>& a_faceState,
+    int face_comp,
+    const amrex::MultiFab* a_EBvelocity,
+    const amrex::MultiFab* a_EBvalue,
+    int ncomp,
+    int const* l_conserv_d,
+    const amrex::Geometry& a_geom,
+    amrex::Real scale,
+    bool fluxes_are_area_weighted) const;
+#endif
+
   void extFluxDivergenceLevel(
     int lev,
     amrex::MultiFab& a_divergence,
@@ -1430,6 +1451,19 @@ public:
     int stateComp,
     int nComp);
 
+  amrex::Vector<std::unique_ptr<amrex::MultiFab>>
+  getEBState(int first_comp, int ncomp, const PeleLM::TimeStamp& a_time);
+
+  std::unique_ptr<amrex::MultiFab> getEBState(
+    int a_lev, int first_comp, int ncomp, const PeleLM::TimeStamp& a_time);
+
+  amrex::FArrayBox getEBState(
+    const amrex::MFIter& a_mfi,
+    int a_lev,
+    int first_comp,
+    int ncomp,
+    const PeleLM::TimeStamp& a_time);
+
   void getEBDiff(
     int a_lev,
     const TimeStamp& a_time,
@@ -1446,6 +1480,8 @@ public:
     amrex::Vector<amrex::MultiFab*> const& a_vel,
     amrex::Vector<amrex::Array<amrex::MultiFab const*, AMREX_SPACEDIM>> const&
       a_umac);
+
+  void checkEBInflowFunctions();
 #endif
 
   //-----------------------------------------------------------------------------
@@ -2068,6 +2104,7 @@ public:
   amrex::Vector<amrex::Real> coveredState_h;
   amrex::Gpu::DeviceVector<amrex::Real> coveredState_d;
   int m_isothermalEB = 0;
+  int m_useEBinflow = 0;
 
   // EB redistribution
   std::string m_adv_redist_type = "StateRedist";
