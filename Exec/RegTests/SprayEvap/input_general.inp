@@ -66,8 +66,8 @@ particles.fixed_parts   = 1
 particles.mom_transfer  = 1
 particles.mass_transfer = 1
 
-particles.fuel_species = NC7H16 NC10H22
-prob.Y_drop = 0. 1.
+particles.fuel_species = NC7H16 NC10H22 POSF10264
+prob.Y_drop = 0. 1. 0.
 particles.fuel_ref_temp = 298.15
 
 # Properties for Heptane in MKS

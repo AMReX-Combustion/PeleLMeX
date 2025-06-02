@@ -21,4 +21,4 @@ Case options include:
 * `Daif()`
 * `RungeHep()`, `RungeDec()`, `RungeMix()`, and `RungeJP8()`
 
-
+Note that multicomponent evaporation is a work in progress as illustrated by the `RungeJP8` test case. 

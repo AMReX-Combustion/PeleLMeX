@@ -35,7 +35,7 @@ PeleLM::readProbParm()
   massfrac[N2_ID] = PeleLM::prob_parm->Y_N2;
   massfrac[O2_ID] = PeleLM::prob_parm->Y_O2;
   amrex::Real T_g = PeleLM::prob_parm->T0_gas;
-  amrex::Real T_eff = (2.*T_d + T_g) / 3.;
+  amrex::Real T_eff = (2. * T_d + T_g) / 3.;
   amrex::Real p_cgs = m2c::P(PeleLM::prob_parm->P_mean);
   amrex::Real rho_cgs = 0.;
   eos.PYT2R(p_cgs, massfrac, T_eff, rho_cgs);
@@ -47,12 +47,9 @@ PeleLM::readProbParm()
   amrex::Real rhoDi_cgs[NUM_SPECIES], Di[NUM_SPECIES] = {0.0};
   auto trans = pele::physics::PhysicsType::transport();
   const auto* trans_parm = &(PeleLM::trans_parms.host_parm());
-  trans.transport
-  (
-    FA, TR, TR, TR, FA, T_eff, 
-    rho_cgs, massfrac, rhoDi_cgs, &dummy_chi_mix, 
-    mu_cgs, dummy_xi, lambda_cgs, trans_parm
-  );
+  trans.transport(
+    FA, TR, TR, TR, FA, T_eff, rho_cgs, massfrac, rhoDi_cgs, &dummy_chi_mix,
+    mu_cgs, dummy_xi, lambda_cgs, trans_parm);
 
   amrex::Real mu = c2m::Mu(mu_cgs);
   amrex::Real rho = c2m::Rho(rho_cgs);
@@ -61,16 +58,17 @@ PeleLM::readProbParm()
   if (Re > 0.) {
     // Get gas velocity from Re
     PeleLM::prob_parm->vel_gas = mu * Re / (rho * drop_dia);
-  }
-  else{
+  } else {
     Re = PeleLM::prob_parm->vel_gas * rho * drop_dia / mu;
   }
 
-  amrex::Print() << "Re = " << Re << "\n"
-                 << "vel_gas = " << prob_parm->vel_gas << "\n"
-                 << "mu_r = " << c2m::Mu(mu_cgs) << "\n"
-                 << "rho_r = "<< c2m::Rho(rho_cgs) << "\n"
-                 << "drop_dia = "<< drop_dia << std::endl;
+  std::ofstream ofs("ic.txt", std::ofstream::out);
+  amrex::Print(ofs) << "Re = " << Re << "\n"
+                    << "vel_gas = " << prob_parm->vel_gas << "\n"
+                    << "mu_r = " << c2m::Mu(mu_cgs) << "\n"
+                    << "rho_r = " << c2m::Rho(rho_cgs) << "\n"
+                    << "drop_dia = " << drop_dia << std::endl;
+  ofs.close();
 }
 
 void
