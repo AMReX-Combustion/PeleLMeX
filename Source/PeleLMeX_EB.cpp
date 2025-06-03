@@ -91,9 +91,10 @@ PeleLM::redistributeAofS(
 
     if (flagfab.getType(bx) != FabType::covered) {
       if (flagfab.getType(grow(bx, 4)) != FabType::regular) {
-        AMREX_D_TERM(auto apx = ebfact.getAreaFrac()[0]->const_array(mfi);
-                     , auto apy = ebfact.getAreaFrac()[1]->const_array(mfi);
-                     , auto apz = ebfact.getAreaFrac()[2]->const_array(mfi););
+        AMREX_D_TERM(
+          auto apx = ebfact.getAreaFrac()[0]->const_array(mfi);
+          , auto apy = ebfact.getAreaFrac()[1]->const_array(mfi);
+          , auto apz = ebfact.getAreaFrac()[2]->const_array(mfi););
         AMREX_D_TERM(
           Array4<Real const> fcx = ebfact.getFaceCent()[0]->const_array(mfi);
           , Array4<Real const> fcy = ebfact.getFaceCent()[1]->const_array(mfi);
@@ -220,9 +221,10 @@ PeleLM::redistributeDiff(
 
     if (flagfab.getType(bx) != FabType::covered) {
       if (flagfab.getType(grow(bx, 4)) != FabType::regular) {
-        AMREX_D_TERM(auto apx = ebfact.getAreaFrac()[0]->const_array(mfi);
-                     , auto apy = ebfact.getAreaFrac()[1]->const_array(mfi);
-                     , auto apz = ebfact.getAreaFrac()[2]->const_array(mfi););
+        AMREX_D_TERM(
+          auto apx = ebfact.getAreaFrac()[0]->const_array(mfi);
+          , auto apy = ebfact.getAreaFrac()[1]->const_array(mfi);
+          , auto apz = ebfact.getAreaFrac()[2]->const_array(mfi););
         AMREX_D_TERM(
           Array4<Real const> fcx = ebfact.getFaceCent()[0]->const_array(mfi);
           , Array4<Real const> fcy = ebfact.getFaceCent()[1]->const_array(mfi);
@@ -272,16 +274,18 @@ PeleLM::initCoveredState()
   // Zero velocities, typical values on species, 'cold' temperature
   if (m_incompressible != 0) {
     coveredState_h.resize(AMREX_SPACEDIM);
-    AMREX_D_TERM(coveredState_h[0] = 0.0;, coveredState_h[1] = 0.0;
-                 , coveredState_h[2] = 0.0;)
+    AMREX_D_TERM(
+      coveredState_h[0] = 0.0;, coveredState_h[1] = 0.0;
+      , coveredState_h[2] = 0.0;)
     coveredState_d.resize(AMREX_SPACEDIM);
     Gpu::copy(
       Gpu::hostToDevice, coveredState_h.begin(), coveredState_h.end(),
       coveredState_d.begin());
   } else {
     coveredState_h.resize(NVAR);
-    AMREX_D_TERM(coveredState_h[0] = 0.0;, coveredState_h[1] = 0.0;
-                 , coveredState_h[2] = 0.0;)
+    AMREX_D_TERM(
+      coveredState_h[0] = 0.0;, coveredState_h[1] = 0.0;
+      , coveredState_h[2] = 0.0;)
     coveredState_h[DENSITY] = typical_values[DENSITY];
     for (int n = 0; n < NUM_SPECIES; n++) {
       coveredState_h[FIRSTSPEC + n] = typical_values[FIRSTSPEC + n];
@@ -369,13 +373,15 @@ PeleLM::initialRedistribution()
           (flagfab.getType(amrex::grow(bx, 4)) != FabType::regular)) {
           Array4<Real const> AMREX_D_DECL(fcx, fcy, fcz), ccc, vfrac,
             AMREX_D_DECL(apx, apy, apz);
-          AMREX_D_TERM(fcx = fact.getFaceCent()[0]->const_array(mfi);
-                       , fcy = fact.getFaceCent()[1]->const_array(mfi);
-                       , fcz = fact.getFaceCent()[2]->const_array(mfi););
+          AMREX_D_TERM(
+            fcx = fact.getFaceCent()[0]->const_array(mfi);
+            , fcy = fact.getFaceCent()[1]->const_array(mfi);
+            , fcz = fact.getFaceCent()[2]->const_array(mfi););
           ccc = fact.getCentroid().const_array(mfi);
-          AMREX_D_TERM(apx = fact.getAreaFrac()[0]->const_array(mfi);
-                       , apy = fact.getAreaFrac()[1]->const_array(mfi);
-                       , apz = fact.getAreaFrac()[2]->const_array(mfi););
+          AMREX_D_TERM(
+            apx = fact.getAreaFrac()[0]->const_array(mfi);
+            , apy = fact.getAreaFrac()[1]->const_array(mfi);
+            , apz = fact.getAreaFrac()[2]->const_array(mfi););
           vfrac = fact.getVolFrac().const_array(mfi);
 
           if (m_incompressible != 0) {
@@ -462,8 +468,9 @@ PeleLM::getEBState(int first_comp, int ncomp, const PeleLM::TimeStamp& a_time)
   Vector<std::unique_ptr<MultiFab>> r;
   r.reserve(finest_level + 1);
   for (int lev = 0; lev <= finest_level; ++lev) {
-    r.push_back(std::make_unique<MultiFab>(
-      grids[lev], dmap[lev], ncomp, m_nGrowState, MFInfo(), Factory(lev)));
+    r.push_back(
+      std::make_unique<MultiFab>(
+        grids[lev], dmap[lev], ncomp, m_nGrowState, MFInfo(), Factory(lev)));
     getEBState(lev, a_time, *r[lev], first_comp, ncomp);
   }
   return r;
@@ -580,9 +587,10 @@ PeleLM::getEBState(
         hasBCNormalEB<const ProblemSpecificFunctions>::value>
         EBfiller{lprobparm, ProblemSpecificFunctions{}};
       const auto& state = ldata_p->state.const_array(mfi);
-      AMREX_D_TERM(const auto& ebfc_x = faceCentroid[0]->array(mfi);
-                   , const auto& ebfc_y = faceCentroid[1]->array(mfi);
-                   , const auto& ebfc_z = faceCentroid[2]->array(mfi););
+      AMREX_D_TERM(
+        const auto& ebfc_x = faceCentroid[0]->array(mfi);
+        , const auto& ebfc_y = faceCentroid[1]->array(mfi);
+        , const auto& ebfc_z = faceCentroid[2]->array(mfi););
       const auto& ebnorm = ebfact.getBndryNormal().const_array(mfi);
       amrex::ParallelFor(
         bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
@@ -638,9 +646,10 @@ PeleLM::getEBDiff(
         ProblemSpecificFunctions,
         hasBCTypeEB<const ProblemSpecificFunctions>::value>
         EBTypfiller{lprobparm, ProblemSpecificFunctions{}};
-      AMREX_D_TERM(const auto& ebfc_x = faceCentroid[0]->array(mfi);
-                   , const auto& ebfc_y = faceCentroid[1]->array(mfi);
-                   , const auto& ebfc_z = faceCentroid[2]->array(mfi););
+      AMREX_D_TERM(
+        const auto& ebfc_x = faceCentroid[0]->array(mfi);
+        , const auto& ebfc_y = faceCentroid[1]->array(mfi);
+        , const auto& ebfc_z = faceCentroid[2]->array(mfi););
       amrex::ParallelFor(
         bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           // Regular/covered cells -> 0.0
@@ -682,10 +691,10 @@ PeleLM::correct_vel_small_cells(
       EBCellFlagFab const& flags = EBFactory(lev).getMultiEBCellFlagFab()[mfi];
 
       // Face-centered velocity components
-      AMREX_D_TERM(const auto& umac_fab = (a_umac[lev][0])->const_array(mfi);
-                   , const auto& vmac_fab = (a_umac[lev][1])->const_array(mfi);
-                   ,
-                   const auto& wmac_fab = (a_umac[lev][2])->const_array(mfi););
+      AMREX_D_TERM(
+        const auto& umac_fab = (a_umac[lev][0])->const_array(mfi);
+        , const auto& vmac_fab = (a_umac[lev][1])->const_array(mfi);
+        , const auto& wmac_fab = (a_umac[lev][2])->const_array(mfi););
 
       // No cut cells in this FAB
       if (
@@ -694,12 +703,13 @@ PeleLM::correct_vel_small_cells(
         // do nothing
       } else { // Cut cells in this FAB
         // Face-centered areas
-        AMREX_D_TERM(const auto& apx_fab =
-                       EBFactory(lev).getAreaFrac()[0]->const_array(mfi);
-                     , const auto& apy_fab =
-                         EBFactory(lev).getAreaFrac()[1]->const_array(mfi);
-                     , const auto& apz_fab =
-                         EBFactory(lev).getAreaFrac()[2]->const_array(mfi););
+        AMREX_D_TERM(
+          const auto& apx_fab =
+            EBFactory(lev).getAreaFrac()[0]->const_array(mfi);
+          , const auto& apy_fab =
+              EBFactory(lev).getAreaFrac()[1]->const_array(mfi);
+          , const auto& apz_fab =
+              EBFactory(lev).getAreaFrac()[2]->const_array(mfi););
 
         const auto& vfrac_fab = EBFactory(lev).getVolFrac().const_array(mfi);
 
@@ -776,12 +786,14 @@ void
 PeleLM::checkEBInflowFunctions()
 {
   if (!hasBCNormalEB<const ProblemSpecificFunctions>::value) {
-    Abort("Provided ProblemSpecificFunctions doesn't have a viable bcnormal_eb "
-          "function");
+    Abort(
+      "Provided ProblemSpecificFunctions doesn't have a viable bcnormal_eb "
+      "function");
   }
   if (!hasBCTypeEB<const ProblemSpecificFunctions>::value) {
-    Abort("Provided ProblemSpecificFunctions doesn't have a viable bctype_eb "
-          "function");
+    Abort(
+      "Provided ProblemSpecificFunctions doesn't have a viable bctype_eb "
+      "function");
   }
   if (m_verbose != 0 && m_useEBinflow != 0) {
     Print() << "WARNING: EB-inflow capability is experimental. Scalar "

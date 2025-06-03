@@ -48,11 +48,12 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
     const amrex::Real deltay = y - prob_parm.yvort;
     const amrex::Real d_sq = deltax * deltax + deltay * deltay;
     const amrex::Real r_sq = prob_parm.rvort * prob_parm.rvort;
-    AMREX_D_TERM(const amrex::Real u_vort = -prob_parm.forcevort * deltay /
-                                            r_sq * exp(-d_sq / r_sq / 2.);
-                 , const amrex::Real v_vort = prob_parm.forcevort * deltax /
-                                              r_sq * exp(-d_sq / r_sq / 2.);
-                 , const amrex::Real w_vort = 0.0;)
+    AMREX_D_TERM(
+      const amrex::Real u_vort =
+        -prob_parm.forcevort * deltay / r_sq * exp(-d_sq / r_sq / 2.);
+      , const amrex::Real v_vort =
+          prob_parm.forcevort * deltax / r_sq * exp(-d_sq / r_sq / 2.);
+      , const amrex::Real w_vort = 0.0;)
 
     AMREX_D_TERM(state(i, j, k, VELX) = u_vort;, state(i, j, k, VELY) = v_vort;
                  , state(i, j, k, VELZ) = w_vort;)

@@ -121,8 +121,9 @@ MLCellABecCecLap::define(
   for (amrlev = 1; amrlev < m_num_amr_levels; ++amrlev) {
     for (int mglev = 1; mglev < m_num_mg_levels[amrlev];
          ++mglev) { // for ref_ratio 4
-      m_overset_mask[amrlev].push_back(std::make_unique<iMultiFab>(
-        m_grids[amrlev][mglev], m_dmap[amrlev][mglev], 1, 1));
+      m_overset_mask[amrlev].push_back(
+        std::make_unique<iMultiFab>(
+          m_grids[amrlev][mglev], m_dmap[amrlev][mglev], 1, 1));
 #ifdef AMREX_USE_GPU
       if (
         Gpu::inLaunchRegion() &&

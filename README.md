@@ -123,6 +123,11 @@ it is most effective to create a fork of this repository and share a branch of t
 
 New contributions to *PeleLMeX* are welcome ! Contributing Guidelines are provided in [CONTRIBUTING.md](CONTRIBUTING.md).
 
+To pass the formatting check use this with a new version of `clang-format`:
+```
+find ./Source ./Exec \( -name "*.cpp" -o -name "*.H" -o -name "*.h" -o -name "*.C" \) -exec clang-format -i {} 
+```
+
 ## Versioning
 
 PeleLMeX now uses uses a type of semantic versioning to help users navigate different versions of the code,
