@@ -88,15 +88,18 @@ PeleLM::computeVelocityAdvTerm(std::unique_ptr<AdvanceAdvData>& advData)
     for (MFIter mfi(ldata_p->state, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
 
       Box const& bx = mfi.tilebox();
-      AMREX_D_TERM(auto const& umac = advData->umac[lev][0].const_array(mfi);
-                   , auto const& vmac = advData->umac[lev][1].const_array(mfi);
-                   , auto const& wmac = advData->umac[lev][2].const_array(mfi);)
-      AMREX_D_TERM(auto const& fx = fluxes[lev][0].array(mfi);
-                   , auto const& fy = fluxes[lev][1].array(mfi);
-                   , auto const& fz = fluxes[lev][2].array(mfi);)
-      AMREX_D_TERM(auto const& facex = faces[lev][0].array(mfi);
-                   , auto const& facey = faces[lev][1].array(mfi);
-                   , auto const& facez = faces[lev][2].array(mfi);)
+      AMREX_D_TERM(
+        auto const& umac = advData->umac[lev][0].const_array(mfi);
+        , auto const& vmac = advData->umac[lev][1].const_array(mfi);
+        , auto const& wmac = advData->umac[lev][2].const_array(mfi);)
+      AMREX_D_TERM(
+        auto const& fx = fluxes[lev][0].array(mfi);
+        , auto const& fy = fluxes[lev][1].array(mfi);
+        , auto const& fz = fluxes[lev][2].array(mfi);)
+      AMREX_D_TERM(
+        auto const& facex = faces[lev][0].array(mfi);
+        , auto const& facey = faces[lev][1].array(mfi);
+        , auto const& facez = faces[lev][2].array(mfi);)
       auto const& divu_arr = divu.const_array(mfi);
       auto const& vel_arr = ldata_p->state.const_array(mfi, VELX);
       auto const& force_arr = velForces[lev].const_array(mfi);
@@ -415,15 +418,18 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
     for (MFIter mfi(ldata_p->state, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
 
       Box const& bx = mfi.tilebox();
-      AMREX_D_TERM(auto const& umac = advData->umac[lev][0].const_array(mfi);
-                   , auto const& vmac = advData->umac[lev][1].const_array(mfi);
-                   , auto const& wmac = advData->umac[lev][2].const_array(mfi);)
-      AMREX_D_TERM(auto const& fx = fluxes[lev][0].array(mfi, 0);
-                   , auto const& fy = fluxes[lev][1].array(mfi, 0);
-                   , auto const& fz = fluxes[lev][2].array(mfi, 0);)
-      AMREX_D_TERM(auto const& edgex = edgeState[0].array(mfi, 1);
-                   , auto const& edgey = edgeState[1].array(mfi, 1);
-                   , auto const& edgez = edgeState[2].array(mfi, 1);)
+      AMREX_D_TERM(
+        auto const& umac = advData->umac[lev][0].const_array(mfi);
+        , auto const& vmac = advData->umac[lev][1].const_array(mfi);
+        , auto const& wmac = advData->umac[lev][2].const_array(mfi);)
+      AMREX_D_TERM(
+        auto const& fx = fluxes[lev][0].array(mfi, 0);
+        , auto const& fy = fluxes[lev][1].array(mfi, 0);
+        , auto const& fz = fluxes[lev][2].array(mfi, 0);)
+      AMREX_D_TERM(
+        auto const& edgex = edgeState[0].array(mfi, 1);
+        , auto const& edgey = edgeState[1].array(mfi, 1);
+        , auto const& edgez = edgeState[2].array(mfi, 1);)
       auto const& divu_arr = divu.const_array(mfi);
       auto const& rhoY_arr = ldata_p->state.const_array(mfi, FIRSTSPEC);
       auto const& force_arr = advData->Forcing[lev].const_array(mfi, 0);
@@ -459,10 +465,10 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
           auto const& udrift = advData->uDrift[lev][0].const_array(mfi, n);
           , auto const& vdrift = advData->uDrift[lev][1].const_array(mfi, n);
           , auto const& wdrift = advData->uDrift[lev][2].const_array(mfi, n);)
-        AMREX_D_TERM(auto const& fx_ions = fluxes[lev][0].array(mfi, ion_idx);
-                     , auto const& fy_ions = fluxes[lev][1].array(mfi, ion_idx);
-                     ,
-                     auto const& fz_ions = fluxes[lev][2].array(mfi, ion_idx);)
+        AMREX_D_TERM(
+          auto const& fx_ions = fluxes[lev][0].array(mfi, ion_idx);
+          , auto const& fy_ions = fluxes[lev][1].array(mfi, ion_idx);
+          , auto const& fz_ions = fluxes[lev][2].array(mfi, ion_idx);)
         AMREX_D_TERM(
           auto const& edgex_ions = edgeState[0].array(mfi, 1 + ion_idx);
           , auto const& edgey_ions = edgeState[1].array(mfi, 1 + ion_idx);
@@ -519,12 +525,14 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
           auto const& umac = advData->umac[lev][0].const_array(mfi);
           , auto const& vmac = advData->umac[lev][1].const_array(mfi);
           , auto const& wmac = advData->umac[lev][2].const_array(mfi);)
-        AMREX_D_TERM(auto const& fx = fluxes_aux[lev][0].array(mfi, 0);
-                     , auto const& fy = fluxes_aux[lev][1].array(mfi, 0);
-                     , auto const& fz = fluxes_aux[lev][2].array(mfi, 0);)
-        AMREX_D_TERM(auto const& edgex = edgeState_aux[0].array(mfi, 0);
-                     , auto const& edgey = edgeState_aux[1].array(mfi, 0);
-                     , auto const& edgez = edgeState_aux[2].array(mfi, 0);)
+        AMREX_D_TERM(
+          auto const& fx = fluxes_aux[lev][0].array(mfi, 0);
+          , auto const& fy = fluxes_aux[lev][1].array(mfi, 0);
+          , auto const& fz = fluxes_aux[lev][2].array(mfi, 0);)
+        AMREX_D_TERM(
+          auto const& edgex = edgeState_aux[0].array(mfi, 0);
+          , auto const& edgey = edgeState_aux[1].array(mfi, 0);
+          , auto const& edgez = edgeState_aux[2].array(mfi, 0);)
         auto const& divu_arr = divu.const_array(mfi);
         auto const& aux_arr = ldata_p->auxiliaries.const_array(mfi, 0);
         auto const& force_arr = advData->Forcing_aux[lev].const_array(mfi, 0);
@@ -609,14 +617,16 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
     for (MFIter mfi(ldata_p->state, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
 
       Box const& bx = mfi.tilebox();
-      AMREX_D_TERM(auto const& umac = advData->umac[lev][0].const_array(mfi);
-                   , auto const& vmac = advData->umac[lev][1].const_array(mfi);
-                   , auto const& wmac = advData->umac[lev][2].const_array(mfi);)
-      AMREX_D_TERM(auto const& fx = fluxes[lev][0].array(mfi, NUM_SPECIES);
-                   , // Put temp fluxes in place of rhoH
-                   auto const& fy = fluxes[lev][1].array(mfi, NUM_SPECIES);
-                   , // will be overwritten later
-                   auto const& fz = fluxes[lev][2].array(mfi, NUM_SPECIES);)
+      AMREX_D_TERM(
+        auto const& umac = advData->umac[lev][0].const_array(mfi);
+        , auto const& vmac = advData->umac[lev][1].const_array(mfi);
+        , auto const& wmac = advData->umac[lev][2].const_array(mfi);)
+      AMREX_D_TERM(
+        auto const& fx = fluxes[lev][0].array(mfi, NUM_SPECIES);
+        , // Put temp fluxes in place of rhoH
+        auto const& fy = fluxes[lev][1].array(mfi, NUM_SPECIES);
+        , // will be overwritten later
+        auto const& fz = fluxes[lev][2].array(mfi, NUM_SPECIES);)
       AMREX_D_TERM(
         auto const& edgex = edgeState[0].array(mfi, NUM_SPECIES + 2);
         , auto const& edgey = edgeState[1].array(mfi, NUM_SPECIES + 2);
@@ -700,12 +710,14 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
     for (MFIter mfi(ldata_p->state, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
 
       Box const& bx = mfi.tilebox();
-      AMREX_D_TERM(auto const& umac = advData->umac[lev][0].const_array(mfi);
-                   , auto const& vmac = advData->umac[lev][1].const_array(mfi);
-                   , auto const& wmac = advData->umac[lev][2].const_array(mfi);)
-      AMREX_D_TERM(auto const& fx = fluxes[lev][0].array(mfi, NUM_SPECIES);
-                   , auto const& fy = fluxes[lev][1].array(mfi, NUM_SPECIES);
-                   , auto const& fz = fluxes[lev][2].array(mfi, NUM_SPECIES);)
+      AMREX_D_TERM(
+        auto const& umac = advData->umac[lev][0].const_array(mfi);
+        , auto const& vmac = advData->umac[lev][1].const_array(mfi);
+        , auto const& wmac = advData->umac[lev][2].const_array(mfi);)
+      AMREX_D_TERM(
+        auto const& fx = fluxes[lev][0].array(mfi, NUM_SPECIES);
+        , auto const& fy = fluxes[lev][1].array(mfi, NUM_SPECIES);
+        , auto const& fz = fluxes[lev][2].array(mfi, NUM_SPECIES);)
       AMREX_D_TERM(
         auto const& edgex = edgeState[0].array(mfi, NUM_SPECIES + 1);
         , auto const& edgey = edgeState[1].array(mfi, NUM_SPECIES + 1);
@@ -985,15 +997,18 @@ PeleLM::computePassiveAdvTerms(
 #endif
     for (MFIter mfi(ldata_p->state, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
       Box const& bx = mfi.tilebox();
-      AMREX_D_TERM(auto const& umac = advData->umac[lev][0].const_array(mfi);
-                   , auto const& vmac = advData->umac[lev][1].const_array(mfi);
-                   , auto const& wmac = advData->umac[lev][2].const_array(mfi);)
-      AMREX_D_TERM(auto const& fx = fluxes[lev][0].array(mfi, 0);
-                   , auto const& fy = fluxes[lev][1].array(mfi, 0);
-                   , auto const& fz = fluxes[lev][2].array(mfi, 0);)
-      AMREX_D_TERM(auto const& edgex = edgeState[lev][0].array(mfi, 0);
-                   , auto const& edgey = edgeState[lev][1].array(mfi, 0);
-                   , auto const& edgez = edgeState[lev][2].array(mfi, 0);)
+      AMREX_D_TERM(
+        auto const& umac = advData->umac[lev][0].const_array(mfi);
+        , auto const& vmac = advData->umac[lev][1].const_array(mfi);
+        , auto const& wmac = advData->umac[lev][2].const_array(mfi);)
+      AMREX_D_TERM(
+        auto const& fx = fluxes[lev][0].array(mfi, 0);
+        , auto const& fy = fluxes[lev][1].array(mfi, 0);
+        , auto const& fz = fluxes[lev][2].array(mfi, 0);)
+      AMREX_D_TERM(
+        auto const& edgex = edgeState[lev][0].array(mfi, 0);
+        , auto const& edgey = edgeState[lev][1].array(mfi, 0);
+        , auto const& edgez = edgeState[lev][2].array(mfi, 0);)
       auto const& divu_arr = divu.const_array(mfi);
       auto const& pass_arr = ldata_p->state.const_array(mfi, state_comp);
       // TODO: Find way to include diffusive forces for passive scalars that

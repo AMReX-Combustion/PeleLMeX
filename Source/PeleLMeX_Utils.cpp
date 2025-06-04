@@ -213,10 +213,10 @@ PeleLM::extFluxDivergenceLevel(
 #endif
   for (MFIter mfi(a_divergence, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
     const Box& bx = mfi.tilebox();
-    AMREX_D_TERM(auto const& fluxX = a_fluxes[0]->const_array(mfi, flux_comp);
-                 , auto const& fluxY = a_fluxes[1]->const_array(mfi, flux_comp);
-                 ,
-                 auto const& fluxZ = a_fluxes[2]->const_array(mfi, flux_comp););
+    AMREX_D_TERM(
+      auto const& fluxX = a_fluxes[0]->const_array(mfi, flux_comp);
+      , auto const& fluxY = a_fluxes[1]->const_array(mfi, flux_comp);
+      , auto const& fluxZ = a_fluxes[2]->const_array(mfi, flux_comp););
     auto const& divergence = a_divergence.array(mfi, div_comp);
     auto const& vol = volume.const_array(mfi);
 
@@ -314,10 +314,10 @@ PeleLM::intFluxDivergenceLevel(
 #endif
   for (MFIter mfi(a_divergence, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
     const Box& bx = mfi.tilebox();
-    AMREX_D_TERM(auto const& fluxX = a_fluxes[0]->const_array(mfi, flux_comp);
-                 , auto const& fluxY = a_fluxes[1]->const_array(mfi, flux_comp);
-                 ,
-                 auto const& fluxZ = a_fluxes[2]->const_array(mfi, flux_comp););
+    AMREX_D_TERM(
+      auto const& fluxX = a_fluxes[0]->const_array(mfi, flux_comp);
+      , auto const& fluxY = a_fluxes[1]->const_array(mfi, flux_comp);
+      , auto const& fluxZ = a_fluxes[2]->const_array(mfi, flux_comp););
     auto const& divergence = a_divergence.array(mfi, div_comp);
     auto const& vol = volume.const_array(mfi);
 
@@ -333,9 +333,10 @@ PeleLM::intFluxDivergenceLevel(
         });
     } else if (flagfab.getType(bx) != FabType::regular) { // EB containing boxes
       auto vfrac = ebfact.getVolFrac().const_array(mfi);
-      AMREX_D_TERM(const auto& afrac_x = areafrac[0]->array(mfi);
-                   , const auto& afrac_y = areafrac[1]->array(mfi);
-                   , const auto& afrac_z = areafrac[2]->array(mfi););
+      AMREX_D_TERM(
+        const auto& afrac_x = areafrac[0]->array(mfi);
+        , const auto& afrac_y = areafrac[1]->array(mfi);
+        , const auto& afrac_z = areafrac[2]->array(mfi););
       amrex::ParallelFor(
         bx, [ncomp, flag, vfrac, divergence, AMREX_D_DECL(fluxX, fluxY, fluxZ),
              AMREX_D_DECL(afrac_x, afrac_y, afrac_z),
@@ -435,10 +436,10 @@ PeleLM::intFluxDivergenceLevelEB(
 #endif
   for (MFIter mfi(a_divergence, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
     const Box& bx = mfi.tilebox();
-    AMREX_D_TERM(auto const& fluxX = a_fluxes[0]->const_array(mfi, flux_comp);
-                 , auto const& fluxY = a_fluxes[1]->const_array(mfi, flux_comp);
-                 ,
-                 auto const& fluxZ = a_fluxes[2]->const_array(mfi, flux_comp););
+    AMREX_D_TERM(
+      auto const& fluxX = a_fluxes[0]->const_array(mfi, flux_comp);
+      , auto const& fluxY = a_fluxes[1]->const_array(mfi, flux_comp);
+      , auto const& fluxZ = a_fluxes[2]->const_array(mfi, flux_comp););
     auto const& divergence = a_divergence.array(mfi, div_comp);
     auto const& vol = volume.const_array(mfi);
 
@@ -455,9 +456,10 @@ PeleLM::intFluxDivergenceLevelEB(
         });
     } else if (flagfab.getType(bx) != FabType::regular) { // EB containing boxes
       auto vfrac = ebfact.getVolFrac().const_array(mfi);
-      AMREX_D_TERM(const auto& afrac_x = areafrac[0]->array(mfi);
-                   , const auto& afrac_y = areafrac[1]->array(mfi);
-                   , const auto& afrac_z = areafrac[2]->array(mfi););
+      AMREX_D_TERM(
+        const auto& afrac_x = areafrac[0]->array(mfi);
+        , const auto& afrac_y = areafrac[1]->array(mfi);
+        , const auto& afrac_z = areafrac[2]->array(mfi););
       const auto& ebarea = eb_area->array(mfi);
       amrex::ParallelFor(
         bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
@@ -542,9 +544,10 @@ PeleLM::
 
     // Get the divergence
     auto const& div_arr = a_divergence.array(mfi, div_comp);
-    AMREX_D_TERM(auto const& fx = a_fluxes[0]->const_array(mfi, flux_comp);
-                 , auto const& fy = a_fluxes[1]->const_array(mfi, flux_comp);
-                 , auto const& fz = a_fluxes[2]->const_array(mfi, flux_comp);)
+    AMREX_D_TERM(
+      auto const& fx = a_fluxes[0]->const_array(mfi, flux_comp);
+      , auto const& fy = a_fluxes[1]->const_array(mfi, flux_comp);
+      , auto const& fz = a_fluxes[2]->const_array(mfi, flux_comp);)
 
 #ifdef AMREX_USE_EB
     auto const& flagfab = ebfact.getMultiEBCellFlagFab()[mfi];
@@ -678,9 +681,10 @@ PeleLM::advFluxDivergence(
 
     // Get the divergence
     auto const& div_arr = a_divergence.array(mfi, div_comp);
-    AMREX_D_TERM(auto const& fx = a_fluxes[0]->const_array(mfi, flux_comp);
-                 , auto const& fy = a_fluxes[1]->const_array(mfi, flux_comp);
-                 , auto const& fz = a_fluxes[2]->const_array(mfi, flux_comp);)
+    AMREX_D_TERM(
+      auto const& fx = a_fluxes[0]->const_array(mfi, flux_comp);
+      , auto const& fy = a_fluxes[1]->const_array(mfi, flux_comp);
+      , auto const& fz = a_fluxes[2]->const_array(mfi, flux_comp);)
 
     auto const& flagfab = ebfact.getMultiEBCellFlagFab()[mfi];
     auto const& vfrac_arr = ebfact.getVolFrac().const_array(mfi);
@@ -1560,8 +1564,9 @@ PeleLM::setTypicalValues(const TimeStamp& a_time, int is_init)
 #if NUM_ODE > 0
       for (int n = 0; n < NUM_ODE; n++) {
         Print() << "\t" << m_ode_names[n]
-                << std::setw(std::max(
-                     0, static_cast<int>(10 - m_ode_names[n].length())))
+                << std::setw(
+                     std::max(
+                       0, static_cast<int>(10 - m_ode_names[n].length())))
                 << std::left << ":" << typical_values[FIRSTODE + n] << '\n';
       }
 #endif
@@ -1884,8 +1889,9 @@ PeleLM::initMixtureFraction()
           found = true;
           spec_Bilger_fact[n] = 1.0;
         } else {
-          amrex::Abort("initMixtureFraction: requested manifold parameter "
-                       "found multiple times");
+          amrex::Abort(
+            "initMixtureFraction: requested manifold parameter "
+            "found multiple times");
         }
       } else {
         spec_Bilger_fact[n] = 0.0;
