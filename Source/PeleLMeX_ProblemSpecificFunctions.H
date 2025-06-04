@@ -101,8 +101,9 @@ struct DefaultProblemSpecificFunctions
   {
     amrex::ignore_unused(
       x, aux_ext, idir, sgn, time, geomdata, prob_parm, pmf_data);
-    amrex::Abort("Default empty bcnormal called, please override in your "
-                 "problem specific struct !");
+    amrex::Abort(
+      "Default empty bcnormal called, please override in your "
+      "problem specific struct !");
     // For filling auxiliary variable boundary conditions
     // Retrieve nAux with aux_ext.ncomp, then aux_ext[n] = ...
   }
@@ -160,8 +161,9 @@ struct DefaultProblemSpecificFunctions
     const int /*required_coarsening_level*/,
     const int /*max_coarsening_level*/)
   {
-    amrex::Abort("Default EBUserDefined function called! Redefine it in your "
-                 "local ProblemSpecificFunctions struct !");
+    amrex::Abort(
+      "Default EBUserDefined function called! Redefine it in your "
+      "local ProblemSpecificFunctions struct !");
     /** Notes:
      *   1. ParmParse any parameter for your geometry
      *   2. Construct your geometry assembling EB2::* methods

@@ -21,10 +21,9 @@ struct matchBCNormEB_sign<T, Ret(Args...)>
 {
 private:
   template <typename C>
-  static constexpr auto check(T*) ->
-    typename std::is_same<
-      decltype(std::declval<C>().bcnormal_eb(std::declval<Args>()...)),
-      Ret>::type;
+  static constexpr auto check(T*) -> typename std::is_same<
+    decltype(std::declval<C>().bcnormal_eb(std::declval<Args>()...)),
+    Ret>::type;
   template <typename>
   static constexpr std::false_type check(...);
 
@@ -39,17 +38,16 @@ struct hasBCNormalEB
 {
 private:
   template <typename C>
-  static constexpr auto check(T*)
-    -> matchBCNormEB_sign<
-      T,
-      void(
-        const amrex::Real*,                        // Face center coordinate
-        const amrex::Real*,                        // Face normal (Outward)
-        const amrex::CellData<const amrex::Real>&, // Cell-centered state (in)
-        amrex::Real*,                              // Face-centered state (out)
-        const amrex::Real,
-        amrex::GeometryData const&,
-        ProbParm const&)>;
+  static constexpr auto check(T*) -> matchBCNormEB_sign<
+    T,
+    void(
+      const amrex::Real*,                        // Face center coordinate
+      const amrex::Real*,                        // Face normal (Outward)
+      const amrex::CellData<const amrex::Real>&, // Cell-centered state (in)
+      amrex::Real*,                              // Face-centered state (out)
+      const amrex::Real,
+      amrex::GeometryData const&,
+      ProbParm const&)>;
   template <typename>
   static constexpr std::false_type check(...);
 
@@ -163,10 +161,9 @@ struct matchBCTypeEB_sign<T, Ret(Args...)>
 {
 private:
   template <typename C>
-  static constexpr auto check(T*) ->
-    typename std::is_same<
-      decltype(std::declval<C>().bctype_eb(std::declval<Args>()...)),
-      Ret>::type;
+  static constexpr auto check(T*) -> typename std::is_same<
+    decltype(std::declval<C>().bctype_eb(std::declval<Args>()...)),
+    Ret>::type;
   template <typename>
   static constexpr std::false_type check(...);
 
@@ -182,13 +179,13 @@ struct hasBCTypeEB
 private:
   template <typename C>
   static constexpr auto check(T*) -> matchBCTypeEB_sign<
-                                    T,
-                                    void(
-                                      const amrex::Real*,
-                                      int&,
-                                      amrex::Real&,
-                                      amrex::GeometryData const&,
-                                      ProbParm const&)>;
+    T,
+    void(
+      const amrex::Real*,
+      int&,
+      amrex::Real&,
+      amrex::GeometryData const&,
+      ProbParm const&)>;
   template <typename>
   static constexpr std::false_type check(...);
 

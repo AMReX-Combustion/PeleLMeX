@@ -79,8 +79,8 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
     MyProbParm const& prob_parm,
     pele::physics::PMF::PmfData::DataContainer const* /*pmf_data*/)
   {
-    AMREX_D_TERM(s_ext[VELX] = prob_parm.vel;, s_ext[VELY] = 0.;
-                 , s_ext[VELZ] = 0.;);
+    AMREX_D_TERM(
+      s_ext[VELX] = prob_parm.vel;, s_ext[VELY] = 0.;, s_ext[VELZ] = 0.;);
     amrex::GpuArray<amrex::Real, NUM_SPECIES> massfrac = {{0.0}};
     massfrac[N2_ID] = prob_parm.Y_N2;
     massfrac[O2_ID] = prob_parm.Y_O2;

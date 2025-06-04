@@ -38,10 +38,7 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
     const amrex::Real* prob_lo = geomdata.ProbLo();
     const amrex::Real* dx = geomdata.CellSize();
 
-    AMREX_D_TERM(const amrex::Real x = prob_lo[0] + (i + 0.5) * dx[0];
-                 , /*const amrex::Real y = prob_lo[1] + (j + 0.5) * dx[1];*/
-                 ,
-                 /*const amrex::Real z = prob_lo[2] + (k + 0.5) * dx[2];*/);
+    AMREX_D_TERM(const amrex::Real x = prob_lo[0] + (i + 0.5) * dx[0];, , );
     amrex::GpuArray<amrex::Real, NUM_SPECIES> massfrac = {{0.0}};
     amrex::GpuArray<amrex::Real, NUM_SPECIES + 4> pmf_vals = {{0.0}};
     amrex::Real x1 = (x - prob_parm.standoff - 0.5 * dx[0]) * 100.;
@@ -95,8 +92,9 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
     amrex::Real massfrac[NUM_SPECIES] = {0.0};
     if (sgn == 1) {
       pele::physics::PMF::pmf(pmf_data, prob_lo[idir], prob_lo[idir], pmf_vals);
-      AMREX_D_TERM(s_ext[VELX] = pmf_vals[0] * 1.E-2;, s_ext[VELY] = 0.0;
-                   , s_ext[VELZ] = 0.0;);
+      AMREX_D_TERM(
+        s_ext[VELX] = pmf_vals[0] * 1.E-2;, s_ext[VELY] = 0.0;
+        , s_ext[VELZ] = 0.0;);
 
       s_ext[TEMP] = pmf_vals[1];
 

@@ -57,9 +57,10 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
     eos.TY2H(state(i, j, k, TEMP), massfrac, h_cgs);
     state(i, j, k, RHOH) = h_cgs * 1.0e-4 * state(i, j, k, DENSITY);
 
-    AMREX_D_TERM(const amrex::Real Lx = prob_hi[0] - prob_lo[0];
-                 , const amrex::Real Ly = prob_hi[1] - prob_lo[1];
-                 , const amrex::Real Lz = prob_hi[2] - prob_lo[2]);
+    AMREX_D_TERM(
+      const amrex::Real Lx = prob_hi[0] - prob_lo[0];
+      , const amrex::Real Ly = prob_hi[1] - prob_lo[1];
+      , const amrex::Real Lz = prob_hi[2] - prob_lo[2]);
 
     // want a cubic domain for ease
 #if AMREX_SPACEDIM > 1

@@ -109,8 +109,9 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
 
       auto eos = pele::physics::PhysicsType::eos();
 
-      AMREX_D_TERM(s_ext[VELX] = prob_parm.meanFlowMag;, s_ext[VELY] = 0.0;
-                   , s_ext[VELZ] = 0.0);
+      AMREX_D_TERM(
+        s_ext[VELX] = prob_parm.meanFlowMag;, s_ext[VELY] = 0.0;
+        , s_ext[VELZ] = 0.0);
 
       massfrac[CH4_ID] = prob_parm.Y_fuel;
       massfrac[O2_ID] = prob_parm.Y_o2;

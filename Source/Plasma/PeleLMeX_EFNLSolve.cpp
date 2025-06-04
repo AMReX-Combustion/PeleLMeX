@@ -669,24 +669,30 @@ PeleLM::getAdvectionFluxesMOL(
     for (MFIter mfi(a_nE, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
 
       Box const& bx = mfi.tilebox();
-      AMREX_D_TERM(const Box& xbx = mfi.grownnodaltilebox(0, 0);
-                   , const Box& ybx = mfi.grownnodaltilebox(1, 0);
-                   , const Box& zbx = mfi.grownnodaltilebox(2, 0));
+      AMREX_D_TERM(
+        const Box& xbx = mfi.grownnodaltilebox(0, 0);
+        , const Box& ybx = mfi.grownnodaltilebox(1, 0);
+        , const Box& zbx = mfi.grownnodaltilebox(2, 0));
 
-      AMREX_D_TERM(auto const& fx = a_fluxes[0]->array(mfi, 0);
-                   , auto const& fy = a_fluxes[1]->array(mfi, 0);
-                   , auto const& fz = a_fluxes[2]->array(mfi, 0);)
-      AMREX_D_TERM(auto const& ueff = a_ueff[0]->const_array(mfi);
-                   , auto const& veff = a_ueff[1]->const_array(mfi);
-                   , auto const& weff = a_ueff[2]->const_array(mfi);)
-      AMREX_D_TERM(edgstate[0].resize(xbx, 1);, edgstate[1].resize(ybx, 1);
-                   , edgstate[2].resize(zbx, 1));
-      AMREX_D_TERM(Array4<Real> xstate = edgstate[0].array();
-                   , Array4<Real> ystate = edgstate[1].array();
-                   , Array4<Real> zstate = edgstate[2].array());
-      AMREX_D_TERM(Elixir eli_edgex = edgstate[0].elixir();
-                   , Elixir eli_edgey = edgstate[1].elixir();
-                   , Elixir eli_edgez = edgstate[2].elixir());
+      AMREX_D_TERM(
+        auto const& fx = a_fluxes[0]->array(mfi, 0);
+        , auto const& fy = a_fluxes[1]->array(mfi, 0);
+        , auto const& fz = a_fluxes[2]->array(mfi, 0);)
+      AMREX_D_TERM(
+        auto const& ueff = a_ueff[0]->const_array(mfi);
+        , auto const& veff = a_ueff[1]->const_array(mfi);
+        , auto const& weff = a_ueff[2]->const_array(mfi);)
+      AMREX_D_TERM(
+        edgstate[0].resize(xbx, 1);, edgstate[1].resize(ybx, 1);
+        , edgstate[2].resize(zbx, 1));
+      AMREX_D_TERM(
+        Array4<Real> xstate = edgstate[0].array();
+        , Array4<Real> ystate = edgstate[1].array();
+        , Array4<Real> zstate = edgstate[2].array());
+      AMREX_D_TERM(
+        Elixir eli_edgex = edgstate[0].elixir();
+        , Elixir eli_edgey = edgstate[1].elixir();
+        , Elixir eli_edgez = edgstate[2].elixir());
 
       auto const& nE_arr = a_nE.const_array(mfi);
       auto const& divu_arr = a_nE.const_array(mfi);
@@ -728,26 +734,32 @@ PeleLM::getAdvectionFluxes(
     FArrayBox edgstate[AMREX_SPACEDIM];
     for (MFIter mfi(a_nE, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
       Box const& bx = mfi.tilebox();
-      AMREX_D_TERM(const Box& xbx = surroundingNodes(bx, 0);
-                   , const Box& ybx = surroundingNodes(bx, 1);
-                   , const Box& zbx = surroundingNodes(bx, 2));
+      AMREX_D_TERM(
+        const Box& xbx = surroundingNodes(bx, 0);
+        , const Box& ybx = surroundingNodes(bx, 1);
+        , const Box& zbx = surroundingNodes(bx, 2));
 
       // data arrays
       auto const& ne_arr = a_nE.const_array(mfi);
-      AMREX_D_TERM(Array4<Real> xflux = a_fluxes[0]->array(mfi);
-                   , Array4<Real> yflux = a_fluxes[1]->array(mfi);
-                   , Array4<Real> zflux = a_fluxes[2]->array(mfi));
-      AMREX_D_TERM(Array4<Real const> u = a_ueff[0]->const_array(mfi);
-                   , Array4<Real const> v = a_ueff[1]->const_array(mfi);
-                   , Array4<Real const> w = a_ueff[2]->const_array(mfi););
-      AMREX_D_TERM(edgstate[0].resize(xbx, 1);, edgstate[1].resize(ybx, 1);
-                   , edgstate[2].resize(zbx, 1));
-      AMREX_D_TERM(Array4<Real> xstate = edgstate[0].array();
-                   , Array4<Real> ystate = edgstate[1].array();
-                   , Array4<Real> zstate = edgstate[2].array());
-      AMREX_D_TERM(Elixir xstate_eli = edgstate[0].elixir();
-                   , Elixir ystate_eli = edgstate[1].elixir();
-                   , Elixir zstate_eli = edgstate[2].elixir());
+      AMREX_D_TERM(
+        Array4<Real> xflux = a_fluxes[0]->array(mfi);
+        , Array4<Real> yflux = a_fluxes[1]->array(mfi);
+        , Array4<Real> zflux = a_fluxes[2]->array(mfi));
+      AMREX_D_TERM(
+        Array4<Real const> u = a_ueff[0]->const_array(mfi);
+        , Array4<Real const> v = a_ueff[1]->const_array(mfi);
+        , Array4<Real const> w = a_ueff[2]->const_array(mfi););
+      AMREX_D_TERM(
+        edgstate[0].resize(xbx, 1);, edgstate[1].resize(ybx, 1);
+        , edgstate[2].resize(zbx, 1));
+      AMREX_D_TERM(
+        Array4<Real> xstate = edgstate[0].array();
+        , Array4<Real> ystate = edgstate[1].array();
+        , Array4<Real> zstate = edgstate[2].array());
+      AMREX_D_TERM(
+        Elixir xstate_eli = edgstate[0].elixir();
+        , Elixir ystate_eli = edgstate[1].elixir();
+        , Elixir zstate_eli = edgstate[2].elixir());
 
       // Predict edge states
       // X

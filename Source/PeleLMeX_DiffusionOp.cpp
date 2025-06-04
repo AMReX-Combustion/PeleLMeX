@@ -823,8 +823,9 @@ DiffusionOp::computeDiffFluxes(
         fluxes[lev][idim] = std::make_unique<MultiFab>(
           *a_flux[lev][idim], amrex::make_alias, flux_comp + comp, m_ncomp);
       }
-      ebfluxes.push_back(std::make_unique<MultiFab>(
-        *a_EBflux[lev], amrex::make_alias, ebflux_comp + comp, m_ncomp));
+      ebfluxes.push_back(
+        std::make_unique<MultiFab>(
+          *a_EBflux[lev], amrex::make_alias, ebflux_comp + comp, m_ncomp));
       component.emplace_back(phi[lev], amrex::make_alias, comp, m_ncomp);
       if (have_boundary != 0) {
         boundary.emplace_back(
