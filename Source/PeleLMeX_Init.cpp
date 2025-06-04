@@ -353,6 +353,7 @@ PeleLM::initLevelData(int lev)
   // Prob/PMF data
   ProbParm const* lprobparm = prob_parm_d;
   auto const* lpmfdata = pmf_data.device_parm();
+  auto const local_m_incompressible = m_incompressible;
 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -363,16 +364,14 @@ PeleLM::initLevelData(int lev)
     auto const& state_arr = ldata_p->state.array(mfi);
     auto const& aux_arr =
       (m_nAux > 0) ? ldata_p->auxiliaries.array(mfi) : DummyFab.array();
-    amrex::ParallelFor(
-      bx, [=, m_incompressible = m_incompressible] AMREX_GPU_DEVICE(
-            int i, int j, int k) noexcept {
-        ProblemSpecificFunctions::initdata(
-          i, j, k, m_incompressible, state_arr, aux_arr, geomdata, *lprobparm,
-          lpmfdata);
-      });
+    amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+      ProblemSpecificFunctions::initdata(
+        i, j, k, local_m_incompressible, state_arr, aux_arr, geomdata,
+        *lprobparm, lpmfdata);
+    });
   }
 
-  if (m_incompressible == 0) {
+  if (local_m_incompressible == 0) {
     // Initialize thermodynamic pressure
     setThermoPress(lev, AmrNewTime);
     if (m_has_divu != 0) {
