@@ -63,6 +63,9 @@ PeleLM::predictVelocity(std::unique_ptr<AdvanceAdvData>& advData)
       bcRecVel, bcRecVel_d.dataPtr(), geom[lev], m_dt,
 #ifdef AMREX_USE_EB
       ebfact,
+      (m_useEBinflow != 0)
+        ? getEBState(lev, VELX, AMREX_SPACEDIM, AmrOldTime).get()
+        : nullptr,
 #endif
       m_Godunov_ppm != 0, m_Godunov_ForceInTrans != 0, m_predict_advection_type,
       m_Godunov_ppm_limiter);
@@ -218,6 +221,15 @@ PeleLM::macProject(
   if (has_divu != 0) {
     macproj->setDivU(GetVecOfConstPtrs(a_divu));
   }
+
+#ifdef AMREX_USE_EB
+  if (m_useEBinflow != 0) {
+    for (int lev = 0; lev <= finest_level; ++lev) {
+      macproj->setEBInflowVelocity(
+        lev, *getEBState(lev, VELX, AMREX_SPACEDIM, a_time));
+    }
+  }
+#endif
 
   // Project
   macproj->project(m_mac_mg_rtol, m_mac_mg_atol);

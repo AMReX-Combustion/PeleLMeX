@@ -111,6 +111,9 @@ PeleLM::computeVelocityAdvTerm(std::unique_ptr<AdvanceAdvData>& advData)
         bcRecVel, bcRecVel_d.dataPtr(), AdvTypeVel_d.dataPtr(),
 #ifdef AMREX_USE_EB
         ebfact,
+        (m_useEBinflow != 0)
+          ? getEBState(mfi, lev, VELX, AMREX_SPACEDIM, AmrOldTime).const_array()
+          : Array4<Real const>{},
 #endif
         m_Godunov_ppm != 0, m_Godunov_ForceInTrans != 0, is_velocity,
         fluxes_are_area_weighted, m_advection_type, m_Godunov_ppm_limiter);
@@ -164,10 +167,19 @@ PeleLM::computeVelocityAdvTerm(std::unique_ptr<AdvanceAdvData>& advData)
       grids[lev], dmap[lev], AMREX_SPACEDIM, nGrow_divT, MFInfo(),
       EBFactory(lev));
     divTmp.setVal(0.0);
-    advFluxDivergence(
-      lev, divTmp, 0, divu, GetArrOfConstPtrs(fluxes[lev]), 0,
-      GetArrOfConstPtrs(faces[lev]), 0, AMREX_SPACEDIM, AdvTypeVel_d.dataPtr(),
-      geom[lev], -1.0, fluxes_are_area_weighted);
+    if (m_useEBinflow != 0) {
+      advFluxDivergence(
+        lev, divTmp, 0, divu, GetArrOfConstPtrs(fluxes[lev]), 0,
+        GetArrOfConstPtrs(faces[lev]), 0,
+        getEBState(lev, VELX, AMREX_SPACEDIM, AmrOldTime).get(),
+        getEBState(lev, VELX, AMREX_SPACEDIM, AmrOldTime).get(), AMREX_SPACEDIM,
+        AdvTypeVel_d.dataPtr(), geom[lev], -1.0, fluxes_are_area_weighted);
+    } else {
+      advFluxDivergence(
+        lev, divTmp, 0, divu, GetArrOfConstPtrs(fluxes[lev]), 0,
+        GetArrOfConstPtrs(faces[lev]), 0, AMREX_SPACEDIM,
+        AdvTypeVel_d.dataPtr(), geom[lev], -1.0, fluxes_are_area_weighted);
+    }
 
     divTmp.FillBoundary(geom[lev].periodicity());
 
@@ -428,38 +440,37 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
         bcRecSpec, bcRecSpec_d.dataPtr(), AdvTypeSpec_d.dataPtr(),
 #ifdef AMREX_USE_EB
         ebfact,
+        (m_useEBinflow != 0)
+          ? getEBState(mfi, lev, FIRSTSPEC, NUM_SPECIES - NUM_IONS, AmrOldTime)
+              .const_array()
+          : Array4<Real const>{},
 #endif
         m_Godunov_ppm, m_Godunov_ForceInTrans, is_velocity,
         fluxes_are_area_weighted, m_advection_type, m_Godunov_ppm_limiter);
 
       // Ions one by one
       for (int n = 0; n < NUM_IONS; n++) {
-        auto bcRecIons =
-          fetchBCRecArray(FIRSTSPEC + NUM_SPECIES - NUM_IONS + n, 1);
+        const int ion_idx = NUM_SPECIES - NUM_IONS + n;
+        auto bcRecIons = fetchBCRecArray(FIRSTSPEC + ion_idx, 1);
         auto bcRecIons_d = convertToDeviceVector(bcRecIons);
-        auto AdvTypeIons =
-          fetchAdvTypeArray(FIRSTSPEC + NUM_SPECIES - NUM_IONS + n, 1);
+        auto AdvTypeIons = fetchAdvTypeArray(FIRSTSPEC + ion_idx, 1);
         auto AdvTypeIons_d = convertToDeviceVector(AdvTypeIons);
         AMREX_D_TERM(
           auto const& udrift = advData->uDrift[lev][0].const_array(mfi, n);
           , auto const& vdrift = advData->uDrift[lev][1].const_array(mfi, n);
           , auto const& wdrift = advData->uDrift[lev][2].const_array(mfi, n);)
-        AMREX_D_TERM(auto const& fx_ions =
-                       fluxes[lev][0].array(mfi, NUM_SPECIES - NUM_IONS + n);
-                     , auto const& fy_ions =
-                         fluxes[lev][1].array(mfi, NUM_SPECIES - NUM_IONS + n);
-                     , auto const& fz_ions =
-                         fluxes[lev][2].array(mfi, NUM_SPECIES - NUM_IONS + n);)
-        AMREX_D_TERM(auto const& edgex_ions =
-                       edgeState[0].array(mfi, 1 + NUM_SPECIES - NUM_IONS + n);
-                     , auto const& edgey_ions = edgeState[1].array(
-                         mfi, 1 + NUM_SPECIES - NUM_IONS + n);
-                     , auto const& edgez_ions = edgeState[2].array(
-                         mfi, 1 + NUM_SPECIES - NUM_IONS + n);)
-        auto const& rhoYions_arr = ldata_p->state.const_array(
-          mfi, FIRSTSPEC + NUM_SPECIES - NUM_IONS + n);
+        AMREX_D_TERM(auto const& fx_ions = fluxes[lev][0].array(mfi, ion_idx);
+                     , auto const& fy_ions = fluxes[lev][1].array(mfi, ion_idx);
+                     ,
+                     auto const& fz_ions = fluxes[lev][2].array(mfi, ion_idx);)
+        AMREX_D_TERM(
+          auto const& edgex_ions = edgeState[0].array(mfi, 1 + ion_idx);
+          , auto const& edgey_ions = edgeState[1].array(mfi, 1 + ion_idx);
+          , auto const& edgez_ions = edgeState[2].array(mfi, 1 + ion_idx);)
+        auto const& rhoYions_arr =
+          ldata_p->state.const_array(mfi, FIRSTSPEC + ion_idx);
         auto const& forceions_arr =
-          advData->Forcing[lev].const_array(mfi, NUM_SPECIES - NUM_IONS + n);
+          advData->Forcing[lev].const_array(mfi, ion_idx);
         HydroUtils::ComputeFluxesOnBoxFromState(
           bx, 1, mfi, rhoYions_arr, AMREX_D_DECL(fx_ions, fy_ions, fz_ions),
           AMREX_D_DECL(edgex_ions, edgey_ions, edgez_ions), knownEdgeState,
@@ -468,6 +479,10 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
           AdvTypeIons_d.dataPtr(),
 #ifdef AMREX_USE_EB
           ebfact,
+          (m_useEBinflow != 0)
+            ? getEBState(mfi, lev, FIRSTSPEC + ion_idx, 1, AmrOldTime)
+                .const_array()
+            : Array4<Real const>{},
 #endif
           m_Godunov_ppm, m_Godunov_ForceInTrans, is_velocity,
           fluxes_are_area_weighted, m_advection_type, m_Godunov_ppm_limiter);
@@ -483,6 +498,10 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
         bcRecSpec, bcRecSpec_d.dataPtr(), AdvTypeSpec_d.dataPtr(),
 #ifdef AMREX_USE_EB
         ebfact,
+        (m_useEBinflow != 0)
+          ? getEBState(mfi, lev, FIRSTSPEC, NUM_SPECIES, AmrOldTime)
+              .const_array()
+          : Array4<Real const>{},
 #endif
         m_Godunov_ppm != 0, m_Godunov_ForceInTrans != 0, is_velocity,
         fluxes_are_area_weighted, m_advection_type, m_Godunov_ppm_limiter);
@@ -616,6 +635,9 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
         bcRecTemp, bcRecTemp_d.dataPtr(), AdvTypeTemp_d.dataPtr(),
 #ifdef AMREX_USE_EB
         ebfact,
+        (m_useEBinflow != 0)
+          ? getEBState(mfi, lev, TEMP, 1, AmrOldTime).const_array()
+          : Array4<Real const>{},
 #endif
         m_Godunov_ppm != 0, m_Godunov_ForceInTrans != 0, is_velocity,
         fluxes_are_area_weighted, m_advection_type, m_Godunov_ppm_limiter);
@@ -702,6 +724,9 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
         bcRecRhoH, bcRecRhoH_d.dataPtr(), AdvTypeRhoH_d.dataPtr(),
 #ifdef AMREX_USE_EB
         ebfact,
+        (m_useEBinflow != 0)
+          ? getEBState(mfi, lev, RHOH, 1, AmrOldTime).const_array()
+          : Array4<Real const>{},
 #endif
         m_Godunov_ppm != 0, m_Godunov_ForceInTrans != 0, is_velocity,
         fluxes_are_area_weighted, m_advection_type, m_Godunov_ppm_limiter);
@@ -799,12 +824,23 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
       grids[lev], dmap[lev], NUM_SPECIES + 1, nGrow_divTmp, MFInfo(),
       EBFactory(lev));
     divTmp.setVal(0.0);
-    advFluxDivergence(
-      lev, divTmp, 0, divu, GetArrOfConstPtrs(fluxes[lev]), 0,
-      GetArrOfConstPtrs(fluxes[lev]),
-      0, // This will not be used since none of rhoY/rhoH in convective
-      NUM_SPECIES + 1, AdvTypeAll_d.dataPtr(), geom[lev], -1.0,
-      fluxes_are_area_weighted);
+    if (m_useEBinflow != 0) {
+      advFluxDivergence(
+        lev, divTmp, 0, divu, GetArrOfConstPtrs(fluxes[lev]), 0,
+        GetArrOfConstPtrs(fluxes[lev]),
+        0, // This will not be used since none of rhoY/rhoH in convective
+        getEBState(lev, VELX, AMREX_SPACEDIM, AmrOldTime).get(),
+        getEBState(lev, FIRSTSPEC, NUM_SPECIES + 1, AmrOldTime).get(),
+        NUM_SPECIES + 1, AdvTypeAll_d.dataPtr(), geom[lev], -1.0,
+        fluxes_are_area_weighted);
+    } else {
+      advFluxDivergence(
+        lev, divTmp, 0, divu, GetArrOfConstPtrs(fluxes[lev]), 0,
+        GetArrOfConstPtrs(fluxes[lev]),
+        0, // This will not be used since none of rhoY/rhoH in convective
+        NUM_SPECIES + 1, AdvTypeAll_d.dataPtr(), geom[lev], -1.0,
+        fluxes_are_area_weighted);
+    }
 
     divTmp.FillBoundary(geom[lev].periodicity());
 

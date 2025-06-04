@@ -46,7 +46,7 @@ Finally a Cartesian coordinate system is used here. An overview of the computati
 
    : Setup of the computational domain for the backward facing step flame case.
 
-All of the geometrical information can be specified the first two blocks of the input file (`input.2d`): ::
+All of the geometrical information can be specified the first two blocks of the input file (`eb_bfs.inp`): ::
 
    #---------------------- DOMAIN DEFINITION ------------------------
    geometry.is_periodic = 0 0                  # For each dir, 0: non-perio, 1: periodic
@@ -117,17 +117,17 @@ Problem specifications
 
 ..  _sec:TUTO_BFS::Problem:
 
-The problem setup is mostly contained in the three C++ source/header files described in :doc:`Tutorials_FlameSheet`.
-The user parameters are gathered in the struct defined in  ``pelelmex_prob_parm.H``: ::
+The problem setup is mostly contained in the two C++ source/header files described in :doc:`Tutorials_FlameSheet`.
+The user parameters are gathered in the struct defined in ``pelelmex_prob.H``: ::
 
-    struct ProbParm
+    struct MyProbParm : public ProbParmDefault
     {
-        amrex::Real T_mean = 298.0_rt;
-        amrex::Real P_mean = 101325.0_rt;
-        amrex::Real Y_fuel = 0.0445_rt;
-        amrex::Real Y_o2   = 0.223_rt;
-        amrex::Real T_hot  = 1800.0_rt;
-        amrex::Real Twall  = 300.0_rt;
+        amrex::Real T_mean = 298.0;
+        amrex::Real P_mean = 101325.0;
+        amrex::Real Y_fuel = 0.0445;
+        amrex::Real Y_o2   = 0.223;
+        amrex::Real T_hot  = 1800.0;
+        amrex::Real Twall  = 300.0;
         amrex::Real meanFlowMag = 0.0;
 
     };
@@ -146,30 +146,29 @@ The user parameters are gathered in the struct defined in  ``pelelmex_prob_parm.
 
 * ``meanFlowMag`` : inlet :math:`x` velocity
 
-
 The initial solution consists of a premixed methane/air mixture in the upper part of the domain
 and pure hot air in the wake of the step. The default parameters provided above are overwritten
-using AMReX ParmParse in ``pelelmex_prob.cpp`` and the initial/boundary conditions implemented in
-``pelelmex_prob.H``. Alternatively, the user can write a custom function to enforce an ignition kernel through the ``patchFlowVariables`` function in the problem-specific ``PeleLMeX_PatchFlowVariables.cpp`` file.
-It should be kept in mind that the ``patchFlowVariables`` function can be used if the user wants to patch certain flow variables after reading an existing solution from a plot file ( ``peleLM.initDataPlt_patch_flow_variables`` should be set to true).
+using AMReX ParmParse in ``pelelmex_prob.cpp`` and the initial/boundary conditions implemented
+in the `MyProblemSpecificFunctions` struct of ``pelelmex_prob.H``. Alternatively, the user can write a custom
+function to enforce an ignition kernel through the ``patchFlowVariables`` function in the
+problem-specific functions struct.
+It should be kept in mind that the ``patchFlowVariables`` function can be used if the user wants to patch certain
+flow variables after reading an existing solution from a plot file ( ``peleLM.initDataPlt_patch_flow_variables`` should be set to true).
 
-In addition to these three C++ files, an extra header is needed in the present case compared to
-:doc:`Tutorials_FlameSheet` : ``EBUserDefined.H``. This file is necessary to specify more complex EB
-geometries (not the case here) and to prescribe EB isothermal wall condition. It contains three functions:
+In ``pelelmex_prob.H``, the `MyProblemSpecificFunctions` struct contains several functions in addition to
+`initdata` and `bcnormal` previously described in the :doc:`Tutorials_FlameSheet`:
 
-* ``EBUserDefined()`` : can be used to provide a user-defined geometry. It is left empty in the present case.
+* ``bcnormal_eb()`` : takes in the EB face center coordinates and return a vector
+  for the entire state vector. For isothermal walls, only the ``TEMP`` component is required. For inflows,
+  the whole state must be specified.
 
-* ``setEBState()`` : takes in the EB face center coordinates and return a vector for the entire state vector. For
-  isothermal walls, only the ``TEMP`` component is required.
-
-* ``setEBType()`` : even though ``peleLM.isothermal_EB=1`` is activated, the user can locally decide to use
+* ``bctype_eb()`` : even though ``peleLM.isothermal_EB=1`` is activated, the user can locally decide to use
   an adiabatic wall on part of the EB. To do so, this function takes in the EB face center coordinates
-  and return a ``Real`` flag that should be set to 1.0 on isothermal areas and 0.0 on adiabatic areas. The
-  flag is later used to pre-multiply the thermal diffusivity effectively zeroing the thermal flux where the flag
-  is 0.0.
+  and return a flag that indicates the boundary type. Additionally, it also returns a real valued parameter,
+  `EBfaceFrac`, that indicates the fraction of the face that is isothermal or inflow.
 
-In the present case, we set the EB temperature to ``T_wall`` everywhere on the EB in ``setEBState()`` but
-the EB flag is only set to 1.0 on the vertical EB faces (:math:`x` normal) such that the top of the EB box
+In the present case, we set the EB temperature to ``T_wall`` everywhere on the EB in ``bcnormal_eb()`` but
+the EB flag is only set to 1 on the vertical EB faces (:math:`x` normal) such that the top of the EB box
 is adiabatic.
 
 
@@ -256,7 +255,7 @@ Checking the initial conditions
 -------------------------------
 
 It is always a good practice to check the initial conditions. To do so, run the simulation specifying
-an ``amr.max_step`` of 0. Open the ``input.2d`` with your favorite editor and update the following parameters ::
+an ``amr.max_step`` of 0. Open the ``eb_bfs.inp`` with your favorite editor and update the following parameters ::
 
     #---------------------- Time Stepping CONTROL --------------------
     amr.max_step      = 0             # Maximum number of time steps
@@ -266,7 +265,7 @@ Since we've set the maximum number of steps to 0, the solver will exit after
 the initial solution is obtained. Let's run the simulation with the default problem parameter
 listed in the input file. To do so, use: ::
 
-    ./PeleLMeX2d.gnu.MPI.ex input.2d
+    ./PeleLMeX2d.gnu.MPI.ex eb_bfs.inp
 
 A variety of information is printed to the screen:
 
@@ -307,7 +306,7 @@ Additionally, make sure that ``amr.check_int`` is set to a positive value to tri
 checkpoint file from which to later restart the simulation. If available, use more than one MPI
 rank to run the simulation and redirect the standard output to a log file using: ::
 
-    mpirun -n 4 ./PeleLMeX2d.gnu.MPI.ex input.2d > logInitCoarse.dat &
+    mpirun -n 4 ./PeleLMeX2d.gnu.MPI.ex eb_bfs.inp > logInitCoarse.dat &
 
 Using 4 MPI ranks, it takes about 200 seconds to complete.
 A typical `PeleLMeX` stdout for a time step now looks like: ::
@@ -356,7 +355,7 @@ following keys in the input file: ::
 
 and restart the simulation: ::
 
-    mpirun -n 4 ./PeleLMeX2d.gnu.MPI.ex input.2d > logFail.dat &
+    mpirun -n 4 ./PeleLMeX2d.gnu.MPI.ex eb_bfs.inp > logFail.dat &
 
 The simulation will proceed, with the step size progressively increasing due to the higher CFL
 and changes to the velocity field, but after ~30 steps `PeleLMeX` will fail with the following error: ::
@@ -402,7 +401,7 @@ And increase the maximum number of steps to 500: ::
 
 Restart the simulation: ::
 
-    mpirun -n 4 ./PeleLMeX2d.gnu.MPI.ex input.2d > log1AMR.dat &
+    mpirun -n 4 ./PeleLMeX2d.gnu.MPI.ex eb_bfs.inp > log1AMR.dat &
 
 Using 4 MPI ranks, the simulation takes approximately 13 mn, so plenty of time to get
 a warm beverage. Looking at the solution after 500 steps (~3.2 ms), fine boxes can be found
@@ -455,7 +454,7 @@ update the following block: ::
 
 Update the ``amr.restart`` and ``amr.max_step`` to `chk00500` and `1000`, respectively and restart the simulation: ::
 
-    mpirun -n 4 ./PeleLMeX2d.gnu.MPI.ex input.2d > log1AMRcnt.dat &
+    mpirun -n 4 ./PeleLMeX2d.gnu.MPI.ex eb_bfs.inp > log1AMRcnt.dat &
 
 Once again, the simulation takes approximately 30 mn to complete. At this point, the flame is fairly well established
 in the downstream part of the domain, but the `mixture_fraction` field can clearly show that hot air is still trapped
@@ -589,3 +588,11 @@ the upstream and downstream region of the flame.
 Note that for this analysis to be relevant, we would need to run the simulation longer to completely
 remove the effect of the initial hot air still trapped in the recirculation zone at this point and largely
 affecting the upstream average data.
+
+Partially premixed case with EB-inflow
+--------------------------------------
+
+This case also includes a separate input file designed to demonstrate the experimental EB-inflow
+capability in PeleLMeX. This input file ``eb_bfs_pp.inp`` corresponds to a partially premixed
+flame, with a fuel jet flowing upward from the horizontal EB surface and mixing with oxidizer
+flowing in through the left domain boundary.

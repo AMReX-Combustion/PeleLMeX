@@ -77,7 +77,10 @@ git clone --recursive --shallow-submodules --single-branch https://github.com/AM
 
 The `--shallow-submodules` and `--single-branch` flags are recommended for most users as they substantially reduce the size of the download by
 skipping extraneous parts of the git history. Developers may wish to omit these flags in order download the complete git history of PeleLMeX
-and its submodules, though standard `git` commands may also be used after a shallow clone to obtain the skipped portions if needed.
+and its submodules, though standard `git` commands may also be used after a shallow clone to obtain the skipped portions if needed. By default,
+you will download the latest version of PeleLMeX. If you'd like to use a specific [released version](https://github.com/AMReX-Combustion/PeleLMeX/releases/)
+of PeleLMeX, you can add the option `--branch=<version>`, e.g. `--branch=v25.04`, to your clone command. See more on PeleLMeX version numbers
+in the [Versioning](#Versioning) section below.
 
 Alternatively, you can use a separate `git clone` of each of the submodules.
 The default location for *PeleLMeX* dependencies is the `Submodules` folder but you optionally
@@ -119,6 +122,20 @@ to provide as much detail as possible, including a case description and the majo
 it is most effective to create a fork of this repository and share a branch of that fork with a case that minimally reproduces the error.
 
 New contributions to *PeleLMeX* are welcome ! Contributing Guidelines are provided in [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Versioning
+
+PeleLMeX now uses uses a type of semantic versioning to help users navigate different versions of the code,
+which are labeled with [GitHub tags](https://github.com/AMReX-Combustion/PeleLMeX/releases/). These tagged versions are not exhaustive, but they adhere to
+the following convention. Given a version number MAJOR.MINOR.PATCH:
+1. MAJOR version for changes to key aspects of the solver affecting input/source files for all cases, when a key model is changed to significantly affect results of simulations, when a major new capability is added
+2. MINOR version for when a significant feature is added (in a backward compatible manner), accumulation of smaller features, or changes to input file compatibility for less central aspects of the solver (e.g., post-processing) or aspects not affecting all cases
+3. PATCH version for backward compatible bug fixes and minor features
+
+PeleLMeX previously used YY.MM formatting for versions. These should be interpreted as version 0 subversions,
+e.g. v25.04 is equivalent to v0.25.04. Significant breaking changes were added for the release of v1.0.0. See
+[CHANGES.md](CHANGES.md) for updates needed to transition case files designed for earlier versions of PeleLMeX
+to this newer version.
 
 ## Acknowledgment
 

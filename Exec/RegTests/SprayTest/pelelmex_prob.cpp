@@ -12,3 +12,8 @@ PeleLM::readProbParm()
   pp.query("init_N2", PeleLM::prob_parm->Y_N2);
   pp.query("init_O2", PeleLM::prob_parm->Y_O2);
 }
+
+void
+PeleLM::freeProbParm()
+{
+}

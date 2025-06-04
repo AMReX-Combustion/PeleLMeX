@@ -77,14 +77,16 @@ PeleLM::initActiveControl()
     const int ctrl_flameDir_l = m_ctrl_flameDir;
     const amrex::Real time_l = -1.0;
     const auto geomdata = Geom(0).data();
+    auto fake_state = Array4<Real>{};
 
     Box dumbx({AMREX_D_DECL(0, 0, 0)}, {AMREX_D_DECL(0, 0, 0)});
     amrex::ParallelFor(
       dumbx,
-      [x, nAux = m_nAux, s_ext_d, ctrl_flameDir_l, time_l, geomdata, lprobparm,
+      [fake_state, x, s_ext_d, ctrl_flameDir_l, time_l, geomdata, lprobparm,
        lpmfdata] AMREX_GPU_DEVICE(int /*i*/, int /*j*/, int /*k*/) noexcept {
-        bcnormal(
-          x, nAux, s_ext_d, ctrl_flameDir_l, 1, time_l, geomdata, *lprobparm,
+        const auto s_in = fake_state.cellData(0, 0, 0);
+        ProblemSpecificFunctions::bcnormal(
+          x, s_in, s_ext_d, ctrl_flameDir_l, 1, time_l, geomdata, *lprobparm,
           lpmfdata);
       });
     Vector<Real> s_ext(NVAR);

@@ -7,6 +7,20 @@ SUNDIALS_HOME      ?= $(abspath $(lastword ${PELE_PHYSICS_HOME}/Submodules/sundi
 USE_SUNDIALS = TRUE
 BL_NO_FORT = TRUE
 
+# Raise an error if case files and source versions are incompatible
+define ERROR_MESSAGE
+    ERROR:
+    Presence of file `pelelmex_prob_parm.H` indicates you may be attempting to compile
+    case files designed for an older version of PeleLMeX (v0.25.04 or earlier) with a
+    newer version of the PeleLMeX source code (v1.0.0 or later). See instructions for
+    updating your case for compatibility with newer PeleLMeX versions in the v1.0.0
+    section of PeleLMeX/CHANGES.md or revert your version of the PeleLMeX source to
+    v0.25.04/v25.04 (`git checkout v0.25.04`).
+endef
+ifneq (,$(wildcard ./pelelmex_prob_parm.H))
+   $(error ${ERROR_MESSAGE})
+endif
+
 # AMReX definitions
 include $(AMREX_HOME)/Tools/GNUMake/Make.defs
 

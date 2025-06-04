@@ -8,3 +8,8 @@ PeleLM::readProbParm() // NOLINT(readability-make-member-function-const)
   pp.query("P_mean", prob_parm->P_mean);
   PeleLM::prob_parm->eosparm = PeleLM::eos_parms.device_parm();
 }
+
+void
+PeleLM::freeProbParm()
+{
+}

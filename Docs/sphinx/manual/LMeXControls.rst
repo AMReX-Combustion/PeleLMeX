@@ -36,8 +36,12 @@ Computational domain definition
     peleLM.lo_bc = Interior Interior Inflow
     peleLM.hi_bc = Interior Interior Inflow
 
-If specifying boundaries as ``Inflow``, the bcnormal function must be defined
+If specifying boundaries as ``Inflow``, the `MyProblemSpecificFunctions::bcnormal` function must be defined
 in the ``pelelmex_prob.H`` file for the case to define the inflow conditions.
+Note that the ``bcnormal`` function is also called for wall boundaries but should
+not modify them (except setting temperature on isothermal walls). Therefore, if
+there are a mixture of inflows with other boundary types, the bcnormal function
+should check which face is being set when applying the inflow boundary condition.
 ``Inflow`` boundaries may also be augmented with spatially and temporally
 varying turbulent fluctuations using the ``TurbInflow`` utility from
 PelePhysics. See the ``Exec/RegTests/TurbInflow`` test for an example of how
@@ -232,8 +236,8 @@ The following list of derived variables are available in PeleLMeX:
 Note that `mixture_fraction` and `progress_variable` requires additional inputs from the users as described below.
 The `derUserDefined` allow the user to define its own derived variable which can comprise several components. To do
 so, the user need to copy the Source/DeriveUserDefined.cpp file into their run folder and update the file. The number of
-components is defined based on the size of the vector returned by `pelelmex_setuserderives()`.  Be sure to add the 
-user derived variables to the input file via `amr.derive_plot_vars`.  
+components is defined based on the size of the vector returned by `pelelmex_setuserderives()`.  Be sure to add the
+user derived variables to the input file via `amr.derive_plot_vars`.
 
 PeleLMeX algorithm
 ------------------
@@ -252,8 +256,8 @@ PeleLMeX algorithm
     peleLM.chi_correction_type = DivuFirstIter  # [OPT, DEF=DivuEveryIter] When to compute divu for MAC proj divu constraint [DivuEveryIter, DivuFirstIter, NoDivu]
     peleLM.print_chi_convergence = 1            # [OPT, DEF=(peleLM.v > 1)] Boolean flag on whether to print size of chi correction on each SDC iter
     peleLM.incompressible = 0              # [OPT, DEF=0] Enable to run fully incompressible, scalar advance is bypassed
-    peleLM.m_rho = 1.17                    # [OPT, DEF=-1] If incompressible, density value [MKS]
-    peleLM.m_mu = 1.8e-5                   # [OPT, DEF=-1] If incompressible, kinematic visc. value [MKS]
+    peleLM.rho = 1.17                      # [OPT, DEF=-1] If incompressible, density value [MKS]
+    peleLM.mu = 1.8e-5                     # [OPT, DEF=-1] If incompressible, dynamic visc. value [MKS]
     peleLM.gravity = 0.0 0.0 -9.81         # [OPT, DEF=Vec{0.0}] Gravity vector [MKS]
     peleLM.gradP0 = 0.0 0.0 10.0           # [OPT, DEF=Vec{0.0}] Average background pressure gradient [Pa/m]
     peleLM.do_periodic_channel = 0         # [OPT, DEF= 0] Add an automatic pressure gradient to maintain initial condition mass flow rate in periodic channel
@@ -278,7 +282,7 @@ PeleLMeX algorithm
     peleLM.a.conservative = 1              # [OPT, DEF = 1] Flag whether this variable is conservative
     peleLM.a.diffuse = 0                   # [OPT, DEF = 1] Flag whether this variable is diffused
     peleLM.a.Schmidt = 0.7                 # [OPT, DEF = -1] Schmidt number for auxiliary variable. If unspecified or negative, assumed to diffuse with unity Lewis number.
-    
+
     peleLM.user_defined_ext_sources = 0    # [OPT, DEF=0] Enable user defined source terms. Requires local ProblemSpecificFunctions.cpp.
 
 
@@ -355,8 +359,8 @@ must set:
 
     eb2.geom_type = UserDefined
 
-and then implement the actual geometry definition in a `EBUserDefined.H` file located in the run folder (and add
-to the GNUmakefile using `CEXE_headers += EBUserDefined.H`). An example of such implementation is available in the
+and then implement the actual geometry definition in the `EBUserDefined` member function of the `ProblemSpecificFunctions` struct in
+``pelelmex_prob.H``. An example of such implementation is available in the
 ``Exec/Case/ChallengeProblem`` folder. Example of more generic EB problems are also found in the ``Exec/RegTest/EB_*``
 folders.
 
@@ -404,12 +408,28 @@ flag:
     peleLM.isothermal_EB = 1
 
 The user is now responsible for providing the wall temperature *on all the EB walls*, but adiabtic wall can still be specified.
-Control over the local EB thermal boundary condition is provided through the `setEBState` and `setEBType` functions, also
-defined in the `EBUserDefined.H` already used above to provide a user-defined EB geometry. Example of isothermal EBs are provided
+Control over the local EB thermal boundary condition is provided through the `bcnormal_eb` and `bctype_eb` functions, also
+defined in the `ProblemSpecificFunctions` struct in ``pelelmex_prob.H`` already used above to provide a user-defined EB geometry.
+Examples of isothermal EBs are provided
 in ``Exec/RegTest/EB_BackwardStepFlame`` and ``Exec/RegTest/EB_FlowPastCylinder`` tests.
 
 .. note::
    Note that when using isothermal EB in combination with LES, the thermal diffusion coefficient employed to compute the EB boundary thermal flux only uses the molecular contribution.
+
+Inflow boundaries on EB surfaces may also be specified through experimental capability by setting the following flag:
+
+::
+
+   peleLM.EBinflow = 1
+
+Similarly to isothermal boundaries, the user is responsible for specifying the inflow conditions using the `bcnormal_eb` function,
+but this function must not specify all state variables in the region of the inflow. Again, an example is provided in the
+``Exec/RegTest/EB_BackwardStepFlame`` test case.
+
+.. note::
+   EB inflow capability is still experimental. Scalar diffusion at these boundaries is not yet supported. This capability and the user interface
+   are subject to potential change in the future and bugs/unanticipated behavior are more likely with this capability for now. Potential changes
+   may also impact the isothermal EB capability.
 
 Lastly, it is possible to change the default redistribution scheme described in the :ref:`geometry with embedded boundaries section: <ssec:geoEB>`
 ::
@@ -455,15 +475,15 @@ Linear solvers are a key component of PeleLMeX algorithm, separate controls are 
 Hypre support
 ^^^^^^^^^^^^^
 
-Through AMReX, PeleLMeX provides interfaces to the `Hypre <https://github.com/hypre-space/hypre>`_ 
-preconditioners and solvers. These can be called as bottom solvers for the MLMG linear 
-solvers, for both cell-centered and node-based problems.  The Hypre solvers are particularly 
-useful if the geometry includes thin elements (such as tube or plate) or narrow channels, 
-as coarsening of the geometry is rapidly limited by the occurrence of multi-cut cells 
-(not supported by AMReX) and the linear solvers are no longer able to robustly 
-tackle projections and implicit diffusion solves.   
+Through AMReX, PeleLMeX provides interfaces to the `Hypre <https://github.com/hypre-space/hypre>`_
+preconditioners and solvers. These can be called as bottom solvers for the MLMG linear
+solvers, for both cell-centered and node-based problems.  The Hypre solvers are particularly
+useful if the geometry includes thin elements (such as tube or plate) or narrow channels,
+as coarsening of the geometry is rapidly limited by the occurrence of multi-cut cells
+(not supported by AMReX) and the linear solvers are no longer able to robustly
+tackle projections and implicit diffusion solves.
 
-To build Hypre, follow the steps outlined in the 
+To build Hypre, follow the steps outlined in the
 `AMReX documentation <https://amrex-codes.github.io/amrex/docs_html/LinearSolvers.html#external-solvers>`_.
 
 Next, in the ``GNUmakefile``, enable Hypre and define the path to the Hypre directory:
@@ -474,8 +494,8 @@ Next, in the ``GNUmakefile``, enable Hypre and define the path to the Hypre dire
     HYPRE_HOME = /path_to_hypre_dir/hypre/src/hypre
 
 
-Select input file controls are provided below for the ``mac_proj`` bottom solver, which 
-can be applied similarly for the ``nodal_proj``. Additional information on the Hypre 
+Select input file controls are provided below for the ``mac_proj`` bottom solver, which
+can be applied similarly for the ``nodal_proj``. Additional information on the Hypre
 solvers and parameters can be found in the `Hypre documentation <https://hypre.readthedocs.io/en/latest/>`_.
 
 ::
@@ -614,18 +634,22 @@ state:
 
 
 Analysing the data a-posteriori can become extremely cumbersome when dealing with extreme datasets.
-PeleLMeX offers a set of diagnostics available at runtime and more are under development.
+PeleLMeX offers a set of diagnostics available at runtime (supported through PelePhysics) and more are under development.
 Currently, the list of diagnostic contains:
 
-* `DiagFramePlane` : extract a plane aligned in the 'x','y' or 'z' direction across the AMR hierarchy, writing
+* ``DiagFramePlane`` : extract a plane aligned in the 'x','y' or 'z' direction across the AMR hierarchy, writing
   a 2D plotfile compatible with Amrvis, Paraview or yt. Only available for 3D simulations.
-* `DiagPDF` : extract the PDF of a given variable and write it to an ASCII file.
-* `DiagConditional` : extract statistics (average and standard deviation, integral or sum) of a
+* ``DiagPDF`` : extract the PDF of a given variable and write it to an ASCII file.
+* ``DiagConditional`` : extract statistics (average and standard deviation, integral or sum) of a
   set of variables conditioned on the value of given variable and write it to an ASCII file.
 
 When using `DiagPDF` or `DiagConditional`, it is possible to narrow down the diagnostic to a region of interest
 by specifying a set of filters, defining a range of interest for a variable. Note also the for these two diagnostics,
-fine-covered regions are masked. The following provide examples for each diagnostic:
+fine-covered regions are masked. An arbitrary number of these diagnostics may be specified in a list by setting
+``peleLM.diagnostics`` in the input file and then specifying the diagnostic type and relevant inputs for each
+diagnostic listed. See the
+`PelePhysics Diagnostics documentation <https://amrex-combustion.github.io/PelePhysics/Utility.html#diagnostics>`_ for full
+details on the options that must be specified for each diagnostic type.
 
 ::
 
@@ -634,38 +658,7 @@ fine-covered regions are masked. The following provide examples for each diagnos
     peleLM.diagnostics = xnormP condT pdfTest
 
     peleLM.xnormP.type = DiagFramePlane                             # Diagnostic type
-    peleLM.xnormP.file = xNorm5mm                                   # Output file prefix
-    peleLM.xnormP.normal = 0                                        # Plane normal (0, 1 or 2 for x, y or z)
-    peleLM.xnormP.center = 0.005                                    # Coordinate in the normal direction
-    peleLM.xnormP.int    = 5                                        # Frequency (as step #) for performing the diagnostic
-    peleLM.xnormP.interpolation = Linear                            # [OPT, DEF=Linear] Interpolation type : Linear or Quadratic
-    peleLM.xnormP.field_names = x_velocity mag_vort density         # List of variables outputted to the 2D pltfile
-    peleLM.xnormP.n_files = 2                                       # [OPT, DEF="min(256,NProcs)"] Number of files to write per level
-
-    peleLM.condT.type = DiagConditional                             # Diagnostic type
-    peleLM.condT.file = condTest                                    # Output file prefix
-    peleLM.condT.int  = 5                                           # Frequency (as step #) for performing the diagnostic
-    peleLM.condT.filters = xHigh stoich                             # [OPT, DEF=None] List of filters
-    peleLM.condT.xHigh.field_name = x                               # Filter field
-    peleLM.condT.xHigh.value_greater = 0.006                        # Filter definition : value_greater, value_less, value_inrange
-    peleLM.condT.stoich.field_name = mixture_fraction               # Filter field
-    peleLM.condT.stoich.value_inrange = 0.053 0.055                 # Filter definition : value_greater, value_less, value_inrange
-    peleLM.condT.conditional_type = Average                         # Conditional type : Average, Integral or Sum
-    peleLM.condT.nBins = 50                                         # Number of bins for the conditioning variable
-    peleLM.condT.condition_field_name = temp                        # Conditioning variable name
-    peleLM.condT.field_names = HeatRelease I_R(CH4) I_R(H2)         # List of variables to be treated
-
-    peleLM.pdfTest.type = DiagPDF                                   # Diagnostic type
-    peleLM.pdfTest.file = PDFTest                                   # Output file prefix
-    peleLM.pdfTest.int  = 5                                         # Frequency (as step #) for performing the diagnostic
-    peleLM.pdfTest.filters = innerFlame                             # [OPT, DEF=None] List of filters
-    peleLM.pdfTest.innerFlame.field_name = temp                     # Filter field
-    peleLM.pdfTest.innerFlame.value_inrange = 450.0 1500.0          # Filter definition : value_greater, value_less, value_inrange
-    peleLM.pdfTest.nBins = 50                                       # Number of bins for the PDF
-    peleLM.pdfTest.normalized = 1                                   # [OPT, DEF=1] PDF is normalized (i.e. integral is unity) ?
-    peleLM.pdfTest.volume_weighted = 1                              # [OPT, DEF=1] Computation of the PDF is volume weighted ?
-    peleLM.pdfTest.range = 0.0 2.0                                  # [OPT, DEF=data min/max] Specify the range of the PDF
-    peleLM.pdfTest.field_name = x_velocity                          # Variable of interest
+    ...
 
 Run-time control
 --------------------

@@ -1,0 +1,30 @@
+# Copy most inputs from periodic case
+FILE = input.3d_CoVo_InflowGen
+
+# Modify as needed
+geometry.is_periodic = 1 0 1              # For each dir, 0: non-perio, 1: periodic
+peleLM.lo_bc = Interior Inflow Interior
+peleLM.hi_bc = Interior Outflow Interior
+
+amr.n_cell          = 64 64 64         # Level 0 number of cells in each direction
+amr.max_level       = 0                # maximum level number allowed
+amr.plot_file       = plt_plane_inflow/plt
+
+prob.meanFlowDir = 2
+prob.forcevort   = 0.0
+
+turbinflows = lowY
+turbinflow.lowY.turb_file = PlaneInflow
+turbinflow.lowY.dir            = 1
+turbinflow.lowY.side           = low
+turbinflow.lowY.turb_scale_loc = 1.0
+turbinflow.lowY.turb_scale_vel = 1.0
+turbinflow.lowY.turb_center    = 0.5 0.5
+turbinflow.lowY.turb_nplane    = 64
+turbinflow.lowY.verbose        = 4
+
+peleLM.turbinflowplane.file = iplane_plane_inflow/plt
+peleLM.turbinflowplane.normal = 1
+peleLM.turbinflowplane.dump_ghost_if_OOB = 1
+peleLM.turbinflowplane.center = -1.0
+peleLM.turbinflowplane.dump_flat_3D_plotfile = 0

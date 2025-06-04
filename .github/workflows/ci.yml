@@ -205,6 +205,15 @@ jobs:
     name: GPU-CUDA
     needs: [Formatting, CPU-GNUmake]
     runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        enable_eb: [EB-OFF, EB-ON]
+        include:
+          - enable_eb: EB-OFF
+            use_eb: "OFF"
+          - enable_eb: EB-ON
+            use_eb: "ON"
+      fail-fast: false
     steps:
       - name: Clone
         uses: actions/checkout@v4
@@ -250,6 +259,7 @@ jobs:
             -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
             -DPELE_ENABLE_MPI:BOOL=OFF \
             -DPELE_ENABLE_CUDA:BOOL=ON \
+            -DPELE_ENABLE_EB:BOOL=${{matrix.use_eb}} \
             -DAMReX_CUDA_ERROR_CAPTURE_THIS:BOOL=ON \
             -DCMAKE_CUDA_ARCHITECTURES:STRING=80 \
             -DCMAKE_CUDA_COMPILER_LAUNCHER:STRING=ccache \

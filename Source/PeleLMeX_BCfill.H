@@ -8,6 +8,7 @@
 
 using namespace amrex;
 
+template <typename T>
 struct PeleLMCCFillExtDirState
 {
 
@@ -51,6 +52,10 @@ struct PeleLMCCFillExtDirState
       prob_lo[0] + (iv[0] + 0.5) * dx[0], prob_lo[1] + (iv[1] + 0.5) * dx[1],
       prob_lo[2] + (iv[2] + 0.5) * dx[2])};
 
+    // Get a 3D version of iv to access first cell in domain
+    auto iv_3d = amrex::IntVectND<3>(0);
+    AMREX_D_TERM(iv_3d[0] = iv[0];, iv_3d[1] = iv[1];, iv_3d[2] = iv[2];);
+
     for (int idir = 0; idir < AMREX_SPACEDIM; idir++) {
 
       // Low
@@ -62,6 +67,11 @@ struct PeleLMCCFillExtDirState
         const int* bc = bcr[n].data();
 
         if ((bc[idir] == amrex::BCType::ext_dir) and (iv[idir] < domlo[idir])) {
+
+          // Get the state in the first cell in the domain
+          auto iv_in = iv_3d;
+          iv_in[idir] = iv_in[idir] + 1;
+          const auto s_in = state.cellData(iv_in[0], iv_in[1], iv_in[2]);
 
           // If using TurbInflow, pass in the turbulent data. User can overwrite
           // if needed
@@ -76,7 +86,8 @@ struct PeleLMCCFillExtDirState
           }
           // bcnormal() is defined in pelelmex_prob.H in problem directory in
           // /Exec
-          bcnormal(x, m_nAux, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
+          T::bcnormal(
+            x, s_in, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
           state(iv, n) = s_ext[n];
         }
       }
@@ -94,6 +105,11 @@ struct PeleLMCCFillExtDirState
           (bc[idir + AMREX_SPACEDIM] == amrex::BCType::ext_dir) and
           (iv[idir] > domhi[idir])) {
 
+          // Get the state in the first cell in the domain
+          auto iv_in = iv_3d;
+          iv_in[idir] = iv_in[idir] - 1;
+          const auto s_in = state.cellData(iv_in[0], iv_in[1], iv_in[2]);
+
           // If using TurbInflow, pass in the turbulent data. User can overwrite
           // if needed
           if (m_do_turbInflow != 0) {
@@ -107,8 +123,8 @@ struct PeleLMCCFillExtDirState
           }
           // bcnormal() is defined in pelelmex_prob.H in problem directory in
           // /Exec
-          bcnormal(
-            x, m_nAux, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
+          T::bcnormal(
+            x, s_in, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
           state(iv, n) = s_ext[n];
         }
       }
@@ -116,6 +132,7 @@ struct PeleLMCCFillExtDirState
   }
 };
 
+template <typename T>
 struct PeleLMCCFillExtDirAux
 {
 
@@ -159,10 +176,6 @@ struct PeleLMCCFillExtDirAux
     auto aux_ext = aux.cellData(iv[0], iv[1], iv[2]);
 #endif
 
-#ifndef PELE_CUSTOM_BCNORMAL_AUX
-    amrex::ignore_unused(x, time, aux_ext);
-#endif
-
     for (int idir = 0; idir < AMREX_SPACEDIM; idir++) {
 
       // Low
@@ -172,17 +185,12 @@ struct PeleLMCCFillExtDirAux
         const int* bc = bcr[n].data();
 
         if ((bc[idir] == amrex::BCType::ext_dir) and (iv[idir] < domlo[idir])) {
-          // bcnormal() is defined in pelelmex_prob.H in problem directory in
-          // /Exec
-#ifdef PELE_CUSTOM_BCNORMAL_AUX
-          bcnormal_aux(x, aux_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
-#else
-          amrex::Abort("Auxiliary variable with Dirichlet boundary with no "
-                       "bcnormal_aux function...");
-#endif
+          // bcnormal_aux() is defined in pelelmex_prob.H in problem directory
+          // in /Exec
+          T::bcnormal_aux(
+            x, aux_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
         }
       }
-
       // High
       for (int n = 0; n < m_nAux; n++) {
 
@@ -192,20 +200,15 @@ struct PeleLMCCFillExtDirAux
         if (
           (bc[idir + AMREX_SPACEDIM] == amrex::BCType::ext_dir) and
           (iv[idir] > domhi[idir])) {
-
-          // /Exec
-#ifdef PELE_CUSTOM_BCNORMAL_AUX
-          bcnormal_aux(x, aux_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
-#else
-          amrex::Abort("Auxiliary variable with Dirichlet boundary with no "
-                       "bcnormal_aux function...");
-#endif
+          T::bcnormal_aux(
+            x, aux_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
         }
       }
     }
   }
 };
 
+template <typename T>
 struct PeleLMCCFillExtDirSpec
 {
 
@@ -244,6 +247,10 @@ struct PeleLMCCFillExtDirSpec
       prob_lo[0] + (iv[0] + 0.5) * dx[0], prob_lo[1] + (iv[1] + 0.5) * dx[1],
       prob_lo[2] + (iv[2] + 0.5) * dx[2])};
 
+    // Get a 3D version of iv to access first cell in domain
+    auto iv_3d = amrex::IntVectND<3>(0);
+    AMREX_D_TERM(iv_3d[0] = iv[0];, iv_3d[1] = iv[1];, iv_3d[2] = iv[2];);
+
     for (int n = 0; n < NUM_SPECIES; n++) {
 
       // Get the species component BC
@@ -256,9 +263,15 @@ struct PeleLMCCFillExtDirSpec
         // Low
         if ((bc[idir] == amrex::BCType::ext_dir) and (iv[idir] < domlo[idir])) {
 
+          // Get the state on the first cell in the domain
+          auto iv_in = iv_3d;
+          iv_in[idir] = iv_in[idir] + 1;
+          const auto s_in = rhoY.cellData(iv_in[0], iv_in[1], iv_in[2]);
+
           // bcnormal() is defined in pelelmex_prob.H in problem directory in
           // /Exec
-          bcnormal(x, m_nAux, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
+          T::bcnormal(
+            x, s_in, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
 
           rhoY(iv, dcomp + n) = s_ext[FIRSTSPEC + n];
 
@@ -267,10 +280,15 @@ struct PeleLMCCFillExtDirSpec
           (bc[idir + AMREX_SPACEDIM] == amrex::BCType::ext_dir) and
           (iv[idir] > domhi[idir])) {
 
+          // Get the state on the first cell in the domain
+          auto iv_in = iv_3d;
+          iv_in[idir] = iv_in[idir] - 1;
+          const auto s_in = rhoY.cellData(iv_in[0], iv_in[1], iv_in[2]);
+
           // bcnormal() is defined in pelelmex_prob.H in problem directory in
           // /Exec
-          bcnormal(
-            x, m_nAux, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
+          T::bcnormal(
+            x, s_in, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
 
           rhoY(iv, dcomp + n) = s_ext[FIRSTSPEC + n];
         }
@@ -279,6 +297,7 @@ struct PeleLMCCFillExtDirSpec
   }
 };
 
+template <typename T>
 struct PeleLMCCFillExtDirDens
 {
 
@@ -317,6 +336,10 @@ struct PeleLMCCFillExtDirDens
       prob_lo[0] + (iv[0] + 0.5) * dx[0], prob_lo[1] + (iv[1] + 0.5) * dx[1],
       prob_lo[2] + (iv[2] + 0.5) * dx[2])};
 
+    // Get a 3D version of iv to access first cell in domain
+    auto iv_3d = amrex::IntVectND<3>(0);
+    AMREX_D_TERM(iv_3d[0] = iv[0];, iv_3d[1] = iv[1];, iv_3d[2] = iv[2];);
+
     // Get the first species component BC
     const int* bc = bcr->data();
 
@@ -327,9 +350,14 @@ struct PeleLMCCFillExtDirDens
       // Low
       if ((bc[idir] == amrex::BCType::ext_dir) and (iv[idir] < domlo[idir])) {
 
+        // Get the state on the first cell in the domain
+        auto iv_in = iv_3d;
+        iv_in[idir] = iv_in[idir] + 1;
+        const auto s_in = state.cellData(iv_in[0], iv_in[1], iv_in[2]);
+
         // bcnormal() is defined in pelelmex_prob.H in problem directory in
         // /Exec
-        bcnormal(x, m_nAux, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
+        T::bcnormal(x, s_in, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
 
         state(iv, dcomp) = s_ext[DENSITY];
 
@@ -338,9 +366,14 @@ struct PeleLMCCFillExtDirDens
         (bc[idir + AMREX_SPACEDIM] == amrex::BCType::ext_dir) and
         (iv[idir] > domhi[idir])) {
 
+        // Get the state on the first cell in the domain
+        auto iv_in = iv_3d;
+        iv_in[idir] = iv_in[idir] - 1;
+        const auto s_in = state.cellData(iv_in[0], iv_in[1], iv_in[2]);
+
         // bcnormal() is defined in pelelmex_prob.H in problem directory in
         // /Exec
-        bcnormal(x, m_nAux, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
+        T::bcnormal(x, s_in, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
 
         state(iv, dcomp) = s_ext[DENSITY];
       }
@@ -348,6 +381,7 @@ struct PeleLMCCFillExtDirDens
   }
 };
 
+template <typename T>
 struct PeleLMCCFillExtDirRhoH
 {
 
@@ -386,6 +420,10 @@ struct PeleLMCCFillExtDirRhoH
       prob_lo[0] + (iv[0] + 0.5) * dx[0], prob_lo[1] + (iv[1] + 0.5) * dx[1],
       prob_lo[2] + (iv[2] + 0.5) * dx[2])};
 
+    // Get a 3D version of iv to access first cell in domain
+    auto iv_3d = amrex::IntVectND<3>(0);
+    AMREX_D_TERM(iv_3d[0] = iv[0];, iv_3d[1] = iv[1];, iv_3d[2] = iv[2];);
+
     // Get the first species component BC
     const int* bc = bcr->data();
 
@@ -396,9 +434,14 @@ struct PeleLMCCFillExtDirRhoH
       // Low
       if ((bc[idir] == amrex::BCType::ext_dir) and (iv[idir] < domlo[idir])) {
 
+        // Get the state on the first cell in the domain
+        auto iv_in = iv_3d;
+        iv_in[idir] = iv_in[idir] + 1;
+        const auto s_in = rhoH.cellData(iv_in[0], iv_in[1], iv_in[2]);
+
         // bcnormal() is defined in pelelmex_prob.H in problem directory in
         // /Exec
-        bcnormal(x, m_nAux, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
+        T::bcnormal(x, s_in, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
 
         rhoH(iv) = s_ext[RHOH];
 
@@ -407,9 +450,14 @@ struct PeleLMCCFillExtDirRhoH
         (bc[idir + AMREX_SPACEDIM] == amrex::BCType::ext_dir) and
         (iv[idir] > domhi[idir])) {
 
+        // Get the state on the first cell in the domain
+        auto iv_in = iv_3d;
+        iv_in[idir] = iv_in[idir] - 1;
+        const auto s_in = rhoH.cellData(iv_in[0], iv_in[1], iv_in[2]);
+
         // bcnormal() is defined in pelelmex_prob.H in problem directory in
         // /Exec
-        bcnormal(x, m_nAux, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
+        T::bcnormal(x, s_in, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
 
         rhoH(iv) = s_ext[RHOH];
       }
@@ -417,6 +465,7 @@ struct PeleLMCCFillExtDirRhoH
   }
 };
 
+template <typename T>
 struct PeleLMCCFillExtDirTemp
 {
 
@@ -455,6 +504,10 @@ struct PeleLMCCFillExtDirTemp
       prob_lo[0] + (iv[0] + 0.5) * dx[0], prob_lo[1] + (iv[1] + 0.5) * dx[1],
       prob_lo[2] + (iv[2] + 0.5) * dx[2])};
 
+    // Get a 3D version of iv to access first cell in domain
+    auto iv_3d = amrex::IntVectND<3>(0);
+    AMREX_D_TERM(iv_3d[0] = iv[0];, iv_3d[1] = iv[1];, iv_3d[2] = iv[2];);
+
     // Get the first species component BC
     const int* bc = bcr->data();
 
@@ -464,9 +517,14 @@ struct PeleLMCCFillExtDirTemp
       // Low
       if ((bc[idir] == amrex::BCType::ext_dir) and (iv[idir] < domlo[idir])) {
 
+        // Get the state on the first cell in the domain
+        auto iv_in = iv_3d;
+        iv_in[idir] = iv_in[idir] + 1;
+        const auto s_in = state.cellData(iv_in[0], iv_in[1], iv_in[2]);
+
         // bcnormal() is defined in pelelmex_prob.H in problem directory in
         // /Exec
-        bcnormal(x, m_nAux, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
+        T::bcnormal(x, s_in, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
 
         state(iv, dcomp) = s_ext[TEMP];
 
@@ -475,9 +533,14 @@ struct PeleLMCCFillExtDirTemp
         (bc[idir + AMREX_SPACEDIM] == amrex::BCType::ext_dir) and
         (iv[idir] > domhi[idir])) {
 
+        // Get the state on the first cell in the domain
+        auto iv_in = iv_3d;
+        iv_in[idir] = iv_in[idir] - 1;
+        const auto s_in = state.cellData(iv_in[0], iv_in[1], iv_in[2]);
+
         // bcnormal() is defined in pelelmex_prob.H in problem directory in
         // /Exec
-        bcnormal(x, m_nAux, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
+        T::bcnormal(x, s_in, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
 
         state(iv, dcomp) = s_ext[TEMP];
       }
@@ -486,6 +549,7 @@ struct PeleLMCCFillExtDirTemp
 };
 
 #ifdef PELE_USE_PLASMA
+template <typename T>
 struct PeleLMCCFillExtDirnE
 {
 
@@ -524,6 +588,10 @@ struct PeleLMCCFillExtDirnE
       prob_lo[0] + (iv[0] + 0.5) * dx[0], prob_lo[1] + (iv[1] + 0.5) * dx[1],
       prob_lo[2] + (iv[2] + 0.5) * dx[2])};
 
+    // Get a 3D version of iv to access first cell in domain
+    auto iv_3d = amrex::IntVectND<3>(0);
+    AMREX_D_TERM(iv_3d[0] = iv[0];, iv_3d[1] = iv[1];, iv_3d[2] = iv[2];);
+
     // Get the first species component BC
     const int* bc = bcr->data();
 
@@ -534,9 +602,14 @@ struct PeleLMCCFillExtDirnE
       // Low
       if ((bc[idir] == amrex::BCType::ext_dir) and (iv[idir] < domlo[idir])) {
 
+        // Get the state on the first cell in the domain
+        auto iv_in = iv_3d;
+        iv_in[idir] = iv_in[idir] + 1;
+        const auto s_in = nE.cellData(iv_in[0], iv_in[1], iv_in[2]);
+
         // bcnormal() is defined in pelelmex_prob.H in problem directory in
         // /Exec
-        bcnormal(x, m_nAux, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
+        T::bcnormal(x, s_in, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
 
         nE(iv) = s_ext[NE];
 
@@ -545,9 +618,14 @@ struct PeleLMCCFillExtDirnE
         (bc[idir + AMREX_SPACEDIM] == amrex::BCType::ext_dir) and
         (iv[idir] > domhi[idir])) {
 
+        // Get the state on the first cell in the domain
+        auto iv_in = iv_3d;
+        iv_in[idir] = iv_in[idir] - 1;
+        const auto s_in = nE.cellData(iv_in[0], iv_in[1], iv_in[2]);
+
         // bcnormal() is defined in pelelmex_prob.H in problem directory in
         // /Exec
-        bcnormal(x, m_nAux, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
+        T::bcnormal(x, s_in, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
 
         nE(iv) = s_ext[NE];
       }
@@ -557,6 +635,7 @@ struct PeleLMCCFillExtDirnE
 #endif
 
 #ifdef PELE_USE_PLASMA
+template <typename T>
 struct PeleLMCCFillExtDirPhiV
 {
 
@@ -595,6 +674,10 @@ struct PeleLMCCFillExtDirPhiV
       prob_lo[0] + (iv[0] + 0.5) * dx[0], prob_lo[1] + (iv[1] + 0.5) * dx[1],
       prob_lo[2] + (iv[2] + 0.5) * dx[2])};
 
+    // Get a 3D version of iv to access first cell in domain
+    auto iv_3d = amrex::IntVectND<3>(0);
+    AMREX_D_TERM(iv_3d[0] = iv[0];, iv_3d[1] = iv[1];, iv_3d[2] = iv[2];);
+
     // Get the first species component BC
     const int* bc = bcr->data();
 
@@ -605,9 +688,14 @@ struct PeleLMCCFillExtDirPhiV
       // Low
       if ((bc[idir] == amrex::BCType::ext_dir) and (iv[idir] < domlo[idir])) {
 
+        // Get the state on the first cell in the domain
+        auto iv_in = iv_3d;
+        iv_in[idir] = iv_in[idir] + 1;
+        const auto s_in = phiV.cellData(iv_in[0], iv_in[1], iv_in[2]);
+
         // bcnormal() is defined in pelelmex_prob.H in problem directory in
         // /Exec
-        bcnormal(x, m_nAux, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
+        T::bcnormal(x, s_in, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
 
         phiV(iv, dcomp) = s_ext[PHIV];
 
@@ -616,9 +704,14 @@ struct PeleLMCCFillExtDirPhiV
         (bc[idir + AMREX_SPACEDIM] == amrex::BCType::ext_dir) and
         (iv[idir] > domhi[idir])) {
 
+        // Get the state on the first cell in the domain
+        auto iv_in = iv_3d;
+        iv_in[idir] = iv_in[idir] - 1;
+        const auto s_in = phiV.cellData(iv_in[0], iv_in[1], iv_in[2]);
+
         // bcnormal() is defined in pelelmex_prob.H in problem directory in
         // /Exec
-        bcnormal(x, m_nAux, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
+        T::bcnormal(x, s_in, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
 
         phiV(iv, dcomp) = s_ext[PHIV];
       }
@@ -629,15 +722,10 @@ struct PeleLMCCFillExtDirPhiV
 
 struct PeleLMCCFillExtDirDummy
 {
-
-  ProbParm const* lprobparm;
   const int m_nAux;
 
   AMREX_GPU_HOST
-  constexpr PeleLMCCFillExtDirDummy(ProbParm const* a_prob_parm, int a_nAux)
-    : lprobparm(a_prob_parm), m_nAux(a_nAux)
-  {
-  }
+  constexpr PeleLMCCFillExtDirDummy(int a_nAux) : m_nAux(a_nAux) {}
 
   AMREX_GPU_DEVICE
   void operator()(
