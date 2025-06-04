@@ -31,7 +31,7 @@ USE_PARTICLES = TRUE
 SPRAY_FUEL_NUM = 3
 
 # PelePhysics
-Chemistry_Model = fuels_nonreacting
+Chemistry_Model = liquid_fuels_nonreacting
 Eos_Model = Fuego
 Transport_Model = Simple
 

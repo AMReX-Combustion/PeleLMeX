@@ -40,15 +40,18 @@ PeleLM::readProbParm()
   amrex::Real rho_cgs = 0.;
   eos.PYT2R(p_cgs, massfrac, T_eff, rho_cgs);
 
-  bool FA = false;
-  bool TR = true;
+  const bool get_xi = false,
+            get_mu = true, 
+            get_lam = false,
+            get_Ddiag = false, 
+            get_chi = false;
   amrex::Real dummy_xi, dummy_chi_mix;
   amrex::Real mu_cgs, lambda_cgs = 0.;
   amrex::Real rhoDi_cgs[NUM_SPECIES], Di[NUM_SPECIES] = {0.0};
   auto trans = pele::physics::PhysicsType::transport();
   const auto* trans_parm = &(PeleLM::trans_parms.host_parm());
   trans.transport(
-    FA, TR, TR, TR, FA, T_eff, rho_cgs, massfrac, rhoDi_cgs, &dummy_chi_mix,
+    get_xi, get_mu, get_lam, get_Ddiag, get_chi, T_eff, rho_cgs, massfrac, rhoDi_cgs, &dummy_chi_mix,
     mu_cgs, dummy_xi, lambda_cgs, trans_parm);
 
   amrex::Real mu = c2m::Mu(mu_cgs);
@@ -65,8 +68,8 @@ PeleLM::readProbParm()
   std::ofstream ofs("ic.txt", std::ofstream::out);
   amrex::Print(ofs) << "Re = " << Re << "\n"
                     << "vel_gas = " << prob_parm->vel_gas << "\n"
-                    << "mu_r = " << c2m::Mu(mu_cgs) << "\n"
-                    << "rho_r = " << c2m::Rho(rho_cgs) << "\n"
+                    << "mu_r = " << mu << "\n"
+                    << "rho_r = " << rho << "\n"
                     << "drop_dia = " << drop_dia << std::endl;
   ofs.close();
 }

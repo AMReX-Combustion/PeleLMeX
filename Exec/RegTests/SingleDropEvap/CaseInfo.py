@@ -45,8 +45,8 @@ class CaseInfo:
         end_time=None,
         dt=1e-2,
         plot_per=0.1,
-        domain=None,
-        cell_num=None,
+        domain=[1., 1.],
+        cell_num=[64, 64],
         reftype=None,
     ):
         FILE_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -59,6 +59,8 @@ class CaseInfo:
         self.time = end_time
         self.dt = dt
         self.plot_per = plot_per
+        self.domain = domain
+        self.cell_num = cell_num
 
         # If reference is experimental or computational results
         if reftype is None:
@@ -98,15 +100,7 @@ class CaseInfo:
             self.yconv = 1.0e3 * 0.5
             self.ylabel = "$r^2$ [mm$^2$]"
 
-        # Set domain parameters
-        if domain is None:
-            self.domain = [1.0, 1.0]
-        else:
-            self.domain = domain
-        if cell_num is None:
-            self.cell_num = [128, 128]
-        else:
-            self.cell_num = cell_num
+        # Check domain parameters
         if (
             abs(self.cell_num[0] / self.domain[0] - self.cell_num[1] / self.domain[1])
             > 0.0
@@ -159,7 +153,7 @@ def Daif():
         291.4, 1.334e-3, ["NC7H16", "NC10H22", "POSF10264"], [0.7375, 0.2625, 0.0]
     )
     gas = GasPhase(348.0, 1.01325e5, vel=3.10)
-    case = CaseInfo("Daif", "Daif et al.", drop, gas, xyunits=["s", "r2_mm"], dt=1e-3)
+    case = CaseInfo("Daif", "Daif et al.", drop, gas, xyunits=["s", "r2_mm"], dt=2e-3)
     return case
 
 
@@ -172,9 +166,8 @@ def RungeMix():
         drop,
         gas,
         xyunits=["runge", "dd02"],
-        dt=1e-3,
+        dt=5e-3,
         plot_per=1,
-        cell_num=[64, 64],
     )
     return case
 
@@ -188,9 +181,8 @@ def RungeDec():
         drop,
         gas,
         xyunits=["runge", "dd02"],
-        dt=1e-3,
+        dt=5e-3,
         plot_per=1,
-        cell_num=[64, 64],
     )
     return case
 
@@ -204,9 +196,8 @@ def RungeHep():
         drop,
         gas,
         xyunits=["runge", "dd02"],
-        dt=1e-3,
+        dt=5e-3,
         plot_per=0.25,
-        cell_num=[64, 64],
     )
     return case
 
@@ -220,7 +211,7 @@ def RungeJP8():
         drop,
         gas,
         xyunits=["runge", "dd02"],
-        dt=1e-3,
+        dt=2e-3,
         plot_per=1,
         cell_num=[64, 64],
     )

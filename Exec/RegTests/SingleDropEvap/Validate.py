@@ -19,10 +19,13 @@ Test cases:
 """
 
 # Case object
-case = WongLin()
+case = RungeHep()
 
 # Run new or extract existing simulation data?
 run_new = True
+
+# Number of processors to run on
+num_proc = 4
 
 # Plotting parameters
 marker_s = 40
@@ -59,9 +62,16 @@ if run_new:
     if not os.path.exists(exe):
         error = "Pele executable not found"
         raise ValueError(error)
+    elif (num_proc > 1) and ("MPI" not in exe):
+        error = f"Pele not compiled with MPI and num_proc = {num_proc}"
+        raise ValueError(error)
 
     # Run the case
-    os.system(f"mpiexec -np 6 ./{exe} {case.input_file}")
+    if ("MPI" in exe) and (num_proc > 1):
+        os.system(f"mpiexec -np {num_proc} ./{exe} {case.input_file}")
+    else:
+        os.system(f"./{exe} {case.input_file}")
+
 else:
     # Check that the case directory exists
     if not os.path.exists(case.case_dir):
