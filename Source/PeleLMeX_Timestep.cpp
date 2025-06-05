@@ -236,7 +236,6 @@ PeleLM::checkDt(const TimeStamp& a_time, const Real& a_dt)
     return;
   }
 
-#ifndef AMREX_USE_GPU
   for (int lev = 0; lev <= finest_level; ++lev) {
 
     auto* ldata_p = getLevelDataPtr(lev, a_time);
@@ -263,5 +262,4 @@ PeleLM::checkDt(const TimeStamp& a_time, const Real& a_dt)
         });
     }
   }
-#endif
 }

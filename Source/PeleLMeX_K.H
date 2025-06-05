@@ -1193,7 +1193,7 @@ check_divu_dt(
   if (a_dt > dtcell) {
     amrex::Abort("Error: divU dtcell larger than actual dt !");
   } else if (a_dt > dtcell * dtfactor) {
-    amrex::Print() << "Warning: divU dtcell close to actual dt ! \n";
+    amrex::Warning() << "Warning: divU dtcell close to actual dt ! \n";
   }
 }
 
