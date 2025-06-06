@@ -45,8 +45,8 @@ class CaseInfo:
         end_time=None,
         dt=1e-2,
         plot_per=0.1,
-        domain=[1., 1.],
-        cell_num=[64, 64],
+        domain=[1., 1., 1.],
+        cell_num=[32, 32, 32],
         reftype=None,
     ):
         FILE_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -225,14 +225,14 @@ def CreateInputFile(case):
     fixed_parts = 1
     if case.droplet.vel > 0:
         fixed_parts = 0
-    if fixed_parts:
-        lo_bc = "Inflow Interior"
-        hi_bc = "Outflow Interior"
-        is_periodic = "0 1"
+    if case.gas.vel > 0:
+        lo_bc = "Inflow Interior Interior"
+        hi_bc = "Outflow Interior Interior"
+        is_periodic = "0 1 1"
     else:
-        lo_bc = "Interior Interior"
-        hi_bc = "Interior Interior"
-        is_periodic = "1 1"
+        lo_bc = "Outflow Outflow Outflow"
+        hi_bc = "Outflow Outflow Outflow"
+        is_periodic = "0 0 0"
 
     # Read general input file
     gen_file = os.path.join(FILE_PATH, "input_general.inp")
@@ -245,11 +245,11 @@ def CreateInputFile(case):
         if "geometry.is_periodic" in line:
             new_line = f"geometry.is_periodic = {is_periodic}\n"
         elif "geometry.prob_lo" in line:
-            dom_lo = [0.0, 0.0]
-            new_line = f"geometry.prob_lo = {dom_lo[0]:.1f} {dom_lo[1]:.1f}\n"
+            dom_lo = [0.0, 0.0, 0.0]
+            new_line = f"geometry.prob_lo = {dom_lo[0]:.1f} {dom_lo[1]:.1f} {dom_lo[2]:.1f}\n"
         elif "geometry.prob_hi" in line:
-            dom_hi = [case.domain[0], case.domain[1]]
-            new_line = f"geometry.prob_hi = {dom_hi[0]:.1f} {dom_hi[1]:.1f}\n"
+            dom_hi = [case.domain[0], case.domain[1], case.domain[2]]
+            new_line = f"geometry.prob_hi = {dom_hi[0]:.1f} {dom_hi[1]:.1f} {dom_hi[2]:.1f}\n"
 
         # BC Flags
         elif "peleLM.lo_bc" in line:
@@ -259,7 +259,7 @@ def CreateInputFile(case):
 
         # AMR Control
         elif "amr.n_cell" in line:
-            new_line = f"amr.n_cell = {case.cell_num[0]:d} {case.cell_num[1]:d}\n"
+            new_line = f"amr.n_cell = {case.cell_num[0]:d} {case.cell_num[1]:d} {case.cell_num[2]:d}\n"
         elif "amr.plot_per" in line:
             new_line = f"amr.plot_per = {case.plot_per:d}\n"
 

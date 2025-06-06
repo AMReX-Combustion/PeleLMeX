@@ -19,13 +19,13 @@ Test cases:
 """
 
 # Case object
-case = RungeHep()
+case = WongLin()
 
 # Run new or extract existing simulation data?
 run_new = True
 
 # Number of processors to run on
-num_proc = 4
+num_proc = 6
 
 # Plotting parameters
 marker_s = 40

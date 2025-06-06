@@ -12,9 +12,9 @@ def ExtractData(case, outfile):
     sprayfiles = []
     for x in os.listdir(CASE_PATH):
         if x.startswith("plt"):
-            pltfiles.append(case.name + "/" + x)
+            pltfiles.append(os.path.join(CASE_PATH,x))
         if x.endswith(".p3d"):
-            sprayfiles.append(case.name + "/" + x)
+            sprayfiles.append(os.path.join(CASE_PATH,x))
 
     def get_step(fn):
         match = re.search(r"(?:plt|spray)(\d+)", fn)
@@ -35,7 +35,9 @@ def ExtractData(case, outfile):
 
     # Column designations in the spray*.p3d files
     numspec = len(case.droplet.Y)  # Liquid fuel components
-    dims = 2  # Solution dimensions
+    dims = 2 # Solution dimensions
+    if "z_velocity\n" in Lines:
+        dims = 3  
     loccols = dims - 1
     velcols = loccols + 1
     tcol = velcols + dims
