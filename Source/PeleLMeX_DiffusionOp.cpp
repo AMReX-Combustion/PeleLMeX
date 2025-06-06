@@ -869,7 +869,8 @@ DiffusionOp::computeGradient(
   const Vector<MultiFab const*>& a_phi,
   const Vector<MultiFab const*>& a_boundary,
   const BCRec& a_bcrec,
-  int do_avgDown) const
+  int do_avgDown,
+  int comp) const
 {
   BL_PROFILE("DiffusionOp::computeGradient()");
 
@@ -881,7 +882,7 @@ DiffusionOp::computeGradient(
   }
 
   // Checks: one components only and 1 ghost cell at least
-  AMREX_ASSERT(a_phi[0]->nComp() == 1);
+  AMREX_ASSERT(a_phi[0]->nComp() > comp);
   AMREX_ASSERT(a_phi[0]->nGrow() >= 1);
 
   int finest_level = m_pelelm->finestLevel();
@@ -905,12 +906,12 @@ DiffusionOp::computeGradient(
       a_phi[lev]->boxArray(), a_phi[lev]->DistributionMap(), 1, 1, MFInfo(),
       a_phi[lev]->Factory());
 
-    MultiFab::Copy(phi[lev], *a_phi[lev], 0, 0, 1, 1);
+    MultiFab::Copy(phi[lev], *a_phi[lev], comp, 0, 1, 1);
 
     if (have_boundary != 0) {
       MultiFab::Copy(boundary[lev], *a_boundary[lev], 0, 0, 1, 1);
     } else {
-      MultiFab::Copy(boundary[lev], *a_phi[lev], 0, 0, 1, 1);
+      MultiFab::Copy(boundary[lev], *a_phi[lev], comp, 0, 1, 1);
     }
 
     m_gradient_op->setLevelBC(lev, &boundary[lev]);

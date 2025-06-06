@@ -169,7 +169,6 @@ PeleLM::WritePlotFile()
   }
 
   if (m_plot_extSource) {
-    // Plot state
     ncomp += NVAR;
   }
 

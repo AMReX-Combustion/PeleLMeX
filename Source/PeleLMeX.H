@@ -846,6 +846,8 @@ public:
 
   void addSpark(const PeleLM::TimeStamp& a_time);
 
+  void addScalarVarianceSources(const PeleLM::TimeStamp& a_time);
+
   //-----------------------------------------------------------------------------
 
 #ifdef PELE_USE_SPRAY
@@ -1986,7 +1988,7 @@ public:
   amrex::Real m_les_cs_smag = 0.18;
   amrex::Real m_les_cm_wale = 0.60;
   amrex::Real m_les_cs_sigma = 1.35;
-  amrex::Vector<amrex::Real> m_turb_visc_time;
+  amrex::Real m_les_c_chi = 20.0;
 
   // switch on/off different processes
   // TODO: actually implement that

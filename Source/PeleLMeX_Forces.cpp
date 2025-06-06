@@ -236,6 +236,145 @@ PeleLM::addSpark(const TimeStamp& a_timestamp)
   }
 }
 
+// Manifold model - dissipation rate sources for variances
+void
+PeleLM::addScalarVarianceSources(const TimeStamp& a_timestamp)
+{
+  BL_PROFILE("PeleLM::addScalarVarianceSources");
+  // no scalar dissipation sources if not using a manifold model
+#ifndef USE_MANIFOLD_EOS
+  amrex::ignore_unused(a_timestamp);
+#else
+
+  auto const& leosparm = eos_parms.host_parm();
+
+  // Determine if we have any scalar variances that need sources added
+  // Could be moved elsewhere to not do every timestep
+  int nvariances = 0;
+  int var_of_scalar = -1;
+  for (int n = 0; n < MANIFOLD_DIM; ++n) {
+    if (leosparm.is_variance_of[n] >= 0) {
+      if (!m_do_les) {
+        amrex::Abort(
+          "PeleLM::addScalarVarianceSources(): cannot add a "
+          "scalar dissipation without an active LES model");
+      }
+      nvariances += 1;
+      var_of_scalar = FIRSTSPEC + leosparm.is_variance_of[n];
+    }
+  }
+
+  if (nvariances > 1) {
+    amrex::Abort(
+      "PeleLM::addScalarVarianceSources(): currently we only support "
+      "manifold models with 0 or 1 variances");
+  } else if (nvariances > 0) {
+
+    // Compute scalar gradients (no need to average down here)
+    int do_avgDown = 0;
+    auto bcRecScalar = fetchBCRecArray(var_of_scalar, 1);
+    int nGrow = 0; // No need for ghost face on fluxes
+    Vector<Array<MultiFab, AMREX_SPACEDIM>> grad_fc(finest_level + 1);
+    for (int lev = 0; lev <= finest_level; ++lev) {
+      const auto& ba = grids[lev];
+      const auto& factory = Factory(lev);
+      for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+        grad_fc[lev][idim].define(
+          amrex::convert(ba, IntVect::TheDimensionVector(idim)), dmap[lev], 1,
+          nGrow, MFInfo(), factory);
+        grad_fc[lev][idim].setVal(0.0); // Required?
+      }
+    }
+    getDiffusionOp()->computeGradient(
+      GetVecOfArrOfPtrs(grad_fc), {},
+      GetVecOfConstPtrs(getStateVect(a_timestamp)), {}, bcRecScalar[0],
+      do_avgDown, var_of_scalar);
+
+    // Add in Production and Dissipation source terms for subfilter variances
+    for (int lev = 0; lev <= finest_level; lev++) {
+
+      auto* ldata_p = getLevelDataPtr(lev, a_timestamp);
+
+      // Require the turbulent viscosity to be pre-computed
+      // it always is stored at AmrOldTime, so we just use that
+      // We need cell-centered mu_t but have it at faces
+      // The simple interpolation below probably isn't valid for EB
+#ifdef AMREX_USE_EB
+      amrex::Abort(
+        "PeleLM::addScalarVarianceSources(): this is not supported with EB");
+#endif
+
+      for (int n = 0; n < MANIFOLD_DIM; ++n) {
+        if (leosparm.is_variance_of[n] >= 0) {
+
+          constexpr amrex::Real fact = 0.5 / AMREX_SPACEDIM;
+          const amrex::Real C_chi = m_les_c_chi;
+          const amrex::Real ScInv = m_Schmidt_inv;
+
+          AMREX_D_TERM(
+            auto const& mut_arr_x =
+              m_leveldata_old[lev]->visc_turb_fc[0].const_arrays();
+            , auto const& mut_arr_y =
+                m_leveldata_old[lev]->visc_turb_fc[1].const_arrays();
+            , auto const& mut_arr_z =
+                m_leveldata_old[lev]->visc_turb_fc[2].const_arrays();)
+          AMREX_D_TERM(
+            auto const& gx = grad_fc[lev][0].const_arrays();
+            , auto const& gy = grad_fc[lev][1].const_arrays();
+            , auto const& gz = grad_fc[lev][2].const_arrays();)
+          auto extma = m_extSource[lev]->arrays();
+          auto statema = ldata_p->state.const_arrays();
+
+          // l_scale will also need modification for EB
+          const amrex::Real vol = AMREX_D_TERM(
+            geom[lev].CellSize(0), *geom[lev].CellSize(1),
+            *geom[lev].CellSize(2));
+          const amrex::Real l_scale =
+            (AMREX_SPACEDIM == 2) ? std::sqrt(vol) : std::cbrt(vol);
+          const amrex::Real inv_l_scale2 = 1.0 / (l_scale * l_scale);
+
+          amrex::ParallelFor(
+            *m_extSource[lev],
+            [=] AMREX_GPU_DEVICE(int bx, int i, int j, int k) noexcept {
+              // Subfilter Scalar Dissipation: Linear Relaxation model
+              // rho chi_sgs = C_chi * mu_t / Delta^2 * Variance
+              amrex::Real mu_t =
+                fact * (AMREX_D_TERM(
+                         mut_arr_x[bx](i, j, k) + mut_arr_x[bx](i + 1, j, k),
+                         +mut_arr_y[bx](i, j, k) + mut_arr_y[bx](i, j + 1, k),
+                         +mut_arr_z[bx](i, j, k) + mut_arr_z[bx](i, j, k + 1)));
+
+              extma[bx](i, j, k, FIRSTSPEC + n) -=
+                C_chi * mu_t * inv_l_scale2 *
+                statema[bx](i, j, k, FIRSTSPEC + n);
+
+              // Production term (w/ Smagorinsky closure for turbulent flux)
+              // -2 (rho <u_j C> - rho <u_j><C>) d<C>/dx_j
+              // = 2 *mu_t/Sc_t * d<C>/dx_j * d<C>/dx_j
+              amrex::Real mu_grad2 =
+                fact *
+                (AMREX_D_TERM(
+                  mut_arr_x[bx](i, j, k) * gx[bx](i, j, k) * gx[bx](i, j, k) +
+                    mut_arr_x[bx](i + 1, j, k) * gx[bx](i + 1, j, k) *
+                      gx[bx](i + 1, j, k),
+                  +mut_arr_y[bx](i, j, k) * gy[bx](i, j, k) * gy[bx](i, j, k) +
+                    mut_arr_y[bx](i, j + 1, k) * gy[bx](i, j + 1, k) *
+                      gy[bx](i, j + 1, k),
+                  +mut_arr_z[bx](i, j, k) * gz[bx](i, j, k) * gz[bx](i, j, k) +
+                    mut_arr_z[bx](i, j, k + 1) * gz[bx](i, j, k + 1) *
+                      gz[bx](i, j, k + 1)));
+
+              extma[bx](i, j, k, FIRSTSPEC + n) += 2.0 * ScInv * mu_grad2;
+            });
+        }
+      }
+      Gpu::streamSynchronize();
+    }
+  }
+
+#endif
+}
+
 // Calculate additional external sources (soot, radiation, user defined, etc.)
 void
 PeleLM::getExternalSources(
@@ -266,6 +405,8 @@ PeleLM::getExternalSources(
     BL_PROFILE_VAR_STOP(PLM_RAD);
   }
 #endif
+
+  addScalarVarianceSources(a_timestamp_old);
 
   // User defined external sources
   if (m_user_defined_ext_sources) {

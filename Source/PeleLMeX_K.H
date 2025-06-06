@@ -1190,13 +1190,11 @@ check_divu_dt(
                              : std::abs(rho(i, j, k)) / denom;
     }
   }
-#ifndef AMREX_USE_GPU
   if (a_dt > dtcell) {
     amrex::Abort("Error: divU dtcell larger than actual dt !");
   } else if (a_dt > dtcell * dtfactor) {
-    amrex::Print() << "Warning: divU dtcell close to actual dt ! \n";
+    amrex::Warning("Warning: divU dtcell close to actual dt !");
   }
-#endif
 }
 
 AMREX_GPU_HOST_DEVICE

@@ -111,6 +111,9 @@ PeleLM::Advance(int is_initIter)
     poissonSolveEF(AmrOldTime);
 #endif
   }
+  if (m_do_les) {
+    calcTurbViscosity(AmrOldTime);
+  }
 
   //----------------------------------------------------------------
   BL_PROFILE_VAR_STOP(PLM_SETUP);

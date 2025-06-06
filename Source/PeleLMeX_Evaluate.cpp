@@ -171,6 +171,10 @@ PeleLM::MLevaluate(
       finest_level, grids, dmap, m_factory, m_nGrowAdv, m_use_wbar, m_use_soret,
       m_nAux);
     calcDiffusivity(AmrNewTime);
+    // If doing LES, need to be able to add in turbulent component
+    if (m_do_les) {
+      calcTurbViscosity(AmrNewTime);
+    }
     computeDifferentialDiffusionTerms(AmrNewTime, diffData);
     for (int lev = 0; lev <= finest_level; ++lev) {
       MultiFab::Copy(
@@ -215,6 +219,7 @@ PeleLM::MLevaluate(
   } else if (a_var == "transportCC") {
     // Cell-centered transport coefficients functions go through the level
     // data container. Simply copy once the later has been filled.
+    // No LES component here - this is just molecular transport coeffs
     calcViscosity(AmrNewTime);
     calcDiffusivity(AmrNewTime);
     for (int lev = 0; lev <= finest_level; ++lev) {
@@ -291,6 +296,9 @@ PeleLM::evaluateChemExtForces(
   // compute t^{n} data
   calcViscosity(AmrOldTime);
   calcDiffusivity(AmrOldTime);
+  if (m_do_les) {
+    calcTurbViscosity(AmrOldTime);
+  }
 
   floorSpecies(AmrOldTime);
   setThermoPress(AmrOldTime);
@@ -394,6 +402,9 @@ PeleLM::evaluateAdvectionTerms(
   // compute t^{n} data
   calcViscosity(AmrOldTime);
   calcDiffusivity(AmrOldTime);
+  if (m_do_les) {
+    calcTurbViscosity(AmrOldTime);
+  }
 
   floorSpecies(AmrOldTime);
   setThermoPress(AmrOldTime);

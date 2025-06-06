@@ -445,9 +445,7 @@ PeleLM::readParameters()
     m_les_verbose = m_verbose;
     pp.query("plot_les", m_plot_les);
     pp.query("les_v", m_les_verbose);
-    for (int lev = 0; lev <= max_level; ++lev) {
-      m_turb_visc_time.push_back(-1.0E200);
-    }
+    pp.query("les_c_chi", m_les_c_chi);
 #ifdef PELE_USE_PLASMA
     amrex::Abort("LES implementation is not yet compatible with plasma/ions");
 #endif

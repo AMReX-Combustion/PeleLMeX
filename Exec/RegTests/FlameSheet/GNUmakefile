@@ -35,7 +35,7 @@ ifeq ($(USE_MANIFOLD), TRUE)
   Chemistry_Model = Null
   Transport_Model = Manifold
   Manifold_Dim = 1
- # Manifold_Type = Table
+  Manifold_Type = Table
 else
   Chemistry_Model = drm19
   Eos_Model = Fuego
