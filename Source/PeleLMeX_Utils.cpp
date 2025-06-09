@@ -782,20 +782,16 @@ PeleLM::floorSpecies(const TimeStamp& a_time)
         fabMinMax(
           i, j, k, 1, 0.0, AMREX_REAL_MAX, Array4<Real>(sma[box_no], NE));
 #endif
-        // Update density accordingly ...
-        sma[box_no](i, j, k, DENSITY) = 0.0;
-        for (int n = 0; n < NUM_SPECIES; n++) {
-          sma[box_no](i, j, k, DENSITY) += sma[box_no](i, j, k, FIRSTSPEC + n);
-        }
-
-        // ... as well as rhoh
-        auto eos = pele::physics::PhysicsType::eos(leosparm);
+        // Update density and RhoH accordingly ...
         Real massfrac[NUM_SPECIES] = {0.0};
-        Real rhoinv = Real(1.0) / sma[box_no](i, j, k, DENSITY);
+        Real massdens[NUM_SPECIES] = {0.0};
+        Real rhoinv, h_cgs = 0.0;
         for (int n = 0; n < NUM_SPECIES; n++) {
-          massfrac[n] = sma[box_no](i, j, k, FIRSTSPEC + n) * rhoinv;
+          massdens[n] = sma[box_no](i, j, k, FIRSTSPEC + n);
         }
-        Real h_cgs = 0.0;
+        auto eos = pele::physics::PhysicsType::eos(leosparm);
+        eos.RY2RRinvY(
+          massdens, sma[box_no](i, j, k, DENSITY), rhoinv, massfrac);
         eos.TY2H(sma[box_no](i, j, k, TEMP), massfrac, h_cgs);
         sma[box_no](i, j, k, RHOH) =
           h_cgs * 1.0e-4 * sma[box_no](i, j, k, DENSITY);
