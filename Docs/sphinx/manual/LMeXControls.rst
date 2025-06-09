@@ -284,6 +284,7 @@ PeleLMeX algorithm
     peleLM.a.Schmidt = 0.7                 # [OPT, DEF = -1] Schmidt number for auxiliary variable. If unspecified or negative, assumed to diffuse with unity Lewis number.
 
     peleLM.user_defined_ext_sources = 0    # [OPT, DEF=0] Enable user defined source terms. Requires local ProblemSpecificFunctions.cpp.
+    peleLM.add_variance_sources = 1        # [OPT, DEF=1] (only relevant for Manifold EOS) include production/dissipation for variances if present in model
 
 
 Transport coefficients and LES

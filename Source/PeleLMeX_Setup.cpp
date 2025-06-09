@@ -792,8 +792,10 @@ PeleLM::readParameters()
   m_user_defined_ext_sources = false;
   m_ext_sources_SDC = false; // TODO: add capability to update ext_srcs in SDC
   m_plot_extSource = false;
+  m_add_variance_sources = true;
   pp.query("user_defined_ext_sources", m_user_defined_ext_sources);
   pp.query("plot_extSource", m_plot_extSource);
+  pp.query("add_variance_sources", m_add_variance_sources);
 }
 
 void
