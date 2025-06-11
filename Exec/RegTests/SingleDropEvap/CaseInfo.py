@@ -212,7 +212,6 @@ def RungeJP8():
         xyunits=["runge", "dd02"],
         dt=2e-3,
         plot_per=1,
-        cell_num=[64, 64],
     )
     return case
 
