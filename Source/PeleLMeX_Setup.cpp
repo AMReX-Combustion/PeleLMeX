@@ -99,9 +99,15 @@ PeleLM::Setup()
     trans_parms.initialize();
     if ((m_les_verbose != 0) and m_do_les) { // Say what transport model we're
                                              // going to use
+
       amrex::Print() << "    Using LES in transport with Sc = "
-                     << 1.0 / m_Schmidt_inv
-                     << " and Pr = " << 1.0 / m_Prandtl_inv << std::endl;
+                     << 1.0 / m_Schmidt_inv;
+      if (pele::physics::PhysicsType::eos_type::identifier() == "Manifold") {
+        amrex::Print() << ", enthalpy not diffused for Manifold EOS "
+                       << std::endl;
+      } else {
+        amrex::Print() << " and Pr = " << 1.0 / m_Prandtl_inv << std::endl;
+      }
     } else if (m_verbose != 0) {
       if (m_fixed_Le == 0 && m_fixed_Pr == 0) {
         if (m_use_soret == 0) {
