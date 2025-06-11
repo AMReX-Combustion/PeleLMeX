@@ -40,19 +40,16 @@ PeleLM::readProbParm()
   amrex::Real rho_cgs = 0.;
   eos.PYT2R(p_cgs, massfrac, T_eff, rho_cgs);
 
-  const bool get_xi = false,
-            get_mu = true, 
-            get_lam = false,
-            get_Ddiag = false, 
-            get_chi = false;
+  const bool get_xi = false, get_mu = true, get_lam = false, get_Ddiag = false,
+             get_chi = false;
   amrex::Real dummy_xi, dummy_chi_mix;
   amrex::Real mu_cgs, lambda_cgs = 0.;
   amrex::Real rhoDi_cgs[NUM_SPECIES], Di[NUM_SPECIES] = {0.0};
   auto trans = pele::physics::PhysicsType::transport();
   const auto* trans_parm = &(PeleLM::trans_parms.host_parm());
   trans.transport(
-    get_xi, get_mu, get_lam, get_Ddiag, get_chi, T_eff, rho_cgs, massfrac, rhoDi_cgs, &dummy_chi_mix,
-    mu_cgs, dummy_xi, lambda_cgs, trans_parm);
+    get_xi, get_mu, get_lam, get_Ddiag, get_chi, T_eff, rho_cgs, massfrac,
+    rhoDi_cgs, &dummy_chi_mix, mu_cgs, dummy_xi, lambda_cgs, trans_parm);
 
   amrex::Real mu = c2m::Mu(mu_cgs);
   amrex::Real rho = c2m::Rho(rho_cgs);
