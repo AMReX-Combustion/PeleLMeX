@@ -520,6 +520,11 @@ PeleLM::readParameters()
                    << std::endl;
   }
 
+  // Manifold EOS: invPrandtl needs to be 0 because H not used
+  if (pele::physics::PhysicsType::eos_type::identifier() == "Manifold") {
+    m_Prandtl_inv = 0.0;
+  }
+
   pp.query("deltaT_verbose", m_deltaT_verbose);
   pp.query("deltaT_iterMax", m_deltaTIterMax);
   pp.query("deltaT_tol", m_deltaT_norm_max);
