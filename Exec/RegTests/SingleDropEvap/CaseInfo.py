@@ -221,6 +221,7 @@ def CreateInputFile(case):
     FILE_PATH = os.path.dirname(os.path.abspath(__file__))
 
     # Boundary conditions depend on particle movement
+    fixed_parts = True
     if (case.gas.vel > 0.) or (case.droplet.Reyn > 0.):
         lo_bc = "Inflow Interior Interior"
         hi_bc = "Outflow Interior Interior"
@@ -292,8 +293,8 @@ def CreateInputFile(case):
             new_line = f"amr.plot_int = {case.plot_int:d}\n"
 
         # Spray particle data
-        #elif "particles.fixed_parts" in line:
-        #    new_line = f"particles.fixed_parts = {fixed_parts:d}\n"
+        elif "particles.fixed_parts" in line:
+            new_line = f"particles.fixed_parts = {fixed_parts:d}\n"
         elif "prob.Y_drop" in line:
             new_line = f"prob.Y_drop = "
             for y in case.droplet.Y:
