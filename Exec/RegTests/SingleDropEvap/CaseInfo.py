@@ -101,10 +101,9 @@ class CaseInfo:
             self.ylabel = "$r^2$ [mm$^2$]"
 
         # Check domain parameters
-        if (
-            abs(self.cell_num[0] / self.domain[0] - self.cell_num[1] / self.domain[1])
-            > 0.0
-        ):
+        diff_dxdy = abs(self.cell_num[0] / self.domain[0] - self.cell_num[1] / self.domain[1])
+        diff_dxdz = abs(self.cell_num[0] / self.domain[0] - self.cell_num[2] / self.domain[2])
+        if (diff_dxdy > 0.) or (diff_dxdz > 0.):
             error = "Uniform grid spacing required"
             raise ValueError(error)
 
@@ -222,10 +221,7 @@ def CreateInputFile(case):
     FILE_PATH = os.path.dirname(os.path.abspath(__file__))
 
     # Boundary conditions depend on particle movement
-    fixed_parts = 1
-    if case.droplet.vel > 0:
-        fixed_parts = 0
-    if case.gas.vel > 0:
+    if (case.gas.vel > 0.) or (case.droplet.Reyn > 0.):
         lo_bc = "Inflow Interior Interior"
         hi_bc = "Outflow Interior Interior"
         is_periodic = "0 1 1"
@@ -248,7 +244,7 @@ def CreateInputFile(case):
             dom_lo = [0.0, 0.0, 0.0]
             new_line = f"geometry.prob_lo = {dom_lo[0]:.1f} {dom_lo[1]:.1f} {dom_lo[2]:.1f}\n"
         elif "geometry.prob_hi" in line:
-            dom_hi = [case.domain[0], case.domain[1], case.domain[2]]
+            dom_hi = case.domain
             new_line = f"geometry.prob_hi = {dom_hi[0]:.1f} {dom_hi[1]:.1f} {dom_hi[2]:.1f}\n"
 
         # BC Flags
@@ -259,7 +255,8 @@ def CreateInputFile(case):
 
         # AMR Control
         elif "amr.n_cell" in line:
-            new_line = f"amr.n_cell = {case.cell_num[0]:d} {case.cell_num[1]:d} {case.cell_num[2]:d}\n"
+            n_cell = case.cell_num
+            new_line = f"amr.n_cell = {n_cell[0]:d} {n_cell[1]:d} {n_cell[2]:d}\n"
         elif "amr.plot_per" in line:
             new_line = f"amr.plot_per = {case.plot_per:d}\n"
 
@@ -295,8 +292,8 @@ def CreateInputFile(case):
             new_line = f"amr.plot_int = {case.plot_int:d}\n"
 
         # Spray particle data
-        elif "particles.fixed_parts" in line:
-            new_line = f"particles.fixed_parts = {fixed_parts:d}\n"
+        #elif "particles.fixed_parts" in line:
+        #    new_line = f"particles.fixed_parts = {fixed_parts:d}\n"
         elif "prob.Y_drop" in line:
             new_line = f"prob.Y_drop = "
             for y in case.droplet.Y:
