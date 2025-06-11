@@ -1,9 +1,9 @@
 ## Single Droplet Evaporation Validation
 This case compares results from PeleLMeX against experimental literature data. Additional details and case descriptions are provided in the PelePhysics documentation at [https://amrex-combustion.github.io/PelePhysics/Spray.html#single-droplet-tests](https://amrex-combustion.github.io/PelePhysics/Spray.html#single-droplet-tests)
 
-The input file `input_general.inp` is set up for the `WongLin` case.  This can be run using:
+The input file `single-drop-evap.inp` is set up for the `WongLin` case.  This can be run using:
 ~~~
-mpirun -np 4 ./<PeleLMeX_EXE> input_general.inp
+mpirun -np 4 ./<PeleLMeX_EXE> single-drop-evap.inp
 ~~~
 
 All cases can be run by opening ``Validate.py`` and setting the case name from the table in the PelePhysics documentation listed above

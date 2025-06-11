@@ -231,7 +231,7 @@ def CreateInputFile(case):
         is_periodic = "0 0 0"
 
     # Read general input file
-    gen_file = os.path.join(FILE_PATH, "input_general.inp")
+    gen_file = os.path.join(FILE_PATH, "single-drop-evap.inp")
     with open(gen_file, "r") as f:
         gen_lines = f.readlines()
 

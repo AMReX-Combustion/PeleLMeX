@@ -19,7 +19,7 @@ Test cases:
 """
 
 # Case object
-case = WongLin()
+case = Daif()
 
 # Run new or extract existing simulation data?
 run_new = True
