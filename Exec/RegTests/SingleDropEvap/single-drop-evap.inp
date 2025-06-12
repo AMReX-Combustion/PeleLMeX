@@ -19,7 +19,7 @@ amr.max_grid_size   = 64               # max box size
 
 #--------------------------Problem--------------------------------
 prob.P_mean        = 101325.
-prob.init_redist   = 0
+prob.init_redist   = -1
 prob.T0_gas        = 1000 # K
 prob.vel_gas       = 0.
 prob.num_particles = (1, 1, 1)
