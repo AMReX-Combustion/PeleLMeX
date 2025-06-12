@@ -292,6 +292,8 @@ def CreateInputFile(case):
             new_line = f"amr.plot_int = {case.plot_int:d}\n"
 
         # Spray particle data
+        elif "particles.write_ascii_files" in line:
+            new_line = f"particles.write_ascii_files = 1\n"
         elif "particles.fixed_parts" in line:
             new_line = f"particles.fixed_parts = {fixed_parts:d}\n"
         elif "prob.Y_drop" in line:
