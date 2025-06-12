@@ -44,7 +44,7 @@ PeleLM::readProbParm()
              get_chi = false;
   amrex::Real dummy_xi, dummy_chi_mix;
   amrex::Real mu_cgs, lambda_cgs = 0.;
-  amrex::Real rhoDi_cgs[NUM_SPECIES], Di[NUM_SPECIES] = {0.0};
+  amrex::Real rhoDi_cgs[NUM_SPECIES] = {0.0};
   auto trans = pele::physics::PhysicsType::transport();
   const auto* trans_parm = &(PeleLM::trans_parms.host_parm());
   trans.transport(
