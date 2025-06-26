@@ -1,3 +1,4 @@
+
 #ifndef PeleLMeX_H
 #define PeleLMeX_H
 
@@ -119,6 +120,8 @@ public:
   // ReadProblemParameters
   void readProbParm();
   void freeProbParm();
+
+  void updateProbParm();
 
   // ReadGridFile
   void
