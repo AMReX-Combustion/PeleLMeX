@@ -602,7 +602,6 @@ PeleLM::readParameters()
   pp.query("velocity_plotfile", m_velocity_plotfile);
   pp.query("velocity_plotfile_scale", m_velocity_plotfile_scale);
 
-
   // -----------------------------------------
   // Load Balancing
   // -----------------------------------------
