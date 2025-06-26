@@ -823,8 +823,9 @@ DiffusionOp::computeDiffFluxes(
         fluxes[lev][idim] = std::make_unique<MultiFab>(
           *a_flux[lev][idim], amrex::make_alias, flux_comp + comp, m_ncomp);
       }
-      ebfluxes.push_back(std::make_unique<MultiFab>(
-        *a_EBflux[lev], amrex::make_alias, ebflux_comp + comp, m_ncomp));
+      ebfluxes.push_back(
+        std::make_unique<MultiFab>(
+          *a_EBflux[lev], amrex::make_alias, ebflux_comp + comp, m_ncomp));
       component.emplace_back(phi[lev], amrex::make_alias, comp, m_ncomp);
       if (have_boundary != 0) {
         boundary.emplace_back(
@@ -868,7 +869,8 @@ DiffusionOp::computeGradient(
   const Vector<MultiFab const*>& a_phi,
   const Vector<MultiFab const*>& a_boundary,
   const BCRec& a_bcrec,
-  int do_avgDown) const
+  int do_avgDown,
+  int comp) const
 {
   BL_PROFILE("DiffusionOp::computeGradient()");
 
@@ -880,7 +882,7 @@ DiffusionOp::computeGradient(
   }
 
   // Checks: one components only and 1 ghost cell at least
-  AMREX_ASSERT(a_phi[0]->nComp() == 1);
+  AMREX_ASSERT(a_phi[0]->nComp() > comp);
   AMREX_ASSERT(a_phi[0]->nGrow() >= 1);
 
   int finest_level = m_pelelm->finestLevel();
@@ -904,12 +906,12 @@ DiffusionOp::computeGradient(
       a_phi[lev]->boxArray(), a_phi[lev]->DistributionMap(), 1, 1, MFInfo(),
       a_phi[lev]->Factory());
 
-    MultiFab::Copy(phi[lev], *a_phi[lev], 0, 0, 1, 1);
+    MultiFab::Copy(phi[lev], *a_phi[lev], comp, 0, 1, 1);
 
     if (have_boundary != 0) {
       MultiFab::Copy(boundary[lev], *a_boundary[lev], 0, 0, 1, 1);
     } else {
-      MultiFab::Copy(boundary[lev], *a_phi[lev], 0, 0, 1, 1);
+      MultiFab::Copy(boundary[lev], *a_phi[lev], comp, 0, 1, 1);
     }
 
     m_gradient_op->setLevelBC(lev, &boundary[lev]);
@@ -1110,9 +1112,9 @@ DiffusionTensorOp::compute_divtau(
   Vector<MultiFab> vel(finest_level + 1);
   for (int lev = 0; lev <= finest_level; ++lev) {
     vel[lev].define(
-      a_vel[lev]->boxArray(), a_vel[lev]->DistributionMap(), AMREX_SPACEDIM, 1,
+      a_vel[lev]->boxArray(), a_vel[lev]->DistributionMap(), AMREX_SPACEDIM, 2,
       MFInfo(), a_vel[lev]->Factory());
-    MultiFab::Copy(vel[lev], *a_vel[lev], 0, 0, AMREX_SPACEDIM, 1);
+    MultiFab::Copy(vel[lev], *a_vel[lev], 0, 0, AMREX_SPACEDIM, 2);
   }
 
 #ifdef AMREX_USE_EB
@@ -1137,7 +1139,14 @@ DiffusionTensorOp::compute_divtau(
       lev, 0, 1, doZeroVisc, {a_bcrec}, *a_beta[lev], addTurbContrib);
     m_apply_op->setShearViscosity(
       lev, GetArrOfConstPtrs(beta_ec), MLMG::Location::FaceCentroid);
-    m_apply_op->setEBShearViscosity(lev, *a_beta[lev]);
+    if (m_pelelm->m_useEBinflow != 0) {
+      m_apply_op->setEBShearViscosityWithInflow(
+        lev, *a_beta[lev],
+        *(m_pelelm->getEBState(
+          lev, VELX, AMREX_SPACEDIM, m_pelelm->AmrOldTime)));
+    } else {
+      m_apply_op->setEBShearViscosity(lev, *a_beta[lev]);
+    }
     m_apply_op->setLevelBC(lev, &vel[lev]);
   }
 
@@ -1221,7 +1230,14 @@ DiffusionTensorOp::diffuse_velocity(
 #ifdef AMREX_USE_EB
     m_solve_op->setShearViscosity(
       lev, GetArrOfConstPtrs(beta_ec), MLMG::Location::FaceCentroid);
-    m_solve_op->setEBShearViscosity(lev, *a_beta[lev]);
+    if (m_pelelm->m_useEBinflow != 0) {
+      m_solve_op->setEBShearViscosityWithInflow(
+        lev, *a_beta[lev],
+        *(m_pelelm->getEBState(
+          lev, VELX, AMREX_SPACEDIM, m_pelelm->AmrOldTime)));
+    } else {
+      m_solve_op->setEBShearViscosity(lev, *a_beta[lev]);
+    }
 #else
     m_solve_op->setShearViscosity(lev, GetArrOfConstPtrs(beta_ec));
 #endif

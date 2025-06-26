@@ -23,3 +23,8 @@ PeleLM::readProbParm() // NOLINT(readability-make-member-function-const)
   pp.query("extRhoYCO2", prob_parm->extRhoYCO2);
   pp.query("extRhoYCO2_ts", prob_parm->extRhoYCO2_ts);
 }
+
+void
+PeleLM::freeProbParm()
+{
+}

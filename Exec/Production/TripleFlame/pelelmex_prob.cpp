@@ -25,3 +25,8 @@ PeleLM::readProbParm()
   PeleLM::prob_parm->fuelID = CH4_ID;
   PeleLM::prob_parm->oxidID = O2_ID;
 }
+
+void
+PeleLM::freeProbParm()
+{
+}

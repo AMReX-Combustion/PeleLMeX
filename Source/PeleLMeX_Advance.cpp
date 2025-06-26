@@ -66,10 +66,11 @@ PeleLM::Advance(int is_initIter)
   // Data for the advance, only live for the duration of the advance
   std::unique_ptr<AdvanceDiffData> diffData;
   diffData = std::make_unique<AdvanceDiffData>(
-    finest_level, grids, dmap, m_factory, m_nGrowAdv, m_use_wbar, m_use_soret);
+    finest_level, grids, dmap, m_factory, m_nGrowAdv, m_use_wbar, m_use_soret,
+    m_nAux);
   std::unique_ptr<AdvanceAdvData> advData;
   advData = std::make_unique<AdvanceAdvData>(
-    finest_level, grids, dmap, m_factory, m_incompressible, m_nGrowAdv,
+    finest_level, grids, dmap, m_factory, m_incompressible, m_nAux, m_nGrowAdv,
     m_nGrowMAC);
 
   for (int lev = 0; lev <= finest_level; lev++) {
@@ -97,13 +98,21 @@ PeleLM::Advance(int is_initIter)
   averageDownState(AmrOldTime);
   fillPatchState(AmrOldTime);
 
+  if (m_nAux > 0) {
+    averageDownAux(AmrOldTime);
+    fillPatchAux(AmrOldTime);
+  }
+
   // compute t^{n} data
   calcViscosity(AmrOldTime);
   if (m_incompressible == 0) {
     calcDiffusivity(AmrOldTime);
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
     poissonSolveEF(AmrOldTime);
 #endif
+  }
+  if (m_do_les) {
+    calcTurbViscosity(AmrOldTime);
   }
 
   //----------------------------------------------------------------
@@ -134,7 +143,7 @@ PeleLM::Advance(int is_initIter)
   copyTransportOldToNew();
   if (m_incompressible == 0) {
     copyDiffusionOldToNew(diffData);
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
     ionDriftVelocity(advData);
 #endif
   }
@@ -181,6 +190,11 @@ PeleLM::Advance(int is_initIter)
     // Post SDC
     averageDownScalars(AmrNewTime);
     fillPatchState(AmrNewTime);
+
+    if (m_nAux > 0) {
+      averageDownAux(AmrNewTime);
+      fillPatchAux(AmrNewTime);
+    }
 
 #ifdef PELE_USE_SOOT
     if (do_soot_solve) {
@@ -280,6 +294,11 @@ PeleLM::oneSDC(
     averageDownScalars(AmrNewTime);
     fillPatchState(AmrNewTime);
 
+    if (m_nAux > 0) {
+      averageDownAux(AmrNewTime);
+      fillPatchAux(AmrNewTime);
+    }
+
     calcDiffusivity(AmrNewTime);
     computeDifferentialDiffusionTerms(AmrNewTime, diffData);
     if (m_has_divu != 0) {
@@ -290,7 +309,7 @@ PeleLM::oneSDC(
         is_initialization, computeDiffusionTerm, do_avgDown, AmrNewTime,
         diffData);
     }
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
     ionDriftVelocity(advData);
 #endif
 
@@ -349,6 +368,7 @@ PeleLM::oneSDC(
   // Compute and update passive advective terms
   computePassiveAdvTerms(advData, FIRSTSOOT, NUMSOOTVAR);
 #endif
+
   // Get scalar advection SDC forcing
   getScalarAdvForce(advData, diffData);
 
@@ -394,7 +414,7 @@ PeleLM::oneSDC(
   BL_PROFILE_VAR_STOP(PLM_DIFF);
   //----------------------------------------------------------------
 
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
   //----------------------------------------------------------------
   // Solve for implicit non-linear nE/PhiV system
   //----------------------------------------------------------------

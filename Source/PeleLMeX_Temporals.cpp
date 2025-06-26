@@ -697,7 +697,7 @@ PeleLM::writeTemporals()
   tmpExtremasFile << "\n";
   tmpExtremasFile.flush();
 
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
   if (m_do_ionsBalance) {
     ionsBalance();
   }
@@ -776,7 +776,7 @@ PeleLM::openTempFile()
       }
       tmppatchmfrFile << "\n";
     }
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
     if (m_do_ionsBalance) {
       tempFileName = "temporals/tempIons";
       tmpIonsFile.open(
@@ -819,7 +819,7 @@ PeleLM::closeTempFile()
       tmppatchmfrFile.flush();
       tmppatchmfrFile.close();
     }
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
     if (m_do_ionsBalance) {
       tmpIonsFile.flush();
       tmpIonsFile.close();

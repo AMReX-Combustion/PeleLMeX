@@ -86,15 +86,15 @@ Problem specifications
 
 ..  _sec:TUTO_HB::Problem:
 
-The problem setup is mostly contained in the three C++ source/header files described in :doc:`Tutorials_FlameSheet`.
-The user parameters are gathered in the struct defined in  ``pelelmex_prob_parm.H``: ::
+The problem setup is mostly contained in the two C++ source/header files described in :doc:`Tutorials_FlameSheet`.
+The user parameters are gathered in the struct defined in  ``pelelmex_prob.H``: ::
 
-    struct ProbParm
+    struct ProbParm : public ProbParmDefault
     {
-        amrex::Real P_mean        = 101325.0_rt;
-        amrex::Real T_mean        = 300.0_rt;
-        amrex::Real T_bubble      = 600.0_rt;
-        amrex::Real bubble_rad    = 0.005_rt;
+        amrex::Real P_mean        = 101325.0;
+        amrex::Real T_mean        = 300.0;
+        amrex::Real T_bubble      = 600.0;
+        amrex::Real bubble_rad    = 0.005;
         amrex::Real bubble_y0     = 0.01;
         int         bubble_is_mix = 0;
         int           is_sym      = 0;
@@ -119,8 +119,8 @@ of a different temperature/mixture intended to be lighter such that the bubble w
 influence of gravity. Note that the user can easily reverse the problem with a heavier bubble.
 The default parameters provided above are overwritten using AMReX ParmParse in ``pelelmex_prob.cpp``
 and the initial/boundary conditions implemented in ``pelelmex_prob.H``. Because this case does not feature
-any dirichlet BC on the state variables, the ``bcnormal`` function in ``pelelmex_prob.H`` will not be called
-and can thus be left empty (but its definition is still required).
+any dirichlet BC on the state variables, the default ``bcnormal`` function is not overridden in
+the `MyProblemSpecificFunctions` struct defined in ``pelelmex_prob.H``.
 
 The interesting aspect of this case is the inclusion of buoyancy effects in the presence of gravity.
 To trigger gravity the following input key is required: ::

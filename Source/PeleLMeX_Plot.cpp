@@ -6,7 +6,6 @@
 #include <AMReX_ParmParse.H>
 #include <PeleLMeX_BCfill.H>
 #include <AMReX_FillPatchUtil.H>
-#include <PeleLMeX_PatchFlowVariables.H>
 #include <memory>
 #ifdef AMREX_USE_EB
 #include <AMReX_EBInterpolater.H>
@@ -86,7 +85,9 @@ PeleLM::WritePlotFile()
   //----------------------------------------------------------------
   // Average down the state
   averageDownState(AmrNewTime);
-
+  if (m_nAux > 0) {
+    averageDownAux(AmrNewTime);
+  }
   // Get consistent reaction data across level
   if ((m_do_react != 0) && (m_skipInstantRR == 0) && (m_plot_react != 0)) {
     averageDownReaction();
@@ -115,6 +116,8 @@ PeleLM::WritePlotFile()
       ncomp += 1;
     }
   }
+
+  ncomp += m_nAux;
 
   // Reactions
   if ((m_do_react != 0) && (m_skipInstantRR == 0) && (m_plot_react != 0)) {
@@ -155,7 +158,7 @@ PeleLM::WritePlotFile()
   }
 #endif
 
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
   if (m_do_extraEFdiags) {
     ncomp += NUM_IONS * AMREX_SPACEDIM;
   }
@@ -163,6 +166,10 @@ PeleLM::WritePlotFile()
 
   if (m_do_les && m_plot_les) {
     ncomp += 1;
+  }
+
+  if (m_plot_extSource) {
+    ncomp += NVAR;
   }
 
   //----------------------------------------------------------------
@@ -192,7 +199,7 @@ PeleLM::WritePlotFile()
     plt_VarsName.push_back("rhoh");
     plt_VarsName.push_back("temp");
     plt_VarsName.push_back("RhoRT");
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
     plt_VarsName.push_back("nE");
     plt_VarsName.push_back("phiV");
 #endif
@@ -220,11 +227,15 @@ PeleLM::WritePlotFile()
                  , plt_VarsName.push_back("gradpz"));
   }
 
+  for (int n = 0; n < m_nAux; n++) {
+    plt_VarsName.push_back(m_aux_names[n]);
+  }
+
   if ((m_do_react != 0) && (m_skipInstantRR == 0) && (m_plot_react != 0)) {
     for (int n = 0; n < NUM_SPECIES; n++) {
       plt_VarsName.push_back("I_R(" + names[n] + ")");
     }
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
     plt_VarsName.push_back("I_R(nE)");
 #endif
     plt_VarsName.push_back("FunctCall");
@@ -266,7 +277,7 @@ PeleLM::WritePlotFile()
   }
 #endif
 
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
   if (m_do_extraEFdiags) {
     for (int ivar = 0; ivar < NUM_IONS; ++ivar) {
       for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
@@ -287,6 +298,13 @@ PeleLM::WritePlotFile()
     plt_VarsName.push_back(m_ode_names[n]);
   }
 #endif
+
+  // External source terms
+  if (m_plot_extSource) {
+    for (int ivar = 0; ivar < NVAR; ++ivar) {
+      plt_VarsName.push_back("extsource_" + stateVariableName(ivar));
+    }
+  }
 
   //----------------------------------------------------------------
   // Fill the plot MultiFabs
@@ -311,7 +329,7 @@ PeleLM::WritePlotFile()
       }
       MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->state, RHOH, cnt, 3, 0);
       cnt += 3;
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
       MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->state, NE, cnt, 2, 0);
       cnt += 2;
 #endif
@@ -340,6 +358,12 @@ PeleLM::WritePlotFile()
       MultiFab::Copy(
         mf_plt[lev], m_leveldata_new[lev]->gp, 0, cnt, AMREX_SPACEDIM, 0);
       cnt += AMREX_SPACEDIM;
+    }
+
+    if (m_nAux > 0) {
+      MultiFab::Copy(
+        mf_plt[lev], m_leveldata_new[lev]->auxiliaries, 0, cnt, m_nAux, 0);
+      cnt += m_nAux;
     }
 
     if ((m_do_react != 0) && (m_skipInstantRR == 0) && (m_plot_react != 0)) {
@@ -401,28 +425,24 @@ PeleLM::WritePlotFile()
       }
     }
 #endif
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
     if (m_do_extraEFdiags) {
       MultiFab::Copy(
         mf_plt[lev], *m_ionsFluxes[lev], 0, cnt, m_ionsFluxes[lev]->nComp(), 0);
       cnt += m_ionsFluxes[lev]->nComp();
     }
 #endif
-#if NUM_ODE > 0
-    MultiFab::Copy(
-      mf_plt[lev], m_leveldata_new[lev]->state, FIRSTODE, cnt, NUM_ODE, 0);
-    cnt += NUM_ODE;
-#endif
 
     if (m_do_les && m_plot_les) {
       constexpr amrex::Real fact = 0.5 / AMREX_SPACEDIM;
       auto const& plot_arr = mf_plt[lev].arrays();
-      AMREX_D_TERM(auto const& mut_arr_x =
-                     m_leveldata_old[lev]->visc_turb_fc[0].const_arrays();
-                   , auto const& mut_arr_y =
-                       m_leveldata_old[lev]->visc_turb_fc[1].const_arrays();
-                   , auto const& mut_arr_z =
-                       m_leveldata_old[lev]->visc_turb_fc[2].const_arrays();)
+      AMREX_D_TERM(
+        auto const& mut_arr_x =
+          m_leveldata_old[lev]->visc_turb_fc[0].const_arrays();
+        , auto const& mut_arr_y =
+            m_leveldata_old[lev]->visc_turb_fc[1].const_arrays();
+        , auto const& mut_arr_z =
+            m_leveldata_old[lev]->visc_turb_fc[2].const_arrays();)
       // interpolate turbulent viscosity from faces to centers
       amrex::ParallelFor(
         mf_plt[lev],
@@ -436,6 +456,17 @@ PeleLM::WritePlotFile()
               +mut_arr_z[box_no](i, j, k) + mut_arr_z[box_no](i, j, k + 1)));
         });
       Gpu::streamSynchronize();
+      cnt += 1;
+    }
+
+#if NUM_ODE > 0
+    MultiFab::Copy(
+      mf_plt[lev], m_leveldata_new[lev]->state, FIRSTODE, cnt, NUM_ODE, 0);
+    cnt += NUM_ODE;
+#endif
+
+    if (m_plot_extSource) {
+      MultiFab::Copy(mf_plt[lev], *m_extSource[lev], 0, cnt, NVAR, 0);
     }
 
 #ifdef AMREX_USE_EB
@@ -579,6 +610,13 @@ PeleLM::WriteCheckPointFile()
     VisMF::Write(
       m_leveldata_new[lev]->press,
       amrex::MultiFabFileFullPrefix(lev, checkpointname, level_prefix, "p"));
+
+    if (m_nAux > 0) {
+      VisMF::Write(
+        m_leveldata_new[lev]->auxiliaries,
+        amrex::MultiFabFileFullPrefix(
+          lev, checkpointname, level_prefix, "aux"));
+    }
 
     if (m_incompressible == 0) {
       if (m_has_divu != 0) {
@@ -738,7 +776,7 @@ PeleLM::ReadCheckPointFile()
 
   // Load the field data
   for (int lev = 0; lev <= finest_level; ++lev) {
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
     if (!m_restart_nonEF) {
       VisMF::Read(
         m_leveldata_new[lev]->state,
@@ -768,6 +806,12 @@ PeleLM::ReadCheckPointFile()
     VisMF::Read(
       m_leveldata_new[lev]->press,
       amrex::MultiFabFileFullPrefix(lev, m_restart_chkfile, level_prefix, "p"));
+    if (m_nAux > 0) {
+      VisMF::Read(
+        m_leveldata_new[lev]->auxiliaries,
+        amrex::MultiFabFileFullPrefix(
+          lev, m_restart_chkfile, level_prefix, "aux"));
+    }
 
     if (m_incompressible == 0) {
       if (m_has_divu != 0) {
@@ -777,7 +821,7 @@ PeleLM::ReadCheckPointFile()
             lev, m_restart_chkfile, level_prefix, "divU"));
       }
 
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
       if (!m_restart_nonEF) {
         if (m_do_react) {
           VisMF::Read(
@@ -819,10 +863,15 @@ void
 PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
 {
   if (m_incompressible != 0) {
-    Abort(" initializing data from a pltfile only available for low-Mach "
-          "simulations");
+    Abort(
+      " initializing data from a pltfile only available for low-Mach "
+      "simulations");
   }
-
+  if (m_nAux > 0) {
+    Warning(
+      " restarting from plotfile with auxiliaries not currently "
+      "implemented, and will not be captured");
+  }
   amrex::Print() << " initData on level " << a_lev << " from pltfile "
                  << a_dataPltFile << "\n";
   if (pltfileSource == "LM") {
@@ -844,7 +893,7 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
   pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(
     spec_names, &(eos_parms.host_parm()));
   int idT = -1, idV = -1, idY = -1, nSpecPlt = 0;
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
   int inE = -1, iPhiV = -1;
 #endif
 #ifdef PELE_USE_SOOT
@@ -872,7 +921,7 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
     if (firstChars == "Y(") {
       nSpecPlt += 1;
     }
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
     if (plt_vars[i] == "nE")
       inE = i;
     if (plt_vars[i] == "phiV")
@@ -940,7 +989,7 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
     }
   }
 
-#ifdef PELE_USE_EFIELD
+#ifdef PELE_USE_PLASMA
   // nE
   pltData.fillPatchFromPlt(a_lev, geom[a_lev], inE, NE, 1, ldata_p->state);
   // phiV
@@ -992,7 +1041,8 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
   // If m_do_patch_flow_variables is set as true, call user-defined function to
   // patch flow variables
   if (m_do_patch_flow_variables) {
-    patchFlowVariables(geom[a_lev], *lprobparm, ldata_p->state);
+    ProblemSpecificFunctions::patchFlowVariables(
+      geom[a_lev], *lprobparm, ldata_p->state);
   }
 
   // Enforce rho and rhoH consistent with temperature and mixture

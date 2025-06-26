@@ -10,6 +10,7 @@ PeleLM::readProbParm()
   pp.query("Vin", PeleLM::prob_parm->Vin);
   pp.query("Thigh", PeleLM::prob_parm->Thigh);
   pp.query("Tlow", PeleLM::prob_parm->Tlow);
+  pp.query("phi", PeleLM::prob_parm->phi);
 
   PeleLM::prob_parm->bathID = N2_ID;
   PeleLM::prob_parm->oxidID = O2_ID;
@@ -30,4 +31,9 @@ PeleLM::readProbParm()
   {
     amrex::Abort("fuel_name not recognised!");
   }
+}
+
+void
+PeleLM::freeProbParm()
+{
 }

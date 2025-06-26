@@ -11,7 +11,6 @@ function(build_pele_exe pele_exe_name pele_physics_lib_name)
 
   target_sources(${pele_exe_name}
      PRIVATE
-       pelelmex_prob_parm.H
        pelelmex_prob.H
        pelelmex_prob.cpp
   )
@@ -47,10 +46,7 @@ function(build_pele_exe pele_exe_name pele_physics_lib_name)
        ${SRC_DIR}/PeleLMeX_Forces.cpp
        ${SRC_DIR}/PeleLMeX_Init.cpp
        ${SRC_DIR}/PeleLMeX_ODEQty.cpp
-       ${SRC_DIR}/PeleLMeX_PatchFlowVariables.H
-       ${SRC_DIR}/PeleLMeX_PatchFlowVariables.cpp
        ${SRC_DIR}/PeleLMeX_Plot.cpp
-       ${SRC_DIR}/PeleLMeX_ProblemSpecificFunctions.H
        ${SRC_DIR}/PeleLMeX_Projection.cpp
        ${SRC_DIR}/PeleLMeX_Reactions.cpp
        ${SRC_DIR}/PeleLMeX_Regrid.cpp
@@ -66,30 +62,11 @@ function(build_pele_exe pele_exe_name pele_physics_lib_name)
        ${SRC_DIR}/PeleLMeX_Utils.H
        ${SRC_DIR}/PeleLMeX_Utils.cpp
        ${SRC_DIR}/PeleLMeX_Index.H
+       ${SRC_DIR}/PeleLMeX_ProblemSpecificFunctions.H
        ${SRC_DIR}/PeleLMeX_K.H
        ${SRC_DIR}/main.cpp
   )
 
-  if(PELE_EB_USER_DEFINED)
-    target_sources(${pele_exe_name}
-      PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}/PeleLMeX_EBUserDefined.H)
-  else()
-    target_sources(${pele_exe_name}
-      PRIVATE
-        ${SRC_DIR}/PeleLMeX_EBUserDefined.H)
-  endif()
-
-  if(PELELM_USER_DEFINED_EXT_SRC)
-    target_sources(${pele_exe_name}
-      PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}/PeleLMeX_ProblemSpecificFunctions.cpp)
-  else()
-    target_sources(${pele_exe_name}
-      PRIVATE
-        ${SRC_DIR}/PeleLMeX_ProblemSpecificFunctions.cpp)
-  endif()
-  
   if(PELE_PHYSICS_ENABLE_SOOT)
     target_sources(${pele_exe_name}
       PRIVATE
