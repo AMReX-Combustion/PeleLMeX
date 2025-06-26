@@ -1,0 +1,49 @@
+#---------------------- DOMAIN DEFINITION ------------------------
+geometry.is_periodic = 1 1 1                 # For each dir, 0: non-perio, 1: periodic
+geometry.coord_sys   = 0                     # 0 => cart, 1 => RZ
+geometry.prob_lo     = 0.0    0.0    0.0     # x_lo y_lo (z_lo)
+geometry.prob_hi     = 0.0042 0.0042 0.0168  # x_hi y_hi (z_hi)
+
+#---------------------- BC FLAGS ---------------------------------
+# Interior, Inflow, Outflow, Symmetry,
+# SlipWallAdiab, NoSlipWallAdiab, SlipWallIsotherm, NoSlipWallIsotherm
+peleLM.lo_bc = Interior Interior Interior           # bc in x_lo y_lo (z_lo)
+peleLM.hi_bc = Interior Interior Interior           # bc in x_hi y_hi (z_hi)
+
+#---------------------- AMR CONTROL ------------------------------
+amr.n_cell          = 64 64 256           # Level 0 number of cells in each direction
+amr.max_level       = 0                   # maximum level number allowed
+amr.ref_ratio       = 2 2 2 2             # refinement ratio
+amr.regrid_int      = 5                   # how often to regrid
+amr.n_error_buf     = 1 1 2 2             # number of buffer cells in error est
+amr.grid_eff        = 0.7                 # what constitutes an efficient grid
+amr.blocking_factor = 16                  # block factor in grid generation (min box size)
+amr.max_grid_size   = 256                 # max box size
+
+#---------------------- Problem ----------------------------------
+peleLM.mu   = 1.e-5
+peleLM.rho  = 1.03
+
+#---------------------- PeleLMeX CONTROL -------------------------
+peleLM.v = 1                              # PeleLMeX verbose
+peleLM.incompressible = 1
+
+#---------------------- Time Stepping CONTROL --------------------
+amr.max_step = 20                          # Maximum number of time steps
+amr.cfl = 0.7                              # CFL number for hyperbolic system
+amr.dt_shrink = 1.0                        # Scale back initial timestep
+
+#---------------------- IO CONTROL -------------------------------
+amr.check_int = 500                       # Frequency of checkpoint output
+amr.plot_int = 100                        # Frequency of pltfile output
+amr.derive_plot_vars = turbforces
+
+#---------------------- Linear solver CONTROL --------------------
+mac_proj.verbose = 0
+nodal_proj.verbose = 0
+
+#---------------------- Turbulent Forcing CONTROL-------------------------
+peleLM.do_turbulent_forcing = 1
+turbforce.rho_incompressible = 1.03
+turbforce.urms = 1.5
+turbforce.v = 1
