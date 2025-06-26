@@ -100,6 +100,10 @@ PeleLM::MakeNewLevelFromScratch(
     } else {
       initLevelDataFromPlt(lev, m_restart_pltfile);
     }
+    if (!m_velocity_plotfile.empty()) {
+      // Add turbulent velocity from an existing plotfile
+      addLevelVelocityDataFromPlt(lev, m_velocity_plotfile);
+    }
   }
 
   // Times

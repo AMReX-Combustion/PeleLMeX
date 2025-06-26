@@ -598,6 +598,10 @@ PeleLM::readParameters()
   // Turbulent Forcing
   // -----------------------------------------
   pp.query("do_turbulent_forcing", m_do_turbulent_forcing);
+  // initialise velocities from an existing plotfile
+  pp.query("velocity_plotfile", m_velocity_plotfile);
+  pp.query("velocity_plotfile_scale", m_velocity_plotfile_scale);
+
 
   // -----------------------------------------
   // Load Balancing

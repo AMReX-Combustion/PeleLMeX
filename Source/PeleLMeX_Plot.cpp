@@ -1101,6 +1101,64 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
 }
 
 void
+PeleLM::addLevelVelocityDataFromPlt(int a_lev, const std::string& a_velPltFile)
+{
+  amrex::Print() << " init velocity data on level " << a_lev << " from pltfile "
+                 << a_velPltFile << "\n";
+
+  // Use PelePhysics PltFileManager
+  pele::physics::pltfilemanager::PltFileManager pltData(a_velPltFile);
+  Vector<std::string> plt_vars = pltData.getVariableList();
+
+  // do some compatibility checks
+  if (pltData.getNlev() < a_lev) {
+    Abort("USE_VELOCITY: not enough levels in plotfile");
+  }
+  if (pltData.getGeom(a_lev).Domain() != geom[a_lev].Domain()) {
+    Abort("USE_VELOCITY: problem domains do not match");
+  }
+
+  // find velocity in the plotfile
+  int idXvel = -1;
+  for (int i = 0; i < plt_vars.size(); ++i) {
+    if (plt_vars[i] == "x_velocity") {
+      idXvel = i;
+    }
+  }
+  if (idXvel == -1) {
+    Abort("Could not find velocity fields in supplied velocity_plotfile");
+  }
+
+  // Get level data
+  auto* ldata_p = getLevelDataPtr(a_lev, AmrNewTime);
+
+  // load data from plot file
+  BoxArray tmpVelBA(ldata_p->state.boxArray());
+  DistributionMapping tmpVelDM(tmpVelBA);
+  int nGrow0(0), sComp0(0);
+  MultiFab tmpVel(tmpVelBA, tmpVelDM, AMREX_SPACEDIM, nGrow0);
+  pltData.fillPatchFromPlt(
+    a_lev, geom[a_lev], idXvel, sComp0, AMREX_SPACEDIM, tmpVel);
+  // scale the velocity
+  tmpVel.mult(m_velocity_plotfile_scale);
+
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+  for (MFIter mfi(ldata_p->state, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
+    const Box& bx = mfi.tilebox();
+    FArrayBox DummyFab(bx, 1);
+    auto const& state_arr = ldata_p->state.array(mfi);
+    auto const& tmpVel_arr = tmpVel.array(mfi);
+    amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+      for (int n = 0; n < AMREX_SPACEDIM; n++) {
+        state_arr(i, j, k, XVEL + n) += tmpVel_arr(i, j, k, n);
+      }
+    });
+  }
+}
+
+void
 PeleLM::WriteJobInfo(const std::string& path) const
 {
   if (ParallelDescriptor::IOProcessor()) {

@@ -310,6 +310,13 @@ public:
   void initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile);
 
   /**
+   * \brief Adds the velocity level data to state
+   * data using the velocities from a pltfile
+   * \param a_velPltFile path to PeleLMeX plot file
+   */
+  void addLevelVelocityDataFromPlt(int a_lev, const std::string& a_velPltFile);
+
+  /**
    * \brief Project the initial solution velocity field,
    * initializing the reaction term and providing a first
    * estimate of the time step size
@@ -2001,6 +2008,8 @@ public:
 
   // Turbulent Forcing
   bool m_do_turbulent_forcing = false;
+  std::string m_velocity_plotfile = "";
+  amrex::Real m_velocity_plotfile_scale = 1.0;
 
   // Misc.
   int m_floor_species = 0;
