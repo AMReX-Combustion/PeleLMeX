@@ -1203,6 +1203,13 @@ PeleLM::derivedSetup()
     "DistributionMap", IndexType::TheCellType(), 1, pelelmex_derdmap,
     the_same_box);
 
+  // Turbulent Forcing Terms
+  Vector<std::string> var_names_turbforcing = {
+    AMREX_D_DECL("forcex", "forcey", "forcez")};
+  derive_lst.add(
+    "turbforces", IndexType::TheCellType(), AMREX_SPACEDIM,
+    var_names_turbforcing, pelelmex_derturbforcing, the_same_box);
+
   // Cell average pressure
   derive_lst.add(
     "avg_pressure", IndexType::TheCellType(), 1, pelelmex_deravgpress,
