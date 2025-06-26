@@ -21,6 +21,7 @@
 #include <PMFData.H>
 #include <turbinflow.H>
 #include <ReactorBase.H>
+#include <TurbForcing.H>
 #include <Utilities.H>
 
 // AMReX-Hydro lib
@@ -1857,6 +1858,7 @@ public:
 
   // Turbulence injection
   pele::physics::turbinflow::TurbInflow turb_inflow;
+  pele::physics::turbforcing::TurbForcing turb_forcing;
 
   // Diagnostics
   amrex::Vector<std::unique_ptr<DiagBase>> m_diagnostics;
@@ -1996,6 +1998,9 @@ public:
   int m_do_react = 1;
   int m_do_diff = 1;
   int m_do_adv = 1;
+
+  // Turbulent Forcing
+  bool m_do_turbulent_forcing = false;
 
   // Misc.
   int m_floor_species = 0;

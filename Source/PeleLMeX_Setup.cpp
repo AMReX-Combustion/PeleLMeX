@@ -199,6 +199,9 @@ PeleLM::Setup()
 
   // Initialize turbulence injection
   turb_inflow.init(Geom(0));
+  if (m_do_turbulent_forcing) {
+    turb_forcing.init(Geom(0).data());
+  }
 
   // Initialize BCs
   setBoundaryConditions();
@@ -590,6 +593,11 @@ PeleLM::readParameters()
       Abort("peleLM.max_grid_size_chem should have 1 or AMREX_SPACEDIM values");
     }
   }
+
+  // -----------------------------------------
+  // Turbulent Forcing
+  // -----------------------------------------
+  pp.query("do_turbulent_forcing", m_do_turbulent_forcing);
 
   // -----------------------------------------
   // Load Balancing
