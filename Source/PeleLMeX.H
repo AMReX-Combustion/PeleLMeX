@@ -77,7 +77,7 @@ public:
   void Evaluate();
 
   // Time advance function
-  void Advance(int is_init);
+  void Advance(const int is_init);
 
   //-----------------------------------------------------------------------------
   // Virtual AmrCore functions
@@ -1493,7 +1493,7 @@ public:
   void advanceSetup();
 
   void oneSDC(
-    int sdcIter,
+    const int sdcIter,
     std::unique_ptr<AdvanceAdvData>& advData,
     std::unique_ptr<AdvanceDiffData>& diffData);
 

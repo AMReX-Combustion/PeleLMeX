@@ -6,7 +6,7 @@
 using namespace amrex;
 
 void
-PeleLM::Advance(int is_initIter)
+PeleLM::Advance(const int is_initIter)
 {
   BL_PROFILE("PeleLMeX::Advance()");
 
@@ -16,7 +16,7 @@ PeleLM::Advance(int is_initIter)
 #endif
 
   // Start timing current time step
-  Real strt_time = ParallelDescriptor::second();
+  const Real strt_time = ParallelDescriptor::second();
 
   //----------------------------------------------------------------
   BL_PROFILE_VAR("PeleLMeX::advance::setup", PLM_SETUP);
@@ -49,7 +49,7 @@ PeleLM::Advance(int is_initIter)
 #endif
 
   // Update time vectors
-  for (int lev = 0; lev <= finest_level; lev++) {
+  for (int lev = 0; lev <= finest_level; ++lev) {
     m_t_old[lev] = m_cur_time;
     m_t_new[lev] = m_cur_time + m_dt;
   }
@@ -73,7 +73,7 @@ PeleLM::Advance(int is_initIter)
     finest_level, grids, dmap, m_factory, m_incompressible, m_nAux, m_nGrowAdv,
     m_nGrowMAC);
 
-  for (int lev = 0; lev <= finest_level; lev++) {
+  for (int lev = 0; lev <= finest_level; ++lev) {
     m_extSource[lev]->setVal(0.);
   }
   //----------------------------------------------------------------
@@ -88,7 +88,7 @@ PeleLM::Advance(int is_initIter)
 
   // Reset velocity flux on boundary faces if doing closed chamber
   if (m_closed_chamber != 0) {
-    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+    for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
       m_domainUmacFlux[2 * idim] = 0.0;
       m_domainUmacFlux[2 * idim + 1] = 0.0;
     }
@@ -203,10 +203,10 @@ PeleLM::Advance(int is_initIter)
 #endif
 
     if (m_has_divu != 0) {
-      int is_initialization = 0; // Not here
-      int computeDiffusionTerm =
+      constexpr int is_initialization = 0; // Not here
+      constexpr int computeDiffusionTerm =
         1; // Yes, re-evaluate the diffusion term after the last chemistry solve
-      int do_avgDown = 1; // Always
+      constexpr int do_avgDown = 1; // Always
       calcDivU(
         is_initialization, computeDiffusionTerm, do_avgDown, AmrNewTime,
         diffData);
@@ -269,7 +269,7 @@ PeleLM::Advance(int is_initIter)
 
 void
 PeleLM::oneSDC(
-  int sdcIter,
+  const int sdcIter,
   std::unique_ptr<AdvanceAdvData>& advData,
   std::unique_ptr<AdvanceDiffData>& diffData)
 {
@@ -302,9 +302,9 @@ PeleLM::oneSDC(
     calcDiffusivity(AmrNewTime);
     computeDifferentialDiffusionTerms(AmrNewTime, diffData);
     if (m_has_divu != 0) {
-      int is_initialization = 0;    // Not here
-      int computeDiffusionTerm = 0; // Nope, we just did that
-      int do_avgDown = 1;           // Always
+      constexpr int is_initialization = 0;    // Not here
+      constexpr int computeDiffusionTerm = 0; // Nope, we just did that
+      constexpr int do_avgDown = 1;           // Always
       calcDivU(
         is_initialization, computeDiffusionTerm, do_avgDown, AmrNewTime,
         diffData);
