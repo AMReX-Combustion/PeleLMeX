@@ -238,6 +238,22 @@ PeleLM::updateVelocity(std::unique_ptr<AdvanceAdvData>& advData)
     // Compute provisional new velocity
     // velForce holds: 1/\rho^{n+1/2} [(gravity+...)^{n+1/2} - \nabla pi^{n} +
     // 0.5 * divTau^{n}]
+    auto state_old_ma = ldataOld_p->state.const_arrays();
+    auto adv_aofs_ma = advData->AofS[lev].const_arrays();
+    auto force_ma = velForces[lev].const_arrays();
+    auto state_new_ma = ldataNew_p->state.arrays();
+    const Real dt_loc = m_dt;
+
+    amrex::ParallelFor(ldataOld_p->state, [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+	for (int n = 0; n < AMREX_SPACEDIM; ++n) {
+	  state_new_ma[box_no](i, j, k, VELX+n) =
+	    state_old_ma[box_no](i, j, k, VELX+n) +
+	    dt_loc * (adv_aofs_ma[box_no](i, j, k, VELX+n) + force_ma[box_no](i, j, k, n));
+	}
+      });
+    
+    
+    /*		       
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
@@ -258,6 +274,7 @@ PeleLM::updateVelocity(std::unique_ptr<AdvanceAdvData>& advData)
             dt_loc * (vel_aofs(i, j, k, n) + force(i, j, k, n));
         });
     }
+    */
   }
 }
 
