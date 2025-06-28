@@ -43,7 +43,7 @@ PeleLM::~PeleLM()
 
 PeleLM::LevelData*
 PeleLM::getLevelDataPtr(
-  int lev, const PeleLM::TimeStamp& a_time, int /*useUMac*/)
+  const int lev, const PeleLM::TimeStamp& a_time, int /*useUMac*/)
 {
   AMREX_ASSERT(
     a_time == AmrOldTime || a_time == AmrNewTime || a_time == AmrHalfTime);
@@ -56,7 +56,7 @@ PeleLM::getLevelDataPtr(
   m_leveldata_floating = std::make_unique<LevelData>(
     grids[lev], dmap[lev], *m_factory[lev], m_incompressible, m_has_divu,
     m_nAux, m_nGrowState, m_use_soret, static_cast<int>(m_do_les));
-  Real time = getTime(lev, a_time);
+  const Real time = getTime(lev, a_time);
   fillpatch_state(lev, time, m_leveldata_floating->state, m_nGrowState);
   if (m_nAux > 0) {
     fillpatch_aux(lev, time, m_leveldata_floating->auxiliaries, m_nGrowState);
@@ -65,7 +65,7 @@ PeleLM::getLevelDataPtr(
 }
 
 PeleLM::LevelDataReact*
-PeleLM::getLevelDataReactPtr(int lev)
+PeleLM::getLevelDataReactPtr(const int lev)
 {
   if (m_do_react != 0) {
     return m_leveldatareact[lev].get();
@@ -177,7 +177,7 @@ PeleLM::getDensityVect(const TimeStamp& a_time)
     }
   } else {
     for (int lev = 0; lev <= finest_level; ++lev) {
-      Real time = getTime(lev, a_time);
+      const Real time = getTime(lev, a_time);
       r.push_back(
         std::make_unique<MultiFab>(grids[lev], dmap[lev], 1, m_nGrowState));
       fillpatch_density(lev, time, *(r[lev]), 0, m_nGrowState);

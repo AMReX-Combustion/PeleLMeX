@@ -1640,7 +1640,7 @@ public:
   // Accessors
   std::string runMode() const { return m_run_mode; }
 
-  static int nCompIR()
+  static constexpr int nCompIR()
   {
 #ifdef PELE_USE_PLASMA
     return NUM_SPECIES + 1;
@@ -1649,7 +1649,7 @@ public:
 #endif
   }
 
-  static int nCompForcing()
+  static constexpr int nCompForcing()
   {
 #ifdef PELE_USE_PLASMA
     return NUM_SPECIES + 2;
@@ -1664,10 +1664,10 @@ public:
   }
 
   LevelData*
-  getLevelDataPtr(int lev, const PeleLM::TimeStamp& a_time, int useUmac = 0);
-  LevelDataReact* getLevelDataReactPtr(int lev);
+  getLevelDataPtr(const int lev, const PeleLM::TimeStamp& a_time, int useUmac = 0);
+  LevelDataReact* getLevelDataReactPtr(const int lev);
 
-  amrex::Real getTime(int lev, const PeleLM::TimeStamp& a_time) const
+  amrex::Real getTime(const int lev, const PeleLM::TimeStamp& a_time) const
   {
     AMREX_ASSERT(
       a_time == AmrOldTime || a_time == AmrNewTime || a_time == AmrHalfTime);
