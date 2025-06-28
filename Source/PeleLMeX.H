@@ -1064,7 +1064,7 @@ public:
 
   // FillPatch the entire class state
   void fillPatchState(const PeleLM::TimeStamp& a_time);
-  void fillPatchState(int lev, const PeleLM::TimeStamp& a_time);
+  void fillPatchState(const int lev, const PeleLM::TimeStamp& a_time);
 
   // FillPatch the various state components
   void fillPatchDensity(const PeleLM::TimeStamp& a_time);
@@ -1078,86 +1078,86 @@ public:
 
   // FillPatch and return a MF
   std::unique_ptr<amrex::MultiFab>
-  fillPatchState(int lev, amrex::Real a_time, int nGrow);
+  fillPatchState(const int lev,const  amrex::Real a_time, const int nGrow);
   std::unique_ptr<amrex::MultiFab>
-  fillPatchReact(int lev, amrex::Real a_time, int nGrow);
+  fillPatchReact(const int lev, const amrex::Real a_time, const int nGrow);
 
   // FillPatch state components
   void fillpatch_state(
-    int lev, amrex::Real a_time, amrex::MultiFab& a_state, int nGhost);
+    const int lev, const amrex::Real a_time, amrex::MultiFab& a_state, const int nGhost);
   void fillpatch_density(
-    int lev,
-    amrex::Real a_time,
+			 const int lev,
+			 const amrex::Real a_time,
     amrex::MultiFab& a_density,
-    int rho_comp,
-    int nGhost);
+    const int rho_comp,
+    const int nGhost);
   void fillpatch_species(
-    int lev,
-    amrex::Real a_time,
+    const int lev,
+    const amrex::Real a_time,
     amrex::MultiFab& a_species,
-    int rhoY_comp,
-    int nGhost);
+    const int rhoY_comp,
+    const int nGhost);
   void fillpatch_temp(
-    int lev,
-    amrex::Real a_time,
+    const int lev,
+    const amrex::Real a_time,
     amrex::MultiFab& a_temp,
-    int temp_comp,
-    int nGhost);
+    const int temp_comp,
+    const int nGhost);
   void fillpatch_aux(
-    int lev, amrex::Real a_time, amrex::MultiFab& a_aux, int nGhost);
+    const int lev, const amrex::Real a_time, amrex::MultiFab& a_aux, const int nGhost);
   void fillpatch_divu(
-    int lev, amrex::Real a_time, amrex::MultiFab& a_divu, int nGhost);
+		      const int lev, const amrex::Real a_time, amrex::MultiFab& a_divu, const int nGhost);
   void fillpatch_gradp(
-    int lev, amrex::Real a_time, amrex::MultiFab& a_gp, int nGhost);
+    const int lev, const amrex::Real a_time, amrex::MultiFab& a_gp, const int nGhost);
   void fillpatch_reaction(
-    int lev, amrex::Real a_time, amrex::MultiFab& a_I_R, int nGhost);
+    const int lev, const amrex::Real a_time, amrex::MultiFab& a_I_R, const int nGhost);
   void fillpatch_forces(
-    amrex::Real a_time,
+    const amrex::Real a_time,
     amrex::Vector<amrex::MultiFab*> const& a_force,
-    int nGrowForce);
+    const int nGrowForce);
   void fillpatch_chemFunctCall(
-    int lev, amrex::Real a_time, amrex::MultiFab& a_fctC, int nGhost);
+    const int lev, const amrex::Real a_time, amrex::MultiFab& a_fctC, const int nGhost);
 #ifdef PELE_USE_PLASMA
   void fillpatch_phiV(
-    int lev,
-    amrex::Real a_time,
-    amrex::MultiFab& a_phiV,
-    int phiV_comp,
-    int nGhost);
+		      const int lev,
+		      const amrex::Real a_time,
+		      amrex::MultiFab& a_phiV,
+		      const int phiV_comp,
+		      const int nGhost);
   void fillPatchExtrap(
-    amrex::Real a_time,
-    amrex::Vector<amrex::MultiFab*> const& a_MF,
-    int a_nGrow);
+		       const amrex::Real a_time,
+		       amrex::Vector<amrex::MultiFab*> const& a_MF,
+		       const int a_nGrow);
   void fillPatchNLnE(
-    amrex::Real a_time,
-    amrex::Vector<amrex::MultiFab*> const& a_nE,
-    int a_nGrow);
+		     const amrex::Real a_time,
+		     amrex::Vector<amrex::MultiFab*> const& a_nE,
+		     const int a_nGrow);
   void fillPatchNLphiV(
-    amrex::Real a_time,
-    amrex::Vector<amrex::MultiFab*> const& a_phiV,
-    int a_nGrow);
+		       const amrex::Real a_time,
+		       amrex::Vector<amrex::MultiFab*> const& a_phiV,
+		       const int a_nGrow);
 #endif
 
   // FillCoarsePatch state components
   void fillcoarsepatch_state(
-    int lev, amrex::Real a_time, amrex::MultiFab& a_state, int nGhost);
+			     const int lev, const amrex::Real a_time, amrex::MultiFab& a_state, const int nGhost);
   void fillcoarsepatch_aux(
-    int lev, amrex::Real a_time, amrex::MultiFab& a_aux, int nGhost);
+			   const int lev, const amrex::Real a_time, amrex::MultiFab& a_aux, const int nGhost);
   void fillcoarsepatch_divu(
-    int lev, amrex::Real a_time, amrex::MultiFab& a_divu, int nGhost);
+    const int lev, const amrex::Real a_time, amrex::MultiFab& a_divu, const int nGhost);
   void fillcoarsepatch_gradp(
-    int lev, amrex::Real a_time, amrex::MultiFab& a_gp, int nGhost);
+			     const int lev, const amrex::Real a_time, amrex::MultiFab& a_gp, const int nGhost);
   void fillcoarsepatch_reaction(
-    int lev, amrex::Real a_time, amrex::MultiFab& a_I_R, int nGhost);
+				const int lev, const amrex::Real a_time, amrex::MultiFab& a_I_R, const int nGhost);
   void fillcoarsepatch_chemFunctCall(
-    int lev, amrex::Real a_time, amrex::MultiFab& a_fctC, int nGhost);
+				     const int lev, const amrex::Real a_time, amrex::MultiFab& a_fctC, const int nGhost);
 
   // Fill physical boundaries
   void setInflowBoundaryVel(
-    amrex::MultiFab& a_vel, int lev, PeleLM::TimeStamp a_time);
+    amrex::MultiFab& a_vel, const int lev, const PeleLM::TimeStamp a_time);
 
   void fillTurbInflow(
-    amrex::MultiFab& a_vel, int vel_comp, int lev, const amrex::Real a_time);
+    amrex::MultiFab& a_vel, const int vel_comp, const int lev, const amrex::Real a_time);
 
   // Average down operations
   void averageDownState(const PeleLM::TimeStamp& a_time);
