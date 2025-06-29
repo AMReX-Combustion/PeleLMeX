@@ -427,7 +427,7 @@ PeleLM::correctIsothermalBoundary(
           [flux_wbar, flux_soret, rhoD_ec, boundary_ar, idim, edomain, bc_lo,
            bc_hi, use_wbar = m_use_wbar,
            need_explicit_fluxes] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-            const int idx[3] = {i, j, k};
+            int idx[3] = {i, j, k};
             const bool on_lo = (bc_lo == BoundaryCondition::BCNoSlipWallIsotherm ||
                           bc_lo == BoundaryCondition::BCSlipWallIsotherm) &&
                          (idx[idim] <= edomain.smallEnd(idim));
@@ -1096,14 +1096,14 @@ PeleLM::differentialDiffusionUpdate(
     auto aux_ma = ldata_p->auxiliaries.const_arrays();
     auto fAux_ma = advData->Forcing_aux[lev].arrays();
 
-    amrex::ParallelFor(advData->Forcing[lev], [state_ma,fY_ma,aux_ma,fAux_ma,dt_loc = m_dt, nAux = m_nAux] AMREX_GPU_DEVICE(int box_no,int i, int j, int k) noexcept {
+    amrex::ParallelFor(advData->Forcing[lev], [state_ma,fY_ma,aux_ma,fAux_ma,dt = m_dt, nAux = m_nAux] AMREX_GPU_DEVICE(int box_no,int i, int j, int k) noexcept {
 	Array4<Real const> rhoY(state_ma[box_no],FIRSTSPEC);	
 	for (int n = 0; n < NUM_SPECIES; ++n) {
-	  fY_ma[box_no](i,j,k,n) *= dt_loc;
+	  fY_ma[box_no](i,j,k,n) *= dt;
 	  fY_ma[box_no](i,j,k,n) += rhoY(i,j,k,n);
 	}
 	for (int n = 0; n < nAux; ++n) {
-	  fAux_ma[box_no](i,j,k,n) *= dt_loc;
+	  fAux_ma[box_no](i,j,k,n) *= dt;
 	  fAux_ma[box_no](i,j,k,n) += aux_ma[box_no](i,j,k,n);
 	}
       });
@@ -1289,43 +1289,43 @@ PeleLM::differentialDiffusionUpdate(
     auto force_aux_ma = advData->Forcing_aux[lev].const_arrays();
 
     if(m_use_wbar != 0 && m_use_soret != 0) {    
-      amrex::ParallelFor(ldata_p->state,[state_ma,dhat_ma,force_ma,dwbar_ma,dT_ma,aux_ma, dhat_aux_ma, force_aux_ma, nAux = m_nAux, dt_loc = m_dt] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+      amrex::ParallelFor(ldata_p->state,[state_ma,dhat_ma,force_ma,dwbar_ma,dT_ma,aux_ma, dhat_aux_ma, force_aux_ma, nAux = m_nAux, dt = m_dt] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
 	  Array4<Real> rhoY(state_ma[box_no],FIRSTSPEC);
 	  for (int n = 0; n < NUM_SPECIES; ++n) {
-	    rhoY(i,j,k,n) = force_ma[box_no](i,j,k,n) + dt_loc * (dhat_ma[box_no](i,j,k,n) - dwbar_ma[box_no](i,j,k,n) - dT_ma[box_no](i,j,k,n));
+	    rhoY(i,j,k,n) = force_ma[box_no](i,j,k,n) + dt * (dhat_ma[box_no](i,j,k,n) - dwbar_ma[box_no](i,j,k,n) - dT_ma[box_no](i,j,k,n));
 	  }
 	  for (int n = 0; n < nAux; ++n) {
-	    aux_ma[box_no](i,j,k,n) = force_aux_ma[box_no](i,j,k,n) + dt_loc * dhat_aux_ma[box_no](i,j,k,n);
+	    aux_ma[box_no](i,j,k,n) = force_aux_ma[box_no](i,j,k,n) + dt * dhat_aux_ma[box_no](i,j,k,n);
 	  }
 	});
     } else if (m_use_wbar != 0) {
-      amrex::ParallelFor(ldata_p->state,[state_ma,dhat_ma,force_ma,dwbar_ma,aux_ma, dhat_aux_ma, force_aux_ma, nAux = m_nAux, dt_loc = m_dt] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+      amrex::ParallelFor(ldata_p->state,[state_ma,dhat_ma,force_ma,dwbar_ma,aux_ma, dhat_aux_ma, force_aux_ma, nAux = m_nAux, dt = m_dt] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
 	  Array4<Real> rhoY(state_ma[box_no],FIRSTSPEC);
 	  for (int n = 0; n < NUM_SPECIES; ++n) {
-	    rhoY(i,j,k,n) = force_ma[box_no](i,j,k,n) + dt_loc * (dhat_ma[box_no](i,j,k,n) - dwbar_ma[box_no](i,j,k,n));
+	    rhoY(i,j,k,n) = force_ma[box_no](i,j,k,n) + dt * (dhat_ma[box_no](i,j,k,n) - dwbar_ma[box_no](i,j,k,n));
 	  }
 	  for (int n = 0; n < nAux; ++n) {
-	    aux_ma[box_no](i,j,k,n) = force_aux_ma[box_no](i,j,k,n) + dt_loc * dhat_aux_ma[box_no](i,j,k,n);
+	    aux_ma[box_no](i,j,k,n) = force_aux_ma[box_no](i,j,k,n) + dt * dhat_aux_ma[box_no](i,j,k,n);
 	  }
 	});
     } else if (m_use_soret != 0) {
-      amrex::ParallelFor(ldata_p->state,[state_ma,dhat_ma,force_ma,dT_ma,aux_ma, dhat_aux_ma, force_aux_ma, nAux = m_nAux, dt_loc = m_dt] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+      amrex::ParallelFor(ldata_p->state,[state_ma,dhat_ma,force_ma,dT_ma,aux_ma, dhat_aux_ma, force_aux_ma, nAux = m_nAux, dt = m_dt] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
 	  Array4<Real> rhoY(state_ma[box_no],FIRSTSPEC);
 	  for (int n = 0; n < NUM_SPECIES; ++n) {
-	    rhoY(i,j,k,n) = force_ma[box_no](i,j,k,n) + dt_loc * (dhat_ma[box_no](i,j,k,n) - dT_ma[box_no](i,j,k,n));
+	    rhoY(i,j,k,n) = force_ma[box_no](i,j,k,n) + dt * (dhat_ma[box_no](i,j,k,n) - dT_ma[box_no](i,j,k,n));
 	  }
 	  for (int n = 0; n < nAux; ++n) {
-	    aux_ma[box_no](i,j,k,n) = force_aux_ma[box_no](i,j,k,n) + dt_loc * dhat_aux_ma[box_no](i,j,k,n);
+	    aux_ma[box_no](i,j,k,n) = force_aux_ma[box_no](i,j,k,n) + dt * dhat_aux_ma[box_no](i,j,k,n);
 	  }
 	});
     } else {
-      amrex::ParallelFor(ldata_p->state,[state_ma,dhat_ma,force_ma,aux_ma, dhat_aux_ma, force_aux_ma, nAux = m_nAux, dt_loc = m_dt] AMREX_GPU_DEVICE(int box_no,int i, int j, int k) noexcept {
+      amrex::ParallelFor(ldata_p->state,[state_ma,dhat_ma,force_ma,aux_ma, dhat_aux_ma, force_aux_ma, nAux = m_nAux, dt = m_dt] AMREX_GPU_DEVICE(int box_no,int i, int j, int k) noexcept {
 	  Array4<Real> rhoY(state_ma[box_no],FIRSTSPEC);
 	  for (int n = 0; n < NUM_SPECIES; ++n) {
-	    rhoY(i,j,k,n) = force_ma[box_no](i,j,k,n) + dt_loc * dhat_ma[box_no](i,j,k,n);
+	    rhoY(i,j,k,n) = force_ma[box_no](i,j,k,n) + dt * dhat_ma[box_no](i,j,k,n);
 	  }
 	  for (int n = 0; n < nAux; ++n) {
-	    aux_ma[box_no](i,j,k,n) = force_aux_ma[box_no](i,j,k,n) + dt_loc * dhat_aux_ma[box_no](i,j,k,n);
+	    aux_ma[box_no](i,j,k,n) = force_aux_ma[box_no](i,j,k,n) + dt * dhat_aux_ma[box_no](i,j,k,n);
 	  }
       });
     }    

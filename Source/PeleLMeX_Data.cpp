@@ -102,75 +102,71 @@ PeleLM::AdvanceDiffData::AdvanceDiffData(
   const int is_init)
 {
   if (is_init != 0) { // All I need is a container for a single diffusion term
-    // Resize Vectors
-    Dnp1.resize(a_finestLevel + 1);
-
+    Dnp1.reserve(a_finestLevel+1);
     // Define MFs
     for (int lev = 0; lev <= a_finestLevel; ++lev) {
-      Dnp1[lev].define(
+      Dnp1.emplace_back(
         ba[lev], dm[lev], NUM_SPECIES + 2, nGrowAdv, MFInfo(), *factory[lev]);
     }
-
     if (a_nAux > 0) {
-      Dnp1_aux.resize(a_finestLevel + 1);
+      Dnp1_aux.reserve(a_finestLevel+1);
       for (int lev = 0; lev <= a_finestLevel; ++lev) {
-        Dnp1_aux[lev].define(
+        Dnp1_aux.emplace_back(
           ba[lev], dm[lev], a_nAux, nGrowAdv, MFInfo(), *factory[lev]);
       }
     }
   } else {
-    // Resize Vectors
-    Dn.resize(a_finestLevel + 1);
-    Dnp1.resize(a_finestLevel + 1);
-    Dhat.resize(a_finestLevel + 1);
+    // Reserve/resize Vectors    
+    Dn.reserve(a_finestLevel + 1);
+    Dnp1.reserve(a_finestLevel + 1);
+    Dhat.reserve(a_finestLevel + 1);
     if (a_nAux > 0) {
-      Dn_aux.resize(a_finestLevel + 1);
-      Dnp1_aux.resize(a_finestLevel + 1);
-      Dhat_aux.resize(a_finestLevel + 1);
+      Dn_aux.reserve(a_finestLevel + 1);
+      Dnp1_aux.reserve(a_finestLevel + 1);
+      Dhat_aux.reserve(a_finestLevel + 1);
     }
     if (a_use_wbar != 0) {
-      Dwbar.resize(a_finestLevel + 1);
+      Dwbar.reserve(a_finestLevel + 1);
       wbar_fluxes.resize(a_finestLevel + 1);
     }
     if (a_use_soret != 0) {
-      DT.resize(a_finestLevel + 1);
+      DT.reserve(a_finestLevel + 1);
       soret_fluxes.resize(a_finestLevel + 1);
     }
-
+    
     // Define MFs
     for (int lev = 0; lev <= a_finestLevel; ++lev) {
-      Dn[lev].define(
+      Dn.emplace_back(
         ba[lev], dm[lev], NUM_SPECIES + 2, nGrowAdv, MFInfo(), *factory[lev]);
-      Dnp1[lev].define(
+      Dnp1.emplace_back(
         ba[lev], dm[lev], NUM_SPECIES + 2, nGrowAdv, MFInfo(), *factory[lev]);
-      Dhat[lev].define(
+      Dhat.emplace_back(
         ba[lev], dm[lev], NUM_SPECIES + 2, nGrowAdv, MFInfo(), *factory[lev]);
       if (a_use_wbar != 0) {
-        Dwbar[lev].define(
+        Dwbar.emplace_back(
           ba[lev], dm[lev], NUM_SPECIES, nGrowAdv, MFInfo(), *factory[lev]);
         for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
-          const BoxArray& faceba =
-            amrex::convert(ba[lev], IntVect::TheDimensionVector(idim));
+	  const BoxArray& faceba =
+            amrex::convert(ba[lev], IntVect::TheDimensionVector(idim));	  	  
           wbar_fluxes[lev][idim].define(
             faceba, dm[lev], NUM_SPECIES, 0, MFInfo(), *factory[lev]);
         }
       }
       if (a_use_soret != 0) {
-        DT[lev].define(
-          ba[lev], dm[lev], NUM_SPECIES, nGrowAdv, MFInfo(), *factory[lev]);
+        DT.emplace_back(ba[lev], dm[lev], NUM_SPECIES, nGrowAdv, MFInfo(), *factory[lev]);
         for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
           const BoxArray& faceba =
             amrex::convert(ba[lev], IntVect::TheDimensionVector(idim));
           soret_fluxes[lev][idim].define(
-            faceba, dm[lev], NUM_SPECIES, 0, MFInfo(), *factory[lev]);
+					 faceba, dm[lev], NUM_SPECIES, 0, MFInfo(), *factory[lev]);
         }
       }
       if (a_nAux > 0) {
-        Dn_aux[lev].define(
+        Dn_aux.emplace_back(
           ba[lev], dm[lev], a_nAux, nGrowAdv, MFInfo(), *factory[lev]);
-        Dnp1_aux[lev].define(
+        Dnp1_aux.emplace_back(
           ba[lev], dm[lev], a_nAux, nGrowAdv, MFInfo(), *factory[lev]);
-        Dhat_aux[lev].define(
+        Dhat_aux.emplace_back(
           ba[lev], dm[lev], a_nAux, nGrowAdv, MFInfo(), *factory[lev]);
       }
     }
@@ -189,15 +185,15 @@ PeleLM::AdvanceAdvData::AdvanceAdvData(
 {
   // Resize Vectors
   umac.resize(a_finestLevel + 1);
-  AofS.resize(a_finestLevel + 1);
+  AofS.reserve(a_finestLevel + 1);
   if (a_incompressible == 0) {
-    chi.resize(a_finestLevel + 1);
-    Forcing.resize(a_finestLevel + 1);
-    mac_divu.resize(a_finestLevel + 1);
+    chi.reserve(a_finestLevel + 1);
+    Forcing.reserve(a_finestLevel + 1);
+    mac_divu.reserve(a_finestLevel + 1);
   }
   if (a_nAux > 0) {
-    AofS_aux.resize(a_finestLevel + 1);
-    Forcing_aux.resize(a_finestLevel + 1);
+    AofS_aux.reserve(a_finestLevel + 1);
+    Forcing_aux.reserve(a_finestLevel + 1);
   }
 #ifdef PELE_USE_PLASMA
   uDrift.resize(a_finestLevel + 1);
@@ -216,27 +212,27 @@ PeleLM::AdvanceAdvData::AdvanceAdvData(
 #endif
     }
     if (a_incompressible != 0) {
-      AofS[lev].define(
+      AofS.emplace_back(
         ba[lev], dm[lev], AMREX_SPACEDIM, 0, MFInfo(), *factory[lev]);
     } else {
-      AofS[lev].define(ba[lev], dm[lev], NVAR, 0, MFInfo(), *factory[lev]);
+      AofS.emplace_back(ba[lev], dm[lev], NVAR, 0, MFInfo(), *factory[lev]);
       chi[lev].define(ba[lev], dm[lev], 1, 1, MFInfo(), *factory[lev]);
 #ifdef PELE_USE_PLASMA
-      Forcing[lev].define(
+      Forcing.emplace_back(
         ba[lev], dm[lev], NUM_SPECIES + 2, nGrowAdv, MFInfo(),
         *factory[lev]); // Species + TEMP + nE
 #else
-      Forcing[lev].define(
+      Forcing.emplace_back(
         ba[lev], dm[lev], NUM_SPECIES + 1, nGrowAdv, MFInfo(),
         *factory[lev]); // Species + TEMP
 #endif
-      mac_divu[lev].define(
+      mac_divu.emplace_back(
         ba[lev], dm[lev], 1, nGrowAdv, MFInfo(), *factory[lev]);
     }
     if (a_nAux > 0) {
-      AofS_aux[lev].define(
+      AofS_aux.emplace_back(
         ba[lev], dm[lev], a_nAux, 0, MFInfo(), *factory[lev]);
-      Forcing_aux[lev].define(
+      Forcing_aux.emplace_back(
         ba[lev], dm[lev], a_nAux, nGrowAdv, MFInfo(), *factory[lev]);
     }
   }
