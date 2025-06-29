@@ -165,12 +165,12 @@ public:
       amrex::BoxArray const& ba,
       amrex::DistributionMapping const& dm,
       amrex::FabFactory<amrex::FArrayBox> const& factory,
-      int a_incompressible,
-      int a_has_divu,
-      int a_nAux,
-      int a_nGrowState,
-      int a_use_soret,
-      int a_do_les);
+      const int a_incompressible,
+      const int a_has_divu,
+      const int a_nAux,
+      const int a_nGrowState,
+      const int a_use_soret,
+      const int a_do_les);
 
     // cell-centered state multifabs
     amrex::MultiFab
@@ -224,15 +224,15 @@ public:
   {
     AdvanceDiffData() = default;
     AdvanceDiffData(
-      int a_finestLevel,
+      const int a_finestLevel,
       const amrex::Vector<amrex::BoxArray>& ba,
       const amrex::Vector<amrex::DistributionMapping>& dm,
       const amrex::Vector<std::unique_ptr<amrex::FabFactory<amrex::FArrayBox>>>&
         factory,
-      int a_nGrowAdv,
-      int a_use_wbar,
-      int a_use_soret,
-      int a_nAux,
+      const int a_nGrowAdv,
+      const int a_use_wbar,
+      const int a_use_soret,
+      const int a_nAux,
       int is_init = 0);
     amrex::Vector<amrex::MultiFab> Dn;   // Diffusion term t^n
     amrex::Vector<amrex::MultiFab> Dnp1; // Diffusion term t^(n+1,k)
@@ -258,15 +258,15 @@ public:
   {
     AdvanceAdvData() = default;
     AdvanceAdvData(
-      int a_finestLevel,
+      const int a_finestLevel,
       const amrex::Vector<amrex::BoxArray>& ba,
       const amrex::Vector<amrex::DistributionMapping>& dm,
       const amrex::Vector<std::unique_ptr<amrex::FabFactory<amrex::FArrayBox>>>&
         factory,
-      int a_incompressible,
-      int a_nAux,
-      int a_nGrowAdv,
-      int a_nGrowMAC);
+      const int a_incompressible,
+      const int a_nAux,
+      const int a_nGrowAdv,
+      const int a_nGrowMAC);
     amrex::Vector<amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>>
       umac;                              // MAC face velocity
     amrex::Vector<amrex::MultiFab> AofS; // Scalar advection term at t^(n+1/2)
@@ -705,7 +705,7 @@ public:
   void computeDivTau(
     const PeleLM::TimeStamp& a_time,
     const amrex::Vector<amrex::MultiFab*>& a_divtau,
-    int use_density,
+    const int use_density,
     amrex::Real scale = 1.0);
 
   /**

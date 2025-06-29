@@ -248,9 +248,9 @@ PeleLM::updateVelocity(std::unique_ptr<AdvanceAdvData>& advData)
 	    state_old_ma[box_no](i, j, k, VELX+n) +
 	    dt_loc * (adv_aofs_ma[box_no](i, j, k, VELX+n) + force_ma[box_no](i, j, k, n));
 	}
-      });    
+      });
   }
-}
+  Gpu::streamSynchronize();}
 
 void
 PeleLM::getScalarAdvForce(
@@ -293,6 +293,7 @@ PeleLM::getScalarAdvForce(
 					       leosparm);	
 		       });
   }
+  Gpu::streamSynchronize();
   // Fill forcing ghost cells
   if (advData->Forcing[0].nGrow() > 0) {
     fillpatch_forces(
@@ -1104,5 +1105,6 @@ PeleLM::updateScalarComp(
 	}
       });        
   }
+  Gpu::streamSynchronize();
   averageDown(AmrNewTime, state_comp, ncomp);
 }

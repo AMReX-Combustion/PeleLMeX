@@ -115,7 +115,7 @@ PeleLMDeriveRec::numDerive() const noexcept
 }
 
 const std::string&
-PeleLMDeriveRec::variableName(int comp) const noexcept
+PeleLMDeriveRec::variableName(const int comp) const noexcept
 {
   if (comp < variable_names.size()) {
     return variable_names[comp];
@@ -130,7 +130,7 @@ PeleLMDeriveRec::variableComp(const std::string& a_name) const noexcept
   if (n_derive == 1) {
     return 0;
   }
-  for (int comp = 0; comp < n_derive; comp++) {
+  for (int comp = 0; comp < n_derive; ++comp) {
     if (variable_names[comp] == a_name) {
       return comp;
     }
@@ -200,7 +200,7 @@ PeleLMDeriveList::canDerive(const std::string& name) const
 {
   for (const auto& li : lst) {
     // Can be either a component name ...
-    for (int i = 0; i < li.numDerive(); i++) {
+    for (int i = 0; i < li.numDerive(); ++i) {
       if (li.variableName(i) == name) {
         return true;
       }
@@ -218,7 +218,7 @@ PeleLMDeriveList::get(const std::string& name) const
 {
   for (const auto& li : lst) {
     // Can be either a component name ...
-    for (int i = 0; i < li.numDerive(); i++) {
+    for (int i = 0; i < li.numDerive(); ++i) {
       if (li.variableName(i) == name) {
         return &li;
       }

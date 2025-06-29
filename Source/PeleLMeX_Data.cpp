@@ -6,12 +6,12 @@ PeleLM::LevelData::LevelData(
   amrex::BoxArray const& ba,
   amrex::DistributionMapping const& dm,
   amrex::FabFactory<FArrayBox> const& factory,
-  int a_incompressible,
-  int a_has_divu,
-  int a_nAux,
-  int a_nGrowState,
-  int a_use_soret,
-  int a_do_les)
+  const int a_incompressible,
+  const int a_has_divu,
+  const int a_nAux,
+  const int a_nGrowState,
+  const int a_use_soret,
+  const int a_do_les)
 {
   if (a_incompressible != 0) {
     state.define(ba, dm, AMREX_SPACEDIM, a_nGrowState, MFInfo(), factory);
@@ -61,9 +61,10 @@ PeleLM::LevelDataReact::LevelDataReact(
   const amrex::DistributionMapping& dm,
   const amrex::FabFactory<FArrayBox>& factory)
 {
-  int IRsize = NUM_SPECIES;
 #ifdef PELE_USE_PLASMA
-  IRsize += 1;
+  constexpr int IRsize = NUM_SPECIES +1;
+#else
+  constexpr int IRsize = NUM_SPECIES;
 #endif
   I_R.define(ba, dm, IRsize, 0, MFInfo(), factory);
   functC.define(ba, dm, 1, 0, MFInfo(), factory);
@@ -74,7 +75,7 @@ PeleLM::LevelDataNLSolve::LevelDataNLSolve(
   amrex::BoxArray const& ba,
   amrex::DistributionMapping const& dm,
   amrex::FabFactory<FArrayBox> const& factory,
-  int a_nGrow)
+  const int a_nGrow)
 {
   nlState.define(ba, dm, 2, a_nGrow, MFInfo(), factory);
   nlResid.define(ba, dm, 2, a_nGrow, MFInfo(), factory);
@@ -90,29 +91,29 @@ PeleLM::LevelDataNLSolve::LevelDataNLSolve(
 #endif
 
 PeleLM::AdvanceDiffData::AdvanceDiffData(
-  int a_finestLevel,
+  const int a_finestLevel,
   const amrex::Vector<amrex::BoxArray>& ba,
   const amrex::Vector<amrex::DistributionMapping>& dm,
   const amrex::Vector<std::unique_ptr<amrex::FabFactory<FArrayBox>>>& factory,
-  int nGrowAdv,
-  int a_use_wbar,
-  int a_use_soret,
-  int a_nAux,
-  int is_init)
+  const int nGrowAdv,
+  const int a_use_wbar,
+  const int a_use_soret,
+  const int a_nAux,
+  const int is_init)
 {
   if (is_init != 0) { // All I need is a container for a single diffusion term
     // Resize Vectors
     Dnp1.resize(a_finestLevel + 1);
 
     // Define MFs
-    for (int lev = 0; lev <= a_finestLevel; lev++) {
+    for (int lev = 0; lev <= a_finestLevel; ++lev) {
       Dnp1[lev].define(
         ba[lev], dm[lev], NUM_SPECIES + 2, nGrowAdv, MFInfo(), *factory[lev]);
     }
 
     if (a_nAux > 0) {
       Dnp1_aux.resize(a_finestLevel + 1);
-      for (int lev = 0; lev <= a_finestLevel; lev++) {
+      for (int lev = 0; lev <= a_finestLevel; ++lev) {
         Dnp1_aux[lev].define(
           ba[lev], dm[lev], a_nAux, nGrowAdv, MFInfo(), *factory[lev]);
       }
@@ -137,7 +138,7 @@ PeleLM::AdvanceDiffData::AdvanceDiffData(
     }
 
     // Define MFs
-    for (int lev = 0; lev <= a_finestLevel; lev++) {
+    for (int lev = 0; lev <= a_finestLevel; ++lev) {
       Dn[lev].define(
         ba[lev], dm[lev], NUM_SPECIES + 2, nGrowAdv, MFInfo(), *factory[lev]);
       Dnp1[lev].define(
@@ -177,14 +178,14 @@ PeleLM::AdvanceDiffData::AdvanceDiffData(
 }
 
 PeleLM::AdvanceAdvData::AdvanceAdvData(
-  int a_finestLevel,
+  const int a_finestLevel,
   const amrex::Vector<amrex::BoxArray>& ba,
   const amrex::Vector<amrex::DistributionMapping>& dm,
   const amrex::Vector<std::unique_ptr<amrex::FabFactory<FArrayBox>>>& factory,
-  int a_incompressible,
-  int a_nAux,
-  int nGrowAdv,
-  int nGrowMAC)
+  const int a_incompressible,
+  const int a_nAux,
+  const int nGrowAdv,
+  const int nGrowMAC)
 {
   // Resize Vectors
   umac.resize(a_finestLevel + 1);
@@ -203,7 +204,7 @@ PeleLM::AdvanceAdvData::AdvanceAdvData(
 #endif
 
   // Define MFs
-  for (int lev = 0; lev <= a_finestLevel; lev++) {
+  for (int lev = 0; lev <= a_finestLevel; ++lev) {
     for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
       const BoxArray& faceba =
         amrex::convert(ba[lev], IntVect::TheDimensionVector(idim));
@@ -245,7 +246,7 @@ void
 PeleLM::copyStateNewToOld(int nGhost)
 {
   AMREX_ASSERT(nGhost <= m_nGrowState);
-  for (int lev = 0; lev <= finest_level; lev++) {
+  for (int lev = 0; lev <= finest_level; ++lev) {
     if (m_incompressible != 0) {
       MultiFab::Copy(
         m_leveldata_old[lev]->state, m_leveldata_new[lev]->state, 0, 0,
@@ -271,7 +272,7 @@ PeleLM::copyStateNewToOld(int nGhost)
 void
 PeleLM::copyPressNewToOld()
 {
-  for (int lev = 0; lev <= finest_level; lev++) {
+  for (int lev = 0; lev <= finest_level; ++lev) {
     MultiFab::Copy(
       m_leveldata_old[lev]->press, m_leveldata_new[lev]->press, 0, 0, 1, 1);
     MultiFab::Copy(
@@ -284,7 +285,7 @@ void
 PeleLM::copyStateOldToNew(int nGhost)
 {
   AMREX_ASSERT(nGhost <= m_nGrowState);
-  for (int lev = 0; lev <= finest_level; lev++) {
+  for (int lev = 0; lev <= finest_level; ++lev) {
     if (m_incompressible != 0) {
       MultiFab::Copy(
         m_leveldata_new[lev]->state, m_leveldata_old[lev]->state, 0, 0,
@@ -310,7 +311,7 @@ PeleLM::copyStateOldToNew(int nGhost)
 void
 PeleLM::copyTransportOldToNew()
 {
-  for (int lev = 0; lev <= finest_level; lev++) {
+  for (int lev = 0; lev <= finest_level; ++lev) {
     MultiFab::Copy(
       m_leveldata_new[lev]->visc_cc, m_leveldata_old[lev]->visc_cc, 0, 0, 1, 1);
     if (m_incompressible == 0) {
@@ -340,7 +341,7 @@ PeleLM::copyTransportOldToNew()
 void
 PeleLM::copyDiffusionOldToNew(std::unique_ptr<AdvanceDiffData>& diffData)
 {
-  for (int lev = 0; lev <= finest_level; lev++) {
+  for (int lev = 0; lev <= finest_level; ++lev) {
     MultiFab::Copy(
       diffData->Dnp1[lev], diffData->Dn[lev], 0, 0, NUM_SPECIES + 2,
       m_nGrowAdv);
