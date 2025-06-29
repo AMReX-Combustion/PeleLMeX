@@ -34,7 +34,6 @@ pelelmex_deruserdef(
   const Vector<BCRec>& /*bcrec*/,
   int /*level*/)
 {
-  Abort(
-    "Using derUserDefine derived requires providing a definition in local "
-    "DeriveUserDefined.cpp");
+  Abort("Using derUserDefine derived requires providing a definition in local "
+        "DeriveUserDefined.cpp");
 }

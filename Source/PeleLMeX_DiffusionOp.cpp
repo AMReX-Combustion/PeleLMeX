@@ -280,21 +280,24 @@ DiffusionOp::diffuse_scalar(
   // Copy the results of the solve back into a_phi
   // Times rho{np1,kp1} if needed
   // Don't touch the ghost cells
-  
+
   if (!have_density) {
-    for (int lev = 0; lev <= finest_level; ++lev) {	  
-      MultiFab::Copy(*a_phi[lev],phi[lev],0,0,ncomp,0);
+    for (int lev = 0; lev <= finest_level; ++lev) {
+      MultiFab::Copy(*a_phi[lev], phi[lev], 0, 0, ncomp, 0);
     }
   } else {
-    for (int lev = 0; lev <= finest_level; ++lev) {     	
+    for (int lev = 0; lev <= finest_level; ++lev) {
       auto a_phi_ma = a_phi[lev]->arrays();
-      auto phi_ma = phi[lev].const_arrays();	
-      auto a_rho_ma = a_density[lev]->const_arrays();    
-      amrex::ParallelFor(phi[lev], [a_phi_ma,a_rho_ma,phi_ma,ncomp] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
-				     for (int n = 0; n < ncomp; ++n) {
-				       a_phi_ma[box_no](i,j,k,n) = phi_ma[box_no](i,j,k,n) * a_rho_ma[box_no](i,j,k);
-				     }
-				   });
+      auto phi_ma = phi[lev].const_arrays();
+      auto a_rho_ma = a_density[lev]->const_arrays();
+      amrex::ParallelFor(
+        phi[lev], [a_phi_ma, a_rho_ma, phi_ma, ncomp] AMREX_GPU_DEVICE(
+                    int box_no, int i, int j, int k) noexcept {
+          for (int n = 0; n < ncomp; ++n) {
+            a_phi_ma[box_no](i, j, k, n) =
+              phi_ma[box_no](i, j, k, n) * a_rho_ma[box_no](i, j, k);
+          }
+        });
     }
     Gpu::streamSynchronize();
   }
@@ -488,22 +491,25 @@ DiffusionOp::diffuse_scalar(
   // Don't touch the ghost cells
 
   if (!have_density) {
-    for (int lev = 0; lev <= finest_level; ++lev) {	  
-      MultiFab::Copy(a_phi[lev],phi[lev],0,0,ncomp,0);
+    for (int lev = 0; lev <= finest_level; ++lev) {
+      MultiFab::Copy(a_phi[lev], phi[lev], 0, 0, ncomp, 0);
     }
   } else {
-    for (int lev = 0; lev <= finest_level; ++lev) {     	
+    for (int lev = 0; lev <= finest_level; ++lev) {
       auto a_phi_ma = a_phi[lev]->arrays();
-      auto phi_ma = phi[lev].const_arrays();	
-      auto a_rho_ma = a_density[lev]->const_arrays();    
-      amrex::ParallelFor(phi[lev], [a_phi_ma,a_rho_ma,phi_ma,ncomp] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
-				     for (int n = 0; n < ncomp; ++n) {
-				       a_phi_ma[box_no](i,j,k,n) = phi_ma[box_no](i,j,k,n) * a_rho_ma[box_no](i,j,k);
-				     }
-				   });
+      auto phi_ma = phi[lev].const_arrays();
+      auto a_rho_ma = a_density[lev]->const_arrays();
+      amrex::ParallelFor(
+        phi[lev], [a_phi_ma, a_rho_ma, phi_ma, ncomp] AMREX_GPU_DEVICE(
+                    int box_no, int i, int j, int k) noexcept {
+          for (int n = 0; n < ncomp; ++n) {
+            a_phi_ma[box_no](i, j, k, n) =
+              phi_ma[box_no](i, j, k, n) * a_rho_ma[box_no](i, j, k);
+          }
+        });
     }
     Gpu::streamSynchronize();
-  }  
+  }
 }
 #endif
 
@@ -811,9 +817,8 @@ DiffusionOp::computeDiffFluxes(
         fluxes[lev][idim] = std::make_unique<MultiFab>(
           *a_flux[lev][idim], amrex::make_alias, flux_comp + comp, m_ncomp);
       }
-      ebfluxes.push_back(
-        std::make_unique<MultiFab>(
-          *a_EBflux[lev], amrex::make_alias, ebflux_comp + comp, m_ncomp));
+      ebfluxes.push_back(std::make_unique<MultiFab>(
+        *a_EBflux[lev], amrex::make_alias, ebflux_comp + comp, m_ncomp));
       component.emplace_back(phi[lev], amrex::make_alias, comp, m_ncomp);
       if (have_boundary != 0) {
         boundary.emplace_back(
@@ -1170,13 +1175,15 @@ DiffusionTensorOp::compute_divtau(
     for (int lev = 0; lev <= finest_level; ++lev) {
       auto divtau_ma = a_divtau[lev]->arrays();
       auto rho_ma = a_density[lev]->const_arrays();
-      amrex::ParallelFor(*a_divtau[lev],[divtau_ma,rho_ma] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
-					  for (int n = 0; n < AMREX_SPACEDIM; ++n) {
-					    divtau_ma[box_no](i,j,k,n) /= rho_ma[box_no](i,j,k);
-					  }
-					});
+      amrex::ParallelFor(
+        *a_divtau[lev], [divtau_ma, rho_ma] AMREX_GPU_DEVICE(
+                          int box_no, int i, int j, int k) noexcept {
+          for (int n = 0; n < AMREX_SPACEDIM; ++n) {
+            divtau_ma[box_no](i, j, k, n) /= rho_ma[box_no](i, j, k);
+          }
+        });
     }
-  }  
+  }
 }
 
 void
@@ -1233,17 +1240,22 @@ DiffusionTensorOp::diffuse_velocity(
     auto vel_ma = a_vel[lev]->const_arrays();
     if (m_pelelm->m_incompressible == 0) {
       auto rho_ma = a_density[lev]->const_arrays();
-      amrex::ParallelFor(rhs[lev],[rhs_ma,vel_ma,rho_ma] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
-				    for (int n = 0; n < AMREX_SPACEDIM; ++n) {
-				      rhs_ma[box_no](i,j,k,n) = rho_ma[box_no](i,j,k) * vel_ma[box_no](i,j,k,n);
-				    }
-				  });
+      amrex::ParallelFor(
+        rhs[lev], [rhs_ma, vel_ma, rho_ma] AMREX_GPU_DEVICE(
+                    int box_no, int i, int j, int k) noexcept {
+          for (int n = 0; n < AMREX_SPACEDIM; ++n) {
+            rhs_ma[box_no](i, j, k, n) =
+              rho_ma[box_no](i, j, k) * vel_ma[box_no](i, j, k, n);
+          }
+        });
     } else {
-      amrex::ParallelFor(rhs[lev],[rhs_ma,vel_ma,rho = m_pelelm->m_rho] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
-				    for (int n = 0; n < AMREX_SPACEDIM; ++n) {
-				      rhs_ma[box_no](i,j,k,n) = rho * vel_ma[box_no](i,j,k,n);
-				    }
-				  });
+      amrex::ParallelFor(
+        rhs[lev], [rhs_ma, vel_ma, rho = m_pelelm->m_rho] AMREX_GPU_DEVICE(
+                    int box_no, int i, int j, int k) noexcept {
+          for (int n = 0; n < AMREX_SPACEDIM; ++n) {
+            rhs_ma[box_no](i, j, k, n) = rho * vel_ma[box_no](i, j, k, n);
+          }
+        });
     }
   }
 

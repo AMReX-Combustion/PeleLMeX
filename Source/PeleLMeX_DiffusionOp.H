@@ -75,7 +75,7 @@ public:
 
   void computeDiffFluxes(
     amrex::Vector<amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>> const&
-    a_fluxes,
+      a_fluxes,
     const int flux_comp,
     amrex::Vector<amrex::MultiFab const*> const& a_phi,
     const int phi_comp,

@@ -11,11 +11,11 @@ PeleLM::getVelForces(
   const TimeStamp& a_time,
   const Vector<MultiFab*>& a_divTau,
   const Vector<MultiFab*>& a_velForce,
-  int nGrowForce,
-  int add_gradP)
+  const int nGrowForce,
+  const int add_gradP)
 {
   BL_PROFILE("PeleLMeX::getVelForces()");
-  int has_divTau = static_cast<int>(!a_divTau.empty());
+  const int has_divTau = static_cast<int>(!a_divTau.empty());
 
   for (int lev = 0; lev <= finest_level; ++lev) {
     if (has_divTau != 0) {
@@ -34,10 +34,10 @@ PeleLM::getVelForces(
 void
 PeleLM::getVelForces(
   const TimeStamp& a_time,
-  int lev,
+  const int lev,
   MultiFab* a_divTau,
   MultiFab* a_velForce,
-  int add_gradP)
+  const int add_gradP)
 {
 
   // Get level data
@@ -49,9 +49,35 @@ PeleLM::getVelForces(
   auto* ldataGP_p = (m_t_old[lev] < 0.0) ? getLevelDataPtr(lev, AmrNewTime)
                                          : getLevelDataPtr(lev, AmrOldTime);
 
-  Real time = getTime(lev, a_time);
+  const Real time = getTime(lev, a_time);
 
-  int has_divTau = static_cast<int>(a_divTau != nullptr);
+  const int has_divTau = static_cast<int>(a_divTau != nullptr);
+
+  auto state_ma = ldata_p->state.const_arrays();
+  auto ext_ma = m_extSource[lev]->const_arrays();
+  auto force_ma = a_velForce->arrays();
+  const auto dx = geom[lev].CellSizeArray();
+
+  amrex::ParallelFor(
+    *a_velForce,
+    [state_ma, ext_ma, force_ma, dx, grav = m_gravity, gp0 = m_background_gp,
+     ps_dir = m_ctrl_flameDir, is_incomp = m_incompressible, rho_incomp = m_rho,
+     pseudo_gravity = m_ctrl_pseudoGravity,
+     dV_control = m_ctrl_dV] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) {
+      Array4<Real const> vel(state_ma[box_no], VELX);
+      Array4<Real const> rho(state_ma[box_no], DENSITY);
+      Array4<Real const> rhoY(state_ma[box_no], FIRSTSPEC);
+      Array4<Real const> rhoh(state_ma[box_no], RHOH);
+      Array4<Real const> temp(state_ma[box_no], TEMP);
+      Array4<Real const> extmom(ext_ma[box_no], VELX);
+      Array4<Real const> extrho(ext_ma[box_no], DENSITY);
+      makeVelForce(
+        i, j, k, is_incomp, rho_incomp, pseudo_gravity, ps_dir, a_time, grav,
+        gp0, dV_control, dx, vel, rho, rhoY, rhoh, temp, extMom, extRho, force);
+      if (add_gradP != 0 || has_divTau != 0) {
+        // TLH::HERE!!! Leave Lorentz in second MFIter
+      }
+    });
 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -192,7 +218,8 @@ PeleLM::addSpark(const TimeStamp& a_timestamp)
       auto const dx = geom[lev].CellSizeArray();
       IntVect spark_idx;
       for (int d = 0; d < AMREX_SPACEDIM; d++) {
-        spark_idx[d] = (int)((m_spark_location[n][d] - probLo[d]) / dx[d]);
+        spark_idx[d] =
+          static_cast<int>((m_spark_location[n][d] - probLo[d]) / dx[d]);
       }
       Box domainBox = geom[lev].Domain();
       // just a check
@@ -256,9 +283,8 @@ PeleLM::addScalarVarianceSources(const TimeStamp& a_timestamp)
     for (int n = 0; n < MANIFOLD_DIM; ++n) {
       if (leosparm.is_variance_of[n] >= 0) {
         if (!m_do_les) {
-          amrex::Abort(
-            "PeleLM::addScalarVarianceSources(): cannot add a "
-            "scalar dissipation without an active LES model");
+          amrex::Abort("PeleLM::addScalarVarianceSources(): cannot add a "
+                       "scalar dissipation without an active LES model");
         }
         nvariances += 1;
         var_of_scalar = FIRSTSPEC + leosparm.is_variance_of[n];
@@ -319,10 +345,9 @@ PeleLM::addScalarVarianceSources(const TimeStamp& a_timestamp)
                   m_leveldata_old[lev]->visc_turb_fc[1].const_arrays();
               , auto const& mut_arr_z =
                   m_leveldata_old[lev]->visc_turb_fc[2].const_arrays();)
-            AMREX_D_TERM(
-              auto const& gx = grad_fc[lev][0].const_arrays();
-              , auto const& gy = grad_fc[lev][1].const_arrays();
-              , auto const& gz = grad_fc[lev][2].const_arrays();)
+            AMREX_D_TERM(auto const& gx = grad_fc[lev][0].const_arrays();
+                         , auto const& gy = grad_fc[lev][1].const_arrays();
+                         , auto const& gz = grad_fc[lev][2].const_arrays();)
             auto extma = m_extSource[lev]->arrays();
             auto statema = ldata_p->state.const_arrays();
 

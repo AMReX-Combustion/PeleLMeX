@@ -62,7 +62,7 @@ PeleLM::LevelDataReact::LevelDataReact(
   const amrex::FabFactory<FArrayBox>& factory)
 {
 #ifdef PELE_USE_PLASMA
-  constexpr int IRsize = NUM_SPECIES +1;
+  constexpr int IRsize = NUM_SPECIES + 1;
 #else
   constexpr int IRsize = NUM_SPECIES;
 #endif
@@ -102,21 +102,21 @@ PeleLM::AdvanceDiffData::AdvanceDiffData(
   const int is_init)
 {
   if (is_init != 0) { // All I need is a container for a single diffusion term
-    Dnp1.reserve(a_finestLevel+1);
+    Dnp1.reserve(a_finestLevel + 1);
     // Define MFs
     for (int lev = 0; lev <= a_finestLevel; ++lev) {
       Dnp1.emplace_back(
         ba[lev], dm[lev], NUM_SPECIES + 2, nGrowAdv, MFInfo(), *factory[lev]);
     }
     if (a_nAux > 0) {
-      Dnp1_aux.reserve(a_finestLevel+1);
+      Dnp1_aux.reserve(a_finestLevel + 1);
       for (int lev = 0; lev <= a_finestLevel; ++lev) {
         Dnp1_aux.emplace_back(
           ba[lev], dm[lev], a_nAux, nGrowAdv, MFInfo(), *factory[lev]);
       }
     }
   } else {
-    // Reserve/resize Vectors    
+    // Reserve/resize Vectors
     Dn.reserve(a_finestLevel + 1);
     Dnp1.reserve(a_finestLevel + 1);
     Dhat.reserve(a_finestLevel + 1);
@@ -133,7 +133,7 @@ PeleLM::AdvanceDiffData::AdvanceDiffData(
       DT.reserve(a_finestLevel + 1);
       soret_fluxes.resize(a_finestLevel + 1);
     }
-    
+
     // Define MFs
     for (int lev = 0; lev <= a_finestLevel; ++lev) {
       Dn.emplace_back(
@@ -146,19 +146,20 @@ PeleLM::AdvanceDiffData::AdvanceDiffData(
         Dwbar.emplace_back(
           ba[lev], dm[lev], NUM_SPECIES, nGrowAdv, MFInfo(), *factory[lev]);
         for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
-	  const BoxArray& faceba =
-            amrex::convert(ba[lev], IntVect::TheDimensionVector(idim));	  	  
+          const BoxArray& faceba =
+            amrex::convert(ba[lev], IntVect::TheDimensionVector(idim));
           wbar_fluxes[lev][idim].define(
             faceba, dm[lev], NUM_SPECIES, 0, MFInfo(), *factory[lev]);
         }
       }
       if (a_use_soret != 0) {
-        DT.emplace_back(ba[lev], dm[lev], NUM_SPECIES, nGrowAdv, MFInfo(), *factory[lev]);
+        DT.emplace_back(
+          ba[lev], dm[lev], NUM_SPECIES, nGrowAdv, MFInfo(), *factory[lev]);
         for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
           const BoxArray& faceba =
             amrex::convert(ba[lev], IntVect::TheDimensionVector(idim));
           soret_fluxes[lev][idim].define(
-					 faceba, dm[lev], NUM_SPECIES, 0, MFInfo(), *factory[lev]);
+            faceba, dm[lev], NUM_SPECIES, 0, MFInfo(), *factory[lev]);
         }
       }
       if (a_nAux > 0) {

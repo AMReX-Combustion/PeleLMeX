@@ -105,13 +105,13 @@ getTransportCoeff(
       // Soret coefficient scaling, see Howarth, Day, Pitsch & Aspden
 #if defined(H2_ID)
       rhotheta(i, j, k, H2_ID) *= 0.664;
-#endif      
+#endif
 #if defined(H_ID)
       rhotheta(i, j, k, H_ID) *= 0.58;
 #endif
 #if !defined(H2_ID) && !defined(H_ID)
       amrex::Abort("Running with Soret without light species, waste of time "
-		   "and memory...");
+                   "and memory...");
 #endif
     }
   }
@@ -462,7 +462,8 @@ EB_intFluxDivergence_K(
   using namespace amrex::literals;
 
   const amrex::Real factor = scaling / vol(i, j, k);
-  const amrex::Real eb_area = AMREX_D_TERM(1.0, *a_dx, *a_dx) * ebAreaFrac(i, j, k);
+  const amrex::Real eb_area =
+    AMREX_D_TERM(1.0, *a_dx, *a_dx) * ebAreaFrac(i, j, k);
 
   for (int n = 0; n < ncomp; ++n) {
     div(i, j, k, n) = AMREX_D_TERM(
@@ -960,7 +961,8 @@ buildAdvectionForcing(
 
   amrex::Real cpmix_cgs = 0.0_rt;
   eos.TY2Cp(T(i, j, k), y, cpmix_cgs);
-  const amrex::Real cpmixinv = 1.0_rt / c2m::Cp(cpmix_cgs); // CGS -> MKS conversion
+  const amrex::Real cpmixinv =
+    1.0_rt / c2m::Cp(cpmix_cgs); // CGS -> MKS conversion
   forceT(i, j, k) *= rhoinv * cpmixinv;
 }
 
@@ -1038,9 +1040,9 @@ AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
 void
 reactionRateRhoY(
-		 const int i,
-		 const int j,
-		 const int k,
+  const int i,
+  const int j,
+  const int k,
   amrex::Array4<const amrex::Real> const& rhoY,
   amrex::Array4<const amrex::Real> const& rhoH,
   amrex::Array4<const amrex::Real> const& T,
@@ -1203,13 +1205,13 @@ AMREX_GPU_HOST_DEVICE
 AMREX_FORCE_INLINE
 amrex::Real
 getGammaInv(
-	    const int i,
-	    const int j,
-	    const int k,
-	    amrex::Array4<const amrex::Real> const& rhoY,
-	    amrex::Array4<const amrex::Real> const& T,
-	    pele::physics::eos::EosParm<pele::physics::PhysicsType::eos_type> const*
-	    eosparm) noexcept
+  const int i,
+  const int j,
+  const int k,
+  amrex::Array4<const amrex::Real> const& rhoY,
+  amrex::Array4<const amrex::Real> const& T,
+  pele::physics::eos::EosParm<pele::physics::PhysicsType::eos_type> const*
+    eosparm) noexcept
 {
   using namespace amrex::literals;
 
@@ -1304,10 +1306,10 @@ AMREX_GPU_HOST_DEVICE
 AMREX_FORCE_INLINE
 void
 getTurbViscSmagorinsky(
-		       const int i,
-		       const int j,
-		       const int k,
-		       const amrex::Real prefactor,
+  const int i,
+  const int j,
+  const int k,
+  const amrex::Real prefactor,
   amrex::Array4<const amrex::Real> const& velgrad,
   amrex::Array4<const amrex::Real> const& rho,
   amrex::Array4<amrex::Real> const& mu_t) noexcept
@@ -1324,10 +1326,10 @@ AMREX_GPU_HOST_DEVICE
 AMREX_FORCE_INLINE
 void
 getTurbViscWALE(
-		const int i,
-		const int j,
-		const int k,
-		const amrex::Real prefactor,
+  const int i,
+  const int j,
+  const int k,
+  const amrex::Real prefactor,
   amrex::Array4<const amrex::Real> const& velgrad,
   amrex::Array4<const amrex::Real> const& rho,
   amrex::Array4<amrex::Real> const& mu_t) noexcept
@@ -1353,13 +1355,13 @@ AMREX_GPU_HOST_DEVICE
 AMREX_FORCE_INLINE
 void
 getTurbViscSigma(
-		 const int i,
-		 const int j,
-		 const int k,
-		 const amrex::Real prefactor,
-		 amrex::Array4<const amrex::Real> const& velgrad,
-		 amrex::Array4<const amrex::Real> const& rho,
-		 amrex::Array4<amrex::Real> const& mu_t) noexcept
+  const int i,
+  const int j,
+  const int k,
+  const amrex::Real prefactor,
+  amrex::Array4<const amrex::Real> const& velgrad,
+  amrex::Array4<const amrex::Real> const& rho,
+  amrex::Array4<amrex::Real> const& mu_t) noexcept
 {
 #if (AMREX_SPACEDIM == 2)
   amrex::ignore_unused(i, j, k, prefactor, velgrad, rho, mu_t);
@@ -1415,14 +1417,10 @@ getTurbViscSigma(
     // Singular values:
     amrex::Real sigma1 = std::sqrt(
       std::max(0.0, I[0] / 3.0 + 2.0 * std::sqrt(alpha1) * std::cos(alpha3)));
-    amrex::Real sigma2 = std::sqrt(
-      std::max(
-        0.0,
-        I[0] / 3.0 - 2.0 * std::sqrt(alpha1) * std::cos(Pi / 3.0 + alpha3)));
-    amrex::Real sigma3 = std::sqrt(
-      std::max(
-        0.0,
-        I[0] / 3.0 - 2.0 * std::sqrt(alpha1) * std::cos(Pi / 3.0 - alpha3)));
+    amrex::Real sigma2 = std::sqrt(std::max(
+      0.0, I[0] / 3.0 - 2.0 * std::sqrt(alpha1) * std::cos(Pi / 3.0 + alpha3)));
+    amrex::Real sigma3 = std::sqrt(std::max(
+      0.0, I[0] / 3.0 - 2.0 * std::sqrt(alpha1) * std::cos(Pi / 3.0 - alpha3)));
 
     // Sort
     sigma2 = std::max(sigma3, sigma2);

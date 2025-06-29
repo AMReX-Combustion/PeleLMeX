@@ -249,18 +249,15 @@ MLABecCecLaplacian::averageDownCoeffsSameAmrLevel(
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
       for (MFIter mfi(a[mglev], TilingIfNotGPU()); mfi.isValid(); ++mfi) {
-        AMREX_D_TERM(
-          Box const& xbx = mfi.nodaltilebox(0);
-          , Box const& ybx = mfi.nodaltilebox(1);
-          , Box const& zbx = mfi.nodaltilebox(2));
-        AMREX_D_TERM(
-          Array4<Real> const& bx = b[mglev][0].array(mfi);
-          , Array4<Real> const& by = b[mglev][1].array(mfi);
-          , Array4<Real> const& bz = b[mglev][2].array(mfi));
-        AMREX_D_TERM(
-          Array4<Real> const& cx = c[mglev][0].array(mfi);
-          , Array4<Real> const& cy = c[mglev][1].array(mfi);
-          , Array4<Real> const& cz = c[mglev][2].array(mfi));
+        AMREX_D_TERM(Box const& xbx = mfi.nodaltilebox(0);
+                     , Box const& ybx = mfi.nodaltilebox(1);
+                     , Box const& zbx = mfi.nodaltilebox(2));
+        AMREX_D_TERM(Array4<Real> const& bx = b[mglev][0].array(mfi);
+                     , Array4<Real> const& by = b[mglev][1].array(mfi);
+                     , Array4<Real> const& bz = b[mglev][2].array(mfi));
+        AMREX_D_TERM(Array4<Real> const& cx = c[mglev][0].array(mfi);
+                     , Array4<Real> const& cy = c[mglev][1].array(mfi);
+                     , Array4<Real> const& cz = c[mglev][2].array(mfi));
         Array4<int const> const& osm =
           m_overset_mask[amrlev][mglev]->const_array(mfi);
         AMREX_LAUNCH_HOST_DEVICE_LAMBDA_DIM(
@@ -366,14 +363,12 @@ MLABecCecLaplacian::Fapply(
   BL_PROFILE("MLABecCecLaplacian::Fapply()");
 
   const MultiFab& acoef = m_a_coeffs[amrlev][mglev];
-  AMREX_D_TERM(
-    const MultiFab& bxcoef = m_b_coeffs[amrlev][mglev][0];
-    , const MultiFab& bycoef = m_b_coeffs[amrlev][mglev][1];
-    , const MultiFab& bzcoef = m_b_coeffs[amrlev][mglev][2];);
-  AMREX_D_TERM(
-    const MultiFab& cxcoef = m_c_coeffs[amrlev][mglev][0];
-    , const MultiFab& cycoef = m_c_coeffs[amrlev][mglev][1];
-    , const MultiFab& czcoef = m_c_coeffs[amrlev][mglev][2];);
+  AMREX_D_TERM(const MultiFab& bxcoef = m_b_coeffs[amrlev][mglev][0];
+               , const MultiFab& bycoef = m_b_coeffs[amrlev][mglev][1];
+               , const MultiFab& bzcoef = m_b_coeffs[amrlev][mglev][2];);
+  AMREX_D_TERM(const MultiFab& cxcoef = m_c_coeffs[amrlev][mglev][0];
+               , const MultiFab& cycoef = m_c_coeffs[amrlev][mglev][1];
+               , const MultiFab& czcoef = m_c_coeffs[amrlev][mglev][2];);
 
   const auto dxinv = m_geom[amrlev][mglev].InvCellSizeArray();
 
@@ -391,14 +386,12 @@ MLABecCecLaplacian::Fapply(
     const auto& xfab = in.array(mfi);
     const auto& yfab = out.array(mfi);
     const auto& afab = acoef.array(mfi);
-    AMREX_D_TERM(
-      const auto& bxfab = bxcoef.array(mfi);
-      , const auto& byfab = bycoef.array(mfi);
-      , const auto& bzfab = bzcoef.array(mfi););
-    AMREX_D_TERM(
-      const auto& cxfab = cxcoef.array(mfi);
-      , const auto& cyfab = cycoef.array(mfi);
-      , const auto& czfab = czcoef.array(mfi););
+    AMREX_D_TERM(const auto& bxfab = bxcoef.array(mfi);
+                 , const auto& byfab = bycoef.array(mfi);
+                 , const auto& bzfab = bzcoef.array(mfi););
+    AMREX_D_TERM(const auto& cxfab = cxcoef.array(mfi);
+                 , const auto& cyfab = cycoef.array(mfi);
+                 , const auto& czfab = czcoef.array(mfi););
     if (m_overset_mask[amrlev][mglev]) {
       const auto& osm = m_overset_mask[amrlev][mglev]->array(mfi);
       AMREX_LAUNCH_HOST_DEVICE_LAMBDA(bx, tbx, {
@@ -424,14 +417,12 @@ MLABecCecLaplacian::normalize(int amrlev, int mglev, MultiFab& mf) const
   BL_PROFILE("MLABecCecLaplacian::normalize()");
 
   const MultiFab& acoef = m_a_coeffs[amrlev][mglev];
-  AMREX_D_TERM(
-    const MultiFab& bxcoef = m_b_coeffs[amrlev][mglev][0];
-    , const MultiFab& bycoef = m_b_coeffs[amrlev][mglev][1];
-    , const MultiFab& bzcoef = m_b_coeffs[amrlev][mglev][2];);
-  AMREX_D_TERM(
-    const MultiFab& cxcoef = m_c_coeffs[amrlev][mglev][0];
-    , const MultiFab& cycoef = m_c_coeffs[amrlev][mglev][1];
-    , const MultiFab& czcoef = m_c_coeffs[amrlev][mglev][2];);
+  AMREX_D_TERM(const MultiFab& bxcoef = m_b_coeffs[amrlev][mglev][0];
+               , const MultiFab& bycoef = m_b_coeffs[amrlev][mglev][1];
+               , const MultiFab& bzcoef = m_b_coeffs[amrlev][mglev][2];);
+  AMREX_D_TERM(const MultiFab& cxcoef = m_c_coeffs[amrlev][mglev][0];
+               , const MultiFab& cycoef = m_c_coeffs[amrlev][mglev][1];
+               , const MultiFab& czcoef = m_c_coeffs[amrlev][mglev][2];);
 
   const auto dxinv = m_geom[amrlev][mglev].InvCellSizeArray();
 
@@ -448,14 +439,12 @@ MLABecCecLaplacian::normalize(int amrlev, int mglev, MultiFab& mf) const
     const Box& bx = mfi.tilebox();
     const auto& fab = mf.array(mfi);
     const auto& afab = acoef.array(mfi);
-    AMREX_D_TERM(
-      const auto& bxfab = bxcoef.array(mfi);
-      , const auto& byfab = bycoef.array(mfi);
-      , const auto& bzfab = bzcoef.array(mfi););
-    AMREX_D_TERM(
-      const auto& cxfab = cxcoef.array(mfi);
-      , const auto& cyfab = cycoef.array(mfi);
-      , const auto& czfab = czcoef.array(mfi););
+    AMREX_D_TERM(const auto& bxfab = bxcoef.array(mfi);
+                 , const auto& byfab = bycoef.array(mfi);
+                 , const auto& bzfab = bzcoef.array(mfi););
+    AMREX_D_TERM(const auto& cxfab = cxcoef.array(mfi);
+                 , const auto& cyfab = cycoef.array(mfi);
+                 , const auto& czfab = czcoef.array(mfi););
 
     AMREX_LAUNCH_HOST_DEVICE_LAMBDA(bx, tbx, {
       mlabecceclap_normalize(
@@ -478,14 +467,12 @@ MLABecCecLaplacian::Fsmooth(
   }
 
   const MultiFab& acoef = m_a_coeffs[amrlev][mglev];
-  AMREX_D_TERM(
-    const MultiFab& bxcoef = m_b_coeffs[amrlev][mglev][0];
-    , const MultiFab& bycoef = m_b_coeffs[amrlev][mglev][1];
-    , const MultiFab& bzcoef = m_b_coeffs[amrlev][mglev][2];);
-  AMREX_D_TERM(
-    const MultiFab& cxcoef = m_c_coeffs[amrlev][mglev][0];
-    , const MultiFab& cycoef = m_c_coeffs[amrlev][mglev][1];
-    , const MultiFab& czcoef = m_c_coeffs[amrlev][mglev][2];);
+  AMREX_D_TERM(const MultiFab& bxcoef = m_b_coeffs[amrlev][mglev][0];
+               , const MultiFab& bycoef = m_b_coeffs[amrlev][mglev][1];
+               , const MultiFab& bzcoef = m_b_coeffs[amrlev][mglev][2];);
+  AMREX_D_TERM(const MultiFab& cxcoef = m_c_coeffs[amrlev][mglev][0];
+               , const MultiFab& cycoef = m_c_coeffs[amrlev][mglev][1];
+               , const MultiFab& czcoef = m_c_coeffs[amrlev][mglev][2];);
   const auto& undrrelxr = m_undrrelxr[amrlev][mglev];
   const auto& maskvals = m_maskvals[amrlev][mglev];
 
@@ -521,13 +508,12 @@ MLABecCecLaplacian::Fsmooth(
 
   const int nc = getNComp();
   const Real* h = m_geom[amrlev][mglev].CellSize();
-  AMREX_D_TERM(
-    const Real dhxsq = m_b_scalar / (h[0] * h[0]);
-    , const Real dhysq = m_b_scalar / (h[1] * h[1]);
-    , const Real dhzsq = m_b_scalar / (h[2] * h[2]));
-  AMREX_D_TERM(
-    const Real dhx = m_c_scalar / (h[0]);, const Real dhy = m_c_scalar / (h[1]);
-    , const Real dhz = m_c_scalar / (h[2]));
+  AMREX_D_TERM(const Real dhxsq = m_b_scalar / (h[0] * h[0]);
+               , const Real dhysq = m_b_scalar / (h[1] * h[1]);
+               , const Real dhzsq = m_b_scalar / (h[2] * h[2]));
+  AMREX_D_TERM(const Real dhx = m_c_scalar / (h[0]);
+               , const Real dhy = m_c_scalar / (h[1]);
+               , const Real dhz = m_c_scalar / (h[2]));
   const Real alpha = m_a_scalar;
   const Real omega = m_omega;
 
@@ -556,14 +542,12 @@ MLABecCecLaplacian::Fsmooth(
     const auto& rhsfab = rhs.array(mfi);
     const auto& afab = acoef.array(mfi);
 
-    AMREX_D_TERM(
-      const auto& bxfab = bxcoef.array(mfi);
-      , const auto& byfab = bycoef.array(mfi);
-      , const auto& bzfab = bzcoef.array(mfi););
-    AMREX_D_TERM(
-      const auto& cxfab = cxcoef.array(mfi);
-      , const auto& cyfab = cycoef.array(mfi);
-      , const auto& czfab = czcoef.array(mfi););
+    AMREX_D_TERM(const auto& bxfab = bxcoef.array(mfi);
+                 , const auto& byfab = bycoef.array(mfi);
+                 , const auto& bzfab = bzcoef.array(mfi););
+    AMREX_D_TERM(const auto& cxfab = cxcoef.array(mfi);
+                 , const auto& cyfab = cycoef.array(mfi);
+                 , const auto& czfab = czcoef.array(mfi););
 
     const auto& f0fab = f0.array(mfi);
     const auto& f1fab = f1.array(mfi);
@@ -651,24 +635,21 @@ MLABecCecLaplacian::checkDiagonalDominance(int amrlev, int mglev)
   BL_PROFILE("MLABecCecLaplacian::checkDiagonalDominance()");
 
   const MultiFab& acoef = m_a_coeffs[amrlev][mglev];
-  AMREX_D_TERM(
-    const MultiFab& bxcoef = m_b_coeffs[amrlev][mglev][0];
-    , const MultiFab& bycoef = m_b_coeffs[amrlev][mglev][1];
-    , const MultiFab& bzcoef = m_b_coeffs[amrlev][mglev][2];);
-  AMREX_D_TERM(
-    const MultiFab& cxcoef = m_c_coeffs[amrlev][mglev][0];
-    , const MultiFab& cycoef = m_c_coeffs[amrlev][mglev][1];
-    , const MultiFab& czcoef = m_c_coeffs[amrlev][mglev][2];);
+  AMREX_D_TERM(const MultiFab& bxcoef = m_b_coeffs[amrlev][mglev][0];
+               , const MultiFab& bycoef = m_b_coeffs[amrlev][mglev][1];
+               , const MultiFab& bzcoef = m_b_coeffs[amrlev][mglev][2];);
+  AMREX_D_TERM(const MultiFab& cxcoef = m_c_coeffs[amrlev][mglev][0];
+               , const MultiFab& cycoef = m_c_coeffs[amrlev][mglev][1];
+               , const MultiFab& czcoef = m_c_coeffs[amrlev][mglev][2];);
 
   const int nc = getNComp();
   const Real* h = m_geom[amrlev][mglev].CellSize();
-  AMREX_D_TERM(
-    const Real dhxsq = m_b_scalar / (h[0] * h[0]);
-    , const Real dhysq = m_b_scalar / (h[1] * h[1]);
-    , const Real dhzsq = m_b_scalar / (h[2] * h[2]));
-  AMREX_D_TERM(
-    const Real dhx = m_c_scalar / (h[0]);, const Real dhy = m_c_scalar / (h[1]);
-    , const Real dhz = m_c_scalar / (h[2]));
+  AMREX_D_TERM(const Real dhxsq = m_b_scalar / (h[0] * h[0]);
+               , const Real dhysq = m_b_scalar / (h[1] * h[1]);
+               , const Real dhzsq = m_b_scalar / (h[2] * h[2]));
+  AMREX_D_TERM(const Real dhx = m_c_scalar / (h[0]);
+               , const Real dhy = m_c_scalar / (h[1]);
+               , const Real dhz = m_c_scalar / (h[2]));
   const Real alpha = m_a_scalar;
 
   MFItInfo mfi_info;
@@ -682,14 +663,12 @@ MLABecCecLaplacian::checkDiagonalDominance(int amrlev, int mglev)
     const Box& tbx = mfi.tilebox();
 
     const auto& afab = acoef.array(mfi);
-    AMREX_D_TERM(
-      const auto& bxfab = bxcoef.array(mfi);
-      , const auto& byfab = bycoef.array(mfi);
-      , const auto& bzfab = bzcoef.array(mfi););
-    AMREX_D_TERM(
-      const auto& cxfab = cxcoef.array(mfi);
-      , const auto& cyfab = cycoef.array(mfi);
-      , const auto& czfab = czcoef.array(mfi););
+    AMREX_D_TERM(const auto& bxfab = bxcoef.array(mfi);
+                 , const auto& byfab = bycoef.array(mfi);
+                 , const auto& bzfab = bzcoef.array(mfi););
+    AMREX_D_TERM(const auto& cxfab = cxcoef.array(mfi);
+                 , const auto& cyfab = cycoef.array(mfi);
+                 , const auto& czfab = czcoef.array(mfi););
 
     AMREX_LAUNCH_HOST_DEVICE_LAMBDA(tbx, thread_box, {
       abeccec_chkdiag(
@@ -708,24 +687,21 @@ MLABecCecLaplacian::getDiagonal(int amrlev, MultiFab& diag)
   int mglev = 0;
 
   const MultiFab& acoef = m_a_coeffs[amrlev][mglev];
-  AMREX_D_TERM(
-    const MultiFab& bxcoef = m_b_coeffs[amrlev][mglev][0];
-    , const MultiFab& bycoef = m_b_coeffs[amrlev][mglev][1];
-    , const MultiFab& bzcoef = m_b_coeffs[amrlev][mglev][2];);
-  AMREX_D_TERM(
-    const MultiFab& cxcoef = m_c_coeffs[amrlev][mglev][0];
-    , const MultiFab& cycoef = m_c_coeffs[amrlev][mglev][1];
-    , const MultiFab& czcoef = m_c_coeffs[amrlev][mglev][2];);
+  AMREX_D_TERM(const MultiFab& bxcoef = m_b_coeffs[amrlev][mglev][0];
+               , const MultiFab& bycoef = m_b_coeffs[amrlev][mglev][1];
+               , const MultiFab& bzcoef = m_b_coeffs[amrlev][mglev][2];);
+  AMREX_D_TERM(const MultiFab& cxcoef = m_c_coeffs[amrlev][mglev][0];
+               , const MultiFab& cycoef = m_c_coeffs[amrlev][mglev][1];
+               , const MultiFab& czcoef = m_c_coeffs[amrlev][mglev][2];);
 
   const int nc = getNComp();
   const Real* h = m_geom[amrlev][mglev].CellSize();
-  AMREX_D_TERM(
-    const Real dhxsq = m_b_scalar / (h[0] * h[0]);
-    , const Real dhysq = m_b_scalar / (h[1] * h[1]);
-    , const Real dhzsq = m_b_scalar / (h[2] * h[2]));
-  AMREX_D_TERM(
-    const Real dhx = m_c_scalar / (h[0]);, const Real dhy = m_c_scalar / (h[1]);
-    , const Real dhz = m_c_scalar / (h[2]));
+  AMREX_D_TERM(const Real dhxsq = m_b_scalar / (h[0] * h[0]);
+               , const Real dhysq = m_b_scalar / (h[1] * h[1]);
+               , const Real dhzsq = m_b_scalar / (h[2] * h[2]));
+  AMREX_D_TERM(const Real dhx = m_c_scalar / (h[0]);
+               , const Real dhy = m_c_scalar / (h[1]);
+               , const Real dhz = m_c_scalar / (h[2]));
   const Real alpha = m_a_scalar;
 
   MFItInfo mfi_info;
@@ -739,14 +715,12 @@ MLABecCecLaplacian::getDiagonal(int amrlev, MultiFab& diag)
     const Box& tbx = mfi.tilebox();
 
     const auto& afab = acoef.array(mfi);
-    AMREX_D_TERM(
-      const auto& bxfab = bxcoef.array(mfi);
-      , const auto& byfab = bycoef.array(mfi);
-      , const auto& bzfab = bzcoef.array(mfi););
-    AMREX_D_TERM(
-      const auto& cxfab = cxcoef.array(mfi);
-      , const auto& cyfab = cycoef.array(mfi);
-      , const auto& czfab = czcoef.array(mfi););
+    AMREX_D_TERM(const auto& bxfab = bxcoef.array(mfi);
+                 , const auto& byfab = bycoef.array(mfi);
+                 , const auto& bzfab = bzcoef.array(mfi););
+    AMREX_D_TERM(const auto& cxfab = cxcoef.array(mfi);
+                 , const auto& cyfab = cycoef.array(mfi);
+                 , const auto& czfab = czcoef.array(mfi););
     const auto& adiag = diag.array(mfi);
 
     AMREX_LAUNCH_HOST_DEVICE_LAMBDA(tbx, thread_box, {
@@ -767,24 +741,21 @@ MLABecCecLaplacian::getNetFaceCoeff(MultiFab& coeffs_dir, int dir)
   int mglev = 0.0;
 
   const MultiFab& acoef = m_a_coeffs[amrlev][mglev];
-  AMREX_D_TERM(
-    const MultiFab& bxcoef = m_b_coeffs[amrlev][mglev][0];
-    , const MultiFab& bycoef = m_b_coeffs[amrlev][mglev][1];
-    , const MultiFab& bzcoef = m_b_coeffs[amrlev][mglev][2];);
-  AMREX_D_TERM(
-    const MultiFab& cxcoef = m_c_coeffs[amrlev][mglev][0];
-    , const MultiFab& cycoef = m_c_coeffs[amrlev][mglev][1];
-    , const MultiFab& czcoef = m_c_coeffs[amrlev][mglev][2];);
+  AMREX_D_TERM(const MultiFab& bxcoef = m_b_coeffs[amrlev][mglev][0];
+               , const MultiFab& bycoef = m_b_coeffs[amrlev][mglev][1];
+               , const MultiFab& bzcoef = m_b_coeffs[amrlev][mglev][2];);
+  AMREX_D_TERM(const MultiFab& cxcoef = m_c_coeffs[amrlev][mglev][0];
+               , const MultiFab& cycoef = m_c_coeffs[amrlev][mglev][1];
+               , const MultiFab& czcoef = m_c_coeffs[amrlev][mglev][2];);
 
   const int nc = getNComp();
   const Real* h = m_geom[amrlev][mglev].CellSize();
-  AMREX_D_TERM(
-    const Real dhxsq = m_b_scalar / (h[0] * h[0]);
-    , const Real dhysq = m_b_scalar / (h[1] * h[1]);
-    , const Real dhzsq = m_b_scalar / (h[2] * h[2]));
-  AMREX_D_TERM(
-    const Real dhx = m_c_scalar / (h[0]);, const Real dhy = m_c_scalar / (h[1]);
-    , const Real dhz = m_c_scalar / (h[2]));
+  AMREX_D_TERM(const Real dhxsq = m_b_scalar / (h[0] * h[0]);
+               , const Real dhysq = m_b_scalar / (h[1] * h[1]);
+               , const Real dhzsq = m_b_scalar / (h[2] * h[2]));
+  AMREX_D_TERM(const Real dhx = m_c_scalar / (h[0]);
+               , const Real dhy = m_c_scalar / (h[1]);
+               , const Real dhz = m_c_scalar / (h[2]));
   const Real alpha = m_a_scalar;
 
   MFItInfo mfi_info;
@@ -798,14 +769,12 @@ MLABecCecLaplacian::getNetFaceCoeff(MultiFab& coeffs_dir, int dir)
     const Box& tbx = mfi.tilebox();
 
     const auto& afab = acoef.array(mfi);
-    AMREX_D_TERM(
-      const auto& bxfab = bxcoef.array(mfi);
-      , const auto& byfab = bycoef.array(mfi);
-      , const auto& bzfab = bzcoef.array(mfi););
-    AMREX_D_TERM(
-      const auto& cxfab = cxcoef.array(mfi);
-      , const auto& cyfab = cycoef.array(mfi);
-      , const auto& czfab = czcoef.array(mfi););
+    AMREX_D_TERM(const auto& bxfab = bxcoef.array(mfi);
+                 , const auto& byfab = bycoef.array(mfi);
+                 , const auto& bzfab = bzcoef.array(mfi););
+    AMREX_D_TERM(const auto& cxfab = cxcoef.array(mfi);
+                 , const auto& cyfab = cycoef.array(mfi);
+                 , const auto& czfab = czcoef.array(mfi););
     const auto& coeffd = coeffs_dir.array(mfi);
 
     AMREX_LAUNCH_HOST_DEVICE_LAMBDA(tbx, thread_box, {
@@ -858,15 +827,15 @@ MLABecCecLaplacian::FFlux(
   int face_only,
   int ncomp)
 {
-  AMREX_D_TERM(
-    const auto bx = bcoef[0]->array();, const auto by = bcoef[1]->array();
-    , const auto bz = bcoef[2]->array(););
-  AMREX_D_TERM(
-    const auto cx = ccoef[0]->array();, const auto cy = ccoef[1]->array();
-    , const auto cz = ccoef[2]->array(););
-  AMREX_D_TERM(
-    const auto& fxarr = flux[0]->array();, const auto& fyarr = flux[1]->array();
-    , const auto& fzarr = flux[2]->array(););
+  AMREX_D_TERM(const auto bx = bcoef[0]->array();
+               , const auto by = bcoef[1]->array();
+               , const auto bz = bcoef[2]->array(););
+  AMREX_D_TERM(const auto cx = ccoef[0]->array();
+               , const auto cy = ccoef[1]->array();
+               , const auto cz = ccoef[2]->array(););
+  AMREX_D_TERM(const auto& fxarr = flux[0]->array();
+               , const auto& fyarr = flux[1]->array();
+               , const auto& fzarr = flux[2]->array(););
   const auto& solarr = sol.array();
 
   if (face_only) {
