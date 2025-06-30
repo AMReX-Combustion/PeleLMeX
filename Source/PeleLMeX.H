@@ -2008,7 +2008,7 @@ public:
 
   // Turbulent Forcing
   bool m_do_turbulent_forcing = false;
-  std::string m_velocity_plotfile = "";
+  std::string m_velocity_plotfile;
   amrex::Real m_velocity_plotfile_scale = 1.0;
 
   // Misc.
