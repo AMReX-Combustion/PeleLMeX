@@ -274,19 +274,19 @@ PeleLM::getScalarAdvForce(
     auto const* leosparm = eos_parms.device_parm();
 
     auto state_ma = ldata_p->state.const_arrays();
-    auto diffData_ma = diffData->Dn[lev].const_arrays();
+    auto dn_ma = diffData->Dn[lev].const_arrays();
     auto adv_ma = advData->Forcing[lev].arrays();
     auto r_ma = ldataR_p->I_R.const_arrays();
     auto ext_ma = m_extSource[lev]->arrays();
 
-    auto diffData_aux_ma =
-      (m_nAux > 0) ? diffData->Dn_aux[lev].const_arrays() : diffData_ma;
+    auto dn_aux_ma =
+      (m_nAux > 0) ? diffData->Dn_aux[lev].const_arrays() : dn_ma;
     auto adv_aux_ma =
       (m_nAux > 0) ? advData->Forcing_aux[lev].arrays() : adv_ma;
 
     amrex::ParallelFor(
       advData->Forcing[lev],
-      [state_ma, diffData_ma, diffData_aux_ma, r_ma, ext_ma, adv_ma, adv_aux_ma,
+      [state_ma, dn_ma, dn_aux_ma, r_ma, ext_ma, adv_ma, adv_aux_ma,
        aux_diffuse_d, leosparm, nAux = m_nAux, dp0dt = m_dp0dt,
        is_closed_ch = m_closed_chamber,
        do_react =
@@ -294,9 +294,9 @@ PeleLM::getScalarAdvForce(
         Array4<const Real> rho(state_ma[box_no], DENSITY);
         Array4<const Real> rhoY(state_ma[box_no], FIRSTSPEC);
         Array4<const Real> T(state_ma[box_no], TEMP);
-        Array4<const Real> dn(diffData_ma[box_no], 0);
-        Array4<const Real> ddn(diffData_ma[box_no], NUM_SPECIES + 1);
-        Array4<const Real> dn_aux(diffData_aux_ma[box_no], 0);
+        Array4<const Real> dn(dn_ma[box_no], 0);
+        Array4<const Real> ddn(dn_ma[box_no], NUM_SPECIES + 1);
+        Array4<const Real> dn_aux(dn_aux_ma[box_no], 0);
         Array4<const Real> r(r_ma[box_no], 0);
         Array4<Real> extRhoY(ext_ma[box_no], FIRSTSPEC);
         Array4<Real> extRhoH(ext_ma[box_no], RHOH);
@@ -1120,13 +1120,11 @@ PeleLM::updateScalarComp(
     amrex::ParallelFor(
       ldataOld_p->state,
       [state_old_ma, adv_aofs_ma, ext_ma, state_new_ma, state_comp, ncomp,
-       dt_loc =
-         m_dt] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+       dt = m_dt] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
         for (int n = state_comp; n < state_comp + ncomp; ++n) {
           state_new_ma[box_no](i, j, k, n) =
             state_old_ma[box_no](i, j, k, n) +
-            dt_loc *
-              (adv_aofs_ma[box_no](i, j, k, n) + ext_ma[box_no](i, j, k, n));
+            dt * (adv_aofs_ma[box_no](i, j, k, n) + ext_ma[box_no](i, j, k, n));
         }
       });
   }
