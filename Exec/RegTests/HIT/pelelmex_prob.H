@@ -119,8 +119,7 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
                              std::cos(3 * TwoPi * z_norm);
       state(i, j, k, VELZ) = tenth_urms * std::cos(3 * TwoPi * x_norm) *
                              std::cos(3 * TwoPi * y_norm);
-    }
-    else { // doing HIT Decay
+    } else { // doing HIT Decay
       // Fill in the velocities
       amrex::Real uinterp[3] = {0.0};
 
