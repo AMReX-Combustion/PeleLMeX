@@ -150,12 +150,12 @@ PeleLM::readProbParm() // NOLINT(readability-make-member-function-const)
 
     for (long i = 0; i < xinput.size(); i++) {
       xinput[i] = data[0 + i * 6];
-      uinput[i] =
-        data[3 + i * 6] * PeleLM::prob_parm->urms0 / PeleLM::prob_parm->uin_norm;
-      vinput[i] =
-        data[4 + i * 6] * PeleLM::prob_parm->urms0 / PeleLM::prob_parm->uin_norm;
-      winput[i] =
-        data[5 + i * 6] * PeleLM::prob_parm->urms0 / PeleLM::prob_parm->uin_norm;
+      uinput[i] = data[3 + i * 6] * PeleLM::prob_parm->urms0 /
+                  PeleLM::prob_parm->uin_norm;
+      vinput[i] = data[4 + i * 6] * PeleLM::prob_parm->urms0 /
+                  PeleLM::prob_parm->uin_norm;
+      winput[i] = data[5 + i * 6] * PeleLM::prob_parm->urms0 /
+                  PeleLM::prob_parm->uin_norm;
     }
 
     // Get the xarray table and the differences.
@@ -177,13 +177,12 @@ PeleLM::readProbParm() // NOLINT(readability-make-member-function-const)
       (amrex::Real*)amrex::The_Arena()->alloc(nx * sizeof(amrex::Real));
     PeleLM::prob_parm->d_xdiff =
       (amrex::Real*)amrex::The_Arena()->alloc(nx * sizeof(amrex::Real));
-    PeleLM::prob_parm->d_uinput =
-      (amrex::Real*)amrex::The_Arena()->alloc(nx * ny * nz * sizeof(amrex::Real));
-    PeleLM::prob_parm->d_vinput =
-      (amrex::Real*)amrex::The_Arena()->alloc(nx * ny * nz * sizeof(amrex::Real));
-    PeleLM::prob_parm->d_winput =
-      (amrex::Real*)amrex::The_Arena()->alloc(nx * ny * nz * sizeof(amrex::Real));
-
+    PeleLM::prob_parm->d_uinput = (amrex::Real*)amrex::The_Arena()->alloc(
+      nx * ny * nz * sizeof(amrex::Real));
+    PeleLM::prob_parm->d_vinput = (amrex::Real*)amrex::The_Arena()->alloc(
+      nx * ny * nz * sizeof(amrex::Real));
+    PeleLM::prob_parm->d_winput = (amrex::Real*)amrex::The_Arena()->alloc(
+      nx * ny * nz * sizeof(amrex::Real));
     // Copy into PeleLM::prob_parm
     amrex::Gpu::copy(
       amrex::Gpu::hostToDevice, xarray.begin(), xarray.end(),

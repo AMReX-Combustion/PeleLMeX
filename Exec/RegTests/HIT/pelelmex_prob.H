@@ -107,16 +107,19 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
 
       // Fill Velocity
       const amrex::Real tenth_urms = 0.1 * prob_parm.urms;
-      const amrex::Real x_norm = (x[0] - prob_lo[0]) / (prob_hi[0] - prob_lo[0]) / 100.0;
-      const amrex::Real y_norm = (x[1] - prob_lo[1]) / (prob_hi[1] - prob_lo[1]) / 100.0;
-      const amrex::Real z_norm = (x[2] - prob_lo[2]) / (prob_hi[2] - prob_lo[2]) / 100.0;
-      state(i, j, k, VELX) =
-        tenth_urms * std::cos(3 * TwoPi * y_norm) * std::cos(3 * TwoPi * z_norm);
-      state(i, j, k, VELY) =
-        tenth_urms * std::cos(3 * TwoPi * x_norm) * std::cos(3 * TwoPi * z_norm);
-      state(i, j, k, VELZ) =
-        tenth_urms * std::cos(3 * TwoPi * x_norm) * std::cos(3 * TwoPi * y_norm);
-    }
+      const amrex::Real x_norm =
+        (x[0] - prob_lo[0]) / (prob_hi[0] - prob_lo[0]) / 100.0;
+      const amrex::Real y_norm =
+        (x[1] - prob_lo[1]) / (prob_hi[1] - prob_lo[1]) / 100.0;
+      const amrex::Real z_norm =
+        (x[2] - prob_lo[2]) / (prob_hi[2] - prob_lo[2]) / 100.0;
+      state(i, j, k, VELX) = tenth_urms * std::cos(3 * TwoPi * y_norm) *
+                             std::cos(3 * TwoPi * z_norm);
+      state(i, j, k, VELY) = tenth_urms * std::cos(3 * TwoPi * x_norm) *
+                             std::cos(3 * TwoPi * z_norm);
+      state(i, j, k, VELZ) = tenth_urms * std::cos(3 * TwoPi * x_norm) *
+                             std::cos(3 * TwoPi * y_norm);
+    } else { // doing HIT Decay
     else { // doing HIT Decay
       // Fill in the velocities
       amrex::Real uinterp[3] = {0.0};
@@ -148,9 +151,12 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
 
       uinterp[0] =
         prob_parm.d_uinput[idx[0] + inSize * (idx[1] + inSize * idx[2])] * f0 +
-        prob_parm.d_uinput[idxp1[0] + inSize * (idx[1] + inSize * idx[2])] * f1 +
-        prob_parm.d_uinput[idx[0] + inSize * (idxp1[1] + inSize * idx[2])] * f2 +
-        prob_parm.d_uinput[idx[0] + inSize * (idx[1] + inSize * idxp1[2])] * f3 +
+        prob_parm.d_uinput[idxp1[0] + inSize * (idx[1] + inSize * idx[2])] *
+          f1 +
+        prob_parm.d_uinput[idx[0] + inSize * (idxp1[1] + inSize * idx[2])] *
+          f2 +
+        prob_parm.d_uinput[idx[0] + inSize * (idx[1] + inSize * idxp1[2])] *
+          f3 +
         prob_parm.d_uinput[idxp1[0] + inSize * (idx[1] + inSize * idxp1[2])] *
           f4 +
         prob_parm.d_uinput[idx[0] + inSize * (idxp1[1] + inSize * idxp1[2])] *
@@ -162,9 +168,12 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
 
       uinterp[1] =
         prob_parm.d_vinput[idx[0] + inSize * (idx[1] + inSize * idx[2])] * f0 +
-        prob_parm.d_vinput[idxp1[0] + inSize * (idx[1] + inSize * idx[2])] * f1 +
-        prob_parm.d_vinput[idx[0] + inSize * (idxp1[1] + inSize * idx[2])] * f2 +
-        prob_parm.d_vinput[idx[0] + inSize * (idx[1] + inSize * idxp1[2])] * f3 +
+        prob_parm.d_vinput[idxp1[0] + inSize * (idx[1] + inSize * idx[2])] *
+          f1 +
+        prob_parm.d_vinput[idx[0] + inSize * (idxp1[1] + inSize * idx[2])] *
+          f2 +
+        prob_parm.d_vinput[idx[0] + inSize * (idx[1] + inSize * idxp1[2])] *
+          f3 +
         prob_parm.d_vinput[idxp1[0] + inSize * (idx[1] + inSize * idxp1[2])] *
           f4 +
         prob_parm.d_vinput[idx[0] + inSize * (idxp1[1] + inSize * idxp1[2])] *
@@ -176,9 +185,12 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
 
       uinterp[2] =
         prob_parm.d_winput[idx[0] + inSize * (idx[1] + inSize * idx[2])] * f0 +
-        prob_parm.d_winput[idxp1[0] + inSize * (idx[1] + inSize * idx[2])] * f1 +
-        prob_parm.d_winput[idx[0] + inSize * (idxp1[1] + inSize * idx[2])] * f2 +
-        prob_parm.d_winput[idx[0] + inSize * (idx[1] + inSize * idxp1[2])] * f3 +
+        prob_parm.d_winput[idxp1[0] + inSize * (idx[1] + inSize * idx[2])] *
+          f1 +
+        prob_parm.d_winput[idx[0] + inSize * (idxp1[1] + inSize * idx[2])] *
+          f2 +
+        prob_parm.d_winput[idx[0] + inSize * (idx[1] + inSize * idxp1[2])] *
+          f3 +
         prob_parm.d_winput[idxp1[0] + inSize * (idx[1] + inSize * idxp1[2])] *
           f4 +
         prob_parm.d_winput[idx[0] + inSize * (idxp1[1] + inSize * idxp1[2])] *
