@@ -1,6 +1,6 @@
 if(PELE_ENABLE_EB)
   add_subdirectory(EB_BackwardStepFlame)
-  add_subdirectory(EB_EnclosedFlame)De
+  add_subdirectory(EB_EnclosedFlame)
   add_subdirectory(EB_EnclosedVortex)
   add_subdirectory(EB_FlowPastCylinder)
   add_subdirectory(EB_ODEQty)
