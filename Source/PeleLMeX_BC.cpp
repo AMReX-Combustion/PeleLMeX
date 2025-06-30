@@ -24,7 +24,7 @@ constexpr int density_bc[] = {
 
 constexpr int species_bc[] = {
   BCType::int_dir,  BCType::ext_dir,  BCType::foextrap, BCType::reflect_even,
-  BCType::foextrap, BCType::foextrap, BCType::ext_dir,  BCType::ext_dir};
+  BCType::foextrap, BCType::foextrap, BCType::foextrap, BCType::foextrap};
 
 constexpr int rhoh_bc[] = {
   BCType::int_dir,  BCType::ext_dir,  BCType::foextrap, BCType::reflect_even,
