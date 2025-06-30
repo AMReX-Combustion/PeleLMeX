@@ -281,7 +281,7 @@ DiffusionOp::diffuse_scalar(
   // Times rho{np1,kp1} if needed
   // Don't touch the ghost cells
 
-  if (!have_density) {
+  if (have_density == 0) {
     for (int lev = 0; lev <= finest_level; ++lev) {
       MultiFab::Copy(*a_phi[lev], phi[lev], 0, 0, ncomp, 0);
     }
@@ -490,7 +490,7 @@ DiffusionOp::diffuse_scalar(
   // Times rho{np1,kp1} if needed
   // Don't touch the ghost cells
 
-  if (!have_density) {
+  if (have_density == 0) {
     for (int lev = 0; lev <= finest_level; ++lev) {
       MultiFab::Copy(*a_phi[lev], phi[lev], 0, 0, ncomp, 0);
     }
