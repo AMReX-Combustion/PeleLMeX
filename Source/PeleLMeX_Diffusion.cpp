@@ -1098,8 +1098,7 @@ PeleLM::differentialDiffusionUpdate(
     auto state_ma = ldata_p->state.const_arrays();
     auto fY_ma = advData->Forcing[lev].arrays();
 
-    auto aux_ma =
-      (m_nAux > 0) ? ldata_p->auxiliaries.const_arrays() : state_ma;
+    auto aux_ma = (m_nAux > 0) ? ldata_p->auxiliaries.const_arrays() : state_ma;
     auto fAux_ma = (m_nAux > 0) ? advData->Forcing_aux[lev].arrays() : fY_ma;
 
     amrex::ParallelFor(
@@ -1718,10 +1717,8 @@ PeleLM::getScalarDiffForce(
 
     auto dwbar_ma =
       (m_use_wbar != 0) ? diffData->Dwbar[lev].const_arrays() : dn_ma;
-    auto dT_ma =
-      (m_use_soret != 0) ? diffData->DT[lev].const_arrays() : dn_ma;
-    auto f_aux_ma =
-      (m_nAux > 0) ? advData->Forcing_aux[lev].arrays() : f_ma;
+    auto dT_ma = (m_use_soret != 0) ? diffData->DT[lev].const_arrays() : dn_ma;
+    auto f_aux_ma = (m_nAux > 0) ? advData->Forcing_aux[lev].arrays() : f_ma;
     auto a_aux_ma =
       (m_nAux > 0) ? advData->AofS_aux[lev].const_arrays() : dn_ma;
     auto dn_aux_ma =
@@ -1736,17 +1733,17 @@ PeleLM::getScalarDiffForce(
        use_wbar = m_use_wbar, use_soret = m_use_soret, dp0dt = m_dp0dt,
        is_closed_ch = m_closed_chamber, nAux = m_nAux, aux_advect_d,
        aux_diffuse_d] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
-	Array4<Real const> ddn(dn_ma[box_no], NUM_SPECIES + 1);
-	Array4<Real const> ddnp1(dnp1_ma[box_no], NUM_SPECIES + 1);
-	Array4<Real const> a(a_ma[box_no], FIRSTSPEC);
+        Array4<Real const> ddn(dn_ma[box_no], NUM_SPECIES + 1);
+        Array4<Real const> ddnp1(dnp1_ma[box_no], NUM_SPECIES + 1);
+        Array4<Real const> a(a_ma[box_no], FIRSTSPEC);
         Array4<Real const> extRhoY(ext_ma[box_no], FIRSTSPEC);
         Array4<Real const> extRhoH(ext_ma[box_no], RHOH);
         Array4<Real> fT(f_ma[box_no], NUM_SPECIES);
         buildDiffusionForcing(
-          i, j, k, dn_ma[box_no], ddn, dnp1_ma[box_no], ddnp1, r_ma[box_no],
-          a, dp0dt, is_closed_ch, do_react, f_ma[box_no], fT,
-          dwbar_ma[box_no], dT_ma[box_no], extRhoY, extRhoH, use_wbar,
-          use_soret, f_aux_ma[box_no], a_aux_ma[box_no], dn_aux_ma[box_no],
+          i, j, k, dn_ma[box_no], ddn, dnp1_ma[box_no], ddnp1, r_ma[box_no], a,
+          dp0dt, is_closed_ch, do_react, f_ma[box_no], fT, dwbar_ma[box_no],
+          dT_ma[box_no], extRhoY, extRhoH, use_wbar, use_soret,
+          f_aux_ma[box_no], a_aux_ma[box_no], dn_aux_ma[box_no],
           dnp1_aux_ma[box_no], aux_advect_d, aux_diffuse_d, nAux);
       });
   }

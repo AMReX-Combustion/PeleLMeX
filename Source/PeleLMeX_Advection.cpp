@@ -278,7 +278,7 @@ PeleLM::getScalarAdvForce(
     auto adv_ma = advData->Forcing[lev].arrays();
     auto r_ma = ldataR_p->I_R.const_arrays();
     auto ext_ma = m_extSource[lev]->arrays();
-    
+
     auto diffData_aux_ma =
       (m_nAux > 0) ? diffData->Dn_aux[lev].const_arrays() : diffData_ma;
     auto adv_aux_ma =
