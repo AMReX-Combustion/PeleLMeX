@@ -2,7 +2,7 @@
 geometry.is_periodic = 1 1 0                 # For each dir, 0: non-perio, 1: periodic
 geometry.coord_sys   = 0                     # 0 => cart, 1 => RZ
 geometry.prob_lo     = 0.0    0.0    0.0     # x_lo y_lo (z_lo)
-geometry.prob_hi     = 0.0042 0.0042 0.0168  # x_hi y_hi (z_hi)
+geometry.prob_hi     = 0.016 0.016 0.064     # x_hi y_hi (z_hi)
 
 #---------------------- BC FLAGS ---------------------------------
 # Interior, Inflow, Outflow, Symmetry,
@@ -12,21 +12,21 @@ peleLM.hi_bc = Interior Interior Outflow            # bc in x_hi y_hi (z_hi)
 
 
 #---------------------- AMR CONTROL ------------------------------
-amr.n_cell          = 64 64 256           # Level 0 number of cells in each direction
-amr.max_level       = 0                   # maximum level number allowed
+amr.n_cell          = 32 32 128           # Level 0 number of cells in each direction
+amr.max_level       = 1                   # maximum level number allowed
 amr.ref_ratio       = 2 2 2 2             # refinement ratio
 amr.regrid_int      = 5                   # how often to regrid
 amr.n_error_buf     = 1 1 2 2             # number of buffer cells in error est
 amr.grid_eff        = 0.7                 # what constitutes an efficient grid
 amr.blocking_factor = 16                  # block factor in grid generation (min box size)
-amr.max_grid_size   = 256                 # max box size
+amr.max_grid_size   = 64                  # max box size
 
 #---------------------- Problem ----------------------------------
 prob.P_mean = 101325.0
-prob.standoff = 0.0063
+prob.standoff = 0.023
 prob.pertmag = 0.0
 prob.pertlength = 0.0
-pmf.datafile = "burkedryer_pdf.dat"
+pmf.datafile = "drm19_pmf.dat"
 
 #---------------------- PeleLMeX CONTROL -------------------------
 peleLM.v = 1                              # PeleLMeX verbose
@@ -42,7 +42,7 @@ peleLM.do_temporals = 0                   # Turn temporals ON/OFF
 #peleLM.do_species_balance = 1             # Compute species balance
 
 #---------------------- Time Stepping CONTROL --------------------
-amr.max_step = 20                         # Maximum number of time steps
+amr.max_step = 5                          # Maximum number of time steps
 #amr.stop_time = 0.001                    # final simulation physical time
 #amr.max_wall_time = 0.1                  # Maximum simulation run time
 amr.cfl = 0.3                             # CFL number for hyperbolic system
@@ -56,7 +56,7 @@ amr.plot_int = 100                        # Frequency of pltfile output
 amr.derive_plot_vars = avg_pressure mass_fractions mag_vort turbforces
 
 #---------------------- Derived CONTROLS -------------------------
-peleLM.fuel_name = H2
+#peleLM.fuel_name = H2
 #peleLM.mixtureFraction.format = Cantera
 #peleLM.mixtureFraction.type   = mass
 #peleLM.mixtureFraction.oxidTank = O2:0.21 N2:0.79
@@ -75,10 +75,10 @@ mac_proj.verbose = 0
 nodal_proj.verbose = 0
 
 #---------------------- Refinement CONTROL------------------------
-amr.refinement_indicators = yHO2
-amr.yHO2.max_level     = 3
-amr.yHO2.value_greater = 10.0e-6
-amr.yHO2.field_name    = Y(HO2)
+amr.refinement_indicators = yH
+amr.yH.max_level     = 3
+amr.yH.value_greater = 1.0e-6
+amr.yH.field_name    = Y(H)
 
 #---------------------- Debug/HPC CONTROL-------------------------
 #amrex.fpe_trap_invalid = 1

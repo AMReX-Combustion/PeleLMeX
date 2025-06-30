@@ -22,7 +22,7 @@ amr.blocking_factor = 16               # block factor in grid generation (min bo
 amr.max_grid_size   = 64               # max box size
 
 #----------------------- PROBLEM PARAMETERS---------------------
-prob.input_name       = hit_ic_4_32.dat
+prob.input_name       = hit_decay_ic_4_32.dat
 prob.input_resolution = 32
 prob.input_binaryformat = 0
 prob.urms0            = 2.0

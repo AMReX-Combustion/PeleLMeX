@@ -1,0 +1,2 @@
+lambda0, urms0, tau 
+0.5,2,0.25
