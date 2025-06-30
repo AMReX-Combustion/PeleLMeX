@@ -72,7 +72,7 @@ public:
       }
 #elif (AMREX_SPACEDIM == 3)
       amrex::Real zp;
-      constexpr amrex::Real sqrt2 = sqrt(2.0);
+      constexpr amrex::Real sqrt2 = 1.4142135623730951;
 
       xp = point_coordinate[0];
       yp = point_coordinate[1];

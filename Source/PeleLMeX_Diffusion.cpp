@@ -1097,8 +1097,14 @@ PeleLM::differentialDiffusionUpdate(
 
     auto state_ma = ldata_p->state.const_arrays();
     auto fY_ma = advData->Forcing[lev].arrays();
-    auto aux_ma = ldata_p->auxiliaries.const_arrays();
-    auto fAux_ma = advData->Forcing_aux[lev].arrays();
+
+    MultiFab dummy_mf(grids[lev], dmap[lev], 1, 0);
+    auto dummy_const_ma = dummy_mf.const_arrays();
+    auto dummy_ma = dummy_mf.arrays();
+
+    auto aux_ma =
+      (m_nAux > 0) ? ldata_p->auxiliaries.const_arrays() : dummy_const_ma;
+    auto fAux_ma = (m_nAux > 0) ? advData->Forcing_aux[lev].arrays() : dummy_ma;
 
     amrex::ParallelFor(
       advData->Forcing[lev],
@@ -1289,11 +1295,20 @@ PeleLM::differentialDiffusionUpdate(
     auto state_ma = ldata_p->state.arrays();
     auto dhat_ma = diffData->Dhat[lev].const_arrays();
     auto force_ma = advData->Forcing[lev].const_arrays();
-    auto dwbar_ma = diffData->Dwbar[lev].const_arrays();
-    auto dT_ma = diffData->DT[lev].const_arrays();
-    auto aux_ma = ldata_p->auxiliaries.arrays();
-    auto dhat_aux_ma = diffData->Dhat_aux[lev].const_arrays();
-    auto force_aux_ma = advData->Forcing_aux[lev].const_arrays();
+
+    MultiFab dummy_mf(grids[lev], dmap[lev], 1, 0);
+    auto dummy_const_ma = dummy_mf.const_arrays();
+    auto dummy_ma = dummy_mf.arrays();
+
+    auto dwbar_ma =
+      (m_use_wbar != 0) ? diffData->Dwbar[lev].const_arrays() : dummy_const_ma;
+    auto dT_ma =
+      (m_use_soret != 0) ? diffData->DT[lev].const_arrays() : dummy_const_ma;
+    auto aux_ma = (m_nAux > 0) ? ldata_p->auxiliaries.arrays() : dummy_ma;
+    auto dhat_aux_ma =
+      (m_nAux > 0) ? diffData->Dhat_aux[lev].const_arrays() : dummy_const_ma;
+    auto force_aux_ma =
+      (m_nAux > 0) ? advData->Forcing_aux[lev].const_arrays() : dummy_const_ma;
 
     if (m_use_wbar != 0 && m_use_soret != 0) {
       amrex::ParallelFor(
@@ -1708,12 +1723,23 @@ PeleLM::getScalarDiffForce(
     auto a_ma = advData->AofS[lev].const_arrays();
     auto ext_ma = m_extSource[lev]->const_arrays();
     auto f_ma = advData->Forcing[lev].arrays();
-    auto dwbar_ma = diffData->Dwbar[lev].const_arrays();
-    auto dT_ma = diffData->DT[lev].const_arrays();
-    auto f_aux_ma = advData->Forcing_aux[lev].arrays();
-    auto a_aux_ma = advData->AofS_aux[lev].const_arrays();
-    auto dn_aux_ma = diffData->Dn_aux[lev].const_arrays();
-    auto dnp1_aux_ma = diffData->Dnp1_aux[lev].const_arrays();
+
+    MultiFab dummy_mf(grids[lev], dmap[lev], 1, 0);
+    auto dummy_const_ma = dummy_mf.const_arrays();
+    auto dummy_ma = dummy_mf.arrays();
+
+    auto dwbar_ma =
+      (m_use_wbar != 0) ? diffData->Dwbar[lev].const_arrays() : dummy_const_ma;
+    auto dT_ma =
+      (m_use_soret != 0) ? diffData->DT[lev].const_arrays() : dummy_const_ma;
+    auto f_aux_ma =
+      (m_nAux > 0) ? advData->Forcing_aux[lev].arrays() : dummy_ma;
+    auto a_aux_ma =
+      (m_nAux > 0) ? advData->AofS_aux[lev].const_arrays() : dummy_const_ma;
+    auto dn_aux_ma =
+      (m_nAux > 0) ? diffData->Dn_aux[lev].const_arrays() : dummy_const_ma;
+    auto dnp1_aux_ma =
+      (m_nAux > 0) ? diffData->Dnp1_aux[lev].const_arrays() : dummy_const_ma;
 
     amrex::ParallelFor(
       advData->Forcing[lev],

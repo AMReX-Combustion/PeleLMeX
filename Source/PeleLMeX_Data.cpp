@@ -217,7 +217,7 @@ PeleLM::AdvanceAdvData::AdvanceAdvData(
         ba[lev], dm[lev], AMREX_SPACEDIM, 0, MFInfo(), *factory[lev]);
     } else {
       AofS.emplace_back(ba[lev], dm[lev], NVAR, 0, MFInfo(), *factory[lev]);
-      chi[lev].define(ba[lev], dm[lev], 1, 1, MFInfo(), *factory[lev]);
+      chi.emplace_back(ba[lev], dm[lev], 1, 1, MFInfo(), *factory[lev]);
 #ifdef PELE_USE_PLASMA
       Forcing.emplace_back(
         ba[lev], dm[lev], NUM_SPECIES + 2, nGrowAdv, MFInfo(),
