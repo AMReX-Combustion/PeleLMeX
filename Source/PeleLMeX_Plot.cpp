@@ -436,12 +436,13 @@ PeleLM::WritePlotFile()
     if (m_do_les && m_plot_les) {
       constexpr amrex::Real fact = 0.5 / AMREX_SPACEDIM;
       auto const& plot_arr = mf_plt[lev].arrays();
-      AMREX_D_TERM(auto const& mut_arr_x =
-                     m_leveldata_old[lev]->visc_turb_fc[0].const_arrays();
-                   , auto const& mut_arr_y =
-                       m_leveldata_old[lev]->visc_turb_fc[1].const_arrays();
-                   , auto const& mut_arr_z =
-                       m_leveldata_old[lev]->visc_turb_fc[2].const_arrays();)
+      AMREX_D_TERM(
+        auto const& mut_arr_x =
+          m_leveldata_old[lev]->visc_turb_fc[0].const_arrays();
+        , auto const& mut_arr_y =
+            m_leveldata_old[lev]->visc_turb_fc[1].const_arrays();
+        , auto const& mut_arr_z =
+            m_leveldata_old[lev]->visc_turb_fc[2].const_arrays();)
       // interpolate turbulent viscosity from faces to centers
       amrex::ParallelFor(
         mf_plt[lev],
@@ -862,12 +863,14 @@ void
 PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
 {
   if (m_incompressible != 0) {
-    Abort(" initializing data from a pltfile only available for low-Mach "
-          "simulations");
+    Abort(
+      " initializing data from a pltfile only available for low-Mach "
+      "simulations");
   }
   if (m_nAux > 0) {
-    Warning(" restarting from plotfile with auxiliaries not currently "
-            "implemented, and will not be captured");
+    Warning(
+      " restarting from plotfile with auxiliaries not currently "
+      "implemented, and will not be captured");
   }
   amrex::Print() << " initData on level " << a_lev << " from pltfile "
                  << a_dataPltFile << "\n";

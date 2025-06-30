@@ -286,9 +286,10 @@ pelelmex_dermgvort(
   int /*level*/)
 
 {
-  AMREX_D_TERM(const amrex::Real idx = geom.InvCellSize(0);
-               , const amrex::Real idy = geom.InvCellSize(1);
-               , const amrex::Real idz = geom.InvCellSize(2););
+  AMREX_D_TERM(
+    const amrex::Real idx = geom.InvCellSize(0);
+    , const amrex::Real idy = geom.InvCellSize(1);
+    , const amrex::Real idz = geom.InvCellSize(2););
 
   auto const& dat_arr = statefab.const_array();
   auto const& vort_arr = derfab.array(dcomp);
@@ -448,9 +449,10 @@ pelelmex_dervort(
   AMREX_ASSERT(derfab.box().contains(bx));
   AMREX_ASSERT(statefab.box().contains(bx));
   AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
-  AMREX_D_TERM(const amrex::Real idx = geom.InvCellSize(0);
-               , const amrex::Real idy = geom.InvCellSize(1);
-               , const amrex::Real idz = geom.InvCellSize(2););
+  AMREX_D_TERM(
+    const amrex::Real idx = geom.InvCellSize(0);
+    , const amrex::Real idy = geom.InvCellSize(1);
+    , const amrex::Real idz = geom.InvCellSize(2););
 
   auto const& dat_arr = statefab.const_array();
   auto const& vort_arr = derfab.array(dcomp);
@@ -622,9 +624,10 @@ pelelmex_dercoord(
   amrex::ignore_unused(ncomp);
   AMREX_ASSERT(derfab.box().contains(bx));
   AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
-  AMREX_D_TERM(const amrex::Real dx = geom.CellSize(0);
-               , const amrex::Real dy = geom.CellSize(1);
-               , const amrex::Real dz = geom.CellSize(2););
+  AMREX_D_TERM(
+    const amrex::Real dx = geom.CellSize(0);
+    , const amrex::Real dy = geom.CellSize(1);
+    , const amrex::Real dz = geom.CellSize(2););
 
   auto const& coord_arr = derfab.array(dcomp);
   const auto geomdata = geom.data();
@@ -708,9 +711,10 @@ pelelmex_derQcrit(
 
 {
 #if AMREX_SPACEDIM == 3
-  AMREX_D_TERM(const amrex::Real idx = geom.InvCellSize(0);
-               , const amrex::Real idy = geom.InvCellSize(1);
-               , const amrex::Real idz = geom.InvCellSize(2););
+  AMREX_D_TERM(
+    const amrex::Real idx = geom.InvCellSize(0);
+    , const amrex::Real idy = geom.InvCellSize(1);
+    , const amrex::Real idz = geom.InvCellSize(2););
 
   auto const& dat_arr = statefab.const_array();
   auto const& qcrit_arr = derfab.array(dcomp);
@@ -977,9 +981,10 @@ pelelmex_derenstrophy(
   int /*level*/)
 
 {
-  AMREX_D_TERM(const amrex::Real idx = geom.InvCellSize(0);
-               , const amrex::Real idy = geom.InvCellSize(1);
-               , const amrex::Real idz = geom.InvCellSize(2););
+  AMREX_D_TERM(
+    const amrex::Real idx = geom.InvCellSize(0);
+    , const amrex::Real idy = geom.InvCellSize(1);
+    , const amrex::Real idz = geom.InvCellSize(2););
 
   auto const& dat_arr = statefab.const_array(VELX);
   auto const& rho_arr = (a_pelelm->m_incompressible) != 0

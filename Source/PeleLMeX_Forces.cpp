@@ -283,8 +283,9 @@ PeleLM::addScalarVarianceSources(const TimeStamp& a_timestamp)
     for (int n = 0; n < MANIFOLD_DIM; ++n) {
       if (leosparm.is_variance_of[n] >= 0) {
         if (!m_do_les) {
-          amrex::Abort("PeleLM::addScalarVarianceSources(): cannot add a "
-                       "scalar dissipation without an active LES model");
+          amrex::Abort(
+            "PeleLM::addScalarVarianceSources(): cannot add a "
+            "scalar dissipation without an active LES model");
         }
         nvariances += 1;
         var_of_scalar = FIRSTSPEC + leosparm.is_variance_of[n];
@@ -345,9 +346,10 @@ PeleLM::addScalarVarianceSources(const TimeStamp& a_timestamp)
                   m_leveldata_old[lev]->visc_turb_fc[1].const_arrays();
               , auto const& mut_arr_z =
                   m_leveldata_old[lev]->visc_turb_fc[2].const_arrays();)
-            AMREX_D_TERM(auto const& gx = grad_fc[lev][0].const_arrays();
-                         , auto const& gy = grad_fc[lev][1].const_arrays();
-                         , auto const& gz = grad_fc[lev][2].const_arrays();)
+            AMREX_D_TERM(
+              auto const& gx = grad_fc[lev][0].const_arrays();
+              , auto const& gy = grad_fc[lev][1].const_arrays();
+              , auto const& gz = grad_fc[lev][2].const_arrays();)
             auto extma = m_extSource[lev]->arrays();
             auto statema = ldata_p->state.const_arrays();
 
