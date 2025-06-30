@@ -142,8 +142,8 @@ PeleLM::setBoundaryConditions()
     // Species
     for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
       for (int n = 0; n < NUM_SPECIES; ++n) {
-        m_bcrec_state[FIRSTSPEC + n].setLo(idim, density_bc[lo_bc[idim]]);
-        m_bcrec_state[FIRSTSPEC + n].setHi(idim, density_bc[hi_bc[idim]]);
+        m_bcrec_state[FIRSTSPEC + n].setLo(idim, species_bc[lo_bc[idim]]);
+        m_bcrec_state[FIRSTSPEC + n].setHi(idim, species_bc[hi_bc[idim]]);
       }
     }
 
