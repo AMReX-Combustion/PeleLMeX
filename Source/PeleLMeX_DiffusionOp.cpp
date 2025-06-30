@@ -492,7 +492,7 @@ DiffusionOp::diffuse_scalar(
 
   if (!have_density) {
     for (int lev = 0; lev <= finest_level; ++lev) {
-      MultiFab::Copy(a_phi[lev], phi[lev], 0, 0, ncomp, 0);
+      MultiFab::Copy(*a_phi[lev], phi[lev], 0, 0, ncomp, 0);
     }
   } else {
     for (int lev = 0; lev <= finest_level; ++lev) {

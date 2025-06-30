@@ -52,7 +52,7 @@ PeleLM::getVelForces(
   const Real time = getTime(lev, a_time);
 
   const int has_divTau = static_cast<int>(a_divTau != nullptr);
-
+  /*
   auto state_ma = ldata_p->state.const_arrays();
   auto ext_ma = m_extSource[lev]->const_arrays();
   auto force_ma = a_velForce->arrays();
@@ -78,7 +78,7 @@ PeleLM::getVelForces(
         // TLH::HERE!!! Leave Lorentz in second MFIter
       }
     });
-
+  */
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
