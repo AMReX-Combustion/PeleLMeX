@@ -14,7 +14,7 @@ Here, there is no scaling by the turbulent Mach number and the density is kept c
 At the beginning of a simulation, a file initialConditions.txt is created to hold the values of urms0, lambda0 and tau, which will be used for post-processing.
 
 ## TurbForce Incompressible
-A periodic domain that can be used to generate and maintain HIT. This is typically used to generate the inital turbulence profile used in maintained HIT flame sheets (see Exec/RegTests/TurbForce_FlameSheet).
+A periodic domain that can be used to generate and maintain HIT. This is typically used to generate the initial turbulence profile used in maintained HIT flame sheets (see Exec/RegTests/TurbForce_FlameSheet).
 
 # Citation
 To cite the forcing scheme, please cite the [CAMCOS article](http://dx.doi.org/10.2140/camcos.2008.3.103)

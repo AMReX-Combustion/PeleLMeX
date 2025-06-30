@@ -6,7 +6,7 @@ A 3D decaying Homogeneous Isotropic Turbulence (HIT) case, where the initial sol
 integration algorithm and Large Eddy Simulation implementation.
 
 ## TurbForce Incompressible
-A periodic domain that can be used to generate and maintain HIT. This is typically used to generate the inital turbulence profile used in maintained HIT flame sheets (see Exec/RegTests/TurbForce_FlameSheet).
+A periodic domain that can be used to generate and maintain HIT. This is typically used to generate the initial turbulence profile used in maintained HIT flame sheets (see Exec/RegTests/TurbForce_FlameSheet).
 
 # Citation
 To cite the forcing scheme, please cite the [CAMCOS article](http://dx.doi.org/10.2140/camcos.2008.3.103)
