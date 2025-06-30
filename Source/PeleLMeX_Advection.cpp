@@ -273,19 +273,16 @@ PeleLM::getScalarAdvForce(
     auto* ldataR_p = getLevelDataReactPtr(lev);
     auto const* leosparm = eos_parms.device_parm();
 
-    MultiFab dummy_mf(grids[lev], dmap[lev], 1, 0);
-    auto dummy_const_ma = dummy_mf.const_arrays();
-    auto dummy_ma = dummy_mf.arrays();
-
     auto state_ma = ldata_p->state.const_arrays();
     auto diffData_ma = diffData->Dn[lev].const_arrays();
-    auto diffData_aux_ma =
-      (m_nAux > 0) ? diffData->Dn_aux[lev].const_arrays() : dummy_const_ma;
+    auto adv_ma = advData->Forcing[lev].arrays();
     auto r_ma = ldataR_p->I_R.const_arrays();
     auto ext_ma = m_extSource[lev]->arrays();
-    auto adv_ma = advData->Forcing[lev].arrays();
+    
+    auto diffData_aux_ma =
+      (m_nAux > 0) ? diffData->Dn_aux[lev].const_arrays() : diffData_ma;
     auto adv_aux_ma =
-      (m_nAux > 0) ? advData->Forcing_aux[lev].arrays() : dummy_ma;
+      (m_nAux > 0) ? advData->Forcing_aux[lev].arrays() : adv_ma;
 
     amrex::ParallelFor(
       advData->Forcing[lev],

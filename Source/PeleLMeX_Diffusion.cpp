@@ -1098,13 +1098,9 @@ PeleLM::differentialDiffusionUpdate(
     auto state_ma = ldata_p->state.const_arrays();
     auto fY_ma = advData->Forcing[lev].arrays();
 
-    MultiFab dummy_mf(grids[lev], dmap[lev], 1, 0);
-    auto dummy_const_ma = dummy_mf.const_arrays();
-    auto dummy_ma = dummy_mf.arrays();
-
     auto aux_ma =
-      (m_nAux > 0) ? ldata_p->auxiliaries.const_arrays() : dummy_const_ma;
-    auto fAux_ma = (m_nAux > 0) ? advData->Forcing_aux[lev].arrays() : dummy_ma;
+      (m_nAux > 0) ? ldata_p->auxiliaries.const_arrays() : state_ma;
+    auto fAux_ma = (m_nAux > 0) ? advData->Forcing_aux[lev].arrays() : fY_ma;
 
     amrex::ParallelFor(
       advData->Forcing[lev],
@@ -1296,19 +1292,15 @@ PeleLM::differentialDiffusionUpdate(
     auto dhat_ma = diffData->Dhat[lev].const_arrays();
     auto force_ma = advData->Forcing[lev].const_arrays();
 
-    MultiFab dummy_mf(grids[lev], dmap[lev], 1, 0);
-    auto dummy_const_ma = dummy_mf.const_arrays();
-    auto dummy_ma = dummy_mf.arrays();
-
     auto dwbar_ma =
-      (m_use_wbar != 0) ? diffData->Dwbar[lev].const_arrays() : dummy_const_ma;
+      (m_use_wbar != 0) ? diffData->Dwbar[lev].const_arrays() : dhat_ma;
     auto dT_ma =
-      (m_use_soret != 0) ? diffData->DT[lev].const_arrays() : dummy_const_ma;
-    auto aux_ma = (m_nAux > 0) ? ldata_p->auxiliaries.arrays() : dummy_ma;
+      (m_use_soret != 0) ? diffData->DT[lev].const_arrays() : dhat_ma;
+    auto aux_ma = (m_nAux > 0) ? ldata_p->auxiliaries.arrays() : state_ma;
     auto dhat_aux_ma =
-      (m_nAux > 0) ? diffData->Dhat_aux[lev].const_arrays() : dummy_const_ma;
+      (m_nAux > 0) ? diffData->Dhat_aux[lev].const_arrays() : dhat_ma;
     auto force_aux_ma =
-      (m_nAux > 0) ? advData->Forcing_aux[lev].const_arrays() : dummy_const_ma;
+      (m_nAux > 0) ? advData->Forcing_aux[lev].const_arrays() : dhat_ma;
 
     if (m_use_wbar != 0 && m_use_soret != 0) {
       amrex::ParallelFor(
@@ -1724,22 +1716,18 @@ PeleLM::getScalarDiffForce(
     auto ext_ma = m_extSource[lev]->const_arrays();
     auto f_ma = advData->Forcing[lev].arrays();
 
-    MultiFab dummy_mf(grids[lev], dmap[lev], 1, 0);
-    auto dummy_const_ma = dummy_mf.const_arrays();
-    auto dummy_ma = dummy_mf.arrays();
-
     auto dwbar_ma =
-      (m_use_wbar != 0) ? diffData->Dwbar[lev].const_arrays() : dummy_const_ma;
+      (m_use_wbar != 0) ? diffData->Dwbar[lev].const_arrays() : dn_ma;
     auto dT_ma =
-      (m_use_soret != 0) ? diffData->DT[lev].const_arrays() : dummy_const_ma;
+      (m_use_soret != 0) ? diffData->DT[lev].const_arrays() : dn_ma;
     auto f_aux_ma =
-      (m_nAux > 0) ? advData->Forcing_aux[lev].arrays() : dummy_ma;
+      (m_nAux > 0) ? advData->Forcing_aux[lev].arrays() : f_ma;
     auto a_aux_ma =
-      (m_nAux > 0) ? advData->AofS_aux[lev].const_arrays() : dummy_const_ma;
+      (m_nAux > 0) ? advData->AofS_aux[lev].const_arrays() : dn_ma;
     auto dn_aux_ma =
-      (m_nAux > 0) ? diffData->Dn_aux[lev].const_arrays() : dummy_const_ma;
+      (m_nAux > 0) ? diffData->Dn_aux[lev].const_arrays() : dn_ma;
     auto dnp1_aux_ma =
-      (m_nAux > 0) ? diffData->Dnp1_aux[lev].const_arrays() : dummy_const_ma;
+      (m_nAux > 0) ? diffData->Dnp1_aux[lev].const_arrays() : dn_ma;
 
     amrex::ParallelFor(
       advData->Forcing[lev],
@@ -1748,14 +1736,15 @@ PeleLM::getScalarDiffForce(
        use_wbar = m_use_wbar, use_soret = m_use_soret, dp0dt = m_dp0dt,
        is_closed_ch = m_closed_chamber, nAux = m_nAux, aux_advect_d,
        aux_diffuse_d] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
-        Array4<Real const> ddn(dn_ma[box_no], NUM_SPECIES + 1);
-        Array4<Real const> ddnp1(dnp1_ma[box_no], NUM_SPECIES + 1);
+	Array4<Real const> ddn(dn_ma[box_no], NUM_SPECIES + 1);
+	Array4<Real const> ddnp1(dnp1_ma[box_no], NUM_SPECIES + 1);
+	Array4<Real const> a(a_ma[box_no], FIRSTSPEC);
         Array4<Real const> extRhoY(ext_ma[box_no], FIRSTSPEC);
         Array4<Real const> extRhoH(ext_ma[box_no], RHOH);
         Array4<Real> fT(f_ma[box_no], NUM_SPECIES);
         buildDiffusionForcing(
           i, j, k, dn_ma[box_no], ddn, dnp1_ma[box_no], ddnp1, r_ma[box_no],
-          a_ma[box_no], dp0dt, is_closed_ch, do_react, f_ma[box_no], fT,
+          a, dp0dt, is_closed_ch, do_react, f_ma[box_no], fT,
           dwbar_ma[box_no], dT_ma[box_no], extRhoY, extRhoH, use_wbar,
           use_soret, f_aux_ma[box_no], a_aux_ma[box_no], dn_aux_ma[box_no],
           dnp1_aux_ma[box_no], aux_advect_d, aux_diffuse_d, nAux);
