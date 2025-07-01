@@ -99,7 +99,7 @@ read_csv(
 void
 PeleLM::readProbParm() // NOLINT(readability-make-member-function-const)
 {
-  if (m_do_turbulent_forcing == true) {
+  if (m_do_turbulent_forcing) {
     prob_parm->doing_turbulent_forcing = true;
     amrex::ParmParse pp("turbforce");
     pp.query("urms", PeleLM::prob_parm->urms);
@@ -205,7 +205,7 @@ PeleLM::readProbParm() // NOLINT(readability-make-member-function-const)
 void
 PeleLM::freeProbParm()
 {
-  if (m_do_turbulent_forcing == false) {
+  if (!m_do_turbulent_forcing) {
     amrex::The_Arena()->free(PeleLM::prob_parm->d_xarray);
     amrex::The_Arena()->free(PeleLM::prob_parm->d_xdiff);
     amrex::The_Arena()->free(PeleLM::prob_parm->d_uinput);

@@ -101,7 +101,7 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
       prob_lo[1] + static_cast<amrex::Real>(j + 0.5) * dx[1] * 100.0,
       prob_lo[2] + static_cast<amrex::Real>(k + 0.5) * dx[2] * 100.0};
 
-    if (prob_parm.doing_turbulent_forcing == true) {
+    if (prob_parm.doing_turbulent_forcing) {
       AMREX_ALWAYS_ASSERT(is_incompressible != 0);
       AMREX_ALWAYS_ASSERT(AMREX_SPACEDIM == 3);
 
