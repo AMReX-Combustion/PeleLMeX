@@ -23,7 +23,8 @@ Checks: 'bugprone-*,
          -readability-convert-member-functions-to-static,
          -readability-make-member-function-const,
          -readability-avoid-nested-conditional-operator,
-         -readability-function-size'
+         -readability-function-size,
+	 performance-*'
 WarningsAsErrors: ''
 HeaderFilterRegex: 'PeleLMeX\/Source|PeleLMeX\/Exec|PeleLMeX\/Submodules\/PelePhysics\/Source|PeleLMeX\/Submodules\/PelePhysics\/Mechanism'
 FormatStyle:     none
