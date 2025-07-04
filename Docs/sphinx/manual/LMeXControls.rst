@@ -328,7 +328,7 @@ Turbulent Forcing and Velocity Plotfile
     turbforce.force_scale_fudge    = 1.0       # [OPT, DEF=1.0] Used for fine scale tuning of the forcing function.
     turbforce.rho_incompressible   = -1.0      # [OPT, DEF=-1.0] Density if running in incompressible mode (otherwise this is not used).
 
-    peleLM.velocity_plotfile       = plt?????  # [OPT, DEF=""] Name of a plotfile that you want to provide velocities to add to the initial conditions.
+    peleLM.velocity_plotfile       = plt?????  # [OPT, DEF=""] Name of a plotfile that you want to provide velocities to add to the initial conditions (must match base grid and domain size exactly).
     peleLM.velocity_plotfile_scale = 1.0       # [OPT, DEF=1.0] Scaling of the velocities provided from the velocity_plotfile
 
 .. note::
