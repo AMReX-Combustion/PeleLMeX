@@ -9,6 +9,10 @@
 #include <PeleLMeX_Index.H>
 #include <PMFData.H>
 #include <PelePhysics.H>
+#include <Utilities.H>
+
+namespace m2c = pele::physics::utilities::mks2cgs;
+namespace c2m = pele::physics::utilities::cgs2mks;
 
 // -----------------------------------------------------------
 // Search for the closest index in an array to a given value
@@ -217,15 +221,14 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
       Yt[N2_ID] = 0.767;
 
       amrex::Real rho_cgs, P_cgs;
-      P_cgs = prob_parm.P_mean * 10.0;
+      P_cgs = m2c::P(prob_parm.P_mean);
 
       auto eos = pele::physics::PhysicsType::eos();
       eos.PYT2R(P_cgs, Yt, state(i, j, k, TEMP), rho_cgs);
-      state(i, j, k, DENSITY) = rho_cgs * 1.0e3; // CGS -> MKS conversion
+      state(i, j, k, DENSITY) = c2m::Rho(rho_cgs);
 
       eos.TY2H(state(i, j, k, TEMP), Yt, state(i, j, k, RHOH));
-      state(i, j, k, RHOH) *=
-        1.0e-4 * state(i, j, k, DENSITY); // CGS -> MKS conversion
+      state(i, j, k, RHOH) = state(i, j, k, DENSITY) * c2m::H(state(i,j,k,RHOH));
 
       for (int n = 0; n < NUM_SPECIES; n++) {
         state(i, j, k, FIRSTSPEC + n) = Yt[n] * state(i, j, k, DENSITY);
