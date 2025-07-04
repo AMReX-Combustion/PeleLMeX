@@ -71,28 +71,34 @@ PeleLM::
     const int a_method) const
 {
   InterpBase* mapper = nullptr;
-
-  if (a_method == 0) {
+  
+  switch (a_method) {
+  case 0:
     mapper = &mf_pc_interp;
-  } else if (a_method == 1) {
-//
-// Get EB-aware interpolater when needed
-//
+    break;
+    
+  case 1:
 #ifdef AMREX_USE_EB
+    // Get EB-aware interpolator when needed
     mapper = (EBFactory(0).isAllRegular()) ? &mf_cell_cons_interp
-                                           : &eb_mf_cell_cons_interp;
+      : &eb_mf_cell_cons_interp;
 #else
     mapper = &mf_cell_cons_interp;
 #endif
-  } else if (a_method == 2) {
+    break;
+    
+  case 2:
 #ifdef AMREX_USE_EB
     Abort("Regrid interpolation method = 2 not available with EB !");
 #else
     mapper = &mf_linear_slope_minmax_interp;
 #endif
-  } else {
+    break;
+    
+  default:
     Abort("Unknown interpolation method");
   }
+  
   return mapper;
 }
 

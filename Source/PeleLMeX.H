@@ -56,7 +56,7 @@ class PeleLM : public amrex::AmrCore
 {
 
 public:
-  enum TimeStamp { AmrOldTime, AmrHalfTime, AmrNewTime };
+  enum TimeStamp : std::uint8_t { AmrOldTime, AmrHalfTime, AmrNewTime };
 
   // constructor
   PeleLM();
@@ -84,8 +84,8 @@ public:
   void regrid(int lbase, amrex::Real time, bool initial = false) override;
 
   void MakeNewLevelFromScratch(
-    int lev,
-    amrex::Real time,
+    const int lev,
+    const amrex::Real time,
     const amrex::BoxArray& ba,
     const amrex::DistributionMapping& dm) override;
 
@@ -299,7 +299,7 @@ public:
    * using the user defined init function
    * \param lev the target level index
    */
-  void initLevelData(int lev);
+  void initLevelData(const int lev);
 
   /**
    * \brief Fill the initial level data container
@@ -1915,8 +1915,10 @@ public:
   int m_plot_grad_p = 1;
   int m_ioDigits = 5;
   amrex::Vector<std::string> m_evaluatePlotVars;
-  bool m_write_hdf5_pltfile = false;
   bool m_do_patch_flow_variables = false;
+#if AMREX_USE_HDF5
+  bool m_write_hdf5_pltfile = false;
+#endif
 
   //-----------------------------------------------------------------------------
   // ALGORITHM
@@ -1964,7 +1966,7 @@ public:
   amrex::Vector<std::string> m_spark;
   amrex::Vector<amrex::Real> m_spark_time;
   amrex::Vector<amrex::Real> m_spark_duration;
-  amrex::Vector<amrex::Vector<amrex::Real>> m_spark_location;
+  amrex::Vector<amrex::Array<amrex::Real,AMREX_SPACEDIM>> m_spark_location;
   amrex::Vector<amrex::Real> m_spark_temp;
   amrex::Vector<amrex::Real> m_spark_radius;
 
@@ -2095,13 +2097,13 @@ public:
 
   // Number of ghost cells
 #ifdef AMREX_USE_EB
-  int m_nGrowState = 4;
+  constexpr int m_nGrowState = 4;
 #else
-  int m_nGrowState = 3;
+  constexpr int m_nGrowState = 3;
 #endif
-  int m_nGrowAdv = 1;
-  int m_nGrowdivu = 1;
-  int m_nGrowMAC = 1;
+  constexpr int m_nGrowAdv = 1;
+  constexpr int m_nGrowdivu = 1;
+  constexpr int m_nGrowMAC = 1;
 
   // Initialization
   int m_do_init_proj = 1;

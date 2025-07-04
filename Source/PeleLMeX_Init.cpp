@@ -24,8 +24,8 @@ PeleLM::Init()
 
 void
 PeleLM::MakeNewLevelFromScratch(
-  int lev,
-  amrex::Real time,
+  const int lev,
+  const amrex::Real time,
   const amrex::BoxArray& ba,
   const amrex::DistributionMapping& dm)
 {
@@ -199,7 +199,7 @@ PeleLM::initData()
 
     //----------------------------------------------------------------
     // Set typical values
-    int is_init = 1;
+    constexpr int is_init = 1;
     setTypicalValues(AmrNewTime, is_init);
 
     // initialize temporals
@@ -236,7 +236,7 @@ PeleLM::initData()
     projectInitSolution();
 
     // Active control
-    int is_restart = 0;
+    constexpr int is_restart = 0;
     activeControl(is_restart);
 
     //----------------------------------------------------------------
@@ -299,8 +299,8 @@ PeleLM::initData()
           m_t_old[lev] = -1.0e200;
         }
         m_dt = -1.0;
-        int is_init = 1;
-        Real dtInit = computeDt(is_init, AmrNewTime);
+        constexpr int is_init = 1;
+        const Real dtInit = computeDt(is_init, AmrNewTime);
         Print() << " Initial dt: " << dtInit << "\n";
       }
 
@@ -332,13 +332,13 @@ PeleLM::initData()
     updateDiagnostics();
 
     // Active control
-    int is_restart = 1;
+    constexpr int is_restart = 1;
     activeControl(is_restart);
   }
 }
 
 void
-PeleLM::initLevelData(int lev)
+PeleLM::initLevelData(const int lev)
 {
   BL_PROFILE("PeleLMeX::initLevelData()");
 
@@ -353,25 +353,18 @@ PeleLM::initLevelData(int lev)
   // Prob/PMF data
   ProbParm const* lprobparm = prob_parm_d;
   auto const* lpmfdata = pmf_data.device_parm();
-  auto const local_m_incompressible = m_incompressible;
+  
+  // don't want to use state for dummy in case user overwrites state in aux
+  MultiFab dummy_mf(grids[lev],ba[lev],1,0);
+  
+  auto state_ma = ldata_p->state.arrays();
+  auto aux_ma = (m_nAux > 0) ? ldata_p->auxiliaries.arrays() : dummy_mf.arrays();
 
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
-  for (MFIter mfi(ldata_p->state, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
-    const Box& bx = mfi.tilebox();
-    FArrayBox DummyFab(bx, 1);
-    auto const& state_arr = ldata_p->state.array(mfi);
-    auto const& aux_arr =
-      (m_nAux > 0) ? ldata_p->auxiliaries.array(mfi) : DummyFab.array();
-    amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-      ProblemSpecificFunctions::initdata(
-        i, j, k, local_m_incompressible, state_arr, aux_arr, geomdata,
-        *lprobparm, lpmfdata);
+  amrex::ParallelFor(ldata_p->state, [state_ma, aux_ma, geomdata,lprobparm,lpmfdata,is_incomp = m_incompressible] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+      ProblemSpecificFunctions::initdata(i,j,k,is_incomp,state_ma[box_no],aux_ma[box_no],geomdata,*lprobparm,lpmfdata);
     });
-  }
 
-  if (local_m_incompressible == 0) {
+  if (m_incompressible == 0) {
     // Initialize thermodynamic pressure
     setThermoPress(lev, AmrNewTime);
     if (m_has_divu != 0) {
@@ -383,15 +376,15 @@ PeleLM::initLevelData(int lev)
 void
 PeleLM::projectInitSolution()
 {
-  const int is_init = 1;
-
+  constexpr int is_init = 1;
+  
 #ifdef PELE_USE_PLASMA
   poissonSolveEF(AmrNewTime);
   fillPatchPhiV(AmrNewTime);
 #endif
 
   // Post data Init time step estimate
-  Real dtInit = computeDt(is_init, AmrNewTime);
+  const Real dtInit = computeDt(is_init, AmrNewTime);
   Print() << " Initial dt: " << dtInit << "\n";
 
   if (m_do_init_proj != 0) {
@@ -400,9 +393,9 @@ PeleLM::projectInitSolution()
     // Subcycling IAMR/PeleLM first does a projection with no reaction divU
     // which can make the dt for evaluating I_R better
     if (m_has_divu != 0) {
-      int is_initialization = 1;    // Yes we are
-      int computeDiffusionTerm = 1; // Needed here
-      int do_avgDown = 1;           // Always
+      constexpr int is_initialization = 1;    // Yes we are
+      constexpr int computeDiffusionTerm = 1; // Needed here
+      constexpr int do_avgDown = 1;           // Always
 
       // Light version of the diffusion data container
       std::unique_ptr<AdvanceDiffData> diffData;
@@ -427,7 +420,7 @@ PeleLM::projectInitSolution()
 
     //----------------------------------------------------------------
     // Initial velocity projection iterations
-    for (int iter = 0; iter < m_numDivuIter; iter++) {
+    for (int iter = 0; iter < m_numDivuIter; ++iter) {
       if (m_do_react != 0) {
         // The new level data has been filled above
         // Copy new -> old since old used in advanceChemistry
@@ -455,9 +448,9 @@ PeleLM::projectInitSolution()
         copyStateOldToNew();
       }
       if (m_has_divu != 0) {
-        int is_initialization = 1;    // Yes we are
-        int computeDiffusionTerm = 1; // Needed here
-        int do_avgDown = 1;           // Always
+        constexpr int is_initialization = 1;    // Yes we are
+        constexpr int computeDiffusionTerm = 1; // Needed here
+        constexpr nt do_avgDown = 1;           // Always
 
         // Light version of the diffusion data container
         std::unique_ptr<AdvanceDiffData> diffData;
@@ -507,13 +500,13 @@ PeleLM::initialIterations()
 
   //----------------------------------------------------------------
   // Initial pressure iterations
-  for (int iter = 0; iter < m_init_iter; iter++) {
+  for (int iter = 0; iter < m_init_iter; ++iter) {
 
     if (m_verbose > 0) {
       amrex::Print() << "\n ================   INITIAL ITERATION [" << iter
                      << "]   ================ \n";
     }
-    int is_init = 1;
+    constexpr int is_init = 1;
     Advance(is_init);
 
     // Pass new pressure and gp from New to Old
@@ -525,7 +518,7 @@ PeleLM::initialIterations()
 }
 
 void
-PeleLM::InitFromGridFile(amrex::Real time)
+PeleLM::InitFromGridFile(const amrex::Real time)
 {
   {
     const amrex::BoxArray& ba = MakeBaseGrids();
@@ -533,7 +526,7 @@ PeleLM::InitFromGridFile(amrex::Real time)
     MakeNewLevelFromScratch(0, time, ba, dm);
   }
   finest_level = static_cast<int>(m_initial_ba.size());
-  for (int lev = 1; lev <= finest_level; lev++) {
+  for (int lev = 1; lev <= finest_level; ++lev) {
     const amrex::BoxArray ba = m_initial_ba[lev - 1];
     DistributionMapping dm(ba);
     MakeNewLevelFromScratch(lev, time, ba, dm);

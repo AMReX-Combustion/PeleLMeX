@@ -11,7 +11,7 @@
 struct BoundaryCondition
 {
   BoundaryCondition() = default;
-  enum {
+  enum : std::uint8_t {
     BCInterior = 0,
     BCInflow,
     BCOutflow,
@@ -41,7 +41,7 @@ const BoundaryCondition boundarycondition;
 struct NSSolver
 {
   NSSolver() = default;
-  enum { LowMachNumber = 0, Incompressible };
+  enum : std::uint8_t { LowMachNumber = 0, Incompressible };
   const std::map<std::string, int> str2int = {
     {"lowmachnumber", LowMachNumber},
     {"incompressible", Incompressible},
@@ -57,7 +57,7 @@ const NSSolver nssolver;
 struct Interpolator
 {
   Interpolator() = default;
-  enum {
+  enum : std::uint8_t {
     PiecewiseLinearConserv = 0,
     PiecewiseLinearConservMinMax,
     PiecewiseConstant
@@ -78,7 +78,7 @@ const Interpolator interpolator;
 struct LESModel
 {
   LESModel() = default;
-  enum { None = 0, Smagorinsky, WALE, Sigma };
+  enum : std::uint8_t { None = 0, Smagorinsky, WALE, Sigma };
   const std::map<const std::string, int> str2int = {
     {"none", None},
     {"smagorinsky", Smagorinsky},
@@ -96,7 +96,7 @@ const LESModel lesmodel;
 struct AdvectionScheme
 {
   AdvectionScheme() = default;
-  enum {
+  enum : std::uint8_t {
     Godunov_PLM = 0,
     Godunov_PPM,
     Godunov_PPM_WENOZ,
@@ -121,7 +121,7 @@ const AdvectionScheme advscheme;
 struct LoadBalanceCost
 {
   LoadBalanceCost() = default;
-  enum {
+  enum : std::uint8_t {
     Ncell = 0,
     ChemFunctCallAvg,
     ChemFunctCallMax,
@@ -150,7 +150,7 @@ const LoadBalanceCost lbcost;
 struct LoadBalanceMethod
 {
   LoadBalanceMethod() = default;
-  enum { SFC = 0, Knapsack, RoundRobin };
+  enum : std::uint8_t { SFC = 0, Knapsack, RoundRobin };
   const std::map<const std::string, int> str2int = {
     {"sfc", SFC},
     {"knapsack", Knapsack},
@@ -168,7 +168,7 @@ const LoadBalanceMethod lbmethod;
 struct ChiCorrectionType
 {
   ChiCorrectionType() = default;
-  enum { DivuEveryIter = 0, DivuFirstIter, NoDivu };
+  enum : std::uint8_t { DivuEveryIter = 0, DivuFirstIter, NoDivu };
   const std::map<const std::string, int> str2int = {
     {"divueveryiter", DivuEveryIter},
     {"divufirstiter", DivuFirstIter},
