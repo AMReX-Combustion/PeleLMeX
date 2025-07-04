@@ -391,7 +391,7 @@ public:
    * \param a_dt time time step size
    */
   void velocityProjection(
-    int is_init, const PeleLM::TimeStamp& a_rhoTime, const amrex::Real& a_dt);
+    const int is_init, const PeleLM::TimeStamp& a_rhoTime, const amrex::Real& a_dt);
 
   /**
    * \brief Actual nodal projection call function.
@@ -407,23 +407,24 @@ public:
     const amrex::Vector<amrex::MultiFab*>& a_sigma,
     const amrex::Vector<amrex::MultiFab*>& rhs_cc,
     const amrex::Vector<const amrex::MultiFab*>& rhs_nd,
-    int incremental,
-    amrex::Real scaling_factor);
-
+    const int incremental,
+    const amrex::Real scaling_factor);
+#if AMREX_SPACEDIM == 2
   /**
    * \brief For 2D-RZ, scale multifab components by radius
    * including 1 ghost cell on Dirichlet BC
    * \param a_lev level index
    * \param a_mf  MultiFab to act upon
    */
-  void scaleProj_RZ(int a_lev, amrex::MultiFab& a_mf);
+  void scaleProj_RZ(const int a_lev, amrex::MultiFab& a_mf);
 
   /**
    * \brief For 2D-RZ, unscale multifab components by radius
    * \param a_lev level index
    * \param a_mf  MultiFab to act upon
    */
-  void unscaleProj_RZ(int a_lev, amrex::MultiFab& a_mf);
+  void unscaleProj_RZ(const int a_lev, amrex::MultiFab& a_mf);
+#endif
   //-----------------------------------------------------------------------------
 
   //-----------------------------------------------------------------------------
