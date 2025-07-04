@@ -391,7 +391,9 @@ public:
    * \param a_dt time time step size
    */
   void velocityProjection(
-    const int is_init, const PeleLM::TimeStamp& a_rhoTime, const amrex::Real& a_dt);
+    const int is_init,
+    const PeleLM::TimeStamp& a_rhoTime,
+    const amrex::Real& a_dt);
 
   /**
    * \brief Actual nodal projection call function.
@@ -1967,7 +1969,7 @@ public:
   amrex::Vector<std::string> m_spark;
   amrex::Vector<amrex::Real> m_spark_time;
   amrex::Vector<amrex::Real> m_spark_duration;
-  amrex::Vector<amrex::Array<amrex::Real,AMREX_SPACEDIM>> m_spark_location;
+  amrex::Vector<amrex::Array<amrex::Real, AMREX_SPACEDIM>> m_spark_location;
   amrex::Vector<amrex::Real> m_spark_temp;
   amrex::Vector<amrex::Real> m_spark_radius;
 

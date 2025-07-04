@@ -173,7 +173,7 @@ PeleLM::SprayInit()
   SprayInjectRedist();
   if (spray_verbose >= 1) {
     Print() << "Total number of initial particles "
-            << SprayPC->TotalNumberOfParticles(false, false) << std::endl;
+            << SprayPC->TotalNumberOfParticles(false, false) << "\n";
   }
 }
 
@@ -278,7 +278,7 @@ PeleLM::SprayMKD(const Real time, const Real dt)
   setupVirtualParticles(0);
   for (int lev = 0; lev <= finest_level; ++lev) {
     if (spray_verbose > 1) {
-      Print() << "SprayMKDLevel " << lev << std::endl;
+      Print() << "SprayMKDLevel " << lev << "\n";
     }
     m_spraysource[lev]->setVal(0.);
     SprayMKDLevel(lev, time, dt);
@@ -390,7 +390,7 @@ PeleLM::SprayInjectRedist()
     Long new_count = SprayPC->TotalNumberOfParticles(true, false);
     Long num_inj = new_count - prev_count;
     Print() << "Injected " << num_inj << " particles at time " << m_t_new[0]
-            << std::endl;
+            << "\n";
   }
 }
 

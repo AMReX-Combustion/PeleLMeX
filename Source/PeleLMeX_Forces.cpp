@@ -131,7 +131,7 @@ PeleLM::addSpark(const TimeStamp& a_timestamp)
         time < m_spark_time[n] ||
         time > m_spark_time[n] + m_spark_duration[n]) {
         if (verb) {
-          Print() << m_spark[n] << " not active" << std::endl;
+          Print() << m_spark[n] << " not active \n";
         }
         continue;
       }
@@ -145,11 +145,11 @@ PeleLM::addSpark(const TimeStamp& a_timestamp)
       const Box domainBox = geom[lev].Domain();
       // just a check
       if (!domainBox.contains(spark_idx)) {
-        Warning(m_spark[n] + " not in domain!");
+        amrex::Warning(m_spark[n] + " not in domain!");
         continue;
       }
       if (verb) {
-        Print() << m_spark[n] << " active" << std::endl;
+        Print() << m_spark[n] << " active\n";
       }
       auto const* eosparm = eos_parms.device_parm();
       auto eos = pele::physics::PhysicsType::eos(eosparm);

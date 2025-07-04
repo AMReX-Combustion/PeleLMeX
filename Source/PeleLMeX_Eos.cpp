@@ -352,7 +352,7 @@ PeleLM::adjustPandDivU(std::unique_ptr<AdvanceAdvData>& advData)
     Print() << " >> Closed chamber pOld: " << m_pOld << ", pNew: " << m_pNew
             << ", dp0dt: " << m_dp0dt << "\n";
     Print() << " >> Total mass old: " << m_massOld
-            << ", mass new: " << m_massNew << std::endl;
+            << ", mass new: " << m_massNew << "\n";
   }
 
   // Return Sbar so that we'll add it back to mac_divu after the MAC projection

@@ -42,8 +42,7 @@ PeleLM::~PeleLM()
 }
 
 PeleLM::LevelData*
-PeleLM::getLevelDataPtr(
-  const int lev, const TimeStamp a_time, int /*useUMac*/)
+PeleLM::getLevelDataPtr(const int lev, const TimeStamp a_time, int /*useUMac*/)
 {
   AMREX_ASSERT(
     a_time == AmrOldTime || a_time == AmrNewTime || a_time == AmrHalfTime);

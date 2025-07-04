@@ -32,11 +32,10 @@ PeleLM::MakeNewLevelFromScratch(
   BL_PROFILE("PeleLMeX::MakeNewLevelFromScratch()");
 
   if (m_verbose > 0) {
-    amrex::Print() << " Making new level " << lev << " from scratch"
-                   << std::endl;
+    amrex::Print() << " Making new level " << lev << " from scratch \n";
     if (m_verbose > 2 && lev > 0) {
       auto const dx = geom[lev].CellSizeArray();
-      Real vol = AMREX_D_TERM(dx[0], *dx[1], *dx[2]);
+      const Real vol = AMREX_D_TERM(dx[0], *dx[1], *dx[2]);
       amrex::Print() << " with " << ba.numPts() << " cells," << ba.size()
                      << " boxes,"
                      << " over "
@@ -45,7 +44,7 @@ PeleLM::MakeNewLevelFromScratch(
                      << "% of the domain \n";
     }
     if (m_verbose > 3 && lev > 0) {
-      amrex::Print() << " with BoxArray " << ba << std::endl;
+      amrex::Print() << " with BoxArray " << ba << "\n";
     }
   }
 
@@ -353,15 +352,22 @@ PeleLM::initLevelData(const int lev)
   // Prob/PMF data
   ProbParm const* lprobparm = prob_parm_d;
   auto const* lpmfdata = pmf_data.device_parm();
-  
-  // don't want to use state for dummy in case user overwrites state in aux
-  MultiFab dummy_mf(grids[lev],ba[lev],1,0);
-  
-  auto state_ma = ldata_p->state.arrays();
-  auto aux_ma = (m_nAux > 0) ? ldata_p->auxiliaries.arrays() : dummy_mf.arrays();
 
-  amrex::ParallelFor(ldata_p->state, [state_ma, aux_ma, geomdata,lprobparm,lpmfdata,is_incomp = m_incompressible] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
-      ProblemSpecificFunctions::initdata(i,j,k,is_incomp,state_ma[box_no],aux_ma[box_no],geomdata,*lprobparm,lpmfdata);
+  // don't want to use state for dummy in case user overwrites state in aux
+  MultiFab dummy_mf(grids[lev], ba[lev], 1, 0);
+
+  auto state_ma = ldata_p->state.arrays();
+  auto aux_ma =
+    (m_nAux > 0) ? ldata_p->auxiliaries.arrays() : dummy_mf.arrays();
+
+  amrex::ParallelFor(
+    ldata_p->state,
+    [state_ma, aux_ma, geomdata, lprobparm, lpmfdata,
+     is_incomp =
+       m_incompressible] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+      ProblemSpecificFunctions::initdata(
+        i, j, k, is_incomp, state_ma[box_no], aux_ma[box_no], geomdata,
+        *lprobparm, lpmfdata);
     });
 
   if (m_incompressible == 0) {
@@ -377,7 +383,7 @@ void
 PeleLM::projectInitSolution()
 {
   constexpr int is_init = 1;
-  
+
 #ifdef PELE_USE_PLASMA
   poissonSolveEF(AmrNewTime);
   fillPatchPhiV(AmrNewTime);
@@ -450,7 +456,7 @@ PeleLM::projectInitSolution()
       if (m_has_divu != 0) {
         constexpr int is_initialization = 1;    // Yes we are
         constexpr int computeDiffusionTerm = 1; // Needed here
-        constexpr nt do_avgDown = 1;           // Always
+        constexpr nt do_avgDown = 1;            // Always
 
         // Light version of the diffusion data container
         std::unique_ptr<AdvanceDiffData> diffData;
@@ -522,7 +528,7 @@ PeleLM::InitFromGridFile(const amrex::Real time)
 {
   {
     const amrex::BoxArray& ba = MakeBaseGrids();
-    DistributionMapping dm(ba);
+    const DistributionMapping dm(ba);
     MakeNewLevelFromScratch(0, time, ba, dm);
   }
   finest_level = static_cast<int>(m_initial_ba.size());

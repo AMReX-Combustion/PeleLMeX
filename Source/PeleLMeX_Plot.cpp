@@ -23,6 +23,9 @@
 
 using namespace amrex;
 
+namespace m2c = pele::physics::utilities::mks2cgs;
+namespace c2m = pele::physics::utilities::cgs2mks;
+
 namespace {
 constexpr std::string level_prefix{"Level_"};
 }
@@ -177,7 +180,8 @@ PeleLM::WritePlotFile()
   Vector<MultiFab> mf_plt;
   mf_plt.reserve(finest_level + 1);
   for (int lev = 0; lev <= finest_level; ++lev) {
-    mf_plt.emplace_back(grids[lev], dmap[lev], ncomp, 0, MFInfo(), Factory(lev));
+    mf_plt.emplace_back(
+      grids[lev], dmap[lev], ncomp, 0, MFInfo(), Factory(lev));
   }
 
   //----------------------------------------------------------------
@@ -856,7 +860,7 @@ PeleLM::ReadCheckPointFile()
     }
   }
   if (m_verbose != 0) {
-    amrex::Print() << "Restart complete" << std::endl;
+    amrex::Print() << "Restart complete \n";
   }
 }
 
@@ -975,12 +979,15 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
   if (pltfileSource == "C") {
     amrex::Print() << " Converting CGS to MKS units... \n";
     auto state_ma = ldata_p->state.arrays();
-    amrex::ParallelFor(ldata_p->state, [vel_ma] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
-	Array4<Real> vel(state_ma[box_no],VELX);		       
-	for (int n = 0; n < AMREX_SPACEDIM; ++n) {
-	  vel(i,j,k,n) *= 0.01; 
-	}
-      });        
+    amrex::ParallelFor(
+      ldata_p->state,
+      [vel_ma] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+        Array4<Real> vel(state_ma[box_no], VELX);
+        for (int n = 0; n < AMREX_SPACEDIM; ++n) {
+          vel(i, j, k, n) *= 0.01;
+        }
+      });
+    Gpu::streamSynchronize();
   }
 
 #ifdef PELE_USE_PLASMA
@@ -999,17 +1006,22 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
         amrex::Real* momV = sc.MomOrderV.data();
         amrex::Real* momS = sc.MomOrderS.data();
 
-	auto state_ma = ldata_p->state.arrays();
-
-	amrex::ParallelFor(ldata_p->state,[state_ma] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
-	    Array4<Real> soot(state_ma[box_no],FIRSTSOOT);
-	    for (int n = 0; n < NUM_SOOT_MOMENTS; ++n) {
-	      const amrex::Real soot_exp = 3. - (3. * momV[n] + 2. * momS[n]);
-	      soot(i, j, k, n) *= std::pow(100., soot_exp);
-	    }
-	    soot_arr(i, j, k, NUMSOOTVAR - 1) *= 1.E6;
-	  });
-      }    
+        auto state_ma = ldata_p->state.arrays();
+        amrex::Real soot_exp[NUM_SOOT_MOMENTS] = {0.0};
+        for (int n = 0; n < NUM_SOOT_MOMENTS; ++n) {
+          soot_exp[n] = 3. - (3. * momV[n] + 2. * momS[n]);
+        }
+        amrex::ParallelFor(
+          ldata_p->state, [state_ma, soot_exp] AMREX_GPU_DEVICE(
+                            int box_no, int i, int j, int k) noexcept {
+            Array4<Real> soot(state_ma[box_no], FIRSTSOOT);
+            for (int n = 0; n < NUM_SOOT_MOMENTS; ++n) {
+              soot(i, j, k, n) *= std::pow(100., soot_exp[n]);
+            }
+            soot_arr(i, j, k, NUMSOOTVAR - 1) *= 1.E6;
+          });
+        Gpu::streamSynchronize();
+      }
     } else {
       SootData* const sd = soot_model->getSootData();
       amrex::Real moments[NUM_SOOT_MOMENTS + 1];
@@ -1025,7 +1037,6 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
   ldata_p->gp.setVal(0.0);
 
   ProbParm const* lprobparm = prob_parm_d;
-  auto const* leosparm = eos_parms.device_parm();
 
   // If m_do_patch_flow_variables is set as true, call user-defined function to
   // patch flow variables
@@ -1037,51 +1048,47 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
   // Enforce rho and rhoH consistent with temperature and mixture
   // The above handles species mapping (to some extent), but nothing enforce
   // sum of Ys = 1 -> use N2 in the following if N2 is present
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
-  for (MFIter mfi(ldata_p->state, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
-    const Box& bx = mfi.tilebox();
-    auto const& rho_arr = ldata_p->state.array(mfi, DENSITY);
-    auto const& rhoY_arr = ldata_p->state.array(mfi, FIRSTSPEC);
-    auto const& rhoH_arr = ldata_p->state.array(mfi, RHOH);
-    auto const& temp_arr = ldata_p->state.array(mfi, TEMP);
-    amrex::ParallelFor(
-      bx,
-      [=, eosparm = leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-        auto eos = pele::physics::PhysicsType::eos(eosparm);
-        Real massfrac[NUM_SPECIES] = {0.0};
-        Real sumYs = 0.0;
-        for (int n = 0; n < NUM_SPECIES; ++n) {
-          massfrac[n] = rhoY_arr(i, j, k, n);
+  auto state_ma = ldata_p->state.arrays();
+  auto const* leosparm = eos_parms.device_parm();
+  const Real P_cgs = m2c::P(lprobparm->P_mean);
+
+  amrex::ParallelFor(
+    ldata_p->state, [state_ma, P_cgs, eosparm = leosparm] AMREX_GPU_DEVICE(
+                      int box_no, int i, int j, int k) noexcept {
+      auto eos = pele::physic::PhysicsType::eos(eosparm);
+      Array4<Real> rho(state_ma[box_no], DENSITY);
+      Array4<Real> rhoY(state_ma[box_no], FIRSTSPEC);
+      Array4<Real> rhoH(state_ma[box_no], RHOH);
+      Array4<Real> temp(state_ma[box_no], TEMP);
+      Real massfrac[NUM_SPECIES] = {0.0};
+      Real sumYs = 0.0;
+      for (int n = 0; n < NUM_SPECIES; ++n) {
+        massfrac[n] = rhoY(i, j, k, n);
 #ifdef N2_ID
-          if (n != N2_ID) {
-            sumYs += massfrac[n];
-          }
-#endif
+        if (n != N2_ID) {
+          sumYs += massfrac[n];
         }
+#endif
+      }
 #ifdef N2_ID
-        massfrac[N2_ID] = 1.0 - sumYs;
+      massfrac[N2_ID] = 1.0 - sumYs;
 #endif
+      // Get density
+      Real rho_cgs = 0.0;
+      eos.PYT2R(P_cgs, massfrac, temp_arr(i, j, k), rho_cgs);
+      rho(i, j, k) = c2m::Rho(rho_cgs);
 
-        // Get density
-        Real P_cgs = lprobparm->P_mean * 10.0;
-        Real rho_cgs = 0.0;
-        eos.PYT2R(P_cgs, massfrac, temp_arr(i, j, k), rho_cgs);
-        rho_arr(i, j, k) = rho_cgs * 1.0e3;
+      // Get enthalpy
+      Real h_cgs = 0.0;
+      eos.TY2H(temp_arr(i, j, k), massfrac, h_cgs);
+      rhoH(i, j, k) = c2m::H(h_cgs) * rho_arr(i, j, k);
 
-        // Get enthalpy
-        Real h_cgs = 0.0;
-        eos.TY2H(temp_arr(i, j, k), massfrac, h_cgs);
-        rhoH_arr(i, j, k) = h_cgs * 1.0e-4 * rho_arr(i, j, k);
-
-        // Fill rhoYs
-        for (int n = 0; n < NUM_SPECIES; ++n) {
-          rhoY_arr(i, j, k, n) = massfrac[n] * rho_arr(i, j, k);
-        }
-      });
-  }
-
+      // Fill rhoYs
+      for (int n = 0; n < NUM_SPECIES; ++n) {
+        rhoY(i, j, k, n) = massfrac[n] * rho_arr(i, j, k);
+      }
+    });
+  Gpu::streamSynchronize();
   // Initialize thermodynamic pressure
   setThermoPress(a_lev, AmrNewTime);
   if (m_has_divu != 0) {

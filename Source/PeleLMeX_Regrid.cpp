@@ -325,7 +325,7 @@ PeleLM::MakeNewLevelFromCoarse(
                      << "% of the domain \n";
     }
     if (m_verbose > 3) {
-      amrex::Print() << " with BoxArray " << ba << std::endl;
+      amrex::Print() << " with BoxArray " << ba << "\n";
     }
   }
 
@@ -439,7 +439,7 @@ PeleLM::RemakeLevel(
                      << "% of the domain \n";
     }
     if (m_verbose > 3) {
-      amrex::Print() << " with BoxArray " << ba << std::endl;
+      amrex::Print() << " with BoxArray " << ba << "\n";
     }
   }
 

@@ -798,8 +798,7 @@ PeleLM::checkEBInflowFunctions()
   if (m_verbose != 0 && m_useEBinflow != 0) {
     Print() << "WARNING: EB-inflow capability is experimental. Scalar "
                "diffusion is not supported at these boundaries and future "
-               "interface changes are possible!"
-            << std::endl;
+               "interface changes are possible!\n"
   }
 }
 #endif

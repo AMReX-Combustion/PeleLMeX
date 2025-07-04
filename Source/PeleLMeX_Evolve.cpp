@@ -7,7 +7,7 @@ PeleLM::Evolve()
 {
   BL_PROFILE("PeleLMeX::Evolve()");
 
-  bool do_not_evolve =
+  const bool do_not_evolve =
     ((m_max_step == 0) || ((m_stop_time >= 0.) && (m_cur_time > m_stop_time)));
 
   int plt_justDidIt = 0;
@@ -48,7 +48,7 @@ PeleLM::Evolve()
       SprayPostRegrid();
     }
 #endif
-    int is_init = 0;
+    constexpr int is_init = 0;
     Advance(is_init);
     m_nstep++;
     m_cur_time += m_dt;
@@ -60,7 +60,7 @@ PeleLM::Evolve()
 #endif
 
     // Active control
-    int is_restart = 0;
+    constexpr int is_restart = 0;
     activeControl(is_restart);
 
     // Temporals
@@ -72,9 +72,9 @@ PeleLM::Evolve()
     doDiagnostics();
 
     // Check message
-    bool dump_and_stop = checkMessage("dump_and_stop");
-    bool plt_and_continue = checkMessage("plt_and_continue");
-    bool chk_and_continue = checkMessage("chk_and_continue");
+    const bool dump_and_stop = checkMessage("dump_and_stop");
+    const bool plt_and_continue = checkMessage("plt_and_continue");
+    const bool chk_and_continue = checkMessage("chk_and_continue");
 
     // Check for plot file
     if (writePlotNow() || dump_and_stop || plt_and_continue) {
@@ -95,9 +95,8 @@ PeleLM::Evolve()
       if (t_elapsed >= (m_max_wall_time * 3600)) {
         over_max_wall_time = true;
         if (m_verbose > 0) {
-          amrex::Print() << std::endl
-                         << "Reached maximum allowed wall time, stopping ..."
-                         << std::endl;
+          amrex::Print()
+            << "\n Reached maximum allowed wall time, stopping ...\n";
         }
       }
     }
@@ -212,13 +211,7 @@ PeleLM::writeCheckNow() const
 bool
 PeleLM::doTemporalsNow() const
 {
-  bool write_now = false;
-
-  if ((m_do_temporals != 0) && (m_nstep % m_temp_int == 0)) {
-    write_now = true;
-  }
-
-  return write_now;
+  return (m_do_temporals != 0) && (m_nstep % m_temp_int == 0)
 }
 
 bool
