@@ -89,9 +89,11 @@ PeleLM::getVelForces(
 
     // Add forcing terms to maintain turbulence
     if (m_do_turbulent_forcing) {
-      // note: if m_incompressible == false then m_rho is unused by addTurbVelForces
+      // note: if m_incompressible == false then m_rho is unused by
+      // addTurbVelForces
       turb_forcing.addTurbVelForces(
-        geom[lev].data(), bx, time, force_arr, rho_arr, m_incompressible, m_rho);
+        geom[lev].data(), bx, time, force_arr, rho_arr, m_incompressible,
+        m_rho);
     }
 
     // Add pressure gradient and viscous forces (if req.) and scale by density.

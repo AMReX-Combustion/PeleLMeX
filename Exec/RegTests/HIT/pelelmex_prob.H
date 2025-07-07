@@ -228,7 +228,8 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
       state(i, j, k, DENSITY) = c2m::Rho(rho_cgs);
 
       eos.TY2H(state(i, j, k, TEMP), Yt, state(i, j, k, RHOH));
-      state(i, j, k, RHOH) = state(i, j, k, DENSITY) * c2m::H(state(i,j,k,RHOH));
+      state(i, j, k, RHOH) =
+        state(i, j, k, DENSITY) * c2m::H(state(i, j, k, RHOH));
 
       for (int n = 0; n < NUM_SPECIES; n++) {
         state(i, j, k, FIRSTSPEC + n) = Yt[n] * state(i, j, k, DENSITY);
