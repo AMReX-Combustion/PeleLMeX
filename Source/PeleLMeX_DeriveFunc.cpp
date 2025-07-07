@@ -1504,7 +1504,7 @@ pelelmex_derturbforcing(
 
   // call the function above to construct the forcing
   a_pelelm->turb_forcing.addTurbVelForces(
-    geomdata, bx, time, der, rho, a_pelelm->m_incompressible);
+    geomdata, bx, time, der, rho, a_pelelm->m_incompressible, a_pelelm->m_rho);
 }
 
 //

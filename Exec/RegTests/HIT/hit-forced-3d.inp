@@ -44,6 +44,5 @@ nodal_proj.verbose = 0
 
 #---------------------- Turbulent Forcing CONTROL-------------------------
 peleLM.do_turbulent_forcing = 1
-turbforce.rho_incompressible = 1.03
 turbforce.urms = 1.5
 turbforce.v = 1
