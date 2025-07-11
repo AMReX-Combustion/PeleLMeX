@@ -75,9 +75,10 @@ PeleLM::SpraySetup()
   // There must be at least as many fuel species in the spray as
   // there are species in the fluid
   if (SPRAY_FUEL_NUM > NUM_SPECIES) {
-    Abort("Cannot have more spray fuel species than fluid species");
+    amrex::Print()<<"Warning! Cannot have more spray fuel species than fluid species";
   }
-  SprayParticleContainer::spraySetup(m_gravity.data());
+  //SprayParticleContainer::spraySetup(m_gravity.data());
+  SprayParticleContainer::spraySetup(m_gravity.data(),eos_parms);
   SprayComps scomps;
   // Component indices for conservative variables
   scomps.rhoIndx = DENSITY;
