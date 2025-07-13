@@ -343,7 +343,7 @@ PeleLM::SprayPostRegrid()
     prev_source.resize(finest_level + 1);
     changed = true;
   } else {
-    for (int lev = 0; lev <= finest_level && !changed; lev++) {
+    for (int lev = 0; lev <= finest_level && !changed; ++lev) {
       if (ba_spray[lev] != grids[lev]) {
         changed = true;
       }

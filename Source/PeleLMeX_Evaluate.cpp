@@ -14,7 +14,7 @@ PeleLM::Evaluate()
   // of the container and entries names
   int ncomp = 0;
   Vector<std::string> plt_VarsName;
-  for (int ivar = 0; ivar < m_evaluatePlotVarCount; ivar++) {
+  for (int ivar = 0; ivar < m_evaluatePlotVarCount; ++ivar) {
     bool itexists = derive_lst.canDerive(m_evaluatePlotVars[ivar]) ||
                     evaluate_lst.canDerive(m_evaluatePlotVars[ivar]) ||
                     isStateVariable(m_evaluatePlotVars[ivar]);
@@ -25,13 +25,13 @@ PeleLM::Evaluate()
     if (derive_lst.canDerive(m_evaluatePlotVars[ivar])) {
       const PeleLMDeriveRec* rec = derive_lst.get(m_evaluatePlotVars[ivar]);
       ncomp += rec->numDerive();
-      for (int dvar = 0; dvar < rec->numDerive(); dvar++) {
+      for (int dvar = 0; dvar < rec->numDerive(); ++dvar) {
         plt_VarsName.push_back(rec->variableName(dvar));
       }
     } else if (evaluate_lst.canDerive(m_evaluatePlotVars[ivar])) {
       const PeleLMDeriveRec* rec = evaluate_lst.get(m_evaluatePlotVars[ivar]);
       ncomp += rec->numDerive();
-      for (int dvar = 0; dvar < rec->numDerive(); dvar++) {
+      for (int dvar = 0; dvar < rec->numDerive(); ++dvar) {
         plt_VarsName.push_back(rec->variableName(dvar));
       }
     } else if (isStateVariable(m_evaluatePlotVars[ivar])) {
@@ -56,7 +56,7 @@ PeleLM::Evaluate()
   //----------------------------------------------------------------
   // Fill the outgoing container
   int cnt = 0;
-  for (int ivar = 0; ivar < m_evaluatePlotVarCount; ivar++) {
+  for (int ivar = 0; ivar < m_evaluatePlotVarCount; ++ivar) {
     int cntIncr = 0;
 
     Print() << " --> Evaluating " << m_evaluatePlotVars[ivar] << "\n";
@@ -267,7 +267,7 @@ PeleLM::evaluateChemExtForces(
   m_dt = computeDt(0, AmrOldTime);
 
   // Update time vectors
-  for (int lev = 0; lev <= finest_level; lev++) {
+  for (int lev = 0; lev <= finest_level; ++lev) {
     m_t_old[lev] = m_cur_time;
     m_t_new[lev] = m_cur_time + m_dt;
   }
@@ -373,7 +373,7 @@ PeleLM::evaluateAdvectionTerms(
   m_dt = computeDt(0, AmrOldTime);
 
   // Update time vectors
-  for (int lev = 0; lev <= finest_level; lev++) {
+  for (int lev = 0; lev <= finest_level; ++lev) {
     m_t_old[lev] = m_cur_time;
     m_t_new[lev] = m_cur_time + m_dt;
   }

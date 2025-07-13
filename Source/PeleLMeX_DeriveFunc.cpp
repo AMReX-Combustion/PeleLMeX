@@ -80,7 +80,7 @@ pelelmex_derheatrelease(
   amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
     getHGivenT(i, j, k, temp, Hi, leosparm);
     HRR(i, j, k) = 0.0;
-    for (int n = 0; n < NUM_SPECIES; n++) {
+    for (int n = 0; n < NUM_SPECIES; ++n) {
       HRR(i, j, k) -= Hi(i, j, k, n) * react(i, j, k, n);
     }
   });
@@ -153,12 +153,12 @@ pelelmex_dermolefrac(
     amrex::Real Yt[NUM_SPECIES] = {0.0};
     amrex::Real Xt[NUM_SPECIES] = {0.0};
     amrex::Real rhoinv = 1.0 / in_dat(i, j, k, DENSITY);
-    for (int n = 0; n < NUM_SPECIES; n++) {
+    for (int n = 0; n < NUM_SPECIES; ++n) {
       Yt[n] = in_dat(i, j, k, FIRSTSPEC + n) * rhoinv;
     }
     auto eos = pele::physics::PhysicsType::eos(leosparm);
     eos.Y2X(Yt, Xt);
-    for (int n = 0; n < NUM_SPECIES; n++) {
+    for (int n = 0; n < NUM_SPECIES; ++n) {
       der(i, j, k, n) = Xt[n];
     }
   });
@@ -194,7 +194,7 @@ pelelmex_derrhomrhoy(
   auto der = derfab.array(dcomp);
   amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
     der(i, j, k, 0) = in_dat(i, j, k, DENSITY);
-    for (int n = 0; n < NUM_SPECIES; n++) {
+    for (int n = 0; n < NUM_SPECIES; ++n) {
       der(i, j, k, 0) -= in_dat(i, j, k, FIRSTSPEC + n);
     }
   });

@@ -752,7 +752,7 @@ tridiagonal_solve(
   Real bet = b_ls(0);
   u_ls(0) = r_ls(0) / bet;
 
-  for (int i = 1; i <= ilen - 1; i++) {
+  for (int i = 1; i <= ilen - 1; ++i) {
     gam(i) = c_ls(i - 1) / bet;
     bet = b_ls(i) - a_ls(i) * gam(i);
     if (bet == 0)

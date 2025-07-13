@@ -49,7 +49,7 @@ PeleLM::Advance(int is_initIter)
 #endif
 
   // Update time vectors
-  for (int lev = 0; lev <= finest_level; lev++) {
+  for (int lev = 0; lev <= finest_level; ++lev) {
     m_t_old[lev] = m_cur_time;
     m_t_new[lev] = m_cur_time + m_dt;
   }
@@ -73,7 +73,7 @@ PeleLM::Advance(int is_initIter)
     finest_level, grids, dmap, m_factory, m_incompressible, m_nAux, m_nGrowAdv,
     m_nGrowMAC);
 
-  for (int lev = 0; lev <= finest_level; lev++) {
+  for (int lev = 0; lev <= finest_level; ++lev) {
     m_extSource[lev]->setVal(0.);
   }
   //----------------------------------------------------------------
@@ -88,7 +88,7 @@ PeleLM::Advance(int is_initIter)
 
   // Reset velocity flux on boundary faces if doing closed chamber
   if (m_closed_chamber != 0) {
-    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+    for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
       m_domainUmacFlux[2 * idim] = 0.0;
       m_domainUmacFlux[2 * idim + 1] = 0.0;
     }

@@ -336,7 +336,7 @@ PeleLM::calcDiffusivity(const TimeStamp& a_time)
       });
 
     // Fill the diff_aux MF with specified Schmidt number
-    for (int n = 0; n < m_nAux; n++) {
+    for (int n = 0; n < m_nAux; ++n) {
       if (m_aux_Schmidt[n] > 0) {
         MultiFab::Copy(
           ldata_p->diff_aux_cc, ldata_p->diff_cc, NUM_SPECIES + 1, n, 1,
@@ -418,7 +418,7 @@ PeleLM::getDiffusivity(
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
   for (MFIter mfi(beta_cc, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
-    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+    for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
       const Box ebx = mfi.nodaltilebox(idim);
       const Box& edomain = amrex::surroundingNodes(domain, idim);
       const auto& diff_c = beta_cc.const_array(mfi, beta_comp);
@@ -466,13 +466,13 @@ PeleLM::getDiffusivity(
     auto* ldata_p = getLevelDataPtr(lev, tstamp);
 
     // Identify and add the correct turbulent contribution
-    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+    for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
       if ((ncomp == 1) and (beta_comp == 0)) { // Viscosity
         amrex::MultiFab::Add(
           beta_ec[idim], ldata_p->visc_turb_fc[idim], 0, 0, 1, 0);
       } else if ((ncomp == NUM_SPECIES) and (beta_comp == 0)) { // Species
                                                                 // diffusivity
-        for (int ispec = 0; ispec < NUM_SPECIES; ispec++) {
+        for (int ispec = 0; ispec < NUM_SPECIES; ++ispec) {
           amrex::MultiFab::Saxpy(
             beta_ec[idim], m_Schmidt_inv, ldata_p->visc_turb_fc[idim], 0, ispec,
             1, 0);
@@ -493,7 +493,7 @@ PeleLM::getDiffusivity(
   if (doZeroVisc != 0) {
     ProbParm const* lprobparm = prob_parm_d;
     const auto geomdata = geom[lev].data();
-    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+    for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
       const Box& edomain = amrex::surroundingNodes(domain, idim);
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())

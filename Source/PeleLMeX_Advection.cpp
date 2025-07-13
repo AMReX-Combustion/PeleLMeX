@@ -22,7 +22,7 @@ PeleLM::computeVelocityAdvTerm(std::unique_ptr<AdvanceAdvData>& advData)
     velForces[lev].define(
       grids[lev], dmap[lev], AMREX_SPACEDIM, nGrow_force, MFInfo(),
       Factory(lev));
-    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+    for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
       fluxes[lev][idim].define(
         amrex::convert(grids[lev], IntVect::TheDimensionVector(idim)),
         dmap[lev], AMREX_SPACEDIM, 0, MFInfo(), Factory(lev));
@@ -352,7 +352,7 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
   Vector<Array<MultiFab, AMREX_SPACEDIM>> fluxes(finest_level + 1);
   Vector<Array<MultiFab, AMREX_SPACEDIM>> fluxes_aux(finest_level + 1);
   for (int lev = 0; lev <= finest_level; ++lev) {
-    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+    for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
       fluxes[lev][idim].define(
         amrex::convert(grids[lev], IntVect::TheDimensionVector(idim)),
         dmap[lev], NUM_SPECIES + 1, 0, MFInfo(),
@@ -377,7 +377,7 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
     int nGrow = 0;
     Array<MultiFab, AMREX_SPACEDIM> edgeState;
     Array<MultiFab, AMREX_SPACEDIM> edgeState_aux;
-    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+    for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
       edgeState[idim].define(
         amrex::convert(grids[lev], IntVect::TheDimensionVector(idim)),
         dmap[lev], NUM_SPECIES + 3, nGrow, MFInfo(), Factory(lev));
@@ -455,7 +455,7 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
         fluxes_are_area_weighted, m_advection_type, m_Godunov_ppm_limiter);
 
       // Ions one by one
-      for (int n = 0; n < NUM_IONS; n++) {
+      for (int n = 0; n < NUM_IONS; ++n) {
         const int ion_idx = NUM_SPECIES - NUM_IONS + n;
         auto bcRecIons = fetchBCRecArray(FIRSTSPEC + ion_idx, 1);
         auto bcRecIons_d = convertToDeviceVector(bcRecIons);
@@ -553,9 +553,9 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
           fluxes_are_area_weighted, m_advection_type, m_Godunov_ppm_limiter);
       }
       // Zero out fluxes for non-advected auxiliaries
-      for (int n = 0; n < m_nAux; n++) {
+      for (int n = 0; n < m_nAux; ++n) {
         if (m_aux_advect[n] == 0) {
-          for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+          for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
             fluxes_aux[lev][idim].setVal(0.0, n, 1);
           }
         }
@@ -575,7 +575,7 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
 #endif
 
       // Edge states
-      for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+      for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
         const Box& ebx = amrex::surroundingNodes(bx, idim);
         auto const& rho_ed = edgeState[idim].array(mfi, 0);
         auto const& rhoY_ed = edgeState[idim].array(mfi, 1);
@@ -666,7 +666,7 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
       auto const& flagfab = ebfact.getMultiEBCellFlagFab()[mfi];
 #endif
 
-      for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+      for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
         const Box& ebx = amrex::surroundingNodes(bx, idim);
         auto const& rho = edgeState[idim].const_array(mfi, 0);
         auto const& rhoY = edgeState[idim].const_array(mfi, 1);
@@ -799,7 +799,7 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
       for (int n = 0; n < NUM_IONS; ++n) {
         int spec_idx = NUM_SPECIES - NUM_IONS + n;
         Array<std::unique_ptr<MultiFab>, AMREX_SPACEDIM> ionFlux;
-        for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+        for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
           ionFlux[idim].reset(
             new MultiFab(fluxes[lev][idim], amrex::make_alias, spec_idx, 1));
         }
@@ -959,7 +959,7 @@ PeleLM::computePassiveAdvTerms(
   Vector<Array<MultiFab, AMREX_SPACEDIM>> fluxes(finest_level + 1);
   Vector<Array<MultiFab, AMREX_SPACEDIM>> edgeState(finest_level + 1);
   for (int lev = 0; lev <= finest_level; ++lev) {
-    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+    for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
       fluxes[lev][idim].define(
         amrex::convert(grids[lev], IntVect::TheDimensionVector(idim)),
         dmap[lev], ncomp, 0, MFInfo(), Factory(lev));

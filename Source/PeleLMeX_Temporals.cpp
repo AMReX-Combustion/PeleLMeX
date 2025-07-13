@@ -13,23 +13,23 @@ PeleLM::initTemporals(const PeleLM::TimeStamp& a_time)
   // Reset mass fluxes integrals on domain boundaries
   if ((m_do_massBalance != 0) && (m_incompressible == 0)) {
     m_massOld = MFSum(GetVecOfConstPtrs(getDensityVect(a_time)), 0);
-    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+    for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
       m_domainMassFlux[2 * idim] = 0.0;
       m_domainMassFlux[2 * idim + 1] = 0.0;
     }
   }
   if ((m_do_energyBalance != 0) && (m_incompressible == 0)) {
     m_RhoHOld = MFSum(GetVecOfConstPtrs(getRhoHVect(a_time)), 0);
-    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+    for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
       m_domainRhoHFlux[2 * idim] = 0.0;
       m_domainRhoHFlux[2 * idim + 1] = 0.0;
     }
   }
 
   if ((m_do_speciesBalance != 0) && (m_incompressible == 0)) {
-    for (int n = 0; n < NUM_SPECIES; n++) {
+    for (int n = 0; n < NUM_SPECIES; ++n) {
       m_RhoYOld[n] = MFSum(GetVecOfConstPtrs(getSpeciesVect(a_time)), n);
-      for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+      for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
         m_domainRhoYFlux[2 * n * AMREX_SPACEDIM + 2 * idim] = 0.0;
         m_domainRhoYFlux[1 + 2 * n * AMREX_SPACEDIM + 2 * idim] = 0.0;
       }
@@ -62,7 +62,7 @@ PeleLM::speciesBalancePatch()
   tmppatchmfrFile << m_nstep << "," << m_cur_time; // Time info
   for (const auto& m_bPatche : m_bPatches) {
     BPatch::BpatchDataContainer* bphost = m_bPatche->getHostDataPtr();
-    for (int i = 0; i < bphost->num_species; i++) {
+    for (int i = 0; i < bphost->num_species; ++i) {
       tmppatchmfrFile << "," << bphost->speciesFlux[i];
     }
   }
@@ -77,7 +77,7 @@ PeleLM::speciesBalance()
   Array<Real, NUM_SPECIES> dmYdt;
   Array<Real, NUM_SPECIES> massYFluxBalance;
   Array<Real, NUM_SPECIES> rhoYdots;
-  for (int n = 0; n < NUM_SPECIES; n++) {
+  for (int n = 0; n < NUM_SPECIES; ++n) {
     m_RhoYNew[n] = MFSum(GetVecOfConstPtrs(getSpeciesVect(AmrNewTime)), n);
     rhoYdots[n] = MFSum(GetVecOfConstPtrs(getIRVect()), n);
     dmYdt[n] = (m_RhoYNew[n] - m_RhoYOld[n]) / m_dt;
@@ -91,7 +91,7 @@ PeleLM::speciesBalance()
   }
 
   tmpSpecFile << m_nstep << "," << m_cur_time; // Time info
-  for (int n = 0; n < NUM_SPECIES; n++) {
+  for (int n = 0; n < NUM_SPECIES; ++n) {
     tmpSpecFile << "," << m_RhoYNew[n]        // mass of Y
                 << "," << dmYdt[n]            // mass temporal derivative
                 << "," << massYFluxBalance[n] // domain boundaries mass fluxes
@@ -130,7 +130,7 @@ PeleLM::addMassFluxes(
   area[2] = dx[0] * dx[1];
 #endif
 
-  for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+  for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
     auto faceDomain =
       amrex::convert(a_geom.Domain(), IntVect::TheDimensionVector(idim));
 
@@ -156,14 +156,14 @@ PeleLM::addMassFluxes(
           // low
           Real low = 0.0;
           if (idx == faceDomain.smallEnd(idim)) {
-            for (int n = 0; n < NUM_SPECIES; n++) {
+            for (int n = 0; n < NUM_SPECIES; ++n) {
               low += flux(i, j, k, n) * area_ar(i, j, k);
             }
           }
           // high
           Real high = 0.0;
           if (idx == faceDomain.bigEnd(idim)) {
-            for (int n = 0; n < NUM_SPECIES; n++) {
+            for (int n = 0; n < NUM_SPECIES; ++n) {
               high += flux(i, j, k, n) * area_ar(i, j, k);
             }
           }
@@ -185,14 +185,14 @@ PeleLM::addMassFluxes(
           // low
           Real low = 0.0;
           if (idx == faceDomain.smallEnd(idim)) {
-            for (int n = 0; n < NUM_SPECIES; n++) {
+            for (int n = 0; n < NUM_SPECIES; ++n) {
               low += flux(i, j, k, n) * area[idim];
             }
           }
           // high
           Real high = 0.0;
           if (idx == faceDomain.bigEnd(idim)) {
-            for (int n = 0; n < NUM_SPECIES; n++) {
+            for (int n = 0; n < NUM_SPECIES; ++n) {
               high += flux(i, j, k, n) * area[idim];
             }
           }
@@ -229,7 +229,7 @@ PeleLM::addUmacFluxes(
   // Just use level 0 since we are calling after averaging down
   int lev = 0;
 
-  for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+  for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
     auto faceDomain =
       amrex::convert(a_geom.Domain(), IntVect::TheDimensionVector(idim));
 
@@ -344,7 +344,7 @@ PeleLM::addRhoHFluxes(
   area[2] = dx[0] * dx[1];
 #endif
 
-  for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+  for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
     auto faceDomain =
       amrex::convert(a_geom.Domain(), IntVect::TheDimensionVector(idim));
 
@@ -442,9 +442,9 @@ PeleLM::addRhoYFluxes(
 #endif
 
   // Outer loop over species
-  for (int n = 0; n < NUM_SPECIES; n++) {
+  for (int n = 0; n < NUM_SPECIES; ++n) {
     // Inner loop over dimensions
-    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+    for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
       auto faceDomain =
         amrex::convert(a_geom.Domain(), IntVect::TheDimensionVector(idim));
 
@@ -582,7 +582,7 @@ PeleLM::addRhoYFluxesPatch(
     auto const& fma = a_fluxes[idim]->const_arrays();
 
     // Loop through species specified by user
-    for (int m = 0; m < bphost->num_species; m++) {
+    for (int m = 0; m < bphost->num_species; ++m) {
 
       Real sum_species_flux_global = 0.0;
 
@@ -737,7 +737,7 @@ PeleLM::openTempFile()
         std::ios::out | std::ios::app | std::ios_base::binary);
       tmpSpecFile.precision(12);
       tmpSpecFile << "iter,time";
-      for (int n = 0; n < NUM_SPECIES; n++) {
+      for (int n = 0; n < NUM_SPECIES; ++n) {
         tmpSpecFile << ",rhoYnew_" << PeleLM::stateVariableName(FIRSTSPEC + n);
         tmpSpecFile << ",drhoYdt_" << PeleLM::stateVariableName(FIRSTSPEC + n);
         tmpSpecFile << ",netFlux_" << PeleLM::stateVariableName(FIRSTSPEC + n);
@@ -769,7 +769,7 @@ PeleLM::openTempFile()
       for (const auto& m_bPatche : m_bPatches) {
         BPatch* patch = m_bPatche.get();
         BPatch::BpatchDataContainer bphost = patch->getHostData();
-        for (int i = 0; i < bphost.num_species; i++) {
+        for (int i = 0; i < bphost.num_species; ++i) {
           tmppatchmfrFile << ","
                           << patch->m_patchname + "_" + patch->speciesList[i];
         }
@@ -784,7 +784,7 @@ PeleLM::openTempFile()
         std::ios::out | std::ios::app | std::ios_base::binary);
       tmpIonsFile.precision(12);
       tmpIonsFile << "iter,time";
-      for (int i = 0; i < AMREX_SPACEDIM; i++) {
+      for (int i = 0; i < AMREX_SPACEDIM; ++i) {
         tmpIonsFile << ",curr_" << i << "_low,curr_" << i << "_hi";
       }
       tmpIonsFile << "\n";

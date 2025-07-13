@@ -78,7 +78,7 @@ PeleLM::computeDifferentialDiffusionTerms(
   for (int lev = 0; lev <= finest_level; ++lev) {
     const auto& ba = grids[lev];
     const auto& factory = Factory(lev);
-    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+    for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
       fluxes[lev][idim].define(
         amrex::convert(ba, IntVect::TheDimensionVector(idim)), dmap[lev],
         NUM_SPECIES + 2, nGrow, MFInfo(), factory);
@@ -377,8 +377,8 @@ PeleLM::correctIsothermalBoundary(
 
   Vector<Array<MultiFab*, AMREX_SPACEDIM>> soretfluxes(finest_level + 1);
   if (need_explicit_fluxes) { // need to fill the soret fluxes ourselves
-    for (int lev = 0; lev <= finest_level; lev++) {
-      for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+    for (int lev = 0; lev <= finest_level; ++lev) {
+      for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
         soretfluxes[lev][idim] = new MultiFab(
           grids[lev], dmap[lev], NUM_SPECIES, 1, MFInfo(), Factory(lev));
         soretfluxes[lev][idim]->setVal(0.0);
@@ -388,8 +388,8 @@ PeleLM::correctIsothermalBoundary(
       soretfluxes, soretfluxes, GetVecOfConstPtrs(getTempVect(a_time)),
       GetVecOfConstPtrs(getDiffusivityVect(a_time)));
   } else { // have the lagged ones, alias to them
-    for (int lev = 0; lev <= finest_level; lev++) {
-      for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+    for (int lev = 0; lev <= finest_level; ++lev) {
+      for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
         soretfluxes[lev][idim] = new MultiFab(
           *a_soretfluxes[lev][idim], amrex::make_alias, 0, NUM_SPECIES);
       }
@@ -438,7 +438,7 @@ PeleLM::correctIsothermalBoundary(
               if (on_lo) { // need to move -1 for lo boundary
                 idx[idim] -= 1;
               }
-              for (int n = 0; n < NUM_SPECIES; n++) {
+              for (int n = 0; n < NUM_SPECIES; ++n) {
                 boundary_ar(idx[0], idx[1], idx[2], n) = flux_soret(i, j, k, n);
                 // add lagged wbar flux
                 if (use_wbar != 0 && !need_explicit_fluxes) {
@@ -453,8 +453,8 @@ PeleLM::correctIsothermalBoundary(
     }
   }
   // TODO: wbar fluxes disabled for this case - boundary system becomes complex
-  for (int lev = 0; lev <= finest_level; lev++) {
-    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+  for (int lev = 0; lev <= finest_level; ++lev) {
+    for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
       delete soretfluxes[lev][idim];
     }
   }
@@ -494,7 +494,7 @@ PeleLM::computeDifferentialDiffusionFluxes(
 
       MultiFab::Copy(
         spec_boundary[lev], ldata_p->state, FIRSTSPEC, 0, NUM_SPECIES, 1);
-      for (int n = 0; n < NUM_SPECIES; n++) {
+      for (int n = 0; n < NUM_SPECIES; ++n) {
         MultiFab::Divide(spec_boundary[lev], ldata_p->state, DENSITY, n, 1, 1);
       }
     }
@@ -518,7 +518,7 @@ PeleLM::computeDifferentialDiffusionFluxes(
       GetVecOfConstPtrs(getDiffusivityVect(a_time)), 0, bcRecSpec,
       NUM_SPECIES - NUM_IONS, do_avgDown, {});
   // Ions one by one
-  for (int n = 0; n < NUM_IONS; n++) {
+  for (int n = 0; n < NUM_IONS; ++n) {
     auto bcRecIons = fetchBCRecArray(FIRSTSPEC + NUM_SPECIES - NUM_IONS + n, 1);
     getDiffusionOp()->computeDiffFluxes(
       a_fluxes, NUM_SPECIES - NUM_IONS + n,
@@ -697,7 +697,7 @@ PeleLM::addWbarTerm(
             // isothermal/soret
             Wbar_boundary_arr(i, j, k) = Wbar_arr(i, j, k);
             int idx[3] = {i, j, k};
-            for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+            for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
               const auto bc_lo = phys_bc.lo(idim);
               const auto bc_hi = phys_bc.hi(idim);
               bool on_lo = (bc_lo == BoundaryCondition::BCNoSlipWallIsotherm ||
@@ -728,7 +728,7 @@ PeleLM::addWbarTerm(
   for (int lev = 0; lev <= finest_level; ++lev) {
     const auto& ba = grids[lev];
     const auto& factory = Factory(lev);
-    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+    for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
       gradWbar[lev][idim].define(
         amrex::convert(ba, IntVect::TheDimensionVector(idim)), dmap[lev],
         NUM_SPECIES, nGrow, MFInfo(), factory);
@@ -758,7 +758,7 @@ PeleLM::addWbarTerm(
 #endif
     {
       for (MFIter mfi(*a_beta[lev], TilingIfNotGPU()); mfi.isValid(); ++mfi) {
-        for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+        for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
 
           // Get edge centered rhoYs
           const Box ebx = mfi.nodaltilebox(idim);
@@ -804,23 +804,23 @@ PeleLM::addWbarTerm(
               auto eos = pele::physics::PhysicsType::eos(eosparm);
               // Get Wbar from rhoYs
               amrex::Real rho = 0.0;
-              for (int n = 0; n < NUM_SPECIES; n++) {
+              for (int n = 0; n < NUM_SPECIES; ++n) {
                 rho += rhoY(i, j, k, n);
               }
               amrex::Real rho_inv = 1.0 / rho;
               amrex::Real y[NUM_SPECIES] = {0.0};
-              for (int n = 0; n < NUM_SPECIES; n++) {
+              for (int n = 0; n < NUM_SPECIES; ++n) {
                 y[n] = rhoY(i, j, k, n) * rho_inv;
               }
               amrex::Real WBAR = 0.0;
               eos.Y2WBAR(y, WBAR);
               WBAR *= 0.001;
-              for (int n = 0; n < NUM_SPECIES; n++) {
+              for (int n = 0; n < NUM_SPECIES; ++n) {
                 spFlux_ar(i, j, k, n) -=
                   y[n] / WBAR * beta_ar(i, j, k, n) * gradWbar_ar(i, j, k);
               }
               if (need_wbar_fluxes != 0) {
-                for (int n = 0; n < NUM_SPECIES; n++) {
+                for (int n = 0; n < NUM_SPECIES; ++n) {
                   spwbarFlux_ar(i, j, k, n) =
                     -y[n] / WBAR * beta_ar(i, j, k, n) * gradWbar_ar(i, j, k);
                 }
@@ -855,7 +855,7 @@ PeleLM::addSoretTerm(
   for (int lev = 0; lev <= finest_level; ++lev) {
     const auto& ba = grids[lev];
     const auto& factory = Factory(lev);
-    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+    for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
       gradT[lev][idim].define(
         amrex::convert(ba, IntVect::TheDimensionVector(idim)), dmap[lev], 1,
         nGrow, MFInfo(), factory);
@@ -884,7 +884,7 @@ PeleLM::addSoretTerm(
     {
       FArrayBox T_ed;
       for (MFIter mfi(*a_beta[lev], TilingIfNotGPU()); mfi.isValid(); ++mfi) {
-        for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+        for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
 
           // Get edge centered rhoYs
           const Box ebx = mfi.nodaltilebox(idim);
@@ -929,13 +929,13 @@ PeleLM::addSoretTerm(
             ebx,
             [need_soret_fluxes, gradT_ar, beta_ar, T, spFlux_ar,
              spsoretFlux_ar] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-              for (int n = 0; n < NUM_SPECIES; n++) {
+              for (int n = 0; n < NUM_SPECIES; ++n) {
                 spFlux_ar(i, j, k, n) -=
                   beta_ar(i, j, k, n) * gradT_ar(i, j, k) / T(i, j, k);
               }
 
               if (need_soret_fluxes != 0) {
-                for (int n = 0; n < NUM_SPECIES; n++) {
+                for (int n = 0; n < NUM_SPECIES; ++n) {
                   spsoretFlux_ar(i, j, k, n) =
                     -beta_ar(i, j, k, n) * gradT_ar(i, j, k) / T(i, j, k);
                 }
@@ -1031,7 +1031,7 @@ PeleLM::computeSpeciesEnthalpyFlux(
           ebox, [spflux_ar, enthflux_ar,
                  enth_ar] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             enthflux_ar(i, j, k) = 0.0;
-            for (int n = 0; n < NUM_SPECIES; n++) {
+            for (int n = 0; n < NUM_SPECIES; ++n) {
               enthflux_ar(i, j, k) +=
                 spflux_ar(i, j, k, n) * enth_ar(i, j, k, n);
             }
@@ -1059,7 +1059,7 @@ PeleLM::differentialDiffusionUpdate(
   for (int lev = 0; lev <= finest_level; ++lev) {
     const auto& ba = grids[lev];
     const auto& factory = Factory(lev);
-    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+    for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
       fluxes[lev][idim].define(
         amrex::convert(ba, IntVect::TheDimensionVector(idim)), dmap[lev],
         NUM_SPECIES + 2, nGrow, MFInfo(), factory);
@@ -1105,11 +1105,11 @@ PeleLM::differentialDiffusionUpdate(
       amrex::ParallelFor(
         bx, [rhoY_o, fY, aux_o, fAux, dt = m_dt,
              nAux = m_nAux] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          for (int n = 0; n < NUM_SPECIES; n++) {
+          for (int n = 0; n < NUM_SPECIES; ++n) {
             fY(i, j, k, n) *= dt;
             fY(i, j, k, n) += rhoY_o(i, j, k, n);
           }
-          for (int n = 0; n < nAux; n++) {
+          for (int n = 0; n < nAux; ++n) {
             fAux(i, j, k, n) *= dt;
             fAux(i, j, k, n) += aux_o(i, j, k, n);
           }
@@ -1137,7 +1137,7 @@ PeleLM::differentialDiffusionUpdate(
 
       MultiFab::Copy(
         spec_boundary[lev], ldata_p->state, FIRSTSPEC, 0, NUM_SPECIES, 1);
-      for (int n = 0; n < NUM_SPECIES; n++) {
+      for (int n = 0; n < NUM_SPECIES; ++n) {
         MultiFab::Divide(spec_boundary[lev], ldata_p->state, DENSITY, n, 1, 1);
       }
     }
@@ -1164,7 +1164,7 @@ PeleLM::differentialDiffusionUpdate(
       GetVecOfConstPtrs(getDiffusivityVect(AmrNewTime)), 0, bcRecSpec,
       NUM_SPECIES - NUM_IONS, 0, m_dt, {});
   // Ions one by one
-  for (int n = 0; n < NUM_IONS; n++) {
+  for (int n = 0; n < NUM_IONS; ++n) {
     auto bcRecIons = fetchBCRecArray(FIRSTSPEC + NUM_SPECIES - NUM_IONS + n, 1);
     getDiffusionOp()->diffuse_scalar(
       GetVecOfPtrs(getSpeciesVect(AmrNewTime)), NUM_SPECIES - NUM_IONS + n,
@@ -1312,7 +1312,7 @@ PeleLM::differentialDiffusionUpdate(
              nAux = m_nAux, dt = m_dt, use_wbar = m_use_wbar,
              use_soret =
                m_use_soret] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          for (int n = 0; n < NUM_SPECIES; n++) {
+          for (int n = 0; n < NUM_SPECIES; ++n) {
             rhoY(i, j, k, n) = force(i, j, k, n) + dt * dhat(i, j, k, n);
             if (use_wbar != 0) {
               rhoY(i, j, k, n) -= dt * dwbar(i, j, k, n);
@@ -1321,7 +1321,7 @@ PeleLM::differentialDiffusionUpdate(
               rhoY(i, j, k, n) -= dt * dT(i, j, k, n);
             }
           }
-          for (int n = 0; n < nAux; n++) {
+          for (int n = 0; n < nAux; ++n) {
             aux(i, j, k, n) = force_aux(i, j, k, n) + dt * dhat_aux(i, j, k, n);
           }
         });
@@ -1825,7 +1825,7 @@ PeleLM::getDiffusionTensorOpBC(
         r[0][idim] = LinOpBCType::Periodic;, r[1][idim] = LinOpBCType::Periodic;
         , r[2][idim] = LinOpBCType::Periodic;);
     } else {
-      for (int dir = 0; dir < AMREX_SPACEDIM; dir++) {
+      for (int dir = 0; dir < AMREX_SPACEDIM; ++dir) {
         auto amrexbc = (a_side == Orientation::low) ? a_bc[dir].lo(idim)
                                                     : a_bc[dir].hi(idim);
         if (amrexbc == amrex::BCType::ext_dir) {

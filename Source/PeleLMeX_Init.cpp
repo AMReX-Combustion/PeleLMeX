@@ -426,7 +426,7 @@ PeleLM::projectInitSolution()
 
     //----------------------------------------------------------------
     // Initial velocity projection iterations
-    for (int iter = 0; iter < m_numDivuIter; iter++) {
+    for (int iter = 0; iter < m_numDivuIter; ++iter) {
       if (m_do_react != 0) {
         // The new level data has been filled above
         // Copy new -> old since old used in advanceChemistry
@@ -506,7 +506,7 @@ PeleLM::initialIterations()
 
   //----------------------------------------------------------------
   // Initial pressure iterations
-  for (int iter = 0; iter < m_init_iter; iter++) {
+  for (int iter = 0; iter < m_init_iter; ++iter) {
 
     if (m_verbose > 0) {
       amrex::Print() << "\n ================   INITIAL ITERATION [" << iter
@@ -532,7 +532,7 @@ PeleLM::InitFromGridFile(amrex::Real time)
     MakeNewLevelFromScratch(0, time, ba, dm);
   }
   finest_level = static_cast<int>(m_initial_ba.size());
-  for (int lev = 1; lev <= finest_level; lev++) {
+  for (int lev = 1; lev <= finest_level; ++lev) {
     const amrex::BoxArray ba = m_initial_ba[lev - 1];
     DistributionMapping dm(ba);
     MakeNewLevelFromScratch(lev, time, ba, dm);

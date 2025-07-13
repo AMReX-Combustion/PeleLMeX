@@ -40,7 +40,7 @@ PeleLM::WriteDebugPlotFile(
 {
   int nComp = a_MF[0]->nComp();
   Vector<std::string> names(nComp);
-  for (int n = 0; n < nComp; n++) {
+  for (int n = 0; n < nComp; ++n) {
     names[n] = "comp" + std::to_string(n);
   }
   Vector<int> istep(finest_level + 1, m_nstep);
@@ -144,7 +144,7 @@ PeleLM::WritePlotFile()
 
   // Derive
   int deriveEntryCount = 0;
-  for (int ivar = 0; ivar < m_derivePlotVarCount; ivar++) {
+  for (int ivar = 0; ivar < m_derivePlotVarCount; ++ivar) {
     const PeleLMDeriveRec* rec = derive_lst.get(m_derivePlotVars[ivar]);
     deriveEntryCount += rec->numDerive();
   }
@@ -192,7 +192,7 @@ PeleLM::WritePlotFile()
   if (m_incompressible == 0) {
     plt_VarsName.push_back("density");
     if (m_plotStateSpec != 0) {
-      for (int n = 0; n < NUM_SPECIES; n++) {
+      for (int n = 0; n < NUM_SPECIES; ++n) {
         plt_VarsName.push_back("rho.Y(" + names[n] + ")");
       }
     }
@@ -204,7 +204,7 @@ PeleLM::WritePlotFile()
     plt_VarsName.push_back("phiV");
 #endif
 #ifdef PELE_USE_SOOT
-    for (int mom = 0; mom < NUMSOOTVAR; mom++) {
+    for (int mom = 0; mom < NUMSOOTVAR; ++mom) {
       std::string sootname = soot_model->sootVariableName(mom);
       plt_VarsName.push_back(sootname);
     }
@@ -227,12 +227,12 @@ PeleLM::WritePlotFile()
                  , plt_VarsName.push_back("gradpz"));
   }
 
-  for (int n = 0; n < m_nAux; n++) {
+  for (int n = 0; n < m_nAux; ++n) {
     plt_VarsName.push_back(m_aux_names[n]);
   }
 
   if ((m_do_react != 0) && (m_skipInstantRR == 0) && (m_plot_react != 0)) {
-    for (int n = 0; n < NUM_SPECIES; n++) {
+    for (int n = 0; n < NUM_SPECIES; ++n) {
       plt_VarsName.push_back("I_R(" + names[n] + ")");
     }
 #ifdef PELE_USE_PLASMA
@@ -249,9 +249,9 @@ PeleLM::WritePlotFile()
   plt_VarsName.push_back("volFrac");
 #endif
 
-  for (int ivar = 0; ivar < m_derivePlotVarCount; ivar++) {
+  for (int ivar = 0; ivar < m_derivePlotVarCount; ++ivar) {
     const PeleLMDeriveRec* rec = derive_lst.get(m_derivePlotVars[ivar]);
-    for (int dvar = 0; dvar < rec->numDerive(); dvar++) {
+    for (int dvar = 0; dvar < rec->numDerive(); ++dvar) {
       plt_VarsName.push_back(rec->variableName(dvar));
     }
   }
@@ -294,7 +294,7 @@ PeleLM::WritePlotFile()
   }
 
 #if NUM_ODE > 0
-  for (int n = 0; n < NUM_ODE; n++) {
+  for (int n = 0; n < NUM_ODE; ++n) {
     plt_VarsName.push_back(m_ode_names[n]);
   }
 #endif
@@ -388,7 +388,7 @@ PeleLM::WritePlotFile()
     cnt += 1;
 #endif
 
-    for (int ivar = 0; ivar < m_derivePlotVarCount; ivar++) {
+    for (int ivar = 0; ivar < m_derivePlotVarCount; ++ivar) {
       std::unique_ptr<MultiFab> mf;
       mf = derive(m_derivePlotVars[ivar], m_cur_time, lev, 0);
       MultiFab::Copy(mf_plt[lev], *mf, 0, cnt, mf->nComp(), 0);
@@ -720,7 +720,7 @@ PeleLM::ReadCheckPointFile()
     std::istringstream lis(line);
     int i = 0;
     while (lis >> word) {
-      prob_lo[i++] = std::stod(word);
+      prob_lo[++i] = std::stod(word);
     }
   }
 
@@ -730,7 +730,7 @@ PeleLM::ReadCheckPointFile()
     std::istringstream lis(line);
     int i = 0;
     while (lis >> word) {
-      prob_hi[i++] = std::stod(word);
+      prob_hi[++i] = std::stod(word);
     }
   }
 
@@ -956,10 +956,10 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
   // in case the number of species differs.
   MultiFab speciesPlt(grids[a_lev], dmap[a_lev], nSpecPlt, 0);
   pltData.fillPatchFromPlt(a_lev, geom[a_lev], idY, 0, nSpecPlt, speciesPlt);
-  for (int i = 0; i < NUM_SPECIES; i++) {
+  for (int i = 0; i < NUM_SPECIES; ++i) {
     std::string specString = "Y(" + spec_names[i] + ")";
     int foundSpec = 0;
-    for (int iplt = 0; iplt < nSpecPlt; iplt++) {
+    for (int iplt = 0; iplt < nSpecPlt; ++iplt) {
       if (specString == plt_vars[idY + iplt]) {
         MultiFab::Copy(ldata_p->state, speciesPlt, iplt, FIRSTSPEC + i, 1, 0);
         foundSpec = 1;
@@ -981,7 +981,7 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
       auto const& vel_arr = ldata_p->state.array(mfi, VELX);
       amrex::ParallelFor(
         bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          for (int n = 0; n < AMREX_SPACEDIM; n++) {
+          for (int n = 0; n < AMREX_SPACEDIM; ++n) {
             amrex::Real vel_mks = vel_arr(i, j, k, n) * 0.01;
             vel_arr(i, j, k, n) = vel_mks;
           }
@@ -1013,7 +1013,7 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
           auto const& soot_arr = ldata_p->state.array(mfi, FIRSTSOOT);
           amrex::ParallelFor(
             bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-              for (int n = 0; n < NUM_SOOT_MOMENTS; n++) {
+              for (int n = 0; n < NUM_SOOT_MOMENTS; ++n) {
                 amrex::Real soot_exp = 3. - (3. * momV[n] + 2. * momS[n]);
                 soot_arr(i, j, k, n) *= std::pow(100., soot_exp);
               }
@@ -1063,7 +1063,7 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
         auto eos = pele::physics::PhysicsType::eos(eosparm);
         Real massfrac[NUM_SPECIES] = {0.0};
         Real sumYs = 0.0;
-        for (int n = 0; n < NUM_SPECIES; n++) {
+        for (int n = 0; n < NUM_SPECIES; ++n) {
           massfrac[n] = rhoY_arr(i, j, k, n);
 #ifdef N2_ID
           if (n != N2_ID) {
@@ -1087,7 +1087,7 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
         rhoH_arr(i, j, k) = h_cgs * 1.0e-4 * rho_arr(i, j, k);
 
         // Fill rhoYs
-        for (int n = 0; n < NUM_SPECIES; n++) {
+        for (int n = 0; n < NUM_SPECIES; ++n) {
           rhoY_arr(i, j, k, n) = massfrac[n] * rho_arr(i, j, k);
         }
       });
@@ -1168,11 +1168,11 @@ PeleLM::WriteJobInfo(const std::string& path) const
     jobInfoFile << " Grid Information\n";
     jobInfoFile << PrettyLine;
 
-    for (int lev = 0; lev <= finest_level; lev++) {
+    for (int lev = 0; lev <= finest_level; ++lev) {
       jobInfoFile << " level: " << lev << "\n";
       jobInfoFile << "   number of boxes = " << grids[lev].size() << "\n";
       jobInfoFile << "   maximum zones   = ";
-      for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+      for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
         jobInfoFile << geom[lev].Domain().length(idim) << " ";
       }
       jobInfoFile << "\n\n";

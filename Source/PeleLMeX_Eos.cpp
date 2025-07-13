@@ -59,7 +59,7 @@ PeleLM::calcDivU(
   }
 
   // Assemble divU on each level
-  for (int lev = 0; lev <= finest_level; lev++) {
+  for (int lev = 0; lev <= finest_level; ++lev) {
 
     auto* ldata_p = getLevelDataPtr(lev, a_time);
 

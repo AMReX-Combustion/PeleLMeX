@@ -102,7 +102,7 @@ PeleLM::initActiveControl()
 
       // Compute some active control parameters
       Real area_tot = 1.0;
-      for (int idim{0}; idim < AMREX_SPACEDIM; idim++) {
+      for (int idim{0}; idim < AMREX_SPACEDIM; ++idim) {
         if (idim != m_ctrl_flameDir) {
           area_tot *= (Geom(0).ProbHi(idim) - Geom(0).ProbLo(idim));
         }
@@ -204,7 +204,7 @@ PeleLM::activeControl(int is_restart)
   if (m_ctrl_nfilled <= 0) {
     Real velIntegral = 0.0;
     for (int n = 1; n <= m_ctrl_NavgPts;
-         n++) { // Piecewise constant velocity over NavgPts last steps
+         ++n) { // Piecewise constant velocity over NavgPts last steps
       velIntegral += 0.5 * (m_ctrl_velo_pts[n - 1] + m_ctrl_velo_pts[n]) *
                      (m_ctrl_time_pts[n - 1] - m_ctrl_time_pts[n]);
     }
@@ -308,7 +308,7 @@ PeleLM::activeControl(int is_restart)
 void
 PeleLM::getActiveControlLowT(Real& a_coft)
 {
-  for (int lev = 0; lev <= finest_level; lev++) {
+  for (int lev = 0; lev <= finest_level; ++lev) {
 
     // Get t^{n+1} data pointer
     auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
@@ -444,7 +444,7 @@ PeleLM::loadActiveControlHistory()
     }
     if (m_ctrl_verbose != 0) {
       Print() << " AC history arrays: \n";
-      for (long int n = 0; n < m_ctrl_time_pts.size(); n++) {
+      for (long int n = 0; n < m_ctrl_time_pts.size(); ++n) {
         Print() << "  [" << n << "] time: " << m_ctrl_time_pts[n]
                 << ", velo: " << m_ctrl_velo_pts[n]
                 << ", coft: " << m_ctrl_cntl_pts[n] << "\n";

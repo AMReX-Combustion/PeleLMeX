@@ -287,7 +287,7 @@ PeleLM::initCoveredState()
       coveredState_h[0] = 0.0;, coveredState_h[1] = 0.0;
       , coveredState_h[2] = 0.0;)
     coveredState_h[DENSITY] = typical_values[DENSITY];
-    for (int n = 0; n < NUM_SPECIES; n++) {
+    for (int n = 0; n < NUM_SPECIES; ++n) {
       coveredState_h[FIRSTSPEC + n] = typical_values[FIRSTSPEC + n];
     }
     coveredState_h[RHOH] = typical_values[RHOH];
@@ -305,7 +305,7 @@ void
 PeleLM::setCoveredState(const TimeStamp& a_time)
 {
   BL_PROFILE("PeleLMeX::setCoveredState()");
-  for (int lev = 0; lev <= finest_level; lev++) {
+  for (int lev = 0; lev <= finest_level; ++lev) {
     setCoveredState(lev, a_time);
   }
 }
@@ -526,7 +526,7 @@ PeleLM::getEBState(
     amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
       // Regular/covered cells -> 0.0
       if (flag(i, j, k).isCovered() || flag(i, j, k).isRegular()) {
-        for (int n = 0; n < ncomp; n++) {
+        for (int n = 0; n < ncomp; ++n) {
           ebscal_arr(i, j, k, n) = 0.0;
         }
       } else { // cut-cells
@@ -596,7 +596,7 @@ PeleLM::getEBState(
         bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           // Regular/covered cells -> 0.0
           if (flag(i, j, k).isCovered() || flag(i, j, k).isRegular()) {
-            for (int n = 0; n < nComp; n++) {
+            for (int n = 0; n < nComp; ++n) {
               ebState(i, j, k, n) = 0.0;
             }
           } else { // cut-cells
@@ -680,7 +680,7 @@ PeleLM::correct_vel_small_cells(
 {
   BL_PROFILE("PeleLMeX::correct_vel_small_cells");
 
-  for (int lev = 0; lev <= finest_level; lev++) {
+  for (int lev = 0; lev <= finest_level; ++lev) {
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif

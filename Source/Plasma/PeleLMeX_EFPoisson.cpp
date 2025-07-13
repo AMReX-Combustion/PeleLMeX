@@ -37,7 +37,7 @@ PeleLM::poissonSolveEF(const TimeStamp& a_time)
         bx, [rhs, rhoY, nE, factor,
              zk = zk] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           rhs(i, j, k) = -nE(i, j, k) * elemCharge * factor;
-          for (int n = 0; n < NUM_SPECIES; n++) {
+          for (int n = 0; n < NUM_SPECIES; ++n) {
             rhs(i, j, k) += zk[n] * rhoY(i, j, k, n) * factor;
           }
         });

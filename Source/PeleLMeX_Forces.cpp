@@ -100,7 +100,7 @@ PeleLM::getVelForces(
         [incomp_rho_inv, is_incomp, add_gradP, has_divTau, rho_arr, gp_arr,
          divTau_arr, force_arr] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           if (is_incomp != 0) {
-            for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+            for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
               if (add_gradP != 0) {
                 force_arr(i, j, k, idim) -= gp_arr(i, j, k, idim);
               }
@@ -110,7 +110,7 @@ PeleLM::getVelForces(
               force_arr(i, j, k, idim) *= incomp_rho_inv;
             }
           } else {
-            for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+            for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
               if (add_gradP != 0) {
                 force_arr(i, j, k, idim) -= gp_arr(i, j, k, idim);
               }
@@ -126,11 +126,11 @@ PeleLM::getVelForces(
         bx, [incomp_rho_inv, is_incomp, rho_arr,
              force_arr] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           if (is_incomp != 0) {
-            for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+            for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
               force_arr(i, j, k, idim) *= incomp_rho_inv;
             }
           } else {
-            for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+            for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
               force_arr(i, j, k, idim) /= rho_arr(i, j, k);
             }
           }
@@ -175,8 +175,8 @@ PeleLM::getVelForces(
 void
 PeleLM::addSpark(const TimeStamp& a_timestamp)
 {
-  for (int lev = 0; lev <= finest_level; lev++) {
-    for (int n = 0; n < m_n_sparks; n++) {
+  for (int lev = 0; lev <= finest_level; ++lev) {
+    for (int n = 0; n < m_n_sparks; ++n) {
       // Do the checks first
       Real time = getTime(lev, a_timestamp);
       bool verb = m_spark_verbose > 1 && lev == 0;
@@ -191,7 +191,7 @@ PeleLM::addSpark(const TimeStamp& a_timestamp)
       const Real* probLo = geom[lev].ProbLo();
       auto const dx = geom[lev].CellSizeArray();
       IntVect spark_idx;
-      for (int d = 0; d < AMREX_SPACEDIM; d++) {
+      for (int d = 0; d < AMREX_SPACEDIM; ++d) {
         spark_idx[d] = (int)((m_spark_location[n][d] - probLo[d]) / dx[d]);
       }
       Box domainBox = geom[lev].Domain();
@@ -223,7 +223,7 @@ PeleLM::addSpark(const TimeStamp& a_timestamp)
             Real rhoh_src_loc = 0;
             Real rho = statema[box_no](i, j, k, DENSITY);
             Real Y[NUM_SPECIES];
-            for (int ns = 0; ns < NUM_SPECIES; ns++) {
+            for (int ns = 0; ns < NUM_SPECIES; ++ns) {
               Y[ns] = statema[box_no](i, j, k, FIRSTSPEC + ns) / rho;
             }
             eos.TY2H(spark_temp, Y, rhoh_src_loc);
@@ -279,7 +279,7 @@ PeleLM::addScalarVarianceSources(const TimeStamp& a_timestamp)
       for (int lev = 0; lev <= finest_level; ++lev) {
         const auto& ba = grids[lev];
         const auto& factory = Factory(lev);
-        for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+        for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
           grad_fc[lev][idim].define(
             amrex::convert(ba, IntVect::TheDimensionVector(idim)), dmap[lev], 1,
             nGrow, MFInfo(), factory);
@@ -292,7 +292,7 @@ PeleLM::addScalarVarianceSources(const TimeStamp& a_timestamp)
         do_avgDown, var_of_scalar);
 
       // Add in Production and Dissipation source terms for subfilter variances
-      for (int lev = 0; lev <= finest_level; lev++) {
+      for (int lev = 0; lev <= finest_level; ++lev) {
 
         auto* ldata_p = getLevelDataPtr(lev, a_timestamp);
 
@@ -414,7 +414,7 @@ PeleLM::getExternalSources(
 
   // User defined external sources
   if (m_user_defined_ext_sources) {
-    for (int lev = 0; lev <= finest_level; lev++) {
+    for (int lev = 0; lev <= finest_level; ++lev) {
       auto* ldata_p_old = getLevelDataPtr(lev, a_timestamp_old);
       auto* ldata_p_new = getLevelDataPtr(lev, a_timestamp_new);
       auto& ext_src = m_extSource[lev];
