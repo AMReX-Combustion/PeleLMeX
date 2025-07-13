@@ -56,7 +56,7 @@ class PeleLM : public amrex::AmrCore
 {
 
 public:
-  enum TimeStamp { AmrOldTime, AmrHalfTime, AmrNewTime };
+  enum TimeStamp : std::uint_8 { AmrOldTime, AmrHalfTime, AmrNewTime };
 
   // constructor
   PeleLM();

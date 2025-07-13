@@ -10,32 +10,32 @@
 // Components are  Interior, Inflow, Outflow, Symmetry, &
 // SlipWallAdiab, NoSlipWallAdiab, SlipWallIsoTherm, NoSlipWallIsoTherm.
 
-int norm_vel_bc[] = {amrex::BCType::int_dir,  amrex::BCType::ext_dir,
+constexpr int norm_vel_bc[] = {amrex::BCType::int_dir,  amrex::BCType::ext_dir,
                      amrex::BCType::foextrap, amrex::BCType::reflect_odd,
                      amrex::BCType::ext_dir,  amrex::BCType::ext_dir,
                      amrex::BCType::ext_dir,  amrex::BCType::ext_dir};
 
-int tang_vel_bc[] = {amrex::BCType::int_dir,  amrex::BCType::ext_dir,
+constexpr int tang_vel_bc[] = {amrex::BCType::int_dir,  amrex::BCType::ext_dir,
                      amrex::BCType::foextrap, amrex::BCType::reflect_even,
                      amrex::BCType::hoextrap, amrex::BCType::ext_dir,
                      amrex::BCType::hoextrap, amrex::BCType::ext_dir};
 
-int density_bc[] = {amrex::BCType::int_dir,  amrex::BCType::ext_dir,
+constexpr int density_bc[] = {amrex::BCType::int_dir,  amrex::BCType::ext_dir,
                     amrex::BCType::foextrap, amrex::BCType::reflect_even,
                     amrex::BCType::foextrap, amrex::BCType::foextrap,
                     amrex::BCType::foextrap, amrex::BCType::foextrap};
 
-int species_bc[] = {amrex::BCType::int_dir,  amrex::BCType::ext_dir,
+constexpr int species_bc[] = {amrex::BCType::int_dir,  amrex::BCType::ext_dir,
                     amrex::BCType::foextrap, amrex::BCType::reflect_even,
                     amrex::BCType::foextrap, amrex::BCType::foextrap,
                     amrex::BCType::ext_dir,  amrex::BCType::ext_dir};
 
-int rhoh_bc[] = {amrex::BCType::int_dir,  amrex::BCType::ext_dir,
+constexpr int rhoh_bc[] = {amrex::BCType::int_dir,  amrex::BCType::ext_dir,
                  amrex::BCType::foextrap, amrex::BCType::reflect_even,
                  amrex::BCType::foextrap, amrex::BCType::foextrap,
                  amrex::BCType::ext_dir,  amrex::BCType::ext_dir};
 
-int temp_bc[] = {amrex::BCType::int_dir,  amrex::BCType::ext_dir,
+constexpr int temp_bc[] = {amrex::BCType::int_dir,  amrex::BCType::ext_dir,
                  amrex::BCType::foextrap, amrex::BCType::reflect_even,
                  amrex::BCType::foextrap, amrex::BCType::foextrap,
                  amrex::BCType::ext_dir,  amrex::BCType::ext_dir};
@@ -75,7 +75,7 @@ int soot_bc[] = {amrex::BCType::int_dir,      amrex::BCType::ext_dir,
 InterpBase*
 PeleLM::
   getInterpolator( // NOLINT(readability-convert-member-functions-to-static)
-    int a_method) const
+    const int a_method) const
 {
   InterpBase* mapper = nullptr;
 
@@ -230,7 +230,7 @@ PeleLM::setBoundaryConditions()
 }
 
 Vector<BCRec>
-PeleLM::fetchBCRecArray(int scomp, int ncomp)
+PeleLM::fetchBCRecArray(const int scomp, const int ncomp)
 {
   Vector<BCRec> bc(ncomp);
   for (int comp = 0; comp < ncomp; ++comp) {
@@ -240,7 +240,7 @@ PeleLM::fetchBCRecArray(int scomp, int ncomp)
 }
 
 Vector<BCRec>
-PeleLM::fetchBCRecAuxArray(int scomp, int ncomp)
+PeleLM::fetchBCRecAuxArray(const int scomp, const int ncomp)
 {
   Vector<BCRec> bc(ncomp);
   for (int comp = 0; comp < ncomp; ++comp) {
@@ -251,10 +251,10 @@ PeleLM::fetchBCRecAuxArray(int scomp, int ncomp)
 
 //-----------------------------------------------------------------------------
 // The following work directly on the leveldata
-
+l
 // Fill the entire class state at once
-void
-PeleLM::fillPatchState(const TimeStamp& a_time)
+voidPe
+PeleLM::fillPatchState(const TimeStamp a_time)
 {
   BL_PROFILE("PeleLMeX::fillPatchState()");
   for (int lev = 0; lev <= finest_level; ++lev) {
@@ -264,7 +264,7 @@ PeleLM::fillPatchState(const TimeStamp& a_time)
 
 // Fill the a given level class state
 void
-PeleLM::fillPatchState(int lev, const TimeStamp& a_time)
+PeleLM::fillPatchState(const int lev, const TimeStamp a_time)
 {
   BL_PROFILE("PeleLMeX::fillPatchStateLev()");
 
