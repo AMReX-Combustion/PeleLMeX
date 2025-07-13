@@ -165,7 +165,7 @@ PeleLM::computeVelocityAdvTerm(std::unique_ptr<AdvanceAdvData>& advData)
     auto* ldata_p = getLevelDataPtr(lev, AmrOldTime);
     //----------------------------------------------------------------
     // Use a temporary MF to hold divergence before redistribution
-    int nGrow_divT = 3;
+    constexpr int nGrow_divT = 3;
     MultiFab divTmp(
       grids[lev], dmap[lev], AMREX_SPACEDIM, nGrow_divT, MFInfo(),
       EBFactory(lev));
@@ -212,7 +212,7 @@ PeleLM::updateVelocity(std::unique_ptr<AdvanceAdvData>& advData)
       grids[lev], dmap[lev], AMREX_SPACEDIM, 0, MFInfo(), Factory(lev));
   }
   constexpr int use_density = 0;
-  const Real CrankNicholsonFactor = 0.5;
+  constexpr Real CrankNicholsonFactor = 0.5;
   computeDivTau(
     AmrOldTime, GetVecOfPtrs(divtau), use_density, CrankNicholsonFactor);
 
@@ -238,27 +238,25 @@ PeleLM::updateVelocity(std::unique_ptr<AdvanceAdvData>& advData)
     // Compute provisional new velocity
     // velForce holds: 1/\rho^{n+1/2} [(gravity+...)^{n+1/2} - \nabla pi^{n} +
     // 0.5 * divTau^{n}]
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
-    for (MFIter mfi(ldataOld_p->state, TilingIfNotGPU()); mfi.isValid();
-         ++mfi) {
 
-      Box const& bx = mfi.tilebox();
-      auto const& vel_old = ldataOld_p->state.const_array(mfi, VELX);
-      auto const& vel_aofs = advData->AofS[lev].const_array(mfi, VELX);
-      auto const& force = velForces[lev].const_array(mfi);
-      auto const& vel_new = ldataNew_p->state.array(mfi, VELX);
-      Real dt_loc = m_dt;
-      amrex::ParallelFor(
-        bx, AMREX_SPACEDIM,
-        [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
-          vel_new(i, j, k, n) =
-            vel_old(i, j, k, n) +
-            dt_loc * (vel_aofs(i, j, k, n) + force(i, j, k, n));
-        });
-    }
+    auto state_old_ma = ldataOld_p->state.const_arrays();
+    auto adv_aofs_ma = advData->AofS[lev].const_arrays();
+    auto force_ma = velForces[lev].const_arrays();
+    auto state_new_ma = ldataNew_p->state.arrays();
+    amrex::ParallelFor(
+      ldataOld_p->state,
+      [state_old_ma, adv_aofs_ma, force_ma, state_new_ma,
+       dt_loc =
+         m_dt] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+        for (int n = 0; n < AMREX_SPACEDIM; ++n) {
+          state_new_ma[box_no](i, j, k, VELX + n) =
+            state_old_ma[box_no](i, j, k, VELX + n) +
+            dt_loc * (adv_aofs_ma[box_no](i, j, k, VELX + n) +
+                      force_ma[box_no](i, j, k, n));
+        }
+      });
   }
+  Gpu::streamSynchronize();
 }
 
 void
@@ -268,47 +266,51 @@ PeleLM::getScalarAdvForce(
 {
 
   int* aux_diffuse_d = convertToDeviceVector(m_DiffTypeAux).dataPtr();
+  auto const* leosparm = eos_parms.device_parm();
+
   for (int lev = 0; lev <= finest_level; ++lev) {
 
     // Get t^{n} data pointer
     auto* ldata_p = getLevelDataPtr(lev, AmrOldTime);
     auto* ldataR_p = getLevelDataReactPtr(lev);
-    auto const* leosparm = eos_parms.device_parm();
 
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
-    for (MFIter mfi(advData->Forcing[lev], TilingIfNotGPU()); mfi.isValid();
-         ++mfi) {
-      const Box& bx = mfi.tilebox();
-      FArrayBox DummyFab(bx, 1);
-      auto const& rho = ldata_p->state.const_array(mfi, DENSITY);
-      auto const& rhoY = ldata_p->state.const_array(mfi, FIRSTSPEC);
-      auto const& T = ldata_p->state.const_array(mfi, TEMP);
-      auto const& dn = diffData->Dn[lev].const_array(mfi, 0);
-      auto const& ddn = diffData->Dn[lev].const_array(mfi, NUM_SPECIES + 1);
-      auto const& r = ldataR_p->I_R.const_array(mfi);
-      auto const& extRhoY = m_extSource[lev]->const_array(mfi, FIRSTSPEC);
-      auto const& extRhoH = m_extSource[lev]->const_array(mfi, RHOH);
-      auto const& fY = advData->Forcing[lev].array(mfi, 0);
-      auto const& fT = advData->Forcing[lev].array(mfi, NUM_SPECIES);
-      auto const& fAux = (m_nAux > 0) ? advData->Forcing_aux[lev].array(mfi, 0)
-                                      : DummyFab.array();
-      auto const& dn_aux = (m_nAux > 0)
-                             ? diffData->Dn_aux[lev].const_array(mfi, 0)
-                             : DummyFab.const_array();
-      amrex::ParallelFor(
-        bx, [rho, rhoY, T, dn, ddn, r, fY, fT, fAux, extRhoY, extRhoH,
-             aux_diffuse_d, dn_aux, nAux = m_nAux, dp0dt = m_dp0dt,
-             is_closed_ch = m_closed_chamber, do_react = m_do_react,
-             leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          buildAdvectionForcing(
-            i, j, k, rho, rhoY, T, dn, ddn, r, extRhoY, extRhoH, dp0dt,
-            is_closed_ch, do_react, fY, fT, fAux, dn_aux, aux_diffuse_d, nAux,
-            leosparm);
-        });
-    }
+    auto state_ma = ldata_p->state.const_arrays();
+    auto dn_ma = diffData->Dn[lev].const_arrays();
+    auto adv_ma = advData->Forcing[lev].arrays();
+    auto r_ma = ldataR_p->I_R.const_arrays();
+    auto ext_ma = m_extSource[lev]->arrays();
+
+    auto dn_aux_ma =
+      (m_nAux > 0) ? diffData->Dn_aux[lev].const_arrays() : dn_ma;
+    auto adv_aux_ma =
+      (m_nAux > 0) ? advData->Forcing_aux[lev].arrays() : adv_ma;
+
+    amrex::ParallelFor(
+      advData->Forcing[lev],
+      [state_ma, dn_ma, dn_aux_ma, r_ma, ext_ma, adv_ma, adv_aux_ma,
+       aux_diffuse_d, leosparm, nAux = m_nAux, dp0dt = m_dp0dt,
+       is_closed_ch = m_closed_chamber,
+       do_react =
+         m_do_react] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+        Array4<const Real> rho(state_ma[box_no], DENSITY);
+        Array4<const Real> rhoY(state_ma[box_no], FIRSTSPEC);
+        Array4<const Real> T(state_ma[box_no], TEMP);
+        Array4<const Real> dn(dn_ma[box_no], 0);
+        Array4<const Real> ddn(dn_ma[box_no], NUM_SPECIES + 1);
+        Array4<const Real> dn_aux(dn_aux_ma[box_no], 0);
+        Array4<const Real> r(r_ma[box_no], 0);
+        Array4<Real> extRhoY(ext_ma[box_no], FIRSTSPEC);
+        Array4<Real> extRhoH(ext_ma[box_no], RHOH);
+        Array4<Real> fY(adv_ma[box_no], 0);
+        Array4<Real> fT(adv_ma[box_no], NUM_SPECIES);
+        Array4<Real> fAux(adv_aux_ma[box_no], 0);
+        buildAdvectionForcing(
+          i, j, k, rho, rhoY, T, dn, ddn, r, extRhoY, extRhoH, dp0dt,
+          is_closed_ch, do_react, fY, fT, fAux, dn_aux, aux_diffuse_d, nAux,
+          leosparm);
+      });
   }
+  Gpu::streamSynchronize();
 
   // Fill forcing ghost cells
   if (advData->Forcing[0].nGrow() > 0) {
@@ -945,7 +947,7 @@ PeleLM::updateDensity(std::unique_ptr<AdvanceAdvData>& advData)
 
 void
 PeleLM::computePassiveAdvTerms(
-  std::unique_ptr<AdvanceAdvData>& advData, int state_comp, int ncomp)
+  std::unique_ptr<AdvanceAdvData>& advData, const int state_comp, const int ncomp)
 {
   //----------------------------------------------------------------
   // Get the BCRecs and AdvectionTypes
@@ -1014,9 +1016,9 @@ PeleLM::computePassiveAdvTerms(
       // TODO: Find way to include diffusive forces for passive scalars that
       // diffuse
       auto const& force_arr = m_extSource[lev]->const_array(mfi, state_comp);
-      bool is_velocity = false;
-      bool fluxes_are_area_weighted = false;
-      bool knownEdgeState = false;
+      constexpr bool is_velocity = false;
+      constexpr bool fluxes_are_area_weighted = false;
+      constexpr bool knownEdgeState = false;
       HydroUtils::ComputeFluxesOnBoxFromState(
         bx, ncomp, mfi, pass_arr, AMREX_D_DECL(fx, fy, fz),
         AMREX_D_DECL(edgex, edgey, edgez), knownEdgeState,
@@ -1107,24 +1109,23 @@ PeleLM::updateScalarComp(
     // Get level data ptr
     auto* ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
     auto* ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
-    for (MFIter mfi(ldataNew_p->state, TilingIfNotGPU()); mfi.isValid();
-         ++mfi) {
-      Box const& bx = mfi.tilebox();
-      auto const& old_arr = ldataOld_p->state.const_array(mfi, state_comp);
-      auto const& new_arr = ldataNew_p->state.array(mfi, state_comp);
-      auto const& a_of_s = advData->AofS[lev].const_array(mfi, state_comp);
-      auto const& ext = m_extSource[lev]->const_array(mfi, state_comp);
-      amrex::ParallelFor(
-        bx, ncomp,
-        [old_arr, new_arr, a_of_s, ext,
-         dt = m_dt] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
-          new_arr(i, j, k, n) =
-            old_arr(i, j, k, n) + dt * (a_of_s(i, j, k, n) + ext(i, j, k, n));
-        });
-    }
+
+    auto state_old_ma = ldataOld_p->state.const_arrays();
+    auto adv_aofs_ma = advData->AofS[lev].const_arrays();
+    auto ext_ma = m_extSource[lev]->const_arrays();
+    auto state_new_ma = ldataNew_p->state.arrays();
+
+    amrex::ParallelFor(
+      ldataOld_p->state,
+      [state_old_ma, adv_aofs_ma, ext_ma, state_new_ma, state_comp, ncomp,
+       dt = m_dt] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+        for (int n = state_comp; n < state_comp + ncomp; ++n) {
+          state_new_ma[box_no](i, j, k, n) =
+            state_old_ma[box_no](i, j, k, n) +
+            dt * (adv_aofs_ma[box_no](i, j, k, n) + ext_ma[box_no](i, j, k, n));
+        }
+      });
   }
+  Gpu::streamSynchronize();  
   averageDown(AmrNewTime, state_comp, ncomp);
 }
