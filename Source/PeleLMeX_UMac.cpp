@@ -274,7 +274,7 @@ PeleLM::create_constrained_umac_grown(
 
   // Set BCRec for Umac
   Vector<BCRec> bcrec(1);
-  for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+  for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
     if (crse_geom->isPeriodic(idim)) {
       bcrec[0].setLo(idim, BCType::int_dir);
       bcrec[0].setHi(idim, BCType::int_dir);

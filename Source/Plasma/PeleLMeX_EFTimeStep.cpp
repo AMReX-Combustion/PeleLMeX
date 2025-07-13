@@ -109,8 +109,8 @@ PeleLM::estEFIonsDt(const TimeStamp& a_time)
       amrex::ParallelFor(
         bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           Real maxVel = 0.0;
-          for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
-            for (int n = 0; n < NUM_IONS; n++) {
+          for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
+            for (int n = 0; n < NUM_IONS; ++n) {
               Real ueff =
                 vel(i, j, k, idim) + mob_cc(i, j, k, n) * efield(i, j, k, idim);
               maxVel = amrex::max(maxVel, std::abs(ueff));

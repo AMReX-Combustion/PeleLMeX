@@ -265,13 +265,13 @@ PeleLM::getScalarAdvForce(
 {
 
   int* aux_diffuse_d = convertToDeviceVector(m_DiffTypeAux).dataPtr();
+  auto const* leosparm = eos_parms.device_parm();
 
   for (int lev = 0; lev <= finest_level; ++lev) {
 
     // Get t^{n} data pointer
     auto* ldata_p = getLevelDataPtr(lev, AmrOldTime);
     auto* ldataR_p = getLevelDataReactPtr(lev);
-    auto const* leosparm = eos_parms.device_parm();
 
     auto state_ma = ldata_p->state.const_arrays();
     auto dn_ma = diffData->Dn[lev].const_arrays();
@@ -1016,9 +1016,9 @@ PeleLM::computePassiveAdvTerms(
       // TODO: Find way to include diffusive forces for passive scalars that
       // diffuse
       auto const& force_arr = m_extSource[lev]->const_array(mfi, state_comp);
-      bool is_velocity = false;
-      bool fluxes_are_area_weighted = false;
-      bool knownEdgeState = false;
+      constexpr bool is_velocity = false;
+      constexpr bool fluxes_are_area_weighted = false;
+      constexpr bool knownEdgeState = false;
       HydroUtils::ComputeFluxesOnBoxFromState(
         bx, ncomp, mfi, pass_arr, AMREX_D_DECL(fx, fy, fz),
         AMREX_D_DECL(edgex, edgey, edgez), knownEdgeState,

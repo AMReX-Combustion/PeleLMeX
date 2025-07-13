@@ -41,11 +41,11 @@ MLGMRESSolver::define(PeleLM* a_pelelm, const int a_nComp, const int a_nGrow)
   KspBase.resize(m_krylovSize + 1);
   for (int n = 0; n <= m_krylovSize; ++n) {
     KspBase[n].resize(finest_level + 1);
-    for (int lev = 0; lev <= finest_level; lev++) {
+    for (int lev = 0; lev <= finest_level; ++lev) {
       KspBase[n][lev].define(m_grids[lev], m_dmap[lev], m_nComp, m_nGrow);
     }
   }
-  for (int lev = 0; lev <= finest_level; lev++) {
+  for (int lev = 0; lev <= finest_level; ++lev) {
     Ax[lev].define(m_grids[lev], m_dmap[lev], m_nComp, m_nGrow);
     res[lev].define(m_grids[lev], m_dmap[lev], m_nComp, m_nGrow);
   }
@@ -335,7 +335,7 @@ MLGMRESSolver::computeMLNorm(const Vector<MultiFab*>& a_vec)
   if (m_norm != nullptr) {
     MEMBER_FUNC_PTR(*m_pelelm, m_norm)(a_vec, r);
   } else {
-    for (int comp = 0; comp < m_nComp; comp++) {
+    for (int comp = 0; comp < m_nComp; ++comp) {
       Real norm = 0.0;
       for (int lev = 0; lev <= a_vec.size(); ++lev) {
         norm += MultiFab::Dot(*a_vec[lev], comp, *a_vec[lev], comp, 1, 0);

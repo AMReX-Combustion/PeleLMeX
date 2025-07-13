@@ -100,7 +100,7 @@ PeleLM::initialProjection()
 
   // Set back press and gpress to zero and restore divu
   // and rescale velocity if 2D-RZ
-  for (int lev = 0; lev <= finest_level; lev++) {
+  for (int lev = 0; lev <= finest_level; ++lev) {
     auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
     ldata_p->press.setVal(0.0);
     ldata_p->gp.setVal(0.0);
@@ -433,7 +433,7 @@ PeleLM::doNodalProject(
   // BCs
   std::array<LinOpBCType, AMREX_SPACEDIM> lobc;
   std::array<LinOpBCType, AMREX_SPACEDIM> hibc;
-  for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+  for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
     if (Geom(0).isPeriodic(idim)) {
       lobc[idim] = hibc[idim] = LinOpBCType::Periodic;
     } else {
@@ -493,7 +493,7 @@ PeleLM::doNodalProject(
   auto phi = nodal_projector->getPhi();
   auto gphi = nodal_projector->getGradPhi();
 
-  for (int lev = 0; lev <= finest_level; lev++) {
+  for (int lev = 0; lev <= finest_level; ++lev) {
 
     auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
 

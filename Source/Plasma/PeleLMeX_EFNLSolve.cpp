@@ -59,7 +59,7 @@ PeleLM::implicitNonLinearSolve(
   for (int lev = 0; lev <= finest_level; ++lev) {
     // Get nl solve data pointer
     auto ldataNLs_p = getLevelDataNLSolvePtr(lev);
-    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+    for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
       MultiFab::Copy(
         ldataNLs_p->umac[idim], advData->umac[lev][idim], 0, 0, 1, 0);
     }
@@ -382,7 +382,7 @@ PeleLM::computeBGcharge(
         [dt_int, rhoYold, adv_arr, dn_arr, dnp1_arr, dhat_arr, rhoYdot, charge,
          factor, zk = zk] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           charge(i, j, k) = 0.0;
-          for (int n = 0; n < NUM_SPECIES; n++) {
+          for (int n = 0; n < NUM_SPECIES; ++n) {
             Real rhoYprov =
               rhoYold(i, j, k, n) +
               dt_int * (adv_arr(i, j, k, n) +
@@ -427,7 +427,7 @@ PeleLM::nonLinearResidual(
   Vector<Array<MultiFab, AMREX_SPACEDIM>> gradPhiVCur(finest_level + 1);
   for (int lev = 0; lev <= finest_level; ++lev) {
     laplacian[lev].define(grids[lev], dmap[lev], 1, 0, MFInfo(), Factory(lev));
-    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+    for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
       const auto& fba =
         amrex::convert(grids[lev], IntVect::TheDimensionVector(idim));
       gradPhiVCur[lev][idim].define(
@@ -554,7 +554,7 @@ PeleLM::getAdvectionTerm(
   for (int lev = 0; lev <= finest_level; ++lev) {
     const auto& ba = grids[lev];
     const auto& factory = Factory(lev);
-    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+    for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
       fluxes[lev][idim].define(
         amrex::convert(ba, IntVect::TheDimensionVector(idim)), dmap[lev], 1,
         nGrow, MFInfo(), factory);
@@ -578,7 +578,7 @@ PeleLM::getAdvectionTerm(
       getDiffusivity(lev, 0, 1, doZeroVisc, bcRecnE, ldata_p->mobE_cc);
 
     // Get the electron effective velocity
-    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+    for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
@@ -987,7 +987,7 @@ PeleLM::setUpPrecond(const Real& a_dt, const Vector<const MultiFab*>& a_nE)
     if (m_ef_PC_approx == 1) { // Assuming identity of the inverse of DiffOp
       // Add Stilda pieces
       Real scalLap = eps0 * epsr / elemCharge;
-      for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+      for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
         neKe_ec[idim].mult(0.5 * a_dt, 0, 1);
         neKe_ec[idim].plus(scalLap, 0, 1);
       }
@@ -997,7 +997,7 @@ PeleLM::setUpPrecond(const Real& a_dt, const Vector<const MultiFab*>& a_nE)
       Array<MultiFab, AMREX_SPACEDIM> Schur_neKe_ec = getUpwindedEdge(
         lev, 0, 1, bcRecnE, Schur_nEKe, GetArrOfConstPtrs(ldataNLs_p->uEffnE));
       Real scalLap = eps0 * epsr / elemCharge;
-      for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+      for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
         Schur_neKe_ec[idim].plus(scalLap, 0, 1);
       }
       getPrecondOp()->setStildaOpBCoeff(lev, GetArrOfConstPtrs(Schur_neKe_ec));
@@ -1040,7 +1040,7 @@ PeleLM::getUpwindedEdge(
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
   for (MFIter mfi(ccMF, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
-    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+    for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
       const Box ebx = mfi.nodaltilebox(idim);
       const Box& edomain = amrex::surroundingNodes(domain, idim);
       const auto& ccVal = ccMF.const_array(mfi, edge_comp);
@@ -1234,7 +1234,7 @@ PeleLM::nlSolveNorm(const Vector<MultiFab*>& a_MF, Real& r)
 {
   r = 0.0;
   int nComp = a_MF[0]->nComp();
-  for (int comp = 0; comp < nComp; comp++) {
+  for (int comp = 0; comp < nComp; ++comp) {
     Real norm = 0.0;
     for (int lev = 0; lev < a_MF.size(); ++lev) {
       // TODO : norm not weighted by cell size, should it ?

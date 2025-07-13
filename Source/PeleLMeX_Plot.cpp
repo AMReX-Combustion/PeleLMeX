@@ -725,7 +725,7 @@ PeleLM::ReadCheckPointFile()
     std::istringstream lis(line);
     int i = 0;
     while (lis >> word) {
-      prob_lo[i++] = std::stod(word);
+      prob_lo[++i] = std::stod(word);
     }
   }
 
@@ -735,7 +735,7 @@ PeleLM::ReadCheckPointFile()
     std::istringstream lis(line);
     int i = 0;
     while (lis >> word) {
-      prob_hi[i++] = std::stod(word);
+      prob_hi[++i] = std::stod(word);
     }
   }
 
@@ -1047,7 +1047,7 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
 
   // Enforce rho and rhoH consistent with temperature and mixture
   // The above handles species mapping (to some extent), but nothing enforce
-  // sum of Ys = 1 -> use N2 in the following if N2 is present
+  // sum of Ys = 1 -> use N2 in the following if N2 is present<<<<<<< HEAD
   auto state_ma = ldata_p->state.arrays();
   auto const* leosparm = eos_parms.device_parm();
   const Real P_cgs = m2c::P(lprobparm->P_mean);

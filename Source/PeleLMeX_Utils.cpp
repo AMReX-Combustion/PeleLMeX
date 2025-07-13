@@ -39,7 +39,7 @@ writeBuildInfo()
 
   std::cout << "\n";
 
-  for (int n = 1; n <= buildInfoGetNumModules(); n++) {
+  for (int n = 1; n <= buildInfoGetNumModules(); ++n) {
     std::cout << buildInfoGetModuleName(n) << ": " << buildInfoGetModuleVal(n)
               << "\n";
   }
@@ -238,7 +238,7 @@ PeleLM::extFluxDivergenceLevel(
         bx, [ncomp, flag, vfrac, divergence, AMREX_D_DECL(fluxX, fluxY, fluxZ),
              vol, scale] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           if (flag(i, j, k).isCovered()) {
-            for (int n = 0; n < ncomp; n++) {
+            for (int n = 0; n < ncomp; ++n) {
               divergence(i, j, k, n) = 0.0;
             }
           } else if (flag(i, j, k).isRegular()) {
@@ -250,7 +250,7 @@ PeleLM::extFluxDivergenceLevel(
             extFluxDivergence_K(
               i, j, k, ncomp, AMREX_D_DECL(fluxX, fluxY, fluxZ), vol, scale,
               divergence);
-            for (int n = 0; n < ncomp; n++) {
+            for (int n = 0; n < ncomp; ++n) {
               divergence(i, j, k, n) *= vfracinv;
             }
           }
@@ -343,7 +343,7 @@ PeleLM::intFluxDivergenceLevel(
              AMREX_D_DECL(areax, areay, areaz), vol,
              scale] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           if (flag(i, j, k).isCovered()) {
-            for (int n = 0; n < ncomp; n++) {
+            for (int n = 0; n < ncomp; ++n) {
               divergence(i, j, k, n) = 0.0;
             }
           } else if (flag(i, j, k).isRegular()) {
@@ -356,7 +356,7 @@ PeleLM::intFluxDivergenceLevel(
               i, j, k, ncomp, AMREX_D_DECL(fluxX, fluxY, fluxZ),
               AMREX_D_DECL(afrac_x, afrac_y, afrac_z),
               AMREX_D_DECL(areax, areay, areaz), vol, scale, divergence);
-            for (int n = 0; n < ncomp; n++) {
+            for (int n = 0; n < ncomp; ++n) {
               divergence(i, j, k, n) *= vfracinv;
             }
           }
@@ -464,7 +464,7 @@ PeleLM::intFluxDivergenceLevelEB(
       amrex::ParallelFor(
         bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           if (flag(i, j, k).isCovered()) {
-            for (int n = 0; n < ncomp; n++) {
+            for (int n = 0; n < ncomp; ++n) {
               divergence(i, j, k, n) = 0.0;
             }
           } else if (flag(i, j, k).isRegular()) {
@@ -478,7 +478,7 @@ PeleLM::intFluxDivergenceLevelEB(
               AMREX_D_DECL(afrac_x, afrac_y, afrac_z),
               AMREX_D_DECL(areax, areay, areaz), ebflux, ebarea, vol, dx[0],
               scale, divergence);
-            for (int n = 0; n < ncomp; n++) {
+            for (int n = 0; n < ncomp; ++n) {
               divergence(i, j, k, n) *= vfracinv;
             }
           }
@@ -786,7 +786,7 @@ PeleLM::floorSpecies(const TimeStamp& a_time)
         Real massfrac[NUM_SPECIES] = {0.0};
         Real massdens[NUM_SPECIES] = {0.0};
         Real rhoinv, h_cgs = 0.0;
-        for (int n = 0; n < NUM_SPECIES; n++) {
+        for (int n = 0; n < NUM_SPECIES; ++n) {
           massdens[n] = sma[box_no](i, j, k, FIRSTSPEC + n);
         }
         auto eos = pele::physics::PhysicsType::eos(leosparm);
@@ -1211,7 +1211,7 @@ PeleLM::parseVars(
 
   // For each entry in the user-provided composition, parse name and value
   std::string delimiter = ":";
-  for (int i = 0; i < varCountIn; i++) {
+  for (int i = 0; i < varCountIn; ++i) {
     long unsigned sep = a_stringIn[i].find(delimiter);
     if (sep == std::string::npos) {
       Abort(
@@ -1221,7 +1221,7 @@ PeleLM::parseVars(
     Real value =
       std::stod(a_stringIn[i].substr(sep + 1, a_stringIn[i].length()));
     int foundIt = 0;
-    for (int k = 0; k < a_varsNames.size(); k++) {
+    for (int k = 0; k < a_varsNames.size(); ++k) {
       if (varNameIn == a_varsNames[k]) {
         a_rVars[k] = value;
         foundIt = 1;
@@ -1257,17 +1257,17 @@ PeleLM::MLNorm0(const Vector<const MultiFab*>& a_MF, int startcomp, int ncomp)
   BL_PROFILE("PeleLMeX::MLNorm0()");
   AMREX_ASSERT(a_MF[0]->nComp() >= startcomp + ncomp);
   Vector<Real> r(ncomp);
-  for (int n = 0; n < ncomp; n++) {
+  for (int n = 0; n < ncomp; ++n) {
     r[n] = 0.0;
   }
   for (int lev = 0; lev < a_MF.size(); ++lev) {
     if (lev != finest_level) {
-      for (int n = 0; n < ncomp; n++) {
+      for (int n = 0; n < ncomp; ++n) {
         r[n] = std::max(
           r[n], a_MF[lev]->norm0(*m_coveredMask[lev], startcomp + n, 0, true));
       }
     } else {
-      for (int n = 0; n < ncomp; n++) {
+      for (int n = 0; n < ncomp; ++n) {
         r[n] = std::max(r[n], a_MF[lev]->norm0(startcomp + n, 0, true, true));
       }
     }
@@ -1354,7 +1354,7 @@ Vector<int>
 PeleLM::fetchAdvTypeArray(int scomp, int ncomp)
 {
   Vector<int> types(ncomp);
-  for (int comp = 0; comp < ncomp; comp++) {
+  for (int comp = 0; comp < ncomp; ++comp) {
     types[comp] = m_AdvTypeState[scomp + comp];
   }
   return types;
@@ -1364,7 +1364,7 @@ Vector<int>
 PeleLM::fetchDiffTypeArray(int scomp, int ncomp)
 {
   Vector<int> types(ncomp);
-  for (int comp = 0; comp < ncomp; comp++) {
+  for (int comp = 0; comp < ncomp; ++comp) {
     types[comp] = m_DiffTypeState[scomp + comp];
   }
   return types;
@@ -1374,7 +1374,7 @@ Vector<int>
 PeleLM::fetchAdvTypeAuxArray(int scomp, int ncomp)
 {
   Vector<int> types(ncomp);
-  for (int comp = 0; comp < ncomp; comp++) {
+  for (int comp = 0; comp < ncomp; ++comp) {
     types[comp] = m_AdvTypeAux[scomp + comp];
   }
   return types;
@@ -1384,7 +1384,7 @@ Vector<int>
 PeleLM::fetchDiffTypeAuxArray(int scomp, int ncomp)
 {
   Vector<int> types(ncomp);
-  for (int comp = 0; comp < ncomp; comp++) {
+  for (int comp = 0; comp < ncomp; ++comp) {
     types[comp] = m_DiffTypeAux[scomp + comp];
   }
   return types;
@@ -1502,7 +1502,7 @@ PeleLM::setTypicalValues(const TimeStamp& a_time, int is_init)
       : MLmin(GetVecOfConstPtrs(getStateVect(a_time)), 0, NVAR);
 
   // Fill typical values vector
-  for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+  for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
     typical_values[idim] =
       std::max(stateMax[VELX + idim], std::abs(stateMin[VELX + idim]));
   }
@@ -1510,7 +1510,7 @@ PeleLM::setTypicalValues(const TimeStamp& a_time, int is_init)
   if (m_incompressible == 0) {
     // Average between max/min
     typical_values[DENSITY] = 0.5 * (stateMax[DENSITY] + stateMin[DENSITY]);
-    for (int n = 0; n < NUM_SPECIES; n++) {
+    for (int n = 0; n < NUM_SPECIES; ++n) {
       typical_values[FIRSTSPEC + n] =
         0.5 * (stateMax[FIRSTSPEC + n] + stateMin[FIRSTSPEC + n]) /
         typical_values[DENSITY];
@@ -1523,7 +1523,7 @@ PeleLM::setTypicalValues(const TimeStamp& a_time, int is_init)
     typical_values[NE] = 0.5 * (stateMax[NE] + stateMin[NE]);
 #endif
 #if NUM_ODE > 0
-    for (int n = 0; n < NUM_ODE; n++) {
+    for (int n = 0; n < NUM_ODE; ++n) {
       typical_values[FIRSTODE + n] =
         0.5 * (stateMax[FIRSTODE + n] + stateMin[FIRSTODE + n]);
     }
@@ -1548,7 +1548,7 @@ PeleLM::setTypicalValues(const TimeStamp& a_time, int is_init)
       Vector<std::string> spec_names;
       pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(
         spec_names, &(eos_parms.host_parm()));
-      for (int n = 0; n < NUM_SPECIES; n++) {
+      for (int n = 0; n < NUM_SPECIES; ++n) {
         Print() << "\tY_" << spec_names[n]
                 << std::setw(
                      std::max(0, static_cast<int>(8 - spec_names[n].length())))
@@ -1558,7 +1558,7 @@ PeleLM::setTypicalValues(const TimeStamp& a_time, int is_init)
       Print() << "\tnE:       " << typical_values[NE] << '\n';
 #endif
 #if NUM_ODE > 0
-      for (int n = 0; n < NUM_ODE; n++) {
+      for (int n = 0; n < NUM_ODE; ++n) {
         Print() << "\t" << m_ode_names[n]
                 << std::setw(
                      std::max(
@@ -1787,12 +1787,12 @@ PeleLM::MLmax(const Vector<const MultiFab*>& a_MF, int scomp, int ncomp)
 
   for (int lev = 0; lev < a_MF.size(); ++lev) {
     if (lev != finest_level) {
-      for (int n = 0; n < ncomp; n++) {
+      for (int n = 0; n < ncomp; ++n) {
         nmax[n] =
           std::max(nmax[n], MFmax(a_MF[lev], *m_coveredMask[lev], scomp + n));
       }
     } else {
-      for (int n = 0; n < ncomp; n++) {
+      for (int n = 0; n < ncomp; ++n) {
         nmax[n] = std::max(nmax[n], a_MF[lev]->max(scomp + n, 0, true));
       }
     }
@@ -1813,12 +1813,12 @@ PeleLM::MLmin(const Vector<const MultiFab*>& a_MF, int scomp, int ncomp)
 
   for (int lev = 0; lev < a_MF.size(); ++lev) {
     if (lev != finest_level) {
-      for (int n = 0; n < ncomp; n++) {
+      for (int n = 0; n < ncomp; ++n) {
         nmin[n] =
           std::min(nmin[n], MFmin(a_MF[lev], *m_coveredMask[lev], scomp + n));
       }
     } else {
-      for (int n = 0; n < ncomp; n++) {
+      for (int n = 0; n < ncomp; ++n) {
         nmin[n] = std::min(nmin[n], a_MF[lev]->min(scomp + n, 0, true));
       }
     }
@@ -2008,7 +2008,7 @@ PeleLM::initMixtureFraction()
   Zox = 0.0;
   for (int i = 0; i < NUM_SPECIES; ++i) {
     spec_Bilger_fact[i] = 0.0;
-    for (int k = 0; k < 4; k++) {
+    for (int k = 0; k < 4; ++k) {
       spec_Bilger_fact[i] +=
         Beta_mix[k] * (ecompCHON[i * 4 + k] * atwCHON[k] / mwt[i]);
     }
@@ -2033,7 +2033,7 @@ PeleLM::parseComposition(
   // For each entry in the user-provided composition, parse name and value
   std::string delimiter = ":";
   const int specCountIn = static_cast<int>(compositionIn.size());
-  for (int i = 0; i < specCountIn; i++) {
+  for (int i = 0; i < specCountIn; ++i) {
     long unsigned sep = compositionIn[i].find(delimiter);
     if (sep == std::string::npos) {
       Abort(
@@ -2044,7 +2044,7 @@ PeleLM::parseComposition(
     Real value =
       std::stod(compositionIn[i].substr(sep + 1, compositionIn[i].length()));
     int foundIt = 0;
-    for (int k = 0; k < NUM_SPECIES; k++) {
+    for (int k = 0; k < NUM_SPECIES; ++k) {
       if (specNameIn == specNames[k]) {
         compoIn[k] = value;
         foundIt = 1;
@@ -2068,7 +2068,7 @@ PeleLM::parseComposition(
 
   // Fill the massFrac array, convert from mole fraction if necessary
   if (compositionType == "mass") { // mass
-    for (int i = 0; i < NUM_SPECIES; i++) {
+    for (int i = 0; i < NUM_SPECIES; ++i) {
       massFrac[i] = compoIn[i];
     }
   } else if (compositionType == "mole") { // mole
@@ -2115,7 +2115,7 @@ PeleLM::extendSignedDistance(MultiFab* a_signDist, Real a_extendFactor)
   // boxes using ghost cells If needed, increase the number of loop to extend
   // the reach of the distance function
   int nMaxLoop = 4;
-  for (int dloop = 1; dloop <= nMaxLoop; dloop++) {
+  for (int dloop = 1; dloop <= nMaxLoop; ++dloop) {
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif

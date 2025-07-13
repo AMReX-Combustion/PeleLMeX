@@ -69,7 +69,7 @@ PeleLM::advanceChemistry(int lev, const Real& a_dt, MultiFab& a_extForcing)
     ParallelFor(
       bx, [rhoY_o, rhoH_o, temp_o, rhoY_n, rhoH_n, temp_n, extF_rhoY,
            extF_rhoH] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-        for (int n = 0; n < NUM_SPECIES; n++) {
+        for (int n = 0; n < NUM_SPECIES; ++n) {
           rhoY_n(i, j, k, n) = rhoY_o(i, j, k, n) * 1.0e-3;
           extF_rhoY(i, j, k, n) *= 1.0e-3;
         }
@@ -111,7 +111,7 @@ PeleLM::advanceChemistry(int lev, const Real& a_dt, MultiFab& a_extForcing)
     ParallelFor(
       bx, [rhoY_n, rhoH_n, extF_rhoY,
            extF_rhoH] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-        for (int n = 0; n < NUM_SPECIES; n++) {
+        for (int n = 0; n < NUM_SPECIES; ++n) {
           rhoY_n(i, j, k, n) *= 1.0e3;
           extF_rhoY(i, j, k, n) *= 1.0e3;
         }
@@ -231,7 +231,7 @@ PeleLM::advanceChemistryBAChem(
     ParallelFor(
       bx, [rhoY_o, rhoH_o, extF_rhoY,
            extF_rhoH] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-        for (int n = 0; n < NUM_SPECIES; n++) {
+        for (int n = 0; n < NUM_SPECIES; ++n) {
           rhoY_o(i, j, k, n) *= 1.0e-3;
           extF_rhoY(i, j, k, n) *= 1.0e-3;
         }
@@ -282,7 +282,7 @@ PeleLM::advanceChemistryBAChem(
     // Convert CGS -> MKS
     ParallelFor(
       bx, [rhoY_o, rhoH_o] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-        for (int n = 0; n < NUM_SPECIES; n++) {
+        for (int n = 0; n < NUM_SPECIES; ++n) {
           rhoY_o(i, j, k, n) *= 1.0e3;
         }
         rhoH_o(i, j, k) *= 0.1;
@@ -334,13 +334,13 @@ PeleLM::advanceChemistryBAChem(
       bx, [state_arr, rhoY_o, rhoY_n, rhoH_n, temp_n, extF_rhoY, rhoYdot,
            dt_inv] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
         // Pass into leveldata_new
-        for (int n = 0; n < NUM_SPECIES; n++) {
+        for (int n = 0; n < NUM_SPECIES; ++n) {
           rhoY_n(i, j, k, n) = state_arr(i, j, k, n);
         }
         rhoH_n(i, j, k) = state_arr(i, j, k, NUM_SPECIES);
         temp_n(i, j, k) = state_arr(i, j, k, NUM_SPECIES + 1);
         // Compute I_R
-        for (int n = 0; n < NUM_SPECIES; n++) {
+        for (int n = 0; n < NUM_SPECIES; ++n) {
           rhoYdot(i, j, k, n) =
             -(rhoY_o(i, j, k, n) - rhoY_n(i, j, k, n)) * dt_inv -
             extF_rhoY(i, j, k, n);
@@ -415,7 +415,7 @@ PeleLM::computeInstantaneousReactionRate(
         bx, [rhoY, rhoH, T, rhoYdot, flag,
              leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           if (flag(i, j, k).isCovered()) {
-            for (int n = 0; n < NUM_SPECIES; n++) {
+            for (int n = 0; n < NUM_SPECIES; ++n) {
               rhoYdot(i, j, k, n) = 0.0;
             }
           } else {
@@ -463,7 +463,7 @@ PeleLM::getScalarReactForce(std::unique_ptr<AdvanceAdvData>& advData)
       amrex::ParallelFor(
         bx, [rhoY_o, rhoH_o, rhoY_n, rhoH_n, react, extF_rhoY, extF_rhoH,
              dtinv] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          for (int n = 0; n < NUM_SPECIES; n++) {
+          for (int n = 0; n < NUM_SPECIES; ++n) {
             extF_rhoY(i, j, k, n) =
               (rhoY_n(i, j, k, n) - rhoY_o(i, j, k, n)) * dtinv -
               react(i, j, k, n);
@@ -497,7 +497,7 @@ PeleLM::getHeatRelease(int a_lev, MultiFab* a_HR)
              leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           getHGivenT(i, j, k, T, Hi, leosparm);
           HRR(i, j, k) = 0.0;
-          for (int n = 0; n < NUM_SPECIES; n++) {
+          for (int n = 0; n < NUM_SPECIES; ++n) {
             HRR(i, j, k) -= Hi(i, j, k, n) * react(i, j, k, n);
           }
         });

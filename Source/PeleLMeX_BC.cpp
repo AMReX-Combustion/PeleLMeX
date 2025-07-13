@@ -250,10 +250,10 @@ PeleLM::fetchBCRecAuxArray(const int scomp, const int ncomp)
 
 //-----------------------------------------------------------------------------
 // The following work directly on the leveldata
-
-// Fill the entire class state at once
-void
-PeleLM::fillPatchState(const TimeStamp& a_time)
+l
+  // Fill the entire class state at once
+  voidPe
+  PeleLM::fillPatchState(const TimeStamp a_time)
 {
   BL_PROFILE("PeleLMeX::fillPatchState()");
   for (int lev = 0; lev <= finest_level; ++lev) {
@@ -263,7 +263,7 @@ PeleLM::fillPatchState(const TimeStamp& a_time)
 
 // Fill the a given level class state
 void
-PeleLM::fillPatchState(const int lev, const TimeStamp& a_time)
+PeleLM::fillPatchState(const int lev, const TimeStamp a_time)
 {
   BL_PROFILE("PeleLMeX::fillPatchStateLev()");
 

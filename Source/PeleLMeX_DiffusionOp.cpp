@@ -205,7 +205,7 @@ DiffusionOp::diffuse_scalar(
     // Set aliases and bcoeff comp
     for (int lev = 0; lev <= finest_level; ++lev) {
       if (have_fluxes != 0) {
-        for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+        for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
           fluxes[lev][idim] = new MultiFab(
             *a_flux[lev][idim], amrex::make_alias, flux_comp + comp, m_ncomp);
         }
@@ -269,7 +269,7 @@ DiffusionOp::diffuse_scalar(
 #endif
 
       for (int lev = 0; lev <= finest_level; ++lev) {
-        for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+        for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
           delete fluxes[lev][idim];
         }
       }
@@ -422,7 +422,7 @@ DiffusionOp::diffuse_scalar(
     // Set aliases and bcoeff comp
     for (int lev = 0; lev <= finest_level; ++lev) {
       if (have_fluxes != 0) {
-        for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+        for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
           fluxes[lev][idim] = new MultiFab(
             *a_flux[lev][idim], amrex::make_alias, flux_comp + comp, m_ncomp);
         }
@@ -478,7 +478,7 @@ DiffusionOp::diffuse_scalar(
       mlmg.getFluxes(fluxes, MLMG::Location::FaceCentroid);
 
       for (int lev = 0; lev <= finest_level; ++lev) {
-        for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+        for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
           delete fluxes[lev][idim];
         }
       }
@@ -670,7 +670,7 @@ DiffusionOp::computeDiffFluxes(
       m_pelelm->getDiffusionLinOpBC(Orientation::high, a_bcrec[comp]));
 
     for (int lev = 0; lev <= finest_level; ++lev) {
-      for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+      for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
         fluxes[lev][idim] = new MultiFab(
           *a_flux[lev][idim], amrex::make_alias, flux_comp + comp, m_ncomp);
       }
@@ -710,7 +710,7 @@ DiffusionOp::computeDiffFluxes(
     mlmg.getFluxes(fluxes, GetVecOfPtrs(component), MLMG::Location::FaceCenter);
 #endif
     for (int lev = 0; lev <= finest_level; ++lev) {
-      for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+      for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
         delete fluxes[lev][idim];
       }
     }
@@ -813,7 +813,7 @@ DiffusionOp::computeDiffFluxes(
       m_pelelm->getDiffusionLinOpBC(Orientation::high, a_bcrec[comp]));
 
     for (int lev = 0; lev <= finest_level; ++lev) {
-      for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+      for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
         fluxes[lev][idim] = std::make_unique<MultiFab>(
           *a_flux[lev][idim], amrex::make_alias, flux_comp + comp, m_ncomp);
       }
@@ -943,7 +943,7 @@ DiffusionOp::avgDownFluxes(
     // Get the requested components only
     Array<MultiFab*, AMREX_SPACEDIM> flux_fine;
     Array<MultiFab*, AMREX_SPACEDIM> flux_crse;
-    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+    for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
       flux_fine[idim] =
         new MultiFab(*a_fluxes[lev][idim], amrex::make_alias, flux_comp, ncomp);
       flux_crse[idim] = new MultiFab(
@@ -958,7 +958,7 @@ DiffusionOp::avgDownFluxes(
       GetArrOfConstPtrs(flux_fine), flux_crse, m_pelelm->refRatio(lev - 1),
       flux_crse[0]->nGrow());
 #endif
-    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+    for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
       delete flux_fine[idim];
       delete flux_crse[idim];
     }

@@ -65,7 +65,7 @@ void
 PeleLM::getNLStateScaling(Real& nEScale, Real& phiVScale)
 {
   Array<Real, 2> r = {0.0, 0.0};
-  for (int comp = 0; comp < 2; comp++) {
+  for (int comp = 0; comp < 2; ++comp) {
     for (int lev = 0; lev <= finest_level; ++lev) {
       if (lev != finest_level) {
         r[comp] = std::max(
@@ -86,7 +86,7 @@ void
 PeleLM::getNLResidScaling(Real& nEScale, Real& phiVScale)
 {
   Array<Real, 2> r = {0.0, 0.0};
-  for (int comp = 0; comp < 2; comp++) {
+  for (int comp = 0; comp < 2; ++comp) {
     for (int lev = 0; lev <= finest_level; ++lev) {
       if (lev != finest_level) {
         r[comp] = std::max(
@@ -131,7 +131,7 @@ PeleLM::hackBCChargedParticle(const Real& charge, const BCRec& bc_in)
   const int* lo_bc = bc_in.lo();
   const int* hi_bc = bc_in.hi();
 
-  for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+  for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
 
     int lo = lo_bc[idim];
     int hi = hi_bc[idim];
@@ -370,14 +370,14 @@ PeleLM::ionsBalance()
 {
   // Compute the sum of ions on the domain boundaries
   Array<Real, 2 * AMREX_SPACEDIM> ionsCurrent{0.0};
-  for (int n = NUM_SPECIES - NUM_IONS; n < NUM_SPECIES; n++) {
-    for (int i = 0; i < 2 * AMREX_SPACEDIM; i++) {
+  for (int n = NUM_SPECIES - NUM_IONS; n < NUM_SPECIES; ++n) {
+    for (int i = 0; i < 2 * AMREX_SPACEDIM; ++i) {
       ionsCurrent[i] += m_domainRhoYFlux[2 * n * AMREX_SPACEDIM + i] * zk[n];
     }
   }
 
   tmpIonsFile << m_nstep << "," << m_cur_time; // Time info
-  for (int i = 0; i < 2 * AMREX_SPACEDIM; i++) {
+  for (int i = 0; i < 2 * AMREX_SPACEDIM; ++i) {
     tmpIonsFile << "," << ionsCurrent[i]; // ions current as xlo, xhi, ylo, ...
   }
   tmpIonsFile << "\n";
