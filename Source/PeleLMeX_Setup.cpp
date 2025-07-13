@@ -196,6 +196,9 @@ PeleLM::Setup()
 
   // Initialize turbulence injection
   turb_inflow.init(Geom(0));
+  if (m_do_turbulent_forcing) {
+    turb_forcing.init(Geom(0).data());
+  }
 
   // Initialize BCs
   setBoundaryConditions();
@@ -584,6 +587,14 @@ PeleLM::readParameters()
       Abort("peleLM.max_grid_size_chem should have 1 or AMREX_SPACEDIM values");
     }
   }
+
+  // -----------------------------------------
+  // Turbulent Forcing
+  // -----------------------------------------
+  pp.query("do_turbulent_forcing", m_do_turbulent_forcing);
+  // Add turbulent velocity from an existing plotfile
+  pp.query("velocity_plotfile", m_velocity_plotfile);
+  pp.query("velocity_plotfile_scale", m_velocity_plotfile_scale);
 
   // -----------------------------------------
   // Load Balancing
@@ -1190,6 +1201,13 @@ PeleLM::derivedSetup()
   derive_lst.add(
     "DistributionMap", IndexType::TheCellType(), 1, pelelmex_derdmap,
     the_same_box);
+
+  // Turbulent Forcing Terms
+  Vector<std::string> var_names_turbforcing = {
+    AMREX_D_DECL("forcex", "forcey", "forcez")};
+  derive_lst.add(
+    "turbforces", IndexType::TheCellType(), AMREX_SPACEDIM,
+    var_names_turbforcing, pelelmex_derturbforcing, the_same_box);
 
   // Cell average pressure
   derive_lst.add(

@@ -21,6 +21,7 @@
 #include <PMFData.H>
 #include <turbinflow.H>
 #include <ReactorBase.H>
+#include <TurbForcing.H>
 #include <Utilities.H>
 
 // AMReX-Hydro lib
@@ -310,6 +311,13 @@ public:
    * \param a_pltFile path to PeleLMeX plot file
    */
   void initLevelDataFromPlt(const int a_lev, const std::string& a_dataPltFile);
+
+  /**
+   * \brief Adds the velocity level data to state
+   * data using the velocities from a pltfile
+   * \param a_velPltFile path to PeleLMeX plot file
+   */
+  void addLevelVelocityDataFromPlt(int a_lev, const std::string& a_velPltFile);
 
   /**
    * \brief Project the initial solution velocity field,
@@ -1898,6 +1906,7 @@ public:
 
   // Turbulence injection
   pele::physics::turbinflow::TurbInflow turb_inflow;
+  pele::physics::turbforcing::TurbForcing turb_forcing;
 
   // Diagnostics
   amrex::Vector<std::unique_ptr<DiagBase>> m_diagnostics;
@@ -2039,6 +2048,11 @@ public:
   int m_do_react = 1;
   int m_do_diff = 1;
   int m_do_adv = 1;
+
+  // Turbulent Forcing
+  bool m_do_turbulent_forcing = false;
+  std::string m_velocity_plotfile;
+  amrex::Real m_velocity_plotfile_scale = 1.0;
 
   // Misc.
   int m_floor_species = 0;

@@ -313,6 +313,28 @@ Transport coefficients and LES
    is applied at isothermal domain boundaries (this is likely sufficient), while no corrections are applied
    at isothermal embedded boundaries (so use caution for isothermal EBs with Soret diffusion active).
 
+
+Turbulent Forcing and Velocity Plotfile
+---------------------------------------
+
+::
+
+    #-----------------------Turbulent Forcing-----------------------
+    peleLM.do_turbulent_forcing    = 0           # [OPT, DEF=0] Use turbulent forcing (note, all turbforce. options are inherited from PelePhysics).
+    turbforce.v                    = 0         # [OPT, DEF=0] Verbosity level for turbulent forcing.
+    turbforce.urms                 = 1.0       # [OPT, DEF=1.0] Target urms.
+    turbforce.time_offset          = 0.0       # [OPT, DEF=0] Offset of the forcing function.
+    turbforce.hack_lz              = 0         # [OPT, DEF=0] Allow periodic reproduction in z.
+    turbforce.force_scale_fudge    = 1.0       # [OPT, DEF=1.0] Used for fine scale tuning of the forcing function.
+    turbforce.rho_incompressible   = -1.0      # [OPT, DEF=-1.0] Density if running in incompressible mode (otherwise this is not used).
+
+    peleLM.velocity_plotfile       = plt?????  # [OPT, DEF=""] Name of a plotfile that you want to provide velocities to add to the initial conditions (must match base grid and domain size exactly).
+    peleLM.velocity_plotfile_scale = 1.0       # [OPT, DEF=1.0] Scaling of the velocities provided from the velocity_plotfile
+
+.. note::
+   For ff_factor, nmodes, forcing_epsilon, spectrum_type and moderate_zero_modes, it is best to leave
+   these as defaults unless you are confident on the consiquences.
+
 Chemistry integrator
 --------------------
 

@@ -1467,6 +1467,47 @@ pelelmex_derdmap(
 }
 
 //
+// Turbulent forcing term
+//
+void
+pelelmex_derturbforcing(
+  PeleLM* a_pelelm,
+  const Box& bx,
+  FArrayBox& derfab,
+  int dcomp,
+  int ncomp,
+  const FArrayBox& statefab,
+  const FArrayBox& /*reactfab*/,
+  const FArrayBox& /*pressfab*/,
+  const Geometry& geom,
+  Real time,
+  const Vector<BCRec>& /*bcrec*/,
+  int /*level*/)
+{
+  AMREX_ASSERT(derfab.box().contains(bx));
+  AMREX_ASSERT(statefab.box().contains(bx));
+  AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
+  AMREX_ASSERT(!a_pelelm->m_incompressible);
+
+  // Need geom for forcing
+  GeometryData const& geomdata = geom.data();
+  Array4<Real> const& der = derfab.array(dcomp);
+
+  // Set derfab to zero first
+  derfab.setVal<amrex::RunOn::Device>(0.0, bx, dcomp, ncomp);
+  FArrayBox DummyFab(bx, 1);
+
+  // Declare a pointer for the density array view
+  Array4<const Real> rho = (a_pelelm->m_incompressible != 0)
+                             ? DummyFab.const_array()
+                             : statefab.const_array(DENSITY);
+
+  // call the function above to construct the forcing
+  a_pelelm->turb_forcing.addTurbVelForces(
+    geomdata, bx, time, der, rho, a_pelelm->m_incompressible, a_pelelm->m_rho);
+}
+
+//
 // Derive manifold output quantities
 //
 #ifdef USE_MANIFOLD_EOS
