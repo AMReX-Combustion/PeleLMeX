@@ -85,8 +85,8 @@ PeleLM::createMACRHS(std::unique_ptr<AdvanceAdvData>& advData)
 
 void
 PeleLM::addChiIncrement(
-  int a_sdcIter,
-  const TimeStamp& a_time,
+  const int a_sdcIter,
+  const TimeStamp a_time,
   std::unique_ptr<AdvanceAdvData>& advData)
 {
   BL_PROFILE("PeleLMeX::addChiIncrement()");
@@ -163,7 +163,7 @@ PeleLM::addChiIncrement(
 
 void
 PeleLM::macProject(
-  const TimeStamp& a_time,
+  const TimeStamp a_time,
   std::unique_ptr<AdvanceAdvData>& advData,
   const Vector<MultiFab*>& a_divu)
 {
@@ -262,7 +262,7 @@ PeleLM::macProject(
 
 void
 PeleLM::create_constrained_umac_grown(
-  int a_nGrow,
+  const int a_nGrow,
   const Geometry* crse_geom,
   const Geometry* fine_geom,
   Array<MultiFab*, AMREX_SPACEDIM> u_mac_crse,

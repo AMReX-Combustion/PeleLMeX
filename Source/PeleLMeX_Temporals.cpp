@@ -4,7 +4,7 @@
 using namespace amrex;
 
 void
-PeleLM::initTemporals(const PeleLM::TimeStamp& a_time)
+PeleLM::initTemporals(const PeleLM::TimeStamp a_time)
 {
   if ((m_do_temporals == 0) && !(m_nstep % m_temp_int == 0)) {
     return;

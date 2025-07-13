@@ -29,7 +29,7 @@ PeleLM::advanceChemistry(std::unique_ptr<AdvanceAdvData>& advData)
 // This advanceChemistry is called on the finest level
 // It works with the AmrCore BoxArray and do not involve ParallelCopy
 void
-PeleLM::advanceChemistry(int lev, const Real& a_dt, MultiFab& a_extForcing)
+PeleLM::advanceChemistry(const int lev, const Real a_dt, MultiFab& a_extForcing)
 {
   BL_PROFILE("PeleLMeX::advanceChemistry_Lev" + std::to_string(lev) + "()");
 
@@ -179,7 +179,7 @@ PeleLM::advanceChemistry(int lev, const Real& a_dt, MultiFab& a_extForcing)
 // on uncovered boxes.
 void
 PeleLM::advanceChemistryBAChem(
-  int lev, const Real& a_dt, MultiFab& a_extForcing)
+  const int lev, const Real a_dt, MultiFab& a_extForcing)
 {
   BL_PROFILE("PeleLMeX::advanceChemistry_Lev" + std::to_string(lev) + "()");
 
@@ -368,7 +368,7 @@ PeleLM::advanceChemistryBAChem(
 
 void
 PeleLM::computeInstantaneousReactionRate(
-  const Vector<MultiFab*>& I_R, const TimeStamp& a_time)
+  const Vector<MultiFab*>& I_R, const TimeStamp a_time)
 {
   for (int lev = 0; lev <= finest_level; ++lev) {
 #ifdef PELE_USE_PLASMA
@@ -381,7 +381,7 @@ PeleLM::computeInstantaneousReactionRate(
 
 void
 PeleLM::computeInstantaneousReactionRate(
-  int lev, const TimeStamp& a_time, MultiFab* a_I_R)
+  const int lev, const TimeStamp a_time, MultiFab* a_I_R)
 {
   BL_PROFILE("PeleLMeX::computeInstantaneousReactionRate()");
   auto* ldata_p = getLevelDataPtr(lev, a_time);
@@ -475,7 +475,7 @@ PeleLM::getScalarReactForce(std::unique_ptr<AdvanceAdvData>& advData)
 }
 
 void
-PeleLM::getHeatRelease(int a_lev, MultiFab* a_HR)
+PeleLM::getHeatRelease(const int a_lev, MultiFab* a_HR)
 {
   auto* ldataNew_p = getLevelDataPtr(a_lev, AmrNewTime);
   auto* ldataR_p = getLevelDataReactPtr(a_lev);

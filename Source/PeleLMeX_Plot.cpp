@@ -27,7 +27,7 @@ namespace m2c = pele::physics::utilities::mks2cgs;
 namespace c2m = pele::physics::utilities::cgs2mks;
 
 namespace {
-constexpr std::string level_prefix{"Level_"};
+const std::string level_prefix{"Level_"};
 }
 
 void
@@ -981,7 +981,7 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
     auto state_ma = ldata_p->state.arrays();
     amrex::ParallelFor(
       ldata_p->state,
-      [vel_ma] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+      [state_ma] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
         Array4<Real> vel(state_ma[box_no], VELX);
         for (int n = 0; n < AMREX_SPACEDIM; ++n) {
           vel(i, j, k, n) *= 0.01;
@@ -1055,7 +1055,7 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
   amrex::ParallelFor(
     ldata_p->state, [state_ma, P_cgs, eosparm = leosparm] AMREX_GPU_DEVICE(
                       int box_no, int i, int j, int k) noexcept {
-      auto eos = pele::physic::PhysicsType::eos(eosparm);
+      auto eos = pele::physics::PhysicsType::eos(eosparm);
       Array4<Real> rho(state_ma[box_no], DENSITY);
       Array4<Real> rhoY(state_ma[box_no], FIRSTSPEC);
       Array4<Real> rhoH(state_ma[box_no], RHOH);
@@ -1075,17 +1075,17 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
 #endif
       // Get density
       Real rho_cgs = 0.0;
-      eos.PYT2R(P_cgs, massfrac, temp_arr(i, j, k), rho_cgs);
+      eos.PYT2R(P_cgs, massfrac, temp(i, j, k), rho_cgs);
       rho(i, j, k) = c2m::Rho(rho_cgs);
 
       // Get enthalpy
       Real h_cgs = 0.0;
-      eos.TY2H(temp_arr(i, j, k), massfrac, h_cgs);
-      rhoH(i, j, k) = c2m::H(h_cgs) * rho_arr(i, j, k);
+      eos.TY2H(temp(i, j, k), massfrac, h_cgs);
+      rhoH(i, j, k) = c2m::H(h_cgs) * rho(i, j, k);
 
       // Fill rhoYs
       for (int n = 0; n < NUM_SPECIES; ++n) {
-        rhoY(i, j, k, n) = massfrac[n] * rho_arr(i, j, k);
+        rhoY(i, j, k, n) = massfrac[n] * rho(i, j, k);
       }
     });
   Gpu::streamSynchronize();

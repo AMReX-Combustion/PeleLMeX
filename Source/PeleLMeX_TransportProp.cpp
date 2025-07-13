@@ -9,7 +9,7 @@
 using namespace amrex;
 
 void
-PeleLM::calcTurbViscosity(const TimeStamp& a_time)
+PeleLM::calcTurbViscosity(const TimeStamp a_time)
 {
   BL_PROFILE("PeleLMeX::calcTurbViscosity()");
 
@@ -249,7 +249,7 @@ PeleLM::calcTurbViscosity(const TimeStamp& a_time)
 }
 
 void
-PeleLM::calcViscosity(const TimeStamp& a_time)
+PeleLM::calcViscosity(const TimeStamp a_time)
 {
   BL_PROFILE("PeleLMeX::calcViscosity()");
 
@@ -282,7 +282,7 @@ PeleLM::calcViscosity(const TimeStamp& a_time)
 }
 
 void
-PeleLM::calcDiffusivity(const TimeStamp& a_time)
+PeleLM::calcDiffusivity(const TimeStamp a_time)
 {
   BL_PROFILE("PeleLMeX::calcDiffusivity()");
 

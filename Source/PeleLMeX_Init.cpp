@@ -354,7 +354,7 @@ PeleLM::initLevelData(const int lev)
   auto const* lpmfdata = pmf_data.device_parm();
 
   // don't want to use state for dummy in case user overwrites state in aux
-  MultiFab dummy_mf(grids[lev], ba[lev], 1, 0);
+  MultiFab dummy_mf(grids[lev], dmap[lev], 1, 0);
 
   auto state_ma = ldata_p->state.arrays();
   auto aux_ma =
@@ -456,7 +456,7 @@ PeleLM::projectInitSolution()
       if (m_has_divu != 0) {
         constexpr int is_initialization = 1;    // Yes we are
         constexpr int computeDiffusionTerm = 1; // Needed here
-        constexpr nt do_avgDown = 1;            // Always
+        constexpr int do_avgDown = 1;           // Always
 
         // Light version of the diffusion data container
         std::unique_ptr<AdvanceDiffData> diffData;

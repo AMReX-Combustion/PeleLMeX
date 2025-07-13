@@ -385,7 +385,8 @@ PeleLM::readParameters()
         Print() << "Spark " << n << " name: " << m_spark[n] << "\n";
         Print() << "Spark " << n << " time: " << m_spark_time[n] << "\n";
         Print() << "Spark " << n << " duration: " << m_spark_duration[n]
-                << "\n" Print() << "Spark " << n << " location: ";
+                << "\n";
+        Print() << "Spark " << n << " location: ";
         for (int d = 0; d < AMREX_SPACEDIM; ++d) {
           Print() << m_spark_location[n][d] << " ";
         }

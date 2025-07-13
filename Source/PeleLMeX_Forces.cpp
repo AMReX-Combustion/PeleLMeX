@@ -11,7 +11,7 @@ using namespace amrex;
 // including divTau if input Vector not empty
 void
 PeleLM::getVelForces(
-  const TimeStamp& a_time,
+  const TimeStamp a_time,
   const Vector<MultiFab*>& a_divTau,
   const Vector<MultiFab*>& a_velForce,
   const int nGrowForce,
@@ -36,7 +36,7 @@ PeleLM::getVelForces(
 
 void
 PeleLM::getVelForces(
-  const TimeStamp& a_time,
+  const TimeStamp a_time,
   const int lev,
   MultiFab* a_divTau,
   MultiFab* a_velForce,
@@ -120,7 +120,7 @@ PeleLM::getVelForces(
 }
 
 void
-PeleLM::addSpark(const TimeStamp& a_timestamp)
+PeleLM::addSpark(const TimeStamp a_timestamp)
 {
   for (int lev = 0; lev <= finest_level; ++lev) {
     for (int n = 0; n < m_n_sparks; ++n) {
@@ -186,7 +186,7 @@ PeleLM::addSpark(const TimeStamp& a_timestamp)
 
 // Manifold model - dissipation rate sources for variances
 void
-PeleLM::addScalarVarianceSources(const TimeStamp& a_timestamp)
+PeleLM::addScalarVarianceSources(const TimeStamp a_timestamp)
 {
   BL_PROFILE("PeleLM::addScalarVarianceSources");
   // no scalar dissipation sources if not using a manifold model
@@ -334,8 +334,8 @@ PeleLM::addScalarVarianceSources(const TimeStamp& a_timestamp)
 void
 PeleLM::getExternalSources(
   const int is_initIter,
-  const PeleLM::TimeStamp& a_timestamp_old,
-  const PeleLM::TimeStamp& a_timestamp_new)
+  const PeleLM::TimeStamp a_timestamp_old,
+  const PeleLM::TimeStamp a_timestamp_new)
 {
   amrex::ignore_unused(is_initIter);
 

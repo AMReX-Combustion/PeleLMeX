@@ -41,7 +41,7 @@ PeleLM::getDiffusionTensorOp()
 
 void
 PeleLM::computeDifferentialDiffusionTerms(
-  const TimeStamp& a_time,
+  const TimeStamp a_time,
   std::unique_ptr<AdvanceDiffData>& diffData,
   const int is_init)
 {
@@ -366,7 +366,7 @@ PeleLM::adjustSpeciesFluxes<pele::physics::eos::Manifold>(
 
 void
 PeleLM::correctIsothermalBoundary(
-  const TimeStamp& a_time,
+  const TimeStamp a_time,
   const Vector<MultiFab*>& a_spec_boundary,
   const Vector<Array<MultiFab*, AMREX_SPACEDIM>>& a_wbarfluxes,
   const Vector<Array<MultiFab*, AMREX_SPACEDIM>>& a_soretfluxes)
@@ -464,7 +464,7 @@ PeleLM::correctIsothermalBoundary(
 
 void
 PeleLM::computeDifferentialDiffusionFluxes(
-  const TimeStamp& a_time,
+  const TimeStamp a_time,
   const Vector<Array<MultiFab*, AMREX_SPACEDIM>>& a_fluxes,
   const Vector<MultiFab*>&
 #ifdef AMREX_USE_EB
@@ -1763,7 +1763,7 @@ PeleLM::getScalarDiffForce(
 
 void
 PeleLM::computeDivTau(
-  const TimeStamp& a_time,
+  const TimeStamp a_time,
   const Vector<MultiFab*>& a_divtau,
   const int use_density,
   const Real scale)

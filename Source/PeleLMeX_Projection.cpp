@@ -33,11 +33,11 @@ PeleLM::initialProjection()
           grids[lev], dmap[lev], 1, nGhost, MFInfo(), *m_factory[lev]));
 
       auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
-      auto state_ma = ldata_p->const_arrays();
+      auto state_ma = ldata_p->state.const_arrays();
       auto sigma_ma = sigma[lev]->arrays();
       amrex::ParallelFor(
-        ldata_p, [state_ma, sigma_ma] AMREX_GPU_DEVICE(
-                   int box_no, int i, int j, int k) noexcept {
+        ldata_p->state, [state_ma, sigma_ma] AMREX_GPU_DEVICE(
+                          int box_no, int i, int j, int k) noexcept {
           Array4<Real const> rho(state_ma[box_no], DENSITY);
           sigma_ma[box_no](i, j, k) = dummy_dt / rho(i, j, k);
         });
@@ -61,7 +61,7 @@ PeleLM::initialProjection()
     setInflowBoundaryVel(*vel[lev], lev, AmrNewTime);
 #if AMREX_SPACEDIM == 2
     if (geom[lev].IsRZ()) {
-      scaleProj_RZ(lev, *vel[lev])
+      scaleProj_RZ(lev, *vel[lev]);
     };
 #endif
   }
@@ -201,7 +201,7 @@ PeleLM::initialPressProjection()
 
 void
 PeleLM::velocityProjection(
-  const int is_initIter, const TimeStamp& a_rhoTime, const Real& a_dt)
+  const int is_initIter, const TimeStamp a_rhoTime, const Real a_dt)
 {
   BL_PROFILE("PeleLMeX::velocityProjection()");
 
@@ -223,7 +223,7 @@ PeleLM::velocityProjection(
       auto sigma_ma = sigma[lev]->arrays();
 
       amrex::ParallelFor(
-        *rhoHalf[lev], [rhoHalf_ma, sig_ma, dt = a_dt] AMREX_GPU_DEVICE(
+        *rhoHalf[lev], [rhoHalf_ma, sigma_ma, dt = a_dt] AMREX_GPU_DEVICE(
                          int box_no, int i, int j, int k) noexcept {
           sigma_ma[box_no](i, j, k) = dt / rhoHalf_ma[box_no](i, j, k);
         });
@@ -250,8 +250,8 @@ PeleLM::velocityProjection(
       auto* ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
       auto* ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
 
-      auto state_old_ma = ldataOld_p->arrays();
-      auto gp_new_ma = ldataNew_p->const_arrays();
+      auto state_old_ma = ldataOld_p->state.arrays();
+      auto gp_new_ma = ldataNew_p->gp.const_arrays();
       if (m_incompressible == 0) {
         auto rho_ma = rhoHalf[lev]->const_arrays();
         amrex::ParallelFor(
@@ -307,7 +307,7 @@ PeleLM::velocityProjection(
     }
 #if AMREX_SPACEDIM == 2
     if (geom[lev].IsRZ()) {
-      scaleProj_RZ(lev, *ve;[lev]);
+      scaleProj_RZ(lev, *vel[lev]);
     }
 #endif
   }

@@ -250,10 +250,9 @@ PeleLM::fetchBCRecAuxArray(const int scomp, const int ncomp)
 
 //-----------------------------------------------------------------------------
 // The following work directly on the leveldata
-l
-  // Fill the entire class state at once
-  voidPe
-  PeleLM::fillPatchState(const TimeStamp a_time)
+// Fill the entire class state at once
+void
+PeleLM::fillPatchState(const TimeStamp a_time)
 {
   BL_PROFILE("PeleLMeX::fillPatchState()");
   for (int lev = 0; lev <= finest_level; ++lev) {
@@ -280,7 +279,7 @@ PeleLM::fillPatchState(const int lev, const TimeStamp a_time)
 
 // Fill a state components
 void
-PeleLM::fillPatchDensity(const TimeStamp& a_time)
+PeleLM::fillPatchDensity(const TimeStamp a_time)
 {
   BL_PROFILE("PeleLMeX::fillPatchDensity()");
   for (int lev = 0; lev <= finest_level; ++lev) {
@@ -291,7 +290,7 @@ PeleLM::fillPatchDensity(const TimeStamp& a_time)
 }
 
 void
-PeleLM::fillPatchSpecies(const TimeStamp& a_time)
+PeleLM::fillPatchSpecies(const TimeStamp a_time)
 {
   BL_PROFILE("PeleLMeX::fillPatchSpecies()");
   for (int lev = 0; lev <= finest_level; ++lev) {
@@ -302,7 +301,7 @@ PeleLM::fillPatchSpecies(const TimeStamp& a_time)
 }
 
 void
-PeleLM::fillPatchTemp(const TimeStamp& a_time)
+PeleLM::fillPatchTemp(const TimeStamp a_time)
 {
   BL_PROFILE("PeleLMeX::fillPatchTemp()");
   for (int lev = 0; lev <= finest_level; ++lev) {
@@ -313,7 +312,7 @@ PeleLM::fillPatchTemp(const TimeStamp& a_time)
 }
 
 void
-PeleLM::fillPatchAux(const TimeStamp& a_time)
+PeleLM::fillPatchAux(const TimeStamp a_time)
 {
   BL_PROFILE("PeleLMeX::fillPatchAux()");
   for (int lev = 0; lev <= finest_level; ++lev) {
@@ -325,7 +324,7 @@ PeleLM::fillPatchAux(const TimeStamp& a_time)
 
 #ifdef PELE_USE_PLASMA
 void
-PeleLM::fillPatchPhiV(const TimeStamp& a_time)
+PeleLM::fillPatchPhiV(const TimeStamp a_time)
 {
   BL_PROFILE("PeleLMeX::fillPatchPhiV()");
   for (int lev = 0; lev <= finest_level; ++lev) {

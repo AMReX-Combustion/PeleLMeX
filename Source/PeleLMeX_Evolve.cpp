@@ -7,7 +7,7 @@ PeleLM::Evolve()
 {
   BL_PROFILE("PeleLMeX::Evolve()");
 
-  const bool do_not_evolve =
+  bool do_not_evolve =
     ((m_max_step == 0) || ((m_stop_time >= 0.) && (m_cur_time > m_stop_time)));
 
   int plt_justDidIt = 0;
@@ -211,7 +211,7 @@ PeleLM::writeCheckNow() const
 bool
 PeleLM::doTemporalsNow() const
 {
-  return (m_do_temporals != 0) && (m_nstep % m_temp_int == 0)
+  return (m_do_temporals != 0) && (m_nstep % m_temp_int == 0);
 }
 
 bool

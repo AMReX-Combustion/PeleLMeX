@@ -758,7 +758,7 @@ PeleLM::advFluxDivergence(
 #endif
 
 void
-PeleLM::floorSpecies(const TimeStamp& a_time)
+PeleLM::floorSpecies(const TimeStamp a_time)
 {
   BL_PROFILE("PeleLMeX::floorSpecies()");
   AMREX_ASSERT(a_time == AmrOldTime || a_time == AmrNewTime);
@@ -1489,7 +1489,7 @@ cells
 */
 
 void
-PeleLM::setTypicalValues(const TimeStamp& a_time, int is_init)
+PeleLM::setTypicalValues(const TimeStamp a_time, const int is_init)
 {
   // Get state Max/Min
   auto stateMax =

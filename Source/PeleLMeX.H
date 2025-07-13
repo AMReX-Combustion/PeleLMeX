@@ -777,7 +777,7 @@ public:
    */
   void computeInstantaneousReactionRate(
     const amrex::Vector<amrex::MultiFab*>& a_I_R,
-    const PeleLM::TimeStamp& a_time);
+    const PeleLM::TimeStamp a_time);
 
   /**
    * \brief Compute instantaneous reaction rate on a given level
@@ -818,7 +818,7 @@ public:
    * \param a_time state time to work on, either Old or New
    */
   amrex::Real estDivUDt(const PeleLM::TimeStamp a_time);
-  void checkDt(const PeleLM::TimeStamp a_time, const amrex::Real& a_dt);
+  void checkDt(const PeleLM::TimeStamp a_time, const amrex::Real a_dt);
   //-----------------------------------------------------------------------------
 
   //-----------------------------------------------------------------------------
@@ -938,7 +938,7 @@ public:
    * \brief Compute temperature from rhoY and rhoH on all levels
    * \param a_time state time to work on, either Old or New
    */
-  void setTemperature(const PeleLM::TimeStamp& a_time);
+  void setTemperature(const PeleLM::TimeStamp a_time);
 
   /**
    * \brief Compute temperature from rhoY and rhoH on a given level
@@ -1057,17 +1057,17 @@ public:
   void setBoundaryConditions();
 
   // FillPatch the entire class state
-  void fillPatchState(const PeleLM::TimeStamp& a_time);
-  void fillPatchState(const int lev, const PeleLM::TimeStamp& a_time);
+  void fillPatchState(const PeleLM::TimeStamp a_time);
+  void fillPatchState(const int lev, const PeleLM::TimeStamp a_time);
 
   // FillPatch the various state components
-  void fillPatchDensity(const PeleLM::TimeStamp& a_time);
-  void fillPatchSpecies(const PeleLM::TimeStamp& a_time);
-  void fillPatchTemp(const PeleLM::TimeStamp& a_time);
-  void fillPatchAux(const PeleLM::TimeStamp& a_time);
+  void fillPatchDensity(const PeleLM::TimeStamp a_time);
+  void fillPatchSpecies(const PeleLM::TimeStamp a_time);
+  void fillPatchTemp(const PeleLM::TimeStamp a_time);
+  void fillPatchAux(const PeleLM::TimeStamp a_time);
 
 #ifdef PELE_USE_PLASMA
-  void fillPatchPhiV(const PeleLM::TimeStamp& a_time);
+  void fillPatchPhiV(const PeleLM::TimeStamp a_time);
 #endif
 
   // FillPatch and return a MF
@@ -1193,16 +1193,16 @@ public:
     const amrex::Real a_time);
 
   // Average down operations
-  void averageDownState(const PeleLM::TimeStamp& a_time);
-  void averageDownScalars(const PeleLM::TimeStamp& a_time);
-  void averageDownVelocity(const PeleLM::TimeStamp& a_time);
-  void averageDownAux(const PeleLM::TimeStamp& a_time);
+  void averageDownState(const PeleLM::TimeStamp a_time);
+  void averageDownScalars(const PeleLM::TimeStamp a_time);
+  void averageDownVelocity(const PeleLM::TimeStamp a_time);
+  void averageDownAux(const PeleLM::TimeStamp a_time);
   void averageDown(
-    const PeleLM::TimeStamp& a_time, const int state_comp, const int ncomp);
+    const PeleLM::TimeStamp a_time, const int state_comp, const int ncomp);
   void averageDownReaction();
 #ifdef PELE_USE_PLASMA
-  void averageDownnE(const PeleLM::TimeStamp& a_time);
-  void averageDownPhiV(const PeleLM::TimeStamp& a_time);
+  void averageDownnE(const PeleLM::TimeStamp a_time);
+  void averageDownPhiV(const PeleLM::TimeStamp a_time);
 #endif
   //-----------------------------------------------------------------------------
 
@@ -1360,7 +1360,7 @@ public:
     int ncomp,
     amrex::Real scale);
 
-  void floorSpecies(const PeleLM::TimeStamp& a_time);
+  void floorSpecies(const PeleLM::TimeStamp a_time);
 
   amrex::Real MLNorm0(const amrex::Vector<const amrex::MultiFab*>& a_MF);
   amrex::Vector<amrex::Real> MLNorm0(
@@ -1616,7 +1616,7 @@ public:
   void ionDriftAddUmac(const int lev, std::unique_ptr<AdvanceAdvData>& advData);
 
   void computeInstantaneousReactionRateEF(
-    const int lev, const PeleLM::TimeStamp& a_time, amrex::MultiFab* a_I_R);
+    const int lev, const PeleLM::TimeStamp a_time, amrex::MultiFab* a_I_R);
 
   amrex::BCRec
   hackBCChargedParticle(const amrex::Real& zk, const amrex::BCRec& bc_in);
@@ -1981,7 +1981,7 @@ public:
   amrex::Vector<std::string> m_spark;
   amrex::Vector<amrex::Real> m_spark_time;
   amrex::Vector<amrex::Real> m_spark_duration;
-  amrex::Vector<amrex::Array<amrex::Real, AMREX_SPACEDIM>> m_spark_location;
+  amrex::Vector<amrex::Vector<amrex::Real>> m_spark_location;
   amrex::Vector<amrex::Real> m_spark_temp;
   amrex::Vector<amrex::Real> m_spark_radius;
 
@@ -2112,13 +2112,13 @@ public:
 
   // Number of ghost cells
 #ifdef AMREX_USE_EB
-  constexpr int m_nGrowState = 4;
+  static constexpr int m_nGrowState = 4;
 #else
-  constexpr int m_nGrowState = 3;
+  static constexpr int m_nGrowState = 3;
 #endif
-  constexpr int m_nGrowAdv = 1;
-  constexpr int m_nGrowdivu = 1;
-  constexpr int m_nGrowMAC = 1;
+  static constexpr int m_nGrowAdv = 1;
+  static constexpr int m_nGrowdivu = 1;
+  static constexpr int m_nGrowMAC = 1;
 
   // Initialization
   int m_do_init_proj = 1;

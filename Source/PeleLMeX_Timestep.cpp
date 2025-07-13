@@ -4,7 +4,7 @@
 using namespace amrex;
 
 Real
-PeleLM::computeDt(int is_init, const TimeStamp& a_time)
+PeleLM::computeDt(const int is_init, const TimeStamp a_time)
 {
   BL_PROFILE("PeleLMeX::computeDt()");
 
@@ -97,7 +97,7 @@ PeleLM::computeDt(int is_init, const TimeStamp& a_time)
 }
 
 Real
-PeleLM::estConvectiveDt(const TimeStamp& a_time)
+PeleLM::estConvectiveDt(const TimeStamp a_time)
 {
 
   Real estdt = 1.0e200;
@@ -156,7 +156,7 @@ PeleLM::estConvectiveDt(const TimeStamp& a_time)
 }
 
 Real
-PeleLM::estDivUDt(const TimeStamp& a_time)
+PeleLM::estDivUDt(const TimeStamp a_time)
 {
 
   Real estdt = 1.0e200;
@@ -228,7 +228,7 @@ PeleLM::estDivUDt(const TimeStamp& a_time)
 }
 
 void
-PeleLM::checkDt(const TimeStamp& a_time, const Real& a_dt)
+PeleLM::checkDt(const TimeStamp a_time, const Real a_dt)
 {
   BL_PROFILE("PeleLMeX::checkDt()");
 
@@ -239,27 +239,23 @@ PeleLM::checkDt(const TimeStamp& a_time, const Real& a_dt)
   for (int lev = 0; lev <= finest_level; ++lev) {
 
     auto* ldata_p = getLevelDataPtr(lev, a_time);
+    const GpuArray<Real, AMREX_SPACEDIM> dxinv = geom[lev].InvCellSizeArray();
 
-    const auto dxinv = geom[lev].InvCellSizeArray();
+    auto state_ma = ldata_p->state.const_arrays();
+    auto divu_ma = ldata_p->divu.const_arrays();
 
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
-    for (MFIter mfi(ldata_p->state, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
-      const Box& bx = mfi.tilebox();
-      auto const& rho = ldata_p->state.const_array(mfi, DENSITY);
-      auto const& vel = ldata_p->state.const_array(mfi, VELX);
-      auto const& divu = ldata_p->divu.const_array(mfi);
-      int divu_checkFlag = m_divu_checkFlag;
-      auto dtfac = m_divu_dtFactor;
-      auto rhoMin = m_divu_rhoMin;
-      amrex::ParallelFor(
-        bx, [rho, vel, divu, divu_checkFlag, dtfac, rhoMin, dxinv,
-             a_dt] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          check_divu_dt(
-            i, j, k, divu_checkFlag, dtfac, rhoMin, dxinv, rho, vel, divu,
-            a_dt);
-        });
-    }
+    amrex::ParallelFor(
+      ldata_p->state,
+      [state_ma, divu_ma, dxinv, a_dt, divu_checkFlag = m_divu_checkFlag,
+       dtfac = m_divu_dtFactor,
+       rhoMin =
+         m_divu_rhoMin] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+        Array4<Real const> rho(state_ma[box_no], DENSITY);
+        Array4<Real const> vel(state_ma[box_no], VELX);
+        Array4<Real const> divu = divu_ma[box_no];
+        check_divu_dt(
+          i, j, k, divu_checkFlag, dtfac, rhoMin, dxinv, rho, vel, divu, a_dt);
+      });
   }
+  Gpu::streamSynchronize();
 }

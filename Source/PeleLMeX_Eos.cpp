@@ -5,7 +5,7 @@
 using namespace amrex;
 
 void
-PeleLM::setThermoPress(const TimeStamp& a_time)
+PeleLM::setThermoPress(const TimeStamp a_time)
 {
   BL_PROFILE("PeleLMeX::setThermoPress()");
 
@@ -17,7 +17,7 @@ PeleLM::setThermoPress(const TimeStamp& a_time)
 }
 
 void
-PeleLM::setThermoPress(int lev, const TimeStamp& a_time)
+PeleLM::setThermoPress(const int lev, const TimeStamp a_time)
 {
 
   AMREX_ASSERT(a_time == AmrOldTime || a_time == AmrNewTime);
@@ -40,10 +40,10 @@ PeleLM::setThermoPress(int lev, const TimeStamp& a_time)
 
 void
 PeleLM::calcDivU(
-  int is_init,
-  int computeDiff,
-  int do_avgDown,
-  const TimeStamp& a_time,
+  const int is_init,
+  const int computeDiff,
+  const int do_avgDown,
+  const TimeStamp a_time,
   std::unique_ptr<AdvanceDiffData>& diffData)
 {
   BL_PROFILE("PeleLMeX::calcDivU()");
@@ -183,7 +183,7 @@ PeleLM::calcDivU(
 }
 
 void
-PeleLM::setRhoToSumRhoY(int lev, const TimeStamp& a_time)
+PeleLM::setRhoToSumRhoY(const int lev, const TimeStamp a_time)
 {
 
   AMREX_ASSERT(a_time == AmrOldTime || a_time == AmrNewTime);
@@ -202,7 +202,7 @@ PeleLM::setRhoToSumRhoY(int lev, const TimeStamp& a_time)
 }
 
 void
-PeleLM::setTemperature(const TimeStamp& a_time)
+PeleLM::setTemperature(const TimeStamp a_time)
 {
   BL_PROFILE_VAR("PeleLMeX::setTemperature()", setTemperature);
 
@@ -215,7 +215,7 @@ PeleLM::setTemperature(const TimeStamp& a_time)
 }
 
 void
-PeleLM::setTemperature(int lev, const TimeStamp& a_time)
+PeleLM::setTemperature(const int lev, const TimeStamp a_time)
 {
 
   AMREX_ASSERT(a_time == AmrOldTime || a_time == AmrNewTime);
@@ -237,7 +237,7 @@ PeleLM::setTemperature(int lev, const TimeStamp& a_time)
 }
 
 void
-PeleLM::calc_dPdt(const TimeStamp& a_time, const Vector<MultiFab*>& a_dPdt)
+PeleLM::calc_dPdt(const TimeStamp a_time, const Vector<MultiFab*>& a_dPdt)
 {
   BL_PROFILE("PeleLMeX::calc_dPdt()");
 
@@ -257,7 +257,7 @@ PeleLM::calc_dPdt(const TimeStamp& a_time, const Vector<MultiFab*>& a_dPdt)
 }
 
 void
-PeleLM::calc_dPdt(int lev, const TimeStamp& a_time, MultiFab* a_dPdt)
+PeleLM::calc_dPdt(const int lev, const TimeStamp a_time, MultiFab* a_dPdt)
 {
   auto const& sma = getLevelDataPtr(lev, a_time)->state.arrays();
   auto const& dPdtma = a_dPdt->arrays();
