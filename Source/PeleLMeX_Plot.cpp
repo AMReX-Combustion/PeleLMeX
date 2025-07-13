@@ -855,7 +855,7 @@ PeleLM::ReadCheckPointFile()
     }
   }
   if (m_verbose != 0) {
-    amrex::Print() << "Restart complete" << std::endl;
+    amrex::Print() << "Restart complete \n";
   }
 }
 

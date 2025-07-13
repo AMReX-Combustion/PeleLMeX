@@ -19,7 +19,7 @@ PeleLM::calcTurbViscosity(const TimeStamp& a_time)
   if (m_les_verbose > 0) {
     amrex::Print() << "   Computing Turbulent Viscosity with LES model: "
                    << m_les_model << " for time " << getTime(0, a_time)
-                   << std::endl;
+                   << "\n";
   }
 
   // Create temporary multifab to store velocity gradient tensor

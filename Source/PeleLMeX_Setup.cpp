@@ -103,34 +103,31 @@ PeleLM::Setup()
       amrex::Print() << "    Using LES in transport with Sc = "
                      << 1.0 / m_Schmidt_inv;
       if (pele::physics::PhysicsType::eos_type::identifier() == "Manifold") {
-        amrex::Print() << ", enthalpy not diffused for Manifold EOS "
-                       << std::endl;
+        amrex::Print() << ", enthalpy not diffused for Manifold EOS \n";
       } else {
-        amrex::Print() << " and Pr = " << 1.0 / m_Prandtl_inv << std::endl;
+        amrex::Print() << " and Pr = " << 1.0 / m_Prandtl_inv << "\n";
       }
     } else if (m_verbose != 0) {
       if (m_fixed_Le == 0 && m_fixed_Pr == 0) {
         if (m_use_soret == 0) {
-          amrex::Print() << "    Using mixture-averaged transport" << std::endl;
+          amrex::Print() << "    Using mixture-averaged transport \n";
         } else {
           amrex::Print()
-            << "    Using mixture-averaged transport with Soret effects"
-            << std::endl;
+            << "    Using mixture-averaged transport with Soret effects \n";
           if (m_soret_boundary_override != 0) {
             amrex::Print()
               << "    Imposing inhomogeneous Neumann conditions "
-                 "for species on isothermal walls. WARNING: use_wbar disabled."
-              << std::endl;
+                 "for species on isothermal walls. WARNING: use_wbar disabled. \n"
           }
         }
       } else {
         if (m_fixed_Le != 0) {
           amrex::Print() << "    Using fixed Le = " << 1.0 / m_Lewis_inv
-                         << std::endl;
+                         << "\n";
         }
         if (m_fixed_Pr != 0) {
           amrex::Print() << "    Using fixed Pr = " << 1.0 / m_Prandtl_inv
-                         << std::endl;
+                         << "\n";
         }
       }
     }
@@ -382,21 +379,20 @@ PeleLM::readParameters()
       pps.get("radius", m_spark_radius[n]);
     }
     if (m_spark_verbose > 0) {
-      Print() << "Spark list:" << std::endl;
+      Print() << "Spark list: \n";
       for (int n = 0; n < m_n_sparks; n++) {
-        Print() << "Spark " << n << " name: " << m_spark[n] << std::endl;
-        Print() << "Spark " << n << " time: " << m_spark_time[n] << std::endl;
+        Print() << "Spark " << n << " name: " << m_spark[n] << "\n";
+        Print() << "Spark " << n << " time: " << m_spark_time[n] << "\n";
         Print() << "Spark " << n << " duration: " << m_spark_duration[n]
-                << std::endl;
+                << "\n";
         Print() << "Spark " << n << " location: ";
         for (int d = 0; d < AMREX_SPACEDIM; d++) {
           Print() << m_spark_location[n][d] << " ";
         }
-        Print() << std::endl;
-        Print() << "Spark " << n << " temperature: " << m_spark_temp[n]
-                << std::endl;
+        Print() << "\n Spark " << n << " temperature: " << m_spark_temp[n]
+                << "\n";
         Print() << "Spark " << n << " radius: " << m_spark_radius[n]
-                << std::endl;
+                << "\n";
       }
     }
   }
@@ -485,8 +481,7 @@ PeleLM::readParameters()
   if (m_unity_Le != 0) {
     m_fixed_Le = 1;
     amrex::Print() << "WARNING: unity_Le is deprecated and will be removed in "
-                      "future version, use fixed_Le instead"
-                   << std::endl;
+                      "future version, use fixed_Le instead \n"
   }
   if (m_do_les) { // For LES, Prandtl and Schmidt numbers are fixed
     m_fixed_Le = 1;
@@ -522,8 +517,7 @@ PeleLM::readParameters()
     m_use_wbar = 0;
     m_use_soret = 0;
     amrex::Print() << "WARNING: use_wbar and use_soret set to false because "
-                      "fixed_Pr or fixed_Le is true"
-                   << std::endl;
+      "fixed_Pr or fixed_Le is true \n";
   }
 
   // Manifold EOS: invPrandtl needs to be 0 because H not used

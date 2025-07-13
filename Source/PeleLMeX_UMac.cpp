@@ -157,7 +157,7 @@ PeleLM::addChiIncrement(
     amrex::Real max_corr =
       MLNorm0(GetVecOfConstPtrs(chiIncr)) * m_dt / m_dpdtFactor;
     amrex::Print() << "      Before SDC " << a_sdcIter
-                   << ": max relative P mismatch is " << max_corr << std::endl;
+                   << ": max relative P mismatch is " << max_corr << "\n";
   }
 }
 

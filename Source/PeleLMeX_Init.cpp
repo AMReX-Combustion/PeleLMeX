@@ -32,8 +32,7 @@ PeleLM::MakeNewLevelFromScratch(
   BL_PROFILE("PeleLMeX::MakeNewLevelFromScratch()");
 
   if (m_verbose > 0) {
-    amrex::Print() << " Making new level " << lev << " from scratch"
-                   << std::endl;
+    amrex::Print() << " Making new level " << lev << " from scratch \n";
     if (m_verbose > 2 && lev > 0) {
       auto const dx = geom[lev].CellSizeArray();
       Real vol = AMREX_D_TERM(dx[0], *dx[1], *dx[2]);
@@ -45,7 +44,7 @@ PeleLM::MakeNewLevelFromScratch(
                      << "% of the domain \n";
     }
     if (m_verbose > 3 && lev > 0) {
-      amrex::Print() << " with BoxArray " << ba << std::endl;
+      amrex::Print() << " with BoxArray " << ba << "\n";
     }
   }
 

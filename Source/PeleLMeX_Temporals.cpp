@@ -535,7 +535,7 @@ PeleLM::initBPatches(Geometry& a_geom)
     m_bPatches[n] = std::make_unique<BPatch>(bpatch_name[n], a_geom);
     if (m_verbose > 0) {
       Print() << " Initializing boundary patch: " << bpatch_name[n]
-              << std::endl;
+              << "\n";
     }
   }
 }

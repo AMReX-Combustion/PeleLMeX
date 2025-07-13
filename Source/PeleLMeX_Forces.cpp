@@ -184,7 +184,7 @@ PeleLM::addSpark(const TimeStamp& a_timestamp)
         time < m_spark_time[n] ||
         time > m_spark_time[n] + m_spark_duration[n]) {
         if (verb) {
-          Print() << m_spark[n] << " not active" << std::endl;
+          Print() << m_spark[n] << " not active \n";
         }
         continue;
       }
@@ -201,7 +201,7 @@ PeleLM::addSpark(const TimeStamp& a_timestamp)
         continue;
       }
       if (verb) {
-        Print() << m_spark[n] << " active" << std::endl;
+        Print() << m_spark[n] << " active \n";
       }
 
       auto statema = getLevelDataPtr(lev, a_timestamp)->state.const_arrays();
