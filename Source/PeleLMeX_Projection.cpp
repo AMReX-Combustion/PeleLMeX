@@ -260,7 +260,7 @@ PeleLM::velocityProjection(
             int box_no, int i, int j, int k) noexcept {
             Array4<Real> vel(state_old_ma[box_no], VELX);
             const Real soverrho = dt / rho_ma[box_no](i, j, k);
-            for (int n = 0; n < NUM_SPECIES; ++n) {
+            for (int n = 0; n < AMREX_SPACEDIM; ++n) {
               vel(i, j, k, n) += gp_new_ma[box_no](i, j, k, n) * soverrho;
             }
           });
@@ -271,7 +271,7 @@ PeleLM::velocityProjection(
             int box_no, int i, int j, int k) noexcept {
             Array4<Real> vel(state_old_ma[box_no], VELX);
             const Real soverrho = dt / rho;
-            for (int n = 0; n < NUM_SPECIES; ++n) {
+            for (int n = 0; n < AMREX_SPACEDIM; ++n) {
               vel(i, j, k, n) += gp_new_ma[box_no](i, j, k, n) * soverrho;
             }
           });
