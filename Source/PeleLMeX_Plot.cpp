@@ -725,7 +725,7 @@ PeleLM::ReadCheckPointFile()
     std::istringstream lis(line);
     int i = 0;
     while (lis >> word) {
-      prob_lo[++i] = std::stod(word);
+      prob_lo[i++] = std::stod(word);
     }
   }
 
@@ -735,7 +735,7 @@ PeleLM::ReadCheckPointFile()
     std::istringstream lis(line);
     int i = 0;
     while (lis >> word) {
-      prob_hi[++i] = std::stod(word);
+      prob_hi[i++] = std::stod(word);
     }
   }
 
