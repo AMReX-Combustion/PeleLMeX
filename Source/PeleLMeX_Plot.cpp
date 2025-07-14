@@ -1018,7 +1018,7 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
             for (int n = 0; n < NUM_SOOT_MOMENTS; ++n) {
               soot(i, j, k, n) *= std::pow(100., soot_exp[n]);
             }
-            soot_arr(i, j, k, NUMSOOTVAR - 1) *= 1.E6;
+            soot(i, j, k, NUMSOOTVAR - 1) *= 1.E6;
           });
         Gpu::streamSynchronize();
       }

@@ -343,7 +343,7 @@ PeleLM::velocityProjection(
       } else {
         auto* ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
         auto* ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
-        rhs_cc[lev].define(
+        rhs_cc.emplace_back(
           grids[lev], dmap[lev], 1, ldataOld_p->divu.nGrow(), MFInfo(),
           *m_factory[lev]);
 #ifdef AMREX_USE_OMP

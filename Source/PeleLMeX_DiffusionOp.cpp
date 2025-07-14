@@ -176,7 +176,7 @@ DiffusionOp::diffuse_scalar(
   // => \alpha = 1.0, A is a_acoeff if provided, 1.0 otherwise
   // => \beta = a_dt, B face centered diffusivity bcoeff^{np1,k}
 
-  const Real alpha = (isPoissonSolve) != 0 ? 0.0 : 1.0;
+  const Real alpha = (isPoissonSolve != 0) ? 0.0 : 1.0;
   const Real beta = a_dt;
   m_scal_solve_op->setScalars(alpha, beta);
   for (int lev = 0; lev <= finest_level; ++lev) {
@@ -393,7 +393,7 @@ DiffusionOp::diffuse_scalar(
   // => \alpha = 1.0, A is a_acoeff if provided, 1.0 otherwise
   // => \beta = a_dt, B face centered diffusivity bcoeff^{np1,k}
 
-  const Real alpha = (isPoissonSolve) != 0 ? 0.0 : 1.0;
+  const Real alpha = (isPoissonSolve != 0) ? 0.0 : 1.0;
   const Real beta = a_dt;
   m_scal_solve_op->setScalars(alpha, beta);
   for (int lev = 0; lev <= finest_level; ++lev) {
@@ -1184,6 +1184,7 @@ DiffusionTensorOp::compute_divtau(
           }
         });
     }
+    Gpu::streamSynchronize();
   }
 }
 
