@@ -104,7 +104,7 @@ PeleLM::getNLResidScaling(Real& nEScale, Real& phiVScale)
 }
 
 void
-PeleLM::scaleNLState(const Real& nEScale, const Real& phiVScale)
+PeleLM::scaleNLState(const Real nEScale, const Real phiVScale)
 {
   for (int lev = 0; lev <= finest_level; ++lev) {
     m_leveldatanlsolve[lev]->nlState.mult(1.0 / nE_scale, 0, 1, m_nGrowState);
@@ -114,7 +114,7 @@ PeleLM::scaleNLState(const Real& nEScale, const Real& phiVScale)
 
 void
 PeleLM::scaleNLResid(
-  const Vector<MultiFab*>& a_resid, const Real& nEScale, const Real& phiVScale)
+  const Vector<MultiFab*>& a_resid, const Real nEScale, const Real phiVScale)
 {
   for (int lev = 0; lev <= finest_level; ++lev) {
     a_resid[lev]->mult(1.0 / FnE_scale, 0, 1, 1);
@@ -123,7 +123,7 @@ PeleLM::scaleNLResid(
 }
 
 BCRec
-PeleLM::hackBCChargedParticle(const Real& charge, const BCRec& bc_in)
+PeleLM::hackBCChargedParticle(const Real charge, const BCRec& bc_in)
 {
 
   BCRec bc_hacked;
@@ -182,9 +182,9 @@ PeleLM::hackBCChargedParticle(const Real& charge, const BCRec& bc_in)
 
 void
 PeleLM::addLorentzVelForces(
-  int lev,
+  const int lev,
   const Box& bx,
-  const Real& a_time,
+  const Real a_time,
   Array4<Real> const& force,
   Array4<const Real> const& rhoY,
   Array4<const Real> const& phiV,

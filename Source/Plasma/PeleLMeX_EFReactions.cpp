@@ -5,7 +5,7 @@ using namespace amrex;
 
 void
 PeleLM::computeInstantaneousReactionRateEF(
-  int lev, const TimeStamp& a_time, MultiFab* a_I_R)
+  const int lev, const TimeStamp a_time, MultiFab* a_I_R)
 {
   auto ldata_p = getLevelDataPtr(lev, a_time);
 

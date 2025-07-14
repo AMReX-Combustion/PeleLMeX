@@ -3,7 +3,7 @@
 using namespace amrex;
 
 Real
-PeleLM::estEFIonsDt(const TimeStamp& a_time)
+PeleLM::estEFIonsDt(const TimeStamp a_time)
 {
   Real estdt = 1.0e200;
   constexpr Real small = 1.0e-8;

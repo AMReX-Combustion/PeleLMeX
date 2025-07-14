@@ -124,7 +124,7 @@ PeleLM::ionDriftVelocity(std::unique_ptr<AdvanceAdvData>& advData)
       // Set BCRec for Umac
       Vector<BCRec> bcrec(NUM_IONS);
       for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
-        for (int ion = 0; ion < NUM_IONS; io++ n) {
+        for (int ion = 0; ion < NUM_IONS; ++ion) {
           if (geom[lev - 1].isPeriodic(idim)) {
             bcrec[ion].setLo(idim, BCType::int_dir);
             bcrec[ion].setHi(idim, BCType::int_dir);

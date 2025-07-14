@@ -402,7 +402,7 @@ PeleLM::velocityProjection(
     }
   }
 
-#ifdef AMREX_SPACEDIM == 2
+#if AMREX_SPACEDIM == 2
   // In R-Z, AMReX-Hydro do an average down of r*vel.
   // Now that we have unscaled vel, need to do average down again
   // to have consistent vel across levels

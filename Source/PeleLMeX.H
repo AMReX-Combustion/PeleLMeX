@@ -1627,7 +1627,7 @@ public:
     const int lev, const PeleLM::TimeStamp a_time, amrex::MultiFab* a_I_R);
 
   amrex::BCRec
-  hackBCChargedParticle(const amrex::Real& zk, const amrex::BCRec& bc_in);
+  hackBCChargedParticle(const amrex::Real zk, const amrex::BCRec& bc_in);
 
   amrex::Real estEFIonsDt(const PeleLM::TimeStamp a_time);
 
@@ -1645,8 +1645,8 @@ public:
 
   int testExitNewton(
     const int newtonIter,
-    const amrex::Real& max_res,
-    const amrex::Real& norm_newtonDir);
+    const amrex::Real max_res,
+    const amrex::Real norm_newtonDir);
 
   void updateNLState(const amrex::Vector<amrex::MultiFab*>& a_update);
 
@@ -1655,11 +1655,11 @@ public:
 
   void getNLStateScaling(amrex::Real& nEScale, amrex::Real& phiVScale);
   void getNLResidScaling(amrex::Real& nEScale, amrex::Real& phiVScale);
-  void scaleNLState(const amrex::Real& nEScale, const amrex::Real& phiVScale);
+  void scaleNLState(const amrex::Real nEScale, const amrex::Real phiVScale);
   void scaleNLResid(
     const amrex::Vector<amrex::MultiFab*>& a_resid,
-    const amrex::Real& nEScale,
-    const amrex::Real& phiVScale);
+    const amrex::Real nEScale,
+    const amrex::Real phiVScale);
 
   // get upwinded edge-centered MF from cc MF and ec Vel
   amrex::Array<amrex::MultiFab, AMREX_SPACEDIM> getUpwindedEdge(
@@ -1675,7 +1675,7 @@ public:
     const amrex::Vector<amrex::MultiFab*>& a_Ax);
 
   void setUpPrecond(
-    const amrex::Real& a_dt, const amrex::Vector<const amrex::MultiFab*>& a_nE);
+    const amrex::Real a_dt, const amrex::Vector<const amrex::MultiFab*>& a_nE);
   void applyPrecond(
     const amrex::Vector<amrex::MultiFab*>& a_v,
     const amrex::Vector<amrex::MultiFab*>& a_Pv);

@@ -18,8 +18,8 @@ PeleLM::getPrecondOp()
 
 void
 PeleLM::implicitNonLinearSolve(
-  int sdcIter,
-  const Real& a_dt,
+  const int sdcIter,
+  const Real a_dt,
   std::unique_ptr<AdvanceDiffData>& diffData,
   std::unique_ptr<AdvanceAdvData>& advData)
 {
@@ -219,7 +219,7 @@ PeleLM::implicitNonLinearSolve(
 
 int
 PeleLM::testExitNewton(
-  int newtonIter, const Real& max_res, const Real& norm_NewtonDir)
+  const int newtonIter, const Real max_res, const Real norm_NewtonDir)
 {
   int exit = 0;
   if (max_res <= m_ef_newtonTol || norm_NewtonDir <= 1e-11) {
@@ -313,7 +313,7 @@ PeleLM::updateNLState(const Vector<MultiFab*>& a_update)
 
 void
 PeleLM::incrementElectronForcing(
-  int a_sstep, std::unique_ptr<AdvanceAdvData>& advData)
+  const int a_sstep, std::unique_ptr<AdvanceAdvData>& advData)
 {
   for (int lev = 0; lev <= finest_level; ++lev) {
 
@@ -349,7 +349,7 @@ PeleLM::incrementElectronForcing(
 
 void
 PeleLM::computeBGcharge(
-  const Real& a_time,
+  const Real a_time,
   std::unique_ptr<AdvanceDiffData>& diffData,
   std::unique_ptr<AdvanceAdvData>& advData)
 {
@@ -399,11 +399,11 @@ PeleLM::computeBGcharge(
 
 void
 PeleLM::nonLinearResidual(
-  const Real& a_dt,
+  const Real a_dt,
   const Vector<MultiFab*>& a_nlstate,
   const Vector<MultiFab*>& a_nlresid,
-  int updateScaling,
-  int updatePrecond)
+  const int updateScaling,
+  const int updatePrecond)
 {
   // Get unscaled copy of the NL state
   Vector<MultiFab> nE(finest_level + 1);
@@ -651,7 +651,7 @@ PeleLM::getAdvectionTerm(
 
 void
 PeleLM::getAdvectionFluxesMOL(
-  int lev,
+  const int lev,
   const Array<MultiFab*, AMREX_SPACEDIM>& a_fluxes,
   const MultiFab& a_nE,
   const Array<const MultiFab*, AMREX_SPACEDIM>& a_ueff,
@@ -717,7 +717,7 @@ PeleLM::getAdvectionFluxesMOL(
 
 void
 PeleLM::getAdvectionFluxes(
-  int lev,
+  const int lev,
   const Array<MultiFab*, AMREX_SPACEDIM>& a_fluxes,
   const MultiFab& a_nE,
   const Array<const MultiFab*, AMREX_SPACEDIM>& a_ueff,
@@ -873,7 +873,7 @@ PeleLM::getAdvectionFluxes(
 }
 
 void
-PeleLM::setUpPrecond(const Real& a_dt, const Vector<const MultiFab*>& a_nE)
+PeleLM::setUpPrecond(const Real a_dt, const Vector<const MultiFab*>& a_nE)
 {
   BL_PROFILE("PeleLMeX::setUpPrecond()");
 
@@ -1009,9 +1009,9 @@ PeleLM::setUpPrecond(const Real& a_dt, const Vector<const MultiFab*>& a_nE)
 
 Array<MultiFab, AMREX_SPACEDIM>
 PeleLM::getUpwindedEdge(
-  int lev,
-  int edge_comp,
-  int ncomp,
+  const int lev,
+  const int edge_comp,
+  const int ncomp,
   Vector<BCRec> bcrec,
   const MultiFab& ccMF,
   const Array<const MultiFab*, AMREX_SPACEDIM>& ecVel)

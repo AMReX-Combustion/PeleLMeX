@@ -58,15 +58,15 @@ PeleLM::makeEBGeometry()
 
 void
 PeleLM::redistributeAofS(
-  int a_lev,
-  Real& a_dt,
+  const int a_lev,
+  const Real a_dt,
   MultiFab& a_tmpDiv,
-  int div_comp,
+  const int div_comp,
   MultiFab& a_AofS,
-  int aofs_comp,
+  const int aofs_comp,
   MultiFab& a_state,
-  int state_comp,
-  int ncomp,
+  const int state_comp,
+  const int ncomp,
   const BCRec* d_bc,
   const Geometry& a_geom) const
 {
@@ -139,7 +139,7 @@ PeleLM::redistributeAofS(
 }
 
 void
-PeleLM::getCoveredIMask(int a_lev, iMultiFab& a_imask) const
+PeleLM::getCoveredIMask(const int a_lev, iMultiFab& a_imask) const
 {
   const auto& ebfact = EBFactory(a_lev);
   const auto& flags = ebfact.getMultiEBCellFlagFab();
@@ -188,15 +188,15 @@ PeleLM::getCoveredIMask(int a_lev, iMultiFab& a_imask) const
 
 void
 PeleLM::redistributeDiff(
-  int a_lev,
-  const Real& a_dt,
+  const int a_lev,
+  const Real a_dt,
   MultiFab& a_tmpDiv,
-  int div_comp,
+  const int div_comp,
   MultiFab& a_diff,
-  int diff_comp,
+  const int diff_comp,
   const MultiFab& a_state,
-  int state_comp,
-  int ncomp,
+  const int state_comp,
+  const int ncomp,
   const BCRec* d_bc,
   const Geometry& a_geom) const
 {
@@ -302,7 +302,7 @@ PeleLM::initCoveredState()
 }
 
 void
-PeleLM::setCoveredState(const TimeStamp& a_time)
+PeleLM::setCoveredState(const TimeStamp a_time)
 {
   BL_PROFILE("PeleLMeX::setCoveredState()");
   for (int lev = 0; lev <= finest_level; ++lev) {
@@ -311,7 +311,7 @@ PeleLM::setCoveredState(const TimeStamp& a_time)
 }
 
 void
-PeleLM::setCoveredState(int lev, const TimeStamp& a_time)
+PeleLM::setCoveredState(const int lev, const TimeStamp a_time)
 {
   AMREX_ASSERT(a_time == AmrOldTime || a_time == AmrNewTime);
 
@@ -411,7 +411,7 @@ PeleLM::initialRedistribution()
 }
 
 void
-PeleLM::getEBDistance(int a_lev, MultiFab& a_signDistLev)
+PeleLM::getEBDistance(const int a_lev, MultiFab& a_signDistLev)
 {
 
   BL_PROFILE("PeleLMeX::getEBDistance()");
@@ -461,7 +461,8 @@ PeleLM::getEBDistance(int a_lev, MultiFab& a_signDistLev)
 }
 
 Vector<std::unique_ptr<MultiFab>>
-PeleLM::getEBState(int first_comp, int ncomp, const PeleLM::TimeStamp& a_time)
+PeleLM::getEBState(
+  const int first_comp, const int ncomp, const TimeStamp a_time)
 {
   AMREX_ASSERT(first_comp >= VELX);
   AMREX_ASSERT(first_comp + ncomp <= NVAR);
@@ -478,7 +479,10 @@ PeleLM::getEBState(int first_comp, int ncomp, const PeleLM::TimeStamp& a_time)
 
 std::unique_ptr<MultiFab>
 PeleLM::getEBState(
-  int a_lev, int first_comp, int ncomp, const PeleLM::TimeStamp& a_time)
+  const int a_lev,
+  const int first_comp,
+  const int ncomp,
+  const TimeStamp a_time)
 {
   AMREX_ASSERT(first_comp >= VELX);
   AMREX_ASSERT(first_comp + ncomp <= NVAR);
@@ -492,10 +496,10 @@ PeleLM::getEBState(
 FArrayBox
 PeleLM::getEBState(
   MFIter const& a_mfi,
-  int a_lev,
-  int first_comp,
-  int ncomp,
-  const PeleLM::TimeStamp& a_time)
+  const int a_lev,
+  const int first_comp,
+  const int ncomp,
+  const TimeStamp a_time)
 {
   AMREX_ASSERT(first_comp >= VELX);
   AMREX_ASSERT(first_comp + ncomp <= NVAR);
@@ -545,11 +549,11 @@ PeleLM::getEBState(
 
 void
 PeleLM::getEBState(
-  int a_lev,
-  const PeleLM::TimeStamp& a_time,
+  const int a_lev,
+  const TimeStamp a_time,
   MultiFab& a_EBstate,
-  int stateComp,
-  int nComp)
+  const int stateComp,
+  const int nComp)
 {
   AMREX_ASSERT(a_EBstate.nComp() >= nComp);
 
@@ -611,7 +615,10 @@ PeleLM::getEBState(
 
 void
 PeleLM::getEBDiff(
-  int a_lev, const TimeStamp& a_time, MultiFab& a_EBDiff, int diffComp)
+  const int a_lev,
+  const TimeStamp a_time,
+  MultiFab& a_EBDiff,
+  const int diffComp)
 {
   // Get Geom / EB data
   ProbParm const* lprobparm = prob_parm_d;
@@ -798,7 +805,7 @@ PeleLM::checkEBInflowFunctions()
   if (m_verbose != 0 && m_useEBinflow != 0) {
     Print() << "WARNING: EB-inflow capability is experimental. Scalar "
                "diffusion is not supported at these boundaries and future "
-               "interface changes are possible!\n"
+               "interface changes are possible!\n";
   }
 }
 #endif
