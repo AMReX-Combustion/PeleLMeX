@@ -42,7 +42,8 @@ PeleLM::~PeleLM()
 }
 
 PeleLM::LevelData*
-PeleLM::getLevelDataPtr(const int lev, const TimeStamp a_time, int /*useUMac*/)
+PeleLM::getLevelDataPtr(
+  const int lev, const TimeStamp a_time, const int /*useUMac*/)
 {
   AMREX_ASSERT(
     a_time == AmrOldTime || a_time == AmrNewTime || a_time == AmrHalfTime);
@@ -336,7 +337,7 @@ PeleLM::getAuxDiffusivityVect(const TimeStamp a_time)
 void
 PeleLM::averageDownState(const TimeStamp a_time)
 {
-  int nCompState = (m_incompressible) != 0 ? AMREX_SPACEDIM : NVAR;
+  const int nCompState = (m_incompressible != 0) ? AMREX_SPACEDIM : NVAR;
   for (int lev = finest_level; lev > 0; --lev) {
     auto* ldataFine_p = getLevelDataPtr(lev, a_time);
     auto* ldataCrse_p = getLevelDataPtr(lev - 1, a_time);
@@ -353,9 +354,10 @@ PeleLM::averageDownState(const TimeStamp a_time)
 void
 PeleLM::averageDownScalars(const TimeStamp a_time)
 {
-  int nScal = NUM_SPECIES + 3; // rho, rhoYs, rhoH, Temp
 #ifdef PELE_USE_PLASMA
-  nScal += 2; // rhoRT, nE
+  constexpr int nScal = NUM_SPECIES + 5;
+#else
+  constexpr int nScal = NUM_SPECIES + 3;
 #endif
   for (int lev = finest_level; lev > 0; --lev) {
     auto* ldataFine_p = getLevelDataPtr(lev, a_time);
