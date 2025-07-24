@@ -12,6 +12,7 @@ PeleLM::Evolve()
 
   int plt_justDidIt = 0;
   int chk_justDidIt = 0;
+  bool nans_in_solution = false;
 
   while (!do_not_evolve) {
 
@@ -101,10 +102,12 @@ PeleLM::Evolve()
         }
       }
     }
+    nans_in_solution = checkForNaNs();
     do_not_evolve =
       ((m_max_step >= 0 && m_nstep >= m_max_step) ||
        (m_stop_time >= 0.0 && m_cur_time >= m_stop_time - 1.0e-12 * m_dt) ||
-       (m_dt < m_min_dt) || over_max_wall_time || dump_and_stop);
+       (m_dt < m_min_dt) || over_max_wall_time || dump_and_stop ||
+       nans_in_solution);
   }
 
   if (m_verbose > 0) {
@@ -119,6 +122,10 @@ PeleLM::Evolve()
     (m_check_int > 0 || m_check_per > 0.) && (chk_justDidIt == 0) &&
     m_nstep > 0) {
     WriteCheckPointFile();
+  }
+
+  if (nans_in_solution) {
+    amrex::Error("Stopped early because NaNs detected in solution");
   }
 }
 
