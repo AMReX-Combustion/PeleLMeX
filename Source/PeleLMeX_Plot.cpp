@@ -872,12 +872,14 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
       " restarting from plotfile with auxiliaries not currently "
       "implemented, and will not be captured");
   }
-  amrex::Print() << " initData on level " << a_lev << " from pltfile "
-                 << a_dataPltFile << "\n";
-  if (pltfileSource == "LM") {
-    amrex::Print() << " Assuming pltfile was generated in LM/LMeX \n";
-  } else if (pltfileSource == "C") {
-    amrex::Print() << " Assuming pltfile was generated in PeleC \n";
+  if (m_verbose > 0) {
+    amrex::Print() << " initData on level " << a_lev << " from pltfile "
+                   << a_dataPltFile << "\n";
+    if (pltfileSource == "LM") {
+      amrex::Print() << " Assuming pltfile was generated in LM/LMeX \n";
+    } else if (pltfileSource == "C") {
+      amrex::Print() << " Assuming pltfile was generated in PeleC \n";
+    }
   }
 
   // Use PelePhysics PltFileManager
@@ -938,8 +940,10 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
   } else if (idT < 0) {
     Abort("Couldn't find temperature in pltfile");
   }
-  Print() << " " << nSpecPlt << " species found in pltfile, starting with "
-          << plt_vars[idY] << "\n";
+  if (m_verbose > 0) {
+    Print() << " " << nSpecPlt << " species found in pltfile, starting with "
+            << plt_vars[idY] << "\n";
+  }
 
   // Get level data
   auto* ldata_p = getLevelDataPtr(a_lev, AmrNewTime);
@@ -957,22 +961,52 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
   MultiFab speciesPlt(grids[a_lev], dmap[a_lev], nSpecPlt, 0);
   pltData.fillPatchFromPlt(a_lev, geom[a_lev], idY, 0, nSpecPlt, speciesPlt);
   for (int i = 0; i < NUM_SPECIES; i++) {
-    std::string specString = "Y(" + spec_names[i] + ")";
+    std::string specName = "Y(" + spec_names[i] + ")";
+    std::string specString = specName;
+    amrex::Print() << m_initDataPlt_specname_map[0] << std::endl;
+    if (!m_initDataPlt_specname_map.empty()) {
+      specString = m_initDataPlt_specname_map[i];
+    }
     int foundSpec = 0;
     for (int iplt = 0; iplt < nSpecPlt; iplt++) {
       if (specString == plt_vars[idY + iplt]) {
         MultiFab::Copy(ldata_p->state, speciesPlt, iplt, FIRSTSPEC + i, 1, 0);
         foundSpec = 1;
+        if (m_verbose > 0) {
+          amrex::Print() << "Loading species " << specName
+                         << " from plotfile species " << specString
+                         << std::endl;
+        }
+      }
+    }
+    if (foundSpec == 0) {
+      for (int iplt = 0; iplt < plt_vars.size(); iplt++) {
+        if (specString == plt_vars[iplt]) {
+          foundSpec = 1;
+          if (m_verbose > 0) {
+            amrex::Print() << "Loading species " << specName
+                           << " from plotfile entry " << specString
+                           << std::endl;
+          }
+          pltData.fillPatchFromPlt(
+            a_lev, geom[a_lev], iplt, FIRSTSPEC + i, 1, ldata_p->state);
+        }
       }
     }
     if (foundSpec == 0) {
       ldata_p->state.setVal(0.0, FIRSTSPEC + i, 1);
+      if (m_verbose > 0) {
+        amrex::Print() << "For species " << specName << " entry " << specString
+                       << " not found in plot file, setting to 0 " << std::endl;
+      }
     }
   }
 
   // Converting units when pltfile is coming from PeleC solution
   if (pltfileSource == "C") {
-    amrex::Print() << " Converting CGS to MKS units... \n";
+    if (m_verbose > 0) {
+      amrex::Print() << " Converting CGS to MKS units... \n";
+    }
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
@@ -1103,8 +1137,10 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
 void
 PeleLM::addLevelVelocityDataFromPlt(int a_lev, const std::string& a_velPltFile)
 {
-  amrex::Print() << " init velocity data on level " << a_lev << " from pltfile "
-                 << a_velPltFile << "\n";
+  if (m_verbose > 0) {
+    amrex::Print() << " init velocity data on level " << a_lev
+                   << " from pltfile " << a_velPltFile << "\n";
+  }
 
   // Use PelePhysics PltFileManager
   pele::physics::pltfilemanager::PltFileManager pltData(a_velPltFile);
