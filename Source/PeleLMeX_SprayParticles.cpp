@@ -61,7 +61,8 @@ PeleLM::SprayReadParameters()
   if (!do_spray_particles) {
     return;
   }
-  SprayParticleContainer::readSprayParams(spray_verbose);
+  //SprayParticleContainer::readSprayParams(spray_verbose);
+  SprayParticleContainer::readSprayParams(spray_verbose,&eos_parms);
   // Must change dtmod to 1 since we only do MKD
   SprayParticleContainer::getSprayData()->dtmod = 1.;
 }
