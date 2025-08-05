@@ -33,8 +33,9 @@ PeleLM::initActiveControl()
 
   // Active control checks
   if ((m_ctrl_useTemp != 0) && (m_ctrl_temperature <= 0.0)) {
-    amrex::Error("active_control.temperature MUST be set with "
-                 "active_control.use_temp = 1");
+    amrex::Error(
+      "active_control.temperature MUST be set with "
+      "active_control.use_temp = 1");
   }
 
   if ((m_ctrl_active != 0) && (m_ctrl_tauControl <= 0.0)) {
@@ -77,14 +78,16 @@ PeleLM::initActiveControl()
     const int ctrl_flameDir_l = m_ctrl_flameDir;
     const amrex::Real time_l = -1.0;
     const auto geomdata = Geom(0).data();
+    auto fake_state = Array4<Real>{};
 
     Box dumbx({AMREX_D_DECL(0, 0, 0)}, {AMREX_D_DECL(0, 0, 0)});
     amrex::ParallelFor(
       dumbx,
-      [x, nAux = m_nAux, s_ext_d, ctrl_flameDir_l, time_l, geomdata, lprobparm,
+      [fake_state, x, s_ext_d, ctrl_flameDir_l, time_l, geomdata, lprobparm,
        lpmfdata] AMREX_GPU_DEVICE(int /*i*/, int /*j*/, int /*k*/) noexcept {
-        bcnormal(
-          x, nAux, s_ext_d, ctrl_flameDir_l, 1, time_l, geomdata, *lprobparm,
+        const auto s_in = fake_state.cellData(0, 0, 0);
+        ProblemSpecificFunctions::bcnormal(
+          x, s_in, s_ext_d, ctrl_flameDir_l, 1, time_l, geomdata, *lprobparm,
           lpmfdata);
       });
     Vector<Real> s_ext(NVAR);
@@ -340,9 +343,10 @@ PeleLM::getActiveControlLowT(Real& a_coft)
                   idx[AC_FlameDir] -= 1;
                   if (T_arr(idx[0], idx[1], idx[2], TEMP) < AC_Tcross) {
                     Real coor[3] = {0.0};
-                    AMREX_D_TERM(coor[0] = prob_lo[0] + (i + 0.5) * dx[0];
-                                 , coor[1] = prob_lo[1] + (j + 0.5) * dx[1];
-                                 , coor[2] = prob_lo[2] + (k + 0.5) * dx[2];);
+                    AMREX_D_TERM(
+                      coor[0] = prob_lo[0] + (i + 0.5) * dx[0];
+                      , coor[1] = prob_lo[1] + (j + 0.5) * dx[1];
+                      , coor[2] = prob_lo[2] + (k + 0.5) * dx[2];);
                     Real slope = ((T_arr(i, j, k, TEMP)) -
                                   T_arr(idx[0], idx[1], idx[2], TEMP)) /
                                  dx[AC_FlameDir];
@@ -377,9 +381,10 @@ PeleLM::getActiveControlLowT(Real& a_coft)
                   idx[AC_FlameDir] -= 1;
                   if (T_arr(idx[0], idx[1], idx[2], TEMP) < AC_Tcross) {
                     Real coor[3] = {0.0};
-                    AMREX_D_TERM(coor[0] = prob_lo[0] + (i + 0.5) * dx[0];
-                                 , coor[1] = prob_lo[1] + (j + 0.5) * dx[1];
-                                 , coor[2] = prob_lo[2] + (k + 0.5) * dx[2];);
+                    AMREX_D_TERM(
+                      coor[0] = prob_lo[0] + (i + 0.5) * dx[0];
+                      , coor[1] = prob_lo[1] + (j + 0.5) * dx[1];
+                      , coor[2] = prob_lo[2] + (k + 0.5) * dx[2];);
                     Real slope = ((T_arr(i, j, k, TEMP)) -
                                   T_arr(idx[0], idx[1], idx[2], TEMP)) /
                                  dx[AC_FlameDir];

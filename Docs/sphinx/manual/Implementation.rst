@@ -171,7 +171,7 @@ only if a significantly better new `DMap` can be obtained, with the threshold fo
 Debugging
 ---------
 
-The first step to debug anyh addition or undefined behavior of *PeleLMeX* is to turn the ``DEBUG`` flag ``ON`` in the
+The first step to debug any addition or undefined behavior of *PeleLMeX* is to turn the ``DEBUG`` flag ``ON`` in the
 GNUmakefile and activate AMReX`s floating point exception traps in the input file: ::
 
     amrex.fpe_trap_invalid = 1

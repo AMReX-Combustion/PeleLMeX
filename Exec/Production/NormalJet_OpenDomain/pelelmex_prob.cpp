@@ -64,3 +64,8 @@ PeleLM::readProbParm()
   prob_parm->center_xy[0] = 0.5 * (probhi[0] + problo[0]);
   prob_parm->center_xy[1] = 0.5 * (probhi[1] + problo[1]);
 }
+
+void
+PeleLM::freeProbParm()
+{
+}

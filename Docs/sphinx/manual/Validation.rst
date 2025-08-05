@@ -375,3 +375,48 @@ subgrid-scale viscosity for the :math:`Re_{\tau}` = 934 case.
 
 Further work is ongoing to assess how to better handle large LES filter size changes in the context
 of AMR-LES
+
+Laminar counterflow diffusion flame
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The laminar counterflow diffusion flame is a fundamental test case for non-premixed reactive flows. A 
+laminar counterflow diffusion flame setup is available in ``Exec/Production/CounterFlow``. 
+In the present configuration, the geometry consists of a 1.5 cm x 1.5 cm domain with inflow at the left 
+and right boundaries and outflow at the top and bottom boundaries. The left and right inflow boundaries 
+correspond to the oxidizer and fuel inlet sides respectively, with an oxidizer/fuel jet section of 
+diameter :math:`d_{jet} = 0.5 cm` (``prob.jet_radius`` of 0.0025) centered at the boundary. The
+remainder of the inflow boundary consists of inert inflow sections with composition of pure N2. 
+The oxidizer jet section composition is that of air, while the fuel jet section composition is pure 
+gaseous Dodecane. The inert inflow velocity on the left and right is set equal to the oxidizer and fuel 
+jet velocities, respectively, in order to eliminate shear interactions between the inert and jet 
+streams. The oxidizer and fuel jet velocities are 15.0 cm/s and 6.17 cm/s, respectively, corresponding 
+to a global strain rate of :math:`40 s^{-1}`. The initial condition corresponds to air composition 
+filling the left half of the domain and gaseous Dodecane composition filling the right half of the 
+domain with a hyperbolic tangent smoothly transitioning species mass fractions in the center of the 
+domain. Ignition is performed by patching a spherical kernel of elevated temperature (in this case 
+1000 K) with radius of 0.3 cm in the center of the domain as to cause autoignition. Grid refinement 
+criteria based on the gradient of temperature is used and solution convergence is achieved with 
+``amr.max_level`` of 2.
+
+The `PeleLMeX` results obtained using the specified grid refinement criteria are compared to that of 
+Cantera in spatial and mixture fraction space in :numref:`CounterflowLMeXCantera_Spatial` and 
+:numref:`CounterflowLMeXCantera_Mixture`, respectively. Centerline profiles of major species as well as 
+temperature across the flame front at steady-state are displayed, with PeleLMeX results indicated by 
+solid colored lines and Cantera results indicated by black ticked lines. The results show very good 
+agreement between the PeleLMeX and Cantera centerline profiles, with only small differences visible 
+when plotting versus spatial coordinate due to differences in geometry (1-D vs. 2-D). 
+
+
+.. figure:: images/validations/CounterflowFlame/Dodecane_Counterflow_Spatial_Dodecane_Added.png
+   :name: CounterflowLMeXCantera_Spatial
+   :align: center
+   :figwidth: 50%
+
+   : One-dimentional flame spatial profiles with PeleLMeX and Cantera (underlying black dashed lines)
+   
+.. figure:: images/validations/CounterflowFlame/Dodecane_Counterflow_Mixture_Dodecane_Added.png
+   :name: CounterflowLMeXCantera_Mixture
+   :align: center
+   :figwidth: 50%
+
+   : One-dimentional flame profiles (mixture fraction space) with PeleLMeX and Cantera (underlying black dashed lines)

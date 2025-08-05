@@ -28,18 +28,18 @@ A `PeleLMeX` case folder generally contains a minimal set of files to enable com
 provide user-defined functions defining initial and boundary conditions, input file(s) and
 any additional files necessary for the simulation (solution of a Cantera 1D flame for instance).
 
-The following three files in particular are necessary: ::
+The following two files in particular are necessary: ::
 
-        pelelmex_prob_parm.H
         pelelmex_prob.H
         pelelmex_prob.cpp
 
-The first file provides a C++ struct `ProbParm` containing the set of user-defined variables
+The first file provides two C++ structs: `MyProbParm` and `MyProblemSpecificFunctions`. The former
+contains the set of user-defined variables
 used during the simulation (value of inlet temperature, amplitude of the initial
-perturbation, ...). The `.cpp` file uses AMReX `ParmParse` to read these run-time
-parameter and initialize the `ProbParm` container values. Finally, `pelelmex_prob.H`
-provides C++ kernels for the initial and boundary conditions and will be detailed
-later in this tutorial.
+perturbation, ...), while the latter provides C++ kernels for applying the initial and
+boundary conditions and will be detailed later in this tutorial.
+The `.cpp` file uses AMReX `ParmParse` to read the run-time parameter contained
+in the `MyProbParm` struct.
 
 The following review the content of the various files required for the flame sheet test case.
 User keys listed in the `input.2d-regt` file are reviewed and linked to the specific aspects
@@ -98,15 +98,17 @@ Problem specifications
 
 ..  _sec:TUTO_FS::Problem:
 
-The problem setup is mostly contained in the three C++ source/header files mentioned above. Looking into ``pelelmex_prob_parm.H`` first,
-we can see the set of parameters that will be used to specify the initial and boundary conditions: ::
+The problem setup is mostly contained in the two C++ source/header files mentioned above.
+Looking into ``pelelmex_prob.H`` first, this file contains two structs used throughout
+the code to define problem-specific parameters (such as initial and boundary conditions).
+We can see the set of parameters that will be used to specify the initial and boundary conditions: ::
 
-    struct ProbParm
+    struct MyProbParm : public ProbParmDefault
     {
-       amrex::Real P_mean   = 101325.0_rt;
-       amrex::Real standoff = 0.0_rt;
-       amrex::Real pertmag  = 0.0004_rt;
-       amrex::Real pertlength  = 0.008_rt;
+       amrex::Real P_mean   = 101325.0;
+       amrex::Real standoff = 0.0;
+       amrex::Real pertmag  = 0.0004;
+       amrex::Real pertlength  = 0.008;
     };
 
 Because initial and boundary conditions for this case are mostly extracted from a 1D freely propagating
@@ -118,7 +120,52 @@ transverse size (the :math:`x` length here) must be a multiple of the ``pertleng
 periodicity of the initial solution.
 
 .. note::
-   The ``P_mean`` parameters, providing the initial thermodynamic pressure, is always needed in the ProbParm struct.
+   Note that `MyProbParm` inherits from a default `ProbParmDefault` struct, which already contains the
+   thermodynamic pressure `P_mean` parameter, since this parameter is always needed in PeleLMeX.
+
+The second struct, `MyProblemSpecificFunctions` here defines the two functions effectively filling the
+initial solution and boundary conditions: `initdata` and `bcnormal`. The arguments of the
+`MyProblemSpecificFunctions::initdata` function are as follows:
+
+* ``int i, int j, int k,`` : indices of the current grid cell the function is called to fill
+
+* ``int /*is_incompressible*/,`` : flag indicating if `PeleLMeX` is running a pure incompressible case
+
+* ``amrex::Array4<amrex::Real> const& state,`` : a lightweight array structure enabling access to the grid state data
+
+* ``amrex::Array4<amrex::Real> const& /*aux*/,`` : similar array structure but for the auxiliaries data
+
+* ``amrex::GeometryData const& geomdata,`` : an AMReX object containing geometrical data of the current level
+
+* ``MyProbParm const& prob_parm,`` : the `ProbParm` struct
+
+* ``pele::physics::PMF::PmfData::DataContainer const * pmf_data`` : the Cantera solution data struct
+
+The reader is encouraged to look into the body of the `MyProblemSpecificFunctions::initdata` function for more details, a skeletal
+version of the function reads:
+
+* Compute the coordinate of the cell center using the cell indices and the `geomdata`.
+
+* Compute the harmonic perturbation.
+
+* Using ``standoff`` and the perturbation, use the ``PMF`` function to get cell-average temperature, mole fractions and
+  velocity from the Cantera solution.
+
+* Use the data from the ``PMF`` to set the state array: velocities, density, rhoYs, rhoH and temperature. Relying on
+  EOS calls and using `MyProbParm::P_mean`.
+
+Some of the arguments of the `bcnormal` should now be familiar. The coordinates of the cell where the function
+is called are now directly passed into the function and the outgoing state vector is now ``s_ext``. The ``idir``
+and ``sgn`` `ints` can be used to easily determine on which domain face the function in called. Once again, the
+state vector is extracted from the ``PMF`` function to match the operating conditions of the Cantera flame. This
+function is only called in the direction/orientation where a Dirichlet boundary condition is imposed, i.e. the
+:math:`y`-low domain face here since the transverse direction is periodic and the outflow is an homogeneous
+Neumann for the state components.
+
+.. note::
+   Note that `MyProblemSpecificFunctions` inherits from a default `DefaultProblemSpecificFunctions` struct, effectively overriding
+   the default (empty) definition of the `initdata`, `bcnormal` and other functions. This allows,
+   for example, to not have to provide a `bcnormal` function for a fully periodic case.
 
 Looking now into ``pelelmex_prob.cpp``, we can see how the developer can provide access to the `ProbParm` parameters
 to overwrite the default values using AMReX's ParmParse: ::
@@ -151,46 +198,6 @@ Additionally, the `readProbParm()` function initialize another data structure de
 ASCII file in the input file: ::
 
     pmf.datafile = "drm19_pmf.dat"
-
-Finally, ``pelelmex_prob.H`` defines the two functions effectively filling the initial solution and boundary conditions:
-`pelelmex_initdata` and `bcnormal`. The arguments of the `pelelmex_initdata` function are as follows:
-
-* ``int i, int j, int k,`` : indices of the current grid cell the function is called to fill
-
-* ``int /*is_incompressible*/,`` : flag indicating if `PeleLMeX` is running a pure incompressible case
-
-* ``amrex::Array4<amrex::Real> const& state,`` : a lightweight array structure enabling access to the grid state data
-
-* ``amrex::Array4<amrex::Real> const& /*aux*/,`` : similar array structure but for the auxiliaries data
-
-* ``amrex::GeometryData const& geomdata,`` : an AMReX object containing geometrical data of the current level
-
-* ``ProbParm const& prob_parm,`` : the `ProbParm` struct
-
-* ``pele::physics::PMF::PmfData::DataContainer const * pmf_data`` : the Cantera solution data struct
-
-The reader is encouraged to look into the body of the `pelelmex_initdata` function for more details, a skeletal
-version of the function reads:
-
-* Compute the coordinate of the cell center using the cell indices and the `geomdata`.
-
-* Compute the harmonic perturbation.
-
-* Using ``standoff`` and the perturbation, use the ``PMF`` function to get cell-average temperature, mole fractions and
-  velocity from the Cantera solution.
-
-* Use the data from the ``PMF`` to set the state array: velocities, density, rhoYs, rhoH and temperature. Relying on
-  EOS calls and using `ProbParm::P_mean`.
-
-Some of the arguments of the `bcnormal` should now be familiar. The coordinates of the cell where the function
-is called are now directly passed into the function and the outgoing state vector is now ``s_ext``. The ``idir``
-and ``sgn`` `ints` can be used to easily determine on which domain face the function in called. Once again, the
-state vector is extracted from the ``PMF`` function to match the operating conditions of the Cantera flame. This
-function is only called in the direction/orientation where a Dirichlet boundary condition is imposed, i.e. the
-:math:`y`-low domain face here since the transverse direction is periodic and the outflow is an homogeneous
-Neumann for the state components.
-
-A last function, ``zero_visc``, is included in ``pelelmex_prob.H`` but is not used in the present case.
 
 Numerical parameters
 ^^^^^^^^^^^^^^^^^^^^
@@ -318,7 +325,7 @@ similar to :numref:`FS_InitSol`.
 
 It is interesting to note that the initial solution has a transverse velocity component
 even though only the axial velocity was extracted from a 1D Cantera solution to initialize
-the solution in the `pelelmex_initdata` function. This is because `PeleLMeX` performs an
+the solution in the `MyProblemSpecificFunctions::initdata` function. This is because `PeleLMeX` performs an
 initial projection (more than one actually). At this point, the `divU` constraint is
 mostly negative, which is counter-intuitive for a flame, but this is the consequence of
 the initialization process and the solution will rapidly relax to adapt to the `PeleLMeX` grid.

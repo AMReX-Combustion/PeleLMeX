@@ -113,7 +113,8 @@ public:
     const amrex::Vector<amrex::MultiFab const*>& a_phi,
     const amrex::Vector<amrex::MultiFab const*>& a_boundary,
     const amrex::BCRec& a_bcrec,
-    int do_avgDown) const;
+    int do_avgDown,
+    int comp = 0) const;
 
   void avgDownFluxes(
     amrex::Vector<amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>> const&

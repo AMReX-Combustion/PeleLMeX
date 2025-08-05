@@ -1,0 +1,107 @@
+#----------------------DOMAIN DEFINITION------------------------
+geometry.is_periodic = 0 1 1             # For each dir, 0: non-perio, 1: periodic
+geometry.coord_sys   = 0                 # 0 => cart, 1 => RZ
+geometry.prob_lo     = 0. 0. 0.          # x_lo y_lo (z_lo)
+geometry.prob_hi     = 1. 1. 1.            # x_hi y_hi (z_hi)
+
+#--------------------------BC FLAGS------------------------------
+# Interior, Inflow, Outflow, Symmetry,
+# SlipWallAdiab, NoSlipWallAdiab, SlipWallIsotherm, NoSlipWallIsotherm
+peleLM.lo_bc = Inflow Interior Interior
+peleLM.hi_bc = Outflow Interior Interior
+
+#-------------------------AMR CONTROL----------------------------
+amr.n_cell          = 32 32 32         # Level 0 number of cells in each direction
+amr.v               = 1                # AMR verbose
+amr.max_level       = 0                # maximum level number allowed
+amr.blocking_factor = 16               # block factor in grid generation (min box size)
+amr.max_grid_size   = 64               # max box size
+
+#--------------------------Problem--------------------------------
+prob.P_mean        = 101325.
+prob.init_redist   = -1
+prob.T0_gas        = 1000 # K
+prob.vel_gas       = 0.
+prob.num_particles = (1, 1, 1)
+prob.part_temp     = 315.
+prob.part_dia      = 1.961E-3
+prob.part_vel      = 0. 0. 0.
+prob.part_Re       = 17
+
+#------------------------PeleLM CONTROL-----------------------------
+peleLM.v = 1
+peleLM.deltaT_verbose = 2
+peleLM.deltaT_iterMax = 50
+
+peleLM.do_temporals = 0
+peleLM.num_init_iter = 0
+
+#------------------------TIME STEPPING------------------------------
+#amr.max_step = 1
+amr.stop_time = 4 
+amr.fixed_dt = 1e-2
+
+#--------------------------IO CONTROL-------------------------------
+amr.plot_file = "plt"
+amr.plot_int = 10
+amr.plot_speciesState = 1
+amr.plot_grad_p = 0
+amr.derive_plot_vars = mass_fractions
+
+# -----------------------LINEAR SOLVERS-----------------------------
+mac_proj.verbose = 0
+nodal_proj.verbose = 0
+diffusion.verbose = 0
+diffusion.rtol = 1.0e-12
+
+# ------------------INPUTS TO CHEMISTRY REACTOR---------------------
+peleLM.chem_integrator = "ReactorNull"
+
+#--------------------SPRAY PARTICLE DATA-----------------------
+peleLM.do_spray_particles = 1
+particles.derive_plot_vars = 1
+particles.write_ascii_files = 0
+particles.v             = 0
+particles.cfl           = 1.
+particles.fixed_parts   = 1
+particles.mom_transfer  = 1
+particles.mass_transfer = 1
+
+particles.fuel_species = NC7H16 NC10H22 POSF10264
+prob.Y_drop = 0. 1. 0.
+particles.fuel_ref_temp = 298.15
+
+# Properties for Heptane in MKS
+particles.NC7H16_crit_temp = 540. # K
+particles.NC7H16_boil_temp = 371.6 # K
+particles.NC7H16_latent = 3.63E5 # J/kg Latent heat at 298 K
+particles.NC7H16_cp = 2.2483E3 # J/kg/K @ 298 K
+particles.NC7H16_rho = 681.43 # kg/m^3 @ 298 K
+# Coefficients for saturation pressure using Antoine equation
+# These are from the NIST webbook website
+# Last coefficient converts units, in this case bar, to Pa
+particles.NC7H16_psat = 4.02832 1268.636 -56.199 1.E5
+
+# Properties for decane in MKS
+particles.NC10H22_crit_temp = 617.8 # K
+particles.NC10H22_boil_temp = 447.27 # K
+particles.NC10H22_latent = 3.5899E5 # J/kg Latent heat at 298 K
+particles.NC10H22_cp = 2.1921E3 # J/kg/K @ 298 K
+particles.NC10H22_rho = 726.53 # kg/m^3 @ 298 K
+# Coefficients for saturation pressure using Antoine equation
+# These are from the NIST website
+# Last coefficient converts units, in this case bar, to Pa
+particles.NC10H22_psat = 4.07857 1501.268 -78.67 1.E5
+
+# Properties for POSF10264 in MKS 
+# Sources:
+# 1. Standford HyChem approach report v6
+#    https://web.stanford.edu/group/haiwanglab/HyChem/approach/Report_Jet_Fuel_Thermochemical_Properties_v6.pdf
+# 2. FuelLib prediction using conventional mixing rule function for Tc, Tb, Lv, cp
+#    https://nrel.github.io/FuelLib/groupcontribution.html#conventional-mixing-rules
+particles.POSF10264_crit_temp = 652.78 # K (Ref 2)
+particles.POSF10264_boil_temp = 462.85 #K (Ref SwRI 50% ASTM dist.) or 469.86 # K (Ref 2)
+particles.POSF10264_latent = 3.60289E5 #J/kg (Ref 2) or 3.6E5 # J/kg Latent heat at 298 K (Ref 1)
+particles.POSF10264_cp = 1.5410E3 #J/kg/K (Ref 2) or 1.4733E3 # J/kg/K @ 298 K (Ref 1)
+particles.POSF10264_rho = 771.56 # kg/m^3 @ 298 K (Ref 2)
+#particles.POSF10264_psat = 5.05171 2429.85092 34.24740 1.E5 # (Estimated from Ref 2)

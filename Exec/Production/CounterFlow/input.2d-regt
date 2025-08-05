@@ -1,8 +1,8 @@
 #----------------------DOMAIN DEFINITION------------------------
 geometry.is_periodic = 0 0               # For each dir, 0: non-perio, 1: periodic
-geometry.coord_sys   = 0                  # 0 => cart, 1 => RZ
-geometry.prob_lo     =  -0.01 -0.01 0.0        # x_lo y_lo (z_lo)
-geometry.prob_hi     =   0.01  0.01 0.016        # x_hi y_hi (z_hi)
+geometry.coord_sys   = 0                 # 0 => cart, 1 => RZ
+geometry.prob_lo     =  -0.0075 -0.0075 0.0		# x_lo y_lo (z_lo)
+geometry.prob_hi     =   0.0075  0.0075 0.0		# x_hi y_hi (z_hi)
 
 # >>>>>>>>>>>>>  BC FLAGS <<<<<<<<<<<<<<<<
 # Interior, Inflow, Outflow, Symmetry,
@@ -11,51 +11,72 @@ peleLM.lo_bc = Inflow Outflow
 peleLM.hi_bc = Inflow Outflow
 
 
-#-------------------------AMR CONTROL----------------------------
-amr.n_cell          = 64 64 32      # Level 0 number of cells in each direction   
+#-------------------------AMR CONTROL----------------------------  
+amr.n_cell          = 64 64 32	  	   # Level 0 number of cells in each direction
 amr.v               = 1                # AMR verbose
-amr.max_level       = 0                # maximum level number allowed
+amr.max_level       = 2                # maximum level number allowed
 amr.ref_ratio       = 2 2 2 2          # refinement ratio
 amr.regrid_int      = 5                # how often to regrid
 amr.n_error_buf     = 2 2 2 2          # number of buffer cells in error est
 amr.grid_eff        = 0.7              # what constitutes an efficient grid
-amr.blocking_factor = 16               # block factor in grid generation (min box size)
+amr.blocking_factor = 4
 amr.max_grid_size   = 64               # max box size
 
-
 #--------------------------- Problem -------------------------------
-prob.P_mean = 101325.0
-prob.T_ox   = 298.0
-prob.T_fuel = 298.0
-prob.massflow = 1.0
-prob.jet_radius = 0.005
-prob.inert_radius = 0.0075
-prob.inert_velocity = 0.2
-prob.pertmag = 0.000
-prob.pmf_datafile = "drm_CH4Air_stoich.dat"
+#prob.P_mean = 101325.0
+prob.P_mean = 792897.5 #7.82529*one_atm 
+
+prob.T_ox   = 450.0
+prob.T_fuel = 450.0
+prob.T_inert = 450.0
+prob.Y_O2_ox = 0.233
+prob.Y_N2_ox = 0.767
+prob.Y_N2_fuel = 0.0
+prob.Y_fuel = 1.0
+
+prob.massflow_ox = 0.9171
+prob.massflow_fuel = 2.228
+prob.jet_radius = 0.0025
+prob.inert_velocity_ox = 0.1500
+prob.inert_velocity_fuel = 0.0617
+
 prob.do_ignition = 1
-prob.ignition_SphT = 2200.0
+prob.ignition_SphT = 1000.0
+prob.ignition_SphRad = 0.0015
 
 #-------------------------PeleLM CONTROL----------------------------
-peleLM.v = 1
-peleLM.incompressible = 0
-peleLM.rho = 1.17
-peleLM.mu = 0.0
-peleLM.use_wbar = 1
-peleLM.sdc_iterMax = 2
-peleLM.floor_species = 1
-peleLM.deltaT_verbose = 0
+peleLM.v = 3 						# [OPT, DEF=0] Verbose
+peleLM.incompressible = 0 			# [OPT, DEF=0] Enable to run fully incompressible, scalar advance is bypassed
+peleLM.rho = 1.17					# [OPT, DEF=-1] If incompressible, density value [MKS]
+peleLM.mu = 0.0						# [OPT, DEF=-1] If incompressible, kinematic visc. value [MKS]
+peleLM.use_wbar = 1 				# Include Wbar term in species diffusion fluxes
+peleLM.sdc_iterMax = 2				# Number of SDC iterations
+peleLM.floor_species = 1			# [OPT, DEF=0] Crudely enforce mass fraction positivity
+peleLM.deltaT_verbose = 0			# [OPT, DEF=0] Verbose of the deltaT iterative solve algorithm
 
-#amr.restart = chk01500
-#amr.regrid_on_restart = 1
-amr.check_int = 100
-amr.plot_int = 20
-amr.max_step = 100
+#amr.restart = chk2000
+amr.initDataPlt = plt02656_coolflow
+peleLM.initDataPlt_patch_flow_variables = true
+amr.regrid_on_restart = 1
+
+amr.check_int = 2000
+#amr.plot_int = 200
+
+amr.plot_per = 0.005  				#Plot every t=5ms
+amr.plot_per_exact = 1            	# [OPT, DEF=0] Flag to enforce exactly plt_per by shortening dt
+
+#amr.max_step = 1000
 amr.dt_shrink = 0.01
-amr.stop_time = 1.1
-#amr.stop_time = 1.00
-amr.cfl = 0.25
-amr.derive_plot_vars = avg_pressure mag_vort mass_fractions
+amr.init_dt = 1.0e-6
+amr.stop_time = 0.150
+amr.cfl = 0.1
+amr.derive_plot_vars = avg_pressure mag_vort mass_fractions mixture_fraction
+
+peleLM.fuel_name = NC12H26
+peleLM.mixtureFraction.format = Cantera
+peleLM.mixtureFraction.type   = mass
+peleLM.mixtureFraction.oxidTank = O2:0.233 N2:0.767
+peleLM.mixtureFraction.fuelTank = NC12H26:1.0
 
 peleLM.chem_integrator = "ReactorCvode"
 peleLM.use_typ_vals_chem = 1          # Use species/temp typical values in CVODE
@@ -64,39 +85,21 @@ ode.atol = 1.0e-5                     # Absolute tolerance factor applied on typ
 cvode.solve_type = denseAJ_direct               # CVODE Linear solve type (for Newton direction) 
 cvode.max_order  = 4                  # CVODE max BDF order. 
 
-godunov.use_ppm = 0
-godunov.use_forceInTrans = 0
-
 nodal_proj.verbose = 0
 mac_proj.verbose = 0
-#diffusion.verbose = 2
+diffusion.verbose = 0
+mac_proj.rtol = 1.0e-10
+nodal_proj.rtol = 1.0e-10
 
 peleLM.do_temporals = 1
 peleLM.do_mass_balance = 1
 
 #--------------------REFINEMENT CONTROL------------------------
-amr.refinement_indicators = temp
-amr.temp.max_level     = 2
-amr.temp.value_greater = 1500
-amr.temp.field_name    = temp
+amr.refinement_indicators = gradT
 
-#amr.refinement_indicators = magVort
-#amr.magVort.max_level     = 1
-#amr.magVort.value_greater = 500.0
-#amr.magVort.field_name    = mag_vort
-
-#amr.refinement_indicators = yH_Crse yH_Fine CH2O
-#amr.yH_Crse.max_level     = 1
-#amr.yH_Crse.value_greater = 1.50e-4
-#amr.yH_Crse.field_name    = Y(H)
-#
-#amr.yH_Fine.max_level     = 3
-#amr.yH_Fine.value_greater = 2.00e-4
-#amr.yH_Fine.field_name    = Y(H)
-#
-#amr.CH2O.max_level     = 4
-#amr.CH2O.value_greater = 1.00e-3
-#amr.CH2O.field_name    = Y(CH2O)
+amr.gradT.max_level = 2
+amr.gradT.adjacent_difference_greater = 100
+amr.gradT.field_name = temp
 
 #amrex.fpe_trap_invalid = 1
 #amrex.fpe_trap_zero = 1

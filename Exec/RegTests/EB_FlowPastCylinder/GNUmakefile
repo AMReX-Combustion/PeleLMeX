@@ -26,8 +26,7 @@ FSANITIZER = FALSE
 THREAD_SANITIZER = FALSE
 
 # PeleLMeX
-USE_EFIELD = FALSE
-CEXE_headers += EBUserDefined.H
+USE_PLASMA = FALSE
 
 # PelePhysics
 Chemistry_Model = air

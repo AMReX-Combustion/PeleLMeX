@@ -464,4 +464,4 @@ The thermal conducivity and species diffusivities are similarly modified with tu
 the diffusion terms is not fully implicit when LES models are active. While the implicit solves as described above are kept
 in place to ensure numerical stability, the turbulent transport coefficients are evaluated only at the old timestep, with the
 old turbulent values also used to approximate the values at the new timestep. Additionally, the present implementation cannot
-be used with EFIELD.
+be used with PLASMA.
