@@ -257,7 +257,7 @@ PeleLM::copyStateNewToOld(int nGhost)
       if (m_has_divu != 0) {
         MultiFab::Copy(
           m_leveldata_old[lev]->divu, m_leveldata_new[lev]->divu, 0, 0, 1,
-          std::min(nGhost, 1));
+          amrex::min(nGhost, 1));
       }
     }
     if (m_nAux > 0) {
@@ -296,7 +296,7 @@ PeleLM::copyStateOldToNew(int nGhost)
       if (m_has_divu != 0) {
         MultiFab::Copy(
           m_leveldata_new[lev]->divu, m_leveldata_old[lev]->divu, 0, 0, 1,
-          std::min(nGhost, 1));
+          amrex::min(nGhost, 1));
       }
     }
     if (m_nAux > 0) {

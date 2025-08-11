@@ -680,7 +680,7 @@ PeleLM::ReadCheckPointFile()
   int chk_finest_level = 0;
   is >> chk_finest_level;
   GotoNextLine(is);
-  finest_level = std::min(chk_finest_level, max_level);
+  finest_level = amrex::min(chk_finest_level, max_level);
 
   // Step count
   is >> m_nstep;

@@ -1396,30 +1396,30 @@ getTurbViscSigma(
   amrex::Real alpha2 = 0.0;
   amrex::Real alpha3 = 0.0;
 
-  alpha1 = std::max(alpha1, (I[0] / 3.0) * (I[0] / 3.0) - I[1] / 3.0);
+  alpha1 = amrex::max(alpha1, (I[0] / 3.0) * (I[0] / 3.0) - I[1] / 3.0);
   if (alpha1 != 0.0) {
     alpha2 = (I[0] / 3.0) * (I[0] / 3.0) * (I[0] / 3.0) - I[0] * I[1] / 6.0 +
              I[2] / 2.0;
     amrex::Real arcCosArg =
-      std::min(1.0, std::max(-1.0, alpha2 / std::pow(alpha1, 1.5)));
+      amrex::min(1.0, amrex::max(-1.0, alpha2 / std::pow(alpha1, 1.5)));
     alpha3 = std::acos(arcCosArg) / 3.0;
 
     // Singular values:
     amrex::Real sigma1 = std::sqrt(
-      std::max(0.0, I[0] / 3.0 + 2.0 * std::sqrt(alpha1) * std::cos(alpha3)));
+      amrex::max(0.0, I[0] / 3.0 + 2.0 * std::sqrt(alpha1) * std::cos(alpha3)));
     amrex::Real sigma2 = std::sqrt(
-      std::max(
+      amrex::max(
         0.0,
         I[0] / 3.0 - 2.0 * std::sqrt(alpha1) * std::cos(Pi / 3.0 + alpha3)));
     amrex::Real sigma3 = std::sqrt(
-      std::max(
+      amrex::max(
         0.0,
         I[0] / 3.0 - 2.0 * std::sqrt(alpha1) * std::cos(Pi / 3.0 - alpha3)));
 
     // Sort
-    sigma2 = std::max(sigma3, sigma2);
-    sigma1 = std::max(sigma2, sigma1);
-    sigma1 = std::max(1e-16, sigma1);
+    sigma2 = amrex::max(sigma3, sigma2);
+    sigma1 = amrex::max(sigma2, sigma1);
+    sigma1 = amrex::max(1e-16, sigma1);
 
     D_sig = sigma3 * (sigma1 - sigma2) * (sigma2 - sigma3) / (sigma1 * sigma1);
   }

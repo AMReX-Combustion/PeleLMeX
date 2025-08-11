@@ -59,7 +59,7 @@ struct PeleLMCCFillExtDirState
     for (int idir = 0; idir < AMREX_SPACEDIM; idir++) {
 
       // Low
-      for (int n = 0; n < std::min(numcomp, NVAR); n++) {
+      for (int n = 0; n < amrex::min(numcomp, NVAR); n++) {
 
         // bcnormal handles all the state components at once
         amrex::Real s_ext[NVAR] = {0.0};
@@ -93,7 +93,7 @@ struct PeleLMCCFillExtDirState
       }
 
       // High
-      for (int n = 0; n < std::min(numcomp, NVAR); n++) {
+      for (int n = 0; n < amrex::min(numcomp, NVAR); n++) {
 
         // bcnormal handles all the state components at once
         amrex::Real s_ext[NVAR] = {0.0};

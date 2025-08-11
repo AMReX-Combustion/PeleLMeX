@@ -705,7 +705,7 @@ PeleLM::readParameters()
   ppa.query("dt_change_max", m_dtChangeMax);
   ppa.query("max_dt", m_max_dt);
   ppa.query("min_dt", m_min_dt);
-  m_nfiles = std::max(1, std::min(ParallelDescriptor::NProcs(), 256));
+  m_nfiles = amrex::max(1, amrex::min(ParallelDescriptor::NProcs(), 256));
   ppa.query("n_files", m_nfiles);
 
   if (max_level > 0 || (m_doLoadBalance != 0)) {
