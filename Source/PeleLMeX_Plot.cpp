@@ -963,7 +963,6 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
   for (int i = 0; i < NUM_SPECIES; i++) {
     std::string specName = "Y(" + spec_names[i] + ")";
     std::string specString = specName;
-    amrex::Print() << m_initDataPlt_specname_map[0] << std::endl;
     if (!m_initDataPlt_specname_map.empty()) {
       specString = m_initDataPlt_specname_map[i];
     }
