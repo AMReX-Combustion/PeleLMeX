@@ -45,8 +45,8 @@ PeleLM::regrid(int lbase, amrex::Real time, bool initial)
         const amrex::Real navg =
           static_cast<Real>(grids[0].size()) /
           static_cast<Real>(ParallelDescriptor::NProcs());
-        const int nmax = static_cast<int>(
-          std::max(std::round(m_loadBalanceKSfactor * navg), std::ceil(navg)));
+        const int nmax = static_cast<int>(amrex::max(
+          std::round(m_loadBalanceKSfactor * navg), std::ceil(navg)));
         test_dmap = DistributionMapping::makeKnapSack(
           *m_costs[0], currentEfficiency, testEfficiency, nmax, false,
           ParallelDescriptor::IOProcessorNumber());
@@ -168,7 +168,7 @@ PeleLM::regrid(int lbase, amrex::Real time, bool initial)
               const amrex::Real navg =
                 static_cast<Real>(new_ba.size()) /
                 static_cast<Real>(ParallelDescriptor::NProcs());
-              const int nmax = static_cast<int>(std::max(
+              const int nmax = static_cast<int>(amrex::max(
                 std::round(m_loadBalanceKSfactor * navg), std::ceil(navg)));
               Vector<Real> costsVec(new_ba.size());
               ParallelDescriptor::GatherLayoutDataToVector(
@@ -210,7 +210,7 @@ PeleLM::regrid(int lbase, amrex::Real time, bool initial)
               const amrex::Real navg =
                 static_cast<Real>(new_ba.size()) /
                 static_cast<Real>(ParallelDescriptor::NProcs());
-              const int nmax = static_cast<int>(std::max(
+              const int nmax = static_cast<int>(amrex::max(
                 std::round(m_loadBalanceKSfactor * navg), std::ceil(navg)));
               test_dmap = DistributionMapping::makeKnapSack(
                 *m_costs[lev], currentEfficiency, testEfficiency, nmax, false,

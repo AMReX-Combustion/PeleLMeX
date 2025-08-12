@@ -945,7 +945,7 @@ PeleLM::loadBalanceChemLev(int a_lev)
     const amrex::Real navg = static_cast<Real>(m_baChem[a_lev]->size()) /
                              static_cast<Real>(ParallelDescriptor::NProcs());
     const int nmax = static_cast<int>(
-      std::max(std::round(m_loadBalanceKSfactor * navg), std::ceil(navg)));
+      amrex::max(std::round(m_loadBalanceKSfactor * navg), std::ceil(navg)));
     test_dmap = DistributionMapping::makeKnapSack(
       new_cost, currentEfficiency, testEfficiency, nmax, false,
       ParallelDescriptor::IOProcessorNumber());
@@ -1242,9 +1242,9 @@ PeleLM::MLNorm0(const Vector<const MultiFab*>& a_MF)
   Real r = 0.0;
   for (int lev = 0; lev < a_MF.size(); ++lev) {
     if (lev != finest_level) {
-      r = std::max(r, a_MF[lev]->norm0(*m_coveredMask[lev], 0, 0, true));
+      r = amrex::max(r, a_MF[lev]->norm0(*m_coveredMask[lev], 0, 0, true));
     } else {
-      r = std::max(r, a_MF[lev]->norm0(0, 0, true, true));
+      r = amrex::max(r, a_MF[lev]->norm0(0, 0, true, true));
     }
   }
   ParallelDescriptor::ReduceRealMax(r);
@@ -1263,12 +1263,12 @@ PeleLM::MLNorm0(const Vector<const MultiFab*>& a_MF, int startcomp, int ncomp)
   for (int lev = 0; lev < a_MF.size(); ++lev) {
     if (lev != finest_level) {
       for (int n = 0; n < ncomp; n++) {
-        r[n] = std::max(
+        r[n] = amrex::max(
           r[n], a_MF[lev]->norm0(*m_coveredMask[lev], startcomp + n, 0, true));
       }
     } else {
       for (int n = 0; n < ncomp; n++) {
-        r[n] = std::max(r[n], a_MF[lev]->norm0(startcomp + n, 0, true, true));
+        r[n] = amrex::max(r[n], a_MF[lev]->norm0(startcomp + n, 0, true, true));
       }
     }
   }
@@ -1504,7 +1504,7 @@ PeleLM::setTypicalValues(const TimeStamp& a_time, int is_init)
   // Fill typical values vector
   for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
     typical_values[idim] =
-      std::max(stateMax[VELX + idim], std::abs(stateMin[VELX + idim]));
+      amrex::max(stateMax[VELX + idim], std::abs(stateMin[VELX + idim]));
   }
 
   if (m_incompressible == 0) {
@@ -1551,7 +1551,8 @@ PeleLM::setTypicalValues(const TimeStamp& a_time, int is_init)
       for (int n = 0; n < NUM_SPECIES; n++) {
         Print() << "\tY_" << spec_names[n]
                 << std::setw(
-                     std::max(0, static_cast<int>(8 - spec_names[n].length())))
+                     amrex::max(
+                       0, static_cast<int>(8 - spec_names[n].length())))
                 << std::left << ":" << typical_values[FIRSTSPEC + n] << '\n';
       }
 #ifdef PELE_USE_PLASMA
@@ -1561,7 +1562,7 @@ PeleLM::setTypicalValues(const TimeStamp& a_time, int is_init)
       for (int n = 0; n < NUM_ODE; n++) {
         Print() << "\t" << m_ode_names[n]
                 << std::setw(
-                     std::max(
+                     amrex::max(
                        0, static_cast<int>(10 - m_ode_names[n].length())))
                 << std::left << ":" << typical_values[FIRSTODE + n] << '\n';
       }
@@ -1645,7 +1646,7 @@ PeleLM::MFmax(const MultiFab* a_MF, const iMultiFab& a_mask, int comp)
           auto const& mask = a_mask.const_array(mfi);
           AMREX_LOOP_3D(bx, i, j, k, {
             if (!flag(i, j, k).isCovered() && mask(i, j, k)) {
-              mx = std::max(mx, a(i, j, k, comp));
+              mx = amrex::max(mx, a(i, j, k, comp));
             }
           });
         }
@@ -1680,7 +1681,7 @@ PeleLM::MFmax(const MultiFab* a_MF, const iMultiFab& a_mask, int comp)
         auto const& mask = a_mask.const_array(mfi);
         AMREX_LOOP_3D(bx, i, j, k, {
           if (mask(i, j, k)) {
-            mx = std::max(mx, a(i, j, k, comp));
+            mx = amrex::max(mx, a(i, j, k, comp));
           }
         });
       }
@@ -1731,7 +1732,7 @@ PeleLM::MFmin(const MultiFab* a_MF, const iMultiFab& a_mask, int comp)
           auto const& mask = a_mask.const_array(mfi);
           AMREX_LOOP_3D(bx, i, j, k, {
             if (!flag(i, j, k).isCovered() && mask(i, j, k)) {
-              mn = std::min(mn, a(i, j, k, comp));
+              mn = amrex::min(mn, a(i, j, k, comp));
             }
           });
         }
@@ -1766,7 +1767,7 @@ PeleLM::MFmin(const MultiFab* a_MF, const iMultiFab& a_mask, int comp)
         auto const& mask = a_mask.const_array(mfi);
         AMREX_LOOP_3D(bx, i, j, k, {
           if (mask(i, j, k)) {
-            mn = std::min(mn, a(i, j, k, comp));
+            mn = amrex::min(mn, a(i, j, k, comp));
           }
         });
       }
@@ -1789,11 +1790,11 @@ PeleLM::MLmax(const Vector<const MultiFab*>& a_MF, int scomp, int ncomp)
     if (lev != finest_level) {
       for (int n = 0; n < ncomp; n++) {
         nmax[n] =
-          std::max(nmax[n], MFmax(a_MF[lev], *m_coveredMask[lev], scomp + n));
+          amrex::max(nmax[n], MFmax(a_MF[lev], *m_coveredMask[lev], scomp + n));
       }
     } else {
       for (int n = 0; n < ncomp; n++) {
-        nmax[n] = std::max(nmax[n], a_MF[lev]->max(scomp + n, 0, true));
+        nmax[n] = amrex::max(nmax[n], a_MF[lev]->max(scomp + n, 0, true));
       }
     }
   }
@@ -1815,11 +1816,11 @@ PeleLM::MLmin(const Vector<const MultiFab*>& a_MF, int scomp, int ncomp)
     if (lev != finest_level) {
       for (int n = 0; n < ncomp; n++) {
         nmin[n] =
-          std::min(nmin[n], MFmin(a_MF[lev], *m_coveredMask[lev], scomp + n));
+          amrex::min(nmin[n], MFmin(a_MF[lev], *m_coveredMask[lev], scomp + n));
       }
     } else {
       for (int n = 0; n < ncomp; n++) {
-        nmin[n] = std::min(nmin[n], a_MF[lev]->min(scomp + n, 0, true));
+        nmin[n] = amrex::min(nmin[n], a_MF[lev]->min(scomp + n, 0, true));
       }
     }
   }

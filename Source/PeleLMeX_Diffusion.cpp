@@ -1567,7 +1567,7 @@ PeleLM::deltaTIter_update(
   for (int lev = 0; lev <= finest_level; ++lev) {
     auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
     a_deltaT_norm =
-      std::max(a_deltaT_norm, ldata_p->state.norm0(TEMP, 0, false, true));
+      amrex::max(a_deltaT_norm, ldata_p->state.norm0(TEMP, 0, false, true));
     MultiFab::Add(ldata_p->state, *a_Tsave[lev], 0, TEMP, 1, 0);
   }
 

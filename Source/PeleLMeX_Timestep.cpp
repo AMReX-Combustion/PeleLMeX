@@ -23,19 +23,19 @@ PeleLM::computeDt(int is_init, const TimeStamp& a_time)
       estdt = m_init_dt;
     } else {
       Real dtconv = estConvectiveDt(a_time);
-      estdt = std::min(estdt, dtconv);
+      estdt = amrex::min(estdt, dtconv);
       Real dtdivU = 1.0e200;
       if ((m_incompressible == 0) && (m_has_divu != 0)) {
         dtdivU = estDivUDt(a_time);
-        estdt = std::min(estdt, dtdivU);
+        estdt = amrex::min(estdt, dtdivU);
       }
 #ifdef PELE_USE_PLASMA
       Real dtions = estEFIonsDt(a_time);
-      estdt = std::min(estdt, dtions);
+      estdt = amrex::min(estdt, dtions);
 #endif
 #ifdef PELE_USE_SPRAY
       Real dtspray = SprayEstDt();
-      estdt = std::min(estdt, dtspray);
+      estdt = amrex::min(estdt, dtspray);
 #endif
       if (m_verbose != 0) {
         Print() << " Est. time step - Conv: " << dtconv << ", divu: " << dtdivU
@@ -55,8 +55,8 @@ PeleLM::computeDt(int is_init, const TimeStamp& a_time)
   if ((is_init != 0) || m_nstep == 0) {
     estdt *= m_dtshrink;
   } else {
-    estdt = std::min(estdt, m_prev_dt * m_dtChangeMax);
-    estdt = std::min(estdt, m_max_dt);
+    estdt = amrex::min(estdt, m_prev_dt * m_dtChangeMax);
+    estdt = amrex::min(estdt, m_max_dt);
     // Shorten the dt to output plt file at exact req. time
     if (m_plot_per_exact > 0.0) {
       // Ensure ~O(dt) step by checking a little in advance
@@ -67,7 +67,7 @@ PeleLM::computeDt(int is_init, const TimeStamp& a_time)
         estdt = Real(0.5) * timeToNextPlot;
       } else {
         if (timeToNextPlot > 1.e-12) {
-          estdt = std::min(estdt, timeToNextPlot);
+          estdt = amrex::min(estdt, timeToNextPlot);
         }
       }
     }
@@ -79,7 +79,7 @@ PeleLM::computeDt(int is_init, const TimeStamp& a_time)
       if (2.0 * estdt > timeLeft && timeLeft > estdt) {
         estdt = 0.5 * timeLeft;
       } else {
-        estdt = std::min(estdt, timeLeft);
+        estdt = amrex::min(estdt, timeLeft);
       }
     }
   }
@@ -137,17 +137,17 @@ PeleLM::estConvectiveDt(const TimeStamp& a_time)
     // Est. min time step on lev
     for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
       if (u_max[idim] > small) {
-        estdt_lev = std::min(estdt_lev, dx[idim] / u_max[idim]);
+        estdt_lev = amrex::min(estdt_lev, dx[idim] / u_max[idim]);
       }
       if (f_max[idim] > small) {
         estdt_lev =
-          std::min(estdt_lev, std::sqrt(2.0 * dx[idim] / f_max[idim]));
+          amrex::min(estdt_lev, std::sqrt(2.0 * dx[idim] / f_max[idim]));
       }
     }
 
     //----------------------------------------------------------------
     // Set overall convective dt
-    estdt = std::min(estdt, estdt_lev * m_cfl);
+    estdt = amrex::min(estdt, estdt_lev * m_cfl);
   }
 
   ParallelDescriptor::ReduceRealMin(estdt);
@@ -192,7 +192,7 @@ PeleLM::estDivUDt(const TimeStamp& a_time)
           }
           return dt;
         });
-      estdt = std::min(divu_dt, estdt);
+      estdt = amrex::min(divu_dt, estdt);
     } else if (m_divu_checkFlag == 2) {
       const auto& dxinv = geom[lev].InvCellSizeArray();
       std::unique_ptr<MultiFab> velo = std::make_unique<MultiFab>(
@@ -218,7 +218,7 @@ PeleLM::estDivUDt(const TimeStamp& a_time)
           }
           return dt;
         });
-      estdt = std::min(divu_dt, estdt);
+      estdt = amrex::min(divu_dt, estdt);
     }
   }
 

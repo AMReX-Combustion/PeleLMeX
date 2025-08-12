@@ -251,11 +251,11 @@ PeleLM::activeControl(int is_restart)
 
   // Limit Vnew
   Real dVmax = m_ctrl_changeMax * 1.0;
-  Real dVmin = m_ctrl_changeMax * std::max(1.0, m_ctrl_V_in);
-  Vnew = std::max(Vnew, 0.0);
-  Vnew = std::min(std::max(Vnew, m_ctrl_V_in - dVmin), m_ctrl_V_in + dVmax);
+  Real dVmin = m_ctrl_changeMax * amrex::max(1.0, m_ctrl_V_in);
+  Vnew = amrex::max(Vnew, 0.0);
+  Vnew = amrex::min(amrex::max(Vnew, m_ctrl_V_in - dVmin), m_ctrl_V_in + dVmax);
   if (m_ctrl_velMax > 0.0) { // Only limit Vnew to velMax if velMax > 0.0
-    Vnew = std::min(Vnew, m_ctrl_velMax);
+    Vnew = amrex::min(Vnew, m_ctrl_velMax);
   }
 
   if ((is_restart == 0) && m_nstep > 0) {
