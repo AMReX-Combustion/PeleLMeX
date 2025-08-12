@@ -210,7 +210,6 @@ PeleLM::addSpark(const TimeStamp& a_timestamp)
       auto statema = getLevelDataPtr(lev, a_timestamp)->state.const_arrays();
       auto extma = m_extSource[lev]->arrays();
       auto const* leosparm = eos_parms.device_parm();
-      auto const* leosparm = eos_parms.device_parm();
       const auto spark_duration = m_spark_duration[n];
       const auto spark_temp = m_spark_temp[n];
       const auto eosparm = leosparm;
