@@ -212,7 +212,7 @@ PeleLM::addSpark(const TimeStamp& a_timestamp)
       auto const* leosparm = eos_parms.device_parm();
       const auto spark_duration = m_spark_duration[n];
       const auto spark_temp = m_spark_temp[n];
-      const auto* const eosparm = leosparm;
+      const auto* eosparm = leosparm;
       const auto spark_radius = m_spark_radius[n];
 
       amrex::ParallelFor(
