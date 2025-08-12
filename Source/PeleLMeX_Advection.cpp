@@ -297,6 +297,10 @@ PeleLM::getScalarAdvForce(
       auto const& dn_aux = (m_nAux > 0)
                              ? diffData->Dn_aux[lev].const_array(mfi, 0)
                              : DummyFab.const_array();
+      const auto nAux = m_nAux;
+      const auto dp0dt = m_dp0dt;
+      const auto is_closed_ch = m_closed_chamber;
+      const auto do_react = m_do_react;
       amrex::ParallelFor(
         bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           buildAdvectionForcing(
