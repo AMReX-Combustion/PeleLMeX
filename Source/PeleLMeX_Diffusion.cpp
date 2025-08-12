@@ -72,7 +72,7 @@ PeleLM::computeDifferentialDiffusionTerms(
   // [0:NUM_SPECIES-1] Species     : \Flux_k
   // [NUM_SPECIES]     Temperature : - \lambda \nabla T
   // [NUM_SPECIES+1]   DiffDiff    : \sum_k ( h_k * \Flux_k )
-  constexpr int nGrow = 0; // No need for ghost face on fluxes
+  const int nGrow = 0; // No need for ghost face on fluxes
   Vector<Array<MultiFab, AMREX_SPACEDIM>> fluxes(finest_level + 1);
   Vector<Array<MultiFab, AMREX_SPACEDIM>> fluxes_aux(finest_level + 1);
   for (int lev = 0; lev <= finest_level; ++lev) {
@@ -139,7 +139,7 @@ PeleLM::computeDifferentialDiffusionTerms(
   // [0:NUM_SPECIES-1] Species           : \nabla \cdot \Flux_k
   // [NUM_SPECIES]     Temperature       : \nabla \cdot (-\lambda \nabla T)
   // [NUM_SPECIES+1]   Differential diff : \nabla \cdot \sum_k ( h_k * \Flux_k )
-  constexpr int intensiveFluxes = 1; // All the fluxes are intensive here
+  const int intensiveFluxes = 1; // All the fluxes are intensive here
   Vector<MultiFab*> diffTermVec = (a_time == AmrOldTime)
                                     ? GetVecOfPtrs(diffData->Dn)
                                     : GetVecOfPtrs(diffData->Dnp1);
@@ -263,7 +263,7 @@ PeleLM::adjustSpeciesFluxes(
 #ifdef AMREX_USE_EB
     //------------------------------------------------------------------------
     // Get the edge species state needed for EB
-    constexpr int nGrow = 1;
+    const int nGrow = 1;
     const auto& ba = a_spec[lev]->boxArray();
     const auto& dm = a_spec[lev]->DistributionMap();
     const auto& ebfact = EBFactory(lev);
@@ -398,8 +398,8 @@ PeleLM::correctIsothermalBoundary(
     // Get the edge centered diffusivities
     MultiFab& ldata_beta_cc = ldata_p->diff_cc;
     const Box& domain = geom[lev].Domain();
-    constexpr int doZeroVisc = 1;
-    constexpr int addTurbContribution = 0;
+    const int doZeroVisc = 1;
+    const int addTurbContribution = 0;
     Array<MultiFab, AMREX_SPACEDIM> beta_ec = getDiffusivity(
       lev, 0, NUM_SPECIES, doZeroVisc, bcRecSpec, ldata_beta_cc,
       addTurbContribution);
@@ -500,7 +500,7 @@ PeleLM::computeDifferentialDiffusionFluxes(
   // Get the species BCRec
   auto bcRecSpec = fetchBCRecArray(FIRSTSPEC, NUM_SPECIES);
   auto bcRecAux = fetchBCRecAuxArray(0, m_nAux);
-  constexpr int do_avgDown = 0;
+  const int do_avgDown = 0;
 
 #ifdef PELE_USE_PLASMA
   // Get the species diffusion fluxes from the DiffusionOp
@@ -712,7 +712,7 @@ PeleLM::addWbarTerm(
   //------------------------------------------------------------------------
   // Compute Wbar gradients and do average down to get gradients consistent
   // across levels Get the species BCRec
-  constexpr int do_avgDown = 1;
+  const int do_avgDown = 1;
   auto bcRecSpec = fetchBCRecArray(FIRSTSPEC, NUM_SPECIES);
 
   nGrow = 0; // No need for ghost face on fluxes
@@ -737,8 +737,8 @@ PeleLM::addWbarTerm(
   for (int lev = 0; lev <= finest_level; ++lev) {
 
     // Get edge diffusivity
-    constexpr int doZeroVisc = 1;
-    constexpr int addTurbContrib = 0;
+    const int doZeroVisc = 1;
+    const int addTurbContrib = 0;
     Array<MultiFab, AMREX_SPACEDIM> beta_ec = getDiffusivity(
       lev, 0, NUM_SPECIES, doZeroVisc, bcRecSpec, *a_beta[lev], addTurbContrib);
 
@@ -835,11 +835,11 @@ PeleLM::addSoretTerm(
   //------------------------------------------------------------------------
   // Compute T gradients and do average down to get gradients consistent across
   // levels Get the temperature BCRec
-  constexpr int do_avgDown = 1;
+  const int do_avgDown = 1;
   auto bcRecTemp = fetchBCRecArray(TEMP, 1);
   auto bcRecSpec = fetchBCRecArray(FIRSTSPEC, NUM_SPECIES);
 
-  constexpr int nGrow = 0; // No need for ghost face on fluxes
+  const int nGrow = 0; // No need for ghost face on fluxes
   Vector<Array<MultiFab, AMREX_SPACEDIM>> gradT(finest_level + 1);
   for (int lev = 0; lev <= finest_level; ++lev) {
     const auto& ba = grids[lev];
@@ -860,7 +860,7 @@ PeleLM::addSoretTerm(
   for (int lev = 0; lev <= finest_level; ++lev) {
 
     // Get edge diffusivity
-    constexpr int doZeroVisc = 1;
+    const int doZeroVisc = 1;
     Array<MultiFab, AMREX_SPACEDIM> beta_ec = getDiffusivity(
       lev, NUM_SPECIES + 2, NUM_SPECIES, doZeroVisc, bcRecSpec, *a_beta[lev]);
 
@@ -951,7 +951,7 @@ PeleLM::computeSpeciesEnthalpyFlux(
 #endif
     //------------------------------------------------------------------------
     // Compute the cell-centered species enthalpies
-    constexpr int nGrow = 1;
+    const int nGrow = 1;
     MultiFab Enth(
       grids[lev], dmap[lev], NUM_SPECIES, nGrow, MFInfo(), Factory(lev));
 
@@ -993,8 +993,8 @@ PeleLM::computeSpeciesEnthalpyFlux(
 
     //------------------------------------------------------------------------
     // Get the face-centered species enthalpies
-    constexpr int doZeroVisc = 0;
-    constexpr int addTurbContrib = 0;
+    const int doZeroVisc = 0;
+    const int addTurbContrib = 0;
     Array<MultiFab, AMREX_SPACEDIM> Enth_ec = getDiffusivity(
       lev, 0, NUM_SPECIES, doZeroVisc, bcRecSpec, Enth, addTurbContrib);
 
@@ -1035,7 +1035,7 @@ PeleLM::differentialDiffusionUpdate(
   // [0:NUM_SPECIES-1] Species     : \Flux_k
   // [NUM_SPECIES]     Temperature : - \lambda \nabla T
   // [NUM_SPECIES+1]   DiffDiff    : \sum_k ( h_k * \Flux_k )
-  constexpr int nGrow = 0; // No need for ghost face on fluxes
+  const int nGrow = 0; // No need for ghost face on fluxes
   Vector<Array<MultiFab, AMREX_SPACEDIM>> fluxes(finest_level + 1);
   Vector<Array<MultiFab, AMREX_SPACEDIM>> fluxes_aux(finest_level + 1);
   for (int lev = 0; lev <= finest_level; ++lev) {
@@ -1326,7 +1326,7 @@ PeleLM::differentialDiffusionUpdate(
   auto bcRecTemp = fetchBCRecArray(TEMP, 1);
 
   // Fourier: - \lambda \nabla T
-  constexpr int do_avgDown = 0;
+  const int do_avgDown = 0;
 #ifdef AMREX_USE_EB
   if (m_isothermalEB != 0) {
     // Set up EB dirichlet value and diffusivity
@@ -1568,7 +1568,7 @@ PeleLM::deltaTIter_update(
   auto bcRecTemp = fetchBCRecArray(TEMP, 1);
 
   // Fourier: - \lambda \nabla T
-  constexpr int do_avgDown = 0;
+  const int do_avgDown = 0;
 #ifdef AMREX_USE_EB
   if (m_isothermalEB != 0) {
     // Set up EB dirichlet value and diffusivity

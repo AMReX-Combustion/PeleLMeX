@@ -307,9 +307,9 @@ pelelmex_dermgvort(
   } else if (typ == FabType::singlevalued) {
     const auto& flag_fab = flags.const_array();
     amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-      constexpr amrex::Real c0 = -1.5;
-      constexpr amrex::Real c1 = 2.0;
-      constexpr amrex::Real c2 = -0.5;
+      const amrex::Real c0 = -1.5;
+      const amrex::Real c1 = 2.0;
+      const amrex::Real c2 = -0.5;
       if (flag_fab(i, j, k).isCovered()) {
         vort_arr(i, j, k) = 0.0;
       } else {
@@ -471,9 +471,9 @@ pelelmex_dervort(
   } else if (typ == FabType::singlevalued) {
     const auto& flag_fab = flags.const_array();
     amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-      constexpr amrex::Real c0 = -1.5;
-      constexpr amrex::Real c1 = 2.0;
-      constexpr amrex::Real c2 = -0.5;
+      const amrex::Real c0 = -1.5;
+      const amrex::Real c1 = 2.0;
+      const amrex::Real c2 = -0.5;
       if (flag_fab(i, j, k).isCovered()) {
         for (int n{0}; n < ncomp; ++n) {
           vort_arr(i, j, k, n) = 0.0;
@@ -736,9 +736,9 @@ pelelmex_derQcrit(
         qcrit_arr(i, j, k) = 0.0;
       } else {
         // Define interpolation lambda
-        constexpr amrex::Real c0 = -1.5;
-        constexpr amrex::Real c1 = 2.0;
-        constexpr amrex::Real c2 = -0.5;
+        const amrex::Real c0 = -1.5;
+        const amrex::Real c1 = 2.0;
+        const amrex::Real c2 = -0.5;
         auto onesided =
           [](const Real& v0, const Real& v1, const Real& v2) -> Real {
           return c0 * v0 + c1 * v1 + c2 * v2;
@@ -1006,9 +1006,9 @@ pelelmex_derenstrophy(
     const auto incomp = a_pelelm->m_incompressible;
     const auto rho = a_pelelm->m_rho;
     amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-      constexpr amrex::Real c0 = -1.5;
-      constexpr amrex::Real c1 = 2.0;
-      constexpr amrex::Real c2 = -0.5;
+      const amrex::Real c0 = -1.5;
+      const amrex::Real c1 = 2.0;
+      const amrex::Real c2 = -0.5;
       if (flag_fab(i, j, k).isCovered()) {
         ens_arr(i, j, k) = 0.0;
       } else {

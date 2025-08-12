@@ -6,7 +6,7 @@ Real
 PeleLM::estEFIonsDt(const TimeStamp& a_time)
 {
   Real estdt = 1.0e200;
-  constexpr Real small = 1.0e-8;
+  const Real small = 1.0e-8;
 
   auto bcRecPhiV = fetchBCRecArray(PHIV, 1);
 

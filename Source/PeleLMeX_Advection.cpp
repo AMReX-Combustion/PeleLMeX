@@ -11,7 +11,7 @@ PeleLM::computeVelocityAdvTerm(std::unique_ptr<AdvanceAdvData>& advData)
 
   //----------------------------------------------------------------
   // Create temporary containers
-  constexpr int nGrow_force = 1;
+  const int nGrow_force = 1;
   Vector<MultiFab> divtau(finest_level + 1);
   Vector<MultiFab> velForces(finest_level + 1);
   Vector<Array<MultiFab, AMREX_SPACEDIM>> fluxes(finest_level + 1);
@@ -34,7 +34,7 @@ PeleLM::computeVelocityAdvTerm(std::unique_ptr<AdvanceAdvData>& advData)
 
   //----------------------------------------------------------------
   // Get viscous forces
-  constexpr int use_density = 0;
+  const int use_density = 0;
   computeDivTau(AmrOldTime, GetVecOfPtrs(divtau), use_density);
 
   // Add compensating pressure gradient for periodic channel flow
@@ -51,7 +51,7 @@ PeleLM::computeVelocityAdvTerm(std::unique_ptr<AdvanceAdvData>& advData)
   //----------------------------------------------------------------
   // Gather all the velocity forces
   // F = [ (gravity+...) - gradP + divTau ] / rho
-  constexpr int add_gradP = 1;
+  const int add_gradP = 1;
   getVelForces(
     AmrOldTime, GetVecOfPtrs(divtau), GetVecOfPtrs(velForces), nGrow_force,
     add_gradP);
@@ -104,9 +104,9 @@ PeleLM::computeVelocityAdvTerm(std::unique_ptr<AdvanceAdvData>& advData)
       auto const& vel_arr = ldata_p->state.const_array(mfi, VELX);
       auto const& force_arr = velForces[lev].const_array(mfi);
 
-      constexpr bool is_velocity = true;
-      constexpr bool fluxes_are_area_weighted = false;
-      constexpr bool knownEdgeState = false;
+      const bool is_velocity = true;
+      const bool fluxes_are_area_weighted = false;
+      const bool knownEdgeState = false;
       HydroUtils::ComputeFluxesOnBoxFromState(
         bx, AMREX_SPACEDIM, mfi, vel_arr, AMREX_D_DECL(fx, fy, fz),
         AMREX_D_DECL(facex, facey, facez), knownEdgeState,
@@ -160,7 +160,7 @@ PeleLM::computeVelocityAdvTerm(std::unique_ptr<AdvanceAdvData>& advData)
       fillpatch_divu(lev, time, divu, m_nGrowdivu);
     }
 
-    constexpr bool fluxes_are_area_weighted = false;
+    const bool fluxes_are_area_weighted = false;
 #ifdef AMREX_USE_EB
     auto* ldata_p = getLevelDataPtr(lev, AmrOldTime);
     //----------------------------------------------------------------
@@ -211,19 +211,19 @@ PeleLM::updateVelocity(std::unique_ptr<AdvanceAdvData>& advData)
     divtau[lev].define(
       grids[lev], dmap[lev], AMREX_SPACEDIM, 0, MFInfo(), Factory(lev));
   }
-  constexpr int use_density = 0;
+  const int use_density = 0;
   const Real CrankNicholsonFactor = 0.5;
   computeDivTau(
     AmrOldTime, GetVecOfPtrs(divtau), use_density, CrankNicholsonFactor);
 
   //----------------------------------------------------------------
   // Get velocity forcing at half time including lagged grad P term
-  constexpr int nGrow_force = 1;
+  const int nGrow_force = 1;
   Vector<MultiFab> velForces(finest_level + 1);
   for (int lev = 0; lev <= finest_level; ++lev) {
     velForces[lev].define(grids[lev], dmap[lev], AMREX_SPACEDIM, nGrow_force);
   }
-  constexpr int add_gradP = 1;
+  const int add_gradP = 1;
   getVelForces(
     AmrHalfTime, GetVecOfPtrs(divtau), GetVecOfPtrs(velForces), nGrow_force,
     add_gradP);
@@ -437,9 +437,9 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
 
 #ifdef PELE_USE_PLASMA
       // Uncharged species all at once
-      constexpr bool is_velocity = false;
-      constexpr bool fluxes_are_area_weighted = false;
-      constexpr bool knownEdgeState = false;
+      const bool is_velocity = false;
+      const bool fluxes_are_area_weighted = false;
+      const bool knownEdgeState = false;
       HydroUtils::ComputeFluxesOnBoxFromState(
         bx, NUM_SPECIES - NUM_IONS, mfi, rhoY_arr, AMREX_D_DECL(fx, fy, fz),
         AMREX_D_DECL(edgex, edgey, edgez), knownEdgeState,
@@ -495,9 +495,9 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
           fluxes_are_area_weighted, m_advection_type, m_Godunov_ppm_limiter);
       }
 #else
-      constexpr bool is_velocity = false;
-      constexpr bool fluxes_are_area_weighted = false;
-      constexpr bool knownEdgeState = false;
+      const bool is_velocity = false;
+      const bool fluxes_are_area_weighted = false;
+      const bool knownEdgeState = false;
       HydroUtils::ComputeFluxesOnBoxFromState(
         bx, NUM_SPECIES, mfi, rhoY_arr, AMREX_D_DECL(fx, fy, fz),
         AMREX_D_DECL(edgex, edgey, edgez), knownEdgeState,
@@ -538,9 +538,9 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
         auto const& aux_arr = ldata_p->auxiliaries.const_array(mfi, 0);
         auto const& force_arr = advData->Forcing_aux[lev].const_array(mfi, 0);
 
-        constexpr bool is_velocity = false;
-        constexpr bool fluxes_are_area_weighted = false;
-        constexpr bool knownEdgeState = false;
+        const bool is_velocity = false;
+        const bool fluxes_are_area_weighted = false;
+        const bool knownEdgeState = false;
 
         HydroUtils::ComputeFluxesOnBoxFromState(
           bx, m_nAux, mfi, aux_arr, AMREX_D_DECL(fx, fy, fz),
@@ -634,9 +634,9 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
       auto const& temp_arr = ldata_p->state.const_array(mfi, TEMP);
       auto const& force_arr =
         advData->Forcing[lev].const_array(mfi, NUM_SPECIES);
-      constexpr bool is_velocity = false;
-      constexpr bool fluxes_are_area_weighted = false;
-      constexpr bool knownEdgeState = false;
+      const bool is_velocity = false;
+      const bool fluxes_are_area_weighted = false;
+      const bool knownEdgeState = false;
       HydroUtils::ComputeFluxesOnBoxFromState(
         bx, 1, mfi, temp_arr, AMREX_D_DECL(fx, fy, fz),
         AMREX_D_DECL(edgex, edgey, edgez), knownEdgeState,
@@ -723,9 +723,9 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
       auto const& rhoh_arr = ldata_p->state.const_array(mfi, RHOH);
       auto const& force_arr =
         advData->Forcing[lev].const_array(mfi, NUM_SPECIES);
-      constexpr bool is_velocity = false;
-      constexpr bool fluxes_are_area_weighted = false;
-      constexpr bool knownEdgeState = true;
+      const bool is_velocity = false;
+      const bool fluxes_are_area_weighted = false;
+      const bool knownEdgeState = true;
       HydroUtils::ComputeFluxesOnBoxFromState(
         bx, 1, mfi, rhoh_arr, AMREX_D_DECL(fx, fy, fz),
         AMREX_D_DECL(edgex, edgey, edgez), knownEdgeState,
@@ -828,7 +828,7 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
     auto* ldata_p = getLevelDataPtr(lev, AmrOldTime);
     //----------------------------------------------------------------
     // Use a temporary MF to hold divergence before redistribution
-    constexpr int nGrow_divTmp = 3;
+    const int nGrow_divTmp = 3;
     MultiFab divTmp(
       grids[lev], dmap[lev], NUM_SPECIES + 1, nGrow_divTmp, MFInfo(),
       EBFactory(lev));
@@ -1064,7 +1064,7 @@ PeleLM::computePassiveAdvTerms(
       fillpatch_divu(lev, time, divu, m_nGrowdivu);
     }
 
-    constexpr bool fluxes_are_area_weighted = false;
+    const bool fluxes_are_area_weighted = false;
 #ifdef AMREX_USE_EB
     auto* ldata_p = getLevelDataPtr(lev, AmrOldTime);
     //----------------------------------------------------------------

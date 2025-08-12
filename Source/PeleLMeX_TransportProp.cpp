@@ -30,7 +30,7 @@ PeleLM::calcTurbViscosity(const TimeStamp& a_time)
     const auto& ba = ldata_p->state.boxArray();
     const auto& dm = ldata_p->state.DistributionMap();
     const auto& factory = ldata_p->state.Factory();
-    constexpr int ncomp = AMREX_SPACEDIM * AMREX_SPACEDIM;
+    const int ncomp = AMREX_SPACEDIM * AMREX_SPACEDIM;
     for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
       GradVel[lev][idim].define(
         amrex::convert(ba, IntVect::TheDimensionVector(idim)), dm, ncomp, 0,

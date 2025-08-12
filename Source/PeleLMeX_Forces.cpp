@@ -312,7 +312,7 @@ PeleLM::addScalarVarianceSources(const TimeStamp& a_timestamp)
         for (int n = 0; n < MANIFOLD_DIM; ++n) {
           if (leosparm.is_variance_of[n] >= 0) {
 
-            constexpr amrex::Real fact = 0.5 / AMREX_SPACEDIM;
+            const amrex::Real fact = 0.5 / AMREX_SPACEDIM;
             const amrex::Real C_chi = m_les_c_chi;
             const amrex::Real ScInv = m_Schmidt_inv;
 

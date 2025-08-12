@@ -30,7 +30,7 @@ const std::string level_prefix{"Level_"};
 void
 GotoNextLine(std::istream& is)
 {
-  constexpr std::streamsize bl_ignore_max{100000};
+  const std::streamsize bl_ignore_max{100000};
   is.ignore(bl_ignore_max, '\n');
 }
 
@@ -434,7 +434,7 @@ PeleLM::WritePlotFile()
 #endif
 
     if (m_do_les && m_plot_les) {
-      constexpr amrex::Real fact = 0.5 / AMREX_SPACEDIM;
+      const amrex::Real fact = 0.5 / AMREX_SPACEDIM;
       auto const& plot_arr = mf_plt[lev].arrays();
       AMREX_D_TERM(
         auto const& mut_arr_x =

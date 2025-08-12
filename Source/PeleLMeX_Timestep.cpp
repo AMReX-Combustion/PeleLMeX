@@ -101,7 +101,7 @@ PeleLM::estConvectiveDt(const TimeStamp& a_time)
 {
 
   Real estdt = 1.0e200;
-  constexpr Real small = 1.0e-8;
+  const Real small = 1.0e-8;
 
   for (int lev = 0; lev <= finest_level; ++lev) {
 

@@ -58,8 +58,8 @@ getTransportCoeff(
   amrex::Real chi_loc[NUM_SPECIES] = {0.0};
   amrex::Real Tloc = T(i, j, k);
 
-  constexpr bool get_xi = false; // always ignore bulk viscosity
-  constexpr bool get_mu = true;  // always get dynamic viscosity
+  const bool get_xi = false; // always ignore bulk viscosity
+  const bool get_mu = true;  // always get dynamic viscosity
   bool get_lam = !do_fixed_Pr;
   bool get_Ddiag = !do_fixed_Le;
   bool get_chi = do_soret;
@@ -161,10 +161,10 @@ getTransportCoeff<pele::physics::eos::Manifold>(
   amrex::Real* dummy_chi = nullptr;
   amrex::Real Tloc = T(i, j, k);
 
-  constexpr bool get_xi = false;
-  constexpr bool get_mu = true;
-  constexpr bool get_lam = false;
-  constexpr bool get_Ddiag = true;
+  const bool get_xi = false;
+  const bool get_mu = true;
+  const bool get_lam = false;
+  const bool get_Ddiag = true;
   bool get_chi = do_soret;
   auto trans = pele::physics::PhysicsType::transport();
   trans.transport(
@@ -211,11 +211,11 @@ getVelViscosity(
   amrex::Real mu_cgs = 0.0_rt;
   amrex::Real dummy_xi = 0.0_rt;
 
-  constexpr bool get_xi = false;
-  constexpr bool get_mu = true;
-  constexpr bool get_lam = false;
-  constexpr bool get_Ddiag = false;
-  constexpr bool get_chi = false;
+  const bool get_xi = false;
+  const bool get_mu = true;
+  const bool get_lam = false;
+  const bool get_Ddiag = false;
+  const bool get_chi = false;
   auto trans = pele::physics::PhysicsType::transport();
   trans.transport(
     get_xi, get_mu, get_lam, get_Ddiag, get_chi, temp, rho_cgs, y, dummy_rhoDi,
@@ -1365,7 +1365,7 @@ getTurbViscSigma(
   // smallnum included to make sure denom is nonzero
   // where sig_* are the singular values of G = g^tg
 
-  constexpr amrex::Real Pi = 3.14159265358979323846264338327950288;
+  const amrex::Real Pi = 3.14159265358979323846264338327950288;
 
   amrex::Real D_sig = 0.0;
 
