@@ -1056,7 +1056,7 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
     auto const& rhoY_arr = ldata_p->state.array(mfi, FIRSTSPEC);
     auto const& rhoH_arr = ldata_p->state.array(mfi, RHOH);
     auto const& temp_arr = ldata_p->state.array(mfi, TEMP);
-    const auto eosparm = leosparm;
+    const auto* const eosparm = leosparm;
     amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
       auto eos = pele::physics::PhysicsType::eos(eosparm);
       Real massfrac[NUM_SPECIES] = {0.0};
