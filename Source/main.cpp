@@ -32,7 +32,7 @@ main(int argc, char* argv[])
 
   BL_PROFILE_VAR("PeleLMeX::main()", main);
 
-  const amrex::Real strt_total = ParallelDescriptor::second();
+  const amrex::Real strt_total = amrex::ParallelDescriptor::second();
 
   {
     PeleLM pelelmex;
@@ -48,10 +48,10 @@ main(int argc, char* argv[])
         " Wrong peleLM.run_mode ! It can only be 'normal' (D) or 'evaluate'");
     }
 
-    amrex::Real end_total = ParallelDescriptor::second() - strt_total;
+    amrex::Real end_total = amrex::ParallelDescriptor::second() - strt_total;
 
-    ParallelDescriptor::ReduceRealMax(
-      end_total, ParallelDescriptor::IOProcessorNumber());
+    amrex::ParallelDescriptor::ReduceRealMax(
+      end_total, amrex::ParallelDescriptor::IOProcessorNumber());
 
     amrex::Print() << "\nTotal Time: " << end_total << '\n';
   }

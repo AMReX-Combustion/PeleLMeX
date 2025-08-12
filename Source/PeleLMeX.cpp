@@ -28,7 +28,7 @@ PeleLM::~PeleLM()
   typical_values.clear();
   freeProbParm();
   delete prob_parm;
-  The_Arena()->free(prob_parm_d);
+  amrex::The_Arena()->free(prob_parm_d);
   m_initial_ba.clear();
   m_regrid_ba.clear();
 #ifdef PELE_USE_SPRAY
