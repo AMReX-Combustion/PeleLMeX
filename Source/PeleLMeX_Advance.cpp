@@ -402,7 +402,8 @@ PeleLM::oneSDC(
   // Diffuse scalars
   differentialDiffusionUpdate(advData, diffData);
   if (m_verbose > 1) {
-    amrex::Real ScalDiffEnd = amrex::ParallelDescriptor::second() - ScalDiffStart;
+    amrex::Real ScalDiffEnd =
+      amrex::ParallelDescriptor::second() - ScalDiffStart;
     amrex::ParallelDescriptor::ReduceRealMax(
       ScalDiffEnd, amrex::ParallelDescriptor::IOProcessorNumber());
     amrex::Print() << "   - oneSDC()::ScalarDiffusion() --> Time: "
@@ -433,7 +434,8 @@ PeleLM::oneSDC(
   // Integrate chemistry
   advanceChemistry(advData);
   if (m_verbose > 1) {
-    amrex::Real ScalReacEnd = amrex::ParallelDescriptor::second() - ScalReacStart;
+    amrex::Real ScalReacEnd =
+      amrex::ParallelDescriptor::second() - ScalReacStart;
     amrex::ParallelDescriptor::ReduceRealMax(
       ScalReacEnd, amrex::ParallelDescriptor::IOProcessorNumber());
     amrex::Print() << "   - oneSDC()::ScalarReaction()  --> Time: "
