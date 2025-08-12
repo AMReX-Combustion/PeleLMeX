@@ -119,8 +119,7 @@ PeleLM::addChiIncrement(
       auto const& mac_divu_ar = advData->mac_divu[lev].array(mfi);
       if (m_chi_correction_type == ChiCorrectionType::DivuFirstIter) {
         amrex::ParallelFor(
-          gbx, [chi_ar, chiInc_ar, mac_divu_ar,
-                a_sdcIter] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          gbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             if (a_sdcIter == 1) {
               chi_ar(i, j, k) = chiInc_ar(i, j, k) + mac_divu_ar(i, j, k);
             } else {
@@ -130,8 +129,7 @@ PeleLM::addChiIncrement(
           });
       } else if (m_chi_correction_type == ChiCorrectionType::NoDivu) {
         amrex::ParallelFor(
-          gbx, [chi_ar, chiInc_ar, mac_divu_ar,
-                a_sdcIter] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          gbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             if (a_sdcIter == 1) {
               chi_ar(i, j, k) = chiInc_ar(i, j, k);
             } else {
@@ -141,8 +139,7 @@ PeleLM::addChiIncrement(
           });
       } else { // Default: use updated divu every iteration
         amrex::ParallelFor(
-          gbx, [chi_ar, chiInc_ar, mac_divu_ar,
-                a_sdcIter] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          gbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             if (a_sdcIter == 1) {
               chi_ar(i, j, k) = chiInc_ar(i, j, k);
             } else {

@@ -939,15 +939,14 @@ pelelmex_derkineticenergy(
   if (a_pelelm->m_incompressible != 0) {
     auto const vel = statefab.array(VELX);
     auto der = derfab.array(dcomp);
-    amrex::ParallelFor(
-      bx, [=, rho = a_pelelm->m_rho] AMREX_GPU_DEVICE(
-            int i, int j, int k) noexcept {
-        der(i, j, k) = 0.5 * rho *
-                       (AMREX_D_TERM(
-                         vel(i, j, k, 0) * vel(i, j, k, 0),
-                         +vel(i, j, k, 1) * vel(i, j, k, 1),
-                         +vel(i, j, k, 2) * vel(i, j, k, 2)));
-      });
+    const auto rho = a_pelelm->m_rho;
+    amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+      der(i, j, k) =
+        0.5 * rho *
+        (AMREX_D_TERM(
+          vel(i, j, k, 0) * vel(i, j, k, 0), +vel(i, j, k, 1) * vel(i, j, k, 1),
+          +vel(i, j, k, 2) * vel(i, j, k, 2)));
+    });
   } else {
     auto const rho = statefab.array(DENSITY);
     auto const vel = statefab.array(VELX);
@@ -1004,62 +1003,59 @@ pelelmex_derenstrophy(
     });
   } else if (typ == FabType::singlevalued) {
     const auto& flag_fab = flags.const_array();
-    amrex::ParallelFor(
-      bx,
-      [=, incomp = a_pelelm->m_incompressible,
-       rho = a_pelelm->m_rho] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-        constexpr amrex::Real c0 = -1.5;
-        constexpr amrex::Real c1 = 2.0;
-        constexpr amrex::Real c2 = -0.5;
-        if (flag_fab(i, j, k).isCovered()) {
-          ens_arr(i, j, k) = 0.0;
-        } else {
-          Real l_rho = rho;
-          if (incomp == 0) {
-            l_rho = rho_arr(i, j, k);
-          }
-          // Define interpolation lambda
-          auto onesided =
-            [](const Real& v0, const Real& v1, const Real& v2) -> Real {
-            return c0 * v0 + c1 * v1 + c2 * v2;
-          };
+    const auto incomp = a_pelelm->m_incompressible;
+    const auto rho = a_pelelm->m_rho;
+    amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+      constexpr amrex::Real c0 = -1.5;
+      constexpr amrex::Real c1 = 2.0;
+      constexpr amrex::Real c2 = -0.5;
+      if (flag_fab(i, j, k).isCovered()) {
+        ens_arr(i, j, k) = 0.0;
+      } else {
+        Real l_rho = rho;
+        if (incomp == 0) {
+          l_rho = rho_arr(i, j, k);
+        }
+        // Define interpolation lambda
+        auto onesided =
+          [](const Real& v0, const Real& v1, const Real& v2) -> Real {
+          return c0 * v0 + c1 * v1 + c2 * v2;
+        };
 
-          amrex::Real vx = 0.0;
-          amrex::Real uy = 0.0;
+        amrex::Real vx = 0.0;
+        amrex::Real uy = 0.0;
 #if (AMREX_SPACEDIM == 2)
-          // Need to check if there are covered cells in neighbours --
-          // -- if so, use one-sided difference computation (but still
-          // quadratic)
-          if (!flag_fab(i, j, k).isConnected(1, 0, 0)) {
-            vx = -onesided(
-                   dat_arr(i, j, k, 1), dat_arr(i - 1, j, k, 1),
-                   dat_arr(i - 2, j, k, 1)) *
-                 idx;
-          } else if (!flag_fab(i, j, k).isConnected(-1, 0, 0)) {
-            vx = onesided(
-                   dat_arr(i, j, k, 1), dat_arr(i + 1, j, k, 1),
-                   dat_arr(i + 2, j, k, 1)) *
-                 idx;
-          } else {
-            vx =
-              0.5 * (dat_arr(i + 1, j, k, 1) - dat_arr(i - 1, j, k, 1)) * idx;
-          }
-          // Do the same in y-direction
-          if (!flag_fab(i, j, k).isConnected(0, 1, 0)) {
-            uy = -onesided(
-                   dat_arr(i, j, k, 0), dat_arr(i, j - 1, k, 0),
-                   dat_arr(i, j - 2, k, 0)) *
-                 idy;
-          } else if (!flag_fab(i, j, k).isConnected(0, -1, 0)) {
-            uy = onesided(
-                   dat_arr(i, j, k, 0), dat_arr(i, j + 1, k, 0),
-                   dat_arr(i, j + 2, k, 0)) *
-                 idy;
-          } else {
-            uy =
-              0.5 * (dat_arr(i, j + 1, k, 0) - dat_arr(i, j - 1, k, 0)) * idy;
-          }
-          ens_arr(i, j, k) = 0.5 * l_rho * (vx - uy) * (vx - uy);
+        // Need to check if there are covered cells in neighbours --
+        // -- if so, use one-sided difference computation (but still
+        // quadratic)
+        if (!flag_fab(i, j, k).isConnected(1, 0, 0)) {
+          vx = -onesided(
+                 dat_arr(i, j, k, 1), dat_arr(i - 1, j, k, 1),
+                 dat_arr(i - 2, j, k, 1)) *
+               idx;
+        } else if (!flag_fab(i, j, k).isConnected(-1, 0, 0)) {
+          vx = onesided(
+                 dat_arr(i, j, k, 1), dat_arr(i + 1, j, k, 1),
+                 dat_arr(i + 2, j, k, 1)) *
+               idx;
+        } else {
+          vx = 0.5 * (dat_arr(i + 1, j, k, 1) - dat_arr(i - 1, j, k, 1)) * idx;
+        }
+        // Do the same in y-direction
+        if (!flag_fab(i, j, k).isConnected(0, 1, 0)) {
+          uy = -onesided(
+                 dat_arr(i, j, k, 0), dat_arr(i, j - 1, k, 0),
+                 dat_arr(i, j - 2, k, 0)) *
+               idy;
+        } else if (!flag_fab(i, j, k).isConnected(0, -1, 0)) {
+          uy = onesided(
+                 dat_arr(i, j, k, 0), dat_arr(i, j + 1, k, 0),
+                 dat_arr(i, j + 2, k, 0)) *
+               idy;
+        } else {
+          uy = 0.5 * (dat_arr(i, j + 1, k, 0) - dat_arr(i, j - 1, k, 0)) * idy;
+        }
+        ens_arr(i, j, k) = 0.5 * l_rho * (vx - uy) * (vx - uy);
 
 #elif (AMREX_SPACEDIM == 3)
           amrex::Real wx = 0.0;
@@ -1150,25 +1146,24 @@ pelelmex_derenstrophy(
                              ((wy - vz) * (wy - vz) + (uz - wx) * (uz - wx) +
                               (vx - uy) * (vx - uy));
 #endif
-        }
-      });
+      }
+    });
   } else
 #endif
   {
-    amrex::ParallelFor(
-      bx,
-      [=, incomp = a_pelelm->m_incompressible,
-       rho = a_pelelm->m_rho] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-        Real l_rho = rho;
-        if (incomp == 0) {
-          l_rho = rho_arr(i, j, k);
-        }
+    const auto incomp = a_pelelm->m_incompressible;
+    const auto rho = a_pelelm->m_rho;
+    amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+      Real l_rho = rho;
+      if (incomp == 0) {
+        l_rho = rho_arr(i, j, k);
+      }
 #if (AMREX_SPACEDIM == 2)
-        amrex::Real vx =
-          0.5 * (dat_arr(i + 1, j, k, 1) - dat_arr(i - 1, j, k, 1)) * idx;
-        amrex::Real uy =
-          0.5 * (dat_arr(i, j + 1, k, 0) - dat_arr(i, j - 1, k, 0)) * idy;
-        ens_arr(i, j, k) = 0.5 * l_rho * (vx - uy) * (vx - uy);
+      amrex::Real vx =
+        0.5 * (dat_arr(i + 1, j, k, 1) - dat_arr(i - 1, j, k, 1)) * idx;
+      amrex::Real uy =
+        0.5 * (dat_arr(i, j + 1, k, 0) - dat_arr(i, j - 1, k, 0)) * idy;
+      ens_arr(i, j, k) = 0.5 * l_rho * (vx - uy) * (vx - uy);
 
 #elif (AMREX_SPACEDIM == 3)
         amrex::Real vx =
@@ -1190,7 +1185,7 @@ pelelmex_derenstrophy(
                            ((wy - vz) * (wy - vz) + (uz - wx) * (uz - wx) +
                             (vx - uy) * (vx - uy));
 #endif
-      });
+    });
   }
 }
 
@@ -1233,16 +1228,14 @@ pelelmex_dermixfrac(
     fact_Bilger[n] = a_pelelm->spec_Bilger_fact[n];
   }
 
-  amrex::ParallelFor(
-    bx, [density, rhoY, mixt_frac, fact_Bilger, Zox_lcl,
-         denom_inv] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-      amrex::Real rho_inv = 1.0_rt / density(i, j, k);
-      mixt_frac(i, j, k) = 0.0_rt;
-      for (int n = 0; n < NUM_SPECIES; ++n) {
-        mixt_frac(i, j, k) += (rhoY(i, j, k, n) * fact_Bilger[n]) * rho_inv;
-      }
-      mixt_frac(i, j, k) = (mixt_frac(i, j, k) - Zox_lcl) * denom_inv;
-    });
+  amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+    amrex::Real rho_inv = 1.0_rt / density(i, j, k);
+    mixt_frac(i, j, k) = 0.0_rt;
+    for (int n = 0; n < NUM_SPECIES; ++n) {
+      mixt_frac(i, j, k) += (rhoY(i, j, k, n) * fact_Bilger[n]) * rho_inv;
+    }
+    mixt_frac(i, j, k) = (mixt_frac(i, j, k) - Zox_lcl) * denom_inv;
+  });
 }
 
 //
@@ -1286,21 +1279,20 @@ pelelmex_derprogvar(
     Cweights[n] = a_pelelm->m_Cweights[n];
   }
 
-  amrex::ParallelFor(
-    bx, [=, revert = a_pelelm->m_Crevert] AMREX_GPU_DEVICE(
-          int i, int j, int k) noexcept {
-      amrex::Real rho_inv = 1.0_rt / density(i, j, k);
-      prog_var(i, j, k) = 0.0_rt;
-      for (int n = 0; n < NUM_SPECIES; ++n) {
-        prog_var(i, j, k) += (rhoY(i, j, k, n) * Cweights[n]) * rho_inv;
-      }
-      prog_var(i, j, k) += temp(i, j, k) * Cweights[NUM_SPECIES];
-      if (revert != 0) {
-        prog_var(i, j, k) = 1.0 - (prog_var(i, j, k) - C0_lcl) * denom_inv;
-      } else {
-        prog_var(i, j, k) = (prog_var(i, j, k) - C0_lcl) * denom_inv;
-      }
-    });
+  const auto revert = a_pelelm->m_Crevert;
+  amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+    amrex::Real rho_inv = 1.0_rt / density(i, j, k);
+    prog_var(i, j, k) = 0.0_rt;
+    for (int n = 0; n < NUM_SPECIES; ++n) {
+      prog_var(i, j, k) += (rhoY(i, j, k, n) * Cweights[n]) * rho_inv;
+    }
+    prog_var(i, j, k) += temp(i, j, k) * Cweights[NUM_SPECIES];
+    if (revert != 0) {
+      prog_var(i, j, k) = 1.0 - (prog_var(i, j, k) - C0_lcl) * denom_inv;
+    } else {
+      prog_var(i, j, k) = (prog_var(i, j, k) - C0_lcl) * denom_inv;
+    }
+  });
 }
 
 //
@@ -1333,11 +1325,9 @@ pelelmex_dervisc(
     auto const& T = statefab.array(TEMP);
     auto der = derfab.array(dcomp);
     auto const* ltransparm = a_pelelm->trans_parms.device_parm();
-    amrex::ParallelFor(
-      bx, [rhoY, T, der,
-           ltransparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-        getVelViscosity(i, j, k, rhoY, T, der, ltransparm);
-      });
+    amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+      getVelViscosity(i, j, k, rhoY, T, der, ltransparm);
+    });
   }
 }
 
@@ -1384,14 +1374,11 @@ pelelmex_derdiffc(
                            : dummies.array(2); // dummy for no soret
   amrex::Real LeInv = a_pelelm->m_Lewis_inv;
   amrex::Real PrInv = a_pelelm->m_Prandtl_inv;
-  amrex::ParallelFor(
-    bx, [do_fixed_Le, do_fixed_Pr, do_soret, LeInv, PrInv, rhoY, T, rhoD,
-         rhotheta, lambda, mu, ltransparm,
-         leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-      getTransportCoeff<pele::physics::PhysicsType::eos_type>(
-        i, j, k, do_fixed_Le, do_fixed_Pr, do_soret, LeInv, PrInv, rhoY, T,
-        rhoD, rhotheta, lambda, mu, ltransparm, leosparm);
-    });
+  amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+    getTransportCoeff<pele::physics::PhysicsType::eos_type>(
+      i, j, k, do_fixed_Le, do_fixed_Pr, do_soret, LeInv, PrInv, rhoY, T, rhoD,
+      rhotheta, lambda, mu, ltransparm, leosparm);
+  });
 }
 
 //
@@ -1430,14 +1417,11 @@ pelelmex_derlambda(
   auto const* leosparm = a_pelelm->eos_parms.device_parm();
   amrex::Real LeInv = a_pelelm->m_Lewis_inv;
   amrex::Real PrInv = a_pelelm->m_Prandtl_inv;
-  amrex::ParallelFor(
-    bx, [do_fixed_Le, do_fixed_Pr, do_soret, LeInv, PrInv, rhoY, T, rhoD,
-         rhotheta, lambda, mu, ltransparm,
-         leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-      getTransportCoeff<pele::physics::PhysicsType::eos_type>(
-        i, j, k, do_fixed_Le, do_fixed_Pr, do_soret, LeInv, PrInv, rhoY, T,
-        rhoD, rhotheta, lambda, mu, ltransparm, leosparm);
-    });
+  amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+    getTransportCoeff<pele::physics::PhysicsType::eos_type>(
+      i, j, k, do_fixed_Le, do_fixed_Pr, do_soret, LeInv, PrInv, rhoY, T, rhoD,
+      rhotheta, lambda, mu, ltransparm, leosparm);
+  });
 }
 
 //

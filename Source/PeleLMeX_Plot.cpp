@@ -446,8 +446,7 @@ PeleLM::WritePlotFile()
       // interpolate turbulent viscosity from faces to centers
       amrex::ParallelFor(
         mf_plt[lev],
-        [plot_arr, AMREX_D_DECL(mut_arr_x, mut_arr_y, mut_arr_z),
-         cnt] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+        [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
           plot_arr[box_no](i, j, k, cnt) =
             fact *
             (AMREX_D_TERM(
@@ -1057,40 +1056,39 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
     auto const& rhoY_arr = ldata_p->state.array(mfi, FIRSTSPEC);
     auto const& rhoH_arr = ldata_p->state.array(mfi, RHOH);
     auto const& temp_arr = ldata_p->state.array(mfi, TEMP);
-    amrex::ParallelFor(
-      bx,
-      [=, eosparm = leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-        auto eos = pele::physics::PhysicsType::eos(eosparm);
-        Real massfrac[NUM_SPECIES] = {0.0};
-        Real sumYs = 0.0;
-        for (int n = 0; n < NUM_SPECIES; n++) {
-          massfrac[n] = rhoY_arr(i, j, k, n);
+    const auto eosparm = leosparm;
+    amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+      auto eos = pele::physics::PhysicsType::eos(eosparm);
+      Real massfrac[NUM_SPECIES] = {0.0};
+      Real sumYs = 0.0;
+      for (int n = 0; n < NUM_SPECIES; n++) {
+        massfrac[n] = rhoY_arr(i, j, k, n);
 #ifdef N2_ID
-          if (n != N2_ID) {
-            sumYs += massfrac[n];
-          }
-#endif
+        if (n != N2_ID) {
+          sumYs += massfrac[n];
         }
+#endif
+      }
 #ifdef N2_ID
-        massfrac[N2_ID] = 1.0 - sumYs;
+      massfrac[N2_ID] = 1.0 - sumYs;
 #endif
 
-        // Get density
-        Real P_cgs = lprobparm->P_mean * 10.0;
-        Real rho_cgs = 0.0;
-        eos.PYT2R(P_cgs, massfrac, temp_arr(i, j, k), rho_cgs);
-        rho_arr(i, j, k) = rho_cgs * 1.0e3;
+      // Get density
+      Real P_cgs = lprobparm->P_mean * 10.0;
+      Real rho_cgs = 0.0;
+      eos.PYT2R(P_cgs, massfrac, temp_arr(i, j, k), rho_cgs);
+      rho_arr(i, j, k) = rho_cgs * 1.0e3;
 
-        // Get enthalpy
-        Real h_cgs = 0.0;
-        eos.TY2H(temp_arr(i, j, k), massfrac, h_cgs);
-        rhoH_arr(i, j, k) = h_cgs * 1.0e-4 * rho_arr(i, j, k);
+      // Get enthalpy
+      Real h_cgs = 0.0;
+      eos.TY2H(temp_arr(i, j, k), massfrac, h_cgs);
+      rhoH_arr(i, j, k) = h_cgs * 1.0e-4 * rho_arr(i, j, k);
 
-        // Fill rhoYs
-        for (int n = 0; n < NUM_SPECIES; n++) {
-          rhoY_arr(i, j, k, n) = massfrac[n] * rho_arr(i, j, k);
-        }
-      });
+      // Fill rhoYs
+      for (int n = 0; n < NUM_SPECIES; n++) {
+        rhoY_arr(i, j, k, n) = massfrac[n] * rho_arr(i, j, k);
+      }
+    });
   }
 
   // Initialize thermodynamic pressure

@@ -105,9 +105,7 @@ PeleLM::getVelForces(
       const auto& divTau_arr =
         (has_divTau) != 0 ? a_divTau->const_array(mfi) : DummyFab.array();
       amrex::ParallelFor(
-        bx,
-        [incomp_rho_inv, is_incomp, add_gradP, has_divTau, rho_arr, gp_arr,
-         divTau_arr, force_arr] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           if (is_incomp != 0) {
             for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
               if (add_gradP != 0) {
@@ -132,8 +130,7 @@ PeleLM::getVelForces(
         });
     } else {
       amrex::ParallelFor(
-        bx, [incomp_rho_inv, is_incomp, rho_arr,
-             force_arr] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           if (is_incomp != 0) {
             for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
               force_arr(i, j, k, idim) *= incomp_rho_inv;
@@ -163,22 +160,19 @@ PeleLM::getVelForces(
   Array4<const Real> const& extRho)
 {
   const auto dx = geom[lev].CellSizeArray();
-
-  // Get non-static info for the pseudo gravity forcing
-  int pseudo_gravity = m_ctrl_pseudoGravity;
+  const int pseudo_gravity = m_ctrl_pseudoGravity;
   const Real dV_control = m_ctrl_dV;
+  const int is_incomp = m_incompressible;
+  const Real rho_incomp = m_rho;
+  const auto grav = m_gravity;
+  const auto gp0 = m_background_gp;
+  const int ps_dir = m_ctrl_flameDir;
 
-  int is_incomp = m_incompressible;
-  Real rho_incomp = m_rho;
-
-  amrex::ParallelFor(
-    bx,
-    [=, grav = m_gravity, gp0 = m_background_gp,
-     ps_dir = m_ctrl_flameDir] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-      makeVelForce(
-        i, j, k, is_incomp, rho_incomp, pseudo_gravity, ps_dir, a_time, grav,
-        gp0, dV_control, dx, vel, rho, rhoY, rhoh, temp, extMom, extRho, force);
-    });
+  amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+    makeVelForce(
+      i, j, k, is_incomp, rho_incomp, pseudo_gravity, ps_dir, a_time, grav, gp0,
+      dV_control, dx, vel, rho, rhoY, rhoh, temp, extMom, extRho, force);
+  });
 }
 
 void
@@ -216,13 +210,15 @@ PeleLM::addSpark(const TimeStamp& a_timestamp)
       auto statema = getLevelDataPtr(lev, a_timestamp)->state.const_arrays();
       auto extma = m_extSource[lev]->arrays();
       auto const* leosparm = eos_parms.device_parm();
+      auto const* leosparm = eos_parms.device_parm();
+      const auto spark_duration = m_spark_duration[n];
+      const auto spark_temp = m_spark_temp[n];
+      const auto eosparm = leosparm;
+      const auto spark_radius = m_spark_radius[n];
 
       amrex::ParallelFor(
         *m_extSource[lev],
-        [=, spark_duration = m_spark_duration[n], spark_temp = m_spark_temp[n],
-         eosparm = leosparm,
-         spark_radius = m_spark_radius
-           [n]] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+        [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
           auto eos = pele::physics::PhysicsType::eos(eosparm);
           Real dist_to_center = std::sqrt(AMREX_D_TERM(
             (i - spark_idx[0]) * (i - spark_idx[0]) * dx[0] * dx[0],

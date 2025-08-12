@@ -718,10 +718,7 @@ PeleLM::correct_vel_small_cells(
         // This FAB has cut cells -- we define the centroid value in terms of
         // the MAC velocities onfaces
         amrex::ParallelFor(
-          bx, [vfrac_fab, AMREX_D_DECL(apx_fab, apy_fab, apz_fab), ccvel_fab,
-               AMREX_D_DECL(
-                 umac_fab, vmac_fab,
-                 wmac_fab)] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             if (vfrac_fab(i, j, k) > 0.0 && vfrac_fab(i, j, k) < 5.e-3) {
               AMREX_D_TERM(
                 Real u_avg = (apx_fab(i, j, k) * umac_fab(i, j, k) +

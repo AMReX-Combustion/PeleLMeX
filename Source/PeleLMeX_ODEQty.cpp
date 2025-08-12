@@ -12,9 +12,10 @@ PeleLM::predictODEQty()
   for (int lev = 0; lev <= finest_level; lev++) {
     auto const& state_arrs = getLevelDataPtr(lev, AmrNewTime)->state.arrays();
     auto const& ext_src_arrs = m_extSource[lev]->arrays();
+    const auto dt = m_dt;
     ParallelFor(
-      *m_extSource[lev], [state_arrs, ext_src_arrs, dt = m_dt] AMREX_GPU_DEVICE(
-                           int box_no, int i, int j, int k) noexcept {
+      *m_extSource[lev],
+      [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
         for (int n = 0; n < NUM_ODE; n++) {
           Real const& B_n = state_arrs[box_no](i, j, k, FIRSTODE + n);
           Real const& S_ext_n = ext_src_arrs[box_no](i, j, k, FIRSTODE + n);

@@ -159,7 +159,7 @@ PeleLM::MakeNewLevelFromScratch(
       auto const& sd_cc = m_signedDist0->array(mfi);
       auto const& sd_nd = signDist.const_array(mfi);
       amrex::ParallelFor(
-        bx, [sd_cc, sd_nd] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           amrex::Real fac = AMREX_D_PICK(0.5, 0.25, 0.125);
           sd_cc(i, j, k) = AMREX_D_TERM(
             sd_nd(i, j, k) + sd_nd(i + 1, j, k),

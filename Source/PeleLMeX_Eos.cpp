@@ -127,15 +127,13 @@ PeleLM::calcDivU(
 #ifdef AMREX_USE_EB
       if (flagfab.getType(bx) == FabType::covered) { // Covered boxes
         amrex::ParallelFor(
-          bx, [divu] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             divu(i, j, k) = 0.0;
           });
       } else if (flagfab.getType(bx) != FabType::regular) { // EB containing
                                                             // boxes
         amrex::ParallelFor(
-          bx, [rhoY, T, SpecD, Fourier, DiffDiff, r, extRhoY, extRhoH, divu,
-               use_react, flag,
-               leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             if (flag(i, j, k).isCovered()) {
               divu(i, j, k) = 0.0;
             } else {
@@ -148,9 +146,7 @@ PeleLM::calcDivU(
 #endif
       {
         amrex::ParallelFor(
-          bx,
-          [rhoY, T, SpecD, Fourier, DiffDiff, r, extRhoY, extRhoH, divu,
-           use_react, leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             compute_divu<pele::physics::PhysicsType::eos_type>(
               i, j, k, rhoY, T, SpecD, Fourier, DiffDiff, r, extRhoY, extRhoH,
               divu, use_react, leosparm);
@@ -263,11 +259,11 @@ PeleLM::calc_dPdt(int lev, const TimeStamp& a_time, MultiFab* a_dPdt)
   auto const& dPdtma = a_dPdt->arrays();
 
   // Use new ambient pressure to compute dPdt
-  Real p_amb = m_pNew;
-
+  const Real p_amb = m_pNew;
+  const auto dt = m_dt;
+  const auto dpdt_fac = m_dpdtFactor;
   amrex::ParallelFor(
-    *a_dPdt, [=, dt = m_dt, dpdt_fac = m_dpdtFactor] AMREX_GPU_DEVICE(
-               int box_no, int i, int j, int k) noexcept {
+    *a_dPdt, [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
       auto dPdta = dPdtma[box_no];
       auto sa = sma[box_no];
       dPdta(i, j, k) =
@@ -293,9 +289,11 @@ PeleLM::adjustPandDivU(std::unique_ptr<AdvanceAdvData>& advData)
     auto const& sma_n = getLevelDataPtr(lev, AmrNewTime)->state.const_arrays();
     auto const* leosparm = eos_parms.device_parm();
 
+    const auto pOld = m_pOld;
+    const auto pNew = m_pNew;
     amrex::ParallelFor(
-      *ThetaHalft[lev], [=, pOld = m_pOld, pNew = m_pNew] AMREX_GPU_DEVICE(
-                          int box_no, int i, int j, int k) noexcept {
+      *ThetaHalft[lev],
+      [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
         auto theta = tma[box_no];
         Real gammaInv_o = getGammaInv(
           i, j, k, Array4<Real const>(sma_o[box_no], FIRSTSPEC),

@@ -82,9 +82,7 @@ PeleLM::initActiveControl()
 
     Box dumbx({AMREX_D_DECL(0, 0, 0)}, {AMREX_D_DECL(0, 0, 0)});
     amrex::ParallelFor(
-      dumbx,
-      [fake_state, x, s_ext_d, ctrl_flameDir_l, time_l, geomdata, lprobparm,
-       lpmfdata] AMREX_GPU_DEVICE(int /*i*/, int /*j*/, int /*k*/) noexcept {
+      dumbx, [=] AMREX_GPU_DEVICE(int /*i*/, int /*j*/, int /*k*/) noexcept {
         const auto s_in = fake_state.cellData(0, 0, 0);
         ProblemSpecificFunctions::bcnormal(
           x, s_in, s_ext_d, ctrl_flameDir_l, 1, time_l, geomdata, *lprobparm,

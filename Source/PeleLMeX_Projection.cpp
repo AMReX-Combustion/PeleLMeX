@@ -40,8 +40,7 @@ PeleLM::initialProjection()
         auto const& rho_arr = ldata_p->state.const_array(mfi, DENSITY);
         auto const& sig_arr = sigma[lev]->array(mfi);
         amrex::ParallelFor(
-          bx, [rho_arr, sig_arr,
-               dummy_dt] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             sig_arr(i, j, k) = dummy_dt / rho_arr(i, j, k);
           });
       }
@@ -152,8 +151,7 @@ PeleLM::initialPressProjection()
         auto const& rho_arr = ldata_p->state.const_array(mfi, DENSITY);
         auto const& sig_arr = sigma[lev]->array(mfi);
         amrex::ParallelFor(
-          bx, [rho_arr, sig_arr,
-               dummy_dt] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             sig_arr(i, j, k) = dummy_dt / rho_arr(i, j, k);
           });
       }
@@ -206,8 +204,7 @@ PeleLM::velocityProjection(
         auto const& rho_arr = rhoHalf[lev]->const_array(mfi);
         auto const& sig_arr = sigma[lev]->array(mfi);
         amrex::ParallelFor(
-          bx, [rho_arr, sig_arr,
-               a_dt] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             sig_arr(i, j, k) = a_dt / rho_arr(i, j, k);
           });
       }
@@ -239,10 +236,10 @@ PeleLM::velocityProjection(
         auto const& rho_arr = (m_incompressible) != 0
                                 ? Array4<Real const>()
                                 : rhoHalf[lev]->const_array(mfi);
+        const auto incompressible = m_incompressible;
+        const auto rho = m_rho;
         amrex::ParallelFor(
-          bx,
-          [vel_arr, gp_arr, rho_arr, a_dt, incompressible = m_incompressible,
-           rho = m_rho] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             Real soverrho =
               (incompressible) != 0 ? a_dt / rho : a_dt / rho_arr(i, j, k);
             AMREX_D_TERM(vel_arr(i, j, k, 0) += gp_arr(i, j, k, 0) * soverrho;
@@ -323,11 +320,9 @@ PeleLM::velocityProjection(
           const auto& divu_o = ldataOld_p->divu.const_array(mfi);
           const auto& divu_n = ldataNew_p->divu.const_array(mfi);
           const auto& rhs = rhs_cc[lev].array(mfi);
+          const auto is_closed_ch = m_closed_chamber;
           amrex::ParallelFor(
-            gbx,
-            [divu_o, divu_n, rhs, SbarNew, SbarOld,
-             is_closed_ch =
-               m_closed_chamber] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+            gbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
               rhs(i, j, k) = -(divu_n(i, j, k) - divu_o(i, j, k));
               if (is_closed_ch != 0) {
                 rhs(i, j, k) +=
@@ -471,25 +466,21 @@ PeleLM::doNodalProject(
       if (incremental != 0) {
         amrex::ParallelFor(
           tbx, AMREX_SPACEDIM,
-          [gp_lev_arr,
-           gp_proj_arr] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
+          [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
             gp_lev_arr(i, j, k, n) += gp_proj_arr(i, j, k, n);
           });
         amrex::ParallelFor(
-          nbx, [p_lev_arr,
-                p_proj_arr] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          nbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             p_lev_arr(i, j, k) += p_proj_arr(i, j, k);
           });
       } else {
         amrex::ParallelFor(
           tbx, AMREX_SPACEDIM,
-          [gp_lev_arr,
-           gp_proj_arr] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
+          [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
             gp_lev_arr(i, j, k, n) = gp_proj_arr(i, j, k, n);
           });
         amrex::ParallelFor(
-          nbx, [p_lev_arr,
-                p_proj_arr] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          nbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             p_lev_arr(i, j, k) = p_proj_arr(i, j, k);
           });
       }
@@ -530,10 +521,10 @@ PeleLM::scaleProj_RZ( // NOLINT(readability-convert-member-functions-to-static)
     }
     const Real dr = geom[a_lev].CellSize()[0];
     auto const& mf_ma = a_mf.arrays();
+    const auto ncomp = a_mf.nComp();
     amrex::ParallelFor(
       a_mf, a_mf.nGrowVect(),
-      [=, ncomp = a_mf.nComp()] AMREX_GPU_DEVICE(
-        int box_no, int i, int j, int k) noexcept {
+      [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
         auto mf = mf_ma[box_no];
         if (domain.contains(i, j, k)) {
           for (int n = 0; n < ncomp; ++n) {
@@ -564,10 +555,10 @@ PeleLM::
     const Box& domain = geom[a_lev].Domain();
     const Real dr = geom[a_lev].CellSize()[0];
     auto const& mf_ma = a_mf.arrays();
+    const auto ncomp = a_mf.nComp();
     amrex::ParallelFor(
       a_mf, a_mf.nGrowVect(),
-      [=, ncomp = a_mf.nComp()] AMREX_GPU_DEVICE(
-        int box_no, int i, int j, int k) noexcept {
+      [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
         auto mf = mf_ma[box_no];
         if (domain.contains(i, j, k)) {
           for (int n = 0; n < ncomp; ++n) {

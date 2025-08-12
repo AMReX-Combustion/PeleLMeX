@@ -254,8 +254,7 @@ PeleLM::checkDt(const TimeStamp& a_time, const Real& a_dt)
       auto dtfac = m_divu_dtFactor;
       auto rhoMin = m_divu_rhoMin;
       amrex::ParallelFor(
-        bx, [rho, vel, divu, divu_checkFlag, dtfac, rhoMin, dxinv,
-             a_dt] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           check_divu_dt(
             i, j, k, divu_checkFlag, dtfac, rhoMin, dxinv, rho, vel, divu,
             a_dt);

@@ -228,15 +228,13 @@ PeleLM::extFluxDivergenceLevel(
 #ifdef AMREX_USE_EB
     if (flagfab.getType(bx) == FabType::covered) { // Covered boxes
       amrex::ParallelFor(
-        bx, ncomp,
-        [divergence] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
+        bx, ncomp, [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
           divergence(i, j, k, n) = 0.0;
         });
     } else if (flagfab.getType(bx) != FabType::regular) { // EB containing boxes
       auto vfrac = ebfact.getVolFrac().const_array(mfi);
       amrex::ParallelFor(
-        bx, [ncomp, flag, vfrac, divergence, AMREX_D_DECL(fluxX, fluxY, fluxZ),
-             vol, scale] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           if (flag(i, j, k).isCovered()) {
             for (int n = 0; n < ncomp; n++) {
               divergence(i, j, k, n) = 0.0;
@@ -259,8 +257,7 @@ PeleLM::extFluxDivergenceLevel(
 #endif
     {
       amrex::ParallelFor(
-        bx, [ncomp, divergence, AMREX_D_DECL(fluxX, fluxY, fluxZ), vol,
-             scale] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           extFluxDivergence_K(
             i, j, k, ncomp, AMREX_D_DECL(fluxX, fluxY, fluxZ), vol, scale,
             divergence);
@@ -327,8 +324,7 @@ PeleLM::intFluxDivergenceLevel(
 
     if (flagfab.getType(bx) == FabType::covered) { // Covered boxes
       amrex::ParallelFor(
-        bx, ncomp,
-        [divergence] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
+        bx, ncomp, [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
           divergence(i, j, k, n) = 0.0;
         });
     } else if (flagfab.getType(bx) != FabType::regular) { // EB containing boxes
@@ -338,10 +334,7 @@ PeleLM::intFluxDivergenceLevel(
         , const auto& afrac_y = areafrac[1]->array(mfi);
         , const auto& afrac_z = areafrac[2]->array(mfi););
       amrex::ParallelFor(
-        bx, [ncomp, flag, vfrac, divergence, AMREX_D_DECL(fluxX, fluxY, fluxZ),
-             AMREX_D_DECL(afrac_x, afrac_y, afrac_z),
-             AMREX_D_DECL(areax, areay, areaz), vol,
-             scale] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           if (flag(i, j, k).isCovered()) {
             for (int n = 0; n < ncomp; n++) {
               divergence(i, j, k, n) = 0.0;
@@ -369,8 +362,7 @@ PeleLM::intFluxDivergenceLevel(
         Array4<Real const> const& ax = mf_ax.const_array(mfi);
         Array4<Real const> const& ay = mf_ay.const_array(mfi);
         amrex::ParallelFor(
-          bx, [ncomp, divergence, AMREX_D_DECL(fluxX, fluxY, fluxZ), ax, ay,
-               vol, scale] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             intFluxDivergence_rz_K(
               i, j, k, ncomp, AMREX_D_DECL(fluxX, fluxY, fluxZ), ax, ay, vol,
               scale, divergence);
@@ -379,9 +371,7 @@ PeleLM::intFluxDivergenceLevel(
 #endif
       {
         amrex::ParallelFor(
-          bx, [ncomp, divergence, AMREX_D_DECL(fluxX, fluxY, fluxZ),
-               AMREX_D_DECL(areax, areay, areaz), vol,
-               scale] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             intFluxDivergence_K(
               i, j, k, ncomp, AMREX_D_DECL(fluxX, fluxY, fluxZ),
               AMREX_D_DECL(areax, areay, areaz), vol, scale, divergence);
@@ -450,8 +440,7 @@ PeleLM::intFluxDivergenceLevelEB(
 
     if (flagfab.getType(bx) == FabType::covered) { // Covered boxes
       amrex::ParallelFor(
-        bx, ncomp,
-        [divergence] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
+        bx, ncomp, [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
           divergence(i, j, k, n) = 0.0;
         });
     } else if (flagfab.getType(bx) != FabType::regular) { // EB containing boxes
@@ -487,9 +476,7 @@ PeleLM::intFluxDivergenceLevelEB(
 #endif
     {
       amrex::ParallelFor(
-        bx, [ncomp, divergence, AMREX_D_DECL(fluxX, fluxY, fluxZ),
-             AMREX_D_DECL(areax, areay, areaz), vol,
-             scale] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           intFluxDivergence_K(
             i, j, k, ncomp, AMREX_D_DECL(fluxX, fluxY, fluxZ),
             AMREX_D_DECL(areax, areay, areaz), vol, scale, divergence);
@@ -826,7 +813,7 @@ PeleLM::resetCoveredMask()
           baf.intersections(grids[lev][mfi.index()], isects);
           for (const auto& is : isects) {
             amrex::ParallelFor(
-              is.second, [mask] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+              is.second, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
                 mask(i, j, k) = 0;
               });
           }

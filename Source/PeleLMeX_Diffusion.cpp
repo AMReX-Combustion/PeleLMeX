@@ -303,8 +303,7 @@ PeleLM::adjustSpeciesFluxes(
           // No cut cells in tile + nghost-cell width halo -> use non-eb routine
           if (flagfab.getType(amrex::grow(ebx, nGrow)) == FabType::regular) {
             amrex::ParallelFor(
-              ebx, [idim, rhoY, flux_dir, edomain, bc_lo,
-                    bc_hi] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+              ebx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
                 int idx[3] = {i, j, k};
                 bool on_lo =
                   ((bc_lo == amrex::BCType::ext_dir) &&
@@ -318,9 +317,7 @@ PeleLM::adjustSpeciesFluxes(
             auto const& rhoYed_ar = edgstate[idim].const_array(mfi);
             auto const& areafrac_ar = areafrac[idim]->const_array(mfi);
             amrex::ParallelFor(
-              ebx,
-              [idim, rhoY, flux_dir, rhoYed_ar, areafrac_ar, edomain, bc_lo,
-               bc_hi] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+              ebx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
                 int idx[3] = {i, j, k};
                 bool on_lo =
                   ((bc_lo == amrex::BCType::ext_dir) &&
@@ -336,8 +333,7 @@ PeleLM::adjustSpeciesFluxes(
         }
 #else
         amrex::ParallelFor(
-          ebx, [idim, rhoY, flux_dir, edomain, bc_lo,
-                bc_hi] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          ebx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             int idx[3] = {i, j, k};
             bool on_lo =
               ((bc_lo == amrex::BCType::ext_dir) &&
@@ -422,11 +418,9 @@ PeleLM::correctIsothermalBoundary(
                                   ? a_wbarfluxes[lev][idim]->const_array(mfi)
                                   : rhoD_ec;
         auto const& boundary_ar = a_spec_boundary[lev]->array(mfi);
+        const auto use_wbar = m_use_wbar;
         amrex::ParallelFor(
-          ebx,
-          [flux_wbar, flux_soret, rhoD_ec, boundary_ar, idim, edomain, bc_lo,
-           bc_hi, use_wbar = m_use_wbar,
-           need_explicit_fluxes] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          ebx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             int idx[3] = {i, j, k};
             bool on_lo = (bc_lo == BoundaryCondition::BCNoSlipWallIsotherm ||
                           bc_lo == BoundaryCondition::BCSlipWallIsotherm) &&
@@ -684,11 +678,9 @@ PeleLM::addWbarTerm(
       auto const& Wbar_boundary_arr =
         (have_boundary != 0) ? Wbar_boundary[lev].array(mfi) : Wbar_arr;
 
+      const auto phys_bc = m_phys_bc;
       amrex::ParallelFor(
-
-        gbx, [rho_arr, rhoY_arr, Wbar_arr, gradY_arr, Wbar_boundary_arr, domain,
-              have_boundary, phys_bc = m_phys_bc,
-              leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        gbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           getMwmixGivenRY(i, j, k, rho_arr, rhoY_arr, Wbar_arr, leosparm);
           if (have_boundary != 0) { // need to impose gradWbar on boundary for
             // computeGradient
@@ -770,8 +762,7 @@ PeleLM::addWbarTerm(
           const auto bc_lo = bcRecSpec[0].lo(idim);
           const auto bc_hi = bcRecSpec[0].hi(idim);
           amrex::ParallelFor(
-            ebx, [idim, bc_lo, bc_hi, use_harmonic_avg, rhoY_arr, rhoYed_arr,
-                  edomain] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+            ebx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
               int idx[3] = {i, j, k};
               bool on_lo =
                 ((bc_lo == amrex::BCType::ext_dir) &&
@@ -796,11 +787,9 @@ PeleLM::addWbarTerm(
           // Wbar flux is : - \rho Y_m / W_k * D_m * \nabla
           // \overline{W} with beta_m = \rho * D_m * overline(W) / W_k below
           // need to divide by \overline(W)
+          const auto eosparm = leosparm;
           amrex::ParallelFor(
-            ebx, [need_wbar_fluxes, gradWbar_ar, beta_ar, rhoY, spFlux_ar,
-                  spwbarFlux_ar,
-                  eosparm =
-                    leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+            ebx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
               auto eos = pele::physics::PhysicsType::eos(eosparm);
               // Get Wbar from rhoYs
               amrex::Real rho = 0.0;
@@ -899,9 +888,7 @@ PeleLM::addSoretTerm(
           const auto bc_lo_temp = bcRecTemp[0].lo(idim);
           const auto bc_hi_temp = bcRecTemp[0].hi(idim);
           amrex::ParallelFor(
-            ebx,
-            [idim, bc_lo_temp, bc_hi_temp, use_harmonic_avg, T_arr, Ted_arr,
-             edomain] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+            ebx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
               int idx[3] = {i, j, k};
               bool on_lo =
                 ((bc_lo_temp == amrex::BCType::ext_dir) &&
@@ -926,9 +913,7 @@ PeleLM::addSoretTerm(
           // Soret flux is : - rho * D_m * chi_m * \nabla T / T
           // with beta_m = rho * D_m * chi_m below
           amrex::ParallelFor(
-            ebx,
-            [need_soret_fluxes, gradT_ar, beta_ar, T, spFlux_ar,
-             spsoretFlux_ar] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+            ebx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
               for (int n = 0; n < NUM_SPECIES; n++) {
                 spFlux_ar(i, j, k, n) -=
                   beta_ar(i, j, k, n) * gradT_ar(i, j, k) / T(i, j, k);
@@ -983,14 +968,13 @@ PeleLM::computeSpeciesEnthalpyFlux(
       auto const& flag = flagfab.const_array();
       if (flagfab.getType(gbx) == FabType::covered) { // Covered boxes
         amrex::ParallelFor(
-          gbx, [Hi_arr] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          gbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             Hi_arr(i, j, k) = 0.0;
           });
       } else if (flagfab.getType(gbx) != FabType::regular) { // EB containing
                                                              // boxes
         amrex::ParallelFor(
-          gbx, [Temp_arr, Hi_arr, flag,
-                leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          gbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             if (flag(i, j, k).isCovered()) {
               Hi_arr(i, j, k) = 0.0;
             } else {
@@ -1001,8 +985,7 @@ PeleLM::computeSpeciesEnthalpyFlux(
 #endif
       {
         amrex::ParallelFor(
-          gbx, [Temp_arr, Hi_arr,
-                leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          gbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             getHGivenT(i, j, k, Temp_arr, Hi_arr, leosparm);
           });
       }
@@ -1028,8 +1011,7 @@ PeleLM::computeSpeciesEnthalpyFlux(
           a_fluxes[lev][idim]->array(mfi, NUM_SPECIES + 1);
         auto const& enth_ar = Enth_ec[idim].const_array(mfi);
         amrex::ParallelFor(
-          ebox, [spflux_ar, enthflux_ar,
-                 enth_ar] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          ebox, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             enthflux_ar(i, j, k) = 0.0;
             for (int n = 0; n < NUM_SPECIES; n++) {
               enthflux_ar(i, j, k) +=
@@ -1102,9 +1084,10 @@ PeleLM::differentialDiffusionUpdate(
                             : DummyFab.const_array();
       auto const& fAux = (m_nAux > 0) ? advData->Forcing_aux[lev].array(mfi, 0)
                                       : DummyFab.array();
+      const auto dt = m_dt;
+      const auto nAux = m_nAux;
       amrex::ParallelFor(
-        bx, [rhoY_o, fY, aux_o, fAux, dt = m_dt,
-             nAux = m_nAux] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           for (int n = 0; n < NUM_SPECIES; n++) {
             fY(i, j, k, n) *= dt;
             fY(i, j, k, n) += rhoY_o(i, j, k, n);
@@ -1222,8 +1205,7 @@ PeleLM::differentialDiffusionUpdate(
             diffData->wbar_fluxes[lev][idim].const_array(mfi);
           amrex::ParallelFor(
             ebx, NUM_SPECIES,
-            [flux_spec,
-             flux_wbar] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
+            [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
               flux_spec(i, j, k, n) += flux_wbar(i, j, k, n);
             });
         }
@@ -1245,8 +1227,7 @@ PeleLM::differentialDiffusionUpdate(
             diffData->soret_fluxes[lev][idim].const_array(mfi);
           amrex::ParallelFor(
             ebx, NUM_SPECIES,
-            [flux_spec,
-             flux_soret] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
+            [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
               flux_spec(i, j, k, n) += flux_soret(i, j, k, n);
             });
         }
@@ -1307,11 +1288,12 @@ PeleLM::differentialDiffusionUpdate(
       auto const& force_aux = (m_nAux > 0)
                                 ? advData->Forcing_aux[lev].const_array(mfi, 0)
                                 : DummyFab.const_array();
+      const auto nAux = m_nAux;
+      const auto dt = m_dt;
+      const auto use_wbar = m_use_wbar;
+      const auto use_soret = m_use_soret;
       amrex::ParallelFor(
-        bx, [rhoY, dhat, force, dwbar, dT, aux, dhat_aux, force_aux,
-             nAux = m_nAux, dt = m_dt, use_wbar = m_use_wbar,
-             use_soret =
-               m_use_soret] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           for (int n = 0; n < NUM_SPECIES; n++) {
             rhoY(i, j, k, n) = force(i, j, k, n) + dt * dhat(i, j, k, n);
             if (use_wbar != 0) {
@@ -1526,8 +1508,9 @@ PeleLM::deltaTIter_prepare(
 
       // T save
       auto const& tsave = a_Tsave[lev]->array(mfi);
+      const auto dt = m_dt;
       amrex::ParallelFor(
-        bx, [=, dt = m_dt] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           // Assemble deltaT RHS
           rhs(i, j, k) =
             dt * ((rhoH_o(i, j, k) - rhoH_n(i, j, k)) * dtinv + force(i, j, k) +
@@ -1702,12 +1685,14 @@ PeleLM::getScalarDiffForce(
       auto const& dnp1k_aux = (m_nAux > 0)
                                 ? diffData->Dnp1_aux[lev].const_array(mfi, 0)
                                 : DummyFab.const_array();
+      const auto do_react = m_do_react;
+      const auto use_wbar = m_use_wbar;
+      const auto use_soret = m_use_soret;
+      const auto dp0dt = m_dp0dt;
+      const auto is_closed_ch = m_closed_chamber;
+      const auto nAux = m_nAux;
       amrex::ParallelFor(
-        bx, [dn, ddn, dnp1k, ddnp1k, do_react = m_do_react, r, a, extRhoY,
-             extRhoH, dwbar, dT, use_wbar = m_use_wbar, use_soret = m_use_soret,
-             fY, fT, fAux, a_aux, dn_aux, dnp1k_aux, aux_advect_d,
-             aux_diffuse_d, dp0dt = m_dp0dt, is_closed_ch = m_closed_chamber,
-             nAux = m_nAux] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           buildDiffusionForcing(
             i, j, k, dn, ddn, dnp1k, ddnp1k, r, a, dp0dt, is_closed_ch,
             do_react, fY, fT, dwbar, dT, extRhoY, extRhoH, use_wbar, use_soret,
