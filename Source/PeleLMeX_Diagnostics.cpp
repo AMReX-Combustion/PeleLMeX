@@ -1,15 +1,13 @@
 #include <PeleLMeX.H>
 
-using namespace amrex;
-
 void
 PeleLM::createDiagnostics()
 {
   std::string pele_prefix = "peleLM";
-  ParmParse pp(pele_prefix);
+  amrex::ParmParse pp(pele_prefix);
   int n_diags = 0;
   n_diags = pp.countval("diagnostics");
-  Vector<std::string> diags;
+  amrex::Vector<std::string> diags;
   if (n_diags > 0) {
     m_diagnostics.resize(n_diags);
     diags.resize(n_diags);
@@ -17,7 +15,7 @@ PeleLM::createDiagnostics()
   for (int n = 0; n < n_diags; ++n) {
     pp.get("diagnostics", diags[n], n);
     std::string diag_prefix = pele_prefix + "." + diags[n];
-    ParmParse ppd(diag_prefix);
+    amrex::ParmParse ppd(diag_prefix);
     std::string diag_type;
     ppd.get("type", diag_type);
     m_diagnostics[n] = DiagBase::create(diag_type);
@@ -33,7 +31,7 @@ PeleLM::createDiagnostics()
     bool itexists =
       derive_lst.canDerive(v) || isStateVariable(v) || isReactVariable(v);
     if (!itexists) {
-      Abort("Field " + v + " is not available");
+      amrex::Abort("Field " + v + " is not available");
     } else {
       if (derive_lst.canDerive(v)) {
         const PeleLMDeriveRec* rec = derive_lst.get(v);
@@ -41,7 +39,7 @@ PeleLM::createDiagnostics()
           std::string errmsg = "Diagnostics can't handle derived with more "
                                "than 1 component at the moment.\n";
           errmsg += "Add the desired components individually.\n";
-          Abort(errmsg);
+          amrex::Abort(errmsg);
         }
       }
     }
@@ -66,12 +64,12 @@ PeleLM::doDiagnostics()
 {
   BL_PROFILE("PeleLMeX::doDiagnostics()");
   // Assemble a vector of MF containing the requested data
-  Vector<std::unique_ptr<MultiFab>> diagMFVec(finestLevel() + 1);
+  amrex::Vector<std::unique_ptr<amrex::MultiFab>> diagMFVec(finestLevel() + 1);
   for (int lev{0}; lev <= finestLevel(); ++lev) {
-    diagMFVec[lev] =
-      std::make_unique<MultiFab>(grids[lev], dmap[lev], m_diagVars.size(), 1);
+    diagMFVec[lev] = std::make_unique<amrex::MultiFab>(
+      grids[lev], dmap[lev], m_diagVars.size(), 1);
     for (int v{0}; v < m_diagVars.size(); ++v) {
-      std::unique_ptr<MultiFab> mf;
+      std::unique_ptr<amrex::MultiFab> mf;
       mf = derive(m_diagVars[v], m_cur_time, lev, 1);
       // If the variable is a derive component, get its index from the derive
       // multifab
@@ -82,7 +80,7 @@ PeleLM::doDiagnostics()
       if (rec != nullptr) {
         mf_idx = rec->variableComp(m_diagVars[v]);
       }
-      MultiFab::Copy(*diagMFVec[lev], *mf, mf_idx, v, 1, 1);
+      amrex::MultiFab::Copy(*diagMFVec[lev], *mf, mf_idx, v, 1, 1);
     }
   }
 
