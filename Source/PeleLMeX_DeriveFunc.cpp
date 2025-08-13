@@ -19,16 +19,16 @@ using namespace amrex;
 void
 pelelmex_dertemp(
   PeleLM* a_pelelm,
-  const Box& bx,
-  FArrayBox& derfab,
+  const amrex::Box& bx,
+  amrex::FArrayBox& derfab,
   int dcomp,
   int ncomp,
-  const FArrayBox& statefab,
-  const FArrayBox& /*reactfab*/,
-  const FArrayBox& /*pressfab*/,
-  const Geometry& /*geom*/,
-  Real /*time*/,
-  const Vector<BCRec>& /*bcrec*/,
+  const amrex::FArrayBox& statefab,
+  const amrex::FArrayBox& /*reactfab*/,
+  const amrex::FArrayBox& /*pressfab*/,
+  const amrex::Geometry& /*geom*/,
+  amrex::Real /*time*/,
+  const amrex::Vector<BCRec>& /*bcrec*/,
   int /*level*/)
 
 {
@@ -50,16 +50,16 @@ pelelmex_dertemp(
 void
 pelelmex_derheatrelease(
   PeleLM* a_pelelm,
-  const Box& bx,
-  FArrayBox& derfab,
+  const amrex::Box& bx,
+  amrex::FArrayBox& derfab,
   int dcomp,
   int ncomp,
-  const FArrayBox& statefab,
-  const FArrayBox& reactfab,
-  const FArrayBox& /*pressfab*/,
-  const Geometry& /*geom*/,
-  Real /*time*/,
-  const Vector<BCRec>& /*bcrec*/,
+  const amrex::FArrayBox& statefab,
+  const amrex::FArrayBox& reactfab,
+  const amrex::FArrayBox& /*pressfab*/,
+  const amrex::Geometry& /*geom*/,
+  amrex::Real /*time*/,
+  const amrex::Vector<BCRec>& /*bcrec*/,
   int /*level*/)
 
 {
@@ -69,7 +69,7 @@ pelelmex_derheatrelease(
   AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
   AMREX_ASSERT(!a_pelelm->m_incompressible);
 
-  FArrayBox EnthFab;
+  amrex::FArrayBox EnthFab;
   EnthFab.resize(bx, NUM_SPECIES, The_Async_Arena());
 
   auto const temp = statefab.const_array(TEMP);
@@ -92,16 +92,16 @@ pelelmex_derheatrelease(
 void
 pelelmex_dermassfrac(
   PeleLM* a_pelelm,
-  const Box& bx,
-  FArrayBox& derfab,
+  const amrex::Box& bx,
+  amrex::FArrayBox& derfab,
   int dcomp,
   int ncomp,
-  const FArrayBox& statefab,
-  const FArrayBox& /*reactfab*/,
-  const FArrayBox& /*pressfab*/,
-  const Geometry& /*geom*/,
-  Real /*time*/,
-  const Vector<BCRec>& /*bcrec*/,
+  const amrex::FArrayBox& statefab,
+  const amrex::FArrayBox& /*reactfab*/,
+  const amrex::FArrayBox& /*pressfab*/,
+  const amrex::Geometry& /*geom*/,
+  amrex::Real /*time*/,
+  const amrex::Vector<BCRec>& /*bcrec*/,
   int /*level*/)
 
 {
@@ -127,16 +127,16 @@ pelelmex_dermassfrac(
 void
 pelelmex_dermolefrac(
   PeleLM* a_pelelm,
-  const Box& bx,
-  FArrayBox& derfab,
+  const amrex::Box& bx,
+  amrex::FArrayBox& derfab,
   int dcomp,
   int ncomp,
-  const FArrayBox& statefab,
-  const FArrayBox& /*reactfab*/,
-  const FArrayBox& /*pressfab*/,
-  const Geometry& /*geom*/,
-  Real /*time*/,
-  const Vector<BCRec>& /*bcrec*/,
+  const amrex::FArrayBox& statefab,
+  const amrex::FArrayBox& /*reactfab*/,
+  const amrex::FArrayBox& /*pressfab*/,
+  const amrex::Geometry& /*geom*/,
+  amrex::Real /*time*/,
+  const amrex::Vector<BCRec>& /*bcrec*/,
   int /*level*/)
 {
   amrex::ignore_unused(a_pelelm, ncomp);
@@ -170,16 +170,16 @@ pelelmex_dermolefrac(
 void
 pelelmex_derrhomrhoy(
   PeleLM* a_pelelm,
-  const Box& bx,
-  FArrayBox& derfab,
+  const amrex::Box& bx,
+  amrex::FArrayBox& derfab,
   int dcomp,
   int ncomp,
-  const FArrayBox& statefab,
-  const FArrayBox& /*reactfab*/,
-  const FArrayBox& /*pressfab*/,
-  const Geometry& /*geom*/,
-  Real /*time*/,
-  const Vector<BCRec>& /*bcrec*/,
+  const amrex::FArrayBox& statefab,
+  const amrex::FArrayBox& /*reactfab*/,
+  const amrex::FArrayBox& /*pressfab*/,
+  const amrex::Geometry& /*geom*/,
+  amrex::Real /*time*/,
+  const amrex::Vector<BCRec>& /*bcrec*/,
   int /*level*/)
 
 {
@@ -206,23 +206,23 @@ pelelmex_derrhomrhoy(
 void
 pelelmex_deravgpress(
   PeleLM* /*a_pelelm*/,
-  const Box& bx,
-  FArrayBox& derfab,
+  const amrex::Box& bx,
+  amrex::FArrayBox& derfab,
   int dcomp,
   int /*ncomp*/,
-  const FArrayBox& /*statefab*/,
-  const FArrayBox& /*reactfab*/,
-  const FArrayBox& pressfab,
-  const Geometry& /*geom*/,
-  Real /*time*/,
-  const Vector<BCRec>& /*bcrec*/,
+  const amrex::FArrayBox& /*statefab*/,
+  const amrex::FArrayBox& /*reactfab*/,
+  const amrex::FArrayBox& pressfab,
+  const amrex::Geometry& /*geom*/,
+  amrex::Real /*time*/,
+  const amrex::Vector<BCRec>& /*bcrec*/,
   int /*level*/)
 
 {
   AMREX_ASSERT(derfab.box().contains(bx));
   auto const in_dat = pressfab.array();
   auto der = derfab.array(dcomp);
-  Real factor = 1.0 / (AMREX_D_TERM(2.0, *2.0, *2.0));
+  amrex::Real factor = 1.0 / (AMREX_D_TERM(2.0, *2.0, *2.0));
   amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
     der(i, j, k) =
       factor * (in_dat(i + 1, j, k) + in_dat(i, j, k)
@@ -243,16 +243,16 @@ pelelmex_deravgpress(
 void
 pelelmex_dermgvel(
   PeleLM* /*a_pelelm*/,
-  const Box& bx,
-  FArrayBox& derfab,
+  const amrex::Box& bx,
+  amrex::FArrayBox& derfab,
   int dcomp,
   int /*ncomp*/,
-  const FArrayBox& statefab,
-  const FArrayBox& /*reactfab*/,
-  const FArrayBox& /*pressfab*/,
-  const Geometry& /*geom*/,
-  Real /*time*/,
-  const Vector<BCRec>& /*bcrec*/,
+  const amrex::FArrayBox& statefab,
+  const amrex::FArrayBox& /*reactfab*/,
+  const amrex::FArrayBox& /*pressfab*/,
+  const amrex::Geometry& /*geom*/,
+  amrex::Real /*time*/,
+  const amrex::Vector<BCRec>& /*bcrec*/,
   int /*level*/)
 
 {
@@ -273,16 +273,16 @@ pelelmex_dermgvel(
 void
 pelelmex_dermgvort(
   PeleLM* /*a_pelelm*/,
-  const Box& bx,
-  FArrayBox& derfab,
+  const amrex::Box& bx,
+  amrex::FArrayBox& derfab,
   int dcomp,
   int /*ncomp*/,
-  const FArrayBox& statefab,
-  const FArrayBox& /*reactfab*/,
-  const FArrayBox& /*pressfab*/,
-  const Geometry& geom,
-  Real /*time*/,
-  const Vector<BCRec>& /*bcrec*/,
+  const amrex::FArrayBox& statefab,
+  const amrex::FArrayBox& /*reactfab*/,
+  const amrex::FArrayBox& /*pressfab*/,
+  const amrex::Geometry& geom,
+  amrex::Real /*time*/,
+  const amrex::Vector<BCRec>& /*bcrec*/,
   int /*level*/)
 
 {
@@ -314,8 +314,9 @@ pelelmex_dermgvort(
         vort_arr(i, j, k) = 0.0;
       } else {
         // Define interpolation lambda
-        auto onesided =
-          [](const Real& v0, const Real& v1, const Real& v2) -> Real {
+        auto onesided = [](
+                          const amrex::Real& v0, const amrex::Real& v1,
+                          const amrex::Real& v2) -> amrex::Real {
           return c0 * v0 + c1 * v1 + c2 * v2;
         };
 
@@ -432,16 +433,16 @@ pelelmex_dermgvort(
 void
 pelelmex_dervort(
   PeleLM* /*a_pelelm*/,
-  const Box& bx,
-  FArrayBox& derfab,
+  const amrex::Box& bx,
+  amrex::FArrayBox& derfab,
   int dcomp,
   int ncomp,
-  const FArrayBox& statefab,
-  const FArrayBox& /*reactfab*/,
-  const FArrayBox& /*pressfab*/,
-  const Geometry& geom,
-  Real /*time*/,
-  const Vector<BCRec>& /*bcrec*/,
+  const amrex::FArrayBox& statefab,
+  const amrex::FArrayBox& /*reactfab*/,
+  const amrex::FArrayBox& /*pressfab*/,
+  const amrex::Geometry& geom,
+  amrex::Real /*time*/,
+  const amrex::Vector<BCRec>& /*bcrec*/,
   int /*level*/)
 
 {
@@ -480,8 +481,9 @@ pelelmex_dervort(
         }
       } else {
         // Define interpolation lambda
-        auto onesided =
-          [](const Real& v0, const Real& v1, const Real& v2) -> Real {
+        auto onesided = [](
+                          const amrex::Real& v0, const amrex::Real& v1,
+                          const amrex::Real& v2) -> amrex::Real {
           return c0 * v0 + c1 * v1 + c2 * v2;
         };
 
@@ -603,22 +605,22 @@ pelelmex_dervort(
 void
 pelelmex_dercoord(
   PeleLM* /*a_pelelm*/,
-  const Box& bx,
-  FArrayBox& derfab,
+  const amrex::Box& bx,
+  amrex::FArrayBox& derfab,
   int dcomp,
   int ncomp,
-  const FArrayBox&
+  const amrex::FArrayBox&
 #ifdef AMREX_USE_EB
     statefab
 #else
 /*unused*/
 #endif
   ,
-  const FArrayBox& /*reactfab*/,
-  const FArrayBox& /*pressfab*/,
-  const Geometry& geom,
-  Real /*time*/,
-  const Vector<BCRec>& /*bcrec*/,
+  const amrex::FArrayBox& /*reactfab*/,
+  const amrex::FArrayBox& /*pressfab*/,
+  const amrex::Geometry& geom,
+  amrex::Real /*time*/,
+  const amrex::Vector<BCRec>& /*bcrec*/,
   int /*level*/)
 {
   amrex::ignore_unused(ncomp);
@@ -677,12 +679,12 @@ pelelmex_dercoord(
 void
 pelelmex_derQcrit(
   PeleLM* /*a_pelelm*/,
-  const Box&
+  const amrex::Box&
 #if AMREX_SPACEDIM == 3
     bx
 #endif
   ,
-  FArrayBox&
+  amrex::FArrayBox&
 #if AMREX_SPACEDIM == 3
     derfab
 #endif
@@ -693,20 +695,20 @@ pelelmex_derQcrit(
 #endif
   ,
   int /*ncomp*/,
-  const FArrayBox&
+  const amrex::FArrayBox&
 #if AMREX_SPACEDIM == 3
     statefab
 #endif
   ,
-  const FArrayBox& /*reactfab*/,
-  const FArrayBox& /*pressfab*/,
-  const Geometry&
+  const amrex::FArrayBox& /*reactfab*/,
+  const amrex::FArrayBox& /*pressfab*/,
+  const amrex::Geometry&
 #if AMREX_SPACEDIM == 3
     geom
 #endif
   ,
-  Real /*time*/,
-  const Vector<BCRec>& /*bcrec*/,
+  amrex::Real /*time*/,
+  const amrex::Vector<BCRec>& /*bcrec*/,
   int /*level*/)
 
 {
@@ -739,13 +741,14 @@ pelelmex_derQcrit(
         constexpr amrex::Real c0 = -1.5;
         constexpr amrex::Real c1 = 2.0;
         constexpr amrex::Real c2 = -0.5;
-        auto onesided =
-          [](const Real& v0, const Real& v1, const Real& v2) -> Real {
+        auto onesided = [](
+                          const amrex::Real& v0, const amrex::Real& v1,
+                          const amrex::Real& v2) -> amrex::Real {
           return c0 * v0 + c1 * v1 + c2 * v2;
         };
 
         // Strain rate tensor
-        Array2D<Real, 0, 2, 0, 2> gradU;
+        Array2D<amrex::Real, 0, 2, 0, 2> gradU;
         if (!flag_fab(i, j, k).isConnected(1, 0, 0)) {
           gradU(0, 0) = -onesided(
                           dat_arr(i, j, k, 0), dat_arr(i - 1, j, k, 0),
@@ -858,8 +861,8 @@ pelelmex_derQcrit(
         qcrit_arr(i, j, k) = 0.0;
         for (int dim1 = 0; dim1 < AMREX_SPACEDIM; ++dim1) {
           for (int dim2 = 0; dim2 < AMREX_SPACEDIM; ++dim2) {
-            Real Ohm = 0.5 * (gradU(dim1, dim2) - gradU(dim2, dim1));
-            Real Sij = 0.5 * (gradU(dim1, dim2) + gradU(dim2, dim1));
+            amrex::Real Ohm = 0.5 * (gradU(dim1, dim2) - gradU(dim2, dim1));
+            amrex::Real Sij = 0.5 * (gradU(dim1, dim2) + gradU(dim2, dim1));
             if (dim1 == dim2) {
               Sij -= divU / AMREX_SPACEDIM;
             }
@@ -873,7 +876,7 @@ pelelmex_derQcrit(
   {
     amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
       // Strain rate tensor
-      Array2D<Real, 0, 2, 0, 2> gradU;
+      Array2D<amrex::Real, 0, 2, 0, 2> gradU;
       gradU(0, 0) =
         0.5 * (dat_arr(i + 1, j, k, 0) - dat_arr(i - 1, j, k, 0)) * idx;
       gradU(0, 1) =
@@ -902,8 +905,8 @@ pelelmex_derQcrit(
       qcrit_arr(i, j, k) = 0.0;
       for (int dim1 = 0; dim1 < AMREX_SPACEDIM; ++dim1) {
         for (int dim2 = 0; dim2 < AMREX_SPACEDIM; ++dim2) {
-          Real Ohm = 0.5 * (gradU(dim1, dim2) - gradU(dim2, dim1));
-          Real Sij = 0.5 * (gradU(dim1, dim2) + gradU(dim2, dim1));
+          amrex::Real Ohm = 0.5 * (gradU(dim1, dim2) - gradU(dim2, dim1));
+          amrex::Real Sij = 0.5 * (gradU(dim1, dim2) + gradU(dim2, dim1));
           if (dim1 == dim2) {
             Sij -= divU / AMREX_SPACEDIM;
           }
@@ -921,16 +924,16 @@ pelelmex_derQcrit(
 void
 pelelmex_derkineticenergy(
   PeleLM* a_pelelm,
-  const Box& bx,
-  FArrayBox& derfab,
+  const amrex::Box& bx,
+  amrex::FArrayBox& derfab,
   int dcomp,
   int /*ncomp*/,
-  const FArrayBox& statefab,
-  const FArrayBox& /*reactfab*/,
-  const FArrayBox& /*pressfab*/,
-  const Geometry& /*geom*/,
-  Real /*time*/,
-  const Vector<BCRec>& /*bcrec*/,
+  const amrex::FArrayBox& statefab,
+  const amrex::FArrayBox& /*reactfab*/,
+  const amrex::FArrayBox& /*pressfab*/,
+  const amrex::Geometry& /*geom*/,
+  amrex::Real /*time*/,
+  const amrex::Vector<BCRec>& /*bcrec*/,
   int /*level*/)
 
 {
@@ -967,16 +970,16 @@ pelelmex_derkineticenergy(
 void
 pelelmex_derenstrophy(
   PeleLM* a_pelelm,
-  const Box& bx,
-  FArrayBox& derfab,
+  const amrex::Box& bx,
+  amrex::FArrayBox& derfab,
   int dcomp,
   int /*ncomp*/,
-  const FArrayBox& statefab,
-  const FArrayBox& /*reactfab*/,
-  const FArrayBox& /*pressfab*/,
-  const Geometry& geom,
-  Real /*time*/,
-  const Vector<BCRec>& /*bcrec*/,
+  const amrex::FArrayBox& statefab,
+  const amrex::FArrayBox& /*reactfab*/,
+  const amrex::FArrayBox& /*pressfab*/,
+  const amrex::Geometry& geom,
+  amrex::Real /*time*/,
+  const amrex::Vector<BCRec>& /*bcrec*/,
   int /*level*/)
 
 {
@@ -987,7 +990,7 @@ pelelmex_derenstrophy(
 
   auto const& dat_arr = statefab.const_array(VELX);
   auto const& rho_arr = (a_pelelm->m_incompressible) != 0
-                          ? Array4<const Real>{}
+                          ? Array4<const amrex::Real>{}
                           : statefab.const_array(DENSITY);
   auto const& ens_arr = derfab.array(dcomp);
 
@@ -1012,13 +1015,14 @@ pelelmex_derenstrophy(
       if (flag_fab(i, j, k).isCovered()) {
         ens_arr(i, j, k) = 0.0;
       } else {
-        Real l_rho = rho;
+        amrex::Real l_rho = rho;
         if (incomp == 0) {
           l_rho = rho_arr(i, j, k);
         }
         // Define interpolation lambda
-        auto onesided =
-          [](const Real& v0, const Real& v1, const Real& v2) -> Real {
+        auto onesided = [](
+                          const amrex::Real& v0, const amrex::Real& v1,
+                          const amrex::Real& v2) -> amrex::Real {
           return c0 * v0 + c1 * v1 + c2 * v2;
         };
 
@@ -1154,7 +1158,7 @@ pelelmex_derenstrophy(
     const auto incomp = a_pelelm->m_incompressible;
     const auto rho = a_pelelm->m_rho;
     amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-      Real l_rho = rho;
+      amrex::Real l_rho = rho;
       if (incomp == 0) {
         l_rho = rho_arr(i, j, k);
       }
@@ -1195,16 +1199,16 @@ pelelmex_derenstrophy(
 void
 pelelmex_dermixfrac(
   PeleLM* a_pelelm,
-  const Box& bx,
-  FArrayBox& derfab,
+  const amrex::Box& bx,
+  amrex::FArrayBox& derfab,
   int dcomp,
   int ncomp,
-  const FArrayBox& statefab,
-  const FArrayBox& /*reactfab*/,
-  const FArrayBox& /*pressfab*/,
-  const Geometry& /*geom*/,
-  Real /*time*/,
-  const Vector<BCRec>& /*bcrec*/,
+  const amrex::FArrayBox& statefab,
+  const amrex::FArrayBox& /*reactfab*/,
+  const amrex::FArrayBox& /*pressfab*/,
+  const amrex::Geometry& /*geom*/,
+  amrex::Real /*time*/,
+  const amrex::Vector<BCRec>& /*bcrec*/,
   int /*level*/)
 {
   amrex::ignore_unused(ncomp);
@@ -1244,16 +1248,16 @@ pelelmex_dermixfrac(
 void
 pelelmex_derprogvar(
   PeleLM* a_pelelm,
-  const Box& bx,
-  FArrayBox& derfab,
+  const amrex::Box& bx,
+  amrex::FArrayBox& derfab,
   int dcomp,
   int ncomp,
-  const FArrayBox& statefab,
-  const FArrayBox& /*reactfab*/,
-  const FArrayBox& /*pressfab*/,
-  const Geometry& /*geom*/,
-  Real /*time*/,
-  const Vector<BCRec>& /*bcrec*/,
+  const amrex::FArrayBox& statefab,
+  const amrex::FArrayBox& /*reactfab*/,
+  const amrex::FArrayBox& /*pressfab*/,
+  const amrex::Geometry& /*geom*/,
+  amrex::Real /*time*/,
+  const amrex::Vector<BCRec>& /*bcrec*/,
   int /*level*/)
 
 {
@@ -1301,16 +1305,16 @@ pelelmex_derprogvar(
 void
 pelelmex_dervisc(
   PeleLM* a_pelelm,
-  const Box& bx,
-  FArrayBox& derfab,
+  const amrex::Box& bx,
+  amrex::FArrayBox& derfab,
   int dcomp,
   int ncomp,
-  const FArrayBox& statefab,
-  const FArrayBox& /*reactfab*/,
-  const FArrayBox& /*pressfab*/,
-  const Geometry& /*geom*/,
-  Real /*time*/,
-  const Vector<BCRec>& /*bcrec*/,
+  const amrex::FArrayBox& statefab,
+  const amrex::FArrayBox& /*reactfab*/,
+  const amrex::FArrayBox& /*pressfab*/,
+  const amrex::Geometry& /*geom*/,
+  amrex::Real /*time*/,
+  const amrex::Vector<BCRec>& /*bcrec*/,
   int /*level*/)
 {
   amrex::ignore_unused(ncomp);
@@ -1337,16 +1341,16 @@ pelelmex_dervisc(
 void
 pelelmex_derdiffc(
   PeleLM* a_pelelm,
-  const Box& bx,
-  FArrayBox& derfab,
+  const amrex::Box& bx,
+  amrex::FArrayBox& derfab,
   int dcomp,
   int ncomp,
-  const FArrayBox& statefab,
-  const FArrayBox& /*reactfab*/,
-  const FArrayBox& /*pressfab*/,
-  const Geometry& /*geom*/,
-  Real /*time*/,
-  const Vector<BCRec>& /*bcrec*/,
+  const amrex::FArrayBox& statefab,
+  const amrex::FArrayBox& /*reactfab*/,
+  const amrex::FArrayBox& /*pressfab*/,
+  const amrex::Geometry& /*geom*/,
+  amrex::Real /*time*/,
+  const amrex::Vector<BCRec>& /*bcrec*/,
   int /*level*/)
 {
   amrex::ignore_unused(ncomp);
@@ -1362,7 +1366,7 @@ pelelmex_derdiffc(
   bool do_fixed_Le = (a_pelelm->m_fixed_Le != 0);
   bool do_fixed_Pr = (a_pelelm->m_fixed_Pr != 0);
   bool do_soret = (a_pelelm->m_use_soret != 0);
-  FArrayBox dummies(bx, NUM_SPECIES + 2, The_Async_Arena());
+  amrex::FArrayBox dummies(bx, NUM_SPECIES + 2, The_Async_Arena());
   auto const& rhoY = statefab.const_array(FIRSTSPEC);
   auto const& T = statefab.array(TEMP);
   auto rhoD = derfab.array(dcomp);
@@ -1387,16 +1391,16 @@ pelelmex_derdiffc(
 void
 pelelmex_derlambda(
   PeleLM* a_pelelm,
-  const Box& bx,
-  FArrayBox& derfab,
+  const amrex::Box& bx,
+  amrex::FArrayBox& derfab,
   int dcomp,
   int ncomp,
-  const FArrayBox& statefab,
-  const FArrayBox& /*reactfab*/,
-  const FArrayBox& /*pressfab*/,
-  const Geometry& /*geom*/,
-  Real /*time*/,
-  const Vector<BCRec>& /*bcrec*/,
+  const amrex::FArrayBox& statefab,
+  const amrex::FArrayBox& /*reactfab*/,
+  const amrex::FArrayBox& /*pressfab*/,
+  const amrex::Geometry& /*geom*/,
+  amrex::Real /*time*/,
+  const amrex::Vector<BCRec>& /*bcrec*/,
   int /*level*/)
 {
   amrex::ignore_unused(ncomp);
@@ -1406,7 +1410,7 @@ pelelmex_derlambda(
   bool do_fixed_Le = (a_pelelm->m_fixed_Le != 0);
   bool do_fixed_Pr = (a_pelelm->m_fixed_Pr != 0);
   bool do_soret = (a_pelelm->m_use_soret != 0);
-  FArrayBox dummies(bx, 2 * NUM_SPECIES + 1, The_Async_Arena());
+  amrex::FArrayBox dummies(bx, 2 * NUM_SPECIES + 1, The_Async_Arena());
   auto const& rhoY = statefab.const_array(FIRSTSPEC);
   auto const& T = statefab.array(TEMP);
   auto rhoD = dummies.array(1);
@@ -1430,16 +1434,16 @@ pelelmex_derlambda(
 void
 pelelmex_derdmap(
   PeleLM* /*a_pelelm*/,
-  const Box& bx,
-  FArrayBox& derfab,
+  const amrex::Box& bx,
+  amrex::FArrayBox& derfab,
   int dcomp,
   int /*ncomp*/,
-  const FArrayBox& /*statefab*/,
-  const FArrayBox& /*reactfab*/,
-  const FArrayBox& /*pressfab*/,
-  const Geometry& /*geom*/,
-  Real /*time*/,
-  const Vector<BCRec>& /*bcrec*/,
+  const amrex::FArrayBox& /*statefab*/,
+  const amrex::FArrayBox& /*reactfab*/,
+  const amrex::FArrayBox& /*pressfab*/,
+  const amrex::Geometry& /*geom*/,
+  amrex::Real /*time*/,
+  const amrex::Vector<BCRec>& /*bcrec*/,
   int /*level*/)
 {
   AMREX_ASSERT(derfab.box().contains(bx));
@@ -1456,16 +1460,16 @@ pelelmex_derdmap(
 void
 pelelmex_derturbforcing(
   PeleLM* a_pelelm,
-  const Box& bx,
-  FArrayBox& derfab,
+  const amrex::Box& bx,
+  amrex::FArrayBox& derfab,
   int dcomp,
   int ncomp,
-  const FArrayBox& statefab,
-  const FArrayBox& /*reactfab*/,
-  const FArrayBox& /*pressfab*/,
-  const Geometry& geom,
-  Real time,
-  const Vector<BCRec>& /*bcrec*/,
+  const amrex::FArrayBox& statefab,
+  const amrex::FArrayBox& /*reactfab*/,
+  const amrex::FArrayBox& /*pressfab*/,
+  const amrex::Geometry& geom,
+  amrex::Real time,
+  const amrex::Vector<BCRec>& /*bcrec*/,
   int /*level*/)
 {
   AMREX_ASSERT(derfab.box().contains(bx));
@@ -1475,16 +1479,16 @@ pelelmex_derturbforcing(
 
   // Need geom for forcing
   GeometryData const& geomdata = geom.data();
-  Array4<Real> const& der = derfab.array(dcomp);
+  Array4<amrex::Real> const& der = derfab.array(dcomp);
 
   // Set derfab to zero first
   derfab.setVal<amrex::RunOn::Device>(0.0, bx, dcomp, ncomp);
-  FArrayBox DummyFab(bx, 1);
+  amrex::FArrayBox DummyFab(bx, 1);
 
   // Declare a pointer for the density array view
-  Array4<const Real> rho = (a_pelelm->m_incompressible != 0)
-                             ? DummyFab.const_array()
-                             : statefab.const_array(DENSITY);
+  Array4<const amrex::Real> rho = (a_pelelm->m_incompressible != 0)
+                                    ? DummyFab.const_array()
+                                    : statefab.const_array(DENSITY);
 
   // call the function above to construct the forcing
   a_pelelm->turb_forcing.addTurbVelForces(
@@ -1498,16 +1502,16 @@ pelelmex_derturbforcing(
 void
 pelelmex_dermaniout(
   PeleLM* a_pelelm,
-  const Box& bx,
-  FArrayBox& derfab,
+  const amrex::Box& bx,
+  amrex::FArrayBox& derfab,
   int dcomp,
   int ncomp,
-  const FArrayBox& statefab,
-  const FArrayBox& /*reactfab*/,
-  const FArrayBox& /*pressfab*/,
-  const Geometry& /*geom*/,
-  Real /*time*/,
-  const Vector<BCRec>& /*bcrec*/,
+  const amrex::FArrayBox& statefab,
+  const amrex::FArrayBox& /*reactfab*/,
+  const amrex::FArrayBox& /*pressfab*/,
+  const amrex::Geometry& /*geom*/,
+  amrex::Real /*time*/,
+  const amrex::Vector<BCRec>& /*bcrec*/,
   int /*level*/)
 {
   auto& h_manf_data =
