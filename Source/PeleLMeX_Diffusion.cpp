@@ -268,7 +268,7 @@ PeleLM::adjustSpeciesFluxes(
     constexpr int nGrow = 1;
     const auto& ba = a_spec[lev]->boxArray();
     const auto& dm = a_spec[lev]->DistributionMap();
-    const auto& ebfact = amrex::EBFactory(lev);
+    const auto& ebfact = EBFactory(lev);
     amrex::Array<amrex::MultiFab, AMREX_SPACEDIM> edgstate{AMREX_D_DECL(
       amrex::MultiFab(
         amrex::convert(ba, amrex::IntVect::TheDimensionVector(0)), dm,
@@ -302,9 +302,11 @@ PeleLM::adjustSpeciesFluxes(
 #ifdef AMREX_USE_EB
         auto const& flagfab = ebfact.getMultiEBCellFlagFab()[mfi];
 
-        if (flagfab.getType(amrex::grow(ebx, 0)) != FabType::covered) {
+        if (flagfab.getType(amrex::grow(ebx, 0)) != amrex::FabType::covered) {
           // No cut cells in tile + nghost-cell width halo -> use non-eb routine
-          if (flagfab.getType(amrex::grow(ebx, nGrow)) == FabType::regular) {
+          if (
+            flagfab.getType(amrex::grow(ebx, nGrow)) ==
+            amrex::FabType::regular) {
             amrex::ParallelFor(
               ebx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
                 int idx[3] = {i, j, k};
@@ -602,7 +604,7 @@ PeleLM::computeDifferentialDiffusionFluxes(
 
     for (int lev = 0; lev <= finest_level; ++lev) {
       EBdiff[lev].define(
-        grids[lev], dmap[lev], 1, 0, amrex::MFInfo(), amrex::EBFactory(lev));
+        grids[lev], dmap[lev], 1, 0, amrex::MFInfo(), EBFactory(lev));
       getEBDiff(lev, a_time, EBdiff[lev], NUM_SPECIES);
     }
     getDiffusionOp()->computeDiffFluxes(
@@ -636,11 +638,11 @@ PeleLM::computeDifferentialDiffusionFluxes(
   //----------------------------------------------------------------
   // Set covered faces to large dummy values to catch any usage
   for (int lev = 0; lev <= finest_level; ++lev) {
-    EB_set_covered_faces(
+    amrex::EB_set_covered_faces(
       {AMREX_D_DECL(a_fluxes[lev][0], a_fluxes[lev][1], a_fluxes[lev][2])},
       1.234e40);
     if (m_nAux > 0) {
-      EB_set_covered_faces(
+      amrex::EB_set_covered_faces(
         {AMREX_D_DECL(
           a_auxfluxes[lev][0], a_auxfluxes[lev][1], a_auxfluxes[lev][2])},
         1.234e40);
@@ -970,7 +972,7 @@ PeleLM::computeSpeciesEnthalpyFlux(
   for (int lev = 0; lev <= finest_level; ++lev) {
 
 #ifdef AMREX_USE_EB
-    auto const& ebfact = amrex::EBFactory(lev);
+    auto const& ebfact = EBFactory(lev);
 #endif
     //------------------------------------------------------------------------
     // Compute the cell-centered species enthalpies
@@ -990,13 +992,14 @@ PeleLM::computeSpeciesEnthalpyFlux(
 #ifdef AMREX_USE_EB
       auto const& flagfab = ebfact.getMultiEBCellFlagFab()[mfi];
       auto const& flag = flagfab.const_array();
-      if (flagfab.getType(gbx) == FabType::covered) { // Covered boxes
+      if (flagfab.getType(gbx) == amrex::FabType::covered) { // Covered boxes
         amrex::ParallelFor(
           gbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             Hi_arr(i, j, k) = 0.0;
           });
-      } else if (flagfab.getType(gbx) != FabType::regular) { // EB containing
-                                                             // boxes
+      } else if (
+        flagfab.getType(gbx) != amrex::FabType::regular) { // EB containing
+                                                           // boxes
         amrex::ParallelFor(
           gbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             if (flag(i, j, k).isCovered()) {
@@ -1364,7 +1367,7 @@ PeleLM::differentialDiffusionUpdate(
     amrex::Vector<amrex::MultiFab> EBdiff(finest_level + 1);
     for (int lev = 0; lev <= finest_level; ++lev) {
       EBdiff[lev].define(
-        grids[lev], dmap[lev], 1, 0, amrex::MFInfo(), amrex::EBFactory(lev));
+        grids[lev], dmap[lev], 1, 0, amrex::MFInfo(), EBFactory(lev));
       getEBDiff(lev, AmrNewTime, EBdiff[lev], NUM_SPECIES);
     }
     getDiffusionOp()->computeDiffFluxes(
@@ -1454,9 +1457,9 @@ PeleLM::differentialDiffusionUpdate(
       amrex::Vector<amrex::MultiFab> EBdiff(finest_level + 1);
       for (int lev = 0; lev <= finest_level; ++lev) {
         EBvalue[lev].define(
-          grids[lev], dmap[lev], 1, 0, amrex::MFInfo(), amrex::EBFactory(lev));
+          grids[lev], dmap[lev], 1, 0, amrex::MFInfo(), EBFactory(lev));
         EBdiff[lev].define(
-          grids[lev], dmap[lev], 1, 0, amrex::MFInfo(), amrex::EBFactory(lev));
+          grids[lev], dmap[lev], 1, 0, amrex::MFInfo(), EBFactory(lev));
         getEBDiff(lev, AmrNewTime, EBdiff[lev], NUM_SPECIES);
         EBvalue[lev].setVal(0.0);
       }
@@ -1611,7 +1614,7 @@ PeleLM::deltaTIter_update(
     amrex::Vector<amrex::MultiFab> EBdiff(finest_level + 1);
     for (int lev = 0; lev <= finest_level; ++lev) {
       EBdiff[lev].define(
-        grids[lev], dmap[lev], 1, 0, amrex::MFInfo(), amrex::EBFactory(lev));
+        grids[lev], dmap[lev], 1, 0, amrex::MFInfo(), EBFactory(lev));
       getEBDiff(lev, AmrNewTime, EBdiff[lev], NUM_SPECIES);
     }
     getDiffusionOp()->computeDiffFluxes(
