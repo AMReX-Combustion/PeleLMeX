@@ -301,7 +301,7 @@ PeleLM::calcDiffusivity(const TimeStamp& a_time)
   auto const* ltransparm = trans_parms.device_parm();
   auto const* leosparm = eos_parms.device_parm();
 #ifdef PELE_USE_PLASMA
-  GpuArray<Real, NUM_SPECIES> mwt{0.0};
+  amrex::GpuArray<amrex::Real, NUM_SPECIES> mwt{0.0};
   {
     auto eos = pele::physics::PhysicsType::eos(leosparm);
     eos.molecular_weight(mwt.arr);
