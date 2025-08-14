@@ -87,7 +87,7 @@ PeleLM::MakeNewLevelFromScratch(
     new LevelDataNLSolve(grids[lev], dmap[lev], *m_factory[lev], m_nGrowState));
   if (m_do_extraEFdiags) {
     m_ionsFluxes[lev].reset(
-      new MultiFab(grids[lev], dmap[lev], NUM_IONS * AMREX_SPACEDIM, 0));
+      new amrex::MultiFab(grids[lev], dmap[lev], NUM_IONS * AMREX_SPACEDIM, 0));
   }
 #endif
 
