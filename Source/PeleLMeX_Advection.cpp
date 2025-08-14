@@ -83,7 +83,7 @@ PeleLM::computeVelocityAdvTerm(std::unique_ptr<AdvanceAdvData>& advData)
     //----------------------------------------------------------------
     // Compute the velocity fluxes
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
     for (MFIter mfi(ldata_p->state, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
 
@@ -239,7 +239,7 @@ PeleLM::updateVelocity(std::unique_ptr<AdvanceAdvData>& advData)
     // velForce holds: 1/\rho^{n+1/2} [(gravity+...)^{n+1/2} - \nabla pi^{n} +
     // 0.5 * divTau^{n}]
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
     for (MFIter mfi(ldataOld_p->state, TilingIfNotGPU()); mfi.isValid();
          ++mfi) {
@@ -249,7 +249,7 @@ PeleLM::updateVelocity(std::unique_ptr<AdvanceAdvData>& advData)
       auto const& vel_aofs = advData->AofS[lev].const_array(mfi, VELX);
       auto const& force = velForces[lev].const_array(mfi);
       auto const& vel_new = ldataNew_p->state.array(mfi, VELX);
-      Real dt_loc = m_dt;
+      const Real dt_loc = m_dt;
       amrex::ParallelFor(
         bx, AMREX_SPACEDIM,
         [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
@@ -276,7 +276,7 @@ PeleLM::getScalarAdvForce(
     auto const* leosparm = eos_parms.device_parm();
 
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
     for (MFIter mfi(advData->Forcing[lev], TilingIfNotGPU()); mfi.isValid();
          ++mfi) {
@@ -297,11 +297,12 @@ PeleLM::getScalarAdvForce(
       auto const& dn_aux = (m_nAux > 0)
                              ? diffData->Dn_aux[lev].const_array(mfi, 0)
                              : DummyFab.const_array();
+      const auto nAux = m_nAux;
+      const auto dp0dt = m_dp0dt;
+      const auto is_closed_ch = m_closed_chamber;
+      const auto do_react = m_do_react;
       amrex::ParallelFor(
-        bx, [rho, rhoY, T, dn, ddn, r, fY, fT, fAux, extRhoY, extRhoH,
-             aux_diffuse_d, dn_aux, nAux = m_nAux, dp0dt = m_dp0dt,
-             is_closed_ch = m_closed_chamber, do_react = m_do_react,
-             leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           buildAdvectionForcing(
             i, j, k, rho, rhoY, T, dn, ddn, r, extRhoY, extRhoH, dp0dt,
             is_closed_ch, do_react, fY, fT, fAux, dn_aux, aux_diffuse_d, nAux,
@@ -413,7 +414,7 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
 
     // Get the species edge state and advection term
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
     for (MFIter mfi(ldata_p->state, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
 
@@ -516,7 +517,7 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
     // get the edge state for auxiliary components
     if (m_nAux > 0) {
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
       for (MFIter mfi(ldata_p->auxiliaries, TilingIfNotGPU()); mfi.isValid();
            ++mfi) {
@@ -564,7 +565,7 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
 
     // Get edge density by summing over the species
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
     for (MFIter mfi(ldata_p->state, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
 
@@ -582,15 +583,14 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
 #ifdef AMREX_USE_EB
         if (flagfab.getType(ebx) == FabType::covered) { // Covered boxes
           amrex::ParallelFor(
-            ebx, [rho_ed] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+            ebx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
               rho_ed(i, j, k) = 0.0;
             });
         } else if (flagfab.getType(ebx) != FabType::regular) { // EB containing
                                                                // boxes
           const auto& afrac = areafrac[idim]->array(mfi);
           amrex::ParallelFor(
-            ebx, [rho_ed, rhoY_ed,
-                  afrac] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+            ebx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
               rho_ed(i, j, k) = 0.0;
               if (afrac(i, j, k) > 0.0) { // Uncovered faces
                 pele::physics::PhysicsType::eos_type::RY2R(
@@ -601,8 +601,7 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
 #endif
         {
           amrex::ParallelFor(
-            ebx,
-            [rho_ed, rhoY_ed] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+            ebx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
               pele::physics::PhysicsType::eos_type::RY2R(
                 rhoY_ed.cellData(i, j, k), rho_ed(i, j, k));
             });
@@ -612,7 +611,7 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
 
     // Get the edge temperature
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
     for (MFIter mfi(ldata_p->state, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
 
@@ -655,7 +654,7 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
 
     // Get the edge RhoH states
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
     for (MFIter mfi(ldata_p->state, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
 
@@ -675,15 +674,14 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
 #ifdef AMREX_USE_EB
         if (flagfab.getType(ebx) == FabType::covered) { // Covered boxes
           amrex::ParallelFor(
-            ebx, [rhoHm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+            ebx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
               rhoHm(i, j, k) = 0.0;
             });
         } else if (flagfab.getType(ebx) != FabType::regular) { // EB containing
                                                                // boxes
           const auto& afrac = areafrac[idim]->array(mfi);
           amrex::ParallelFor(
-            ebx, [rho, rhoY, T, rhoHm, afrac,
-                  leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+            ebx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
               if (afrac(i, j, k) <= 0.0) { // Covered faces
                 rhoHm(i, j, k) = 0.0;
               } else {
@@ -694,8 +692,7 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
 #endif
         {
           amrex::ParallelFor(
-            ebx, [rho, rhoY, T, rhoHm,
-                  leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+            ebx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
               getRHmixGivenTY(i, j, k, rho, rhoY, T, rhoHm, leosparm);
             });
         }
@@ -705,7 +702,7 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
     // Finally get the RhoH advection term
     // Pass the Temp forces again here, but they aren't used.
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
     for (MFIter mfi(ldata_p->state, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
 
@@ -917,7 +914,7 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
           FIRSTSPEC);
       });
   }
-  Gpu::streamSynchronize();
+  amrex::Gpu::streamSynchronize();
 }
 
 void
@@ -930,17 +927,18 @@ PeleLM::updateDensity(std::unique_ptr<AdvanceAdvData>& advData)
     auto const& sma_n = getLevelDataPtr(lev, AmrNewTime)->state.arrays();
     auto aofsma = advData->AofS[lev].const_arrays();
     auto extma = m_extSource[lev]->const_arrays();
+    const auto dt = m_dt;
 
     amrex::ParallelFor(
-      advData->AofS[lev], [=, dt = m_dt] AMREX_GPU_DEVICE(
-                            int box_no, int i, int j, int k) noexcept {
+      advData->AofS[lev],
+      [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
         sma_n[box_no](i, j, k, DENSITY) =
           sma_o[box_no](i, j, k, DENSITY) +
           dt * (aofsma[box_no](i, j, k, DENSITY) +
                 extma[box_no](i, j, k, DENSITY));
       });
   }
-  Gpu::streamSynchronize();
+  amrex::Gpu::streamSynchronize();
 }
 
 void
@@ -993,7 +991,7 @@ PeleLM::computePassiveAdvTerms(
 
     // Get the passive variables edge state and advection term
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
     for (MFIter mfi(ldata_p->state, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
       Box const& bx = mfi.tilebox();
@@ -1108,7 +1106,7 @@ PeleLM::updateScalarComp(
     auto* ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
     auto* ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
     for (MFIter mfi(ldataNew_p->state, TilingIfNotGPU()); mfi.isValid();
          ++mfi) {
@@ -1117,10 +1115,9 @@ PeleLM::updateScalarComp(
       auto const& new_arr = ldataNew_p->state.array(mfi, state_comp);
       auto const& a_of_s = advData->AofS[lev].const_array(mfi, state_comp);
       auto const& ext = m_extSource[lev]->const_array(mfi, state_comp);
+      const auto dt = m_dt;
       amrex::ParallelFor(
-        bx, ncomp,
-        [old_arr, new_arr, a_of_s, ext,
-         dt = m_dt] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
+        bx, ncomp, [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
           new_arr(i, j, k, n) =
             old_arr(i, j, k, n) + dt * (a_of_s(i, j, k, n) + ext(i, j, k, n));
         });

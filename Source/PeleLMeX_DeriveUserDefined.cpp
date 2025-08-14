@@ -5,12 +5,10 @@
 #include <PeleLMeX.H>
 #include <PeleLMeX_K.H>
 
-using namespace amrex;
-
 //
 // User-defined derived variables list
 //
-Vector<std::string>
+amrex::Vector<std::string>
 pelelmex_setuserderives()
 {
   return {"derUserDefine_null"}; // var_names;
@@ -22,19 +20,19 @@ pelelmex_setuserderives()
 void
 pelelmex_deruserdef(
   PeleLM* /*a_pelelm*/,
-  const Box& /*bx*/,
-  FArrayBox& /*derfab*/,
+  const amrex::Box& /*bx*/,
+  amrex::FArrayBox& /*derfab*/,
   int /*dcomp*/,
   int /*ncomp*/,
-  const FArrayBox& /*statefab*/,
-  const FArrayBox& /*reactfab*/,
-  const FArrayBox& /*pressfab*/,
-  const Geometry& /*geom*/,
-  Real /*time*/,
-  const Vector<BCRec>& /*bcrec*/,
+  const amrex::FArrayBox& /*statefab*/,
+  const amrex::FArrayBox& /*reactfab*/,
+  const amrex::FArrayBox& /*pressfab*/,
+  const amrex::Geometry& /*geom*/,
+  amrex::Real /*time*/,
+  const amrex::Vector<amrex::BCRec>& /*bcrec*/,
   int /*level*/)
 {
-  Abort(
+  amrex::Abort(
     "Using derUserDefine derived requires providing a definition in local "
     "DeriveUserDefined.cpp");
 }

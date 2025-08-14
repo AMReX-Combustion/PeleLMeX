@@ -1,8 +1,6 @@
 #include <PeleLMeX.H>
 #include <memory>
 
-using namespace amrex;
-
 void
 PeleLM::regrid(int lbase, amrex::Real time, bool initial)
 {
@@ -21,7 +19,7 @@ PeleLM::regrid(int lbase, amrex::Real time, bool initial)
     if (lbase == 0 && (m_doLoadBalance != 0) && !initial) {
 
       if (m_verbose > 0) {
-        Print() << " Load balancing level 0 \n";
+        amrex::Print() << " Load balancing level 0 \n";
       }
 
       int remakeLevel = 0;
@@ -32,64 +30,65 @@ PeleLM::regrid(int lbase, amrex::Real time, bool initial)
       amrex::Real currentEfficiency = 0.0;
       amrex::Real testEfficiency = 0.0;
 
-      DistributionMapping test_dmap;
+      amrex::DistributionMapping test_dmap;
       // Build the test dmap, w/o braodcasting
       if (m_loadBalanceMethod == LoadBalanceMethod::SFC) {
 
-        test_dmap = DistributionMapping::makeSFC(
+        test_dmap = amrex::DistributionMapping::makeSFC(
           *m_costs[0], currentEfficiency, testEfficiency, false,
-          ParallelDescriptor::IOProcessorNumber());
+          amrex::ParallelDescriptor::IOProcessorNumber());
 
       } else if (m_loadBalanceMethod == LoadBalanceMethod::Knapsack) {
 
         const amrex::Real navg =
-          static_cast<Real>(grids[0].size()) /
-          static_cast<Real>(ParallelDescriptor::NProcs());
+          static_cast<amrex::Real>(grids[0].size()) /
+          static_cast<amrex::Real>(amrex::ParallelDescriptor::NProcs());
         const int nmax = static_cast<int>(amrex::max(
           std::round(m_loadBalanceKSfactor * navg), std::ceil(navg)));
-        test_dmap = DistributionMapping::makeKnapSack(
+        test_dmap = amrex::DistributionMapping::makeKnapSack(
           *m_costs[0], currentEfficiency, testEfficiency, nmax, false,
-          ParallelDescriptor::IOProcessorNumber());
+          amrex::ParallelDescriptor::IOProcessorNumber());
       }
 
       // IO proc determine if the test dmap offers significant improvements
       if (
         (m_loadBalanceEffRatioThreshold > 0.0) &&
-        (ParallelDescriptor::MyProc() ==
-         ParallelDescriptor::IOProcessorNumber())) {
+        (amrex::ParallelDescriptor::MyProc() ==
+         amrex::ParallelDescriptor::IOProcessorNumber())) {
         remakeLevel = static_cast<int>(
           (remakeLevel != 0) ||
           (testEfficiency >
            m_loadBalanceEffRatioThreshold * currentEfficiency));
       }
-      ParallelDescriptor::Bcast(
-        &remakeLevel, 1, ParallelDescriptor::IOProcessorNumber());
+      amrex::ParallelDescriptor::Bcast(
+        &remakeLevel, 1, amrex::ParallelDescriptor::IOProcessorNumber());
 
       if (m_verbose > 1 && (remakeLevel != 0)) {
-        Print() << " Current LoadBalancing efficiency: " << currentEfficiency
-                << "\n"
-                << " Test LoadBalancing efficiency: " << testEfficiency
-                << " \n";
+        amrex::Print() << " Current LoadBalancing efficiency: "
+                       << currentEfficiency << "\n"
+                       << " Test LoadBalancing efficiency: " << testEfficiency
+                       << " \n";
       }
 
       // Bcast the test dmap and remake level
       if (remakeLevel != 0) {
-        Vector<int> pmap;
+        amrex::Vector<int> pmap;
         if (
-          ParallelDescriptor::MyProc() ==
-          ParallelDescriptor::IOProcessorNumber()) {
+          amrex::ParallelDescriptor::MyProc() ==
+          amrex::ParallelDescriptor::IOProcessorNumber()) {
           pmap = test_dmap.ProcessorMap();
         } else {
 #pragma GCC diagnostic ignored "-Wnull-dereference"
           pmap.resize(static_cast<std::size_t>(grids[0].size()));
         }
-        ParallelDescriptor::Bcast(
-          pmap.data(), pmap.size(), ParallelDescriptor::IOProcessorNumber());
+        amrex::ParallelDescriptor::Bcast(
+          pmap.data(), pmap.size(),
+          amrex::ParallelDescriptor::IOProcessorNumber());
 
         if (
-          ParallelDescriptor::MyProc() !=
-          ParallelDescriptor::IOProcessorNumber()) {
-          test_dmap = DistributionMapping(pmap);
+          amrex::ParallelDescriptor::MyProc() !=
+          amrex::ParallelDescriptor::IOProcessorNumber()) {
+          test_dmap = amrex::DistributionMapping(pmap);
         }
 
         RemakeLevel(0, time, grids[0], test_dmap);
@@ -102,7 +101,7 @@ PeleLM::regrid(int lbase, amrex::Real time, bool initial)
     }
 
     int new_finest;
-    Vector<BoxArray> new_grids(finest_level + 2);
+    amrex::Vector<amrex::BoxArray> new_grids(finest_level + 2);
     MakeNewGrids(lbase, time, new_finest, new_grids);
 
     BL_ASSERT(new_finest <= finest_level + 1);
@@ -117,11 +116,11 @@ PeleLM::regrid(int lbase, amrex::Real time, bool initial)
         // remake level only if the grid changed using the default DMap strategy
         if (initial || (m_doLoadBalance == 0)) {
           if (ba_changed || coarse_ba_changed) {
-            BoxArray level_grids = grids[lev];
-            DistributionMapping level_dmap = dmap[lev];
+            amrex::BoxArray level_grids = grids[lev];
+            amrex::DistributionMapping level_dmap = dmap[lev];
             if (ba_changed) {
               level_grids = new_grids[lev];
-              level_dmap = DistributionMapping(level_grids);
+              level_dmap = amrex::DistributionMapping(level_grids);
             }
             const auto old_num_setdm = num_setdm;
             RemakeLevel(lev, time, level_grids, level_dmap);
@@ -137,8 +136,8 @@ PeleLM::regrid(int lbase, amrex::Real time, bool initial)
 
           int remakeLevel = 0;
 
-          BoxArray new_ba;
-          DistributionMapping new_dmap;
+          amrex::BoxArray new_ba;
+          amrex::DistributionMapping new_dmap;
 
           // If the grid changed, let's build a new dmap
           if (ba_changed) {
@@ -146,51 +145,53 @@ PeleLM::regrid(int lbase, amrex::Real time, bool initial)
             remakeLevel = 1;
 
             new_ba = new_grids[lev];
-            new_dmap = DistributionMapping(new_ba);
+            new_dmap = amrex::DistributionMapping(new_ba);
 
             // Get the cost on a LayoutData associated with the new grid
-            LayoutData<Real> new_cost(new_ba, new_dmap);
+            amrex::LayoutData<amrex::Real> new_cost(new_ba, new_dmap);
             computeCosts(lev, new_cost, m_loadBalanceCost);
 
             if (m_loadBalanceMethod == LoadBalanceMethod::SFC) {
-              Vector<Real> costsVec(new_ba.size());
-              ParallelDescriptor::GatherLayoutDataToVector(
-                new_cost, costsVec, ParallelContext::IOProcessorNumberSub());
-              ParallelDescriptor::Bcast(
+              amrex::Vector<amrex::Real> costsVec(new_ba.size());
+              amrex::ParallelDescriptor::GatherLayoutDataToVector(
+                new_cost, costsVec,
+                amrex::ParallelContext::IOProcessorNumberSub());
+              amrex::ParallelDescriptor::Bcast(
                 costsVec.data(), costsVec.size(),
-                ParallelContext::IOProcessorNumberSub());
-              Real efficiency;
-              new_dmap =
-                DistributionMapping::makeSFC(costsVec, new_ba, efficiency);
+                amrex::ParallelContext::IOProcessorNumberSub());
+              amrex::Real efficiency;
+              new_dmap = amrex::DistributionMapping::makeSFC(
+                costsVec, new_ba, efficiency);
 
             } else if (m_loadBalanceMethod == LoadBalanceMethod::Knapsack) {
 
               const amrex::Real navg =
-                static_cast<Real>(new_ba.size()) /
-                static_cast<Real>(ParallelDescriptor::NProcs());
+                static_cast<amrex::Real>(new_ba.size()) /
+                static_cast<amrex::Real>(amrex::ParallelDescriptor::NProcs());
               const int nmax = static_cast<int>(amrex::max(
                 std::round(m_loadBalanceKSfactor * navg), std::ceil(navg)));
-              Vector<Real> costsVec(new_ba.size());
-              ParallelDescriptor::GatherLayoutDataToVector(
-                new_cost, costsVec, ParallelContext::IOProcessorNumberSub());
-              ParallelDescriptor::Bcast(
+              amrex::Vector<amrex::Real> costsVec(new_ba.size());
+              amrex::ParallelDescriptor::GatherLayoutDataToVector(
+                new_cost, costsVec,
+                amrex::ParallelContext::IOProcessorNumberSub());
+              amrex::ParallelDescriptor::Bcast(
                 costsVec.data(), costsVec.size(),
-                ParallelContext::IOProcessorNumberSub());
-              Real efficiency;
-              new_dmap =
-                DistributionMapping::makeKnapSack(costsVec, efficiency, nmax);
+                amrex::ParallelContext::IOProcessorNumberSub());
+              amrex::Real efficiency;
+              new_dmap = amrex::DistributionMapping::makeKnapSack(
+                costsVec, efficiency, nmax);
             }
 
             // Let's see if we can get a better dmap
           } else {
 
             if (m_verbose > 1) {
-              Print() << " Load balancing level " << lev << "\n";
+              amrex::Print() << " Load balancing level " << lev << "\n";
             }
 
             // Try to build a new dmap with the same old grid
             new_ba = grids[lev];
-            DistributionMapping test_dmap;
+            amrex::DistributionMapping test_dmap;
 
             computeCosts(lev);
 
@@ -201,62 +202,63 @@ PeleLM::regrid(int lbase, amrex::Real time, bool initial)
             // Build the test dmap, w/o braodcasting
             if (m_loadBalanceMethod == LoadBalanceMethod::SFC) {
 
-              test_dmap = DistributionMapping::makeSFC(
+              test_dmap = amrex::DistributionMapping::makeSFC(
                 *m_costs[lev], currentEfficiency, testEfficiency, false,
-                ParallelDescriptor::IOProcessorNumber());
+                amrex::ParallelDescriptor::IOProcessorNumber());
 
             } else if (m_loadBalanceMethod == LoadBalanceMethod::Knapsack) {
 
               const amrex::Real navg =
-                static_cast<Real>(new_ba.size()) /
-                static_cast<Real>(ParallelDescriptor::NProcs());
+                static_cast<amrex::Real>(new_ba.size()) /
+                static_cast<amrex::Real>(amrex::ParallelDescriptor::NProcs());
               const int nmax = static_cast<int>(amrex::max(
                 std::round(m_loadBalanceKSfactor * navg), std::ceil(navg)));
-              test_dmap = DistributionMapping::makeKnapSack(
+              test_dmap = amrex::DistributionMapping::makeKnapSack(
                 *m_costs[lev], currentEfficiency, testEfficiency, nmax, false,
-                ParallelDescriptor::IOProcessorNumber());
+                amrex::ParallelDescriptor::IOProcessorNumber());
             }
 
             // IO proc determine if the test dmap offers significant
             // improvements
             if (
               (m_loadBalanceEffRatioThreshold > 0.0) &&
-              (ParallelDescriptor::MyProc() ==
-               ParallelDescriptor::IOProcessorNumber())) {
+              (amrex::ParallelDescriptor::MyProc() ==
+               amrex::ParallelDescriptor::IOProcessorNumber())) {
               remakeLevel = static_cast<int>(
                 (remakeLevel != 0) ||
                 (testEfficiency >
                  m_loadBalanceEffRatioThreshold * currentEfficiency));
             }
-            ParallelDescriptor::Bcast(
-              &remakeLevel, 1, ParallelDescriptor::IOProcessorNumber());
+            amrex::ParallelDescriptor::Bcast(
+              &remakeLevel, 1, amrex::ParallelDescriptor::IOProcessorNumber());
 
             if (m_verbose > 1 && (remakeLevel != 0)) {
-              Print() << " Current LoadBalancing efficiency: "
-                      << currentEfficiency << "\n"
-                      << " Test LoadBalancing efficiency: " << testEfficiency
-                      << " \n";
+              amrex::Print()
+                << " Current LoadBalancing efficiency: " << currentEfficiency
+                << "\n"
+                << " Test LoadBalancing efficiency: " << testEfficiency
+                << " \n";
             }
 
             // Bcast the test dmap if we plan on remaking the level
             if (remakeLevel != 0) {
-              Vector<int> pmap;
+              amrex::Vector<int> pmap;
               if (
-                ParallelDescriptor::MyProc() ==
-                ParallelDescriptor::IOProcessorNumber()) {
+                amrex::ParallelDescriptor::MyProc() ==
+                amrex::ParallelDescriptor::IOProcessorNumber()) {
                 pmap = test_dmap.ProcessorMap();
               } else {
 #pragma GCC diagnostic ignored "-Wnull-dereference"
                 pmap.resize(static_cast<std::size_t>(new_ba.size()));
               }
-              ParallelDescriptor::Bcast(
+              amrex::ParallelDescriptor::Bcast(
                 pmap.data(), pmap.size(),
-                ParallelDescriptor::IOProcessorNumber());
+                amrex::ParallelDescriptor::IOProcessorNumber());
 
               if (
-                ParallelDescriptor::MyProc() !=
-                ParallelDescriptor::IOProcessorNumber()) {
-                test_dmap = DistributionMapping(pmap);
+                amrex::ParallelDescriptor::MyProc() !=
+                amrex::ParallelDescriptor::IOProcessorNumber()) {
+                test_dmap = amrex::DistributionMapping(pmap);
               }
               new_dmap = test_dmap;
             }
@@ -273,7 +275,7 @@ PeleLM::regrid(int lbase, amrex::Real time, bool initial)
         }
         coarse_ba_changed = ba_changed;
       } else { // a new level, use default DMap strategy
-        DistributionMapping new_dmap(new_grids[lev]);
+        amrex::DistributionMapping new_dmap(new_grids[lev]);
         const auto old_num_setdm = num_setdm;
         MakeNewLevelFromCoarse(lev, time, new_grids[lev], new_dmap);
         SetBoxArray(lev, new_grids[lev]);
@@ -313,10 +315,10 @@ PeleLM::MakeNewLevelFromCoarse(
   BL_PROFILE("PeleLMeX::MakeNewLevelFromCoarse()");
 
   if (m_verbose > 0) {
-    Print() << " Making new level " << lev << " from coarse\n";
+    amrex::Print() << " Making new level " << lev << " from coarse\n";
     if (m_verbose > 2) {
       auto const dx = geom[lev].CellSizeArray();
-      Real vol = AMREX_D_TERM(dx[0], *dx[1], *dx[2]);
+      amrex::Real vol = AMREX_D_TERM(dx[0], *dx[1], *dx[2]);
       amrex::Print() << " with " << ba.numPts() << " cells, " << ba.size()
                      << " boxes,"
                      << " over "
@@ -331,10 +333,11 @@ PeleLM::MakeNewLevelFromCoarse(
 
   // New level factory
 #ifdef AMREX_USE_EB
-  std::unique_ptr<FabFactory<FArrayBox>> new_fact =
-    makeEBFabFactory(geom[lev], ba, dm, {6, 6, 6}, EBSupport::full);
+  std::unique_ptr<amrex::FabFactory<amrex::FArrayBox>> new_fact =
+    makeEBFabFactory(geom[lev], ba, dm, {6, 6, 6}, amrex::EBSupport::full);
 #else
-  std::unique_ptr<FabFactory<FArrayBox>> new_fact(new FArrayBoxFactory());
+  std::unique_ptr<amrex::FabFactory<amrex::FArrayBox>> new_fact(
+    new amrex::FArrayBoxFactory());
 #endif
 
   // New leveldatas
@@ -388,7 +391,7 @@ PeleLM::MakeNewLevelFromCoarse(
   }
 
   if (max_level > 0 && lev != max_level) {
-    m_coveredMask[lev] = std::make_unique<iMultiFab>(ba, dm, 1, 0);
+    m_coveredMask[lev] = std::make_unique<amrex::iMultiFab>(ba, dm, 1, 0);
   }
   m_resetCoveredMask = 1;
 
@@ -396,13 +399,14 @@ PeleLM::MakeNewLevelFromCoarse(
   m_leveldatanlsolve[lev].reset(
     new LevelDataNLSolve(ba, dm, *m_factory[lev], m_nGrowState));
   if (m_do_extraEFdiags) {
-    m_ionsFluxes[lev].reset(new MultiFab(ba, dm, NUM_IONS * AMREX_SPACEDIM, 0));
+    m_ionsFluxes[lev].reset(
+      new amrex::MultiFab(ba, dm, NUM_IONS * AMREX_SPACEDIM, 0));
   }
   m_precond_op.reset();
 #endif
 
   // Load balance
-  m_costs[lev] = std::make_unique<LayoutData<Real>>(ba, dm);
+  m_costs[lev] = std::make_unique<amrex::LayoutData<amrex::Real>>(ba, dm);
 
   // DiffusionOp will be recreated
   m_diffusion_op.reset();
@@ -411,8 +415,8 @@ PeleLM::MakeNewLevelFromCoarse(
 
   // Trigger MacProj reset
   m_macProjNeedReset = 1;
-  m_extSource[lev] = std::make_unique<MultiFab>(
-    ba, dm, NVAR, amrex::max(m_nGrowAdv, m_nGrowMAC), MFInfo(),
+  m_extSource[lev] = std::make_unique<amrex::MultiFab>(
+    ba, dm, NVAR, amrex::max(m_nGrowAdv, m_nGrowMAC), amrex::MFInfo(),
     *m_factory[lev]);
   m_extSource[lev]->setVal(0.);
 }
@@ -427,10 +431,10 @@ PeleLM::RemakeLevel(
   BL_PROFILE("PeleLMeX::RemakeLevel()");
 
   if (m_verbose > 0) {
-    Print() << " Remaking level " << lev << "\n";
+    amrex::Print() << " Remaking level " << lev << "\n";
     if (m_verbose > 2) {
       auto const dx = geom[lev].CellSizeArray();
-      Real vol = AMREX_D_TERM(dx[0], *dx[1], *dx[2]);
+      amrex::Real vol = AMREX_D_TERM(dx[0], *dx[1], *dx[2]);
       amrex::Print() << " with " << ba.numPts() << " cells," << ba.size()
                      << " boxes,"
                      << " over "
@@ -445,10 +449,11 @@ PeleLM::RemakeLevel(
 
   // New level factory
 #ifdef AMREX_USE_EB
-  std::unique_ptr<FabFactory<FArrayBox>> new_fact =
-    makeEBFabFactory(geom[lev], ba, dm, {6, 6, 6}, EBSupport::full);
+  std::unique_ptr<amrex::FabFactory<amrex::FArrayBox>> new_fact =
+    makeEBFabFactory(geom[lev], ba, dm, {6, 6, 6}, amrex::EBSupport::full);
 #else
-  std::unique_ptr<FabFactory<FArrayBox>> new_fact(new FArrayBoxFactory());
+  std::unique_ptr<amrex::FabFactory<amrex::FArrayBox>> new_fact(
+    new amrex::FArrayBoxFactory());
 #endif
 
   // New leveldatas
@@ -488,7 +493,7 @@ PeleLM::RemakeLevel(
   }
 
   if (max_level > 0 && lev != max_level) {
-    m_coveredMask[lev] = std::make_unique<iMultiFab>(ba, dm, 1, 0);
+    m_coveredMask[lev] = std::make_unique<amrex::iMultiFab>(ba, dm, 1, 0);
   }
   m_resetCoveredMask = 1;
 
@@ -510,13 +515,14 @@ PeleLM::RemakeLevel(
   m_leveldatanlsolve[lev].reset(
     new LevelDataNLSolve(ba, dm, *m_factory[lev], m_nGrowState));
   if (m_do_extraEFdiags) {
-    m_ionsFluxes[lev].reset(new MultiFab(ba, dm, NUM_IONS * AMREX_SPACEDIM, 0));
+    m_ionsFluxes[lev].reset(
+      new amrex::MultiFab(ba, dm, NUM_IONS * AMREX_SPACEDIM, 0));
   }
   m_precond_op.reset();
 #endif
 
   // Load balance
-  m_costs[lev] = std::make_unique<LayoutData<Real>>(ba, dm);
+  m_costs[lev] = std::make_unique<amrex::LayoutData<amrex::Real>>(ba, dm);
 
   // DiffusionOp will be recreated
   m_diffusion_op.reset();
@@ -525,8 +531,8 @@ PeleLM::RemakeLevel(
 
   // Trigger MacProj reset
   m_macProjNeedReset = 1;
-  m_extSource[lev] = std::make_unique<MultiFab>(
-    ba, dm, NVAR, amrex::max(m_nGrowAdv, m_nGrowMAC), MFInfo(),
+  m_extSource[lev] = std::make_unique<amrex::MultiFab>(
+    ba, dm, NVAR, amrex::max(m_nGrowAdv, m_nGrowMAC), amrex::MFInfo(),
     *m_factory[lev]);
   m_extSource[lev]->setVal(0.);
 }
@@ -564,52 +570,53 @@ PeleLM::ClearLevel(int lev)
 }
 
 void
-PeleLM::computeCosts(int a_lev, LayoutData<Real>& a_costs, int a_costMethod)
+PeleLM::computeCosts(
+  int a_lev, amrex::LayoutData<amrex::Real>& a_costs, int a_costMethod)
 {
   if (a_costMethod == LoadBalanceCost::Ncell) {
-    for (MFIter mfi(a_costs, false); mfi.isValid(); ++mfi) {
+    for (amrex::MFIter mfi(a_costs, false); mfi.isValid(); ++mfi) {
       a_costs[mfi] = static_cast<amrex::Real>(mfi.validbox().numPts());
     }
   } else if (a_costMethod == LoadBalanceCost::ChemFunctCallAvg) {
-    MultiFab costMF(a_costs.boxArray(), a_costs.DistributionMap(), 1, 0);
+    amrex::MultiFab costMF(a_costs.boxArray(), a_costs.DistributionMap(), 1, 0);
     fillpatch_chemFunctCall(a_lev, m_cur_time, costMF, 0);
-    for (MFIter mfi(costMF, false); mfi.isValid(); ++mfi) {
-      a_costs[mfi] = costMF[mfi].sum<RunOn::Device>(mfi.validbox(), 0) /
+    for (amrex::MFIter mfi(costMF, false); mfi.isValid(); ++mfi) {
+      a_costs[mfi] = costMF[mfi].sum<amrex::RunOn::Device>(mfi.validbox(), 0) /
                      static_cast<amrex::Real>(mfi.validbox().numPts());
     }
   } else if (a_costMethod == LoadBalanceCost::ChemFunctCallMax) {
-    MultiFab costMF(a_costs.boxArray(), a_costs.DistributionMap(), 1, 0);
+    amrex::MultiFab costMF(a_costs.boxArray(), a_costs.DistributionMap(), 1, 0);
     fillpatch_chemFunctCall(a_lev, m_cur_time, costMF, 0);
-    for (MFIter mfi(costMF, false); mfi.isValid(); ++mfi) {
-      a_costs[mfi] = costMF[mfi].max<RunOn::Device>(mfi.validbox(), 0);
+    for (amrex::MFIter mfi(costMF, false); mfi.isValid(); ++mfi) {
+      a_costs[mfi] = costMF[mfi].max<amrex::RunOn::Device>(mfi.validbox(), 0);
     }
   } else if (a_costMethod == LoadBalanceCost::ChemFunctCallSum) {
-    MultiFab costMF(a_costs.boxArray(), a_costs.DistributionMap(), 1, 0);
+    amrex::MultiFab costMF(a_costs.boxArray(), a_costs.DistributionMap(), 1, 0);
     fillpatch_chemFunctCall(a_lev, m_cur_time, costMF, 0);
-    for (MFIter mfi(costMF, false); mfi.isValid(); ++mfi) {
-      a_costs[mfi] = costMF[mfi].sum<RunOn::Device>(mfi.validbox(), 0);
+    for (amrex::MFIter mfi(costMF, false); mfi.isValid(); ++mfi) {
+      a_costs[mfi] = costMF[mfi].sum<amrex::RunOn::Device>(mfi.validbox(), 0);
     }
   } else if (a_costMethod == LoadBalanceCost::UserDefinedDerivedAvg) {
-    MultiFab costMF(a_costs.boxArray(), a_costs.DistributionMap(), 1, 0);
+    amrex::MultiFab costMF(a_costs.boxArray(), a_costs.DistributionMap(), 1, 0);
     costMF.setVal(0.0);
-    std::unique_ptr<MultiFab> mf;
+    std::unique_ptr<amrex::MultiFab> mf;
     mf = derive("derUserDefined", m_cur_time, a_lev, 0);
     costMF.ParallelCopy(*mf, 0, 0, 1);
-    for (MFIter mfi(costMF, false); mfi.isValid(); ++mfi) {
-      a_costs[mfi] = costMF[mfi].sum<RunOn::Device>(mfi.validbox(), 0) /
+    for (amrex::MFIter mfi(costMF, false); mfi.isValid(); ++mfi) {
+      a_costs[mfi] = costMF[mfi].sum<amrex::RunOn::Device>(mfi.validbox(), 0) /
                      static_cast<amrex::Real>(mfi.validbox().numPts());
     }
   } else if (a_costMethod == LoadBalanceCost::UserDefinedDerivedSum) {
-    MultiFab costMF(a_costs.boxArray(), a_costs.DistributionMap(), 1, 0);
+    amrex::MultiFab costMF(a_costs.boxArray(), a_costs.DistributionMap(), 1, 0);
     costMF.setVal(0.0);
-    std::unique_ptr<MultiFab> mf;
+    std::unique_ptr<amrex::MultiFab> mf;
     mf = derive("derUserDefined", m_cur_time, a_lev, 0);
     costMF.ParallelCopy(*mf, 0, 0, 1);
-    for (MFIter mfi(costMF, false); mfi.isValid(); ++mfi) {
-      a_costs[mfi] = costMF[mfi].sum<RunOn::Device>(mfi.validbox(), 0);
+    for (amrex::MFIter mfi(costMF, false); mfi.isValid(); ++mfi) {
+      a_costs[mfi] = costMF[mfi].sum<amrex::RunOn::Device>(mfi.validbox(), 0);
     }
   } else {
-    Abort(" Unknown cost estimate method !");
+    amrex::Abort(" Unknown cost estimate method !");
   }
 }
 
@@ -631,9 +638,9 @@ PeleLM::resetMacProjector()
 #ifdef AMREX_USE_EB
   macproj = std::make_unique<Hydro::MacProjector>(
     Geom(0, finest_level),
-    MLMG::Location::FaceCentroid, // Location of mac velocity
-    MLMG::Location::FaceCentroid, // Location of beta
-    MLMG::Location::CellCenter);  // Location of solution variable phi
+    amrex::MLMG::Location::FaceCentroid, // Location of mac velocity
+    amrex::MLMG::Location::FaceCentroid, // Location of beta
+    amrex::MLMG::Location::CellCenter);  // Location of solution variable phi
 #else
   macproj = std::make_unique<Hydro::MacProjector>(Geom(0, finest_level));
 #endif
@@ -647,7 +654,7 @@ void
 PeleLM::regridFromGridFile(int lbase, amrex::Real time, bool /*initial*/)
 {
   const int new_finest = static_cast<int>(m_regrid_ba.size());
-  Vector<BoxArray> new_grids(finest_level + 2);
+  amrex::Vector<amrex::BoxArray> new_grids(finest_level + 2);
   BL_ASSERT(new_finest <= finest_level + 1);
 
   bool coarse_ba_changed = false;
@@ -656,11 +663,11 @@ PeleLM::regridFromGridFile(int lbase, amrex::Real time, bool /*initial*/)
     if (lev <= finest_level) { // an old level
       bool ba_changed = (new_grids[lev] != grids[lev]);
       if (ba_changed || coarse_ba_changed) {
-        BoxArray level_grids = grids[lev];
-        DistributionMapping level_dmap = dmap[lev];
+        amrex::BoxArray level_grids = grids[lev];
+        amrex::DistributionMapping level_dmap = dmap[lev];
         if (ba_changed) {
           level_grids = new_grids[lev];
-          level_dmap = DistributionMapping(level_grids);
+          level_dmap = amrex::DistributionMapping(level_grids);
         }
         const auto old_num_setdm = num_setdm;
         RemakeLevel(lev, time, level_grids, level_dmap);
@@ -672,7 +679,7 @@ PeleLM::regridFromGridFile(int lbase, amrex::Real time, bool /*initial*/)
       coarse_ba_changed = ba_changed;
       ;
     } else { // a new level
-      DistributionMapping new_dmap(new_grids[lev]);
+      amrex::DistributionMapping new_dmap(new_grids[lev]);
       const auto old_num_setdm = num_setdm;
       MakeNewLevelFromCoarse(lev, time, new_grids[lev], new_dmap);
       SetBoxArray(lev, new_grids[lev]);
