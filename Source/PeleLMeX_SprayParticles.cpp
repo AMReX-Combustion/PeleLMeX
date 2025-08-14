@@ -228,10 +228,11 @@ PeleLM::SpraySetState(const amrex::Real& a_flow_dt)
     if (
       mesh_regrid || prev_state[lev] != state_ghosts ||
       prev_source[lev] != source_ghosts) {
-      m_spraystate[lev] = std::make_unique<MultiFab>(
-        grids[lev], dmap[lev], NVAR, state_ghosts, MFInfo(), *m_factory[lev]);
-      m_spraysource[lev] = std::make_unique<MultiFab>(
-        grids[lev], dmap[lev], num_spray_src, source_ghosts, MFInfo(),
+      m_spraystate[lev] = std::make_unique<amrex::MultiFab>(
+        grids[lev], dmap[lev], NVAR, state_ghosts, amrex::MFInfo(),
+        *m_factory[lev]);
+      m_spraysource[lev] = std::make_unique<amrex::MultiFab>(
+        grids[lev], dmap[lev], num_spray_src, source_ghosts, amrex::MFInfo(),
         *m_factory[lev]);
     }
     fillpatch_state(lev, m_cur_time, *(m_spraystate[lev]), state_ghosts);
@@ -243,8 +244,8 @@ PeleLM::SpraySetState(const amrex::Real& a_flow_dt)
 void
 PeleLM::SprayAddSource(const int level)
 {
-  MultiFab& source = *(m_spraysource[level]);
-  MultiFab& extsource = *(m_extSource[level]);
+  amrex::MultiFab& source = *(m_spraysource[level]);
+  amrex::MultiFab& extsource = *(m_extSource[level]);
   const int eghosts = extsource.nGrow();
   SprayComps scomps = SprayParticleContainer::getSprayComps();
   amrex::MultiFab::Add(
@@ -369,7 +370,7 @@ void
 PeleLM::SprayInjectRedist()
 {
   BL_PROFILE("PeleLMeX::SprayInjectRedist");
-  Long prev_count = 0;
+  amrex::Long prev_count = 0;
   if (spray_verbose >= 3) {
     prev_count = SprayPC->TotalNumberOfParticles(true, false);
   }
@@ -388,8 +389,8 @@ PeleLM::SprayInjectRedist()
   // We must redistribute after each time step
   SprayPC->Redistribute();
   if (spray_verbose >= 3 && injected) {
-    Long new_count = SprayPC->TotalNumberOfParticles(true, false);
-    Long num_inj = new_count - prev_count;
+    amrex::Long new_count = SprayPC->TotalNumberOfParticles(true, false);
+    amrex::Long num_inj = new_count - prev_count;
     amrex::Print() << "Injected " << num_inj << " particles at time "
                    << m_t_new[0] << std::endl;
   }
