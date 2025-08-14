@@ -157,7 +157,7 @@ PeleLM::SprayInit()
   std::string restart_file =
     (m_restart_chkfile.empty()) ? m_restart_pltfile : m_restart_chkfile;
   std::string restart_partfile = restart_file + "/particles";
-  if (!FileSystem::Exists(restart_partfile)) {
+  if (!amrex::FileSystem::Exists(restart_partfile)) {
     restart_file = "";
     if (!m_restart_chkfile.empty() || !m_restart_pltfile.empty()) {
       std::string warn_msg = "Restart file does not contain particles. "
