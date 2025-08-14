@@ -6,8 +6,6 @@
 #include <AMReX_PhysBCFunct.H>
 #include <AMReX_Geometry.H>
 
-using namespace amrex;
-
 template <typename, typename T>
 struct matchBCNormEB_sign
 {
