@@ -1642,7 +1642,7 @@ PeleLM::MFmax(
       auto const& mask = a_mask.const_arrays();
       mx = ParReduce(
         amrex::TypeList<amrex::ReduceOpMax>{}, amrex::TypeList<amrex::Real>{},
-        *a_MF, IntVect(0),
+        *a_MF, amrex::IntVect(0),
         [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept
           -> amrex::GpuTuple<amrex::Real> {
           if (flagsma[box_no](i, j, k).isCovered() || !mask[box_no](i, j, k)) {
@@ -1680,7 +1680,7 @@ PeleLM::MFmax(
       auto const& mask = a_mask.const_arrays();
       mx = ParReduce(
         amrex::TypeList<amrex::ReduceOpMax>{}, amrex::TypeList<amrex::Real>{},
-        *a_MF, IntVect(0),
+        *a_MF, amrex::IntVect(0),
         [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept
           -> amrex::GpuTuple<amrex::Real> {
           if (!mask[box_no](i, j, k)) {
@@ -1731,7 +1731,7 @@ PeleLM::MFmin(
       auto const& mask = a_mask.const_arrays();
       mn = ParReduce(
         amrex::TypeList<amrex::ReduceOpMin>{}, amrex::TypeList<amrex::Real>{},
-        *a_MF, IntVect(0),
+        *a_MF, amrex::IntVect(0),
         [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept
           -> amrex::GpuTuple<amrex::Real> {
           if (flagsma[box_no](i, j, k).isCovered() || !mask[box_no](i, j, k)) {
@@ -1769,7 +1769,7 @@ PeleLM::MFmin(
       auto const& mask = a_mask.const_arrays();
       mn = ParReduce(
         amrex::TypeList<amrex::ReduceOpMin>{}, amrex::TypeList<amrex::Real>{},
-        *a_MF, IntVect(0),
+        *a_MF, amrex::IntVect(0),
         [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept
           -> amrex::GpuTuple<amrex::Real> {
           if (!mask[box_no](i, j, k)) {
