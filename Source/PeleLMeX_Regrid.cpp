@@ -78,6 +78,7 @@ PeleLM::regrid(int lbase, amrex::Real time, bool initial)
           amrex::ParallelDescriptor::IOProcessorNumber()) {
           pmap = test_dmap.ProcessorMap();
         } else {
+#pragma GCC diagnostic ignored "-Wnull-dereference"
           pmap.resize(static_cast<std::size_t>(grids[0].size()));
         }
         amrex::ParallelDescriptor::Bcast(
@@ -247,6 +248,7 @@ PeleLM::regrid(int lbase, amrex::Real time, bool initial)
                 amrex::ParallelDescriptor::IOProcessorNumber()) {
                 pmap = test_dmap.ProcessorMap();
               } else {
+#pragma GCC diagnostic ignored "-Wnull-dereference"
                 pmap.resize(static_cast<std::size_t>(new_ba.size()));
               }
               amrex::ParallelDescriptor::Bcast(
