@@ -947,8 +947,9 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
     amrex::Abort("Couldn't find temperature in pltfile");
   }
   if (m_verbose > 0) {
-      amrex::Print() << " " << nSpecPlt << " species found in pltfile, starting with "
-            << plt_vars[idY] << "\n";
+    amrex::Print() << " " << nSpecPlt
+                   << " species found in pltfile, starting with "
+                   << plt_vars[idY] << "\n";
   }
 
   // Get level data
