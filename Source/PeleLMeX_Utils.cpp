@@ -209,7 +209,7 @@ PeleLM::extFluxDivergenceLevel(
 #endif
 
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
   for (MFIter mfi(a_divergence, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
     const Box& bx = mfi.tilebox();
@@ -307,7 +307,7 @@ PeleLM::intFluxDivergenceLevel(
 #endif
 
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
   for (MFIter mfi(a_divergence, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
     const Box& bx = mfi.tilebox();
@@ -422,7 +422,7 @@ PeleLM::intFluxDivergenceLevelEB(
 #endif
 
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
   for (MFIter mfi(a_divergence, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
     const Box& bx = mfi.tilebox();
@@ -523,7 +523,7 @@ PeleLM::
 #endif
 
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
   for (MFIter mfi(a_divergence, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
 
@@ -660,7 +660,7 @@ PeleLM::advFluxDivergence(
   auto const& ebfact = EBFactory(a_lev);
 
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
   for (MFIter mfi(a_divergence, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
 
@@ -783,7 +783,7 @@ PeleLM::floorSpecies(const TimeStamp& a_time)
         sma[box_no](i, j, k, RHOH) =
           h_cgs * 1.0e-4 * sma[box_no](i, j, k, DENSITY);
       });
-    Gpu::streamSynchronize();
+    amrex::Gpu::streamSynchronize();
   }
 }
 
@@ -803,7 +803,7 @@ PeleLM::resetCoveredMask()
       baf.coarsen(ref_ratio[lev]);
       m_coveredMask[lev]->setVal(1);
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
       {
         std::vector<std::pair<int, Box>> isects;
@@ -1009,7 +1009,7 @@ PeleLM::derive(const std::string& a_name, Real a_time, int lev, int nGrow)
     }
     auto stateBCs = fetchBCRecArray(VELX, NVAR);
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
     for (MFIter mfi(*mf, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
       const Box& bx = mfi.growntilebox(nGrow);
@@ -1074,7 +1074,7 @@ PeleLM::deriveComp(const std::string& a_name, Real a_time, int lev, int nGrow)
     // Temp MF for all the derive components
     MultiFab derTemp(grids[lev], dmap[lev], rec->numDerive(), nGrow);
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
     for (MFIter mfi(*mf, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
       const Box& bx = mfi.growntilebox(nGrow);
@@ -1567,7 +1567,7 @@ PeleLM::updateTypicalValuesChem()
       Print() << " Update chemistry typical values \n";
     }
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
     {
       Vector<Real> typical_values_chem;
@@ -1605,7 +1605,7 @@ PeleLM::MFmax(const MultiFab* a_MF, const iMultiFab& a_mask, int comp)
       dynamic_cast<EBFArrayBoxFactory const&>(a_MF->Factory());
     auto const& flags = ebfactory.getMultiEBCellFlagFab();
 #ifdef AMREX_USE_GPU
-    if (Gpu::inLaunchRegion()) {
+    if (amrex::Gpu::inLaunchRegion()) {
       auto const& flagsma = flags.const_arrays();
       auto const& ma = a_MF->const_arrays();
       auto const& mask = a_mask.const_arrays();
@@ -1643,7 +1643,7 @@ PeleLM::MFmax(const MultiFab* a_MF, const iMultiFab& a_mask, int comp)
 #endif
   {
 #ifdef AMREX_USE_GPU
-    if (Gpu::inLaunchRegion()) {
+    if (amrex::Gpu::inLaunchRegion()) {
       auto const& ma = a_MF->const_arrays();
       auto const& mask = a_mask.const_arrays();
       mx = ParReduce(
@@ -1691,7 +1691,7 @@ PeleLM::MFmin(const MultiFab* a_MF, const iMultiFab& a_mask, int comp)
       dynamic_cast<EBFArrayBoxFactory const&>(a_MF->Factory());
     auto const& flags = ebfactory.getMultiEBCellFlagFab();
 #ifdef AMREX_USE_GPU
-    if (Gpu::inLaunchRegion()) {
+    if (amrex::Gpu::inLaunchRegion()) {
       auto const& flagsma = flags.const_arrays();
       auto const& ma = a_MF->const_arrays();
       auto const& mask = a_mask.const_arrays();
@@ -1729,7 +1729,7 @@ PeleLM::MFmin(const MultiFab* a_MF, const iMultiFab& a_mask, int comp)
 #endif
   {
 #ifdef AMREX_USE_GPU
-    if (Gpu::inLaunchRegion()) {
+    if (amrex::Gpu::inLaunchRegion()) {
       auto const& ma = a_MF->const_arrays();
       auto const& mask = a_mask.const_arrays();
       mn = ParReduce(
@@ -1825,7 +1825,7 @@ PeleLM::checkMemory(const std::string& a_message) const
 
   const int IOProc = ParallelDescriptor::IOProcessorNumber();
 #ifdef AMREX_USE_GPU
-  Long free_mem_avail = Gpu::Device::freeMemAvailable() / (1024 * 1024);
+  Long free_mem_avail = amrex::Gpu::Device::freeMemAvailable() / (1024 * 1024);
   ParallelDescriptor::ReduceLongMin(free_mem_avail, IOProc);
   Print() << "     [" << a_message << "] GPU mem. avail. (MB) "
           << free_mem_avail << "\n";
@@ -2086,7 +2086,7 @@ PeleLM::extendSignedDistance(MultiFab* a_signDist, Real a_extendFactor)
 
   // First set the region far away at the max value we need
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
   for (MFIter mfi(*a_signDist, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
     const Box& bx = mfi.growntilebox();
@@ -2105,7 +2105,7 @@ PeleLM::extendSignedDistance(MultiFab* a_signDist, Real a_extendFactor)
   int nMaxLoop = 4;
   for (int dloop = 1; dloop <= nMaxLoop; dloop++) {
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
     for (MFIter mfi(*a_signDist, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
       const Box& bx = mfi.tilebox();

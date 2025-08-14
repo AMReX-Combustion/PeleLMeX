@@ -45,7 +45,7 @@ PeleLM::computeRadSource(const PeleLM::TimeStamp& a_timestamp)
   for (int lev = 0; lev <= finest_level; lev++) {
     auto* ldata_p = PeleLM::getLevelDataPtr(lev, a_timestamp);
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
     for (amrex::MFIter mfi(*(m_extSource[lev]), amrex::TilingIfNotGPU());
          mfi.isValid(); ++mfi) {
@@ -74,7 +74,7 @@ PeleLM::computeRadSource(const PeleLM::TimeStamp& a_timestamp)
 
   for (int lev = 0; lev <= finest_level; lev++) {
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
     for (amrex::MFIter mfi(*(m_extSource[lev]), amrex::TilingIfNotGPU());
          mfi.isValid(); ++mfi) {

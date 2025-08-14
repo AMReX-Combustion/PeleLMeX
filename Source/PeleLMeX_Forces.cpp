@@ -52,7 +52,7 @@ PeleLM::getVelForces(
   int has_divTau = static_cast<int>(a_divTau != nullptr);
 
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
   for (amrex::MFIter mfi(*a_velForce, amrex::TilingIfNotGPU()); mfi.isValid();
        ++mfi) {

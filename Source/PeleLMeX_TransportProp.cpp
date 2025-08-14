@@ -77,7 +77,7 @@ PeleLM::calcTurbViscosity(const TimeStamp& a_time)
             Array4<Real const>(state_arr[box_no], TEMP),
             Array4<Real>(cp_arr[box_no]), leosparm);
         });
-      Gpu::streamSynchronize();
+      amrex::Gpu::streamSynchronize();
 
       // this function really just interpolates CCs to FCs in this case
       int doZeroVisc = 0;
@@ -234,7 +234,7 @@ PeleLM::calcTurbViscosity(const TimeStamp& a_time)
 #endif
           });
       }
-      Gpu::streamSynchronize();
+      amrex::Gpu::streamSynchronize();
 
       // Compute lambda_turb = alpha_t * cp = mu_t / Pr_t * cp
       if (m_incompressible == 0) {
@@ -279,7 +279,7 @@ PeleLM::calcViscosity(const TimeStamp& a_time)
         });
     }
   }
-  Gpu::streamSynchronize();
+  amrex::Gpu::streamSynchronize();
 }
 
 void
@@ -371,7 +371,7 @@ PeleLM::calcDiffusivity(const TimeStamp& a_time)
       }
     }
   }
-  Gpu::streamSynchronize();
+  amrex::Gpu::streamSynchronize();
 }
 
 Array<MultiFab, AMREX_SPACEDIM>
@@ -415,7 +415,7 @@ PeleLM::getDiffusivity(
   bool use_harmonic_avg = m_harm_avg_cen2edge != 0;
 
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
   for (MFIter mfi(beta_cc, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
     for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
@@ -495,7 +495,7 @@ PeleLM::getDiffusivity(
     for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
       const Box& edomain = amrex::surroundingNodes(domain, idim);
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
       for (MFIter mfi(beta_ec[idim], TilingIfNotGPU()); mfi.isValid(); ++mfi) {
         const Box ebx = mfi.tilebox();

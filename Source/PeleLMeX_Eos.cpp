@@ -89,7 +89,7 @@ PeleLM::calcDivU(
 #endif
 
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
     for (amrex::MFIter mfi(ldata_p->divu, amrex::TilingIfNotGPU());
          mfi.isValid(); ++mfi) {

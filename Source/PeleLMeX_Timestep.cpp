@@ -243,7 +243,7 @@ PeleLM::checkDt(const TimeStamp& a_time, const Real& a_dt)
     const auto dxinv = geom[lev].InvCellSizeArray();
 
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
     for (MFIter mfi(ldata_p->state, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
       const Box& bx = mfi.tilebox();

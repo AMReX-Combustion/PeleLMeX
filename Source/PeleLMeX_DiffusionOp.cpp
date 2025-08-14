@@ -146,7 +146,7 @@ DiffusionOp::diffuse_scalar(
       a_phi[lev]->boxArray(), a_phi[lev]->DistributionMap(), ncomp, 1,
       amrex::MFInfo(), a_phi[lev]->Factory());
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
     for (amrex::MFIter mfi(phi[lev], amrex::TilingIfNotGPU()); mfi.isValid();
          ++mfi) {
@@ -283,7 +283,7 @@ DiffusionOp::diffuse_scalar(
   // Don't touch the ghost cells
   for (int lev = 0; lev <= finest_level; ++lev) {
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
     for (amrex::MFIter mfi(phi[lev], amrex::TilingIfNotGPU()); mfi.isValid();
          ++mfi) {
@@ -367,7 +367,7 @@ DiffusionOp::diffuse_scalar(
       a_phi[lev]->boxArray(), a_phi[lev]->DistributionMap(), ncomp, 1,
       amrex::MFInfo(), a_phi[lev]->Factory());
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
     for (amrex::MFIter mfi(phi[lev], amrex::TilingIfNotGPU()); mfi.isValid();
          ++mfi) {
@@ -496,7 +496,7 @@ DiffusionOp::diffuse_scalar(
   // Don't touch the ghost cells
   for (int lev = 0; lev <= finest_level; ++lev) {
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
     for (amrex::MFIter mfi(phi[lev], amrex::TilingIfNotGPU()); mfi.isValid();
          ++mfi) {
@@ -631,7 +631,7 @@ DiffusionOp::computeDiffFluxes(
       a_phi[lev]->boxArray(), a_phi[lev]->DistributionMap(), ncomp, 1,
       amrex::MFInfo(), a_phi[lev]->Factory());
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
     for (amrex::MFIter mfi(phi[lev], amrex::TilingIfNotGPU()); mfi.isValid();
          ++mfi) {
@@ -774,7 +774,7 @@ DiffusionOp::computeDiffFluxes(
       a_phi[lev]->boxArray(), a_phi[lev]->DistributionMap(), ncomp, 1,
       amrex::MFInfo(), a_phi[lev]->Factory());
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
     for (amrex::MFIter mfi(phi[lev], amrex::TilingIfNotGPU()); mfi.isValid();
          ++mfi) {
@@ -1191,7 +1191,7 @@ DiffusionTensorOp::compute_divtau(
   if (have_density != 0) {
     for (int lev = 0; lev <= finest_level; ++lev) {
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
       for (amrex::MFIter mfi(*a_divtau[lev], amrex::TilingIfNotGPU());
            mfi.isValid(); ++mfi) {
@@ -1261,7 +1261,7 @@ DiffusionTensorOp::diffuse_velocity(
     rhs[lev].define(
       a_vel[lev]->boxArray(), a_vel[lev]->DistributionMap(), AMREX_SPACEDIM, 0);
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
     for (amrex::MFIter mfi(rhs[lev], amrex::TilingIfNotGPU()); mfi.isValid();
          ++mfi) {

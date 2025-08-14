@@ -77,7 +77,7 @@ PeleLM::redistributeAofS(
   const auto& ebfact = EBFactory(a_lev);
 
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
   for (amrex::MFIter mfi(a_tmpDiv, amrex::TilingIfNotGPU()); mfi.isValid();
        ++mfi) {
@@ -151,7 +151,7 @@ PeleLM::getCoveredIMask(int a_lev, iMultiFab& a_imask) const
     (a_imask.DistributionMap() == flags.DistributionMap())) {
 
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
     for (amrex::MFIter mfi(a_imask, amrex::TilingIfNotGPU()); mfi.isValid();
          ++mfi) {
@@ -171,7 +171,7 @@ PeleLM::getCoveredIMask(int a_lev, iMultiFab& a_imask) const
     iMultiFab mask_tmp(flags.boxArray(), flags.DistributionMap(), 1, 0);
 
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
     for (amrex::MFIter mfi(mask_tmp, amrex::TilingIfNotGPU()); mfi.isValid();
          ++mfi) {
@@ -213,7 +213,7 @@ PeleLM::redistributeDiff(
   const auto& ebfact = EBFactory(a_lev);
 
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
   for (amrex::MFIter mfi(a_tmpDiv, amrex::TilingIfNotGPU()); mfi.isValid();
        ++mfi) {
@@ -577,7 +577,7 @@ PeleLM::getEBState(
   }
 
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
   for (amrex::MFIter mfi(a_EBstate, mfi_info); mfi.isValid(); ++mfi) {
     const Box& bx = mfi.growntilebox();
@@ -639,7 +639,7 @@ PeleLM::getEBDiff(
   }
 
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
   for (amrex::MFIter mfi(a_EBDiff, mfi_info); mfi.isValid(); ++mfi) {
     const Box& bx = mfi.tilebox();
@@ -693,7 +693,7 @@ PeleLM::correct_vel_small_cells(
 
   for (int lev = 0; lev <= finest_level; lev++) {
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
     for (amrex::MFIter mfi(*a_vel[lev], amrex::TilingIfNotGPU()); mfi.isValid();
          ++mfi) {

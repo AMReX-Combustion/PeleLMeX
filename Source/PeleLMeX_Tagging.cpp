@@ -33,7 +33,7 @@ PeleLM::ErrorEst(int lev, TagBoxArray& tags, Real time, int /*ng*/)
 #ifdef AMREX_USE_EB
   // Untag covered cells
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
   for (MFIter mfi(tags, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
     const auto& bx = mfi.tilebox();
@@ -64,7 +64,7 @@ PeleLM::ErrorEst(int lev, TagBoxArray& tags, Real time, int /*ng*/)
 
     // Untag cells too close to EB
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
     for (MFIter mfi(tags, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
       const auto& bx = mfi.tilebox();

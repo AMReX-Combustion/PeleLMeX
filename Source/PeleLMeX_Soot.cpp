@@ -39,7 +39,7 @@ PeleLM::computeSootSource(const PeleLM::TimeStamp& a_timestamp, const Real a_dt)
     auto* ldata_p = getLevelDataPtr(lev, a_timestamp);
     Real time = getTime(lev, a_timestamp);
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
     for (MFIter mfi(*(m_extSource[lev]), TilingIfNotGPU()); mfi.isValid();
          ++mfi) {
@@ -59,7 +59,7 @@ PeleLM::clipSootMoments()
   for (int lev = 0; lev <= finest_level; lev++) {
     auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
     for (MFIter mfi(ldata_p->state, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
       Box const& gbx = mfi.tilebox();

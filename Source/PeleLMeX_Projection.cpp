@@ -31,7 +31,7 @@ PeleLM::initialProjection()
       auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
 
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
       for (amrex::MFIter mfi(ldata_p->state, amrex::TilingIfNotGPU());
            mfi.isValid(); ++mfi) {
@@ -143,7 +143,7 @@ PeleLM::initialPressProjection()
       auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
 
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
       for (amrex::MFIter mfi(ldata_p->state, amrex::TilingIfNotGPU());
            mfi.isValid(); ++mfi) {
@@ -315,7 +315,7 @@ PeleLM::velocityProjection(
           grids[lev], dmap[lev], 1, ldataOld_p->divu.nGrow(), amrex::MFInfo(),
           *m_factory[lev]);
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
         for (amrex::MFIter mfi(rhs_cc[lev], amrex::TilingIfNotGPU());
              mfi.isValid(); ++mfi) {

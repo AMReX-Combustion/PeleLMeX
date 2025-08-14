@@ -286,7 +286,7 @@ PeleLM::adjustSpeciesFluxes(
 #endif
 
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
     for (amrex::MFIter mfi(*a_spec[lev], amrex::TilingIfNotGPU());
          mfi.isValid(); ++mfi) {
@@ -413,7 +413,7 @@ PeleLM::correctIsothermalBoundary(
       lev, 0, NUM_SPECIES, doZeroVisc, bcRecSpec, ldata_beta_cc,
       addTurbContribution);
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
     for (amrex::MFIter mfi(ldata_beta_cc, amrex::TilingIfNotGPU());
          mfi.isValid(); ++mfi) {
@@ -684,7 +684,7 @@ PeleLM::addWbarTerm(
     }
     const amrex::Box& domain = geom[lev].Domain();
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
     for (amrex::MFIter mfi(Wbar[lev], amrex::TilingIfNotGPU()); mfi.isValid();
          ++mfi) {
@@ -766,7 +766,7 @@ PeleLM::addWbarTerm(
     const bool use_harmonic_avg = m_harm_avg_cen2edge != 0;
 
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
     {
       for (amrex::MFIter mfi(*a_beta[lev], amrex::TilingIfNotGPU());
@@ -892,7 +892,7 @@ PeleLM::addSoretTerm(
     const bool use_harmonic_avg = m_harm_avg_cen2edge != 0;
 
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
     {
       amrex::FArrayBox T_ed;
@@ -981,7 +981,7 @@ PeleLM::computeSpeciesEnthalpyFlux(
       grids[lev], dmap[lev], NUM_SPECIES, nGrow, amrex::MFInfo(), Factory(lev));
 
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
     for (amrex::MFIter mfi(Enth, amrex::TilingIfNotGPU()); mfi.isValid();
          ++mfi) {
@@ -1028,7 +1028,7 @@ PeleLM::computeSpeciesEnthalpyFlux(
     //------------------------------------------------------------------------
     // Compute \sum_k { \Flux_k * h_k }
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
     for (amrex::MFIter mfi(Enth, amrex::TilingIfNotGPU()); mfi.isValid();
          ++mfi) {
@@ -1101,7 +1101,7 @@ PeleLM::differentialDiffusionUpdate(
     // Get t^{n} data pointer
     auto* ldata_p = getLevelDataPtr(lev, AmrOldTime);
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
     for (amrex::MFIter mfi(advData->Forcing[lev], amrex::TilingIfNotGPU());
          mfi.isValid(); ++mfi) {
@@ -1226,7 +1226,7 @@ PeleLM::differentialDiffusionUpdate(
       auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
 
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
       for (amrex::MFIter mfi(ldata_p->state, amrex::TilingIfNotGPU());
            mfi.isValid(); ++mfi) {
@@ -1249,7 +1249,7 @@ PeleLM::differentialDiffusionUpdate(
       auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
 
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
       for (amrex::MFIter mfi(ldata_p->state, amrex::TilingIfNotGPU());
            mfi.isValid(); ++mfi) {
@@ -1300,7 +1300,7 @@ PeleLM::differentialDiffusionUpdate(
     auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
 
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
     for (amrex::MFIter mfi(ldata_p->state, amrex::TilingIfNotGPU());
          mfi.isValid(); ++mfi) {
@@ -1524,7 +1524,7 @@ PeleLM::deltaTIter_prepare(
     auto* ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
 
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
     for (amrex::MFIter mfi(ldataNew_p->state, amrex::TilingIfNotGPU());
          mfi.isValid(); ++mfi) {
@@ -1691,7 +1691,7 @@ PeleLM::getScalarDiffForce(
     auto* ldataR_p = getLevelDataReactPtr(lev);
 
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
     for (amrex::MFIter mfi(advData->Forcing[lev], amrex::TilingIfNotGPU());
          mfi.isValid(); ++mfi) {
