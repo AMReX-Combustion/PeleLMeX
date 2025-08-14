@@ -1,8 +1,6 @@
 #include <PeleLMeX.H>
 #include <PeleLMeX_K.H>
 
-using namespace amrex;
-
 #if NUM_ODE > 0
 void
 PeleLM::predictODEQty()
@@ -17,12 +15,13 @@ PeleLM::predictODEQty()
       *m_extSource[lev],
       [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
         for (int n = 0; n < NUM_ODE; n++) {
-          Real const& B_n = state_arrs[box_no](i, j, k, FIRSTODE + n);
-          Real const& S_ext_n = ext_src_arrs[box_no](i, j, k, FIRSTODE + n);
+          amrex::Real const& B_n = state_arrs[box_no](i, j, k, FIRSTODE + n);
+          amrex::Real const& S_ext_n =
+            ext_src_arrs[box_no](i, j, k, FIRSTODE + n);
           state_arrs[box_no](i, j, k, FIRSTODE + n) = B_n + dt * S_ext_n;
         }
       });
-    Gpu::streamSynchronize();
+    amrex::Gpu::streamSynchronize();
   }
 }
 #endif

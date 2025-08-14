@@ -221,12 +221,12 @@ struct DefaultProblemSpecificFunctions
      *   *ext_src,
      *   [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
      *     for (int n = 0; n < NUM_ODE; n++) {
-     *       Real B_n = state_old_arr[box_no](i, j, k, FIRSTODE + n);
-     *       Real src = -1.0 * pow(10.0, n + 1) * B_n;
+     *       amrex::Real B_n = state_old_arr[box_no](i, j, k, FIRSTODE + n);
+     *       amrex::Real src = -1.0 * pow(10.0, n + 1) * B_n;
      *       ext_src_arr[box_no](i, j, k, FIRSTODE + n) += src;
      *     }
      *   });
-     * Gpu::streamSynchronize();
+     * amrex::Gpu::streamSynchronize();
      */
   }
 

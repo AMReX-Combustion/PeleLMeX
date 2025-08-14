@@ -30,31 +30,29 @@ getTransportCoeff(
   pele::physics::eos::EosParm<pele::physics::PhysicsType::eos_type> const*
     eosparm) noexcept
 {
-  using namespace amrex::literals;
-
   auto eos = pele::physics::PhysicsType::eos(eosparm);
   amrex::Real mwtinv[NUM_SPECIES] = {0.0};
   eos.inv_molecular_weight(mwtinv);
 
   // Get rho & Y from rhoY
-  amrex::Real rho = 0.0_rt;
+  amrex::Real rho = 0.0;
   for (int n = 0; n < NUM_SPECIES; n++) {
     rho += rhoY(i, j, k, n);
   }
-  amrex::Real rhoinv = 1.0_rt / rho;
+  amrex::Real rhoinv = 1.0 / rho;
   amrex::Real y[NUM_SPECIES] = {0.0};
   for (int n = 0; n < NUM_SPECIES; n++) {
     y[n] = rhoY(i, j, k, n) * rhoinv;
   }
 
-  amrex::Real Wbar = 0.0_rt;
+  amrex::Real Wbar = 0.0;
   eos.Y2WBAR(y, Wbar);
 
   amrex::Real rho_cgs = m2c::Rho(rho); // MKS -> CGS conversion
   amrex::Real rhoDi_cgs[NUM_SPECIES] = {0.0};
-  amrex::Real lambda_cgs = 0.0_rt;
-  amrex::Real mu_cgs = 0.0_rt;
-  amrex::Real dummy_xi = 0.0_rt;
+  amrex::Real lambda_cgs = 0.0;
+  amrex::Real mu_cgs = 0.0;
+  amrex::Real dummy_xi = 0.0;
   amrex::Real chi_loc[NUM_SPECIES] = {0.0};
   amrex::Real Tloc = T(i, j, k);
 
@@ -72,7 +70,7 @@ getTransportCoeff(
   mu(i, j, k) = c2m::Mu(mu_cgs);
   if (do_fixed_Pr && do_fixed_Le) { // fixed Pr and Le, transport all dependent
                                     // on visc
-    amrex::Real cpmix_cgs = 0.0_rt;
+    amrex::Real cpmix_cgs = 0.0;
     eos.TY2Cp(T(i, j, k), y, cpmix_cgs);
     lambda(i, j, k) = PrInv * c2m::Cp(cpmix_cgs) * mu(i, j, k);
     amrex::Real ScInv = PrInv * LeInv;
@@ -80,25 +78,25 @@ getTransportCoeff(
       rhoDi(i, j, k, n) = ScInv * mu(i, j, k);
     }
   } else if (do_fixed_Pr) { // fixed Pr, still use species diffs
-    amrex::Real cpmix_cgs = 0.0_rt;
+    amrex::Real cpmix_cgs = 0.0;
     eos.TY2Cp(T(i, j, k), y, cpmix_cgs);
     lambda(i, j, k) = PrInv * c2m::Cp(cpmix_cgs) * mu(i, j, k);
     for (int n = 0; n < NUM_SPECIES; n++) {
-      rhoDi(i, j, k, n) = rhoDi_cgs[n] * Wbar * mwtinv[n] * 1.0e-1_rt;
+      rhoDi(i, j, k, n) = rhoDi_cgs[n] * Wbar * mwtinv[n] * 1.0e-1;
     }
   } else if (do_fixed_Le) { // fixed Le, still use thermal cond
     lambda(i, j, k) = c2m::Lambda(lambda_cgs);
-    amrex::Real cpmix_cgs = 0.0_rt;
+    amrex::Real cpmix_cgs = 0.0;
     eos.TY2Cp(T(i, j, k), y, cpmix_cgs);
     for (int n = 0; n < NUM_SPECIES; n++) {
-      rhoDi(i, j, k, n) = lambda_cgs * 1.0e-1_rt * LeInv / cpmix_cgs;
+      rhoDi(i, j, k, n) = lambda_cgs * 1.0e-1 * LeInv / cpmix_cgs;
     }
   } else { // full MA model, with Soret if needed
     lambda(i, j, k) = c2m::Lambda(lambda_cgs);
     for (int n = 0; n < NUM_SPECIES; n++) {
-      rhoDi(i, j, k, n) = rhoDi_cgs[n] * Wbar * mwtinv[n] * 1.0e-1_rt;
+      rhoDi(i, j, k, n) = rhoDi_cgs[n] * Wbar * mwtinv[n] * 1.0e-1;
       if (do_soret) {
-        rhotheta(i, j, k, n) = -rhoDi_cgs[n] * chi_loc[n] * 1.0e-1_rt;
+        rhotheta(i, j, k, n) = -rhoDi_cgs[n] * chi_loc[n] * 1.0e-1;
       }
     }
     if (do_soret) {
@@ -138,8 +136,6 @@ getTransportCoeff<pele::physics::eos::Manifold>(
   const pele::physics::eos::EosParm<pele::physics::PhysicsType::eos_type>*
     eosparm) noexcept
 {
-  using namespace amrex::literals;
-
   // No Soret with manifold moels
   AMREX_ASSERT(!do_soret);
 
@@ -155,9 +151,9 @@ getTransportCoeff<pele::physics::eos::Manifold>(
 
   amrex::Real rho_cgs = m2c::Rho(rho); // MKS -> CGS conversion
   amrex::Real rhoDi_cgs[NUM_SPECIES] = {0.0};
-  amrex::Real lambda_cgs = 0.0_rt;
-  amrex::Real mu_cgs = 0.0_rt;
-  amrex::Real dummy_xi = 0.0_rt;
+  amrex::Real lambda_cgs = 0.0;
+  amrex::Real mu_cgs = 0.0;
+  amrex::Real dummy_xi = 0.0;
   amrex::Real* dummy_chi = nullptr;
   amrex::Real Tloc = T(i, j, k);
 
@@ -173,7 +169,7 @@ getTransportCoeff<pele::physics::eos::Manifold>(
 
   // Do CGS -> MKS conversions
   for (int n = 0; n < NUM_SPECIES; n++) {
-    rhoDi(i, j, k, n) = rhoDi_cgs[n] * 1.0e-1_rt;
+    rhoDi(i, j, k, n) = rhoDi_cgs[n] * 1.0e-1;
   }
   lambda(i, j, k) = 0.0; // No need to carry lambda for manifold
   mu(i, j, k) = c2m::Mu(mu_cgs);
@@ -193,23 +189,21 @@ getVelViscosity(
     pele::physics::PhysicsType::eos_type,
     pele::physics::PhysicsType::transport_type> const* trans_parm) noexcept
 {
-  using namespace amrex::literals;
-
   // Get rho & Y from rhoY
   amrex::Real massdens[NUM_SPECIES];
   for (int n = 0; n < NUM_SPECIES; n++) {
     massdens[n] = rhoY(i, j, k, n);
   }
-  amrex::Real rho = 0.0_rt, rhoinv = 0.0_rt, y[NUM_SPECIES] = {0.0};
+  amrex::Real rho = 0.0, rhoinv = 0.0, y[NUM_SPECIES] = {0.0};
   pele::physics::PhysicsType::eos_type::RY2RRinvY(massdens, rho, rhoinv, y);
 
   amrex::Real rho_cgs = m2c::Rho(rho); // MKS -> CGS conversion
   amrex::Real temp = T(i, j, k);
   amrex::Real dummy_rhoDi[NUM_SPECIES] = {0.0};
   amrex::Real dummy_chi[NUM_SPECIES] = {0.0};
-  amrex::Real dummy_lambda = 0.0_rt;
-  amrex::Real mu_cgs = 0.0_rt;
-  amrex::Real dummy_xi = 0.0_rt;
+  amrex::Real dummy_lambda = 0.0;
+  amrex::Real mu_cgs = 0.0;
+  amrex::Real dummy_xi = 0.0;
 
   constexpr bool get_xi = false;
   constexpr bool get_mu = true;
@@ -239,13 +233,11 @@ getPGivenRTY(
   pele::physics::eos::EosParm<pele::physics::PhysicsType::eos_type> const*
     eosparm) noexcept
 {
-  using namespace amrex::literals;
-
   auto eos = pele::physics::PhysicsType::eos(eosparm);
-  amrex::Real rhoinv = 1.0_rt / rho(i, j, k);
+  amrex::Real rhoinv = 1.0 / rho(i, j, k);
   amrex::Real rho_cgs = m2c::Rho(rho(i, j, k));
 
-  amrex::Real y[NUM_SPECIES] = {0.0_rt};
+  amrex::Real y[NUM_SPECIES] = {0.0};
   for (int n = 0; n < NUM_SPECIES; n++) {
     y[n] = rhoY(i, j, k, n) * rhoinv;
   }
@@ -273,26 +265,24 @@ compute_divu(
   pele::physics::eos::EosParm<pele::physics::PhysicsType::eos_type> const*
     eosparm) noexcept
 {
-  using namespace amrex::literals;
-
   auto eos = pele::physics::PhysicsType::eos(eosparm);
   amrex::Real mwtinv[NUM_SPECIES] = {0.0};
   eos.inv_molecular_weight(mwtinv);
 
   // Get rho & Y from rhoY
-  amrex::Real rho = 0.0_rt;
+  amrex::Real rho = 0.0;
   for (int n = 0; n < NUM_SPECIES; n++) {
     rho += rhoY(i, j, k, n);
   }
-  amrex::Real rhoinv = 1.0_rt / rho;
+  amrex::Real rhoinv = 1.0 / rho;
   amrex::Real y[NUM_SPECIES] = {0.0};
   for (int n = 0; n < NUM_SPECIES; n++) {
     y[n] = rhoY(i, j, k, n) * rhoinv;
   }
 
-  amrex::Real cpmix_cgs = 0.0_rt;
+  amrex::Real cpmix_cgs = 0.0;
   eos.TY2Cp(T(i, j, k), y, cpmix_cgs);
-  amrex::Real Wbar = 0.0_rt;
+  amrex::Real Wbar = 0.0;
   eos.Y2WBAR(y, Wbar);
   amrex::Real hi_cgs[NUM_SPECIES] = {0.0};
   eos.T2Hi(T(i, j, k), hi_cgs);
@@ -303,7 +293,7 @@ compute_divu(
   }
 
   // Note: divu does not depend on extRho. See docs and PR #428 for details.
-  amrex::Real denominv = 1.0_rt / (rho * cpmix * T(i, j, k));
+  amrex::Real denominv = 1.0 / (rho * cpmix * T(i, j, k));
   divu(i, j, k) =
     (specEnthDiff(i, j, k) + tempDiff(i, j, k) + extRhoH(i, j, k)) * denominv;
   for (int n = 0; n < NUM_SPECIES; n++) {
@@ -334,12 +324,10 @@ compute_divu<pele::physics::eos::Manifold>(
   pele::physics::eos::EosParm<pele::physics::PhysicsType::eos_type> const*
     eosparm) noexcept
 {
-  using namespace amrex::literals;
-
   // Get rho & Ys from rhoYs.
   amrex::Real rho, rhoinv;
-  amrex::Real y[NUM_SPECIES] = {0.0_rt};
-  amrex::Real massdens[NUM_SPECIES] = {0.0_rt};
+  amrex::Real y[NUM_SPECIES] = {0.0};
+  amrex::Real massdens[NUM_SPECIES] = {0.0};
   for (int n = 0; n < NUM_SPECIES; n++) {
     massdens[n] = rhoY(i, j, k, n);
   }
@@ -383,8 +371,6 @@ extFluxDivergence_K(
   const amrex::Real& scaling,
   amrex::Array4<amrex::Real> const& div) noexcept
 {
-  using namespace amrex::literals;
-
   amrex::Real factor = scaling / vol(i, j, k);
 
   for (int n = 0; n < ncomp; n++) {
@@ -417,8 +403,6 @@ EB_intFluxDivergence_K(
   const amrex::Real& scaling,
   amrex::Array4<amrex::Real> const& div) noexcept
 {
-  using namespace amrex::literals;
-
   amrex::Real factor = scaling / vol(i, j, k);
 
   for (int n = 0; n < ncomp; n++) {
@@ -457,8 +441,6 @@ EB_intFluxDivergence_K(
   const amrex::Real& scaling,
   amrex::Array4<amrex::Real> const& div) noexcept
 {
-  using namespace amrex::literals;
-
   amrex::Real factor = scaling / vol(i, j, k);
   amrex::Real eb_area = AMREX_D_TERM(1.0, *a_dx, *a_dx) * ebAreaFrac(i, j, k);
 
@@ -492,8 +474,6 @@ intFluxDivergence_K(
   const amrex::Real& scaling,
   amrex::Array4<amrex::Real> const& div) noexcept
 {
-  using namespace amrex::literals;
-
   amrex::Real factor = scaling / vol(i, j, k);
 
   for (int n = 0; n < ncomp; n++) {
@@ -524,8 +504,6 @@ intFluxDivergence_rz_K(
   const amrex::Real& scaling,
   amrex::Array4<amrex::Real> const& div) noexcept
 {
-  using namespace amrex::literals;
-
   amrex::Real factor = scaling / vol(i, j, k);
 
   for (int n = 0; n < ncomp; n++) {
@@ -551,17 +529,15 @@ getMwmixGivenRY(
   pele::physics::eos::EosParm<pele::physics::PhysicsType::eos_type> const*
     eosparm) noexcept
 {
-  using namespace amrex::literals;
-
   auto eos = pele::physics::PhysicsType::eos(eosparm);
-  amrex::Real rhoinv = 1.0_rt / rho(i, j, k);
-  amrex::Real y[NUM_SPECIES] = {0.0_rt};
+  amrex::Real rhoinv = 1.0 / rho(i, j, k);
+  amrex::Real y[NUM_SPECIES] = {0.0};
   for (int n = 0; n < NUM_SPECIES; n++) {
     y[n] = rhoY(i, j, k, n) * rhoinv;
   }
 
   eos.Y2WBAR(y, Mwmix(i, j, k));
-  Mwmix(i, j, k) = Mwmix(i, j, k) * 0.001_rt; // CGS -> MKS conversion
+  Mwmix(i, j, k) = Mwmix(i, j, k) * 0.001; // CGS -> MKS conversion
 }
 
 AMREX_GPU_DEVICE
@@ -577,10 +553,8 @@ getGradMwmixGivengradYMwmix(
   pele::physics::eos::EosParm<pele::physics::PhysicsType::eos_type> const*
     eosparm) noexcept
 {
-  using namespace amrex::literals;
-
   auto eos = pele::physics::PhysicsType::eos(eosparm);
-  amrex::Real imw[NUM_SPECIES] = {0.0_rt};
+  amrex::Real imw[NUM_SPECIES] = {0.0};
   eos.inv_molecular_weight(imw);
   gradMwmix(i, j, k) = 0.0;
   for (int n = 0; n < NUM_SPECIES; n++) {
@@ -606,8 +580,6 @@ cen2edg_cpp(
   amrex::Array4<const amrex::Real> const& cfab,
   amrex::Array4<amrex::Real> const& efab) noexcept
 {
-  using namespace amrex::literals;
-
   // Default behavior: id_l -1 in dir
   // Handle the BCs
   // Need -1 in id_l and id_h in dir on low Dirichlet BC
@@ -626,20 +598,20 @@ cen2edg_cpp(
     for (int n = 0; n < ncomp; n++) {
       if (
         (cfab(id_l[0], id_l[1], id_l[2], n) *
-         cfab(id_h[0], id_h[1], id_h[2], n)) > 0.0_rt) {
-        efab(i, j, k, n) = 2.0_rt *
+         cfab(id_h[0], id_h[1], id_h[2], n)) > 0.0) {
+        efab(i, j, k, n) = 2.0 *
                            (cfab(id_l[0], id_l[1], id_l[2], n) *
                             cfab(id_h[0], id_h[1], id_h[2], n)) /
                            (cfab(id_l[0], id_l[1], id_l[2], n) +
                             cfab(id_h[0], id_h[1], id_h[2], n));
       } else {
-        efab(i, j, k, n) = 0.0_rt;
+        efab(i, j, k, n) = 0.0;
       }
     }
   } else {
     for (int n = 0; n < ncomp; n++) {
-      efab(i, j, k, n) = 0.5_rt * (cfab(id_l[0], id_l[1], id_l[2], n) +
-                                   cfab(id_h[0], id_h[1], id_h[2], n));
+      efab(i, j, k, n) = 0.5 * (cfab(id_l[0], id_l[1], id_l[2], n) +
+                                cfab(id_h[0], id_h[1], id_h[2], n));
     }
   }
 }
@@ -657,8 +629,6 @@ repair_flux(
   amrex::Array4<const amrex::Real> const& rhoY,
   amrex::Array4<amrex::Real> const& flux) noexcept
 {
-  using namespace amrex::literals;
-
   // Handle the BCs : need a -1 on id_l in dir away from the BC
   // Need -1 in id_l and id_h in dir on low Dirichlet BC
   // Need nothing on high Dirichlet BC
@@ -673,16 +643,16 @@ repair_flux(
     id_h[dir] -= 1;
   }
 
-  amrex::Real sumFlux = 0.0_rt;
-  amrex::Real sumRhoYe = 0.0_rt;
+  amrex::Real sumFlux = 0.0;
+  amrex::Real sumRhoYe = 0.0;
   amrex::Real RhoYe[NUM_SPECIES] = {0.0};
   for (int n = 0; n < NUM_SPECIES; n++) {
     sumFlux += flux(i, j, k, n);
-    RhoYe[n] = 0.5_rt * (rhoY(id_l[0], id_l[1], id_l[2], n) +
-                         rhoY(id_h[0], id_h[1], id_h[2], n));
+    RhoYe[n] = 0.5 * (rhoY(id_l[0], id_l[1], id_l[2], n) +
+                      rhoY(id_h[0], id_h[1], id_h[2], n));
     sumRhoYe += RhoYe[n];
   }
-  sumRhoYe = 1.0_rt / sumRhoYe;
+  sumRhoYe = 1.0 / sumRhoYe;
   for (int n = 0; n < NUM_SPECIES; n++) {
     flux(i, j, k, n) -= sumFlux * RhoYe[n] * sumRhoYe;
   }
@@ -703,14 +673,12 @@ repair_flux_eb(
   amrex::Array4<const amrex::Real> const& areafrac,
   amrex::Array4<amrex::Real> const& flux) noexcept
 {
-  using namespace amrex::literals;
-
   // Handle the BCs : need a -1 on id_l in dir on Dirichlet BC
   int id_l[3] = {i, j, k};
   id_l[dir] -= 1;
-  if (areafrac(i, j, k) > 0.0_rt) {
-    amrex::Real sumFlux = 0.0_rt;
-    amrex::Real sumRhoYe = 0.0_rt;
+  if (areafrac(i, j, k) > 0.0) {
+    amrex::Real sumFlux = 0.0;
+    amrex::Real sumRhoYe = 0.0;
     amrex::Real RhoYe[NUM_SPECIES] = {0.0};
     for (int n = 0; n < NUM_SPECIES; n++) {
       sumFlux += flux(i, j, k, n);
@@ -723,13 +691,13 @@ repair_flux_eb(
       }
       sumRhoYe += RhoYe[n];
     }
-    sumRhoYe = 1.0_rt / sumRhoYe;
+    sumRhoYe = 1.0 / sumRhoYe;
     for (int n = 0; n < NUM_SPECIES; n++) {
       flux(i, j, k, n) -= sumFlux * RhoYe[n] * sumRhoYe;
     }
   } else {
     for (int n = 0; n < NUM_SPECIES; n++) {
-      flux(i, j, k, n) = 0.0_rt;
+      flux(i, j, k, n) = 0.0;
     }
   }
 }
@@ -746,13 +714,11 @@ getHGivenT(
   pele::physics::eos::EosParm<pele::physics::PhysicsType::eos_type> const*
     eosparm) noexcept
 {
-  using namespace amrex::literals;
-
   auto eos = pele::physics::PhysicsType::eos(eosparm);
-  amrex::Real hi_spec[NUM_SPECIES] = {0.0_rt};
+  amrex::Real hi_spec[NUM_SPECIES] = {0.0};
   eos.T2Hi(T(i, j, k), hi_spec);
   for (int n = 0; n < NUM_SPECIES; n++) {
-    Hi(i, j, k, n) = hi_spec[n] * 0.0001_rt; // CGS -> MKS conversion
+    Hi(i, j, k, n) = hi_spec[n] * 0.0001; // CGS -> MKS conversion
   }
 }
 
@@ -781,8 +747,6 @@ makeVelForce(
   amrex::Array4<const amrex::Real> const& extrho,
   amrex::Array4<amrex::Real> const& force) noexcept
 {
-  using namespace amrex::literals;
-
   // Switch between incompressible/low-Mach rhos
   amrex::Real rho_lcl = 0.0;
   if (is_incomp != 0) {
@@ -822,11 +786,9 @@ getRHmixGivenTY(
   pele::physics::eos::EosParm<pele::physics::PhysicsType::eos_type> const*
     eosparm) noexcept
 {
-  using namespace amrex::literals;
-
   auto eos = pele::physics::PhysicsType::eos(eosparm);
-  amrex::Real rhoinv = 1.0_rt / rho(i, j, k);
-  amrex::Real y[NUM_SPECIES] = {0.0_rt};
+  amrex::Real rhoinv = 1.0 / rho(i, j, k);
+  amrex::Real y[NUM_SPECIES] = {0.0};
   for (int n = 0; n < NUM_SPECIES; n++) {
     y[n] = rhoY(i, j, k, n) * rhoinv;
   }
@@ -849,10 +811,8 @@ getTfromHY(
   pele::physics::eos::EosParm<pele::physics::PhysicsType::eos_type> const*
     eosparm) noexcept
 {
-  using namespace amrex::literals;
-
   auto eos = pele::physics::PhysicsType::eos(eosparm);
-  amrex::Real rhoinv = 1.0_rt / rho(i, j, k);
+  amrex::Real rhoinv = 1.0 / rho(i, j, k);
   amrex::Real y[NUM_SPECIES] = {0.0};
   for (int n = 0; n < NUM_SPECIES; n++) {
     y[n] = rhoY(i, j, k, n) * rhoinv;
@@ -877,10 +837,8 @@ getCpmixGivenRYT(
   pele::physics::eos::EosParm<pele::physics::PhysicsType::eos_type> const*
     eosparm) noexcept
 {
-  using namespace amrex::literals;
-
   auto eos = pele::physics::PhysicsType::eos(eosparm);
-  amrex::Real rhoinv = 1.0_rt / rho(i, j, k);
+  amrex::Real rhoinv = 1.0 / rho(i, j, k);
   amrex::Real y[NUM_SPECIES] = {0.0};
   for (int n = 0; n < NUM_SPECIES; n++) {
     y[n] = rhoY(i, j, k, n) * rhoinv;
@@ -917,15 +875,13 @@ buildAdvectionForcing(
   pele::physics::eos::EosParm<pele::physics::PhysicsType::eos_type> const*
     eosparm) noexcept
 {
-  using namespace amrex::literals;
-
   auto eos = pele::physics::PhysicsType::eos(eosparm);
   // Get species enthalpy
   amrex::Real hi_spec_cgs[NUM_SPECIES] = {0.0};
   eos.T2Hi(T(i, j, k), hi_spec_cgs);
 
   // For species mass fractions
-  amrex::Real rhoinv = 1.0_rt / rho(i, j, k);
+  amrex::Real rhoinv = 1.0 / rho(i, j, k);
   amrex::Real y[NUM_SPECIES] = {0.0};
 
   forceT(i, j, k) = dn(i, j, k, NUM_SPECIES) + ddn(i, j, k);
@@ -956,9 +912,9 @@ buildAdvectionForcing(
     // TO DO: source terms for Aux
   }
 
-  amrex::Real cpmix_cgs = 0.0_rt;
+  amrex::Real cpmix_cgs = 0.0;
   eos.TY2Cp(T(i, j, k), y, cpmix_cgs);
-  amrex::Real cpmixinv = 1.0_rt / c2m::Cp(cpmix_cgs); // CGS -> MKS conversion
+  amrex::Real cpmixinv = 1.0 / c2m::Cp(cpmix_cgs); // CGS -> MKS conversion
   forceT(i, j, k) *= rhoinv * cpmixinv;
 }
 
@@ -994,11 +950,9 @@ buildDiffusionForcing(
   const int* aux_diffuse,
   int nAux) noexcept
 {
-  using namespace amrex::literals;
-
   for (int n = 0; n < NUM_SPECIES; n++) {
     forceY(i, j, k, n) = a(i, j, k, n) +
-                         0.5_rt * (dn(i, j, k, n) - dnp1k(i, j, k, n)) +
+                         0.5 * (dn(i, j, k, n) - dnp1k(i, j, k, n)) +
                          extRhoY(i, j, k, n);
     if (do_react != 0) {
       forceY(i, j, k, n) += r(i, j, k, n);
@@ -1011,8 +965,8 @@ buildDiffusionForcing(
     }
   }
   forceT(i, j, k) = a(i, j, k, NUM_SPECIES) +
-                    0.5_rt * (dn(i, j, k, NUM_SPECIES) + ddn(i, j, k) -
-                              dnp1k(i, j, k, NUM_SPECIES) - ddnp1k(i, j, k)) +
+                    0.5 * (dn(i, j, k, NUM_SPECIES) + ddn(i, j, k) -
+                           dnp1k(i, j, k, NUM_SPECIES) - ddnp1k(i, j, k)) +
                     extRhoH(i, j, k);
 
   if (closed_chamber == 1) {
@@ -1023,7 +977,7 @@ buildDiffusionForcing(
     forceAux(i, j, k, n) = 0.0;
     if (aux_diffuse[n] != 0) {
       forceAux(i, j, k, n) +=
-        0.5_rt * (dn_aux(i, j, k, n) - dnp1k_aux(i, j, k, n));
+        0.5 * (dn_aux(i, j, k, n) - dnp1k_aux(i, j, k, n));
     }
     if (aux_advect[n] != 0) {
       forceAux(i, j, k, n) += a_aux(i, j, k, n);
@@ -1046,8 +1000,6 @@ reactionRateRhoY(
   pele::physics::eos::EosParm<pele::physics::PhysicsType::eos_type> const*
     eosparm) noexcept
 {
-  using namespace amrex::literals;
-
   auto eos = pele::physics::PhysicsType::eos(eosparm);
 
   // Get rho & Ys from rhoYs.
@@ -1062,10 +1014,10 @@ reactionRateRhoY(
 
   // Get wdot.
   amrex::Real rho_cgs = m2c::Rho(rho); // rho MKS -> CGS
-  amrex::Real wdot[NUM_SPECIES] = {0.0_rt};
+  amrex::Real wdot[NUM_SPECIES] = {0.0};
   eos.RTY2WDOT(rho_cgs, Tloc, y, wdot);
   for (int n = 0; n < NUM_SPECIES; n++) {
-    rhoYdot(i, j, k, n) = wdot[n] * 1000.0_rt; // CGS -> MKS conversion
+    rhoYdot(i, j, k, n) = wdot[n] * 1000.0; // CGS -> MKS conversion
   }
 }
 
@@ -1081,8 +1033,6 @@ fabMinMax(
   amrex::Real fmax,
   amrex::Array4<amrex::Real> const& fab) noexcept
 {
-  using namespace amrex::literals;
-
   for (int n = 0; n < ncomp; n++) {
     fab(i, j, k, n) = amrex::max(fmin, amrex::min(fmax, fab(i, j, k, n)));
   }
@@ -1102,14 +1052,12 @@ est_divu_dt_1(
   amrex::Array4<const amrex::Real> const& rho,
   amrex::Array4<const amrex::Real> const& divu) noexcept
 {
-  using namespace amrex::literals;
-
-  amrex::Real dtcell = 1.0e20_rt;
+  amrex::Real dtcell = 1.0e20;
   const bool rho_is_okay = (rho(i, j, k) > rhomin);
 
-  if (divu(i, j, k) > 0.0_rt) {
-    dtcell = (rho_is_okay) ? (1.0_rt - rhomin / rho(i, j, k)) / divu(i, j, k)
-                           : 1.0_rt / divu(i, j, k);
+  if (divu(i, j, k) > 0.0) {
+    dtcell = (rho_is_okay) ? (1.0 - rhomin / rho(i, j, k)) / divu(i, j, k)
+                           : 1.0 / divu(i, j, k);
     dtcell *= dtfactor;
   }
   return dtcell;
@@ -1131,10 +1079,8 @@ est_divu_dt_2(
   amrex::Array4<const amrex::Real> const& vel,
   amrex::Array4<const amrex::Real> const& divu) noexcept
 {
-  using namespace amrex::literals;
-
-  amrex::Real dtcell = 1.0e20_rt;
-  amrex::Real denom = 0.0_rt;
+  amrex::Real dtcell = 1.0e20;
+  amrex::Real denom = 0.0;
   bool rho_is_okay = (rho(i, j, k) > rhomin);
 
   denom =
@@ -1143,7 +1089,7 @@ est_divu_dt_2(
       vel(i, j, k, 0) * (rho(i + 1, j, k) - rho(i - 1, j, k)) * dxinv[0],
       +vel(i, j, k, 1) * (rho(i, j + 1, k) - rho(i, j - 1, k)) * dxinv[1],
       +vel(i, j, k, 2) * (rho(i, j, k + 1) - rho(i, j, k - 1)) * dxinv[2]);
-  if (denom > 0.0_rt) {
+  if (denom > 0.0) {
     dtcell = (rho_is_okay) ? (rho(i, j, k) - rhomin) / denom
                            : std::abs(rho(i, j, k)) / denom;
     dtcell *= dtfactor;
@@ -1167,16 +1113,14 @@ check_divu_dt(
   amrex::Array4<const amrex::Real> const& divu,
   amrex::Real const& a_dt) noexcept
 {
-  using namespace amrex::literals;
-
-  amrex::Real dtcell = 1.0e12_rt;
-  amrex::Real denom = 0.0_rt;
+  amrex::Real dtcell = 1.0e12;
+  amrex::Real denom = 0.0;
   bool rho_is_okay = (rho(i, j, k) > rhomin);
 
   if (check_type == 1) { // Check based on divU
-    if (divu(i, j, k) > 0.0_rt) {
-      dtcell = (rho_is_okay) ? (1.0_rt - rhomin / rho(i, j, k)) / divu(i, j, k)
-                             : 1.0_rt / divu(i, j, k);
+    if (divu(i, j, k) > 0.0) {
+      dtcell = (rho_is_okay) ? (1.0 - rhomin / rho(i, j, k)) / divu(i, j, k)
+                             : 1.0 / divu(i, j, k);
     }
   } else if (check_type == 2) { // Check based rho * divU + u \cdot grad rho
     denom =
@@ -1185,7 +1129,7 @@ check_divu_dt(
         vel(i, j, k, 0) * (rho(i + 1, j, k) - rho(i - 1, j, k)) * dxinv[0],
         +vel(i, j, k, 1) * (rho(i, j + 1, k) - rho(i, j - 1, k)) * dxinv[1],
         +vel(i, j, k, 2) * (rho(i, j, k + 1) - rho(i, j, k - 1)) * dxinv[2]);
-    if (denom > 0.0_rt) {
+    if (denom > 0.0) {
       dtcell = (rho_is_okay) ? (rho(i, j, k) - rhomin) / denom
                              : std::abs(rho(i, j, k)) / denom;
     }
@@ -1209,23 +1153,21 @@ getGammaInv(
   pele::physics::eos::EosParm<pele::physics::PhysicsType::eos_type> const*
     eosparm) noexcept
 {
-  using namespace amrex::literals;
-
   auto eos = pele::physics::PhysicsType::eos(eosparm);
   // Get rho & Y from rhoY
-  amrex::Real rho = 0.0_rt;
+  amrex::Real rho = 0.0;
   for (int n = 0; n < NUM_SPECIES; n++) {
     rho += rhoY(i, j, k, n);
   }
-  amrex::Real rhoinv = 1.0_rt / rho;
+  amrex::Real rhoinv = 1.0 / rho;
   amrex::Real y[NUM_SPECIES] = {0.0};
   for (int n = 0; n < NUM_SPECIES; n++) {
     y[n] = rhoY(i, j, k, n) * rhoinv;
   }
 
-  amrex::Real cpmix = 0.0_rt;
+  amrex::Real cpmix = 0.0;
   eos.TY2Cp(T(i, j, k), y, cpmix);
-  amrex::Real cvmix = 0.0_rt;
+  amrex::Real cvmix = 0.0;
   eos.TY2Cv(T(i, j, k), y, cvmix);
 
   amrex::Real gammainv = cvmix / cpmix;
@@ -1304,8 +1246,6 @@ getTurbViscSmagorinsky(
   amrex::Array4<const amrex::Real> const& rho,
   amrex::Array4<amrex::Real> const& mu_t) noexcept
 {
-  using namespace amrex::literals;
-
   // mu_t = rho * Cs * Delta^2 * |S|    where |S| = sqrt(2 SijSij)
 
   amrex::Real Smag = std::sqrt(2.0 * getSijSij(i, j, k, velgrad));
@@ -1324,8 +1264,6 @@ getTurbViscWALE(
   amrex::Array4<const amrex::Real> const& rho,
   amrex::Array4<amrex::Real> const& mu_t) noexcept
 {
-  using namespace amrex::literals;
-
   // From Ducros, Nicoud, and Poinsot 1999
   // mu_t = rho * Cs * Delta^2 * (S^d_ijS^d_ij)^(3/2)
   //        / (SijSij^(5/2) + (S^d_ijS^d_ij)^(5/4) + smallnum)
@@ -1357,8 +1295,6 @@ getTurbViscSigma(
   amrex::ignore_unused(i, j, k, prefactor, velgrad, rho, mu_t);
   amrex::Abort("getTurbViscSigma not implemented in 2D");
 #elif (AMREX_SPACEDIM == 3)
-  using namespace amrex::literals;
-
   // From Nicoud, et al . 2011
   // mu_t = rho * Cs * Delta^2 * \sig_3(\sig_1-\sig_2)(\sig_2-\sig_3)
   //        / (\sig_1*\sig_1 + smallnum)

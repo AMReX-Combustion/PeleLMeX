@@ -21,8 +21,6 @@
 #include "PeleLMRad.H"
 #endif
 
-using namespace amrex;
-
 namespace {
 const std::string level_prefix{"Level_"};
 }
@@ -36,14 +34,14 @@ GotoNextLine(std::istream& is)
 
 void
 PeleLM::WriteDebugPlotFile(
-  const Vector<const MultiFab*>& a_MF, const std::string& pltname)
+  const amrex::Vector<const amrex::MultiFab*>& a_MF, const std::string& pltname)
 {
   int nComp = a_MF[0]->nComp();
-  Vector<std::string> names(nComp);
+  amrex::Vector<std::string> names(nComp);
   for (int n = 0; n < nComp; n++) {
     names[n] = "comp" + std::to_string(n);
   }
-  Vector<int> istep(finest_level + 1, m_nstep);
+  amrex::Vector<int> istep(finest_level + 1, m_nstep);
 #ifdef AMREX_USE_HDF5
   if (m_write_hdf5_pltfile) {
     amrex::WriteMultiLevelPlotfileHDF5(
@@ -80,7 +78,7 @@ PeleLM::WritePlotFile()
     }
   }
 
-  VisMF::SetNOutFiles(m_nfiles);
+  amrex::VisMF::SetNOutFiles(m_nfiles);
 
   //----------------------------------------------------------------
   // Average down the state
@@ -174,18 +172,19 @@ PeleLM::WritePlotFile()
 
   //----------------------------------------------------------------
   // Plot MultiFabs
-  Vector<MultiFab> mf_plt(finest_level + 1);
+  amrex::Vector<amrex::MultiFab> mf_plt(finest_level + 1);
   for (int lev = 0; lev <= finest_level; ++lev) {
-    mf_plt[lev].define(grids[lev], dmap[lev], ncomp, 0, MFInfo(), Factory(lev));
+    mf_plt[lev].define(
+      grids[lev], dmap[lev], ncomp, 0, amrex::MFInfo(), Factory(lev));
   }
 
   //----------------------------------------------------------------
   // Components names
-  Vector<std::string> names;
+  amrex::Vector<std::string> names;
   pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(
     names, &(eos_parms.host_parm()));
 
-  Vector<std::string> plt_VarsName;
+  amrex::Vector<std::string> plt_VarsName;
   AMREX_D_TERM(plt_VarsName.push_back("x_velocity");
                , plt_VarsName.push_back("y_velocity");
                , plt_VarsName.push_back("z_velocity"));
@@ -311,87 +310,94 @@ PeleLM::WritePlotFile()
   for (int lev = 0; lev <= finest_level; ++lev) {
     int cnt = 0;
     if (m_incompressible != 0) {
-      MultiFab::Copy(
+      amrex::MultiFab::Copy(
         mf_plt[lev], m_leveldata_new[lev]->state, 0, cnt, AMREX_SPACEDIM, 0);
       cnt += AMREX_SPACEDIM;
     } else {
       // Velocity and density
-      MultiFab::Copy(
+      amrex::MultiFab::Copy(
         mf_plt[lev], m_leveldata_new[lev]->state, 0, cnt, AMREX_SPACEDIM + 1,
         0);
       cnt += AMREX_SPACEDIM + 1;
       // Species only if requested
       if (m_plotStateSpec != 0) {
-        MultiFab::Copy(
+        amrex::MultiFab::Copy(
           mf_plt[lev], m_leveldata_new[lev]->state, FIRSTSPEC, cnt, NUM_SPECIES,
           0);
         cnt += NUM_SPECIES;
       }
-      MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->state, RHOH, cnt, 3, 0);
+      amrex::MultiFab::Copy(
+        mf_plt[lev], m_leveldata_new[lev]->state, RHOH, cnt, 3, 0);
       cnt += 3;
 #ifdef PELE_USE_PLASMA
-      MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->state, NE, cnt, 2, 0);
+      amrex::MultiFab::Copy(
+        mf_plt[lev], m_leveldata_new[lev]->state, NE, cnt, 2, 0);
       cnt += 2;
 #endif
 #ifdef PELE_USE_SOOT
-      MultiFab::Copy(
+      amrex::MultiFab::Copy(
         mf_plt[lev], m_leveldata_new[lev]->state, FIRSTSOOT, cnt, NUMSOOTVAR,
         0);
       cnt += NUMSOOTVAR;
 #endif
 #ifdef PELE_USE_RADIATION
       if (do_rad_solve) {
-        MultiFab::Copy(mf_plt[lev], rad_model->G()[lev], 0, cnt, 1, 0);
+        amrex::MultiFab::Copy(mf_plt[lev], rad_model->G()[lev], 0, cnt, 1, 0);
         cnt += 1;
-        MultiFab::Copy(mf_plt[lev], rad_model->kappa()[lev], 0, cnt, 1, 0);
+        amrex::MultiFab::Copy(
+          mf_plt[lev], rad_model->kappa()[lev], 0, cnt, 1, 0);
         cnt += 1;
-        MultiFab::Copy(mf_plt[lev], rad_model->emis()[lev], 0, cnt, 1, 0);
+        amrex::MultiFab::Copy(
+          mf_plt[lev], rad_model->emis()[lev], 0, cnt, 1, 0);
         cnt += 1;
       }
 #endif
       if (m_has_divu != 0) {
-        MultiFab::Copy(mf_plt[lev], m_leveldata_new[lev]->divu, 0, cnt, 1, 0);
+        amrex::MultiFab::Copy(
+          mf_plt[lev], m_leveldata_new[lev]->divu, 0, cnt, 1, 0);
         cnt += 1;
       }
     }
     if (m_plot_grad_p != 0) {
-      MultiFab::Copy(
+      amrex::MultiFab::Copy(
         mf_plt[lev], m_leveldata_new[lev]->gp, 0, cnt, AMREX_SPACEDIM, 0);
       cnt += AMREX_SPACEDIM;
     }
 
     if (m_nAux > 0) {
-      MultiFab::Copy(
+      amrex::MultiFab::Copy(
         mf_plt[lev], m_leveldata_new[lev]->auxiliaries, 0, cnt, m_nAux, 0);
       cnt += m_nAux;
     }
 
     if ((m_do_react != 0) && (m_skipInstantRR == 0) && (m_plot_react != 0)) {
-      MultiFab::Copy(
+      amrex::MultiFab::Copy(
         mf_plt[lev], m_leveldatareact[lev]->I_R, 0, cnt, nCompIR(), 0);
       cnt += nCompIR();
 
-      MultiFab::Copy(mf_plt[lev], m_leveldatareact[lev]->functC, 0, cnt, 1, 0);
+      amrex::MultiFab::Copy(
+        mf_plt[lev], m_leveldatareact[lev]->functC, 0, cnt, 1, 0);
       cnt += 1;
 
       if (m_plotHeatRelease != 0) {
-        std::unique_ptr<MultiFab> mf;
-        mf = std::make_unique<MultiFab>(grids[lev], dmap[lev], 1, 0);
+        std::unique_ptr<amrex::MultiFab> mf;
+        mf = std::make_unique<amrex::MultiFab>(grids[lev], dmap[lev], 1, 0);
         getHeatRelease(lev, mf.get());
-        MultiFab::Copy(mf_plt[lev], *mf, 0, cnt, 1, 0);
+        amrex::MultiFab::Copy(mf_plt[lev], *mf, 0, cnt, 1, 0);
         cnt += 1;
       }
     }
 
 #ifdef AMREX_USE_EB
-    MultiFab::Copy(mf_plt[lev], EBFactory(lev).getVolFrac(), 0, cnt, 1, 0);
+    amrex::MultiFab::Copy(
+      mf_plt[lev], EBFactory(lev).getVolFrac(), 0, cnt, 1, 0);
     cnt += 1;
 #endif
 
     for (int ivar = 0; ivar < m_derivePlotVarCount; ivar++) {
-      std::unique_ptr<MultiFab> mf;
+      std::unique_ptr<amrex::MultiFab> mf;
       mf = derive(m_derivePlotVars[ivar], m_cur_time, lev, 0);
-      MultiFab::Copy(mf_plt[lev], *mf, 0, cnt, mf->nComp(), 0);
+      amrex::MultiFab::Copy(mf_plt[lev], *mf, 0, cnt, mf->nComp(), 0);
       cnt += mf->nComp();
     }
 #ifdef PELE_USE_SPRAY
@@ -400,26 +406,27 @@ PeleLM::WritePlotFile()
       mf_plt[lev].setVal(0., cnt, num_spray_derive);
       SprayPC->computeDerivedVars(mf_plt[lev], lev, cnt);
       if (lev < finest_level) {
-        MultiFab tmp_plt(
-          grids[lev], dmap[lev], num_spray_derive, 0, MFInfo(), Factory(lev));
+        amrex::MultiFab tmp_plt(
+          grids[lev], dmap[lev], num_spray_derive, 0, amrex::MFInfo(),
+          Factory(lev));
         tmp_plt.setVal(0.);
         VirtPC->computeDerivedVars(tmp_plt, lev, 0);
-        MultiFab::Add(mf_plt[lev], tmp_plt, 0, cnt, num_spray_derive, 0);
+        amrex::MultiFab::Add(mf_plt[lev], tmp_plt, 0, cnt, num_spray_derive, 0);
       }
       cnt += num_spray_derive;
     }
     if (do_spray_particles && SprayParticleContainer::plot_spray_src) {
       SprayComps scomps = SprayParticleContainer::getSprayComps();
-      MultiFab::Copy(
+      amrex::MultiFab::Copy(
         mf_plt[lev], *m_spraysource[lev], scomps.rhoSrcIndx, cnt++, 1, 0);
-      MultiFab::Copy(
+      amrex::MultiFab::Copy(
         mf_plt[lev], *m_spraysource[lev], scomps.engSrcIndx, cnt++, 1, 0);
-      MultiFab::Copy(
+      amrex::MultiFab::Copy(
         mf_plt[lev], *m_spraysource[lev], scomps.momSrcIndx, cnt,
         AMREX_SPACEDIM, 0);
       cnt += AMREX_SPACEDIM;
       for (int spf = 0; spf < SPRAY_FUEL_NUM; ++spf) {
-        MultiFab::Copy(
+        amrex::MultiFab::Copy(
           mf_plt[lev], *m_spraysource[lev], scomps.specSrcIndx + spf, cnt++, 1,
           0);
       }
@@ -427,7 +434,7 @@ PeleLM::WritePlotFile()
 #endif
 #ifdef PELE_USE_PLASMA
     if (m_do_extraEFdiags) {
-      MultiFab::Copy(
+      amrex::MultiFab::Copy(
         mf_plt[lev], *m_ionsFluxes[lev], 0, cnt, m_ionsFluxes[lev]->nComp(), 0);
       cnt += m_ionsFluxes[lev]->nComp();
     }
@@ -454,18 +461,18 @@ PeleLM::WritePlotFile()
               +mut_arr_y[box_no](i, j, k) + mut_arr_y[box_no](i, j + 1, k),
               +mut_arr_z[box_no](i, j, k) + mut_arr_z[box_no](i, j, k + 1)));
         });
-      Gpu::streamSynchronize();
+      amrex::Gpu::streamSynchronize();
       cnt += 1;
     }
 
 #if NUM_ODE > 0
-    MultiFab::Copy(
+    amrex::MultiFab::Copy(
       mf_plt[lev], m_leveldata_new[lev]->state, FIRSTODE, cnt, NUM_ODE, 0);
     cnt += NUM_ODE;
 #endif
 
     if (m_plot_extSource) {
-      MultiFab::Copy(mf_plt[lev], *m_extSource[lev], 0, cnt, NVAR, 0);
+      amrex::MultiFab::Copy(mf_plt[lev], *m_extSource[lev], 0, cnt, NVAR, 0);
     }
 
 #ifdef AMREX_USE_EB
@@ -476,7 +483,7 @@ PeleLM::WritePlotFile()
   }
 
   // No SubCycling, all levels the same step.
-  Vector<int> istep(finest_level + 1, m_nstep);
+  amrex::Vector<int> istep(finest_level + 1, m_nstep);
 
 #ifdef AMREX_USE_HDF5
   if (m_write_hdf5_pltfile) {
@@ -506,9 +513,9 @@ PeleLM::WritePlotFile()
 void
 PeleLM::WriteHeader(const std::string& name, bool is_checkpoint) const
 {
-  if (ParallelDescriptor::IOProcessor()) {
+  if (amrex::ParallelDescriptor::IOProcessor()) {
     std::string HeaderFileName(name + "/Header");
-    VisMF::IO_Buffer io_buffer(VisMF::IO_Buffer_Size);
+    amrex::VisMF::IO_Buffer io_buffer(amrex::VisMF::IO_Buffer_Size);
     std::ofstream HeaderFile;
 
     HeaderFile.rdbuf()->pubsetbuf(io_buffer.dataPtr(), io_buffer.size());
@@ -587,7 +594,7 @@ PeleLM::WriteCheckPointFile()
     }
   }
 
-  VisMF::SetNOutFiles(m_nfiles);
+  amrex::VisMF::SetNOutFiles(m_nfiles);
 
   amrex::PreBuildDirectorHierarchy(
     checkpointname, level_prefix, finest_level + 1, true);
@@ -597,21 +604,21 @@ PeleLM::WriteCheckPointFile()
   WriteJobInfo(checkpointname);
 
   for (int lev = 0; lev <= finest_level; ++lev) {
-    VisMF::Write(
+    amrex::VisMF::Write(
       m_leveldata_new[lev]->state,
       amrex::MultiFabFileFullPrefix(
         lev, checkpointname, level_prefix, "state"));
 
-    VisMF::Write(
+    amrex::VisMF::Write(
       m_leveldata_new[lev]->gp, amrex::MultiFabFileFullPrefix(
                                   lev, checkpointname, level_prefix, "gradp"));
 
-    VisMF::Write(
+    amrex::VisMF::Write(
       m_leveldata_new[lev]->press,
       amrex::MultiFabFileFullPrefix(lev, checkpointname, level_prefix, "p"));
 
     if (m_nAux > 0) {
-      VisMF::Write(
+      amrex::VisMF::Write(
         m_leveldata_new[lev]->auxiliaries,
         amrex::MultiFabFileFullPrefix(
           lev, checkpointname, level_prefix, "aux"));
@@ -619,14 +626,14 @@ PeleLM::WriteCheckPointFile()
 
     if (m_incompressible == 0) {
       if (m_has_divu != 0) {
-        VisMF::Write(
+        amrex::VisMF::Write(
           m_leveldata_new[lev]->divu,
           amrex::MultiFabFileFullPrefix(
             lev, checkpointname, level_prefix, "divU"));
       }
 
       if (m_do_react != 0) {
-        VisMF::Write(
+        amrex::VisMF::Write(
           m_leveldatareact[lev]->I_R,
           amrex::MultiFabFileFullPrefix(
             lev, checkpointname, level_prefix, "I_R"));
@@ -650,8 +657,8 @@ PeleLM::ReadCheckPointFile()
 
   amrex::Print() << "Restarting from checkpoint " << m_restart_chkfile << "\n";
 
-  Real prob_lo[AMREX_SPACEDIM];
-  Real prob_hi[AMREX_SPACEDIM];
+  amrex::Real prob_lo[AMREX_SPACEDIM];
+  amrex::Real prob_hi[AMREX_SPACEDIM];
 
   /***************************************************************************
   ** Load header: set up problem domain (including BoxArray)                 *
@@ -661,10 +668,10 @@ PeleLM::ReadCheckPointFile()
 
   std::string File(m_restart_chkfile + "/Header");
 
-  VisMF::IO_Buffer io_buffer(VisMF::GetIOBufferSize());
+  amrex::VisMF::IO_Buffer io_buffer(amrex::VisMF::GetIOBufferSize());
 
-  Vector<char> fileCharPtr;
-  ParallelDescriptor::ReadAndBcastFile(File, fileCharPtr);
+  amrex::Vector<char> fileCharPtr;
+  amrex::ParallelDescriptor::ReadAndBcastFile(File, fileCharPtr);
   std::string fileCharPtrString(fileCharPtr.dataPtr());
   std::istringstream is(fileCharPtrString, std::istringstream::in);
 
@@ -734,29 +741,29 @@ PeleLM::ReadCheckPointFile()
   }
 
   // Set up problem domain
-  RealBox rb(prob_lo, prob_hi);
-  Geometry::ResetDefaultProbDomain(rb);
+  amrex::RealBox rb(prob_lo, prob_hi);
+  amrex::Geometry::ResetDefaultProbDomain(rb);
   for (int lev = 0; lev <= max_level; ++lev) {
     SetGeometry(
       lev,
-      Geometry(
+      amrex::Geometry(
         Geom(lev).Domain(), rb, Geom(lev).CoordInt(), Geom(lev).isPeriodic()));
   }
 
   for (int lev = 0; lev <= finest_level; ++lev) {
     // read in level 'lev' BoxArray from Header
-    BoxArray ba;
+    amrex::BoxArray ba;
     ba.readFrom(is);
     GotoNextLine(is);
 
     // Create distribution mapping
-    DistributionMapping dm{ba, ParallelDescriptor::NProcs()};
+    amrex::DistributionMapping dm{ba, amrex::ParallelDescriptor::NProcs()};
     MakeNewLevelFromScratch(lev, m_cur_time, ba, dm);
   }
 
   for (int lev = finest_level + 1; lev <= chk_finest_level; ++lev) {
     // read dummy level 'lev' BoxArray if restarting with reduced levels
-    BoxArray ba;
+    amrex::BoxArray ba;
     ba.readFrom(is);
   }
 
@@ -777,36 +784,36 @@ PeleLM::ReadCheckPointFile()
   for (int lev = 0; lev <= finest_level; ++lev) {
 #ifdef PELE_USE_PLASMA
     if (!m_restart_nonEF) {
-      VisMF::Read(
+      amrex::VisMF::Read(
         m_leveldata_new[lev]->state,
         amrex::MultiFabFileFullPrefix(
           lev, m_restart_chkfile, level_prefix, "state"));
     } else {
       // The chk state is 2 component shorter since phiV and nE aren't in it
-      MultiFab stateTemp(grids[lev], dmap[lev], NVAR - 2, m_nGrowState);
-      VisMF::Read(
+      amrex::MultiFab stateTemp(grids[lev], dmap[lev], NVAR - 2, m_nGrowState);
+      amrex::VisMF::Read(
         stateTemp, amrex::MultiFabFileFullPrefix(
                      lev, m_restart_chkfile, level_prefix, "state"));
-      MultiFab::Copy(
+      amrex::MultiFab::Copy(
         m_leveldata_new[lev]->state, stateTemp, 0, 0, NVAR - 2, m_nGrowState);
     }
 #else
-    VisMF::Read(
+    amrex::VisMF::Read(
       m_leveldata_new[lev]->state,
       amrex::MultiFabFileFullPrefix(
         lev, m_restart_chkfile, level_prefix, "state"));
 #endif
 
-    VisMF::Read(
+    amrex::VisMF::Read(
       m_leveldata_new[lev]->gp,
       amrex::MultiFabFileFullPrefix(
         lev, m_restart_chkfile, level_prefix, "gradp"));
 
-    VisMF::Read(
+    amrex::VisMF::Read(
       m_leveldata_new[lev]->press,
       amrex::MultiFabFileFullPrefix(lev, m_restart_chkfile, level_prefix, "p"));
     if (m_nAux > 0) {
-      VisMF::Read(
+      amrex::VisMF::Read(
         m_leveldata_new[lev]->auxiliaries,
         amrex::MultiFabFileFullPrefix(
           lev, m_restart_chkfile, level_prefix, "aux"));
@@ -814,7 +821,7 @@ PeleLM::ReadCheckPointFile()
 
     if (m_incompressible == 0) {
       if (m_has_divu != 0) {
-        VisMF::Read(
+        amrex::VisMF::Read(
           m_leveldata_new[lev]->divu,
           amrex::MultiFabFileFullPrefix(
             lev, m_restart_chkfile, level_prefix, "divU"));
@@ -823,7 +830,7 @@ PeleLM::ReadCheckPointFile()
 #ifdef PELE_USE_PLASMA
       if (!m_restart_nonEF) {
         if (m_do_react) {
-          VisMF::Read(
+          amrex::VisMF::Read(
             m_leveldatareact[lev]->I_R,
             amrex::MultiFabFileFullPrefix(
               lev, m_restart_chkfile, level_prefix, "I_R"));
@@ -832,11 +839,11 @@ PeleLM::ReadCheckPointFile()
         // I_R for non-EF simulation is one component shorted, need to account
         // for that.
         if (m_do_react) {
-          MultiFab I_Rtemp(grids[lev], dmap[lev], NUM_SPECIES, 0);
-          VisMF::Read(
+          amrex::MultiFab I_Rtemp(grids[lev], dmap[lev], NUM_SPECIES, 0);
+          amrex::VisMF::Read(
             I_Rtemp, amrex::MultiFabFileFullPrefix(
                        lev, m_restart_chkfile, level_prefix, "I_R"));
-          MultiFab::Copy(
+          amrex::MultiFab::Copy(
             m_leveldatareact[lev]->I_R, I_Rtemp, 0, 0, NUM_SPECIES, 0);
         }
 
@@ -845,7 +852,7 @@ PeleLM::ReadCheckPointFile()
       }
 #else
       if (m_do_react != 0) {
-        VisMF::Read(
+        amrex::VisMF::Read(
           m_leveldatareact[lev]->I_R,
           amrex::MultiFabFileFullPrefix(
             lev, m_restart_chkfile, level_prefix, "I_R"));
@@ -862,12 +869,12 @@ void
 PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
 {
   if (m_incompressible != 0) {
-    Abort(
+    amrex::Abort(
       " initializing data from a pltfile only available for low-Mach "
       "simulations");
   }
   if (m_nAux > 0) {
-    Warning(
+    amrex::Warning(
       " restarting from plotfile with auxiliaries not currently "
       "implemented, and will not be captured");
   }
@@ -881,14 +888,14 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
 
   // Use PelePhysics PltFileManager
   pele::physics::pltfilemanager::PltFileManager pltData(a_dataPltFile);
-  Vector<std::string> plt_vars = pltData.getVariableList();
+  amrex::Vector<std::string> plt_vars = pltData.getVariableList();
   if (m_do_reset_time == 0) {
     m_cur_time = pltData.getTime();
     m_nstep = pltData.getNsteps();
   }
 
   // Find required data in pltfile
-  Vector<std::string> spec_names;
+  amrex::Vector<std::string> spec_names;
   pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(
     spec_names, &(eos_parms.host_parm()));
   int idT = -1, idV = -1, idY = -1, nSpecPlt = 0;
@@ -933,12 +940,13 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
 #endif
   }
   if (idY < 0) {
-    Abort("Couldn't find species mass fractions in pltfile");
+    amrex::Abort("Couldn't find species mass fractions in pltfile");
   } else if (idT < 0) {
-    Abort("Couldn't find temperature in pltfile");
+    amrex::Abort("Couldn't find temperature in pltfile");
   }
-  Print() << " " << nSpecPlt << " species found in pltfile, starting with "
-          << plt_vars[idY] << "\n";
+  amrex::Print() << " " << nSpecPlt
+                 << " species found in pltfile, starting with " << plt_vars[idY]
+                 << "\n";
 
   // Get level data
   auto* ldata_p = getLevelDataPtr(a_lev, AmrNewTime);
@@ -953,14 +961,15 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
   // Species
   // Hold the species in temporary MF before copying to level data
   // in case the number of species differs.
-  MultiFab speciesPlt(grids[a_lev], dmap[a_lev], nSpecPlt, 0);
+  amrex::MultiFab speciesPlt(grids[a_lev], dmap[a_lev], nSpecPlt, 0);
   pltData.fillPatchFromPlt(a_lev, geom[a_lev], idY, 0, nSpecPlt, speciesPlt);
   for (int i = 0; i < NUM_SPECIES; i++) {
     std::string specString = "Y(" + spec_names[i] + ")";
     int foundSpec = 0;
     for (int iplt = 0; iplt < nSpecPlt; iplt++) {
       if (specString == plt_vars[idY + iplt]) {
-        MultiFab::Copy(ldata_p->state, speciesPlt, iplt, FIRSTSPEC + i, 1, 0);
+        amrex::MultiFab::Copy(
+          ldata_p->state, speciesPlt, iplt, FIRSTSPEC + i, 1, 0);
         foundSpec = 1;
       }
     }
@@ -973,10 +982,11 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
   if (pltfileSource == "C") {
     amrex::Print() << " Converting CGS to MKS units... \n";
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
-    for (MFIter mfi(ldata_p->state, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
-      const Box& bx = mfi.tilebox();
+    for (amrex::MFIter mfi(ldata_p->state, amrex::TilingIfNotGPU());
+         mfi.isValid(); ++mfi) {
+      const amrex::Box& bx = mfi.tilebox();
       auto const& vel_arr = ldata_p->state.array(mfi, VELX);
       amrex::ParallelFor(
         bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
@@ -1004,11 +1014,11 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
         amrex::Real* momV = sc.MomOrderV.data();
         amrex::Real* momS = sc.MomOrderS.data();
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
-        for (MFIter mfi(ldata_p->state, TilingIfNotGPU()); mfi.isValid();
-             ++mfi) {
-          const Box& bx = mfi.tilebox();
+        for (amrex::MFIter mfi(ldata_p->state, amrex::TilingIfNotGPU());
+             mfi.isValid(); ++mfi) {
+          const amrex::Box& bx = mfi.tilebox();
           auto const& soot_arr = ldata_p->state.array(mfi, FIRSTSOOT);
           amrex::ParallelFor(
             bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
@@ -1048,10 +1058,11 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
   // The above handles species mapping (to some extent), but nothing enforce
   // sum of Ys = 1 -> use N2 in the following if N2 is present
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
-  for (MFIter mfi(ldata_p->state, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
-    const Box& bx = mfi.tilebox();
+  for (amrex::MFIter mfi(ldata_p->state, amrex::TilingIfNotGPU());
+       mfi.isValid(); ++mfi) {
+    const amrex::Box& bx = mfi.tilebox();
     auto const& rho_arr = ldata_p->state.array(mfi, DENSITY);
     auto const& rhoY_arr = ldata_p->state.array(mfi, FIRSTSPEC);
     auto const& rhoH_arr = ldata_p->state.array(mfi, RHOH);
@@ -1059,8 +1070,8 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
     const auto* eosparm = leosparm;
     amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
       auto eos = pele::physics::PhysicsType::eos(eosparm);
-      Real massfrac[NUM_SPECIES] = {0.0};
-      Real sumYs = 0.0;
+      amrex::Real massfrac[NUM_SPECIES] = {0.0};
+      amrex::Real sumYs = 0.0;
       for (int n = 0; n < NUM_SPECIES; n++) {
         massfrac[n] = rhoY_arr(i, j, k, n);
 #ifdef N2_ID
@@ -1074,13 +1085,13 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
 #endif
 
       // Get density
-      Real P_cgs = lprobparm->P_mean * 10.0;
-      Real rho_cgs = 0.0;
+      amrex::Real P_cgs = lprobparm->P_mean * 10.0;
+      amrex::Real rho_cgs = 0.0;
       eos.PYT2R(P_cgs, massfrac, temp_arr(i, j, k), rho_cgs);
       rho_arr(i, j, k) = rho_cgs * 1.0e3;
 
       // Get enthalpy
-      Real h_cgs = 0.0;
+      amrex::Real h_cgs = 0.0;
       eos.TY2H(temp_arr(i, j, k), massfrac, h_cgs);
       rhoH_arr(i, j, k) = h_cgs * 1.0e-4 * rho_arr(i, j, k);
 
@@ -1106,14 +1117,14 @@ PeleLM::addLevelVelocityDataFromPlt(int a_lev, const std::string& a_velPltFile)
 
   // Use PelePhysics PltFileManager
   pele::physics::pltfilemanager::PltFileManager pltData(a_velPltFile);
-  Vector<std::string> plt_vars = pltData.getVariableList();
+  amrex::Vector<std::string> plt_vars = pltData.getVariableList();
 
   // do some compatibility checks
   if (pltData.getNlev() < a_lev) {
-    Abort("USE_VELOCITY: not enough levels in plotfile");
+    amrex::Abort("USE_VELOCITY: not enough levels in plotfile");
   }
   if (pltData.getGeom(a_lev).Domain() != geom[a_lev].Domain()) {
-    Abort("USE_VELOCITY: problem domains do not match");
+    amrex::Abort("USE_VELOCITY: problem domains do not match");
   }
 
   // find velocity in the plotfile
@@ -1124,28 +1135,30 @@ PeleLM::addLevelVelocityDataFromPlt(int a_lev, const std::string& a_velPltFile)
     }
   }
   if (idXvel == -1) {
-    Abort("Could not find velocity fields in supplied velocity_plotfile");
+    amrex::Abort(
+      "Could not find velocity fields in supplied velocity_plotfile");
   }
 
   // Get level data
   auto* ldata_p = getLevelDataPtr(a_lev, AmrNewTime);
 
   // load data from plot file
-  BoxArray tmpVelBA(ldata_p->state.boxArray());
-  DistributionMapping tmpVelDM(tmpVelBA);
+  amrex::BoxArray tmpVelBA(ldata_p->state.boxArray());
+  amrex::DistributionMapping tmpVelDM(tmpVelBA);
   int nGrow0(0), sComp0(0);
-  MultiFab tmpVel(tmpVelBA, tmpVelDM, AMREX_SPACEDIM, nGrow0);
+  amrex::MultiFab tmpVel(tmpVelBA, tmpVelDM, AMREX_SPACEDIM, nGrow0);
   pltData.fillPatchFromPlt(
     a_lev, geom[a_lev], idXvel, sComp0, AMREX_SPACEDIM, tmpVel);
   // scale the velocity
   tmpVel.mult(m_velocity_plotfile_scale);
 
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
-  for (MFIter mfi(ldata_p->state, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
-    const Box& bx = mfi.tilebox();
-    FArrayBox DummyFab(bx, 1);
+  for (amrex::MFIter mfi(ldata_p->state, amrex::TilingIfNotGPU());
+       mfi.isValid(); ++mfi) {
+    const amrex::Box& bx = mfi.tilebox();
+    amrex::FArrayBox DummyFab(bx, 1);
     auto const& state_arr = ldata_p->state.array(mfi);
     auto const& tmpVel_arr = tmpVel.array(mfi);
     amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
@@ -1159,7 +1172,7 @@ PeleLM::addLevelVelocityDataFromPlt(int a_lev, const std::string& a_velPltFile)
 void
 PeleLM::WriteJobInfo(const std::string& path) const
 {
-  if (ParallelDescriptor::IOProcessor()) {
+  if (amrex::ParallelDescriptor::IOProcessor()) {
     // job_info file with details about the run
     std::ofstream jobInfoFile;
     std::string FullPathJobInfoFile = path;
@@ -1172,8 +1185,8 @@ PeleLM::WriteJobInfo(const std::string& path) const
     jobInfoFile << " PeleLMeX Job Information\n";
     jobInfoFile << PrettyLine;
 
-    jobInfoFile << "number of MPI processes: " << ParallelDescriptor::NProcs()
-                << "\n";
+    jobInfoFile << "number of MPI processes: "
+                << amrex::ParallelDescriptor::NProcs() << "\n";
 #ifdef AMREX_USE_OMP
     jobInfoFile << "number of threads:       " << omp_get_max_threads() << "\n";
 #endif
@@ -1185,24 +1198,26 @@ PeleLM::WriteJobInfo(const std::string& path) const
     jobInfoFile << " Build Information\n";
     jobInfoFile << PrettyLine;
 
-    jobInfoFile << "build date:    " << buildInfoGetBuildDate() << "\n";
-    jobInfoFile << "build machine: " << buildInfoGetBuildMachine() << "\n";
-    jobInfoFile << "build dir:     " << buildInfoGetBuildDir() << "\n";
-    jobInfoFile << "AMReX dir:     " << buildInfoGetAMReXDir() << "\n";
+    jobInfoFile << "build date:    " << amrex::buildInfoGetBuildDate() << "\n";
+    jobInfoFile << "build machine: " << amrex::buildInfoGetBuildMachine()
+                << "\n";
+    jobInfoFile << "build dir:     " << amrex::buildInfoGetBuildDir() << "\n";
+    jobInfoFile << "AMReX dir:     " << amrex::buildInfoGetAMReXDir() << "\n";
 
     jobInfoFile << "\n";
 
-    jobInfoFile << "COMP:          " << buildInfoGetComp() << "\n";
-    jobInfoFile << "COMP version:  " << buildInfoGetCompVersion() << "\n";
-    jobInfoFile << "C++ compiler:  " << buildInfoGetCXXName() << "\n";
-    jobInfoFile << "C++ flags:     " << buildInfoGetCXXFlags() << "\n";
+    jobInfoFile << "COMP:          " << amrex::buildInfoGetComp() << "\n";
+    jobInfoFile << "COMP version:  " << amrex::buildInfoGetCompVersion()
+                << "\n";
+    jobInfoFile << "C++ compiler:  " << amrex::buildInfoGetCXXName() << "\n";
+    jobInfoFile << "C++ flags:     " << amrex::buildInfoGetCXXFlags() << "\n";
 
     jobInfoFile << "\n";
 
-    const char* githash1 = buildInfoGetGitHash(1);
-    const char* githash2 = buildInfoGetGitHash(2);
-    const char* githash3 = buildInfoGetGitHash(3);
-    const char* githash4 = buildInfoGetGitHash(4);
+    const char* githash1 = amrex::buildInfoGetGitHash(1);
+    const char* githash2 = amrex::buildInfoGetGitHash(2);
+    const char* githash3 = amrex::buildInfoGetGitHash(3);
+    const char* githash4 = amrex::buildInfoGetGitHash(4);
 
     if (strlen(githash1) > 0) {
       jobInfoFile << "PeleLMeX     git describe: " << githash1 << "\n";
@@ -1241,7 +1256,7 @@ PeleLM::WriteJobInfo(const std::string& path) const
     jobInfoFile << " Inputs File Parameters\n";
     jobInfoFile << PrettyLine;
 
-    ParmParse::dumpTable(jobInfoFile, true);
+    amrex::ParmParse::dumpTable(jobInfoFile, true);
 
     jobInfoFile.close();
   }

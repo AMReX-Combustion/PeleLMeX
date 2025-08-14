@@ -1,16 +1,14 @@
 #include <PeleLMeX.H>
 #include <PeleLMeX_K.H>
 
-using namespace amrex;
-
 // Return velocity forces scaled by rhoInv
 // including grapP term if add_gradP = 1
-// including divTau if input Vector not empty
+// including divTau if input amrex::Vector not empty
 void
 PeleLM::getVelForces(
   const TimeStamp& a_time,
-  const Vector<MultiFab*>& a_divTau,
-  const Vector<MultiFab*>& a_velForce,
+  const amrex::Vector<amrex::MultiFab*>& a_divTau,
+  const amrex::Vector<amrex::MultiFab*>& a_velForce,
   int nGrowForce,
   int add_gradP)
 {
@@ -35,8 +33,8 @@ void
 PeleLM::getVelForces(
   const TimeStamp& a_time,
   int lev,
-  MultiFab* a_divTau,
-  MultiFab* a_velForce,
+  amrex::MultiFab* a_divTau,
+  amrex::MultiFab* a_velForce,
   int add_gradP)
 {
 
@@ -49,16 +47,17 @@ PeleLM::getVelForces(
   auto* ldataGP_p = (m_t_old[lev] < 0.0) ? getLevelDataPtr(lev, AmrNewTime)
                                          : getLevelDataPtr(lev, AmrOldTime);
 
-  Real time = getTime(lev, a_time);
+  amrex::Real time = getTime(lev, a_time);
 
   int has_divTau = static_cast<int>(a_divTau != nullptr);
 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
-  for (MFIter mfi(*a_velForce, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
+  for (amrex::MFIter mfi(*a_velForce, amrex::TilingIfNotGPU()); mfi.isValid();
+       ++mfi) {
     const auto& bx = mfi.tilebox();
-    FArrayBox DummyFab(bx, 1);
+    amrex::FArrayBox DummyFab(bx, 1);
     const auto& vel_arr = ldata_p->state.const_array(mfi, VELX);
     const auto& rho_arr = (m_incompressible) != 0
                             ? DummyFab.array()
@@ -98,7 +97,7 @@ PeleLM::getVelForces(
 
     // Add pressure gradient and viscous forces (if req.) and scale by density.
     int is_incomp = m_incompressible;
-    Real incomp_rho_inv = 1.0 / m_rho;
+    amrex::Real incomp_rho_inv = 1.0 / m_rho;
     if ((add_gradP != 0) || (has_divTau != 0)) {
       const auto& gp_arr =
         (add_gradP) != 0 ? ldataGP_p->gp.const_array(mfi) : DummyFab.array();
@@ -148,22 +147,22 @@ PeleLM::getVelForces(
 void
 PeleLM::getVelForces(
   int lev,
-  const Box& bx,
-  const Real& a_time,
-  Array4<Real> const& force,
-  Array4<const Real> const& vel,
-  Array4<const Real> const& rho,
-  Array4<const Real> const& rhoY,
-  Array4<const Real> const& rhoh,
-  Array4<const Real> const& temp,
-  Array4<const Real> const& extMom,
-  Array4<const Real> const& extRho)
+  const amrex::Box& bx,
+  const amrex::Real& a_time,
+  amrex::Array4<amrex::Real> const& force,
+  amrex::Array4<const amrex::Real> const& vel,
+  amrex::Array4<const amrex::Real> const& rho,
+  amrex::Array4<const amrex::Real> const& rhoY,
+  amrex::Array4<const amrex::Real> const& rhoh,
+  amrex::Array4<const amrex::Real> const& temp,
+  amrex::Array4<const amrex::Real> const& extMom,
+  amrex::Array4<const amrex::Real> const& extRho)
 {
   const auto dx = geom[lev].CellSizeArray();
   const int pseudo_gravity = m_ctrl_pseudoGravity;
-  const Real dV_control = m_ctrl_dV;
+  const amrex::Real dV_control = m_ctrl_dV;
   const int is_incomp = m_incompressible;
-  const Real rho_incomp = m_rho;
+  const amrex::Real rho_incomp = m_rho;
   const auto grav = m_gravity;
   const auto gp0 = m_background_gp;
   const int ps_dir = m_ctrl_flameDir;
@@ -181,30 +180,30 @@ PeleLM::addSpark(const TimeStamp& a_timestamp)
   for (int lev = 0; lev <= finest_level; lev++) {
     for (int n = 0; n < m_n_sparks; n++) {
       // Do the checks first
-      Real time = getTime(lev, a_timestamp);
+      amrex::Real time = getTime(lev, a_timestamp);
       bool verb = m_spark_verbose > 1 && lev == 0;
       if (
         time < m_spark_time[n] ||
         time > m_spark_time[n] + m_spark_duration[n]) {
         if (verb) {
-          Print() << m_spark[n] << " not active" << std::endl;
+          amrex::Print() << m_spark[n] << " not active" << std::endl;
         }
         continue;
       }
-      const Real* probLo = geom[lev].ProbLo();
+      const amrex::Real* probLo = geom[lev].ProbLo();
       auto const dx = geom[lev].CellSizeArray();
-      IntVect spark_idx;
+      amrex::IntVect spark_idx;
       for (int d = 0; d < AMREX_SPACEDIM; d++) {
         spark_idx[d] = (int)((m_spark_location[n][d] - probLo[d]) / dx[d]);
       }
-      Box domainBox = geom[lev].Domain();
+      amrex::Box domainBox = geom[lev].Domain();
       // just a check
       if (!domainBox.contains(spark_idx)) {
-        Warning(m_spark[n] + " not in domain!");
+        amrex::Warning(m_spark[n] + " not in domain!");
         continue;
       }
       if (verb) {
-        Print() << m_spark[n] << " active" << std::endl;
+        amrex::Print() << m_spark[n] << " active" << std::endl;
       }
 
       auto statema = getLevelDataPtr(lev, a_timestamp)->state.const_arrays();
@@ -219,14 +218,14 @@ PeleLM::addSpark(const TimeStamp& a_timestamp)
         *m_extSource[lev],
         [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
           auto eos = pele::physics::PhysicsType::eos(eosparm);
-          Real dist_to_center = std::sqrt(AMREX_D_TERM(
+          amrex::Real dist_to_center = std::sqrt(AMREX_D_TERM(
             (i - spark_idx[0]) * (i - spark_idx[0]) * dx[0] * dx[0],
             +(j - spark_idx[1]) * (j - spark_idx[1]) * dx[1] * dx[1],
             +(k - spark_idx[2]) * (k - spark_idx[2]) * dx[2] * dx[2]));
           if (dist_to_center < spark_radius) {
-            Real rhoh_src_loc = 0;
-            Real rho = statema[box_no](i, j, k, DENSITY);
-            Real Y[NUM_SPECIES];
+            amrex::Real rhoh_src_loc = 0;
+            amrex::Real rho = statema[box_no](i, j, k, DENSITY);
+            amrex::Real Y[NUM_SPECIES];
             for (int ns = 0; ns < NUM_SPECIES; ns++) {
               Y[ns] = statema[box_no](i, j, k, FIRSTSPEC + ns) / rho;
             }
@@ -235,7 +234,7 @@ PeleLM::addSpark(const TimeStamp& a_timestamp)
             extma[box_no](i, j, k, RHOH) = rhoh_src_loc;
           }
         });
-      Gpu::streamSynchronize();
+      amrex::Gpu::streamSynchronize();
     }
   }
 }
@@ -279,14 +278,15 @@ PeleLM::addScalarVarianceSources(const TimeStamp& a_timestamp)
       int do_avgDown = 0;
       auto bcRecScalar = fetchBCRecArray(var_of_scalar, 1);
       int nGrow = 0; // No need for ghost face on fluxes
-      Vector<Array<MultiFab, AMREX_SPACEDIM>> grad_fc(finest_level + 1);
+      amrex::Vector<amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>> grad_fc(
+        finest_level + 1);
       for (int lev = 0; lev <= finest_level; ++lev) {
         const auto& ba = grids[lev];
         const auto& factory = Factory(lev);
         for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
           grad_fc[lev][idim].define(
-            amrex::convert(ba, IntVect::TheDimensionVector(idim)), dmap[lev], 1,
-            nGrow, MFInfo(), factory);
+            amrex::convert(ba, amrex::IntVect::TheDimensionVector(idim)),
+            dmap[lev], 1, nGrow, MFInfo(), factory);
           grad_fc[lev][idim].setVal(0.0); // Required?
         }
       }
@@ -376,7 +376,7 @@ PeleLM::addScalarVarianceSources(const TimeStamp& a_timestamp)
               });
           }
         }
-        Gpu::streamSynchronize();
+        amrex::Gpu::streamSynchronize();
       }
     }
   }

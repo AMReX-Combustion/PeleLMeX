@@ -3,12 +3,10 @@
 
 #include <sys/stat.h>
 
-using namespace amrex;
-
 void
 PeleLM::initActiveControl()
 {
-  ParmParse pp("active_control");
+  amrex::ParmParse pp("active_control");
 
   pp.query("on", m_ctrl_active);
 
@@ -16,7 +14,7 @@ PeleLM::initActiveControl()
     return;
   }
 
-  Print() << " Initialization of active control \n";
+  amrex::Print() << " Initialization of active control \n";
 
   pp.query("use_temp", m_ctrl_useTemp);
   pp.query("temperature", m_ctrl_temperature);
@@ -53,7 +51,8 @@ PeleLM::initActiveControl()
 
   // Initialize flow controller
   if (!hasFlowControllerData<ProbParm>::value) {
-    Abort("ProbParm doesn't have a FCData FlowControllerData member variable");
+    amrex::Abort(
+      "ProbParm doesn't have a FCData FlowControllerData member variable");
   }
 
   // Get FlowControllerData from ProbParm if it exists
@@ -70,17 +69,17 @@ PeleLM::initActiveControl()
     ProbParm const* lprobparm = prob_parm_d;
     auto const* lpmfdata = pmf_data.device_parm();
 
-    Gpu::DeviceVector<Real> s_ext_v(NVAR);
-    Real* s_ext_d = s_ext_v.data();
-    Real x[AMREX_SPACEDIM] = {
+    amrex::Gpu::DeviceVector<amrex::Real> s_ext_v(NVAR);
+    amrex::Real* s_ext_d = s_ext_v.data();
+    amrex::Real x[AMREX_SPACEDIM] = {
       AMREX_D_DECL(Geom(0).ProbLo(0), Geom(0).ProbLo(1), Geom(0).ProbLo(2))};
     x[m_ctrl_flameDir] -= 1.0;
     const int ctrl_flameDir_l = m_ctrl_flameDir;
     const amrex::Real time_l = -1.0;
     const auto geomdata = Geom(0).data();
-    auto fake_state = Array4<Real>{};
+    auto fake_state = amrex::Array4<amrex::Real>{};
 
-    Box dumbx({AMREX_D_DECL(0, 0, 0)}, {AMREX_D_DECL(0, 0, 0)});
+    amrex::Box dumbx({AMREX_D_DECL(0, 0, 0)}, {AMREX_D_DECL(0, 0, 0)});
     amrex::ParallelFor(
       dumbx, [=] AMREX_GPU_DEVICE(int /*i*/, int /*j*/, int /*k*/) noexcept {
         const auto s_in = fake_state.cellData(0, 0, 0);
@@ -88,18 +87,19 @@ PeleLM::initActiveControl()
           x, s_in, s_ext_d, ctrl_flameDir_l, 1, time_l, geomdata, *lprobparm,
           lpmfdata);
       });
-    Vector<Real> s_ext(NVAR);
-    Gpu::copy(Gpu::deviceToHost, s_ext_v.begin(), s_ext_v.end(), s_ext.begin());
+    amrex::Vector<amrex::Real> s_ext(NVAR);
+    amrex::Gpu::copy(
+      amrex::Gpu::deviceToHost, s_ext_v.begin(), s_ext_v.end(), s_ext.begin());
 
     if (m_ctrl_useTemp == 0) {
       // Get the fuel rhoY
       if (fuelID < 0) {
-        Abort(
+        amrex::Abort(
           "Using activeControl based on fuel mass requires peleLM.fuelName !");
       }
 
       // Compute some active control parameters
-      Real area_tot = 1.0;
+      amrex::Real area_tot = 1.0;
       for (int idim{0}; idim < AMREX_SPACEDIM; idim++) {
         if (idim != m_ctrl_flameDir) {
           area_tot *= (Geom(0).ProbHi(idim) - Geom(0).ProbLo(idim));
@@ -124,13 +124,14 @@ PeleLM::initActiveControl()
 
     if (m_ctrl_verbose != 0) {
       if (m_ctrl_useTemp != 0) {
-        Print() << " Active control based on temperature iso-level activated."
-                << " Maintaining the flame at " << m_ctrl_h << " in "
-                << m_ctrl_flameDir << " direction. \n";
+        amrex::Print()
+          << " Active control based on temperature iso-level activated."
+          << " Maintaining the flame at " << m_ctrl_h << " in "
+          << m_ctrl_flameDir << " direction. \n";
       } else {
-        Print() << " Active control based on fuel mass activated."
-                << " Maintaining the flame at " << m_ctrl_h << " in "
-                << m_ctrl_flameDir << " direction. \n";
+        amrex::Print() << " Active control based on fuel mass activated."
+                       << " Maintaining the flame at " << m_ctrl_h << " in "
+                       << m_ctrl_flameDir << " direction. \n";
       }
     }
   }
@@ -146,7 +147,7 @@ PeleLM::activeControl(int is_restart)
   // -------------------------------------------
   // Get the current target state (either amount of fuel or T-iso position)
   // -------------------------------------------
-  Real coft = 0.0;
+  amrex::Real coft = 0.0;
   if (m_ctrl_useTemp == 0) {
     // Compute the integral of the fuel mass in the domain
     coft = MFSum(GetVecOfConstPtrs(getSpeciesVect(AmrNewTime)), fuelID);
@@ -177,8 +178,8 @@ PeleLM::activeControl(int is_restart)
     m_ctrl_V_in += m_dt * m_ctrl_dV;
   }
 
-  Real slocal = 0.5 * (m_ctrl_V_in_old + m_ctrl_V_in) -
-                (coft - m_ctrl_coftOld) / (m_dt * m_ctrl_scale);
+  amrex::Real slocal = 0.5 * (m_ctrl_V_in_old + m_ctrl_V_in) -
+                       (coft - m_ctrl_coftOld) / (m_dt * m_ctrl_scale);
 
   // -------------------------------------------
   // Get s_est averaged from previous N steps
@@ -200,7 +201,7 @@ PeleLM::activeControl(int is_restart)
   }
 
   if (m_ctrl_nfilled <= 0) {
-    Real velIntegral = 0.0;
+    amrex::Real velIntegral = 0.0;
     for (int n = 1; n <= m_ctrl_NavgPts;
          n++) { // Piecewise constant velocity over NavgPts last steps
       velIntegral += 0.5 * (m_ctrl_velo_pts[n - 1] + m_ctrl_velo_pts[n]) *
@@ -221,35 +222,38 @@ PeleLM::activeControl(int is_restart)
   // -------------------------------------------
   // Compute Vnew
   // -------------------------------------------
-  Real Vnew = 0.0;
+  amrex::Real Vnew = 0.0;
 
   if (m_ctrl_method == 1) { // linear
-    Real vslope = 2.0 *
-                  ((m_ctrl_cfix - coft) / (m_ctrl_scale * m_ctrl_tauControl) +
-                   m_ctrl_sest - m_ctrl_V_in) /
-                  m_ctrl_tauControl;
+    amrex::Real vslope =
+      2.0 *
+      ((m_ctrl_cfix - coft) / (m_ctrl_scale * m_ctrl_tauControl) + m_ctrl_sest -
+       m_ctrl_V_in) /
+      m_ctrl_tauControl;
     Vnew = m_ctrl_V_in + m_dt * vslope;
   } else if (m_ctrl_method == 2) { // Quadratic 1
-    Real vslope = 3.0 *
-                  ((m_ctrl_cfix - coft) / (m_ctrl_scale * m_ctrl_tauControl) +
-                   m_ctrl_sest - m_ctrl_V_in) /
-                  m_ctrl_tauControl;
+    amrex::Real vslope =
+      3.0 *
+      ((m_ctrl_cfix - coft) / (m_ctrl_scale * m_ctrl_tauControl) + m_ctrl_sest -
+       m_ctrl_V_in) /
+      m_ctrl_tauControl;
     Vnew =
       m_ctrl_V_in + (m_dt - 0.5 * m_dt * m_dt / m_ctrl_tauControl) * vslope;
   } else if (m_ctrl_method == 3) { // Quadratic 2
-    Real rhs2 = 2.0 *
-                ((m_ctrl_cfix - coft) / (m_ctrl_scale * m_ctrl_tauControl) +
-                 m_ctrl_sest - m_ctrl_V_in) /
-                m_ctrl_tauControl;
-    Real rhs1 = (m_ctrl_sest - m_ctrl_V_in) / m_ctrl_tauControl;
-    Real vt_tay = 3.0 * rhs2 - 2.0 * rhs1;
-    Real vtt_tay = 6.0 * (rhs1 - rhs2) / m_ctrl_tauControl;
+    amrex::Real rhs2 =
+      2.0 *
+      ((m_ctrl_cfix - coft) / (m_ctrl_scale * m_ctrl_tauControl) + m_ctrl_sest -
+       m_ctrl_V_in) /
+      m_ctrl_tauControl;
+    amrex::Real rhs1 = (m_ctrl_sest - m_ctrl_V_in) / m_ctrl_tauControl;
+    amrex::Real vt_tay = 3.0 * rhs2 - 2.0 * rhs1;
+    amrex::Real vtt_tay = 6.0 * (rhs1 - rhs2) / m_ctrl_tauControl;
     Vnew = m_ctrl_V_in + m_dt * vt_tay + 0.5 * m_dt * m_dt * vtt_tay;
   }
 
   // Limit Vnew
-  Real dVmax = m_ctrl_changeMax * 1.0;
-  Real dVmin = m_ctrl_changeMax * amrex::max(1.0, m_ctrl_V_in);
+  amrex::Real dVmax = m_ctrl_changeMax * 1.0;
+  amrex::Real dVmin = m_ctrl_changeMax * amrex::max(1.0, m_ctrl_V_in);
   Vnew = amrex::max(Vnew, 0.0);
   Vnew = amrex::min(amrex::max(Vnew, m_ctrl_V_in - dVmin), m_ctrl_V_in + dVmax);
   if (m_ctrl_velMax > 0.0) { // Only limit Vnew to velMax if velMax > 0.0
@@ -278,25 +282,28 @@ PeleLM::activeControl(int is_restart)
     fcdata_h->ctrl_tBase = m_ctrl_tBase;
 
     // Update Device version
-    Gpu::copy(Gpu::hostToDevice, fcdata_h, fcdata_h + 1, fcdata_d);
+    amrex::Gpu::copy(
+      amrex::Gpu::hostToDevice, fcdata_h, fcdata_h + 1, fcdata_d);
   }
 
   if ((m_ctrl_verbose != 0) && (is_restart == 0)) {
-    Print()
+    amrex::Print()
       << "\n------------------------AC CONTROL------------------------ \n";
-    Print() << " |     Time: " << m_cur_time << " -     dt: " << m_dt << "\n";
-    Print() << " | Position: " << coft / m_ctrl_scale
-            << " - Target: " << m_ctrl_cfix / m_ctrl_scale << "\n";
-    Print() << " |    V_new: " << Vnew << " -   V_in: " << m_ctrl_V_in
-            << " - dV: " << m_ctrl_dV << "\n";
-    Print() << "---------------------------------------------------------- \n";
+    amrex::Print() << " |     Time: " << m_cur_time << " -     dt: " << m_dt
+                   << "\n";
+    amrex::Print() << " | Position: " << coft / m_ctrl_scale
+                   << " - Target: " << m_ctrl_cfix / m_ctrl_scale << "\n";
+    amrex::Print() << " |    V_new: " << Vnew << " -   V_in: " << m_ctrl_V_in
+                   << " - dV: " << m_ctrl_dV << "\n";
+    amrex::Print()
+      << "---------------------------------------------------------- \n";
   }
 
   // Append to (or create) AC history file
   if (is_restart == 0) {
     std::ofstream ACfile(
       m_ctrl_AChistory.c_str(), std::ofstream::out | std::ofstream::app);
-    Print(ACfile).SetPrecision(15)
+    amrex::Print(ACfile).SetPrecision(15)
       << m_nstep << "  " << m_cur_time << "  " << m_ctrl_V_in << "  " << slocal
       << "  " << m_ctrl_dV << "  " << m_ctrl_sest << "  " << m_ctrl_coftOld
       << "\n";
@@ -304,7 +311,7 @@ PeleLM::activeControl(int is_restart)
 }
 
 void
-PeleLM::getActiveControlLowT(Real& a_coft)
+PeleLM::getActiveControlLowT(amrex::Real& a_coft)
 {
   for (int lev = 0; lev <= finest_level; lev++) {
 
@@ -314,40 +321,39 @@ PeleLM::getActiveControlLowT(Real& a_coft)
 
     // local FC data
     int AC_FlameDir = m_ctrl_flameDir;
-    Real AC_Tcross = m_ctrl_temperature;
+    amrex::Real AC_Tcross = m_ctrl_temperature;
 
-    Real lowT = 1.e37;
+    amrex::Real lowT = 1.e37;
 
     if (lev != finest_level) {
       lowT = amrex::ReduceMin(
         ldata_p->state, *m_coveredMask[lev], 0,
         [=] AMREX_GPU_HOST_DEVICE(
-          Box const& bx, Array4<Real const> const& T_arr,
-          Array4<int const> const& covered_arr) -> Real {
-          using namespace amrex::literals;
+          amrex::Box const& bx, amrex::Array4<amrex::Real const> const& T_arr,
+          amrex::Array4<int const> const& covered_arr) -> amrex::Real {
           const auto lo = amrex::lbound(bx);
           const auto hi = amrex::ubound(bx);
-          Real tmp_pos = 1.e37_rt;
-          const Real* prob_lo = geomdata.ProbLo();
-          const Real* dx = geomdata.CellSize();
+          amrex::Real tmp_pos = 1.e37;
+          const amrex::Real* prob_lo = geomdata.ProbLo();
+          const amrex::Real* dx = geomdata.CellSize();
           for (int k = lo.z; k <= hi.z; ++k) {
             for (int j = lo.y; j <= hi.y; ++j) {
               for (int i = lo.x; i <= hi.x; ++i) {
-                Real lcl_pos = 1.e37_rt;
+                amrex::Real lcl_pos = 1.e37;
                 if (
                   T_arr(i, j, k, TEMP) > AC_Tcross &&
                   covered_arr(i, j, k) > 0) {
                   int idx[3] = {i, j, k};
                   idx[AC_FlameDir] -= 1;
                   if (T_arr(idx[0], idx[1], idx[2], TEMP) < AC_Tcross) {
-                    Real coor[3] = {0.0};
+                    amrex::Real coor[3] = {0.0};
                     AMREX_D_TERM(
                       coor[0] = prob_lo[0] + (i + 0.5) * dx[0];
                       , coor[1] = prob_lo[1] + (j + 0.5) * dx[1];
                       , coor[2] = prob_lo[2] + (k + 0.5) * dx[2];);
-                    Real slope = ((T_arr(i, j, k, TEMP)) -
-                                  T_arr(idx[0], idx[1], idx[2], TEMP)) /
-                                 dx[AC_FlameDir];
+                    amrex::Real slope = ((T_arr(i, j, k, TEMP)) -
+                                         T_arr(idx[0], idx[1], idx[2], TEMP)) /
+                                        dx[AC_FlameDir];
                     lcl_pos =
                       coor[AC_FlameDir] - dx[AC_FlameDir] +
                       (AC_Tcross - T_arr(idx[0], idx[1], idx[2], TEMP)) / slope;
@@ -363,29 +369,29 @@ PeleLM::getActiveControlLowT(Real& a_coft)
       lowT = amrex::ReduceMin(
         ldata_p->state, 0,
         [=] AMREX_GPU_HOST_DEVICE(
-          Box const& bx, Array4<Real const> const& T_arr) -> Real {
-          using namespace amrex::literals;
+          amrex::Box const& bx,
+          amrex::Array4<amrex::Real const> const& T_arr) -> amrex::Real {
           const auto lo = amrex::lbound(bx);
           const auto hi = amrex::ubound(bx);
-          Real tmp_pos = 1.e37_rt;
-          const Real* prob_lo = geomdata.ProbLo();
-          const Real* dx = geomdata.CellSize();
+          amrex::Real tmp_pos = 1.e37;
+          const amrex::Real* prob_lo = geomdata.ProbLo();
+          const amrex::Real* dx = geomdata.CellSize();
           for (int k = lo.z; k <= hi.z; ++k) {
             for (int j = lo.y; j <= hi.y; ++j) {
               for (int i = lo.x; i <= hi.x; ++i) {
-                Real lcl_pos = 1.e37_rt;
+                amrex::Real lcl_pos = 1.e37;
                 if (T_arr(i, j, k, TEMP) > AC_Tcross) {
                   int idx[3] = {i, j, k};
                   idx[AC_FlameDir] -= 1;
                   if (T_arr(idx[0], idx[1], idx[2], TEMP) < AC_Tcross) {
-                    Real coor[3] = {0.0};
+                    amrex::Real coor[3] = {0.0};
                     AMREX_D_TERM(
                       coor[0] = prob_lo[0] + (i + 0.5) * dx[0];
                       , coor[1] = prob_lo[1] + (j + 0.5) * dx[1];
                       , coor[2] = prob_lo[2] + (k + 0.5) * dx[2];);
-                    Real slope = ((T_arr(i, j, k, TEMP)) -
-                                  T_arr(idx[0], idx[1], idx[2], TEMP)) /
-                                 dx[AC_FlameDir];
+                    amrex::Real slope = ((T_arr(i, j, k, TEMP)) -
+                                         T_arr(idx[0], idx[1], idx[2], TEMP)) /
+                                        dx[AC_FlameDir];
                     lcl_pos =
                       coor[AC_FlameDir] - dx[AC_FlameDir] +
                       (AC_Tcross - T_arr(idx[0], idx[1], idx[2], TEMP)) / slope;
@@ -400,7 +406,7 @@ PeleLM::getActiveControlLowT(Real& a_coft)
     }
     a_coft = amrex::min(a_coft, lowT);
   }
-  ParallelDescriptor::ReduceRealMin(a_coft);
+  amrex::ParallelDescriptor::ReduceRealMin(a_coft);
 }
 
 void
@@ -411,13 +417,14 @@ PeleLM::loadActiveControlHistory()
   bool have_history = (stat(m_ctrl_AChistory.c_str(), &buffer) == 0);
   if (have_history) {
     if (m_ctrl_verbose != 0) {
-      Print() << " Setting AC from history from " << m_ctrl_AChistory << "\n";
+      amrex::Print() << " Setting AC from history from " << m_ctrl_AChistory
+                     << "\n";
     }
     std::fstream ACfile(m_ctrl_AChistory.c_str(), std::fstream::in);
     if (ACfile.is_open()) {
       while (ACfile.good()) {
         int step_io;
-        Real time_io, vel_io, slocal_io, dV_io, s_est_io, coft_old_io;
+        amrex::Real time_io, vel_io, slocal_io, dV_io, s_est_io, coft_old_io;
         ACfile >> step_io >> time_io >> vel_io >> slocal_io >> dV_io >>
           s_est_io >> coft_old_io;
         if (
@@ -441,17 +448,17 @@ PeleLM::loadActiveControlHistory()
       ACfile.close();
     }
     if (m_ctrl_verbose != 0) {
-      Print() << " AC history arrays: \n";
+      amrex::Print() << " AC history arrays: \n";
       for (long int n = 0; n < m_ctrl_time_pts.size(); n++) {
-        Print() << "  [" << n << "] time: " << m_ctrl_time_pts[n]
-                << ", velo: " << m_ctrl_velo_pts[n]
-                << ", coft: " << m_ctrl_cntl_pts[n] << "\n";
+        amrex::Print() << "  [" << n << "] time: " << m_ctrl_time_pts[n]
+                       << ", velo: " << m_ctrl_velo_pts[n]
+                       << ", coft: " << m_ctrl_cntl_pts[n] << "\n";
       }
     }
   } else {
     if (m_ctrl_verbose != 0) {
-      Print() << " AC history file " << m_ctrl_AChistory
-              << " not found, restarting from scratch \n";
+      amrex::Print() << " AC history file " << m_ctrl_AChistory
+                     << " not found, restarting from scratch \n";
     }
   }
 }
