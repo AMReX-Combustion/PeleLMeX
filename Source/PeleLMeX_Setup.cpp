@@ -17,22 +17,20 @@
 #include "SootModel.H"
 #endif
 
-using namespace amrex;
-
-static Box
-the_same_box(const Box& b)
+static amrex::Box
+the_same_box(const amrex::Box& b)
 {
   return b;
 }
 #ifdef PELE_USE_PLASMA
-static Box
-grow_box_by_one(const Box& b)
+static amrex::Box
+grow_box_by_one(const amrex::Box& b)
 {
   return amrex::grow(b, 1);
 }
 #endif
-static Box
-grow_box_by_two(const Box& b)
+static amrex::Box
+grow_box_by_two(const amrex::Box& b)
 {
   return amrex::grow(b, 2);
 }
@@ -52,10 +50,10 @@ PeleLM::Setup()
       &&amrex::almostEqual(dx[1], dx[2], 10)));
   }
   // Print build info to screen
-  const char* githash1 = buildInfoGetGitHash(1);
-  const char* githash2 = buildInfoGetGitHash(2);
-  const char* githash3 = buildInfoGetGitHash(3);
-  const char* githash4 = buildInfoGetGitHash(4);
+  const char* githash1 = amrex::buildInfoGetGitHash(1);
+  const char* githash2 = amrex::buildInfoGetGitHash(2);
+  const char* githash3 = amrex::buildInfoGetGitHash(3);
+  const char* githash4 = amrex::buildInfoGetGitHash(4);
   amrex::Print() << "\n ================= Build infos =================\n";
   amrex::Print() << " PeleLMeX    git hash: " << githash1 << "\n";
   amrex::Print() << " AMReX       git hash: " << githash2 << "\n";
@@ -139,7 +137,7 @@ PeleLM::Setup()
       int ncells_chem = 1;
       amrex::Print() << " Initialization of chemical reactor ... \n";
       m_chem_integrator = "ReactorNull";
-      ParmParse pp("peleLM");
+      amrex::ParmParse pp("peleLM");
       pp.query("chem_integrator", m_chem_integrator);
       m_reactor =
         pele::physics::reactions::ReactorBase::create(m_chem_integrator);
@@ -208,7 +206,7 @@ PeleLM::Setup()
 
   // Problem parameters
   prob_parm = new ProbParm{};
-  prob_parm_d = (ProbParm*)The_Arena()->alloc(sizeof(ProbParm));
+  prob_parm_d = (ProbParm*)amrex::The_Arena()->alloc(sizeof(ProbParm));
 
   // Problem parameters
   readProbParm();
@@ -219,7 +217,8 @@ PeleLM::Setup()
   m_pNew = prob_parm->P_mean;
 
   // Copy problem parameters into device copy
-  Gpu::copy(Gpu::hostToDevice, prob_parm, prob_parm + 1, prob_parm_d);
+  amrex::Gpu::copy(
+    amrex::Gpu::hostToDevice, prob_parm, prob_parm + 1, prob_parm_d);
 
   // Initialize active control
   initActiveControl();
@@ -235,7 +234,7 @@ PeleLM::readParameters()
 
   readIOParameters();
 
-  ParmParse pp("peleLM");
+  amrex::ParmParse pp("peleLM");
 
   // -----------------------------------------
   // Misc
@@ -266,15 +265,16 @@ PeleLM::readParameters()
   m_closed_chamber = (isOpenDomain) != 0 ? 0 : 1;
   pp.query("closed_chamber", m_closed_chamber);
   if ((verbose != 0) && (m_closed_chamber != 0)) {
-    Print() << " Simulation performed with the closed chamber algorithm \n";
+    amrex::Print()
+      << " Simulation performed with the closed chamber algorithm \n";
   }
 
 #ifdef PELE_USE_PLASMA
-  ParmParse ppef("ef");
+  amrex::ParmParse ppef("ef");
 
   // Get the phiV bc
-  Vector<std::string> lo_bc_char(AMREX_SPACEDIM);
-  Vector<std::string> hi_bc_char(AMREX_SPACEDIM);
+  amrex::Vector<std::string> lo_bc_char(AMREX_SPACEDIM);
+  amrex::Vector<std::string> hi_bc_char(AMREX_SPACEDIM);
   ppef.getarr("phiV_lo_bc", lo_bc_char, 0, AMREX_SPACEDIM);
   ppef.getarr("phiV_hi_bc", hi_bc_char, 0, AMREX_SPACEDIM);
   for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
@@ -347,9 +347,9 @@ PeleLM::readParameters()
     AMREX_ASSERT_WITH_MESSAGE(
       m_mu > 0.0, "peleLM.mu is needed when running incompressible");
   }
-  Vector<Real> grav(AMREX_SPACEDIM, 0);
+  amrex::Vector<amrex::Real> grav(AMREX_SPACEDIM, 0);
   pp.queryarr("gravity", grav, 0, AMREX_SPACEDIM);
-  Vector<Real> gp0(AMREX_SPACEDIM, 0);
+  amrex::Vector<amrex::Real> gp0(AMREX_SPACEDIM, 0);
   pp.queryarr("gradP0", gp0, 0, AMREX_SPACEDIM);
   for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
     m_background_gp[idim] = gp0[idim];
@@ -376,7 +376,7 @@ PeleLM::readParameters()
     for (int n = 0; n < m_n_sparks; n++) {
       pp.get("sparks", m_spark[n], n);
       std::string spark_prefix = "peleLM." + m_spark[n];
-      ParmParse pps(spark_prefix);
+      amrex::ParmParse pps(spark_prefix);
       pps.get("time", m_spark_time[n]);
       pps.get("duration", m_spark_duration[n]);
       m_spark_location[n].resize(AMREX_SPACEDIM);
@@ -385,21 +385,22 @@ PeleLM::readParameters()
       pps.get("radius", m_spark_radius[n]);
     }
     if (m_spark_verbose > 0) {
-      Print() << "Spark list:" << std::endl;
+      amrex::Print() << "Spark list:" << std::endl;
       for (int n = 0; n < m_n_sparks; n++) {
-        Print() << "Spark " << n << " name: " << m_spark[n] << std::endl;
-        Print() << "Spark " << n << " time: " << m_spark_time[n] << std::endl;
-        Print() << "Spark " << n << " duration: " << m_spark_duration[n]
-                << std::endl;
-        Print() << "Spark " << n << " location: ";
+        amrex::Print() << "Spark " << n << " name: " << m_spark[n] << std::endl;
+        amrex::Print() << "Spark " << n << " time: " << m_spark_time[n]
+                       << std::endl;
+        amrex::Print() << "Spark " << n << " duration: " << m_spark_duration[n]
+                       << std::endl;
+        amrex::Print() << "Spark " << n << " location: ";
         for (int d = 0; d < AMREX_SPACEDIM; d++) {
-          Print() << m_spark_location[n][d] << " ";
+          amrex::Print() << m_spark_location[n][d] << " ";
         }
-        Print() << std::endl;
-        Print() << "Spark " << n << " temperature: " << m_spark_temp[n]
-                << std::endl;
-        Print() << "Spark " << n << " radius: " << m_spark_radius[n]
-                << std::endl;
+        amrex::Print() << std::endl;
+        amrex::Print() << "Spark " << n << " temperature: " << m_spark_temp[n]
+                       << std::endl;
+        amrex::Print() << "Spark " << n << " radius: " << m_spark_radius[n]
+                       << std::endl;
       }
     }
   }
@@ -414,7 +415,7 @@ PeleLM::readParameters()
     for (int n = 0; n < m_nAux; n++) {
       pp.get("aux_vars", m_aux_names[n], n);
       std::string aux_prefix = "peleLM." + m_aux_names[n];
-      ParmParse ppa(aux_prefix);
+      amrex::ParmParse ppa(aux_prefix);
       m_aux_advect[n] = 1;
       ppa.query("advect", m_aux_advect[n]);
       m_AdvTypeAux[n] = 1;
@@ -462,7 +463,7 @@ PeleLM::readParameters()
 
   // -----------------------------------------
   // diffusion
-  ParmParse pptrans("transport");
+  amrex::ParmParse pptrans("transport");
   pptrans.query("use_soret", m_use_soret);
   pp.query("use_wbar", m_use_wbar);
   if (m_use_soret != 0) {
@@ -584,13 +585,14 @@ PeleLM::readParameters()
         m_max_grid_size_chem[0] = mgsc;, m_max_grid_size_chem[1] = mgsc;
         , m_max_grid_size_chem[2] = mgsc);
     } else if (mgsc_size == AMREX_SPACEDIM) {
-      Vector<int> mgsc;
+      amrex::Vector<int> mgsc;
       pp.getarr("max_grid_size_chem", mgsc, 0, AMREX_SPACEDIM);
       AMREX_D_TERM(
         m_max_grid_size_chem[0] = mgsc[0];, m_max_grid_size_chem[1] = mgsc[1];
         , m_max_grid_size_chem[2] = mgsc[2]);
     } else {
-      Abort("peleLM.max_grid_size_chem should have 1 or AMREX_SPACEDIM values");
+      amrex::Abort(
+        "peleLM.max_grid_size_chem should have 1 or AMREX_SPACEDIM values");
     }
   }
 
@@ -617,7 +619,7 @@ PeleLM::readParameters()
 
   // Deactivate load balancing for serial runs
 #ifdef AMREX_USE_MPI
-  if (ParallelContext::NProcsSub() == 1) {
+  if (amrex::ParallelContext::NProcsSub() == 1) {
     m_doLoadBalance = 0;
   }
 #else
@@ -631,31 +633,31 @@ PeleLM::readParameters()
   if (m_advection_key == "Godunov_PLM") {
     m_advection_type = "Godunov";
     m_Godunov_ppm = 0;
-    ParmParse ppg("godunov");
+    amrex::ParmParse ppg("godunov");
     ppg.query("use_forceInTrans", m_Godunov_ForceInTrans);
   } else if (m_advection_key == "Godunov_PPM") {
     m_advection_type = "Godunov";
     m_Godunov_ppm = 1;
     m_Godunov_ppm_limiter = PPM::VanLeer;
-    ParmParse ppg("godunov");
+    amrex::ParmParse ppg("godunov");
     ppg.query("use_forceInTrans", m_Godunov_ForceInTrans);
   } else if (m_advection_key == "Godunov_PPM_WENOZ") {
     m_advection_type = "Godunov";
     m_Godunov_ppm = 1;
     m_Godunov_ppm_limiter = PPM::WENOZ;
-    ParmParse ppg("godunov");
+    amrex::ParmParse ppg("godunov");
     ppg.query("use_forceInTrans", m_Godunov_ForceInTrans);
   } else if (m_advection_key == "Godunov_PPM_NOLIM") {
     m_advection_type = "Godunov";
     m_Godunov_ppm = 1;
     m_Godunov_ppm_limiter = PPM::NoLimiter;
-    ParmParse ppg("godunov");
+    amrex::ParmParse ppg("godunov");
     ppg.query("use_forceInTrans", m_Godunov_ForceInTrans);
   } else if (m_advection_key == "Godunov_BDS") {
     m_advection_type = "BDS";
     m_Godunov_ppm = 0;
   } else {
-    Abort(
+    amrex::Abort(
       "Unknown 'advection_scheme'. Recognized options are: Godunov_PLM, "
       "Godunov_PPM or Godunov_BDS");
   }
@@ -666,13 +668,13 @@ PeleLM::readParameters()
   // -----------------------------------------
   // Linear solvers tols
   // -----------------------------------------
-  ParmParse ppnproj("nodal_proj");
+  amrex::ParmParse ppnproj("nodal_proj");
   ppnproj.query("mg_max_coarsening_level", m_nodal_mg_max_coarsening_level);
   ppnproj.query("atol", m_nodal_mg_atol);
   ppnproj.query("rtol", m_nodal_mg_rtol);
   ppnproj.query("hypre_namespace", m_hypre_namespace_nodal);
 
-  ParmParse ppmacproj("mac_proj");
+  amrex::ParmParse ppmacproj("mac_proj");
   ppmacproj.query("mg_max_coarsening_level", m_mac_mg_max_coarsening_level);
   ppmacproj.query("atol", m_mac_mg_atol);
   ppmacproj.query("rtol", m_mac_mg_rtol);
@@ -693,7 +695,7 @@ PeleLM::readParameters()
   // -----------------------------------------
   // Time stepping control
   // -----------------------------------------
-  ParmParse ppa("amr");
+  amrex::ParmParse ppa("amr");
   ppa.query("max_wall_time", m_max_wall_time); // hours
   ppa.query("max_step", m_max_step);
   ppa.query("stop_time", m_stop_time);
@@ -705,7 +707,8 @@ PeleLM::readParameters()
   ppa.query("dt_change_max", m_dtChangeMax);
   ppa.query("max_dt", m_max_dt);
   ppa.query("min_dt", m_min_dt);
-  m_nfiles = amrex::max(1, amrex::min(ParallelDescriptor::NProcs(), 256));
+  m_nfiles =
+    amrex::max(1, amrex::min(amrex::ParallelDescriptor::NProcs(), 256));
   ppa.query("n_files", m_nfiles);
 
   if (max_level > 0 || (m_doLoadBalance != 0)) {
@@ -718,7 +721,7 @@ PeleLM::readParameters()
     // Default EB refine type is Static
     pp.query("refine_EB_type", m_EB_refine_type);
     if (m_EB_refine_type != "Static" && m_EB_refine_type != "Adaptive") {
-      Abort("refine_EB_type can only be 'Static' or 'Adaptive'");
+      amrex::Abort("refine_EB_type can only be 'Static' or 'Adaptive'");
     }
     // Default EB refinement level is max_level
     m_EB_refine_LevMax = max_level;
@@ -796,7 +799,7 @@ PeleLM::readParameters()
   do_soot_solve = true;
   pp.query("do_soot_solve", do_soot_solve);
   if ((m_verbose != 0) && do_soot_solve) {
-    Print() << "Simulation performed with soot modeling \n";
+    amrex::Print() << "Simulation performed with soot modeling \n";
   }
   soot_model->readSootParams();
 #endif
@@ -804,7 +807,7 @@ PeleLM::readParameters()
   do_rad_solve = false;
   pp.query("do_rad_solve", do_rad_solve);
   if ((m_verbose != 0) && do_rad_solve) {
-    Print() << "Simulation performed with radiation modeling \n";
+    amrex::Print() << "Simulation performed with radiation modeling \n";
   }
 #endif
 
@@ -868,7 +871,7 @@ PeleLM::readIOParameters()
 {
   BL_PROFILE_VAR("PeleLMeX::readIOParameters()", readIOParameters);
 
-  ParmParse pp("amr");
+  amrex::ParmParse pp("amr");
 
   pp.query("check_file", m_check_file);
   pp.query("check_int", m_check_int);
@@ -919,65 +922,65 @@ PeleLM::variablesSetup()
   // Variables ordering is defined through compiler macro in PeleLMeX_Index.H
   // Simply print on screen the state layout and append to the stateComponents
   // list
-  Print() << "\n";
-  Print() << PrettyLine;
-  Print() << " State components \n";
-  Print() << PrettyLine;
+  amrex::Print() << "\n";
+  amrex::Print() << PrettyLine;
+  amrex::Print() << " State components \n";
+  amrex::Print() << PrettyLine;
 
-  Print() << " Velocity X: " << VELX;
+  amrex::Print() << " Velocity X: " << VELX;
   stateComponents.emplace_back(VELX, "x_velocity");
 #if AMREX_SPACEDIM > 1
-  Print() << ", Velocity Y: " << VELY;
+  amrex::Print() << ", Velocity Y: " << VELY;
   stateComponents.emplace_back(VELY, "y_velocity");
 #if AMREX_SPACEDIM > 2
-  Print() << ", Velocity Z: " << VELZ;
+  amrex::Print() << ", Velocity Z: " << VELZ;
   stateComponents.emplace_back(VELZ, "z_velocity");
 #endif
 #endif
-  Print() << " \n";
+  amrex::Print() << " \n";
 
   if (m_incompressible == 0) {
-    Print() << " Density: " << DENSITY << "\n";
+    amrex::Print() << " Density: " << DENSITY << "\n";
     stateComponents.emplace_back(DENSITY, "density");
-    Print() << " First species: " << FIRSTSPEC << "\n";
-    Vector<std::string> names;
+    amrex::Print() << " First species: " << FIRSTSPEC << "\n";
+    amrex::Vector<std::string> names;
     pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(
       names, &(eos_parms.host_parm()));
     for (int n = 0; n < NUM_SPECIES; n++) {
       stateComponents.emplace_back(FIRSTSPEC + n, "rho.Y(" + names[n] + ")");
       reactComponents.emplace_back(n, "I_R(" + names[n] + ")");
     }
-    Print() << " Enthalpy: " << RHOH << "\n";
+    amrex::Print() << " Enthalpy: " << RHOH << "\n";
     stateComponents.emplace_back(RHOH, "rhoh");
-    Print() << " Temperature: " << TEMP << "\n";
+    amrex::Print() << " Temperature: " << TEMP << "\n";
     stateComponents.emplace_back(TEMP, "temp");
-    Print() << " thermo. pressure: " << RHORT << "\n";
+    amrex::Print() << " thermo. pressure: " << RHORT << "\n";
     stateComponents.emplace_back(RHORT, "RhoRT");
 #ifdef PELE_USE_PLASMA
-    Print() << " nE: " << NE << "\n";
+    amrex::Print() << " nE: " << NE << "\n";
     stateComponents.emplace_back(NE, "nE");
-    Print() << " PhiV: " << PHIV << "\n";
+    amrex::Print() << " PhiV: " << PHIV << "\n";
     stateComponents.emplace_back(PHIV, "PhiV");
 #endif
 #ifdef PELE_USE_SOOT
     for (int mom = 0; mom < NUMSOOTVAR; mom++) {
       std::string sootname = soot_model->sootVariableName(mom);
-      Print() << " " << sootname << ": " << FIRSTSOOT + mom << "\n";
+      amrex::Print() << " " << sootname << ": " << FIRSTSOOT + mom << "\n";
       stateComponents.emplace_back(FIRSTSOOT + mom, sootname);
     }
     setSootIndx();
 #endif
 #if NUM_ODE > 0
-    Print() << " First ODE: " << FIRSTODE << "\n";
+    amrex::Print() << " First ODE: " << FIRSTODE << "\n";
     ProblemSpecificFunctions::set_ode_names(m_ode_names);
     if (m_ode_names.size() != NUM_ODE) {
-      Abort(
+      amrex::Abort(
         "ODEQty names improperly set. Adjust set_ode_names in "
         "ProblemSpecificFunctions or NUM_ODE in GNUMakefile");
     }
     for (int n = 0; n < NUM_ODE; ++n) {
       if (m_ode_names[n].empty()) {
-        Abort(
+        amrex::Abort(
           "ODEQty names improperly set. Adjust set_ode_names in "
           "ProblemSpecificFunctions or NUM_ODE in GNUMakefile");
       }
@@ -987,27 +990,28 @@ PeleLM::variablesSetup()
   }
 
   if (m_incompressible != 0) {
-    Print() << " => Total number of state variables: " << AMREX_SPACEDIM
-            << "\n";
+    amrex::Print() << " => Total number of state variables: " << AMREX_SPACEDIM
+                   << "\n";
   } else {
-    Print() << " => Total number of state variables: " << NVAR << "\n";
+    amrex::Print() << " => Total number of state variables: " << NVAR << "\n";
   }
   if (m_nAux > 0) {
     for (int n = 0; n < m_nAux; n++) {
-      Print() << " Auxiliary " + std::to_string(n + 1) + ": " << m_aux_names[n]
-              << "\n";
-      Print() << "   Advective: " << m_aux_advect[n] << "\n";
-      Print() << "   Conservative: " << m_AdvTypeAux[n] << "\n";
-      Print() << "   Diffusive: " << m_DiffTypeAux[n];
+      amrex::Print() << " Auxiliary " + std::to_string(n + 1) + ": "
+                     << m_aux_names[n] << "\n";
+      amrex::Print() << "   Advective: " << m_aux_advect[n] << "\n";
+      amrex::Print() << "   Conservative: " << m_AdvTypeAux[n] << "\n";
+      amrex::Print() << "   Diffusive: " << m_DiffTypeAux[n];
       if (m_aux_Schmidt[n] > 0) {
-        Print() << " - Schmidt number: " << m_aux_Schmidt[n];
+        amrex::Print() << " - Schmidt number: " << m_aux_Schmidt[n];
       }
-      Print() << "\n";
+      amrex::Print() << "\n";
     }
-    Print() << " => Total number of auxiliary variables: " << m_nAux << "\n";
+    amrex::Print() << " => Total number of auxiliary variables: " << m_nAux
+                   << "\n";
   }
-  Print() << PrettyLine;
-  Print() << "\n";
+  amrex::Print() << PrettyLine;
+  amrex::Print() << "\n";
 
   //----------------------------------------------------------------
   // Set advection/diffusion types
@@ -1064,7 +1068,7 @@ PeleLM::variablesSetup()
     // -----------------------------------------
     // Combustion
     // -----------------------------------------
-    ParmParse pp("peleLM");
+    amrex::ParmParse pp("peleLM");
     std::string fuel_name;
     pp.query("fuel_name", fuel_name);
     fuel_name = "rho.Y(" + fuel_name + ")";
@@ -1113,11 +1117,11 @@ PeleLM::readGridFile(
   }
 
   for (int lev = 1; lev <= in_finest; lev++) {
-    BoxList bl;
+    amrex::BoxList bl;
     is >> ngrid;
     STRIP;
     for (int i = 0; i < ngrid; i++) {
-      Box bx;
+      amrex::Box bx;
       is >> bx;
       STRIP;
       bx.refine(ref_ratio[lev - 1]);
@@ -1138,24 +1142,24 @@ PeleLM::derivedSetup()
   if (m_incompressible == 0) {
 
     // Get species names
-    Vector<std::string> spec_names;
+    amrex::Vector<std::string> spec_names;
     pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(
       spec_names, &(eos_parms.host_parm()));
 
     // Set species mass fractions
-    Vector<std::string> var_names_massfrac(NUM_SPECIES);
+    amrex::Vector<std::string> var_names_massfrac(NUM_SPECIES);
     for (int n = 0; n < NUM_SPECIES; n++) {
       var_names_massfrac[n] = "Y(" + spec_names[n] + ")";
     }
     derive_lst.add(
-      "mass_fractions", IndexType::TheCellType(), NUM_SPECIES,
+      "mass_fractions", amrex::IndexType::TheCellType(), NUM_SPECIES,
       var_names_massfrac, pelelmex_dermassfrac, the_same_box);
 
     for (int n = 0; n < NUM_SPECIES; n++) {
       var_names_massfrac[n] = "X(" + spec_names[n] + ")";
     }
     derive_lst.add(
-      "mole_fractions", IndexType::TheCellType(), NUM_SPECIES,
+      "mole_fractions", amrex::IndexType::TheCellType(), NUM_SPECIES,
       var_names_massfrac, pelelmex_dermolefrac, the_same_box);
 
     // Species diffusion coefficients
@@ -1168,74 +1172,77 @@ PeleLM::derivedSetup()
         var_names_massfrac[n + NUM_SPECIES] = "theta_" + spec_names[n];
       }
       derive_lst.add(
-        "diffcoeff", IndexType::TheCellType(), 2 * NUM_SPECIES,
+        "diffcoeff", amrex::IndexType::TheCellType(), 2 * NUM_SPECIES,
         var_names_massfrac, pelelmex_derdiffc, the_same_box);
     } else {
       derive_lst.add(
-        "diffcoeff", IndexType::TheCellType(), NUM_SPECIES, var_names_massfrac,
-        pelelmex_derdiffc, the_same_box);
+        "diffcoeff", amrex::IndexType::TheCellType(), NUM_SPECIES,
+        var_names_massfrac, pelelmex_derdiffc, the_same_box);
     }
 
     // Rho - sum rhoYs
     derive_lst.add(
-      "rhominsumrhoY", IndexType::TheCellType(), 1, pelelmex_derrhomrhoy,
+      "rhominsumrhoY", amrex::IndexType::TheCellType(), 1, pelelmex_derrhomrhoy,
       the_same_box);
 
     // Heat Release
     derive_lst.add(
-      "HeatRelease", IndexType::TheCellType(), 1, pelelmex_derheatrelease,
-      the_same_box);
+      "HeatRelease", amrex::IndexType::TheCellType(), 1,
+      pelelmex_derheatrelease, the_same_box);
 
     // Thermal diffusivity
     derive_lst.add(
-      "lambda", IndexType::TheCellType(), 1, pelelmex_derlambda, the_same_box);
+      "lambda", amrex::IndexType::TheCellType(), 1, pelelmex_derlambda,
+      the_same_box);
 
     // Mixture fraction
     derive_lst.add(
-      "mixture_fraction", IndexType::TheCellType(), 1, pelelmex_dermixfrac,
-      the_same_box);
+      "mixture_fraction", amrex::IndexType::TheCellType(), 1,
+      pelelmex_dermixfrac, the_same_box);
 
     // Progress variable
     derive_lst.add(
-      "progress_variable", IndexType::TheCellType(), 1, pelelmex_derprogvar,
-      the_same_box);
+      "progress_variable", amrex::IndexType::TheCellType(), 1,
+      pelelmex_derprogvar, the_same_box);
   }
 
   // Distribution Map
   derive_lst.add(
-    "DistributionMap", IndexType::TheCellType(), 1, pelelmex_derdmap,
+    "DistributionMap", amrex::IndexType::TheCellType(), 1, pelelmex_derdmap,
     the_same_box);
 
   // Turbulent Forcing Terms
-  Vector<std::string> var_names_turbforcing = {
+  amrex::Vector<std::string> var_names_turbforcing = {
     AMREX_D_DECL("forcex", "forcey", "forcez")};
   derive_lst.add(
-    "turbforces", IndexType::TheCellType(), AMREX_SPACEDIM,
+    "turbforces", amrex::IndexType::TheCellType(), AMREX_SPACEDIM,
     var_names_turbforcing, pelelmex_derturbforcing, the_same_box);
 
   // Cell average pressure
   derive_lst.add(
-    "avg_pressure", IndexType::TheCellType(), 1, pelelmex_deravgpress,
+    "avg_pressure", amrex::IndexType::TheCellType(), 1, pelelmex_deravgpress,
     the_same_box);
 
   // Viscosity
   derive_lst.add(
-    "viscosity", IndexType::TheCellType(), 1, pelelmex_dervisc, the_same_box);
+    "viscosity", amrex::IndexType::TheCellType(), 1, pelelmex_dervisc,
+    the_same_box);
 
   // Velocity magnitude
   derive_lst.add(
-    "mag_vel", IndexType::TheCellType(), 1, pelelmex_dermgvel, the_same_box);
+    "mag_vel", amrex::IndexType::TheCellType(), 1, pelelmex_dermgvel,
+    the_same_box);
 
   // Vorticity magnitude
   derive_lst.add(
-    "mag_vort", IndexType::TheCellType(), 1, pelelmex_dermgvort,
+    "mag_vort", amrex::IndexType::TheCellType(), 1, pelelmex_dermgvort,
     grow_box_by_two);
 
   // Spatial coordinates
   {
-    Vector<std::string> var_names({AMREX_D_DECL("x", "y", "z")});
+    amrex::Vector<std::string> var_names({AMREX_D_DECL("x", "y", "z")});
     derive_lst.add(
-      "coordinates", IndexType::TheCellType(), AMREX_SPACEDIM, var_names,
+      "coordinates", amrex::IndexType::TheCellType(), AMREX_SPACEDIM, var_names,
       pelelmex_dercoord, the_same_box);
   }
 
@@ -1243,20 +1250,20 @@ PeleLM::derivedSetup()
   {
     const int vort_ncomp = 2 * AMREX_SPACEDIM - 3;
 #if (AMREX_SPACEDIM == 2)
-    Vector<std::string> var_names({"VortZ"});
+    amrex::Vector<std::string> var_names({"VortZ"});
 #elif (AMREX_SPACEDIM == 3)
-    Vector<std::string> var_names({"VortX", "VortY", "VortZ"});
+    amrex::Vector<std::string> var_names({"VortX", "VortY", "VortZ"});
 #endif
     derive_lst.add(
-      "vorticity", IndexType::TheCellType(), vort_ncomp, var_names,
+      "vorticity", amrex::IndexType::TheCellType(), vort_ncomp, var_names,
       pelelmex_dervort, grow_box_by_two);
   }
 
   // UserDefined derived
   {
-    Vector<std::string> var_names = pelelmex_setuserderives();
+    amrex::Vector<std::string> var_names = pelelmex_setuserderives();
     derive_lst.add(
-      "derUserDefined", IndexType::TheCellType(),
+      "derUserDefined", amrex::IndexType::TheCellType(),
       static_cast<int>(var_names.size()), var_names, pelelmex_deruserdef,
       the_same_box);
   }
@@ -1264,61 +1271,65 @@ PeleLM::derivedSetup()
 #if (AMREX_SPACEDIM == 3)
   // Q-criterion
   derive_lst.add(
-    "Qcrit", IndexType::TheCellType(), 1, pelelmex_derQcrit, grow_box_by_two);
+    "Qcrit", amrex::IndexType::TheCellType(), 1, pelelmex_derQcrit,
+    grow_box_by_two);
 #endif
 
   // Kinetic energy
   derive_lst.add(
-    "kinetic_energy", IndexType::TheCellType(), 1, pelelmex_derkineticenergy,
-    the_same_box);
+    "kinetic_energy", amrex::IndexType::TheCellType(), 1,
+    pelelmex_derkineticenergy, the_same_box);
 
   // Enstrophy
   derive_lst.add(
-    "enstrophy", IndexType::TheCellType(), 1, pelelmex_derenstrophy,
+    "enstrophy", amrex::IndexType::TheCellType(), 1, pelelmex_derenstrophy,
     grow_box_by_two);
 
 #ifdef USE_MANIFOLD_EOS
   auto& mani_data = eos_parms.host_only_parm().manfunc_par->host_parm();
   const int nmanivar = mani_data.Nvar;
-  Vector<std::string> var_names_maniout(nmanivar);
+  amrex::Vector<std::string> var_names_maniout(nmanivar);
   for (int n = 0; n < nmanivar; n++) {
     std::string nametmp = std::string(
       &(mani_data.varnames)[n * mani_data.len_str], mani_data.len_str);
     var_names_maniout[n] = "MANI_" + amrex::trim(nametmp);
   }
   derive_lst.add(
-    "maniout", IndexType::TheCellType(), nmanivar, var_names_maniout,
+    "maniout", amrex::IndexType::TheCellType(), nmanivar, var_names_maniout,
     pelelmex_dermaniout, the_same_box);
 #endif
 
 #ifdef PELE_USE_PLASMA
   // Charge distribution
   derive_lst.add(
-    "chargedistrib", IndexType::TheCellType(), 1, pelelmex_derchargedist,
+    "chargedistrib", amrex::IndexType::TheCellType(), 1, pelelmex_derchargedist,
     the_same_box);
 
   // Electric field
   derive_lst.add(
-    "efieldx", IndexType::TheCellType(), 1, pelelmex_derefx, grow_box_by_one);
+    "efieldx", amrex::IndexType::TheCellType(), 1, pelelmex_derefx,
+    grow_box_by_one);
 #if (AMREX_SPACEDIM > 1)
   derive_lst.add(
-    "efieldy", IndexType::TheCellType(), 1, pelelmex_derefy, grow_box_by_one);
+    "efieldy", amrex::IndexType::TheCellType(), 1, pelelmex_derefy,
+    grow_box_by_one);
 #if (AMREX_SPACEDIM > 2)
   derive_lst.add(
-    "efieldz", IndexType::TheCellType(), 1, pelelmex_derefz, grow_box_by_one);
+    "efieldz", amrex::IndexType::TheCellType(), 1, pelelmex_derefz,
+    grow_box_by_one);
 #endif
 #endif
   // Lorentz forces
   derive_lst.add(
-    "LorentzFx", IndexType::TheCellType(), 1, pelelmex_derLorentzx,
+    "LorentzFx", amrex::IndexType::TheCellType(), 1, pelelmex_derLorentzx,
     grow_box_by_one);
 #if (AMREX_SPACEDIM > 1)
   derive_lst.add(
-    "LorentzFy", IndexType::TheCellType(), 1, pelelmex_derLorentzy,
+    "LorentzFy", amrex::IndexType::TheCellType(), 1, pelelmex_derLorentzy,
     grow_box_by_one);
 #if (AMREX_SPACEDIM > 2)
   derive_lst.add(
-    "LorentzFz", IndexType::TheCellType(), 1, pelelmex_derLorentzz,
+    "LorentzFz", amrex::IndexType::TheCellType(), 1, pelelmex_derLorentzz,
     grow_box_by_one);
 #endif
 #endif
@@ -1340,56 +1351,56 @@ PeleLM::evaluateSetup()
   BL_PROFILE("PeleLMeX::evaluateSetup()");
 
   // Get species names
-  Vector<std::string> spec_names;
+  amrex::Vector<std::string> spec_names;
   pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(
     spec_names, &(eos_parms.host_parm()));
 
   // divU
-  evaluate_lst.add("divU", IndexType::TheCellType(), 1, the_same_box);
+  evaluate_lst.add("divU", amrex::IndexType::TheCellType(), 1, the_same_box);
 
   // projected velocity field
   {
-    Vector<std::string> var_names = {
+    amrex::Vector<std::string> var_names = {
       AMREX_D_DECL("x_velProj", "y_velProj", "z_velProj")};
     evaluate_lst.add(
-      "velProj", IndexType::TheCellType(), AMREX_SPACEDIM, var_names,
+      "velProj", amrex::IndexType::TheCellType(), AMREX_SPACEDIM, var_names,
       the_same_box);
   }
 
   // velocity force
   {
-    Vector<std::string> var_names = {
+    amrex::Vector<std::string> var_names = {
       AMREX_D_DECL("x_velForce", "y_velForce", "z_velForce")};
     evaluate_lst.add(
-      "velForce", IndexType::TheCellType(), AMREX_SPACEDIM, var_names,
+      "velForce", amrex::IndexType::TheCellType(), AMREX_SPACEDIM, var_names,
       the_same_box);
   }
 
   // divTau
   {
-    Vector<std::string> var_names = {
+    amrex::Vector<std::string> var_names = {
       AMREX_D_DECL("x_divTau", "y_divTau", "z_divTau")};
     evaluate_lst.add(
-      "divTau", IndexType::TheCellType(), AMREX_SPACEDIM, var_names,
+      "divTau", amrex::IndexType::TheCellType(), AMREX_SPACEDIM, var_names,
       the_same_box);
   }
 
   // scalar diffusion term
   {
-    Vector<std::string> var_names(NUM_SPECIES + 2);
+    amrex::Vector<std::string> var_names(NUM_SPECIES + 2);
     for (int n = 0; n < NUM_SPECIES; n++) {
       var_names[n] = "D(" + spec_names[n] + ")";
     }
     var_names[NUM_SPECIES] = "D(RhoH)";
     var_names[NUM_SPECIES + 1] = "D(Temp)";
     evaluate_lst.add(
-      "diffTerm", IndexType::TheCellType(), NUM_SPECIES + 2, var_names,
+      "diffTerm", amrex::IndexType::TheCellType(), NUM_SPECIES + 2, var_names,
       the_same_box);
   }
 
   // advection terms
   {
-    Vector<std::string> var_names(
+    amrex::Vector<std::string> var_names(
       NVAR - 2); // Skip temperature and RhoRT, unused
     AMREX_D_TERM(
       var_names[VELX] = "A(VELX)";, var_names[VELY] = "A(VELY)";
@@ -1400,12 +1411,13 @@ PeleLM::evaluateSetup()
     }
     var_names[RHOH] = "A(RhoH)";
     evaluate_lst.add(
-      "advTerm", IndexType::TheCellType(), NVAR - 2, var_names, the_same_box);
+      "advTerm", amrex::IndexType::TheCellType(), NVAR - 2, var_names,
+      the_same_box);
   }
 
   // Chemical state and external chem. forcing (used in ReactEval)
   {
-    Vector<std::string> var_names(2 * (NUM_SPECIES + 1) + 1);
+    amrex::Vector<std::string> var_names(2 * (NUM_SPECIES + 1) + 1);
     for (int n = 0; n < NUM_SPECIES; n++) {
       var_names[n] = "rhoY(" + spec_names[n] + ")";
     }
@@ -1416,31 +1428,32 @@ PeleLM::evaluateSetup()
     }
     var_names[2 * NUM_SPECIES + 2] = "F_rhoH";
     evaluate_lst.add(
-      "chemTest", IndexType::TheCellType(), 2 * (NUM_SPECIES + 1) + 1,
+      "chemTest", amrex::IndexType::TheCellType(), 2 * (NUM_SPECIES + 1) + 1,
       var_names, the_same_box);
   }
 
   // instantaneous reaction rate
   {
-    Vector<std::string> var_names(NUM_SPECIES);
+    amrex::Vector<std::string> var_names(NUM_SPECIES);
     for (int n = 0; n < NUM_SPECIES; n++) {
       var_names[n] = "I_R(" + spec_names[n] + ")";
     }
     evaluate_lst.add(
-      "instRR", IndexType::TheCellType(), NUM_SPECIES, var_names, the_same_box);
+      "instRR", amrex::IndexType::TheCellType(), NUM_SPECIES, var_names,
+      the_same_box);
   }
 
   // cell-centered transport coefficients
   {
-    Vector<std::string> var_names(NUM_SPECIES + 2);
+    amrex::Vector<std::string> var_names(NUM_SPECIES + 2);
     for (int n = 0; n < NUM_SPECIES; n++) {
       var_names[n] = "rhoD(" + spec_names[n] + ")";
     }
     var_names[NUM_SPECIES] = "Lamdba";
     var_names[NUM_SPECIES + 1] = "Mu";
     evaluate_lst.add(
-      "transportCC", IndexType::TheCellType(), NUM_SPECIES + 2, var_names,
-      the_same_box);
+      "transportCC", amrex::IndexType::TheCellType(), NUM_SPECIES + 2,
+      var_names, the_same_box);
   }
 }
 
@@ -1450,40 +1463,40 @@ PeleLM::taggingSetup()
   BL_PROFILE("PeleLMeX::taggingSetup()");
 
   std::string amr_prefix = "amr";
-  ParmParse ppamr(amr_prefix);
+  amrex::ParmParse ppamr(amr_prefix);
 
-  Vector<std::string> refinement_indicators;
+  amrex::Vector<std::string> refinement_indicators;
   ppamr.queryarr(
     "refinement_indicators", refinement_indicators, 0,
     ppamr.countval("refinement_indicators"));
   for (const auto& refinement_indicator : refinement_indicators) {
     std::string ref_prefix = amr_prefix + "." + refinement_indicator;
-    ParmParse ppr(ref_prefix);
+    amrex::ParmParse ppr(ref_prefix);
 
     // Tag a given box
-    RealBox realbox;
+    amrex::RealBox realbox;
     if (ppr.countval("in_box_lo") != 0) {
-      Vector<Real> box_lo(AMREX_SPACEDIM);
-      Vector<Real> box_hi(AMREX_SPACEDIM);
+      amrex::Vector<amrex::Real> box_lo(AMREX_SPACEDIM);
+      amrex::Vector<amrex::Real> box_hi(AMREX_SPACEDIM);
       ppr.getarr("in_box_lo", box_lo, 0, static_cast<int>(box_lo.size()));
       ppr.getarr("in_box_hi", box_hi, 0, static_cast<int>(box_hi.size()));
-      realbox = RealBox(box_lo.data(), box_hi.data());
+      realbox = amrex::RealBox(box_lo.data(), box_hi.data());
     }
 
-    AMRErrorTagInfo info;
+    amrex::AMRErrorTagInfo info;
 
     if (realbox.ok()) {
       info.SetRealBox(realbox);
     }
 
     if (ppr.countval("start_time") > 0) {
-      Real min_time;
+      amrex::Real min_time;
       ppr.get("start_time", min_time);
       info.SetMinTime(min_time);
     }
 
     if (ppr.countval("end_time") > 0) {
-      Real max_time;
+      amrex::Real max_time;
       ppr.get("end_time", max_time);
       info.SetMaxTime(max_time);
     }
@@ -1496,41 +1509,45 @@ PeleLM::taggingSetup()
 
     bool itexists = false;
     if (ppr.countval("value_greater") != 0) {
-      Real value;
+      amrex::Real value;
       ppr.get("value_greater", value);
       std::string field;
       ppr.get("field_name", field);
-      errTags.push_back(AMRErrorTag(value, AMRErrorTag::GREATER, field, info));
+      errTags.push_back(
+        amrex::AMRErrorTag(value, amrex::AMRErrorTag::GREATER, field, info));
       itexists = derive_lst.canDerive(field) || isStateVariable(field) ||
                  isReactVariable(field);
     } else if (ppr.countval("value_less") != 0) {
-      Real value;
+      amrex::Real value;
       ppr.get("value_less", value);
       std::string field;
       ppr.get("field_name", field);
-      errTags.push_back(AMRErrorTag(value, AMRErrorTag::LESS, field, info));
+      errTags.push_back(
+        amrex::AMRErrorTag(value, amrex::AMRErrorTag::LESS, field, info));
       itexists = derive_lst.canDerive(field) || isStateVariable(field) ||
                  isReactVariable(field);
     } else if (ppr.countval("vorticity_greater") != 0) {
-      Real value;
+      amrex::Real value;
       ppr.get("vorticity_greater", value);
       const std::string field = "mag_vort";
-      errTags.push_back(AMRErrorTag(value, AMRErrorTag::VORT, field, info));
+      errTags.push_back(
+        amrex::AMRErrorTag(value, amrex::AMRErrorTag::VORT, field, info));
       itexists = derive_lst.canDerive(field) || isStateVariable(field) ||
                  isReactVariable(field);
     } else if (ppr.countval("adjacent_difference_greater") != 0) {
-      Real value;
+      amrex::Real value;
       ppr.get("adjacent_difference_greater", value);
       std::string field;
       ppr.get("field_name", field);
-      errTags.push_back(AMRErrorTag(value, AMRErrorTag::GRAD, field, info));
+      errTags.push_back(
+        amrex::AMRErrorTag(value, amrex::AMRErrorTag::GRAD, field, info));
       itexists = derive_lst.canDerive(field) || isStateVariable(field) ||
                  isReactVariable(field);
     } else if (realbox.ok()) {
-      errTags.push_back(AMRErrorTag(info));
+      errTags.push_back(amrex::AMRErrorTag(info));
       itexists = true;
     } else {
-      Abort(
+      amrex::Abort(
         std::string(
           "Unrecognized refinement indicator for " + refinement_indicator)
           .c_str());
@@ -1549,7 +1566,8 @@ PeleLM::resizeArray()
 {
 
   if (m_verbose != 0) {
-    Print() << " Initializing data for " << max_level + 1 << " levels \n";
+    amrex::Print() << " Initializing data for " << max_level + 1
+                   << " levels \n";
   }
 
   // State data

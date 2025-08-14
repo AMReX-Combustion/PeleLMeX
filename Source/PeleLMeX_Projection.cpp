@@ -516,14 +516,14 @@ PeleLM::scaleProj_RZ( // NOLINT(readability-convert-member-functions-to-static)
     amrex::Box domain = geom[a_lev].Domain();
     auto BCRecVel = fetchBCRecArray(VELX, 1);
     for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
-      if (BCRecVel[0].lo(idim) == BCType::ext_dir) {
+      if (BCRecVel[0].lo(idim) == amrex::BCType::ext_dir) {
         domain.growLo(idim, 1);
       }
-      if (BCRecVel[0].hi(idim) == BCType::ext_dir) {
+      if (BCRecVel[0].hi(idim) == amrex::BCType::ext_dir) {
         domain.growHi(idim, 1);
       }
     }
-    const Real dr = geom[a_lev].CellSize()[0];
+    const amrex::Real dr = geom[a_lev].CellSize()[0];
     auto const& mf_ma = a_mf.arrays();
     const auto ncomp = a_mf.nComp();
     amrex::ParallelFor(
@@ -532,7 +532,7 @@ PeleLM::scaleProj_RZ( // NOLINT(readability-convert-member-functions-to-static)
         auto mf = mf_ma[box_no];
         if (domain.contains(i, j, k)) {
           for (int n = 0; n < ncomp; ++n) {
-            mf(i, j, k, n) *= (static_cast<Real>(i) + 0.5) * dr;
+            mf(i, j, k, n) *= (static_cast<amrex::Real>(i) + 0.5) * dr;
           }
         } else {
           for (int n = 0; n < ncomp; ++n) {
@@ -556,8 +556,8 @@ PeleLM::
 #if AMREX_SPACEDIM == 2
   // Unscale nodal projection cell-centered mfs by radius
   if (geom[a_lev].IsRZ()) {
-    const Box& domain = geom[a_lev].Domain();
-    const Real dr = geom[a_lev].CellSize()[0];
+    const amrex::Box& domain = geom[a_lev].Domain();
+    const amrex::Real dr = geom[a_lev].CellSize()[0];
     auto const& mf_ma = a_mf.arrays();
     const auto ncomp = a_mf.nComp();
     amrex::ParallelFor(
@@ -566,7 +566,7 @@ PeleLM::
         auto mf = mf_ma[box_no];
         if (domain.contains(i, j, k)) {
           for (int n = 0; n < ncomp; ++n) {
-            mf(i, j, k, n) /= (static_cast<Real>(i) + 0.5) * dr;
+            mf(i, j, k, n) /= (static_cast<amrex::Real>(i) + 0.5) * dr;
           }
         } else {
           for (int n = 0; n < ncomp; ++n) {
