@@ -134,7 +134,7 @@ PeleLM::MakeNewLevelFromScratch(
       grids[lev], dmap[lev], 1, 1, amrex::MFInfo(), *m_factory[lev]);
 
     // Estimate the maximum distance we need in terms of level 0 dx:
-    amrex::Real extentFactor = static_cast<amrex::Real>(nErrorBuf(0));
+    auto extentFactor = static_cast<amrex::Real>(nErrorBuf(0));
     for (int ilev = 1; ilev <= max_level; ++ilev) {
       extentFactor += static_cast<amrex::Real>(nErrorBuf(ilev)) /
                       std::pow(
