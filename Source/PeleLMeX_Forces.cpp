@@ -286,7 +286,7 @@ PeleLM::addScalarVarianceSources(const TimeStamp& a_timestamp)
         for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
           grad_fc[lev][idim].define(
             amrex::convert(ba, amrex::IntVect::TheDimensionVector(idim)),
-            dmap[lev], 1, nGrow, MFInfo(), factory);
+            dmap[lev], 1, nGrow, amrex::MFInfo(), factory);
           grad_fc[lev][idim].setVal(0.0); // Required?
         }
       }
