@@ -546,6 +546,13 @@ PeleLM::readParameters()
   pp.query("do_init_proj", m_do_init_proj);
   pp.query("num_init_iter", m_init_iter);
   pp.query("initDataPlt_patch_flow_variables", m_do_patch_flow_variables);
+  pp.queryarr("initDataPlt_specname_map", m_initDataPlt_specname_map);
+  if (
+    !m_initDataPlt_specname_map.empty() &&
+    m_initDataPlt_specname_map.size() != NUM_SPECIES) {
+    amrex::Abort(
+      "If specifying a species name map, length must equal number of species");
+  }
   pp.query("initDataPlt_reset_time", m_do_reset_time);
 
   // -----------------------------------------
