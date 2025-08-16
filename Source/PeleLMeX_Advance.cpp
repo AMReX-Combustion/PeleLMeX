@@ -3,8 +3,6 @@
 #include <AMReX_MemProfiler.H>
 #include <memory>
 
-using namespace amrex;
-
 void
 PeleLM::Advance(int is_initIter)
 {
@@ -16,7 +14,7 @@ PeleLM::Advance(int is_initIter)
 #endif
 
   // Start timing current time step
-  Real strt_time = ParallelDescriptor::second();
+  amrex::Real strt_time = amrex::ParallelDescriptor::second();
 
   //----------------------------------------------------------------
   BL_PROFILE_VAR("PeleLMeX::advance::setup", PLM_SETUP);
@@ -160,9 +158,9 @@ PeleLM::Advance(int is_initIter)
   //----------------------------------------------------------------
   // Scalar advance
   if (m_incompressible != 0) {
-    Real MACStart = 0.0;
+    amrex::Real MACStart = 0.0;
     if (m_verbose > 1) {
-      MACStart = ParallelDescriptor::second();
+      MACStart = amrex::ParallelDescriptor::second();
     }
 
     // Still need to get face velocities ...
@@ -172,9 +170,9 @@ PeleLM::Advance(int is_initIter)
     macProject(AmrOldTime, advData, {});
 
     if (m_verbose > 1) {
-      Real MACEnd = ParallelDescriptor::second() - MACStart;
-      ParallelDescriptor::ReduceRealMax(
-        MACEnd, ParallelDescriptor::IOProcessorNumber());
+      amrex::Real MACEnd = amrex::ParallelDescriptor::second() - MACStart;
+      amrex::ParallelDescriptor::ReduceRealMax(
+        MACEnd, amrex::ParallelDescriptor::IOProcessorNumber());
       amrex::Print() << "   - Advance()::MACProjection()  --> Time: " << MACEnd
                      << "\n";
     }
@@ -217,9 +215,9 @@ PeleLM::Advance(int is_initIter)
   //----------------------------------------------------------------
   BL_PROFILE_VAR("PeleLMeX::advance::velocity", PLM_VEL);
   // Velocity advance
-  Real VelAdvStart = 0.0;
+  amrex::Real VelAdvStart = 0.0;
   if (m_verbose > 1) {
-    VelAdvStart = ParallelDescriptor::second();
+    VelAdvStart = amrex::ParallelDescriptor::second();
   }
   // Re-evaluate viscosity only if scalar updated
   if (m_incompressible == 0) {
@@ -241,9 +239,9 @@ PeleLM::Advance(int is_initIter)
   const TimeStamp rhoTime = AmrHalfTime;
   velocityProjection(is_initIter, rhoTime, m_dt);
   if (m_verbose > 1) {
-    Real VelAdvEnd = ParallelDescriptor::second() - VelAdvStart;
-    ParallelDescriptor::ReduceRealMax(
-      VelAdvEnd, ParallelDescriptor::IOProcessorNumber());
+    amrex::Real VelAdvEnd = amrex::ParallelDescriptor::second() - VelAdvStart;
+    amrex::ParallelDescriptor::ReduceRealMax(
+      VelAdvEnd, amrex::ParallelDescriptor::IOProcessorNumber());
     amrex::Print() << "   - Advance()::VelocityAdvance  --> Time: " << VelAdvEnd
                    << "\n";
   }
@@ -260,9 +258,9 @@ PeleLM::Advance(int is_initIter)
   // Wrapup advance
   // Timing current time step
   if (m_verbose > 0) {
-    Real run_time = ParallelDescriptor::second() - strt_time;
-    ParallelDescriptor::ReduceRealMax(
-      run_time, ParallelDescriptor::IOProcessorNumber());
+    amrex::Real run_time = amrex::ParallelDescriptor::second() - strt_time;
+    amrex::ParallelDescriptor::ReduceRealMax(
+      run_time, amrex::ParallelDescriptor::IOProcessorNumber());
     amrex::Print() << " >> PeleLMeX::Advance() --> Time: " << run_time << "\n";
   }
 }
@@ -286,9 +284,9 @@ PeleLM::oneSDC(
   // At the first SDC, we already copied old -> new
   if (sdcIter > 1) {
 
-    Real UpdateStart = 0.0;
+    amrex::Real UpdateStart = 0.0;
     if (m_verbose > 1) {
-      UpdateStart = ParallelDescriptor::second();
+      UpdateStart = amrex::ParallelDescriptor::second();
     }
     // fillpatch the new state
     averageDownScalars(AmrNewTime);
@@ -317,9 +315,9 @@ PeleLM::oneSDC(
     checkDt(AmrNewTime, m_dt);
 
     if (m_verbose > 1) {
-      Real UpdateEnd = ParallelDescriptor::second() - UpdateStart;
-      ParallelDescriptor::ReduceRealMax(
-        UpdateEnd, ParallelDescriptor::IOProcessorNumber());
+      amrex::Real UpdateEnd = amrex::ParallelDescriptor::second() - UpdateStart;
+      amrex::ParallelDescriptor::ReduceRealMax(
+        UpdateEnd, amrex::ParallelDescriptor::IOProcessorNumber());
       amrex::Print() << "   - oneSDC()::Update t^{n+1,k}  --> Time: "
                      << UpdateEnd << "\n";
     }
@@ -330,9 +328,9 @@ PeleLM::oneSDC(
   // Get u MAC
   //----------------------------------------------------------------
   BL_PROFILE_VAR("PeleLMeX::advance::mac", PLM_MAC);
-  Real MACStart = 0.0;
+  amrex::Real MACStart = 0.0;
   if (m_verbose > 1) {
-    MACStart = ParallelDescriptor::second();
+    MACStart = amrex::ParallelDescriptor::second();
   }
   // Predict face velocity with Godunov
   predictVelocity(advData);
@@ -346,9 +344,9 @@ PeleLM::oneSDC(
   // MAC projection
   macProject(AmrOldTime, advData, GetVecOfPtrs(advData->mac_divu));
   if (m_verbose > 1) {
-    Real MACEnd = ParallelDescriptor::second() - MACStart;
-    ParallelDescriptor::ReduceRealMax(
-      MACEnd, ParallelDescriptor::IOProcessorNumber());
+    amrex::Real MACEnd = amrex::ParallelDescriptor::second() - MACStart;
+    amrex::ParallelDescriptor::ReduceRealMax(
+      MACEnd, amrex::ParallelDescriptor::IOProcessorNumber());
     amrex::Print() << "   - oneSDC()::MACProjection()   --> Time: " << MACEnd
                    << "\n";
   }
@@ -360,9 +358,9 @@ PeleLM::oneSDC(
   // Scalar advections
   //----------------------------------------------------------------
   BL_PROFILE_VAR("PeleLMeX::advance::scalars_adv", PLM_SADV);
-  Real ScalAdvStart = 0.0;
+  amrex::Real ScalAdvStart = 0.0;
   if (m_verbose > 1) {
-    ScalAdvStart = ParallelDescriptor::second();
+    ScalAdvStart = amrex::ParallelDescriptor::second();
   }
 #ifdef PELE_USE_SOOT
   // Compute and update passive advective terms
@@ -380,9 +378,9 @@ PeleLM::oneSDC(
   updateDensity(advData);
   fillPatchDensity(AmrNewTime);
   if (m_verbose > 1) {
-    Real ScalAdvEnd = ParallelDescriptor::second() - ScalAdvStart;
-    ParallelDescriptor::ReduceRealMax(
-      ScalAdvEnd, ParallelDescriptor::IOProcessorNumber());
+    amrex::Real ScalAdvEnd = amrex::ParallelDescriptor::second() - ScalAdvStart;
+    amrex::ParallelDescriptor::ReduceRealMax(
+      ScalAdvEnd, amrex::ParallelDescriptor::IOProcessorNumber());
     amrex::Print() << "   - oneSDC()::ScalarAdvection() --> Time: "
                    << ScalAdvEnd << "\n";
   }
@@ -394,9 +392,9 @@ PeleLM::oneSDC(
   // Scalar diffusion
   //----------------------------------------------------------------
   BL_PROFILE_VAR("PeleLMeX::advance::diffusion", PLM_DIFF);
-  Real ScalDiffStart = 0.0;
+  amrex::Real ScalDiffStart = 0.0;
   if (m_verbose > 1) {
-    ScalDiffStart = ParallelDescriptor::second();
+    ScalDiffStart = amrex::ParallelDescriptor::second();
   }
   // Get scalar diffusion SDC RHS (stored in Forcing)
   getScalarDiffForce(advData, diffData);
@@ -404,9 +402,10 @@ PeleLM::oneSDC(
   // Diffuse scalars
   differentialDiffusionUpdate(advData, diffData);
   if (m_verbose > 1) {
-    Real ScalDiffEnd = ParallelDescriptor::second() - ScalDiffStart;
-    ParallelDescriptor::ReduceRealMax(
-      ScalDiffEnd, ParallelDescriptor::IOProcessorNumber());
+    amrex::Real ScalDiffEnd =
+      amrex::ParallelDescriptor::second() - ScalDiffStart;
+    amrex::ParallelDescriptor::ReduceRealMax(
+      ScalDiffEnd, amrex::ParallelDescriptor::IOProcessorNumber());
     amrex::Print() << "   - oneSDC()::ScalarDiffusion() --> Time: "
                    << ScalDiffEnd << "\n";
   }
@@ -425,9 +424,9 @@ PeleLM::oneSDC(
   // Reaction
   //----------------------------------------------------------------
   BL_PROFILE_VAR("PeleLMeX::advance::reactions", PLM_REAC);
-  Real ScalReacStart = 0.0;
+  amrex::Real ScalReacStart = 0.0;
   if (m_verbose > 1) {
-    ScalReacStart = ParallelDescriptor::second();
+    ScalReacStart = amrex::ParallelDescriptor::second();
   }
   // Get external forcing for chemistry
   getScalarReactForce(advData);
@@ -435,9 +434,10 @@ PeleLM::oneSDC(
   // Integrate chemistry
   advanceChemistry(advData);
   if (m_verbose > 1) {
-    Real ScalReacEnd = ParallelDescriptor::second() - ScalReacStart;
-    ParallelDescriptor::ReduceRealMax(
-      ScalReacEnd, ParallelDescriptor::IOProcessorNumber());
+    amrex::Real ScalReacEnd =
+      amrex::ParallelDescriptor::second() - ScalReacStart;
+    amrex::ParallelDescriptor::ReduceRealMax(
+      ScalReacEnd, amrex::ParallelDescriptor::IOProcessorNumber());
     amrex::Print() << "   - oneSDC()::ScalarReaction()  --> Time: "
                    << ScalReacEnd << "\n";
   }

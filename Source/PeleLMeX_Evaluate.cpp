@@ -2,8 +2,6 @@
 #include <AMReX_PlotFileUtil.H>
 #include <memory>
 
-using namespace amrex;
-
 void
 PeleLM::Evaluate()
 {
@@ -13,7 +11,7 @@ PeleLM::Evaluate()
   // Check that requested evaluate entries exist and determine the size
   // of the container and entries names
   int ncomp = 0;
-  Vector<std::string> plt_VarsName;
+  amrex::Vector<std::string> plt_VarsName;
   for (int ivar = 0; ivar < m_evaluatePlotVarCount; ivar++) {
     bool itexists = derive_lst.canDerive(m_evaluatePlotVars[ivar]) ||
                     evaluate_lst.canDerive(m_evaluatePlotVars[ivar]) ||
@@ -42,9 +40,10 @@ PeleLM::Evaluate()
 
   //----------------------------------------------------------------
   // Define the outgoing container
-  Vector<MultiFab> mf_plt(finest_level + 1);
+  amrex::Vector<amrex::MultiFab> mf_plt(finest_level + 1);
   for (int lev = 0; lev <= finest_level; ++lev) {
-    mf_plt[lev].define(grids[lev], dmap[lev], ncomp, 0, MFInfo(), Factory(lev));
+    mf_plt[lev].define(
+      grids[lev], dmap[lev], ncomp, 0, amrex::MFInfo(), Factory(lev));
   }
 
   //----------------------------------------------------------------
@@ -59,7 +58,7 @@ PeleLM::Evaluate()
   for (int ivar = 0; ivar < m_evaluatePlotVarCount; ivar++) {
     int cntIncr = 0;
 
-    Print() << " --> Evaluating " << m_evaluatePlotVars[ivar] << "\n";
+    amrex::Print() << " --> Evaluating " << m_evaluatePlotVars[ivar] << "\n";
 
     // Evaluate function calls actual PeleLM::Evolve pieces and may require
     // the entire multi-level hierarchy
@@ -72,9 +71,9 @@ PeleLM::Evaluate()
       derive_lst.canDerive(m_evaluatePlotVars[ivar]) ||
       isStateVariable(m_evaluatePlotVars[ivar])) {
       for (int lev = 0; lev <= finest_level; ++lev) {
-        std::unique_ptr<MultiFab> mf;
+        std::unique_ptr<amrex::MultiFab> mf;
         mf = derive(m_evaluatePlotVars[ivar], m_cur_time, lev, 0);
-        MultiFab::Copy(mf_plt[lev], *mf, 0, cnt, mf->nComp(), 0);
+        amrex::MultiFab::Copy(mf_plt[lev], *mf, 0, cnt, mf->nComp(), 0);
         cntIncr = mf->nComp();
       }
     }
@@ -83,7 +82,7 @@ PeleLM::Evaluate()
 
   //----------------------------------------------------------------
   // Write the evaluated variables to disc
-  Vector<int> istep(finest_level + 1, 0);
+  amrex::Vector<int> istep(finest_level + 1, 0);
 
   // Override m_cur_time to store the dt in pltEvaluate
   m_cur_time = m_dt;
@@ -96,7 +95,7 @@ PeleLM::Evaluate()
 
 void
 PeleLM::MLevaluate(
-  const Vector<MultiFab*>& a_MFVec,
+  const amrex::Vector<amrex::MultiFab*>& a_MFVec,
   int a_comp,
   int& nComp,
   const std::string& a_var)
@@ -120,7 +119,7 @@ PeleLM::MLevaluate(
       diffData);
     for (int lev = 0; lev <= finest_level; ++lev) {
       auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
-      MultiFab::Copy(*a_MFVec[lev], ldata_p->divu, 0, a_comp, 1, 0);
+      amrex::MultiFab::Copy(*a_MFVec[lev], ldata_p->divu, 0, a_comp, 1, 0);
     }
     nComp = 1;
   } else if (a_var == "velProj") {
@@ -144,16 +143,17 @@ PeleLM::MLevaluate(
     // Copy into outgoing data holder
     for (int lev = 0; lev <= finest_level; ++lev) {
       auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
-      MultiFab::Copy(
+      amrex::MultiFab::Copy(
         *a_MFVec[lev], ldata_p->state, VELX, a_comp, AMREX_SPACEDIM, 0);
     }
     nComp = AMREX_SPACEDIM;
   } else if (a_var == "divTau") {
     // Velocity tensor components
     int use_density = 0;
-    Vector<std::unique_ptr<MultiFab>> aliasDivTau(finest_level + 1);
+    amrex::Vector<std::unique_ptr<amrex::MultiFab>> aliasDivTau(
+      finest_level + 1);
     for (int lev = 0; lev <= finest_level; ++lev) {
-      aliasDivTau[lev] = std::make_unique<MultiFab>(
+      aliasDivTau[lev] = std::make_unique<amrex::MultiFab>(
         *a_MFVec[lev], amrex::make_alias, a_comp, AMREX_SPACEDIM);
     }
     computeDivTau(AmrNewTime, GetVecOfPtrs(aliasDivTau), use_density);
@@ -177,14 +177,14 @@ PeleLM::MLevaluate(
     }
     computeDifferentialDiffusionTerms(AmrNewTime, diffData);
     for (int lev = 0; lev <= finest_level; ++lev) {
-      MultiFab::Copy(
+      amrex::MultiFab::Copy(
         *a_MFVec[lev], diffData->Dnp1[lev], 0, a_comp, NUM_SPECIES + 2, 0);
     }
     nComp = NUM_SPECIES + 2;
   } else if (a_var == "advTerm") {
-    Vector<std::unique_ptr<MultiFab>> aliasMF(finest_level + 1);
+    amrex::Vector<std::unique_ptr<amrex::MultiFab>> aliasMF(finest_level + 1);
     for (int lev = 0; lev <= finest_level; ++lev) {
-      aliasMF[lev] = std::make_unique<MultiFab>(
+      aliasMF[lev] = std::make_unique<amrex::MultiFab>(
         *a_MFVec[lev], amrex::make_alias, a_comp, NVAR - 2);
     }
     evaluateAdvectionTerms(GetVecOfPtrs(aliasMF));
@@ -194,16 +194,16 @@ PeleLM::MLevaluate(
     // integration Replicate most of the advance function Copy the state
     for (int lev = 0; lev <= finest_level; ++lev) {
       auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
-      MultiFab::Copy(
+      amrex::MultiFab::Copy(
         *a_MFVec[lev], ldata_p->state, FIRSTSPEC, a_comp, NUM_SPECIES + 2, 0);
     }
     // Initial velocity projection
     if (m_restart_chkfile.empty()) {
       projectInitSolution();
     }
-    Vector<std::unique_ptr<MultiFab>> aliasMF(finest_level + 1);
+    amrex::Vector<std::unique_ptr<amrex::MultiFab>> aliasMF(finest_level + 1);
     for (int lev = 0; lev <= finest_level; ++lev) {
-      aliasMF[lev] = std::make_unique<MultiFab>(
+      aliasMF[lev] = std::make_unique<amrex::MultiFab>(
         *a_MFVec[lev], amrex::make_alias, a_comp + NUM_SPECIES + 2,
         NUM_SPECIES + 1);
     }
@@ -211,7 +211,7 @@ PeleLM::MLevaluate(
     nComp = 2 * (NUM_SPECIES + 1) + 1;
   } else if (a_var == "instRR") {
     for (int lev = 0; lev <= finest_level; ++lev) {
-      std::unique_ptr<MultiFab> I_RR = std::make_unique<MultiFab>(
+      std::unique_ptr<amrex::MultiFab> I_RR = std::make_unique<amrex::MultiFab>(
         *a_MFVec[lev], amrex::make_alias, a_comp, NUM_SPECIES);
       computeInstantaneousReactionRate(lev, AmrNewTime, I_RR.get());
     }
@@ -224,12 +224,12 @@ PeleLM::MLevaluate(
     calcDiffusivity(AmrNewTime);
     for (int lev = 0; lev <= finest_level; ++lev) {
       auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
-      MultiFab::Copy(
+      amrex::MultiFab::Copy(
         *a_MFVec[lev], ldata_p->diff_cc, 0, a_comp, NUM_SPECIES + 1, 0);
-      MultiFab::Copy(
+      amrex::MultiFab::Copy(
         *a_MFVec[lev], ldata_p->visc_cc, 0, a_comp + NUM_SPECIES + 1, 1, 0);
       if (m_use_soret != 0) {
-        MultiFab::Copy(
+        amrex::MultiFab::Copy(
           *a_MFVec[lev], ldata_p->diff_cc, NUM_SPECIES + 2,
           a_comp + NUM_SPECIES + 2, NUM_SPECIES, 0);
       }
@@ -242,9 +242,10 @@ PeleLM::MLevaluate(
   } else if (a_var == "velForce") {
     // Velocity forces used in computing the velocity advance
     int add_gradP = 0;
-    Vector<std::unique_ptr<MultiFab>> aliasMFVec(finest_level + 1);
+    amrex::Vector<std::unique_ptr<amrex::MultiFab>> aliasMFVec(
+      finest_level + 1);
     for (int lev = 0; lev <= finest_level; ++lev) {
-      aliasMFVec[lev] = std::make_unique<MultiFab>(
+      aliasMFVec[lev] = std::make_unique<amrex::MultiFab>(
         *a_MFVec[lev], amrex::make_alias, a_comp, AMREX_SPACEDIM);
     }
     getVelForces(AmrNewTime, {}, GetVecOfPtrs(aliasMFVec), 0, add_gradP);
@@ -350,7 +351,7 @@ PeleLM::evaluateChemExtForces(
 
   // Copy external forcing for chemistry into outgoing container
   for (int lev = 0; lev <= finest_level; ++lev) {
-    MultiFab::Copy(
+    amrex::MultiFab::Copy(
       *a_chemForces[lev], advData->Forcing[lev], 0, 0, NUM_SPECIES + 1, 0);
   }
 
@@ -449,7 +450,8 @@ PeleLM::evaluateAdvectionTerms(
 
   // Copy AofS into outgoing container, skip Temperature and RhoRT
   for (int lev = 0; lev <= finest_level; ++lev) {
-    MultiFab::Copy(*a_advTerms[lev], advData->AofS[lev], 0, 0, NVAR - 2, 0);
+    amrex::MultiFab::Copy(
+      *a_advTerms[lev], advData->AofS[lev], 0, 0, NVAR - 2, 0);
   }
 
   // Reset state

@@ -209,7 +209,7 @@ PeleLM::extFluxDivergenceLevel(
 #endif
 
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
   for (MFIter mfi(a_divergence, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
     const Box& bx = mfi.tilebox();
@@ -228,15 +228,13 @@ PeleLM::extFluxDivergenceLevel(
 #ifdef AMREX_USE_EB
     if (flagfab.getType(bx) == FabType::covered) { // Covered boxes
       amrex::ParallelFor(
-        bx, ncomp,
-        [divergence] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
+        bx, ncomp, [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
           divergence(i, j, k, n) = 0.0;
         });
     } else if (flagfab.getType(bx) != FabType::regular) { // EB containing boxes
       auto vfrac = ebfact.getVolFrac().const_array(mfi);
       amrex::ParallelFor(
-        bx, [ncomp, flag, vfrac, divergence, AMREX_D_DECL(fluxX, fluxY, fluxZ),
-             vol, scale] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           if (flag(i, j, k).isCovered()) {
             for (int n = 0; n < ncomp; n++) {
               divergence(i, j, k, n) = 0.0;
@@ -259,8 +257,7 @@ PeleLM::extFluxDivergenceLevel(
 #endif
     {
       amrex::ParallelFor(
-        bx, [ncomp, divergence, AMREX_D_DECL(fluxX, fluxY, fluxZ), vol,
-             scale] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           extFluxDivergence_K(
             i, j, k, ncomp, AMREX_D_DECL(fluxX, fluxY, fluxZ), vol, scale,
             divergence);
@@ -310,7 +307,7 @@ PeleLM::intFluxDivergenceLevel(
 #endif
 
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
   for (MFIter mfi(a_divergence, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
     const Box& bx = mfi.tilebox();
@@ -327,8 +324,7 @@ PeleLM::intFluxDivergenceLevel(
 
     if (flagfab.getType(bx) == FabType::covered) { // Covered boxes
       amrex::ParallelFor(
-        bx, ncomp,
-        [divergence] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
+        bx, ncomp, [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
           divergence(i, j, k, n) = 0.0;
         });
     } else if (flagfab.getType(bx) != FabType::regular) { // EB containing boxes
@@ -338,10 +334,7 @@ PeleLM::intFluxDivergenceLevel(
         , const auto& afrac_y = areafrac[1]->array(mfi);
         , const auto& afrac_z = areafrac[2]->array(mfi););
       amrex::ParallelFor(
-        bx, [ncomp, flag, vfrac, divergence, AMREX_D_DECL(fluxX, fluxY, fluxZ),
-             AMREX_D_DECL(afrac_x, afrac_y, afrac_z),
-             AMREX_D_DECL(areax, areay, areaz), vol,
-             scale] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           if (flag(i, j, k).isCovered()) {
             for (int n = 0; n < ncomp; n++) {
               divergence(i, j, k, n) = 0.0;
@@ -369,8 +362,7 @@ PeleLM::intFluxDivergenceLevel(
         Array4<Real const> const& ax = mf_ax.const_array(mfi);
         Array4<Real const> const& ay = mf_ay.const_array(mfi);
         amrex::ParallelFor(
-          bx, [ncomp, divergence, AMREX_D_DECL(fluxX, fluxY, fluxZ), ax, ay,
-               vol, scale] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             intFluxDivergence_rz_K(
               i, j, k, ncomp, AMREX_D_DECL(fluxX, fluxY, fluxZ), ax, ay, vol,
               scale, divergence);
@@ -379,9 +371,7 @@ PeleLM::intFluxDivergenceLevel(
 #endif
       {
         amrex::ParallelFor(
-          bx, [ncomp, divergence, AMREX_D_DECL(fluxX, fluxY, fluxZ),
-               AMREX_D_DECL(areax, areay, areaz), vol,
-               scale] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             intFluxDivergence_K(
               i, j, k, ncomp, AMREX_D_DECL(fluxX, fluxY, fluxZ),
               AMREX_D_DECL(areax, areay, areaz), vol, scale, divergence);
@@ -432,7 +422,7 @@ PeleLM::intFluxDivergenceLevelEB(
 #endif
 
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
   for (MFIter mfi(a_divergence, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
     const Box& bx = mfi.tilebox();
@@ -450,8 +440,7 @@ PeleLM::intFluxDivergenceLevelEB(
 
     if (flagfab.getType(bx) == FabType::covered) { // Covered boxes
       amrex::ParallelFor(
-        bx, ncomp,
-        [divergence] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
+        bx, ncomp, [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
           divergence(i, j, k, n) = 0.0;
         });
     } else if (flagfab.getType(bx) != FabType::regular) { // EB containing boxes
@@ -487,9 +476,7 @@ PeleLM::intFluxDivergenceLevelEB(
 #endif
     {
       amrex::ParallelFor(
-        bx, [ncomp, divergence, AMREX_D_DECL(fluxX, fluxY, fluxZ),
-             AMREX_D_DECL(areax, areay, areaz), vol,
-             scale] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           intFluxDivergence_K(
             i, j, k, ncomp, AMREX_D_DECL(fluxX, fluxY, fluxZ),
             AMREX_D_DECL(areax, areay, areaz), vol, scale, divergence);
@@ -536,7 +523,7 @@ PeleLM::
 #endif
 
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
   for (MFIter mfi(a_divergence, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
 
@@ -673,7 +660,7 @@ PeleLM::advFluxDivergence(
   auto const& ebfact = EBFactory(a_lev);
 
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
   for (MFIter mfi(a_divergence, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
 
@@ -796,7 +783,7 @@ PeleLM::floorSpecies(const TimeStamp& a_time)
         sma[box_no](i, j, k, RHOH) =
           h_cgs * 1.0e-4 * sma[box_no](i, j, k, DENSITY);
       });
-    Gpu::streamSynchronize();
+    amrex::Gpu::streamSynchronize();
   }
 }
 
@@ -816,7 +803,7 @@ PeleLM::resetCoveredMask()
       baf.coarsen(ref_ratio[lev]);
       m_coveredMask[lev]->setVal(1);
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
       {
         std::vector<std::pair<int, Box>> isects;
@@ -826,7 +813,7 @@ PeleLM::resetCoveredMask()
           baf.intersections(grids[lev][mfi.index()], isects);
           for (const auto& is : isects) {
             amrex::ParallelFor(
-              is.second, [mask] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+              is.second, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
                 mask(i, j, k) = 0;
               });
           }
@@ -945,7 +932,7 @@ PeleLM::loadBalanceChemLev(int a_lev)
     const amrex::Real navg = static_cast<Real>(m_baChem[a_lev]->size()) /
                              static_cast<Real>(ParallelDescriptor::NProcs());
     const int nmax = static_cast<int>(
-      std::max(std::round(m_loadBalanceKSfactor * navg), std::ceil(navg)));
+      amrex::max(std::round(m_loadBalanceKSfactor * navg), std::ceil(navg)));
     test_dmap = DistributionMapping::makeKnapSack(
       new_cost, currentEfficiency, testEfficiency, nmax, false,
       ParallelDescriptor::IOProcessorNumber());
@@ -1022,7 +1009,7 @@ PeleLM::derive(const std::string& a_name, Real a_time, int lev, int nGrow)
     }
     auto stateBCs = fetchBCRecArray(VELX, NVAR);
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
     for (MFIter mfi(*mf, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
       const Box& bx = mfi.growntilebox(nGrow);
@@ -1087,7 +1074,7 @@ PeleLM::deriveComp(const std::string& a_name, Real a_time, int lev, int nGrow)
     // Temp MF for all the derive components
     MultiFab derTemp(grids[lev], dmap[lev], rec->numDerive(), nGrow);
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
     for (MFIter mfi(*mf, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
       const Box& bx = mfi.growntilebox(nGrow);
@@ -1242,9 +1229,9 @@ PeleLM::MLNorm0(const Vector<const MultiFab*>& a_MF)
   Real r = 0.0;
   for (int lev = 0; lev < a_MF.size(); ++lev) {
     if (lev != finest_level) {
-      r = std::max(r, a_MF[lev]->norm0(*m_coveredMask[lev], 0, 0, true));
+      r = amrex::max(r, a_MF[lev]->norm0(*m_coveredMask[lev], 0, 0, true));
     } else {
-      r = std::max(r, a_MF[lev]->norm0(0, 0, true, true));
+      r = amrex::max(r, a_MF[lev]->norm0(0, 0, true, true));
     }
   }
   ParallelDescriptor::ReduceRealMax(r);
@@ -1263,12 +1250,12 @@ PeleLM::MLNorm0(const Vector<const MultiFab*>& a_MF, int startcomp, int ncomp)
   for (int lev = 0; lev < a_MF.size(); ++lev) {
     if (lev != finest_level) {
       for (int n = 0; n < ncomp; n++) {
-        r[n] = std::max(
+        r[n] = amrex::max(
           r[n], a_MF[lev]->norm0(*m_coveredMask[lev], startcomp + n, 0, true));
       }
     } else {
       for (int n = 0; n < ncomp; n++) {
-        r[n] = std::max(r[n], a_MF[lev]->norm0(startcomp + n, 0, true, true));
+        r[n] = amrex::max(r[n], a_MF[lev]->norm0(startcomp + n, 0, true, true));
       }
     }
   }
@@ -1504,7 +1491,7 @@ PeleLM::setTypicalValues(const TimeStamp& a_time, int is_init)
   // Fill typical values vector
   for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
     typical_values[idim] =
-      std::max(stateMax[VELX + idim], std::abs(stateMin[VELX + idim]));
+      amrex::max(stateMax[VELX + idim], std::abs(stateMin[VELX + idim]));
   }
 
   if (m_incompressible == 0) {
@@ -1551,7 +1538,8 @@ PeleLM::setTypicalValues(const TimeStamp& a_time, int is_init)
       for (int n = 0; n < NUM_SPECIES; n++) {
         Print() << "\tY_" << spec_names[n]
                 << std::setw(
-                     std::max(0, static_cast<int>(8 - spec_names[n].length())))
+                     amrex::max(
+                       0, static_cast<int>(8 - spec_names[n].length())))
                 << std::left << ":" << typical_values[FIRSTSPEC + n] << '\n';
       }
 #ifdef PELE_USE_PLASMA
@@ -1561,7 +1549,7 @@ PeleLM::setTypicalValues(const TimeStamp& a_time, int is_init)
       for (int n = 0; n < NUM_ODE; n++) {
         Print() << "\t" << m_ode_names[n]
                 << std::setw(
-                     std::max(
+                     amrex::max(
                        0, static_cast<int>(10 - m_ode_names[n].length())))
                 << std::left << ":" << typical_values[FIRSTODE + n] << '\n';
       }
@@ -1579,7 +1567,7 @@ PeleLM::updateTypicalValuesChem()
       Print() << " Update chemistry typical values \n";
     }
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
     {
       Vector<Real> typical_values_chem;
@@ -1617,7 +1605,7 @@ PeleLM::MFmax(const MultiFab* a_MF, const iMultiFab& a_mask, int comp)
       dynamic_cast<EBFArrayBoxFactory const&>(a_MF->Factory());
     auto const& flags = ebfactory.getMultiEBCellFlagFab();
 #ifdef AMREX_USE_GPU
-    if (Gpu::inLaunchRegion()) {
+    if (amrex::Gpu::inLaunchRegion()) {
       auto const& flagsma = flags.const_arrays();
       auto const& ma = a_MF->const_arrays();
       auto const& mask = a_mask.const_arrays();
@@ -1645,7 +1633,7 @@ PeleLM::MFmax(const MultiFab* a_MF, const iMultiFab& a_mask, int comp)
           auto const& mask = a_mask.const_array(mfi);
           AMREX_LOOP_3D(bx, i, j, k, {
             if (!flag(i, j, k).isCovered() && mask(i, j, k)) {
-              mx = std::max(mx, a(i, j, k, comp));
+              mx = amrex::max(mx, a(i, j, k, comp));
             }
           });
         }
@@ -1655,7 +1643,7 @@ PeleLM::MFmax(const MultiFab* a_MF, const iMultiFab& a_mask, int comp)
 #endif
   {
 #ifdef AMREX_USE_GPU
-    if (Gpu::inLaunchRegion()) {
+    if (amrex::Gpu::inLaunchRegion()) {
       auto const& ma = a_MF->const_arrays();
       auto const& mask = a_mask.const_arrays();
       mx = ParReduce(
@@ -1680,7 +1668,7 @@ PeleLM::MFmax(const MultiFab* a_MF, const iMultiFab& a_mask, int comp)
         auto const& mask = a_mask.const_array(mfi);
         AMREX_LOOP_3D(bx, i, j, k, {
           if (mask(i, j, k)) {
-            mx = std::max(mx, a(i, j, k, comp));
+            mx = amrex::max(mx, a(i, j, k, comp));
           }
         });
       }
@@ -1703,7 +1691,7 @@ PeleLM::MFmin(const MultiFab* a_MF, const iMultiFab& a_mask, int comp)
       dynamic_cast<EBFArrayBoxFactory const&>(a_MF->Factory());
     auto const& flags = ebfactory.getMultiEBCellFlagFab();
 #ifdef AMREX_USE_GPU
-    if (Gpu::inLaunchRegion()) {
+    if (amrex::Gpu::inLaunchRegion()) {
       auto const& flagsma = flags.const_arrays();
       auto const& ma = a_MF->const_arrays();
       auto const& mask = a_mask.const_arrays();
@@ -1731,7 +1719,7 @@ PeleLM::MFmin(const MultiFab* a_MF, const iMultiFab& a_mask, int comp)
           auto const& mask = a_mask.const_array(mfi);
           AMREX_LOOP_3D(bx, i, j, k, {
             if (!flag(i, j, k).isCovered() && mask(i, j, k)) {
-              mn = std::min(mn, a(i, j, k, comp));
+              mn = amrex::min(mn, a(i, j, k, comp));
             }
           });
         }
@@ -1741,7 +1729,7 @@ PeleLM::MFmin(const MultiFab* a_MF, const iMultiFab& a_mask, int comp)
 #endif
   {
 #ifdef AMREX_USE_GPU
-    if (Gpu::inLaunchRegion()) {
+    if (amrex::Gpu::inLaunchRegion()) {
       auto const& ma = a_MF->const_arrays();
       auto const& mask = a_mask.const_arrays();
       mn = ParReduce(
@@ -1766,7 +1754,7 @@ PeleLM::MFmin(const MultiFab* a_MF, const iMultiFab& a_mask, int comp)
         auto const& mask = a_mask.const_array(mfi);
         AMREX_LOOP_3D(bx, i, j, k, {
           if (mask(i, j, k)) {
-            mn = std::min(mn, a(i, j, k, comp));
+            mn = amrex::min(mn, a(i, j, k, comp));
           }
         });
       }
@@ -1789,11 +1777,11 @@ PeleLM::MLmax(const Vector<const MultiFab*>& a_MF, int scomp, int ncomp)
     if (lev != finest_level) {
       for (int n = 0; n < ncomp; n++) {
         nmax[n] =
-          std::max(nmax[n], MFmax(a_MF[lev], *m_coveredMask[lev], scomp + n));
+          amrex::max(nmax[n], MFmax(a_MF[lev], *m_coveredMask[lev], scomp + n));
       }
     } else {
       for (int n = 0; n < ncomp; n++) {
-        nmax[n] = std::max(nmax[n], a_MF[lev]->max(scomp + n, 0, true));
+        nmax[n] = amrex::max(nmax[n], a_MF[lev]->max(scomp + n, 0, true));
       }
     }
   }
@@ -1815,11 +1803,11 @@ PeleLM::MLmin(const Vector<const MultiFab*>& a_MF, int scomp, int ncomp)
     if (lev != finest_level) {
       for (int n = 0; n < ncomp; n++) {
         nmin[n] =
-          std::min(nmin[n], MFmin(a_MF[lev], *m_coveredMask[lev], scomp + n));
+          amrex::min(nmin[n], MFmin(a_MF[lev], *m_coveredMask[lev], scomp + n));
       }
     } else {
       for (int n = 0; n < ncomp; n++) {
-        nmin[n] = std::min(nmin[n], a_MF[lev]->min(scomp + n, 0, true));
+        nmin[n] = amrex::min(nmin[n], a_MF[lev]->min(scomp + n, 0, true));
       }
     }
   }
@@ -1837,7 +1825,7 @@ PeleLM::checkMemory(const std::string& a_message) const
 
   const int IOProc = ParallelDescriptor::IOProcessorNumber();
 #ifdef AMREX_USE_GPU
-  Long free_mem_avail = Gpu::Device::freeMemAvailable() / (1024 * 1024);
+  Long free_mem_avail = amrex::Gpu::Device::freeMemAvailable() / (1024 * 1024);
   ParallelDescriptor::ReduceLongMin(free_mem_avail, IOProc);
   Print() << "     [" << a_message << "] GPU mem. avail. (MB) "
           << free_mem_avail << "\n";
@@ -2098,7 +2086,7 @@ PeleLM::extendSignedDistance(MultiFab* a_signDist, Real a_extendFactor)
 
   // First set the region far away at the max value we need
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
   for (MFIter mfi(*a_signDist, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
     const Box& bx = mfi.growntilebox();
@@ -2117,7 +2105,7 @@ PeleLM::extendSignedDistance(MultiFab* a_signDist, Real a_extendFactor)
   int nMaxLoop = 4;
   for (int dloop = 1; dloop <= nMaxLoop; dloop++) {
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
     for (MFIter mfi(*a_signDist, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
       const Box& bx = mfi.tilebox();
