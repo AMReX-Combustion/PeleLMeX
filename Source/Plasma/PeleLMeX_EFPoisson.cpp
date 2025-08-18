@@ -3,14 +3,12 @@
 #include <PeleLMeX_EF_Constants.H>
 #include <PeleLMeX_DiffusionOp.H>
 
-using namespace amrex;
-
 void
 PeleLM::poissonSolveEF(const TimeStamp a_time)
 {
   BL_PROFILE("PeleLMeX::poissonSolveEF()");
   if (ef_verbose) {
-    Print() << " EF Poisson solve \n";
+    amrex::Print() << " EF Poisson solve \n";
   }
 
   // Get the phiV BCRec
@@ -19,10 +17,10 @@ PeleLM::poissonSolveEF(const TimeStamp a_time)
   // Build Poisson RHS: charge distribution
   constexpr int nGhost = 0;
   constexpr Real factor = -1.0;
-  Vector<std::unique_ptr<MultiFab>> rhsPoisson(finest_level + 1);
+  amrex::Vector<std::unique_ptr<amrex::MultiFab>> rhsPoisson(finest_level + 1);
   for (int lev = 0; lev <= finest_level; ++lev) {
-    rhsPoisson[lev].reset(new MultiFab(
-      grids[lev], dmap[lev], 1, nGhost, MFInfo(), *m_factory[lev]));
+    rhsPoisson[lev].reset(new amrex::MultiFab(
+      grids[lev], dmap[lev], 1, nGhost, amrex::MFInfo(), *m_factory[lev]));
 
     auto ldata_p = getLevelDataPtr(lev, a_time);
 
@@ -43,17 +41,17 @@ PeleLM::poissonSolveEF(const TimeStamp a_time)
   Gpu::streamSynchronize();
   /*
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
-    for (MFIter mfi(*rhsPoisson[lev], TilingIfNotGPU()); mfi.isValid(); ++mfi) {
-      const Box& bx = mfi.tilebox();
+    for (amrex::MFIter mfi(*rhsPoisson[lev], amrex::TilingIfNotGPU());
+         mfi.isValid(); ++mfi) {
+      const amrex::Box& bx = mfi.tilebox();
       auto const& rhoY = ldata_p->state.const_array(mfi, FIRSTSPEC);
       auto const& nE = ldata_p->state.const_array(mfi, NE);
       auto const& rhs = rhsPoisson[lev]->array(mfi);
-      Real factor = -1.0; // / ( eps0  * epsr);
+      amrex::Real factor = -1.0; // / ( eps0  * epsr);
       amrex::ParallelFor(
-        bx, [rhs, rhoY, nE, factor,
-             zk = zk] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           rhs(i, j, k) = -nE(i, j, k) * elemCharge * factor;
           for (int n = 0; n < NUM_SPECIES; ++n) {
             rhs(i, j, k) += zk[n] * rhoY(i, j, k, n) * factor;

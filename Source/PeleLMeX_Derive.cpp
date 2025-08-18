@@ -1,15 +1,13 @@
 #include <PeleLMeX_Derive.H>
 #include <utility>
 
-using namespace amrex;
-
 PeleLMDeriveRec::PeleLMDeriveRec(
   std::string a_name,
-  IndexType result_type,
+  amrex::IndexType result_type,
   int nvar_derive,
   PeleLMDeriveFunc der_func,
   DeriveBoxMap box_map,
-  Interpolater* a_interp)
+  amrex::Interpolater* a_interp)
   : derive_name(std::move(a_name)),
     variable_names(),
     der_type(result_type),
@@ -22,12 +20,12 @@ PeleLMDeriveRec::PeleLMDeriveRec(
 
 PeleLMDeriveRec::PeleLMDeriveRec(
   std::string a_name,
-  IndexType result_type,
+  amrex::IndexType result_type,
   int nvar_derive,
-  Vector<std::string>& var_names,
+  amrex::Vector<std::string>& var_names,
   PeleLMDeriveFunc der_func,
   DeriveBoxMap box_map,
-  Interpolater* a_interp)
+  amrex::Interpolater* a_interp)
   : derive_name(std::move(a_name)),
     variable_names(var_names),
     der_type(result_type),
@@ -40,15 +38,14 @@ PeleLMDeriveRec::PeleLMDeriveRec(
 
 PeleLMDeriveRec::PeleLMDeriveRec(
   std::string a_name,
-  IndexType result_type,
+  amrex::IndexType result_type,
   int nvar_derive,
   DeriveBoxMap box_map,
-  Interpolater* a_interp)
+  amrex::Interpolater* a_interp)
   : derive_name(std::move(a_name)),
     variable_names(),
     der_type(result_type),
     n_derive(nvar_derive),
-
     mapper(a_interp),
     bx_map(box_map)
 {
@@ -56,16 +53,15 @@ PeleLMDeriveRec::PeleLMDeriveRec(
 
 PeleLMDeriveRec::PeleLMDeriveRec(
   std::string a_name,
-  IndexType result_type,
+  amrex::IndexType result_type,
   int nvar_derive,
-  Vector<std::string>& var_names,
+  amrex::Vector<std::string>& var_names,
   DeriveBoxMap box_map,
-  Interpolater* a_interp)
+  amrex::Interpolater* a_interp)
   : derive_name(std::move(a_name)),
     variable_names(var_names),
     der_type(result_type),
     n_derive(nvar_derive),
-
     mapper(a_interp),
     bx_map(box_map)
 {
@@ -84,7 +80,7 @@ PeleLMDeriveRec::name() const noexcept
   return derive_name;
 }
 
-IndexType
+amrex::IndexType
 PeleLMDeriveRec::deriveType() const noexcept
 {
   return der_type;
@@ -102,7 +98,7 @@ PeleLMDeriveRec::boxMap() const noexcept
   return bx_map;
 }
 
-Interpolater*
+amrex::Interpolater*
 PeleLMDeriveRec::interp() const noexcept
 {
   return mapper;
@@ -144,11 +140,11 @@ PeleLMDeriveList::PeleLMDeriveList() = default;
 void
 PeleLMDeriveList::add(
   const std::string& name,
-  IndexType result_type,
+  amrex::IndexType result_type,
   int nvar_der,
   PeleLMDeriveFunc der_func,
   PeleLMDeriveRec::DeriveBoxMap bx_map,
-  Interpolater* interp)
+  amrex::Interpolater* interp)
 {
   lst.emplace_back(name, result_type, nvar_der, der_func, bx_map, interp);
 }
@@ -156,12 +152,12 @@ PeleLMDeriveList::add(
 void
 PeleLMDeriveList::add(
   const std::string& name,
-  IndexType result_type,
+  amrex::IndexType result_type,
   int nvar_der,
-  Vector<std::string>& vars,
+  amrex::Vector<std::string>& vars,
   PeleLMDeriveFunc der_func,
   PeleLMDeriveRec::DeriveBoxMap bx_map,
-  Interpolater* interp)
+  amrex::Interpolater* interp)
 {
   lst.emplace_back(name, result_type, nvar_der, vars, der_func, bx_map, interp);
 }
@@ -169,10 +165,10 @@ PeleLMDeriveList::add(
 void
 PeleLMDeriveList::add(
   const std::string& name,
-  IndexType result_type,
+  amrex::IndexType result_type,
   int nvar_der,
   PeleLMDeriveRec::DeriveBoxMap bx_map,
-  Interpolater* interp)
+  amrex::Interpolater* interp)
 {
   lst.emplace_back(name, result_type, nvar_der, bx_map, interp);
 }
@@ -180,11 +176,11 @@ PeleLMDeriveList::add(
 void
 PeleLMDeriveList::add(
   const std::string& name,
-  IndexType result_type,
+  amrex::IndexType result_type,
   int nvar_der,
-  Vector<std::string>& vars,
+  amrex::Vector<std::string>& vars,
   PeleLMDeriveRec::DeriveBoxMap bx_map,
-  Interpolater* interp)
+  amrex::Interpolater* interp)
 {
   lst.emplace_back(name, result_type, nvar_der, vars, bx_map, interp);
 }

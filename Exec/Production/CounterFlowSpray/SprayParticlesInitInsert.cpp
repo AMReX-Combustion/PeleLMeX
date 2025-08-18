@@ -1,49 +1,46 @@
-
 #include "SprayParticles.H"
 #include "SprayInjection.H"
 #include "pelelmex_prob.H"
-
-using namespace amrex;
 
 class CounterFlowJet : public SprayJet
 {
 public:
   // Use default constructor
-  CounterFlowJet(const std::string jet_name, const Geometry& geom)
+  CounterFlowJet(const std::string jet_name, const amrex::Geometry& geom)
     : SprayJet(jet_name, geom)
   {
   }
 
   bool get_new_particle(
-    const Real time,
-    const Real& phi_radial,
-    const Real& cur_radius,
-    Real& umag,
-    Real& theta_spread,
-    Real& phi_swirl,
-    Real& dia_part,
-    Real& T_part,
-    Real* Y_part) override;
+    const amrex::Real time,
+    const amrex::Real& phi_radial,
+    const amrex::Real& cur_radius,
+    amrex::Real& umag,
+    amrex::Real& theta_spread,
+    amrex::Real& phi_swirl,
+    amrex::Real& dia_part,
+    amrex::Real& T_part,
+    amrex::Real* Y_part) override;
 };
 
 bool
 CounterFlowJet::get_new_particle(
-  const Real time,
-  const Real& phi_radial,
-  const Real& cur_radius,
-  Real& umag,
-  Real& theta_spread,
-  Real& phi_swirl,
-  Real& dia_part,
-  Real& T_part,
-  Real* Y_part)
+  const amrex::Real time,
+  const amrex::Real& phi_radial,
+  const amrex::Real& cur_radius,
+  amrex::Real& umag,
+  amrex::Real& theta_spread,
+  amrex::Real& phi_swirl,
+  amrex::Real& dia_part,
+  amrex::Real& T_part,
+  amrex::Real* Y_part)
 {
   umag = m_jetVel;
   T_part = m_jetT;
   dia_part = m_dropDist->get_dia();
   phi_swirl = 0.;
   // Random spread angle
-  Real tan_vel_comp = (2. * amrex::Random() - 1.) * 0.05;
+  amrex::Real tan_vel_comp = (2. * amrex::Random() - 1.) * 0.05;
   theta_spread = std::asin(tan_vel_comp);
   for (int sp = 0; sp < SPRAY_FUEL_NUM; ++sp) {
     Y_part[sp] = 0.;
@@ -54,7 +51,7 @@ CounterFlowJet::get_new_particle(
 
 bool
 SprayParticleContainer::injectParticles(
-  Real time, Real dt, int nstep, int lev, int finest_level)
+  amrex::Real time, amrex::Real dt, int nstep, int lev, int finest_level)
 {
   if (lev != 0) {
     return false;

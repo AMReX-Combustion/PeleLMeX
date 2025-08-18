@@ -1,19 +1,14 @@
 #include <PeleLMeX.H>
 #include <PeleLMeX_K.H>
-#ifdef PELE_USE_PLASMA
-#include <PeleLMeX_EF.H>
-#include <PeleLMeX_EF_K.H>
-#endif
-using namespace amrex;
 
 // Return velocity forces scaled by rhoInv
 // including grapP term if add_gradP = 1
-// including divTau if input Vector not empty
+// including divTau if input amrex::Vector not empty
 void
 PeleLM::getVelForces(
   const TimeStamp a_time,
-  const Vector<MultiFab*>& a_divTau,
-  const Vector<MultiFab*>& a_velForce,
+  const amrex::Vector<amrex::MultiFab*>& a_divTau,
+  const amrex::Vector<amrex::MultiFab*>& a_velForce,
   const int nGrowForce,
   const int add_gradP)
 {
@@ -38,8 +33,8 @@ void
 PeleLM::getVelForces(
   const TimeStamp a_time,
   const int lev,
-  MultiFab* a_divTau,
-  MultiFab* a_velForce,
+  amrex::MultiFab* a_divTau,
+  amrex::MultiFab* a_velForce,
   const int add_gradP)
 {
 
@@ -52,7 +47,7 @@ PeleLM::getVelForces(
   auto* ldataGP_p = (m_t_old[lev] < 0.0) ? getLevelDataPtr(lev, AmrNewTime)
                                          : getLevelDataPtr(lev, AmrOldTime);
 
-  const Real time = getTime(lev, a_time);
+  const amrex::Real time = getTime(lev, a_time);
 
   const int has_divTau = static_cast<int>(a_divTau != nullptr);
 
@@ -64,34 +59,41 @@ PeleLM::getVelForces(
   auto divTau_ma = (has_divTau != 0) ? a_divTau->const_arrays() : state_ma;
 
   const auto dx = geom[lev].CellSizeArray();
+  const int pseudo_gravity = m_ctrl_pseudoGravity;
+  const amrex::Real dV_control = m_ctrl_dV;
+  const int is_incomp = m_incompressible;
+  const amrex::Real rho_incomp = m_rho;
+  const auto grav = m_gravity;
+  const auto gp0 = m_background_gp;
+  const int ps_dir = m_ctrl_flameDir;
 
   amrex::ParallelFor(
     *a_velForce,
     [state_ma, ext_ma, force_ma, gp_ma, divTau_ma, dx, add_gradP, has_divTau,
-     time, grav = m_gravity, gp0 = m_background_gp, ps_dir = m_ctrl_flameDir,
-     is_incomp = m_incompressible, rho_incomp = m_rho,
-     pseudo_gravity = m_ctrl_pseudoGravity, dV_control = m_ctrl_dV
+     time, grav, gp0, ps_dir,
+     is_incomp, rho_incomp,
+     pseudo_gravity, dV_control
 #ifdef PELE_USE_PLASMA
      ,
      plasma_ba = grids[lev], zk = zk
 #endif
   ] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) {
-      Array4<Real const> vel(state_ma[box_no], VELX);
-      Array4<Real const> rho(state_ma[box_no], DENSITY);
-      Array4<Real const> rhoY(state_ma[box_no], FIRSTSPEC);
-      Array4<Real const> rhoh(state_ma[box_no], RHOH);
-      Array4<Real const> temp(state_ma[box_no], TEMP);
-      Array4<Real const> extmom(ext_ma[box_no], VELX);
-      Array4<Real const> extrho(ext_ma[box_no], DENSITY);
+      amrex::Array4<amrex::Real const> vel(state_ma[box_no], VELX);
+      amrex::Array4<amrex::Real const> rho(state_ma[box_no], DENSITY);
+      amrex::Array4<amrex::Real const> rhoY(state_ma[box_no], FIRSTSPEC);
+      amrex::Array4<amrex::Real const> rhoh(state_ma[box_no], RHOH);
+      amrex::Array4<amrex::Real const> temp(state_ma[box_no], TEMP);
+      amrex::Array4<amrex::Real const> extmom(ext_ma[box_no], VELX);
+      amrex::Array4<amrex::Real const> extrho(ext_ma[box_no], DENSITY);
       makeVelForce(
         i, j, k, is_incomp, rho_incomp, pseudo_gravity, ps_dir, time, grav, gp0,
         dV_control, dx, vel, rho, rhoY, rhoh, temp, extmom, extrho,
         force_ma[box_no]);
 #ifdef PELE_USE_PLASMA
-      Array4<Real const> phiV(state_ma[box_no], PHIV);
-      Array4<Real const> nE(state_ma[box_no], NE);
-      GpuArray<int, 3> blo = plasma_ba[box_no].loVect3d();
-      GpuArray<int, 3> bhi = plasma_ba[box_no].hiVect3d();
+      amrex::Array4<amrex::Real const> phiV(state_ma[box_no], PHIV);
+      amrex::Array4<amrex::Real const> nE(state_ma[box_no], NE);
+      amrex::GpuArray<int, 3> blo = plasma_ba[box_no].loVect3d();
+      amrex::GpuArray<int, 3> bhi = plasma_ba[box_no].hiVect3d();
       addLorentzForce(
         i, j, k, blo, bhi, time, dx, zk, rhoY, nE, phiV, force_ma[box_no]);
 #endif
@@ -116,7 +118,7 @@ PeleLM::getVelForces(
         }
       }
     });
-  Gpu::streamSynchronize();
+  amrex::Gpu::streamSynchronize();
 }
 
 void
@@ -125,52 +127,51 @@ PeleLM::addSpark(const TimeStamp a_timestamp)
   for (int lev = 0; lev <= finest_level; ++lev) {
     for (int n = 0; n < m_n_sparks; ++n) {
       // Do the checks first
-      const Real time = getTime(lev, a_timestamp);
+      const amrex::Real time = getTime(lev, a_timestamp);
       const bool verb = m_spark_verbose > 1 && lev == 0;
       if (
         time < m_spark_time[n] ||
         time > m_spark_time[n] + m_spark_duration[n]) {
         if (verb) {
-          Print() << m_spark[n] << " not active \n";
+          amrex::Print() << m_spark[n] << " not active \n";
         }
         continue;
       }
-      const Real* probLo = geom[lev].ProbLo();
+      const amrex::Real* probLo = geom[lev].ProbLo();
       auto const dx = geom[lev].CellSizeArray();
-      IntVect spark_idx;
+      amrex::IntVect spark_idx;
       for (int d = 0; d < AMREX_SPACEDIM; ++d) {
         spark_idx[d] =
           static_cast<int>((m_spark_location[n][d] - probLo[d]) / dx[d]);
       }
-      const Box domainBox = geom[lev].Domain();
+      const amrex::Box domainBox = geom[lev].Domain();
       // just a check
       if (!domainBox.contains(spark_idx)) {
         amrex::Warning(m_spark[n] + " not in domain!");
         continue;
       }
       if (verb) {
-        Print() << m_spark[n] << " active\n";
+        amrex::Print() << m_spark[n] << " active\n";
       }
       auto const* eosparm = eos_parms.device_parm();
       auto eos = pele::physics::PhysicsType::eos(eosparm);
 
       auto statema = getLevelDataPtr(lev, a_timestamp)->state.const_arrays();
       auto extma = m_extSource[lev]->arrays();
-
       amrex::ParallelFor(
         *m_extSource[lev],
         [statema, extma, eos, dx, spark_idx,
          spark_duration = m_spark_duration[n], spark_temp = m_spark_temp[n],
          spark_radius = m_spark_radius
            [n]] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
-          const Real dist_to_center = std::sqrt(AMREX_D_TERM(
+          const amrex::Real dist_to_center = std::sqrt(AMREX_D_TERM(
             (i - spark_idx[0]) * (i - spark_idx[0]) * dx[0] * dx[0],
             +(j - spark_idx[1]) * (j - spark_idx[1]) * dx[1] * dx[1],
             +(k - spark_idx[2]) * (k - spark_idx[2]) * dx[2] * dx[2]));
           if (dist_to_center < spark_radius) {
-            Real rhoh_src_loc = 0;
-            const Real rho = statema[box_no](i, j, k, DENSITY);
-            Real Y[NUM_SPECIES];
+            amrex::Real rhoh_src_loc = 0;
+            const amrex::Real rho = statema[box_no](i, j, k, DENSITY);
+            amrex::Real Y[NUM_SPECIES];
             for (int ns = 0; ns < NUM_SPECIES; ++ns) {
               Y[ns] = statema[box_no](i, j, k, FIRSTSPEC + ns) / rho;
             }
@@ -181,7 +182,7 @@ PeleLM::addSpark(const TimeStamp a_timestamp)
         });
     }
   }
-  Gpu::streamSynchronize();
+  amrex::Gpu::streamSynchronize();
 }
 
 // Manifold model - dissipation rate sources for variances
@@ -223,14 +224,14 @@ PeleLM::addScalarVarianceSources(const TimeStamp a_timestamp)
       constexpr int do_avgDown = 0;
       auto bcRecScalar = fetchBCRecArray(var_of_scalar, 1);
       constexpr int nGrow = 0; // No need for ghost face on fluxes
-      Vector<Array<MultiFab, AMREX_SPACEDIM>> grad_fc(finest_level + 1);
+      amrex::Vector<amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>> grad_fc(finest_level + 1);
       for (int lev = 0; lev <= finest_level; ++lev) {
         const auto& ba = grids[lev];
         const auto& factory = Factory(lev);
         for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
           grad_fc[lev][idim].define(
-            amrex::convert(ba, IntVect::TheDimensionVector(idim)), dmap[lev], 1,
-            nGrow, MFInfo(), factory);
+            amrex::convert(ba, amrex::IntVect::TheDimensionVector(idim)),
+            dmap[lev], 1, nGrow, amrex::MFInfo(), factory);
           grad_fc[lev][idim].setVal(0.0); // Required?
         }
       }

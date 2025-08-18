@@ -1541,6 +1541,7 @@ public:
     std::unique_ptr<AdvanceAdvData>& advData,
     std::unique_ptr<AdvanceDiffData>& diffData);
 
+  bool checkForNaNs();
   void copyTransportOldToNew();
   void copyStateNewToOld(const int nGhost = 0);
   void copyPressNewToOld();
@@ -1939,10 +1940,9 @@ public:
   int m_plot_grad_p = 1;
   int m_ioDigits = 5;
   amrex::Vector<std::string> m_evaluatePlotVars;
-  bool m_do_patch_flow_variables = false;
-#if AMREX_USE_HDF5
   bool m_write_hdf5_pltfile = false;
-#endif
+  bool m_do_patch_flow_variables = false;
+  amrex::Vector<std::string> m_initDataPlt_specname_map = {};
 
   //-----------------------------------------------------------------------------
   // ALGORITHM
