@@ -785,7 +785,7 @@ pelelmex_derQcrit(
   } else if (typ == amrex::FabType::singlevalued) {
     const auto& flag_fab = flags.const_array();
     amrex::ParallelFor(
-      bx, [qcrit_arr, flag_fab, idx, idy
+      bx, [qcrit_arr, dat_arr, flag_fab, idx, idy
 #if (AMREX_SPACEDIM == 3)
            ,
            idz
@@ -920,8 +920,7 @@ pelelmex_derQcrit(
             for (int dim2 = 0; dim2 < AMREX_SPACEDIM; ++dim2) {
               const amrex::Real Ohm =
                 0.5 * (gradU(dim1, dim2) - gradU(dim2, dim1));
-              const amrex::Real Sij =
-                0.5 * (gradU(dim1, dim2) + gradU(dim2, dim1));
+              amrex::Real Sij = 0.5 * (gradU(dim1, dim2) + gradU(dim2, dim1));
               if (dim1 == dim2) {
                 Sij -= divU / static_cast<amrex::Real>(AMREX_SPACEDIM);
               }
