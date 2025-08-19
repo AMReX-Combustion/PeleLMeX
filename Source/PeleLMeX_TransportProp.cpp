@@ -109,7 +109,7 @@ PeleLM::calcTurbViscosity(const TimeStamp a_time)
           [prefact, velgrad_arr, dens_arr, mut_arr
 #ifdef AMREX_USE_EB
            ,
-           vfrac
+           vfrac, idim
 #endif
         ] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
             getTurbViscSmagorinsky(
@@ -139,7 +139,7 @@ PeleLM::calcTurbViscosity(const TimeStamp a_time)
           [prefact, velgrad_arr, dens_arr, mut_arr
 #ifdef AMREX_USE_EB
            ,
-           vfrac
+           vfrac, idim
 #endif
         ] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
             getTurbViscWALE(
@@ -169,7 +169,7 @@ PeleLM::calcTurbViscosity(const TimeStamp a_time)
           [prefact, velgrad_arr, dens_arr, mut_arr
 #ifdef AMREX_USE_EB
            ,
-           vfrac
+           vfrac, idim
 #endif
         ] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
             getTurbViscSigma(

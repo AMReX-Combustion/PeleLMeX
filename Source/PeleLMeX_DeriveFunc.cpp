@@ -466,9 +466,8 @@ pelelmex_dervort(
   amrex::Real /*time*/,
   const amrex::Vector<amrex::BCRec>& /*bcrec*/,
   int /*level*/)
-
 {
-  amrex::ignore_unused(ncomp);  
+  amrex::ignore_unused(ncomp);
   AMREX_ASSERT(derfab.box().contains(bx));
   AMREX_ASSERT(statefab.box().contains(bx));
   AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
