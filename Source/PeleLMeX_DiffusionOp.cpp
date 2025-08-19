@@ -367,7 +367,7 @@ DiffusionOp::diffuse_scalar(
         phi[lev], *a_phi[lev], phi_comp, 0, ncomp, phi[lev].nGrowVect());
     } else {
       auto const& a_phi_ma = a_phi[lev]->const_arrays();
-      auto const& a_rho_ma = a_rho[lev]->const_arrays();
+      auto const& a_rho_ma = a_density[lev]->const_arrays();
       auto const& phi_ma = phi[lev].arrays();
       amrex::ParallelFor(
         phi[lev], phi[lev].nGrowVect(),
