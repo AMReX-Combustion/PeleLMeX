@@ -675,67 +675,67 @@ PeleLM::addWbarTerm(
   //------------------------------------------------------------------------
   // Compute Wbar on all the levels
   int nGrow = 1; // Need one ghost cell to compute gradWbar
-  amrex::Vector<amrex::MultiFab> Wbar(finest_level + 1);
+  amrex::Vector<amrex::MultiFab> Wbar;
+  Wbar.reserve(finest_level + 1);
   amrex::Vector<amrex::MultiFab> Wbar_boundary;
   if (have_boundary != 0) {
-    Wbar_boundary.resize(finest_level + 1);
+    Wbar_boundary.reserve(finest_level + 1);
   }
   auto const* leosparm = eos_parms.device_parm();
   for (int lev = 0; lev <= finest_level; ++lev) {
-    Wbar[lev].define(
+    Wbar.emplace_back(
       grids[lev], dmap[lev], 1, nGrow, amrex::MFInfo(), Factory(lev));
     if (have_boundary != 0) {
-      Wbar_boundary[lev].define(
+      Wbar_boundary.emplace_back(
         grids[lev], dmap[lev], 1, nGrow, amrex::MFInfo(), Factory(lev));
     }
     const amrex::Box& domain = geom[lev].Domain();
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-    for (amrex::MFIter mfi(Wbar[lev], amrex::TilingIfNotGPU()); mfi.isValid();
-         ++mfi) {
-      const amrex::Box& gbx = mfi.growntilebox();
-      auto const& rho_arr = a_rho[lev]->const_array(mfi);
-      auto const& rhoY_arr = a_spec[lev]->const_array(mfi);
-      auto const& Wbar_arr = Wbar[lev].array(mfi);
-      auto const& gradY_arr =
-        (have_boundary != 0) ? a_boundary[lev]->const_array(mfi) : Wbar_arr;
-      auto const& Wbar_boundary_arr =
-        (have_boundary != 0) ? Wbar_boundary[lev].array(mfi) : Wbar_arr;
 
-      const auto phys_bc = m_phys_bc;
-      amrex::ParallelFor(
-        gbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          getMwmixGivenRY(i, j, k, rho_arr, rhoY_arr, Wbar_arr, leosparm);
-          if (have_boundary != 0) { // need to impose gradWbar on boundary for
-            // computeGradient
-            // for dirichlet boundaries, we'll overwrite inhomog neumann ones
-            // NOTE: for now, this is skipped since wbar disabled for
-            // isothermal/soret
-            Wbar_boundary_arr(i, j, k) = Wbar_arr(i, j, k);
-            const int idx[3] = {i, j, k};
-            for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
-              const auto bc_lo = phys_bc.lo(idim);
-              const auto bc_hi = phys_bc.hi(idim);
-              const bool on_lo =
-                (bc_lo == BoundaryCondition::BCNoSlipWallIsotherm ||
-                 bc_lo == BoundaryCondition::BCSlipWallIsotherm) &&
-                (idx[idim] < domain.smallEnd(idim));
-              const bool on_hi =
-                (bc_hi == BoundaryCondition::BCNoSlipWallIsotherm ||
-                 bc_hi == BoundaryCondition::BCSlipWallIsotherm) &&
-                (idx[idim] > domain.bigEnd(idim));
+    auto const& rho_ma = a_rho[lev]->const_arrays();
+    auto const& rhoY_ma = a_spec[lev]->const_arrays();
+    auto const& Wbar_ma = Wbar[lev].arrays();
+    auto const& gradY_ma =
+      (have_boundary != 0) ? a_boundary[lev]->const_arrays() : rhoY_ma;
+    auto const& Wbar_boundary_ma =
+      (have_boundary != 0) ? Wbar_boundary[lev].arrays() : Wbar_ma;
 
-              if (on_lo || on_hi) {
-                getGradMwmixGivengradYMwmix(
-                  i, j, k, gradY_arr, Wbar_arr, Wbar_boundary_arr, leosparm);
-              }
+    amrex::ParallelFor(
+      Wbar[lev], Wbar[lev].nGrowVect(),
+      [rho_ma, rhoY_ma, Wbar_ma, gradY_ma, Wbar_boundary_ma, have_boundary,
+       leosparm, domain,
+       phys_bc =
+         m_phys_bc] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+        getMwmixGivenRY(
+          i, j, k, rho_ma[box_no], rhoY_ma[box_no], Wbar_ma[box_no], leosparm);
+        if (have_boundary != 0) { // need to impose gradWbar on boundary for
+          // computeGradient
+          // for dirichlet boundaries, we'll overwrite inhomog neumann ones
+          // NOTE: for now, this is skipped since wbar disabled for
+          // isothermal/soret
+          Wbar_boundary_ma[box_no](i, j, k) = Wbar_ma[box_no](i, j, k);
+          const int idx[3] = {i, j, k};
+          for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
+            const auto bc_lo = phys_bc.lo(idim);
+            const auto bc_hi = phys_bc.hi(idim);
+            const bool on_lo =
+              (bc_lo == BoundaryCondition::BCNoSlipWallIsotherm ||
+               bc_lo == BoundaryCondition::BCSlipWallIsotherm) &&
+              (idx[idim] < domain.smallEnd(idim));
+            const bool on_hi =
+              (bc_hi == BoundaryCondition::BCNoSlipWallIsotherm ||
+               bc_hi == BoundaryCondition::BCSlipWallIsotherm) &&
+              (idx[idim] > domain.bigEnd(idim));
+
+            if (on_lo || on_hi) {
+              getGradMwmixGivengradYMwmix(
+                i, j, k, gradY_ma[box_no], Wbar_ma[box_no],
+                Wbar_boundary_ma[box_no], leosparm);
             }
           }
-        });
-    }
+        }
+      });
   }
-
+  amrex::Gpu::streamSynchronize();
   //------------------------------------------------------------------------
   // Compute Wbar gradients and do average down to get gradients consistent
   // across levels Get the species BCRec

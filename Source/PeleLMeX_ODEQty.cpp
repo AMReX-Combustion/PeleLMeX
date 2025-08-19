@@ -12,7 +12,7 @@ PeleLM::predictODEQty()
     auto const& ext_src_arrs = m_extSource[lev]->arrays();
     const auto dt = m_dt;
     amrex::ParallelFor(
-      *m_extSource[lev], [state_arrs, ext_src_arrs, dt = m_dt] AMREX_GPU_DEVICE(
+      *m_extSource[lev], [state_arrs, ext_src_arrs, dt] AMREX_GPU_DEVICE(
                            int box_no, int i, int j, int k) noexcept {
         for (int n = 0; n < NUM_ODE; ++n) {
           amrex::Real const& B_n = state_arrs[box_no](i, j, k, FIRSTODE + n);

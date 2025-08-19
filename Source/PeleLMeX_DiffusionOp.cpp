@@ -140,34 +140,32 @@ DiffusionOp::diffuse_scalar(
   // after adv., when we divide by \rho, it is inconsistent. But it only matters
   // if it screws up the ghost cell values 'cause interiors are just an initial
   // solution for the solve.
-  amrex::Vector<amrex::MultiFab> phi(finest_level + 1);
+  amrex::Vector<amrex::MultiFab> phi;
+  phi.reserve(finest_level + 1);
   for (int lev = 0; lev <= finest_level; ++lev) {
-    phi[lev].define(
+    phi.emplace_back(
       a_phi[lev]->boxArray(), a_phi[lev]->DistributionMap(), ncomp, 1,
       amrex::MFInfo(), a_phi[lev]->Factory());
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-    for (amrex::MFIter mfi(phi[lev], amrex::TilingIfNotGPU()); mfi.isValid();
-         ++mfi) {
-      const amrex::Box& gbx = mfi.growntilebox();
-      auto const& a_phi_arr = a_phi[lev]->const_array(mfi, phi_comp);
-      auto const& a_rho_arr =
-        (have_density) != 0 ? a_density[lev]->const_array(mfi)
-                            : a_phi[lev]->const_array(
-                                mfi); // Get dummy amrex::Array4 if no density
-      auto const& phi_arr = phi[lev].array(mfi);
+    if (have_density == 0) {
+      amrex::MultiFab::Copy(
+        phi[lev], *a_phi[lev], phi_comp, 0, ncomp, phi[lev].nGrowVect());
+    } else {
+      auto const& a_phi_ma = a_phi[lev]->const_arrays();
+      auto const& a_rho_ma = a_density[lev]->const_arrays();
+      auto const& phi_ma = phi[lev].arrays();
       amrex::ParallelFor(
-        gbx, ncomp, [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
-          if (have_density != 0) {
-            phi_arr(i, j, k, n) = a_phi_arr(i, j, k, n) / a_rho_arr(i, j, k);
-          } else {
-            phi_arr(i, j, k, n) = a_phi_arr(i, j, k, n);
+        phi[lev], phi[lev].nGrowVect(),
+        [a_phi_ma, a_rho_ma, phi_ma, phi_comp,
+         ncomp] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+          amrex::Array4<amrex::Real const> a_phi(a_phi_ma[box_no], phi_comp);
+          for (int n = 0; n < ncomp; ++n) {
+            phi_ma[box_no](i, j, k, n) =
+              a_phi(i, j, k, n) / a_rho_ma[box_no](i, j, k);
           }
         });
+      amrex::Gpu::streamSynchronize();
     }
   }
-
   //----------------------------------------------------------------
   // Setup solve LinearOp coefficients
   // LinOp is \alpha A \phi - \beta \nabla \cdot B \nabla \phi = rhs
@@ -358,34 +356,32 @@ DiffusionOp::diffuse_scalar(
   // after adv., when we divide by \rho, it is inconsistent. But it only matters
   // if it screws up the ghost cell values 'cause interiors are just an initial
   // solution for the solve.
-  amrex::Vector<amrex::MultiFab> phi(finest_level + 1);
+  amrex::Vector<amrex::MultiFab> phi;
+  phi.reserve(finest_level + 1);
   for (int lev = 0; lev <= finest_level; ++lev) {
-    phi[lev].define(
+    phi.emplace_back(
       a_phi[lev]->boxArray(), a_phi[lev]->DistributionMap(), ncomp, 1,
       amrex::MFInfo(), a_phi[lev]->Factory());
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-    for (amrex::MFIter mfi(phi[lev], amrex::TilingIfNotGPU()); mfi.isValid();
-         ++mfi) {
-      const amrex::Box& gbx = mfi.growntilebox();
-      auto const& a_phi_arr = a_phi[lev]->const_array(mfi, phi_comp);
-      auto const& a_rho_arr =
-        (have_density) != 0 ? a_density[lev]->const_array(mfi)
-                            : a_phi[lev]->const_array(
-                                mfi); // Get dummy amrex::Array4 if no density
-      auto const& phi_arr = phi[lev].array(mfi);
+    if (have_density == 0) {
+      amrex::MultiFab::Copy(
+        phi[lev], *a_phi[lev], phi_comp, 0, ncomp, phi[lev].nGrowVect());
+    } else {
+      auto const& a_phi_ma = a_phi[lev]->const_arrays();
+      auto const& a_rho_ma = a_rho[lev]->const_arrays();
+      auto const& phi_ma = phi[lev].arrays();
       amrex::ParallelFor(
-        gbx, ncomp, [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
-          if (have_density != 0) {
-            phi_arr(i, j, k, n) = a_phi_arr(i, j, k, n) / a_rho_arr(i, j, k);
-          } else {
-            phi_arr(i, j, k, n) = a_phi_arr(i, j, k, n);
+        phi[lev], phi[lev].nGrowVect(),
+        [a_phi_ma, a_rho_ma, phi_ma, phi_comp,
+         ncomp] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+          amrex::Array4<amrex::Real const> a_phi(a_phi_ma[box_no], phi_comp);
+          for (int n = 0; n < ncomp; ++n) {
+            phi_ma[box_no](i, j, k, n) =
+              a_phi(i, j, k, n) / a_rho_ma[box_no](i, j, k);
           }
         });
+      amrex::Gpu::streamSynchronize();
     }
   }
-
   //----------------------------------------------------------------
   // Setup solve LinearOp coefficients
   // LinOp is \alpha A \phi - \beta \nabla \cdot B \nabla \phi = rhs
@@ -395,10 +391,12 @@ DiffusionOp::diffuse_scalar(
   const amrex::Real alpha = (isPoissonSolve != 0) ? 0.0 : 1.0;
   const amrex::Real beta = a_dt;
   m_scal_solve_op->setScalars(alpha, beta);
-  for (int lev = 0; lev <= finest_level; ++lev) {
-    if (have_acoeff != 0) {
+  if (have_acoeff != 0) {
+    for (int lev = 0; lev <= finest_level; ++lev) {
       m_scal_solve_op->setACoeffs(lev, *a_acoeff[lev]);
-    } else {
+    }
+  } else {
+    for (int lev = 0; lev <= finest_level; ++lev) {
       m_scal_solve_op->setACoeffs(lev, 1.0);
     }
   }
@@ -619,31 +617,30 @@ DiffusionOp::computeDiffFluxes(
 
   // Duplicate phi since it is modified by the LinOp
   // and if have_density -> divide by density
-  amrex::Vector<amrex::MultiFab> phi(finest_level + 1);
+  amrex::Vector<amrex::MultiFab> phi;
+  phi.reserve(finest_level + 1);
   for (int lev = 0; lev <= finest_level; ++lev) {
-    phi[lev].define(
+    phi.emplace_back(
       a_phi[lev]->boxArray(), a_phi[lev]->DistributionMap(), ncomp, 1,
       amrex::MFInfo(), a_phi[lev]->Factory());
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-    for (amrex::MFIter mfi(phi[lev], amrex::TilingIfNotGPU()); mfi.isValid();
-         ++mfi) {
-      const amrex::Box& gbx = mfi.growntilebox();
-      auto const& a_phi_arr = a_phi[lev]->const_array(mfi, phi_comp);
-      auto const& a_rho_arr =
-        (have_density) != 0 ? a_density[lev]->const_array(mfi)
-                            : a_phi[lev]->const_array(
-                                mfi); // Get dummy amrex::Array4 if no density
-      auto const& phi_arr = phi[lev].array(mfi);
+    if (have_density == 0) {
+      amrex::MultiFab::Copy(
+        phi[lev], *a_phi[lev], phi_comp, 0, ncomp, phi[lev].nGrowVect());
+    } else {
+      auto const& a_phi_ma = a_phi[lev]->const_arrays();
+      auto const& a_rho_ma = a_density[lev]->const_arrays();
+      auto const& phi_ma = phi[lev].arrays();
       amrex::ParallelFor(
-        gbx, ncomp, [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
-          if (have_density != 0) {
-            phi_arr(i, j, k, n) = a_phi_arr(i, j, k, n) / a_rho_arr(i, j, k);
-          } else {
-            phi_arr(i, j, k, n) = a_phi_arr(i, j, k, n);
+        phi[lev], phi[lev].nGrowVect(),
+        [a_phi_ma, a_rho_ma, phi_ma, phi_comp,
+         ncomp] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+          amrex::Array4<amrex::Real const> a_phi(a_phi_ma[box_no], phi_comp);
+          for (int n = 0; n < ncomp; ++n) {
+            phi_ma[box_no](i, j, k, n) =
+              a_phi(i, j, k, n) / a_rho_ma[box_no](i, j, k);
           }
         });
+      amrex::Gpu::streamSynchronize();
     }
   }
 
@@ -762,31 +759,30 @@ DiffusionOp::computeDiffFluxes(
 
   // Duplicate phi since it is modified by the LinOp
   // and if have_density -> divide by density
-  amrex::Vector<amrex::MultiFab> phi(finest_level + 1);
+  amrex::Vector<amrex::MultiFab> phi;
+  phi.reserve(finest_level + 1);
   for (int lev = 0; lev <= finest_level; ++lev) {
-    phi[lev].define(
+    phi.emplace_back(
       a_phi[lev]->boxArray(), a_phi[lev]->DistributionMap(), ncomp, 1,
       amrex::MFInfo(), a_phi[lev]->Factory());
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-    for (amrex::MFIter mfi(phi[lev], amrex::TilingIfNotGPU()); mfi.isValid();
-         ++mfi) {
-      const amrex::Box& gbx = mfi.growntilebox();
-      auto const& a_phi_arr = a_phi[lev]->const_array(mfi, phi_comp);
-      auto const& a_rho_arr =
-        (have_density) != 0 ? a_density[lev]->const_array(mfi)
-                            : a_phi[lev]->const_array(
-                                mfi); // Get dummy amrex::Array4 if no density
-      auto const& phi_arr = phi[lev].array(mfi);
+    if (have_density == 0) {
+      amrex::MultiFab::Copy(
+        phi[lev], *a_phi[lev], phi_comp, 0, ncomp, phi[lev].nGrowVect());
+    } else {
+      auto const& a_phi_ma = a_phi[lev]->const_arrays();
+      auto const& a_rho_ma = a_density[lev]->const_arrays();
+      auto const& phi_ma = phi[lev].arrays();
       amrex::ParallelFor(
-        gbx, ncomp, [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
-          if (have_density != 0) {
-            phi_arr(i, j, k, n) = a_phi_arr(i, j, k, n) / a_rho_arr(i, j, k);
-          } else {
-            phi_arr(i, j, k, n) = a_phi_arr(i, j, k, n);
+        phi[lev], phi[lev].nGrowVect(),
+        [a_phi_ma, a_rho_ma, phi_ma, phi_comp,
+         ncomp] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+          amrex::Array4<amrex::Real const> a_phi(a_phi_ma[box_no], phi_comp);
+          for (int n = 0; n < ncomp; ++n) {
+            phi_ma[box_no](i, j, k, n) =
+              a_phi(i, j, k, n) / a_rho_ma[box_no](i, j, k);
           }
         });
+      amrex::Gpu::streamSynchronize();
     }
   }
 

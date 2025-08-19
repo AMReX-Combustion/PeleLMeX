@@ -60,14 +60,15 @@ PeleLM::calcTurbViscosity(const TimeStamp a_time)
       }
     } else {
       // get cp_cc (valid in 1 grow cell for interpolation to FCs)
-      int ngrow = 1;
+      constexpr int ngrow = 1;
       auto const* leosparm = eos_parms.device_parm();
       cp_cc.define(ba, dm, 1, ngrow, amrex::MFInfo(), factory);
       auto const& state_arr = ldata_p->state.const_arrays();
       auto const& cp_arr = cp_cc.arrays();
       amrex::ParallelFor(
         cp_cc, cp_cc.nGrowVect(),
-        [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+        [state_arr, cp_arr,
+         leosparm] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
           getCpmixGivenRYT(
             i, j, k,
             amrex::Array4<amrex::Real const>(state_arr[box_no], DENSITY),
@@ -78,7 +79,7 @@ PeleLM::calcTurbViscosity(const TimeStamp a_time)
       amrex::Gpu::streamSynchronize();
 
       // this function really just interpolates CCs to FCs in this case
-      int doZeroVisc = 0;
+      constexpr int doZeroVisc = 0;
       auto bcRec = fetchBCRecArray(DENSITY, 1);
       dens_fc =
         getDiffusivity(lev, DENSITY, 1, doZeroVisc, {bcRec}, ldata_p->state);

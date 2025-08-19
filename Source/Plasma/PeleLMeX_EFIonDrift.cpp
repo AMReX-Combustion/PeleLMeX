@@ -37,7 +37,7 @@ PeleLM::ionDriftVelocity(std::unique_ptr<AdvanceAdvData>& advData)
     }
   }
 
-  int do_avgDown = 0; // TODO or should I ?
+  constexpr int do_avgDown = 0; // TODO or should I ?
   auto bcRecPhiV = fetchBCRecArray(PHIV, 1);
   getDiffusionOp()->computeGradient(
     GetVecOfArrOfPtrs(gphiVOld), {}, // don't need the laplacian out
