@@ -18,7 +18,7 @@ PeleLM::computeInstantaneousReactionRateEF(
       amrex::Array4<amrex::Real const> nE(state_ma[box_no], NE);
       amrex::Array4<amrex::Real const> T(state_ma[box_no], TEMP);
       amrex::Array4<amrex::Real> rhoYdot(I_R_ma[box_no], 0);
-      amrex::Array4<amrex::Real> nEdot(I_R_ma[box_no], NE);
+      amrex::Array4<amrex::Real> nEdot(I_R_ma[box_no], NUM_SPECIES);
       reactionRateRhoY_EF(i, j, k, rhoY, rhoH, T, nE, rhoYdot, nEdot);
     });
   amrex::Gpu::streamSynchronize();

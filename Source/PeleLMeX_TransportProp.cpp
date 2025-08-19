@@ -1,4 +1,4 @@
-#include <PeleLMeX.H>
+ #include <PeleLMeX.H>
 #include <PeleLMeX_K.H>
 #include <pelelmex_prob.H>
 #include <PeleLMeX_DiffusionOp.H>
@@ -106,7 +106,7 @@ PeleLM::calcTurbViscosity(const TimeStamp a_time)
           m_les_cs_smag * m_les_cs_smag * l_scale * l_scale;
         amrex::ParallelFor(
           ldata_p->visc_turb_fc[idim], ldata_p->visc_turb_fc[idim].nGrowVect(),
-          [prefact, idim, velgrad_arr, dens_arr, mut_arr
+          [prefact, velgrad_arr, dens_arr, mut_arr
 #ifdef AMREX_USE_EB
            ,
            vfrac
@@ -136,7 +136,7 @@ PeleLM::calcTurbViscosity(const TimeStamp a_time)
           m_les_cm_wale * m_les_cm_wale * l_scale * l_scale;
         amrex::ParallelFor(
           ldata_p->visc_turb_fc[idim], ldata_p->visc_turb_fc[idim].nGrowVect(),
-          [prefact, idim, velgrad_arr, dens_arr, mut_arr
+          [prefact, velgrad_arr, dens_arr, mut_arr
 #ifdef AMREX_USE_EB
            ,
            vfrac
@@ -166,7 +166,7 @@ PeleLM::calcTurbViscosity(const TimeStamp a_time)
           m_les_cs_sigma * m_les_cs_sigma * l_scale * l_scale;
         amrex::ParallelFor(
           ldata_p->visc_turb_fc[idim], ldata_p->visc_turb_fc[idim].nGrowVect(),
-          [prefact, idim, velgrad_arr, dens_arr, mut_arr
+          [prefact, velgrad_arr, dens_arr, mut_arr
 #ifdef AMREX_USE_EB
            ,
            vfrac

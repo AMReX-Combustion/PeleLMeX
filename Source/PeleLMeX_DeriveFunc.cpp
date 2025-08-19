@@ -468,6 +468,7 @@ pelelmex_dervort(
   int /*level*/)
 
 {
+  amrex::ignore_unused(ncomp);  
   AMREX_ASSERT(derfab.box().contains(bx));
   AMREX_ASSERT(statefab.box().contains(bx));
   AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
