@@ -355,6 +355,7 @@ PeleLM::computeBGcharge(
 {
   // Get integration dt
   amrex::Real dt_int = a_time - getTime(0, AmrOldTime);
+  auto const lzk = zk;
 
   for (int lev = 0; lev <= finest_level; ++lev) {
     // Get data pointers
@@ -387,7 +388,7 @@ PeleLM::computeBGcharge(
                         0.5 * (dn_arr(i, j, k, n) - dnp1_arr(i, j, k, n)) +
                         dhat_arr(i, j, k, n) + rhoYdot(i, j, k, n));
             rhoYprov = amrex::max(rhoYprov, 0.0);
-            charge(i, j, k) += zk[n] * rhoYprov;
+            charge(i, j, k) += lzk[n] * rhoYprov;
           }
           charge(i, j, k) *= factor;
         });
