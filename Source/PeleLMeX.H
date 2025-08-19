@@ -1399,10 +1399,16 @@ public:
   void getActiveControlLowT(amrex::Real& a_coft);
 
   // Derived variable evaluation
-  std::unique_ptr<amrex::MultiFab>
-  derive(const std::string& a_name, amrex::Real a_time, int lev, int nGrow);
-  std::unique_ptr<amrex::MultiFab>
-  deriveComp(const std::string& a_name, amrex::Real a_time, int lev, int nGrow);
+  std::unique_ptr<amrex::MultiFab> derive(
+    const std::string& a_name,
+    const amrex::Real a_time,
+    const int lev,
+    const int nGrow);
+  std::unique_ptr<amrex::MultiFab> deriveComp(
+    const std::string& a_name,
+    const amrex::Real a_time,
+    const int lev,
+    const int nGrow);
 
   // Evaluate function
   void MLevaluate(

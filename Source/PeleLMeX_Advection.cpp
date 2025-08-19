@@ -9,16 +9,18 @@ PeleLM::computeVelocityAdvTerm(std::unique_ptr<AdvanceAdvData>& advData)
   //----------------------------------------------------------------
   // Create temporary containers
   constexpr int nGrow_force = 1;
-  amrex::Vector<amrex::MultiFab> divtau(finest_level + 1);
-  amrex::Vector<amrex::MultiFab> velForces(finest_level + 1);
+  amrex::Vector<amrex::MultiFab> divtau;
+  divtau.reserve(finest_level + 1);
+  amrex::Vector<amrex::MultiFab> velForces;
+  velForces.reserve(finest_level + 1);
   amrex::Vector<amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>> fluxes(
     finest_level + 1);
   amrex::Vector<amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>> faces(
     finest_level + 1);
   for (int lev = 0; lev <= finest_level; ++lev) {
-    divtau[lev].define(
+    divtau.emplace_back(
       grids[lev], dmap[lev], AMREX_SPACEDIM, 0, amrex::MFInfo(), Factory(lev));
-    velForces[lev].define(
+    velForces.emplace_back(
       grids[lev], dmap[lev], AMREX_SPACEDIM, nGrow_force, amrex::MFInfo(),
       Factory(lev));
     for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
@@ -206,9 +208,10 @@ PeleLM::updateVelocity(std::unique_ptr<AdvanceAdvData>& advData)
 {
   //----------------------------------------------------------------
   // Compute t^n divTau
-  amrex::Vector<amrex::MultiFab> divtau(finest_level + 1);
+  amrex::Vector<amrex::MultiFab> divtau;
+  divtau.reserve(finest_level + 1);
   for (int lev = 0; lev <= finest_level; ++lev) {
-    divtau[lev].define(
+    divtau.emplace_back(
       grids[lev], dmap[lev], AMREX_SPACEDIM, 0, amrex::MFInfo(), Factory(lev));
   }
   constexpr int use_density = 0;
@@ -219,9 +222,10 @@ PeleLM::updateVelocity(std::unique_ptr<AdvanceAdvData>& advData)
   //----------------------------------------------------------------
   // Get velocity forcing at half time including lagged grad P term
   constexpr int nGrow_force = 1;
-  amrex::Vector<amrex::MultiFab> velForces(finest_level + 1);
+  amrex::Vector<amrex::MultiFab> velForces;
+  velForces.reserve(finest_level + 1);
   for (int lev = 0; lev <= finest_level; ++lev) {
-    velForces[lev].define(grids[lev], dmap[lev], AMREX_SPACEDIM, nGrow_force);
+    velForces.emplace_back(grids[lev], dmap[lev], AMREX_SPACEDIM, nGrow_force);
   }
   constexpr int add_gradP = 1;
   getVelForces(

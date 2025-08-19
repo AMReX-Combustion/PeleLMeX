@@ -960,9 +960,10 @@ PeleLM::resetCoveredMask()
   //----------------------------------------------------------------------------
   // Need to compute the uncovered volume
   if (m_uncoveredVol < 0.0) {
-    amrex::Vector<amrex::MultiFab> dummy(finest_level + 1);
+    amrex::Vector<amrex::MultiFab> dummy;
+    dummy.reserve(finest_level + 1);
     for (int lev = 0; lev <= finest_level; ++lev) {
-      dummy[lev].define(
+      dummy.emplace_back(
         grids[lev], dmap[lev], 1, 0, amrex::MFInfo(), *m_factory[lev]);
       dummy[lev].setVal(1.0);
     }
@@ -985,7 +986,7 @@ PeleLM::loadBalanceChem()
 }
 
 void
-PeleLM::loadBalanceChemLev(int a_lev)
+PeleLM::loadBalanceChemLev(const int a_lev)
 {
   amrex::LayoutData<amrex::Real> new_cost(*m_baChem[a_lev], *m_dmapChem[a_lev]);
   computeCosts(a_lev, new_cost, m_loadBalanceCostChem);
@@ -997,7 +998,6 @@ PeleLM::loadBalanceChemLev(int a_lev)
   amrex::DistributionMapping test_dmap;
   // Build the test dmap, w/o braodcasting
   if (m_loadBalanceMethodChem == LoadBalanceMethod::SFC) {
-
     test_dmap = amrex::DistributionMapping::makeSFC(
       new_cost, currentEfficiency, testEfficiency, false,
       amrex::ParallelDescriptor::IOProcessorNumber());
@@ -1059,7 +1059,10 @@ PeleLM::loadBalanceChemLev(int a_lev)
 // Return a unique_ptr with the entire derive
 std::unique_ptr<amrex::MultiFab>
 PeleLM::derive(
-  const std::string& a_name, amrex::Real a_time, int lev, int nGrow)
+  const std::string& a_name,
+  const amrex::Real a_time,
+  const int lev,
+  const int nGrow)
 {
   BL_PROFILE("PeleLMeX::derive()");
   AMREX_ASSERT(nGrow >= 0);
@@ -1126,7 +1129,10 @@ PeleLM::derive(
 // Return a unique_ptr with only the required component of a derive
 std::unique_ptr<amrex::MultiFab>
 PeleLM::deriveComp(
-  const std::string& a_name, amrex::Real a_time, int lev, int nGrow)
+  const std::string& a_name,
+  const amrex::Real a_time,
+  const int lev,
+  const int nGrow)
 {
   BL_PROFILE("PeleLMeX::derive()");
   AMREX_ASSERT(nGrow >= 0);

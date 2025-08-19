@@ -20,23 +20,25 @@ PeleLM::predictVelocity(std::unique_ptr<AdvanceAdvData>& advData)
 
   //----------------------------------------------------------------
   // Get viscous forces
-  int nGrow_force = 1;
-  amrex::Vector<amrex::MultiFab> divtau(finest_level + 1);
-  amrex::Vector<amrex::MultiFab> velForces(finest_level + 1);
+  constexpr int nGrow_force = 1;
+  amrex::Vector<amrex::MultiFab> divtau;
+  divtau.reserve(finest_level + 1);
+  amrex::Vector<amrex::MultiFab> velForces;
+  velForces.reserve(finest_level + 1);
   for (int lev = 0; lev <= finest_level; ++lev) {
-    divtau[lev].define(
+    divtau.emplace_back(
       grids[lev], dmap[lev], AMREX_SPACEDIM, 0, amrex::MFInfo(), Factory(lev));
-    velForces[lev].define(
+    velForces.emplace_back(
       grids[lev], dmap[lev], AMREX_SPACEDIM, nGrow_force, amrex::MFInfo(),
       Factory(lev));
   }
-  int use_density = 0;
+  constexpr int use_density = 0;
   computeDivTau(AmrOldTime, GetVecOfPtrs(divtau), use_density);
 
   //----------------------------------------------------------------
   // Gather all the velocity forces
   // F = [ (gravity+...) - gradP + divTau ] / rho
-  int add_gradP = 1;
+  constexpr int add_gradP = 1;
   getVelForces(
     AmrOldTime, GetVecOfPtrs(divtau), GetVecOfPtrs(velForces), nGrow_force,
     add_gradP);
@@ -89,10 +91,11 @@ PeleLM::addChiIncrement(
 {
   BL_PROFILE("PeleLMeX::addChiIncrement()");
 
-  int nGrow = m_nGrowAdv;
-  amrex::Vector<amrex::MultiFab> chiIncr(finest_level + 1);
+  const int nGrow = m_nGrowAdv;
+  amrex::Vector<amrex::MultiFab> chiIncr;
+  chiIncr.reserve(finest_level + 1);
   for (int lev = 0; lev <= finest_level; ++lev) {
-    chiIncr[lev].define(
+    chiIncr.emplace_back(
       grids[lev], dmap[lev], 1, nGrow, amrex::MFInfo(), Factory(lev));
   }
 
@@ -158,7 +161,7 @@ PeleLM::macProject(
 {
   BL_PROFILE("PeleLMeX::macProject()");
 
-  int has_divu = static_cast<int>(!a_divu.empty());
+  const int has_divu = static_cast<int>(!a_divu.empty());
 
   // Get face rho inv
   auto bcRec = fetchBCRecArray(DENSITY, 1);
@@ -175,7 +178,7 @@ PeleLM::macProject(
       }
     } else {
       auto* ldata_p = getLevelDataPtr(lev, a_time);
-      int doZeroVisc = 0;
+      constexpr int doZeroVisc = 0;
       rho_inv[lev] =
         getDiffusivity(lev, DENSITY, 1, doZeroVisc, {bcRec}, ldata_p->state);
       for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
@@ -232,22 +235,19 @@ PeleLM::macProject(
   }
 
   // FillBoundary umac
-  for (int lev = 0; lev <= finest_level; ++lev) {
-    if (lev > 0) {
-      // We need to fill the MAC velocities outside the fine region so we can
-      // use them in the Godunov method
-      amrex::IntVect rr =
-        geom[lev].Domain().size() / geom[lev - 1].Domain().size();
-      create_constrained_umac_grown(
-        m_nGrowMAC, &geom[lev - 1], &geom[lev],
-        GetArrOfPtrs(advData->umac[lev - 1]), GetArrOfPtrs(advData->umac[lev]),
-        rr);
-    } else {
-      AMREX_D_TERM(
-        advData->umac[lev][0].FillBoundary(geom[lev].periodicity());
-        , advData->umac[lev][1].FillBoundary(geom[lev].periodicity());
-        , advData->umac[lev][2].FillBoundary(geom[lev].periodicity()));
-    }
+  // Do coarse first
+  AMREX_D_TERM(advData->umac[0][0].FillBoundary(geom[0].periodicity());
+               , advData->umac[0][1].FillBoundary(geom[0].periodicity());
+               , advData->umac[0][2].FillBoundary(geom[0].periodicity()));
+  for (int lev = 1; lev <= finest_level; ++lev) {
+    // We need to fill the MAC velocities outside the fine region so we can
+    // use them in the Godunov method
+    const amrex::IntVect rr =
+      geom[lev].Domain().size() / geom[lev - 1].Domain().size();
+    create_constrained_umac_grown(
+      m_nGrowMAC, &geom[lev - 1], &geom[lev],
+      GetArrOfPtrs(advData->umac[lev - 1]), GetArrOfPtrs(advData->umac[lev]),
+      rr);
   }
 }
 

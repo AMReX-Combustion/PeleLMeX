@@ -48,7 +48,7 @@ PeleLM::implicitNonLinearSolve(
   }
 
   // Gradient of PhiV at t^{n}
-  int do_avgDown = 0; // TODO or should I ?
+  constexpr int do_avgDown = 0; // TODO or should I ?
   auto bcRecPhiV = fetchBCRecArray(PHIV, 1);
   getDiffusionOp()->computeGradient(
     getNLgradPhiVVect(), {}, // don't need the laplacian out
@@ -141,9 +141,10 @@ PeleLM::implicitNonLinearSolve(
       }
 
       // Solve for Newton direction
-      amrex::Vector<amrex::MultiFab> newtonDir(finest_level + 1);
+      amrex::Vector<amrex::MultiFab> newtonDir;
+      newtonDir.reserve(finest_level + 1);
       for (int lev = 0; lev <= finest_level; ++lev) {
-        newtonDir[lev].define(
+        newtonDir.emplace_back(
           grids[lev], dmap[lev], 2, 1, amrex::MFInfo(), Factory(lev));
         newtonDir[lev].setVal(0.0, 0, 2, 1);
       }
@@ -380,7 +381,6 @@ PeleLM::computeBGcharge(
     auto const& dhat_ma = diffData->Dhat[lev].const_arrays();
     auto const& rhoYdot_ma = ldataR_p->I_R.const_arrays();
     auto const& charge_ma = ldataNLs_p->backgroundCharge.arrays();
-    constexpr amrex::Real factor = 1.0 / elemCharge;
     amrex::ParallelFor(
       ldataNLs_p->backgroundCharge,
       [state_old_ma, adv_ma, dn_ma, dnp1_ma, dhat_ma, rhoYdot_ma, charge_ma,
@@ -390,6 +390,7 @@ PeleLM::computeBGcharge(
           state_old_ma[box_no], FIRSTSPEC);
         amrex::Array4<amrex::Real const> adv(adv_ma[box_no], FIRSTSPEC);
         charge_ma[box_no](i, j, k) = 0.0;
+        constexpr amrex::Real factor = 1.0 / elemCharge;
         for (int n = 0; n < NUM_SPECIES; ++n) {
           amrex::Real rhoYprov =
             rhoYold(i, j, k, n) +
@@ -415,12 +416,14 @@ PeleLM::nonLinearResidual(
   const int updatePrecond)
 {
   // Get unscaled copy of the NL state
-  amrex::Vector<amrex::MultiFab> nE(finest_level + 1);
-  amrex::Vector<amrex::MultiFab> phiV(finest_level + 1);
+  amrex::Vector<amrex::MultiFab> nE;
+  nE.reserve(finest_level + 1);
+  amrex::Vector<amrex::MultiFab> phiV;
+  phiV.reserve(finest_level + 1);
   for (int lev = 0; lev <= finest_level; ++lev) {
-    nE[lev].define(
+    nE.emplace_back(
       grids[lev], dmap[lev], 1, m_nGrowState, amrex::MFInfo(), Factory(lev));
-    phiV[lev].define(
+    phiV.emplace_back(
       grids[lev], dmap[lev], 1, m_nGrowState, amrex::MFInfo(), Factory(lev));
     amrex::MultiFab::Copy(nE[lev], *a_nlstate[lev], 0, 0, 1, m_nGrowState);
     nE[lev].mult(nE_scale, 0, 1, m_nGrowState);
@@ -432,11 +435,12 @@ PeleLM::nonLinearResidual(
   fillPatchNLnE(m_cur_time, GetVecOfPtrs(nE), m_nGrowState);
 
   // Get L(phiV) and Grad(phiV)
-  amrex::Vector<amrex::MultiFab> laplacian(finest_level + 1);
+  amrex::Vector<amrex::MultiFab> laplacian;
+  laplacian.reserve(finest_level + 1);
   amrex::Vector<amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>> gradPhiVCur(
     finest_level + 1);
   for (int lev = 0; lev <= finest_level; ++lev) {
-    laplacian[lev].define(
+    laplacian.emplace_back(
       grids[lev], dmap[lev], 1, 0, amrex::MFInfo(), Factory(lev));
     for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
       const auto& fba =
@@ -445,16 +449,17 @@ PeleLM::nonLinearResidual(
         fba, dmap[lev], 1, 0, amrex::MFInfo(), Factory(lev));
     }
   }
-  int do_avgDown = 0; // TODO or should I ?
+  constexpr int do_avgDown = 0; // TODO or should I ?
   auto bcRecPhiV = fetchBCRecArray(PHIV, 1);
   getDiffusionOp()->computeGradient(
     GetVecOfArrOfPtrs(gradPhiVCur), GetVecOfPtrs(laplacian),
     GetVecOfConstPtrs(phiV), {}, bcRecPhiV[0], do_avgDown);
 
   // Get nE diffusion term
-  amrex::Vector<amrex::MultiFab> diffnE(finest_level + 1);
+  amrex::Vector<amrex::MultiFab> diffnE;
+  diffnE.reserve(finest_level + 1);
   for (int lev = 0; lev <= finest_level; ++lev) {
-    diffnE[lev].define(
+    diffnE.emplace_back(
       grids[lev], dmap[lev], 1, 0, amrex::MFInfo(), Factory(lev));
   }
   auto bcRecnE = fetchBCRecArray(NE, 1);
@@ -466,9 +471,10 @@ PeleLM::nonLinearResidual(
   // amrex::VisMF::Write(diffnE[0],"diffnEnlResid");
 
   // Get nE advection term
-  amrex::Vector<amrex::MultiFab> advnE(finest_level + 1);
+  amrex::Vector<amrex::MultiFab> advnE;
+  advnE.reserve(finest_level + 1);
   for (int lev = 0; lev <= finest_level; ++lev) {
-    advnE[lev].define(
+    advnE.emplace_back(
       grids[lev], dmap[lev], 1, 0, amrex::MFInfo(), Factory(lev));
   }
   getAdvectionTerm(
@@ -932,10 +938,11 @@ PeleLM::setUpPrecond(
   }
 
   // Stilda approx first-order
-  amrex::Vector<amrex::MultiFab> diagDiffOp(finest_level + 1);
+  amrex::Vector<amrex::MultiFab> diagDiffOp;
+  diagDiffOp.reserve(finest_level + 1);
   if (m_ef_PC_approx == 2) {
     for (int lev = 0; lev <= finest_level; ++lev) {
-      diagDiffOp[lev].define(grids[lev], dmap[lev], 1, 1);
+      diagDiffOp.emplace_back(grids[lev], dmap[lev], 1, 1);
       getPrecondOp()->getDiffOpDiagonal(lev, diagDiffOp[lev]);
       diagDiffOp[lev].mult(FnE_scale / nE_scale);
     }
@@ -1139,21 +1146,23 @@ PeleLM::jTimesV(
     m_ef_lambda_jfnk * (m_ef_lambda_jfnk + nl_stateNorm / vNorm);
 
   if (m_ef_diffT_jfnk == 1) {
-    amrex::Vector<amrex::MultiFab> statePert(finest_level + 1);
-    amrex::Vector<amrex::MultiFab> residPert(finest_level + 1);
+    amrex::Vector<amrex::MultiFab> statePert;
+    statePert.reserve(finest_level + 1);
+    amrex::Vector<amrex::MultiFab> residPert;
+    residPert.reserve(finest_level + 1);
     for (int lev = 0; lev <= finest_level; ++lev) {
       auto ldataNLs_p = getLevelDataNLSolvePtr(lev);
-      statePert[lev].define(
+      statePert.emplace_back(
         grids[lev], dmap[lev], 2, m_nGrowState, amrex::MFInfo(), Factory(lev));
-      residPert[lev].define(
+      residPert.emplace_back(
         grids[lev], dmap[lev], 2, m_nGrowState, amrex::MFInfo(), Factory(lev));
       amrex::MultiFab::Copy(
         statePert[lev], ldataNLs_p->nlState, 0, 0, 2, m_nGrowState);
       amrex::MultiFab::Saxpy(statePert[lev], delta_pert, *a_v[lev], 0, 0, 2, 0);
     }
 
-    int update_scaling = 0;
-    int update_precond = 0;
+    constexpr int update_scaling = 0;
+    constexpr int update_precond = 0;
     nonLinearResidual(
       dtsub, GetVecOfPtrs(statePert), GetVecOfPtrs(residPert), update_scaling,
       update_precond);
@@ -1166,19 +1175,23 @@ PeleLM::jTimesV(
       a_Jv[lev]->mult(-1.0 / delta_pert);
     }
   } else if (m_ef_diffT_jfnk == 2) {
-    amrex::Vector<amrex::MultiFab> statePertPls(finest_level + 1);
-    amrex::Vector<amrex::MultiFab> residPertPls(finest_level + 1);
-    amrex::Vector<amrex::MultiFab> statePertMns(finest_level + 1);
-    amrex::Vector<amrex::MultiFab> residPertMns(finest_level + 1);
+    amrex::Vector<amrex::MultiFab> statePertPls;
+    statePertPls.reserve(finest_level + 1);
+    amrex::Vector<amrex::MultiFab> residPertPls;
+    residPertPls.reserve(finest_level + 1);
+    amrex::Vector<amrex::MultiFab> statePertMns;
+    statePertMns.reserve(finest_level + 1);
+    amrex::Vector<amrex::MultiFab> residPertMns;
+    residPertMns.reserve(finest_level + 1);
     for (int lev = 0; lev <= finest_level; ++lev) {
       auto ldataNLs_p = getLevelDataNLSolvePtr(lev);
-      statePertPls[lev].define(
+      statePertPls.emplace_back(
         grids[lev], dmap[lev], 2, m_nGrowState, amrex::MFInfo(), Factory(lev));
-      residPertPls[lev].define(
+      residPertPls.emplace_back(
         grids[lev], dmap[lev], 2, m_nGrowState, amrex::MFInfo(), Factory(lev));
-      statePertMns[lev].define(
+      statePertMns.emplace_back(
         grids[lev], dmap[lev], 2, m_nGrowState, amrex::MFInfo(), Factory(lev));
-      residPertMns[lev].define(
+      residPertMns.emplace_back(
         grids[lev], dmap[lev], 2, m_nGrowState, amrex::MFInfo(), Factory(lev));
       amrex::MultiFab::Copy(
         statePertPls[lev], ldataNLs_p->nlState, 0, 0, 2, m_nGrowState);
@@ -1190,8 +1203,8 @@ PeleLM::jTimesV(
         statePertMns[lev], -delta_pert, *a_v[lev], 0, 0, 2, 0);
     }
 
-    int update_scaling = 0;
-    int update_precond = 0;
+    constexpr int update_scaling = 0;
+    constexpr int update_precond = 0;
     nonLinearResidual(
       dtsub, GetVecOfPtrs(statePertPls), GetVecOfPtrs(residPertPls),
       update_scaling, update_precond);

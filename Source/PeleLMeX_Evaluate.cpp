@@ -40,9 +40,10 @@ PeleLM::Evaluate()
 
   //----------------------------------------------------------------
   // Define the outgoing container
-  amrex::Vector<amrex::MultiFab> mf_plt(finest_level + 1);
+  amrex::Vector<amrex::MultiFab> mf_plt;
+  mf_plt.reserve(finest_level + 1);
   for (int lev = 0; lev <= finest_level; ++lev) {
-    mf_plt[lev].define(
+    mf_plt.emplace_back(
       grids[lev], dmap[lev], ncomp, 0, amrex::MFInfo(), Factory(lev));
   }
 
@@ -96,7 +97,7 @@ PeleLM::Evaluate()
 void
 PeleLM::MLevaluate(
   const amrex::Vector<amrex::MultiFab*>& a_MFVec,
-  int a_comp,
+  const int a_comp,
   int& nComp,
   const std::string& a_var)
 {
@@ -105,9 +106,9 @@ PeleLM::MLevaluate(
   // used in PeleLM:::Evolve
 
   if (a_var == "divU") {
-    int is_initialization = 0;    // No, use IRR
-    int computeDiffusionTerm = 1; // Needed here
-    int do_avgDown = 1;           // Always
+    constexpr int is_initialization = 0;    // No, use IRR
+    constexpr int computeDiffusionTerm = 1; // Needed here
+    constexpr int do_avgDown = 1;           // Always
 
     // Light version of the diffusion data container
     std::unique_ptr<AdvanceDiffData> diffData;
@@ -124,9 +125,9 @@ PeleLM::MLevaluate(
     nComp = 1;
   } else if (a_var == "velProj") {
     // Will need DivU
-    int is_initialization = 0;    // No, use IRR
-    int computeDiffusionTerm = 1; // Needed here
-    int do_avgDown = 1;           // Always
+    constexpr int is_initialization = 0;    // No, use IRR
+    constexpr int computeDiffusionTerm = 1; // Needed here
+    constexpr int do_avgDown = 1;           // Always
 
     // Light version of the diffusion data container
     std::unique_ptr<AdvanceDiffData> diffData;
@@ -149,7 +150,7 @@ PeleLM::MLevaluate(
     nComp = AMREX_SPACEDIM;
   } else if (a_var == "divTau") {
     // Velocity tensor components
-    int use_density = 0;
+    constexpr int use_density = 0;
     amrex::Vector<std::unique_ptr<amrex::MultiFab>> aliasDivTau(
       finest_level + 1);
     for (int lev = 0; lev <= finest_level; ++lev) {
@@ -241,7 +242,7 @@ PeleLM::MLevaluate(
     }
   } else if (a_var == "velForce") {
     // Velocity forces used in computing the velocity advance
-    int add_gradP = 0;
+    constexpr int add_gradP = 0;
     amrex::Vector<std::unique_ptr<amrex::MultiFab>> aliasMFVec(
       finest_level + 1);
     for (int lev = 0; lev <= finest_level; ++lev) {

@@ -90,10 +90,11 @@ PeleLM::computeDifferentialDiffusionTerms(
     }
   }
 #ifdef AMREX_USE_EB
-  amrex::Vector<amrex::MultiFab> EBfluxes(finest_level + 1);
+  amrex::Vector<amrex::MultiFab> EBfluxes;
   if (m_isothermalEB != 0) {
+    EBfluxes.reserve(finest_level + 1);
     for (int lev = 0; lev <= finest_level; ++lev) {
-      EBfluxes[lev].define(
+      EBfluxes.emplace_back(
         grids[lev], dmap[lev], 1, nGrow, amrex::MFInfo(), Factory(lev));
     }
   }
@@ -496,13 +497,12 @@ PeleLM::computeDifferentialDiffusionFluxes(
 
   amrex::Vector<amrex::MultiFab> spec_boundary;
   if (m_soret_boundary_override != 0) {
-    spec_boundary.resize(finest_level + 1);
+    spec_boundary.reserve(finest_level + 1);
     // this is the same regardless of lagged or not
     for (int lev = 0; lev <= finest_level; ++lev) {
-      auto* ldata_p = getLevelDataPtr(lev, a_time);
-      spec_boundary[lev].define(
+      spec_boundary.emplace_back(
         grids[lev], dmap[lev], NUM_SPECIES, 1, amrex::MFInfo(), Factory(lev));
-
+      auto* ldata_p = getLevelDataPtr(lev, a_time);
       // if we have a mix of Dirichlet and Isothermal walls, we need to give
       // Dirichlet boundaries and divide by density since diffuse_scalar doesn't
       // touch this boundary MF
@@ -608,10 +608,11 @@ PeleLM::computeDifferentialDiffusionFluxes(
   if (m_isothermalEB != 0) {
     AMREX_ASSERT(!a_EBfluxes.empty());
     // Set up EB dirichlet value and diffusivity
-    amrex::Vector<amrex::MultiFab> EBdiff(finest_level + 1);
+    amrex::Vector<amrex::MultiFab> EBdiff;
+    EBdiff.reserve(finest_level + 1);
 
     for (int lev = 0; lev <= finest_level; ++lev) {
-      EBdiff[lev].define(
+      EBdiff.emplace_back(
         grids[lev], dmap[lev], 1, 0, amrex::MFInfo(), EBFactory(lev));
       getEBDiff(lev, a_time, EBdiff[lev], NUM_SPECIES);
     }
@@ -1105,10 +1106,11 @@ PeleLM::differentialDiffusionUpdate(
     }
   }
 #ifdef AMREX_USE_EB
-  amrex::Vector<amrex::MultiFab> EBfluxes(finest_level + 1);
+  amrex::Vector<amrex::MultiFab> EBfluxes;
   if (m_isothermalEB != 0) {
+    EBfluxes.reserve(finest_level + 1);
     for (int lev = 0; lev <= finest_level; ++lev) {
-      EBfluxes[lev].define(
+      EBfluxes.emplace_back(
         grids[lev], dmap[lev], 1, nGrow, amrex::MFInfo(), Factory(lev));
     }
   }
@@ -1154,11 +1156,11 @@ PeleLM::differentialDiffusionUpdate(
   auto bcRecAux = fetchBCRecAuxArray(0, m_nAux);
   amrex::Vector<amrex::MultiFab> spec_boundary;
   if (m_soret_boundary_override != 0) {
-    spec_boundary.resize(finest_level + 1);
+    spec_boundary.reserve(finest_level + 1);
     // this is the same regardless of lagged or not
     for (int lev = 0; lev <= finest_level; ++lev) {
       auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
-      spec_boundary[lev].define(
+      spec_boundary.emplace_back(
         grids[lev], dmap[lev], NUM_SPECIES, 1, amrex::MFInfo(), Factory(lev));
 
       // if we have a mix of Dirichlet and Isothermal walls, we need to give
@@ -1424,9 +1426,10 @@ PeleLM::differentialDiffusionUpdate(
 #ifdef AMREX_USE_EB
   if (m_isothermalEB != 0) {
     // Set up EB dirichlet value and diffusivity
-    amrex::Vector<amrex::MultiFab> EBdiff(finest_level + 1);
+    amrex::Vector<amrex::MultiFab> EBdiff;
+    EBdiff.reserve(finest_level + 1);
     for (int lev = 0; lev <= finest_level; ++lev) {
-      EBdiff[lev].define(
+      EBdiff.emplace_back(
         grids[lev], dmap[lev], 1, 0, amrex::MFInfo(), EBFactory(lev));
       getEBDiff(lev, AmrNewTime, EBdiff[lev], NUM_SPECIES);
     }
@@ -1479,17 +1482,18 @@ PeleLM::differentialDiffusionUpdate(
 
   //------------------------------------------------------------------------
   // Temporary data holders
-  amrex::Vector<amrex::MultiFab> rhs(
-    finest_level + 1); // Linear deltaT solve RHS
-  amrex::Vector<amrex::MultiFab> Tsave(
-    finest_level + 1); // Storage of T while working on deltaT
-  amrex::Vector<amrex::MultiFab> RhoCp(
-    finest_level + 1); // Acoeff of the linear solve
+  amrex::Vector<amrex::MultiFab> rhs;
+  rhs.reserve(finest_level + 1); // Linear deltaT solve RHS
+  amrex::Vector<amrex::MultiFab> Tsave;
+  Tsave.reserve(finest_level + 1); // Storage of T while working on deltaT
+  amrex::Vector<amrex::MultiFab> RhoCp;
+  RhoCp.reserve(finest_level + 1); // Acoeff of the linear solve
   for (int lev = 0; lev <= finest_level; ++lev) {
-    rhs[lev].define(grids[lev], dmap[lev], 1, 0, amrex::MFInfo(), Factory(lev));
-    Tsave[lev].define(
+    rhs.emplace_back(
+      grids[lev], dmap[lev], 1, 0, amrex::MFInfo(), Factory(lev));
+    Tsave.emplace_back(
       grids[lev], dmap[lev], 1, 1, amrex::MFInfo(), Factory(lev));
-    RhoCp[lev].define(
+    RhoCp.emplace_back(
       grids[lev], dmap[lev], 1, 0, amrex::MFInfo(), Factory(lev));
   }
 
@@ -1513,12 +1517,14 @@ PeleLM::differentialDiffusionUpdate(
     if (m_isothermalEB != 0) {
       // Set up EB dirichlet value and diffusivity
       // Dirichlet value is deltaT
-      amrex::Vector<amrex::MultiFab> EBvalue(finest_level + 1);
-      amrex::Vector<amrex::MultiFab> EBdiff(finest_level + 1);
+      amrex::Vector<amrex::MultiFab> EBvalue;
+      EBvalue.reserve(finest_level + 1);
+      amrex::Vector<amrex::MultiFab> EBdiff;
+      EBdiff.reserve(finest_level + 1);
       for (int lev = 0; lev <= finest_level; ++lev) {
-        EBvalue[lev].define(
+        EBvalue.emplace_back(
           grids[lev], dmap[lev], 1, 0, amrex::MFInfo(), EBFactory(lev));
-        EBdiff[lev].define(
+        EBdiff.emplace_back(
           grids[lev], dmap[lev], 1, 0, amrex::MFInfo(), EBFactory(lev));
         getEBDiff(lev, AmrNewTime, EBdiff[lev], NUM_SPECIES);
         EBvalue[lev].setVal(0.0);
@@ -1667,9 +1673,10 @@ PeleLM::deltaTIter_update(
 #ifdef AMREX_USE_EB
   if (m_isothermalEB != 0) {
     // Set up EB dirichlet value and diffusivity
-    amrex::Vector<amrex::MultiFab> EBdiff(finest_level + 1);
+    amrex::Vector<amrex::MultiFab> EBdiff;
+    EBdiff.reserve(finest_level + 1);
     for (int lev = 0; lev <= finest_level; ++lev) {
-      EBdiff[lev].define(
+      EBdiff.emplace_back(
         grids[lev], dmap[lev], 1, 0, amrex::MFInfo(), EBFactory(lev));
       getEBDiff(lev, AmrNewTime, EBdiff[lev], NUM_SPECIES);
     }
