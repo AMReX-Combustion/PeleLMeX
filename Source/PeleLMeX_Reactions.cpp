@@ -86,10 +86,12 @@ PeleLM::advanceChemistry(
     auto eos = pele::physics::PhysicsType::eos(&eos_parms.host_parm());
     amrex::Real mwt[NUM_SPECIES] = {0.0};
     eos.molecular_weight(mwt);
-    amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-      rhoYe_n(i, j, k) = nE_o(i, j, k) / Na * mwt[E_ID] * 1.0e-6;
-      FrhoYe(i, j, k) = FnE(i, j, k) / Na * mwt[E_ID] * 1.0e-6;
-    });
+    amrex::ParallelFor(
+      bx, [rhoYe_n, nE_o, mwt, FrhoYe,
+           FnE] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        rhoYe_n(i, j, k) = nE_o(i, j, k) / Na * mwt[E_ID] * 1.0e-6;
+        FrhoYe(i, j, k) = FnE(i, j, k) / Na * mwt[E_ID] * 1.0e-6;
+      });
 #endif
 
     amrex::Real dt_incr = a_dt;
@@ -121,11 +123,13 @@ PeleLM::advanceChemistry(
     auto const& nE_n = ldataNew_p->state.array(mfi, NE);
     amrex::Real invmwt[NUM_SPECIES] = {0.0};
     eos.inv_molecular_weight(invmwt);
-    amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-      nE_n(i, j, k) = rhoYe_n(i, j, k) * Na * invmwt[E_ID] * 1.0e3;
-      rhoYe_n(i, j, k) = 0.0;
-      extF_rhoY(i, j, k, E_ID) = 0.0;
-    });
+    amrex::ParallelFor(
+      bx, [nE_n, rhoYe_n, invmwt,
+           extF_rhoY] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        nE_n(i, j, k) = rhoYe_n(i, j, k) * Na * invmwt[E_ID] * 1.0e3;
+        rhoYe_n(i, j, k) = 0.0;
+        extF_rhoY(i, j, k, E_ID) = 0.0;
+      });
 #endif
 
 #ifdef AMREX_USE_GPU
@@ -147,7 +151,8 @@ PeleLM::advanceChemistry(
     amrex::Real dt_inv = 1.0 / a_dt;
     amrex::ParallelFor(
       bx, NUM_SPECIES,
-      [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
+      [rhoYdot, rhoY_o, rhoY_n, dt_inv,
+       extF_rhoY] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
         rhoYdot(i, j, k, n) =
           -(rhoY_o(i, j, k, n) - rhoY_n(i, j, k, n)) * dt_inv -
           extF_rhoY(i, j, k, n);
@@ -158,9 +163,12 @@ PeleLM::advanceChemistry(
     auto const& nE_n = ldataNew_p->state.const_array(mfi, NE);
     auto const& FnE = a_extForcing.const_array(mfi, NUM_SPECIES + 1);
     auto const& nEdot = ldataR_p->I_R.array(mfi, NUM_SPECIES);
-    amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-      nEdot(i, j, k) = -(nE_o(i, j, k) - nE_n(i, j, k)) * dt_inv - FnE(i, j, k);
-    });
+    amrex::ParallelFor(
+      bx, [nEdot, nE_o, nE_n, dt_inv,
+           FnE] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        nEdot(i, j, k) =
+          -(nE_o(i, j, k) - nE_n(i, j, k)) * dt_inv - FnE(i, j, k);
+      });
 #endif
   }
 }
@@ -241,10 +249,12 @@ PeleLM::advanceChemistryBAChem(
     auto eos = pele::physics::PhysicsType::eos(&eos_parms.host_parm());
     amrex::Real mwt[NUM_SPECIES] = {0.0};
     eos.molecular_weight(mwt);
-    amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-      rhoYe_o(i, j, k) = nE_o(i, j, k) / Na * mwt[E_ID] * 1.0e-6;
-      FrhoYe(i, j, k) = FnE(i, j, k) / Na * mwt[E_ID] * 1.0e-6;
-    });
+    amrex::ParallelFor(
+      bx, [rhoYe_o, nE_o, mwt, FrhoYe,
+           FnE] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        rhoYe_o(i, j, k) = nE_o(i, j, k) / Na * mwt[E_ID] * 1.0e-6;
+        FrhoYe(i, j, k) = FnE(i, j, k) / Na * mwt[E_ID] * 1.0e-6;
+      });
 #endif
 
     // Do reaction only on uncovered box
@@ -266,7 +276,7 @@ PeleLM::advanceChemistryBAChem(
     } else {
       // Just set the function call to 0.0
       amrex::ParallelFor(
-        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        bx, [fcl] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           fcl(i, j, k) = 0.0;
         });
     }
@@ -284,10 +294,12 @@ PeleLM::advanceChemistryBAChem(
     // rhoY_e -> nE and set rhoY_e to zero
     amrex::Real invmwt[NUM_SPECIES] = {0.0};
     eos.inv_molecular_weight(invmwt);
-    ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-      nE_o(i, j, k) = rhoYe_o(i, j, k) * Na * invmwt[E_ID] * 1.0e3;
-      rhoYe_o(i, j, k) = 0.0;
-    });
+    ParallelFor(
+      bx,
+      [nE_o, rhoYe_o, invmwt] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        nE_o(i, j, k) = rhoYe_o(i, j, k) * Na * invmwt[E_ID] * 1.0e3;
+        rhoYe_o(i, j, k) = 0.0;
+      });
 #endif
 
 #ifdef AMREX_USE_GPU
@@ -343,12 +355,15 @@ PeleLM::advanceChemistryBAChem(
     auto const& nE_n = ldataNew_p->state.array(mfi, NE);
     auto const& FnE = a_extForcing.const_array(mfi, NUM_SPECIES + 1);
     auto const& nEdot = ldataR_p->I_R.array(mfi, NUM_SPECIES);
-    amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-      // Pass into leveldata_new
-      nE_n(i, j, k) = nE_arr(i, j, k);
-      // Compute I_R
-      nEdot(i, j, k) = -(nE_o(i, j, k) - nE_n(i, j, k)) * dt_inv - FnE(i, j, k);
-    });
+    amrex::ParallelFor(
+      bx, [nE_n, nE_arr, nEdot, nE_o, dt_inv,
+           FnE] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        // Pass into leveldata_new
+        nE_n(i, j, k) = nE_arr(i, j, k);
+        // Compute I_R
+        nEdot(i, j, k) =
+          -(nE_o(i, j, k) - nE_n(i, j, k)) * dt_inv - FnE(i, j, k);
+      });
 #endif
   }
 }
@@ -395,14 +410,15 @@ PeleLM::computeInstantaneousReactionRate(
     if (flagfab.getType(bx) == amrex::FabType::covered) { // Covered boxes
       amrex::ParallelFor(
         bx, NUM_SPECIES,
-        [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
+        [rhoYdot] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
           rhoYdot(i, j, k, n) = 0.0;
         });
     } else if (flagfab.getType(bx) != amrex::FabType::regular) { // EB
                                                                  // containing
                                                                  // boxes
       amrex::ParallelFor(
-        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        bx, [rhoYdot, flag, rhoY, rhoH, T,
+             leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           if (flag(i, j, k).isCovered()) {
             for (int n = 0; n < NUM_SPECIES; ++n) {
               rhoYdot(i, j, k, n) = 0.0;
@@ -415,7 +431,8 @@ PeleLM::computeInstantaneousReactionRate(
 #endif
     {
       amrex::ParallelFor(
-        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        bx, [rhoY, rhoH, T, rhoYdot,
+             leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           reactionRateRhoY(i, j, k, rhoY, rhoH, T, rhoYdot, leosparm);
         });
     }
@@ -482,7 +499,8 @@ PeleLM::getHeatRelease(const int a_lev, amrex::MultiFab* a_HR)
       auto const& Hi = EnthFab.array();
       auto const& HRR = a_HR->array(mfi);
       amrex::ParallelFor(
-        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        bx, [T, Hi, leosparm, HRR,
+             react] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           getHGivenT(i, j, k, T, Hi, leosparm);
           HRR(i, j, k) = 0.0;
           for (int n = 0; n < NUM_SPECIES; ++n) {

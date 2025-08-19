@@ -26,7 +26,7 @@ PeleLM::setThermoPress(const int lev, const TimeStamp a_time)
 
   amrex::ParallelFor(
     ldata_p->state,
-    [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+    [sma, leosparm] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
       getPGivenRTY(
         i, j, k, amrex::Array4<amrex::Real const>(sma[box_no], DENSITY),
         amrex::Array4<amrex::Real const>(sma[box_no], FIRSTSPEC),
@@ -126,14 +126,16 @@ PeleLM::calcDivU(
 #ifdef AMREX_USE_EB
       if (flagfab.getType(bx) == amrex::FabType::covered) { // Covered boxes
         amrex::ParallelFor(
-          bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          bx, [divu] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             divu(i, j, k) = 0.0;
           });
       } else if (flagfab.getType(bx) != amrex::FabType::regular) { // EB
                                                                    // containing
                                                                    // boxes
         amrex::ParallelFor(
-          bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          bx,
+          [flag, divu, rhoY, T, SpecD, Fourier, DiffDiff, r, extRhoY, extRhoH,
+           use_react, leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             if (flag(i, j, k).isCovered()) {
               divu(i, j, k) = 0.0;
             } else {
@@ -146,7 +148,9 @@ PeleLM::calcDivU(
 #endif
       {
         amrex::ParallelFor(
-          bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          bx,
+          [divu, rhoY, T, SpecD, Fourier, DiffDiff, r, extRhoY, extRhoH,
+           use_react, leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             compute_divu<pele::physics::PhysicsType::eos_type>(
               i, j, k, rhoY, T, SpecD, Fourier, DiffDiff, r, extRhoY, extRhoH,
               divu, use_react, leosparm);
@@ -189,7 +193,7 @@ PeleLM::setRhoToSumRhoY(const int lev, const TimeStamp a_time)
 
   amrex::ParallelFor(
     ldata_p->state,
-    [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+    [sma] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
       pele::physics::PhysicsType::eos_type::RY2R(
         sma[box_no].cellData(i, j, k), sma[box_no](i, j, k, DENSITY),
         FIRSTSPEC);
@@ -222,7 +226,7 @@ PeleLM::setTemperature(const int lev, const TimeStamp a_time)
 
   amrex::ParallelFor(
     ldata_p->state,
-    [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+    [sma, leosparm] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
       getTfromHY(
         i, j, k, amrex::Array4<amrex::Real const>(sma[box_no], DENSITY),
         amrex::Array4<amrex::Real const>(sma[box_no], FIRSTSPEC),
@@ -265,7 +269,8 @@ PeleLM::calc_dPdt(
   const auto dt = m_dt;
   const auto dpdt_fac = m_dpdtFactor;
   amrex::ParallelFor(
-    *a_dPdt, [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+    *a_dPdt, [dPdtma, sma, p_amb, dt, dpdt_fac] AMREX_GPU_DEVICE(
+               int box_no, int i, int j, int k) noexcept {
       auto dPdta = dPdtma[box_no];
       auto sa = sma[box_no];
       dPdta(i, j, k) =
@@ -295,7 +300,8 @@ PeleLM::adjustPandDivU(std::unique_ptr<AdvanceAdvData>& advData)
     const auto pNew = m_pNew;
     amrex::ParallelFor(
       *ThetaHalft[lev],
-      [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+      [tma, sma_o, sma_n, pOld, pNew,
+       leosparm] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
         auto theta = tma[box_no];
         amrex::Real gammaInv_o = getGammaInv(
           i, j, k, amrex::Array4<amrex::Real const>(sma_o[box_no], FIRSTSPEC),
@@ -338,8 +344,8 @@ PeleLM::adjustPandDivU(std::unique_ptr<AdvanceAdvData>& advData)
     auto const& tma = ThetaHalft[lev]->arrays();
     auto const& uma = advData->mac_divu[lev].arrays();
     amrex::ParallelFor(
-      *ThetaHalft[lev],
-      [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+      *ThetaHalft[lev], [uma, Sbar, Thetabar, divu_vol, tma] AMREX_GPU_DEVICE(
+                          int box_no, int i, int j, int k) noexcept {
         auto theta = tma[box_no];
         uma[box_no](i, j, k) -=
           (theta(i, j, k) * Sbar / Thetabar -

@@ -228,7 +228,8 @@ PeleLM::extFluxDivergenceLevel(
 #ifdef AMREX_USE_EB
     if (flagfab.getType(bx) == amrex::FabType::covered) { // Covered boxes
       amrex::ParallelFor(
-        bx, ncomp, [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
+        bx, ncomp,
+        [divergence] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
           divergence(i, j, k, n) = 0.0;
         });
     } else if (flagfab.getType(bx) != amrex::FabType::regular) { // EB
@@ -236,7 +237,12 @@ PeleLM::extFluxDivergenceLevel(
                                                                  // boxes
       auto vfrac = ebfact.getVolFrac().const_array(mfi);
       amrex::ParallelFor(
-        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        bx, [flag, divergence, ncomp, vol, scale, vfrac, fluxX, fluxY
+#if (AMREX_SPACEDIM == 3)
+             ,
+             fluxZ
+#endif
+      ] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           if (flag(i, j, k).isCovered()) {
             for (int n = 0; n < ncomp; ++n) {
               divergence(i, j, k, n) = 0.0;
@@ -246,7 +252,7 @@ PeleLM::extFluxDivergenceLevel(
               i, j, k, ncomp, AMREX_D_DECL(fluxX, fluxY, fluxZ), vol, scale,
               divergence);
           } else {
-            amrex::Real vfracinv = 1.0 / vfrac(i, j, k);
+            const amrex::Real vfracinv = 1.0 / vfrac(i, j, k);
             extFluxDivergence_K(
               i, j, k, ncomp, AMREX_D_DECL(fluxX, fluxY, fluxZ), vol, scale,
               divergence);
@@ -259,7 +265,12 @@ PeleLM::extFluxDivergenceLevel(
 #endif
     {
       amrex::ParallelFor(
-        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        bx, [ncomp, vol, scale, divergence, fluxX, fluxY
+#if (AMREX_SPACEDIM == 3)
+             ,
+             fluxZ
+#endif
+      ] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           extFluxDivergence_K(
             i, j, k, ncomp, AMREX_D_DECL(fluxX, fluxY, fluxZ), vol, scale,
             divergence);
@@ -327,7 +338,8 @@ PeleLM::intFluxDivergenceLevel(
 
     if (flagfab.getType(bx) == amrex::FabType::covered) { // Covered boxes
       amrex::ParallelFor(
-        bx, ncomp, [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
+        bx, ncomp,
+        [divergence] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
           divergence(i, j, k, n) = 0.0;
         });
     } else if (flagfab.getType(bx) != amrex::FabType::regular) { // EB
@@ -339,7 +351,13 @@ PeleLM::intFluxDivergenceLevel(
         , const auto& afrac_y = areafrac[1]->array(mfi);
         , const auto& afrac_z = areafrac[2]->array(mfi););
       amrex::ParallelFor(
-        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        bx, [flag, divergence, ncomp, vol, scale, vfrac, fluxX, areax, afrac_x,
+             fluxY, areay, afrac_y
+#if (AMREX_SPACEDIM == 3)
+             ,
+             fluxZ, areaz, afrac_z
+#endif
+      ] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           if (flag(i, j, k).isCovered()) {
             for (int n = 0; n < ncomp; ++n) {
               divergence(i, j, k, n) = 0.0;
@@ -349,7 +367,7 @@ PeleLM::intFluxDivergenceLevel(
               i, j, k, ncomp, AMREX_D_DECL(fluxX, fluxY, fluxZ),
               AMREX_D_DECL(areax, areay, areaz), vol, scale, divergence);
           } else {
-            amrex::Real vfracinv = 1.0 / vfrac(i, j, k);
+            const amrex::Real vfracinv = 1.0 / vfrac(i, j, k);
             EB_intFluxDivergence_K(
               i, j, k, ncomp, AMREX_D_DECL(fluxX, fluxY, fluxZ),
               AMREX_D_DECL(afrac_x, afrac_y, afrac_z),
@@ -367,16 +385,21 @@ PeleLM::intFluxDivergenceLevel(
         amrex::Array4<amrex::Real const> const& ax = mf_ax.const_array(mfi);
         amrex::Array4<amrex::Real const> const& ay = mf_ay.const_array(mfi);
         amrex::ParallelFor(
-          bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          bx, [ncomp, ax, ay, fluxX, fluxY, vol, scale,
+               divergence] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             intFluxDivergence_rz_K(
-              i, j, k, ncomp, AMREX_D_DECL(fluxX, fluxY, fluxZ), ax, ay, vol,
-              scale, divergence);
+              i, j, k, ncomp, fluxX, fluxY, ax, ay, vol, scale, divergence);
           });
       } else
 #endif
       {
         amrex::ParallelFor(
-          bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          bx, [ncomp, vol, scale, divergence, fluxX, areax, fluxY, areay
+#if (AMREX_SPACEDIM == 3)
+               ,
+               fluxZ, areaz
+#endif
+        ] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             intFluxDivergence_K(
               i, j, k, ncomp, AMREX_D_DECL(fluxX, fluxY, fluxZ),
               AMREX_D_DECL(areax, areay, areaz), vol, scale, divergence);
@@ -447,7 +470,8 @@ PeleLM::intFluxDivergenceLevelEB(
 
     if (flagfab.getType(bx) == amrex::FabType::covered) { // Covered boxes
       amrex::ParallelFor(
-        bx, ncomp, [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
+        bx, ncomp,
+        [divergence] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
           divergence(i, j, k, n) = 0.0;
         });
     } else if (flagfab.getType(bx) != amrex::FabType::regular) { // EB
@@ -460,7 +484,13 @@ PeleLM::intFluxDivergenceLevelEB(
         , const auto& afrac_z = areafrac[2]->array(mfi););
       const auto& ebarea = eb_area->array(mfi);
       amrex::ParallelFor(
-        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        bx, [flag, divergence, vol, scale, ncomp, ebflux, ebarea, dx, vfrac,
+             fluxX, areax, afrac_x, fluxY, areay, afrac_y
+#if (AMREX_SPACEDIM == 3)
+             ,
+             fluxZ, areaz, afrac_z
+#endif
+      ] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           if (flag(i, j, k).isCovered()) {
             for (int n = 0; n < ncomp; ++n) {
               divergence(i, j, k, n) = 0.0;
@@ -470,7 +500,7 @@ PeleLM::intFluxDivergenceLevelEB(
               i, j, k, ncomp, AMREX_D_DECL(fluxX, fluxY, fluxZ),
               AMREX_D_DECL(areax, areay, areaz), vol, scale, divergence);
           } else {
-            amrex::Real vfracinv = 1.0 / vfrac(i, j, k);
+            const amrex::Real vfracinv = 1.0 / vfrac(i, j, k);
             EB_intFluxDivergence_K(
               i, j, k, ncomp, AMREX_D_DECL(fluxX, fluxY, fluxZ),
               AMREX_D_DECL(afrac_x, afrac_y, afrac_z),
@@ -485,7 +515,12 @@ PeleLM::intFluxDivergenceLevelEB(
 #endif
     {
       amrex::ParallelFor(
-        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        bx, [ncomp, vol, scale, divergence, fluxX, areax, fluxY, areay
+#if (AMREX_SPACEDIM == 3)
+             ,
+             fluxZ, areaz
+#endif
+      ] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           intFluxDivergence_K(
             i, j, k, ncomp, AMREX_D_DECL(fluxX, fluxY, fluxZ),
             AMREX_D_DECL(areax, areay, areaz), vol, scale, divergence);
@@ -579,16 +614,23 @@ PeleLM::
         , auto const& apy_arr = ebfact.getAreaFrac()[1]->const_array(mfi);
         , auto const& apz_arr = ebfact.getAreaFrac()[2]->const_array(mfi););
       amrex::ParallelFor(
-        bx, ncomp, [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
+        bx, ncomp,
+        [l_conserv_d, vfrac_arr, div_arr, divu_arr, apx_arr, facex, apy_arr,
+         facey
+#if (AMREX_SPACEDIM == 3)
+         ,
+         apz_arr, facez
+#endif
+      ] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
           if ((l_conserv_d[n] == 0) && vfrac_arr(i, j, k) > 0.) {
-            amrex::Real qwsum = AMREX_D_TERM(
+            const amrex::Real qwsum = AMREX_D_TERM(
               apx_arr(i, j, k) * facex(i, j, k, n) +
                 apx_arr(i + 1, j, k) * facex(i + 1, j, k, n),
               +apy_arr(i, j, k) * facey(i, j, k, n) +
                 apy_arr(i, j + 1, k) * facey(i, j + 1, k, n),
               +apz_arr(i, j, k) * facez(i, j, k, n) +
                 apz_arr(i, j, k + 1) * facez(i, j, k + 1, n));
-            amrex::Real areasum = AMREX_D_TERM(
+            const amrex::Real areasum = AMREX_D_TERM(
               apx_arr(i, j, k) + apx_arr(i + 1, j, k),
               +apy_arr(i, j, k) + apy_arr(i, j + 1, k),
               +apz_arr(i, j, k) + apz_arr(i, j, k + 1));
@@ -605,15 +647,16 @@ PeleLM::
         amrex::Array4<amrex::Real const> const& ax = mf_ax.const_array(mfi);
         amrex::Array4<amrex::Real const> const& ay = mf_ay.const_array(mfi);
         amrex::ParallelFor(
-          bx, ncomp, [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
+          bx, ncomp,
+          [l_conserv_d, ax, ay, facex, facey, divu_arr,
+           div_arr] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
             if (l_conserv_d[n] == 0) {
               amrex::Real qavg = AMREX_D_TERM(
                 ax(i, j, k) * facex(i, j, k, n) +
                   ax(i + 1, j, k) * facex(i + 1, j, k, n),
                 +ay(i, j, k) * facey(i, j, k, n) +
-                  ay(i, j + 1, k) * facey(i, j + 1, k, n),
-                +0.0);
-              amrex::Real areasum =
+                  ay(i, j + 1, k) * facey(i, j + 1, k, n), );
+              const amrex::Real areasum =
                 ax(i, j, k) + ax(i + 1, j, k) + ay(i, j, k) + ay(i, j + 1, k);
               qavg /= areasum;
               // Note that because we define adv update as MINUS div(u q), here
@@ -625,7 +668,13 @@ PeleLM::
 #endif
       {
         amrex::ParallelFor(
-          bx, ncomp, [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
+          bx, ncomp,
+          [l_conserv_d, div_arr, divu_arr, facex, facey
+#if (AMREX_SPACEDIM == 3)
+           ,
+           facez
+#endif
+        ] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
             if (l_conserv_d[n] == 0) {
               amrex::Real qavg = AMREX_D_TERM(
                 facex(i, j, k, n) + facex(i + 1, j, k, n),
@@ -718,16 +767,23 @@ PeleLM::advFluxDivergence(
         , auto const& apy_arr = ebfact.getAreaFrac()[1]->const_array(mfi);
         , auto const& apz_arr = ebfact.getAreaFrac()[2]->const_array(mfi););
       amrex::ParallelFor(
-        bx, ncomp, [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
+        bx, ncomp,
+        [l_conserv_d, vfrac_arr, div_arr, divu_arr, facex, apx_arr, facey,
+         apy_arr
+#if (AMREX_SPACEDIM == 3)
+         ,
+         facez, apz_arr
+#endif
+      ] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
           if (l_conserv_d[n] == 0 && vfrac_arr(i, j, k) > 0.) {
-            amrex::Real qwsum = AMREX_D_TERM(
+            const amrex::Real qwsum = AMREX_D_TERM(
               apx_arr(i, j, k) * facex(i, j, k, n) +
                 apx_arr(i + 1, j, k) * facex(i + 1, j, k, n),
               +apy_arr(i, j, k) * facey(i, j, k, n) +
                 apy_arr(i, j + 1, k) * facey(i, j + 1, k, n),
               +apz_arr(i, j, k) * facez(i, j, k, n) +
                 apz_arr(i, j, k + 1) * facez(i, j, k + 1, n));
-            amrex::Real areasum = AMREX_D_TERM(
+            const amrex::Real areasum = AMREX_D_TERM(
               apx_arr(i, j, k) + apx_arr(i + 1, j, k),
               +apy_arr(i, j, k) + apy_arr(i, j + 1, k),
               +apz_arr(i, j, k) + apz_arr(i, j, k + 1));
@@ -738,7 +794,13 @@ PeleLM::advFluxDivergence(
         });
     } else {
       amrex::ParallelFor(
-        bx, ncomp, [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
+        bx, ncomp,
+        [l_conserv_d, div_arr, divu_arr, facex, facey
+#if (AMREX_SPACEDIM == 3)
+         ,
+         facez
+#endif
+      ] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
           if (l_conserv_d[n] == 0) {
             amrex::Real qavg = AMREX_D_TERM(
               facex(i, j, k, n) + facex(i + 1, j, k, n),
@@ -771,8 +833,8 @@ PeleLM::floorSpecies(const TimeStamp a_time)
     auto const* leosparm = eos_parms.device_parm();
 
     amrex::ParallelFor(
-      ldata_p->state,
-      [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+      ldata_p->state, [sma, leosparm] AMREX_GPU_DEVICE(
+                        int box_no, int i, int j, int k) noexcept {
         fabMinMax(
           i, j, k, NUM_SPECIES, 0.0, AMREX_REAL_MAX,
           amrex::Array4<amrex::Real>(sma[box_no], FIRSTSPEC));
@@ -825,7 +887,7 @@ PeleLM::resetCoveredMask()
           baf.intersections(grids[lev][mfi.index()], isects);
           for (const auto& is : isects) {
             amrex::ParallelFor(
-              is.second, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+              is.second, [mask] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
                 mask(i, j, k) = 0;
               });
           }
@@ -1297,7 +1359,7 @@ PeleLM::isStateVariable(std::string_view a_name)
   // Check state
   return std::any_of(
     stateComponents.begin(), stateComponents.end(),
-    [=](const auto& stateComponent) {
+    [a_name](const auto& stateComponent) {
       return std::get<1>(stateComponent) == a_name;
     });
 }
@@ -1308,7 +1370,7 @@ PeleLM::isReactVariable(std::string_view a_name)
   // Check reaction state
   return std::any_of(
     reactComponents.begin(), reactComponents.end(),
-    [=](const auto& reactComponent) {
+    [a_name](const auto& reactComponent) {
       return std::get<1>(reactComponent) == a_name;
     });
 }
@@ -1643,8 +1705,9 @@ PeleLM::MFmax(
       mx = ParReduce(
         amrex::TypeList<amrex::ReduceOpMax>{}, amrex::TypeList<amrex::Real>{},
         *a_MF, amrex::IntVect(0),
-        [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept
-          -> amrex::GpuTuple<amrex::Real> {
+        [flagsma, mask, ma] AMREX_GPU_DEVICE(
+          int box_no, int i, int j,
+          int k) noexcept -> amrex::GpuTuple<amrex::Real> {
           if (flagsma[box_no](i, j, k).isCovered() || !mask[box_no](i, j, k)) {
             return AMREX_REAL_LOWEST;
           } else {
@@ -1681,8 +1744,9 @@ PeleLM::MFmax(
       mx = ParReduce(
         amrex::TypeList<amrex::ReduceOpMax>{}, amrex::TypeList<amrex::Real>{},
         *a_MF, amrex::IntVect(0),
-        [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept
-          -> amrex::GpuTuple<amrex::Real> {
+        [mask, ma, comp] AMREX_GPU_DEVICE(
+          int box_no, int i, int j,
+          int k) noexcept -> amrex::GpuTuple<amrex::Real> {
           if (!mask[box_no](i, j, k)) {
             return AMREX_REAL_LOWEST;
           } else {
@@ -1732,8 +1796,9 @@ PeleLM::MFmin(
       mn = ParReduce(
         amrex::TypeList<amrex::ReduceOpMin>{}, amrex::TypeList<amrex::Real>{},
         *a_MF, amrex::IntVect(0),
-        [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept
-          -> amrex::GpuTuple<amrex::Real> {
+        [flagsma, mask, ma] AMREX_GPU_DEVICE(
+          int box_no, int i, int j,
+          int k) noexcept -> amrex::GpuTuple<amrex::Real> {
           if (flagsma[box_no](i, j, k).isCovered() || !mask[box_no](i, j, k)) {
             return AMREX_REAL_MAX;
           } else {
@@ -1770,8 +1835,9 @@ PeleLM::MFmin(
       mn = ParReduce(
         amrex::TypeList<amrex::ReduceOpMin>{}, amrex::TypeList<amrex::Real>{},
         *a_MF, amrex::IntVect(0),
-        [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept
-          -> amrex::GpuTuple<amrex::Real> {
+        [mask, ma, comp] AMREX_GPU_DEVICE(
+          int box_no, int i, int j,
+          int k) noexcept -> amrex::GpuTuple<amrex::Real> {
           if (!mask[box_no](i, j, k)) {
             return AMREX_REAL_MAX;
           } else {
@@ -2120,28 +2186,26 @@ PeleLM::extendSignedDistance(
   // signed distance and propagates it manually up to the point where we need to
   // have it for derefining.
   const auto geomdata = geom[0].data();
-  amrex::Real maxSignedDist = a_signDist->max(0);
+  const amrex::Real maxSignedDist = a_signDist->max(0);
   const auto& ebfactory =
     dynamic_cast<amrex::EBFArrayBoxFactory const&>(a_signDist->Factory());
   const auto& flags = ebfactory.getMultiEBCellFlagFab();
-  int nGrowFac = flags.nGrow() + 1;
+  const int nGrowFac = flags.nGrow() + 1;
 
   // First set the region far away at the max value we need
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-  for (amrex::MFIter mfi(*a_signDist, amrex::TilingIfNotGPU()); mfi.isValid();
-       ++mfi) {
-    const amrex::Box& bx = mfi.growntilebox();
-    auto const& sd_cc = a_signDist->array(mfi);
-    amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-      if (sd_cc(i, j, k) >= maxSignedDist - 1e-12) {
-        const amrex::Real* dx = geomdata.CellSize();
-        sd_cc(i, j, k) = nGrowFac * dx[0] * a_extendFactor;
+
+  auto const& sd_cc_ma = a_signDist->arrays();
+  const amrex::Real* dx = geomdata.CellSize();
+  const amrex::Real sd_cc_fact = nGrowFac * dx[0] * a_extendFactor;
+  amrex::ParallelFor(
+    *a_signDist, a_signDist->nGrowVect(),
+    [sd_cc_ma, maxSignedDist,
+     sd_cc_fact] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+      if (sd_cc_ma[box_no](i, j, k) > maxSignedDist - 1e-12) {
+        sd_cc_ma[box_no](i, j, k) = sd_cc_fact;
       }
     });
-  }
-
+  amrex::Gpu::streamSynchronize();
   // Iteratively compute the distance function in boxes, propagating across
   // boxes using ghost cells If needed, increase the number of loop to extend
   // the reach of the distance function
@@ -2159,7 +2223,8 @@ PeleLM::extendSignedDistance(
       }
       auto const& sd_cc = a_signDist->array(mfi);
       amrex::ParallelFor(
-        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        bx, [gbx, geomdata, a_extendFactor, sd_cc,
+             maxSignedDist] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           const auto glo = amrex::lbound(gbx);
           const auto ghi = amrex::ubound(gbx);
           const amrex::Real* dx = geomdata.CellSize();

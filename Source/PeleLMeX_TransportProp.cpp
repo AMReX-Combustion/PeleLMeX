@@ -93,8 +93,9 @@ PeleLM::calcTurbViscosity(const TimeStamp a_time)
       auto const& mut_arr = ldata_p->visc_turb_fc[idim].arrays();
       const amrex::Real vol = AMREX_D_TERM(
         geom[lev].CellSize(0), *geom[lev].CellSize(1), *geom[lev].CellSize(2));
+
       const amrex::Real l_scale =
-        (AMREX_SPACEDIM == 2) ? std::sqrt(vol) : std::cbrt(vol);
+        AMREX_D_PICK(vol, std::sqrt(vol), std::cbrt(vol));
 
 #ifdef AMREX_USE_EB
       auto const& ebfact = EBFactory(lev);
@@ -105,44 +106,29 @@ PeleLM::calcTurbViscosity(const TimeStamp a_time)
           m_les_cs_smag * m_les_cs_smag * l_scale * l_scale;
         amrex::ParallelFor(
           ldata_p->visc_turb_fc[idim], ldata_p->visc_turb_fc[idim].nGrowVect(),
-          [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+          [prefact, idim, velgrad_arr, dens_arr, mut_arr
+#ifdef AMREX_USE_EB
+           ,
+           vfrac
+#endif
+        ] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
             getTurbViscSmagorinsky(
               i, j, k, prefact,
               amrex::Array4<amrex::Real const>(velgrad_arr[box_no]),
               amrex::Array4<amrex::Real const>(dens_arr[box_no]),
               amrex::Array4<amrex::Real>(mut_arr[box_no]));
 #ifdef AMREX_USE_EB
-            if (idim == 0) {
-              const amrex::Real vfr_m =
-                (AMREX_SPACEDIM == 2) ? vfrac[box_no](i - 1, j, k)
-                                      : std::cbrt(vfrac[box_no](i - 1, j, k)) *
-                                          std::cbrt(vfrac[box_no](i - 1, j, k));
-              const amrex::Real vfr_p = (AMREX_SPACEDIM == 2)
-                                          ? vfrac[box_no](i, j, k)
-                                          : std::cbrt(vfrac[box_no](i, j, k)) *
-                                              std::cbrt(vfrac[box_no](i, j, k));
-              mut_arr[box_no](i, j, k) *= amrex::min(vfr_m, vfr_p);
-            } else if (idim == 1) {
-              const amrex::Real vfr_m =
-                (AMREX_SPACEDIM == 2) ? vfrac[box_no](i, j - 1, k)
-                                      : std::cbrt(vfrac[box_no](i, j - 1, k)) *
-                                          std::cbrt(vfrac[box_no](i, j - 1, k));
-              const amrex::Real vfr_p = (AMREX_SPACEDIM == 2)
-                                          ? vfrac[box_no](i, j, k)
-                                          : std::cbrt(vfrac[box_no](i, j, k)) *
-                                              std::cbrt(vfrac[box_no](i, j, k));
-              mut_arr[box_no](i, j, k) *= amrex::min(vfr_m, vfr_p);
-            } else if (idim == 2) {
-              const amrex::Real vfr_m =
-                (AMREX_SPACEDIM == 2) ? vfrac[box_no](i, j, k - 1)
-                                      : std::cbrt(vfrac[box_no](i, j, k - 1)) *
-                                          std::cbrt(vfrac[box_no](i, j, k - 1));
-              const amrex::Real vfr_p = (AMREX_SPACEDIM == 2)
-                                          ? vfrac[box_no](i, j, k)
-                                          : std::cbrt(vfrac[box_no](i, j, k)) *
-                                              std::cbrt(vfrac[box_no](i, j, k));
-              mut_arr[box_no](i, j, k) *= amrex::min(vfr_m, vfr_p);
-            }
+            int idx[3] = {i, j, k};
+            idx[idim] -= 1;
+            const amrex::Real vfr_m = AMREX_D_PICK(
+              1.0, vfrac[box_no](idx[0], idx[1], idx[2]),
+              std::cbrt(
+                vfrac[box_no](idx[0], idx[1], idx[2]) *
+                vfrac[box_no](idx[0], idx[1], idx[2])));
+            const amrex::Real vfr_p = AMREX_D_PICK(
+              1.0, vfrac[box_no](i, j, k),
+              std::cbrt(vfrac[box_no](i, j, k) * vfrac[box_no](i, j, k)));
+            mut_arr[box_no](i, j, k) *= amrex::min(vfr_m, vfr_p);
 #endif
           });
       } else if (m_les_model == "WALE") {
@@ -150,44 +136,29 @@ PeleLM::calcTurbViscosity(const TimeStamp a_time)
           m_les_cm_wale * m_les_cm_wale * l_scale * l_scale;
         amrex::ParallelFor(
           ldata_p->visc_turb_fc[idim], ldata_p->visc_turb_fc[idim].nGrowVect(),
-          [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+          [prefact, idim, velgrad_arr, dens_arr, mut_arr
+#ifdef AMREX_USE_EB
+           ,
+           vfrac
+#endif
+        ] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
             getTurbViscWALE(
               i, j, k, prefact,
               amrex::Array4<amrex::Real const>(velgrad_arr[box_no]),
               amrex::Array4<amrex::Real const>(dens_arr[box_no]),
               amrex::Array4<amrex::Real>(mut_arr[box_no]));
 #ifdef AMREX_USE_EB
-            if (idim == 0) {
-              const amrex::Real vfr_m =
-                (AMREX_SPACEDIM == 2) ? vfrac[box_no](i - 1, j, k)
-                                      : std::cbrt(vfrac[box_no](i - 1, j, k)) *
-                                          std::cbrt(vfrac[box_no](i - 1, j, k));
-              const amrex::Real vfr_p = (AMREX_SPACEDIM == 2)
-                                          ? vfrac[box_no](i, j, k)
-                                          : std::cbrt(vfrac[box_no](i, j, k)) *
-                                              std::cbrt(vfrac[box_no](i, j, k));
-              mut_arr[box_no](i, j, k) *= amrex::min(vfr_m, vfr_p);
-            } else if (idim == 1) {
-              const amrex::Real vfr_m =
-                (AMREX_SPACEDIM == 2) ? vfrac[box_no](i, j - 1, k)
-                                      : std::cbrt(vfrac[box_no](i, j - 1, k)) *
-                                          std::cbrt(vfrac[box_no](i, j - 1, k));
-              const amrex::Real vfr_p = (AMREX_SPACEDIM == 2)
-                                          ? vfrac[box_no](i, j, k)
-                                          : std::cbrt(vfrac[box_no](i, j, k)) *
-                                              std::cbrt(vfrac[box_no](i, j, k));
-              mut_arr[box_no](i, j, k) *= amrex::min(vfr_m, vfr_p);
-            } else if (idim == 2) {
-              const amrex::Real vfr_m =
-                (AMREX_SPACEDIM == 2) ? vfrac[box_no](i, j, k - 1)
-                                      : std::cbrt(vfrac[box_no](i, j, k - 1)) *
-                                          std::cbrt(vfrac[box_no](i, j, k - 1));
-              const amrex::Real vfr_p = (AMREX_SPACEDIM == 2)
-                                          ? vfrac[box_no](i, j, k)
-                                          : std::cbrt(vfrac[box_no](i, j, k)) *
-                                              std::cbrt(vfrac[box_no](i, j, k));
-              mut_arr[box_no](i, j, k) *= amrex::min(vfr_m, vfr_p);
-            }
+            int idx[3] = {i, j, k};
+            idx[idim] -= 1;
+            const amrex::Real vfr_m = AMREX_D_PICK(
+              1.0, vfrac[box_no](idx[0], idx[1], idx[2]),
+              std::cbrt(
+                vfrac[box_no](idx[0], idx[1], idx[2]) *
+                vfrac[box_no](idx[0], idx[1], idx[2])));
+            const amrex::Real vfr_p = AMREX_D_PICK(
+              1.0, vfrac[box_no](i, j, k),
+              std::cbrt(vfrac[box_no](i, j, k) * vfrac[box_no](i, j, k)));
+            mut_arr[box_no](i, j, k) *= amrex::min(vfr_m, vfr_p);
 #endif
           });
       } else if (m_les_model == "Sigma") {
@@ -195,44 +166,29 @@ PeleLM::calcTurbViscosity(const TimeStamp a_time)
           m_les_cs_sigma * m_les_cs_sigma * l_scale * l_scale;
         amrex::ParallelFor(
           ldata_p->visc_turb_fc[idim], ldata_p->visc_turb_fc[idim].nGrowVect(),
-          [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+          [prefact, idim, velgrad_arr, dens_arr, mut_arr
+#ifdef AMREX_USE_EB
+           ,
+           vfrac
+#endif
+        ] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
             getTurbViscSigma(
               i, j, k, prefact,
               amrex::Array4<amrex::Real const>(velgrad_arr[box_no]),
               amrex::Array4<amrex::Real const>(dens_arr[box_no]),
               amrex::Array4<amrex::Real>(mut_arr[box_no]));
 #ifdef AMREX_USE_EB
-            if (idim == 0) {
-              const amrex::Real vfr_m =
-                (AMREX_SPACEDIM == 2) ? vfrac[box_no](i - 1, j, k)
-                                      : std::cbrt(vfrac[box_no](i - 1, j, k)) *
-                                          std::cbrt(vfrac[box_no](i - 1, j, k));
-              const amrex::Real vfr_p = (AMREX_SPACEDIM == 2)
-                                          ? vfrac[box_no](i, j, k)
-                                          : std::cbrt(vfrac[box_no](i, j, k)) *
-                                              std::cbrt(vfrac[box_no](i, j, k));
-              mut_arr[box_no](i, j, k) *= amrex::min(vfr_m, vfr_p);
-            } else if (idim == 1) {
-              const amrex::Real vfr_m =
-                (AMREX_SPACEDIM == 2) ? vfrac[box_no](i, j - 1, k)
-                                      : std::cbrt(vfrac[box_no](i, j - 1, k)) *
-                                          std::cbrt(vfrac[box_no](i, j - 1, k));
-              const amrex::Real vfr_p = (AMREX_SPACEDIM == 2)
-                                          ? vfrac[box_no](i, j, k)
-                                          : std::cbrt(vfrac[box_no](i, j, k)) *
-                                              std::cbrt(vfrac[box_no](i, j, k));
-              mut_arr[box_no](i, j, k) *= amrex::min(vfr_m, vfr_p);
-            } else if (idim == 2) {
-              const amrex::Real vfr_m =
-                (AMREX_SPACEDIM == 2) ? vfrac[box_no](i, j, k - 1)
-                                      : std::cbrt(vfrac[box_no](i, j, k - 1)) *
-                                          std::cbrt(vfrac[box_no](i, j, k - 1));
-              const amrex::Real vfr_p = (AMREX_SPACEDIM == 2)
-                                          ? vfrac[box_no](i, j, k)
-                                          : std::cbrt(vfrac[box_no](i, j, k)) *
-                                              std::cbrt(vfrac[box_no](i, j, k));
-              mut_arr[box_no](i, j, k) *= amrex::min(vfr_m, vfr_p);
-            }
+            int idx[3] = {i, j, k};
+            idx[idim] -= 1;
+            const amrex::Real vfr_m = AMREX_D_PICK(
+              1.0, vfrac[box_no](idx[0], idx[1], idx[2]),
+              std::cbrt(
+                vfrac[box_no](idx[0], idx[1], idx[2]) *
+                vfrac[box_no](idx[0], idx[1], idx[2])));
+            const amrex::Real vfr_p = AMREX_D_PICK(
+              1.0, vfrac[box_no](i, j, k),
+              std::cbrt(vfrac[box_no](i, j, k) * vfrac[box_no](i, j, k)));
+            mut_arr[box_no](i, j, k) *= amrex::min(vfr_m, vfr_p);
 #endif
           });
       }
@@ -273,7 +229,8 @@ PeleLM::calcViscosity(const TimeStamp a_time)
 
       amrex::ParallelFor(
         ldata_p->visc_cc, ldata_p->visc_cc.nGrowVect(),
-        [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+        [sma, vma, ltransparm] AMREX_GPU_DEVICE(
+          int box_no, int i, int j, int k) noexcept {
           getVelViscosity(
             i, j, k, amrex::Array4<amrex::Real const>(sma[box_no], FIRSTSPEC),
             amrex::Array4<amrex::Real>(sma[box_no], TEMP),
@@ -321,7 +278,13 @@ PeleLM::calcDiffusivity(const TimeStamp a_time)
 
     amrex::ParallelFor(
       ldata_p->diff_cc, ldata_p->diff_cc.nGrowVect(),
-      [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+      [sma, dma, soret_idx, ltransparm, do_fixed_Le, do_fixed_Pr, do_soret,
+       Le_inv, Pr_inv, leosparm
+#if PELE_USE_PLASMA
+       ,
+       kma, mwt, zk = zk
+#endif
+    ] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
         getTransportCoeff<pele::physics::PhysicsType::eos_type>(
           i, j, k, do_fixed_Le, do_fixed_Pr, do_soret, Le_inv, Pr_inv,
           amrex::Array4<amrex::Real const>(sma[box_no], FIRSTSPEC),
@@ -359,13 +322,14 @@ PeleLM::calcDiffusivity(const TimeStamp a_time)
         const auto& factory = ldata_p->diff_cc.Factory();
 
         amrex::MultiFab cp_cc;
-        int ngrow = ldata_p->diff_cc.nGrow();
+        const int ngrow = ldata_p->diff_cc.nGrow();
         cp_cc.define(ba, dm, 1, ngrow, amrex::MFInfo(), factory);
         auto const& state_arr = ldata_p->state.const_arrays();
         auto const& cp_arr = cp_cc.arrays();
         amrex::ParallelFor(
           cp_cc, cp_cc.nGrowVect(),
-          [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+          [state_arr, cp_arr, leosparm] AMREX_GPU_DEVICE(
+            int box_no, int i, int j, int k) noexcept {
             getCpmixGivenRYT(
               i, j, k,
               amrex::Array4<amrex::Real const>(state_arr[box_no], DENSITY),
@@ -419,7 +383,7 @@ PeleLM::getDiffusivity(
   EB_set_covered_faces(GetArrOfPtrs(beta_ec), 1.234e40);
 #else
   // NON-EB : use cen2edg_cpp
-  bool use_harmonic_avg = m_harm_avg_cen2edge != 0;
+  const bool use_harmonic_avg = m_harm_avg_cen2edge != 0;
 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
@@ -434,7 +398,8 @@ PeleLM::getDiffusivity(
       const auto bc_lo = bcrec[0].lo(idim);
       const auto bc_hi = bcrec[0].hi(idim);
       amrex::ParallelFor(
-        ebx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        ebx, [bc_lo, bc_hi, diff_ec, use_harmonic_avg, ncomp, idim, edomain,
+              diff_c] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           int idx[3] = {i, j, k};
           bool on_lo =
             ((bc_lo == amrex::BCType::ext_dir) &&
@@ -510,7 +475,8 @@ PeleLM::getDiffusivity(
         const amrex::Box ebx = mfi.tilebox();
         const auto& diff_ec = beta_ec[idim].array(mfi);
         amrex::ParallelFor(
-          ebx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          ebx, [diff_ec, geomdata, edomain, idim, beta_comp, ncomp,
+                lprobparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             ProblemSpecificFunctions::zero_visc(
               i, j, k, diff_ec, geomdata, edomain, idim, beta_comp, ncomp,
               *lprobparm);

@@ -148,25 +148,22 @@ PeleLM::MakeNewLevelFromScratch(
       amrex::MFInfo(), EBFactory(0));
     FillSignedDistance(signDist, true);
 
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-    for (amrex::MFIter mfi(*m_signedDist0, amrex::TilingIfNotGPU());
-         mfi.isValid(); ++mfi) {
-      const amrex::Box& bx = mfi.growntilebox();
-      auto const& sd_cc = m_signedDist0->array(mfi);
-      auto const& sd_nd = signDist.const_array(mfi);
-      amrex::ParallelFor(
-        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          amrex::Real fac = AMREX_D_PICK(0.5, 0.25, 0.125);
-          sd_cc(i, j, k) = AMREX_D_TERM(
-            sd_nd(i, j, k) + sd_nd(i + 1, j, k),
-            +sd_nd(i, j + 1, k) + sd_nd(i + 1, j + 1, k),
-            +sd_nd(i, j, k + 1) + sd_nd(i + 1, j, k + 1) +
-              sd_nd(i, j + 1, k + 1) + sd_nd(i + 1, j + 1, k + 1));
-          sd_cc(i, j, k) *= fac;
-        });
-    }
+    constexpr amrex::Real fac = AMREX_D_PICK(0.5, 0.25, 0.125);
+    auto const& sd_cc_ma = m_signedDist0->arrays();
+    auto const& sd_nd_ma = signDist.const_arrays();
+    amrex::ParallelFor(
+      *m_signedDist0, m_signedDist0->nGrowVect(),
+      [sd_cc_ma,
+       sd_nd_ma] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+        sd_cc_ma[box_no](i, j, k) = AMREX_D_TERM(
+          sd_nd_ma[box_no](i, j, k) + sd_nd_ma[box_no](i + 1, j, k),
+          +sd_nd_ma[box_no](i, j + 1, k) + sd_nd_ma[box_no](i + 1, j + 1, k),
+          +sd_nd_ma[box_no](i, j, k + 1) + sd_nd_ma[box_no](i + 1, j, k + 1) +
+            sd_nd_ma[box_no](i, j + 1, k + 1) +
+            sd_nd_ma[box_no](i + 1, j + 1, k + 1));
+        sd_cc_ma[box_no](i, j, k) *= fac;
+      });
+    amrex::Gpu::streamSynchronize();
     m_signedDist0->FillBoundary(geom[0].periodicity());
     extendSignedDistance(m_signedDist0.get(), extentFactor);
   }

@@ -31,10 +31,11 @@ PeleLM::cleanupSootModel()
 void
 PeleLM::computeSootSource(const TimeStamp a_timestamp, const amrex::Real a_dt)
 {
-  bool pres_term = false; // Do not include change in pressure in energy
+  constexpr bool pres_term =
+    false; // Do not include change in pressure in energy
   for (int lev = 0; lev <= finest_level; ++lev) {
     auto* ldata_p = getLevelDataPtr(lev, a_timestamp);
-    amrex::Real time = getTime(lev, a_timestamp);
+    const amrex::Real time = getTime(lev, a_timestamp);
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
@@ -53,29 +54,25 @@ PeleLM::computeSootSource(const TimeStamp a_timestamp, const amrex::Real a_dt)
 void
 PeleLM::clipSootMoments()
 {
+  SootData* sd = soot_model->getSootData_d();
   for (int lev = 0; lev <= finest_level; ++lev) {
     auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-    for (amrex::MFIter mfi(ldata_p->state, amrex::TilingIfNotGPU());
-         mfi.isValid(); ++mfi) {
-      amrex::Box const& gbx = mfi.tilebox();
-      auto const& state_arr = ldata_p->state.array(mfi, FIRSTSOOT);
-      SootData* sd = soot_model->getSootData_d();
-      amrex::ParallelFor(
-        gbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          amrex::GpuArray<amrex::Real, NUM_SOOT_MOMENTS + 1> moments;
-          for (int mom = 0; mom < NUM_SOOT_MOMENTS + 1; ++mom) {
-            moments[mom] = state_arr(i, j, k, mom);
-          }
-          sd->momConvClipConv(moments.data());
-          for (int mom = 0; mom < NUM_SOOT_MOMENTS + 1; ++mom) {
-            state_arr(i, j, k, mom) = moments[mom];
-          }
-        });
-    }
+    auto const& state_ma = ldata_p->state.arrays();
+    amrex::ParallelFor(
+      ldata_p->state, [state_ma, sd] AMREX_GPU_DEVICE(
+                        int box_no, int i, int j, int k) noexcept {
+        amrex::Array4<amrex::Real> state_arr(state_ma[box_no], FIRSTSOOT);
+        amrex::GpuArray<amrex::Real, NUM_SOOT_MOMENTS + 1> moments;
+        for (int mom = 0; mom < NUM_SOOT_MOMENTS + 1; ++mom) {
+          moments[mom] = state_arr(i, j, k, mom);
+        }
+        sd->momConvClipConv(moments.data());
+        for (int mom = 0; mom < NUM_SOOT_MOMENTS + 1; ++mom) {
+          state_arr(i, j, k, mom) = moments[mom];
+        }
+      });
   }
+  amrex::Gpu::streamSynchronize();
 }
 
 // TODO: This isn't working yet

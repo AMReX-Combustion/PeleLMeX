@@ -146,8 +146,9 @@ PeleLM::addMassFluxes(
         amrex::TypeList<amrex::ReduceOpSum, amrex::ReduceOpSum>{},
         amrex::TypeList<amrex::Real, amrex::Real>{}, *a_fluxes[idim],
         amrex::IntVect(0),
-        [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept
-          -> amrex::GpuTuple<amrex::Real, amrex::Real> {
+        [fma, ama, idim, faceDomain] AMREX_GPU_DEVICE(
+          int box_no, int i, int j,
+          int k) noexcept -> amrex::GpuTuple<amrex::Real, amrex::Real> {
           amrex::Array4<const amrex::Real> const& flux = fma[box_no];
           amrex::Array4<const amrex::Real> const& area_ar = ama[box_no];
 
@@ -177,8 +178,9 @@ PeleLM::addMassFluxes(
         amrex::TypeList<amrex::ReduceOpSum, amrex::ReduceOpSum>{},
         amrex::TypeList<amrex::Real, amrex::Real>{}, *a_fluxes[idim],
         amrex::IntVect(0),
-        [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept
-          -> amrex::GpuTuple<amrex::Real, amrex::Real> {
+        [fma, idim, faceDomain, area] AMREX_GPU_DEVICE(
+          int box_no, int i, int j,
+          int k) noexcept -> amrex::GpuTuple<amrex::Real, amrex::Real> {
           amrex::Array4<const amrex::Real> const& flux = fma[box_no];
 
           int idx = (idim == 0) ? i : ((idim == 1) ? j : k);
@@ -247,8 +249,9 @@ PeleLM::addUmacFluxes(
         amrex::TypeList<amrex::ReduceOpSum, amrex::ReduceOpSum>{},
         amrex::TypeList<amrex::Real, amrex::Real>{}, advData->umac[lev][idim],
         amrex::IntVect(0),
-        [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept
-          -> amrex::GpuTuple<amrex::Real, amrex::Real> {
+        [fma, ama, idim, faceDomain] AMREX_GPU_DEVICE(
+          int box_no, int i, int j,
+          int k) noexcept -> amrex::GpuTuple<amrex::Real, amrex::Real> {
           amrex::Array4<const amrex::Real> const& flux = fma[box_no];
           amrex::Array4<const amrex::Real> const& area_ar = ama[box_no];
 
@@ -274,8 +277,9 @@ PeleLM::addUmacFluxes(
         amrex::TypeList<amrex::ReduceOpSum, amrex::ReduceOpSum>{},
         amrex::TypeList<amrex::Real, amrex::Real>{}, advData->umac[lev][idim],
         amrex::IntVect(0),
-        [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept
-          -> amrex::GpuTuple<amrex::Real, amrex::Real> {
+        [fma, idim, faceDomain, area] AMREX_GPU_DEVICE(
+          int box_no, int i, int j,
+          int k) noexcept -> amrex::GpuTuple<amrex::Real, amrex::Real> {
           amrex::Array4<const amrex::Real> const& flux = fma[box_no];
 
           int idx = (idim == 0) ? i : ((idim == 1) ? j : k);
@@ -364,8 +368,9 @@ PeleLM::addRhoHFluxes(
         amrex::TypeList<amrex::ReduceOpSum, amrex::ReduceOpSum>{},
         amrex::TypeList<amrex::Real, amrex::Real>{}, *a_fluxes[idim],
         amrex::IntVect(0),
-        [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept
-          -> amrex::GpuTuple<amrex::Real, amrex::Real> {
+        [fma, ama, idim, faceDomain] AMREX_GPU_DEVICE(
+          int box_no, int i, int j,
+          int k) noexcept -> amrex::GpuTuple<amrex::Real, amrex::Real> {
           amrex::Array4<const amrex::Real> const& flux = fma[box_no];
           amrex::Array4<const amrex::Real> const& area_ar = ama[box_no];
 
@@ -391,8 +396,9 @@ PeleLM::addRhoHFluxes(
         amrex::TypeList<amrex::ReduceOpSum, amrex::ReduceOpSum>{},
         amrex::TypeList<amrex::Real, amrex::Real>{}, *a_fluxes[idim],
         amrex::IntVect(0),
-        [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept
-          -> amrex::GpuTuple<amrex::Real, amrex::Real> {
+        [fma, idim, faceDomain, area] AMREX_GPU_DEVICE(
+          int box_no, int i, int j,
+          int k) noexcept -> amrex::GpuTuple<amrex::Real, amrex::Real> {
           amrex::Array4<const amrex::Real> const& flux = fma[box_no];
 
           int idx = (idim == 0) ? i : ((idim == 1) ? j : k);
@@ -466,8 +472,9 @@ PeleLM::addRhoYFluxes(
           amrex::TypeList<amrex::ReduceOpSum, amrex::ReduceOpSum>{},
           amrex::TypeList<amrex::Real, amrex::Real>{}, *a_fluxes[idim],
           amrex::IntVect(0),
-          [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept
-            -> amrex::GpuTuple<amrex::Real, amrex::Real> {
+          [fma, ama, idim, faceDomain, n] AMREX_GPU_DEVICE(
+            int box_no, int i, int j,
+            int k) noexcept -> amrex::GpuTuple<amrex::Real, amrex::Real> {
             amrex::Array4<const amrex::Real> const& flux = fma[box_no];
             amrex::Array4<const amrex::Real> const& area_ar = ama[box_no];
 
@@ -493,8 +500,9 @@ PeleLM::addRhoYFluxes(
           amrex::TypeList<amrex::ReduceOpSum, amrex::ReduceOpSum>{},
           amrex::TypeList<amrex::Real, amrex::Real>{}, *a_fluxes[idim],
           amrex::IntVect(0),
-          [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept
-            -> amrex::GpuTuple<amrex::Real, amrex::Real> {
+          [fma, idim, faceDomain, area, n] AMREX_GPU_DEVICE(
+            int box_no, int i, int j,
+            int k) noexcept -> amrex::GpuTuple<amrex::Real, amrex::Real> {
             amrex::Array4<const amrex::Real> const& flux = fma[box_no];
 
             int idx = (idim == 0) ? i : ((idim == 1) ? j : k);
@@ -597,7 +605,8 @@ PeleLM::addRhoYFluxesPatch(
           amrex::TypeList<amrex::ReduceOpSum, amrex::ReduceOpSum>{},
           amrex::TypeList<amrex::Real, amrex::Real>{}, *a_fluxes[idim],
           amrex::IntVect(0),
-          [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept
+          [fma, bpdevice, faceDomain, idim, prob_lo, dx, m,
+           area] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept
             -> amrex::GpuTuple<amrex::Real, amrex::Real> {
             amrex::Array4<const amrex::Real> const& flux = fma[box_no];
             int idx =

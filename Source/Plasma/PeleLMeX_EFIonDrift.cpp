@@ -58,48 +58,43 @@ PeleLM::ionDriftVelocity(std::unique_ptr<AdvanceAdvData>& advData)
     auto ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
 
     amrex::MultiFab mobH_cc(grids[lev], dmap[lev], NUM_IONS, 1);
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-    for (amrex::MFIter mfi(mobH_cc, amrex::TilingIfNotGPU()); mfi.isValid();
-         ++mfi) {
-      const amrex::Box& gbx = mfi.growntilebox();
-      const auto& mob_o = ldataOld_p->mob_cc.const_array(mfi);
-      const auto& mob_n = ldataNew_p->mob_cc.const_array(mfi);
-      const auto& mob_h = mobH_cc.array(mfi);
-      amrex::ParallelFor(
-        gbx, NUM_IONS,
-        [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
-          mob_h(i, j, k, n) = 0.5 * (mob_o(i, j, k, n) + mob_n(i, j, k, n));
-        });
-    }
 
+    auto const& mob_o_ma = ldataOld_p->mob_cc.const_arrays();
+    auto const& mob_n_ma = ldataNew_p->mob_cc.const_arrays();
+    auto const& mob_h_ma = mobH_cc.arrays();
+
+    amrex::ParallelFor(
+      mobH_cc, mobH_cc.nGrowVect(),
+      [mob_o_ma, mob_n_ma,
+       mob_h_ma] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+        for (int n = 0; n < NUM_IONS; ++n) {
+          mob_h_ma[box_no](i, j, k, n) =
+            0.5 * (mob_o_ma[box_no](i, j, k, n) + mob_n_ma[box_no](i, j, k, n));
+        }
+      });
     // Get the face centered ions mobility
-    int doZeroVisc = 0;
+    constexpr int doZeroVisc = 0;
     amrex::Array<amrex::MultiFab, AMREX_SPACEDIM> mobH_ec =
       getDiffusivity(lev, 0, NUM_IONS, doZeroVisc, bcRecIons, mobH_cc);
 
     // Assemble the ions drift velocity
     for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-      for (amrex::MFIter mfi(mobH_ec[idim], amrex::TilingIfNotGPU());
-           mfi.isValid(); ++mfi) {
-        const amrex::Box bx = mfi.tilebox();
-        const auto& mob_h = mobH_ec[idim].const_array(mfi);
-        const auto& gp_o = gphiVOld[lev][idim].const_array(mfi);
-        const auto& gp_n = gphiVNew[lev][idim].const_array(mfi);
-        const auto& Ud_Sp = advData->uDrift[lev][idim].array(mfi);
-        amrex::ParallelFor(
-          bx, NUM_IONS,
-          [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
-            Ud_Sp(i, j, k, n) =
-              mob_h(i, j, k, n) * -0.5 * (gp_o(i, j, k) + gp_n(i, j, k));
-          });
-      }
+      auto const& mob_h_ma = mobH_ec[idim].const_arrays();
+      auto const& gp_o_ma = gphiVOld[lev][idim].const_arrays();
+      auto const& gp_n_ma = gphiVNew[lev][idim].const_arrays();
+      auto const& Ud_Sp_ma = advData->uDrift[lev][idim].arrays();
+      amrex::ParallelFor(
+        mobH_ec[idim], [mob_h_ma, gp_o_ma, gp_n_ma, Ud_Sp_ma] AMREX_GPU_DEVICE(
+                         int box_no, int i, int j, int k) noexcept {
+          for (int n = 0; n < NUM_IONS; ++n) {
+            Ud_Sp_ma[box_no](i, j, k, n) =
+              mob_h_ma[box_no](i, j, k, n) * -0.5 *
+              (gp_o_ma[box_no](i, j, k) + gp_n_ma[box_no](i, j, k));
+          }
+        });
     }
   }
+  amrex::Gpu::streamSynchronize();
 
   //----------------------------------------------------------------
   // Average down faces
@@ -173,20 +168,9 @@ PeleLM::ionDriftAddUmac(int lev, std::unique_ptr<AdvanceAdvData>& advData)
 {
   // Add umac to the ions drift velocity to get the effective velocity
   for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-    for (amrex::MFIter mfi(advData->umac[lev][idim], amrex::TilingIfNotGPU());
-         mfi.isValid(); ++mfi) {
-      const amrex::Box gbx = mfi.growntilebox();
-      const auto& umac = advData->umac[lev][idim].const_array(mfi);
-      const auto& Ud_Sp = advData->uDrift[lev][idim].array(mfi);
-      amrex::ParallelFor(
-        gbx, NUM_IONS,
-        [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
-          Ud_Sp(i, j, k, n) += umac(i, j, k);
-        });
-    }
+    amrex::MultiFab::Add(
+      advData->uDrift[lev][idim], advData->umac[lev][idim], 0, 0, 1,
+      advData->umac[lev][idim].nGrowVect());
     advData->uDrift[lev][idim].FillBoundary(geom[lev].periodicity());
   }
 }

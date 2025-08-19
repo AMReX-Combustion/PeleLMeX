@@ -344,25 +344,27 @@ PeleLM::velocityProjection(
         rhs_cc.emplace_back(
           grids[lev], dmap[lev], 1, ldataOld_p->divu.nGrow(), amrex::MFInfo(),
           *m_factory[lev]);
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-        for (amrex::MFIter mfi(rhs_cc[lev], amrex::TilingIfNotGPU());
-             mfi.isValid(); ++mfi) {
-          const amrex::Box& gbx = mfi.growntilebox();
-          const auto& divu_o = ldataOld_p->divu.const_array(mfi);
-          const auto& divu_n = ldataNew_p->divu.const_array(mfi);
-          const auto& rhs = rhs_cc[lev].array(mfi);
-          const auto is_closed_ch = m_closed_chamber;
+
+        auto const& divu_o_ma = ldataOld_p->divu.const_arrays();
+        auto const& divu_n_ma = ldataNew_p->divu.const_arrays();
+        auto const& rhs_ma = rhs_cc[lev].arrays();
+
+        amrex::ParallelFor(
+          rhs_cc[lev], rhs_cc[lev].nGrowVect(),
+          [divu_o_ma, divu_n_ma,
+           rhs_ma] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+            rhs_ma[box_no](i, j, k) =
+              -(divu_n_ma[box_no](i, j, k) - divu_o_ma[box_no](i, j, k));
+          });
+        if (m_closed_chamber != 0) {
           amrex::ParallelFor(
-            gbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-              rhs(i, j, k) = -(divu_n(i, j, k) - divu_o(i, j, k));
-              if (is_closed_ch != 0) {
-                rhs(i, j, k) +=
-                  SbarNew - SbarOld; // subtract the mean, but rhs's already -
-              }
+            rhs_cc[lev], rhs_cc[lev].nGrowVect(),
+            [rhs_ma, SbarNew, SbarOld] AMREX_GPU_DEVICE(
+              int box_no, int i, int j, int k) noexcept {
+              rhs_ma[box_no](i, j, k) += SbarNew - SbarOld;
             });
         }
+        amrex::Gpu::streamSynchronize();
       }
 #ifdef AMREX_USE_EB
       EB_set_covered(rhs_cc[lev], 0.0);
@@ -380,8 +382,8 @@ PeleLM::velocityProjection(
     incremental, a_dt);
 
 #if AMREX_SPACEDIM == 2
+  // Unscaling New vel before adding back old one
   for (int lev = 0; lev <= finest_level; ++lev) {
-    // Unscaling New vel before adding back old one
     if (geom[lev].IsRZ()) {
       unscaleProj_RZ(lev, *vel[lev]);
     }
@@ -508,21 +510,25 @@ PeleLM::doNodalProject(
       if (incremental != 0) {
         amrex::ParallelFor(
           tbx, AMREX_SPACEDIM,
-          [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
+          [gp_lev_arr,
+           gp_proj_arr] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
             gp_lev_arr(i, j, k, n) += gp_proj_arr(i, j, k, n);
           });
         amrex::ParallelFor(
-          nbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          nbx, [p_lev_arr,
+                p_proj_arr] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             p_lev_arr(i, j, k) += p_proj_arr(i, j, k);
           });
       } else {
         amrex::ParallelFor(
           tbx, AMREX_SPACEDIM,
-          [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
+          [gp_lev_arr,
+           gp_proj_arr] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
             gp_lev_arr(i, j, k, n) = gp_proj_arr(i, j, k, n);
           });
         amrex::ParallelFor(
-          nbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          nbx, [p_lev_arr,
+                p_proj_arr] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             p_lev_arr(i, j, k) = p_proj_arr(i, j, k);
           });
       }

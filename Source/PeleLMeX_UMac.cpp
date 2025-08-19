@@ -106,50 +106,44 @@ PeleLM::addChiIncrement(
   // Both mac_divu and chiIncr have properly filled ghost cells -> work on
   // grownbox
   for (int lev = 0; lev <= finest_level; ++lev) {
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-    for (amrex::MFIter mfi(advData->chi[lev], amrex::TilingIfNotGPU());
-         mfi.isValid(); ++mfi) {
-      const amrex::Box& gbx = mfi.growntilebox();
-      auto const& chiInc_ar = chiIncr[lev].const_array(mfi);
-      auto const& chi_ar = advData->chi[lev].array(mfi);
-      auto const& mac_divu_ar = advData->mac_divu[lev].array(mfi);
+    if (a_sdcIter == 1) {
+      // fill chi on first SDC iter
       if (m_chi_correction_type == ChiCorrectionType::DivuFirstIter) {
+        auto const& chiInc_ma = chiIncr[lev].const_arrays();
+        auto const& chi_ma = advData->chi[lev].arrays();
+        auto const& mac_divu_ma = advData->mac_divu[lev].arrays();
         amrex::ParallelFor(
-          gbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-            if (a_sdcIter == 1) {
-              chi_ar(i, j, k) = chiInc_ar(i, j, k) + mac_divu_ar(i, j, k);
-            } else {
-              chi_ar(i, j, k) += chiInc_ar(i, j, k);
-            }
-            mac_divu_ar(i, j, k) = chi_ar(i, j, k);
+          advData->chi[lev], advData->chi[lev].nGrowVect(),
+          [chi_ma, chiInc_ma, mac_divu_ma] AMREX_GPU_DEVICE(
+            int box_no, int i, int j, int k) noexcept {
+            chi_ma[box_no](i, j, k) =
+              chiInc_ma[box_no](i, j, k) + mac_divu_ma[box_no](i, j, k);
           });
-      } else if (m_chi_correction_type == ChiCorrectionType::NoDivu) {
-        amrex::ParallelFor(
-          gbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-            if (a_sdcIter == 1) {
-              chi_ar(i, j, k) = chiInc_ar(i, j, k);
-            } else {
-              chi_ar(i, j, k) += chiInc_ar(i, j, k);
-            }
-            mac_divu_ar(i, j, k) = chi_ar(i, j, k);
-          });
-      } else { // Default: use updated divu every iteration
-        amrex::ParallelFor(
-          gbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-            if (a_sdcIter == 1) {
-              chi_ar(i, j, k) = chiInc_ar(i, j, k);
-            } else {
-              chi_ar(i, j, k) += chiInc_ar(i, j, k);
-            }
-            mac_divu_ar(i, j, k) += chi_ar(i, j, k);
-          });
+        amrex::Gpu::streamSynchronize();
+      } else {
+        amrex::MultiFab::Copy(
+          advData->chi[lev], chiIncr[lev], 0, 0, 1,
+          advData->chi[lev].nGrowVect());
       }
+    } else {
+      amrex::MultiFab::Add(
+        advData->chi[lev], chiIncr[lev], 0, 0, 1,
+        advData->chi[lev].nGrowVect());
+    }
+    if (
+      m_chi_correction_type == ChiCorrectionType::DivuFirstIter ||
+      m_chi_correction_type == ChiCorrectionType::NoDivu) {
+      amrex::MultiFab::Copy(
+        advData->mac_divu[lev], advData->chi[lev], 0, 0, 1,
+        advData->chi[lev].nGrowVect());
+    } else {
+      amrex::MultiFab::Add(
+        advData->mac_divu[lev], advData->chi[lev], 0, 0, 1,
+        advData->chi[lev].nGrowVect());
     }
   }
   if (m_print_chi_convergence) {
-    amrex::Real max_corr =
+    const amrex::Real max_corr =
       MLNorm0(GetVecOfConstPtrs(chiIncr)) * m_dt / m_dpdtFactor;
     amrex::Print() << "      Before SDC " << a_sdcIter
                    << ": max relative P mismatch is " << max_corr << "\n";

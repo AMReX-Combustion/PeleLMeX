@@ -456,8 +456,12 @@ PeleLM::WritePlotFile()
             m_leveldata_old[lev]->visc_turb_fc[2].const_arrays();)
       // interpolate turbulent viscosity from faces to centers
       amrex::ParallelFor(
-        mf_plt[lev],
-        [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+        mf_plt[lev], [plot_arr, cnt, mut_arr_x, mut_arr_y
+#if (AMREX_SPACEDIM == 3)
+                      ,
+                      mut_arr_z
+#endif
+      ] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
           plot_arr[box_no](i, j, k, cnt) =
             fact *
             (AMREX_D_TERM(
@@ -1187,11 +1191,13 @@ PeleLM::addLevelVelocityDataFromPlt(int a_lev, const std::string& a_velPltFile)
     amrex::FArrayBox DummyFab(bx, 1);
     auto const& state_arr = ldata_p->state.array(mfi);
     auto const& tmpVel_arr = tmpVel.array(mfi);
-    amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-      for (int n = 0; n < AMREX_SPACEDIM; n++) {
-        state_arr(i, j, k, XVEL + n) += tmpVel_arr(i, j, k, n);
-      }
-    });
+    amrex::ParallelFor(
+      bx,
+      [state_arr, tmpVel_arr] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        for (int n = 0; n < AMREX_SPACEDIM; n++) {
+          state_arr(i, j, k, XVEL + n) += tmpVel_arr(i, j, k, n);
+        }
+      });
   }
 }
 

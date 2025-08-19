@@ -288,8 +288,13 @@ PeleLM::addScalarVarianceSources(const TimeStamp a_timestamp)
             const amrex::Real inv_l_scale2 = 1.0 / (l_scale * l_scale);
 
             amrex::ParallelFor(
-              *m_extSource[lev],
-              [=] AMREX_GPU_DEVICE(int bx, int i, int j, int k) noexcept {
+              *m_extSource[lev], [extma, statema, n, C_chi, ScInv, inv_l_scale2,
+                                  mut_arr_x, gx, mut_arr_y, gy
+#if (AMREX_SPACEDIM == 3)
+                                  ,
+                                  mut_arr_z, gz
+#endif
+            ] AMREX_GPU_DEVICE(int bx, int i, int j, int k) noexcept {
                 // Subfilter Scalar Dissipation: Linear Relaxation model
                 // rho chi_sgs = C_chi * mu_t / Delta^2 * Variance
                 const amrex::Real mu_t =
@@ -326,7 +331,7 @@ PeleLM::addScalarVarianceSources(const TimeStamp a_timestamp)
           }
         }
       }
-      Gpu::streamSynchronize();
+      amrex::Gpu::streamSynchronize();
     }
   }
 #endif

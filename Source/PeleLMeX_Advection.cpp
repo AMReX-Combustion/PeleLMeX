@@ -587,7 +587,7 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
 #ifdef AMREX_USE_EB
         if (flagfab.getType(ebx) == amrex::FabType::covered) { // Covered boxes
           amrex::ParallelFor(
-            ebx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+            ebx, [rho_ed] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
               rho_ed(i, j, k) = 0.0;
             });
         } else if (
@@ -595,7 +595,8 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
                                                              // boxes
           const auto& afrac = areafrac[idim]->array(mfi);
           amrex::ParallelFor(
-            ebx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+            ebx, [rho_ed, afrac,
+                  rhoY_ed] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
               rho_ed(i, j, k) = 0.0;
               if (afrac(i, j, k) > 0.0) { // Uncovered faces
                 pele::physics::PhysicsType::eos_type::RY2R(
@@ -606,7 +607,8 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
 #endif
         {
           amrex::ParallelFor(
-            ebx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+            ebx,
+            [rhoY_ed, rho_ed] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
               pele::physics::PhysicsType::eos_type::RY2R(
                 rhoY_ed.cellData(i, j, k), rho_ed(i, j, k));
             });
@@ -679,7 +681,7 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
 #ifdef AMREX_USE_EB
         if (flagfab.getType(ebx) == amrex::FabType::covered) { // Covered boxes
           amrex::ParallelFor(
-            ebx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+            ebx, [rhoHm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
               rhoHm(i, j, k) = 0.0;
             });
         } else if (
@@ -687,7 +689,8 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
                                                              // boxes
           const auto& afrac = areafrac[idim]->array(mfi);
           amrex::ParallelFor(
-            ebx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+            ebx, [rhoHm, afrac, rhoY, T, rho,
+                  leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
               if (afrac(i, j, k) <= 0.0) { // Covered faces
                 rhoHm(i, j, k) = 0.0;
               } else {
@@ -698,7 +701,8 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
 #endif
         {
           amrex::ParallelFor(
-            ebx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+            ebx, [rho, rhoY, T, rhoHm,
+                  leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
               getRHmixGivenTY(i, j, k, rho, rhoY, T, rhoHm, leosparm);
             });
         }
@@ -914,7 +918,7 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
     auto aofsma = advData->AofS[lev].arrays();
     amrex::ParallelFor(
       advData->AofS[lev],
-      [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+      [aofsma] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
         pele::physics::PhysicsType::eos_type::RY2R(
           aofsma[box_no].cellData(i, j, k), aofsma[box_no](i, j, k, DENSITY),
           FIRSTSPEC);
@@ -935,8 +939,8 @@ PeleLM::updateDensity(std::unique_ptr<AdvanceAdvData>& advData)
     const auto dt = m_dt;
 
     amrex::ParallelFor(
-      advData->AofS[lev],
-      [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+      advData->AofS[lev], [sma_o, sma_n, aofsma, extma, dt] AMREX_GPU_DEVICE(
+                            int box_no, int i, int j, int k) noexcept {
         sma_n[box_no](i, j, k, DENSITY) =
           sma_o[box_no](i, j, k, DENSITY) +
           dt * (aofsma[box_no](i, j, k, DENSITY) +

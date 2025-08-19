@@ -434,7 +434,9 @@ PeleLM::correctIsothermalBoundary(
         auto const& boundary_ar = a_spec_boundary[lev]->array(mfi);
         const auto use_wbar = m_use_wbar;
         amrex::ParallelFor(
-          ebx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          ebx, [bc_lo, bc_hi, idim, need_explicit_fluxes, edomain, flux_soret,
+                rhoD_ec, flux_wbar, boundary_ar,
+                use_wbar] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             int idx[3] = {i, j, k};
             const bool on_lo =
               (bc_lo == BoundaryCondition::BCNoSlipWallIsotherm ||
@@ -818,9 +820,12 @@ PeleLM::addWbarTerm(
           // \overline{W} with beta_m = \rho * D_m * overline(W) / W_k below
           // need to divide by \overline(W)
           const auto* eosparm = leosparm;
+          auto eos = pele::physics::PhysicsType::eos(eosparm);
+
           amrex::ParallelFor(
-            ebx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-              auto eos = pele::physics::PhysicsType::eos(eosparm);
+            ebx,
+            [eos, rhoY, gradWbar_ar, beta_ar, spFlux_ar, spwbarFlux_ar,
+             need_wbar_fluxes] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
               // Get Wbar from rhoYs
               amrex::Real rho = 0.0;
               for (int n = 0; n < NUM_SPECIES; ++n) {
@@ -1007,14 +1012,15 @@ PeleLM::computeSpeciesEnthalpyFlux(
       auto const& flag = flagfab.const_array();
       if (flagfab.getType(gbx) == amrex::FabType::covered) { // Covered boxes
         amrex::ParallelFor(
-          gbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          gbx, [Hi_arr] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             Hi_arr(i, j, k) = 0.0;
           });
       } else if (
         flagfab.getType(gbx) != amrex::FabType::regular) { // EB containing
                                                            // boxes
         amrex::ParallelFor(
-          gbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          gbx, [Hi_arr, flag, Temp_arr,
+                leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             if (flag(i, j, k).isCovered()) {
               Hi_arr(i, j, k) = 0.0;
             } else {
@@ -1025,7 +1031,8 @@ PeleLM::computeSpeciesEnthalpyFlux(
 #endif
       {
         amrex::ParallelFor(
-          gbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          gbx, [Temp_arr, Hi_arr,
+                leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             getHGivenT(i, j, k, Temp_arr, Hi_arr, leosparm);
           });
       }
@@ -1053,7 +1060,8 @@ PeleLM::computeSpeciesEnthalpyFlux(
           a_fluxes[lev][idim]->array(mfi, NUM_SPECIES + 1);
         auto const& enth_ar = Enth_ec[idim].const_array(mfi);
         amrex::ParallelFor(
-          ebox, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          ebox, [enthflux_ar, spflux_ar,
+                 enth_ar] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             enthflux_ar(i, j, k) = 0.0;
             for (int n = 0; n < NUM_SPECIES; ++n) {
               enthflux_ar(i, j, k) +=
@@ -1246,7 +1254,8 @@ PeleLM::differentialDiffusionUpdate(
             diffData->wbar_fluxes[lev][idim].const_array(mfi);
           amrex::ParallelFor(
             ebx, NUM_SPECIES,
-            [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
+            [flux_spec,
+             flux_wbar] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
               flux_spec(i, j, k, n) += flux_wbar(i, j, k, n);
             });
         }
@@ -1269,7 +1278,8 @@ PeleLM::differentialDiffusionUpdate(
             diffData->soret_fluxes[lev][idim].const_array(mfi);
           amrex::ParallelFor(
             ebx, NUM_SPECIES,
-            [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
+            [flux_spec,
+             flux_soret] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
               flux_spec(i, j, k, n) += flux_soret(i, j, k, n);
             });
         }
@@ -1710,8 +1720,8 @@ PeleLM::deltaTIter_update(
     auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
     auto const& sma = ldata_p->state.arrays();
     amrex::ParallelFor(
-      ldata_p->state,
-      [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+      ldata_p->state, [sma, leosparm] AMREX_GPU_DEVICE(
+                        int box_no, int i, int j, int k) noexcept {
         getRHmixGivenTY(
           i, j, k, amrex::Array4<amrex::Real const>(sma[box_no], DENSITY),
           amrex::Array4<amrex::Real const>(sma[box_no], FIRSTSPEC),

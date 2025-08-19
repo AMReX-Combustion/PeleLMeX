@@ -120,7 +120,7 @@ PeleLM::redistributeAofS(
         if (m_adv_redist_type == "FluxRedist") {
           amrex::ParallelFor(
             amrex::Box(scratch),
-            [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+            [scratch] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
               scratch(i, j, k) = 1.;
             });
         }
@@ -132,7 +132,9 @@ PeleLM::redistributeAofS(
       } else {
         // Move data to AofS for regular bx
         amrex::ParallelFor(
-          bx, ncomp, [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
+          bx, ncomp,
+          [aofs_ar,
+           divT_ar] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
             aofs_ar(i, j, k, n) = divT_ar(i, j, k, n);
           });
       }
@@ -256,7 +258,7 @@ PeleLM::redistributeDiff(
         if (m_diff_redist_type == "FluxRedist") {
           amrex::ParallelFor(
             amrex::Box(scratch),
-            [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+            [scratch] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
               scratch(i, j, k) = 1.;
             });
         }
@@ -268,7 +270,9 @@ PeleLM::redistributeDiff(
       } else {
         // Move data to AofS for regular bx
         amrex::ParallelFor(
-          bx, ncomp, [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
+          bx, ncomp,
+          [diff_ar,
+           divT_ar] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
             diff_ar(i, j, k, n) = divT_ar(i, j, k, n);
           });
       }
@@ -540,21 +544,31 @@ PeleLM::getEBState(
       , const auto& ebfc_y = ebfact.getFaceCent()[1]->const_array(a_mfi);
       , const auto& ebfc_z = ebfact.getFaceCent()[2]->const_array(a_mfi););
     const auto& ebnorm = ebfact.getBndryNormal().const_array(a_mfi);
-    amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-      // Regular/covered cells -> 0.0
-      if (flag(i, j, k).isCovered() || flag(i, j, k).isRegular()) {
-        for (int n = 0; n < ncomp; ++n) {
-          ebscal_arr(i, j, k, n) = 0.0;
+    amrex::ParallelFor(
+      bx, [flag, ebscal_arr, state, ebnorm, ncomp, EBfiller, first_comp,
+           geomdata, time, ebfc_x, ebfc_y
+#if (AMREX_SPACEDIM == 3)
+           ,
+           ebfc_z
+#endif
+    ] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        // Regular/covered cells -> 0.0
+        if (flag(i, j, k).isCovered() || flag(i, j, k).isRegular()) {
+          for (int n = 0; n < ncomp; ++n) {
+            ebscal_arr(i, j, k, n) = 0.0;
+          }
+        } else { // cut-cells
+          EBfiller(
+            i, j, k, state, ebscal_arr, first_comp, ncomp,
+            AMREX_D_DECL(ebfc_x, ebfc_y, ebfc_z), ebnorm, geomdata, time);
         }
-      } else { // cut-cells
-        EBfiller(
-          i, j, k, state, ebscal_arr, first_comp, ncomp,
-          AMREX_D_DECL(ebfc_x, ebfc_y, ebfc_z), ebnorm, geomdata, time);
-      }
-    });
+      });
   } else {
-    AMREX_PARALLEL_FOR_4D(
-      bx, ncomp, i, j, k, n, { ebscal_arr(i, j, k, n) = 0.0; });
+    amrex::ParallelFor(
+      bx, ncomp,
+      [ebscal_arr] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
+        ebscal_arr(i, j, k, n) = 0.0;
+      });
   }
 
   return r;
@@ -611,7 +625,13 @@ PeleLM::getEBState(
         , const auto& ebfc_z = faceCentroid[2]->array(mfi););
       const auto& ebnorm = ebfact.getBndryNormal().const_array(mfi);
       amrex::ParallelFor(
-        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        bx, [flag, ebState, state, EBfiller, stateComp, nComp, ebnorm, geomdata,
+             time, ebfc_x, ebfc_y
+#if (AMREX_SPACEDIM == 3)
+             ,
+             ebfc_z
+#endif
+      ] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           // Regular/covered cells -> 0.0
           if (flag(i, j, k).isCovered() || flag(i, j, k).isRegular()) {
             for (int n = 0; n < nComp; ++n) {
@@ -673,7 +693,13 @@ PeleLM::getEBDiff(
         , const auto& ebfc_y = faceCentroid[1]->array(mfi);
         , const auto& ebfc_z = faceCentroid[2]->array(mfi););
       amrex::ParallelFor(
-        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        bx,
+        [flag, ebdiff, diff_cc, EBTypfiller, geomdata, lprobparm, ebfc_x, ebfc_y
+#if (AMREX_SPACEDIM == 3)
+         ,
+         ebfc_z
+#endif
+      ] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           // Regular/covered cells -> 0.0
           if (flag(i, j, k).isCovered() || flag(i, j, k).isRegular()) {
             ebdiff(i, j, k) = 0.0;
@@ -743,18 +769,23 @@ PeleLM::correct_vel_small_cells(
         // This FAB has cut cells -- we define the centroid value in terms of
         // the MAC velocities onfaces
         amrex::ParallelFor(
-          bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          bx, [vfrac_fab, ccvel_fab, umac_fab, apx_fab, vmac_fab, apy_fab
+#if (AMREX_SPACEDIM == 3)
+               ,
+               wmac_fab, apz_fab
+#endif
+        ] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             if (vfrac_fab(i, j, k) > 0.0 && vfrac_fab(i, j, k) < 5.e-3) {
               AMREX_D_TERM(
-                amrex::Real u_avg =
+                const amrex::Real u_avg =
                   (apx_fab(i, j, k) * umac_fab(i, j, k) +
                    apx_fab(i + 1, j, k) * umac_fab(i + 1, j, k)) /
                   (apx_fab(i, j, k) + apx_fab(i + 1, j, k));
-                , amrex::Real v_avg =
+                , const amrex::Real v_avg =
                     (apy_fab(i, j, k) * vmac_fab(i, j, k) +
                      apy_fab(i, j + 1, k) * vmac_fab(i, j + 1, k)) /
                     (apy_fab(i, j, k) + apy_fab(i, j + 1, k));
-                , amrex::Real w_avg =
+                , const amrex::Real w_avg =
                     (apz_fab(i, j, k) * wmac_fab(i, j, k) +
                      apz_fab(i, j, k + 1) * wmac_fab(i, j, k + 1)) /
                     (apz_fab(i, j, k) + apz_fab(i, j, k + 1)););
