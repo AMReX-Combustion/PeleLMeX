@@ -111,7 +111,10 @@ PeleLM::scaleNLState(const amrex::Real nEScale, const amrex::Real phiVScale)
 }
 
 void
-PeleLM::scaleNLResid(const amrex::Vector<amrex::MultiFab*>& a_resid, const amrex::Real nEScale, const amrex::Real phiVScale)
+PeleLM::scaleNLResid(
+  const amrex::Vector<amrex::MultiFab*>& a_resid,
+  const amrex::Real nEScale,
+  const amrex::Real phiVScale)
 {
   for (int lev = 0; lev <= finest_level; ++lev) {
     a_resid[lev]->mult(1.0 / FnE_scale, 0, 1, 1);
@@ -120,7 +123,8 @@ PeleLM::scaleNLResid(const amrex::Vector<amrex::MultiFab*>& a_resid, const amrex
 }
 
 amrex::BCRec
-PeleLM::hackBCChargedParticle(const amrex::Real charge, const amrex::BCRec& bc_in)
+PeleLM::hackBCChargedParticle(
+  const amrex::Real charge, const amrex::BCRec& bc_in)
 {
   amrex::BCRec bc_hacked;
 

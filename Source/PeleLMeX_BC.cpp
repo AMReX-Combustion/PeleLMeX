@@ -11,58 +11,69 @@
 // SlipWallAdiab, NoSlipWallAdiab, SlipWallIsoTherm, NoSlipWallIsoTherm.
 
 constexpr int norm_vel_bc[] = {
-  amrex::BCType::int_dir, amrex::BCType::ext_dir, amrex::BCType::foextrap, amrex::BCType::reflect_odd,
-  amrex::BCType::ext_dir, amrex::BCType::ext_dir, amrex::BCType::ext_dir,  amrex::BCType::ext_dir};
+  amrex::BCType::int_dir,     amrex::BCType::ext_dir, amrex::BCType::foextrap,
+  amrex::BCType::reflect_odd, amrex::BCType::ext_dir, amrex::BCType::ext_dir,
+  amrex::BCType::ext_dir,     amrex::BCType::ext_dir};
 
 constexpr int tang_vel_bc[] = {
-  amrex::BCType::int_dir,  amrex::BCType::ext_dir, amrex::BCType::foextrap, amrex::BCType::reflect_even,
-  amrex::BCType::hoextrap, amrex::BCType::ext_dir, amrex::BCType::hoextrap, amrex::BCType::ext_dir};
+  amrex::BCType::int_dir,      amrex::BCType::ext_dir,  amrex::BCType::foextrap,
+  amrex::BCType::reflect_even, amrex::BCType::hoextrap, amrex::BCType::ext_dir,
+  amrex::BCType::hoextrap,     amrex::BCType::ext_dir};
 
 constexpr int density_bc[] = {
-  amrex::BCType::int_dir,  amrex::BCType::ext_dir,  amrex::BCType::foextrap, amrex::BCType::reflect_even,
-  amrex::BCType::foextrap, amrex::BCType::foextrap, amrex::BCType::foextrap, amrex::BCType::foextrap};
+  amrex::BCType::int_dir,      amrex::BCType::ext_dir,  amrex::BCType::foextrap,
+  amrex::BCType::reflect_even, amrex::BCType::foextrap, amrex::BCType::foextrap,
+  amrex::BCType::foextrap,     amrex::BCType::foextrap};
 
 constexpr int species_bc[] = {
-  amrex::BCType::int_dir,  amrex::BCType::ext_dir,  amrex::BCType::foextrap, amrex::BCType::reflect_even,
-  amrex::BCType::foextrap, amrex::BCType::foextrap, amrex::BCType::foextrap, amrex::BCType::foextrap};
+  amrex::BCType::int_dir,      amrex::BCType::ext_dir,  amrex::BCType::foextrap,
+  amrex::BCType::reflect_even, amrex::BCType::foextrap, amrex::BCType::foextrap,
+  amrex::BCType::foextrap,     amrex::BCType::foextrap};
 
-constexpr int rhoh_bc[] = {
-  amrex::BCType::int_dir,  amrex::BCType::ext_dir,  amrex::BCType::foextrap, amrex::BCType::reflect_even,
-  amrex::BCType::foextrap, amrex::BCType::foextrap, amrex::BCType::ext_dir,  amrex::BCType::ext_dir};
+constexpr int rhoh_bc[] = {amrex::BCType::int_dir,  amrex::BCType::ext_dir,
+                           amrex::BCType::foextrap, amrex::BCType::reflect_even,
+                           amrex::BCType::foextrap, amrex::BCType::foextrap,
+                           amrex::BCType::ext_dir,  amrex::BCType::ext_dir};
 
-constexpr int temp_bc[] = {
-  amrex::BCType::int_dir,  amrex::BCType::ext_dir,  amrex::BCType::foextrap, amrex::BCType::reflect_even,
-  amrex::BCType::foextrap, amrex::BCType::foextrap, amrex::BCType::ext_dir,  amrex::BCType::ext_dir};
+constexpr int temp_bc[] = {amrex::BCType::int_dir,  amrex::BCType::ext_dir,
+                           amrex::BCType::foextrap, amrex::BCType::reflect_even,
+                           amrex::BCType::foextrap, amrex::BCType::foextrap,
+                           amrex::BCType::ext_dir,  amrex::BCType::ext_dir};
 
-constexpr int aux_bc[] = {
-  amrex::BCType::int_dir,  amrex::BCType::ext_dir,  amrex::BCType::foextrap, amrex::BCType::reflect_even,
-  amrex::BCType::foextrap, amrex::BCType::foextrap, amrex::BCType::ext_dir,  amrex::BCType::ext_dir};
+constexpr int aux_bc[] = {amrex::BCType::int_dir,  amrex::BCType::ext_dir,
+                          amrex::BCType::foextrap, amrex::BCType::reflect_even,
+                          amrex::BCType::foextrap, amrex::BCType::foextrap,
+                          amrex::BCType::ext_dir,  amrex::BCType::ext_dir};
 
-constexpr int divu_bc[] = {amrex::BCType::int_dir,      amrex::BCType::reflect_even,
-                           amrex::BCType::reflect_even, amrex::BCType::reflect_even,
-                           amrex::BCType::reflect_even, amrex::BCType::reflect_even,
-                           amrex::BCType::reflect_even,amrex::BCType::reflect_even};
+constexpr int divu_bc[] = {
+  amrex::BCType::int_dir,      amrex::BCType::reflect_even,
+  amrex::BCType::reflect_even, amrex::BCType::reflect_even,
+  amrex::BCType::reflect_even, amrex::BCType::reflect_even,
+  amrex::BCType::reflect_even, amrex::BCType::reflect_even};
 
 // Following incflo rather than IAMR here
-constexpr int force_bc[] = {
-  amrex::BCType::int_dir,  amrex::BCType::foextrap, amrex::BCType::foextrap, amrex::BCType::foextrap,
-  amrex::BCType::foextrap, amrex::BCType::foextrap, amrex::BCType::foextrap, amrex::BCType::foextrap};
+constexpr int force_bc[] = {amrex::BCType::int_dir,  amrex::BCType::foextrap,
+                            amrex::BCType::foextrap, amrex::BCType::foextrap,
+                            amrex::BCType::foextrap, amrex::BCType::foextrap,
+                            amrex::BCType::foextrap, amrex::BCType::foextrap};
 
 #ifdef PELE_USE_PLASMA
-constexpr int nE_bc[] = {amrex::BCType::int_dir,      amrex::BCType::ext_dir,
-                         amrex::BCType::foextrap,     amrex::BCType::reflect_even,
-                        amrex::BCType::reflect_even, amrex::BCType::reflect_even,
-                         amrex::BCType::ext_dir,      amrex::BCType::ext_dir};
+constexpr int nE_bc[] = {
+  amrex::BCType::int_dir,      amrex::BCType::ext_dir,
+  amrex::BCType::foextrap,     amrex::BCType::reflect_even,
+  amrex::BCType::reflect_even, amrex::BCType::reflect_even,
+  amrex::BCType::ext_dir,      amrex::BCType::ext_dir};
 
 constexpr int phiV_bc[] = {
   amrex::BCType::int_dir, amrex::BCType::ext_dir, amrex::BCType::reflect_even};
 #endif
 
 #ifdef PELE_USE_SOOT
-constexpr int soot_bc[] = {amrex::BCType::int_dir,      amrex::BCType::ext_dir,
-                           amrex::BCType::foextrap,     amrex::BCType::reflect_even,
-                           amrex::BCType::reflect_even, amrex::BCType::reflect_even,
-                           amrex::BCType::ext_dir,      amrex::BCType::ext_dir};
+constexpr int soot_bc[] = {
+  amrex::BCType::int_dir,      amrex::BCType::ext_dir,
+  amrex::BCType::foextrap,     amrex::BCType::reflect_even,
+  amrex::BCType::reflect_even, amrex::BCType::reflect_even,
+  amrex::BCType::ext_dir,      amrex::BCType::ext_dir};
 #endif
 
 amrex::InterpBase*
@@ -81,7 +92,7 @@ PeleLM::
 #ifdef AMREX_USE_EB
     // Get EB-aware interpolator when needed
     mapper = (EBFactory(0).isAllRegular()) ? &amrex::mf_cell_cons_interp
-      : &amrex::eb_mf_cell_cons_interp;
+                                           : &amrex::eb_mf_cell_cons_interp;
 #else
     mapper = &amrex::mf_cell_cons_interp;
 #endif
@@ -380,7 +391,10 @@ PeleLM::fillPatchReact(const int lev, const amrex::Real a_time, const int nGrow)
 // Fill the state
 void
 PeleLM::fillpatch_state(
-  const int lev, const amrex::Real a_time, amrex::MultiFab& a_state, const int nGhost)
+  const int lev,
+  const amrex::Real a_time,
+  amrex::MultiFab& a_state,
+  const int nGhost)
 {
   ProbParm const* lprobparm = prob_parm_d;
   auto const* lpmfdata = pmf_data.device_parm();
@@ -596,7 +610,10 @@ PeleLM::fillpatch_temp(
 // Fill the auxiliaries
 void
 PeleLM::fillpatch_aux(
-  const int lev, const amrex::Real a_time, amrex::MultiFab& a_aux, const int nGhost)
+  const int lev,
+  const amrex::Real a_time,
+  amrex::MultiFab& a_aux,
+  const int nGhost)
 {
 
   ProbParm const* lprobparm = prob_parm_d;
@@ -702,7 +719,10 @@ PeleLM::fillpatch_phiV(
 // Fill the divU
 void
 PeleLM::fillpatch_divu(
-  const int lev, const amrex::Real a_time, amrex::MultiFab& a_divu, const int nGhost)
+  const int lev,
+  const amrex::Real a_time,
+  amrex::MultiFab& a_divu,
+  const int nGhost)
 {
   if (lev == 0) {
     amrex::PhysBCFunct<amrex::GpuBndryFuncFab<PeleLMCCFillExtDirDummy>>
@@ -737,7 +757,10 @@ PeleLM::fillpatch_divu(
 // -> actually only modifies the ghost cells : fillBoundary, C/F interp,
 // foextrap on domain BCs
 void
-PeleLM::fillpatch_forces(const amrex::Real a_time, amrex::Vector<amrex::MultiFab*> const& a_force, const int nGrowForce)
+PeleLM::fillpatch_forces(
+  const amrex::Real a_time,
+  amrex::Vector<amrex::MultiFab*> const& a_force,
+  const int nGrowForce)
 {
   AMREX_ASSERT(a_force[0]->nComp() <= m_bcrec_force.size());
   const int nComp = a_force[0]->nComp();
@@ -769,7 +792,10 @@ PeleLM::fillpatch_forces(const amrex::Real a_time, amrex::Vector<amrex::MultiFab
 // Fill the gradp
 void
 PeleLM::fillpatch_gradp(
-  const int lev, const amrex::Real a_time, amrex::MultiFab& a_gp, const int nGhost)
+  const int lev,
+  const amrex::Real a_time,
+  amrex::MultiFab& a_gp,
+  const int nGhost)
 {
   if (lev == 0) {
     amrex::PhysBCFunct<amrex::GpuBndryFuncFab<PeleLMCCFillExtDirDummy>>
@@ -804,7 +830,10 @@ PeleLM::fillpatch_gradp(
 // Fill the reaction data
 void
 PeleLM::fillpatch_reaction(
-  const int lev, const amrex::Real a_time, amrex::MultiFab& a_I_R, const int nGhost)
+  const int lev,
+  const amrex::Real a_time,
+  amrex::MultiFab& a_I_R,
+  const int nGhost)
 {
   if (lev == 0) {
     amrex::PhysBCFunct<amrex::GpuBndryFuncFab<PeleLMCCFillExtDirDummy>>
@@ -835,7 +864,10 @@ PeleLM::fillpatch_reaction(
 // Fill functC
 void
 PeleLM::fillpatch_chemFunctCall(
-  const int lev, const amrex::Real a_time, amrex::MultiFab& a_fctC, const int nGhost)
+  const int lev,
+  const amrex::Real a_time,
+  amrex::MultiFab& a_fctC,
+  const int nGhost)
 {
   if (lev == 0) {
     amrex::PhysBCFunct<amrex::GpuBndryFuncFab<PeleLMCCFillExtDirDummy>>
@@ -867,7 +899,10 @@ PeleLM::fillpatch_chemFunctCall(
 // Fill the state
 void
 PeleLM::fillcoarsepatch_state(
-  const int lev, const amrex::Real a_time, amrex::MultiFab& a_state, const int nGhost)
+  const int lev,
+  const amrex::Real a_time,
+  amrex::MultiFab& a_state,
+  const int nGhost)
 {
   AMREX_ASSERT(lev > 0);
   ProbParm const* lprobparm = prob_parm_d;
@@ -904,7 +939,10 @@ PeleLM::fillcoarsepatch_state(
 // Fill the auxiliaries
 void
 PeleLM::fillcoarsepatch_aux(
-  const int lev, const amrex::Real a_time, amrex::MultiFab& a_aux, const int nGhost)
+  const int lev,
+  const amrex::Real a_time,
+  amrex::MultiFab& a_aux,
+  const int nGhost)
 {
   AMREX_ASSERT(lev > 0);
   ProbParm const* lprobparm = prob_parm_d;
@@ -935,7 +973,10 @@ PeleLM::fillcoarsepatch_aux(
 // Fill the grad P
 void
 PeleLM::fillcoarsepatch_gradp(
-  const int lev, const amrex::Real a_time, amrex::MultiFab& a_gp, const int nGhost)
+  const int lev,
+  const amrex::Real a_time,
+  amrex::MultiFab& a_gp,
+  const int nGhost)
 {
   // Interpolator
   auto* mapper = getInterpolator(m_regrid_interp_method);
@@ -955,7 +996,10 @@ PeleLM::fillcoarsepatch_gradp(
 // Fill the divu
 void
 PeleLM::fillcoarsepatch_divu(
-  const int lev, const amrex::Real a_time, amrex::MultiFab& a_divu, const int nGhost)
+  const int lev,
+  const amrex::Real a_time,
+  amrex::MultiFab& a_divu,
+  const int nGhost)
 {
   // Interpolator
   auto* mapper = getInterpolator(m_regrid_interp_method);
@@ -974,7 +1018,10 @@ PeleLM::fillcoarsepatch_divu(
 // Fill coarse patch of reaction
 void
 PeleLM::fillcoarsepatch_reaction(
-  const int lev, const amrex::Real a_time, amrex::MultiFab& a_I_R, const int nGhost)
+  const int lev,
+  const amrex::Real a_time,
+  amrex::MultiFab& a_I_R,
+  const int nGhost)
 {
   // Interpolator
   auto* mapper = getInterpolator(m_regrid_interp_method);
@@ -994,7 +1041,10 @@ PeleLM::fillcoarsepatch_reaction(
 // Fill coarse patch of chem function call
 void
 PeleLM::fillcoarsepatch_chemFunctCall(
-  const int lev, const amrex::Real a_time, amrex::MultiFab& a_fctC, const int nGhost)
+  const int lev,
+  const amrex::Real a_time,
+  amrex::MultiFab& a_fctC,
+  const int nGhost)
 {
   // Interpolator
   auto* mapper = getInterpolator(m_regrid_interp_method);
@@ -1014,7 +1064,8 @@ PeleLM::fillcoarsepatch_chemFunctCall(
 // Fill the inflow boundary of a velocity MF
 // used for velocity projection
 void
-PeleLM::setInflowBoundaryVel(amrex::MultiFab& a_vel, const int lev, const TimeStamp a_time)
+PeleLM::setInflowBoundaryVel(
+  amrex::MultiFab& a_vel, const int lev, const TimeStamp a_time)
 {
   BL_PROFILE("PeleLMeX::setInflowBoundaryVel()");
 
@@ -1057,7 +1108,11 @@ PeleLM::setInflowBoundaryVel(amrex::MultiFab& a_vel, const int lev, const TimeSt
 }
 
 void
-PeleLM::fillTurbInflow(amrex::MultiFab& a_vel, const int vel_comp, const int lev, const amrex::Real a_time)
+PeleLM::fillTurbInflow(
+  amrex::MultiFab& a_vel,
+  const int vel_comp,
+  const int lev,
+  const amrex::Real a_time)
 {
   if (turb_inflow.is_initialized()) {
 
@@ -1068,7 +1123,8 @@ PeleLM::fillTurbInflow(amrex::MultiFab& a_vel, const int vel_comp, const int lev
     auto velBCRec = fetchBCRecArray(VELX, AMREX_SPACEDIM);
 
     // Copy problem parameter structs to host
-    amrex::Gpu::copy(amrex::Gpu::deviceToHost, probparmDD, probparmDD + 1, probparmDH);
+    amrex::Gpu::copy(
+      amrex::Gpu::deviceToHost, probparmDD, probparmDD + 1, probparmDH);
 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
@@ -1080,47 +1136,56 @@ PeleLM::fillTurbInflow(amrex::MultiFab& a_vel, const int vel_comp, const int lev
 
       for (int dir = 0; dir < AMREX_SPACEDIM; ++dir) {
 
-        auto bndryBoxLO = amrex::Box(amrex::adjCellLo(geom[lev].Domain(), dir, 4) & bx);
-        if (velBCRec[0].lo()[dir] == amrex::BCType::ext_dir && bndryBoxLO.ok()) {
+        auto bndryBoxLO =
+          amrex::Box(amrex::adjCellLo(geom[lev].Domain(), dir, 4) & bx);
+        if (
+          velBCRec[0].lo()[dir] == amrex::BCType::ext_dir && bndryBoxLO.ok()) {
           // Create box with ghost cells and set them to zero
-	  amrex::IntVect growVect(amrex::IntVect::TheUnitVector());
+          amrex::IntVect growVect(amrex::IntVect::TheUnitVector());
           constexpr int Grow = 4; // Being conservative
           for (int n = 0; n < AMREX_SPACEDIM; ++n) {
             growVect[n] = Grow;
           }
           growVect[dir] = 0;
-	  amrex::Box modDom = geom[lev].Domain();
+          amrex::Box modDom = geom[lev].Domain();
           modDom.grow(growVect);
-          auto bndryBoxLO_ghost = amrex::Box(amrex::adjCellLo(modDom, dir, Grow) & bx);
+          auto bndryBoxLO_ghost =
+            amrex::Box(amrex::adjCellLo(modDom, dir, Grow) & bx);
           data.setVal<amrex::RunOn::Device>(
             0.0, bndryBoxLO_ghost, vel_comp, AMREX_SPACEDIM);
 
           turb_inflow.add_turb(
-			       bndryBoxLO, data, 0, geom[lev], a_time, dir, amrex::Orientation::low);
+            bndryBoxLO, data, 0, geom[lev], a_time, dir,
+            amrex::Orientation::low);
         }
 
-        auto bndryBoxHI = amrex::Box(amrex::adjCellHi(geom[lev].Domain(), dir, 4) & bx);
-        if (velBCRec[0].hi()[dir] == amrex::BCType::ext_dir && bndryBoxHI.ok()) {
+        auto bndryBoxHI =
+          amrex::Box(amrex::adjCellHi(geom[lev].Domain(), dir, 4) & bx);
+        if (
+          velBCRec[0].hi()[dir] == amrex::BCType::ext_dir && bndryBoxHI.ok()) {
           // Create box with ghost cells and set them to zero
-	  amrex::IntVect growVect(amrex::IntVect::TheUnitVector());
+          amrex::IntVect growVect(amrex::IntVect::TheUnitVector());
           constexpr int Grow = 4;
           for (int n = 0; n < AMREX_SPACEDIM; ++n) {
             growVect[n] = Grow;
           }
           growVect[dir] = 0;
-	  amrex::Box modDom = geom[lev].Domain();
+          amrex::Box modDom = geom[lev].Domain();
           modDom.grow(growVect);
-          auto bndryBoxHI_ghost = amrex::Box(amrex::adjCellHi(modDom, dir, Grow) & bx);
+          auto bndryBoxHI_ghost =
+            amrex::Box(amrex::adjCellHi(modDom, dir, Grow) & bx);
           data.setVal<amrex::RunOn::Device>(
             0.0, bndryBoxHI_ghost, vel_comp, AMREX_SPACEDIM);
 
           turb_inflow.add_turb(
-			       bndryBoxHI, data, 0, geom[lev], a_time, dir, amrex::Orientation::high);
+            bndryBoxHI, data, 0, geom[lev], a_time, dir,
+            amrex::Orientation::high);
         }
       }
     }
 
     // Copy problem parameter structs back to device
-    amrex::Gpu::copy(amrex::Gpu::hostToDevice, probparmDH, probparmDH + 1, probparmDD);
+    amrex::Gpu::copy(
+      amrex::Gpu::hostToDevice, probparmDH, probparmDH + 1, probparmDD);
   }
 }

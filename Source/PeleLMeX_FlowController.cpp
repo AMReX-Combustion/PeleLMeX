@@ -450,9 +450,9 @@ PeleLM::loadActiveControlHistory()
     if (m_ctrl_verbose != 0) {
       amrex::Print() << " AC history arrays: \n";
       for (long int n = 0; n < m_ctrl_time_pts.size(); ++n) {
-	amrex::Print() << "  [" << n << "] time: " << m_ctrl_time_pts[n]
-                << ", velo: " << m_ctrl_velo_pts[n]
-                << ", coft: " << m_ctrl_cntl_pts[n] << "\n";
+        amrex::Print() << "  [" << n << "] time: " << m_ctrl_time_pts[n]
+                       << ", velo: " << m_ctrl_velo_pts[n]
+                       << ", coft: " << m_ctrl_cntl_pts[n] << "\n";
       }
     }
   } else {

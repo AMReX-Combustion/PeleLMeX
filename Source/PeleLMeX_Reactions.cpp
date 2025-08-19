@@ -27,7 +27,8 @@ PeleLM::advanceChemistry(std::unique_ptr<AdvanceAdvData>& advData)
 // This advanceChemistry is called on the finest level
 // It works with the AmrCore BoxArray and do not involve ParallelCopy
 void
-PeleLM::advanceChemistry(const int lev, const amrex::Real a_dt, amrex::MultiFab& a_extForcing)
+PeleLM::advanceChemistry(
+  const int lev, const amrex::Real a_dt, amrex::MultiFab& a_extForcing)
 {
   BL_PROFILE("PeleLMeX::advanceChemistry_Lev" + std::to_string(lev) + "()");
 

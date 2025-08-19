@@ -423,7 +423,8 @@ PeleLM::getDiffusivity(
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
-  for (amrex::MFIter mfi(beta_cc, amrex::TilingIfNotGPU()); mfi.isValid(); ++mfi) {
+  for (amrex::MFIter mfi(beta_cc, amrex::TilingIfNotGPU()); mfi.isValid();
+       ++mfi) {
     for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
       const amrex::Box ebx = mfi.nodaltilebox(idim);
       const amrex::Box& edomain = amrex::surroundingNodes(domain, idim);

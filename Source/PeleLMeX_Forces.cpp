@@ -70,9 +70,7 @@ PeleLM::getVelForces(
   amrex::ParallelFor(
     *a_velForce,
     [state_ma, ext_ma, force_ma, gp_ma, divTau_ma, dx, add_gradP, has_divTau,
-     time, grav, gp0, ps_dir,
-     is_incomp, rho_incomp,
-     pseudo_gravity, dV_control
+     time, grav, gp0, ps_dir, is_incomp, rho_incomp, pseudo_gravity, dV_control
 #ifdef PELE_USE_PLASMA
      ,
      plasma_ba = grids[lev], zk = zk
@@ -224,7 +222,8 @@ PeleLM::addScalarVarianceSources(const TimeStamp a_timestamp)
       constexpr int do_avgDown = 0;
       auto bcRecScalar = fetchBCRecArray(var_of_scalar, 1);
       constexpr int nGrow = 0; // No need for ghost face on fluxes
-      amrex::Vector<amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>> grad_fc(finest_level + 1);
+      amrex::Vector<amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>> grad_fc(
+        finest_level + 1);
       for (int lev = 0; lev <= finest_level; ++lev) {
         const auto& ba = grids[lev];
         const auto& factory = Factory(lev);

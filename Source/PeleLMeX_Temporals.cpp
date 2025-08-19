@@ -449,8 +449,8 @@ PeleLM::addRhoYFluxes(
   for (int n = 0; n < NUM_SPECIES; ++n) {
     // Inner loop over dimensions
     for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
-      auto faceDomain =
-        amrex::convert(a_geom.Domain(), amrex::IntVect::TheDimensionVector(idim));
+      auto faceDomain = amrex::convert(
+        a_geom.Domain(), amrex::IntVect::TheDimensionVector(idim));
 
       auto const& fma = a_fluxes[idim]->const_arrays();
 
@@ -540,7 +540,8 @@ PeleLM::initBPatches(amrex::Geometry& a_geom)
     pp.get("patchnames", bpatch_name[n], n);
     m_bPatches[n] = std::make_unique<BPatch>(bpatch_name[n], a_geom);
     if (m_verbose > 0) {
-      amrex::Print() << " Initializing boundary patch: " << bpatch_name[n] << "\n";
+      amrex::Print() << " Initializing boundary patch: " << bpatch_name[n]
+                     << "\n";
     }
   }
 }

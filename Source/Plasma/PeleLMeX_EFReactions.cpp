@@ -2,7 +2,8 @@
 #include <PeleLMeX_EF_K.H>
 
 void
-PeleLM::computeInstantaneousReactionRateEF(const int lev, const TimeStamp a_time, amrex::MultiFab* a_I_R)
+PeleLM::computeInstantaneousReactionRateEF(
+  const int lev, const TimeStamp a_time, amrex::MultiFab* a_I_R)
 {
   auto ldata_p = getLevelDataPtr(lev, a_time);
 

@@ -25,16 +25,19 @@ PeleLM::initialProjection()
   if (m_incompressible == 0) {
     sigma.reserve(finest_level + 1);
     for (int lev = 0; lev <= finest_level; ++lev) {
-      sigma.emplace_back(std::make_unique<amrex::MultiFab>(grids[lev], dmap[lev], 1, nGhost, amrex::MFInfo(), *m_factory[lev]));
-      
+      sigma.emplace_back(
+        std::make_unique<amrex::MultiFab>(
+          grids[lev], dmap[lev], 1, nGhost, amrex::MFInfo(), *m_factory[lev]));
+
       auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
       auto state_ma = ldata_p->state.const_arrays();
       auto sigma_ma = sigma[lev]->arrays();
-      amrex::ParallelFor(ldata_p->state, [state_ma, sigma_ma] AMREX_GPU_DEVICE(
-									       int box_no, int i, int j, int k) noexcept {
-			   amrex::Array4<amrex::Real const> rho(state_ma[box_no], DENSITY);
-			   sigma_ma[box_no](i, j, k) = dummy_dt / rho(i, j, k);
-			 });
+      amrex::ParallelFor(
+        ldata_p->state, [state_ma, sigma_ma] AMREX_GPU_DEVICE(
+                          int box_no, int i, int j, int k) noexcept {
+          amrex::Array4<amrex::Real const> rho(state_ma[box_no], DENSITY);
+          sigma_ma[box_no](i, j, k) = dummy_dt / rho(i, j, k);
+        });
       amrex::Gpu::streamSynchronize();
 #if AMREX_SPACEDIM == 2
       if (geom[lev].IsRZ()) {
@@ -150,7 +153,7 @@ PeleLM::initialPressProjection()
 
       sigma.emplace_back(
         std::make_unique<amrex::MultiFab>(
-				   grids[lev], dmap[lev], 1, nGhost, amrex::MFInfo(), *m_factory[lev]));
+          grids[lev], dmap[lev], 1, nGhost, amrex::MFInfo(), *m_factory[lev]));
 
       auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
       auto state_ma = ldata_p->state.const_arrays();
@@ -175,7 +178,8 @@ PeleLM::initialPressProjection()
   vel.reserve(finest_level + 1);
   for (int lev = 0; lev <= finest_level; ++lev) {
     vel.emplace_back(
-      grids[lev], dmap[lev], AMREX_SPACEDIM, nGhost, amrex::MFInfo(), *m_factory[lev]);
+      grids[lev], dmap[lev], AMREX_SPACEDIM, nGhost, amrex::MFInfo(),
+      *m_factory[lev]);
     for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
       vel[lev].setVal(m_gravity[idim], idim, 1, 1);
     }
@@ -205,12 +209,14 @@ PeleLM::velocityProjection(
   // Get sigma : scaled density inv. if not incompressible
   amrex::Vector<std::unique_ptr<amrex::MultiFab>> sigma;
   if (m_incompressible == 0) {
-    amrex::Vector<std::unique_ptr<amrex::MultiFab>> rhoHalf = getDensityVect(a_rhoTime);
+    amrex::Vector<std::unique_ptr<amrex::MultiFab>> rhoHalf =
+      getDensityVect(a_rhoTime);
     sigma.reserve(finest_level + 1);
     for (int lev = 0; lev <= finest_level; ++lev) {
-      
+
       sigma.emplace_back(
-			 std::make_unique<amrex::MultiFab>(grids[lev], dmap[lev], 1, nGhost, amrex::MFInfo(), *m_factory[lev]));
+        std::make_unique<amrex::MultiFab>(
+          grids[lev], dmap[lev], 1, nGhost, amrex::MFInfo(), *m_factory[lev]));
 
       auto rhoHalf_ma = rhoHalf[lev]->const_arrays();
       auto sigma_ma = sigma[lev]->arrays();

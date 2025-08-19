@@ -237,7 +237,8 @@ PeleLM::checkDt(const TimeStamp a_time, const amrex::Real a_dt)
 
   for (int lev = 0; lev <= finest_level; ++lev) {
     auto* ldata_p = getLevelDataPtr(lev, a_time);
-    const amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> dxinv = geom[lev].InvCellSizeArray();
+    const amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> dxinv =
+      geom[lev].InvCellSizeArray();
 
     auto state_ma = ldata_p->state.const_arrays();
     auto divu_ma = ldata_p->divu.const_arrays();
@@ -248,7 +249,7 @@ PeleLM::checkDt(const TimeStamp a_time, const amrex::Real a_dt)
        dtfac = m_divu_dtFactor,
        rhoMin =
          m_divu_rhoMin] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
-	amrex::Array4<amrex::Real const> rho(state_ma[box_no], DENSITY);
+        amrex::Array4<amrex::Real const> rho(state_ma[box_no], DENSITY);
         amrex::Array4<amrex::Real const> vel(state_ma[box_no], VELX);
         amrex::Array4<amrex::Real const> divu = divu_ma[box_no];
         check_divu_dt(

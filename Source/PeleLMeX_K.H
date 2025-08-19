@@ -615,7 +615,7 @@ cen2edg_cpp(
   } else {
     for (int n = 0; n < ncomp; ++n) {
       efab(i, j, k, n) = 0.5 * (cfab(id_l[0], id_l[1], id_l[2], n) +
-                                   cfab(id_h[0], id_h[1], id_h[2], n));
+                                cfab(id_h[0], id_h[1], id_h[2], n));
     }
   }
 }

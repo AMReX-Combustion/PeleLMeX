@@ -108,10 +108,10 @@ PeleLM::estEFIonsDt(const TimeStamp a_time)
       auto const& uDrMax = driftVelMax_cc.array(mfi);
       amrex::ParallelFor(
         bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-	  amrex::Real maxVel = 0.0;
+          amrex::Real maxVel = 0.0;
           for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
             for (int n = 0; n < NUM_IONS; ++n) {
-	      amrex::Real ueff =
+              amrex::Real ueff =
                 vel(i, j, k, idim) + mob_cc(i, j, k, n) * efield(i, j, k, idim);
               maxVel = amrex::max(maxVel, std::abs(ueff));
             }

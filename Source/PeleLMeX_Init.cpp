@@ -303,7 +303,7 @@ PeleLM::initData()
         m_dt = -1.0;
         constexpr int is_init = 1;
         const amrex::Real dtInit = computeDt(is_init, AmrNewTime);
-        Print() << " Initial dt: " << dtInit << "\n";
+        amrex::Print() << " Initial dt: " << dtInit << "\n";
       }
 
       // Let's write the initial condition

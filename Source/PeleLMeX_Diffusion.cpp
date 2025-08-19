@@ -374,8 +374,10 @@ void
 PeleLM::correctIsothermalBoundary(
   const TimeStamp a_time,
   const amrex::Vector<amrex::MultiFab*>& a_spec_boundary,
-  const amrex::Vector<amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>>& a_wbarfluxes,
-  const amrex::Vector<amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>>& a_soretfluxes)
+  const amrex::Vector<amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>>&
+    a_wbarfluxes,
+  const amrex::Vector<amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>>&
+    a_soretfluxes)
 {
   BL_PROFILE("PeleLMeX::correctIsothermalBoundary()");
   auto bcRecSpec = fetchBCRecArray(FIRSTSPEC, NUM_SPECIES);
@@ -386,7 +388,8 @@ PeleLM::correctIsothermalBoundary(
   if (need_explicit_fluxes) { // need to fill the soret fluxes ourselves
     for (int lev = 0; lev <= finest_level; ++lev) {
       for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
-        soretfluxes[lev][idim] = new amrex::MultiFab(grids[lev], dmap[lev], NUM_SPECIES, 1, amrex::MFInfo(), Factory(lev));
+        soretfluxes[lev][idim] = new amrex::MultiFab(
+          grids[lev], dmap[lev], NUM_SPECIES, 1, amrex::MFInfo(), Factory(lev));
         soretfluxes[lev][idim]->setVal(0.0);
       }
     }
@@ -505,7 +508,8 @@ PeleLM::computeDifferentialDiffusionFluxes(
       amrex::MultiFab::Copy(
         spec_boundary[lev], ldata_p->state, FIRSTSPEC, 0, NUM_SPECIES, 1);
       for (int n = 0; n < NUM_SPECIES; ++n) {
-        amrex::MultiFab::Divide(spec_boundary[lev], ldata_p->state, DENSITY, n, 1, 1);
+        amrex::MultiFab::Divide(
+          spec_boundary[lev], ldata_p->state, DENSITY, n, 1, 1);
       }
     }
     // correct the boundary values, pass empty soret & wbar to trigger explicit
@@ -773,7 +777,8 @@ PeleLM::addWbarTerm(
 #pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
     {
-      for (amrex::MFIter mfi(*a_beta[lev], amrex::TilingIfNotGPU()); mfi.isValid(); ++mfi) {
+      for (amrex::MFIter mfi(*a_beta[lev], amrex::TilingIfNotGPU());
+           mfi.isValid(); ++mfi) {
         for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
 
           // Get edge centered rhoYs
@@ -900,7 +905,8 @@ PeleLM::addSoretTerm(
 #endif
     {
       amrex::FArrayBox T_ed;
-      for (amrex::MFIter mfi(*a_beta[lev], amrex::TilingIfNotGPU()); mfi.isValid(); ++mfi) {
+      for (amrex::MFIter mfi(*a_beta[lev], amrex::TilingIfNotGPU());
+           mfi.isValid(); ++mfi) {
         for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
 
           // Get edge centered rhoYs
@@ -1120,7 +1126,7 @@ PeleLM::differentialDiffusionUpdate(
       [state_ma, fY_ma, aux_ma, fAux_ma, dt = m_dt,
        nAux =
          m_nAux] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
-	amrex::Array4<amrex::Real const> rhoY(state_ma[box_no], FIRSTSPEC);
+        amrex::Array4<amrex::Real const> rhoY(state_ma[box_no], FIRSTSPEC);
         for (int n = 0; n < NUM_SPECIES; ++n) {
           fY_ma[box_no](i, j, k, n) *= dt;
           fY_ma[box_no](i, j, k, n) += rhoY(i, j, k, n);
@@ -1154,7 +1160,8 @@ PeleLM::differentialDiffusionUpdate(
       amrex::MultiFab::Copy(
         spec_boundary[lev], ldata_p->state, FIRSTSPEC, 0, NUM_SPECIES, 1);
       for (int n = 0; n < NUM_SPECIES; ++n) {
-	amrex::MultiFab::Divide(spec_boundary[lev], ldata_p->state, DENSITY, n, 1, 1);
+        amrex::MultiFab::Divide(
+          spec_boundary[lev], ldata_p->state, DENSITY, n, 1, 1);
       }
     }
     // correct boundary, we have lagged fluxes so lets use them
@@ -1321,7 +1328,7 @@ PeleLM::differentialDiffusionUpdate(
         [state_ma, dhat_ma, force_ma, dwbar_ma, dT_ma, aux_ma, dhat_aux_ma,
          force_aux_ma, nAux = m_nAux,
          dt = m_dt] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
-	  amrex::Array4<amrex::Real> rhoY(state_ma[box_no], FIRSTSPEC);
+          amrex::Array4<amrex::Real> rhoY(state_ma[box_no], FIRSTSPEC);
           for (int n = 0; n < NUM_SPECIES; ++n) {
             rhoY(i, j, k, n) =
               force_ma[box_no](i, j, k, n) +
@@ -1339,7 +1346,7 @@ PeleLM::differentialDiffusionUpdate(
         [state_ma, dhat_ma, force_ma, dwbar_ma, aux_ma, dhat_aux_ma,
          force_aux_ma, nAux = m_nAux,
          dt = m_dt] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
-	  amrex::Array4<amrex::Real> rhoY(state_ma[box_no], FIRSTSPEC);
+          amrex::Array4<amrex::Real> rhoY(state_ma[box_no], FIRSTSPEC);
           for (int n = 0; n < NUM_SPECIES; ++n) {
             rhoY(i, j, k, n) =
               force_ma[box_no](i, j, k, n) +
@@ -1356,7 +1363,7 @@ PeleLM::differentialDiffusionUpdate(
         [state_ma, dhat_ma, force_ma, dT_ma, aux_ma, dhat_aux_ma, force_aux_ma,
          nAux = m_nAux,
          dt = m_dt] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
-	  amrex::Array4<amrex::Real> rhoY(state_ma[box_no], FIRSTSPEC);
+          amrex::Array4<amrex::Real> rhoY(state_ma[box_no], FIRSTSPEC);
           for (int n = 0; n < NUM_SPECIES; ++n) {
             rhoY(i, j, k, n) =
               force_ma[box_no](i, j, k, n) +
@@ -1373,7 +1380,7 @@ PeleLM::differentialDiffusionUpdate(
         [state_ma, dhat_ma, force_ma, aux_ma, dhat_aux_ma, force_aux_ma,
          nAux = m_nAux,
          dt = m_dt] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
-	  amrex::Array4<amrex::Real> rhoY(state_ma[box_no], FIRSTSPEC);
+          amrex::Array4<amrex::Real> rhoY(state_ma[box_no], FIRSTSPEC);
           for (int n = 0; n < NUM_SPECIES; ++n) {
             rhoY(i, j, k, n) =
               force_ma[box_no](i, j, k, n) + dt * dhat_ma[box_no](i, j, k, n);
@@ -1580,17 +1587,18 @@ PeleLM::deltaTIter_prepare(
       [state_old_ma, state_new_ma, force_ma, dhat_ma, rhs_ma, rhocp_ma,
        tsave_ma, dtinv, leosparm,
        dt = m_dt] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
-	amrex::Array4<amrex::Real const> rhoH_o(state_old_ma[box_no], RHOH);
-	amrex::Array4<amrex::Real const> rhoH_n(state_new_ma[box_no], RHOH);
-	amrex::Array4<amrex::Real const> force(force_ma[box_no], NUM_SPECIES);
-	amrex::Array4<amrex::Real const> fourier(dhat_ma[box_no], NUM_SPECIES);
-	amrex::Array4<amrex::Real const> diffDiff(dhat_ma[box_no], NUM_SPECIES + 1);
+        amrex::Array4<amrex::Real const> rhoH_o(state_old_ma[box_no], RHOH);
+        amrex::Array4<amrex::Real const> rhoH_n(state_new_ma[box_no], RHOH);
+        amrex::Array4<amrex::Real const> force(force_ma[box_no], NUM_SPECIES);
+        amrex::Array4<amrex::Real const> fourier(dhat_ma[box_no], NUM_SPECIES);
+        amrex::Array4<amrex::Real const> diffDiff(
+          dhat_ma[box_no], NUM_SPECIES + 1);
         // Assemble deltaT RHS
         rhs_ma[box_no](i, j, k) =
           dt * ((rhoH_o(i, j, k) - rhoH_n(i, j, k)) * dtinv + force(i, j, k) +
                 fourier(i, j, k) + diffDiff(i, j, k));
 
-	amrex::Array4<amrex::Real const> rho(state_new_ma[box_no], DENSITY);
+        amrex::Array4<amrex::Real const> rho(state_new_ma[box_no], DENSITY);
         amrex::Array4<amrex::Real const> rhoY(state_new_ma[box_no], FIRSTSPEC);
         amrex::Array4<amrex::Real const> T(state_new_ma[box_no], TEMP);
         // Get \rho * Cp_{mix}
@@ -1754,7 +1762,8 @@ PeleLM::getScalarDiffForce(
        is_closed_ch = m_closed_chamber, nAux = m_nAux, aux_advect_d,
        aux_diffuse_d] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
         amrex::Array4<amrex::Real const> ddn(dn_ma[box_no], NUM_SPECIES + 1);
-        amrex::Array4<amrex::Real const> ddnp1(dnp1_ma[box_no], NUM_SPECIES + 1);
+        amrex::Array4<amrex::Real const> ddnp1(
+          dnp1_ma[box_no], NUM_SPECIES + 1);
         amrex::Array4<amrex::Real const> a(a_ma[box_no], FIRSTSPEC);
         amrex::Array4<amrex::Real const> extRhoY(ext_ma[box_no], FIRSTSPEC);
         amrex::Array4<amrex::Real const> extRhoH(ext_ma[box_no], RHOH);
@@ -1883,7 +1892,7 @@ PeleLM::getDiffusionTensorOpBC(
     } else {
       for (int dir = 0; dir < AMREX_SPACEDIM; ++dir) {
         auto amrexbc = (a_side == amrex::Orientation::low) ? a_bc[dir].lo(idim)
-                                                    : a_bc[dir].hi(idim);
+                                                           : a_bc[dir].hi(idim);
         if (amrexbc == amrex::BCType::ext_dir) {
           r[dir][idim] = amrex::LinOpBCType::Dirichlet;
         } else if (

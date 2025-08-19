@@ -65,7 +65,7 @@ PeleLM::clipSootMoments()
       SootData* sd = soot_model->getSootData_d();
       amrex::ParallelFor(
         gbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          amrex::GpuArray<Real, NUM_SOOT_MOMENTS + 1> moments;
+          amrex::GpuArray<amrex::Real, NUM_SOOT_MOMENTS + 1> moments;
           for (int mom = 0; mom < NUM_SOOT_MOMENTS + 1; ++mom) {
             moments[mom] = state_arr(i, j, k, mom);
           }

@@ -94,7 +94,8 @@ PeleLM::AdvanceDiffData::AdvanceDiffData(
   const int a_finestLevel,
   const amrex::Vector<amrex::BoxArray>& ba,
   const amrex::Vector<amrex::DistributionMapping>& dm,
-  const amrex::Vector<std::unique_ptr<amrex::FabFactory<amrex::FArrayBox>>>& factory,
+  const amrex::Vector<std::unique_ptr<amrex::FabFactory<amrex::FArrayBox>>>&
+    factory,
   const int nGrowAdv,
   const int a_use_wbar,
   const int a_use_soret,
@@ -105,12 +106,15 @@ PeleLM::AdvanceDiffData::AdvanceDiffData(
     Dnp1.reserve(a_finestLevel + 1);
     // Define MFs
     for (int lev = 0; lev <= a_finestLevel; ++lev) {
-      Dnp1.emplace_back(ba[lev], dm[lev], NUM_SPECIES + 2, nGrowAdv, amrex::MFInfo(), *factory[lev]);
+      Dnp1.emplace_back(
+        ba[lev], dm[lev], NUM_SPECIES + 2, nGrowAdv, amrex::MFInfo(),
+        *factory[lev]);
     }
     if (a_nAux > 0) {
       Dnp1_aux.reserve(a_finestLevel + 1);
       for (int lev = 0; lev <= a_finestLevel; ++lev) {
-        Dnp1_aux.emplace_back(ba[lev], dm[lev], a_nAux, nGrowAdv, amrex::MFInfo(), *factory[lev]);
+        Dnp1_aux.emplace_back(
+          ba[lev], dm[lev], a_nAux, nGrowAdv, amrex::MFInfo(), *factory[lev]);
       }
     }
   } else {
@@ -135,14 +139,18 @@ PeleLM::AdvanceDiffData::AdvanceDiffData(
     // Define MFs
     for (int lev = 0; lev <= a_finestLevel; ++lev) {
       Dn.emplace_back(
-		      ba[lev], dm[lev], NUM_SPECIES + 2, nGrowAdv, amrex::MFInfo(), *factory[lev]);
+        ba[lev], dm[lev], NUM_SPECIES + 2, nGrowAdv, amrex::MFInfo(),
+        *factory[lev]);
       Dnp1.emplace_back(
-			ba[lev], dm[lev], NUM_SPECIES + 2, nGrowAdv, amrex::MFInfo(), *factory[lev]);
+        ba[lev], dm[lev], NUM_SPECIES + 2, nGrowAdv, amrex::MFInfo(),
+        *factory[lev]);
       Dhat.emplace_back(
-			ba[lev], dm[lev], NUM_SPECIES + 2, nGrowAdv, amrex::MFInfo(), *factory[lev]);
+        ba[lev], dm[lev], NUM_SPECIES + 2, nGrowAdv, amrex::MFInfo(),
+        *factory[lev]);
       if (a_use_wbar != 0) {
         Dwbar.emplace_back(
-			   ba[lev], dm[lev], NUM_SPECIES, nGrowAdv, amrex::MFInfo(), *factory[lev]);
+          ba[lev], dm[lev], NUM_SPECIES, nGrowAdv, amrex::MFInfo(),
+          *factory[lev]);
         for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
           const amrex::BoxArray& faceba =
             amrex::convert(ba[lev], amrex::IntVect::TheDimensionVector(idim));
@@ -152,7 +160,8 @@ PeleLM::AdvanceDiffData::AdvanceDiffData(
       }
       if (a_use_soret != 0) {
         DT.emplace_back(
-			ba[lev], dm[lev], NUM_SPECIES, nGrowAdv, amrex::MFInfo(), *factory[lev]);
+          ba[lev], dm[lev], NUM_SPECIES, nGrowAdv, amrex::MFInfo(),
+          *factory[lev]);
         for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
           const amrex::BoxArray& faceba =
             amrex::convert(ba[lev], amrex::IntVect::TheDimensionVector(idim));
@@ -162,11 +171,11 @@ PeleLM::AdvanceDiffData::AdvanceDiffData(
       }
       if (a_nAux > 0) {
         Dn_aux.emplace_back(
-			    ba[lev], dm[lev], a_nAux, nGrowAdv, amrex::MFInfo(), *factory[lev]);
+          ba[lev], dm[lev], a_nAux, nGrowAdv, amrex::MFInfo(), *factory[lev]);
         Dnp1_aux.emplace_back(
-			      ba[lev], dm[lev], a_nAux, nGrowAdv, amrex::MFInfo(), *factory[lev]);
+          ba[lev], dm[lev], a_nAux, nGrowAdv, amrex::MFInfo(), *factory[lev]);
         Dhat_aux.emplace_back(
-			      ba[lev], dm[lev], a_nAux, nGrowAdv, amrex::MFInfo(), *factory[lev]);
+          ba[lev], dm[lev], a_nAux, nGrowAdv, amrex::MFInfo(), *factory[lev]);
       }
     }
   }
@@ -176,7 +185,8 @@ PeleLM::AdvanceAdvData::AdvanceAdvData(
   const int a_finestLevel,
   const amrex::Vector<amrex::BoxArray>& ba,
   const amrex::Vector<amrex::DistributionMapping>& dm,
-  const amrex::Vector<std::unique_ptr<amrex::FabFactory<amrex::FArrayBox>>>& factory,
+  const amrex::Vector<std::unique_ptr<amrex::FabFactory<amrex::FArrayBox>>>&
+    factory,
   const int a_incompressible,
   const int a_nAux,
   const int nGrowAdv,
@@ -212,9 +222,10 @@ PeleLM::AdvanceAdvData::AdvanceAdvData(
     }
     if (a_incompressible != 0) {
       AofS.emplace_back(
-			ba[lev], dm[lev], AMREX_SPACEDIM, 0, amrex::MFInfo(), *factory[lev]);
+        ba[lev], dm[lev], AMREX_SPACEDIM, 0, amrex::MFInfo(), *factory[lev]);
     } else {
-      AofS.emplace_back(ba[lev], dm[lev], NVAR, 0, amrex::MFInfo(), *factory[lev]);
+      AofS.emplace_back(
+        ba[lev], dm[lev], NVAR, 0, amrex::MFInfo(), *factory[lev]);
       chi.emplace_back(ba[lev], dm[lev], 1, 1, amrex::MFInfo(), *factory[lev]);
 #ifdef PELE_USE_PLASMA
       Forcing.emplace_back(

@@ -92,21 +92,21 @@ DiffusionOp::DiffusionOp(PeleLM* a_pelelm, const int ncomp)
 
 void
 DiffusionOp::diffuse_scalar(
-			    amrex::Vector<amrex::MultiFab*> const& a_phi,
-			    const int phi_comp,
-			    amrex::Vector<amrex::MultiFab const*> const& a_rhs,
-			    const int rhs_comp,
-			    amrex::Vector<amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>> const& a_flux,
-			    const int flux_comp,
-			    amrex::Vector<amrex::MultiFab const*> const& a_acoeff,
-			    amrex::Vector<amrex::MultiFab const*> const& a_density,
-			    amrex::Vector<amrex::MultiFab const*> const& a_bcoeff,
-			    const int bcoeff_comp,
-			    amrex::Vector<amrex::BCRec> a_bcrec,
-			    const int ncomp,
-			    const int isPoissonSolve,
-			    const amrex::Real a_dt,
-			    amrex::Vector<amrex::MultiFab const*> const& a_boundary)
+  amrex::Vector<amrex::MultiFab*> const& a_phi,
+  const int phi_comp,
+  amrex::Vector<amrex::MultiFab const*> const& a_rhs,
+  const int rhs_comp,
+  amrex::Vector<amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>> const& a_flux,
+  const int flux_comp,
+  amrex::Vector<amrex::MultiFab const*> const& a_acoeff,
+  amrex::Vector<amrex::MultiFab const*> const& a_density,
+  amrex::Vector<amrex::MultiFab const*> const& a_bcoeff,
+  const int bcoeff_comp,
+  amrex::Vector<amrex::BCRec> a_bcrec,
+  const int ncomp,
+  const int isPoissonSolve,
+  const amrex::Real a_dt,
+  amrex::Vector<amrex::MultiFab const*> const& a_boundary)
 {
   BL_PROFILE("DiffusionOp::diffuse_scalar()");
 
@@ -291,13 +291,13 @@ DiffusionOp::diffuse_scalar(
       auto phi_ma = phi[lev].const_arrays();
       auto a_rho_ma = a_density[lev]->const_arrays();
       amrex::ParallelFor(
-			 phi[lev], [a_phi_ma, a_rho_ma, phi_ma, ncomp] AMREX_GPU_DEVICE(
-											int box_no, int i, int j, int k) noexcept {
-			   for (int n = 0; n < ncomp; ++n) {
-			     a_phi_ma[box_no](i, j, k, n) =
-			       phi_ma[box_no](i, j, k, n) * a_rho_ma[box_no](i, j, k);
-			   }
-			 });
+        phi[lev], [a_phi_ma, a_rho_ma, phi_ma, ncomp] AMREX_GPU_DEVICE(
+                    int box_no, int i, int j, int k) noexcept {
+          for (int n = 0; n < ncomp; ++n) {
+            a_phi_ma[box_no](i, j, k, n) =
+              phi_ma[box_no](i, j, k, n) * a_rho_ma[box_no](i, j, k);
+          }
+        });
     }
     amrex::Gpu::streamSynchronize();
   }
@@ -306,25 +306,25 @@ DiffusionOp::diffuse_scalar(
 #ifdef AMREX_USE_EB
 void
 DiffusionOp::diffuse_scalar(
-			    amrex::Vector<amrex::MultiFab*> const& a_phi,
-			    const int phi_comp,
-			    amrex::Vector<amrex::MultiFab const*> const& a_phiEB,
-			    const int /*phiEB_comp*/,
-			    amrex::Vector<amrex::MultiFab const*> const& a_rhs,
-			    const int rhs_comp,
-			    amrex::Vector<amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>> const& a_flux,
-			    const int flux_comp,
-			    amrex::Vector<amrex::MultiFab const*> const& a_acoeff,
-			    amrex::Vector<amrex::MultiFab const*> const& a_density,
-			    amrex::Vector<amrex::MultiFab const*> const& a_bcoeff,
-			    const int bcoeff_comp,
-			    amrex::Vector<amrex::MultiFab const*> const& a_bcoeffEB,
-			    const int /*bcoeffEB_comp*/,
-			    amrex::Vector<amrex::BCRec> a_bcrec,
-			    const int ncomp,
-			    const int isPoissonSolve,
-			    const amrex::Real a_dt,
-			    amrex::Vector<amrex::MultiFab const*> const& a_boundary)
+  amrex::Vector<amrex::MultiFab*> const& a_phi,
+  const int phi_comp,
+  amrex::Vector<amrex::MultiFab const*> const& a_phiEB,
+  const int /*phiEB_comp*/,
+  amrex::Vector<amrex::MultiFab const*> const& a_rhs,
+  const int rhs_comp,
+  amrex::Vector<amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>> const& a_flux,
+  const int flux_comp,
+  amrex::Vector<amrex::MultiFab const*> const& a_acoeff,
+  amrex::Vector<amrex::MultiFab const*> const& a_density,
+  amrex::Vector<amrex::MultiFab const*> const& a_bcoeff,
+  const int bcoeff_comp,
+  amrex::Vector<amrex::MultiFab const*> const& a_bcoeffEB,
+  const int /*bcoeffEB_comp*/,
+  amrex::Vector<amrex::BCRec> a_bcrec,
+  const int ncomp,
+  const int isPoissonSolve,
+  const amrex::Real a_dt,
+  amrex::Vector<amrex::MultiFab const*> const& a_boundary)
 {
   BL_PROFILE("DiffusionOp::diffuse_scalar()");
 
@@ -516,14 +516,14 @@ DiffusionOp::diffuse_scalar(
 
 void
 DiffusionOp::computeDiffLap(
-			    amrex::Vector<amrex::MultiFab*> const& a_laps,
-			    const int lap_comp,
-			    amrex::Vector<amrex::MultiFab const*> const& a_phi,
-			    const int phi_comp,
-			    amrex::Vector<amrex::MultiFab const*> const& a_bcoeff,
-			    const int bcoeff_comp,
-			    amrex::Vector<amrex::BCRec> a_bcrec,
-			    const int ncomp)
+  amrex::Vector<amrex::MultiFab*> const& a_laps,
+  const int lap_comp,
+  amrex::Vector<amrex::MultiFab const*> const& a_phi,
+  const int phi_comp,
+  amrex::Vector<amrex::MultiFab const*> const& a_bcoeff,
+  const int bcoeff_comp,
+  amrex::Vector<amrex::BCRec> a_bcrec,
+  const int ncomp)
 {
   BL_PROFILE("DiffusionOp::computeDiffLap()");
 
@@ -590,17 +590,17 @@ DiffusionOp::computeDiffLap(
 
 void
 DiffusionOp::computeDiffFluxes(
-			       amrex::Vector<amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>> const& a_flux,
-			       const int flux_comp,
-			       amrex::Vector<amrex::MultiFab const*> const& a_phi,
-			       const int phi_comp,
-			       amrex::Vector<amrex::MultiFab const*> const& a_density,
-			       amrex::Vector<amrex::MultiFab const*> const& a_bcoeff,
-			       const int bcoeff_comp,
-			       amrex::Vector<amrex::BCRec> a_bcrec,
-			       const int ncomp,
-			       const int do_avgDown,
-			       amrex::Vector<amrex::MultiFab const*> const& a_boundary)
+  amrex::Vector<amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>> const& a_flux,
+  const int flux_comp,
+  amrex::Vector<amrex::MultiFab const*> const& a_phi,
+  const int phi_comp,
+  amrex::Vector<amrex::MultiFab const*> const& a_density,
+  amrex::Vector<amrex::MultiFab const*> const& a_bcoeff,
+  const int bcoeff_comp,
+  amrex::Vector<amrex::BCRec> a_bcrec,
+  const int ncomp,
+  const int do_avgDown,
+  amrex::Vector<amrex::MultiFab const*> const& a_boundary)
 {
   BL_PROFILE("DiffusionOp::computeDiffFluxes()");
 
@@ -729,21 +729,21 @@ DiffusionOp::computeDiffFluxes(
 #ifdef AMREX_USE_EB
 void
 DiffusionOp::computeDiffFluxes(
-			      amrex::Vector<amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>> const& a_flux,
-			      const int flux_comp,
-			      amrex::Vector<amrex::MultiFab*> const& a_EBflux,
-			      const int ebflux_comp,
-			      amrex::Vector<amrex::MultiFab const*> const& a_phi,
-			      const int phi_comp,
-			      amrex::Vector<amrex::MultiFab const*> const& a_density,
-			      amrex::Vector<amrex::MultiFab const*> const& a_bcoeff,
-			      const int bcoeff_comp,
-			      amrex::Vector<amrex::MultiFab const*> const& a_EBvalue,
-			      amrex::Vector<amrex::MultiFab const*> const& a_EBbcoeff,
-			      amrex::Vector<amrex::BCRec> a_bcrec,
-			      const int ncomp,
-			      const int do_avgDown,
-			      amrex::Vector<amrex::MultiFab const*> const& a_boundary)
+  amrex::Vector<amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>> const& a_flux,
+  const int flux_comp,
+  amrex::Vector<amrex::MultiFab*> const& a_EBflux,
+  const int ebflux_comp,
+  amrex::Vector<amrex::MultiFab const*> const& a_phi,
+  const int phi_comp,
+  amrex::Vector<amrex::MultiFab const*> const& a_density,
+  amrex::Vector<amrex::MultiFab const*> const& a_bcoeff,
+  const int bcoeff_comp,
+  amrex::Vector<amrex::MultiFab const*> const& a_EBvalue,
+  amrex::Vector<amrex::MultiFab const*> const& a_EBbcoeff,
+  amrex::Vector<amrex::BCRec> a_bcrec,
+  const int ncomp,
+  const int do_avgDown,
+  amrex::Vector<amrex::MultiFab const*> const& a_boundary)
 {
   BL_PROFILE("DiffusionOp::computeDiffFluxes()");
 
@@ -951,8 +951,8 @@ DiffusionOp::avgDownFluxes(
     amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM> flux_fine;
     amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM> flux_crse;
     for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
-      flux_fine[idim] =
-        new amrex::MultiFab(*a_fluxes[lev][idim], amrex::make_alias, flux_comp, ncomp);
+      flux_fine[idim] = new amrex::MultiFab(
+        *a_fluxes[lev][idim], amrex::make_alias, flux_comp, ncomp);
       flux_crse[idim] = new amrex::MultiFab(
         *a_fluxes[lev - 1][idim], amrex::make_alias, flux_comp, ncomp);
     }
@@ -1099,12 +1099,12 @@ DiffusionTensorOp::computeGradientTensor(
 
 void
 DiffusionTensorOp::compute_divtau(
-				  amrex::Vector<amrex::MultiFab*> const& a_divtau,
-				  amrex::Vector<amrex::MultiFab const*> const& a_vel,
-				  amrex::Vector<amrex::MultiFab const*> const& a_density,
-				  amrex::Vector<amrex::MultiFab const*> const& a_beta,
-				  const amrex::BCRec& a_bcrec,
-				  const amrex::Real scale)
+  amrex::Vector<amrex::MultiFab*> const& a_divtau,
+  amrex::Vector<amrex::MultiFab const*> const& a_vel,
+  amrex::Vector<amrex::MultiFab const*> const& a_density,
+  amrex::Vector<amrex::MultiFab const*> const& a_beta,
+  const amrex::BCRec& a_bcrec,
+  const amrex::Real scale)
 {
   const int finest_level = m_pelelm->finestLevel();
 
@@ -1137,8 +1137,9 @@ DiffusionTensorOp::compute_divtau(
     }
     constexpr int doZeroVisc = 0;
     constexpr int addTurbContrib = 1;
-    amrex::Array<amrex::MultiFab, AMREX_SPACEDIM> beta_ec = m_pelelm->getDiffusivity(
-      lev, 0, 1, doZeroVisc, {a_bcrec}, *a_beta[lev], addTurbContrib);
+    amrex::Array<amrex::MultiFab, AMREX_SPACEDIM> beta_ec =
+      m_pelelm->getDiffusivity(
+        lev, 0, 1, doZeroVisc, {a_bcrec}, *a_beta[lev], addTurbContrib);
     m_apply_op->setShearViscosity(
       lev, GetArrOfConstPtrs(beta_ec), amrex::MLMG::Location::FaceCentroid);
     if (m_pelelm->m_useEBinflow != 0) {
@@ -1170,8 +1171,9 @@ DiffusionTensorOp::compute_divtau(
     }
     constexpr int doZeroVisc = 0;
     constexpr int addTurbContrib = 1;
-    amrex::Array<amrex::MultiFab, AMREX_SPACEDIM> beta_ec = m_pelelm->getDiffusivity(
-								       lev, 0, 1, doZeroVisc, {a_bcrec}, *a_beta[lev], addTurbContrib);
+    amrex::Array<amrex::MultiFab, AMREX_SPACEDIM> beta_ec =
+      m_pelelm->getDiffusivity(
+        lev, 0, 1, doZeroVisc, {a_bcrec}, *a_beta[lev], addTurbContrib);
     m_apply_op->setShearViscosity(lev, GetArrOfConstPtrs(beta_ec));
     m_apply_op->setLevelBC(lev, &vel[lev]);
   }
@@ -1185,11 +1187,12 @@ DiffusionTensorOp::compute_divtau(
       auto divtau_ma = a_divtau[lev]->arrays();
       auto rho_ma = a_density[lev]->const_arrays();
       amrex::ParallelFor(
-			 *a_divtau[lev], [divtau_ma, rho_ma] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
-			   for (int n = 0; n < AMREX_SPACEDIM; ++n) {
-			     divtau_ma[box_no](i, j, k, n) /= rho_ma[box_no](i, j, k);
-			   }
-			 });
+        *a_divtau[lev], [divtau_ma, rho_ma] AMREX_GPU_DEVICE(
+                          int box_no, int i, int j, int k) noexcept {
+          for (int n = 0; n < AMREX_SPACEDIM; ++n) {
+            divtau_ma[box_no](i, j, k, n) /= rho_ma[box_no](i, j, k);
+          }
+        });
     }
     amrex::Gpu::streamSynchronize();
   }
@@ -1197,11 +1200,11 @@ DiffusionTensorOp::compute_divtau(
 
 void
 DiffusionTensorOp::diffuse_velocity(
-				    amrex::Vector<amrex::MultiFab*> const& a_vel,
-				    amrex::Vector<amrex::MultiFab const*> const& a_density,
-				    amrex::Vector<amrex::MultiFab const*> const& a_beta,
-				    const amrex::BCRec& a_bcrec,
-				    const amrex::Real a_dt)
+  amrex::Vector<amrex::MultiFab*> const& a_vel,
+  amrex::Vector<amrex::MultiFab const*> const& a_density,
+  amrex::Vector<amrex::MultiFab const*> const& a_beta,
+  const amrex::BCRec& a_bcrec,
+  const amrex::Real a_dt)
 {
 
   const int finest_level = m_pelelm->finestLevel();
@@ -1221,8 +1224,9 @@ DiffusionTensorOp::diffuse_velocity(
     }
     constexpr int doZeroVisc = 0;
     constexpr int addTurbContrib = 1;
-    amrex::Array<amrex::MultiFab, AMREX_SPACEDIM> beta_ec = m_pelelm->getDiffusivity(
-      lev, 0, 1, doZeroVisc, {a_bcrec}, *a_beta[lev], addTurbContrib);
+    amrex::Array<amrex::MultiFab, AMREX_SPACEDIM> beta_ec =
+      m_pelelm->getDiffusivity(
+        lev, 0, 1, doZeroVisc, {a_bcrec}, *a_beta[lev], addTurbContrib);
 #ifdef AMREX_USE_EB
     m_solve_op->setShearViscosity(
       lev, GetArrOfConstPtrs(beta_ec), amrex::MLMG::Location::FaceCentroid);

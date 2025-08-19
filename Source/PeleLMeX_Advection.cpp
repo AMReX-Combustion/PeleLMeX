@@ -166,7 +166,8 @@ PeleLM::computeVelocityAdvTerm(std::unique_ptr<AdvanceAdvData>& advData)
     //----------------------------------------------------------------
     // Use a temporary MF to hold divergence before redistribution
     constexpr int nGrow_divT = 3;
-    amrex::MultiFab divTmp(grids[lev], dmap[lev], AMREX_SPACEDIM, nGrow_divT, amrex::MFInfo(),
+    amrex::MultiFab divTmp(
+      grids[lev], dmap[lev], AMREX_SPACEDIM, nGrow_divT, amrex::MFInfo(),
       EBFactory(lev));
     divTmp.setVal(0.0);
     if (m_useEBinflow != 0) {
@@ -290,7 +291,7 @@ PeleLM::getScalarAdvForce(
        is_closed_ch = m_closed_chamber,
        do_react =
          m_do_react] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
-	amrex::Array4<const amrex::Real> rho(state_ma[box_no], DENSITY);
+        amrex::Array4<const amrex::Real> rho(state_ma[box_no], DENSITY);
         amrex::Array4<const amrex::Real> rhoY(state_ma[box_no], FIRSTSPEC);
         amrex::Array4<const amrex::Real> T(state_ma[box_no], TEMP);
         amrex::Array4<const amrex::Real> dn(dn_ma[box_no], 0);
@@ -800,9 +801,10 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
     for (int lev = 0; lev <= finest_level; ++lev) {
       for (int n = 0; n < NUM_IONS; ++n) {
         const int spec_idx = NUM_SPECIES - NUM_IONS + n;
-	amrex::Array<std::unique_ptr<amrex::MultiFab>, AMREX_SPACEDIM> ionFlux;
+        amrex::Array<std::unique_ptr<amrex::MultiFab>, AMREX_SPACEDIM> ionFlux;
         for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
-          ionFlux[idim].reset(new amrex::MultiFab(fluxes[lev][idim], amrex::make_alias, spec_idx, 1));
+          ionFlux[idim].reset(new amrex::MultiFab(
+            fluxes[lev][idim], amrex::make_alias, spec_idx, 1));
         }
         average_face_to_cellcenter(
           *m_ionsFluxes[lev], n * AMREX_SPACEDIM, GetArrOfConstPtrs(ionFlux));
@@ -1078,7 +1080,9 @@ PeleLM::computePassiveAdvTerms(
     //----------------------------------------------------------------
     // Use a temporary MF to hold divergence before redistribution
     constexpr int nGrow_divTmp = 3;
-    amrex::MultiFab divTmp(grids[lev], dmap[lev], ncomp, nGrow_divTmp, amrex::MFInfo(), EBFactory(lev));
+    amrex::MultiFab divTmp(
+      grids[lev], dmap[lev], ncomp, nGrow_divTmp, amrex::MFInfo(),
+      EBFactory(lev));
     divTmp.setVal(0.0);
     advFluxDivergence(
       lev, divTmp, 0, divu, GetArrOfConstPtrs(fluxes[lev]), 0,

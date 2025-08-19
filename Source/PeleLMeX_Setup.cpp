@@ -387,14 +387,16 @@ PeleLM::readParameters()
         amrex::Print() << "Spark " << n << " name: " << m_spark[n] << "\n";
         amrex::Print() << "Spark " << n << " time: " << m_spark_time[n] << "\n";
         amrex::Print() << "Spark " << n << " duration: " << m_spark_duration[n]
-                << "\n";
+                       << "\n";
         amrex::Print() << "Spark " << n << " location: ";
         for (int d = 0; d < AMREX_SPACEDIM; ++d) {
           amrex::Print() << m_spark_location[n][d] << " ";
         }
         amrex::Print() << "\n";
-        amrex::Print() << "Spark " << n << " temperature: " << m_spark_temp[n] << "\n";
-        amrex::Print() << "Spark " << n << " radius: " << m_spark_radius[n] << "\n";
+        amrex::Print() << "Spark " << n << " temperature: " << m_spark_temp[n]
+                       << "\n";
+        amrex::Print() << "Spark " << n << " radius: " << m_spark_radius[n]
+                       << "\n";
       }
     }
   }
@@ -998,8 +1000,8 @@ PeleLM::variablesSetup()
   }
   if (m_nAux > 0) {
     for (int n = 0; n < m_nAux; ++n) {
-      amrex::Print() << " Auxiliary " + std::to_string(n + 1) + ": " << m_aux_names[n]
-              << "\n";
+      amrex::Print() << " Auxiliary " + std::to_string(n + 1) + ": "
+                     << m_aux_names[n] << "\n";
       amrex::Print() << "   Advective: " << m_aux_advect[n] << "\n";
       amrex::Print() << "   Conservative: " << m_AdvTypeAux[n] << "\n";
       amrex::Print() << "   Diffusive: " << m_DiffTypeAux[n];

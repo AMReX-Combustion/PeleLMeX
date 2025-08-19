@@ -218,7 +218,10 @@ PeleLM::implicitNonLinearSolve(
 }
 
 int
-PeleLM::testExitNewton(const int newtonIter, const amrex::Real max_res, const amrex::Real norm_NewtonDir)
+PeleLM::testExitNewton(
+  const int newtonIter,
+  const amrex::Real max_res,
+  const amrex::Real norm_NewtonDir)
 {
   int exit = 0;
   if (max_res <= m_ef_newtonTol || norm_NewtonDir <= 1e-11) {
@@ -347,9 +350,10 @@ PeleLM::incrementElectronForcing(
 }
 
 void
-PeleLM::computeBGcharge(const amrex::Real a_time,
-			std::unique_ptr<AdvanceDiffData>& diffData,
-			std::unique_ptr<AdvanceAdvData>& advData)
+PeleLM::computeBGcharge(
+  const amrex::Real a_time,
+  std::unique_ptr<AdvanceDiffData>& diffData,
+  std::unique_ptr<AdvanceAdvData>& advData)
 {
   // Get integration dt
   amrex::Real dt_int = a_time - getTime(0, AmrOldTime);
@@ -379,7 +383,7 @@ PeleLM::computeBGcharge(const amrex::Real a_time,
         bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           charge(i, j, k) = 0.0;
           for (int n = 0; n < NUM_SPECIES; ++n) {
-	    amrex::Real rhoYprov =
+            amrex::Real rhoYprov =
               rhoYold(i, j, k, n) +
               dt_int * (adv_arr(i, j, k, n) +
                         0.5 * (dn_arr(i, j, k, n) - dnp1_arr(i, j, k, n)) +
@@ -395,11 +399,11 @@ PeleLM::computeBGcharge(const amrex::Real a_time,
 
 void
 PeleLM::nonLinearResidual(
-			  const amrex::Real a_dt,
-			  const amrex::Vector<amrex::MultiFab*>& a_nlstate,
-			  const amrex::Vector<amrex::MultiFab*>& a_nlresid,
-			  const int updateScaling,
-			  const int updatePrecond)
+  const amrex::Real a_dt,
+  const amrex::Vector<amrex::MultiFab*>& a_nlstate,
+  const amrex::Vector<amrex::MultiFab*>& a_nlresid,
+  const int updateScaling,
+  const int updatePrecond)
 {
   // Get unscaled copy of the NL state
   amrex::Vector<amrex::MultiFab> nE(finest_level + 1);
@@ -423,7 +427,8 @@ PeleLM::nonLinearResidual(
   amrex::Vector<amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>> gradPhiVCur(
     finest_level + 1);
   for (int lev = 0; lev <= finest_level; ++lev) {
-    laplacian[lev].define(grids[lev], dmap[lev], 1, 0, amrex::MFInfo(), Factory(lev));
+    laplacian[lev].define(
+      grids[lev], dmap[lev], 1, 0, amrex::MFInfo(), Factory(lev));
     for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
       const auto& fba =
         amrex::convert(grids[lev], amrex::IntVect::TheDimensionVector(idim));
@@ -877,7 +882,8 @@ PeleLM::getAdvectionFluxes(
 }
 
 void
-PeleLM::setUpPrecond(const amrex::Real a_dt, const amrex::Vector<const amrex::MultiFab*>& a_nE)
+PeleLM::setUpPrecond(
+  const amrex::Real a_dt, const amrex::Vector<const amrex::MultiFab*>& a_nE)
 {
   BL_PROFILE("PeleLMeX::setUpPrecond()");
 
@@ -998,8 +1004,10 @@ PeleLM::setUpPrecond(const amrex::Real a_dt, const amrex::Vector<const amrex::Mu
       getPrecondOp()->setStildaOpBCoeff(lev, GetArrOfConstPtrs(neKe_ec));
     } else if (m_ef_PC_approx == 2) { // Assuming inverse of the diag of DiffOp
       // Upwinded Schur edge neKe values
-      amrex::Array<amrex::MultiFab, AMREX_SPACEDIM> Schur_neKe_ec = getUpwindedEdge(
-        lev, 0, 1, bcRecnE, Schur_nEKe, GetArrOfConstPtrs(ldataNLs_p->uEffnE));
+      amrex::Array<amrex::MultiFab, AMREX_SPACEDIM> Schur_neKe_ec =
+        getUpwindedEdge(
+          lev, 0, 1, bcRecnE, Schur_nEKe,
+          GetArrOfConstPtrs(ldataNLs_p->uEffnE));
       amrex::Real scalLap = eps0 * epsr / elemCharge;
       for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
         Schur_neKe_ec[idim].plus(scalLap, 0, 1);

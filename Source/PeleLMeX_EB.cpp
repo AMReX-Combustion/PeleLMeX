@@ -821,9 +821,10 @@ PeleLM::checkEBInflowFunctions()
       "function");
   }
   if (m_verbose != 0 && m_useEBinflow != 0) {
-    amrex::Print() << "WARNING: EB-inflow capability is experimental. Scalar "
-               "diffusion is not supported at these boundaries and future "
-               "interface changes are possible!\n";
+    amrex::Print()
+      << "WARNING: EB-inflow capability is experimental. Scalar "
+         "diffusion is not supported at these boundaries and future "
+         "interface changes are possible!\n";
   }
 }
 #endif

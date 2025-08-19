@@ -233,7 +233,8 @@ PeleLM::setTemperature(const int lev, const TimeStamp a_time)
 }
 
 void
-PeleLM::calc_dPdt(const TimeStamp a_time, const amrex::Vector<amrex::MultiFab*>& a_dPdt)
+PeleLM::calc_dPdt(
+  const TimeStamp a_time, const amrex::Vector<amrex::MultiFab*>& a_dPdt)
 {
   BL_PROFILE("PeleLMeX::calc_dPdt()");
 
@@ -253,7 +254,8 @@ PeleLM::calc_dPdt(const TimeStamp a_time, const amrex::Vector<amrex::MultiFab*>&
 }
 
 void
-PeleLM::calc_dPdt(const int lev, const TimeStamp a_time, amrex::MultiFab* a_dPdt)
+PeleLM::calc_dPdt(
+  const int lev, const TimeStamp a_time, amrex::MultiFab* a_dPdt)
 {
   auto const& sma = getLevelDataPtr(lev, a_time)->state.arrays();
   auto const& dPdtma = a_dPdt->arrays();
@@ -347,10 +349,10 @@ PeleLM::adjustPandDivU(std::unique_ptr<AdvanceAdvData>& advData)
   amrex::Gpu::streamSynchronize();
 
   if (m_verbose > 2) {
-    amrex::Print() << " >> Closed chamber pOld: " << m_pOld << ", pNew: " << m_pNew
-            << ", dp0dt: " << m_dp0dt << "\n";
+    amrex::Print() << " >> Closed chamber pOld: " << m_pOld
+                   << ", pNew: " << m_pNew << ", dp0dt: " << m_dp0dt << "\n";
     amrex::Print() << " >> Total mass old: " << m_massOld
-            << ", mass new: " << m_massNew << "\n";
+                   << ", mass new: " << m_massNew << "\n";
   }
 
   // Return Sbar so that we'll add it back to mac_divu after the MAC projection

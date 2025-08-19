@@ -38,8 +38,8 @@ writeBuildInfo()
   std::cout << "\n";
 
   for (int n = 1; n <= amrex::buildInfoGetNumModules(); ++n) {
-    std::cout << amrex::buildInfoGetModuleName(n) << ": " << amrex::buildInfoGetModuleVal(n)
-              << "\n";
+    std::cout << amrex::buildInfoGetModuleName(n) << ": "
+              << amrex::buildInfoGetModuleVal(n) << "\n";
   }
 
   std::cout << "\n";
@@ -782,9 +782,9 @@ PeleLM::floorSpecies(const TimeStamp a_time)
           amrex::Array4<amrex::Real>(sma[box_no], NE));
 #endif
         // Update density and RhoH accordingly ...
-	amrex::Real massfrac[NUM_SPECIES] = {0.0};
-	amrex::Real massdens[NUM_SPECIES] = {0.0};
-	amrex::Real rhoinv, h_cgs = 0.0;
+        amrex::Real massfrac[NUM_SPECIES] = {0.0};
+        amrex::Real massdens[NUM_SPECIES] = {0.0};
+        amrex::Real rhoinv, h_cgs = 0.0;
         for (int n = 0; n < NUM_SPECIES; ++n) {
           massdens[n] = sma[box_no](i, j, k, FIRSTSPEC + n);
         }
@@ -1566,19 +1566,22 @@ PeleLM::setTypicalValues(const TimeStamp a_time, const int is_init)
         spec_names, &(eos_parms.host_parm()));
       for (int n = 0; n < NUM_SPECIES; ++n) {
         amrex::Print() << "\tY_" << spec_names[n]
-                << std::setw(
-                     amrex::max(0, static_cast<int>(8 - spec_names[n].length())))
-                << std::left << ":" << typical_values[FIRSTSPEC + n] << '\n';
+                       << std::setw(
+                            amrex::max(
+                              0, static_cast<int>(8 - spec_names[n].length())))
+                       << std::left << ":" << typical_values[FIRSTSPEC + n]
+                       << '\n';
       }
 #ifdef PELE_USE_PLASMA
       amrex::Print() << "\tnE:       " << typical_values[NE] << '\n';
 #endif
 #if NUM_ODE > 0
       for (int n = 0; n < NUM_ODE; ++n) {
-        amrex::Print() << "\t" << m_ode_names[n]
-                << std::setw(amrex::max(
-                       0, static_cast<int>(10 - m_ode_names[n].length())))
-                << std::left << ":" << typical_values[FIRSTODE + n] << '\n';
+        amrex::Print()
+          << "\t" << m_ode_names[n]
+          << std::setw(
+               amrex::max(0, static_cast<int>(10 - m_ode_names[n].length())))
+          << std::left << ":" << typical_values[FIRSTODE + n] << '\n';
       }
 #endif
     }

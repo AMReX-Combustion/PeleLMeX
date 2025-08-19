@@ -170,7 +170,7 @@ PeleLM::SprayInit()
   SprayInjectRedist();
   if (spray_verbose >= 1) {
     amrex::Print() << "Total number of initial particles "
-            << SprayPC->TotalNumberOfParticles(false, false) << "\n";
+                   << SprayPC->TotalNumberOfParticles(false, false) << "\n";
   }
 }
 
@@ -390,8 +390,8 @@ PeleLM::SprayInjectRedist()
   if (spray_verbose >= 3 && injected) {
     amrex::Long new_count = SprayPC->TotalNumberOfParticles(true, false);
     amrex::Long num_inj = new_count - prev_count;
-    amrex::Print() << "Injected " << num_inj << " particles at time " << m_t_new[0]
-		   << "\n";
+    amrex::Print() << "Injected " << num_inj << " particles at time "
+                   << m_t_new[0] << "\n";
   }
 }
 

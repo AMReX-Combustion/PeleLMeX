@@ -21,7 +21,6 @@
 #include "PeleLMRad.H"
 #endif
 
-
 namespace m2c = pele::physics::utilities::mks2cgs;
 namespace c2m = pele::physics::utilities::cgs2mks;
 
@@ -179,7 +178,8 @@ PeleLM::WritePlotFile()
   amrex::Vector<amrex::MultiFab> mf_plt;
   mf_plt.reserve(finest_level + 1);
   for (int lev = 0; lev <= finest_level; ++lev) {
-    mf_plt.emplace_back(grids[lev], dmap[lev], ncomp, 0, amrex::MFInfo(), Factory(lev));
+    mf_plt.emplace_back(
+      grids[lev], dmap[lev], ncomp, 0, amrex::MFInfo(), Factory(lev));
   }
 
   //----------------------------------------------------------------
@@ -1020,7 +1020,7 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
     amrex::ParallelFor(
       ldata_p->state,
       [state_ma] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
-	amrex::Array4<amrex::Real> vel(state_ma[box_no], VELX);
+        amrex::Array4<amrex::Real> vel(state_ma[box_no], VELX);
         for (int n = 0; n < AMREX_SPACEDIM; ++n) {
           vel(i, j, k, n) *= 0.01;
         }
@@ -1051,13 +1051,13 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
         amrex::ParallelFor(
           ldata_p->state, [state_ma, soot_exp] AMREX_GPU_DEVICE(
                             int box_no, int i, int j, int k) noexcept {
-	    amrex::Array4<amrex::Real> soot(state_ma[box_no], FIRSTSOOT);
+            amrex::Array4<amrex::Real> soot(state_ma[box_no], FIRSTSOOT);
             for (int n = 0; n < NUM_SOOT_MOMENTS; ++n) {
               soot(i, j, k, n) *= std::pow(100., soot_exp[n]);
             }
             soot(i, j, k, NUMSOOTVAR - 1) *= 1.E6;
           });
-	amrex::Gpu::streamSynchronize();
+        amrex::Gpu::streamSynchronize();
       }
     } else {
       SootData* const sd = soot_model->getSootData();
