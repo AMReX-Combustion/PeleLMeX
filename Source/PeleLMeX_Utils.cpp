@@ -70,11 +70,11 @@ writeBuildInfo()
 void
 PeleLM::fluxDivergence(
   const amrex::Vector<amrex::MultiFab*>& a_divergence,
-  int div_comp,
+  const int div_comp,
   const amrex::Vector<amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>>& a_fluxes,
-  int flux_comp,
-  int ncomp,
-  int intensiveFluxes,
+  const int flux_comp,
+  const int ncomp,
+  const int intensiveFluxes,
   amrex::Real scale)
 {
   BL_PROFILE("PeleLMeX::fluxDivergence()");
@@ -97,14 +97,14 @@ PeleLM::fluxDivergence(
 void
 PeleLM::fluxDivergence(
   const amrex::Vector<amrex::MultiFab*>& a_divergence,
-  int div_comp,
+  const int div_comp,
   const amrex::Vector<amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>>& a_fluxes,
-  int flux_comp,
+  const int flux_comp,
   const amrex::Vector<amrex::MultiFab*>& a_EBfluxes,
-  int ebflux_comp,
-  int ncomp,
-  int intensiveFluxes,
-  amrex::Real scale)
+  const int ebflux_comp,
+  const int ncomp,
+  const int intensiveFluxes,
+  const amrex::Real scale)
 {
 
   BL_PROFILE("PeleLMeX::fluxDivergence()");
@@ -127,26 +127,26 @@ PeleLM::fluxDivergence(
 void
 PeleLM::fluxDivergenceRD(
   const amrex::Vector<const amrex::MultiFab*>& a_state,
-  int state_comp,
+  const int state_comp,
   const amrex::Vector<amrex::MultiFab*>& a_divergence,
-  int div_comp,
+  const int div_comp,
   const amrex::Vector<amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>>& a_fluxes,
-  int flux_comp,
+  const int flux_comp,
   const amrex::Vector<amrex::MultiFab*>& a_EBfluxes,
-  int ebflux_comp,
-  int ncomp,
-  int intensiveFluxes,
+  const int ebflux_comp,
+  const int ncomp,
+  const int intensiveFluxes,
   const amrex::BCRec* state_bc_d,
   const amrex::Real& scale,
   const amrex::Real& a_dt)
 {
   BL_PROFILE("PeleLMeX::fluxDivergenceRD()");
 #ifdef AMREX_USE_EB
-  int have_ebfluxes = (a_EBfluxes.empty()) ? 0 : 1;
+  const int have_ebfluxes = (a_EBfluxes.empty()) ? 0 : 1;
   for (int lev = 0; lev <= finest_level; ++lev) {
     //----------------------------------------------------------------
     // Use a temporary MF to hold divergence before redistribution
-    int nGrow_divTmp = 3;
+    constexpr int nGrow_divTmp = 3;
     amrex::MultiFab divTmp(
       grids[lev], dmap[lev], ncomp, nGrow_divTmp, amrex::MFInfo(),
       EBFactory(lev));
@@ -188,13 +188,13 @@ PeleLM::fluxDivergenceRD(
 
 void
 PeleLM::extFluxDivergenceLevel(
-  int lev,
+  const int lev,
   amrex::MultiFab& a_divergence,
-  int div_comp,
+  const int div_comp,
   const amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>& a_fluxes,
-  int flux_comp,
-  int ncomp,
-  amrex::Real scale)
+  const int flux_comp,
+  const int ncomp,
+  const amrex::Real scale)
 {
 
   AMREX_ASSERT(a_divergence.nComp() >= div_comp + ncomp);
@@ -281,13 +281,13 @@ PeleLM::extFluxDivergenceLevel(
 
 void
 PeleLM::intFluxDivergenceLevel(
-  int lev,
+  const int lev,
   amrex::MultiFab& a_divergence,
-  int div_comp,
+  const int div_comp,
   const amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>& a_fluxes,
-  int flux_comp,
-  int ncomp,
-  amrex::Real scale)
+  const int flux_comp,
+  const int ncomp,
+  const amrex::Real scale)
 {
 
   AMREX_ASSERT(a_divergence.nComp() >= div_comp + ncomp);
@@ -411,15 +411,15 @@ PeleLM::intFluxDivergenceLevel(
 
 void
 PeleLM::intFluxDivergenceLevelEB(
-  int lev,
+  const int lev,
   amrex::MultiFab& a_divergence,
-  int div_comp,
+  const int div_comp,
   const amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>& a_fluxes,
-  int flux_comp,
+  const int flux_comp,
   const amrex::MultiFab* a_EBfluxes,
-  int ebflux_comp,
-  int ncomp,
-  amrex::Real scale)
+  const int ebflux_comp,
+  const int ncomp,
+  const amrex::Real scale)
 {
 
   AMREX_ASSERT(a_divergence.nComp() >= div_comp + ncomp);
@@ -530,21 +530,20 @@ PeleLM::intFluxDivergenceLevelEB(
 }
 
 void
-PeleLM::
-  advFluxDivergence( // NOLINT(readability-convert-member-functions-to-static)
-    int a_lev,
-    amrex::MultiFab& a_divergence,
-    int div_comp,
-    amrex::MultiFab& a_divu,
-    const amrex::Array<const amrex::MultiFab*, AMREX_SPACEDIM>& a_fluxes,
-    int flux_comp,
-    const amrex::Array<const amrex::MultiFab*, AMREX_SPACEDIM>& a_faceState,
-    int face_comp,
-    int ncomp,
-    int const* l_conserv_d,
-    const amrex::Geometry& a_geom,
-    amrex::Real scale,
-    bool fluxes_are_area_weighted) const
+PeleLM::advFluxDivergence(
+  const int a_lev,
+  amrex::MultiFab& a_divergence,
+  const int div_comp,
+  amrex::MultiFab& a_divu,
+  const amrex::Array<const amrex::MultiFab*, AMREX_SPACEDIM>& a_fluxes,
+  const int flux_comp,
+  const amrex::Array<const amrex::MultiFab*, AMREX_SPACEDIM>& a_faceState,
+  const int face_comp,
+  const int ncomp,
+  int const* l_conserv_d,
+  const amrex::Geometry& a_geom,
+  const amrex::Real scale,
+  const bool fluxes_are_area_weighted) const
 {
   BL_PROFILE("PeleLMeX::advFluxDivergence()");
 
@@ -694,21 +693,21 @@ PeleLM::
 #ifdef AMREX_USE_EB
 void
 PeleLM::advFluxDivergence(
-  int a_lev,
+  const int a_lev,
   amrex::MultiFab& a_divergence,
-  int div_comp,
+  const int div_comp,
   amrex::MultiFab& a_divu,
   const amrex::Array<const amrex::MultiFab*, AMREX_SPACEDIM>& a_fluxes,
-  int flux_comp,
+  const int flux_comp,
   const amrex::Array<const amrex::MultiFab*, AMREX_SPACEDIM>& a_faceState,
-  int face_comp,
+  const int face_comp,
   const amrex::MultiFab* a_EBvelocity,
   const amrex::MultiFab* a_EBvalue,
-  int ncomp,
+  const int ncomp,
   int const* l_conserv_d,
   const amrex::Geometry& a_geom,
-  amrex::Real scale,
-  bool fluxes_are_area_weighted) const
+  const amrex::Real scale,
+  const bool fluxes_are_area_weighted) const
 {
   BL_PROFILE("PeleLM::advFluxDivergence()");
 
@@ -2209,7 +2208,7 @@ PeleLM::extendSignedDistance(
   // Iteratively compute the distance function in boxes, propagating across
   // boxes using ghost cells If needed, increase the number of loop to extend
   // the reach of the distance function
-  int nMaxLoop = 4;
+  constexpr int nMaxLoop = 4;
   for (int dloop = 1; dloop <= nMaxLoop; ++dloop) {
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
@@ -2223,11 +2222,10 @@ PeleLM::extendSignedDistance(
       }
       auto const& sd_cc = a_signDist->array(mfi);
       amrex::ParallelFor(
-        bx, [gbx, geomdata, a_extendFactor, sd_cc,
+        bx, [gbx, dx, a_extendFactor, sd_cc,
              maxSignedDist] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           const auto glo = amrex::lbound(gbx);
           const auto ghi = amrex::ubound(gbx);
-          const amrex::Real* dx = geomdata.CellSize();
           amrex::Real extendedDist = dx[0] * a_extendFactor;
           if (sd_cc(i, j, k) >= maxSignedDist - 1e-12) {
             amrex::Real closestEBDist = 1e12;

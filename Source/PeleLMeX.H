@@ -1270,104 +1270,104 @@ public:
   // flux divergence
   void fluxDivergence(
     const amrex::Vector<amrex::MultiFab*>& a_divergence,
-    int div_comp,
+    const int div_comp,
     const amrex::Vector<amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>>&
       a_fluxes,
-    int flux_comp,
-    int ncomp,
-    int intensiveFluxes,
-    amrex::Real scale);
+    const int flux_comp,
+    const int ncomp,
+    const int intensiveFluxes,
+    const amrex::Real scale);
 
   void fluxDivergence(
     const amrex::Vector<amrex::MultiFab*>& a_divergence,
-    int div_comp,
+    const int div_comp,
     const amrex::Vector<amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>>&
       a_fluxes,
-    int flux_comp,
+    const int flux_comp,
     const amrex::Vector<amrex::MultiFab*>& a_EBfluxes,
-    int ebflux_comp,
-    int ncomp,
-    int intensiveFluxes,
-    amrex::Real scale);
+    const int ebflux_comp,
+    const int ncomp,
+    const int intensiveFluxes,
+    const amrex::Real scale);
 
   void fluxDivergenceRD(
     const amrex::Vector<const amrex::MultiFab*>& a_state,
-    int state_comp,
+    const int state_comp,
     const amrex::Vector<amrex::MultiFab*>& a_divergence,
-    int div_comp,
+    const int div_comp,
     const amrex::Vector<amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>>&
       a_fluxes,
-    int flux_comp,
+    const int flux_comp,
     const amrex::Vector<amrex::MultiFab*>& a_EBfluxes,
-    int ebflux_comp,
-    int ncomp,
-    int intensiveFluxes,
+    const int ebflux_comp,
+    const int ncomp,
+    const int intensiveFluxes,
     const amrex::BCRec* state_bc_d,
     const amrex::Real& scale,
     const amrex::Real& a_dt);
 
   void advFluxDivergence(
-    int a_lev,
+    const int a_lev,
     amrex::MultiFab& a_divergence,
-    int div_comp,
+    const int div_comp,
     amrex::MultiFab& a_divu,
     const amrex::Array<const amrex::MultiFab*, AMREX_SPACEDIM>& a_fluxes,
-    int flux_comp,
+    const int flux_comp,
     const amrex::Array<const amrex::MultiFab*, AMREX_SPACEDIM>& a_faceState,
-    int face_comp,
-    int ncomp,
+    const int face_comp,
+    const int ncomp,
     int const* l_conserv_d,
     const amrex::Geometry& a_geom,
-    amrex::Real scale,
-    bool fluxes_are_area_weighted) const;
+    const amrex::Real scale,
+    const bool fluxes_are_area_weighted) const;
 
 #ifdef AMREX_USE_EB
   void advFluxDivergence(
-    int a_lev,
+    const int a_lev,
     amrex::MultiFab& a_divergence,
-    int div_comp,
+    const int div_comp,
     amrex::MultiFab& a_divu,
     const amrex::Array<const amrex::MultiFab*, AMREX_SPACEDIM>& a_fluxes,
-    int flux_comp,
+    const int flux_comp,
     const amrex::Array<const amrex::MultiFab*, AMREX_SPACEDIM>& a_faceState,
-    int face_comp,
+    const int face_comp,
     const amrex::MultiFab* a_EBvelocity,
     const amrex::MultiFab* a_EBvalue,
-    int ncomp,
+    const int ncomp,
     int const* l_conserv_d,
     const amrex::Geometry& a_geom,
-    amrex::Real scale,
-    bool fluxes_are_area_weighted) const;
+    const amrex::Real scale,
+    const bool fluxes_are_area_weighted) const;
 #endif
 
   void extFluxDivergenceLevel(
-    int lev,
+    const int lev,
     amrex::MultiFab& a_divergence,
-    int div_comp,
+    const int div_comp,
     const amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>& a_fluxes,
-    int flux_comp,
-    int ncomp,
-    amrex::Real scale);
+    const int flux_comp,
+    const int ncomp,
+    const amrex::Real scale);
 
   void intFluxDivergenceLevel(
-    int lev,
+    const int lev,
     amrex::MultiFab& a_divergence,
-    int div_comp,
+    const int div_comp,
     const amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>& a_fluxes,
-    int flux_comp,
-    int ncomp,
-    amrex::Real scale);
+    const int flux_comp,
+    const int ncomp,
+    const amrex::Real scale);
 
   void intFluxDivergenceLevelEB(
-    int lev,
+    const int lev,
     amrex::MultiFab& a_divergence,
-    int div_comp,
+    const int div_comp,
     const amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>& a_fluxes,
-    int flux_comp,
+    const int flux_comp,
     const amrex::MultiFab* a_EBfluxes,
-    int ebflux_comp,
-    int ncomp,
-    amrex::Real scale);
+    const int ebflux_comp,
+    const int ncomp,
+    const amrex::Real scale);
 
   void floorSpecies(const PeleLM::TimeStamp a_time);
 
