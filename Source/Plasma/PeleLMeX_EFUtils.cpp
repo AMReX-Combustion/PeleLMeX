@@ -62,7 +62,7 @@ PeleLM::getNLBGChargeVect()
 void
 PeleLM::getNLStateScaling(amrex::Real& nEScale, amrex::Real& phiVScale)
 {
-  amrex::Array<Real, 2> r = {0.0, 0.0};
+  amrex::Array<amrex::Real, 2> r = {0.0, 0.0};
   for (int comp = 0; comp < 2; ++comp) {
     for (int lev = 0; lev <= finest_level; ++lev) {
       if (lev != finest_level) {

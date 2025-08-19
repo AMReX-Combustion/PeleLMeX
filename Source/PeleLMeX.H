@@ -125,8 +125,8 @@ public:
   void freeProbParm();
 
   // ReadGridFile
-  void
-  readGridFile(std::string grid_file, amrex::Vector<amrex::BoxArray>& input_ba);
+  void readGridFile(
+    const std::string& grid_file, amrex::Vector<amrex::BoxArray>& input_ba);
 
 #ifdef PELE_USE_SPRAY
   // ReadSprayParameters
@@ -561,7 +561,7 @@ public:
     const int beta_comp,
     const int ncomp,
     const int doZeroVisc,
-    amrex::Vector<amrex::BCRec> bcrec,
+    const amrex::Vector<amrex::BCRec>& bcrec,
     const amrex::MultiFab& beta_cc,
     const int addTurbContrib = 0);
 
@@ -744,7 +744,8 @@ public:
    */
   amrex::Vector<amrex::Array<amrex::LinOpBCType, AMREX_SPACEDIM>>
   getDiffusionTensorOpBC(
-    amrex::Orientation::Side a_side, const amrex::Vector<amrex::BCRec> a_bc);
+    const amrex::Orientation::Side a_side,
+    const amrex::Vector<amrex::BCRec>& a_bc);
   //-----------------------------------------------------------------------------
 
   //-----------------------------------------------------------------------------
@@ -1431,8 +1432,8 @@ public:
   // Mixture fraction & Progress variable
   void initMixtureFraction();
   static void parseComposition(
-    amrex::Vector<std::string> compositionIn,
-    std::string compositionType,
+    const amrex::Vector<std::string>& compositionIn,
+    const std::string& compositionType,
     amrex::Real* massFrac);
   static void parseVars(
     const amrex::Vector<std::string>& a_varsNames,

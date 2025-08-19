@@ -1099,7 +1099,7 @@ PeleLM::variablesSetup()
 
 void
 PeleLM::readGridFile(
-  std::string grid_file, amrex::Vector<amrex::BoxArray>& input_ba)
+  const std::string& grid_file, amrex::Vector<amrex::BoxArray>& input_ba)
 {
 #define STRIP                \
   while (is.get() != '\n') { \
@@ -1473,7 +1473,9 @@ PeleLM::taggingSetup()
     "refinement_indicators", refinement_indicators, 0,
     ppamr.countval("refinement_indicators"));
   for (const auto& refinement_indicator : refinement_indicators) {
-    std::string ref_prefix = amr_prefix + "." + refinement_indicator;
+    std::string ref_prefix = amr_prefix;
+    ref_prefix += ".";
+    ref_prefix += refinement_indicator;
     amrex::ParmParse ppr(ref_prefix);
 
     // Tag a given box

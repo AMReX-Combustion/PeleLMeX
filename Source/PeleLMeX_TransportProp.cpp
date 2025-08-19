@@ -382,13 +382,13 @@ PeleLM::calcDiffusivity(const TimeStamp a_time)
 
 amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>
 PeleLM::getDiffusivity(
-  int lev,
-  int beta_comp,
-  int ncomp,
-  int doZeroVisc,
-  amrex::Vector<amrex::BCRec> bcrec,
+  const int lev,
+  const int beta_comp,
+  const int ncomp,
+  const int doZeroVisc,
+  amrex::Vector<amrex::BCRec> const& bcrec,
   amrex::MultiFab const& beta_cc,
-  int addTurbContrib)
+  const int addTurbContrib)
 {
   BL_PROFILE("PeleLMeX::getDiffusivity()");
 

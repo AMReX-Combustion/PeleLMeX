@@ -2048,8 +2048,8 @@ PeleLM::initMixtureFraction()
 
 void
 PeleLM::parseComposition(
-  amrex::Vector<std::string> compositionIn,
-  std::string compositionType,
+  const amrex::Vector<std::string>& compositionIn,
+  const std::string& compositionType,
   amrex::Real* massFrac)
 {
   amrex::Real compoIn[NUM_SPECIES] = {0.0};

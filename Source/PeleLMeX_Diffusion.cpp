@@ -1878,7 +1878,8 @@ PeleLM::getDiffusionLinOpBC(
 
 amrex::Vector<amrex::Array<amrex::LinOpBCType, AMREX_SPACEDIM>>
 PeleLM::getDiffusionTensorOpBC(
-  amrex::Orientation::Side a_side, const amrex::Vector<amrex::BCRec> a_bc)
+  const amrex::Orientation::Side a_side,
+  const amrex::Vector<amrex::BCRec>& a_bc)
 {
   AMREX_ASSERT(a_bc.size() == AMREX_SPACEDIM);
   amrex::Vector<amrex::Array<amrex::LinOpBCType, AMREX_SPACEDIM>> r(
