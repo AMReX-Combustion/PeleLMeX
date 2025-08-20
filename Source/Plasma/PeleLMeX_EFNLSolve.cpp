@@ -503,7 +503,6 @@ PeleLM::nonLinearResidual(
     auto const& state_old_ma = ldataOld_p->state.const_arrays();
     auto const& charge_ma = ldataNLs_p->backgroundCharge.const_arrays();
     auto const& res_ma = a_nlresid[lev]->arrays();
-    constexpr amrex::Real scalLap = eps0 * epsr / elemCharge;
     amrex::ParallelFor(
       ldataNLs_p->nlResid,
       [I_R_ma, lapPhiV_ma, ne_diff_ma, ne_adv_ma, ne_curr_ma, state_old_ma,
@@ -516,6 +515,7 @@ PeleLM::nonLinearResidual(
         res_nE(i, j, k) = ne_old(i, j, k) - ne_curr_ma[box_no](i, j, k) +
                           a_dt * (ne_diff_ma[box_no](i, j, k) +
                                   ne_adv_ma[box_no](i, j, k) + I_R_nE(i, j, k));
+        constexpr amrex::Real scalLap = eps0 * epsr / elemCharge;
         res_phiV(i, j, k) = lapPhiV_ma[box_no](i, j, k) * scalLap -
                             ne_curr_ma[box_no](i, j, k) +
                             charge_ma[box_no](i, j, k);
