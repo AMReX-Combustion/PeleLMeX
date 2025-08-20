@@ -1374,21 +1374,29 @@ public:
   amrex::Real MLNorm0(const amrex::Vector<const amrex::MultiFab*>& a_MF);
   amrex::Vector<amrex::Real> MLNorm0(
     const amrex::Vector<const amrex::MultiFab*>& a_MF,
-    int startcomp,
-    int ncomp);
+    const int startcomp,
+    const int ncomp);
 
   amrex::Real
-  MFSum(const amrex::Vector<const amrex::MultiFab*>& a_MF, int comp);
-  static amrex::Real
-  MFmax(const amrex::MultiFab* a_MF, const amrex::iMultiFab& a_mask, int comp);
-  static amrex::Real
-  MFmin(const amrex::MultiFab* a_MF, const amrex::iMultiFab& a_mask, int comp);
+  MFSum(const amrex::Vector<const amrex::MultiFab*>& a_MF, const int comp);
+  static amrex::Real MFmax(
+    const amrex::MultiFab* a_MF,
+    const amrex::iMultiFab& a_mask,
+    const int comp);
+  static amrex::Real MFmin(
+    const amrex::MultiFab* a_MF,
+    const amrex::iMultiFab& a_mask,
+    const int comp);
 
   amrex::Vector<amrex::Real> MLmax(
-    const amrex::Vector<const amrex::MultiFab*>& a_MF, int scomp, int ncomp);
+    const amrex::Vector<const amrex::MultiFab*>& a_MF,
+    const int scomp,
+    const int ncomp);
 
   amrex::Vector<amrex::Real> MLmin(
-    const amrex::Vector<const amrex::MultiFab*>& a_MF, int scomp, int ncomp);
+    const amrex::Vector<const amrex::MultiFab*>& a_MF,
+    const int scomp,
+    const int ncomp);
 
   void resetCoveredMask();
 

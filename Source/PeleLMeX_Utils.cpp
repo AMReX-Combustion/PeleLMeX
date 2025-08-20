@@ -1334,7 +1334,9 @@ PeleLM::MLNorm0(const amrex::Vector<const amrex::MultiFab*>& a_MF)
 
 amrex::Vector<amrex::Real>
 PeleLM::MLNorm0(
-  const amrex::Vector<const amrex::MultiFab*>& a_MF, int startcomp, int ncomp)
+  const amrex::Vector<const amrex::MultiFab*>& a_MF,
+  const int startcomp,
+  const int ncomp)
 {
   BL_PROFILE("PeleLMeX::MLNorm0()");
   AMREX_ASSERT(a_MF[0]->nComp() >= startcomp + ncomp);
@@ -1473,7 +1475,7 @@ PeleLM::fetchDiffTypeAuxArray(int scomp, int ncomp)
 }
 
 amrex::Real
-PeleLM::MFSum(const amrex::Vector<const amrex::MultiFab*>& a_mf, int comp)
+PeleLM::MFSum(const amrex::Vector<const amrex::MultiFab*>& a_mf, const int comp)
 {
   BL_PROFILE("PeleLMeX::MFSum()");
   // Get the integral of the MF, not including the fine-covered and
@@ -1692,7 +1694,7 @@ PeleLM::updateTypicalValuesChem()
 // amrex::MultiFab max, excluding EB-covered/fine-covered cells, local
 amrex::Real
 PeleLM::MFmax(
-  const amrex::MultiFab* a_MF, const amrex::iMultiFab& a_mask, int comp)
+  const amrex::MultiFab* a_MF, const amrex::iMultiFab& a_mask, const int comp)
 {
   BL_PROFILE("PeleLMeX::MFmax()");
   amrex::Real mx = std::numeric_limits<amrex::Real>::lowest();
@@ -1710,7 +1712,7 @@ PeleLM::MFmax(
       mx = ParReduce(
         amrex::TypeList<amrex::ReduceOpMax>{}, amrex::TypeList<amrex::Real>{},
         *a_MF, amrex::IntVect(0),
-        [flagsma, mask, ma] AMREX_GPU_DEVICE(
+        [flagsma, mask, ma, comp] AMREX_GPU_DEVICE(
           int box_no, int i, int j,
           int k) noexcept -> amrex::GpuTuple<amrex::Real> {
           if (flagsma[box_no](i, j, k).isCovered() || !mask[box_no](i, j, k)) {
@@ -1783,7 +1785,7 @@ PeleLM::MFmax(
 // amrex::MultiFab min, excluding EB-covered/fine-covered cells, local
 amrex::Real
 PeleLM::MFmin(
-  const amrex::MultiFab* a_MF, const amrex::iMultiFab& a_mask, int comp)
+  const amrex::MultiFab* a_MF, const amrex::iMultiFab& a_mask, const int comp)
 {
   BL_PROFILE("PeleLMeX::MFmin()");
   amrex::Real mn = std::numeric_limits<amrex::Real>::max();
@@ -1801,7 +1803,7 @@ PeleLM::MFmin(
       mn = ParReduce(
         amrex::TypeList<amrex::ReduceOpMin>{}, amrex::TypeList<amrex::Real>{},
         *a_MF, amrex::IntVect(0),
-        [flagsma, mask, ma] AMREX_GPU_DEVICE(
+        [flagsma, mask, ma, comp] AMREX_GPU_DEVICE(
           int box_no, int i, int j,
           int k) noexcept -> amrex::GpuTuple<amrex::Real> {
           if (flagsma[box_no](i, j, k).isCovered() || !mask[box_no](i, j, k)) {
@@ -1874,7 +1876,9 @@ PeleLM::MFmin(
 // MultiLevel max, exlucing EB-covered/fine-covered cells
 amrex::Vector<amrex::Real>
 PeleLM::MLmax(
-  const amrex::Vector<const amrex::MultiFab*>& a_MF, int scomp, int ncomp)
+  const amrex::Vector<const amrex::MultiFab*>& a_MF,
+  const int scomp,
+  const int ncomp)
 {
   BL_PROFILE("PeleLMeX::MLmax()");
   AMREX_ASSERT(a_MF[0]->nComp() >= scomp + ncomp);
@@ -1901,7 +1905,9 @@ PeleLM::MLmax(
 // MultiLevel min, exlucing EB-covered/fine-covered cells
 amrex::Vector<amrex::Real>
 PeleLM::MLmin(
-  const amrex::Vector<const amrex::MultiFab*>& a_MF, int scomp, int ncomp)
+  const amrex::Vector<const amrex::MultiFab*>& a_MF,
+  const int scomp,
+  const int ncomp)
 {
   BL_PROFILE("PeleLMeX::MLmin()");
   AMREX_ASSERT(a_MF[0]->nComp() >= scomp + ncomp);
