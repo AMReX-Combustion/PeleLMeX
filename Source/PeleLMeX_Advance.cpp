@@ -10,7 +10,7 @@ PeleLM::Advance(const int is_initIter)
 
 #ifdef AMREX_MEM_PROFILING
   // Memory profiler if compiled
-  MemProfiler::report("STEP [" + std::to_string(m_nstep) + "]");
+  amrex::MemProfiler::report("STEP [" + std::to_string(m_nstep) + "]");
 #endif
 
   // Start timing current time step

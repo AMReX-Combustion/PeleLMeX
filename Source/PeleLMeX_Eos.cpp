@@ -176,7 +176,7 @@ PeleLM::calcDivU(
 
   // fillPatch a_time divu to get properly filled ghost cells
   for (int lev = 0; lev <= finest_level; ++lev) {
-    amrex::Real time = getTime(lev, a_time);
+    const amrex::Real time = getTime(lev, a_time);
     auto* ldata_p = getLevelDataPtr(lev, a_time);
     fillpatch_divu(lev, time, ldata_p->divu, m_nGrowdivu);
   }
@@ -303,10 +303,10 @@ PeleLM::adjustPandDivU(std::unique_ptr<AdvanceAdvData>& advData)
       [tma, sma_o, sma_n, pOld, pNew,
        leosparm] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
         auto theta = tma[box_no];
-        amrex::Real gammaInv_o = getGammaInv(
+        const amrex::Real gammaInv_o = getGammaInv(
           i, j, k, amrex::Array4<amrex::Real const>(sma_o[box_no], FIRSTSPEC),
           amrex::Array4<amrex::Real const>(sma_o[box_no], TEMP), leosparm);
-        amrex::Real gammaInv_n = getGammaInv(
+        const amrex::Real gammaInv_n = getGammaInv(
           i, j, k, amrex::Array4<amrex::Real const>(sma_n[box_no], FIRSTSPEC),
           amrex::Array4<amrex::Real const>(sma_n[box_no], TEMP), leosparm);
         theta(i, j, k) = 0.5 * (gammaInv_o / pOld + gammaInv_n / pNew);
@@ -315,10 +315,10 @@ PeleLM::adjustPandDivU(std::unique_ptr<AdvanceAdvData>& advData)
   amrex::Gpu::streamSynchronize();
 
   // Get the mean mac_divu (Sbar) and mean theta
-  amrex::Real Sbar = MFSum(GetVecOfConstPtrs(advData->mac_divu), 0);
-  Sbar /= m_uncoveredVol;
-  amrex::Real Thetabar = MFSum(GetVecOfConstPtrs(ThetaHalft), 0);
-  Thetabar /= m_uncoveredVol;
+  const amrex::Real Sbar =
+    MFSum(GetVecOfConstPtrs(advData->mac_divu), 0) / m_uncoveredVol;
+  const amrex::Real Thetabar =
+    MFSum(GetVecOfConstPtrs(ThetaHalft), 0) / m_uncoveredVol;
 
   // Adjust
   for (int lev = 0; lev <= finest_level; ++lev) {
@@ -329,11 +329,11 @@ PeleLM::adjustPandDivU(std::unique_ptr<AdvanceAdvData>& advData)
   }
 
   // Compute 1/Volume * int(U_inflow)dA across all boundary faces
-  amrex::Real umacFluxBalance = AMREX_D_TERM(
+  const amrex::Real umacFluxBalance = AMREX_D_TERM(
     m_domainUmacFlux[0] + m_domainUmacFlux[1],
     +m_domainUmacFlux[2] + m_domainUmacFlux[3],
     +m_domainUmacFlux[4] + m_domainUmacFlux[5]);
-  amrex::Real divu_vol = umacFluxBalance / m_uncoveredVol;
+  const amrex::Real divu_vol = umacFluxBalance / m_uncoveredVol;
 
   // Advance the ambient pressure
   m_pNew = m_pOld + m_dt * (Sbar - divu_vol) / Thetabar;

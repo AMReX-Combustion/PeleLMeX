@@ -219,13 +219,10 @@ PeleLM::extFluxDivergenceLevel(
       , auto const& fluxZ = a_fluxes[2]->const_array(mfi, flux_comp););
     auto const& divergence = a_divergence.array(mfi, div_comp);
     auto const& vol = volume.const_array(mfi);
-
 #ifdef AMREX_USE_EB
     auto const& flagfab = ebfact.getMultiEBCellFlagFab()[mfi];
     auto const& flag = flagfab.const_array();
-#endif
 
-#ifdef AMREX_USE_EB
     if (flagfab.getType(bx) == amrex::FabType::covered) { // Covered boxes
       amrex::ParallelFor(
         bx, ncomp,
@@ -238,26 +235,24 @@ PeleLM::extFluxDivergenceLevel(
       auto vfrac = ebfact.getVolFrac().const_array(mfi);
       amrex::ParallelFor(
         bx, [flag, divergence, ncomp, vol, scale, vfrac, fluxX, fluxY
-#if (AMREX_SPACEDIM == 3)
+#if AMREX_SPACEDIM == 3
              ,
              fluxZ
 #endif
       ] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          if (flag(i, j, k).isCovered()) {
-            for (int n = 0; n < ncomp; ++n) {
+          if (flag(i, j, k).isCovered()) { // Covered cell
+            for (int n = 0; n < ncomp; n++) {
               divergence(i, j, k, n) = 0.0;
             }
-          } else if (flag(i, j, k).isRegular()) {
+          } else { // Regular or cut cell
             extFluxDivergence_K(
               i, j, k, ncomp, AMREX_D_DECL(fluxX, fluxY, fluxZ), vol, scale,
               divergence);
-          } else {
-            const amrex::Real vfracinv = 1.0 / vfrac(i, j, k);
-            extFluxDivergence_K(
-              i, j, k, ncomp, AMREX_D_DECL(fluxX, fluxY, fluxZ), vol, scale,
-              divergence);
-            for (int n = 0; n < ncomp; ++n) {
-              divergence(i, j, k, n) *= vfracinv;
+            if (!flag(i, j, k).isRegular()) { // Cut cell
+              const amrex::Real vfracinv = 1.0 / vfrac(i, j, k);
+              for (int n = 0; n < ncomp; n++) {
+                divergence(i, j, k, n) *= vfracinv;
+              }
             }
           }
         });
@@ -266,7 +261,7 @@ PeleLM::extFluxDivergenceLevel(
     {
       amrex::ParallelFor(
         bx, [ncomp, vol, scale, divergence, fluxX, fluxY
-#if (AMREX_SPACEDIM == 3)
+#if AMREX_SPACEDIM == 3
              ,
              fluxZ
 #endif
@@ -358,7 +353,7 @@ PeleLM::intFluxDivergenceLevel(
              fluxZ, areaz, afrac_z
 #endif
       ] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          if (flag(i, j, k).isCovered()) {
+          if (flag(i, j, k).isCovered()) { // Covered cells
             for (int n = 0; n < ncomp; ++n) {
               divergence(i, j, k, n) = 0.0;
             }

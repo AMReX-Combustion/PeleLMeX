@@ -82,7 +82,10 @@ public:
 
   //-----------------------------------------------------------------------------
   // Virtual AmrCore functions
-  void regrid(int lbase, amrex::Real time, bool initial = false) override;
+  void regrid(
+    const int lbase,
+    const amrex::Real time,
+    const bool initial = false) override;
 
   void MakeNewLevelFromScratch(
     const int lev,
@@ -93,7 +96,7 @@ public:
   void ErrorEst(
     const int lev,
     amrex::TagBoxArray& tags,
-    amrex::Real time,
+    const amrex::Real time,
     const int ng) override;
 
   void MakeNewLevelFromCoarse(
