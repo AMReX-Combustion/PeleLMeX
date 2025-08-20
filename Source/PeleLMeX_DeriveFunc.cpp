@@ -226,9 +226,9 @@ pelelmex_deravgpress(
   AMREX_ASSERT(derfab.box().contains(bx));
   auto const in_dat = pressfab.array();
   auto der = derfab.array(dcomp);
-  constexpr amrex::Real factor = 1.0 / (AMREX_D_TERM(2.0, *2.0, *2.0));
   amrex::ParallelFor(
     bx, [der, in_dat] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+      constexpr amrex::Real factor = 1.0 / (AMREX_D_TERM(2.0, *2.0, *2.0));
       der(i, j, k) =
         factor * (in_dat(i + 1, j, k) + in_dat(i, j, k)
 #if (AMREX_SPACEDIM >= 2)
