@@ -363,7 +363,7 @@ bool
 PeleLM::checkForNaNs()
 {
   bool contains_nan = false;
-  for (int lev = 0; lev <= finest_level; lev++) {
+  for (int lev = 0; lev <= finest_level; ++lev) {
     if (
       m_leveldata_new[lev]->state.contains_nan() ||
       m_leveldata_new[lev]->state.contains_inf()) {

@@ -82,7 +82,7 @@ PeleLM::implicitNonLinearSolve(
   if (ef_substep > 1)
     amrex::Abort("Non-linear solve sub-stepping not re-implemented yet");
   int NK_tot_count = 0;
-  for (int sstep = 0; sstep < ef_substep; sstep++) {
+  for (int sstep = 0; sstep < ef_substep; ++sstep) {
     curtime = getTime(0, AmrOldTime) + (sstep + 1) * dtsub;
 
     // -----------------

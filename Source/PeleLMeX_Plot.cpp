@@ -995,7 +995,7 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
       }
     }
     if (foundSpec == 0) {
-      for (int iplt = 0; iplt < plt_vars.size(); iplt++) {
+      for (int iplt = 0; iplt < plt_vars.size(); ++iplt) {
         if (specString == plt_vars[iplt]) {
           foundSpec = 1;
           if (m_verbose > 0) {
@@ -1194,7 +1194,7 @@ PeleLM::addLevelVelocityDataFromPlt(int a_lev, const std::string& a_velPltFile)
     amrex::ParallelFor(
       bx,
       [state_arr, tmpVel_arr] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-        for (int n = 0; n < AMREX_SPACEDIM; n++) {
+        for (int n = 0; n < AMREX_SPACEDIM; ++n) {
           state_arr(i, j, k, XVEL + n) += tmpVel_arr(i, j, k, n);
         }
       });

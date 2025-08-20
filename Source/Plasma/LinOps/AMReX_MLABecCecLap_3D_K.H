@@ -759,7 +759,7 @@ tridiagonal_solve(
       amrex::Abort(">>>TRIDIAG FAILED");
     u_ls(i) = (r_ls(i) - a_ls(i) * u_ls(i - 1)) / bet;
   }
-  for (int i = ilen - 2; i >= 0; i--) {
+  for (int i = ilen - 2; i >= 0; --i) {
     u_ls(i) = u_ls(i) - gam(i + 1) * u_ls(i + 1);
   }
 }

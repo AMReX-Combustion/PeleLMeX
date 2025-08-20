@@ -241,7 +241,7 @@ PeleLM::extFluxDivergenceLevel(
 #endif
       ] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           if (flag(i, j, k).isCovered()) { // Covered cell
-            for (int n = 0; n < ncomp; n++) {
+            for (int n = 0; n < ncomp; ++n) {
               divergence(i, j, k, n) = 0.0;
             }
           } else { // Regular or cut cell
@@ -250,7 +250,7 @@ PeleLM::extFluxDivergenceLevel(
               divergence);
             if (!flag(i, j, k).isRegular()) { // Cut cell
               const amrex::Real vfracinv = 1.0 / vfrac(i, j, k);
-              for (int n = 0; n < ncomp; n++) {
+              for (int n = 0; n < ncomp; ++n) {
                 divergence(i, j, k, n) *= vfracinv;
               }
             }
@@ -1887,7 +1887,7 @@ PeleLM::MLmax(
           amrex::max(nmax[n], MFmax(a_MF[lev], *m_coveredMask[lev], scomp + n));
       }
     } else {
-      for (int n = 0; n < ncomp; n++) {
+      for (int n = 0; n < ncomp; ++n) {
         nmax[n] = amrex::max(nmax[n], a_MF[lev]->max(scomp + n, 0, true));
       }
     }
@@ -1916,7 +1916,7 @@ PeleLM::MLmin(
           amrex::min(nmin[n], MFmin(a_MF[lev], *m_coveredMask[lev], scomp + n));
       }
     } else {
-      for (int n = 0; n < ncomp; n++) {
+      for (int n = 0; n < ncomp; ++n) {
         nmin[n] = amrex::min(nmin[n], a_MF[lev]->min(scomp + n, 0, true));
       }
     }
