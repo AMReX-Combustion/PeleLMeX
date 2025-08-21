@@ -57,9 +57,6 @@ PeleLM::getVelForces(
   auto ext_ma = m_extSource[lev]->const_arrays();
   auto force_ma = a_velForce->arrays();
 
-  // auto gp_ma = (add_gradP != 0) ? ldataGP_p->gp.const_arrays() : state_ma;
-  // auto divTau_ma = (has_divTau != 0) ? a_divTau->const_arrays() : state_ma;
-
   const auto dx = geom[lev].CellSizeArray();
   const int pseudo_gravity = m_ctrl_pseudoGravity;
   const amrex::Real dV_control = m_ctrl_dV;
@@ -70,12 +67,11 @@ PeleLM::getVelForces(
   const int ps_dir = m_ctrl_flameDir;
 
   amrex::ParallelFor(
-    *a_velForce,
-    [state_ma, ext_ma, force_ma, dx, /*gp_ma, divTau_ma,add_gradP,has_divTau,*/
-     time, grav, gp0, ps_dir, is_incomp, rho_incomp, pseudo_gravity, dV_control
+    *a_velForce, [state_ma, ext_ma, force_ma, dx, time, grav, gp0, ps_dir,
+                  is_incomp, rho_incomp, pseudo_gravity, dV_control
 #ifdef PELE_USE_PLASMA
-     ,
-     plasma_ba = grids[lev], zk = zk
+                  ,
+                  plasma_ba = grids[lev], zk = zk
 #endif
   ] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) {
       amrex::Array4<amrex::Real const> vel(state_ma[box_no], VELX);
