@@ -737,8 +737,8 @@ PeleLM::addWbarTerm(
           }
         }
       });
+    amrex::Gpu::streamSynchronize();
   }
-  amrex::Gpu::streamSynchronize();
   //------------------------------------------------------------------------
   // Compute Wbar gradients and do average down to get gradients consistent
   // across levels Get the species BCRec
@@ -1624,12 +1624,11 @@ PeleLM::deltaTIter_prepare(
         // Save T
         tsave_ma[box_no](i, j, k) = T(i, j, k);
       });
-
+    amrex::Gpu::streamSynchronize();
     // Set T^{np1} to zero
     // Include one ghost cell to ensure levelBC at zero for linear solve
     ldataNew_p->state.setVal(0.0, TEMP, 1, 1);
   }
-  amrex::Gpu::streamSynchronize();
 }
 
 void
@@ -1722,8 +1721,8 @@ PeleLM::deltaTIter_update(
 
   //------------------------------------------------------------------------
   // Recompute RhoH
+  auto const* leosparm = eos_parms.device_parm();
   for (int lev = 0; lev <= finest_level; ++lev) {
-    auto const* leosparm = eos_parms.device_parm();
     auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
     auto const& sma = ldata_p->state.arrays();
     amrex::ParallelFor(
@@ -1745,8 +1744,8 @@ PeleLM::getScalarDiffForce(
   std::unique_ptr<AdvanceDiffData>& diffData)
 {
 
-  int* aux_advect_d = convertToDeviceVector(m_aux_advect).dataPtr();
-  int* aux_diffuse_d = convertToDeviceVector(m_DiffTypeAux).dataPtr();
+  const int* aux_advect_d = convertToDeviceVector(m_aux_advect).dataPtr();
+  const int* aux_diffuse_d = convertToDeviceVector(m_DiffTypeAux).dataPtr();
 
   for (int lev = 0; lev <= finest_level; ++lev) {
 

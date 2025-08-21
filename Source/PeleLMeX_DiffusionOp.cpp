@@ -1276,6 +1276,7 @@ DiffusionTensorOp::diffuse_velocity(
           }
         });
     }
+    amrex::Gpu::streamSynchronize();
   }
 
   amrex::MLMG mlmg(*m_solve_op);

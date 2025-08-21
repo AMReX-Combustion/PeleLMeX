@@ -15,7 +15,6 @@ PeleLM::poissonSolveEF(const TimeStamp a_time)
 
   // Build Poisson RHS: charge distribution
   constexpr int nGhost = 0;
-  constexpr amrex::Real factor = -1.0;
   amrex::Vector<std::unique_ptr<amrex::MultiFab>> rhsPoisson(finest_level + 1);
   for (int lev = 0; lev <= finest_level; ++lev) {
     rhsPoisson[lev].reset(new amrex::MultiFab(
@@ -31,13 +30,14 @@ PeleLM::poissonSolveEF(const TimeStamp a_time)
                         int box_no, int i, int j, int k) noexcept {
         amrex::Array4<amrex::Real const> rhoY(state_ma[box_no], FIRSTSPEC);
         amrex::Array4<amrex::Real const> nE(state_ma[box_no], NE);
+        constexpr amrex::Real factor = -1.0;
         rhs_ma[box_no](i, j, k) = -nE(i, j, k) * elemCharge * factor;
         for (int n = 0; n < NUM_SPECIES; ++n) {
           rhs_ma[box_no](i, j, k) += zk[n] * rhoY(i, j, k, n) * factor;
         }
       });
+    amrex::Gpu::streamSynchronize();
   }
-  amrex::Gpu::streamSynchronize();
   // Solve for PhiV
   getDiffusionOp()->diffuse_scalar(
     GetVecOfPtrs(getPhiVVect(a_time)), 0, GetVecOfConstPtrs(rhsPoisson), 0, {},

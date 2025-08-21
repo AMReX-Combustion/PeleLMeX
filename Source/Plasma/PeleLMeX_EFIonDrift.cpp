@@ -72,6 +72,7 @@ PeleLM::ionDriftVelocity(std::unique_ptr<AdvanceAdvData>& advData)
             0.5 * (mob_o_ma[box_no](i, j, k, n) + mob_n_ma[box_no](i, j, k, n));
         }
       });
+    amrex::Gpu::streamSynchronize();
     // Get the face centered ions mobility
     constexpr int doZeroVisc = 0;
     amrex::Array<amrex::MultiFab, AMREX_SPACEDIM> mobH_ec =
@@ -93,8 +94,8 @@ PeleLM::ionDriftVelocity(std::unique_ptr<AdvanceAdvData>& advData)
           }
         });
     }
+    amrex::Gpu::streamSynchronize();
   }
-  amrex::Gpu::streamSynchronize();
 
   //----------------------------------------------------------------
   // Average down faces

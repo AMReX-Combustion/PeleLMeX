@@ -148,7 +148,6 @@ PeleLM::MakeNewLevelFromScratch(
       amrex::MFInfo(), EBFactory(0));
     FillSignedDistance(signDist, true);
 
-    constexpr amrex::Real fac = AMREX_D_PICK(0.5, 0.25, 0.125);
     auto const& sd_cc_ma = m_signedDist0->arrays();
     auto const& sd_nd_ma = signDist.const_arrays();
     amrex::ParallelFor(
@@ -161,7 +160,7 @@ PeleLM::MakeNewLevelFromScratch(
           +sd_nd_ma[box_no](i, j, k + 1) + sd_nd_ma[box_no](i + 1, j, k + 1) +
             sd_nd_ma[box_no](i, j + 1, k + 1) +
             sd_nd_ma[box_no](i + 1, j + 1, k + 1));
-        sd_cc_ma[box_no](i, j, k) *= fac;
+        sd_cc_ma[box_no](i, j, k) *= AMREX_D_PICK(0.5, 0.25, 0.125);
       });
     amrex::Gpu::streamSynchronize();
     m_signedDist0->FillBoundary(geom[0].periodicity());
@@ -369,6 +368,7 @@ PeleLM::initLevelData(const int lev)
         i, j, k, is_incomp, state_ma[box_no], aux_ma[box_no], geomdata,
         *lprobparm, lpmfdata);
     });
+  amrex::Gpu::streamSynchronize();
 
   if (m_incompressible == 0) {
     // Initialize thermodynamic pressure

@@ -226,6 +226,7 @@ PeleLM::velocityProjection(
                          int box_no, int i, int j, int k) noexcept {
           sigma_ma[box_no](i, j, k) = dt / rhoHalf_ma[box_no](i, j, k);
         });
+      amrex::Gpu::streamSynchronize();
 #ifdef AMREX_USE_EB
       EB_set_covered(*sigma[lev], 0.0);
 #endif
@@ -238,19 +239,14 @@ PeleLM::velocityProjection(
   }
 
   if (incremental == 0) {
-    amrex::Vector<std::unique_ptr<amrex::MultiFab>> rhoHalf;
     if (m_incompressible == 0) {
-      rhoHalf = getDensityVect(a_rhoTime);
-    }
-    rhoHalf.reserve(finest_level + 1);
-    for (int lev = 0; lev <= finest_level; ++lev) {
-
-      auto* ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
-      auto* ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
-
-      auto state_old_ma = ldataOld_p->state.arrays();
-      auto gp_new_ma = ldataNew_p->gp.const_arrays();
-      if (m_incompressible == 0) {
+      amrex::Vector<std::unique_ptr<amrex::MultiFab>> rhoHalf =
+        getDensityVect(a_rhoTime);
+      for (int lev = 0; lev <= finest_level; ++lev) {
+        auto* ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
+        auto* ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
+        auto state_old_ma = ldataOld_p->state.arrays();
+        auto gp_new_ma = ldataNew_p->gp.const_arrays();
         auto rho_ma = rhoHalf[lev]->const_arrays();
         amrex::ParallelFor(
           ldataNew_p->state,
@@ -262,13 +258,19 @@ PeleLM::velocityProjection(
               vel(i, j, k, n) += gp_new_ma[box_no](i, j, k, n) * soverrho;
             }
           });
-      } else {
+      }
+    } else {
+      for (int lev = 0; lev <= finest_level; ++lev) {
+        auto* ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
+        auto* ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
+        auto state_old_ma = ldataOld_p->state.arrays();
+        auto gp_new_ma = ldataNew_p->gp.const_arrays();
+        const amrex::Real soverrho = m_dt / m_rho;
         amrex::ParallelFor(
           ldataNew_p->state,
-          [state_old_ma, gp_new_ma, rho = m_rho, dt = a_dt] AMREX_GPU_DEVICE(
+          [state_old_ma, gp_new_ma, soverrho] AMREX_GPU_DEVICE(
             int box_no, int i, int j, int k) noexcept {
             amrex::Array4<amrex::Real> vel(state_old_ma[box_no], VELX);
-            const amrex::Real soverrho = dt / rho;
             for (int n = 0; n < AMREX_SPACEDIM; ++n) {
               vel(i, j, k, n) += gp_new_ma[box_no](i, j, k, n) * soverrho;
             }

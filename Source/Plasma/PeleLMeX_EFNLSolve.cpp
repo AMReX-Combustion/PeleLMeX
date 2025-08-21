@@ -318,8 +318,8 @@ void
 PeleLM::incrementElectronForcing(
   const int a_sstep, std::unique_ptr<AdvanceAdvData>& advData)
 {
-  for (int lev = 0; lev <= finest_level; ++lev) {
 
+  for (int lev = 0; lev <= finest_level; ++lev) {
     auto ldata_p = getLevelDataPtr(lev, AmrOldTime); // Old time electron
     auto ldataR_p = getLevelDataReactPtr(lev);       // Reaction
     auto ldataNLs_p = getLevelDataNLSolvePtr(lev);   // NL data
@@ -996,6 +996,7 @@ PeleLM::setUpPrecond(
         neke_ma[box_no](i, j, k) =
           kappaE_ma[box_no](i, j, k) * ne_arr_ma[box_no](i, j, k);
       });
+    amrex::Gpu::streamSynchronize();
     if (do_Schur == 1) {
       amrex::ParallelFor(
         nEKe, nEKe.nGrowVect(),
@@ -1006,31 +1007,6 @@ PeleLM::setUpPrecond(
         });
     }
     amrex::Gpu::streamSynchronize();
-    /*
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
-    for (amrex::MFIter mfi(nEKe, amrex::TilingIfNotGPU()); mfi.isValid();
-         ++mfi) {
-      const amrex::Box& gbx = mfi.growntilebox();
-      auto const& neke = nEKe.array(mfi);
-      auto const& kappaE = ldata_p->mobE_cc.array(mfi);
-      auto const& ne_arr = a_nE[lev]->const_array(mfi);
-      auto const& Schur =
-        (m_ef_PC_approx == 2) ? Schur_nEKe.array(mfi) : nEKe.array(mfi);
-      auto const& diffOp_diag =
-        (m_ef_PC_approx == 2) ? diagDiffOp[lev].array(mfi) : nEKe.array(mfi);
-      int do_Schur = (m_ef_PC_approx == 2) ? 1 : 0;
-      amrex::ParallelFor(
-        gbx, [] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          neke(i, j, k) = kappaE(i, j, k) * ne_arr(i, j, k);
-          if (do_Schur) {
-            Schur(i, j, k) = -a_dt * 0.5 * neke(i, j, k) / diffOp_diag(i, j, k);
-          }
-        });
-
-  }
-    */
 
     // Upwinded edge neKe values
     amrex::Array<amrex::MultiFab, AMREX_SPACEDIM> neKe_ec = getUpwindedEdge(

@@ -303,6 +303,7 @@ PeleLM::calcDiffusivity(const TimeStamp a_time)
           amrex::Array4<amrex::Real>(kma[box_no], 0));
 #endif
       });
+    amrex::Gpu::streamSynchronize();
 
     // Fill the diff_aux MF with specified Schmidt number
     for (int n = 0; n < m_nAux; ++n) {
@@ -337,12 +338,11 @@ PeleLM::calcDiffusivity(const TimeStamp a_time)
               amrex::Array4<amrex::Real const>(state_arr[box_no], TEMP),
               amrex::Array4<amrex::Real>(cp_arr[box_no]), leosparm);
           });
-
+        amrex::Gpu::streamSynchronize();
         ldata_p->diff_aux_cc.divide(cp_cc, n, 1, ldata_p->diff_cc.nGrow());
       }
     }
   }
-  amrex::Gpu::streamSynchronize();
 }
 
 amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>

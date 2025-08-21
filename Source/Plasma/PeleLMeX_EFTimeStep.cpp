@@ -61,6 +61,7 @@ PeleLM::estEFIonsDt(const TimeStamp a_time)
           }
         });
     }
+    amrex::Gpu::streamSynchronize();
 
     auto const& efield_const_ma = efield_cc.const_arrays();
     auto const& mob_cc_ma = ldata_p->mob_cc.const_arrays();
@@ -85,7 +86,7 @@ PeleLM::estEFIonsDt(const TimeStamp a_time)
       });
     amrex::Gpu::streamSynchronize();
     const auto dx = Geom(lev).CellSizeArray();
-    amrex::Real cfl_lcl = m_cfl;
+    const amrex::Real cfl_lcl = m_cfl;
     estdt_lev = amrex::ReduceMin(
       driftVelMax_cc, 0,
       [dx, cfl_lcl] AMREX_GPU_HOST_DEVICE(

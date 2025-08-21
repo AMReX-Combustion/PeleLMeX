@@ -222,7 +222,7 @@ PeleLM::initializeElectronNeutral()
         amrex::Array4<amrex::Real> nE(state_ma[box_no], NE);
         initElecNeutral(i, j, k, rho, rhoY, rhoH, temp, nE, *lprobparm);
       });
-
+    amrex::Gpu::streamSynchronize();
     // Convert I_R(Y_nE) into I_R(nE) and set I_R(Y_nE) to zero
     auto ldataR_p = getLevelDataReactPtr(lev);
     auto const& I_R_ma = ldataR_p->I_R.arrays();

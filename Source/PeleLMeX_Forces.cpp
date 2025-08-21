@@ -57,8 +57,8 @@ PeleLM::getVelForces(
   auto ext_ma = m_extSource[lev]->const_arrays();
   auto force_ma = a_velForce->arrays();
 
-  auto gp_ma = (add_gradP != 0) ? ldataGP_p->gp.const_arrays() : state_ma;
-  auto divTau_ma = (has_divTau != 0) ? a_divTau->const_arrays() : state_ma;
+  // auto gp_ma = (add_gradP != 0) ? ldataGP_p->gp.const_arrays() : state_ma;
+  // auto divTau_ma = (has_divTau != 0) ? a_divTau->const_arrays() : state_ma;
 
   const auto dx = geom[lev].CellSizeArray();
   const int pseudo_gravity = m_ctrl_pseudoGravity;
@@ -71,7 +71,7 @@ PeleLM::getVelForces(
 
   amrex::ParallelFor(
     *a_velForce,
-    [state_ma, ext_ma, force_ma, gp_ma, divTau_ma, dx, add_gradP, has_divTau,
+    [state_ma, ext_ma, force_ma, dx, /*gp_ma, divTau_ma,add_gradP,has_divTau,*/
      time, grav, gp0, ps_dir, is_incomp, rho_incomp, pseudo_gravity, dV_control
 #ifdef PELE_USE_PLASMA
      ,
@@ -97,28 +97,28 @@ PeleLM::getVelForces(
       addLorentzForce(
         i, j, k, blo, bhi, time, dx, zk, rhoY, nE, phiV, force_ma[box_no]);
 #endif
-      // Do we shift these outside ParallelFor?
-      if (add_gradP != 0) {
-        for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
-          force_ma[box_no](i, j, k, idim) -= gp_ma[box_no](i, j, k, idim);
-        }
-      }
-      if (has_divTau != 0) {
-        for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
-          force_ma[box_no](i, j, k, idim) += divTau_ma[box_no](i, j, k, idim);
-        }
-      }
-      if (is_incomp != 0) {
-        for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
-          force_ma[box_no](i, j, k, idim) /= rho_incomp;
-        }
-      } else {
+    });
+  amrex::Gpu::streamSynchronize();
+  if (add_gradP != 0) {
+    amrex::MultiFab::Subtract(
+      *a_velForce, ldataGP_p->gp, 0, 0, AMREX_SPACEDIM, 0);
+  }
+  if (has_divTau != 0) {
+    amrex::MultiFab::Add(*a_velForce, *a_divTau, 0, 0, AMREX_SPACEDIM, 0);
+  }
+  if (is_incomp != 0) {
+    a_velForce->mult(1.0 / rho_incomp, 0, AMREX_SPACEDIM, 0);
+  } else {
+    amrex::ParallelFor(
+      *a_velForce, [force_ma, state_ma] AMREX_GPU_DEVICE(
+                     int box_no, int i, int j, int k) noexcept {
+        amrex::Array4<amrex::Real const> rho(state_ma[box_no], DENSITY);
         for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
           force_ma[box_no](i, j, k, idim) /= rho(i, j, k);
         }
-      }
-    });
-  amrex::Gpu::streamSynchronize();
+      });
+    amrex::Gpu::streamSynchronize();
+  }
 }
 
 void
@@ -241,6 +241,11 @@ PeleLM::addScalarVarianceSources(const TimeStamp a_timestamp)
         GetVecOfConstPtrs(getStateVect(a_timestamp)), {}, bcRecScalar[0],
         do_avgDown, var_of_scalar);
 
+      constexpr amrex::Real fact =
+        0.5 / static_cast<amrex::Real>(AMREX_SPACEDIM);
+      const amrex::Real C_chi = m_les_c_chi;
+      const amrex::Real ScInv = m_Schmidt_inv;
+
       // Add in Production and Dissipation source terms for subfilter variances
       for (int lev = 0; lev <= finest_level; ++lev) {
 
@@ -257,10 +262,6 @@ PeleLM::addScalarVarianceSources(const TimeStamp a_timestamp)
 
         for (int n = 0; n < MANIFOLD_DIM; ++n) {
           if (leosparm.is_variance_of[n] >= 0) {
-
-            constexpr amrex::Real fact = 0.5 / AMREX_SPACEDIM;
-            const amrex::Real C_chi = m_les_c_chi;
-            const amrex::Real ScInv = m_Schmidt_inv;
 
             AMREX_D_TERM(
               auto const& mut_arr_x =

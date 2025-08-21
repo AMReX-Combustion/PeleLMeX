@@ -311,8 +311,8 @@ PeleLM::adjustPandDivU(std::unique_ptr<AdvanceAdvData>& advData)
           amrex::Array4<amrex::Real const>(sma_n[box_no], TEMP), leosparm);
         theta(i, j, k) = 0.5 * (gammaInv_o / pOld + gammaInv_n / pNew);
       });
+    amrex::Gpu::streamSynchronize();
   }
-  amrex::Gpu::streamSynchronize();
 
   // Get the mean mac_divu (Sbar) and mean theta
   const amrex::Real Sbar =
