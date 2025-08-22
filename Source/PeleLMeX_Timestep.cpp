@@ -114,12 +114,12 @@ PeleLM::estConvectiveDt(const TimeStamp a_time)
 
     //----------------------------------------------------------------
     // Get velocity forces
-    int nGrow_force = 0;
+    constexpr int nGrow_force = 0;
     amrex::MultiFab velForces(
       grids[lev], dmap[lev], AMREX_SPACEDIM, nGrow_force, amrex::MFInfo(),
       Factory(lev));
 
-    int add_gradP = 1;
+    constexpr int add_gradP = 1;
     getVelForces(a_time, lev, nullptr, &velForces, add_gradP);
 
     //----------------------------------------------------------------

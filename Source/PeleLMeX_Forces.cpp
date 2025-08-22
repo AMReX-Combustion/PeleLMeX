@@ -65,7 +65,8 @@ PeleLM::getVelForces(
   auto const& ext_ma = m_extSource[lev]->const_arrays();
   auto const& force_ma = a_velForce->arrays();
   auto const& gp_ma = ldataGP_p->gp.const_arrays();
-  auto const& divTau_ma = a_divTau->const_arrays();
+  auto const& divTau_ma =
+    (has_divTau != 0) ? a_divTau->const_arrays() : state_ma;
 
 #ifdef PELE_USE_PLASMA
   auto const& dx = geom[lev].CellSizeArray();
@@ -86,7 +87,7 @@ PeleLM::getVelForces(
       amrex::Array4<amrex::Real const> extmom(ext_ma[box_no], VELX);
       amrex::Array4<amrex::Real const> rho;
       amrex::Array4<amrex::Real const> extrho;
-      if (is_incomp != 0) {
+      if (is_incomp == 0) {
         rho = amrex::Array4<amrex::Real const>(state_ma[box_no], DENSITY);
         extrho = amrex::Array4<amrex::Real const>(ext_ma[box_no], DENSITY);
       }
