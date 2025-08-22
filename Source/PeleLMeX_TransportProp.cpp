@@ -306,7 +306,6 @@ PeleLM::calcDiffusivity(const TimeStamp& a_time)
     auto eos = pele::physics::PhysicsType::eos(leosparm);
     eos.molecular_weight(mwt.arr);
   }
-  auto const lzk = zk;
 #endif
 
   for (int lev = 0; lev <= finest_level; ++lev) {
@@ -334,7 +333,7 @@ PeleLM::calcDiffusivity(const TimeStamp& a_time)
           leosparm);
 #ifdef PELE_USE_PLASMA
         getKappaSp(
-          i, j, k, mwt.arr, lzk,
+          i, j, k, mwt.arr, zk,
           amrex::Array4<amrex::Real const>(sma[box_no], FIRSTSPEC),
           amrex::Array4<amrex::Real>(dma[box_no], 0),
           amrex::Array4<amrex::Real const>(sma[box_no], TEMP),

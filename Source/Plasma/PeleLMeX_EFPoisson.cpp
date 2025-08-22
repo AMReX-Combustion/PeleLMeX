@@ -22,7 +22,6 @@ PeleLM::poissonSolveEF(const TimeStamp& a_time)
       grids[lev], dmap[lev], 1, nGhost, amrex::MFInfo(), *m_factory[lev]));
 
     auto ldata_p = getLevelDataPtr(lev, a_time);
-    auto const lzk = zk;
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
@@ -37,7 +36,7 @@ PeleLM::poissonSolveEF(const TimeStamp& a_time)
         bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           rhs(i, j, k) = -nE(i, j, k) * elemCharge * factor;
           for (int n = 0; n < NUM_SPECIES; n++) {
-            rhs(i, j, k) += lzk[n] * rhoY(i, j, k, n) * factor;
+            rhs(i, j, k) += zk[n] * rhoY(i, j, k, n) * factor;
           }
         });
     }

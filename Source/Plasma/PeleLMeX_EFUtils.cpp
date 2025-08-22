@@ -190,12 +190,11 @@ PeleLM::addLorentzVelForces(
   amrex::Array4<const amrex::Real> const& nE)
 {
   const auto dx = geom[lev].CellSizeArray();
-  const auto lzk = zk;
   amrex::GpuArray<int, 3> blo = bx.loVect3d();
   amrex::GpuArray<int, 3> bhi = bx.hiVect3d();
 
   amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-    addLorentzForce(i, j, k, blo, bhi, a_time, dx, lzk, rhoY, nE, phiV, force);
+    addLorentzForce(i, j, k, blo, bhi, a_time, dx, zk, rhoY, nE, phiV, force);
   });
 }
 
