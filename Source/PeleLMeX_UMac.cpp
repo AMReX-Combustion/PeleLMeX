@@ -126,6 +126,8 @@ PeleLM::addChiIncrement(
           }
           mac_divu_ma[box_no](i, j, k) = chi_ma[box_no](i, j, k);
         });
+      // Shift outside?
+      amrex::Gpu::streamSynchronize();
     }
     break;
   }
@@ -145,6 +147,8 @@ PeleLM::addChiIncrement(
           }
           mac_divu_ma[box_no](i, j, k) = chi_ma[box_no](i, j, k);
         });
+      // Shift outside?
+      amrex::Gpu::streamSynchronize();
     }
     break;
   }
@@ -164,10 +168,11 @@ PeleLM::addChiIncrement(
           }
           mac_divu_ma[box_no](i, j, k) += chi_ma[box_no](i, j, k);
         });
+      // Shift outside?
+      amrex::Gpu::streamSynchronize();
     }
   }
   }
-  amrex::Gpu::streamSynchronize();
   if (m_print_chi_convergence) {
     const amrex::Real max_corr =
       MLNorm0(GetVecOfConstPtrs(chiIncr)) * m_dt / m_dpdtFactor;

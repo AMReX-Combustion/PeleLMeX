@@ -252,6 +252,8 @@ PeleLM::velocityProjection(
               vel(i, j, k, n) += gp_new_ma[box_no](i, j, k, n) * soverrho;
             }
           });
+        // Shift outside? (w/below)
+        amrex::Gpu::streamSynchronize();
       }
     } else {
       for (int lev = 0; lev <= finest_level; ++lev) {
@@ -269,9 +271,10 @@ PeleLM::velocityProjection(
               vel(i, j, k, n) += gp_new_ma[box_no](i, j, k, n) * soverrho;
             }
           });
+        // Shift outside?
+        amrex::Gpu::streamSynchronize();
       }
     }
-    amrex::Gpu::streamSynchronize();
   }
 
   // If incremental
@@ -345,19 +348,15 @@ PeleLM::velocityProjection(
 
         amrex::ParallelFor(
           rhs_cc[lev], rhs_cc[lev].nGrowVect(),
-          [divu_o_ma, divu_n_ma,
-           rhs_ma] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+          [divu_o_ma, divu_n_ma, rhs_ma, SbarNew, SbarOld,
+           is_closed_chamber =
+             m_closed_chamber] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
             rhs_ma[box_no](i, j, k) =
               -(divu_n_ma[box_no](i, j, k) - divu_o_ma[box_no](i, j, k));
-          });
-        if (m_closed_chamber != 0) {
-          amrex::ParallelFor(
-            rhs_cc[lev], rhs_cc[lev].nGrowVect(),
-            [rhs_ma, SbarNew, SbarOld] AMREX_GPU_DEVICE(
-              int box_no, int i, int j, int k) noexcept {
+            if (is_closed_chamber != 0) {
               rhs_ma[box_no](i, j, k) += SbarNew - SbarOld;
-            });
-        }
+            }
+          });
         amrex::Gpu::streamSynchronize();
       }
 #ifdef AMREX_USE_EB

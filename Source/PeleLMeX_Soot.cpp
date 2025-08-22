@@ -71,8 +71,9 @@ PeleLM::clipSootMoments()
           state_arr(i, j, k, mom) = moments[mom];
         }
       });
+    // Shift outside?
+    amrex::Gpu::streamSynchronize();
   }
-  amrex::Gpu::streamSynchronize();
 }
 
 // TODO: This isn't working yet

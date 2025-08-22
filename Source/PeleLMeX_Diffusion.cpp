@@ -1148,8 +1148,9 @@ PeleLM::differentialDiffusionUpdate(
           fAux_ma[box_no](i, j, k, n) += aux_ma[box_no](i, j, k, n);
         }
       });
+    // Shift outside?
+    amrex::Gpu::streamSynchronize();
   }
-  amrex::Gpu::streamSynchronize();
 
   //------------------------------------------------------------------------
   // Species diffusion solve
@@ -1406,8 +1407,9 @@ PeleLM::differentialDiffusionUpdate(
           }
         });
     }
+    // Shift outside?
+    amrex::Gpu::streamSynchronize();
   }
-  amrex::Gpu::streamSynchronize();
 
   // FillPatch species again before going into the enthalpy solve
   fillPatchSpecies(AmrNewTime);
@@ -1796,8 +1798,9 @@ PeleLM::getScalarDiffForce(
           f_aux_ma[box_no], a_aux_ma[box_no], dn_aux_ma[box_no],
           dnp1_aux_ma[box_no], aux_advect_d, aux_diffuse_d, nAux);
       });
+    // Shift outside?
+    amrex::Gpu::streamSynchronize();
   }
-  amrex::Gpu::streamSynchronize();
 
   // Fill forcing ghost cells
   if (advData->Forcing[0].nGrow() > 0) {

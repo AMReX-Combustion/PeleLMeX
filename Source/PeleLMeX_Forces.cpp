@@ -214,9 +214,10 @@ PeleLM::addSpark(const TimeStamp a_timestamp)
             extma[box_no](i, j, k, RHOH) = rhoh_src_loc;
           }
         });
+      // Shift outside?
+      amrex::Gpu::streamSynchronize();
     }
   }
-  amrex::Gpu::streamSynchronize();
 }
 
 // Manifold model - dissipation rate sources for variances

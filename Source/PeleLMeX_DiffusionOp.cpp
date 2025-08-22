@@ -297,8 +297,9 @@ DiffusionOp::diffuse_scalar(
               phi_ma[box_no](i, j, k, n) * a_rho_ma[box_no](i, j, k);
           }
         });
+      // Shift outside?
+      amrex::Gpu::streamSynchronize();
     }
-    amrex::Gpu::streamSynchronize();
   }
 }
 
@@ -508,8 +509,9 @@ DiffusionOp::diffuse_scalar(
               phi_ma[box_no](i, j, k, n) * a_rho_ma[box_no](i, j, k);
           }
         });
+      // Shift outside?
+      amrex::Gpu::streamSynchronize();
     }
-    amrex::Gpu::streamSynchronize();
   }
 }
 #endif
@@ -1199,8 +1201,9 @@ DiffusionTensorOp::compute_divtau(
             divtau_ma[box_no](i, j, k, n) /= rho_ma[box_no](i, j, k);
           }
         });
+      // Shift outside?
+      amrex::Gpu::streamSynchronize();
     }
-    amrex::Gpu::streamSynchronize();
   }
 }
 
