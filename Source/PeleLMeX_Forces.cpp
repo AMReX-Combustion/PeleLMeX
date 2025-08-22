@@ -86,7 +86,7 @@ PeleLM::getVelForces(
       amrex::Array4<amrex::Real const> extmom(ext_ma[box_no], VELX);
       amrex::Array4<amrex::Real const> rho;
       amrex::Array4<amrex::Real const> extrho;
-      if (is_incomp == 0) {
+      if (is_incomp != 0) {
         rho = amrex::Array4<amrex::Real const>(state_ma[box_no], DENSITY);
         extrho = amrex::Array4<amrex::Real const>(ext_ma[box_no], DENSITY);
       }
