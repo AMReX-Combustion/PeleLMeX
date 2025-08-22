@@ -58,7 +58,7 @@ PeleLM::SprayReadParameters()
   if (!do_spray_particles) {
     return;
   }
-  SprayParticleContainer::readSprayParams(spray_verbose,&eos_parms);
+  SprayParticleContainer::readSprayParams(spray_verbose);
   // Must change dtmod to 1 since we only do MKD
   SprayParticleContainer::getSprayData()->dtmod = 1.;
 }
@@ -74,7 +74,7 @@ PeleLM::SpraySetup()
   if (SPRAY_FUEL_NUM > NUM_SPECIES) {
     amrex::Abort("Cannot have more spray fuel species than fluid species");
   }
-  SprayParticleContainer::spraySetup(m_gravity.data(),&(eos_parms.host_parm()));
+  SprayParticleContainer::spraySetup(m_gravity.data(),&(eos_parms.host_parm()),&eos_parms);
   SprayComps scomps;
   // Component indices for conservative variables
   scomps.rhoIndx = DENSITY;
