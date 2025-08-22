@@ -345,7 +345,7 @@ PeleLM::copyTransportOldToNew()
 }
 
 void
-PeleLM::copyDiffusionOldToNew(std::unique_ptr<AdvanceDiffData>& diffData)
+PeleLM::copyDiffusionOldToNew(const std::unique_ptr<AdvanceDiffData>& diffData)
 {
   for (int lev = 0; lev <= finest_level; ++lev) {
     amrex::MultiFab::Copy(

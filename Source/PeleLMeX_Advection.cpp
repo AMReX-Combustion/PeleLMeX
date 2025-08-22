@@ -4,7 +4,7 @@
 #include <hydro_utils.H>
 
 void
-PeleLM::computeVelocityAdvTerm(std::unique_ptr<AdvanceAdvData>& advData)
+PeleLM::computeVelocityAdvTerm(const std::unique_ptr<AdvanceAdvData>& advData)
 {
   //----------------------------------------------------------------
   // Create temporary containers
@@ -204,7 +204,7 @@ PeleLM::computeVelocityAdvTerm(std::unique_ptr<AdvanceAdvData>& advData)
 }
 
 void
-PeleLM::updateVelocity(std::unique_ptr<AdvanceAdvData>& advData)
+PeleLM::updateVelocity(const std::unique_ptr<AdvanceAdvData>& advData)
 {
   //----------------------------------------------------------------
   // Compute t^n divTau
@@ -265,11 +265,11 @@ PeleLM::updateVelocity(std::unique_ptr<AdvanceAdvData>& advData)
 
 void
 PeleLM::getScalarAdvForce(
-  std::unique_ptr<AdvanceAdvData>& advData,
-  std::unique_ptr<AdvanceDiffData>& diffData)
+  const std::unique_ptr<AdvanceAdvData>& advData,
+  const std::unique_ptr<AdvanceDiffData>& diffData)
 {
 
-  int* aux_diffuse_d = convertToDeviceVector(m_DiffTypeAux).dataPtr();
+  const int* aux_diffuse_d = convertToDeviceVector(m_DiffTypeAux).dataPtr();
   auto const* leosparm = eos_parms.device_parm();
 
   for (int lev = 0; lev <= finest_level; ++lev) {
@@ -332,7 +332,7 @@ PeleLM::getScalarAdvForce(
 }
 
 void
-PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
+PeleLM::computeScalarAdvTerms(const std::unique_ptr<AdvanceAdvData>& advData)
 {
 
   //----------------------------------------------------------------
@@ -934,7 +934,7 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
 }
 
 void
-PeleLM::updateDensity(std::unique_ptr<AdvanceAdvData>& advData)
+PeleLM::updateDensity(const std::unique_ptr<AdvanceAdvData>& advData)
 {
   for (int lev = 0; lev <= finest_level; ++lev) {
     // Get MultiArrays
@@ -958,7 +958,7 @@ PeleLM::updateDensity(std::unique_ptr<AdvanceAdvData>& advData)
 
 void
 PeleLM::computePassiveAdvTerms(
-  std::unique_ptr<AdvanceAdvData>& advData,
+  const std::unique_ptr<AdvanceAdvData>& advData,
   const int state_comp,
   const int ncomp)
 {
@@ -1119,7 +1119,7 @@ PeleLM::computePassiveAdvTerms(
 
 void
 PeleLM::updateScalarComp(
-  std::unique_ptr<AdvanceAdvData>& advData,
+  const std::unique_ptr<AdvanceAdvData>& advData,
   const int state_comp,
   const int ncomp)
 {

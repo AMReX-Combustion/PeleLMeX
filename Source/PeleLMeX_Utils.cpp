@@ -2186,7 +2186,7 @@ PeleLM::parseComposition(
 // Extend the cell-centered based signed distance function
 void
 PeleLM::extendSignedDistance(
-  amrex::MultiFab* a_signDist, amrex::Real a_extendFactor)
+  amrex::MultiFab* a_signDist, const amrex::Real a_extendFactor)
 {
   BL_PROFILE("PeleLMeX::extendSignedDistance()");
   // This is a not-so-pretty piece of code that'll take AMReX cell-averaged

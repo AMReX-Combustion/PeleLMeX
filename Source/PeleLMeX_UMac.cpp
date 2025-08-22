@@ -5,7 +5,7 @@
 #include <PeleLMeX_BCfill.H>
 
 void
-PeleLM::predictVelocity(std::unique_ptr<AdvanceAdvData>& advData)
+PeleLM::predictVelocity(const std::unique_ptr<AdvanceAdvData>& advData)
 {
   BL_PROFILE("PeleLMeX::predictVelocity()");
 
@@ -73,7 +73,7 @@ PeleLM::predictVelocity(std::unique_ptr<AdvanceAdvData>& advData)
 }
 
 void
-PeleLM::createMACRHS(std::unique_ptr<AdvanceAdvData>& advData)
+PeleLM::createMACRHS(const std::unique_ptr<AdvanceAdvData>& advData)
 {
   BL_PROFILE("PeleLMeX::createMACRHS()");
 
@@ -87,7 +87,7 @@ void
 PeleLM::addChiIncrement(
   const int a_sdcIter,
   const TimeStamp a_time,
-  std::unique_ptr<AdvanceAdvData>& advData)
+  const std::unique_ptr<AdvanceAdvData>& advData)
 {
   BL_PROFILE("PeleLMeX::addChiIncrement()");
 
@@ -184,7 +184,7 @@ PeleLM::addChiIncrement(
 void
 PeleLM::macProject(
   const TimeStamp a_time,
-  std::unique_ptr<AdvanceAdvData>& advData,
+  const std::unique_ptr<AdvanceAdvData>& advData,
   const amrex::Vector<amrex::MultiFab*>& a_divu)
 {
   BL_PROFILE("PeleLMeX::macProject()");
@@ -284,8 +284,8 @@ PeleLM::create_constrained_umac_grown(
   const int a_nGrow,
   const amrex::Geometry* crse_geom,
   const amrex::Geometry* fine_geom,
-  amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM> u_mac_crse,
-  amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM> u_mac_fine,
+  const amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>& u_mac_crse,
+  const amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>& u_mac_fine,
   const amrex::IntVect& crse_ratio)
 {
   // Divergence preserving interp

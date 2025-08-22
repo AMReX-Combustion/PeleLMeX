@@ -5,7 +5,7 @@
 #endif
 
 void
-PeleLM::advanceChemistry(std::unique_ptr<AdvanceAdvData>& advData)
+PeleLM::advanceChemistry(const std::unique_ptr<AdvanceAdvData>& advData)
 {
   BL_PROFILE("PeleLMeX::advanceChemistry()");
 
@@ -440,7 +440,7 @@ PeleLM::computeInstantaneousReactionRate(
 }
 
 void
-PeleLM::getScalarReactForce(std::unique_ptr<AdvanceAdvData>& advData)
+PeleLM::getScalarReactForce(const std::unique_ptr<AdvanceAdvData>& advData)
 {
   // The differentialDiffusionUpdate just provided the {np1,kp1} AD state
   // -> use it to build the external forcing for the chemistry

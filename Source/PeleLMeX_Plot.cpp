@@ -519,7 +519,7 @@ PeleLM::WritePlotFile()
 }
 
 void
-PeleLM::WriteHeader(const std::string& name, bool is_checkpoint) const
+PeleLM::WriteHeader(const std::string& name, const bool is_checkpoint) const
 {
   if (amrex::ParallelDescriptor::IOProcessor()) {
     std::string HeaderFileName(name + "/Header");

@@ -268,8 +268,8 @@ PeleLM::Advance(const int is_initIter)
 void
 PeleLM::oneSDC(
   const int sdcIter,
-  std::unique_ptr<AdvanceAdvData>& advData,
-  std::unique_ptr<AdvanceDiffData>& diffData)
+  const std::unique_ptr<AdvanceAdvData>& advData,
+  const std::unique_ptr<AdvanceDiffData>& diffData)
 {
   BL_PROFILE("PeleLMeX::oneSDC()");
   m_sdcIter = sdcIter;

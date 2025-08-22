@@ -237,8 +237,8 @@ PeleLM::initializeElectronNeutral()
         nEdot(i, j, k) = YnEdot(i, j, k) * Na * invmwt[E_ID] * 1.0e3;
         YnEdot(i, j, k) = 0.0;
       });
+    amrex::Gpu::streamSynchronize();
   }
-  amrex::Gpu::streamSynchronize();
 }
 
 void

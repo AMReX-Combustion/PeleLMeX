@@ -60,8 +60,9 @@ PeleLM::estEFIonsDt(const TimeStamp a_time)
                         phiV(idxm[0], idxm[1], idxm[2]));
           }
         });
+      // Shift outside?
+      amrex::Gpu::streamSynchronize();
     }
-    amrex::Gpu::streamSynchronize();
 
     auto const& efield_const_ma = efield_cc.const_arrays();
     auto const& mob_cc_ma = ldata_p->mob_cc.const_arrays();

@@ -40,7 +40,7 @@ PeleLM::getDiffusionTensorOp()
 void
 PeleLM::computeDifferentialDiffusionTerms(
   const TimeStamp a_time,
-  std::unique_ptr<AdvanceDiffData>& diffData,
+  const std::unique_ptr<AdvanceDiffData>& diffData,
   const int is_init)
 {
   BL_PROFILE("PeleLMeX::computeDifferentialDiffusionTerms()");
@@ -1076,8 +1076,8 @@ PeleLM::computeSpeciesEnthalpyFlux(
 
 void
 PeleLM::differentialDiffusionUpdate(
-  std::unique_ptr<AdvanceAdvData>& advData,
-  std::unique_ptr<AdvanceDiffData>& diffData)
+  const std::unique_ptr<AdvanceAdvData>& advData,
+  const std::unique_ptr<AdvanceDiffData>& diffData)
 {
   BL_PROFILE("PeleLMeX::differentialDiffusionUpdate()");
 
@@ -1585,8 +1585,8 @@ PeleLM::deltaTIter_prepare(
   const amrex::Vector<amrex::MultiFab*>& a_rhs,
   const amrex::Vector<amrex::MultiFab*>& a_Tsave,
   const amrex::Vector<amrex::MultiFab*>& a_rhoCp,
-  std::unique_ptr<AdvanceAdvData>& advData,
-  std::unique_ptr<AdvanceDiffData>& diffData)
+  const std::unique_ptr<AdvanceAdvData>& advData,
+  const std::unique_ptr<AdvanceDiffData>& diffData)
 {
   auto const* leosparm = eos_parms.device_parm();
   const amrex::Real dtinv = 1.0 / m_dt;
@@ -1638,11 +1638,11 @@ PeleLM::deltaTIter_prepare(
 
 void
 PeleLM::deltaTIter_update(
-  int a_dtiter,
+  const int a_dtiter,
   const amrex::Vector<amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>>& a_fluxes,
   const amrex::Vector<amrex::MultiFab*>& a_ebfluxes,
   const amrex::Vector<amrex::MultiFab const*>& a_Tsave,
-  std::unique_ptr<AdvanceDiffData>& diffData,
+  const std::unique_ptr<AdvanceDiffData>& diffData,
   amrex::Real& a_deltaT_norm)
 {
 #ifndef AMREX_USE_EB
@@ -1745,8 +1745,8 @@ PeleLM::deltaTIter_update(
 
 void
 PeleLM::getScalarDiffForce(
-  std::unique_ptr<AdvanceAdvData>& advData,
-  std::unique_ptr<AdvanceDiffData>& diffData)
+  const std::unique_ptr<AdvanceAdvData>& advData,
+  const std::unique_ptr<AdvanceDiffData>& diffData)
 {
 
   const int* aux_advect_d = convertToDeviceVector(m_aux_advect).dataPtr();

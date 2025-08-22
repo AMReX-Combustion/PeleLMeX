@@ -5,7 +5,7 @@
 #include <PeleLMeX_BCfill.H>
 
 void
-PeleLM::ionDriftVelocity(std::unique_ptr<AdvanceAdvData>& advData)
+PeleLM::ionDriftVelocity(const std::unique_ptr<AdvanceAdvData>& advData)
 {
   //----------------------------------------------------------------
   // set udrift boundaries to zero
@@ -93,8 +93,9 @@ PeleLM::ionDriftVelocity(std::unique_ptr<AdvanceAdvData>& advData)
               (gp_o_ma[box_no](i, j, k) + gp_n_ma[box_no](i, j, k));
           }
         });
+      // Shift outside?
+      amrex::Gpu::streamSynchronize();
     }
-    amrex::Gpu::streamSynchronize();
   }
 
   //----------------------------------------------------------------
@@ -165,7 +166,8 @@ PeleLM::ionDriftVelocity(std::unique_ptr<AdvanceAdvData>& advData)
 }
 
 void
-PeleLM::ionDriftAddUmac(int lev, std::unique_ptr<AdvanceAdvData>& advData)
+PeleLM::ionDriftAddUmac(
+  const int lev, const std::unique_ptr<AdvanceAdvData>& advData)
 {
   // Add umac to the ions drift velocity to get the effective velocity
   for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {

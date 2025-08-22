@@ -458,14 +458,14 @@ public:
    * from cell-centered ones
    * \param advData container for the face-centered velocity umac
    */
-  void predictVelocity(std::unique_ptr<AdvanceAdvData>& advData);
+  void predictVelocity(const std::unique_ptr<AdvanceAdvData>& advData);
 
   /**
    * \brief Create MAC projection RHS by fillpatching divU
    *  between old and new time
    * \param advData container for mac_divu
    */
-  void createMACRHS(std::unique_ptr<AdvanceAdvData>& advData);
+  void createMACRHS(const std::unique_ptr<AdvanceAdvData>& advData);
 
   /**
    * \brief Create MAC projection RHS by fillpatching divU
@@ -477,7 +477,7 @@ public:
   void addChiIncrement(
     const int a_sdcIter,
     const PeleLM::TimeStamp a_time,
-    std::unique_ptr<AdvanceAdvData>& advData);
+    const std::unique_ptr<AdvanceAdvData>& advData);
 
   /**
    * \brief Perform MAC projection to obtained divergence constrained
@@ -488,7 +488,7 @@ public:
    */
   void macProject(
     const PeleLM::TimeStamp a_time,
-    std::unique_ptr<AdvanceAdvData>& advData,
+    const std::unique_ptr<AdvanceAdvData>& advData,
     const amrex::Vector<amrex::MultiFab*>& a_divu);
 
   /**
@@ -508,8 +508,8 @@ public:
     const int a_nGrow,
     const amrex::Geometry* crse_geom,
     const amrex::Geometry* fine_geom,
-    amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM> u_mac_crse,
-    amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM> u_mac_fine,
+    const amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>& u_mac_crse,
+    const amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>& u_mac_fine,
     const amrex::IntVect& crse_ratio);
 
   /**
@@ -608,7 +608,7 @@ public:
    */
   void computeDifferentialDiffusionTerms(
     const PeleLM::TimeStamp a_time,
-    std::unique_ptr<AdvanceDiffData>& diffData,
+    const std::unique_ptr<AdvanceDiffData>& diffData,
     const int is_init = 0);
 
   /**
@@ -676,8 +676,8 @@ public:
    * \param diffData container for the returning implicit diffusion term
    */
   void differentialDiffusionUpdate(
-    std::unique_ptr<AdvanceAdvData>& advData,
-    std::unique_ptr<AdvanceDiffData>& diffData);
+    const std::unique_ptr<AdvanceAdvData>& advData,
+    const std::unique_ptr<AdvanceDiffData>& diffData);
 
   /**
    * \brief Setup the implicit deltaT linear solve
@@ -691,8 +691,8 @@ public:
     const amrex::Vector<amrex::MultiFab*>& a_rhs,
     const amrex::Vector<amrex::MultiFab*>& a_Tsave,
     const amrex::Vector<amrex::MultiFab*>& a_rhoCp,
-    std::unique_ptr<AdvanceAdvData>& advData,
-    std::unique_ptr<AdvanceDiffData>& diffData);
+    const std::unique_ptr<AdvanceAdvData>& advData,
+    const std::unique_ptr<AdvanceDiffData>& diffData);
 
   /**
    * \brief Restore state, update enthalpy and compute fluxes after deltaT
@@ -709,7 +709,7 @@ public:
       a_fluxes,
     const amrex::Vector<amrex::MultiFab*>& a_ebfluxes,
     const amrex::Vector<amrex::MultiFab const*>& a_Tsave,
-    std::unique_ptr<AdvanceDiffData>& diffData,
+    const std::unique_ptr<AdvanceDiffData>& diffData,
     amrex::Real& a_deltaT_norm);
 
   /**
@@ -724,7 +724,7 @@ public:
     const PeleLM::TimeStamp a_time,
     const amrex::Vector<amrex::MultiFab*>& a_divtau,
     const int use_density,
-    amrex::Real scale = 1.0);
+    const amrex::Real scale = 1.0);
 
   /**
    * \brief Implicit diffusion of the of velocity field using AMReX
@@ -760,7 +760,7 @@ public:
    * the advection/diffusion component of the advance function in the SDC
    * context
    */
-  void advanceChemistry(std::unique_ptr<AdvanceAdvData>& advData);
+  void advanceChemistry(const std::unique_ptr<AdvanceAdvData>& advData);
 
   /**
    * \brief Performing the chemistry integration on a given level, for a fixed
@@ -973,7 +973,7 @@ public:
     const int computeDiff,
     const int do_avgDown,
     const PeleLM::TimeStamp a_time,
-    std::unique_ptr<AdvanceDiffData>& diffData);
+    const std::unique_ptr<AdvanceDiffData>& diffData);
 
   /**
    * \brief Compute the pressure drift term using RhoRT and
@@ -1001,7 +1001,7 @@ public:
    * thermodynamic pressure. Return the mean divU.
    * \param advData container including mac_divu
    */
-  amrex::Real adjustPandDivU(std::unique_ptr<AdvanceAdvData>& advData);
+  amrex::Real adjustPandDivU(const std::unique_ptr<AdvanceAdvData>& advData);
   //-----------------------------------------------------------------------------
 
   //-----------------------------------------------------------------------------
@@ -1013,7 +1013,7 @@ public:
   void ReadCheckPointFile();
   bool writeCheckNow() const;
   void WriteJobInfo(const std::string& path) const;
-  void WriteHeader(const std::string& name, bool is_checkpoint) const;
+  void WriteHeader(const std::string& name, const bool is_checkpoint) const;
   void WriteDebugPlotFile(
     const amrex::Vector<const amrex::MultiFab*>& a_MF,
     const std::string& pltname);
@@ -1032,7 +1032,7 @@ public:
   void massBalance();
   void speciesBalance();
   void speciesBalancePatch();
-  void initBPatches(amrex::Geometry& a_geom);
+  void initBPatches(const amrex::Geometry& a_geom);
 
   void rhoHBalance();
   void initTemporals(const PeleLM::TimeStamp a_time = AmrOldTime);
@@ -1052,7 +1052,8 @@ public:
     const amrex::Geometry& a_geom,
     const amrex::Real& a_factor = 1.0);
   void addUmacFluxes(
-    std::unique_ptr<AdvanceAdvData>& advData, const amrex::Geometry& a_geom);
+    const std::unique_ptr<AdvanceAdvData>& advData,
+    const amrex::Geometry& a_geom);
   void openTempFile();
   void closeTempFile();
   bool doTemporalsNow() const;
@@ -1060,7 +1061,7 @@ public:
 
   //-----------------------------------------------------------------------------
   // BOUNDARY CONDITIONS / FILLPATCH
-  amrex::InterpBase* getInterpolator(int a_method = 1) const;
+  amrex::InterpBase* getInterpolator(const int a_method = 1) const;
 
   // Interpolation method for regrid (default to cell cons interp)
   int m_regrid_interp_method = 1;
@@ -1405,7 +1406,7 @@ public:
 
   // Active control
   void initActiveControl();
-  void activeControl(int is_restart);
+  void activeControl(const int is_restart);
   void loadActiveControlHistory();
   void getActiveControlLowT(amrex::Real& a_coft);
 
@@ -1503,8 +1504,8 @@ public:
 
   void getEBDistance(const int a_lev, amrex::MultiFab& a_signDistLev);
 
-  void
-  extendSignedDistance(amrex::MultiFab* a_signDist, amrex::Real a_extendFactor);
+  void extendSignedDistance(
+    amrex::MultiFab* a_signDist, const amrex::Real a_extendFactor);
 
   void getEBState(
     const int a_lev,
@@ -1556,38 +1557,38 @@ public:
 
   void oneSDC(
     const int sdcIter,
-    std::unique_ptr<AdvanceAdvData>& advData,
-    std::unique_ptr<AdvanceDiffData>& diffData);
+    const std::unique_ptr<AdvanceAdvData>& advData,
+    const std::unique_ptr<AdvanceDiffData>& diffData);
 
   bool checkForNaNs();
   void copyTransportOldToNew();
   void copyStateNewToOld(const int nGhost = 0);
   void copyPressNewToOld();
   void copyStateOldToNew(const int nGhost = 0);
-  void copyDiffusionOldToNew(std::unique_ptr<AdvanceDiffData>& diffData);
+  void copyDiffusionOldToNew(const std::unique_ptr<AdvanceDiffData>& diffData);
 
-  void computeVelocityAdvTerm(std::unique_ptr<AdvanceAdvData>& advData);
-  void updateVelocity(std::unique_ptr<AdvanceAdvData>& advData);
+  void computeVelocityAdvTerm(const std::unique_ptr<AdvanceAdvData>& advData);
+  void updateVelocity(const std::unique_ptr<AdvanceAdvData>& advData);
 
   void getScalarAdvForce(
-    std::unique_ptr<AdvanceAdvData>& advData,
-    std::unique_ptr<AdvanceDiffData>& diffData);
-  void computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData);
+    const std::unique_ptr<AdvanceAdvData>& advData,
+    const std::unique_ptr<AdvanceDiffData>& diffData);
+  void computeScalarAdvTerms(const std::unique_ptr<AdvanceAdvData>& advData);
   void computePassiveAdvTerms(
-    std::unique_ptr<AdvanceAdvData>& advData,
+    const std::unique_ptr<AdvanceAdvData>& advData,
     const int state_comp,
     const int ncomp);
-  void updateDensity(std::unique_ptr<AdvanceAdvData>& advData);
+  void updateDensity(const std::unique_ptr<AdvanceAdvData>& advData);
   void updateScalarComp(
-    std::unique_ptr<AdvanceAdvData>& advData,
+    const std::unique_ptr<AdvanceAdvData>& advData,
     const int state_comp,
     const int ncomp);
 
   void getScalarDiffForce(
-    std::unique_ptr<AdvanceAdvData>& advData,
-    std::unique_ptr<AdvanceDiffData>& diffData);
+    const std::unique_ptr<AdvanceAdvData>& advData,
+    const std::unique_ptr<AdvanceDiffData>& diffData);
 
-  void getScalarReactForce(std::unique_ptr<AdvanceAdvData>& advData);
+  void getScalarReactForce(const std::unique_ptr<AdvanceAdvData>& advData);
   //-----------------------------------------------------------------------------
 
 #ifdef PELE_USE_PLASMA
@@ -1605,12 +1606,12 @@ public:
   void implicitNonLinearSolve(
     const int sdcIter,
     const amrex::Real a_dt,
-    std::unique_ptr<AdvanceDiffData>& diffData,
-    std::unique_ptr<AdvanceAdvData>& advData);
+    const std::unique_ptr<AdvanceDiffData>& diffData,
+    const std::unique_ptr<AdvanceAdvData>& advData);
   void computeBGcharge(
     const amrex::Real a_time,
-    std::unique_ptr<AdvanceDiffData>& diffData,
-    std::unique_ptr<AdvanceAdvData>& advData);
+    const std::unique_ptr<AdvanceDiffData>& diffData,
+    const std::unique_ptr<AdvanceAdvData>& advData);
 
   void nonLinearResidual(
     const amrex::Real a_dt,
@@ -1639,8 +1640,9 @@ public:
     const amrex::Array<const amrex::MultiFab*, AMREX_SPACEDIM>& a_ueff,
     amrex::BCRec bcrec);
 
-  void ionDriftVelocity(std::unique_ptr<AdvanceAdvData>& advData);
-  void ionDriftAddUmac(const int lev, std::unique_ptr<AdvanceAdvData>& advData);
+  void ionDriftVelocity(const std::unique_ptr<AdvanceAdvData>& advData);
+  void ionDriftAddUmac(
+    const int lev, const std::unique_ptr<AdvanceAdvData>& advData);
 
   void computeInstantaneousReactionRateEF(
     const int lev, const PeleLM::TimeStamp a_time, amrex::MultiFab* a_I_R);
@@ -1670,7 +1672,7 @@ public:
   void updateNLState(const amrex::Vector<amrex::MultiFab*>& a_update);
 
   void incrementElectronForcing(
-    const int a_sstep, std::unique_ptr<AdvanceAdvData>& advData);
+    const int a_sstep, const std::unique_ptr<AdvanceAdvData>& advData);
 
   void getNLStateScaling(amrex::Real& nEScale, amrex::Real& phiVScale);
   void getNLResidScaling(amrex::Real& nEScale, amrex::Real& phiVScale);
@@ -1685,7 +1687,7 @@ public:
     const int lev,
     const int edge_comp,
     const int ncomp,
-    amrex::Vector<amrex::BCRec> a_bcrec,
+    const amrex::Vector<amrex::BCRec>& a_bcrec,
     const amrex::MultiFab& ccMF,
     const amrex::Array<const amrex::MultiFab*, AMREX_SPACEDIM>& ecVel);
 
@@ -1734,7 +1736,7 @@ public:
     const int lev, const PeleLM::TimeStamp a_time, const int useUmac = 0);
   LevelDataReact* getLevelDataReactPtr(const int lev);
 
-  amrex::Real getTime(int lev, const PeleLM::TimeStamp a_time) const
+  amrex::Real getTime(const int lev, const PeleLM::TimeStamp a_time) const
   {
     AMREX_ASSERT(
       a_time == AmrOldTime || a_time == AmrNewTime || a_time == AmrHalfTime);

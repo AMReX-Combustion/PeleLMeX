@@ -42,7 +42,7 @@ PeleLM::calcDivU(
   const int computeDiff,
   const int do_avgDown,
   const TimeStamp a_time,
-  std::unique_ptr<AdvanceDiffData>& diffData)
+  const std::unique_ptr<AdvanceDiffData>& diffData)
 {
   BL_PROFILE("PeleLMeX::calcDivU()");
 
@@ -280,7 +280,7 @@ PeleLM::calc_dPdt(
 }
 
 amrex::Real
-PeleLM::adjustPandDivU(std::unique_ptr<AdvanceAdvData>& advData)
+PeleLM::adjustPandDivU(const std::unique_ptr<AdvanceAdvData>& advData)
 {
   BL_PROFILE("PeleLMeX::adjustPandDivU()");
 

@@ -140,7 +140,7 @@ PeleLM::initActiveControl()
 }
 
 void
-PeleLM::activeControl(int is_restart)
+PeleLM::activeControl(const int is_restart)
 {
   if (m_ctrl_active == 0) {
     return;

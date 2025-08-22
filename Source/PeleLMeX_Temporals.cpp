@@ -212,7 +212,7 @@ PeleLM::addMassFluxes(
 
 void
 PeleLM::addUmacFluxes(
-  std::unique_ptr<AdvanceAdvData>& advData, const amrex::Geometry& a_geom)
+  const std::unique_ptr<AdvanceAdvData>& advData, const amrex::Geometry& a_geom)
 {
   // Get the face areas
   const amrex::Real* dx = a_geom.CellSize();
@@ -229,7 +229,7 @@ PeleLM::addUmacFluxes(
 #endif
 
   // Just use level 0 since we are calling after averaging down
-  int lev = 0;
+  constexpr int lev = 0;
 
   for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
     auto faceDomain =
@@ -531,7 +531,7 @@ PeleLM::addRhoYFluxes(
 }
 
 void
-PeleLM::initBPatches(amrex::Geometry& a_geom)
+PeleLM::initBPatches(const amrex::Geometry& a_geom)
 {
   std::string pele_prefix = "peleLM.bpatch";
   amrex::ParmParse pp(pele_prefix);
