@@ -140,8 +140,9 @@ PeleLM::MakeNewLevelFromScratch(
                         static_cast<amrex::Real>(refRatio(ilev - 1)[0]),
                         static_cast<amrex::Real>(ilev));
     }
-    extentFactor *=
-      std::sqrt(2.0) * m_derefineEBBuffer; // Account for diagonals
+    // Account for diagonals
+    constexpr amrex::Real sqrt2 = 1.4142135623730951;
+    extentFactor *= sqrt2 * m_derefineEBBuffer;
 
     amrex::MultiFab signDist(
       convert(grids[0], amrex::IntVect::TheUnitVector()), dmap[0], 1, 1,

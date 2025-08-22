@@ -56,7 +56,8 @@ PeleLM::ErrorEst(
     getEBDistance(lev, signDist);
 
     // Estimate how far I need to derefine
-    amrex::Real diagFac = std::sqrt(2.0) * m_derefineEBBuffer;
+    constexpr amrex::Real sqrt2 = 1.4142135623730951;
+    const amrex::Real diagFac = sqrt2 * m_derefineEBBuffer;
     amrex::Real clearTagDist =
       Geom(m_EB_refine_LevMax).CellSize(0) *
       static_cast<amrex::Real>(nErrorBuf(m_EB_refine_LevMax)) * diagFac;
