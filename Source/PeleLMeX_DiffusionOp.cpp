@@ -286,9 +286,9 @@ DiffusionOp::diffuse_scalar(
     }
   } else {
     for (int lev = 0; lev <= finest_level; ++lev) {
-      auto a_phi_ma = a_phi[lev]->arrays();
-      auto phi_ma = phi[lev].const_arrays();
-      auto a_rho_ma = a_density[lev]->const_arrays();
+      auto const& a_phi_ma = a_phi[lev]->arrays();
+      auto const& phi_ma = phi[lev].const_arrays();
+      auto const& a_rho_ma = a_density[lev]->const_arrays();
       amrex::ParallelFor(
         phi[lev], [a_phi_ma, a_rho_ma, phi_ma, ncomp] AMREX_GPU_DEVICE(
                     int box_no, int i, int j, int k) noexcept {
@@ -497,9 +497,9 @@ DiffusionOp::diffuse_scalar(
     }
   } else {
     for (int lev = 0; lev <= finest_level; ++lev) {
-      auto a_phi_ma = a_phi[lev]->arrays();
-      auto phi_ma = phi[lev].const_arrays();
-      auto a_rho_ma = a_density[lev]->const_arrays();
+      auto const& a_phi_ma = a_phi[lev]->arrays();
+      auto const& phi_ma = phi[lev].const_arrays();
+      auto const& a_rho_ma = a_density[lev]->const_arrays();
       amrex::ParallelFor(
         phi[lev], [a_phi_ma, a_rho_ma, phi_ma, ncomp] AMREX_GPU_DEVICE(
                     int box_no, int i, int j, int k) noexcept {
@@ -1190,8 +1190,8 @@ DiffusionTensorOp::compute_divtau(
 
   if (have_density != 0) {
     for (int lev = 0; lev <= finest_level; ++lev) {
-      auto divtau_ma = a_divtau[lev]->arrays();
-      auto rho_ma = a_density[lev]->const_arrays();
+      auto const& divtau_ma = a_divtau[lev]->arrays();
+      auto const& rho_ma = a_density[lev]->const_arrays();
       amrex::ParallelFor(
         *a_divtau[lev], [divtau_ma, rho_ma] AMREX_GPU_DEVICE(
                           int box_no, int i, int j, int k) noexcept {
@@ -1255,10 +1255,10 @@ DiffusionTensorOp::diffuse_velocity(
   for (int lev = 0; lev <= finest_level; ++lev) {
     rhs.emplace_back(
       a_vel[lev]->boxArray(), a_vel[lev]->DistributionMap(), AMREX_SPACEDIM, 0);
-    auto rhs_ma = rhs[lev].arrays();
-    auto vel_ma = a_vel[lev]->const_arrays();
+    auto const& rhs_ma = rhs[lev].arrays();
+    auto const& vel_ma = a_vel[lev]->const_arrays();
     if (m_pelelm->m_incompressible == 0) {
-      auto rho_ma = a_density[lev]->const_arrays();
+      auto const& rho_ma = a_density[lev]->const_arrays();
       amrex::ParallelFor(
         rhs[lev], [rhs_ma, vel_ma, rho_ma] AMREX_GPU_DEVICE(
                     int box_no, int i, int j, int k) noexcept {

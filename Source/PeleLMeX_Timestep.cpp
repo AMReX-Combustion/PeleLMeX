@@ -240,8 +240,8 @@ PeleLM::checkDt(const TimeStamp a_time, const amrex::Real a_dt)
     const amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> dxinv =
       geom[lev].InvCellSizeArray();
 
-    auto state_ma = ldata_p->state.const_arrays();
-    auto divu_ma = ldata_p->divu.const_arrays();
+    auto const& state_ma = ldata_p->state.const_arrays();
+    auto const& divu_ma = ldata_p->divu.const_arrays();
 
     amrex::ParallelFor(
       ldata_p->state,

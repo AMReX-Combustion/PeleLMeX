@@ -51,57 +51,92 @@ PeleLM::getVelForces(
 
   const amrex::Real time = getTime(lev, a_time);
 
-  const int has_divTau = static_cast<int>(a_divTau != nullptr);
-
-  auto state_ma = ldata_p->state.const_arrays();
-  auto ext_ma = m_extSource[lev]->const_arrays();
-  auto force_ma = a_velForce->arrays();
-
-  const auto dx = geom[lev].CellSizeArray();
-  const int pseudo_gravity = m_ctrl_pseudoGravity;
-  const amrex::Real dV_control = m_ctrl_dV;
   const int is_incomp = m_incompressible;
   const amrex::Real rho_incomp = m_rho;
+  const int has_divTau = static_cast<int>(a_divTau != nullptr);
+
+  const int pseudo_gravity = m_ctrl_pseudoGravity;
+  const amrex::Real dV_control = m_ctrl_dV;
   const auto grav = m_gravity;
   const auto gp0 = m_background_gp;
   const int ps_dir = m_ctrl_flameDir;
 
-  amrex::ParallelFor(
-    *a_velForce, [state_ma, ext_ma, force_ma, dx, time, grav, gp0, ps_dir,
-                  is_incomp, rho_incomp, pseudo_gravity, dV_control
+  auto const& state_ma = ldata_p->state.const_arrays();
+  auto const& ext_ma = m_extSource[lev]->const_arrays();
+  auto const& force_ma = a_velForce->arrays();
+  auto const& gp_ma = ldataGP_p->gp.const_arrays();
+  auto const& divTau_ma = a_divTau->const_arrays();
+
 #ifdef PELE_USE_PLASMA
-                  ,
-                  plasma_ba = grids[lev], zk = zk
+  auto const& dx = geom[lev].CellSizeArray();
+  auto const& ba = grids[lev];
+  auto const& zkl = zk;
+#endif
+
+  amrex::ParallelFor(
+    *a_velForce,
+    [state_ma, ext_ma, force_ma, grav, gp0, ps_dir, add_gradP, gp_ma,
+     has_divTau, divTau_ma, is_incomp, rho_incomp, pseudo_gravity, dV_control
+#ifdef PELE_USE_PLASMA
+     ,
+     dx, time, ba, zkl
 #endif
   ] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) {
       amrex::Array4<amrex::Real const> vel(state_ma[box_no], VELX);
-      amrex::Array4<amrex::Real const> rho(state_ma[box_no], DENSITY);
+      amrex::Array4<amrex::Real const> extmom(ext_ma[box_no], VELX);
+      amrex::Array4<amrex::Real const> rho;
+      amrex::Array4<amrex::Real const> extrho;
+      if (is_incomp == 0) {
+        rho = amrex::Array4<amrex::Real const>(state_ma[box_no], DENSITY);
+        extrho = amrex::Array4<amrex::Real const>(ext_ma[box_no], DENSITY);
+      }
+      // background gp, pseudo grav, ext sources
+      makeVelForce(
+        i, j, k, is_incomp, rho_incomp, pseudo_gravity, ps_dir, grav, gp0,
+        dV_control, vel, rho, extmom, extrho, force_ma[box_no]);
+#ifdef PELE_USE_PLASMA
       amrex::Array4<amrex::Real const> rhoY(state_ma[box_no], FIRSTSPEC);
       amrex::Array4<amrex::Real const> rhoh(state_ma[box_no], RHOH);
       amrex::Array4<amrex::Real const> temp(state_ma[box_no], TEMP);
-      amrex::Array4<amrex::Real const> extmom(ext_ma[box_no], VELX);
-      amrex::Array4<amrex::Real const> extrho(ext_ma[box_no], DENSITY);
-      makeVelForce(
-        i, j, k, is_incomp, rho_incomp, pseudo_gravity, ps_dir, time, grav, gp0,
-        dV_control, dx, vel, rho, rhoY, rhoh, temp, extmom, extrho,
-        force_ma[box_no]);
-#ifdef PELE_USE_PLASMA
       amrex::Array4<amrex::Real const> phiV(state_ma[box_no], PHIV);
       amrex::Array4<amrex::Real const> nE(state_ma[box_no], NE);
-      amrex::GpuArray<int, 3> blo = plasma_ba[box_no].loVect3d();
-      amrex::GpuArray<int, 3> bhi = plasma_ba[box_no].hiVect3d();
+      amrex::GpuArray<int, 3> blo = ba[box_no].loVect3d();
+      amrex::GpuArray<int, 3> bhi = ba[box_no].hiVect3d();
       addLorentzForce(
-        i, j, k, blo, bhi, time, dx, zk, rhoY, nE, phiV, force_ma[box_no]);
+        i, j, k, blo, bhi, time, dx, zkl, rhoY, nE, phiV, force_ma[box_no]);
 #endif
+      if (add_gradP != 0) {
+        for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
+          force_ma[box_no](i, j, k, idim) -= gp_ma[box_no](i, j, k, idim);
+        }
+      }
+      if (has_divTau != 0) {
+        for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
+          force_ma[box_no](i, j, k, idim) += divTau_ma[box_no](i, j, k, idim);
+        }
+      }
     });
   amrex::Gpu::streamSynchronize();
-  if (add_gradP != 0) {
-    amrex::MultiFab::Subtract(
-      *a_velForce, ldataGP_p->gp, 0, 0, AMREX_SPACEDIM, 0);
+  // Add forcing terms to maintain turbulence
+  // note: if m_incompressible == 0     then m_rho is unused by
+  // addTurbVelForces
+  if (m_do_turbulent_forcing) {
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
+#endif
+    for (amrex::MFIter mfi(*a_velForce, amrex::TilingIfNotGPU()); mfi.isValid();
+         ++mfi) {
+      const auto& bx = mfi.tilebox();
+      amrex::FArrayBox DummyFab(bx, 1);
+      const auto& rho_arr = (is_incomp != 0)
+                              ? DummyFab.array()
+                              : ldata_p->state.const_array(mfi, DENSITY);
+      const auto& force_arr = a_velForce->array(mfi);
+      turb_forcing.addTurbVelForces(
+        geom[lev].data(), bx, time, force_arr, rho_arr, is_incomp, rho_incomp);
+    }
   }
-  if (has_divTau != 0) {
-    amrex::MultiFab::Add(*a_velForce, *a_divTau, 0, 0, AMREX_SPACEDIM, 0);
-  }
+
   if (is_incomp != 0) {
     a_velForce->mult(1.0 / rho_incomp, 0, AMREX_SPACEDIM, 0);
   } else {
@@ -152,8 +187,9 @@ PeleLM::addSpark(const TimeStamp a_timestamp)
       auto const* eosparm = eos_parms.device_parm();
       auto eos = pele::physics::PhysicsType::eos(eosparm);
 
-      auto statema = getLevelDataPtr(lev, a_timestamp)->state.const_arrays();
-      auto extma = m_extSource[lev]->arrays();
+      auto const& statema =
+        getLevelDataPtr(lev, a_timestamp)->state.const_arrays();
+      auto const& extma = m_extSource[lev]->arrays();
       amrex::ParallelFor(
         *m_extSource[lev],
         [statema, extma, eos, dx, spark_idx,
@@ -270,8 +306,8 @@ PeleLM::addScalarVarianceSources(const TimeStamp a_timestamp)
               auto const& gx = grad_fc[lev][0].const_arrays();
               , auto const& gy = grad_fc[lev][1].const_arrays();
               , auto const& gz = grad_fc[lev][2].const_arrays();)
-            auto extma = m_extSource[lev]->arrays();
-            auto statema = ldata_p->state.const_arrays();
+            auto const& extma = m_extSource[lev]->arrays();
+            auto const& statema = ldata_p->state.const_arrays();
 
             // l_scale will also need modification for EB
             const amrex::Real vol = AMREX_D_TERM(

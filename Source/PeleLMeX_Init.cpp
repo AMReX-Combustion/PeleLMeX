@@ -355,8 +355,8 @@ PeleLM::initLevelData(const int lev)
   // don't want to use state for dummy in case user overwrites state in aux
   amrex::MultiFab dummy_mf(grids[lev], dmap[lev], 1, 0);
 
-  auto state_ma = ldata_p->state.arrays();
-  auto aux_ma =
+  auto const& state_ma = ldata_p->state.arrays();
+  auto const& aux_ma =
     (m_nAux > 0) ? ldata_p->auxiliaries.arrays() : dummy_mf.arrays();
 
   amrex::ParallelFor(

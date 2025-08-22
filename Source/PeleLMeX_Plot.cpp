@@ -1020,7 +1020,7 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
   // Converting units when pltfile is coming from PeleC solution
   if (pltfileSource == "C") {
     amrex::Print() << " Converting CGS to MKS units... \n";
-    auto state_ma = ldata_p->state.arrays();
+    auto const& state_ma = ldata_p->state.arrays();
     amrex::ParallelFor(
       ldata_p->state,
       [state_ma] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
@@ -1047,7 +1047,7 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
         SootConst sc;
         amrex::Real* momV = sc.MomOrderV.data();
         amrex::Real* momS = sc.MomOrderS.data();
-        auto state_ma = ldata_p->state.arrays();
+        auto const& state_ma = ldata_p->state.arrays();
         amrex::Real soot_exp[NUM_SOOT_MOMENTS] = {0.0};
         for (int n = 0; n < NUM_SOOT_MOMENTS; ++n) {
           soot_exp[n] = 3. - (3. * momV[n] + 2. * momS[n]);
@@ -1089,7 +1089,7 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
   // Enforce rho and rhoH consistent with temperature and mixture
   // The above handles species mapping (to some extent), but nothing enforce
   // sum of Ys = 1 -> use N2 in the following if N2 is present
-  auto state_ma = ldata_p->state.arrays();
+  auto const& state_ma = ldata_p->state.arrays();
   auto const* leosparm = eos_parms.device_parm();
   const amrex::Real P_cgs = m2c::P(lprobparm->P_mean);
 

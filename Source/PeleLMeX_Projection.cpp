@@ -30,8 +30,8 @@ PeleLM::initialProjection()
           grids[lev], dmap[lev], 1, nGhost, amrex::MFInfo(), *m_factory[lev]));
 
       auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
-      auto state_ma = ldata_p->state.const_arrays();
-      auto sigma_ma = sigma[lev]->arrays();
+      auto const& state_ma = ldata_p->state.const_arrays();
+      auto const& sigma_ma = sigma[lev]->arrays();
       amrex::ParallelFor(
         ldata_p->state, [state_ma, sigma_ma] AMREX_GPU_DEVICE(
                           int box_no, int i, int j, int k) noexcept {
@@ -156,8 +156,8 @@ PeleLM::initialPressProjection()
           grids[lev], dmap[lev], 1, nGhost, amrex::MFInfo(), *m_factory[lev]));
 
       auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
-      auto state_ma = ldata_p->state.const_arrays();
-      auto sigma_ma = sigma[lev]->arrays();
+      auto const& state_ma = ldata_p->state.const_arrays();
+      auto const& sigma_ma = sigma[lev]->arrays();
       amrex::ParallelFor(
         ldata_p->state, [state_ma, sigma_ma] AMREX_GPU_DEVICE(
                           int box_no, int i, int j, int k) noexcept {
@@ -218,8 +218,8 @@ PeleLM::velocityProjection(
         std::make_unique<amrex::MultiFab>(
           grids[lev], dmap[lev], 1, nGhost, amrex::MFInfo(), *m_factory[lev]));
 
-      auto rhoHalf_ma = rhoHalf[lev]->const_arrays();
-      auto sigma_ma = sigma[lev]->arrays();
+      auto const& rhoHalf_ma = rhoHalf[lev]->const_arrays();
+      auto const& sigma_ma = sigma[lev]->arrays();
 
       amrex::ParallelFor(
         *rhoHalf[lev], [rhoHalf_ma, sigma_ma, dt = a_dt] AMREX_GPU_DEVICE(
@@ -245,9 +245,9 @@ PeleLM::velocityProjection(
       for (int lev = 0; lev <= finest_level; ++lev) {
         auto* ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
         auto* ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
-        auto state_old_ma = ldataOld_p->state.arrays();
-        auto gp_new_ma = ldataNew_p->gp.const_arrays();
-        auto rho_ma = rhoHalf[lev]->const_arrays();
+        auto const& state_old_ma = ldataOld_p->state.arrays();
+        auto const& gp_new_ma = ldataNew_p->gp.const_arrays();
+        auto const& rho_ma = rhoHalf[lev]->const_arrays();
         amrex::ParallelFor(
           ldataNew_p->state,
           [state_old_ma, gp_new_ma, rho_ma, dt = a_dt] AMREX_GPU_DEVICE(
@@ -263,8 +263,8 @@ PeleLM::velocityProjection(
       for (int lev = 0; lev <= finest_level; ++lev) {
         auto* ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
         auto* ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
-        auto state_old_ma = ldataOld_p->state.arrays();
-        auto gp_new_ma = ldataNew_p->gp.const_arrays();
+        auto const& state_old_ma = ldataOld_p->state.arrays();
+        auto const& gp_new_ma = ldataNew_p->gp.const_arrays();
         const amrex::Real soverrho = m_dt / m_rho;
         amrex::ParallelFor(
           ldataNew_p->state,

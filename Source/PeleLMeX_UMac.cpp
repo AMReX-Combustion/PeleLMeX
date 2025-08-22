@@ -108,43 +108,66 @@ PeleLM::addChiIncrement(
   // Add chiIncr to chi and add chi to mac_divu
   // Both mac_divu and chiIncr have properly filled ghost cells -> work on
   // grownbox
-  for (int lev = 0; lev <= finest_level; ++lev) {
-    if (a_sdcIter == 1) {
-      // fill chi on first SDC iter
-      if (m_chi_correction_type == ChiCorrectionType::DivuFirstIter) {
-        auto const& chiInc_ma = chiIncr[lev].const_arrays();
-        auto const& chi_ma = advData->chi[lev].arrays();
-        auto const& mac_divu_ma = advData->mac_divu[lev].arrays();
-        amrex::ParallelFor(
-          advData->chi[lev], advData->chi[lev].nGrowVect(),
-          [chi_ma, chiInc_ma, mac_divu_ma] AMREX_GPU_DEVICE(
-            int box_no, int i, int j, int k) noexcept {
+  switch (m_chi_correction_type) {
+  case ChiCorrectionType::DivuFirstIter: {
+    for (int lev = 0; lev <= finest_level; ++lev) {
+      auto const& chiInc_ma = chiIncr[lev].const_arrays();
+      auto const& chi_ma = advData->chi[lev].arrays();
+      auto const& mac_divu_ma = advData->mac_divu[lev].arrays();
+      amrex::ParallelFor(
+        advData->chi[lev], advData->chi[lev].nGrowVect(),
+        [chi_ma, chiInc_ma, mac_divu_ma,
+         a_sdcIter] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+          if (a_sdcIter == 1) {
             chi_ma[box_no](i, j, k) =
               chiInc_ma[box_no](i, j, k) + mac_divu_ma[box_no](i, j, k);
-          });
-        amrex::Gpu::streamSynchronize();
-      } else {
-        amrex::MultiFab::Copy(
-          advData->chi[lev], chiIncr[lev], 0, 0, 1,
-          advData->chi[lev].nGrowVect());
-      }
-    } else {
-      amrex::MultiFab::Add(
-        advData->chi[lev], chiIncr[lev], 0, 0, 1,
-        advData->chi[lev].nGrowVect());
+          } else {
+            chi_ma[box_no](i, j, k) += chiInc_ma[box_no](i, j, k);
+          }
+          mac_divu_ma[box_no](i, j, k) = chi_ma[box_no](i, j, k);
+        });
     }
-    if (
-      m_chi_correction_type == ChiCorrectionType::DivuFirstIter ||
-      m_chi_correction_type == ChiCorrectionType::NoDivu) {
-      amrex::MultiFab::Copy(
-        advData->mac_divu[lev], advData->chi[lev], 0, 0, 1,
-        advData->chi[lev].nGrowVect());
-    } else {
-      amrex::MultiFab::Add(
-        advData->mac_divu[lev], advData->chi[lev], 0, 0, 1,
-        advData->chi[lev].nGrowVect());
+    break;
+  }
+  case ChiCorrectionType::NoDivu: {
+    for (int lev = 0; lev <= finest_level; ++lev) {
+      auto const& chiInc_ma = chiIncr[lev].const_arrays();
+      auto const& chi_ma = advData->chi[lev].arrays();
+      auto const& mac_divu_ma = advData->mac_divu[lev].arrays();
+      amrex::ParallelFor(
+        advData->chi[lev], advData->chi[lev].nGrowVect(),
+        [chi_ma, chiInc_ma, mac_divu_ma,
+         a_sdcIter] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+          if (a_sdcIter == 1) {
+            chi_ma[box_no](i, j, k) = chiInc_ma[box_no](i, j, k);
+          } else {
+            chi_ma[box_no](i, j, k) += chiInc_ma[box_no](i, j, k);
+          }
+          mac_divu_ma[box_no](i, j, k) = chi_ma[box_no](i, j, k);
+        });
+    }
+    break;
+  }
+  default: {
+    for (int lev = 0; lev <= finest_level; ++lev) {
+      auto const& chiInc_ma = chiIncr[lev].const_arrays();
+      auto const& chi_ma = advData->chi[lev].arrays();
+      auto const& mac_divu_ma = advData->mac_divu[lev].arrays();
+      amrex::ParallelFor(
+        advData->chi[lev], advData->chi[lev].nGrowVect(),
+        [chi_ma, chiInc_ma, mac_divu_ma,
+         a_sdcIter] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+          if (a_sdcIter == 1) {
+            chi_ma[box_no](i, j, k) = chiInc_ma[box_no](i, j, k);
+          } else {
+            chi_ma[box_no](i, j, k) += chiInc_ma[box_no](i, j, k);
+          }
+          mac_divu_ma[box_no](i, j, k) += chi_ma[box_no](i, j, k);
+        });
     }
   }
+  }
+  amrex::Gpu::streamSynchronize();
   if (m_print_chi_convergence) {
     const amrex::Real max_corr =
       MLNorm0(GetVecOfConstPtrs(chiIncr)) * m_dt / m_dpdtFactor;

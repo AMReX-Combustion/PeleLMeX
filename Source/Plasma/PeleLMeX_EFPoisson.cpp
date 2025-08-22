@@ -22,8 +22,8 @@ PeleLM::poissonSolveEF(const TimeStamp a_time)
 
     auto ldata_p = getLevelDataPtr(lev, a_time);
 
-    auto state_ma = ldata_p->state.const_arrays();
-    auto rhs_ma = rhsPoisson[lev]->arrays();
+    auto const& state_ma = ldata_p->state.const_arrays();
+    auto const& rhs_ma = rhsPoisson[lev]->arrays();
 
     amrex::ParallelFor(
       ldata_p->state, [state_ma, rhs_ma, zk = zk] AMREX_GPU_DEVICE(

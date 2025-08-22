@@ -99,7 +99,7 @@ PeleLM::calcTurbViscosity(const TimeStamp a_time)
 
 #ifdef AMREX_USE_EB
       auto const& ebfact = EBFactory(lev);
-      auto const vfrac = ebfact.getVolFrac().const_arrays();
+      auto const& vfrac = ebfact.getVolFrac().const_arrays();
 #endif
       if (m_les_model == "Smagorinsky") {
         const amrex::Real prefact =

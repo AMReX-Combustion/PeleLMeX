@@ -242,10 +242,10 @@ PeleLM::updateVelocity(std::unique_ptr<AdvanceAdvData>& advData)
     // Compute provisional new velocity
     // velForce holds: 1/\rho^{n+1/2} [(gravity+...)^{n+1/2} - \nabla pi^{n} +
     // 0.5 * divTau^{n}]
-    auto state_old_ma = ldataOld_p->state.const_arrays();
-    auto adv_aofs_ma = advData->AofS[lev].const_arrays();
-    auto force_ma = velForces[lev].const_arrays();
-    auto state_new_ma = ldataNew_p->state.arrays();
+    auto const& state_old_ma = ldataOld_p->state.const_arrays();
+    auto const& adv_aofs_ma = advData->AofS[lev].const_arrays();
+    auto const& force_ma = velForces[lev].const_arrays();
+    auto const& state_new_ma = ldataNew_p->state.arrays();
     amrex::ParallelFor(
       ldataOld_p->state,
       [state_old_ma, adv_aofs_ma, force_ma, state_new_ma,
@@ -277,15 +277,15 @@ PeleLM::getScalarAdvForce(
     auto* ldata_p = getLevelDataPtr(lev, AmrOldTime);
     auto* ldataR_p = getLevelDataReactPtr(lev);
 
-    auto state_ma = ldata_p->state.const_arrays();
-    auto dn_ma = diffData->Dn[lev].const_arrays();
-    auto adv_ma = advData->Forcing[lev].arrays();
-    auto r_ma = ldataR_p->I_R.const_arrays();
-    auto ext_ma = m_extSource[lev]->arrays();
+    auto const& state_ma = ldata_p->state.const_arrays();
+    auto const& dn_ma = diffData->Dn[lev].const_arrays();
+    auto const& adv_ma = advData->Forcing[lev].arrays();
+    auto const& r_ma = ldataR_p->I_R.const_arrays();
+    auto const& ext_ma = m_extSource[lev]->arrays();
 
-    auto dn_aux_ma =
+    auto const& dn_aux_ma =
       (m_nAux > 0) ? diffData->Dn_aux[lev].const_arrays() : dn_ma;
-    auto adv_aux_ma =
+    auto const& adv_aux_ma =
       (m_nAux > 0) ? advData->Forcing_aux[lev].arrays() : adv_ma;
 
     amrex::ParallelFor(
@@ -919,7 +919,7 @@ PeleLM::computeScalarAdvTerms(std::unique_ptr<AdvanceAdvData>& advData)
   //----------------------------------------------------------------
   // Sum over the species AofS to get the density advection term
   for (int lev = 0; lev <= finest_level; ++lev) {
-    auto aofsma = advData->AofS[lev].arrays();
+    auto const& aofsma = advData->AofS[lev].arrays();
     amrex::ParallelFor(
       advData->AofS[lev],
       [aofsma] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
@@ -938,8 +938,8 @@ PeleLM::updateDensity(std::unique_ptr<AdvanceAdvData>& advData)
     // Get MultiArrays
     auto const& sma_o = getLevelDataPtr(lev, AmrOldTime)->state.arrays();
     auto const& sma_n = getLevelDataPtr(lev, AmrNewTime)->state.arrays();
-    auto aofsma = advData->AofS[lev].const_arrays();
-    auto extma = m_extSource[lev]->const_arrays();
+    auto const& aofsma = advData->AofS[lev].const_arrays();
+    auto const& extma = m_extSource[lev]->const_arrays();
     const auto dt = m_dt;
 
     amrex::ParallelFor(
@@ -1126,10 +1126,10 @@ PeleLM::updateScalarComp(
     auto* ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
     auto* ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
 
-    auto state_old_ma = ldataOld_p->state.const_arrays();
-    auto adv_aofs_ma = advData->AofS[lev].const_arrays();
-    auto ext_ma = m_extSource[lev]->const_arrays();
-    auto state_new_ma = ldataNew_p->state.arrays();
+    auto const& state_old_ma = ldataOld_p->state.const_arrays();
+    auto const& adv_aofs_ma = advData->AofS[lev].const_arrays();
+    auto const& ext_ma = m_extSource[lev]->const_arrays();
+    auto const& state_new_ma = ldataNew_p->state.arrays();
 
     amrex::ParallelFor(
       ldataOld_p->state,

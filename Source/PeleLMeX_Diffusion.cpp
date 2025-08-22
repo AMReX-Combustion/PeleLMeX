@@ -1125,11 +1125,13 @@ PeleLM::differentialDiffusionUpdate(
     // Get t^{n} data pointer
     auto* ldata_p = getLevelDataPtr(lev, AmrOldTime);
 
-    auto state_ma = ldata_p->state.const_arrays();
-    auto fY_ma = advData->Forcing[lev].arrays();
+    auto const& state_ma = ldata_p->state.const_arrays();
+    auto const& fY_ma = advData->Forcing[lev].arrays();
 
-    auto aux_ma = (m_nAux > 0) ? ldata_p->auxiliaries.const_arrays() : state_ma;
-    auto fAux_ma = (m_nAux > 0) ? advData->Forcing_aux[lev].arrays() : fY_ma;
+    auto const& aux_ma =
+      (m_nAux > 0) ? ldata_p->auxiliaries.const_arrays() : state_ma;
+    auto const& fAux_ma =
+      (m_nAux > 0) ? advData->Forcing_aux[lev].arrays() : fY_ma;
 
     amrex::ParallelFor(
       advData->Forcing[lev],
@@ -1320,18 +1322,19 @@ PeleLM::differentialDiffusionUpdate(
 
     auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
 
-    auto state_ma = ldata_p->state.arrays();
-    auto dhat_ma = diffData->Dhat[lev].const_arrays();
-    auto force_ma = advData->Forcing[lev].const_arrays();
+    auto const& state_ma = ldata_p->state.arrays();
+    auto const& dhat_ma = diffData->Dhat[lev].const_arrays();
+    auto const& force_ma = advData->Forcing[lev].const_arrays();
 
-    auto dwbar_ma =
+    auto const& dwbar_ma =
       (m_use_wbar != 0) ? diffData->Dwbar[lev].const_arrays() : dhat_ma;
-    auto dT_ma =
+    auto const& dT_ma =
       (m_use_soret != 0) ? diffData->DT[lev].const_arrays() : dhat_ma;
-    auto aux_ma = (m_nAux > 0) ? ldata_p->auxiliaries.arrays() : state_ma;
-    auto dhat_aux_ma =
+    auto const& aux_ma =
+      (m_nAux > 0) ? ldata_p->auxiliaries.arrays() : state_ma;
+    auto const& dhat_aux_ma =
       (m_nAux > 0) ? diffData->Dhat_aux[lev].const_arrays() : dhat_ma;
-    auto force_aux_ma =
+    auto const& force_aux_ma =
       (m_nAux > 0) ? advData->Forcing_aux[lev].const_arrays() : dhat_ma;
 
     if (m_use_wbar != 0 && m_use_soret != 0) {
@@ -1590,13 +1593,13 @@ PeleLM::deltaTIter_prepare(
     auto* ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
     auto* ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
 
-    auto state_old_ma = ldataOld_p->state.const_arrays();
-    auto state_new_ma = ldataNew_p->state.const_arrays();
-    auto force_ma = advData->Forcing[lev].const_arrays();
-    auto dhat_ma = diffData->Dhat[lev].const_arrays();
-    auto rhs_ma = a_rhs[lev]->arrays();
-    auto rhocp_ma = a_rhoCp[lev]->arrays();
-    auto tsave_ma = a_Tsave[lev]->arrays();
+    auto const& state_old_ma = ldataOld_p->state.const_arrays();
+    auto const& state_new_ma = ldataNew_p->state.const_arrays();
+    auto const& force_ma = advData->Forcing[lev].const_arrays();
+    auto const& dhat_ma = diffData->Dhat[lev].const_arrays();
+    auto const& rhs_ma = a_rhs[lev]->arrays();
+    auto const& rhocp_ma = a_rhoCp[lev]->arrays();
+    auto const& tsave_ma = a_Tsave[lev]->arrays();
 
     amrex::ParallelFor(
       ldataNew_p->state,
@@ -1752,22 +1755,24 @@ PeleLM::getScalarDiffForce(
     // Get t^{n} data pointer
     auto* ldataR_p = getLevelDataReactPtr(lev);
 
-    auto dn_ma = diffData->Dn[lev].const_arrays();
-    auto dnp1_ma = diffData->Dnp1[lev].const_arrays();
-    auto r_ma = ldataR_p->I_R.const_arrays();
-    auto a_ma = advData->AofS[lev].const_arrays();
-    auto ext_ma = m_extSource[lev]->const_arrays();
-    auto f_ma = advData->Forcing[lev].arrays();
+    auto const& dn_ma = diffData->Dn[lev].const_arrays();
+    auto const& dnp1_ma = diffData->Dnp1[lev].const_arrays();
+    auto const& r_ma = ldataR_p->I_R.const_arrays();
+    auto const& a_ma = advData->AofS[lev].const_arrays();
+    auto const& ext_ma = m_extSource[lev]->const_arrays();
+    auto const& f_ma = advData->Forcing[lev].arrays();
 
-    auto dwbar_ma =
+    auto const& dwbar_ma =
       (m_use_wbar != 0) ? diffData->Dwbar[lev].const_arrays() : dn_ma;
-    auto dT_ma = (m_use_soret != 0) ? diffData->DT[lev].const_arrays() : dn_ma;
-    auto f_aux_ma = (m_nAux > 0) ? advData->Forcing_aux[lev].arrays() : f_ma;
-    auto a_aux_ma =
+    auto const& dT_ma =
+      (m_use_soret != 0) ? diffData->DT[lev].const_arrays() : dn_ma;
+    auto const& f_aux_ma =
+      (m_nAux > 0) ? advData->Forcing_aux[lev].arrays() : f_ma;
+    auto const& a_aux_ma =
       (m_nAux > 0) ? advData->AofS_aux[lev].const_arrays() : dn_ma;
-    auto dn_aux_ma =
+    auto const& dn_aux_ma =
       (m_nAux > 0) ? diffData->Dn_aux[lev].const_arrays() : dn_ma;
-    auto dnp1_aux_ma =
+    auto const& dnp1_aux_ma =
       (m_nAux > 0) ? diffData->Dnp1_aux[lev].const_arrays() : dn_ma;
 
     amrex::ParallelFor(
