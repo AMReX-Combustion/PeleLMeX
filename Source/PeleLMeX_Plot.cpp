@@ -989,8 +989,7 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
         foundSpec = 1;
         if (m_verbose > 0) {
           amrex::Print() << "Loading species " << specName
-                         << " from plotfile species " << specString
-                         << std::endl;
+                         << " from plotfile species " << specString << "\n";
         }
       }
     }
@@ -1000,8 +999,7 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
           foundSpec = 1;
           if (m_verbose > 0) {
             amrex::Print() << "Loading species " << specName
-                           << " from plotfile entry " << specString
-                           << std::endl;
+                           << " from plotfile entry " << specString << "\n";
           }
           pltData.fillPatchFromPlt(
             a_lev, geom[a_lev], iplt, FIRSTSPEC + i, 1, ldata_p->state);
@@ -1012,7 +1010,7 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
       ldata_p->state.setVal(0.0, FIRSTSPEC + i, 1);
       if (m_verbose > 0) {
         amrex::Print() << "For species " << specName << " entry " << specString
-                       << " not found in plot file, setting to 0 " << std::endl;
+                       << " not found in plot file, setting to 0\n";
       }
     }
   }
