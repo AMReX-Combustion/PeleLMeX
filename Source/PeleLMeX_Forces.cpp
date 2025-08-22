@@ -85,11 +85,12 @@ PeleLM::getVelForces(
   ] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) {
       amrex::Array4<amrex::Real const> vel(state_ma[box_no], VELX);
       amrex::Array4<amrex::Real const> extmom(ext_ma[box_no], VELX);
-      amrex::Array4<amrex::Real const> rho;
-      amrex::Array4<amrex::Real const> extrho;
-      if (is_incomp == 0) {
-        rho = amrex::Array4<amrex::Real const>(state_ma[box_no], DENSITY);
-        extrho = amrex::Array4<amrex::Real const>(ext_ma[box_no], DENSITY);
+      amrex::Array4<amrex::Real const> rho(state_ma[box_no], DENSITY);
+      amrex::Array4<amrex::Real const> extrho(ext_ma[box_no], DENSITY);
+      // overwrite if incompressible, just to point to something
+      if (is_incomp != 0) {
+        rho = vel;
+        extrho = extmom;
       }
       // background gp, pseudo grav, ext sources
       makeVelForce(

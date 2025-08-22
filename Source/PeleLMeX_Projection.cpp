@@ -16,18 +16,16 @@ PeleLM::initialProjection()
       "  W: " << velMax[2] <<) "\n";
   }
 
-  constexpr amrex::Real dummy_dt = 1.0;
   constexpr int incremental = 0;
   constexpr int nGhost = 0;
+  constexpr amrex::Real dummy_dt = 1.0;
 
   // Get sigma : density if not incompressible
-  amrex::Vector<std::unique_ptr<amrex::MultiFab>> sigma;
+  amrex::Vector<std::unique_ptr<amrex::MultiFab>> sigma(finest_level + 1);
   if (m_incompressible == 0) {
-    sigma.reserve(finest_level + 1);
     for (int lev = 0; lev <= finest_level; ++lev) {
-      sigma.emplace_back(
-        std::make_unique<amrex::MultiFab>(
-          grids[lev], dmap[lev], 1, nGhost, amrex::MFInfo(), *m_factory[lev]));
+      sigma[lev] = std::make_unique<amrex::MultiFab>(
+        grids[lev], dmap[lev], 1, nGhost, amrex::MFInfo(), *m_factory[lev]);
 
       auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
       auto const& state_ma = ldata_p->state.const_arrays();
@@ -48,12 +46,10 @@ PeleLM::initialProjection()
   }
 
   // Get velocity
-  amrex::Vector<std::unique_ptr<amrex::MultiFab>> vel;
-  vel.reserve(finest_level + 1);
+  amrex::Vector<std::unique_ptr<amrex::MultiFab>> vel(finest_level + 1);
   for (int lev = 0; lev <= finest_level; ++lev) {
-    vel.emplace_back(
-      std::make_unique<amrex::MultiFab>(
-        m_leveldata_new[lev]->state, amrex::make_alias, VELX, AMREX_SPACEDIM));
+    vel[lev] = std::make_unique<amrex::MultiFab>(
+      m_leveldata_new[lev]->state, amrex::make_alias, VELX, AMREX_SPACEDIM);
     vel[lev]->setBndry(0.0);
     setInflowBoundaryVel(*vel[lev], lev, AmrNewTime);
 #if AMREX_SPACEDIM == 2
@@ -207,16 +203,14 @@ PeleLM::velocityProjection(
   const int incremental = (is_initIter) != 0 ? 1 : 0;
 
   // Get sigma : scaled density inv. if not incompressible
-  amrex::Vector<std::unique_ptr<amrex::MultiFab>> sigma;
+  amrex::Vector<std::unique_ptr<amrex::MultiFab>> sigma(finest_level + 1);
   if (m_incompressible == 0) {
     amrex::Vector<std::unique_ptr<amrex::MultiFab>> rhoHalf =
       getDensityVect(a_rhoTime);
-    sigma.reserve(finest_level + 1);
     for (int lev = 0; lev <= finest_level; ++lev) {
 
-      sigma.emplace_back(
-        std::make_unique<amrex::MultiFab>(
-          grids[lev], dmap[lev], 1, nGhost, amrex::MFInfo(), *m_factory[lev]));
+      sigma[lev] = std::make_unique<amrex::MultiFab>(
+        grids[lev], dmap[lev], 1, nGhost, amrex::MFInfo(), *m_factory[lev]);
 
       auto const& rhoHalf_ma = rhoHalf[lev]->const_arrays();
       auto const& sigma_ma = sigma[lev]->arrays();
@@ -292,12 +286,10 @@ PeleLM::velocityProjection(
   }
 
   // Get velocity
-  amrex::Vector<std::unique_ptr<amrex::MultiFab>> vel;
-  vel.reserve(finest_level + 1);
+  amrex::Vector<std::unique_ptr<amrex::MultiFab>> vel(finest_level + 1);
   for (int lev = 0; lev <= finest_level; ++lev) {
-    vel.emplace_back(
-      std::make_unique<amrex::MultiFab>(
-        m_leveldata_new[lev]->state, amrex::make_alias, VELX, AMREX_SPACEDIM));
+    vel[lev] = std::make_unique<amrex::MultiFab>(
+      m_leveldata_new[lev]->state, amrex::make_alias, VELX, AMREX_SPACEDIM);
 #ifdef AMREX_USE_EB
     EB_set_covered(*vel[lev], 0.0);
 #endif
