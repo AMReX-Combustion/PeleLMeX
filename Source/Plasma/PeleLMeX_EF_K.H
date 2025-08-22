@@ -22,26 +22,24 @@ getKappaE(
   amrex::Array4<const amrex::Real> const& T,
   amrex::Array4<amrex::Real> const& Ke) noexcept
 {
-  using namespace amrex::literals;
-
   if (!isKeTabulated) {
     Ke(i, j, k) = cstKe;
   } else {
     auto eos = pele::physics::PhysicsType::eos();
 
     // Get rho & Y from rhoY
-    amrex::Real rho = 0.0_rt;
+    amrex::Real rho = 0.0;
     for (int n = 0; n < NUM_SPECIES; n++) {
       rho += rhoY(i, j, k, n);
     }
-    amrex::Real rhoinv = 1.0_rt / rho;
+    amrex::Real rhoinv = 1.0 / rho;
     amrex::Real y[NUM_SPECIES] = {0.0};
     for (int n = 0; n < NUM_SPECIES; n++) {
       y[n] = rhoY(i, j, k, n) * rhoinv;
     }
 
     // Get the reduced electric field
-    amrex::Real Wbar = 0.0_rt;
+    amrex::Real Wbar = 0.0;
     eos.Y2WBAR(y, Wbar);
     amrex::Real Ngas = rho * Na / Wbar * 1000.0; // CGS -> MKS conversion
     amrex::Real EnormSq = AMREX_D_TERM(
@@ -78,7 +76,6 @@ getKappaSp(
   amrex::Array4<const amrex::Real> const& T,
   amrex::Array4<amrex::Real> const& Ksp) noexcept
 {
-  using namespace amrex::literals;
   amrex::Real rho = 0.0;
   for (int n = 0; n < NUM_SPECIES; n++) {
     rho += rhoY(i, j, k, n);
@@ -108,8 +105,6 @@ getDiffE(
   amrex::Array4<const amrex::Real> const& Ke,
   amrex::Array4<amrex::Real> const& De) noexcept
 {
-  using namespace amrex::literals;
-
   De(i, j, k) = Ke(i, j, k) * T(i, j, k) * factor;
 }
 
@@ -126,8 +121,6 @@ ef_edge_state_extdir(
   amrex::Array4<amrex::Real const> const& state,
   amrex::Array4<amrex::Real const> const& effvel) noexcept
 {
-  using namespace amrex::literals;
-
   // Default behavior: id_l -1 in dir
   // Handle the BCs
   // Need -1 in id_l and id_h in dir on low Dirichlet BC
@@ -149,8 +142,8 @@ ef_edge_state_extdir(
   } else if (effvel(i, j, k) < -smallVel) {
     state_ed = state(id_h[0], id_h[1], id_h[2]);
   } else {
-    state_ed = 0.5_rt * (state(id_l[0], id_l[1], id_l[2]) +
-                         state(id_h[0], id_h[1], id_h[2]));
+    state_ed = 0.5 * (state(id_l[0], id_l[1], id_l[2]) +
+                      state(id_h[0], id_h[1], id_h[2]));
   }
   return state_ed;
 }
@@ -173,8 +166,6 @@ ef_edge_state_2ndO_extdir(
   amrex::Array4<amrex::Real const> const& effvel,
   const amrex::Box& box) noexcept
 {
-  using namespace amrex::literals;
-
   // Default behavior: id_l -1 in dir
   // Handle the BCs
   // Need -1 in id_l and id_h in dir on low Dirichlet BC
@@ -235,7 +226,7 @@ ef_edge_state_2ndO_extdir(
     } else if (effvel(i, j, k) < -smallVel) {
       state_ed = state_pls;
     } else {
-      state_ed = 0.5_rt * (state_pls + state_mns);
+      state_ed = 0.5 * (state_pls + state_mns);
     }
   }
   return state_ed;
@@ -256,8 +247,6 @@ cen2edg_upwind(
   amrex::Array4<const amrex::Real> const& cfab,
   amrex::Array4<amrex::Real> const& efab) noexcept
 {
-  using namespace amrex::literals;
-
   // Default behavior: id_l -1 in dir
   // Handle the BCs
   // Need -1 in id_l and id_h in dir on low Dirichlet BC
@@ -279,8 +268,8 @@ cen2edg_upwind(
     } else if (ueff(i, j, k) < -smallVel) {
       efab(i, j, k, n) = cfab(id_h[0], id_h[1], id_h[2], n);
     } else {
-      efab(i, j, k, n) = 0.5_rt * (cfab(id_l[0], id_l[1], id_l[2], n) +
-                                   cfab(id_h[0], id_h[1], id_h[2], n));
+      efab(i, j, k, n) = 0.5 * (cfab(id_l[0], id_l[1], id_l[2], n) +
+                                cfab(id_h[0], id_h[1], id_h[2], n));
     }
   }
 }
@@ -299,14 +288,12 @@ reactionRateRhoY_EF(
   amrex::Array4<amrex::Real> const& rhoYdot,
   amrex::Array4<amrex::Real> const& nEdot) noexcept
 {
-  using namespace amrex::literals;
-
   // Get rho from rhoY. Is there a better way ?
-  amrex::Real rho = 0.0_rt;
+  amrex::Real rho = 0.0;
   for (int n = 0; n < NUM_SPECIES; n++) {
     rho += rhoY(i, j, k, n);
   }
-  amrex::Real rhoinv = 1.0_rt / rho;
+  amrex::Real rhoinv = 1.0 / rho;
   amrex::Real y[NUM_SPECIES] = {0.0};
   for (int n = 0; n < NUM_SPECIES; n++) {
     y[n] = rhoY(i, j, k, n) * rhoinv;
@@ -321,15 +308,15 @@ reactionRateRhoY_EF(
   // Get T from Y/H. Was done like that before.
   amrex::Real Tloc = T(i, j, k);
   amrex::Real H =
-    rhoH(i, j, k) * rhoinv * 1.0e4_rt; // Include MKS -> CGS conversion
+    rhoH(i, j, k) * rhoinv * 1.0e4; // Include MKS -> CGS conversion
   eos.HY2T(H, y, Tloc);
 
   // Get wdot. Don't like the temporary wdot there ...
-  rho = rho * 0.001_rt; // rho MKS -> CGS
+  rho = rho * 0.001; // rho MKS -> CGS
   amrex::Real wdot[NUM_SPECIES] = {0.0};
   eos.RTY2WDOT(rho, Tloc, y, wdot);
   for (int n = 0; n < NUM_SPECIES; n++) {
-    rhoYdot(i, j, k, n) = wdot[n] * 1000.0_rt; // CGS -> MKS conversion
+    rhoYdot(i, j, k, n) = wdot[n] * 1000.0; // CGS -> MKS conversion
   }
   nEdot(i, j, k) = wdot[E_ID] * Na * 1.0e6;
   rhoYdot(i, j, k, E_ID) = 0.0;
@@ -352,32 +339,31 @@ addLorentzForce(
   amrex::Array4<const amrex::Real> const& phiV,
   amrex::Array4<amrex::Real> const& force) noexcept
 {
-  using namespace amrex::literals;
   // Electric field. Use 1-sided stencil in the force ghost cells.
   amrex::Real EFx;
   if (i == bxlo[0]) {
-    EFx = -1.0_rt / dx[0] * (phiV(i + 1, j, k) - phiV(i, j, k));
+    EFx = -1.0 / dx[0] * (phiV(i + 1, j, k) - phiV(i, j, k));
   } else if (i == bxhi[0]) {
-    EFx = -1.0_rt / dx[0] * (phiV(i, j, k) - phiV(i - 1, j, k));
+    EFx = -1.0 / dx[0] * (phiV(i, j, k) - phiV(i - 1, j, k));
   } else {
-    EFx = -0.5_rt / dx[0] * (phiV(i + 1, j, k) - phiV(i - 1, j, k));
+    EFx = -0.5 / dx[0] * (phiV(i + 1, j, k) - phiV(i - 1, j, k));
   }
   amrex::Real EFy;
   if (j == bxlo[1]) {
-    EFy = -1.0_rt / dx[1] * (phiV(i, j + 1, k) - phiV(i, j, k));
+    EFy = -1.0 / dx[1] * (phiV(i, j + 1, k) - phiV(i, j, k));
   } else if (j == bxhi[1]) {
-    EFy = -1.0_rt / dx[1] * (phiV(i, j, k) - phiV(i, j - 1, k));
+    EFy = -1.0 / dx[1] * (phiV(i, j, k) - phiV(i, j - 1, k));
   } else {
-    EFy = -0.5_rt / dx[1] * (phiV(i, j + 1, k) - phiV(i, j - 1, k));
+    EFy = -0.5 / dx[1] * (phiV(i, j + 1, k) - phiV(i, j - 1, k));
   }
 #if (AMREX_SPACEDIM == 3)
   amrex::Real EFz;
   if (k == bxlo[2]) {
-    EFz = -1.0_rt / dx[2] * (phiV(i, j, k + 1) - phiV(i, j, k));
+    EFz = -1.0 / dx[2] * (phiV(i, j, k + 1) - phiV(i, j, k));
   } else if (k == bxhi[2]) {
-    EFz = -1.0_rt / dx[2] * (phiV(i, j, k) - phiV(i, j, k - 1));
+    EFz = -1.0 / dx[2] * (phiV(i, j, k) - phiV(i, j, k - 1));
   } else {
-    EFz = -0.5_rt / dx[2] * (phiV(i, j, k + 1) - phiV(i, j, k - 1));
+    EFz = -0.5 / dx[2] * (phiV(i, j, k + 1) - phiV(i, j, k - 1));
   }
 #endif
   for (int n = 0; n < NUM_SPECIES; n++) {

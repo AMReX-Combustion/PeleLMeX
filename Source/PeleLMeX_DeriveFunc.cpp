@@ -11,8 +11,6 @@
 #include <AMReX_EBFArrayBox.H>
 #endif
 
-using namespace amrex;
-
 //
 // Extract temp
 //
@@ -28,7 +26,7 @@ pelelmex_dertemp(
   const amrex::FArrayBox& /*pressfab*/,
   const amrex::Geometry& /*geom*/,
   amrex::Real /*time*/,
-  const amrex::Vector<BCRec>& /*bcrec*/,
+  const amrex::Vector<amrex::BCRec>& /*bcrec*/,
   int /*level*/)
 
 {
@@ -59,7 +57,7 @@ pelelmex_derheatrelease(
   const amrex::FArrayBox& /*pressfab*/,
   const amrex::Geometry& /*geom*/,
   amrex::Real /*time*/,
-  const amrex::Vector<BCRec>& /*bcrec*/,
+  const amrex::Vector<amrex::BCRec>& /*bcrec*/,
   int /*level*/)
 
 {
@@ -70,7 +68,7 @@ pelelmex_derheatrelease(
   AMREX_ASSERT(!a_pelelm->m_incompressible);
 
   amrex::FArrayBox EnthFab;
-  EnthFab.resize(bx, NUM_SPECIES, The_Async_Arena());
+  EnthFab.resize(bx, NUM_SPECIES, amrex::The_Async_Arena());
 
   auto const temp = statefab.const_array(TEMP);
   auto const react = reactfab.const_array(0);
@@ -101,7 +99,7 @@ pelelmex_dermassfrac(
   const amrex::FArrayBox& /*pressfab*/,
   const amrex::Geometry& /*geom*/,
   amrex::Real /*time*/,
-  const amrex::Vector<BCRec>& /*bcrec*/,
+  const amrex::Vector<amrex::BCRec>& /*bcrec*/,
   int /*level*/)
 
 {
@@ -136,7 +134,7 @@ pelelmex_dermolefrac(
   const amrex::FArrayBox& /*pressfab*/,
   const amrex::Geometry& /*geom*/,
   amrex::Real /*time*/,
-  const amrex::Vector<BCRec>& /*bcrec*/,
+  const amrex::Vector<amrex::BCRec>& /*bcrec*/,
   int /*level*/)
 {
   amrex::ignore_unused(a_pelelm, ncomp);
@@ -179,7 +177,7 @@ pelelmex_derrhomrhoy(
   const amrex::FArrayBox& /*pressfab*/,
   const amrex::Geometry& /*geom*/,
   amrex::Real /*time*/,
-  const amrex::Vector<BCRec>& /*bcrec*/,
+  const amrex::Vector<amrex::BCRec>& /*bcrec*/,
   int /*level*/)
 
 {
@@ -215,7 +213,7 @@ pelelmex_deravgpress(
   const amrex::FArrayBox& pressfab,
   const amrex::Geometry& /*geom*/,
   amrex::Real /*time*/,
-  const amrex::Vector<BCRec>& /*bcrec*/,
+  const amrex::Vector<amrex::BCRec>& /*bcrec*/,
   int /*level*/)
 
 {
@@ -252,7 +250,7 @@ pelelmex_dermgvel(
   const amrex::FArrayBox& /*pressfab*/,
   const amrex::Geometry& /*geom*/,
   amrex::Real /*time*/,
-  const amrex::Vector<BCRec>& /*bcrec*/,
+  const amrex::Vector<amrex::BCRec>& /*bcrec*/,
   int /*level*/)
 
 {
@@ -282,7 +280,7 @@ pelelmex_dermgvort(
   const amrex::FArrayBox& /*pressfab*/,
   const amrex::Geometry& geom,
   amrex::Real /*time*/,
-  const amrex::Vector<BCRec>& /*bcrec*/,
+  const amrex::Vector<amrex::BCRec>& /*bcrec*/,
   int /*level*/)
 
 {
@@ -295,16 +293,16 @@ pelelmex_dermgvort(
   auto const& vort_arr = derfab.array(dcomp);
 
 #ifdef AMREX_USE_EB
-  const auto& ebfab = static_cast<EBFArrayBox const&>(statefab);
-  const EBCellFlagFab& flags = ebfab.getEBCellFlagFab();
+  const auto& ebfab = static_cast<amrex::EBFArrayBox const&>(statefab);
+  const amrex::EBCellFlagFab& flags = ebfab.getEBCellFlagFab();
 
   auto typ = flags.getType(bx);
 
-  if (typ == FabType::covered) {
+  if (typ == amrex::FabType::covered) {
     amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
       vort_arr(i, j, k) = 0.0;
     });
-  } else if (typ == FabType::singlevalued) {
+  } else if (typ == amrex::FabType::singlevalued) {
     const auto& flag_fab = flags.const_array();
     amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
       constexpr amrex::Real c0 = -1.5;
@@ -442,7 +440,7 @@ pelelmex_dervort(
   const amrex::FArrayBox& /*pressfab*/,
   const amrex::Geometry& geom,
   amrex::Real /*time*/,
-  const amrex::Vector<BCRec>& /*bcrec*/,
+  const amrex::Vector<amrex::BCRec>& /*bcrec*/,
   int /*level*/)
 
 {
@@ -459,17 +457,17 @@ pelelmex_dervort(
   auto const& vort_arr = derfab.array(dcomp);
 
 #ifdef AMREX_USE_EB
-  const auto& ebfab = static_cast<EBFArrayBox const&>(statefab);
-  const EBCellFlagFab& flags = ebfab.getEBCellFlagFab();
+  const auto& ebfab = static_cast<amrex::EBFArrayBox const&>(statefab);
+  const amrex::EBCellFlagFab& flags = ebfab.getEBCellFlagFab();
 
   auto typ = flags.getType(bx);
 
-  if (typ == FabType::covered) {
+  if (typ == amrex::FabType::covered) {
     amrex::ParallelFor(
       bx, ncomp, [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
         vort_arr(i, j, k, n) = 0.0;
       });
-  } else if (typ == FabType::singlevalued) {
+  } else if (typ == amrex::FabType::singlevalued) {
     const auto& flag_fab = flags.const_array();
     amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
       constexpr amrex::Real c0 = -1.5;
@@ -620,7 +618,7 @@ pelelmex_dercoord(
   const amrex::FArrayBox& /*pressfab*/,
   const amrex::Geometry& geom,
   amrex::Real /*time*/,
-  const amrex::Vector<BCRec>& /*bcrec*/,
+  const amrex::Vector<amrex::BCRec>& /*bcrec*/,
   int /*level*/)
 {
   amrex::ignore_unused(ncomp);
@@ -636,13 +634,13 @@ pelelmex_dercoord(
 
 #ifdef AMREX_USE_EB
   AMREX_ASSERT(statefab.box().contains(bx));
-  const auto& ebfab = static_cast<EBFArrayBox const&>(statefab);
-  const EBCellFlagFab& flags = ebfab.getEBCellFlagFab();
+  const auto& ebfab = static_cast<amrex::EBFArrayBox const&>(statefab);
+  const amrex::EBCellFlagFab& flags = ebfab.getEBCellFlagFab();
 
   auto typ = flags.getType(bx);
   // Compute cell center coordinates even in covered boxes/cell. Only
   // modify the cell-center in cut cells
-  if (typ == FabType::singlevalued) {
+  if (typ == amrex::FabType::singlevalued) {
     const auto& flag_arr = flags.const_array();
     const auto& ccent_fab = ebfab.getCentroidData();
     const auto& ccent_arr = ccent_fab->const_array();
@@ -708,7 +706,7 @@ pelelmex_derQcrit(
 #endif
   ,
   amrex::Real /*time*/,
-  const amrex::Vector<BCRec>& /*bcrec*/,
+  const amrex::Vector<amrex::BCRec>& /*bcrec*/,
   int /*level*/)
 
 {
@@ -722,16 +720,16 @@ pelelmex_derQcrit(
   auto const& qcrit_arr = derfab.array(dcomp);
 
 #ifdef AMREX_USE_EB
-  const auto& ebfab = static_cast<EBFArrayBox const&>(statefab);
-  const EBCellFlagFab& flags = ebfab.getEBCellFlagFab();
+  const auto& ebfab = static_cast<amrex::EBFArrayBox const&>(statefab);
+  const amrex::EBCellFlagFab& flags = ebfab.getEBCellFlagFab();
 
   auto typ = flags.getType(bx);
 
-  if (typ == FabType::covered) {
+  if (typ == amrex::FabType::covered) {
     amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
       qcrit_arr(i, j, k) = 0.0;
     });
-  } else if (typ == FabType::singlevalued) {
+  } else if (typ == amrex::FabType::singlevalued) {
     const auto& flag_fab = flags.const_array();
     amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
       if (flag_fab(i, j, k).isCovered()) {
@@ -748,7 +746,7 @@ pelelmex_derQcrit(
         };
 
         // Strain rate tensor
-        Array2D<amrex::Real, 0, 2, 0, 2> gradU;
+        amrex::Array2D<amrex::Real, 0, 2, 0, 2> gradU;
         if (!flag_fab(i, j, k).isConnected(1, 0, 0)) {
           gradU(0, 0) = -onesided(
                           dat_arr(i, j, k, 0), dat_arr(i - 1, j, k, 0),
@@ -876,7 +874,7 @@ pelelmex_derQcrit(
   {
     amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
       // Strain rate tensor
-      Array2D<amrex::Real, 0, 2, 0, 2> gradU;
+      amrex::Array2D<amrex::Real, 0, 2, 0, 2> gradU;
       gradU(0, 0) =
         0.5 * (dat_arr(i + 1, j, k, 0) - dat_arr(i - 1, j, k, 0)) * idx;
       gradU(0, 1) =
@@ -933,7 +931,7 @@ pelelmex_derkineticenergy(
   const amrex::FArrayBox& /*pressfab*/,
   const amrex::Geometry& /*geom*/,
   amrex::Real /*time*/,
-  const amrex::Vector<BCRec>& /*bcrec*/,
+  const amrex::Vector<amrex::BCRec>& /*bcrec*/,
   int /*level*/)
 
 {
@@ -979,7 +977,7 @@ pelelmex_derenstrophy(
   const amrex::FArrayBox& /*pressfab*/,
   const amrex::Geometry& geom,
   amrex::Real /*time*/,
-  const amrex::Vector<BCRec>& /*bcrec*/,
+  const amrex::Vector<amrex::BCRec>& /*bcrec*/,
   int /*level*/)
 
 {
@@ -990,21 +988,21 @@ pelelmex_derenstrophy(
 
   auto const& dat_arr = statefab.const_array(VELX);
   auto const& rho_arr = (a_pelelm->m_incompressible) != 0
-                          ? Array4<const amrex::Real>{}
+                          ? amrex::Array4<const amrex::Real>{}
                           : statefab.const_array(DENSITY);
   auto const& ens_arr = derfab.array(dcomp);
 
 #ifdef AMREX_USE_EB
-  const auto& ebfab = static_cast<EBFArrayBox const&>(statefab);
-  const EBCellFlagFab& flags = ebfab.getEBCellFlagFab();
+  const auto& ebfab = static_cast<amrex::EBFArrayBox const&>(statefab);
+  const amrex::EBCellFlagFab& flags = ebfab.getEBCellFlagFab();
 
   auto typ = flags.getType(bx);
 
-  if (typ == FabType::covered) {
+  if (typ == amrex::FabType::covered) {
     amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
       ens_arr(i, j, k) = 0.0;
     });
-  } else if (typ == FabType::singlevalued) {
+  } else if (typ == amrex::FabType::singlevalued) {
     const auto& flag_fab = flags.const_array();
     const auto incomp = a_pelelm->m_incompressible;
     const auto rho = a_pelelm->m_rho;
@@ -1208,7 +1206,7 @@ pelelmex_dermixfrac(
   const amrex::FArrayBox& /*pressfab*/,
   const amrex::Geometry& /*geom*/,
   amrex::Real /*time*/,
-  const amrex::Vector<BCRec>& /*bcrec*/,
+  const amrex::Vector<amrex::BCRec>& /*bcrec*/,
   int /*level*/)
 {
   amrex::ignore_unused(ncomp);
@@ -1233,8 +1231,8 @@ pelelmex_dermixfrac(
   }
 
   amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-    amrex::Real rho_inv = 1.0_rt / density(i, j, k);
-    mixt_frac(i, j, k) = 0.0_rt;
+    amrex::Real rho_inv = 1.0 / density(i, j, k);
+    mixt_frac(i, j, k) = 0.0;
     for (int n = 0; n < NUM_SPECIES; ++n) {
       mixt_frac(i, j, k) += (rhoY(i, j, k, n) * fact_Bilger[n]) * rho_inv;
     }
@@ -1257,7 +1255,7 @@ pelelmex_derprogvar(
   const amrex::FArrayBox& /*pressfab*/,
   const amrex::Geometry& /*geom*/,
   amrex::Real /*time*/,
-  const amrex::Vector<BCRec>& /*bcrec*/,
+  const amrex::Vector<amrex::BCRec>& /*bcrec*/,
   int /*level*/)
 
 {
@@ -1285,8 +1283,8 @@ pelelmex_derprogvar(
 
   const auto revert = a_pelelm->m_Crevert;
   amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-    amrex::Real rho_inv = 1.0_rt / density(i, j, k);
-    prog_var(i, j, k) = 0.0_rt;
+    amrex::Real rho_inv = 1.0 / density(i, j, k);
+    prog_var(i, j, k) = 0.0;
     for (int n = 0; n < NUM_SPECIES; ++n) {
       prog_var(i, j, k) += (rhoY(i, j, k, n) * Cweights[n]) * rho_inv;
     }
@@ -1314,7 +1312,7 @@ pelelmex_dervisc(
   const amrex::FArrayBox& /*pressfab*/,
   const amrex::Geometry& /*geom*/,
   amrex::Real /*time*/,
-  const amrex::Vector<BCRec>& /*bcrec*/,
+  const amrex::Vector<amrex::BCRec>& /*bcrec*/,
   int /*level*/)
 {
   amrex::ignore_unused(ncomp);
@@ -1323,7 +1321,7 @@ pelelmex_dervisc(
   AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
 
   if (a_pelelm->m_incompressible != 0) {
-    derfab.setVal<RunOn::Device>(a_pelelm->m_mu, bx, dcomp, 1);
+    derfab.setVal<amrex::RunOn::Device>(a_pelelm->m_mu, bx, dcomp, 1);
   } else {
     auto const& rhoY = statefab.const_array(FIRSTSPEC);
     auto const& T = statefab.array(TEMP);
@@ -1350,7 +1348,7 @@ pelelmex_derdiffc(
   const amrex::FArrayBox& /*pressfab*/,
   const amrex::Geometry& /*geom*/,
   amrex::Real /*time*/,
-  const amrex::Vector<BCRec>& /*bcrec*/,
+  const amrex::Vector<amrex::BCRec>& /*bcrec*/,
   int /*level*/)
 {
   amrex::ignore_unused(ncomp);
@@ -1366,7 +1364,7 @@ pelelmex_derdiffc(
   bool do_fixed_Le = (a_pelelm->m_fixed_Le != 0);
   bool do_fixed_Pr = (a_pelelm->m_fixed_Pr != 0);
   bool do_soret = (a_pelelm->m_use_soret != 0);
-  amrex::FArrayBox dummies(bx, NUM_SPECIES + 2, The_Async_Arena());
+  amrex::FArrayBox dummies(bx, NUM_SPECIES + 2, amrex::The_Async_Arena());
   auto const& rhoY = statefab.const_array(FIRSTSPEC);
   auto const& T = statefab.array(TEMP);
   auto rhoD = derfab.array(dcomp);
@@ -1400,7 +1398,7 @@ pelelmex_derlambda(
   const amrex::FArrayBox& /*pressfab*/,
   const amrex::Geometry& /*geom*/,
   amrex::Real /*time*/,
-  const amrex::Vector<BCRec>& /*bcrec*/,
+  const amrex::Vector<amrex::BCRec>& /*bcrec*/,
   int /*level*/)
 {
   amrex::ignore_unused(ncomp);
@@ -1410,7 +1408,7 @@ pelelmex_derlambda(
   bool do_fixed_Le = (a_pelelm->m_fixed_Le != 0);
   bool do_fixed_Pr = (a_pelelm->m_fixed_Pr != 0);
   bool do_soret = (a_pelelm->m_use_soret != 0);
-  amrex::FArrayBox dummies(bx, 2 * NUM_SPECIES + 1, The_Async_Arena());
+  amrex::FArrayBox dummies(bx, 2 * NUM_SPECIES + 1, amrex::The_Async_Arena());
   auto const& rhoY = statefab.const_array(FIRSTSPEC);
   auto const& T = statefab.array(TEMP);
   auto rhoD = dummies.array(1);
@@ -1443,12 +1441,12 @@ pelelmex_derdmap(
   const amrex::FArrayBox& /*pressfab*/,
   const amrex::Geometry& /*geom*/,
   amrex::Real /*time*/,
-  const amrex::Vector<BCRec>& /*bcrec*/,
+  const amrex::Vector<amrex::BCRec>& /*bcrec*/,
   int /*level*/)
 {
   AMREX_ASSERT(derfab.box().contains(bx));
   auto der = derfab.array(dcomp);
-  const int myrank = ParallelDescriptor::MyProc();
+  const int myrank = amrex::ParallelDescriptor::MyProc();
   amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
     der(i, j, k) = myrank;
   });
@@ -1469,7 +1467,7 @@ pelelmex_derturbforcing(
   const amrex::FArrayBox& /*pressfab*/,
   const amrex::Geometry& geom,
   amrex::Real time,
-  const amrex::Vector<BCRec>& /*bcrec*/,
+  const amrex::Vector<amrex::BCRec>& /*bcrec*/,
   int /*level*/)
 {
   AMREX_ASSERT(derfab.box().contains(bx));
@@ -1478,17 +1476,17 @@ pelelmex_derturbforcing(
   AMREX_ASSERT(!a_pelelm->m_incompressible);
 
   // Need geom for forcing
-  GeometryData const& geomdata = geom.data();
-  Array4<amrex::Real> const& der = derfab.array(dcomp);
+  amrex::GeometryData const& geomdata = geom.data();
+  amrex::Array4<amrex::Real> const& der = derfab.array(dcomp);
 
   // Set derfab to zero first
   derfab.setVal<amrex::RunOn::Device>(0.0, bx, dcomp, ncomp);
   amrex::FArrayBox DummyFab(bx, 1);
 
   // Declare a pointer for the density array view
-  Array4<const amrex::Real> rho = (a_pelelm->m_incompressible != 0)
-                                    ? DummyFab.const_array()
-                                    : statefab.const_array(DENSITY);
+  amrex::Array4<const amrex::Real> rho = (a_pelelm->m_incompressible != 0)
+                                           ? DummyFab.const_array()
+                                           : statefab.const_array(DENSITY);
 
   // call the function above to construct the forcing
   a_pelelm->turb_forcing.addTurbVelForces(
@@ -1511,7 +1509,7 @@ pelelmex_dermaniout(
   const amrex::FArrayBox& /*pressfab*/,
   const amrex::Geometry& /*geom*/,
   amrex::Real /*time*/,
-  const amrex::Vector<BCRec>& /*bcrec*/,
+  const amrex::Vector<amrex::BCRec>& /*bcrec*/,
   int /*level*/)
 {
   auto& h_manf_data =

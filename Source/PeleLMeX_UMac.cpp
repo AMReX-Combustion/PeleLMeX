@@ -4,8 +4,6 @@
 #include <AMReX_FillPatchUtil.H>
 #include <PeleLMeX_BCfill.H>
 
-using namespace amrex;
-
 void
 PeleLM::predictVelocity(std::unique_ptr<AdvanceAdvData>& advData)
 {
@@ -23,13 +21,13 @@ PeleLM::predictVelocity(std::unique_ptr<AdvanceAdvData>& advData)
   //----------------------------------------------------------------
   // Get viscous forces
   int nGrow_force = 1;
-  Vector<MultiFab> divtau(finest_level + 1);
-  Vector<MultiFab> velForces(finest_level + 1);
+  amrex::Vector<amrex::MultiFab> divtau(finest_level + 1);
+  amrex::Vector<amrex::MultiFab> velForces(finest_level + 1);
   for (int lev = 0; lev <= finest_level; ++lev) {
     divtau[lev].define(
-      grids[lev], dmap[lev], AMREX_SPACEDIM, 0, MFInfo(), Factory(lev));
+      grids[lev], dmap[lev], AMREX_SPACEDIM, 0, amrex::MFInfo(), Factory(lev));
     velForces[lev].define(
-      grids[lev], dmap[lev], AMREX_SPACEDIM, nGrow_force, MFInfo(),
+      grids[lev], dmap[lev], AMREX_SPACEDIM, nGrow_force, amrex::MFInfo(),
       Factory(lev));
   }
   int use_density = 0;
@@ -78,7 +76,7 @@ PeleLM::createMACRHS(std::unique_ptr<AdvanceAdvData>& advData)
   BL_PROFILE("PeleLMeX::createMACRHS()");
 
   for (int lev = 0; lev <= finest_level; ++lev) {
-    Real halftime = 0.5 * (m_t_old[lev] + m_t_new[lev]);
+    amrex::Real halftime = 0.5 * (m_t_old[lev] + m_t_new[lev]);
     fillpatch_divu(lev, halftime, advData->mac_divu[lev], m_nGrowAdv);
   }
 }
@@ -92,10 +90,10 @@ PeleLM::addChiIncrement(
   BL_PROFILE("PeleLMeX::addChiIncrement()");
 
   int nGrow = m_nGrowAdv;
-  Vector<MultiFab> chiIncr(finest_level + 1);
+  amrex::Vector<amrex::MultiFab> chiIncr(finest_level + 1);
   for (int lev = 0; lev <= finest_level; ++lev) {
     chiIncr[lev].define(
-      grids[lev], dmap[lev], 1, nGrow, MFInfo(), Factory(lev));
+      grids[lev], dmap[lev], 1, nGrow, amrex::MFInfo(), Factory(lev));
   }
 
   // Update the thermodynamic pressure
@@ -111,9 +109,9 @@ PeleLM::addChiIncrement(
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
-    for (MFIter mfi(advData->chi[lev], TilingIfNotGPU()); mfi.isValid();
-         ++mfi) {
-      const Box& gbx = mfi.growntilebox();
+    for (amrex::MFIter mfi(advData->chi[lev], amrex::TilingIfNotGPU());
+         mfi.isValid(); ++mfi) {
+      const amrex::Box& gbx = mfi.growntilebox();
       auto const& chiInc_ar = chiIncr[lev].const_array(mfi);
       auto const& chi_ar = advData->chi[lev].array(mfi);
       auto const& mac_divu_ar = advData->mac_divu[lev].array(mfi);
@@ -162,7 +160,7 @@ void
 PeleLM::macProject(
   const TimeStamp& a_time,
   std::unique_ptr<AdvanceAdvData>& advData,
-  const Vector<MultiFab*>& a_divu)
+  const amrex::Vector<amrex::MultiFab*>& a_divu)
 {
   BL_PROFILE("PeleLMeX::macProject()");
 
@@ -170,14 +168,15 @@ PeleLM::macProject(
 
   // Get face rho inv
   auto bcRec = fetchBCRecArray(DENSITY, 1);
-  Vector<Array<MultiFab, AMREX_SPACEDIM>> rho_inv(finest_level + 1);
+  amrex::Vector<amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>> rho_inv(
+    finest_level + 1);
   for (int lev = 0; lev <= finest_level; ++lev) {
     if (m_incompressible != 0) {
-      Real rhoInv = m_dt / (2.0 * m_rho);
+      amrex::Real rhoInv = m_dt / (2.0 * m_rho);
       for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
         rho_inv[lev][idim].define(
-          amrex::convert(grids[lev], IntVect::TheDimensionVector(idim)),
-          dmap[lev], 1, 0, MFInfo(), Factory(lev));
+          amrex::convert(grids[lev], amrex::IntVect::TheDimensionVector(idim)),
+          dmap[lev], 1, 0, amrex::MFInfo(), Factory(lev));
         rho_inv[lev][idim].setVal(rhoInv);
       }
     } else {
@@ -193,18 +192,18 @@ PeleLM::macProject(
   }
 
   // For closed chamber, compute change in chamber pressure
-  Real Sbar = 0.0;
+  amrex::Real Sbar = 0.0;
   if ((m_closed_chamber != 0) && (m_incompressible == 0)) {
     Sbar = adjustPandDivU(advData);
   }
 
   if (macproj->needInitialization()) {
-    LPInfo lpInfo;
+    amrex::LPInfo lpInfo;
     lpInfo.setMaxCoarseningLevel(m_mac_mg_max_coarsening_level);
     macproj->initProjector(lpInfo, GetVecOfArrOfConstPtrs(rho_inv));
     macproj->setDomainBC(
-      getMACProjectionBC(Orientation::low),
-      getMACProjectionBC(Orientation::high));
+      getMACProjectionBC(amrex::Orientation::low),
+      getMACProjectionBC(amrex::Orientation::high));
 #ifdef AMREX_USE_HYPRE
     macproj->getMLMG().setHypreOptionsNamespace(m_hypre_namespace_mac);
 #endif
@@ -243,7 +242,8 @@ PeleLM::macProject(
     if (lev > 0) {
       // We need to fill the MAC velocities outside the fine region so we can
       // use them in the Godunov method
-      IntVect rr = geom[lev].Domain().size() / geom[lev - 1].Domain().size();
+      amrex::IntVect rr =
+        geom[lev].Domain().size() / geom[lev - 1].Domain().size();
       create_constrained_umac_grown(
         m_nGrowMAC, &geom[lev - 1], &geom[lev],
         GetArrOfPtrs(advData->umac[lev - 1]), GetArrOfPtrs(advData->umac[lev]),
@@ -260,63 +260,67 @@ PeleLM::macProject(
 void
 PeleLM::create_constrained_umac_grown(
   int a_nGrow,
-  const Geometry* crse_geom,
-  const Geometry* fine_geom,
-  Array<MultiFab*, AMREX_SPACEDIM> u_mac_crse,
-  Array<MultiFab*, AMREX_SPACEDIM> u_mac_fine,
-  const IntVect& crse_ratio)
+  const amrex::Geometry* crse_geom,
+  const amrex::Geometry* fine_geom,
+  amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM> u_mac_crse,
+  amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM> u_mac_fine,
+  const amrex::IntVect& crse_ratio)
 {
   // Divergence preserving interp
-  Interpolater* mapper = &face_divfree_interp;
+  amrex::Interpolater* mapper = &amrex::face_divfree_interp;
 
   // Set BCRec for Umac
-  Vector<BCRec> bcrec(1);
+  amrex::Vector<amrex::BCRec> bcrec(1);
   for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
     if (crse_geom->isPeriodic(idim)) {
-      bcrec[0].setLo(idim, BCType::int_dir);
-      bcrec[0].setHi(idim, BCType::int_dir);
+      bcrec[0].setLo(idim, amrex::BCType::int_dir);
+      bcrec[0].setHi(idim, amrex::BCType::int_dir);
     } else {
-      bcrec[0].setLo(idim, BCType::foextrap);
-      bcrec[0].setHi(idim, BCType::foextrap);
+      bcrec[0].setLo(idim, amrex::BCType::foextrap);
+      bcrec[0].setHi(idim, amrex::BCType::foextrap);
     }
   }
-  Array<Vector<BCRec>, AMREX_SPACEDIM> bcrecArr = {
+  amrex::Array<amrex::Vector<amrex::BCRec>, AMREX_SPACEDIM> bcrecArr = {
     AMREX_D_DECL(bcrec, bcrec, bcrec)};
 
-  PhysBCFunct<GpuBndryFuncFab<umacFill>> crse_bndry_func(
+  amrex::PhysBCFunct<amrex::GpuBndryFuncFab<umacFill>> crse_bndry_func(
     *crse_geom, bcrec, umacFill{});
-  Array<PhysBCFunct<GpuBndryFuncFab<umacFill>>, AMREX_SPACEDIM> cbndyFuncArr = {
-    AMREX_D_DECL(crse_bndry_func, crse_bndry_func, crse_bndry_func)};
+  amrex::Array<
+    amrex::PhysBCFunct<amrex::GpuBndryFuncFab<umacFill>>, AMREX_SPACEDIM>
+    cbndyFuncArr = {
+      AMREX_D_DECL(crse_bndry_func, crse_bndry_func, crse_bndry_func)};
 
-  PhysBCFunct<GpuBndryFuncFab<umacFill>> fine_bndry_func(
+  amrex::PhysBCFunct<amrex::GpuBndryFuncFab<umacFill>> fine_bndry_func(
     *fine_geom, bcrec, umacFill{});
-  Array<PhysBCFunct<GpuBndryFuncFab<umacFill>>, AMREX_SPACEDIM> fbndyFuncArr = {
-    AMREX_D_DECL(fine_bndry_func, fine_bndry_func, fine_bndry_func)};
+  amrex::Array<
+    amrex::PhysBCFunct<amrex::GpuBndryFuncFab<umacFill>>, AMREX_SPACEDIM>
+    fbndyFuncArr = {
+      AMREX_D_DECL(fine_bndry_func, fine_bndry_func, fine_bndry_func)};
 
   // Use piecewise constant interpolation in time, so create dummy variable for
   // time
-  Real dummy = 0.;
+  amrex::Real dummy = 0.;
   FillPatchTwoLevels(
-    u_mac_fine, IntVect(a_nGrow), dummy, {u_mac_crse}, {dummy}, {u_mac_fine},
-    {dummy}, 0, 0, 1, *crse_geom, *fine_geom, cbndyFuncArr, 0, fbndyFuncArr, 0,
-    crse_ratio, mapper, bcrecArr, 0);
+    u_mac_fine, amrex::IntVect(a_nGrow), dummy, {u_mac_crse}, {dummy},
+    {u_mac_fine}, {dummy}, 0, 0, 1, *crse_geom, *fine_geom, cbndyFuncArr, 0,
+    fbndyFuncArr, 0, crse_ratio, mapper, bcrecArr, 0);
 }
 
-Array<LinOpBCType, AMREX_SPACEDIM>
-PeleLM::getMACProjectionBC(Orientation::Side a_side)
+amrex::Array<amrex::LinOpBCType, AMREX_SPACEDIM>
+PeleLM::getMACProjectionBC(amrex::Orientation::Side a_side)
 {
 
-  Array<LinOpBCType, AMREX_SPACEDIM> r;
+  amrex::Array<amrex::LinOpBCType, AMREX_SPACEDIM> r;
   for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
     if (Geom(0).isPeriodic(idim)) {
-      r[idim] = LinOpBCType::Periodic;
+      r[idim] = amrex::LinOpBCType::Periodic;
     } else {
-      auto physbc =
-        (a_side == Orientation::low) ? m_phys_bc.lo(idim) : m_phys_bc.hi(idim);
+      auto physbc = (a_side == amrex::Orientation::low) ? m_phys_bc.lo(idim)
+                                                        : m_phys_bc.hi(idim);
       if (physbc == amrex::PhysBCType::outflow) {
-        r[idim] = LinOpBCType::Dirichlet;
+        r[idim] = amrex::LinOpBCType::Dirichlet;
       } else {
-        r[idim] = LinOpBCType::Neumann;
+        r[idim] = amrex::LinOpBCType::Neumann;
       }
     }
   }
