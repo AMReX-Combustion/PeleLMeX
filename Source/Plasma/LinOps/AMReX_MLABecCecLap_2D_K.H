@@ -670,14 +670,16 @@ abeccec_chkdiag(
                  getRightCellUpwindCoeff(cY(i, j, 0, n), cY(i, j + 1, 0, n)));
 
         if (fabs(offdiagdiff + offdiagadv) > fabs(diag)) {
-          amrex::Print() << " Abort LinOp not diagonal dominant at: " << i
-                         << " " << j << "\n";
-          // amrex::Print() << j << " Val diag: " << diag << ", offdiagdiff/adv:
-          // " << offdiagdiff << " " << offdiagadv << "\n"; amrex::Print() << j
-          // << " Val diag: " << diag << ", left/right: " << left << "  " <<
-          // right << "\n"; amrex::Print() << j << " " << fabs(diag) << " " <<
-          // fabs(offdiagdiff+offdiagadv) << "\n"; amrex::Abort("MLABecCec is
-          // not diagonal dominant !!!");
+          amrex::Abort("LinOp not diagonal dominant");
+          // amrex::Print() << " Abort LinOp not diagonal dominant at: " << i
+          //                << " " << j << "\n";
+          //  amrex::Print() << j << " Val diag: " << diag << ",
+          //  offdiagdiff/adv: " << offdiagdiff << " " << offdiagadv << "\n";
+          //  amrex::Print() << j
+          //  << " Val diag: " << diag << ", left/right: " << left << "  " <<
+          //  right << "\n"; amrex::Print() << j << " " << fabs(diag) << " " <<
+          //  fabs(offdiagdiff+offdiagadv) << "\n"; amrex::Abort("MLABecCec is
+          //  not diagonal dominant !!!");
         }
       }
     }
