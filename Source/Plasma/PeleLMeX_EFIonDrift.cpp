@@ -4,8 +4,6 @@
 #include <AMReX_FillPatchUtil.H>
 #include <PeleLMeX_BCfill.H>
 
-using namespace amrex;
-
 void
 PeleLM::ionDriftVelocity(std::unique_ptr<AdvanceAdvData>& advData)
 {
@@ -21,19 +19,21 @@ PeleLM::ionDriftVelocity(std::unique_ptr<AdvanceAdvData>& advData)
 
   //----------------------------------------------------------------
   // Get the gradient of Old and New phiV
-  Vector<Array<MultiFab, AMREX_SPACEDIM>> gphiVOld(finest_level + 1);
-  Vector<Array<MultiFab, AMREX_SPACEDIM>> gphiVNew(finest_level + 1);
+  amrex::Vector<amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>> gphiVOld(
+    finest_level + 1);
+  amrex::Vector<amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>> gphiVNew(
+    finest_level + 1);
   int nGrow = 0; // No need for ghost face on gphiV
   for (int lev = 0; lev <= finest_level; ++lev) {
     const auto& ba = grids[lev];
     const auto& factory = Factory(lev);
     for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
       gphiVOld[lev][idim].define(
-        amrex::convert(ba, IntVect::TheDimensionVector(idim)), dmap[lev], 1,
-        nGrow, MFInfo(), factory);
+        amrex::convert(ba, amrex::IntVect::TheDimensionVector(idim)), dmap[lev],
+        1, nGrow, amrex::MFInfo(), factory);
       gphiVNew[lev][idim].define(
-        amrex::convert(ba, IntVect::TheDimensionVector(idim)), dmap[lev], 1,
-        nGrow, MFInfo(), factory);
+        amrex::convert(ba, amrex::IntVect::TheDimensionVector(idim)), dmap[lev],
+        1, nGrow, amrex::MFInfo(), factory);
     }
   }
 
@@ -57,43 +57,43 @@ PeleLM::ionDriftVelocity(std::unique_ptr<AdvanceAdvData>& advData)
     auto ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
     auto ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
 
-    MultiFab mobH_cc(grids[lev], dmap[lev], NUM_IONS, 1);
+    amrex::MultiFab mobH_cc(grids[lev], dmap[lev], NUM_IONS, 1);
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
-    for (MFIter mfi(mobH_cc, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
-      const Box& gbx = mfi.growntilebox();
+    for (amrex::MFIter mfi(mobH_cc, amrex::TilingIfNotGPU()); mfi.isValid();
+         ++mfi) {
+      const amrex::Box& gbx = mfi.growntilebox();
       const auto& mob_o = ldataOld_p->mob_cc.const_array(mfi);
       const auto& mob_n = ldataNew_p->mob_cc.const_array(mfi);
       const auto& mob_h = mobH_cc.array(mfi);
       amrex::ParallelFor(
         gbx, NUM_IONS,
-        [mob_o, mob_n,
-         mob_h] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
+        [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
           mob_h(i, j, k, n) = 0.5 * (mob_o(i, j, k, n) + mob_n(i, j, k, n));
         });
     }
 
     // Get the face centered ions mobility
     int doZeroVisc = 0;
-    Array<MultiFab, AMREX_SPACEDIM> mobH_ec =
+    amrex::Array<amrex::MultiFab, AMREX_SPACEDIM> mobH_ec =
       getDiffusivity(lev, 0, NUM_IONS, doZeroVisc, bcRecIons, mobH_cc);
 
     // Assemble the ions drift velocity
     for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
-      for (MFIter mfi(mobH_ec[idim], TilingIfNotGPU()); mfi.isValid(); ++mfi) {
-        const Box bx = mfi.tilebox();
+      for (amrex::MFIter mfi(mobH_ec[idim], amrex::TilingIfNotGPU());
+           mfi.isValid(); ++mfi) {
+        const amrex::Box bx = mfi.tilebox();
         const auto& mob_h = mobH_ec[idim].const_array(mfi);
         const auto& gp_o = gphiVOld[lev][idim].const_array(mfi);
         const auto& gp_n = gphiVNew[lev][idim].const_array(mfi);
         const auto& Ud_Sp = advData->uDrift[lev][idim].array(mfi);
         amrex::ParallelFor(
           bx, NUM_IONS,
-          [mob_h, gp_o, gp_n,
-           Ud_Sp] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
+          [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
             Ud_Sp(i, j, k, n) =
               mob_h(i, j, k, n) * -0.5 * (gp_o(i, j, k) + gp_n(i, j, k));
           });
@@ -118,40 +118,43 @@ PeleLM::ionDriftVelocity(std::unique_ptr<AdvanceAdvData>& advData)
   // FillPatch Udrift on levels > 0
   for (int lev = 0; lev <= finest_level; ++lev) {
     if (lev > 0) {
-      IntVect rr = geom[lev].Domain().size() / geom[lev - 1].Domain().size();
-      Interpolater* mapper = &face_linear_interp;
+      amrex::IntVect rr =
+        geom[lev].Domain().size() / geom[lev - 1].Domain().size();
+      amrex::Interpolater* mapper = &amrex::face_linear_interp;
 
       // Set BCRec for Umac
-      Vector<BCRec> bcrec(NUM_IONS);
+      amrex::Vector<amrex::BCRec> bcrec(NUM_IONS);
       for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
         for (int ion = 0; ion < NUM_IONS; ion++) {
           if (geom[lev - 1].isPeriodic(idim)) {
-            bcrec[ion].setLo(idim, BCType::int_dir);
-            bcrec[ion].setHi(idim, BCType::int_dir);
+            bcrec[ion].setLo(idim, amrex::BCType::int_dir);
+            bcrec[ion].setHi(idim, amrex::BCType::int_dir);
           } else {
-            bcrec[ion].setLo(idim, BCType::foextrap);
-            bcrec[ion].setHi(idim, BCType::foextrap);
+            bcrec[ion].setLo(idim, amrex::BCType::foextrap);
+            bcrec[ion].setHi(idim, amrex::BCType::foextrap);
           }
         }
       }
-      Array<Vector<BCRec>, AMREX_SPACEDIM> bcrecArr = {
+      amrex::Array<amrex::Vector<amrex::BCRec>, AMREX_SPACEDIM> bcrecArr = {
         AMREX_D_DECL(bcrec, bcrec, bcrec)};
 
-      PhysBCFunct<GpuBndryFuncFab<umacFill>> crse_bndry_func(
+      amrex::PhysBCFunct<amrex::GpuBndryFuncFab<umacFill>> crse_bndry_func(
         geom[lev - 1], bcrec, umacFill{});
-      Array<PhysBCFunct<GpuBndryFuncFab<umacFill>>, AMREX_SPACEDIM>
+      amrex::Array<
+        amrex::PhysBCFunct<amrex::GpuBndryFuncFab<umacFill>>, AMREX_SPACEDIM>
         cbndyFuncArr = {
           AMREX_D_DECL(crse_bndry_func, crse_bndry_func, crse_bndry_func)};
 
-      PhysBCFunct<GpuBndryFuncFab<umacFill>> fine_bndry_func(
+      amrex::PhysBCFunct<amrex::GpuBndryFuncFab<umacFill>> fine_bndry_func(
         geom[lev], bcrec, umacFill{});
-      Array<PhysBCFunct<GpuBndryFuncFab<umacFill>>, AMREX_SPACEDIM>
+      amrex::Array<
+        amrex::PhysBCFunct<amrex::GpuBndryFuncFab<umacFill>>, AMREX_SPACEDIM>
         fbndyFuncArr = {
           AMREX_D_DECL(fine_bndry_func, fine_bndry_func, fine_bndry_func)};
 
-      Real dummy = 0.;
+      amrex::Real dummy = 0.0;
       FillPatchTwoLevels(
-        GetArrOfPtrs(advData->uDrift[lev]), IntVect(1), dummy,
+        GetArrOfPtrs(advData->uDrift[lev]), amrex::IntVect(1), dummy,
         {GetArrOfPtrs(advData->uDrift[lev - 1])}, {dummy},
         {GetArrOfPtrs(advData->uDrift[lev])}, {dummy}, 0, 0, NUM_IONS,
         geom[lev - 1], geom[lev - 1], cbndyFuncArr, 0, fbndyFuncArr, 0, rr,
@@ -171,16 +174,16 @@ PeleLM::ionDriftAddUmac(int lev, std::unique_ptr<AdvanceAdvData>& advData)
   // Add umac to the ions drift velocity to get the effective velocity
   for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
 #ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
-    for (MFIter mfi(advData->umac[lev][idim], TilingIfNotGPU()); mfi.isValid();
-         ++mfi) {
-      const Box gbx = mfi.growntilebox();
+    for (amrex::MFIter mfi(advData->umac[lev][idim], amrex::TilingIfNotGPU());
+         mfi.isValid(); ++mfi) {
+      const amrex::Box gbx = mfi.growntilebox();
       const auto& umac = advData->umac[lev][idim].const_array(mfi);
       const auto& Ud_Sp = advData->uDrift[lev][idim].array(mfi);
       amrex::ParallelFor(
         gbx, NUM_IONS,
-        [umac, Ud_Sp] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
+        [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
           Ud_Sp(i, j, k, n) += umac(i, j, k);
         });
     }
