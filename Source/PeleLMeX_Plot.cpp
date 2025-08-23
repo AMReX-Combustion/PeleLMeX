@@ -1179,24 +1179,7 @@ PeleLM::addLevelVelocityDataFromPlt(int a_lev, const std::string& a_velPltFile)
     a_lev, geom[a_lev], idXvel, sComp0, AMREX_SPACEDIM, tmpVel);
   // scale the velocity
   tmpVel.mult(m_velocity_plotfile_scale);
-
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-  for (amrex::MFIter mfi(ldata_p->state, amrex::TilingIfNotGPU());
-       mfi.isValid(); ++mfi) {
-    const amrex::Box& bx = mfi.tilebox();
-    amrex::FArrayBox DummyFab(bx, 1);
-    auto const& state_arr = ldata_p->state.array(mfi);
-    auto const& tmpVel_arr = tmpVel.array(mfi);
-    amrex::ParallelFor(
-      bx,
-      [state_arr, tmpVel_arr] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-        for (int n = 0; n < AMREX_SPACEDIM; ++n) {
-          state_arr(i, j, k, XVEL + n) += tmpVel_arr(i, j, k, n);
-        }
-      });
-  }
+  amrex::MultiFab::Add(ldata_p->state, tmpVel, 0, VELX, AMREX_SPACEDIM, 0);
 }
 
 void

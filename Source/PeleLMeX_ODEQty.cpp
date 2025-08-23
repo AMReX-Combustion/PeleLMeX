@@ -21,7 +21,7 @@ PeleLM::predictODEQty()
           state_arrs[box_no](i, j, k, FIRSTODE + n) = B_n + dt * S_ext_n;
         }
       });
+    amrex::Gpu::streamSynchronize();
   }
-  amrex::Gpu::streamSynchronize();
 }
 #endif

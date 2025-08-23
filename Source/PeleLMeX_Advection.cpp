@@ -247,16 +247,14 @@ PeleLM::updateVelocity(const std::unique_ptr<AdvanceAdvData>& advData)
     auto const& force_ma = velForces[lev].const_arrays();
     auto const& state_new_ma = ldataNew_p->state.arrays();
     amrex::ParallelFor(
-      ldataOld_p->state,
+      ldataOld_p->state, amrex::IntVect(0), AMREX_SPACEDIM,
       [state_old_ma, adv_aofs_ma, force_ma, state_new_ma,
        dt_loc =
-         m_dt] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
-        for (int n = 0; n < AMREX_SPACEDIM; ++n) {
-          state_new_ma[box_no](i, j, k, VELX + n) =
-            state_old_ma[box_no](i, j, k, VELX + n) +
-            dt_loc * (adv_aofs_ma[box_no](i, j, k, VELX + n) +
-                      force_ma[box_no](i, j, k, n));
-        }
+         m_dt] AMREX_GPU_DEVICE(int box_no, int i, int j, int k, int n) noexcept {
+        state_new_ma[box_no](i, j, k, VELX + n) =
+          state_old_ma[box_no](i, j, k, VELX + n) +
+          dt_loc * (adv_aofs_ma[box_no](i, j, k, VELX + n) +
+                    force_ma[box_no](i, j, k, n));
       });
     // Shift outside?
     amrex::Gpu::streamSynchronize();
@@ -1134,17 +1132,22 @@ PeleLM::updateScalarComp(
     auto const& state_new_ma = ldataNew_p->state.arrays();
 
     amrex::ParallelFor(
-      ldataOld_p->state,
-      [state_old_ma, adv_aofs_ma, ext_ma, state_new_ma, state_comp, ncomp,
-       dt = m_dt] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
-        for (int n = state_comp; n < state_comp + ncomp; ++n) {
-          state_new_ma[box_no](i, j, k, n) =
-            state_old_ma[box_no](i, j, k, n) +
-            dt * (adv_aofs_ma[box_no](i, j, k, n) + ext_ma[box_no](i, j, k, n));
-        }
+      ldataOld_p->state, amrex::IntVect(0), ncomp,
+      [state_old_ma, adv_aofs_ma, ext_ma, state_new_ma, state_comp, // ncomp,
+       dt =
+         m_dt] AMREX_GPU_DEVICE(int box_no, int i, int j, int k, int n) noexcept {
+        amrex::Array4<amrex::Real> state_new_arr(
+          state_new_ma[box_no], state_comp);
+        amrex::Array4<amrex::Real const> state_old_arr(
+          state_old_ma[box_no], state_comp);
+        amrex::Array4<amrex::Real const> adv_aofs_arr(
+          adv_aofs_ma[box_no], state_comp);
+        amrex::Array4<amrex::Real const> ext_arr(ext_ma[box_no], state_comp);
+        state_new_arr(i, j, k, n) =
+          state_old_arr(i, j, k, n) +
+          dt * (adv_aofs_arr(i, j, k, n) + ext_arr(i, j, k, n));
       });
-    // Shift outside?
-    amrex::Gpu::streamSynchronize();
   }
+  amrex::Gpu::streamSynchronize();
   averageDown(AmrNewTime, state_comp, ncomp);
 }

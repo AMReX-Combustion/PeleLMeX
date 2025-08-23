@@ -28,6 +28,6 @@ PeleLM::calcEFTransport(const TimeStamp a_time)
           i, j, k, useTab, fixedKe, dxinv, rhoY, phiV, T, mobE_ma[box_no]);
         getDiffE(i, j, k, factor, T, mobE_ma[box_no], diffE_ma[box_no]);
       });
+    amrex::Gpu::streamSynchronize();
   }
-  amrex::Gpu::streamSynchronize();
 }
