@@ -351,13 +351,7 @@ PeleLM::velocityProjection(
           });
         amrex::Gpu::streamSynchronize();
         if (m_closed_chamber != 0) {
-          amrex::ParallelFor(
-            rhs_cc[lev], rhs_cc[lev].nGrowVect(),
-            [rhs_ma, SbarNew, SbarOld] AMREX_GPU_DEVICE(
-              int box_no, int i, int j, int k) noexcept {
-              rhs_ma[box_no](i, j, k) += SbarNew - SbarOld;
-            });
-          amrex::Gpu::streamSynchronize();
+          rhs_cc[lev].plus(SbarNew - SbarOld, 0, 1);
         }
       }
 #ifdef AMREX_USE_EB
