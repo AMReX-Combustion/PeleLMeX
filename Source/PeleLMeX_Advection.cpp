@@ -1133,7 +1133,7 @@ PeleLM::updateScalarComp(
 
     amrex::ParallelFor(
       ldataOld_p->state, amrex::IntVect(0), ncomp,
-      [state_old_ma, adv_aofs_ma, ext_ma, state_new_ma, state_comp, // ncomp,
+      [state_old_ma, adv_aofs_ma, ext_ma, state_new_ma, state_comp,
        dt =
          m_dt] AMREX_GPU_DEVICE(int box_no, int i, int j, int k, int n) noexcept {
         amrex::Array4<amrex::Real> state_new_arr(

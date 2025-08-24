@@ -400,11 +400,11 @@ PeleLM::getDiffusivity(
       amrex::ParallelFor(
         ebx, [bc_lo, bc_hi, diff_ec, use_harmonic_avg, ncomp, idim, edomain,
               diff_c] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          int idx[3] = {i, j, k};
-          bool on_lo =
+          const int idx[3] = {i, j, k};
+          const bool on_lo =
             ((bc_lo == amrex::BCType::ext_dir) &&
              (idx[idim] <= edomain.smallEnd(idim)));
-          bool on_hi =
+          const bool on_hi =
             ((bc_hi == amrex::BCType::ext_dir) &&
              (idx[idim] >= edomain.bigEnd(idim)));
           cen2edg_cpp(

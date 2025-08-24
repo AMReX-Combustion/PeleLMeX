@@ -307,11 +307,11 @@ PeleLM::velocityProjection(
   amrex::Real SbarOld = 0.0;
   amrex::Real SbarNew = 0.0;
   if ((m_closed_chamber != 0) && (m_incompressible == 0)) {
-    SbarNew = MFSum(GetVecOfConstPtrs(getDivUVect(AmrNewTime)), 0);
-    SbarNew /= m_uncoveredVol; // Transform in Mean.
+    SbarNew = MFSum(GetVecOfConstPtrs(getDivUVect(AmrNewTime)), 0) /
+              m_uncoveredVol; // Transform in Mean.
     if (incremental != 0) {
-      SbarOld = MFSum(GetVecOfConstPtrs(getDivUVect(AmrOldTime)), 0);
-      SbarOld /= m_uncoveredVol; // Transform in Mean.
+      SbarOld = MFSum(GetVecOfConstPtrs(getDivUVect(AmrOldTime)), 0) /
+                m_uncoveredVol; // Transform in Mean.
     }
   }
 
@@ -344,16 +344,21 @@ PeleLM::velocityProjection(
 
         amrex::ParallelFor(
           rhs_cc[lev], rhs_cc[lev].nGrowVect(),
-          [divu_o_ma, divu_n_ma, rhs_ma, SbarNew, SbarOld,
-           is_closed_chamber =
-             m_closed_chamber] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+          [divu_o_ma, divu_n_ma,
+           rhs_ma] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
             rhs_ma[box_no](i, j, k) =
               -(divu_n_ma[box_no](i, j, k) - divu_o_ma[box_no](i, j, k));
-            if (is_closed_chamber != 0) {
-              rhs_ma[box_no](i, j, k) += SbarNew - SbarOld;
-            }
           });
         amrex::Gpu::streamSynchronize();
+        if (m_closed_chamber != 0) {
+          amrex::ParallelFor(
+            rhs_cc[lev], rhs_cc[lev].nGrowVect(),
+            [rhs_ma, SbarNew, SbarOld] AMREX_GPU_DEVICE(
+              int box_no, int i, int j, int k) noexcept {
+              rhs_ma[box_no](i, j, k) += SbarNew - SbarOld;
+            });
+          amrex::Gpu::streamSynchronize();
+        }
       }
 #ifdef AMREX_USE_EB
       EB_set_covered(rhs_cc[lev], 0.0);
