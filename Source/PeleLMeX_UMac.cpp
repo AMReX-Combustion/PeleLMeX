@@ -108,71 +108,97 @@ PeleLM::addChiIncrement(
   // Add chiIncr to chi and add chi to mac_divu
   // Both mac_divu and chiIncr have properly filled ghost cells -> work on
   // grownbox
-  switch (m_chi_correction_type) {
-  case ChiCorrectionType::DivuFirstIter: {
-    for (int lev = 0; lev <= finest_level; ++lev) {
-      auto const& chiInc_ma = chiIncr[lev].const_arrays();
-      auto const& chi_ma = advData->chi[lev].arrays();
-      auto const& mac_divu_ma = advData->mac_divu[lev].arrays();
-      amrex::ParallelFor(
-        advData->chi[lev], advData->chi[lev].nGrowVect(),
-        [chi_ma, chiInc_ma, mac_divu_ma,
-         a_sdcIter] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
-          if (a_sdcIter == 1) {
+
+  if (a_sdcIter == 1) {
+    switch (m_chi_correction_type) {
+    case ChiCorrectionType::DivuFirstIter: {
+      for (int lev = 0; lev <= finest_level; ++lev) {
+        auto const& chiInc_ma = chiIncr[lev].const_arrays();
+        auto const& chi_ma = advData->chi[lev].arrays();
+        auto const& mac_divu_ma = advData->mac_divu[lev].arrays();
+        amrex::ParallelFor(
+          advData->chi[lev], advData->chi[lev].nGrowVect(),
+          [chi_ma, chiInc_ma, mac_divu_ma] AMREX_GPU_DEVICE(
+            int box_no, int i, int j, int k) noexcept {
             chi_ma[box_no](i, j, k) =
               chiInc_ma[box_no](i, j, k) + mac_divu_ma[box_no](i, j, k);
-          } else {
-            chi_ma[box_no](i, j, k) += chiInc_ma[box_no](i, j, k);
-          }
-          mac_divu_ma[box_no](i, j, k) = chi_ma[box_no](i, j, k);
-        });
-      // Shift outside?
-      amrex::Gpu::streamSynchronize();
+            mac_divu_ma[box_no](i, j, k) = chi_ma[box_no](i, j, k);
+          });
+        // Shift outside?
+        amrex::Gpu::streamSynchronize();
+      }
+      break;
     }
-    break;
-  }
-  case ChiCorrectionType::NoDivu: {
-    for (int lev = 0; lev <= finest_level; ++lev) {
-      auto const& chiInc_ma = chiIncr[lev].const_arrays();
-      auto const& chi_ma = advData->chi[lev].arrays();
-      auto const& mac_divu_ma = advData->mac_divu[lev].arrays();
-      amrex::ParallelFor(
-        advData->chi[lev], advData->chi[lev].nGrowVect(),
-        [chi_ma, chiInc_ma, mac_divu_ma,
-         a_sdcIter] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
-          if (a_sdcIter == 1) {
+    case ChiCorrectionType::NoDivu: {
+      for (int lev = 0; lev <= finest_level; ++lev) {
+        auto const& chiInc_ma = chiIncr[lev].const_arrays();
+        auto const& chi_ma = advData->chi[lev].arrays();
+        auto const& mac_divu_ma = advData->mac_divu[lev].arrays();
+        amrex::ParallelFor(
+          advData->chi[lev], advData->chi[lev].nGrowVect(),
+          [chi_ma, chiInc_ma, mac_divu_ma] AMREX_GPU_DEVICE(
+            int box_no, int i, int j, int k) noexcept {
             chi_ma[box_no](i, j, k) = chiInc_ma[box_no](i, j, k);
-          } else {
-            chi_ma[box_no](i, j, k) += chiInc_ma[box_no](i, j, k);
-          }
-          mac_divu_ma[box_no](i, j, k) = chi_ma[box_no](i, j, k);
-        });
-      // Shift outside?
-      amrex::Gpu::streamSynchronize();
+            mac_divu_ma[box_no](i, j, k) = chi_ma[box_no](i, j, k);
+          });
+        // Shift outside?
+        amrex::Gpu::streamSynchronize();
+      }
+      break;
     }
-    break;
-  }
-  default: {
-    for (int lev = 0; lev <= finest_level; ++lev) {
-      auto const& chiInc_ma = chiIncr[lev].const_arrays();
-      auto const& chi_ma = advData->chi[lev].arrays();
-      auto const& mac_divu_ma = advData->mac_divu[lev].arrays();
-      amrex::ParallelFor(
-        advData->chi[lev], advData->chi[lev].nGrowVect(),
-        [chi_ma, chiInc_ma, mac_divu_ma,
-         a_sdcIter] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
-          if (a_sdcIter == 1) {
+    default: {
+      for (int lev = 0; lev <= finest_level; ++lev) {
+        auto const& chiInc_ma = chiIncr[lev].const_arrays();
+        auto const& chi_ma = advData->chi[lev].arrays();
+        auto const& mac_divu_ma = advData->mac_divu[lev].arrays();
+        amrex::ParallelFor(
+          advData->chi[lev], advData->chi[lev].nGrowVect(),
+          [chi_ma, chiInc_ma, mac_divu_ma] AMREX_GPU_DEVICE(
+            int box_no, int i, int j, int k) noexcept {
             chi_ma[box_no](i, j, k) = chiInc_ma[box_no](i, j, k);
-          } else {
+            mac_divu_ma[box_no](i, j, k) += chi_ma[box_no](i, j, k);
+          });
+        // Shift outside?
+        amrex::Gpu::streamSynchronize();
+      }
+    }
+    }
+  } else {
+    if (
+      m_chi_correction_type == ChiCorrectionType::DivuFirstIter ||
+      m_chi_correction_type == ChiCorrectionType::NoDivu) {
+      for (int lev = 0; lev <= finest_level; ++lev) {
+        auto const& chiInc_ma = chiIncr[lev].const_arrays();
+        auto const& chi_ma = advData->chi[lev].arrays();
+        auto const& mac_divu_ma = advData->mac_divu[lev].arrays();
+        amrex::ParallelFor(
+          advData->chi[lev], advData->chi[lev].nGrowVect(),
+          [chi_ma, chiInc_ma, mac_divu_ma] AMREX_GPU_DEVICE(
+            int box_no, int i, int j, int k) noexcept {
             chi_ma[box_no](i, j, k) += chiInc_ma[box_no](i, j, k);
-          }
-          mac_divu_ma[box_no](i, j, k) += chi_ma[box_no](i, j, k);
-        });
-      // Shift outside?
-      amrex::Gpu::streamSynchronize();
+            mac_divu_ma[box_no](i, j, k) = chi_ma[box_no](i, j, k);
+          });
+        // Shift outside?
+        amrex::Gpu::streamSynchronize();
+      }
+    } else {
+      for (int lev = 0; lev <= finest_level; ++lev) {
+        auto const& chiInc_ma = chiIncr[lev].const_arrays();
+        auto const& chi_ma = advData->chi[lev].arrays();
+        auto const& mac_divu_ma = advData->mac_divu[lev].arrays();
+        amrex::ParallelFor(
+          advData->chi[lev], advData->chi[lev].nGrowVect(),
+          [chi_ma, chiInc_ma, mac_divu_ma] AMREX_GPU_DEVICE(
+            int box_no, int i, int j, int k) noexcept {
+            chi_ma[box_no](i, j, k) += chiInc_ma[box_no](i, j, k);
+            mac_divu_ma[box_no](i, j, k) += chi_ma[box_no](i, j, k);
+          });
+        // Shift outside?
+        amrex::Gpu::streamSynchronize();
+      }
     }
   }
-  }
+
   if (m_print_chi_convergence) {
     const amrex::Real max_corr =
       MLNorm0(GetVecOfConstPtrs(chiIncr)) * m_dt / m_dpdtFactor;
@@ -321,7 +347,7 @@ PeleLM::create_constrained_umac_grown(
 
   // Use piecewise constant interpolation in time, so create dummy variable for
   // time
-  amrex::Real dummy = 0.;
+  constexpr amrex::Real dummy = 0.;
   FillPatchTwoLevels(
     u_mac_fine, amrex::IntVect(a_nGrow), dummy, {u_mac_crse}, {dummy},
     {u_mac_fine}, {dummy}, 0, 0, 1, *crse_geom, *fine_geom, cbndyFuncArr, 0,

@@ -1328,13 +1328,11 @@ PeleLM::differentialDiffusionUpdate(
     auto const& state_ma = ldata_p->state.arrays();
     auto const& dhat_ma = diffData->Dhat[lev].const_arrays();
     auto const& force_ma = advData->Forcing[lev].const_arrays();
-
-    auto const& dwbar_ma =
-      (m_use_wbar != 0) ? diffData->Dwbar[lev].const_arrays() : dhat_ma;
-    auto const& dT_ma =
-      (m_use_soret != 0) ? diffData->DT[lev].const_arrays() : dhat_ma;
     auto dt = m_dt;
+
     if (m_use_wbar != 0 && m_use_soret != 0) {
+      auto const& dwbar_ma = diffData->Dwbar[lev].const_arrays();
+      auto const& dT_ma = diffData->DT[lev].const_arrays();
       amrex::ParallelFor(
         ldata_p->state, amrex::IntVect(0), NUM_SPECIES,
         [state_ma, dhat_ma, force_ma, dwbar_ma, dT_ma,
@@ -1346,6 +1344,7 @@ PeleLM::differentialDiffusionUpdate(
                   dT_ma[box_no](i, j, k, n));
         });
     } else if (m_use_wbar != 0) {
+      auto const& dwbar_ma = diffData->Dwbar[lev].const_arrays();
       amrex::ParallelFor(
         ldata_p->state, amrex::IntVect(0), NUM_SPECIES,
         [state_ma, dhat_ma, force_ma, dwbar_ma,
@@ -1356,6 +1355,7 @@ PeleLM::differentialDiffusionUpdate(
             dt * (dhat_ma[box_no](i, j, k, n) - dwbar_ma[box_no](i, j, k, n));
         });
     } else if (m_use_soret != 0) {
+      auto const& dT_ma = diffData->DT[lev].const_arrays();
       amrex::ParallelFor(
         ldata_p->state, amrex::IntVect(0), NUM_SPECIES,
         [state_ma, dhat_ma, force_ma, dT_ma,
@@ -1375,20 +1375,18 @@ PeleLM::differentialDiffusionUpdate(
             force_ma[box_no](i, j, k, n) + dt * dhat_ma[box_no](i, j, k, n);
         });
     }
-    auto const& aux_ma =
-      (m_nAux > 0) ? ldata_p->auxiliaries.arrays() : state_ma;
-    auto const& dhat_aux_ma =
-      (m_nAux > 0) ? diffData->Dhat_aux[lev].const_arrays() : dhat_ma;
-    auto const& force_aux_ma =
-      (m_nAux > 0) ? advData->Forcing_aux[lev].const_arrays() : dhat_ma;
-    amrex::ParallelFor(
-      ldata_p->state, amrex::IntVect(0), m_nAux,
-      [aux_ma, dhat_aux_ma, force_aux_ma,
-       dt] AMREX_GPU_DEVICE(int box_no, int i, int j, int k, int n) noexcept {
-        aux_ma[box_no](i, j, k, n) = force_aux_ma[box_no](i, j, k, n) +
-                                     dt * dhat_aux_ma[box_no](i, j, k, n);
-      });
-
+    if (m_nAux > 0) {
+      auto const& aux_ma = ldata_p->auxiliaries.arrays();
+      auto const& dhat_aux_ma = diffData->Dhat_aux[lev].const_arrays();
+      auto const& force_aux_ma = advData->Forcing_aux[lev].const_arrays();
+      amrex::ParallelFor(
+        ldata_p->state, amrex::IntVect(0), m_nAux,
+        [aux_ma, dhat_aux_ma, force_aux_ma,
+         dt] AMREX_GPU_DEVICE(int box_no, int i, int j, int k, int n) noexcept {
+          aux_ma[box_no](i, j, k, n) = force_aux_ma[box_no](i, j, k, n) +
+                                       dt * dhat_aux_ma[box_no](i, j, k, n);
+        });
+    }
     // Shift outside?
     amrex::Gpu::streamSynchronize();
   }
