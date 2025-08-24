@@ -1,8 +1,6 @@
 #include <PeleLMeX.H>
 #include <PeleLMeX_K.H>
-#if PELE_USE_PLASMA
-#include <PeleLMeX_EF_K.H>
-#endif
+
 // Return velocity forces scaled by rhoInv
 // including grapP term if add_gradP = 1
 // including divTau if input amrex::Vector not empty
