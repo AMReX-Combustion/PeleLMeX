@@ -351,7 +351,7 @@ PeleLM::velocityProjection(
           });
         amrex::Gpu::streamSynchronize();
         if (m_closed_chamber != 0) {
-          rhs_cc[lev].plus(SbarNew - SbarOld, 0, 1);
+          rhs_cc[lev].plus(SbarNew - SbarOld, 0, 1, ldataOld_p->divu.nGrow());
         }
       }
 #ifdef AMREX_USE_EB
