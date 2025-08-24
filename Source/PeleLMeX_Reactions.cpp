@@ -469,8 +469,8 @@ PeleLM::getScalarReactForce(const std::unique_ptr<AdvanceAdvData>& advData)
       advData->Forcing[lev],
       [state_o_ma, state_n_ma, extF_ma,
        dtinv] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
-        amrex::Array4<amrex::Real> extF_rhoH(extF_ma[box_no], RHOH);
-        amrex::Array4<amrex::Real const> rhoH_n(state_o_ma[box_no], RHOH);
+        amrex::Array4<amrex::Real> extF_rhoH(extF_ma[box_no], NUM_SPECIES);
+        amrex::Array4<amrex::Real const> rhoH_n(state_n_ma[box_no], RHOH);
         amrex::Array4<amrex::Real const> rhoH_o(state_o_ma[box_no], RHOH);
         extF_rhoH(i, j, k) = (rhoH_n(i, j, k) - rhoH_o(i, j, k)) * dtinv;
       });
