@@ -490,7 +490,7 @@ PeleLM::getHeatRelease(const int a_lev, amrex::MultiFab* a_HR)
   amrex::MultiFab Enth(grids[a_lev], dmap[a_lev], NUM_SPECIES, 0);
   auto const& enth_ma = Enth.arrays();
   amrex::ParallelFor(
-    *a_HR, [react_ma, state_n_ma, enth_ma, leosparm] AMREX_GPU_DEVICE(
+    *a_HR, [state_n_ma, enth_ma, leosparm] AMREX_GPU_DEVICE(
              int box_no, int i, int j, int k) noexcept {
       amrex::Array4<amrex::Real const> T(state_n_ma[box_no], TEMP);
       getHGivenT(i, j, k, T, enth_ma[box_no], leosparm);
