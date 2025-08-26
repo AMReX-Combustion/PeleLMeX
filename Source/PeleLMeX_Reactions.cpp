@@ -115,8 +115,8 @@ PeleLM::advanceChemistry(
       bx, NUM_SPECIES,
       [rhoY_n,
        extF_rhoY] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
-        rhoY_n(i, j, k, n) = c2m::Rho(rhoY_n(i, j, k, n));       // 1.0e3;
-        extF_rhoY(i, j, k, n) = c2m::Rho(extF_rhoY(i, j, k, n)); // 1.0e3;
+        rhoY_n(i, j, k, n) = c2m::Rho(rhoY_n(i, j, k, n));
+        extF_rhoY(i, j, k, n) = c2m::Rho(extF_rhoY(i, j, k, n));
       });
     amrex::ParallelFor(
       bx, [rhoH_n, extF_rhoH] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
