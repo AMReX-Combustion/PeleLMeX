@@ -6,26 +6,31 @@ import matplotlib.pyplot as plt
 """
 Script for validating PelePhysics spray model
 Test cases:
-| Case         | Fuel           |
-| ------------ | -------------- |
-| Nomura(471)  | heptane        |
-| Nomura(741)  | heptane        |
-| WongLin()    | decane         |
-| Daif()       | heptane/decane |
-| RungeHep()   | heptane        |
-| RungeDec()   | decane         |
-| RungeMix()   | heptane/decane |
-| RungeJP8()   | POSF10264      |
+| Case       | Fuel           |
+| ---------- | -------------- |
+| Nomura     | heptane        |
+| WongLin    | decane         |
+| Daif       | heptane/decane |
+| RungeHep   | heptane        |
+| RungeDec   | decane         |
+| RungeMix   | heptane/decane |
+| RungeJP8   | POSF10264      |
 """
 
+# Liquid properties model: "mp" or "gcm"
+LiqPropsType = "mp" 
+
 # Case object
-case = WongLin()
+case = RungeDec(LiqPropsType)
 
 # Run new or extract existing simulation data?
 run_new = True
 
 # Number of processors to run on
 num_proc = 6
+
+# General input file
+case.gen_input_file = f"{LiqPropsType.lower()}-single-drop-evap.inp"
 
 # Plotting parameters
 marker_s = 40

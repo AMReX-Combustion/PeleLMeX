@@ -41,6 +41,7 @@ class CaseInfo:
         dname,
         droplet: Droplet,
         gas: GasPhase,
+        LiqPropsType,
         xyunits,
         end_time=None,
         dt=1e-2,
@@ -52,7 +53,8 @@ class CaseInfo:
         FILE_PATH = os.path.dirname(os.path.abspath(__file__))
         self.name = name
         self.dname = dname
-        self.case_dir = os.path.join(FILE_PATH, name)
+        self.LiqPropsType = LiqPropsType
+        self.case_dir = os.path.join(FILE_PATH, f"{LiqPropsType.upper()}_{name}")
         self.input_file = os.path.join(self.case_dir, f"input_{name}.inp")
         self.droplet = droplet
         self.gas = gas
@@ -115,55 +117,59 @@ class CaseInfo:
         self.plot_int = round(self.plot_per / self.dt)
 
 
-def Nomura(temp):
-    if temp == 471:
-        end_time = 2.94
-    elif temp == 741:
-        end_time = 1.225
-    else:
-        end_time = None
-    drop = Droplet(298.0, 7.0e-4, ["NC7H16", "NC10H22", "POSF10264"], [1.0, 0.0, 0.0])
-    gas = GasPhase(temp, 1.0e5, vel=0.0)
+def Nomura(LiqPropsType):
+    #drop = Droplet(298.0, 7.0e-4, ["NC7H16", "NC10H22", "POSF10264"], [1.0, 0.0, 0.0])
+    drop = Droplet(298.0, 7.0e-4, ["NC7H16", "NC10H22"], [1.0, 0.0])
+    gas = GasPhase(471, 1.0e5, vel=0.0)
     case = CaseInfo(
-        f"Nomura_{int(temp)}",
+        f"Nomura_{int(471)}",
         "Nomura et al.",
         drop,
         gas,
+        LiqPropsType,
         xyunits=["s/mm2", "dd02"],
-        end_time=end_time,
+        end_time=2.94,
     )
     return case
 
 
-def WongLin():
+def WongLin(LiqPropsType):
     end_time = 4
+    #drop = Droplet(
+    #    315.0, 1.961e-3, ["NC7H16", "NC10H22", "POSF10264"], [0.0, 1.0, 0.0], Reyn=17
+    #)
     drop = Droplet(
-        315.0, 1.961e-3, ["NC7H16", "NC10H22", "POSF10264"], [0.0, 1.0, 0.0], Reyn=17
+        315.0, 1.961e-3, ["NC7H16", "NC10H22"], [0.0, 1.0], Reyn=17
     )
     gas = GasPhase(1000.0, 1.01325e5)
     case = CaseInfo(
-        "WongLin", "Wong & Lin", drop, gas, xyunits=["s", "dd0"], end_time=end_time
+        "WongLin", "Wong & Lin", drop, gas, LiqPropsType, xyunits=["s", "dd0"], end_time=end_time
     )
     return case
 
 
-def Daif():
+def Daif(LiqPropsType):
+    #drop = Droplet(
+    #    291.4, 1.334e-3, ["NC7H16", "NC10H22", "POSF10264"], [0.7375, 0.2625, 0.0]
+    #)
     drop = Droplet(
-        291.4, 1.334e-3, ["NC7H16", "NC10H22", "POSF10264"], [0.7375, 0.2625, 0.0]
+        291.4, 1.334e-3, ["NC7H16", "NC10H22"], [0.7375, 0.2625]
     )
     gas = GasPhase(348.0, 1.01325e5, vel=3.10)
-    case = CaseInfo("Daif", "Daif et al.", drop, gas, xyunits=["s", "r2_mm"], dt=2e-3)
+    case = CaseInfo("Daif", "Daif et al.", drop, gas, LiqPropsType, xyunits=["s", "r2_mm"], dt=2e-3)
     return case
 
 
-def RungeMix():
-    drop = Droplet(272, 5.94e-4, ["NC7H16", "NC10H22", "POSF10264"], [0.5, 0.5, 0.0])
+def RungeMix(LiqPropsType):
+    #drop = Droplet(272, 5.94e-4, ["NC7H16", "NC10H22", "POSF10264"], [0.5, 0.5, 0.0])
+    drop = Droplet(272, 5.94e-4, ["NC7H16", "NC10H22"], [0.5, 0.5])
     gas = GasPhase(272, 1.01325e5, vel=2.5)
     case = CaseInfo(
         "RungeMix",
         "Runge et al.",
         drop,
         gas,
+        LiqPropsType,
         xyunits=["runge", "dd02"],
         dt=5e-3,
         plot_per=1,
@@ -171,14 +177,16 @@ def RungeMix():
     return case
 
 
-def RungeDec():
-    drop = Droplet(272, 5.88e-4, ["NC7H16", "NC10H22", "POSF10264"], [0.0, 1.0, 0.0])
+def RungeDec(LiqPropsType):
+    #drop = Droplet(272, 5.88e-4, ["NC7H16", "NC10H22", "POSF10264"], [0.0, 1.0, 0.0])
+    drop = Droplet(272, 5.88e-4, ["NC7H16", "NC10H22"], [0.0, 1.0])
     gas = GasPhase(272, 1.01325e5, vel=2.5)
     case = CaseInfo(
         "RungeDec",
         "Runge et al.",
         drop,
         gas,
+        LiqPropsType,
         xyunits=["runge", "dd02"],
         dt=5e-3,
         plot_per=1,
@@ -186,14 +194,16 @@ def RungeDec():
     return case
 
 
-def RungeHep():
-    drop = Droplet(272, 5.7e-4, ["NC7H16", "NC10H22", "POSF10264"], [1.0, 0.0, 0.0])
+def RungeHep(LiqPropsType):
+    #drop = Droplet(272, 5.7e-4, ["NC7H16", "NC10H22", "POSF10264"], [1.0, 0.0, 0.0])
+    drop = Droplet(272, 5.7e-4, ["NC7H16", "NC10H22"], [1.0, 0.0])
     gas = GasPhase(272, 1.01325e5, vel=2.5)
     case = CaseInfo(
         "RungeHep",
         "Runge et al.",
         drop,
         gas,
+        LiqPropsType,
         xyunits=["runge", "dd02"],
         dt=5e-3,
         plot_per=0.25,
@@ -201,7 +211,7 @@ def RungeHep():
     return case
 
 
-def RungeJP8():
+def RungeJP8(LiqPropsType,):
     drop = Droplet(294.15, 6.36e-4, ["NC7H16", "NC10H22", "POSF10264"], [0.0, 0.0, 1.0])
     gas = GasPhase(294.15, 1.01325e5, vel=3.0)
     case = CaseInfo(
@@ -209,6 +219,7 @@ def RungeJP8():
         "Runge et al.",
         drop,
         gas,
+        LiqPropsType,
         xyunits=["runge", "dd02"],
         dt=2e-3,
         plot_per=1,
@@ -231,7 +242,7 @@ def CreateInputFile(case):
         is_periodic = "0 0 0"
 
     # Read general input file
-    gen_file = os.path.join(FILE_PATH, "single-drop-evap.inp")
+    gen_file = os.path.join(FILE_PATH, case.gen_input_file)
     with open(gen_file, "r") as f:
         gen_lines = f.readlines()
 
@@ -287,7 +298,7 @@ def CreateInputFile(case):
 
         # IO Control
         elif "amr.plot_file" in line:
-            new_line = f'amr.plot_file = "{case.name}/plt"\n'
+            new_line = f'amr.plot_file = "{case.LiqPropsType}_{case.name}/plt"\n'
         elif "amr.plot_int" in line:
             new_line = f"amr.plot_int = {case.plot_int:d}\n"
 

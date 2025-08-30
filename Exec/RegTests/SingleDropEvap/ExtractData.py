@@ -7,7 +7,7 @@ import re
 
 def ExtractData(case, outfile):
     FILE_PATH = os.path.dirname(os.path.abspath(__file__))
-    CASE_PATH = os.path.join(FILE_PATH, case.name)
+    CASE_PATH = case.case_dir
     pltfiles = []
     sprayfiles = []
     for x in os.listdir(CASE_PATH):
