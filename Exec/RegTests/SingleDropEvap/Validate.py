@@ -6,22 +6,23 @@ import matplotlib.pyplot as plt
 """
 Script for validating PelePhysics spray model
 Test cases:
-| Case       | Fuel           |
-| ---------- | -------------- |
-| Nomura     | heptane        |
-| WongLin    | decane         |
-| Daif       | heptane/decane |
-| RungeHep   | heptane        |
-| RungeDec   | decane         |
-| RungeMix   | heptane/decane |
-| RungeJP8   | POSF10264      |
+| Case       | Fuel           | Notes                                          |
+| ---------- | -------------- | ---------------------------------------------- |
+| Nomura     | heptane        | Requires SPRAY_FUEL_NUM = 2                    |
+| WongLin    | decane         | Requires SPRAY_FUEL_NUM = 2                    |
+| Daif       | heptane/decane | Requires SPRAY_FUEL_NUM = 2                    |
+| RungeHep   | heptane        | Requires SPRAY_FUEL_NUM = 2                    |
+| RungeDec   | decane         | Requires SPRAY_FUEL_NUM = 2                    |
+| RungeMix   | heptane/decane | Requires SPRAY_FUEL_NUM = 2                    |
+| RungeJP8   | POSF10264      | Requires SPRAY_GCM=FALSE & SPRAY_FUEL_NUM = 1  |
+| ---------- | -------------- | ---------------------------------------------- |
 """
 
 # Liquid properties model: "mp" or "gcm"
-LiqPropsType = "mp" 
+LiqPropsType = "gcm" 
 
 # Case object
-case = RungeDec(LiqPropsType)
+case = WongLin(LiqPropsType)
 
 # Run new or extract existing simulation data?
 run_new = True
@@ -30,7 +31,10 @@ run_new = True
 num_proc = 6
 
 # General input file
-case.gen_input_file = f"{LiqPropsType.lower()}-single-drop-evap.inp"
+if "JP8" in case.name:
+    case.gen_input_file = f"{LiqPropsType.lower()}-single-drop-evap-jp8.inp"
+else:
+    case.gen_input_file = f"{LiqPropsType.lower()}-single-drop-evap-heptane-decane.inp"
 
 # Plotting parameters
 marker_s = 40
@@ -53,7 +57,7 @@ if run_new:
     # Remove existing plt and .p3d files
     else:
         os.system(
-            f"rm -rf {case.name}/plt* {case.name}/*.p3d {case.name}/pele_vals.csv"
+            f"rm -rf {case.case_dir}/plt* {case.case_dir}/*.p3d {case.case_dir}/pele_vals.csv"
         )
 
     # Create case-specific input file

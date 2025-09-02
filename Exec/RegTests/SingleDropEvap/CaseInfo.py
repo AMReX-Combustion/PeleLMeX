@@ -211,8 +211,10 @@ def RungeHep(LiqPropsType):
     return case
 
 
-def RungeJP8(LiqPropsType,):
-    drop = Droplet(294.15, 6.36e-4, ["NC7H16", "NC10H22", "POSF10264"], [0.0, 0.0, 1.0])
+def RungeJP8(LiqPropsType):
+    if LiqPropsType.lower() != "mp":
+        raise ValueError("RungeJP8 case currently requires LiqPropsType='mp'")
+    drop = Droplet(294.15, 6.36e-4, ["POSF10264"], [1.0])
     gas = GasPhase(294.15, 1.01325e5, vel=3.0)
     case = CaseInfo(
         "RungeJP8",
