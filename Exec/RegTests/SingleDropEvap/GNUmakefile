@@ -29,12 +29,12 @@ THREAD_SANITIZER = FALSE
 USE_PLASMA = FALSE
 USE_PARTICLES = TRUE
 SPRAY_FUEL_NUM = 2
-SPRAY_GCM = TRUE
+SPRAY_GCM = FALSE
 
 # PelePhysics
 Chemistry_Model = liquid_fuels_nonreacting
 Eos_Model = Fuego
 Transport_Model = Simple
 
-PELE_HOME ?= /Users/dmontgo2/Documents/Pele-Cases/PelePhysics-Implementation/PeleLMeX
+PELE_HOME ?= ../../..
 include $(PELE_HOME)/Exec/Make.PeleLMeX
