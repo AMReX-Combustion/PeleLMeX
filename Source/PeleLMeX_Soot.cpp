@@ -64,7 +64,6 @@ PeleLM::clipSootMoments()
          mfi.isValid(); ++mfi) {
       amrex::Box const& gbx = mfi.tilebox();
       auto const& state_arr = ldata_p->state.array(mfi, FIRSTSOOT);
-      SootData* sd = soot_model->getSootData_d();
       amrex::ParallelFor(
         gbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           amrex::GpuArray<amrex::Real, NUM_SOOT_MOMENTS + 1> moments;
