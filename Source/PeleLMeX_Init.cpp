@@ -149,21 +149,26 @@ PeleLM::MakeNewLevelFromScratch(
       amrex::MFInfo(), EBFactory(0));
     FillSignedDistance(signDist, true);
 
-    auto const& sd_cc_ma = m_signedDist0->arrays();
-    auto const& sd_nd_ma = signDist.const_arrays();
-    amrex::ParallelFor(
-      *m_signedDist0, m_signedDist0->nGrowVect(),
-      [sd_cc_ma,
-       sd_nd_ma] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
-        sd_cc_ma[box_no](i, j, k) = AMREX_D_TERM(
-          sd_nd_ma[box_no](i, j, k) + sd_nd_ma[box_no](i + 1, j, k),
-          +sd_nd_ma[box_no](i, j + 1, k) + sd_nd_ma[box_no](i + 1, j + 1, k),
-          +sd_nd_ma[box_no](i, j, k + 1) + sd_nd_ma[box_no](i + 1, j, k + 1) +
-            sd_nd_ma[box_no](i, j + 1, k + 1) +
-            sd_nd_ma[box_no](i + 1, j + 1, k + 1));
-        sd_cc_ma[box_no](i, j, k) *= AMREX_D_PICK(0.5, 0.25, 0.125);
-      });
-    amrex::Gpu::streamSynchronize();
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
+#endif
+    for (amrex::MFIter mfi(*m_signedDist0, amrex::TilingIfNotGPU());
+         mfi.isValid(); ++mfi) {
+      const amrex::Box& bx = mfi.growntilebox();
+      auto const& sd_cc = m_signedDist0->array(mfi);
+      auto const& sd_nd = signDist.const_array(mfi);
+      amrex::ParallelFor(
+        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          amrex::Real fac = AMREX_D_PICK(0.5, 0.25, 0.125);
+          sd_cc(i, j, k) = AMREX_D_TERM(
+            sd_nd(i, j, k) + sd_nd(i + 1, j, k),
+            +sd_nd(i, j + 1, k) + sd_nd(i + 1, j + 1, k),
+            +sd_nd(i, j, k + 1) + sd_nd(i + 1, j, k + 1) +
+              sd_nd(i, j + 1, k + 1) + sd_nd(i + 1, j + 1, k + 1));
+          sd_cc(i, j, k) *= fac;
+        });
+    }
+
     m_signedDist0->FillBoundary(geom[0].periodicity());
     extendSignedDistance(m_signedDist0.get(), extentFactor);
   }
@@ -352,26 +357,26 @@ PeleLM::initLevelData(const int lev)
   // Prob/PMF data
   ProbParm const* lprobparm = prob_parm_d;
   auto const* lpmfdata = pmf_data.device_parm();
+  auto const local_m_incompressible = m_incompressible;
 
-  // don't want to use state for dummy in case user overwrites state in aux
-  amrex::MultiFab dummy_mf(grids[lev], dmap[lev], 1, 0);
-
-  auto const& state_ma = ldata_p->state.arrays();
-  auto const& aux_ma =
-    (m_nAux > 0) ? ldata_p->auxiliaries.arrays() : dummy_mf.arrays();
-
-  amrex::ParallelFor(
-    ldata_p->state,
-    [state_ma, aux_ma, geomdata, lprobparm, lpmfdata,
-     is_incomp =
-       m_incompressible] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
+#endif
+  for (amrex::MFIter mfi(ldata_p->state, amrex::TilingIfNotGPU());
+       mfi.isValid(); ++mfi) {
+    const amrex::Box& bx = mfi.tilebox();
+    amrex::FArrayBox DummyFab(bx, 1);
+    auto const& state_arr = ldata_p->state.array(mfi);
+    auto const& aux_arr =
+      (m_nAux > 0) ? ldata_p->auxiliaries.array(mfi) : DummyFab.array();
+    amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
       ProblemSpecificFunctions::initdata(
-        i, j, k, is_incomp, state_ma[box_no], aux_ma[box_no], geomdata,
+        i, j, k, local_m_incompressible, state_arr, aux_arr, geomdata,
         *lprobparm, lpmfdata);
     });
-  amrex::Gpu::streamSynchronize();
+  }
 
-  if (m_incompressible == 0) {
+  if (local_m_incompressible == 0) {
     // Initialize thermodynamic pressure
     setThermoPress(lev, AmrNewTime);
     if (m_has_divu != 0) {

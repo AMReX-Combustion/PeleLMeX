@@ -108,93 +108,46 @@ PeleLM::addChiIncrement(
   // Add chiIncr to chi and add chi to mac_divu
   // Both mac_divu and chiIncr have properly filled ghost cells -> work on
   // grownbox
-
-  if (a_sdcIter == 1) {
-    switch (m_chi_correction_type) {
-    case ChiCorrectionType::DivuFirstIter: {
-      for (int lev = 0; lev <= finest_level; ++lev) {
-        auto const& chiInc_ma = chiIncr[lev].const_arrays();
-        auto const& chi_ma = advData->chi[lev].arrays();
-        auto const& mac_divu_ma = advData->mac_divu[lev].arrays();
+  for (int lev = 0; lev <= finest_level; ++lev) {
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
+#endif
+    for (amrex::MFIter mfi(advData->chi[lev], amrex::TilingIfNotGPU());
+         mfi.isValid(); ++mfi) {
+      const amrex::Box& gbx = mfi.growntilebox();
+      auto const& chiInc_ar = chiIncr[lev].const_array(mfi);
+      auto const& chi_ar = advData->chi[lev].array(mfi);
+      auto const& mac_divu_ar = advData->mac_divu[lev].array(mfi);
+      if (m_chi_correction_type == ChiCorrectionType::DivuFirstIter) {
         amrex::ParallelFor(
-          advData->chi[lev], advData->chi[lev].nGrowVect(),
-          [chi_ma, chiInc_ma, mac_divu_ma] AMREX_GPU_DEVICE(
-            int box_no, int i, int j, int k) noexcept {
-            chi_ma[box_no](i, j, k) =
-              chiInc_ma[box_no](i, j, k) + mac_divu_ma[box_no](i, j, k);
-            mac_divu_ma[box_no](i, j, k) = chi_ma[box_no](i, j, k);
+          gbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+            if (a_sdcIter == 1) {
+              chi_ar(i, j, k) = chiInc_ar(i, j, k) + mac_divu_ar(i, j, k);
+            } else {
+              chi_ar(i, j, k) += chiInc_ar(i, j, k);
+            }
+            mac_divu_ar(i, j, k) = chi_ar(i, j, k);
           });
-        // Shift outside?
-        amrex::Gpu::streamSynchronize();
-      }
-      break;
-    }
-    case ChiCorrectionType::NoDivu: {
-      for (int lev = 0; lev <= finest_level; ++lev) {
-        auto const& chiInc_ma = chiIncr[lev].const_arrays();
-        auto const& chi_ma = advData->chi[lev].arrays();
-        auto const& mac_divu_ma = advData->mac_divu[lev].arrays();
+      } else if (m_chi_correction_type == ChiCorrectionType::NoDivu) {
         amrex::ParallelFor(
-          advData->chi[lev], advData->chi[lev].nGrowVect(),
-          [chi_ma, chiInc_ma, mac_divu_ma] AMREX_GPU_DEVICE(
-            int box_no, int i, int j, int k) noexcept {
-            chi_ma[box_no](i, j, k) = chiInc_ma[box_no](i, j, k);
-            mac_divu_ma[box_no](i, j, k) = chi_ma[box_no](i, j, k);
+          gbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+            if (a_sdcIter == 1) {
+              chi_ar(i, j, k) = chiInc_ar(i, j, k);
+            } else {
+              chi_ar(i, j, k) += chiInc_ar(i, j, k);
+            }
+            mac_divu_ar(i, j, k) = chi_ar(i, j, k);
           });
-        // Shift outside?
-        amrex::Gpu::streamSynchronize();
-      }
-      break;
-    }
-    default: {
-      for (int lev = 0; lev <= finest_level; ++lev) {
-        auto const& chiInc_ma = chiIncr[lev].const_arrays();
-        auto const& chi_ma = advData->chi[lev].arrays();
-        auto const& mac_divu_ma = advData->mac_divu[lev].arrays();
+      } else { // Default: use updated divu every iteration
         amrex::ParallelFor(
-          advData->chi[lev], advData->chi[lev].nGrowVect(),
-          [chi_ma, chiInc_ma, mac_divu_ma] AMREX_GPU_DEVICE(
-            int box_no, int i, int j, int k) noexcept {
-            chi_ma[box_no](i, j, k) = chiInc_ma[box_no](i, j, k);
-            mac_divu_ma[box_no](i, j, k) += chi_ma[box_no](i, j, k);
+          gbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+            if (a_sdcIter == 1) {
+              chi_ar(i, j, k) = chiInc_ar(i, j, k);
+            } else {
+              chi_ar(i, j, k) += chiInc_ar(i, j, k);
+            }
+            mac_divu_ar(i, j, k) += chi_ar(i, j, k);
           });
-        // Shift outside?
-        amrex::Gpu::streamSynchronize();
-      }
-    }
-    }
-  } else {
-    if (
-      m_chi_correction_type == ChiCorrectionType::DivuFirstIter ||
-      m_chi_correction_type == ChiCorrectionType::NoDivu) {
-      for (int lev = 0; lev <= finest_level; ++lev) {
-        auto const& chiInc_ma = chiIncr[lev].const_arrays();
-        auto const& chi_ma = advData->chi[lev].arrays();
-        auto const& mac_divu_ma = advData->mac_divu[lev].arrays();
-        amrex::ParallelFor(
-          advData->chi[lev], advData->chi[lev].nGrowVect(),
-          [chi_ma, chiInc_ma, mac_divu_ma] AMREX_GPU_DEVICE(
-            int box_no, int i, int j, int k) noexcept {
-            chi_ma[box_no](i, j, k) += chiInc_ma[box_no](i, j, k);
-            mac_divu_ma[box_no](i, j, k) = chi_ma[box_no](i, j, k);
-          });
-        // Shift outside?
-        amrex::Gpu::streamSynchronize();
-      }
-    } else {
-      for (int lev = 0; lev <= finest_level; ++lev) {
-        auto const& chiInc_ma = chiIncr[lev].const_arrays();
-        auto const& chi_ma = advData->chi[lev].arrays();
-        auto const& mac_divu_ma = advData->mac_divu[lev].arrays();
-        amrex::ParallelFor(
-          advData->chi[lev], advData->chi[lev].nGrowVect(),
-          [chi_ma, chiInc_ma, mac_divu_ma] AMREX_GPU_DEVICE(
-            int box_no, int i, int j, int k) noexcept {
-            chi_ma[box_no](i, j, k) += chiInc_ma[box_no](i, j, k);
-            mac_divu_ma[box_no](i, j, k) += chi_ma[box_no](i, j, k);
-          });
-        // Shift outside?
-        amrex::Gpu::streamSynchronize();
       }
     }
   }

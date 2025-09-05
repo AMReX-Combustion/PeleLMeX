@@ -25,18 +25,24 @@ PeleLM::poissonSolveEF(const TimeStamp a_time)
     auto const& state_ma = ldata_p->state.const_arrays();
     auto const& rhs_ma = rhsPoisson[lev]->arrays();
 
-    amrex::ParallelFor(
-      ldata_p->state, [state_ma, rhs_ma, zk = zk] AMREX_GPU_DEVICE(
-                        int box_no, int i, int j, int k) noexcept {
-        amrex::Array4<amrex::Real const> rhoY(state_ma[box_no], FIRSTSPEC);
-        amrex::Array4<amrex::Real const> nE(state_ma[box_no], NE);
-        constexpr amrex::Real factor = -1.0;
-        rhs_ma[box_no](i, j, k) = -nE(i, j, k) * elemCharge * factor;
-        for (int n = 0; n < NUM_SPECIES; ++n) {
-          rhs_ma[box_no](i, j, k) += zk[n] * rhoY(i, j, k, n) * factor;
-        }
-      });
-    amrex::Gpu::streamSynchronize();
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
+#endif
+    for (amrex::MFIter mfi(*rhsPoisson[lev], amrex::TilingIfNotGPU());
+         mfi.isValid(); ++mfi) {
+      const amrex::Box& bx = mfi.tilebox();
+      auto const& rhoY = ldata_p->state.const_array(mfi, FIRSTSPEC);
+      auto const& nE = ldata_p->state.const_array(mfi, NE);
+      auto const& rhs = rhsPoisson[lev]->array(mfi);
+      amrex::Real factor = -1.0; // / ( eps0  * epsr);
+      amrex::ParallelFor(
+        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          rhs(i, j, k) = -nE(i, j, k) * elemCharge * factor;
+          for (int n = 0; n < NUM_SPECIES; n++) {
+            rhs(i, j, k) += zk[n] * rhoY(i, j, k, n) * factor;
+          }
+        });
+    }
   }
   // Solve for PhiV
   getDiffusionOp()->diffuse_scalar(
