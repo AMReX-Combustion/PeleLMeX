@@ -1350,7 +1350,6 @@ PeleLM::differentialDiffusionUpdate(
                                 ? advData->Forcing_aux[lev].const_array(mfi, 0)
                                 : DummyFab.const_array();
       const auto nAux = m_nAux;
-      const auto dt = m_dt;
       const auto use_wbar = m_use_wbar;
       const auto use_soret = m_use_soret;
       amrex::ParallelFor(
@@ -1568,7 +1567,6 @@ PeleLM::deltaTIter_prepare(
       auto const& diffDiff =
         diffData->Dhat[lev].const_array(mfi, NUM_SPECIES + 1);
       auto const& rhs = a_rhs[lev]->array(mfi);
-      const amrex::Real dtinv = 1.0 / m_dt;
 
       // Cpmix
       auto const& rho = ldataNew_p->state.const_array(mfi, DENSITY);
@@ -1584,7 +1582,7 @@ PeleLM::deltaTIter_prepare(
           // Assemble deltaT RHS
           rhs(i, j, k) =
             dt * ((rhoH_o(i, j, k) - rhoH_n(i, j, k)) * dtinv + force(i, j, k) +
-]                  fourier(i, j, k) + diffDiff(i, j, k));
+                  fourier(i, j, k) + diffDiff(i, j, k));
 
           // Get \rho * Cp_{mix}
           getCpmixGivenRYT(i, j, k, rho, rhoY, T, rhocp, leosparm);
