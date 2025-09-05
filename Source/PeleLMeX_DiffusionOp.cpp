@@ -775,15 +775,14 @@ DiffusionOp::computeDiffFluxes(
   amrex::Vector<amrex::MultiFab> phi;
   phi.reserve(finest_level + 1);
   for (int lev = 0; lev <= finest_level; ++lev) {
-    phi[lev].define(
+    phi.emplace_back(
       a_phi[lev]->boxArray(), a_phi[lev]->DistributionMap(), ncomp, 1,
       amrex::MFInfo(), a_phi[lev]->Factory());
 #ifdef AMREX_USE_OMP
-    w #pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
-      for (amrex::MFIter mfi(phi[lev], amrex::TilingIfNotGPU()); mfi.isValid();
-           ++mfi)
-    {
+    for (amrex::MFIter mfi(phi[lev], amrex::TilingIfNotGPU()); mfi.isValid();
+         ++mfi) {
       const amrex::Box& gbx = mfi.growntilebox();
       auto const& a_phi_arr = a_phi[lev]->const_array(mfi, phi_comp);
       auto const& a_rho_arr =
