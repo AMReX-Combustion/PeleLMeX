@@ -174,9 +174,20 @@ PeleLM::ionDriftAddUmac(
 {
   // Add umac to the ions drift velocity to get the effective velocity
   for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
-    amrex::MultiFab::Add(
-      advData->uDrift[lev][idim], advData->umac[lev][idim], 0, 0, 1,
-      advData->umac[lev][idim].nGrowVect());
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
+#endif
+    for (amrex::MFIter mfi(advData->umac[lev][idim], amrex::TilingIfNotGPU());
+         mfi.isValid(); ++mfi) {
+      const amrex::Box gbx = mfi.growntilebox();
+      const auto& umac = advData->umac[lev][idim].const_array(mfi);
+      const auto& Ud_Sp = advData->uDrift[lev][idim].array(mfi);
+      amrex::ParallelFor(
+        gbx, NUM_IONS,
+        [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
+          Ud_Sp(i, j, k, n) += umac(i, j, k);
+        });
+    }
     advData->uDrift[lev][idim].FillBoundary(geom[lev].periodicity());
   }
 }
