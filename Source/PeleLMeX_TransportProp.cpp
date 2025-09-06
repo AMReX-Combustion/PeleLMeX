@@ -33,6 +33,7 @@ PeleLM::calcTurbViscosity(const TimeStamp& a_time)
       GradVel[lev][idim].define(
         amrex::convert(ba, amrex::IntVect::TheDimensionVector(idim)), dm, ncomp,
         0, amrex::MFInfo(), factory);
+      GradVel[lev][idim].setVal(0.0);
     }
   }
 
