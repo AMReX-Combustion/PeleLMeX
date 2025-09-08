@@ -504,7 +504,7 @@ PeleLM::readParameters()
     amrex::Real Schmidt = 0.7;
     pp.query("Schmidt", Schmidt);
     m_Schmidt_inv = 1.0 / Schmidt;
-    m_Lewis_inv = m_Prandtl_inv / m_Schmidt_inv;
+    m_Lewis_inv = m_Schmidt_inv / m_Prandtl_inv;
   } else if (m_fixed_Le != 0) {
     amrex::Real Lewis = 1.0;
     pp.query("Lewis", Lewis);
