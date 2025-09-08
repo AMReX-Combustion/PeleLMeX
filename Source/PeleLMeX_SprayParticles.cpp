@@ -74,7 +74,9 @@ PeleLM::SpraySetup()
   if (SPRAY_FUEL_NUM > NUM_SPECIES) {
     amrex::Abort("Cannot have more spray fuel species than fluid species");
   }
-  SprayParticleContainer::spraySetup(m_gravity.data());
+
+  SprayParticleContainer::spraySetup(
+    m_gravity.data(), &eos_parms.host_parm(), eos_parms.device_parm());
   SprayComps scomps;
   // Component indices for conservative variables
   scomps.rhoIndx = DENSITY;
@@ -170,8 +172,7 @@ PeleLM::SprayInit()
   SprayInjectRedist();
   if (spray_verbose >= 1) {
     amrex::Print() << "Total number of initial particles "
-                   << SprayPC->TotalNumberOfParticles(false, false)
-                   << std::endl;
+                   << SprayPC->TotalNumberOfParticles(false, false) << "\n";
   }
 }
 
@@ -278,7 +279,7 @@ PeleLM::SprayMKD(const amrex::Real time, const amrex::Real dt)
   setupVirtualParticles(0);
   for (int lev = 0; lev <= finest_level; ++lev) {
     if (spray_verbose > 1) {
-      amrex::Print() << "SprayMKDLevel " << lev << std::endl;
+      amrex::Print() << "SprayMKDLevel " << lev << "\n";
     }
     m_spraysource[lev]->setVal(0.);
     SprayMKDLevel(lev, time, dt);
@@ -344,7 +345,7 @@ PeleLM::SprayPostRegrid()
     prev_source.resize(finest_level + 1);
     changed = true;
   } else {
-    for (int lev = 0; lev <= finest_level && !changed; lev++) {
+    for (int lev = 0; lev <= finest_level && !changed; ++lev) {
       if (ba_spray[lev] != grids[lev]) {
         changed = true;
       }
@@ -392,7 +393,7 @@ PeleLM::SprayInjectRedist()
     amrex::Long new_count = SprayPC->TotalNumberOfParticles(true, false);
     amrex::Long num_inj = new_count - prev_count;
     amrex::Print() << "Injected " << num_inj << " particles at time "
-                   << m_t_new[0] << std::endl;
+                   << m_t_new[0] << "\n";
   }
 }
 

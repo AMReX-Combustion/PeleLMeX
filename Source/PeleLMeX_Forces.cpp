@@ -6,14 +6,14 @@
 // including divTau if input amrex::Vector not empty
 void
 PeleLM::getVelForces(
-  const TimeStamp& a_time,
+  const TimeStamp a_time,
   const amrex::Vector<amrex::MultiFab*>& a_divTau,
   const amrex::Vector<amrex::MultiFab*>& a_velForce,
-  int nGrowForce,
-  int add_gradP)
+  const int nGrowForce,
+  const int add_gradP)
 {
   BL_PROFILE("PeleLMeX::getVelForces()");
-  int has_divTau = static_cast<int>(!a_divTau.empty());
+  const int has_divTau = static_cast<int>(!a_divTau.empty());
 
   for (int lev = 0; lev <= finest_level; ++lev) {
     if (has_divTau != 0) {
@@ -31,11 +31,11 @@ PeleLM::getVelForces(
 
 void
 PeleLM::getVelForces(
-  const TimeStamp& a_time,
-  int lev,
+  const TimeStamp a_time,
+  const int lev,
   amrex::MultiFab* a_divTau,
   amrex::MultiFab* a_velForce,
-  int add_gradP)
+  const int add_gradP)
 {
 
   // Get level data
@@ -47,7 +47,7 @@ PeleLM::getVelForces(
   auto* ldataGP_p = (m_t_old[lev] < 0.0) ? getLevelDataPtr(lev, AmrNewTime)
                                          : getLevelDataPtr(lev, AmrOldTime);
 
-  amrex::Real time = getTime(lev, a_time);
+  const amrex::Real time = getTime(lev, a_time);
 
   int has_divTau = static_cast<int>(a_divTau != nullptr);
 
@@ -175,58 +175,58 @@ PeleLM::getVelForces(
 }
 
 void
-PeleLM::addSpark(const TimeStamp& a_timestamp)
+PeleLM::addSpark(const TimeStamp a_timestamp)
 {
-  for (int lev = 0; lev <= finest_level; lev++) {
-    for (int n = 0; n < m_n_sparks; n++) {
+  for (int lev = 0; lev <= finest_level; ++lev) {
+    for (int n = 0; n < m_n_sparks; ++n) {
       // Do the checks first
-      amrex::Real time = getTime(lev, a_timestamp);
-      bool verb = m_spark_verbose > 1 && lev == 0;
+      const amrex::Real time = getTime(lev, a_timestamp);
+      const bool verb = m_spark_verbose > 1 && lev == 0;
       if (
         time < m_spark_time[n] ||
         time > m_spark_time[n] + m_spark_duration[n]) {
         if (verb) {
-          amrex::Print() << m_spark[n] << " not active" << std::endl;
+          amrex::Print() << m_spark[n] << " not active \n";
         }
         continue;
       }
       const amrex::Real* probLo = geom[lev].ProbLo();
       auto const dx = geom[lev].CellSizeArray();
       amrex::IntVect spark_idx;
-      for (int d = 0; d < AMREX_SPACEDIM; d++) {
-        spark_idx[d] = (int)((m_spark_location[n][d] - probLo[d]) / dx[d]);
+      for (int d = 0; d < AMREX_SPACEDIM; ++d) {
+        spark_idx[d] =
+          static_cast<int>((m_spark_location[n][d] - probLo[d]) / dx[d]);
       }
-      amrex::Box domainBox = geom[lev].Domain();
+      const amrex::Box domainBox = geom[lev].Domain();
       // just a check
       if (!domainBox.contains(spark_idx)) {
         amrex::Warning(m_spark[n] + " not in domain!");
         continue;
       }
       if (verb) {
-        amrex::Print() << m_spark[n] << " active" << std::endl;
+        amrex::Print() << m_spark[n] << " active\n";
       }
+      auto const* eosparm = eos_parms.device_parm();
+      auto eos = pele::physics::PhysicsType::eos(eosparm);
 
-      auto statema = getLevelDataPtr(lev, a_timestamp)->state.const_arrays();
-      auto extma = m_extSource[lev]->arrays();
-      auto const* leosparm = eos_parms.device_parm();
-      const auto spark_duration = m_spark_duration[n];
-      const auto spark_temp = m_spark_temp[n];
-      const auto* eosparm = leosparm;
-      const auto spark_radius = m_spark_radius[n];
-
+      auto const& statema =
+        getLevelDataPtr(lev, a_timestamp)->state.const_arrays();
+      auto const& extma = m_extSource[lev]->arrays();
       amrex::ParallelFor(
         *m_extSource[lev],
-        [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
-          auto eos = pele::physics::PhysicsType::eos(eosparm);
-          amrex::Real dist_to_center = std::sqrt(AMREX_D_TERM(
+        [statema, extma, eos, dx, spark_idx,
+         spark_duration = m_spark_duration[n], spark_temp = m_spark_temp[n],
+         spark_radius = m_spark_radius
+           [n]] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+          const amrex::Real dist_to_center = std::sqrt(AMREX_D_TERM(
             (i - spark_idx[0]) * (i - spark_idx[0]) * dx[0] * dx[0],
             +(j - spark_idx[1]) * (j - spark_idx[1]) * dx[1] * dx[1],
             +(k - spark_idx[2]) * (k - spark_idx[2]) * dx[2] * dx[2]));
           if (dist_to_center < spark_radius) {
             amrex::Real rhoh_src_loc = 0;
-            amrex::Real rho = statema[box_no](i, j, k, DENSITY);
+            const amrex::Real rho = statema[box_no](i, j, k, DENSITY);
             amrex::Real Y[NUM_SPECIES];
-            for (int ns = 0; ns < NUM_SPECIES; ns++) {
+            for (int ns = 0; ns < NUM_SPECIES; ++ns) {
               Y[ns] = statema[box_no](i, j, k, FIRSTSPEC + ns) / rho;
             }
             eos.TY2H(spark_temp, Y, rhoh_src_loc);
@@ -234,6 +234,7 @@ PeleLM::addSpark(const TimeStamp& a_timestamp)
             extma[box_no](i, j, k, RHOH) = rhoh_src_loc;
           }
         });
+      // Shift outside?
       amrex::Gpu::streamSynchronize();
     }
   }
@@ -241,7 +242,7 @@ PeleLM::addSpark(const TimeStamp& a_timestamp)
 
 // Manifold model - dissipation rate sources for variances
 void
-PeleLM::addScalarVarianceSources(const TimeStamp& a_timestamp)
+PeleLM::addScalarVarianceSources(const TimeStamp a_timestamp)
 {
   BL_PROFILE("PeleLM::addScalarVarianceSources");
   // no scalar dissipation sources if not using a manifold model
@@ -275,15 +276,15 @@ PeleLM::addScalarVarianceSources(const TimeStamp& a_timestamp)
     } else if (nvariances > 0) {
 
       // Compute scalar gradients (no need to average down here)
-      int do_avgDown = 0;
+      constexpr int do_avgDown = 0;
       auto bcRecScalar = fetchBCRecArray(var_of_scalar, 1);
-      int nGrow = 0; // No need for ghost face on fluxes
+      constexpr int nGrow = 0; // No need for ghost face on fluxes
       amrex::Vector<amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>> grad_fc(
         finest_level + 1);
       for (int lev = 0; lev <= finest_level; ++lev) {
         const auto& ba = grids[lev];
         const auto& factory = Factory(lev);
-        for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+        for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
           grad_fc[lev][idim].define(
             amrex::convert(ba, amrex::IntVect::TheDimensionVector(idim)),
             dmap[lev], 1, nGrow, amrex::MFInfo(), factory);
@@ -295,8 +296,14 @@ PeleLM::addScalarVarianceSources(const TimeStamp& a_timestamp)
         GetVecOfConstPtrs(getStateVect(a_timestamp)), {}, bcRecScalar[0],
         do_avgDown, var_of_scalar);
 
-      // Add in Production and Dissipation source terms for subfilter variances
-      for (int lev = 0; lev <= finest_level; lev++) {
+      constexpr amrex::Real fact =
+        0.5 / static_cast<amrex::Real>(AMREX_SPACEDIM);
+      const amrex::Real C_chi = m_les_c_chi;
+      const amrex::Real ScInv = m_Schmidt_inv;
+
+      // Add in Production and Dissipation source terms for subfilter
+      // variances
+      for (int lev = 0; lev <= finest_level; ++lev) {
 
         auto* ldata_p = getLevelDataPtr(lev, a_timestamp);
 
@@ -306,15 +313,12 @@ PeleLM::addScalarVarianceSources(const TimeStamp& a_timestamp)
         // The simple interpolation below probably isn't valid for EB
 #ifdef AMREX_USE_EB
         amrex::Abort(
-          "PeleLM::addScalarVarianceSources(): this is not supported with EB");
+          "PeleLM::addScalarVarianceSources(): this is not supported with "
+          "EB");
 #endif
 
         for (int n = 0; n < MANIFOLD_DIM; ++n) {
           if (leosparm.is_variance_of[n] >= 0) {
-
-            constexpr amrex::Real fact = 0.5 / AMREX_SPACEDIM;
-            const amrex::Real C_chi = m_les_c_chi;
-            const amrex::Real ScInv = m_Schmidt_inv;
 
             AMREX_D_TERM(
               auto const& mut_arr_x =
@@ -327,23 +331,31 @@ PeleLM::addScalarVarianceSources(const TimeStamp& a_timestamp)
               auto const& gx = grad_fc[lev][0].const_arrays();
               , auto const& gy = grad_fc[lev][1].const_arrays();
               , auto const& gz = grad_fc[lev][2].const_arrays();)
-            auto extma = m_extSource[lev]->arrays();
-            auto statema = ldata_p->state.const_arrays();
+            auto const& extma = m_extSource[lev]->arrays();
+            auto const& statema = ldata_p->state.const_arrays();
 
             // l_scale will also need modification for EB
             const amrex::Real vol = AMREX_D_TERM(
               geom[lev].CellSize(0), *geom[lev].CellSize(1),
               *geom[lev].CellSize(2));
-            const amrex::Real l_scale =
-              (AMREX_SPACEDIM == 2) ? std::sqrt(vol) : std::cbrt(vol);
+#if AMREX_SPACEDIM == 2
+            const amrex::Real l_scale = std::sqrt(vol);
+#else
+            const amrex::Real l_scale = std::cbrt(vol);
+#endif
             const amrex::Real inv_l_scale2 = 1.0 / (l_scale * l_scale);
 
             amrex::ParallelFor(
-              *m_extSource[lev],
-              [=] AMREX_GPU_DEVICE(int bx, int i, int j, int k) noexcept {
+              *m_extSource[lev], [extma, statema, n, C_chi, ScInv, inv_l_scale2,
+                                  mut_arr_x, gx, mut_arr_y, gy
+#if (AMREX_SPACEDIM == 3)
+                                  ,
+                                  mut_arr_z, gz
+#endif
+            ] AMREX_GPU_DEVICE(int bx, int i, int j, int k) noexcept {
                 // Subfilter Scalar Dissipation: Linear Relaxation model
                 // rho chi_sgs = C_chi * mu_t / Delta^2 * Variance
-                amrex::Real mu_t =
+                const amrex::Real mu_t =
                   fact *
                   (AMREX_D_TERM(
                     mut_arr_x[bx](i, j, k) + mut_arr_x[bx](i + 1, j, k),
@@ -357,7 +369,7 @@ PeleLM::addScalarVarianceSources(const TimeStamp& a_timestamp)
                 // Production term (w/ Smagorinsky closure for turbulent flux)
                 // -2 (rho <u_j C> - rho <u_j><C>) d<C>/dx_j
                 // = 2 *mu_t/Sc_t * d<C>/dx_j * d<C>/dx_j
-                amrex::Real mu_grad2 =
+                const amrex::Real mu_grad2 =
                   fact *
                   (AMREX_D_TERM(
                     mut_arr_x[bx](i, j, k) * gx[bx](i, j, k) * gx[bx](i, j, k) +
@@ -374,9 +386,9 @@ PeleLM::addScalarVarianceSources(const TimeStamp& a_timestamp)
 
                 extma[bx](i, j, k, FIRSTSPEC + n) += 2.0 * ScInv * mu_grad2;
               });
+            amrex::Gpu::streamSynchronize();
           }
         }
-        amrex::Gpu::streamSynchronize();
       }
     }
   }
@@ -386,9 +398,9 @@ PeleLM::addScalarVarianceSources(const TimeStamp& a_timestamp)
 // Calculate additional external sources (soot, radiation, user defined, etc.)
 void
 PeleLM::getExternalSources(
-  int is_initIter,
-  const PeleLM::TimeStamp& a_timestamp_old,
-  const PeleLM::TimeStamp& a_timestamp_new)
+  const int is_initIter,
+  const PeleLM::TimeStamp a_timestamp_old,
+  const PeleLM::TimeStamp a_timestamp_new)
 {
   amrex::ignore_unused(is_initIter);
 
@@ -418,7 +430,7 @@ PeleLM::getExternalSources(
 
   // User defined external sources
   if (m_user_defined_ext_sources) {
-    for (int lev = 0; lev <= finest_level; lev++) {
+    for (int lev = 0; lev <= finest_level; ++lev) {
       auto* ldata_p_old = getLevelDataPtr(lev, a_timestamp_old);
       auto* ldata_p_new = getLevelDataPtr(lev, a_timestamp_new);
       auto& ext_src = m_extSource[lev];

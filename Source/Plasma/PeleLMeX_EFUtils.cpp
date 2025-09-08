@@ -63,7 +63,7 @@ void
 PeleLM::getNLStateScaling(amrex::Real& nEScale, amrex::Real& phiVScale)
 {
   amrex::Array<amrex::Real, 2> r = {0.0, 0.0};
-  for (int comp = 0; comp < 2; comp++) {
+  for (int comp = 0; comp < 2; ++comp) {
     for (int lev = 0; lev <= finest_level; ++lev) {
       if (lev != finest_level) {
         r[comp] = amrex::max(
@@ -84,7 +84,7 @@ void
 PeleLM::getNLResidScaling(amrex::Real& nEScale, amrex::Real& phiVScale)
 {
   amrex::Array<amrex::Real, 2> r = {0.0, 0.0};
-  for (int comp = 0; comp < 2; comp++) {
+  for (int comp = 0; comp < 2; ++comp) {
     for (int lev = 0; lev <= finest_level; ++lev) {
       if (lev != finest_level) {
         r[comp] = amrex::max(
@@ -102,7 +102,7 @@ PeleLM::getNLResidScaling(amrex::Real& nEScale, amrex::Real& phiVScale)
 }
 
 void
-PeleLM::scaleNLState(const amrex::Real& nEScale, const amrex::Real& phiVScale)
+PeleLM::scaleNLState(const amrex::Real nEScale, const amrex::Real phiVScale)
 {
   for (int lev = 0; lev <= finest_level; ++lev) {
     m_leveldatanlsolve[lev]->nlState.mult(1.0 / nE_scale, 0, 1, m_nGrowState);
@@ -113,8 +113,8 @@ PeleLM::scaleNLState(const amrex::Real& nEScale, const amrex::Real& phiVScale)
 void
 PeleLM::scaleNLResid(
   const amrex::Vector<amrex::MultiFab*>& a_resid,
-  const amrex::Real& nEScale,
-  const amrex::Real& phiVScale)
+  const amrex::Real nEScale,
+  const amrex::Real phiVScale)
 {
   for (int lev = 0; lev <= finest_level; ++lev) {
     a_resid[lev]->mult(1.0 / FnE_scale, 0, 1, 1);
@@ -124,14 +124,14 @@ PeleLM::scaleNLResid(
 
 amrex::BCRec
 PeleLM::hackBCChargedParticle(
-  const amrex::Real& charge, const amrex::BCRec& bc_in)
+  const amrex::Real charge, const amrex::BCRec& bc_in)
 {
   amrex::BCRec bc_hacked;
 
   const int* lo_bc = bc_in.lo();
   const int* hi_bc = bc_in.hi();
 
-  for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+  for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
     int lo = lo_bc[idim];
     int hi = hi_bc[idim];
     // Spec is In/Out and it's cathode (neg electrode)
@@ -181,9 +181,9 @@ PeleLM::hackBCChargedParticle(
 
 void
 PeleLM::addLorentzVelForces(
-  int lev,
+  const int lev,
   const amrex::Box& bx,
-  const amrex::Real& a_time,
+  const amrex::Real a_time,
   amrex::Array4<amrex::Real> const& force,
   amrex::Array4<const amrex::Real> const& rhoY,
   amrex::Array4<const amrex::Real> const& phiV,
@@ -193,9 +193,11 @@ PeleLM::addLorentzVelForces(
   amrex::GpuArray<int, 3> blo = bx.loVect3d();
   amrex::GpuArray<int, 3> bhi = bx.hiVect3d();
 
-  amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-    addLorentzForce(i, j, k, blo, bhi, a_time, dx, zk, rhoY, nE, phiV, force);
-  });
+  amrex::ParallelFor(
+    bx, [blo, bhi, a_time, dx, zk = zk, rhoY, nE, phiV,
+         force] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+      addLorentzForce(i, j, k, blo, bhi, a_time, dx, zk, rhoY, nE, phiV, force);
+    });
 }
 
 void
@@ -254,7 +256,9 @@ PeleLM::initializeElectronFromMassFraction()
 
 void
 PeleLM::fillPatchExtrap(
-  amrex::Real a_time, amrex::Vector<amrex::MultiFab*> const& a_MF, int a_nGrow)
+  const amrex::Real a_time,
+  amrex::Vector<amrex::MultiFab*> const& a_MF,
+  const int a_nGrow)
 {
   AMREX_ASSERT(a_MF[0]->nComp() <= m_bcrec_force.size());
   const int nComp = a_MF[0]->nComp();
@@ -375,14 +379,14 @@ PeleLM::ionsBalance()
 {
   // Compute the sum of ions on the domain boundaries
   amrex::Array<amrex::Real, 2 * AMREX_SPACEDIM> ionsCurrent{0.0};
-  for (int n = NUM_SPECIES - NUM_IONS; n < NUM_SPECIES; n++) {
-    for (int i = 0; i < 2 * AMREX_SPACEDIM; i++) {
+  for (int n = NUM_SPECIES - NUM_IONS; n < NUM_SPECIES; ++n) {
+    for (int i = 0; i < 2 * AMREX_SPACEDIM; ++i) {
       ionsCurrent[i] += m_domainRhoYFlux[2 * n * AMREX_SPACEDIM + i] * zk[n];
     }
   }
 
   tmpIonsFile << m_nstep << "," << m_cur_time; // Time info
-  for (int i = 0; i < 2 * AMREX_SPACEDIM; i++) {
+  for (int i = 0; i < 2 * AMREX_SPACEDIM; ++i) {
     tmpIonsFile << "," << ionsCurrent[i]; // ions current as xlo, xhi, ylo, ...
   }
   tmpIonsFile << "\n";

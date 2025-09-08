@@ -156,19 +156,19 @@ BPatch::BPatch(const std::string& patch_name, const amrex::Geometry& geom)
   pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(names);
   names.resize(names.size());
 
-  for (int n = 0; n < names.size(); n++) {
+  for (int n = 0; n < names.size(); ++n) {
     m_bpdata_h.speciesIndex[n] = -1;
   }
 
-  for (int m = 0; m < m_bpdata_h.num_species; m++) {
-    for (int n = 0; n < names.size(); n++) {
+  for (int m = 0; m < m_bpdata_h.num_species; ++m) {
+    for (int n = 0; n < names.size(); ++n) {
       if (speciesList[m] == names[n]) {
         m_bpdata_h.speciesIndex[m] = n;
       }
     }
   }
 
-  for (int n = 0; n < m_bpdata_h.num_species; n++) {
+  for (int n = 0; n < m_bpdata_h.num_species; ++n) {
     if (m_bpdata_h.speciesIndex[n] == -1) {
       std::string msg =
         "\nError! Unable to find species index " + std::to_string(n);

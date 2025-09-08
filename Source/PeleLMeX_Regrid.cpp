@@ -2,7 +2,7 @@
 #include <memory>
 
 void
-PeleLM::regrid(int lbase, amrex::Real time, bool initial)
+PeleLM::regrid(const int lbase, const amrex::Real time, const bool initial)
 {
   BL_PROFILE("PeleLMeX::regrid()");
 
@@ -307,8 +307,8 @@ PeleLM::regrid(int lbase, amrex::Real time, bool initial)
 
 void
 PeleLM::MakeNewLevelFromCoarse(
-  int lev,
-  amrex::Real time,
+  const int lev,
+  const amrex::Real time,
   const amrex::BoxArray& ba,
   const amrex::DistributionMapping& dm)
 {
@@ -327,7 +327,7 @@ PeleLM::MakeNewLevelFromCoarse(
                      << "% of the domain \n";
     }
     if (m_verbose > 3) {
-      amrex::Print() << " with BoxArray " << ba << std::endl;
+      amrex::Print() << " with BoxArray " << ba << "\n";
     }
   }
 
@@ -423,8 +423,8 @@ PeleLM::MakeNewLevelFromCoarse(
 
 void
 PeleLM::RemakeLevel(
-  int lev,
-  amrex::Real time,
+  const int lev,
+  const amrex::Real time,
   const amrex::BoxArray& ba,
   const amrex::DistributionMapping& dm)
 {
@@ -443,7 +443,7 @@ PeleLM::RemakeLevel(
                      << "% of the domain \n";
     }
     if (m_verbose > 3) {
-      amrex::Print() << " with BoxArray " << ba << std::endl;
+      amrex::Print() << " with BoxArray " << ba << "\n";
     }
   }
 
@@ -538,7 +538,7 @@ PeleLM::RemakeLevel(
 }
 
 void
-PeleLM::ClearLevel(int lev)
+PeleLM::ClearLevel(const int lev)
 {
   BL_PROFILE("PeleLMeX::ClearLevel()");
 
@@ -571,32 +571,43 @@ PeleLM::ClearLevel(int lev)
 
 void
 PeleLM::computeCosts(
-  int a_lev, amrex::LayoutData<amrex::Real>& a_costs, int a_costMethod)
+  const int a_lev,
+  amrex::LayoutData<amrex::Real>& a_costs,
+  const int a_costMethod)
 {
-  if (a_costMethod == LoadBalanceCost::Ncell) {
+  switch (a_costMethod) {
+  case LoadBalanceCost::Ncell: {
     for (amrex::MFIter mfi(a_costs, false); mfi.isValid(); ++mfi) {
       a_costs[mfi] = static_cast<amrex::Real>(mfi.validbox().numPts());
     }
-  } else if (a_costMethod == LoadBalanceCost::ChemFunctCallAvg) {
+    return;
+  }
+  case LoadBalanceCost::ChemFunctCallAvg: {
     amrex::MultiFab costMF(a_costs.boxArray(), a_costs.DistributionMap(), 1, 0);
     fillpatch_chemFunctCall(a_lev, m_cur_time, costMF, 0);
     for (amrex::MFIter mfi(costMF, false); mfi.isValid(); ++mfi) {
       a_costs[mfi] = costMF[mfi].sum<amrex::RunOn::Device>(mfi.validbox(), 0) /
                      static_cast<amrex::Real>(mfi.validbox().numPts());
     }
-  } else if (a_costMethod == LoadBalanceCost::ChemFunctCallMax) {
+    return;
+  }
+  case LoadBalanceCost::ChemFunctCallMax: {
     amrex::MultiFab costMF(a_costs.boxArray(), a_costs.DistributionMap(), 1, 0);
     fillpatch_chemFunctCall(a_lev, m_cur_time, costMF, 0);
     for (amrex::MFIter mfi(costMF, false); mfi.isValid(); ++mfi) {
       a_costs[mfi] = costMF[mfi].max<amrex::RunOn::Device>(mfi.validbox(), 0);
     }
-  } else if (a_costMethod == LoadBalanceCost::ChemFunctCallSum) {
+    return;
+  }
+  case LoadBalanceCost::ChemFunctCallSum: {
     amrex::MultiFab costMF(a_costs.boxArray(), a_costs.DistributionMap(), 1, 0);
     fillpatch_chemFunctCall(a_lev, m_cur_time, costMF, 0);
     for (amrex::MFIter mfi(costMF, false); mfi.isValid(); ++mfi) {
       a_costs[mfi] = costMF[mfi].sum<amrex::RunOn::Device>(mfi.validbox(), 0);
     }
-  } else if (a_costMethod == LoadBalanceCost::UserDefinedDerivedAvg) {
+    return;
+  }
+  case LoadBalanceCost::UserDefinedDerivedAvg: {
     amrex::MultiFab costMF(a_costs.boxArray(), a_costs.DistributionMap(), 1, 0);
     costMF.setVal(0.0);
     std::unique_ptr<amrex::MultiFab> mf;
@@ -606,7 +617,9 @@ PeleLM::computeCosts(
       a_costs[mfi] = costMF[mfi].sum<amrex::RunOn::Device>(mfi.validbox(), 0) /
                      static_cast<amrex::Real>(mfi.validbox().numPts());
     }
-  } else if (a_costMethod == LoadBalanceCost::UserDefinedDerivedSum) {
+    return;
+  }
+  case LoadBalanceCost::UserDefinedDerivedSum: {
     amrex::MultiFab costMF(a_costs.boxArray(), a_costs.DistributionMap(), 1, 0);
     costMF.setVal(0.0);
     std::unique_ptr<amrex::MultiFab> mf;
@@ -615,13 +628,15 @@ PeleLM::computeCosts(
     for (amrex::MFIter mfi(costMF, false); mfi.isValid(); ++mfi) {
       a_costs[mfi] = costMF[mfi].sum<amrex::RunOn::Device>(mfi.validbox(), 0);
     }
-  } else {
+    return;
+  }
+  default:
     amrex::Abort(" Unknown cost estimate method !");
   }
 }
 
 void
-PeleLM::computeCosts(int a_lev)
+PeleLM::computeCosts(const int a_lev)
 {
   computeCosts(a_lev, *m_costs[a_lev], m_loadBalanceCost);
 }
@@ -651,7 +666,8 @@ PeleLM::resetMacProjector()
 }
 
 void
-PeleLM::regridFromGridFile(int lbase, amrex::Real time, bool /*initial*/)
+PeleLM::regridFromGridFile(
+  const int lbase, const amrex::Real time, const bool /*initial*/)
 {
   const int new_finest = static_cast<int>(m_regrid_ba.size());
   amrex::Vector<amrex::BoxArray> new_grids(finest_level + 2);

@@ -4,12 +4,12 @@ PeleLM::LevelData::LevelData(
   amrex::BoxArray const& ba,
   amrex::DistributionMapping const& dm,
   amrex::FabFactory<amrex::FArrayBox> const& factory,
-  int a_incompressible,
-  int a_has_divu,
-  int a_nAux,
-  int a_nGrowState,
-  int a_use_soret,
-  int a_do_les)
+  const int a_incompressible,
+  const int a_has_divu,
+  const int a_nAux,
+  const int a_nGrowState,
+  const int a_use_soret,
+  const int a_do_les)
 {
   if (a_incompressible != 0) {
     state.define(
@@ -61,9 +61,10 @@ PeleLM::LevelDataReact::LevelDataReact(
   const amrex::DistributionMapping& dm,
   const amrex::FabFactory<amrex::FArrayBox>& factory)
 {
-  int IRsize = NUM_SPECIES;
 #ifdef PELE_USE_PLASMA
-  IRsize += 1;
+  constexpr int IRsize = NUM_SPECIES + 1;
+#else
+  constexpr int IRsize = NUM_SPECIES;
 #endif
   I_R.define(ba, dm, IRsize, 0, amrex::MFInfo(), factory);
   functC.define(ba, dm, 1, 0, amrex::MFInfo(), factory);
@@ -74,7 +75,7 @@ PeleLM::LevelDataNLSolve::LevelDataNLSolve(
   amrex::BoxArray const& ba,
   amrex::DistributionMapping const& dm,
   amrex::FabFactory<amrex::FArrayBox> const& factory,
-  int a_nGrow)
+  const int a_nGrow)
 {
   nlState.define(ba, dm, 2, a_nGrow, amrex::MFInfo(), factory);
   nlResid.define(ba, dm, 2, a_nGrow, amrex::MFInfo(), factory);
@@ -90,67 +91,64 @@ PeleLM::LevelDataNLSolve::LevelDataNLSolve(
 #endif
 
 PeleLM::AdvanceDiffData::AdvanceDiffData(
-  int a_finestLevel,
+  const int a_finestLevel,
   const amrex::Vector<amrex::BoxArray>& ba,
   const amrex::Vector<amrex::DistributionMapping>& dm,
   const amrex::Vector<std::unique_ptr<amrex::FabFactory<amrex::FArrayBox>>>&
     factory,
-  int nGrowAdv,
-  int a_use_wbar,
-  int a_use_soret,
-  int a_nAux,
-  int is_init)
+  const int nGrowAdv,
+  const int a_use_wbar,
+  const int a_use_soret,
+  const int a_nAux,
+  const int is_init)
 {
   if (is_init != 0) { // All I need is a container for a single diffusion term
-    // Resize Vectors
-    Dnp1.resize(a_finestLevel + 1);
-
+    Dnp1.reserve(a_finestLevel + 1);
     // Define MFs
-    for (int lev = 0; lev <= a_finestLevel; lev++) {
-      Dnp1[lev].define(
+    for (int lev = 0; lev <= a_finestLevel; ++lev) {
+      Dnp1.emplace_back(
         ba[lev], dm[lev], NUM_SPECIES + 2, nGrowAdv, amrex::MFInfo(),
         *factory[lev]);
     }
-
     if (a_nAux > 0) {
-      Dnp1_aux.resize(a_finestLevel + 1);
-      for (int lev = 0; lev <= a_finestLevel; lev++) {
-        Dnp1_aux[lev].define(
+      Dnp1_aux.reserve(a_finestLevel + 1);
+      for (int lev = 0; lev <= a_finestLevel; ++lev) {
+        Dnp1_aux.emplace_back(
           ba[lev], dm[lev], a_nAux, nGrowAdv, amrex::MFInfo(), *factory[lev]);
       }
     }
   } else {
-    // Resize Vectors
-    Dn.resize(a_finestLevel + 1);
-    Dnp1.resize(a_finestLevel + 1);
-    Dhat.resize(a_finestLevel + 1);
+    // Reserve/resize Vectors
+    Dn.reserve(a_finestLevel + 1);
+    Dnp1.reserve(a_finestLevel + 1);
+    Dhat.reserve(a_finestLevel + 1);
     if (a_nAux > 0) {
-      Dn_aux.resize(a_finestLevel + 1);
-      Dnp1_aux.resize(a_finestLevel + 1);
-      Dhat_aux.resize(a_finestLevel + 1);
+      Dn_aux.reserve(a_finestLevel + 1);
+      Dnp1_aux.reserve(a_finestLevel + 1);
+      Dhat_aux.reserve(a_finestLevel + 1);
     }
     if (a_use_wbar != 0) {
-      Dwbar.resize(a_finestLevel + 1);
+      Dwbar.reserve(a_finestLevel + 1);
       wbar_fluxes.resize(a_finestLevel + 1);
     }
     if (a_use_soret != 0) {
-      DT.resize(a_finestLevel + 1);
+      DT.reserve(a_finestLevel + 1);
       soret_fluxes.resize(a_finestLevel + 1);
     }
 
     // Define MFs
-    for (int lev = 0; lev <= a_finestLevel; lev++) {
-      Dn[lev].define(
+    for (int lev = 0; lev <= a_finestLevel; ++lev) {
+      Dn.emplace_back(
         ba[lev], dm[lev], NUM_SPECIES + 2, nGrowAdv, amrex::MFInfo(),
         *factory[lev]);
-      Dnp1[lev].define(
+      Dnp1.emplace_back(
         ba[lev], dm[lev], NUM_SPECIES + 2, nGrowAdv, amrex::MFInfo(),
         *factory[lev]);
-      Dhat[lev].define(
+      Dhat.emplace_back(
         ba[lev], dm[lev], NUM_SPECIES + 2, nGrowAdv, amrex::MFInfo(),
         *factory[lev]);
       if (a_use_wbar != 0) {
-        Dwbar[lev].define(
+        Dwbar.emplace_back(
           ba[lev], dm[lev], NUM_SPECIES, nGrowAdv, amrex::MFInfo(),
           *factory[lev]);
         for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
@@ -161,7 +159,7 @@ PeleLM::AdvanceDiffData::AdvanceDiffData(
         }
       }
       if (a_use_soret != 0) {
-        DT[lev].define(
+        DT.emplace_back(
           ba[lev], dm[lev], NUM_SPECIES, nGrowAdv, amrex::MFInfo(),
           *factory[lev]);
         for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
@@ -172,11 +170,11 @@ PeleLM::AdvanceDiffData::AdvanceDiffData(
         }
       }
       if (a_nAux > 0) {
-        Dn_aux[lev].define(
+        Dn_aux.emplace_back(
           ba[lev], dm[lev], a_nAux, nGrowAdv, amrex::MFInfo(), *factory[lev]);
-        Dnp1_aux[lev].define(
+        Dnp1_aux.emplace_back(
           ba[lev], dm[lev], a_nAux, nGrowAdv, amrex::MFInfo(), *factory[lev]);
-        Dhat_aux[lev].define(
+        Dhat_aux.emplace_back(
           ba[lev], dm[lev], a_nAux, nGrowAdv, amrex::MFInfo(), *factory[lev]);
       }
     }
@@ -184,34 +182,34 @@ PeleLM::AdvanceDiffData::AdvanceDiffData(
 }
 
 PeleLM::AdvanceAdvData::AdvanceAdvData(
-  int a_finestLevel,
+  const int a_finestLevel,
   const amrex::Vector<amrex::BoxArray>& ba,
   const amrex::Vector<amrex::DistributionMapping>& dm,
   const amrex::Vector<std::unique_ptr<amrex::FabFactory<amrex::FArrayBox>>>&
     factory,
-  int a_incompressible,
-  int a_nAux,
-  int nGrowAdv,
-  int nGrowMAC)
+  const int a_incompressible,
+  const int a_nAux,
+  const int nGrowAdv,
+  const int nGrowMAC)
 {
   // Resize Vectors
   umac.resize(a_finestLevel + 1);
-  AofS.resize(a_finestLevel + 1);
+  AofS.reserve(a_finestLevel + 1);
   if (a_incompressible == 0) {
-    chi.resize(a_finestLevel + 1);
-    Forcing.resize(a_finestLevel + 1);
-    mac_divu.resize(a_finestLevel + 1);
+    chi.reserve(a_finestLevel + 1);
+    Forcing.reserve(a_finestLevel + 1);
+    mac_divu.reserve(a_finestLevel + 1);
   }
   if (a_nAux > 0) {
-    AofS_aux.resize(a_finestLevel + 1);
-    Forcing_aux.resize(a_finestLevel + 1);
+    AofS_aux.reserve(a_finestLevel + 1);
+    Forcing_aux.reserve(a_finestLevel + 1);
   }
 #ifdef PELE_USE_PLASMA
   uDrift.resize(a_finestLevel + 1);
 #endif
 
   // Define MFs
-  for (int lev = 0; lev <= a_finestLevel; lev++) {
+  for (int lev = 0; lev <= a_finestLevel; ++lev) {
     for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
       const amrex::BoxArray& faceba =
         amrex::convert(ba[lev], amrex::IntVect::TheDimensionVector(idim));
@@ -223,28 +221,28 @@ PeleLM::AdvanceAdvData::AdvanceAdvData(
 #endif
     }
     if (a_incompressible != 0) {
-      AofS[lev].define(
+      AofS.emplace_back(
         ba[lev], dm[lev], AMREX_SPACEDIM, 0, amrex::MFInfo(), *factory[lev]);
     } else {
-      AofS[lev].define(
+      AofS.emplace_back(
         ba[lev], dm[lev], NVAR, 0, amrex::MFInfo(), *factory[lev]);
-      chi[lev].define(ba[lev], dm[lev], 1, 1, amrex::MFInfo(), *factory[lev]);
+      chi.emplace_back(ba[lev], dm[lev], 1, 1, amrex::MFInfo(), *factory[lev]);
 #ifdef PELE_USE_PLASMA
-      Forcing[lev].define(
+      Forcing.emplace_back(
         ba[lev], dm[lev], NUM_SPECIES + 2, nGrowAdv, amrex::MFInfo(),
         *factory[lev]); // Species + TEMP + nE
 #else
-      Forcing[lev].define(
+      Forcing.emplace_back(
         ba[lev], dm[lev], NUM_SPECIES + 1, nGrowAdv, amrex::MFInfo(),
         *factory[lev]); // Species + TEMP
 #endif
-      mac_divu[lev].define(
+      mac_divu.emplace_back(
         ba[lev], dm[lev], 1, nGrowAdv, amrex::MFInfo(), *factory[lev]);
     }
     if (a_nAux > 0) {
-      AofS_aux[lev].define(
+      AofS_aux.emplace_back(
         ba[lev], dm[lev], a_nAux, 0, amrex::MFInfo(), *factory[lev]);
-      Forcing_aux[lev].define(
+      Forcing_aux.emplace_back(
         ba[lev], dm[lev], a_nAux, nGrowAdv, amrex::MFInfo(), *factory[lev]);
     }
   }
@@ -254,7 +252,7 @@ void
 PeleLM::copyStateNewToOld(int nGhost)
 {
   AMREX_ASSERT(nGhost <= m_nGrowState);
-  for (int lev = 0; lev <= finest_level; lev++) {
+  for (int lev = 0; lev <= finest_level; ++lev) {
     if (m_incompressible != 0) {
       amrex::MultiFab::Copy(
         m_leveldata_old[lev]->state, m_leveldata_new[lev]->state, 0, 0,
@@ -280,7 +278,7 @@ PeleLM::copyStateNewToOld(int nGhost)
 void
 PeleLM::copyPressNewToOld()
 {
-  for (int lev = 0; lev <= finest_level; lev++) {
+  for (int lev = 0; lev <= finest_level; ++lev) {
     amrex::MultiFab::Copy(
       m_leveldata_old[lev]->press, m_leveldata_new[lev]->press, 0, 0, 1, 1);
     amrex::MultiFab::Copy(
@@ -293,7 +291,7 @@ void
 PeleLM::copyStateOldToNew(int nGhost)
 {
   AMREX_ASSERT(nGhost <= m_nGrowState);
-  for (int lev = 0; lev <= finest_level; lev++) {
+  for (int lev = 0; lev <= finest_level; ++lev) {
     if (m_incompressible != 0) {
       amrex::MultiFab::Copy(
         m_leveldata_new[lev]->state, m_leveldata_old[lev]->state, 0, 0,
@@ -319,7 +317,7 @@ PeleLM::copyStateOldToNew(int nGhost)
 void
 PeleLM::copyTransportOldToNew()
 {
-  for (int lev = 0; lev <= finest_level; lev++) {
+  for (int lev = 0; lev <= finest_level; ++lev) {
     amrex::MultiFab::Copy(
       m_leveldata_new[lev]->visc_cc, m_leveldata_old[lev]->visc_cc, 0, 0, 1, 1);
     if (m_incompressible == 0) {
@@ -347,9 +345,9 @@ PeleLM::copyTransportOldToNew()
 }
 
 void
-PeleLM::copyDiffusionOldToNew(std::unique_ptr<AdvanceDiffData>& diffData)
+PeleLM::copyDiffusionOldToNew(const std::unique_ptr<AdvanceDiffData>& diffData)
 {
-  for (int lev = 0; lev <= finest_level; lev++) {
+  for (int lev = 0; lev <= finest_level; ++lev) {
     amrex::MultiFab::Copy(
       diffData->Dnp1[lev], diffData->Dn[lev], 0, 0, NUM_SPECIES + 2,
       m_nGrowAdv);
@@ -365,7 +363,7 @@ bool
 PeleLM::checkForNaNs()
 {
   bool contains_nan = false;
-  for (int lev = 0; lev <= finest_level; lev++) {
+  for (int lev = 0; lev <= finest_level; ++lev) {
     if (
       m_leveldata_new[lev]->state.contains_nan() ||
       m_leveldata_new[lev]->state.contains_inf()) {

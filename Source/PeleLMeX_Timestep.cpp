@@ -2,7 +2,7 @@
 #include <PeleLMeX_K.H>
 
 amrex::Real
-PeleLM::computeDt(int is_init, const TimeStamp& a_time)
+PeleLM::computeDt(const int is_init, const TimeStamp a_time)
 {
   BL_PROFILE("PeleLMeX::computeDt()");
 
@@ -96,7 +96,7 @@ PeleLM::computeDt(int is_init, const TimeStamp& a_time)
 }
 
 amrex::Real
-PeleLM::estConvectiveDt(const TimeStamp& a_time)
+PeleLM::estConvectiveDt(const TimeStamp a_time)
 {
 
   amrex::Real estdt = 1.0e200;
@@ -114,12 +114,12 @@ PeleLM::estConvectiveDt(const TimeStamp& a_time)
 
     //----------------------------------------------------------------
     // Get velocity forces
-    int nGrow_force = 0;
+    constexpr int nGrow_force = 0;
     amrex::MultiFab velForces(
       grids[lev], dmap[lev], AMREX_SPACEDIM, nGrow_force, amrex::MFInfo(),
       Factory(lev));
 
-    int add_gradP = 1;
+    constexpr int add_gradP = 1;
     getVelForces(a_time, lev, nullptr, &velForces, add_gradP);
 
     //----------------------------------------------------------------
@@ -155,7 +155,7 @@ PeleLM::estConvectiveDt(const TimeStamp& a_time)
 }
 
 amrex::Real
-PeleLM::estDivUDt(const TimeStamp& a_time)
+PeleLM::estDivUDt(const TimeStamp a_time)
 {
 
   amrex::Real estdt = 1.0e200;
@@ -227,7 +227,7 @@ PeleLM::estDivUDt(const TimeStamp& a_time)
 }
 
 void
-PeleLM::checkDt(const TimeStamp& a_time, const amrex::Real& a_dt)
+PeleLM::checkDt(const TimeStamp a_time, const amrex::Real a_dt)
 {
   BL_PROFILE("PeleLMeX::checkDt()");
 
@@ -236,10 +236,9 @@ PeleLM::checkDt(const TimeStamp& a_time, const amrex::Real& a_dt)
   }
 
   for (int lev = 0; lev <= finest_level; ++lev) {
-
     auto* ldata_p = getLevelDataPtr(lev, a_time);
-
-    const auto dxinv = geom[lev].InvCellSizeArray();
+    const amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> dxinv =
+      geom[lev].InvCellSizeArray();
 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (amrex::Gpu::notInLaunchRegion())

@@ -2,7 +2,7 @@
 #include <PeleLMeX_BPatch.H>
 
 void
-PeleLM::initTemporals(const PeleLM::TimeStamp& a_time)
+PeleLM::initTemporals(const PeleLM::TimeStamp a_time)
 {
   if ((m_do_temporals == 0) && !(m_nstep % m_temp_int == 0)) {
     return;
@@ -11,23 +11,23 @@ PeleLM::initTemporals(const PeleLM::TimeStamp& a_time)
   // Reset mass fluxes integrals on domain boundaries
   if ((m_do_massBalance != 0) && (m_incompressible == 0)) {
     m_massOld = MFSum(GetVecOfConstPtrs(getDensityVect(a_time)), 0);
-    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+    for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
       m_domainMassFlux[2 * idim] = 0.0;
       m_domainMassFlux[2 * idim + 1] = 0.0;
     }
   }
   if ((m_do_energyBalance != 0) && (m_incompressible == 0)) {
     m_RhoHOld = MFSum(GetVecOfConstPtrs(getRhoHVect(a_time)), 0);
-    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+    for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
       m_domainRhoHFlux[2 * idim] = 0.0;
       m_domainRhoHFlux[2 * idim + 1] = 0.0;
     }
   }
 
   if ((m_do_speciesBalance != 0) && (m_incompressible == 0)) {
-    for (int n = 0; n < NUM_SPECIES; n++) {
+    for (int n = 0; n < NUM_SPECIES; ++n) {
       m_RhoYOld[n] = MFSum(GetVecOfConstPtrs(getSpeciesVect(a_time)), n);
-      for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+      for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
         m_domainRhoYFlux[2 * n * AMREX_SPACEDIM + 2 * idim] = 0.0;
         m_domainRhoYFlux[1 + 2 * n * AMREX_SPACEDIM + 2 * idim] = 0.0;
       }
@@ -60,7 +60,7 @@ PeleLM::speciesBalancePatch()
   tmppatchmfrFile << m_nstep << "," << m_cur_time; // Time info
   for (const auto& m_bPatche : m_bPatches) {
     BPatch::BpatchDataContainer* bphost = m_bPatche->getHostDataPtr();
-    for (int i = 0; i < bphost->num_species; i++) {
+    for (int i = 0; i < bphost->num_species; ++i) {
       tmppatchmfrFile << "," << bphost->speciesFlux[i];
     }
   }
@@ -75,7 +75,7 @@ PeleLM::speciesBalance()
   amrex::Array<amrex::Real, NUM_SPECIES> dmYdt;
   amrex::Array<amrex::Real, NUM_SPECIES> massYFluxBalance;
   amrex::Array<amrex::Real, NUM_SPECIES> rhoYdots;
-  for (int n = 0; n < NUM_SPECIES; n++) {
+  for (int n = 0; n < NUM_SPECIES; ++n) {
     m_RhoYNew[n] = MFSum(GetVecOfConstPtrs(getSpeciesVect(AmrNewTime)), n);
     rhoYdots[n] = MFSum(GetVecOfConstPtrs(getIRVect()), n);
     dmYdt[n] = (m_RhoYNew[n] - m_RhoYOld[n]) / m_dt;
@@ -89,7 +89,7 @@ PeleLM::speciesBalance()
   }
 
   tmpSpecFile << m_nstep << "," << m_cur_time; // Time info
-  for (int n = 0; n < NUM_SPECIES; n++) {
+  for (int n = 0; n < NUM_SPECIES; ++n) {
     tmpSpecFile << "," << m_RhoYNew[n]        // mass of Y
                 << "," << dmYdt[n]            // mass temporal derivative
                 << "," << massYFluxBalance[n] // domain boundaries mass fluxes
@@ -128,7 +128,7 @@ PeleLM::addMassFluxes(
   area[2] = dx[0] * dx[1];
 #endif
 
-  for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+  for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
     auto faceDomain =
       amrex::convert(a_geom.Domain(), amrex::IntVect::TheDimensionVector(idim));
 
@@ -146,8 +146,9 @@ PeleLM::addMassFluxes(
         amrex::TypeList<amrex::ReduceOpSum, amrex::ReduceOpSum>{},
         amrex::TypeList<amrex::Real, amrex::Real>{}, *a_fluxes[idim],
         amrex::IntVect(0),
-        [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept
-          -> amrex::GpuTuple<amrex::Real, amrex::Real> {
+        [fma, ama, idim, faceDomain] AMREX_GPU_DEVICE(
+          int box_no, int i, int j,
+          int k) noexcept -> amrex::GpuTuple<amrex::Real, amrex::Real> {
           amrex::Array4<const amrex::Real> const& flux = fma[box_no];
           amrex::Array4<const amrex::Real> const& area_ar = ama[box_no];
 
@@ -155,14 +156,14 @@ PeleLM::addMassFluxes(
           // low
           amrex::Real low = 0.0;
           if (idx == faceDomain.smallEnd(idim)) {
-            for (int n = 0; n < NUM_SPECIES; n++) {
+            for (int n = 0; n < NUM_SPECIES; ++n) {
               low += flux(i, j, k, n) * area_ar(i, j, k);
             }
           }
           // high
           amrex::Real high = 0.0;
           if (idx == faceDomain.bigEnd(idim)) {
-            for (int n = 0; n < NUM_SPECIES; n++) {
+            for (int n = 0; n < NUM_SPECIES; ++n) {
               high += flux(i, j, k, n) * area_ar(i, j, k);
             }
           }
@@ -177,22 +178,23 @@ PeleLM::addMassFluxes(
         amrex::TypeList<amrex::ReduceOpSum, amrex::ReduceOpSum>{},
         amrex::TypeList<amrex::Real, amrex::Real>{}, *a_fluxes[idim],
         amrex::IntVect(0),
-        [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept
-          -> amrex::GpuTuple<amrex::Real, amrex::Real> {
+        [fma, idim, faceDomain, area] AMREX_GPU_DEVICE(
+          int box_no, int i, int j,
+          int k) noexcept -> amrex::GpuTuple<amrex::Real, amrex::Real> {
           amrex::Array4<const amrex::Real> const& flux = fma[box_no];
 
           int idx = (idim == 0) ? i : ((idim == 1) ? j : k);
           // low
           amrex::Real low = 0.0;
           if (idx == faceDomain.smallEnd(idim)) {
-            for (int n = 0; n < NUM_SPECIES; n++) {
+            for (int n = 0; n < NUM_SPECIES; ++n) {
               low += flux(i, j, k, n) * area[idim];
             }
           }
           // high
           amrex::Real high = 0.0;
           if (idx == faceDomain.bigEnd(idim)) {
-            for (int n = 0; n < NUM_SPECIES; n++) {
+            for (int n = 0; n < NUM_SPECIES; ++n) {
               high += flux(i, j, k, n) * area[idim];
             }
           }
@@ -210,7 +212,7 @@ PeleLM::addMassFluxes(
 
 void
 PeleLM::addUmacFluxes(
-  std::unique_ptr<AdvanceAdvData>& advData, const amrex::Geometry& a_geom)
+  const std::unique_ptr<AdvanceAdvData>& advData, const amrex::Geometry& a_geom)
 {
   // Get the face areas
   const amrex::Real* dx = a_geom.CellSize();
@@ -227,9 +229,9 @@ PeleLM::addUmacFluxes(
 #endif
 
   // Just use level 0 since we are calling after averaging down
-  int lev = 0;
+  constexpr int lev = 0;
 
-  for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+  for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
     auto faceDomain =
       amrex::convert(a_geom.Domain(), amrex::IntVect::TheDimensionVector(idim));
 
@@ -247,8 +249,9 @@ PeleLM::addUmacFluxes(
         amrex::TypeList<amrex::ReduceOpSum, amrex::ReduceOpSum>{},
         amrex::TypeList<amrex::Real, amrex::Real>{}, advData->umac[lev][idim],
         amrex::IntVect(0),
-        [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept
-          -> amrex::GpuTuple<amrex::Real, amrex::Real> {
+        [fma, ama, idim, faceDomain] AMREX_GPU_DEVICE(
+          int box_no, int i, int j,
+          int k) noexcept -> amrex::GpuTuple<amrex::Real, amrex::Real> {
           amrex::Array4<const amrex::Real> const& flux = fma[box_no];
           amrex::Array4<const amrex::Real> const& area_ar = ama[box_no];
 
@@ -274,8 +277,9 @@ PeleLM::addUmacFluxes(
         amrex::TypeList<amrex::ReduceOpSum, amrex::ReduceOpSum>{},
         amrex::TypeList<amrex::Real, amrex::Real>{}, advData->umac[lev][idim],
         amrex::IntVect(0),
-        [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept
-          -> amrex::GpuTuple<amrex::Real, amrex::Real> {
+        [fma, idim, faceDomain, area] AMREX_GPU_DEVICE(
+          int box_no, int i, int j,
+          int k) noexcept -> amrex::GpuTuple<amrex::Real, amrex::Real> {
           amrex::Array4<const amrex::Real> const& flux = fma[box_no];
 
           int idx = (idim == 0) ? i : ((idim == 1) ? j : k);
@@ -346,7 +350,7 @@ PeleLM::addRhoHFluxes(
   area[2] = dx[0] * dx[1];
 #endif
 
-  for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+  for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
     auto faceDomain =
       amrex::convert(a_geom.Domain(), amrex::IntVect::TheDimensionVector(idim));
 
@@ -364,8 +368,9 @@ PeleLM::addRhoHFluxes(
         amrex::TypeList<amrex::ReduceOpSum, amrex::ReduceOpSum>{},
         amrex::TypeList<amrex::Real, amrex::Real>{}, *a_fluxes[idim],
         amrex::IntVect(0),
-        [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept
-          -> amrex::GpuTuple<amrex::Real, amrex::Real> {
+        [fma, ama, idim, faceDomain] AMREX_GPU_DEVICE(
+          int box_no, int i, int j,
+          int k) noexcept -> amrex::GpuTuple<amrex::Real, amrex::Real> {
           amrex::Array4<const amrex::Real> const& flux = fma[box_no];
           amrex::Array4<const amrex::Real> const& area_ar = ama[box_no];
 
@@ -391,8 +396,9 @@ PeleLM::addRhoHFluxes(
         amrex::TypeList<amrex::ReduceOpSum, amrex::ReduceOpSum>{},
         amrex::TypeList<amrex::Real, amrex::Real>{}, *a_fluxes[idim],
         amrex::IntVect(0),
-        [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept
-          -> amrex::GpuTuple<amrex::Real, amrex::Real> {
+        [fma, idim, faceDomain, area] AMREX_GPU_DEVICE(
+          int box_no, int i, int j,
+          int k) noexcept -> amrex::GpuTuple<amrex::Real, amrex::Real> {
           amrex::Array4<const amrex::Real> const& flux = fma[box_no];
 
           int idx = (idim == 0) ? i : ((idim == 1) ? j : k);
@@ -446,9 +452,9 @@ PeleLM::addRhoYFluxes(
 #endif
 
   // Outer loop over species
-  for (int n = 0; n < NUM_SPECIES; n++) {
+  for (int n = 0; n < NUM_SPECIES; ++n) {
     // Inner loop over dimensions
-    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+    for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
       auto faceDomain = amrex::convert(
         a_geom.Domain(), amrex::IntVect::TheDimensionVector(idim));
 
@@ -466,8 +472,9 @@ PeleLM::addRhoYFluxes(
           amrex::TypeList<amrex::ReduceOpSum, amrex::ReduceOpSum>{},
           amrex::TypeList<amrex::Real, amrex::Real>{}, *a_fluxes[idim],
           amrex::IntVect(0),
-          [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept
-            -> amrex::GpuTuple<amrex::Real, amrex::Real> {
+          [fma, ama, idim, faceDomain, n] AMREX_GPU_DEVICE(
+            int box_no, int i, int j,
+            int k) noexcept -> amrex::GpuTuple<amrex::Real, amrex::Real> {
             amrex::Array4<const amrex::Real> const& flux = fma[box_no];
             amrex::Array4<const amrex::Real> const& area_ar = ama[box_no];
 
@@ -493,8 +500,9 @@ PeleLM::addRhoYFluxes(
           amrex::TypeList<amrex::ReduceOpSum, amrex::ReduceOpSum>{},
           amrex::TypeList<amrex::Real, amrex::Real>{}, *a_fluxes[idim],
           amrex::IntVect(0),
-          [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept
-            -> amrex::GpuTuple<amrex::Real, amrex::Real> {
+          [fma, idim, faceDomain, area, n] AMREX_GPU_DEVICE(
+            int box_no, int i, int j,
+            int k) noexcept -> amrex::GpuTuple<amrex::Real, amrex::Real> {
             amrex::Array4<const amrex::Real> const& flux = fma[box_no];
 
             int idx = (idim == 0) ? i : ((idim == 1) ? j : k);
@@ -523,7 +531,7 @@ PeleLM::addRhoYFluxes(
 }
 
 void
-PeleLM::initBPatches(amrex::Geometry& a_geom)
+PeleLM::initBPatches(const amrex::Geometry& a_geom)
 {
   std::string pele_prefix = "peleLM.bpatch";
   amrex::ParmParse pp(pele_prefix);
@@ -541,7 +549,7 @@ PeleLM::initBPatches(amrex::Geometry& a_geom)
     m_bPatches[n] = std::make_unique<BPatch>(bpatch_name[n], a_geom);
     if (m_verbose > 0) {
       amrex::Print() << " Initializing boundary patch: " << bpatch_name[n]
-                     << std::endl;
+                     << "\n";
     }
   }
 }
@@ -588,7 +596,7 @@ PeleLM::addRhoYFluxesPatch(
     auto const& fma = a_fluxes[idim]->const_arrays();
 
     // Loop through species specified by user
-    for (int m = 0; m < bphost->num_species; m++) {
+    for (int m = 0; m < bphost->num_species; ++m) {
 
       amrex::Real sum_species_flux_global = 0.0;
 
@@ -597,7 +605,8 @@ PeleLM::addRhoYFluxesPatch(
           amrex::TypeList<amrex::ReduceOpSum, amrex::ReduceOpSum>{},
           amrex::TypeList<amrex::Real, amrex::Real>{}, *a_fluxes[idim],
           amrex::IntVect(0),
-          [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept
+          [fma, bpdevice, faceDomain, idim, prob_lo, dx, m,
+           area] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept
             -> amrex::GpuTuple<amrex::Real, amrex::Real> {
             amrex::Array4<const amrex::Real> const& flux = fma[box_no];
             int idx =
@@ -744,7 +753,7 @@ PeleLM::openTempFile()
         std::ios::out | std::ios::app | std::ios_base::binary);
       tmpSpecFile.precision(12);
       tmpSpecFile << "iter,time";
-      for (int n = 0; n < NUM_SPECIES; n++) {
+      for (int n = 0; n < NUM_SPECIES; ++n) {
         tmpSpecFile << ",rhoYnew_" << PeleLM::stateVariableName(FIRSTSPEC + n);
         tmpSpecFile << ",drhoYdt_" << PeleLM::stateVariableName(FIRSTSPEC + n);
         tmpSpecFile << ",netFlux_" << PeleLM::stateVariableName(FIRSTSPEC + n);
@@ -776,7 +785,7 @@ PeleLM::openTempFile()
       for (const auto& m_bPatche : m_bPatches) {
         BPatch* patch = m_bPatche.get();
         BPatch::BpatchDataContainer bphost = patch->getHostData();
-        for (int i = 0; i < bphost.num_species; i++) {
+        for (int i = 0; i < bphost.num_species; ++i) {
           tmppatchmfrFile << ","
                           << patch->m_patchname + "_" + patch->speciesList[i];
         }
@@ -791,7 +800,7 @@ PeleLM::openTempFile()
         std::ios::out | std::ios::app | std::ios_base::binary);
       tmpIonsFile.precision(12);
       tmpIonsFile << "iter,time";
-      for (int i = 0; i < AMREX_SPACEDIM; i++) {
+      for (int i = 0; i < AMREX_SPACEDIM; ++i) {
         tmpIonsFile << ",curr_" << i << "_low,curr_" << i << "_hi";
       }
       tmpIonsFile << "\n";

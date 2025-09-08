@@ -72,7 +72,7 @@ public:
       }
 #elif (AMREX_SPACEDIM == 3)
       amrex::Real zp;
-      const amrex::Real sqrt2 = sqrt(2.0);
+      constexpr amrex::Real sqrt2 = 1.4142135623730951;
 
       xp = point_coordinate[0];
       yp = point_coordinate[1];
@@ -82,9 +82,9 @@ public:
         inside = true;
       } else if (m_patchtype_num == 1) {
 
-        amrex::Real patch_circle_radius_touse =
+        const amrex::Real patch_circle_radius_touse =
           m_patch_circle_radius + dx * sqrt2 / 2.0;
-        amrex::Real rad = sqrt(
+        const amrex::Real rad = sqrt(
           (xp - m_patch_circle_center[0]) * (xp - m_patch_circle_center[0]) +
           (yp - m_patch_circle_center[1]) * (yp - m_patch_circle_center[1]) +
           (zp - m_patch_circle_center[2]) * (zp - m_patch_circle_center[2]));
@@ -116,12 +116,12 @@ public:
           inside = true;
         }
       } else if (m_patchtype_num == 3) {
-        amrex::Real patch_circ_ann_outer_radius_touse =
+        const amrex::Real patch_circ_ann_outer_radius_touse =
           m_patch_circ_ann_outer_radius + dx * sqrt2 / 2.0;
-        amrex::Real patch_circ_ann_inner_radius_touse =
+        const amrex::Real patch_circ_ann_inner_radius_touse =
           m_patch_circ_ann_inner_radius - dx * sqrt2 / 2.0;
 
-        amrex::Real rad = sqrt(
+        const amrex::Real rad = sqrt(
           (xp - m_patch_circ_ann_center[0]) *
             (xp - m_patch_circ_ann_center[0]) +
           (yp - m_patch_circ_ann_center[1]) *

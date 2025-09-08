@@ -5,7 +5,7 @@
 #include <PeleLMeX_BCfill.H>
 
 void
-PeleLM::ionDriftVelocity(std::unique_ptr<AdvanceAdvData>& advData)
+PeleLM::ionDriftVelocity(const std::unique_ptr<AdvanceAdvData>& advData)
 {
   //----------------------------------------------------------------
   // set udrift boundaries to zero
@@ -27,7 +27,7 @@ PeleLM::ionDriftVelocity(std::unique_ptr<AdvanceAdvData>& advData)
   for (int lev = 0; lev <= finest_level; ++lev) {
     const auto& ba = grids[lev];
     const auto& factory = Factory(lev);
-    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+    for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
       gphiVOld[lev][idim].define(
         amrex::convert(ba, amrex::IntVect::TheDimensionVector(idim)), dmap[lev],
         1, nGrow, amrex::MFInfo(), factory);
@@ -37,7 +37,7 @@ PeleLM::ionDriftVelocity(std::unique_ptr<AdvanceAdvData>& advData)
     }
   }
 
-  int do_avgDown = 0; // TODO or should I ?
+  constexpr int do_avgDown = 0; // TODO or should I ?
   auto bcRecPhiV = fetchBCRecArray(PHIV, 1);
   getDiffusionOp()->computeGradient(
     GetVecOfArrOfPtrs(gphiVOld), {}, // don't need the laplacian out
@@ -58,6 +58,7 @@ PeleLM::ionDriftVelocity(std::unique_ptr<AdvanceAdvData>& advData)
     auto ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
 
     amrex::MultiFab mobH_cc(grids[lev], dmap[lev], NUM_IONS, 1);
+
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
@@ -73,14 +74,13 @@ PeleLM::ionDriftVelocity(std::unique_ptr<AdvanceAdvData>& advData)
           mob_h(i, j, k, n) = 0.5 * (mob_o(i, j, k, n) + mob_n(i, j, k, n));
         });
     }
-
     // Get the face centered ions mobility
-    int doZeroVisc = 0;
+    constexpr int doZeroVisc = 0;
     amrex::Array<amrex::MultiFab, AMREX_SPACEDIM> mobH_ec =
       getDiffusivity(lev, 0, NUM_IONS, doZeroVisc, bcRecIons, mobH_cc);
 
     // Assemble the ions drift velocity
-    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+    for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
@@ -124,8 +124,8 @@ PeleLM::ionDriftVelocity(std::unique_ptr<AdvanceAdvData>& advData)
 
       // Set BCRec for Umac
       amrex::Vector<amrex::BCRec> bcrec(NUM_IONS);
-      for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
-        for (int ion = 0; ion < NUM_IONS; ion++) {
+      for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
+        for (int ion = 0; ion < NUM_IONS; ++ion) {
           if (geom[lev - 1].isPeriodic(idim)) {
             bcrec[ion].setLo(idim, amrex::BCType::int_dir);
             bcrec[ion].setHi(idim, amrex::BCType::int_dir);
@@ -169,10 +169,11 @@ PeleLM::ionDriftVelocity(std::unique_ptr<AdvanceAdvData>& advData)
 }
 
 void
-PeleLM::ionDriftAddUmac(int lev, std::unique_ptr<AdvanceAdvData>& advData)
+PeleLM::ionDriftAddUmac(
+  const int lev, const std::unique_ptr<AdvanceAdvData>& advData)
 {
   // Add umac to the ions drift velocity to get the effective velocity
-  for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+  for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif

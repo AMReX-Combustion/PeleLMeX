@@ -2,7 +2,7 @@
 #include <PeleLMeX_EF_K.H>
 
 void
-PeleLM::calcEFTransport(const TimeStamp& a_time)
+PeleLM::calcEFTransport(const TimeStamp a_time)
 {
   BL_PROFILE("PeleLMeX::calcEFTransport()");
 

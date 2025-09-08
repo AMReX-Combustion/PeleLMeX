@@ -3,7 +3,7 @@
 #include <memory>
 
 void
-PeleLM::setThermoPress(const TimeStamp& a_time)
+PeleLM::setThermoPress(const TimeStamp a_time)
 {
   BL_PROFILE("PeleLMeX::setThermoPress()");
 
@@ -15,7 +15,7 @@ PeleLM::setThermoPress(const TimeStamp& a_time)
 }
 
 void
-PeleLM::setThermoPress(int lev, const TimeStamp& a_time)
+PeleLM::setThermoPress(const int lev, const TimeStamp a_time)
 {
 
   AMREX_ASSERT(a_time == AmrOldTime || a_time == AmrNewTime);
@@ -26,7 +26,7 @@ PeleLM::setThermoPress(int lev, const TimeStamp& a_time)
 
   amrex::ParallelFor(
     ldata_p->state,
-    [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+    [sma, leosparm] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
       getPGivenRTY(
         i, j, k, amrex::Array4<amrex::Real const>(sma[box_no], DENSITY),
         amrex::Array4<amrex::Real const>(sma[box_no], FIRSTSPEC),
@@ -38,11 +38,11 @@ PeleLM::setThermoPress(int lev, const TimeStamp& a_time)
 
 void
 PeleLM::calcDivU(
-  int is_init,
-  int computeDiff,
-  int do_avgDown,
-  const TimeStamp& a_time,
-  std::unique_ptr<AdvanceDiffData>& diffData)
+  const int is_init,
+  const int computeDiff,
+  const int do_avgDown,
+  const TimeStamp a_time,
+  const std::unique_ptr<AdvanceDiffData>& diffData)
 {
   BL_PROFILE("PeleLMeX::calcDivU()");
 
@@ -57,7 +57,7 @@ PeleLM::calcDivU(
   }
 
   // Assemble divU on each level
-  for (int lev = 0; lev <= finest_level; lev++) {
+  for (int lev = 0; lev <= finest_level; ++lev) {
 
     auto* ldata_p = getLevelDataPtr(lev, a_time);
 
@@ -126,14 +126,16 @@ PeleLM::calcDivU(
 #ifdef AMREX_USE_EB
       if (flagfab.getType(bx) == amrex::FabType::covered) { // Covered boxes
         amrex::ParallelFor(
-          bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          bx, [divu] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             divu(i, j, k) = 0.0;
           });
       } else if (flagfab.getType(bx) != amrex::FabType::regular) { // EB
                                                                    // containing
                                                                    // boxes
         amrex::ParallelFor(
-          bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          bx,
+          [flag, divu, rhoY, T, SpecD, Fourier, DiffDiff, r, extRhoY, extRhoH,
+           use_react, leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             if (flag(i, j, k).isCovered()) {
               divu(i, j, k) = 0.0;
             } else {
@@ -146,7 +148,9 @@ PeleLM::calcDivU(
 #endif
       {
         amrex::ParallelFor(
-          bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          bx,
+          [divu, rhoY, T, SpecD, Fourier, DiffDiff, r, extRhoY, extRhoH,
+           use_react, leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             compute_divu<pele::physics::PhysicsType::eos_type>(
               i, j, k, rhoY, T, SpecD, Fourier, DiffDiff, r, extRhoY, extRhoH,
               divu, use_react, leosparm);
@@ -172,14 +176,14 @@ PeleLM::calcDivU(
 
   // fillPatch a_time divu to get properly filled ghost cells
   for (int lev = 0; lev <= finest_level; ++lev) {
-    amrex::Real time = getTime(lev, a_time);
+    const amrex::Real time = getTime(lev, a_time);
     auto* ldata_p = getLevelDataPtr(lev, a_time);
     fillpatch_divu(lev, time, ldata_p->divu, m_nGrowdivu);
   }
 }
 
 void
-PeleLM::setRhoToSumRhoY(int lev, const TimeStamp& a_time)
+PeleLM::setRhoToSumRhoY(const int lev, const TimeStamp a_time)
 {
 
   AMREX_ASSERT(a_time == AmrOldTime || a_time == AmrNewTime);
@@ -189,7 +193,7 @@ PeleLM::setRhoToSumRhoY(int lev, const TimeStamp& a_time)
 
   amrex::ParallelFor(
     ldata_p->state,
-    [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+    [sma] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
       pele::physics::PhysicsType::eos_type::RY2R(
         sma[box_no].cellData(i, j, k), sma[box_no](i, j, k, DENSITY),
         FIRSTSPEC);
@@ -198,7 +202,7 @@ PeleLM::setRhoToSumRhoY(int lev, const TimeStamp& a_time)
 }
 
 void
-PeleLM::setTemperature(const TimeStamp& a_time)
+PeleLM::setTemperature(const TimeStamp a_time)
 {
   BL_PROFILE_VAR("PeleLMeX::setTemperature()", setTemperature);
 
@@ -211,7 +215,7 @@ PeleLM::setTemperature(const TimeStamp& a_time)
 }
 
 void
-PeleLM::setTemperature(int lev, const TimeStamp& a_time)
+PeleLM::setTemperature(const int lev, const TimeStamp a_time)
 {
 
   AMREX_ASSERT(a_time == AmrOldTime || a_time == AmrNewTime);
@@ -222,7 +226,7 @@ PeleLM::setTemperature(int lev, const TimeStamp& a_time)
 
   amrex::ParallelFor(
     ldata_p->state,
-    [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+    [sma, leosparm] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
       getTfromHY(
         i, j, k, amrex::Array4<amrex::Real const>(sma[box_no], DENSITY),
         amrex::Array4<amrex::Real const>(sma[box_no], FIRSTSPEC),
@@ -234,7 +238,7 @@ PeleLM::setTemperature(int lev, const TimeStamp& a_time)
 
 void
 PeleLM::calc_dPdt(
-  const TimeStamp& a_time, const amrex::Vector<amrex::MultiFab*>& a_dPdt)
+  const TimeStamp a_time, const amrex::Vector<amrex::MultiFab*>& a_dPdt)
 {
   BL_PROFILE("PeleLMeX::calc_dPdt()");
 
@@ -254,7 +258,8 @@ PeleLM::calc_dPdt(
 }
 
 void
-PeleLM::calc_dPdt(int lev, const TimeStamp& a_time, amrex::MultiFab* a_dPdt)
+PeleLM::calc_dPdt(
+  const int lev, const TimeStamp a_time, amrex::MultiFab* a_dPdt)
 {
   auto const& sma = getLevelDataPtr(lev, a_time)->state.arrays();
   auto const& dPdtma = a_dPdt->arrays();
@@ -264,7 +269,8 @@ PeleLM::calc_dPdt(int lev, const TimeStamp& a_time, amrex::MultiFab* a_dPdt)
   const auto dt = m_dt;
   const auto dpdt_fac = m_dpdtFactor;
   amrex::ParallelFor(
-    *a_dPdt, [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+    *a_dPdt, [dPdtma, sma, p_amb, dt, dpdt_fac] AMREX_GPU_DEVICE(
+               int box_no, int i, int j, int k) noexcept {
       auto dPdta = dPdtma[box_no];
       auto sa = sma[box_no];
       dPdta(i, j, k) =
@@ -274,7 +280,7 @@ PeleLM::calc_dPdt(int lev, const TimeStamp& a_time, amrex::MultiFab* a_dPdt)
 }
 
 amrex::Real
-PeleLM::adjustPandDivU(std::unique_ptr<AdvanceAdvData>& advData)
+PeleLM::adjustPandDivU(const std::unique_ptr<AdvanceAdvData>& advData)
 {
   BL_PROFILE("PeleLMeX::adjustPandDivU()");
 
@@ -294,24 +300,25 @@ PeleLM::adjustPandDivU(std::unique_ptr<AdvanceAdvData>& advData)
     const auto pNew = m_pNew;
     amrex::ParallelFor(
       *ThetaHalft[lev],
-      [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+      [tma, sma_o, sma_n, pOld, pNew,
+       leosparm] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
         auto theta = tma[box_no];
-        amrex::Real gammaInv_o = getGammaInv(
+        const amrex::Real gammaInv_o = getGammaInv(
           i, j, k, amrex::Array4<amrex::Real const>(sma_o[box_no], FIRSTSPEC),
           amrex::Array4<amrex::Real const>(sma_o[box_no], TEMP), leosparm);
-        amrex::Real gammaInv_n = getGammaInv(
+        const amrex::Real gammaInv_n = getGammaInv(
           i, j, k, amrex::Array4<amrex::Real const>(sma_n[box_no], FIRSTSPEC),
           amrex::Array4<amrex::Real const>(sma_n[box_no], TEMP), leosparm);
         theta(i, j, k) = 0.5 * (gammaInv_o / pOld + gammaInv_n / pNew);
       });
+    amrex::Gpu::streamSynchronize();
   }
-  amrex::Gpu::streamSynchronize();
 
   // Get the mean mac_divu (Sbar) and mean theta
-  amrex::Real Sbar = MFSum(GetVecOfConstPtrs(advData->mac_divu), 0);
-  Sbar /= m_uncoveredVol;
-  amrex::Real Thetabar = MFSum(GetVecOfConstPtrs(ThetaHalft), 0);
-  Thetabar /= m_uncoveredVol;
+  const amrex::Real Sbar =
+    MFSum(GetVecOfConstPtrs(advData->mac_divu), 0) / m_uncoveredVol;
+  const amrex::Real Thetabar =
+    MFSum(GetVecOfConstPtrs(ThetaHalft), 0) / m_uncoveredVol;
 
   // Adjust
   for (int lev = 0; lev <= finest_level; ++lev) {
@@ -322,11 +329,11 @@ PeleLM::adjustPandDivU(std::unique_ptr<AdvanceAdvData>& advData)
   }
 
   // Compute 1/Volume * int(U_inflow)dA across all boundary faces
-  amrex::Real umacFluxBalance = AMREX_D_TERM(
+  const amrex::Real umacFluxBalance = AMREX_D_TERM(
     m_domainUmacFlux[0] + m_domainUmacFlux[1],
     +m_domainUmacFlux[2] + m_domainUmacFlux[3],
     +m_domainUmacFlux[4] + m_domainUmacFlux[5]);
-  amrex::Real divu_vol = umacFluxBalance / m_uncoveredVol;
+  const amrex::Real divu_vol = umacFluxBalance / m_uncoveredVol;
 
   // Advance the ambient pressure
   m_pNew = m_pOld + m_dt * (Sbar - divu_vol) / Thetabar;
@@ -337,8 +344,8 @@ PeleLM::adjustPandDivU(std::unique_ptr<AdvanceAdvData>& advData)
     auto const& tma = ThetaHalft[lev]->arrays();
     auto const& uma = advData->mac_divu[lev].arrays();
     amrex::ParallelFor(
-      *ThetaHalft[lev],
-      [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+      *ThetaHalft[lev], [uma, Sbar, Thetabar, divu_vol, tma] AMREX_GPU_DEVICE(
+                          int box_no, int i, int j, int k) noexcept {
         auto theta = tma[box_no];
         uma[box_no](i, j, k) -=
           (theta(i, j, k) * Sbar / Thetabar -
@@ -351,7 +358,7 @@ PeleLM::adjustPandDivU(std::unique_ptr<AdvanceAdvData>& advData)
     amrex::Print() << " >> Closed chamber pOld: " << m_pOld
                    << ", pNew: " << m_pNew << ", dp0dt: " << m_dp0dt << "\n";
     amrex::Print() << " >> Total mass old: " << m_massOld
-                   << ", mass new: " << m_massNew << std::endl;
+                   << ", mass new: " << m_massNew << "\n";
   }
 
   // Return Sbar so that we'll add it back to mac_divu after the MAC projection

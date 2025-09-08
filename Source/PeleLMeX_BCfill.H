@@ -54,10 +54,10 @@ struct PeleLMCCFillExtDirState
     auto iv_3d = amrex::IntVectND<3>(0);
     AMREX_D_TERM(iv_3d[0] = iv[0];, iv_3d[1] = iv[1];, iv_3d[2] = iv[2];);
 
-    for (int idir = 0; idir < AMREX_SPACEDIM; idir++) {
+    for (int idir = 0; idir < AMREX_SPACEDIM; ++idir) {
 
       // Low
-      for (int n = 0; n < amrex::min(numcomp, NVAR); n++) {
+      for (int n = 0; n < amrex::min(numcomp, NVAR); ++n) {
 
         // bcnormal handles all the state components at once
         amrex::Real s_ext[NVAR] = {0.0};
@@ -91,7 +91,7 @@ struct PeleLMCCFillExtDirState
       }
 
       // High
-      for (int n = 0; n < amrex::min(numcomp, NVAR); n++) {
+      for (int n = 0; n < amrex::min(numcomp, NVAR); ++n) {
 
         // bcnormal handles all the state components at once
         amrex::Real s_ext[NVAR] = {0.0};
@@ -174,10 +174,10 @@ struct PeleLMCCFillExtDirAux
     auto aux_ext = aux.cellData(iv[0], iv[1], iv[2]);
 #endif
 
-    for (int idir = 0; idir < AMREX_SPACEDIM; idir++) {
+    for (int idir = 0; idir < AMREX_SPACEDIM; ++idir) {
 
       // Low
-      for (int n = 0; n < m_nAux; n++) {
+      for (int n = 0; n < m_nAux; ++n) {
 
         // Get current state component BC
         const int* bc = bcr[n].data();
@@ -190,7 +190,7 @@ struct PeleLMCCFillExtDirAux
         }
       }
       // High
-      for (int n = 0; n < m_nAux; n++) {
+      for (int n = 0; n < m_nAux; ++n) {
 
         // Get current state component BC
         const int* bc = bcr[n].data();
@@ -249,7 +249,7 @@ struct PeleLMCCFillExtDirSpec
     auto iv_3d = amrex::IntVectND<3>(0);
     AMREX_D_TERM(iv_3d[0] = iv[0];, iv_3d[1] = iv[1];, iv_3d[2] = iv[2];);
 
-    for (int n = 0; n < NUM_SPECIES; n++) {
+    for (int n = 0; n < NUM_SPECIES; ++n) {
 
       // Get the species component BC
       const int* bc = bcr[n].data();
@@ -257,7 +257,7 @@ struct PeleLMCCFillExtDirSpec
       // bcnormal handles all the state components at once
       amrex::Real s_ext[NVAR] = {0.0};
 
-      for (int idir = 0; idir < AMREX_SPACEDIM; idir++) {
+      for (int idir = 0; idir < AMREX_SPACEDIM; ++idir) {
         // Low
         if ((bc[idir] == amrex::BCType::ext_dir) and (iv[idir] < domlo[idir])) {
 
@@ -344,7 +344,7 @@ struct PeleLMCCFillExtDirDens
     // bcnormal handles all the state components at once
     amrex::Real s_ext[NVAR] = {0.0};
 
-    for (int idir = 0; idir < AMREX_SPACEDIM; idir++) {
+    for (int idir = 0; idir < AMREX_SPACEDIM; ++idir) {
       // Low
       if ((bc[idir] == amrex::BCType::ext_dir) and (iv[idir] < domlo[idir])) {
 
@@ -428,7 +428,7 @@ struct PeleLMCCFillExtDirRhoH
     // bcnormal handles all the state components at once
     amrex::Real s_ext[NVAR] = {0.0};
 
-    for (int idir = 0; idir < AMREX_SPACEDIM; idir++) {
+    for (int idir = 0; idir < AMREX_SPACEDIM; ++idir) {
       // Low
       if ((bc[idir] == amrex::BCType::ext_dir) and (iv[idir] < domlo[idir])) {
 
@@ -511,7 +511,7 @@ struct PeleLMCCFillExtDirTemp
 
     // bcnormal handles all the state components at once
     amrex::Real s_ext[NVAR] = {0.0};
-    for (int idir = 0; idir < AMREX_SPACEDIM; idir++) {
+    for (int idir = 0; idir < AMREX_SPACEDIM; ++idir) {
       // Low
       if ((bc[idir] == amrex::BCType::ext_dir) and (iv[idir] < domlo[idir])) {
 
@@ -596,7 +596,7 @@ struct PeleLMCCFillExtDirnE
     // bcnormal handles all the state components at once
     amrex::Real s_ext[NVAR] = {0.0};
 
-    for (int idir = 0; idir < AMREX_SPACEDIM; idir++) {
+    for (int idir = 0; idir < AMREX_SPACEDIM; ++idir) {
       // Low
       if ((bc[idir] == amrex::BCType::ext_dir) and (iv[idir] < domlo[idir])) {
 
@@ -682,7 +682,7 @@ struct PeleLMCCFillExtDirPhiV
     // bcnormal handles all the state components at once
     amrex::Real s_ext[NVAR] = {0.0};
 
-    for (int idir = 0; idir < AMREX_SPACEDIM; idir++) {
+    for (int idir = 0; idir < AMREX_SPACEDIM; ++idir) {
       // Low
       if ((bc[idir] == amrex::BCType::ext_dir) and (iv[idir] < domlo[idir])) {
 

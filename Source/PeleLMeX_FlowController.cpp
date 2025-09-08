@@ -81,7 +81,9 @@ PeleLM::initActiveControl()
 
     amrex::Box dumbx({AMREX_D_DECL(0, 0, 0)}, {AMREX_D_DECL(0, 0, 0)});
     amrex::ParallelFor(
-      dumbx, [=] AMREX_GPU_DEVICE(int /*i*/, int /*j*/, int /*k*/) noexcept {
+      dumbx,
+      [x, fake_state, s_ext_d, ctrl_flameDir_l, time_l, geomdata, lprobparm,
+       lpmfdata] AMREX_GPU_DEVICE(int /*i*/, int /*j*/, int /*k*/) noexcept {
         const auto s_in = fake_state.cellData(0, 0, 0);
         ProblemSpecificFunctions::bcnormal(
           x, s_in, s_ext_d, ctrl_flameDir_l, 1, time_l, geomdata, *lprobparm,
@@ -100,7 +102,7 @@ PeleLM::initActiveControl()
 
       // Compute some active control parameters
       amrex::Real area_tot = 1.0;
-      for (int idim{0}; idim < AMREX_SPACEDIM; idim++) {
+      for (int idim{0}; idim < AMREX_SPACEDIM; ++idim) {
         if (idim != m_ctrl_flameDir) {
           area_tot *= (Geom(0).ProbHi(idim) - Geom(0).ProbLo(idim));
         }
@@ -138,7 +140,7 @@ PeleLM::initActiveControl()
 }
 
 void
-PeleLM::activeControl(int is_restart)
+PeleLM::activeControl(const int is_restart)
 {
   if (m_ctrl_active == 0) {
     return;
@@ -203,7 +205,7 @@ PeleLM::activeControl(int is_restart)
   if (m_ctrl_nfilled <= 0) {
     amrex::Real velIntegral = 0.0;
     for (int n = 1; n <= m_ctrl_NavgPts;
-         n++) { // Piecewise constant velocity over NavgPts last steps
+         ++n) { // Piecewise constant velocity over NavgPts last steps
       velIntegral += 0.5 * (m_ctrl_velo_pts[n - 1] + m_ctrl_velo_pts[n]) *
                      (m_ctrl_time_pts[n - 1] - m_ctrl_time_pts[n]);
     }
@@ -313,7 +315,7 @@ PeleLM::activeControl(int is_restart)
 void
 PeleLM::getActiveControlLowT(amrex::Real& a_coft)
 {
-  for (int lev = 0; lev <= finest_level; lev++) {
+  for (int lev = 0; lev <= finest_level; ++lev) {
 
     // Get t^{n+1} data pointer
     auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
@@ -328,7 +330,7 @@ PeleLM::getActiveControlLowT(amrex::Real& a_coft)
     if (lev != finest_level) {
       lowT = amrex::ReduceMin(
         ldata_p->state, *m_coveredMask[lev], 0,
-        [=] AMREX_GPU_HOST_DEVICE(
+        [geomdata, AC_Tcross, AC_FlameDir] AMREX_GPU_HOST_DEVICE(
           amrex::Box const& bx, amrex::Array4<amrex::Real const> const& T_arr,
           amrex::Array4<int const> const& covered_arr) -> amrex::Real {
           const auto lo = amrex::lbound(bx);
@@ -368,7 +370,7 @@ PeleLM::getActiveControlLowT(amrex::Real& a_coft)
     } else {
       lowT = amrex::ReduceMin(
         ldata_p->state, 0,
-        [=] AMREX_GPU_HOST_DEVICE(
+        [geomdata, AC_Tcross, AC_FlameDir] AMREX_GPU_HOST_DEVICE(
           amrex::Box const& bx,
           amrex::Array4<amrex::Real const> const& T_arr) -> amrex::Real {
           const auto lo = amrex::lbound(bx);
@@ -449,7 +451,7 @@ PeleLM::loadActiveControlHistory()
     }
     if (m_ctrl_verbose != 0) {
       amrex::Print() << " AC history arrays: \n";
-      for (long int n = 0; n < m_ctrl_time_pts.size(); n++) {
+      for (long int n = 0; n < m_ctrl_time_pts.size(); ++n) {
         amrex::Print() << "  [" << n << "] time: " << m_ctrl_time_pts[n]
                        << ", velo: " << m_ctrl_velo_pts[n]
                        << ", coft: " << m_ctrl_cntl_pts[n] << "\n";

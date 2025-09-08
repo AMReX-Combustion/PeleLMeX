@@ -18,13 +18,13 @@ MLGMRESSolver::define(PeleLM* a_pelelm, const int a_nComp, const int a_nGrow)
 
   m_pelelm = a_pelelm;
 
-  int finest_level = m_pelelm->finestLevel();
+  const int finest_level = m_pelelm->finestLevel();
 
   // Resize level vector
   m_grids.resize(finest_level + 1);
   m_dmap.resize(finest_level + 1);
-  Ax.resize(finest_level + 1);
-  res.resize(finest_level + 1);
+  Ax.reserve(finest_level + 1);
+  res.reserve(finest_level + 1);
 
   // Grab stuff from AmrCore
   m_geom = m_pelelm->Geom(0, finest_level);
@@ -38,14 +38,14 @@ MLGMRESSolver::define(PeleLM* a_pelelm, const int a_nComp, const int a_nGrow)
   // Build krylov base memory and work MFs
   KspBase.resize(m_krylovSize + 1);
   for (int n = 0; n <= m_krylovSize; ++n) {
-    KspBase[n].resize(finest_level + 1);
-    for (int lev = 0; lev <= finest_level; lev++) {
-      KspBase[n][lev].define(m_grids[lev], m_dmap[lev], m_nComp, m_nGrow);
+    KspBase[n].reserve(finest_level + 1);
+    for (int lev = 0; lev <= finest_level; ++lev) {
+      KspBase[n].emplace_back(m_grids[lev], m_dmap[lev], m_nComp, m_nGrow);
     }
   }
-  for (int lev = 0; lev <= finest_level; lev++) {
-    Ax[lev].define(m_grids[lev], m_dmap[lev], m_nComp, m_nGrow);
-    res[lev].define(m_grids[lev], m_dmap[lev], m_nComp, m_nGrow);
+  for (int lev = 0; lev <= finest_level; ++lev) {
+    Ax.emplace_back(m_grids[lev], m_dmap[lev], m_nComp, m_nGrow);
+    res.emplace_back(m_grids[lev], m_dmap[lev], m_nComp, m_nGrow);
   }
 
   // Work Reals
@@ -340,7 +340,7 @@ MLGMRESSolver::computeMLNorm(const amrex::Vector<amrex::MultiFab*>& a_vec)
   if (m_norm != nullptr) {
     MEMBER_FUNC_PTR(*m_pelelm, m_norm)(a_vec, r);
   } else {
-    for (int comp = 0; comp < m_nComp; comp++) {
+    for (int comp = 0; comp < m_nComp; ++comp) {
       amrex::Real norm = 0.0;
       for (int lev = 0; lev <= a_vec.size(); ++lev) {
         norm +=

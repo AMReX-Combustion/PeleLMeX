@@ -140,7 +140,7 @@ struct PeleLMFillBCStateEB<T, true>
     ebh.bcnormal_eb(xface, bcnorm, stateIn, stateExt, time, geom, *lprobparm);
 
     // Extract requested entries
-    for (int n = 0; n < numcomp; n++) {
+    for (int n = 0; n < numcomp; ++n) {
       ebState(i, j, k, n) = stateExt[firstcomp + n];
     }
   }

@@ -10,7 +10,7 @@ int
 main(int argc, char* argv[])
 {
   if (argc >= 2) {
-    for (auto i = 1; i < argc; i++) {
+    for (auto i = 1; i < argc; ++i) {
       if (std::string(argv[i]) == "--describe") {
         writeBuildInfo();
         return 0;

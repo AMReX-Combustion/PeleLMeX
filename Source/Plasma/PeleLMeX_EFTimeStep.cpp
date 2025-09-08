@@ -1,7 +1,7 @@
 #include <PeleLMeX.H>
 
 amrex::Real
-PeleLM::estEFIonsDt(const TimeStamp& a_time)
+PeleLM::estEFIonsDt(const TimeStamp a_time)
 {
   amrex::Real estdt = 1.0e200;
   constexpr amrex::Real small = 1.0e-8;
@@ -93,7 +93,6 @@ PeleLM::estEFIonsDt(const TimeStamp& a_time)
 #endif
 #endif
     }
-
     // Get cell centered max effective velocities across
     // all dimension/ions
 #ifdef AMREX_USE_OMP
@@ -121,7 +120,7 @@ PeleLM::estEFIonsDt(const TimeStamp& a_time)
     }
 
     const auto dx = Geom(lev).CellSizeArray();
-    amrex::Real cfl_lcl = m_cfl;
+    const amrex::Real cfl_lcl = m_cfl;
     estdt_lev = amrex::ReduceMin(
       driftVelMax_cc, 0,
       [dx, cfl_lcl] AMREX_GPU_HOST_DEVICE(
