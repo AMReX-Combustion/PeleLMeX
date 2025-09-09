@@ -445,7 +445,8 @@ PeleLM::WritePlotFile()
 #endif
 
     if (m_do_les && m_plot_les) {
-      constexpr amrex::Real fact = 0.5 / AMREX_SPACEDIM;
+      constexpr amrex::Real fact =
+        0.5 / static_cast<amrex::Real>(AMREX_SPACEDIM);
       auto const& plot_arr = mf_plt[lev].arrays();
       AMREX_D_TERM(
         auto const& mut_arr_x =

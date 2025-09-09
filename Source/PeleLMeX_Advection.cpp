@@ -251,10 +251,12 @@ PeleLM::updateVelocity(const std::unique_ptr<AdvanceAdvData>& advData)
       [state_old_ma, adv_aofs_ma, force_ma, state_new_ma,
        dt_loc =
          m_dt] AMREX_GPU_DEVICE(int box_no, int i, int j, int k, int n) noexcept {
-        state_new_ma[box_no](i, j, k, VELX + n) =
-          state_old_ma[box_no](i, j, k, VELX + n) +
-          dt_loc * (adv_aofs_ma[box_no](i, j, k, VELX + n) +
-                    force_ma[box_no](i, j, k, n));
+        amrex::Array4<amrex::Real> vel_new(state_new_ma[box_no], VELX);
+        amrex::Array4<amrex::Real const> vel_old(state_old_ma[box_no], VELX);
+        amrex::Array4<amrex::Real const> adv_aofs(adv_aofs_ma[box_no], VELX);
+        vel_new(i, j, k, n) =
+          vel_old(i, j, k, n) +
+          dt_loc * (adv_aofs(i, j, k, n) + force_ma[box_no](i, j, k, n));
       });
     // Shift outside?
     amrex::Gpu::streamSynchronize();

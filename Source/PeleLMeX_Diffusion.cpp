@@ -1121,6 +1121,8 @@ PeleLM::differentialDiffusionUpdate(
   // Convert species forcing into actual solve RHS by *dt and adding rhoY^{n}
   // Could have done it at the same time the forcing is built, but this is
   // clearer
+
+  const auto dt = m_dt;
   for (int lev = 0; lev <= finest_level; ++lev) {
 
     // Get t^{n} data pointer
@@ -1134,7 +1136,6 @@ PeleLM::differentialDiffusionUpdate(
     auto const& fAux_ma =
       (m_nAux > 0) ? advData->Forcing_aux[lev].arrays() : fY_ma;
 
-    auto dt = m_dt;
     amrex::ParallelFor(
       advData->Forcing[lev], amrex::IntVect(0), NUM_SPECIES,
       [state_ma, fY_ma,
@@ -1321,7 +1322,7 @@ PeleLM::differentialDiffusionUpdate(
   // Update species
   // Remove the Wbar and Soret terms because we included them both the dhat and
   // the forcing.
-  auto dt = m_dt;
+  const auto dt = m_dt;
 
   if (m_use_wbar != 0 && m_use_soret != 0) {
     for (int lev = 0; lev <= finest_level; ++lev) {
@@ -1427,6 +1428,8 @@ PeleLM::differentialDiffusionUpdate(
           aux_ma[box_no](i, j, k, n) = force_aux_ma[box_no](i, j, k, n) +
                                        dt * dhat_aux_ma[box_no](i, j, k, n);
         });
+      // Shift outside?
+      amrex::Gpu::streamSynchronize();
     }
   }
 
