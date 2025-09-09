@@ -285,7 +285,8 @@ PeleLM::addScalarVarianceSources(const TimeStamp a_timestamp)
         // The simple interpolation below probably isn't valid for EB
 #ifdef AMREX_USE_EB
         amrex::Abort(
-          "PeleLM::addScalarVarianceSources(): this is not supported with EB");
+          "PeleLM::addScalarVarianceSources(): this is not supported with "
+          "EB");
 #endif
 
         for (int n = 0; n < MANIFOLD_DIM; ++n) {

@@ -32,6 +32,7 @@ PeleLM::calcTurbViscosity(const TimeStamp a_time)
       GradVel[lev][idim].define(
         amrex::convert(ba, amrex::IntVect::TheDimensionVector(idim)), dm, ncomp,
         0, amrex::MFInfo(), factory);
+      GradVel[lev][idim].setVal(0.0);
     }
   }
 
@@ -303,6 +304,7 @@ PeleLM::calcDiffusivity(const TimeStamp a_time)
           amrex::Array4<amrex::Real>(kma[box_no], 0));
 #endif
       });
+    // Shift outside/combine with below?
     amrex::Gpu::streamSynchronize();
 
     // Fill the diff_aux MF with specified Schmidt number
@@ -338,6 +340,7 @@ PeleLM::calcDiffusivity(const TimeStamp a_time)
               amrex::Array4<amrex::Real const>(state_arr[box_no], TEMP),
               amrex::Array4<amrex::Real>(cp_arr[box_no]), leosparm);
           });
+        // Combine with the one above?
         amrex::Gpu::streamSynchronize();
         ldata_p->diff_aux_cc.divide(cp_cc, n, 1, ldata_p->diff_cc.nGrow());
       }

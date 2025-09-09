@@ -36,6 +36,7 @@ PeleLM::initialProjection()
           amrex::Array4<amrex::Real const> rho(state_ma[box_no], DENSITY);
           sigma_ma[box_no](i, j, k) = dummy_dt / rho(i, j, k);
         });
+      // Shift outside?
       amrex::Gpu::streamSynchronize();
 #if AMREX_SPACEDIM == 2
       if (geom[lev].IsRZ()) {
@@ -160,6 +161,7 @@ PeleLM::initialPressProjection()
           amrex::Array4<amrex::Real const> rho(state_ma[box_no], DENSITY);
           sigma_ma[box_no](i, j, k) = dummy_dt / rho(i, j, k);
         });
+      // Shift outside?
       amrex::Gpu::streamSynchronize();
 #if AMREX_SPACEDIM == 2
       if (geom[lev].IsRZ()) {
@@ -539,9 +541,7 @@ PeleLM::doNodalProject(
 
 #if AMREX_SPACEDIM == 2
 void
-PeleLM::scaleProj_RZ( // NOLINT(readability-convert-member-functions-to-static)
-		      const int a_lev,
-		      amrex::MultiFab& a_mf)
+PeleLM::scaleProj_RZ(const int a_lev, amrex::MultiFab& a_mf)
 {
   // Scale nodal projection cell-centered mfs by radius
   amrex::Box domain = geom[a_lev].Domain();
@@ -571,10 +571,7 @@ PeleLM::scaleProj_RZ( // NOLINT(readability-convert-member-functions-to-static)
 }
 
 void
-PeleLM::
-  unscaleProj_RZ( // NOLINT(readability-convert-member-functions-to-static)
-    const int a_lev,
-    amrex::MultiFab& a_mf)
+PeleLM::unscaleProj_RZ(const int a_lev, amrex::MultiFab& a_mf)
 {
   // Unscale nodal projection cell-centered mfs by radius
   const amrex::Box& domain = geom[a_lev].Domain();

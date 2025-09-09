@@ -487,34 +487,27 @@ PeleLM::readParameters()
     amrex::Print() << "WARNING: unity_Le is deprecated and will be removed in "
                       "future version, use fixed_Le instead \n";
   }
-  if (m_do_les) { // For LES, Prandtl and Schmidt numbers are fixed
-    m_fixed_Le = 1;
-    m_fixed_Pr = 1;
-    amrex::Real Schmidt = 0.7;
-    pp.query("Schmidt", Schmidt);
-    m_Schmidt_inv = 1.0 / Schmidt;
-  }
-  if (m_fixed_Le != 0 && !m_do_les) { // Only ask for Lewis number when not
-                                      // LES, determined by Prandtl and
-                                      // Schmidt outside of this
-    amrex::Real Lewis = 1.0;
-    pp.query("Lewis", Lewis);
-    m_Lewis_inv = 1.0 / Lewis;
-  }
-  if (m_fixed_Pr != 0) {
+  // LES: Schmidt and Prandtl are specified for turbulent diffusion
+  // fixed_Pr/fixed_Le: Lewis and Prandtl are specified for molecular diffusion
+  // Both: Specify Prandtl and Schmidt, apply for both diffusion types
+  if (m_fixed_Pr != 0 || m_do_les) {
     amrex::Real Prandtl = 0.7;
     pp.query("Prandtl", Prandtl);
     m_Prandtl_inv = 1.0 / Prandtl;
   }
-  if (m_fixed_Le != 0 && m_fixed_Pr != 0 && !m_do_les) { // calculate Schmidt in
-                                                         // case of no LES from
-                                                         // Lewis and Prandtl
-    m_Schmidt_inv = m_Lewis_inv * m_Prandtl_inv;
+  if (m_do_les) {
+    amrex::Real Schmidt = 0.7;
+    pp.query("Schmidt", Schmidt);
+    m_Schmidt_inv = 1.0 / Schmidt;
+    m_Lewis_inv = m_Schmidt_inv / m_Prandtl_inv;
+  } else if (m_fixed_Le != 0) {
+    amrex::Real Lewis = 1.0;
+    pp.query("Lewis", Lewis);
+    m_Lewis_inv = 1.0 / Lewis;
+    if (m_fixed_Pr != 0) {
+      m_Schmidt_inv = m_Lewis_inv * m_Prandtl_inv;
+    }
   }
-  if (m_do_les) { // calculate Lewis in case of LES
-    m_Lewis_inv = m_Prandtl_inv / m_Schmidt_inv;
-  }
-
   if (
     (m_use_wbar != 0 || m_use_soret != 0) &&
     (m_fixed_Le != 0 || m_fixed_Pr != 0)) {

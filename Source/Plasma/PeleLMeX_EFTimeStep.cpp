@@ -67,6 +67,7 @@ PeleLM::estEFIonsDt(const TimeStamp a_time)
     auto const& efield_const_ma = efield_cc.const_arrays();
     auto const& mob_cc_ma = ldata_p->mob_cc.const_arrays();
     auto const& uDrMax_ma = driftVelMax_cc.arrays();
+
     // Get cell centered max effective velocities across
     // all dimension/ions
     amrex::ParallelFor(

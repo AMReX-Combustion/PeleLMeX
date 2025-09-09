@@ -1321,18 +1321,19 @@ PeleLM::differentialDiffusionUpdate(
   // Update species
   // Remove the Wbar and Soret terms because we included them both the dhat and
   // the forcing.
-  for (int lev = 0; lev <= finest_level; ++lev) {
+  auto dt = m_dt;
 
-    auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
+  if (m_use_wbar != 0 && m_use_soret != 0) {
+    for (int lev = 0; lev <= finest_level; ++lev) {
 
-    auto const& state_ma = ldata_p->state.arrays();
-    auto const& dhat_ma = diffData->Dhat[lev].const_arrays();
-    auto const& force_ma = advData->Forcing[lev].const_arrays();
-    auto dt = m_dt;
+      auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
 
-    if (m_use_wbar != 0 && m_use_soret != 0) {
+      auto const& state_ma = ldata_p->state.arrays();
+      auto const& dhat_ma = diffData->Dhat[lev].const_arrays();
+      auto const& force_ma = advData->Forcing[lev].const_arrays();
       auto const& dwbar_ma = diffData->Dwbar[lev].const_arrays();
       auto const& dT_ma = diffData->DT[lev].const_arrays();
+
       amrex::ParallelFor(
         ldata_p->state, amrex::IntVect(0), NUM_SPECIES,
         [state_ma, dhat_ma, force_ma, dwbar_ma, dT_ma,
@@ -1343,7 +1344,18 @@ PeleLM::differentialDiffusionUpdate(
             dt * (dhat_ma[box_no](i, j, k, n) - dwbar_ma[box_no](i, j, k, n) -
                   dT_ma[box_no](i, j, k, n));
         });
-    } else if (m_use_wbar != 0) {
+      // Shift outside?
+      amrex::Gpu::streamSynchronize();
+    }
+  } else if (m_use_wbar != 0) {
+    for (int lev = 0; lev <= finest_level; ++lev) {
+
+      auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
+
+      auto const& state_ma = ldata_p->state.arrays();
+      auto const& dhat_ma = diffData->Dhat[lev].const_arrays();
+      auto const& force_ma = advData->Forcing[lev].const_arrays();
+
       auto const& dwbar_ma = diffData->Dwbar[lev].const_arrays();
       amrex::ParallelFor(
         ldata_p->state, amrex::IntVect(0), NUM_SPECIES,
@@ -1354,7 +1366,18 @@ PeleLM::differentialDiffusionUpdate(
             force_ma[box_no](i, j, k, n) +
             dt * (dhat_ma[box_no](i, j, k, n) - dwbar_ma[box_no](i, j, k, n));
         });
-    } else if (m_use_soret != 0) {
+      // Shift outside?
+      amrex::Gpu::streamSynchronize();
+    }
+  } else if (m_use_soret != 0) {
+    for (int lev = 0; lev <= finest_level; ++lev) {
+
+      auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
+
+      auto const& state_ma = ldata_p->state.arrays();
+      auto const& dhat_ma = diffData->Dhat[lev].const_arrays();
+      auto const& force_ma = advData->Forcing[lev].const_arrays();
+
       auto const& dT_ma = diffData->DT[lev].const_arrays();
       amrex::ParallelFor(
         ldata_p->state, amrex::IntVect(0), NUM_SPECIES,
@@ -1365,7 +1388,18 @@ PeleLM::differentialDiffusionUpdate(
             force_ma[box_no](i, j, k, n) +
             dt * (dhat_ma[box_no](i, j, k, n) - dT_ma[box_no](i, j, k, n));
         });
-    } else {
+      // Shift outside?
+      amrex::Gpu::streamSynchronize();
+    }
+  } else {
+    for (int lev = 0; lev <= finest_level; ++lev) {
+
+      auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
+
+      auto const& state_ma = ldata_p->state.arrays();
+      auto const& dhat_ma = diffData->Dhat[lev].const_arrays();
+      auto const& force_ma = advData->Forcing[lev].const_arrays();
+
       amrex::ParallelFor(
         ldata_p->state, amrex::IntVect(0), NUM_SPECIES,
         [state_ma, dhat_ma, force_ma,
@@ -1374,8 +1408,15 @@ PeleLM::differentialDiffusionUpdate(
           rhoY(i, j, k, n) =
             force_ma[box_no](i, j, k, n) + dt * dhat_ma[box_no](i, j, k, n);
         });
+      // Shift outside?
+      amrex::Gpu::streamSynchronize();
     }
-    if (m_nAux > 0) {
+  }
+  if (m_nAux > 0) {
+    for (int lev = 0; lev <= finest_level; ++lev) {
+
+      auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
+
       auto const& aux_ma = ldata_p->auxiliaries.arrays();
       auto const& dhat_aux_ma = diffData->Dhat_aux[lev].const_arrays();
       auto const& force_aux_ma = advData->Forcing_aux[lev].const_arrays();
@@ -1387,8 +1428,6 @@ PeleLM::differentialDiffusionUpdate(
                                        dt * dhat_aux_ma[box_no](i, j, k, n);
         });
     }
-    // Shift outside?
-    amrex::Gpu::streamSynchronize();
   }
 
   // FillPatch species again before going into the enthalpy solve

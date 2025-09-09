@@ -248,7 +248,9 @@ PeleLM::initializeElectronFromMassFraction()
 
 void
 PeleLM::fillPatchExtrap(
-  amrex::Real a_time, amrex::Vector<amrex::MultiFab*> const& a_MF, int a_nGrow)
+  const amrex::Real a_time,
+  amrex::Vector<amrex::MultiFab*> const& a_MF,
+  const int a_nGrow)
 {
   AMREX_ASSERT(a_MF[0]->nComp() <= m_bcrec_force.size());
   const int nComp = a_MF[0]->nComp();

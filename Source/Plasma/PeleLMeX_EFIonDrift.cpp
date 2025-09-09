@@ -85,15 +85,14 @@ PeleLM::ionDriftVelocity(const std::unique_ptr<AdvanceAdvData>& advData)
       auto const& gp_n_ma = gphiVNew[lev][idim].const_arrays();
       auto const& Ud_Sp_ma = advData->uDrift[lev][idim].arrays();
       amrex::ParallelFor(
-        mobH_ec[idim], [mob_h_ma, gp_o_ma, gp_n_ma, Ud_Sp_ma] AMREX_GPU_DEVICE(
-                         int box_no, int i, int j, int k) noexcept {
-          for (int n = 0; n < NUM_IONS; ++n) {
-            Ud_Sp_ma[box_no](i, j, k, n) =
-              mob_h_ma[box_no](i, j, k, n) * -0.5 *
-              (gp_o_ma[box_no](i, j, k) + gp_n_ma[box_no](i, j, k));
-          }
+        mobH_ec[idim], amrex::IntVect(0), NUM_IONS,
+        [mob_h_ma, gp_o_ma, gp_n_ma, Ud_Sp_ma] AMREX_GPU_DEVICE(
+          int box_no, int i, int j, int k, int n) noexcept {
+          Ud_Sp_ma[box_no](i, j, k, n) =
+            mob_h_ma[box_no](i, j, k, n) * -0.5 *
+            (gp_o_ma[box_no](i, j, k) + gp_n_ma[box_no](i, j, k));
         });
-      // Shift outside?
+      // Shift outside (idim/lev)?
       amrex::Gpu::streamSynchronize();
     }
   }
@@ -171,9 +170,18 @@ PeleLM::ionDriftAddUmac(
 {
   // Add umac to the ions drift velocity to get the effective velocity
   for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
-    amrex::MultiFab::Add(
-      advData->uDrift[lev][idim], advData->umac[lev][idim], 0, 0, 1,
-      advData->umac[lev][idim].nGrowVect());
+
+    auto const& umac_ma = advData->umac[lev][idim].const_arrays();
+    auto const& Ud_Sp_ma = advData->uDrift[lev][idim].arrays();
+
+    amrex::ParallelFor(
+      advData->umac[lev][idim], advData->umac[lev][idim].nGrowVect(), NUM_IONS,
+      [umac_ma, Ud_Sp_ma] AMREX_GPU_DEVICE(
+        int box_no, int i, int j, int k, int n) noexcept {
+        Ud_Sp_ma[box_no](i, j, k, n) += umac_ma[box_no](i, j, k);
+      });
+    // Shift outside?
+    amrex::Gpu::streamSynchronize();
     advData->uDrift[lev][idim].FillBoundary(geom[lev].periodicity());
   }
 }

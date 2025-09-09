@@ -434,16 +434,16 @@ pelelmex_dermgvort(
         vort_arr(i, j, k) = std::abs(vx - uy);
 
 #elif (AMREX_SPACEDIM == 3)
-            const amrex::Real vx = 0.5 * (dat_arr(i+1,j,k,1) - dat_arr(i-1,j,k,1)) * idx;
-            const amrex::Real wx = 0.5 * (dat_arr(i+1,j,k,2) - dat_arr(i-1,j,k,2)) * idx;
+	const amrex::Real vx = 0.5 * (dat_arr(i+1,j,k,1) - dat_arr(i-1,j,k,1)) * idx;
+	const amrex::Real wx = 0.5 * (dat_arr(i+1,j,k,2) - dat_arr(i-1,j,k,2)) * idx;
 
-            const amrex::Real uy = 0.5 * (dat_arr(i,j+1,k,0) - dat_arr(i,j-1,k,0)) * idy;
-            const amrex::Real wy = 0.5 * (dat_arr(i,j+1,k,2) - dat_arr(i,j-1,k,2)) * idy;
-	    
-            const amrex::Real uz = 0.5 * (dat_arr(i,j,k+1,0) - dat_arr(i,j,k-1,0)) * idz;
-            const amrex::Real vz = 0.5 * (dat_arr(i,j,k+1,1) - dat_arr(i,j,k-1,1)) * idz;
-
-            vort_arr(i,j,k) = std::sqrt((wy-vz)*(wy-vz) + (uz-wx)*(uz-wx) + (vx-uy)*(vx-uy));
+	const amrex::Real uy = 0.5 * (dat_arr(i,j+1,k,0) - dat_arr(i,j-1,k,0)) * idy;
+	const amrex::Real wy = 0.5 * (dat_arr(i,j+1,k,2) - dat_arr(i,j-1,k,2)) * idy;
+	
+	const amrex::Real uz = 0.5 * (dat_arr(i,j,k+1,0) - dat_arr(i,j,k-1,0)) * idz;
+	const amrex::Real vz = 0.5 * (dat_arr(i,j,k+1,1) - dat_arr(i,j,k-1,1)) * idz;
+	
+	vort_arr(i,j,k) = std::sqrt((wy-vz)*(wy-vz) + (uz-wx)*(uz-wx) + (vx-uy)*(vx-uy));
 #endif
       });
   }
@@ -612,25 +612,25 @@ pelelmex_dervort(
 #endif
     ] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
 #if (AMREX_SPACEDIM == 2)
-        amrex::Real vx =
+        const amrex::Real vx =
           0.5 * (dat_arr(i + 1, j, k, 1) - dat_arr(i - 1, j, k, 1)) * idx;
-        amrex::Real uy =
+        const amrex::Real uy =
           0.5 * (dat_arr(i, j + 1, k, 0) - dat_arr(i, j - 1, k, 0)) * idy;
         vort_arr(i, j, k) = vx - uy;
 
 #elif (AMREX_SPACEDIM == 3)
-            amrex::Real vx = 0.5 * (dat_arr(i+1,j,k,1) - dat_arr(i-1,j,k,1)) * idx;
-            amrex::Real wx = 0.5 * (dat_arr(i+1,j,k,2) - dat_arr(i-1,j,k,2)) * idx;
+	const amrex::Real vx = 0.5 * (dat_arr(i+1,j,k,1) - dat_arr(i-1,j,k,1)) * idx;
+	const amrex::Real wx = 0.5 * (dat_arr(i+1,j,k,2) - dat_arr(i-1,j,k,2)) * idx;
 
-            amrex::Real uy = 0.5 * (dat_arr(i,j+1,k,0) - dat_arr(i,j-1,k,0)) * idy;
-            amrex::Real wy = 0.5 * (dat_arr(i,j+1,k,2) - dat_arr(i,j-1,k,2)) * idy;
+	const amrex::Real uy = 0.5 * (dat_arr(i,j+1,k,0) - dat_arr(i,j-1,k,0)) * idy;
+	const amrex::Real wy = 0.5 * (dat_arr(i,j+1,k,2) - dat_arr(i,j-1,k,2)) * idy;
 
-            amrex::Real uz = 0.5 * (dat_arr(i,j,k+1,0) - dat_arr(i,j,k-1,0)) * idz;
-            amrex::Real vz = 0.5 * (dat_arr(i,j,k+1,1) - dat_arr(i,j,k-1,1)) * idz;
-
-            vort_arr(i,j,k,0) = (wy-vz)*(wy-vz);
-            vort_arr(i,j,k,1) = (uz-wx)*(uz-wx);
-            vort_arr(i,j,k,2) = (vx-uy)*(vx-uy);
+	const amrex::Real uz = 0.5 * (dat_arr(i,j,k+1,0) - dat_arr(i,j,k-1,0)) * idz;
+	const amrex::Real vz = 0.5 * (dat_arr(i,j,k+1,1) - dat_arr(i,j,k-1,1)) * idz;
+	    
+	vort_arr(i,j,k,0) = (wy-vz)*(wy-vz);
+	vort_arr(i,j,k,1) = (uz-wx)*(uz-wx);
+	vort_arr(i,j,k,2) = (vx-uy)*(vx-uy);
 #endif
       });
   }
@@ -1245,26 +1245,26 @@ pelelmex_derenstrophy(
           l_rho = rho_arr(i, j, k);
         }
 #if (AMREX_SPACEDIM == 2)
-        amrex::Real vx =
+        const amrex::Real vx =
           0.5 * (dat_arr(i + 1, j, k, 1) - dat_arr(i - 1, j, k, 1)) * idx;
-        amrex::Real uy =
+        const amrex::Real uy =
           0.5 * (dat_arr(i, j + 1, k, 0) - dat_arr(i, j - 1, k, 0)) * idy;
         ens_arr(i, j, k) = 0.5 * l_rho * (vx - uy) * (vx - uy);
 
 #elif (AMREX_SPACEDIM == 3)
-        amrex::Real vx =
+        const amrex::Real vx =
           0.5 * (dat_arr(i + 1, j, k, 1) - dat_arr(i - 1, j, k, 1)) * idx;
-        amrex::Real wx =
+        const amrex::Real wx =
           0.5 * (dat_arr(i + 1, j, k, 2) - dat_arr(i - 1, j, k, 2)) * idx;
 
-        amrex::Real uy =
+        const amrex::Real uy =
           0.5 * (dat_arr(i, j + 1, k, 0) - dat_arr(i, j - 1, k, 0)) * idy;
-        amrex::Real wy =
+        const amrex::Real wy =
           0.5 * (dat_arr(i, j + 1, k, 2) - dat_arr(i, j - 1, k, 2)) * idy;
 
-        amrex::Real uz =
+        const amrex::Real uz =
           0.5 * (dat_arr(i, j, k + 1, 0) - dat_arr(i, j, k - 1, 0)) * idz;
-        amrex::Real vz =
+        const amrex::Real vz =
           0.5 * (dat_arr(i, j, k + 1, 1) - dat_arr(i, j, k - 1, 1)) * idz;
 
         ens_arr(i, j, k) = 0.5 * l_rho *
@@ -1451,9 +1451,9 @@ pelelmex_derdiffc(
   if (a_pelelm->m_use_soret == 0) {
     AMREX_ASSERT(ncomp == NUM_SPECIES);
   }
-  bool do_fixed_Le = (a_pelelm->m_fixed_Le != 0);
-  bool do_fixed_Pr = (a_pelelm->m_fixed_Pr != 0);
-  bool do_soret = (a_pelelm->m_use_soret != 0);
+  const bool do_fixed_Le = (a_pelelm->m_fixed_Le != 0);
+  const bool do_fixed_Pr = (a_pelelm->m_fixed_Pr != 0);
+  const bool do_soret = (a_pelelm->m_use_soret != 0);
   amrex::FArrayBox dummies(bx, NUM_SPECIES + 2, amrex::The_Async_Arena());
   auto const& rhoY = statefab.const_array(FIRSTSPEC);
   auto const& T = statefab.array(TEMP);
