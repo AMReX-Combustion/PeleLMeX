@@ -29,7 +29,7 @@ THREAD_SANITIZER = FALSE
 USE_PLASMA = FALSE
 USE_PARTICLES = TRUE
 SPRAY_FUEL_NUM = 2
-SPRAY_GCM = FALSE
+SPRAY_GCM = TRUE
 
 # PelePhysics
 Chemistry_Model = liquid_fuels_nonreacting
