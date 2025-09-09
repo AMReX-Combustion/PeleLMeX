@@ -365,8 +365,10 @@ PeleLM::checkForNaNs()
   bool contains_nan = false;
   for (int lev = 0; lev <= finest_level; ++lev) {
     if (
-      m_leveldata_new[lev]->state.contains_nan(0, NVAR, 0) ||
-      m_leveldata_new[lev]->state.contains_inf(0, NVAR, 0)) {
+      m_leveldata_new[lev]->state.contains_nan(
+        0, m_leveldata_new[lev]->state.nComp(), 0) ||
+      m_leveldata_new[lev]->state.contains_inf(
+        0, m_leveldata_new[lev]->state.nComp(), 0)) {
       contains_nan = true;
     }
   }

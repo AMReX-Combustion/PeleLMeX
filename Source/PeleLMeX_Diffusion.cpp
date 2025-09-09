@@ -1322,8 +1322,6 @@ PeleLM::differentialDiffusionUpdate(
   // Update species
   // Remove the Wbar and Soret terms because we included them both the dhat and
   // the forcing.
-  const auto dt = m_dt;
-
   if (m_use_wbar != 0 && m_use_soret != 0) {
     for (int lev = 0; lev <= finest_level; ++lev) {
 
