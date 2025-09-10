@@ -72,17 +72,17 @@ pelelmex_derheatrelease(
   EnthFab.resize(bx, NUM_SPECIES, amrex::The_Async_Arena());
 
   auto const temp = statefab.const_array(TEMP);
-  auto const react = reactfab.const_array(0);
   auto const& Hi = EnthFab.array();
   auto HRR = derfab.array(dcomp);
   auto const* leosparm = a_pelelm->eos_parms.device_parm();
   amrex::ParallelFor(
-    bx, [temp, Hi, leosparm, HRR,
-         react] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+    bx,
+    [temp, Hi, leosparm, HRR] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
       getHGivenT(i, j, k, temp, Hi, leosparm);
       HRR(i, j, k) = 0.0;
     });
   amrex::Gpu::streamSynchronize();
+  auto const react = reactfab.const_array();
   amrex::ParallelFor(
     bx, NUM_SPECIES,
     [HRR, Hi, react] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
