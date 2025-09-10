@@ -81,9 +81,13 @@ pelelmex_derheatrelease(
          react] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
       getHGivenT(i, j, k, temp, Hi, leosparm);
       HRR(i, j, k) = 0.0;
-      for (int n = 0; n < NUM_SPECIES; ++n) {
-        HRR(i, j, k) -= Hi(i, j, k, n) * react(i, j, k, n);
-      }
+    });
+  amrex::Gpu::streamSynchronize();
+  amrex::ParallelFor(
+    bx, NUM_SPECIES,
+    [HRR, Hi, react] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
+      amrex::Real val = -Hi(i, j, k, n) * react(i, j, k, n);
+      amrex::Gpu::Atomic::Add(&HRR(i, j, k), val);
     });
 }
 

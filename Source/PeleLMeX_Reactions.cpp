@@ -502,8 +502,9 @@ PeleLM::getHeatRelease(const int a_lev, amrex::MultiFab* a_HR)
     *a_HR, amrex::IntVect(0), NUM_SPECIES,
     [react_ma, HRR_ma, enth_ma] AMREX_GPU_DEVICE(
       int box_no, int i, int j, int k, int n) noexcept {
-      HRR_ma[box_no](i, j, k) -=
-        enth_ma[box_no](i, j, k, n) * react_ma[box_no](i, j, k, n);
+      amrex::Real val =
+        -enth_ma[box_no](i, j, k, n) * react_ma[box_no](i, j, k, n);
+      amrex::Gpu::Atomic::Add(&HRR_ma[box_no](i, j, k), val);
     });
   amrex::Gpu::streamSynchronize();
 }
