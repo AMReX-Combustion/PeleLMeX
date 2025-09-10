@@ -95,7 +95,7 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
     massfrac[E_ID] = 0.0;
     amrex::Real sum = 0.0;
     for (int n = 0; n < NUM_SPECIES; n++) {
-      massfrac[n] = std::max(0.0, massfrac[n]);
+      massfrac[n] = amrex::max(0.0, massfrac[n]);
       if (n != N2_ID)
         sum += massfrac[n];
     }
@@ -126,7 +126,7 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
     for (int n = 0; n < NUM_SPECIES; n++) {
       chargeDist += massfrac[n] * zk[n];
     }
-    state(i, j, k, NE) = std::max(1.0e-24, chargeDist / elemCharge);
+    state(i, j, k, NE) = amrex::max(1.0e-24, chargeDist / elemCharge);
 
     AMREX_D_TERM(state(i, j, k, VELX) = 0.0;
                  , state(i, j, k, VELY) = pmf_vals[1] * 0.01;

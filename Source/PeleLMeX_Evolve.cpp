@@ -1,7 +1,5 @@
 #include <PeleLMeX.H>
 
-using namespace amrex;
-
 void
 PeleLM::Evolve()
 {
@@ -49,7 +47,7 @@ PeleLM::Evolve()
       SprayPostRegrid();
     }
 #endif
-    int is_init = 0;
+    constexpr int is_init = 0;
     Advance(is_init);
     m_nstep++;
     m_cur_time += m_dt;
@@ -61,7 +59,7 @@ PeleLM::Evolve()
 #endif
 
     // Active control
-    int is_restart = 0;
+    constexpr int is_restart = 0;
     activeControl(is_restart);
 
     // Temporals
@@ -73,9 +71,9 @@ PeleLM::Evolve()
     doDiagnostics();
 
     // Check message
-    bool dump_and_stop = checkMessage("dump_and_stop");
-    bool plt_and_continue = checkMessage("plt_and_continue");
-    bool chk_and_continue = checkMessage("chk_and_continue");
+    const bool dump_and_stop = checkMessage("dump_and_stop");
+    const bool plt_and_continue = checkMessage("plt_and_continue");
+    const bool chk_and_continue = checkMessage("chk_and_continue");
 
     // Check for plot file
     if (writePlotNow() || dump_and_stop || plt_and_continue) {
@@ -91,14 +89,14 @@ PeleLM::Evolve()
     // Check for the end of the simulation
     bool over_max_wall_time = false;
     if (m_max_wall_time > 0.0) {
-      amrex::Real t_elapsed = ParallelDescriptor::second() - m_wall_start;
-      ParallelDescriptor::ReduceRealMax(t_elapsed);
+      amrex::Real t_elapsed =
+        amrex::ParallelDescriptor::second() - m_wall_start;
+      amrex::ParallelDescriptor::ReduceRealMax(t_elapsed);
       if (t_elapsed >= (m_max_wall_time * 3600)) {
         over_max_wall_time = true;
         if (m_verbose > 0) {
-          amrex::Print() << std::endl
-                         << "Reached maximum allowed wall time, stopping ..."
-                         << std::endl;
+          amrex::Print()
+            << "\n Reached maximum allowed wall time, stopping ...\n";
         }
       }
     }
@@ -149,9 +147,9 @@ PeleLM::writePlotNow() const
     // within machine epsilon of the next interval. In that case, increment
     // the counter, because we have indeed reached the next plot_per interval
     // at this point.
-    const Real eps =
-      std::numeric_limits<Real>::epsilon() * 10.0_rt * std::abs(m_cur_time);
-    const Real next_plot_time = (num_per_old + 1) * m_plot_per_approx;
+    const amrex::Real eps =
+      std::numeric_limits<amrex::Real>::epsilon() * 10.0 * std::abs(m_cur_time);
+    const amrex::Real next_plot_time = (num_per_old + 1) * m_plot_per_approx;
     if (
       (num_per_new == num_per_old) &&
       std::abs(m_cur_time - next_plot_time) <= eps) {
@@ -191,9 +189,9 @@ PeleLM::writeCheckNow() const
     // within machine epsilon of the next interval. In that case, increment
     // the counter, because we have indeed reached the next plot_per interval
     // at this point.
-    const Real eps =
-      std::numeric_limits<Real>::epsilon() * 10.0_rt * std::abs(m_cur_time);
-    const Real next_check_time = (num_per_old + 1) * m_check_per;
+    const amrex::Real eps =
+      std::numeric_limits<amrex::Real>::epsilon() * 10.0 * std::abs(m_cur_time);
+    const amrex::Real next_check_time = (num_per_old + 1) * m_check_per;
     if (
       (num_per_new == num_per_old) &&
       std::abs(m_cur_time - next_check_time) <= eps) {
@@ -219,13 +217,7 @@ PeleLM::writeCheckNow() const
 bool
 PeleLM::doTemporalsNow() const
 {
-  bool write_now = false;
-
-  if ((m_do_temporals != 0) && (m_nstep % m_temp_int == 0)) {
-    write_now = true;
-  }
-
-  return write_now;
+  return (m_do_temporals != 0) && (m_nstep % m_temp_int == 0);
 }
 
 bool
@@ -241,12 +233,12 @@ PeleLM::checkMessage(const std::string& a_action) const
   } else if (a_action == "chk_and_continue") {
     action_file = "chk_and_continue";
   } else {
-    Abort("Unknown action in checkMessage()");
+    amrex::Abort("Unknown action in checkMessage()");
   }
 
   if (m_nstep % m_message_int == 0) {
     int action_flag = 0;
-    if (ParallelDescriptor::IOProcessor()) {
+    if (amrex::ParallelDescriptor::IOProcessor()) {
       FILE* fp = fopen(action_file.c_str(), "r");
       if (fp != nullptr) {
         remove(action_file.c_str());
@@ -256,8 +248,8 @@ PeleLM::checkMessage(const std::string& a_action) const
     }
     int packed_data[1];
     packed_data[0] = action_flag;
-    ParallelDescriptor::Bcast(
-      packed_data, 1, ParallelDescriptor::IOProcessorNumber());
+    amrex::ParallelDescriptor::Bcast(
+      packed_data, 1, amrex::ParallelDescriptor::IOProcessorNumber());
     take_action = (packed_data[0] != 0);
   }
   return take_action;

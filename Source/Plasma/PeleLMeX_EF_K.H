@@ -22,26 +22,24 @@ getKappaE(
   amrex::Array4<const amrex::Real> const& T,
   amrex::Array4<amrex::Real> const& Ke) noexcept
 {
-  using namespace amrex::literals;
-
   if (!isKeTabulated) {
     Ke(i, j, k) = cstKe;
   } else {
     auto eos = pele::physics::PhysicsType::eos();
 
     // Get rho & Y from rhoY
-    amrex::Real rho = 0.0_rt;
-    for (int n = 0; n < NUM_SPECIES; n++) {
+    amrex::Real rho = 0.0;
+    for (int n = 0; n < NUM_SPECIES; ++n) {
       rho += rhoY(i, j, k, n);
     }
-    amrex::Real rhoinv = 1.0_rt / rho;
+    amrex::Real rhoinv = 1.0 / rho;
     amrex::Real y[NUM_SPECIES] = {0.0};
-    for (int n = 0; n < NUM_SPECIES; n++) {
+    for (int n = 0; n < NUM_SPECIES; ++n) {
       y[n] = rhoY(i, j, k, n) * rhoinv;
     }
 
     // Get the reduced electric field
-    amrex::Real Wbar = 0.0_rt;
+    amrex::Real Wbar = 0.0;
     eos.Y2WBAR(y, Wbar);
     amrex::Real Ngas = rho * Na / Wbar * 1000.0; // CGS -> MKS conversion
     amrex::Real EnormSq = AMREX_D_TERM(
@@ -78,13 +76,12 @@ getKappaSp(
   amrex::Array4<const amrex::Real> const& T,
   amrex::Array4<amrex::Real> const& Ksp) noexcept
 {
-  using namespace amrex::literals;
   amrex::Real rho = 0.0;
-  for (int n = 0; n < NUM_SPECIES; n++) {
+  for (int n = 0; n < NUM_SPECIES; ++n) {
     rho += rhoY(i, j, k, n);
   }
   int ionCnt = 0;
-  for (int n = 0; n < NUM_SPECIES; n++) {
+  for (int n = 0; n < NUM_SPECIES; ++n) {
     if (a_zk[n] != 0.0) {
       Ksp(i, j, k, ionCnt) = rhoD(i, j, k, n) * mwt[n] * 0.001 * a_zk[n] /
                              (rho * PP_RU_MKS * T(i, j, k));
@@ -108,8 +105,6 @@ getDiffE(
   amrex::Array4<const amrex::Real> const& Ke,
   amrex::Array4<amrex::Real> const& De) noexcept
 {
-  using namespace amrex::literals;
-
   De(i, j, k) = Ke(i, j, k) * T(i, j, k) * factor;
 }
 
@@ -126,8 +121,6 @@ ef_edge_state_extdir(
   amrex::Array4<amrex::Real const> const& state,
   amrex::Array4<amrex::Real const> const& effvel) noexcept
 {
-  using namespace amrex::literals;
-
   // Default behavior: id_l -1 in dir
   // Handle the BCs
   // Need -1 in id_l and id_h in dir on low Dirichlet BC
@@ -149,8 +142,8 @@ ef_edge_state_extdir(
   } else if (effvel(i, j, k) < -smallVel) {
     state_ed = state(id_h[0], id_h[1], id_h[2]);
   } else {
-    state_ed = 0.5_rt * (state(id_l[0], id_l[1], id_l[2]) +
-                         state(id_h[0], id_h[1], id_h[2]));
+    state_ed = 0.5 * (state(id_l[0], id_l[1], id_l[2]) +
+                      state(id_h[0], id_h[1], id_h[2]));
   }
   return state_ed;
 }
@@ -173,8 +166,6 @@ ef_edge_state_2ndO_extdir(
   amrex::Array4<amrex::Real const> const& effvel,
   const amrex::Box& box) noexcept
 {
-  using namespace amrex::literals;
-
   // Default behavior: id_l -1 in dir
   // Handle the BCs
   // Need -1 in id_l and id_h in dir on low Dirichlet BC
@@ -235,7 +226,7 @@ ef_edge_state_2ndO_extdir(
     } else if (effvel(i, j, k) < -smallVel) {
       state_ed = state_pls;
     } else {
-      state_ed = 0.5_rt * (state_pls + state_mns);
+      state_ed = 0.5 * (state_pls + state_mns);
     }
   }
   return state_ed;
@@ -256,8 +247,6 @@ cen2edg_upwind(
   amrex::Array4<const amrex::Real> const& cfab,
   amrex::Array4<amrex::Real> const& efab) noexcept
 {
-  using namespace amrex::literals;
-
   // Default behavior: id_l -1 in dir
   // Handle the BCs
   // Need -1 in id_l and id_h in dir on low Dirichlet BC
@@ -273,14 +262,14 @@ cen2edg_upwind(
     id_h[dir] -= 1;
   }
 
-  for (int n = 0; n < ncomp; n++) {
+  for (int n = 0; n < ncomp; ++n) {
     if (ueff(i, j, k) > smallVel) {
       efab(i, j, k, n) = cfab(id_l[0], id_l[1], id_l[2], n);
     } else if (ueff(i, j, k) < -smallVel) {
       efab(i, j, k, n) = cfab(id_h[0], id_h[1], id_h[2], n);
     } else {
-      efab(i, j, k, n) = 0.5_rt * (cfab(id_l[0], id_l[1], id_l[2], n) +
-                                   cfab(id_h[0], id_h[1], id_h[2], n));
+      efab(i, j, k, n) = 0.5 * (cfab(id_l[0], id_l[1], id_l[2], n) +
+                                cfab(id_h[0], id_h[1], id_h[2], n));
     }
   }
 }
@@ -299,16 +288,14 @@ reactionRateRhoY_EF(
   amrex::Array4<amrex::Real> const& rhoYdot,
   amrex::Array4<amrex::Real> const& nEdot) noexcept
 {
-  using namespace amrex::literals;
-
   // Get rho from rhoY. Is there a better way ?
-  amrex::Real rho = 0.0_rt;
-  for (int n = 0; n < NUM_SPECIES; n++) {
+  amrex::Real rho = 0.0;
+  for (int n = 0; n < NUM_SPECIES; ++n) {
     rho += rhoY(i, j, k, n);
   }
-  amrex::Real rhoinv = 1.0_rt / rho;
+  amrex::Real rhoinv = 1.0 / rho;
   amrex::Real y[NUM_SPECIES] = {0.0};
-  for (int n = 0; n < NUM_SPECIES; n++) {
+  for (int n = 0; n < NUM_SPECIES; ++n) {
     y[n] = rhoY(i, j, k, n) * rhoinv;
   }
 
@@ -321,15 +308,15 @@ reactionRateRhoY_EF(
   // Get T from Y/H. Was done like that before.
   amrex::Real Tloc = T(i, j, k);
   amrex::Real H =
-    rhoH(i, j, k) * rhoinv * 1.0e4_rt; // Include MKS -> CGS conversion
+    rhoH(i, j, k) * rhoinv * 1.0e4; // Include MKS -> CGS conversion
   eos.HY2T(H, y, Tloc);
 
   // Get wdot. Don't like the temporary wdot there ...
-  rho = rho * 0.001_rt; // rho MKS -> CGS
+  rho = rho * 0.001; // rho MKS -> CGS
   amrex::Real wdot[NUM_SPECIES] = {0.0};
   eos.RTY2WDOT(rho, Tloc, y, wdot);
-  for (int n = 0; n < NUM_SPECIES; n++) {
-    rhoYdot(i, j, k, n) = wdot[n] * 1000.0_rt; // CGS -> MKS conversion
+  for (int n = 0; n < NUM_SPECIES; ++n) {
+    rhoYdot(i, j, k, n) = wdot[n] * 1000.0; // CGS -> MKS conversion
   }
   nEdot(i, j, k) = wdot[E_ID] * Na * 1.0e6;
   rhoYdot(i, j, k, E_ID) = 0.0;
@@ -352,35 +339,34 @@ addLorentzForce(
   amrex::Array4<const amrex::Real> const& phiV,
   amrex::Array4<amrex::Real> const& force) noexcept
 {
-  using namespace amrex::literals;
   // Electric field. Use 1-sided stencil in the force ghost cells.
   amrex::Real EFx;
   if (i == bxlo[0]) {
-    EFx = -1.0_rt / dx[0] * (phiV(i + 1, j, k) - phiV(i, j, k));
+    EFx = -1.0 / dx[0] * (phiV(i + 1, j, k) - phiV(i, j, k));
   } else if (i == bxhi[0]) {
-    EFx = -1.0_rt / dx[0] * (phiV(i, j, k) - phiV(i - 1, j, k));
+    EFx = -1.0 / dx[0] * (phiV(i, j, k) - phiV(i - 1, j, k));
   } else {
-    EFx = -0.5_rt / dx[0] * (phiV(i + 1, j, k) - phiV(i - 1, j, k));
+    EFx = -0.5 / dx[0] * (phiV(i + 1, j, k) - phiV(i - 1, j, k));
   }
   amrex::Real EFy;
   if (j == bxlo[1]) {
-    EFy = -1.0_rt / dx[1] * (phiV(i, j + 1, k) - phiV(i, j, k));
+    EFy = -1.0 / dx[1] * (phiV(i, j + 1, k) - phiV(i, j, k));
   } else if (j == bxhi[1]) {
-    EFy = -1.0_rt / dx[1] * (phiV(i, j, k) - phiV(i, j - 1, k));
+    EFy = -1.0 / dx[1] * (phiV(i, j, k) - phiV(i, j - 1, k));
   } else {
-    EFy = -0.5_rt / dx[1] * (phiV(i, j + 1, k) - phiV(i, j - 1, k));
+    EFy = -0.5 / dx[1] * (phiV(i, j + 1, k) - phiV(i, j - 1, k));
   }
 #if (AMREX_SPACEDIM == 3)
   amrex::Real EFz;
   if (k == bxlo[2]) {
-    EFz = -1.0_rt / dx[2] * (phiV(i, j, k + 1) - phiV(i, j, k));
+    EFz = -1.0 / dx[2] * (phiV(i, j, k + 1) - phiV(i, j, k));
   } else if (k == bxhi[2]) {
-    EFz = -1.0_rt / dx[2] * (phiV(i, j, k) - phiV(i, j, k - 1));
+    EFz = -1.0 / dx[2] * (phiV(i, j, k) - phiV(i, j, k - 1));
   } else {
-    EFz = -0.5_rt / dx[2] * (phiV(i, j, k + 1) - phiV(i, j, k - 1));
+    EFz = -0.5 / dx[2] * (phiV(i, j, k + 1) - phiV(i, j, k - 1));
   }
 #endif
-  for (int n = 0; n < NUM_SPECIES; n++) {
+  for (int n = 0; n < NUM_SPECIES; ++n) {
     force(i, j, k, 0) += a_zk[n] * rhoY(i, j, k, n) * EFx;
     force(i, j, k, 1) += a_zk[n] * rhoY(i, j, k, n) * EFy;
 #if (AMREX_SPACEDIM == 3)
@@ -413,14 +399,14 @@ initElecNeutral(
   // Get species charge/mass
   amrex::Real zk[NUM_SPECIES] = {0.0};
   pele::physics::eos::charge_mass(zk);
-  for (int n = 0; n < NUM_SPECIES; n++) {
+  for (int n = 0; n < NUM_SPECIES; ++n) {
     zk[n] *= 1000.0; // CGS->MKS
   }
 
   // Get mass fractions
   amrex::Real massfrac[NUM_SPECIES] = {0.0};
   amrex::Real rho_inv = 1.0 / rho(i, j, k);
-  for (int n = 0; n < NUM_SPECIES; n++) {
+  for (int n = 0; n < NUM_SPECIES; ++n) {
     massfrac[n] = rhoY(i, j, k, n) * rho_inv;
   }
 
@@ -429,7 +415,7 @@ initElecNeutral(
   // First remove Y_nE
   massfrac[E_ID] = 0.0;
   amrex::Real sum = 0.0;
-  for (int n = 0; n < NUM_SPECIES; n++) {
+  for (int n = 0; n < NUM_SPECIES; ++n) {
     massfrac[n] = std::max(0.0, massfrac[n]);
     if (n != N2_ID)
       sum += massfrac[n];
@@ -438,20 +424,20 @@ initElecNeutral(
 
   // Change ions massfrac where charge already < 0.0
   amrex::Real chargeDist = 0.0;
-  for (int n = 0; n < NUM_SPECIES; n++) {
+  for (int n = 0; n < NUM_SPECIES; ++n) {
     chargeDist += massfrac[n] * zk[n];
   }
   if (chargeDist < 0.0) {
     amrex::Real sum_pos_ion = 0.0;
     amrex::Real mean_zk_pos_ion = 0.0;
-    for (int n = 0; n < NUM_SPECIES; n++) {
+    for (int n = 0; n < NUM_SPECIES; ++n) {
       if (zk[n] > 0.0) {
         sum_pos_ion += massfrac[n];
         mean_zk_pos_ion += massfrac[n] * zk[n];
       }
     }
     if (sum_pos_ion > 0.0) {
-      for (int n = 0; n < NUM_SPECIES; n++) {
+      for (int n = 0; n < NUM_SPECIES; ++n) {
         if (zk[n] > 0.0) {
           massfrac[N2_ID] += massfrac[n] / sum_pos_ion * chargeDist /
                              mean_zk_pos_ion * sum_pos_ion;
@@ -463,7 +449,7 @@ initElecNeutral(
   }
   // Add Electrons
   chargeDist = 0.0;
-  for (int n = 0; n < NUM_SPECIES; n++) {
+  for (int n = 0; n < NUM_SPECIES; ++n) {
     chargeDist += massfrac[n] * zk[n];
   }
   nE(i, j, k) = std::max(1.0e-24, chargeDist / elemCharge);
@@ -481,7 +467,7 @@ initElecNeutral(
   rhoH(i, j, k) = h_cgs * 1.0e-4 * rho(i, j, k);
 
   // Species mass
-  for (int n = 0; n < NUM_SPECIES; n++) {
+  for (int n = 0; n < NUM_SPECIES; ++n) {
     rhoY(i, j, k, n) = massfrac[n] * rho(i, j, k);
   }
 

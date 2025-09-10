@@ -80,7 +80,7 @@ MLCellABecCecLap::define(
         Array4<int> const& cmsk = crse->array(mfi);
         reduce_op.eval(
           bx, reduce_data,
-          [=] AMREX_GPU_HOST_DEVICE(Box const& b) -> ReduceTuple {
+          [cmsk, fmsk] AMREX_GPU_HOST_DEVICE(Box const& b) -> ReduceTuple {
             return {coarsen_overset_mask(b, cmsk, fmsk)};
           });
       }
