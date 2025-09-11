@@ -2091,7 +2091,7 @@ PeleLM::initMixtureFraction()
 
   // Detailed chem - compute Bilger coefficients
   // Only interested in CHON -in that order. Compute Bilger weights
-  amrex::Real atwCHON[4] = {-1.0};
+  amrex::Real atwCHON[4] = {-1.0, -1.0, -1.0, -1.0};
   pele::physics::eos::atomic_weightsCHON<pele::physics::PhysicsType::eos_type>(
     atwCHON);
   Beta_mix[0] = (atwCHON[0] > 0.0) ? 2.0 / atwCHON[0] : 0.0;
