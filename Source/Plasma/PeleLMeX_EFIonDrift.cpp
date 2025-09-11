@@ -64,13 +64,11 @@ PeleLM::ionDriftVelocity(const std::unique_ptr<AdvanceAdvData>& advData)
     auto const& mob_h_ma = mobH_cc.arrays();
 
     amrex::ParallelFor(
-      mobH_cc, mobH_cc.nGrowVect(),
-      [mob_o_ma, mob_n_ma,
-       mob_h_ma] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
-        for (int n = 0; n < NUM_IONS; ++n) {
-          mob_h_ma[box_no](i, j, k, n) =
-            0.5 * (mob_o_ma[box_no](i, j, k, n) + mob_n_ma[box_no](i, j, k, n));
-        }
+      mobH_cc, mobH_cc.nGrowVect(), NUM_IONS,
+      [mob_o_ma, mob_n_ma, mob_h_ma] AMREX_GPU_DEVICE(
+        int box_no, int i, int j, int k, int n) noexcept {
+        mob_h_ma[box_no](i, j, k, n) =
+          0.5 * (mob_o_ma[box_no](i, j, k, n) + mob_n_ma[box_no](i, j, k, n));
       });
     amrex::Gpu::streamSynchronize();
     // Get the face centered ions mobility

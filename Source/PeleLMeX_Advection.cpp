@@ -1149,7 +1149,8 @@ PeleLM::updateScalarComp(
           state_old_arr(i, j, k, n) +
           dt * (adv_aofs_arr(i, j, k, n) + ext_arr(i, j, k, n));
       });
+    // Shift outside?
+    amrex::Gpu::streamSynchronize();
   }
-  amrex::Gpu::streamSynchronize();
   averageDown(AmrNewTime, state_comp, ncomp);
 }

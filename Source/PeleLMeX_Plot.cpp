@@ -1021,12 +1021,11 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
     amrex::Print() << " Converting CGS to MKS units... \n";
     auto const& state_ma = ldata_p->state.arrays();
     amrex::ParallelFor(
-      ldata_p->state,
-      [state_ma] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+      ldata_p->state, amrex::IntVect(0), AMREX_SPACEDIM,
+      [state_ma] AMREX_GPU_DEVICE(
+        int box_no, int i, int j, int k, int n) noexcept {
         amrex::Array4<amrex::Real> vel(state_ma[box_no], VELX);
-        for (int n = 0; n < AMREX_SPACEDIM; ++n) {
-          vel(i, j, k, n) *= 0.01;
-        }
+        vel(i, j, k, n) *= 0.01;
       });
     amrex::Gpu::streamSynchronize();
   }
@@ -1052,22 +1051,23 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
           soot_exp[n] = 3. - (3. * momV[n] + 2. * momS[n]);
         }
         amrex::ParallelFor(
-          ldata_p->state, [state_ma, soot_exp] AMREX_GPU_DEVICE(
-                            int box_no, int i, int j, int k) noexcept {
+          ldata_p->state, amrex::IntVect(0), NUM_SOOT_MOMENTS,
+          [state_ma, soot_exp] AMREX_GPU_DEVICE(
+            int box_no, int i, int j, int k, int n) noexcept {
             amrex::Array4<amrex::Real> soot(state_ma[box_no], FIRSTSOOT);
-            for (int n = 0; n < NUM_SOOT_MOMENTS; ++n) {
-              soot(i, j, k, n) *= std::pow(100., soot_exp[n]);
-            }
-            soot(i, j, k, NUMSOOTVAR - 1) *= 1.E6;
+            soot(i, j, k, n) *= std::pow(100., soot_exp[n]);
           });
         amrex::Gpu::streamSynchronize();
+        ldata_p->state.mult(1.E6, FIRSTSOOT + NUM_SOOT_MOMENTS - 1, 1);
       }
     } else {
       SootData* const sd = soot_model->getSootData();
       amrex::Real moments[NUM_SOOT_MOMENTS + 1];
       sd->initialSmallMomVals(moments);
-      for (int mom = 0; mom < NUM_SOOT_MOMENTS + 1; ++mom) {
-        ldata_p->state.setVal(moments[mom], FIRSTSOOT + mom, 1);
+      auto const& state_ma = ldata_p->state.arrays();
+      amrex::ParallelFor(ldata_p->state,amrex::IntVect(0),NUM_SOOT_MOMENTS+1,[state_ma,moments] AMREX_GPU_DEVICE(int box, int i, int j, int k, int n) noexcept {
+        amrex::Array4<amrex : Real> soot(state_ma[box_no], FIRSTSOOT);
+        soot(i, j, k, n) = moments[n];
       }
     }
   }

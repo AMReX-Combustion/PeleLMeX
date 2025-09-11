@@ -89,6 +89,7 @@ pelelmex_derheatrelease(
       amrex::Real val = -Hi(i, j, k, n) * react(i, j, k, n);
       amrex::Gpu::Atomic::Add(&HRR(i, j, k), val);
     });
+  amrex::Gpu::streamSynchronize();
 }
 
 //

@@ -25,16 +25,21 @@ PeleLM::poissonSolveEF(const TimeStamp a_time)
     auto const& state_ma = ldata_p->state.const_arrays();
     auto const& rhs_ma = rhsPoisson[lev]->arrays();
 
+    constexpr amrex::Real factor = -1.0;
     amrex::ParallelFor(
-      ldata_p->state, [state_ma, rhs_ma, zk = zk] AMREX_GPU_DEVICE(
+      ldata_p->state, [state_ma, rhs_ma, factor, zk = zk] AMREX_GPU_DEVICE(
                         int box_no, int i, int j, int k) noexcept {
-        amrex::Array4<amrex::Real const> rhoY(state_ma[box_no], FIRSTSPEC);
         amrex::Array4<amrex::Real const> nE(state_ma[box_no], NE);
-        constexpr amrex::Real factor = -1.0;
         rhs_ma[box_no](i, j, k) = -nE(i, j, k) * elemCharge * factor;
-        for (int n = 0; n < NUM_SPECIES; ++n) {
-          rhs_ma[box_no](i, j, k) += zk[n] * rhoY(i, j, k, n) * factor;
-        }
+      });
+    amrex::Gpu::streamSynchronize();
+    amrex::ParallelFor(
+      ldata_p->state, amrex::IntVect(0), NUM_SPECIES,
+      [state_ma, rhs_ma, factor, zk = zk] AMREX_GPU_DEVICE(
+        int box_no, int i, int j, int k, int n) noexcept {
+        amrex::Array4<amrex::Real const> rhoY(state_ma[box_no], FIRSTSPEC);
+        const amrex::Real val = zk[n] * rhoY(i, j, k, n) * factor;
+        amrex::Gpu::Atomic::Add(&rhs_ma[box_no](i, j, k), val);
       });
     amrex::Gpu::streamSynchronize();
   }

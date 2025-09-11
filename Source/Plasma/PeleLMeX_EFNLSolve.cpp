@@ -383,31 +383,32 @@ PeleLM::computeBGcharge(
     auto const& dnp1_ma = diffData->Dnp1[lev].const_arrays();
     auto const& dhat_ma = diffData->Dhat[lev].const_arrays();
     auto const& rhoYdot_ma = ldataR_p->I_R.const_arrays();
+
+    ldataNLs_p->backgroundCharge.setVal(0.0);
     auto const& charge_ma = ldataNLs_p->backgroundCharge.arrays();
+    constexpr amrex::Real factor = 1.0 / elemCharge;
+
     amrex::ParallelFor(
-      ldataNLs_p->backgroundCharge,
+      ldataNLs_p->backgroundCharge, amrex::IntVect(0.0), NUM_SPECIES,
       [state_old_ma, adv_ma, dn_ma, dnp1_ma, dhat_ma, rhoYdot_ma, charge_ma,
-       dt_int,
-       zk = zk] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+       dt_int, factor,
+       zk =
+         zk] AMREX_GPU_DEVICE(int box_no, int i, int j, int k, int n) noexcept {
         amrex::Array4<amrex::Real const> rhoYold(
           state_old_ma[box_no], FIRSTSPEC);
         amrex::Array4<amrex::Real const> adv(adv_ma[box_no], FIRSTSPEC);
-        charge_ma[box_no](i, j, k) = 0.0;
-        constexpr amrex::Real factor = 1.0 / elemCharge;
-        for (int n = 0; n < NUM_SPECIES; ++n) {
-          amrex::Real rhoYprov =
-            rhoYold(i, j, k, n) +
-            dt_int *
-              (adv(i, j, k, n) +
-               0.5 * (dn_ma[box_no](i, j, k, n) - dnp1_ma[box_no](i, j, k, n)) +
-               dhat_ma[box_no](i, j, k, n) + rhoYdot_ma[box_no](i, j, k, n));
-          rhoYprov = amrex::max(rhoYprov, 0.0);
-          charge_ma[box_no](i, j, k) += zk[n] * rhoYprov;
-        }
-        charge_ma[box_no](i, j, k) *= factor;
+        amrex::Real rhoYprov =
+          rhoYold(i, j, k, n) +
+          dt_int *
+            (adv(i, j, k, n) +
+             0.5 * (dn_ma[box_no](i, j, k, n) - dnp1_ma[box_no](i, j, k, n)) +
+             dhat_ma[box_no](i, j, k, n) + rhoYdot_ma[box_no](i, j, k, n));
+        rhoYprov = amrex::max(rhoYprov, 0.0);
+        const amrex::Real val = zk[n] * rhoYprov;
+        amrex::Gpu::Atomic::Add(&charge_ma[box_no](i, j, k), val);
       });
-    // Shift outside?
     amrex::Gpu::streamSynchronize();
+    ldataNLs_p->backgroundCharge.mult(factor);
   }
 }
 
@@ -997,17 +998,22 @@ PeleLM::setUpPrecond(
 
     amrex::ParallelFor(
       nEKe, nEKe.nGrowVect(),
-      [neke_ma, kappaE_ma, ne_arr_ma, Schur_ma, diffOp_diag_ma, a_dt,
-       do_Schur] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+      [neke_ma, kappaE_ma,
+       ne_arr_ma] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
         neke_ma[box_no](i, j, k) =
           kappaE_ma[box_no](i, j, k) * ne_arr_ma[box_no](i, j, k);
-        if (do_Schur == 1) {
-          Schur_ma[box_no](i, j, k) = -a_dt * 0.5 * neke_ma[box_no](i, j, k) /
-                                      diffOp_diag_ma[box_no](i, j, k);
-        }
       });
     amrex::Gpu::streamSynchronize();
-
+    if (do_Schur == 1) {
+      amrex::ParallelFor(
+        nEKe, nEKe.nGrowVect(),
+        [Schur_ma, a_dt, neke_ma, diffOp_diag_ma] AMREX_GPU_DEVICE(
+          int box_no, int i, int j, int k) noexcept {
+          Schur_ma[box_no](i, j, k) = -a_dt * 0.5 * neke_ma[box_no](i, j, k) /
+                                      diffOp_diag_ma[box_no](i, j, k);
+        });
+      amrex::Gpu::streamSynchronize();
+    }
     // Upwinded edge neKe values
     amrex::Array<amrex::MultiFab, AMREX_SPACEDIM> neKe_ec = getUpwindedEdge(
       lev, 0, 1, bcRecnE, nEKe, GetArrOfConstPtrs(ldataNLs_p->uEffnE));
