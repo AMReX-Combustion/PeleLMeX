@@ -1065,10 +1065,13 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
       amrex::Real moments[NUM_SOOT_MOMENTS + 1];
       sd->initialSmallMomVals(moments);
       auto const& state_ma = ldata_p->state.arrays();
-      amrex::ParallelFor(ldata_p->state,amrex::IntVect(0),NUM_SOOT_MOMENTS+1,[state_ma,moments] AMREX_GPU_DEVICE(int box, int i, int j, int k, int n) noexcept {
-        amrex::Array4<amrex : Real> soot(state_ma[box_no], FIRSTSOOT);
-        soot(i, j, k, n) = moments[n];
-      }
+      amrex::ParallelFor(
+        ldata_p->state, amrex::IntVect(0), NUM_SOOT_MOMENTS + 1,
+        [state_ma, moments] AMREX_GPU_DEVICE(
+          int box_no, int i, int j, int k, int n) noexcept {
+          amrex::Array4<amrex::Real> soot(state_ma[box_no], FIRSTSOOT);
+          soot(i, j, k, n) = moments[n];
+        });
     }
   }
 #endif
