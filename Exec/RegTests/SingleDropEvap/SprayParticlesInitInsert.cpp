@@ -21,6 +21,7 @@ SprayParticleContainer::InitSprayParticles(const bool init_parts)
   }
   const int level = 0;
   amrex::ParmParse pp("prob");
+  amrex::ParmParse pp_part("particles");
   int numRedist = -1;
   amrex::IntVect partNum(AMREX_D_DECL(100, 100, 100));
   // Find the number of redistributions during particle initialization
@@ -41,7 +42,7 @@ SprayParticleContainer::InitSprayParticles(const bool init_parts)
   // Get composition of liquid
   std::array<amrex::Real, SPRAY_FUEL_NUM> partY = {0.0};
   if (SPRAY_FUEL_NUM > 1) {
-    pp.query<amrex::Real>("Y_drop", partY);
+    pp_part.query<amrex::Real>("Y_0", partY);
     amrex::Real sumtest = 0.;
     for (int n = 0; n < SPRAY_FUEL_NUM; ++n) {
       sumtest += partY[n];

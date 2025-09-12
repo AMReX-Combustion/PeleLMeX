@@ -67,4 +67,4 @@ particles.fixed_parts = 1
 particles.mom_transfer  = 1
 particles.mass_transfer = 1
 
-FILE = sprayPropsGCM_heptane-decane.inp
+FILE = sprayPropsGCM_mixture_posf10264.inp

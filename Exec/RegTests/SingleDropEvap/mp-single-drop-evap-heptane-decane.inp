@@ -42,7 +42,7 @@ amr.stop_time = 18.1
 amr.fixed_dt = 0.002
 
 #--------------------------IO CONTROL-------------------------------
-amr.plot_file = "Daif/plt"
+amr.plot_file = "plt"
 amr.plot_int = 50
 amr.plot_speciesState = 1
 amr.plot_grad_p = 0
@@ -68,7 +68,7 @@ particles.mom_transfer  = 1
 particles.mass_transfer = 1
 
 particles.fuel_species = NC7H16 NC10H22 
-prob.Y_drop = 0.74 0.26 
+particles.Y_0 = 0. 1.
 particles.fuel_ref_temp = 298.15
 
 # Properties for Heptane in MKS
