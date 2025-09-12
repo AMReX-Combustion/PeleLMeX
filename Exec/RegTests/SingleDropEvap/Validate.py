@@ -18,10 +18,10 @@ Test cases:
 | ---------- | -------------- | ---------------------------------------------- |
 """
 # Case to run
-case_name = "RungeDec" 
+case_name = "RungeDec"
 
 # Liquid properties model: "mp" or "gcm"
-LiqPropsType = "mp" 
+LiqPropsType = "mp"
 
 # Psat model for PeleMP: "Antoine" or "Clasius-Clapeyron"
 PeleMP_PsatModel = "Antoine"
