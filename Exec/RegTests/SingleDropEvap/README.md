@@ -38,4 +38,7 @@ Case options include:
 * `Daif`
 * `RungeHep`, `RungeDec`, `RungeMix`, and `RungeJP8`
 
+Users can compare the results from the various tests/configurations by running the `CompareLiqPropsType.py` script with the desired `case_name`. The script will search the current directory for all available data for each case.
+
 Note that multicomponent evaporation is a work in progress as illustrated by the `RungeJP8` test case. 
+
