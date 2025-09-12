@@ -402,7 +402,7 @@ def CreateInputFile(case):
     if (case.LiqPropsType.lower() == "mp") and (
         case.PeleMP_PsatModel.lower() == "antoine"
     ):
-        if num_psat_lines != case.num_liq_spec:
+        if num_psat_lines < case.num_liq_spec:
             error = f"Expected {case.num_liq_spec} particles.SP_psat lines, found {num_psat_lines}"
             raise ValueError(error)
 

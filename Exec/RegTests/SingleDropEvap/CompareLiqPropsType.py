@@ -18,7 +18,7 @@ Test cases:
 """
 
 # Case to run
-case_name = "RungeJP8"
+case_name = "WongLin"
 
 
 def find_case_dirs(case_name):

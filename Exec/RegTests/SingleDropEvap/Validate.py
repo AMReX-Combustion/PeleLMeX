@@ -18,10 +18,10 @@ Test cases:
 | ---------- | -------------- | ---------------------------------------------- |
 """
 # Case to run
-case_name = "RungeDec"
+case_name = "WongLin"
 
 # Liquid properties model: "mp" or "gcm"
-LiqPropsType = "mp"
+LiqPropsType = "gcm"
 
 # Psat model for PeleMP: "Antoine" or "Clasius-Clapeyron"
 PeleMP_PsatModel = "Antoine"
@@ -36,11 +36,10 @@ num_proc = 6
 case = SpecifyCase(case_name, LiqPropsType, PeleMP_PsatModel)
 
 # General input file
+case.gen_input_file = f"single-drop-evap-{LiqPropsType.lower()}.inp"
 if "jp8" in case.name.lower():
-    case.gen_input_file = f"{LiqPropsType.lower()}-single-drop-evap-jp8.inp"
     case.gcm_input_file = f"sprayPropsGCM_mixture_jp8.inp"
 else:
-    case.gen_input_file = f"{LiqPropsType.lower()}-single-drop-evap-heptane-decane.inp"
     case.gcm_input_file = f"sprayPropsGCM_heptane-decane.inp"
 
 # Get reference values from experiments
