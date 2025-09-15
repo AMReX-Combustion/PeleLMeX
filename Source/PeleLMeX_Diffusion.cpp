@@ -818,13 +818,12 @@ PeleLM::addWbarTerm(
           // Wbar flux is : - \rho Y_m / W_k * D_m * \nabla
           // \overline{W} with beta_m = \rho * D_m * overline(W) / W_k below
           // need to divide by \overline(W)
-          const auto* eosparm = leosparm;
-          auto eos = pele::physics::PhysicsType::eos(eosparm);
 
           amrex::ParallelFor(
-            ebx,
-            [eos, rhoY, gradWbar_ar, beta_ar, spFlux_ar, spwbarFlux_ar,
-             need_wbar_fluxes] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+            ebx, [rhoY, gradWbar_ar, beta_ar, spFlux_ar, spwbarFlux_ar,
+                  need_wbar_fluxes,
+                  leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+              auto eos = pele::physics::PhysicsType::eos(leosparm);
               // Get Wbar from rhoYs
               amrex::Real rho = 0.0;
               for (int n = 0; n < NUM_SPECIES; ++n) {
