@@ -1,4 +1,5 @@
 import os
+import re
 
 
 class Droplet:
@@ -41,19 +42,23 @@ class CaseInfo:
         dname,
         droplet: Droplet,
         gas: GasPhase,
+        LiqPropsType,
         xyunits,
         end_time=None,
         dt=1e-2,
         plot_per=0.1,
-        domain=[1., 1., 1.],
+        domain=[1.0, 1.0, 1.0],
         cell_num=[32, 32, 32],
         reftype=None,
+        PeleMP_PsatModel="Antoine",
     ):
-        FILE_PATH = os.path.dirname(os.path.abspath(__file__))
-        self.name = name
-        self.dname = dname
-        self.case_dir = os.path.join(FILE_PATH, name)
-        self.input_file = os.path.join(self.case_dir, f"input_{name}.inp")
+
+        # Model specifics
+        self.LiqPropsType = LiqPropsType
+        if LiqPropsType.lower() == "gcm":
+            self.PeleMP_PsatModel = None
+        else:
+            self.PeleMP_PsatModel = PeleMP_PsatModel
         self.droplet = droplet
         self.gas = gas
         self.time = end_time
@@ -61,6 +66,22 @@ class CaseInfo:
         self.plot_per = plot_per
         self.domain = domain
         self.cell_num = cell_num
+        self.num_liq_spec = len(droplet.fuel_names)
+
+        # File paths, names, etc.
+        FILE_PATH = os.path.dirname(os.path.abspath(__file__))
+        self.name = name
+        self.dname = dname
+        self.case_dir = f"{LiqPropsType.upper()}_{name}"
+        if LiqPropsType.lower() == "mp":
+            if PeleMP_PsatModel.lower() == "antoine":
+                self.case_dir += "_Antoine"
+            else:
+                self.case_dir += "_CC"
+        self.case_path = os.path.join(FILE_PATH, self.case_dir)
+        self.input_file = os.path.join(self.case_path, f"input_{name}.inp")
+        if LiqPropsType.lower() == "gcm":
+            self.input_gcm = os.path.join(self.case_path, f"input_{name}_gcm.inp")
 
         # If reference is experimental or computational results
         if reftype is None:
@@ -101,9 +122,13 @@ class CaseInfo:
             self.ylabel = "$r^2$ [mm$^2$]"
 
         # Check domain parameters
-        diff_dxdy = abs(self.cell_num[0] / self.domain[0] - self.cell_num[1] / self.domain[1])
-        diff_dxdz = abs(self.cell_num[0] / self.domain[0] - self.cell_num[2] / self.domain[2])
-        if (diff_dxdy > 0.) or (diff_dxdz > 0.):
+        diff_dxdy = abs(
+            self.cell_num[0] / self.domain[0] - self.cell_num[1] / self.domain[1]
+        )
+        diff_dxdz = abs(
+            self.cell_num[0] / self.domain[0] - self.cell_num[2] / self.domain[2]
+        )
+        if (diff_dxdy > 0.0) or (diff_dxdz > 0.0):
             error = "Uniform grid spacing required"
             raise ValueError(error)
 
@@ -115,103 +140,139 @@ class CaseInfo:
         self.plot_int = round(self.plot_per / self.dt)
 
 
-def Nomura(temp):
-    if temp == 471:
-        end_time = 2.94
-    elif temp == 741:
-        end_time = 1.225
+def SpecifyCase(case_name, LiqPropsType, PeleMP_PsatModel="Antoine"):
+    if case_name.lower() == "nomura":
+        case = Nomura(LiqPropsType, PeleMP_PsatModel)
+    elif case_name.lower() == "wonglin":
+        case = WongLin(LiqPropsType, PeleMP_PsatModel)
+    elif case_name.lower() == "daif":
+        case = Daif(LiqPropsType, PeleMP_PsatModel)
+    elif case_name.lower() == "rungehep":
+        case = RungeHep(LiqPropsType, PeleMP_PsatModel)
+    elif case_name.lower() == "rungedec":
+        case = RungeDec(LiqPropsType, PeleMP_PsatModel)
+    elif case_name.lower() == "rungemix":
+        case = RungeMix(LiqPropsType, PeleMP_PsatModel)
+    elif case_name.lower() == "rungejp8":
+        case = RungeJP8(LiqPropsType, PeleMP_PsatModel)
     else:
-        end_time = None
-    drop = Droplet(298.0, 7.0e-4, ["NC7H16", "NC10H22", "POSF10264"], [1.0, 0.0, 0.0])
-    gas = GasPhase(temp, 1.0e5, vel=0.0)
+        raise ValueError(f"Unknown case name: {case_name}")
+    return case
+
+
+def Nomura(LiqPropsType, PeleMP_PsatModel="Antoine"):
+    drop = Droplet(298.0, 7.0e-4, ["NC7H16", "NC10H22"], [1.0, 0.0])
+    gas = GasPhase(471, 1.0e5, vel=0.0)
     case = CaseInfo(
-        f"Nomura_{int(temp)}",
+        f"Nomura",
         "Nomura et al.",
         drop,
         gas,
+        LiqPropsType,
         xyunits=["s/mm2", "dd02"],
-        end_time=end_time,
+        end_time=2.94,
+        PeleMP_PsatModel=PeleMP_PsatModel,
     )
     return case
 
 
-def WongLin():
+def WongLin(LiqPropsType, PeleMP_PsatModel="Antoine"):
     end_time = 4
-    drop = Droplet(
-        315.0, 1.961e-3, ["NC7H16", "NC10H22", "POSF10264"], [0.0, 1.0, 0.0], Reyn=17
-    )
+    drop = Droplet(315.0, 1.961e-3, ["NC7H16", "NC10H22"], [0.0, 1.0], Reyn=17)
     gas = GasPhase(1000.0, 1.01325e5)
     case = CaseInfo(
-        "WongLin", "Wong & Lin", drop, gas, xyunits=["s", "dd0"], end_time=end_time
+        "WongLin",
+        "Wong & Lin",
+        drop,
+        gas,
+        LiqPropsType,
+        xyunits=["s", "dd0"],
+        end_time=end_time,
+        PeleMP_PsatModel=PeleMP_PsatModel,
     )
     return case
 
 
-def Daif():
-    drop = Droplet(
-        291.4, 1.334e-3, ["NC7H16", "NC10H22", "POSF10264"], [0.7375, 0.2625, 0.0]
-    )
+def Daif(LiqPropsType, PeleMP_PsatModel="Antoine"):
+    drop = Droplet(291.4, 1.334e-3, ["NC7H16", "NC10H22"], [0.7375, 0.2625])
     gas = GasPhase(348.0, 1.01325e5, vel=3.10)
-    case = CaseInfo("Daif", "Daif et al.", drop, gas, xyunits=["s", "r2_mm"], dt=2e-3)
+    case = CaseInfo(
+        "Daif",
+        "Daif et al.",
+        drop,
+        gas,
+        LiqPropsType,
+        xyunits=["s", "r2_mm"],
+        dt=2e-3,
+        PeleMP_PsatModel=PeleMP_PsatModel,
+    )
     return case
 
 
-def RungeMix():
-    drop = Droplet(272, 5.94e-4, ["NC7H16", "NC10H22", "POSF10264"], [0.5, 0.5, 0.0])
+def RungeMix(LiqPropsType, PeleMP_PsatModel="Antoine"):
+    drop = Droplet(272, 5.94e-4, ["NC7H16", "NC10H22"], [0.5, 0.5])
     gas = GasPhase(272, 1.01325e5, vel=2.5)
     case = CaseInfo(
         "RungeMix",
         "Runge et al.",
         drop,
         gas,
+        LiqPropsType,
         xyunits=["runge", "dd02"],
         dt=5e-3,
         plot_per=1,
+        PeleMP_PsatModel=PeleMP_PsatModel,
     )
     return case
 
 
-def RungeDec():
-    drop = Droplet(272, 5.88e-4, ["NC7H16", "NC10H22", "POSF10264"], [0.0, 1.0, 0.0])
+def RungeDec(LiqPropsType, PeleMP_PsatModel="Antoine"):
+    drop = Droplet(272, 5.88e-4, ["NC7H16", "NC10H22"], [0.0, 1.0])
     gas = GasPhase(272, 1.01325e5, vel=2.5)
     case = CaseInfo(
         "RungeDec",
         "Runge et al.",
         drop,
         gas,
+        LiqPropsType,
         xyunits=["runge", "dd02"],
         dt=5e-3,
         plot_per=1,
+        PeleMP_PsatModel=PeleMP_PsatModel,
     )
     return case
 
 
-def RungeHep():
-    drop = Droplet(272, 5.7e-4, ["NC7H16", "NC10H22", "POSF10264"], [1.0, 0.0, 0.0])
+def RungeHep(LiqPropsType, PeleMP_PsatModel="Antoine"):
+    drop = Droplet(272, 5.7e-4, ["NC7H16", "NC10H22"], [1.0, 0.0])
     gas = GasPhase(272, 1.01325e5, vel=2.5)
     case = CaseInfo(
         "RungeHep",
         "Runge et al.",
         drop,
         gas,
+        LiqPropsType,
         xyunits=["runge", "dd02"],
         dt=5e-3,
         plot_per=0.25,
+        PeleMP_PsatModel=PeleMP_PsatModel,
     )
     return case
 
 
-def RungeJP8():
-    drop = Droplet(294.15, 6.36e-4, ["NC7H16", "NC10H22", "POSF10264"], [0.0, 0.0, 1.0])
+def RungeJP8(LiqPropsType, PeleMP_PsatModel="Antoine"):
+    drop = Droplet(294.15, 6.36e-4, ["POSF10264"], [1.0])
     gas = GasPhase(294.15, 1.01325e5, vel=3.0)
     case = CaseInfo(
         "RungeJP8",
         "Runge et al.",
         drop,
         gas,
+        LiqPropsType,
         xyunits=["runge", "dd02"],
         dt=2e-3,
         plot_per=1,
+        PeleMP_PsatModel=PeleMP_PsatModel,
     )
     return case
 
@@ -221,7 +282,7 @@ def CreateInputFile(case):
 
     # Boundary conditions depend on particle movement
     fixed_parts = True
-    if (case.gas.vel > 0.) or (case.droplet.Reyn > 0.):
+    if (case.gas.vel > 0.0) or (case.droplet.Reyn > 0.0):
         lo_bc = "Inflow Interior Interior"
         hi_bc = "Outflow Interior Interior"
         is_periodic = "0 1 1"
@@ -231,21 +292,27 @@ def CreateInputFile(case):
         is_periodic = "0 0 0"
 
     # Read general input file
-    gen_file = os.path.join(FILE_PATH, "single-drop-evap.inp")
-    with open(gen_file, "r") as f:
+    gen_input_file = os.path.join(FILE_PATH, case.gen_input_file)
+
+    with open(gen_input_file, "r") as f:
         gen_lines = f.readlines()
 
     new_lines = []
+    num_psat_lines = 0
     for line in gen_lines:
         # Domain definition
         if "geometry.is_periodic" in line:
             new_line = f"geometry.is_periodic = {is_periodic}\n"
         elif "geometry.prob_lo" in line:
             dom_lo = [0.0, 0.0, 0.0]
-            new_line = f"geometry.prob_lo = {dom_lo[0]:.1f} {dom_lo[1]:.1f} {dom_lo[2]:.1f}\n"
+            new_line = (
+                f"geometry.prob_lo = {dom_lo[0]:.1f} {dom_lo[1]:.1f} {dom_lo[2]:.1f}\n"
+            )
         elif "geometry.prob_hi" in line:
             dom_hi = case.domain
-            new_line = f"geometry.prob_hi = {dom_hi[0]:.1f} {dom_hi[1]:.1f} {dom_hi[2]:.1f}\n"
+            new_line = (
+                f"geometry.prob_hi = {dom_hi[0]:.1f} {dom_hi[1]:.1f} {dom_hi[2]:.1f}\n"
+            )
 
         # BC Flags
         elif "peleLM.lo_bc" in line:
@@ -287,29 +354,85 @@ def CreateInputFile(case):
 
         # IO Control
         elif "amr.plot_file" in line:
-            new_line = f'amr.plot_file = "{case.name}/plt"\n'
+            new_line = f'amr.plot_file = "{case.case_dir}/plt"\n'
         elif "amr.plot_int" in line:
             new_line = f"amr.plot_int = {case.plot_int:d}\n"
 
         # Spray particle data
         elif "particles.write_ascii_files" in line:
-            new_line = f"particles.write_ascii_files = 1\n"
+            new_line = "particles.write_ascii_files = 1\n"
         elif "particles.fixed_parts" in line:
             new_line = f"particles.fixed_parts = {fixed_parts:d}\n"
-        elif "prob.Y_drop" in line:
-            new_line = f"prob.Y_drop = "
-            for y in case.droplet.Y:
-                new_line += f"{y:.2f} "
-            new_line += "\n"
+        elif "particles.Y_0" in line:
+            if case.LiqPropsType.lower() == "mp":
+                # Only edit gen_input for PeleMP case
+                new_line = "particles.Y_0 = "
+                for y in case.droplet.Y:
+                    new_line += f"{y:.2f} "
+                new_line += "\n"
+            else:
+                # particles.Y_0 is in gcm_input_file
+                new_line = "\n"
         elif "particles.fuel_species" in line:
-            new_line = f"particles.fuel_species = "
+            new_line = "particles.fuel_species = "
             for n in case.droplet.fuel_names:
                 new_line += f"{n} "
             new_line += "\n"
+        elif re.search(r"particles\S*_psat", line):
+            if case.LiqPropsType.lower() == "mp":
+                # Only edit gen_input for PeleMP case
+                if case.PeleMP_PsatModel.lower() == "antoine":
+                    new_line = line
+                    num_psat_lines += 1
+                else:
+                    # Clausius-Clapeyron relation, ignore existing line
+                    new_line = ""
+
+        elif "FILE" in line:
+            if case.LiqPropsType.lower() == "gcm":
+                new_line = f"FILE = {case.case_dir}/input_{case.name}_gcm.inp\n"
+            else:
+                # Ignore existing FILE line for PeleMP case
+                new_line = ""
         else:
             new_line = line
         new_lines.append(new_line)
 
+    # Check that Psat lines were found for PeleMP if needed
+    if (case.LiqPropsType.lower() == "mp") and (
+        case.PeleMP_PsatModel.lower() == "antoine"
+    ):
+        if num_psat_lines < case.num_liq_spec:
+            error = f"Expected {case.num_liq_spec} particles.SP_psat lines, found {num_psat_lines}"
+            raise ValueError(error)
+
     # Save to output file
     with open(case.input_file, "w") as f:
         f.writelines(new_lines)
+
+    # For GCM cases edit particles.Y_0 in gcm_input_file
+    if case.LiqPropsType.lower() == "gcm":
+
+        gcm_input_file = os.path.join(FILE_PATH, case.gcm_input_file)
+
+        with open(gcm_input_file, "r") as f:
+            gcm_lines = f.readlines()
+
+        new_gcm_lines = []
+        for line in gcm_lines:
+            if "particles.Y_0" in line:
+                # Edit gcm_input_file for GCM case
+                new_line = f"particles.Y_0 = "
+                for y in case.droplet.Y:
+                    new_line += f"{y:.2f} "
+                new_line += "\n"
+            elif "# Units" in line:
+                new_line = line
+                new_line += f"# Notes: Y_0 modified for {case.name} case\n"
+            else:
+                new_line = line
+            new_gcm_lines.append(new_line)
+
+        # Save to output file
+        with open(case.input_gcm, "w") as f:
+            f.writelines(new_gcm_lines)

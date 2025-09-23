@@ -173,6 +173,7 @@ function(build_pele_physics_lib pele_physics_lib_name)
        endif()
        target_compile_definitions(${pele_physics_lib_name} PUBLIC PELE_USE_SPRAY PELELM_USE_SPRAY)
        target_compile_definitions(${pele_physics_lib_name} PUBLIC SPRAY_FUEL_NUM=${PELE_PHYSICS_SPRAY_FUEL_NUM})
+       target_compile_definitions(${pele_physics_lib_name} PUBLIC PELE_SPRAY_GCM PELE_PHYSICS_SPRAY_GCM)
        target_sources(${pele_physics_lib_name} PRIVATE
                       ${PELE_PHYSICS_SPRAY_DIR}/Drag.H
                       ${PELE_PHYSICS_SPRAY_DIR}/SprayDerive.cpp
