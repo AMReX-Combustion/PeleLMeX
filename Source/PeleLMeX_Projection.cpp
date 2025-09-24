@@ -481,8 +481,10 @@ PeleLM::doNodalProject(
 #endif
 
 #ifdef AMREX_USE_HYPRE
-  if(!m_hypre_namespace_nodal.empty())
-  nodal_projector->getMLMG().setHypreOptionsNamespace(m_hypre_namespace_nodal);
+  if (!m_hypre_namespace_nodal.empty()) {
+    nodal_projector->getMLMG().setHypreOptionsNamespace(
+      m_hypre_namespace_nodal);
+  }
 #endif
 
   // Solve
@@ -551,8 +553,8 @@ PeleLM::doNodalProject(
 #if AMREX_SPACEDIM == 2
 void
 PeleLM::scaleProj_RZ( // NOLINT(readability-convert-member-functions-to-static)
-		      const int a_lev,
-		      amrex::MultiFab& a_mf)
+  const int a_lev,
+  amrex::MultiFab& a_mf)
 {
   // Scale nodal projection cell-centered mfs by radius
   amrex::Box domain = geom[a_lev].Domain();
