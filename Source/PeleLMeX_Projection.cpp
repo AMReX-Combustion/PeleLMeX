@@ -481,6 +481,7 @@ PeleLM::doNodalProject(
 #endif
 
 #ifdef AMREX_USE_HYPRE
+  if(!m_hypre_namespace_nodal.empty())
   nodal_projector->getMLMG().setHypreOptionsNamespace(m_hypre_namespace_nodal);
 #endif
 

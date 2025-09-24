@@ -209,6 +209,7 @@ PeleLM::macProject(
       getMACProjectionBC(amrex::Orientation::low),
       getMACProjectionBC(amrex::Orientation::high));
 #ifdef AMREX_USE_HYPRE
+    if(!m_hypre_namespace_mac.empty())
     macproj->getMLMG().setHypreOptionsNamespace(m_hypre_namespace_mac);
 #endif
   } else {
