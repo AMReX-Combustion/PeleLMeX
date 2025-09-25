@@ -1380,158 +1380,161 @@ PeleLM::differentialDiffusionUpdate(
   //------------------------------------------------------------------------
 
   //------------------------------------------------------------------------
-  // Enthalpy iterative diffusion solve
-  // Get the temperature BCRec
-  auto bcRecTemp = fetchBCRecArray(TEMP, 1);
+  if (pele::physics::PhysicsType::eos_type::identifier() != "Manifold") {
+    // Enthalpy iterative diffusion solve
+    // Get the temperature BCRec
+    auto bcRecTemp = fetchBCRecArray(TEMP, 1);
 
-  // Fourier: - \lambda \nabla T
-  constexpr int do_avgDown = 0;
-#ifdef AMREX_USE_EB
-  if (m_isothermalEB != 0) {
-    // Set up EB dirichlet value and diffusivity
-    amrex::Vector<amrex::MultiFab> EBdiff;
-    EBdiff.reserve(finest_level + 1);
-    for (int lev = 0; lev <= finest_level; ++lev) {
-      EBdiff.emplace_back(
-        grids[lev], dmap[lev], 1, 0, amrex::MFInfo(), EBFactory(lev));
-      getEBDiff(lev, AmrNewTime, EBdiff[lev], NUM_SPECIES);
-    }
-    getDiffusionOp()->computeDiffFluxes(
-      GetVecOfArrOfPtrs(fluxes), NUM_SPECIES, GetVecOfPtrs(EBfluxes), 0,
-      GetVecOfConstPtrs(getTempVect(AmrNewTime)), 0, {},
-      GetVecOfConstPtrs(getDiffusivityVect(AmrNewTime)), NUM_SPECIES,
-      GetVecOfConstPtrs(getEBState(TEMP, 1, AmrNewTime)),
-      GetVecOfConstPtrs(EBdiff), bcRecTemp, 1, do_avgDown, {});
-  } else
-#endif
-  {
-    getDiffusionOp()->computeDiffFluxes(
-      GetVecOfArrOfPtrs(fluxes), NUM_SPECIES,
-      GetVecOfConstPtrs(getTempVect(AmrNewTime)), 0, {},
-      GetVecOfConstPtrs(getDiffusivityVect(AmrNewTime)), NUM_SPECIES, bcRecTemp,
-      1, do_avgDown, {});
-  }
-
-  // Differential diffusion term: \sum_k ( h_k * \Flux_k )
-  computeSpeciesEnthalpyFlux(
-    GetVecOfArrOfPtrs(fluxes), GetVecOfConstPtrs(getTempVect(AmrNewTime)));
-
-  // average_down enthalpy fluxes
-  getDiffusionOp()->avgDownFluxes(GetVecOfArrOfPtrs(fluxes), NUM_SPECIES, 2);
-
-  // Compute diffusion term D^{np1,kp1} of Fourier and DifferentialDiffusion
-#ifdef AMREX_USE_EB
-  if (m_isothermalEB != 0) {
-    // Do Fourier with EBflux first then differential diffusion
-    fluxDivergence(
-      GetVecOfPtrs(diffData->Dhat), NUM_SPECIES, GetVecOfArrOfPtrs(fluxes),
-      NUM_SPECIES, GetVecOfPtrs(EBfluxes), 0, 1, 1, -1.0);
-    fluxDivergence(
-      GetVecOfPtrs(diffData->Dhat), NUM_SPECIES + 1, GetVecOfArrOfPtrs(fluxes),
-      NUM_SPECIES + 1, 1, 1, -1.0);
-  } else
-#endif
-  {
-    fluxDivergence(
-      GetVecOfPtrs(diffData->Dhat), NUM_SPECIES, GetVecOfArrOfPtrs(fluxes),
-      NUM_SPECIES, 2, 1, -1.0);
-  }
-
-  //------------------------------------------------------------------------
-  // delta(T) iterations
-  if (m_deltaT_verbose != 0) {
-    amrex::Print() << " Iterative solve for deltaT \n";
-  }
-
-  //------------------------------------------------------------------------
-  // Temporary data holders
-  amrex::Vector<amrex::MultiFab> rhs;
-  rhs.reserve(finest_level + 1); // Linear deltaT solve RHS
-  amrex::Vector<amrex::MultiFab> Tsave;
-  Tsave.reserve(finest_level + 1); // Storage of T while working on deltaT
-  amrex::Vector<amrex::MultiFab> RhoCp;
-  RhoCp.reserve(finest_level + 1); // Acoeff of the linear solve
-  for (int lev = 0; lev <= finest_level; ++lev) {
-    rhs.emplace_back(
-      grids[lev], dmap[lev], 1, 0, amrex::MFInfo(), Factory(lev));
-    Tsave.emplace_back(
-      grids[lev], dmap[lev], 1, 1, amrex::MFInfo(), Factory(lev));
-    RhoCp.emplace_back(
-      grids[lev], dmap[lev], 1, 0, amrex::MFInfo(), Factory(lev));
-  }
-
-  // DeltaT norm
-  amrex::Real deltaT_norm = 0.0;
-  for (int dTiter = 0; dTiter < m_deltaTIterMax &&
-                       (dTiter == 0 || deltaT_norm >= m_deltaT_norm_max);
-       ++dTiter) {
-
-    // Prepare the deltaT iteration linear solve:
-    // -> Assemble the RHS
-    // -> Compute current value of \rho * \Cp_{mix}
-    // -> Save current T^{np1,kp1}
-    // -> set T^{np1,kp1} to zero
-    deltaTIter_prepare(
-      GetVecOfPtrs(rhs), GetVecOfPtrs(Tsave), GetVecOfPtrs(RhoCp), advData,
-      diffData);
-
-    // Diffuse deltaT
+    // Fourier: - \lambda \nabla T
+    constexpr int do_avgDown = 0;
 #ifdef AMREX_USE_EB
     if (m_isothermalEB != 0) {
       // Set up EB dirichlet value and diffusivity
-      // Dirichlet value is deltaT
-      amrex::Vector<amrex::MultiFab> EBvalue;
-      EBvalue.reserve(finest_level + 1);
       amrex::Vector<amrex::MultiFab> EBdiff;
       EBdiff.reserve(finest_level + 1);
       for (int lev = 0; lev <= finest_level; ++lev) {
-        EBvalue.emplace_back(
-          grids[lev], dmap[lev], 1, 0, amrex::MFInfo(), EBFactory(lev));
         EBdiff.emplace_back(
           grids[lev], dmap[lev], 1, 0, amrex::MFInfo(), EBFactory(lev));
         getEBDiff(lev, AmrNewTime, EBdiff[lev], NUM_SPECIES);
-        EBvalue[lev].setVal(0.0);
       }
-      getDiffusionOp()->diffuse_scalar(
-        GetVecOfPtrs(getTempVect(AmrNewTime)), 0, GetVecOfConstPtrs(EBvalue), 0,
-        GetVecOfConstPtrs(rhs), 0, GetVecOfArrOfPtrs(fluxes), NUM_SPECIES,
-        GetVecOfConstPtrs(RhoCp), {},
+      getDiffusionOp()->computeDiffFluxes(
+        GetVecOfArrOfPtrs(fluxes), NUM_SPECIES, GetVecOfPtrs(EBfluxes), 0,
+        GetVecOfConstPtrs(getTempVect(AmrNewTime)), 0, {},
         GetVecOfConstPtrs(getDiffusivityVect(AmrNewTime)), NUM_SPECIES,
-        GetVecOfConstPtrs(EBdiff), 0, bcRecTemp, 1, 0, m_dt, {});
+        GetVecOfConstPtrs(getEBState(TEMP, 1, AmrNewTime)),
+        GetVecOfConstPtrs(EBdiff), bcRecTemp, 1, do_avgDown, {});
     } else
 #endif
     {
-      getDiffusionOp()->diffuse_scalar(
-        GetVecOfPtrs(getTempVect(AmrNewTime)), 0, GetVecOfConstPtrs(rhs), 0,
-        GetVecOfArrOfPtrs(fluxes), NUM_SPECIES, GetVecOfConstPtrs(RhoCp), {},
+      getDiffusionOp()->computeDiffFluxes(
+        GetVecOfArrOfPtrs(fluxes), NUM_SPECIES,
+        GetVecOfConstPtrs(getTempVect(AmrNewTime)), 0, {},
         GetVecOfConstPtrs(getDiffusivityVect(AmrNewTime)), NUM_SPECIES,
-        bcRecTemp, 1, 0, m_dt, {});
+        bcRecTemp, 1, do_avgDown, {});
     }
 
-    // Post deltaT iteration linear solve
-    // -> evaluate deltaT_norm
-    // -> add deltaT to T^{np1,kp1}
-    // -> recompute enthalpy fluxes
-    // -> recompute rhoH
+    // Differential diffusion term: \sum_k ( h_k * \Flux_k )
+    computeSpeciesEnthalpyFlux(
+      GetVecOfArrOfPtrs(fluxes), GetVecOfConstPtrs(getTempVect(AmrNewTime)));
+
+    // average_down enthalpy fluxes
+    getDiffusionOp()->avgDownFluxes(GetVecOfArrOfPtrs(fluxes), NUM_SPECIES, 2);
+
+    // Compute diffusion term D^{np1,kp1} of Fourier and DifferentialDiffusion
 #ifdef AMREX_USE_EB
     if (m_isothermalEB != 0) {
-      deltaTIter_update(
-        dTiter, GetVecOfArrOfPtrs(fluxes), GetVecOfPtrs(EBfluxes),
-        GetVecOfConstPtrs(Tsave), diffData, deltaT_norm);
+      // Do Fourier with EBflux first then differential diffusion
+      fluxDivergence(
+        GetVecOfPtrs(diffData->Dhat), NUM_SPECIES, GetVecOfArrOfPtrs(fluxes),
+        NUM_SPECIES, GetVecOfPtrs(EBfluxes), 0, 1, 1, -1.0);
+      fluxDivergence(
+        GetVecOfPtrs(diffData->Dhat), NUM_SPECIES + 1,
+        GetVecOfArrOfPtrs(fluxes), NUM_SPECIES + 1, 1, 1, -1.0);
     } else
 #endif
     {
-      deltaTIter_update(
-        dTiter, GetVecOfArrOfPtrs(fluxes), {}, GetVecOfConstPtrs(Tsave),
-        diffData, deltaT_norm);
+      fluxDivergence(
+        GetVecOfPtrs(diffData->Dhat), NUM_SPECIES, GetVecOfArrOfPtrs(fluxes),
+        NUM_SPECIES, 2, 1, -1.0);
     }
 
-    // Check for convergence failure
-    if ((dTiter == m_deltaTIterMax - 1) && (deltaT_norm > m_deltaT_norm_max)) {
-      if (m_crashOnDeltaTFail != 0) {
-        amrex::Abort("deltaT_iters not converged !");
-      } else {
-        amrex::Print() << "deltaT_iters not converged !\n";
+    //------------------------------------------------------------------------
+    // delta(T) iterations
+    if (m_deltaT_verbose != 0) {
+      amrex::Print() << " Iterative solve for deltaT \n";
+    }
+
+    //------------------------------------------------------------------------
+    // Temporary data holders
+    amrex::Vector<amrex::MultiFab> rhs;
+    rhs.reserve(finest_level + 1); // Linear deltaT solve RHS
+    amrex::Vector<amrex::MultiFab> Tsave;
+    Tsave.reserve(finest_level + 1); // Storage of T while working on deltaT
+    amrex::Vector<amrex::MultiFab> RhoCp;
+    RhoCp.reserve(finest_level + 1); // Acoeff of the linear solve
+    for (int lev = 0; lev <= finest_level; ++lev) {
+      rhs.emplace_back(
+        grids[lev], dmap[lev], 1, 0, amrex::MFInfo(), Factory(lev));
+      Tsave.emplace_back(
+        grids[lev], dmap[lev], 1, 1, amrex::MFInfo(), Factory(lev));
+      RhoCp.emplace_back(
+        grids[lev], dmap[lev], 1, 0, amrex::MFInfo(), Factory(lev));
+    }
+
+    // DeltaT norm
+    amrex::Real deltaT_norm = 0.0;
+    for (int dTiter = 0; dTiter < m_deltaTIterMax &&
+                         (dTiter == 0 || deltaT_norm >= m_deltaT_norm_max);
+         ++dTiter) {
+
+      // Prepare the deltaT iteration linear solve:
+      // -> Assemble the RHS
+      // -> Compute current value of \rho * \Cp_{mix}
+      // -> Save current T^{np1,kp1}
+      // -> set T^{np1,kp1} to zero
+      deltaTIter_prepare(
+        GetVecOfPtrs(rhs), GetVecOfPtrs(Tsave), GetVecOfPtrs(RhoCp), advData,
+        diffData);
+
+      // Diffuse deltaT
+#ifdef AMREX_USE_EB
+      if (m_isothermalEB != 0) {
+        // Set up EB dirichlet value and diffusivity
+        // Dirichlet value is deltaT
+        amrex::Vector<amrex::MultiFab> EBvalue;
+        EBvalue.reserve(finest_level + 1);
+        amrex::Vector<amrex::MultiFab> EBdiff;
+        EBdiff.reserve(finest_level + 1);
+        for (int lev = 0; lev <= finest_level; ++lev) {
+          EBvalue.emplace_back(
+            grids[lev], dmap[lev], 1, 0, amrex::MFInfo(), EBFactory(lev));
+          EBdiff.emplace_back(
+            grids[lev], dmap[lev], 1, 0, amrex::MFInfo(), EBFactory(lev));
+          getEBDiff(lev, AmrNewTime, EBdiff[lev], NUM_SPECIES);
+          EBvalue[lev].setVal(0.0);
+        }
+        getDiffusionOp()->diffuse_scalar(
+          GetVecOfPtrs(getTempVect(AmrNewTime)), 0, GetVecOfConstPtrs(EBvalue),
+          0, GetVecOfConstPtrs(rhs), 0, GetVecOfArrOfPtrs(fluxes), NUM_SPECIES,
+          GetVecOfConstPtrs(RhoCp), {},
+          GetVecOfConstPtrs(getDiffusivityVect(AmrNewTime)), NUM_SPECIES,
+          GetVecOfConstPtrs(EBdiff), 0, bcRecTemp, 1, 0, m_dt, {});
+      } else
+#endif
+      {
+        getDiffusionOp()->diffuse_scalar(
+          GetVecOfPtrs(getTempVect(AmrNewTime)), 0, GetVecOfConstPtrs(rhs), 0,
+          GetVecOfArrOfPtrs(fluxes), NUM_SPECIES, GetVecOfConstPtrs(RhoCp), {},
+          GetVecOfConstPtrs(getDiffusivityVect(AmrNewTime)), NUM_SPECIES,
+          bcRecTemp, 1, 0, m_dt, {});
+      }
+
+      // Post deltaT iteration linear solve
+      // -> evaluate deltaT_norm
+      // -> add deltaT to T^{np1,kp1}
+      // -> recompute enthalpy fluxes
+      // -> recompute rhoH
+#ifdef AMREX_USE_EB
+      if (m_isothermalEB != 0) {
+        deltaTIter_update(
+          dTiter, GetVecOfArrOfPtrs(fluxes), GetVecOfPtrs(EBfluxes),
+          GetVecOfConstPtrs(Tsave), diffData, deltaT_norm);
+      } else
+#endif
+      {
+        deltaTIter_update(
+          dTiter, GetVecOfArrOfPtrs(fluxes), {}, GetVecOfConstPtrs(Tsave),
+          diffData, deltaT_norm);
+      }
+
+      // Check for convergence failure
+      if (
+        (dTiter == m_deltaTIterMax - 1) && (deltaT_norm > m_deltaT_norm_max)) {
+        if (m_crashOnDeltaTFail != 0) {
+          amrex::Abort("deltaT_iters not converged !");
+        } else {
+          amrex::Print() << "deltaT_iters not converged !\n";
+        }
       }
     }
   }
