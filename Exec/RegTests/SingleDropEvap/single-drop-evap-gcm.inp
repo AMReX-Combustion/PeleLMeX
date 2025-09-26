@@ -1,0 +1,70 @@
+#----------------------DOMAIN DEFINITION------------------------
+geometry.is_periodic = 0 1 1
+geometry.coord_sys   = 0                 # 0 => cart, 1 => RZ
+geometry.prob_lo = 0.0 0.0 0.0
+geometry.prob_hi = 1.0 1.0 1.0
+
+#--------------------------BC FLAGS------------------------------
+# Interior, Inflow, Outflow, Symmetry,
+# SlipWallAdiab, NoSlipWallAdiab, SlipWallIsotherm, NoSlipWallIsotherm
+peleLM.lo_bc = Inflow Interior Interior
+peleLM.hi_bc = Outflow Interior Interior
+
+#-------------------------AMR CONTROL----------------------------
+amr.n_cell = 32 32 32
+amr.v               = 1                # AMR verbose
+amr.max_level       = 0                # maximum level number allowed
+amr.blocking_factor = 16               # block factor in grid generation (min box size)
+amr.max_grid_size   = 64               # max box size
+
+#--------------------------Problem--------------------------------
+prob.P_mean = 101325.0
+prob.init_redist   = -1
+prob.T0_gas = 1000.0
+prob.vel_gas = 0.000000
+prob.num_particles = (1, 1, 1)
+prob.part_temp = 315.0
+prob.part_dia = 0.001961
+prob.part_vel = 0.000000 0.0 0.0
+prob.part_Re = 17.0
+
+#------------------------PeleLM CONTROL-----------------------------
+peleLM.v = 1
+peleLM.deltaT_verbose = 2
+peleLM.deltaT_iterMax = 50
+
+peleLM.do_temporals = 0
+peleLM.num_init_iter = 0
+
+#------------------------TIME STEPPING------------------------------
+#amr.max_step = 1
+amr.stop_time = 4
+amr.fixed_dt = 0.01
+
+#--------------------------IO CONTROL-------------------------------
+amr.plot_file = "plt"
+amr.plot_int = 10
+amr.plot_speciesState = 1
+amr.plot_grad_p = 0
+amr.derive_plot_vars = mass_fractions
+
+# -----------------------LINEAR SOLVERS-----------------------------
+mac_proj.verbose = 0
+nodal_proj.verbose = 0
+diffusion.verbose = 0
+diffusion.rtol = 1.0e-12
+
+# ------------------INPUTS TO CHEMISTRY REACTOR---------------------
+peleLM.chem_integrator = "ReactorNull"
+
+#--------------------SPRAY PARTICLE DATA-----------------------
+peleLM.do_spray_particles = 1
+particles.derive_plot_vars = 1
+particles.write_ascii_files = 1
+particles.v             = 0
+particles.cfl           = 1.
+particles.fixed_parts = 1
+particles.mom_transfer  = 1
+particles.mass_transfer = 1
+
+FILE = sprayPropsGCM_heptane-decane.inp

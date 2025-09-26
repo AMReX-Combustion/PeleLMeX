@@ -6,20 +6,25 @@ import matplotlib.pyplot as plt
 """
 Script for validating PelePhysics spray model
 Test cases:
-| Case         | Fuel           |
-| ------------ | -------------- |
-| Nomura(471)  | heptane        |
-| Nomura(741)  | heptane        |
-| WongLin()    | decane         |
-| Daif()       | heptane/decane |
-| RungeHep()   | heptane        |
-| RungeDec()   | decane         |
-| RungeMix()   | heptane/decane |
-| RungeJP8()   | POSF10264      |
+| Case Name  | Fuel           | Requirements for SPRAY_FUEL_NUM                |
+| ---------- | -------------- | ---------------------------------------------- |
+| Nomura     | heptane        | SPRAY_FUEL_NUM = 2                             |
+| WongLin    | decane         | SPRAY_FUEL_NUM = 2                             |
+| Daif       | heptane/decane | SPRAY_FUEL_NUM = 2                             |
+| RungeHep   | heptane        | SPRAY_FUEL_NUM = 2                             |
+| RungeDec   | decane         | SPRAY_FUEL_NUM = 2                             |
+| RungeMix   | heptane/decane | SPRAY_FUEL_NUM = 2                             |
+| RungeJP8   | POSF10264      | SPRAY_FUEL_NUM = 1                             |
+| ---------- | -------------- | ---------------------------------------------- |
 """
+# Case to run
+case_name = "WongLin"
 
-# Case object
-case = WongLin()
+# Liquid properties model: "mp" or "gcm"
+LiqPropsType = "gcm"
+
+# Psat model for PeleMP: "Antoine" or "Clasius-Clapeyron"
+PeleMP_PsatModel = "Antoine"
 
 # Run new or extract existing simulation data?
 run_new = True
@@ -27,10 +32,15 @@ run_new = True
 # Number of processors to run on
 num_proc = 6
 
-# Plotting parameters
-marker_s = 40
-line_w = 3
-font_s = 16
+# Create case instance
+case = SpecifyCase(case_name, LiqPropsType, PeleMP_PsatModel)
+
+# General input file
+case.gen_input_file = f"single-drop-evap-{LiqPropsType.lower()}.inp"
+if "jp8" in case.name.lower():
+    case.gcm_input_file = f"sprayPropsGCM_mixture_jp8.inp"
+else:
+    case.gcm_input_file = f"sprayPropsGCM_heptane-decane.inp"
 
 # Get reference values from experiments
 [refdvals, reftvals, refyvals] = ExtractRefVals(case)
@@ -42,17 +52,41 @@ case.set_end_time(time)
 if run_new:
     # Create a new directory for plt and spray files
     FILE_PATH = os.path.dirname(os.path.abspath(__file__))
-    if not os.path.exists(case.case_dir):
-        os.makedirs(case.case_dir)
+    if not os.path.exists(case.case_path):
+        os.makedirs(case.case_path)
 
     # Remove existing plt and .p3d files
     else:
         os.system(
-            f"rm -rf {case.name}/plt* {case.name}/*.p3d {case.name}/pele_vals.csv"
+            f"rm -rf {case.case_path}/plt* {case.case_path}/*.p3d {case.case_path}/pele_vals.csv"
         )
 
     # Create case-specific input file
     CreateInputFile(case)
+
+    # Check GNUmakefile for correct compilation flags
+    with open(os.path.join(FILE_PATH, "GNUmakefile"), "r") as f:
+        lines = f.readlines()
+    gcm_flag = False
+    for line in lines:
+        if "SPRAY_GCM" in line:
+            if "TRUE" in line:
+                gcm_flag = True
+        elif "SPRAY_FUEL_NUM" in line:
+            if "jp8" in case.name.lower():
+                if "1" not in line:
+                    error = "GNUmakefile SPRAY_FUEL_NUM must be 1 for JP-8"
+                    raise ValueError(error)
+            else:
+                if "2" not in line:
+                    error = "GNUmakefile SPRAY_FUEL_NUM must be 2 for heptane/decane"
+                    raise ValueError(error)
+    if case.LiqPropsType.lower() == "gcm" and not gcm_flag:
+        error = "GNUmakefile SPRAY_GCM must be TRUE for GCM liquid properties model"
+        raise ValueError(error)
+    elif case.LiqPropsType.lower() == "mp" and gcm_flag:
+        error = "GNUmakefile SPRAY_GCM must be FALSE for MP liquid properties model"
+        raise ValueError(error)
 
     # Get the Pele executable
     exe = ""
@@ -74,12 +108,17 @@ if run_new:
 
 else:
     # Check that the case directory exists
-    if not os.path.exists(case.case_dir):
-        raise ValueError(f"Case directory not found: {case.case_dir}")
+    if not os.path.exists(case.case_path):
+        raise ValueError(f"Case directory not found: {case.case_path}")
 
-outfile = os.path.join(case.case_dir, "pele_vals.csv")
+# Extract Pele simulation data
+outfile = os.path.join(case.case_path, "pele_vals.csv")
 pele_vals = ExtractData(case, outfile)
 
+# Plotting parameters
+marker_s = 40
+line_w = 3
+font_s = 16
 numplots = 1
 if reftvals is not None:
     numplots += 1
@@ -207,5 +246,5 @@ else:
 
 
 plt.tight_layout()
-plt.savefig(os.path.join(case.case_dir, "results.png"))
+plt.savefig(os.path.join(case.case_path, "results.png"))
 plt.show()

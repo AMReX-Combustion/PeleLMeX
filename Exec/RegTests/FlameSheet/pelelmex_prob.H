@@ -111,7 +111,8 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
     }
     amrex::Real rho_temp, tmp1, tmp2;
     eos.PYT2R(tmp1, massfrac, tmp2, rho_temp);
-    state(i, j, k, DENSITY) = c2m::Rho(rho_temp);
+    rho_temp = c2m::Rho(rho_temp);
+    state(i, j, k, DENSITY) = rho_temp;
     state(i, j, k, RHOH) = 0.0; // No RhoH transport in manifold model
     for (int n = 0; n < NUM_SPECIES - 1; n++) {
       state(i, j, k, FIRSTSPEC + n) = massfrac[n] * rho_temp;
