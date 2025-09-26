@@ -139,6 +139,7 @@ getTransportCoeff<pele::physics::eos::Manifold>(
   const pele::physics::eos::EosParm<pele::physics::PhysicsType::eos_type>*
     eosparm) noexcept
 {
+
   // No Soret with manifold moels
   AMREX_ASSERT(!do_soret);
 
@@ -149,8 +150,12 @@ getTransportCoeff<pele::physics::eos::Manifold>(
   for (int n = 0; n < NUM_SPECIES; ++n) {
     massdens[n] = rhoY(i, j, k, n);
   }
+
   auto eos = pele::physics::PhysicsType::eos(eosparm);
+
+
   eos.RY2RRinvY(massdens, rho, rhoinv, y);
+
 
   const amrex::Real rho_cgs = m2c::Rho(rho); // MKS -> CGS conversion
   amrex::Real rhoDi_cgs[NUM_SPECIES] = {0.0};
@@ -162,10 +167,11 @@ getTransportCoeff<pele::physics::eos::Manifold>(
 
   constexpr bool get_xi = false;
   constexpr bool get_mu = true;
-  constexpr bool get_lam = false;
+  constexpr bool get_lam = true;
   constexpr bool get_Ddiag = true;
   const bool get_chi = do_soret;
   auto trans = pele::physics::PhysicsType::transport();
+
   trans.transport(
     get_xi, get_mu, get_lam, get_Ddiag, get_chi, Tloc, rho_cgs, y, rhoDi_cgs,
     dummy_chi, mu_cgs, dummy_xi, lambda_cgs, trans_parm);
