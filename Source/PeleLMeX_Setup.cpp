@@ -840,9 +840,6 @@ PeleLM::checkSetupParams()
       amrex::Abort("Soot models are not yet supported for Manifold EOS");
     }
 #endif
-#ifdef PELE_USE_SPRAY
-    // amrex::Abort("Spray models are not yet supported for Manifold EOS");
-#endif
 #ifdef PELE_USE_PLASMA
     amrex::Abort("Plasma models are not yet supported for Manifold EOS");
 #endif

@@ -818,11 +818,6 @@ PeleLM::addWbarTerm(
           // Wbar flux is : - \rho Y_m / W_k * D_m * \nabla
           // \overline{W} with beta_m = \rho * D_m * overline(W) / W_k below
           // need to divide by \overline(W)
-          //<<<<<<< HEAD
-          //          auto* eosparm = leosparm;
-          //          auto eos = pele::physics::PhysicsType::eos(eosparm);
-          //=======
-          //>>>>>>> development
 
           amrex::ParallelFor(
             ebx, [rhoY, gradWbar_ar, beta_ar, spFlux_ar, spwbarFlux_ar,
