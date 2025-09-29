@@ -663,10 +663,6 @@ pelelmex_dercoord(
   amrex::ignore_unused(ncomp);
   AMREX_ASSERT(derfab.box().contains(bx));
   AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
-  AMREX_D_TERM(
-    const amrex::Real dx = geom.CellSize(0);
-    , const amrex::Real dy = geom.CellSize(1);
-    , const amrex::Real dz = geom.CellSize(2););
 
   auto const& coord_arr = derfab.array(dcomp);
   const auto geomdata = geom.data();
@@ -684,41 +680,40 @@ pelelmex_dercoord(
     const auto& ccent_fab = ebfab.getCentroidData();
     const auto& ccent_arr = ccent_fab->const_array();
     amrex::ParallelFor(
-      bx, [flag_arr, ccent_arr, coord_arr, geomdata, dx, dy
-#if (AMREX_SPACEDIM == 3)
-           ,
-           dz
-#endif
-    ] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+      bx, [flag_arr, ccent_arr, coord_arr,
+           geomdata] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
         const amrex::Real* prob_lo = geomdata.ProbLo();
         if (flag_arr(i, j, k).isCovered() || flag_arr(i, j, k).isRegular()) {
-          AMREX_D_TERM(coord_arr(i, j, k, 0) = prob_lo[0] + (i + 0.5) * dx;
-                       , coord_arr(i, j, k, 1) = prob_lo[1] + (j + 0.5) * dy;
-                       , coord_arr(i, j, k, 2) = prob_lo[2] + (k + 0.5) * dz;);
+          AMREX_D_TERM(coord_arr(i, j, k, 0) =
+                         prob_lo[0] + (i + 0.5) * geomdata.CellSize(0);
+                       , coord_arr(i, j, k, 1) =
+                           prob_lo[1] + (j + 0.5) * geomdata.CellSize(1);
+                       , coord_arr(i, j, k, 2) =
+                           prob_lo[2] + (k + 0.5) * geomdata.CellSize(2););
         } else {
           AMREX_D_TERM(coord_arr(i, j, k, 0) =
-                         prob_lo[0] + (i + 0.5 + ccent_arr(i, j, k, 0)) * dx;
+                         prob_lo[0] + (i + 0.5 + ccent_arr(i, j, k, 0)) *
+                                        geomdata.CellSize(0);
                        , coord_arr(i, j, k, 1) =
-                           prob_lo[1] + (j + 0.5 + ccent_arr(i, j, k, 1)) * dy;
-                       ,
-                       coord_arr(i, j, k, 2) =
-                         prob_lo[2] + (k + 0.5 + ccent_arr(i, j, k, 2)) * dz;);
+                           prob_lo[1] + (j + 0.5 + ccent_arr(i, j, k, 1)) *
+                                          geomdata.CellSize(1);
+                       , coord_arr(i, j, k, 2) =
+                           prob_lo[2] + (k + 0.5 + ccent_arr(i, j, k, 2)) *
+                                          geomdata.CellSize(2););
         }
       });
   } else
 #endif
   {
-    const amrex::Real* prob_lo = geomdata.ProbLo();
     amrex::ParallelFor(
-      bx, [coord_arr, prob_lo, dx, dy
-#if (AMREX_SPACEDIM == 3)
-           ,
-           dz
-#endif
-    ] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-        AMREX_D_TERM(coord_arr(i, j, k, 0) = prob_lo[0] + (i + 0.5) * dx;
-                     , coord_arr(i, j, k, 1) = prob_lo[1] + (j + 0.5) * dy;
-                     , coord_arr(i, j, k, 2) = prob_lo[2] + (k + 0.5) * dz;);
+      bx, [coord_arr, geomdata] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        AMREX_D_TERM(coord_arr(i, j, k, 0) =
+                       geomdata.ProbLo(0) + (i + 0.5) * geomdata.CellSize(0);
+                     , coord_arr(i, j, k, 1) =
+                         geomdata.ProbLo(1) + (j + 0.5) * geomdata.CellSize(1);
+                     ,
+                     coord_arr(i, j, k, 2) =
+                       geomdata.ProbLo(2) + (k + 0.5) * geomdata.CellSize(2););
       });
   }
 }
