@@ -163,7 +163,7 @@ getTransportCoeff<pele::physics::eos::Manifold>(
 
   constexpr bool get_xi = false;
   constexpr bool get_mu = true;
-  constexpr bool get_lam = true;
+  constexpr bool get_lam = false;
   constexpr bool get_Ddiag = true;
   const bool get_chi = do_soret;
   auto trans = pele::physics::PhysicsType::transport();
