@@ -19,11 +19,12 @@ main(int argc, char* argv[])
   }
 
 #ifdef AMREX_USE_HIP
-  // Explicitly initialize the HIP runtime before MPI/AMReX to avoid lazy init race conditions at scale.
+  // Explicitly initialize the HIP runtime before MPI/AMReX to avoid lazy init
+  // race conditions at scale.
   hipError_t herr = hipInit(0);
   if (herr != hipSuccess) {
-        fprintf(stderr, "hipInit failed: %s\n", hipGetErrorString(herr));
-        return 1;
+    fprintf(stderr, "hipInit failed: %s\n", hipGetErrorString(herr));
+    return 1;
   }
 #endif
 
