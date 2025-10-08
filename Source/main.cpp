@@ -18,6 +18,16 @@ main(int argc, char* argv[])
     }
   }
 
+#ifdef AMREX_USE_HIP
+  // Explicitly initialize the HIP runtime before MPI/AMReX to avoid lazy init
+  // race conditions at scale.
+  hipError_t herr = hipInit(0);
+  if (herr != hipSuccess) {
+    fprintf(stderr, "hipInit failed: %s\n", hipGetErrorString(herr));
+    return 1;
+  }
+#endif
+
   amrex::Initialize(argc, argv);
 
 // Defined and initialized when in gnumake, but not defined in cmake and
