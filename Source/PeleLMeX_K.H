@@ -149,7 +149,6 @@ getTransportCoeff<pele::physics::eos::Manifold>(
   for (int n = 0; n < NUM_SPECIES; ++n) {
     massdens[n] = rhoY(i, j, k, n);
   }
-
   auto eos = pele::physics::PhysicsType::eos(eosparm);
   eos.RY2RRinvY(massdens, rho, rhoinv, y);
 
