@@ -1,0 +1,3 @@
+manifold.has_species_mw = true
+manifold.NC7H16_mw = 100.205
+manifold.nominal_pressure_cgs = 1000000.0
