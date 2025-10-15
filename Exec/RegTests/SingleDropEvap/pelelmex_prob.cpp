@@ -8,7 +8,14 @@ void
 PeleLM::readProbParm()
 {
   amrex::ParmParse pp("prob");
-  auto eos = pele::physics::PhysicsType::eos();
+  
+  
+  #ifdef USE_MANIFOLD_EOS
+    PeleLM::prob_parm->eosparm = PeleLM::eos_parms.device_parm();
+  auto eos = pele::physics::PhysicsType::eos(&(PeleLM::eos_parms.host_parm()));
+#else
+    auto eos = pele::physics::PhysicsType::eos();
+#endif
 
   // Gas phase properties
   pp.query("P_mean", PeleLM::prob_parm->P_mean);
@@ -32,8 +39,13 @@ PeleLM::readProbParm()
 
   // Calculate transport properties from Simple transport model
   amrex::Real massfrac[NUM_SPECIES] = {0.0};
-  massfrac[N2_ID] = PeleLM::prob_parm->Y_N2;
-  massfrac[O2_ID] = PeleLM::prob_parm->Y_O2;
+  #ifdef USE_MANIFOLD_EOS
+    massfrac[0] = 0.0;
+    massfrac[NUM_SPECIES-1] = 1.0;
+#else
+    massfrac[N2_ID] = PeleLM::prob_parm->Y_N2;
+    massfrac[O2_ID] = PeleLM::prob_parm->Y_O2;
+#endif
   amrex::Real T_g = PeleLM::prob_parm->T0_gas;
   amrex::Real T_eff = (2. * T_d + T_g) / 3.;
   amrex::Real p_cgs = m2c::P(PeleLM::prob_parm->P_mean);
@@ -69,6 +81,7 @@ PeleLM::readProbParm()
                     << "rho_r = " << rho << "\n"
                     << "drop_dia = " << drop_dia << std::endl;
   ofs.close();
+
 }
 
 void

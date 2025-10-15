@@ -22,6 +22,8 @@ struct MyProbParm : public ProbParmDefault
   amrex::Real Y_N2 = 0.767;
   amrex::Real vel_gas = 0.;
   amrex::Real part_Re = -1.;
+  pele::physics::eos::EosParm<pele::physics::PhysicsType::eos_type> const*
+      eosparm;
 };
 
 struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
@@ -39,10 +41,21 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
     MyProbParm const& prob_parm,
     pele::physics::PMF::PmfData::DataContainer const* /*pmf_data*/)
   {
-    auto eos = pele::physics::PhysicsType::eos();
+
     amrex::Real massfrac[NUM_SPECIES] = {0.0};
+#ifdef USE_MANIFOLD_EOS
+    //Print a warning that manifold model is still being validated.
+    amrex::Print()<<"\n*******************************************";
+    amrex::Print()<<"\nWarning! Manifold model is still being validated.";
+    amrex::Print()<<"\n*******************************************";
+    auto eos = pele::physics::PhysicsType::eos(prob_parm.eosparm);
+    massfrac[0] = 0.0;
+    massfrac[NUM_SPECIES-1] = 1.0;
+#else
+	auto eos = pele::physics::PhysicsType::eos();
     massfrac[N2_ID] = prob_parm.Y_N2;
     massfrac[O2_ID] = prob_parm.Y_O2;
+#endif
     state(i, j, k, TEMP) = prob_parm.T0_gas;
     state(i, j, k, VELX) = prob_parm.vel_gas;
 #if (AMREX_SPACEDIM == 2)
@@ -86,8 +99,13 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
     AMREX_D_TERM(
       s_ext[VELX] = prob_parm.vel_gas;, s_ext[VELY] = 0.;, s_ext[VELZ] = 0.;);
     amrex::GpuArray<amrex::Real, NUM_SPECIES> massfrac = {{0.0}};
+#ifdef USE_MANIFOLD_EOS
+    massfrac[0] = 0.0;
+    massfrac[NUM_SPECIES-1] = 1.0;
+#else
     massfrac[N2_ID] = prob_parm.Y_N2;
     massfrac[O2_ID] = prob_parm.Y_O2;
+#endif
     s_ext[TEMP] = prob_parm.T0_gas;
     amrex::Real rho_cgs, P_cgs;
     P_cgs = m2c::P(prob_parm.P_mean);
