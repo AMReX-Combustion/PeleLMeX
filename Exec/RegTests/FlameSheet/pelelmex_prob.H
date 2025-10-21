@@ -10,6 +10,10 @@
 #include <PMF.H>
 #include <PMFData.H>
 #include <PelePhysics.H>
+#include <Utilities.H>
+
+namespace m2c = pele::physics::utilities::mks2cgs;
+namespace c2m = pele::physics::utilities::cgs2mks;
 
 struct MyProbParm : public ProbParmDefault
 {
@@ -107,9 +111,8 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
     }
     amrex::Real rho_temp, tmp1, tmp2;
     eos.PYT2R(tmp1, massfrac, tmp2, rho_temp);
-    rho_temp *= 1.0e3;
-    state(i, j, k, DENSITY) = rho_temp; // CGS -> MKS conversion
-    state(i, j, k, RHOH) = 0.0;         // No RhoH transport in manifold model
+    state(i, j, k, DENSITY) = c2m::Rho(rho_temp);
+    state(i, j, k, RHOH) = 0.0; // No RhoH transport in manifold model
     for (int n = 0; n < NUM_SPECIES - 1; n++) {
       state(i, j, k, FIRSTSPEC + n) = massfrac[n] * rho_temp;
     }
@@ -120,17 +123,17 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
     }
     eos.X2Y(molefrac, massfrac);
 
-    amrex::Real P_cgs = prob_parm.P_mean * 10.0;
+    amrex::Real P_cgs = m2c::P(prob_parm.P_mean);
 
     // Density
     amrex::Real rho_cgs = 0.0;
     eos.PYT2R(P_cgs, massfrac, state(i, j, k, TEMP), rho_cgs);
-    state(i, j, k, DENSITY) = rho_cgs * 1.0e3;
+    state(i, j, k, DENSITY) = c2m::Rho(rho_cgs);
 
     // Enthalpy
     amrex::Real h_cgs = 0.0;
     eos.TY2H(state(i, j, k, TEMP), massfrac, h_cgs);
-    state(i, j, k, RHOH) = h_cgs * 1.0e-4 * state(i, j, k, DENSITY);
+    state(i, j, k, RHOH) = state(i, j, k, DENSITY) * c2m::H(h_cgs);
 
     // Species mass
     for (int n = 0; n < NUM_SPECIES; n++) {

@@ -95,7 +95,7 @@ def pproc(args):
                             cer = float(line.split()[2])
                             if (cer > max_error):
                                 errfail += 1
-                                perr = "Error in {} on level {}: {} > {}".format(var,curlev,cer,maxerror)
+                                perr = "Error in {} on level {}: {} > {}".format(var,curlev,cer,max_error)
                                 print(perr)
         if (varcount != len(vars)):
             error = "Not all variables were found in plot file"

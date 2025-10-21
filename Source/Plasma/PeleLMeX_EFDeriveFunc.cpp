@@ -5,21 +5,19 @@
 #include <PeleLMeX_EOS_Extension.H>
 #include <mechanism.H>
 
-using namespace amrex;
-
 void
 pelelmex_derchargedist(
   PeleLM* /*a_pelelm*/,
-  const Box& bx,
-  FArrayBox& derfab,
+  const amrex::Box& bx,
+  amrex::FArrayBox& derfab,
   int dcomp,
   int ncomp,
-  const FArrayBox& statefab,
-  const FArrayBox& /*reactfab*/,
-  const FArrayBox& /*pressfab*/,
-  const Geometry& /*geomdata*/,
-  Real /*time*/,
-  const Vector<BCRec>& /*bcrec*/,
+  const amrex::FArrayBox& statefab,
+  const amrex::FArrayBox& /*reactfab*/,
+  const amrex::FArrayBox& /*pressfab*/,
+  const amrex::Geometry& /*geomdata*/,
+  amrex::Real /*time*/,
+  const amrex::Vector<amrex::BCRec>& /*bcrec*/,
   int /*level*/)
 {
   AMREX_ASSERT(derfab.box().contains(bx));
@@ -43,16 +41,16 @@ pelelmex_derchargedist(
 void
 pelelmex_derefx(
   PeleLM* /*a_pelelm*/,
-  const Box& bx,
-  FArrayBox& derfab,
+  const amrex::Box& bx,
+  amrex::FArrayBox& derfab,
   int dcomp,
   int ncomp,
-  const FArrayBox& statefab,
-  const FArrayBox& /*reactfab*/,
-  const FArrayBox& /*pressfab*/,
-  const Geometry& geomdata,
-  Real /*time*/,
-  const Vector<BCRec>& bcrec,
+  const amrex::FArrayBox& statefab,
+  const amrex::FArrayBox& /*reactfab*/,
+  const amrex::FArrayBox& /*pressfab*/,
+  const amrex::Geometry& geomdata,
+  amrex::Real /*time*/,
+  const amrex::Vector<amrex::BCRec>& bcrec,
   int /*level*/)
 {
   AMREX_ASSERT(derfab.box().contains(bx));
@@ -83,16 +81,16 @@ pelelmex_derefx(
 void
 pelelmex_derLorentzx(
   PeleLM* /*a_pelelm*/,
-  const Box& bx,
-  FArrayBox& derfab,
+  const amrex::Box& bx,
+  amrex::FArrayBox& derfab,
   int dcomp,
   int ncomp,
-  const FArrayBox& statefab,
-  const FArrayBox& /*reactfab*/,
-  const FArrayBox& /*pressfab*/,
-  const Geometry& geomdata,
-  Real /*time*/,
-  const Vector<BCRec>& bcrec,
+  const amrex::FArrayBox& statefab,
+  const amrex::FArrayBox& /*reactfab*/,
+  const amrex::FArrayBox& /*pressfab*/,
+  const amrex::Geometry& geomdata,
+  amrex::Real /*time*/,
+  const amrex::Vector<amrex::BCRec>& bcrec,
   int /*level*/)
 {
   AMREX_ASSERT(derfab.box().contains(bx));
@@ -137,16 +135,16 @@ pelelmex_derLorentzx(
 void
 pelelmex_derefy(
   PeleLM* /*a_pelelm*/,
-  const Box& bx,
-  FArrayBox& derfab,
+  const amrex::Box& bx,
+  amrex::FArrayBox& derfab,
   int dcomp,
   int ncomp,
-  const FArrayBox& statefab,
-  const FArrayBox& /*reactfab*/,
-  const FArrayBox& /*pressfab*/,
-  const Geometry& geomdata,
-  Real /*time*/,
-  const Vector<BCRec>& bcrec,
+  const amrex::FArrayBox& statefab,
+  const amrex::FArrayBox& /*reactfab*/,
+  const amrex::FArrayBox& /*pressfab*/,
+  const amrex::Geometry& geomdata,
+  amrex::Real /*time*/,
+  const amrex::Vector<amrex::BCRec>& bcrec,
   int /*level*/)
 {
   AMREX_ASSERT(derfab.box().contains(bx));
@@ -177,16 +175,16 @@ pelelmex_derefy(
 void
 pelelmex_derLorentzy(
   PeleLM* /*a_pelelm*/,
-  const Box& bx,
-  FArrayBox& derfab,
+  const amrex::Box& bx,
+  amrex::FArrayBox& derfab,
   int dcomp,
   int ncomp,
-  const FArrayBox& statefab,
-  const FArrayBox& /*reactfab*/,
-  const FArrayBox& /*pressfab*/,
-  const Geometry& geomdata,
-  Real /*time*/,
-  const Vector<BCRec>& bcrec,
+  const amrex::FArrayBox& statefab,
+  const amrex::FArrayBox& /*reactfab*/,
+  const amrex::FArrayBox& /*pressfab*/,
+  const amrex::Geometry& geomdata,
+  amrex::Real /*time*/,
+  const amrex::Vector<amrex::BCRec>& bcrec,
   int /*level*/)
 {
   AMREX_ASSERT(derfab.box().contains(bx));
@@ -231,16 +229,16 @@ pelelmex_derLorentzy(
 void
 pelelmex_derefz(
   PeleLM* /*a_pelelm*/,
-  const Box& bx,
-  FArrayBox& derfab,
+  const amrex::Box& bx,
+  amrex::FArrayBox& derfab,
   int dcomp,
   int ncomp,
-  const FArrayBox& statefab,
-  const FArrayBox& /*reactfab*/,
-  const FArrayBox& /*pressfab*/,
-  const Geometry& geomdata,
-  Real /*time*/,
-  const Vector<BCRec>& bcrec,
+  const amrex::FArrayBox& statefab,
+  const amrex::FArrayBox& /*reactfab*/,
+  const amrex::FArrayBox& /*pressfab*/,
+  const amrex::Geometry& geomdata,
+  amrex::Real /*time*/,
+  const amrex::Vector<amrex::BCRec>& bcrec,
   int /*level*/)
 {
   AMREX_ASSERT(derfab.box().contains(bx));
@@ -271,16 +269,16 @@ pelelmex_derefz(
 void
 pelelmex_derLorentzz(
   PeleLM* /*a_pelelm*/,
-  const Box& bx,
-  FArrayBox& derfab,
+  const amrex::Box& bx,
+  amrex::FArrayBox& derfab,
   int dcomp,
   int ncomp,
-  const FArrayBox& statefab,
-  const FArrayBox& /*reactfab*/,
-  const FArrayBox& /*pressfab*/,
-  const Geometry& geomdata,
-  Real /*time*/,
-  const Vector<BCRec>& bcrec,
+  const amrex::FArrayBox& statefab,
+  const amrex::FArrayBox& /*reactfab*/,
+  const amrex::FArrayBox& /*pressfab*/,
+  const amrex::Geometry& geomdata,
+  amrex::Real /*time*/,
+  const amrex::Vector<amrex::BCRec>& bcrec,
   int /*level*/)
 {
   AMREX_ASSERT(derfab.box().contains(bx));
