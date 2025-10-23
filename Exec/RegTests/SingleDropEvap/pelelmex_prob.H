@@ -110,7 +110,7 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
     amrex::Real rho_cgs, P_cgs;
     P_cgs = m2c::P(prob_parm.P_mean);
 
-    auto eos = pele::physics::PhysicsType::eos();
+    auto eos = pele::physics::PhysicsType::eos(prob_parm.eosparm);
     eos.PYT2R(P_cgs, massfrac.data(), prob_parm.T0_gas, rho_cgs);
 
     s_ext[DENSITY] = c2m::Rho(rho_cgs);
