@@ -262,6 +262,12 @@ PeleLM::SprayAddSource(const int level)
     amrex::MultiFab::Add(
       extsource, source, scomps.specSrcIndx + n, dstcomp, 1, eghosts);
   }
+#ifdef USE_MANIFOLD_EOS
+  // Need to keep dummy Rho and actual Rho the same
+  amrex::MultiFab::Add(
+    extsource, source, scomps.rhoSrcIndx, scomps.specIndx + NUM_SPECIES - 1, 1,
+    eghosts);
+#endif
 }
 
 void
