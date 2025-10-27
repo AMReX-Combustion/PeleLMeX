@@ -44,15 +44,9 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
 
     amrex::Real massfrac[NUM_SPECIES] = {0.0};
 #ifdef USE_MANIFOLD_EOS
-    // Print a warning that manifold model is still being validated.
-    amrex::Print() << "\n*******************************************";
-    amrex::Print() << "\nWarning! Manifold model is still being validated.";
-    amrex::Print() << "\n*******************************************";
-    auto eos = pele::physics::PhysicsType::eos(prob_parm.eosparm);
     massfrac[0] = 0.0;
     massfrac[NUM_SPECIES - 1] = 1.0;
 #else
-    auto eos = pele::physics::PhysicsType::eos();
     massfrac[N2_ID] = prob_parm.Y_N2;
     massfrac[O2_ID] = prob_parm.Y_O2;
 #endif
@@ -66,6 +60,7 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
 #endif
 
     amrex::Real P_cgs = m2c::P(prob_parm.P_mean);
+    auto eos = pele::physics::PhysicsType::eos(prob_parm.eosparm);
 
     // Density
     amrex::Real rho_cgs = 0.0;
