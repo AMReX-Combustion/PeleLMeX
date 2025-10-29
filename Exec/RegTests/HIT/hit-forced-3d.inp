@@ -23,7 +23,7 @@ amr.max_grid_size   = 64                 # max box size
 
 #---------------------- PeleLMeX CONTROL -------------------------
 peleLM.v = 3                              # PeleLMeX verbose
-peleLM.incompressible = 1
+peleLM.incompressible = 0
 peleLM.mu   = 1.e-5
 peleLM.rho  = 1.03
 
