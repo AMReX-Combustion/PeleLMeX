@@ -13,11 +13,11 @@ PeleLM::readProbParm()
   auto eos = pele::physics::PhysicsType::eos(&(PeleLM::eos_parms.host_parm()));
   if (eos.identifier() == "Manifold") {
     amrex::Print()
-      << "\n************************************************************";
+      << "\n************************************************************\n";
     amrex::Print()
-      << "\nWarning! Manifold model with Spray is still being validated.";
+      << "\nWarning! Manifold model with Spray is still being validated.\n";
     amrex::Print()
-      << "\n************************************************************";
+      << "\n************************************************************\n";
   }
 
   // Gas phase properties
@@ -73,6 +73,17 @@ PeleLM::readProbParm()
   if (Re > 0.) {
     // Get gas velocity from Re
     PeleLM::prob_parm->vel_gas = mu * Re / (rho * drop_dia);
+    if (eos.identifier() == "Manifold") {
+      const amrex::Real temp_ratio = T_eff / T_g;
+      const amrex::Real sutherland_temp = 110.4;
+      const amrex::Real sutherland_ratio = std::sqrt(temp_ratio) * temp_ratio *
+                                           (T_g + sutherland_temp) /
+                                           (T_eff + sutherland_temp);
+      PeleLM::prob_parm->vel_gas *= temp_ratio * sutherland_ratio;
+      amrex::Print() << "WARNING: using approximate scalings to set inlet "
+                        "velocity from Re, inlet velocoity is "
+                     << PeleLM::prob_parm->vel_gas << "\n";
+    }
   } else {
     Re = PeleLM::prob_parm->vel_gas * rho * drop_dia / mu;
   }
