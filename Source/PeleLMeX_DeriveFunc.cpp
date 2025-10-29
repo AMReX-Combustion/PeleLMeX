@@ -1565,7 +1565,6 @@ pelelmex_derturbforcing(
   AMREX_ASSERT(derfab.box().contains(bx));
   AMREX_ASSERT(statefab.box().contains(bx));
   AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
-  AMREX_ASSERT(!a_pelelm->m_incompressible);
 
   // Need geom for forcing
   amrex::GeometryData const& geomdata = geom.data();
