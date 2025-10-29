@@ -1245,13 +1245,13 @@ public:
   {
     std::string userkey = "default";
     if (keyIndex < 0) {
-      a_pp.query(a_search_key.c_str(), userkey);
+      a_pp.query(a_search_key, userkey);
     } else {
-      int search_key_size = a_pp.countval(a_search_key.c_str());
+      int search_key_size = a_pp.countval(a_search_key);
       if (search_key_size > 0) {
         AMREX_ASSERT(keyIndex < search_key_size);
         amrex::Vector<std::string> userkeyVec(search_key_size);
-        a_pp.getarr(a_search_key.c_str(), userkeyVec, keyIndex, 1);
+        a_pp.getarr(a_search_key, userkeyVec, keyIndex, 1);
         userkey = userkeyVec[keyIndex];
       }
     }
