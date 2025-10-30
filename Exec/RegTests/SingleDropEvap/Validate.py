@@ -20,23 +20,66 @@ Test cases:
 """
 
 parser = argparse.ArgumentParser(
-    description='Run single droplet evaporation cases and compare to experimental data'
+    description="Run single droplet evaporation cases and compare to experimental data"
 )
 
 cases = ["WongLin", "Nomura", "Daif", "RungeHep", "RungeDec", "RungeMix", "RungeJP8"]
-parser.add_argument("--case_name", "-c", type=str, default="WongLing", choices=cases, help="Case name to run, default: WongLin")
-prop_models = ['mp','gcm']
-parser.add_argument("--liq_props_type", "-l", type=str, default="gcm", choices=prop_models, help="Liquid properties model, default: gcm")
-psat_models = ['Antoine','Clausius-Clapeyron']
-parser.add_argument("--mp_psat_model", "-p", type=str, default="Antoine", choices=psat_models, help="Psat model for PeleMP properties, default: Antoine")
-parser.add_argument("--use_manifold", "-m", action="store_true", help="Use Manifold chemistry/EOS instead of Detailed chemistry/EOS")
-parser.add_argument("--cmlm_path", type=str, default="./cmlm", help="Path to CMLM install, required only for Manifold chemistry, default: ./cmlm")
-parser.add_argument("--dont_run_new", "-d", action="store_true",  help="Rerun case rather than using previously computed data")
-parser.add_argument("--build_new", "-b", action="store_true", help="Build executable to run case")
-parser.add_argument("--num_proc", "-n", type=int, default=6, help="number of processors for parallel runs, default: 6")
+parser.add_argument(
+    "--case_name",
+    "-c",
+    type=str,
+    default="WongLing",
+    choices=cases,
+    help="Case name to run, default: WongLin",
+)
+prop_models = ["mp", "gcm"]
+parser.add_argument(
+    "--liq_props_type",
+    "-l",
+    type=str,
+    default="gcm",
+    choices=prop_models,
+    help="Liquid properties model, default: gcm",
+)
+psat_models = ["Antoine", "Clausius-Clapeyron"]
+parser.add_argument(
+    "--mp_psat_model",
+    "-p",
+    type=str,
+    default="Antoine",
+    choices=psat_models,
+    help="Psat model for PeleMP properties, default: Antoine",
+)
+parser.add_argument(
+    "--use_manifold",
+    "-m",
+    action="store_true",
+    help="Use Manifold chemistry/EOS instead of Detailed chemistry/EOS",
+)
+parser.add_argument(
+    "--cmlm_path",
+    type=str,
+    default="./cmlm",
+    help="Path to CMLM install, required only for Manifold chemistry, default: ./cmlm",
+)
+parser.add_argument(
+    "--dont_run_new",
+    "-d",
+    action="store_true",
+    help="Rerun case rather than using previously computed data",
+)
+parser.add_argument(
+    "--build_new", "-b", action="store_true", help="Build executable to run case"
+)
+parser.add_argument(
+    "--num_proc",
+    "-n",
+    type=int,
+    default=6,
+    help="number of processors for parallel runs, default: 6",
+)
 args = parser.parse_args()
 
-print(args.dont_run_new)
 
 # Case to run
 case_name = args.case_name
@@ -92,7 +135,7 @@ if run_new:
     # Create case-specific input file
     CreateInputFile(case)
     if use_manifold:
-        CreateManifoldFiles(case,cmlm_path)
+        CreateManifoldFiles(case, cmlm_path)
 
     # Build the executable if needed
     if build_new:
@@ -112,7 +155,9 @@ if run_new:
         os.system(f"make {build_flags}")
 
     # Get the Pele executable
-    exe_files = [f for f in os.listdir(FILE_PATH) if f.startswith("Pele") and f.endswith(".ex")]
+    exe_files = [
+        f for f in os.listdir(FILE_PATH) if f.startswith("Pele") and f.endswith(".ex")
+    ]
     exe = None
     found = 0
     for f in exe_files:

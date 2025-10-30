@@ -51,7 +51,7 @@ class CaseInfo:
         cell_num=[32, 32, 32],
         reftype=None,
         PeleMP_PsatModel="Antoine",
-        **kwargs
+        **kwargs,
     ):
 
         # Model specifics
@@ -79,9 +79,9 @@ class CaseInfo:
                 self.case_dir += "_Antoine"
             else:
                 self.case_dir += "_CC"
-        if 'use_manifold' in kwargs.keys():
-            if kwargs['use_manifold']:
-                self.case_dir += '_Manifold'
+        if "use_manifold" in kwargs.keys():
+            if kwargs["use_manifold"]:
+                self.case_dir += "_Manifold"
         self.case_path = os.path.join(FILE_PATH, self.case_dir)
         self.input_file = os.path.join(self.case_path, f"input_{name}.inp")
         if LiqPropsType.lower() == "gcm":
@@ -458,43 +458,42 @@ def CreateManifoldFiles(case, cmlm_dir):
     ifile = case.input_gcm if case.LiqPropsType.lower() == "gcm" else case.input_file
     delta_h_vap = [0.0, 0.0]
     found = [False] * len(fuels)
-    with open(ifile,"r") as f:
+    with open(ifile, "r") as f:
         for line in f.readlines():
-            for i,fuel in enumerate(fuels):
+            for i, fuel in enumerate(fuels):
                 if line.startswith(f"particles.{fuel}_latent"):
                     delta_h_vap[i] = float(line.split("=")[1].split("#")[0])
                     found[i] = True
-    for ifound,fuel in zip(found, fuels):
+    for ifound, fuel in zip(found, fuels):
         if not ifound:
             raise RuntimeError(f"Latent heat not found in input files for fuel: {fuel}")
 
     # full input data
-    table_file = os.path.join(case.case_path,"table.ctb")
-    table_metadata_file = os.path.join(case.case_path,"table_metadata.txt")
+    table_file = os.path.join(case.case_path, "table.ctb")
+    table_metadata_file = os.path.join(case.case_path, "table_metadata.txt")
     input_data = {
-        "phys":
-        {
-            "mechanism":"../../../Submodules/PelePhysics/Mechanisms/liquid_fuels_nonreacting/mechanism.yaml",
-            "pressure":case.gas.P,
-            "X_ox":"O2:1.0, N2:3.76",
+        "phys": {
+            "mechanism": "../../../Submodules/PelePhysics/Mechanisms/liquid_fuels_nonreacting/mechanism.yaml",
+            "pressure": case.gas.P,
+            "X_ox": "O2:1.0, N2:3.76",
             "T_ox": case.gas.T,
             "X_fuel": [f"{fuel}:1.0" for fuel in fuels],
             "liq_temp_fuel": [case.droplet.T] * len(fuels),
-            "delta_h_vap":delta_h_vap,
-            "T_min": 100.0
+            "delta_h_vap": delta_h_vap,
+            "T_min": 100.0,
         },
-        "table":
-        {
-            "use_fmix":False,
-            "grid":[50] * len(fuels),
-            "filename":table_file,
-            "metadata_file":table_metadata_file
-        }
+        "table": {
+            "use_fmix": False,
+            "grid": [50] * len(fuels),
+            "filename": table_file,
+            "metadata_file": table_metadata_file,
+        },
     }
 
     # write input data to toml file
     import toml
-    table_toml_file = os.path.join(case.case_path,"table_generation.toml")
+
+    table_toml_file = os.path.join(case.case_path, "table_generation.toml")
     with open(table_toml_file, "w") as tomlfile:
         toml.dump(input_data, tomlfile)
 
@@ -507,7 +506,7 @@ def CreateManifoldFiles(case, cmlm_dir):
         raise RuntimeError(f"Table generation failed with error code {error}")
 
     # append necessary manifold information to input files
-    with open(case.input_file ,"a") as f:
+    with open(case.input_file, "a") as f:
         f.write("\n\n")
         f.write("# --------------------- # \n")
         f.write("# MANIFOLD MODEL INPUTS # \n")
@@ -519,7 +518,9 @@ def CreateManifoldFiles(case, cmlm_dir):
         f.write("manifold.compute_temperature = true \n")
         f.write("manifold.has_species_mw = true \n")
         f.write("manifold.v = 1 \n")
-        f.write("particles.dep_fuel_species = "
-                + " ".join([f"ZMIX{i}" for i in range(len(fuels))])
-                + "\n")
+        f.write(
+            "particles.dep_fuel_species = "
+            + " ".join([f"ZMIX{i}" for i in range(len(fuels))])
+            + "\n"
+        )
         f.write("peleLM.use_wbar = 0 \n")
