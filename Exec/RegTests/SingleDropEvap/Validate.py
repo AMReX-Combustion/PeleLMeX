@@ -17,6 +17,7 @@ Test cases:
 | RungeJP8   | POSF10264      | SPRAY_FUEL_NUM = 1                             |
 | ---------- | -------------- | ---------------------------------------------- |
 """
+
 # Case to run
 case_name = "WongLin"
 
@@ -33,14 +34,14 @@ cmlm_path = "cmlm/"
 # Run new or extract existing simulation data?
 run_new = True
 
-# Buld new executable for case if needed
+# Build new executable for case if needed
 build_new = True
 
 # Number of processors to run on
 num_proc = 6
 
 # Create case instance
-case = SpecifyCase(case_name, LiqPropsType, PeleMP_PsatModel)
+case = SpecifyCase(case_name, LiqPropsType, PeleMP_PsatModel, use_manifold=use_manifold)
 
 # General input file
 case.gen_input_file = f"single-drop-evap-{LiqPropsType.lower()}.inp"
@@ -70,6 +71,8 @@ if run_new:
 
     # Create case-specific input file
     CreateInputFile(case)
+    if use_manifold:
+        CreateManifoldFiles(case,cmlm_path)
 
     # Build the executable if needed
     if build_new:
