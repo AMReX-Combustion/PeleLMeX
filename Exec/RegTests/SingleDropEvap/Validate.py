@@ -193,9 +193,11 @@ if run_new:
 
     # Run the case
     if ("MPI" in exe) and (num_proc > 1):
-        os.system(f"mpiexec -np {num_proc} ./{exe} {case.input_file}")
+        error = os.system(f"mpiexec -np {num_proc} ./{exe} {case.input_file}")
     else:
-        os.system(f"./{exe} {case.input_file}")
+        error = os.system(f"./{exe} {case.input_file}")
+    if error:
+        raise RuntimeError(f"Pele simulation failed with error code {error}")
 
 else:
     # Check that the case directory exists
