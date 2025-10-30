@@ -4,7 +4,7 @@ This case compares results from PeleLMeX against experimental literature data. A
 There are two general input files:
 * `single-drop-evap-mp.inp`
 * `single-drop-evap-gcm.inp`
-Both are set up for the `WongLin` case with either the original PeleMP liquid properties or the GCM liquid properties.  The case with the PeleMP liquid properties can be run by compiling with `SPRAY_FUEL_NUM = 2` and 
+Both are set up for the `WongLin` case with either the original PeleMP liquid properties or the GCM liquid properties.  The case with the PeleMP liquid properties can be run by compiling with `SPRAY_FUEL_NUM = 2` and
 `SPRAY_GCM = FALSE`, then running:
 ~~~
 mpirun -np 4 ./<PeleLMeX_EXE> single-drop-evap-mp.inp
@@ -30,7 +30,9 @@ then run
 ~~~
 python Validate.py
 ~~~
-Be sure to use the correct compile-time flag for `SPRAY_GCM` or the python script will thrown an error. 
+Because many of the necessary options for each case must be set at compile time, the `Validate.py` script
+will automatically recompile the code with the necessary options if a valid executable does not exist already.
+The relevant compile time options are indicated in the executable name.
 
 Case options include:
 * `Nomura`
@@ -40,5 +42,28 @@ Case options include:
 
 Users can compare the results from the various tests/configurations by running the `CompareLiqPropsType.py` script with the desired `case_name`. The script will search the current directory for all available data for each case.
 
-Note that multicomponent evaporation is a work in progress as illustrated by the `RungeJP8` test case. 
+Note that multicomponent evaporation is a work in progress as illustrated by the `RungeJP8` test case.
 
+### Droplet Evaporation with Manifold-based Chemistry Models
+
+This case setup also supports single droplet evaporation validation for pray modeling capability coupled
+to manifold based chemistry models. These models replace the EOS and Transport property models from
+PelePhysics with tabulated (or neural network) reduced-order representations. These models require additional
+files containing the tabulated data and associated metadata, which are generated with the separate [CMLM
+repository](https://github.com/NREL/cmlm). For example purposes, we include the necessary files to run the
+`WongLin` case (`spray_wonglin.ctb` and `manifold_metadata_wonglin.text`). To run the sample case, which uses
+PeleMP liquid properties with Antoine coefficients, first compile with `USE_MANIFOLD=TRUE`, `Manifold_Dim=1`,
+and `SPRAY_GCM=FALSE`. Then run:
+~~~
+mpirun -np 4 ./<PeleLMeX_EXE> single-drop-evap-mp-manifold.inp
+~~~
+
+The `Validaty.py` script can also be used to run any of the caes with manifold-based chemistry. This requires
+an installed version of CMLM (including dependencie), which can be obtained within this directory using:
+~~~
+git clone git@github.com:NREL/cmlm.git
+pip install -e cmlm
+~~~
+Then within `Validate.py` set `use_manifold = True` and the appropriate `cmlm_path` if downloaded elsewhere.
+Note that the key script within CMLM that generates the tables for spray vaporization cases is located at
+`cmlm/run_scripts/ctable/create_spray_table_nd.py`.
