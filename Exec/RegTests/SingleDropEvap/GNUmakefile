@@ -28,21 +28,28 @@ THREAD_SANITIZER = FALSE
 # PelePhysics
 USE_PLASMA = FALSE
 USE_PARTICLES = TRUE
+SPRAY_GCM = FALSE
+SPRAY_FUEL_NUM = 2
+ifeq ($(SPRAY_GCM), TRUE)
+  SpraySuffix = .$(SPRAY_FUEL_NUM)SprayFuel.SprayGCM
+else
+  SpraySuffix = .$(SPRAY_FUEL_NUM)SprayFuel.SprayMP
+endif
+
 USE_MANIFOLD = FALSE
 ifeq ($(USE_MANIFOLD), TRUE)
   Eos_Model       = Manifold
   Chemistry_Model = Null
   Transport_Model = Manifold
-  Manifold_Dim = 1
+  Manifold_Dim = $(SPRAY_FUEL_NUM)
   Manifold_Type = Table
-  SPRAY_FUEL_NUM = 1
-  USERSuffix = .Manifold$(Manifold_Dim)D.$(SPRAY_FUEL_NUM)SprayFuels
+  USERSuffix = .Manifold$(Manifold_Dim)d$(Manifold_Type)$(SpraySuffix)
 else
   SPRAY_FUEL_NUM = 2
   Chemistry_Model = liquid_fuels_nonreacting
   Eos_Model = Fuego
   Transport_Model = Simple
-  USERSuffix = .$(Chemistry_Model).$(SPRAY_FUEL_NUM)SprayFuels
+  USERSuffix = .$(Chemistry_Model)$(SpraySuffix)
 endif
 
 PELE_HOME ?= ../../..
