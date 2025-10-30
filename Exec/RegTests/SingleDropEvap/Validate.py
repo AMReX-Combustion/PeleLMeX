@@ -2,6 +2,7 @@ import os
 from CaseInfo import *
 from ExtractData import *
 import matplotlib.pyplot as plt
+import argparse
 
 """
 Script for validating PelePhysics spray model
@@ -18,27 +19,46 @@ Test cases:
 | ---------- | -------------- | ---------------------------------------------- |
 """
 
+parser = argparse.ArgumentParser(
+    description='Run single droplet evaporation cases and compare to experimental data'
+)
+
+cases = ["WongLin", "Nomura", "Daif", "RungeHep", "RungeDec", "RungeMix", "RungeJP8"]
+parser.add_argument("--case_name", "-c", type=str, default="WongLing", choices=cases, help="Case name to run, default: WongLin")
+prop_models = ['mp','gcm']
+parser.add_argument("--liq_props_type", "-l", type=str, default="gcm", choices=prop_models, help="Liquid properties model, default: gcm")
+psat_models = ['Antoine','Clausius-Clapeyron']
+parser.add_argument("--mp_psat_model", "-p", type=str, default="Antoine", choices=psat_models, help="Psat model for PeleMP properties, default: Antoine")
+parser.add_argument("--use_manifold", "-m", action="store_true", help="Use Manifold chemistry/EOS instead of Detailed chemistry/EOS")
+parser.add_argument("--cmlm_path", type=str, default="./cmlm", help="Path to CMLM install, required only for Manifold chemistry, default: ./cmlm")
+parser.add_argument("--dont_run_new", "-d", action="store_true",  help="Rerun case rather than using previously computed data")
+parser.add_argument("--build_new", "-b", action="store_true", help="Build executable to run case")
+parser.add_argument("--num_proc", "-n", type=int, default=6, help="number of processors for parallel runs, default: 6")
+args = parser.parse_args()
+
+print(args.dont_run_new)
+
 # Case to run
-case_name = "WongLin"
+case_name = args.case_name
 
 # Liquid properties model: "mp" or "gcm"
-LiqPropsType = "gcm"
+LiqPropsType = args.liq_props_type
 
 # Psat model for PeleMP: "Antoine" or "Clasius-Clapeyron"
-PeleMP_PsatModel = "Antoine"
+PeleMP_PsatModel = args.mp_psat_model
 
 # Use manifold model for EOS (requires CMLM dependency)
-use_manifold = False
-cmlm_path = "cmlm/"
+use_manifold = args.use_manifold
+cmlm_path = args.cmlm_path
 
 # Run new or extract existing simulation data?
-run_new = True
+run_new = not args.dont_run_new
 
 # Build new executable for case if needed
-build_new = True
+build_new = args.build_new
 
 # Number of processors to run on
-num_proc = 6
+num_proc = args.num_proc
 
 # Create case instance
 case = SpecifyCase(case_name, LiqPropsType, PeleMP_PsatModel, use_manifold=use_manifold)
