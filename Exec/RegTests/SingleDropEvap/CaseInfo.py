@@ -436,3 +436,8 @@ def CreateInputFile(case):
         # Save to output file
         with open(case.input_gcm, "w") as f:
             f.writelines(new_gcm_lines)
+
+
+def CreateManifoldFiles(case, cmlm_dir):
+    if not os.path.exists(cmlm_dir):
+        raise RuntimeError(f"CMLM installation not found at specified path: {cmlm_dir}")

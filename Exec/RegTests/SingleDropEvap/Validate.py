@@ -26,8 +26,15 @@ LiqPropsType = "gcm"
 # Psat model for PeleMP: "Antoine" or "Clasius-Clapeyron"
 PeleMP_PsatModel = "Antoine"
 
+# Use manifold model for EOS (requires CMLM dependency)
+use_manifold = False
+cmlm_path = "cmlm/"
+
 # Run new or extract existing simulation data?
 run_new = True
+
+# Buld new executable for case if needed
+build_new = True
 
 # Number of processors to run on
 num_proc = 6
@@ -64,39 +71,55 @@ if run_new:
     # Create case-specific input file
     CreateInputFile(case)
 
-    # Check GNUmakefile for correct compilation flags
-    with open(os.path.join(FILE_PATH, "GNUmakefile"), "r") as f:
-        lines = f.readlines()
-    gcm_flag = False
-    for line in lines:
-        if "SPRAY_GCM" in line:
-            if "TRUE" in line:
-                gcm_flag = True
-        elif "SPRAY_FUEL_NUM" in line:
-            if "jp8" in case.name.lower():
-                if "1" not in line:
-                    error = "GNUmakefile SPRAY_FUEL_NUM must be 1 for JP-8"
-                    raise ValueError(error)
-            else:
-                if "2" not in line:
-                    error = "GNUmakefile SPRAY_FUEL_NUM must be 2 for heptane/decane"
-                    raise ValueError(error)
-    if case.LiqPropsType.lower() == "gcm" and not gcm_flag:
-        error = "GNUmakefile SPRAY_GCM must be TRUE for GCM liquid properties model"
-        raise ValueError(error)
-    elif case.LiqPropsType.lower() == "mp" and gcm_flag:
-        error = "GNUmakefile SPRAY_GCM must be FALSE for MP liquid properties model"
-        raise ValueError(error)
+    # Build the executable if needed
+    if build_new:
+        build_flags = f" -j "
+        if case.LiqPropsType.lower() == "gcm":
+            build_flags += " SPRAY_GCM=TRUE"
+        elif case.LiqPropsType.lower() == "mp":
+            build_flags += " SPRAY_GCM=FALSE"
+        if "jp8" in case.name.lower():
+            build_flags += " SPRAY_FUEL_NUM=1"
+        else:
+            build_flags += " SPRAY_FUEL_NUM=2"
+        if use_manifold:
+            build_flags += " USE_MANIFOLD=TRUE"
+        else:
+            build_flags += " USE_MANIFOLD=FALSE"
+        os.system(f"make {build_flags}")
 
     # Get the Pele executable
-    exe = ""
-    for f in os.listdir(FILE_PATH):
-        if f.startswith("Pele") and f.endswith(".ex"):
-            exe = f
-    if not os.path.exists(exe):
-        error = "Pele executable not found"
+    exe_files = [f for f in os.listdir(FILE_PATH) if f.startswith("Pele") and f.endswith(".ex")]
+    exe = None
+    found = 0
+    for f in exe_files:
+        # We continue past invalid executables for our configuration
+        if case.LiqPropsType.lower() == "gcm" and ".SprayGCM." not in f:
+            continue
+        if case.LiqPropsType.lower() == "mp" and ".SprayMP." not in f:
+            continue
+        if "jp8" in case.name.lower():
+            if ".1SprayFuel." not in f:
+                continue
+        else:
+            if ".2SprayFuel." not in f:
+                continue
+        if use_manifold and ".Manifold" not in f:
+            continue
+        elif not use_manifold and ".Manifold" in f:
+            continue
+        found += 1
+        exe = f
+
+    if found == 0:
+        error = "Valid Pele executable for case not found"
         raise ValueError(error)
-    elif (num_proc > 1) and ("MPI" not in exe):
+    elif found == 1:
+        print(f"Running with executable: {exe}")
+    else:
+        print(f"Found {found} valid executables, using the last: {exe}")
+
+    if (num_proc > 1) and ("MPI" not in exe):
         error = f"Pele not compiled with MPI and num_proc = {num_proc}"
         raise ValueError(error)
 
