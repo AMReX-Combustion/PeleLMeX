@@ -53,7 +53,7 @@ files containing the tabulated data and associated metadata, which are generated
 repository](https://github.com/NREL/cmlm). For example purposes, we include the necessary files to run the
 `WongLin` case (`spray_wonglin.ctb` and `manifold_metadata_wonglin.text`). To run the sample case, which uses
 PeleMP liquid properties with Antoine coefficients, first compile with `USE_MANIFOLD=TRUE`, `Manifold_Dim=1`,
-and `SPRAY_GCM=FALSE`. Then run:
+`SPRAY_FUEL_NUM=1` and `SPRAY_GCM=FALSE`. Then run:
 ~~~
 mpirun -np 4 ./<PeleLMeX_EXE> single-drop-evap-mp-manifold.inp
 ~~~
