@@ -229,9 +229,10 @@ jobs:
     - name: System Dependencies
       run: |
          .github/workflows/dependencies/dependencies_gcc10.sh
-         sudo apt-get install -y python3-setuptools
-         python3 -m pip install --user numpy
-         python3 -m pip install --user argparse
+    - name: Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
     - name: Repo Dependencies
       run: |
         Utils/CloneDeps.sh
