@@ -33,6 +33,7 @@ PeleLM::~PeleLM()
   m_regrid_ba.clear();
 #ifdef PELE_USE_SPRAY
   SprayParticleContainer::SprayCleanUp();
+  SprayPC.reset();
 #endif
 #ifdef PELE_USE_SOOT
   cleanupSootModel();

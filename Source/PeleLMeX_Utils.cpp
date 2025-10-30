@@ -2192,7 +2192,6 @@ PeleLM::extendSignedDistance(
   // This is a not-so-pretty piece of code that'll take AMReX cell-averaged
   // signed distance and propagates it manually up to the point where we need to
   // have it for derefining.
-  const auto geomdata = geom[0].data();
   const amrex::Real maxSignedDist = a_signDist->max(0);
   const auto& ebfactory =
     dynamic_cast<amrex::EBFArrayBoxFactory const&>(a_signDist->Factory());
@@ -2200,6 +2199,7 @@ PeleLM::extendSignedDistance(
   const int nGrowFac = flags.nGrow() + 1;
 
   // First set the region far away at the max value we need
+  const auto& dx = geom[0].CellSizeArray();
 
   auto const& sd_cc_ma = a_signDist->arrays();
   const amrex::Real* dx = geomdata.CellSize();
