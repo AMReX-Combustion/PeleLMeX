@@ -235,7 +235,7 @@ jobs:
     - name: Repo Dependencies
       run: |
         Utils/CloneDeps.sh
-        git clone git@github.com:NREL/cmlm.git
+        git clone https://github.com/NREL/cmlm.git
         pip install -e cmlm
     - name: Build AMReX Tools
       env:
