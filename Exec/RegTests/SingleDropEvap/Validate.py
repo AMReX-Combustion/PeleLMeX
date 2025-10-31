@@ -139,7 +139,7 @@ if run_new:
 
     # Build the executable if needed
     if build_new:
-        build_flags = f" -j "
+        build_flags = f" -j {num_proc} "
         if case.LiqPropsType.lower() == "gcm":
             build_flags += " SPRAY_GCM=TRUE"
         elif case.LiqPropsType.lower() == "mp":

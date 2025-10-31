@@ -238,6 +238,19 @@ jobs:
         Utils/CloneDeps.sh
         git clone https://github.com/NREL/cmlm.git
         pip install -e cmlm
+    - name: Nomura GCM
+      working-directory: ./Exec/RegTests/SingleDropEvap
+      run: |
+        make TPL
+        python Validate.py -b -c Nomura -n $(nproc)
+    - Name: WongLin MP Antoine
+      working-directory: ./Exec/RegTests/SingleDropEvap
+      run: |
+        python Validate.py -b -c WongLin -l mp -p Antoine -n $(nproc)
+    - name: Daif GCM Manifold
+      working-directory: ./Exec/RegTests/SingleDropEvap
+      run: |
+        python Validate.py -b -c Daif -m -n $(nproc)
     - name: Build AMReX Tools
       env:
          AMREX_HOME: ${GITHUB_WORKSPACE}/Submodules/PelePhysics/Submodules/amrex
@@ -256,15 +269,3 @@ jobs:
         sed -i "s/mpiexec -n 1/mpiexec -n 2/g" multiRuns.py
         ./multiRuns.py
         ./compareOutput.py
-    - name: Nomura GCM
-      working-directory: ./Exec/RegTests/SingleDropEvap
-      run: |
-        python Validate.py -b -c Nomura -n 2
-    - name: WongLin MP Antoine
-      working-directory: ./Exec/RegTests/SingleDropEvap
-      run: |
-        python Validate.py -b -c WongLin -l mp -p Antoine -n 2
-    - name: Daif GCM Manifold
-      working-directory: ./Exec/RegTests/SingleDropEvap
-      run: |
-        python Validate.py -b -c Daif -m -n 2
