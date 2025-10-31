@@ -152,7 +152,9 @@ if run_new:
             build_flags += " USE_MANIFOLD=TRUE"
         else:
             build_flags += " USE_MANIFOLD=FALSE"
-        os.system(f"make {build_flags}")
+        error = os.system(f"make {build_flags}")
+        if error:
+            raise RuntimeError(f"Compilation of PeleLMeX failed with code {error}")
 
     # Get the Pele executable
     exe_files = [

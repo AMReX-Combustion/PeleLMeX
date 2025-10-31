@@ -242,11 +242,11 @@ jobs:
     - name: Daif GCM Manifold
       working-directory: ./Exec/RegTests/SingleDropEvap
       run: |
+        make TPL
         python Validate.py -b -c Daif -m -n 2 --cmlm_path ${GITHUB_WORKSPACE}/src/cmlm
     - name: Nomura GCM
       working-directory: ./Exec/RegTests/SingleDropEvap
       run: |
-        make TPL
         python Validate.py -b -c Nomura -n 2
     - name: WongLin MP Antoine
       working-directory: ./Exec/RegTests/SingleDropEvap
