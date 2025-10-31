@@ -223,8 +223,8 @@ jobs:
     name: GNU@9.3 MPI Run [SPRAY]
     runs-on: ubuntu-latest
     env:
-      {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
-      {CMLM_VERSION: 0.0.1}
+      CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"
+      CMLM_VERSION: 0.0.1
     steps:
     - uses: actions/checkout@v4
     - name: System Dependencies
