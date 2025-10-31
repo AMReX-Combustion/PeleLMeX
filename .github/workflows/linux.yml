@@ -224,6 +224,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
+      {CMLM_VERSION: 0.0.1}
     steps:
     - uses: actions/checkout@v4
     - name: System Dependencies
@@ -236,21 +237,22 @@ jobs:
     - name: Repo Dependencies
       run: |
         Utils/CloneDeps.sh
-        git clone https://github.com/NREL/cmlm.git
-        pip install -e cmlm
+        wget https://github.com/NREL/cmlm/archive/refs/tags/v${CMLM_VERSION}.zip
+        unzip v${CMLM_VERSION}.zip
+        pip install -e cmlm-v${CMLM_VERSION}
     - name: Nomura GCM
       working-directory: ./Exec/RegTests/SingleDropEvap
       run: |
         make TPL
-        python Validate.py -b -c Nomura -n $(nproc)
+        python Validate.py -b -c Nomura -n 2
     - name: WongLin MP Antoine
       working-directory: ./Exec/RegTests/SingleDropEvap
       run: |
-        python Validate.py -b -c WongLin -l mp -p Antoine -n $(nproc)
+        python Validate.py -b -c WongLin -l mp -p Antoine -n 2
     - name: Daif GCM Manifold
       working-directory: ./Exec/RegTests/SingleDropEvap
       run: |
-        python Validate.py -b -c Daif -m -n $(nproc)
+        python Validate.py -b -c Daif -m -n 2 --cmlm_path ./cmlm-${CMLM_VERSION}
     - name: Build AMReX Tools
       env:
          AMREX_HOME: ${GITHUB_WORKSPACE}/Submodules/PelePhysics/Submodules/amrex
