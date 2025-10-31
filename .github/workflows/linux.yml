@@ -237,9 +237,8 @@ jobs:
     - name: Repo Dependencies
       run: |
         Utils/CloneDeps.sh
-        wget https://github.com/NREL/cmlm/archive/refs/tags/v${CMLM_VERSION}.zip
-        unzip v${CMLM_VERSION}.zip
-        pip install -e cmlm-v${CMLM_VERSION}
+        # install CMLM (includes python dependencies needed for other scripts)
+        pip install -e git+https://github.com/NREL/cmlm.git@v${CMLM_VERSION}#egg=cmlm
     - name: Nomura GCM
       working-directory: ./Exec/RegTests/SingleDropEvap
       run: |
@@ -252,7 +251,7 @@ jobs:
     - name: Daif GCM Manifold
       working-directory: ./Exec/RegTests/SingleDropEvap
       run: |
-        python Validate.py -b -c Daif -m -n 2 --cmlm_path ./cmlm-${CMLM_VERSION}
+        python Validate.py -b -c Daif -m -n 2 --cmlm_path ./src/cmlm
     - name: Build AMReX Tools
       env:
          AMREX_HOME: ${GITHUB_WORKSPACE}/Submodules/PelePhysics/Submodules/amrex
