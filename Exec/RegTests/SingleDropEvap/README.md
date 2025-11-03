@@ -58,7 +58,7 @@ PeleMP liquid properties with Antoine coefficients, first compile with `USE_MANI
 mpirun -np 4 ./<PeleLMeX_EXE> single-drop-evap-mp-manifold.inp
 ~~~
 
-The `Validaty.py` script can also be used to run any of the caes with manifold-based chemistry. This requires
+The `Validate.py` script can also be used to run any of the cases with manifold-based chemistry. This requires
 an installed version of CMLM (including dependencies), which can be obtained within this directory using:
 ~~~
 git clone git@github.com:NREL/cmlm.git
