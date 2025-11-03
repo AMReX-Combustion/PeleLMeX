@@ -46,7 +46,7 @@ Note that multicomponent evaporation is a work in progress as illustrated by the
 
 ### Droplet Evaporation with Manifold-based Chemistry Models
 
-This case setup also supports single droplet evaporation validation for pray modeling capability coupled
+This case setup also supports single droplet evaporation validation for spray modeling capability coupled
 to manifold based chemistry models. These models replace the EOS and Transport property models from
 PelePhysics with tabulated (or neural network) reduced-order representations. These models require additional
 files containing the tabulated data and associated metadata, which are generated with the separate [CMLM
