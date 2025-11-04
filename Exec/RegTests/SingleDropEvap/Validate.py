@@ -41,14 +41,14 @@ parser.add_argument(
     choices=prop_models,
     help="Liquid properties model, default: gcm",
 )
-psat_models = ["Antoine", "Clausius-Clapeyron"]
+psat_models = ["Antoine", "Clausius-Clapeyron", "CC"]
 parser.add_argument(
     "--mp_psat_model",
     "-p",
     type=str,
     default="Antoine",
     choices=psat_models,
-    help="Psat model for PeleMP properties, default: Antoine",
+    help="Psat model for PeleMP properties (Antoine, Clausius-Clapeyron, or CC), default: Antoine",
 )
 parser.add_argument(
     "--use_manifold",
@@ -66,7 +66,7 @@ parser.add_argument(
     "--dont_run_new",
     "-d",
     action="store_true",
-    help="Rerun case rather than using previously computed data",
+    help="Plot previously computed data instead of running new simulation",
 )
 parser.add_argument(
     "--build_new", "-b", action="store_true", help="Build executable to run case"
@@ -87,8 +87,11 @@ case_name = args.case_name
 # Liquid properties model: "mp" or "gcm"
 LiqPropsType = args.liq_props_type
 
-# Psat model for PeleMP: "Antoine" or "Clasius-Clapeyron"
+# Psat model for PeleMP: "Antoine" or "Clausius-Clapeyron"
 PeleMP_PsatModel = args.mp_psat_model
+# Map CC shortcut to full name
+if PeleMP_PsatModel == "CC":
+    PeleMP_PsatModel = "Clausius-Clapeyron"
 
 # Use manifold model for EOS (requires CMLM dependency)
 use_manifold = args.use_manifold

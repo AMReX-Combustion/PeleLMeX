@@ -15,32 +15,29 @@ Similarly, the case with the GCM liquid properties can be run by compiling with 
 mpirun -np 4 ./<PeleLMeX_EXE> single-drop-evap-gcm.inp
 ~~~
 
-All cases provided in the PelePhysics documentation can be run by opening `Validate.py` and setting the `case_name` from the table in the PelePhysics documentation listed above, the model for the liquid properties, and the model for estimating saturated vapor pressure for the PeleMP model, which defaults to the Antoine fit. For example:
-~~~
-# Case to run
-case_name = "Daif"
+All cases provided in the [PelePhysics documentation]((https://amrex-combustion.github.io/PelePhysics/Spray.html#single-droplet-tests)) can be run using the `Validate.py` script. Because many of the necessary options for each case must be set at compile time, the `Validate.py` script can be used to compile the code with the necessary options if a valid executable does not exist already.
+The relevant compile time options are indicated in the executable name. The following options are availble with teh `Validate.py` script:
 
-# Liquid properties model: "mp" or "gcm"
-LiqPropsType = "mp"
+| Option | Description | Choices/Defaults |
+| :----: | :---------- | :--------------- |
+| `-c`   | Case name   | **_WongLin_**, Nomura, Daif, RungeHep, <br> RungeDec, RungeMix, RungeJP8|
+| `-l`   | Liquid properties model | **_gcm_**, mp |
+| `-p`   | $P_{sat}$ model for PeleMP | **_Antoine_**, Clausius-Clapeyron (or CC) |
+| `-m`   | Use Manifold chemistry/EOS | |
+| `--cmlm_path` | Path to CMLM install for<br>Manifold table generation | Only needed with `-m` if installed outside<br> of SingleDropEvap |
+| `-b`   | Build executable for case | |
+| `-d`   | Don't run new simulation | Use to plot previously computed data |
+| `-n`   | Number of processors for<br> parallel runs | Any machine-valid integer, default is **_6_** |
 
-# Psat model for PeleMP: "Antoine" or "Clasius-Clapeyron"
-PeleMP_PsatModel = "Antoine"
+For example, the following command runs the *Daif* case with the *PeleMP* liquid properties model with the *Clasius-Clapeyron* model for estimating saturated vapor pressure on 4 processors
 ~~~
-then run
+python Validate.py -c Daif -l mp -p CC -n 4 -b
 ~~~
-python Validate.py
-~~~
-Because many of the necessary options for each case must be set at compile time, the `Validate.py` script
-will automatically recompile the code with the necessary options if a valid executable does not exist already.
-The relevant compile time options are indicated in the executable name.
 
-Case options include:
-* `Nomura`
-* `WongLin`
-* `Daif`
-* `RungeHep`, `RungeDec`, `RungeMix`, and `RungeJP8`
-
-Users can compare the results from the various tests/configurations by running the `CompareLiqPropsType.py` script with the desired `case_name`. The script will search the current directory for all available data for each case.
+Users can compare the results from the various tests/configurations by running the `CompareResults.py` script with the desired `case_name`. The script will search the current directory for all available data for each case. For example:
+~~~
+python CompareResults.py -c Daif
+~~~
 
 Note that multicomponent evaporation is a work in progress as illustrated by the `RungeJP8` test case.
 
@@ -58,12 +55,14 @@ PeleMP liquid properties with Antoine coefficients, first compile with `USE_MANI
 mpirun -np 4 ./<PeleLMeX_EXE> single-drop-evap-mp-manifold.inp
 ~~~
 
-The `Validate.py` script can also be used to run any of the cases with manifold-based chemistry. This requires
-an installed version of CMLM (including dependencies), which can be obtained within this directory using:
+The `Validate.py` script can also be used to run any of the cases with manifold-based chemistry. This requires an installed version of CMLM (including dependencies), which can be obtained within this directory using:
 ~~~
 git clone git@github.com:NREL/cmlm.git
 pip install -e cmlm
 ~~~
-Then within `Validate.py` set `use_manifold = True` and the appropriate `cmlm_path` if downloaded elsewhere.
+Then run `Validate.py` with the option `--use_manifold` (or the shorthand `-m`) and the appropriate `--cmlm_path` if downloaded elsewhere. For example: 
+~~~
+python Validate.py -b -c Daif -m -n 4 --cmlm_path $PATH_TO_CMLM
+~~~
 Note that the key script within CMLM that generates the tables for spray vaporization cases is located at
 `cmlm/run_scripts/ctable/create_spray_table_nd.py`.

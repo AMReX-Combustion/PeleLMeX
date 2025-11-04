@@ -280,7 +280,7 @@ def RungeJP8(LiqPropsType, PeleMP_PsatModel="Antoine", **kwargs):
         gas,
         LiqPropsType,
         xyunits=["runge", "dd02"],
-        dt=2e-3,
+        dt=5e-3,
         plot_per=1,
         PeleMP_PsatModel=PeleMP_PsatModel,
         **kwargs,
