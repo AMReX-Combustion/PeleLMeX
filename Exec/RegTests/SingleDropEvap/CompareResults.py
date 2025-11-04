@@ -3,6 +3,7 @@ import numpy as np
 from CaseInfo import *
 from ExtractData import *
 import matplotlib.pyplot as plt
+import argparse
 
 """
 Script for plotting and comparing PelePhysics liquid properties models
@@ -17,9 +18,24 @@ Test cases:
 | ---------- | -------------------- | ---------------------------------------- |
 """
 
-# Case to run
-case_name = "WongLin"
+parser = argparse.ArgumentParser(
+    description="Quantitatively compare results for given case to experimental data"
+)
 
+cases = ["WongLin", "Nomura", "Daif", "RungeHep", "RungeDec", "RungeMix", "RungeJP8"]
+parser.add_argument(
+    "--case_name",
+    "-c",
+    type=str,
+    default="WongLing",
+    choices=cases,
+    help="Case name to run, default: WongLin",
+)
+
+args = parser.parse_args()
+
+# Case to run
+case_name = args.case_name
 
 def find_case_dirs(case_name):
     # List all directories in file path
@@ -64,24 +80,34 @@ def setup(case_name):
     for k, d in enumerate(matching_dirs):
         if "gcm" in d.lower():
             name = d.split("_")[1]
-            cases.append(SpecifyCase(name, "gcm"))
             leg_lab.append("PeleGCM")
+            cases.append(SpecifyCase(name, "gcm"))
             leg_col.append("tab:blue")
-            line_sty.append("-")
+            cases[k].case_path = d
+            if "_manifold" in d.lower():
+                line_sty.append(":")
+                leg_lab[k] += ": Manifold"
+            else:
+                line_sty.append("-")
 
         elif "mp" in d.lower():
             name = d.split("_")[1]
-            leg_lab.append("PeleMP")
+            leg_lab.append("PeleMP:")
             if "antoine" in d.lower():
                 cases.append(SpecifyCase(name, "mp", "Antoine"))
                 leg_col.append("tab:red")
                 line_sty.append("--")
+                leg_lab[k] += " Antoine"
             elif "cc" in d.lower():
                 cases.append(SpecifyCase(name, "mp", "Clasius-Clapeyron"))
                 leg_col.append("tab:orange")
                 line_sty.append("--")
+                leg_lab[k] += " Clasius-Clapeyron"
             else:
                 raise ValueError(f"Unknown Psat model in directory name: {d}")
+            if "_manifold" in d.lower():
+                leg_lab[k] += " + Manifold"
+                line_sty[k] = ":"
         else:
             raise ValueError(f"Unknown liquid properties model in directory name: {d}")
 
@@ -95,8 +121,6 @@ def setup(case_name):
         elif "rungemix" in name.lower():
             leg_lab[k] += ": Mix"
             leg_col[k] = "tab:orange"
-        elif "antoine" in d.lower() or "cc" in d.lower():
-            leg_lab[k] += f": {d.split('_')[-1]}"
 
     return cases, leg_lab, leg_col, line_sty
 
@@ -330,7 +354,7 @@ else:
 
 # Single legend from axs[0] placed in rightmost subplot
 handles, labels = axs[0].get_legend_handles_labels()
-axs[-1].legend(handles, labels, fontsize=font_s, loc="best")
+axs[-1].legend(handles, labels, fontsize=font_s-2, loc="center left", bbox_to_anchor=(1, 0.5))
 
 plt.tight_layout()
 plt.show()
