@@ -22,7 +22,7 @@ parser = argparse.ArgumentParser(
     description="Quantitatively compare results for given case to experimental data"
 )
 
-cases = ["WongLin", "Nomura", "Daif", "RungeHep", "RungeDec", "RungeMix", "RungeJP8"]
+cases = ["WongLin", "Nomura", "Daif", "Runge", "RungeJP8"]
 parser.add_argument(
     "--case_name",
     "-c",
