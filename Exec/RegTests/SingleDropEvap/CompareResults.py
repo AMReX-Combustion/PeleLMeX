@@ -3,6 +3,7 @@ import numpy as np
 from CaseInfo import *
 from ExtractData import *
 import matplotlib.pyplot as plt
+import pandas as pd
 import argparse
 
 """
@@ -86,28 +87,28 @@ def setup(case_name):
             cases[k].case_path = d
             if "_manifold" in d.lower():
                 line_sty.append(":")
-                leg_lab[k] += ": Manifold"
+                leg_lab[k] += " + Manifold"
             else:
                 line_sty.append("-")
 
         elif "mp" in d.lower():
             name = d.split("_")[1]
-            leg_lab.append("PeleMP:")
-            if "antoine" in d.lower():
-                cases.append(SpecifyCase(name, "mp", "Antoine"))
-                leg_col.append("tab:red")
-                line_sty.append("--")
-                leg_lab[k] += " Antoine"
-            elif "cc" in d.lower():
-                cases.append(SpecifyCase(name, "mp", "Clasius-Clapeyron"))
-                leg_col.append("tab:orange")
-                line_sty.append("--")
-                leg_lab[k] += " Clasius-Clapeyron"
-            else:
-                raise ValueError(f"Unknown Psat model in directory name: {d}")
+            leg_lab.append("PeleMP")
+            line_sty.append("--")
             if "_manifold" in d.lower():
                 leg_lab[k] += " + Manifold"
                 line_sty[k] = ":"
+            if "antoine" in d.lower():
+                cases.append(SpecifyCase(name, "mp", "Antoine"))
+                leg_col.append("tab:red")
+                leg_lab[k] += ": Antoine"
+            elif "cc" in d.lower():
+                cases.append(SpecifyCase(name, "mp", "Clasius-Clapeyron"))
+                leg_col.append("tab:orange")
+                leg_lab[k] += ": Clasius-Clapeyron"
+            else:
+                raise ValueError(f"Unknown Psat model in directory name: {d}")
+            
         else:
             raise ValueError(f"Unknown liquid properties model in directory name: {d}")
 
@@ -135,7 +136,7 @@ font_s = 16
 
 
 def case_info(case):
-    refdvals, reftvals, pele_vals = ExtractRefVals(case)
+    refdvals, reftvals, _ = ExtractRefVals(case)
     # Set end time based on reference values if available
     if refdvals is not None:
         time = refdvals[-1, 0] / case.xconv
@@ -143,7 +144,14 @@ def case_info(case):
     if not os.path.exists(case.case_path):
         raise ValueError(f"Case directory not found: {case.case_path}")
     outfile = os.path.join(case.case_path, "pele_vals.csv")
-    pele_vals = ExtractData(case, outfile)
+    if not os.path.isfile(outfile):
+        try:
+            pele_vals = ExtractData(case, outfile)
+        except Exception as e:
+            raise RuntimeError(f"Error extracting data for case {case.name}: {e}")
+    else:
+        df = pd.read_csv(outfile)
+        pele_vals = df.to_numpy()
     return refdvals, reftvals, pele_vals
 
 
