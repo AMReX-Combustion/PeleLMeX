@@ -28,7 +28,7 @@ parser.add_argument(
     "--case_name",
     "-c",
     type=str,
-    default="WongLing",
+    default="WongLin",
     choices=cases,
     help="Case name to run, default: WongLin",
 )
