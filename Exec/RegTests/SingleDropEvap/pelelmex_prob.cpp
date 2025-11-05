@@ -11,14 +11,6 @@ PeleLM::readProbParm()
 
   PeleLM::prob_parm->eosparm = PeleLM::eos_parms.device_parm();
   auto eos = pele::physics::PhysicsType::eos(&(PeleLM::eos_parms.host_parm()));
-  if (eos.identifier() == "Manifold") {
-    amrex::Print()
-      << "\n************************************************************\n";
-    amrex::Print()
-      << "\nWarning! Manifold model with Spray is still being validated.\n";
-    amrex::Print()
-      << "\n************************************************************\n";
-  }
 
   // Gas phase properties
   pp.query("P_mean", PeleLM::prob_parm->P_mean);
