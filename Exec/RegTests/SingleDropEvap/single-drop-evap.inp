@@ -29,7 +29,7 @@ prob.part_vel = 0.000000 0.0 0.0
 prob.part_Re = 17.0
 
 #------------------------PeleLM CONTROL-----------------------------
-peleLM.v = 1
+peleLM.v = 3
 peleLM.deltaT_verbose = 2
 peleLM.deltaT_iterMax = 50
 
@@ -49,8 +49,8 @@ amr.plot_grad_p = 0
 amr.derive_plot_vars = mass_fractions
 
 # -----------------------LINEAR SOLVERS-----------------------------
-mac_proj.verbose = 0
-nodal_proj.verbose = 0
+mac_proj.verbose = 1
+nodal_proj.verbose = 1
 diffusion.verbose = 0
 diffusion.rtol = 1.0e-12
 

@@ -9,7 +9,7 @@
 # -----------------------------------------------------------------------------
 
 particles.fuel_species = NC7H16 NC10H22
-particles.Y_0 = 0.7375 0.2625
+particles.Y_0 = 0. 1.
 particles.dep_fuel_species = NC7H16 NC10H22
 
 # Properties for NC7H16 in MKS

@@ -44,9 +44,12 @@ SprayParticleContainer::InitSprayParticles(const bool init_parts)
   if (SPRAY_FUEL_NUM > 1) {
     pp_part.query<amrex::Real>("Y_0", partY);
     amrex::Real sumtest = 0.;
+    amrex::Print() << "\nY_0 = ";
     for (int n = 0; n < SPRAY_FUEL_NUM; ++n) {
       sumtest += partY[n];
+      amrex::Print() << partY[n] << " ";
     }
+    amrex::Print() << "\n\n";
     if (std::abs(1. - sumtest) > 1.E-6) {
       amrex::Abort("Liquid mass fractions must sum to 1!");
     }

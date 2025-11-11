@@ -28,7 +28,7 @@ THREAD_SANITIZER = FALSE
 # PelePhysics
 USE_PLASMA = FALSE
 USE_PARTICLES = TRUE
-SPRAY_GCM = FALSE
+SPRAY_GCM = TRUE
 SPRAY_FUEL_NUM = 2
 ifeq ($(SPRAY_GCM), TRUE)
   SpraySuffix = .$(SPRAY_FUEL_NUM)SprayFuel.SprayGCM
@@ -46,7 +46,8 @@ ifeq ($(USE_MANIFOLD), TRUE)
   USERSuffix = .Manifold$(Manifold_Dim)d$(Manifold_Type)$(SpraySuffix)
 else
   SPRAY_FUEL_NUM = 2
-  Chemistry_Model = liquid_fuels_nonreacting
+  #Chemistry_Model = liquid_fuels_nonreacting
+  Chemistry_Model = many-to-one
   Eos_Model = Fuego
   Transport_Model = Simple
   USERSuffix = .$(Chemistry_Model)$(SpraySuffix)

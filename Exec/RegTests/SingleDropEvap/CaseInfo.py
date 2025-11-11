@@ -68,6 +68,7 @@ class CaseInfo:
         self.domain = domain
         self.cell_num = cell_num
         self.num_liq_spec = len(droplet.fuel_names)
+        self.use_file_y0 = False
 
         # File paths, names, etc.
         FILE_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -84,8 +85,7 @@ class CaseInfo:
                 self.case_dir += "_Manifold"
         self.case_path = os.path.join(FILE_PATH, self.case_dir)
         self.input_file = os.path.join(self.case_path, f"input_{name}.inp")
-        if LiqPropsType.lower() == "gcm":
-            self.input_gcm = os.path.join(self.case_path, f"input_{name}_gcm.inp")
+        self.input_spray = os.path.join(self.case_path, f"input_{name}_spray.inp")
 
         # If reference is experimental or computational results
         if reftype is None:
@@ -285,6 +285,7 @@ def RungeJP8(LiqPropsType, PeleMP_PsatModel="Antoine", **kwargs):
         PeleMP_PsatModel=PeleMP_PsatModel,
         **kwargs,
     )
+    case.use_file_y0 = True
     return case
 
 
@@ -375,40 +376,55 @@ def CreateInputFile(case):
         elif "particles.fixed_parts" in line:
             new_line = f"particles.fixed_parts = {fixed_parts:d}\n"
         elif "particles.Y_0" in line:
-            if case.LiqPropsType.lower() == "mp":
-                # Only edit gen_input for PeleMP case
-                new_line = "particles.Y_0 = "
-                for y in case.droplet.Y:
-                    new_line += f"{y:.2f} "
-                new_line += "\n"
-            else:
-                # particles.Y_0 is in gcm_input_file
+                # particles.Y_0 is in sprayProps{case.LiqPropsType}_*.inp file
                 new_line = "\n"
         elif "particles.fuel_species" in line:
             new_line = "particles.fuel_species = "
             for n in case.droplet.fuel_names:
                 new_line += f"{n} "
             new_line += "\n"
+        elif "FILE" in line:
+            new_line = f"FILE = {case.case_dir}/input_{case.name}_spray.inp\n"
+        else:
+            new_line = line
+        new_lines.append(new_line)
+
+    # Save to output file
+    with open(case.input_file, "w") as f:
+        f.writelines(new_lines)
+
+    # Edit spray_input_file
+    spray_input_file = os.path.join(FILE_PATH, case.spray_input_file)
+
+    with open(spray_input_file, "r") as f:
+        spray_lines = f.readlines()
+
+    new_spray_lines = []
+    for line in spray_lines:
+        if "particles.Y_0" in line:
+            if case.use_file_y0:
+                new_line = line
+            else:
+                new_line = f"particles.Y_0 = "
+                for y in case.droplet.Y:
+                    new_line += f"{y:.2f} "
+                new_line += "\n"
+        elif "# Units" in line:
+            new_line = line
+            new_line += f"# Notes: Y_0 modified for {case.name} case\n"
         elif re.search(r"particles\S*_psat", line):
             if case.LiqPropsType.lower() == "mp":
-                # Only edit gen_input for PeleMP case
+                # Only edit for PeleMP case
                 if case.PeleMP_PsatModel.lower() == "antoine":
                     new_line = line
                     num_psat_lines += 1
                 else:
                     # Clausius-Clapeyron relation, ignore existing line
                     new_line = ""
-
-        elif "FILE" in line:
-            if case.LiqPropsType.lower() == "gcm":
-                new_line = f"FILE = {case.case_dir}/input_{case.name}_gcm.inp\n"
-            else:
-                # Ignore existing FILE line for PeleMP case
-                new_line = ""
         else:
             new_line = line
-        new_lines.append(new_line)
-
+        new_spray_lines.append(new_line)
+    
     # Check that Psat lines were found for PeleMP if needed
     if (case.LiqPropsType.lower() == "mp") and (
         case.PeleMP_PsatModel.lower() == "antoine"
@@ -418,35 +434,8 @@ def CreateInputFile(case):
             raise ValueError(error)
 
     # Save to output file
-    with open(case.input_file, "w") as f:
-        f.writelines(new_lines)
-
-    # For GCM cases edit particles.Y_0 in gcm_input_file
-    if case.LiqPropsType.lower() == "gcm":
-
-        gcm_input_file = os.path.join(FILE_PATH, case.gcm_input_file)
-
-        with open(gcm_input_file, "r") as f:
-            gcm_lines = f.readlines()
-
-        new_gcm_lines = []
-        for line in gcm_lines:
-            if "particles.Y_0" in line:
-                # Edit gcm_input_file for GCM case
-                new_line = f"particles.Y_0 = "
-                for y in case.droplet.Y:
-                    new_line += f"{y:.2f} "
-                new_line += "\n"
-            elif "# Units" in line:
-                new_line = line
-                new_line += f"# Notes: Y_0 modified for {case.name} case\n"
-            else:
-                new_line = line
-            new_gcm_lines.append(new_line)
-
-        # Save to output file
-        with open(case.input_gcm, "w") as f:
-            f.writelines(new_gcm_lines)
+    with open(case.input_spray, "w") as f:
+        f.writelines(new_spray_lines)
 
 
 def CreateManifoldFiles(case, cmlm_dir):
@@ -455,7 +444,7 @@ def CreateManifoldFiles(case, cmlm_dir):
     fuels = case.droplet.fuel_names
 
     # first find latent heat for each fuel from input files
-    ifile = case.input_gcm if case.LiqPropsType.lower() == "gcm" else case.input_file
+    ifile = case.input_spray
     delta_h_vap = [0.0, 0.0]
     found = [False] * len(fuels)
     with open(ifile, "r") as f:

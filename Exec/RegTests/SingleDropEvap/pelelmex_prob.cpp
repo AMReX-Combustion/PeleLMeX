@@ -80,13 +80,15 @@ PeleLM::readProbParm()
     Re = PeleLM::prob_parm->vel_gas * rho * drop_dia / mu;
   }
 
-  std::ofstream ofs("ic.txt", std::ofstream::out);
-  amrex::Print(ofs) << "Re = " << Re << "\n"
-                    << "vel_gas = " << prob_parm->vel_gas << "\n"
-                    << "mu_r = " << mu << "\n"
-                    << "rho_r = " << rho << "\n"
-                    << "drop_dia = " << drop_dia << std::endl;
-  ofs.close();
+  if(amrex::ParallelDescriptor::IOProcessor()){
+    std::ofstream ofs("ic.txt", std::ofstream::out);
+    amrex::Print(ofs) << "Re = " << Re << "\n"
+                      << "vel_gas = " << prob_parm->vel_gas << "\n"
+                      << "mu_r = " << mu << "\n"
+                      << "rho_r = " << rho << "\n"
+                      << "drop_dia = " << drop_dia << std::endl;
+    ofs.close();
+  }
 }
 
 void
