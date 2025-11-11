@@ -10,7 +10,6 @@ namespace {
 int sprayMomSrcIndx = VELX;
 int sprayRhoSrcIndx = DENSITY;
 int spraySpecSrcIndx = FIRSTSPEC;
-int sprayEngSrcIndx = FIRSTSPEC + SPRAY_FUEL_NUM;
 amrex::Vector<amrex::Real> spray_cfl;
 amrex::Vector<int> spray_state_ghosts;
 amrex::Vector<int> spray_source_ghosts;
@@ -69,11 +68,6 @@ PeleLM::SpraySetup()
   if (!do_spray_particles) {
     return;
   }
-  // There must be at least as many fuel species in the spray as
-  // there are species in the fluid
-  if (SPRAY_FUEL_NUM > NUM_SPECIES) {
-    amrex::Abort("Cannot have more spray fuel species than fluid species");
-  }
 
   SprayParticleContainer::spraySetup(
     m_gravity.data(), &eos_parms.host_parm(), eos_parms.device_parm());
@@ -88,7 +82,7 @@ PeleLM::SpraySetup()
   scomps.rhoSrcIndx = sprayRhoSrcIndx;
   scomps.momSrcIndx = sprayMomSrcIndx;
   scomps.specSrcIndx = spraySpecSrcIndx;
-  scomps.engSrcIndx = sprayEngSrcIndx;
+  scomps.engSrcIndx = spraySpecSrcIndx + SprayParticleContainer::m_sprayData->N_pc;
   SprayParticleContainer::AssignSprayComps(scomps);
 }
 
@@ -245,6 +239,7 @@ PeleLM::SpraySetState(const amrex::Real& a_flow_dt)
 void
 PeleLM::SprayAddSource(const int level)
 {
+  int N_pc = SprayParticleContainer::m_sprayData->N_pc;
   amrex::MultiFab& source = *(m_spraysource[level]);
   amrex::MultiFab& extsource = *(m_extSource[level]);
   const int eghosts = extsource.nGrow();
@@ -256,11 +251,11 @@ PeleLM::SprayAddSource(const int level)
   amrex::MultiFab::Add(
     extsource, source, scomps.momSrcIndx, scomps.momIndx, AMREX_SPACEDIM,
     eghosts);
-  for (int n = 0; n < SPRAY_FUEL_NUM; ++n) {
+  for (int pc = 0; pc < N_pc; ++pc) {
     const int dstcomp =
-      scomps.specIndx + SprayParticleContainer::getFuelIndx(n);
+      scomps.specIndx + SprayParticleContainer::getFuelIndx(pc);
     amrex::MultiFab::Add(
-      extsource, source, scomps.specSrcIndx + n, dstcomp, 1, eghosts);
+      extsource, source, scomps.specSrcIndx + pc, dstcomp, 1, eghosts);
   }
 #ifdef USE_MANIFOLD_EOS
   // Need to keep dummy Rho and actual Rho the same
