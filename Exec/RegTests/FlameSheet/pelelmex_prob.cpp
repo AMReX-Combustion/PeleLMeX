@@ -10,6 +10,7 @@ PeleLM::readProbParm()
   pp.query("standoff", PeleLM::prob_parm->standoff);
   pp.query("pertmag", PeleLM::prob_parm->pertmag);
   pp.query("pertlength", PeleLM::prob_parm->pertlength);
+  pp.query("ref_frame", PeleLM::prob_parm->ref_frame);
 
   PeleLM::prob_parm->eosparm = PeleLM::eos_parms.device_parm();
   PeleLM::pmf_data.initialize();
