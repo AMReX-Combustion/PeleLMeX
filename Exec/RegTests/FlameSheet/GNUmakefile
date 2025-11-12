@@ -36,10 +36,12 @@ ifeq ($(USE_MANIFOLD), TRUE)
   Transport_Model = Manifold
   Manifold_Dim = 1
   Manifold_Type = Table
+  USERSuffix = .Manifold$(Manifold_Dim)d$(Manifold_Type)
 else
   Chemistry_Model = drm19
   Eos_Model = Fuego
   Transport_Model = Simple
+  USERSuffix = .$(Chemistry_Model)
 endif
 
 PELE_HOME ?= ../../..
