@@ -160,39 +160,33 @@ BPatch::BPatch(const std::string& patch_name, const amrex::Geometry& geom)
 
   // To begin with, fill tmp_species_only with pure species in the list. For
   // now, we are not checking if the species actually exist in the mechanism
-  for (int n = 0; n < speciesList.size(); ++n) {
-    if (
-      speciesList[n][0] != '{' &&
-      speciesList[n][speciesList[n].size() - 1] != '}') {
-      tmp_species_only.push_back(speciesList[n]);
+
+  for (const auto& s : speciesList) {
+    if (s.front() != '{' && s.back() != '}') {
+      tmp_species_only.push_back(s);
     }
   }
 
   // Now search for species in the group definitions and fill them in
   // tmp_species_only. For now, we are not checking if the species actually
   // exist in the mechanism
-  for (int n = 0; n < speciesList.size(); ++n) {
-    if (
-      speciesList[n][0] == '{' and speciesList[n][speciesList[n].size() - 1] ==
-                                     '}') // Found a group definition
-    {
-      size_t start = speciesList[n].find('{'); // opening brace
-      size_t colon = speciesList[n].find(':'); // first colon
-      size_t end = speciesList[n].find('}');   // ending brace
 
+  for (const auto& s : speciesList) {
+    if (s.front() == '{' && s.back() == '}') {
+      size_t start = s.find('{');
+      size_t colon = s.find(':');
+      size_t end = s.find('}');
       std::string groupname_tmp;
-
       if (
         start != std::string::npos && colon != std::string::npos &&
         colon > start) {
-        groupname_tmp = speciesList[n].substr(start + 1, colon - start - 1);
+        groupname_tmp = s.substr(start + 1, colon - start - 1);
       }
-
       amrex::Vector<std::string> tokens;
       if (
         colon != std::string::npos && end != std::string::npos && end > colon) {
         // Extract substring between ':' and '}'
-        std::string rest = speciesList[n].substr(colon + 1, end - colon - 1);
+        std::string rest = s.substr(colon + 1, end - colon - 1);
 
         // Split by comma
         std::stringstream ss(rest);
@@ -220,11 +214,11 @@ BPatch::BPatch(const std::string& patch_name, const amrex::Geometry& geom)
 
   // Now we collected all the species for which we need to find flux. Now let us
   // check if all the species in tmp_species_only exist in the mechanism
-  for (int n = 0; n < tmp_species_only.size(); ++n) {
-    auto it = std::find(names.begin(), names.end(), tmp_species_only[n]);
+  for (const auto& s : tmp_species_only) {
+    auto it = std::find(names.begin(), names.end(), s);
     if (it == names.end()) {
       std::string msg =
-        "\nError! Unable to find species " + tmp_species_only[n] +
+        "\nError! Unable to find species " + s +
         " in the mechanism. Please correct the bpatch species list";
       amrex::Abort(msg);
     }
@@ -232,7 +226,7 @@ BPatch::BPatch(const std::string& patch_name, const amrex::Geometry& geom)
 
   // Now the species list should be devoid of any duplicates or non-existent
   // species
-  m_bpdata_h.num_species = tmp_species_only.size();
+  m_bpdata_h.num_species = static_cast<int>(tmp_species_only.size());
 
   // Now allocate memory for speciesIndex and speciesFlux
   if (m_bpdata_h.num_species > 0) {
@@ -255,53 +249,44 @@ BPatch::BPatch(const std::string& patch_name, const amrex::Geometry& geom)
     auto it = std::find(names.begin(), names.end(), tmp_species_only[n]);
     if (it != names.end()) {
       size_t index = std::distance(names.begin(), it);
-      m_bpdata_h.speciesIndex[n] = index;
+      m_bpdata_h.speciesIndex[n] = static_cast<int>(index);
     }
   }
 
-  // Check if there is -1. There shouldnt be any
+  // Check if there is -1. There shouldn't be any
   for (int n = 0; n < m_bpdata_h.num_species; n++) {
     if (m_bpdata_h.speciesIndex[n] == -1) {
-      amrex::Abort("\nError! -1 found in specied index vector");
+      amrex::Abort("\nError! -1 found in specified index vector");
     }
   }
 
-  for (int n = 0; n < speciesList.size(); ++n) {
-    // First add pure species to grouplist
+  for (const auto& s : speciesList) {
     amrex::Vector<int> tmp;
-    if (
-      speciesList[n][0] != '{' &&
-      speciesList[n][speciesList[n].size() - 1] != '}') {
-      auto it = std::find(names.begin(), names.end(), speciesList[n]);
+    if (s.front() != '{' && s.back() != '}') {
+      auto it = std::find(names.begin(), names.end(), s);
       if (it != names.end()) {
         size_t index = std::distance(names.begin(), it);
         tmp.push_back(index);
       }
-
       speciesinGroup.push_back(tmp);
-      groupNames.push_back(speciesList[n]);
-    }
-
-    if (
-      speciesList[n][0] == '{' and speciesList[n][speciesList[n].size() - 1] ==
-                                     '}') // Found a group definition
+      groupNames.push_back(s);
+    } else if (s.front() == '{' && s.back() == '}') // Found a group definition
     {
-      size_t start = speciesList[n].find('{'); // opening brace
-      size_t colon = speciesList[n].find(':'); // first colon
-      size_t end = speciesList[n].find('}');   // ending brace
+      size_t start = s.find('{'); // opening brace
+      size_t colon = s.find(':'); // first colon
+      size_t end = s.find('}');   // ending brace
 
       if (
         start != std::string::npos && colon != std::string::npos &&
         colon > start) {
-        groupNames.push_back(
-          speciesList[n].substr(start + 1, colon - start - 1));
+        groupNames.push_back(s.substr(start + 1, colon - start - 1));
       }
 
       amrex::Vector<std::string> tokens;
       if (
         colon != std::string::npos && end != std::string::npos && end > colon) {
         // Extract substring between ':' and '}'
-        std::string rest = speciesList[n].substr(colon + 1, end - colon - 1);
+        std::string rest = s.substr(colon + 1, end - colon - 1);
 
         // Split by comma
         std::stringstream ss(rest);
@@ -320,21 +305,6 @@ BPatch::BPatch(const std::string& patch_name, const amrex::Geometry& geom)
   // species group definitions
 
   m_bpdata_h.num_groups = groupNames.size();
-
-  for (int n = 0; n < groupNames.size(); n++) {
-    amrex::Print() << "\n Group names = " << groupNames[n];
-    for (int m = 0; m < speciesinGroup[n].size(); m++) {
-      amrex::Print() << "\n\t Species index: " << speciesinGroup[n][m];
-    }
-  }
-
-  for (int n = 0; n < m_bpdata_h.num_species; ++n) {
-    if (m_bpdata_h.speciesIndex[n] == -1) {
-      std::string msg = "\nError! Unable to find species index " +
-                        std::to_string(n) + " with name " + speciesList[n];
-      amrex::Abort(msg);
-    }
-  }
 
   allocate();
   amrex::Gpu::streamSynchronize();
