@@ -266,7 +266,7 @@ BPatch::BPatch(const std::string& patch_name, const amrex::Geometry& geom)
       auto it = std::find(names.begin(), names.end(), s);
       if (it != names.end()) {
         size_t index = std::distance(names.begin(), it);
-        tmp.push_back(index);
+        tmp.push_back(static_cast<int>(index));
       }
       speciesinGroup.push_back(tmp);
       groupNames.push_back(s);
@@ -294,7 +294,7 @@ BPatch::BPatch(const std::string& patch_name, const amrex::Geometry& geom)
         while (std::getline(ss, item, ',')) {
           auto it = std::find(names.begin(), names.end(), item);
           size_t index = std::distance(names.begin(), it);
-          tmp.push_back(index);
+          tmp.push_back(static_cast<int>(index));
         }
       }
       speciesinGroup.push_back(tmp);
@@ -304,7 +304,7 @@ BPatch::BPatch(const std::string& patch_name, const amrex::Geometry& geom)
   // If species are not found by now, they could be defined in groups. Check for
   // species group definitions
 
-  m_bpdata_h.num_groups = groupNames.size();
+  m_bpdata_h.num_groups = static_cast<int>(groupNames.size());
 
   allocate();
   amrex::Gpu::streamSynchronize();
