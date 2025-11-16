@@ -226,11 +226,9 @@ BPatch::BPatch(const std::string& patch_name, const amrex::Geometry& geom)
       }
 
       std::unordered_set<std::string> check_duplicate;
-      bool hasDuplicateSpecies = false;
       for (const auto& s : tokens) {
         if (!check_duplicate.insert(s)
-               .second) { // insert returns {iterator, success}
-          hasDuplicateSpecies = true;
+              .second) { // insert returns {iterator, success}
           std::string msg = "\nError! Duplicate species " + s +
                             " in group definition " + groupname_tmp +
                             "  in the patch " + patch_name;
