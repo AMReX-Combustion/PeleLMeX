@@ -222,10 +222,6 @@ BPatch::BPatch(const std::string& patch_name, const amrex::Geometry& geom)
             tmp_species_only.push_back(item_trimmed);
           }
         }
-        //Check and remove if there are duplicate species in the group definitions
-        std::sort(speciesList.begin(), speciesList.end());
-          speciesList.erase(
-            std::unique(speciesList.begin(), speciesList.end()), speciesList.end());
       }
 
       std::unordered_set<std::string> check_duplicate;
@@ -302,7 +298,7 @@ BPatch::BPatch(const std::string& patch_name, const amrex::Geometry& geom)
 
   for (const auto& s : speciesList) {
     amrex::Vector<int> tmp;
-    if (s.front() != '{' && s.back() != '}') {
+    if (!(s.front() == '{' && s.back() == '}')) {
       auto it = std::find(names.begin(), names.end(), s);
       if (it != names.end()) {
         size_t index = std::distance(names.begin(), it);
