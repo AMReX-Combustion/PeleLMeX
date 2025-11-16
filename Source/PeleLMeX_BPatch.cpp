@@ -201,7 +201,26 @@ BPatch::BPatch(const std::string& patch_name, const amrex::Geometry& geom)
             tmp_species_only.push_back(item);
           }
         }
+        //Check and remove if there are duplicate species in the group definitions
+        std::sort(speciesList.begin(), speciesList.end());
+          speciesList.erase(
+            std::unique(speciesList.begin(), speciesList.end()), speciesList.end());
       }
+
+      std::unordered_set<std::string> check_duplicate;
+      bool hasDuplicateSpecies = false;
+      for (const auto& s : tokens)
+      {
+    	  if (!check_duplicate.insert(s).second) { // insert returns {iterator, success}
+    		  hasDuplicateSpecies = true;
+    		  std::string msg =
+    		            "\nError! Duplicate species "+s+" in group definition " +
+    		            groupname_tmp;
+    		          amrex::Abort(msg);
+
+    	  }
+      }
+
       // If tokens is null vector abort
       if (tokens.size() <= 0) {
         std::string msg =
