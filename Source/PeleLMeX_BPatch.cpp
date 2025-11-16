@@ -1,12 +1,15 @@
 #include "PeleLMeX_BPatch.H"
 #include "PelePhysics.H"
 
-std::string Trim_First_Last_Whitespace(const std::string& species_name) {
-    auto start = species_name.find_first_not_of(" \t\n\r\f\v");
-    auto end   = species_name.find_last_not_of(" \t\n\r\f\v");
+std::string
+Trim_First_Last_Whitespace(const std::string& species_name)
+{
+  auto start = species_name.find_first_not_of(" \t\n\r\f\v");
+  auto end = species_name.find_last_not_of(" \t\n\r\f\v");
 
-    if (start == std::string::npos) return ""; // all whitespace
-    return species_name.substr(start, end - start + 1);
+  if (start == std::string::npos)
+    return ""; // all whitespace
+  return species_name.substr(start, end - start + 1);
 }
 
 BPatch::BPatch(const std::string& patch_name, const amrex::Geometry& geom)
@@ -170,9 +173,9 @@ BPatch::BPatch(const std::string& patch_name, const amrex::Geometry& geom)
   // now, we are not checking if the species actually exist in the mechanism
 
   for (const auto& s : speciesList) {
-	  std::string s_trimmed;
+    std::string s_trimmed;
     if (!(s.front() == '{' && s.back() == '}')) {
-    	s_trimmed = Trim_First_Last_Whitespace(s);
+      s_trimmed = Trim_First_Last_Whitespace(s);
       tmp_species_only.push_back(s_trimmed);
     }
   }
@@ -198,13 +201,11 @@ BPatch::BPatch(const std::string& patch_name, const amrex::Geometry& geom)
         // Extract substring between ':' and '}'
         std::string rest = s.substr(colon + 1, end - colon - 1);
 
-        if(rest.empty())
-        {
-        	std::string msg =
-        	    		            "\nError! Empty species list in the group definition " +
-        	    		            groupname_tmp+"  in the patch "+patch_name;
-        	    		          amrex::Abort(msg);
-
+        if (rest.empty()) {
+          std::string msg =
+            "\nError! Empty species list in the group definition " +
+            groupname_tmp + "  in the patch " + patch_name;
+          amrex::Abort(msg);
         }
 
         // Split by comma
@@ -212,10 +213,10 @@ BPatch::BPatch(const std::string& patch_name, const amrex::Geometry& geom)
         std::string item;
         std::string item_trimmed;
         while (std::getline(ss, item, ',')) {
-        	item_trimmed = Trim_First_Last_Whitespace(item);
+          item_trimmed = Trim_First_Last_Whitespace(item);
           tokens.push_back(item_trimmed);
-          auto it =
-            std::find(tmp_species_only.begin(), tmp_species_only.end(), item_trimmed);
+          auto it = std::find(
+            tmp_species_only.begin(), tmp_species_only.end(), item_trimmed);
           if (it != tmp_species_only.end()) {
             // Do nothing
           } else {
@@ -226,23 +227,22 @@ BPatch::BPatch(const std::string& patch_name, const amrex::Geometry& geom)
 
       std::unordered_set<std::string> check_duplicate;
       bool hasDuplicateSpecies = false;
-      for (const auto& s : tokens)
-      {
-    	  if (!check_duplicate.insert(s).second) { // insert returns {iterator, success}
-    		  hasDuplicateSpecies = true;
-    		  std::string msg =
-    		            "\nError! Duplicate species "+s+" in group definition " +
-    		            groupname_tmp+"  in the patch "+patch_name;
-    		          amrex::Abort(msg);
-
-    	  }
+      for (const auto& s : tokens) {
+        if (!check_duplicate.insert(s)
+               .second) { // insert returns {iterator, success}
+          hasDuplicateSpecies = true;
+          std::string msg = "\nError! Duplicate species " + s +
+                            " in group definition " + groupname_tmp +
+                            "  in the patch " + patch_name;
+          amrex::Abort(msg);
+        }
       }
 
       // If tokens is null vector abort
       if (tokens.size() <= 0) {
         std::string msg =
           "\nError! Unable to find species in the group definition " +
-          groupname_tmp+"  in the patch "+patch_name;
+          groupname_tmp + "  in the patch " + patch_name;
         amrex::Abort(msg);
       }
     }
@@ -253,9 +253,10 @@ BPatch::BPatch(const std::string& patch_name, const amrex::Geometry& geom)
   for (const auto& s : tmp_species_only) {
     auto it = std::find(names.begin(), names.end(), s);
     if (it == names.end()) {
-      std::string msg =
-        "\nError! Unable to find species " + s +
-        " in the mechanism. Please correct the bpatch species list in the patch "+patch_name;
+      std::string msg = "\nError! Unable to find species " + s +
+                        " in the mechanism. Please correct the bpatch species "
+                        "list in the patch " +
+                        patch_name;
       amrex::Abort(msg);
     }
   }
@@ -329,7 +330,7 @@ BPatch::BPatch(const std::string& patch_name, const amrex::Geometry& geom)
         std::string item;
         std::string item_trimmed;
         while (std::getline(ss, item, ',')) {
-        	item_trimmed = Trim_First_Last_Whitespace(item);
+          item_trimmed = Trim_First_Last_Whitespace(item);
           auto it = std::find(names.begin(), names.end(), item_trimmed);
           size_t index = std::distance(names.begin(), it);
           tmp.push_back(static_cast<int>(index));
