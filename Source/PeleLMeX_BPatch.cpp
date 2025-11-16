@@ -7,8 +7,9 @@ Trim_First_Last_Whitespace(const std::string& species_name)
   auto start = species_name.find_first_not_of(" \t\n\r\f\v");
   auto end = species_name.find_last_not_of(" \t\n\r\f\v");
 
-  if (start == std::string::npos)
+  if (start == std::string::npos) {
     return ""; // all whitespace
+  }
   return species_name.substr(start, end - start + 1);
 }
 
@@ -169,13 +170,27 @@ BPatch::BPatch(const std::string& patch_name, const amrex::Geometry& geom)
   amrex::Vector<std::string> names;
   pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(names);
 
-  // To begin with, fill tmp_species_only with pure species in the list. For
-  // now, we are not checking if the species actually exist in the mechanism
-
+  // Check if there are unpaired open or closing braces in group definitions.
   for (const auto& s : speciesList) {
     std::string s_trimmed;
-    if (!(s.front() == '{' && s.back() == '}')) {
-      s_trimmed = Trim_First_Last_Whitespace(s);
+    s_trimmed = Trim_First_Last_Whitespace(s);
+    if (
+      (s_trimmed.front() == '{' && s_trimmed.back() != '}') ||
+      (s_trimmed.front() != '{' && s_trimmed.back() == '}')) {
+      std::string msg = "\nError! Unpaired open or closing braces in group "
+                        "definition in the patch " +
+                        m_patchname;
+      amrex::Abort(msg);
+    }
+  }
+
+  // To begin with, fill tmp_species_only with pure species in the list. For
+  // now, we are not checking if the species actually exist in the mechanism
+  for (const auto& s : speciesList) {
+    std::string s_trimmed;
+    s_trimmed = Trim_First_Last_Whitespace(s);
+    if ((s_trimmed.front() != '{' && s_trimmed.back() != '}')) {
+
       tmp_species_only.push_back(s_trimmed);
     }
   }
@@ -204,7 +219,7 @@ BPatch::BPatch(const std::string& patch_name, const amrex::Geometry& geom)
         if (rest.empty()) {
           std::string msg =
             "\nError! Empty species list in the group definition " +
-            groupname_tmp + "  in the patch " + patch_name;
+            groupname_tmp + "  in the patch " + m_patchname;
           amrex::Abort(msg);
         }
 
@@ -226,12 +241,12 @@ BPatch::BPatch(const std::string& patch_name, const amrex::Geometry& geom)
       }
 
       std::unordered_set<std::string> check_duplicate;
-      for (const auto& s : tokens) {
-        if (!check_duplicate.insert(s)
+      for (const auto& token : tokens) {
+        if (!check_duplicate.insert(token)
                .second) { // insert returns {iterator, success}
           std::string msg = "\nError! Duplicate species " + s +
                             " in group definition " + groupname_tmp +
-                            "  in the patch " + patch_name;
+                            "  in the patch " + m_patchname;
           amrex::Abort(msg);
         }
       }
@@ -240,7 +255,7 @@ BPatch::BPatch(const std::string& patch_name, const amrex::Geometry& geom)
       if (tokens.size() <= 0) {
         std::string msg =
           "\nError! Unable to find species in the group definition " +
-          groupname_tmp + "  in the patch " + patch_name;
+          groupname_tmp + "  in the patch " + m_patchname;
         amrex::Abort(msg);
       }
     }
@@ -254,7 +269,7 @@ BPatch::BPatch(const std::string& patch_name, const amrex::Geometry& geom)
       std::string msg = "\nError! Unable to find species " + s +
                         " in the mechanism. Please correct the bpatch species "
                         "list in the patch " +
-                        patch_name;
+                        m_patchname;
       amrex::Abort(msg);
     }
   }
@@ -297,7 +312,7 @@ BPatch::BPatch(const std::string& patch_name, const amrex::Geometry& geom)
 
   for (const auto& s : speciesList) {
     amrex::Vector<int> tmp;
-    if (!(s.front() == '{' && s.back() == '}')) {
+    if (s.front() != '{' && s.back() != '}') {
       auto it = std::find(names.begin(), names.end(), s);
       if (it != names.end()) {
         size_t index = std::distance(names.begin(), it);
