@@ -1,6 +1,14 @@
 #include "PeleLMeX_BPatch.H"
 #include "PelePhysics.H"
 
+std::string Trim_First_Last_Whitespace(const std::string& species_name) {
+    auto start = species_name.find_first_not_of(" \t\n\r\f\v");
+    auto end   = species_name.find_last_not_of(" \t\n\r\f\v");
+
+    if (start == std::string::npos) return ""; // all whitespace
+    return species_name.substr(start, end - start + 1);
+}
+
 BPatch::BPatch(const std::string& patch_name, const amrex::Geometry& geom)
   : m_patchname(std::move(patch_name))
 {
@@ -162,8 +170,10 @@ BPatch::BPatch(const std::string& patch_name, const amrex::Geometry& geom)
   // now, we are not checking if the species actually exist in the mechanism
 
   for (const auto& s : speciesList) {
+	  std::string s_trimmed;
     if (s.front() != '{' && s.back() != '}') {
-      tmp_species_only.push_back(s);
+    	s_trimmed = Trim_First_Last_Whitespace(s);
+      tmp_species_only.push_back(s_trimmed);
     }
   }
 
@@ -191,14 +201,16 @@ BPatch::BPatch(const std::string& patch_name, const amrex::Geometry& geom)
         // Split by comma
         std::stringstream ss(rest);
         std::string item;
+        std::string item_trimmed;
         while (std::getline(ss, item, ',')) {
-          tokens.push_back(item);
+        	item_trimmed = Trim_First_Last_Whitespace(item);
+          tokens.push_back(item_trimmed);
           auto it =
             std::find(tmp_species_only.begin(), tmp_species_only.end(), item);
           if (it != tmp_species_only.end()) {
             // Do nothing
           } else {
-            tmp_species_only.push_back(item);
+            tmp_species_only.push_back(item_trimmed);
           }
         }
         //Check and remove if there are duplicate species in the group definitions
