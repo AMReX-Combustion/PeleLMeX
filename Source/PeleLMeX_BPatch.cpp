@@ -171,7 +171,7 @@ BPatch::BPatch(const std::string& patch_name, const amrex::Geometry& geom)
 
   for (const auto& s : speciesList) {
 	  std::string s_trimmed;
-    if (s.front() != '{' && s.back() != '}') {
+    if (!(s.front() == '{' && s.back() == '}')) {
     	s_trimmed = Trim_First_Last_Whitespace(s);
       tmp_species_only.push_back(s_trimmed);
     }
@@ -197,6 +197,15 @@ BPatch::BPatch(const std::string& patch_name, const amrex::Geometry& geom)
         colon != std::string::npos && end != std::string::npos && end > colon) {
         // Extract substring between ':' and '}'
         std::string rest = s.substr(colon + 1, end - colon - 1);
+
+        if(rest.empty())
+        {
+        	std::string msg =
+        	    		            "\nError! Empty species list in the group definition " +
+        	    		            groupname_tmp+"  in the patch "+patch_name;
+        	    		          amrex::Abort(msg);
+
+        }
 
         // Split by comma
         std::stringstream ss(rest);
@@ -227,7 +236,7 @@ BPatch::BPatch(const std::string& patch_name, const amrex::Geometry& geom)
     		  hasDuplicateSpecies = true;
     		  std::string msg =
     		            "\nError! Duplicate species "+s+" in group definition " +
-    		            groupname_tmp;
+    		            groupname_tmp+"  in the patch "+patch_name;
     		          amrex::Abort(msg);
 
     	  }
@@ -237,7 +246,7 @@ BPatch::BPatch(const std::string& patch_name, const amrex::Geometry& geom)
       if (tokens.size() <= 0) {
         std::string msg =
           "\nError! Unable to find species in the group definition " +
-          groupname_tmp;
+          groupname_tmp+"  in the patch "+patch_name;
         amrex::Abort(msg);
       }
     }
@@ -250,7 +259,7 @@ BPatch::BPatch(const std::string& patch_name, const amrex::Geometry& geom)
     if (it == names.end()) {
       std::string msg =
         "\nError! Unable to find species " + s +
-        " in the mechanism. Please correct the bpatch species list";
+        " in the mechanism. Please correct the bpatch species list in the patch "+patch_name;
       amrex::Abort(msg);
     }
   }
