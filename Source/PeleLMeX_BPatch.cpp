@@ -215,7 +215,7 @@ BPatch::BPatch(const std::string& patch_name, const amrex::Geometry& geom)
         	item_trimmed = Trim_First_Last_Whitespace(item);
           tokens.push_back(item_trimmed);
           auto it =
-            std::find(tmp_species_only.begin(), tmp_species_only.end(), item);
+            std::find(tmp_species_only.begin(), tmp_species_only.end(), item_trimmed);
           if (it != tmp_species_only.end()) {
             // Do nothing
           } else {
@@ -331,8 +331,10 @@ BPatch::BPatch(const std::string& patch_name, const amrex::Geometry& geom)
         // Split by comma
         std::stringstream ss(rest);
         std::string item;
+        std::string item_trimmed;
         while (std::getline(ss, item, ',')) {
-          auto it = std::find(names.begin(), names.end(), item);
+        	item_trimmed = Trim_First_Last_Whitespace(item);
+          auto it = std::find(names.begin(), names.end(), item_trimmed);
           size_t index = std::distance(names.begin(), it);
           tmp.push_back(static_cast<int>(index));
         }
