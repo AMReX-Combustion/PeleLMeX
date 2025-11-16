@@ -631,7 +631,7 @@ advective \& diffusive fluxes across the domain boundaries, consumption rate int
 Users can also monitor species advective fluxes through specific regions of the domain boundaries (called as boundary patches).
 Patches can be defined on the low or high sides of non-embedded boundaries through the use of pre-defined shapes such as `circle`,
 `rectangle`,`circle-annular`, `rectangle-annular` and `full-boundary`. The zero AMR level, advective fluxes of each of the user-specified species will be
-reported in the ASCII `temppatchmfr` file in the temporals folder. User can also group species to define a mixture in the species list, in the format {<mixture-name>:<species1>,<species2>,..,<speciesN>}. For example, to get the total air mass flow rate
+reported in the ASCII `temppatchmfr` file in the temporals folder. User can also group species to define a mixture in the species list, in the format {<mixture-name>:<species1>,<species2>,..,<speciesN>}. For example, to get the total air mass flow rate,
 the user can define {Air:O2,N2} in the species list. The temporal function would then print total species fluxes of O2 and N2 through the specified patch.
 
 Combustion diagnostics often involve the use of a mixture fraction and/or a progress variable, both of which can be defined
