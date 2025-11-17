@@ -64,7 +64,6 @@ PeleLM::speciesBalancePatch()
       tmppatchmfrFile << ",";
       amrex::Real tmp = 0.0;
       for (int j = 0; j < m_bPatche->speciesinGroup[i].size(); j++) {
-        // for (const auto& s : m_bPatche->speciesinGroup[i]) {
         tmp += bphost->speciesFlux[j];
       }
       tmppatchmfrFile << tmp;
