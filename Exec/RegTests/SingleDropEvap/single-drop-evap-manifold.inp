@@ -75,6 +75,6 @@ particles.mom_transfer  = 1
 particles.mass_transfer = 1
 
 particles.fuel_species = NC10H22
-particles.dep_fuel_species = ZMIX0
+particles.dep_manifold_species = ZMIX0
 
 FILE="sprayPropsMP_heptane-decane.inp"

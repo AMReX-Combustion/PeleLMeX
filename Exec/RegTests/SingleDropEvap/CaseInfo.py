@@ -508,7 +508,7 @@ def CreateManifoldFiles(case, cmlm_dir):
         f.write("manifold.has_species_mw = true \n")
         f.write("manifold.v = 1 \n")
         f.write(
-            "particles.dep_fuel_species = "
+            "particles.dep_manifold_species = "
             + " ".join([f"ZMIX{i}" for i in range(len(fuels))])
             + "\n"
         )
