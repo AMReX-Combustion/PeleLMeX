@@ -140,10 +140,10 @@ PeleLM::removeGhostParticles(const int level)
 void
 PeleLM::SprayCreateData()
 {
-  SprayPC = std::make_unique<SprayParticleContainer>(this, &m_phys_bc);
+  SprayPC = std::make_unique<SprayParticleContainer>(this, m_phys_bc);
   SprayPC->SetVerbose(spray_verbose);
-  VirtPC = std::make_unique<SprayParticleContainer>(this, &m_phys_bc);
-  GhostPC = std::make_unique<SprayParticleContainer>(this, &m_phys_bc);
+  VirtPC = std::make_unique<SprayParticleContainer>(this, m_phys_bc);
+  GhostPC = std::make_unique<SprayParticleContainer>(this, m_phys_bc);
 }
 
 void
@@ -262,6 +262,12 @@ PeleLM::SprayAddSource(const int level)
     amrex::MultiFab::Add(
       extsource, source, scomps.specSrcIndx + n, dstcomp, 1, eghosts);
   }
+#ifdef USE_MANIFOLD_EOS
+  // Need to keep dummy Rho and actual Rho the same
+  amrex::MultiFab::Add(
+    extsource, source, scomps.rhoSrcIndx, scomps.specIndx + NUM_SPECIES - 1, 1,
+    eghosts);
+#endif
 }
 
 void

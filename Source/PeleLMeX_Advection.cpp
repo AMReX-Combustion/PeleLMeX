@@ -271,7 +271,8 @@ PeleLM::getScalarAdvForce(
   const std::unique_ptr<AdvanceDiffData>& diffData)
 {
 
-  const int* aux_diffuse_d = convertToDeviceVector(m_DiffTypeAux).dataPtr();
+  const auto aux_diffuse_v = convertToDeviceVector(m_DiffTypeAux);
+  const auto* aux_diffuse_d = aux_diffuse_v.dataPtr();
   auto const* leosparm = eos_parms.device_parm();
 
   for (int lev = 0; lev <= finest_level; ++lev) {

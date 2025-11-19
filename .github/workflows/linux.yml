@@ -223,32 +223,49 @@ jobs:
     name: GNU@9.3 MPI Run [SPRAY]
     runs-on: ubuntu-latest
     env:
-      {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
+      CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"
+      CMLM_VERSION: 0.0.1
     steps:
     - uses: actions/checkout@v4
     - name: System Dependencies
       run: |
          .github/workflows/dependencies/dependencies_gcc10.sh
-         sudo apt-get install -y python3-setuptools
-         python3 -m pip install --user numpy
-         python3 -m pip install --user argparse
+    - name: Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
     - name: Repo Dependencies
-      run: Utils/CloneDeps.sh
+      run: |
+        Utils/CloneDeps.sh
+        # install CMLM (includes python dependencies needed for other scripts)
+        pip install -e git+https://github.com/NREL/cmlm.git@v${CMLM_VERSION}#egg=cmlm
     - name: Build AMReX Tools
       env:
          AMREX_HOME: ${GITHUB_WORKSPACE}/Submodules/PelePhysics/Submodules/amrex
       working-directory: ./Submodules/PelePhysics/Submodules/amrex/Tools/Plotfile
       run: |
         make
-    - name: Build PeleLMeX
+    - name: Build PeleLMeX for Convergence
       working-directory: ./Exec/RegTests/SprayTest/
       run: |
         make TPL COMP=gnu USE_MPI=TRUE
         make -j 2 COMP=gnu USE_MPI=TRUE
-    - name: Run
+    - name: Run Convergence
       working-directory: ./Exec/RegTests/SprayTest/
       run: |
         cp ${GITHUB_WORKSPACE}/Submodules/PelePhysics/Submodules/amrex/Tools/Plotfile/fcompare.gnu.ex .
         sed -i "s/mpiexec -n 1/mpiexec -n 2/g" multiRuns.py
         ./multiRuns.py
         ./compareOutput.py
+    - name: Daif GCM Manifold
+      working-directory: ./Exec/RegTests/SingleDropEvap
+      run: |
+        python Validate.py -b -c Daif -m -n 2 --cmlm_path ${GITHUB_WORKSPACE}/src/cmlm
+    - name: Nomura GCM
+      working-directory: ./Exec/RegTests/SingleDropEvap
+      run: |
+        python Validate.py -b -c Nomura -n 2
+    - name: WongLin MP Antoine
+      working-directory: ./Exec/RegTests/SingleDropEvap
+      run: |
+        python Validate.py -b -c WongLin -l mp -p Antoine -n 2

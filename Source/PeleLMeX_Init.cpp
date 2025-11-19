@@ -226,9 +226,18 @@ PeleLM::initData()
       fillPatchAux(AmrNewTime);
     }
 
+    //----------------------------------------------------------------
+    // Initialize turbulent viscosity for LES
+    if (m_do_les) {
+      calcTurbViscosity(AmrNewTime);
+    }
+
+    //----------------------------------------------------------------
+    // Plot state before initial iterations
     if (m_plot_init_state) {
       WritePlotFile();
     }
+
     //----------------------------------------------------------------
     // If performing UnitTest, let's stop here
     if (runMode() != "normal") {

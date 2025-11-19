@@ -8,7 +8,9 @@ void
 PeleLM::readProbParm()
 {
   amrex::ParmParse pp("prob");
-  auto eos = pele::physics::PhysicsType::eos();
+
+  PeleLM::prob_parm->eosparm = PeleLM::eos_parms.device_parm();
+  auto eos = pele::physics::PhysicsType::eos(&(PeleLM::eos_parms.host_parm()));
 
   // Gas phase properties
   pp.query("P_mean", PeleLM::prob_parm->P_mean);
@@ -32,8 +34,13 @@ PeleLM::readProbParm()
 
   // Calculate transport properties from Simple transport model
   amrex::Real massfrac[NUM_SPECIES] = {0.0};
+#ifdef USE_MANIFOLD_EOS
+  massfrac[0] = 0.0;
+  massfrac[NUM_SPECIES - 1] = 1.0;
+#else
   massfrac[N2_ID] = PeleLM::prob_parm->Y_N2;
   massfrac[O2_ID] = PeleLM::prob_parm->Y_O2;
+#endif
   amrex::Real T_g = PeleLM::prob_parm->T0_gas;
   amrex::Real T_eff = (2. * T_d + T_g) / 3.;
   amrex::Real p_cgs = m2c::P(PeleLM::prob_parm->P_mean);
@@ -58,6 +65,17 @@ PeleLM::readProbParm()
   if (Re > 0.) {
     // Get gas velocity from Re
     PeleLM::prob_parm->vel_gas = mu * Re / (rho * drop_dia);
+    if (eos.identifier() == "Manifold") {
+      const amrex::Real temp_ratio = T_eff / T_g;
+      const amrex::Real sutherland_temp = 110.4;
+      const amrex::Real sutherland_ratio = std::sqrt(temp_ratio) * temp_ratio *
+                                           (T_g + sutherland_temp) /
+                                           (T_eff + sutherland_temp);
+      PeleLM::prob_parm->vel_gas *= temp_ratio * sutherland_ratio;
+      amrex::Print() << "WARNING: using approximate scalings to set inlet "
+                        "velocity from Re, inlet velocoity is "
+                     << PeleLM::prob_parm->vel_gas << "\n";
+    }
   } else {
     Re = PeleLM::prob_parm->vel_gas * rho * drop_dia / mu;
   }

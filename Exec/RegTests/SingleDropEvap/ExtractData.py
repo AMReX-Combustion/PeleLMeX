@@ -11,7 +11,7 @@ def ExtractData(case, outfile):
     pltfiles = []
     sprayfiles = []
     for x in os.listdir(CASE_PATH):
-        if x.startswith("plt"):
+        if x.startswith("plt") and ".old." not in x:
             pltfiles.append(os.path.join(CASE_PATH, x))
         if x.endswith(".p3d"):
             sprayfiles.append(os.path.join(CASE_PATH, x))
