@@ -60,8 +60,13 @@ PeleLM::speciesBalancePatch()
   tmppatchmfrFile << m_nstep << "," << m_cur_time; // Time info
   for (const auto& m_bPatche : m_bPatches) {
     BPatch::BpatchDataContainer* bphost = m_bPatche->getHostDataPtr();
-    for (int i = 0; i < bphost->num_species; ++i) {
-      tmppatchmfrFile << "," << bphost->speciesFlux[i];
+    for (int i = 0; i < bphost->num_groups; ++i) {
+      tmppatchmfrFile << ",";
+      amrex::Real tmp = 0.0;
+      for (int j = 0; j < m_bPatche->speciesinGroup[i].size(); j++) {
+        tmp += bphost->speciesFlux[j];
+      }
+      tmppatchmfrFile << tmp;
     }
   }
   tmppatchmfrFile << "\n";
@@ -785,9 +790,9 @@ PeleLM::openTempFile()
       for (const auto& m_bPatche : m_bPatches) {
         BPatch* patch = m_bPatche.get();
         BPatch::BpatchDataContainer bphost = patch->getHostData();
-        for (int i = 0; i < bphost.num_species; ++i) {
+        for (int i = 0; i < bphost.num_groups; ++i) {
           tmppatchmfrFile << ","
-                          << patch->m_patchname + "_" + patch->speciesList[i];
+                          << patch->m_patchname + "_" + patch->groupNames[i];
         }
       }
       tmppatchmfrFile << "\n";

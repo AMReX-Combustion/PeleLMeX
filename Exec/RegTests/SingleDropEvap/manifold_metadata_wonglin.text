@@ -1,0 +1,3 @@
+manifold.has_species_mw = true
+manifold.NC10H22_mw = 142.286
+manifold.nominal_pressure_cgs = 1013250.0

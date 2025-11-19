@@ -841,7 +841,8 @@ PeleLM::checkSetupParams()
     }
 #endif
 #ifdef PELE_USE_SPRAY
-    amrex::Abort("Spray models are not yet supported for Manifold EOS");
+    amrex::Print()
+      << "WARNING: Spray models with Manifold EOS are experimental !!!!\n";
 #endif
 #ifdef PELE_USE_PLASMA
     amrex::Abort("Plasma models are not yet supported for Manifold EOS");

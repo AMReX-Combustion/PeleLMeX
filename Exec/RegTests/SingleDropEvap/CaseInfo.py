@@ -51,6 +51,7 @@ class CaseInfo:
         cell_num=[32, 32, 32],
         reftype=None,
         PeleMP_PsatModel="Antoine",
+        **kwargs,
     ):
 
         # Model specifics
@@ -78,6 +79,9 @@ class CaseInfo:
                 self.case_dir += "_Antoine"
             else:
                 self.case_dir += "_CC"
+        if "use_manifold" in kwargs.keys():
+            if kwargs["use_manifold"]:
+                self.case_dir += "_Manifold"
         self.case_path = os.path.join(FILE_PATH, self.case_dir)
         self.input_file = os.path.join(self.case_path, f"input_{name}.inp")
         if LiqPropsType.lower() == "gcm":
@@ -140,27 +144,27 @@ class CaseInfo:
         self.plot_int = round(self.plot_per / self.dt)
 
 
-def SpecifyCase(case_name, LiqPropsType, PeleMP_PsatModel="Antoine"):
+def SpecifyCase(case_name, LiqPropsType, PeleMP_PsatModel="Antoine", **kwargs):
     if case_name.lower() == "nomura":
-        case = Nomura(LiqPropsType, PeleMP_PsatModel)
+        case = Nomura(LiqPropsType, PeleMP_PsatModel, **kwargs)
     elif case_name.lower() == "wonglin":
-        case = WongLin(LiqPropsType, PeleMP_PsatModel)
+        case = WongLin(LiqPropsType, PeleMP_PsatModel, **kwargs)
     elif case_name.lower() == "daif":
-        case = Daif(LiqPropsType, PeleMP_PsatModel)
+        case = Daif(LiqPropsType, PeleMP_PsatModel, **kwargs)
     elif case_name.lower() == "rungehep":
-        case = RungeHep(LiqPropsType, PeleMP_PsatModel)
+        case = RungeHep(LiqPropsType, PeleMP_PsatModel, **kwargs)
     elif case_name.lower() == "rungedec":
-        case = RungeDec(LiqPropsType, PeleMP_PsatModel)
+        case = RungeDec(LiqPropsType, PeleMP_PsatModel, **kwargs)
     elif case_name.lower() == "rungemix":
-        case = RungeMix(LiqPropsType, PeleMP_PsatModel)
+        case = RungeMix(LiqPropsType, PeleMP_PsatModel, **kwargs)
     elif case_name.lower() == "rungejp8":
-        case = RungeJP8(LiqPropsType, PeleMP_PsatModel)
+        case = RungeJP8(LiqPropsType, PeleMP_PsatModel, **kwargs)
     else:
         raise ValueError(f"Unknown case name: {case_name}")
     return case
 
 
-def Nomura(LiqPropsType, PeleMP_PsatModel="Antoine"):
+def Nomura(LiqPropsType, PeleMP_PsatModel="Antoine", **kwargs):
     drop = Droplet(298.0, 7.0e-4, ["NC7H16", "NC10H22"], [1.0, 0.0])
     gas = GasPhase(471, 1.0e5, vel=0.0)
     case = CaseInfo(
@@ -172,11 +176,12 @@ def Nomura(LiqPropsType, PeleMP_PsatModel="Antoine"):
         xyunits=["s/mm2", "dd02"],
         end_time=2.94,
         PeleMP_PsatModel=PeleMP_PsatModel,
+        **kwargs,
     )
     return case
 
 
-def WongLin(LiqPropsType, PeleMP_PsatModel="Antoine"):
+def WongLin(LiqPropsType, PeleMP_PsatModel="Antoine", **kwargs):
     end_time = 4
     drop = Droplet(315.0, 1.961e-3, ["NC7H16", "NC10H22"], [0.0, 1.0], Reyn=17)
     gas = GasPhase(1000.0, 1.01325e5)
@@ -189,11 +194,12 @@ def WongLin(LiqPropsType, PeleMP_PsatModel="Antoine"):
         xyunits=["s", "dd0"],
         end_time=end_time,
         PeleMP_PsatModel=PeleMP_PsatModel,
+        **kwargs,
     )
     return case
 
 
-def Daif(LiqPropsType, PeleMP_PsatModel="Antoine"):
+def Daif(LiqPropsType, PeleMP_PsatModel="Antoine", **kwargs):
     drop = Droplet(291.4, 1.334e-3, ["NC7H16", "NC10H22"], [0.7375, 0.2625])
     gas = GasPhase(348.0, 1.01325e5, vel=3.10)
     case = CaseInfo(
@@ -205,11 +211,12 @@ def Daif(LiqPropsType, PeleMP_PsatModel="Antoine"):
         xyunits=["s", "r2_mm"],
         dt=2e-3,
         PeleMP_PsatModel=PeleMP_PsatModel,
+        **kwargs,
     )
     return case
 
 
-def RungeMix(LiqPropsType, PeleMP_PsatModel="Antoine"):
+def RungeMix(LiqPropsType, PeleMP_PsatModel="Antoine", **kwargs):
     drop = Droplet(272, 5.94e-4, ["NC7H16", "NC10H22"], [0.5, 0.5])
     gas = GasPhase(272, 1.01325e5, vel=2.5)
     case = CaseInfo(
@@ -222,11 +229,12 @@ def RungeMix(LiqPropsType, PeleMP_PsatModel="Antoine"):
         dt=5e-3,
         plot_per=1,
         PeleMP_PsatModel=PeleMP_PsatModel,
+        **kwargs,
     )
     return case
 
 
-def RungeDec(LiqPropsType, PeleMP_PsatModel="Antoine"):
+def RungeDec(LiqPropsType, PeleMP_PsatModel="Antoine", **kwargs):
     drop = Droplet(272, 5.88e-4, ["NC7H16", "NC10H22"], [0.0, 1.0])
     gas = GasPhase(272, 1.01325e5, vel=2.5)
     case = CaseInfo(
@@ -239,11 +247,12 @@ def RungeDec(LiqPropsType, PeleMP_PsatModel="Antoine"):
         dt=5e-3,
         plot_per=1,
         PeleMP_PsatModel=PeleMP_PsatModel,
+        **kwargs,
     )
     return case
 
 
-def RungeHep(LiqPropsType, PeleMP_PsatModel="Antoine"):
+def RungeHep(LiqPropsType, PeleMP_PsatModel="Antoine", **kwargs):
     drop = Droplet(272, 5.7e-4, ["NC7H16", "NC10H22"], [1.0, 0.0])
     gas = GasPhase(272, 1.01325e5, vel=2.5)
     case = CaseInfo(
@@ -256,11 +265,12 @@ def RungeHep(LiqPropsType, PeleMP_PsatModel="Antoine"):
         dt=5e-3,
         plot_per=0.25,
         PeleMP_PsatModel=PeleMP_PsatModel,
+        **kwargs,
     )
     return case
 
 
-def RungeJP8(LiqPropsType, PeleMP_PsatModel="Antoine"):
+def RungeJP8(LiqPropsType, PeleMP_PsatModel="Antoine", **kwargs):
     drop = Droplet(294.15, 6.36e-4, ["POSF10264"], [1.0])
     gas = GasPhase(294.15, 1.01325e5, vel=3.0)
     case = CaseInfo(
@@ -270,9 +280,10 @@ def RungeJP8(LiqPropsType, PeleMP_PsatModel="Antoine"):
         gas,
         LiqPropsType,
         xyunits=["runge", "dd02"],
-        dt=2e-3,
+        dt=5e-3,
         plot_per=1,
         PeleMP_PsatModel=PeleMP_PsatModel,
+        **kwargs,
     )
     return case
 
@@ -436,3 +447,80 @@ def CreateInputFile(case):
         # Save to output file
         with open(case.input_gcm, "w") as f:
             f.writelines(new_gcm_lines)
+
+
+def CreateManifoldFiles(case, cmlm_dir):
+    if not os.path.exists(cmlm_dir):
+        raise RuntimeError(f"CMLM installation not found at specified path: {cmlm_dir}")
+    fuels = case.droplet.fuel_names
+
+    # first find latent heat for each fuel from input files
+    ifile = case.input_gcm if case.LiqPropsType.lower() == "gcm" else case.input_file
+    delta_h_vap = [0.0, 0.0]
+    found = [False] * len(fuels)
+    with open(ifile, "r") as f:
+        for line in f.readlines():
+            for i, fuel in enumerate(fuels):
+                if line.startswith(f"particles.{fuel}_latent"):
+                    delta_h_vap[i] = float(line.split("=")[1].split("#")[0])
+                    found[i] = True
+    for ifound, fuel in zip(found, fuels):
+        if not ifound:
+            raise RuntimeError(f"Latent heat not found in input files for fuel: {fuel}")
+
+    # full input data
+    table_file = os.path.join(case.case_path, "table.ctb")
+    table_metadata_file = os.path.join(case.case_path, "table_metadata.txt")
+    input_data = {
+        "phys": {
+            "mechanism": "../../../Submodules/PelePhysics/Mechanisms/liquid_fuels_nonreacting/mechanism.yaml",
+            "pressure": case.gas.P,
+            "X_ox": "O2:1.0, N2:3.76",
+            "T_ox": case.gas.T,
+            "X_fuel": [f"{fuel}:1.0" for fuel in fuels],
+            "liq_temp_fuel": [case.droplet.T] * len(fuels),
+            "delta_h_vap": delta_h_vap,
+            "T_min": 100.0,
+        },
+        "table": {
+            "use_fmix": False,
+            "grid": [50] * len(fuels),
+            "filename": table_file,
+            "metadata_file": table_metadata_file,
+        },
+    }
+
+    # write input data to toml file
+    import toml
+
+    table_toml_file = os.path.join(case.case_path, "table_generation.toml")
+    with open(table_toml_file, "w") as tomlfile:
+        toml.dump(input_data, tomlfile)
+
+    # run table generation scripts
+    command = f"python {os.path.join(cmlm_dir,'run_scripts/ctable/create_spray_table_nd.py')} {table_toml_file}"
+    print("Running Table Generation Command:")
+    print(command)
+    error = os.system(command)
+    if error:
+        raise RuntimeError(f"Table generation failed with error code {error}")
+
+    # append necessary manifold information to input files
+    with open(case.input_file, "a") as f:
+        f.write("\n\n")
+        f.write("# --------------------- # \n")
+        f.write("# MANIFOLD MODEL INPUTS # \n")
+        f.write("# --------------------- # \n")
+        f.write("\n")
+        f.write("manifold.model = Table \n")
+        f.write(f"manifold.table.filename = {table_file} \n")
+        f.write(f"manifold.metadata_filename = {table_metadata_file} \n")
+        f.write("manifold.compute_temperature = true \n")
+        f.write("manifold.has_species_mw = true \n")
+        f.write("manifold.v = 1 \n")
+        f.write(
+            "particles.dep_fuel_species = "
+            + " ".join([f"ZMIX{i}" for i in range(len(fuels))])
+            + "\n"
+        )
+        f.write("peleLM.use_wbar = 0 \n")
