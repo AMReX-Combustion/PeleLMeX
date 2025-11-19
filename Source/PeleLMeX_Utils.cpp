@@ -2199,10 +2199,8 @@ PeleLM::extendSignedDistance(
   const int nGrowFac = flags.nGrow() + 1;
 
   // First set the region far away at the max value we need
-  const auto& dx = geom[0].CellSizeArray();
-
   auto const& sd_cc_ma = a_signDist->arrays();
-  const amrex::Real* dx = geomdata.CellSize();
+  const auto& dx = geom[0].CellSizeArray();
   const amrex::Real sd_cc_fact = nGrowFac * dx[0] * a_extendFactor;
   amrex::ParallelFor(
     *a_signDist, a_signDist->nGrowVect(),
