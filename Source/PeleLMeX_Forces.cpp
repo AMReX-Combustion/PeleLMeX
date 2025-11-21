@@ -136,8 +136,14 @@ PeleLM::getVelForces(
   if (is_incomp != 0) {
     a_velForce->mult(1.0 / rho_incomp, 0, AMREX_SPACEDIM, 0);
   } else {
-    amrex::MultiFab::Divide(
-      *a_velForce, ldata_p->state, DENSITY, 0, AMREX_SPACEDIM, 0);
+    amrex::ParallelFor(
+      *a_velForce, amrex::IntVect(0), AMREX_SPACEDIM,
+      [force_ma, state_ma] AMREX_GPU_DEVICE(
+        int box_no, int i, int j, int k, int n) noexcept {
+        amrex::Array4<amrex::Real const> rho(state_ma[box_no], DENSITY);
+        force_ma[box_no](i, j, k, n) /= rho(i, j, k);
+      });
+    amrex::Gpu::streamSynchronize();
   }
 }
 
