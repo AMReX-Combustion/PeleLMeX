@@ -1051,14 +1051,15 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
           soot_exp[n] = 3. - (3. * momV[n] + 2. * momS[n]);
         }
         amrex::ParallelFor(
-          ldata_p->state, amrex::IntVect(0), NUM_SOOT_MOMENTS,
-          [state_ma, soot_exp] AMREX_GPU_DEVICE(
-            int box_no, int i, int j, int k, int n) noexcept {
+          ldata_p->state, [state_ma, soot_exp] AMREX_GPU_DEVICE(
+                            int box_no, int i, int j, int k) noexcept {
             amrex::Array4<amrex::Real> soot(state_ma[box_no], FIRSTSOOT);
-            soot(i, j, k, n) *= std::pow(100., soot_exp[n]);
+            for (int n = 0; n < NUM_SOOT_MOMENTS; ++n) {
+              soot(i, j, k, n) *= std::pow(100., soot_exp[n]);
+            }
+            soot(i, j, k, NUMSOOTVAR - 1) *= 1.E6;
           });
         amrex::Gpu::streamSynchronize();
-        ldata_p->state.mult(1.E6, FIRSTSOOT + NUM_SOOT_MOMENTS - 1, 1);
       }
     } else {
       SootData* const sd = soot_model->getSootData();

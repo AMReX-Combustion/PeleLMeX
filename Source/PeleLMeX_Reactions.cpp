@@ -489,22 +489,17 @@ PeleLM::getHeatRelease(const int a_lev, amrex::MultiFab* a_HR)
   auto const& state_n_ma = ldataNew_p->state.const_arrays();
   amrex::MultiFab Enth(grids[a_lev], dmap[a_lev], NUM_SPECIES, 0);
   auto const& enth_ma = Enth.arrays();
+  auto const& HRR_ma = a_HR->arrays();
   amrex::ParallelFor(
-    *a_HR, [state_n_ma, enth_ma, leosparm] AMREX_GPU_DEVICE(
+    *a_HR, [state_n_ma, enth_ma, leosparm, HRR_ma, react_ma] AMREX_GPU_DEVICE(
              int box_no, int i, int j, int k) noexcept {
       amrex::Array4<amrex::Real const> T(state_n_ma[box_no], TEMP);
       getHGivenT(i, j, k, T, enth_ma[box_no], leosparm);
-    });
-  amrex::Gpu::streamSynchronize();
-  a_HR->setVal(0.0);
-  auto const& HRR_ma = a_HR->arrays();
-  amrex::ParallelFor(
-    *a_HR, amrex::IntVect(0), NUM_SPECIES,
-    [react_ma, HRR_ma, enth_ma] AMREX_GPU_DEVICE(
-      int box_no, int i, int j, int k, int n) noexcept {
-      amrex::Real val =
-        -enth_ma[box_no](i, j, k, n) * react_ma[box_no](i, j, k, n);
-      amrex::Gpu::Atomic::Add(&HRR_ma[box_no](i, j, k), val);
+      HRR_ma[box_no](i, j, k) = 0.0;
+      for (int n = 0; n < NUM_SPECIES; ++n) {
+        HRR_ma[box_no](i, j, k) -=
+          enth_ma[box_no](i, j, k, n) * react_ma[box_no](i, j, k, n);
+      }
     });
   amrex::Gpu::streamSynchronize();
 }
