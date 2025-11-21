@@ -363,7 +363,7 @@ PeleLM::initLevelData(const int lev)
   auto const* lpmfdata = pmf_data.device_parm();
 
   // don't want to use state for dummy in case user overwrites state in aux
-  amrex::MultiFab dummy_mf(grids[lev], dmap[lev], 1, 0);
+  amrex::MultiFab dummy_mf(grids[lev], dmap[lev], 0, 0);
 
   auto const& state_ma = ldata_p->state.arrays();
   auto const& aux_ma =
