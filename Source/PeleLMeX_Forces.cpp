@@ -137,7 +137,7 @@ PeleLM::getVelForces(
     a_velForce->mult(1.0 / rho_incomp, 0, AMREX_SPACEDIM, 0);
   } else {
     amrex::MultiFab::Divide(
-      *a_velForce, ldata_p->state, 0, DENSITY, AMREX_SPACEDIM, 0);
+      *a_velForce, ldata_p->state, DENSITY, 0, AMREX_SPACEDIM, 0);
   }
 }
 
