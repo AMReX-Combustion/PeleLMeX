@@ -256,7 +256,11 @@ PeleLM::macProject(
       getMACProjectionBC(amrex::Orientation::low),
       getMACProjectionBC(amrex::Orientation::high));
 #ifdef AMREX_USE_HYPRE
-    macproj->getMLMG().setHypreOptionsNamespace(m_hypre_namespace_mac);
+    if (
+      macproj->getMLMG().getBottomSolver() ==
+      amrex::MLMG::BottomSolver::hypre) {
+      macproj->getMLMG().setHypreOptionsNamespace(m_hypre_namespace_mac);
+    }
 #endif
   } else {
     macproj->updateBeta(GetVecOfArrOfConstPtrs(rho_inv));

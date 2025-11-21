@@ -30,6 +30,11 @@ constexpr int species_bc[] = {
   amrex::BCType::reflect_even, amrex::BCType::foextrap, amrex::BCType::foextrap,
   amrex::BCType::foextrap,     amrex::BCType::foextrap};
 
+constexpr int ode_bc[] = {amrex::BCType::int_dir,  amrex::BCType::ext_dir,
+                          amrex::BCType::foextrap, amrex::BCType::reflect_even,
+                          amrex::BCType::foextrap, amrex::BCType::foextrap,
+                          amrex::BCType::foextrap, amrex::BCType::foextrap};
+
 constexpr int rhoh_bc[] = {amrex::BCType::int_dir,  amrex::BCType::ext_dir,
                            amrex::BCType::foextrap, amrex::BCType::reflect_even,
                            amrex::BCType::foextrap, amrex::BCType::foextrap,
@@ -180,6 +185,14 @@ PeleLM::setBoundaryConditions()
     for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
       m_bcrec_state[RHORT].setLo(idim, divu_bc[lo_bc[idim]]);
       m_bcrec_state[RHORT].setHi(idim, divu_bc[hi_bc[idim]]);
+    }
+
+    // ODEs
+    for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
+      for (int n = 0; n < NUM_ODE; ++n) {
+        m_bcrec_state[FIRSTODE + n].setLo(idim, ode_bc[lo_bc[idim]]);
+        m_bcrec_state[FIRSTODE + n].setHi(idim, ode_bc[hi_bc[idim]]);
+      }
     }
 
     // divU

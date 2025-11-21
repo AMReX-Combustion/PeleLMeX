@@ -473,7 +473,12 @@ PeleLM::doNodalProject(
 #endif
 
 #ifdef AMREX_USE_HYPRE
-  nodal_projector->getMLMG().setHypreOptionsNamespace(m_hypre_namespace_nodal);
+  if (
+    nodal_projector->getMLMG().getBottomSolver() ==
+    amrex::MLMG::BottomSolver::hypre) {
+    nodal_projector->getMLMG().setHypreOptionsNamespace(
+      m_hypre_namespace_nodal);
+  }
 #endif
 
   // Solve
