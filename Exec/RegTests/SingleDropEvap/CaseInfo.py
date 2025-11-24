@@ -464,17 +464,17 @@ def CreateManifoldFiles(case, cmlm_dir):
 
     # first find latent heat for each fuel from input files
     ifile = case.input_spray
-    delta_h_vap = [0.0] * len(fuels)
-    found = [False] * len(fuels)
+    delta_h_vap = [0.0] * len(dep_fuels)
+    found = [False] * len(dep_fuels)
     with open(ifile, "r") as f:
         for line in f.readlines():
-            for i, fuel in enumerate(fuels):
+            for i, fuel in enumerate(dep_fuels):
                 if line.startswith(f"particles.{fuel}_latent"):
                     delta_h_vap[i] = float(line.split("=")[1].split("#")[0])
                     found[i] = True
-    for ifound, fuel in zip(found, fuels):
+    for ifound, fuel in zip(found, dep_fuels):
         if not ifound:
-            raise RuntimeError(f"Latent heat not found in input files for fuel: {fuel}")
+            raise RuntimeError(f"Latent heat not found in input files for dep species: {fuel}")
 
     # full input data
     table_file = os.path.join(case.case_path, "table.ctb")
@@ -492,7 +492,7 @@ def CreateManifoldFiles(case, cmlm_dir):
         },
         "table": {
             "use_fmix": False,
-            "grid": [50] * len(fuels),
+            "grid": [50] * len(dep_fuels),
             "filename": table_file,
             "metadata_file": table_metadata_file,
         },
