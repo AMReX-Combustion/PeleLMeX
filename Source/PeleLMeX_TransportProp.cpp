@@ -317,13 +317,14 @@ PeleLM::calcDiffusivity(const TimeStamp a_time)
       auto const& diff_arr = ldata_p->diff_cc.const_arrays();
       if (m_aux_Schmidt[n] > 0) {
         // Compute diffusivity with Schmidt number
-        amrex::ParallelFor(
-          ldata_p->diff_aux_cc, ldata_p->diff_aux_cc.nGrowVect(),
-          [diff_aux_arr, diff_arr, schmidt = m_aux_Schmidt[n],
-           n] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
-            diff_aux_arr[box_no](i, j, k, n) =
-              diff_arr[box_no](i, j, k, NUM_SPECIES + 1) / schmidt;
-          });
+        const amrex::Real inv_sc =
+          1.0 / m_aux_Schmidt[n] amrex::ParallelFor(
+                  ldata_p->diff_aux_cc, ldata_p->diff_aux_cc.nGrowVect(),
+                  [diff_aux_arr, diff_arr, inv_sc, n] AMREX_GPU_DEVICE(
+                    int box_no, int i, int j, int k) noexcept {
+                    diff_aux_arr[box_no](i, j, k, n) =
+                      diff_arr[box_no](i, j, k, NUM_SPECIES + 1) * inv_sc;
+                  });
       } else {
         // Otherwise, assume unity Lewis number
         const auto& ba = ldata_p->state.boxArray();
