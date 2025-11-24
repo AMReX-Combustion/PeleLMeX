@@ -162,6 +162,7 @@ if run_new:
                 build_flags += " SPRAY_FUEL_NUM=1"
             else:
                 build_flags += " SPRAY_FUEL_NUM=67"
+                build_flags += " Manifold_Dim=1"
         else:
             build_flags += " SPRAY_FUEL_NUM=2"
         if use_manifold:

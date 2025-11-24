@@ -7,6 +7,7 @@ class Droplet:
         self.T = T
         self.dia = dia
         self.fuel_names = fuel_names
+        self.dep_fuel_names = None
         if Y is None:
             self.Y = [1.0, 0.0]
         else:
@@ -376,13 +377,11 @@ def CreateInputFile(case):
         elif "particles.fixed_parts" in line:
             new_line = f"particles.fixed_parts = {fixed_parts:d}\n"
         elif "particles.Y_0" in line:
-                # particles.Y_0 is in sprayProps{case.LiqPropsType}_*.inp file
+                # particles.Y_0 will be in sprayProps{case.LiqPropsType}_*.inp file
                 new_line = "\n"
         elif "particles.fuel_species" in line:
-            new_line = "particles.fuel_species = "
-            for n in case.droplet.fuel_names:
-                new_line += f"{n} "
-            new_line += "\n"
+                # particles.fuel_species will be in sprayProps{case.LiqPropsType}_*.inp file
+                new_line = "\n"
         elif "FILE" in line:
             new_line = f"FILE = {case.case_dir}/input_{case.name}_spray.inp\n"
         else:
@@ -409,6 +408,22 @@ def CreateInputFile(case):
                 for y in case.droplet.Y:
                     new_line += f"{y:.2f} "
                 new_line += "\n"
+        elif "particles.fuel_species" in line:
+            if ("jp8" in case.name.lower()) and ("mix" not in case.name.lower()):
+                new_line = line
+                # Set fuel_names to list after "particles.fuel_species = "
+                case.droplet.fuel_names = line.split("=")[1].strip().split()
+            else: 
+                new_line = "particles.fuel_species = "
+                for fuel in case.droplet.fuel_names:
+                    new_line += f"{fuel} "
+                new_line += "\n"
+        elif "particles.dep_fuel_species" in line:
+            case.droplet.dep_fuel_names = line.split("=")[1].strip().split()
+            case.droplet.unique_dep_fuel_names = list(
+                set(case.droplet.dep_fuel_names)
+            )
+            new_line = line
         elif "# Units" in line:
             new_line = line
             new_line += f"# Notes: Y_0 modified for {case.name} case\n"
@@ -442,10 +457,14 @@ def CreateManifoldFiles(case, cmlm_dir):
     if not os.path.exists(cmlm_dir):
         raise RuntimeError(f"CMLM installation not found at specified path: {cmlm_dir}")
     fuels = case.droplet.fuel_names
+    if case.droplet.dep_fuel_names is not None:
+        dep_fuels = case.droplet.unique_dep_fuel_names
+    else:
+        dep_fuels = fuels
 
     # first find latent heat for each fuel from input files
     ifile = case.input_spray
-    delta_h_vap = [0.0, 0.0]
+    delta_h_vap = [0.0] * len(fuels)
     found = [False] * len(fuels)
     with open(ifile, "r") as f:
         for line in f.readlines():
@@ -466,8 +485,8 @@ def CreateManifoldFiles(case, cmlm_dir):
             "pressure": case.gas.P,
             "X_ox": "O2:1.0, N2:3.76",
             "T_ox": case.gas.T,
-            "X_fuel": [f"{fuel}:1.0" for fuel in fuels],
-            "liq_temp_fuel": [case.droplet.T] * len(fuels),
+            "X_fuel": [f"{fuel}:1.0" for fuel in dep_fuels],
+            "liq_temp_fuel": [case.droplet.T] * len(dep_fuels),
             "delta_h_vap": delta_h_vap,
             "T_min": 100.0,
         },
@@ -507,9 +526,16 @@ def CreateManifoldFiles(case, cmlm_dir):
         f.write("manifold.compute_temperature = true \n")
         f.write("manifold.has_species_mw = true \n")
         f.write("manifold.v = 1 \n")
-        f.write(
-            "particles.dep_manifold_species = "
-            + " ".join([f"ZMIX{i}" for i in range(len(fuels))])
-            + "\n"
-        )
+        if "jp8" in case.name.lower() and "mix" not in case.name.lower():
+            f.write(
+                "particles.dep_manifold_species = "
+                + " ".join([f"ZMIX0" for i in range(len(fuels))])
+                + "\n"
+            )
+        else:
+            f.write(
+                "particles.dep_manifold_species = "
+                + " ".join([f"ZMIX{i}" for i in range(len(fuels))])
+                + "\n"
+            )
         f.write("peleLM.use_wbar = 0 \n")
