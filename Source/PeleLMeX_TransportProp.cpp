@@ -203,10 +203,10 @@ PeleLM::calcTurbViscosity(const TimeStamp a_time)
         auto const& cp_ma = cp_fc[idim].const_arrays();
         amrex::ParallelFor(
           ldata_p->lambda_turb_fc[idim],
-          [l_turb_ma, v_turb_ma, cp_ma, pr = m_Prandtl_inv] AMREX_GPU_DEVICE(
+          [l_turb_ma, v_turb_ma, cp_ma, inv_pr = m_Prandtl_inv] AMREX_GPU_DEVICE(
             int box_no, int i, int j, int k) noexcept {
             l_turb_ma[box_no](i, j, k) =
-              cp_ma[box_no](i, j, k) * v_turb_ma[box_no](i, j, k) * pr;
+              cp_ma[box_no](i, j, k) * v_turb_ma[box_no](i, j, k) * inv_pr;
           });
       }
       amrex::Gpu::streamSynchronize();
