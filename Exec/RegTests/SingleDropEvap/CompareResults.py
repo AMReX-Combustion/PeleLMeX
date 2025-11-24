@@ -108,7 +108,7 @@ def setup(case_name):
                 leg_lab[k] += ": Clasius-Clapeyron"
             else:
                 raise ValueError(f"Unknown Psat model in directory name: {d}")
-            
+            cases[k].case_path = d
         else:
             raise ValueError(f"Unknown liquid properties model in directory name: {d}")
 
@@ -172,8 +172,8 @@ fig, axs = (
 )
 
 # Plot simulation lines first
-for k in range(len(cases)):
-    refdvals, reftvals, pele_vals = case_info(cases[k])
+for k, case in enumerate(cases):
+    refdvals, reftvals, pele_vals = case_info(case)
     # Diameter plot
     i = 0
     axs[i].plot(
@@ -189,7 +189,7 @@ for k in range(len(cases)):
     axs[i].set_xlim(min(pele_vals[:, 0]), max(pele_vals[:, 0]))
     axs[i].grid()
     axs[i].set_xlabel(
-        cases[k].xlabel if hasattr(cases[k], "xlabel") else "Time", fontsize=font_s
+        case.xlabel if hasattr(case, "xlabel") else "Time", fontsize=font_s
     )
 
     # Temperature plot if available
