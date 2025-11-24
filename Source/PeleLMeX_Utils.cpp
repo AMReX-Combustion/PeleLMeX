@@ -851,9 +851,8 @@ PeleLM::floorSpecies(const TimeStamp a_time)
         sma[box_no](i, j, k, RHOH) =
           h_cgs * 1.0e-4 * sma[box_no](i, j, k, DENSITY);
       });
-    // Shift outside?
-    amrex::Gpu::streamSynchronize();
   }
+  amrex::Gpu::streamSynchronize();
 }
 
 void

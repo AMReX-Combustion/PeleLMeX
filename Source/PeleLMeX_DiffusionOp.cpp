@@ -294,9 +294,8 @@ DiffusionOp::diffuse_scalar(
           a_phi_ma[box_no](i, j, k, n) =
             phi_ma[box_no](i, j, k, n) * a_rho_ma[box_no](i, j, k);
         });
-      // Shift outside?
-      amrex::Gpu::streamSynchronize();
     }
+    amrex::Gpu::streamSynchronize();
   }
 }
 
@@ -380,6 +379,7 @@ DiffusionOp::diffuse_scalar(
       amrex::Gpu::streamSynchronize();
     }
   }
+
   //----------------------------------------------------------------
   // Setup solve LinearOp coefficients
   // LinOp is \alpha A \phi - \beta \nabla \cdot B \nabla \phi = rhs
@@ -503,9 +503,8 @@ DiffusionOp::diffuse_scalar(
           a_phi_ma[box_no](i, j, k, n) =
             phi_ma[box_no](i, j, k, n) * a_rho_ma[box_no](i, j, k);
         });
-      // Shift outside?
-      amrex::Gpu::streamSynchronize();
     }
+    amrex::Gpu::streamSynchronize();
   }
 }
 #endif
@@ -1190,9 +1189,8 @@ DiffusionTensorOp::compute_divtau(
           int box_no, int i, int j, int k, int n) noexcept {
           divtau_ma[box_no](i, j, k, n) /= rho_ma[box_no](i, j, k);
         });
-      // Shift outside?
-      amrex::Gpu::streamSynchronize();
     }
+    amrex::Gpu::streamSynchronize();
   }
 }
 
