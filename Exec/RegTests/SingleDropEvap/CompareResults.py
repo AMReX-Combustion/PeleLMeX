@@ -175,10 +175,12 @@ ylabels = [cases[0].ylabel if hasattr(cases[0], "ylabel") else "$d/d_0$"]
 if numplots == 2:
     ylabels.append("$T$ [K]")
 
+# Use wider figure for JP8 case to accommodate legend
+figwidth = 9.5 if case_name.lower() == "rungejp8" else 6.4
 fig, axs = (
-    plt.subplots(1, numplots, figsize=(numplots * 6.4, 4.8))
+    plt.subplots(1, numplots, figsize=(numplots * figwidth, 4.8), constrained_layout=True)
     if numplots > 1
-    else (plt.figure(), [plt.gca()])
+    else (plt.figure(figsize=(figwidth, 4.8), constrained_layout=True), [plt.gca()])
 )
 
 # Plot simulation lines first
@@ -370,9 +372,13 @@ else:
                 uline = [uncrt[j, 2], uncrt[j, 3]]
                 axs[i].plot(tval, uline, "k-", linewidth=round(line_w / 2))
 
-# Single legend from axs[0] placed in rightmost subplot
+# Single legend from axs[0]
 handles, labels = axs[0].get_legend_handles_labels()
-axs[-1].legend(handles, labels, fontsize=font_s-2, loc="center left", bbox_to_anchor=(1, 0.5))
+if case_name.lower() == "rungejp8":
+    # Place legend outside for JP8 case
+    axs[-1].legend(handles, labels, fontsize=font_s-2, loc="center left", bbox_to_anchor=(1, 0.5))
+else:
+    # Place legend inside for other cases
+    axs[-1].legend(handles, labels, fontsize=font_s-2, loc="best")
 
-plt.tight_layout()
 plt.show()

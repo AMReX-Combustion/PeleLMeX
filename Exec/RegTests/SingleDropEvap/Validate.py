@@ -7,24 +7,25 @@ import argparse
 """
 Script for validating PelePhysics spray model
 Test cases:
-| Case Name      | Fuel           | Requirements for SPRAY_FUEL_NUM           |
-| -------------- | -------------- | ----------------------------------------- |
-| Nomura         | heptane        | SPRAY_FUEL_NUM = 2                        |
-| WongLin        | decane         | SPRAY_FUEL_NUM = 2                        |
-| Daif           | heptane/decane | SPRAY_FUEL_NUM = 2                        |
-| RungeHep       | heptane        | SPRAY_FUEL_NUM = 2                        |
-| RungeDec       | decane         | SPRAY_FUEL_NUM = 2                        |
-| RungeMix       | heptane/decane | SPRAY_FUEL_NUM = 2                        |
-| RungeJP8       | POSF10264      | SPRAY_FUEL_NUM = 67                       |
-| RungeJP8HyChem | POSF10264      | SPRAY_FUEL_NUM = 1                        |
-| -------------- | -------------- | ----------------------------------------- |
+| Case Name   | Fuel           | Requirements for SPRAY_FUEL_NUM               |
+| ----------- | -------------- | --------------------------------------------- |
+| Nomura      | heptane        | SPRAY_FUEL_NUM = 2                            |
+| WongLin     | decane         | SPRAY_FUEL_NUM = 2                            |
+| Daif        | heptane/decane | SPRAY_FUEL_NUM = 2                            |
+| RungeHep    | heptane        | SPRAY_FUEL_NUM = 2                            |
+| RungeDec    | decane         | SPRAY_FUEL_NUM = 2                            |
+| RungeMix    | heptane/decane | SPRAY_FUEL_NUM = 2                            |
+| RungeJP8    | POSF10264      | SPRAY_FUEL_NUM = 67 (Many-to-one)             |
+| RungeJP8-H  | POSF10264      | SPRAY_FUEL_NUM = 1  (One-to-one, HyChem)      |
+| RungeJP8-D  | POSF10264      | SPRAY_FUEL_NUM = 67 (One-to-one, Detailed)    |
+| ----------- | -------------- | --------------------------------------------- |
 """
 
 parser = argparse.ArgumentParser(
     description="Run single droplet evaporation cases and compare to experimental data"
 )
 
-cases = ["WongLin", "Nomura", "Daif", "RungeHep", "RungeDec", "RungeMix", "RungeJP8", "RungeJP8HyChem"]
+cases = ["WongLin", "Nomura", "Daif", "RungeHep", "RungeDec", "RungeMix", "RungeJP8", "RungeJP8-H", "RungeJP8-D"]
 parser.add_argument(
     "--case_name",
     "-c",
@@ -116,11 +117,15 @@ num_proc = args.num_proc
 # Create case instance
 case = SpecifyCase(case_name, LiqPropsType, PeleMP_PsatModel, use_manifold=use_manifold)
 
-# General input file
+# General input and spray input files
 case.gen_input_file = f"single-drop-evap.inp"
 if "jp8" in case.name.lower():
     if "hychem" in case.name.lower():
         case.spray_input_file = f"sprayProps{LiqPropsType.upper()}_mixture_jp8.inp"
+    elif "detailed" in case.name.lower():
+        mech_path = "../../../Submodules/PelePhysics/Mechanisms/fuellib_posf_nonreacting/"
+        spray_input_file = f"spray_input_files/sprayProps{LiqPropsType.upper()}_posf10264.inp"
+        case.spray_input_file = mech_path + spray_input_file
     else:   
         case.spray_input_file = f"sprayProps{LiqPropsType.upper()}_jp8.inp"
 else:
@@ -148,6 +153,8 @@ if run_new:
     # Create case-specific input file
     CreateInputFile(case)
     if use_manifold:
+        if "detailed" in case.name.lower():
+            raise ValueError("RungeJP8-D is not compatible with Manifold model")
         CreateManifoldFiles(case, cmlm_path)
 
     # Build the executable if needed
@@ -160,6 +167,9 @@ if run_new:
         if "jp8" in case.name.lower():
             if "hychem" in case.name.lower():
                 build_flags += " SPRAY_FUEL_NUM=1"
+            elif "detailed" in case.name.lower():
+                build_flags += " SPRAY_FUEL_NUM=67"
+                build_flags += " Chemistry_Model=fuellib_posf_nonreacting"
             else:
                 build_flags += " SPRAY_FUEL_NUM=67"
                 build_flags += " Manifold_Dim=1"
@@ -188,6 +198,11 @@ if run_new:
         if "jp8" in case.name.lower():
             if "hychem" in case.name.lower():
                 if ".1SprayFuel." not in f:
+                    continue
+            elif "detailed" in case.name.lower():
+                if ".67SprayFuel." not in f:
+                    continue
+                if ".fuellib_posf_nonreacting" not in f:
                     continue
             else:
                 if ".67SprayFuel." not in f:
