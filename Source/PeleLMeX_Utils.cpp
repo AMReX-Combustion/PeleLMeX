@@ -2199,22 +2199,18 @@ PeleLM::extendSignedDistance(
   const int nGrowFac = flags.nGrow() + 1;
 
   // First set the region far away at the max value we need
+  auto const& sd_cc_ma = a_signDist->arrays();
   const auto& dx = geom[0].CellSizeArray();
-
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-  for (amrex::MFIter mfi(*a_signDist, amrex::TilingIfNotGPU()); mfi.isValid();
-       ++mfi) {
-    const amrex::Box& bx = mfi.growntilebox();
-    auto const& sd_cc = a_signDist->array(mfi);
-    amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-      if (sd_cc(i, j, k) >= maxSignedDist - 1e-12) {
-        sd_cc(i, j, k) = nGrowFac * dx[0] * a_extendFactor;
+  const amrex::Real sd_cc_fact = nGrowFac * dx[0] * a_extendFactor;
+  amrex::ParallelFor(
+    *a_signDist, a_signDist->nGrowVect(),
+    [sd_cc_ma, maxSignedDist,
+     sd_cc_fact] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+      if (sd_cc_ma[box_no](i, j, k) > maxSignedDist - 1e-12) {
+        sd_cc_ma[box_no](i, j, k) = sd_cc_fact;
       }
     });
-  }
-
+  amrex::Gpu::streamSynchronize();
   // Iteratively compute the distance function in boxes, propagating across
   // boxes using ghost cells If needed, increase the number of loop to extend
   // the reach of the distance function

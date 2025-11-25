@@ -28,19 +28,16 @@ PeleLM::initialProjection()
         grids[lev], dmap[lev], 1, nGhost, amrex::MFInfo(), *m_factory[lev]);
 
       auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-      for (amrex::MFIter mfi(ldata_p->state, amrex::TilingIfNotGPU());
-           mfi.isValid(); ++mfi) {
-        amrex::Box const& bx = mfi.tilebox();
-        auto const& rho_arr = ldata_p->state.const_array(mfi, DENSITY);
-        auto const& sig_arr = sigma[lev]->array(mfi);
-        amrex::ParallelFor(
-          bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-            sig_arr(i, j, k) = dummy_dt / rho_arr(i, j, k);
-          });
-      }
+      auto const& state_ma = ldata_p->state.const_arrays();
+      auto const& sigma_ma = sigma[lev]->arrays();
+      amrex::ParallelFor(
+        ldata_p->state, [state_ma, sigma_ma] AMREX_GPU_DEVICE(
+                          int box_no, int i, int j, int k) noexcept {
+          amrex::Array4<amrex::Real const> rho(state_ma[box_no], DENSITY);
+          sigma_ma[box_no](i, j, k) = dummy_dt / rho(i, j, k);
+        });
+      // Shift outside?
+      amrex::Gpu::streamSynchronize();
 #if AMREX_SPACEDIM == 2
       if (geom[lev].IsRZ()) {
         scaleProj_RZ(lev, *sigma[lev]);
@@ -156,19 +153,16 @@ PeleLM::initialPressProjection()
           grids[lev], dmap[lev], 1, nGhost, amrex::MFInfo(), *m_factory[lev]));
 
       auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-      for (amrex::MFIter mfi(ldata_p->state, amrex::TilingIfNotGPU());
-           mfi.isValid(); ++mfi) {
-        amrex::Box const& bx = mfi.tilebox();
-        auto const& rho_arr = ldata_p->state.const_array(mfi, DENSITY);
-        auto const& sig_arr = sigma[lev]->array(mfi);
-        amrex::ParallelFor(
-          bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-            sig_arr(i, j, k) = dummy_dt / rho_arr(i, j, k);
-          });
-      }
+      auto const& state_ma = ldata_p->state.const_arrays();
+      auto const& sigma_ma = sigma[lev]->arrays();
+      amrex::ParallelFor(
+        ldata_p->state, [state_ma, sigma_ma] AMREX_GPU_DEVICE(
+                          int box_no, int i, int j, int k) noexcept {
+          amrex::Array4<amrex::Real const> rho(state_ma[box_no], DENSITY);
+          sigma_ma[box_no](i, j, k) = dummy_dt / rho(i, j, k);
+        });
+      // Shift outside?
+      amrex::Gpu::streamSynchronize();
 #if AMREX_SPACEDIM == 2
       if (geom[lev].IsRZ()) {
         scaleProj_RZ(lev, *sigma[lev]);
@@ -220,19 +214,15 @@ PeleLM::velocityProjection(
       sigma[lev] = std::make_unique<amrex::MultiFab>(
         grids[lev], dmap[lev], 1, nGhost, amrex::MFInfo(), *m_factory[lev]);
 
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-      for (amrex::MFIter mfi(*rhoHalf[lev], amrex::TilingIfNotGPU());
-           mfi.isValid(); ++mfi) {
-        amrex::Box const& bx = mfi.tilebox();
-        auto const& rho_arr = rhoHalf[lev]->const_array(mfi);
-        auto const& sig_arr = sigma[lev]->array(mfi);
-        amrex::ParallelFor(
-          bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-            sig_arr(i, j, k) = a_dt / rho_arr(i, j, k);
-          });
-      }
+      auto const& rhoHalf_ma = rhoHalf[lev]->const_arrays();
+      auto const& sigma_ma = sigma[lev]->arrays();
+
+      amrex::ParallelFor(
+        *rhoHalf[lev], [rhoHalf_ma, sigma_ma, dt = a_dt] AMREX_GPU_DEVICE(
+                         int box_no, int i, int j, int k) noexcept {
+          sigma_ma[box_no](i, j, k) = dt / rhoHalf_ma[box_no](i, j, k);
+        });
+      amrex::Gpu::streamSynchronize();
 #ifdef AMREX_USE_EB
       EB_set_covered(*sigma[lev], 0.0);
 #endif
@@ -245,37 +235,42 @@ PeleLM::velocityProjection(
   }
 
   if (incremental == 0) {
-    amrex::Vector<std::unique_ptr<amrex::MultiFab>> rhoHalf(finest_level + 1);
     if (m_incompressible == 0) {
-      rhoHalf = getDensityVect(a_rhoTime);
-    }
-    for (int lev = 0; lev <= finest_level; ++lev) {
-
-      auto* ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
-      auto* ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
-
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-      for (amrex::MFIter mfi(ldataNew_p->state, amrex::TilingIfNotGPU());
-           mfi.isValid(); ++mfi) {
-        amrex::Box const& bx = mfi.tilebox();
-        auto const& vel_arr = ldataNew_p->state.array(mfi, VELX);
-        auto const& gp_arr = ldataOld_p->gp.const_array(mfi);
-        auto const& rho_arr = (m_incompressible) != 0
-                                ? amrex::Array4<amrex::Real const>()
-                                : rhoHalf[lev]->const_array(mfi);
-        const auto incompressible = m_incompressible;
-        const auto rho = m_rho;
+      amrex::Vector<std::unique_ptr<amrex::MultiFab>> rhoHalf =
+        getDensityVect(a_rhoTime);
+      for (int lev = 0; lev <= finest_level; ++lev) {
+        auto* ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
+        auto* ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
+        auto const& state_old_ma = ldataOld_p->state.arrays();
+        auto const& gp_new_ma = ldataNew_p->gp.const_arrays();
+        auto const& rho_ma = rhoHalf[lev]->const_arrays();
         amrex::ParallelFor(
-          bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-            amrex::Real soverrho =
-              (incompressible) != 0 ? a_dt / rho : a_dt / rho_arr(i, j, k);
-            AMREX_D_TERM(vel_arr(i, j, k, 0) += gp_arr(i, j, k, 0) * soverrho;
-                         , vel_arr(i, j, k, 1) += gp_arr(i, j, k, 1) * soverrho;
-                         ,
-                         vel_arr(i, j, k, 2) += gp_arr(i, j, k, 2) * soverrho);
+          ldataNew_p->state, amrex::IntVect(0), AMREX_SPACEDIM,
+          [state_old_ma, gp_new_ma, rho_ma, dt = a_dt] AMREX_GPU_DEVICE(
+            int box_no, int i, int j, int k, int n) noexcept {
+            amrex::Array4<amrex::Real> vel(state_old_ma[box_no], VELX);
+            const amrex::Real soverrho = dt / rho_ma[box_no](i, j, k);
+            vel(i, j, k, n) += gp_new_ma[box_no](i, j, k, n) * soverrho;
           });
+        // Shift outside? (w/below)
+        amrex::Gpu::streamSynchronize();
+      }
+    } else {
+      for (int lev = 0; lev <= finest_level; ++lev) {
+        auto* ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
+        auto* ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
+        auto const& state_old_ma = ldataOld_p->state.arrays();
+        auto const& gp_new_ma = ldataNew_p->gp.const_arrays();
+        const amrex::Real soverrho = m_dt / m_rho;
+        amrex::ParallelFor(
+          ldataNew_p->state, amrex::IntVect(0), AMREX_SPACEDIM,
+          [state_old_ma, gp_new_ma, soverrho] AMREX_GPU_DEVICE(
+            int box_no, int i, int j, int k, int n) noexcept {
+            amrex::Array4<amrex::Real> vel(state_old_ma[box_no], VELX);
+            vel(i, j, k, n) += gp_new_ma[box_no](i, j, k, n) * soverrho;
+          });
+        // Shift outside?
+        amrex::Gpu::streamSynchronize();
       }
     }
   }
@@ -344,24 +339,21 @@ PeleLM::velocityProjection(
         rhs_cc.emplace_back(
           grids[lev], dmap[lev], 1, ldataOld_p->divu.nGrow(), amrex::MFInfo(),
           *m_factory[lev]);
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-        for (amrex::MFIter mfi(rhs_cc[lev], amrex::TilingIfNotGPU());
-             mfi.isValid(); ++mfi) {
-          const amrex::Box& gbx = mfi.growntilebox();
-          const auto& divu_o = ldataOld_p->divu.const_array(mfi);
-          const auto& divu_n = ldataNew_p->divu.const_array(mfi);
-          const auto& rhs = rhs_cc[lev].array(mfi);
-          const auto is_closed_ch = m_closed_chamber;
-          amrex::ParallelFor(
-            gbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-              rhs(i, j, k) = -(divu_n(i, j, k) - divu_o(i, j, k));
-              if (is_closed_ch != 0) {
-                rhs(i, j, k) +=
-                  SbarNew - SbarOld; // subtract the mean, but rhs's already -
-              }
-            });
+
+        auto const& divu_o_ma = ldataOld_p->divu.const_arrays();
+        auto const& divu_n_ma = ldataNew_p->divu.const_arrays();
+        auto const& rhs_ma = rhs_cc[lev].arrays();
+
+        amrex::ParallelFor(
+          rhs_cc[lev], rhs_cc[lev].nGrowVect(),
+          [divu_o_ma, divu_n_ma,
+           rhs_ma] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+            rhs_ma[box_no](i, j, k) =
+              -(divu_n_ma[box_no](i, j, k) - divu_o_ma[box_no](i, j, k));
+          });
+        amrex::Gpu::streamSynchronize();
+        if (m_closed_chamber != 0) {
+          rhs_cc[lev].plus(SbarNew - SbarOld, 0, 1, ldataOld_p->divu.nGrow());
         }
       }
 #ifdef AMREX_USE_EB
@@ -481,7 +473,12 @@ PeleLM::doNodalProject(
 #endif
 
 #ifdef AMREX_USE_HYPRE
-  nodal_projector->getMLMG().setHypreOptionsNamespace(m_hypre_namespace_nodal);
+  if (
+    nodal_projector->getMLMG().getBottomSolver() ==
+    amrex::MLMG::BottomSolver::hypre) {
+    nodal_projector->getMLMG().setHypreOptionsNamespace(
+      m_hypre_namespace_nodal);
+  }
 #endif
 
   // Solve
@@ -549,9 +546,7 @@ PeleLM::doNodalProject(
 
 #if AMREX_SPACEDIM == 2
 void
-PeleLM::scaleProj_RZ( // NOLINT(readability-convert-member-functions-to-static)
-		      const int a_lev,
-		      amrex::MultiFab& a_mf)
+PeleLM::scaleProj_RZ(const int a_lev, amrex::MultiFab& a_mf)
 {
   // Scale nodal projection cell-centered mfs by radius
   amrex::Box domain = geom[a_lev].Domain();
@@ -566,47 +561,36 @@ PeleLM::scaleProj_RZ( // NOLINT(readability-convert-member-functions-to-static)
   }
   const amrex::Real dr = geom[a_lev].CellSize()[0];
   auto const& mf_ma = a_mf.arrays();
-  const auto ncomp = a_mf.nComp();
   amrex::ParallelFor(
-    a_mf, a_mf.nGrowVect(),
-    [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+    a_mf, a_mf.nGrowVect(), a_mf.nComp(),
+    [mf_ma, dr,
+     domain] AMREX_GPU_DEVICE(int box_no, int i, int j, int k, int n) noexcept {
       auto mf = mf_ma[box_no];
       if (domain.contains(i, j, k)) {
-        for (int n = 0; n < ncomp; ++n) {
-          mf(i, j, k, n) *= (static_cast<amrex::Real>(i) + 0.5) * dr;
-        }
+        mf(i, j, k, n) *= (static_cast<amrex::Real>(i) + 0.5) * dr;
       } else {
-        for (int n = 0; n < ncomp; ++n) {
-          mf(i, j, k, n) = 0.0;
-        }
+        mf(i, j, k, n) = 0.0;
       }
     });
   amrex::Gpu::streamSynchronize();
 }
 
 void
-PeleLM::
-  unscaleProj_RZ( // NOLINT(readability-convert-member-functions-to-static)
-    const int a_lev,
-    amrex::MultiFab& a_mf)
+PeleLM::unscaleProj_RZ(const int a_lev, amrex::MultiFab& a_mf)
 {
   // Unscale nodal projection cell-centered mfs by radius
   const amrex::Box& domain = geom[a_lev].Domain();
   const amrex::Real dr = geom[a_lev].CellSize()[0];
   auto const& mf_ma = a_mf.arrays();
-  const auto ncomp = a_mf.nComp();
   amrex::ParallelFor(
-    a_mf, a_mf.nGrowVect(),
-    [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+    a_mf, a_mf.nGrowVect(), a_mf.nComp(),
+    [mf_ma, dr,
+     domain] AMREX_GPU_DEVICE(int box_no, int i, int j, int k, int n) noexcept {
       auto mf = mf_ma[box_no];
       if (domain.contains(i, j, k)) {
-        for (int n = 0; n < ncomp; ++n) {
-          mf(i, j, k, n) /= (static_cast<amrex::Real>(i) + 0.5) * dr;
-        }
+        mf(i, j, k, n) /= (static_cast<amrex::Real>(i) + 0.5) * dr;
       } else {
-        for (int n = 0; n < ncomp; ++n) {
-          mf(i, j, k, n) = 0.0;
-        }
+        mf(i, j, k, n) = 0.0;
       }
     });
   amrex::Gpu::streamSynchronize();

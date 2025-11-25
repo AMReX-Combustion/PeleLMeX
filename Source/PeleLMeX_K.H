@@ -730,23 +730,18 @@ AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
 void
 makeVelForce(
-  int i,
-  int j,
-  int k,
-  int is_incomp,
-  const amrex::Real& rho_incomp,
-  int pseudo_gravity,
-  int pseudo_gravity_dir,
-  const amrex::Real& /*time*/,
-  amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const gravity,
-  amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const gp0,
-  const amrex::Real& dV_control,
-  amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const /*dx*/,
+  const int i,
+  const int j,
+  const int k,
+  const int is_incomp,
+  const amrex::Real rho_incomp,
+  const int pseudo_gravity,
+  const int pseudo_gravity_dir,
+  amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const& gravity,
+  amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const& gp0,
+  const amrex::Real dV_control,
   amrex::Array4<const amrex::Real> const& vel,
   amrex::Array4<const amrex::Real> const& rho,
-  amrex::Array4<const amrex::Real> const& /*rhoY*/,
-  amrex::Array4<const amrex::Real> const& /*rhoh*/,
-  amrex::Array4<const amrex::Real> const& /*temp*/,
   amrex::Array4<const amrex::Real> const& extmom,
   amrex::Array4<const amrex::Real> const& extrho,
   amrex::Array4<amrex::Real> const& force) noexcept
@@ -760,7 +755,7 @@ makeVelForce(
   }
 
   // Gravity and background pressure gradient
-  for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+  for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
     force(i, j, k, idim) = -gp0[idim] + gravity[idim] * rho_lcl;
   }
 
@@ -769,7 +764,7 @@ makeVelForce(
     force(i, j, k, pseudo_gravity_dir) += dV_control * rho_lcl;
   }
 
-  for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+  for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
     force(i, j, k, idim) +=
       extmom(i, j, k, idim) - vel(i, j, k, idim) * extrho(i, j, k);
   }

@@ -445,15 +445,16 @@ PeleLM::WritePlotFile()
 #endif
 
     if (m_do_les && m_plot_les) {
-      constexpr amrex::Real fact = 0.5 / AMREX_SPACEDIM;
+      constexpr amrex::Real fact =
+        0.5 / static_cast<amrex::Real>(AMREX_SPACEDIM);
       auto const& plot_arr = mf_plt[lev].arrays();
       AMREX_D_TERM(
         auto const& mut_arr_x =
-          m_leveldata_old[lev]->visc_turb_fc[0].const_arrays();
+          m_leveldata_new[lev]->visc_turb_fc[0].const_arrays();
         , auto const& mut_arr_y =
-            m_leveldata_old[lev]->visc_turb_fc[1].const_arrays();
+            m_leveldata_new[lev]->visc_turb_fc[1].const_arrays();
         , auto const& mut_arr_z =
-            m_leveldata_old[lev]->visc_turb_fc[2].const_arrays();)
+            m_leveldata_new[lev]->visc_turb_fc[2].const_arrays();)
       // interpolate turbulent viscosity from faces to centers
       amrex::ParallelFor(
         mf_plt[lev], [plot_arr, cnt, mut_arr_x, mut_arr_y
@@ -1017,24 +1018,16 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
 
   // Converting units when pltfile is coming from PeleC solution
   if (pltfileSource == "C") {
-    if (m_verbose > 0) {
-      amrex::Print() << " Converting CGS to MKS units... \n";
-    }
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-    for (amrex::MFIter mfi(ldata_p->state, amrex::TilingIfNotGPU());
-         mfi.isValid(); ++mfi) {
-      const amrex::Box& bx = mfi.tilebox();
-      auto const& vel_arr = ldata_p->state.array(mfi, VELX);
-      amrex::ParallelFor(
-        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          for (int n = 0; n < AMREX_SPACEDIM; n++) {
-            amrex::Real vel_mks = vel_arr(i, j, k, n) * 0.01;
-            vel_arr(i, j, k, n) = vel_mks;
-          }
-        });
-    }
+    amrex::Print() << " Converting CGS to MKS units... \n";
+    auto const& state_ma = ldata_p->state.arrays();
+    amrex::ParallelFor(
+      ldata_p->state, amrex::IntVect(0), AMREX_SPACEDIM,
+      [state_ma] AMREX_GPU_DEVICE(
+        int box_no, int i, int j, int k, int n) noexcept {
+        amrex::Array4<amrex::Real> vel(state_ma[box_no], VELX);
+        vel(i, j, k, n) *= 0.01;
+      });
+    amrex::Gpu::streamSynchronize();
   }
 
 #ifdef PELE_USE_PLASMA
@@ -1052,30 +1045,34 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
         SootConst sc;
         amrex::Real* momV = sc.MomOrderV.data();
         amrex::Real* momS = sc.MomOrderS.data();
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-        for (amrex::MFIter mfi(ldata_p->state, amrex::TilingIfNotGPU());
-             mfi.isValid(); ++mfi) {
-          const amrex::Box& bx = mfi.tilebox();
-          auto const& soot_arr = ldata_p->state.array(mfi, FIRSTSOOT);
-          amrex::ParallelFor(
-            bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-              for (int n = 0; n < NUM_SOOT_MOMENTS; n++) {
-                amrex::Real soot_exp = 3. - (3. * momV[n] + 2. * momS[n]);
-                soot_arr(i, j, k, n) *= std::pow(100., soot_exp);
-              }
-              soot_arr(i, j, k, NUMSOOTVAR - 1) *= 1.E6;
-            });
+        auto const& state_ma = ldata_p->state.arrays();
+        amrex::Real soot_exp[NUM_SOOT_MOMENTS] = {0.0};
+        for (int n = 0; n < NUM_SOOT_MOMENTS; ++n) {
+          soot_exp[n] = 3. - (3. * momV[n] + 2. * momS[n]);
         }
+        amrex::ParallelFor(
+          ldata_p->state, [state_ma, soot_exp] AMREX_GPU_DEVICE(
+                            int box_no, int i, int j, int k) noexcept {
+            amrex::Array4<amrex::Real> soot(state_ma[box_no], FIRSTSOOT);
+            for (int n = 0; n < NUM_SOOT_MOMENTS; ++n) {
+              soot(i, j, k, n) *= std::pow(100., soot_exp[n]);
+            }
+            soot(i, j, k, NUMSOOTVAR - 1) *= 1.E6;
+          });
+        amrex::Gpu::streamSynchronize();
       }
     } else {
       SootData* const sd = soot_model->getSootData();
       amrex::Real moments[NUM_SOOT_MOMENTS + 1];
       sd->initialSmallMomVals(moments);
-      for (int mom = 0; mom < NUM_SOOT_MOMENTS + 1; ++mom) {
-        ldata_p->state.setVal(moments[mom], FIRSTSOOT + mom, 1);
-      }
+      auto const& state_ma = ldata_p->state.arrays();
+      amrex::ParallelFor(
+        ldata_p->state, amrex::IntVect(0), NUM_SOOT_MOMENTS + 1,
+        [state_ma, moments] AMREX_GPU_DEVICE(
+          int box_no, int i, int j, int k, int n) noexcept {
+          amrex::Array4<amrex::Real> soot(state_ma[box_no], FIRSTSOOT);
+          soot(i, j, k, n) = moments[n];
+        });
     }
   }
 #endif
@@ -1084,7 +1081,6 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
   ldata_p->gp.setVal(0.0);
 
   ProbParm const* lprobparm = prob_parm_d;
-  auto const* leosparm = eos_parms.device_parm();
 
   // If m_do_patch_flow_variables is set as true, call user-defined function to
   // patch flow variables
@@ -1096,23 +1092,22 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
   // Enforce rho and rhoH consistent with temperature and mixture
   // The above handles species mapping (to some extent), but nothing enforce
   // sum of Ys = 1 -> use N2 in the following if N2 is present
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-  for (amrex::MFIter mfi(ldata_p->state, amrex::TilingIfNotGPU());
-       mfi.isValid(); ++mfi) {
-    const amrex::Box& bx = mfi.tilebox();
-    auto const& rho_arr = ldata_p->state.array(mfi, DENSITY);
-    auto const& rhoY_arr = ldata_p->state.array(mfi, FIRSTSPEC);
-    auto const& rhoH_arr = ldata_p->state.array(mfi, RHOH);
-    auto const& temp_arr = ldata_p->state.array(mfi, TEMP);
-    const auto* eosparm = leosparm;
-    amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+  auto const& state_ma = ldata_p->state.arrays();
+  auto const* leosparm = eos_parms.device_parm();
+  const amrex::Real P_cgs = m2c::P(lprobparm->P_mean);
+
+  amrex::ParallelFor(
+    ldata_p->state, [state_ma, P_cgs, eosparm = leosparm] AMREX_GPU_DEVICE(
+                      int box_no, int i, int j, int k) noexcept {
       auto eos = pele::physics::PhysicsType::eos(eosparm);
+      amrex::Array4<amrex::Real> rho(state_ma[box_no], DENSITY);
+      amrex::Array4<amrex::Real> rhoY(state_ma[box_no], FIRSTSPEC);
+      amrex::Array4<amrex::Real> rhoH(state_ma[box_no], RHOH);
+      amrex::Array4<amrex::Real> temp(state_ma[box_no], TEMP);
       amrex::Real massfrac[NUM_SPECIES] = {0.0};
       amrex::Real sumYs = 0.0;
-      for (int n = 0; n < NUM_SPECIES; n++) {
-        massfrac[n] = rhoY_arr(i, j, k, n);
+      for (int n = 0; n < NUM_SPECIES; ++n) {
+        massfrac[n] = rhoY(i, j, k, n);
 #ifdef N2_ID
         if (n != N2_ID) {
           sumYs += massfrac[n];
@@ -1122,25 +1117,22 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
 #ifdef N2_ID
       massfrac[N2_ID] = 1.0 - sumYs;
 #endif
-
       // Get density
-      amrex::Real P_cgs = lprobparm->P_mean * 10.0;
       amrex::Real rho_cgs = 0.0;
-      eos.PYT2R(P_cgs, massfrac, temp_arr(i, j, k), rho_cgs);
-      rho_arr(i, j, k) = rho_cgs * 1.0e3;
+      eos.PYT2R(P_cgs, massfrac, temp(i, j, k), rho_cgs);
+      rho(i, j, k) = c2m::Rho(rho_cgs);
 
       // Get enthalpy
       amrex::Real h_cgs = 0.0;
-      eos.TY2H(temp_arr(i, j, k), massfrac, h_cgs);
-      rhoH_arr(i, j, k) = h_cgs * 1.0e-4 * rho_arr(i, j, k);
+      eos.TY2H(temp(i, j, k), massfrac, h_cgs);
+      rhoH(i, j, k) = c2m::H(h_cgs) * rho(i, j, k);
 
       // Fill rhoYs
-      for (int n = 0; n < NUM_SPECIES; n++) {
-        rhoY_arr(i, j, k, n) = massfrac[n] * rho_arr(i, j, k);
+      for (int n = 0; n < NUM_SPECIES; ++n) {
+        rhoY(i, j, k, n) = massfrac[n] * rho(i, j, k);
       }
     });
-  }
-
+  amrex::Gpu::streamSynchronize();
   // Initialize thermodynamic pressure
   setThermoPress(a_lev, AmrNewTime);
   if (m_has_divu != 0) {

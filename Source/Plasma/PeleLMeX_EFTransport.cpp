@@ -9,25 +9,25 @@ PeleLM::calcEFTransport(const TimeStamp a_time)
   for (int lev = 0; lev <= finest_level; ++lev) {
     auto ldata_p = getLevelDataPtr(lev, a_time);
     auto dxinv = Geom(lev).InvCellSizeArray();
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-    for (amrex::MFIter mfi(ldata_p->diffE_cc, amrex::TilingIfNotGPU());
-         mfi.isValid(); ++mfi) {
-      const amrex::Box& gbx = mfi.growntilebox();
-      auto const& mobE = ldata_p->mobE_cc.array(mfi);
-      auto const& diffE = ldata_p->diffE_cc.array(mfi);
-      auto const& rhoY = ldata_p->state.const_array(mfi, FIRSTSPEC);
-      auto const& phiV = ldata_p->state.const_array(mfi, PHIV);
-      auto const& T = ldata_p->state.const_array(mfi, TEMP);
-      amrex::Real factor = PP_RU_MKS / (Na * elemCharge);
-      const auto useTab = m_electronKappaTab;
-      const auto fixedKe = m_fixedKappaE;
-      amrex::ParallelFor(
-        gbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          getKappaE(i, j, k, useTab, fixedKe, dxinv, rhoY, phiV, T, mobE);
-          getDiffE(i, j, k, factor, T, mobE, diffE);
-        });
-    }
+
+    auto const& mobE_ma = ldata_p->mobE_cc.arrays();
+    auto const& diffE_ma = ldata_p->diffE_cc.arrays();
+    auto const& state_ma = ldata_p->state.const_arrays();
+    const auto useTab = m_electronKappaTab;
+    const auto fixedKe = m_fixedKappaE;
+
+    amrex::ParallelFor(
+      ldata_p->diffE_cc, ldata_p->diffE_cc.nGrowVect(),
+      [useTab, fixedKe, dxinv, mobE_ma, diffE_ma,
+       state_ma] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+        constexpr amrex::Real factor = PP_RU_MKS / (Na * elemCharge);
+        amrex::Array4<amrex::Real const> rhoY(state_ma[box_no], FIRSTSPEC);
+        amrex::Array4<amrex::Real const> phiV(state_ma[box_no], PHIV);
+        amrex::Array4<amrex::Real const> T(state_ma[box_no], TEMP);
+        getKappaE(
+          i, j, k, useTab, fixedKe, dxinv, rhoY, phiV, T, mobE_ma[box_no]);
+        getDiffE(i, j, k, factor, T, mobE_ma[box_no], diffE_ma[box_no]);
+      });
+    amrex::Gpu::streamSynchronize();
   }
 }

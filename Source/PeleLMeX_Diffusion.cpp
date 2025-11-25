@@ -693,49 +693,51 @@ PeleLM::addWbarTerm(
         grids[lev], dmap[lev], 1, nGrow, amrex::MFInfo(), Factory(lev));
     }
     const amrex::Box& domain = geom[lev].Domain();
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-    for (amrex::MFIter mfi(Wbar[lev], amrex::TilingIfNotGPU()); mfi.isValid();
-         ++mfi) {
-      const amrex::Box& gbx = mfi.growntilebox();
-      auto const& rho_arr = a_rho[lev]->const_array(mfi);
-      auto const& rhoY_arr = a_spec[lev]->const_array(mfi);
-      auto const& Wbar_arr = Wbar[lev].array(mfi);
-      auto const& gradY_arr =
-        (have_boundary != 0) ? a_boundary[lev]->const_array(mfi) : Wbar_arr;
-      auto const& Wbar_boundary_arr =
-        (have_boundary != 0) ? Wbar_boundary[lev].array(mfi) : Wbar_arr;
 
-      const auto phys_bc = m_phys_bc;
-      amrex::ParallelFor(
-        gbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          getMwmixGivenRY(i, j, k, rho_arr, rhoY_arr, Wbar_arr, leosparm);
-          if (have_boundary != 0) { // need to impose gradWbar on boundary for
-            // computeGradient
-            // for dirichlet boundaries, we'll overwrite inhomog neumann ones
-            // NOTE: for now, this is skipped since wbar disabled for
-            // isothermal/soret
-            Wbar_boundary_arr(i, j, k) = Wbar_arr(i, j, k);
-            int idx[3] = {i, j, k};
-            for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
-              const auto bc_lo = phys_bc.lo(idim);
-              const auto bc_hi = phys_bc.hi(idim);
-              bool on_lo = (bc_lo == BoundaryCondition::BCNoSlipWallIsotherm ||
-                            bc_lo == BoundaryCondition::BCSlipWallIsotherm) &&
-                           (idx[idim] < domain.smallEnd(idim));
-              bool on_hi = (bc_hi == BoundaryCondition::BCNoSlipWallIsotherm ||
-                            bc_hi == BoundaryCondition::BCSlipWallIsotherm) &&
-                           (idx[idim] > domain.bigEnd(idim));
+    auto const& rho_ma = a_rho[lev]->const_arrays();
+    auto const& rhoY_ma = a_spec[lev]->const_arrays();
+    auto const& Wbar_ma = Wbar[lev].arrays();
+    auto const& gradY_ma =
+      (have_boundary != 0) ? a_boundary[lev]->const_arrays() : rhoY_ma;
+    auto const& Wbar_boundary_ma =
+      (have_boundary != 0) ? Wbar_boundary[lev].arrays() : Wbar_ma;
 
-              if (on_lo || on_hi) {
-                getGradMwmixGivengradYMwmix(
-                  i, j, k, gradY_arr, Wbar_arr, Wbar_boundary_arr, leosparm);
-              }
+    amrex::ParallelFor(
+      Wbar[lev], Wbar[lev].nGrowVect(),
+      [rho_ma, rhoY_ma, Wbar_ma, gradY_ma, Wbar_boundary_ma, have_boundary,
+       leosparm, domain,
+       phys_bc =
+         m_phys_bc] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+        getMwmixGivenRY(
+          i, j, k, rho_ma[box_no], rhoY_ma[box_no], Wbar_ma[box_no], leosparm);
+        if (have_boundary != 0) { // need to impose gradWbar on boundary for
+          // computeGradient
+          // for dirichlet boundaries, we'll overwrite inhomog neumann ones
+          // NOTE: for now, this is skipped since wbar disabled for
+          // isothermal/soret
+          Wbar_boundary_ma[box_no](i, j, k) = Wbar_ma[box_no](i, j, k);
+          const int idx[3] = {i, j, k};
+          for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
+            const auto bc_lo = phys_bc.lo(idim);
+            const auto bc_hi = phys_bc.hi(idim);
+            const bool on_lo =
+              (bc_lo == BoundaryCondition::BCNoSlipWallIsotherm ||
+               bc_lo == BoundaryCondition::BCSlipWallIsotherm) &&
+              (idx[idim] < domain.smallEnd(idim));
+            const bool on_hi =
+              (bc_hi == BoundaryCondition::BCNoSlipWallIsotherm ||
+               bc_hi == BoundaryCondition::BCSlipWallIsotherm) &&
+              (idx[idim] > domain.bigEnd(idim));
+
+            if (on_lo || on_hi) {
+              getGradMwmixGivengradYMwmix(
+                i, j, k, gradY_ma[box_no], Wbar_ma[box_no],
+                Wbar_boundary_ma[box_no], leosparm);
             }
           }
-        });
-    }
+        }
+      });
+    amrex::Gpu::streamSynchronize();
   }
   //------------------------------------------------------------------------
   // Compute Wbar gradients and do average down to get gradients consistent
@@ -1118,39 +1120,38 @@ PeleLM::differentialDiffusionUpdate(
   // Convert species forcing into actual solve RHS by *dt and adding rhoY^{n}
   // Could have done it at the same time the forcing is built, but this is
   // clearer
+
+  const auto dt = m_dt;
   for (int lev = 0; lev <= finest_level; ++lev) {
 
     // Get t^{n} data pointer
     auto* ldata_p = getLevelDataPtr(lev, AmrOldTime);
 
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-    for (amrex::MFIter mfi(advData->Forcing[lev], amrex::TilingIfNotGPU());
-         mfi.isValid(); ++mfi) {
-      const amrex::Box& bx = mfi.tilebox();
-      amrex::FArrayBox DummyFab(bx, 1);
-      auto const& rhoY_o = ldata_p->state.const_array(mfi, FIRSTSPEC);
-      auto const& fY = advData->Forcing[lev].array(mfi, 0);
-      auto const& aux_o = (m_nAux > 0)
-                            ? ldata_p->auxiliaries.const_array(mfi, 0)
-                            : DummyFab.const_array();
-      auto const& fAux = (m_nAux > 0) ? advData->Forcing_aux[lev].array(mfi, 0)
-                                      : DummyFab.array();
-      const auto dt = m_dt;
-      const auto nAux = m_nAux;
-      amrex::ParallelFor(
-        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          for (int n = 0; n < NUM_SPECIES; n++) {
-            fY(i, j, k, n) *= dt;
-            fY(i, j, k, n) += rhoY_o(i, j, k, n);
-          }
-          for (int n = 0; n < nAux; n++) {
-            fAux(i, j, k, n) *= dt;
-            fAux(i, j, k, n) += aux_o(i, j, k, n);
-          }
-        });
-    }
+    auto const& state_ma = ldata_p->state.const_arrays();
+    auto const& fY_ma = advData->Forcing[lev].arrays();
+
+    auto const& aux_ma =
+      (m_nAux > 0) ? ldata_p->auxiliaries.const_arrays() : state_ma;
+    auto const& fAux_ma =
+      (m_nAux > 0) ? advData->Forcing_aux[lev].arrays() : fY_ma;
+
+    amrex::ParallelFor(
+      advData->Forcing[lev], amrex::IntVect(0), NUM_SPECIES,
+      [state_ma, fY_ma,
+       dt] AMREX_GPU_DEVICE(int box_no, int i, int j, int k, int n) noexcept {
+        amrex::Array4<amrex::Real const> rhoY(state_ma[box_no], FIRSTSPEC);
+        fY_ma[box_no](i, j, k, n) *= dt;
+        fY_ma[box_no](i, j, k, n) += rhoY(i, j, k, n);
+      });
+    amrex::ParallelFor(
+      advData->Forcing[lev], amrex::IntVect(0), m_nAux,
+      [aux_ma, fAux_ma,
+       dt] AMREX_GPU_DEVICE(int box_no, int i, int j, int k, int n) noexcept {
+        fAux_ma[box_no](i, j, k, n) *= dt;
+        fAux_ma[box_no](i, j, k, n) += aux_ma[box_no](i, j, k, n);
+      });
+    // Shift outside?
+    amrex::Gpu::streamSynchronize();
   }
 
   //------------------------------------------------------------------------
@@ -1320,52 +1321,112 @@ PeleLM::differentialDiffusionUpdate(
   // Update species
   // Remove the Wbar and Soret terms because we included them both the dhat and
   // the forcing.
-  for (int lev = 0; lev <= finest_level; ++lev) {
+  if (m_use_wbar != 0 && m_use_soret != 0) {
+    for (int lev = 0; lev <= finest_level; ++lev) {
 
-    auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
-    auto dt = m_dt;
+      auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
 
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-    for (amrex::MFIter mfi(ldata_p->state, amrex::TilingIfNotGPU());
-         mfi.isValid(); ++mfi) {
-      const amrex::Box& bx = mfi.tilebox();
-      amrex::FArrayBox DummyFab(bx, 1);
-      auto const& rhoY = ldata_p->state.array(mfi, FIRSTSPEC);
-      auto const& dhat = diffData->Dhat[lev].const_array(mfi);
-      auto const& force = advData->Forcing[lev].const_array(mfi, 0);
-      auto const& dwbar = (m_use_wbar != 0)
-                            ? diffData->Dwbar[lev].const_array(mfi)
-                            : DummyFab.const_array();
-      auto const& dT = (m_use_soret != 0) ? diffData->DT[lev].const_array(mfi)
-                                          : DummyFab.const_array();
-      auto const& aux =
-        (m_nAux > 0) ? ldata_p->auxiliaries.array(mfi, 0) : DummyFab.array();
-      auto const& dhat_aux = (m_nAux > 0)
-                               ? diffData->Dhat_aux[lev].const_array(mfi)
-                               : DummyFab.const_array();
-      auto const& force_aux = (m_nAux > 0)
-                                ? advData->Forcing_aux[lev].const_array(mfi, 0)
-                                : DummyFab.const_array();
-      const auto nAux = m_nAux;
-      const auto use_wbar = m_use_wbar;
-      const auto use_soret = m_use_soret;
+      auto const& state_ma = ldata_p->state.arrays();
+      auto const& dhat_ma = diffData->Dhat[lev].const_arrays();
+      auto const& force_ma = advData->Forcing[lev].const_arrays();
+      auto const& dwbar_ma = diffData->Dwbar[lev].const_arrays();
+      auto const& dT_ma = diffData->DT[lev].const_arrays();
+
       amrex::ParallelFor(
-        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          for (int n = 0; n < NUM_SPECIES; n++) {
-            rhoY(i, j, k, n) = force(i, j, k, n) + dt * dhat(i, j, k, n);
-            if (use_wbar != 0) {
-              rhoY(i, j, k, n) -= dt * dwbar(i, j, k, n);
-            }
-            if (use_soret != 0) {
-              rhoY(i, j, k, n) -= dt * dT(i, j, k, n);
-            }
-          }
-          for (int n = 0; n < nAux; n++) {
-            aux(i, j, k, n) = force_aux(i, j, k, n) + dt * dhat_aux(i, j, k, n);
-          }
+        ldata_p->state, amrex::IntVect(0), NUM_SPECIES,
+        [state_ma, dhat_ma, force_ma, dwbar_ma, dT_ma,
+         dt] AMREX_GPU_DEVICE(int box_no, int i, int j, int k, int n) noexcept {
+          amrex::Array4<amrex::Real> rhoY(state_ma[box_no], FIRSTSPEC);
+          rhoY(i, j, k, n) =
+            force_ma[box_no](i, j, k, n) +
+            dt * (dhat_ma[box_no](i, j, k, n) - dwbar_ma[box_no](i, j, k, n) -
+                  dT_ma[box_no](i, j, k, n));
         });
+      // Shift outside?
+      amrex::Gpu::streamSynchronize();
+    }
+  } else if (m_use_wbar != 0) {
+    for (int lev = 0; lev <= finest_level; ++lev) {
+
+      auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
+
+      auto const& state_ma = ldata_p->state.arrays();
+      auto const& dhat_ma = diffData->Dhat[lev].const_arrays();
+      auto const& force_ma = advData->Forcing[lev].const_arrays();
+
+      auto const& dwbar_ma = diffData->Dwbar[lev].const_arrays();
+      amrex::ParallelFor(
+        ldata_p->state, amrex::IntVect(0), NUM_SPECIES,
+        [state_ma, dhat_ma, force_ma, dwbar_ma,
+         dt] AMREX_GPU_DEVICE(int box_no, int i, int j, int k, int n) noexcept {
+          amrex::Array4<amrex::Real> rhoY(state_ma[box_no], FIRSTSPEC);
+          rhoY(i, j, k, n) =
+            force_ma[box_no](i, j, k, n) +
+            dt * (dhat_ma[box_no](i, j, k, n) - dwbar_ma[box_no](i, j, k, n));
+        });
+      // Shift outside?
+      amrex::Gpu::streamSynchronize();
+    }
+  } else if (m_use_soret != 0) {
+    for (int lev = 0; lev <= finest_level; ++lev) {
+
+      auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
+
+      auto const& state_ma = ldata_p->state.arrays();
+      auto const& dhat_ma = diffData->Dhat[lev].const_arrays();
+      auto const& force_ma = advData->Forcing[lev].const_arrays();
+
+      auto const& dT_ma = diffData->DT[lev].const_arrays();
+      amrex::ParallelFor(
+        ldata_p->state, amrex::IntVect(0), NUM_SPECIES,
+        [state_ma, dhat_ma, force_ma, dT_ma,
+         dt] AMREX_GPU_DEVICE(int box_no, int i, int j, int k, int n) noexcept {
+          amrex::Array4<amrex::Real> rhoY(state_ma[box_no], FIRSTSPEC);
+          rhoY(i, j, k, n) =
+            force_ma[box_no](i, j, k, n) +
+            dt * (dhat_ma[box_no](i, j, k, n) - dT_ma[box_no](i, j, k, n));
+        });
+      // Shift outside?
+      amrex::Gpu::streamSynchronize();
+    }
+  } else {
+    for (int lev = 0; lev <= finest_level; ++lev) {
+
+      auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
+
+      auto const& state_ma = ldata_p->state.arrays();
+      auto const& dhat_ma = diffData->Dhat[lev].const_arrays();
+      auto const& force_ma = advData->Forcing[lev].const_arrays();
+
+      amrex::ParallelFor(
+        ldata_p->state, amrex::IntVect(0), NUM_SPECIES,
+        [state_ma, dhat_ma, force_ma,
+         dt] AMREX_GPU_DEVICE(int box_no, int i, int j, int k, int n) noexcept {
+          amrex::Array4<amrex::Real> rhoY(state_ma[box_no], FIRSTSPEC);
+          rhoY(i, j, k, n) =
+            force_ma[box_no](i, j, k, n) + dt * dhat_ma[box_no](i, j, k, n);
+        });
+      // Shift outside?
+      amrex::Gpu::streamSynchronize();
+    }
+  }
+  if (m_nAux > 0) {
+    for (int lev = 0; lev <= finest_level; ++lev) {
+
+      auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
+
+      auto const& aux_ma = ldata_p->auxiliaries.arrays();
+      auto const& dhat_aux_ma = diffData->Dhat_aux[lev].const_arrays();
+      auto const& force_aux_ma = advData->Forcing_aux[lev].const_arrays();
+      amrex::ParallelFor(
+        ldata_p->state, amrex::IntVect(0), m_nAux,
+        [aux_ma, dhat_aux_ma, force_aux_ma,
+         dt] AMREX_GPU_DEVICE(int box_no, int i, int j, int k, int n) noexcept {
+          aux_ma[box_no](i, j, k, n) = force_aux_ma[box_no](i, j, k, n) +
+                                       dt * dhat_aux_ma[box_no](i, j, k, n);
+        });
+      // Shift outside?
+      amrex::Gpu::streamSynchronize();
     }
   }
 
@@ -1555,46 +1616,42 @@ PeleLM::deltaTIter_prepare(
 
     auto* ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
     auto* ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-    for (amrex::MFIter mfi(ldataNew_p->state, amrex::TilingIfNotGPU());
-         mfi.isValid(); ++mfi) {
-      const amrex::Box& bx = mfi.tilebox();
-      // RHS pieces
-      auto const& rhoH_o = ldataOld_p->state.const_array(mfi, RHOH);
-      auto const& rhoH_n = ldataNew_p->state.const_array(mfi, RHOH);
-      auto const& force = advData->Forcing[lev].const_array(mfi, NUM_SPECIES);
-      auto const& fourier = diffData->Dhat[lev].const_array(mfi, NUM_SPECIES);
-      auto const& diffDiff =
-        diffData->Dhat[lev].const_array(mfi, NUM_SPECIES + 1);
-      auto const& rhs = a_rhs[lev]->array(mfi);
 
-      // Cpmix
-      auto const& rho = ldataNew_p->state.const_array(mfi, DENSITY);
-      auto const& rhoY = ldataNew_p->state.const_array(mfi, FIRSTSPEC);
-      auto const& T = ldataNew_p->state.const_array(mfi, TEMP);
-      auto const& rhocp = a_rhoCp[lev]->array(mfi);
+    auto const& state_old_ma = ldataOld_p->state.const_arrays();
+    auto const& state_new_ma = ldataNew_p->state.const_arrays();
+    auto const& force_ma = advData->Forcing[lev].const_arrays();
+    auto const& dhat_ma = diffData->Dhat[lev].const_arrays();
+    auto const& rhs_ma = a_rhs[lev]->arrays();
+    auto const& rhocp_ma = a_rhoCp[lev]->arrays();
+    auto const& tsave_ma = a_Tsave[lev]->arrays();
 
-      // T save
-      auto const& tsave = a_Tsave[lev]->array(mfi);
-      const auto dt = m_dt;
-      amrex::ParallelFor(
-        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          // Assemble deltaT RHS
-          rhs(i, j, k) =
-            dt * ((rhoH_o(i, j, k) - rhoH_n(i, j, k)) * dtinv + force(i, j, k) +
-                  fourier(i, j, k) + diffDiff(i, j, k));
+    amrex::ParallelFor(
+      ldataNew_p->state,
+      [state_old_ma, state_new_ma, force_ma, dhat_ma, rhs_ma, rhocp_ma,
+       tsave_ma, dtinv, leosparm,
+       dt = m_dt] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+        amrex::Array4<amrex::Real const> rhoH_o(state_old_ma[box_no], RHOH);
+        amrex::Array4<amrex::Real const> rhoH_n(state_new_ma[box_no], RHOH);
+        amrex::Array4<amrex::Real const> force(force_ma[box_no], NUM_SPECIES);
+        amrex::Array4<amrex::Real const> fourier(dhat_ma[box_no], NUM_SPECIES);
+        amrex::Array4<amrex::Real const> diffDiff(
+          dhat_ma[box_no], NUM_SPECIES + 1);
+        // Assemble deltaT RHS
+        rhs_ma[box_no](i, j, k) =
+          dt * ((rhoH_o(i, j, k) - rhoH_n(i, j, k)) * dtinv + force(i, j, k) +
+                fourier(i, j, k) + diffDiff(i, j, k));
 
-          // Get \rho * Cp_{mix}
-          getCpmixGivenRYT(i, j, k, rho, rhoY, T, rhocp, leosparm);
-          rhocp(i, j, k) *= rho(i, j, k);
+        amrex::Array4<amrex::Real const> rho(state_new_ma[box_no], DENSITY);
+        amrex::Array4<amrex::Real const> rhoY(state_new_ma[box_no], FIRSTSPEC);
+        amrex::Array4<amrex::Real const> T(state_new_ma[box_no], TEMP);
+        // Get \rho * Cp_{mix}
+        getCpmixGivenRYT(i, j, k, rho, rhoY, T, rhocp_ma[box_no], leosparm);
+        rhocp_ma[box_no](i, j, k) *= rho(i, j, k);
 
-          // Save T
-          tsave(i, j, k) = T(i, j, k);
-        });
-    }
-
+        // Save T
+        tsave_ma[box_no](i, j, k) = T(i, j, k);
+      });
+    amrex::Gpu::streamSynchronize();
     // Set T^{np1} to zero
     // Include one ghost cell to ensure levelBC at zero for linear solve
     ldataNew_p->state.setVal(0.0, TEMP, 1, 1);
@@ -1724,55 +1781,49 @@ PeleLM::getScalarDiffForce(
     // Get t^{n} data pointer
     auto* ldataR_p = getLevelDataReactPtr(lev);
 
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-    for (amrex::MFIter mfi(advData->Forcing[lev], amrex::TilingIfNotGPU());
-         mfi.isValid(); ++mfi) {
-      const amrex::Box& bx = mfi.tilebox();
-      amrex::FArrayBox DummyFab(bx, 1);
-      auto const& dn = diffData->Dn[lev].const_array(mfi, 0);
-      auto const& ddn = diffData->Dn[lev].const_array(mfi, NUM_SPECIES + 1);
-      auto const& dnp1k = diffData->Dnp1[lev].const_array(mfi, 0);
-      auto const& ddnp1k =
-        diffData->Dnp1[lev].const_array(mfi, NUM_SPECIES + 1);
-      auto const& r = ldataR_p->I_R.const_array(mfi);
-      auto const& a = advData->AofS[lev].const_array(mfi, FIRSTSPEC);
-      auto const& extRhoY = m_extSource[lev]->const_array(mfi, FIRSTSPEC);
-      auto const& extRhoH = m_extSource[lev]->const_array(mfi, RHOH);
-      auto const& fY = advData->Forcing[lev].array(mfi, 0);
-      auto const& fT = advData->Forcing[lev].array(mfi, NUM_SPECIES);
-      auto const& dwbar = (m_use_wbar != 0)
-                            ? diffData->Dwbar[lev].const_array(mfi, 0)
-                            : DummyFab.const_array();
-      auto const& dT = (m_use_soret != 0)
-                         ? diffData->DT[lev].const_array(mfi, 0)
-                         : DummyFab.const_array();
-      auto const& fAux = (m_nAux > 0) ? advData->Forcing_aux[lev].array(mfi, 0)
-                                      : DummyFab.array();
-      auto const& a_aux = (m_nAux > 0)
-                            ? advData->AofS_aux[lev].const_array(mfi, 0)
-                            : DummyFab.const_array();
-      auto const& dn_aux = (m_nAux > 0)
-                             ? diffData->Dn_aux[lev].const_array(mfi, 0)
-                             : DummyFab.const_array();
-      auto const& dnp1k_aux = (m_nAux > 0)
-                                ? diffData->Dnp1_aux[lev].const_array(mfi, 0)
-                                : DummyFab.const_array();
-      const auto do_react = m_do_react;
-      const auto use_wbar = m_use_wbar;
-      const auto use_soret = m_use_soret;
-      const auto dp0dt = m_dp0dt;
-      const auto is_closed_ch = m_closed_chamber;
-      const auto nAux = m_nAux;
-      amrex::ParallelFor(
-        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          buildDiffusionForcing(
-            i, j, k, dn, ddn, dnp1k, ddnp1k, r, a, dp0dt, is_closed_ch,
-            do_react, fY, fT, dwbar, dT, extRhoY, extRhoH, use_wbar, use_soret,
-            fAux, a_aux, dn_aux, dnp1k_aux, aux_advect_d, aux_diffuse_d, nAux);
-        });
-    }
+    auto const& dn_ma = diffData->Dn[lev].const_arrays();
+    auto const& dnp1_ma = diffData->Dnp1[lev].const_arrays();
+    auto const& r_ma = ldataR_p->I_R.const_arrays();
+    auto const& a_ma = advData->AofS[lev].const_arrays();
+    auto const& ext_ma = m_extSource[lev]->const_arrays();
+    auto const& f_ma = advData->Forcing[lev].arrays();
+
+    auto const& dwbar_ma =
+      (m_use_wbar != 0) ? diffData->Dwbar[lev].const_arrays() : dn_ma;
+    auto const& dT_ma =
+      (m_use_soret != 0) ? diffData->DT[lev].const_arrays() : dn_ma;
+    auto const& f_aux_ma =
+      (m_nAux > 0) ? advData->Forcing_aux[lev].arrays() : f_ma;
+    auto const& a_aux_ma =
+      (m_nAux > 0) ? advData->AofS_aux[lev].const_arrays() : dn_ma;
+    auto const& dn_aux_ma =
+      (m_nAux > 0) ? diffData->Dn_aux[lev].const_arrays() : dn_ma;
+    auto const& dnp1_aux_ma =
+      (m_nAux > 0) ? diffData->Dnp1_aux[lev].const_arrays() : dn_ma;
+
+    amrex::ParallelFor(
+      advData->Forcing[lev],
+      [dn_ma, dnp1_ma, r_ma, a_ma, ext_ma, f_ma, dwbar_ma, dT_ma, f_aux_ma,
+       a_aux_ma, dn_aux_ma, dnp1_aux_ma, do_react = m_do_react,
+       use_wbar = m_use_wbar, use_soret = m_use_soret, dp0dt = m_dp0dt,
+       is_closed_ch = m_closed_chamber, nAux = m_nAux, aux_advect_d,
+       aux_diffuse_d] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+        amrex::Array4<amrex::Real const> ddn(dn_ma[box_no], NUM_SPECIES + 1);
+        amrex::Array4<amrex::Real const> ddnp1(
+          dnp1_ma[box_no], NUM_SPECIES + 1);
+        amrex::Array4<amrex::Real const> a(a_ma[box_no], FIRSTSPEC);
+        amrex::Array4<amrex::Real const> extRhoY(ext_ma[box_no], FIRSTSPEC);
+        amrex::Array4<amrex::Real const> extRhoH(ext_ma[box_no], RHOH);
+        amrex::Array4<amrex::Real> fT(f_ma[box_no], NUM_SPECIES);
+        buildDiffusionForcing(
+          i, j, k, dn_ma[box_no], ddn, dnp1_ma[box_no], ddnp1, r_ma[box_no], a,
+          dp0dt, is_closed_ch, do_react, f_ma[box_no], fT, dwbar_ma[box_no],
+          dT_ma[box_no], extRhoY, extRhoH, use_wbar, use_soret,
+          f_aux_ma[box_no], a_aux_ma[box_no], dn_aux_ma[box_no],
+          dnp1_aux_ma[box_no], aux_advect_d, aux_diffuse_d, nAux);
+      });
+    // Shift outside?
+    amrex::Gpu::streamSynchronize();
   }
 
   // Fill forcing ghost cells

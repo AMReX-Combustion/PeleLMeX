@@ -850,19 +850,6 @@ public:
     amrex::MultiFab* a_velForce,
     const int add_gradP);
 
-  void getVelForces(
-    int lev,
-    const amrex::Box& bx,
-    const amrex::Real& a_time,
-    amrex::Array4<amrex::Real> const& force,
-    amrex::Array4<const amrex::Real> const& vel,
-    amrex::Array4<const amrex::Real> const& rho,
-    amrex::Array4<const amrex::Real> const& rhoY,
-    amrex::Array4<const amrex::Real> const& rhoh,
-    amrex::Array4<const amrex::Real> const& temp,
-    amrex::Array4<const amrex::Real> const& extMom,
-    amrex::Array4<const amrex::Real> const& extRho);
-
   void addSpark(const PeleLM::TimeStamp a_time);
 
   void addScalarVarianceSources(const PeleLM::TimeStamp a_time);

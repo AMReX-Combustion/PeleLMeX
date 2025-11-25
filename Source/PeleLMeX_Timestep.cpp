@@ -240,24 +240,21 @@ PeleLM::checkDt(const TimeStamp a_time, const amrex::Real a_dt)
     const amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> dxinv =
       geom[lev].InvCellSizeArray();
 
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-    for (amrex::MFIter mfi(ldata_p->state, amrex::TilingIfNotGPU());
-         mfi.isValid(); ++mfi) {
-      const amrex::Box& bx = mfi.tilebox();
-      auto const& rho = ldata_p->state.const_array(mfi, DENSITY);
-      auto const& vel = ldata_p->state.const_array(mfi, VELX);
-      auto const& divu = ldata_p->divu.const_array(mfi);
-      int divu_checkFlag = m_divu_checkFlag;
-      auto dtfac = m_divu_dtFactor;
-      auto rhoMin = m_divu_rhoMin;
-      amrex::ParallelFor(
-        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          check_divu_dt(
-            i, j, k, divu_checkFlag, dtfac, rhoMin, dxinv, rho, vel, divu,
-            a_dt);
-        });
-    }
+    auto const& state_ma = ldata_p->state.const_arrays();
+    auto const& divu_ma = ldata_p->divu.const_arrays();
+
+    amrex::ParallelFor(
+      ldata_p->state,
+      [state_ma, divu_ma, dxinv, a_dt, divu_checkFlag = m_divu_checkFlag,
+       dtfac = m_divu_dtFactor,
+       rhoMin =
+         m_divu_rhoMin] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+        amrex::Array4<amrex::Real const> rho(state_ma[box_no], DENSITY);
+        amrex::Array4<amrex::Real const> vel(state_ma[box_no], VELX);
+        amrex::Array4<amrex::Real const> divu = divu_ma[box_no];
+        check_divu_dt(
+          i, j, k, divu_checkFlag, dtfac, rhoMin, dxinv, rho, vel, divu, a_dt);
+      });
+    amrex::Gpu::streamSynchronize();
   }
 }

@@ -210,42 +210,34 @@ PeleLM::initializeElectronNeutral()
     // Get level data new time pointer
     auto ldata_p = getLevelDataPtr(lev, AmrNewTime);
 
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-    for (amrex::MFIter mfi(ldata_p->state, amrex::TilingIfNotGPU());
-         mfi.isValid(); ++mfi) {
-      const amrex::Box& bx = mfi.tilebox();
-      auto const& rho = ldata_p->state.array(mfi, DENSITY);
-      auto const& rhoY = ldata_p->state.array(mfi, FIRSTSPEC);
-      auto const& rhoH = ldata_p->state.array(mfi, RHOH);
-      auto const& temp = ldata_p->state.array(mfi, TEMP);
-      auto const& nE = ldata_p->state.array(mfi, NE);
-      amrex::ParallelFor(
-        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          initElecNeutral(i, j, k, rho, rhoY, rhoH, temp, nE, *lprobparm);
-        });
-    }
+    auto const& state_ma = ldata_p->state.arrays();
 
+    amrex::ParallelFor(
+      ldata_p->state, [state_ma, lprobparm] AMREX_GPU_DEVICE(
+                        int box_no, int i, int j, int k) noexcept {
+        amrex::Array4<amrex::Real> rho(state_ma[box_no], DENSITY);
+        amrex::Array4<amrex::Real> rhoY(state_ma[box_no], FIRSTSPEC);
+        amrex::Array4<amrex::Real> rhoH(state_ma[box_no], RHOH);
+        amrex::Array4<amrex::Real> temp(state_ma[box_no], TEMP);
+        amrex::Array4<amrex::Real> nE(state_ma[box_no], NE);
+        initElecNeutral(i, j, k, rho, rhoY, rhoH, temp, nE, *lprobparm);
+      });
+    amrex::Gpu::streamSynchronize();
     // Convert I_R(Y_nE) into I_R(nE) and set I_R(Y_nE) to zero
     auto ldataR_p = getLevelDataReactPtr(lev);
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-    for (amrex::MFIter mfi(ldataR_p->I_R, amrex::TilingIfNotGPU());
-         mfi.isValid(); ++mfi) {
-      const amrex::Box& bx = mfi.tilebox();
-      auto const& YnEdot = ldataR_p->I_R.array(mfi, E_ID);
-      auto const& nEdot = ldataR_p->I_R.array(mfi, NUM_SPECIES);
-      auto eos = pele::physics::PhysicsType::eos();
-      amrex::Real invmwt[NUM_SPECIES] = {0.0};
-      eos.inv_molecular_weight(invmwt);
-      amrex::ParallelFor(
-        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          nEdot(i, j, k) = YnEdot(i, j, k) * Na * invmwt[E_ID] * 1.0e3;
-          YnEdot(i, j, k) = 0.0;
-        });
-    }
+    auto const& I_R_ma = ldataR_p->I_R.arrays();
+    auto eos = pele::physics::PhysicsType::eos();
+    amrex::Real invmwt[NUM_SPECIES] = {0.0};
+    eos.inv_molecular_weight(invmwt);
+    amrex::ParallelFor(
+      ldataR_p->I_R, [I_R_ma, invmwt] AMREX_GPU_DEVICE(
+                       int box_no, int i, int j, int k) noexcept {
+        amrex::Array4<amrex::Real> YnEdot(I_R_ma[box_no], E_ID);
+        amrex::Array4<amrex::Real> nEdot(I_R_ma[box_no], NUM_SPECIES);
+        nEdot(i, j, k) = YnEdot(i, j, k) * Na * invmwt[E_ID] * 1.0e3;
+        YnEdot(i, j, k) = 0.0;
+      });
+    amrex::Gpu::streamSynchronize();
   }
 }
 

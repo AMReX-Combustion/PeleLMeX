@@ -202,6 +202,9 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
     for (int n = 0; n < NUM_SPECIES; n++) {
       s_ext[FIRSTSPEC + n] = massfrac[n] * s_ext[DENSITY];
     }
+    for (int n = 0; n < NUM_ODE; n++) {
+      s_ext[FIRSTODE + n] = 0.0;
+    }
   }
 
   static void set_ode_names(amrex::Vector<std::string>& a_ode_names)
