@@ -82,7 +82,8 @@ PeleLM::SpraySetup()
   scomps.rhoSrcIndx = sprayRhoSrcIndx;
   scomps.momSrcIndx = sprayMomSrcIndx;
   scomps.specSrcIndx = spraySpecSrcIndx;
-  scomps.engSrcIndx = spraySpecSrcIndx + SprayParticleContainer::m_sprayData->N_pc;
+  scomps.engSrcIndx =
+    spraySpecSrcIndx + SprayParticleContainer::m_sprayData->N_pc;
   SprayParticleContainer::AssignSprayComps(scomps);
 }
 
