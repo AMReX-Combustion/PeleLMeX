@@ -122,7 +122,14 @@ def setup(case_name):
         elif "rungemix" in name.lower():
             leg_lab[k] += ": Mix"
             leg_col[k] = "tab:orange"
-
+        elif "rungejp8" in name.lower():
+            if ":" not in leg_lab[k]:
+                leg_lab[k] += ":"
+            if "hychem" in d.lower():
+                leg_lab[k] += " HyChem"
+                line_sty[k] = "-."
+            else:
+                leg_lab[k] += " Many-to-One"
     return cases, leg_lab, leg_col, line_sty
 
 

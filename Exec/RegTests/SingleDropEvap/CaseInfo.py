@@ -74,6 +74,7 @@ class CaseInfo:
         # File paths, names, etc.
         FILE_PATH = os.path.dirname(os.path.abspath(__file__))
         self.name = name
+        self.ref_name = name  # Name to use for reference data lookup
         self.dname = dname
         self.case_dir = f"{LiqPropsType.upper()}_{name}"
         if LiqPropsType.lower() == "mp":
@@ -158,7 +159,9 @@ def SpecifyCase(case_name, LiqPropsType, PeleMP_PsatModel="Antoine", **kwargs):
         case = RungeDec(LiqPropsType, PeleMP_PsatModel, **kwargs)
     elif case_name.lower() == "rungemix":
         case = RungeMix(LiqPropsType, PeleMP_PsatModel, **kwargs)
-    elif case_name.lower() == "rungejp8":
+    elif "rungejp8" in case_name.lower():
+        if "hychem" in case_name.lower():
+            kwargs["hychem"] = True
         case = RungeJP8(LiqPropsType, PeleMP_PsatModel, **kwargs)
     else:
         raise ValueError(f"Unknown case name: {case_name}")
@@ -272,10 +275,14 @@ def RungeHep(LiqPropsType, PeleMP_PsatModel="Antoine", **kwargs):
 
 
 def RungeJP8(LiqPropsType, PeleMP_PsatModel="Antoine", **kwargs):
+    name = "RungeJP8"
+    if "hychem" in kwargs.keys():
+        if kwargs["hychem"]:
+            name += "_HyChem"
     drop = Droplet(294.15, 6.36e-4, ["POSF10264"], [1.0])
     gas = GasPhase(294.15, 1.01325e5, vel=3.0)
     case = CaseInfo(
-        "RungeJP8",
+        name, 
         "Runge et al.",
         drop,
         gas,
@@ -287,6 +294,8 @@ def RungeJP8(LiqPropsType, PeleMP_PsatModel="Antoine", **kwargs):
         **kwargs,
     )
     case.use_file_y0 = True
+    # Use same reference data for both RungeJP8 and RungeJP8HyChem
+    case.ref_name = "RungeJP8"
     return case
 
 
@@ -409,7 +418,7 @@ def CreateInputFile(case):
                     new_line += f"{y:.2f} "
                 new_line += "\n"
         elif "particles.fuel_species" in line:
-            if ("jp8" in case.name.lower()) and ("mix" not in case.name.lower()):
+            if ("jp8" in case.name.lower()) and ("hychem" not in case.name.lower()):
                 new_line = line
                 # Set fuel_names to list after "particles.fuel_species = "
                 case.droplet.fuel_names = line.split("=")[1].strip().split()
@@ -526,7 +535,7 @@ def CreateManifoldFiles(case, cmlm_dir):
         f.write("manifold.compute_temperature = true \n")
         f.write("manifold.has_species_mw = true \n")
         f.write("manifold.v = 1 \n")
-        if "jp8" in case.name.lower() and "mix" not in case.name.lower():
+        if "jp8" in case.name.lower() and "hychem" not in case.name.lower():
             f.write(
                 "particles.dep_manifold_species = "
                 + " ".join([f"ZMIX0" for i in range(len(fuels))])

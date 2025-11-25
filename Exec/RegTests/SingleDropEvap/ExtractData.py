@@ -84,7 +84,8 @@ def ExtractData(case, outfile):
 def ExtractRefVals(case):
     FILE_PATH = os.path.dirname(os.path.abspath(__file__))
 
-    ldir = os.path.join(FILE_PATH, f"ref_files/{case.name}")
+    ref_name = case.ref_name if hasattr(case, 'ref_name') else case.name
+    ldir = os.path.join(FILE_PATH, f"ref_files/{ref_name}")
     fnames = ["refdvals.csv", "refTvals.csv", "refYvals.csv"]
     reffiles = []
 
