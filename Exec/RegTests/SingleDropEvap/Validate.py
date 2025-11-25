@@ -25,7 +25,8 @@ parser = argparse.ArgumentParser(
     description="Run single droplet evaporation cases and compare to experimental data"
 )
 
-cases = ["WongLin", "Nomura", "Daif", "RungeHep", "RungeDec", "RungeMix", "RungeJP8", "RungeJP8-H", "RungeJP8-D"]
+cases = ["WongLin", "Nomura", "Daif", "RungeHep", "RungeDec", "RungeMix", 
+         "RungeJP8", "RungeJP8-H", "RungeJP8-D"]
 parser.add_argument(
     "--case_name",
     "-c",
@@ -86,6 +87,14 @@ parser.add_argument(
     default="",
     help="Redirect output to log file with given name",
 )
+parser.add_argument(
+    "--runtime_flags",
+    "-r",
+    type=str,
+    nargs='*',
+    default=[],
+    help="Additional runtime flags to pass to PeleLMeX",
+)
 args = parser.parse_args()
 
 
@@ -113,6 +122,9 @@ build_new = args.build_new
 
 # Number of processors to run on
 num_proc = args.num_proc
+
+# Additional runtime flags for PeleLMeX
+runtime_flags = " ".join(args.runtime_flags)
 
 # Create case instance
 case = SpecifyCase(case_name, LiqPropsType, PeleMP_PsatModel, use_manifold=use_manifold)
@@ -230,14 +242,14 @@ if run_new:
         raise ValueError(error)
 
     # Run the case
-    if ("MPI" in exe) and (num_proc > 1):
-        run_command = f"mpiexec -np {num_proc} ./{exe} {case.input_file}"
-    else:
-        run_command = f"./{exe} {case.input_file}"
+    run_command = f"./{exe} {case.input_file} {runtime_flags}"
     if args.log != "":
         print(f"Redirecting output to log file: {case.case_path}/{args.log}")
         run_command += f" > {case.case_path}/{args.log} 2>&1"
-    error = os.system(run_command)
+    if ("MPI" in exe) and (num_proc > 1):
+        error = os.system(f"mpiexec -np {num_proc} {run_command}")
+    else:
+        error = os.system(run_command)
     if error:
         raise RuntimeError(f"Pele simulation failed with error code {error}")
 
