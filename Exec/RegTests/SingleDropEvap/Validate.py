@@ -85,8 +85,8 @@ parser.add_argument(
     "--log",
     action="store_const",
     const="log.out",
-    default="log.out",
-    help="Redirect output to log file (default: log.out)",
+    default=None,
+    help="Redirect output to log file (log.out)",
 )
 parser.add_argument(
     "--runtime_flags",
@@ -244,8 +244,9 @@ if run_new:
 
     # Run the case
     run_command = f"./{exe} {case.input_file} {runtime_flags}"
-    print(f"Redirecting output to log file: {case.case_path}/{args.log}")
-    run_command += f" > {case.case_path}/{args.log} 2>&1"
+    if args.log:
+        print(f"Redirecting output to log file: {case.case_path}/{args.log}")
+        run_command += f" > {case.case_path}/{args.log} 2>&1"
     if ("MPI" in exe) and (num_proc > 1):
         error = os.system(f"mpiexec -np {num_proc} {run_command}")
     else:
