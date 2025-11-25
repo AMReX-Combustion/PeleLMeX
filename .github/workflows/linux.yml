@@ -269,3 +269,7 @@ jobs:
       working-directory: ./Exec/RegTests/SingleDropEvap
       run: |
         python Validate.py -b -c WongLin -l mp -p Antoine -n 2
+    - name: RungeJP8 GCM Many-to-One
+      working-directory: ./Exec/RegTests/SingleDropEvap
+      run: |
+        python Validate.py -b -c RungeJP8 -n 2 -r amr.max_step=1000
