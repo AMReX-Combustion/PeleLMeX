@@ -160,8 +160,10 @@ def SpecifyCase(case_name, LiqPropsType, PeleMP_PsatModel="Antoine", **kwargs):
     elif case_name.lower() == "rungemix":
         case = RungeMix(LiqPropsType, PeleMP_PsatModel, **kwargs)
     elif "rungejp8" in case_name.lower():
-        if "hychem" in case_name.lower():
+        if "-h" in case_name.lower():
             kwargs["hychem"] = True
+        elif "-d" in case_name.lower():
+            kwargs["detailed"] = True
         case = RungeJP8(LiqPropsType, PeleMP_PsatModel, **kwargs)
     else:
         raise ValueError(f"Unknown case name: {case_name}")
@@ -279,6 +281,9 @@ def RungeJP8(LiqPropsType, PeleMP_PsatModel="Antoine", **kwargs):
     if "hychem" in kwargs.keys():
         if kwargs["hychem"]:
             name += "_HyChem"
+    elif "detailed" in kwargs.keys():
+        if kwargs["detailed"]:
+            name += "_Detailed"
     drop = Droplet(294.15, 6.36e-4, ["POSF10264"], [1.0])
     gas = GasPhase(294.15, 1.01325e5, vel=3.0)
     case = CaseInfo(
@@ -294,7 +299,7 @@ def RungeJP8(LiqPropsType, PeleMP_PsatModel="Antoine", **kwargs):
         **kwargs,
     )
     case.use_file_y0 = True
-    # Use same reference data for both RungeJP8 and RungeJP8HyChem
+    # Use same reference data for RungeJP8, RungeJP8-H, and RungeJP8-D
     case.ref_name = "RungeJP8"
     return case
 

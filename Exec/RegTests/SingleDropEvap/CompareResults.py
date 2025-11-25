@@ -128,6 +128,9 @@ def setup(case_name):
             if "hychem" in d.lower():
                 leg_lab[k] += " HyChem"
                 line_sty[k] = "-."
+            elif "detailed" in d.lower():
+                leg_lab[k] += " Detailed"
+                line_sty[k] = "--"
             else:
                 leg_lab[k] += " Many-to-One"
     return cases, leg_lab, leg_col, line_sty
