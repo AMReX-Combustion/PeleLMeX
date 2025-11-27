@@ -697,6 +697,8 @@ PeleLM::addWbarTerm(
       Wbar_boundary.emplace_back(
         grids[lev], dmap[lev], 1, nGrow, amrex::MFInfo(), Factory(lev));
     }
+  }
+  for (int lev = 0; lev <= finest_level; ++lev) {
     const amrex::Box& domain = geom[lev].Domain();
 
     auto const& rho_ma = a_rho[lev]->const_arrays();
@@ -742,8 +744,9 @@ PeleLM::addWbarTerm(
           }
         }
       });
-    amrex::Gpu::streamSynchronize();
   }
+  amrex::Gpu::streamSynchronize();
+
   //------------------------------------------------------------------------
   // Compute Wbar gradients and do average down to get gradients consistent
   // across levels Get the species BCRec

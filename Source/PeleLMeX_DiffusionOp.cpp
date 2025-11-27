@@ -146,10 +146,14 @@ DiffusionOp::diffuse_scalar(
     phi.emplace_back(
       a_phi[lev]->boxArray(), a_phi[lev]->DistributionMap(), ncomp, 1,
       amrex::MFInfo(), a_phi[lev]->Factory());
-    if (have_density == 0) {
+  }
+  if (have_density == 0) {
+    for (int lev = 0; lev <= finest_level; ++lev) {
       amrex::MultiFab::Copy(
         phi[lev], *a_phi[lev], phi_comp, 0, ncomp, phi[lev].nGrowVect());
-    } else {
+    }
+  } else {
+    for (int lev = 0; lev <= finest_level; ++lev) {
       auto const& a_phi_ma = a_phi[lev]->const_arrays();
       auto const& a_rho_ma = a_density[lev]->const_arrays();
       auto const& phi_ma = phi[lev].arrays();
@@ -162,8 +166,8 @@ DiffusionOp::diffuse_scalar(
           phi_ma[box_no](i, j, k, n) =
             a_phi_arr(i, j, k, n) / a_rho_ma[box_no](i, j, k);
         });
-      amrex::Gpu::streamSynchronize();
     }
+    amrex::Gpu::streamSynchronize();
   }
   //----------------------------------------------------------------
   // Setup solve LinearOp coefficients
@@ -360,10 +364,14 @@ DiffusionOp::diffuse_scalar(
     phi.emplace_back(
       a_phi[lev]->boxArray(), a_phi[lev]->DistributionMap(), ncomp, 1,
       amrex::MFInfo(), a_phi[lev]->Factory());
-    if (have_density == 0) {
+  }
+  if (have_density == 0) {
+    for (int lev = 0; lev <= finest_level; ++lev) {
       amrex::MultiFab::Copy(
         phi[lev], *a_phi[lev], phi_comp, 0, ncomp, phi[lev].nGrowVect());
-    } else {
+    }
+  } else {
+    for (int lev = 0; lev <= finest_level; ++lev) {
       auto const& a_phi_ma = a_phi[lev]->const_arrays();
       auto const& a_rho_ma = a_density[lev]->const_arrays();
       auto const& phi_ma = phi[lev].arrays();
@@ -376,10 +384,9 @@ DiffusionOp::diffuse_scalar(
           phi_ma[box_no](i, j, k, n) =
             a_phi_arr(i, j, k, n) / a_rho_ma[box_no](i, j, k);
         });
-      amrex::Gpu::streamSynchronize();
     }
+    amrex::Gpu::streamSynchronize();
   }
-
   //----------------------------------------------------------------
   // Setup solve LinearOp coefficients
   // LinOp is \alpha A \phi - \beta \nabla \cdot B \nabla \phi = rhs
@@ -621,10 +628,14 @@ DiffusionOp::computeDiffFluxes(
     phi.emplace_back(
       a_phi[lev]->boxArray(), a_phi[lev]->DistributionMap(), ncomp, 1,
       amrex::MFInfo(), a_phi[lev]->Factory());
-    if (have_density == 0) {
+  }
+  if (have_density == 0) {
+    for (int lev = 0; lev <= finest_level; ++lev) {
       amrex::MultiFab::Copy(
         phi[lev], *a_phi[lev], phi_comp, 0, ncomp, phi[lev].nGrowVect());
-    } else {
+    }
+  } else {
+    for (int lev = 0; lev <= finest_level; ++lev) {
       auto const& a_phi_ma = a_phi[lev]->const_arrays();
       auto const& a_rho_ma = a_density[lev]->const_arrays();
       auto const& phi_ma = phi[lev].arrays();
@@ -637,8 +648,8 @@ DiffusionOp::computeDiffFluxes(
           phi_ma[box_no](i, j, k, n) =
             a_phi_arr(i, j, k, n) / a_rho_ma[box_no](i, j, k);
         });
-      amrex::Gpu::streamSynchronize();
     }
+    amrex::Gpu::streamSynchronize();
   }
 
   // LinOp is \alpha A \phi - \beta \nabla \cdot B \nabla \phi
@@ -762,10 +773,14 @@ DiffusionOp::computeDiffFluxes(
     phi.emplace_back(
       a_phi[lev]->boxArray(), a_phi[lev]->DistributionMap(), ncomp, 1,
       amrex::MFInfo(), a_phi[lev]->Factory());
-    if (have_density == 0) {
+  }
+  if (have_density == 0) {
+    for (int lev = 0; lev <= finest_level; ++lev) {
       amrex::MultiFab::Copy(
         phi[lev], *a_phi[lev], phi_comp, 0, ncomp, phi[lev].nGrowVect());
-    } else {
+    }
+  } else {
+    for (int lev = 0; lev <= finest_level; ++lev) {
       auto const& a_phi_ma = a_phi[lev]->const_arrays();
       auto const& a_rho_ma = a_density[lev]->const_arrays();
       auto const& phi_ma = phi[lev].arrays();
@@ -778,8 +793,8 @@ DiffusionOp::computeDiffFluxes(
           phi_ma[box_no](i, j, k, n) =
             a_phi_arr(i, j, k, n) / a_rho_ma[box_no](i, j, k);
         });
-      amrex::Gpu::streamSynchronize();
     }
+    amrex::Gpu::streamSynchronize();
   }
 
   // LinOp is \alpha A \phi - \beta \nabla \cdot B \nabla \phi
@@ -1245,6 +1260,8 @@ DiffusionTensorOp::diffuse_velocity(
   for (int lev = 0; lev <= finest_level; ++lev) {
     rhs.emplace_back(
       a_vel[lev]->boxArray(), a_vel[lev]->DistributionMap(), AMREX_SPACEDIM, 0);
+  }
+  for (int lev = 0; lev <= finest_level; ++lev) {
     auto const& rhs_ma = rhs[lev].arrays();
     auto const& vel_ma = a_vel[lev]->const_arrays();
     if (m_pelelm->m_incompressible == 0) {
@@ -1264,8 +1281,8 @@ DiffusionTensorOp::diffuse_velocity(
           rhs_ma[box_no](i, j, k, n) = rho * vel_ma[box_no](i, j, k, n);
         });
     }
-    amrex::Gpu::streamSynchronize();
   }
+  amrex::Gpu::streamSynchronize();
 
   amrex::MLMG mlmg(*m_solve_op);
 
