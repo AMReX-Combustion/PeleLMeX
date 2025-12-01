@@ -2380,10 +2380,14 @@ dumpMLMGResidual(
     plot_base = a_plot_file_root.substr(last_slash + 1);
   }
   
-  // Create plotfile name: <plot_dir>/pltMLMGResidual_<solver>_<step>
+  // Get iteration count from MLMG
+  int num_iters = a_mlmg.getNumIters();
+  
+  // Create plotfile name: <plot_dir>/pltMLMGResidual_<solver>_<step>_<iters>
   std::string residual_name = "pltMLMGResidual_" + a_solver_name + "_";
   int ioDigits = (a_pelelm != nullptr) ? a_pelelm->m_ioDigits : 5;
   std::string plotfile_name = plot_dir + amrex::Concatenate(residual_name, a_step, ioDigits);
+  plotfile_name += "_" + amrex::Concatenate("", num_iters, 2);
   
   amrex::Vector<int> level_steps(nlevs, a_step);
   amrex::Vector<amrex::IntVect> ref_ratio(nlevs > 1 ? nlevs-1 : 0, amrex::IntVect(2));
