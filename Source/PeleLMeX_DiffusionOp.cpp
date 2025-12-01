@@ -1,5 +1,6 @@
 #include <PeleLMeX.H>
 #include <PeleLMeX_DiffusionOp.H>
+#include <PeleLMeX_Utils.H>
 #include <AMReX_ParmParse.H>
 #include <AMReX_VisMF.H>
 
@@ -254,9 +255,29 @@ DiffusionOp::diffuse_scalar(
     mlmg.setPreSmooth(m_num_pre_smooth);
     mlmg.setPostSmooth(m_num_post_smooth);
 
+    // Tell MLMG to throw exceptions instead of calling Abort
+    if (m_pelelm->m_mlmg_fail_dump_residuals != 0) {
+      mlmg.setThrowException(true);
+    }
+
     // Solve
-    mlmg.solve(
-      GetVecOfPtrs(component), GetVecOfConstPtrs(rhs), m_mg_rtol, m_mg_atol);
+    try {
+      mlmg.solve(
+        GetVecOfPtrs(component), GetVecOfConstPtrs(rhs), m_mg_rtol, m_mg_atol);
+    } catch (const std::exception& e) {
+      amrex::Print() << "\n";
+      amrex::Print() << "  *** Scalar diffusion MLMG solve failed (non-EB)! ***\n";
+      amrex::Print() << "  Error: " << e.what() << "\n";
+      
+      if (m_pelelm->m_mlmg_fail_dump_residuals) {
+        amrex::Print() << "  Dumping residuals for debugging...\n";
+        dumpMLMGResidual(
+          mlmg, GetVecOfPtrs(component), GetVecOfConstPtrs(rhs),
+          "scalar_diffusion", m_pelelm->m_plot_file, m_pelelm->m_nstep, m_pelelm->Geom(), m_pelelm);
+      }
+      
+      throw;
+    }
 
     // Need to get the fluxes
     if (have_fluxes != 0) {
@@ -467,9 +488,31 @@ DiffusionOp::diffuse_scalar(
     mlmg.setPreSmooth(m_num_pre_smooth);
     mlmg.setPostSmooth(m_num_post_smooth);
 
+    // Tell MLMG to throw exceptions instead of calling Abort
+    if (m_pelelm->m_mlmg_fail_dump_residuals != 0) {
+      mlmg.setThrowException(true);
+      mlmg.setConvergenceNormType(amrex::MLMGNormType::bnorm);
+    }
+
     // Solve
-    mlmg.solve(
-      GetVecOfPtrs(component), GetVecOfConstPtrs(rhs), m_mg_rtol, m_mg_atol);
+    try {
+      mlmg.solve(
+        GetVecOfPtrs(component), GetVecOfConstPtrs(rhs), m_mg_rtol, m_mg_atol);
+    } catch (const std::exception& e) {
+      amrex::Print() << "\n";
+      amrex::Print() << "  *** Scalar diffusion MLMG solve failed (EB)! ***\n";
+      amrex::Print() << "  Error: " << e.what() << "\n";
+      amrex::Print() << "  Error: " << e.what() << "\n";
+      
+      if (m_pelelm->m_mlmg_fail_dump_residuals) {
+        amrex::Print() << "  Dumping residuals for debugging...\n";
+        dumpMLMGResidual(
+          mlmg, GetVecOfPtrs(component), GetVecOfConstPtrs(rhs),
+          "scalar_diffusion_eb", m_pelelm->m_plot_file, m_pelelm->m_nstep, m_pelelm->Geom(), m_pelelm);
+      }
+      
+      throw;
+    }
 
     // Need to get the fluxes
     if (have_fluxes != 0) {
@@ -1283,7 +1326,27 @@ DiffusionTensorOp::diffuse_velocity(
   mlmg.setPreSmooth(m_num_pre_smooth);
   mlmg.setPostSmooth(m_num_post_smooth);
 
-  mlmg.solve(a_vel, GetVecOfConstPtrs(rhs), m_mg_rtol, m_mg_atol);
+  // Tell MLMG to throw exceptions instead of calling Abort
+  if (m_pelelm->m_mlmg_fail_dump_residuals) {
+    mlmg.setThrowException(true);
+    mlmg.setConvergenceNormType(amrex::MLMGNormType::bnorm);
+  }
+
+  try {
+    mlmg.solve(a_vel, GetVecOfConstPtrs(rhs), m_mg_rtol, m_mg_atol);
+  } catch (const std::exception& e) {
+    amrex::Print() << "\n";
+    amrex::Print() << "  *** Velocity diffusion MLMG solve failed! ***\n";
+    amrex::Print() << "  Error: " << e.what() << "\n";
+    
+    if (m_pelelm->m_mlmg_fail_dump_residuals) {
+      amrex::Print() << "  Dumping residuals for debugging...\n";
+      dumpMLMGResidual(
+        mlmg, a_vel, GetVecOfConstPtrs(rhs),
+        "vel_diffusion", m_pelelm->m_plot_file, m_pelelm->m_nstep, m_pelelm->Geom(), m_pelelm);
+    }    // Re-throw the exception
+    throw;
+  }
 }
 
 void

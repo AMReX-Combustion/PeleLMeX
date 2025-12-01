@@ -1,4 +1,5 @@
 #include <PeleLMeX.H>
+#include <PeleLMeX_Utils.H>
 #include <memory>
 
 void
@@ -481,8 +482,57 @@ PeleLM::doNodalProject(
   }
 #endif
 
+  // Tell MLMG to throw exceptions instead of calling Abort
+  if (m_mlmg_fail_dump_residuals) {
+    nodal_projector->getMLMG().setThrowException(true);
+    // Force use of bnorm to avoid issues with zero RHS
+    nodal_projector->getMLMG().setConvergenceNormType(amrex::MLMGNormType::bnorm);
+  }
+
   // Solve
-  nodal_projector->project(m_nodal_mg_rtol, m_nodal_mg_atol);
+  try {
+    nodal_projector->project(m_nodal_mg_rtol, m_nodal_mg_atol);
+  } catch (const std::exception& e) {
+    amrex::Print() << "\n";
+    amrex::Print() << "  *** Nodal projection MLMG solve failed! ***\n";
+    amrex::Print() << "  Error: " << e.what() << "\n";
+    
+    if (m_mlmg_fail_dump_residuals) {
+      amrex::Print() << "  Dumping residuals for debugging...\n";
+      
+      // Get phi (solution) and compute residual
+      auto phi = nodal_projector->getPhi();
+      
+      // We need to compute the RHS ourselves since it's private
+      // Create temporary RHS storage
+      amrex::Vector<amrex::MultiFab> rhs_tmp(finest_level + 1);
+      amrex::Vector<const amrex::MultiFab*> rhs_ptrs(finest_level + 1);
+      
+      auto& linop = nodal_projector->getLinOp();
+      for (int lev = 0; lev <= finest_level; ++lev) {
+        // Use nodal BoxArray for nodal projection
+        const auto& ba_cc = a_vel[lev]->boxArray();
+        const auto& dm = a_vel[lev]->DistributionMap();
+        int ncomp = 1; // Nodal projection solves for single component
+        rhs_tmp[lev].define(
+          amrex::convert(ba_cc, amrex::IntVect::TheNodeVector()), 
+          dm, ncomp, 0);
+        rhs_ptrs[lev] = &rhs_tmp[lev];
+      }
+      
+      // Compute RHS = Div(U)
+      nodal_projector->computeRHS(
+        GetVecOfPtrs(rhs_tmp), a_vel, rhs_cc, rhs_nd);
+      
+      // Now dump the residual
+      dumpMLMGResidual(
+        nodal_projector->getMLMG(), phi, rhs_ptrs,
+        "nodal_projection", m_plot_file, m_nstep, Geom(), this);
+    }
+    
+    // Re-throw the exception
+    throw;
+  }
 
   auto phi = nodal_projector->getPhi();
   auto gphi = nodal_projector->getGradPhi();

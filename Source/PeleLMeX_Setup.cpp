@@ -238,6 +238,7 @@ PeleLM::readParameters()
   // -----------------------------------------
   pp.query("run_mode", m_run_mode);
   pp.query("v", m_verbose);
+  pp.query("mlmg_fail_dump_residuals", m_mlmg_fail_dump_residuals);
 
   // -----------------------------------------
   // Boundary conditions

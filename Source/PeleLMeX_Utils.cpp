@@ -1,4 +1,5 @@
 #include <AMReX_buildInfo.H>
+#include <AMReX_PlotFileUtil.H>
 #include <PeleLMeX.H>
 #include <PeleLMeX_K.H>
 #include <hydro_utils.H>
@@ -2265,3 +2266,139 @@ PeleLM::extendSignedDistance(
   }
 }
 #endif
+
+void
+dumpMLMGResidual(
+  amrex::MLMG& a_mlmg,
+  const amrex::Vector<amrex::MultiFab*>& a_sol,
+  const amrex::Vector<const amrex::MultiFab*>& a_rhs,
+  const std::string& a_solver_name,
+  const std::string& a_plot_file_root,
+  int a_step,
+  const amrex::Vector<amrex::Geometry>& a_geom,
+  PeleLM* a_pelelm)
+{
+  BL_PROFILE("dumpMLMGResidual()");
+  
+  // Get the linear operator
+  auto& linop = a_mlmg.getLinOp();
+  int nlevs = linop.NAMRLevels();
+  int ncomp_residual = linop.getNComp();
+  
+  // Create MultiFabs to hold the residual
+  amrex::Vector<amrex::MultiFab> residual(nlevs);
+  amrex::Vector<amrex::MultiFab*> residual_ptrs(nlevs);
+  
+  for (int lev = 0; lev < nlevs; ++lev) {
+    // Use the same BoxArray and DistributionMap as the solution
+    const auto& ba = a_sol[lev]->boxArray();
+    const auto& dm = a_sol[lev]->DistributionMap();
+    int ngrow = 0;
+    residual[lev].define(ba, dm, ncomp_residual, ngrow);
+    residual_ptrs[lev] = &residual[lev];
+  }
+  
+  // Compute the residual: r = b - A*x
+  a_mlmg.compResidual(residual_ptrs, a_sol, a_rhs);
+  
+  // Get state data from PeleLM if provided
+  amrex::Vector<const amrex::MultiFab*> state_data;
+  amrex::Vector<std::string> var_names;
+  int ncomp_total = ncomp_residual;
+  bool has_eb = false;
+  
+  if (a_pelelm != nullptr) {
+    // Get the state MultiFab for each level
+    for (int lev = 0; lev < nlevs; ++lev) {
+      auto* ldata_p = a_pelelm->getLevelDataPtr(lev, PeleLM::AmrNewTime);
+      state_data.push_back(&(ldata_p->state));
+    }
+    ncomp_total += state_data[0]->nComp();
+    
+    // Check if we have EB
+    has_eb = (a_pelelm->EBFactory(0).isAllRegular() == false);
+    if (has_eb) {
+      ncomp_total += 1;  // Add one component for volFrac
+    }
+    
+    // Get variable names from PeleLM
+    for (int n = 0; n < state_data[0]->nComp(); ++n) {
+      var_names.push_back(a_pelelm->stateVariableName(n));
+    }
+    
+    // Add volFrac if EB
+    if (has_eb) {
+      var_names.push_back("volFrac");
+    }
+  }
+  
+  // Add residual component names
+  for (int n = 0; n < ncomp_residual; ++n) {
+    var_names.push_back("mlmg_residual_comp_" + std::to_string(n));
+  }
+  
+  // Create combined MultiFabs with state + volFrac + residual
+  amrex::Vector<amrex::MultiFab> combined_data(nlevs);
+  amrex::Vector<const amrex::MultiFab*> combined_ptrs(nlevs);
+  
+  for (int lev = 0; lev < nlevs; ++lev) {
+    const auto& ba = a_sol[lev]->boxArray();
+    const auto& dm = a_sol[lev]->DistributionMap();
+    combined_data[lev].define(ba, dm, ncomp_total, 0);
+    
+    int comp_offset = 0;
+    
+    if (a_pelelm != nullptr) {
+      // Copy state data first
+      amrex::MultiFab::Copy(combined_data[lev], *state_data[lev], 0, comp_offset, state_data[lev]->nComp(), 0);
+      comp_offset += state_data[lev]->nComp();
+      
+      // Copy volFrac if EB
+      if (has_eb) {
+        const auto& vfrac = a_pelelm->EBFactory(lev).getVolFrac();
+        amrex::MultiFab::Copy(combined_data[lev], vfrac, 0, comp_offset, 1, 0);
+        comp_offset += 1;
+      }
+      
+      // Then copy residual
+      amrex::MultiFab::Copy(combined_data[lev], residual[lev], 0, comp_offset, ncomp_residual, 0);
+    } else {
+      // Just copy residual
+      amrex::MultiFab::Copy(combined_data[lev], residual[lev], 0, 0, ncomp_residual, 0);
+    }
+    
+    combined_ptrs[lev] = &combined_data[lev];
+  }
+  
+  // Extract directory from plot_file_root if it contains a path
+  std::string plot_dir = "";
+  std::string plot_base = a_plot_file_root;
+  
+  size_t last_slash = a_plot_file_root.find_last_of("/\\");
+  if (last_slash != std::string::npos) {
+    plot_dir = a_plot_file_root.substr(0, last_slash + 1);
+    plot_base = a_plot_file_root.substr(last_slash + 1);
+  }
+  
+  // Create plotfile name: <plot_dir>/pltMLMGResidual_<solver>_<step>
+  std::string residual_name = "pltMLMGResidual_" + a_solver_name + "_";
+  int ioDigits = (a_pelelm != nullptr) ? a_pelelm->m_ioDigits : 5;
+  std::string plotfile_name = plot_dir + amrex::Concatenate(residual_name, a_step, ioDigits);
+  
+  amrex::Vector<int> level_steps(nlevs, a_step);
+  amrex::Vector<amrex::IntVect> ref_ratio(nlevs > 1 ? nlevs-1 : 0, amrex::IntVect(2));
+  
+  amrex::WriteMultiLevelPlotfile(
+    plotfile_name,
+    nlevs,
+    combined_ptrs,
+    var_names,
+    a_geom,
+    0.0,  // time
+    level_steps,
+    ref_ratio);
+  
+  amrex::Print() << "\n";
+  amrex::Print() << "  *** MLMG residual dumped to: " << plotfile_name << " ***\n";
+  amrex::Print() << "\n";
+}

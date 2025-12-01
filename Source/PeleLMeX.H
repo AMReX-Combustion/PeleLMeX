@@ -1934,6 +1934,7 @@ public:
   amrex::Vector<std::string> m_diagVars;
 
   int m_verbose = 0;
+  bool m_mlmg_fail_dump_residuals = false;
 
   // IO options
   std::string m_restart_chkfile;
