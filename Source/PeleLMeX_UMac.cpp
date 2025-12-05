@@ -318,7 +318,7 @@ PeleLM::macProject(
       const auto& rhs_vec = macproj->getRHS();
 
       // Create pointer vectors for pltMLMGResidual
-      int nlevs = phi_vec.size();
+      int nlevs = static_cast<int>(phi_vec.size());
       amrex::Vector<amrex::MultiFab*> phi_ptrs(nlevs);
       amrex::Vector<const amrex::MultiFab*> rhs_ptrs(nlevs);
       for (int lev = 0; lev < nlevs; ++lev) {

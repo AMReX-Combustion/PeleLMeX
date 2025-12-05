@@ -2341,7 +2341,7 @@ pltMLMGResidual(
   ncomp_total += state_data[0]->nComp();
 
 #ifdef AMREX_USE_EB
-  has_eb = (a_pelelm->EBFactory(0).isAllRegular() == false);
+  has_eb = !a_pelelm->EBFactory(0).isAllRegular();
   if (has_eb) {
     // Include volFrac
     ncomp_total += 1;
@@ -2412,7 +2412,7 @@ pltMLMGResidual(
   }
 
   // Extract directory from plot_file_root if it contains a path
-  std::string plot_dir = "";
+  std::string plot_dir;
   std::string plot_base = a_plot_file_root;
   size_t last_slash = a_plot_file_root.find_last_of("/\\");
   if (last_slash != std::string::npos) {
