@@ -2278,8 +2278,6 @@ pltMLMGResidual(
   const amrex::Vector<amrex::Geometry>& a_geom,
   PeleLM* a_pelelm)
 {
-  BL_PROFILE("pltMLMGResidual()");
-
   // Get the linear operator
   auto& linop = a_mlmg.getLinOp();
   int nlevs = linop.NAMRLevels();
@@ -2312,9 +2310,8 @@ pltMLMGResidual(
     // Use compResidual which handles refluxing and average-down for AMR
     a_mlmg.compResidual(residual_ptrs, a_sol, a_rhs);
   } else {
-    // Fall back to direct solutionResidual computation for tensor diffusion
-    // MLEBTensorOp and MLTensorOp don't implement update() which is needed by
-    // compResidual
+    // Use solutionResidual computation for tensor diffusion as MLEBTensorOp
+    // and MLTensorOp don't implement update() which is needed by compResidual
     amrex::Print()
       << "  NOTE: Using linop.solutionResidual because compResidual"
       << " is not available for tensor diffusion\n";

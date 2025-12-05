@@ -1451,8 +1451,7 @@ DiffusionTensorOp::diffuse_velocity(
 
     bool sdc_iters_met = (m_pelelm->m_sdcIter >= m_mg_fail_sdc_miniter);
 
-    // Velocity diffusion: only check SDC iter (solved before deltaT iterations,
-    // like species)
+    // Only check SDC iter
     if (sdc_iters_met && (m_mg_fail_maxiter_after_sdc_miniter > 0)) {
       max_iter = m_mg_fail_maxiter_after_sdc_miniter;
       amrex::Print() << "      Limiting velocity diffusion MLMG max_iter to "
