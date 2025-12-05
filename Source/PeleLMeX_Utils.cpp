@@ -2343,11 +2343,13 @@ pltMLMGResidual(
   }
   ncomp_total += state_data[0]->nComp();
 
+#ifdef AMREX_USE_EB
   has_eb = (a_pelelm->EBFactory(0).isAllRegular() == false);
   if (has_eb) {
     // Include volFrac
     ncomp_total += 1;
   }
+#endif
 
   for (int n = 0; n < state_data[0]->nComp(); ++n) {
     var_names.push_back(a_pelelm->stateVariableName(n));
@@ -2399,11 +2401,13 @@ pltMLMGResidual(
     comp_offset += state_data[lev]->nComp();
 
     // volFrac
+#ifdef AMREX_USE_EB
     if (has_eb) {
       const auto& vfrac = a_pelelm->EBFactory(lev).getVolFrac();
       amrex::MultiFab::Copy(combined_data[lev], vfrac, 0, comp_offset, 1, 0);
       comp_offset += 1;
     }
+#endif
 
     amrex::MultiFab::Copy(
       combined_data[lev], residual[lev], 0, comp_offset, ncomp_residual, 0);
