@@ -1934,7 +1934,7 @@ public:
   amrex::Vector<std::string> m_diagVars;
 
   int m_verbose = 0;
-  bool m_mlmg_fail_dump_residuals = false;
+  bool m_mlmg_fail_plt_residuals = false;
 
   // IO options
   std::string m_restart_chkfile;
@@ -2099,6 +2099,7 @@ public:
   // DeltaT iterations
   int m_deltaT_verbose = 0;
   int m_deltaTIterMax = 10;
+  int m_deltaTIter = 0;
   amrex::Real m_deltaT_norm_max = 1.0e-10;
   int m_crashOnDeltaTFail = 1;
 
@@ -2233,6 +2234,8 @@ public:
   amrex::Real m_mac_mg_rtol = 1.0e-11;
   amrex::Real m_mac_mg_atol = 1.0e-14;
   std::string m_hypre_namespace_mac = "mac_hypre";
+  int m_mac_mg_fail_sdc_miniter = -1;
+  int m_mac_mg_fail_maxiter_after_sdc_miniter = -1;
   //-----------------------------------------------------------------------------
 };
 

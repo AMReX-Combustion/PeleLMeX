@@ -283,7 +283,55 @@ PeleLM::macProject(
 #endif
 
   // Project
-  macproj->project(m_mac_mg_rtol, m_mac_mg_atol);
+  if (m_verbose > 0) {
+    amrex::Print() << "MLMG: MAC Projection\n";
+  }
+  if (!m_mlmg_fail_plt_residuals) {
+    macproj->project(m_mac_mg_rtol, m_mac_mg_atol);
+  } else {
+    macproj->getMLMG().setThrowException(true);
+    macproj->getMLMG().setConvergenceNormType(amrex::MLMGNormType::bnorm);
+    
+    // Maximum MLMG iterations may change for debugging purposes
+    if (m_mac_mg_fail_sdc_miniter >= 0 && 
+        m_sdcIter >= m_mac_mg_fail_sdc_miniter) {
+      if (m_mac_mg_fail_maxiter_after_sdc_miniter > 0) {
+        macproj->getMLMG().setMaxIter(m_mac_mg_fail_maxiter_after_sdc_miniter);
+        amrex::Print() << "      Limiting MAC MLMG max_iter to " 
+                       << m_mac_mg_fail_maxiter_after_sdc_miniter 
+                       << " (SDC iter [" << m_sdcIter << "] >= " 
+                       << m_mac_mg_fail_sdc_miniter << ")\n";
+      }
+    }
+
+    try {
+      macproj->project(m_mac_mg_rtol, m_mac_mg_atol);
+    } catch (const std::exception& e) {
+      amrex::Print() << "\n";
+      amrex::Print() << "  *** MAC projection MLMG solve failed! ***\n";
+      amrex::Print() << "  Error: " << e.what() << "\n";
+      amrex::Print() << "  Dumping MAC projection residuals for debugging...\n";
+      
+      auto& mlmg = macproj->getMLMG();
+      const auto& phi_vec = macproj->getPhi();
+      const auto& rhs_vec = macproj->getRHS();
+      
+      // Create pointer vectors for pltMLMGResidual
+      int nlevs = phi_vec.size();
+      amrex::Vector<amrex::MultiFab*> phi_ptrs(nlevs);
+      amrex::Vector<const amrex::MultiFab*> rhs_ptrs(nlevs);
+      for (int lev = 0; lev < nlevs; ++lev) {
+        phi_ptrs[lev] = const_cast<amrex::MultiFab*>(&phi_vec[lev]);
+        rhs_ptrs[lev] = &rhs_vec[lev];
+      }
+      
+      pltMLMGResidual(
+        mlmg, phi_ptrs, rhs_ptrs,
+        "mac_projection", m_plot_file, m_nstep, Geom(), this);
+      
+      amrex::Abort("MLMG solve for mac_projection failed");
+    }
+  }
 
   // Restore mac_divu
   if ((m_closed_chamber != 0) && (m_incompressible == 0)) {
