@@ -1524,10 +1524,11 @@ PeleLM::differentialDiffusionUpdate(
 
     // DeltaT norm
     amrex::Real deltaT_norm = 0.0;
-    
-    // Reset deltaT iteration counter at the start of deltaT loop for MLMG fail tracking
+
+    // Reset deltaT iteration counter at the start of deltaT loop for MLMG fail
+    // tracking
     m_deltaTIter = 0;
-    
+
     for (int dTiter = 0; dTiter < m_deltaTIterMax &&
                          (dTiter == 0 || deltaT_norm >= m_deltaT_norm_max);
          ++dTiter) {

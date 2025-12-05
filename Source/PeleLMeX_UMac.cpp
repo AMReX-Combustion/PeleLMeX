@@ -291,16 +291,17 @@ PeleLM::macProject(
   } else {
     macproj->getMLMG().setThrowException(true);
     macproj->getMLMG().setConvergenceNormType(amrex::MLMGNormType::bnorm);
-    
+
     // Maximum MLMG iterations may change for debugging purposes
-    if (m_mac_mg_fail_sdc_miniter >= 0 && 
-        m_sdcIter >= m_mac_mg_fail_sdc_miniter) {
+    if (
+      m_mac_mg_fail_sdc_miniter >= 0 &&
+      m_sdcIter >= m_mac_mg_fail_sdc_miniter) {
       if (m_mac_mg_fail_maxiter_after_sdc_miniter > 0) {
         macproj->getMLMG().setMaxIter(m_mac_mg_fail_maxiter_after_sdc_miniter);
-        amrex::Print() << "      Limiting MAC MLMG max_iter to " 
-                       << m_mac_mg_fail_maxiter_after_sdc_miniter 
-                       << " (SDC iter [" << m_sdcIter << "] >= " 
-                       << m_mac_mg_fail_sdc_miniter << ")\n";
+        amrex::Print() << "      Limiting MAC MLMG max_iter to "
+                       << m_mac_mg_fail_maxiter_after_sdc_miniter
+                       << " (SDC iter [" << m_sdcIter
+                       << "] >= " << m_mac_mg_fail_sdc_miniter << ")\n";
       }
     }
 
@@ -311,11 +312,11 @@ PeleLM::macProject(
       amrex::Print() << "  *** MAC projection MLMG solve failed! ***\n";
       amrex::Print() << "  Error: " << e.what() << "\n";
       amrex::Print() << "  Dumping MAC projection residuals for debugging...\n";
-      
+
       auto& mlmg = macproj->getMLMG();
       const auto& phi_vec = macproj->getPhi();
       const auto& rhs_vec = macproj->getRHS();
-      
+
       // Create pointer vectors for pltMLMGResidual
       int nlevs = phi_vec.size();
       amrex::Vector<amrex::MultiFab*> phi_ptrs(nlevs);
@@ -324,11 +325,11 @@ PeleLM::macProject(
         phi_ptrs[lev] = const_cast<amrex::MultiFab*>(&phi_vec[lev]);
         rhs_ptrs[lev] = &rhs_vec[lev];
       }
-      
+
       pltMLMGResidual(
-        mlmg, phi_ptrs, rhs_ptrs,
-        "mac_projection", m_plot_file, m_nstep, Geom(), this);
-      
+        mlmg, phi_ptrs, rhs_ptrs, "mac_projection", m_plot_file, m_nstep,
+        Geom(), this);
+
       amrex::Abort("MLMG solve for mac_projection failed");
     }
   }

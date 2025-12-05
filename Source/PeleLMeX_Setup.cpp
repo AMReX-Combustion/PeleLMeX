@@ -675,7 +675,9 @@ PeleLM::readParameters()
   ppmacproj.query("rtol", m_mac_mg_rtol);
   ppmacproj.query("hypre_namespace", m_hypre_namespace_mac);
   ppmacproj.query("mlmg_fail_sdc_miniter", m_mac_mg_fail_sdc_miniter);
-  ppmacproj.query("mlmg_fail_maxiter_after_sdc_miniter", m_mac_mg_fail_maxiter_after_sdc_miniter);
+  ppmacproj.query(
+    "mlmg_fail_maxiter_after_sdc_miniter",
+    m_mac_mg_fail_maxiter_after_sdc_miniter);
 
   // -----------------------------------------
   // Temporals

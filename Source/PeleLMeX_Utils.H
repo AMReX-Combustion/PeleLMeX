@@ -21,8 +21,7 @@ convertToDeviceVector(const amrex::Vector<T>& v)
   return v_d;
 }
 
-void
-pltMLMGResidual(
+void pltMLMGResidual(
   amrex::MLMG& a_mlmg,
   const amrex::Vector<amrex::MultiFab*>& a_sol,
   const amrex::Vector<const amrex::MultiFab*>& a_rhs,

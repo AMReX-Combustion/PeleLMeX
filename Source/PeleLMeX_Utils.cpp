@@ -2279,16 +2279,16 @@ pltMLMGResidual(
   PeleLM* a_pelelm)
 {
   BL_PROFILE("pltMLMGResidual()");
-  
+
   // Get the linear operator
   auto& linop = a_mlmg.getLinOp();
   int nlevs = linop.NAMRLevels();
   int ncomp_residual = linop.getNComp();
-  
+
   // Create MultiFabs to hold the residual
   amrex::Vector<amrex::MultiFab> residual(nlevs);
   amrex::Vector<amrex::MultiFab*> residual_ptrs(nlevs);
-  
+
   for (int lev = 0; lev < nlevs; ++lev) {
     // Use the same BoxArray and DistributionMap as the solution
     const auto& ba = a_sol[lev]->boxArray();
@@ -2299,58 +2299,65 @@ pltMLMGResidual(
   }
 
   // Classify solver type
-  bool is_tensor_diff = (a_solver_type.find("vel_diffusion") != std::string::npos);
-  bool is_species = (a_solver_type.find("species_diffusion") != std::string::npos);
-  bool is_temp = (a_solver_type.find("temperature_diffusion") != std::string::npos);
+  bool is_tensor_diff =
+    (a_solver_type.find("vel_diffusion") != std::string::npos);
+  bool is_species =
+    (a_solver_type.find("species_diffusion") != std::string::npos);
+  bool is_temp =
+    (a_solver_type.find("temperature_diffusion") != std::string::npos);
   bool is_proj = (a_solver_type.find("projection") != std::string::npos);
-  
+
   // Compute the residual: r = b - A*x
   if (!is_tensor_diff) {
     // Use compResidual which handles refluxing and average-down for AMR
     a_mlmg.compResidual(residual_ptrs, a_sol, a_rhs);
   } else {
     // Fall back to direct solutionResidual computation for tensor diffusion
-    // MLEBTensorOp and MLTensorOp don't implement update() which is needed by compResidual
-    amrex::Print() << "  NOTE: Using linop.solutionResidual because compResidual" 
-                   << " is not available for tensor diffusion\n";
+    // MLEBTensorOp and MLTensorOp don't implement update() which is needed by
+    // compResidual
+    amrex::Print()
+      << "  NOTE: Using linop.solutionResidual because compResidual"
+      << " is not available for tensor diffusion\n";
     if (nlevs > 1) {
-      amrex::Print() << "  WARNING: Multi-level residual computed without refluxing or average-down.\n";
+      amrex::Print() << "  WARNING: Multi-level residual computed without "
+                        "refluxing or average-down.\n";
     }
-    
+
     for (int lev = 0; lev < nlevs; ++lev) {
-      const amrex::MultiFab* crse_bcdata = (lev > 0) ? a_sol[lev-1] : nullptr;
-      linop.solutionResidual(lev, residual[lev], *a_sol[lev], *a_rhs[lev], crse_bcdata);
+      const amrex::MultiFab* crse_bcdata = (lev > 0) ? a_sol[lev - 1] : nullptr;
+      linop.solutionResidual(
+        lev, residual[lev], *a_sol[lev], *a_rhs[lev], crse_bcdata);
     }
   }
-  
+
   // Get state data
   amrex::Vector<const amrex::MultiFab*> state_data;
   amrex::Vector<std::string> var_names;
   int ncomp_total = ncomp_residual;
   bool has_eb = false;
-  
+
   // Get the state MultiFab for each level
   for (int lev = 0; lev < nlevs; ++lev) {
     auto* ldata_p = a_pelelm->getLevelDataPtr(lev, PeleLM::AmrNewTime);
     state_data.push_back(&(ldata_p->state));
   }
   ncomp_total += state_data[0]->nComp();
-  
+
   has_eb = (a_pelelm->EBFactory(0).isAllRegular() == false);
   if (has_eb) {
     // Include volFrac
-    ncomp_total += 1;  
+    ncomp_total += 1;
   }
-  
+
   for (int n = 0; n < state_data[0]->nComp(); ++n) {
     var_names.push_back(a_pelelm->stateVariableName(n));
   }
-  
+
   // Add volFrac if EB
   if (has_eb) {
     var_names.push_back("volFrac");
   }
-  
+
   if (is_species) {
     // Get species names
     amrex::Vector<std::string> spec_names;
@@ -2373,33 +2380,36 @@ pltMLMGResidual(
       var_names.push_back("mlmg_residual_comp_" + std::to_string(n));
     }
   }
-  
+
   // Create combined MultiFabs with state + volFrac + residual
   amrex::Vector<amrex::MultiFab> combined_data(nlevs);
   amrex::Vector<const amrex::MultiFab*> combined_ptrs(nlevs);
-  
+
   for (int lev = 0; lev < nlevs; ++lev) {
     const auto& ba = a_sol[lev]->boxArray();
     const auto& dm = a_sol[lev]->DistributionMap();
     combined_data[lev].define(ba, dm, ncomp_total, 0);
-    
+
     int comp_offset = 0;
-    
+
     // State data
-    amrex::MultiFab::Copy(combined_data[lev], *state_data[lev], 0, comp_offset, state_data[lev]->nComp(), 0);
+    amrex::MultiFab::Copy(
+      combined_data[lev], *state_data[lev], 0, comp_offset,
+      state_data[lev]->nComp(), 0);
     comp_offset += state_data[lev]->nComp();
-    
+
     // volFrac
     if (has_eb) {
       const auto& vfrac = a_pelelm->EBFactory(lev).getVolFrac();
       amrex::MultiFab::Copy(combined_data[lev], vfrac, 0, comp_offset, 1, 0);
       comp_offset += 1;
     }
-    
-    amrex::MultiFab::Copy(combined_data[lev], residual[lev], 0, comp_offset, ncomp_residual, 0);    
+
+    amrex::MultiFab::Copy(
+      combined_data[lev], residual[lev], 0, comp_offset, ncomp_residual, 0);
     combined_ptrs[lev] = &combined_data[lev];
   }
-  
+
   // Extract directory from plot_file_root if it contains a path
   std::string plot_dir = "";
   std::string plot_base = a_plot_file_root;
@@ -2408,27 +2418,23 @@ pltMLMGResidual(
     plot_dir = a_plot_file_root.substr(0, last_slash + 1);
     plot_base = a_plot_file_root.substr(last_slash + 1);
   }
-  
+
   // Get iteration count from MLMG
   int num_iters = a_mlmg.getNumIters();
-  
+
   // Create plotfile name: <plot_dir>/pltMLMGResidual_<solver>_<step>_<iters>
   std::string residual_name = "pltMLMGResidual_" + a_solver_type + "_";
   int ioDigits = a_pelelm->m_ioDigits;
-  std::string plotfile_name = plot_dir + amrex::Concatenate(residual_name, a_step, ioDigits);
+  std::string plotfile_name =
+    plot_dir + amrex::Concatenate(residual_name, a_step, ioDigits);
   plotfile_name += "_" + amrex::Concatenate("", num_iters, 2);
-  
+
   amrex::Vector<int> level_steps(nlevs, a_step);
-  
+
   amrex::WriteMultiLevelPlotfile(
-    plotfile_name,
-    nlevs,
-    combined_ptrs,
-    var_names,
-    a_geom,
-    0.0,  // time
-    level_steps,
-    a_pelelm->refRatio());
-  
+    plotfile_name, nlevs, combined_ptrs, var_names, a_geom,
+    0.0, // time
+    level_steps, a_pelelm->refRatio());
+
   amrex::Print() << "\n";
 }
