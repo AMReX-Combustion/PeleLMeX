@@ -1562,6 +1562,7 @@ public:
 
   bool checkForNaNs();
   void copyTransportOldToNew();
+  void copyTurbTransportNewToOld();
   void copyStateNewToOld(const int nGhost = 0);
   void copyPressNewToOld();
   void copyStateOldToNew(const int nGhost = 0);

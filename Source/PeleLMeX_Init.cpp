@@ -225,6 +225,7 @@ PeleLM::initData()
     // Initialize turbulent viscosity for LES
     if (m_do_les) {
       calcTurbViscosity(AmrNewTime);
+      copyTurbTransportNewToOld();
     }
 
     //----------------------------------------------------------------

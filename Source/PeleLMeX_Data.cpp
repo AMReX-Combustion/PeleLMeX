@@ -345,6 +345,26 @@ PeleLM::copyTransportOldToNew()
 }
 
 void
+PeleLM::copyTurbTransportNewToOld()
+{
+  if (m_do_les) {
+    for (int lev = 0; lev <= finest_level; ++lev) {
+      for (int i = 0; i < AMREX_SPACEDIM; ++i) {
+
+        amrex::MultiFab::Copy(
+          m_leveldata_old[lev]->visc_turb_fc[i],
+          m_leveldata_new[lev]->visc_turb_fc[i], 0, 0, 1, 0);
+        if (m_incompressible == 0) {
+          amrex::MultiFab::Copy(
+            m_leveldata_old[lev]->lambda_turb_fc[i],
+            m_leveldata_new[lev]->lambda_turb_fc[i], 0, 0, 1, 0);
+        }
+      }
+    }
+  }
+}
+
+void
 PeleLM::copyDiffusionOldToNew(const std::unique_ptr<AdvanceDiffData>& diffData)
 {
   for (int lev = 0; lev <= finest_level; ++lev) {
