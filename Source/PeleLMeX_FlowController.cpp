@@ -124,6 +124,14 @@ PeleLM::initActiveControl()
     fcdata_host->ctrl_active = 1;
     fcdata_host->ctrl_V_in = m_ctrl_V_in;
 
+    // Update device copy of FCData
+    FlowControllerData* fcdata_dev{nullptr};
+    fcdata_dev = getFCDataPtr(*prob_parm_d, hasFlowControllerData<ProbParm>{});
+    if (fcdata_dev != nullptr) {
+      amrex::Gpu::copy(
+        amrex::Gpu::hostToDevice, fcdata_host, fcdata_host + 1, fcdata_dev);
+    }
+
     if (m_ctrl_verbose != 0) {
       if (m_ctrl_useTemp != 0) {
         amrex::Print()
