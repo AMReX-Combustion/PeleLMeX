@@ -77,8 +77,8 @@ PeleLM::initActiveControl()
     const int ctrl_flameDir_l = m_ctrl_flameDir;
     const amrex::Real time_l = -1.0;
     const auto geomdata = Geom(0).data();
-    amrex::Dim3 begin{AMREX_D_DECL(0, 0, 0)};
-    amrex::Dim3 end{AMREX_D_DECL(1, 1, 1)};
+    amrex::Dim3 begin{0, 0, 0};
+    amrex::Dim3 end{1, 1, 1};
     auto fake_state = amrex::Array4<amrex::Real>(nullptr, begin, end, NVAR);
 
     amrex::Box dumbx({AMREX_D_DECL(0, 0, 0)}, {AMREX_D_DECL(0, 0, 0)});
