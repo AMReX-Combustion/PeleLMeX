@@ -283,7 +283,7 @@ PeleLM::macProject(
 #endif
 
   // Project
-  if (m_verbose > 0) {
+  if (m_macproj_verbose > 0) {
     amrex::Print() << "MLMG: MAC Projection\n";
   }
   if (!m_mlmg_fail_plt_residuals) {

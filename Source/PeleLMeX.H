@@ -1749,6 +1749,8 @@ public:
     return 0.5 * (m_t_old[lev] + m_t_new[lev]);
   }
 
+  int getVerbose() const { return m_verbose; }
+
   amrex::Vector<std::unique_ptr<amrex::MultiFab>>
   getStateVect(const PeleLM::TimeStamp a_time);
   amrex::Vector<std::unique_ptr<amrex::MultiFab>>
@@ -1934,6 +1936,8 @@ public:
   amrex::Vector<std::string> m_diagVars;
 
   int m_verbose = 0;
+  int m_macproj_verbose = 0;
+  int m_nproj_verbose = 0;
   bool m_mlmg_fail_plt_residuals = false;
 
   // IO options

@@ -523,6 +523,7 @@ PeleLM::readParameters()
     m_Prandtl_inv = 0.0;
   }
 
+  m_deltaT_verbose = std::max(m_verbose - 1, m_deltaT_verbose);
   pp.query("deltaT_verbose", m_deltaT_verbose);
   pp.query("deltaT_iterMax", m_deltaTIterMax);
   pp.query("deltaT_tol", m_deltaT_norm_max);
@@ -668,6 +669,8 @@ PeleLM::readParameters()
   ppnproj.query("atol", m_nodal_mg_atol);
   ppnproj.query("rtol", m_nodal_mg_rtol);
   ppnproj.query("hypre_namespace", m_hypre_namespace_nodal);
+  m_nproj_verbose = std::max(m_verbose - 2, 0);
+  ppnproj.queryAdd("verbose", m_nproj_verbose);
 
   amrex::ParmParse ppmacproj("mac_proj");
   ppmacproj.query("mg_max_coarsening_level", m_mac_mg_max_coarsening_level);
@@ -678,6 +681,8 @@ PeleLM::readParameters()
   ppmacproj.query(
     "mlmg_fail_maxiter_after_sdc_miniter",
     m_mac_mg_fail_maxiter_after_sdc_miniter);
+  m_macproj_verbose = std::max(m_verbose - 2, 0);
+  ppmacproj.queryAdd("verbose", m_macproj_verbose);
 
   // -----------------------------------------
   // Temporals
