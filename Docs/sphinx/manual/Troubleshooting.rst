@@ -24,16 +24,21 @@ amrex::Abort::0::MLMG failing so lets stop here !!!
 
 appearing multiple times when using more than one MPI rank. The first thing to do
 is to identify which linear solve is failing and how. To do so, one needs to increase
-PeleLMeX, as well as the projection and diffusion solves verbose (see the `Control <https://amrex-combustion.github.io/PeleLMeX/LMeXControls.html>`_
+PeleLMeX, as well as the projection and diffusion solve's verbosity (see the `Control <https://amrex-combustion.github.io/PeleLMeX/LMeXControls.html>`_
 section for more details on LMeX controls):
 
 ::
 
-    peleLM.verbose = 3
+    peleLM.verbose = 4
+
+which will increase the default verbosity for all linear solvers to 2 (more generally to peleLM.v - 2),
+although the solver verbosity may also be controlled for the solvers individually:
+
+::
     nodal_proj.verbose = 2
     mac_proj.verbose = 2
     diffusion.verbose = 2
-    tensor_diffusion.verbose = 2 
+    tensor_diffusion.verbose = 2
 
 Note that we focused on the projection solves here because they are generally more
 prone to failure than the diffusion ones. You can then restart the simulation
@@ -120,19 +125,19 @@ Alternatively, the solver can fail as follows:
 
 In this case, the solver diverges and it is generally a clear indication that the problem
 is not properly setup. To aid in debugging, it may be useful to dump plotfiles of the residual
-and solution at the time of the failure to visually inspect where the solution is diverging. 
-This can be accomplished by enabling residual plotting on MLMG failure: 
+and solution at the time of the failure to visually inspect where the solution is diverging.
+This can be accomplished by enabling residual plotting on MLMG failure:
 
 ::
- 
+
     peleLM.mlmg_fail_plt_residuals = true       # [OPT, DEF=false] Dump MLMG residuals plotfiles on MLMG failure
 
 In the example above, plotfiles named ``<plot_dir>/pltMLMGResidual_<solver>_<step>_<iters>``
 would be created after the failure in the 17th iteration of the nodal projection at the given time step.
 However, given that ``resid/bnorm = 5.170158884e+20`` here, it is likely that the
 residual is large everywhere in the domain. Therefore, it may be more useful to dump the residuals
-after a smaller number of iterations, e.g., iteration 3 or 4 where the residual is still relatively small, 
-but clearly growing. Since the nodal projection is always the last MLMG solve for a given time step, 
+after a smaller number of iterations, e.g., iteration 3 or 4 where the residual is still relatively small,
+but clearly growing. Since the nodal projection is always the last MLMG solve for a given time step,
 this can be accomplihed by setting `nodal_proj.maxiter=4`. This results in the following output upon failure:
 
 ::
@@ -151,8 +156,8 @@ this can be accomplihed by setting `nodal_proj.maxiter=4`. This results in the f
     Error: MLMG failed to converge.
     Dumping residuals for debugging...
 
-For the other solvers (MAC projection, species/temperature diffusion, and tensor diffusion), 
-users can further control when to dump the residuals for debugging based on 
+For the other solvers (MAC projection, species/temperature diffusion, and tensor diffusion),
+users can further control when to dump the residuals for debugging based on
 a minimum number of SDC and, when appropriate, deltaT iterations.  This is done
 on a per-solver basis using the following options:
 
@@ -160,13 +165,13 @@ on a per-solver basis using the following options:
 
     # MAC projection controls
     mac_proj.mlmg_fail_sdc_miniter = 2                             # [OPT, DEF=-1] Minimum SDC iterations before dumping residuals on MLMG failure
-    mac_proj.mlmg_fail_maxiter_after_sdc_miniter = 3               # [OPT, DEF=-1] Maximum MLMG solver iters after minimum SDC iters have been reached 
+    mac_proj.mlmg_fail_maxiter_after_sdc_miniter = 3               # [OPT, DEF=-1] Maximum MLMG solver iters after minimum SDC iters have been reached
 
     # Species/Temperature diffusion controls
     diffusion.mlmg_fail_sdc_miniter = 1                            # [OPT, DEF=-1] Minimum SDC iterations before dumping residuals on MLMG failure
     diffusion.mlmg_fail_deltaT_miniter = 4                         # [OPT, DEF=-1] Minimum deltaT iterations before dumping residuals on MLMG failure (only for temperature diffusion)
-    diffusion.mlmg_fail_species_maxiter_after_sdc_miniter = 5      # [OPT, DEF=-1] Maximum species MLMG solver iters after minimum SDC iters have been reached 
-    diffusion.mlmg_fail_temp_maxiter_after_sdc_deltaT_miniter = 3  # [OPT, DEF=-1] Maximum temp MLMG solver iters after minimum SDC and deltaT iters have been reached 
+    diffusion.mlmg_fail_species_maxiter_after_sdc_miniter = 5      # [OPT, DEF=-1] Maximum species MLMG solver iters after minimum SDC iters have been reached
+    diffusion.mlmg_fail_temp_maxiter_after_sdc_deltaT_miniter = 3  # [OPT, DEF=-1] Maximum temp MLMG solver iters after minimum SDC and deltaT iters have been reached
 
     # Velocity diffusion controls
     tensor_diffusion.mlmg_fail_sdc_miniter = 1                     # [OPT, DEF=-1] Minimum SDC iterations before dumping residuals on MLMG failure
@@ -220,4 +225,3 @@ In this case, one can use the following option:
 
 where the ODE integration is then computed as an increment where the initial species mass fractions
 [0-1] bounds are enforced.
-

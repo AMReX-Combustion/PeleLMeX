@@ -370,6 +370,9 @@ PeleLM::readParameters()
     m_spark_location.resize(m_n_sparks);
     m_spark_temp.resize(m_n_sparks);
     m_spark_radius.resize(m_n_sparks);
+    if (m_n_sparks > 0) {
+      m_spark_verbose = std::max(m_verbose - 2, 0);
+    }
     pp.query("spark_verbose", m_spark_verbose);
     for (int n = 0; n < m_n_sparks; ++n) {
       pp.get("sparks", m_spark[n], n);
