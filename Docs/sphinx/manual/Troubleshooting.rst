@@ -29,7 +29,7 @@ section for more details on LMeX controls):
 
 ::
 
-    peleLM.verbose = 4
+    peleLM.v = 4
 
 which will increase the default verbosity for all linear solvers to 2 (more generally to peleLM.v - 2),
 although the solver verbosity may also be controlled for the solvers individually:
