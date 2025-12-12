@@ -1,4 +1,5 @@
 #include <PeleLMeX.H>
+#include <PeleLMeX_Utils.H>
 #include <hydro_utils.H>
 #include <AMReX_FillPatchUtil.H>
 #include <PeleLMeX_BCfill.H>
