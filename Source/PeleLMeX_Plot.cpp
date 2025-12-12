@@ -166,6 +166,8 @@ PeleLM::WritePlotFile()
 #endif
 
   if (m_do_les && m_plot_les) {
+    // Compute turbulent viscosity from current flow field at AmrNewTime
+    calcTurbViscosity(AmrNewTime);
     ncomp += 1;
   }
 
