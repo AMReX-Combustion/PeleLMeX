@@ -1287,7 +1287,7 @@ PeleLM::WriteMLMGResidual(
   amrex::MLMG& a_mlmg,
   const amrex::Vector<amrex::MultiFab*>& a_sol,
   const amrex::Vector<const amrex::MultiFab*>& a_rhs,
-  const std::string& a_solver_type,
+  const std::string& a_solver_name,
   int a_step)
 {
   // Get the linear operator
@@ -1310,12 +1310,12 @@ PeleLM::WriteMLMGResidual(
 
   // Classify solver type
   bool is_tensor_diff =
-    (a_solver_type.find("vel_diffusion") != std::string::npos);
+    (a_solver_name.find("vel_diffusion") != std::string::npos);
   bool is_species =
-    (a_solver_type.find("species_diffusion") != std::string::npos);
+    (a_solver_name.find("species_diffusion") != std::string::npos);
   bool is_temp =
-    (a_solver_type.find("temperature_diffusion") != std::string::npos);
-  bool is_proj = (a_solver_type.find("projection") != std::string::npos);
+    (a_solver_name.find("temperature_diffusion") != std::string::npos);
+  bool is_proj = (a_solver_name.find("projection") != std::string::npos);
 
   // Compute the residual: r = b - A*x
   if (!is_tensor_diff) {
@@ -1383,7 +1383,7 @@ PeleLM::WriteMLMGResidual(
       var_names.push_back("mlmg_residual_" + std::to_string(n));
     }
   } else if (is_proj) {
-    var_names.push_back("mlmg_residual_" + a_solver_type);
+    var_names.push_back("mlmg_residual_" + a_solver_name);
   } else if (is_temp) {
     var_names.push_back("mlmg_residual_temp");
   } else {
@@ -1436,7 +1436,7 @@ PeleLM::WriteMLMGResidual(
   int num_iters = a_mlmg.getNumIters();
 
   // Create plotfile name: <plot_dir>/pltMLMGResidual_<solver>_<step>_<iters>
-  std::string residual_name = "pltMLMGResidual_" + a_solver_type + "_";
+  std::string residual_name = "pltMLMGResidual_" + a_solver_name + "_";
   int ioDigits = m_ioDigits;
   std::string plotfile_name =
     plot_dir + amrex::Concatenate(residual_name, a_step, ioDigits);
