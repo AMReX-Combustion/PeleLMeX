@@ -1017,6 +1017,12 @@ public:
   void WriteDebugPlotFile(
     const amrex::Vector<const amrex::MultiFab*>& a_MF,
     const std::string& pltname);
+  void WriteMLMGResidual(
+    amrex::MLMG& a_mlmg,
+    const amrex::Vector<amrex::MultiFab*>& a_sol,
+    const amrex::Vector<const amrex::MultiFab*>& a_rhs,
+    const std::string& a_solver_name,
+    int a_step);
   //-----------------------------------------------------------------------------
 
   //-----------------------------------------------------------------------------

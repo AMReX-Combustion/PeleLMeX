@@ -1,6 +1,5 @@
 #include <PeleLMeX.H>
 #include <PeleLMeX_DiffusionOp.H>
-#include <PeleLMeX_Utils.H>
 #include <AMReX_ParmParse.H>
 #include <AMReX_VisMF.H>
 
@@ -331,9 +330,9 @@ DiffusionOp::diffuse_scalar(
         std::string m_solver_type = (m_ncomp == NUM_SPECIES)
                                       ? "species_diffusion"
                                       : "temperature_diffusion";
-        pltMLMGResidual(
+        m_pelelm->WriteMLMGResidual(
           mlmg, GetVecOfPtrs(component), GetVecOfConstPtrs(rhs), m_solver_type,
-          m_pelelm->m_plot_file, m_pelelm->m_nstep, m_pelelm->Geom(), m_pelelm);
+          m_pelelm->m_nstep);
 
         amrex::Abort("MLMG solve for scalar diffusion failed");
       }
@@ -624,9 +623,9 @@ DiffusionOp::diffuse_scalar(
         std::string m_solver_type = (m_ncomp == NUM_SPECIES)
                                       ? "species_diffusion"
                                       : "temperature_diffusion";
-        pltMLMGResidual(
+        m_pelelm->WriteMLMGResidual(
           mlmg, GetVecOfPtrs(component), GetVecOfConstPtrs(rhs), m_solver_type,
-          m_pelelm->m_plot_file, m_pelelm->m_nstep, m_pelelm->Geom(), m_pelelm);
+          m_pelelm->m_nstep);
 
         amrex::Abort("MLMG solve for scalar diffusion failed");
       }
@@ -1486,9 +1485,9 @@ DiffusionTensorOp::diffuse_velocity(
                      << "  *** Velocity diffusion MLMG solve failed! ***\n"
                      << "  Error: " << e.what() << "\n"
                      << "  Dumping residuals for debugging...\n";
-      pltMLMGResidual(
+      m_pelelm->WriteMLMGResidual(
         mlmg, a_vel, GetVecOfConstPtrs(rhs), "vel_diffusion",
-        m_pelelm->m_plot_file, m_pelelm->m_nstep, m_pelelm->Geom(), m_pelelm);
+        m_pelelm->m_nstep);
 
       amrex::Abort("MLMG solve for velocity diffusion failed");
     }

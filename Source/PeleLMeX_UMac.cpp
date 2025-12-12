@@ -1,5 +1,4 @@
 #include <PeleLMeX.H>
-#include <PeleLMeX_Utils.H>
 #include <hydro_utils.H>
 #include <AMReX_FillPatchUtil.H>
 #include <PeleLMeX_BCfill.H>
@@ -314,21 +313,11 @@ PeleLM::macProject(
       amrex::Print() << "  Dumping MAC projection residuals for debugging...\n";
 
       auto& mlmg = macproj->getMLMG();
-      const auto& phi_vec = macproj->getPhi();
-      const auto& rhs_vec = macproj->getRHS();
+      const auto& phi_ptrs = amrex::GetVecOfPtrs(
+        const_cast<amrex::Vector<amrex::MultiFab>&>(macproj->getPhi()));
+      const auto& rhs_ptrs = amrex::GetVecOfConstPtrs(macproj->getRHS());
 
-      // Create pointer vectors for pltMLMGResidual
-      int nlevs = static_cast<int>(phi_vec.size());
-      amrex::Vector<amrex::MultiFab*> phi_ptrs(nlevs);
-      amrex::Vector<const amrex::MultiFab*> rhs_ptrs(nlevs);
-      for (int lev = 0; lev < nlevs; ++lev) {
-        phi_ptrs[lev] = const_cast<amrex::MultiFab*>(&phi_vec[lev]);
-        rhs_ptrs[lev] = &rhs_vec[lev];
-      }
-
-      pltMLMGResidual(
-        mlmg, phi_ptrs, rhs_ptrs, "mac_projection", m_plot_file, m_nstep,
-        Geom(), this);
+      WriteMLMGResidual(mlmg, phi_ptrs, rhs_ptrs, "mac_projection", m_nstep);
 
       amrex::Abort("MLMG solve for mac_projection failed");
     }

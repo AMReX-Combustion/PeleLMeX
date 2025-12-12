@@ -1,5 +1,4 @@
 #include <PeleLMeX.H>
-#include <PeleLMeX_Utils.H>
 #include <memory>
 
 void
@@ -501,9 +500,8 @@ PeleLM::doNodalProject(
       auto phi = nodal_projector->getPhi();
       auto rhs = nodal_projector->getRHSConst();
 
-      pltMLMGResidual(
-        nodal_projector->getMLMG(), phi, rhs, "nodal_projection", m_plot_file,
-        m_nstep, Geom(), this);
+      WriteMLMGResidual(
+        nodal_projector->getMLMG(), phi, rhs, "nodal_projection", m_nstep);
 
       amrex::Abort("MLMG solve for nodal_projection failed");
     }
