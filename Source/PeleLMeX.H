@@ -2123,6 +2123,7 @@ public:
   int m_do_patch_mfr = 0;
   amrex::Vector<std::unique_ptr<BPatch>> m_bPatches;
   int m_temp_int = 5;
+  std::string m_temporal_dir = "temporals";
   int m_do_extremas = 0;
   int m_do_massBalance = 0;
   int m_do_energyBalance = 0;
