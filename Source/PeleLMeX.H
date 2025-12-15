@@ -1017,6 +1017,12 @@ public:
   void WriteDebugPlotFile(
     const amrex::Vector<const amrex::MultiFab*>& a_MF,
     const std::string& pltname);
+  void WriteMLMGResidual(
+    amrex::MLMG& a_mlmg,
+    const amrex::Vector<amrex::MultiFab*>& a_sol,
+    const amrex::Vector<const amrex::MultiFab*>& a_rhs,
+    const std::string& a_solver_name,
+    int a_step);
   //-----------------------------------------------------------------------------
 
   //-----------------------------------------------------------------------------
@@ -1749,6 +1755,8 @@ public:
     return 0.5 * (m_t_old[lev] + m_t_new[lev]);
   }
 
+  int getVerbose() const { return m_verbose; }
+
   amrex::Vector<std::unique_ptr<amrex::MultiFab>>
   getStateVect(const PeleLM::TimeStamp a_time);
   amrex::Vector<std::unique_ptr<amrex::MultiFab>>
@@ -1934,6 +1942,9 @@ public:
   amrex::Vector<std::string> m_diagVars;
 
   int m_verbose = 0;
+  int m_macproj_verbose = 0;
+  int m_nproj_verbose = 0;
+  bool m_mlmg_fail_plt_residuals = false;
 
   // IO options
   std::string m_restart_chkfile;
@@ -2098,6 +2109,7 @@ public:
   // DeltaT iterations
   int m_deltaT_verbose = 0;
   int m_deltaTIterMax = 10;
+  int m_deltaTIter = 0;
   amrex::Real m_deltaT_norm_max = 1.0e-10;
   int m_crashOnDeltaTFail = 1;
 
@@ -2232,6 +2244,8 @@ public:
   amrex::Real m_mac_mg_rtol = 1.0e-11;
   amrex::Real m_mac_mg_atol = 1.0e-14;
   std::string m_hypre_namespace_mac = "mac_hypre";
+  int m_mac_mg_fail_sdc_miniter = -1;
+  int m_mac_mg_fail_maxiter_after_sdc_miniter = -1;
   //-----------------------------------------------------------------------------
 };
 

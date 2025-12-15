@@ -24,14 +24,21 @@ amrex::Abort::0::MLMG failing so lets stop here !!!
 
 appearing multiple times when using more than one MPI rank. The first thing to do
 is to identify which linear solve is failing and how. To do so, one needs to increase
-PeleLMeX, as well as the projection solves verbose (see the `Control <https://amrex-combustion.github.io/PeleLMeX/LMeXControls.html>`_
+PeleLMeX, as well as the projection and diffusion solve's verbosity (see the `Control <https://amrex-combustion.github.io/PeleLMeX/LMeXControls.html>`_
 section for more details on LMeX controls):
 
 ::
 
-    peleLM.verbose = 3
+    peleLM.v = 4
+
+which will increase the default verbosity for all linear solvers to 2 (more generally to peleLM.v - 2),
+although the solver verbosity may also be controlled for the solvers individually:
+
+::
     nodal_proj.verbose = 2
     mac_proj.verbose = 2
+    diffusion.verbose = 2
+    tensor_diffusion.verbose = 2
 
 Note that we focused on the projection solves here because they are generally more
 prone to failure than the diffusion ones. You can then restart the simulation
@@ -88,17 +95,92 @@ Alternatively, the solver can fail as follows:
 
 ::
 
-    MLMG: # of AMR levels: 2
-      # of MG levels on the coarsest AMR level: 6
-    MLMG: Initial rhs               = 395786.0963
-    MLMG: Initial residual (resid0) = 395786.0963
-    MLMG: Iteration   1 Fine resid/bnorm = 0.009458721163
-    MLMG: Iteration   2 Fine resid/bnorm = 1046166408
-    MLMG: Iteration   3 Fine resid/bnorm = 5.420966957e+23
+    Nodal Projection:
+    >> Before projection:
+    * On lev 0 max(abs(rhs)) = 32972.4697
+
+    MLMG: # of AMR levels: 1
+        # of MG levels on the coarsest AMR level: 5
+    MLMG: Initial rhs               = 29416.37315
+    MLMG: Initial residual (resid0) = 29416.37315
+    MLMG: Iteration   1 Fine resid/bnorm = 0.003754141785
+    MLMG: Iteration   2 Fine resid/bnorm = 0.104435142
+    MLMG: Iteration   3 Fine resid/bnorm = 2.918558728
+    MLMG: Iteration   4 Fine resid/bnorm = 81.56015694
+    MLMG: Iteration   5 Fine resid/bnorm = 2279.227794
+    MLMG: Iteration   6 Fine resid/bnorm = 63693.83698
+    MLMG: Iteration   7 Fine resid/bnorm = 1779947.086
+    MLMG: Iteration   8 Fine resid/bnorm = 49741258.78
+    MLMG: Iteration   9 Fine resid/bnorm = 1390037291
+    MLMG: Iteration  10 Fine resid/bnorm = 3.884508992e+10
+    MLMG: Iteration  11 Fine resid/bnorm = 1.08553995e+12
+    MLMG: Iteration  12 Fine resid/bnorm = 3.033580267e+13
+    MLMG: Iteration  13 Fine resid/bnorm = 8.477448701e+14
+    MLMG: Iteration  14 Fine resid/bnorm = 2.369053401e+16
+    MLMG: Iteration  15 Fine resid/bnorm = 6.620404574e+17
+    MLMG: Iteration  16 Fine resid/bnorm = 1.850095768e+19
+    MLMG: Iteration  17 Fine resid/bnorm = 5.170158884e+20
+    MLMG: Failing to converge after 17 iterations. resid, resid/bnorm = 1.52087323e+25, 5.170158884e+20
 
 
 In this case, the solver diverges and it is generally a clear indication that the problem
-is not properly setup.
+is not properly setup. To aid in debugging, it may be useful to dump plotfiles of the residual
+and solution at the time of the failure to visually inspect where the solution is diverging.
+This can be accomplished by enabling residual plotting on MLMG failure:
+
+::
+
+    peleLM.mlmg_fail_plt_residuals = true       # [OPT, DEF=false] Dump MLMG residuals plotfiles on MLMG failure
+
+In the example above, plotfiles named ``<plot_dir>/pltMLMGResidual_<solver>_<step>_<iters>``
+would be created after the failure in the 17th iteration of the nodal projection at the given time step.
+However, given that ``resid/bnorm = 5.170158884e+20`` here, it is likely that the
+residual is large everywhere in the domain. Therefore, it may be more useful to dump the residuals
+after a smaller number of iterations, e.g., iteration 3 or 4 where the residual is still relatively small,
+but clearly growing. Since the nodal projection is always the last MLMG solve for a given time step,
+this can be accomplihed by setting `nodal_proj.maxiter=4`. This results in the following output upon failure:
+
+::
+
+    MLMG: # of AMR levels: 1
+        # of MG levels on the coarsest AMR level: 5
+    MLMG: Initial rhs               = 29416.37318
+    MLMG: Initial residual (resid0) = 29416.37318
+    MLMG: Iteration   1 Fine resid/bnorm = 0.003754106743
+    MLMG: Iteration   2 Fine resid/bnorm = 0.1044336961
+    MLMG: Iteration   3 Fine resid/bnorm = 2.918500162
+    MLMG: Iteration   4 Fine resid/bnorm = 81.55801241
+    MLMG: Failed to converge after 4 iterations. resid, resid/bnorm = 2399140.929, 81.55801241
+
+    *** Nodal projection MLMG solve failed! ***
+    Error: MLMG failed to converge.
+    Dumping residuals for debugging...
+
+For the other solvers (MAC projection, species/temperature diffusion, and tensor diffusion),
+users can further control when to dump the residuals for debugging based on
+a minimum number of SDC and, when appropriate, deltaT iterations.  This is done
+on a per-solver basis using the following options:
+
+::
+
+    # MAC projection controls
+    mac_proj.mlmg_fail_sdc_miniter = 2                             # [OPT, DEF=-1] Minimum SDC iterations before dumping residuals on MLMG failure
+    mac_proj.mlmg_fail_maxiter_after_sdc_miniter = 3               # [OPT, DEF=-1] Maximum MLMG solver iters after minimum SDC iters have been reached
+
+    # Species/Temperature diffusion controls
+    diffusion.mlmg_fail_sdc_miniter = 1                            # [OPT, DEF=-1] Minimum SDC iterations before dumping residuals on MLMG failure
+    diffusion.mlmg_fail_deltaT_miniter = 4                         # [OPT, DEF=-1] Minimum deltaT iterations before dumping residuals on MLMG failure (only for temperature diffusion)
+    diffusion.mlmg_fail_species_maxiter_after_sdc_miniter = 5      # [OPT, DEF=-1] Maximum species MLMG solver iters after minimum SDC iters have been reached
+    diffusion.mlmg_fail_temp_maxiter_after_sdc_deltaT_miniter = 3  # [OPT, DEF=-1] Maximum temp MLMG solver iters after minimum SDC and deltaT iters have been reached
+
+    # Velocity diffusion controls
+    tensor_diffusion.mlmg_fail_sdc_miniter = 1                     # [OPT, DEF=-1] Minimum SDC iterations before dumping residuals on MLMG failure
+    tensor_diffusion.mlmg_maxiter_after_sdc_miniter = 6            # [OPT, DEF=-1] Maximum MLMG solver iters after minimum SDC iters have been reached
+
+As an example, setting ``diffusion.mlmg_fail_sdc_miniter = 2``, ``diffusion.mlmg_fail_deltaT_miniter = 2``,
+and ``diffusion.mlmg_fail_temp_maxiter_after_sdc_deltaT_miniter = 3`` would result in dumping the temperature diffusion
+residuals for debugging only if the failure occurs after at least 2 SDC iterations and 2 deltaT iterations, and
+the MLMG solver has performed at least 3 iterations after those minimums have been reached.
 
 
 Chemistry integration failure
@@ -143,4 +225,3 @@ In this case, one can use the following option:
 
 where the ODE integration is then computed as an increment where the initial species mass fractions
 [0-1] bounds are enforced.
-

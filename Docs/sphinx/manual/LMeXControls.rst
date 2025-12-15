@@ -246,7 +246,7 @@ PeleLMeX algorithm
 ::
 
     #-----------------------PELE CONTROL-----------------------
-    peleLM.v = 1                           # [OPT, DEF=0] Verbose
+    peleLM.v = 1                           # [OPT, DEF=0] Verbose (1 - verbose for core algorithm, 2+ adds default verbosity for deltaTiters, projections, etc)
     peleLM.run_mode = normal               # [OPT, DEF=normal] Switch between time-advance mode (normal) or UnitTest (evaluate)
     peleLM.use_wbar = 1                    # [OPT, DEF=1] Enable Wbar correction in diffusion fluxes
     peleLM.sdc_iterMax = 2                 # [OPT, DEF=1] Number of SDC iterations
