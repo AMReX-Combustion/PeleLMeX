@@ -578,6 +578,7 @@ to activate `temporal` diagnostics performing these reductions at given interval
 
     #-------------------------TEMPORALS---------------------------
     peleLM.do_temporals = 1                     # [OPT, DEF=0] Activate temporal diagnostics
+    peleLM.temporal_dir = temporals             # [OPT, DEF="temporals"] Directory to store temporal diagnostics
     peleLM.temporal_int = 10                    # [OPT, DEF=5] Temporal freq.
     peleLM.do_extremas = 1                      # [OPT, DEF=0] Trigger extremas, if temporals activated
     peleLM.do_mass_balance = 1                  # [OPT, DEF=0] Compute mass balance, if temporals activated
