@@ -1,16 +1,23 @@
-particles.fuel_species = POSF10264
-particles.Y_0 = 1.
-particles.fuel_ref_temp = 298.15
+# -----------------------------------------------------------------------------
+# Liquid fuel properties for MP in Pele
+# Fuel: posf10264
+# Number of compounds: 1
+# Generated: 2025-12-15 21:22:11
+# FuelLib remote URL: https://github.com/NREL/FuelLib.git
+# Git commit: 0d18d88bd32795d06b5086bd764e077611b48e5c
+# Units: MKS
+# -----------------------------------------------------------------------------
 
-# Properties for POSF10264 in MKS 
-# Sources:
-# 1. Standford HyChem approach report v6
-#    https://web.stanford.edu/group/haiwanglab/HyChem/approach/Report_Jet_Fuel_Thermochemical_Properties_v6.pdf
-# 2. FuelLib prediction using conventional mixing rule function for Tc, Tb, Lv, cp
-#    https://nrel.github.io/FuelLib/groupcontribution.html#conventional-mixing-rules
-particles.POSF10264_crit_temp = 648.11 # K (Ref 2)
-particles.POSF10264_boil_temp = 463.91 # K  (Ref 2) or 462.85 K (Ref SwRI 50% ASTM dist.)
-particles.POSF10264_latent = 3.6172156E5 #J/kg (Ref 2) or 3.6E5 # J/kg Latent heat at 298 K (Ref 1)
-particles.POSF10264_cp = 1.53075E3 #J/kg/K (Ref 2) or 1.4733E3 # J/kg/K @ 298 K (Ref 1)
-particles.POSF10264_rho = 771.56 # kg/m^3 @ 298 K (Ref 2)
-particles.POSF10264_psat = 5.05171 2429.85092 34.24740 1.E5 # (Estimated from Ref 2)
+particles.fuel_species = POSF10264
+particles.Y_0 = 1.0
+particles.dep_fuel_species = POSF10264
+particles.fuel_ref_temp = 298.15 # K
+
+# Properties for POSF10264 in MKS
+particles.POSF10264_molar_weight = 0.151552 # kg/mol
+particles.POSF10264_crit_temp = 643.703633 # K
+particles.POSF10264_boil_temp = 462.514088 # K
+particles.POSF10264_latent = 361707.572276 # J/kg
+particles.POSF10264_cp = 1521.050596 # J/kg/K
+particles.POSF10264_rho = 769.849718 # kg/m^3
+particles.POSF10264_psat = 9.558843920980598 2047.4745769561123 8.963746877397346 1 # Pa
