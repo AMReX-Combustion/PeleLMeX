@@ -64,7 +64,15 @@ PeleLM::speciesBalancePatch()
       tmppatchmfrFile << ",";
       amrex::Real tmp = 0.0;
       for (int j = 0; j < m_bPatche->speciesinGroup[i].size(); j++) {
-        tmp += bphost->speciesFlux[j];
+        // speciesinGroup[i][j] contains the mechanism species index
+        // Find the corresponding index in the speciesIndex array
+        int mechSpeciesIdx = m_bPatche->speciesinGroup[i][j];
+        for (int k = 0; k < bphost->num_species; k++) {
+          if (bphost->speciesIndex[k] == mechSpeciesIdx) {
+            tmp += bphost->speciesFlux[k];
+            break;
+          }
+        }
       }
       tmppatchmfrFile << tmp;
     }
