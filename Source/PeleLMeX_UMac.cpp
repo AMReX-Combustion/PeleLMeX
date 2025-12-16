@@ -283,7 +283,46 @@ PeleLM::macProject(
 #endif
 
   // Project
-  macproj->project(m_mac_mg_rtol, m_mac_mg_atol);
+  if (m_macproj_verbose > 0) {
+    amrex::Print() << "MLMG: MAC Projection\n";
+  }
+  if (!m_mlmg_fail_plt_residuals) {
+    macproj->project(m_mac_mg_rtol, m_mac_mg_atol);
+  } else {
+    macproj->getMLMG().setThrowException(true);
+    macproj->getMLMG().setConvergenceNormType(amrex::MLMGNormType::bnorm);
+
+    // Maximum MLMG iterations may change for debugging purposes
+    if (
+      m_mac_mg_fail_sdc_miniter >= 0 &&
+      m_sdcIter >= m_mac_mg_fail_sdc_miniter) {
+      if (m_mac_mg_fail_maxiter_after_sdc_miniter > 0) {
+        macproj->getMLMG().setMaxIter(m_mac_mg_fail_maxiter_after_sdc_miniter);
+        amrex::Print() << "      Limiting MAC MLMG max_iter to "
+                       << m_mac_mg_fail_maxiter_after_sdc_miniter
+                       << " (SDC iter [" << m_sdcIter
+                       << "] >= " << m_mac_mg_fail_sdc_miniter << ")\n";
+      }
+    }
+
+    try {
+      macproj->project(m_mac_mg_rtol, m_mac_mg_atol);
+    } catch (const std::exception& e) {
+      amrex::Print() << "\n";
+      amrex::Print() << "  *** MAC projection MLMG solve failed! ***\n";
+      amrex::Print() << "  Error: " << e.what() << "\n";
+      amrex::Print() << "  Dumping MAC projection residuals for debugging...\n";
+
+      auto& mlmg = macproj->getMLMG();
+      const auto& phi_ptrs = amrex::GetVecOfPtrs(
+        const_cast<amrex::Vector<amrex::MultiFab>&>(macproj->getPhi()));
+      const auto& rhs_ptrs = amrex::GetVecOfConstPtrs(macproj->getRHS());
+
+      WriteMLMGResidual(mlmg, phi_ptrs, rhs_ptrs, "mac_projection", m_nstep);
+
+      amrex::Abort("MLMG solve for mac_projection failed");
+    }
+  }
 
   // Restore mac_divu
   if ((m_closed_chamber != 0) && (m_incompressible == 0)) {

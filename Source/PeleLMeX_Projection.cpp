@@ -482,7 +482,30 @@ PeleLM::doNodalProject(
 #endif
 
   // Solve
-  nodal_projector->project(m_nodal_mg_rtol, m_nodal_mg_atol);
+  if (!m_mlmg_fail_plt_residuals) {
+    nodal_projector->project(m_nodal_mg_rtol, m_nodal_mg_atol);
+  } else {
+    nodal_projector->getMLMG().setThrowException(true);
+    nodal_projector->getMLMG().setConvergenceNormType(
+      amrex::MLMGNormType::bnorm);
+    try {
+      nodal_projector->project(m_nodal_mg_rtol, m_nodal_mg_atol);
+    } catch (const std::exception& e) {
+      amrex::Print() << "\n";
+      amrex::Print() << "  *** Nodal projection MLMG solve failed! ***\n";
+      amrex::Print() << "  Error: " << e.what() << "\n";
+      amrex::Print()
+        << "  Dumping nodal projection residuals for debugging...\n";
+
+      auto phi = nodal_projector->getPhi();
+      auto rhs = nodal_projector->getRHSConst();
+
+      WriteMLMGResidual(
+        nodal_projector->getMLMG(), phi, rhs, "nodal_projection", m_nstep);
+
+      amrex::Abort("MLMG solve for nodal_projection failed");
+    }
+  }
 
   auto phi = nodal_projector->getPhi();
   auto gphi = nodal_projector->getGradPhi();

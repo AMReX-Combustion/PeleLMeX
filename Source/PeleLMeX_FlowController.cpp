@@ -77,7 +77,9 @@ PeleLM::initActiveControl()
     const int ctrl_flameDir_l = m_ctrl_flameDir;
     const amrex::Real time_l = -1.0;
     const auto geomdata = Geom(0).data();
-    auto fake_state = amrex::Array4<amrex::Real>{};
+    amrex::Dim3 begin{0, 0, 0};
+    amrex::Dim3 end{1, 1, 1};
+    auto fake_state = amrex::Array4<amrex::Real>(nullptr, begin, end, NVAR);
 
     amrex::Box dumbx({AMREX_D_DECL(0, 0, 0)}, {AMREX_D_DECL(0, 0, 0)});
     amrex::ParallelFor(
@@ -123,6 +125,14 @@ PeleLM::initActiveControl()
     // Fill host ProbParm FCData
     fcdata_host->ctrl_active = 1;
     fcdata_host->ctrl_V_in = m_ctrl_V_in;
+
+    // Update device copy of FCData
+    FlowControllerData* fcdata_dev{nullptr};
+    fcdata_dev = getFCDataPtr(*prob_parm_d, hasFlowControllerData<ProbParm>{});
+    if (fcdata_dev != nullptr) {
+      amrex::Gpu::copy(
+        amrex::Gpu::hostToDevice, fcdata_host, fcdata_host + 1, fcdata_dev);
+    }
 
     if (m_ctrl_verbose != 0) {
       if (m_ctrl_useTemp != 0) {

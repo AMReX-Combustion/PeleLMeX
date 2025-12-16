@@ -165,6 +165,12 @@ public:
   amrex::Real m_mg_atol = 1.0e-14;
 
   std::string m_mg_bottom_solver = "bicgstab";
+
+  // MLMG failure debugging options
+  int m_mg_fail_sdc_miniter = -1;
+  int m_mg_fail_deltaT_miniter = -1;
+  int m_mg_fail_species_maxiter_after_sdc_miniter = -1;
+  int m_mg_fail_temp_maxiter_after_sdc_deltaT_miniter = -1;
 };
 
 class DiffusionTensorOp
@@ -224,6 +230,10 @@ private:
   amrex::Real m_mg_atol = 1.0e-14;
 
   std::string m_mg_bottom_solver = "bicgstab";
+
+  // MLMG failure debugging options
+  int m_mg_fail_sdc_miniter = -1;
+  int m_mg_fail_maxiter_after_sdc_miniter = -1;
 };
 
 #endif

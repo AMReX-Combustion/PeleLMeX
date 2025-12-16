@@ -242,8 +242,63 @@ DiffusionOp::diffuse_scalar(
     // Setup linear solver
     amrex::MLMG mlmg(*m_scal_solve_op);
 
-    // Maximum iterations
-    mlmg.setMaxIter(m_mg_max_iter);
+    std::string mg_variable =
+      (m_ncomp == NUM_SPECIES) ? "Species" : "Temperature";
+    if (m_mg_verbose > 0) {
+      if (m_ncomp == NUM_SPECIES) {
+        amrex::Print() << "MLMG: " << mg_variable << " Diffusion\n";
+      } else {
+        amrex::Print() << "MLMG: DeltaT solve [" << m_pelelm->m_deltaTIter
+                       << "]\n";
+      }
+    }
+
+    // Maximum iterations for MultiGrid / ConjugateGradients may change for
+    // debugging purposes
+    int max_iter = m_mg_max_iter;
+    if (m_pelelm->m_mlmg_fail_plt_residuals) {
+
+      bool sdc_iters_met = (m_pelelm->m_sdcIter >= m_mg_fail_sdc_miniter);
+      bool limit_max_iter = false;
+
+      if (m_ncomp == NUM_SPECIES) {
+        // Species diffusion: only SDC iter matters
+        if (
+          sdc_iters_met && (m_mg_fail_species_maxiter_after_sdc_miniter > 0)) {
+          limit_max_iter = true;
+          max_iter = m_mg_fail_species_maxiter_after_sdc_miniter;
+        }
+      } else {
+#ifndef USE_MANIFOLD_EOS
+        // Temperature diffusion: check both SDC and deltaT iters
+        bool dT_iters_met =
+          (m_pelelm->m_deltaTIter >= m_mg_fail_deltaT_miniter);
+        limit_max_iter = sdc_iters_met && dT_iters_met &&
+                         (m_mg_fail_temp_maxiter_after_sdc_deltaT_miniter > 0);
+        if (limit_max_iter) {
+          max_iter = m_mg_fail_temp_maxiter_after_sdc_deltaT_miniter;
+        }
+#endif
+      }
+
+      // Print diagnostic message if limit was applied
+      if (limit_max_iter) {
+        if (m_ncomp == NUM_SPECIES) {
+          amrex::Print() << "      Limiting species diffusion MLMG max_iter to "
+                         << max_iter << " (SDC iter [" << m_pelelm->m_sdcIter
+                         << "] >= " << m_mg_fail_sdc_miniter << ")\n";
+        } else {
+          amrex::Print()
+            << "      Limiting temperature diffusion MLMG max_iter to "
+            << max_iter << " (SDC iter [" << m_pelelm->m_sdcIter
+            << "] >= " << m_mg_fail_sdc_miniter << ", deltaT solve ["
+            << m_pelelm->m_deltaTIter << "] >= " << m_mg_fail_deltaT_miniter
+            << ")\n";
+        }
+      }
+    }
+
+    mlmg.setMaxIter(max_iter);
     mlmg.setMaxFmgIter(m_mg_max_fmg_iter);
     mlmg.setBottomMaxIter(m_mg_bottom_maxiter);
 
@@ -255,8 +310,33 @@ DiffusionOp::diffuse_scalar(
     mlmg.setPostSmooth(m_num_post_smooth);
 
     // Solve
-    mlmg.solve(
-      GetVecOfPtrs(component), GetVecOfConstPtrs(rhs), m_mg_rtol, m_mg_atol);
+    if (!m_pelelm->m_mlmg_fail_plt_residuals) {
+      mlmg.solve(
+        GetVecOfPtrs(component), GetVecOfConstPtrs(rhs), m_mg_rtol, m_mg_atol);
+    } else {
+      mlmg.setThrowException(true);
+      mlmg.setConvergenceNormType(amrex::MLMGNormType::bnorm);
+
+      try {
+        mlmg.solve(
+          GetVecOfPtrs(component), GetVecOfConstPtrs(rhs), m_mg_rtol,
+          m_mg_atol);
+      } catch (const std::exception& e) {
+        amrex::Print() << "\n"
+                       << "  *** " << mg_variable
+                       << " diffusion MLMG solve failed (non-EB)! ***\n"
+                       << "  Error: " << e.what() << "\n"
+                       << "  Dumping residuals for debugging...\n";
+        std::string m_solver_type = (m_ncomp == NUM_SPECIES)
+                                      ? "species_diffusion"
+                                      : "temperature_diffusion";
+        m_pelelm->WriteMLMGResidual(
+          mlmg, GetVecOfPtrs(component), GetVecOfConstPtrs(rhs), m_solver_type,
+          m_pelelm->m_nstep);
+
+        amrex::Abort("MLMG solve for scalar diffusion failed");
+      }
+    }
 
     // Need to get the fluxes
     if (have_fluxes != 0) {
@@ -455,8 +535,63 @@ DiffusionOp::diffuse_scalar(
     // Setup linear solver
     amrex::MLMG mlmg(*m_scal_solve_op);
 
-    // Maximum iterations
-    mlmg.setMaxIter(m_mg_max_iter);
+    std::string mg_variable =
+      (m_ncomp == NUM_SPECIES) ? "Species" : "Temperature";
+    if (m_mg_verbose > 0) {
+      if (m_ncomp == NUM_SPECIES) {
+        amrex::Print() << "MLMG: " << mg_variable << " Diffusion\n";
+      } else {
+        amrex::Print() << "MLMG: DeltaT solve [" << m_pelelm->m_deltaTIter
+                       << "]\n";
+      }
+    }
+
+    // Maximum iterations for MultiGrid / ConjugateGradients may change for
+    // debugging purposes
+    int max_iter = m_mg_max_iter;
+    if (m_pelelm->m_mlmg_fail_plt_residuals) {
+
+      bool sdc_iters_met = (m_pelelm->m_sdcIter >= m_mg_fail_sdc_miniter);
+      bool limit_max_iter = false;
+
+      if (m_ncomp == NUM_SPECIES) {
+        // Species diffusion: only SDC iter matters
+        if (
+          sdc_iters_met && (m_mg_fail_species_maxiter_after_sdc_miniter > 0)) {
+          limit_max_iter = true;
+          max_iter = m_mg_fail_species_maxiter_after_sdc_miniter;
+        }
+      } else {
+#ifndef USE_MANIFOLD_EOS
+        // Temperature diffusion: check both SDC and deltaT iters
+        bool dT_iters_met =
+          (m_pelelm->m_deltaTIter >= m_mg_fail_deltaT_miniter);
+        limit_max_iter = sdc_iters_met && dT_iters_met &&
+                         (m_mg_fail_temp_maxiter_after_sdc_deltaT_miniter > 0);
+        if (limit_max_iter) {
+          max_iter = m_mg_fail_temp_maxiter_after_sdc_deltaT_miniter;
+        }
+#endif
+      }
+
+      // Print diagnostic message if limit was applied
+      if (limit_max_iter) {
+        if (m_ncomp == NUM_SPECIES) {
+          amrex::Print() << "      Limiting species diffusion MLMG max_iter to "
+                         << max_iter << " (SDC iter [" << m_pelelm->m_sdcIter
+                         << "] >= " << m_mg_fail_sdc_miniter << ")\n";
+        } else {
+          amrex::Print()
+            << "      Limiting temperature diffusion MLMG max_iter to "
+            << max_iter << " (SDC iter [" << m_pelelm->m_sdcIter
+            << "] >= " << m_mg_fail_sdc_miniter << ", deltaT solve ["
+            << m_pelelm->m_deltaTIter << "] >= " << m_mg_fail_deltaT_miniter
+            << ")\n";
+        }
+      }
+    }
+
+    mlmg.setMaxIter(max_iter);
     mlmg.setMaxFmgIter(m_mg_max_fmg_iter);
     mlmg.setBottomMaxIter(m_mg_bottom_maxiter);
 
@@ -468,8 +603,33 @@ DiffusionOp::diffuse_scalar(
     mlmg.setPostSmooth(m_num_post_smooth);
 
     // Solve
-    mlmg.solve(
-      GetVecOfPtrs(component), GetVecOfConstPtrs(rhs), m_mg_rtol, m_mg_atol);
+    if (!m_pelelm->m_mlmg_fail_plt_residuals) {
+      mlmg.solve(
+        GetVecOfPtrs(component), GetVecOfConstPtrs(rhs), m_mg_rtol, m_mg_atol);
+    } else {
+      mlmg.setThrowException(true);
+      mlmg.setConvergenceNormType(amrex::MLMGNormType::bnorm);
+
+      try {
+        mlmg.solve(
+          GetVecOfPtrs(component), GetVecOfConstPtrs(rhs), m_mg_rtol,
+          m_mg_atol);
+      } catch (const std::exception& e) {
+        amrex::Print() << "\n"
+                       << "  *** " << mg_variable
+                       << " diffusion MLMG solve failed (EB)! ***\n"
+                       << "  Error: " << e.what() << "\n"
+                       << "  Dumping residuals for debugging...\n";
+        std::string m_solver_type = (m_ncomp == NUM_SPECIES)
+                                      ? "species_diffusion"
+                                      : "temperature_diffusion";
+        m_pelelm->WriteMLMGResidual(
+          mlmg, GetVecOfPtrs(component), GetVecOfConstPtrs(rhs), m_solver_type,
+          m_pelelm->m_nstep);
+
+        amrex::Abort("MLMG solve for scalar diffusion failed");
+      }
+    }
 
     // Need to get the fluxes
     if (have_fluxes != 0) {
@@ -972,12 +1132,21 @@ DiffusionOp::readParameters()
 {
   amrex::ParmParse pp("diffusion");
 
+  m_mg_verbose = std::max(m_pelelm->getVerbose() - 2, m_mg_verbose);
   pp.query("verbose", m_mg_verbose);
   pp.query("atol", m_mg_atol);
   pp.query("rtol", m_mg_rtol);
   pp.query("max_iter", m_mg_max_iter);
   pp.query("bottom_solver", m_mg_bottom_solver);
   pp.query("max_order", m_mg_maxorder);
+  pp.query("mlmg_fail_sdc_miniter", m_mg_fail_sdc_miniter);
+  pp.query("mlmg_fail_deltaT_miniter", m_mg_fail_deltaT_miniter);
+  pp.query(
+    "mlmg_fail_species_maxiter_after_sdc_miniter",
+    m_mg_fail_species_maxiter_after_sdc_miniter);
+  pp.query(
+    "mlmg_fail_temp_maxiter_after_sdc_deltaT_miniter",
+    m_mg_fail_temp_maxiter_after_sdc_deltaT_miniter);
 }
 
 //---------------------------------------------------------------------------------------
@@ -1271,8 +1440,27 @@ DiffusionTensorOp::diffuse_velocity(
 
   amrex::MLMG mlmg(*m_solve_op);
 
-  // Maximum iterations for MultiGrid / ConjugateGradients
-  mlmg.setMaxIter(m_mg_max_iter);
+  if (m_mg_verbose > 0) {
+    amrex::Print() << "MLMG: Velocity Diffusion\n";
+  }
+
+  // Maximum iterations for / ConjugateGradients may change for debugging
+  // purposes
+  int max_iter = m_mg_max_iter;
+  if (m_pelelm->m_mlmg_fail_plt_residuals) {
+
+    bool sdc_iters_met = (m_pelelm->m_sdcIter >= m_mg_fail_sdc_miniter);
+
+    // Only check SDC iter
+    if (sdc_iters_met && (m_mg_fail_maxiter_after_sdc_miniter > 0)) {
+      max_iter = m_mg_fail_maxiter_after_sdc_miniter;
+      amrex::Print() << "      Limiting velocity diffusion MLMG max_iter to "
+                     << max_iter << " (SDC iter [" << m_pelelm->m_sdcIter
+                     << "] >= " << m_mg_fail_sdc_miniter << ")\n";
+    }
+  }
+
+  mlmg.setMaxIter(max_iter);
   mlmg.setMaxFmgIter(m_mg_max_fmg_iter);
   mlmg.setBottomMaxIter(m_mg_bottom_maxiter);
 
@@ -1283,7 +1471,27 @@ DiffusionTensorOp::diffuse_velocity(
   mlmg.setPreSmooth(m_num_pre_smooth);
   mlmg.setPostSmooth(m_num_post_smooth);
 
-  mlmg.solve(a_vel, GetVecOfConstPtrs(rhs), m_mg_rtol, m_mg_atol);
+  // Solve
+  if (!m_pelelm->m_mlmg_fail_plt_residuals) {
+    mlmg.solve(a_vel, GetVecOfConstPtrs(rhs), m_mg_rtol, m_mg_atol);
+  } else {
+    mlmg.setThrowException(true);
+    mlmg.setConvergenceNormType(amrex::MLMGNormType::bnorm);
+
+    try {
+      mlmg.solve(a_vel, GetVecOfConstPtrs(rhs), m_mg_rtol, m_mg_atol);
+    } catch (const std::exception& e) {
+      amrex::Print() << "\n"
+                     << "  *** Velocity diffusion MLMG solve failed! ***\n"
+                     << "  Error: " << e.what() << "\n"
+                     << "  Dumping residuals for debugging...\n";
+      m_pelelm->WriteMLMGResidual(
+        mlmg, a_vel, GetVecOfConstPtrs(rhs), "vel_diffusion",
+        m_pelelm->m_nstep);
+
+      amrex::Abort("MLMG solve for velocity diffusion failed");
+    }
+  }
 }
 
 void
@@ -1291,6 +1499,7 @@ DiffusionTensorOp::readParameters()
 {
   amrex::ParmParse pp("tensor_diffusion");
 
+  m_mg_verbose = std::max(m_pelelm->getVerbose() - 2, m_mg_verbose);
   pp.query("verbose", m_mg_verbose);
   pp.query("atol", m_mg_atol);
   pp.query("rtol", m_mg_rtol);
@@ -1300,4 +1509,7 @@ DiffusionTensorOp::readParameters()
   pp.query("mg_max_fmg_iter", m_mg_max_fmg_iter);
   pp.query("num_pre_smooth", m_num_pre_smooth);
   pp.query("num_post_smooth", m_num_post_smooth);
+  pp.query("mlmg_fail_sdc_miniter", m_mg_fail_sdc_miniter);
+  pp.query(
+    "mlmg_maxiter_after_sdc_miniter", m_mg_fail_maxiter_after_sdc_miniter);
 }

@@ -733,10 +733,10 @@ PeleLM::openTempFile()
   }
 
   // Create the temporal directory
-  amrex::UtilCreateDirectory("temporals", 0755);
+  amrex::UtilCreateDirectory(m_temporal_dir, 0755);
 
   if (amrex::ParallelDescriptor::IOProcessor()) {
-    std::string tempFileName = "temporals/tempState";
+    std::string tempFileName = m_temporal_dir + "/tempState";
     tmpStateFile.open(
       tempFileName.c_str(),
       std::ios::out | std::ios::app | std::ios_base::binary);
@@ -744,7 +744,7 @@ PeleLM::openTempFile()
     tmpStateFile << "iter,time,dt,kinEnergy,enstrophy,pressure,fuelConsumption,"
                     "heatRelease\n";
     if (m_do_massBalance != 0) {
-      tempFileName = "temporals/tempMass";
+      tempFileName = m_temporal_dir + "/tempMass";
       tmpMassFile.open(
         tempFileName.c_str(),
         std::ios::out | std::ios::app | std::ios_base::binary);
@@ -752,7 +752,7 @@ PeleLM::openTempFile()
       tmpMassFile << "iter,time,massNew,dmdt,netMassFlux,balance\n";
     }
     if (m_do_speciesBalance != 0) {
-      tempFileName = "temporals/tempSpecies";
+      tempFileName = m_temporal_dir + "/tempSpecies";
       tmpSpecFile.open(
         tempFileName.c_str(),
         std::ios::out | std::ios::app | std::ios_base::binary);
@@ -768,7 +768,7 @@ PeleLM::openTempFile()
       tmpSpecFile << "\n";
     }
     if (m_do_extremas != 0) {
-      tempFileName = "temporals/tempExtremas";
+      tempFileName = m_temporal_dir + "/tempExtremas";
       tmpExtremasFile.open(
         tempFileName.c_str(),
         std::ios::out | std::ios::app | std::ios_base::binary);
@@ -781,7 +781,7 @@ PeleLM::openTempFile()
       tmpExtremasFile << "\n";
     }
     if (m_do_patch_mfr != 0) {
-      tempFileName = "temporals/temppatchmfr";
+      tempFileName = m_temporal_dir + "/temppatchmfr";
       tmppatchmfrFile.open(
         tempFileName.c_str(),
         std::ios::out | std::ios::app | std::ios_base::binary);
@@ -799,7 +799,7 @@ PeleLM::openTempFile()
     }
 #ifdef PELE_USE_PLASMA
     if (m_do_ionsBalance) {
-      tempFileName = "temporals/tempIons";
+      tempFileName = m_temporal_dir + "/tempIons";
       tmpIonsFile.open(
         tempFileName.c_str(),
         std::ios::out | std::ios::app | std::ios_base::binary);
