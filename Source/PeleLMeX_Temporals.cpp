@@ -63,8 +63,13 @@ PeleLM::speciesBalancePatch()
     for (int i = 0; i < bphost->num_groups; ++i) {
       tmppatchmfrFile << ",";
       amrex::Real tmp = 0.0;
-      for (int j = 0; j < m_bPatche->speciesinGroup[i].size(); j++) {
-        tmp += bphost->speciesFlux[j];
+      for (const auto& mechSpeciesIdx : m_bPatche->speciesinGroup[i]) {
+        for (int k = 0; k < bphost->num_species; k++) {
+          if (bphost->speciesIndex[k] == mechSpeciesIdx) {
+            tmp += bphost->speciesFlux[k];
+            break;
+          }
+        }
       }
       tmppatchmfrFile << tmp;
     }
