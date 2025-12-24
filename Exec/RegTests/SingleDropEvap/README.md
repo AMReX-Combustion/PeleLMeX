@@ -2,17 +2,16 @@
 This case compares results from PeleLMeX against experimental literature data. Additional details and case descriptions are provided in the PelePhysics documentation at [https://amrex-combustion.github.io/PelePhysics/Spray.html#single-droplet-tests](https://amrex-combustion.github.io/PelePhysics/Spray.html#single-droplet-tests)
 
 There are two general input files:
-* `single-drop-evap-mp.inp`
-* `single-drop-evap-gcm.inp`
-Both are set up for the `WongLin` case with either the original PeleMP liquid properties or the GCM liquid properties.  The case with the PeleMP liquid properties can be run by compiling with `SPRAY_FUEL_NUM = 2` and
-`SPRAY_GCM = FALSE`, then running:
+* `single-drop-evap.inp`
+* `single-drop-evap-manifold.inp`
+Both are set up for the `WongLin` case with the original PeleMP liquid properties model.  The non-manifold case can be run by compiling `make TPL && make -j`, then running
 ~~~
-mpirun -np 4 ./<PeleLMeX_EXE> single-drop-evap-mp.inp
+mpirun -np 4 ./PeleLMeX2d.<comp>.MPI.liquid_fuels_nonreacting.2SprayFuel.SprayMP.ex single-drop-evap.inp
 ~~~
 
-Similarly, the case with the GCM liquid properties can be run by compiling with `SPRAY_FUEL_NUM = 2` and `SPRAY_GCM = TRUE`, then running:
+Similarly, the case can be run with the group contribution method (GCM) liquid properties model by compiling with `SPRAY_FUEL_NUM = 2` and `SPRAY_GCM = TRUE`, then running:
 ~~~
-mpirun -np 4 ./<PeleLMeX_EXE> single-drop-evap-gcm.inp
+mpirun -np 4 ./PeleLMeX2d.<comp>.MPI.liquid_fuels_nonreacting.2SprayFuel.SprayGCM.ex single-drop-evap.inp FILE=sprayPropsGCM_heptane-decane.inp
 ~~~
 
 All cases provided in the [PelePhysics documentation]((https://amrex-combustion.github.io/PelePhysics/Spray.html#single-droplet-tests)) can be run using the `Validate.py` script. Because many of the necessary options for each case must be set at compile time, the `Validate.py` script can be used to compile the code with the necessary options if a valid executable does not exist already.
