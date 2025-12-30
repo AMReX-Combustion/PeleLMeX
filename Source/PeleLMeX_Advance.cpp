@@ -181,8 +181,8 @@ PeleLM::Advance(const int is_initIter)
   } else {
 
     // SDC iterations
-    for (int sdc_iter = 1; sdc_iter <= m_nSDCmax; ++sdc_iter) {
-      oneSDC(sdc_iter, advData, diffData);
+    for (m_sdcIter = 1; m_sdcIter <= m_nSDCmax; ++m_sdcIter) {
+      oneSDC(m_sdcIter, advData, diffData);
     }
 
     // Post SDC
@@ -272,7 +272,6 @@ PeleLM::oneSDC(
   const std::unique_ptr<AdvanceDiffData>& diffData)
 {
   BL_PROFILE("PeleLMeX::oneSDC()");
-  m_sdcIter = sdcIter;
 
   if (m_verbose > 0) {
     amrex::Print() << "   SDC iter [" << sdcIter << "] \n";
