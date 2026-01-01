@@ -41,7 +41,8 @@ void
 PeleLM::computeDifferentialDiffusionTerms(
   const TimeStamp a_time,
   const std::unique_ptr<AdvanceDiffData>& diffData,
-  const int is_init)
+  const int is_init,
+  const amrex::Real flux_tracking_factor)
 {
   BL_PROFILE("PeleLMeX::computeDifferentialDiffusionTerms()");
 
@@ -129,10 +130,9 @@ PeleLM::computeDifferentialDiffusionTerms(
   // If doing species balances, compute face domain integrals
   // using level 0 since we've averaged down the fluxes already
   // Factor for SDC is 0.5 is for Dn and -0.5 for Dnp1
-  if (
-    (m_sdcIter == 0 || m_sdcIter == m_nSDCmax) && (m_do_speciesBalance != 0)) {
-    const amrex::Real sdc_weight = (a_time == AmrOldTime) ? 0.5 : -0.5;
-    addRhoYFluxes(GetArrOfConstPtrs(fluxes[0]), geom[0], sdc_weight);
+  amrex::Print() << "Computed Diffuion Terms" << std::endl;
+  if ((flux_tracking_factor != 0.0) && (m_do_speciesBalance != 0)) {
+    addRhoYFluxes(GetArrOfConstPtrs(fluxes[0]), geom[0], flux_tracking_factor);
   }
 
   //----------------------------------------------------------------
