@@ -1350,6 +1350,7 @@ PeleLM::WriteMLMGResidual(
     auto* ldata_p = getLevelDataPtr(lev, PeleLM::AmrNewTime);
     state_data.push_back(&(ldata_p->state));
   }
+  AMREX_ALWAYS_ASSERT(!state_data.empty());
   ncomp_total += state_data[0]->nComp();
 
 #ifdef AMREX_USE_EB
