@@ -718,3 +718,56 @@ frequency using:
 ::
 
     amr.message_int      = 20                # [OPT, DEF=10] Frequency for checking the presence of trigger files
+
+Selection of Helpful GNUmakefile Flags
+--------------------------------------
+
+When compiling PeleLMeX, several compilation flags can be selected to help with debugging, improving performance, etc. Below is a selection of some useful flags. The full list of options can be found in `Exec/Make.PeleLMeX`.
+::
+
+    # Models
+    USE_PLASMA = TRUE                    # [OPT, DEF=FALSE] Enable plasma model
+    USE_PARTICLES = TRUE                 # [OPT, DEF=FALSE] Enable Lagrangian particle spray model
+    USE_SOOT = TRUE                      # [OPT, DEF=FALSE] Enable soot model
+    USE_RADIATION = TRUE                 # [OPT, DEF=FALSE] Enable radiation model
+    PELELM_NUM_ODE = INT                 # [OPT, DEF=0] Number of user-defined ODEs to solve
+
+    # If USE_PARTICLES = TRUE
+    SPRAY_FUEL_NUM = INT                 # [REQD] Number of fuel species in spray model
+    SPRAY_GCM = TRUE                     # [OPT, DEF=FALSE] Enable group contribution method for liquid property prediction in spray model
+    
+    # If USE_SOOT = TRUE
+    NUM_SOOT_MOMENTS = 3                 # [REQD] Number of soot moments (must be 3 or 6)
+    
+    # Equation of State
+    Eos_Model = Fuego                    # [OPT, DEF=Fuego] EOS model: GammaLaw, Fuego, Soave-Redlich-Kwong, or Manifold
+    
+    # If Eos_Model = Manifold
+    Manifold_Dim = INT                   # [REQD] Manifold dimension
+    Manifold_Type = Table                # [REQD] Manifold type: Table or Network
+    
+    # Transport Model
+    Transport_Model = Simple             # [OPT, DEF=Simple] Transport model: Simple, EGLib, Constant, Sutherland, or Manifold
+    
+    # Chemistry
+    Chemistry_Model = drm19              # [REQD] Chemistry mechanism name (from PelePhysics/Mechanisms) or path if USE_CUSTOM_CHEMISTRY=TRUE
+    USE_CUSTOM_CHEMISTRY = TRUE          # [OPT, DEF=FALSE] Chemistry_Model is interpreted as a path to an arbitrary location
+    
+    # Embedded Boundaries
+    USE_EB = TRUE                        # [OPT, DEF=FALSE] Enable embedded boundary support
+    
+    # HPC System Specifics and GPU/Accelerator Support
+    COMP = gnu                           # [OPT, DEF=gnu] Compiler choice: gnu, intel, cray, etc.
+    USE_MPI = TRUE                       # [OPT, DEF=TRUE] Compile with MPI support
+    USE_OMP = TRUE                       # [OPT, DEF=FALSE] Compile with OpenMP support
+    USE_CUDA = TRUE                      # [OPT, DEF=FALSE] Compile for NVIDIA GPUs
+    USE_HIP = TRUE                       # [OPT, DEF=FALSE] Compile for AMD GPUs
+    USE_SYCL = TRUE                      # [OPT, DEF=FALSE] Compile for IntC
+    
+    # Case Specific files
+    CEXE_sources += <file_name>          # [OPT] Add additional source files to the build
+
+    # Other Quality of Life Flags
+    USERSuffix = String                  # [OPT, DEF=""] Suffix to append to executable name, useful when multiple builds are needed
+    TINY_PROFILE = TRUE                  # [OPT, DEF=FALSE] Enable lightweight profiling with AMReX's TinyProfiler
+    DEBUG = TRUE                         # [OPT, DEF=FALSE] Compile with debug flags (disables optimizations)
