@@ -763,7 +763,7 @@ When compiling PeleLMeX, several compilation flags can be selected to help with 
     USE_OMP = TRUE                       # [OPT, DEF=FALSE] Compile with OpenMP support
     USE_CUDA = TRUE                      # [OPT, DEF=FALSE] Compile for NVIDIA GPUs
     USE_HIP = TRUE                       # [OPT, DEF=FALSE] Compile for AMD GPUs
-    USE_SYCL = TRUE                      # [OPT, DEF=FALSE] Compile for IntC
+    USE_SYCL = TRUE                      # [OPT, DEF=FALSE] Compile for Intel GPUs
     
     # Case Specific files
     CEXE_sources += <file_name>          # [OPT] Add additional source files to the build
