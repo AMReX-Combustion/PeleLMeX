@@ -182,7 +182,9 @@ the relevant files, for example: ::
 
    Chemistry_Model = air
 
-Here, the model ``air`` contains only 2 species (O2 and N2) without any reactions. A constant transport model is used
+Here, the model ``air`` contains only 2 species (O2 and N2) without any reactions. Advanced users may also specify
+``USE_CUSTOM_CHEMISTRY = TRUE``, in which case ``Chemistry_Model`` is interpreted as a path and can point to models not included in
+PelePhysics by default, though the new model directory must contain valid chemistry model files. A constant transport model is used
 and transport properties are set to zero in the input files which is effectively equivalent to solving the variable-density
 Euler equations.
 The user is referred to the `PelePhysics <https://pelephysics.readthedocs.io/en/latest/>`_ documentation for a
