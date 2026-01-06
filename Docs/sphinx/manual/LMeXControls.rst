@@ -722,7 +722,7 @@ frequency using:
 Selection of Helpful GNUmakefile Flags
 --------------------------------------
 
-When compiling PeleLMeX, several compilation flags can be selected to help with debugging, improving performance, etc. Below is a selection of some useful flags. The full list of options can be found in `Exec/Make.PeleLMeX`.
+When compiling PeleLMeX, several compilation flags can be selected to help with debugging, improving performance, etc. Below is a selection of some of the most common flags users may wish to add to their `GNUmakefile`:
 ::
 
     # Models
