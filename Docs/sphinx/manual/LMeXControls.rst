@@ -740,9 +740,10 @@ When compiling PeleLMeX, several compilation flags can be selected to help with 
     NUM_SOOT_MOMENTS = 3                 # [REQD] Number of soot moments (must be 3 or 6)
     
     # Equation of State
-    Eos_Model = Fuego                    # [OPT, DEF=Fuego] EOS model: GammaLaw, Fuego, Soave-Redlich-Kwong, or Manifold
-    
-    # If Eos_Model = Manifold
+    Eos_Model = Fuego                    # [OPT, DEF=Fuego] EOS model: GammaLaw, Fuego, Soave-Redlich-Kwong, or Null
+    USE_MANIFOLD_EOS = TRUE              # [OPT, DEF=FALSE] Enable manifold-based EOS, requires Eos_Model=Null
+
+    # If USE_MANIFOLD_EOS = TRUE
     Manifold_Dim = INT                   # [REQD] Manifold dimension
     Manifold_Type = Table                # [REQD] Manifold type: Table or Network
     
