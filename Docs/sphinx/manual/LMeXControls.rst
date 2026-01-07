@@ -472,7 +472,7 @@ Linear solvers are a key component of PeleLMeX algorithm, separate controls are 
     nodal_proj.verbose = 1                    # [OPT, DEF=0] Verbose of the nodal projector
     nodal_proj.rtol = 1.0e-11                 # [OPT, DEF=1e-11] Relative tolerance of the nodal projection
     nodal_proj.atol = 1.0e-12                 # [OPT, DEF=1e-14] Absolute tolerance of the nodal projection
-    nodal_proj.maxiter = 100                   # [OPT, DEF=100] Maximum number of iterations of the nodal projection
+    nodal_proj.maxiter = 100                  # [OPT, DEF=100] Maximum number of iterations of the nodal projection
     nodal_proj.mg_max_coarsening_level = 5    # [OPT, DEF=100] Maximum number of MG levels (useful when using EB)
     nodal_proj.bottom_verbose = 1             # [OPT, DEF=0] Verbose of the bottom solve for nodal projector
     nodal_proj.bottom_rtol = 1e-3             # [OPT, DEF=1e-4] Relative tolerance of the bottom solve for nodal projection
