@@ -472,7 +472,7 @@ Linear solvers are a key component of PeleLMeX algorithm, separate controls are 
     nodal_proj.verbose = 1                    # [OPT, DEF=0] Verbose of the nodal projector
     nodal_proj.rtol = 1.0e-11                 # [OPT, DEF=1e-11] Relative tolerance of the nodal projection
     nodal_proj.atol = 1.0e-12                 # [OPT, DEF=1e-14] Absolute tolerance of the nodal projection
-    nodal_proj.maxiter = 50                   # [OPT, DEF=] Maximum number of iterations of the nodal projection
+    nodal_proj.maxiter = 100                   # [OPT, DEF=100] Maximum number of iterations of the nodal projection
     nodal_proj.mg_max_coarsening_level = 5    # [OPT, DEF=100] Maximum number of MG levels (useful when using EB)
     nodal_proj.bottom_verbose = 1             # [OPT, DEF=0] Verbose of the bottom solve for nodal projector
     nodal_proj.bottom_rtol = 1e-3             # [OPT, DEF=1e-4] Relative tolerance of the bottom solve for nodal projection
@@ -482,6 +482,7 @@ Linear solvers are a key component of PeleLMeX algorithm, separate controls are 
     mac_proj.verbose = 1                      # [OPT, DEF=0] Verbose of the MAC projector
     mac_proj.rtol = 1.0e-11                   # [OPT, DEF=1e-11] Relative tolerance of the MAC projection
     mac_proj.atol = 1.0e-12                   # [OPT, DEF=1e-14] Absolute tolerance of the MAC projection
+    mac_proj.maxiter = 200                    # [OPT, DEF=200] Maximum number of iterations of the MAC projection
     mac_proj.mg_max_coarsening_level = 5      # [OPT, DEF=100] Maximum number of MG levels (useful when using EB)
     mac_proj.bottom_verbose = 1               # [OPT, DEF=0] Verbose of the bottom solve for MAC projector
     mac_proj.bottom_rtol = 1e-3               # [OPT, DEF=1e-4] Relative tolerance of the bottom solve for MAC projection
@@ -491,10 +492,12 @@ Linear solvers are a key component of PeleLMeX algorithm, separate controls are 
     diffusion.verbose = 1                     # [OPT, DEF=0] Verbose of the scalar diffusion solve
     diffusion.rtol = 1.0e-11                  # [OPT, DEF=1e-11] Relative tolerance of the scalar diffusion solve
     diffusion.atol = 1.0e-12                  # [OPT, DEF=1e-14] Absolute tolerance of the scalar diffusion solve
+    diffusion.max_iter = 100                  # [OPT, DEF=100] Maximum number of iterations of the scalar diffusion solve
 
     tensor_diffusion.verbose = 1              # [OPT, DEF=0] Verbose of the velocity tensor diffusion solve
     tensor_diffusion.rtol = 1.0e-11           # [OPT, DEF=1e-11] Relative tolerance of the velocity tensor diffusion solve
     tensor_diffusion.atol = 1.0e-12           # [OPT, DEF=1e-14] Absolute tolerance of the velocity tensor diffusion solve
+    tensor_diffusion.max_iter = 100           # [OPT, DEF=100] Maximum number of iterations of the velocity tensor diffusion solve
 
 Hypre support
 ^^^^^^^^^^^^^
