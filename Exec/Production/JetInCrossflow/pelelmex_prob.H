@@ -24,7 +24,7 @@ struct MyProbParm : public ProbParmDefault
   amrex::Real jet_velocity = 1.1e2;
   amrex::Real jet_temp = 5.5e2;
   amrex::Real jet_massfracs[NUM_SPECIES]{0.0};
-  amrex::Real jet_bl_thickness = 1.0e-4;
+  amrex::Real jet_bl_thickness = -1.0;
   amrex::Real jet_rad = 2.5e-4;
   int jet_dir = 0;
   amrex::Real jet_init_time = -1;
@@ -108,7 +108,8 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
     amrex::Real rho_air = 0.0;
     amrex::Real rho_jet = 0.0;
     amrex::Real radsq = 0.0;
-    amrex::Real factor = 0.0;
+    amrex::Real vel_factor = 0.0;
+    amrex::Real comp_factor = 0.0;
     amrex::Real area = 0.0;
     const amrex::Real jet_vel = prob_parm.jet_velocity;
 
@@ -125,16 +126,6 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
         found_dir = true;
       }
     }
-
-    // Density
-    eos.PYT2R(
-      prob_parm.P_mean * 10.0, prob_parm.cf_massfracs, prob_parm.cf_temp,
-      rho_air);
-    eos.PYT2R(
-      prob_parm.P_mean * 10.0, prob_parm.jet_massfracs, prob_parm.jet_temp,
-      rho_jet);
-    rho_air *= 1.0e3;
-    rho_jet *= 1.0e3;
 
     // Initialize jet velocity BCs
 #if (AMREX_SPACEDIM < 3)
@@ -158,22 +149,46 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
 
     if (idir == jet_dir and (prob_parm.double_jet == 1 or sgn == 1)) {
 
-      radsq = x[other_dir] * x[other_dir] + x[cf_dir] * x[cf_dir];
-      factor =
-        0.5 *
-        (1.0 -
-         tanh((sqrt(radsq) - jet_rad) / (prob_parm.jet_bl_thickness / 4.0)));
+      if (prob_parm.jet_bl_thickness > 0.0) {
+        // specified BL thickness - use tanh profile at jet boundary
+        radsq = x[other_dir] * x[other_dir] + x[cf_dir] * x[cf_dir];
+        vel_factor =
+          0.5 *
+          (1.0 -
+           tanh((sqrt(radsq) - jet_rad) / (prob_parm.jet_bl_thickness / 4.0)));
+        comp_factor = vel_factor;
+      } else {
+        // scale inlet conditions by how much of cell is covered by the jet
+        radsq = x[other_dir] * x[other_dir] + x[cf_dir] * x[cf_dir];
+        if (
+          radsq <
+          jet_rad + geomdata.CellSize(cf_dir) + geomdata.CellSize(other_dir)) {
+          amrex::Real area =
+            pele::physics::utilities::rectangle_circle_intersection_area(
+              x[other_dir] - 0.5 * geomdata.CellSize(other_dir),
+              x[other_dir] + 0.5 * geomdata.CellSize(other_dir),
+              x[cf_dir] - 0.5 * geomdata.CellSize(cf_dir),
+              x[cf_dir] + 0.5 * geomdata.CellSize(cf_dir), 0.0, 0.0, jet_rad);
+          vel_factor =
+            area / (geomdata.CellSize(cf_dir) * geomdata.CellSize(other_dir));
+          vel_factor = (vel_factor > 1e-9) ? vel_factor : 0.0;
+          comp_factor = (vel_factor > 0.5e-9) ? 1.0 : 0.0;
+        } else {
+          vel_factor = 0.0;
+          comp_factor = 0.0;
+        }
+      }
 
       for (int n = 0; n < NUM_SPECIES; n++) {
-        massfrac[n] = factor * prob_parm.jet_massfracs[n] +
-                      (1.0 - factor) * prob_parm.cf_massfracs[n];
+        massfrac[n] = comp_factor * prob_parm.jet_massfracs[n] +
+                      (1.0 - comp_factor) * prob_parm.cf_massfracs[n];
       }
 
       amrex::Real rho_cgs, P_cgs, RhoH_temp;
       P_cgs = prob_parm.P_mean * 10.0;
 
-      s_ext[TEMP] =
-        factor * prob_parm.jet_temp + (1.0 - factor) * prob_parm.cf_temp;
+      s_ext[TEMP] = comp_factor * prob_parm.jet_temp +
+                    (1.0 - comp_factor) * prob_parm.cf_temp;
 
       eos.PYT2R(P_cgs, massfrac, s_ext[TEMP], rho_cgs);
       s_ext[DENSITY] = rho_cgs * 1.0e3;
@@ -195,15 +210,19 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
         time_factor = 1.0;
       }
       s_ext[VELX] = (1 - 0.5 * prob_parm.double_jet) * sgn * time_factor *
-                    factor * U_jet[0];
+                    vel_factor * U_jet[0];
       s_ext[VELY] = (1 - 0.5 * prob_parm.double_jet) * sgn * time_factor *
-                    factor * U_jet[1];
+                    vel_factor * U_jet[1];
       s_ext[VELZ] = (1 - 0.5 * prob_parm.double_jet) * sgn * time_factor *
-                    factor * U_jet[2];
+                    vel_factor * U_jet[2];
     }
 
     if ((idir == cf_dir) and (sgn == 1)) {
       // Density
+      eos.PYT2R(
+        prob_parm.P_mean * 10.0, prob_parm.cf_massfracs, prob_parm.cf_temp,
+        rho_air);
+      rho_air *= 1.0e3;
       s_ext[DENSITY] = rho_air;
       // Mass fraction
       for (int n = 0; n < NUM_SPECIES; n++) {
@@ -222,7 +241,35 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
     }
   }
 
-  // Add Zero Visc Function
+  // Zero diffusion coefficients for walls on inflow face so we don't get
+  // diffusiin through them
+  AMREX_GPU_DEVICE
+  AMREX_FORCE_INLINE
+  static void zero_visc(
+    int i,
+    int j,
+    int k,
+    amrex::Array4<amrex::Real> const& beta,
+    amrex::GeometryData const& /*geomdata*/,
+    amrex::Box const& domainBox,
+    const int dir,
+    const int beta_comp,
+    const int nComp,
+    MyProbParm const& prob_parm)
+  {
+    // We treat species when beta_comp == 0 and nComp == NUM_SPECIES
+    // otherwise this routine could be called for other face diffusivity (Temp,
+    // velocity, ...)
+    if (beta_comp == 0 && nComp == NUM_SPECIES) {
+      amrex::IntVect idx{i, j, k};
+      if (dir == prob_parm.jet_dir && idx[dir] <= domainBox.smallEnd(dir)) {
+        // Just over whole inlet
+        for (int n = 0; n < nComp; n++) {
+          beta(i, j, k, n) = 0.0;
+        }
+      }
+    }
+  }
 };
 
 using ProblemSpecificFunctions = MyProblemSpecificFunctions;
