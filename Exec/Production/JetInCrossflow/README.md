@@ -6,7 +6,7 @@ Perform a {DNS, **LES} of a {nonreacting, **reacting} jet in crossflow where the
 [] - Numerical Parameters that can be directly changed in the input file.
      Changing any of these should be the easiest level of change.
 {} - Categorical options that may be changed with varying degress of difficulty. In all cases, the existing
-     setup is the first option, and * are used to indicate the difficulty of alternative options.
+     setup is the first option, and * are used to indicate the difficulty of alternative options:
      *: Easiest: simply change the value of an existing input parameters
      **: Somewhat harder: must add several input parameters not included in the current input file
      ***: Moderate difficulty: Slight changes needed to case source files
