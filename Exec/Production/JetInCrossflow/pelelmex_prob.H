@@ -235,9 +235,9 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
       eos.TY2H(s_ext[TEMP], prob_parm.cf_massfracs, RhoH_temp);
       s_ext[RHOH] = RhoH_temp * 1.0e-4 * s_ext[DENSITY];
       // Velocity
-      s_ext[VELX] = U_air[0];
-      s_ext[VELY] = U_air[1];
-      s_ext[VELZ] = U_air[2];
+      s_ext[VELX] += U_air[0];
+      s_ext[VELY] += U_air[1];
+      s_ext[VELZ] += U_air[2];
     }
   }
 
