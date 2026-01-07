@@ -735,28 +735,27 @@ When compiling PeleLMeX, several compilation flags can be selected to help with 
     # If USE_PARTICLES = TRUE
     SPRAY_FUEL_NUM = INT                 # [REQD] Number of fuel species in spray model
     SPRAY_GCM = TRUE                     # [OPT, DEF=FALSE] Enable group contribution method for liquid property prediction in spray model
-    
+
     # If USE_SOOT = TRUE
     NUM_SOOT_MOMENTS = 3                 # [REQD] Number of soot moments (must be 3 or 6)
-    
-    # Equation of State
-    Eos_Model = Fuego                    # [OPT, DEF=Fuego] EOS model: GammaLaw, Fuego, Soave-Redlich-Kwong, or Null
-    USE_MANIFOLD_EOS = TRUE              # [OPT, DEF=FALSE] Enable manifold-based EOS, requires Eos_Model=Null
 
-    # If USE_MANIFOLD_EOS = TRUE
+    # Equation of State
+    Eos_Model = Fuego                    # [OPT, DEF=Fuego] EOS model: GammaLaw, Fuego, Soave-Redlich-Kwong, Manifold, or Null
+
+    # If Eos_Model = Manifold
     Manifold_Dim = INT                   # [REQD] Manifold dimension
-    Manifold_Type = Table                # [REQD] Manifold type: Table or Network
-    
+    Manifold_Type = Table                # [REQD] Manifold type: Table or Network (if unspecified, will support both but at a performance cost)
+
     # Transport Model
     Transport_Model = Simple             # [OPT, DEF=Simple] Transport model: Simple, EGLib, Constant, Sutherland, or Manifold
-    
+
     # Chemistry
     Chemistry_Model = drm19              # [REQD] Chemistry mechanism name (from PelePhysics/Mechanisms) or path if USE_CUSTOM_CHEMISTRY=TRUE
     USE_CUSTOM_CHEMISTRY = TRUE          # [OPT, DEF=FALSE] Chemistry_Model is interpreted as a path to an arbitrary location
-    
+
     # Embedded Boundaries
     USE_EB = TRUE                        # [OPT, DEF=FALSE] Enable embedded boundary support
-    
+
     # HPC System Specifics and GPU/Accelerator Support
     COMP = gnu                           # [OPT, DEF=gnu] Compiler choice: gnu, intel, cray, etc.
     USE_MPI = TRUE                       # [OPT, DEF=TRUE] Compile with MPI support
@@ -764,7 +763,7 @@ When compiling PeleLMeX, several compilation flags can be selected to help with 
     USE_CUDA = TRUE                      # [OPT, DEF=FALSE] Compile for NVIDIA GPUs
     USE_HIP = TRUE                       # [OPT, DEF=FALSE] Compile for AMD GPUs
     USE_SYCL = TRUE                      # [OPT, DEF=FALSE] Compile for Intel GPUs
-    
+
     # Case Specific files
     CEXE_sources += <file_name>          # [OPT] Add additional source files to the build
 
