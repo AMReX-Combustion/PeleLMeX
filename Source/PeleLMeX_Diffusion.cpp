@@ -130,7 +130,6 @@ PeleLM::computeDifferentialDiffusionTerms(
   // If doing species balances, compute face domain integrals
   // using level 0 since we've averaged down the fluxes already
   // Factor for SDC is 0.5 is for Dn and -0.5 for Dnp1
-  amrex::Print() << "Computed Diffuion Terms" << std::endl;
   if ((flux_tracking_factor != 0.0) && (m_do_speciesBalance != 0)) {
     addRhoYFluxes(GetArrOfConstPtrs(fluxes[0]), geom[0], flux_tracking_factor);
   }
