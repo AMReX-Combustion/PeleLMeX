@@ -1,3 +1,4 @@
+----------------
 Case Description
 ----------------
 
@@ -11,3 +12,17 @@ Perform a {DNS, **LES} of a {nonreacting, **reacting} jet in crossflow where the
      **: Somewhat harder: must add several input parameters not included in the current input file
      ***: Moderate difficulty: Slight changes needed to case source files
      ****: Extreme difficulty: Requires setting up and running a precursor simulation
+
+Quantities of Interest:
+- Jet trajectory (z(x) on the mean streamline eminating from the jet center)
+
+Sample additional prompt:
+Adjust the momentum ratio of the default jet in-crossflow case from 5.08 to 25.32 by adjusting the jet velocity and run a simulation to determine the resulting jet trajectory.
+
+---------------
+Case References
+---------------
+
+[1] Xu, C., Ameen, M., Pal, P. and Som, S., 2022. Direct Numerical Simulation of a Reacting Hydrogen Jet in Turbulent Vitiated Crossflow Using Spectral Element Method. In AIAA SCITECH 2022 Forum (p. 0823).
+
+[2] Wilde, B.R., 2014. Dynamics of variable density ratio reacting jets in unsteady, vitiated crossflows. Doctor of Philosophy.
