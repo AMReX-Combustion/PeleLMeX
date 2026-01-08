@@ -1340,16 +1340,12 @@ PeleLM::WriteMLMGResidual(
   }
 
   // Get state data
-  amrex::Vector<const amrex::MultiFab*> state_data;
+  auto state_data = GetVecOfConstPtrs(getStateVect(PeleLM::AmrNewTime));
   amrex::Vector<std::string> var_names;
   int ncomp_total = ncomp_residual;
   bool has_eb = false;
 
-  // Get the state MultiFab for each level
-  for (int lev = 0; lev < nlevs; ++lev) {
-    auto* ldata_p = getLevelDataPtr(lev, PeleLM::AmrNewTime);
-    state_data.push_back(&(ldata_p->state));
-  }
+  AMREX_ALWAYS_ASSERT(!state_data.empty());
   ncomp_total += state_data[0]->nComp();
 
 #ifdef AMREX_USE_EB
