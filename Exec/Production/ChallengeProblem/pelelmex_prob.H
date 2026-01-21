@@ -69,8 +69,7 @@ time_eta(
   eta_time = 0.5 * (std::tanh((time - start) / (duration * tau)) *
                       std::tanh((-time + start + duration) / (duration * tau)) +
                     1.0);
-  eta_time =
-    amrex::min<amrex::Real>(amrex::max<amrex::Real>(eta_time, 0.0), 1.0);
+  eta_time = amrex::Clamp(eta_time, 0.0, 1.0);
   return eta_time;
 }
 

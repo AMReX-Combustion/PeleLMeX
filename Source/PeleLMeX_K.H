@@ -1034,8 +1034,7 @@ fabMinMax(
   amrex::Array4<amrex::Real> const& fab) noexcept
 {
   for (int n = 0; n < ncomp; ++n) {
-    fab(i, j, k, n) = amrex::max<amrex::Real>(
-      fmin, amrex::min<amrex::Real>(fmax, fab(i, j, k, n)));
+    fab(i, j, k, n) = amrex::Clamp(fab(i, j, k, n), fmin, fmax);
   }
 }
 
@@ -1344,8 +1343,7 @@ getTurbViscSigma(
   if (alpha1 != 0.0) {
     alpha2 = (I[0] / 3.0) * (I[0] / 3.0) * (I[0] / 3.0) - I[0] * I[1] / 6.0 +
              I[2] / 2.0;
-    const amrex::Real arcCosArg = amrex::min<amrex::Real>(
-      1.0, amrex::max<amrex::Real>(-1.0, alpha2 / std::pow(alpha1, 1.5)));
+    const amrex::Real arcCosArg = amrex::Clamp(alpha2 / std::pow(alpha1, 1.5), -1.0, 1.0);
     alpha3 = std::acos(arcCosArg) / 3.0;
 
     // Singular values:

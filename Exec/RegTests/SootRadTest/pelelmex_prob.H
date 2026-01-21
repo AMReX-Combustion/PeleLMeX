@@ -47,7 +47,7 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
     state(i, j, k, TEMP) = pmf_vals[1];
     amrex::Real norm = 0.;
     for (int n = 0; n < NUM_SPECIES; n++) {
-      massfrac[n] = amrex::max<amrex::Real>(0.0, amrex::min<amrex::Real>(1.0, pmf_vals[3 + n]));
+      massfrac[n] = amrex::Clamp(pmf_vals[3 + n], 0.0, 1.0);
       norm += massfrac[n];
     }
     for (int n = 0; n < NUM_SPECIES; ++n) {
