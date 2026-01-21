@@ -129,7 +129,8 @@ PeleLM::Advance(const int is_initIter)
     BL_PROFILE_VAR_STOP(PLM_MAC);
     //----------------------------------------------------------------
     BL_PROFILE_VAR("PeleLMeX::advance::diffusion", PLM_DIFF);
-    computeDifferentialDiffusionTerms(AmrOldTime, diffData);
+    const amrex::Real fluxfact = (m_nSDCmax > 1) ? 0.5 : 0.0;
+    computeDifferentialDiffusionTerms(AmrOldTime, diffData, 0, fluxfact);
     BL_PROFILE_VAR_STOP(PLM_DIFF);
     //----------------------------------------------------------------
   }
@@ -181,8 +182,8 @@ PeleLM::Advance(const int is_initIter)
   } else {
 
     // SDC iterations
-    for (int sdc_iter = 1; sdc_iter <= m_nSDCmax; ++sdc_iter) {
-      oneSDC(sdc_iter, advData, diffData);
+    for (m_sdcIter = 1; m_sdcIter <= m_nSDCmax; ++m_sdcIter) {
+      oneSDC(m_sdcIter, advData, diffData);
     }
 
     // Post SDC
@@ -272,7 +273,6 @@ PeleLM::oneSDC(
   const std::unique_ptr<AdvanceDiffData>& diffData)
 {
   BL_PROFILE("PeleLMeX::oneSDC()");
-  m_sdcIter = sdcIter;
 
   if (m_verbose > 0) {
     amrex::Print() << "   SDC iter [" << sdcIter << "] \n";
@@ -298,7 +298,8 @@ PeleLM::oneSDC(
     }
 
     calcDiffusivity(AmrNewTime);
-    computeDifferentialDiffusionTerms(AmrNewTime, diffData);
+    const amrex::Real fluxfact = (sdcIter == m_nSDCmax) ? -0.5 : 0.0;
+    computeDifferentialDiffusionTerms(AmrNewTime, diffData, 0, fluxfact);
     if (m_has_divu != 0) {
       constexpr int is_initialization = 0;    // Not here
       constexpr int computeDiffusionTerm = 0; // Nope, we just did that

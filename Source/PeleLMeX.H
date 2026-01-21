@@ -609,7 +609,8 @@ public:
   void computeDifferentialDiffusionTerms(
     const PeleLM::TimeStamp a_time,
     const std::unique_ptr<AdvanceDiffData>& diffData,
-    const int is_init = 0);
+    const int is_init = 0,
+    const amrex::Real flux_tracking_factor = 0.0);
 
   /**
    * \brief Add the Wbar contribution to the face-centered species diffusion
@@ -2135,6 +2136,7 @@ public:
   int m_do_patch_mfr = 0;
   amrex::Vector<std::unique_ptr<BPatch>> m_bPatches;
   int m_temp_int = 5;
+  std::string m_temporal_dir = "temporals";
   int m_do_extremas = 0;
   int m_do_massBalance = 0;
   int m_do_energyBalance = 0;

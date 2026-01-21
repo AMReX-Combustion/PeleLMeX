@@ -215,7 +215,9 @@ the relevant files, for example: ::
 
    Chemistry_Model = drm19
 
-Here, the methane kinetic model ``drm19``, containing 21 species is employed. The user is referred to
+Here, the methane kinetic model ``drm19``, containing 21 species is employed. Advanced users may also specify
+``USE_CUSTOM_CHEMISTRY = TRUE``, in which case ``Chemistry_Model`` is interpreted as a path and can point to models not included in
+PelePhysics by default, though the new model directory must contain valid chemistry model files. The user is referred to
 the `PelePhysics <https://pelephysics.readthedocs.io/en/latest/>`_ documentation for a list of available
 mechanisms and more information regarding the EOS, chemistry and transport models specified: ::
 

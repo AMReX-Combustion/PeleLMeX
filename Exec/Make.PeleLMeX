@@ -140,15 +140,22 @@ ifeq ($(PELE_CVODE_FORCE_YCORDER), TRUE)
   DEFINES += -DPELE_CVODE_FORCE_YCORDER
 endif
 
-ChemDir  = Mechanisms/$(Chemistry_Model)
-
 PPdirs := Source/Utility/PMF Source/Utility/TurbInflow Source/Utility/PltFileManager
 PPdirs += Source/Utility/Diagnostics Source/Utility/BlackBoxFunction
 PPdirs += Source/Utility/TurbForcing
 PPdirs += Source/Utility/Utilities
-PPdirs += Source $(ChemDir) Source/Reactions Source/Eos Source/Transport
+PPdirs += Source Source/Reactions Source/Eos Source/Transport
+
+ifeq ($(USE_CUSTOM_CHEMISTRY), TRUE)
+  Bpack += $(Chemistry_Model)/Make.package
+  Blocs += $(Chemistry_Model)
+else
+  PPdirs += Mechanisms/$(Chemistry_Model)
+endif
+
 Bpack += $(foreach dir, $(PPdirs), $(PELE_PHYSICS_HOME)/$(dir)/Make.package)
 Blocs += $(foreach dir, $(PPdirs), $(PELE_PHYSICS_HOME)/$(dir))
+
 include $(PELE_PHYSICS_HOME)/ThirdParty/Make.ThirdParty
 
 # Spray

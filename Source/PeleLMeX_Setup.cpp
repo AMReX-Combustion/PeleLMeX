@@ -693,6 +693,7 @@ PeleLM::readParameters()
   pp.query("do_temporals", m_do_temporals);
   if (m_do_temporals != 0) {
     pp.query("temporal_int", m_temp_int);
+    pp.query("temporal_dir", m_temporal_dir);
     pp.query("do_extremas", m_do_extremas);
     pp.query("do_mass_balance", m_do_massBalance);
     pp.query("do_species_balance", m_do_speciesBalance);
