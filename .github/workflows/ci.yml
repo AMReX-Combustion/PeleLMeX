@@ -200,11 +200,12 @@ jobs:
       fail-fast: false
       matrix:
         enable_eb: [EB-OFF, EB-ON]
-      include:
-        - enable_eb: EB-OFF
-          use_eb: "OFF"
-        - enable_eb: EB-ON
-          use_eb: "ON"
+        dim: [2, 3]
+        include:
+          - enable_eb: EB-OFF
+            use_eb: "OFF"
+          - enable_eb: EB-ON
+            use_eb: "ON"
     steps:
       - name: Clone
         uses: actions/checkout@v4
