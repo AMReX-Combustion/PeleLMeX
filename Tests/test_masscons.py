@@ -24,7 +24,7 @@ class ConsTestCase(unittest.TestCase):
         fdir = os.path.abspath(".")
         fname = os.path.join(fdir, "temporals/tempMass")
         cnames=['step','time','mass','dmdt','massFluxBal','balance']
-        df = pd.read_csv(fname, names=cnames, delim_whitespace=True)
+        df = pd.read_csv(fname, names=cnames, sep=r"\s+")
         init_mass = df.mass[0]
         npt.assert_allclose(df.mass, init_mass, rtol=1e-13)
 
