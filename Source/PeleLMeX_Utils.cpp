@@ -1003,7 +1003,7 @@ PeleLM::loadBalanceChemLev(const int a_lev)
     const amrex::Real navg =
       static_cast<amrex::Real>(m_baChem[a_lev]->size()) /
       static_cast<amrex::Real>(amrex::ParallelDescriptor::NProcs());
-    const int nmax = static_cast<int>(amrex::max<int>(
+    const int nmax = static_cast<int>(amrex::max<amrex::Real>(
       std::round(m_loadBalanceKSfactor * navg), std::ceil(navg)));
     test_dmap = amrex::DistributionMapping::makeKnapSack(
       new_cost, currentEfficiency, testEfficiency, nmax, false,
@@ -2167,10 +2167,10 @@ PeleLM::parseComposition(
 
   // Ensure that it sums to 1.0:
   amrex::Real sum = 0.0;
-  for (double k : compoIn) {
+  for (amrex::Real k : compoIn) {
     sum += k;
   }
-  for (double& k : compoIn) {
+  for (amrex::Real& k : compoIn) {
     k /= sum;
   }
 
