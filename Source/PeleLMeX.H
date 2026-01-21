@@ -609,7 +609,8 @@ public:
   void computeDifferentialDiffusionTerms(
     const PeleLM::TimeStamp a_time,
     const std::unique_ptr<AdvanceDiffData>& diffData,
-    const int is_init = 0);
+    const int is_init = 0,
+    const amrex::Real flux_tracking_factor = 0.0);
 
   /**
    * \brief Add the Wbar contribution to the face-centered species diffusion
@@ -850,19 +851,6 @@ public:
     amrex::MultiFab* a_velForce,
     const int add_gradP);
 
-  void getVelForces(
-    int lev,
-    const amrex::Box& bx,
-    const amrex::Real& a_time,
-    amrex::Array4<amrex::Real> const& force,
-    amrex::Array4<const amrex::Real> const& vel,
-    amrex::Array4<const amrex::Real> const& rho,
-    amrex::Array4<const amrex::Real> const& rhoY,
-    amrex::Array4<const amrex::Real> const& rhoh,
-    amrex::Array4<const amrex::Real> const& temp,
-    amrex::Array4<const amrex::Real> const& extMom,
-    amrex::Array4<const amrex::Real> const& extRho);
-
   void addSpark(const PeleLM::TimeStamp a_time);
 
   void addScalarVarianceSources(const PeleLM::TimeStamp a_time);
@@ -1030,6 +1018,12 @@ public:
   void WriteDebugPlotFile(
     const amrex::Vector<const amrex::MultiFab*>& a_MF,
     const std::string& pltname);
+  void WriteMLMGResidual(
+    amrex::MLMG& a_mlmg,
+    const amrex::Vector<amrex::MultiFab*>& a_sol,
+    const amrex::Vector<const amrex::MultiFab*>& a_rhs,
+    const std::string& a_solver_name,
+    int a_step);
   //-----------------------------------------------------------------------------
 
   //-----------------------------------------------------------------------------
@@ -1762,6 +1756,8 @@ public:
     return 0.5 * (m_t_old[lev] + m_t_new[lev]);
   }
 
+  int getVerbose() const { return m_verbose; }
+
   amrex::Vector<std::unique_ptr<amrex::MultiFab>>
   getStateVect(const PeleLM::TimeStamp a_time);
   amrex::Vector<std::unique_ptr<amrex::MultiFab>>
@@ -1947,6 +1943,9 @@ public:
   amrex::Vector<std::string> m_diagVars;
 
   int m_verbose = 0;
+  int m_macproj_verbose = 0;
+  int m_nproj_verbose = 0;
+  bool m_mlmg_fail_plt_residuals = false;
 
   // IO options
   std::string m_restart_chkfile;
@@ -2111,6 +2110,7 @@ public:
   // DeltaT iterations
   int m_deltaT_verbose = 0;
   int m_deltaTIterMax = 10;
+  int m_deltaTIter = 0;
   amrex::Real m_deltaT_norm_max = 1.0e-10;
   int m_crashOnDeltaTFail = 1;
 
@@ -2136,6 +2136,7 @@ public:
   int m_do_patch_mfr = 0;
   amrex::Vector<std::unique_ptr<BPatch>> m_bPatches;
   int m_temp_int = 5;
+  std::string m_temporal_dir = "temporals";
   int m_do_extremas = 0;
   int m_do_massBalance = 0;
   int m_do_energyBalance = 0;
@@ -2245,6 +2246,8 @@ public:
   amrex::Real m_mac_mg_rtol = 1.0e-11;
   amrex::Real m_mac_mg_atol = 1.0e-14;
   std::string m_hypre_namespace_mac = "mac_hypre";
+  int m_mac_mg_fail_sdc_miniter = -1;
+  int m_mac_mg_fail_maxiter_after_sdc_miniter = -1;
   //-----------------------------------------------------------------------------
 };
 

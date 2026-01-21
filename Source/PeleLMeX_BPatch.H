@@ -16,7 +16,8 @@ public:
   {
     int m_boundary_dir;
     int m_boundary_lo_hi;
-    int num_species;
+    int num_species = 0;
+    int num_groups = 0;
     int m_patchtype_num;
     int* speciesIndex = nullptr;
     amrex::Real* speciesFlux = nullptr;
@@ -228,6 +229,8 @@ public:
     m_patchtype; // values:
                  // "fullboundary","circle","rectangle","annular-circle","annular-rectangle"
   amrex::Vector<std::string> speciesList;
+  amrex::Vector<std::string> groupNames;
+  amrex::Vector<amrex::Vector<int>> speciesinGroup;
 
 protected:
   BpatchDataContainer m_bpdata_h;

@@ -23,102 +23,70 @@ PeleLM::estEFIonsDt(const TimeStamp a_time)
     const auto dxinv = Geom(lev).InvCellSizeArray();
     const auto domain = Geom(lev).Domain();
 
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-    for (amrex::MFIter mfi(ldata_p->state, amrex::TilingIfNotGPU());
-         mfi.isValid(); ++mfi) {
-      const amrex::Box& bx = mfi.tilebox();
-      auto const& phiV = ldata_p->state.const_array(mfi, PHIV);
-      auto const& efield = efield_cc.array(mfi, 0);
+    auto const& state_ma = ldata_p->state.const_arrays();
+    auto const& efield_ma = efield_cc.arrays();
 
-      // X
-      auto bc_lo = bcRecPhiV[0].lo(0);
-      auto bc_hi = bcRecPhiV[0].hi(0);
-      amrex::Real factor = -0.5 * dxinv[0];
+    for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
+      auto bc_lo = bcRecPhiV[0].lo(idim);
+      auto bc_hi = bcRecPhiV[0].hi(idim);
+      const amrex::Real factor = -0.5 * dxinv[idim];
       amrex::ParallelFor(
-        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          bool on_lo =
-            ((bc_lo == amrex::BCType::ext_dir) && i <= domain.smallEnd(0));
-          bool on_hi =
-            ((bc_hi == amrex::BCType::ext_dir) && i >= domain.bigEnd(0));
-          efield(i, j, k, 0) = factor * (phiV(i + 1, j, k) - phiV(i - 1, j, k));
-          if (on_lo)
-            efield(i, j, k, 0) = factor * (phiV(i + 1, j, k) + phiV(i, j, k) -
-                                           2.0 * phiV(i - 1, j, k));
-          if (on_hi)
-            efield(i, j, k, 0) = factor * (2.0 * phiV(i + 1, j, k) -
-                                           phiV(i, j, k) - phiV(i - 1, j, k));
+        ldata_p->state,
+        [bc_lo, bc_hi, efield_ma, state_ma, factor, domain,
+         idim] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+          int idx[3] = {i, j, k};
+          amrex::Array4<amrex::Real const> phiV(state_ma[box_no], PHIV);
+          const bool on_lo =
+            ((bc_lo == amrex::BCType::ext_dir) &&
+             idx[idim] <= domain.smallEnd(idim));
+          const bool on_hi =
+            ((bc_hi == amrex::BCType::ext_dir) &&
+             idx[idim] >= domain.bigEnd(idim));
+          // use idx for idxp
+          idx[idim] += 1;
+          int idxm[3] = {i, j, k};
+          idxm[idim] -= 1;
+          efield_ma[box_no](i, j, k, idim) =
+            factor *
+            (phiV(idx[0], idx[1], idx[2]) - phiV(idxm[0], idxm[1], idxm[2]));
+          if (on_lo) {
+            efield_ma[box_no](i, j, k, idim) =
+              factor * (phiV(idx[0], idx[1], idx[2]) + phiV(i, j, k) -
+                        2.0 * phiV(idxm[0], idxm[1], idxm[2]));
+          }
+          if (on_hi) {
+            efield_ma[box_no](i, j, k, idim) =
+              factor * (2.0 * phiV(idx[0], idx[1], idx[2]) - phiV(i, j, k) -
+                        phiV(idxm[0], idxm[1], idxm[2]));
+          }
         });
-
-#if (AMREX_SPACEDIM > 1)
-      // Y
-      bc_lo = bcRecPhiV[0].lo(1);
-      bc_hi = bcRecPhiV[0].hi(1);
-      factor = -0.5 * dxinv[1];
-      amrex::ParallelFor(
-        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          bool on_lo =
-            ((bc_lo == amrex::BCType::ext_dir) && j <= domain.smallEnd(1));
-          bool on_hi =
-            ((bc_hi == amrex::BCType::ext_dir) && j >= domain.bigEnd(1));
-          efield(i, j, k, 1) = factor * (phiV(i, j + 1, k) - phiV(i, j - 1, k));
-          if (on_lo)
-            efield(i, j, k, 1) = factor * (phiV(i, j + 1, k) + phiV(i, j, k) -
-                                           2.0 * phiV(i, j - 1, k));
-          if (on_hi)
-            efield(i, j, k, 1) = factor * (2.0 * phiV(i, j + 1, k) -
-                                           phiV(i, j, k) - phiV(i, j - 1, k));
-        });
-
-#if (AMREX_SPACEDIM > 2)
-      // Z
-      bc_lo = bcRecPhiV[0].lo(2);
-      bc_hi = bcRecPhiV[0].hi(2);
-      factor = -0.5 * dxinv[2];
-      amrex::ParallelFor(
-        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          bool on_lo =
-            ((bc_lo == amrex::BCType::ext_dir) && k <= domain.smallEnd(2));
-          bool on_hi =
-            ((bc_hi == amrex::BCType::ext_dir) && k >= domain.bigEnd(2));
-          efield(i, j, k, 2) = factor * (phiV(i, j, k + 1) - phiV(i, j, k - 1));
-          if (on_lo)
-            efield(i, j, k, 2) = factor * (phiV(i, j, k + 1) + phiV(i, j, k) -
-                                           2.0 * phiV(i, j, k - 1));
-          if (on_hi)
-            efield(i, j, k, 2) = factor * (2.0 * phiV(i, j, k + 1) -
-                                           phiV(i, j, k) - phiV(i, j, k - 1));
-        });
-#endif
-#endif
+      // Shift outside?
+      amrex::Gpu::streamSynchronize();
     }
+
+    auto const& efield_const_ma = efield_cc.const_arrays();
+    auto const& mob_cc_ma = ldata_p->mob_cc.const_arrays();
+    auto const& uDrMax_ma = driftVelMax_cc.arrays();
+
     // Get cell centered max effective velocities across
     // all dimension/ions
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-    for (amrex::MFIter mfi(ldata_p->state, amrex::TilingIfNotGPU());
-         mfi.isValid(); ++mfi) {
-      const amrex::Box& bx = mfi.tilebox();
-      auto const& vel = ldata_p->state.const_array(mfi, VELX);
-      auto const& efield = efield_cc.const_array(mfi);
-      auto const& mob_cc = ldata_p->mob_cc.const_array(mfi);
-      auto const& uDrMax = driftVelMax_cc.array(mfi);
-      amrex::ParallelFor(
-        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          amrex::Real maxVel = 0.0;
-          for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
-            for (int n = 0; n < NUM_IONS; n++) {
-              amrex::Real ueff =
-                vel(i, j, k, idim) + mob_cc(i, j, k, n) * efield(i, j, k, idim);
-              maxVel = amrex::max(maxVel, std::abs(ueff));
-            }
+    amrex::ParallelFor(
+      ldata_p->state,
+      [state_ma, efield_const_ma, mob_cc_ma,
+       uDrMax_ma] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+        amrex::Array4<amrex::Real const> vel(state_ma[box_no], VELX);
+        amrex::Real maxVel = 0.0;
+        for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
+          for (int n = 0; n < NUM_IONS; ++n) {
+            amrex::Real ueff =
+              vel(i, j, k, idim) + mob_cc_ma[box_no](i, j, k, n) *
+                                     efield_const_ma[box_no](i, j, k, idim);
+            maxVel = amrex::max(maxVel, std::abs(ueff));
           }
-          uDrMax(i, j, k) = maxVel;
-        });
-    }
-
+        }
+        uDrMax_ma[box_no](i, j, k) = maxVel;
+      });
+    amrex::Gpu::streamSynchronize();
     const auto dx = Geom(lev).CellSizeArray();
     const amrex::Real cfl_lcl = m_cfl;
     estdt_lev = amrex::ReduceMin(

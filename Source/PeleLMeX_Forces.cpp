@@ -49,129 +49,102 @@ PeleLM::getVelForces(
 
   const amrex::Real time = getTime(lev, a_time);
 
-  int has_divTau = static_cast<int>(a_divTau != nullptr);
-
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-  for (amrex::MFIter mfi(*a_velForce, amrex::TilingIfNotGPU()); mfi.isValid();
-       ++mfi) {
-    const auto& bx = mfi.tilebox();
-    amrex::FArrayBox DummyFab(bx, 1);
-    const auto& vel_arr = ldata_p->state.const_array(mfi, VELX);
-    const auto& rho_arr = (m_incompressible) != 0
-                            ? DummyFab.array()
-                            : ldata_p->state.const_array(mfi, DENSITY);
-    const auto& rhoY_arr = (m_incompressible) != 0
-                             ? DummyFab.array()
-                             : ldata_p->state.const_array(mfi, FIRSTSPEC);
-    const auto& rhoh_arr = (m_incompressible) != 0
-                             ? DummyFab.array()
-                             : ldata_p->state.const_array(mfi, RHOH);
-    const auto& temp_arr = (m_incompressible) != 0
-                             ? DummyFab.array()
-                             : ldata_p->state.const_array(mfi, TEMP);
-    const auto& extmom_arr = m_extSource[lev]->const_array(mfi, VELX);
-    const auto& extrho_arr = m_extSource[lev]->const_array(mfi, DENSITY);
-    const auto& force_arr = a_velForce->array(mfi);
-
-    // Get other forces (gravity, ...)
-    getVelForces(
-      lev, bx, time, force_arr, vel_arr, rho_arr, rhoY_arr, rhoh_arr, temp_arr,
-      extmom_arr, extrho_arr);
-
-#ifdef PELE_USE_PLASMA
-    const auto& phiV_arr = ldata_p->state.const_array(mfi, PHIV);
-    const auto& ne_arr = ldata_p->state.const_array(mfi, NE);
-    addLorentzVelForces(lev, bx, time, force_arr, rhoY_arr, phiV_arr, ne_arr);
-#endif
-
-    // Add forcing terms to maintain turbulence
-    if (m_do_turbulent_forcing) {
-      // note: if m_incompressible == false then m_rho is unused by
-      // addTurbVelForces
-      turb_forcing.addTurbVelForces(
-        geom[lev].data(), bx, time, force_arr, rho_arr, m_incompressible,
-        m_rho);
-    }
-
-    // Add pressure gradient and viscous forces (if req.) and scale by density.
-    int is_incomp = m_incompressible;
-    amrex::Real incomp_rho_inv = 1.0 / m_rho;
-    if ((add_gradP != 0) || (has_divTau != 0)) {
-      const auto& gp_arr =
-        (add_gradP) != 0 ? ldataGP_p->gp.const_array(mfi) : DummyFab.array();
-      const auto& divTau_arr =
-        (has_divTau) != 0 ? a_divTau->const_array(mfi) : DummyFab.array();
-      amrex::ParallelFor(
-        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          if (is_incomp != 0) {
-            for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
-              if (add_gradP != 0) {
-                force_arr(i, j, k, idim) -= gp_arr(i, j, k, idim);
-              }
-              if (has_divTau != 0) {
-                force_arr(i, j, k, idim) += divTau_arr(i, j, k, idim);
-              }
-              force_arr(i, j, k, idim) *= incomp_rho_inv;
-            }
-          } else {
-            for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
-              if (add_gradP != 0) {
-                force_arr(i, j, k, idim) -= gp_arr(i, j, k, idim);
-              }
-              if (has_divTau != 0) {
-                force_arr(i, j, k, idim) += divTau_arr(i, j, k, idim);
-              }
-              force_arr(i, j, k, idim) /= rho_arr(i, j, k);
-            }
-          }
-        });
-    } else {
-      amrex::ParallelFor(
-        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          if (is_incomp != 0) {
-            for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
-              force_arr(i, j, k, idim) *= incomp_rho_inv;
-            }
-          } else {
-            for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
-              force_arr(i, j, k, idim) /= rho_arr(i, j, k);
-            }
-          }
-        });
-    }
-  }
-}
-
-void
-PeleLM::getVelForces(
-  int lev,
-  const amrex::Box& bx,
-  const amrex::Real& a_time,
-  amrex::Array4<amrex::Real> const& force,
-  amrex::Array4<const amrex::Real> const& vel,
-  amrex::Array4<const amrex::Real> const& rho,
-  amrex::Array4<const amrex::Real> const& rhoY,
-  amrex::Array4<const amrex::Real> const& rhoh,
-  amrex::Array4<const amrex::Real> const& temp,
-  amrex::Array4<const amrex::Real> const& extMom,
-  amrex::Array4<const amrex::Real> const& extRho)
-{
-  const auto dx = geom[lev].CellSizeArray();
-  const int pseudo_gravity = m_ctrl_pseudoGravity;
-  const amrex::Real dV_control = m_ctrl_dV;
   const int is_incomp = m_incompressible;
   const amrex::Real rho_incomp = m_rho;
+
+  const int pseudo_gravity = m_ctrl_pseudoGravity;
+  const amrex::Real dV_control = m_ctrl_dV;
   const auto grav = m_gravity;
   const auto gp0 = m_background_gp;
   const int ps_dir = m_ctrl_flameDir;
 
-  amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-    makeVelForce(
-      i, j, k, is_incomp, rho_incomp, pseudo_gravity, ps_dir, a_time, grav, gp0,
-      dV_control, dx, vel, rho, rhoY, rhoh, temp, extMom, extRho, force);
-  });
+  auto const& state_ma = ldata_p->state.const_arrays();
+  auto const& ext_ma = m_extSource[lev]->const_arrays();
+  auto const& force_ma = a_velForce->arrays();
+
+  amrex::ParallelFor(
+    *a_velForce,
+    [state_ma, ext_ma, force_ma, grav, gp0, ps_dir, is_incomp, rho_incomp,
+     pseudo_gravity,
+     dV_control] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) {
+      amrex::Array4<amrex::Real const> vel(state_ma[box_no], VELX);
+      amrex::Array4<amrex::Real const> extmom(ext_ma[box_no], VELX);
+      amrex::Array4<amrex::Real const> rho(state_ma[box_no], DENSITY);
+      amrex::Array4<amrex::Real const> extrho(ext_ma[box_no], DENSITY);
+      // overwrite if incompressible, just to point to something
+      if (is_incomp != 0) {
+        rho = vel;
+        extrho = extmom;
+      }
+      // background gp, pseudo grav, ext sources
+      makeVelForce(
+        i, j, k, is_incomp, rho_incomp, pseudo_gravity, ps_dir, grav, gp0,
+        dV_control, vel, rho, extmom, extrho, force_ma[box_no]);
+    });
+  amrex::Gpu::streamSynchronize();
+
+  if (add_gradP != 0) {
+    amrex::MultiFab::Subtract(
+      *a_velForce, ldataGP_p->gp, 0, 0, AMREX_SPACEDIM, 0);
+  }
+  const int has_divTau = static_cast<int>(a_divTau != nullptr);
+  if (has_divTau != 0) {
+    amrex::MultiFab::Add(*a_velForce, *a_divTau, 0, 0, AMREX_SPACEDIM, 0);
+  }
+
+#ifndef PELE_USE_PLASMA
+  if (m_do_turbulent_forcing)
+#endif
+  {
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
+#endif
+    for (amrex::MFIter mfi(*a_velForce, amrex::TilingIfNotGPU()); mfi.isValid();
+         ++mfi) {
+      const auto& bx = mfi.tilebox();
+      amrex::FArrayBox DummyFab(bx, 1);
+      const auto& rho_arr = (m_incompressible != 0)
+                              ? DummyFab.array()
+                              : ldata_p->state.const_array(mfi, DENSITY);
+      const auto& force_arr = a_velForce->array(mfi);
+#ifdef PELE_USE_PLASMA
+      const auto& rhoY_arr = (m_incompressible != 0)
+                               ? DummyFab.array()
+                               : ldata_p->state.const_array(mfi, FIRSTSPEC);
+      const auto& rhoh_arr = (m_incompressible != 0)
+                               ? DummyFab.array()
+                               : ldata_p->state.const_array(mfi, RHOH);
+      const auto& temp_arr = (m_incompressible != 0)
+                               ? DummyFab.array()
+                               : ldata_p->state.const_array(mfi, TEMP);
+      const auto& phiV_arr = ldata_p->state.const_array(mfi, PHIV);
+      const auto& ne_arr = ldata_p->state.const_array(mfi, NE);
+      addLorentzVelForces(lev, bx, time, force_arr, rhoY_arr, phiV_arr, ne_arr);
+      if (m_do_turbulent_forcing)
+#endif
+      {
+        // Add forcing terms to maintain turbulence
+        // note: if m_incompressible == 0 then m_rho is unused by
+        // addTurbVelForce
+        turb_forcing.addTurbVelForces(
+          geom[lev].data(), bx, time, force_arr, rho_arr, is_incomp,
+          rho_incomp);
+      }
+    }
+  }
+
+  if (is_incomp != 0) {
+    a_velForce->mult(1.0 / rho_incomp, 0, AMREX_SPACEDIM, 0);
+  } else {
+    amrex::ParallelFor(
+      *a_velForce, amrex::IntVect(0), AMREX_SPACEDIM,
+      [force_ma, state_ma] AMREX_GPU_DEVICE(
+        int box_no, int i, int j, int k, int n) noexcept {
+        amrex::Array4<amrex::Real const> rho(state_ma[box_no], DENSITY);
+        force_ma[box_no](i, j, k, n) /= rho(i, j, k);
+      });
+    amrex::Gpu::streamSynchronize();
+  }
 }
 
 void
@@ -301,8 +274,7 @@ PeleLM::addScalarVarianceSources(const TimeStamp a_timestamp)
       const amrex::Real C_chi = m_les_c_chi;
       const amrex::Real ScInv = m_Schmidt_inv;
 
-      // Add in Production and Dissipation source terms for subfilter
-      // variances
+      // Add in Production and Dissipation source terms for subfilter variances
       for (int lev = 0; lev <= finest_level; ++lev) {
 
         auto* ldata_p = getLevelDataPtr(lev, a_timestamp);

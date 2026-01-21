@@ -146,26 +146,23 @@ DiffusionOp::diffuse_scalar(
     phi.emplace_back(
       a_phi[lev]->boxArray(), a_phi[lev]->DistributionMap(), ncomp, 1,
       amrex::MFInfo(), a_phi[lev]->Factory());
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-    for (amrex::MFIter mfi(phi[lev], amrex::TilingIfNotGPU()); mfi.isValid();
-         ++mfi) {
-      const amrex::Box& gbx = mfi.growntilebox();
-      auto const& a_phi_arr = a_phi[lev]->const_array(mfi, phi_comp);
-      auto const& a_rho_arr =
-        (have_density) != 0 ? a_density[lev]->const_array(mfi)
-                            : a_phi[lev]->const_array(
-                                mfi); // Get dummy amrex::Array4 if no density
-      auto const& phi_arr = phi[lev].array(mfi);
+    if (have_density == 0) {
+      amrex::MultiFab::Copy(
+        phi[lev], *a_phi[lev], phi_comp, 0, ncomp, phi[lev].nGrowVect());
+    } else {
+      auto const& a_phi_ma = a_phi[lev]->const_arrays();
+      auto const& a_rho_ma = a_density[lev]->const_arrays();
+      auto const& phi_ma = phi[lev].arrays();
       amrex::ParallelFor(
-        gbx, ncomp, [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
-          if (have_density != 0) {
-            phi_arr(i, j, k, n) = a_phi_arr(i, j, k, n) / a_rho_arr(i, j, k);
-          } else {
-            phi_arr(i, j, k, n) = a_phi_arr(i, j, k, n);
-          }
+        phi[lev], phi[lev].nGrowVect(), ncomp,
+        [a_phi_ma, a_rho_ma, phi_ma, phi_comp] AMREX_GPU_DEVICE(
+          int box_no, int i, int j, int k, int n) noexcept {
+          amrex::Array4<amrex::Real const> a_phi_arr(
+            a_phi_ma[box_no], phi_comp);
+          phi_ma[box_no](i, j, k, n) =
+            a_phi_arr(i, j, k, n) / a_rho_ma[box_no](i, j, k);
         });
+      amrex::Gpu::streamSynchronize();
     }
   }
   //----------------------------------------------------------------
@@ -245,8 +242,63 @@ DiffusionOp::diffuse_scalar(
     // Setup linear solver
     amrex::MLMG mlmg(*m_scal_solve_op);
 
-    // Maximum iterations
-    mlmg.setMaxIter(m_mg_max_iter);
+    std::string mg_variable =
+      (m_ncomp == NUM_SPECIES) ? "Species" : "Temperature";
+    if (m_mg_verbose > 0) {
+      if (m_ncomp == NUM_SPECIES) {
+        amrex::Print() << "MLMG: " << mg_variable << " Diffusion\n";
+      } else {
+        amrex::Print() << "MLMG: DeltaT solve [" << m_pelelm->m_deltaTIter
+                       << "]\n";
+      }
+    }
+
+    // Maximum iterations for MultiGrid / ConjugateGradients may change for
+    // debugging purposes
+    int max_iter = m_mg_max_iter;
+    if (m_pelelm->m_mlmg_fail_plt_residuals) {
+
+      bool sdc_iters_met = (m_pelelm->m_sdcIter >= m_mg_fail_sdc_miniter);
+      bool limit_max_iter = false;
+
+      if (m_ncomp == NUM_SPECIES) {
+        // Species diffusion: only SDC iter matters
+        if (
+          sdc_iters_met && (m_mg_fail_species_maxiter_after_sdc_miniter > 0)) {
+          limit_max_iter = true;
+          max_iter = m_mg_fail_species_maxiter_after_sdc_miniter;
+        }
+      } else {
+#ifndef USE_MANIFOLD_EOS
+        // Temperature diffusion: check both SDC and deltaT iters
+        bool dT_iters_met =
+          (m_pelelm->m_deltaTIter >= m_mg_fail_deltaT_miniter);
+        limit_max_iter = sdc_iters_met && dT_iters_met &&
+                         (m_mg_fail_temp_maxiter_after_sdc_deltaT_miniter > 0);
+        if (limit_max_iter) {
+          max_iter = m_mg_fail_temp_maxiter_after_sdc_deltaT_miniter;
+        }
+#endif
+      }
+
+      // Print diagnostic message if limit was applied
+      if (limit_max_iter) {
+        if (m_ncomp == NUM_SPECIES) {
+          amrex::Print() << "      Limiting species diffusion MLMG max_iter to "
+                         << max_iter << " (SDC iter [" << m_pelelm->m_sdcIter
+                         << "] >= " << m_mg_fail_sdc_miniter << ")\n";
+        } else {
+          amrex::Print()
+            << "      Limiting temperature diffusion MLMG max_iter to "
+            << max_iter << " (SDC iter [" << m_pelelm->m_sdcIter
+            << "] >= " << m_mg_fail_sdc_miniter << ", deltaT solve ["
+            << m_pelelm->m_deltaTIter << "] >= " << m_mg_fail_deltaT_miniter
+            << ")\n";
+        }
+      }
+    }
+
+    mlmg.setMaxIter(max_iter);
     mlmg.setMaxFmgIter(m_mg_max_fmg_iter);
     mlmg.setBottomMaxIter(m_mg_bottom_maxiter);
 
@@ -258,8 +310,33 @@ DiffusionOp::diffuse_scalar(
     mlmg.setPostSmooth(m_num_post_smooth);
 
     // Solve
-    mlmg.solve(
-      GetVecOfPtrs(component), GetVecOfConstPtrs(rhs), m_mg_rtol, m_mg_atol);
+    if (!m_pelelm->m_mlmg_fail_plt_residuals) {
+      mlmg.solve(
+        GetVecOfPtrs(component), GetVecOfConstPtrs(rhs), m_mg_rtol, m_mg_atol);
+    } else {
+      mlmg.setThrowException(true);
+      mlmg.setConvergenceNormType(amrex::MLMGNormType::bnorm);
+
+      try {
+        mlmg.solve(
+          GetVecOfPtrs(component), GetVecOfConstPtrs(rhs), m_mg_rtol,
+          m_mg_atol);
+      } catch (const std::exception& e) {
+        amrex::Print() << "\n"
+                       << "  *** " << mg_variable
+                       << " diffusion MLMG solve failed (non-EB)! ***\n"
+                       << "  Error: " << e.what() << "\n"
+                       << "  Dumping residuals for debugging...\n";
+        std::string m_solver_type = (m_ncomp == NUM_SPECIES)
+                                      ? "species_diffusion"
+                                      : "temperature_diffusion";
+        m_pelelm->WriteMLMGResidual(
+          mlmg, GetVecOfPtrs(component), GetVecOfConstPtrs(rhs), m_solver_type,
+          m_pelelm->m_nstep);
+
+        amrex::Abort("MLMG solve for scalar diffusion failed");
+      }
+    }
 
     // Need to get the fluxes
     if (have_fluxes != 0) {
@@ -281,27 +358,24 @@ DiffusionOp::diffuse_scalar(
   // Copy the results of the solve back into a_phi
   // Times rho{np1,kp1} if needed
   // Don't touch the ghost cells
-  for (int lev = 0; lev <= finest_level; ++lev) {
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-    for (amrex::MFIter mfi(phi[lev], amrex::TilingIfNotGPU()); mfi.isValid();
-         ++mfi) {
-      const amrex::Box& bx = mfi.tilebox();
-      auto const& a_phi_arr = a_phi[lev]->array(mfi, phi_comp);
-      auto const& a_rho_arr =
-        (have_density) != 0 ? a_density[lev]->const_array(mfi)
-                            : a_phi[lev]->const_array(
-                                mfi); // Get dummy amrex::Array4 if no density
-      auto const& phi_arr = phi[lev].const_array(mfi);
+  if (have_density == 0) {
+    for (int lev = 0; lev <= finest_level; ++lev) {
+      amrex::MultiFab::Copy(*a_phi[lev], phi[lev], 0, 0, ncomp, 0);
+    }
+  } else {
+    for (int lev = 0; lev <= finest_level; ++lev) {
+      auto const& a_phi_ma = a_phi[lev]->arrays();
+      auto const& phi_ma = phi[lev].const_arrays();
+      auto const& a_rho_ma = a_density[lev]->const_arrays();
       amrex::ParallelFor(
-        bx, ncomp, [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
-          if (have_density != 0) {
-            a_phi_arr(i, j, k, n) = phi_arr(i, j, k, n) * a_rho_arr(i, j, k);
-          } else {
-            a_phi_arr(i, j, k, n) = phi_arr(i, j, k, n);
-          }
+        phi[lev], amrex::IntVect(0), ncomp,
+        [a_phi_ma, a_rho_ma, phi_ma] AMREX_GPU_DEVICE(
+          int box_no, int i, int j, int k, int n) noexcept {
+          a_phi_ma[box_no](i, j, k, n) =
+            phi_ma[box_no](i, j, k, n) * a_rho_ma[box_no](i, j, k);
         });
+      // Shift outside?
+      amrex::Gpu::streamSynchronize();
     }
   }
 }
@@ -367,26 +441,23 @@ DiffusionOp::diffuse_scalar(
     phi.emplace_back(
       a_phi[lev]->boxArray(), a_phi[lev]->DistributionMap(), ncomp, 1,
       amrex::MFInfo(), a_phi[lev]->Factory());
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-    for (amrex::MFIter mfi(phi[lev], amrex::TilingIfNotGPU()); mfi.isValid();
-         ++mfi) {
-      const amrex::Box& gbx = mfi.growntilebox();
-      auto const& a_phi_arr = a_phi[lev]->const_array(mfi, phi_comp);
-      auto const& a_rho_arr =
-        (have_density) != 0 ? a_density[lev]->const_array(mfi)
-                            : a_phi[lev]->const_array(
-                                mfi); // Get dummy amrex::Array4 if no density
-      auto const& phi_arr = phi[lev].array(mfi);
+    if (have_density == 0) {
+      amrex::MultiFab::Copy(
+        phi[lev], *a_phi[lev], phi_comp, 0, ncomp, phi[lev].nGrowVect());
+    } else {
+      auto const& a_phi_ma = a_phi[lev]->const_arrays();
+      auto const& a_rho_ma = a_density[lev]->const_arrays();
+      auto const& phi_ma = phi[lev].arrays();
       amrex::ParallelFor(
-        gbx, ncomp, [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
-          if (have_density != 0) {
-            phi_arr(i, j, k, n) = a_phi_arr(i, j, k, n) / a_rho_arr(i, j, k);
-          } else {
-            phi_arr(i, j, k, n) = a_phi_arr(i, j, k, n);
-          }
+        phi[lev], phi[lev].nGrowVect(), ncomp,
+        [a_phi_ma, a_rho_ma, phi_ma, phi_comp] AMREX_GPU_DEVICE(
+          int box_no, int i, int j, int k, int n) noexcept {
+          amrex::Array4<amrex::Real const> a_phi_arr(
+            a_phi_ma[box_no], phi_comp);
+          phi_ma[box_no](i, j, k, n) =
+            a_phi_arr(i, j, k, n) / a_rho_ma[box_no](i, j, k);
         });
+      amrex::Gpu::streamSynchronize();
     }
   }
   //----------------------------------------------------------------
@@ -464,8 +535,63 @@ DiffusionOp::diffuse_scalar(
     // Setup linear solver
     amrex::MLMG mlmg(*m_scal_solve_op);
 
-    // Maximum iterations
-    mlmg.setMaxIter(m_mg_max_iter);
+    std::string mg_variable =
+      (m_ncomp == NUM_SPECIES) ? "Species" : "Temperature";
+    if (m_mg_verbose > 0) {
+      if (m_ncomp == NUM_SPECIES) {
+        amrex::Print() << "MLMG: " << mg_variable << " Diffusion\n";
+      } else {
+        amrex::Print() << "MLMG: DeltaT solve [" << m_pelelm->m_deltaTIter
+                       << "]\n";
+      }
+    }
+
+    // Maximum iterations for MultiGrid / ConjugateGradients may change for
+    // debugging purposes
+    int max_iter = m_mg_max_iter;
+    if (m_pelelm->m_mlmg_fail_plt_residuals) {
+
+      bool sdc_iters_met = (m_pelelm->m_sdcIter >= m_mg_fail_sdc_miniter);
+      bool limit_max_iter = false;
+
+      if (m_ncomp == NUM_SPECIES) {
+        // Species diffusion: only SDC iter matters
+        if (
+          sdc_iters_met && (m_mg_fail_species_maxiter_after_sdc_miniter > 0)) {
+          limit_max_iter = true;
+          max_iter = m_mg_fail_species_maxiter_after_sdc_miniter;
+        }
+      } else {
+#ifndef USE_MANIFOLD_EOS
+        // Temperature diffusion: check both SDC and deltaT iters
+        bool dT_iters_met =
+          (m_pelelm->m_deltaTIter >= m_mg_fail_deltaT_miniter);
+        limit_max_iter = sdc_iters_met && dT_iters_met &&
+                         (m_mg_fail_temp_maxiter_after_sdc_deltaT_miniter > 0);
+        if (limit_max_iter) {
+          max_iter = m_mg_fail_temp_maxiter_after_sdc_deltaT_miniter;
+        }
+#endif
+      }
+
+      // Print diagnostic message if limit was applied
+      if (limit_max_iter) {
+        if (m_ncomp == NUM_SPECIES) {
+          amrex::Print() << "      Limiting species diffusion MLMG max_iter to "
+                         << max_iter << " (SDC iter [" << m_pelelm->m_sdcIter
+                         << "] >= " << m_mg_fail_sdc_miniter << ")\n";
+        } else {
+          amrex::Print()
+            << "      Limiting temperature diffusion MLMG max_iter to "
+            << max_iter << " (SDC iter [" << m_pelelm->m_sdcIter
+            << "] >= " << m_mg_fail_sdc_miniter << ", deltaT solve ["
+            << m_pelelm->m_deltaTIter << "] >= " << m_mg_fail_deltaT_miniter
+            << ")\n";
+        }
+      }
+    }
+
+    mlmg.setMaxIter(max_iter);
     mlmg.setMaxFmgIter(m_mg_max_fmg_iter);
     mlmg.setBottomMaxIter(m_mg_bottom_maxiter);
 
@@ -477,8 +603,33 @@ DiffusionOp::diffuse_scalar(
     mlmg.setPostSmooth(m_num_post_smooth);
 
     // Solve
-    mlmg.solve(
-      GetVecOfPtrs(component), GetVecOfConstPtrs(rhs), m_mg_rtol, m_mg_atol);
+    if (!m_pelelm->m_mlmg_fail_plt_residuals) {
+      mlmg.solve(
+        GetVecOfPtrs(component), GetVecOfConstPtrs(rhs), m_mg_rtol, m_mg_atol);
+    } else {
+      mlmg.setThrowException(true);
+      mlmg.setConvergenceNormType(amrex::MLMGNormType::bnorm);
+
+      try {
+        mlmg.solve(
+          GetVecOfPtrs(component), GetVecOfConstPtrs(rhs), m_mg_rtol,
+          m_mg_atol);
+      } catch (const std::exception& e) {
+        amrex::Print() << "\n"
+                       << "  *** " << mg_variable
+                       << " diffusion MLMG solve failed (EB)! ***\n"
+                       << "  Error: " << e.what() << "\n"
+                       << "  Dumping residuals for debugging...\n";
+        std::string m_solver_type = (m_ncomp == NUM_SPECIES)
+                                      ? "species_diffusion"
+                                      : "temperature_diffusion";
+        m_pelelm->WriteMLMGResidual(
+          mlmg, GetVecOfPtrs(component), GetVecOfConstPtrs(rhs), m_solver_type,
+          m_pelelm->m_nstep);
+
+        amrex::Abort("MLMG solve for scalar diffusion failed");
+      }
+    }
 
     // Need to get the fluxes
     if (have_fluxes != 0) {
@@ -496,27 +647,24 @@ DiffusionOp::diffuse_scalar(
   // Copy the results of the solve back into a_phi
   // Times rho{np1,kp1} if needed
   // Don't touch the ghost cells
-  for (int lev = 0; lev <= finest_level; ++lev) {
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-    for (amrex::MFIter mfi(phi[lev], amrex::TilingIfNotGPU()); mfi.isValid();
-         ++mfi) {
-      const amrex::Box& bx = mfi.tilebox();
-      auto const& a_phi_arr = a_phi[lev]->array(mfi, phi_comp);
-      auto const& a_rho_arr =
-        (have_density) != 0 ? a_density[lev]->const_array(mfi)
-                            : a_phi[lev]->const_array(
-                                mfi); // Get dummy amrex::Array4 if no density
-      auto const& phi_arr = phi[lev].const_array(mfi);
+  if (have_density == 0) {
+    for (int lev = 0; lev <= finest_level; ++lev) {
+      amrex::MultiFab::Copy(*a_phi[lev], phi[lev], 0, 0, ncomp, 0);
+    }
+  } else {
+    for (int lev = 0; lev <= finest_level; ++lev) {
+      auto const& a_phi_ma = a_phi[lev]->arrays();
+      auto const& phi_ma = phi[lev].const_arrays();
+      auto const& a_rho_ma = a_density[lev]->const_arrays();
       amrex::ParallelFor(
-        bx, ncomp, [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
-          if (have_density != 0) {
-            a_phi_arr(i, j, k, n) = phi_arr(i, j, k, n) * a_rho_arr(i, j, k);
-          } else {
-            a_phi_arr(i, j, k, n) = phi_arr(i, j, k, n);
-          }
+        phi[lev], amrex::IntVect(0), ncomp,
+        [a_phi_ma, a_rho_ma, phi_ma] AMREX_GPU_DEVICE(
+          int box_no, int i, int j, int k, int n) noexcept {
+          a_phi_ma[box_no](i, j, k, n) =
+            phi_ma[box_no](i, j, k, n) * a_rho_ma[box_no](i, j, k);
         });
+      // Shift outside?
+      amrex::Gpu::streamSynchronize();
     }
   }
 }
@@ -634,26 +782,23 @@ DiffusionOp::computeDiffFluxes(
     phi.emplace_back(
       a_phi[lev]->boxArray(), a_phi[lev]->DistributionMap(), ncomp, 1,
       amrex::MFInfo(), a_phi[lev]->Factory());
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-    for (amrex::MFIter mfi(phi[lev], amrex::TilingIfNotGPU()); mfi.isValid();
-         ++mfi) {
-      const amrex::Box& gbx = mfi.growntilebox();
-      auto const& a_phi_arr = a_phi[lev]->const_array(mfi, phi_comp);
-      auto const& a_rho_arr =
-        (have_density) != 0 ? a_density[lev]->const_array(mfi)
-                            : a_phi[lev]->const_array(
-                                mfi); // Get dummy amrex::Array4 if no density
-      auto const& phi_arr = phi[lev].array(mfi);
+    if (have_density == 0) {
+      amrex::MultiFab::Copy(
+        phi[lev], *a_phi[lev], phi_comp, 0, ncomp, phi[lev].nGrowVect());
+    } else {
+      auto const& a_phi_ma = a_phi[lev]->const_arrays();
+      auto const& a_rho_ma = a_density[lev]->const_arrays();
+      auto const& phi_ma = phi[lev].arrays();
       amrex::ParallelFor(
-        gbx, ncomp, [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
-          if (have_density != 0) {
-            phi_arr(i, j, k, n) = a_phi_arr(i, j, k, n) / a_rho_arr(i, j, k);
-          } else {
-            phi_arr(i, j, k, n) = a_phi_arr(i, j, k, n);
-          }
+        phi[lev], phi[lev].nGrowVect(), ncomp,
+        [a_phi_ma, a_rho_ma, phi_ma, phi_comp] AMREX_GPU_DEVICE(
+          int box_no, int i, int j, int k, int n) noexcept {
+          amrex::Array4<amrex::Real const> a_phi_arr(
+            a_phi_ma[box_no], phi_comp);
+          phi_ma[box_no](i, j, k, n) =
+            a_phi_arr(i, j, k, n) / a_rho_ma[box_no](i, j, k);
         });
+      amrex::Gpu::streamSynchronize();
     }
   }
 
@@ -778,26 +923,23 @@ DiffusionOp::computeDiffFluxes(
     phi.emplace_back(
       a_phi[lev]->boxArray(), a_phi[lev]->DistributionMap(), ncomp, 1,
       amrex::MFInfo(), a_phi[lev]->Factory());
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-    for (amrex::MFIter mfi(phi[lev], amrex::TilingIfNotGPU()); mfi.isValid();
-         ++mfi) {
-      const amrex::Box& gbx = mfi.growntilebox();
-      auto const& a_phi_arr = a_phi[lev]->const_array(mfi, phi_comp);
-      auto const& a_rho_arr =
-        (have_density) != 0 ? a_density[lev]->const_array(mfi)
-                            : a_phi[lev]->const_array(
-                                mfi); // Get dummy amrex::Array4 if no density
-      auto const& phi_arr = phi[lev].array(mfi);
+    if (have_density == 0) {
+      amrex::MultiFab::Copy(
+        phi[lev], *a_phi[lev], phi_comp, 0, ncomp, phi[lev].nGrowVect());
+    } else {
+      auto const& a_phi_ma = a_phi[lev]->const_arrays();
+      auto const& a_rho_ma = a_density[lev]->const_arrays();
+      auto const& phi_ma = phi[lev].arrays();
       amrex::ParallelFor(
-        gbx, ncomp, [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
-          if (have_density != 0) {
-            phi_arr(i, j, k, n) = a_phi_arr(i, j, k, n) / a_rho_arr(i, j, k);
-          } else {
-            phi_arr(i, j, k, n) = a_phi_arr(i, j, k, n);
-          }
+        phi[lev], phi[lev].nGrowVect(), ncomp,
+        [a_phi_ma, a_rho_ma, phi_ma, phi_comp] AMREX_GPU_DEVICE(
+          int box_no, int i, int j, int k, int n) noexcept {
+          amrex::Array4<amrex::Real const> a_phi_arr(
+            a_phi_ma[box_no], phi_comp);
+          phi_ma[box_no](i, j, k, n) =
+            a_phi_arr(i, j, k, n) / a_rho_ma[box_no](i, j, k);
         });
+      amrex::Gpu::streamSynchronize();
     }
   }
 
@@ -990,12 +1132,21 @@ DiffusionOp::readParameters()
 {
   amrex::ParmParse pp("diffusion");
 
+  m_mg_verbose = std::max(m_pelelm->getVerbose() - 2, m_mg_verbose);
   pp.query("verbose", m_mg_verbose);
   pp.query("atol", m_mg_atol);
   pp.query("rtol", m_mg_rtol);
   pp.query("max_iter", m_mg_max_iter);
   pp.query("bottom_solver", m_mg_bottom_solver);
   pp.query("max_order", m_mg_maxorder);
+  pp.query("mlmg_fail_sdc_miniter", m_mg_fail_sdc_miniter);
+  pp.query("mlmg_fail_deltaT_miniter", m_mg_fail_deltaT_miniter);
+  pp.query(
+    "mlmg_fail_species_maxiter_after_sdc_miniter",
+    m_mg_fail_species_maxiter_after_sdc_miniter);
+  pp.query(
+    "mlmg_fail_temp_maxiter_after_sdc_deltaT_miniter",
+    m_mg_fail_temp_maxiter_after_sdc_deltaT_miniter);
 }
 
 //---------------------------------------------------------------------------------------
@@ -1200,22 +1351,16 @@ DiffusionTensorOp::compute_divtau(
 
   if (have_density != 0) {
     for (int lev = 0; lev <= finest_level; ++lev) {
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-      for (amrex::MFIter mfi(*a_divtau[lev], amrex::TilingIfNotGPU());
-           mfi.isValid(); ++mfi) {
-        amrex::Box const& bx = mfi.tilebox();
-        auto const& divtau_arr = a_divtau[lev]->array(mfi);
-        auto const& rho_arr = a_density[lev]->const_array(mfi);
-        amrex::ParallelFor(
-          bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-            amrex::Real rhoinv = 1.0 / rho_arr(i, j, k);
-            AMREX_D_TERM(divtau_arr(i, j, k, 0) *= rhoinv;
-                         , divtau_arr(i, j, k, 1) *= rhoinv;
-                         , divtau_arr(i, j, k, 2) *= rhoinv;);
-          });
-      }
+      auto const& divtau_ma = a_divtau[lev]->arrays();
+      auto const& rho_ma = a_density[lev]->const_arrays();
+      amrex::ParallelFor(
+        *a_divtau[lev], amrex::IntVect(0), AMREX_SPACEDIM,
+        [divtau_ma, rho_ma] AMREX_GPU_DEVICE(
+          int box_no, int i, int j, int k, int n) noexcept {
+          divtau_ma[box_no](i, j, k, n) /= rho_ma[box_no](i, j, k);
+        });
+      // Shift outside?
+      amrex::Gpu::streamSynchronize();
     }
   }
 }
@@ -1271,35 +1416,51 @@ DiffusionTensorOp::diffuse_velocity(
   for (int lev = 0; lev <= finest_level; ++lev) {
     rhs.emplace_back(
       a_vel[lev]->boxArray(), a_vel[lev]->DistributionMap(), AMREX_SPACEDIM, 0);
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-    for (amrex::MFIter mfi(rhs[lev], amrex::TilingIfNotGPU()); mfi.isValid();
-         ++mfi) {
-      amrex::Box const& bx = mfi.tilebox();
-      auto const& rhs_a = rhs[lev].array(mfi);
-      auto const& vel_a = a_vel[lev]->const_array(mfi);
-      auto const& rho_a = (have_density) != 0
-                            ? a_density[lev]->const_array(mfi)
-                            : amrex::Array4<const amrex::Real>{};
-      const auto rho_incomp = m_pelelm->m_rho;
-      const auto is_incomp = m_pelelm->m_incompressible;
+    auto const& rhs_ma = rhs[lev].arrays();
+    auto const& vel_ma = a_vel[lev]->const_arrays();
+    if (m_pelelm->m_incompressible == 0) {
+      auto const& rho_ma = a_density[lev]->const_arrays();
       amrex::ParallelFor(
-        bx, AMREX_SPACEDIM,
-        [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
-          if (is_incomp != 0) {
-            rhs_a(i, j, k, n) = rho_incomp * vel_a(i, j, k, n);
-          } else {
-            rhs_a(i, j, k, n) = rho_a(i, j, k) * vel_a(i, j, k, n);
-          }
+        rhs[lev], amrex::IntVect(0), AMREX_SPACEDIM,
+        [rhs_ma, vel_ma, rho_ma] AMREX_GPU_DEVICE(
+          int box_no, int i, int j, int k, int n) noexcept {
+          rhs_ma[box_no](i, j, k, n) =
+            rho_ma[box_no](i, j, k) * vel_ma[box_no](i, j, k, n);
+        });
+    } else {
+      amrex::ParallelFor(
+        rhs[lev], amrex::IntVect(0), AMREX_SPACEDIM,
+        [rhs_ma, vel_ma, rho = m_pelelm->m_rho] AMREX_GPU_DEVICE(
+          int box_no, int i, int j, int k, int n) noexcept {
+          rhs_ma[box_no](i, j, k, n) = rho * vel_ma[box_no](i, j, k, n);
         });
     }
+    amrex::Gpu::streamSynchronize();
   }
 
   amrex::MLMG mlmg(*m_solve_op);
 
-  // Maximum iterations for MultiGrid / ConjugateGradients
-  mlmg.setMaxIter(m_mg_max_iter);
+  if (m_mg_verbose > 0) {
+    amrex::Print() << "MLMG: Velocity Diffusion\n";
+  }
+
+  // Maximum iterations for / ConjugateGradients may change for debugging
+  // purposes
+  int max_iter = m_mg_max_iter;
+  if (m_pelelm->m_mlmg_fail_plt_residuals) {
+
+    bool sdc_iters_met = (m_pelelm->m_sdcIter >= m_mg_fail_sdc_miniter);
+
+    // Only check SDC iter
+    if (sdc_iters_met && (m_mg_fail_maxiter_after_sdc_miniter > 0)) {
+      max_iter = m_mg_fail_maxiter_after_sdc_miniter;
+      amrex::Print() << "      Limiting velocity diffusion MLMG max_iter to "
+                     << max_iter << " (SDC iter [" << m_pelelm->m_sdcIter
+                     << "] >= " << m_mg_fail_sdc_miniter << ")\n";
+    }
+  }
+
+  mlmg.setMaxIter(max_iter);
   mlmg.setMaxFmgIter(m_mg_max_fmg_iter);
   mlmg.setBottomMaxIter(m_mg_bottom_maxiter);
 
@@ -1310,7 +1471,27 @@ DiffusionTensorOp::diffuse_velocity(
   mlmg.setPreSmooth(m_num_pre_smooth);
   mlmg.setPostSmooth(m_num_post_smooth);
 
-  mlmg.solve(a_vel, GetVecOfConstPtrs(rhs), m_mg_rtol, m_mg_atol);
+  // Solve
+  if (!m_pelelm->m_mlmg_fail_plt_residuals) {
+    mlmg.solve(a_vel, GetVecOfConstPtrs(rhs), m_mg_rtol, m_mg_atol);
+  } else {
+    mlmg.setThrowException(true);
+    mlmg.setConvergenceNormType(amrex::MLMGNormType::bnorm);
+
+    try {
+      mlmg.solve(a_vel, GetVecOfConstPtrs(rhs), m_mg_rtol, m_mg_atol);
+    } catch (const std::exception& e) {
+      amrex::Print() << "\n"
+                     << "  *** Velocity diffusion MLMG solve failed! ***\n"
+                     << "  Error: " << e.what() << "\n"
+                     << "  Dumping residuals for debugging...\n";
+      m_pelelm->WriteMLMGResidual(
+        mlmg, a_vel, GetVecOfConstPtrs(rhs), "vel_diffusion",
+        m_pelelm->m_nstep);
+
+      amrex::Abort("MLMG solve for velocity diffusion failed");
+    }
+  }
 }
 
 void
@@ -1318,6 +1499,7 @@ DiffusionTensorOp::readParameters()
 {
   amrex::ParmParse pp("tensor_diffusion");
 
+  m_mg_verbose = std::max(m_pelelm->getVerbose() - 2, m_mg_verbose);
   pp.query("verbose", m_mg_verbose);
   pp.query("atol", m_mg_atol);
   pp.query("rtol", m_mg_rtol);
@@ -1327,4 +1509,7 @@ DiffusionTensorOp::readParameters()
   pp.query("mg_max_fmg_iter", m_mg_max_fmg_iter);
   pp.query("num_pre_smooth", m_num_pre_smooth);
   pp.query("num_post_smooth", m_num_post_smooth);
+  pp.query("mlmg_fail_sdc_miniter", m_mg_fail_sdc_miniter);
+  pp.query(
+    "mlmg_maxiter_after_sdc_miniter", m_mg_fail_maxiter_after_sdc_miniter);
 }

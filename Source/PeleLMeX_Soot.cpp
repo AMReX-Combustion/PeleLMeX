@@ -57,25 +57,22 @@ PeleLM::clipSootMoments()
   SootData* sd = soot_model->getSootData_d();
   for (int lev = 0; lev <= finest_level; ++lev) {
     auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-    for (amrex::MFIter mfi(ldata_p->state, amrex::TilingIfNotGPU());
-         mfi.isValid(); ++mfi) {
-      amrex::Box const& gbx = mfi.tilebox();
-      auto const& state_arr = ldata_p->state.array(mfi, FIRSTSOOT);
-      amrex::ParallelFor(
-        gbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          amrex::GpuArray<amrex::Real, NUM_SOOT_MOMENTS + 1> moments;
-          for (int mom = 0; mom < NUM_SOOT_MOMENTS + 1; mom++) {
-            moments[mom] = state_arr(i, j, k, mom);
-          }
-          sd->momConvClipConv(moments.data());
-          for (int mom = 0; mom < NUM_SOOT_MOMENTS + 1; mom++) {
-            state_arr(i, j, k, mom) = moments[mom];
-          }
-        });
-    }
+    auto const& state_ma = ldata_p->state.arrays();
+    amrex::ParallelFor(
+      ldata_p->state, [state_ma, sd] AMREX_GPU_DEVICE(
+                        int box_no, int i, int j, int k) noexcept {
+        amrex::Array4<amrex::Real> state_arr(state_ma[box_no], FIRSTSOOT);
+        amrex::GpuArray<amrex::Real, NUM_SOOT_MOMENTS + 1> moments;
+        for (int mom = 0; mom < NUM_SOOT_MOMENTS + 1; ++mom) {
+          moments[mom] = state_arr(i, j, k, mom);
+        }
+        sd->momConvClipConv(moments.data());
+        for (int mom = 0; mom < NUM_SOOT_MOMENTS + 1; ++mom) {
+          state_arr(i, j, k, mom) = moments[mom];
+        }
+      });
+    // Shift outside?
+    amrex::Gpu::streamSynchronize();
   }
 }
 

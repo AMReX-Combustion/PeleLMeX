@@ -324,28 +324,40 @@ PeleLM::incrementElectronForcing(
     auto ldataR_p = getLevelDataReactPtr(lev);       // Reaction
     auto ldataNLs_p = getLevelDataNLSolvePtr(lev);   // NL data
 
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-    for (amrex::MFIter mfi(ldata_p->state, amrex::TilingIfNotGPU());
-         mfi.isValid(); ++mfi) {
-      const amrex::Box& bx = mfi.tilebox();
-      auto const& nE_o = ldata_p->state.const_array(mfi, NE);
-      auto const& nE_n = ldataNLs_p->nlState.const_array(mfi);
-      auto const& I_R_nE = ldataR_p->I_R.const_array(mfi, NUM_SPECIES);
-      auto const& FnE = advData->Forcing[lev].array(mfi, NUM_SPECIES + 1);
-      amrex::Real scaling = nE_scale;
-      amrex::Real dtinv = 1.0 / dtsub;
+    auto const& state_o_ma = ldata_p->state.const_arrays();
+    auto const& nE_n_ma = ldataNLs_p->nlState.const_arrays();
+    auto const& I_R_ma = ldataR_p->I_R.const_arrays();
+    auto const& F_ma = advData->Forcing[lev].arrays();
+    const amrex::Real scaling = nE_scale;
+    const amrex::Real dtinv = 1.0 / dtsub;
+    if (a_sstep == 0) {
       amrex::ParallelFor(
-        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          if (a_sstep == 0) {
-            FnE(i, j, k) = (nE_n(i, j, k) * scaling - nE_o(i, j, k)) * dtinv -
-                           I_R_nE(i, j, k);
-          } else {
-            FnE(i, j, k) += (nE_n(i, j, k) * scaling - nE_o(i, j, k)) * dtinv -
-                            I_R_nE(i, j, k);
-          }
+        ldata_p->state,
+        [state_o_ma, nE_n_ma, I_R_ma, F_ma, scaling,
+         dtinv] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+          amrex::Array4<amrex::Real const> nE_o(state_o_ma[box_no], NE);
+          amrex::Array4<amrex::Real const> I_R_nE(I_R_ma[box_no], NUM_SPECIES);
+          amrex::Array4<amrex::Real> FnE(F_ma[box_no], NUM_SPECIES + 1);
+          FnE(i, j, k) =
+            (nE_n_ma[box_no](i, j, k) * scaling - nE_o(i, j, k)) * dtinv -
+            I_R_nE(i, j, k);
         });
+      // Shift outside?
+      amrex::Gpu::streamSynchronize();
+    } else {
+      amrex::ParallelFor(
+        ldata_p->state,
+        [state_o_ma, nE_n_ma, I_R_ma, F_ma, scaling,
+         dtinv] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+          amrex::Array4<amrex::Real const> nE_o(state_o_ma[box_no], NE);
+          amrex::Array4<amrex::Real const> I_R_nE(I_R_ma[box_no], NUM_SPECIES);
+          amrex::Array4<amrex::Real> FnE(F_ma[box_no], NUM_SPECIES + 1);
+          FnE(i, j, k) +=
+            (nE_n_ma[box_no](i, j, k) * scaling - nE_o(i, j, k)) * dtinv -
+            I_R_nE(i, j, k);
+        });
+      // Shift outside?
+      amrex::Gpu::streamSynchronize();
     }
   }
 }
@@ -365,36 +377,38 @@ PeleLM::computeBGcharge(
     auto ldataR_p = getLevelDataReactPtr(lev);       // Reaction
     auto ldataNLs_p = getLevelDataNLSolvePtr(lev);   // NL data
 
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-    for (amrex::MFIter mfi(
-           ldataNLs_p->backgroundCharge, amrex::TilingIfNotGPU());
-         mfi.isValid(); ++mfi) {
-      const amrex::Box& bx = mfi.tilebox();
-      auto const& rhoYold = ldata_p->state.const_array(mfi, FIRSTSPEC);
-      auto const& adv_arr = advData->AofS[lev].const_array(mfi, FIRSTSPEC);
-      auto const& dn_arr = diffData->Dn[lev].const_array(mfi);
-      auto const& dnp1_arr = diffData->Dnp1[lev].const_array(mfi);
-      auto const& dhat_arr = diffData->Dhat[lev].const_array(mfi);
-      auto const& rhoYdot = ldataR_p->I_R.const_array(mfi);
-      auto const& charge = ldataNLs_p->backgroundCharge.array(mfi);
-      amrex::Real factor = 1.0 / elemCharge;
-      amrex::ParallelFor(
-        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          charge(i, j, k) = 0.0;
-          for (int n = 0; n < NUM_SPECIES; n++) {
-            amrex::Real rhoYprov =
-              rhoYold(i, j, k, n) +
-              dt_int * (adv_arr(i, j, k, n) +
-                        0.5 * (dn_arr(i, j, k, n) - dnp1_arr(i, j, k, n)) +
-                        dhat_arr(i, j, k, n) + rhoYdot(i, j, k, n));
-            rhoYprov = amrex::max(rhoYprov, 0.0);
-            charge(i, j, k) += zk[n] * rhoYprov;
-          }
-          charge(i, j, k) *= factor;
-        });
-    }
+    auto const& state_old_ma = ldata_p->state.const_arrays();
+    auto const& adv_ma = advData->AofS[lev].const_arrays();
+    auto const& dn_ma = diffData->Dn[lev].const_arrays();
+    auto const& dnp1_ma = diffData->Dnp1[lev].const_arrays();
+    auto const& dhat_ma = diffData->Dhat[lev].const_arrays();
+    auto const& rhoYdot_ma = ldataR_p->I_R.const_arrays();
+
+    ldataNLs_p->backgroundCharge.setVal(0.0);
+    auto const& charge_ma = ldataNLs_p->backgroundCharge.arrays();
+    constexpr amrex::Real factor = 1.0 / elemCharge;
+
+    amrex::ParallelFor(
+      ldataNLs_p->backgroundCharge, amrex::IntVect(0.0), NUM_SPECIES,
+      [state_old_ma, adv_ma, dn_ma, dnp1_ma, dhat_ma, rhoYdot_ma, charge_ma,
+       dt_int, factor,
+       zk =
+         zk] AMREX_GPU_DEVICE(int box_no, int i, int j, int k, int n) noexcept {
+        amrex::Array4<amrex::Real const> rhoYold(
+          state_old_ma[box_no], FIRSTSPEC);
+        amrex::Array4<amrex::Real const> adv(adv_ma[box_no], FIRSTSPEC);
+        amrex::Real rhoYprov =
+          rhoYold(i, j, k, n) +
+          dt_int *
+            (adv(i, j, k, n) +
+             0.5 * (dn_ma[box_no](i, j, k, n) - dnp1_ma[box_no](i, j, k, n)) +
+             dhat_ma[box_no](i, j, k, n) + rhoYdot_ma[box_no](i, j, k, n));
+        rhoYprov = amrex::max(rhoYprov, 0.0);
+        const amrex::Real val = zk[n] * rhoYprov;
+        amrex::Gpu::Atomic::Add(&charge_ma[box_no](i, j, k), val);
+      });
+    amrex::Gpu::streamSynchronize();
+    ldataNLs_p->backgroundCharge.mult(factor);
   }
 }
 
@@ -485,33 +499,36 @@ PeleLM::nonLinearResidual(
 
     // Init the ghostcells too
     a_nlresid[lev]->setVal(0.0);
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-    for (amrex::MFIter mfi(ldataNLs_p->nlResid, amrex::TilingIfNotGPU());
-         mfi.isValid(); ++mfi) {
-      const amrex::Box& bx = mfi.tilebox();
-      auto const& I_R_nE = ldataR_p->I_R.const_array(mfi, NUM_SPECIES);
-      auto const& lapPhiV = laplacian[lev].const_array(mfi);
-      auto const& ne_diff = diffnE[lev].const_array(mfi);
-      auto const& ne_adv = advnE[lev].const_array(mfi);
-      auto const& ne_curr = nE[lev].const_array(mfi);
-      auto const& ne_old = ldataOld_p->state.const_array(mfi, NE);
-      auto const& charge = ldataNLs_p->backgroundCharge.const_array(mfi);
-      auto const& res_nE = a_nlresid[lev]->array(mfi, 0);
-      auto const& res_phiV = a_nlresid[lev]->array(mfi, 1);
-      amrex::Real scalLap = eps0 * epsr / elemCharge;
-      amrex::ParallelFor(
-        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          res_nE(i, j, k) =
-            ne_old(i, j, k) - ne_curr(i, j, k) +
-            a_dt * (ne_diff(i, j, k) + ne_adv(i, j, k) + I_R_nE(i, j, k));
-          res_phiV(i, j, k) =
-            lapPhiV(i, j, k) * scalLap - ne_curr(i, j, k) + charge(i, j, k);
-          res_nE(i, j, k) *= -1.0;   // NLresidual is -RHS
-          res_phiV(i, j, k) *= -1.0; // NLresidual is -RHS
-        });
-    }
+
+    auto const& I_R_ma = ldataR_p->I_R.const_arrays();
+    auto const& lapPhiV_ma = laplacian[lev].const_arrays();
+    auto const& ne_diff_ma = diffnE[lev].const_arrays();
+    auto const& ne_adv_ma = advnE[lev].const_arrays();
+    auto const& ne_curr_ma = nE[lev].const_arrays();
+    auto const& state_old_ma = ldataOld_p->state.const_arrays();
+    auto const& charge_ma = ldataNLs_p->backgroundCharge.const_arrays();
+    auto const& res_ma = a_nlresid[lev]->arrays();
+    amrex::ParallelFor(
+      ldataNLs_p->nlResid,
+      [I_R_ma, lapPhiV_ma, ne_diff_ma, ne_adv_ma, ne_curr_ma, state_old_ma,
+       charge_ma, res_ma,
+       a_dt] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+        amrex::Array4<amrex::Real> res_nE(res_ma[box_no], 0);
+        amrex::Array4<amrex::Real> res_phiV(res_ma[box_no], 1);
+        amrex::Array4<amrex::Real const> I_R_nE(I_R_ma[box_no], NUM_SPECIES);
+        amrex::Array4<amrex::Real const> ne_old(state_old_ma[box_no], NE);
+        res_nE(i, j, k) = ne_old(i, j, k) - ne_curr_ma[box_no](i, j, k) +
+                          a_dt * (ne_diff_ma[box_no](i, j, k) +
+                                  ne_adv_ma[box_no](i, j, k) + I_R_nE(i, j, k));
+        constexpr amrex::Real scalLap = eps0 * epsr / elemCharge;
+        res_phiV(i, j, k) = lapPhiV_ma[box_no](i, j, k) * scalLap -
+                            ne_curr_ma[box_no](i, j, k) +
+                            charge_ma[box_no](i, j, k);
+        res_nE(i, j, k) *= -1.0;   // NLresidual is -RHS
+        res_phiV(i, j, k) *= -1.0; // NLresidual is -RHS
+      });
+    // Shift outside?
+    amrex::Gpu::streamSynchronize();
   }
   // WriteDebugPlotFile(GetVecOfConstPtrs(a_nlresid),"UnscalednlResid");
 
@@ -585,27 +602,23 @@ PeleLM::getAdvectionTerm(
       getDiffusivity(lev, 0, 1, doZeroVisc, bcRecnE, ldata_p->mobE_cc);
 
     // Get the electron effective velocity
-
-    // Get the electron effective velocity
-    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-      for (amrex::MFIter mfi(ldataNLs_p->uEffnE[idim], amrex::TilingIfNotGPU());
-           mfi.isValid(); ++mfi) {
-        const amrex::Box& bx = mfi.tilebox();
-        auto const& ueff = ldataNLs_p->uEffnE[idim].array(mfi);
-        auto const& umac = ldataNLs_p->umac[idim].const_array(mfi);
-        auto const& gphi_c = a_gPhiVCur[lev][idim]->const_array(mfi);
-        auto const& gphi_o = ldataNLs_p->gPhiVOld[idim].const_array(mfi);
-        auto const& kappa_e = mobE_ec[idim].const_array(mfi);
-        amrex::ParallelFor(
-          bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-            ueff(i, j, k) =
-              umac(i, j, k) - kappa_e(i, j, k) * -1.0 * 0.5 *
-                                (gphi_c(i, j, k) + gphi_o(i, j, k));
-          });
-      }
+    for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
+      auto const& ueff_ma = ldataNLs_p->uEffnE[idim].arrays();
+      auto const& umac_ma = ldataNLs_p->umac[idim].const_arrays();
+      auto const& gphi_c_ma = a_gPhiVCur[lev][idim]->const_arrays();
+      auto const& gphi_o_ma = ldataNLs_p->gPhiVOld[idim].const_arrays();
+      auto const& kappa_e_ma = mobE_ec[idim].const_arrays();
+      amrex::ParallelFor(
+        ldataNLs_p->uEffnE[idim],
+        [ueff_ma, umac_ma, gphi_c_ma, gphi_o_ma, kappa_e_ma] AMREX_GPU_DEVICE(
+          int box_no, int i, int j, int k) noexcept {
+          ueff_ma[box_no](i, j, k) =
+            umac_ma[box_no](i, j, k) -
+            kappa_e_ma[box_no](i, j, k) * -1.0 * 0.5 *
+              (gphi_c_ma[box_no](i, j, k) + gphi_o_ma[box_no](i, j, k));
+        });
+      // Shift outside?
+      amrex::Gpu::streamSynchronize();
     }
   }
 
@@ -974,29 +987,33 @@ PeleLM::setUpPrecond(
       Schur_nEKe.define(grids[lev], dmap[lev], 1, 1);
     }
 
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
-    for (amrex::MFIter mfi(nEKe, amrex::TilingIfNotGPU()); mfi.isValid();
-         ++mfi) {
-      const amrex::Box& gbx = mfi.growntilebox();
-      auto const& neke = nEKe.array(mfi);
-      auto const& kappaE = ldata_p->mobE_cc.array(mfi);
-      auto const& ne_arr = a_nE[lev]->const_array(mfi);
-      auto const& Schur =
-        (m_ef_PC_approx == 2) ? Schur_nEKe.array(mfi) : nEKe.array(mfi);
-      auto const& diffOp_diag =
-        (m_ef_PC_approx == 2) ? diagDiffOp[lev].array(mfi) : nEKe.array(mfi);
-      int do_Schur = (m_ef_PC_approx == 2) ? 1 : 0;
-      amrex::ParallelFor(
-        gbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          neke(i, j, k) = kappaE(i, j, k) * ne_arr(i, j, k);
-          if (do_Schur) {
-            Schur(i, j, k) = -a_dt * 0.5 * neke(i, j, k) / diffOp_diag(i, j, k);
-          }
-        });
-    }
+    auto const& neke_ma = nEKe.arrays();
+    auto const& kappaE_ma = ldata_p->mobE_cc.arrays();
+    auto const& ne_arr_ma = a_nE[lev]->const_arrays();
+    auto const& Schur_ma =
+      (m_ef_PC_approx == 2) ? Schur_nEKe.arrays() : nEKe.arrays();
+    auto const& diffOp_diag_ma =
+      (m_ef_PC_approx == 2) ? diagDiffOp[lev].arrays() : nEKe.arrays();
+    const int do_Schur = (m_ef_PC_approx == 2) ? 1 : 0;
 
+    amrex::ParallelFor(
+      nEKe, nEKe.nGrowVect(),
+      [neke_ma, kappaE_ma,
+       ne_arr_ma] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+        neke_ma[box_no](i, j, k) =
+          kappaE_ma[box_no](i, j, k) * ne_arr_ma[box_no](i, j, k);
+      });
+    amrex::Gpu::streamSynchronize();
+    if (do_Schur == 1) {
+      amrex::ParallelFor(
+        nEKe, nEKe.nGrowVect(),
+        [Schur_ma, a_dt, neke_ma, diffOp_diag_ma] AMREX_GPU_DEVICE(
+          int box_no, int i, int j, int k) noexcept {
+          Schur_ma[box_no](i, j, k) = -a_dt * 0.5 * neke_ma[box_no](i, j, k) /
+                                      diffOp_diag_ma[box_no](i, j, k);
+        });
+      amrex::Gpu::streamSynchronize();
+    }
     // Upwinded edge neKe values
     amrex::Array<amrex::MultiFab, AMREX_SPACEDIM> neKe_ec = getUpwindedEdge(
       lev, 0, 1, bcRecnE, nEKe, GetArrOfConstPtrs(ldataNLs_p->uEffnE));

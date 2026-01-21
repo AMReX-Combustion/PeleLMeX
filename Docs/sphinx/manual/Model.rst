@@ -432,7 +432,7 @@ In the `Smagorinsky <https://journals.ametsoc.org/view/journals/mwre/91/3/1520-0
 
 .. math::
 
-   \mathcal{D}_{s} = |\widetilde{S}| = sqrt(2 \widetilde{S}_{ij}\widetilde{S}_{ij}), \hspace{12pt} \widetilde{S}_{ij} = \frac{1}{2} \left(\frac{\partial u_i}{\partial x_j} + \frac{\partial u_j}{\partial x_i} \right).
+   \mathcal{D}_{s} = |\widetilde{S}| = \sqrt{2 \widetilde{S}_{ij}\widetilde{S}_{ij}}, \hspace{12pt} \widetilde{S}_{ij} = \frac{1}{2} \left(\frac{\partial u_i}{\partial x_j} + \frac{\partial u_j}{\partial x_i} \right).
 
 where filtered quantities are indicated with an overbar, Favre-filtered quantities are indicated with
 a tilde. In the `WALE <https://doi.org/10.1023/A:1009995426001>`_  model, :math:`C_m = C_w = 0.60` and :math:`\mathcal{D}` writes:
