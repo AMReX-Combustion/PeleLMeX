@@ -50,7 +50,8 @@ struct PeleLMCCFillExtDirState
     const amrex::Real* prob_lo = geom.ProbLo();
     const amrex::Real* dx = geom.CellSize();
     const amrex::Real x[AMREX_SPACEDIM] = {AMREX_D_DECL(
-      prob_lo[0] + (iv[0] + 0.5_rt) * dx[0], prob_lo[1] + (iv[1] + 0.5_rt) * dx[1],
+      prob_lo[0] + (iv[0] + 0.5_rt) * dx[0],
+      prob_lo[1] + (iv[1] + 0.5_rt) * dx[1],
       prob_lo[2] + (iv[2] + 0.5_rt) * dx[2])};
 
     // Get a 3D version of iv to access first cell in domain
@@ -168,7 +169,8 @@ struct PeleLMCCFillExtDirAux
     const amrex::Real* prob_lo = geom.ProbLo();
     const amrex::Real* dx = geom.CellSize();
     const amrex::Real x[AMREX_SPACEDIM] = {AMREX_D_DECL(
-      prob_lo[0] + (iv[0] + 0.5_rt) * dx[0], prob_lo[1] + (iv[1] + 0.5_rt) * dx[1],
+      prob_lo[0] + (iv[0] + 0.5_rt) * dx[0],
+      prob_lo[1] + (iv[1] + 0.5_rt) * dx[1],
       prob_lo[2] + (iv[2] + 0.5_rt) * dx[2])};
 
 #if AMREX_SPACEDIM == 2
@@ -245,7 +247,8 @@ struct PeleLMCCFillExtDirSpec
     const amrex::Real* prob_lo = geom.ProbLo();
     const amrex::Real* dx = geom.CellSize();
     const amrex::Real x[AMREX_SPACEDIM] = {AMREX_D_DECL(
-      prob_lo[0] + (iv[0] + 0.5_rt) * dx[0], prob_lo[1] + (iv[1] + 0.5_rt) * dx[1],
+      prob_lo[0] + (iv[0] + 0.5_rt) * dx[0],
+      prob_lo[1] + (iv[1] + 0.5_rt) * dx[1],
       prob_lo[2] + (iv[2] + 0.5_rt) * dx[2])};
 
     // Get a 3D version of iv to access first cell in domain
@@ -334,7 +337,8 @@ struct PeleLMCCFillExtDirDens
     const amrex::Real* prob_lo = geom.ProbLo();
     const amrex::Real* dx = geom.CellSize();
     const amrex::Real x[AMREX_SPACEDIM] = {AMREX_D_DECL(
-      prob_lo[0] + (iv[0] + 0.5_rt) * dx[0], prob_lo[1] + (iv[1] + 0.5_rt) * dx[1],
+      prob_lo[0] + (iv[0] + 0.5_rt) * dx[0],
+      prob_lo[1] + (iv[1] + 0.5_rt) * dx[1],
       prob_lo[2] + (iv[2] + 0.5_rt) * dx[2])};
 
     // Get a 3D version of iv to access first cell in domain
@@ -418,7 +422,8 @@ struct PeleLMCCFillExtDirRhoH
     const amrex::Real* prob_lo = geom.ProbLo();
     const amrex::Real* dx = geom.CellSize();
     const amrex::Real x[AMREX_SPACEDIM] = {AMREX_D_DECL(
-      prob_lo[0] + (iv[0] + 0.5_rt) * dx[0], prob_lo[1] + (iv[1] + 0.5_rt) * dx[1],
+      prob_lo[0] + (iv[0] + 0.5_rt) * dx[0],
+      prob_lo[1] + (iv[1] + 0.5_rt) * dx[1],
       prob_lo[2] + (iv[2] + 0.5_rt) * dx[2])};
 
     // Get a 3D version of iv to access first cell in domain
@@ -502,7 +507,8 @@ struct PeleLMCCFillExtDirTemp
     const amrex::Real* prob_lo = geom.ProbLo();
     const amrex::Real* dx = geom.CellSize();
     const amrex::Real x[AMREX_SPACEDIM] = {AMREX_D_DECL(
-      prob_lo[0] + (iv[0] + 0.5_rt) * dx[0], prob_lo[1] + (iv[1] + 0.5_rt) * dx[1],
+      prob_lo[0] + (iv[0] + 0.5_rt) * dx[0],
+      prob_lo[1] + (iv[1] + 0.5_rt) * dx[1],
       prob_lo[2] + (iv[2] + 0.5_rt) * dx[2])};
 
     // Get a 3D version of iv to access first cell in domain
@@ -586,7 +592,8 @@ struct PeleLMCCFillExtDirnE
     const amrex::Real* prob_lo = geom.ProbLo();
     const amrex::Real* dx = geom.CellSize();
     const amrex::Real x[AMREX_SPACEDIM] = {AMREX_D_DECL(
-      prob_lo[0] + (iv[0] + 0.5_rt) * dx[0], prob_lo[1] + (iv[1] + 0.5_rt) * dx[1],
+      prob_lo[0] + (iv[0] + 0.5_rt) * dx[0],
+      prob_lo[1] + (iv[1] + 0.5_rt) * dx[1],
       prob_lo[2] + (iv[2] + 0.5_rt) * dx[2])};
 
     // Get a 3D version of iv to access first cell in domain
@@ -672,7 +679,8 @@ struct PeleLMCCFillExtDirPhiV
     const amrex::Real* prob_lo = geom.ProbLo();
     const amrex::Real* dx = geom.CellSize();
     const amrex::Real x[AMREX_SPACEDIM] = {AMREX_D_DECL(
-      prob_lo[0] + (iv[0] + 0.5_rt) * dx[0], prob_lo[1] + (iv[1] + 0.5_rt) * dx[1],
+      prob_lo[0] + (iv[0] + 0.5_rt) * dx[0],
+      prob_lo[1] + (iv[1] + 0.5_rt) * dx[1],
       prob_lo[2] + (iv[2] + 0.5_rt) * dx[2])};
 
     // Get a 3D version of iv to access first cell in domain

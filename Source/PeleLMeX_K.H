@@ -1343,7 +1343,8 @@ getTurbViscSigma(
   if (alpha1 != 0.0) {
     alpha2 = (I[0] / 3.0) * (I[0] / 3.0) * (I[0] / 3.0) - I[0] * I[1] / 6.0 +
              I[2] / 2.0;
-    const amrex::Real arcCosArg = amrex::Clamp(alpha2 / std::pow(alpha1, 1.5), -1.0, 1.0);
+    const amrex::Real arcCosArg =
+      amrex::Clamp(alpha2 / std::pow(alpha1, 1.5), -1.0, 1.0);
     alpha3 = std::acos(arcCosArg) / 3.0;
 
     // Singular values:

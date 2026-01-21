@@ -139,8 +139,8 @@ PeleLM::estConvectiveDt(const TimeStamp a_time)
         estdt_lev = amrex::min<amrex::Real>(estdt_lev, dx[idim] / u_max[idim]);
       }
       if (f_max[idim] > small) {
-        estdt_lev =
-          amrex::min<amrex::Real>(estdt_lev, std::sqrt(2.0 * dx[idim] / f_max[idim]));
+        estdt_lev = amrex::min<amrex::Real>(
+          estdt_lev, std::sqrt(2.0 * dx[idim] / f_max[idim]));
       }
     }
 

@@ -72,7 +72,8 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
 #endif
     // find the centre of the domain
     const amrex::Real cen[AMREX_SPACEDIM] = {AMREX_D_DECL(
-      prob_lo[0] + 0.5_rt * Lx, prob_lo[1] + 0.5_rt * Ly, prob_lo[2] + 0.5_rt * Lz)};
+      prob_lo[0] + 0.5_rt * Lx, prob_lo[1] + 0.5_rt * Ly,
+      prob_lo[2] + 0.5_rt * Lz)};
     const amrex::Real x[AMREX_SPACEDIM] = {AMREX_D_DECL(
       prob_lo[0] + (i + 0.5_rt) * dx[0], prob_lo[1] + (j + 0.5_rt) * dx[1],
       prob_lo[2] + (k + 0.5_rt) * dx[2])};
