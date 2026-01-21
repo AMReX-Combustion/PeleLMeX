@@ -694,6 +694,7 @@ PeleLM::readParameters()
   if (m_do_temporals != 0) {
     pp.query("temporal_int", m_temp_int);
     pp.query("temporal_dir", m_temporal_dir);
+    m_temporal_dir = m_base_output_pref + m_temporal_dir;
     pp.query("do_extremas", m_do_extremas);
     pp.query("do_mass_balance", m_do_massBalance);
     pp.query("do_species_balance", m_do_speciesBalance);
@@ -880,9 +881,15 @@ PeleLM::readIOParameters()
 {
   BL_PROFILE_VAR("PeleLMeX::readIOParameters()", readIOParameters);
 
+  {
+    amrex::ParmParse pp("peleLM");
+    pp.query("base_output_prefix", m_base_output_pref);
+  }
+
   amrex::ParmParse pp("amr");
 
   pp.query("check_file", m_check_file);
+  m_check_file = m_base_output_pref + m_check_file;
   pp.query("check_int", m_check_int);
   pp.query("check_overwrite", m_check_overwrite);
   pp.query("check_per", m_check_per);
@@ -890,6 +897,7 @@ PeleLM::readIOParameters()
   pp.query("initDataPlt", m_restart_pltfile);
   pp.query("initDataPltSource", pltfileSource);
   pp.query("plot_file", m_plot_file);
+  m_plot_file = m_base_output_pref + m_plot_file;
   pp.query("plot_int", m_plot_int);
   pp.query("plot_overwrite", m_plot_overwrite);
   pp.query("plot_init_state", m_plot_init_state);

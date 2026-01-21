@@ -112,6 +112,7 @@ IO parameters
 ::
 
     #--------------------------IO CONTROL--------------------------
+    peleLM.base_output_prefix = outdir/    # [OPT, DEF=""] Prefix applied across all output types (plt, chk, diagnostics, temporals)
     amr.plot_int         = 20              # [OPT, DEF=-1] Frequency (as step #) for writing plot file
     amr.plot_overwrite   = false           # [OPT, DEF=false] Overwrite plot files with same name if present
     amr.plot_init_state  = false           # [OPT, DEF=false] Create a plot file during initialization before the initial projections
