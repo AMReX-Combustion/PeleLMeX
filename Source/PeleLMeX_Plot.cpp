@@ -577,7 +577,7 @@ PeleLM::WriteHeader(const std::string& name, const bool is_checkpoint) const
 
     // Ambient pressure and typvals
     HeaderFile << m_pNew << "\n";
-    for (double typical_value : typical_values) {
+    for (amrex::Real typical_value : typical_values) {
       HeaderFile << typical_value << "\n";
     }
   }
@@ -782,7 +782,7 @@ PeleLM::ReadCheckPointFile()
   is >> m_pNew;
   GotoNextLine(is);
   m_pOld = m_pNew;
-  for (double& typical_value : typical_values) {
+  for (amrex::Real& typical_value : typical_values) {
     is >> typical_value;
     GotoNextLine(is);
   }

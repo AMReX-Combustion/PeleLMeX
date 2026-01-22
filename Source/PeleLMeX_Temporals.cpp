@@ -1,5 +1,8 @@
 #include <PeleLMeX.H>
 #include <PeleLMeX_BPatch.H>
+#include <AMReX_REAL.H>
+
+using namespace amrex::literals;
 
 void
 PeleLM::initTemporals(const PeleLM::TimeStamp a_time)
@@ -629,8 +632,9 @@ PeleLM::addRhoYFluxesPatch(
 
             amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> point_coordinates{
               AMREX_D_DECL(
-                prob_lo[0] + (i + 0.5) * dx[0], prob_lo[1] + (j + 0.5) * dx[1],
-                prob_lo[2] + (k + 0.5) * dx[2])};
+                prob_lo[0] + (i + 0.5_rt) * dx[0],
+                prob_lo[1] + (j + 0.5_rt) * dx[1],
+                prob_lo[2] + (k + 0.5_rt) * dx[2])};
 
             amrex::Real sum_species_flux = 0.0;
             amrex::Real dummy = 0.0;

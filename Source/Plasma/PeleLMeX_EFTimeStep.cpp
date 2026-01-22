@@ -81,7 +81,7 @@ PeleLM::estEFIonsDt(const TimeStamp a_time)
             amrex::Real ueff =
               vel(i, j, k, idim) + mob_cc_ma[box_no](i, j, k, n) *
                                      efield_const_ma[box_no](i, j, k, idim);
-            maxVel = amrex::max(maxVel, std::abs(ueff));
+            maxVel = amrex::max<amrex::Real>(maxVel, std::abs(ueff));
           }
         }
         uDrMax_ma[box_no](i, j, k) = maxVel;
@@ -105,7 +105,7 @@ PeleLM::estEFIonsDt(const TimeStamp a_time)
         for (int k = lo.z; k <= hi.z; ++k) {
           for (int j = lo.y; j <= hi.y; ++j) {
             for (int i = lo.x; i <= hi.x; ++i) {
-              velmax = amrex::max(velmax, ueffm(i, j, k));
+              velmax = amrex::max<amrex::Real>(velmax, ueffm(i, j, k));
             }
           }
         }
@@ -113,7 +113,7 @@ PeleLM::estEFIonsDt(const TimeStamp a_time)
       });
 
     // Min across levels
-    estdt = amrex::min(estdt, estdt_lev);
+    estdt = amrex::min<amrex::Real>(estdt, estdt_lev);
   }
 
   // Min across processors

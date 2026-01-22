@@ -1003,8 +1003,8 @@ PeleLM::loadBalanceChemLev(const int a_lev)
     const amrex::Real navg =
       static_cast<amrex::Real>(m_baChem[a_lev]->size()) /
       static_cast<amrex::Real>(amrex::ParallelDescriptor::NProcs());
-    const int nmax = static_cast<int>(
-      amrex::max(std::round(m_loadBalanceKSfactor * navg), std::ceil(navg)));
+    const int nmax = static_cast<int>(amrex::max<amrex::Real>(
+      std::round(m_loadBalanceKSfactor * navg), std::ceil(navg)));
     test_dmap = amrex::DistributionMapping::makeKnapSack(
       new_cost, currentEfficiency, testEfficiency, nmax, false,
       amrex::ParallelDescriptor::IOProcessorNumber());
@@ -1319,9 +1319,10 @@ PeleLM::MLNorm0(const amrex::Vector<const amrex::MultiFab*>& a_MF)
   amrex::Real r = 0.0;
   for (int lev = 0; lev < a_MF.size(); ++lev) {
     if (lev != finest_level) {
-      r = amrex::max(r, a_MF[lev]->norm0(*m_coveredMask[lev], 0, 0, true));
+      r = amrex::max<amrex::Real>(
+        r, a_MF[lev]->norm0(*m_coveredMask[lev], 0, 0, true));
     } else {
-      r = amrex::max(r, a_MF[lev]->norm0(0, 0, true, true));
+      r = amrex::max<amrex::Real>(r, a_MF[lev]->norm0(0, 0, true, true));
     }
   }
   amrex::ParallelDescriptor::ReduceRealMax(r);
@@ -1343,12 +1344,13 @@ PeleLM::MLNorm0(
   for (int lev = 0; lev < a_MF.size(); ++lev) {
     if (lev != finest_level) {
       for (int n = 0; n < ncomp; ++n) {
-        r[n] = amrex::max(
+        r[n] = amrex::max<amrex::Real>(
           r[n], a_MF[lev]->norm0(*m_coveredMask[lev], startcomp + n, 0, true));
       }
     } else {
       for (int n = 0; n < ncomp; ++n) {
-        r[n] = amrex::max(r[n], a_MF[lev]->norm0(startcomp + n, 0, true, true));
+        r[n] = amrex::max<amrex::Real>(
+          r[n], a_MF[lev]->norm0(startcomp + n, 0, true, true));
       }
     }
   }
@@ -1584,8 +1586,8 @@ PeleLM::setTypicalValues(const TimeStamp a_time, const int is_init)
 
   // Fill typical values vector
   for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
-    typical_values[idim] =
-      amrex::max(stateMax[VELX + idim], std::abs(stateMin[VELX + idim]));
+    typical_values[idim] = amrex::max<amrex::Real>(
+      stateMax[VELX + idim], std::abs(stateMin[VELX + idim]));
   }
 
   if (m_incompressible == 0) {
@@ -1632,7 +1634,7 @@ PeleLM::setTypicalValues(const TimeStamp a_time, const int is_init)
       for (int n = 0; n < NUM_SPECIES; ++n) {
         amrex::Print() << "\tY_" << spec_names[n]
                        << std::setw(
-                            amrex::max(
+                            amrex::max<int>(
                               0, static_cast<int>(8 - spec_names[n].length())))
                        << std::left << ":" << typical_values[FIRSTSPEC + n]
                        << '\n';
@@ -1642,11 +1644,13 @@ PeleLM::setTypicalValues(const TimeStamp a_time, const int is_init)
 #endif
 #if NUM_ODE > 0
       for (int n = 0; n < NUM_ODE; ++n) {
-        amrex::Print()
-          << "\t" << m_ode_names[n]
-          << std::setw(
-               amrex::max(0, static_cast<int>(10 - m_ode_names[n].length())))
-          << std::left << ":" << typical_values[FIRSTODE + n] << '\n';
+        amrex::Print() << "\t" << m_ode_names[n]
+                       << std::setw(
+                            amrex::max<int>(
+                              0,
+                              static_cast<int>(10 - m_ode_names[n].length())))
+                       << std::left << ":" << typical_values[FIRSTODE + n]
+                       << '\n';
       }
 #endif
     }
@@ -1668,7 +1672,7 @@ PeleLM::updateTypicalValuesChem()
       amrex::Vector<amrex::Real> typical_values_chem;
       typical_values_chem.resize(NUM_SPECIES + 1);
       for (int i = 0; i < NUM_SPECIES; ++i) {
-        typical_values_chem[i] = amrex::max(
+        typical_values_chem[i] = amrex::max<amrex::Real>(
           m_typicalYvalMin * typical_values[DENSITY] * 1.E-3,
           typical_values[FIRSTSPEC + i] * typical_values[DENSITY] *
             1.E-3); // CGS -> MKS conversion
@@ -1731,7 +1735,7 @@ PeleLM::MFmax(
           auto const& mask = a_mask.const_array(mfi);
           AMREX_LOOP_3D(bx, i, j, k, {
             if (!flag(i, j, k).isCovered() && mask(i, j, k)) {
-              mx = amrex::max(mx, a(i, j, k, comp));
+              mx = amrex::max<amrex::Real>(mx, a(i, j, k, comp));
             }
           });
         }
@@ -1768,7 +1772,7 @@ PeleLM::MFmax(
         auto const& mask = a_mask.const_array(mfi);
         AMREX_LOOP_3D(bx, i, j, k, {
           if (mask(i, j, k)) {
-            mx = amrex::max(mx, a(i, j, k, comp));
+            mx = amrex::max<amrex::Real>(mx, a(i, j, k, comp));
           }
         });
       }
@@ -1822,7 +1826,7 @@ PeleLM::MFmin(
           auto const& mask = a_mask.const_array(mfi);
           AMREX_LOOP_3D(bx, i, j, k, {
             if (!flag(i, j, k).isCovered() && mask(i, j, k)) {
-              mn = amrex::min(mn, a(i, j, k, comp));
+              mn = amrex::min<amrex::Real>(mn, a(i, j, k, comp));
             }
           });
         }
@@ -1859,7 +1863,7 @@ PeleLM::MFmin(
         auto const& mask = a_mask.const_array(mfi);
         AMREX_LOOP_3D(bx, i, j, k, {
           if (mask(i, j, k)) {
-            mn = amrex::min(mn, a(i, j, k, comp));
+            mn = amrex::min<amrex::Real>(mn, a(i, j, k, comp));
           }
         });
       }
@@ -1884,12 +1888,13 @@ PeleLM::MLmax(
   for (int lev = 0; lev < a_MF.size(); ++lev) {
     if (lev != finest_level) {
       for (int n = 0; n < ncomp; ++n) {
-        nmax[n] =
-          amrex::max(nmax[n], MFmax(a_MF[lev], *m_coveredMask[lev], scomp + n));
+        nmax[n] = amrex::max<amrex::Real>(
+          nmax[n], MFmax(a_MF[lev], *m_coveredMask[lev], scomp + n));
       }
     } else {
       for (int n = 0; n < ncomp; ++n) {
-        nmax[n] = amrex::max(nmax[n], a_MF[lev]->max(scomp + n, 0, true));
+        nmax[n] =
+          amrex::max<amrex::Real>(nmax[n], a_MF[lev]->max(scomp + n, 0, true));
       }
     }
   }
@@ -1913,12 +1918,13 @@ PeleLM::MLmin(
   for (int lev = 0; lev < a_MF.size(); ++lev) {
     if (lev != finest_level) {
       for (int n = 0; n < ncomp; ++n) {
-        nmin[n] =
-          amrex::min(nmin[n], MFmin(a_MF[lev], *m_coveredMask[lev], scomp + n));
+        nmin[n] = amrex::min<amrex::Real>(
+          nmin[n], MFmin(a_MF[lev], *m_coveredMask[lev], scomp + n));
       }
     } else {
       for (int n = 0; n < ncomp; ++n) {
-        nmin[n] = amrex::min(nmin[n], a_MF[lev]->min(scomp + n, 0, true));
+        nmin[n] =
+          amrex::min<amrex::Real>(nmin[n], a_MF[lev]->min(scomp + n, 0, true));
       }
     }
   }
@@ -2161,10 +2167,10 @@ PeleLM::parseComposition(
 
   // Ensure that it sums to 1.0:
   amrex::Real sum = 0.0;
-  for (double k : compoIn) {
+  for (amrex::Real k : compoIn) {
     sum += k;
   }
-  for (double& k : compoIn) {
+  for (amrex::Real& k : compoIn) {
     k /= sum;
   }
 
