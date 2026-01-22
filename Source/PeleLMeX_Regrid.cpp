@@ -43,7 +43,7 @@ PeleLM::regrid(const int lbase, const amrex::Real time, const bool initial)
         const amrex::Real navg =
           static_cast<amrex::Real>(grids[0].size()) /
           static_cast<amrex::Real>(amrex::ParallelDescriptor::NProcs());
-        const int nmax = static_cast<int>(amrex::max(
+        const int nmax = static_cast<int>(amrex::max<amrex::Real>(
           std::round(m_loadBalanceKSfactor * navg), std::ceil(navg)));
         test_dmap = amrex::DistributionMapping::makeKnapSack(
           *m_costs[0], currentEfficiency, testEfficiency, nmax, false,
@@ -168,7 +168,7 @@ PeleLM::regrid(const int lbase, const amrex::Real time, const bool initial)
               const amrex::Real navg =
                 static_cast<amrex::Real>(new_ba.size()) /
                 static_cast<amrex::Real>(amrex::ParallelDescriptor::NProcs());
-              const int nmax = static_cast<int>(amrex::max(
+              const int nmax = static_cast<int>(amrex::max<amrex::Real>(
                 std::round(m_loadBalanceKSfactor * navg), std::ceil(navg)));
               amrex::Vector<amrex::Real> costsVec(new_ba.size());
               amrex::ParallelDescriptor::GatherLayoutDataToVector(
@@ -211,7 +211,7 @@ PeleLM::regrid(const int lbase, const amrex::Real time, const bool initial)
               const amrex::Real navg =
                 static_cast<amrex::Real>(new_ba.size()) /
                 static_cast<amrex::Real>(amrex::ParallelDescriptor::NProcs());
-              const int nmax = static_cast<int>(amrex::max(
+              const int nmax = static_cast<int>(amrex::max<amrex::Real>(
                 std::round(m_loadBalanceKSfactor * navg), std::ceil(navg)));
               test_dmap = amrex::DistributionMapping::makeKnapSack(
                 *m_costs[lev], currentEfficiency, testEfficiency, nmax, false,
@@ -416,7 +416,7 @@ PeleLM::MakeNewLevelFromCoarse(
   // Trigger MacProj reset
   m_macProjNeedReset = 1;
   m_extSource[lev] = std::make_unique<amrex::MultiFab>(
-    ba, dm, NVAR, amrex::max(m_nGrowAdv, m_nGrowMAC), amrex::MFInfo(),
+    ba, dm, NVAR, amrex::max<int>(m_nGrowAdv, m_nGrowMAC), amrex::MFInfo(),
     *m_factory[lev]);
   m_extSource[lev]->setVal(0.);
 }
@@ -532,7 +532,7 @@ PeleLM::RemakeLevel(
   // Trigger MacProj reset
   m_macProjNeedReset = 1;
   m_extSource[lev] = std::make_unique<amrex::MultiFab>(
-    ba, dm, NVAR, amrex::max(m_nGrowAdv, m_nGrowMAC), amrex::MFInfo(),
+    ba, dm, NVAR, amrex::max<int>(m_nGrowAdv, m_nGrowMAC), amrex::MFInfo(),
     *m_factory[lev]);
   m_extSource[lev]->setVal(0.);
 }

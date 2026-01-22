@@ -21,19 +21,19 @@ PeleLM::computeDt(const int is_init, const TimeStamp a_time)
       estdt = m_init_dt;
     } else {
       amrex::Real dtconv = estConvectiveDt(a_time);
-      estdt = amrex::min(estdt, dtconv);
+      estdt = amrex::min<amrex::Real>(estdt, dtconv);
       amrex::Real dtdivU = 1.0e200;
       if ((m_incompressible == 0) && (m_has_divu != 0)) {
         dtdivU = estDivUDt(a_time);
-        estdt = amrex::min(estdt, dtdivU);
+        estdt = amrex::min<amrex::Real>(estdt, dtdivU);
       }
 #ifdef PELE_USE_PLASMA
       amrex::Real dtions = estEFIonsDt(a_time);
-      estdt = amrex::min(estdt, dtions);
+      estdt = amrex::min<amrex::Real>(estdt, dtions);
 #endif
 #ifdef PELE_USE_SPRAY
       amrex::Real dtspray = SprayEstDt();
-      estdt = amrex::min(estdt, dtspray);
+      estdt = amrex::min<amrex::Real>(estdt, dtspray);
 #endif
       if (m_verbose != 0) {
         amrex::Print() << " Est. time step - Conv: " << dtconv
@@ -54,8 +54,8 @@ PeleLM::computeDt(const int is_init, const TimeStamp a_time)
   if ((is_init != 0) || m_nstep == 0) {
     estdt *= m_dtshrink;
   } else {
-    estdt = amrex::min(estdt, m_prev_dt * m_dtChangeMax);
-    estdt = amrex::min(estdt, m_max_dt);
+    estdt = amrex::min<amrex::Real>(estdt, m_prev_dt * m_dtChangeMax);
+    estdt = amrex::min<amrex::Real>(estdt, m_max_dt);
     // Shorten the dt to output plt file at exact req. time
     if (m_plot_per_exact > 0.0) {
       // Ensure ~O(dt) step by checking a little in advance
@@ -66,7 +66,7 @@ PeleLM::computeDt(const int is_init, const TimeStamp a_time)
         estdt = amrex::Real(0.5) * timeToNextPlot;
       } else {
         if (timeToNextPlot > 1.e-12) {
-          estdt = amrex::min(estdt, timeToNextPlot);
+          estdt = amrex::min<amrex::Real>(estdt, timeToNextPlot);
         }
       }
     }
@@ -78,7 +78,7 @@ PeleLM::computeDt(const int is_init, const TimeStamp a_time)
       if (2.0 * estdt > timeLeft && timeLeft > estdt) {
         estdt = 0.5 * timeLeft;
       } else {
-        estdt = amrex::min(estdt, timeLeft);
+        estdt = amrex::min<amrex::Real>(estdt, timeLeft);
       }
     }
   }
@@ -136,17 +136,17 @@ PeleLM::estConvectiveDt(const TimeStamp a_time)
     // Est. min time step on lev
     for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
       if (u_max[idim] > small) {
-        estdt_lev = amrex::min(estdt_lev, dx[idim] / u_max[idim]);
+        estdt_lev = amrex::min<amrex::Real>(estdt_lev, dx[idim] / u_max[idim]);
       }
       if (f_max[idim] > small) {
-        estdt_lev =
-          amrex::min(estdt_lev, std::sqrt(2.0 * dx[idim] / f_max[idim]));
+        estdt_lev = amrex::min<amrex::Real>(
+          estdt_lev, std::sqrt(2.0 * dx[idim] / f_max[idim]));
       }
     }
 
     //----------------------------------------------------------------
     // Set overall convective dt
-    estdt = amrex::min(estdt, estdt_lev * m_cfl);
+    estdt = amrex::min<amrex::Real>(estdt, estdt_lev * m_cfl);
   }
 
   amrex::ParallelDescriptor::ReduceRealMin(estdt);
@@ -186,13 +186,13 @@ PeleLM::estDivUDt(const TimeStamp a_time)
               for (int i = lo.x; i <= hi.x; ++i) {
                 amrex::Real dtcell =
                   est_divu_dt_1(i, j, k, dtfac, rhoMin, rho, divu);
-                dt = amrex::min(dt, dtcell);
+                dt = amrex::min<amrex::Real>(dt, dtcell);
               }
             }
           }
           return dt;
         });
-      estdt = amrex::min(divu_dt, estdt);
+      estdt = amrex::min<amrex::Real>(divu_dt, estdt);
     } else if (m_divu_checkFlag == 2) {
       const auto& dxinv = geom[lev].InvCellSizeArray();
       std::unique_ptr<amrex::MultiFab> velo = std::make_unique<amrex::MultiFab>(
@@ -211,13 +211,13 @@ PeleLM::estDivUDt(const TimeStamp a_time)
               for (int i = lo.x; i <= hi.x; ++i) {
                 amrex::Real dtcell =
                   est_divu_dt_2(i, j, k, dtfac, rhoMin, dxinv, rho, vel, divu);
-                dt = amrex::min(dt, dtcell);
+                dt = amrex::min<amrex::Real>(dt, dtcell);
               }
             }
           }
           return dt;
         });
-      estdt = amrex::min(divu_dt, estdt);
+      estdt = amrex::min<amrex::Real>(divu_dt, estdt);
     }
   }
 

@@ -122,7 +122,7 @@ PeleLM::MakeNewLevelFromScratch(
 #endif
   m_macProjOldSize = finest_level + 1;
   m_extSource[lev] = std::make_unique<amrex::MultiFab>(
-    grids[lev], dmap[lev], NVAR, amrex::max(m_nGrowAdv, m_nGrowMAC),
+    grids[lev], dmap[lev], NVAR, amrex::max<int>(m_nGrowAdv, m_nGrowMAC),
     amrex::MFInfo(), *m_factory[lev]);
   m_extSource[lev]->setVal(0.);
 

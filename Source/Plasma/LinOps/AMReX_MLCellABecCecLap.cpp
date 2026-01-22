@@ -100,8 +100,8 @@ MLCellABecCecLap::define(
   m_overset_mask[amrlev].resize(max_overset_mask_coarsening_level + 1);
 
   LPInfo linfo = a_info;
-  linfo.max_coarsening_level =
-    std::min(a_info.max_coarsening_level, max_overset_mask_coarsening_level);
+  linfo.max_coarsening_level = amrex::min<int>(
+    a_info.max_coarsening_level, max_overset_mask_coarsening_level);
 
   MLCellLinOp::define(a_geom, a_grids, a_dmap, linfo, a_factory);
 

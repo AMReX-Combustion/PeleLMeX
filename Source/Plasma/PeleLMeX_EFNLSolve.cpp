@@ -118,7 +118,7 @@ PeleLM::implicitNonLinearSolve(
     // Check for convergence
     amrex::Real scaledResnE, scaledResphiV;
     getNLResidScaling(scaledResnE, scaledResphiV);
-    amrex::Real max_nlres = std::max(scaledResnE, scaledResphiV);
+    amrex::Real max_nlres = amrex::max<amrex::Real>(scaledResnE, scaledResphiV);
     if (max_nlres <= m_ef_newtonTol) {
       if (ef_verbose) {
         amrex::Print() << " No Newton iteration needed, exiting. \n";
@@ -170,7 +170,7 @@ PeleLM::implicitNonLinearSolve(
         update_precond);
       nlSolveNorm(getNLresidVect(), nl_residNorm);
       getNLResidScaling(scaledResnE, scaledResphiV);
-      max_nlres = std::max(scaledResnE, scaledResphiV);
+      max_nlres = amrex::max<amrex::Real>(scaledResnE, scaledResphiV);
       // WriteDebugPlotFile(GetVecOfConstPtrs(getNLstateVect()),"NLState_"+std::to_string(NK_ite));
       // WriteDebugPlotFile(GetVecOfConstPtrs(getNLresidVect()),"NLResid_"+std::to_string(NK_ite));
 
@@ -403,7 +403,7 @@ PeleLM::computeBGcharge(
             (adv(i, j, k, n) +
              0.5 * (dn_ma[box_no](i, j, k, n) - dnp1_ma[box_no](i, j, k, n)) +
              dhat_ma[box_no](i, j, k, n) + rhoYdot_ma[box_no](i, j, k, n));
-        rhoYprov = amrex::max(rhoYprov, 0.0);
+        rhoYprov = amrex::max<amrex::Real>(rhoYprov, 0.0);
         const amrex::Real val = zk[n] * rhoYprov;
         amrex::Gpu::Atomic::Add(&charge_ma[box_no](i, j, k), val);
       });

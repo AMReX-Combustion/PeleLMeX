@@ -265,11 +265,12 @@ PeleLM::activeControl(const int is_restart)
 
   // Limit Vnew
   amrex::Real dVmax = m_ctrl_changeMax * 1.0;
-  amrex::Real dVmin = m_ctrl_changeMax * amrex::max(1.0, m_ctrl_V_in);
-  Vnew = amrex::max(Vnew, 0.0);
-  Vnew = amrex::min(amrex::max(Vnew, m_ctrl_V_in - dVmin), m_ctrl_V_in + dVmax);
+  amrex::Real dVmin =
+    m_ctrl_changeMax * amrex::max<amrex::Real>(1.0, m_ctrl_V_in);
+  Vnew = amrex::max<amrex::Real>(Vnew, 0.0);
+  Vnew = amrex::Clamp(Vnew, m_ctrl_V_in - dVmin, m_ctrl_V_in + dVmax);
   if (m_ctrl_velMax > 0.0) { // Only limit Vnew to velMax if velMax > 0.0
-    Vnew = amrex::min(Vnew, m_ctrl_velMax);
+    Vnew = amrex::min<amrex::Real>(Vnew, m_ctrl_velMax);
   }
 
   if ((is_restart == 0) && m_nstep > 0) {
@@ -371,7 +372,7 @@ PeleLM::getActiveControlLowT(amrex::Real& a_coft)
                       (AC_Tcross - T_arr(idx[0], idx[1], idx[2], TEMP)) / slope;
                   }
                 }
-                tmp_pos = amrex::min(tmp_pos, lcl_pos);
+                tmp_pos = amrex::min<amrex::Real>(tmp_pos, lcl_pos);
               }
             }
           }
@@ -409,14 +410,14 @@ PeleLM::getActiveControlLowT(amrex::Real& a_coft)
                       (AC_Tcross - T_arr(idx[0], idx[1], idx[2], TEMP)) / slope;
                   }
                 }
-                tmp_pos = amrex::min(tmp_pos, lcl_pos);
+                tmp_pos = amrex::min<amrex::Real>(tmp_pos, lcl_pos);
               }
             }
           }
           return tmp_pos;
         });
     }
-    a_coft = amrex::min(a_coft, lowT);
+    a_coft = amrex::min<amrex::Real>(a_coft, lowT);
   }
   amrex::ParallelDescriptor::ReduceRealMin(a_coft);
 }

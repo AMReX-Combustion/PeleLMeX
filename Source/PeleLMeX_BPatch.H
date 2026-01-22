@@ -2,6 +2,9 @@
 #define BPATCH_H
 
 #include <PeleLMeX.H>
+#include <AMReX_REAL.H>
+
+using namespace amrex::literals;
 
 class BPatch
 {
@@ -96,14 +99,14 @@ public:
       } else if (m_patchtype_num == 2) {
         amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> patch_rectangle_lo_touse =
           {AMREX_D_DECL(
-            m_patch_rectangle_lo[0] - dx / 2.0,
-            m_patch_rectangle_lo[1] - dx / 2.0,
-            m_patch_rectangle_lo[2] - dx / 2.0)};
+            m_patch_rectangle_lo[0] - dx / 2.0_rt,
+            m_patch_rectangle_lo[1] - dx / 2.0_rt,
+            m_patch_rectangle_lo[2] - dx / 2.0_rt)};
         amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> patch_rectangle_hi_touse =
           {AMREX_D_DECL(
-            m_patch_rectangle_hi[0] + dx / 2.0,
-            m_patch_rectangle_hi[1] + dx / 2.0,
-            m_patch_rectangle_hi[2] + dx / 2.0)};
+            m_patch_rectangle_hi[0] + dx / 2.0_rt,
+            m_patch_rectangle_hi[1] + dx / 2.0_rt,
+            m_patch_rectangle_hi[2] + dx / 2.0_rt)};
         patch_rectangle_hi_touse[m_boundary_dir] = 0.0;
         patch_rectangle_lo_touse[m_boundary_dir] = 0.0;
 
@@ -139,24 +142,24 @@ public:
         bool inside_inner = false;
         amrex::GpuArray<amrex::Real, AMREX_SPACEDIM>
           patch_rect_ann_inner_lo_touse = {AMREX_D_DECL(
-            m_patch_rect_ann_inner_lo[0] + dx / 2.0,
-            m_patch_rect_ann_inner_lo[1] + dx / 2.0,
-            m_patch_rect_ann_inner_lo[2] + dx / 2.0)};
+            m_patch_rect_ann_inner_lo[0] + dx / 2.0_rt,
+            m_patch_rect_ann_inner_lo[1] + dx / 2.0_rt,
+            m_patch_rect_ann_inner_lo[2] + dx / 2.0_rt)};
         amrex::GpuArray<amrex::Real, AMREX_SPACEDIM>
           patch_rect_ann_inner_hi_touse = {AMREX_D_DECL(
-            m_patch_rect_ann_inner_hi[0] - dx / 2.0,
-            m_patch_rect_ann_inner_hi[1] - dx / 2.0,
-            m_patch_rect_ann_inner_hi[2] - dx / 2.0)};
+            m_patch_rect_ann_inner_hi[0] - dx / 2.0_rt,
+            m_patch_rect_ann_inner_hi[1] - dx / 2.0_rt,
+            m_patch_rect_ann_inner_hi[2] - dx / 2.0_rt)};
         amrex::GpuArray<amrex::Real, AMREX_SPACEDIM>
           patch_rect_ann_outer_lo_touse = {AMREX_D_DECL(
-            m_patch_rect_ann_outer_lo[0] - dx / 2.0,
-            m_patch_rect_ann_outer_lo[1] - dx / 2.0,
-            m_patch_rect_ann_outer_lo[2] - dx / 2.0)};
+            m_patch_rect_ann_outer_lo[0] - dx / 2.0_rt,
+            m_patch_rect_ann_outer_lo[1] - dx / 2.0_rt,
+            m_patch_rect_ann_outer_lo[2] - dx / 2.0_rt)};
         amrex::GpuArray<amrex::Real, AMREX_SPACEDIM>
           patch_rect_ann_outer_hi_touse = {AMREX_D_DECL(
-            m_patch_rect_ann_outer_hi[0] + dx / 2.0,
-            m_patch_rect_ann_outer_hi[1] + dx / 2.0,
-            m_patch_rect_ann_outer_hi[2] + dx / 2.0)};
+            m_patch_rect_ann_outer_hi[0] + dx / 2.0_rt,
+            m_patch_rect_ann_outer_hi[1] + dx / 2.0_rt,
+            m_patch_rect_ann_outer_hi[2] + dx / 2.0_rt)};
         patch_rect_ann_inner_lo_touse[m_boundary_dir] = 0.0;
         patch_rect_ann_inner_hi_touse[m_boundary_dir] = 0.0;
         patch_rect_ann_outer_lo_touse[m_boundary_dir] = 0.0;
