@@ -5,6 +5,9 @@
 
 #include <AMReX_PhysBCFunct.H>
 #include <AMReX_Geometry.H>
+#include <AMReX_REAL.H>
+
+using namespace amrex::literals;
 
 template <typename, typename T>
 struct matchBCNormEB_sign
@@ -122,8 +125,8 @@ struct PeleLMFillBCStateEB<T, true>
     const amrex::Real* dx = geom.CellSize();
     const amrex::Real* prob_lo = geom.ProbLo();
     const amrex::Real xcell[AMREX_SPACEDIM] = {AMREX_D_DECL(
-      prob_lo[0] + (i + 0.5) * dx[0], prob_lo[1] + (j + 0.5) * dx[1],
-      prob_lo[2] + (k + 0.5) * dx[2])};
+      prob_lo[0] + (i + 0.5_rt) * dx[0], prob_lo[1] + (j + 0.5_rt) * dx[1],
+      prob_lo[2] + (k + 0.5_rt) * dx[2])};
     const amrex::Real xface[AMREX_SPACEDIM] = {AMREX_D_DECL(
       xcell[0] + ebfc_x(i, j, k) * dx[0], xcell[1] + ebfc_y(i, j, k) * dx[1],
       xcell[2] + ebfc_z(i, j, k) * dx[2])};
@@ -254,8 +257,8 @@ struct PeleLMFillBCTypeEB<T, true>
     const amrex::Real* dx = geom.CellSize();
     const amrex::Real* prob_lo = geom.ProbLo();
     const amrex::Real xcell[AMREX_SPACEDIM] = {AMREX_D_DECL(
-      prob_lo[0] + (i + 0.5) * dx[0], prob_lo[1] + (j + 0.5) * dx[1],
-      prob_lo[2] + (k + 0.5) * dx[2])};
+      prob_lo[0] + (i + 0.5_rt) * dx[0], prob_lo[1] + (j + 0.5_rt) * dx[1],
+      prob_lo[2] + (k + 0.5_rt) * dx[2])};
     const amrex::Real xface[AMREX_SPACEDIM] = {AMREX_D_DECL(
       xcell[0] + ebfc_x(i, j, k) * dx[0], xcell[1] + ebfc_y(i, j, k) * dx[1],
       xcell[2] + ebfc_z(i, j, k) * dx[2])};

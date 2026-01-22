@@ -54,7 +54,7 @@ read_csv(
   const size_t nx,
   const size_t ny,
   const size_t nz,
-  amrex::Vector<amrex::Real>& data)
+  amrex::Vector<double>& data) // needs to be double
 {
   std::ifstream infile(iname, std::ios::in);
   const std::string memfile = read_file(infile);
@@ -132,8 +132,7 @@ PeleLM::readProbParm() // NOLINT(readability-make-member-function-const)
     const size_t nx = PeleLM::prob_parm->input_resolution;
     const size_t ny = PeleLM::prob_parm->input_resolution;
     const size_t nz = PeleLM::prob_parm->input_resolution;
-    amrex::Vector<amrex::Real> data(
-      nx * ny * nz * 6); /* this needs to be double */
+    amrex::Vector<double> data(nx * ny * nz * 6); // needs to be double
     if (binfmt != 0) {
       read_binary(datafile, nx, ny, nz, 6, data);
     } else {

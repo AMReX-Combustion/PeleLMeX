@@ -371,7 +371,7 @@ PeleLM::readParameters()
     m_spark_temp.resize(m_n_sparks);
     m_spark_radius.resize(m_n_sparks);
     if (m_n_sparks > 0) {
-      m_spark_verbose = std::max(m_verbose - 2, 0);
+      m_spark_verbose = amrex::max<int>(m_verbose - 2, 0);
     }
     pp.query("spark_verbose", m_spark_verbose);
     for (int n = 0; n < m_n_sparks; ++n) {
@@ -526,7 +526,7 @@ PeleLM::readParameters()
     m_Prandtl_inv = 0.0;
   }
 
-  m_deltaT_verbose = std::max(m_verbose - 1, m_deltaT_verbose);
+  m_deltaT_verbose = amrex::max<int>(m_verbose - 1, m_deltaT_verbose);
   pp.query("deltaT_verbose", m_deltaT_verbose);
   pp.query("deltaT_iterMax", m_deltaTIterMax);
   pp.query("deltaT_tol", m_deltaT_norm_max);
@@ -672,7 +672,7 @@ PeleLM::readParameters()
   ppnproj.query("atol", m_nodal_mg_atol);
   ppnproj.query("rtol", m_nodal_mg_rtol);
   ppnproj.query("hypre_namespace", m_hypre_namespace_nodal);
-  m_nproj_verbose = std::max(m_verbose - 2, 0);
+  m_nproj_verbose = amrex::max<int>(m_verbose - 2, 0);
   ppnproj.queryAdd("verbose", m_nproj_verbose);
 
   amrex::ParmParse ppmacproj("mac_proj");
@@ -684,7 +684,7 @@ PeleLM::readParameters()
   ppmacproj.query(
     "mlmg_fail_maxiter_after_sdc_miniter",
     m_mac_mg_fail_maxiter_after_sdc_miniter);
-  m_macproj_verbose = std::max(m_verbose - 2, 0);
+  m_macproj_verbose = amrex::max<int>(m_verbose - 2, 0);
   ppmacproj.queryAdd("verbose", m_macproj_verbose);
 
   // -----------------------------------------
@@ -715,8 +715,7 @@ PeleLM::readParameters()
   ppa.query("dt_change_max", m_dtChangeMax);
   ppa.query("max_dt", m_max_dt);
   ppa.query("min_dt", m_min_dt);
-  m_nfiles =
-    amrex::max(1, amrex::min(amrex::ParallelDescriptor::NProcs(), 256));
+  m_nfiles = amrex::Clamp(amrex::ParallelDescriptor::NProcs(), 1, 256);
   ppa.query("n_files", m_nfiles);
 
   if (max_level > 0 || (m_doLoadBalance != 0)) {

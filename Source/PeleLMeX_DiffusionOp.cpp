@@ -1146,7 +1146,7 @@ DiffusionOp::readParameters()
 {
   amrex::ParmParse pp("diffusion");
 
-  m_mg_verbose = std::max(m_pelelm->getVerbose() - 2, m_mg_verbose);
+  m_mg_verbose = amrex::max<int>(m_pelelm->getVerbose() - 2, m_mg_verbose);
   pp.query("verbose", m_mg_verbose);
   pp.query("atol", m_mg_atol);
   pp.query("rtol", m_mg_rtol);
@@ -1514,7 +1514,7 @@ DiffusionTensorOp::readParameters()
 {
   amrex::ParmParse pp("tensor_diffusion");
 
-  m_mg_verbose = std::max(m_pelelm->getVerbose() - 2, m_mg_verbose);
+  m_mg_verbose = amrex::max<int>(m_pelelm->getVerbose() - 2, m_mg_verbose);
   pp.query("verbose", m_mg_verbose);
   pp.query("atol", m_mg_atol);
   pp.query("rtol", m_mg_rtol);

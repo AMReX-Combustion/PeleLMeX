@@ -202,7 +202,7 @@ PeleLM::SpraySetState(const amrex::Real& a_flow_dt)
     amrex::Real cur_spray_cfl = SprayParticleContainer::spray_cfl;
     amrex::Real spraydt_lev = SprayPC->estTimestep(lev);
     amrex::Real vel_lev = cur_spray_cfl * dx[0] / spraydt_lev;
-    max_vel = amrex::max(max_vel, vel_lev);
+    max_vel = amrex::max<amrex::Real>(max_vel, vel_lev);
     if (spraydt_lev > 0.) {
       spray_cfl[lev] = cur_spray_cfl / spraydt_lev * a_flow_dt;
     } else {
@@ -211,7 +211,8 @@ PeleLM::SpraySetState(const amrex::Real& a_flow_dt)
   }
   for (int lev = finest_level; lev >= 0; --lev) {
     auto const dx = geom[lev].CellSizeArray();
-    spray_cfl[lev] = amrex::max(spray_cfl[lev], max_vel * a_flow_dt / dx[0]);
+    spray_cfl[lev] =
+      amrex::max<amrex::Real>(spray_cfl[lev], max_vel * a_flow_dt / dx[0]);
     if (lev < finest_level) {
       // Note: Ghost particles made during level N depend on information at
       // level N+1
