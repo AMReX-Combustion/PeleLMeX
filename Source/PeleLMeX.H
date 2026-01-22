@@ -1953,7 +1953,7 @@ public:
   std::string pltfileSource{"LM"};
   std::string m_plot_file{"plt"};
   std::string m_check_file{"chk"};
-  std::string m_base_output_pref{""};
+  std::string m_base_output_pref;
   int m_derivePlotVarCount = 0;
   amrex::Vector<std::string> m_derivePlotVars;
   int m_plotChemDiag = 0;
