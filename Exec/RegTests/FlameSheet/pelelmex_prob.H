@@ -15,6 +15,8 @@
 namespace m2c = pele::physics::utilities::mks2cgs;
 namespace c2m = pele::physics::utilities::cgs2mks;
 
+AMREX_ENUM(PmfReferenceFrame, lab, flame, fixed_velocity);
+
 struct MyProbParm : public ProbParmDefault
 {
   amrex::Real standoff = 0.0;
@@ -23,6 +25,8 @@ struct MyProbParm : public ProbParmDefault
   int meanFlowDir = 1;
   pele::physics::eos::EosParm<pele::physics::PhysicsType::eos_type> const*
     eosparm;
+  PmfReferenceFrame ref_frame = PmfReferenceFrame::flame;
+  amrex::Real moving_frame_velocity = 0.0;
 };
 
 struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
@@ -168,7 +172,13 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
       for (int dim = 0; dim < AMREX_SPACEDIM - 1; dim++) {
         s_ext[VELX + dim] = 0.0;
       }
-      s_ext[VELX + AMREX_SPACEDIM - 1] = pmf_vals[1] * 1e-2;
+      if (prob_parm.ref_frame == PmfReferenceFrame::flame) {
+        s_ext[VELX + AMREX_SPACEDIM - 1] = pmf_vals[1] * 1e-2;
+      } else if (prob_parm.ref_frame == PmfReferenceFrame::fixed_velocity) {
+        s_ext[VELX + AMREX_SPACEDIM - 1] = prob_parm.moving_frame_velocity;
+      } else {
+        s_ext[VELX + AMREX_SPACEDIM - 1] = 0.0;
+      }
       s_ext[TEMP] = pmf_vals[0];
 
 #ifdef USE_MANIFOLD_EOS

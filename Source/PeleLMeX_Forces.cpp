@@ -207,10 +207,9 @@ PeleLM::addSpark(const TimeStamp a_timestamp)
             extma[box_no](i, j, k, RHOH) = rhoh_src_loc;
           }
         });
-      // Shift outside?
-      amrex::Gpu::streamSynchronize();
     }
   }
+  amrex::Gpu::streamSynchronize();
 }
 
 // Manifold model - dissipation rate sources for variances
@@ -288,6 +287,13 @@ PeleLM::addScalarVarianceSources(const TimeStamp a_timestamp)
           "PeleLM::addScalarVarianceSources(): this is not supported with "
           "EB");
 #endif
+        // l_scale will also need modification for EB
+        const amrex::Real vol = AMREX_D_TERM(
+          geom[lev].CellSize(0), *geom[lev].CellSize(1),
+          *geom[lev].CellSize(2));
+        const amrex::Real l_scale =
+          AMREX_D_PICK(vol, std::sqrt(vol), std::cbrt(vol));
+        const amrex::Real inv_l_scale2 = 1.0 / (l_scale * l_scale);
 
         for (int n = 0; n < MANIFOLD_DIM; ++n) {
           if (leosparm.is_variance_of[n] >= 0) {
@@ -305,17 +311,6 @@ PeleLM::addScalarVarianceSources(const TimeStamp a_timestamp)
               , auto const& gz = grad_fc[lev][2].const_arrays();)
             auto const& extma = m_extSource[lev]->arrays();
             auto const& statema = ldata_p->state.const_arrays();
-
-            // l_scale will also need modification for EB
-            const amrex::Real vol = AMREX_D_TERM(
-              geom[lev].CellSize(0), *geom[lev].CellSize(1),
-              *geom[lev].CellSize(2));
-#if AMREX_SPACEDIM == 2
-            const amrex::Real l_scale = std::sqrt(vol);
-#else
-            const amrex::Real l_scale = std::cbrt(vol);
-#endif
-            const amrex::Real inv_l_scale2 = 1.0 / (l_scale * l_scale);
 
             amrex::ParallelFor(
               *m_extSource[lev], [extma, statema, n, C_chi, ScInv, inv_l_scale2,
@@ -358,10 +353,10 @@ PeleLM::addScalarVarianceSources(const TimeStamp a_timestamp)
 
                 extma[bx](i, j, k, FIRSTSPEC + n) += 2.0 * ScInv * mu_grad2;
               });
-            amrex::Gpu::streamSynchronize();
           }
         }
       }
+      amrex::Gpu::streamSynchronize();
     }
   }
 #endif

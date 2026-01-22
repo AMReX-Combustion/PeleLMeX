@@ -255,6 +255,6 @@ PeleLM::checkDt(const TimeStamp a_time, const amrex::Real a_dt)
         check_divu_dt(
           i, j, k, divu_checkFlag, dtfac, rhoMin, dxinv, rho, vel, divu, a_dt);
       });
-    amrex::Gpu::streamSynchronize();
   }
+  amrex::Gpu::streamSynchronize();
 }
