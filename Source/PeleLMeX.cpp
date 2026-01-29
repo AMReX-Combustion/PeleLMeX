@@ -32,9 +32,9 @@ PeleLM::~PeleLM()
   m_initial_ba.clear();
   m_regrid_ba.clear();
 #ifdef PELE_USE_SPRAY
-  //SprayParticleContainer::SprayCleanUp();
-  //SprayPC.reset();
-  SprayPC.reset(); 
+  // SprayParticleContainer::SprayCleanUp();
+  // SprayPC.reset();
+  SprayPC.reset();
   GhostPC.reset();
   VirtPC.reset();
 #endif
