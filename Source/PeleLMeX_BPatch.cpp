@@ -263,6 +263,7 @@ BPatch::BPatch(const std::string& patch_name, const amrex::Geometry& geom)
 
   // Now we collected all the species for which we need to find flux. Now let us
   // check if all the species in tmp_species_only exist in the mechanism
+
   for (const auto& s : tmp_species_only) {
     auto it = std::find(names.begin(), names.end(), s);
     if (it == names.end()) {
