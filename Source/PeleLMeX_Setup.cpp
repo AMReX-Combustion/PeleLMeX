@@ -182,7 +182,7 @@ PeleLM::Setup()
 
   // Boundary Patch Setup
   if (m_do_patch_mfr != 0) {
-    initBPatches(Geom(0));
+    initBPatches(Geom(0), &eos_parms.host_parm(), eos_parms.device_parm());
   }
 
   // Initialize Level Hierarchy data

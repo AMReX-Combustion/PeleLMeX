@@ -13,7 +13,12 @@ Trim_First_Last_Whitespace(const std::string& species_name)
   return species_name.substr(start, end - start + 1);
 }
 
-BPatch::BPatch(const std::string& patch_name, const amrex::Geometry& geom)
+BPatch::BPatch(
+  const std::string& patch_name,
+  const amrex::Geometry& geom,
+  pele::physics::eos::EosParm<pele::physics::PhysicsType::eos_type>* eosparms_h,
+  const pele::physics::eos::EosParm<pele::physics::PhysicsType::eos_type>* /*
+    eosparms_d*/)
   : m_patchname(std::move(patch_name))
 {
 
@@ -168,7 +173,8 @@ BPatch::BPatch(const std::string& patch_name, const amrex::Geometry& geom)
 
   amrex::Vector<std::string> tmp_species_only;
   amrex::Vector<std::string> names;
-  pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(names);
+  pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(
+    names, eosparms_h);
 
   // Check if there are unpaired open or closing braces in group definitions.
   for (const auto& s : speciesList) {

@@ -544,7 +544,11 @@ PeleLM::addRhoYFluxes(
 }
 
 void
-PeleLM::initBPatches(const amrex::Geometry& a_geom)
+PeleLM::initBPatches(
+  const amrex::Geometry& a_geom,
+  pele::physics::eos::EosParm<pele::physics::PhysicsType::eos_type>* eosparms_h,
+  const pele::physics::eos::EosParm<pele::physics::PhysicsType::eos_type>*
+    eosparms_d)
 {
   std::string pele_prefix = "peleLM.bpatch";
   amrex::ParmParse pp(pele_prefix);
@@ -559,7 +563,8 @@ PeleLM::initBPatches(const amrex::Geometry& a_geom)
   }
   for (int n = 0; n < num_bPatches; ++n) {
     pp.get("patchnames", bpatch_name[n], n);
-    m_bPatches[n] = std::make_unique<BPatch>(bpatch_name[n], a_geom);
+    m_bPatches[n] =
+      std::make_unique<BPatch>(bpatch_name[n], a_geom, eosparms_h, eosparms_d);
     if (m_verbose > 0) {
       amrex::Print() << " Initializing boundary patch: " << bpatch_name[n]
                      << "\n";
