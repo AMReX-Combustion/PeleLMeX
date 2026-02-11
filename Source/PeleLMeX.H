@@ -1039,7 +1039,9 @@ public:
   void massBalance();
   void speciesBalance();
   void speciesBalancePatch();
-  void initBPatches(const amrex::Geometry& a_geom);
+  void initBPatches(const amrex::Geometry& a_geom,pele::physics::eos::EosParm<pele::physics::PhysicsType::eos_type>* eosparms_h,
+		    const pele::physics::eos::EosParm<pele::physics::PhysicsType::eos_type>*
+		      eosparms_d);
 
   void rhoHBalance();
   void initTemporals(const PeleLM::TimeStamp a_time = AmrOldTime);
