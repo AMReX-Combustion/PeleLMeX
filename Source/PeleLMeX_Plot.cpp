@@ -913,8 +913,8 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
       m_prev_dt = m_fixed_dt;
     } else {
       // Use large value so CFL calculation isn't artificially constrained
-      m_dt = AMREX_REAL_MAX;
-      m_prev_dt = AMREX_REAL_MAX;
+      m_dt = m_max_dt;
+      m_prev_dt = m_max_dt;
     }
   }
 
