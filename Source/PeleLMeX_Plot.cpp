@@ -905,6 +905,17 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
   if (m_do_reset_time == 0) {
     m_cur_time = pltData.getTime();
     m_nstep = pltData.getNsteps();
+
+    // Plotfiles don't contain dt/prev_dt values, but we need to initialize
+    // them to avoid negative dt calculation
+    if (m_fixed_dt > 0.0) {
+      m_dt = m_fixed_dt;
+      m_prev_dt = m_fixed_dt;
+    } else {
+      // Use large value so CFL calculation isn't artificially constrained
+      m_dt = 1.0e200;
+      m_prev_dt = 1.0e200;
+    }
   }
 
   // Find required data in pltfile
