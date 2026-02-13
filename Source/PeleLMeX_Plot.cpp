@@ -577,7 +577,7 @@ PeleLM::WriteHeader(const std::string& name, const bool is_checkpoint) const
 
     // Ambient pressure and typvals
     HeaderFile << m_pNew << "\n";
-    for (double typical_value : typical_values) {
+    for (amrex::Real typical_value : typical_values) {
       HeaderFile << typical_value << "\n";
     }
   }
@@ -782,7 +782,7 @@ PeleLM::ReadCheckPointFile()
   is >> m_pNew;
   GotoNextLine(is);
   m_pOld = m_pNew;
-  for (double& typical_value : typical_values) {
+  for (amrex::Real& typical_value : typical_values) {
     is >> typical_value;
     GotoNextLine(is);
   }
@@ -905,6 +905,17 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
   if (m_do_reset_time == 0) {
     m_cur_time = pltData.getTime();
     m_nstep = pltData.getNsteps();
+
+    // Plotfiles don't contain dt/prev_dt values, but we need to initialize
+    // them to avoid negative dt calculation
+    if (m_fixed_dt > 0.0) {
+      m_dt = m_fixed_dt;
+      m_prev_dt = m_fixed_dt;
+    } else {
+      // Use large value so CFL calculation isn't artificially constrained
+      m_dt = m_max_dt;
+      m_prev_dt = m_max_dt;
+    }
   }
 
   // Find required data in pltfile

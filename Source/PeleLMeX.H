@@ -1039,7 +1039,12 @@ public:
   void massBalance();
   void speciesBalance();
   void speciesBalancePatch();
-  void initBPatches(const amrex::Geometry& a_geom);
+  void initBPatches(
+    const amrex::Geometry& a_geom,
+    pele::physics::eos::EosParm<pele::physics::PhysicsType::eos_type>*
+      eosparms_h,
+    const pele::physics::eos::EosParm<pele::physics::PhysicsType::eos_type>*
+      eosparms_d);
 
   void rhoHBalance();
   void initTemporals(const PeleLM::TimeStamp a_time = AmrOldTime);
@@ -1953,6 +1958,7 @@ public:
   std::string pltfileSource{"LM"};
   std::string m_plot_file{"plt"};
   std::string m_check_file{"chk"};
+  std::string m_base_output_pref;
   int m_derivePlotVarCount = 0;
   amrex::Vector<std::string> m_derivePlotVars;
   int m_plotChemDiag = 0;

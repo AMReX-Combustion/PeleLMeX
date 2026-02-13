@@ -193,17 +193,23 @@ PeleLM::calcTurbViscosity(const TimeStamp a_time)
 #endif
           });
       }
-      amrex::Gpu::streamSynchronize();
-
-      // Compute lambda_turb = alpha_t * cp = mu_t / Pr_t * cp
-      if (m_incompressible == 0) {
-        amrex::MultiFab::Copy(
-          ldata_p->lambda_turb_fc[idim], ldata_p->visc_turb_fc[idim], 0, 0, 1,
-          0);
-        amrex::MultiFab::Multiply(
-          ldata_p->lambda_turb_fc[idim], cp_fc[idim], 0, 0, 1, 0);
-        ldata_p->lambda_turb_fc[idim].mult(m_Prandtl_inv);
+    }
+    amrex::Gpu::streamSynchronize();
+    // Compute lambda_turb = alpha_t * cp = mu_t / Pr_t * cp
+    if (m_incompressible == 0) {
+      for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
+        auto const& l_turb_ma = ldata_p->lambda_turb_fc[idim].arrays();
+        auto const& v_turb_ma = ldata_p->visc_turb_fc[idim].const_arrays();
+        auto const& cp_ma = cp_fc[idim].const_arrays();
+        amrex::ParallelFor(
+          ldata_p->lambda_turb_fc[idim],
+          [l_turb_ma, v_turb_ma, cp_ma, inv_pr = m_Prandtl_inv] AMREX_GPU_DEVICE(
+            int box_no, int i, int j, int k) noexcept {
+            l_turb_ma[box_no](i, j, k) =
+              cp_ma[box_no](i, j, k) * v_turb_ma[box_no](i, j, k) * inv_pr;
+          });
       }
+      amrex::Gpu::streamSynchronize();
     }
   }
 }
@@ -304,48 +310,47 @@ PeleLM::calcDiffusivity(const TimeStamp a_time)
           amrex::Array4<amrex::Real>(kma[box_no], 0));
 #endif
       });
-    // Shift outside/combine with below?
-    amrex::Gpu::streamSynchronize();
 
     // Fill the diff_aux MF with specified Schmidt number
     for (int n = 0; n < m_nAux; ++n) {
+      auto const& diff_aux_arr = ldata_p->diff_aux_cc.arrays();
+      auto const& diff_arr = ldata_p->diff_cc.const_arrays();
       if (m_aux_Schmidt[n] > 0) {
-        amrex::MultiFab::Copy(
-          ldata_p->diff_aux_cc, ldata_p->diff_cc, NUM_SPECIES + 1, n, 1,
-          ldata_p->diff_cc.nGrowVect());
-        ldata_p->diff_aux_cc.mult(
-          1.0 / m_aux_Schmidt[n], n, 1, ldata_p->diff_cc.nGrow());
+        // Compute diffusivity with Schmidt number
+        const amrex::Real inv_sc = 1.0 / m_aux_Schmidt[n];
+        amrex::ParallelFor(
+          ldata_p->diff_aux_cc, ldata_p->diff_aux_cc.nGrowVect(),
+          [diff_aux_arr, diff_arr, inv_sc,
+           n] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+            diff_aux_arr[box_no](i, j, k, n) =
+              diff_arr[box_no](i, j, k, NUM_SPECIES + 1) * inv_sc;
+          });
       } else {
-        amrex::MultiFab::Copy(
-          ldata_p->diff_aux_cc, ldata_p->diff_cc, NUM_SPECIES, n, 1,
-          ldata_p->diff_cc.nGrowVect()); // lambda
-
-        const auto& ba = ldata_p->diff_cc.boxArray();
-        const auto& dm = ldata_p->diff_cc.DistributionMap();
-        const auto& factory = ldata_p->diff_cc.Factory();
-
-        amrex::MultiFab cp_cc;
+        // Otherwise, assume unity Lewis number
+        const auto& ba = ldata_p->state.boxArray();
+        const auto& dm = ldata_p->state.DistributionMap();
+        const auto& factory = ldata_p->state.Factory();
         const int ngrow = ldata_p->diff_cc.nGrow();
-        cp_cc.define(ba, dm, 1, ngrow, amrex::MFInfo(), factory);
+        amrex::MultiFab cp_cc(ba, dm, 1, ngrow, amrex::MFInfo(), factory);
         auto const& state_arr = ldata_p->state.const_arrays();
         auto const& cp_arr = cp_cc.arrays();
         amrex::ParallelFor(
-          cp_cc, cp_cc.nGrowVect(),
-          [state_arr, cp_arr, leosparm] AMREX_GPU_DEVICE(
-            int box_no, int i, int j, int k) noexcept {
+          ldata_p->diff_aux_cc, ldata_p->diff_aux_cc.nGrowVect(),
+          [state_arr, cp_arr, diff_aux_arr, diff_arr, leosparm,
+           n] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
             getCpmixGivenRYT(
               i, j, k,
               amrex::Array4<amrex::Real const>(state_arr[box_no], DENSITY),
               amrex::Array4<amrex::Real const>(state_arr[box_no], FIRSTSPEC),
               amrex::Array4<amrex::Real const>(state_arr[box_no], TEMP),
               amrex::Array4<amrex::Real>(cp_arr[box_no]), leosparm);
+            diff_aux_arr[box_no](i, j, k, n) =
+              diff_arr[box_no](i, j, k, NUM_SPECIES) / cp_arr[box_no](i, j, k);
           });
-        // Combine with the one above?
-        amrex::Gpu::streamSynchronize();
-        ldata_p->diff_aux_cc.divide(cp_cc, n, 1, ldata_p->diff_cc.nGrow());
       }
     }
   }
+  amrex::Gpu::streamSynchronize();
 }
 
 amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>

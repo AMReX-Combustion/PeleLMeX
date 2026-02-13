@@ -124,8 +124,6 @@ PeleLM::addChiIncrement(
               chiInc_ma[box_no](i, j, k) + mac_divu_ma[box_no](i, j, k);
             mac_divu_ma[box_no](i, j, k) = chi_ma[box_no](i, j, k);
           });
-        // Shift outside?
-        amrex::Gpu::streamSynchronize();
       }
       break;
     }
@@ -141,8 +139,6 @@ PeleLM::addChiIncrement(
             chi_ma[box_no](i, j, k) = chiInc_ma[box_no](i, j, k);
             mac_divu_ma[box_no](i, j, k) = chi_ma[box_no](i, j, k);
           });
-        // Shift outside?
-        amrex::Gpu::streamSynchronize();
       }
       break;
     }
@@ -158,8 +154,6 @@ PeleLM::addChiIncrement(
             chi_ma[box_no](i, j, k) = chiInc_ma[box_no](i, j, k);
             mac_divu_ma[box_no](i, j, k) += chi_ma[box_no](i, j, k);
           });
-        // Shift outside?
-        amrex::Gpu::streamSynchronize();
       }
     }
     }
@@ -178,8 +172,6 @@ PeleLM::addChiIncrement(
             chi_ma[box_no](i, j, k) += chiInc_ma[box_no](i, j, k);
             mac_divu_ma[box_no](i, j, k) = chi_ma[box_no](i, j, k);
           });
-        // Shift outside?
-        amrex::Gpu::streamSynchronize();
       }
     } else {
       for (int lev = 0; lev <= finest_level; ++lev) {
@@ -193,11 +185,10 @@ PeleLM::addChiIncrement(
             chi_ma[box_no](i, j, k) += chiInc_ma[box_no](i, j, k);
             mac_divu_ma[box_no](i, j, k) += chi_ma[box_no](i, j, k);
           });
-        // Shift outside?
-        amrex::Gpu::streamSynchronize();
       }
     }
   }
+  amrex::Gpu::streamSynchronize();
 
   if (m_print_chi_convergence) {
     const amrex::Real max_corr =

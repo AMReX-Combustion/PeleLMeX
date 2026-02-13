@@ -288,9 +288,10 @@ PeleLM::adjustPandDivU(const std::unique_ptr<AdvanceAdvData>& advData)
 
   // Get theta = 1 / (\Gamma * P_amb) at half time
   for (int lev = 0; lev <= finest_level; ++lev) {
-
     ThetaHalft[lev] = std::make_unique<amrex::MultiFab>(
       grids[lev], dmap[lev], 1, 0, amrex::MFInfo(), *m_factory[lev]);
+  }
+  for (int lev = 0; lev <= finest_level; ++lev) {
     auto const& tma = ThetaHalft[lev]->arrays();
     auto const& sma_o = getLevelDataPtr(lev, AmrOldTime)->state.const_arrays();
     auto const& sma_n = getLevelDataPtr(lev, AmrNewTime)->state.const_arrays();
@@ -311,8 +312,8 @@ PeleLM::adjustPandDivU(const std::unique_ptr<AdvanceAdvData>& advData)
           amrex::Array4<amrex::Real const>(sma_n[box_no], TEMP), leosparm);
         theta(i, j, k) = 0.5 * (gammaInv_o / pOld + gammaInv_n / pNew);
       });
-    amrex::Gpu::streamSynchronize();
   }
+  amrex::Gpu::streamSynchronize();
 
   // Get the mean mac_divu (Sbar) and mean theta
   const amrex::Real Sbar =

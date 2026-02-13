@@ -4,12 +4,15 @@
 #include <AMReX_Geometry.H>
 #include <AMReX_FArrayBox.H>
 #include <AMReX_SPACE.H>
+#include <AMReX_REAL.H>
 
 #include <PeleLMeX_ProblemSpecificFunctions.H>
 #include <PeleLMeX_Index.H>
 #include <PMFData.H>
 #include <PelePhysics.H>
 #include <Utilities.H>
+
+using namespace amrex::literals;
 
 namespace m2c = pele::physics::utilities::mks2cgs;
 namespace c2m = pele::physics::utilities::cgs2mks;
@@ -101,9 +104,9 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
     const amrex::Real* dx = geomdata.CellSize();
 
     amrex::Real x[3] = {
-      prob_lo[0] + static_cast<amrex::Real>(i + 0.5) * dx[0] * 100.0,
-      prob_lo[1] + static_cast<amrex::Real>(j + 0.5) * dx[1] * 100.0,
-      prob_lo[2] + static_cast<amrex::Real>(k + 0.5) * dx[2] * 100.0};
+      prob_lo[0] + static_cast<amrex::Real>(i + 0.5_rt) * dx[0] * 100.0_rt,
+      prob_lo[1] + static_cast<amrex::Real>(j + 0.5_rt) * dx[1] * 100.0_rt,
+      prob_lo[2] + static_cast<amrex::Real>(k + 0.5_rt) * dx[2] * 100.0_rt};
 
     if (prob_parm.doing_turbulent_forcing) {
       AMREX_ALWAYS_ASSERT(is_incompressible != 0);

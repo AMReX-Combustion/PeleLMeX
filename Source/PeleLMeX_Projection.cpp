@@ -36,14 +36,14 @@ PeleLM::initialProjection()
           amrex::Array4<amrex::Real const> rho(state_ma[box_no], DENSITY);
           sigma_ma[box_no](i, j, k) = dummy_dt / rho(i, j, k);
         });
-      // Shift outside?
-      amrex::Gpu::streamSynchronize();
 #if AMREX_SPACEDIM == 2
       if (geom[lev].IsRZ()) {
+        amrex::Gpu::streamSynchronize();
         scaleProj_RZ(lev, *sigma[lev]);
       }
 #endif
     }
+    amrex::Gpu::streamSynchronize();
   }
 
   // Get velocity
@@ -161,14 +161,14 @@ PeleLM::initialPressProjection()
           amrex::Array4<amrex::Real const> rho(state_ma[box_no], DENSITY);
           sigma_ma[box_no](i, j, k) = dummy_dt / rho(i, j, k);
         });
-      // Shift outside?
-      amrex::Gpu::streamSynchronize();
 #if AMREX_SPACEDIM == 2
       if (geom[lev].IsRZ()) {
+        amrex::Gpu::streamSynchronize();
         scaleProj_RZ(lev, *sigma[lev]);
       }
 #endif
     }
+    amrex::Gpu::streamSynchronize();
   }
 
   // Set the velocity to the gravity field
@@ -222,16 +222,18 @@ PeleLM::velocityProjection(
                          int box_no, int i, int j, int k) noexcept {
           sigma_ma[box_no](i, j, k) = dt / rhoHalf_ma[box_no](i, j, k);
         });
-      amrex::Gpu::streamSynchronize();
 #ifdef AMREX_USE_EB
+      amrex::Gpu::streamSynchronize();
       EB_set_covered(*sigma[lev], 0.0);
 #endif
 #if AMREX_SPACEDIM == 2
       if (geom[lev].IsRZ()) {
+        amrex::Gpu::streamSynchronize();
         scaleProj_RZ(lev, *sigma[lev]);
       }
 #endif
     }
+    amrex::Gpu::streamSynchronize();
   }
 
   if (incremental == 0) {
@@ -252,8 +254,6 @@ PeleLM::velocityProjection(
             const amrex::Real soverrho = dt / rho_ma[box_no](i, j, k);
             vel(i, j, k, n) += gp_new_ma[box_no](i, j, k, n) * soverrho;
           });
-        // Shift outside? (w/below)
-        amrex::Gpu::streamSynchronize();
       }
     } else {
       for (int lev = 0; lev <= finest_level; ++lev) {
@@ -269,10 +269,9 @@ PeleLM::velocityProjection(
             amrex::Array4<amrex::Real> vel(state_old_ma[box_no], VELX);
             vel(i, j, k, n) += gp_new_ma[box_no](i, j, k, n) * soverrho;
           });
-        // Shift outside?
-        amrex::Gpu::streamSynchronize();
       }
     }
+    amrex::Gpu::streamSynchronize();
   }
 
   // If incremental
@@ -321,8 +320,8 @@ PeleLM::velocityProjection(
   amrex::Vector<amrex::MultiFab> rhs_cc;
   if ((m_incompressible == 0) && (m_has_divu != 0)) {
     rhs_cc.reserve(finest_level + 1);
-    for (int lev = 0; lev <= finest_level; ++lev) {
-      if (incremental == 0) {
+    if (incremental == 0) {
+      for (int lev = 0; lev <= finest_level; ++lev) {
         auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
         rhs_cc.emplace_back(
           grids[lev], dmap[lev], 1, ldata_p->divu.nGrow(), amrex::MFInfo(),
@@ -333,7 +332,17 @@ PeleLM::velocityProjection(
           rhs_cc[lev].plus(-SbarNew, 0, 1);
         }
         rhs_cc[lev].mult(-1.0, 0, 1, ldata_p->divu.nGrow());
-      } else {
+#ifdef AMREX_USE_EB
+        EB_set_covered(rhs_cc[lev], 0.0);
+#endif
+#if AMREX_SPACEDIM == 2
+        if (geom[lev].IsRZ()) {
+          scaleProj_RZ(lev, rhs_cc[lev]);
+        }
+#endif
+      }
+    } else {
+      for (int lev = 0; lev <= finest_level; ++lev) {
         auto* ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
         auto* ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
         rhs_cc.emplace_back(
@@ -351,19 +360,22 @@ PeleLM::velocityProjection(
             rhs_ma[box_no](i, j, k) =
               -(divu_n_ma[box_no](i, j, k) - divu_o_ma[box_no](i, j, k));
           });
-        amrex::Gpu::streamSynchronize();
         if (m_closed_chamber != 0) {
+          amrex::Gpu::streamSynchronize();
           rhs_cc[lev].plus(SbarNew - SbarOld, 0, 1, ldataOld_p->divu.nGrow());
         }
-      }
 #ifdef AMREX_USE_EB
-      EB_set_covered(rhs_cc[lev], 0.0);
+        amrex::Gpu::streamSynchronize();
+        EB_set_covered(rhs_cc[lev], 0.0);
 #endif
 #if AMREX_SPACEDIM == 2
-      if (geom[lev].IsRZ()) {
-        scaleProj_RZ(lev, rhs_cc[lev]);
-      }
+        if (geom[lev].IsRZ()) {
+          amrex::Gpu::streamSynchronize();
+          scaleProj_RZ(lev, rhs_cc[lev]);
+        }
 #endif
+      }
+      amrex::Gpu::streamSynchronize();
     }
   }
 

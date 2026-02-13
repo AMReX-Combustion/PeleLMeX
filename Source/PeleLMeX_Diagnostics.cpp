@@ -19,7 +19,7 @@ PeleLM::createDiagnostics()
     std::string diag_type;
     ppd.get("type", diag_type);
     m_diagnostics[n] = DiagBase::create(diag_type);
-    m_diagnostics[n]->init(diag_prefix, diags[n]);
+    m_diagnostics[n]->init(diag_prefix, m_base_output_pref + diags[n]);
     m_diagnostics[n]->addVars(m_diagVars);
   }
 

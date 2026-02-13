@@ -258,9 +258,8 @@ PeleLM::updateVelocity(const std::unique_ptr<AdvanceAdvData>& advData)
           vel_old(i, j, k, n) +
           dt_loc * (adv_aofs(i, j, k, n) + force_ma[box_no](i, j, k, n));
       });
-    // Shift outside?
-    amrex::Gpu::streamSynchronize();
   }
+  amrex::Gpu::streamSynchronize();
 }
 
 void
@@ -314,9 +313,9 @@ PeleLM::getScalarAdvForce(
           is_closed_ch, do_react, fY, fT, fAux, dn_aux, aux_diffuse_d, nAux,
           leosparm);
       });
-    // Shift outside?
-    amrex::Gpu::streamSynchronize();
   }
+  amrex::Gpu::streamSynchronize();
+
   // Fill forcing ghost cells
   if (advData->Forcing[0].nGrow() > 0) {
     fillpatch_forces(
@@ -1150,8 +1149,7 @@ PeleLM::updateScalarComp(
           state_old_arr(i, j, k, n) +
           dt * (adv_aofs_arr(i, j, k, n) + ext_arr(i, j, k, n));
       });
-    // Shift outside?
-    amrex::Gpu::streamSynchronize();
   }
+  amrex::Gpu::streamSynchronize();
   averageDown(AmrNewTime, state_comp, ncomp);
 }
