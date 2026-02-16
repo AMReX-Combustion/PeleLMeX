@@ -53,7 +53,7 @@ amr.dt_change_max = 1.1                   # Maximum dt increase btw successive s
 #amr.restart = chk00050                   # Restart checkpoint file
 #amr.check_int = 2000                     # Frequency of checkpoint output
 amr.plot_int = 100                        # Frequency of pltfile output
-amr.derive_plot_vars = avg_pressure mag_vort mass_fractions mixture_fraction progress_variable
+amr.derive_plot_vars = avg_pressure mag_vort mass_fractions mixture_fraction progress_variable element_fractions
 
 #---------------------- Derived CONTROLS -------------------------
 peleLM.fuel_name = CH4
