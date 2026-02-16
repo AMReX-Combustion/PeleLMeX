@@ -1186,12 +1186,13 @@ PeleLM::derivedSetup()
       pele::physics::PhysicsType::eos_type::identifier() == "SRK") {
       amrex::Vector<std::string> ename;
       CKSYME_STR(ename);
+      amrex::Vector<std::string> var_names_elemfrac(NUM_ELEMENTS);
       for (int n = 0; n < NUM_ELEMENTS; ++n) {
-        var_names_massfrac[n] = "Z(" + ename[n] + ")";
+        var_names_elemfrac[n] = "Z(" + ename[n] + ")";
       }
       derive_lst.add(
         "element_fractions", amrex::IndexType::TheCellType(), NUM_ELEMENTS,
-        var_names_massfrac, pelelmex_derelementfrac, the_same_box);
+        var_names_elemfrac, pelelmex_derelementfrac, the_same_box);
     }
 
     // Species diffusion coefficients

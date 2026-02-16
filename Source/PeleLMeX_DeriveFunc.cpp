@@ -199,7 +199,7 @@ pelelmex_derelementfrac(
   amrex::ParallelFor(
     bx, [in_dat, leosparm, der] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
       amrex::Real Yt[NUM_SPECIES] = {0.0};
-      amrex::Real Zt[NUM_SPECIES] = {0.0};
+      amrex::Real Zt[NUM_ELEMENTS] = {0.0};
       amrex::Real rhoinv = 1.0 / in_dat(i, j, k, DENSITY);
       for (int n = 0; n < NUM_SPECIES; ++n) {
         Yt[n] = in_dat(i, j, k, FIRSTSPEC + n) * rhoinv;
