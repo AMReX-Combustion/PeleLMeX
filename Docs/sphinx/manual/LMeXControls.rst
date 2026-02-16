@@ -186,6 +186,9 @@ The following list of derived variables are available in PeleLMeX:
     * - `mole_fractions`
       - NUM_SPECIES
       - Species mole fractions
+    * - `element_fractions`
+      - NUM_ELEMENTS
+      - Element mass fractions
     * - `diffcoeff`
       - NUM_SPECIES
       - Species mixture-averaged diffusion coefficients
