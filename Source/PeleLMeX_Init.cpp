@@ -31,7 +31,7 @@ PeleLM::MakeNewLevelFromScratch(
 
   if (m_verbose > 0) {
     amrex::Print() << " Making new level " << lev << " from scratch \n";
-    if (m_verbose > 2 && lev > 0) {
+    if (m_verbose > 1 && lev > 0) {
       auto const dx = geom[lev].CellSizeArray();
       const amrex::Real vol = AMREX_D_TERM(dx[0], *dx[1], *dx[2]);
       amrex::Print() << " with " << ba.numPts() << " cells," << ba.size()
