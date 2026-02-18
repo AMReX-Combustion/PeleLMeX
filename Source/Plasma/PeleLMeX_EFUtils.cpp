@@ -66,11 +66,11 @@ PeleLM::getNLStateScaling(amrex::Real& nEScale, amrex::Real& phiVScale)
   for (int comp = 0; comp < 2; ++comp) {
     for (int lev = 0; lev <= finest_level; ++lev) {
       if (lev != finest_level) {
-        r[comp] = amrex::max(
+        r[comp] = amrex::max<amrex::Real>(
           r[comp], m_leveldatanlsolve[lev]->nlState.norm0(
                      *m_coveredMask[lev], comp, 0, true));
       } else {
-        r[comp] = amrex::max(
+        r[comp] = amrex::max<amrex::Real>(
           r[comp], m_leveldatanlsolve[lev]->nlState.norm0(comp, 0, true, true));
       }
     }
@@ -87,11 +87,11 @@ PeleLM::getNLResidScaling(amrex::Real& nEScale, amrex::Real& phiVScale)
   for (int comp = 0; comp < 2; ++comp) {
     for (int lev = 0; lev <= finest_level; ++lev) {
       if (lev != finest_level) {
-        r[comp] = amrex::max(
+        r[comp] = amrex::max<amrex::Real>(
           r[comp], m_leveldatanlsolve[lev]->nlResid.norm0(
                      *m_coveredMask[lev], comp, 0, true));
       } else {
-        r[comp] = amrex::max(
+        r[comp] = amrex::max<amrex::Real>(
           r[comp], m_leveldatanlsolve[lev]->nlResid.norm0(comp, 0, true));
       }
     }

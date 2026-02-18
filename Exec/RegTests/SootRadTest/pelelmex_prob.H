@@ -4,6 +4,7 @@
 #include <AMReX_Geometry.H>
 #include <AMReX_FArrayBox.H>
 #include <AMReX_ParmParse.H>
+#include <AMReX_REAL.H>
 
 #include <PeleLMeX_ProblemSpecificFunctions.H>
 #include <PMF.H>
@@ -12,6 +13,8 @@
 #include <PeleLMeX_Index.H>
 #include <PelePhysics.H>
 #include "SootModel.H"
+
+using namespace amrex::literals;
 
 struct MyProbParm : public ProbParmDefault
 {
@@ -47,7 +50,7 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
     state(i, j, k, TEMP) = pmf_vals[1];
     amrex::Real norm = 0.;
     for (int n = 0; n < NUM_SPECIES; n++) {
-      massfrac[n] = amrex::max(0., amrex::min(1., pmf_vals[3 + n]));
+      massfrac[n] = amrex::Clamp(pmf_vals[3 + n], 0.0_rt, 1.0_rt);
       norm += massfrac[n];
     }
     for (int n = 0; n < NUM_SPECIES; ++n) {

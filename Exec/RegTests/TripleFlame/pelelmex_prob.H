@@ -52,7 +52,7 @@ void
 set_Y_from_Ksi(
   MyProbParm const& prob_parm, const amrex::Real& ksi_in, amrex::Real Y[])
 {
-  amrex::Real phi = ksi_in / (1.0 - amrex::min(ksi_in, 0.999999)) *
+  amrex::Real phi = ksi_in / (1.0 - amrex::min<amrex::Real>(ksi_in, 0.999999)) *
                     (1.0 - prob_parm.Zst) / prob_parm.Zst;
 
   set_Y_from_Phi(prob_parm, phi, Y);
@@ -100,7 +100,8 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
 
     amrex::Real rad = std::sqrt(
       (x - prob_parm.splitx) * (x - prob_parm.splitx) +
-      (amrex::min(y, y_lo) - y_lo) * (amrex::min(y, y_lo) - y_lo));
+      (amrex::min<amrex::Real>(y, y_lo) - y_lo) *
+        (amrex::min<amrex::Real>(y, y_lo) - y_lo));
 
     amrex::Real Gaussian_T = std::exp(
       -(rad * rad) / (2.0 * (Gauss_T_width * (1.0 + (y - y_lo) / 0.03)) *

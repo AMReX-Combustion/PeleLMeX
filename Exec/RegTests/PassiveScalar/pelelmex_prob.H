@@ -4,11 +4,14 @@
 #include <AMReX_Geometry.H>
 #include <AMReX_FArrayBox.H>
 #include <AMReX_SPACE.H>
+#include <AMReX_REAL.H>
 
 #include <PeleLMeX_ProblemSpecificFunctions.H>
 #include <PeleLMeX_Index.H>
 #include <PMFData.H>
 #include <PelePhysics.H>
+
+using namespace amrex::literals;
 
 struct MyProbParm : public ProbParmDefault
 {
@@ -69,10 +72,11 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
 #endif
     // find the centre of the domain
     const amrex::Real cen[AMREX_SPACEDIM] = {AMREX_D_DECL(
-      prob_lo[0] + 0.5 * Lx, prob_lo[1] + 0.5 * Ly, prob_lo[2] + 0.5 * Lz)};
+      prob_lo[0] + 0.5_rt * Lx, prob_lo[1] + 0.5_rt * Ly,
+      prob_lo[2] + 0.5_rt * Lz)};
     const amrex::Real x[AMREX_SPACEDIM] = {AMREX_D_DECL(
-      prob_lo[0] + (i + 0.5) * dx[0], prob_lo[1] + (j + 0.5) * dx[1],
-      prob_lo[2] + (k + 0.5) * dx[2])};
+      prob_lo[0] + (i + 0.5_rt) * dx[0], prob_lo[1] + (j + 0.5_rt) * dx[1],
+      prob_lo[2] + (k + 0.5_rt) * dx[2])};
     // radius from centre
     const amrex::Real r = std::sqrt(AMREX_D_TERM(
       (x[0] - cen[0]) * (x[0] - cen[0]), +(x[1] - cen[1]) * (x[1] - cen[1]),

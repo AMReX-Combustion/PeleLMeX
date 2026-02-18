@@ -124,7 +124,7 @@ PeleLM::setBoundaryConditions()
 
   // Initialize the BCRecs
   m_bcrec_state.resize(NVAR);
-  constexpr int sizeForceBC = amrex::max(AMREX_SPACEDIM, NUM_SPECIES + 2);
+  constexpr int sizeForceBC = amrex::max<int>(AMREX_SPACEDIM, NUM_SPECIES + 2);
   m_bcrec_force.resize(sizeForceBC);
   m_bcrec_aux.resize(m_nAux);
 
