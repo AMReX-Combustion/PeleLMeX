@@ -12,10 +12,10 @@ peleLM.hi_bc = NoSlipWallAdiab NoSlipWallAdiab Outflow
 
 #-------------------------AMR CONTROL----------------------------
 amr.n_cell          = 40 24 80         # Level 0 number of cells in each direction
-amr.v               = 1                # AMR verbose
-amr.max_level       = 4                # maximum level number allowed
+amr.v               = 2                # AMR verbose
+amr.max_level       = 5                # maximum level number allowed
 amr.ref_ratio       = 2 2 2 2          # refinement ratio
-amr.regrid_int      = 2                # how often to regrid
+amr.regrid_int      = 6                # how often to regrid
 amr.n_error_buf     = 2 2 2 2          # number of buffer cells in error est
 amr.grid_eff        = 0.7              # what constitutes an efficient grid
 amr.blocking_factor = 8               # block factor in grid generation (min box size)
@@ -49,6 +49,7 @@ peleLM.mu = 0.0
 peleLM.use_wbar = 1
 peleLM.sdc_iterMax = 1
 peleLM.advection_scheme = "Godunov_BDS"
+peleLM.deltaT_crashIfFailing = 0
 
 amr.plot_int = 50
 amr.check_int = 200
@@ -75,18 +76,18 @@ cvode.max_order  = 4                  # CVODE max BDF order.
 amr.refinement_indicators = overYH2 diffYH2 diffRho inlet_box
 
 amr.overYH2.max_level = 4
-amr.overYH2.value_greater = 0.99
+amr.overYH2.value_greater = 0.15
 amr.overYH2.field_name = Y(H2)
 
-amr.diffYH2.max_level = 4
-amr.diffYH2.adjacent_difference_greater = 0.01
+amr.diffYH2.max_level = 5
+amr.diffYH2.adjacent_difference_greater = 0.005
 amr.diffYH2.field_name = Y(H2)
 
 amr.diffRho.max_level = 1
 amr.diffRho.adjacent_difference_greater = 0.8
 amr.diffRho.field_name = density
 
-amr.inlet_box.max_level = 4
+amr.inlet_box.max_level = 5
 amr.inlet_box.in_box_lo = 0.000 -0.002 -0.002
 amr.inlet_box.in_box_hi = 0.004 0.002 0.0002
 
