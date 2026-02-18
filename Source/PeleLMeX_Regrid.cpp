@@ -316,7 +316,7 @@ PeleLM::MakeNewLevelFromCoarse(
 
   if (m_verbose > 0) {
     amrex::Print() << " Making new level " << lev << " from coarse\n";
-    if (m_verbose > 2) {
+    if (m_verbose > 1) {
       auto const dx = geom[lev].CellSizeArray();
       amrex::Real vol = AMREX_D_TERM(dx[0], *dx[1], *dx[2]);
       amrex::Print() << " with " << ba.numPts() << " cells, " << ba.size()
@@ -432,7 +432,7 @@ PeleLM::RemakeLevel(
 
   if (m_verbose > 0) {
     amrex::Print() << " Remaking level " << lev << "\n";
-    if (m_verbose > 2) {
+    if (m_verbose > 1) {
       auto const dx = geom[lev].CellSizeArray();
       amrex::Real vol = AMREX_D_TERM(dx[0], *dx[1], *dx[2]);
       amrex::Print() << " with " << ba.numPts() << " cells," << ba.size()
