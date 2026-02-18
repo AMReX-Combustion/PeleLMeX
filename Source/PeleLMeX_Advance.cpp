@@ -54,7 +54,7 @@ PeleLM::Advance(const int is_initIter)
   //----------------------------------------------------------------
 
   if (m_verbose != 0) {
-    int ncells = 0;
+    amrex::Long ncells = 0;
     for (int lev = 0; lev <= finest_level; ++lev) {
       ncells += m_extSource[lev]->boxArray().numPts();
     }
