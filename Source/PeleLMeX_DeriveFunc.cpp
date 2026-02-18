@@ -169,6 +169,50 @@ pelelmex_dermolefrac(
 }
 
 //
+// Extract element mass fractions Z_n
+//
+void
+pelelmex_derelementfrac(
+  PeleLM* a_pelelm,
+  const amrex::Box& bx,
+  amrex::FArrayBox& derfab,
+  int dcomp,
+  int ncomp,
+  const amrex::FArrayBox& statefab,
+  const amrex::FArrayBox& /*reactfab*/,
+  const amrex::FArrayBox& /*pressfab*/,
+  const amrex::Geometry& /*geom*/,
+  amrex::Real /*time*/,
+  const amrex::Vector<amrex::BCRec>& /*bcrec*/,
+  int /*level*/)
+{
+  amrex::ignore_unused(a_pelelm, ncomp);
+  AMREX_ASSERT(derfab.box().contains(bx));
+  AMREX_ASSERT(statefab.box().contains(bx));
+  AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
+  AMREX_ASSERT(statefab.nComp() >= NUM_SPECIES + 1);
+  AMREX_ASSERT(ncomp == NUM_ELEMENTS);
+  AMREX_ASSERT(!a_pelelm->m_incompressible);
+  auto const in_dat = statefab.array();
+  auto der = derfab.array(dcomp);
+  auto const* leosparm = a_pelelm->eos_parms.device_parm();
+  amrex::ParallelFor(
+    bx, [in_dat, leosparm, der] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+      amrex::Real Yt[NUM_SPECIES] = {0.0};
+      amrex::Real Zt[NUM_ELEMENTS] = {0.0};
+      amrex::Real rhoinv = 1.0 / in_dat(i, j, k, DENSITY);
+      for (int n = 0; n < NUM_SPECIES; ++n) {
+        Yt[n] = in_dat(i, j, k, FIRSTSPEC + n) * rhoinv;
+      }
+      auto eos = pele::physics::PhysicsType::eos(leosparm);
+      eos.Y2Z(Yt, Zt);
+      for (int n = 0; n < NUM_ELEMENTS; ++n) {
+        der(i, j, k, n) = Zt[n];
+      }
+    });
+}
+
+//
 // Extract rho - sum rhoY
 //
 void
@@ -440,10 +484,10 @@ pelelmex_dermgvort(
 
 	const amrex::Real uy = 0.5 * (dat_arr(i,j+1,k,0) - dat_arr(i,j-1,k,0)) * idy;
 	const amrex::Real wy = 0.5 * (dat_arr(i,j+1,k,2) - dat_arr(i,j-1,k,2)) * idy;
-	
+
 	const amrex::Real uz = 0.5 * (dat_arr(i,j,k+1,0) - dat_arr(i,j,k-1,0)) * idz;
 	const amrex::Real vz = 0.5 * (dat_arr(i,j,k+1,1) - dat_arr(i,j,k-1,1)) * idz;
-	
+
 	vort_arr(i,j,k) = std::sqrt((wy-vz)*(wy-vz) + (uz-wx)*(uz-wx) + (vx-uy)*(vx-uy));
 #endif
       });
@@ -628,7 +672,7 @@ pelelmex_dervort(
 
 	const amrex::Real uz = 0.5 * (dat_arr(i,j,k+1,0) - dat_arr(i,j,k-1,0)) * idz;
 	const amrex::Real vz = 0.5 * (dat_arr(i,j,k+1,1) - dat_arr(i,j,k-1,1)) * idz;
-	    
+
 	vort_arr(i,j,k,0) = (wy-vz)*(wy-vz);
 	vort_arr(i,j,k,1) = (uz-wx)*(uz-wx);
 	vort_arr(i,j,k,2) = (vx-uy)*(vx-uy);
