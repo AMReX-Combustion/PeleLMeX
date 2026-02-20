@@ -6,6 +6,7 @@ SUNDIALS_HOME      ?= $(abspath $(lastword ${PELE_PHYSICS_HOME}/Submodules/sundi
 
 USE_SUNDIALS = TRUE
 BL_NO_FORT = TRUE
+CXXSTD = c++20
 
 # Raise an error if case files and source versions are incompatible
 define ERROR_MESSAGE
@@ -39,8 +40,6 @@ endif
 ifeq ($(USE_CUDA),TRUE)
    CXXFLAGS += -Xptxas --disable-optimizer-constants -Xcompiler=-std=c++17
 endif
-
-CXXSTD = c++20
 
 #---------------
 # PeleLM sources
