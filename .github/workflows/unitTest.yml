@@ -35,7 +35,7 @@ jobs:
       working-directory: ${{github.workspace}}/buildRef/PeleLMeX/Exec/UnitTests/DodecaneLu
       run: |
           make -j2 TPL COMP=gnu DEBUG=FALSE
-          make -j2 CXXSTD=c++20 COMP=gnu DEBUG=FALSE
+          make -j2 COMP=gnu DEBUG=FALSE
     - name: Run Reference Case
       working-directory: ${{github.workspace}}/buildRef/PeleLMeX/Exec/UnitTests/DodecaneLu
       run: |
@@ -51,7 +51,7 @@ jobs:
       working-directory: ${{github.workspace}}/Exec/UnitTests/DodecaneLu
       run: |
           make -j2 TPL COMP=gnu DEBUG=FALSE
-          make -j2 CXXSTD=c++20 COMP=gnu DEBUG=FALSE
+          make -j2 COMP=gnu DEBUG=FALSE
     - name: Run Case
       working-directory: ${{github.workspace}}/Exec/UnitTests/DodecaneLu
       run: |

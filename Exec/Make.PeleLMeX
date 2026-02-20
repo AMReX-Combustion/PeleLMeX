@@ -40,7 +40,7 @@ ifeq ($(USE_CUDA),TRUE)
    CXXFLAGS += -Xptxas --disable-optimizer-constants -Xcompiler=-std=c++17
 endif
 
-CXXFLAGS += -std=c++17
+CXXSTD = c++20
 
 #---------------
 # PeleLM sources

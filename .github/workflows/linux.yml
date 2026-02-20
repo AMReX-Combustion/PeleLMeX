@@ -71,7 +71,7 @@ jobs:
       working-directory: ./Exec/RegTests/EB_PipeFlow/
       run: |
         make TPL COMP=gnu USE_MPI=TRUE
-        make -j 2 CXXSTD=c++20 COMP=gnu USE_MPI=TRUE
+        make -j 2 COMP=gnu USE_MPI=TRUE
     - name: Run
       working-directory: ./Exec/RegTests/EB_PipeFlow/
       run: |
@@ -94,7 +94,7 @@ jobs:
       working-directory: ./Exec/RegTests/SootRadTest/
       run: |
         make TPL COMP=gnu USE_MPI=TRUE TINY_PROFILE=FALSE
-        make -j 2 CXXSTD=c++20 COMP=gnu USE_MPI=TRUE TINY_PROFILE=FALSE
+        make -j 2 COMP=gnu USE_MPI=TRUE TINY_PROFILE=FALSE
     - name: Run Release
       working-directory: ./Exec/RegTests/SootRadTest/
       run: |
@@ -103,7 +103,7 @@ jobs:
       working-directory: ./Exec/RegTests/SootRadTest/
       run: |
         make TPL COMP=gnu USE_MPI=TRUE DEBUG=TRUE TINY_PROFILE=FALSE
-        make -j 2 CXXSTD=c++20 COMP=gnu USE_MPI=TRUE DEBUG=TRUE TINY_PROFILE=FALSE
+        make -j 2 COMP=gnu USE_MPI=TRUE DEBUG=TRUE TINY_PROFILE=FALSE
     - name: Run Debug
       working-directory: ./Exec/RegTests/SootRadTest/
       run: |
@@ -125,7 +125,7 @@ jobs:
       working-directory: ./Exec/RegTests/EB_BackwardStepFlame/
       run: |
         make TPL COMP=gnu USE_MPI=TRUE
-        make -j 2 CXXSTD=c++20 COMP=gnu USE_MPI=TRUE
+        make -j 2 COMP=gnu USE_MPI=TRUE
     - name: Run
       working-directory: ./Exec/RegTests/EB_BackwardStepFlame/
       run: |
@@ -147,7 +147,7 @@ jobs:
       working-directory: ./Exec/Plasma/FlameSheetIons
       run: |
         make TPL COMP=gnu USE_MPI=TRUE
-        make -j 2 CXXSTD=c++20 COMP=gnu USE_MPI=TRUE
+        make -j 2 COMP=gnu USE_MPI=TRUE
     - name: Run
       working-directory: ./Exec/Plasma/FlameSheetIons
       run: |
@@ -180,7 +180,7 @@ jobs:
       working-directory: ./Submodules/PelePhysics/Support/TurbInflowGenerator
       run: |
         ./gen_hit_ic.py -k0 4 -N 32 -Nk 256
-        make -j 2 CXXSTD=c++20 COMP=gnu
+        make -j 2 COMP=gnu
         ./PeleTurb3d.gnu.ex input hit_file=hit_ic_4_32.dat input_ncell=32 amrex.abort_on_unused_inputs=1
         mkdir ${GITHUB_WORKSPACE}/Exec/RegTests/TurbInflow/TurbFileHIT
         cp -r TurbTEST ${GITHUB_WORKSPACE}/Exec/RegTests/TurbInflow/TurbFileHIT
@@ -188,7 +188,7 @@ jobs:
       working-directory: ./Exec/RegTests/TurbInflow/
       run: |
         make TPL COMP=gnu USE_MPI=TRUE DEBUG=TRUE
-        make -j 2 CXXSTD=c++20 COMP=gnu USE_MPI=TRUE DEBUG=TRUE
+        make -j 2 COMP=gnu USE_MPI=TRUE DEBUG=TRUE
     - name: Run
       working-directory: ./Exec/RegTests/TurbInflow/
       run: |
@@ -202,7 +202,7 @@ jobs:
       working-directory: ./Exec/RegTests/PeriodicCases/
       run: |
         make TPL DIM=3 COMP=gnu USE_MPI=TRUE
-        make -j 2 CXXSTD=c++20 DIM=3 COMP=gnu USE_MPI=TRUE
+        make -j 2 DIM=3 COMP=gnu USE_MPI=TRUE
     - name: Periodic Vortex for Inflow
       working-directory: ./Exec/RegTests/PeriodicCases/
       run: |
@@ -249,7 +249,7 @@ jobs:
       working-directory: ./Exec/RegTests/SprayTest/
       run: |
         make TPL COMP=gnu USE_MPI=TRUE
-        make -j 2 CXXSTD=c++20 COMP=gnu USE_MPI=TRUE
+        make -j 2 COMP=gnu USE_MPI=TRUE
     - name: Run Convergence
       working-directory: ./Exec/RegTests/SprayTest/
       run: |
