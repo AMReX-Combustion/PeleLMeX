@@ -1,3 +1,4 @@
+
 #include <PeleLMeX.H>
 #include <PeleLMeX_Utils.H>
 #include <PeleLMeX_K.H>
@@ -1501,6 +1502,27 @@ PeleLM::differentialDiffusionUpdate(
         GetVecOfPtrs(diffData->Dhat), NUM_SPECIES, GetVecOfArrOfPtrs(fluxes),
         NUM_SPECIES, 2, 1, -1.0);
     }
+
+    //------------------------------------------------------------------------
+    // Recompute RhoH (before deltaT iters: we've updated species at the new
+    // state already, we should modify enthalpy to reflect this update before
+    // the iterative procedure to update enthalpy due to T diffusion)
+
+    auto const* leosparm = eos_parms.device_parm();
+    for (int lev = 0; lev <= finest_level; ++lev) {
+      auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
+      auto const& sma = ldata_p->state.arrays();
+      amrex::ParallelFor(
+        ldata_p->state, [sma, leosparm] AMREX_GPU_DEVICE(
+                          int box_no, int i, int j, int k) noexcept {
+          getRHmixGivenTY(
+            i, j, k, amrex::Array4<amrex::Real const>(sma[box_no], DENSITY),
+            amrex::Array4<amrex::Real const>(sma[box_no], FIRSTSPEC),
+            amrex::Array4<amrex::Real const>(sma[box_no], TEMP),
+            amrex::Array4<amrex::Real>(sma[box_no], RHOH), leosparm);
+        });
+    }
+    amrex::Gpu::streamSynchronize();
 
     //------------------------------------------------------------------------
     // delta(T) iterations
