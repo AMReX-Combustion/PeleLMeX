@@ -39,6 +39,7 @@ PeleLM::readProbParm()
   pp.get("jet_rad", PeleLM::prob_parm->jet_rad);
   pp.get("jet_bl_thickness", PeleLM::prob_parm->jet_bl_thickness);
   pp.query("jet_init_time", PeleLM::prob_parm->jet_init_time);
+  pp.query("jet_start_time", PeleLM::prob_parm->jet_start_time);
   pp.query("double_jet", PeleLM::prob_parm->double_jet);
 }
 

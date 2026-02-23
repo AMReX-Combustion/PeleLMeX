@@ -28,6 +28,7 @@ struct MyProbParm : public ProbParmDefault
   amrex::Real jet_rad = 2.5e-4;
   int jet_dir = 0;
   amrex::Real jet_init_time = -1;
+  amrex::Real jet_start_time = -1;
   int double_jet = 0;
 };
 
@@ -179,6 +180,18 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
         }
       }
 
+      amrex::Real time_factor = 0.0;
+      if (time < prob_parm.jet_start_time) {
+        time_factor = 0.0;
+      } else if (time < prob_parm.jet_start_time + prob_parm.jet_init_time) {
+        time_factor =
+          (time - prob_parm.jet_start_time) / prob_parm.jet_init_time;
+      } else {
+        time_factor = 1.0;
+      }
+      vel_factor *= time_factor;
+      comp_factor *= time_factor;
+
       for (int n = 0; n < NUM_SPECIES; n++) {
         massfrac[n] = comp_factor * prob_parm.jet_massfracs[n] +
                       (1.0 - comp_factor) * prob_parm.cf_massfracs[n];
@@ -202,19 +215,12 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
       }
 
       // Velocity
-      amrex::Real time_factor = 0.0;
-      if (time < prob_parm.jet_init_time) {
-        time_factor =
-          (time / prob_parm.jet_init_time) * (time / prob_parm.jet_init_time);
-      } else {
-        time_factor = 1.0;
-      }
-      s_ext[VELX] = (1 - 0.5 * prob_parm.double_jet) * sgn * time_factor *
-                    vel_factor * U_jet[0];
-      s_ext[VELY] = (1 - 0.5 * prob_parm.double_jet) * sgn * time_factor *
-                    vel_factor * U_jet[1];
-      s_ext[VELZ] = (1 - 0.5 * prob_parm.double_jet) * sgn * time_factor *
-                    vel_factor * U_jet[2];
+      s_ext[VELX] =
+        (1 - 0.5 * prob_parm.double_jet) * sgn * vel_factor * U_jet[0];
+      s_ext[VELY] =
+        (1 - 0.5 * prob_parm.double_jet) * sgn * vel_factor * U_jet[1];
+      s_ext[VELZ] =
+        (1 - 0.5 * prob_parm.double_jet) * sgn * vel_factor * U_jet[2];
     }
 
     if ((idir == cf_dir) and (sgn == 1)) {
@@ -242,7 +248,7 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
   }
 
   // Zero diffusion coefficients for walls on inflow face so we don't get
-  // diffusiin through them
+  // diffusion through them
   AMREX_GPU_DEVICE
   AMREX_FORCE_INLINE
   static void zero_visc(
