@@ -54,8 +54,12 @@ PeleLM::Advance(const int is_initIter)
   //----------------------------------------------------------------
 
   if (m_verbose != 0) {
+    amrex::Long ncells = 0;
+    for (int lev = 0; lev <= finest_level; ++lev) {
+      ncells += m_extSource[lev]->boxArray().numPts();
+    }
     amrex::Print() << " STEP [" << m_nstep << "] - Time: " << m_cur_time
-                   << ", dt " << m_dt << "\n";
+                   << ", dt " << m_dt << ", Ncells " << ncells << "\n";
   }
 
   checkMemory("Adv. start");
