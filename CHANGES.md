@@ -6,6 +6,8 @@ The changes should largely be backward compatible.
 Slight modifications are also made to mechanism generation in PelePhysics that will
 require re-generating any mechanism that does not ship with PelePhysics.
 
+PelePhysics submodule updated to eec058f4 (higher precision in thermo polys).
+
 ## v1.1.0
 
 EB-Inflow capability was added in PR #515. To enable this capability, the optional
