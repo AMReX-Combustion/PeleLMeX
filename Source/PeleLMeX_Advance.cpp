@@ -283,7 +283,7 @@ PeleLM::Advance(const int is_initIter)
   }
   ProblemSpecificFunctions::postAdvance(
     m_cur_time + m_dt, m_dt, finest_level, state_mf, geom_vec, prob_parm_d);
-    
+
   BL_PROFILE_VAR_STOP(PLM_POSTADV);
 }
 
