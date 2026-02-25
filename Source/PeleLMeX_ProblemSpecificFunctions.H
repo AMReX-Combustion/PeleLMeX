@@ -240,6 +240,33 @@ struct DefaultProblemSpecificFunctions
       "ProblemSpecificFunctions in pelelmex_prob.H");
   }
 
+  /**
+   * \brief Perform problem-specific operations after advance
+   *
+   * \param time              current time after advance.
+   * \param dt                time-step size used in advance.
+   * \param finest_level      finest AMR level.
+   * \param state             vector of state multifabs for all levels.
+   * \param geom              vector of geometry objects for all levels.
+   * \param prob_parm         problem specific parameters.
+   */
+  static void postAdvance(
+    amrex::Real /*time*/,
+    amrex::Real /*dt*/,
+    int /*finest_level*/,
+    const amrex::Vector<amrex::MultiFab*>& /*state*/,
+    const amrex::Vector<const amrex::Geometry*>& /*geom*/,
+    const ProbParmDefault* /*prob_parm_d*/)
+  {
+    /** Notes:
+     *   1. This function is called once after each time advance
+     *   2. Receives state data for all AMR levels
+     *   3. Any post-advance operations must be performend on each level
+     *   4. The default implementation does nothing
+     *   5. Specific problem implementations can override this function
+     */
+  }
+
 }; // namespace DefaultProblemSpecificFunctions
 
 #endif

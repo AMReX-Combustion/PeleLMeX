@@ -54,12 +54,8 @@ PeleLM::Advance(const int is_initIter)
   //----------------------------------------------------------------
 
   if (m_verbose != 0) {
-    amrex::Long ncells = 0;
-    for (int lev = 0; lev <= finest_level; ++lev) {
-      ncells += m_extSource[lev]->boxArray().numPts();
-    }
     amrex::Print() << " STEP [" << m_nstep << "] - Time: " << m_cur_time
-                   << ", dt " << m_dt << ", Ncells " << ncells << "\n";
+                   << ", dt " << m_dt << "\n";
   }
 
   checkMemory("Adv. start");
@@ -268,6 +264,23 @@ PeleLM::Advance(const int is_initIter)
       run_time, amrex::ParallelDescriptor::IOProcessorNumber());
     amrex::Print() << " >> PeleLMeX::Advance() --> Time: " << run_time << "\n";
   }
+
+  //----------------------------------------------------------------
+  // Post advance steps ProblemSpecificFunctions
+  BL_PROFILE_VAR("ProblemSpecificFunctions::postAdvance()", PLM_POSTADV);
+
+  // Collect state MultiFabs and geometries for all levels
+  amrex::Vector<amrex::MultiFab*> state_mf(finest_level + 1);
+  amrex::Vector<const amrex::Geometry*> geom_vec(finest_level + 1);
+  for (int lev = 0; lev <= finest_level; ++lev) {
+    auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
+    state_mf[lev] = &(ldata_p->state);
+    geom_vec[lev] = &(geom[lev]);
+  }
+  ProblemSpecificFunctions::postAdvance(
+    m_cur_time + m_dt, m_dt, finest_level, state_mf, geom_vec, prob_parm_d);
+    
+  BL_PROFILE_VAR_STOP(PLM_POSTADV);
 }
 
 void
