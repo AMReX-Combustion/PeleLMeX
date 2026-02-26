@@ -6,7 +6,7 @@ The changes should largely be backward compatible.
 Slight modifications are also made to mechanism generation in PelePhysics that will
 require re-generating any mechanism that does not ship with PelePhysics.
 
-PelePhysics submodule updated to eec058f4 (higher precision in thermo polys).
+PelePhysics submodule updated to 07bbae5c (update precision for all thermo polynomials).
 
 ## v1.1.0
 
