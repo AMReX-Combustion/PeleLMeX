@@ -209,7 +209,7 @@ getVelViscosity(
   amrex::Real dummy_xi = 0.0;
 
   constexpr bool get_xi = false;
-forc  constexpr bool get_mu = true;
+  constexpr bool get_mu = true;
   constexpr bool get_lam = false;
   constexpr bool get_Ddiag = false;
   constexpr bool get_chi = false;
@@ -958,7 +958,7 @@ buildDiffusionForcing(
       forceY(i, j, k, n) += r(i, j, k, n);
     }
     if (use_wbar != 0) {
-      forceY(i, j, k, n) += 2.0*dwbar(i, j, k, n);
+      forceY(i, j, k, n) += 2.0 * dwbar(i, j, k, n);
     }
     if (use_soret != 0) {
       forceY(i, j, k, n) += dT(i, j, k, n);
