@@ -207,6 +207,7 @@ jobs:
           git checkout amrexcomb/development
           git submodule update --recursive --depth=1
       - name: Configure Reference
+        if: env.DO_REF_COMPARE == 'true'
         run: |
           cmake -B${{runner.workspace}}/build-${{matrix.dim}}d-${{matrix.os}}-${{matrix.build_type}}-${{matrix.enable_eb}}-reference \
           -DCMAKE_INSTALL_PREFIX:PATH=${{runner.workspace}}/install-${{matrix.dim}}d-${{matrix.os}}-${{matrix.build_type}}-${{matrix.enable_eb}}-reference \
