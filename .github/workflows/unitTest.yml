@@ -57,4 +57,4 @@ jobs:
       run: |
           cp ${{env.AMREX_HOME}}/Tools/Plotfile/fcompare.gnu.ex .
           ./PeleLMeX3d.gnu.MPI.ex inputs.3d
-          ./fcompare.gnu.ex pltEvaluate ${{github.workspace}}/buildRef/PeleLMeX/Exec/UnitTests/DodecaneLu/pltEvaluate
+          ./fcompare.gnu.ex --abort_if_not_all_found pltEvaluate ${{github.workspace}}/buildRef/PeleLMeX/Exec/UnitTests/DodecaneLu/pltEvaluate
