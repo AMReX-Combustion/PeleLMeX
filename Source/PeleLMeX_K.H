@@ -94,7 +94,7 @@ getTransportCoeff(
   } else { // full MA model, with Soret if needed
     lambda(i, j, k) = c2m::Lambda(lambda_cgs);
     for (int n = 0; n < NUM_SPECIES; ++n) {
-      rhoDi(i, j, k, n) = rhoDi_cgs[n] * Wbar * mwtinv[n] * 4.0e-1;
+      rhoDi(i, j, k, n) = rhoDi_cgs[n] * Wbar * mwtinv[n] * 1.0e-1;
       if (do_soret) {
         rhotheta(i, j, k, n) = -rhoDi_cgs[n] * chi_loc[n] * 1.0e-1;
       }
@@ -958,7 +958,7 @@ buildDiffusionForcing(
       forceY(i, j, k, n) += r(i, j, k, n);
     }
     if (use_wbar != 0) {
-      forceY(i, j, k, n) += 2.0 * dwbar(i, j, k, n);
+      forceY(i, j, k, n) += dwbar(i, j, k, n);
     }
     if (use_soret != 0) {
       forceY(i, j, k, n) += dT(i, j, k, n);

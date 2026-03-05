@@ -208,7 +208,7 @@ initial solution is most likely erroneous.
 
 In the case of the second message, the system was integrated up to 2.459e-6 s, but CVODE was not able
 to proceed any further as its internal step size dropped to a small value. This could indicates that your
-CFL condition is too loose and the chemical stifness can't be properly handled by
+CFL condition is too loose and the chemical stiffness can't be properly handled by
 CVODE. You can consider reduce your CFL number:
 
 ::
