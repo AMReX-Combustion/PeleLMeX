@@ -282,7 +282,7 @@ PeleLM::Advance(const int is_initIter)
     geom_vec[lev] = &(geom[lev]);
   }
   ProblemSpecificFunctions::postAdvance(
-    m_cur_time + m_dt, m_dt, finest_level, state_mf, geom_vec, *prob_parm_d);
+    m_cur_time + m_dt, m_dt, finest_level, state_mf, geom_vec, *prob_parm);
 
   BL_PROFILE_VAR_STOP(PLM_POSTADV);
 }
