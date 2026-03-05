@@ -243,31 +243,31 @@ PeleLM::velocityProjection(
       for (int lev = 0; lev <= finest_level; ++lev) {
         auto* ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
         auto* ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
-        auto const& state_old_ma = ldataOld_p->state.arrays();
-        auto const& gp_new_ma = ldataNew_p->gp.const_arrays();
+        auto const& state_new_ma = ldataNew_p->state.arrays();
+        auto const& gp_old_ma = ldataOld_p->gp.const_arrays();
         auto const& rho_ma = rhoHalf[lev]->const_arrays();
         amrex::ParallelFor(
           ldataNew_p->state, amrex::IntVect(0), AMREX_SPACEDIM,
-          [state_old_ma, gp_new_ma, rho_ma, dt = a_dt] AMREX_GPU_DEVICE(
+          [state_new_ma, gp_old_ma, rho_ma, dt = a_dt] AMREX_GPU_DEVICE(
             int box_no, int i, int j, int k, int n) noexcept {
-            amrex::Array4<amrex::Real> vel(state_old_ma[box_no], VELX);
+            amrex::Array4<amrex::Real> vel(state_new_ma[box_no], VELX);
             const amrex::Real soverrho = dt / rho_ma[box_no](i, j, k);
-            vel(i, j, k, n) += gp_new_ma[box_no](i, j, k, n) * soverrho;
+            vel(i, j, k, n) += gp_old_ma[box_no](i, j, k, n) * soverrho;
           });
       }
     } else {
       for (int lev = 0; lev <= finest_level; ++lev) {
         auto* ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
         auto* ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
-        auto const& state_old_ma = ldataOld_p->state.arrays();
-        auto const& gp_new_ma = ldataNew_p->gp.const_arrays();
+        auto const& state_new_ma = ldataNew_p->state.arrays();
+        auto const& gp_old_ma = ldataOld_p->gp.const_arrays();
         const amrex::Real soverrho = m_dt / m_rho;
         amrex::ParallelFor(
           ldataNew_p->state, amrex::IntVect(0), AMREX_SPACEDIM,
-          [state_old_ma, gp_new_ma, soverrho] AMREX_GPU_DEVICE(
+          [state_new_ma, gp_old_ma, soverrho] AMREX_GPU_DEVICE(
             int box_no, int i, int j, int k, int n) noexcept {
-            amrex::Array4<amrex::Real> vel(state_old_ma[box_no], VELX);
-            vel(i, j, k, n) += gp_new_ma[box_no](i, j, k, n) * soverrho;
+            amrex::Array4<amrex::Real> vel(state_new_ma[box_no], VELX);
+            vel(i, j, k, n) += gp_old_ma[box_no](i, j, k, n) * soverrho;
           });
       }
     }
