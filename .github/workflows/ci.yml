@@ -220,7 +220,6 @@ jobs:
           -DPELE_ENABLE_FCOMPARE_FOR_TESTS:BOOL=ON \
           -DPELE_REFERENCE_GOLDS_DIRECTORY:STRING=${{runner.workspace}}/build-${{matrix.dim}}d-${{matrix.os}}-${{matrix.build_type}}-${{matrix.enable_eb}}  \
           -DPELE_ENABLE_EB:BOOL=${{matrix.use_eb}} \
-          -DPELE_ENABLE_FCOMPARE_FOR_TESTS:BOOL=OFF \
           -DCMAKE_CXX_COMPILER_LAUNCHER:STRING=ccache \
           ${{github.workspace}}
       - name: Build Reference Version
