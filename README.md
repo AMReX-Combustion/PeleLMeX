@@ -2,7 +2,7 @@
 
 [![AMReX Badge](https://img.shields.io/static/v1?label=%22powered%20by%22&message=%22AMReX%22&color=%22blue%22)](https://amrex-codes.github.io/amrex/)
 [![Exascale Computing Project](https://img.shields.io/badge/supported%20by-ECP-blue)](https://www.exascaleproject.org/research-project/combustion-pele/)
-[![Language: C++17](https://img.shields.io/badge/language-C%2B%2B17-blue)](https://isocpp.org/)
+[![Language: C++20](https://img.shields.io/badge/language-C%2B%2B20-blue)](https://isocpp.org/)
 [![Citing](https://joss.theoj.org/papers/10.21105/joss.05450/status.svg)](https://joss.theoj.org/papers/10.21105/joss.05450)
 [![Archive](https://zenodo.org/badge/DOI/10.5281/zenodo.10056232.svg)](https://doi.org/10.5281/zenodo.10056232)
 
