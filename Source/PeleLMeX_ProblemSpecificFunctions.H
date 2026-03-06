@@ -248,7 +248,8 @@ struct DefaultProblemSpecificFunctions
    * \param finest_level      finest AMR level.
    * \param state             vector of state multifabs for all levels.
    * \param geom              vector of geometry objects for all levels.
-   * \param prob_parm         problem specific parameters.
+   * \param prob_parm         host copy of problem specific parameters.
+   * \param prob_parm_d       device copy of problem specific parameters.
    */
   static void postAdvance(
     amrex::Real /*time*/,
@@ -256,14 +257,17 @@ struct DefaultProblemSpecificFunctions
     int /*finest_level*/,
     const amrex::Vector<amrex::MultiFab*>& /*state*/,
     const amrex::Vector<const amrex::Geometry*>& /*geom*/,
-    const ProbParmDefault& /*prob_parm*/)
+    const ProbParmDefault& /*prob_parm*/,
+    const ProbParmDefault* /*prob_parm_d*/)
   {
     /** Notes:
      *   1. This function is called once after each time advance
      *   2. Receives state data for all AMR levels
-     *   3. Any post-advance operations must be performend on each level
-     *   4. The default implementation does nothing
-     *   5. Specific problem implementations can override this function
+     *   3. prob_parm is the host copy, useful for CPU-side logic and checks
+     *   4. prob_parm_d is the device copy, useful for GPU kernel launches
+     *   5. Any post-advance operations must be performend on each level
+     *   6. The default implementation does nothing
+     *   7. Specific problem implementations can override this function
      */
   }
 
