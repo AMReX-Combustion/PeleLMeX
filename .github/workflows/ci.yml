@@ -107,7 +107,7 @@ jobs:
             ctest_args: -LE no-ci
             ccache_size: 250M
           - build_type: Debug
-            ctest_args: -R covo
+            ctest_args: -LE no-ci
             ccache_size: 500M
           - enable_eb: EB-OFF
             use_eb: "OFF"
