@@ -19,7 +19,7 @@ jobs:
   #  env:
   #    {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
   #  steps:
-  #  - uses: actions/checkout@v4
+  #  - uses: actions/checkout@v6
   #  - name: System Dependencies
   #    run: .github/workflows/dependencies/dependencies_gcc10.sh
   #  - name: Repo Dependencies
@@ -62,7 +62,7 @@ jobs:
     env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies_gcc10.sh
     - name: Repo Dependencies
@@ -84,7 +84,7 @@ jobs:
     env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - name: Repo Dependencies
       run: |
         Utils/CloneDeps.sh
@@ -116,7 +116,7 @@ jobs:
     env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies_gcc10.sh
     - name: Repo Dependencies
@@ -138,7 +138,7 @@ jobs:
     env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - name: System Dependencies
       run: .github/workflows/dependencies/dependencies_gcc10.sh
     - name: Repo Dependencies
@@ -160,7 +160,7 @@ jobs:
     env:
       {CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"}
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - name: System Dependencies
       run: |
         .github/workflows/dependencies/dependencies_gcc10.sh
@@ -226,12 +226,12 @@ jobs:
       CXXFLAGS: "-Werror -Wshadow -Woverloaded-virtual -Wunreachable-code"
       CMLM_VERSION: 0.0.1
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - name: System Dependencies
       run: |
          .github/workflows/dependencies/dependencies_gcc10.sh
     - name: Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: '3.11'
     - name: Repo Dependencies

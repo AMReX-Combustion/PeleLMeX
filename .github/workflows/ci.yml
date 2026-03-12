@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
     - name: Clone
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
     - name: Check formatting
       uses: DoozyX/clang-format-lint-action@v0.20
       with:
@@ -29,7 +29,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Clone
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: recursive
       - name: Setup
@@ -48,7 +48,7 @@ jobs:
           tar xvf ccache-4.8-linux-x86_64.tar.xz
           sudo cp -f ccache-4.8-linux-x86_64/ccache /usr/local/bin/
       - name: Set Up Ccache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cache/ccache
           key: ccache-${{github.workflow}}-${{github.job}}-git-${{github.sha}}
@@ -120,11 +120,11 @@ jobs:
       DO_REF_COMPARE: ${{matrix.reference_comparison == 'ON' && github.event_name != 'push'}}
     steps:
       - name: Clone
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: recursive
       - name: Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12'
       - name: Setup
@@ -153,7 +153,7 @@ jobs:
             sudo cp -f ccache-4.8-linux-x86_64/ccache /usr/local/bin/
           fi
       - name: Set Up Ccache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{matrix.ccache_cache}}
           key: ccache-${{github.workflow}}-${{github.job}}-${{matrix.os}}-${{matrix.dim}}d-${{matrix.build_type}}-${{matrix.enable_eb}}-git-${{github.sha}}
@@ -250,11 +250,11 @@ jobs:
             use_eb: "ON"
     steps:
       - name: Clone
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: recursive
       - name: Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12'
       - name: Setup
@@ -274,7 +274,7 @@ jobs:
           tar xvf ccache-4.8-linux-x86_64.tar.xz
           sudo cp -f ccache-4.8-linux-x86_64/ccache /usr/local/bin/
       - name: Set Up Ccache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cache/ccache
           key: ccache-${{github.workflow}}-${{github.job}}-${{matrix.dim}}d-${{matrix.enable_eb}}-single-git-${{github.sha}}
@@ -336,7 +336,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Clone
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: recursive
       - name: Setup
@@ -364,7 +364,7 @@ jobs:
           tar xvf ccache-4.8-linux-x86_64.tar.xz
           sudo cp -f ccache-4.8-linux-x86_64/ccache /usr/local/bin/
       - name: Set Up Ccache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cache/ccache
           key: ccache-${{github.workflow}}-${{github.job}}-${{matrix.enable_eb}}-git-${{github.sha}}
@@ -399,7 +399,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Clone
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: recursive
       - name: Setup
@@ -425,7 +425,7 @@ jobs:
           tar xvf ccache-4.8-linux-x86_64.tar.xz
           sudo cp -f ccache-4.8-linux-x86_64/ccache /usr/local/bin/
       - name: Set Up Ccache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cache/ccache
           key: ccache-${{github.workflow}}-${{github.job}}-git-${{github.sha}}
@@ -470,7 +470,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Clone
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: recursive
       - name: Setup
@@ -495,7 +495,7 @@ jobs:
           tar xvf ccache-4.8-linux-x86_64.tar.xz
           sudo cp -f ccache-4.8-linux-x86_64/ccache /usr/local/bin/
       - name: Set Up Ccache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cache/ccache
           key: ccache-${{github.workflow}}-${{github.job}}-git-${{github.sha}}
@@ -551,7 +551,7 @@ jobs:
           echo "CCACHE_MAXSIZE=100M" >> $GITHUB_ENV
           echo "CTCACHE_DIR=~/.cache/ctcache" >> $GITHUB_ENV
       - name: Clone
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: recursive
       - name: Install Ccache
@@ -563,7 +563,7 @@ jobs:
           sudo chmod +x /usr/bin/clang-tidy-cache
           mkdir -p ~/.cache/ctcache
       - name: Set Up Ccache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cache
           key: ccache-${{github.workflow}}-${{github.job}}-${{matrix.enable_eb}}-git-${{github.sha}}
@@ -614,11 +614,11 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Clone
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: recursive
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           languages: cpp
           queries: +security-and-quality
@@ -638,7 +638,7 @@ jobs:
         run: |
           cmake --build ${{runner.workspace}}/build-codeql --parallel ${{env.NPROCS}}
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
         with:
           category: "/language:cpp"
           upload: False
@@ -653,7 +653,7 @@ jobs:
           input: sarif-results/cpp.sarif
           output: sarif-results/cpp.sarif
       - name: Upload CodeQL sarif
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: sarif-results/cpp.sarif
   Lint-codespell:
@@ -661,11 +661,11 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Clone
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: false
       - name: Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.10'
       - name: Dependencies
