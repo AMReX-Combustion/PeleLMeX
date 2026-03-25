@@ -198,7 +198,7 @@ PeleLM::estDivUDt(const TimeStamp a_time)
       std::unique_ptr<amrex::MultiFab> velo = std::make_unique<amrex::MultiFab>(
         ldata_p->state, amrex::make_alias, VELX, AMREX_SPACEDIM);
       amrex::Real divu_dt = amrex::ReduceMin(
-        *density, ldata_p->divu, *velo, 0,
+        *density, *velo, ldata_p->divu, 0,
         [dtfac, rhoMin, dxinv] AMREX_GPU_HOST_DEVICE(
           amrex::Box const& bx, amrex::Array4<amrex::Real const> const& rho,
           amrex::Array4<amrex::Real const> const& vel,

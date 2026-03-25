@@ -44,6 +44,8 @@ set_Y_from_Phi(
   amrex::Real a = 0.0;
   if (prob_parm.fuelID == CH4_ID) {
     a = 2.0;
+  } else {
+    amrex::Abort("fuelID not supported");
   }
   Xt[prob_parm.oxidID] = 1.0 / (1.0 + phi_in / a + 0.79 / 0.21);
   Xt[prob_parm.fuelID] = phi_in * Xt[prob_parm.oxidID] / a;
