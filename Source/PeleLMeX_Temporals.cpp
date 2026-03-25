@@ -7,7 +7,7 @@ using namespace amrex::literals;
 void
 PeleLM::initTemporals(const PeleLM::TimeStamp a_time)
 {
-  if ((m_do_temporals == 0) && !(m_nstep % m_temp_int == 0)) {
+  if ((m_do_temporals == 0) || !(m_nstep % m_temp_int == 0)) {
     return;
   }
 
