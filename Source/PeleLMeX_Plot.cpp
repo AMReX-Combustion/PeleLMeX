@@ -1176,7 +1176,8 @@ PeleLM::addLevelVelocityDataFromPlt(int a_lev, const std::string& a_velPltFile)
   // Use PelePhysics PltFileManager – reuse the shared instance if it was
   // pre-created in initData() to avoid re-reading the plotfile header for
   // every AMR level.
-  std::unique_ptr<pele::physics::pltfilemanager::PltFileManager> localVelPltData;
+  std::unique_ptr<pele::physics::pltfilemanager::PltFileManager>
+    localVelPltData;
   pele::physics::pltfilemanager::PltFileManager* pltDataPtr = nullptr;
   if (m_velPltDataManager) {
     pltDataPtr = m_velPltDataManager.get();
