@@ -19,6 +19,7 @@
 #include <mechanism.H>
 #include <PelePhysics.H>
 #include <PMFData.H>
+#include <PltFileManager.H>
 #include <turbinflow.H>
 #include <ReactorBase.H>
 #include <TurbForcing.H>
@@ -1956,6 +1957,13 @@ public:
   std::string m_restart_chkfile;
   std::string m_restart_pltfile;
   std::string pltfileSource{"LM"};
+  // Temporary PltFileManagers used during initialization from plotfile (held
+  // here so all AMR levels share a single instance rather than each level
+  // creating its own, which would cause repeated large memory allocations).
+  std::unique_ptr<pele::physics::pltfilemanager::PltFileManager>
+    m_pltDataManager;
+  std::unique_ptr<pele::physics::pltfilemanager::PltFileManager>
+    m_velPltDataManager;
   std::string m_plot_file{"plt"};
   std::string m_check_file{"chk"};
   std::string m_base_output_pref;
