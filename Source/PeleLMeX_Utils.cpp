@@ -48,28 +48,33 @@ writeBuildInfo()
   std::cout << "\n";
 
 #ifdef PELE_USE_CMAKE
-  const std::string githash1 = PeleBuildInfo::PeleLMeX_git_hash;
-  const std::string githash2 = PeleBuildInfo::AMReX_git_hash;
-  const std::string githash3 = PeleBuildInfo::PelePhysics_git_hash;
-  const std::string githash4 = PeleBuildInfo::AMReXHydro_git_hash;
+  const std::string pele_hash = PeleBuildInfo::PeleLMeX_git_hash;
+  const std::string amrex_hash = PeleBuildInfo::AMReX_git_hash;
+  const std::string pelephysics_hash = PeleBuildInfo::PelePhysics_git_hash;
+  const std::string amrex_hydro_hash = PeleBuildInfo::AMReXHydro_git_hash;
+  const std::string sundials_hash = PeleBuildInfo::SUNDIALS_git_hash;
 #else
-  const std::string githash1 = amrex::buildInfoGetGitHash(1);
-  const std::string githash2 = amrex::buildInfoGetGitHash(2);
-  const std::string githash3 = amrex::buildInfoGetGitHash(3);
-  const std::string githash4 = amrex::buildInfoGetGitHash(4);
+  const std::string pele_hash = amrex::buildInfoGetGitHash(1);
+  const std::string amrex_hash = amrex::buildInfoGetGitHash(2);
+  const std::string pelephysics_hash = amrex::buildInfoGetGitHash(3);
+  const std::string amrex_hydro_hash = amrex::buildInfoGetGitHash(4);
+  const std::string sundials_hash = amrex::buildInfoGetGitHash(5);
 #endif
 
-  if (!githash1.empty()) {
-    std::cout << "PeleLMeX     git hash: " << githash1 << "\n";
+  if (!pele_hash.empty()) {
+    std::cout << "PeleLMeX     git hash: " << pele_hash << "\n";
   }
-  if (!githash2.empty()) {
-    std::cout << "AMReX        git hash: " << githash2 << "\n";
+  if (!amrex_hash.empty()) {
+    std::cout << "AMReX        git hash: " << amrex_hash << "\n";
   }
-  if (!githash3.empty()) {
-    std::cout << "PelePhysics  git hash: " << githash3 << "\n";
+  if (!pelephysics_hash.empty()) {
+    std::cout << "PelePhysics  git hash: " << pelephysics_hash << "\n";
   }
-  if (!githash4.empty()) {
-    std::cout << "AMReX-Hydro  git hash: " << githash4 << "\n";
+  if (!amrex_hydro_hash.empty()) {
+    std::cout << "AMReX-Hydro  git hash: " << amrex_hydro_hash << "\n";
+  }
+  if (!sundials_hash.empty()) {
+    std::cout << "SUNDIALS     git hash: " << sundials_hash << "\n";
   }
 
   const std::string buildgithash = amrex::buildInfoGetBuildGitHash();

@@ -24,17 +24,20 @@ set(PELELMEX_DIR "${CMAKE_SOURCE_DIR}")
 set(AMREX_DIR "${CMAKE_SOURCE_DIR}/Submodules/PelePhysics/Submodules/amrex")
 set(PELEPHYSICS_DIR "${CMAKE_SOURCE_DIR}/Submodules/PelePhysics")
 set(AMREX_HYDRO_DIR "${CMAKE_SOURCE_DIR}/Submodules/AMReX-Hydro")
+set(SUNDIALS_DIR "${CMAKE_SOURCE_DIR}/Submodules/PelePhysics/Submodules/sundials")
 
 # --- Get hashes ---
 get_git_hash("${PELELMEX_DIR}" PELELMEX_GIT_HASH)
 get_git_hash("${AMREX_DIR}" AMREX_GIT_HASH)
 get_git_hash("${PELEPHYSICS_DIR}" PELEPHYSICS_GIT_HASH)
 get_git_hash("${AMREX_HYDRO_DIR}" AMREX_HYDRO_GIT_HASH)
+get_git_hash("${SUNDIALS_DIR}" SUNDIALS_GIT_HASH)
 
 message(STATUS "PeleLMeX    git hash: ${PELELMEX_GIT_HASH}")
 message(STATUS "AMReX       git hash: ${AMREX_GIT_HASH}")
 message(STATUS "PelePhysics git hash: ${PELEPHYSICS_GIT_HASH}")
 message(STATUS "AMReX-Hydro git hash: ${AMREX_HYDRO_GIT_HASH}")
+message(STATUS "SUNDIALS    git hash: ${SUNDIALS_GIT_HASH}")
 
 # --- Generate the header ---
 configure_file(
