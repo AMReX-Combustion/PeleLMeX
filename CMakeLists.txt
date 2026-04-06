@@ -103,6 +103,9 @@ init_code_checks()
 
 include(SetRpath)
 
+########################### Git Hash Info ##################################
+include(SetGitHashInfo)
+
 add_subdirectory(Exec)
 add_subdirectory(Tests)
 add_subdirectory(${CMAKE_SOURCE_DIR}/Submodules/PelePhysics/Testing/Exec/Radiation)

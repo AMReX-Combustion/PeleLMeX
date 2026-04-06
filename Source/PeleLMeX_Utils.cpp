@@ -1,4 +1,5 @@
 #include <AMReX_buildInfo.H>
+#include "PeleGitHashes.H"
 #include <PeleLMeX.H>
 #include <PeleLMeX_K.H>
 #include <hydro_utils.H>
@@ -44,25 +45,10 @@ writeBuildInfo()
 
   std::cout << "\n";
 
-  const char* githash1 = amrex::buildInfoGetGitHash(1);
-  const char* githash2 = amrex::buildInfoGetGitHash(2);
-  const char* githash3 = amrex::buildInfoGetGitHash(3);
-
-  if (strlen(githash1) > 0) {
-    std::cout << "PeleLMeX     git describe: " << githash1 << "\n";
-  }
-  if (strlen(githash2) > 0) {
-    std::cout << "AMReX        git describe: " << githash2 << "\n";
-  }
-  if (strlen(githash3) > 0) {
-    std::cout << "PelePhysics  git describe: " << githash3 << "\n";
-  }
-
-  const char* buildgithash = amrex::buildInfoGetBuildGitHash();
-  const char* buildgitname = amrex::buildInfoGetBuildGitName();
-  if (strlen(buildgithash) > 0) {
-    std::cout << buildgitname << " git describe: " << buildgithash << "\n";
-  }
+  std::cout << "PeleLMeX     git describe: " << PeleBuildInfo::PeleLMeX_git_hash << "\n";
+  std::cout << "AMReX        git describe: " << PeleBuildInfo::AMReX_git_hash << "\n";
+  std::cout << "PelePhysics  git describe: " << PeleBuildInfo::PelePhysics_git_hash << "\n";
+  std::cout << "AMReX-Hydro  git describe: " << PeleBuildInfo::AMReXHydro_git_hash << "\n";
 
   std::cout << "\n\n";
 }
