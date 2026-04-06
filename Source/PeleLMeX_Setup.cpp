@@ -1,9 +1,13 @@
-#include <PeleLMeX.H>
+#include <string>
 #include <AMReX_ParmParse.H>
+#include <AMReX_buildInfo.H>
+#include <PeleLMeX.H>
 #include <PeleLMeX_DeriveFunc.H>
 #include <PeleLMeX_BPatch.H>
-#include "PelePhysics.H"
-#include "PeleGitHashes.H"
+#include <PelePhysics.H>
+#ifdef PELE_USE_CMAKE
+#include <PeleGitHashes.H>
+#endif
 
 #ifdef PELE_USE_PLASMA
 #include "PeleLMeX_EOS_Extension.H"
@@ -50,11 +54,22 @@ PeleLM::Setup()
       &&amrex::almostEqual(dx[1], dx[2], 10)));
   }
   // Print build info to screen
-  amrex::Print() << "\n ================= Build infos =================\n";
-  amrex::Print() << " PeleLMeX    git hash: " << PeleBuildInfo::PeleLMeX_git_hash << "\n";
-  amrex::Print() << " AMReX       git hash: " << PeleBuildInfo::AMReX_git_hash << "\n";
-  amrex::Print() << " PelePhysics git hash: " << PeleBuildInfo::PelePhysics_git_hash << "\n";
-  amrex::Print() << " AMReX-Hydro git hash: " << PeleBuildInfo::AMReXHydro_git_hash << "\n";
+#ifdef PELE_USE_CMAKE
+  const std::string githash1 = PeleBuildInfo::PeleLMeX_git_hash;
+  const std::string githash2 = PeleBuildInfo::AMReX_git_hash;
+  const std::string githash3 = PeleBuildInfo::PelePhysics_git_hash;
+  const std::string githash4 = PeleBuildInfo::AMReXHydro_git_hash;
+#else
+  const std::string githash1 = amrex::buildInfoGetGitHash(1);
+  const std::string githash2 = amrex::buildInfoGetGitHash(2);
+  const std::string githash3 = amrex::buildInfoGetGitHash(3);
+  const std::string githash4 = amrex::buildInfoGetGitHash(4);
+#endif
+  amrex::Print() << "\n ================ Version Info =================\n";
+  amrex::Print() << " PeleLMeX    git hash: " << githash1 << "\n";
+  amrex::Print() << " AMReX       git hash: " << githash2 << "\n";
+  amrex::Print() << " PelePhysics git hash: " << githash3 << "\n";
+  amrex::Print() << " AMReX-Hydro git hash: " << githash4 << "\n";
   amrex::Print() << " ===============================================\n";
 
 #ifdef PELE_USE_SOOT

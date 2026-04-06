@@ -1,11 +1,13 @@
 #include <AMReX_buildInfo.H>
-#include "PeleGitHashes.H"
 #include <PeleLMeX.H>
 #include <PeleLMeX_K.H>
 #include <hydro_utils.H>
 #include <memory>
 #ifdef PELE_USE_PLASMA
 #include <PeleLMeX_EF_Constants.H>
+#endif
+#ifdef PELE_USE_CMAKE
+#include "PeleGitHashes.H"
 #endif
 
 void
@@ -45,10 +47,36 @@ writeBuildInfo()
 
   std::cout << "\n";
 
-  std::cout << "PeleLMeX     git describe: " << PeleBuildInfo::PeleLMeX_git_hash << "\n";
-  std::cout << "AMReX        git describe: " << PeleBuildInfo::AMReX_git_hash << "\n";
-  std::cout << "PelePhysics  git describe: " << PeleBuildInfo::PelePhysics_git_hash << "\n";
-  std::cout << "AMReX-Hydro  git describe: " << PeleBuildInfo::AMReXHydro_git_hash << "\n";
+#ifdef PELE_USE_CMAKE
+  const std::string githash1 = PeleBuildInfo::PeleLMeX_git_hash;
+  const std::string githash2 = PeleBuildInfo::AMReX_git_hash;
+  const std::string githash3 = PeleBuildInfo::PelePhysics_git_hash;
+  const std::string githash4 = PeleBuildInfo::AMReXHydro_git_hash;
+#else
+  const std::string githash1 = amrex::buildInfoGetGitHash(1);
+  const std::string githash2 = amrex::buildInfoGetGitHash(2);
+  const std::string githash3 = amrex::buildInfoGetGitHash(3);
+  const std::string githash4 = amrex::buildInfoGetGitHash(4);
+#endif
+
+  if (!githash1.empty()) {
+    std::cout << "PeleLMeX     git hash: " << githash1 << "\n";
+  }
+  if (!githash2.empty()) {
+    std::cout << "AMReX        git hash: " << githash2 << "\n";
+  }
+  if (!githash3.empty()) {
+    std::cout << "PelePhysics  git hash: " << githash3 << "\n";
+  }
+  if (!githash4.empty()) {
+    std::cout << "AMReX-Hydro  git hash: " << githash4 << "\n";
+  }
+
+  const std::string buildgithash = amrex::buildInfoGetBuildGitHash();
+  const std::string buildgitname = amrex::buildInfoGetBuildGitName();
+  if (!buildgithash.empty()) {
+    std::cout << buildgitname << " git hash: " << buildgithash << "\n";
+  }
 
   std::cout << "\n\n";
 }
