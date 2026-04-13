@@ -6,6 +6,9 @@
 #ifdef PELE_USE_PLASMA
 #include <PeleLMeX_EF_Constants.H>
 #endif
+#ifdef PELE_USE_CMAKE
+#include "PeleGitHashes.H"
+#endif
 
 void
 writeBuildInfo()
@@ -44,24 +47,40 @@ writeBuildInfo()
 
   std::cout << "\n";
 
-  const char* githash1 = amrex::buildInfoGetGitHash(1);
-  const char* githash2 = amrex::buildInfoGetGitHash(2);
-  const char* githash3 = amrex::buildInfoGetGitHash(3);
+#ifdef PELE_USE_CMAKE
+  const std::string pele_hash = PeleBuildInfo::PeleLMeX_git_hash;
+  const std::string amrex_hash = PeleBuildInfo::AMReX_git_hash;
+  const std::string pelephysics_hash = PeleBuildInfo::PelePhysics_git_hash;
+  const std::string amrex_hydro_hash = PeleBuildInfo::AMReXHydro_git_hash;
+  const std::string sundials_hash = PeleBuildInfo::SUNDIALS_git_hash;
+#else
+  const std::string pele_hash = amrex::buildInfoGetGitHash(1);
+  const std::string amrex_hash = amrex::buildInfoGetGitHash(2);
+  const std::string pelephysics_hash = amrex::buildInfoGetGitHash(3);
+  const std::string amrex_hydro_hash = amrex::buildInfoGetGitHash(4);
+  const std::string sundials_hash = amrex::buildInfoGetGitHash(5);
+#endif
 
-  if (strlen(githash1) > 0) {
-    std::cout << "PeleLMeX     git describe: " << githash1 << "\n";
+  if (!pele_hash.empty()) {
+    std::cout << "PeleLMeX     git hash: " << pele_hash << "\n";
   }
-  if (strlen(githash2) > 0) {
-    std::cout << "AMReX        git describe: " << githash2 << "\n";
+  if (!amrex_hash.empty()) {
+    std::cout << "AMReX        git hash: " << amrex_hash << "\n";
   }
-  if (strlen(githash3) > 0) {
-    std::cout << "PelePhysics  git describe: " << githash3 << "\n";
+  if (!pelephysics_hash.empty()) {
+    std::cout << "PelePhysics  git hash: " << pelephysics_hash << "\n";
+  }
+  if (!amrex_hydro_hash.empty()) {
+    std::cout << "AMReX-Hydro  git hash: " << amrex_hydro_hash << "\n";
+  }
+  if (!sundials_hash.empty()) {
+    std::cout << "SUNDIALS     git hash: " << sundials_hash << "\n";
   }
 
-  const char* buildgithash = amrex::buildInfoGetBuildGitHash();
-  const char* buildgitname = amrex::buildInfoGetBuildGitName();
-  if (strlen(buildgithash) > 0) {
-    std::cout << buildgitname << " git describe: " << buildgithash << "\n";
+  const std::string buildgithash = amrex::buildInfoGetBuildGitHash();
+  const std::string buildgitname = amrex::buildInfoGetBuildGitName();
+  if (!buildgithash.empty()) {
+    std::cout << buildgitname << " git hash: " << buildgithash << "\n";
   }
 
   std::cout << "\n\n";
