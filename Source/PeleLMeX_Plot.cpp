@@ -899,8 +899,20 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
     }
   }
 
-  // Use PelePhysics PltFileManager
-  pele::physics::pltfilemanager::PltFileManager pltData(a_dataPltFile);
+  // Use PelePhysics PltFileManager – reuse the shared instance if it was
+  // pre-created in initData() to avoid re-reading the plotfile header for
+  // every AMR level, which can cause OOM for large plotfiles.
+  std::unique_ptr<pele::physics::pltfilemanager::PltFileManager> localPltData;
+  pele::physics::pltfilemanager::PltFileManager* pltDataPtr = nullptr;
+  if (m_pltDataManager) {
+    pltDataPtr = m_pltDataManager.get();
+  } else {
+    localPltData =
+      std::make_unique<pele::physics::pltfilemanager::PltFileManager>(
+        a_dataPltFile);
+    pltDataPtr = localPltData.get();
+  }
+  auto& pltData = *pltDataPtr;
   amrex::Vector<std::string> plt_vars = pltData.getVariableList();
   if (m_do_reset_time == 0) {
     m_cur_time = pltData.getTime();
@@ -1161,8 +1173,21 @@ PeleLM::addLevelVelocityDataFromPlt(int a_lev, const std::string& a_velPltFile)
                    << " from pltfile " << a_velPltFile << "\n";
   }
 
-  // Use PelePhysics PltFileManager
-  pele::physics::pltfilemanager::PltFileManager pltData(a_velPltFile);
+  // Use PelePhysics PltFileManager – reuse the shared instance if it was
+  // pre-created in initData() to avoid re-reading the plotfile header for
+  // every AMR level.
+  std::unique_ptr<pele::physics::pltfilemanager::PltFileManager>
+    localVelPltData;
+  pele::physics::pltfilemanager::PltFileManager* pltDataPtr = nullptr;
+  if (m_velPltDataManager) {
+    pltDataPtr = m_velPltDataManager.get();
+  } else {
+    localVelPltData =
+      std::make_unique<pele::physics::pltfilemanager::PltFileManager>(
+        a_velPltFile);
+    pltDataPtr = localVelPltData.get();
+  }
+  auto& pltData = *pltDataPtr;
   amrex::Vector<std::string> plt_vars = pltData.getVariableList();
 
   // do some compatibility checks

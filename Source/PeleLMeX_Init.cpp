@@ -176,6 +176,20 @@ PeleLM::initData()
   BL_PROFILE("PeleLMeX::initData()");
 
   if (m_restart_chkfile.empty()) {
+    // Pre-create PltFileManagers so all AMR levels share a single instance
+    // rather than each level instantiating its own (which causes repeated large
+    // memory allocations for big plotfiles).
+    if (!m_restart_pltfile.empty()) {
+      m_pltDataManager =
+        std::make_unique<pele::physics::pltfilemanager::PltFileManager>(
+          m_restart_pltfile);
+    }
+    if (!m_velocity_plotfile.empty()) {
+      m_velPltDataManager =
+        std::make_unique<pele::physics::pltfilemanager::PltFileManager>(
+          m_velocity_plotfile);
+    }
+
     //----------------------------------------------------------------
     if (!m_initial_grid_file.empty()) {
       InitFromGridFile(m_cur_time);
@@ -184,6 +198,11 @@ PeleLM::initData()
       // with MakeNewLevelFromScratch.
       InitFromScratch(m_cur_time);
     }
+
+    // Release PltFileManagers now that all levels have been initialized.
+    m_pltDataManager.reset();
+    m_velPltDataManager.reset();
+
     resetCoveredMask();
     updateDiagnostics();
 

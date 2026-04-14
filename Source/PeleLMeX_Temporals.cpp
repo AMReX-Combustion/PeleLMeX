@@ -7,7 +7,7 @@ using namespace amrex::literals;
 void
 PeleLM::initTemporals(const PeleLM::TimeStamp a_time)
 {
-  if ((m_do_temporals == 0) && !(m_nstep % m_temp_int == 0)) {
+  if ((m_do_temporals == 0) || !((m_nstep + 1) % m_temp_int == 0)) {
     return;
   }
 
@@ -665,6 +665,10 @@ PeleLM::addRhoYFluxesPatch(
 void
 PeleLM::writeTemporals()
 {
+  if (m_verbose > 1) {
+    amrex::Print() << " Writing temporals." << std::endl;
+  }
+
   //----------------------------------------------------------------
   // Mass balance
   if ((m_do_massBalance != 0) && (m_incompressible == 0)) {

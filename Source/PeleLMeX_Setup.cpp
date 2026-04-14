@@ -1,9 +1,13 @@
-#include <PeleLMeX.H>
+#include <string>
 #include <AMReX_ParmParse.H>
+#include <AMReX_buildInfo.H>
+#include <PeleLMeX.H>
 #include <PeleLMeX_DeriveFunc.H>
 #include <PeleLMeX_BPatch.H>
-#include "PelePhysics.H"
-#include <AMReX_buildInfo.H>
+#include <PelePhysics.H>
+#ifdef PELE_USE_CMAKE
+#include <PeleGitHashes.H>
+#endif
 
 #ifdef PELE_USE_PLASMA
 #include "PeleLMeX_EOS_Extension.H"
@@ -50,15 +54,26 @@ PeleLM::Setup()
       &&amrex::almostEqual(dx[1], dx[2], 10)));
   }
   // Print build info to screen
-  const char* githash1 = amrex::buildInfoGetGitHash(1);
-  const char* githash2 = amrex::buildInfoGetGitHash(2);
-  const char* githash3 = amrex::buildInfoGetGitHash(3);
-  const char* githash4 = amrex::buildInfoGetGitHash(4);
-  amrex::Print() << "\n ================= Build infos =================\n";
-  amrex::Print() << " PeleLMeX    git hash: " << githash1 << "\n";
-  amrex::Print() << " AMReX       git hash: " << githash2 << "\n";
-  amrex::Print() << " PelePhysics git hash: " << githash3 << "\n";
-  amrex::Print() << " AMReX-Hydro git hash: " << githash4 << "\n";
+#ifdef PELE_USE_CMAKE
+  const std::string pele_hash = PeleBuildInfo::PeleLMeX_git_hash;
+  const std::string amrex_hash = PeleBuildInfo::AMReX_git_hash;
+  const std::string pelephysics_hash = PeleBuildInfo::PelePhysics_git_hash;
+  const std::string amrex_hydro_hash = PeleBuildInfo::AMReXHydro_git_hash;
+  const std::string sundials_hash = PeleBuildInfo::SUNDIALS_git_hash;
+#else
+  const std::string pele_hash = amrex::buildInfoGetGitHash(1);
+  const std::string amrex_hash = amrex::buildInfoGetGitHash(2);
+  const std::string pelephysics_hash = amrex::buildInfoGetGitHash(3);
+  const std::string amrex_hydro_hash = amrex::buildInfoGetGitHash(4);
+  const std::string sundials_hash = amrex::buildInfoGetGitHash(5);
+#endif
+
+  amrex::Print() << "\n ================ Version Info =================\n";
+  amrex::Print() << " PeleLMeX    git hash: " << pele_hash << "\n";
+  amrex::Print() << " AMReX       git hash: " << amrex_hash << "\n";
+  amrex::Print() << " PelePhysics git hash: " << pelephysics_hash << "\n";
+  amrex::Print() << " AMReX-Hydro git hash: " << amrex_hydro_hash << "\n";
+  amrex::Print() << " SUNDIALS    git hash: " << sundials_hash << "\n";
   amrex::Print() << " ===============================================\n";
 
 #ifdef PELE_USE_SOOT
