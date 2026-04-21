@@ -53,7 +53,7 @@ https://amrex-combustion.github.io/PeleLMeX/manual/html/Tutorials.html
 
 ### Requirements
 
-The compilations of *PeleLMeX* requires a C++20 compatible compiler as
+Compiling *PeleLMeX* requires a C++20 compatible compiler as
 well as [CMake](https://cmake.org/download/) >= 3.23 for compiling the [SUNDIALS](https://github.com/LLNL/sundials) third party library.
 
 Most of the examples provided hereafter and in the [tutorials](https://amrex-combustion.github.io/PeleLMeX/manual/html/Tutorials.html)
