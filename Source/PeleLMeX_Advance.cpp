@@ -259,6 +259,13 @@ PeleLM::Advance(const int is_initIter)
     m_pOld = m_pNew;
   }
 
+  // Snapshot the recycling-plane velocity and update the running mean.
+  // Skipped during initial-iteration passes so the mean accumulates only
+  // over real timesteps.
+  if (is_initIter == 0) {
+    updateRecyclingPlaneSnapshot();
+  }
+
   //----------------------------------------------------------------
   // Wrapup advance
   // Timing current time step
