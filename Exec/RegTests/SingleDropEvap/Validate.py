@@ -18,6 +18,9 @@ Test cases:
 | RungeJP8    | POSF10264      | SPRAY_FUEL_NUM = 67 (Many-to-one)             |
 | RungeJP8-H  | POSF10264      | SPRAY_FUEL_NUM = 1  (One-to-one, HyChem)      |
 | RungeJP8-D  | POSF10264      | SPRAY_FUEL_NUM = 67 (One-to-one, Detailed)    |
+| BurgerBar1  | POSF4658       | SPRAY_FUEL_NUM = 67 (1 bar pressure)          |
+| BurgerBar10 | POSF4658       | SPRAY_FUEL_NUM = 67 (10 bar pressure)         |
+| BurgerBar50 | POSF4658       | SPRAY_FUEL_NUM = 67 (50 bar pressure)         |
 | ----------- | -------------- | --------------------------------------------- |
 """
 
@@ -26,7 +29,7 @@ parser = argparse.ArgumentParser(
 )
 
 cases = ["WongLin", "Nomura", "Daif", "RungeHep", "RungeDec", "RungeMix", 
-         "RungeJP8", "RungeJP8-H", "RungeJP8-D"]
+         "RungeJP8", "RungeJP8-H", "RungeJP8-D", "BurgerBar1", "BurgerBar10", "BurgerBar50"]
 parser.add_argument(
     "--case_name",
     "-c",
@@ -132,7 +135,9 @@ case = SpecifyCase(case_name, LiqPropsType, PeleMP_PsatModel, use_manifold=use_m
 
 # General input and spray input files
 case.gen_input_file = f"single-drop-evap.inp"
-if "jp8" in case.name.lower():
+if "burger" in case.name.lower():
+    case.spray_input_file = f"sprayProps{LiqPropsType.upper()}_posf4658.inp"
+elif "jp8" in case.name.lower():
     if "hychem" in case.name.lower():
         case.spray_input_file = f"sprayProps{LiqPropsType.upper()}_mixture_jp8.inp"
     elif "detailed" in case.name.lower():
@@ -177,7 +182,9 @@ if run_new:
             build_flags += " SPRAY_GCM=TRUE"
         elif case.LiqPropsType.lower() == "mp":
             build_flags += " SPRAY_GCM=FALSE"
-        if "jp8" in case.name.lower():
+        if "burger" in case.name.lower():
+            build_flags += " SPRAY_FUEL_NUM=67"
+        elif "jp8" in case.name.lower():
             if "hychem" in case.name.lower():
                 build_flags += " SPRAY_FUEL_NUM=1"
             elif "detailed" in case.name.lower():
@@ -208,7 +215,10 @@ if run_new:
             continue
         if case.LiqPropsType.lower() == "mp" and ".SprayMP." not in f:
             continue
-        if "jp8" in case.name.lower():
+        if "burger" in case.name.lower():
+            if ".67SprayFuel." not in f:
+                continue
+        elif "jp8" in case.name.lower():
             if "hychem" in case.name.lower():
                 if ".1SprayFuel." not in f:
                     continue

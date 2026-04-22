@@ -165,6 +165,14 @@ def SpecifyCase(case_name, LiqPropsType, PeleMP_PsatModel="Antoine", **kwargs):
         elif "-d" in case_name.lower():
             kwargs["detailed"] = True
         case = RungeJP8(LiqPropsType, PeleMP_PsatModel, **kwargs)
+    elif "burger" in case_name.lower():
+        if "bar50" in case_name.lower():
+            kwargs["Bar50"] = True
+        elif "bar10" in case_name.lower():
+            kwargs["Bar10"] = True
+        elif "bar1" in case_name.lower():
+            kwargs["Bar1"] = True
+        case = Burger(LiqPropsType, PeleMP_PsatModel, **kwargs)
     else:
         raise ValueError(f"Unknown case name: {case_name}")
     return case
@@ -303,6 +311,41 @@ def RungeJP8(LiqPropsType, PeleMP_PsatModel="Antoine", **kwargs):
     case.ref_name = "RungeJP8"
     return case
 
+def Burger(LiqPropsType, PeleMP_PsatModel="Antoine", **kwargs):
+    name = "Burger"
+    P = 1e5  # Default to 1 bar
+    end_time = 0.065
+    if "Bar50" in kwargs.keys():
+        if kwargs["Bar50"]:
+            name += "Bar50"
+            P = 50.0 * 1e5
+            end_time = 0.08
+    elif "Bar10" in kwargs.keys():
+        if kwargs["Bar10"]:
+            name += "Bar10"
+            P = 10.0 * 1e5
+            end_time = 0.075
+    elif "Bar1" in kwargs.keys():
+        if kwargs["Bar1"]:
+            name += "Bar1"
+    drop = Droplet(300, 1e-4, ["POSF10325"], [1.0])
+    gas = GasPhase(800, P, vel=0.0)
+    case = CaseInfo(
+        name, 
+        "Burger et al.",
+        drop,
+        gas,
+        LiqPropsType,
+        xyunits=["s", "dd02"],
+        dt=1e-4,
+        end_time=end_time,
+        plot_per=0.001,
+        PeleMP_PsatModel=PeleMP_PsatModel,
+        **kwargs,
+    )
+    case.use_file_y0 = True
+    case.ref_name = name
+    return case
 
 def CreateInputFile(case):
     FILE_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -424,6 +467,10 @@ def CreateInputFile(case):
                 new_line += "\n"
         elif "particles.fuel_species" in line:
             if ("jp8" in case.name.lower()) and ("hychem" not in case.name.lower()):
+                new_line = line
+                # Set fuel_names to list after "particles.fuel_species = "
+                case.droplet.fuel_names = line.split("=")[1].strip().split()
+            elif ("burger" in case.name.lower()):
                 new_line = line
                 # Set fuel_names to list after "particles.fuel_species = "
                 case.droplet.fuel_names = line.split("=")[1].strip().split()

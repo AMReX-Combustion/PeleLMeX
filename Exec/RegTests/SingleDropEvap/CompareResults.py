@@ -16,6 +16,7 @@ Test cases:
 | Daif       | heptane/decane       |                                          |
 | Runge      | heptane, decane, mix | Plots RungeHep, RungeDec and RungeMix    |
 | RungeJP8   | POSF10264            | Plots JP8 case only                      |
+| Burger     | POSF4658             | Plots BurgerBar1, BurgerBar10, BurgerBar50|
 | ---------- | -------------------- | ---------------------------------------- |
 """
 
@@ -23,7 +24,7 @@ parser = argparse.ArgumentParser(
     description="Quantitatively compare results for given case to experimental data"
 )
 
-cases = ["WongLin", "Nomura", "Daif", "Runge", "RungeJP8"]
+cases = ["WongLin", "Nomura", "Daif", "Runge", "RungeJP8", "Burger"]
 parser.add_argument(
     "--case_name",
     "-c",
@@ -69,11 +70,25 @@ def find_case_dirs(case_name):
             )
         )
 
+    # If case_name.lower() == "burger", ensure all three pressure cases are present
+    if case_name.lower() == "burger":
+        sub_cases = ["Bar1", "Bar10", "Bar50"]
+        for sub_case in sub_cases:
+            if not any(sub_case.lower() in d.lower() for d in matching_dirs):
+                raise ValueError(f"Missing sub-case directory for Burger: {sub_case}")
+        # Sort to ensure consistent order (Bar1 < Bar10 < Bar50)
+        matching_dirs.sort(
+            key=lambda x: ["bar1", "bar10", "bar50"].index(
+                next(sub for sub in ["bar1", "bar10", "bar50"] if sub in x.lower())
+            )
+        )
+
     return matching_dirs
 
 
 def setup(case_name):
     matching_dirs = find_case_dirs(case_name)
+    FILE_PATH = os.path.dirname(os.path.abspath(__file__))
     cases = []
     leg_lab = []
     leg_col = []
@@ -84,7 +99,7 @@ def setup(case_name):
             leg_lab.append("PeleGCM")
             cases.append(SpecifyCase(name, "gcm"))
             leg_col.append("tab:blue")
-            cases[k].case_path = d
+            cases[k].case_path = os.path.join(FILE_PATH, d)
             if "_manifold" in d.lower():
                 line_sty.append(":")
                 leg_lab[k] += " + Manifold"
@@ -108,7 +123,7 @@ def setup(case_name):
                 leg_lab[k] += ": Clasius-Clapeyron"
             else:
                 raise ValueError(f"Unknown Psat model in directory name: {d}")
-            cases[k].case_path = d
+            cases[k].case_path = os.path.join(FILE_PATH, d)
         else:
             raise ValueError(f"Unknown liquid properties model in directory name: {d}")
 
@@ -133,6 +148,19 @@ def setup(case_name):
                 line_sty[k] = "--"
             else:
                 leg_lab[k] += " Many-to-One"
+        # Specifics for Burger pressure sub-cases
+        elif "burger" in name.lower():
+            if ":" not in leg_lab[k]:
+                leg_lab[k] += ":"
+            if "bar50" in name.lower():
+                leg_lab[k] += " 50 bar"
+                leg_col[k] = "tab:red"
+            elif "bar10" in name.lower():
+                leg_lab[k] += " 10 bar"
+                leg_col[k] = "tab:orange"
+            elif "bar1" in name.lower():
+                leg_lab[k] += " 1 bar"
+                leg_col[k] = "tab:blue"
     return cases, leg_lab, leg_col, line_sty
 
 
@@ -300,8 +328,48 @@ if case_name.lower() == "runge":
                 tval = [uncrt[j, 0], uncrt[j, 0]]
                 uline = [uncrt[j, 2], uncrt[j, 3]]
                 axs[i].plot(tval, uline, "k-", linewidth=round(line_w / 2))
+elif case_name.lower() == "burger":
+    # Diameter reference for each pressure variant
+    for k, case in enumerate(cases):
+        refdvals, _, _ = case_info(case)
+        i = 0
+        label = f"{case.dname}" if k == 0 else None
+        if refdvals is not None:
+            axs[i].scatter(
+                refdvals[:, 0],
+                refdvals[:, 1],
+                marker="o",
+                s=marker_s,
+                facecolor="none",
+                edgecolor=leg_col[k],
+                label=label,
+                linewidth=round(line_w / 2),
+            )
+            # Plot uncertainty if available
+            if refdvals.shape[1] == 4:
+                uncrt = refdvals[~np.isnan(refdvals).any(axis=1)]
+                axs[i].scatter(
+                    uncrt[:, 0],
+                    uncrt[:, 2],
+                    marker="_",
+                    color=leg_col[k],
+                    label=None,
+                    linewidth=round(line_w / 2),
+                )
+                axs[i].scatter(
+                    uncrt[:, 0],
+                    uncrt[:, 3],
+                    marker="_",
+                    color=leg_col[k],
+                    label=None,
+                    linewidth=round(line_w / 2),
+                )
+                for j in range(len(uncrt)):
+                    tval = [uncrt[j, 0], uncrt[j, 0]]
+                    uline = [uncrt[j, 2], uncrt[j, 3]]
+                    axs[i].plot(tval, uline, color=leg_col[k], linewidth=round(line_w / 2))
 else:
-    # Non-Runge cases: reference data only for first case
+    # Non-Runge/Non-Burger cases: reference data only for first case
     refdvals, reftvals, _ = case_info(cases[0])
     i = 0
     if refdvals is not None:
