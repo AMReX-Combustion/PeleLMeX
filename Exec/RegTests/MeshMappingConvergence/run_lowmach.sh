@@ -19,7 +19,13 @@ set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$HERE/../../.."
 HOTBUBBLE_DIR="$PROJECT_ROOT/Exec/RegTests/HotBubble"
-BIN="${HOTBUBBLE_DIR}/PeleLMeX2d.gnu.ex"
+if [[ -z "${BIN:-}" ]]; then
+  if [[ -x "${HOTBUBBLE_DIR}/PeleLMeX2d.gnu.OMP.ex" ]]; then
+    BIN="${HOTBUBBLE_DIR}/PeleLMeX2d.gnu.OMP.ex"
+  else
+    BIN="${HOTBUBBLE_DIR}/PeleLMeX2d.gnu.ex"
+  fi
+fi
 INP="${HOTBUBBLE_DIR}/input.2d-regt"
 
 : "${NS:=32 64}"          # cells per direction sweep

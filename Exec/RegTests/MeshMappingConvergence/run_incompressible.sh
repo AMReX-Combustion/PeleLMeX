@@ -24,7 +24,15 @@ set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$HERE/../../.."
 PIPEFLOW_DIR="$PROJECT_ROOT/Exec/RegTests/PipeFlow"
-BIN="${PIPEFLOW_DIR}/PeleLMeX3d.gnu.ex"
+# Prefer the OpenMP binary if it was built; fall back to serial.  Can
+# also be overridden via the BIN env variable.
+if [[ -z "${BIN:-}" ]]; then
+  if [[ -x "${PIPEFLOW_DIR}/PeleLMeX3d.gnu.OMP.ex" ]]; then
+    BIN="${PIPEFLOW_DIR}/PeleLMeX3d.gnu.OMP.ex"
+  else
+    BIN="${PIPEFLOW_DIR}/PeleLMeX3d.gnu.ex"
+  fi
+fi
 INP="${PIPEFLOW_DIR}/input.3d-Poiseuille"
 
 # Resolutions to sweep for the convergence study.  Keep small enough

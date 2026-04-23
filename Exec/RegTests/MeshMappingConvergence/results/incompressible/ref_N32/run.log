@@ -1,0 +1,1596 @@
+Initializing AMReX (eb10d70823df)...
+Initializing SUNDIALS with 1 threads...
+SUNDIALS initialized.
+AMReX (eb10d70823df) initialized
+Successfully read inputs file ... 
+
+ ================ Version Info =================
+ PeleLMeX    git hash: v1.3.0-9-g3ccd651-dirty
+ AMReX       git hash: eb10d7082
+ PelePhysics git hash: 30c9f547
+ AMReX-Hydro git hash: 75da770
+ SUNDIALS    git hash: 0eff39663
+ ===============================================
+ Simulation performed with the closed chamber algorithm 
+
+ ==============================================================================
+ State components 
+ ==============================================================================
+ Velocity X: 0, Velocity Y: 1, Velocity Z: 2 
+ => Total number of state variables: 3
+ ==============================================================================
+
+ Initializing data for 1 levels 
+Creating new distribution map on level: 0
+ Making new level 0 from scratch 
+ Resetting fine-covered cells mask 
+ ==============================================================================
+ Typical values: 
+	Velocity: 18 4.613833396 4.880312656 
+ ==============================================================================
+ Est. time step - Conv: 2.430555556e-05, divu: 1e+200
+ Initial dt: 2.430555556e-05
+
+ Doing initial projection(s) 
+
+ Initial velocity projection:   U: 18  V: 4.613833396  W: 4.880312656
+ >> After initial velocity projection:   U: 21.50430117  V: 3.22970277  W: 0.6907167081
+ Est. time step - Conv: 2.034476715e-05, divu: 1e+200
+ Initial dt: 2.034476715e-05
+ Initial velocity projection:   U: 21.50430117  V: 3.22970277  W: 0.6907167081
+ >> After initial velocity projection:   U: 21.67936696  V: 3.130253629  W: 0.5958466974
+ ==============================================================================
+
+ Doing initial pressure iteration(s) 
+
+ ================   INITIAL ITERATION [0]   ================ 
+ Est. time step - Conv: 2.018047856e-05, divu: 1e+200
+ STEP [-1] - Time: 0, dt 2.018047856e-05, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.034617541
+   - Advance()::VelocityAdvance  --> Time: 0.108161625
+ >> PeleLMeX::Advance() --> Time: 0.146170292
+
+ ================   INITIAL ITERATION [1]   ================ 
+ Est. time step - Conv: 2.018047856e-05, divu: 1e+200
+ STEP [-1] - Time: 0, dt 2.018047856e-05, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.021082291
+   - Advance()::VelocityAdvance  --> Time: 0.101500291
+ >> PeleLMeX::Advance() --> Time: 0.124998292
+
+ ================   INITIAL ITERATION [2]   ================ 
+ Est. time step - Conv: 2.018047856e-05, divu: 1e+200
+ STEP [-1] - Time: 0, dt 2.018047856e-05, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.019960042
+   - Advance()::VelocityAdvance  --> Time: 0.100659583
+ >> PeleLMeX::Advance() --> Time: 0.122985042
+ Writing temporals.
+
+ Writing plotfile: plt_00000
+ ==============================================================================
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 2.018047856e-05, divu: 1e+200
+ STEP [0] - Time: 0, dt 2.018047856e-05, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.019783334
+   - Advance()::VelocityAdvance  --> Time: 0.101066292
+ >> PeleLMeX::Advance() --> Time: 0.123258292
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 2.109406536e-05, divu: 1e+200
+ STEP [1] - Time: 2.018047856e-05, dt 2.109406536e-05, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.018459583
+   - Advance()::VelocityAdvance  --> Time: 0.100030333
+ >> PeleLMeX::Advance() --> Time: 0.120909583
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 1.416543439e-05, divu: 1e+200
+ STEP [2] - Time: 4.127454392e-05, dt 1.416543439e-05, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.01787175
+   - Advance()::VelocityAdvance  --> Time: 0.101151417
+ >> PeleLMeX::Advance() --> Time: 0.121466208
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 1.931485564e-05, divu: 1e+200
+ STEP [3] - Time: 5.543997831e-05, dt 1.558197783e-05, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.01813375
+   - Advance()::VelocityAdvance  --> Time: 0.100789666
+ >> PeleLMeX::Advance() --> Time: 0.1216525
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 1.832134188e-05, divu: 1e+200
+ STEP [4] - Time: 7.102195613e-05, dt 1.714017561e-05, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.018027251
+   - Advance()::VelocityAdvance  --> Time: 0.10097575
+ >> PeleLMeX::Advance() --> Time: 0.1213905
+ Writing temporals.
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 1.73213036e-05, divu: 1e+200
+ STEP [5] - Time: 8.816213174e-05, dt 1.73213036e-05, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.018113083
+   - Advance()::VelocityAdvance  --> Time: 0.100814208
+ >> PeleLMeX::Advance() --> Time: 0.121319875
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 1.642937099e-05, divu: 1e+200
+ STEP [6] - Time: 0.0001054834353, dt 1.642937099e-05, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.018188542
+   - Advance()::VelocityAdvance  --> Time: 0.100448792
+ >> PeleLMeX::Advance() --> Time: 0.121157958
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 1.567657272e-05, divu: 1e+200
+ STEP [7] - Time: 0.0001219128063, dt 1.567657272e-05, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.018370542
+   - Advance()::VelocityAdvance  --> Time: 0.100998208
+ >> PeleLMeX::Advance() --> Time: 0.121863084
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 1.50289564e-05, divu: 1e+200
+ STEP [8] - Time: 0.000137589379, dt 1.50289564e-05, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.018171166
+   - Advance()::VelocityAdvance  --> Time: 0.100542541
+ >> PeleLMeX::Advance() --> Time: 0.121108666
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 1.44648561e-05, divu: 1e+200
+ STEP [9] - Time: 0.0001526183354, dt 1.44648561e-05, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.018150042
+   - Advance()::VelocityAdvance  --> Time: 0.100611167
+ >> PeleLMeX::Advance() --> Time: 0.121268
+ Writing temporals.
+
+ ====================   NEW TIME STEP   ==================== 
+ ==============================================================================
+ Typical values: 
+	Velocity: 31.31981411 0.04921591963 0.02440824231 
+ ==============================================================================
+ Est. time step - Conv: 1.3968793e-05, divu: 1e+200
+ STEP [10] - Time: 0.0001670831915, dt 1.3968793e-05, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.018180083
+   - Advance()::VelocityAdvance  --> Time: 0.099968166
+ >> PeleLMeX::Advance() --> Time: 0.121497
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 1.35289802e-05, divu: 1e+200
+ STEP [11] - Time: 0.0001810519845, dt 1.35289802e-05, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.018163958
+   - Advance()::VelocityAdvance  --> Time: 0.0958055
+ >> PeleLMeX::Advance() --> Time: 0.116518042
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 1.313658164e-05, divu: 1e+200
+ STEP [12] - Time: 0.0001945809647, dt 1.313658164e-05, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.018116583
+   - Advance()::VelocityAdvance  --> Time: 0.096110875
+ >> PeleLMeX::Advance() --> Time: 0.116773875
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 1.278438594e-05, divu: 1e+200
+ STEP [13] - Time: 0.0002077175464, dt 1.278438594e-05, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.018214792
+   - Advance()::VelocityAdvance  --> Time: 0.095948791
+ >> PeleLMeX::Advance() --> Time: 0.1165875
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 1.246665048e-05, divu: 1e+200
+ STEP [14] - Time: 0.0002205019323, dt 1.246665048e-05, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.018129041
+   - Advance()::VelocityAdvance  --> Time: 0.095501166
+ >> PeleLMeX::Advance() --> Time: 0.116124833
+ Writing temporals.
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 1.217862621e-05, divu: 1e+200
+ STEP [15] - Time: 0.0002329685828, dt 1.217862621e-05, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017682
+   - Advance()::VelocityAdvance  --> Time: 0.087607459
+ >> PeleLMeX::Advance() --> Time: 0.107639792
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 1.191639503e-05, divu: 1e+200
+ STEP [16] - Time: 0.000245147209, dt 1.191639503e-05, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017747334
+   - Advance()::VelocityAdvance  --> Time: 0.088212375
+ >> PeleLMeX::Advance() --> Time: 0.108308333
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 1.167668189e-05, divu: 1e+200
+ STEP [17] - Time: 0.000257063604, dt 1.167668189e-05, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.018048041
+   - Advance()::VelocityAdvance  --> Time: 0.085420541
+ >> PeleLMeX::Advance() --> Time: 0.105993375
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 1.145673266e-05, divu: 1e+200
+ STEP [18] - Time: 0.0002687402859, dt 1.145673266e-05, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.018327584
+   - Advance()::VelocityAdvance  --> Time: 0.0859395
+ >> PeleLMeX::Advance() --> Time: 0.106707125
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 1.125422175e-05, divu: 1e+200
+ STEP [19] - Time: 0.0002801970186, dt 1.125422175e-05, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.018196041
+   - Advance()::VelocityAdvance  --> Time: 0.086484666
+ >> PeleLMeX::Advance() --> Time: 0.107029292
+ Writing temporals.
+
+ ====================   NEW TIME STEP   ==================== 
+ ==============================================================================
+ Typical values: 
+	Velocity: 39.53133983 0.0003900586134 0.0003284063393 
+ ==============================================================================
+ Est. time step - Conv: 1.106716853e-05, divu: 1e+200
+ STEP [20] - Time: 0.0002914512404, dt 1.106716853e-05, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.018169083
+   - Advance()::VelocityAdvance  --> Time: 0.085593875
+ >> PeleLMeX::Advance() --> Time: 0.107354667
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 1.089387954e-05, divu: 1e+200
+ STEP [21] - Time: 0.0003025184089, dt 1.089387954e-05, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.018121666
+   - Advance()::VelocityAdvance  --> Time: 0.085722167
+ >> PeleLMeX::Advance() --> Time: 0.106295666
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 1.073289825e-05, divu: 1e+200
+ STEP [22] - Time: 0.0003134122884, dt 1.073289825e-05, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.018096501
+   - Advance()::VelocityAdvance  --> Time: 0.085973125
+ >> PeleLMeX::Advance() --> Time: 0.106627667
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 1.058296591e-05, divu: 1e+200
+ STEP [23] - Time: 0.0003241451867, dt 1.058296591e-05, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017893208
+   - Advance()::VelocityAdvance  --> Time: 0.085377833
+ >> PeleLMeX::Advance() --> Time: 0.105609209
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 1.044298945e-05, divu: 1e+200
+ STEP [24] - Time: 0.0003347281526, dt 1.044298945e-05, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.0178325
+   - Advance()::VelocityAdvance  --> Time: 0.091784458
+ >> PeleLMeX::Advance() --> Time: 0.112153791
+ Writing temporals.
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 1.03120155e-05, divu: 1e+200
+ STEP [25] - Time: 0.000345171142, dt 1.03120155e-05, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.01795275
+   - Advance()::VelocityAdvance  --> Time: 0.092291583
+ >> PeleLMeX::Advance() --> Time: 0.112810333
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 1.018920867e-05, divu: 1e+200
+ STEP [26] - Time: 0.0003554831575, dt 1.018920867e-05, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.01803975
+   - Advance()::VelocityAdvance  --> Time: 0.092041417
+ >> PeleLMeX::Advance() --> Time: 0.112405458
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 1.007383469e-05, divu: 1e+200
+ STEP [27] - Time: 0.0003656723662, dt 1.007383469e-05, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017812375
+   - Advance()::VelocityAdvance  --> Time: 0.091713917
+ >> PeleLMeX::Advance() --> Time: 0.11209175
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 9.965245034e-06, divu: 1e+200
+ STEP [28] - Time: 0.0003757462009, dt 9.965245034e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.01780325
+   - Advance()::VelocityAdvance  --> Time: 0.087692626
+ >> PeleLMeX::Advance() --> Time: 0.107848292
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 9.862864958e-06, divu: 1e+200
+ STEP [29] - Time: 0.0003857114459, dt 9.862864958e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017922167
+   - Advance()::VelocityAdvance  --> Time: 0.0870845
+ >> PeleLMeX::Advance() --> Time: 0.107465833
+ Writing temporals.
+
+ ====================   NEW TIME STEP   ==================== 
+ ==============================================================================
+ Typical values: 
+	Velocity: 44.79743761 2.708055558e-05 2.567158954e-05 
+ ==============================================================================
+ Est. time step - Conv: 9.766183588e-06, divu: 1e+200
+ STEP [30] - Time: 0.0003955743109, dt 9.766183588e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017800584
+   - Advance()::VelocityAdvance  --> Time: 0.086900792
+ >> PeleLMeX::Advance() --> Time: 0.108528208
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 9.674744967e-06, divu: 1e+200
+ STEP [31] - Time: 0.0004053404945, dt 9.674744967e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017957709
+   - Advance()::VelocityAdvance  --> Time: 0.08550225
+ >> PeleLMeX::Advance() --> Time: 0.106104
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 9.588141003e-06, divu: 1e+200
+ STEP [32] - Time: 0.0004150152394, dt 9.588141003e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017525333
+   - Advance()::VelocityAdvance  --> Time: 0.085352791
+ >> PeleLMeX::Advance() --> Time: 0.105178917
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 9.506005352e-06, divu: 1e+200
+ STEP [33] - Time: 0.0004246033804, dt 9.506005352e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017301667
+   - Advance()::VelocityAdvance  --> Time: 0.085290042
+ >> PeleLMeX::Advance() --> Time: 0.10490675
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 9.428008195e-06, divu: 1e+200
+ STEP [34] - Time: 0.0004341093858, dt 9.428008195e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017142416
+   - Advance()::VelocityAdvance  --> Time: 0.086843583
+ >> PeleLMeX::Advance() --> Time: 0.106340292
+ Writing temporals.
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 9.353851794e-06, divu: 1e+200
+ STEP [35] - Time: 0.000443537394, dt 9.353851794e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017479625
+   - Advance()::VelocityAdvance  --> Time: 0.086772875
+ >> PeleLMeX::Advance() --> Time: 0.10662975
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 9.283266661e-06, divu: 1e+200
+ STEP [36] - Time: 0.0004528912458, dt 9.283266661e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017463458
+   - Advance()::VelocityAdvance  --> Time: 0.086921334
+ >> PeleLMeX::Advance() --> Time: 0.10682575
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 9.216008275e-06, divu: 1e+200
+ STEP [37] - Time: 0.0004621745124, dt 9.216008275e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017505458
+   - Advance()::VelocityAdvance  --> Time: 0.086767959
+ >> PeleLMeX::Advance() --> Time: 0.10683825
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 9.151854237e-06, divu: 1e+200
+ STEP [38] - Time: 0.0004713905207, dt 9.151854237e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017872333
+   - Advance()::VelocityAdvance  --> Time: 0.08772925
+ >> PeleLMeX::Advance() --> Time: 0.108046583
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 9.090601811e-06, divu: 1e+200
+ STEP [39] - Time: 0.0004805423749, dt 9.090601811e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017726417
+   - Advance()::VelocityAdvance  --> Time: 0.086706
+ >> PeleLMeX::Advance() --> Time: 0.10698875
+ Writing temporals.
+
+ ====================   NEW TIME STEP   ==================== 
+ ==============================================================================
+ Typical values: 
+	Velocity: 48.4385312 3.379204031e-06 3.337185652e-06 
+ ==============================================================================
+ Est. time step - Conv: 9.032065778e-06, divu: 1e+200
+ STEP [40] - Time: 0.0004896329767, dt 9.032065778e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017487834
+   - Advance()::VelocityAdvance  --> Time: 0.087110167
+ >> PeleLMeX::Advance() --> Time: 0.108228208
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 8.976076574e-06, divu: 1e+200
+ STEP [41] - Time: 0.0004986650425, dt 8.976076574e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017618875
+   - Advance()::VelocityAdvance  --> Time: 0.086756709
+ >> PeleLMeX::Advance() --> Time: 0.106936167
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 8.922478639e-06, divu: 1e+200
+ STEP [42] - Time: 0.0005076411191, dt 8.922478639e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017617709
+   - Advance()::VelocityAdvance  --> Time: 0.086948542
+ >> PeleLMeX::Advance() --> Time: 0.107237667
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 8.871129032e-06, divu: 1e+200
+ STEP [43] - Time: 0.0005165635977, dt 8.871129032e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017231167
+   - Advance()::VelocityAdvance  --> Time: 0.086324792
+ >> PeleLMeX::Advance() --> Time: 0.106067791
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 8.821896125e-06, divu: 1e+200
+ STEP [44] - Time: 0.0005254347268, dt 8.821896125e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.0175335
+   - Advance()::VelocityAdvance  --> Time: 0.087037083
+ >> PeleLMeX::Advance() --> Time: 0.1070985
+ Writing temporals.
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 8.774658501e-06, divu: 1e+200
+ STEP [45] - Time: 0.0005342566229, dt 8.774658501e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017525958
+   - Advance()::VelocityAdvance  --> Time: 0.087545375
+ >> PeleLMeX::Advance() --> Time: 0.107647334
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 8.729303974e-06, divu: 1e+200
+ STEP [46] - Time: 0.0005430312814, dt 8.729303974e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017537791
+   - Advance()::VelocityAdvance  --> Time: 0.087282292
+ >> PeleLMeX::Advance() --> Time: 0.10734075
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 8.685728721e-06, divu: 1e+200
+ STEP [47] - Time: 0.0005517605854, dt 8.685728721e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017457209
+   - Advance()::VelocityAdvance  --> Time: 0.086898417
+ >> PeleLMeX::Advance() --> Time: 0.106759
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 8.643836502e-06, divu: 1e+200
+ STEP [48] - Time: 0.0005604463141, dt 8.643836502e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.01745575
+   - Advance()::VelocityAdvance  --> Time: 0.086193666
+ >> PeleLMeX::Advance() --> Time: 0.106291667
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 8.603537952e-06, divu: 1e+200
+ STEP [49] - Time: 0.0005690901506, dt 8.603537952e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017679125
+   - Advance()::VelocityAdvance  --> Time: 0.086454791
+ >> PeleLMeX::Advance() --> Time: 0.106641916
+ Writing temporals.
+
+ ====================   NEW TIME STEP   ==================== 
+ ==============================================================================
+ Typical values: 
+	Velocity: 51.08146732 4.796811276e-07 4.832309134e-07 
+ ==============================================================================
+ Est. time step - Conv: 8.564750054e-06, divu: 1e+200
+ STEP [50] - Time: 0.0005776936885, dt 8.564750054e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017398084
+   - Advance()::VelocityAdvance  --> Time: 0.086497542
+ >> PeleLMeX::Advance() --> Time: 0.107387583
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 8.527395479e-06, divu: 1e+200
+ STEP [51] - Time: 0.0005862584386, dt 8.527395479e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017610125
+   - Advance()::VelocityAdvance  --> Time: 0.086931167
+ >> PeleLMeX::Advance() --> Time: 0.107135875
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 8.491402151e-06, divu: 1e+200
+ STEP [52] - Time: 0.0005947858341, dt 8.491402151e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017577417
+   - Advance()::VelocityAdvance  --> Time: 0.086794583
+ >> PeleLMeX::Advance() --> Time: 0.106770959
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 8.456702786e-06, divu: 1e+200
+ STEP [53] - Time: 0.0006032772362, dt 8.456702786e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017703125
+   - Advance()::VelocityAdvance  --> Time: 0.087007958
+ >> PeleLMeX::Advance() --> Time: 0.10706525
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 8.423234499e-06, divu: 1e+200
+ STEP [54] - Time: 0.000611733939, dt 8.423234499e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017634834
+   - Advance()::VelocityAdvance  --> Time: 0.087338083
+ >> PeleLMeX::Advance() --> Time: 0.1073115
+ Writing temporals.
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 8.390938443e-06, divu: 1e+200
+ STEP [55] - Time: 0.0006201571735, dt 8.390938443e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017789625
+   - Advance()::VelocityAdvance  --> Time: 0.086833875
+ >> PeleLMeX::Advance() --> Time: 0.10701225
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 8.359759489e-06, divu: 1e+200
+ STEP [56] - Time: 0.000628548112, dt 8.359759489e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017491875
+   - Advance()::VelocityAdvance  --> Time: 0.088081375
+ >> PeleLMeX::Advance() --> Time: 0.107941709
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 8.32964593e-06, divu: 1e+200
+ STEP [57] - Time: 0.0006369078714, dt 8.32964593e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017693166
+   - Advance()::VelocityAdvance  --> Time: 0.086834125
+ >> PeleLMeX::Advance() --> Time: 0.106939541
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 8.300549216e-06, divu: 1e+200
+ STEP [58] - Time: 0.0006452375174, dt 8.300549216e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017604042
+   - Advance()::VelocityAdvance  --> Time: 0.087067333
+ >> PeleLMeX::Advance() --> Time: 0.107023
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 8.272423714e-06, divu: 1e+200
+ STEP [59] - Time: 0.0006535380666, dt 8.272423714e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017603292
+   - Advance()::VelocityAdvance  --> Time: 0.087320667
+ >> PeleLMeX::Advance() --> Time: 0.1075595
+ Writing temporals.
+
+ ====================   NEW TIME STEP   ==================== 
+ ==============================================================================
+ Typical values: 
+	Velocity: 53.06100453 9.245925933e-08 7.974762382e-08 
+ ==============================================================================
+ Est. time step - Conv: 8.245226488e-06, divu: 1e+200
+ STEP [60] - Time: 0.0006618104903, dt 8.245226488e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.018051
+   - Advance()::VelocityAdvance  --> Time: 0.087314208
+ >> PeleLMeX::Advance() --> Time: 0.108824167
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 8.218917098e-06, divu: 1e+200
+ STEP [61] - Time: 0.0006700557168, dt 8.218917098e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.01777275
+   - Advance()::VelocityAdvance  --> Time: 0.087349208
+ >> PeleLMeX::Advance() --> Time: 0.107602375
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 8.193457421e-06, divu: 1e+200
+ STEP [62] - Time: 0.0006782746339, dt 8.193457421e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017663625
+   - Advance()::VelocityAdvance  --> Time: 0.087565667
+ >> PeleLMeX::Advance() --> Time: 0.107618458
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 8.168811482e-06, divu: 1e+200
+ STEP [63] - Time: 0.0006864680913, dt 8.168811482e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.01770525
+   - Advance()::VelocityAdvance  --> Time: 0.087595666
+ >> PeleLMeX::Advance() --> Time: 0.107799125
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 8.144945306e-06, divu: 1e+200
+ STEP [64] - Time: 0.0006946369028, dt 8.144945306e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017789292
+   - Advance()::VelocityAdvance  --> Time: 0.08745925
+ >> PeleLMeX::Advance() --> Time: 0.107698833
+ Writing temporals.
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 8.121826776e-06, divu: 1e+200
+ STEP [65] - Time: 0.0007027818481, dt 8.121826776e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017522291
+   - Advance()::VelocityAdvance  --> Time: 0.0869495
+ >> PeleLMeX::Advance() --> Time: 0.106953
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 8.099425504e-06, divu: 1e+200
+ STEP [66] - Time: 0.0007109036749, dt 8.099425504e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017578792
+   - Advance()::VelocityAdvance  --> Time: 0.087069875
+ >> PeleLMeX::Advance() --> Time: 0.107169291
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 8.077712718e-06, divu: 1e+200
+ STEP [67] - Time: 0.0007190031004, dt 8.077712718e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017719667
+   - Advance()::VelocityAdvance  --> Time: 0.087440959
+ >> PeleLMeX::Advance() --> Time: 0.107621459
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 8.056661152e-06, divu: 1e+200
+ STEP [68] - Time: 0.0007270808131, dt 8.056661152e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.01770475
+   - Advance()::VelocityAdvance  --> Time: 0.0877905
+ >> PeleLMeX::Advance() --> Time: 0.107944459
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 8.036244946e-06, divu: 1e+200
+ STEP [69] - Time: 0.0007351374743, dt 8.036244946e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017941375
+   - Advance()::VelocityAdvance  --> Time: 0.087805166
+ >> PeleLMeX::Advance() --> Time: 0.10829
+ Writing temporals.
+
+ ====================   NEW TIME STEP   ==================== 
+ ==============================================================================
+ Typical values: 
+	Velocity: 54.57535066 1.889342933e-08 1.714674007e-08 
+ ==============================================================================
+ Est. time step - Conv: 8.016439559e-06, divu: 1e+200
+ STEP [70] - Time: 0.0007431737192, dt 8.016439559e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.0176435
+   - Advance()::VelocityAdvance  --> Time: 0.087722375
+ >> PeleLMeX::Advance() --> Time: 0.108800666
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.99722168e-06, divu: 1e+200
+ STEP [71] - Time: 0.0007511901588, dt 7.99722168e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.01742875
+   - Advance()::VelocityAdvance  --> Time: 0.087344667
+ >> PeleLMeX::Advance() --> Time: 0.107247625
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.978569152e-06, divu: 1e+200
+ STEP [72] - Time: 0.0007591873804, dt 7.978569152e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.0174035
+   - Advance()::VelocityAdvance  --> Time: 0.087385791
+ >> PeleLMeX::Advance() --> Time: 0.107134
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.960460905e-06, divu: 1e+200
+ STEP [73] - Time: 0.0007671659496, dt 7.960460905e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017294958
+   - Advance()::VelocityAdvance  --> Time: 0.087523917
+ >> PeleLMeX::Advance() --> Time: 0.107185375
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.942876882e-06, divu: 1e+200
+ STEP [74] - Time: 0.0007751264105, dt 7.942876882e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017312041
+   - Advance()::VelocityAdvance  --> Time: 0.08715075
+ >> PeleLMeX::Advance() --> Time: 0.106993084
+ Writing temporals.
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.925797981e-06, divu: 1e+200
+ STEP [75] - Time: 0.0007830692874, dt 7.925797981e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017409042
+   - Advance()::VelocityAdvance  --> Time: 0.088256084
+ >> PeleLMeX::Advance() --> Time: 0.108047416
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.909206e-06, divu: 1e+200
+ STEP [76] - Time: 0.0007909950854, dt 7.909206e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017306708
+   - Advance()::VelocityAdvance  --> Time: 0.088049208
+ >> PeleLMeX::Advance() --> Time: 0.10772025
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.893083578e-06, divu: 1e+200
+ STEP [77] - Time: 0.0007989042914, dt 7.893083578e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017443167
+   - Advance()::VelocityAdvance  --> Time: 0.087206292
+ >> PeleLMeX::Advance() --> Time: 0.107023667
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.877414154e-06, divu: 1e+200
+ STEP [78] - Time: 0.0008067973749, dt 7.877414154e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.0172905
+   - Advance()::VelocityAdvance  --> Time: 0.08705075
+ >> PeleLMeX::Advance() --> Time: 0.1067865
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.862181912e-06, divu: 1e+200
+ STEP [79] - Time: 0.0008146747891, dt 7.862181912e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017417166
+   - Advance()::VelocityAdvance  --> Time: 0.08779825
+ >> PeleLMeX::Advance() --> Time: 0.1079405
+ Writing temporals.
+
+ ====================   NEW TIME STEP   ==================== 
+ ==============================================================================
+ Typical values: 
+	Velocity: 55.75115007 4.588051344e-09 4.99262321e-09 
+ ==============================================================================
+ Est. time step - Conv: 7.847371748e-06, divu: 1e+200
+ STEP [80] - Time: 0.000822536971, dt 7.847371748e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017556542
+   - Advance()::VelocityAdvance  --> Time: 0.081061917
+ >> PeleLMeX::Advance() --> Time: 0.102033001
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.832969223e-06, divu: 1e+200
+ STEP [81] - Time: 0.0008303843428, dt 7.832969223e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017350042
+   - Advance()::VelocityAdvance  --> Time: 0.080377292
+ >> PeleLMeX::Advance() --> Time: 0.10036225
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.818960528e-06, divu: 1e+200
+ STEP [82] - Time: 0.000838217312, dt 7.818960528e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017371084
+   - Advance()::VelocityAdvance  --> Time: 0.08017425
+ >> PeleLMeX::Advance() --> Time: 0.10000725
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.805332451e-06, divu: 1e+200
+ STEP [83] - Time: 0.0008460362725, dt 7.805332451e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017241916
+   - Advance()::VelocityAdvance  --> Time: 0.080519125
+ >> PeleLMeX::Advance() --> Time: 0.100348667
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.792072345e-06, divu: 1e+200
+ STEP [84] - Time: 0.000853841605, dt 7.792072345e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017229625
+   - Advance()::VelocityAdvance  --> Time: 0.081002625
+ >> PeleLMeX::Advance() --> Time: 0.100704958
+ Writing temporals.
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.779168095e-06, divu: 1e+200
+ STEP [85] - Time: 0.0008616336773, dt 7.779168095e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.0176165
+   - Advance()::VelocityAdvance  --> Time: 0.08115175
+ >> PeleLMeX::Advance() --> Time: 0.101403417
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.766608092e-06, divu: 1e+200
+ STEP [86] - Time: 0.0008694128454, dt 7.766608092e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.01758825
+   - Advance()::VelocityAdvance  --> Time: 0.081256334
+ >> PeleLMeX::Advance() --> Time: 0.101388042
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.754381204e-06, divu: 1e+200
+ STEP [87] - Time: 0.0008771794535, dt 7.754381204e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017354709
+   - Advance()::VelocityAdvance  --> Time: 0.081157625
+ >> PeleLMeX::Advance() --> Time: 0.101146583
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.742476757e-06, divu: 1e+200
+ STEP [88] - Time: 0.0008849338347, dt 7.742476757e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017790084
+   - Advance()::VelocityAdvance  --> Time: 0.081283833
+ >> PeleLMeX::Advance() --> Time: 0.101580417
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.730884506e-06, divu: 1e+200
+ STEP [89] - Time: 0.0008926763114, dt 7.730884506e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017489542
+   - Advance()::VelocityAdvance  --> Time: 0.081664708
+ >> PeleLMeX::Advance() --> Time: 0.10179125
+ Writing temporals.
+
+ ====================   NEW TIME STEP   ==================== 
+ ==============================================================================
+ Typical values: 
+	Velocity: 56.67396047 1.211978645e-09 1.460138903e-09 
+ ==============================================================================
+ Est. time step - Conv: 7.719594614e-06, divu: 1e+200
+ STEP [90] - Time: 0.000900407196, dt 7.719594614e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.01742875
+   - Advance()::VelocityAdvance  --> Time: 0.081086875
+ >> PeleLMeX::Advance() --> Time: 0.102211625
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.708597635e-06, divu: 1e+200
+ STEP [91] - Time: 0.0009081267906, dt 7.708597635e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017407042
+   - Advance()::VelocityAdvance  --> Time: 0.080713625
+ >> PeleLMeX::Advance() --> Time: 0.100713333
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.697884492e-06, divu: 1e+200
+ STEP [92] - Time: 0.0009158353882, dt 7.697884492e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017567959
+   - Advance()::VelocityAdvance  --> Time: 0.08087125
+ >> PeleLMeX::Advance() --> Time: 0.101049416
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.687446459e-06, divu: 1e+200
+ STEP [93] - Time: 0.0009235332727, dt 7.687446459e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017234083
+   - Advance()::VelocityAdvance  --> Time: 0.080893
+ >> PeleLMeX::Advance() --> Time: 0.100776417
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.677275145e-06, divu: 1e+200
+ STEP [94] - Time: 0.0009312207192, dt 7.677275145e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017273959
+   - Advance()::VelocityAdvance  --> Time: 0.082437792
+ >> PeleLMeX::Advance() --> Time: 0.102443417
+ Writing temporals.
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.667362477e-06, divu: 1e+200
+ STEP [95] - Time: 0.0009388979943, dt 7.667362477e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017712042
+   - Advance()::VelocityAdvance  --> Time: 0.087467875
+ >> PeleLMeX::Advance() --> Time: 0.107653583
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.657700686e-06, divu: 1e+200
+ STEP [96] - Time: 0.0009465653568, dt 7.657700686e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017453541
+   - Advance()::VelocityAdvance  --> Time: 0.080902709
+ >> PeleLMeX::Advance() --> Time: 0.100904125
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.648282292e-06, divu: 1e+200
+ STEP [97] - Time: 0.0009542230575, dt 7.648282292e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017359208
+   - Advance()::VelocityAdvance  --> Time: 0.081079208
+ >> PeleLMeX::Advance() --> Time: 0.101098417
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.639100092e-06, divu: 1e+200
+ STEP [98] - Time: 0.0009618713398, dt 7.639100092e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017267875
+   - Advance()::VelocityAdvance  --> Time: 0.080767042
+ >> PeleLMeX::Advance() --> Time: 0.100523375
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.630147143e-06, divu: 1e+200
+ STEP [99] - Time: 0.0009695104398, dt 7.630147143e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017009584
+   - Advance()::VelocityAdvance  --> Time: 0.079221417
+ >> PeleLMeX::Advance() --> Time: 0.098825375
+ Writing temporals.
+
+ ====================   NEW TIME STEP   ==================== 
+ ==============================================================================
+ Typical values: 
+	Velocity: 57.40402525 3.150019408e-10 4.43691627e-10 
+ ==============================================================================
+ Est. time step - Conv: 7.621416757e-06, divu: 1e+200
+ STEP [100] - Time: 0.000977140587, dt 7.621416757e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017204875
+   - Advance()::VelocityAdvance  --> Time: 0.079541417
+ >> PeleLMeX::Advance() --> Time: 0.100413667
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.612902483e-06, divu: 1e+200
+ STEP [101] - Time: 0.0009847620037, dt 7.612902483e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.01746725
+   - Advance()::VelocityAdvance  --> Time: 0.080191833
+ >> PeleLMeX::Advance() --> Time: 0.100204708
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.604598102e-06, divu: 1e+200
+ STEP [102] - Time: 0.0009923749062, dt 7.604598102e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017628917
+   - Advance()::VelocityAdvance  --> Time: 0.081424
+ >> PeleLMeX::Advance() --> Time: 0.10151875
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.59649761e-06, divu: 1e+200
+ STEP [103] - Time: 0.0009999795043, dt 7.59649761e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017528375
+   - Advance()::VelocityAdvance  --> Time: 0.080867041
+ >> PeleLMeX::Advance() --> Time: 0.101220458
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.588595217e-06, divu: 1e+200
+ STEP [104] - Time: 0.001007576002, dt 7.588595217e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017504958
+   - Advance()::VelocityAdvance  --> Time: 0.081336459
+ >> PeleLMeX::Advance() --> Time: 0.101449792
+ Writing temporals.
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.580885331e-06, divu: 1e+200
+ STEP [105] - Time: 0.001015164597, dt 7.580885331e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017649042
+   - Advance()::VelocityAdvance  --> Time: 0.081160542
+ >> PeleLMeX::Advance() --> Time: 0.101384667
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.573362552e-06, divu: 1e+200
+ STEP [106] - Time: 0.001022745482, dt 7.573362552e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017701333
+   - Advance()::VelocityAdvance  --> Time: 0.081304459
+ >> PeleLMeX::Advance() --> Time: 0.101589
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.566021664e-06, divu: 1e+200
+ STEP [107] - Time: 0.001030318845, dt 7.566021664e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017554167
+   - Advance()::VelocityAdvance  --> Time: 0.081555375
+ >> PeleLMeX::Advance() --> Time: 0.101631375
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.558857628e-06, divu: 1e+200
+ STEP [108] - Time: 0.001037884867, dt 7.558857628e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017672041
+   - Advance()::VelocityAdvance  --> Time: 0.08129225
+ >> PeleLMeX::Advance() --> Time: 0.101432917
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.551865572e-06, divu: 1e+200
+ STEP [109] - Time: 0.001045443724, dt 7.551865572e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017612167
+   - Advance()::VelocityAdvance  --> Time: 0.081326709
+ >> PeleLMeX::Advance() --> Time: 0.101633542
+ Writing temporals.
+
+ ====================   NEW TIME STEP   ==================== 
+ ==============================================================================
+ Typical values: 
+	Velocity: 57.98510735 9.049148126e-11 1.352940753e-10 
+ ==============================================================================
+ Est. time step - Conv: 7.545040788e-06, divu: 1e+200
+ STEP [110] - Time: 0.00105299559, dt 7.545040788e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017884625
+   - Advance()::VelocityAdvance  --> Time: 0.081451916
+ >> PeleLMeX::Advance() --> Time: 0.103002334
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.53837872e-06, divu: 1e+200
+ STEP [111] - Time: 0.001060540631, dt 7.53837872e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017582709
+   - Advance()::VelocityAdvance  --> Time: 0.080966667
+ >> PeleLMeX::Advance() --> Time: 0.101252625
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.531874962e-06, divu: 1e+200
+ STEP [112] - Time: 0.001068079009, dt 7.531874962e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.018013459
+   - Advance()::VelocityAdvance  --> Time: 0.081744
+ >> PeleLMeX::Advance() --> Time: 0.102459917
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.525525254e-06, divu: 1e+200
+ STEP [113] - Time: 0.001075610884, dt 7.525525254e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.0179625
+   - Advance()::VelocityAdvance  --> Time: 0.081502917
+ >> PeleLMeX::Advance() --> Time: 0.101966417
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.519325468e-06, divu: 1e+200
+ STEP [114] - Time: 0.00108313641, dt 7.519325468e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017837334
+   - Advance()::VelocityAdvance  --> Time: 0.082568791
+ >> PeleLMeX::Advance() --> Time: 0.103015958
+ Writing temporals.
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.513271611e-06, divu: 1e+200
+ STEP [115] - Time: 0.001090655735, dt 7.513271611e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.016773292
+   - Advance()::VelocityAdvance  --> Time: 0.081268625
+ >> PeleLMeX::Advance() --> Time: 0.100572125
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.507359817e-06, divu: 1e+200
+ STEP [116] - Time: 0.001098169007, dt 7.507359817e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.016903334
+   - Advance()::VelocityAdvance  --> Time: 0.079671417
+ >> PeleLMeX::Advance() --> Time: 0.099010209
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.501586338e-06, divu: 1e+200
+ STEP [117] - Time: 0.001105676367, dt 7.501586338e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.016725292
+   - Advance()::VelocityAdvance  --> Time: 0.072930792
+ >> PeleLMeX::Advance() --> Time: 0.092066792
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.495947548e-06, divu: 1e+200
+ STEP [118] - Time: 0.001113177953, dt 7.495947548e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.016390167
+   - Advance()::VelocityAdvance  --> Time: 0.073445833
+ >> PeleLMeX::Advance() --> Time: 0.09230825
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.49043993e-06, divu: 1e+200
+ STEP [119] - Time: 0.0011206739, dt 7.49043993e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.016232708
+   - Advance()::VelocityAdvance  --> Time: 0.073826834
+ >> PeleLMeX::Advance() --> Time: 0.092514
+ Writing temporals.
+
+ ====================   NEW TIME STEP   ==================== 
+ ==============================================================================
+ Typical values: 
+	Velocity: 58.44976467 2.80177112e-11 4.439561741e-11 
+ ==============================================================================
+ Est. time step - Conv: 7.485060076e-06, divu: 1e+200
+ STEP [120] - Time: 0.00112816434, dt 7.485060076e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.016728583
+   - Advance()::VelocityAdvance  --> Time: 0.075097917
+ >> PeleLMeX::Advance() --> Time: 0.095539042
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.479804682e-06, divu: 1e+200
+ STEP [121] - Time: 0.0011356494, dt 7.479804682e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.016878708
+   - Advance()::VelocityAdvance  --> Time: 0.073934708
+ >> PeleLMeX::Advance() --> Time: 0.093303209
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.474670547e-06, divu: 1e+200
+ STEP [122] - Time: 0.001143129205, dt 7.474670547e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.016661125
+   - Advance()::VelocityAdvance  --> Time: 0.074381125
+ >> PeleLMeX::Advance() --> Time: 0.093779791
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.469654563e-06, divu: 1e+200
+ STEP [123] - Time: 0.001150603876, dt 7.469654563e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.016861417
+   - Advance()::VelocityAdvance  --> Time: 0.075335958
+ >> PeleLMeX::Advance() --> Time: 0.094633125
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.464753717e-06, divu: 1e+200
+ STEP [124] - Time: 0.00115807353, dt 7.464753717e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.016756
+   - Advance()::VelocityAdvance  --> Time: 0.075399125
+ >> PeleLMeX::Advance() --> Time: 0.094788666
+ Writing temporals.
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.459965085e-06, divu: 1e+200
+ STEP [125] - Time: 0.001165538284, dt 7.459965085e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.016896666
+   - Advance()::VelocityAdvance  --> Time: 0.075064417
+ >> PeleLMeX::Advance() --> Time: 0.094500958
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.45528583e-06, divu: 1e+200
+ STEP [126] - Time: 0.001172998249, dt 7.45528583e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.016801792
+   - Advance()::VelocityAdvance  --> Time: 0.075091958
+ >> PeleLMeX::Advance() --> Time: 0.094539209
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.450713198e-06, divu: 1e+200
+ STEP [127] - Time: 0.001180453535, dt 7.450713198e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.016691208
+   - Advance()::VelocityAdvance  --> Time: 0.074783375
+ >> PeleLMeX::Advance() --> Time: 0.093986917
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.446244516e-06, divu: 1e+200
+ STEP [128] - Time: 0.001187904248, dt 7.446244516e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.017393542
+   - Advance()::VelocityAdvance  --> Time: 0.075428834
+ >> PeleLMeX::Advance() --> Time: 0.095405458
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.441877189e-06, divu: 1e+200
+ STEP [129] - Time: 0.001195350493, dt 7.441877189e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.016830375
+   - Advance()::VelocityAdvance  --> Time: 0.075081083
+ >> PeleLMeX::Advance() --> Time: 0.094403833
+ Writing temporals.
+
+ ====================   NEW TIME STEP   ==================== 
+ ==============================================================================
+ Typical values: 
+	Velocity: 58.82266975 8.640508592e-12 1.464978298e-11 
+ ==============================================================================
+ Est. time step - Conv: 7.437608696e-06, divu: 1e+200
+ STEP [130] - Time: 0.00120279237, dt 7.437608696e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.016792209
+   - Advance()::VelocityAdvance  --> Time: 0.074874917
+ >> PeleLMeX::Advance() --> Time: 0.095752125
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.433436587e-06, divu: 1e+200
+ STEP [131] - Time: 0.001210229978, dt 7.433436587e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.016747292
+   - Advance()::VelocityAdvance  --> Time: 0.075473583
+ >> PeleLMeX::Advance() --> Time: 0.094640666
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.429358485e-06, divu: 1e+200
+ STEP [132] - Time: 0.001217663415, dt 7.429358485e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.016796625
+   - Advance()::VelocityAdvance  --> Time: 0.07432825
+ >> PeleLMeX::Advance() --> Time: 0.093968875
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.425372078e-06, divu: 1e+200
+ STEP [133] - Time: 0.001225092774, dt 7.425372078e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.016775875
+   - Advance()::VelocityAdvance  --> Time: 0.074808375
+ >> PeleLMeX::Advance() --> Time: 0.094087458
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.42147512e-06, divu: 1e+200
+ STEP [134] - Time: 0.001232518146, dt 7.42147512e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.016937041
+   - Advance()::VelocityAdvance  --> Time: 0.075103542
+ >> PeleLMeX::Advance() --> Time: 0.094552791
+ Writing temporals.
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.417665428e-06, divu: 1e+200
+ STEP [135] - Time: 0.001239939621, dt 7.417665428e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.016983833
+   - Advance()::VelocityAdvance  --> Time: 0.076091209
+ >> PeleLMeX::Advance() --> Time: 0.095558583
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.413940879e-06, divu: 1e+200
+ STEP [136] - Time: 0.001247357286, dt 7.413940879e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.016774708
+   - Advance()::VelocityAdvance  --> Time: 0.074256291
+ >> PeleLMeX::Advance() --> Time: 0.093765583
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.410299411e-06, divu: 1e+200
+ STEP [137] - Time: 0.001254771227, dt 7.410299411e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.016802333
+   - Advance()::VelocityAdvance  --> Time: 0.074453291
+ >> PeleLMeX::Advance() --> Time: 0.093782458
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.406739016e-06, divu: 1e+200
+ STEP [138] - Time: 0.001262181526, dt 7.406739016e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.016901
+   - Advance()::VelocityAdvance  --> Time: 0.074737375
+ >> PeleLMeX::Advance() --> Time: 0.094155625
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.403257744e-06, divu: 1e+200
+ STEP [139] - Time: 0.001269588265, dt 7.403257744e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.016759041
+   - Advance()::VelocityAdvance  --> Time: 0.07456925
+ >> PeleLMeX::Advance() --> Time: 0.094013333
+ Writing temporals.
+
+ ====================   NEW TIME STEP   ==================== 
+ ==============================================================================
+ Typical values: 
+	Velocity: 59.12279054 2.898016169e-12 4.865967972e-12 
+ ==============================================================================
+ Est. time step - Conv: 7.399853695e-06, divu: 1e+200
+ STEP [140] - Time: 0.001276991523, dt 7.399853695e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.01671575
+   - Advance()::VelocityAdvance  --> Time: 0.074170625
+ >> PeleLMeX::Advance() --> Time: 0.094767084
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.396525023e-06, divu: 1e+200
+ STEP [141] - Time: 0.001284391377, dt 7.396525023e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.016724167
+   - Advance()::VelocityAdvance  --> Time: 0.0748785
+ >> PeleLMeX::Advance() --> Time: 0.094236917
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.393269931e-06, divu: 1e+200
+ STEP [142] - Time: 0.001291787902, dt 7.393269931e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.016730292
+   - Advance()::VelocityAdvance  --> Time: 0.074517042
+ >> PeleLMeX::Advance() --> Time: 0.093688417
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.39008667e-06, divu: 1e+200
+ STEP [143] - Time: 0.001299181172, dt 7.39008667e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.016877625
+   - Advance()::VelocityAdvance  --> Time: 0.074243834
+ >> PeleLMeX::Advance() --> Time: 0.093848083
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.386973539e-06, divu: 1e+200
+ STEP [144] - Time: 0.001306571259, dt 7.386973539e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.015514667
+   - Advance()::VelocityAdvance  --> Time: 0.074851667
+ >> PeleLMeX::Advance() --> Time: 0.092897542
+ Writing temporals.
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.383928881e-06, divu: 1e+200
+ STEP [145] - Time: 0.001313958232, dt 7.383928881e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.015786292
+   - Advance()::VelocityAdvance  --> Time: 0.074835334
+ >> PeleLMeX::Advance() --> Time: 0.093053
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.380951083e-06, divu: 1e+200
+ STEP [146] - Time: 0.001321342161, dt 7.380951083e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.01554325
+   - Advance()::VelocityAdvance  --> Time: 0.0741855
+ >> PeleLMeX::Advance() --> Time: 0.092346
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.378038575e-06, divu: 1e+200
+ STEP [147] - Time: 0.001328723112, dt 7.378038575e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.015436167
+   - Advance()::VelocityAdvance  --> Time: 0.074518042
+ >> PeleLMeX::Advance() --> Time: 0.092658916
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.375189828e-06, divu: 1e+200
+ STEP [148] - Time: 0.001336101151, dt 7.375189828e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.015554042
+   - Advance()::VelocityAdvance  --> Time: 0.074655125
+ >> PeleLMeX::Advance() --> Time: 0.092753709
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.372403353e-06, divu: 1e+200
+ STEP [149] - Time: 0.00134347634, dt 7.372403353e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.015488541
+   - Advance()::VelocityAdvance  --> Time: 0.074591667
+ >> PeleLMeX::Advance() --> Time: 0.092488834
+ Writing temporals.
+
+ ====================   NEW TIME STEP   ==================== 
+ ==============================================================================
+ Typical values: 
+	Velocity: 59.36487563 1.10936852e-12 1.716407158e-12 
+ ==============================================================================
+ Est. time step - Conv: 7.369677699e-06, divu: 1e+200
+ STEP [150] - Time: 0.001350848744, dt 7.369677699e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.015355166
+   - Advance()::VelocityAdvance  --> Time: 0.07429075
+ >> PeleLMeX::Advance() --> Time: 0.093667417
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.367011454e-06, divu: 1e+200
+ STEP [151] - Time: 0.001358218421, dt 7.367011454e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.015302666
+   - Advance()::VelocityAdvance  --> Time: 0.0749445
+ >> PeleLMeX::Advance() --> Time: 0.0927455
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.364403241e-06, divu: 1e+200
+ STEP [152] - Time: 0.001365585433, dt 7.364403241e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.015318084
+   - Advance()::VelocityAdvance  --> Time: 0.07441725
+ >> PeleLMeX::Advance() --> Time: 0.092306291
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.361851719e-06, divu: 1e+200
+ STEP [153] - Time: 0.001372949836, dt 7.361851719e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.015274792
+   - Advance()::VelocityAdvance  --> Time: 0.074338583
+ >> PeleLMeX::Advance() --> Time: 0.092048708
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.359355582e-06, divu: 1e+200
+ STEP [154] - Time: 0.001380311688, dt 7.359355582e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.015176458
+   - Advance()::VelocityAdvance  --> Time: 0.073705417
+ >> PeleLMeX::Advance() --> Time: 0.091643875
+ Writing temporals.
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.356913555e-06, divu: 1e+200
+ STEP [155] - Time: 0.001387671043, dt 7.356913555e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.015030834
+   - Advance()::VelocityAdvance  --> Time: 0.073650209
+ >> PeleLMeX::Advance() --> Time: 0.091429834
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.354524398e-06, divu: 1e+200
+ STEP [156] - Time: 0.001395027957, dt 7.354524398e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.015084875
+   - Advance()::VelocityAdvance  --> Time: 0.075149958
+ >> PeleLMeX::Advance() --> Time: 0.09282725
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.352186901e-06, divu: 1e+200
+ STEP [157] - Time: 0.001402382481, dt 7.352186901e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.015015708
+   - Advance()::VelocityAdvance  --> Time: 0.074148417
+ >> PeleLMeX::Advance() --> Time: 0.091604167
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.349899884e-06, divu: 1e+200
+ STEP [158] - Time: 0.001409734668, dt 7.349899884e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.01509275
+   - Advance()::VelocityAdvance  --> Time: 0.073831208
+ >> PeleLMeX::Advance() --> Time: 0.091394375
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.347662197e-06, divu: 1e+200
+ STEP [159] - Time: 0.001417084568, dt 7.347662197e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.01511675
+   - Advance()::VelocityAdvance  --> Time: 0.074380458
+ >> PeleLMeX::Advance() --> Time: 0.092038666
+ Writing temporals.
+
+ ====================   NEW TIME STEP   ==================== 
+ ==============================================================================
+ Typical values: 
+	Velocity: 59.56049621 5.836878735e-13 6.605971846e-13 
+ ==============================================================================
+ Est. time step - Conv: 7.345472718e-06, divu: 1e+200
+ STEP [160] - Time: 0.00142443223, dt 7.345472718e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.014896542
+   - Advance()::VelocityAdvance  --> Time: 0.074245584
+ >> PeleLMeX::Advance() --> Time: 0.0930775
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.343330356e-06, divu: 1e+200
+ STEP [161] - Time: 0.001431777703, dt 7.343330356e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.014989958
+   - Advance()::VelocityAdvance  --> Time: 0.074525292
+ >> PeleLMeX::Advance() --> Time: 0.092211583
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.341234042e-06, divu: 1e+200
+ STEP [162] - Time: 0.001439121033, dt 7.341234042e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.014974375
+   - Advance()::VelocityAdvance  --> Time: 0.074462834
+ >> PeleLMeX::Advance() --> Time: 0.091927291
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.339182738e-06, divu: 1e+200
+ STEP [163] - Time: 0.001446462268, dt 7.339182738e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.014996667
+   - Advance()::VelocityAdvance  --> Time: 0.074167583
+ >> PeleLMeX::Advance() --> Time: 0.091801875
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.337175429e-06, divu: 1e+200
+ STEP [164] - Time: 0.00145380145, dt 7.337175429e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.015021333
+   - Advance()::VelocityAdvance  --> Time: 0.074183333
+ >> PeleLMeX::Advance() --> Time: 0.091630834
+ Writing temporals.
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.335211126e-06, divu: 1e+200
+ STEP [165] - Time: 0.001461138626, dt 7.335211126e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.014895959
+   - Advance()::VelocityAdvance  --> Time: 0.06789425
+ >> PeleLMeX::Advance() --> Time: 0.085511917
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.333288862e-06, divu: 1e+200
+ STEP [166] - Time: 0.001468473837, dt 7.333288862e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.014770959
+   - Advance()::VelocityAdvance  --> Time: 0.067574416
+ >> PeleLMeX::Advance() --> Time: 0.084766625
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.331407697e-06, divu: 1e+200
+ STEP [167] - Time: 0.001475807126, dt 7.331407697e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.014839417
+   - Advance()::VelocityAdvance  --> Time: 0.068014542
+ >> PeleLMeX::Advance() --> Time: 0.085275958
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.329566711e-06, divu: 1e+200
+ STEP [168] - Time: 0.001483138533, dt 7.329566711e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.014872042
+   - Advance()::VelocityAdvance  --> Time: 0.067303042
+ >> PeleLMeX::Advance() --> Time: 0.084735166
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.327765007e-06, divu: 1e+200
+ STEP [169] - Time: 0.0014904681, dt 7.327765007e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.014709834
+   - Advance()::VelocityAdvance  --> Time: 0.067946041
+ >> PeleLMeX::Advance() --> Time: 0.085207667
+ Writing temporals.
+
+ ====================   NEW TIME STEP   ==================== 
+ ==============================================================================
+ Typical values: 
+	Velocity: 59.71879577 5.501765776e-13 5.474234512e-13 
+ ==============================================================================
+ Est. time step - Conv: 7.326001711e-06, divu: 1e+200
+ STEP [170] - Time: 0.001497795865, dt 7.326001711e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.014710375
+   - Advance()::VelocityAdvance  --> Time: 0.067712375
+ >> PeleLMeX::Advance() --> Time: 0.086185542
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.324275968e-06, divu: 1e+200
+ STEP [171] - Time: 0.001505121867, dt 7.324275968e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.014623208
+   - Advance()::VelocityAdvance  --> Time: 0.06749825
+ >> PeleLMeX::Advance() --> Time: 0.084692208
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.322586944e-06, divu: 1e+200
+ STEP [172] - Time: 0.001512446143, dt 7.322586944e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.01477175
+   - Advance()::VelocityAdvance  --> Time: 0.067785292
+ >> PeleLMeX::Advance() --> Time: 0.085028042
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.320933827e-06, divu: 1e+200
+ STEP [173] - Time: 0.00151976873, dt 7.320933827e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.014852
+   - Advance()::VelocityAdvance  --> Time: 0.067781334
+ >> PeleLMeX::Advance() --> Time: 0.085095125
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.319315821e-06, divu: 1e+200
+ STEP [174] - Time: 0.001527089664, dt 7.319315821e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.014745041
+   - Advance()::VelocityAdvance  --> Time: 0.067060542
+ >> PeleLMeX::Advance() --> Time: 0.084372417
+ Writing temporals.
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.31773215e-06, divu: 1e+200
+ STEP [175] - Time: 0.001534408979, dt 7.31773215e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.014703834
+   - Advance()::VelocityAdvance  --> Time: 0.067001167
+ >> PeleLMeX::Advance() --> Time: 0.084323334
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.316182059e-06, divu: 1e+200
+ STEP [176] - Time: 0.001541726712, dt 7.316182059e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.014716125
+   - Advance()::VelocityAdvance  --> Time: 0.0670485
+ >> PeleLMeX::Advance() --> Time: 0.08415275
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.314664808e-06, divu: 1e+200
+ STEP [177] - Time: 0.001549042894, dt 7.314664808e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.014599291
+   - Advance()::VelocityAdvance  --> Time: 0.06703325
+ >> PeleLMeX::Advance() --> Time: 0.084257833
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.313179674e-06, divu: 1e+200
+ STEP [178] - Time: 0.001556357558, dt 7.313179674e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.014910958
+   - Advance()::VelocityAdvance  --> Time: 0.067533208
+ >> PeleLMeX::Advance() --> Time: 0.085071125
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.311725953e-06, divu: 1e+200
+ STEP [179] - Time: 0.001563670738, dt 7.311725953e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.014480167
+   - Advance()::VelocityAdvance  --> Time: 0.068843791
+ >> PeleLMeX::Advance() --> Time: 0.086038542
+ Writing temporals.
+
+ ====================   NEW TIME STEP   ==================== 
+ ==============================================================================
+ Typical values: 
+	Velocity: 59.8470409 5.361222447e-13 5.353156271e-13 
+ ==============================================================================
+ Est. time step - Conv: 7.310302956e-06, divu: 1e+200
+ STEP [180] - Time: 0.001570982464, dt 7.310302956e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.014623167
+   - Advance()::VelocityAdvance  --> Time: 0.067677542
+ >> PeleLMeX::Advance() --> Time: 0.08623075
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.308910012e-06, divu: 1e+200
+ STEP [181] - Time: 0.001578292767, dt 7.308910012e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.014598708
+   - Advance()::VelocityAdvance  --> Time: 0.067579667
+ >> PeleLMeX::Advance() --> Time: 0.084780458
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.307546462e-06, divu: 1e+200
+ STEP [182] - Time: 0.001585601677, dt 7.307546462e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.014945
+   - Advance()::VelocityAdvance  --> Time: 0.0677175
+ >> PeleLMeX::Advance() --> Time: 0.085114626
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.306211667e-06, divu: 1e+200
+ STEP [183] - Time: 0.001592909223, dt 7.306211667e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.014976083
+   - Advance()::VelocityAdvance  --> Time: 0.067562417
+ >> PeleLMeX::Advance() --> Time: 0.08506325
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.304905e-06, divu: 1e+200
+ STEP [184] - Time: 0.001600215435, dt 7.304905e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.01449
+   - Advance()::VelocityAdvance  --> Time: 0.067763584
+ >> PeleLMeX::Advance() --> Time: 0.084998
+ Writing temporals.
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.303625848e-06, divu: 1e+200
+ STEP [185] - Time: 0.00160752034, dt 7.303625848e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.014718833
+   - Advance()::VelocityAdvance  --> Time: 0.067653833
+ >> PeleLMeX::Advance() --> Time: 0.084878125
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.302373613e-06, divu: 1e+200
+ STEP [186] - Time: 0.001614823966, dt 7.302373613e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.01474225
+   - Advance()::VelocityAdvance  --> Time: 0.067840292
+ >> PeleLMeX::Advance() --> Time: 0.085157042
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.301147712e-06, divu: 1e+200
+ STEP [187] - Time: 0.00162212634, dt 7.301147712e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.014607041
+   - Advance()::VelocityAdvance  --> Time: 0.067714292
+ >> PeleLMeX::Advance() --> Time: 0.084991292
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.299947573e-06, divu: 1e+200
+ STEP [188] - Time: 0.001629427487, dt 7.299947573e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.014818583
+   - Advance()::VelocityAdvance  --> Time: 0.0675205
+ >> PeleLMeX::Advance() --> Time: 0.08478925
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.298772639e-06, divu: 1e+200
+ STEP [189] - Time: 0.001636727435, dt 7.298772639e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.014743417
+   - Advance()::VelocityAdvance  --> Time: 0.067222084
+ >> PeleLMeX::Advance() --> Time: 0.084587666
+ Writing temporals.
+
+ ====================   NEW TIME STEP   ==================== 
+ ==============================================================================
+ Typical values: 
+	Velocity: 59.95103311 5.293197593e-13 5.288830785e-13 
+ ==============================================================================
+ Est. time step - Conv: 7.297622365e-06, divu: 1e+200
+ STEP [190] - Time: 0.001644026207, dt 7.297622365e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.014630834
+   - Advance()::VelocityAdvance  --> Time: 0.067550334
+ >> PeleLMeX::Advance() --> Time: 0.0859275
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.296496218e-06, divu: 1e+200
+ STEP [191] - Time: 0.00165132383, dt 7.296496218e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.0147775
+   - Advance()::VelocityAdvance  --> Time: 0.067365583
+ >> PeleLMeX::Advance() --> Time: 0.084619417
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.295393678e-06, divu: 1e+200
+ STEP [192] - Time: 0.001658620326, dt 7.295393678e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.014495458
+   - Advance()::VelocityAdvance  --> Time: 0.067438333
+ >> PeleLMeX::Advance() --> Time: 0.084642625
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.294314236e-06, divu: 1e+200
+ STEP [193] - Time: 0.00166591572, dt 7.294314236e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.014595333
+   - Advance()::VelocityAdvance  --> Time: 0.067412042
+ >> PeleLMeX::Advance() --> Time: 0.084537375
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.293257396e-06, divu: 1e+200
+ STEP [194] - Time: 0.001673210034, dt 7.293257396e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.014893042
+   - Advance()::VelocityAdvance  --> Time: 0.067998541
+ >> PeleLMeX::Advance() --> Time: 0.085362333
+ Writing temporals.
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.292222671e-06, divu: 1e+200
+ STEP [195] - Time: 0.001680503291, dt 7.292222671e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.014478583
+   - Advance()::VelocityAdvance  --> Time: 0.065859125
+ >> PeleLMeX::Advance() --> Time: 0.082968708
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.291209586e-06, divu: 1e+200
+ STEP [196] - Time: 0.001687795514, dt 7.291209586e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.014414583
+   - Advance()::VelocityAdvance  --> Time: 0.065808292
+ >> PeleLMeX::Advance() --> Time: 0.082762333
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.290217678e-06, divu: 1e+200
+ STEP [197] - Time: 0.001695086724, dt 7.290217678e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.014319667
+   - Advance()::VelocityAdvance  --> Time: 0.066460042
+ >> PeleLMeX::Advance() --> Time: 0.083179834
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.289246492e-06, divu: 1e+200
+ STEP [198] - Time: 0.001702376941, dt 7.289246492e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.014531375
+   - Advance()::VelocityAdvance  --> Time: 0.067121958
+ >> PeleLMeX::Advance() --> Time: 0.084288834
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 7.288295586e-06, divu: 1e+200
+ STEP [199] - Time: 0.001709666188, dt 7.288295586e-06, Ncells 65536
+   - Advance()::MACProjection()  --> Time: 0.014749959
+   - Advance()::VelocityAdvance  --> Time: 0.06825425
+ >> PeleLMeX::Advance() --> Time: 0.085659833
+ Writing temporals.
+
+ Writing plotfile: plt_00200
+
+ >> Final simulation time: 0.001716954483
+
+Total Time: 20.89481618
+Unused ParmParse Variables:
+  [TOP]::amr.ref_ratio(nvals = 4)  :: [2, 2, 2, 2]
+  [TOP]::amr.regrid_int(nvals = 1)  :: [2]
+
+AMReX (eb10d70823df) finalized
