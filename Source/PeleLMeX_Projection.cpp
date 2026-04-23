@@ -145,6 +145,28 @@ PeleLM::initialProjection()
     GetVecOfPtrs(vel), GetVecOfPtrs(sigma), GetVecOfPtrs(rhs_cc), {},
     incremental, dummy_dt);
 
+  // Mesh mapping: correct the AmrWind-inherited sigma_x-only velocity
+  // update from MLNodeLaplacian::mknewu.  See velocityProjection for
+  // the derivation; the same correction applies here.
+  if (m_mesh_mapping) {
+    for (int lev = 0; lev <= finest_level; ++lev) {
+      auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
+      auto const& sigma_ma = sigma[lev]->const_arrays();
+      auto const& gp_ma = ldata_p->gp.const_arrays();
+      auto const& vel_ma = vel[lev]->arrays();
+      amrex::ParallelFor(
+        *vel[lev], amrex::IntVect(0), AMREX_SPACEDIM,
+        [=] AMREX_GPU_DEVICE(
+          int box_no, int i, int j, int k, int n) noexcept {
+          const amrex::Real sig_x = sigma_ma[box_no](i, j, k, 0);
+          const amrex::Real sig_n = sigma_ma[box_no](i, j, k, n);
+          vel_ma[box_no](i, j, k, n) +=
+            (sig_x - sig_n) * gp_ma[box_no](i, j, k, n);
+        });
+    }
+    amrex::Gpu::streamSynchronize();
+  }
+
   // Mesh mapping: convert projected velocity back to physical space
   if (m_mesh_mapping) {
     for (int lev = 0; lev <= finest_level; ++lev) {
@@ -593,6 +615,38 @@ PeleLM::velocityProjection(
   doNodalProject(
     GetVecOfPtrs(vel), GetVecOfPtrs(sigma), GetVecOfPtrs(rhs_cc), {},
     incremental, a_dt);
+
+  // Correct the AmrWind-inherited limitation in AMReX's nodal projector:
+  // MLNodeLaplacian::mknewu collapses the anisotropic sigma to sigma_x
+  // (the first component of the stored 3-component sigma) when applying
+  // the velocity update to all three components.  That means doNodalProject
+  // left us with
+  //     u_i = u_entry_i - sigma_x . (grad phi)_i
+  // instead of the correct
+  //     u_i = u_entry_i - sigma_i . (grad phi)_i
+  // After doNodalProject, ldata_p->gp holds grad phi (cell-centered,
+  // AMREX_SPACEDIM components).  Apply the per-component correction here
+  // so the mesh-mapping path produces the right answer even without an
+  // AMReX-level fix for mknewu.  Under identity mapping all sigma_i are
+  // equal and the correction is exactly zero, preserving byte-identity.
+  if (m_mesh_mapping) {
+    for (int lev = 0; lev <= finest_level; ++lev) {
+      auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
+      auto const& sigma_ma = sigma[lev]->const_arrays();
+      auto const& gp_ma = ldata_p->gp.const_arrays();
+      auto const& vel_ma = vel[lev]->arrays();
+      amrex::ParallelFor(
+        *vel[lev], amrex::IntVect(0), AMREX_SPACEDIM,
+        [=] AMREX_GPU_DEVICE(
+          int box_no, int i, int j, int k, int n) noexcept {
+          const amrex::Real sig_x = sigma_ma[box_no](i, j, k, 0);
+          const amrex::Real sig_n = sigma_ma[box_no](i, j, k, n);
+          vel_ma[box_no](i, j, k, n) +=
+            (sig_x - sig_n) * gp_ma[box_no](i, j, k, n);
+        });
+    }
+    amrex::Gpu::streamSynchronize();
+  }
 
   // Mesh mapping: scale U^{n+1} back to physical space (u_i *= fac_i/J).
   if (m_mesh_mapping) {
