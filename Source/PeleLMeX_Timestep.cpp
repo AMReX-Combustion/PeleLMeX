@@ -133,14 +133,31 @@ PeleLM::estConvectiveDt(const TimeStamp a_time)
       ldata_p->state.norm0({AMREX_D_DECL(VELX, VELY, VELZ)}, 0, true, true);
 
     //----------------------------------------------------------------
+    // Under mesh mapping, physical cell size in direction i is
+    // dx[i] . fac_i(x).  Take the minimum fac across the level to get
+    // the smallest physical spacing (most restrictive CFL).  For
+    // ConstantMap this is just the scaling factor; for spatially
+    // varying maps it's the worst-case cell.
+    amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> fac_min;
+    for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
+      fac_min[idim] = 1.0;
+    }
+    if (m_mesh_mapping) {
+      for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
+        fac_min[idim] = m_mesh_map->fac_cc(lev).min(idim);
+      }
+    }
+
+    //----------------------------------------------------------------
     // Est. min time step on lev
     for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
+      const amrex::Real dx_phys = dx[idim] * fac_min[idim];
       if (u_max[idim] > small) {
-        estdt_lev = amrex::min<amrex::Real>(estdt_lev, dx[idim] / u_max[idim]);
+        estdt_lev = amrex::min<amrex::Real>(estdt_lev, dx_phys / u_max[idim]);
       }
       if (f_max[idim] > small) {
         estdt_lev = amrex::min<amrex::Real>(
-          estdt_lev, std::sqrt(2.0 * dx[idim] / f_max[idim]));
+          estdt_lev, std::sqrt(2.0 * dx_phys / f_max[idim]));
       }
     }
 
