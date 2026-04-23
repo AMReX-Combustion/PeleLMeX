@@ -256,6 +256,54 @@ PeleLM::readParameters()
   pp.query("mlmg_fail_plt_residuals", m_mlmg_fail_plt_residuals);
 
   // -----------------------------------------
+  // Mesh mapping (optional)
+  // -----------------------------------------
+  // Activate via e.g.  geometry.mesh_mapping = ConstantMap
+  // Additional per-map parameters live under the map's own ParmParse
+  // group (e.g. ConstantMap.scaling_factor = 1.0 2.0 1.0).
+  {
+    amrex::ParmParse ppg("geometry");
+    std::string mesh_mapping_name;
+    if (ppg.query("mesh_mapping", mesh_mapping_name)) {
+      m_mesh_mapping = true;
+
+      // --- Compatibility guards -----------------------------------------
+      // These match amr-wind PR #545's stated limitations.  Relaxing any
+      // of these requires additional implementation work (see notes).
+#ifdef AMREX_USE_EB
+      amrex::Abort(
+        "mesh_mapping is not supported with Embedded Boundaries (EB).\n"
+        "Rebuild without USE_EB or omit geometry.mesh_mapping.");
+#endif
+#ifdef PELE_USE_PLASMA
+      amrex::Abort(
+        "mesh_mapping is not supported with the plasma solver "
+        "(PELE_USE_PLASMA).");
+#endif
+#ifdef PELE_USE_SPRAY
+      amrex::Abort(
+        "mesh_mapping is not supported with Lagrangian sprays "
+        "(PELE_USE_SPRAY).");
+#endif
+      if (geom[0].IsRZ()) {
+        amrex::Abort(
+          "mesh_mapping is not supported with RZ geometry "
+          "(geometry.coord_sys = 1).");
+      }
+      if (max_level > 0) {
+        amrex::Print()
+          << " WARNING: mesh_mapping has only been exercised on "
+             "single-level AMR;\n          multi-level behaviour with "
+             "max_level > 0 is not verified.\n";
+      }
+
+      m_mesh_map = MeshMap::create(mesh_mapping_name);
+      amrex::Print()
+        << " Mesh mapping enabled: " << mesh_mapping_name << "\n";
+    }
+  }
+
+  // -----------------------------------------
   // Boundary conditions
   // -----------------------------------------
   int isOpenDomain = 0;
@@ -1655,4 +1703,9 @@ PeleLM::resizeArray()
   // Load balancing
   m_costs.resize(max_level + 1);
   m_loadBalanceEff.resize(max_level + 1);
+
+  // Mesh mapping metric fields (if enabled; otherwise no-op)
+  if (m_mesh_map) {
+    m_mesh_map->resize(max_level + 1);
+  }
 }

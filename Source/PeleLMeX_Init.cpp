@@ -126,6 +126,14 @@ PeleLM::MakeNewLevelFromScratch(
     amrex::MFInfo(), *m_factory[lev]);
   m_extSource[lev]->setVal(0.);
 
+  // Mesh mapping metric fields (if enabled; otherwise no-op).  Allocate
+  // storage here so downstream consumers can index the per-level MFs even
+  // though create_map() is not yet called from the numerics paths.
+  if (m_mesh_map) {
+    m_mesh_map->define(lev, grids[lev], dmap[lev], *m_factory[lev], m_nGrowState);
+    m_mesh_map->create_map(lev, geom[lev]);
+  }
+
 #ifdef AMREX_USE_EB
   if (lev == 0 && (m_signDistNeeded != 0)) {
     // Set up CC signed distance container to control EB refinement

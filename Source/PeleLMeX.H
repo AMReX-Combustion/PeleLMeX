@@ -10,6 +10,7 @@
 #include "DiagBase.H"
 #include "PeleLMeX_FlowControllerData.H"
 #include "PeleLMeX_BPatch.H"
+#include "PeleLMeX_MeshMap.H"
 
 #ifdef PELE_USE_PLASMA
 #include "PrecondOp.H"
@@ -2246,6 +2247,25 @@ public:
   std::unique_ptr<Hydro::MacProjector> macproj;
   int m_macProjNeedReset{0};
   int m_macProjOldSize{0};
+
+  //-----------------------------------------------------------------------------
+  // Mesh mapping (optional single-block, axis-aligned stretched mesh).
+  // Controlled via the "geometry.mesh_mapping" input; when absent,
+  // m_mesh_map remains null and all metric-field machinery is bypassed.
+  std::unique_ptr<MeshMap> m_mesh_map;
+  bool m_mesh_mapping{false};
+
+public:
+  //! Access the MeshMap instance (nullptr if mesh mapping is disabled).
+  MeshMap* meshMap() noexcept { return m_mesh_map.get(); }
+  [[nodiscard]] const MeshMap* meshMap() const noexcept
+  {
+    return m_mesh_map.get();
+  }
+  [[nodiscard]] bool hasMeshMapping() const noexcept { return m_mesh_mapping; }
+
+private:
+  //-----------------------------------------------------------------------------
 
   // Nodal projection
   int m_nodal_mg_max_coarsening_level = 100;

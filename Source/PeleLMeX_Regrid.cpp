@@ -419,6 +419,12 @@ PeleLM::MakeNewLevelFromCoarse(
     ba, dm, NVAR, amrex::max<int>(m_nGrowAdv, m_nGrowMAC), amrex::MFInfo(),
     *m_factory[lev]);
   m_extSource[lev]->setVal(0.);
+
+  // Mesh mapping metric fields (if enabled; otherwise no-op)
+  if (m_mesh_map) {
+    m_mesh_map->define(lev, ba, dm, *m_factory[lev], m_nGrowState);
+    m_mesh_map->create_map(lev, geom[lev]);
+  }
 }
 
 void
@@ -535,6 +541,12 @@ PeleLM::RemakeLevel(
     ba, dm, NVAR, amrex::max<int>(m_nGrowAdv, m_nGrowMAC), amrex::MFInfo(),
     *m_factory[lev]);
   m_extSource[lev]->setVal(0.);
+
+  // Mesh mapping metric fields (if enabled; otherwise no-op)
+  if (m_mesh_map) {
+    m_mesh_map->define(lev, ba, dm, *m_factory[lev], m_nGrowState);
+    m_mesh_map->create_map(lev, geom[lev]);
+  }
 }
 
 void
@@ -567,6 +579,11 @@ PeleLM::ClearLevel(const int lev)
 
   m_costs[lev].reset();
   m_loadBalanceEff[lev] = -1.0;
+
+  // Mesh mapping metric fields (if enabled; otherwise no-op)
+  if (m_mesh_map) {
+    m_mesh_map->clear_level(lev);
+  }
 }
 
 void
