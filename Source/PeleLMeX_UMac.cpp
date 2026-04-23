@@ -239,6 +239,48 @@ PeleLM::macProject(
     Sbar = adjustPandDivU(advData);
   }
 
+  //-------------------------------------------------------------------
+  // Mesh-mapping scaling (MAC projection).  Solves
+  //     div_Xi . ( beta grad phi ) = div_Xi . u_bar - J.S
+  // with u_bar_i = (J/fac_i) u_i on face i and
+  //      beta_i = (dt/2) . J / (fac_i^2 . rho) on face i.
+  // Transforms umac -> u_bar and rho_inv -> (J/fac_i^2) rho_inv before
+  // the solve; undoes u_bar -> u after.  See:
+  //   amr-wind/docs/sphinx/theory/mapping.rst  (MAC projection section)
+  //   amr-wind/equation_systems/icns/icns_advection.cpp :: mac_proj_to_uniform_space
+  //-------------------------------------------------------------------
+  if (m_mesh_mapping) {
+    for (int lev = 0; lev <= finest_level; ++lev) {
+      for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
+        const auto& fac_ma = m_mesh_map->fac_fc(lev, idim).const_arrays();
+        const auto& detJ_ma = m_mesh_map->detJ_fc(lev, idim).const_arrays();
+        const auto& umac_ma = advData->umac[lev][idim].arrays();
+        const auto& rhoinv_ma = rho_inv[lev][idim].arrays();
+        const int nc = idim;
+        amrex::ParallelFor(
+          advData->umac[lev][idim],
+          [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+            const amrex::Real f = fac_ma[box_no](i, j, k, nc);
+            const amrex::Real dJ = detJ_ma[box_no](i, j, k);
+            umac_ma[box_no](i, j, k) *= dJ / f;
+            rhoinv_ma[box_no](i, j, k) *= dJ / (f * f);
+          });
+      }
+    }
+    amrex::Gpu::streamSynchronize();
+
+    // Scale cell-centered divU by J before it goes to the projector.
+    // setDivU copies its argument, but a_divu itself is owned by the
+    // caller so we must restore it afterwards.
+    if (has_divu != 0) {
+      for (int lev = 0; lev <= finest_level; ++lev) {
+        amrex::MultiFab::Multiply(
+          *a_divu[lev], m_mesh_map->detJ_cc(lev), 0, 0, 1,
+          a_divu[lev]->nGrow());
+      }
+    }
+  }
+
   if (macproj->needInitialization()) {
     amrex::LPInfo lpInfo;
     lpInfo.setMaxCoarseningLevel(m_mac_mg_max_coarsening_level);
@@ -319,6 +361,37 @@ PeleLM::macProject(
   if ((m_closed_chamber != 0) && (m_incompressible == 0)) {
     for (int lev = 0; lev <= finest_level; ++lev) {
       a_divu[lev]->plus(Sbar, 0, 1);
+    }
+  }
+
+  //-------------------------------------------------------------------
+  // Undo the mesh-mapping scaling: convert umac (face-normal u_bar)
+  // back to physical-space u, and divide a_divu back by J.
+  //-------------------------------------------------------------------
+  if (m_mesh_mapping) {
+    for (int lev = 0; lev <= finest_level; ++lev) {
+      for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
+        const auto& fac_ma = m_mesh_map->fac_fc(lev, idim).const_arrays();
+        const auto& detJ_ma = m_mesh_map->detJ_fc(lev, idim).const_arrays();
+        const auto& umac_ma = advData->umac[lev][idim].arrays();
+        const int nc = idim;
+        amrex::ParallelFor(
+          advData->umac[lev][idim],
+          [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+            const amrex::Real f = fac_ma[box_no](i, j, k, nc);
+            const amrex::Real dJ = detJ_ma[box_no](i, j, k);
+            umac_ma[box_no](i, j, k) *= f / dJ;
+          });
+      }
+    }
+    amrex::Gpu::streamSynchronize();
+
+    if (has_divu != 0) {
+      for (int lev = 0; lev <= finest_level; ++lev) {
+        amrex::MultiFab::Divide(
+          *a_divu[lev], m_mesh_map->detJ_cc(lev), 0, 0, 1,
+          a_divu[lev]->nGrow());
+      }
     }
   }
 
