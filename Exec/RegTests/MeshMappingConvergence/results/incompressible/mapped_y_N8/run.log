@@ -1,0 +1,102 @@
+Initializing AMReX (eb10d70823df)...
+Initializing SUNDIALS with 1 threads...
+SUNDIALS initialized.
+AMReX (eb10d70823df) initialized
+Successfully read inputs file ... 
+
+ ================ Version Info =================
+ PeleLMeX    git hash: v1.3.0-9-g3ccd651-dirty
+ AMReX       git hash: eb10d7082
+ PelePhysics git hash: 30c9f547
+ AMReX-Hydro git hash: 75da770
+ SUNDIALS    git hash: 0eff39663
+ ===============================================
+ Mesh mapping enabled: ConstantMap
+ Simulation performed with the closed chamber algorithm 
+
+ ==============================================================================
+ State components 
+ ==============================================================================
+ Velocity X: 0, Velocity Y: 1, Velocity Z: 2 
+ => Total number of state variables: 3
+ ==============================================================================
+
+ Initializing data for 1 levels 
+Creating new distribution map on level: 0
+ Making new level 0 from scratch 
+ Resetting fine-covered cells mask 
+ ==============================================================================
+ Typical values: 
+	Velocity: 18 4.903926402 3.266407412 
+ ==============================================================================
+ Est. time step - Conv: 9.722222222e-05, divu: 1e+200
+ Initial dt: 9.722222222e-05
+
+ Doing initial projection(s) 
+
+ Initial velocity projection:   U: 18  V: 4.903926402  W: 3.266407412
+ >> After initial velocity projection:   U: 18.736025  V: 2.963695331  W: 1.489485886
+ Est. time step - Conv: 9.340294969e-05, divu: 1e+200
+ Initial dt: 9.340294969e-05
+ Initial velocity projection:   U: 18.736025  V: 2.963695331  W: 1.489485886
+ >> After initial velocity projection:   U: 19.00295611  V: 1.791113751  W: 0.8450571684
+ ==============================================================================
+
+ Doing initial pressure iteration(s) 
+
+ ================   INITIAL ITERATION [0]   ================ 
+ Est. time step - Conv: 9.209093521e-05, divu: 1e+200
+ STEP [-1] - Time: 0, dt 9.209093521e-05, Ncells 1024
+   - Advance()::MACProjection()  --> Time: 0.001252958
+   - Advance()::VelocityAdvance  --> Time: 0.003921667
+ >> PeleLMeX::Advance() --> Time: 0.005830792
+
+ ================   INITIAL ITERATION [1]   ================ 
+ Est. time step - Conv: 9.209093521e-05, divu: 1e+200
+ STEP [-1] - Time: 0, dt 9.209093521e-05, Ncells 1024
+   - Advance()::MACProjection()  --> Time: 0.000546083
+   - Advance()::VelocityAdvance  --> Time: 0.003979625
+ >> PeleLMeX::Advance() --> Time: 0.005206375
+
+ ================   INITIAL ITERATION [2]   ================ 
+ Est. time step - Conv: 9.209093521e-05, divu: 1e+200
+ STEP [-1] - Time: 0, dt 9.209093521e-05, Ncells 1024
+   - Advance()::MACProjection()  --> Time: 0.000587583
+   - Advance()::VelocityAdvance  --> Time: 0.003476291
+ >> PeleLMeX::Advance() --> Time: 0.004679792
+ Writing temporals.
+
+ Writing plotfile: plt_00000
+ ==============================================================================
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 9.209093521e-05, divu: 1e+200
+ STEP [0] - Time: 0, dt 9.209093521e-05, Ncells 1024
+   - Advance()::MACProjection()  --> Time: 0.000595833
+   - Advance()::VelocityAdvance  --> Time: 0.003973875
+ >> PeleLMeX::Advance() --> Time: 0.005232583
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 6.865816787e-05, divu: 1e+200
+ STEP [1] - Time: 9.209093521e-05, dt 6.865816787e-05, Ncells 1024
+   - Advance()::MACProjection()  --> Time: 0.000523709
+   - Advance()::VelocityAdvance  --> Time: 0.003862959
+ >> PeleLMeX::Advance() --> Time: 0.005020958
+
+ ====================   NEW TIME STEP   ==================== 
+ Est. time step - Conv: 5.798497371e-05, divu: 1e+200
+ STEP [2] - Time: 0.0001607491031, dt 5.798497371e-05, Ncells 1024
+   - Advance()::MACProjection()  --> Time: 0.000555084
+   - Advance()::VelocityAdvance  --> Time: 0.0037295
+ >> PeleLMeX::Advance() --> Time: 0.004962333
+
+ Writing plotfile: plt_00003
+
+ >> Final simulation time: 0.0002187340768
+
+Total Time: 0.060596875
+Unused ParmParse Variables:
+  [TOP]::amr.ref_ratio(nvals = 4)  :: [2, 2, 2, 2]
+  [TOP]::amr.regrid_int(nvals = 1)  :: [2]
+
+AMReX (eb10d70823df) finalized

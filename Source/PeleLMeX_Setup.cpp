@@ -46,12 +46,26 @@ PeleLM::Setup()
 
   m_wall_start = amrex::ParallelDescriptor::second();
 
-  // Ensure grid is isotropic
+  // Ensure grid is isotropic.
+  //
+  // When mesh mapping is enabled, the AMReX grid represents the uniform
+  // (Xi) computational grid and *must* be anisotropic in order for the
+  // physical grid (dx_AMReX . fac_i per direction) to be isotropic.
+  // We therefore skip this assertion when geometry.mesh_mapping is set
+  // in the inputs; the mapping model is expected to produce a
+  // physically isotropic grid (or the user has intentionally chosen
+  // anisotropic physical spacing).
   {
-    auto const dx = geom[0].CellSizeArray();
-    AMREX_ALWAYS_ASSERT(AMREX_D_TERM(
-      , amrex::almostEqual(dx[0], dx[1], 10),
-      &&amrex::almostEqual(dx[1], dx[2], 10)));
+    std::string mesh_mapping_name;
+    amrex::ParmParse ppg("geometry");
+    const bool mesh_mapping_on =
+      static_cast<bool>(ppg.query("mesh_mapping", mesh_mapping_name));
+    if (!mesh_mapping_on) {
+      auto const dx = geom[0].CellSizeArray();
+      AMREX_ALWAYS_ASSERT(AMREX_D_TERM(
+        , amrex::almostEqual(dx[0], dx[1], 10),
+        &&amrex::almostEqual(dx[1], dx[2], 10)));
+    }
   }
   // Print build info to screen
 #ifdef PELE_USE_CMAKE
