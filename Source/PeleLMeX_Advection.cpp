@@ -76,6 +76,14 @@ PeleLM::computeVelocityAdvTerm(const std::unique_ptr<AdvanceAdvData>& advData)
       fillpatch_divu(lev, time, divu, m_nGrowdivu);
     }
 
+    // Under mesh mapping, umac lives in uniform (Xi) space after MAC
+    // projection, so the Godunov non-conservative correction needs
+    // J.divU rather than divU (see amr-wind mapping.rst).
+    if (m_mesh_mapping) {
+      amrex::MultiFab::Multiply(
+        divu, m_mesh_map->detJ_cc(lev), 0, 0, 1, m_nGrowdivu);
+    }
+
     //----------------------------------------------------------------
 #ifdef AMREX_USE_EB
     const auto& ebfact = EBFactory(lev);
@@ -161,6 +169,10 @@ PeleLM::computeVelocityAdvTerm(const std::unique_ptr<AdvanceAdvData>& advData)
       const amrex::Real time = getTime(lev, AmrOldTime);
       fillpatch_divu(lev, time, divu, m_nGrowdivu);
     }
+    if (m_mesh_mapping) {
+      amrex::MultiFab::Multiply(
+        divu, m_mesh_map->detJ_cc(lev), 0, 0, 1, m_nGrowdivu);
+    }
 
     constexpr bool fluxes_are_area_weighted = false;
 #ifdef AMREX_USE_EB
@@ -200,6 +212,16 @@ PeleLM::computeVelocityAdvTerm(const std::unique_ptr<AdvanceAdvData>& advData)
       GetArrOfConstPtrs(faces[lev]), 0, AMREX_SPACEDIM, AdvTypeVel_d.dataPtr(),
       geom[lev], -1.0, fluxes_are_area_weighted);
 #endif
+
+    // Under mesh mapping, the flux divergence was computed in uniform
+    // (Xi) space with umac = u_bar, giving J . (physical divergence).
+    // Restore the physical-space advection term by dividing by J.
+    if (m_mesh_mapping) {
+      for (int n = 0; n < AMREX_SPACEDIM; ++n) {
+        amrex::MultiFab::Divide(
+          advData->AofS[lev], m_mesh_map->detJ_cc(lev), 0, VELX + n, 1, 0);
+      }
+    }
   }
 }
 
