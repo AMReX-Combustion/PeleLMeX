@@ -1288,6 +1288,7 @@ DiffusionTensorOp::compute_divtau(
   const int finest_level = m_pelelm->finestLevel();
 
   const int have_density = (a_density.empty()) ? 0 : 1;
+  const bool mesh_mapping = m_pelelm->hasMeshMapping();
 
   // Duplicate vel since it is modified by the TensorOp
   amrex::Vector<amrex::MultiFab> vel;
@@ -1355,6 +1356,24 @@ DiffusionTensorOp::compute_divtau(
     amrex::Array<amrex::MultiFab, AMREX_SPACEDIM> beta_ec =
       m_pelelm->getDiffusivity(
         lev, 0, 1, doZeroVisc, {a_bcrec}, *a_beta[lev], addTurbContrib);
+    if (mesh_mapping) {
+      // beta_i -> (J/fac_i^2) . beta on face i
+      auto* mm = m_pelelm->meshMap();
+      for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
+        const auto& fac_ma = mm->fac_fc(lev, idim).const_arrays();
+        const auto& detJ_ma = mm->detJ_fc(lev, idim).const_arrays();
+        const auto& b_ma = beta_ec[idim].arrays();
+        const int nc = idim;
+        amrex::ParallelFor(
+          beta_ec[idim],
+          [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+            const amrex::Real f = fac_ma[box_no](i, j, k, nc);
+            const amrex::Real dJ = detJ_ma[box_no](i, j, k);
+            b_ma[box_no](i, j, k) *= dJ / (f * f);
+          });
+      }
+      amrex::Gpu::streamSynchronize();
+    }
     m_apply_op->setShearViscosity(lev, GetArrOfConstPtrs(beta_ec));
     m_apply_op->setLevelBC(lev, &vel[lev]);
   }
@@ -1362,6 +1381,18 @@ DiffusionTensorOp::compute_divtau(
   amrex::MLMG mlmg(*m_apply_op);
   mlmg.apply(a_divtau, GetVecOfPtrs(vel));
 #endif
+
+  // Under mesh mapping the apply operator produces J . (physical divTau).
+  // Divide by J to recover the physical-space viscous force.
+  if (mesh_mapping) {
+    auto* mm = m_pelelm->meshMap();
+    for (int lev = 0; lev <= finest_level; ++lev) {
+      for (int n = 0; n < AMREX_SPACEDIM; ++n) {
+        amrex::MultiFab::Divide(
+          *a_divtau[lev], mm->detJ_cc(lev), 0, n, 1, 0);
+      }
+    }
+  }
 
   if (have_density != 0) {
     for (int lev = 0; lev <= finest_level; ++lev) {
@@ -1395,9 +1426,33 @@ DiffusionTensorOp::diffuse_velocity(
     (!m_pelelm->m_incompressible && have_density) ||
     (m_pelelm->m_incompressible && !have_density));
 
+  const bool mesh_mapping = m_pelelm->hasMeshMapping();
+  auto* mm = mesh_mapping ? m_pelelm->meshMap() : nullptr;
+
+  // Under mesh mapping we need a cell-centered A-coeff of rho . J
+  // (density . detJ).  Build scratch MFs that live as long as the solve.
+  amrex::Vector<amrex::MultiFab> a_coeff_scaled;
+  if (mesh_mapping) {
+    a_coeff_scaled.resize(finest_level + 1);
+    for (int lev = 0; lev <= finest_level; ++lev) {
+      a_coeff_scaled[lev].define(
+        a_vel[lev]->boxArray(), a_vel[lev]->DistributionMap(), 1, 0,
+        amrex::MFInfo(), a_vel[lev]->Factory());
+      if (have_density != 0) {
+        amrex::MultiFab::Copy(a_coeff_scaled[lev], *a_density[lev], 0, 0, 1, 0);
+      } else {
+        a_coeff_scaled[lev].setVal(m_pelelm->m_rho);
+      }
+      amrex::MultiFab::Multiply(
+        a_coeff_scaled[lev], mm->detJ_cc(lev), 0, 0, 1, 0);
+    }
+  }
+
   m_solve_op->setScalars(1.0, a_dt);
   for (int lev = 0; lev <= finest_level; ++lev) {
-    if (have_density != 0) {
+    if (mesh_mapping) {
+      m_solve_op->setACoeffs(lev, a_coeff_scaled[lev]);
+    } else if (have_density != 0) {
       m_solve_op->setACoeffs(lev, *a_density[lev]);
     } else {
       m_solve_op->setACoeffs(lev, m_pelelm->m_rho);
@@ -1407,6 +1462,23 @@ DiffusionTensorOp::diffuse_velocity(
     amrex::Array<amrex::MultiFab, AMREX_SPACEDIM> beta_ec =
       m_pelelm->getDiffusivity(
         lev, 0, 1, doZeroVisc, {a_bcrec}, *a_beta[lev], addTurbContrib);
+    if (mesh_mapping) {
+      // beta_i -> (J/fac_i^2) . beta on face i
+      for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
+        const auto& fac_ma = mm->fac_fc(lev, idim).const_arrays();
+        const auto& detJ_ma = mm->detJ_fc(lev, idim).const_arrays();
+        const auto& b_ma = beta_ec[idim].arrays();
+        const int nc = idim;
+        amrex::ParallelFor(
+          beta_ec[idim],
+          [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+            const amrex::Real f = fac_ma[box_no](i, j, k, nc);
+            const amrex::Real dJ = detJ_ma[box_no](i, j, k);
+            b_ma[box_no](i, j, k) *= dJ / (f * f);
+          });
+      }
+      amrex::Gpu::streamSynchronize();
+    }
 #ifdef AMREX_USE_EB
     m_solve_op->setShearViscosity(
       lev, GetArrOfConstPtrs(beta_ec), amrex::MLMG::Location::FaceCentroid);
@@ -1452,6 +1524,16 @@ DiffusionTensorOp::diffuse_velocity(
     }
   }
   amrex::Gpu::streamSynchronize();
+
+  // Under mesh mapping, rhs = rho . u -> rho . J . u  (to match the
+  // A-coeff scaling above so the implicit operator remains consistent).
+  if (mesh_mapping) {
+    for (int lev = 0; lev <= finest_level; ++lev) {
+      for (int n = 0; n < AMREX_SPACEDIM; ++n) {
+        amrex::MultiFab::Multiply(rhs[lev], mm->detJ_cc(lev), 0, n, 1, 0);
+      }
+    }
+  }
 
   amrex::MLMG mlmg(*m_solve_op);
 
