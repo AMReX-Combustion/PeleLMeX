@@ -244,6 +244,41 @@ PeleLM::computeDifferentialDiffusionTerms(
     }
   }
 #endif
+
+  // Under mesh mapping the flux divergence was computed in Xi-space on
+  // Xi-space fluxes (bcoeff carries the J/fac^2 factor).  That produces
+  // J . (physical divergence).  Divide each divergence term by J so the
+  // returned Dn / Dnp1 / Dwbar / DT are in physical-space units.
+  if (m_mesh_mapping) {
+    for (int lev = 0; lev <= finest_level; ++lev) {
+      amrex::MultiFab& dterm = (a_time == AmrOldTime) ? diffData->Dn[lev]
+                                                      : diffData->Dnp1[lev];
+      const int nc = dterm.nComp();
+      for (int n = 0; n < nc; ++n) {
+        amrex::MultiFab::Divide(dterm, m_mesh_map->detJ_cc(lev), 0, n, 1, 0);
+      }
+      if (m_nAux > 0) {
+        amrex::MultiFab& dt_aux = (a_time == AmrOldTime)
+                                    ? diffData->Dn_aux[lev]
+                                    : diffData->Dnp1_aux[lev];
+        for (int n = 0; n < dt_aux.nComp(); ++n) {
+          amrex::MultiFab::Divide(dt_aux, m_mesh_map->detJ_cc(lev), 0, n, 1, 0);
+        }
+      }
+      if ((is_init == 0) && (m_use_wbar != 0)) {
+        for (int n = 0; n < diffData->Dwbar[lev].nComp(); ++n) {
+          amrex::MultiFab::Divide(
+            diffData->Dwbar[lev], m_mesh_map->detJ_cc(lev), 0, n, 1, 0);
+        }
+      }
+      if ((is_init == 0) && (m_use_soret != 0)) {
+        for (int n = 0; n < diffData->DT[lev].nComp(); ++n) {
+          amrex::MultiFab::Divide(
+            diffData->DT[lev], m_mesh_map->detJ_cc(lev), 0, n, 1, 0);
+        }
+      }
+    }
+  }
 }
 
 template <typename EOSType>
