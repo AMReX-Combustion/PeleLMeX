@@ -63,18 +63,13 @@ def ExtractData(case, outfile):
 
     modvals = []
     with open(outfile, "w+") as new_file:
-        new_file.write("t, dd0, T, Y1, Y2\n")
+        new_file.write("t, dd0, T\n")
         csv_writer = csv.writer(new_file, delimiter=",", lineterminator="\n")
         for k, tv in enumerate(timevals):
             dia = vals[k][dcol]
             dd0 = (dia * yconv) ** yexp
             T = vals[k][tcol]
-            Y1 = vals[k][mfcol]
-            if len(case.droplet.Y) == 2:
-                Y2 = vals[k][mfcol + 1]
-                outvals = [tv * xconv, dd0, T, Y1, Y2]
-            else:
-                outvals = [tv * xconv, dd0, T, Y1]
+            outvals = [tv * xconv, dd0, T]
             modvals.append(outvals)
             csv_writer.writerow(outvals)
     modvals = np.array(modvals)
@@ -96,6 +91,19 @@ def ExtractRefVals(case):
     dvals = None
     tvals = None
     yvals = None
+    
+    # Check if directory exists, otherwise try backward compatibility mapping
+    if not os.path.exists(ldir) and "burger" in ref_name.lower():
+        # Try old naming scheme (BurgerBar1/10/50)
+        old_ref_name = ref_name.replace("Burger1Bar", "BurgerBar1").replace("Burger10Bar", "BurgerBar10").replace("Burger50Bar", "BurgerBar50")
+        old_ldir = os.path.join(FILE_PATH, f"ref_files/{old_ref_name}")
+        if os.path.exists(old_ldir):
+            ldir = old_ldir
+    
+    # Check if directory exists
+    if not os.path.exists(ldir):
+        return [None, None, None]
+    
     cname = fnames[0]
     if cname in os.listdir(ldir):
         dvals = getdata(os.path.join(ldir, cname))

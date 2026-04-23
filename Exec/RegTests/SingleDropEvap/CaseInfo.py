@@ -166,12 +166,12 @@ def SpecifyCase(case_name, LiqPropsType, PeleMP_PsatModel="Antoine", **kwargs):
             kwargs["detailed"] = True
         case = RungeJP8(LiqPropsType, PeleMP_PsatModel, **kwargs)
     elif "burger" in case_name.lower():
-        if "bar50" in case_name.lower():
-            kwargs["Bar50"] = True
-        elif "bar10" in case_name.lower():
-            kwargs["Bar10"] = True
-        elif "bar1" in case_name.lower():
-            kwargs["Bar1"] = True
+        if "50bar" in case_name.lower():
+            kwargs["50bar"] = True
+        elif "10bar" in case_name.lower():
+            kwargs["10bar"] = True
+        elif "1bar" in case_name.lower():
+            kwargs["1bar"] = True
         case = Burger(LiqPropsType, PeleMP_PsatModel, **kwargs)
     else:
         raise ValueError(f"Unknown case name: {case_name}")
@@ -312,22 +312,23 @@ def RungeJP8(LiqPropsType, PeleMP_PsatModel="Antoine", **kwargs):
     return case
 
 def Burger(LiqPropsType, PeleMP_PsatModel="Antoine", **kwargs):
-    name = "Burger"
-    P = 1e5  # Default to 1 bar
-    end_time = 0.065
-    if "Bar50" in kwargs.keys():
-        if kwargs["Bar50"]:
-            name += "Bar50"
+    name = "Burger1Bar"  # Default to 1 bar
+    P = 1e5 
+    dt = 1e-3
+    end_time = 0.075
+    if "50bar" in kwargs.keys():
+        if kwargs["50bar"]:
+            name = "Burger50Bar"
             P = 50.0 * 1e5
-            end_time = 0.08
-    elif "Bar10" in kwargs.keys():
-        if kwargs["Bar10"]:
-            name += "Bar10"
+            end_time = 0.09
+    elif "10bar" in kwargs.keys():
+        if kwargs["10bar"]:
+            name = "Burger10Bar"
             P = 10.0 * 1e5
-            end_time = 0.075
-    elif "Bar1" in kwargs.keys():
-        if kwargs["Bar1"]:
-            name += "Bar1"
+            end_time = 0.085
+    elif "1bar" in kwargs.keys():
+        if kwargs["1bar"]:
+            name = "Burger1Bar"
     drop = Droplet(300, 1e-4, ["POSF10325"], [1.0])
     gas = GasPhase(800, P, vel=0.0)
     case = CaseInfo(
@@ -337,7 +338,7 @@ def Burger(LiqPropsType, PeleMP_PsatModel="Antoine", **kwargs):
         gas,
         LiqPropsType,
         xyunits=["s", "dd02"],
-        dt=1e-4,
+        dt=dt,
         end_time=end_time,
         plot_per=0.001,
         PeleMP_PsatModel=PeleMP_PsatModel,

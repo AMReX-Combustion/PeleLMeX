@@ -18,9 +18,9 @@ Test cases:
 | RungeJP8    | POSF10264      | SPRAY_FUEL_NUM = 67 (Many-to-one)             |
 | RungeJP8-H  | POSF10264      | SPRAY_FUEL_NUM = 1  (One-to-one, HyChem)      |
 | RungeJP8-D  | POSF10264      | SPRAY_FUEL_NUM = 67 (One-to-one, Detailed)    |
-| BurgerBar1  | POSF4658       | SPRAY_FUEL_NUM = 67 (1 bar pressure)          |
-| BurgerBar10 | POSF4658       | SPRAY_FUEL_NUM = 67 (10 bar pressure)         |
-| BurgerBar50 | POSF4658       | SPRAY_FUEL_NUM = 67 (50 bar pressure)         |
+| Burger1Bar  | POSF4658       | SPRAY_FUEL_NUM = 67 (1 bar pressure)          |
+| Burger10Bar | POSF4658       | SPRAY_FUEL_NUM = 67 (10 bar pressure)         |
+| Burger50Bar | POSF4658       | SPRAY_FUEL_NUM = 67 (50 bar pressure)         |
 | ----------- | -------------- | --------------------------------------------- |
 """
 
@@ -29,7 +29,7 @@ parser = argparse.ArgumentParser(
 )
 
 cases = ["WongLin", "Nomura", "Daif", "RungeHep", "RungeDec", "RungeMix", 
-         "RungeJP8", "RungeJP8-H", "RungeJP8-D", "BurgerBar1", "BurgerBar10", "BurgerBar50"]
+         "RungeJP8", "RungeJP8-H", "RungeJP8-D", "Burger1Bar", "Burger10Bar", "Burger50Bar"]
 parser.add_argument(
     "--case_name",
     "-c",

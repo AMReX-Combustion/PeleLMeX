@@ -16,7 +16,7 @@ Test cases:
 | Daif       | heptane/decane       |                                          |
 | Runge      | heptane, decane, mix | Plots RungeHep, RungeDec and RungeMix    |
 | RungeJP8   | POSF10264            | Plots JP8 case only                      |
-| Burger     | POSF4658             | Plots BurgerBar1, BurgerBar10, BurgerBar50|
+| Burger     | POSF4658             | Plots Burger1Bar, Burger10Bar, Burger50Bar|
 | ---------- | -------------------- | ---------------------------------------- |
 """
 
@@ -70,16 +70,14 @@ def find_case_dirs(case_name):
             )
         )
 
-    # If case_name.lower() == "burger", ensure all three pressure cases are present
+    # If case_name.lower() == "burger", sort available pressure cases
     if case_name.lower() == "burger":
-        sub_cases = ["Bar1", "Bar10", "Bar50"]
-        for sub_case in sub_cases:
-            if not any(sub_case.lower() in d.lower() for d in matching_dirs):
-                raise ValueError(f"Missing sub-case directory for Burger: {sub_case}")
-        # Sort to ensure consistent order (Bar1 < Bar10 < Bar50)
+        # Sort to ensure consistent order (1bar < 10bar < 50bar) for available cases
+        sub_case_order = {"1bar": 0, "10bar": 1, "50bar": 2}
         matching_dirs.sort(
-            key=lambda x: ["bar1", "bar10", "bar50"].index(
-                next(sub for sub in ["bar1", "bar10", "bar50"] if sub in x.lower())
+            key=lambda x: min(
+                (order for sub, order in sub_case_order.items() if sub in x.lower()),
+                default=999,
             )
         )
 
@@ -152,13 +150,13 @@ def setup(case_name):
         elif "burger" in name.lower():
             if ":" not in leg_lab[k]:
                 leg_lab[k] += ":"
-            if "bar50" in name.lower():
+            if "50bar" in name.lower():
                 leg_lab[k] += " 50 bar"
                 leg_col[k] = "tab:red"
-            elif "bar10" in name.lower():
+            elif "10bar" in name.lower():
                 leg_lab[k] += " 10 bar"
                 leg_col[k] = "tab:orange"
-            elif "bar1" in name.lower():
+            elif "1bar" in name.lower():
                 leg_lab[k] += " 1 bar"
                 leg_col[k] = "tab:blue"
     return cases, leg_lab, leg_col, line_sty
@@ -333,7 +331,6 @@ elif case_name.lower() == "burger":
     for k, case in enumerate(cases):
         refdvals, _, _ = case_info(case)
         i = 0
-        label = f"{case.dname}" if k == 0 else None
         if refdvals is not None:
             axs[i].scatter(
                 refdvals[:, 0],
@@ -342,7 +339,7 @@ elif case_name.lower() == "burger":
                 s=marker_s,
                 facecolor="none",
                 edgecolor=leg_col[k],
-                label=label,
+                label=None,
                 linewidth=round(line_w / 2),
             )
             # Plot uncertainty if available
@@ -368,6 +365,17 @@ elif case_name.lower() == "burger":
                     tval = [uncrt[j, 0], uncrt[j, 0]]
                     uline = [uncrt[j, 2], uncrt[j, 3]]
                     axs[i].plot(tval, uline, color=leg_col[k], linewidth=round(line_w / 2))
+    # Add legend entry for Burger et al. with black marker (no data points)
+    axs[i].scatter(
+        [],
+        [],
+        marker="o",
+        s=marker_s,
+        facecolor="none",
+        edgecolor="black",
+        label="Burger et al.",
+        linewidth=round(line_w / 2),
+    )
 else:
     # Non-Runge/Non-Burger cases: reference data only for first case
     refdvals, reftvals, _ = case_info(cases[0])
