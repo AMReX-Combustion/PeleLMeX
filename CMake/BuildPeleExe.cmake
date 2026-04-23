@@ -54,6 +54,10 @@ function(build_pele_exe pele_exe_name pele_physics_lib_name)
        ${SRC_DIR}/PeleLMeX_Tagging.cpp
        ${SRC_DIR}/PeleLMeX_BPatch.H
        ${SRC_DIR}/PeleLMeX_BPatch.cpp
+       ${SRC_DIR}/PeleLMeX_MeshMap.H
+       ${SRC_DIR}/PeleLMeX_MeshMap.cpp
+       ${SRC_DIR}/PeleLMeX_ConstantMap.H
+       ${SRC_DIR}/PeleLMeX_ConstantMap.cpp
        ${SRC_DIR}/PeleLMeX_Temporals.cpp
        ${SRC_DIR}/PeleLMeX_Timestep.cpp
        ${SRC_DIR}/PeleLMeX_TransportProp.cpp

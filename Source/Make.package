@@ -8,6 +8,8 @@ CEXE_headers += PeleLMeX_DiffusionOp.H
 CEXE_headers += PeleLMeX_DeriveFunc.H
 CEXE_headers += PeleLMeX_FlowControllerData.H
 CEXE_headers += PeleLMeX_BPatch.H
+CEXE_headers += PeleLMeX_MeshMap.H
+CEXE_headers += PeleLMeX_ConstantMap.H
 
 ## Sources
 CEXE_sources += main.cpp
@@ -42,6 +44,8 @@ CEXE_sources += PeleLMeX_Diagnostics.cpp
 CEXE_sources += PeleLMeX_FlowController.cpp
 CEXE_sources += PeleLMeX_DeriveUserDefined.cpp
 CEXE_sources += PeleLMeX_BPatch.cpp
+CEXE_sources += PeleLMeX_MeshMap.cpp
+CEXE_sources += PeleLMeX_ConstantMap.cpp
 
 ifeq ($(USE_SOOT), TRUE)
   CEXE_sources += PeleLMeX_Soot.cpp
