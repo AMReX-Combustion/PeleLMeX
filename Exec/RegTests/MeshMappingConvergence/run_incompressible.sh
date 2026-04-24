@@ -75,6 +75,7 @@ run_case() {
   "$BIN" "$INP" \
       amr.n_cell="$ncell" \
       "geometry.prob_lo=$plo" "geometry.prob_hi=$phi" \
+      amr.max_level=0 \
       amr.max_step="$MAX_STEP" \
       amr.stop_time="$STOP_TIME" \
       amr.plot_file=plt_ \

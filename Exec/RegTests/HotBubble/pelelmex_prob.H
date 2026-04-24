@@ -18,6 +18,13 @@ struct MyProbParm : public ProbParmDefault
   amrex::Real bubble_y0 = 0.01;
   int bubble_is_mix = 0;
   int is_sym = 0;
+  // Mesh-mapping scaling factors (read from ConstantMap.scaling_factor).
+  // When mesh mapping is active the AMReX grid is Xi-space and physical
+  // coordinates are  x_phys = prob_lo + (i+0.5) * dx * fac.  With the
+  // defaults (fac = 1) this reduces to the standard AMReX-space IC.
+  amrex::Real fac_x = 1.0;
+  amrex::Real fac_y = 1.0;
+  amrex::Real fac_z = 1.0;
 };
 
 struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
@@ -39,14 +46,20 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
     const amrex::Real* prob_hi = geomdata.ProbHi();
     const amrex::Real* dx = geomdata.CellSize();
 
+    // Convert AMReX indices to *physical* coordinates using the mesh-
+    // mapping factors; for the default fac = 1 this is identical to
+    // the standard AMReX-coordinate IC.
     AMREX_D_TERM(
-      const amrex::Real x = prob_lo[0] + (i + 0.5) * dx[0];
-      , const amrex::Real y = prob_lo[1] + (j + 0.5) * dx[1];
-      , const amrex::Real z = prob_lo[2] + (k + 0.5) * dx[2];);
+      const amrex::Real x =
+        prob_lo[0] + (i + 0.5) * dx[0] * prob_parm.fac_x;
+      , const amrex::Real y =
+        prob_lo[1] + (j + 0.5) * dx[1] * prob_parm.fac_y;
+      , const amrex::Real z =
+        prob_lo[2] + (k + 0.5) * dx[2] * prob_parm.fac_z;);
 
     AMREX_D_TERM(
-      const amrex::Real Lx = prob_hi[0] - prob_lo[0];
-      , , const amrex::Real Lz = prob_hi[2] - prob_lo[2]);
+      const amrex::Real Lx = (prob_hi[0] - prob_lo[0]) * prob_parm.fac_x;
+      , , const amrex::Real Lz = (prob_hi[2] - prob_lo[2]) * prob_parm.fac_z);
 
     auto eos = pele::physics::PhysicsType::eos();
     amrex::Real massfrac[NUM_SPECIES] = {0.0};
