@@ -326,7 +326,7 @@ def main() -> int:
     except Exception:
         pass
 
-    for suite in ("incompressible", "lowmach"):
+    for suite in ("incompressible", "lowmach", "lowmach_nograv"):
         suite_dir = root / suite
         if not suite_dir.is_dir():
             continue

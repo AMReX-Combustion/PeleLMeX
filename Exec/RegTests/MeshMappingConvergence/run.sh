@@ -12,8 +12,12 @@ echo "### Incompressible (PipeFlow) ###"
 "$HERE/run_incompressible.sh"
 
 echo
-echo "### Low-Mach (HotBubble) ###"
+echo "### Low-Mach (HotBubble, gravity ON) ###"
 "$HERE/run_lowmach.sh"
+
+echo
+echo "### Low-Mach (HotBubble, gravity OFF + thermal diffusion) ###"
+"$HERE/run_lowmach_nograv.sh"
 
 echo
 echo "### All runs complete.  Analyze with:"
