@@ -2,8 +2,11 @@
 #include <PeleLMeX_ConstantMap.H>
 
 #include <AMReX.H>
+#include <AMReX_Geometry.H>
+#include <AMReX_Gpu.H>
 #include <AMReX_IntVect.H>
 #include <AMReX_MultiFab.H>
+#include <AMReX_ParallelDescriptor.H>
 
 #include <memory>
 #include <string>
@@ -77,4 +80,43 @@ MeshMap::create(const std::string& name)
     "MeshMap::create(): unrecognised mesh-mapping name '" + name +
     "'.  Supported: ConstantMap.");
   return nullptr;
+}
+
+void
+MeshMap::fill_nodal_displacement(
+  int lev,
+  const amrex::Geometry& geom,
+  amrex::MultiFab& disp_nd) const
+{
+  AMREX_ASSERT(lev >= 0 && lev < num_levels());
+  AMREX_ASSERT(disp_nd.nComp() >= AMREX_SPACEDIM);
+  AMREX_ASSERT_WITH_MESSAGE(
+    disp_nd.boxArray().ixType().nodeCentered(),
+    "MeshMap::fill_nodal_displacement: output MultiFab must be nodal");
+
+  const amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> plo{AMREX_D_DECL(
+    geom.ProbLo(0), geom.ProbLo(1), geom.ProbLo(2))};
+  const amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> dx_xi{AMREX_D_DECL(
+    geom.CellSize(0), geom.CellSize(1), geom.CellSize(2))};
+
+  // disp_i(node) = (fac_i(node) - 1) * (x_xi_i(node) - prob_lo_i)
+  //              = (fac_i(node) - 1) * i * dx_xi_i     (for node index i)
+  // which is exact for ConstantMap (piecewise-constant fac).
+  const auto& fac_ma = m_fac_nd[lev].const_arrays();
+  const auto& disp_ma = disp_nd.arrays();
+  amrex::ParallelFor(
+    disp_nd, amrex::IntVect(0),
+    [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+      auto f = fac_ma[box_no];
+      auto d = disp_ma[box_no];
+      AMREX_D_TERM(
+        d(i, j, k, 0) = (f(i, j, k, 0) - amrex::Real(1.0)) *
+                        static_cast<amrex::Real>(i) * dx_xi[0];
+        , d(i, j, k, 1) = (f(i, j, k, 1) - amrex::Real(1.0)) *
+                          static_cast<amrex::Real>(j) * dx_xi[1];
+        , d(i, j, k, 2) = (f(i, j, k, 2) - amrex::Real(1.0)) *
+                          static_cast<amrex::Real>(k) * dx_xi[2];);
+      amrex::ignore_unused(plo); // not needed in this formulation
+    });
+  amrex::Gpu::streamSynchronize();
 }

@@ -82,6 +82,32 @@ public:
    */
   virtual void create_map(int lev, const amrex::Geometry& geom) = 0;
 
+  /**
+   * \brief Fill a nodal MultiFab with the per-direction displacement
+   *        from the Xi-space node position to the physical-space node
+   *        position.
+   *
+   * Used when writing plotfiles with mesh-mapping metadata so that
+   * ParaView / VisIt's AMReX reader can render the solution on the
+   * curvilinear physical grid (see PeleLMeX_Plot.cpp's
+   * writePlotfileWithMapping).  The displacement convention is
+   *     disp_i(node) = x_phys_i(node) - x_xi_i(node)
+   * The default implementation assumes a piecewise-constant stretch
+   * factor (diagonal, axis-aligned, single-block) and reads the
+   * per-direction factors out of the already-filled nodal fac MultiFab:
+   *     disp_i(node) = (fac_i(node) - 1) * (x_xi_i(node) - prob_lo_i)
+   * which is exact for ConstantMap.  Derived classes with spatially
+   * varying fac must override this method with the correct integral
+   *     disp_i(node) = int_{prob_lo_i}^{x_xi_i(node)} (fac_i(xi) - 1) dxi_i
+   *
+   * \p disp_nd must be a nodal MultiFab with at least AMREX_SPACEDIM
+   * components.  Only the first AMREX_SPACEDIM components are written.
+   */
+  virtual void fill_nodal_displacement(
+    int lev,
+    const amrex::Geometry& geom,
+    amrex::MultiFab& disp_nd) const;
+
   /** \return the number of active levels currently allocated. */
   [[nodiscard]] int num_levels() const
   {

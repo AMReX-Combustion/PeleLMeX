@@ -2255,6 +2255,15 @@ public:
   std::unique_ptr<MeshMap> m_mesh_map;
   bool m_mesh_mapping{false};
 
+  // When true (and mesh mapping is active), WritePlotFile emits a
+  // nodal-displacement MultiFab alongside the cell-centered state and
+  // tags the plotfile Header with the AMReX ParaView/VisIt plugin's
+  // amrexvec_nu_{x,y,z} magic names so the solution is rendered on the
+  // curvilinear physical grid instead of the Xi-space AMReX grid.
+  // Disable via `peleLM.plot_mesh_mapping = 0` to fall back to the
+  // standard (Xi-space) plotfile format.
+  int m_plot_mesh_mapping{1};
+
 public:
   //! Access the MeshMap instance (nullptr if mesh mapping is disabled).
   MeshMap* meshMap() noexcept { return m_mesh_map.get(); }

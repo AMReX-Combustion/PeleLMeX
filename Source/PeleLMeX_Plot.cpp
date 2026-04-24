@@ -1,5 +1,7 @@
 #include <PeleLMeX.H>
 #include <AMReX_PlotFileUtil.H>
+#include <AMReX_VisMF.H>
+#include <AMReX_AsyncOut.H>
 #include <AMReX_buildInfo.H>
 #include "PelePhysics.H"
 #include <PltFileManager.H>
@@ -7,6 +9,7 @@
 #include <PeleLMeX_BCfill.H>
 #include <AMReX_FillPatchUtil.H>
 #include <memory>
+#include <fstream>
 #ifdef AMREX_USE_EB
 #include <AMReX_EBInterpolater.H>
 #endif
@@ -34,6 +37,148 @@ GotoNextLine(std::istream& is)
   constexpr std::streamsize bl_ignore_max{100000};
   is.ignore(bl_ignore_max, '\n');
 }
+
+namespace {
+
+// Write the AMReX "standard" plotfile Header, then append the trailer
+// the AMReX ParaView/VisIt reader recognises: one extra vector field of
+// AMREX_SPACEDIM components holding the per-node displacement from Xi-
+// space to physical space.  Mirrors ERF's WriteGenericPlotfileHeader-
+// WithTerrain (Source/IO/ERF_Plotfile.cpp) but built on top of AMReX's
+// public WriteGenericPlotfileHeader so we don't duplicate the standard
+// header body.
+void
+writePlotfileHeaderWithMapping(
+  std::ostream& HeaderFile,
+  int nlevels,
+  const amrex::Vector<amrex::BoxArray>& bArrays,
+  const amrex::Vector<std::string>& varnames,
+  const amrex::Vector<amrex::Geometry>& geom,
+  amrex::Real time,
+  const amrex::Vector<int>& level_steps,
+  const amrex::Vector<amrex::IntVect>& ref_ratio,
+  const std::string& versionName,
+  const std::string& levelPrefix,
+  const std::string& mfPrefix,
+  const std::string& mfNodalPrefix)
+{
+  amrex::WriteGenericPlotfileHeader(
+    HeaderFile, nlevels, bArrays, varnames, geom, time, level_steps,
+    ref_ratio, versionName, levelPrefix, mfPrefix);
+
+  // Magic trailer: one extra vector field of AMREX_SPACEDIM components
+  // named amrexvec_nu_{x,y,z}.  The AMReX ParaView/VisIt plugin treats
+  // this as a node-centred displacement and renders the solution on
+  // (Xi + nu) rather than on Xi, yielding physical-space visualization
+  // automatically.
+  HeaderFile << 1 << '\n';
+  HeaderFile << AMREX_SPACEDIM << '\n';
+  HeaderFile << "amrexvec_nu_x" << '\n';
+#if (AMREX_SPACEDIM >= 2)
+  HeaderFile << "amrexvec_nu_y" << '\n';
+#endif
+#if (AMREX_SPACEDIM == 3)
+  HeaderFile << "amrexvec_nu_z" << '\n';
+#endif
+  for (int lev = 0; lev < nlevels; ++lev) {
+    HeaderFile
+      << amrex::MultiFabHeaderPath(lev, levelPrefix, mfNodalPrefix)
+      << '\n';
+  }
+}
+
+// Write a multi-level plotfile in the AMReX native format, extended with
+// a per-level nodal-displacement MultiFab that tags the plotfile as
+// mesh-mapped.  The cell-centered data is written under MultiFab prefix
+// "Cell" and the nodal displacement under "Nu_nd"; the extra handshake
+// lines (see writePlotfileHeaderWithMapping) go at the end of Header.
+void
+writePlotfileWithMapping(
+  const std::string& plotfilename,
+  int nlevels,
+  const amrex::Vector<const amrex::MultiFab*>& mf_cc,
+  const amrex::Vector<const amrex::MultiFab*>& mf_nd,
+  const amrex::Vector<std::string>& varnames,
+  const amrex::Vector<amrex::Geometry>& geom,
+  amrex::Real time,
+  const amrex::Vector<int>& level_steps,
+  const amrex::Vector<amrex::IntVect>& ref_ratio,
+  const std::string& versionName = "HyperCLaw-V1.1")
+{
+  BL_PROFILE("PeleLMeX::writePlotfileWithMapping()");
+
+  AMREX_ALWAYS_ASSERT(nlevels <= mf_cc.size());
+  AMREX_ALWAYS_ASSERT(nlevels <= mf_nd.size());
+  AMREX_ALWAYS_ASSERT(nlevels <= ref_ratio.size() + 1);
+  AMREX_ALWAYS_ASSERT(nlevels <= level_steps.size());
+  AMREX_ALWAYS_ASSERT(mf_cc[0]->nComp() == static_cast<int>(varnames.size()));
+  AMREX_ALWAYS_ASSERT(mf_nd[0]->nComp() >= AMREX_SPACEDIM);
+
+  const std::string levelPrefix{"Level_"};
+  const std::string mfPrefix{"Cell"};
+  const std::string mfNodalPrefix{"Nu_nd"};
+
+  const bool callBarrier = false;
+  amrex::PreBuildDirectorHierarchy(
+    plotfilename, levelPrefix, nlevels, callBarrier);
+  amrex::ParallelDescriptor::Barrier();
+
+  // Header is written by the highest-rank process, matching ERF / AMReX
+  // convention.
+  if (amrex::ParallelDescriptor::MyProc() ==
+      amrex::ParallelDescriptor::NProcs() - 1) {
+    amrex::Vector<amrex::BoxArray> bArrays(nlevels);
+    for (int lev = 0; lev < nlevels; ++lev) {
+      bArrays[lev] = mf_cc[lev]->boxArray();
+    }
+    auto f = [=]() {
+      amrex::VisMF::IO_Buffer io_buffer(amrex::VisMF::IO_Buffer_Size);
+      const std::string HeaderFileName(plotfilename + "/Header");
+      std::ofstream HeaderFile;
+      HeaderFile.rdbuf()->pubsetbuf(io_buffer.dataPtr(), io_buffer.size());
+      HeaderFile.open(
+        HeaderFileName.c_str(),
+        std::ofstream::out | std::ofstream::trunc | std::ofstream::binary);
+      if (!HeaderFile.good()) {
+        amrex::FileOpenFailed(HeaderFileName);
+      }
+      writePlotfileHeaderWithMapping(
+        HeaderFile, nlevels, bArrays, varnames, geom, time, level_steps,
+        ref_ratio, versionName, levelPrefix, mfPrefix, mfNodalPrefix);
+    };
+    if (amrex::AsyncOut::UseAsyncOut()) {
+      amrex::AsyncOut::Submit(std::move(f));
+    } else {
+      f();
+    }
+  }
+
+  for (int lev = 0; lev < nlevels; ++lev) {
+    if (amrex::AsyncOut::UseAsyncOut()) {
+      amrex::VisMF::AsyncWrite(
+        *mf_cc[lev],
+        amrex::MultiFabFileFullPrefix(
+          lev, plotfilename, levelPrefix, mfPrefix),
+        true);
+      amrex::VisMF::AsyncWrite(
+        *mf_nd[lev],
+        amrex::MultiFabFileFullPrefix(
+          lev, plotfilename, levelPrefix, mfNodalPrefix),
+        true);
+    } else {
+      amrex::VisMF::Write(
+        *mf_cc[lev],
+        amrex::MultiFabFileFullPrefix(
+          lev, plotfilename, levelPrefix, mfPrefix));
+      amrex::VisMF::Write(
+        *mf_nd[lev],
+        amrex::MultiFabFileFullPrefix(
+          lev, plotfilename, levelPrefix, mfNodalPrefix));
+    }
+  }
+}
+
+} // anonymous namespace
 
 void
 PeleLM::WriteDebugPlotFile(
@@ -504,9 +649,27 @@ PeleLM::WritePlotFile()
   } else
 #endif
   {
-    amrex::WriteMultiLevelPlotfile(
-      plotfilename, finest_level + 1, GetVecOfConstPtrs(mf_plt), plt_VarsName,
-      Geom(), m_cur_time, istep, refRatio());
+    if (m_mesh_mapping && (m_plot_mesh_mapping != 0)) {
+      // Build per-level nodal-displacement MultiFabs (Xi -> physical)
+      // and emit the plotfile with the ERF-style "amrexvec_nu_*"
+      // handshake so ParaView/VisIt render on the curvilinear grid.
+      const int ncomp_nd = AMREX_SPACEDIM;
+      amrex::Vector<amrex::MultiFab> mf_nd(finest_level + 1);
+      for (int lev = 0; lev <= finest_level; ++lev) {
+        amrex::BoxArray nba(grids[lev]);
+        nba.surroundingNodes();
+        mf_nd[lev].define(nba, dmap[lev], ncomp_nd, 0);
+        m_mesh_map->fill_nodal_displacement(lev, Geom(lev), mf_nd[lev]);
+      }
+      writePlotfileWithMapping(
+        plotfilename, finest_level + 1, GetVecOfConstPtrs(mf_plt),
+        GetVecOfConstPtrs(mf_nd), plt_VarsName, Geom(), m_cur_time, istep,
+        refRatio());
+    } else {
+      amrex::WriteMultiLevelPlotfile(
+        plotfilename, finest_level + 1, GetVecOfConstPtrs(mf_plt),
+        plt_VarsName, Geom(), m_cur_time, istep, refRatio());
+    }
   }
 
 #ifdef PELE_USE_SPRAY

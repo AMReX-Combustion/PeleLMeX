@@ -36,6 +36,28 @@ runs when the AMReX grid spans the same physical region.
 Multi-level AMR + mesh mapping is an inherited AmrWind limitation and
 is not exercised here; the driver scripts pin `amr.max_level = 0`.
 
+## Physical-space plotfile rendering
+
+When mesh mapping is active, PeleLMeX's `WritePlotFile` emits a per-level
+nodal `MultiFab` of node-displacement (`x_phys − x_xi`) alongside the
+standard cell-centered data and appends the AMReX ParaView/VisIt
+plugin's `amrexvec_nu_{x,y,z}` handshake trailer to the plotfile
+`Header`.  A ParaView/VisIt session loading these plotfiles via the
+AMReX reader automatically renders the solution on the curvilinear
+physical grid — no user-side state file, calculator, or warp filter
+required.  This is the same on-disk protocol used by ERF for its
+terrain-following output (`WriteGenericPlotfileHeaderWithTerrain`).
+
+Kill-switch: set `peleLM.plot_mesh_mapping = 0` to fall back to the
+standard `WriteMultiLevelPlotfile` call, in which case the plotfile
+is byte-compatible with the pre-mapping format and renders in
+&xi;-space.
+
+`yt` and other tools that only look at the standard cell-centered
+variables (including `analyze.py` in this directory) are unaffected by
+the extra metadata; they continue to read the plotfile in its native
+&xi;-space coordinates.
+
 ## Running
 
 ```bash
