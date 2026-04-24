@@ -643,6 +643,34 @@ PeleLM::WritePlotFile()
 
 #ifdef AMREX_USE_HDF5
   if (m_write_hdf5_pltfile) {
+    // HDF5 plotfiles have no equivalent of the native plotfile's
+    // amrexvec_nu_* curvilinear-grid handshake.  When mesh mapping is
+    // active we still write the HDF5 file (so data archiving and
+    // parallel-I/O performance aren't lost), but it will render in
+    // Xi-space in ParaView/VisIt.  Warn once per run so the user is
+    // not surprised, and point at the native-plotfile path for
+    // physical-space visualization.
+    static bool hdf5_mesh_mapping_warned = false;
+    if (
+      m_mesh_mapping && (m_plot_mesh_mapping != 0) &&
+      !hdf5_mesh_mapping_warned) {
+      amrex::Print()
+        << "\n  [PeleLMeX] NOTE: HDF5 plotfile output is active together "
+           "with mesh mapping.\n"
+        << "    The AMReX HDF5 reader does not implement the "
+           "amrexvec_nu_* curvilinear\n"
+        << "    handshake used by the native plotfile reader, so HDF5 "
+           "plotfiles will\n"
+        << "    render in Xi-space (not physical space) in "
+           "ParaView/VisIt.  Options:\n"
+        << "      (a) switch to native plotfiles "
+           "(peleLM.use_hdf5_plt = 0) if you\n"
+        << "          need curvilinear visualization;\n"
+        << "      (b) set peleLM.plot_mesh_mapping = 0 to silence this "
+           "message and keep\n"
+        << "          HDF5 output in Xi-space.\n\n";
+      hdf5_mesh_mapping_warned = true;
+    }
     amrex::WriteMultiLevelPlotfileHDF5(
       plotfilename, finest_level + 1, GetVecOfConstPtrs(mf_plt), plt_VarsName,
       Geom(), m_cur_time, istep, refRatio());
