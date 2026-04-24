@@ -84,8 +84,25 @@ PeleLM::getVelForces(
   amrex::Gpu::streamSynchronize();
 
   if (add_gradP != 0) {
-    amrex::MultiFab::Subtract(
-      *a_velForce, ldataGP_p->gp, 0, 0, AMREX_SPACEDIM, 0);
+    if (m_mesh_mapping) {
+      // gp is stored in Xi-space (component i = fac_i . grad_phys p_i).
+      // When subtracting from the physical-space velocity force we need
+      // the physical gradient, hence the 1/fac_i per-component factor.
+      auto const& gp_ma = ldataGP_p->gp.const_arrays();
+      auto const& fac_ma = m_mesh_map->fac_cc(lev).const_arrays();
+      auto const& fm_ma = a_velForce->arrays();
+      amrex::ParallelFor(
+        *a_velForce, amrex::IntVect(0), AMREX_SPACEDIM,
+        [=] AMREX_GPU_DEVICE(
+          int box_no, int i, int j, int k, int n) noexcept {
+          fm_ma[box_no](i, j, k, n) -=
+            gp_ma[box_no](i, j, k, n) / fac_ma[box_no](i, j, k, n);
+        });
+      amrex::Gpu::streamSynchronize();
+    } else {
+      amrex::MultiFab::Subtract(
+        *a_velForce, ldataGP_p->gp, 0, 0, AMREX_SPACEDIM, 0);
+    }
   }
   const int has_divTau = static_cast<int>(a_divTau != nullptr);
   if (has_divTau != 0) {
