@@ -148,6 +148,13 @@ PeleLM::initialProjection()
   // Mesh mapping: correct the AmrWind-inherited sigma_x-only velocity
   // update from MLNodeLaplacian::mknewu.  See velocityProjection for
   // the derivation; the same correction applies here.
+  //
+  // Gated on AMREX_MLNODELAP_HAS_MKNEWU_HA: when the AMReX fix is present
+  // (updateVelocity/getFluxes route through the anisotropic mknewu_ha
+  // kernel automatically), this post-hoc correction is unnecessary and
+  // is compiled out.  This keeps PeleLMeX working against both pre- and
+  // post-fix AMReX.
+#if !defined(AMREX_MLNODELAP_HAS_MKNEWU_HA)
   if (m_mesh_mapping) {
     for (int lev = 0; lev <= finest_level; ++lev) {
       auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
@@ -166,6 +173,7 @@ PeleLM::initialProjection()
     }
     amrex::Gpu::streamSynchronize();
   }
+#endif
 
   // Mesh mapping: convert projected velocity back to physical space
   if (m_mesh_mapping) {
@@ -629,6 +637,13 @@ PeleLM::velocityProjection(
   // so the mesh-mapping path produces the right answer even without an
   // AMReX-level fix for mknewu.  Under identity mapping all sigma_i are
   // equal and the correction is exactly zero, preserving byte-identity.
+  //
+  // Gated on AMREX_MLNODELAP_HAS_MKNEWU_HA: when the AMReX fix is present
+  // (updateVelocity/getFluxes route through the anisotropic mknewu_ha
+  // kernel automatically), this post-hoc correction is unnecessary and
+  // is compiled out.  This keeps PeleLMeX working against both pre- and
+  // post-fix AMReX.
+#if !defined(AMREX_MLNODELAP_HAS_MKNEWU_HA)
   if (m_mesh_mapping) {
     for (int lev = 0; lev <= finest_level; ++lev) {
       auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
@@ -647,6 +662,7 @@ PeleLM::velocityProjection(
     }
     amrex::Gpu::streamSynchronize();
   }
+#endif
 
   // Mesh mapping: scale U^{n+1} back to physical space (u_i *= fac_i/J).
   if (m_mesh_mapping) {
