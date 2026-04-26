@@ -42,6 +42,16 @@ INP="${PIPEFLOW_DIR}/input.3d-Poiseuille"
                                   # MAC problem conditioning is dominated
                                   # by the mapping rather than by the
                                   # velocity perturbations in the IC.
+: "${PERTURB_MAG:=0.5}"           # magnitude of the IC sin*sin transverse
+                                  # perturbations.  Default 5.0 in the
+                                  # PipeFlow IC has wavenumber-11
+                                  # content that's under-resolved at
+                                  # modest N and dominates self-
+                                  # convergence comparisons.  0.5 is
+                                  # mild enough that the cell-aligned
+                                  # error metric reflects time-evolution
+                                  # discretization rather than IC
+                                  # under-resolution.
 : "${MAC_MAXITER:=5000}"
 : "${MAC_RTOL:=1e-8}"
 : "${NODAL_MAXITER:=5000}"
@@ -89,6 +99,7 @@ run_case() {
       amrex.fpe_trap_zero=0 \
       amrex.fpe_trap_overflow=0 \
       prob.meanFlowMag="$MEAN_FLOW" \
+      prob.perturbMag="$PERTURB_MAG" \
       geometry.mesh_mapping=ExpStretchMap \
       ExpStretchMap.direction=1 \
       ExpStretchMap.wall_end=lo \

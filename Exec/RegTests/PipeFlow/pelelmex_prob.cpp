@@ -10,6 +10,7 @@ PeleLM::readProbParm() // NOLINT(readability-make-member-function-const)
   pp.query("P_mean", prob_parm->P_mean);
   pp.query("meanFlowDir", prob_parm->meanFlowDir);
   pp.query("meanFlowMag", prob_parm->meanFlowMag);
+  pp.query("perturbMag", prob_parm->perturbMag);
   pp.query("problem_type", prob_parm->flowType);
   AMREX_ALWAYS_ASSERT(prob_parm->flowType == 1 || prob_parm->flowType == 2);
 

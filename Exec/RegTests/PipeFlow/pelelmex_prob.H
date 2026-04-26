@@ -16,6 +16,13 @@ struct MyProbParm : public ProbParmDefault
   amrex::Real meanFlowMag = 5.0;
   int meanFlowDir = 1;
   int flowType = 1;
+  // Magnitude of the IC's transverse sin*sin perturbations.  The
+  // historical default (5.0) deposits energy at wavenumbers up to
+  // k=11 in x and k=4-5 in y/z, which is poorly resolved at modest
+  // N (e.g. N=32) and pollutes self-convergence comparisons.  Set to
+  // a smaller value (e.g. 0.0 for a clean uniform flow, or 0.5 for a
+  // mild perturbation) when running a convergence study.
+  amrex::Real perturbMag = 5.0;
   // Mesh-mapping scaling factors (read from ConstantMap.scaling_factor).
   // When mesh mapping is active the AMReX grid is Xi-space and physical
   // coordinates are  x_phys = prob_lo + (i+0.5) * dx * fac.  Defaults
@@ -72,9 +79,11 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
       case 1:
         AMREX_D_TERM(
           state(i, j, k, VELX) = prob_parm.meanFlowMag;
-          , state(i, j, k, VELY) = 5.0 * std::sin(2 * Pi * 4 * y / Ly) *
+          , state(i, j, k, VELY) = prob_parm.perturbMag *
+                                   std::sin(2 * Pi * 4 * y / Ly) *
                                    std::sin(2 * Pi * 11 * x / Lx);
-          , state(i, j, k, VELZ) = 5.0 * std::sin(2 * Pi * 5 * z / Lz) *
+          , state(i, j, k, VELZ) = prob_parm.perturbMag *
+                                   std::sin(2 * Pi * 5 * z / Lz) *
                                    std::sin(2 * Pi * 4 * x / Lx));
         break;
       case -1:

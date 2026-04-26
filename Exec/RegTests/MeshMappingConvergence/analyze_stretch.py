@@ -28,26 +28,74 @@ from pathlib import Path
 import numpy as np
 
 # ---------------------------------------------------------------------
-# Plotfile loader (yt).  yt sees the run's Xi-space domain; since runs
-# at the same N share the same index space, cell-by-cell comparison is
-# valid across beta at fixed N (and across N by restriction).
+# Plotfile loader (yt).  We use covering_grid to get the velocity field
+# as a structured 3D array indexed by (i, j, k), so that fine-resolution
+# data can be averaged onto coarse-resolution cells for proper
+# cell-aligned comparison.
 # ---------------------------------------------------------------------
 
 
-def load_vel(path: Path):
+def load_vel_grid(path: Path):
+    """
+    Load (x,y,z)-velocity from an AMReX plotfile as 4-D arrays.
+
+    Returns
+    -------
+    u : np.ndarray, shape (Nx, Ny, Nz, 3)
+        Velocity field on a structured grid.  In 2D, Nz = 1.
+    dims : tuple of int
+        (Nx, Ny, Nz) domain dimensions at level 0.
+    time : float
+    """
     import yt  # type: ignore
 
     yt.set_log_level("error")
     ds = yt.load(str(path))
-    ad = ds.all_data()
-    vx = np.asarray(ad[("boxlib", "x_velocity")])
-    vy = np.asarray(ad[("boxlib", "y_velocity")])
+    dims = tuple(int(x) for x in ds.domain_dimensions)
+    cg = ds.covering_grid(
+        level=0, left_edge=ds.domain_left_edge, dims=ds.domain_dimensions)
+    vx = np.asarray(cg["boxlib", "x_velocity"])
+    vy = np.asarray(cg["boxlib", "y_velocity"])
     try:
-        vz = np.asarray(ad[("boxlib", "z_velocity")])
+        vz = np.asarray(cg["boxlib", "z_velocity"])
     except Exception:
         vz = np.zeros_like(vx)
-    dims = tuple(int(x) for x in ds.domain_dimensions)
-    return np.stack([vx, vy, vz], axis=-1), dims, float(ds.current_time)
+    u = np.stack([vx, vy, vz], axis=-1)
+    return u, dims, float(ds.current_time)
+
+
+def downsample_2x(arr: np.ndarray) -> np.ndarray:
+    """
+    Average-pool a (Nx, Ny, Nz, C) array by factor 2 in each spatial
+    direction.  Each output cell is the mean of the 8 (in 3D) or 4 (in
+    2D, with Nz==1) input cells.  Requires Nx, Ny, Nz to be even (Nz
+    may be 1 to indicate 2D, in which case it is preserved).
+    """
+    Nx, Ny, Nz, nc = arr.shape
+    assert Nx % 2 == 0 and Ny % 2 == 0
+    if Nz == 1:
+        return arr.reshape(Nx // 2, 2, Ny // 2, 2, 1, nc).mean(axis=(1, 3))
+    assert Nz % 2 == 0
+    return arr.reshape(
+        Nx // 2, 2, Ny // 2, 2, Nz // 2, 2, nc).mean(axis=(1, 3, 5))
+
+
+def cell_diff_norms(u_coarse: np.ndarray, u_fine: np.ndarray) -> dict:
+    """
+    Average-pool u_fine to the resolution of u_coarse, then return the
+    cell-by-cell L2 and Linf norms of |u_coarse - u_fine_pooled|, plus
+    a normalized form (relative to ||u_fine||_L2).
+    """
+    while u_fine.shape[:3] != u_coarse.shape[:3]:
+        u_fine = downsample_2x(u_fine)
+    diff = u_coarse - u_fine
+    diff_mag = np.sqrt(np.sum(diff ** 2, axis=-1))
+    fine_mag = np.sqrt(np.sum(u_fine ** 2, axis=-1))
+    L2 = float(np.sqrt(np.mean(diff_mag ** 2)))
+    Linf = float(np.max(diff_mag))
+    fine_L2 = float(np.sqrt(np.mean(fine_mag ** 2)))
+    rel = L2 / fine_L2 if fine_L2 > 0 else float("nan")
+    return {"L2": L2, "Linf": Linf, "fine_L2": fine_L2, "rel": rel}
 
 
 # ---------------------------------------------------------------------
@@ -171,10 +219,14 @@ def gather(root: Path) -> dict:
 
 def self_converge(cases: dict) -> dict:
     """
-    For each beta with both N and 2N present and both finalized, compute
-    ||u_N - subsampled(u_{2N})||_L2.  Subsample by averaging 2x2x2 blocks.
+    For each beta with at least two consecutive N (Nc, 2*Nc) present and
+    finalized, compute  ||u_Nc - downsample_2x(u_{2*Nc})||_L2  using
+    cell-aligned 2x2x2 (or 2x2 in 2D) averaging.  Returns
 
-    Returns { beta : [ (N_coarse, eL2) ... ] }.
+      { beta : [ (Nc, {'L2':..., 'Linf':..., 'rel':...}) ... ] }
+
+    With three or more resolutions the printer derives the observed
+    order from the ratio of consecutive L2 errors.
     """
     by_beta: dict = {}
     betas = sorted({b for (_, b) in cases.keys()})
@@ -197,24 +249,23 @@ def self_converge(cases: dict) -> dict:
             if c["plt"] is None or f["plt"] is None:
                 continue
             try:
-                uc, _, _ = load_vel(c["plt"])
-                uf, _, _ = load_vel(f["plt"])
+                uc, dims_c, _ = load_vel_grid(c["plt"])
+                uf, dims_f, _ = load_vel_grid(f["plt"])
             except Exception as exc:
                 series.append((Nc, None, f"load error: {exc}"))
                 continue
-            # uc shape: (Nc^3, 3).  uf shape: (Nf^3, 3).  yt returns a
-            # flat array of all cells (order = unspecified but consistent
-            # within yt).  Instead of trying to restrict uf, compare RMS.
-            nc = uc.shape[0]
-            nf = uf.shape[0]
-            if nf != 8 * nc:
-                series.append((Nc, None, f"unexpected ratio Nf/Nc"))
+            # Sanity: both grids should have factor-2 ratio.
+            if any(2 * dc != df for dc, df in zip(dims_c[:3], dims_f[:3])
+                   if df != 1 and dc != 1):
+                series.append((Nc, None,
+                               f"unexpected dims Nc={dims_c} Nf={dims_f}"))
                 continue
-            # Crude but monotone proxy: difference in L2 norms of |u|.
-            # This is a scalar comparison and doesn't need cell matching.
-            L2_c = float(np.sqrt(np.mean(np.sum(uc ** 2, axis=-1))))
-            L2_f = float(np.sqrt(np.mean(np.sum(uf ** 2, axis=-1))))
-            series.append((Nc, abs(L2_f - L2_c), None))
+            try:
+                norms = cell_diff_norms(uc, uf)
+            except Exception as exc:
+                series.append((Nc, None, f"diff error: {exc}"))
+                continue
+            series.append((Nc, norms, None))
         if series:
             by_beta[beta] = series
     return by_beta
@@ -253,22 +304,36 @@ def print_self_convergence(cases: dict) -> None:
     if not series:
         print("\n=== Self-convergence: (no adjacent N pairs to compare) ===")
         return
-    print("\n=== Self-convergence |d|u_L2|| from N -> 2N, per beta ===\n")
-    print("  (proxy for order of accuracy; cleaner comparison needs cell alignment)\n")
+    print(
+        "\n=== Cell-aligned self-convergence per beta ===\n"
+        "  e_Nc(beta) = || u_Nc - downsample_2x(u_{2*Nc}) ||_L2,\n"
+        "  where downsample_2x averages each 2x2(x2) block of the fine\n"
+        "  velocity field down to coarse resolution.  Observed order is\n"
+        "  log2( e_Nc / e_{2*Nc} ) when at least three consecutive N are\n"
+        "  available; with two N values only the absolute error magnitude\n"
+        "  and its ratio to the fine ||u||_L2 are reported.\n")
+    header = (
+        f"  {'beta':>6} {'Nc':>4} -> {'2Nc':<4}"
+        f"  {'e_Nc L2':>12} {'e_Nc Linf':>12}"
+        f"  {'rel(L2)':>10} {'order':>8}")
+    print(header)
+    print("  " + "-" * (len(header) - 2))
     for beta, rows in sorted(series.items()):
-        print(f"  beta = {beta}:")
-        prev = None
-        for (Nc, dL2, err) in rows:
+        prev_L2 = None
+        for (Nc, norms, err) in rows:
+            tag = f"  {beta:>6.2f} {Nc:>4} -> {2*Nc:<4}"
             if err:
-                print(f"    N={Nc:>4}  {err}")
-                prev = None
+                print(f"{tag}  {err}")
+                prev_L2 = None
                 continue
-            line = f"    N={Nc:>4}  |dL2| = {dL2:.4e}"
-            if prev is not None and dL2 > 0 and prev > 0:
-                slope = np.log2(prev / dL2) if dL2 > 0 else float("nan")
-                line += f"  observed order = {slope:.3f}"
-            print(line)
-            prev = dL2
+            order_str = ""
+            if prev_L2 is not None and norms["L2"] > 0 and prev_L2 > 0:
+                order_str = f"{np.log2(prev_L2 / norms['L2']):.3f}"
+            print(
+                f"{tag}"
+                f"  {norms['L2']:>12.4e} {norms['Linf']:>12.4e}"
+                f"  {norms['rel']:>10.4e} {order_str:>8}")
+            prev_L2 = norms["L2"]
 
 
 def main() -> int:
