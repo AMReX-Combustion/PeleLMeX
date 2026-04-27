@@ -20,7 +20,7 @@ PeleLM::initActiveControl()
   pp.query("temperature", m_ctrl_temperature);
   pp.query("tau", m_ctrl_tauControl);
   pp.query("v", m_ctrl_verbose);
-  pp.query("height", m_ctrl_h);
+  pp.get("height", m_ctrl_h);
   pp.query("changeMax", m_ctrl_changeMax);
   pp.query("velMax", m_ctrl_velMax);
   pp.query("pseudo_gravity", m_ctrl_pseudoGravity);
@@ -38,10 +38,6 @@ PeleLM::initActiveControl()
 
   if ((m_ctrl_active != 0) && (m_ctrl_tauControl <= 0.0)) {
     amrex::Error("active_control.tau MUST be set when using active_control");
-  }
-
-  if (m_ctrl_h <= 0.0) {
-    amrex::Error("active_control.height MUST be set when using active_control");
   }
 
   if (m_ctrl_flameDir > 2) {
