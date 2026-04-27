@@ -42,7 +42,7 @@ PeleLM::initActiveControl()
 
   if (m_ctrl_flameDir > 2) {
     amrex::Error(
-      "active_control.flame_direction MUST be 0, 1 or 2 for X, Y and Z resp.");
+      "active_control.flow_dir MUST be 0, 1 or 2 for X, Y and Z resp.");
   }
 
   // Initialize flow controller
