@@ -67,18 +67,18 @@ writePlotfileHeaderWithMapping(
     ref_ratio, versionName, levelPrefix, mfPrefix);
 
   // Magic trailer: one extra vector field of AMREX_SPACEDIM components
-  // named amrexvec_nu_{x,y,z}.  The AMReX ParaView/VisIt plugin treats
+  // named nu_{x,y,z}.  The AMReX ParaView/VisIt plugin treats
   // this as a node-centred displacement and renders the solution on
   // (Xi + nu) rather than on Xi, yielding physical-space visualization
   // automatically.
   HeaderFile << 1 << '\n';
   HeaderFile << AMREX_SPACEDIM << '\n';
-  HeaderFile << "amrexvec_nu_x" << '\n';
+  HeaderFile << "nu_x" << '\n';
 #if (AMREX_SPACEDIM >= 2)
-  HeaderFile << "amrexvec_nu_y" << '\n';
+  HeaderFile << "nu_y" << '\n';
 #endif
 #if (AMREX_SPACEDIM == 3)
-  HeaderFile << "amrexvec_nu_z" << '\n';
+  HeaderFile << "nu_z" << '\n';
 #endif
   for (int lev = 0; lev < nlevels; ++lev) {
     HeaderFile
