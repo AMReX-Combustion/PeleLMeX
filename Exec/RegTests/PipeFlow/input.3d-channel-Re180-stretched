@@ -1,0 +1,150 @@
+# =====================================================================
+# Re_tau = 180 channel-flow DNS using mesh stretching (no EB, no AMR)
+# =====================================================================
+#
+# Direct alternative to the EB+AMR setup described in
+#   Docs/sphinx/manual/Validation.rst :: "Channel Flow using EB"
+# (Exec/RegTests/EB_PipeFlow/input.3d-regt).  The reference DNS uses a
+# 384x128x192 base grid with two levels of EB-targeted refinement
+# (~56.6 M cells) to reach y+ = 0.479 at the first off-wall cell.
+#
+# Here we instead run a HALF-channel with Symmetry BC at the midplane
+# and a no-slip wall at y = delta = 0.005, and use ExpStretchMap to
+# cluster cells against the wall.  Single AMR level, no EB.
+#
+# Domain (matching docs):
+#   x  in [0, 6.24*delta]    = [0,    0.0312]   periodic
+#   y  in [0, delta]         = [0,    0.005 ]   sym (lo) / no-slip (hi)
+#   z  in [-1.56*delta, 1.56*delta] = [-0.0078, 0.0078]  periodic
+# delta = 0.005 m  (channel half-width)
+#
+# Stretching: ExpStretchMap, direction=1, wall_end=hi, beta=4.
+#   max/min cell-size ratio = e^beta = 54.6
+#   At N_y = 32: dxi_y = 0.005/32 = 1.5625e-4 m
+#                fac at wall = beta/(e^beta-1) = 0.0746
+#                dy_min     = 1.166e-5 m
+#                y+ at first cell-center = 0.420
+#   This is BETTER than the docs DNS L2 first-cell y+ of 0.479.
+#
+# Resolution: small first-pass, ~150k cells.  See bottom of file for
+# how to scale up to match docs L0 in x, z.
+# ---------------------------------------------------------------------
+
+#----------------------DOMAIN DEFINITION------------------------
+geometry.is_periodic = 1 0 1                  # periodic x, z; walls in y
+geometry.coord_sys   = 0
+geometry.prob_lo     = 0.0     0.0    -0.0078
+geometry.prob_hi     = 0.0312  0.005   0.0078
+
+# Symmetry at y=0, no-slip wall at y=delta=0.005.  Symmetry implements
+# the channel midplane (du/dy=0, v=0).
+peleLM.lo_bc = Interior Symmetry         Interior
+peleLM.hi_bc = Interior NoSlipWallAdiab  Interior
+
+#-------------------------AMR CONTROL----------------------------
+# 96 x 32 x 48 = 147,456 cells.  At full DNS L0 resolution this would
+# be 384 x 32 x 192 = 2.36 M.  Start small to verify the setup; scale
+# up after confirming the run stabilizes and BoomerAMG handles the
+# stretched problem.
+amr.n_cell          = 96 32 48
+amr.v               = 1
+amr.max_level       = 0                   # no AMR; stretching does the
+                                          # near-wall refinement
+amr.blocking_factor = 16
+amr.max_grid_size   = 64
+
+#------------------------ MESH MAPPING ---------------------------
+geometry.mesh_mapping        = ExpStretchMap
+ExpStretchMap.direction      = 1          # stretch the y axis
+ExpStretchMap.wall_end       = hi         # cluster cells at y = prob_hi
+ExpStretchMap.beta           = 4.0
+
+#--------------------------- Problem -----------------------------
+prob.T_mean              = 750.0          # K, matches docs
+prob.P_mean              = 102325.0       # Pa, matches docs
+prob.problem_type        = 2              # turbulent-channel IC
+prob.meanFlowMag         = 0.0            # unused for flowType=2
+prob.perturbMag          = 5.0            # default IC perturbations
+prob.channelFullHeight   = 0.01           # = 2*delta; tells the IC
+                                          # we're a half-channel so the
+                                          # parabolic-ish profile peaks
+                                          # at y=0 (symmetry) and goes
+                                          # to zero at y=delta (wall)
+
+#-------------------------PeleLM CONTROL--------------------------
+peleLM.v              = 2
+peleLM.incompressible = 1                 # match docs: incompressible
+                                          # with prescribed rho, mu
+peleLM.rho            = 0.4688            # kg/m^3, air at T=750K, P=102325
+peleLM.mu             = 3.57816e-5        # Pa.s
+peleLM.gradP0         = -709.79 0.0 0.0   # Pa/m, drives the channel
+
+#-------------------------- TIME ---------------------------------
+amr.cfl       = 0.7
+amr.max_step  = 200
+amr.stop_time = 0.05                      # ~ 28 t* with t* = delta/u_tau
+                                          # = 1.817e-3 s.  (Docs run for
+                                          # 20 t* statistical steady
+                                          # plus 10 t* averaging.)
+
+amr.plot_int   = 50
+amr.plot_file  = plt_
+amr.check_int  = -1
+amr.derive_plot_vars = avg_pressure mag_vort
+
+#-------------- LINEAR SOLVERS (BoomerAMG for MAC) ---------------
+# The mapped MAC operator is poorly conditioned at this stretching
+# (anisotropy ~e^4 ~ 54).  Use HypreMLABecLap (BoomerAMG) for MAC and
+# hypre as the nodal MLMG bottom solver.  Requires PeleLMeX built with
+# USE_HYPRE=TRUE.
+#
+# NOTE: HypreMLABecLap currently hard-codes its BoomerAMG strong-
+# threshold/relaxation/coarsening options (see AMReX_HypreMLABecLap.cpp
+# ~line 887).  Tuning options like bamg_coarsen_type / bamg_interp_type
+# / bamg_relax_type are read by the OTHER hypre path, accessed via
+# `mac_proj.bottom_solver = hypre`.  That path requires AMReX's
+# MacProjector MLMG to be templated on MultiFab, which isn't the case
+# in the AMReX vendored here -- the bottom_solver=hypre call aborts
+# with "Using Hypre as bottom solver not supported in this case".  On
+# a newer AMReX, switch to the bottom_solver=hypre + namespace style:
+#
+#   mac_proj.bottom_solver         = hypre
+#   mac_proj.hypre_namespace       = mac_proj.hypre
+#   mac_proj.hypre.hypre_solver    = GMRES
+#   mac_proj.hypre.hypre_preconditioner = BoomerAMG
+#   mac_proj.hypre.bamg_coarsen_type    = 9
+#   mac_proj.hypre.bamg_interp_type     = 4
+#   mac_proj.hypre.bamg_relax_type      = 7
+#
+# For now, use_mlhypre=1 with HypreMLABecLap's defaults.  At this
+# resolution it converges at ~75 iterations per MAC solve.
+mac_proj.use_mlhypre = 1
+
+nodal_proj.bottom_solver = hypre
+nodal_proj.maxiter       = 20000
+nodal_proj.rtol          = 1.0e-7
+nodal_proj.verbose       = 1
+
+# Mesh-mapping plotfile metadata (ParaView/VisIt curvilinear render)
+peleLM.plot_mesh_mapping = 1
+
+# Diagnostics
+amrex.fpe_trap_invalid  = 0
+amrex.fpe_trap_zero     = 0
+amrex.fpe_trap_overflow = 0
+
+# =====================================================================
+# Notes for scaling up to match docs L0 resolution:
+#
+#   amr.n_cell = 384 32 192     # 2.36 M cells, x+ = z+ ~ 2.93 (DNS L0)
+#
+# DNS L2 quality at the wall is achieved by raising N_y or beta:
+#   N_y = 64,  beta = 4   => dy_min = 5.83e-6 m, y+ = 0.21
+#   N_y = 32,  beta = 5   => dy_min = 5.30e-6 m, y+ = 0.19
+#
+# beta > 4 currently hits MAC-solver convergence trouble at N_y >= 64
+# in the sandbox build; scaling out N_y at fixed beta is the safer
+# direction.  For symmetric clustering at BOTH walls (full-channel
+# without symmetry BC), implement TanhStretchMap and switch to
+# geometry.mesh_mapping = TanhStretchMap.
+# =====================================================================

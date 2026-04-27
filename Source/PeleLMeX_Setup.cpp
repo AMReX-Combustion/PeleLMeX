@@ -179,11 +179,6 @@ PeleLM::Setup()
         reactComponents.clear();
       }
       pp.query("plot_react", m_plot_react);
-      // Emit mesh-mapping displacement metadata alongside the plotfile
-      // when mesh mapping is active (so ParaView/VisIt renders in
-      // physical space).  On by default; set to 0 to keep Xi-space
-      // plotfiles.
-      pp.query("plot_mesh_mapping", m_plot_mesh_mapping);
     }
 
 #ifdef PELE_USE_PLASMA
@@ -196,6 +191,16 @@ PeleLM::Setup()
 
   // Derived variables
   derivedSetup();
+
+  // Emit mesh-mapping displacement metadata alongside the plotfile
+  // when mesh mapping is active (so ParaView/VisIt renders in physical
+  // space).  On by default; set to 0 to keep Xi-space plotfiles.
+  // Parsed unconditionally so the query also runs for incompressible /
+  // chemistry-off cases.
+  {
+    amrex::ParmParse ppplt("peleLM");
+    ppplt.query("plot_mesh_mapping", m_plot_mesh_mapping);
+  }
 
   // Evaluate variables
   evaluateSetup();

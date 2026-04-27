@@ -23,6 +23,13 @@ struct MyProbParm : public ProbParmDefault
   // a smaller value (e.g. 0.0 for a clean uniform flow, or 0.5 for a
   // mild perturbation) when running a convergence study.
   amrex::Real perturbMag = 5.0;
+  // Optional override of the channel full height used by flowType=2's
+  // analytical profile.  Default <= 0 means "use the actual y-extent
+  // of the simulation domain" (correct for full-channel runs).  Set to
+  // 2*delta when running a HALF-channel (Symmetry BC at one y face,
+  // NoSlipWall at the other); the profile then peaks at the symmetry
+  // plane and reaches zero at the wall.
+  amrex::Real channelFullHeight = -1.0;
   // Mesh-mapping scaling factors (read from ConstantMap.scaling_factor).
   // When mesh mapping is active the AMReX grid is Xi-space and physical
   // coordinates are  x_phys = prob_lo + (i+0.5) * dx * fac.  Defaults
@@ -117,24 +124,49 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
       // Turbulent-channel-like analytical profile (no EB needed):
       //   parabolic-ish mean profile in y across a channel of half-width Ly/2
       //   with superimposed divergence-free structured perturbations.
+      //
+      // For half-channel runs (with Symmetry BC at one y boundary and
+      // NoSlipWall at the other), the simulation domain spans only Ly/2
+      // of the physical channel.  Set prob.channelFullHeight to the
+      // FULL physical channel height; the IC formula will then evaluate
+      // 2y/H_full so the profile peaks at the symmetry plane (y where
+      // H_full / 2 - y = 0) and vanishes at the wall.  When channel-
+      // FullHeight <= 0 (default) the formula falls back to the actual
+      // domain Ly, which is correct for full-channel runs centered on
+      // y=0.
       const amrex::Real dpdx = 709.79; // Pa/m
       const amrex::Real c_f = 0.0062418;
+      const amrex::Real H_full =
+        (prob_parm.channelFullHeight > amrex::Real(0.0))
+          ? prob_parm.channelFullHeight
+          : Ly;
       amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> u;
-      u[0] = sqrt(dpdx * Ly / (0.4688 * c_f)) *
-             (1.0 - pow(fabs(2.0 * y / Ly), 10.0));
+      // y_centered measures distance from the channel midplane; the
+      // symmetry plane of a half-channel run is at the lower y boundary
+      // (so y_centered = y in that case), and the centerline of a full
+      // channel is at the geometric center (so we shift by half the
+      // domain extent there).
+      const amrex::Real y_centered =
+        (prob_parm.channelFullHeight > amrex::Real(0.0))
+          ? y - prob_lo[1]
+          : y;
+      u[0] = sqrt(dpdx * H_full / (0.4688 * c_f)) *
+             (1.0 - pow(fabs(2.0 * y_centered / H_full), 10.0));
 
       AMREX_D_TERM(
         state(i, j, k, VELX) =
           u[0] *
           (1.0 +
-           std::sin(2 * Pi * 5 * y / Ly) * std::sin(2 * Pi * 14 * z / Lz) +
-           std::sin(2 * Pi * 7 * y / Ly) *
+           std::sin(2 * Pi * 5 * y_centered / H_full) *
+             std::sin(2 * Pi * 14 * z / Lz) +
+           std::sin(2 * Pi * 7 * y_centered / H_full) *
              std::sin(2 * Pi * 6 * (z - 0.00541) / Lz));
         , state(i, j, k, VELY) =
             0.2 * u[0] *
-            (std::sin(2 * Pi * 5 * y / Ly) *
+            (std::sin(2 * Pi * 5 * y_centered / H_full) *
                std::sin(2 * Pi * 7 * (x - 0.0013) / Lx) +
-             std::sin(2 * Pi * 6 * y / Ly) * std::sin(2 * Pi * 13 * x / Lx));
+             std::sin(2 * Pi * 6 * y_centered / H_full) *
+               std::sin(2 * Pi * 13 * x / Lx));
         , state(i, j, k, VELZ) =
             0.2 * u[0] *
             (std::sin(2 * Pi * 11 * z / Lz) * std::sin(2 * Pi * 4 * x / Lx) +
