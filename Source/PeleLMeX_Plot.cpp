@@ -944,9 +944,8 @@ PeleLM::ReadCheckPointFile()
         amrex::MultiFab chk_mean(
           chk_recycling_ba[lev], chk_dm, AMREX_SPACEDIM, 0);
         amrex::VisMF::Read(
-          chk_mean,
-          amrex::MultiFabFileFullPrefix(
-            lev, m_restart_chkfile, level_prefix, "recycle_mean"));
+          chk_mean, amrex::MultiFabFileFullPrefix(
+                      lev, m_restart_chkfile, level_prefix, "recycle_mean"));
         m_inlet_recycling.mean_src[lev]->ParallelCopy(
           chk_mean, 0, 0, AMREX_SPACEDIM);
       }

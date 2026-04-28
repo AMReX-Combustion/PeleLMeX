@@ -460,7 +460,7 @@ PeleLM::fillpatch_state(
       fetchBCRecArray(0, nCompState), 0);
   }
 
-  fillFromRecyclingPlane(a_state,0,lev);
+  fillFromRecyclingPlane(a_state, 0, lev);
 
   a_state.EnforcePeriodicity(geom[lev].periodicity());
 }
@@ -953,7 +953,7 @@ PeleLM::fillcoarsepatch_state(
     fine_bndry_func, 0, refRatio(lev - 1), mapper,
     fetchBCRecArray(0, nCompState), 0);
 
-  fillFromRecyclingPlane(a_state,0,lev);
+  fillFromRecyclingPlane(a_state, 0, lev);
 }
 
 // Fill the auxiliaries
@@ -1124,7 +1124,7 @@ PeleLM::setInflowBoundaryVel(
 
   bndry_func(a_vel, 0, AMREX_SPACEDIM, a_vel.nGrowVect(), time, 0);
 
-  fillFromRecyclingPlane(a_vel,0,lev);
+  fillFromRecyclingPlane(a_vel, 0, lev);
 
   a_vel.EnforcePeriodicity(geom[lev].periodicity());
 }
@@ -1274,12 +1274,12 @@ PeleLM::buildRecyclingPlaneStorage()
     slab_ba.maxSize(maxGridSize(lev));
     amrex::DistributionMapping slab_dm(slab_ba);
 
-    m_inlet_recycling.u_src[lev] = std::make_unique<amrex::MultiFab>(
-      slab_ba, slab_dm, AMREX_SPACEDIM, 0);
-    m_inlet_recycling.mean_src[lev] = std::make_unique<amrex::MultiFab>(
-      slab_ba, slab_dm, AMREX_SPACEDIM, 0);
-    m_inlet_recycling.fluct_src[lev] = std::make_unique<amrex::MultiFab>(
-      slab_ba, slab_dm, AMREX_SPACEDIM, 0);
+    m_inlet_recycling.u_src[lev] =
+      std::make_unique<amrex::MultiFab>(slab_ba, slab_dm, AMREX_SPACEDIM, 0);
+    m_inlet_recycling.mean_src[lev] =
+      std::make_unique<amrex::MultiFab>(slab_ba, slab_dm, AMREX_SPACEDIM, 0);
+    m_inlet_recycling.fluct_src[lev] =
+      std::make_unique<amrex::MultiFab>(slab_ba, slab_dm, AMREX_SPACEDIM, 0);
 
     // No fluctuation until the next snapshot has populated u_src and
     // recomputed it.
@@ -1477,8 +1477,7 @@ PeleLM::updateRecyclingPlaneSnapshot()
 }
 
 void
-PeleLM::fillFromRecyclingPlane(
-  amrex::MultiFab& a_vel, int vel_comp, int lev)
+PeleLM::fillFromRecyclingPlane(amrex::MultiFab& a_vel, int vel_comp, int lev)
 {
   if (m_use_inlet_from_plane == 0) {
     return;
@@ -1506,7 +1505,9 @@ PeleLM::fillFromRecyclingPlane(
   const int planeDir = m_inlet_plane_dir;
   const int srcIndex = computeRecyclingSrcIndex(lev);
   const amrex::Box& domain = geom[lev].Domain();
-  if (srcIndex < domain.smallEnd(planeDir) || srcIndex > domain.bigEnd(planeDir)) {
+  if (
+    srcIndex < domain.smallEnd(planeDir) ||
+    srcIndex > domain.bigEnd(planeDir)) {
     amrex::Print() << "[fillFromRecyclingPlane] lev " << lev
                    << " plane outside domain\n";
     return;

@@ -1218,10 +1218,7 @@ public:
     const int lev,
     const amrex::Real a_time);
 
-  void fillFromRecyclingPlane(
-    amrex::MultiFab& a_vel,
-    int vel_comp,
-    int lev);
+  void fillFromRecyclingPlane(amrex::MultiFab& a_vel, int vel_comp, int lev);
 
   // (Re)build per-level thin-slab storage for the recycling plane.
   void buildRecyclingPlaneStorage();
