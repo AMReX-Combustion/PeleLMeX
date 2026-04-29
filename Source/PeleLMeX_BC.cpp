@@ -1514,7 +1514,7 @@ PeleLM::fillFromRecyclingPlane(amrex::MultiFab& a_vel, int vel_comp, int lev)
   }
 
   auto velBCRec = fetchBCRecArray(VELX, AMREX_SPACEDIM);
-  const amrex::BoxArray& grids = a_vel.boxArray();
+  const amrex::BoxArray& ba = a_vel.boxArray();
   const int nGrowDest = a_vel.nGrow();
 
   // Recycling injects all AMREX_SPACEDIM velocity components as a single
@@ -1539,13 +1539,13 @@ PeleLM::fillFromRecyclingPlane(amrex::MultiFab& a_vel, int vel_comp, int lev)
   };
 
   // Decide which sides of planeDir need recycling. Uses only global
-  // quantities (BCRec + domain + grids), so the result is identical on
+  // quantities (BCRec + domain + ba), so the result is identical on
   // every rank and the subsequent ParallelAdd calls remain collective.
   bool need_lo = false;
   bool need_hi = false;
   if (faceIsExtDir(amrex::Orientation::low)) {
-    for (int i = 0; i < grids.size(); ++i) {
-      const auto bx = amrex::Box(grids[i]).grow(nGrowDest);
+    for (int i = 0; i < ba.size(); ++i) {
+      const auto bx = amrex::Box(ba[i]).grow(nGrowDest);
       if (amrex::Box(amrex::adjCellLo(domain, planeDir, nGrowDest) & bx).ok()) {
         need_lo = true;
         break;
@@ -1553,8 +1553,8 @@ PeleLM::fillFromRecyclingPlane(amrex::MultiFab& a_vel, int vel_comp, int lev)
     }
   }
   if (faceIsExtDir(amrex::Orientation::high)) {
-    for (int i = 0; i < grids.size(); ++i) {
-      const auto bx = amrex::Box(grids[i]).grow(nGrowDest);
+    for (int i = 0; i < ba.size(); ++i) {
+      const auto bx = amrex::Box(ba[i]).grow(nGrowDest);
       if (amrex::Box(amrex::adjCellHi(domain, planeDir, nGrowDest) & bx).ok()) {
         need_hi = true;
         break;
