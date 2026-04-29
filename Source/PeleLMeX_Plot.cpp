@@ -936,7 +936,7 @@ PeleLM::ReadCheckPointFile()
     for (int lev = 0; lev <= finest_level; ++lev) {
       if (
         lev < static_cast<int>(chk_recycling_ba.size()) &&
-        chk_recycling_ba[lev].size() > 0 &&
+        (!chk_recycling_ba[lev].empty()) &&
         lev < static_cast<int>(m_inlet_recycling.mean_src.size()) &&
         m_inlet_recycling.mean_src[lev]) {
         amrex::DistributionMapping chk_dm{
