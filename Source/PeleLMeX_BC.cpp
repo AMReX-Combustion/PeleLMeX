@@ -1455,7 +1455,7 @@ PeleLM::updateRecyclingPlaneSnapshot()
   // cumulative average via 1/n.
   amrex::Real alpha;
   if (m_inlet_plane_avg_window > 0.0) {
-    alpha = std::min(1.0, m_dt / m_inlet_plane_avg_window);
+    alpha = std::min(amrex::Real(1.0), m_dt / m_inlet_plane_avg_window);
   } else {
     alpha =
       1.0 / static_cast<amrex::Real>(std::max(1, m_inlet_recycling.n_samples));

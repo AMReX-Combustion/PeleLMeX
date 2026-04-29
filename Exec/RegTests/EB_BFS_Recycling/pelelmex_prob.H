@@ -71,7 +71,7 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
     // standing wave along any axis. Amplitude tapered to zero at the
     // wall-normal boundaries by (1 - (2y/Ly)^2).
     const amrex::Real ywall = 1.0 - std::pow(2.0 * y / Ly, 2.0);
-    const amrex::Real wy = amrex::max<amrex::Real>(0.0, ywall);
+    const amrex::Real wy = std::max(amrex::Real(0.0), ywall);
 
     const amrex::Real pu =
       (std::sin(2.0 * Pi * 3.0 * x / Lx + 0.17) *
