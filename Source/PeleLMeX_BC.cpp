@@ -419,6 +419,8 @@ PeleLM::fillpatch_state(
 
   fillTurbInflow(a_state, VELX, lev, a_time);
 
+  fillFromRecyclingPlane(a_state, 0, lev);
+
   if (lev == 0) {
     amrex::PhysBCFunct<
       amrex::GpuBndryFuncFab<PeleLMCCFillExtDirState<ProblemSpecificFunctions>>>
@@ -459,8 +461,6 @@ PeleLM::fillpatch_state(
       crse_bndry_func, 0, fine_bndry_func, 0, refRatio(lev - 1), mapper,
       fetchBCRecArray(0, nCompState), 0);
   }
-
-  fillFromRecyclingPlane(a_state, 0, lev);
 
   a_state.EnforcePeriodicity(geom[lev].periodicity());
 }
@@ -930,6 +930,8 @@ PeleLM::fillcoarsepatch_state(
 
   fillTurbInflow(a_state, VELX, lev, a_time);
 
+  fillFromRecyclingPlane(a_state, 0, lev);
+
   // Interpolator
   auto* mapper = getInterpolator(m_regrid_interp_method);
 
@@ -952,8 +954,6 @@ PeleLM::fillcoarsepatch_state(
     0, nCompState, geom[lev - 1], geom[lev], crse_bndry_func, 0,
     fine_bndry_func, 0, refRatio(lev - 1), mapper,
     fetchBCRecArray(0, nCompState), 0);
-
-  fillFromRecyclingPlane(a_state, 0, lev);
 }
 
 // Fill the auxiliaries
@@ -1112,6 +1112,8 @@ PeleLM::setInflowBoundaryVel(
 
   fillTurbInflow(a_vel, 0, lev, time);
 
+  fillFromRecyclingPlane(a_vel, 0, lev);
+
   ProbParm const* lprobparm = prob_parm_d;
   auto const* lpmfdata = pmf_data.device_parm();
   amrex::PhysBCFunct<
@@ -1123,8 +1125,6 @@ PeleLM::setInflowBoundaryVel(
         static_cast<int>(turb_inflow.is_initialized())});
 
   bndry_func(a_vel, 0, AMREX_SPACEDIM, a_vel.nGrowVect(), time, 0);
-
-  fillFromRecyclingPlane(a_vel, 0, lev);
 
   a_vel.EnforcePeriodicity(geom[lev].periodicity());
 }
