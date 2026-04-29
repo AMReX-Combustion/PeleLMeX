@@ -75,21 +75,18 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
 
     const amrex::Real pu =
       (std::sin(2.0 * Pi * 3.0 * x / Lx + 0.17) *
-         std::cos(2.0 * Pi * 5.0 * y / Ly) *
-         std::sin(2.0 * Pi * 4.0 * z / Lz) +
+         std::cos(2.0 * Pi * 5.0 * y / Ly) * std::sin(2.0 * Pi * 4.0 * z / Lz) +
        std::sin(2.0 * Pi * 7.0 * x / Lx - 0.43) *
          std::cos(2.0 * Pi * 3.0 * y / Ly + 0.91) *
          std::sin(2.0 * Pi * 2.0 * z / Lz) +
        std::sin(2.0 * Pi * 11.0 * x / Lx + 1.23) *
-         std::cos(2.0 * Pi * 2.0 * y / Ly) *
-         std::sin(2.0 * Pi * 7.0 * z / Lz));
+         std::cos(2.0 * Pi * 2.0 * y / Ly) * std::sin(2.0 * Pi * 7.0 * z / Lz));
     const amrex::Real pv =
       (std::cos(2.0 * Pi * 4.0 * x / Lx) *
          std::sin(2.0 * Pi * 4.0 * y / Ly + 0.31) *
          std::cos(2.0 * Pi * 3.0 * z / Lz + 0.77) +
        std::cos(2.0 * Pi * 6.0 * x / Lx + 0.55) *
-         std::sin(2.0 * Pi * 2.0 * y / Ly) *
-         std::cos(2.0 * Pi * 5.0 * z / Lz) +
+         std::sin(2.0 * Pi * 2.0 * y / Ly) * std::cos(2.0 * Pi * 5.0 * z / Lz) +
        std::cos(2.0 * Pi * 9.0 * x / Lx) *
          std::sin(2.0 * Pi * 3.0 * y / Ly - 0.22) *
          std::cos(2.0 * Pi * 6.0 * z / Lz + 1.05));
