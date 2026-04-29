@@ -1567,7 +1567,7 @@ PeleLM::fillFromRecyclingPlane(amrex::MultiFab& a_vel, int vel_comp, int lev)
   }
 
   // Shift the cached fluctuation MultiFab onto each inflow ghost layer and
-  // ADD it to the destination. The standard ext_dir fill has already set
+  // COPY it to the destination. The standard ext_dir fill will add
   // the inlet mean profile; this only contributes the zero-mean fluctuation.
   amrex::MultiFab& fluct = *m_inlet_recycling.fluct_src[lev];
 
@@ -1576,7 +1576,7 @@ PeleLM::fillFromRecyclingPlane(amrex::MultiFab& a_vel, int vel_comp, int lev)
       const int nshift = srcIndex - domain.smallEnd(planeDir) + g;
       const auto shift = amrex::BASISV(planeDir) * nshift;
       fluct.shift(-shift);
-      a_vel.ParallelAdd(fluct, 0, vel_comp, AMREX_SPACEDIM, 0, nGrowDest);
+      a_vel.ParallelCopy(fluct, 0, vel_comp, AMREX_SPACEDIM, 0, nGrowDest);
       fluct.shift(+shift);
     }
   }
@@ -1585,7 +1585,7 @@ PeleLM::fillFromRecyclingPlane(amrex::MultiFab& a_vel, int vel_comp, int lev)
       const int nshift = domain.bigEnd(planeDir) - srcIndex + g;
       const auto shift = amrex::BASISV(planeDir) * nshift;
       fluct.shift(+shift);
-      a_vel.ParallelAdd(fluct, 0, vel_comp, AMREX_SPACEDIM, 0, nGrowDest);
+      a_vel.ParallelCopy(fluct, 0, vel_comp, AMREX_SPACEDIM, 0, nGrowDest);
       fluct.shift(-shift);
     }
   }

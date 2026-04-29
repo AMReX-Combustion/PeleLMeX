@@ -110,7 +110,7 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
       auto eos = pele::physics::PhysicsType::eos();
 
       AMREX_D_TERM(
-        s_ext[VELX] = prob_parm.meanFlowMag;, s_ext[VELY] = 0.0;
+        s_ext[VELX] += prob_parm.meanFlowMag;, s_ext[VELY] = 0.0;
         , s_ext[VELZ] = 0.0);
 
       massfrac[CH4_ID] = prob_parm.Y_fuel;
@@ -158,7 +158,7 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
     if (prob_parm.do_EBinflow && std::abs(xEBface[0]) <= 0.0015) {
       auto eos = pele::physics::PhysicsType::eos();
       s_ext[VELX] = 0.0;
-      s_ext[VELY] = prob_parm.EBinflow_vel;
+      s_ext[VELY] += prob_parm.EBinflow_vel;
       amrex::Real massfrac[NUM_SPECIES] = {0.0};
       massfrac[CH4_ID] = prob_parm.EBinflow_Yfuel;
       massfrac[O2_ID] = (1.0 - massfrac[CH4_ID]) * 0.233;
