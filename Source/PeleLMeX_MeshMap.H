@@ -104,9 +104,7 @@ public:
    * components.  Only the first AMREX_SPACEDIM components are written.
    */
   virtual void fill_nodal_displacement(
-    int lev,
-    const amrex::Geometry& geom,
-    amrex::MultiFab& disp_nd) const;
+    int lev, const amrex::Geometry& geom, amrex::MultiFab& disp_nd) const;
 
   /** \return the number of active levels currently allocated. */
   [[nodiscard]] int num_levels() const
@@ -150,7 +148,8 @@ public:
     return m_detJ_fc[lev][idim];
   }
 
-  /// Array accessor: returns references to the per-direction face MFs on a level.
+  /// Array accessor: returns references to the per-direction face MFs on a
+  /// level.
   amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM> fac_fc(int lev)
   {
     amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM> r;

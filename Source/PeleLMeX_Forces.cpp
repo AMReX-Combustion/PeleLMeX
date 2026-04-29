@@ -93,8 +93,7 @@ PeleLM::getVelForces(
       auto const& fm_ma = a_velForce->arrays();
       amrex::ParallelFor(
         *a_velForce, amrex::IntVect(0), AMREX_SPACEDIM,
-        [=] AMREX_GPU_DEVICE(
-          int box_no, int i, int j, int k, int n) noexcept {
+        [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k, int n) noexcept {
           fm_ma[box_no](i, j, k, n) -=
             gp_ma[box_no](i, j, k, n) / fac_ma[box_no](i, j, k, n);
         });

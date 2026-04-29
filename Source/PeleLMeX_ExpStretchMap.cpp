@@ -63,8 +63,7 @@ ExpStretchMap::ExpStretchMap()
     m_wall_end = 1;
   } else {
     amrex::Abort(
-      "ExpStretchMap: 'wall_end' must be 'lo' or 'hi' (got '" + wall +
-      "').");
+      "ExpStretchMap: 'wall_end' must be 'lo' or 'hi' (got '" + wall + "').");
   }
   pp.query("beta", m_beta);
   if (m_beta < Real(0.0)) {
@@ -98,20 +97,17 @@ ExpStretchMap::create_map(int lev, const amrex::Geometry& geom)
   // Helper: evaluate fac along the stretched axis at cell/node index n
   // with offset_in_cell in [0,1] (0 = node at low face of cell, 0.5 = cc,
   // 1 = node at high face).  For the non-stretched axes, fac = 1.
-  auto fill_fac_array =
-    [=] AMREX_GPU_HOST_DEVICE(
-      amrex::Array4<Real> const& fac, int i, int j, int k,
-      int stretched_index, Real offset_in_cell) noexcept {
-      const Real xi_here =
-        xi_lo + (static_cast<Real>(stretched_index) + offset_in_cell) * dxi;
-      const Real eta = eta_of_xi(xi_here);
-      const Real f = exp_fac(eta, beta);
-      AMREX_D_TERM(
-        fac(i, j, k, 0) = Real(1.0);
-        , fac(i, j, k, 1) = Real(1.0);
-        , fac(i, j, k, 2) = Real(1.0););
-      fac(i, j, k, idir) = f;
-    };
+  auto fill_fac_array = [=] AMREX_GPU_HOST_DEVICE(
+                          amrex::Array4<Real> const& fac, int i, int j, int k,
+                          int stretched_index, Real offset_in_cell) noexcept {
+    const Real xi_here =
+      xi_lo + (static_cast<Real>(stretched_index) + offset_in_cell) * dxi;
+    const Real eta = eta_of_xi(xi_here);
+    const Real f = exp_fac(eta, beta);
+    AMREX_D_TERM(fac(i, j, k, 0) = Real(1.0);, fac(i, j, k, 1) = Real(1.0);
+                 , fac(i, j, k, 2) = Real(1.0););
+    fac(i, j, k, idir) = f;
+  };
 
   auto set_detJ = [=] AMREX_GPU_HOST_DEVICE(
                     amrex::Array4<Real> const& det, int i, int j, int k,
@@ -174,9 +170,7 @@ ExpStretchMap::create_map(int lev, const amrex::Geometry& geom)
 
 void
 ExpStretchMap::fill_nodal_displacement(
-  int lev,
-  const amrex::Geometry& geom,
-  amrex::MultiFab& disp_nd) const
+  int lev, const amrex::Geometry& geom, amrex::MultiFab& disp_nd) const
 {
   AMREX_ASSERT(lev >= 0 && lev < num_levels());
   AMREX_ASSERT(disp_nd.nComp() >= AMREX_SPACEDIM);
@@ -198,10 +192,8 @@ ExpStretchMap::fill_nodal_displacement(
     [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
       auto d = disp_ma[box_no];
       // Non-stretched directions: zero displacement.
-      AMREX_D_TERM(
-        d(i, j, k, 0) = Real(0.0);
-        , d(i, j, k, 1) = Real(0.0);
-        , d(i, j, k, 2) = Real(0.0););
+      AMREX_D_TERM(d(i, j, k, 0) = Real(0.0);, d(i, j, k, 1) = Real(0.0);
+                   , d(i, j, k, 2) = Real(0.0););
 
       // Stretched direction: evaluate the exact integral
       //   disp(xi) = x_phys(xi) - xi
@@ -214,8 +206,8 @@ ExpStretchMap::fill_nodal_displacement(
       // axis: L_xi * (e^{beta*eta} - 1)/(e^beta - 1).  In the limit
       // beta -> 0 this reduces to L_xi * eta, i.e. x_phys == xi.
       const Real offset_from_wall = L_xi * exp_offset(eta, beta);
-      const Real x_phys = (wall_end == 0) ? xi_lo + offset_from_wall
-                                          : xi_hi - offset_from_wall;
+      const Real x_phys =
+        (wall_end == 0) ? xi_lo + offset_from_wall : xi_hi - offset_from_wall;
       d(i, j, k, idir) = x_phys - xi_here;
     });
   amrex::Gpu::streamSynchronize();

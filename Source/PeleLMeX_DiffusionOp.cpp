@@ -288,8 +288,7 @@ DiffusionOp::diffuse_scalar(
         amrex::MultiFab::Copy(
           rhs.back(), *a_rhs[lev], rhs_comp + comp, 0, m_ncomp, 0);
         for (int n = 0; n < m_ncomp; ++n) {
-          amrex::MultiFab::Multiply(
-            rhs.back(), mm->detJ_cc(lev), 0, n, 1, 0);
+          amrex::MultiFab::Multiply(rhs.back(), mm->detJ_cc(lev), 0, n, 1, 0);
         }
       } else {
         rhs.emplace_back(
@@ -1501,8 +1500,7 @@ DiffusionTensorOp::compute_divtau(
     auto* mm = m_pelelm->meshMap();
     for (int lev = 0; lev <= finest_level; ++lev) {
       for (int n = 0; n < AMREX_SPACEDIM; ++n) {
-        amrex::MultiFab::Divide(
-          *a_divtau[lev], mm->detJ_cc(lev), 0, n, 1, 0);
+        amrex::MultiFab::Divide(*a_divtau[lev], mm->detJ_cc(lev), 0, n, 1, 0);
       }
     }
   }

@@ -63,8 +63,8 @@ public:
   [[nodiscard]] amrex::Real beta() const noexcept { return m_beta; }
 
 private:
-  int m_dir{1};         // stretched direction (0,1,2); default y
-  int m_wall_end{0};    // 0 = lo, 1 = hi
+  int m_dir{1};      // stretched direction (0,1,2); default y
+  int m_wall_end{0}; // 0 = lo, 1 = hi
   amrex::Real m_beta{1.0};
 };
 

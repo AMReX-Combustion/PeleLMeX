@@ -163,8 +163,7 @@ PeleLM::initialProjection()
       auto const& vel_ma = vel[lev]->arrays();
       amrex::ParallelFor(
         *vel[lev], amrex::IntVect(0), AMREX_SPACEDIM,
-        [=] AMREX_GPU_DEVICE(
-          int box_no, int i, int j, int k, int n) noexcept {
+        [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k, int n) noexcept {
           const amrex::Real sig_x = sigma_ma[box_no](i, j, k, 0);
           const amrex::Real sig_n = sigma_ma[box_no](i, j, k, n);
           vel_ma[box_no](i, j, k, n) +=
@@ -439,8 +438,7 @@ PeleLM::velocityProjection(
           auto const& fac_ma = m_mesh_map->fac_cc(lev).const_arrays();
           amrex::ParallelFor(
             ldataNew_p->state, amrex::IntVect(0), AMREX_SPACEDIM,
-            [state_new_ma, gp_old_ma, rho_ma, fac_ma,
-             dt = a_dt] AMREX_GPU_DEVICE(
+            [state_new_ma, gp_old_ma, rho_ma, fac_ma, dt = a_dt] AMREX_GPU_DEVICE(
               int box_no, int i, int j, int k, int n) noexcept {
               amrex::Array4<amrex::Real> vel(state_new_ma[box_no], VELX);
               const amrex::Real soverrho = dt / rho_ma[box_no](i, j, k);
@@ -652,8 +650,7 @@ PeleLM::velocityProjection(
       auto const& vel_ma = vel[lev]->arrays();
       amrex::ParallelFor(
         *vel[lev], amrex::IntVect(0), AMREX_SPACEDIM,
-        [=] AMREX_GPU_DEVICE(
-          int box_no, int i, int j, int k, int n) noexcept {
+        [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k, int n) noexcept {
           const amrex::Real sig_x = sigma_ma[box_no](i, j, k, 0);
           const amrex::Real sig_n = sigma_ma[box_no](i, j, k, n);
           vel_ma[box_no](i, j, k, n) +=

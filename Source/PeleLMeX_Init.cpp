@@ -130,7 +130,8 @@ PeleLM::MakeNewLevelFromScratch(
   // storage here so downstream consumers can index the per-level MFs even
   // though create_map() is not yet called from the numerics paths.
   if (m_mesh_map) {
-    m_mesh_map->define(lev, grids[lev], dmap[lev], *m_factory[lev], m_nGrowState);
+    m_mesh_map->define(
+      lev, grids[lev], dmap[lev], *m_factory[lev], m_nGrowState);
     m_mesh_map->create_map(lev, geom[lev]);
   }
 

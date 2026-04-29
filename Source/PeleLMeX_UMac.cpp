@@ -249,7 +249,8 @@ PeleLM::macProject(
   // is NOT undone on exit.  Downstream consumers of umac must be aware
   // (see computeVelocityAdvTerm in PeleLMeX_Advection.cpp).
   //   amr-wind/docs/sphinx/theory/mapping.rst  (MAC projection section)
-  //   amr-wind/equation_systems/icns/icns_advection.cpp :: mac_proj_to_uniform_space
+  //   amr-wind/equation_systems/icns/icns_advection.cpp ::
+  //   mac_proj_to_uniform_space
   //
   // The caller-owned a_divu is NOT modified; a scratch MF holding
   // (J . divU) is built and passed to setDivU instead, so the caller's

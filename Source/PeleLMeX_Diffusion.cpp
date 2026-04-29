@@ -251,8 +251,8 @@ PeleLM::computeDifferentialDiffusionTerms(
   // returned Dn / Dnp1 / Dwbar / DT are in physical-space units.
   if (m_mesh_mapping) {
     for (int lev = 0; lev <= finest_level; ++lev) {
-      amrex::MultiFab& dterm = (a_time == AmrOldTime) ? diffData->Dn[lev]
-                                                      : diffData->Dnp1[lev];
+      amrex::MultiFab& dterm =
+        (a_time == AmrOldTime) ? diffData->Dn[lev] : diffData->Dnp1[lev];
       const int nc = dterm.nComp();
       for (int n = 0; n < nc; ++n) {
         amrex::MultiFab::Divide(dterm, m_mesh_map->detJ_cc(lev), 0, n, 1, 0);

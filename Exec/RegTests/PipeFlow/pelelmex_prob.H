@@ -62,12 +62,10 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
     // mapping factors.  For the default fac = 1 this is identical to
     // the standard AMReX-coordinate IC.
     AMREX_D_TERM(
-      const amrex::Real x =
-        prob_lo[0] + (i + 0.5) * dx[0] * prob_parm.fac_x;
-      , const amrex::Real y =
-        prob_lo[1] + (j + 0.5) * dx[1] * prob_parm.fac_y;
-      , const amrex::Real z =
-        prob_lo[2] + (k + 0.5) * dx[2] * prob_parm.fac_z;);
+      const amrex::Real x = prob_lo[0] + (i + 0.5) * dx[0] * prob_parm.fac_x;
+      , const amrex::Real y = prob_lo[1] + (j + 0.5) * dx[1] * prob_parm.fac_y;
+      ,
+      const amrex::Real z = prob_lo[2] + (k + 0.5) * dx[2] * prob_parm.fac_z;);
 
     AMREX_D_TERM(
       const amrex::Real Lx = (prob_hi[0] - prob_lo[0]) * prob_parm.fac_x;
@@ -84,14 +82,13 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
     if (prob_parm.flowType == 1) {
       switch (prob_parm.meanFlowDir) {
       case 1:
-        AMREX_D_TERM(
-          state(i, j, k, VELX) = prob_parm.meanFlowMag;
-          , state(i, j, k, VELY) = prob_parm.perturbMag *
-                                   std::sin(2 * Pi * 4 * y / Ly) *
-                                   std::sin(2 * Pi * 11 * x / Lx);
-          , state(i, j, k, VELZ) = prob_parm.perturbMag *
-                                   std::sin(2 * Pi * 5 * z / Lz) *
-                                   std::sin(2 * Pi * 4 * x / Lx));
+        AMREX_D_TERM(state(i, j, k, VELX) = prob_parm.meanFlowMag;
+                     , state(i, j, k, VELY) = prob_parm.perturbMag *
+                                              std::sin(2 * Pi * 4 * y / Ly) *
+                                              std::sin(2 * Pi * 11 * x / Lx);
+                     , state(i, j, k, VELZ) = prob_parm.perturbMag *
+                                              std::sin(2 * Pi * 5 * z / Lz) *
+                                              std::sin(2 * Pi * 4 * x / Lx));
         break;
       case -1:
         AMREX_D_TERM(state(i, j, k, VELX) = -prob_parm.meanFlowMag;
@@ -147,26 +144,22 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
       // channel is at the geometric center (so we shift by half the
       // domain extent there).
       const amrex::Real y_centered =
-        (prob_parm.channelFullHeight > amrex::Real(0.0))
-          ? y - prob_lo[1]
-          : y;
+        (prob_parm.channelFullHeight > amrex::Real(0.0)) ? y - prob_lo[1] : y;
       u[0] = sqrt(dpdx * H_full / (0.4688 * c_f)) *
              (1.0 - pow(fabs(2.0 * y_centered / H_full), 10.0));
 
       AMREX_D_TERM(
         state(i, j, k, VELX) =
-          u[0] *
-          (1.0 +
-           std::sin(2 * Pi * 5 * y_centered / H_full) *
-             std::sin(2 * Pi * 14 * z / Lz) +
-           std::sin(2 * Pi * 7 * y_centered / H_full) *
-             std::sin(2 * Pi * 6 * (z - 0.00541) / Lz));
-        , state(i, j, k, VELY) =
-            0.2 * u[0] *
-            (std::sin(2 * Pi * 5 * y_centered / H_full) *
-               std::sin(2 * Pi * 7 * (x - 0.0013) / Lx) +
-             std::sin(2 * Pi * 6 * y_centered / H_full) *
-               std::sin(2 * Pi * 13 * x / Lx));
+          u[0] * (1.0 +
+                  std::sin(2 * Pi * 5 * y_centered / H_full) *
+                    std::sin(2 * Pi * 14 * z / Lz) +
+                  std::sin(2 * Pi * 7 * y_centered / H_full) *
+                    std::sin(2 * Pi * 6 * (z - 0.00541) / Lz));
+        , state(i, j, k, VELY) = 0.2 * u[0] *
+                                 (std::sin(2 * Pi * 5 * y_centered / H_full) *
+                                    std::sin(2 * Pi * 7 * (x - 0.0013) / Lx) +
+                                  std::sin(2 * Pi * 6 * y_centered / H_full) *
+                                    std::sin(2 * Pi * 13 * x / Lx));
         , state(i, j, k, VELZ) =
             0.2 * u[0] *
             (std::sin(2 * Pi * 11 * z / Lz) * std::sin(2 * Pi * 4 * x / Lx) +

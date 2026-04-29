@@ -63,8 +63,8 @@ writePlotfileHeaderWithMapping(
   const std::string& mfNodalPrefix)
 {
   amrex::WriteGenericPlotfileHeader(
-    HeaderFile, nlevels, bArrays, varnames, geom, time, level_steps,
-    ref_ratio, versionName, levelPrefix, mfPrefix);
+    HeaderFile, nlevels, bArrays, varnames, geom, time, level_steps, ref_ratio,
+    versionName, levelPrefix, mfPrefix);
 
   // Magic trailer: one extra vector field of AMREX_SPACEDIM components
   // named nu_{x,y,z}.  The AMReX ParaView/VisIt plugin treats
@@ -81,9 +81,8 @@ writePlotfileHeaderWithMapping(
   HeaderFile << "nu_z" << '\n';
 #endif
   for (int lev = 0; lev < nlevels; ++lev) {
-    HeaderFile
-      << amrex::MultiFabHeaderPath(lev, levelPrefix, mfNodalPrefix)
-      << '\n';
+    HeaderFile << amrex::MultiFabHeaderPath(lev, levelPrefix, mfNodalPrefix)
+               << '\n';
   }
 }
 
@@ -125,8 +124,9 @@ writePlotfileWithMapping(
 
   // Header is written by the highest-rank process, matching ERF / AMReX
   // convention.
-  if (amrex::ParallelDescriptor::MyProc() ==
-      amrex::ParallelDescriptor::NProcs() - 1) {
+  if (
+    amrex::ParallelDescriptor::MyProc() ==
+    amrex::ParallelDescriptor::NProcs() - 1) {
     amrex::Vector<amrex::BoxArray> bArrays(nlevels);
     for (int lev = 0; lev < nlevels; ++lev) {
       bArrays[lev] = mf_cc[lev]->boxArray();
@@ -157,8 +157,7 @@ writePlotfileWithMapping(
     if (amrex::AsyncOut::UseAsyncOut()) {
       amrex::VisMF::AsyncWrite(
         *mf_cc[lev],
-        amrex::MultiFabFileFullPrefix(
-          lev, plotfilename, levelPrefix, mfPrefix),
+        amrex::MultiFabFileFullPrefix(lev, plotfilename, levelPrefix, mfPrefix),
         true);
       amrex::VisMF::AsyncWrite(
         *mf_nd[lev],
@@ -167,13 +166,11 @@ writePlotfileWithMapping(
         true);
     } else {
       amrex::VisMF::Write(
-        *mf_cc[lev],
-        amrex::MultiFabFileFullPrefix(
-          lev, plotfilename, levelPrefix, mfPrefix));
+        *mf_cc[lev], amrex::MultiFabFileFullPrefix(
+                       lev, plotfilename, levelPrefix, mfPrefix));
       amrex::VisMF::Write(
-        *mf_nd[lev],
-        amrex::MultiFabFileFullPrefix(
-          lev, plotfilename, levelPrefix, mfNodalPrefix));
+        *mf_nd[lev], amrex::MultiFabFileFullPrefix(
+                       lev, plotfilename, levelPrefix, mfNodalPrefix));
     }
   }
 }
@@ -695,8 +692,8 @@ PeleLM::WritePlotFile()
         refRatio());
     } else {
       amrex::WriteMultiLevelPlotfile(
-        plotfilename, finest_level + 1, GetVecOfConstPtrs(mf_plt),
-        plt_VarsName, Geom(), m_cur_time, istep, refRatio());
+        plotfilename, finest_level + 1, GetVecOfConstPtrs(mf_plt), plt_VarsName,
+        Geom(), m_cur_time, istep, refRatio());
     }
   }
 

@@ -28,9 +28,9 @@ ConstantMap::create_map(int lev, const amrex::Geometry& /*geom*/)
 void
 ConstantMap::fill_cc(int lev)
 {
-  AMREX_D_TERM(const Real fx = m_fac[0];
-               , const Real fy = m_fac[1];
-               , const Real fz = m_fac[2];);
+  AMREX_D_TERM(
+    const Real fx = m_fac[0];, const Real fy = m_fac[1];
+    , const Real fz = m_fac[2];);
   const Real detJ = AMREX_D_TERM(fx, *fy, *fz);
 
   const auto& fac_ma = m_fac_cc[lev].arrays();
@@ -49,9 +49,9 @@ ConstantMap::fill_cc(int lev)
 void
 ConstantMap::fill_nd(int lev)
 {
-  AMREX_D_TERM(const Real fx = m_fac[0];
-               , const Real fy = m_fac[1];
-               , const Real fz = m_fac[2];);
+  AMREX_D_TERM(
+    const Real fx = m_fac[0];, const Real fy = m_fac[1];
+    , const Real fz = m_fac[2];);
   const Real detJ = AMREX_D_TERM(fx, *fy, *fz);
 
   const auto& fac_ma = m_fac_nd[lev].arrays();
@@ -70,9 +70,9 @@ ConstantMap::fill_nd(int lev)
 void
 ConstantMap::fill_fc(int lev)
 {
-  AMREX_D_TERM(const Real fx = m_fac[0];
-               , const Real fy = m_fac[1];
-               , const Real fz = m_fac[2];);
+  AMREX_D_TERM(
+    const Real fx = m_fac[0];, const Real fy = m_fac[1];
+    , const Real fz = m_fac[2];);
   const Real detJ = AMREX_D_TERM(fx, *fy, *fz);
 
   for (int d = 0; d < AMREX_SPACEDIM; ++d) {

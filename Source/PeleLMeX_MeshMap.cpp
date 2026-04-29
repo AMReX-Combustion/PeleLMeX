@@ -48,14 +48,13 @@ MeshMap::define(
   const amrex::IntVect ng(nghost);
 
   // Cell-centered: fac has AMREX_SPACEDIM components, detJ has 1.
-  m_fac_cc[lev].define(
-    ba, dm, AMREX_SPACEDIM, ng, amrex::MFInfo(), factory);
+  m_fac_cc[lev].define(ba, dm, AMREX_SPACEDIM, ng, amrex::MFInfo(), factory);
   m_detJ_cc[lev].define(ba, dm, 1, ng, amrex::MFInfo(), factory);
 
   // Nodal.
-  const amrex::BoxArray nba = amrex::convert(ba, amrex::IntVect::TheNodeVector());
-  m_fac_nd[lev].define(
-    nba, dm, AMREX_SPACEDIM, ng, amrex::MFInfo(), factory);
+  const amrex::BoxArray nba =
+    amrex::convert(ba, amrex::IntVect::TheNodeVector());
+  m_fac_nd[lev].define(nba, dm, AMREX_SPACEDIM, ng, amrex::MFInfo(), factory);
   m_detJ_nd[lev].define(nba, dm, 1, ng, amrex::MFInfo(), factory);
 
   // Face-centered, per direction.  Matches the amr-wind convention of
@@ -88,9 +87,7 @@ MeshMap::create(const std::string& name)
 
 void
 MeshMap::fill_nodal_displacement(
-  int lev,
-  const amrex::Geometry& geom,
-  amrex::MultiFab& disp_nd) const
+  int lev, const amrex::Geometry& geom, amrex::MultiFab& disp_nd) const
 {
   AMREX_ASSERT(lev >= 0 && lev < num_levels());
   AMREX_ASSERT(disp_nd.nComp() >= AMREX_SPACEDIM);
@@ -98,10 +95,10 @@ MeshMap::fill_nodal_displacement(
     disp_nd.boxArray().ixType().nodeCentered(),
     "MeshMap::fill_nodal_displacement: output MultiFab must be nodal");
 
-  const amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> plo{AMREX_D_DECL(
-    geom.ProbLo(0), geom.ProbLo(1), geom.ProbLo(2))};
-  const amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> dx_xi{AMREX_D_DECL(
-    geom.CellSize(0), geom.CellSize(1), geom.CellSize(2))};
+  const amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> plo{
+    AMREX_D_DECL(geom.ProbLo(0), geom.ProbLo(1), geom.ProbLo(2))};
+  const amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> dx_xi{
+    AMREX_D_DECL(geom.CellSize(0), geom.CellSize(1), geom.CellSize(2))};
 
   // disp_i(node) = (fac_i(node) - 1) * (x_xi_i(node) - prob_lo_i)
   //              = (fac_i(node) - 1) * i * dx_xi_i     (for node index i)
@@ -113,13 +110,12 @@ MeshMap::fill_nodal_displacement(
     [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
       auto f = fac_ma[box_no];
       auto d = disp_ma[box_no];
-      AMREX_D_TERM(
-        d(i, j, k, 0) = (f(i, j, k, 0) - amrex::Real(1.0)) *
-                        static_cast<amrex::Real>(i) * dx_xi[0];
-        , d(i, j, k, 1) = (f(i, j, k, 1) - amrex::Real(1.0)) *
-                          static_cast<amrex::Real>(j) * dx_xi[1];
-        , d(i, j, k, 2) = (f(i, j, k, 2) - amrex::Real(1.0)) *
-                          static_cast<amrex::Real>(k) * dx_xi[2];);
+      AMREX_D_TERM(d(i, j, k, 0) = (f(i, j, k, 0) - amrex::Real(1.0)) *
+                                   static_cast<amrex::Real>(i) * dx_xi[0];
+                   , d(i, j, k, 1) = (f(i, j, k, 1) - amrex::Real(1.0)) *
+                                     static_cast<amrex::Real>(j) * dx_xi[1];
+                   , d(i, j, k, 2) = (f(i, j, k, 2) - amrex::Real(1.0)) *
+                                     static_cast<amrex::Real>(k) * dx_xi[2];);
       amrex::ignore_unused(plo); // not needed in this formulation
     });
   amrex::Gpu::streamSynchronize();
