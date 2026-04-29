@@ -10,6 +10,7 @@ peleLM.hi_bc = Outflow NoSlipWallAdiab
 
 #---------------------- AMR CONTROL ------------------------------
 amr.n_cell          = 256 64
+amr.n_cell          = 128 32
 amr.v               = 1
 amr.max_level       = 1
 amr.ref_ratio       = 2 2 2 2
