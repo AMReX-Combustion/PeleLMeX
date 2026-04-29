@@ -1,0 +1,103 @@
+#---------------------- DOMAIN DEFINITION ------------------------
+# x: streamwise, inlet on x_lo, outlet on x_hi
+# y: wall-normal, no-slip walls
+# z: spanwise, periodic
+geometry.is_periodic = 0 0 1
+geometry.coord_sys   = 0
+geometry.prob_lo     = -0.01  -0.01   0.00
+geometry.prob_hi     =  0.07   0.01   0.02
+
+#---------------------- BC FLAGS ---------------------------------
+peleLM.lo_bc = Inflow   NoSlipWallAdiab  Interior
+peleLM.hi_bc = Outflow  NoSlipWallAdiab  Interior
+
+#---------------------- AMR CONTROL ------------------------------
+amr.n_cell          = 256 64 64          # isotropic dx = 3.125e-4 m
+amr.v               = 1
+amr.max_level       = 0
+amr.n_error_buf     = 2 2 2 2
+amr.grid_eff        = 0.7
+amr.blocking_factor = 16
+amr.max_grid_size   = 32
+
+#---------------------- Problem ----------------------------------
+prob.T_mean = 298.0
+prob.P_mean = 101325.0
+prob.meanFlowMag = 10.0
+# Seed a 5% random-looking velocity fluctuation on the IC so that the
+# shear layer has something to amplify. Pure-uniform IC + recycling
+# self-references into a zero-fluctuation fixed point for many flow-
+# throughs on this grid.
+prob.turb_seed_amplitude = 0.05
+
+#---------------------- PeleLM CONTROL ---------------------------
+peleLM.v = 1
+peleLM.sdc_iterMax = 2
+# Multiple initial iterations on this EB geometry at 3D send the MAC
+# projection divergent before the first real step (same failure mode as
+# the 2D BFS at max_level=1). A single initial iteration is enough to
+# set up a consistent pressure field.
+peleLM.num_init_iter = 1
+peleLM.floor_species = 0
+peleLM.use_wbar = 0
+
+# Non-reactive: ReactorNull skips chemistry source evaluation entirely.
+peleLM.chem_integrator = "ReactorNull"
+
+#---------------------- Recycling-plane inflow --------------------
+# Sample plane at x = 0.05, which is 6 step-heights downstream of the
+# step (step ends at x=0.01, H=0.01). That is past the expected mean
+# reattachment (~5-7 H for Re_H ~ 6000) and well inside fully-developed
+# post-step flow.
+peleLM.use_inlet_from_plane      = 1
+peleLM.inlet_plane_dir           = 0
+peleLM.inlet_plane_position      = 0.065
+# Let the first couple flow-throughs populate the mean before injecting
+# anything. Flow-through = L_x / U = 0.08/10 = 0.008 s; at dt ~ 1.25e-5
+# that is ~640 steps. 500 warmup steps covers ~0.8 flow-through.
+peleLM.inlet_plane_warmup_steps  = 500
+# Cumulative mean (avg_window unset): simplest, and since this run is
+# a development-time study (not a long production campaign) there is no
+# advantage in an EMA window over the cumulative path.
+
+#---------------------- Time Stepping CONTROL --------------------
+amr.max_step   = 25000
+amr.stop_time  = 0.30
+amr.cfl        = 0.4
+amr.dt_shrink  = 0.01
+amr.dt_change_max = 1.1
+
+#---------------------- Temporal CONTROL -------------------------
+# Log KE/enstrophy/extremas every 10 steps; the tempState CSV is what
+# we will post-process to detect stationarity of domain-integrated KE.
+peleLM.do_temporals      = 1
+peleLM.temporal_int      = 10
+peleLM.do_extremas       = 1
+peleLM.do_mass_balance   = 1
+
+#---------------------- IO CONTROL -------------------------------
+amr.plot_int  = 1000
+amr.check_int = 2000
+amr.plot_file  = plt
+amr.check_file = chk
+amr.derive_plot_vars = avg_pressure mag_vort
+
+#---------------------- EB SETUP ---------------------------------
+# Backward-facing step: solid block filling the lower-left quarter of
+# the x-y plane, extruded across the full periodic z range.
+eb2.geom_type = box
+eb2.box_lo =    -0.01  -0.01  0.00
+eb2.box_hi =     0.01   0.00  0.02
+eb2.box_has_fluid_inside = 0
+eb2.small_volfrac = 1.0e-4
+
+#---------------------- Linear solver CONTROL --------------------
+mac_proj.atol = 1.0e-10
+mac_proj.rtol = 1.0e-10
+mac_proj.verbose = 0
+nodal_proj.verbose = 0
+
+#---------------------- Debug/HPC CONTROL-------------------------
+#amrex.fpe_trap_invalid = 1
+#amrex.fpe_trap_zero = 1
+#amrex.fpe_trap_overflow = 1
