@@ -4,5 +4,5 @@
 	shallow = true
 [submodule "Submodules/PelePhysics"]
 	path = Submodules/PelePhysics
-	url = https://github.com/AMReX-Combustion/PelePhysics.git
+	url = git@github.com:drummerdoc/PelePhysics.git
 	shallow = true
