@@ -170,7 +170,7 @@ ExpStretchMap::create_map(int lev, const amrex::Geometry& geom)
 
 void
 ExpStretchMap::fill_nodal_displacement(
-  int lev, const amrex::Geometry& geom, amrex::MultiFab& disp_nd) const
+  int, const amrex::Geometry& geom, amrex::MultiFab& disp_nd) const
 {
   AMREX_ASSERT(lev >= 0 && lev < num_levels());
   AMREX_ASSERT(disp_nd.nComp() >= AMREX_SPACEDIM);
