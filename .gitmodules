@@ -4,5 +4,5 @@
 	shallow = true
 [submodule "Submodules/PelePhysics"]
 	path = Submodules/PelePhysics
-	url = git@github.com:drummerdoc/PelePhysics.git
+	url = https://github.com/drummerdoc/PelePhysics.git
 	shallow = true
