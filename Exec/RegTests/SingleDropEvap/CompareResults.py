@@ -16,7 +16,7 @@ Test cases:
 | Daif       | heptane/decane       |                                          |
 | Runge      | heptane, decane, mix | Plots RungeHep, RungeDec and RungeMix    |
 | RungeJP8   | POSF10264            | Plots JP8 case only                      |
-| Burger     | POSF4658             | Plots Burger1Bar, Burger10Bar, Burger50Bar|
+| Burger     | POSF10325             | Plots Burger1Bar, Burger10Bar, Burger50Bar|
 | ---------- | -------------------- | ---------------------------------------- |
 """
 
@@ -148,8 +148,14 @@ def setup(case_name):
                 leg_lab[k] += " Many-to-One"
         # Specifics for Burger pressure sub-cases
         elif "burger" in name.lower():
+            leg_lab[k] = "Jet A:"
             if ":" not in leg_lab[k]:
                 leg_lab[k] += ":"
+            if "hychem" in d.lower():
+                leg_lab[k] += " HyChem-to-Hychem"
+                line_sty[k] = ":"
+            else:
+                leg_lab[k] += " GC-to-HyChem"
             if "50bar" in name.lower():
                 leg_lab[k] += " 50 bar"
                 leg_col[k] = "tab:red"

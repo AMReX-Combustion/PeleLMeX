@@ -166,6 +166,8 @@ def SpecifyCase(case_name, LiqPropsType, PeleMP_PsatModel="Antoine", **kwargs):
             kwargs["detailed"] = True
         case = RungeJP8(LiqPropsType, PeleMP_PsatModel, **kwargs)
     elif "burger" in case_name.lower():
+        if "-h" in case_name.lower():
+            kwargs["hychem"] = True
         if "50bar" in case_name.lower():
             kwargs["50bar"] = True
         elif "10bar" in case_name.lower():
@@ -327,6 +329,12 @@ def Burger(LiqPropsType, PeleMP_PsatModel="Antoine", **kwargs):
     elif "1bar" in kwargs.keys():
         if kwargs["1bar"]:
             name = "Burger1Bar"
+    
+    # Add HyChem suffix if specified
+    if "hychem" in kwargs.keys():
+        if kwargs["hychem"]:
+            name += "_HyChem"
+    
     drop = Droplet(300, 1e-4, ["POSF10325"], [1.0])
     gas = GasPhase(800, P, vel=0.0)
     case = CaseInfo(
@@ -344,7 +352,8 @@ def Burger(LiqPropsType, PeleMP_PsatModel="Antoine", **kwargs):
         **kwargs,
     )
     case.use_file_y0 = True
-    case.ref_name = name
+    # Use base name without _HyChem suffix for reference data lookup
+    case.ref_name = name.replace("_HyChem", "")
     return case
 
 def CreateInputFile(case):
