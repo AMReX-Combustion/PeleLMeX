@@ -315,17 +315,15 @@ def Burger(LiqPropsType, PeleMP_PsatModel="Antoine", **kwargs):
     name = "Burger1Bar"  # Default to 1 bar
     P = 1e5 
     dt = 1e-3
-    end_time = 0.075
+    end_time = 0.09
     if "50bar" in kwargs.keys():
         if kwargs["50bar"]:
             name = "Burger50Bar"
             P = 50.0 * 1e5
-            end_time = 0.09
     elif "10bar" in kwargs.keys():
         if kwargs["10bar"]:
             name = "Burger10Bar"
             P = 10.0 * 1e5
-            end_time = 0.085
     elif "1bar" in kwargs.keys():
         if kwargs["1bar"]:
             name = "Burger1Bar"
@@ -341,6 +339,7 @@ def Burger(LiqPropsType, PeleMP_PsatModel="Antoine", **kwargs):
         dt=dt,
         end_time=end_time,
         plot_per=0.001,
+        cell_num=[128, 128, 128],
         PeleMP_PsatModel=PeleMP_PsatModel,
         **kwargs,
     )

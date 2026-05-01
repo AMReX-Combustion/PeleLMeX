@@ -136,7 +136,7 @@ case = SpecifyCase(case_name, LiqPropsType, PeleMP_PsatModel, use_manifold=use_m
 # General input and spray input files
 case.gen_input_file = f"single-drop-evap.inp"
 if "burger" in case.name.lower():
-    case.spray_input_file = f"sprayProps{LiqPropsType.upper()}_posf4658.inp"
+    case.spray_input_file = f"sprayProps{LiqPropsType.upper()}_posf10325.inp"
 elif "jp8" in case.name.lower():
     if "hychem" in case.name.lower():
         case.spray_input_file = f"sprayProps{LiqPropsType.upper()}_mixture_jp8.inp"
