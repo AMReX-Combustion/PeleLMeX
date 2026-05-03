@@ -1,9 +1,13 @@
-#include <PeleLMeX.H>
+#include <string>
 #include <AMReX_ParmParse.H>
+#include <AMReX_buildInfo.H>
+#include <PeleLMeX.H>
 #include <PeleLMeX_DeriveFunc.H>
 #include <PeleLMeX_BPatch.H>
-#include "PelePhysics.H"
-#include <AMReX_buildInfo.H>
+#include <PelePhysics.H>
+#ifdef PELE_USE_CMAKE
+#include <PeleGitHashes.H>
+#endif
 
 #ifdef PELE_USE_PLASMA
 #include "PeleLMeX_EOS_Extension.H"
@@ -50,15 +54,26 @@ PeleLM::Setup()
       &&amrex::almostEqual(dx[1], dx[2], 10)));
   }
   // Print build info to screen
-  const char* githash1 = amrex::buildInfoGetGitHash(1);
-  const char* githash2 = amrex::buildInfoGetGitHash(2);
-  const char* githash3 = amrex::buildInfoGetGitHash(3);
-  const char* githash4 = amrex::buildInfoGetGitHash(4);
-  amrex::Print() << "\n ================= Build infos =================\n";
-  amrex::Print() << " PeleLMeX    git hash: " << githash1 << "\n";
-  amrex::Print() << " AMReX       git hash: " << githash2 << "\n";
-  amrex::Print() << " PelePhysics git hash: " << githash3 << "\n";
-  amrex::Print() << " AMReX-Hydro git hash: " << githash4 << "\n";
+#ifdef PELE_USE_CMAKE
+  const std::string pele_hash = PeleBuildInfo::PeleLMeX_git_hash;
+  const std::string amrex_hash = PeleBuildInfo::AMReX_git_hash;
+  const std::string pelephysics_hash = PeleBuildInfo::PelePhysics_git_hash;
+  const std::string amrex_hydro_hash = PeleBuildInfo::AMReXHydro_git_hash;
+  const std::string sundials_hash = PeleBuildInfo::SUNDIALS_git_hash;
+#else
+  const std::string pele_hash = amrex::buildInfoGetGitHash(1);
+  const std::string amrex_hash = amrex::buildInfoGetGitHash(2);
+  const std::string pelephysics_hash = amrex::buildInfoGetGitHash(3);
+  const std::string amrex_hydro_hash = amrex::buildInfoGetGitHash(4);
+  const std::string sundials_hash = amrex::buildInfoGetGitHash(5);
+#endif
+
+  amrex::Print() << "\n ================ Version Info =================\n";
+  amrex::Print() << " PeleLMeX    git hash: " << pele_hash << "\n";
+  amrex::Print() << " AMReX       git hash: " << amrex_hash << "\n";
+  amrex::Print() << " PelePhysics git hash: " << pelephysics_hash << "\n";
+  amrex::Print() << " AMReX-Hydro git hash: " << amrex_hydro_hash << "\n";
+  amrex::Print() << " SUNDIALS    git hash: " << sundials_hash << "\n";
   amrex::Print() << " ===============================================\n";
 
 #ifdef PELE_USE_SOOT
@@ -101,34 +116,31 @@ PeleLM::Setup()
       amrex::Print() << "    Using LES in transport with Sc = "
                      << 1.0 / m_Schmidt_inv;
       if (pele::physics::PhysicsType::eos_type::identifier() == "Manifold") {
-        amrex::Print() << ", enthalpy not diffused for Manifold EOS "
-                       << std::endl;
+        amrex::Print() << ", enthalpy not diffused for Manifold EOS \n";
       } else {
-        amrex::Print() << " and Pr = " << 1.0 / m_Prandtl_inv << std::endl;
+        amrex::Print() << " and Pr = " << 1.0 / m_Prandtl_inv << "\n";
       }
     } else if (m_verbose != 0) {
       if (m_fixed_Le == 0 && m_fixed_Pr == 0) {
         if (m_use_soret == 0) {
-          amrex::Print() << "    Using mixture-averaged transport" << std::endl;
+          amrex::Print() << "    Using mixture-averaged transport \n";
         } else {
           amrex::Print()
-            << "    Using mixture-averaged transport with Soret effects"
-            << std::endl;
+            << "    Using mixture-averaged transport with Soret effects \n";
           if (m_soret_boundary_override != 0) {
-            amrex::Print()
-              << "    Imposing inhomogeneous Neumann conditions "
-                 "for species on isothermal walls. WARNING: use_wbar disabled."
-              << std::endl;
+            amrex::Print() << "    Imposing inhomogeneous Neumann conditions "
+                              "for species on isothermal walls. WARNING: "
+                              "use_wbar disabled. \n";
           }
         }
       } else {
         if (m_fixed_Le != 0) {
           amrex::Print() << "    Using fixed Le = " << 1.0 / m_Lewis_inv
-                         << std::endl;
+                         << "\n";
         }
         if (m_fixed_Pr != 0) {
           amrex::Print() << "    Using fixed Pr = " << 1.0 / m_Prandtl_inv
-                         << std::endl;
+                         << "\n";
         }
       }
     }
@@ -157,7 +169,7 @@ PeleLM::Setup()
 
 #ifdef PELE_USE_PLASMA
     pele::physics::eos::charge_mass(zk.arr);
-    for (int n = 0; n < NUM_SPECIES; n++) {
+    for (int n = 0; n < NUM_SPECIES; ++n) {
       zk[n] *= 1000.0; // CGS->MKS
     }
 #endif
@@ -185,7 +197,7 @@ PeleLM::Setup()
 
   // Boundary Patch Setup
   if (m_do_patch_mfr != 0) {
-    initBPatches(Geom(0));
+    initBPatches(Geom(0), &eos_parms.host_parm(), eos_parms.device_parm());
   }
 
   // Initialize Level Hierarchy data
@@ -241,12 +253,13 @@ PeleLM::readParameters()
   // -----------------------------------------
   pp.query("run_mode", m_run_mode);
   pp.query("v", m_verbose);
+  pp.query("mlmg_fail_plt_residuals", m_mlmg_fail_plt_residuals);
 
   // -----------------------------------------
   // Boundary conditions
   // -----------------------------------------
   int isOpenDomain = 0;
-  for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+  for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
     int lo_bc = BoundaryCondition::BCInterior;
     int hi_bc = BoundaryCondition::BCInterior;
     parseUserKey(pp, "lo_bc", boundarycondition, lo_bc, idim);
@@ -277,7 +290,7 @@ PeleLM::readParameters()
   amrex::Vector<std::string> hi_bc_char(AMREX_SPACEDIM);
   ppef.getarr("phiV_lo_bc", lo_bc_char, 0, AMREX_SPACEDIM);
   ppef.getarr("phiV_hi_bc", hi_bc_char, 0, AMREX_SPACEDIM);
-  for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+  for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
     if (lo_bc_char[idim] == "Interior") {
       m_phiV_bc.setLo(idim, 0);
     } else if (lo_bc_char[idim] == "Dirichlet") {
@@ -301,7 +314,7 @@ PeleLM::readParameters()
   // Get the polarity of BCs
   ppef.getarr("phiV_polarity_lo", lo_bc_char, 0, AMREX_SPACEDIM);
   ppef.getarr("phiV_polarity_hi", hi_bc_char, 0, AMREX_SPACEDIM);
-  for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+  for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
     if (lo_bc_char[idim] == "Neutral") {
       m_phiV_bcpol.setLo(idim, 0);
     } else if (lo_bc_char[idim] == "Anode") { // Pos. elec = 1
@@ -351,7 +364,7 @@ PeleLM::readParameters()
   pp.queryarr("gravity", grav, 0, AMREX_SPACEDIM);
   amrex::Vector<amrex::Real> gp0(AMREX_SPACEDIM, 0);
   pp.queryarr("gradP0", gp0, 0, AMREX_SPACEDIM);
-  for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+  for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
     m_background_gp[idim] = gp0[idim];
     m_gravity[idim] = grav[idim];
   }
@@ -372,8 +385,11 @@ PeleLM::readParameters()
     m_spark_location.resize(m_n_sparks);
     m_spark_temp.resize(m_n_sparks);
     m_spark_radius.resize(m_n_sparks);
+    if (m_n_sparks > 0) {
+      m_spark_verbose = amrex::max<int>(m_verbose - 2, 0);
+    }
     pp.query("spark_verbose", m_spark_verbose);
-    for (int n = 0; n < m_n_sparks; n++) {
+    for (int n = 0; n < m_n_sparks; ++n) {
       pp.get("sparks", m_spark[n], n);
       std::string spark_prefix = "peleLM." + m_spark[n];
       amrex::ParmParse pps(spark_prefix);
@@ -385,22 +401,21 @@ PeleLM::readParameters()
       pps.get("radius", m_spark_radius[n]);
     }
     if (m_spark_verbose > 0) {
-      amrex::Print() << "Spark list:" << std::endl;
-      for (int n = 0; n < m_n_sparks; n++) {
-        amrex::Print() << "Spark " << n << " name: " << m_spark[n] << std::endl;
-        amrex::Print() << "Spark " << n << " time: " << m_spark_time[n]
-                       << std::endl;
+      amrex::Print() << "Spark list: \n";
+      for (int n = 0; n < m_n_sparks; ++n) {
+        amrex::Print() << "Spark " << n << " name: " << m_spark[n] << "\n";
+        amrex::Print() << "Spark " << n << " time: " << m_spark_time[n] << "\n";
         amrex::Print() << "Spark " << n << " duration: " << m_spark_duration[n]
-                       << std::endl;
+                       << "\n";
         amrex::Print() << "Spark " << n << " location: ";
-        for (int d = 0; d < AMREX_SPACEDIM; d++) {
+        for (int d = 0; d < AMREX_SPACEDIM; ++d) {
           amrex::Print() << m_spark_location[n][d] << " ";
         }
-        amrex::Print() << std::endl;
+        amrex::Print() << "\n";
         amrex::Print() << "Spark " << n << " temperature: " << m_spark_temp[n]
-                       << std::endl;
+                       << "\n";
         amrex::Print() << "Spark " << n << " radius: " << m_spark_radius[n]
-                       << std::endl;
+                       << "\n";
       }
     }
   }
@@ -412,7 +427,7 @@ PeleLM::readParameters()
     m_aux_advect.resize(m_nAux);
     m_DiffTypeAux.resize(m_nAux);
     m_aux_Schmidt.resize(m_nAux);
-    for (int n = 0; n < m_nAux; n++) {
+    for (int n = 0; n < m_nAux; ++n) {
       pp.get("aux_vars", m_aux_names[n], n);
       std::string aux_prefix = "peleLM." + m_aux_names[n];
       amrex::ParmParse ppa(aux_prefix);
@@ -468,7 +483,7 @@ PeleLM::readParameters()
   pp.query("use_wbar", m_use_wbar);
   if (m_use_soret != 0) {
     bool isothermal = false;
-    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+    for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
       isothermal |=
         (m_phys_bc.lo(idim) == BoundaryCondition::BCSlipWallIsotherm ||
          m_phys_bc.lo(idim) == BoundaryCondition::BCNoSlipWallIsotherm ||
@@ -489,45 +504,36 @@ PeleLM::readParameters()
   if (m_unity_Le != 0) {
     m_fixed_Le = 1;
     amrex::Print() << "WARNING: unity_Le is deprecated and will be removed in "
-                      "future version, use fixed_Le instead"
-                   << std::endl;
+                      "future version, use fixed_Le instead \n";
   }
-  if (m_do_les) { // For LES, Prandtl and Schmidt numbers are fixed
-    m_fixed_Le = 1;
-    m_fixed_Pr = 1;
-    amrex::Real Schmidt = 0.7;
-    pp.query("Schmidt", Schmidt);
-    m_Schmidt_inv = 1.0 / Schmidt;
-  }
-  if (m_fixed_Le != 0 && !m_do_les) { // Only ask for Lewis number when not
-                                      // LES, determined by Prandtl and
-                                      // Schmidt outside of this
-    amrex::Real Lewis = 1.0;
-    pp.query("Lewis", Lewis);
-    m_Lewis_inv = 1.0 / Lewis;
-  }
-  if (m_fixed_Pr != 0) {
+  // LES: Schmidt and Prandtl are specified for turbulent diffusion
+  // fixed_Pr/fixed_Le: Lewis and Prandtl are specified for molecular diffusion
+  // Both: Specify Prandtl and Schmidt, apply for both diffusion types
+  if (m_fixed_Pr != 0 || m_do_les) {
     amrex::Real Prandtl = 0.7;
     pp.query("Prandtl", Prandtl);
     m_Prandtl_inv = 1.0 / Prandtl;
   }
-  if (m_fixed_Le != 0 && m_fixed_Pr != 0 && !m_do_les) { // calculate Schmidt in
-                                                         // case of no LES from
-                                                         // Lewis and Prandtl
-    m_Schmidt_inv = m_Lewis_inv * m_Prandtl_inv;
+  if (m_do_les) {
+    amrex::Real Schmidt = 0.7;
+    pp.query("Schmidt", Schmidt);
+    m_Schmidt_inv = 1.0 / Schmidt;
+    m_Lewis_inv = m_Schmidt_inv / m_Prandtl_inv;
+  } else if (m_fixed_Le != 0) {
+    amrex::Real Lewis = 1.0;
+    pp.query("Lewis", Lewis);
+    m_Lewis_inv = 1.0 / Lewis;
+    if (m_fixed_Pr != 0) {
+      m_Schmidt_inv = m_Lewis_inv * m_Prandtl_inv;
+    }
   }
-  if (m_do_les) { // calculate Lewis in case of LES
-    m_Lewis_inv = m_Prandtl_inv / m_Schmidt_inv;
-  }
-
   if (
     (m_use_wbar != 0 || m_use_soret != 0) &&
     (m_fixed_Le != 0 || m_fixed_Pr != 0)) {
     m_use_wbar = 0;
     m_use_soret = 0;
     amrex::Print() << "WARNING: use_wbar and use_soret set to false because "
-                      "fixed_Pr or fixed_Le is true"
-                   << std::endl;
+                      "fixed_Pr or fixed_Le is true \n";
   }
 
   // Manifold EOS: invPrandtl needs to be 0 because H not used
@@ -535,6 +541,7 @@ PeleLM::readParameters()
     m_Prandtl_inv = 0.0;
   }
 
+  m_deltaT_verbose = amrex::max<int>(m_verbose - 1, m_deltaT_verbose);
   pp.query("deltaT_verbose", m_deltaT_verbose);
   pp.query("deltaT_iterMax", m_deltaTIterMax);
   pp.query("deltaT_tol", m_deltaT_norm_max);
@@ -680,12 +687,20 @@ PeleLM::readParameters()
   ppnproj.query("atol", m_nodal_mg_atol);
   ppnproj.query("rtol", m_nodal_mg_rtol);
   ppnproj.query("hypre_namespace", m_hypre_namespace_nodal);
+  m_nproj_verbose = amrex::max<int>(m_verbose - 2, 0);
+  ppnproj.queryAdd("verbose", m_nproj_verbose);
 
   amrex::ParmParse ppmacproj("mac_proj");
   ppmacproj.query("mg_max_coarsening_level", m_mac_mg_max_coarsening_level);
   ppmacproj.query("atol", m_mac_mg_atol);
   ppmacproj.query("rtol", m_mac_mg_rtol);
   ppmacproj.query("hypre_namespace", m_hypre_namespace_mac);
+  ppmacproj.query("mlmg_fail_sdc_miniter", m_mac_mg_fail_sdc_miniter);
+  ppmacproj.query(
+    "mlmg_fail_maxiter_after_sdc_miniter",
+    m_mac_mg_fail_maxiter_after_sdc_miniter);
+  m_macproj_verbose = amrex::max<int>(m_verbose - 2, 0);
+  ppmacproj.queryAdd("verbose", m_macproj_verbose);
 
   // -----------------------------------------
   // Temporals
@@ -693,6 +708,8 @@ PeleLM::readParameters()
   pp.query("do_temporals", m_do_temporals);
   if (m_do_temporals != 0) {
     pp.query("temporal_int", m_temp_int);
+    pp.query("temporal_dir", m_temporal_dir);
+    m_temporal_dir = m_base_output_pref + m_temporal_dir;
     pp.query("do_extremas", m_do_extremas);
     pp.query("do_mass_balance", m_do_massBalance);
     pp.query("do_species_balance", m_do_speciesBalance);
@@ -714,8 +731,7 @@ PeleLM::readParameters()
   ppa.query("dt_change_max", m_dtChangeMax);
   ppa.query("max_dt", m_max_dt);
   ppa.query("min_dt", m_min_dt);
-  m_nfiles =
-    amrex::max(1, amrex::min(amrex::ParallelDescriptor::NProcs(), 256));
+  m_nfiles = amrex::Clamp(amrex::ParallelDescriptor::NProcs(), 1, 256);
   ppa.query("n_files", m_nfiles);
 
   if (max_level > 0 || (m_doLoadBalance != 0)) {
@@ -759,7 +775,7 @@ PeleLM::readParameters()
     m_evaluatePlotVarCount = (pp.countval("evaluate_vars"));
     if (m_evaluatePlotVarCount != 0) {
       m_evaluatePlotVars.resize(m_evaluatePlotVarCount);
-      for (int ivar = 0; ivar < m_evaluatePlotVarCount; ivar++) {
+      for (int ivar = 0; ivar < m_evaluatePlotVarCount; ++ivar) {
         pp.get("evaluate_vars", m_evaluatePlotVars[ivar], ivar);
       }
     }
@@ -854,7 +870,8 @@ PeleLM::checkSetupParams()
     }
 #endif
 #ifdef PELE_USE_SPRAY
-    amrex::Abort("Spray models are not yet supported for Manifold EOS");
+    amrex::Print()
+      << "WARNING: Spray models with Manifold EOS are experimental !!!!\n";
 #endif
 #ifdef PELE_USE_PLASMA
     amrex::Abort("Plasma models are not yet supported for Manifold EOS");
@@ -878,9 +895,15 @@ PeleLM::readIOParameters()
 {
   BL_PROFILE_VAR("PeleLMeX::readIOParameters()", readIOParameters);
 
+  {
+    amrex::ParmParse pp("peleLM");
+    pp.query("base_output_prefix", m_base_output_pref);
+  }
+
   amrex::ParmParse pp("amr");
 
   pp.query("check_file", m_check_file);
+  m_check_file = m_base_output_pref + m_check_file;
   pp.query("check_int", m_check_int);
   pp.query("check_overwrite", m_check_overwrite);
   pp.query("check_per", m_check_per);
@@ -888,6 +911,7 @@ PeleLM::readIOParameters()
   pp.query("initDataPlt", m_restart_pltfile);
   pp.query("initDataPltSource", pltfileSource);
   pp.query("plot_file", m_plot_file);
+  m_plot_file = m_base_output_pref + m_plot_file;
   pp.query("plot_int", m_plot_int);
   pp.query("plot_overwrite", m_plot_overwrite);
   pp.query("plot_init_state", m_plot_init_state);
@@ -904,7 +928,7 @@ PeleLM::readIOParameters()
   m_derivePlotVarCount = (pp.countval("derive_plot_vars"));
   if (m_derivePlotVarCount != 0) {
     m_derivePlotVars.resize(m_derivePlotVarCount);
-    for (int ivar = 0; ivar < m_derivePlotVarCount; ivar++) {
+    for (int ivar = 0; ivar < m_derivePlotVarCount; ++ivar) {
       pp.get("derive_plot_vars", m_derivePlotVars[ivar], ivar);
     }
   }
@@ -915,8 +939,10 @@ PeleLM::readIOParameters()
   pp.query("initial_grid_file", m_initial_grid_file);
   pp.query("regrid_file", m_regrid_file);
   pp.query("file_stepDigits", m_ioDigits);
-  pp.query("use_hdf5_plt", m_write_hdf5_pltfile);
   pp.query("regrid_interp_method", m_regrid_interp_method);
+#ifdef AMREX_USE_HDF5
+  pp.query("use_hdf5_plt", m_write_hdf5_pltfile);
+#endif
   AMREX_ASSERT(m_regrid_interp_method == 0 || m_regrid_interp_method == 1);
 }
 
@@ -953,7 +979,7 @@ PeleLM::variablesSetup()
     amrex::Vector<std::string> names;
     pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(
       names, &(eos_parms.host_parm()));
-    for (int n = 0; n < NUM_SPECIES; n++) {
+    for (int n = 0; n < NUM_SPECIES; ++n) {
       stateComponents.emplace_back(FIRSTSPEC + n, "rho.Y(" + names[n] + ")");
       reactComponents.emplace_back(n, "I_R(" + names[n] + ")");
     }
@@ -970,7 +996,7 @@ PeleLM::variablesSetup()
     stateComponents.emplace_back(PHIV, "PhiV");
 #endif
 #ifdef PELE_USE_SOOT
-    for (int mom = 0; mom < NUMSOOTVAR; mom++) {
+    for (int mom = 0; mom < NUMSOOTVAR; ++mom) {
       std::string sootname = soot_model->sootVariableName(mom);
       amrex::Print() << " " << sootname << ": " << FIRSTSOOT + mom << "\n";
       stateComponents.emplace_back(FIRSTSOOT + mom, sootname);
@@ -1003,7 +1029,7 @@ PeleLM::variablesSetup()
     amrex::Print() << " => Total number of state variables: " << NVAR << "\n";
   }
   if (m_nAux > 0) {
-    for (int n = 0; n < m_nAux; n++) {
+    for (int n = 0; n < m_nAux; ++n) {
       amrex::Print() << " Auxiliary " + std::to_string(n + 1) + ": "
                      << m_aux_names[n] << "\n";
       amrex::Print() << "   Advective: " << m_aux_advect[n] << "\n";
@@ -1056,7 +1082,7 @@ PeleLM::variablesSetup()
     m_DiffTypeState[PHIV] = 0;
 #endif
 #ifdef PELE_USE_SOOT
-    for (int mom = 0; mom < NUMSOOTVAR; mom++) {
+    for (int mom = 0; mom < NUMSOOTVAR; ++mom) {
       m_AdvTypeState[FIRSTSOOT + mom] = 0;
       m_DiffTypeState[FIRSTSOOT + mom] = 0;
     }
@@ -1103,7 +1129,7 @@ PeleLM::variablesSetup()
 
 void
 PeleLM::readGridFile(
-  std::string grid_file, amrex::Vector<amrex::BoxArray>& input_ba)
+  const std::string& grid_file, amrex::Vector<amrex::BoxArray>& input_ba)
 {
 #define STRIP                \
   while (is.get() != '\n') { \
@@ -1123,11 +1149,11 @@ PeleLM::readGridFile(
       "You have fewer levels in your inputs file then in your grids file!");
   }
 
-  for (int lev = 1; lev <= in_finest; lev++) {
+  for (int lev = 1; lev <= in_finest; ++lev) {
     amrex::BoxList bl;
     is >> ngrid;
     STRIP;
-    for (int i = 0; i < ngrid; i++) {
+    for (int i = 0; i < ngrid; ++i) {
       amrex::Box bx;
       is >> bx;
       STRIP;
@@ -1155,27 +1181,42 @@ PeleLM::derivedSetup()
 
     // Set species mass fractions
     amrex::Vector<std::string> var_names_massfrac(NUM_SPECIES);
-    for (int n = 0; n < NUM_SPECIES; n++) {
+    for (int n = 0; n < NUM_SPECIES; ++n) {
       var_names_massfrac[n] = "Y(" + spec_names[n] + ")";
     }
     derive_lst.add(
       "mass_fractions", amrex::IndexType::TheCellType(), NUM_SPECIES,
       var_names_massfrac, pelelmex_dermassfrac, the_same_box);
 
-    for (int n = 0; n < NUM_SPECIES; n++) {
+    for (int n = 0; n < NUM_SPECIES; ++n) {
       var_names_massfrac[n] = "X(" + spec_names[n] + ")";
     }
     derive_lst.add(
       "mole_fractions", amrex::IndexType::TheCellType(), NUM_SPECIES,
       var_names_massfrac, pelelmex_dermolefrac, the_same_box);
 
+    // Element mass fractions - for now only FUEGO/SRK
+    if (
+      pele::physics::PhysicsType::eos_type::identifier() == "Fuego" ||
+      pele::physics::PhysicsType::eos_type::identifier() == "SRK") {
+      amrex::Vector<std::string> ename;
+      CKSYME_STR(ename);
+      amrex::Vector<std::string> var_names_elemfrac(NUM_ELEMENTS);
+      for (int n = 0; n < NUM_ELEMENTS; ++n) {
+        var_names_elemfrac[n] = "Z(" + ename[n] + ")";
+      }
+      derive_lst.add(
+        "element_fractions", amrex::IndexType::TheCellType(), NUM_ELEMENTS,
+        var_names_elemfrac, pelelmex_derelementfrac, the_same_box);
+    }
+
     // Species diffusion coefficients
-    for (int n = 0; n < NUM_SPECIES; n++) {
+    for (int n = 0; n < NUM_SPECIES; ++n) {
       var_names_massfrac[n] = "D_" + spec_names[n];
     }
     if (m_use_soret != 0) {
       var_names_massfrac.resize(2 * NUM_SPECIES);
-      for (int n = 0; n < NUM_SPECIES; n++) {
+      for (int n = 0; n < NUM_SPECIES; ++n) {
         var_names_massfrac[n + NUM_SPECIES] = "theta_" + spec_names[n];
       }
       derive_lst.add(
@@ -1296,7 +1337,7 @@ PeleLM::derivedSetup()
   auto& mani_data = eos_parms.host_only_parm().manfunc_par->host_parm();
   const int nmanivar = mani_data.Nvar;
   amrex::Vector<std::string> var_names_maniout(nmanivar);
-  for (int n = 0; n < nmanivar; n++) {
+  for (int n = 0; n < nmanivar; ++n) {
     std::string nametmp = std::string(
       &(mani_data.varnames)[n * mani_data.len_str], mani_data.len_str);
     var_names_maniout[n] = "MANI_" + amrex::trim(nametmp);
@@ -1395,7 +1436,7 @@ PeleLM::evaluateSetup()
   // scalar diffusion term
   {
     amrex::Vector<std::string> var_names(NUM_SPECIES + 2);
-    for (int n = 0; n < NUM_SPECIES; n++) {
+    for (int n = 0; n < NUM_SPECIES; ++n) {
       var_names[n] = "D(" + spec_names[n] + ")";
     }
     var_names[NUM_SPECIES] = "D(RhoH)";
@@ -1413,7 +1454,7 @@ PeleLM::evaluateSetup()
       var_names[VELX] = "A(VELX)";, var_names[VELY] = "A(VELY)";
       , var_names[VELZ] = "A(VELZ)");
     var_names[DENSITY] = "A(Rho)";
-    for (int n = 0; n < NUM_SPECIES; n++) {
+    for (int n = 0; n < NUM_SPECIES; ++n) {
       var_names[FIRSTSPEC + n] = "A(" + spec_names[n] + ")";
     }
     var_names[RHOH] = "A(RhoH)";
@@ -1425,12 +1466,12 @@ PeleLM::evaluateSetup()
   // Chemical state and external chem. forcing (used in ReactEval)
   {
     amrex::Vector<std::string> var_names(2 * (NUM_SPECIES + 1) + 1);
-    for (int n = 0; n < NUM_SPECIES; n++) {
+    for (int n = 0; n < NUM_SPECIES; ++n) {
       var_names[n] = "rhoY(" + spec_names[n] + ")";
     }
     var_names[NUM_SPECIES] = "rhoH";
     var_names[NUM_SPECIES + 1] = "Temp";
-    for (int n = 0; n < NUM_SPECIES; n++) {
+    for (int n = 0; n < NUM_SPECIES; ++n) {
       var_names[NUM_SPECIES + 2 + n] = "F_rhoY(" + spec_names[n] + ")";
     }
     var_names[2 * NUM_SPECIES + 2] = "F_rhoH";
@@ -1442,7 +1483,7 @@ PeleLM::evaluateSetup()
   // instantaneous reaction rate
   {
     amrex::Vector<std::string> var_names(NUM_SPECIES);
-    for (int n = 0; n < NUM_SPECIES; n++) {
+    for (int n = 0; n < NUM_SPECIES; ++n) {
       var_names[n] = "I_R(" + spec_names[n] + ")";
     }
     evaluate_lst.add(
@@ -1453,7 +1494,7 @@ PeleLM::evaluateSetup()
   // cell-centered transport coefficients
   {
     amrex::Vector<std::string> var_names(NUM_SPECIES + 2);
-    for (int n = 0; n < NUM_SPECIES; n++) {
+    for (int n = 0; n < NUM_SPECIES; ++n) {
       var_names[n] = "rhoD(" + spec_names[n] + ")";
     }
     var_names[NUM_SPECIES] = "Lamdba";
@@ -1477,7 +1518,9 @@ PeleLM::taggingSetup()
     "refinement_indicators", refinement_indicators, 0,
     ppamr.countval("refinement_indicators"));
   for (const auto& refinement_indicator : refinement_indicators) {
-    std::string ref_prefix = amr_prefix + "." + refinement_indicator;
+    std::string ref_prefix = amr_prefix;
+    ref_prefix += ".";
+    ref_prefix += refinement_indicator;
     amrex::ParmParse ppr(ref_prefix);
 
     // Tag a given box

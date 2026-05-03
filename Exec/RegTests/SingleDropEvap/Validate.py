@@ -2,35 +2,147 @@ import os
 from CaseInfo import *
 from ExtractData import *
 import matplotlib.pyplot as plt
+import argparse
 
 """
 Script for validating PelePhysics spray model
 Test cases:
-| Case         | Fuel           |
-| ------------ | -------------- |
-| Nomura(471)  | heptane        |
-| Nomura(741)  | heptane        |
-| WongLin()    | decane         |
-| Daif()       | heptane/decane |
-| RungeHep()   | heptane        |
-| RungeDec()   | decane         |
-| RungeMix()   | heptane/decane |
-| RungeJP8()   | POSF10264      |
+| Case Name   | Fuel           | Requirements for SPRAY_FUEL_NUM               |
+| ----------- | -------------- | --------------------------------------------- |
+| Nomura      | heptane        | SPRAY_FUEL_NUM = 2                            |
+| WongLin     | decane         | SPRAY_FUEL_NUM = 2                            |
+| Daif        | heptane/decane | SPRAY_FUEL_NUM = 2                            |
+| RungeHep    | heptane        | SPRAY_FUEL_NUM = 2                            |
+| RungeDec    | decane         | SPRAY_FUEL_NUM = 2                            |
+| RungeMix    | heptane/decane | SPRAY_FUEL_NUM = 2                            |
+| RungeJP8    | POSF10264      | SPRAY_FUEL_NUM = 67 (Many-to-one)             |
+| RungeJP8-H  | POSF10264      | SPRAY_FUEL_NUM = 1  (One-to-one, HyChem)      |
+| RungeJP8-D  | POSF10264      | SPRAY_FUEL_NUM = 67 (One-to-one, Detailed)    |
+| ----------- | -------------- | --------------------------------------------- |
 """
 
-# Case object
-case = WongLin()
+parser = argparse.ArgumentParser(
+    description="Run single droplet evaporation cases and compare to experimental data"
+)
+
+cases = ["WongLin", "Nomura", "Daif", "RungeHep", "RungeDec", "RungeMix", 
+         "RungeJP8", "RungeJP8-H", "RungeJP8-D"]
+parser.add_argument(
+    "--case_name",
+    "-c",
+    type=str,
+    default="WongLin",
+    choices=cases,
+    help="Case name to run, default: WongLin",
+)
+prop_models = ["mp", "gcm"]
+parser.add_argument(
+    "--liq_props_type",
+    "-l",
+    type=str,
+    default="gcm",
+    choices=prop_models,
+    help="Liquid properties model, default: gcm",
+)
+psat_models = ["Antoine", "Clausius-Clapeyron", "CC"]
+parser.add_argument(
+    "--mp_psat_model",
+    "-p",
+    type=str,
+    default="Antoine",
+    choices=psat_models,
+    help="Psat model for PeleMP properties (Antoine, Clausius-Clapeyron, or CC), default: Antoine",
+)
+parser.add_argument(
+    "--use_manifold",
+    "-m",
+    action="store_true",
+    help="Use Manifold chemistry/EOS instead of Detailed chemistry/EOS",
+)
+parser.add_argument(
+    "--cmlm_path",
+    type=str,
+    default="./cmlm",
+    help="Path to CMLM install, required only for Manifold chemistry, default: ./cmlm",
+)
+parser.add_argument(
+    "--dont_run_new",
+    "-d",
+    action="store_true",
+    help="Plot previously computed data instead of running new simulation",
+)
+parser.add_argument(
+    "--build_new", "-b", action="store_true", help="Build executable to run case"
+)
+parser.add_argument(
+    "--num_proc",
+    "-n",
+    type=int,
+    default=6,
+    help="number of processors for parallel runs, default: 6",
+)
+parser.add_argument(
+    "--log",
+    action="store_const",
+    const="log.out",
+    default=None,
+    help="Redirect output to log file (log.out)",
+)
+parser.add_argument(
+    "--runtime_flags",
+    "-r",
+    type=str,
+    nargs='*',
+    default=[],
+    help="Additional runtime flags to pass to PeleLMeX",
+)
+args = parser.parse_args()
+
+
+# Case to run
+case_name = args.case_name
+
+# Liquid properties model: "mp" or "gcm"
+LiqPropsType = args.liq_props_type
+
+# Psat model for PeleMP: "Antoine" or "Clausius-Clapeyron"
+PeleMP_PsatModel = args.mp_psat_model
+# Map CC shortcut to full name
+if PeleMP_PsatModel == "CC":
+    PeleMP_PsatModel = "Clausius-Clapeyron"
+
+# Use manifold model for EOS (requires CMLM dependency)
+use_manifold = args.use_manifold
+cmlm_path = args.cmlm_path
 
 # Run new or extract existing simulation data?
-run_new = True
+run_new = not args.dont_run_new
+
+# Build new executable for case if needed
+build_new = args.build_new
 
 # Number of processors to run on
-num_proc = 6
+num_proc = args.num_proc
 
-# Plotting parameters
-marker_s = 40
-line_w = 3
-font_s = 16
+# Additional runtime flags for PeleLMeX
+runtime_flags = " ".join(args.runtime_flags)
+
+# Create case instance
+case = SpecifyCase(case_name, LiqPropsType, PeleMP_PsatModel, use_manifold=use_manifold)
+
+# General input and spray input files
+case.gen_input_file = f"single-drop-evap.inp"
+if "jp8" in case.name.lower():
+    if "hychem" in case.name.lower():
+        case.spray_input_file = f"sprayProps{LiqPropsType.upper()}_mixture_jp8.inp"
+    elif "detailed" in case.name.lower():
+        mech_path = "../../../Submodules/PelePhysics/Mechanisms/fuellib_posf_nonreacting/"
+        spray_input_file = f"spray_input_files/sprayProps{LiqPropsType.upper()}_posf10264.inp"
+        case.spray_input_file = mech_path + spray_input_file
+    else:   
+        case.spray_input_file = f"sprayProps{LiqPropsType.upper()}_jp8.inp"
+else:
+    case.spray_input_file = f"sprayProps{LiqPropsType.upper()}_heptane-decane.inp"
 
 # Get reference values from experiments
 [refdvals, reftvals, refyvals] = ExtractRefVals(case)
@@ -42,44 +154,119 @@ case.set_end_time(time)
 if run_new:
     # Create a new directory for plt and spray files
     FILE_PATH = os.path.dirname(os.path.abspath(__file__))
-    if not os.path.exists(case.case_dir):
-        os.makedirs(case.case_dir)
+    if not os.path.exists(case.case_path):
+        os.makedirs(case.case_path)
 
     # Remove existing plt and .p3d files
     else:
         os.system(
-            f"rm -rf {case.name}/plt* {case.name}/*.p3d {case.name}/pele_vals.csv"
+            f"rm -rf {case.case_path}/plt* {case.case_path}/*.p3d {case.case_path}/pele_vals.csv"
         )
 
     # Create case-specific input file
     CreateInputFile(case)
+    if use_manifold:
+        if "detailed" in case.name.lower():
+            raise ValueError("RungeJP8-D is not compatible with Manifold model")
+        CreateManifoldFiles(case, cmlm_path)
+
+    # Build the executable if needed
+    if build_new:
+        build_flags = f" -j {num_proc} "
+        if case.LiqPropsType.lower() == "gcm":
+            build_flags += " SPRAY_GCM=TRUE"
+        elif case.LiqPropsType.lower() == "mp":
+            build_flags += " SPRAY_GCM=FALSE"
+        if "jp8" in case.name.lower():
+            if "hychem" in case.name.lower():
+                build_flags += " SPRAY_FUEL_NUM=1"
+            elif "detailed" in case.name.lower():
+                build_flags += " SPRAY_FUEL_NUM=67"
+                build_flags += " Chemistry_Model=fuellib_posf_nonreacting"
+            else:
+                build_flags += " SPRAY_FUEL_NUM=67"
+                build_flags += " Manifold_Dim=1"
+        else:
+            build_flags += " SPRAY_FUEL_NUM=2"
+        if use_manifold:
+            build_flags += " USE_MANIFOLD=TRUE"
+        else:
+            build_flags += " USE_MANIFOLD=FALSE"
+        error = os.system(f"make {build_flags}")
+        if error:
+            raise RuntimeError(f"Compilation of PeleLMeX failed with code {error}")
 
     # Get the Pele executable
-    exe = ""
-    for f in os.listdir(FILE_PATH):
-        if f.startswith("Pele") and f.endswith(".ex"):
-            exe = f
-    if not os.path.exists(exe):
-        error = "Pele executable not found"
+    exe_files = [
+        f for f in os.listdir(FILE_PATH) if f.startswith("Pele") and f.endswith(".ex")
+    ]
+    exe = None
+    found = 0
+    for f in exe_files:
+        # We continue past invalid executables for our configuration
+        if case.LiqPropsType.lower() == "gcm" and ".SprayGCM." not in f:
+            continue
+        if case.LiqPropsType.lower() == "mp" and ".SprayMP." not in f:
+            continue
+        if "jp8" in case.name.lower():
+            if "hychem" in case.name.lower():
+                if ".1SprayFuel." not in f:
+                    continue
+            elif "detailed" in case.name.lower():
+                if ".67SprayFuel." not in f:
+                    continue
+                if ".fuellib_posf_nonreacting" not in f:
+                    continue
+            else:
+                if ".67SprayFuel." not in f:
+                    continue
+        else:
+            if ".2SprayFuel." not in f:
+                continue
+        if use_manifold and ".Manifold" not in f:
+            continue
+        elif not use_manifold and ".Manifold" in f:
+            continue
+        found += 1
+        exe = f
+
+    if found == 0:
+        error = "Valid Pele executable for case not found"
         raise ValueError(error)
-    elif (num_proc > 1) and ("MPI" not in exe):
+    elif found == 1:
+        print(f"Running with executable: {exe}")
+    else:
+        print(f"Found {found} valid executables, using the last: {exe}")
+
+    if (num_proc > 1) and ("MPI" not in exe):
         error = f"Pele not compiled with MPI and num_proc = {num_proc}"
         raise ValueError(error)
 
     # Run the case
+    run_command = f"./{exe} {case.input_file} {runtime_flags}"
+    if args.log:
+        print(f"Redirecting output to log file: {case.case_path}/{args.log}")
+        run_command += f" > {case.case_path}/{args.log} 2>&1"
     if ("MPI" in exe) and (num_proc > 1):
-        os.system(f"mpiexec -np {num_proc} ./{exe} {case.input_file}")
+        error = os.system(f"mpiexec -np {num_proc} {run_command}")
     else:
-        os.system(f"./{exe} {case.input_file}")
+        error = os.system(run_command)
+    if error:
+        raise RuntimeError(f"Pele simulation failed with error code {error}")
 
 else:
     # Check that the case directory exists
-    if not os.path.exists(case.case_dir):
-        raise ValueError(f"Case directory not found: {case.case_dir}")
+    if not os.path.exists(case.case_path):
+        raise ValueError(f"Case directory not found: {case.case_path}")
 
-outfile = os.path.join(case.case_dir, "pele_vals.csv")
+# Extract Pele simulation data
+outfile = os.path.join(case.case_path, "pele_vals.csv")
 pele_vals = ExtractData(case, outfile)
 
+# Plotting parameters
+marker_s = 40
+line_w = 3
+font_s = 16
 numplots = 1
 if reftvals is not None:
     numplots += 1
@@ -207,5 +394,5 @@ else:
 
 
 plt.tight_layout()
-plt.savefig(os.path.join(case.case_dir, "results.png"))
+plt.savefig(os.path.join(case.case_path, "results.png"))
 plt.show()

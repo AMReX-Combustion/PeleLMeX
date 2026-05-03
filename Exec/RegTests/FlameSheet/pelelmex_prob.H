@@ -15,6 +15,8 @@
 namespace m2c = pele::physics::utilities::mks2cgs;
 namespace c2m = pele::physics::utilities::cgs2mks;
 
+AMREX_ENUM(PmfReferenceFrame, lab, flame, fixed_velocity);
+
 struct MyProbParm : public ProbParmDefault
 {
   amrex::Real standoff = 0.0;
@@ -23,6 +25,8 @@ struct MyProbParm : public ProbParmDefault
   int meanFlowDir = 1;
   pele::physics::eos::EosParm<pele::physics::PhysicsType::eos_type> const*
     eosparm;
+  PmfReferenceFrame ref_frame = PmfReferenceFrame::flame;
+  amrex::Real moving_frame_velocity = 0.0;
 };
 
 struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
@@ -111,7 +115,8 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
     }
     amrex::Real rho_temp, tmp1, tmp2;
     eos.PYT2R(tmp1, massfrac, tmp2, rho_temp);
-    state(i, j, k, DENSITY) = c2m::Rho(rho_temp);
+    rho_temp = c2m::Rho(rho_temp);
+    state(i, j, k, DENSITY) = rho_temp;
     state(i, j, k, RHOH) = 0.0; // No RhoH transport in manifold model
     for (int n = 0; n < NUM_SPECIES - 1; n++) {
       state(i, j, k, FIRSTSPEC + n) = massfrac[n] * rho_temp;
@@ -167,7 +172,13 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
       for (int dim = 0; dim < AMREX_SPACEDIM - 1; dim++) {
         s_ext[VELX + dim] = 0.0;
       }
-      s_ext[VELX + AMREX_SPACEDIM - 1] = pmf_vals[1] * 1e-2;
+      if (prob_parm.ref_frame == PmfReferenceFrame::flame) {
+        s_ext[VELX + AMREX_SPACEDIM - 1] = pmf_vals[1] * 1e-2;
+      } else if (prob_parm.ref_frame == PmfReferenceFrame::fixed_velocity) {
+        s_ext[VELX + AMREX_SPACEDIM - 1] = prob_parm.moving_frame_velocity;
+      } else {
+        s_ext[VELX + AMREX_SPACEDIM - 1] = 0.0;
+      }
       s_ext[TEMP] = pmf_vals[0];
 
 #ifdef USE_MANIFOLD_EOS

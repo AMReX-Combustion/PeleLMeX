@@ -21,6 +21,9 @@
 #include "PeleLMRad.H"
 #endif
 
+namespace m2c = pele::physics::utilities::mks2cgs;
+namespace c2m = pele::physics::utilities::cgs2mks;
+
 namespace {
 const std::string level_prefix{"Level_"};
 }
@@ -36,9 +39,9 @@ void
 PeleLM::WriteDebugPlotFile(
   const amrex::Vector<const amrex::MultiFab*>& a_MF, const std::string& pltname)
 {
-  int nComp = a_MF[0]->nComp();
+  const int nComp = a_MF[0]->nComp();
   amrex::Vector<std::string> names(nComp);
-  for (int n = 0; n < nComp; n++) {
+  for (int n = 0; n < nComp; ++n) {
     names[n] = "comp" + std::to_string(n);
   }
   amrex::Vector<int> istep(finest_level + 1, m_nstep);
@@ -142,7 +145,7 @@ PeleLM::WritePlotFile()
 
   // Derive
   int deriveEntryCount = 0;
-  for (int ivar = 0; ivar < m_derivePlotVarCount; ivar++) {
+  for (int ivar = 0; ivar < m_derivePlotVarCount; ++ivar) {
     const PeleLMDeriveRec* rec = derive_lst.get(m_derivePlotVars[ivar]);
     deriveEntryCount += rec->numDerive();
   }
@@ -163,6 +166,8 @@ PeleLM::WritePlotFile()
 #endif
 
   if (m_do_les && m_plot_les) {
+    // Compute turbulent viscosity from current flow field at AmrNewTime
+    calcTurbViscosity(AmrNewTime);
     ncomp += 1;
   }
 
@@ -172,9 +177,10 @@ PeleLM::WritePlotFile()
 
   //----------------------------------------------------------------
   // Plot MultiFabs
-  amrex::Vector<amrex::MultiFab> mf_plt(finest_level + 1);
+  amrex::Vector<amrex::MultiFab> mf_plt;
+  mf_plt.reserve(finest_level + 1);
   for (int lev = 0; lev <= finest_level; ++lev) {
-    mf_plt[lev].define(
+    mf_plt.emplace_back(
       grids[lev], dmap[lev], ncomp, 0, amrex::MFInfo(), Factory(lev));
   }
 
@@ -191,7 +197,7 @@ PeleLM::WritePlotFile()
   if (m_incompressible == 0) {
     plt_VarsName.push_back("density");
     if (m_plotStateSpec != 0) {
-      for (int n = 0; n < NUM_SPECIES; n++) {
+      for (int n = 0; n < NUM_SPECIES; ++n) {
         plt_VarsName.push_back("rho.Y(" + names[n] + ")");
       }
     }
@@ -203,8 +209,8 @@ PeleLM::WritePlotFile()
     plt_VarsName.push_back("phiV");
 #endif
 #ifdef PELE_USE_SOOT
-    for (int mom = 0; mom < NUMSOOTVAR; mom++) {
-      std::string sootname = soot_model->sootVariableName(mom);
+    for (int mom = 0; mom < NUMSOOTVAR; ++mom) {
+      const std::string sootname = soot_model->sootVariableName(mom);
       plt_VarsName.push_back(sootname);
     }
 #endif
@@ -226,12 +232,12 @@ PeleLM::WritePlotFile()
                  , plt_VarsName.push_back("gradpz"));
   }
 
-  for (int n = 0; n < m_nAux; n++) {
+  for (int n = 0; n < m_nAux; ++n) {
     plt_VarsName.push_back(m_aux_names[n]);
   }
 
   if ((m_do_react != 0) && (m_skipInstantRR == 0) && (m_plot_react != 0)) {
-    for (int n = 0; n < NUM_SPECIES; n++) {
+    for (int n = 0; n < NUM_SPECIES; ++n) {
       plt_VarsName.push_back("I_R(" + names[n] + ")");
     }
 #ifdef PELE_USE_PLASMA
@@ -248,9 +254,9 @@ PeleLM::WritePlotFile()
   plt_VarsName.push_back("volFrac");
 #endif
 
-  for (int ivar = 0; ivar < m_derivePlotVarCount; ivar++) {
+  for (int ivar = 0; ivar < m_derivePlotVarCount; ++ivar) {
     const PeleLMDeriveRec* rec = derive_lst.get(m_derivePlotVars[ivar]);
-    for (int dvar = 0; dvar < rec->numDerive(); dvar++) {
+    for (int dvar = 0; dvar < rec->numDerive(); ++dvar) {
       plt_VarsName.push_back(rec->variableName(dvar));
     }
   }
@@ -280,7 +286,7 @@ PeleLM::WritePlotFile()
   if (m_do_extraEFdiags) {
     for (int ivar = 0; ivar < NUM_IONS; ++ivar) {
       for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
-        std::string dir = (idim == 0) ? "X" : ((idim == 1) ? "Y" : "Z");
+        const std::string dir = (idim == 0) ? "X" : ((idim == 1) ? "Y" : "Z");
         plt_VarsName.push_back(
           "DriftFlux_" + names[NUM_SPECIES - NUM_IONS + ivar] + "_" + dir);
       }
@@ -293,7 +299,7 @@ PeleLM::WritePlotFile()
   }
 
 #if NUM_ODE > 0
-  for (int n = 0; n < NUM_ODE; n++) {
+  for (int n = 0; n < NUM_ODE; ++n) {
     plt_VarsName.push_back(m_ode_names[n]);
   }
 #endif
@@ -394,7 +400,7 @@ PeleLM::WritePlotFile()
     cnt += 1;
 #endif
 
-    for (int ivar = 0; ivar < m_derivePlotVarCount; ivar++) {
+    for (int ivar = 0; ivar < m_derivePlotVarCount; ++ivar) {
       std::unique_ptr<amrex::MultiFab> mf;
       mf = derive(m_derivePlotVars[ivar], m_cur_time, lev, 0);
       amrex::MultiFab::Copy(mf_plt[lev], *mf, 0, cnt, mf->nComp(), 0);
@@ -441,19 +447,24 @@ PeleLM::WritePlotFile()
 #endif
 
     if (m_do_les && m_plot_les) {
-      constexpr amrex::Real fact = 0.5 / AMREX_SPACEDIM;
+      constexpr amrex::Real fact =
+        0.5 / static_cast<amrex::Real>(AMREX_SPACEDIM);
       auto const& plot_arr = mf_plt[lev].arrays();
       AMREX_D_TERM(
         auto const& mut_arr_x =
-          m_leveldata_old[lev]->visc_turb_fc[0].const_arrays();
+          m_leveldata_new[lev]->visc_turb_fc[0].const_arrays();
         , auto const& mut_arr_y =
-            m_leveldata_old[lev]->visc_turb_fc[1].const_arrays();
+            m_leveldata_new[lev]->visc_turb_fc[1].const_arrays();
         , auto const& mut_arr_z =
-            m_leveldata_old[lev]->visc_turb_fc[2].const_arrays();)
+            m_leveldata_new[lev]->visc_turb_fc[2].const_arrays();)
       // interpolate turbulent viscosity from faces to centers
       amrex::ParallelFor(
-        mf_plt[lev],
-        [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+        mf_plt[lev], [plot_arr, cnt, mut_arr_x, mut_arr_y
+#if (AMREX_SPACEDIM == 3)
+                      ,
+                      mut_arr_z
+#endif
+      ] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
           plot_arr[box_no](i, j, k, cnt) =
             fact *
             (AMREX_D_TERM(
@@ -500,7 +511,7 @@ PeleLM::WritePlotFile()
 
 #ifdef PELE_USE_SPRAY
   if (do_spray_particles) {
-    bool is_spraycheck = false;
+    constexpr bool is_spraycheck = false;
     for (int lev = 0; lev <= finest_level; ++lev) {
       SprayPC->SprayParticleIO(lev, is_spraycheck, plotfilename);
       // Remove virtual particles that were made for derived variables
@@ -511,7 +522,7 @@ PeleLM::WritePlotFile()
 }
 
 void
-PeleLM::WriteHeader(const std::string& name, bool is_checkpoint) const
+PeleLM::WriteHeader(const std::string& name, const bool is_checkpoint) const
 {
   if (amrex::ParallelDescriptor::IOProcessor()) {
     std::string HeaderFileName(name + "/Header");
@@ -566,7 +577,7 @@ PeleLM::WriteHeader(const std::string& name, bool is_checkpoint) const
 
     // Ambient pressure and typvals
     HeaderFile << m_pNew << "\n";
-    for (double typical_value : typical_values) {
+    for (amrex::Real typical_value : typical_values) {
       HeaderFile << typical_value << "\n";
     }
   }
@@ -599,7 +610,7 @@ PeleLM::WriteCheckPointFile()
   amrex::PreBuildDirectorHierarchy(
     checkpointname, level_prefix, finest_level + 1, true);
 
-  bool is_checkpoint = true;
+  constexpr bool is_checkpoint = true;
   WriteHeader(checkpointname, is_checkpoint);
   WriteJobInfo(checkpointname);
 
@@ -642,7 +653,7 @@ PeleLM::WriteCheckPointFile()
   }
 #ifdef PELE_USE_SPRAY
   if (do_spray_particles) {
-    bool is_spraycheck = true;
+    constexpr bool is_spraycheck = true;
     for (int lev = 0; lev <= finest_level; ++lev) {
       SprayPC->SprayParticleIO(lev, is_spraycheck, checkpointname);
     }
@@ -771,7 +782,7 @@ PeleLM::ReadCheckPointFile()
   is >> m_pNew;
   GotoNextLine(is);
   m_pOld = m_pNew;
-  for (double& typical_value : typical_values) {
+  for (amrex::Real& typical_value : typical_values) {
     is >> typical_value;
     GotoNextLine(is);
   }
@@ -861,7 +872,7 @@ PeleLM::ReadCheckPointFile()
     }
   }
   if (m_verbose != 0) {
-    amrex::Print() << "Restart complete" << std::endl;
+    amrex::Print() << "Restart complete \n";
   }
 }
 
@@ -888,12 +899,35 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
     }
   }
 
-  // Use PelePhysics PltFileManager
-  pele::physics::pltfilemanager::PltFileManager pltData(a_dataPltFile);
+  // Use PelePhysics PltFileManager – reuse the shared instance if it was
+  // pre-created in initData() to avoid re-reading the plotfile header for
+  // every AMR level, which can cause OOM for large plotfiles.
+  std::unique_ptr<pele::physics::pltfilemanager::PltFileManager> localPltData;
+  pele::physics::pltfilemanager::PltFileManager* pltDataPtr = nullptr;
+  if (m_pltDataManager) {
+    pltDataPtr = m_pltDataManager.get();
+  } else {
+    localPltData =
+      std::make_unique<pele::physics::pltfilemanager::PltFileManager>(
+        a_dataPltFile);
+    pltDataPtr = localPltData.get();
+  }
+  auto& pltData = *pltDataPtr;
   amrex::Vector<std::string> plt_vars = pltData.getVariableList();
   if (m_do_reset_time == 0) {
     m_cur_time = pltData.getTime();
     m_nstep = pltData.getNsteps();
+
+    // Plotfiles don't contain dt/prev_dt values, but we need to initialize
+    // them to avoid negative dt calculation
+    if (m_fixed_dt > 0.0) {
+      m_dt = m_fixed_dt;
+      m_prev_dt = m_fixed_dt;
+    } else {
+      // Use large value so CFL calculation isn't artificially constrained
+      m_dt = m_max_dt;
+      m_prev_dt = m_max_dt;
+    }
   }
 
   // Find required data in pltfile
@@ -967,33 +1001,31 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
   // in case the number of species differs.
   amrex::MultiFab speciesPlt(grids[a_lev], dmap[a_lev], nSpecPlt, 0);
   pltData.fillPatchFromPlt(a_lev, geom[a_lev], idY, 0, nSpecPlt, speciesPlt);
-  for (int i = 0; i < NUM_SPECIES; i++) {
+  for (int i = 0; i < NUM_SPECIES; ++i) {
     std::string specName = "Y(" + spec_names[i] + ")";
     std::string specString = specName;
     if (!m_initDataPlt_specname_map.empty()) {
       specString = m_initDataPlt_specname_map[i];
     }
     int foundSpec = 0;
-    for (int iplt = 0; iplt < nSpecPlt; iplt++) {
+    for (int iplt = 0; iplt < nSpecPlt; ++iplt) {
       if (specString == plt_vars[idY + iplt]) {
         amrex::MultiFab::Copy(
           ldata_p->state, speciesPlt, iplt, FIRSTSPEC + i, 1, 0);
         foundSpec = 1;
         if (m_verbose > 0) {
           amrex::Print() << "Loading species " << specName
-                         << " from plotfile species " << specString
-                         << std::endl;
+                         << " from plotfile species " << specString << "\n";
         }
       }
     }
     if (foundSpec == 0) {
-      for (int iplt = 0; iplt < plt_vars.size(); iplt++) {
+      for (int iplt = 0; iplt < plt_vars.size(); ++iplt) {
         if (specString == plt_vars[iplt]) {
           foundSpec = 1;
           if (m_verbose > 0) {
             amrex::Print() << "Loading species " << specName
-                           << " from plotfile entry " << specString
-                           << std::endl;
+                           << " from plotfile entry " << specString << "\n";
           }
           pltData.fillPatchFromPlt(
             a_lev, geom[a_lev], iplt, FIRSTSPEC + i, 1, ldata_p->state);
@@ -1004,31 +1036,23 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
       ldata_p->state.setVal(0.0, FIRSTSPEC + i, 1);
       if (m_verbose > 0) {
         amrex::Print() << "For species " << specName << " entry " << specString
-                       << " not found in plot file, setting to 0 " << std::endl;
+                       << " not found in plot file, setting to 0\n";
       }
     }
   }
 
   // Converting units when pltfile is coming from PeleC solution
   if (pltfileSource == "C") {
-    if (m_verbose > 0) {
-      amrex::Print() << " Converting CGS to MKS units... \n";
-    }
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-    for (amrex::MFIter mfi(ldata_p->state, amrex::TilingIfNotGPU());
-         mfi.isValid(); ++mfi) {
-      const amrex::Box& bx = mfi.tilebox();
-      auto const& vel_arr = ldata_p->state.array(mfi, VELX);
-      amrex::ParallelFor(
-        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          for (int n = 0; n < AMREX_SPACEDIM; n++) {
-            amrex::Real vel_mks = vel_arr(i, j, k, n) * 0.01;
-            vel_arr(i, j, k, n) = vel_mks;
-          }
-        });
-    }
+    amrex::Print() << " Converting CGS to MKS units... \n";
+    auto const& state_ma = ldata_p->state.arrays();
+    amrex::ParallelFor(
+      ldata_p->state, amrex::IntVect(0), AMREX_SPACEDIM,
+      [state_ma] AMREX_GPU_DEVICE(
+        int box_no, int i, int j, int k, int n) noexcept {
+        amrex::Array4<amrex::Real> vel(state_ma[box_no], VELX);
+        vel(i, j, k, n) *= 0.01;
+      });
+    amrex::Gpu::streamSynchronize();
   }
 
 #ifdef PELE_USE_PLASMA
@@ -1046,30 +1070,34 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
         SootConst sc;
         amrex::Real* momV = sc.MomOrderV.data();
         amrex::Real* momS = sc.MomOrderS.data();
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-        for (amrex::MFIter mfi(ldata_p->state, amrex::TilingIfNotGPU());
-             mfi.isValid(); ++mfi) {
-          const amrex::Box& bx = mfi.tilebox();
-          auto const& soot_arr = ldata_p->state.array(mfi, FIRSTSOOT);
-          amrex::ParallelFor(
-            bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-              for (int n = 0; n < NUM_SOOT_MOMENTS; n++) {
-                amrex::Real soot_exp = 3. - (3. * momV[n] + 2. * momS[n]);
-                soot_arr(i, j, k, n) *= std::pow(100., soot_exp);
-              }
-              soot_arr(i, j, k, NUMSOOTVAR - 1) *= 1.E6;
-            });
+        auto const& state_ma = ldata_p->state.arrays();
+        amrex::Real soot_exp[NUM_SOOT_MOMENTS] = {0.0};
+        for (int n = 0; n < NUM_SOOT_MOMENTS; ++n) {
+          soot_exp[n] = 3. - (3. * momV[n] + 2. * momS[n]);
         }
+        amrex::ParallelFor(
+          ldata_p->state, [state_ma, soot_exp] AMREX_GPU_DEVICE(
+                            int box_no, int i, int j, int k) noexcept {
+            amrex::Array4<amrex::Real> soot(state_ma[box_no], FIRSTSOOT);
+            for (int n = 0; n < NUM_SOOT_MOMENTS; ++n) {
+              soot(i, j, k, n) *= std::pow(100., soot_exp[n]);
+            }
+            soot(i, j, k, NUMSOOTVAR - 1) *= 1.E6;
+          });
+        amrex::Gpu::streamSynchronize();
       }
     } else {
       SootData* const sd = soot_model->getSootData();
       amrex::Real moments[NUM_SOOT_MOMENTS + 1];
       sd->initialSmallMomVals(moments);
-      for (int mom = 0; mom < NUM_SOOT_MOMENTS + 1; ++mom) {
-        ldata_p->state.setVal(moments[mom], FIRSTSOOT + mom, 1);
-      }
+      auto const& state_ma = ldata_p->state.arrays();
+      amrex::ParallelFor(
+        ldata_p->state, amrex::IntVect(0), NUM_SOOT_MOMENTS + 1,
+        [state_ma, moments] AMREX_GPU_DEVICE(
+          int box_no, int i, int j, int k, int n) noexcept {
+          amrex::Array4<amrex::Real> soot(state_ma[box_no], FIRSTSOOT);
+          soot(i, j, k, n) = moments[n];
+        });
     }
   }
 #endif
@@ -1078,7 +1106,6 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
   ldata_p->gp.setVal(0.0);
 
   ProbParm const* lprobparm = prob_parm_d;
-  auto const* leosparm = eos_parms.device_parm();
 
   // If m_do_patch_flow_variables is set as true, call user-defined function to
   // patch flow variables
@@ -1090,23 +1117,22 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
   // Enforce rho and rhoH consistent with temperature and mixture
   // The above handles species mapping (to some extent), but nothing enforce
   // sum of Ys = 1 -> use N2 in the following if N2 is present
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-  for (amrex::MFIter mfi(ldata_p->state, amrex::TilingIfNotGPU());
-       mfi.isValid(); ++mfi) {
-    const amrex::Box& bx = mfi.tilebox();
-    auto const& rho_arr = ldata_p->state.array(mfi, DENSITY);
-    auto const& rhoY_arr = ldata_p->state.array(mfi, FIRSTSPEC);
-    auto const& rhoH_arr = ldata_p->state.array(mfi, RHOH);
-    auto const& temp_arr = ldata_p->state.array(mfi, TEMP);
-    const auto* eosparm = leosparm;
-    amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+  auto const& state_ma = ldata_p->state.arrays();
+  auto const* leosparm = eos_parms.device_parm();
+  const amrex::Real P_cgs = m2c::P(lprobparm->P_mean);
+
+  amrex::ParallelFor(
+    ldata_p->state, [state_ma, P_cgs, eosparm = leosparm] AMREX_GPU_DEVICE(
+                      int box_no, int i, int j, int k) noexcept {
       auto eos = pele::physics::PhysicsType::eos(eosparm);
+      amrex::Array4<amrex::Real> rho(state_ma[box_no], DENSITY);
+      amrex::Array4<amrex::Real> rhoY(state_ma[box_no], FIRSTSPEC);
+      amrex::Array4<amrex::Real> rhoH(state_ma[box_no], RHOH);
+      amrex::Array4<amrex::Real> temp(state_ma[box_no], TEMP);
       amrex::Real massfrac[NUM_SPECIES] = {0.0};
       amrex::Real sumYs = 0.0;
-      for (int n = 0; n < NUM_SPECIES; n++) {
-        massfrac[n] = rhoY_arr(i, j, k, n);
+      for (int n = 0; n < NUM_SPECIES; ++n) {
+        massfrac[n] = rhoY(i, j, k, n);
 #ifdef N2_ID
         if (n != N2_ID) {
           sumYs += massfrac[n];
@@ -1116,25 +1142,22 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
 #ifdef N2_ID
       massfrac[N2_ID] = 1.0 - sumYs;
 #endif
-
       // Get density
-      amrex::Real P_cgs = lprobparm->P_mean * 10.0;
       amrex::Real rho_cgs = 0.0;
-      eos.PYT2R(P_cgs, massfrac, temp_arr(i, j, k), rho_cgs);
-      rho_arr(i, j, k) = rho_cgs * 1.0e3;
+      eos.PYT2R(P_cgs, massfrac, temp(i, j, k), rho_cgs);
+      rho(i, j, k) = c2m::Rho(rho_cgs);
 
       // Get enthalpy
       amrex::Real h_cgs = 0.0;
-      eos.TY2H(temp_arr(i, j, k), massfrac, h_cgs);
-      rhoH_arr(i, j, k) = h_cgs * 1.0e-4 * rho_arr(i, j, k);
+      eos.TY2H(temp(i, j, k), massfrac, h_cgs);
+      rhoH(i, j, k) = c2m::H(h_cgs) * rho(i, j, k);
 
       // Fill rhoYs
-      for (int n = 0; n < NUM_SPECIES; n++) {
-        rhoY_arr(i, j, k, n) = massfrac[n] * rho_arr(i, j, k);
+      for (int n = 0; n < NUM_SPECIES; ++n) {
+        rhoY(i, j, k, n) = massfrac[n] * rho(i, j, k);
       }
     });
-  }
-
+  amrex::Gpu::streamSynchronize();
   // Initialize thermodynamic pressure
   setThermoPress(a_lev, AmrNewTime);
   if (m_has_divu != 0) {
@@ -1150,8 +1173,21 @@ PeleLM::addLevelVelocityDataFromPlt(int a_lev, const std::string& a_velPltFile)
                    << " from pltfile " << a_velPltFile << "\n";
   }
 
-  // Use PelePhysics PltFileManager
-  pele::physics::pltfilemanager::PltFileManager pltData(a_velPltFile);
+  // Use PelePhysics PltFileManager – reuse the shared instance if it was
+  // pre-created in initData() to avoid re-reading the plotfile header for
+  // every AMR level.
+  std::unique_ptr<pele::physics::pltfilemanager::PltFileManager>
+    localVelPltData;
+  pele::physics::pltfilemanager::PltFileManager* pltDataPtr = nullptr;
+  if (m_velPltDataManager) {
+    pltDataPtr = m_velPltDataManager.get();
+  } else {
+    localVelPltData =
+      std::make_unique<pele::physics::pltfilemanager::PltFileManager>(
+        a_velPltFile);
+    pltDataPtr = localVelPltData.get();
+  }
+  auto& pltData = *pltDataPtr;
   amrex::Vector<std::string> plt_vars = pltData.getVariableList();
 
   // do some compatibility checks
@@ -1186,22 +1222,7 @@ PeleLM::addLevelVelocityDataFromPlt(int a_lev, const std::string& a_velPltFile)
     a_lev, geom[a_lev], idXvel, sComp0, AMREX_SPACEDIM, tmpVel);
   // scale the velocity
   tmpVel.mult(m_velocity_plotfile_scale);
-
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-  for (amrex::MFIter mfi(ldata_p->state, amrex::TilingIfNotGPU());
-       mfi.isValid(); ++mfi) {
-    const amrex::Box& bx = mfi.tilebox();
-    amrex::FArrayBox DummyFab(bx, 1);
-    auto const& state_arr = ldata_p->state.array(mfi);
-    auto const& tmpVel_arr = tmpVel.array(mfi);
-    amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-      for (int n = 0; n < AMREX_SPACEDIM; n++) {
-        state_arr(i, j, k, XVEL + n) += tmpVel_arr(i, j, k, n);
-      }
-    });
-  }
+  amrex::MultiFab::Add(ldata_p->state, tmpVel, 0, VELX, AMREX_SPACEDIM, 0);
 }
 
 void
@@ -1274,11 +1295,11 @@ PeleLM::WriteJobInfo(const std::string& path) const
     jobInfoFile << " Grid Information\n";
     jobInfoFile << PrettyLine;
 
-    for (int lev = 0; lev <= finest_level; lev++) {
+    for (int lev = 0; lev <= finest_level; ++lev) {
       jobInfoFile << " level: " << lev << "\n";
       jobInfoFile << "   number of boxes = " << grids[lev].size() << "\n";
       jobInfoFile << "   maximum zones   = ";
-      for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+      for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
         jobInfoFile << geom[lev].Domain().length(idim) << " ";
       }
       jobInfoFile << "\n\n";
@@ -1295,4 +1316,168 @@ PeleLM::WriteJobInfo(const std::string& path) const
 
     jobInfoFile.close();
   }
+}
+
+void
+PeleLM::WriteMLMGResidual(
+  amrex::MLMG& a_mlmg,
+  const amrex::Vector<amrex::MultiFab*>& a_sol,
+  const amrex::Vector<const amrex::MultiFab*>& a_rhs,
+  const std::string& a_solver_name,
+  int a_step)
+{
+  // Get the linear operator
+  auto& linop = a_mlmg.getLinOp();
+  int nlevs = linop.NAMRLevels();
+  int ncomp_residual = linop.getNComp();
+
+  // Create MultiFabs to hold the residual
+  amrex::Vector<amrex::MultiFab> residual(nlevs);
+  amrex::Vector<amrex::MultiFab*> residual_ptrs(nlevs);
+
+  for (int lev = 0; lev < nlevs; ++lev) {
+    // Use the same BoxArray and DistributionMap as the solution
+    const auto& ba = a_sol[lev]->boxArray();
+    const auto& dm = a_sol[lev]->DistributionMap();
+    int ngrow = 0;
+    residual[lev].define(ba, dm, ncomp_residual, ngrow);
+    residual_ptrs[lev] = &residual[lev];
+  }
+
+  // Classify solver type
+  bool is_tensor_diff =
+    (a_solver_name.find("vel_diffusion") != std::string::npos);
+  bool is_species =
+    (a_solver_name.find("species_diffusion") != std::string::npos);
+  bool is_temp =
+    (a_solver_name.find("temperature_diffusion") != std::string::npos);
+  bool is_proj = (a_solver_name.find("projection") != std::string::npos);
+
+  // Compute the residual: r = b - A*x
+  if (!is_tensor_diff) {
+    // Use compResidual which handles refluxing and average-down for AMR
+    a_mlmg.compResidual(residual_ptrs, a_sol, a_rhs);
+  } else {
+    // Use solutionResidual computation for tensor diffusion as MLEBTensorOp
+    // and MLTensorOp don't implement update() which is needed by compResidual
+    amrex::Print()
+      << "  NOTE: Using linop.solutionResidual because compResidual"
+      << " is not available for tensor diffusion\n";
+    if (nlevs > 1) {
+      amrex::Print() << "  WARNING: Multi-level residual computed without "
+                        "refluxing or average-down.\n";
+    }
+
+    for (int lev = 0; lev < nlevs; ++lev) {
+      const amrex::MultiFab* crse_bcdata = (lev > 0) ? a_sol[lev - 1] : nullptr;
+      linop.solutionResidual(
+        lev, residual[lev], *a_sol[lev], *a_rhs[lev], crse_bcdata);
+    }
+  }
+
+  // Get state data
+  auto state_data = GetVecOfConstPtrs(getStateVect(PeleLM::AmrNewTime));
+  amrex::Vector<std::string> var_names;
+  int ncomp_total = ncomp_residual;
+  bool has_eb = false;
+
+  AMREX_ALWAYS_ASSERT(!state_data.empty());
+  ncomp_total += state_data[0]->nComp();
+
+#ifdef AMREX_USE_EB
+  has_eb = !EBFactory(0).isAllRegular();
+  if (has_eb) {
+    // Include volFrac
+    ncomp_total += 1;
+  }
+#endif
+
+  for (int n = 0; n < state_data[0]->nComp(); ++n) {
+    var_names.push_back(stateVariableName(n));
+  }
+
+  // Add volFrac if EB
+  if (has_eb) {
+    var_names.push_back("volFrac");
+  }
+
+  if (is_species) {
+    // Get species names
+    amrex::Vector<std::string> spec_names;
+    pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(
+      spec_names, &(PeleLM::eos_parms.host_parm()));
+    for (int n = 0; n < ncomp_residual; ++n) {
+      var_names.push_back("mlmg_residual_" + spec_names[n]);
+    }
+  } else if (is_tensor_diff) {
+    // Get velocity component indices
+    for (int n = 0; n < ncomp_residual; ++n) {
+      var_names.push_back("mlmg_residual_" + std::to_string(n));
+    }
+  } else if (is_proj) {
+    var_names.push_back("mlmg_residual_" + a_solver_name);
+  } else if (is_temp) {
+    var_names.push_back("mlmg_residual_temp");
+  } else {
+    for (int n = 0; n < ncomp_residual; ++n) {
+      var_names.push_back("mlmg_residual_comp_" + std::to_string(n));
+    }
+  }
+
+  // Create combined MultiFabs with state + volFrac + residual
+  amrex::Vector<amrex::MultiFab> combined_data(nlevs);
+  amrex::Vector<const amrex::MultiFab*> combined_ptrs(nlevs);
+
+  for (int lev = 0; lev < nlevs; ++lev) {
+    const auto& ba = a_sol[lev]->boxArray();
+    const auto& dm = a_sol[lev]->DistributionMap();
+    combined_data[lev].define(ba, dm, ncomp_total, 0);
+
+    int comp_offset = 0;
+
+    // State data
+    amrex::MultiFab::Copy(
+      combined_data[lev], *state_data[lev], 0, comp_offset,
+      state_data[lev]->nComp(), 0);
+    comp_offset += state_data[lev]->nComp();
+
+    // volFrac
+#ifdef AMREX_USE_EB
+    if (has_eb) {
+      const auto& vfrac = EBFactory(lev).getVolFrac();
+      amrex::MultiFab::Copy(combined_data[lev], vfrac, 0, comp_offset, 1, 0);
+      comp_offset += 1;
+    }
+#endif
+
+    amrex::MultiFab::Copy(
+      combined_data[lev], residual[lev], 0, comp_offset, ncomp_residual, 0);
+    combined_ptrs[lev] = &combined_data[lev];
+  }
+
+  // Extract directory from plot_file_root if it contains a path
+  std::string plot_dir;
+  std::string plot_base = m_plot_file;
+  size_t last_slash = m_plot_file.find_last_of("/\\");
+  if (last_slash != std::string::npos) {
+    plot_dir = m_plot_file.substr(0, last_slash + 1);
+    plot_base = m_plot_file.substr(last_slash + 1);
+  }
+
+  // Get iteration count from MLMG
+  int num_iters = a_mlmg.getNumIters();
+
+  // Create plotfile name: <plot_dir>/pltMLMGResidual_<solver>_<step>_<iters>
+  std::string residual_name = "pltMLMGResidual_" + a_solver_name + "_";
+  int ioDigits = m_ioDigits;
+  std::string plotfile_name =
+    plot_dir + amrex::Concatenate(residual_name, a_step, ioDigits);
+  plotfile_name += "_" + amrex::Concatenate("", num_iters, 2);
+
+  amrex::Vector<int> level_steps(nlevs, a_step);
+
+  amrex::WriteMultiLevelPlotfile(
+    plotfile_name, nlevs, combined_ptrs, var_names, Geom(),
+    0.0, // time
+    level_steps, refRatio());
 }

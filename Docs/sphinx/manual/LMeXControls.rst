@@ -112,6 +112,7 @@ IO parameters
 ::
 
     #--------------------------IO CONTROL--------------------------
+    peleLM.base_output_prefix = outdir/    # [OPT, DEF=""] Prefix applied across all output types (plt, chk, diagnostics, temporals)
     amr.plot_int         = 20              # [OPT, DEF=-1] Frequency (as step #) for writing plot file
     amr.plot_overwrite   = false           # [OPT, DEF=false] Overwrite plot files with same name if present
     amr.plot_init_state  = false           # [OPT, DEF=false] Create a plot file during initialization before the initial projections
@@ -185,6 +186,9 @@ The following list of derived variables are available in PeleLMeX:
     * - `mole_fractions`
       - NUM_SPECIES
       - Species mole fractions
+    * - `element_fractions`
+      - NUM_ELEMENTS
+      - Element mass fractions
     * - `diffcoeff`
       - NUM_SPECIES
       - Species mixture-averaged diffusion coefficients
@@ -246,7 +250,7 @@ PeleLMeX algorithm
 ::
 
     #-----------------------PELE CONTROL-----------------------
-    peleLM.v = 1                           # [OPT, DEF=0] Verbose
+    peleLM.v = 1                           # [OPT, DEF=0] Verbose (1 - verbose for core algorithm, 2+ adds default verbosity for deltaTiters, projections, etc)
     peleLM.run_mode = normal               # [OPT, DEF=normal] Switch between time-advance mode (normal) or UnitTest (evaluate)
     peleLM.use_wbar = 1                    # [OPT, DEF=1] Enable Wbar correction in diffusion fluxes
     peleLM.sdc_iterMax = 2                 # [OPT, DEF=1] Number of SDC iterations
@@ -472,7 +476,7 @@ Linear solvers are a key component of PeleLMeX algorithm, separate controls are 
     nodal_proj.verbose = 1                    # [OPT, DEF=0] Verbose of the nodal projector
     nodal_proj.rtol = 1.0e-11                 # [OPT, DEF=1e-11] Relative tolerance of the nodal projection
     nodal_proj.atol = 1.0e-12                 # [OPT, DEF=1e-14] Absolute tolerance of the nodal projection
-    nodal_proj.maxiter = 50                   # [OPT, DEF=] Maximum number of iterations of the nodal projection
+    nodal_proj.maxiter = 100                  # [OPT, DEF=100] Maximum number of iterations of the nodal projection
     nodal_proj.mg_max_coarsening_level = 5    # [OPT, DEF=100] Maximum number of MG levels (useful when using EB)
     nodal_proj.bottom_verbose = 1             # [OPT, DEF=0] Verbose of the bottom solve for nodal projector
     nodal_proj.bottom_rtol = 1e-3             # [OPT, DEF=1e-4] Relative tolerance of the bottom solve for nodal projection
@@ -482,6 +486,7 @@ Linear solvers are a key component of PeleLMeX algorithm, separate controls are 
     mac_proj.verbose = 1                      # [OPT, DEF=0] Verbose of the MAC projector
     mac_proj.rtol = 1.0e-11                   # [OPT, DEF=1e-11] Relative tolerance of the MAC projection
     mac_proj.atol = 1.0e-12                   # [OPT, DEF=1e-14] Absolute tolerance of the MAC projection
+    mac_proj.maxiter = 200                    # [OPT, DEF=200] Maximum number of iterations of the MAC projection
     mac_proj.mg_max_coarsening_level = 5      # [OPT, DEF=100] Maximum number of MG levels (useful when using EB)
     mac_proj.bottom_verbose = 1               # [OPT, DEF=0] Verbose of the bottom solve for MAC projector
     mac_proj.bottom_rtol = 1e-3               # [OPT, DEF=1e-4] Relative tolerance of the bottom solve for MAC projection
@@ -491,10 +496,12 @@ Linear solvers are a key component of PeleLMeX algorithm, separate controls are 
     diffusion.verbose = 1                     # [OPT, DEF=0] Verbose of the scalar diffusion solve
     diffusion.rtol = 1.0e-11                  # [OPT, DEF=1e-11] Relative tolerance of the scalar diffusion solve
     diffusion.atol = 1.0e-12                  # [OPT, DEF=1e-14] Absolute tolerance of the scalar diffusion solve
+    diffusion.max_iter = 100                  # [OPT, DEF=100] Maximum number of iterations of the scalar diffusion solve
 
     tensor_diffusion.verbose = 1              # [OPT, DEF=0] Verbose of the velocity tensor diffusion solve
     tensor_diffusion.rtol = 1.0e-11           # [OPT, DEF=1e-11] Relative tolerance of the velocity tensor diffusion solve
     tensor_diffusion.atol = 1.0e-12           # [OPT, DEF=1e-14] Absolute tolerance of the velocity tensor diffusion solve
+    tensor_diffusion.max_iter = 100           # [OPT, DEF=100] Maximum number of iterations of the velocity tensor diffusion solve
 
 Hypre support
 ^^^^^^^^^^^^^
@@ -578,6 +585,7 @@ to activate `temporal` diagnostics performing these reductions at given interval
 
     #-------------------------TEMPORALS---------------------------
     peleLM.do_temporals = 1                     # [OPT, DEF=0] Activate temporal diagnostics
+    peleLM.temporal_dir = temporals             # [OPT, DEF="temporals"] Directory to store temporal diagnostics
     peleLM.temporal_int = 10                    # [OPT, DEF=5] Temporal freq.
     peleLM.do_extremas = 1                      # [OPT, DEF=0] Trigger extremas, if temporals activated
     peleLM.do_mass_balance = 1                  # [OPT, DEF=0] Compute mass balance, if temporals activated
@@ -588,7 +596,7 @@ to activate `temporal` diagnostics performing these reductions at given interval
     bpatch.patch_name1.patchtype=full-boundary             # patchtype one of "full-boundary", "circle, "rectangle", "circle-annular" or "rectangle-annular"
     bpatch.patch_name1.boundary_direction=2                # patch normal direction
     bpatch.patch_name1.boundary_lo_or_hi=0                 # patch in low or high side of boundary
-    bpatch.patch_name1.species= O2 N2                      # list of species names
+    bpatch.patch_name1.species= {Air:O2,N2} O2 N2                      # list of species names
 
     bpatch.patch_name2.patchtype=circle                    # patchtype one of "full-boundary", "circle, "rectangle", "circle-annular" or "rectangle-annular"
     bpatch.patch_name2.boundary_direction=2                # patch normal direction
@@ -631,7 +639,8 @@ advective \& diffusive fluxes across the domain boundaries, consumption rate int
 Users can also monitor species advective fluxes through specific regions of the domain boundaries (called as boundary patches).
 Patches can be defined on the low or high sides of non-embedded boundaries through the use of pre-defined shapes such as `circle`,
 `rectangle`,`circle-annular`, `rectangle-annular` and `full-boundary`. The zero AMR level, advective fluxes of each of the user-specified species will be
-reported in the ASCII `temppatchmfr` file in the temporals folder.
+reported in the ASCII `temppatchmfr` file in the temporals folder. User can also group species to define a mixture in the species list, in the format {<mixture-name>:<species1>,<species2>,..,<speciesN>}. For example, to get the total air mass flow rate,
+the user can define {Air:O2,N2} in the species list. The temporal function would then print total species fluxes of O2 and N2 through the specified patch.
 
 Combustion diagnostics often involve the use of a mixture fraction and/or a progress variable, both of which can be defined
 at run time and added to the derived variables included in the plotfile. If `mixture_fraction` or `progress_variable` is
@@ -716,3 +725,56 @@ frequency using:
 ::
 
     amr.message_int      = 20                # [OPT, DEF=10] Frequency for checking the presence of trigger files
+
+Selection of Helpful GNUmakefile Flags
+--------------------------------------
+
+When compiling PeleLMeX, several compilation flags can be selected to help with debugging, improving performance, etc. Below is a selection of some of the most common flags users may wish to add to their `GNUmakefile`:
+::
+
+    # Models
+    USE_PLASMA = TRUE                    # [OPT, DEF=FALSE] Enable plasma model
+    USE_PARTICLES = TRUE                 # [OPT, DEF=FALSE] Enable Lagrangian particle spray model
+    USE_SOOT = TRUE                      # [OPT, DEF=FALSE] Enable soot model
+    USE_RADIATION = TRUE                 # [OPT, DEF=FALSE] Enable radiation model
+    PELELM_NUM_ODE = INT                 # [OPT, DEF=0] Number of user-defined ODEs to solve
+
+    # If USE_PARTICLES = TRUE
+    SPRAY_FUEL_NUM = INT                 # [REQD] Number of fuel species in spray model
+    SPRAY_GCM = TRUE                     # [OPT, DEF=FALSE] Enable group contribution method for liquid property prediction in spray model
+
+    # If USE_SOOT = TRUE
+    NUM_SOOT_MOMENTS = 3                 # [REQD] Number of soot moments (must be 3 or 6)
+
+    # Equation of State
+    Eos_Model = Fuego                    # [OPT, DEF=Fuego] EOS model: GammaLaw, Fuego, Soave-Redlich-Kwong, Manifold, or Null
+
+    # If Eos_Model = Manifold
+    Manifold_Dim = INT                   # [REQD] Manifold dimension
+    Manifold_Type = Table                # [REQD] Manifold type: Table or Network (if unspecified, will support both but at a performance cost)
+
+    # Transport Model
+    Transport_Model = Simple             # [OPT, DEF=Simple] Transport model: Simple, EGLib, Constant, Sutherland, or Manifold
+
+    # Chemistry
+    Chemistry_Model = drm19              # [REQD] Chemistry mechanism name (from PelePhysics/Mechanisms) or path if USE_CUSTOM_CHEMISTRY=TRUE
+    USE_CUSTOM_CHEMISTRY = TRUE          # [OPT, DEF=FALSE] Chemistry_Model is interpreted as a path to an arbitrary location
+
+    # Embedded Boundaries
+    USE_EB = TRUE                        # [OPT, DEF=FALSE] Enable embedded boundary support
+
+    # HPC System Specifics and GPU/Accelerator Support
+    COMP = gnu                           # [OPT, DEF=gnu] Compiler choice: gnu, intel, cray, etc.
+    USE_MPI = TRUE                       # [OPT, DEF=TRUE] Compile with MPI support
+    USE_OMP = TRUE                       # [OPT, DEF=FALSE] Compile with OpenMP support
+    USE_CUDA = TRUE                      # [OPT, DEF=FALSE] Compile for NVIDIA GPUs
+    USE_HIP = TRUE                       # [OPT, DEF=FALSE] Compile for AMD GPUs
+    USE_SYCL = TRUE                      # [OPT, DEF=FALSE] Compile for Intel GPUs
+
+    # Case Specific files
+    CEXE_sources += <file_name>          # [OPT] Add additional source files to the build
+
+    # Other Quality of Life Flags
+    USERSuffix = String                  # [OPT, DEF=""] Suffix to append to executable name, useful when multiple builds are needed
+    TINY_PROFILE = TRUE                  # [OPT, DEF=FALSE] Enable lightweight profiling with AMReX's TinyProfiler
+    DEBUG = TRUE                         # [OPT, DEF=FALSE] Compile with debug flags (disables optimizations)

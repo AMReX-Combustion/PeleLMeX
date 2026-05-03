@@ -36,6 +36,20 @@ void pelelmex_dermolefrac(
   const amrex::Vector<amrex::BCRec>& bcrec,
   int level);
 
+void pelelmex_derelementfrac(
+  PeleLM* a_pelelm,
+  const amrex::Box& bx,
+  amrex::FArrayBox& derfab,
+  int dcomp,
+  int ncomp,
+  const amrex::FArrayBox& statefab,
+  const amrex::FArrayBox& reactfab,
+  const amrex::FArrayBox& pressfab,
+  const amrex::Geometry& geom,
+  amrex::Real time,
+  const amrex::Vector<amrex::BCRec>& bcrec,
+  int level);
+
 void pelelmex_dertemp(
   PeleLM* a_pelelm,
   const amrex::Box& bx,

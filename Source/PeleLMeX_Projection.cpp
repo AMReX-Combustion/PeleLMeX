@@ -16,59 +16,62 @@ PeleLM::initialProjection()
       "  W: " << velMax[2] <<) "\n";
   }
 
-  amrex::Real dummy_dt = 1.0;
-  int incremental = 0;
-  int nGhost = 0;
+  constexpr int incremental = 0;
+  constexpr int nGhost = 0;
+  constexpr amrex::Real dummy_dt = 1.0;
 
   // Get sigma : density if not incompressible
   amrex::Vector<std::unique_ptr<amrex::MultiFab>> sigma(finest_level + 1);
   if (m_incompressible == 0) {
     for (int lev = 0; lev <= finest_level; ++lev) {
-
       sigma[lev] = std::make_unique<amrex::MultiFab>(
         grids[lev], dmap[lev], 1, nGhost, amrex::MFInfo(), *m_factory[lev]);
 
       auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
-
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-      for (amrex::MFIter mfi(ldata_p->state, amrex::TilingIfNotGPU());
-           mfi.isValid(); ++mfi) {
-        amrex::Box const& bx = mfi.tilebox();
-        auto const& rho_arr = ldata_p->state.const_array(mfi, DENSITY);
-        auto const& sig_arr = sigma[lev]->array(mfi);
-        amrex::ParallelFor(
-          bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-            sig_arr(i, j, k) = dummy_dt / rho_arr(i, j, k);
-          });
+      auto const& state_ma = ldata_p->state.const_arrays();
+      auto const& sigma_ma = sigma[lev]->arrays();
+      amrex::ParallelFor(
+        ldata_p->state, [state_ma, sigma_ma] AMREX_GPU_DEVICE(
+                          int box_no, int i, int j, int k) noexcept {
+          amrex::Array4<amrex::Real const> rho(state_ma[box_no], DENSITY);
+          sigma_ma[box_no](i, j, k) = dummy_dt / rho(i, j, k);
+        });
+#if AMREX_SPACEDIM == 2
+      if (geom[lev].IsRZ()) {
+        amrex::Gpu::streamSynchronize();
+        scaleProj_RZ(lev, *sigma[lev]);
       }
-      scaleProj_RZ(lev, *sigma[lev]);
+#endif
     }
+    amrex::Gpu::streamSynchronize();
   }
 
   // Get velocity
-  amrex::Vector<std::unique_ptr<amrex::MultiFab>> vel;
+  amrex::Vector<std::unique_ptr<amrex::MultiFab>> vel(finest_level + 1);
   for (int lev = 0; lev <= finest_level; ++lev) {
-    vel.push_back(
-      std::make_unique<amrex::MultiFab>(
-        m_leveldata_new[lev]->state, amrex::make_alias, VELX, AMREX_SPACEDIM));
+    vel[lev] = std::make_unique<amrex::MultiFab>(
+      m_leveldata_new[lev]->state, amrex::make_alias, VELX, AMREX_SPACEDIM);
     vel[lev]->setBndry(0.0);
     setInflowBoundaryVel(*vel[lev], lev, AmrNewTime);
-    scaleProj_RZ(lev, *vel[lev]);
+#if AMREX_SPACEDIM == 2
+    if (geom[lev].IsRZ()) {
+      scaleProj_RZ(lev, *vel[lev]);
+    };
+#endif
   }
 
   // Get RHS cc: - divU (- \int{divU})
   amrex::Real Sbar = 0.0;
-  amrex::Vector<amrex::MultiFab> rhs_cc(finest_level + 1);
+  amrex::Vector<amrex::MultiFab> rhs_cc;
   if ((m_incompressible == 0) && (m_has_divu != 0)) {
     // Ensure integral of RHS is zero for closed chamber
     if (m_closed_chamber != 0) {
       Sbar = MFSum(GetVecOfConstPtrs(getDivUVect(AmrNewTime)), 0);
       Sbar /= m_uncoveredVol; // Transform in Mean.
     }
+    rhs_cc.reserve(finest_level + 1);
     for (int lev = 0; lev <= finest_level; ++lev) {
-      rhs_cc[lev].define(
+      rhs_cc.emplace_back(
         grids[lev], dmap[lev], 1, m_leveldata_new[lev]->divu.nGrow());
       amrex::MultiFab::Copy(
         rhs_cc[lev], m_leveldata_new[lev]->divu, 0, 0, 1,
@@ -76,7 +79,11 @@ PeleLM::initialProjection()
       if (m_closed_chamber != 0) {
         rhs_cc[lev].plus(-Sbar, 0, 1);
       }
-      scaleProj_RZ(lev, rhs_cc[lev]);
+#if AMREX_SPACEDIM == 2
+      if (geom[lev].IsRZ()) {
+        scaleProj_RZ(lev, rhs_cc[lev]);
+      }
+#endif
       rhs_cc[lev].mult(-1.0, 0, 1, rhs_cc[lev].nGrow());
     }
   }
@@ -87,7 +94,7 @@ PeleLM::initialProjection()
 
   // Set back press and gpress to zero and restore divu
   // and rescale velocity if 2D-RZ
-  for (int lev = 0; lev <= finest_level; lev++) {
+  for (int lev = 0; lev <= finest_level; ++lev) {
     auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
     ldata_p->press.setVal(0.0);
     ldata_p->gp.setVal(0.0);
@@ -98,7 +105,11 @@ PeleLM::initialProjection()
         m_leveldata_new[lev]->divu.plus(Sbar, 0, 1);
       }
     }
-    unscaleProj_RZ(lev, *vel[lev]);
+#if AMREX_SPACEDIM == 2
+    if (geom[lev].IsRZ()) {
+      unscaleProj_RZ(lev, *vel[lev]);
+    }
+#endif
   }
 
   // In R-Z, AMReX-Hydro do an average down of r*vel.
@@ -109,8 +120,7 @@ PeleLM::initialProjection()
   }
 
   if (m_verbose != 0) {
-    amrex::Vector<amrex::Real> velMax(AMREX_SPACEDIM);
-    velMax = MLNorm0(
+    amrex::Vector<amrex::Real> velMax = MLNorm0(
       GetVecOfConstPtrs(getVelocityVect(AmrNewTime)), 0, AMREX_SPACEDIM);
     amrex::Print() << " >> After initial velocity projection: ";
     amrex::Print() << AMREX_D_TERM(
@@ -128,41 +138,44 @@ PeleLM::initialPressProjection()
     amrex::Print() << " Initial pressure projection \n";
   }
 
-  amrex::Real dummy_dt = 1.0;
-  int incremental = 0;
-  int nGhost = 1;
+  constexpr amrex::Real dummy_dt = 1.0;
+  constexpr int incremental = 0;
+  constexpr int nGhost = 1;
 
   // Get sigma : density if not incompressible
-  amrex::Vector<std::unique_ptr<amrex::MultiFab>> sigma(finest_level + 1);
+  amrex::Vector<std::unique_ptr<amrex::MultiFab>> sigma;
   if (m_incompressible == 0) {
+    sigma.reserve(finest_level + 1);
     for (int lev = 0; lev <= finest_level; ++lev) {
 
-      sigma[lev] = std::make_unique<amrex::MultiFab>(
-        grids[lev], dmap[lev], 1, nGhost, amrex::MFInfo(), *m_factory[lev]);
+      sigma.emplace_back(
+        std::make_unique<amrex::MultiFab>(
+          grids[lev], dmap[lev], 1, nGhost, amrex::MFInfo(), *m_factory[lev]));
 
       auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
-
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-      for (amrex::MFIter mfi(ldata_p->state, amrex::TilingIfNotGPU());
-           mfi.isValid(); ++mfi) {
-        amrex::Box const& bx = mfi.tilebox();
-        auto const& rho_arr = ldata_p->state.const_array(mfi, DENSITY);
-        auto const& sig_arr = sigma[lev]->array(mfi);
-        amrex::ParallelFor(
-          bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-            sig_arr(i, j, k) = dummy_dt / rho_arr(i, j, k);
-          });
+      auto const& state_ma = ldata_p->state.const_arrays();
+      auto const& sigma_ma = sigma[lev]->arrays();
+      amrex::ParallelFor(
+        ldata_p->state, [state_ma, sigma_ma] AMREX_GPU_DEVICE(
+                          int box_no, int i, int j, int k) noexcept {
+          amrex::Array4<amrex::Real const> rho(state_ma[box_no], DENSITY);
+          sigma_ma[box_no](i, j, k) = dummy_dt / rho(i, j, k);
+        });
+#if AMREX_SPACEDIM == 2
+      if (geom[lev].IsRZ()) {
+        amrex::Gpu::streamSynchronize();
+        scaleProj_RZ(lev, *sigma[lev]);
       }
-      scaleProj_RZ(lev, *sigma[lev]);
+#endif
     }
+    amrex::Gpu::streamSynchronize();
   }
 
   // Set the velocity to the gravity field
-  amrex::Vector<amrex::MultiFab> vel(finest_level + 1);
+  amrex::Vector<amrex::MultiFab> vel;
+  vel.reserve(finest_level + 1);
   for (int lev = 0; lev <= finest_level; ++lev) {
-    vel[lev].define(
+    vel.emplace_back(
       grids[lev], dmap[lev], AMREX_SPACEDIM, nGhost, amrex::MFInfo(),
       *m_factory[lev]);
     for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
@@ -170,7 +183,11 @@ PeleLM::initialPressProjection()
     }
     vel[lev].setBndry(0.0);
     setInflowBoundaryVel(vel[lev], lev, AmrNewTime);
-    scaleProj_RZ(lev, vel[lev]);
+#if AMREX_SPACEDIM == 2
+    if (geom[lev].IsRZ()) {
+      scaleProj_RZ(lev, vel[lev]);
+    }
+#endif
   }
 
   // Done without divU in IAMR
@@ -180,77 +197,81 @@ PeleLM::initialPressProjection()
 
 void
 PeleLM::velocityProjection(
-  int is_initIter, const TimeStamp& a_rhoTime, const amrex::Real& a_dt)
+  const int is_initIter, const TimeStamp a_rhoTime, const amrex::Real a_dt)
 {
   BL_PROFILE("PeleLMeX::velocityProjection()");
 
-  int nGhost = 0;
-  int incremental = (is_initIter) != 0 ? 1 : 0;
+  constexpr int nGhost = 0;
+  const int incremental = (is_initIter) != 0 ? 1 : 0;
 
   // Get sigma : scaled density inv. if not incompressible
   amrex::Vector<std::unique_ptr<amrex::MultiFab>> sigma(finest_level + 1);
   if (m_incompressible == 0) {
-    amrex::Vector<std::unique_ptr<amrex::MultiFab>> rhoHalf(finest_level + 1);
-    rhoHalf = getDensityVect(a_rhoTime);
+    amrex::Vector<std::unique_ptr<amrex::MultiFab>> rhoHalf =
+      getDensityVect(a_rhoTime);
     for (int lev = 0; lev <= finest_level; ++lev) {
 
       sigma[lev] = std::make_unique<amrex::MultiFab>(
         grids[lev], dmap[lev], 1, nGhost, amrex::MFInfo(), *m_factory[lev]);
 
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-      for (amrex::MFIter mfi(*rhoHalf[lev], amrex::TilingIfNotGPU());
-           mfi.isValid(); ++mfi) {
-        amrex::Box const& bx = mfi.tilebox();
-        auto const& rho_arr = rhoHalf[lev]->const_array(mfi);
-        auto const& sig_arr = sigma[lev]->array(mfi);
-        amrex::ParallelFor(
-          bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-            sig_arr(i, j, k) = a_dt / rho_arr(i, j, k);
-          });
-      }
+      auto const& rhoHalf_ma = rhoHalf[lev]->const_arrays();
+      auto const& sigma_ma = sigma[lev]->arrays();
+
+      amrex::ParallelFor(
+        *rhoHalf[lev], [rhoHalf_ma, sigma_ma, dt = a_dt] AMREX_GPU_DEVICE(
+                         int box_no, int i, int j, int k) noexcept {
+          sigma_ma[box_no](i, j, k) = dt / rhoHalf_ma[box_no](i, j, k);
+        });
 #ifdef AMREX_USE_EB
+      amrex::Gpu::streamSynchronize();
       EB_set_covered(*sigma[lev], 0.0);
 #endif
-      scaleProj_RZ(lev, *sigma[lev]);
+#if AMREX_SPACEDIM == 2
+      if (geom[lev].IsRZ()) {
+        amrex::Gpu::streamSynchronize();
+        scaleProj_RZ(lev, *sigma[lev]);
+      }
+#endif
     }
+    amrex::Gpu::streamSynchronize();
   }
 
   if (incremental == 0) {
-    amrex::Vector<std::unique_ptr<amrex::MultiFab>> rhoHalf(finest_level + 1);
     if (m_incompressible == 0) {
-      rhoHalf = getDensityVect(a_rhoTime);
-    }
-    for (int lev = 0; lev <= finest_level; ++lev) {
-
-      auto* ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
-      auto* ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
-
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-      for (amrex::MFIter mfi(ldataNew_p->state, amrex::TilingIfNotGPU());
-           mfi.isValid(); ++mfi) {
-        amrex::Box const& bx = mfi.tilebox();
-        auto const& vel_arr = ldataNew_p->state.array(mfi, VELX);
-        auto const& gp_arr = ldataOld_p->gp.const_array(mfi);
-        auto const& rho_arr = (m_incompressible) != 0
-                                ? amrex::Array4<amrex::Real const>()
-                                : rhoHalf[lev]->const_array(mfi);
-        const auto incompressible = m_incompressible;
-        const auto rho = m_rho;
+      amrex::Vector<std::unique_ptr<amrex::MultiFab>> rhoHalf =
+        getDensityVect(a_rhoTime);
+      for (int lev = 0; lev <= finest_level; ++lev) {
+        auto* ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
+        auto* ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
+        auto const& state_new_ma = ldataNew_p->state.arrays();
+        auto const& gp_old_ma = ldataOld_p->gp.const_arrays();
+        auto const& rho_ma = rhoHalf[lev]->const_arrays();
         amrex::ParallelFor(
-          bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-            amrex::Real soverrho =
-              (incompressible) != 0 ? a_dt / rho : a_dt / rho_arr(i, j, k);
-            AMREX_D_TERM(vel_arr(i, j, k, 0) += gp_arr(i, j, k, 0) * soverrho;
-                         , vel_arr(i, j, k, 1) += gp_arr(i, j, k, 1) * soverrho;
-                         ,
-                         vel_arr(i, j, k, 2) += gp_arr(i, j, k, 2) * soverrho);
+          ldataNew_p->state, amrex::IntVect(0), AMREX_SPACEDIM,
+          [state_new_ma, gp_old_ma, rho_ma, dt = a_dt] AMREX_GPU_DEVICE(
+            int box_no, int i, int j, int k, int n) noexcept {
+            amrex::Array4<amrex::Real> vel(state_new_ma[box_no], VELX);
+            const amrex::Real soverrho = dt / rho_ma[box_no](i, j, k);
+            vel(i, j, k, n) += gp_old_ma[box_no](i, j, k, n) * soverrho;
+          });
+      }
+    } else {
+      for (int lev = 0; lev <= finest_level; ++lev) {
+        auto* ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
+        auto* ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
+        auto const& state_new_ma = ldataNew_p->state.arrays();
+        auto const& gp_old_ma = ldataOld_p->gp.const_arrays();
+        const amrex::Real soverrho = m_dt / m_rho;
+        amrex::ParallelFor(
+          ldataNew_p->state, amrex::IntVect(0), AMREX_SPACEDIM,
+          [state_new_ma, gp_old_ma, soverrho] AMREX_GPU_DEVICE(
+            int box_no, int i, int j, int k, int n) noexcept {
+            amrex::Array4<amrex::Real> vel(state_new_ma[box_no], VELX);
+            vel(i, j, k, n) += gp_old_ma[box_no](i, j, k, n) * soverrho;
           });
       }
     }
+    amrex::Gpu::streamSynchronize();
   }
 
   // If incremental
@@ -265,11 +286,10 @@ PeleLM::velocityProjection(
   }
 
   // Get velocity
-  amrex::Vector<std::unique_ptr<amrex::MultiFab>> vel;
+  amrex::Vector<std::unique_ptr<amrex::MultiFab>> vel(finest_level + 1);
   for (int lev = 0; lev <= finest_level; ++lev) {
-    vel.push_back(
-      std::make_unique<amrex::MultiFab>(
-        m_leveldata_new[lev]->state, amrex::make_alias, VELX, AMREX_SPACEDIM));
+    vel[lev] = std::make_unique<amrex::MultiFab>(
+      m_leveldata_new[lev]->state, amrex::make_alias, VELX, AMREX_SPACEDIM);
 #ifdef AMREX_USE_EB
     EB_set_covered(*vel[lev], 0.0);
 #endif
@@ -277,29 +297,33 @@ PeleLM::velocityProjection(
     if (incremental == 0) {
       setInflowBoundaryVel(*vel[lev], lev, AmrNewTime);
     }
-    scaleProj_RZ(lev, *vel[lev]);
+#if AMREX_SPACEDIM == 2
+    if (geom[lev].IsRZ()) {
+      scaleProj_RZ(lev, *vel[lev]);
+    }
+#endif
   }
 
   // To ensure integral of RHS is zero for closed chamber, get mean divU
   amrex::Real SbarOld = 0.0;
   amrex::Real SbarNew = 0.0;
   if ((m_closed_chamber != 0) && (m_incompressible == 0)) {
-    SbarNew = MFSum(GetVecOfConstPtrs(getDivUVect(AmrNewTime)), 0);
-    SbarNew /= m_uncoveredVol; // Transform in Mean.
+    SbarNew = MFSum(GetVecOfConstPtrs(getDivUVect(AmrNewTime)), 0) /
+              m_uncoveredVol; // Transform in Mean.
     if (incremental != 0) {
-      SbarOld = MFSum(GetVecOfConstPtrs(getDivUVect(AmrOldTime)), 0);
-      SbarOld /= m_uncoveredVol; // Transform in Mean.
+      SbarOld = MFSum(GetVecOfConstPtrs(getDivUVect(AmrOldTime)), 0) /
+                m_uncoveredVol; // Transform in Mean.
     }
   }
 
   // Get RHS cc
   amrex::Vector<amrex::MultiFab> rhs_cc;
   if ((m_incompressible == 0) && (m_has_divu != 0)) {
-    rhs_cc.resize(finest_level + 1);
-    for (int lev = 0; lev <= finest_level; ++lev) {
-      if (incremental == 0) {
+    rhs_cc.reserve(finest_level + 1);
+    if (incremental == 0) {
+      for (int lev = 0; lev <= finest_level; ++lev) {
         auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
-        rhs_cc[lev].define(
+        rhs_cc.emplace_back(
           grids[lev], dmap[lev], 1, ldata_p->divu.nGrow(), amrex::MFInfo(),
           *m_factory[lev]);
         amrex::MultiFab::Copy(
@@ -308,36 +332,50 @@ PeleLM::velocityProjection(
           rhs_cc[lev].plus(-SbarNew, 0, 1);
         }
         rhs_cc[lev].mult(-1.0, 0, 1, ldata_p->divu.nGrow());
-      } else {
+#ifdef AMREX_USE_EB
+        EB_set_covered(rhs_cc[lev], 0.0);
+#endif
+#if AMREX_SPACEDIM == 2
+        if (geom[lev].IsRZ()) {
+          scaleProj_RZ(lev, rhs_cc[lev]);
+        }
+#endif
+      }
+    } else {
+      for (int lev = 0; lev <= finest_level; ++lev) {
         auto* ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
         auto* ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
-        rhs_cc[lev].define(
+        rhs_cc.emplace_back(
           grids[lev], dmap[lev], 1, ldataOld_p->divu.nGrow(), amrex::MFInfo(),
           *m_factory[lev]);
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-        for (amrex::MFIter mfi(rhs_cc[lev], amrex::TilingIfNotGPU());
-             mfi.isValid(); ++mfi) {
-          const amrex::Box& gbx = mfi.growntilebox();
-          const auto& divu_o = ldataOld_p->divu.const_array(mfi);
-          const auto& divu_n = ldataNew_p->divu.const_array(mfi);
-          const auto& rhs = rhs_cc[lev].array(mfi);
-          const auto is_closed_ch = m_closed_chamber;
-          amrex::ParallelFor(
-            gbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-              rhs(i, j, k) = -(divu_n(i, j, k) - divu_o(i, j, k));
-              if (is_closed_ch != 0) {
-                rhs(i, j, k) +=
-                  SbarNew - SbarOld; // subtract the mean, but rhs's already -
-              }
-            });
+
+        auto const& divu_o_ma = ldataOld_p->divu.const_arrays();
+        auto const& divu_n_ma = ldataNew_p->divu.const_arrays();
+        auto const& rhs_ma = rhs_cc[lev].arrays();
+
+        amrex::ParallelFor(
+          rhs_cc[lev], rhs_cc[lev].nGrowVect(),
+          [divu_o_ma, divu_n_ma,
+           rhs_ma] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+            rhs_ma[box_no](i, j, k) =
+              -(divu_n_ma[box_no](i, j, k) - divu_o_ma[box_no](i, j, k));
+          });
+        if (m_closed_chamber != 0) {
+          amrex::Gpu::streamSynchronize();
+          rhs_cc[lev].plus(SbarNew - SbarOld, 0, 1, ldataOld_p->divu.nGrow());
         }
-      }
 #ifdef AMREX_USE_EB
-      EB_set_covered(rhs_cc[lev], 0.0);
+        amrex::Gpu::streamSynchronize();
+        EB_set_covered(rhs_cc[lev], 0.0);
 #endif
-      scaleProj_RZ(lev, rhs_cc[lev]);
+#if AMREX_SPACEDIM == 2
+        if (geom[lev].IsRZ()) {
+          amrex::Gpu::streamSynchronize();
+          scaleProj_RZ(lev, rhs_cc[lev]);
+        }
+#endif
+      }
+      amrex::Gpu::streamSynchronize();
     }
   }
 
@@ -345,30 +383,34 @@ PeleLM::velocityProjection(
     GetVecOfPtrs(vel), GetVecOfPtrs(sigma), GetVecOfPtrs(rhs_cc), {},
     incremental, a_dt);
 
+#if AMREX_SPACEDIM == 2
+  // Unscaling New vel before adding back old one
+  for (int lev = 0; lev <= finest_level; ++lev) {
+    if (geom[lev].IsRZ()) {
+      unscaleProj_RZ(lev, *vel[lev]);
+    }
+  }
+#endif
+
   // If incremental
   // define back to be U^{np1} by adding U^{n}
-  // and handles scaling if 2D-RZ
   if (incremental != 0) {
     for (int lev = 0; lev <= finest_level; ++lev) {
       auto* ldataOld_p = getLevelDataPtr(lev, AmrOldTime);
       auto* ldataNew_p = getLevelDataPtr(lev, AmrNewTime);
-      unscaleProj_RZ(
-        lev, *vel[lev]); // Unscaling New vel before adding back old one
       amrex::MultiFab::Add(
         ldataNew_p->state, ldataOld_p->state, VELX, VELX, AMREX_SPACEDIM, 0);
     }
-  } else {
-    for (int lev = 0; lev <= finest_level; ++lev) {
-      unscaleProj_RZ(lev, *vel[lev]);
-    }
   }
 
+#if AMREX_SPACEDIM == 2
   // In R-Z, AMReX-Hydro do an average down of r*vel.
   // Now that we have unscaled vel, need to do average down again
   // to have consistent vel across levels
   if (Geom(0).IsRZ()) {
     averageDownVelocity(AmrNewTime);
   }
+#endif
 }
 
 void
@@ -377,8 +419,8 @@ PeleLM::doNodalProject(
   const amrex::Vector<amrex::MultiFab*>& a_sigma,
   const amrex::Vector<amrex::MultiFab*>& rhs_cc,
   const amrex::Vector<const amrex::MultiFab*>& rhs_nd,
-  int incremental,
-  amrex::Real scaling_factor)
+  const int incremental,
+  const amrex::Real scaling_factor)
 {
   // Asserts
   AMREX_ASSERT(a_vel.size() == a_sigma.size());
@@ -392,7 +434,7 @@ PeleLM::doNodalProject(
   // BCs
   std::array<amrex::LinOpBCType, AMREX_SPACEDIM> lobc;
   std::array<amrex::LinOpBCType, AMREX_SPACEDIM> hibc;
-  for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+  for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
     if (Geom(0).isPeriodic(idim)) {
       lobc[idim] = hibc[idim] = amrex::LinOpBCType::Periodic;
     } else {
@@ -417,7 +459,7 @@ PeleLM::doNodalProject(
   std::unique_ptr<Hydro::NodalProjector> nodal_projector;
 
   if (m_incompressible != 0) {
-    amrex::Real constant_sigma = scaling_factor / m_rho;
+    const amrex::Real constant_sigma = scaling_factor / m_rho;
     nodal_projector = std::make_unique<Hydro::NodalProjector>(
       a_vel, constant_sigma, Geom(0, finest_level), info);
   } else {
@@ -443,16 +485,44 @@ PeleLM::doNodalProject(
 #endif
 
 #ifdef AMREX_USE_HYPRE
-  nodal_projector->getMLMG().setHypreOptionsNamespace(m_hypre_namespace_nodal);
+  if (
+    nodal_projector->getMLMG().getBottomSolver() ==
+    amrex::MLMG::BottomSolver::hypre) {
+    nodal_projector->getMLMG().setHypreOptionsNamespace(
+      m_hypre_namespace_nodal);
+  }
 #endif
 
   // Solve
-  nodal_projector->project(m_nodal_mg_rtol, m_nodal_mg_atol);
+  if (!m_mlmg_fail_plt_residuals) {
+    nodal_projector->project(m_nodal_mg_rtol, m_nodal_mg_atol);
+  } else {
+    nodal_projector->getMLMG().setThrowException(true);
+    nodal_projector->getMLMG().setConvergenceNormType(
+      amrex::MLMGNormType::bnorm);
+    try {
+      nodal_projector->project(m_nodal_mg_rtol, m_nodal_mg_atol);
+    } catch (const std::exception& e) {
+      amrex::Print() << "\n";
+      amrex::Print() << "  *** Nodal projection MLMG solve failed! ***\n";
+      amrex::Print() << "  Error: " << e.what() << "\n";
+      amrex::Print()
+        << "  Dumping nodal projection residuals for debugging...\n";
+
+      auto phi = nodal_projector->getPhi();
+      auto rhs = nodal_projector->getRHSConst();
+
+      WriteMLMGResidual(
+        nodal_projector->getMLMG(), phi, rhs, "nodal_projection", m_nstep);
+
+      amrex::Abort("MLMG solve for nodal_projection failed");
+    }
+  }
 
   auto phi = nodal_projector->getPhi();
   auto gphi = nodal_projector->getGradPhi();
 
-  for (int lev = 0; lev <= finest_level; lev++) {
+  for (int lev = 0; lev <= finest_level; ++lev) {
 
     auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
 
@@ -470,21 +540,25 @@ PeleLM::doNodalProject(
       if (incremental != 0) {
         amrex::ParallelFor(
           tbx, AMREX_SPACEDIM,
-          [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
+          [gp_lev_arr,
+           gp_proj_arr] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
             gp_lev_arr(i, j, k, n) += gp_proj_arr(i, j, k, n);
           });
         amrex::ParallelFor(
-          nbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          nbx, [p_lev_arr,
+                p_proj_arr] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             p_lev_arr(i, j, k) += p_proj_arr(i, j, k);
           });
       } else {
         amrex::ParallelFor(
           tbx, AMREX_SPACEDIM,
-          [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
+          [gp_lev_arr,
+           gp_proj_arr] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
             gp_lev_arr(i, j, k, n) = gp_proj_arr(i, j, k, n);
           });
         amrex::ParallelFor(
-          nbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          nbx, [p_lev_arr,
+                p_proj_arr] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             p_lev_arr(i, j, k) = p_proj_arr(i, j, k);
           });
       }
@@ -505,77 +579,55 @@ PeleLM::doNodalProject(
   }
 }
 
-void
-PeleLM::scaleProj_RZ( // NOLINT(readability-convert-member-functions-to-static)
-  int a_lev,
-  amrex::MultiFab& a_mf)
-{
 #if AMREX_SPACEDIM == 2
+void
+PeleLM::scaleProj_RZ(const int a_lev, amrex::MultiFab& a_mf)
+{
   // Scale nodal projection cell-centered mfs by radius
-  if (geom[a_lev].IsRZ()) {
-    amrex::Box domain = geom[a_lev].Domain();
-    auto BCRecVel = fetchBCRecArray(VELX, 1);
-    for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
-      if (BCRecVel[0].lo(idim) == amrex::BCType::ext_dir) {
-        domain.growLo(idim, 1);
-      }
-      if (BCRecVel[0].hi(idim) == amrex::BCType::ext_dir) {
-        domain.growHi(idim, 1);
-      }
+  amrex::Box domain = geom[a_lev].Domain();
+  auto BCRecVel = fetchBCRecArray(VELX, 1);
+  for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
+    if (BCRecVel[0].lo(idim) == amrex::BCType::ext_dir) {
+      domain.growLo(idim, 1);
     }
-    const amrex::Real dr = geom[a_lev].CellSize()[0];
-    auto const& mf_ma = a_mf.arrays();
-    const auto ncomp = a_mf.nComp();
-    amrex::ParallelFor(
-      a_mf, a_mf.nGrowVect(),
-      [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
-        auto mf = mf_ma[box_no];
-        if (domain.contains(i, j, k)) {
-          for (int n = 0; n < ncomp; ++n) {
-            mf(i, j, k, n) *= (static_cast<amrex::Real>(i) + 0.5) * dr;
-          }
-        } else {
-          for (int n = 0; n < ncomp; ++n) {
-            mf(i, j, k, n) = 0.0;
-          }
-        }
-      });
-    amrex::Gpu::streamSynchronize();
+    if (BCRecVel[0].hi(idim) == amrex::BCType::ext_dir) {
+      domain.growHi(idim, 1);
+    }
   }
-#else
-  amrex::ignore_unused(a_lev, a_mf);
-#endif
+  const amrex::Real dr = geom[a_lev].CellSize()[0];
+  auto const& mf_ma = a_mf.arrays();
+  amrex::ParallelFor(
+    a_mf, a_mf.nGrowVect(), a_mf.nComp(),
+    [mf_ma, dr,
+     domain] AMREX_GPU_DEVICE(int box_no, int i, int j, int k, int n) noexcept {
+      auto mf = mf_ma[box_no];
+      if (domain.contains(i, j, k)) {
+        mf(i, j, k, n) *= (static_cast<amrex::Real>(i) + 0.5) * dr;
+      } else {
+        mf(i, j, k, n) = 0.0;
+      }
+    });
+  amrex::Gpu::streamSynchronize();
 }
 
 void
-PeleLM::
-  unscaleProj_RZ( // NOLINT(readability-convert-member-functions-to-static)
-    int a_lev,
-    amrex::MultiFab& a_mf)
+PeleLM::unscaleProj_RZ(const int a_lev, amrex::MultiFab& a_mf)
 {
-#if AMREX_SPACEDIM == 2
   // Unscale nodal projection cell-centered mfs by radius
-  if (geom[a_lev].IsRZ()) {
-    const amrex::Box& domain = geom[a_lev].Domain();
-    const amrex::Real dr = geom[a_lev].CellSize()[0];
-    auto const& mf_ma = a_mf.arrays();
-    const auto ncomp = a_mf.nComp();
-    amrex::ParallelFor(
-      a_mf, a_mf.nGrowVect(),
-      [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
-        auto mf = mf_ma[box_no];
-        if (domain.contains(i, j, k)) {
-          for (int n = 0; n < ncomp; ++n) {
-            mf(i, j, k, n) /= (static_cast<amrex::Real>(i) + 0.5) * dr;
-          }
-        } else {
-          for (int n = 0; n < ncomp; ++n) {
-            mf(i, j, k, n) = 0.0;
-          }
-        }
-      });
-  }
-#else
-  amrex::ignore_unused(a_lev, a_mf);
-#endif
+  const amrex::Box& domain = geom[a_lev].Domain();
+  const amrex::Real dr = geom[a_lev].CellSize()[0];
+  auto const& mf_ma = a_mf.arrays();
+  amrex::ParallelFor(
+    a_mf, a_mf.nGrowVect(), a_mf.nComp(),
+    [mf_ma, dr,
+     domain] AMREX_GPU_DEVICE(int box_no, int i, int j, int k, int n) noexcept {
+      auto mf = mf_ma[box_no];
+      if (domain.contains(i, j, k)) {
+        mf(i, j, k, n) /= (static_cast<amrex::Real>(i) + 0.5) * dr;
+      } else {
+        mf(i, j, k, n) = 0.0;
+      }
+    });
+  amrex::Gpu::streamSynchronize();
 }
+#endif

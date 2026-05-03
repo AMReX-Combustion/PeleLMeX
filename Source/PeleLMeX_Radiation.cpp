@@ -35,14 +35,14 @@ PeleLM::RadInit()
 }
 
 void
-PeleLM::computeRadSource(const PeleLM::TimeStamp& a_timestamp)
+PeleLM::computeRadSource(const TimeStamp a_timestamp)
 {
   int const co2Indx = rad_model->readRadIndices().co2Indx;
   int const h2oIndx = rad_model->readRadIndices().h2oIndx;
   int const coIndx = rad_model->readRadIndices().coIndx;
 
   BL_PROFILE_VAR("PeleLM::advance::rad::spec", PLM_RAD_SPEC);
-  for (int lev = 0; lev <= finest_level; lev++) {
+  for (int lev = 0; lev <= finest_level; ++lev) {
     auto* ldata_p = PeleLM::getLevelDataPtr(lev, a_timestamp);
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
@@ -72,7 +72,7 @@ PeleLM::computeRadSource(const PeleLM::TimeStamp& a_timestamp)
   BL_PROFILE_VAR("PeleLM::advance::rad::solve", PLM_RAD_SOLV);
   rad_model->evaluateRad();
 
-  for (int lev = 0; lev <= finest_level; lev++) {
+  for (int lev = 0; lev <= finest_level; ++lev) {
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif

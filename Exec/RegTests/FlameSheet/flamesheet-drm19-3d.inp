@@ -35,6 +35,7 @@ peleLM.incompressible = 0
 peleLM.use_wbar = 1
 peleLM.sdc_iterMax = 2
 peleLM.floor_species = 0
+peleLM.divu_dt_method = 2
 
 peleLM.do_temporals = 1
 peleLM.do_mass_balance = 1

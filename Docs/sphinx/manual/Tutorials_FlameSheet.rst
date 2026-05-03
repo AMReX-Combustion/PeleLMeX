@@ -244,7 +244,9 @@ In `PeleLMeX`, the chemistry model (set of species, their thermodynamic and tran
 
    Chemistry_Model = drm19
 
-Here, the model ``drm19``, contains 21 species and describe the chemical decomposition of methane.
+Here, the model ``drm19``, contains 21 species and describe the chemical decomposition of methane. Advanced users may also specify
+``USE_CUSTOM_CHEMISTRY = TRUE``, in which case ``Chemistry_Model`` is interpreted as a path and can point to models not included in
+PelePhysics by default, though the new model directory must contain valid chemistry model files.
 The user is referred to the `PelePhysics <https://pelephysics.readthedocs.io/en/latest/>`_ documentation for a
 list of available mechanisms and more information regarding the EOS, chemistry and transport models specified: ::
 

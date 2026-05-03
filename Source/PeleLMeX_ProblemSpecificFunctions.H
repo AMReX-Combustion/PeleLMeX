@@ -181,7 +181,7 @@ struct DefaultProblemSpecificFunctions
   {
 #if NUM_ODE > 0
     a_ode_names.resize(NUM_ODE);
-    for (int n = 0; n < NUM_ODE; n++) {
+    for (int n = 0; n < NUM_ODE; ++n) {
       a_ode_names[n] = "ODE_" + std::to_string(n);
     }
 #else
@@ -219,11 +219,11 @@ struct DefaultProblemSpecificFunctions
      * auto const& state_old_arr = state_old.const_arrays();
      * ParallelFor(
      *   *ext_src,
-     *   [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
-     *     for (int n = 0; n < NUM_ODE; n++) {
-     *       amrex::Real B_n = state_old_arr[box_no](i, j, k, FIRSTODE + n);
-     *       amrex::Real src = -1.0 * pow(10.0, n + 1) * B_n;
-     *       ext_src_arr[box_no](i, j, k, FIRSTODE + n) += src;
+     *   [ext_src_arr] AMREX_GPU_DEVICE(int box_no, int i, int j, int k)
+     * noexcept { for (int n = 0; n < NUM_ODE; ++n) { amrex::Real B_n =
+     * state_old_arr[box_no](i, j, k, FIRSTODE + n); amrex::Real src = -1.0 *
+     * pow(10.0, n + 1) * B_n; ext_src_arr[box_no](i, j, k, FIRSTODE + n) +=
+     * src;
      *     }
      *   });
      * amrex::Gpu::streamSynchronize();
@@ -238,6 +238,37 @@ struct DefaultProblemSpecificFunctions
     amrex::Abort(
       "Using patchFlowVariables requires providing a definition in local "
       "ProblemSpecificFunctions in pelelmex_prob.H");
+  }
+
+  /**
+   * \brief Perform problem-specific operations after advance
+   *
+   * \param time              current time after advance.
+   * \param dt                time-step size used in advance.
+   * \param finest_level      finest AMR level.
+   * \param state             vector of state multifabs for all levels.
+   * \param geom              vector of geometry objects for all levels.
+   * \param prob_parm         host copy of problem specific parameters.
+   * \param prob_parm_d       device copy of problem specific parameters.
+   */
+  static void postAdvance(
+    amrex::Real /*time*/,
+    amrex::Real /*dt*/,
+    int /*finest_level*/,
+    const amrex::Vector<amrex::MultiFab*>& /*state*/,
+    const amrex::Vector<const amrex::Geometry*>& /*geom*/,
+    const ProbParmDefault& /*prob_parm*/,
+    const ProbParmDefault* /*prob_parm_d*/)
+  {
+    /** Notes:
+     *   1. This function is called once after each time advance
+     *   2. Receives state data for all AMR levels
+     *   3. prob_parm is the host copy, useful for CPU-side logic and checks
+     *   4. prob_parm_d is the device copy, useful for GPU kernel launches
+     *   5. Any post-advance operations must be performend on each level
+     *   6. The default implementation does nothing
+     *   7. Specific problem implementations can override this function
+     */
   }
 
 }; // namespace DefaultProblemSpecificFunctions

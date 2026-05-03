@@ -6,6 +6,7 @@ SUNDIALS_HOME      ?= $(abspath $(lastword ${PELE_PHYSICS_HOME}/Submodules/sundi
 
 USE_SUNDIALS = TRUE
 BL_NO_FORT = TRUE
+CXXSTD = c++20
 
 # Raise an error if case files and source versions are incompatible
 define ERROR_MESSAGE
@@ -37,10 +38,8 @@ endif
 	@echo SUCCESS
 
 ifeq ($(USE_CUDA),TRUE)
-   CXXFLAGS += -Xptxas --disable-optimizer-constants -Xcompiler=-std=c++17
+   CXXFLAGS += -Xptxas --disable-optimizer-constants
 endif
-
-CXXFLAGS += -std=c++17
 
 #---------------
 # PeleLM sources
@@ -52,9 +51,12 @@ ifeq ($(USE_PLASMA),TRUE)
 endif
 ifeq ($(USE_PARTICLES), TRUE)
    ifdef SPRAY_FUEL_NUM
-      # This tells PeleMP that PeleC is not being used
+      # This tells PelePhysics that PeleC is not being used
       DEFINES += -DPELE_USE_SPRAY -DPELELM_USE_SPRAY
       DEFINES += -DSPRAY_FUEL_NUM=$(SPRAY_FUEL_NUM)
+      ifeq ($(SPRAY_GCM), TRUE)
+         DEFINES += -DPELE_SPRAY_GCM=$(SPRAY_GCM)
+      endif
    endif
 endif
 ifeq ($(USE_SOOT), TRUE)
@@ -137,15 +139,22 @@ ifeq ($(PELE_CVODE_FORCE_YCORDER), TRUE)
   DEFINES += -DPELE_CVODE_FORCE_YCORDER
 endif
 
-ChemDir  = Mechanisms/$(Chemistry_Model)
-
 PPdirs := Source/Utility/PMF Source/Utility/TurbInflow Source/Utility/PltFileManager
 PPdirs += Source/Utility/Diagnostics Source/Utility/BlackBoxFunction
 PPdirs += Source/Utility/TurbForcing
 PPdirs += Source/Utility/Utilities
-PPdirs += Source $(ChemDir) Source/Reactions Source/Eos Source/Transport
+PPdirs += Source Source/Reactions Source/Eos Source/Transport
+
+ifeq ($(USE_CUSTOM_CHEMISTRY), TRUE)
+  Bpack += $(Chemistry_Model)/Make.package
+  Blocs += $(Chemistry_Model)
+else
+  PPdirs += Mechanisms/$(Chemistry_Model)
+endif
+
 Bpack += $(foreach dir, $(PPdirs), $(PELE_PHYSICS_HOME)/$(dir)/Make.package)
 Blocs += $(foreach dir, $(PPdirs), $(PELE_PHYSICS_HOME)/$(dir))
+
 include $(PELE_PHYSICS_HOME)/ThirdParty/Make.ThirdParty
 
 # Spray

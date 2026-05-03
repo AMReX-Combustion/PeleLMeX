@@ -4,17 +4,17 @@
 #include <memory>
 
 void
-PeleLM::Advance(int is_initIter)
+PeleLM::Advance(const int is_initIter)
 {
   BL_PROFILE("PeleLMeX::Advance()");
 
 #ifdef AMREX_MEM_PROFILING
   // Memory profiler if compiled
-  MemProfiler::report("STEP [" + std::to_string(m_nstep) + "]");
+  amrex::MemProfiler::report("STEP [" + std::to_string(m_nstep) + "]");
 #endif
 
   // Start timing current time step
-  amrex::Real strt_time = amrex::ParallelDescriptor::second();
+  const amrex::Real strt_time = amrex::ParallelDescriptor::second();
 
   //----------------------------------------------------------------
   BL_PROFILE_VAR("PeleLMeX::advance::setup", PLM_SETUP);
@@ -47,15 +47,19 @@ PeleLM::Advance(int is_initIter)
 #endif
 
   // Update time vectors
-  for (int lev = 0; lev <= finest_level; lev++) {
+  for (int lev = 0; lev <= finest_level; ++lev) {
     m_t_old[lev] = m_cur_time;
     m_t_new[lev] = m_cur_time + m_dt;
   }
   //----------------------------------------------------------------
 
   if (m_verbose != 0) {
+    amrex::Long ncells = 0;
+    for (int lev = 0; lev <= finest_level; ++lev) {
+      ncells += m_extSource[lev]->boxArray().numPts();
+    }
     amrex::Print() << " STEP [" << m_nstep << "] - Time: " << m_cur_time
-                   << ", dt " << m_dt << "\n";
+                   << ", dt " << m_dt << ", Ncells " << ncells << "\n";
   }
 
   checkMemory("Adv. start");
@@ -71,7 +75,7 @@ PeleLM::Advance(int is_initIter)
     finest_level, grids, dmap, m_factory, m_incompressible, m_nAux, m_nGrowAdv,
     m_nGrowMAC);
 
-  for (int lev = 0; lev <= finest_level; lev++) {
+  for (int lev = 0; lev <= finest_level; ++lev) {
     m_extSource[lev]->setVal(0.);
   }
   //----------------------------------------------------------------
@@ -86,7 +90,7 @@ PeleLM::Advance(int is_initIter)
 
   // Reset velocity flux on boundary faces if doing closed chamber
   if (m_closed_chamber != 0) {
-    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+    for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
       m_domainUmacFlux[2 * idim] = 0.0;
       m_domainUmacFlux[2 * idim + 1] = 0.0;
     }
@@ -129,7 +133,8 @@ PeleLM::Advance(int is_initIter)
     BL_PROFILE_VAR_STOP(PLM_MAC);
     //----------------------------------------------------------------
     BL_PROFILE_VAR("PeleLMeX::advance::diffusion", PLM_DIFF);
-    computeDifferentialDiffusionTerms(AmrOldTime, diffData);
+    const amrex::Real fluxfact = (m_nSDCmax > 1) ? 0.5 : 0.0;
+    computeDifferentialDiffusionTerms(AmrOldTime, diffData, 0, fluxfact);
     BL_PROFILE_VAR_STOP(PLM_DIFF);
     //----------------------------------------------------------------
   }
@@ -181,8 +186,8 @@ PeleLM::Advance(int is_initIter)
   } else {
 
     // SDC iterations
-    for (int sdc_iter = 1; sdc_iter <= m_nSDCmax; ++sdc_iter) {
-      oneSDC(sdc_iter, advData, diffData);
+    for (m_sdcIter = 1; m_sdcIter <= m_nSDCmax; ++m_sdcIter) {
+      oneSDC(m_sdcIter, advData, diffData);
     }
 
     // Post SDC
@@ -201,10 +206,10 @@ PeleLM::Advance(int is_initIter)
 #endif
 
     if (m_has_divu != 0) {
-      int is_initialization = 0; // Not here
-      int computeDiffusionTerm =
+      constexpr int is_initialization = 0; // Not here
+      constexpr int computeDiffusionTerm =
         1; // Yes, re-evaluate the diffusion term after the last chemistry solve
-      int do_avgDown = 1; // Always
+      constexpr int do_avgDown = 1; // Always
       calcDivU(
         is_initialization, computeDiffusionTerm, do_avgDown, AmrNewTime,
         diffData);
@@ -263,16 +268,33 @@ PeleLM::Advance(int is_initIter)
       run_time, amrex::ParallelDescriptor::IOProcessorNumber());
     amrex::Print() << " >> PeleLMeX::Advance() --> Time: " << run_time << "\n";
   }
+
+  //----------------------------------------------------------------
+  // Post advance steps ProblemSpecificFunctions
+  BL_PROFILE_VAR("ProblemSpecificFunctions::postAdvance()", PLM_POSTADV);
+
+  // Collect state MultiFabs and geometries for all levels
+  amrex::Vector<amrex::MultiFab*> state_mf(finest_level + 1);
+  amrex::Vector<const amrex::Geometry*> geom_vec(finest_level + 1);
+  for (int lev = 0; lev <= finest_level; ++lev) {
+    auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
+    state_mf[lev] = &(ldata_p->state);
+    geom_vec[lev] = &(geom[lev]);
+  }
+  ProblemSpecificFunctions::postAdvance(
+    m_cur_time + m_dt, m_dt, finest_level, state_mf, geom_vec, *prob_parm,
+    prob_parm_d);
+
+  BL_PROFILE_VAR_STOP(PLM_POSTADV);
 }
 
 void
 PeleLM::oneSDC(
-  int sdcIter,
-  std::unique_ptr<AdvanceAdvData>& advData,
-  std::unique_ptr<AdvanceDiffData>& diffData)
+  const int sdcIter,
+  const std::unique_ptr<AdvanceAdvData>& advData,
+  const std::unique_ptr<AdvanceDiffData>& diffData)
 {
   BL_PROFILE("PeleLMeX::oneSDC()");
-  m_sdcIter = sdcIter;
 
   if (m_verbose > 0) {
     amrex::Print() << "   SDC iter [" << sdcIter << "] \n";
@@ -298,11 +320,12 @@ PeleLM::oneSDC(
     }
 
     calcDiffusivity(AmrNewTime);
-    computeDifferentialDiffusionTerms(AmrNewTime, diffData);
+    const amrex::Real fluxfact = (sdcIter == m_nSDCmax) ? -0.5 : 0.0;
+    computeDifferentialDiffusionTerms(AmrNewTime, diffData, 0, fluxfact);
     if (m_has_divu != 0) {
-      int is_initialization = 0;    // Not here
-      int computeDiffusionTerm = 0; // Nope, we just did that
-      int do_avgDown = 1;           // Always
+      constexpr int is_initialization = 0;    // Not here
+      constexpr int computeDiffusionTerm = 0; // Nope, we just did that
+      constexpr int do_avgDown = 1;           // Always
       calcDivU(
         is_initialization, computeDiffusionTerm, do_avgDown, AmrNewTime,
         diffData);

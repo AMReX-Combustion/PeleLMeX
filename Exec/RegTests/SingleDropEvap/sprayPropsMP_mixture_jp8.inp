@@ -1,0 +1,23 @@
+# -----------------------------------------------------------------------------
+# Liquid fuel properties for MP in Pele
+# Fuel: posf10264
+# Number of compounds: 1
+# Generated: 2025-12-15 21:22:11
+# FuelLib remote URL: https://github.com/NREL/FuelLib.git
+# Git commit: 0d18d88bd32795d06b5086bd764e077611b48e5c
+# Units: MKS
+# -----------------------------------------------------------------------------
+
+particles.fuel_species = POSF10264
+particles.Y_0 = 1.0
+particles.dep_fuel_species = POSF10264
+particles.fuel_ref_temp = 298.15 # K
+
+# Properties for POSF10264 in MKS
+particles.POSF10264_molar_weight = 0.151552 # kg/mol
+particles.POSF10264_crit_temp = 643.703633 # K
+particles.POSF10264_boil_temp = 462.514088 # K
+particles.POSF10264_latent = 361707.572276 # J/kg
+particles.POSF10264_cp = 1521.050596 # J/kg/K
+particles.POSF10264_rho = 769.849718 # kg/m^3
+particles.POSF10264_psat = 9.558843920980598 2047.4745769561123 8.963746877397346 1 # Pa

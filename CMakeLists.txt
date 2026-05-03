@@ -36,7 +36,7 @@ option(PELE_ENABLE_HIP "Enable HIP" OFF)
 option(PELE_ENABLE_SYCL "Enable SyCL" OFF)
 
 # C++ Options
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -46,9 +46,9 @@ endif()
 
 if(PELE_ENABLE_CUDA)
   enable_language(CUDA)
-  if(CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "10.0")
+  if(CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "12.0")
     message(FATAL_ERROR "Your nvcc version is ${CMAKE_CUDA_COMPILER_VERSION} which is unsupported."
-      "Please use CUDA toolkit version 10.0 or newer.")
+      "Please use CUDA toolkit version 12.0 or newer.")
   endif()
   if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
     set(CMAKE_CUDA_ARCHITECTURES 70)
@@ -102,6 +102,9 @@ message(STATUS "PELE_PRECISION = ${PELE_PRECISION}")
 init_code_checks()
 
 include(SetRpath)
+
+########################### Git Hash Info ##################################
+include(SetGitHashInfo)
 
 add_subdirectory(Exec)
 add_subdirectory(Tests)

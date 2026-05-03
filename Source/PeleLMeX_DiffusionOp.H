@@ -23,87 +23,87 @@ public:
 
   void diffuse_scalar(
     amrex::Vector<amrex::MultiFab*> const& a_phi,
-    int phi_comp,
+    const int phi_comp,
     amrex::Vector<amrex::MultiFab const*> const& a_rhs,
-    int rhs_comp,
+    const int rhs_comp,
     amrex::Vector<amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>> const&
       a_fluxes,
-    int flux_comp,
+    const int flux_comp,
     amrex::Vector<amrex::MultiFab const*> const& a_acoeff,
     amrex::Vector<amrex::MultiFab const*> const& a_density,
     amrex::Vector<amrex::MultiFab const*> const& a_bcoeff,
-    int bcoeff_comp,
+    const int bcoeff_comp,
     amrex::Vector<amrex::BCRec> a_bcrec,
-    int ncomp,
-    int isPoissonSolve,
-    amrex::Real dt,
+    const int ncomp,
+    const int isPoissonSolve,
+    const amrex::Real dt,
     amrex::Vector<amrex::MultiFab const*> const& a_boundary);
 
 #ifdef AMREX_USE_EB
   void diffuse_scalar(
     amrex::Vector<amrex::MultiFab*> const& a_phi,
-    int phi_comp,
+    const int phi_comp,
     amrex::Vector<amrex::MultiFab const*> const& a_phiEB,
-    int phiEB_comp,
+    const int phiEB_comp,
     amrex::Vector<amrex::MultiFab const*> const& a_rhs,
-    int rhs_comp,
+    const int rhs_comp,
     amrex::Vector<amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>> const&
       a_fluxes,
-    int flux_comp,
+    const int flux_comp,
     amrex::Vector<amrex::MultiFab const*> const& a_acoeff,
     amrex::Vector<amrex::MultiFab const*> const& a_density,
     amrex::Vector<amrex::MultiFab const*> const& a_bcoeff,
-    int bcoeff_comp,
+    const int bcoeff_comp,
     amrex::Vector<amrex::MultiFab const*> const& a_bcoeffEB,
-    int bcoeffEB_comp,
+    const int bcoeffEB_comp,
     amrex::Vector<amrex::BCRec> a_bcrec,
-    int ncomp,
-    int isPoissonSolve,
-    amrex::Real dt,
+    const int ncomp,
+    const int isPoissonSolve,
+    const amrex::Real dt,
     amrex::Vector<amrex::MultiFab const*> const& a_boundary);
 #endif
 
   void computeDiffLap(
     amrex::Vector<amrex::MultiFab*> const& laps,
-    int lap_comp,
+    const int lap_comp,
     amrex::Vector<amrex::MultiFab const*> const& phi,
-    int phi_comp,
+    const int phi_comp,
     amrex::Vector<amrex::MultiFab const*> const& bcoeff,
-    int bcoeff_comp,
+    const int bcoeff_comp,
     amrex::Vector<amrex::BCRec> a_bcrec,
-    int ncomp);
+    const int ncomp);
 
   void computeDiffFluxes(
     amrex::Vector<amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>> const&
       a_fluxes,
-    int flux_comp,
+    const int flux_comp,
     amrex::Vector<amrex::MultiFab const*> const& a_phi,
-    int phi_comp,
+    const int phi_comp,
     amrex::Vector<amrex::MultiFab const*> const& a_density,
     amrex::Vector<amrex::MultiFab const*> const& a_bcoeff,
-    int bcoeff_comp,
+    const int bcoeff_comp,
     amrex::Vector<amrex::BCRec> a_bcrec,
-    int ncomp,
-    int do_avgDown,
+    const int ncomp,
+    const int do_avgDown,
     amrex::Vector<amrex::MultiFab const*> const& a_boundary);
 
 #ifdef AMREX_USE_EB
   void computeDiffFluxes(
     amrex::Vector<amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>> const&
       a_fluxes,
-    int flux_comp,
+    const int flux_comp,
     amrex::Vector<amrex::MultiFab*> const& a_EBflux,
-    int ebflux_comp,
+    const int ebflux_comp,
     amrex::Vector<amrex::MultiFab const*> const& a_phi,
-    int phi_comp,
+    const int phi_comp,
     amrex::Vector<amrex::MultiFab const*> const& a_density,
     amrex::Vector<amrex::MultiFab const*> const& a_bcoeff,
-    int bcoeff_comp,
+    const int bcoeff_comp,
     amrex::Vector<amrex::MultiFab const*> const& a_EBvalue,
     amrex::Vector<amrex::MultiFab const*> const& a_EBbcoeff,
     amrex::Vector<amrex::BCRec> a_bcrec,
-    int ncomp,
-    int do_avgDown,
+    const int ncomp,
+    const int do_avgDown,
     amrex::Vector<amrex::MultiFab const*> const& a_boundary);
 #endif
 
@@ -113,14 +113,14 @@ public:
     const amrex::Vector<amrex::MultiFab const*>& a_phi,
     const amrex::Vector<amrex::MultiFab const*>& a_boundary,
     const amrex::BCRec& a_bcrec,
-    int do_avgDown,
+    const int do_avgDown,
     int comp = 0) const;
 
   void avgDownFluxes(
     amrex::Vector<amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>> const&
       a_fluxes,
-    int flux_comp,
-    int ncomp) const;
+    const int flux_comp,
+    const int ncomp) const;
 
   void readParameters();
 
@@ -165,6 +165,12 @@ public:
   amrex::Real m_mg_atol = 1.0e-14;
 
   std::string m_mg_bottom_solver = "bicgstab";
+
+  // MLMG failure debugging options
+  int m_mg_fail_sdc_miniter = -1;
+  int m_mg_fail_deltaT_miniter = -1;
+  int m_mg_fail_species_maxiter_after_sdc_miniter = -1;
+  int m_mg_fail_temp_maxiter_after_sdc_deltaT_miniter = -1;
 };
 
 class DiffusionTensorOp
@@ -178,14 +184,14 @@ public:
     amrex::Vector<amrex::MultiFab const*> const& a_density,
     amrex::Vector<amrex::MultiFab const*> const& a_beta,
     const amrex::BCRec& a_bcrec,
-    amrex::Real scale);
+    const amrex::Real scale);
 
   void diffuse_velocity(
     amrex::Vector<amrex::MultiFab*> const& a_vel,
     amrex::Vector<amrex::MultiFab const*> const& a_density,
     amrex::Vector<amrex::MultiFab const*> const& a_beta,
     const amrex::BCRec& a_bcrec,
-    amrex::Real dt);
+    const amrex::Real dt);
 
   void computeGradientTensor(
     amrex::Vector<amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>> const&
@@ -224,6 +230,10 @@ private:
   amrex::Real m_mg_atol = 1.0e-14;
 
   std::string m_mg_bottom_solver = "bicgstab";
+
+  // MLMG failure debugging options
+  int m_mg_fail_sdc_miniter = -1;
+  int m_mg_fail_maxiter_after_sdc_miniter = -1;
 };
 
 #endif

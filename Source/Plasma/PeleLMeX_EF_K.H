@@ -29,12 +29,12 @@ getKappaE(
 
     // Get rho & Y from rhoY
     amrex::Real rho = 0.0;
-    for (int n = 0; n < NUM_SPECIES; n++) {
+    for (int n = 0; n < NUM_SPECIES; ++n) {
       rho += rhoY(i, j, k, n);
     }
     amrex::Real rhoinv = 1.0 / rho;
     amrex::Real y[NUM_SPECIES] = {0.0};
-    for (int n = 0; n < NUM_SPECIES; n++) {
+    for (int n = 0; n < NUM_SPECIES; ++n) {
       y[n] = rhoY(i, j, k, n) * rhoinv;
     }
 
@@ -77,11 +77,11 @@ getKappaSp(
   amrex::Array4<amrex::Real> const& Ksp) noexcept
 {
   amrex::Real rho = 0.0;
-  for (int n = 0; n < NUM_SPECIES; n++) {
+  for (int n = 0; n < NUM_SPECIES; ++n) {
     rho += rhoY(i, j, k, n);
   }
   int ionCnt = 0;
-  for (int n = 0; n < NUM_SPECIES; n++) {
+  for (int n = 0; n < NUM_SPECIES; ++n) {
     if (a_zk[n] != 0.0) {
       Ksp(i, j, k, ionCnt) = rhoD(i, j, k, n) * mwt[n] * 0.001 * a_zk[n] /
                              (rho * PP_RU_MKS * T(i, j, k));
@@ -262,7 +262,7 @@ cen2edg_upwind(
     id_h[dir] -= 1;
   }
 
-  for (int n = 0; n < ncomp; n++) {
+  for (int n = 0; n < ncomp; ++n) {
     if (ueff(i, j, k) > smallVel) {
       efab(i, j, k, n) = cfab(id_l[0], id_l[1], id_l[2], n);
     } else if (ueff(i, j, k) < -smallVel) {
@@ -290,12 +290,12 @@ reactionRateRhoY_EF(
 {
   // Get rho from rhoY. Is there a better way ?
   amrex::Real rho = 0.0;
-  for (int n = 0; n < NUM_SPECIES; n++) {
+  for (int n = 0; n < NUM_SPECIES; ++n) {
     rho += rhoY(i, j, k, n);
   }
   amrex::Real rhoinv = 1.0 / rho;
   amrex::Real y[NUM_SPECIES] = {0.0};
-  for (int n = 0; n < NUM_SPECIES; n++) {
+  for (int n = 0; n < NUM_SPECIES; ++n) {
     y[n] = rhoY(i, j, k, n) * rhoinv;
   }
 
@@ -315,7 +315,7 @@ reactionRateRhoY_EF(
   rho = rho * 0.001; // rho MKS -> CGS
   amrex::Real wdot[NUM_SPECIES] = {0.0};
   eos.RTY2WDOT(rho, Tloc, y, wdot);
-  for (int n = 0; n < NUM_SPECIES; n++) {
+  for (int n = 0; n < NUM_SPECIES; ++n) {
     rhoYdot(i, j, k, n) = wdot[n] * 1000.0; // CGS -> MKS conversion
   }
   nEdot(i, j, k) = wdot[E_ID] * Na * 1.0e6;
@@ -366,7 +366,7 @@ addLorentzForce(
     EFz = -0.5 / dx[2] * (phiV(i, j, k + 1) - phiV(i, j, k - 1));
   }
 #endif
-  for (int n = 0; n < NUM_SPECIES; n++) {
+  for (int n = 0; n < NUM_SPECIES; ++n) {
     force(i, j, k, 0) += a_zk[n] * rhoY(i, j, k, n) * EFx;
     force(i, j, k, 1) += a_zk[n] * rhoY(i, j, k, n) * EFy;
 #if (AMREX_SPACEDIM == 3)
@@ -399,14 +399,14 @@ initElecNeutral(
   // Get species charge/mass
   amrex::Real zk[NUM_SPECIES] = {0.0};
   pele::physics::eos::charge_mass(zk);
-  for (int n = 0; n < NUM_SPECIES; n++) {
+  for (int n = 0; n < NUM_SPECIES; ++n) {
     zk[n] *= 1000.0; // CGS->MKS
   }
 
   // Get mass fractions
   amrex::Real massfrac[NUM_SPECIES] = {0.0};
   amrex::Real rho_inv = 1.0 / rho(i, j, k);
-  for (int n = 0; n < NUM_SPECIES; n++) {
+  for (int n = 0; n < NUM_SPECIES; ++n) {
     massfrac[n] = rhoY(i, j, k, n) * rho_inv;
   }
 
@@ -415,7 +415,7 @@ initElecNeutral(
   // First remove Y_nE
   massfrac[E_ID] = 0.0;
   amrex::Real sum = 0.0;
-  for (int n = 0; n < NUM_SPECIES; n++) {
+  for (int n = 0; n < NUM_SPECIES; ++n) {
     massfrac[n] = std::max(0.0, massfrac[n]);
     if (n != N2_ID)
       sum += massfrac[n];
@@ -424,20 +424,20 @@ initElecNeutral(
 
   // Change ions massfrac where charge already < 0.0
   amrex::Real chargeDist = 0.0;
-  for (int n = 0; n < NUM_SPECIES; n++) {
+  for (int n = 0; n < NUM_SPECIES; ++n) {
     chargeDist += massfrac[n] * zk[n];
   }
   if (chargeDist < 0.0) {
     amrex::Real sum_pos_ion = 0.0;
     amrex::Real mean_zk_pos_ion = 0.0;
-    for (int n = 0; n < NUM_SPECIES; n++) {
+    for (int n = 0; n < NUM_SPECIES; ++n) {
       if (zk[n] > 0.0) {
         sum_pos_ion += massfrac[n];
         mean_zk_pos_ion += massfrac[n] * zk[n];
       }
     }
     if (sum_pos_ion > 0.0) {
-      for (int n = 0; n < NUM_SPECIES; n++) {
+      for (int n = 0; n < NUM_SPECIES; ++n) {
         if (zk[n] > 0.0) {
           massfrac[N2_ID] += massfrac[n] / sum_pos_ion * chargeDist /
                              mean_zk_pos_ion * sum_pos_ion;
@@ -449,7 +449,7 @@ initElecNeutral(
   }
   // Add Electrons
   chargeDist = 0.0;
-  for (int n = 0; n < NUM_SPECIES; n++) {
+  for (int n = 0; n < NUM_SPECIES; ++n) {
     chargeDist += massfrac[n] * zk[n];
   }
   nE(i, j, k) = std::max(1.0e-24, chargeDist / elemCharge);
@@ -467,7 +467,7 @@ initElecNeutral(
   rhoH(i, j, k) = h_cgs * 1.0e-4 * rho(i, j, k);
 
   // Species mass
-  for (int n = 0; n < NUM_SPECIES; n++) {
+  for (int n = 0; n < NUM_SPECIES; ++n) {
     rhoY(i, j, k, n) = massfrac[n] * rho(i, j, k);
   }
 

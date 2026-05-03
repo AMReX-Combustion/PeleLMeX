@@ -2,7 +2,7 @@
 #include <PeleLMeX_K.H>
 
 amrex::Real
-PeleLM::computeDt(int is_init, const TimeStamp& a_time)
+PeleLM::computeDt(const int is_init, const TimeStamp a_time)
 {
   BL_PROFILE("PeleLMeX::computeDt()");
 
@@ -21,19 +21,19 @@ PeleLM::computeDt(int is_init, const TimeStamp& a_time)
       estdt = m_init_dt;
     } else {
       amrex::Real dtconv = estConvectiveDt(a_time);
-      estdt = amrex::min(estdt, dtconv);
+      estdt = amrex::min<amrex::Real>(estdt, dtconv);
       amrex::Real dtdivU = 1.0e200;
       if ((m_incompressible == 0) && (m_has_divu != 0)) {
         dtdivU = estDivUDt(a_time);
-        estdt = amrex::min(estdt, dtdivU);
+        estdt = amrex::min<amrex::Real>(estdt, dtdivU);
       }
 #ifdef PELE_USE_PLASMA
       amrex::Real dtions = estEFIonsDt(a_time);
-      estdt = amrex::min(estdt, dtions);
+      estdt = amrex::min<amrex::Real>(estdt, dtions);
 #endif
 #ifdef PELE_USE_SPRAY
       amrex::Real dtspray = SprayEstDt();
-      estdt = amrex::min(estdt, dtspray);
+      estdt = amrex::min<amrex::Real>(estdt, dtspray);
 #endif
       if (m_verbose != 0) {
         amrex::Print() << " Est. time step - Conv: " << dtconv
@@ -54,8 +54,8 @@ PeleLM::computeDt(int is_init, const TimeStamp& a_time)
   if ((is_init != 0) || m_nstep == 0) {
     estdt *= m_dtshrink;
   } else {
-    estdt = amrex::min(estdt, m_prev_dt * m_dtChangeMax);
-    estdt = amrex::min(estdt, m_max_dt);
+    estdt = amrex::min<amrex::Real>(estdt, m_prev_dt * m_dtChangeMax);
+    estdt = amrex::min<amrex::Real>(estdt, m_max_dt);
     // Shorten the dt to output plt file at exact req. time
     if (m_plot_per_exact > 0.0) {
       // Ensure ~O(dt) step by checking a little in advance
@@ -66,7 +66,7 @@ PeleLM::computeDt(int is_init, const TimeStamp& a_time)
         estdt = amrex::Real(0.5) * timeToNextPlot;
       } else {
         if (timeToNextPlot > 1.e-12) {
-          estdt = amrex::min(estdt, timeToNextPlot);
+          estdt = amrex::min<amrex::Real>(estdt, timeToNextPlot);
         }
       }
     }
@@ -78,7 +78,7 @@ PeleLM::computeDt(int is_init, const TimeStamp& a_time)
       if (2.0 * estdt > timeLeft && timeLeft > estdt) {
         estdt = 0.5 * timeLeft;
       } else {
-        estdt = amrex::min(estdt, timeLeft);
+        estdt = amrex::min<amrex::Real>(estdt, timeLeft);
       }
     }
   }
@@ -96,7 +96,7 @@ PeleLM::computeDt(int is_init, const TimeStamp& a_time)
 }
 
 amrex::Real
-PeleLM::estConvectiveDt(const TimeStamp& a_time)
+PeleLM::estConvectiveDt(const TimeStamp a_time)
 {
 
   amrex::Real estdt = 1.0e200;
@@ -114,12 +114,12 @@ PeleLM::estConvectiveDt(const TimeStamp& a_time)
 
     //----------------------------------------------------------------
     // Get velocity forces
-    int nGrow_force = 0;
+    constexpr int nGrow_force = 0;
     amrex::MultiFab velForces(
       grids[lev], dmap[lev], AMREX_SPACEDIM, nGrow_force, amrex::MFInfo(),
       Factory(lev));
 
-    int add_gradP = 1;
+    constexpr int add_gradP = 1;
     getVelForces(a_time, lev, nullptr, &velForces, add_gradP);
 
     //----------------------------------------------------------------
@@ -136,17 +136,17 @@ PeleLM::estConvectiveDt(const TimeStamp& a_time)
     // Est. min time step on lev
     for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
       if (u_max[idim] > small) {
-        estdt_lev = amrex::min(estdt_lev, dx[idim] / u_max[idim]);
+        estdt_lev = amrex::min<amrex::Real>(estdt_lev, dx[idim] / u_max[idim]);
       }
       if (f_max[idim] > small) {
-        estdt_lev =
-          amrex::min(estdt_lev, std::sqrt(2.0 * dx[idim] / f_max[idim]));
+        estdt_lev = amrex::min<amrex::Real>(
+          estdt_lev, std::sqrt(2.0 * dx[idim] / f_max[idim]));
       }
     }
 
     //----------------------------------------------------------------
     // Set overall convective dt
-    estdt = amrex::min(estdt, estdt_lev * m_cfl);
+    estdt = amrex::min<amrex::Real>(estdt, estdt_lev * m_cfl);
   }
 
   amrex::ParallelDescriptor::ReduceRealMin(estdt);
@@ -155,7 +155,7 @@ PeleLM::estConvectiveDt(const TimeStamp& a_time)
 }
 
 amrex::Real
-PeleLM::estDivUDt(const TimeStamp& a_time)
+PeleLM::estDivUDt(const TimeStamp a_time)
 {
 
   amrex::Real estdt = 1.0e200;
@@ -186,19 +186,19 @@ PeleLM::estDivUDt(const TimeStamp& a_time)
               for (int i = lo.x; i <= hi.x; ++i) {
                 amrex::Real dtcell =
                   est_divu_dt_1(i, j, k, dtfac, rhoMin, rho, divu);
-                dt = amrex::min(dt, dtcell);
+                dt = amrex::min<amrex::Real>(dt, dtcell);
               }
             }
           }
           return dt;
         });
-      estdt = amrex::min(divu_dt, estdt);
+      estdt = amrex::min<amrex::Real>(divu_dt, estdt);
     } else if (m_divu_checkFlag == 2) {
       const auto& dxinv = geom[lev].InvCellSizeArray();
       std::unique_ptr<amrex::MultiFab> velo = std::make_unique<amrex::MultiFab>(
         ldata_p->state, amrex::make_alias, VELX, AMREX_SPACEDIM);
       amrex::Real divu_dt = amrex::ReduceMin(
-        *density, ldata_p->divu, *velo, 0,
+        *density, *velo, ldata_p->divu, 0,
         [dtfac, rhoMin, dxinv] AMREX_GPU_HOST_DEVICE(
           amrex::Box const& bx, amrex::Array4<amrex::Real const> const& rho,
           amrex::Array4<amrex::Real const> const& vel,
@@ -211,13 +211,13 @@ PeleLM::estDivUDt(const TimeStamp& a_time)
               for (int i = lo.x; i <= hi.x; ++i) {
                 amrex::Real dtcell =
                   est_divu_dt_2(i, j, k, dtfac, rhoMin, dxinv, rho, vel, divu);
-                dt = amrex::min(dt, dtcell);
+                dt = amrex::min<amrex::Real>(dt, dtcell);
               }
             }
           }
           return dt;
         });
-      estdt = amrex::min(divu_dt, estdt);
+      estdt = amrex::min<amrex::Real>(divu_dt, estdt);
     }
   }
 
@@ -227,7 +227,7 @@ PeleLM::estDivUDt(const TimeStamp& a_time)
 }
 
 void
-PeleLM::checkDt(const TimeStamp& a_time, const amrex::Real& a_dt)
+PeleLM::checkDt(const TimeStamp a_time, const amrex::Real a_dt)
 {
   BL_PROFILE("PeleLMeX::checkDt()");
 
@@ -236,29 +236,25 @@ PeleLM::checkDt(const TimeStamp& a_time, const amrex::Real& a_dt)
   }
 
   for (int lev = 0; lev <= finest_level; ++lev) {
-
     auto* ldata_p = getLevelDataPtr(lev, a_time);
+    const amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> dxinv =
+      geom[lev].InvCellSizeArray();
 
-    const auto dxinv = geom[lev].InvCellSizeArray();
+    auto const& state_ma = ldata_p->state.const_arrays();
+    auto const& divu_ma = ldata_p->divu.const_arrays();
 
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-    for (amrex::MFIter mfi(ldata_p->state, amrex::TilingIfNotGPU());
-         mfi.isValid(); ++mfi) {
-      const amrex::Box& bx = mfi.tilebox();
-      auto const& rho = ldata_p->state.const_array(mfi, DENSITY);
-      auto const& vel = ldata_p->state.const_array(mfi, VELX);
-      auto const& divu = ldata_p->divu.const_array(mfi);
-      int divu_checkFlag = m_divu_checkFlag;
-      auto dtfac = m_divu_dtFactor;
-      auto rhoMin = m_divu_rhoMin;
-      amrex::ParallelFor(
-        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          check_divu_dt(
-            i, j, k, divu_checkFlag, dtfac, rhoMin, dxinv, rho, vel, divu,
-            a_dt);
-        });
-    }
+    amrex::ParallelFor(
+      ldata_p->state,
+      [state_ma, divu_ma, dxinv, a_dt, divu_checkFlag = m_divu_checkFlag,
+       dtfac = m_divu_dtFactor,
+       rhoMin =
+         m_divu_rhoMin] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+        amrex::Array4<amrex::Real const> rho(state_ma[box_no], DENSITY);
+        amrex::Array4<amrex::Real const> vel(state_ma[box_no], VELX);
+        amrex::Array4<amrex::Real const> divu = divu_ma[box_no];
+        check_divu_dt(
+          i, j, k, divu_checkFlag, dtfac, rhoMin, dxinv, rho, vel, divu, a_dt);
+      });
   }
+  amrex::Gpu::streamSynchronize();
 }

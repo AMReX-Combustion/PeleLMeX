@@ -1,0 +1,27 @@
+# -----------------------------------------------------------------------------
+# Liquid fuel properties for GCM in Pele
+# Fuel: posf10264
+# Number of compounds: 1
+# Generated: 2025-12-15 21:17:36
+# FuelLib remote URL: https://github.com/NREL/FuelLib.git
+# Git commit: 0d18d88bd32795d06b5086bd764e077611b48e5c
+# Units: MKS
+# -----------------------------------------------------------------------------
+
+particles.fuel_species = POSF10264
+particles.Y_0 = 1.0
+particles.dep_fuel_species = POSF10264
+
+# Properties for POSF10264 in MKS
+particles.POSF10264_family = 0 # saturated hydrocarbons
+particles.POSF10264_molar_weight = 0.151552 # kg/mol
+particles.POSF10264_crit_temp = 643.703633 # K
+particles.POSF10264_crit_press = 2233497.754084 # Pa
+particles.POSF10264_crit_vol = 0.000613 # m^3/mol
+particles.POSF10264_boil_temp = 462.514088 # K
+particles.POSF10264_acentric_factor = 0.413817 # -
+particles.POSF10264_molar_vol = 0.000198 # m^3/mol
+particles.POSF10264_cp_a = 1521.050596 # J/kg/K
+particles.POSF10264_cp_b = 3138.727807 # J/kg/K
+particles.POSF10264_cp_c = -1093.190501 # J/kg/K
+particles.POSF10264_latent = 361707.572276 # J/kg

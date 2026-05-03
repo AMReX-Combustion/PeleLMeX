@@ -6,6 +6,9 @@
 #ifdef PELE_USE_PLASMA
 #include <PeleLMeX_EF_Constants.H>
 #endif
+#ifdef PELE_USE_CMAKE
+#include "PeleGitHashes.H"
+#endif
 
 void
 writeBuildInfo()
@@ -37,31 +40,47 @@ writeBuildInfo()
 
   std::cout << "\n";
 
-  for (int n = 1; n <= amrex::buildInfoGetNumModules(); n++) {
+  for (int n = 1; n <= amrex::buildInfoGetNumModules(); ++n) {
     std::cout << amrex::buildInfoGetModuleName(n) << ": "
               << amrex::buildInfoGetModuleVal(n) << "\n";
   }
 
   std::cout << "\n";
 
-  const char* githash1 = amrex::buildInfoGetGitHash(1);
-  const char* githash2 = amrex::buildInfoGetGitHash(2);
-  const char* githash3 = amrex::buildInfoGetGitHash(3);
+#ifdef PELE_USE_CMAKE
+  const std::string pele_hash = PeleBuildInfo::PeleLMeX_git_hash;
+  const std::string amrex_hash = PeleBuildInfo::AMReX_git_hash;
+  const std::string pelephysics_hash = PeleBuildInfo::PelePhysics_git_hash;
+  const std::string amrex_hydro_hash = PeleBuildInfo::AMReXHydro_git_hash;
+  const std::string sundials_hash = PeleBuildInfo::SUNDIALS_git_hash;
+#else
+  const std::string pele_hash = amrex::buildInfoGetGitHash(1);
+  const std::string amrex_hash = amrex::buildInfoGetGitHash(2);
+  const std::string pelephysics_hash = amrex::buildInfoGetGitHash(3);
+  const std::string amrex_hydro_hash = amrex::buildInfoGetGitHash(4);
+  const std::string sundials_hash = amrex::buildInfoGetGitHash(5);
+#endif
 
-  if (strlen(githash1) > 0) {
-    std::cout << "PeleLMeX     git describe: " << githash1 << "\n";
+  if (!pele_hash.empty()) {
+    std::cout << "PeleLMeX     git hash: " << pele_hash << "\n";
   }
-  if (strlen(githash2) > 0) {
-    std::cout << "AMReX        git describe: " << githash2 << "\n";
+  if (!amrex_hash.empty()) {
+    std::cout << "AMReX        git hash: " << amrex_hash << "\n";
   }
-  if (strlen(githash3) > 0) {
-    std::cout << "PelePhysics  git describe: " << githash3 << "\n";
+  if (!pelephysics_hash.empty()) {
+    std::cout << "PelePhysics  git hash: " << pelephysics_hash << "\n";
+  }
+  if (!amrex_hydro_hash.empty()) {
+    std::cout << "AMReX-Hydro  git hash: " << amrex_hydro_hash << "\n";
+  }
+  if (!sundials_hash.empty()) {
+    std::cout << "SUNDIALS     git hash: " << sundials_hash << "\n";
   }
 
-  const char* buildgithash = amrex::buildInfoGetBuildGitHash();
-  const char* buildgitname = amrex::buildInfoGetBuildGitName();
-  if (strlen(buildgithash) > 0) {
-    std::cout << buildgitname << " git describe: " << buildgithash << "\n";
+  const std::string buildgithash = amrex::buildInfoGetBuildGitHash();
+  const std::string buildgitname = amrex::buildInfoGetBuildGitName();
+  if (!buildgithash.empty()) {
+    std::cout << buildgitname << " git hash: " << buildgithash << "\n";
   }
 
   std::cout << "\n\n";
@@ -70,11 +89,11 @@ writeBuildInfo()
 void
 PeleLM::fluxDivergence(
   const amrex::Vector<amrex::MultiFab*>& a_divergence,
-  int div_comp,
+  const int div_comp,
   const amrex::Vector<amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>>& a_fluxes,
-  int flux_comp,
-  int ncomp,
-  int intensiveFluxes,
+  const int flux_comp,
+  const int ncomp,
+  const int intensiveFluxes,
   amrex::Real scale)
 {
   BL_PROFILE("PeleLMeX::fluxDivergence()");
@@ -97,14 +116,14 @@ PeleLM::fluxDivergence(
 void
 PeleLM::fluxDivergence(
   const amrex::Vector<amrex::MultiFab*>& a_divergence,
-  int div_comp,
+  const int div_comp,
   const amrex::Vector<amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>>& a_fluxes,
-  int flux_comp,
+  const int flux_comp,
   const amrex::Vector<amrex::MultiFab*>& a_EBfluxes,
-  int ebflux_comp,
-  int ncomp,
-  int intensiveFluxes,
-  amrex::Real scale)
+  const int ebflux_comp,
+  const int ncomp,
+  const int intensiveFluxes,
+  const amrex::Real scale)
 {
 
   BL_PROFILE("PeleLMeX::fluxDivergence()");
@@ -127,26 +146,26 @@ PeleLM::fluxDivergence(
 void
 PeleLM::fluxDivergenceRD(
   const amrex::Vector<const amrex::MultiFab*>& a_state,
-  int state_comp,
+  const int state_comp,
   const amrex::Vector<amrex::MultiFab*>& a_divergence,
-  int div_comp,
+  const int div_comp,
   const amrex::Vector<amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>>& a_fluxes,
-  int flux_comp,
+  const int flux_comp,
   const amrex::Vector<amrex::MultiFab*>& a_EBfluxes,
-  int ebflux_comp,
-  int ncomp,
-  int intensiveFluxes,
+  const int ebflux_comp,
+  const int ncomp,
+  const int intensiveFluxes,
   const amrex::BCRec* state_bc_d,
   const amrex::Real& scale,
   const amrex::Real& a_dt)
 {
   BL_PROFILE("PeleLMeX::fluxDivergenceRD()");
 #ifdef AMREX_USE_EB
-  int have_ebfluxes = (a_EBfluxes.empty()) ? 0 : 1;
+  const int have_ebfluxes = (a_EBfluxes.empty()) ? 0 : 1;
   for (int lev = 0; lev <= finest_level; ++lev) {
     //----------------------------------------------------------------
     // Use a temporary MF to hold divergence before redistribution
-    int nGrow_divTmp = 3;
+    constexpr int nGrow_divTmp = 3;
     amrex::MultiFab divTmp(
       grids[lev], dmap[lev], ncomp, nGrow_divTmp, amrex::MFInfo(),
       EBFactory(lev));
@@ -188,13 +207,13 @@ PeleLM::fluxDivergenceRD(
 
 void
 PeleLM::extFluxDivergenceLevel(
-  int lev,
+  const int lev,
   amrex::MultiFab& a_divergence,
-  int div_comp,
+  const int div_comp,
   const amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>& a_fluxes,
-  int flux_comp,
-  int ncomp,
-  amrex::Real scale)
+  const int flux_comp,
+  const int ncomp,
+  const amrex::Real scale)
 {
 
   AMREX_ASSERT(a_divergence.nComp() >= div_comp + ncomp);
@@ -219,16 +238,14 @@ PeleLM::extFluxDivergenceLevel(
       , auto const& fluxZ = a_fluxes[2]->const_array(mfi, flux_comp););
     auto const& divergence = a_divergence.array(mfi, div_comp);
     auto const& vol = volume.const_array(mfi);
-
 #ifdef AMREX_USE_EB
     auto const& flagfab = ebfact.getMultiEBCellFlagFab()[mfi];
     auto const& flag = flagfab.const_array();
-#endif
 
-#ifdef AMREX_USE_EB
     if (flagfab.getType(bx) == amrex::FabType::covered) { // Covered boxes
       amrex::ParallelFor(
-        bx, ncomp, [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
+        bx, ncomp,
+        [divergence] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
           divergence(i, j, k, n) = 0.0;
         });
     } else if (flagfab.getType(bx) != amrex::FabType::regular) { // EB
@@ -236,22 +253,25 @@ PeleLM::extFluxDivergenceLevel(
                                                                  // boxes
       auto vfrac = ebfact.getVolFrac().const_array(mfi);
       amrex::ParallelFor(
-        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          if (flag(i, j, k).isCovered()) {
-            for (int n = 0; n < ncomp; n++) {
+        bx, [flag, divergence, ncomp, vol, scale, vfrac, fluxX, fluxY
+#if AMREX_SPACEDIM == 3
+             ,
+             fluxZ
+#endif
+      ] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          if (flag(i, j, k).isCovered()) { // Covered cell
+            for (int n = 0; n < ncomp; ++n) {
               divergence(i, j, k, n) = 0.0;
             }
-          } else if (flag(i, j, k).isRegular()) {
+          } else { // Regular or cut cell
             extFluxDivergence_K(
               i, j, k, ncomp, AMREX_D_DECL(fluxX, fluxY, fluxZ), vol, scale,
               divergence);
-          } else {
-            amrex::Real vfracinv = 1.0 / vfrac(i, j, k);
-            extFluxDivergence_K(
-              i, j, k, ncomp, AMREX_D_DECL(fluxX, fluxY, fluxZ), vol, scale,
-              divergence);
-            for (int n = 0; n < ncomp; n++) {
-              divergence(i, j, k, n) *= vfracinv;
+            if (!flag(i, j, k).isRegular()) { // Cut cell
+              const amrex::Real vfracinv = 1.0 / vfrac(i, j, k);
+              for (int n = 0; n < ncomp; ++n) {
+                divergence(i, j, k, n) *= vfracinv;
+              }
             }
           }
         });
@@ -259,7 +279,12 @@ PeleLM::extFluxDivergenceLevel(
 #endif
     {
       amrex::ParallelFor(
-        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        bx, [ncomp, vol, scale, divergence, fluxX, fluxY
+#if AMREX_SPACEDIM == 3
+             ,
+             fluxZ
+#endif
+      ] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           extFluxDivergence_K(
             i, j, k, ncomp, AMREX_D_DECL(fluxX, fluxY, fluxZ), vol, scale,
             divergence);
@@ -270,13 +295,13 @@ PeleLM::extFluxDivergenceLevel(
 
 void
 PeleLM::intFluxDivergenceLevel(
-  int lev,
+  const int lev,
   amrex::MultiFab& a_divergence,
-  int div_comp,
+  const int div_comp,
   const amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>& a_fluxes,
-  int flux_comp,
-  int ncomp,
-  amrex::Real scale)
+  const int flux_comp,
+  const int ncomp,
+  const amrex::Real scale)
 {
 
   AMREX_ASSERT(a_divergence.nComp() >= div_comp + ncomp);
@@ -327,7 +352,8 @@ PeleLM::intFluxDivergenceLevel(
 
     if (flagfab.getType(bx) == amrex::FabType::covered) { // Covered boxes
       amrex::ParallelFor(
-        bx, ncomp, [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
+        bx, ncomp,
+        [divergence] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
           divergence(i, j, k, n) = 0.0;
         });
     } else if (flagfab.getType(bx) != amrex::FabType::regular) { // EB
@@ -339,9 +365,15 @@ PeleLM::intFluxDivergenceLevel(
         , const auto& afrac_y = areafrac[1]->array(mfi);
         , const auto& afrac_z = areafrac[2]->array(mfi););
       amrex::ParallelFor(
-        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          if (flag(i, j, k).isCovered()) {
-            for (int n = 0; n < ncomp; n++) {
+        bx, [flag, divergence, ncomp, vol, scale, vfrac, fluxX, areax, afrac_x,
+             fluxY, areay, afrac_y
+#if (AMREX_SPACEDIM == 3)
+             ,
+             fluxZ, areaz, afrac_z
+#endif
+      ] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          if (flag(i, j, k).isCovered()) { // Covered cells
+            for (int n = 0; n < ncomp; ++n) {
               divergence(i, j, k, n) = 0.0;
             }
           } else if (flag(i, j, k).isRegular()) {
@@ -349,12 +381,12 @@ PeleLM::intFluxDivergenceLevel(
               i, j, k, ncomp, AMREX_D_DECL(fluxX, fluxY, fluxZ),
               AMREX_D_DECL(areax, areay, areaz), vol, scale, divergence);
           } else {
-            amrex::Real vfracinv = 1.0 / vfrac(i, j, k);
+            const amrex::Real vfracinv = 1.0 / vfrac(i, j, k);
             EB_intFluxDivergence_K(
               i, j, k, ncomp, AMREX_D_DECL(fluxX, fluxY, fluxZ),
               AMREX_D_DECL(afrac_x, afrac_y, afrac_z),
               AMREX_D_DECL(areax, areay, areaz), vol, scale, divergence);
-            for (int n = 0; n < ncomp; n++) {
+            for (int n = 0; n < ncomp; ++n) {
               divergence(i, j, k, n) *= vfracinv;
             }
           }
@@ -367,16 +399,21 @@ PeleLM::intFluxDivergenceLevel(
         amrex::Array4<amrex::Real const> const& ax = mf_ax.const_array(mfi);
         amrex::Array4<amrex::Real const> const& ay = mf_ay.const_array(mfi);
         amrex::ParallelFor(
-          bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          bx, [ncomp, ax, ay, fluxX, fluxY, vol, scale,
+               divergence] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             intFluxDivergence_rz_K(
-              i, j, k, ncomp, AMREX_D_DECL(fluxX, fluxY, fluxZ), ax, ay, vol,
-              scale, divergence);
+              i, j, k, ncomp, fluxX, fluxY, ax, ay, vol, scale, divergence);
           });
       } else
 #endif
       {
         amrex::ParallelFor(
-          bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          bx, [ncomp, vol, scale, divergence, fluxX, areax, fluxY, areay
+#if (AMREX_SPACEDIM == 3)
+               ,
+               fluxZ, areaz
+#endif
+        ] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             intFluxDivergence_K(
               i, j, k, ncomp, AMREX_D_DECL(fluxX, fluxY, fluxZ),
               AMREX_D_DECL(areax, areay, areaz), vol, scale, divergence);
@@ -388,15 +425,15 @@ PeleLM::intFluxDivergenceLevel(
 
 void
 PeleLM::intFluxDivergenceLevelEB(
-  int lev,
+  const int lev,
   amrex::MultiFab& a_divergence,
-  int div_comp,
+  const int div_comp,
   const amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>& a_fluxes,
-  int flux_comp,
+  const int flux_comp,
   const amrex::MultiFab* a_EBfluxes,
-  int ebflux_comp,
-  int ncomp,
-  amrex::Real scale)
+  const int ebflux_comp,
+  const int ncomp,
+  const amrex::Real scale)
 {
 
   AMREX_ASSERT(a_divergence.nComp() >= div_comp + ncomp);
@@ -447,7 +484,8 @@ PeleLM::intFluxDivergenceLevelEB(
 
     if (flagfab.getType(bx) == amrex::FabType::covered) { // Covered boxes
       amrex::ParallelFor(
-        bx, ncomp, [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
+        bx, ncomp,
+        [divergence] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
           divergence(i, j, k, n) = 0.0;
         });
     } else if (flagfab.getType(bx) != amrex::FabType::regular) { // EB
@@ -460,9 +498,15 @@ PeleLM::intFluxDivergenceLevelEB(
         , const auto& afrac_z = areafrac[2]->array(mfi););
       const auto& ebarea = eb_area->array(mfi);
       amrex::ParallelFor(
-        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        bx, [flag, divergence, vol, scale, ncomp, ebflux, ebarea, dx, vfrac,
+             fluxX, areax, afrac_x, fluxY, areay, afrac_y
+#if (AMREX_SPACEDIM == 3)
+             ,
+             fluxZ, areaz, afrac_z
+#endif
+      ] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           if (flag(i, j, k).isCovered()) {
-            for (int n = 0; n < ncomp; n++) {
+            for (int n = 0; n < ncomp; ++n) {
               divergence(i, j, k, n) = 0.0;
             }
           } else if (flag(i, j, k).isRegular()) {
@@ -470,13 +514,13 @@ PeleLM::intFluxDivergenceLevelEB(
               i, j, k, ncomp, AMREX_D_DECL(fluxX, fluxY, fluxZ),
               AMREX_D_DECL(areax, areay, areaz), vol, scale, divergence);
           } else {
-            amrex::Real vfracinv = 1.0 / vfrac(i, j, k);
+            const amrex::Real vfracinv = 1.0 / vfrac(i, j, k);
             EB_intFluxDivergence_K(
               i, j, k, ncomp, AMREX_D_DECL(fluxX, fluxY, fluxZ),
               AMREX_D_DECL(afrac_x, afrac_y, afrac_z),
               AMREX_D_DECL(areax, areay, areaz), ebflux, ebarea, vol, dx[0],
               scale, divergence);
-            for (int n = 0; n < ncomp; n++) {
+            for (int n = 0; n < ncomp; ++n) {
               divergence(i, j, k, n) *= vfracinv;
             }
           }
@@ -485,7 +529,12 @@ PeleLM::intFluxDivergenceLevelEB(
 #endif
     {
       amrex::ParallelFor(
-        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        bx, [ncomp, vol, scale, divergence, fluxX, areax, fluxY, areay
+#if (AMREX_SPACEDIM == 3)
+             ,
+             fluxZ, areaz
+#endif
+      ] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           intFluxDivergence_K(
             i, j, k, ncomp, AMREX_D_DECL(fluxX, fluxY, fluxZ),
             AMREX_D_DECL(areax, areay, areaz), vol, scale, divergence);
@@ -495,21 +544,20 @@ PeleLM::intFluxDivergenceLevelEB(
 }
 
 void
-PeleLM::
-  advFluxDivergence( // NOLINT(readability-convert-member-functions-to-static)
-    int a_lev,
-    amrex::MultiFab& a_divergence,
-    int div_comp,
-    amrex::MultiFab& a_divu,
-    const amrex::Array<const amrex::MultiFab*, AMREX_SPACEDIM>& a_fluxes,
-    int flux_comp,
-    const amrex::Array<const amrex::MultiFab*, AMREX_SPACEDIM>& a_faceState,
-    int face_comp,
-    int ncomp,
-    int const* l_conserv_d,
-    const amrex::Geometry& a_geom,
-    amrex::Real scale,
-    bool fluxes_are_area_weighted) const
+PeleLM::advFluxDivergence(
+  const int a_lev,
+  amrex::MultiFab& a_divergence,
+  const int div_comp,
+  amrex::MultiFab& a_divu,
+  const amrex::Array<const amrex::MultiFab*, AMREX_SPACEDIM>& a_fluxes,
+  const int flux_comp,
+  const amrex::Array<const amrex::MultiFab*, AMREX_SPACEDIM>& a_faceState,
+  const int face_comp,
+  const int ncomp,
+  int const* l_conserv_d,
+  const amrex::Geometry& a_geom,
+  const amrex::Real scale,
+  const bool fluxes_are_area_weighted) const
 {
   BL_PROFILE("PeleLMeX::advFluxDivergence()");
 
@@ -579,16 +627,23 @@ PeleLM::
         , auto const& apy_arr = ebfact.getAreaFrac()[1]->const_array(mfi);
         , auto const& apz_arr = ebfact.getAreaFrac()[2]->const_array(mfi););
       amrex::ParallelFor(
-        bx, ncomp, [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
+        bx, ncomp,
+        [l_conserv_d, vfrac_arr, div_arr, divu_arr, apx_arr, facex, apy_arr,
+         facey
+#if (AMREX_SPACEDIM == 3)
+         ,
+         apz_arr, facez
+#endif
+      ] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
           if ((l_conserv_d[n] == 0) && vfrac_arr(i, j, k) > 0.) {
-            amrex::Real qwsum = AMREX_D_TERM(
+            const amrex::Real qwsum = AMREX_D_TERM(
               apx_arr(i, j, k) * facex(i, j, k, n) +
                 apx_arr(i + 1, j, k) * facex(i + 1, j, k, n),
               +apy_arr(i, j, k) * facey(i, j, k, n) +
                 apy_arr(i, j + 1, k) * facey(i, j + 1, k, n),
               +apz_arr(i, j, k) * facez(i, j, k, n) +
                 apz_arr(i, j, k + 1) * facez(i, j, k + 1, n));
-            amrex::Real areasum = AMREX_D_TERM(
+            const amrex::Real areasum = AMREX_D_TERM(
               apx_arr(i, j, k) + apx_arr(i + 1, j, k),
               +apy_arr(i, j, k) + apy_arr(i, j + 1, k),
               +apz_arr(i, j, k) + apz_arr(i, j, k + 1));
@@ -605,15 +660,16 @@ PeleLM::
         amrex::Array4<amrex::Real const> const& ax = mf_ax.const_array(mfi);
         amrex::Array4<amrex::Real const> const& ay = mf_ay.const_array(mfi);
         amrex::ParallelFor(
-          bx, ncomp, [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
+          bx, ncomp,
+          [l_conserv_d, ax, ay, facex, facey, divu_arr,
+           div_arr] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
             if (l_conserv_d[n] == 0) {
               amrex::Real qavg = AMREX_D_TERM(
                 ax(i, j, k) * facex(i, j, k, n) +
                   ax(i + 1, j, k) * facex(i + 1, j, k, n),
                 +ay(i, j, k) * facey(i, j, k, n) +
-                  ay(i, j + 1, k) * facey(i, j + 1, k, n),
-                +0.0);
-              amrex::Real areasum =
+                  ay(i, j + 1, k) * facey(i, j + 1, k, n), );
+              const amrex::Real areasum =
                 ax(i, j, k) + ax(i + 1, j, k) + ay(i, j, k) + ay(i, j + 1, k);
               qavg /= areasum;
               // Note that because we define adv update as MINUS div(u q), here
@@ -625,7 +681,13 @@ PeleLM::
 #endif
       {
         amrex::ParallelFor(
-          bx, ncomp, [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
+          bx, ncomp,
+          [l_conserv_d, div_arr, divu_arr, facex, facey
+#if (AMREX_SPACEDIM == 3)
+           ,
+           facez
+#endif
+        ] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
             if (l_conserv_d[n] == 0) {
               amrex::Real qavg = AMREX_D_TERM(
                 facex(i, j, k, n) + facex(i + 1, j, k, n),
@@ -645,21 +707,21 @@ PeleLM::
 #ifdef AMREX_USE_EB
 void
 PeleLM::advFluxDivergence(
-  int a_lev,
+  const int a_lev,
   amrex::MultiFab& a_divergence,
-  int div_comp,
+  const int div_comp,
   amrex::MultiFab& a_divu,
   const amrex::Array<const amrex::MultiFab*, AMREX_SPACEDIM>& a_fluxes,
-  int flux_comp,
+  const int flux_comp,
   const amrex::Array<const amrex::MultiFab*, AMREX_SPACEDIM>& a_faceState,
-  int face_comp,
+  const int face_comp,
   const amrex::MultiFab* a_EBvelocity,
   const amrex::MultiFab* a_EBvalue,
-  int ncomp,
+  const int ncomp,
   int const* l_conserv_d,
   const amrex::Geometry& a_geom,
-  amrex::Real scale,
-  bool fluxes_are_area_weighted) const
+  const amrex::Real scale,
+  const bool fluxes_are_area_weighted) const
 {
   BL_PROFILE("PeleLM::advFluxDivergence()");
 
@@ -718,16 +780,23 @@ PeleLM::advFluxDivergence(
         , auto const& apy_arr = ebfact.getAreaFrac()[1]->const_array(mfi);
         , auto const& apz_arr = ebfact.getAreaFrac()[2]->const_array(mfi););
       amrex::ParallelFor(
-        bx, ncomp, [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
+        bx, ncomp,
+        [l_conserv_d, vfrac_arr, div_arr, divu_arr, facex, apx_arr, facey,
+         apy_arr
+#if (AMREX_SPACEDIM == 3)
+         ,
+         facez, apz_arr
+#endif
+      ] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
           if (l_conserv_d[n] == 0 && vfrac_arr(i, j, k) > 0.) {
-            amrex::Real qwsum = AMREX_D_TERM(
+            const amrex::Real qwsum = AMREX_D_TERM(
               apx_arr(i, j, k) * facex(i, j, k, n) +
                 apx_arr(i + 1, j, k) * facex(i + 1, j, k, n),
               +apy_arr(i, j, k) * facey(i, j, k, n) +
                 apy_arr(i, j + 1, k) * facey(i, j + 1, k, n),
               +apz_arr(i, j, k) * facez(i, j, k, n) +
                 apz_arr(i, j, k + 1) * facez(i, j, k + 1, n));
-            amrex::Real areasum = AMREX_D_TERM(
+            const amrex::Real areasum = AMREX_D_TERM(
               apx_arr(i, j, k) + apx_arr(i + 1, j, k),
               +apy_arr(i, j, k) + apy_arr(i, j + 1, k),
               +apz_arr(i, j, k) + apz_arr(i, j, k + 1));
@@ -738,7 +807,13 @@ PeleLM::advFluxDivergence(
         });
     } else {
       amrex::ParallelFor(
-        bx, ncomp, [=] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
+        bx, ncomp,
+        [l_conserv_d, div_arr, divu_arr, facex, facey
+#if (AMREX_SPACEDIM == 3)
+         ,
+         facez
+#endif
+      ] AMREX_GPU_DEVICE(int i, int j, int k, int n) noexcept {
           if (l_conserv_d[n] == 0) {
             amrex::Real qavg = AMREX_D_TERM(
               facex(i, j, k, n) + facex(i + 1, j, k, n),
@@ -756,7 +831,7 @@ PeleLM::advFluxDivergence(
 #endif
 
 void
-PeleLM::floorSpecies(const TimeStamp& a_time)
+PeleLM::floorSpecies(const TimeStamp a_time)
 {
   BL_PROFILE("PeleLMeX::floorSpecies()");
   AMREX_ASSERT(a_time == AmrOldTime || a_time == AmrNewTime);
@@ -771,8 +846,8 @@ PeleLM::floorSpecies(const TimeStamp& a_time)
     auto const* leosparm = eos_parms.device_parm();
 
     amrex::ParallelFor(
-      ldata_p->state,
-      [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+      ldata_p->state, [sma, leosparm] AMREX_GPU_DEVICE(
+                        int box_no, int i, int j, int k) noexcept {
         fabMinMax(
           i, j, k, NUM_SPECIES, 0.0, AMREX_REAL_MAX,
           amrex::Array4<amrex::Real>(sma[box_no], FIRSTSPEC));
@@ -785,7 +860,7 @@ PeleLM::floorSpecies(const TimeStamp& a_time)
         amrex::Real massfrac[NUM_SPECIES] = {0.0};
         amrex::Real massdens[NUM_SPECIES] = {0.0};
         amrex::Real rhoinv, h_cgs = 0.0;
-        for (int n = 0; n < NUM_SPECIES; n++) {
+        for (int n = 0; n < NUM_SPECIES; ++n) {
           massdens[n] = sma[box_no](i, j, k, FIRSTSPEC + n);
         }
         auto eos = pele::physics::PhysicsType::eos(leosparm);
@@ -795,8 +870,8 @@ PeleLM::floorSpecies(const TimeStamp& a_time)
         sma[box_no](i, j, k, RHOH) =
           h_cgs * 1.0e-4 * sma[box_no](i, j, k, DENSITY);
       });
-    amrex::Gpu::streamSynchronize();
   }
+  amrex::Gpu::streamSynchronize();
 }
 
 void
@@ -825,7 +900,7 @@ PeleLM::resetCoveredMask()
           baf.intersections(grids[lev][mfi.index()], isects);
           for (const auto& is : isects) {
             amrex::ParallelFor(
-              is.second, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+              is.second, [mask] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
                 mask(i, j, k) = 0;
               });
           }
@@ -899,9 +974,10 @@ PeleLM::resetCoveredMask()
   //----------------------------------------------------------------------------
   // Need to compute the uncovered volume
   if (m_uncoveredVol < 0.0) {
-    amrex::Vector<amrex::MultiFab> dummy(finest_level + 1);
+    amrex::Vector<amrex::MultiFab> dummy;
+    dummy.reserve(finest_level + 1);
     for (int lev = 0; lev <= finest_level; ++lev) {
-      dummy[lev].define(
+      dummy.emplace_back(
         grids[lev], dmap[lev], 1, 0, amrex::MFInfo(), *m_factory[lev]);
       dummy[lev].setVal(1.0);
     }
@@ -924,7 +1000,7 @@ PeleLM::loadBalanceChem()
 }
 
 void
-PeleLM::loadBalanceChemLev(int a_lev)
+PeleLM::loadBalanceChemLev(const int a_lev)
 {
   amrex::LayoutData<amrex::Real> new_cost(*m_baChem[a_lev], *m_dmapChem[a_lev]);
   computeCosts(a_lev, new_cost, m_loadBalanceCostChem);
@@ -936,7 +1012,6 @@ PeleLM::loadBalanceChemLev(int a_lev)
   amrex::DistributionMapping test_dmap;
   // Build the test dmap, w/o braodcasting
   if (m_loadBalanceMethodChem == LoadBalanceMethod::SFC) {
-
     test_dmap = amrex::DistributionMapping::makeSFC(
       new_cost, currentEfficiency, testEfficiency, false,
       amrex::ParallelDescriptor::IOProcessorNumber());
@@ -946,8 +1021,8 @@ PeleLM::loadBalanceChemLev(int a_lev)
     const amrex::Real navg =
       static_cast<amrex::Real>(m_baChem[a_lev]->size()) /
       static_cast<amrex::Real>(amrex::ParallelDescriptor::NProcs());
-    const int nmax = static_cast<int>(
-      amrex::max(std::round(m_loadBalanceKSfactor * navg), std::ceil(navg)));
+    const int nmax = static_cast<int>(amrex::max<amrex::Real>(
+      std::round(m_loadBalanceKSfactor * navg), std::ceil(navg)));
     test_dmap = amrex::DistributionMapping::makeKnapSack(
       new_cost, currentEfficiency, testEfficiency, nmax, false,
       amrex::ParallelDescriptor::IOProcessorNumber());
@@ -998,7 +1073,10 @@ PeleLM::loadBalanceChemLev(int a_lev)
 // Return a unique_ptr with the entire derive
 std::unique_ptr<amrex::MultiFab>
 PeleLM::derive(
-  const std::string& a_name, amrex::Real a_time, int lev, int nGrow)
+  const std::string& a_name,
+  const amrex::Real a_time,
+  const int lev,
+  const int nGrow)
 {
   BL_PROFILE("PeleLMeX::derive()");
   AMREX_ASSERT(nGrow >= 0);
@@ -1065,7 +1143,10 @@ PeleLM::derive(
 // Return a unique_ptr with only the required component of a derive
 std::unique_ptr<amrex::MultiFab>
 PeleLM::deriveComp(
-  const std::string& a_name, amrex::Real a_time, int lev, int nGrow)
+  const std::string& a_name,
+  const amrex::Real a_time,
+  const int lev,
+  const int nGrow)
 {
   BL_PROFILE("PeleLMeX::derive()");
   AMREX_ASSERT(nGrow >= 0);
@@ -1225,7 +1306,7 @@ PeleLM::parseVars(
 
   // For each entry in the user-provided composition, parse name and value
   std::string delimiter = ":";
-  for (int i = 0; i < varCountIn; i++) {
+  for (int i = 0; i < varCountIn; ++i) {
     long unsigned sep = a_stringIn[i].find(delimiter);
     if (sep == std::string::npos) {
       amrex::Abort(
@@ -1235,7 +1316,7 @@ PeleLM::parseVars(
     amrex::Real value =
       std::stod(a_stringIn[i].substr(sep + 1, a_stringIn[i].length()));
     int foundIt = 0;
-    for (int k = 0; k < a_varsNames.size(); k++) {
+    for (int k = 0; k < a_varsNames.size(); ++k) {
       if (varNameIn == a_varsNames[k]) {
         a_rVars[k] = value;
         foundIt = 1;
@@ -1256,9 +1337,10 @@ PeleLM::MLNorm0(const amrex::Vector<const amrex::MultiFab*>& a_MF)
   amrex::Real r = 0.0;
   for (int lev = 0; lev < a_MF.size(); ++lev) {
     if (lev != finest_level) {
-      r = amrex::max(r, a_MF[lev]->norm0(*m_coveredMask[lev], 0, 0, true));
+      r = amrex::max<amrex::Real>(
+        r, a_MF[lev]->norm0(*m_coveredMask[lev], 0, 0, true));
     } else {
-      r = amrex::max(r, a_MF[lev]->norm0(0, 0, true, true));
+      r = amrex::max<amrex::Real>(r, a_MF[lev]->norm0(0, 0, true, true));
     }
   }
   amrex::ParallelDescriptor::ReduceRealMax(r);
@@ -1267,23 +1349,26 @@ PeleLM::MLNorm0(const amrex::Vector<const amrex::MultiFab*>& a_MF)
 
 amrex::Vector<amrex::Real>
 PeleLM::MLNorm0(
-  const amrex::Vector<const amrex::MultiFab*>& a_MF, int startcomp, int ncomp)
+  const amrex::Vector<const amrex::MultiFab*>& a_MF,
+  const int startcomp,
+  const int ncomp)
 {
   BL_PROFILE("PeleLMeX::MLNorm0()");
   AMREX_ASSERT(a_MF[0]->nComp() >= startcomp + ncomp);
   amrex::Vector<amrex::Real> r(ncomp);
-  for (int n = 0; n < ncomp; n++) {
+  for (int n = 0; n < ncomp; ++n) {
     r[n] = 0.0;
   }
   for (int lev = 0; lev < a_MF.size(); ++lev) {
     if (lev != finest_level) {
-      for (int n = 0; n < ncomp; n++) {
-        r[n] = amrex::max(
+      for (int n = 0; n < ncomp; ++n) {
+        r[n] = amrex::max<amrex::Real>(
           r[n], a_MF[lev]->norm0(*m_coveredMask[lev], startcomp + n, 0, true));
       }
     } else {
-      for (int n = 0; n < ncomp; n++) {
-        r[n] = amrex::max(r[n], a_MF[lev]->norm0(startcomp + n, 0, true, true));
+      for (int n = 0; n < ncomp; ++n) {
+        r[n] = amrex::max<amrex::Real>(
+          r[n], a_MF[lev]->norm0(startcomp + n, 0, true, true));
       }
     }
   }
@@ -1297,7 +1382,7 @@ PeleLM::isStateVariable(std::string_view a_name)
   // Check state
   return std::any_of(
     stateComponents.begin(), stateComponents.end(),
-    [=](const auto& stateComponent) {
+    [a_name](const auto& stateComponent) {
       return std::get<1>(stateComponent) == a_name;
     });
 }
@@ -1308,7 +1393,7 @@ PeleLM::isReactVariable(std::string_view a_name)
   // Check reaction state
   return std::any_of(
     reactComponents.begin(), reactComponents.end(),
-    [=](const auto& reactComponent) {
+    [a_name](const auto& reactComponent) {
       return std::get<1>(reactComponent) == a_name;
     });
 }
@@ -1369,7 +1454,7 @@ amrex::Vector<int>
 PeleLM::fetchAdvTypeArray(int scomp, int ncomp)
 {
   amrex::Vector<int> types(ncomp);
-  for (int comp = 0; comp < ncomp; comp++) {
+  for (int comp = 0; comp < ncomp; ++comp) {
     types[comp] = m_AdvTypeState[scomp + comp];
   }
   return types;
@@ -1379,7 +1464,7 @@ amrex::Vector<int>
 PeleLM::fetchDiffTypeArray(int scomp, int ncomp)
 {
   amrex::Vector<int> types(ncomp);
-  for (int comp = 0; comp < ncomp; comp++) {
+  for (int comp = 0; comp < ncomp; ++comp) {
     types[comp] = m_DiffTypeState[scomp + comp];
   }
   return types;
@@ -1389,7 +1474,7 @@ amrex::Vector<int>
 PeleLM::fetchAdvTypeAuxArray(int scomp, int ncomp)
 {
   amrex::Vector<int> types(ncomp);
-  for (int comp = 0; comp < ncomp; comp++) {
+  for (int comp = 0; comp < ncomp; ++comp) {
     types[comp] = m_AdvTypeAux[scomp + comp];
   }
   return types;
@@ -1399,14 +1484,14 @@ amrex::Vector<int>
 PeleLM::fetchDiffTypeAuxArray(int scomp, int ncomp)
 {
   amrex::Vector<int> types(ncomp);
-  for (int comp = 0; comp < ncomp; comp++) {
+  for (int comp = 0; comp < ncomp; ++comp) {
     types[comp] = m_DiffTypeAux[scomp + comp];
   }
   return types;
 }
 
 amrex::Real
-PeleLM::MFSum(const amrex::Vector<const amrex::MultiFab*>& a_mf, int comp)
+PeleLM::MFSum(const amrex::Vector<const amrex::MultiFab*>& a_mf, const int comp)
 {
   BL_PROFILE("PeleLMeX::MFSum()");
   // Get the integral of the MF, not including the fine-covered and
@@ -1505,7 +1590,7 @@ cells
 */
 
 void
-PeleLM::setTypicalValues(const TimeStamp& a_time, int is_init)
+PeleLM::setTypicalValues(const TimeStamp a_time, const int is_init)
 {
   // Get state Max/Min
   auto stateMax =
@@ -1518,15 +1603,15 @@ PeleLM::setTypicalValues(const TimeStamp& a_time, int is_init)
       : MLmin(GetVecOfConstPtrs(getStateVect(a_time)), 0, NVAR);
 
   // Fill typical values vector
-  for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
-    typical_values[idim] =
-      amrex::max(stateMax[VELX + idim], std::abs(stateMin[VELX + idim]));
+  for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
+    typical_values[idim] = amrex::max<amrex::Real>(
+      stateMax[VELX + idim], std::abs(stateMin[VELX + idim]));
   }
 
   if (m_incompressible == 0) {
     // Average between max/min
     typical_values[DENSITY] = 0.5 * (stateMax[DENSITY] + stateMin[DENSITY]);
-    for (int n = 0; n < NUM_SPECIES; n++) {
+    for (int n = 0; n < NUM_SPECIES; ++n) {
       typical_values[FIRSTSPEC + n] =
         0.5 * (stateMax[FIRSTSPEC + n] + stateMin[FIRSTSPEC + n]) /
         typical_values[DENSITY];
@@ -1539,7 +1624,7 @@ PeleLM::setTypicalValues(const TimeStamp& a_time, int is_init)
     typical_values[NE] = 0.5 * (stateMax[NE] + stateMin[NE]);
 #endif
 #if NUM_ODE > 0
-    for (int n = 0; n < NUM_ODE; n++) {
+    for (int n = 0; n < NUM_ODE; ++n) {
       typical_values[FIRSTODE + n] =
         0.5 * (stateMax[FIRSTODE + n] + stateMin[FIRSTODE + n]);
     }
@@ -1564,10 +1649,10 @@ PeleLM::setTypicalValues(const TimeStamp& a_time, int is_init)
       amrex::Vector<std::string> spec_names;
       pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(
         spec_names, &(eos_parms.host_parm()));
-      for (int n = 0; n < NUM_SPECIES; n++) {
+      for (int n = 0; n < NUM_SPECIES; ++n) {
         amrex::Print() << "\tY_" << spec_names[n]
                        << std::setw(
-                            amrex::max(
+                            amrex::max<int>(
                               0, static_cast<int>(8 - spec_names[n].length())))
                        << std::left << ":" << typical_values[FIRSTSPEC + n]
                        << '\n';
@@ -1576,12 +1661,14 @@ PeleLM::setTypicalValues(const TimeStamp& a_time, int is_init)
       amrex::Print() << "\tnE:       " << typical_values[NE] << '\n';
 #endif
 #if NUM_ODE > 0
-      for (int n = 0; n < NUM_ODE; n++) {
-        amrex::Print()
-          << "\t" << m_ode_names[n]
-          << std::setw(
-               amrex::max(0, static_cast<int>(10 - m_ode_names[n].length())))
-          << std::left << ":" << typical_values[FIRSTODE + n] << '\n';
+      for (int n = 0; n < NUM_ODE; ++n) {
+        amrex::Print() << "\t" << m_ode_names[n]
+                       << std::setw(
+                            amrex::max<int>(
+                              0,
+                              static_cast<int>(10 - m_ode_names[n].length())))
+                       << std::left << ":" << typical_values[FIRSTODE + n]
+                       << '\n';
       }
 #endif
     }
@@ -1603,7 +1690,7 @@ PeleLM::updateTypicalValuesChem()
       amrex::Vector<amrex::Real> typical_values_chem;
       typical_values_chem.resize(NUM_SPECIES + 1);
       for (int i = 0; i < NUM_SPECIES; ++i) {
-        typical_values_chem[i] = amrex::max(
+        typical_values_chem[i] = amrex::max<amrex::Real>(
           m_typicalYvalMin * typical_values[DENSITY] * 1.E-3,
           typical_values[FIRSTSPEC + i] * typical_values[DENSITY] *
             1.E-3); // CGS -> MKS conversion
@@ -1625,7 +1712,7 @@ PeleLM::updateTypicalValuesChem()
 // amrex::MultiFab max, excluding EB-covered/fine-covered cells, local
 amrex::Real
 PeleLM::MFmax(
-  const amrex::MultiFab* a_MF, const amrex::iMultiFab& a_mask, int comp)
+  const amrex::MultiFab* a_MF, const amrex::iMultiFab& a_mask, const int comp)
 {
   BL_PROFILE("PeleLMeX::MFmax()");
   amrex::Real mx = std::numeric_limits<amrex::Real>::lowest();
@@ -1643,8 +1730,9 @@ PeleLM::MFmax(
       mx = ParReduce(
         amrex::TypeList<amrex::ReduceOpMax>{}, amrex::TypeList<amrex::Real>{},
         *a_MF, amrex::IntVect(0),
-        [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept
-          -> amrex::GpuTuple<amrex::Real> {
+        [flagsma, mask, ma, comp] AMREX_GPU_DEVICE(
+          int box_no, int i, int j,
+          int k) noexcept -> amrex::GpuTuple<amrex::Real> {
           if (flagsma[box_no](i, j, k).isCovered() || !mask[box_no](i, j, k)) {
             return AMREX_REAL_LOWEST;
           } else {
@@ -1665,7 +1753,7 @@ PeleLM::MFmax(
           auto const& mask = a_mask.const_array(mfi);
           AMREX_LOOP_3D(bx, i, j, k, {
             if (!flag(i, j, k).isCovered() && mask(i, j, k)) {
-              mx = amrex::max(mx, a(i, j, k, comp));
+              mx = amrex::max<amrex::Real>(mx, a(i, j, k, comp));
             }
           });
         }
@@ -1681,8 +1769,9 @@ PeleLM::MFmax(
       mx = ParReduce(
         amrex::TypeList<amrex::ReduceOpMax>{}, amrex::TypeList<amrex::Real>{},
         *a_MF, amrex::IntVect(0),
-        [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept
-          -> amrex::GpuTuple<amrex::Real> {
+        [mask, ma, comp] AMREX_GPU_DEVICE(
+          int box_no, int i, int j,
+          int k) noexcept -> amrex::GpuTuple<amrex::Real> {
           if (!mask[box_no](i, j, k)) {
             return AMREX_REAL_LOWEST;
           } else {
@@ -1701,7 +1790,7 @@ PeleLM::MFmax(
         auto const& mask = a_mask.const_array(mfi);
         AMREX_LOOP_3D(bx, i, j, k, {
           if (mask(i, j, k)) {
-            mx = amrex::max(mx, a(i, j, k, comp));
+            mx = amrex::max<amrex::Real>(mx, a(i, j, k, comp));
           }
         });
       }
@@ -1714,7 +1803,7 @@ PeleLM::MFmax(
 // amrex::MultiFab min, excluding EB-covered/fine-covered cells, local
 amrex::Real
 PeleLM::MFmin(
-  const amrex::MultiFab* a_MF, const amrex::iMultiFab& a_mask, int comp)
+  const amrex::MultiFab* a_MF, const amrex::iMultiFab& a_mask, const int comp)
 {
   BL_PROFILE("PeleLMeX::MFmin()");
   amrex::Real mn = std::numeric_limits<amrex::Real>::max();
@@ -1732,8 +1821,9 @@ PeleLM::MFmin(
       mn = ParReduce(
         amrex::TypeList<amrex::ReduceOpMin>{}, amrex::TypeList<amrex::Real>{},
         *a_MF, amrex::IntVect(0),
-        [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept
-          -> amrex::GpuTuple<amrex::Real> {
+        [flagsma, mask, ma, comp] AMREX_GPU_DEVICE(
+          int box_no, int i, int j,
+          int k) noexcept -> amrex::GpuTuple<amrex::Real> {
           if (flagsma[box_no](i, j, k).isCovered() || !mask[box_no](i, j, k)) {
             return AMREX_REAL_MAX;
           } else {
@@ -1754,7 +1844,7 @@ PeleLM::MFmin(
           auto const& mask = a_mask.const_array(mfi);
           AMREX_LOOP_3D(bx, i, j, k, {
             if (!flag(i, j, k).isCovered() && mask(i, j, k)) {
-              mn = amrex::min(mn, a(i, j, k, comp));
+              mn = amrex::min<amrex::Real>(mn, a(i, j, k, comp));
             }
           });
         }
@@ -1770,8 +1860,9 @@ PeleLM::MFmin(
       mn = ParReduce(
         amrex::TypeList<amrex::ReduceOpMin>{}, amrex::TypeList<amrex::Real>{},
         *a_MF, amrex::IntVect(0),
-        [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept
-          -> amrex::GpuTuple<amrex::Real> {
+        [mask, ma, comp] AMREX_GPU_DEVICE(
+          int box_no, int i, int j,
+          int k) noexcept -> amrex::GpuTuple<amrex::Real> {
           if (!mask[box_no](i, j, k)) {
             return AMREX_REAL_MAX;
           } else {
@@ -1790,7 +1881,7 @@ PeleLM::MFmin(
         auto const& mask = a_mask.const_array(mfi);
         AMREX_LOOP_3D(bx, i, j, k, {
           if (mask(i, j, k)) {
-            mn = amrex::min(mn, a(i, j, k, comp));
+            mn = amrex::min<amrex::Real>(mn, a(i, j, k, comp));
           }
         });
       }
@@ -1803,7 +1894,9 @@ PeleLM::MFmin(
 // MultiLevel max, exlucing EB-covered/fine-covered cells
 amrex::Vector<amrex::Real>
 PeleLM::MLmax(
-  const amrex::Vector<const amrex::MultiFab*>& a_MF, int scomp, int ncomp)
+  const amrex::Vector<const amrex::MultiFab*>& a_MF,
+  const int scomp,
+  const int ncomp)
 {
   BL_PROFILE("PeleLMeX::MLmax()");
   AMREX_ASSERT(a_MF[0]->nComp() >= scomp + ncomp);
@@ -1812,13 +1905,14 @@ PeleLM::MLmax(
 
   for (int lev = 0; lev < a_MF.size(); ++lev) {
     if (lev != finest_level) {
-      for (int n = 0; n < ncomp; n++) {
-        nmax[n] =
-          amrex::max(nmax[n], MFmax(a_MF[lev], *m_coveredMask[lev], scomp + n));
+      for (int n = 0; n < ncomp; ++n) {
+        nmax[n] = amrex::max<amrex::Real>(
+          nmax[n], MFmax(a_MF[lev], *m_coveredMask[lev], scomp + n));
       }
     } else {
-      for (int n = 0; n < ncomp; n++) {
-        nmax[n] = amrex::max(nmax[n], a_MF[lev]->max(scomp + n, 0, true));
+      for (int n = 0; n < ncomp; ++n) {
+        nmax[n] =
+          amrex::max<amrex::Real>(nmax[n], a_MF[lev]->max(scomp + n, 0, true));
       }
     }
   }
@@ -1830,7 +1924,9 @@ PeleLM::MLmax(
 // MultiLevel min, exlucing EB-covered/fine-covered cells
 amrex::Vector<amrex::Real>
 PeleLM::MLmin(
-  const amrex::Vector<const amrex::MultiFab*>& a_MF, int scomp, int ncomp)
+  const amrex::Vector<const amrex::MultiFab*>& a_MF,
+  const int scomp,
+  const int ncomp)
 {
   BL_PROFILE("PeleLMeX::MLmin()");
   AMREX_ASSERT(a_MF[0]->nComp() >= scomp + ncomp);
@@ -1839,13 +1935,14 @@ PeleLM::MLmin(
 
   for (int lev = 0; lev < a_MF.size(); ++lev) {
     if (lev != finest_level) {
-      for (int n = 0; n < ncomp; n++) {
-        nmin[n] =
-          amrex::min(nmin[n], MFmin(a_MF[lev], *m_coveredMask[lev], scomp + n));
+      for (int n = 0; n < ncomp; ++n) {
+        nmin[n] = amrex::min<amrex::Real>(
+          nmin[n], MFmin(a_MF[lev], *m_coveredMask[lev], scomp + n));
       }
     } else {
-      for (int n = 0; n < ncomp; n++) {
-        nmin[n] = amrex::min(nmin[n], a_MF[lev]->min(scomp + n, 0, true));
+      for (int n = 0; n < ncomp; ++n) {
+        nmin[n] =
+          amrex::min<amrex::Real>(nmin[n], a_MF[lev]->min(scomp + n, 0, true));
       }
     }
   }
@@ -2037,7 +2134,7 @@ PeleLM::initMixtureFraction()
   Zox = 0.0;
   for (int i = 0; i < NUM_SPECIES; ++i) {
     spec_Bilger_fact[i] = 0.0;
-    for (int k = 0; k < 4; k++) {
+    for (int k = 0; k < 4; ++k) {
       spec_Bilger_fact[i] +=
         Beta_mix[k] * (ecompCHON[i * 4 + k] * atwCHON[k] / mwt[i]);
     }
@@ -2048,8 +2145,8 @@ PeleLM::initMixtureFraction()
 
 void
 PeleLM::parseComposition(
-  amrex::Vector<std::string> compositionIn,
-  std::string compositionType,
+  const amrex::Vector<std::string>& compositionIn,
+  const std::string& compositionType,
   amrex::Real* massFrac)
 {
   amrex::Real compoIn[NUM_SPECIES] = {0.0};
@@ -2062,7 +2159,7 @@ PeleLM::parseComposition(
   // For each entry in the user-provided composition, parse name and value
   std::string delimiter = ":";
   const int specCountIn = static_cast<int>(compositionIn.size());
-  for (int i = 0; i < specCountIn; i++) {
+  for (int i = 0; i < specCountIn; ++i) {
     long unsigned sep = compositionIn[i].find(delimiter);
     if (sep == std::string::npos) {
       amrex::Abort(
@@ -2073,7 +2170,7 @@ PeleLM::parseComposition(
     amrex::Real value =
       std::stod(compositionIn[i].substr(sep + 1, compositionIn[i].length()));
     int foundIt = 0;
-    for (int k = 0; k < NUM_SPECIES; k++) {
+    for (int k = 0; k < NUM_SPECIES; ++k) {
       if (specNameIn == specNames[k]) {
         compoIn[k] = value;
         foundIt = 1;
@@ -2088,16 +2185,16 @@ PeleLM::parseComposition(
 
   // Ensure that it sums to 1.0:
   amrex::Real sum = 0.0;
-  for (double k : compoIn) {
+  for (amrex::Real k : compoIn) {
     sum += k;
   }
-  for (double& k : compoIn) {
+  for (amrex::Real& k : compoIn) {
     k /= sum;
   }
 
   // Fill the massFrac array, convert from mole fraction if necessary
   if (compositionType == "mass") { // mass
-    for (int i = 0; i < NUM_SPECIES; i++) {
+    for (int i = 0; i < NUM_SPECIES; ++i) {
       massFrac[i] = compoIn[i];
     }
   } else if (compositionType == "mole") { // mole
@@ -2113,40 +2210,36 @@ PeleLM::parseComposition(
 // Extend the cell-centered based signed distance function
 void
 PeleLM::extendSignedDistance(
-  amrex::MultiFab* a_signDist, amrex::Real a_extendFactor)
+  amrex::MultiFab* a_signDist, const amrex::Real a_extendFactor)
 {
   BL_PROFILE("PeleLMeX::extendSignedDistance()");
   // This is a not-so-pretty piece of code that'll take AMReX cell-averaged
   // signed distance and propagates it manually up to the point where we need to
   // have it for derefining.
-  const auto geomdata = geom[0].data();
-  amrex::Real maxSignedDist = a_signDist->max(0);
+  const amrex::Real maxSignedDist = a_signDist->max(0);
   const auto& ebfactory =
     dynamic_cast<amrex::EBFArrayBoxFactory const&>(a_signDist->Factory());
   const auto& flags = ebfactory.getMultiEBCellFlagFab();
-  int nGrowFac = flags.nGrow() + 1;
+  const int nGrowFac = flags.nGrow() + 1;
 
   // First set the region far away at the max value we need
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-  for (amrex::MFIter mfi(*a_signDist, amrex::TilingIfNotGPU()); mfi.isValid();
-       ++mfi) {
-    const amrex::Box& bx = mfi.growntilebox();
-    auto const& sd_cc = a_signDist->array(mfi);
-    amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-      if (sd_cc(i, j, k) >= maxSignedDist - 1e-12) {
-        const amrex::Real* dx = geomdata.CellSize();
-        sd_cc(i, j, k) = nGrowFac * dx[0] * a_extendFactor;
+  auto const& sd_cc_ma = a_signDist->arrays();
+  const auto& dx = geom[0].CellSizeArray();
+  const amrex::Real sd_cc_fact = nGrowFac * dx[0] * a_extendFactor;
+  amrex::ParallelFor(
+    *a_signDist, a_signDist->nGrowVect(),
+    [sd_cc_ma, maxSignedDist,
+     sd_cc_fact] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+      if (sd_cc_ma[box_no](i, j, k) > maxSignedDist - 1e-12) {
+        sd_cc_ma[box_no](i, j, k) = sd_cc_fact;
       }
     });
-  }
-
+  amrex::Gpu::streamSynchronize();
   // Iteratively compute the distance function in boxes, propagating across
   // boxes using ghost cells If needed, increase the number of loop to extend
   // the reach of the distance function
-  int nMaxLoop = 4;
-  for (int dloop = 1; dloop <= nMaxLoop; dloop++) {
+  constexpr int nMaxLoop = 4;
+  for (int dloop = 1; dloop <= nMaxLoop; ++dloop) {
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
@@ -2159,10 +2252,10 @@ PeleLM::extendSignedDistance(
       }
       auto const& sd_cc = a_signDist->array(mfi);
       amrex::ParallelFor(
-        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        bx, [gbx, dx, a_extendFactor, sd_cc,
+             maxSignedDist] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           const auto glo = amrex::lbound(gbx);
           const auto ghi = amrex::ubound(gbx);
-          const amrex::Real* dx = geomdata.CellSize();
           amrex::Real extendedDist = dx[0] * a_extendFactor;
           if (sd_cc(i, j, k) >= maxSignedDist - 1e-12) {
             amrex::Real closestEBDist = 1e12;

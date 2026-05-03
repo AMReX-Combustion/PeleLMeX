@@ -22,19 +22,18 @@ PeleLM::Init()
 
 void
 PeleLM::MakeNewLevelFromScratch(
-  int lev,
-  amrex::Real time,
+  const int lev,
+  const amrex::Real time,
   const amrex::BoxArray& ba,
   const amrex::DistributionMapping& dm)
 {
   BL_PROFILE("PeleLMeX::MakeNewLevelFromScratch()");
 
   if (m_verbose > 0) {
-    amrex::Print() << " Making new level " << lev << " from scratch"
-                   << std::endl;
-    if (m_verbose > 2 && lev > 0) {
+    amrex::Print() << " Making new level " << lev << " from scratch \n";
+    if (m_verbose > 1 && lev > 0) {
       auto const dx = geom[lev].CellSizeArray();
-      amrex::Real vol = AMREX_D_TERM(dx[0], *dx[1], *dx[2]);
+      const amrex::Real vol = AMREX_D_TERM(dx[0], *dx[1], *dx[2]);
       amrex::Print() << " with " << ba.numPts() << " cells," << ba.size()
                      << " boxes,"
                      << " over "
@@ -43,7 +42,7 @@ PeleLM::MakeNewLevelFromScratch(
                      << "% of the domain \n";
     }
     if (m_verbose > 3 && lev > 0) {
-      amrex::Print() << " with BoxArray " << ba << std::endl;
+      amrex::Print() << " with BoxArray " << ba << "\n";
     }
   }
 
@@ -123,7 +122,7 @@ PeleLM::MakeNewLevelFromScratch(
 #endif
   m_macProjOldSize = finest_level + 1;
   m_extSource[lev] = std::make_unique<amrex::MultiFab>(
-    grids[lev], dmap[lev], NVAR, amrex::max(m_nGrowAdv, m_nGrowMAC),
+    grids[lev], dmap[lev], NVAR, amrex::max<int>(m_nGrowAdv, m_nGrowMAC),
     amrex::MFInfo(), *m_factory[lev]);
   m_extSource[lev]->setVal(0.);
 
@@ -141,33 +140,30 @@ PeleLM::MakeNewLevelFromScratch(
                         static_cast<amrex::Real>(refRatio(ilev - 1)[0]),
                         static_cast<amrex::Real>(ilev));
     }
-    extentFactor *=
-      std::sqrt(2.0) * m_derefineEBBuffer; // Account for diagonals
+    // Account for diagonals
+    constexpr amrex::Real sqrt2 = 1.4142135623730951;
+    extentFactor *= sqrt2 * m_derefineEBBuffer;
 
     amrex::MultiFab signDist(
       convert(grids[0], amrex::IntVect::TheUnitVector()), dmap[0], 1, 1,
       amrex::MFInfo(), EBFactory(0));
     FillSignedDistance(signDist, true);
 
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-    for (amrex::MFIter mfi(*m_signedDist0, amrex::TilingIfNotGPU());
-         mfi.isValid(); ++mfi) {
-      const amrex::Box& bx = mfi.growntilebox();
-      auto const& sd_cc = m_signedDist0->array(mfi);
-      auto const& sd_nd = signDist.const_array(mfi);
-      amrex::ParallelFor(
-        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          amrex::Real fac = AMREX_D_PICK(0.5, 0.25, 0.125);
-          sd_cc(i, j, k) = AMREX_D_TERM(
-            sd_nd(i, j, k) + sd_nd(i + 1, j, k),
-            +sd_nd(i, j + 1, k) + sd_nd(i + 1, j + 1, k),
-            +sd_nd(i, j, k + 1) + sd_nd(i + 1, j, k + 1) +
-              sd_nd(i, j + 1, k + 1) + sd_nd(i + 1, j + 1, k + 1));
-          sd_cc(i, j, k) *= fac;
-        });
-    }
+    auto const& sd_cc_ma = m_signedDist0->arrays();
+    auto const& sd_nd_ma = signDist.const_arrays();
+    amrex::ParallelFor(
+      *m_signedDist0, m_signedDist0->nGrowVect(),
+      [sd_cc_ma,
+       sd_nd_ma] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+        sd_cc_ma[box_no](i, j, k) = AMREX_D_TERM(
+          sd_nd_ma[box_no](i, j, k) + sd_nd_ma[box_no](i + 1, j, k),
+          +sd_nd_ma[box_no](i, j + 1, k) + sd_nd_ma[box_no](i + 1, j + 1, k),
+          +sd_nd_ma[box_no](i, j, k + 1) + sd_nd_ma[box_no](i + 1, j, k + 1) +
+            sd_nd_ma[box_no](i, j + 1, k + 1) +
+            sd_nd_ma[box_no](i + 1, j + 1, k + 1));
+        sd_cc_ma[box_no](i, j, k) *= AMREX_D_PICK(0.5, 0.25, 0.125);
+      });
+    amrex::Gpu::streamSynchronize();
     m_signedDist0->FillBoundary(geom[0].periodicity());
     extendSignedDistance(m_signedDist0.get(), extentFactor);
   }
@@ -180,6 +176,20 @@ PeleLM::initData()
   BL_PROFILE("PeleLMeX::initData()");
 
   if (m_restart_chkfile.empty()) {
+    // Pre-create PltFileManagers so all AMR levels share a single instance
+    // rather than each level instantiating its own (which causes repeated large
+    // memory allocations for big plotfiles).
+    if (!m_restart_pltfile.empty()) {
+      m_pltDataManager =
+        std::make_unique<pele::physics::pltfilemanager::PltFileManager>(
+          m_restart_pltfile);
+    }
+    if (!m_velocity_plotfile.empty()) {
+      m_velPltDataManager =
+        std::make_unique<pele::physics::pltfilemanager::PltFileManager>(
+          m_velocity_plotfile);
+    }
+
     //----------------------------------------------------------------
     if (!m_initial_grid_file.empty()) {
       InitFromGridFile(m_cur_time);
@@ -188,6 +198,11 @@ PeleLM::initData()
       // with MakeNewLevelFromScratch.
       InitFromScratch(m_cur_time);
     }
+
+    // Release PltFileManagers now that all levels have been initialized.
+    m_pltDataManager.reset();
+    m_velPltDataManager.reset();
+
     resetCoveredMask();
     updateDiagnostics();
 
@@ -202,7 +217,7 @@ PeleLM::initData()
 
     //----------------------------------------------------------------
     // Set typical values
-    int is_init = 1;
+    constexpr int is_init = 1;
     setTypicalValues(AmrNewTime, is_init);
 
     // initialize temporals
@@ -225,9 +240,18 @@ PeleLM::initData()
       fillPatchAux(AmrNewTime);
     }
 
+    //----------------------------------------------------------------
+    // Initialize turbulent viscosity for LES
+    if (m_do_les) {
+      calcTurbViscosity(AmrNewTime);
+    }
+
+    //----------------------------------------------------------------
+    // Plot state before initial iterations
     if (m_plot_init_state) {
       WritePlotFile();
     }
+
     //----------------------------------------------------------------
     // If performing UnitTest, let's stop here
     if (runMode() != "normal") {
@@ -239,7 +263,7 @@ PeleLM::initData()
     projectInitSolution();
 
     // Active control
-    int is_restart = 0;
+    constexpr int is_restart = 0;
     activeControl(is_restart);
 
     //----------------------------------------------------------------
@@ -302,8 +326,8 @@ PeleLM::initData()
           m_t_old[lev] = -1.0e200;
         }
         m_dt = -1.0;
-        int is_init = 1;
-        amrex::Real dtInit = computeDt(is_init, AmrNewTime);
+        constexpr int is_init = 1;
+        const amrex::Real dtInit = computeDt(is_init, AmrNewTime);
         amrex::Print() << " Initial dt: " << dtInit << "\n";
       }
 
@@ -335,13 +359,13 @@ PeleLM::initData()
     updateDiagnostics();
 
     // Active control
-    int is_restart = 1;
+    constexpr int is_restart = 1;
     activeControl(is_restart);
   }
 }
 
 void
-PeleLM::initLevelData(int lev)
+PeleLM::initLevelData(const int lev)
 {
   BL_PROFILE("PeleLMeX::initLevelData()");
 
@@ -356,26 +380,26 @@ PeleLM::initLevelData(int lev)
   // Prob/PMF data
   ProbParm const* lprobparm = prob_parm_d;
   auto const* lpmfdata = pmf_data.device_parm();
-  auto const local_m_incompressible = m_incompressible;
 
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-  for (amrex::MFIter mfi(ldata_p->state, amrex::TilingIfNotGPU());
-       mfi.isValid(); ++mfi) {
-    const amrex::Box& bx = mfi.tilebox();
-    amrex::FArrayBox DummyFab(bx, 1);
-    auto const& state_arr = ldata_p->state.array(mfi);
-    auto const& aux_arr =
-      (m_nAux > 0) ? ldata_p->auxiliaries.array(mfi) : DummyFab.array();
-    amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+  // don't want to use state for dummy in case user overwrites state in aux
+  amrex::MultiFab dummy_mf(grids[lev], dmap[lev], 0, 0);
+
+  auto const& state_ma = ldata_p->state.arrays();
+  auto const& aux_ma =
+    (m_nAux > 0) ? ldata_p->auxiliaries.arrays() : dummy_mf.arrays();
+
+  amrex::ParallelFor(
+    ldata_p->state,
+    [state_ma, aux_ma, geomdata, lprobparm, lpmfdata,
+     is_incomp =
+       m_incompressible] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
       ProblemSpecificFunctions::initdata(
-        i, j, k, local_m_incompressible, state_arr, aux_arr, geomdata,
+        i, j, k, is_incomp, state_ma[box_no], aux_ma[box_no], geomdata,
         *lprobparm, lpmfdata);
     });
-  }
+  amrex::Gpu::streamSynchronize();
 
-  if (local_m_incompressible == 0) {
+  if (m_incompressible == 0) {
     // Initialize thermodynamic pressure
     setThermoPress(lev, AmrNewTime);
     if (m_has_divu != 0) {
@@ -387,7 +411,7 @@ PeleLM::initLevelData(int lev)
 void
 PeleLM::projectInitSolution()
 {
-  const int is_init = 1;
+  constexpr int is_init = 1;
 
 #ifdef PELE_USE_PLASMA
   poissonSolveEF(AmrNewTime);
@@ -395,7 +419,7 @@ PeleLM::projectInitSolution()
 #endif
 
   // Post data Init time step estimate
-  amrex::Real dtInit = computeDt(is_init, AmrNewTime);
+  const amrex::Real dtInit = computeDt(is_init, AmrNewTime);
   amrex::Print() << " Initial dt: " << dtInit << "\n";
 
   if (m_do_init_proj != 0) {
@@ -404,9 +428,9 @@ PeleLM::projectInitSolution()
     // Subcycling IAMR/PeleLM first does a projection with no reaction divU
     // which can make the dt for evaluating I_R better
     if (m_has_divu != 0) {
-      int is_initialization = 1;    // Yes we are
-      int computeDiffusionTerm = 1; // Needed here
-      int do_avgDown = 1;           // Always
+      constexpr int is_initialization = 1;    // Yes we are
+      constexpr int computeDiffusionTerm = 1; // Needed here
+      constexpr int do_avgDown = 1;           // Always
 
       // Light version of the diffusion data container
       std::unique_ptr<AdvanceDiffData> diffData;
@@ -431,7 +455,7 @@ PeleLM::projectInitSolution()
 
     //----------------------------------------------------------------
     // Initial velocity projection iterations
-    for (int iter = 0; iter < m_numDivuIter; iter++) {
+    for (int iter = 0; iter < m_numDivuIter; ++iter) {
       if (m_do_react != 0) {
         // The new level data has been filled above
         // Copy new -> old since old used in advanceChemistry
@@ -459,9 +483,9 @@ PeleLM::projectInitSolution()
         copyStateOldToNew();
       }
       if (m_has_divu != 0) {
-        int is_initialization = 1;    // Yes we are
-        int computeDiffusionTerm = 1; // Needed here
-        int do_avgDown = 1;           // Always
+        constexpr int is_initialization = 1;    // Yes we are
+        constexpr int computeDiffusionTerm = 1; // Needed here
+        constexpr int do_avgDown = 1;           // Always
 
         // Light version of the diffusion data container
         std::unique_ptr<AdvanceDiffData> diffData;
@@ -511,13 +535,13 @@ PeleLM::initialIterations()
 
   //----------------------------------------------------------------
   // Initial pressure iterations
-  for (int iter = 0; iter < m_init_iter; iter++) {
+  for (int iter = 0; iter < m_init_iter; ++iter) {
 
     if (m_verbose > 0) {
       amrex::Print() << "\n ================   INITIAL ITERATION [" << iter
                      << "]   ================ \n";
     }
-    int is_init = 1;
+    constexpr int is_init = 1;
     Advance(is_init);
 
     // Pass new pressure and gp from New to Old
@@ -529,15 +553,15 @@ PeleLM::initialIterations()
 }
 
 void
-PeleLM::InitFromGridFile(amrex::Real time)
+PeleLM::InitFromGridFile(const amrex::Real time)
 {
   {
     const amrex::BoxArray& ba = MakeBaseGrids();
-    amrex::DistributionMapping dm(ba);
+    const amrex::DistributionMapping dm(ba);
     MakeNewLevelFromScratch(0, time, ba, dm);
   }
   finest_level = static_cast<int>(m_initial_ba.size());
-  for (int lev = 1; lev <= finest_level; lev++) {
+  for (int lev = 1; lev <= finest_level; ++lev) {
     const amrex::BoxArray ba = m_initial_ba[lev - 1];
     amrex::DistributionMapping dm(ba);
     MakeNewLevelFromScratch(lev, time, ba, dm);

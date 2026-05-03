@@ -1,0 +1,25 @@
+particles.fuel_species = NC7H16 NC10H22
+particles.Y_0 = 0. 1.
+particles.fuel_ref_temp = 298.15
+
+# Properties for Heptane in MKS
+particles.NC7H16_crit_temp = 540. # K
+particles.NC7H16_boil_temp = 371.6 # K
+particles.NC7H16_latent = 3.63E5 # J/kg Latent heat at 298 K
+particles.NC7H16_cp = 2.2483E3 # J/kg/K @ 298 K
+particles.NC7H16_rho = 681.43 # kg/m^3 @ 298 K
+# Coefficients for saturation pressure using Antoine equation
+# These are from the NIST webbook website
+# Last coefficient converts units, in this case bar, to Pa
+particles.NC7H16_psat = 4.02832 1268.636 -56.199 1.E5
+
+# Properties for decane in MKS
+particles.NC10H22_crit_temp = 617.8 # K
+particles.NC10H22_boil_temp = 447.27 # K
+particles.NC10H22_latent = 3.5899E5 # J/kg Latent heat at 298 K
+particles.NC10H22_cp = 2.1921E3 # J/kg/K @ 298 K
+particles.NC10H22_rho = 726.53 # kg/m^3 @ 298 K
+# Coefficients for saturation pressure using Antoine equation
+# These are from the NIST website
+# Last coefficient converts units, in this case bar, to Pa
+particles.NC10H22_psat = 4.07857 1501.268 -78.67 1.E5

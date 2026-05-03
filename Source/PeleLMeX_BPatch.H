@@ -2,6 +2,9 @@
 #define BPATCH_H
 
 #include <PeleLMeX.H>
+#include <AMReX_REAL.H>
+
+using namespace amrex::literals;
 
 class BPatch
 {
@@ -10,13 +13,20 @@ public:
   BPatch() = default;
   ~BPatch() = default;
 
-  BPatch(const std::string& patch_name, const amrex::Geometry& geom);
+  BPatch(
+    const std::string& patch_name,
+    const amrex::Geometry& geom,
+    pele::physics::eos::EosParm<pele::physics::PhysicsType::eos_type>*
+      eosparms_h,
+    const pele::physics::eos::EosParm<pele::physics::PhysicsType::eos_type>*
+      eosparms_d);
 
   struct BpatchDataContainer
   {
     int m_boundary_dir;
     int m_boundary_lo_hi;
-    int num_species;
+    int num_species = 0;
+    int num_groups = 0;
     int m_patchtype_num;
     int* speciesIndex = nullptr;
     amrex::Real* speciesFlux = nullptr;
@@ -72,7 +82,7 @@ public:
       }
 #elif (AMREX_SPACEDIM == 3)
       amrex::Real zp;
-      const amrex::Real sqrt2 = sqrt(2.0);
+      constexpr amrex::Real sqrt2 = 1.4142135623730951;
 
       xp = point_coordinate[0];
       yp = point_coordinate[1];
@@ -82,9 +92,9 @@ public:
         inside = true;
       } else if (m_patchtype_num == 1) {
 
-        amrex::Real patch_circle_radius_touse =
+        const amrex::Real patch_circle_radius_touse =
           m_patch_circle_radius + dx * sqrt2 / 2.0;
-        amrex::Real rad = sqrt(
+        const amrex::Real rad = sqrt(
           (xp - m_patch_circle_center[0]) * (xp - m_patch_circle_center[0]) +
           (yp - m_patch_circle_center[1]) * (yp - m_patch_circle_center[1]) +
           (zp - m_patch_circle_center[2]) * (zp - m_patch_circle_center[2]));
@@ -95,14 +105,14 @@ public:
       } else if (m_patchtype_num == 2) {
         amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> patch_rectangle_lo_touse =
           {AMREX_D_DECL(
-            m_patch_rectangle_lo[0] - dx / 2.0,
-            m_patch_rectangle_lo[1] - dx / 2.0,
-            m_patch_rectangle_lo[2] - dx / 2.0)};
+            m_patch_rectangle_lo[0] - dx / 2.0_rt,
+            m_patch_rectangle_lo[1] - dx / 2.0_rt,
+            m_patch_rectangle_lo[2] - dx / 2.0_rt)};
         amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> patch_rectangle_hi_touse =
           {AMREX_D_DECL(
-            m_patch_rectangle_hi[0] + dx / 2.0,
-            m_patch_rectangle_hi[1] + dx / 2.0,
-            m_patch_rectangle_hi[2] + dx / 2.0)};
+            m_patch_rectangle_hi[0] + dx / 2.0_rt,
+            m_patch_rectangle_hi[1] + dx / 2.0_rt,
+            m_patch_rectangle_hi[2] + dx / 2.0_rt)};
         patch_rectangle_hi_touse[m_boundary_dir] = 0.0;
         patch_rectangle_lo_touse[m_boundary_dir] = 0.0;
 
@@ -116,12 +126,12 @@ public:
           inside = true;
         }
       } else if (m_patchtype_num == 3) {
-        amrex::Real patch_circ_ann_outer_radius_touse =
+        const amrex::Real patch_circ_ann_outer_radius_touse =
           m_patch_circ_ann_outer_radius + dx * sqrt2 / 2.0;
-        amrex::Real patch_circ_ann_inner_radius_touse =
+        const amrex::Real patch_circ_ann_inner_radius_touse =
           m_patch_circ_ann_inner_radius - dx * sqrt2 / 2.0;
 
-        amrex::Real rad = sqrt(
+        const amrex::Real rad = sqrt(
           (xp - m_patch_circ_ann_center[0]) *
             (xp - m_patch_circ_ann_center[0]) +
           (yp - m_patch_circ_ann_center[1]) *
@@ -138,24 +148,24 @@ public:
         bool inside_inner = false;
         amrex::GpuArray<amrex::Real, AMREX_SPACEDIM>
           patch_rect_ann_inner_lo_touse = {AMREX_D_DECL(
-            m_patch_rect_ann_inner_lo[0] + dx / 2.0,
-            m_patch_rect_ann_inner_lo[1] + dx / 2.0,
-            m_patch_rect_ann_inner_lo[2] + dx / 2.0)};
+            m_patch_rect_ann_inner_lo[0] + dx / 2.0_rt,
+            m_patch_rect_ann_inner_lo[1] + dx / 2.0_rt,
+            m_patch_rect_ann_inner_lo[2] + dx / 2.0_rt)};
         amrex::GpuArray<amrex::Real, AMREX_SPACEDIM>
           patch_rect_ann_inner_hi_touse = {AMREX_D_DECL(
-            m_patch_rect_ann_inner_hi[0] - dx / 2.0,
-            m_patch_rect_ann_inner_hi[1] - dx / 2.0,
-            m_patch_rect_ann_inner_hi[2] - dx / 2.0)};
+            m_patch_rect_ann_inner_hi[0] - dx / 2.0_rt,
+            m_patch_rect_ann_inner_hi[1] - dx / 2.0_rt,
+            m_patch_rect_ann_inner_hi[2] - dx / 2.0_rt)};
         amrex::GpuArray<amrex::Real, AMREX_SPACEDIM>
           patch_rect_ann_outer_lo_touse = {AMREX_D_DECL(
-            m_patch_rect_ann_outer_lo[0] - dx / 2.0,
-            m_patch_rect_ann_outer_lo[1] - dx / 2.0,
-            m_patch_rect_ann_outer_lo[2] - dx / 2.0)};
+            m_patch_rect_ann_outer_lo[0] - dx / 2.0_rt,
+            m_patch_rect_ann_outer_lo[1] - dx / 2.0_rt,
+            m_patch_rect_ann_outer_lo[2] - dx / 2.0_rt)};
         amrex::GpuArray<amrex::Real, AMREX_SPACEDIM>
           patch_rect_ann_outer_hi_touse = {AMREX_D_DECL(
-            m_patch_rect_ann_outer_hi[0] + dx / 2.0,
-            m_patch_rect_ann_outer_hi[1] + dx / 2.0,
-            m_patch_rect_ann_outer_hi[2] + dx / 2.0)};
+            m_patch_rect_ann_outer_hi[0] + dx / 2.0_rt,
+            m_patch_rect_ann_outer_hi[1] + dx / 2.0_rt,
+            m_patch_rect_ann_outer_hi[2] + dx / 2.0_rt)};
         patch_rect_ann_inner_lo_touse[m_boundary_dir] = 0.0;
         patch_rect_ann_inner_hi_touse[m_boundary_dir] = 0.0;
         patch_rect_ann_outer_lo_touse[m_boundary_dir] = 0.0;
@@ -228,6 +238,8 @@ public:
     m_patchtype; // values:
                  // "fullboundary","circle","rectangle","annular-circle","annular-rectangle"
   amrex::Vector<std::string> speciesList;
+  amrex::Vector<std::string> groupNames;
+  amrex::Vector<amrex::Vector<int>> speciesinGroup;
 
 protected:
   BpatchDataContainer m_bpdata_h;

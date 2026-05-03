@@ -1,3 +1,13 @@
+## v1.2.0
+
+This new minor version adds significant capability for modeling multi-component sprays.
+The changes should largely be backward compatible.
+
+Slight modifications are also made to mechanism generation in PelePhysics that will
+require re-generating any mechanism that does not ship with PelePhysics.
+
+PelePhysics submodule updated to 07bbae5c (update precision for all thermo polynomials).
+
 ## v1.1.0
 
 EB-Inflow capability was added in PR #515. To enable this capability, the optional

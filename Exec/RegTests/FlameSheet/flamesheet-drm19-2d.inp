@@ -53,7 +53,7 @@ amr.dt_change_max = 1.1                   # Maximum dt increase btw successive s
 #amr.restart = chk00050                   # Restart checkpoint file
 #amr.check_int = 2000                     # Frequency of checkpoint output
 amr.plot_int = 100                        # Frequency of pltfile output
-amr.derive_plot_vars = avg_pressure mag_vort mass_fractions mixture_fraction progress_variable
+amr.derive_plot_vars = avg_pressure mag_vort mass_fractions mixture_fraction progress_variable element_fractions
 
 #---------------------- Derived CONTROLS -------------------------
 peleLM.fuel_name = CH4
@@ -71,7 +71,7 @@ peleLM.chem_integrator = "ReactorCvode"
 peleLM.use_typ_vals_chem = 1              # Use species/temp typical values in CVODE
 ode.rtol = 1.0e-6                         # Relative tolerance of the chemical solve
 ode.atol = 1.0e-5                         # Absolute tolerance factor applied on typical values
-cvode.solve_type = denseAJ_direct         # CVODE Linear solve type (for Newton direction)
+cvode.solve_type = GMRES                  # CVODE Linear solve type (for Newton direction)
 cvode.max_order  = 4                      # CVODE max BDF order.
 
 #---------------------- Linear solver CONTROL --------------------

@@ -5,7 +5,7 @@
 #include <PeleLMeX_BCfill.H>
 
 void
-PeleLM::predictVelocity(std::unique_ptr<AdvanceAdvData>& advData)
+PeleLM::predictVelocity(const std::unique_ptr<AdvanceAdvData>& advData)
 {
   BL_PROFILE("PeleLMeX::predictVelocity()");
 
@@ -20,23 +20,25 @@ PeleLM::predictVelocity(std::unique_ptr<AdvanceAdvData>& advData)
 
   //----------------------------------------------------------------
   // Get viscous forces
-  int nGrow_force = 1;
-  amrex::Vector<amrex::MultiFab> divtau(finest_level + 1);
-  amrex::Vector<amrex::MultiFab> velForces(finest_level + 1);
+  constexpr int nGrow_force = 1;
+  amrex::Vector<amrex::MultiFab> divtau;
+  divtau.reserve(finest_level + 1);
+  amrex::Vector<amrex::MultiFab> velForces;
+  velForces.reserve(finest_level + 1);
   for (int lev = 0; lev <= finest_level; ++lev) {
-    divtau[lev].define(
+    divtau.emplace_back(
       grids[lev], dmap[lev], AMREX_SPACEDIM, 0, amrex::MFInfo(), Factory(lev));
-    velForces[lev].define(
+    velForces.emplace_back(
       grids[lev], dmap[lev], AMREX_SPACEDIM, nGrow_force, amrex::MFInfo(),
       Factory(lev));
   }
-  int use_density = 0;
+  constexpr int use_density = 0;
   computeDivTau(AmrOldTime, GetVecOfPtrs(divtau), use_density);
 
   //----------------------------------------------------------------
   // Gather all the velocity forces
   // F = [ (gravity+...) - gradP + divTau ] / rho
-  int add_gradP = 1;
+  constexpr int add_gradP = 1;
   getVelForces(
     AmrOldTime, GetVecOfPtrs(divtau), GetVecOfPtrs(velForces), nGrow_force,
     add_gradP);
@@ -71,7 +73,7 @@ PeleLM::predictVelocity(std::unique_ptr<AdvanceAdvData>& advData)
 }
 
 void
-PeleLM::createMACRHS(std::unique_ptr<AdvanceAdvData>& advData)
+PeleLM::createMACRHS(const std::unique_ptr<AdvanceAdvData>& advData)
 {
   BL_PROFILE("PeleLMeX::createMACRHS()");
 
@@ -83,16 +85,17 @@ PeleLM::createMACRHS(std::unique_ptr<AdvanceAdvData>& advData)
 
 void
 PeleLM::addChiIncrement(
-  int a_sdcIter,
-  const TimeStamp& a_time,
-  std::unique_ptr<AdvanceAdvData>& advData)
+  const int a_sdcIter,
+  const TimeStamp a_time,
+  const std::unique_ptr<AdvanceAdvData>& advData)
 {
   BL_PROFILE("PeleLMeX::addChiIncrement()");
 
-  int nGrow = m_nGrowAdv;
-  amrex::Vector<amrex::MultiFab> chiIncr(finest_level + 1);
+  const int nGrow = m_nGrowAdv;
+  amrex::Vector<amrex::MultiFab> chiIncr;
+  chiIncr.reserve(finest_level + 1);
   for (int lev = 0; lev <= finest_level; ++lev) {
-    chiIncr[lev].define(
+    chiIncr.emplace_back(
       grids[lev], dmap[lev], 1, nGrow, amrex::MFInfo(), Factory(lev));
   }
 
@@ -105,66 +108,105 @@ PeleLM::addChiIncrement(
   // Add chiIncr to chi and add chi to mac_divu
   // Both mac_divu and chiIncr have properly filled ghost cells -> work on
   // grownbox
-  for (int lev = 0; lev <= finest_level; ++lev) {
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-    for (amrex::MFIter mfi(advData->chi[lev], amrex::TilingIfNotGPU());
-         mfi.isValid(); ++mfi) {
-      const amrex::Box& gbx = mfi.growntilebox();
-      auto const& chiInc_ar = chiIncr[lev].const_array(mfi);
-      auto const& chi_ar = advData->chi[lev].array(mfi);
-      auto const& mac_divu_ar = advData->mac_divu[lev].array(mfi);
-      if (m_chi_correction_type == ChiCorrectionType::DivuFirstIter) {
+
+  if (a_sdcIter == 1) {
+    switch (m_chi_correction_type) {
+    case ChiCorrectionType::DivuFirstIter: {
+      for (int lev = 0; lev <= finest_level; ++lev) {
+        auto const& chiInc_ma = chiIncr[lev].const_arrays();
+        auto const& chi_ma = advData->chi[lev].arrays();
+        auto const& mac_divu_ma = advData->mac_divu[lev].arrays();
         amrex::ParallelFor(
-          gbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-            if (a_sdcIter == 1) {
-              chi_ar(i, j, k) = chiInc_ar(i, j, k) + mac_divu_ar(i, j, k);
-            } else {
-              chi_ar(i, j, k) += chiInc_ar(i, j, k);
-            }
-            mac_divu_ar(i, j, k) = chi_ar(i, j, k);
+          advData->chi[lev], advData->chi[lev].nGrowVect(),
+          [chi_ma, chiInc_ma, mac_divu_ma] AMREX_GPU_DEVICE(
+            int box_no, int i, int j, int k) noexcept {
+            chi_ma[box_no](i, j, k) =
+              chiInc_ma[box_no](i, j, k) + mac_divu_ma[box_no](i, j, k);
+            mac_divu_ma[box_no](i, j, k) = chi_ma[box_no](i, j, k);
           });
-      } else if (m_chi_correction_type == ChiCorrectionType::NoDivu) {
+      }
+      break;
+    }
+    case ChiCorrectionType::NoDivu: {
+      for (int lev = 0; lev <= finest_level; ++lev) {
+        auto const& chiInc_ma = chiIncr[lev].const_arrays();
+        auto const& chi_ma = advData->chi[lev].arrays();
+        auto const& mac_divu_ma = advData->mac_divu[lev].arrays();
         amrex::ParallelFor(
-          gbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-            if (a_sdcIter == 1) {
-              chi_ar(i, j, k) = chiInc_ar(i, j, k);
-            } else {
-              chi_ar(i, j, k) += chiInc_ar(i, j, k);
-            }
-            mac_divu_ar(i, j, k) = chi_ar(i, j, k);
+          advData->chi[lev], advData->chi[lev].nGrowVect(),
+          [chi_ma, chiInc_ma, mac_divu_ma] AMREX_GPU_DEVICE(
+            int box_no, int i, int j, int k) noexcept {
+            chi_ma[box_no](i, j, k) = chiInc_ma[box_no](i, j, k);
+            mac_divu_ma[box_no](i, j, k) = chi_ma[box_no](i, j, k);
           });
-      } else { // Default: use updated divu every iteration
+      }
+      break;
+    }
+    default: {
+      for (int lev = 0; lev <= finest_level; ++lev) {
+        auto const& chiInc_ma = chiIncr[lev].const_arrays();
+        auto const& chi_ma = advData->chi[lev].arrays();
+        auto const& mac_divu_ma = advData->mac_divu[lev].arrays();
         amrex::ParallelFor(
-          gbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-            if (a_sdcIter == 1) {
-              chi_ar(i, j, k) = chiInc_ar(i, j, k);
-            } else {
-              chi_ar(i, j, k) += chiInc_ar(i, j, k);
-            }
-            mac_divu_ar(i, j, k) += chi_ar(i, j, k);
+          advData->chi[lev], advData->chi[lev].nGrowVect(),
+          [chi_ma, chiInc_ma, mac_divu_ma] AMREX_GPU_DEVICE(
+            int box_no, int i, int j, int k) noexcept {
+            chi_ma[box_no](i, j, k) = chiInc_ma[box_no](i, j, k);
+            mac_divu_ma[box_no](i, j, k) += chi_ma[box_no](i, j, k);
+          });
+      }
+    }
+    }
+  } else {
+    if (
+      m_chi_correction_type == ChiCorrectionType::DivuFirstIter ||
+      m_chi_correction_type == ChiCorrectionType::NoDivu) {
+      for (int lev = 0; lev <= finest_level; ++lev) {
+        auto const& chiInc_ma = chiIncr[lev].const_arrays();
+        auto const& chi_ma = advData->chi[lev].arrays();
+        auto const& mac_divu_ma = advData->mac_divu[lev].arrays();
+        amrex::ParallelFor(
+          advData->chi[lev], advData->chi[lev].nGrowVect(),
+          [chi_ma, chiInc_ma, mac_divu_ma] AMREX_GPU_DEVICE(
+            int box_no, int i, int j, int k) noexcept {
+            chi_ma[box_no](i, j, k) += chiInc_ma[box_no](i, j, k);
+            mac_divu_ma[box_no](i, j, k) = chi_ma[box_no](i, j, k);
+          });
+      }
+    } else {
+      for (int lev = 0; lev <= finest_level; ++lev) {
+        auto const& chiInc_ma = chiIncr[lev].const_arrays();
+        auto const& chi_ma = advData->chi[lev].arrays();
+        auto const& mac_divu_ma = advData->mac_divu[lev].arrays();
+        amrex::ParallelFor(
+          advData->chi[lev], advData->chi[lev].nGrowVect(),
+          [chi_ma, chiInc_ma, mac_divu_ma] AMREX_GPU_DEVICE(
+            int box_no, int i, int j, int k) noexcept {
+            chi_ma[box_no](i, j, k) += chiInc_ma[box_no](i, j, k);
+            mac_divu_ma[box_no](i, j, k) += chi_ma[box_no](i, j, k);
           });
       }
     }
   }
+  amrex::Gpu::streamSynchronize();
+
   if (m_print_chi_convergence) {
-    amrex::Real max_corr =
+    const amrex::Real max_corr =
       MLNorm0(GetVecOfConstPtrs(chiIncr)) * m_dt / m_dpdtFactor;
     amrex::Print() << "      Before SDC " << a_sdcIter
-                   << ": max relative P mismatch is " << max_corr << std::endl;
+                   << ": max relative P mismatch is " << max_corr << "\n";
   }
 }
 
 void
 PeleLM::macProject(
-  const TimeStamp& a_time,
-  std::unique_ptr<AdvanceAdvData>& advData,
+  const TimeStamp a_time,
+  const std::unique_ptr<AdvanceAdvData>& advData,
   const amrex::Vector<amrex::MultiFab*>& a_divu)
 {
   BL_PROFILE("PeleLMeX::macProject()");
 
-  int has_divu = static_cast<int>(!a_divu.empty());
+  const int has_divu = static_cast<int>(!a_divu.empty());
 
   // Get face rho inv
   auto bcRec = fetchBCRecArray(DENSITY, 1);
@@ -181,7 +223,7 @@ PeleLM::macProject(
       }
     } else {
       auto* ldata_p = getLevelDataPtr(lev, a_time);
-      int doZeroVisc = 0;
+      constexpr int doZeroVisc = 0;
       rho_inv[lev] =
         getDiffusivity(lev, DENSITY, 1, doZeroVisc, {bcRec}, ldata_p->state);
       for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
@@ -205,7 +247,11 @@ PeleLM::macProject(
       getMACProjectionBC(amrex::Orientation::low),
       getMACProjectionBC(amrex::Orientation::high));
 #ifdef AMREX_USE_HYPRE
-    macproj->getMLMG().setHypreOptionsNamespace(m_hypre_namespace_mac);
+    if (
+      macproj->getMLMG().getBottomSolver() ==
+      amrex::MLMG::BottomSolver::hypre) {
+      macproj->getMLMG().setHypreOptionsNamespace(m_hypre_namespace_mac);
+    }
 #endif
   } else {
     macproj->updateBeta(GetVecOfArrOfConstPtrs(rho_inv));
@@ -228,7 +274,46 @@ PeleLM::macProject(
 #endif
 
   // Project
-  macproj->project(m_mac_mg_rtol, m_mac_mg_atol);
+  if (m_macproj_verbose > 0) {
+    amrex::Print() << "MLMG: MAC Projection\n";
+  }
+  if (!m_mlmg_fail_plt_residuals) {
+    macproj->project(m_mac_mg_rtol, m_mac_mg_atol);
+  } else {
+    macproj->getMLMG().setThrowException(true);
+    macproj->getMLMG().setConvergenceNormType(amrex::MLMGNormType::bnorm);
+
+    // Maximum MLMG iterations may change for debugging purposes
+    if (
+      m_mac_mg_fail_sdc_miniter >= 0 &&
+      m_sdcIter >= m_mac_mg_fail_sdc_miniter) {
+      if (m_mac_mg_fail_maxiter_after_sdc_miniter > 0) {
+        macproj->getMLMG().setMaxIter(m_mac_mg_fail_maxiter_after_sdc_miniter);
+        amrex::Print() << "      Limiting MAC MLMG max_iter to "
+                       << m_mac_mg_fail_maxiter_after_sdc_miniter
+                       << " (SDC iter [" << m_sdcIter
+                       << "] >= " << m_mac_mg_fail_sdc_miniter << ")\n";
+      }
+    }
+
+    try {
+      macproj->project(m_mac_mg_rtol, m_mac_mg_atol);
+    } catch (const std::exception& e) {
+      amrex::Print() << "\n";
+      amrex::Print() << "  *** MAC projection MLMG solve failed! ***\n";
+      amrex::Print() << "  Error: " << e.what() << "\n";
+      amrex::Print() << "  Dumping MAC projection residuals for debugging...\n";
+
+      auto& mlmg = macproj->getMLMG();
+      const auto& phi_ptrs = amrex::GetVecOfPtrs(
+        const_cast<amrex::Vector<amrex::MultiFab>&>(macproj->getPhi()));
+      const auto& rhs_ptrs = amrex::GetVecOfConstPtrs(macproj->getRHS());
+
+      WriteMLMGResidual(mlmg, phi_ptrs, rhs_ptrs, "mac_projection", m_nstep);
+
+      amrex::Abort("MLMG solve for mac_projection failed");
+    }
+  }
 
   // Restore mac_divu
   if ((m_closed_chamber != 0) && (m_incompressible == 0)) {
@@ -238,32 +323,29 @@ PeleLM::macProject(
   }
 
   // FillBoundary umac
-  for (int lev = 0; lev <= finest_level; ++lev) {
-    if (lev > 0) {
-      // We need to fill the MAC velocities outside the fine region so we can
-      // use them in the Godunov method
-      amrex::IntVect rr =
-        geom[lev].Domain().size() / geom[lev - 1].Domain().size();
-      create_constrained_umac_grown(
-        m_nGrowMAC, &geom[lev - 1], &geom[lev],
-        GetArrOfPtrs(advData->umac[lev - 1]), GetArrOfPtrs(advData->umac[lev]),
-        rr);
-    } else {
-      AMREX_D_TERM(
-        advData->umac[lev][0].FillBoundary(geom[lev].periodicity());
-        , advData->umac[lev][1].FillBoundary(geom[lev].periodicity());
-        , advData->umac[lev][2].FillBoundary(geom[lev].periodicity()));
-    }
+  // Do coarse first
+  AMREX_D_TERM(advData->umac[0][0].FillBoundary(geom[0].periodicity());
+               , advData->umac[0][1].FillBoundary(geom[0].periodicity());
+               , advData->umac[0][2].FillBoundary(geom[0].periodicity()));
+  for (int lev = 1; lev <= finest_level; ++lev) {
+    // We need to fill the MAC velocities outside the fine region so we can
+    // use them in the Godunov method
+    const amrex::IntVect rr =
+      geom[lev].Domain().size() / geom[lev - 1].Domain().size();
+    create_constrained_umac_grown(
+      m_nGrowMAC, &geom[lev - 1], &geom[lev],
+      GetArrOfPtrs(advData->umac[lev - 1]), GetArrOfPtrs(advData->umac[lev]),
+      rr);
   }
 }
 
 void
 PeleLM::create_constrained_umac_grown(
-  int a_nGrow,
+  const int a_nGrow,
   const amrex::Geometry* crse_geom,
   const amrex::Geometry* fine_geom,
-  amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM> u_mac_crse,
-  amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM> u_mac_fine,
+  const amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>& u_mac_crse,
+  const amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>& u_mac_fine,
   const amrex::IntVect& crse_ratio)
 {
   // Divergence preserving interp
@@ -271,7 +353,7 @@ PeleLM::create_constrained_umac_grown(
 
   // Set BCRec for Umac
   amrex::Vector<amrex::BCRec> bcrec(1);
-  for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+  for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
     if (crse_geom->isPeriodic(idim)) {
       bcrec[0].setLo(idim, amrex::BCType::int_dir);
       bcrec[0].setHi(idim, amrex::BCType::int_dir);
@@ -299,7 +381,7 @@ PeleLM::create_constrained_umac_grown(
 
   // Use piecewise constant interpolation in time, so create dummy variable for
   // time
-  amrex::Real dummy = 0.;
+  constexpr amrex::Real dummy = 0.;
   FillPatchTwoLevels(
     u_mac_fine, amrex::IntVect(a_nGrow), dummy, {u_mac_crse}, {dummy},
     {u_mac_fine}, {dummy}, 0, 0, 1, *crse_geom, *fine_geom, cbndyFuncArr, 0,

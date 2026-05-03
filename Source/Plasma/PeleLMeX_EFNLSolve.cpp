@@ -16,10 +16,10 @@ PeleLM::getPrecondOp()
 
 void
 PeleLM::implicitNonLinearSolve(
-  int sdcIter,
-  const amrex::Real& a_dt,
-  std::unique_ptr<AdvanceDiffData>& diffData,
-  std::unique_ptr<AdvanceAdvData>& advData)
+  const int sdcIter,
+  const amrex::Real a_dt,
+  const std::unique_ptr<AdvanceDiffData>& diffData,
+  const std::unique_ptr<AdvanceAdvData>& advData)
 {
   BL_PROFILE_VAR("PeleLMeX::implicitNonLinearSolve()", implicitNonLinearSolve);
 
@@ -48,7 +48,7 @@ PeleLM::implicitNonLinearSolve(
   }
 
   // Gradient of PhiV at t^{n}
-  int do_avgDown = 0; // TODO or should I ?
+  constexpr int do_avgDown = 0; // TODO or should I ?
   auto bcRecPhiV = fetchBCRecArray(PHIV, 1);
   getDiffusionOp()->computeGradient(
     getNLgradPhiVVect(), {}, // don't need the laplacian out
@@ -58,7 +58,7 @@ PeleLM::implicitNonLinearSolve(
   for (int lev = 0; lev <= finest_level; ++lev) {
     // Get nl solve data pointer
     auto ldataNLs_p = getLevelDataNLSolvePtr(lev);
-    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+    for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
       amrex::MultiFab::Copy(
         ldataNLs_p->umac[idim], advData->umac[lev][idim], 0, 0, 1, 0);
     }
@@ -82,7 +82,7 @@ PeleLM::implicitNonLinearSolve(
   if (ef_substep > 1)
     amrex::Abort("Non-linear solve sub-stepping not re-implemented yet");
   int NK_tot_count = 0;
-  for (int sstep = 0; sstep < ef_substep; sstep++) {
+  for (int sstep = 0; sstep < ef_substep; ++sstep) {
     curtime = getTime(0, AmrOldTime) + (sstep + 1) * dtsub;
 
     // -----------------
@@ -118,7 +118,7 @@ PeleLM::implicitNonLinearSolve(
     // Check for convergence
     amrex::Real scaledResnE, scaledResphiV;
     getNLResidScaling(scaledResnE, scaledResphiV);
-    amrex::Real max_nlres = std::max(scaledResnE, scaledResphiV);
+    amrex::Real max_nlres = amrex::max<amrex::Real>(scaledResnE, scaledResphiV);
     if (max_nlres <= m_ef_newtonTol) {
       if (ef_verbose) {
         amrex::Print() << " No Newton iteration needed, exiting. \n";
@@ -141,9 +141,10 @@ PeleLM::implicitNonLinearSolve(
       }
 
       // Solve for Newton direction
-      amrex::Vector<amrex::MultiFab> newtonDir(finest_level + 1);
+      amrex::Vector<amrex::MultiFab> newtonDir;
+      newtonDir.reserve(finest_level + 1);
       for (int lev = 0; lev <= finest_level; ++lev) {
-        newtonDir[lev].define(
+        newtonDir.emplace_back(
           grids[lev], dmap[lev], 2, 1, amrex::MFInfo(), Factory(lev));
         newtonDir[lev].setVal(0.0, 0, 2, 1);
       }
@@ -169,7 +170,7 @@ PeleLM::implicitNonLinearSolve(
         update_precond);
       nlSolveNorm(getNLresidVect(), nl_residNorm);
       getNLResidScaling(scaledResnE, scaledResphiV);
-      max_nlres = std::max(scaledResnE, scaledResphiV);
+      max_nlres = amrex::max<amrex::Real>(scaledResnE, scaledResphiV);
       // WriteDebugPlotFile(GetVecOfConstPtrs(getNLstateVect()),"NLState_"+std::to_string(NK_ite));
       // WriteDebugPlotFile(GetVecOfConstPtrs(getNLresidVect()),"NLResid_"+std::to_string(NK_ite));
 
@@ -219,7 +220,9 @@ PeleLM::implicitNonLinearSolve(
 
 int
 PeleLM::testExitNewton(
-  int newtonIter, const amrex::Real& max_res, const amrex::Real& norm_NewtonDir)
+  const int newtonIter,
+  const amrex::Real max_res,
+  const amrex::Real norm_NewtonDir)
 {
   int exit = 0;
   if (max_res <= m_ef_newtonTol || norm_NewtonDir <= 1e-11) {
@@ -313,48 +316,60 @@ PeleLM::updateNLState(const amrex::Vector<amrex::MultiFab*>& a_update)
 
 void
 PeleLM::incrementElectronForcing(
-  int a_sstep, std::unique_ptr<AdvanceAdvData>& advData)
+  const int a_sstep, const std::unique_ptr<AdvanceAdvData>& advData)
 {
-  for (int lev = 0; lev <= finest_level; ++lev) {
 
+  for (int lev = 0; lev <= finest_level; ++lev) {
     auto ldata_p = getLevelDataPtr(lev, AmrOldTime); // Old time electron
     auto ldataR_p = getLevelDataReactPtr(lev);       // Reaction
     auto ldataNLs_p = getLevelDataNLSolvePtr(lev);   // NL data
 
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-    for (amrex::MFIter mfi(ldata_p->state, amrex::TilingIfNotGPU());
-         mfi.isValid(); ++mfi) {
-      const amrex::Box& bx = mfi.tilebox();
-      auto const& nE_o = ldata_p->state.const_array(mfi, NE);
-      auto const& nE_n = ldataNLs_p->nlState.const_array(mfi);
-      auto const& I_R_nE = ldataR_p->I_R.const_array(mfi, NUM_SPECIES);
-      auto const& FnE = advData->Forcing[lev].array(mfi, NUM_SPECIES + 1);
-      amrex::Real scaling = nE_scale;
-      amrex::Real dtinv = 1.0 / dtsub;
+    auto const& state_o_ma = ldata_p->state.const_arrays();
+    auto const& nE_n_ma = ldataNLs_p->nlState.const_arrays();
+    auto const& I_R_ma = ldataR_p->I_R.const_arrays();
+    auto const& F_ma = advData->Forcing[lev].arrays();
+    const amrex::Real scaling = nE_scale;
+    const amrex::Real dtinv = 1.0 / dtsub;
+    if (a_sstep == 0) {
       amrex::ParallelFor(
-        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          if (a_sstep == 0) {
-            FnE(i, j, k) = (nE_n(i, j, k) * scaling - nE_o(i, j, k)) * dtinv -
-                           I_R_nE(i, j, k);
-          } else {
-            FnE(i, j, k) += (nE_n(i, j, k) * scaling - nE_o(i, j, k)) * dtinv -
-                            I_R_nE(i, j, k);
-          }
+        ldata_p->state,
+        [state_o_ma, nE_n_ma, I_R_ma, F_ma, scaling,
+         dtinv] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+          amrex::Array4<amrex::Real const> nE_o(state_o_ma[box_no], NE);
+          amrex::Array4<amrex::Real const> I_R_nE(I_R_ma[box_no], NUM_SPECIES);
+          amrex::Array4<amrex::Real> FnE(F_ma[box_no], NUM_SPECIES + 1);
+          FnE(i, j, k) =
+            (nE_n_ma[box_no](i, j, k) * scaling - nE_o(i, j, k)) * dtinv -
+            I_R_nE(i, j, k);
         });
+      // Shift outside?
+      amrex::Gpu::streamSynchronize();
+    } else {
+      amrex::ParallelFor(
+        ldata_p->state,
+        [state_o_ma, nE_n_ma, I_R_ma, F_ma, scaling,
+         dtinv] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+          amrex::Array4<amrex::Real const> nE_o(state_o_ma[box_no], NE);
+          amrex::Array4<amrex::Real const> I_R_nE(I_R_ma[box_no], NUM_SPECIES);
+          amrex::Array4<amrex::Real> FnE(F_ma[box_no], NUM_SPECIES + 1);
+          FnE(i, j, k) +=
+            (nE_n_ma[box_no](i, j, k) * scaling - nE_o(i, j, k)) * dtinv -
+            I_R_nE(i, j, k);
+        });
+      // Shift outside?
+      amrex::Gpu::streamSynchronize();
     }
   }
 }
 
 void
 PeleLM::computeBGcharge(
-  const amrex::Real& a_time,
-  std::unique_ptr<AdvanceDiffData>& diffData,
-  std::unique_ptr<AdvanceAdvData>& advData)
+  const amrex::Real a_time,
+  const std::unique_ptr<AdvanceDiffData>& diffData,
+  const std::unique_ptr<AdvanceAdvData>& advData)
 {
   // Get integration dt
-  amrex::Real dt_int = a_time - getTime(0, AmrOldTime);
+  const amrex::Real dt_int = a_time - getTime(0, AmrOldTime);
 
   for (int lev = 0; lev <= finest_level; ++lev) {
     // Get data pointers
@@ -362,54 +377,58 @@ PeleLM::computeBGcharge(
     auto ldataR_p = getLevelDataReactPtr(lev);       // Reaction
     auto ldataNLs_p = getLevelDataNLSolvePtr(lev);   // NL data
 
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-    for (amrex::MFIter mfi(
-           ldataNLs_p->backgroundCharge, amrex::TilingIfNotGPU());
-         mfi.isValid(); ++mfi) {
-      const amrex::Box& bx = mfi.tilebox();
-      auto const& rhoYold = ldata_p->state.const_array(mfi, FIRSTSPEC);
-      auto const& adv_arr = advData->AofS[lev].const_array(mfi, FIRSTSPEC);
-      auto const& dn_arr = diffData->Dn[lev].const_array(mfi);
-      auto const& dnp1_arr = diffData->Dnp1[lev].const_array(mfi);
-      auto const& dhat_arr = diffData->Dhat[lev].const_array(mfi);
-      auto const& rhoYdot = ldataR_p->I_R.const_array(mfi);
-      auto const& charge = ldataNLs_p->backgroundCharge.array(mfi);
-      amrex::Real factor = 1.0 / elemCharge;
-      amrex::ParallelFor(
-        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          charge(i, j, k) = 0.0;
-          for (int n = 0; n < NUM_SPECIES; n++) {
-            amrex::Real rhoYprov =
-              rhoYold(i, j, k, n) +
-              dt_int * (adv_arr(i, j, k, n) +
-                        0.5 * (dn_arr(i, j, k, n) - dnp1_arr(i, j, k, n)) +
-                        dhat_arr(i, j, k, n) + rhoYdot(i, j, k, n));
-            rhoYprov = amrex::max(rhoYprov, 0.0);
-            charge(i, j, k) += zk[n] * rhoYprov;
-          }
-          charge(i, j, k) *= factor;
-        });
-    }
+    auto const& state_old_ma = ldata_p->state.const_arrays();
+    auto const& adv_ma = advData->AofS[lev].const_arrays();
+    auto const& dn_ma = diffData->Dn[lev].const_arrays();
+    auto const& dnp1_ma = diffData->Dnp1[lev].const_arrays();
+    auto const& dhat_ma = diffData->Dhat[lev].const_arrays();
+    auto const& rhoYdot_ma = ldataR_p->I_R.const_arrays();
+
+    ldataNLs_p->backgroundCharge.setVal(0.0);
+    auto const& charge_ma = ldataNLs_p->backgroundCharge.arrays();
+    constexpr amrex::Real factor = 1.0 / elemCharge;
+
+    amrex::ParallelFor(
+      ldataNLs_p->backgroundCharge, amrex::IntVect(0.0), NUM_SPECIES,
+      [state_old_ma, adv_ma, dn_ma, dnp1_ma, dhat_ma, rhoYdot_ma, charge_ma,
+       dt_int, factor,
+       zk =
+         zk] AMREX_GPU_DEVICE(int box_no, int i, int j, int k, int n) noexcept {
+        amrex::Array4<amrex::Real const> rhoYold(
+          state_old_ma[box_no], FIRSTSPEC);
+        amrex::Array4<amrex::Real const> adv(adv_ma[box_no], FIRSTSPEC);
+        amrex::Real rhoYprov =
+          rhoYold(i, j, k, n) +
+          dt_int *
+            (adv(i, j, k, n) +
+             0.5 * (dn_ma[box_no](i, j, k, n) - dnp1_ma[box_no](i, j, k, n)) +
+             dhat_ma[box_no](i, j, k, n) + rhoYdot_ma[box_no](i, j, k, n));
+        rhoYprov = amrex::max<amrex::Real>(rhoYprov, 0.0);
+        const amrex::Real val = zk[n] * rhoYprov;
+        amrex::Gpu::Atomic::Add(&charge_ma[box_no](i, j, k), val);
+      });
+    amrex::Gpu::streamSynchronize();
+    ldataNLs_p->backgroundCharge.mult(factor);
   }
 }
 
 void
 PeleLM::nonLinearResidual(
-  const amrex::Real& a_dt,
+  const amrex::Real a_dt,
   const amrex::Vector<amrex::MultiFab*>& a_nlstate,
   const amrex::Vector<amrex::MultiFab*>& a_nlresid,
-  int updateScaling,
-  int updatePrecond)
+  const int updateScaling,
+  const int updatePrecond)
 {
   // Get unscaled copy of the NL state
-  amrex::Vector<amrex::MultiFab> nE(finest_level + 1);
-  amrex::Vector<amrex::MultiFab> phiV(finest_level + 1);
+  amrex::Vector<amrex::MultiFab> nE;
+  nE.reserve(finest_level + 1);
+  amrex::Vector<amrex::MultiFab> phiV;
+  phiV.reserve(finest_level + 1);
   for (int lev = 0; lev <= finest_level; ++lev) {
-    nE[lev].define(
+    nE.emplace_back(
       grids[lev], dmap[lev], 1, m_nGrowState, amrex::MFInfo(), Factory(lev));
-    phiV[lev].define(
+    phiV.emplace_back(
       grids[lev], dmap[lev], 1, m_nGrowState, amrex::MFInfo(), Factory(lev));
     amrex::MultiFab::Copy(nE[lev], *a_nlstate[lev], 0, 0, 1, m_nGrowState);
     nE[lev].mult(nE_scale, 0, 1, m_nGrowState);
@@ -421,29 +440,31 @@ PeleLM::nonLinearResidual(
   fillPatchNLnE(m_cur_time, GetVecOfPtrs(nE), m_nGrowState);
 
   // Get L(phiV) and Grad(phiV)
-  amrex::Vector<amrex::MultiFab> laplacian(finest_level + 1);
+  amrex::Vector<amrex::MultiFab> laplacian;
+  laplacian.reserve(finest_level + 1);
   amrex::Vector<amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>> gradPhiVCur(
     finest_level + 1);
   for (int lev = 0; lev <= finest_level; ++lev) {
-    laplacian[lev].define(
+    laplacian.emplace_back(
       grids[lev], dmap[lev], 1, 0, amrex::MFInfo(), Factory(lev));
-    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+    for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
       const auto& fba =
         amrex::convert(grids[lev], amrex::IntVect::TheDimensionVector(idim));
       gradPhiVCur[lev][idim].define(
         fba, dmap[lev], 1, 0, amrex::MFInfo(), Factory(lev));
     }
   }
-  int do_avgDown = 0; // TODO or should I ?
+  constexpr int do_avgDown = 0; // TODO or should I ?
   auto bcRecPhiV = fetchBCRecArray(PHIV, 1);
   getDiffusionOp()->computeGradient(
     GetVecOfArrOfPtrs(gradPhiVCur), GetVecOfPtrs(laplacian),
     GetVecOfConstPtrs(phiV), {}, bcRecPhiV[0], do_avgDown);
 
   // Get nE diffusion term
-  amrex::Vector<amrex::MultiFab> diffnE(finest_level + 1);
+  amrex::Vector<amrex::MultiFab> diffnE;
+  diffnE.reserve(finest_level + 1);
   for (int lev = 0; lev <= finest_level; ++lev) {
-    diffnE[lev].define(
+    diffnE.emplace_back(
       grids[lev], dmap[lev], 1, 0, amrex::MFInfo(), Factory(lev));
   }
   auto bcRecnE = fetchBCRecArray(NE, 1);
@@ -455,9 +476,10 @@ PeleLM::nonLinearResidual(
   // amrex::VisMF::Write(diffnE[0],"diffnEnlResid");
 
   // Get nE advection term
-  amrex::Vector<amrex::MultiFab> advnE(finest_level + 1);
+  amrex::Vector<amrex::MultiFab> advnE;
+  advnE.reserve(finest_level + 1);
   for (int lev = 0; lev <= finest_level; ++lev) {
-    advnE[lev].define(
+    advnE.emplace_back(
       grids[lev], dmap[lev], 1, 0, amrex::MFInfo(), Factory(lev));
   }
   getAdvectionTerm(
@@ -478,33 +500,35 @@ PeleLM::nonLinearResidual(
     // Init the ghostcells too
     a_nlresid[lev]->setVal(0.0);
 
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-    for (amrex::MFIter mfi(ldataNLs_p->nlResid, amrex::TilingIfNotGPU());
-         mfi.isValid(); ++mfi) {
-      const amrex::Box& bx = mfi.tilebox();
-      auto const& I_R_nE = ldataR_p->I_R.const_array(mfi, NUM_SPECIES);
-      auto const& lapPhiV = laplacian[lev].const_array(mfi);
-      auto const& ne_diff = diffnE[lev].const_array(mfi);
-      auto const& ne_adv = advnE[lev].const_array(mfi);
-      auto const& ne_curr = nE[lev].const_array(mfi);
-      auto const& ne_old = ldataOld_p->state.const_array(mfi, NE);
-      auto const& charge = ldataNLs_p->backgroundCharge.const_array(mfi);
-      auto const& res_nE = a_nlresid[lev]->array(mfi, 0);
-      auto const& res_phiV = a_nlresid[lev]->array(mfi, 1);
-      amrex::Real scalLap = eps0 * epsr / elemCharge;
-      amrex::ParallelFor(
-        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          res_nE(i, j, k) =
-            ne_old(i, j, k) - ne_curr(i, j, k) +
-            a_dt * (ne_diff(i, j, k) + ne_adv(i, j, k) + I_R_nE(i, j, k));
-          res_phiV(i, j, k) =
-            lapPhiV(i, j, k) * scalLap - ne_curr(i, j, k) + charge(i, j, k);
-          res_nE(i, j, k) *= -1.0;   // NLresidual is -RHS
-          res_phiV(i, j, k) *= -1.0; // NLresidual is -RHS
-        });
-    }
+    auto const& I_R_ma = ldataR_p->I_R.const_arrays();
+    auto const& lapPhiV_ma = laplacian[lev].const_arrays();
+    auto const& ne_diff_ma = diffnE[lev].const_arrays();
+    auto const& ne_adv_ma = advnE[lev].const_arrays();
+    auto const& ne_curr_ma = nE[lev].const_arrays();
+    auto const& state_old_ma = ldataOld_p->state.const_arrays();
+    auto const& charge_ma = ldataNLs_p->backgroundCharge.const_arrays();
+    auto const& res_ma = a_nlresid[lev]->arrays();
+    amrex::ParallelFor(
+      ldataNLs_p->nlResid,
+      [I_R_ma, lapPhiV_ma, ne_diff_ma, ne_adv_ma, ne_curr_ma, state_old_ma,
+       charge_ma, res_ma,
+       a_dt] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+        amrex::Array4<amrex::Real> res_nE(res_ma[box_no], 0);
+        amrex::Array4<amrex::Real> res_phiV(res_ma[box_no], 1);
+        amrex::Array4<amrex::Real const> I_R_nE(I_R_ma[box_no], NUM_SPECIES);
+        amrex::Array4<amrex::Real const> ne_old(state_old_ma[box_no], NE);
+        res_nE(i, j, k) = ne_old(i, j, k) - ne_curr_ma[box_no](i, j, k) +
+                          a_dt * (ne_diff_ma[box_no](i, j, k) +
+                                  ne_adv_ma[box_no](i, j, k) + I_R_nE(i, j, k));
+        constexpr amrex::Real scalLap = eps0 * epsr / elemCharge;
+        res_phiV(i, j, k) = lapPhiV_ma[box_no](i, j, k) * scalLap -
+                            ne_curr_ma[box_no](i, j, k) +
+                            charge_ma[box_no](i, j, k);
+        res_nE(i, j, k) *= -1.0;   // NLresidual is -RHS
+        res_phiV(i, j, k) *= -1.0; // NLresidual is -RHS
+      });
+    // Shift outside?
+    amrex::Gpu::streamSynchronize();
   }
   // WriteDebugPlotFile(GetVecOfConstPtrs(a_nlresid),"UnscalednlResid");
 
@@ -554,7 +578,7 @@ PeleLM::getAdvectionTerm(
   for (int lev = 0; lev <= finest_level; ++lev) {
     const auto& ba = grids[lev];
     const auto& factory = Factory(lev);
-    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+    for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
       fluxes[lev][idim].define(
         amrex::convert(ba, amrex::IntVect::TheDimensionVector(idim)), dmap[lev],
         1, nGrow, amrex::MFInfo(), factory);
@@ -573,30 +597,28 @@ PeleLM::getAdvectionTerm(
     auto ldataNLs_p = getLevelDataNLSolvePtr(lev);
 
     // Get the face centered electron mobility
-    int doZeroVisc = 0;
+    constexpr int doZeroVisc = 0;
     amrex::Array<amrex::MultiFab, AMREX_SPACEDIM> mobE_ec =
       getDiffusivity(lev, 0, 1, doZeroVisc, bcRecnE, ldata_p->mobE_cc);
 
     // Get the electron effective velocity
-    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
-#endif
-      for (amrex::MFIter mfi(ldataNLs_p->uEffnE[idim], amrex::TilingIfNotGPU());
-           mfi.isValid(); ++mfi) {
-        const amrex::Box& bx = mfi.tilebox();
-        auto const& ueff = ldataNLs_p->uEffnE[idim].array(mfi);
-        auto const& umac = ldataNLs_p->umac[idim].const_array(mfi);
-        auto const& gphi_c = a_gPhiVCur[lev][idim]->const_array(mfi);
-        auto const& gphi_o = ldataNLs_p->gPhiVOld[idim].const_array(mfi);
-        auto const& kappa_e = mobE_ec[idim].const_array(mfi);
-        amrex::ParallelFor(
-          bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-            ueff(i, j, k) =
-              umac(i, j, k) - kappa_e(i, j, k) * -1.0 * 0.5 *
-                                (gphi_c(i, j, k) + gphi_o(i, j, k));
-          });
-      }
+    for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
+      auto const& ueff_ma = ldataNLs_p->uEffnE[idim].arrays();
+      auto const& umac_ma = ldataNLs_p->umac[idim].const_arrays();
+      auto const& gphi_c_ma = a_gPhiVCur[lev][idim]->const_arrays();
+      auto const& gphi_o_ma = ldataNLs_p->gPhiVOld[idim].const_arrays();
+      auto const& kappa_e_ma = mobE_ec[idim].const_arrays();
+      amrex::ParallelFor(
+        ldataNLs_p->uEffnE[idim],
+        [ueff_ma, umac_ma, gphi_c_ma, gphi_o_ma, kappa_e_ma] AMREX_GPU_DEVICE(
+          int box_no, int i, int j, int k) noexcept {
+          ueff_ma[box_no](i, j, k) =
+            umac_ma[box_no](i, j, k) -
+            kappa_e_ma[box_no](i, j, k) * -1.0 * 0.5 *
+              (gphi_c_ma[box_no](i, j, k) + gphi_o_ma[box_no](i, j, k));
+        });
+      // Shift outside?
+      amrex::Gpu::streamSynchronize();
     }
   }
 
@@ -643,14 +665,14 @@ PeleLM::getAdvectionTerm(
   }
 
   // Compute divergence
-  int intensiveFluxes = 1;
+  constexpr int intensiveFluxes = 1;
   fluxDivergence(
     a_advTerm, 0, GetVecOfArrOfPtrs(fluxes), 0, 1, intensiveFluxes, -1.0);
 }
 
 void
 PeleLM::getAdvectionFluxesMOL(
-  int lev,
+  const int lev,
   const amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>& a_fluxes,
   const amrex::MultiFab& a_nE,
   const amrex::Array<const amrex::MultiFab*, AMREX_SPACEDIM>& a_ueff,
@@ -698,9 +720,9 @@ PeleLM::getAdvectionFluxesMOL(
       auto const& divu_arr = a_nE.const_array(mfi);
       auto const& force_arr = a_nE.const_array(mfi);
 
-      bool is_velocity = false;
-      bool fluxes_are_area_weighted = false;
-      bool knownEdgeState = false;
+      constexpr bool is_velocity = false;
+      constexpr bool fluxes_are_area_weighted = false;
+      constexpr bool knownEdgeState = false;
       std::string mol = "MOL";
       HydroUtils::ComputeFluxesOnBoxFromState(
         bx, 1, mfi, nE_arr, AMREX_D_DECL(fx, fy, fz),
@@ -717,7 +739,7 @@ PeleLM::getAdvectionFluxesMOL(
 
 void
 PeleLM::getAdvectionFluxes(
-  int lev,
+  const int lev,
   const amrex::Array<amrex::MultiFab*, AMREX_SPACEDIM>& a_fluxes,
   const amrex::MultiFab& a_nE,
   const amrex::Array<const amrex::MultiFab*, AMREX_SPACEDIM>& a_ueff,
@@ -725,7 +747,7 @@ PeleLM::getAdvectionFluxes(
 {
   const amrex::Box& domain = geom[lev].Domain();
 
-  int order = m_nEAdvOrder;
+  const int order = m_nEAdvOrder;
 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
@@ -771,22 +793,23 @@ PeleLM::getAdvectionFluxes(
         const auto bc_hi = bcrec.hi(0);
 
         amrex::ParallelFor(
-          xbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-            int idx[3] = {i, j, k};
-            bool on_lo =
+          xbx, [bc_lo, bc_hi, edomain, ne_arr, xstate, u, order, domain,
+                xbx] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+            const int idx[3] = {i, j, k};
+            const bool on_lo =
               ((bc_lo == amrex::BCType::ext_dir) &&
                (idx[0] <= edomain.smallEnd(0)));
-            bool on_hi =
+            const bool on_hi =
               ((bc_hi == amrex::BCType::ext_dir) &&
                (idx[0] >= edomain.bigEnd(0)));
             if (order == 1) {
               xstate(i, j, k) =
                 ef_edge_state_extdir(i, j, k, 0, on_lo, on_hi, ne_arr, u);
             } else if (order == 2) {
-              bool extdir_or_ho_lo = (bc_lo == amrex::BCType::ext_dir) ||
-                                     (bc_lo == amrex::BCType::hoextrap);
-              bool extdir_or_ho_hi = (bc_hi == amrex::BCType::ext_dir) ||
-                                     (bc_hi == amrex::BCType::hoextrap);
+              const bool extdir_or_ho_lo = (bc_lo == amrex::BCType::ext_dir) ||
+                                           (bc_lo == amrex::BCType::hoextrap);
+              const bool extdir_or_ho_hi = (bc_hi == amrex::BCType::ext_dir) ||
+                                           (bc_hi == amrex::BCType::hoextrap);
               xstate(i, j, k) = ef_edge_state_2ndO_extdir(
                 i, j, k, 0, on_lo, on_hi, extdir_or_ho_lo, extdir_or_ho_hi,
                 domain.smallEnd(0), domain.bigEnd(0), ne_arr, u, xbx);
@@ -802,22 +825,23 @@ PeleLM::getAdvectionFluxes(
         const auto bc_hi = bcrec.hi(1);
 
         amrex::ParallelFor(
-          ybx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-            int idx[3] = {i, j, k};
-            bool on_lo =
+          ybx, [bc_lo, bc_hi, edomain, domain, order, ystate, ne_arr, v,
+                ybx] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+            const int idx[3] = {i, j, k};
+            const bool on_lo =
               ((bc_lo == amrex::BCType::ext_dir) &&
                (idx[1] <= edomain.smallEnd(1)));
-            bool on_hi =
+            const bool on_hi =
               ((bc_hi == amrex::BCType::ext_dir) &&
                (idx[1] >= edomain.bigEnd(1)));
             if (order == 1) {
               ystate(i, j, k) =
                 ef_edge_state_extdir(i, j, k, 1, on_lo, on_hi, ne_arr, v);
             } else if (order == 2) {
-              bool extdir_or_ho_lo = (bc_lo == amrex::BCType::ext_dir) ||
-                                     (bc_lo == amrex::BCType::hoextrap);
-              bool extdir_or_ho_hi = (bc_hi == amrex::BCType::ext_dir) ||
-                                     (bc_hi == amrex::BCType::hoextrap);
+              const bool extdir_or_ho_lo = (bc_lo == amrex::BCType::ext_dir) ||
+                                           (bc_lo == amrex::BCType::hoextrap);
+              const bool extdir_or_ho_hi = (bc_hi == amrex::BCType::ext_dir) ||
+                                           (bc_hi == amrex::BCType::hoextrap);
               ystate(i, j, k) = ef_edge_state_2ndO_extdir(
                 i, j, k, 1, on_lo, on_hi, extdir_or_ho_lo, extdir_or_ho_hi,
                 domain.smallEnd(1), domain.bigEnd(1), ne_arr, v, ybx);
@@ -833,22 +857,23 @@ PeleLM::getAdvectionFluxes(
         const auto bc_hi = bcrec.hi(2);
 
         amrex::ParallelFor(
-          zbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-            int idx[3] = {i, j, k};
-            bool on_lo =
+          zbx, [bc_lo, bc_hi, edomain, zstate, order, ne_arr, w, zbx,
+                domain] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+            const int idx[3] = {i, j, k};
+            const bool on_lo =
               ((bc_lo == amrex::BCType::ext_dir) &&
                (idx[2] <= edomain.smallEnd(2)));
-            bool on_hi =
+            const bool on_hi =
               ((bc_hi == amrex::BCType::ext_dir) &&
                (idx[2] >= edomain.bigEnd(2)));
             if (order == 1) {
               zstate(i, j, k) =
                 ef_edge_state_extdir(i, j, k, 2, on_lo, on_hi, ne_arr, w);
             } else if (order == 2) {
-              bool extdir_or_ho_lo = (bc_lo == amrex::BCType::ext_dir) ||
-                                     (bc_lo == amrex::BCType::hoextrap);
-              bool extdir_or_ho_hi = (bc_hi == amrex::BCType::ext_dir) ||
-                                     (bc_hi == amrex::BCType::hoextrap);
+              const bool extdir_or_ho_lo = (bc_lo == amrex::BCType::ext_dir) ||
+                                           (bc_lo == amrex::BCType::hoextrap);
+              const bool extdir_or_ho_hi = (bc_hi == amrex::BCType::ext_dir) ||
+                                           (bc_hi == amrex::BCType::hoextrap);
               zstate(i, j, k) = ef_edge_state_2ndO_extdir(
                 i, j, k, 2, on_lo, on_hi, extdir_or_ho_lo, extdir_or_ho_hi,
                 domain.smallEnd(2), domain.bigEnd(2), ne_arr, w, zbx);
@@ -860,17 +885,17 @@ PeleLM::getAdvectionFluxes(
 
       // Computing fluxes
       amrex::ParallelFor(
-        xbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        xbx, [xflux, u, xstate] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           xflux(i, j, k) = u(i, j, k) * xstate(i, j, k);
         });
 #if (AMREX_SPACEDIM > 1)
       amrex::ParallelFor(
-        ybx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        ybx, [yflux, v, ystate] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           yflux(i, j, k) = v(i, j, k) * ystate(i, j, k);
         });
 #if (AMREX_SPACEDIM == 3)
       amrex::ParallelFor(
-        zbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        zbx, [zflux, w, zstate] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           zflux(i, j, k) = w(i, j, k) * zstate(i, j, k);
         });
 #endif
@@ -881,7 +906,7 @@ PeleLM::getAdvectionFluxes(
 
 void
 PeleLM::setUpPrecond(
-  const amrex::Real& a_dt, const amrex::Vector<const amrex::MultiFab*>& a_nE)
+  const amrex::Real a_dt, const amrex::Vector<const amrex::MultiFab*>& a_nE)
 {
   BL_PROFILE("PeleLMeX::setUpPrecond()");
 
@@ -910,7 +935,7 @@ PeleLM::setUpPrecond(
     // Get nl solve data pointer
     auto ldataNLs_p = getLevelDataNLSolvePtr(lev);
 
-    int doZeroVisc = 0;
+    constexpr int doZeroVisc = 0;
     amrex::Array<amrex::MultiFab, AMREX_SPACEDIM> diffE_ec =
       getDiffusivity(lev, 0, 1, doZeroVisc, bcRecnE, ldata_p->diffE_cc);
 
@@ -920,10 +945,11 @@ PeleLM::setUpPrecond(
   }
 
   // Stilda approx first-order
-  amrex::Vector<amrex::MultiFab> diagDiffOp(finest_level + 1);
+  amrex::Vector<amrex::MultiFab> diagDiffOp;
+  diagDiffOp.reserve(finest_level + 1);
   if (m_ef_PC_approx == 2) {
     for (int lev = 0; lev <= finest_level; ++lev) {
-      diagDiffOp[lev].define(grids[lev], dmap[lev], 1, 1);
+      diagDiffOp.emplace_back(grids[lev], dmap[lev], 1, 1);
       getPrecondOp()->getDiffOpDiagonal(lev, diagDiffOp[lev]);
       diagDiffOp[lev].mult(FnE_scale / nE_scale);
     }
@@ -961,29 +987,33 @@ PeleLM::setUpPrecond(
       Schur_nEKe.define(grids[lev], dmap[lev], 1, 1);
     }
 
-#ifdef AMREX_USE_OMP
-#pragma omp parallel if (Gpu::notInLaunchRegion())
-#endif
-    for (amrex::MFIter mfi(nEKe, amrex::TilingIfNotGPU()); mfi.isValid();
-         ++mfi) {
-      const amrex::Box& gbx = mfi.growntilebox();
-      auto const& neke = nEKe.array(mfi);
-      auto const& kappaE = ldata_p->mobE_cc.array(mfi);
-      auto const& ne_arr = a_nE[lev]->const_array(mfi);
-      auto const& Schur =
-        (m_ef_PC_approx == 2) ? Schur_nEKe.array(mfi) : nEKe.array(mfi);
-      auto const& diffOp_diag =
-        (m_ef_PC_approx == 2) ? diagDiffOp[lev].array(mfi) : nEKe.array(mfi);
-      int do_Schur = (m_ef_PC_approx == 2) ? 1 : 0;
-      amrex::ParallelFor(
-        gbx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          neke(i, j, k) = kappaE(i, j, k) * ne_arr(i, j, k);
-          if (do_Schur) {
-            Schur(i, j, k) = -a_dt * 0.5 * neke(i, j, k) / diffOp_diag(i, j, k);
-          }
-        });
-    }
+    auto const& neke_ma = nEKe.arrays();
+    auto const& kappaE_ma = ldata_p->mobE_cc.arrays();
+    auto const& ne_arr_ma = a_nE[lev]->const_arrays();
+    auto const& Schur_ma =
+      (m_ef_PC_approx == 2) ? Schur_nEKe.arrays() : nEKe.arrays();
+    auto const& diffOp_diag_ma =
+      (m_ef_PC_approx == 2) ? diagDiffOp[lev].arrays() : nEKe.arrays();
+    const int do_Schur = (m_ef_PC_approx == 2) ? 1 : 0;
 
+    amrex::ParallelFor(
+      nEKe, nEKe.nGrowVect(),
+      [neke_ma, kappaE_ma,
+       ne_arr_ma] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
+        neke_ma[box_no](i, j, k) =
+          kappaE_ma[box_no](i, j, k) * ne_arr_ma[box_no](i, j, k);
+      });
+    amrex::Gpu::streamSynchronize();
+    if (do_Schur == 1) {
+      amrex::ParallelFor(
+        nEKe, nEKe.nGrowVect(),
+        [Schur_ma, a_dt, neke_ma, diffOp_diag_ma] AMREX_GPU_DEVICE(
+          int box_no, int i, int j, int k) noexcept {
+          Schur_ma[box_no](i, j, k) = -a_dt * 0.5 * neke_ma[box_no](i, j, k) /
+                                      diffOp_diag_ma[box_no](i, j, k);
+        });
+      amrex::Gpu::streamSynchronize();
+    }
     // Upwinded edge neKe values
     amrex::Array<amrex::MultiFab, AMREX_SPACEDIM> neKe_ec = getUpwindedEdge(
       lev, 0, 1, bcRecnE, nEKe, GetArrOfConstPtrs(ldataNLs_p->uEffnE));
@@ -995,7 +1025,7 @@ PeleLM::setUpPrecond(
     if (m_ef_PC_approx == 1) { // Assuming identity of the inverse of DiffOp
       // Add Stilda pieces
       amrex::Real scalLap = eps0 * epsr / elemCharge;
-      for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+      for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
         neKe_ec[idim].mult(0.5 * a_dt, 0, 1);
         neKe_ec[idim].plus(scalLap, 0, 1);
       }
@@ -1007,7 +1037,7 @@ PeleLM::setUpPrecond(
           lev, 0, 1, bcRecnE, Schur_nEKe,
           GetArrOfConstPtrs(ldataNLs_p->uEffnE));
       amrex::Real scalLap = eps0 * epsr / elemCharge;
-      for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+      for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
         Schur_neKe_ec[idim].plus(scalLap, 0, 1);
       }
       getPrecondOp()->setStildaOpBCoeff(lev, GetArrOfConstPtrs(Schur_neKe_ec));
@@ -1019,10 +1049,10 @@ PeleLM::setUpPrecond(
 
 amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>
 PeleLM::getUpwindedEdge(
-  int lev,
-  int edge_comp,
-  int ncomp,
-  amrex::Vector<amrex::BCRec> bcrec,
+  const int lev,
+  const int edge_comp,
+  const int ncomp,
+  const amrex::Vector<amrex::BCRec>& bcrec,
   const amrex::MultiFab& ccMF,
   const amrex::Array<const amrex::MultiFab*, AMREX_SPACEDIM>& ecVel)
 {
@@ -1050,7 +1080,7 @@ PeleLM::getUpwindedEdge(
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
   for (amrex::MFIter mfi(ccMF, amrex::TilingIfNotGPU()); mfi.isValid(); ++mfi) {
-    for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
+    for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
       const amrex::Box ebx = mfi.nodaltilebox(idim);
       const amrex::Box& edomain = amrex::surroundingNodes(domain, idim);
       const auto& ccVal = ccMF.const_array(mfi, edge_comp);
@@ -1059,12 +1089,13 @@ PeleLM::getUpwindedEdge(
       const auto bc_lo = bcrec[0].lo(idim);
       const auto bc_hi = bcrec[0].hi(idim);
       amrex::ParallelFor(
-        ebx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          int idx[3] = {i, j, k};
-          bool on_lo =
+        ebx, [bc_lo, bc_hi, idim, edomain, ecUeff, ccVal,
+              ecVal] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          const int idx[3] = {i, j, k};
+          const bool on_lo =
             ((bc_lo == amrex::BCType::ext_dir) &&
              (idx[idim] <= edomain.smallEnd(idim)));
-          bool on_hi =
+          const bool on_hi =
             ((bc_hi == amrex::BCType::ext_dir) &&
              (idx[idim] >= edomain.bigEnd(idim)));
           cen2edg_upwind(i, j, k, idim, 1, on_lo, on_hi, ecUeff, ccVal, ecVal);
@@ -1097,21 +1128,23 @@ PeleLM::jTimesV(
     m_ef_lambda_jfnk * (m_ef_lambda_jfnk + nl_stateNorm / vNorm);
 
   if (m_ef_diffT_jfnk == 1) {
-    amrex::Vector<amrex::MultiFab> statePert(finest_level + 1);
-    amrex::Vector<amrex::MultiFab> residPert(finest_level + 1);
+    amrex::Vector<amrex::MultiFab> statePert;
+    statePert.reserve(finest_level + 1);
+    amrex::Vector<amrex::MultiFab> residPert;
+    residPert.reserve(finest_level + 1);
     for (int lev = 0; lev <= finest_level; ++lev) {
       auto ldataNLs_p = getLevelDataNLSolvePtr(lev);
-      statePert[lev].define(
+      statePert.emplace_back(
         grids[lev], dmap[lev], 2, m_nGrowState, amrex::MFInfo(), Factory(lev));
-      residPert[lev].define(
+      residPert.emplace_back(
         grids[lev], dmap[lev], 2, m_nGrowState, amrex::MFInfo(), Factory(lev));
       amrex::MultiFab::Copy(
         statePert[lev], ldataNLs_p->nlState, 0, 0, 2, m_nGrowState);
       amrex::MultiFab::Saxpy(statePert[lev], delta_pert, *a_v[lev], 0, 0, 2, 0);
     }
 
-    int update_scaling = 0;
-    int update_precond = 0;
+    constexpr int update_scaling = 0;
+    constexpr int update_precond = 0;
     nonLinearResidual(
       dtsub, GetVecOfPtrs(statePert), GetVecOfPtrs(residPert), update_scaling,
       update_precond);
@@ -1124,19 +1157,23 @@ PeleLM::jTimesV(
       a_Jv[lev]->mult(-1.0 / delta_pert);
     }
   } else if (m_ef_diffT_jfnk == 2) {
-    amrex::Vector<amrex::MultiFab> statePertPls(finest_level + 1);
-    amrex::Vector<amrex::MultiFab> residPertPls(finest_level + 1);
-    amrex::Vector<amrex::MultiFab> statePertMns(finest_level + 1);
-    amrex::Vector<amrex::MultiFab> residPertMns(finest_level + 1);
+    amrex::Vector<amrex::MultiFab> statePertPls;
+    statePertPls.reserve(finest_level + 1);
+    amrex::Vector<amrex::MultiFab> residPertPls;
+    residPertPls.reserve(finest_level + 1);
+    amrex::Vector<amrex::MultiFab> statePertMns;
+    statePertMns.reserve(finest_level + 1);
+    amrex::Vector<amrex::MultiFab> residPertMns;
+    residPertMns.reserve(finest_level + 1);
     for (int lev = 0; lev <= finest_level; ++lev) {
       auto ldataNLs_p = getLevelDataNLSolvePtr(lev);
-      statePertPls[lev].define(
+      statePertPls.emplace_back(
         grids[lev], dmap[lev], 2, m_nGrowState, amrex::MFInfo(), Factory(lev));
-      residPertPls[lev].define(
+      residPertPls.emplace_back(
         grids[lev], dmap[lev], 2, m_nGrowState, amrex::MFInfo(), Factory(lev));
-      statePertMns[lev].define(
+      statePertMns.emplace_back(
         grids[lev], dmap[lev], 2, m_nGrowState, amrex::MFInfo(), Factory(lev));
-      residPertMns[lev].define(
+      residPertMns.emplace_back(
         grids[lev], dmap[lev], 2, m_nGrowState, amrex::MFInfo(), Factory(lev));
       amrex::MultiFab::Copy(
         statePertPls[lev], ldataNLs_p->nlState, 0, 0, 2, m_nGrowState);
@@ -1148,8 +1185,8 @@ PeleLM::jTimesV(
         statePertMns[lev], -delta_pert, *a_v[lev], 0, 0, 2, 0);
     }
 
-    int update_scaling = 0;
-    int update_precond = 0;
+    constexpr int update_scaling = 0;
+    constexpr int update_precond = 0;
     nonLinearResidual(
       dtsub, GetVecOfPtrs(statePertPls), GetVecOfPtrs(residPertPls),
       update_scaling, update_precond);
@@ -1176,9 +1213,13 @@ PeleLM::applyPrecond(
 
   // Setup aliases and temps
   amrex::Vector<amrex::MultiFab> nE_al;
+  nE_al.reserve(finest_level + 1);
   amrex::Vector<amrex::MultiFab> phiV_al;
+  phiV_al.reserve(finest_level + 1);
   amrex::Vector<amrex::MultiFab> PnE_al;
+  PnE_al.reserve(finest_level + 1);
   amrex::Vector<amrex::MultiFab> PphiV_al;
+  PphiV_al.reserve(finest_level + 1);
   amrex::Vector<std::unique_ptr<amrex::MultiFab>> temp(finest_level + 1);
   amrex::Vector<std::unique_ptr<amrex::MultiFab>> temp2(finest_level + 1);
   for (int lev = 0; lev <= finest_level; ++lev) {
@@ -1249,8 +1290,8 @@ void
 PeleLM::nlSolveNorm(const amrex::Vector<amrex::MultiFab*>& a_MF, amrex::Real& r)
 {
   r = 0.0;
-  int nComp = a_MF[0]->nComp();
-  for (int comp = 0; comp < nComp; comp++) {
+  const int nComp = a_MF[0]->nComp();
+  for (int comp = 0; comp < nComp; ++comp) {
     amrex::Real norm = 0.0;
     for (int lev = 0; lev < a_MF.size(); ++lev) {
       // TODO : norm not weighted by cell size, should it ?

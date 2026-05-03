@@ -40,11 +40,12 @@ PeleLM::ErrorEst(
     const auto& bx = mfi.tilebox();
     auto tag = tags.array(mfi);
     auto vfrac = EBFactory(lev).getVolFrac().const_array(mfi);
-    amrex::ParallelFor(bx, [=] AMREX_GPU_HOST_DEVICE(int i, int j, int k) {
-      if (vfrac(i, j, k) <= 0.0) {
-        tag(i, j, k) = amrex::TagBox::CLEAR;
-      }
-    });
+    amrex::ParallelFor(
+      bx, [tag, vfrac] AMREX_GPU_HOST_DEVICE(int i, int j, int k) {
+        if (vfrac(i, j, k) <= 0.0) {
+          tag(i, j, k) = amrex::TagBox::CLEAR;
+        }
+      });
   }
 
   // Untag cell close to EB
@@ -55,7 +56,8 @@ PeleLM::ErrorEst(
     getEBDistance(lev, signDist);
 
     // Estimate how far I need to derefine
-    amrex::Real diagFac = std::sqrt(2.0) * m_derefineEBBuffer;
+    constexpr amrex::Real sqrt2 = 1.4142135623730951;
+    const amrex::Real diagFac = sqrt2 * m_derefineEBBuffer;
     amrex::Real clearTagDist =
       Geom(m_EB_refine_LevMax).CellSize(0) *
       static_cast<amrex::Real>(nErrorBuf(m_EB_refine_LevMax)) * diagFac;
@@ -73,11 +75,13 @@ PeleLM::ErrorEst(
       const auto& bx = mfi.tilebox();
       const auto& dist = signDist.const_array(mfi);
       auto tag = tags.array(mfi);
-      amrex::ParallelFor(bx, [=] AMREX_GPU_HOST_DEVICE(int i, int j, int k) {
-        if (dist(i, j, k) < clearTagDist) {
-          tag(i, j, k) = amrex::TagBox::CLEAR;
-        }
-      });
+      amrex::ParallelFor(
+        bx,
+        [dist, clearTagDist, tag] AMREX_GPU_HOST_DEVICE(int i, int j, int k) {
+          if (dist(i, j, k) < clearTagDist) {
+            tag(i, j, k) = amrex::TagBox::CLEAR;
+          }
+        });
     }
   }
 #endif

@@ -10,13 +10,23 @@ int
 main(int argc, char* argv[])
 {
   if (argc >= 2) {
-    for (auto i = 1; i < argc; i++) {
+    for (auto i = 1; i < argc; ++i) {
       if (std::string(argv[i]) == "--describe") {
         writeBuildInfo();
         return 0;
       }
     }
   }
+
+#ifdef AMREX_USE_HIP
+  // Explicitly initialize the HIP runtime before MPI/AMReX to avoid lazy init
+  // race conditions at scale.
+  hipError_t herr = hipInit(0);
+  if (herr != hipSuccess) {
+    fprintf(stderr, "hipInit failed: %s\n", hipGetErrorString(herr));
+    return 1;
+  }
+#endif
 
   amrex::Initialize(argc, argv);
 
