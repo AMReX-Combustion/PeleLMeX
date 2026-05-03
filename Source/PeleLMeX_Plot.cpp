@@ -1219,7 +1219,7 @@ PeleLM::addLevelVelocityDataFromPlt(int a_lev, const std::string& a_velPltFile)
   int nGrow0(0), sComp0(0);
   amrex::MultiFab tmpVel(tmpVelBA, tmpVelDM, AMREX_SPACEDIM, nGrow0);
   pltData.fillPatchFromPlt(
-    a_lev, geom[a_lev], idXvel, sComp0, AMREX_SPACEDIM, tmpVel);
+    a_lev, geom[a_lev], idXvel, sComp0, AMREX_SPACEDIM, tmpVel, 0);
   // scale the velocity
   tmpVel.mult(m_velocity_plotfile_scale);
   amrex::MultiFab::Add(ldata_p->state, tmpVel, 0, VELX, AMREX_SPACEDIM, 0);
