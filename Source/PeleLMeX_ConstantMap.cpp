@@ -5,6 +5,7 @@
 #include <AMReX_MFIter.H>
 #include <AMReX_ParmParse.H>
 #include <AMReX_REAL.H>
+#include <limits>
 
 using amrex::Real;
 
@@ -23,8 +24,7 @@ ConstantMap::ConstantMap()
         amrex::Concatenate(
           "ConstantMap: scaling_factor[", d, "] = ", m_fac[d],
           " is invalid. All scaling factors must be "
-          "strictly positive (> ",
-          std::numeric_limits<amrex::Real>::epsilon(), ")."));
+          "strictly positive."));
     }
   }
 }
