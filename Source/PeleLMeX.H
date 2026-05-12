@@ -2264,7 +2264,6 @@ public:
   // standard (Xi-space) plotfile format.
   int m_plot_mesh_mapping{1};
 
-public:
   //! Access the MeshMap instance (nullptr if mesh mapping is disabled).
   MeshMap* meshMap() noexcept { return m_mesh_map.get(); }
   [[nodiscard]] const MeshMap* meshMap() const noexcept

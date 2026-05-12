@@ -288,7 +288,7 @@ PeleLM::readParameters()
   {
     amrex::ParmParse ppg("geometry");
     std::string mesh_mapping_name;
-    if (ppg.query("mesh_mapping", mesh_mapping_name)) {
+    if (ppg.query("mesh_mapping", mesh_mapping_name) != 0) {
       m_mesh_mapping = true;
 
       // --- Compatibility guards -----------------------------------------
