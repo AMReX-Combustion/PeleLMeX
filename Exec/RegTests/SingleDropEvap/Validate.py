@@ -7,24 +7,24 @@ import argparse
 """
 Script for validating PelePhysics spray model
 Test cases:
-| Case Name   | Fuel           | Requirements for SPRAY_FUEL_NUM               |
-| ----------- | -------------- | --------------------------------------------- |
-| Nomura      | heptane        | SPRAY_FUEL_NUM = 2                            |
-| WongLin     | decane         | SPRAY_FUEL_NUM = 2                            |
-| Daif        | heptane/decane | SPRAY_FUEL_NUM = 2                            |
-| RungeHep    | heptane        | SPRAY_FUEL_NUM = 2                            |
-| RungeDec    | decane         | SPRAY_FUEL_NUM = 2                            |
-| RungeMix    | heptane/decane | SPRAY_FUEL_NUM = 2                            |
-| RungeJP8    | POSF10264      | SPRAY_FUEL_NUM = 67 (Many-to-one)             |
-| RungeJP8-H  | POSF10264      | SPRAY_FUEL_NUM = 1  (One-to-one, HyChem)      |
-| RungeJP8-D  | POSF10264      | SPRAY_FUEL_NUM = 67 (One-to-one, Detailed)    |
-| Burger1Bar  | POSF10325       | SPRAY_FUEL_NUM = 67 (1 bar pressure)          |
-| Burger10Bar | POSF10325       | SPRAY_FUEL_NUM = 67 (10 bar pressure)         |
-| Burger50Bar | POSF10325       | SPRAY_FUEL_NUM = 67 (50 bar pressure)         |
-| Burger1Bar-H  | POSF10325     | SPRAY_FUEL_NUM = 1  (1 bar, HyChem-to-HyChem) |
-| Burger10Bar-H | POSF10325     | SPRAY_FUEL_NUM = 1  (10 bar, HyChem-to-HyChem)|
-| Burger50Bar-H | POSF10325     | SPRAY_FUEL_NUM = 1  (50 bar, HyChem-to-HyChem)|
-| ----------- | -------------- | --------------------------------------------- |
+| Case Name     | Fuel           | Requirements for SPRAY_FUEL_NUM             |
+| ------------- | -------------- | ------------------------------------------- |
+| Nomura        | heptane        | SPRAY_FUEL_NUM = 2                          |
+| WongLin       | decane         | SPRAY_FUEL_NUM = 2                          |
+| Daif          | heptane/decane | SPRAY_FUEL_NUM = 2                          |
+| RungeHep      | heptane        | SPRAY_FUEL_NUM = 2                          |
+| RungeDec      | decane         | SPRAY_FUEL_NUM = 2                          |
+| RungeMix      | heptane/decane | SPRAY_FUEL_NUM = 2                          |
+| RungeJP8      | POSF10264      | SPRAY_FUEL_NUM = 67 (Many-to-one)           |
+| RungeJP8-H    | POSF10264      | SPRAY_FUEL_NUM = 1  (HyChem-to-Hychem)      |
+| RungeJP8-D    | POSF10264      | SPRAY_FUEL_NUM = 67 (GC-to-GC, Detailed)    |
+| Burger1Bar    | POSF10325      | SPRAY_FUEL_NUM = 67                         |
+| Burger10Bar   | POSF10325      | SPRAY_FUEL_NUM = 67                         |
+| Burger50Bar   | POSF10325      | SPRAY_FUEL_NUM = 67                         |
+| Burger1Bar-H  | POSF10325      | SPRAY_FUEL_NUM = 1  (HyChem-to-HyChem)      |
+| Burger10Bar-H | POSF10325      | SPRAY_FUEL_NUM = 1  (HyChem-to-HyChem)      |
+| Burger50Bar-H | POSF10325      | SPRAY_FUEL_NUM = 1  (HyChem-to-HyChem)      |
+| ------------- | -------------- | ------------------------------------------- |
 """
 
 parser = argparse.ArgumentParser(

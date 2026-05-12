@@ -205,8 +205,8 @@ ylabels = [cases[0].ylabel if hasattr(cases[0], "ylabel") else "$d/d_0$"]
 if numplots == 2:
     ylabels.append("$T$ [K]")
 
-# Use wider figure for JP8 case to accommodate legend
-figwidth = 9.5 if case_name.lower() == "rungejp8" else 6.4
+# Use wider figure for JP8 and Burger cases to accommodate legend/layout
+figwidth = 9.5 if case_name.lower() in ["rungejp8", "burger"] else 6.4
 fig, axs = (
     plt.subplots(1, numplots, figsize=(numplots * figwidth, 4.8), constrained_layout=True)
     if numplots > 1
@@ -454,8 +454,8 @@ else:
 
 # Single legend from axs[0]
 handles, labels = axs[0].get_legend_handles_labels()
-if case_name.lower() == "rungejp8":
-    # Place legend outside for JP8 case
+if case_name.lower() in ["rungejp8", "burger"]:
+    # Place legend outside for JP8 and Burger cases
     axs[-1].legend(handles, labels, fontsize=font_s-2, loc="center left", bbox_to_anchor=(1, 0.5))
 else:
     # Place legend inside for other cases

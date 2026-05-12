@@ -92,18 +92,6 @@ def ExtractRefVals(case):
     tvals = None
     yvals = None
     
-    # Check if directory exists, otherwise try backward compatibility mapping
-    if not os.path.exists(ldir) and "burger" in ref_name.lower():
-        # Try old naming scheme (BurgerBar1/10/50)
-        old_ref_name = ref_name.replace("Burger1Bar", "BurgerBar1").replace("Burger10Bar", "BurgerBar10").replace("Burger50Bar", "BurgerBar50")
-        old_ldir = os.path.join(FILE_PATH, f"ref_files/{old_ref_name}")
-        if os.path.exists(old_ldir):
-            ldir = old_ldir
-    
-    # Check if directory exists
-    if not os.path.exists(ldir):
-        return [None, None, None]
-    
     cname = fnames[0]
     if cname in os.listdir(ldir):
         dvals = getdata(os.path.join(ldir, cname))
