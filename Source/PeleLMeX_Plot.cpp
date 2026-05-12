@@ -173,6 +173,10 @@ writePlotfileWithMapping(
                        lev, plotfilename, levelPrefix, mfNodalPrefix));
     }
   }
+
+  if (amrex::AsyncOut::UseAsyncOut()) {
+    amrex::AsyncOut::Finalize();
+  }
 }
 
 } // anonymous namespace
