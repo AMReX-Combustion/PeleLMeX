@@ -21,10 +21,7 @@ ConstantMap::ConstantMap()
   for (int d = 0; d < AMREX_SPACEDIM; ++d) {
     if (m_fac[d] <= std::numeric_limits<amrex::Real>::epsilon()) {
       amrex::Abort(
-        amrex::Concatenate(
-          "ConstantMap: scaling_factor[", d, "] = ", m_fac[d],
-          " is invalid. All scaling factors must be "
-          "strictly positive."));
+        "ConstantMap: All scaling factors must be strictly positive.");
     }
   }
 }
