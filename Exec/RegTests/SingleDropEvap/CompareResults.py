@@ -214,8 +214,16 @@ fig, axs = (
 )
 
 # Plot simulation lines first
+burger_pele_ymax = None
 for k, case in enumerate(cases):
     refdvals, reftvals, pele_vals = case_info(case)
+    if case_name.lower() == "burger":
+        case_pele_ymax = np.nanmax(pele_vals[:, 1])
+        burger_pele_ymax = (
+            case_pele_ymax
+            if burger_pele_ymax is None
+            else max(burger_pele_ymax, case_pele_ymax)
+        )
     # Diameter plot
     i = 0
     axs[i].plot(
@@ -332,10 +340,17 @@ if case_name.lower() == "runge":
                 axs[i].plot(tval, uline, "k-", linewidth=round(line_w / 2))
 elif case_name.lower() == "burger":
     # Diameter reference for each pressure variant
+    burger_ref_xmax = None
     for k, case in enumerate(cases):
         refdvals, _, _ = case_info(case)
         i = 0
         if refdvals is not None:
+            case_ref_xmax = np.nanmax(refdvals[:, 0])
+            burger_ref_xmax = (
+                case_ref_xmax
+                if burger_ref_xmax is None
+                else max(burger_ref_xmax, case_ref_xmax)
+            )
             axs[i].scatter(
                 refdvals[:, 0],
                 refdvals[:, 1],
@@ -369,6 +384,11 @@ elif case_name.lower() == "burger":
                     tval = [uncrt[j, 0], uncrt[j, 0]]
                     uline = [uncrt[j, 2], uncrt[j, 3]]
                     axs[i].plot(tval, uline, color=leg_col[k], linewidth=round(line_w / 2))
+    if burger_ref_xmax is not None:
+        xmin, _ = axs[i].get_xlim()
+        axs[i].set_xlim(xmin, 1.05 * burger_ref_xmax)
+    if burger_pele_ymax is not None:
+        axs[i].set_ylim(0.0, 1.05 * burger_pele_ymax)
     # Add legend entry for Burger et al. with black marker (no data points)
     axs[i].scatter(
         [],
