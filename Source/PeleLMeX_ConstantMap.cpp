@@ -13,6 +13,20 @@ ConstantMap::ConstantMap()
   amrex::ParmParse pp("ConstantMap");
   m_fac.assign(AMREX_SPACEDIM, 1.0);
   pp.queryarr("scaling_factor", m_fac, 0, AMREX_SPACEDIM);
+
+  // Validate that all scaling factors are strictly positive
+  // to avoid division-by-zero or NaN issues in downstream operations
+  // (MAC projection, diffusion, etc. divide by fac and fac^2)
+  for (int d = 0; d < AMREX_SPACEDIM; ++d) {
+    if (m_fac[d] <= std::numeric_limits<amrex::Real>::epsilon()) {
+      amrex::Abort(
+        amrex::Concatenate(
+          "ConstantMap: scaling_factor[", d, "] = ", m_fac[d],
+          " is invalid. All scaling factors must be "
+          "strictly positive (> ",
+          std::numeric_limits<amrex::Real>::epsilon(), ")."));
+    }
+  }
 }
 
 void
