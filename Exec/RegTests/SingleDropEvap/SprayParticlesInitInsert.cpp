@@ -1,4 +1,3 @@
-
 #include "SprayInjection.H"
 #include "pelelmex_prob.H"
 
@@ -56,6 +55,33 @@ SprayParticleContainer::InitSprayParticles(const bool init_parts)
   } else {
     partY[0] = 1.;
   }
+
+  // =========================================================================
+  // MESH MAPPING: Read the ConstantMap scaling factors so particle
+  // initialization is performed in physical (not index) space.  This
+  // ensures consistency with the gas-phase IC when mesh mapping is active.
+  // =========================================================================
+  amrex::RealVect fac(AMREX_D_DECL(1.0, 1.0, 1.0));
+  {
+    amrex::ParmParse ppcm("ConstantMap");
+    amrex::Vector<amrex::Real> fac_vec(AMREX_SPACEDIM, 1.0);
+    ppcm.queryarr("scaling_factor", fac_vec, 0, AMREX_SPACEDIM);
+    AMREX_D_TERM(
+      fac[0] = fac_vec[0];, fac[1] = fac_vec[1];, fac[2] = fac_vec[2];);
+  }
+
+  // Scale partNum by the reciprocal of the mesh-mapping factors.
+  // Under mesh mapping, the AMReX index space spans prob_lo to
+  // prob_hi / fac_i.  To distribute particles uniformly across
+  // the *physical* domain (prob_lo to prob_hi), we need to place them
+  // at AMReX indices that account for the stretched grid.
+  //   AMReX index range for direction i: [0, N_i / fac_i)
+  //   To fill uniform spacing over [prob_lo_i, prob_hi_i], divide by fac_i
+  for (int dir = 0; dir < AMREX_SPACEDIM; ++dir) {
+    partNum[dir] = amrex::max<amrex::Real>(
+      1, static_cast<int>(std::ceil(partNum[dir] / fac[dir])));
+  }
+
   // Initialize particles using uniform distribution
   uniformSprayInit(
     partNum, partVel, partDia, partTemp, partY.begin(), level, numRedist);

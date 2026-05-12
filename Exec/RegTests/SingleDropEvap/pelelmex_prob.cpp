@@ -89,6 +89,20 @@ PeleLM::readProbParm()
                       << "drop_dia = " << drop_dia << std::endl;
     ofs.close();
   }
+
+  // Read mesh-mapping scaling factors for spray IC
+  {
+    amrex::ParmParse ppcm("ConstantMap");
+    amrex::Vector<amrex::Real> fac(AMREX_SPACEDIM, 1.0);
+    ppcm.queryarr("scaling_factor", fac, 0, AMREX_SPACEDIM);
+    prob_parm->fac_x = fac[0];
+#if AMREX_SPACEDIM >= 2
+    prob_parm->fac_y = fac[1];
+#endif
+#if AMREX_SPACEDIM >= 3
+    prob_parm->fac_z = fac[2];
+#endif
+  }
 }
 
 void
