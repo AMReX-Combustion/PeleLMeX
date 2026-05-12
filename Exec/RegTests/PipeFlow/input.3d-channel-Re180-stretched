@@ -116,11 +116,14 @@ amr.derive_plot_vars = avg_pressure mag_vort
 #   mac_proj.hypre.bamg_interp_type     = 4
 #   mac_proj.hypre.bamg_relax_type      = 7
 #
-# For now, use_mlhypre=1 with HypreMLABecLap's defaults.  At this
-# resolution it converges at ~75 iterations per MAC solve.
-mac_proj.use_mlhypre = 1
-
-nodal_proj.bottom_solver = hypre
+# NOTE: The default PipeFlow build in this directory uses USE_HYPRE=FALSE.
+# Leave Hypre-specific runtime options disabled unless PipeFlow is rebuilt
+# with Hypre support enabled; otherwise this input will abort at runtime.
+#
+# For Hypre-enabled builds, uncomment the following lines.  At this
+# resolution, use_mlhypre=1 converges at ~75 iterations per MAC solve.
+# mac_proj.use_mlhypre = 1
+# nodal_proj.bottom_solver = hypre
 nodal_proj.maxiter       = 20000
 nodal_proj.rtol          = 1.0e-7
 nodal_proj.verbose       = 1
