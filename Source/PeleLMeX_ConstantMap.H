@@ -36,11 +36,11 @@ public:
 
   void create_map(int lev, const amrex::Geometry& geom) override;
 
-private:
   void fill_cc(int lev);
   void fill_nd(int lev);
   void fill_fc(int lev);
 
+private:
   amrex::Vector<amrex::Real> m_fac{AMREX_D_DECL(1.0, 1.0, 1.0)};
 };
 
