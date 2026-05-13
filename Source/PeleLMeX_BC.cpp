@@ -1579,34 +1579,35 @@ PeleLM::fillFromRecyclingPlane(amrex::MultiFab& a_vel, int vel_comp, int lev)
   // the inlet mean profile; this only contributes the zero-mean fluctuation.
   amrex::MultiFab& fluct = *m_inlet_recycling.fluct_src[lev];
 
+  auto copy_shifted_fluct = [&](const amrex::IntVect& shift) {
+    amrex::BoxArray shifted_ba(fluct.boxArray());
+    shifted_ba.shift(shift);
+
+    amrex::MultiFab shifted_fluct(
+      shifted_ba, fluct.DistributionMap(), fluct.nComp(), 0,
+      amrex::MFInfo(), fluct.Factory());
+
+    for (amrex::MFIter mfi(fluct); mfi.isValid(); ++mfi) {
+      const amrex::Box& src_bx = fluct[mfi].box();
+      const amrex::Box dst_bx = amrex::shift(src_bx, shift);
+      shifted_fluct[mfi].copy(fluct[mfi], src_bx, 0, dst_bx, 0, fluct.nComp());
+    }
+
+    a_vel.ParallelCopy(shifted_fluct, 0, vel_comp, AMREX_SPACEDIM, 0, 0);
+  };
+
   if (need_lo) {
     for (int g = 1; g <= nGrowDest; ++g) {
       const int nshift = srcIndex - domain.smallEnd(planeDir) + g;
       const auto shift = amrex::BASISV(planeDir) * nshift;
-
-      // Create shifted the BoxArray
-      amrex::BoxArray shifted_ba =
-        amrex::BoxArray(fluct.boxArray()).shift(shift);
-
-      // Create an Aliased MultiFab that lives on this shifted BA
-      amrex::MultiFab shifted_fluct(fluct, amrex::make_alias, 0, fluct.nComp());
-      a_vel.ParallelCopy(
-        shifted_fluct, 0, vel_comp, AMREX_SPACEDIM, 0, nGrowDest);
+      copy_shifted_fluct(shift);
     }
   }
   if (need_hi) {
     for (int g = 1; g <= nGrowDest; ++g) {
       const int nshift = domain.bigEnd(planeDir) - srcIndex + g;
       const auto shift = amrex::BASISV(planeDir) * nshift;
-
-      // Create shifted the BoxArray
-      amrex::BoxArray shifted_ba =
-        amrex::BoxArray(fluct.boxArray()).shift(shift);
-
-      // Create an Aliased MultiFab that lives on this shifted BA
-      amrex::MultiFab shifted_fluct(fluct, amrex::make_alias, 0, fluct.nComp());
-      a_vel.ParallelCopy(
-        shifted_fluct, 0, vel_comp, AMREX_SPACEDIM, 0, nGrowDest);
+      copy_shifted_fluct(shift);
     }
   }
 }
