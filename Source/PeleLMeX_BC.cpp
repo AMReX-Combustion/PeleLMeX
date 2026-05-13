@@ -1492,8 +1492,8 @@ PeleLM::updateRecyclingPlaneSnapshot()
 void
 PeleLM::fillFromRecyclingPlane(amrex::MultiFab& a_vel, int vel_comp, int lev)
 {
-  // NOTE: Fluctuation data injected is refresh only once per time step (rather
-  // than per SDC iteration)
+  // NOTE: Fluctuation data injected is refreshed only once per time step
+  // (rather than per SDC iteration)
 
   if (m_use_inlet_from_plane == 0) {
     return;
