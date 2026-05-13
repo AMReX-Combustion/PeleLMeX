@@ -633,6 +633,9 @@ PeleLM::readParameters()
   pp.query("velocity_plotfile", m_velocity_plotfile);
   pp.query("velocity_plotfile_scale", m_velocity_plotfile_scale);
 
+  AMREX_ALWAYS_ASSERT_WITH_MESSAGE(!(m_use_inlet_from_plane && m_do_turbulent_forcing),
+								   "Cannot inject turbulence and recycling simultaneously");
+
   // -----------------------------------------
   // Load Balancing
   // -----------------------------------------
