@@ -25,12 +25,12 @@ struct PeleLMCCFillExtDirState
     pele::physics::PMF::PmfData::DataContainer const* a_pmf_data,
     int a_nAux,
     int do_turbInflow,
-	int do_inletFromPlane)
+    int do_inletFromPlane)
     : lprobparm(a_prob_parm),
       lpmfdata(a_pmf_data),
       m_nAux(a_nAux),
       m_do_turbInflow(do_turbInflow),
-	  m_do_inlet_from_plane(do_inletFromPlane)
+      m_do_inlet_from_plane(do_inletFromPlane)
   {
   }
 
