@@ -56,7 +56,9 @@ struct DefaultProblemSpecificFunctions
   /**
    * \brief Define the domain face boundary conditions. Note: If turbInflow or
    * recycling is used, s_in arrives here with the velocity fields preloaded
-   * with that data
+   * with those fluctuations. If neither option is activated, the fields are
+   * preloaded with zero. Thus a += should be used for those fields to add
+   * fluctuating fields with the user-desired mean values.
    *
    * \param x                 the face center coordinates.
    * \param s_in              state in first cell (as ptr into Array4)

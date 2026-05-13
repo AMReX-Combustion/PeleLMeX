@@ -814,12 +814,14 @@ PeleLM::ReadCheckPointFile()
   }
 
   // Optional recycling-plane block. Pre-existing checkpoints don't have this
-  // marker; in that case getline simply hits EOF and we leave the state
-  // un-restored (the running mean will reseed from the next sample).
+  // marker; we leave the state un-restored (the running mean will reseed
+  // from the next sample), however we must be careful to safely rewind the
+  // stream
   bool have_recycling_chk = false;
   int chk_recycling_n_samples = 0;
   amrex::Vector<amrex::BoxArray> chk_recycling_ba;
   {
+    std::streampos pos = is.tellg();
     std::string marker_line;
     if (std::getline(is, marker_line)) {
       const auto colon = marker_line.find(':');
@@ -839,6 +841,8 @@ PeleLM::ReadCheckPointFile()
         }
       }
     }
+    is.clear(); // Clear EOF flags if they were set
+    is.seekg(pos);
   }
 
   /***************************************************************************

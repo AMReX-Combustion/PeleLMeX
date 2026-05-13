@@ -1466,8 +1466,8 @@ PeleLM::updateRecyclingPlaneSnapshot()
   if (m_inlet_plane_avg_window > 0.0) {
     alpha = std::min(amrex::Real(1.0), m_dt / m_inlet_plane_avg_window);
     if (alpha == amrex::Real(1.0)) {
-      amrex::Print(
-        "WARNING: Clipped recycle averaging window will give no fluctuations.");
+      amrex::Print() << "WARNING: Clipped recycle averaging window will give "
+                        "no fluctuations.\n";
     }
   } else {
     alpha =

@@ -202,7 +202,7 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
     MyProbParm const& /*prob_parm*/)
   {
     EBflagType = pelelmex::BCTypeEB::wall_adiab;
-    EBfaceFrac = 0.0;
+    EBfaceFrac = 0.0; /* setting a safe value to ensure zero transport flux */
   }
 
   static void patchFlowVariables(
