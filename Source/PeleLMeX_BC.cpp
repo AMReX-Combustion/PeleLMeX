@@ -1601,7 +1601,8 @@ PeleLM::fillFromRecyclingPlane(amrex::MultiFab& a_vel, int vel_comp, int lev)
       shifted_fluct[mfi].copy(fluct[mfi], src_bx, 0, dst_bx, 0, fluct.nComp());
     }
 
-    a_vel.ParallelCopy(shifted_fluct, 0, vel_comp, AMREX_SPACEDIM, 0, 0);
+    a_vel.ParallelCopy(
+      shifted_fluct, 0, vel_comp, AMREX_SPACEDIM, 0, nGrowDest);
   };
 
   if (need_lo) {
