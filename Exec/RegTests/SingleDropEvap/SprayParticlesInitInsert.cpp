@@ -78,8 +78,8 @@ SprayParticleContainer::InitSprayParticles(const bool init_parts)
   //   AMReX index range for direction i: [0, N_i / fac_i)
   //   To fill uniform spacing over [prob_lo_i, prob_hi_i], divide by fac_i
   for (int dir = 0; dir < AMREX_SPACEDIM; ++dir) {
-    partNum[dir] = amrex::max<amrex::Real>(
-      1, static_cast<int>(std::ceil(partNum[dir] / fac[dir])));
+    partNum[dir] =
+      amrex::max(1, static_cast<int>(std::ceil(partNum[dir] / fac[dir])));
   }
 
   // Initialize particles using uniform distribution
