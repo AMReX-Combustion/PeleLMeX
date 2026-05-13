@@ -17,17 +17,20 @@ struct PeleLMCCFillExtDirState
   pele::physics::PMF::PmfData::DataContainer const* lpmfdata;
   const int m_nAux;
   int m_do_turbInflow = 0;
+  int m_do_inlet_from_plane = 0;
 
   AMREX_GPU_HOST
   constexpr PeleLMCCFillExtDirState(
     ProbParm const* a_prob_parm,
     pele::physics::PMF::PmfData::DataContainer const* a_pmf_data,
     int a_nAux,
-    int do_turbInflow)
+    int do_turbInflow,
+	int do_inletFromPlane)
     : lprobparm(a_prob_parm),
       lpmfdata(a_pmf_data),
       m_nAux(a_nAux),
-      m_do_turbInflow(do_turbInflow)
+      m_do_turbInflow(do_turbInflow),
+	  m_do_inlet_from_plane(do_inletFromPlane)
   {
   }
 
@@ -77,7 +80,7 @@ struct PeleLMCCFillExtDirState
 
           // If using TurbInflow, pass in the turbulent data. User can overwrite
           // if needed
-          if (m_do_turbInflow != 0 || m_use_inlet_from_plane != 0) {
+          if (m_do_turbInflow != 0 || m_do_inlet_from_plane != 0) {
             if (n >= VELX && n < DENSITY) {
               if (!isnan(
                     state(iv, VELX + n))) { // During fillcoarsepatch, get here
@@ -114,7 +117,7 @@ struct PeleLMCCFillExtDirState
 
           // If using TurbInflow, pass in the turbulent data. User can overwrite
           // if needed
-          if (m_do_turbInflow != 0 || m_use_inlet_from_plane != 0) {
+          if (m_do_turbInflow != 0 || m_do_inlet_from_plane != 0) {
             if (n >= VELX && n < DENSITY) {
               if (!isnan(
                     state(iv, VELX + n))) { // During fillcoarsepatch, get here

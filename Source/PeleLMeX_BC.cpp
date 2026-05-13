@@ -428,7 +428,8 @@ PeleLM::fillpatch_state(
         geom[lev], fetchBCRecArray(0, nCompState),
         PeleLMCCFillExtDirState<ProblemSpecificFunctions>{
           lprobparm, lpmfdata, m_nAux,
-          static_cast<int>(turb_inflow.is_initialized())});
+          static_cast<int>(turb_inflow.is_initialized()),
+		  static_cast<int>(m_use_inlet_from_plane)});
     FillPatchSingleLevel(
       a_state, amrex::IntVect(nGhost), a_time,
       {&(m_leveldata_old[lev]->state), &(m_leveldata_new[lev]->state)},
@@ -444,14 +445,16 @@ PeleLM::fillpatch_state(
         geom[lev - 1], fetchBCRecArray(0, nCompState),
         PeleLMCCFillExtDirState<ProblemSpecificFunctions>{
           lprobparm, lpmfdata, m_nAux,
-          static_cast<int>(turb_inflow.is_initialized())});
+          static_cast<int>(turb_inflow.is_initialized()),
+		  static_cast<int>(m_use_inlet_from_plane)});
     amrex::PhysBCFunct<
       amrex::GpuBndryFuncFab<PeleLMCCFillExtDirState<ProblemSpecificFunctions>>>
       fine_bndry_func(
         geom[lev], fetchBCRecArray(0, nCompState),
         PeleLMCCFillExtDirState<ProblemSpecificFunctions>{
           lprobparm, lpmfdata, m_nAux,
-          static_cast<int>(turb_inflow.is_initialized())});
+          static_cast<int>(turb_inflow.is_initialized()),
+		  static_cast<int>(m_use_inlet_from_plane)});
     FillPatchTwoLevels(
       a_state, amrex::IntVect(nGhost), a_time,
       {&(m_leveldata_old[lev - 1]->state), &(m_leveldata_new[lev - 1]->state)},
@@ -941,14 +944,16 @@ PeleLM::fillcoarsepatch_state(
       geom[lev - 1], fetchBCRecArray(0, nCompState),
       PeleLMCCFillExtDirState<ProblemSpecificFunctions>{
         lprobparm, lpmfdata, m_nAux,
-        static_cast<int>(turb_inflow.is_initialized())});
+        static_cast<int>(turb_inflow.is_initialized()),
+		static_cast<int>(m_use_inlet_from_plane)});
   amrex::PhysBCFunct<
     amrex::GpuBndryFuncFab<PeleLMCCFillExtDirState<ProblemSpecificFunctions>>>
     fine_bndry_func(
       geom[lev], fetchBCRecArray(0, nCompState),
       PeleLMCCFillExtDirState<ProblemSpecificFunctions>{
         lprobparm, lpmfdata, m_nAux,
-        static_cast<int>(turb_inflow.is_initialized())});
+        static_cast<int>(turb_inflow.is_initialized()),
+		static_cast<int>(m_use_inlet_from_plane)});
   InterpFromCoarseLevel(
     a_state, amrex::IntVect(nGhost), a_time, m_leveldata_new[lev - 1]->state, 0,
     0, nCompState, geom[lev - 1], geom[lev], crse_bndry_func, 0,
@@ -1122,7 +1127,8 @@ PeleLM::setInflowBoundaryVel(
       geom[lev], dummyVelBCRec,
       PeleLMCCFillExtDirState<ProblemSpecificFunctions>{
         lprobparm, lpmfdata, m_nAux,
-        static_cast<int>(turb_inflow.is_initialized())});
+        static_cast<int>(turb_inflow.is_initialized()),
+		static_cast<int>(m_use_inlet_from_plane)});
 
   bndry_func(a_vel, 0, AMREX_SPACEDIM, a_vel.nGrowVect(), time, 0);
 
@@ -1390,14 +1396,16 @@ PeleLM::updateRecyclingPlaneSnapshot()
           geom[lev - 1], velBCRec,
           PeleLMCCFillExtDirState<ProblemSpecificFunctions>{
             lprobparm, lpmfdata, m_nAux,
-            static_cast<int>(turb_inflow.is_initialized())});
+            static_cast<int>(turb_inflow.is_initialized()),
+			static_cast<int>(m_use_inlet_from_plane)});
       amrex::PhysBCFunct<amrex::GpuBndryFuncFab<
         PeleLMCCFillExtDirState<ProblemSpecificFunctions>>>
         fine_bndry_func(
           geom[lev], velBCRec,
           PeleLMCCFillExtDirState<ProblemSpecificFunctions>{
             lprobparm, lpmfdata, m_nAux,
-            static_cast<int>(turb_inflow.is_initialized())});
+            static_cast<int>(turb_inflow.is_initialized()),
+			static_cast<int>(m_use_inlet_from_plane)});
       amrex::InterpFromCoarseLevel(
         u_src, amrex::IntVect(0), a_time, *m_inlet_recycling.u_src[lev - 1], 0,
         0, AMREX_SPACEDIM, geom[lev - 1], geom[lev], crse_bndry_func, 0,
@@ -1577,7 +1585,7 @@ PeleLM::fillFromRecyclingPlane(amrex::MultiFab& a_vel, int vel_comp, int lev)
       const auto shift = amrex::BASISV(planeDir) * nshift;
 
 	  // Create shifted the BoxArray
-	  amrex::BoxArray shifted_ba = BoxArray(orig_mf.boxArray()).shift(shift);
+	  amrex::BoxArray shifted_ba = amrex::BoxArray(fluct.boxArray()).shift(shift);
 	  
 	  // Create an Aliased MultiFab that lives on this shifted BA
 	  amrex::MultiFab shifted_fluct(fluct, amrex::make_alias, 0, fluct.nComp());
@@ -1590,7 +1598,7 @@ PeleLM::fillFromRecyclingPlane(amrex::MultiFab& a_vel, int vel_comp, int lev)
       const auto shift = amrex::BASISV(planeDir) * nshift;
 	  
 	  // Create shifted the BoxArray
-	  amrex::BoxArray shifted_ba = BoxArray(orig_mf.boxArray()).shift(shift);
+	  amrex::BoxArray shifted_ba = amrex::BoxArray(fluct.boxArray()).shift(shift);
 	  
 	  // Create an Aliased MultiFab that lives on this shifted BA
 	  amrex::MultiFab shifted_fluct(fluct, amrex::make_alias, 0, fluct.nComp());
