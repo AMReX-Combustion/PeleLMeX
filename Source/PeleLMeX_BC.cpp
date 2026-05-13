@@ -1575,18 +1575,26 @@ PeleLM::fillFromRecyclingPlane(amrex::MultiFab& a_vel, int vel_comp, int lev)
     for (int g = 1; g <= nGrowDest; ++g) {
       const int nshift = srcIndex - domain.smallEnd(planeDir) + g;
       const auto shift = amrex::BASISV(planeDir) * nshift;
-      fluct.shift(-shift);
-      a_vel.ParallelCopy(fluct, 0, vel_comp, AMREX_SPACEDIM, 0, nGrowDest);
-      fluct.shift(+shift);
+
+	  // Create shifted the BoxArray
+	  amrex::BoxArray shifted_ba = BoxArray(orig_mf.boxArray()).shift(shift);
+	  
+	  // Create an Aliased MultiFab that lives on this shifted BA
+	  amrex::MultiFab shifted_fluct(fluct, amrex::make_alias, 0, fluct.nComp());
+      a_vel.ParallelCopy(shifted_fluct, 0, vel_comp, AMREX_SPACEDIM, 0, nGrowDest);
     }
   }
   if (need_hi) {
     for (int g = 1; g <= nGrowDest; ++g) {
       const int nshift = domain.bigEnd(planeDir) - srcIndex + g;
       const auto shift = amrex::BASISV(planeDir) * nshift;
-      fluct.shift(+shift);
-      a_vel.ParallelCopy(fluct, 0, vel_comp, AMREX_SPACEDIM, 0, nGrowDest);
-      fluct.shift(-shift);
+	  
+	  // Create shifted the BoxArray
+	  amrex::BoxArray shifted_ba = BoxArray(orig_mf.boxArray()).shift(shift);
+	  
+	  // Create an Aliased MultiFab that lives on this shifted BA
+	  amrex::MultiFab shifted_fluct(fluct, amrex::make_alias, 0, fluct.nComp());
+      a_vel.ParallelCopy(shifted_fluct, 0, vel_comp, AMREX_SPACEDIM, 0, nGrowDest);
     }
   }
 }
