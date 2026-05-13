@@ -54,7 +54,8 @@ struct DefaultProblemSpecificFunctions
   }
 
   /**
-   * \brief Define the domain face boundary conditions
+   * \brief Define the domain face boundary conditions. Note: If turbInflow or recycling is used,
+   *        s_in arrives here with the velocity fields preloaded with that data
    *
    * \param x                 the face center coordinates.
    * \param s_in              state in first cell (as ptr into Array4)
