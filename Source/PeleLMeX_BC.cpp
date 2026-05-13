@@ -1466,7 +1466,8 @@ PeleLM::updateRecyclingPlaneSnapshot()
   if (m_inlet_plane_avg_window > 0.0) {
     alpha = std::min(amrex::Real(1.0), m_dt / m_inlet_plane_avg_window);
     if (alpha == amrex::Real(1.0)) {
-      amrex::Print("WARNING: Clipped recycle averaging window will give no fluctuations.");
+      amrex::Print(
+        "WARNING: Clipped recycle averaging window will give no fluctuations.");
     }
   } else {
     alpha =
@@ -1491,7 +1492,8 @@ PeleLM::updateRecyclingPlaneSnapshot()
 void
 PeleLM::fillFromRecyclingPlane(amrex::MultiFab& a_vel, int vel_comp, int lev)
 {
-  // NOTE: Fluctuation data injected is refresh only once per time step (rather than per SDC iteration)
+  // NOTE: Fluctuation data injected is refresh only once per time step (rather
+  // than per SDC iteration)
 
   if (m_use_inlet_from_plane == 0) {
     return;
@@ -1590,8 +1592,8 @@ PeleLM::fillFromRecyclingPlane(amrex::MultiFab& a_vel, int vel_comp, int lev)
     shifted_ba.shift(shift);
 
     amrex::MultiFab shifted_fluct(
-      shifted_ba, fluct.DistributionMap(), fluct.nComp(), 0,
-      amrex::MFInfo(), fluct.Factory());
+      shifted_ba, fluct.DistributionMap(), fluct.nComp(), 0, amrex::MFInfo(),
+      fluct.Factory());
 
     for (amrex::MFIter mfi(fluct); mfi.isValid(); ++mfi) {
       const amrex::Box& src_bx = fluct[mfi].box();
