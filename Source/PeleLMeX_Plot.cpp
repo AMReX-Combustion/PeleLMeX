@@ -955,6 +955,16 @@ PeleLM::ReadCheckPointFile()
     // Storage was just rebuilt from current-run geometry; the regrid hooks
     // may set this back to 1 later, which is fine.
     m_recyclingNeedsRebuild = 0;
+  } else if (have_recycling_chk && (m_use_inlet_from_plane == 0)) {
+	amrex::Print()
+	  << "WARNING: Restart checkpoint contains RecyclingPlane data, but "
+	  << "peleLM.use_inlet_from_plane = 0 in this run. Ignoring checkpointed "
+	  << "recycling-plane running mean.\n";
+  } else if ((!have_recycling_chk) && (m_use_inlet_from_plane != 0)) {
+	amrex::Print()
+	  << "WARNING: peleLM.use_inlet_from_plane != 0 in this run, but the "
+	  << "restart checkpoint does not contain RecyclingPlane data. "
+	  << "Recycling-plane running mean will not be restored from checkpoint.\n";
   }
 
   if (m_verbose != 0) {
