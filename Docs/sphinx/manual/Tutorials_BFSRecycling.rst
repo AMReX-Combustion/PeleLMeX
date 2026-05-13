@@ -235,7 +235,7 @@ roughly 8–11 hours of wall time on 32 ranks for a single case.
 
 Launch the run, redirecting stdout to a log file: ::
 
-    mpiexec -n 32 ./PeleLMeX3d.gnu.MPI.ex inputs.3d-recycle.p25 > run.log 2>&1
+    mpiexec -n 32 ./PeleLMeX3d.gnu.MPI.ex inputs.3d-recycle peleLM.inlet_plane_position=0.065 > run.log 2>&1
 
 Three things in particular are worth watching during the run:
 
@@ -294,10 +294,8 @@ Choice of source-plane position
 -------------------------------
 
 The source-plane location is the single most influential parameter for
-this feature. The case directory contains four additional input variants
-(``inputs.3d-recycle``, ``inputs.3d-recycle.m25``, ``inputs.3d-recycle.34``,
-``inputs.3d-recycle.edge``) that differ only in
-``peleLM.inlet_plane_position``, sweeping the plane from the narrow
+this feature. Four additional cases were run with
+``peleLM.inlet_plane_position=0.05,0.035,.005,.0095``, sweeping the plane from the narrow
 channel above the step out to the near-outflow region. The trends
 observed in those runs are:
 
