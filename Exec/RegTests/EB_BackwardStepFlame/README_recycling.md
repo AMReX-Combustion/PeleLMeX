@@ -3,7 +3,7 @@
 This folder contains six short input files that exercise the
 recycling-plane inflow capability (see
 `Docs/sphinx/manual/LMeXControls.rst` § "Recycling-plane inflow"). Each
-file is a 10-step, 256×64, 4-rank variant of the base `eb_bfs.inp` case
+file is a 10-step, 128x32, 4-rank variant of the base `eb_bfs.inp` case
 that touches one specific code path of the new feature. They are
 registered as CTest entries in `Tests/CMakeLists.txt`.
 
