@@ -24,6 +24,13 @@ struct MyProbParm : public ProbParmDefault
   amrex::Real part_Re = -1.;
   pele::physics::eos::EosParm<pele::physics::PhysicsType::eos_type> const*
     eosparm;
+  // Mesh-mapping scaling factors (read from ConstantMap.scaling_factor).
+  // When mesh mapping is active the AMReX grid is Xi-space and physical
+  // coordinates are  x_phys = prob_lo + (i+0.5) * dx * fac.  With the
+  // defaults (fac = 1) this reduces to the standard AMReX-space IC.
+  amrex::Real fac_x = 1.0;
+  amrex::Real fac_y = 1.0;
+  amrex::Real fac_z = 1.0;
 };
 
 struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
