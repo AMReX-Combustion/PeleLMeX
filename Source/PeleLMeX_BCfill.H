@@ -77,7 +77,7 @@ struct PeleLMCCFillExtDirState
 
           // If using TurbInflow, pass in the turbulent data. User can overwrite
           // if needed
-          if (m_do_turbInflow != 0) {
+          if (m_do_turbInflow != 0 || m_use_inlet_from_plane != 0) {
             if (n >= VELX && n < DENSITY) {
               if (!isnan(
                     state(iv, VELX + n))) { // During fillcoarsepatch, get here
@@ -114,7 +114,7 @@ struct PeleLMCCFillExtDirState
 
           // If using TurbInflow, pass in the turbulent data. User can overwrite
           // if needed
-          if (m_do_turbInflow != 0) {
+          if (m_do_turbInflow != 0 || m_use_inlet_from_plane != 0) {
             if (n >= VELX && n < DENSITY) {
               if (!isnan(
                     state(iv, VELX + n))) { // During fillcoarsepatch, get here
