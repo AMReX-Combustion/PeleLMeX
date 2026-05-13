@@ -1222,10 +1222,10 @@ int
 PeleLM::computeRecyclingSrcIndex(int lev) const
 {
   const int dir = m_inlet_plane_dir;
-  return static_cast<int>(std::floor(
+  return static_cast<int>(std::lround(
     (m_inlet_plane_position - geom[lev].ProbLo()[dir]) /
       geom[lev].CellSize()[dir] -
-    0.5 + 1e-12));
+    0.5));
 }
 
 void
@@ -1379,6 +1379,7 @@ PeleLM::updateRecyclingPlaneSnapshot()
     //      get a complete coverage at this level's resolution.
     //   2. Overwrite from this level's own state where it covers, using the
     //      higher-resolution data.
+    //   NOTE: Relies on data filled at next coarse level, filled by this loop.
     if (lev > 0) {
       // Use piecewise-constant interpolation: the source slab is one cell
       // thick along planeDir, so any stencil-based interpolator (e.g.,
@@ -1464,6 +1465,9 @@ PeleLM::updateRecyclingPlaneSnapshot()
   amrex::Real alpha;
   if (m_inlet_plane_avg_window > 0.0) {
     alpha = std::min(amrex::Real(1.0), m_dt / m_inlet_plane_avg_window);
+    if (alpha == amrex::Real(1.0)) {
+      amrex::Print("WARNING: Clipped recycle averaging window will give no fluctuations.");
+    }
   } else {
     alpha =
       1.0 / static_cast<amrex::Real>(std::max(1, m_inlet_recycling.n_samples));
@@ -1487,6 +1491,8 @@ PeleLM::updateRecyclingPlaneSnapshot()
 void
 PeleLM::fillFromRecyclingPlane(amrex::MultiFab& a_vel, int vel_comp, int lev)
 {
+  // NOTE: Fluctuation data injected is refresh only once per time step (rather than per SDC iteration)
+
   if (m_use_inlet_from_plane == 0) {
     return;
   }

@@ -129,7 +129,7 @@ multi-mode perturbation to all three velocity components, tapered to zero
 at the wall-normal boundaries: ::
 
     const amrex::Real ywall = 1.0 - std::pow(2.0 * y / Ly, 2.0);
-    const amrex::Real wy = amrex::max<amrex::Real>(0.0, ywall);
+    const amrex::Real wy = std::max(amrex::Real(0.0), ywall);
     state(i, j, k, VELX) = U + A * wy * pu * norm;
     state(i, j, k, VELY) = 0.0 + A * wy * pv * norm;
     state(i, j, k, VELZ) = 0.0 + A * wy * pw * norm;
@@ -295,7 +295,8 @@ Choice of source-plane position
 
 The source-plane location is the single most influential parameter for
 this feature. Four additional cases were run with
-``peleLM.inlet_plane_position=0.05,0.035,.005,.0095``, sweeping the plane from the narrow
+``peleLM.inlet_plane_position``, taken from
+``{0.05, 0.035, 0.005, 0.0095}``, sweeping the plane from the narrow
 channel above the step out to the near-outflow region. The trends
 observed in those runs are:
 
