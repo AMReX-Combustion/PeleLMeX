@@ -432,6 +432,8 @@ PeleLM::fillpatch_state(
 
   const int nCompState = (m_incompressible) != 0 ? AMREX_SPACEDIM : NVAR;
 
+  a_state.setBndry(0.0); // Add safety required for += ops in bcnormal
+
   fillTurbInflow(a_state, VELX, lev, a_time);
 
   if (m_use_inlet_from_plane != 0) {
@@ -1400,7 +1402,7 @@ PeleLM::updateRecyclingPlaneSnapshot()
 
   ProbParm const* lprobparm = prob_parm_d;
   auto const* lpmfdata = pmf_data.device_parm();
-  auto velBCRec = fetchBCRecArray(VELX, AMREX_SPACEDIM);
+  auto velBCRec = fetchBCRecDummyArray(VELX, AMREX_SPACEDIM);
   // The time used by InterpFromCoarseLevel is mostly informational here
   // (the slab is in the interior, so PhysBCFunct calls on its temporaries
   // are no-ops in practice); pass the new time for consistency.
@@ -1540,21 +1542,6 @@ PeleLM::fillFromRecyclingPlane(amrex::MultiFab& a_vel, int vel_comp, int lev)
   // (e.g., MAC) layouts would need a different shift convention.
   AMREX_ASSERT(a_vel.boxArray().ixType().cellCentered());
 
-  // Storage may not yet exist (first call before updateRecyclingPlaneSnapshot,
-  // or this level didn't exist when the snapshot last ran). Fall back to the
-  // standard ext_dir fill silently.
-  if (
-    lev >= static_cast<int>(m_inlet_recycling.fluct_src.size()) ||
-    !m_inlet_recycling.fluct_src[lev]) {
-    return;
-  }
-  // Don't inject anything until the running mean has had a chance to settle.
-  if (
-    !m_inlet_recycling.initialized ||
-    m_inlet_recycling.n_samples <= m_inlet_plane_warmup_steps) {
-    return;
-  }
-
   const int planeDir = m_inlet_plane_dir;
   const int srcIndex = computeRecyclingSrcIndex(lev);
   const amrex::Box& domain = geom[lev].Domain();
@@ -1611,44 +1598,82 @@ PeleLM::fillFromRecyclingPlane(amrex::MultiFab& a_vel, int vel_comp, int lev)
     return;
   }
 
-  // Shift the cached fluctuation MultiFab onto each inflow ghost layer and
-  // COPY it to the destination. The standard ext_dir fill will add
-  // the inlet mean profile; this only contributes the zero-mean fluctuation.
-  amrex::MultiFab& fluct = *m_inlet_recycling.fluct_src[lev];
+  bool set_zero_in_bndry = false;
 
-  auto copy_shifted_fluct = [&](const amrex::IntVect& shift) {
-    amrex::BoxArray shifted_ba(fluct.boxArray());
-    shifted_ba.shift(shift);
+  // Storage may not yet exist (first call before updateRecyclingPlaneSnapshot,
+  // or this level didn't exist when the snapshot last ran). Fall back to the
+  // standard ext_dir fill silently.
+  if (
+    lev >= static_cast<int>(m_inlet_recycling.fluct_src.size()) ||
+    !m_inlet_recycling.fluct_src[lev]) {
+    set_zero_in_bndry = true;
+  }
 
-    amrex::MultiFab shifted_fluct(
-      shifted_ba, fluct.DistributionMap(), fluct.nComp(), 0, amrex::MFInfo(),
-      fluct.Factory());
+  // Don't inject anything until the running mean has had a chance to settle.
+  if (
+    !m_inlet_recycling.initialized ||
+    m_inlet_recycling.n_samples <= m_inlet_plane_warmup_steps) {
+    set_zero_in_bndry = true;
+  }
+
+  if (set_zero_in_bndry) {
+
+    // Land here if we do not have trustworthy data for inflow
+    // Note that the user contract already suggests that there will be valid
+    // data in all grow cells across a dirichlet boundary, but ensure anyway
+    if (need_lo) {
+      auto bndryBox = amrex::Box(domain).grow(nGrowDest);
+      bndryBox.setBig(planeDir, domain.smallEnd(planeDir) - 1);
+      a_vel.setVal(0.0, bndryBox, 0, AMREX_SPACEDIM, nGrowDest);
+    }
+    if (need_hi) {
+      auto bndryBox = amrex::Box(domain).grow(nGrowDest);
+      bndryBox.setSmall(planeDir, domain.bigEnd(planeDir) + 1);
+      a_vel.setVal(0.0, bndryBox, 0, AMREX_SPACEDIM, nGrowDest);
+    }
+
+  } else {
+
+    // Shift the cached fluctuation MultiFab onto each inflow ghost layer and
+    // COPY it to the destination. The standard ext_dir fill will add
+    // the inlet mean profile; this only contributes the zero-mean fluctuation.
+    amrex::MultiFab& fluct = *m_inlet_recycling.fluct_src[lev];
+
+    auto copy_shifted_fluct = [&](const amrex::IntVect& shift) {
+      amrex::BoxArray shifted_ba(fluct.boxArray());
+      shifted_ba.shift(shift);
+
+      amrex::MultiFab shifted_fluct(
+        shifted_ba, fluct.DistributionMap(), fluct.nComp(), 0, amrex::MFInfo(),
+        fluct.Factory());
 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
-    for (amrex::MFIter mfi(fluct); mfi.isValid(); ++mfi) {
-      const amrex::Box& src_bx = fluct[mfi].box();
-      const amrex::Box dst_bx = amrex::shift(src_bx, shift);
-      shifted_fluct[mfi].copy(fluct[mfi], src_bx, 0, dst_bx, 0, fluct.nComp());
-    }
+      for (amrex::MFIter mfi(fluct); mfi.isValid(); ++mfi) {
+        const amrex::Box& src_bx = fluct[mfi].box();
+        const amrex::Box dst_bx = amrex::shift(src_bx, shift);
+        shifted_fluct[mfi].copy(
+          fluct[mfi], src_bx, 0, dst_bx, 0, fluct.nComp());
+      }
 
-    a_vel.ParallelCopy(
-      shifted_fluct, 0, vel_comp, AMREX_SPACEDIM, 0, nGrowDest);
-  };
+      a_vel.ParallelCopy(
+        shifted_fluct, 0, vel_comp, AMREX_SPACEDIM, 0, nGrowDest);
+    };
 
-  if (need_lo) {
-    for (int g = 1; g <= nGrowDest; ++g) {
-      const int nshift = srcIndex - domain.smallEnd(planeDir) + g;
-      const auto shift = amrex::BASISV(planeDir) * nshift;
-      copy_shifted_fluct(shift);
+    if (need_lo) {
+      for (int g = 1; g <= nGrowDest; ++g) {
+        const int nshift = srcIndex - domain.smallEnd(planeDir) + g;
+        const auto shift = amrex::BASISV(planeDir) * nshift;
+        copy_shifted_fluct(shift);
+      }
     }
-  }
-  if (need_hi) {
-    for (int g = 1; g <= nGrowDest; ++g) {
-      const int nshift = domain.bigEnd(planeDir) - srcIndex + g;
-      const auto shift = amrex::BASISV(planeDir) * nshift;
-      copy_shifted_fluct(shift);
+    if (need_hi) {
+      for (int g = 1; g <= nGrowDest; ++g) {
+        const int nshift = domain.bigEnd(planeDir) - srcIndex + g;
+        const auto shift = amrex::BASISV(planeDir) * nshift;
+        copy_shifted_fluct(shift);
+      }
     }
   }
 }
