@@ -1416,6 +1416,7 @@ PeleLM::updateRecyclingPlaneSnapshot()
   const amrex::Real a_time = m_cur_time;
 
   for (int lev = 0; lev <= finest_level; ++lev) {
+    AMREX_ASSERT(m_inlet_recycling.u_src[lev] != null);
     auto& u_src = *m_inlet_recycling.u_src[lev];
     const auto& state_lev = m_leveldata_new[lev]->state;
 
@@ -1526,12 +1527,12 @@ PeleLM::updateRecyclingPlaneSnapshot()
     auto& u_src = *m_inlet_recycling.u_src[lev];
     auto& fluct = *m_inlet_recycling.fluct_src[lev];
 
-    // mean = (1 - alpha) * mean + alpha * u_src
-    amrex::MultiFab::LinComb(
-      mean, one_minus_alpha, mean, 0, alpha, u_src, 0, 0, AMREX_SPACEDIM, 0);
     // fluct = u_src - mean
     amrex::MultiFab::LinComb(
       fluct, 1.0, u_src, 0, -1.0, mean, 0, 0, AMREX_SPACEDIM, 0);
+    // mean = (1 - alpha) * mean + alpha * u_src
+    amrex::MultiFab::LinComb(
+      mean, one_minus_alpha, mean, 0, alpha, u_src, 0, 0, AMREX_SPACEDIM, 0);
   }
 }
 
@@ -1629,12 +1630,12 @@ PeleLM::fillFromRecyclingPlane(amrex::MultiFab& a_vel, int vel_comp, int lev)
     // Note that the user contract already suggests that there will be valid
     // data in all grow cells across a dirichlet boundary, but ensure anyway
     if (need_lo) {
-      auto bndryBox = amrex::Box(domain).grow(nGrowDest);
+      auto bndryBox = amrex::Box(domain).grow(planeDir, nGrowDest);
       bndryBox.setBig(planeDir, domain.smallEnd(planeDir) - 1);
       a_vel.setVal(0.0, bndryBox, 0, AMREX_SPACEDIM, nGrowDest);
     }
     if (need_hi) {
-      auto bndryBox = amrex::Box(domain).grow(nGrowDest);
+      auto bndryBox = amrex::Box(domain).grow(planeDir, nGrowDest);
       bndryBox.setSmall(planeDir, domain.bigEnd(planeDir) + 1);
       a_vel.setVal(0.0, bndryBox, 0, AMREX_SPACEDIM, nGrowDest);
     }
@@ -1650,9 +1651,10 @@ PeleLM::fillFromRecyclingPlane(amrex::MultiFab& a_vel, int vel_comp, int lev)
       amrex::BoxArray shifted_ba(fluct.boxArray());
       shifted_ba.shift(shift);
 
+      // Build shifted_flux with default factory since no EB operations needed
+      // and working with a shifted boxarray could trigger an assertion
       amrex::MultiFab shifted_fluct(
-        shifted_ba, fluct.DistributionMap(), fluct.nComp(), 0, amrex::MFInfo(),
-        fluct.Factory());
+        shifted_ba, fluct.DistributionMap(), fluct.nComp(), 0, amrex::MFInfo());
 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
