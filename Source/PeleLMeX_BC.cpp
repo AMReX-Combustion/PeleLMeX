@@ -281,7 +281,7 @@ PeleLM::fetchBCRecAuxArray(const int scomp, const int ncomp)
 }
 
 amrex::Vector<amrex::BCRec>
-PeleLM::fetchBCRecDummyArray(const int scomp, const int ncomp)
+PeleLM::fetchBCRecDummyArray(const int /* scomp */, const int ncomp)
 {
   amrex::Vector<amrex::BCRec> bc(ncomp);
   for (int comp = 0; comp < ncomp; ++comp) {
