@@ -1314,7 +1314,14 @@ PeleLM::buildRecyclingPlaneStorage()
         slab_pmap.push_back(level_pmap[ibox]);
       }
     }
-    AMREX_ALWAYS_ASSERT(!slab_pmap.empty());
+
+    if (slab_pmap.empty()) {
+      amrex::Print()
+        << "WARNING: inlet recycling source slab does not intersect any grids "
+        << "on level " << lev << ". Skipping slab storage allocation for slab "
+        << slab << " at srcIndex=" << srcIndex << "\n";
+      continue;
+    }
     amrex::BoxArray slab_ba(slab_bl);
     amrex::DistributionMapping slab_dm(slab_pmap);
 

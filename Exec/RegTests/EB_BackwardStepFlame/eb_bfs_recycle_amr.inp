@@ -43,14 +43,6 @@ peleLM.num_init_iter = 1
 peleLM.floor_species = 0
 peleLM.initDataPlt_patch_flow_variables = false
 
-# Recycling with AMR: the gradT indicator tags the T_hot/T_mean interface
-# near y=0 for x>0, generating a level-1 grid that overlaps the x=0.03
-# sampling plane. This exercises
-#   - buildRecyclingPlaneStorage at nlevels=2,
-#   - the coarse->fine slab InterpFromCoarseLevel path,
-#   - m_recyclingNeedsRebuild being re-set by the regrid hooks in
-#     MakeNewLevelFromCoarse / RemakeLevel, and the mean-preservation
-#     ParallelCopy when storage is rebuilt.
 peleLM.use_inlet_from_plane    = 1
 peleLM.inlet_plane_dir         = 0
 peleLM.inlet_plane_position    = 0.03
