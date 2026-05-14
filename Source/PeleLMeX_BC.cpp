@@ -1664,7 +1664,8 @@ PeleLM::fillFromRecyclingPlane(amrex::MultiFab& a_vel, int vel_comp, int lev)
         amrex::FArrayBox& dst_fab = shifted_fluct[mfi];
         const amrex::Box& src_bx = src_fab.box();
         const amrex::Box dst_bx = amrex::shift(src_bx, shift);
-        dst_fab.copy<amrex::RunOn::Device>(src_fab, src_bx, 0, dst_bx, 0, fluct.nComp());
+        dst_fab.copy<amrex::RunOn::Device>(
+          src_fab, src_bx, 0, dst_bx, 0, fluct.nComp());
       }
 
       a_vel.ParallelCopy(
