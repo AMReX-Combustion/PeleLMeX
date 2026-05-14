@@ -266,7 +266,7 @@ else()
     setup_test()
     set(P1_OPTS "amr.max_step=5 amr.check_int=5 amr.plot_int=-1 amr.check_file=chk")
     set(P2_OPTS "amr.restart=chk00005 amr.max_step=10 amr.check_int=-1")
-    add_test(${TEST_NAME} bash -c "set -o pipefail && rm -rf chk0000* plt0000* \
+    add_test(${TEST_NAME} bash -c "set -o pipefail && rm -rf chk* plt* \
 && ${MPI_COMMANDS} ${CURRENT_TEST_EXE} ${MPIEXEC_POSTFLAGS} ${CURRENT_TEST_BINARY_DIR}/${TEST_NAME}.inp ${RUNTIME_OPTIONS} ${P1_OPTS} 2>&1 | tee ${TEST_NAME}.phase1.log \
 && ${MPI_COMMANDS} ${CURRENT_TEST_EXE} ${MPIEXEC_POSTFLAGS} ${CURRENT_TEST_BINARY_DIR}/${TEST_NAME}.inp ${RUNTIME_OPTIONS} ${P2_OPTS} 2>&1 | tee ${TEST_NAME}.phase2.log ${SAVE_GOLDS_COMMAND} ${FCOMPARE_COMMAND}")
     set_tests_properties(${TEST_NAME} PROPERTIES TIMEOUT 18000 PROCESSORS ${PELE_NP} WORKING_DIRECTORY "${CURRENT_TEST_BINARY_DIR}/" LABELS "regression" ATTACHED_FILES "${CURRENT_TEST_BINARY_DIR}/${TEST_NAME}.phase1.log;${CURRENT_TEST_BINARY_DIR}/${TEST_NAME}.phase2.log")
