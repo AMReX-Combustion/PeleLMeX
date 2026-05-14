@@ -252,6 +252,11 @@ PeleLM::setBoundaryConditions()
       }
     }
 #endif
+    // Dummy
+    for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
+      m_bcrec_dummy.setLo(idim, amrex::BCType::int_dir);
+      m_bcrec_dummy.setHi(idim, amrex::BCType::int_dir);
+    }
   }
 }
 
@@ -271,6 +276,16 @@ PeleLM::fetchBCRecAuxArray(const int scomp, const int ncomp)
   amrex::Vector<amrex::BCRec> bc(ncomp);
   for (int comp = 0; comp < ncomp; ++comp) {
     bc[comp] = m_bcrec_aux[scomp + comp];
+  }
+  return bc;
+}
+
+amrex::Vector<amrex::BCRec>
+PeleLM::fetchBCRecDummyArray(const int scomp, const int ncomp)
+{
+  amrex::Vector<amrex::BCRec> bc(ncomp);
+  for (int comp = 0; comp < ncomp; ++comp) {
+    bc[comp] = m_bcrec_dummy;
   }
   return bc;
 }
@@ -419,7 +434,9 @@ PeleLM::fillpatch_state(
 
   fillTurbInflow(a_state, VELX, lev, a_time);
 
-  fillFromRecyclingPlane(a_state, 0, lev);
+  if (m_use_inlet_from_plane != 0) {
+    fillFromRecyclingPlane(a_state, 0, lev);
+  }
 
   if (lev == 0) {
     amrex::PhysBCFunct<
@@ -933,7 +950,9 @@ PeleLM::fillcoarsepatch_state(
 
   fillTurbInflow(a_state, VELX, lev, a_time);
 
-  fillFromRecyclingPlane(a_state, 0, lev);
+  if (m_use_inlet_from_plane != 0) {
+    fillFromRecyclingPlane(a_state, 0, lev);
+  }
 
   // Interpolator
   auto* mapper = getInterpolator(m_regrid_interp_method);
@@ -1117,7 +1136,9 @@ PeleLM::setInflowBoundaryVel(
 
   fillTurbInflow(a_vel, 0, lev, time);
 
-  fillFromRecyclingPlane(a_vel, 0, lev);
+  if (m_use_inlet_from_plane != 0) {
+    fillFromRecyclingPlane(a_vel, 0, lev);
+  }
 
   ProbParm const* lprobparm = prob_parm_d;
   auto const* lpmfdata = pmf_data.device_parm();
@@ -1271,14 +1292,29 @@ PeleLM::buildRecyclingPlaneStorage()
       srcIndex >= domain.smallEnd(planeDir) &&
       srcIndex <= domain.bigEnd(planeDir));
 
-    // Thin slab spanning the entire transverse cross-section at srcIndex,
-    // chopped according to this level's max_grid_size for parallel balance.
+    // Thin slab spanning the entire transverse cross-section at srcIndex.
+    // Build it by intersecting the slab with this level's existing grids so
+    // the slab MultiFabs inherit the same processor ownership as the source
+    // state data and subsequent ParallelCopy operations preserve locality.
     amrex::Box slab = domain;
     slab.setSmall(planeDir, srcIndex);
     slab.setBig(planeDir, srcIndex);
-    amrex::BoxArray slab_ba(slab);
-    slab_ba.maxSize(maxGridSize(lev));
-    amrex::DistributionMapping slab_dm(slab_ba);
+
+    const amrex::BoxArray& level_ba = boxArray(lev);
+    const amrex::DistributionMapping& level_dm = DistributionMap(lev);
+    const auto& level_pmap = level_dm.ProcessorMap();
+    amrex::BoxList slab_bl;
+    amrex::Vector<int> slab_pmap;
+    for (int ibox = 0; ibox < level_ba.size(); ++ibox) {
+      amrex::Box isect = level_ba[ibox] & slab;
+      if (isect.ok()) {
+        slab_bl.push_back(isect);
+        slab_pmap.push_back(level_pmap[ibox]);
+      }
+    }
+    AMREX_ALWAYS_ASSERT(!slab_pmap.empty());
+    amrex::BoxArray slab_ba(slab_bl);
+    amrex::DistributionMapping slab_dm(slab_pmap);
 
     m_inlet_recycling.u_src[lev] =
       std::make_unique<amrex::MultiFab>(slab_ba, slab_dm, AMREX_SPACEDIM, 0);
@@ -1297,7 +1333,8 @@ PeleLM::buildRecyclingPlaneStorage()
     // 0 = EB-covered (excluded from the running mean; zero fluctuation),
     // 1 = regular or cut (included).
     auto slab_eb_factory = amrex::makeEBFabFactory(
-      geom[lev], slab_ba, slab_dm, {0, 0, 0}, amrex::EBSupport::basic);
+      geom[lev], slab_ba, slab_dm, {AMREX_D_DECL(0, 0, 0)},
+      amrex::EBSupport::basic);
     const auto& flags = slab_eb_factory->getMultiEBCellFlagFab();
 
     m_inlet_recycling.mask[lev] =
@@ -1364,10 +1401,10 @@ PeleLM::updateRecyclingPlaneSnapshot()
   ProbParm const* lprobparm = prob_parm_d;
   auto const* lpmfdata = pmf_data.device_parm();
   auto velBCRec = fetchBCRecArray(VELX, AMREX_SPACEDIM);
-  // The new-time used by InterpFromCoarseLevel is mostly informational here
+  // The time used by InterpFromCoarseLevel is mostly informational here
   // (the slab is in the interior, so PhysBCFunct calls on its temporaries
   // are no-ops in practice); pass the new time for consistency.
-  const amrex::Real a_time = m_cur_time + m_dt;
+  const amrex::Real a_time = m_cur_time;
 
   for (int lev = 0; lev <= finest_level; ++lev) {
     auto& u_src = *m_inlet_recycling.u_src[lev];
@@ -1559,23 +1596,15 @@ PeleLM::fillFromRecyclingPlane(amrex::MultiFab& a_vel, int vel_comp, int lev)
   // every rank and the subsequent ParallelAdd calls remain collective.
   bool need_lo = false;
   bool need_hi = false;
+  amrex::BoxArray grown_ba(ba);
+  grown_ba.grow(nGrowDest);
   if (faceIsExtDir(amrex::Orientation::low)) {
-    for (int i = 0; i < ba.size(); ++i) {
-      const auto bx = amrex::Box(ba[i]).grow(nGrowDest);
-      if (amrex::Box(amrex::adjCellLo(domain, planeDir, nGrowDest) & bx).ok()) {
-        need_lo = true;
-        break;
-      }
-    }
+    need_lo =
+      grown_ba.intersects(amrex::adjCellLo(domain, planeDir, nGrowDest));
   }
   if (faceIsExtDir(amrex::Orientation::high)) {
-    for (int i = 0; i < ba.size(); ++i) {
-      const auto bx = amrex::Box(ba[i]).grow(nGrowDest);
-      if (amrex::Box(amrex::adjCellHi(domain, planeDir, nGrowDest) & bx).ok()) {
-        need_hi = true;
-        break;
-      }
-    }
+    need_hi =
+      grown_ba.intersects(amrex::adjCellHi(domain, planeDir, nGrowDest));
   }
 
   if (!need_lo && !need_hi) {
@@ -1595,6 +1624,9 @@ PeleLM::fillFromRecyclingPlane(amrex::MultiFab& a_vel, int vel_comp, int lev)
       shifted_ba, fluct.DistributionMap(), fluct.nComp(), 0, amrex::MFInfo(),
       fluct.Factory());
 
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
+#endif
     for (amrex::MFIter mfi(fluct); mfi.isValid(); ++mfi) {
       const amrex::Box& src_bx = fluct[mfi].box();
       const amrex::Box dst_bx = amrex::shift(src_bx, shift);

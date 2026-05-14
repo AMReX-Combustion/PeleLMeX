@@ -816,33 +816,30 @@ PeleLM::ReadCheckPointFile()
   // Optional recycling-plane block. Pre-existing checkpoints don't have this
   // marker; we leave the state un-restored (the running mean will reseed
   // from the next sample), however we must be careful to safely rewind the
-  // stream
+  // stream if the marker is not found
   bool have_recycling_chk = false;
   int chk_recycling_n_samples = 0;
   amrex::Vector<amrex::BoxArray> chk_recycling_ba;
   {
     std::streampos pos = is.tellg();
-    std::string marker_line;
-    if (std::getline(is, marker_line)) {
-      const auto colon = marker_line.find(':');
-      if (
-        colon != std::string::npos &&
-        marker_line.compare(0, colon, "RecyclingPlane") == 0) {
-        const int active = std::stoi(marker_line.substr(colon + 1));
-        if (active != 0) {
-          is >> chk_recycling_n_samples;
+    std::string marker;
+    int active = 0;
+    if ((is >> marker >> active) && marker == "RecyclingPlane:") {
+      GotoNextLine(is);
+      if (active != 0) {
+        is >> chk_recycling_n_samples;
+        GotoNextLine(is);
+        chk_recycling_ba.resize(finest_level + 1);
+        for (int lev = 0; lev <= finest_level; ++lev) {
+          chk_recycling_ba[lev].readFrom(is);
           GotoNextLine(is);
-          chk_recycling_ba.resize(finest_level + 1);
-          for (int lev = 0; lev <= finest_level; ++lev) {
-            chk_recycling_ba[lev].readFrom(is);
-            GotoNextLine(is);
-          }
-          have_recycling_chk = true;
         }
+        have_recycling_chk = true;
       }
+    } else {
+      is.clear();    // Clear EOF flags if they were set
+      is.seekg(pos); // Only rewind if RecyclingPlane data NOT found
     }
-    is.clear(); // Clear EOF flags if they were set
-    is.seekg(pos);
   }
 
   /***************************************************************************

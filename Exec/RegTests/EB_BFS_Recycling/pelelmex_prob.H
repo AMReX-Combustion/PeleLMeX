@@ -41,13 +41,15 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
     const amrex::Real* prob_hi = geomdata.ProbHi();
     const amrex::Real* dx = geomdata.CellSize();
 
-    const amrex::Real x = prob_lo[0] + (i + 0.5) * dx[0];
-    const amrex::Real y = prob_lo[1] + (j + 0.5) * dx[1];
-    const amrex::Real z = prob_lo[2] + (k + 0.5) * dx[2];
+    AMREX_D_TERM(
+      const amrex::Real x = prob_lo[0] + (i + 0.5) * dx[0];
+      , const amrex::Real y = prob_lo[1] + (j + 0.5) * dx[1];
+      , const amrex::Real z = prob_lo[2] + (k + 0.5) * dx[2];);
 
-    const amrex::Real Lx = prob_hi[0] - prob_lo[0];
-    const amrex::Real Ly = prob_hi[1] - prob_lo[1];
-    const amrex::Real Lz = prob_hi[2] - prob_lo[2];
+    AMREX_D_TERM(
+      const amrex::Real Lx = prob_hi[0] - prob_lo[0];
+      , const amrex::Real Ly = prob_hi[1] - prob_lo[1];
+      , const amrex::Real Lz = prob_hi[2] - prob_lo[2];);
 
     auto eos = pele::physics::PhysicsType::eos();
     constexpr amrex::Real Pi = 3.14159265358979323846264338327950288;
@@ -59,7 +61,7 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
     // Only seed perturbation in the fluid region above/ahead of the step
     // (i.e., not inside the EB box); cells covered by EB get overwritten
     // later anyway, but keeping the seed clean is cheap and avoids weird
-    // derived-plot artefacts near the cut cells.
+    // derived-plot artifacts near the cut cells.
     const bool in_step_block = (x < 0.01) && (y < 0.0);
 
     const amrex::Real U = prob_parm.meanFlowMag;
@@ -75,21 +77,39 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
 
     const amrex::Real pu =
       (std::sin(2.0 * Pi * 3.0 * x / Lx + 0.17) *
-         std::cos(2.0 * Pi * 5.0 * y / Ly) * std::sin(2.0 * Pi * 4.0 * z / Lz) +
-       std::sin(2.0 * Pi * 7.0 * x / Lx - 0.43) *
-         std::cos(2.0 * Pi * 3.0 * y / Ly + 0.91) *
-         std::sin(2.0 * Pi * 2.0 * z / Lz) +
-       std::sin(2.0 * Pi * 11.0 * x / Lx + 1.23) *
-         std::cos(2.0 * Pi * 2.0 * y / Ly) * std::sin(2.0 * Pi * 7.0 * z / Lz));
+         std::cos(2.0 * Pi * 5.0 * y / Ly)
+#if AMREX_SPACEDIM == 3
+         * std::sin(2.0 * Pi * 4.0 * z / Lz)
+#endif
+       + std::sin(2.0 * Pi * 7.0 * x / Lx - 0.43) *
+           std::cos(2.0 * Pi * 3.0 * y / Ly + 0.91)
+#if AMREX_SPACEDIM == 3
+           * std::sin(2.0 * Pi * 2.0 * z / Lz)
+#endif
+       + std::sin(2.0 * Pi * 11.0 * x / Lx + 1.23) *
+           std::cos(2.0 * Pi * 2.0 * y / Ly)
+#if AMREX_SPACEDIM == 3
+           * std::sin(2.0 * Pi * 7.0 * z / Lz)
+#endif
+      );
     const amrex::Real pv =
       (std::cos(2.0 * Pi * 4.0 * x / Lx) *
-         std::sin(2.0 * Pi * 4.0 * y / Ly + 0.31) *
-         std::cos(2.0 * Pi * 3.0 * z / Lz + 0.77) +
-       std::cos(2.0 * Pi * 6.0 * x / Lx + 0.55) *
-         std::sin(2.0 * Pi * 2.0 * y / Ly) * std::cos(2.0 * Pi * 5.0 * z / Lz) +
-       std::cos(2.0 * Pi * 9.0 * x / Lx) *
-         std::sin(2.0 * Pi * 3.0 * y / Ly - 0.22) *
-         std::cos(2.0 * Pi * 6.0 * z / Lz + 1.05));
+         std::sin(2.0 * Pi * 4.0 * y / Ly + 0.31)
+#if AMREX_SPACEDIM == 3
+         * std::cos(2.0 * Pi * 3.0 * z / Lz + 0.77)
+#endif
+       + std::cos(2.0 * Pi * 6.0 * x / Lx + 0.55) *
+           std::sin(2.0 * Pi * 2.0 * y / Ly)
+#if AMREX_SPACEDIM == 3
+           * std::cos(2.0 * Pi * 5.0 * z / Lz)
+#endif
+       + std::cos(2.0 * Pi * 9.0 * x / Lx) *
+           std::sin(2.0 * Pi * 3.0 * y / Ly - 0.22)
+#if AMREX_SPACEDIM == 3
+           * std::cos(2.0 * Pi * 6.0 * z / Lz + 1.05)
+#endif
+      );
+#if AMREX_SPACEDIM == 3
     const amrex::Real pw =
       (std::sin(2.0 * Pi * 5.0 * x / Lx + 0.65) *
          std::cos(2.0 * Pi * 3.0 * y / Ly) *
@@ -100,19 +120,19 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
        std::sin(2.0 * Pi * 2.0 * x / Lx - 0.93) *
          std::cos(2.0 * Pi * 5.0 * y / Ly) *
          std::sin(2.0 * Pi * 6.0 * z / Lz + 0.12));
+#endif
 
     // Sum-of-three triads has amplitude up to ~3; normalise back to ~1
     // so the final scaling is exactly `A` per component.
-    const amrex::Real norm = 1.0 / 3.0;
+    const amrex::Real norm = 1.0 / AMREX_SPACEDIM;
 
     if (in_step_block) {
-      state(i, j, k, VELX) = 0.0;
-      state(i, j, k, VELY) = 0.0;
-      state(i, j, k, VELZ) = 0.0;
+      AMREX_D_TERM(state(i, j, k, VELX) = 0.0;, state(i, j, k, VELY) = 0.0;
+                   , state(i, j, k, VELZ) = 0.0;);
     } else {
-      state(i, j, k, VELX) = U + A * wy * pu * norm;
-      state(i, j, k, VELY) = 0.0 + A * wy * pv * norm;
-      state(i, j, k, VELZ) = 0.0 + A * wy * pw * norm;
+      AMREX_D_TERM(state(i, j, k, VELX) = U + A * wy * pu * norm;
+                   , state(i, j, k, VELY) = 0.0 + A * wy * pv * norm;
+                   , state(i, j, k, VELZ) = 0.0 + A * wy * pw * norm;);
     }
 
     if (!(is_incompressible == 0)) {

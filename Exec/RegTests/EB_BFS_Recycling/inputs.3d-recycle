@@ -51,7 +51,7 @@ peleLM.chem_integrator = "ReactorNull"
 # post-step flow.
 peleLM.use_inlet_from_plane      = 1
 peleLM.inlet_plane_dir           = 0
-peleLM.inlet_plane_position      = 0.05
+peleLM.inlet_plane_position      = 0.065
 # Let the first couple flow-throughs populate the mean before injecting
 # anything. Flow-through = L_x / U = 0.08/10 = 0.008 s; at dt ~ 1.25e-5
 # that is ~640 steps. 500 warmup steps covers ~0.8 flow-through.

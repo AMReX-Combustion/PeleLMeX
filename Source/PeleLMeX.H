@@ -1810,6 +1810,8 @@ public:
   amrex::Vector<amrex::BCRec> fetchBCRecArray(const int scomp, const int ncomp);
   amrex::Vector<amrex::BCRec>
   fetchBCRecAuxArray(const int scomp, const int ncomp);
+  amrex::Vector<amrex::BCRec>
+  fetchBCRecDummyArray(const int scomp, const int ncomp);
   amrex::Vector<int> fetchAdvTypeArray(const int scomp, const int ncomp);
   amrex::Vector<int> fetchDiffTypeArray(const int scomp, const int ncomp);
   amrex::Vector<int> fetchAdvTypeAuxArray(const int scomp, const int ncomp);
@@ -1863,6 +1865,7 @@ public:
   amrex::BCRec m_bcrec_divu;
   amrex::Vector<amrex::BCRec> m_bcrec_force;
   amrex::Vector<amrex::BCRec> m_bcrec_aux;
+  amrex::BCRec m_bcrec_dummy;
 
   // Recycling-plane inflow controls (see fillFromRecyclingPlane).
   // Recycling injects a zero-mean fluctuation onto the inflow ghost cells:
