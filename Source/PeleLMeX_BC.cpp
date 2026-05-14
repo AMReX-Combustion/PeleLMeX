@@ -1151,7 +1151,7 @@ PeleLM::setInflowBoundaryVel(
       PeleLMCCFillExtDirState<ProblemSpecificFunctions>{
         lprobparm, lpmfdata, m_nAux,
         static_cast<int>(turb_inflow.is_initialized()),
-        static_cast<int>(m_use_inlet_from_plane)});
+        m_use_inlet_from_plane});
 
   bndry_func(a_vel, 0, AMREX_SPACEDIM, a_vel.nGrowVect(), time, 0);
 
