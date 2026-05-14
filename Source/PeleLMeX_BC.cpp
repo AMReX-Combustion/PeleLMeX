@@ -1379,13 +1379,14 @@ PeleLM::buildRecyclingPlaneStorage()
     }
   }
 
-  if (saved_initialized && !full_reseed) {
-    // Carry the running statistics forward.
+  if (saved_initialized) {
+    // Carry the running statistics forward for any levels that already had
+    // accumulated means. Newly created levels were initialized above without
+    // discarding the existing running statistics.
     m_inlet_recycling.initialized = true;
     m_inlet_recycling.n_samples = saved_n_samples;
   } else {
-    // No prior mean, or a new level appeared and we don't have a mean for it
-    // — let the next snapshot reseed cleanly.
+    // No prior running statistics were available; let the next snapshot seed.
     m_inlet_recycling.initialized = false;
     m_inlet_recycling.n_samples = 0;
   }

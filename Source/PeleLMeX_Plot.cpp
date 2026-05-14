@@ -587,12 +587,14 @@ PeleLM::WriteHeader(const std::string& name, const bool is_checkpoint) const
     const bool recycling_active =
       (m_use_inlet_from_plane != 0) && m_inlet_recycling.initialized &&
       static_cast<int>(m_inlet_recycling.mean_src.size()) >= finest_level + 1;
-    HeaderFile << "RecyclingPlane: " << (recycling_active ? 1 : 0) << "\n";
-    if (recycling_active) {
-      HeaderFile << m_inlet_recycling.n_samples << "\n";
-      for (int lev = 0; lev <= finest_level; ++lev) {
-        m_inlet_recycling.mean_src[lev]->boxArray().writeOn(HeaderFile);
-        HeaderFile << "\n";
+    if (m_use_inlet_from_plane != 0) {
+      HeaderFile << "RecyclingPlane: " << (recycling_active ? 1 : 0) << "\n";
+      if (recycling_active) {
+        HeaderFile << m_inlet_recycling.n_samples << "\n";
+        for (int lev = 0; lev <= finest_level; ++lev) {
+          m_inlet_recycling.mean_src[lev]->boxArray().writeOn(HeaderFile);
+          HeaderFile << "\n";
+        }
       }
     }
   }
