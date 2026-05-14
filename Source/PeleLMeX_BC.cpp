@@ -1657,12 +1657,13 @@ PeleLM::fillFromRecyclingPlane(amrex::MultiFab& a_vel, int vel_comp, int lev)
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif
-      for (amrex::MFIter mfi(fluct); mfi.isValid(); ++mfi) {
-        const amrex::Box& src_bx = fluct[mfi].box();
-        const amrex::Box dst_bx = amrex::shift(src_bx, shift);
-        shifted_fluct[mfi].copy(
-          fluct[mfi], src_bx, 0, dst_bx, 0, fluct.nComp());
-      }
+	  for (amrex::MFIter mfi(fluct); mfi.isValid(); ++mfi) {
+		amrex::FArrayBox const& src_fab = fluct[mfi];
+		amrex::FArrayBox& dst_fab = shifted_fluct[mfi];
+		const amrex::Box& src_bx = src_fab.box();
+		const amrex::Box dst_bx = amrex::shift(src_bx, shift);
+		dst_fab.copy(src_fab, src_bx, 0, dst_bx, 0, fluct.nComp());
+	  }
 
       a_vel.ParallelCopy(
         shifted_fluct, 0, vel_comp, AMREX_SPACEDIM, 0, nGrowDest);
