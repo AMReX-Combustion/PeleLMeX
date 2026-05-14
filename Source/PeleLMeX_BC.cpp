@@ -1663,7 +1663,7 @@ PeleLM::fillFromRecyclingPlane(amrex::MultiFab& a_vel, int vel_comp, int lev)
 
     if (need_lo) {
       for (int g = 1; g <= nGrowDest; ++g) {
-        const int nshift = srcIndex - domain.smallEnd(planeDir) + g;
+        const int nshift = -(srcIndex - domain.smallEnd(planeDir) + g);
         const auto shift = amrex::BASISV(planeDir) * nshift;
         copy_shifted_fluct(shift);
       }
