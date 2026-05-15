@@ -1565,6 +1565,7 @@ PeleLM::fillFromRecyclingPlane(amrex::MultiFab& a_vel, int vel_comp, int lev)
 
   const int planeDir = m_inlet_plane_dir;
   const int srcIndex = computeRecyclingSrcIndex(lev);
+  const amrex::Box& domain = geom[lev].Domain();
 
   auto velBCRec = fetchBCRecArray(VELX, AMREX_SPACEDIM);
   const amrex::BoxArray& ba = a_vel.boxArray();
