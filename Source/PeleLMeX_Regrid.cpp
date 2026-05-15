@@ -422,7 +422,7 @@ PeleLM::MakeNewLevelFromCoarse(
 
   // Recycling-plane storage spans whatever set of AMR levels currently exists
   // and must be rebuilt whenever that changes.
-  m_recyclingNeedsRebuild = 1;
+  m_recyclingNeedsRebuild = true;
 }
 
 void
@@ -542,7 +542,7 @@ PeleLM::RemakeLevel(
 
   // Recycling-plane storage spans whatever set of AMR levels currently exists
   // and must be rebuilt whenever that changes.
-  m_recyclingNeedsRebuild = 1;
+  m_recyclingNeedsRebuild = true;
 }
 
 void
@@ -577,7 +577,7 @@ PeleLM::ClearLevel(const int lev)
   m_loadBalanceEff[lev] = -1.0;
 
   // Recycling-plane storage covers all current levels; flag for rebuild.
-  m_recyclingNeedsRebuild = 1;
+  m_recyclingNeedsRebuild = true;
 }
 
 void

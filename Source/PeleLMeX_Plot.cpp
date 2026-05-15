@@ -957,7 +957,7 @@ PeleLM::ReadCheckPointFile()
     m_inlet_recycling.n_samples = chk_recycling_n_samples;
     // Storage was just rebuilt from current-run geometry; the regrid hooks
     // may set this back to 1 later, which is fine.
-    m_recyclingNeedsRebuild = 0;
+    m_recyclingNeedsRebuild = false;
   } else if (have_recycling_chk && (m_use_inlet_from_plane == 0)) {
     amrex::Print()
       << "WARNING: Restart checkpoint contains RecyclingPlane data, but "

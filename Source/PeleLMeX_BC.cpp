@@ -1433,7 +1433,7 @@ PeleLM::updateRecyclingPlaneSnapshot()
       // boundary.
       // NOTE: Declared as InterpBase* (not auto* / MFPCInterp*) so AMReX's
       // FillPatchInterp dispatches through its runtime dynamic_cast path
-      // and picks the MultiFab-based interpolater entry point.
+      // and picks the MultiFab-based interpolator entry point.
       amrex::InterpBase* mapper = &amrex::mf_pc_interp;
       amrex::PhysBCFunct<amrex::GpuBndryFuncFab<
         PeleLMCCFillExtDirState<ProblemSpecificFunctions>>>
