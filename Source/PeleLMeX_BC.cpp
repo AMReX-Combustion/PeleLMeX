@@ -1709,8 +1709,9 @@ PeleLM::fillFromRecyclingPlane(amrex::MultiFab& a_vel, int vel_comp, int lev)
           const bool abuts =
             is_lo ? (valid.smallEnd(planeDir) == domain.smallEnd(planeDir))
                   : (valid.bigEnd(planeDir) == domain.bigEnd(planeDir));
-          if (!abuts)
+          if (!abuts) {
             continue;
+          }
 
           amrex::FArrayBox& fab = a_vel[mfi];
 
