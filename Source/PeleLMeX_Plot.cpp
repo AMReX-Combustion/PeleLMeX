@@ -581,24 +581,27 @@ PeleLM::WriteHeader(const std::string& name, const bool is_checkpoint) const
       HeaderFile << typical_value << "\n";
     }
 
-    // Optional recycling-plane block. Always emitted so the marker line is
-    // unambiguous; older checkpoints without it remain readable because the
-    // restart code treats the absence of the marker as "inactive".
+    // Optional recycling-plane block. When inlet-from-plane is enabled, always
+    // emit the full block so the on-disk format is uniform regardless of
+    // initialization state. "RecyclingPlane: 0" means the feature was enabled
+    // but no recycling samples were available yet; older checkpoints without
+    // the marker remain readable because the restart code treats the absence
+    // of the marker as "inactive".
     const bool recycling_active =
       (m_use_inlet_from_plane != 0) && m_inlet_recycling.initialized &&
       static_cast<int>(m_inlet_recycling.mean_src.size()) >= finest_level + 1;
     if (m_use_inlet_from_plane != 0) {
       HeaderFile << "RecyclingPlane: " << (recycling_active ? 1 : 0) << "\n";
-      if (recycling_active) {
-        HeaderFile << m_inlet_recycling.n_samples << "\n";
-        for (int lev = 0; lev <= finest_level; ++lev) {
-          const bool planePresent = m_inlet_recycling.mean_src[lev] != nullptr;
-          HeaderFile << "RecyclingPlanePresent: " << (planePresent ? 1 : 0)
-                     << "\n";
-          if (planePresent) {
-            m_inlet_recycling.mean_src[lev]->boxArray().writeOn(HeaderFile);
-            HeaderFile << "\n";
-          }
+      HeaderFile << (recycling_active ? m_inlet_recycling.n_samples : 0)
+                 << "\n";
+      for (int lev = 0; lev <= finest_level; ++lev) {
+        const bool planePresent =
+          recycling_active && (m_inlet_recycling.mean_src[lev] != nullptr);
+        HeaderFile << "RecyclingPlanePresent: " << (planePresent ? 1 : 0)
+                   << "\n";
+        if (planePresent) {
+          m_inlet_recycling.mean_src[lev]->boxArray().writeOn(HeaderFile);
+          HeaderFile << "\n";
         }
       }
     }
