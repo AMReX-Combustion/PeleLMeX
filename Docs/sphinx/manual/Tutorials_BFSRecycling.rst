@@ -299,7 +299,7 @@ The source-plane location is the single most influential parameter for
  four additional out-of-tree runs in which only
  ``peleLM.inlet_plane_position`` was changed, taking values from
  ``{0.05, 0.035, 0.005, 0.0095}`` to sweep the plane from the narrow
-observed in those separate runs are:
+ observed in those separate runs are:
 
 * **Plane upstream of the step edge (e.g.** :math:`x = 0.005,\, 0.0095`
   **).** The flow at the source plane is laminar boundary-layer
