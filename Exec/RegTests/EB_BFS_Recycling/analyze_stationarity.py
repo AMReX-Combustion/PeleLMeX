@@ -109,7 +109,7 @@ def main(path: Path):
         while t_c + window <= t_end:
             trl = running_mean(ke, times, t_c - window, t_c)
             lead = running_mean(ke, times, t_c, t_c + window)
-            if trl and lead:
+            if trl is not None and lead is not None:
                 if abs(lead - trl) / max(abs(trl), 1e-30) < TOL:
                     passes += 1
                 checks += 1
@@ -151,7 +151,7 @@ def main(path: Path):
         # Still developing -- report most recent window trend
         last_trail = running_mean(ke, times, t_end - 2 * window, t_end - window)
         last_lead = running_mean(ke, times, t_end - window, t_end)
-        if last_trail and last_lead:
+        if last_trail is not None and last_lead is not None:
             rel = (last_lead - last_trail) / max(abs(last_trail), 1e-30)
             print()
             print(f"Not yet stationary. Most recent KE shift: {rel*100:+.2f}% "

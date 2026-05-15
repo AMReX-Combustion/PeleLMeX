@@ -1810,8 +1810,7 @@ public:
   amrex::Vector<amrex::BCRec> fetchBCRecArray(const int scomp, const int ncomp);
   amrex::Vector<amrex::BCRec>
   fetchBCRecAuxArray(const int scomp, const int ncomp);
-  amrex::Vector<amrex::BCRec>
-  fetchBCRecDummyArray(const int scomp, const int ncomp);
+  amrex::Vector<amrex::BCRec> fetchBCRecDummyArray(const int ncomp);
   amrex::Vector<int> fetchAdvTypeArray(const int scomp, const int ncomp);
   amrex::Vector<int> fetchDiffTypeArray(const int scomp, const int ncomp);
   amrex::Vector<int> fetchAdvTypeAuxArray(const int scomp, const int ncomp);
@@ -1883,7 +1882,7 @@ public:
   int m_inlet_plane_warmup_steps = 0;
   // Set to 1 whenever per-level thin-slab storage needs to be rebuilt
   // (initialization, regrid). Consumed by updateRecyclingPlaneSnapshot.
-  bool m_recyclingNeedsRebuild = true;
+  bool m_recycling_needs_rebuild = true;
 
   // Per-level thin-slab storage for the recycling plane: one cell thick along
   // m_inlet_plane_dir, spanning the full transverse cross-section at the

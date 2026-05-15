@@ -592,8 +592,13 @@ PeleLM::WriteHeader(const std::string& name, const bool is_checkpoint) const
       if (recycling_active) {
         HeaderFile << m_inlet_recycling.n_samples << "\n";
         for (int lev = 0; lev <= finest_level; ++lev) {
-          m_inlet_recycling.mean_src[lev]->boxArray().writeOn(HeaderFile);
-          HeaderFile << "\n";
+          const bool planePresent = m_inlet_recycling.mean_src[lev] != nullptr;
+          HeaderFile << "RecyclingPlanePresent: " << (planePresent ? 1 : 0)
+                     << "\n";
+          if (planePresent) {
+            m_inlet_recycling.mean_src[lev]->boxArray().writeOn(HeaderFile);
+            HeaderFile << "\n";
+          }
         }
       }
     }
@@ -833,8 +838,14 @@ PeleLM::ReadCheckPointFile()
         GotoNextLine(is);
         chk_recycling_ba.resize(finest_level + 1);
         for (int lev = 0; lev <= finest_level; ++lev) {
-          chk_recycling_ba[lev].readFrom(is);
-          GotoNextLine(is);
+          std::string level_marker;
+          int level_present;
+          is >> level_marker >> level_present;
+          AMREX_ASSERT(level_marker == "RecyclingPlanePresent:");
+          if (level_present != 0) {
+            chk_recycling_ba[lev].readFrom(is);
+            GotoNextLine(is);
+          }
         }
         have_recycling_chk = true;
       }
@@ -955,9 +966,15 @@ PeleLM::ReadCheckPointFile()
     }
     m_inlet_recycling.initialized = true;
     m_inlet_recycling.n_samples = chk_recycling_n_samples;
+    if (m_inlet_recycling.n_samples <= m_inlet_plane_warmup_steps) {
+      amrex::Print()
+        << "WARNING: Current setting for inlet_plane_warmup_steps is less than"
+        << "checkpointed n_samples. Injected fluctuations will be computed"
+        << "against restored mean.\n";
+    }
     // Storage was just rebuilt from current-run geometry; the regrid hooks
     // may set this back to 1 later, which is fine.
-    m_recyclingNeedsRebuild = false;
+    m_recycling_needs_rebuild = false;
   } else if (have_recycling_chk && (m_use_inlet_from_plane == 0)) {
     amrex::Print()
       << "WARNING: Restart checkpoint contains RecyclingPlane data, but "
