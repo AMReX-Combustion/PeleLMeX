@@ -34,7 +34,6 @@ class CompTestCase(unittest.TestCase):
         file_name = os.path.join(file_dir, "temporals/tempExtremas")
         col_names = ["time", "max_density", "max_rho.Y(AR)", "max_rho.Y(N2)", "max_rho.Y(CO2)"]
         var_names = ["AR", "N2", "CO2"]
-        #data = pd.read_csv(file_name, usecols=col_names, delimiter=',')
         data = read_last_dataset(file_name, usecols=col_names, delimiter=',')
         print("Raw data:\n", data)
 

@@ -28,7 +28,6 @@ class SpeciesBalTestCase(unittest.TestCase):
         # Load the data
         fdir = os.path.abspath(".")
         fname = os.path.join(fdir, "temporals/tempSpecies")
-        #df = pd.read_csv(fname)
         df = read_last_dataset(fname)
         print(df)
         for col in df.columns:

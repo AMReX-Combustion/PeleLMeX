@@ -844,6 +844,7 @@ PeleLM::ReadCheckPointFile()
           std::string level_marker;
           int level_present;
           is >> level_marker >> level_present;
+          GotoNextLine(is);
           AMREX_ASSERT(level_marker == "RecyclingPlanePresent:");
           if (level_present != 0) {
             chk_recycling_ba[lev].readFrom(is);
@@ -971,8 +972,8 @@ PeleLM::ReadCheckPointFile()
     m_inlet_recycling.n_samples = chk_recycling_n_samples;
     if (m_inlet_recycling.n_samples <= m_inlet_plane_warmup_steps) {
       amrex::Print()
-        << "WARNING: Current setting for inlet_plane_warmup_steps is less than"
-        << "checkpointed n_samples. Injected fluctuations will be computed"
+        << "WARNING: Current setting for inlet_plane_warmup_steps is less than "
+        << "checkpointed n_samples. Injected fluctuations will be computed "
         << "against restored mean.\n";
     }
     // Storage was just rebuilt from current-run geometry; the regrid hooks

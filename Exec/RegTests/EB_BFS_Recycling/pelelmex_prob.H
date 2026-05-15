@@ -124,7 +124,7 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
 
     // Sum-of-three triads has amplitude up to ~3; normalise back to ~1
     // so the final scaling is exactly `A` per component.
-    const amrex::Real norm = 1.0 / AMREX_SPACEDIM;
+    const amrex::Real norm = 1.0 / 3.0;
 
     if (in_step_block) {
       AMREX_D_TERM(state(i, j, k, VELX) = 0.0;, state(i, j, k, VELY) = 0.0;

@@ -252,7 +252,8 @@ PeleLM::setBoundaryConditions()
       }
     }
 #endif
-    // Dummy
+    // Used by fetchBCRecDummyArray for slab interpolation in interior-only
+    // contexts where domain BCs must not be applied
     for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
       m_bcrec_dummy.setLo(idim, amrex::BCType::int_dir);
       m_bcrec_dummy.setHi(idim, amrex::BCType::int_dir);
@@ -1310,12 +1311,10 @@ PeleLM::buildRecyclingPlaneStorage()
     const auto& level_pmap = level_dm.ProcessorMap();
     amrex::BoxList slab_bl;
     amrex::Vector<int> slab_pmap;
-    for (int ibox = 0; ibox < level_ba.size(); ++ibox) {
-      amrex::Box isect = level_ba[ibox] & slab;
-      if (isect.ok()) {
-        slab_bl.push_back(isect);
-        slab_pmap.push_back(level_pmap[ibox]);
-      }
+    const auto isects = level_ba.intersections(slab);
+    for (const auto& isect : isects) {
+      slab_bl.push_back(isect.second);
+      slab_pmap.push_back(level_pmap[isect.first]);
     }
 
     if (slab_pmap.empty()) {
@@ -1410,6 +1409,8 @@ PeleLM::updateRecyclingPlaneSnapshot()
 
   ProbParm const* lprobparm = prob_parm_d;
   auto const* lpmfdata = pmf_data.device_parm();
+  // Sample plane will have all-int_dir dummy BCRecs to disable boundary
+  // handling
   auto velBCRec = fetchBCRecDummyArray(AMREX_SPACEDIM);
   // The time used by InterpFromCoarseLevel is mostly informational here
   // (the slab is in the interior, so PhysBCFunct calls on its temporaries
@@ -1564,12 +1565,6 @@ PeleLM::fillFromRecyclingPlane(amrex::MultiFab& a_vel, int vel_comp, int lev)
 
   const int planeDir = m_inlet_plane_dir;
   const int srcIndex = computeRecyclingSrcIndex(lev);
-  const amrex::Box& domain = geom[lev].Domain();
-  AMREX_ALWAYS_ASSERT_WITH_MESSAGE(
-    srcIndex >= domain.smallEnd(planeDir) &&
-      srcIndex <= domain.bigEnd(planeDir),
-    "fillFromRecyclingPlane: recycling plane source index lies outside the "
-    "domain on this level.");
 
   auto velBCRec = fetchBCRecArray(VELX, AMREX_SPACEDIM);
   const amrex::BoxArray& ba = a_vel.boxArray();

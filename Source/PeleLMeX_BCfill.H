@@ -115,8 +115,8 @@ struct PeleLMCCFillExtDirState
           iv_in[idir] = iv_in[idir] - 1;
           const auto s_in = state.cellData(iv_in[0], iv_in[1], iv_in[2]);
 
-          // If using TurbInflow, pass in the turbulent data. User can overwrite
-          // if needed
+          // If using TurbInflow or inlet_from_plane, pass in the sampled data.
+          // User can overwrite or increment, as needed
           if (m_do_turbInflow != 0 || m_do_inlet_from_plane != 0) {
             if (n >= VELX && n < DENSITY) {
               if (!isnan(
