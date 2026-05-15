@@ -452,7 +452,7 @@ PeleLM::fillpatch_state(
         PeleLMCCFillExtDirState<ProblemSpecificFunctions>{
           lprobparm, lpmfdata, m_nAux,
           static_cast<int>(turb_inflow.is_initialized()),
-          static_cast<int>(m_use_inlet_from_plane)});
+          m_use_inlet_from_plane});
     FillPatchSingleLevel(
       a_state, amrex::IntVect(nGhost), a_time,
       {&(m_leveldata_old[lev]->state), &(m_leveldata_new[lev]->state)},
@@ -469,7 +469,7 @@ PeleLM::fillpatch_state(
         PeleLMCCFillExtDirState<ProblemSpecificFunctions>{
           lprobparm, lpmfdata, m_nAux,
           static_cast<int>(turb_inflow.is_initialized()),
-          static_cast<int>(m_use_inlet_from_plane)});
+          m_use_inlet_from_plane});
     amrex::PhysBCFunct<
       amrex::GpuBndryFuncFab<PeleLMCCFillExtDirState<ProblemSpecificFunctions>>>
       fine_bndry_func(
@@ -477,7 +477,7 @@ PeleLM::fillpatch_state(
         PeleLMCCFillExtDirState<ProblemSpecificFunctions>{
           lprobparm, lpmfdata, m_nAux,
           static_cast<int>(turb_inflow.is_initialized()),
-          static_cast<int>(m_use_inlet_from_plane)});
+          m_use_inlet_from_plane});
     FillPatchTwoLevels(
       a_state, amrex::IntVect(nGhost), a_time,
       {&(m_leveldata_old[lev - 1]->state), &(m_leveldata_new[lev - 1]->state)},
@@ -970,7 +970,7 @@ PeleLM::fillcoarsepatch_state(
       PeleLMCCFillExtDirState<ProblemSpecificFunctions>{
         lprobparm, lpmfdata, m_nAux,
         static_cast<int>(turb_inflow.is_initialized()),
-        static_cast<int>(m_use_inlet_from_plane)});
+        m_use_inlet_from_plane});
   amrex::PhysBCFunct<
     amrex::GpuBndryFuncFab<PeleLMCCFillExtDirState<ProblemSpecificFunctions>>>
     fine_bndry_func(
@@ -978,7 +978,7 @@ PeleLM::fillcoarsepatch_state(
       PeleLMCCFillExtDirState<ProblemSpecificFunctions>{
         lprobparm, lpmfdata, m_nAux,
         static_cast<int>(turb_inflow.is_initialized()),
-        static_cast<int>(m_use_inlet_from_plane)});
+        m_use_inlet_from_plane});
   InterpFromCoarseLevel(
     a_state, amrex::IntVect(nGhost), a_time, m_leveldata_new[lev - 1]->state, 0,
     0, nCompState, geom[lev - 1], geom[lev], crse_bndry_func, 0,
@@ -1395,9 +1395,9 @@ PeleLM::updateRecyclingPlaneSnapshot()
     return;
   }
 
-  if (m_recyclingNeedsRebuild != 0) {
+  if (m_recyclingNeedsRebuild) {
     buildRecyclingPlaneStorage();
-    m_recyclingNeedsRebuild = 0;
+    m_recyclingNeedsRebuild = false;
   }
 
   // The new-time velocity is what we sample; ensure storage exists.
@@ -1442,7 +1442,7 @@ PeleLM::updateRecyclingPlaneSnapshot()
           PeleLMCCFillExtDirState<ProblemSpecificFunctions>{
             lprobparm, lpmfdata, m_nAux,
             static_cast<int>(turb_inflow.is_initialized()),
-            static_cast<int>(m_use_inlet_from_plane)});
+            m_use_inlet_from_plane});
       amrex::PhysBCFunct<amrex::GpuBndryFuncFab<
         PeleLMCCFillExtDirState<ProblemSpecificFunctions>>>
         fine_bndry_func(
@@ -1450,7 +1450,7 @@ PeleLM::updateRecyclingPlaneSnapshot()
           PeleLMCCFillExtDirState<ProblemSpecificFunctions>{
             lprobparm, lpmfdata, m_nAux,
             static_cast<int>(turb_inflow.is_initialized()),
-            static_cast<int>(m_use_inlet_from_plane)});
+            m_use_inlet_from_plane});
       amrex::InterpFromCoarseLevel(
         u_src, amrex::IntVect(0), a_time, *m_inlet_recycling.u_src[lev - 1], 0,
         0, AMREX_SPACEDIM, geom[lev - 1], geom[lev], crse_bndry_func, 0,
