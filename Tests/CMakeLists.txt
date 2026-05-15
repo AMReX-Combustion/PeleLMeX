@@ -90,10 +90,50 @@ endmacro(setup_test)
 
 # Standard regression test
 function(add_test_r TEST_NAME TEST_EXE_DIR)
+    cmake_parse_arguments(ATR "" "RESTART_STEP" "" ${ARGN})
+
     setup_test()
     set(RUNTIME_OPTIONS "amr.max_step=10 ${RUNTIME_OPTIONS}")
-    add_test(${TEST_NAME} bash -c "set -o pipefail && ${MPI_COMMANDS} ${CURRENT_TEST_EXE} ${MPIEXEC_POSTFLAGS} ${CURRENT_TEST_BINARY_DIR}/${TEST_NAME}.inp ${RUNTIME_OPTIONS} 2>&1 | tee ${TEST_NAME}.log ${SAVE_GOLDS_COMMAND} ${FCOMPARE_COMMAND}")
-    set_tests_properties(${TEST_NAME} PROPERTIES TIMEOUT 18000 PROCESSORS ${PELE_NP} WORKING_DIRECTORY "${CURRENT_TEST_BINARY_DIR}/" LABELS "regression" ATTACHED_FILES "${CURRENT_TEST_BINARY_DIR}/${TEST_NAME}.log")
+
+    # Give every test its own private run directory so that ctest -j cannot
+    # clobber plt*/chk*/Backtrace.* between tests that share TEST_EXE_DIR.
+    set(TEST_RUN_DIR "${CURRENT_TEST_BINARY_DIR}/${TEST_NAME}")
+    file(MAKE_DIRECTORY "${TEST_RUN_DIR}")
+
+    if(DEFINED ATR_RESTART_STEP)
+        # Two-phase restart variant:
+        #   phase 1 runs RESTART_STEP steps and writes a checkpoint;
+        #   phase 2 restarts from that checkpoint and runs through step 10,
+        #   with fcompare applied to plt00010 from the restarted run.
+        # Zero-pad RESTART_STEP to AMReX's 5-digit chk format (chkNNNNN).
+        set(_padded "0000${ATR_RESTART_STEP}")
+        string(LENGTH "${_padded}" _len)
+        math(EXPR _start "${_len} - 5")
+        string(SUBSTRING "${_padded}" ${_start} 5 _step_padded)
+
+        set(P1_OPTS "amr.max_step=${ATR_RESTART_STEP} amr.check_int=${ATR_RESTART_STEP} amr.plot_int=-1 amr.check_file=chk")
+        set(P2_OPTS "amr.restart=chk${_step_padded} amr.max_step=10 amr.check_int=-1")
+
+        add_test(${TEST_NAME} bash -c "set -o pipefail \
+&& ${MPI_COMMANDS} ${CURRENT_TEST_EXE} ${MPIEXEC_POSTFLAGS} ${CURRENT_TEST_BINARY_DIR}/${TEST_NAME}.inp ${RUNTIME_OPTIONS} ${P1_OPTS} 2>&1 | tee ${TEST_NAME}.phase1.log \
+&& ${MPI_COMMANDS} ${CURRENT_TEST_EXE} ${MPIEXEC_POSTFLAGS} ${CURRENT_TEST_BINARY_DIR}/${TEST_NAME}.inp ${RUNTIME_OPTIONS} ${P2_OPTS} 2>&1 | tee ${TEST_NAME}.phase2.log ${SAVE_GOLDS_COMMAND} ${FCOMPARE_COMMAND}")
+
+        set_tests_properties(${TEST_NAME} PROPERTIES
+            TIMEOUT 18000
+            PROCESSORS ${PELE_NP}
+            WORKING_DIRECTORY "${TEST_RUN_DIR}/"
+            LABELS "regression"
+            ATTACHED_FILES "${TEST_RUN_DIR}/${TEST_NAME}.phase1.log;${TEST_RUN_DIR}/${TEST_NAME}.phase2.log")
+    else()
+        add_test(${TEST_NAME} bash -c "set -o pipefail && ${MPI_COMMANDS} ${CURRENT_TEST_EXE} ${MPIEXEC_POSTFLAGS} ${CURRENT_TEST_BINARY_DIR}/${TEST_NAME}.inp ${RUNTIME_OPTIONS} 2>&1 | tee ${TEST_NAME}.log ${SAVE_GOLDS_COMMAND} ${FCOMPARE_COMMAND}")
+
+        set_tests_properties(${TEST_NAME} PROPERTIES
+            TIMEOUT 18000
+            PROCESSORS ${PELE_NP}
+            WORKING_DIRECTORY "${TEST_RUN_DIR}/"
+            LABELS "regression"
+            ATTACHED_FILES "${TEST_RUN_DIR}/${TEST_NAME}.log")
+    endif()
 endfunction(add_test_r)
 
 # Regression test with mass conservation verification
@@ -258,18 +298,7 @@ else()
     add_test_r(eb_bfs_recycle_warmup  EB_BackwardStepFlame)
     add_test_r(eb_bfs_recycle_window  EB_BackwardStepFlame)
     add_test_r(eb_bfs_recycle_amr     EB_BackwardStepFlame)
-    # Two-phase restart variant: phase 1 runs 5 steps and writes chk00005;
-    # phase 2 restarts from chk00005 and runs through step 10, with fcompare
-    # applied to plt00010 from the restarted run.
-    set(TEST_NAME eb_bfs_recycle_restart)
-    set(TEST_EXE_DIR EB_BackwardStepFlame)
-    setup_test()
-    set(P1_OPTS "amr.max_step=5 amr.check_int=5 amr.plot_int=-1 amr.check_file=chk")
-    set(P2_OPTS "amr.restart=chk00005 amr.max_step=10 amr.check_int=-1")
-    add_test(${TEST_NAME} bash -c "set -o pipefail && rm -rf chk* plt* \
-&& ${MPI_COMMANDS} ${CURRENT_TEST_EXE} ${MPIEXEC_POSTFLAGS} ${CURRENT_TEST_BINARY_DIR}/${TEST_NAME}.inp ${RUNTIME_OPTIONS} ${P1_OPTS} 2>&1 | tee ${TEST_NAME}.phase1.log \
-&& ${MPI_COMMANDS} ${CURRENT_TEST_EXE} ${MPIEXEC_POSTFLAGS} ${CURRENT_TEST_BINARY_DIR}/${TEST_NAME}.inp ${RUNTIME_OPTIONS} ${P2_OPTS} 2>&1 | tee ${TEST_NAME}.phase2.log ${SAVE_GOLDS_COMMAND} ${FCOMPARE_COMMAND}")
-    set_tests_properties(${TEST_NAME} PROPERTIES TIMEOUT 18000 PROCESSORS ${PELE_NP} WORKING_DIRECTORY "${CURRENT_TEST_BINARY_DIR}/" LABELS "regression" ATTACHED_FILES "${CURRENT_TEST_BINARY_DIR}/${TEST_NAME}.phase1.log;${CURRENT_TEST_BINARY_DIR}/${TEST_NAME}.phase2.log")
+	add_test_r(eb_bfs_recycle_restart EB_BackwardStepFlame RESTART_STEP 5)
   endif()
   add_test_r(eb-odeqty-${PELE_DIM}d EB_ODEQty)
 endif()
