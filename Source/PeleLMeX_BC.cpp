@@ -1286,11 +1286,6 @@ PeleLM::buildRecyclingPlaneStorage()
   m_inlet_recycling.mask.resize(nlevels);
 #endif
 
-  // If a level was added by this regrid, we have no saved mean for it. Falling
-  // back to a fresh reseed is safer than zero-mean (which would inject the
-  // full instantaneous velocity, not a fluctuation, on the new level).
-  bool full_reseed = false;
-
   for (int lev = 0; lev < nlevels; ++lev) {
     const int srcIndex = computeRecyclingSrcIndex(lev);
     const amrex::Box& domain = geom[lev].Domain();
@@ -1377,9 +1372,6 @@ PeleLM::buildRecyclingPlaneStorage()
     } else {
       // Either we never had a mean, or this level didn't exist before.
       m_inlet_recycling.mean_src[lev]->setVal(0.0);
-      if (saved_initialized) {
-        full_reseed = true;
-      }
     }
   }
 
