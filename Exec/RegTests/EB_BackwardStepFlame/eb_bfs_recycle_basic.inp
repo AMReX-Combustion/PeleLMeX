@@ -56,7 +56,7 @@ amr.dt_change_max = 1.1
 #---------------------- IO CONTROL -------------------------------
 amr.plot_int = -1
 amr.check_int = -1
-amr.derive_plot_vars = avg_pressure mag_vort mass_fractions
+amr.derive_plot_vars = avg_pressure mag_vort
 
 #---------------------- Derived CONTROLS -------------------------
 peleLM.fuel_name = CH4

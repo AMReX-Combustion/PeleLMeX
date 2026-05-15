@@ -12,8 +12,6 @@ time steps. If no stationarity is reached in the available data, reports the
 trend of the last window instead.
 """
 
-from __future__ import annotations
-
 import csv
 import sys
 from pathlib import Path

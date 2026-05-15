@@ -58,7 +58,10 @@ struct DefaultProblemSpecificFunctions
    * recycling is used, s_in arrives here with the velocity fields preloaded
    * with those fluctuations. If neither option is activated, the fields are
    * preloaded with zero. Thus a += should be used for those fields to add
-   * fluctuating fields with the user-desired mean values.
+   * fluctuating fields with the user-desired mean values. Important: when
+   * this happens, user code MUST use s_ext[VELX+n] += ... rather than =
+   * for the velocity components, otherwise the preloaded fluctuation is
+   * overwritten.
    *
    * \param x                 the face center coordinates.
    * \param s_in              state in first cell (as ptr into Array4)

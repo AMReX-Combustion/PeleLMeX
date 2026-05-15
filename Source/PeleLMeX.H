@@ -1883,7 +1883,7 @@ public:
   int m_inlet_plane_warmup_steps = 0;
   // Set to 1 whenever per-level thin-slab storage needs to be rebuilt
   // (initialization, regrid). Consumed by updateRecyclingPlaneSnapshot.
-  int m_recyclingNeedsRebuild = 1;
+  bool m_recyclingNeedsRebuild = true;
 
   // Per-level thin-slab storage for the recycling plane: one cell thick along
   // m_inlet_plane_dir, spanning the full transverse cross-section at the

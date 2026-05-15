@@ -432,7 +432,11 @@ PeleLM::fillpatch_state(
 
   const int nCompState = (m_incompressible) != 0 ? AMREX_SPACEDIM : NVAR;
 
-  a_state.setBndry(0.0); // Add safety required for += ops in bcnormal
+  // Unconditionally zero ghost/boundary cells before fills because bcnormal
+  // later uses += on those locations. This is a behavior change for all
+  // callers/problems: any pre-existing ghost-cell boundary contents are
+  // discarded here, not just for recycling/turbulent inflow cases.
+  a_state.setBndry(0.0);
 
   fillTurbInflow(a_state, VELX, lev, a_time);
 
@@ -1417,7 +1421,7 @@ PeleLM::updateRecyclingPlaneSnapshot()
   const amrex::Real a_time = m_cur_time;
 
   for (int lev = 0; lev <= finest_level; ++lev) {
-    AMREX_ASSERT(m_inlet_recycling.u_src[lev] != null);
+    AMREX_ASSERT(m_inlet_recycling.u_src[lev] != nullptr);
     auto& u_src = *m_inlet_recycling.u_src[lev];
     const auto& state_lev = m_leveldata_new[lev]->state;
 
