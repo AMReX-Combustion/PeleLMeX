@@ -1,6 +1,7 @@
 #include <PeleLMeX.H>
 #include <PeleLMeX_BCfill.H>
 #include <AMReX_FillPatchUtil.H>
+#include <AMReX_REAL.H>
 #include <memory>
 #ifdef AMREX_USE_EB
 #include <AMReX_EBInterpolater.H>
@@ -1521,8 +1522,8 @@ PeleLM::updateRecyclingPlaneSnapshot()
   amrex::Real alpha;
   static bool warned_clipped_recycle_avg_window = false;
   if (m_inlet_plane_avg_window > 0.0) {
-    alpha = std::min(amrex::Real(1.0), m_dt / m_inlet_plane_avg_window);
-    if (alpha == amrex::Real(1.0) && !warned_clipped_recycle_avg_window) {
+    alpha = amrex::min<amrex::Real>(1.0, m_dt / m_inlet_plane_avg_window);
+    if (alpha == 1.0_rt && !warned_clipped_recycle_avg_window) {
       warned_clipped_recycle_avg_window = true;
       amrex::Print()
         << "WARNING: inlet_plane_avg_window <= dt, so recycle averaging "
@@ -1530,8 +1531,7 @@ PeleLM::updateRecyclingPlaneSnapshot()
            "sample and the fluctuation will be approximately zero.\n";
     }
   } else {
-    alpha =
-      1.0 / static_cast<amrex::Real>(std::max(1, m_inlet_recycling.n_samples));
+    alpha = 1.0 / amrex::max<amrex::Real>(1.0, m_inlet_recycling.n_samples);
   }
   const amrex::Real one_minus_alpha = 1.0 - alpha;
 
