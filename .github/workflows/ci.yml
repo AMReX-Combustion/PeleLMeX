@@ -234,7 +234,7 @@ jobs:
         if: env.DO_REF_COMPARE == 'true'
         working-directory: ${{runner.workspace}}/build-${{matrix.dim}}d-${{matrix.os}}-${{matrix.build_type}}-${{matrix.enable_eb}}-reference
         run : |
-          ctest ${{matrix.ctest_args}} -VV --output-on-failure
+          ctest ${{matrix.ctest_args}} -LE no-ref-compare -VV --output-on-failure
   CPU-CMake-SINGLE:
     needs: Formatting
     runs-on: ubuntu-24.04

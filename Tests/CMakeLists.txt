@@ -96,6 +96,13 @@ function(add_test_r TEST_NAME TEST_EXE_DIR)
     set_tests_properties(${TEST_NAME} PROPERTIES TIMEOUT 18000 PROCESSORS ${PELE_NP} WORKING_DIRECTORY "${CURRENT_TEST_BINARY_DIR}/" LABELS "regression" ATTACHED_FILES "${CURRENT_TEST_BINARY_DIR}/${TEST_NAME}.log")
 endfunction(add_test_r)
 
+# Regression test excluded from reference-comparison CI step (but still runs in the regular test step).
+# Use when a submodule update legitimately changes test output relative to the development branch.
+function(add_test_rn TEST_NAME TEST_EXE_DIR)
+    add_test_r(${TEST_NAME} ${TEST_EXE_DIR})
+    set_tests_properties(${TEST_NAME} PROPERTIES LABELS "regression;no-ref-compare")
+endfunction(add_test_rn)
+
 # Regression test with mass conservation verification
 function(add_test_rv TEST_NAME TEST_EXE_DIR)
     setup_test()
@@ -236,7 +243,13 @@ if(NOT PELE_ENABLE_EB)
     add_test_r(soot-rad-${PELE_DIM}d SootRadTest)
   endif()
   if(PELE_ENABLE_PARTICLES)
-    add_test_r(single-drop-evap-gcm-test SingleDropEvap)
+    # PelePhysics was updated in this branch to fix the 2D spray_density
+    # volume calculation (PelePhysics PR #669).  The development branch
+    # still has the old computation, so the reference-comparison step would
+    # always report a ~32x difference in spray_density / spray_vol_frac for
+    # 2D builds.  Use add_test_rn to keep the test running in the regular CI
+    # pass while skipping it in the reference-comparison pass.
+    add_test_rn(single-drop-evap-gcm-test SingleDropEvap)
   endif()
   if(PELE_DIM EQUAL 2)
     add_test_r(tripleflame-${PELE_DIM}d TripleFlame)
