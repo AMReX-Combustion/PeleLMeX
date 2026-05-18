@@ -27,7 +27,7 @@ Checks: 'bugprone-*,
          -readability-avoid-nested-conditional-operator,
          -readability-function-size'
 WarningsAsErrors: ''
-HeaderFilterRegex: 'PeleLMeX\/Source|PeleLMeX\/Exec|PeleLMeX\/Submodules\/PelePhysics\/Source|PeleLMeX\/Submodules\/PelePhysics\/Mechanism'
+HeaderFilterRegex: 'PeleLMeX\/(Source|Exec)|PeleLMeX\/Submodules\/PelePhysics\/(Source|Mechanism)'
 FormatStyle:     none
 User:            user
 CheckOptions:
