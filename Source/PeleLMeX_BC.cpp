@@ -3,6 +3,7 @@
 #include <AMReX_FillPatchUtil.H>
 #include <AMReX_REAL.H>
 #include <memory>
+#include <queue>
 #ifdef AMREX_USE_EB
 #include <AMReX_EBInterpolater.H>
 #include <AMReX_EB2.H>
