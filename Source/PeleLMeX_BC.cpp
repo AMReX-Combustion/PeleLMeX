@@ -1315,14 +1315,16 @@ extendDM(
 
   // 1) current load per rank from the frozen N entries
   amrex::Vector<amrex::Long> load(nprocs, 0);
-  for (int i = 0; i < N; ++i)
+  for (int i = 0; i < N; ++i) {
     load[pmap[i]] += old_wgts[i];
+  }
 
   // 2) min-heap of (load, rank)
   using PII = std::pair<amrex::Long, int>;
   std::priority_queue<PII, std::vector<PII>, std::greater<>> pq;
-  for (int r = 0; r < nprocs; ++r)
+  for (int r = 0; r < nprocs; ++r) {
     pq.emplace(load[r], r);
+  }
 
   // 3) assign M new boxes heaviest-first to lightest rank
   amrex::Vector<int> order(M);
