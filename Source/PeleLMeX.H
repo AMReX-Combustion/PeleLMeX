@@ -1228,6 +1228,9 @@ public:
   void updateRecyclingPlaneSnapshot();
   // Cell-centered index of the recycling plane on level `lev`.
   int computeRecyclingSrcIndex(int lev) const;
+  // If dt>=m_inlet_plane_avg_window, the injected fluctions will be
+  // approximately zero, warn user every step this happens
+  bool m_warned_clipped_recycle_avg_window_this_step;
 
   // Average down operations
   void averageDownState(const PeleLM::TimeStamp a_time);

@@ -434,11 +434,48 @@ PeleLM::fillpatch_state(
 
   const int nCompState = (m_incompressible) != 0 ? AMREX_SPACEDIM : NVAR;
 
-  // Zero boundary ghost cells only for velocity components in the special
-  // inflow paths that rely on additive updates in bcnormal. Preserve existing
-  // scalar ghost-cell contents for the standard ext_dir contract.
   if (turb_inflow.is_initialized() || m_use_inlet_from_plane != 0) {
-    a_state.setBndry(0.0, VELX, AMREX_SPACEDIM);
+    const auto bcrec = fetchBCRecArray(XVEL, XVEL + AMREX_SPACEDIM);
+    const auto domain = geom[lev].Domain();
+    const int idir = m_inlet_plane_dir;
+    auto face_is_recycling_inflow = [=](int is_hi) -> bool {
+      for (int n = 0; n < AMREX_SPACEDIM; ++n) {
+        const auto& vbc = bcrec[n];
+        const int bctype = (is_hi != 0) ? vbc.hi(idir) : vbc.lo(idir);
+        if (bctype != amrex::BCType::ext_dir) {
+          return false;
+        }
+      }
+      return true;
+    };
+    const bool zero_lo = face_is_recycling_inflow(0);
+    const bool zero_hi = face_is_recycling_inflow(1);
+    if (zero_lo || zero_hi) {
+
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
+#endif
+      for (amrex::MFIter mfi(a_state); mfi.isValid(); ++mfi) {
+        const amrex::Box& vbx = mfi.validbox();
+        const amrex::Box& gbx = mfi.fabbox();
+        if (zero_lo && vbx.smallEnd(idir) == domain.smallEnd(idir)) {
+          amrex::Box lobx = gbx;
+          lobx.setBig(idir, vbx.smallEnd(idir) - 1);
+          if (lobx.ok()) {
+            a_state[mfi].setVal<amrex::RunOn::Device>(
+              0.0, lobx, VELX, AMREX_SPACEDIM);
+          }
+        }
+        if (zero_hi && vbx.bigEnd(idir) == domain.bigEnd(idir)) {
+          amrex::Box hibx = gbx;
+          hibx.setSmall(idir, vbx.bigEnd(idir) + 1);
+          if (hibx.ok()) {
+            a_state[mfi].setVal<amrex::RunOn::Device>(
+              0.0, hibx, VELX, AMREX_SPACEDIM);
+          }
+        }
+      }
+    }
   }
 
   fillTurbInflow(a_state, VELX, lev, a_time);
@@ -1257,7 +1294,54 @@ PeleLM::computeRecyclingSrcIndex(int lev) const
       geom[lev].CellSize()[dir] -
     0.5));
   const auto& dom = geom[lev].Domain();
-  return std::clamp(srcIndex, dom.smallEnd(dir), dom.bigEnd(dir));
+  AMREX_ALWAYS_ASSERT_WITH_MESSAGE(
+    srcIndex >= dom.smallEnd(dir) && srcIndex <= dom.bigEnd(dir),
+    "computeRecyclingSrcIndex: inlet_plane_position maps outside the level "
+    "domain");
+  return srcIndex;
+}
+
+static amrex::DistributionMapping
+extendDM(
+  const amrex::DistributionMapping& olddm,    // length N
+  const amrex::Vector<amrex::Long>& new_wgts, // length M (use 1s if unweighted)
+  const amrex::Vector<amrex::Long>& old_wgts) // length N (use 1s if unweighted)
+{
+  const int nprocs = amrex::ParallelDescriptor::NProcs();
+  const auto& pmap = olddm.ProcessorMap();
+  const int N = static_cast<int>(pmap.size());
+  const int M = static_cast<int>(new_wgts.size());
+
+  // 1) current load per rank from the frozen N entries
+  amrex::Vector<amrex::Long> load(nprocs, 0);
+  for (int i = 0; i < N; ++i)
+    load[pmap[i]] += old_wgts[i];
+
+  // 2) min-heap of (load, rank)
+  using PII = std::pair<amrex::Long, int>;
+  std::priority_queue<PII, std::vector<PII>, std::greater<>> pq;
+  for (int r = 0; r < nprocs; ++r)
+    pq.emplace(load[r], r);
+
+  // 3) assign M new boxes heaviest-first to lightest rank
+  amrex::Vector<int> order(M);
+  std::iota(order.begin(), order.end(), 0);
+  std::sort(order.begin(), order.end(), [&](int a, int b) {
+    return new_wgts[a] > new_wgts[b];
+  });
+
+  amrex::Vector<int> new_pmap(N + M);
+  std::copy(pmap.begin(), pmap.end(), new_pmap.begin());
+
+  for (int k : order) {
+    auto [ld, r] = pq.top();
+    pq.pop();
+    new_pmap[N + k] = r;
+    pq.emplace(ld + new_wgts[k], r);
+  }
+
+  // 4) wrap into a DistributionMapping
+  return amrex::DistributionMapping(std::move(new_pmap));
 }
 
 void
@@ -1312,9 +1396,11 @@ PeleLM::buildRecyclingPlaneStorage()
     const auto& level_pmap = level_dm.ProcessorMap();
     amrex::BoxList slab_bl;
     amrex::Vector<int> slab_pmap;
+    amrex::Vector<amrex::Long> slab_wgts;
     const auto isects = level_ba.intersections(slab);
     for (const auto& isect : isects) {
       slab_bl.push_back(isect.second);
+      slab_wgts.push_back(isect.second.numPts());
       slab_pmap.push_back(level_pmap[isect.first]);
     }
 
@@ -1327,6 +1413,22 @@ PeleLM::buildRecyclingPlaneStorage()
     }
     amrex::BoxArray slab_ba(slab_bl);
     amrex::DistributionMapping slab_dm(slab_pmap);
+
+    // Add add boxes fillable from next coarser level - check if even lev-1 is
+    // not big enough
+    if (lev > 0) {
+      amrex::BoxList unfilled_bl = amrex::complementIn(slab, slab_bl);
+      if (unfilled_bl.isNotEmpty()) {
+        unfilled_bl.maxSize(max_grid_size[lev]);
+        amrex::Vector<amrex::Long> unfilled_wgts;
+        for (const auto& it : unfilled_bl) {
+          unfilled_wgts.push_back(it.numPts());
+        }
+        slab_dm = extendDM(slab_dm, unfilled_wgts, slab_wgts);
+        slab_bl.join(unfilled_bl);
+        slab_ba = amrex::BoxArray(slab_bl);
+      }
+    }
 
     m_inlet_recycling.u_src[lev] =
       std::make_unique<amrex::MultiFab>(slab_ba, slab_dm, AMREX_SPACEDIM, 0);
@@ -1503,7 +1605,8 @@ PeleLM::updateRecyclingPlaneSnapshot()
   }
 
   // Update the running mean and store the current fluctuation.
-  ++m_inlet_recycling.n_samples;
+  // NOTE: m_inlet_recycling.n_samples is NOT incremented so that we avoid
+  // inecting fluctuations computed against a single sample mean.
 
   if (!m_inlet_recycling.initialized) {
     // Seed: <u> = u_0; fluctuation defined as zero on the seeding sample.
@@ -1520,11 +1623,10 @@ PeleLM::updateRecyclingPlaneSnapshot()
   // alpha for exponential moving average; if no window is set, fall back to a
   // cumulative average via 1/n.
   amrex::Real alpha;
-  static bool warned_clipped_recycle_avg_window = false;
   if (m_inlet_plane_avg_window > 0.0) {
     alpha = amrex::min<amrex::Real>(1.0, m_dt / m_inlet_plane_avg_window);
-    if (alpha == 1.0_rt && !warned_clipped_recycle_avg_window) {
-      warned_clipped_recycle_avg_window = true;
+    if (alpha == 1.0_rt && !m_warned_clipped_recycle_avg_window_this_step) {
+      m_warned_clipped_recycle_avg_window_this_step = true;
       amrex::Print()
         << "WARNING: inlet_plane_avg_window <= dt, so recycle averaging "
            "alpha is clipped to 1; the running mean equals the current "

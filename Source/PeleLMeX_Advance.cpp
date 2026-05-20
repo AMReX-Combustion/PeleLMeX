@@ -96,6 +96,9 @@ PeleLM::Advance(const int is_initIter)
     }
   }
 
+  // Reset fluctuation warnings each time dt could change
+  m_warned_clipped_recycle_avg_window_this_step = false;
+
   // fillpatch the t^{n} data
   averageDownState(AmrOldTime);
   fillPatchState(AmrOldTime);
