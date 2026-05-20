@@ -18,6 +18,7 @@ struct PeleLMCCFillExtDirState
   const int m_nAux;
   int m_do_turbInflow = 0;
   int m_do_inlet_from_plane = 0;
+  int m_inlet_from_plane_dir = -1;
 
   AMREX_GPU_HOST
   constexpr PeleLMCCFillExtDirState(
@@ -25,12 +26,14 @@ struct PeleLMCCFillExtDirState
     pele::physics::PMF::PmfData::DataContainer const* a_pmf_data,
     int a_nAux,
     int do_turbInflow,
-    int do_inletFromPlane)
+    int do_inletFromPlane,
+    int inlet_plane_dir)
     : lprobparm(a_prob_parm),
       lpmfdata(a_pmf_data),
       m_nAux(a_nAux),
       m_do_turbInflow(do_turbInflow),
-      m_do_inlet_from_plane(do_inletFromPlane)
+      m_do_inlet_from_plane(do_inletFromPlane),
+      m_inlet_from_plane_dir(inlet_plane_dir)
   {
   }
 
@@ -80,12 +83,16 @@ struct PeleLMCCFillExtDirState
 
           // If using TurbInflow or inlet_from_plane, pass in the sampled data.
           // User can overwrite or increment, as needed
-          if (m_do_turbInflow != 0 || m_do_inlet_from_plane != 0) {
-            if (n >= VELX && n < DENSITY) {
+          if (n >= VELX && n < DENSITY) {
+            if (
+              m_do_turbInflow != 0 || ((m_do_inlet_from_plane != 0) &&
+                                       (idir == m_inlet_from_plane_dir))) {
               if (!isnan(
                     state(iv, VELX + n))) { // During fillcoarsepatch, get here
                                             // with nan. TODO: find a better fix
                 s_ext[VELX + n] = state(iv, VELX + n);
+              } else {
+                s_ext[VELX + n] = 0;
               }
             }
           }
@@ -117,12 +124,16 @@ struct PeleLMCCFillExtDirState
 
           // If using TurbInflow or inlet_from_plane, pass in the sampled data.
           // User can overwrite or increment, as needed
-          if (m_do_turbInflow != 0 || m_do_inlet_from_plane != 0) {
-            if (n >= VELX && n < DENSITY) {
+          if (n >= VELX && n < DENSITY) {
+            if (
+              m_do_turbInflow != 0 || ((m_do_inlet_from_plane != 0) &&
+                                       (idir == m_inlet_from_plane_dir))) {
               if (!isnan(
                     state(iv, VELX + n))) { // During fillcoarsepatch, get here
                                             // with nan. TODO: find a better fix
                 s_ext[VELX + n] = state(iv, VELX + n);
+              } else {
+                s_ext[VELX + n] = 0;
               }
             }
           }
