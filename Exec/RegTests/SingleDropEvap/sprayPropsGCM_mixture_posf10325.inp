@@ -2,8 +2,8 @@
 # Liquid fuel properties for GCM in Pele
 # Fuel: posf10325
 # Number of compounds: 1
-# Generated: 2026-04-27 10:43:19
-# FuelLib remote URL: https://github.com/d-montgomery/FuelLib-NLR.git
+# Generated: 2026-05-20 11:16:34
+# FuelLib remote URL: git@github.com:NatLabRockies/FuelLib.git
 # Git commit: 0b1c6006f5e999c8244194c5045a61906da2013a
 # Units: MKS
 # -----------------------------------------------------------------------------
