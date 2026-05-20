@@ -435,7 +435,7 @@ PeleLM::fillpatch_state(
 
   const int nCompState = (m_incompressible) != 0 ? AMREX_SPACEDIM : NVAR;
 
-  if (turb_inflow.is_initialized() || m_use_inlet_from_plane != 0) {
+  if (m_use_inlet_from_plane != 0) {
     const auto bcrec = fetchBCRecArray(XVEL, XVEL + AMREX_SPACEDIM);
     const auto domain = geom[lev].Domain();
     const int idir = m_inlet_plane_dir;
@@ -1162,6 +1162,12 @@ PeleLM::setInflowBoundaryVel(
 
   const amrex::Real time = getTime(lev, a_time);
 
+  fillTurbInflow(a_vel, 0, lev, time);
+
+  if (m_use_inlet_from_plane != 0) {
+    fillFromRecyclingPlane(a_vel, 0, lev);
+  }
+
   // Create a dummy BCRec from Velocity BCRec keeping only Inflow and set the
   // other to bogus
   auto realVelBCRec = fetchBCRecArray(VELX, AMREX_SPACEDIM);
@@ -1179,12 +1185,6 @@ PeleLM::setInflowBoundaryVel(
         dummyVelBCRec[idim].setHi(idim2, amrex::BCType::bogus);
       }
     }
-  }
-
-  fillTurbInflow(a_vel, 0, lev, time);
-
-  if (m_use_inlet_from_plane != 0) {
-    fillFromRecyclingPlane(a_vel, 0, lev);
   }
 
   ProbParm const* lprobparm = prob_parm_d;
