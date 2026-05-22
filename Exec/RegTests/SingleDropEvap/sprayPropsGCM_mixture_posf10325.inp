@@ -1,0 +1,27 @@
+# -----------------------------------------------------------------------------
+# Liquid fuel properties for GCM in Pele
+# Fuel: posf10325
+# Number of compounds: 1
+# Generated: 2026-05-20 11:16:34
+# FuelLib remote URL: git@github.com:NatLabRockies/FuelLib.git
+# Git commit: 0b1c6006f5e999c8244194c5045a61906da2013a
+# Units: MKS
+# -----------------------------------------------------------------------------
+
+particles.fuel_species = POSF10325
+particles.Y_0 = 1.0
+particles.dep_fuel_species = POSF10325
+
+# Properties for POSF10325 in MKS
+particles.POSF10325_family = 0 # saturated hydrocarbons
+particles.POSF10325_molar_weight = 0.158681 # kg/mol
+particles.POSF10325_crit_temp = 658.676540 # K
+particles.POSF10325_crit_press = 2205123.244238 # Pa
+particles.POSF10325_crit_vol = 0.000636 # m^3/mol
+particles.POSF10325_boil_temp = 473.947136 # K
+particles.POSF10325_acentric_factor = 0.406477 # -
+particles.POSF10325_molar_vol = 0.000202 # m^3/mol
+particles.POSF10325_cp_a = 1486.785806 # J/kg/K
+particles.POSF10325_cp_b = 3158.035199 # J/kg/K
+particles.POSF10325_cp_c = -1112.795686 # J/kg/K
+particles.POSF10325_latent = 361640.997320 # J/kg
