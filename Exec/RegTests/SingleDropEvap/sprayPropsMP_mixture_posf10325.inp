@@ -1,0 +1,23 @@
+# -----------------------------------------------------------------------------
+# Liquid fuel properties for MP in Pele
+# Fuel: posf10325
+# Number of compounds: 1
+# Generated: 2026-05-20 11:16:26
+# FuelLib remote URL: git@github.com:NatLabRockies/FuelLib.git
+# Git commit: 0b1c6006f5e999c8244194c5045a61906da2013a
+# Units: MKS
+# -----------------------------------------------------------------------------
+
+particles.fuel_species = POSF10325
+particles.Y_0 = 1.0
+particles.dep_fuel_species = POSF10325
+particles.fuel_ref_temp = 298.15 # K
+
+# Properties for POSF10325 in MKS
+particles.POSF10325_molar_weight = 0.158681 # kg/mol
+particles.POSF10325_crit_temp = 658.676540 # K
+particles.POSF10325_boil_temp = 473.947136 # K
+particles.POSF10325_latent = 361640.997320 # J/kg
+particles.POSF10325_cp = 1486.785806 # J/kg/K
+particles.POSF10325_rho = 790.012301 # kg/m^3
+particles.POSF10325_psat = 9.526552129506877 2081.597858539647 10.05657960800456 1 # Pa

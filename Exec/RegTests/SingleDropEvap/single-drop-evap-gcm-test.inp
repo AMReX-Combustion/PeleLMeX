@@ -72,7 +72,7 @@ particles.mass_transfer = 1
 # Fuel: heptane-decane
 # Number of compounds: 2
 # Generated: 2025-09-01 17:19:14
-# FuelLib remote URL: https://github.com/NREL/FuelLib.git
+# FuelLib remote URL: https://github.com/NatLabRockies/FuelLib.git
 # Git commit: 2512fdf6ba66194a6b696c72ab370f5e8fb720d9
 # Units: MKS
 # -----------------------------------------------------------------------------

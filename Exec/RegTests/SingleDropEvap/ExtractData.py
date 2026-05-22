@@ -63,18 +63,13 @@ def ExtractData(case, outfile):
 
     modvals = []
     with open(outfile, "w+") as new_file:
-        new_file.write("t, dd0, T, Y1, Y2\n")
+        new_file.write("t, dd0, T\n")
         csv_writer = csv.writer(new_file, delimiter=",", lineterminator="\n")
         for k, tv in enumerate(timevals):
             dia = vals[k][dcol]
             dd0 = (dia * yconv) ** yexp
             T = vals[k][tcol]
-            Y1 = vals[k][mfcol]
-            if len(case.droplet.Y) == 2:
-                Y2 = vals[k][mfcol + 1]
-                outvals = [tv * xconv, dd0, T, Y1, Y2]
-            else:
-                outvals = [tv * xconv, dd0, T, Y1]
+            outvals = [tv * xconv, dd0, T]
             modvals.append(outvals)
             csv_writer.writerow(outvals)
     modvals = np.array(modvals)
@@ -96,6 +91,7 @@ def ExtractRefVals(case):
     dvals = None
     tvals = None
     yvals = None
+    
     cname = fnames[0]
     if cname in os.listdir(ldir):
         dvals = getdata(os.path.join(ldir, cname))

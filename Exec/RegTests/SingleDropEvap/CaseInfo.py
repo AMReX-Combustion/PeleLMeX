@@ -165,6 +165,16 @@ def SpecifyCase(case_name, LiqPropsType, PeleMP_PsatModel="Antoine", **kwargs):
         elif "-d" in case_name.lower():
             kwargs["detailed"] = True
         case = RungeJP8(LiqPropsType, PeleMP_PsatModel, **kwargs)
+    elif "burger" in case_name.lower():
+        if "-h" in case_name.lower():
+            kwargs["hychem"] = True
+        if "50bar" in case_name.lower():
+            kwargs["50bar"] = True
+        elif "10bar" in case_name.lower():
+            kwargs["10bar"] = True
+        elif "1bar" in case_name.lower():
+            kwargs["1bar"] = True
+        case = Burger(LiqPropsType, PeleMP_PsatModel, **kwargs)
     else:
         raise ValueError(f"Unknown case name: {case_name}")
     return case
@@ -303,6 +313,48 @@ def RungeJP8(LiqPropsType, PeleMP_PsatModel="Antoine", **kwargs):
     case.ref_name = "RungeJP8"
     return case
 
+def Burger(LiqPropsType, PeleMP_PsatModel="Antoine", **kwargs):
+    name = "Burger1Bar"  # Default to 1 bar
+    P = 1e5 
+    dt = 1e-3
+    end_time = 0.09
+    if "50bar" in kwargs.keys():
+        if kwargs["50bar"]:
+            name = "Burger50Bar"
+            P = 50.0 * 1e5
+    elif "10bar" in kwargs.keys():
+        if kwargs["10bar"]:
+            name = "Burger10Bar"
+            P = 10.0 * 1e5
+    elif "1bar" in kwargs.keys():
+        if kwargs["1bar"]:
+            name = "Burger1Bar"
+    
+    # Add HyChem suffix if specified
+    if "hychem" in kwargs.keys():
+        if kwargs["hychem"]:
+            name += "_HyChem"
+    
+    drop = Droplet(300, 1e-4, ["POSF10325"], [1.0])
+    gas = GasPhase(800, P, vel=0.0)
+    case = CaseInfo(
+        name, 
+        "Burger et al.",
+        drop,
+        gas,
+        LiqPropsType,
+        xyunits=["s", "dd02"],
+        dt=dt,
+        end_time=end_time,
+        plot_per=0.001,
+        cell_num=[128, 128, 128],
+        PeleMP_PsatModel=PeleMP_PsatModel,
+        **kwargs,
+    )
+    case.use_file_y0 = True
+    # Use base name without _HyChem suffix for reference data lookup
+    case.ref_name = name.replace("_HyChem", "")
+    return case
 
 def CreateInputFile(case):
     FILE_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -424,6 +476,10 @@ def CreateInputFile(case):
                 new_line += "\n"
         elif "particles.fuel_species" in line:
             if ("jp8" in case.name.lower()) and ("hychem" not in case.name.lower()):
+                new_line = line
+                # Set fuel_names to list after "particles.fuel_species = "
+                case.droplet.fuel_names = line.split("=")[1].strip().split()
+            elif ("burger" in case.name.lower()):
                 new_line = line
                 # Set fuel_names to list after "particles.fuel_species = "
                 case.droplet.fuel_names = line.split("=")[1].strip().split()
