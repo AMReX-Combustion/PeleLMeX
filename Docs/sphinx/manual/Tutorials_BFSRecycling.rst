@@ -57,7 +57,8 @@ The computational domain is a 0.08 × 0.02 × 0.02 :math:`m^3` box with the
 streamwise direction (:math:`x`) aligned with the bulk flow and a periodic
 spanwise direction (:math:`z`). The step occupies the lower-left quarter
 of the :math:`x`-:math:`y` plane and is extruded across the full periodic
-:math:`z` range. Boundary conditions are ``Inflow`` on :math:`x_{lo}`,
+:math:`z` range. The physical setup here is identical that used in the
+BFSFlame tutorial. Boundary conditions are ``Inflow`` on :math:`x_{lo}`,
 ``Outflow`` on :math:`x_{hi}`, no-slip walls on :math:`y`, and ``Interior``
 (periodic) on :math:`z`.
 
