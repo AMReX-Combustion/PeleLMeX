@@ -10,6 +10,14 @@ PeleLM::poissonSolveEF(const TimeStamp a_time)
     amrex::Print() << " EF Poisson solve \n";
   }
 
+  // Refill PhiV ghost cells before the solve so the implicit
+  // Dirichlet boundary value picked up via setLevelBC reflects
+  // bcnormal at the current time.  See PeleLM::diffuseVelocity and
+  // PeleLM::differentialDiffusionUpdate for the analogous fixes and
+  // the LidDrivenCavity regression for the discovery of this class
+  // of bug.
+  fillPatchPhiV(a_time);
+
   // Get the phiV BCRec
   auto bcRecPhiV = fetchBCRecArray(PHIV, 1);
 

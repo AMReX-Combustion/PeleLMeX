@@ -1089,6 +1089,31 @@ PeleLM::differentialDiffusionUpdate(
 {
   BL_PROFILE("PeleLMeX::differentialDiffusionUpdate()");
 
+  // Refill the AmrNewTime ghost cells of the scalars about to be
+  // diffused.  See PeleLM::diffuseVelocity for the analogous fix and
+  // the LidDrivenCavity regression for the discovery of this class
+  // of bug: the implicit Crank-Nicholson solve in diffuse_scalar
+  // pulls its Dirichlet boundary value from the ghost cells of its
+  // input MultiFab when no explicit a_boundary is supplied.  Scalar
+  // advection between the last fillPatchState (in oneSDC) and this
+  // routine writes new interior values without refreshing the
+  // ghosts, so the implicit solve would otherwise see stale (or, in
+  // pathological cases, zero) Dirichlet data at Inflow faces.  For
+  // typical Pele setups where Inflow scalars are static this would
+  // be benign, but it is wrong as soon as bcnormal becomes time-
+  // dependent and is hostile to anyone porting moving-wall- or
+  // moving-Dirichlet-style problems to PeleLMeX.  Refilling now keeps
+  // the implicit solve consistent with whatever bcnormal currently
+  // returns at AmrNewTime.
+  fillPatchSpecies(AmrNewTime);
+  if (m_nAux > 0) {
+    fillPatchAux(AmrNewTime);
+  }
+  // Temperature ghost cells are managed explicitly by the
+  // deltaTIter_prepare / deltaTIter_update pair below (which sets T
+  // and its ghost to zero before each deltaT solve and refills via
+  // fillPatchTemp after).  No refill needed here.
+
   //------------------------------------------------------------------------
   // Setup fluxes
   // [0:NUM_SPECIES-1] Species     : \Flux_k
@@ -1897,6 +1922,23 @@ PeleLM::diffuseVelocity()
   BL_PROFILE("PeleLMeX::diffuseVelocity()");
   // Get the density component BCRec to get viscosity on faces
   auto bcRec = fetchBCRecArray(DENSITY, 1);
+
+  // BUGFIX: the implicit Crank-Nicholson solve below calls setLevelBC
+  // on the velocity MultiFab and pulls the Dirichlet boundary value
+  // from its ghost cells.  After updateVelocity (the explicit
+  // predictor) the new-time velocity ghost cells contain whatever
+  // was there from the previous fillpatch, NOT the bcnormal value at
+  // Inflow faces -- in particular they are zero for a moving-wall
+  // tangential component that has not been refilled since.  Without
+  // this refill the implicit corrector enforces u_face = 0 at the
+  // Inflow boundary instead of the user-supplied value, so the only
+  // wall-stress contribution comes from the explicit 0.5*divTau^n
+  // half of the C-N split.  See the LidDrivenCavity regression test
+  // for the test case that surfaces this.
+  for (int lev = 0; lev <= finestLevel(); ++lev) {
+    auto& vel_mf = getLevelDataPtr(lev, AmrNewTime)->state;
+    setInflowBoundaryVel(vel_mf, lev, AmrNewTime);
+  }
 
   // CrankNicholson 0.5 coeff
   const amrex::Real dt_lcl = 0.5 * m_dt;
