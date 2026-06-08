@@ -331,10 +331,10 @@ In-situ visualization with Ascent
 lightweight in-situ visualization and analysis library developed as part of the
 `Alpine <https://alpine-dav.github.io/ascent/>`_ project. Ascent uses `Conduit
 <https://llnl-conduit.readthedocs.io>`_ to describe and pass simulation data,
-and the `Viskores <https://viskores.org>`_ library for rendering on both CPU
-and GPU. Since the solver state is passed directly to Ascent without writing to
-disk, in-situ rendering eliminates the I/O bottleneck of traditional post-hoc
-workflows and is well-suited to large-scale GPU runs.
+and the `Viskores <https://github.com/Viskores/viskores>`_ library for
+rendering on both CPU and GPU. Since the solver state is passed directly to
+Ascent without writing to disk, in-situ rendering eliminates the I/O bottleneck
+of traditional post-hoc workflows and is well-suited to large-scale GPU runs.
 
 .. note::
     Ascent and Conduit must be built and installed before enabling in-situ
@@ -343,8 +343,8 @@ workflows and is well-suited to large-scale GPU runs.
     `Conduit build documentation
     <https://llnl-conduit.readthedocs.io/en/latest/building.html>`_ for
     instructions. The ``build_ascent.sh`` script provided in the Ascent
-    repository builds both Ascent and Conduit together and is the recommended
-    approach.
+    repository (``scripts/build_ascent/build_ascent.sh``) builds both Ascent
+    and Conduit together and is the recommended approach.
 
 Building with Ascent
 ^^^^^^^^^^^^^^^^^^^^^
@@ -407,11 +407,9 @@ call with no additional solver cost: ::
 clearly showing the block-structured refinement levels that `PeleLMeX`
 automatically generates around the bubble interface.
 
-Ascent automatically selects the best available rendering backend (CUDA when
-available, otherwise OpenMP). To force a specific backend, add
-``viskores-backend: openmp`` (or ``cuda``) under the scene entry. For runs
-where GPU memory is constrained by the solver, setting
-``viskores-backend: openmp`` renders on CPU while the solver runs on GPU.
+Ascent automatically selects the best available rendering backend — CUDA
+when available, otherwise OpenMP — based on how it was compiled. No
+additional configuration is required.
 
 Published fields
 ^^^^^^^^^^^^^^^^^
@@ -440,11 +438,9 @@ This produces two sets of images per render interval:
 * ``hotbubble_temp_00050.png`` — temperature pseudocolor
 * ``hotbubble_mesh_00050.png`` — temperature pseudocolor with AMR mesh overlay
 
-The mesh overlay image shows the three AMR refinement levels concentrating
-cells around the rising bubble interface, illustrating how `PeleLMeX`
-dynamically refines the grid to resolve the temperature gradient. Since the
-data never leaves the GPU, Ascent render times are typically under 0.2 seconds
-per call for this case.
+The mesh overlay image shows the AMR refinement levels concentrating cells
+around the rising bubble interface, illustrating how `PeleLMeX` dynamically
+refines the grid to resolve the temperature gradient.
 
 For more information on available Ascent actions (contours, volume rendering,
 Cinema databases, triggers, etc.), see the `Ascent actions documentation
