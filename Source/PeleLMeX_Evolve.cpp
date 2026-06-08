@@ -52,6 +52,12 @@ PeleLM::Evolve()
     m_nstep++;
     m_cur_time += m_dt;
 
+#ifdef AMREX_USE_ASCENT
+    // Ascent in-situ rendering — mirrors PeleC main.cpp call after
+    // coarseTimeStep()
+    doInSituViz();
+#endif
+
 #ifdef PELE_USE_SPRAY
     if (do_spray_particles) {
       SprayInjectRedist();
