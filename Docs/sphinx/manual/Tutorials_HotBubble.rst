@@ -407,6 +407,15 @@ call with no additional solver cost: ::
 clearly showing the block-structured refinement levels that `PeleLMeX`
 automatically generates around the bubble interface.
 
+
+.. figure:: images/tutorials/HB_Ascent_combined.png
+   :name: HB_Ascent_combined
+   :align: center
+   :figwidth: 95%
+
+   : Temperature field (left) and temperature with AMR mesh overlay (right) at step 200.
+
+
 Ascent automatically selects the best available rendering backend — CUDA
 when available, otherwise OpenMP — based on how it was compiled. No
 additional configuration is required.
@@ -433,14 +442,6 @@ To run the ``HotBubble`` case with in-situ rendering every 50 steps: ::
         amr.max_step=400 amr.plot_int=-1 amr.check_int=-1   \
         ascent.plot_int=50
 
-This produces two sets of images per render interval:
-
-* ``hotbubble_temp_00050.png`` — temperature pseudocolor
-* ``hotbubble_mesh_00050.png`` — temperature pseudocolor with AMR mesh overlay
-
-The mesh overlay image shows the AMR refinement levels concentrating cells
-around the rising bubble interface, illustrating how `PeleLMeX` dynamically
-refines the grid to resolve the temperature gradient.
 
 For more information on available Ascent actions (contours, volume rendering,
 Cinema databases, triggers, etc.), see the `Ascent actions documentation
