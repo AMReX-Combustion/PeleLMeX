@@ -60,6 +60,8 @@ function(build_pele_exe pele_exe_name pele_physics_lib_name)
        ${SRC_DIR}/PeleLMeX_ConstantMap.cpp
        ${SRC_DIR}/PeleLMeX_ExpStretchMap.H
        ${SRC_DIR}/PeleLMeX_ExpStretchMap.cpp
+       ${SRC_DIR}/PeleLMeX_TanhStretchMap.H
+       ${SRC_DIR}/PeleLMeX_TanhStretchMap.cpp
        ${SRC_DIR}/PeleLMeX_Temporals.cpp
        ${SRC_DIR}/PeleLMeX_Timestep.cpp
        ${SRC_DIR}/PeleLMeX_TransportProp.cpp

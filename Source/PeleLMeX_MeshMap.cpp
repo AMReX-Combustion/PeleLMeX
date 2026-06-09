@@ -1,6 +1,7 @@
 #include <PeleLMeX_MeshMap.H>
 #include <PeleLMeX_ConstantMap.H>
 #include <PeleLMeX_ExpStretchMap.H>
+#include <PeleLMeX_TanhStretchMap.H>
 
 #include <AMReX.H>
 #include <AMReX_Geometry.H>
@@ -79,9 +80,12 @@ MeshMap::create(const std::string& name)
   if (name == "ExpStretchMap") {
     return std::make_unique<ExpStretchMap>();
   }
+  if (name == "TanhStretchMap") {
+    return std::make_unique<TanhStretchMap>();
+  }
   amrex::Abort(
     "MeshMap::create(): unrecognised mesh-mapping name '" + name +
-    "'.  Supported: ConstantMap, ExpStretchMap.");
+    "'.  Supported: ConstantMap, ExpStretchMap, TanhStretchMap.");
   return nullptr;
 }
 

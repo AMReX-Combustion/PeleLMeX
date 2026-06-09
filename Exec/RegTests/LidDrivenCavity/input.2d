@@ -1,0 +1,90 @@
+# =====================================================================
+# Classical 2D lid-driven cavity, Re = 100
+# Reference: Ghia, Ghia & Shin, J. Comp. Phys. 48 (1982)
+# =====================================================================
+#
+# Square domain [0,1] x [0,1].  Lid (y = 1) moves with u = U_lid = 1.
+# All other three walls are no-slip.  Steady-state solution sought.
+# Re = U_lid * L / nu = 1 * 1 / 0.01 = 100.
+#
+# Mesh: 64 x 64 base level.  TanhStretchMap with beta_x = beta_y = 2
+# clusters cells at all four walls (max/min cell-size ratio per axis
+# = cosh^2(2) = 14.15).  At the walls the spacing is roughly
+#   dy_wall ~ (1/64) * 0.147 = 0.0023
+# vs uniform spacing 0.0156, and dy_center ~ 0.0156 * 2.075 = 0.0324.
+# ---------------------------------------------------------------------
+
+geometry.is_periodic = 0 0 0
+geometry.coord_sys   = 0
+geometry.prob_lo     = 0.0 0.0 0.0
+geometry.prob_hi     = 1.0 1.0 1.0
+
+# BC layout (2D):  x = (left=NoSlip, right=NoSlip)
+#                  y = (bottom=NoSlip, top=Inflow with u=U_lid)
+peleLM.lo_bc = NoSlipWallAdiab NoSlipWallAdiab
+peleLM.hi_bc = NoSlipWallAdiab Inflow
+
+amr.n_cell          = 64 64
+amr.v               = 1
+amr.max_level       = 0
+amr.blocking_factor = 16
+amr.max_grid_size   = 64
+
+# Mesh mapping ---------------------------------------------------------
+geometry.mesh_mapping = TanhStretchMap
+TanhStretchMap.beta   = 2.0 2.0   # one value per AMREX_SPACEDIM axis
+
+# Problem --------------------------------------------------------------
+prob.U_lid = 1.0
+
+# PeleLM controls -------------------------------------------------------
+peleLM.v              = 2
+peleLM.incompressible = 1
+peleLM.rho            = 1.0
+peleLM.mu             = 0.01     # Re = U*L/nu = 1*1/0.01 = 100
+# peleLM.mu             = 0.0025   # Re = 1 / 0.0025 = 400
+# peleLM.mu             = 0.001    # Re = 1 / 0.001 = 1000
+peleLM.gradP0         = 0.0 0.0 0.0
+peleLM.gravity        = 0.0 0.0 0.0
+
+# Time stepping --------------------------------------------------------
+amr.cfl       = 0.7
+amr.dt_shrink = 0.1
+amr.init_dt   = 1.0e-4
+amr.max_dt    = 5.0e-3
+amr.max_step  = 5000      # ~12 convective times at dt ~ 2.5e-3; raise
+                          # if you want to take the run all the way to
+                          # the Ghia-tabulated steady state (typically
+                          # 30-50 convective times for Re = 100)
+amr.stop_time = 100.0
+amr.plot_int  = 500
+amr.plot_file = plt_
+amr.check_int = -1
+amr.derive_plot_vars = mag_vort
+
+# Linear solvers -------------------------------------------------------
+# At beta = 2 the MAC operator's anisotropy (cosh^2(2) = 14.15) is
+# already enough to stall the default MLMG path -- the residual grows
+# instead of converging when the cavity's corner-singularity divergence
+# couples through stretched cells.  Use HypreMLABecLap (BoomerAMG) for
+# MAC and hypre as the nodal MLMG bottom solver.  Requires PeleLMeX
+# built with USE_HYPRE = TRUE (see GNUmakefile).
+#
+# To run without hypre, drop TanhStretchMap.beta to 1.0 1.0 (cosh^2(1)
+# = 2.38, well within the default MLMG sweet spot) and delete these
+# four lines.
+mac_proj.use_mlhypre     = 1
+nodal_proj.bottom_solver = hypre
+nodal_proj.maxiter       = 10000
+nodal_proj.rtol          = 1.0e-7
+
+nodal_proj.verbose = 1
+mac_proj.verbose   = 1
+
+# Mesh-mapping plotfile metadata
+peleLM.plot_mesh_mapping = 1
+
+# Diagnostics
+amrex.fpe_trap_invalid  = 0
+amrex.fpe_trap_zero     = 0
+amrex.fpe_trap_overflow = 0

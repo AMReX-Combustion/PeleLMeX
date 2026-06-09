@@ -171,7 +171,9 @@ public:
    * \brief Factory method: build a concrete MeshMap by name.
    *
    * Recognised names:
-   *   - "ConstantMap" : uniform per-direction stretching
+   *   - "ConstantMap"    : uniform per-direction stretching
+   *   - "ExpStretchMap"  : one-sided (single-axis) exponential mesh stretching
+   *   - "TanhStretchMap" : two-sided tanh-based mesh stretching
    *
    * Aborts with an informative message if the name is not recognised.
    */
