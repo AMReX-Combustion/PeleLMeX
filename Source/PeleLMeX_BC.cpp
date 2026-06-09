@@ -423,7 +423,7 @@ PeleLM::fillpatch_state(
         geom[lev], fetchBCRecArray(0, nCompState),
         PeleLMCCFillExtDirState<ProblemSpecificFunctions>{
           lprobparm, lpmfdata, m_nAux,
-          static_cast<int>(turb_inflow.is_initialized())});
+          static_cast<int>(turb_inflow.is_initialized()), m_map_eval});
     FillPatchSingleLevel(
       a_state, amrex::IntVect(nGhost), a_time,
       {&(m_leveldata_old[lev]->state), &(m_leveldata_new[lev]->state)},
@@ -439,14 +439,14 @@ PeleLM::fillpatch_state(
         geom[lev - 1], fetchBCRecArray(0, nCompState),
         PeleLMCCFillExtDirState<ProblemSpecificFunctions>{
           lprobparm, lpmfdata, m_nAux,
-          static_cast<int>(turb_inflow.is_initialized())});
+          static_cast<int>(turb_inflow.is_initialized()), m_map_eval});
     amrex::PhysBCFunct<
       amrex::GpuBndryFuncFab<PeleLMCCFillExtDirState<ProblemSpecificFunctions>>>
       fine_bndry_func(
         geom[lev], fetchBCRecArray(0, nCompState),
         PeleLMCCFillExtDirState<ProblemSpecificFunctions>{
           lprobparm, lpmfdata, m_nAux,
-          static_cast<int>(turb_inflow.is_initialized())});
+          static_cast<int>(turb_inflow.is_initialized()), m_map_eval});
     FillPatchTwoLevels(
       a_state, amrex::IntVect(nGhost), a_time,
       {&(m_leveldata_old[lev - 1]->state), &(m_leveldata_new[lev - 1]->state)},
@@ -479,7 +479,7 @@ PeleLM::fillpatch_density(
       bndry_func_rho(
         geom[lev], fetchBCRecArray(DENSITY, 1),
         PeleLMCCFillExtDirDens<ProblemSpecificFunctions>{
-          lprobparm, lpmfdata, m_nAux});
+          lprobparm, lpmfdata, m_nAux, m_map_eval});
     FillPatchSingleLevel(
       a_density, amrex::IntVect(nGhost), a_time,
       {&(m_leveldata_old[lev]->state), &(m_leveldata_new[lev]->state)},
@@ -497,13 +497,13 @@ PeleLM::fillpatch_density(
       crse_bndry_func_rho(
         geom[lev - 1], fetchBCRecArray(DENSITY, 1),
         PeleLMCCFillExtDirDens<ProblemSpecificFunctions>{
-          lprobparm, lpmfdata, m_nAux});
+          lprobparm, lpmfdata, m_nAux, m_map_eval});
     amrex::PhysBCFunct<
       amrex::GpuBndryFuncFab<PeleLMCCFillExtDirDens<ProblemSpecificFunctions>>>
       fine_bndry_func_rho(
         geom[lev], fetchBCRecArray(DENSITY, 1),
         PeleLMCCFillExtDirDens<ProblemSpecificFunctions>{
-          lprobparm, lpmfdata, m_nAux});
+          lprobparm, lpmfdata, m_nAux, m_map_eval});
     FillPatchTwoLevels(
       a_density, amrex::IntVect(nGhost), a_time,
       {&(m_leveldata_old[lev - 1]->state), &(m_leveldata_new[lev - 1]->state)},
@@ -534,7 +534,7 @@ PeleLM::fillpatch_species(
       bndry_func(
         geom[lev], fetchBCRecArray(FIRSTSPEC, NUM_SPECIES),
         PeleLMCCFillExtDirSpec<ProblemSpecificFunctions>{
-          lprobparm, lpmfdata, m_nAux});
+          lprobparm, lpmfdata, m_nAux, m_map_eval});
     FillPatchSingleLevel(
       a_species, amrex::IntVect(nGhost), a_time,
       {&(m_leveldata_old[lev]->state), &(m_leveldata_new[lev]->state)},
@@ -551,13 +551,13 @@ PeleLM::fillpatch_species(
       crse_bndry_func(
         geom[lev - 1], fetchBCRecArray(FIRSTSPEC, NUM_SPECIES),
         PeleLMCCFillExtDirSpec<ProblemSpecificFunctions>{
-          lprobparm, lpmfdata, m_nAux});
+          lprobparm, lpmfdata, m_nAux, m_map_eval});
     amrex::PhysBCFunct<
       amrex::GpuBndryFuncFab<PeleLMCCFillExtDirSpec<ProblemSpecificFunctions>>>
       fine_bndry_func(
         geom[lev], fetchBCRecArray(FIRSTSPEC, NUM_SPECIES),
         PeleLMCCFillExtDirSpec<ProblemSpecificFunctions>{
-          lprobparm, lpmfdata, m_nAux});
+          lprobparm, lpmfdata, m_nAux, m_map_eval});
     FillPatchTwoLevels(
       a_species, amrex::IntVect(nGhost), a_time,
       {&(m_leveldata_old[lev - 1]->state), &(m_leveldata_new[lev - 1]->state)},
@@ -586,7 +586,7 @@ PeleLM::fillpatch_temp(
       bndry_func(
         geom[lev], fetchBCRecArray(TEMP, 1),
         PeleLMCCFillExtDirTemp<ProblemSpecificFunctions>{
-          lprobparm, lpmfdata, m_nAux});
+          lprobparm, lpmfdata, m_nAux, m_map_eval});
     FillPatchSingleLevel(
       a_temp, amrex::IntVect(nGhost), a_time,
       {&(m_leveldata_old[lev]->state), &(m_leveldata_new[lev]->state)},
@@ -602,13 +602,13 @@ PeleLM::fillpatch_temp(
       crse_bndry_func(
         geom[lev - 1], fetchBCRecArray(TEMP, 1),
         PeleLMCCFillExtDirTemp<ProblemSpecificFunctions>{
-          lprobparm, lpmfdata, m_nAux});
+          lprobparm, lpmfdata, m_nAux, m_map_eval});
     amrex::PhysBCFunct<
       amrex::GpuBndryFuncFab<PeleLMCCFillExtDirTemp<ProblemSpecificFunctions>>>
       fine_bndry_func(
         geom[lev], fetchBCRecArray(TEMP, 1),
         PeleLMCCFillExtDirTemp<ProblemSpecificFunctions>{
-          lprobparm, lpmfdata, m_nAux});
+          lprobparm, lpmfdata, m_nAux, m_map_eval});
     FillPatchTwoLevels(
       a_temp, amrex::IntVect(nGhost), a_time,
       {&(m_leveldata_old[lev - 1]->state), &(m_leveldata_new[lev - 1]->state)},
@@ -638,7 +638,7 @@ PeleLM::fillpatch_aux(
       bndry_func(
         geom[lev], fetchBCRecAuxArray(0, m_nAux),
         PeleLMCCFillExtDirAux<ProblemSpecificFunctions>{
-          lprobparm, lpmfdata, m_nAux});
+          lprobparm, lpmfdata, m_nAux, m_map_eval});
     FillPatchSingleLevel(
       a_aux, amrex::IntVect(nGhost), a_time,
       {&(m_leveldata_old[lev]->auxiliaries),
@@ -654,13 +654,13 @@ PeleLM::fillpatch_aux(
       crse_bndry_func(
         geom[lev - 1], fetchBCRecAuxArray(0, m_nAux),
         PeleLMCCFillExtDirAux<ProblemSpecificFunctions>{
-          lprobparm, lpmfdata, m_nAux});
+          lprobparm, lpmfdata, m_nAux, m_map_eval});
     amrex::PhysBCFunct<
       amrex::GpuBndryFuncFab<PeleLMCCFillExtDirAux<ProblemSpecificFunctions>>>
       fine_bndry_func(
         geom[lev], fetchBCRecAuxArray(0, m_nAux),
         PeleLMCCFillExtDirAux<ProblemSpecificFunctions>{
-          lprobparm, lpmfdata, m_nAux});
+          lprobparm, lpmfdata, m_nAux, m_map_eval});
     FillPatchTwoLevels(
       a_aux, amrex::IntVect(nGhost), a_time,
       {&(m_leveldata_old[lev - 1]->auxiliaries),
@@ -694,7 +694,7 @@ PeleLM::fillpatch_phiV(
       bndry_func(
         geom[lev], fetchBCRecArray(PHIV, 1),
         PeleLMCCFillExtDirPhiV<ProblemSpecificFunctions>{
-          lprobparm, lpmfdata, m_nAux});
+          lprobparm, lpmfdata, m_nAux, m_map_eval});
     FillPatchSingleLevel(
       a_temp, amrex::IntVect(nGhost), a_time,
       {&(m_leveldata_old[lev]->state), &(m_leveldata_new[lev]->state)},
@@ -710,13 +710,13 @@ PeleLM::fillpatch_phiV(
       crse_bndry_func(
         geom[lev - 1], fetchBCRecArray(PHIV, 1),
         PeleLMCCFillExtDirPhiV<ProblemSpecificFunctions>{
-          lprobparm, lpmfdata, m_nAux});
+          lprobparm, lpmfdata, m_nAux, m_map_eval});
     amrex::PhysBCFunct<
       amrex::GpuBndryFuncFab<PeleLMCCFillExtDirPhiV<ProblemSpecificFunctions>>>
       fine_bndry_func(
         geom[lev], fetchBCRecArray(PHIV, 1),
         PeleLMCCFillExtDirPhiV<ProblemSpecificFunctions>{
-          lprobparm, lpmfdata, m_nAux});
+          lprobparm, lpmfdata, m_nAux, m_map_eval});
     FillPatchTwoLevels(
       a_temp, amrex::IntVect(nGhost), a_time,
       {&(m_leveldata_old[lev - 1]->state), &(m_leveldata_new[lev - 1]->state)},
@@ -934,14 +934,14 @@ PeleLM::fillcoarsepatch_state(
       geom[lev - 1], fetchBCRecArray(0, nCompState),
       PeleLMCCFillExtDirState<ProblemSpecificFunctions>{
         lprobparm, lpmfdata, m_nAux,
-        static_cast<int>(turb_inflow.is_initialized())});
+        static_cast<int>(turb_inflow.is_initialized()), m_map_eval});
   amrex::PhysBCFunct<
     amrex::GpuBndryFuncFab<PeleLMCCFillExtDirState<ProblemSpecificFunctions>>>
     fine_bndry_func(
       geom[lev], fetchBCRecArray(0, nCompState),
       PeleLMCCFillExtDirState<ProblemSpecificFunctions>{
         lprobparm, lpmfdata, m_nAux,
-        static_cast<int>(turb_inflow.is_initialized())});
+        static_cast<int>(turb_inflow.is_initialized()), m_map_eval});
   InterpFromCoarseLevel(
     a_state, amrex::IntVect(nGhost), a_time, m_leveldata_new[lev - 1]->state, 0,
     0, nCompState, geom[lev - 1], geom[lev], crse_bndry_func, 0,
@@ -969,13 +969,13 @@ PeleLM::fillcoarsepatch_aux(
     crse_bndry_func(
       geom[lev - 1], fetchBCRecAuxArray(0, m_nAux),
       PeleLMCCFillExtDirAux<ProblemSpecificFunctions>{
-        lprobparm, lpmfdata, m_nAux});
+        lprobparm, lpmfdata, m_nAux, m_map_eval});
   amrex::PhysBCFunct<
     amrex::GpuBndryFuncFab<PeleLMCCFillExtDirAux<ProblemSpecificFunctions>>>
     fine_bndry_func(
       geom[lev], fetchBCRecAuxArray(0, m_nAux),
       PeleLMCCFillExtDirAux<ProblemSpecificFunctions>{
-        lprobparm, lpmfdata, m_nAux});
+        lprobparm, lpmfdata, m_nAux, m_map_eval});
   InterpFromCoarseLevel(
     a_aux, amrex::IntVect(nGhost), a_time,
     m_leveldata_new[lev - 1]->auxiliaries, 0, 0, m_nAux, geom[lev - 1],
@@ -1113,7 +1113,7 @@ PeleLM::setInflowBoundaryVel(
       geom[lev], dummyVelBCRec,
       PeleLMCCFillExtDirState<ProblemSpecificFunctions>{
         lprobparm, lpmfdata, m_nAux,
-        static_cast<int>(turb_inflow.is_initialized())});
+        static_cast<int>(turb_inflow.is_initialized()), m_map_eval});
 
   bndry_func(a_vel, 0, AMREX_SPACEDIM, a_vel.nGrowVect(), time, 0);
 

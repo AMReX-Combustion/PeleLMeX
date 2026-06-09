@@ -50,6 +50,8 @@ public:
 
   void create_map(int lev, const amrex::Geometry& geom) override;
 
+  [[nodiscard]] MeshMapEvaluator make_evaluator() const override;
+
   void fill_nodal_displacement(
     int lev,
     const amrex::Geometry& geom,

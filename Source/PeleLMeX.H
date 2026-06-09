@@ -2255,6 +2255,15 @@ public:
   std::unique_ptr<MeshMap> m_mesh_map;
   bool m_mesh_mapping{false};
 
+  // Cached device-callable evaluator for the active mesh mapping.  See
+  // PeleLMeX_MeshMapEvaluator.H.  Defaults to Kind::Identity when no
+  // mapping is active; refreshed from m_mesh_map->make_evaluator()
+  // whenever the mapping is (re)created (Init and Regrid paths).  This
+  // is the conduit used by user initdata_mapped / bcnormal code to
+  // obtain physical-space coordinates without having to know which
+  // concrete map is active.
+  MeshMapEvaluator m_map_eval{};
+
   // When true (and mesh mapping is active), WritePlotFile emits a
   // nodal-displacement MultiFab alongside the cell-centered state so
   // visualization tools can render the solution on the curvilinear
@@ -2271,6 +2280,13 @@ public:
     return m_mesh_map.get();
   }
   [[nodiscard]] bool hasMeshMapping() const noexcept { return m_mesh_mapping; }
+
+  //! Cached device-callable physical-coordinate evaluator (Identity
+  //! when no mesh mapping is active).
+  [[nodiscard]] const MeshMapEvaluator& meshMapEvaluator() const noexcept
+  {
+    return m_map_eval;
+  }
 
 private:
   //-----------------------------------------------------------------------------

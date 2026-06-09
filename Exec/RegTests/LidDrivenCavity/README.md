@@ -84,6 +84,58 @@ to switch to `mac_proj.use_mlhypre = 1` with HYPRE / BoomerAMG and
 `USE_HYPRE = TRUE` (see the AMReX documentation for building an
 appropriate version of hypre and setting `HYPER_DIR`)
 
+## Mesh-mapping-aware initial data and bcnormal (opt-in API)
+
+The driver passes a device-callable `MeshMapEvaluator mmap` to
+`initdata_mapped` and uses it to compute the `x[]` array that the
+driver hands to `bcnormal`.  Both behaviours are zero-cost on
+unmapped runs (the evaluator falls back to `Kind::Identity` and the
+helpers return the unmapped xi-space coordinate).
+
+### `initdata` (legacy) vs `initdata_mapped` (opt-in)
+
+The cavity here uses the legacy `initdata` (its IC is `u = 0`
+everywhere, so no coordinate is needed).  For a problem that needs
+the physical cell-centre coordinate, define `initdata_mapped`
+instead — the driver detects this at compile time via the
+`has_initdata_mapped_v<>` trait and dispatches accordingly.  Sketch:
+
+```cpp
+static void initdata_mapped(
+  int i, int j, int k, int is_incomp,
+  amrex::Array4<amrex::Real> const& state,
+  amrex::Array4<amrex::Real> const& aux,
+  amrex::GeometryData const& geomdata,
+  MeshMapEvaluator const& mmap,        // <-- new arg
+  MyProbParm const& prob_parm,
+  pele::physics::PMF::PmfData::DataContainer const* pmf_data)
+{
+  // Physical cell-centre coordinates under whatever map is active
+  // (Identity when none is active, so this is safe in both cases).
+  const amrex::Real x = mmap.x_phys_cc(0, i, geomdata);
+  const amrex::Real y = mmap.x_phys_cc(1, j, geomdata);
+  // ... use (x, y) to set state(i, j, k, ...) ...
+}
+```
+
+Defining both `initdata` and `initdata_mapped` is legal but
+`initdata_mapped` wins; the legacy `initdata` becomes dead code in
+that case.
+
+### `bcnormal` (unchanged signature, smarter `x`)
+
+The `x[]` array that the driver hands to `bcnormal` is now the
+**physical face-centre position** for `x[idir]` (the boundary
+direction being filled) and the physical cell-centre for the
+tangential axes.  Under no mesh mapping these reduce to the standard
+uniform-grid formulas, with one small correction: `x[idir]` is now
+at the boundary face rather than the ghost-cell centre (a half-cell
+shift in the boundary direction), matching the documented intent of
+the `bcnormal` interface.  User code that branches on `idir` /
+`sgn` (as this cavity does) is bit-exact unaffected; code that
+queries `x[idir]` for the boundary location now sees the actual
+wall position.
+
 ## Known limitations
 
   - **Single-level only.**  Multi-level AMR with mesh mapping is an

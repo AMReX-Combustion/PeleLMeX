@@ -7,6 +7,65 @@
 #include <AMReX_REAL.H>
 #include <PMFData.H>
 
+#include <PeleLMeX_MeshMapEvaluator.H>
+
+#include <type_traits>
+
+// Compile-time detection: does the user-supplied problem-specific
+// struct provide a mapping-aware `initdata_mapped` static method
+// (in addition to, or instead of, the legacy `initdata`)?  When true,
+// PeleLM::initLevelData dispatches to `initdata_mapped` and passes
+// the active MeshMapEvaluator; when false, it falls back to the
+// legacy `initdata` signature.  See PeleLMeX_Init.cpp for the
+// `if constexpr` switch.  Existing problem setups need no edits to
+// continue working; mapping-aware problems opt in by defining
+// `initdata_mapped` instead of `initdata`.
+template <typename T, typename = void>
+struct has_initdata_mapped : std::false_type
+{
+};
+
+template <typename T>
+struct has_initdata_mapped<T, std::void_t<decltype(&T::initdata_mapped)>>
+  : std::true_type
+{
+};
+
+template <typename T>
+inline constexpr bool has_initdata_mapped_v = has_initdata_mapped<T>::value;
+
+// Template helper that dispatches between legacy `initdata` and the
+// mapping-aware `initdata_mapped` at compile time.  Wrapping the
+// dispatch in a function template makes the calls dependent on the
+// template parameter `PSF`, so the `if constexpr` branch that doesn't
+// apply for the particular `PSF` is never instantiated -- which is
+// what allows existing problem setups (that define only the legacy
+// `initdata`) to keep compiling without providing an
+// `initdata_mapped` stub.
+template <typename PSF, typename ProbParm>
+AMREX_GPU_DEVICE AMREX_FORCE_INLINE void
+call_initdata(
+  int i,
+  int j,
+  int k,
+  int is_incomp,
+  amrex::Array4<amrex::Real> const& state,
+  amrex::Array4<amrex::Real> const& aux,
+  amrex::GeometryData const& geomdata,
+  MeshMapEvaluator const& mmap,
+  ProbParm const& prob_parm,
+  pele::physics::PMF::PmfData::DataContainer const* pmf_data) noexcept
+{
+  if constexpr (has_initdata_mapped_v<PSF>) {
+    PSF::initdata_mapped(
+      i, j, k, is_incomp, state, aux, geomdata, mmap, prob_parm, pmf_data);
+  } else {
+    (void)mmap; // unused in the legacy path; suppress -Wunused
+    PSF::initdata(
+      i, j, k, is_incomp, state, aux, geomdata, prob_parm, pmf_data);
+  }
+}
+
 struct ProbParmDefault
 {
   /**

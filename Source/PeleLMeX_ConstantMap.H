@@ -36,6 +36,8 @@ public:
 
   void create_map(int lev, const amrex::Geometry& geom) override;
 
+  [[nodiscard]] MeshMapEvaluator make_evaluator() const override;
+
   void fill_cc(int lev);
   void fill_nd(int lev);
   void fill_fc(int lev);

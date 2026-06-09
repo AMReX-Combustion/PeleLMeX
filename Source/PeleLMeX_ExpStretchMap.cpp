@@ -168,6 +168,23 @@ ExpStretchMap::create_map(int lev, const amrex::Geometry& geom)
   amrex::Gpu::streamSynchronize();
 }
 
+MeshMapEvaluator
+ExpStretchMap::make_evaluator() const
+{
+  MeshMapEvaluator e;
+  e.m_kind = MeshMapEvaluator::Kind::ExpStretch;
+  for (int d = 0; d < AMREX_SPACEDIM; ++d) {
+    if (d == m_dir) {
+      e.m_p[d] = m_beta;
+      e.m_q[d] = m_wall_end; // 0 = lo, 1 = hi
+    } else {
+      e.m_p[d] = Real(0.0); // identity on the unstretched axes
+      e.m_q[d] = -1;
+    }
+  }
+  return e;
+}
+
 void
 ExpStretchMap::fill_nodal_displacement(
   int lev, const amrex::Geometry& geom, amrex::MultiFab& disp_nd) const

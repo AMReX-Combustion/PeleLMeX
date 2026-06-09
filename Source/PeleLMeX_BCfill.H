@@ -1,6 +1,7 @@
 #ifndef PELELM_BCFILL
 #define PELELM_BCFILL
 #include <PeleLMeX_Index.H>
+#include <PeleLMeX_MeshMapEvaluator.H>
 #include <pelelmex_prob.H>
 #include <PMFData.H>
 #include <AMReX_PhysBCFunct.H>
@@ -8,6 +9,50 @@
 #include <AMReX_REAL.H>
 
 using namespace amrex::literals;
+
+// Compute the boundary-face coordinate array x[] that gets passed to
+// the user's bcnormal.  The boundary-direction component (d == idir)
+// is taken at the actual physical face; the tangential components
+// (d != idir) are taken at the ghost-cell centre (which has the same
+// tangential index as the matching interior cell).
+//
+// When the supplied MeshMapEvaluator is Kind::Identity, x[idir] is
+// `prob_lo[idir] + face_idx*dx[idir]` and x[d!=idir] is
+// `prob_lo[d] + (iv[d]+0.5)*dx[d]`.  When a mapping is active the
+// returned values are the physical-space coordinates under that
+// mapping, so user bcnormal code that branches on x[] sees the
+// physical face position rather than the xi-space position.
+//
+// Note: this corrects a latent half-cell offset in the legacy
+// computation, which used the ghost-cell centre for all components
+// (i.e. `x[idir] = prob_lo + (iv[idir]+0.5)*dx`, half a cell outside
+// the actual wall).  User code that branched on `x[idir]` via a
+// loose threshold (e.g. `x[idir] > 0.99*L`) is unaffected; code that
+// compares to an exact half-cell offset will see the wall position.
+AMREX_GPU_HOST_DEVICE
+AMREX_FORCE_INLINE
+void
+pelelm_bc_face_x(
+  amrex::IntVect const& iv,
+  int idir,
+  int sgn,
+  amrex::GeometryData const& geom,
+  MeshMapEvaluator const& mmap,
+  amrex::Real x[AMREX_SPACEDIM]) noexcept
+{
+  // sgn = +1 means low side: ghost cell at iv[idir] = domlo-1, face at
+  //                          integer index iv[idir] + 1 = domlo.
+  // sgn = -1 means high side: ghost cell at iv[idir] = domhi+1, face at
+  //                          integer index iv[idir] = domhi+1.
+  for (int d = 0; d < AMREX_SPACEDIM; ++d) {
+    if (d == idir) {
+      const int face_idx = (sgn > 0) ? iv[d] + 1 : iv[d];
+      x[d] = mmap.x_phys_face(d, face_idx, geom);
+    } else {
+      x[d] = mmap.x_phys_cc(d, iv[d], geom);
+    }
+  }
+}
 
 template <typename T>
 struct PeleLMCCFillExtDirState
@@ -17,17 +62,20 @@ struct PeleLMCCFillExtDirState
   pele::physics::PMF::PmfData::DataContainer const* lpmfdata;
   const int m_nAux;
   int m_do_turbInflow = 0;
+  MeshMapEvaluator m_map_eval{}; // defaults to Identity (no mesh mapping)
 
   AMREX_GPU_HOST
   constexpr PeleLMCCFillExtDirState(
     ProbParm const* a_prob_parm,
     pele::physics::PMF::PmfData::DataContainer const* a_pmf_data,
     int a_nAux,
-    int do_turbInflow)
+    int do_turbInflow,
+    MeshMapEvaluator a_map_eval = MeshMapEvaluator{})
     : lprobparm(a_prob_parm),
       lpmfdata(a_pmf_data),
       m_nAux(a_nAux),
-      m_do_turbInflow(do_turbInflow)
+      m_do_turbInflow(do_turbInflow),
+      m_map_eval(a_map_eval)
   {
   }
 
@@ -47,12 +95,6 @@ struct PeleLMCCFillExtDirState
     // Get geometry data
     const int* domlo = geom.Domain().loVect();
     const int* domhi = geom.Domain().hiVect();
-    const amrex::Real* prob_lo = geom.ProbLo();
-    const amrex::Real* dx = geom.CellSize();
-    const amrex::Real x[AMREX_SPACEDIM] = {AMREX_D_DECL(
-      prob_lo[0] + (iv[0] + 0.5_rt) * dx[0],
-      prob_lo[1] + (iv[1] + 0.5_rt) * dx[1],
-      prob_lo[2] + (iv[2] + 0.5_rt) * dx[2])};
 
     // Get a 3D version of iv to access first cell in domain
     auto iv_3d = amrex::IntVectND<3>(0);
@@ -69,6 +111,9 @@ struct PeleLMCCFillExtDirState
         const int* bc = bcr[n].data();
 
         if ((bc[idir] == amrex::BCType::ext_dir) and (iv[idir] < domlo[idir])) {
+
+          amrex::Real x[AMREX_SPACEDIM];
+          pelelm_bc_face_x(iv, idir, 1, geom, m_map_eval, x);
 
           // Get the state in the first cell in the domain
           auto iv_in = iv_3d;
@@ -106,6 +151,9 @@ struct PeleLMCCFillExtDirState
         if (
           (bc[idir + AMREX_SPACEDIM] == amrex::BCType::ext_dir) and
           (iv[idir] > domhi[idir])) {
+
+          amrex::Real x[AMREX_SPACEDIM];
+          pelelm_bc_face_x(iv, idir, -1, geom, m_map_eval, x);
 
           // Get the state in the first cell in the domain
           auto iv_in = iv_3d;
@@ -141,13 +189,18 @@ struct PeleLMCCFillExtDirAux
   ProbParm const* lprobparm;
   pele::physics::PMF::PmfData::DataContainer const* lpmfdata;
   const int m_nAux;
+  MeshMapEvaluator m_map_eval{};
 
   AMREX_GPU_HOST
   constexpr PeleLMCCFillExtDirAux(
     ProbParm const* a_prob_parm,
     pele::physics::PMF::PmfData::DataContainer const* a_pmf_data,
-    int a_nAux)
-    : lprobparm(a_prob_parm), lpmfdata(a_pmf_data), m_nAux(a_nAux)
+    int a_nAux,
+    MeshMapEvaluator a_map_eval = MeshMapEvaluator{})
+    : lprobparm(a_prob_parm),
+      lpmfdata(a_pmf_data),
+      m_nAux(a_nAux),
+      m_map_eval(a_map_eval)
   {
   }
 
@@ -166,12 +219,6 @@ struct PeleLMCCFillExtDirAux
     // Get geometry data
     const int* domlo = geom.Domain().loVect();
     const int* domhi = geom.Domain().hiVect();
-    const amrex::Real* prob_lo = geom.ProbLo();
-    const amrex::Real* dx = geom.CellSize();
-    const amrex::Real x[AMREX_SPACEDIM] = {AMREX_D_DECL(
-      prob_lo[0] + (iv[0] + 0.5_rt) * dx[0],
-      prob_lo[1] + (iv[1] + 0.5_rt) * dx[1],
-      prob_lo[2] + (iv[2] + 0.5_rt) * dx[2])};
 
 #if AMREX_SPACEDIM == 2
     auto aux_ext = aux.cellData(iv[0], iv[1], 0);
@@ -188,6 +235,8 @@ struct PeleLMCCFillExtDirAux
         const int* bc = bcr[n].data();
 
         if ((bc[idir] == amrex::BCType::ext_dir) and (iv[idir] < domlo[idir])) {
+          amrex::Real x[AMREX_SPACEDIM];
+          pelelm_bc_face_x(iv, idir, 1, geom, m_map_eval, x);
           // bcnormal_aux() is defined in pelelmex_prob.H in problem directory
           // in /Exec
           T::bcnormal_aux(
@@ -203,6 +252,8 @@ struct PeleLMCCFillExtDirAux
         if (
           (bc[idir + AMREX_SPACEDIM] == amrex::BCType::ext_dir) and
           (iv[idir] > domhi[idir])) {
+          amrex::Real x[AMREX_SPACEDIM];
+          pelelm_bc_face_x(iv, idir, -1, geom, m_map_eval, x);
           T::bcnormal_aux(
             x, aux_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
         }
@@ -218,13 +269,18 @@ struct PeleLMCCFillExtDirSpec
   ProbParm const* lprobparm;
   pele::physics::PMF::PmfData::DataContainer const* lpmfdata;
   const int m_nAux;
+  MeshMapEvaluator m_map_eval{};
 
   AMREX_GPU_HOST
   constexpr PeleLMCCFillExtDirSpec(
     ProbParm const* a_prob_parm,
     pele::physics::PMF::PmfData::DataContainer const* a_pmf_data,
-    int a_nAux)
-    : lprobparm(a_prob_parm), lpmfdata(a_pmf_data), m_nAux(a_nAux)
+    int a_nAux,
+    MeshMapEvaluator a_map_eval = MeshMapEvaluator{})
+    : lprobparm(a_prob_parm),
+      lpmfdata(a_pmf_data),
+      m_nAux(a_nAux),
+      m_map_eval(a_map_eval)
   {
   }
 
@@ -244,12 +300,6 @@ struct PeleLMCCFillExtDirSpec
     // Get geometry data
     const int* domlo = geom.Domain().loVect();
     const int* domhi = geom.Domain().hiVect();
-    const amrex::Real* prob_lo = geom.ProbLo();
-    const amrex::Real* dx = geom.CellSize();
-    const amrex::Real x[AMREX_SPACEDIM] = {AMREX_D_DECL(
-      prob_lo[0] + (iv[0] + 0.5_rt) * dx[0],
-      prob_lo[1] + (iv[1] + 0.5_rt) * dx[1],
-      prob_lo[2] + (iv[2] + 0.5_rt) * dx[2])};
 
     // Get a 3D version of iv to access first cell in domain
     auto iv_3d = amrex::IntVectND<3>(0);
@@ -267,6 +317,9 @@ struct PeleLMCCFillExtDirSpec
         // Low
         if ((bc[idir] == amrex::BCType::ext_dir) and (iv[idir] < domlo[idir])) {
 
+          amrex::Real x[AMREX_SPACEDIM];
+          pelelm_bc_face_x(iv, idir, 1, geom, m_map_eval, x);
+
           // Get the state on the first cell in the domain
           auto iv_in = iv_3d;
           iv_in[idir] = iv_in[idir] + 1;
@@ -283,6 +336,9 @@ struct PeleLMCCFillExtDirSpec
         } else if (
           (bc[idir + AMREX_SPACEDIM] == amrex::BCType::ext_dir) and
           (iv[idir] > domhi[idir])) {
+
+          amrex::Real x[AMREX_SPACEDIM];
+          pelelm_bc_face_x(iv, idir, -1, geom, m_map_eval, x);
 
           // Get the state on the first cell in the domain
           auto iv_in = iv_3d;
@@ -308,13 +364,18 @@ struct PeleLMCCFillExtDirDens
   ProbParm const* lprobparm;
   pele::physics::PMF::PmfData::DataContainer const* lpmfdata;
   const int m_nAux;
+  MeshMapEvaluator m_map_eval{};
 
   AMREX_GPU_HOST
   constexpr PeleLMCCFillExtDirDens(
     ProbParm const* a_prob_parm,
     pele::physics::PMF::PmfData::DataContainer const* a_pmf_data,
-    int a_nAux)
-    : lprobparm(a_prob_parm), lpmfdata(a_pmf_data), m_nAux(a_nAux)
+    int a_nAux,
+    MeshMapEvaluator a_map_eval = MeshMapEvaluator{})
+    : lprobparm(a_prob_parm),
+      lpmfdata(a_pmf_data),
+      m_nAux(a_nAux),
+      m_map_eval(a_map_eval)
   {
   }
 
@@ -334,12 +395,6 @@ struct PeleLMCCFillExtDirDens
     // Get geometry data
     const int* domlo = geom.Domain().loVect();
     const int* domhi = geom.Domain().hiVect();
-    const amrex::Real* prob_lo = geom.ProbLo();
-    const amrex::Real* dx = geom.CellSize();
-    const amrex::Real x[AMREX_SPACEDIM] = {AMREX_D_DECL(
-      prob_lo[0] + (iv[0] + 0.5_rt) * dx[0],
-      prob_lo[1] + (iv[1] + 0.5_rt) * dx[1],
-      prob_lo[2] + (iv[2] + 0.5_rt) * dx[2])};
 
     // Get a 3D version of iv to access first cell in domain
     auto iv_3d = amrex::IntVectND<3>(0);
@@ -354,6 +409,9 @@ struct PeleLMCCFillExtDirDens
     for (int idir = 0; idir < AMREX_SPACEDIM; ++idir) {
       // Low
       if ((bc[idir] == amrex::BCType::ext_dir) and (iv[idir] < domlo[idir])) {
+
+        amrex::Real x[AMREX_SPACEDIM];
+        pelelm_bc_face_x(iv, idir, 1, geom, m_map_eval, x);
 
         // Get the state on the first cell in the domain
         auto iv_in = iv_3d;
@@ -370,6 +428,9 @@ struct PeleLMCCFillExtDirDens
       } else if (
         (bc[idir + AMREX_SPACEDIM] == amrex::BCType::ext_dir) and
         (iv[idir] > domhi[idir])) {
+
+        amrex::Real x[AMREX_SPACEDIM];
+        pelelm_bc_face_x(iv, idir, -1, geom, m_map_eval, x);
 
         // Get the state on the first cell in the domain
         auto iv_in = iv_3d;
@@ -393,13 +454,18 @@ struct PeleLMCCFillExtDirRhoH
   ProbParm const* lprobparm;
   pele::physics::PMF::PmfData::DataContainer const* lpmfdata;
   const int m_nAux;
+  MeshMapEvaluator m_map_eval{};
 
   AMREX_GPU_HOST
   constexpr PeleLMCCFillExtDirRhoH(
     ProbParm const* a_prob_parm,
     pele::physics::PMF::PmfData::DataContainer const* a_pmf_data,
-    int a_nAux)
-    : lprobparm(a_prob_parm), lpmfdata(a_pmf_data), m_nAux(a_nAux)
+    int a_nAux,
+    MeshMapEvaluator a_map_eval = MeshMapEvaluator{})
+    : lprobparm(a_prob_parm),
+      lpmfdata(a_pmf_data),
+      m_nAux(a_nAux),
+      m_map_eval(a_map_eval)
   {
   }
 
@@ -419,12 +485,6 @@ struct PeleLMCCFillExtDirRhoH
     // Get geometry data
     const int* domlo = geom.Domain().loVect();
     const int* domhi = geom.Domain().hiVect();
-    const amrex::Real* prob_lo = geom.ProbLo();
-    const amrex::Real* dx = geom.CellSize();
-    const amrex::Real x[AMREX_SPACEDIM] = {AMREX_D_DECL(
-      prob_lo[0] + (iv[0] + 0.5_rt) * dx[0],
-      prob_lo[1] + (iv[1] + 0.5_rt) * dx[1],
-      prob_lo[2] + (iv[2] + 0.5_rt) * dx[2])};
 
     // Get a 3D version of iv to access first cell in domain
     auto iv_3d = amrex::IntVectND<3>(0);
@@ -439,6 +499,9 @@ struct PeleLMCCFillExtDirRhoH
     for (int idir = 0; idir < AMREX_SPACEDIM; ++idir) {
       // Low
       if ((bc[idir] == amrex::BCType::ext_dir) and (iv[idir] < domlo[idir])) {
+
+        amrex::Real x[AMREX_SPACEDIM];
+        pelelm_bc_face_x(iv, idir, 1, geom, m_map_eval, x);
 
         // Get the state on the first cell in the domain
         auto iv_in = iv_3d;
@@ -455,6 +518,9 @@ struct PeleLMCCFillExtDirRhoH
       } else if (
         (bc[idir + AMREX_SPACEDIM] == amrex::BCType::ext_dir) and
         (iv[idir] > domhi[idir])) {
+
+        amrex::Real x[AMREX_SPACEDIM];
+        pelelm_bc_face_x(iv, idir, -1, geom, m_map_eval, x);
 
         // Get the state on the first cell in the domain
         auto iv_in = iv_3d;
@@ -478,13 +544,18 @@ struct PeleLMCCFillExtDirTemp
   ProbParm const* lprobparm;
   pele::physics::PMF::PmfData::DataContainer const* lpmfdata;
   const int m_nAux;
+  MeshMapEvaluator m_map_eval{};
 
   AMREX_GPU_HOST
   constexpr PeleLMCCFillExtDirTemp(
     ProbParm const* a_prob_parm,
     pele::physics::PMF::PmfData::DataContainer const* a_pmf_data,
-    int a_nAux)
-    : lprobparm(a_prob_parm), lpmfdata(a_pmf_data), m_nAux(a_nAux)
+    int a_nAux,
+    MeshMapEvaluator a_map_eval = MeshMapEvaluator{})
+    : lprobparm(a_prob_parm),
+      lpmfdata(a_pmf_data),
+      m_nAux(a_nAux),
+      m_map_eval(a_map_eval)
   {
   }
 
@@ -504,12 +575,6 @@ struct PeleLMCCFillExtDirTemp
     // Get geometry data
     const int* domlo = geom.Domain().loVect();
     const int* domhi = geom.Domain().hiVect();
-    const amrex::Real* prob_lo = geom.ProbLo();
-    const amrex::Real* dx = geom.CellSize();
-    const amrex::Real x[AMREX_SPACEDIM] = {AMREX_D_DECL(
-      prob_lo[0] + (iv[0] + 0.5_rt) * dx[0],
-      prob_lo[1] + (iv[1] + 0.5_rt) * dx[1],
-      prob_lo[2] + (iv[2] + 0.5_rt) * dx[2])};
 
     // Get a 3D version of iv to access first cell in domain
     auto iv_3d = amrex::IntVectND<3>(0);
@@ -523,6 +588,9 @@ struct PeleLMCCFillExtDirTemp
     for (int idir = 0; idir < AMREX_SPACEDIM; ++idir) {
       // Low
       if ((bc[idir] == amrex::BCType::ext_dir) and (iv[idir] < domlo[idir])) {
+
+        amrex::Real x[AMREX_SPACEDIM];
+        pelelm_bc_face_x(iv, idir, 1, geom, m_map_eval, x);
 
         // Get the state on the first cell in the domain
         auto iv_in = iv_3d;
@@ -539,6 +607,9 @@ struct PeleLMCCFillExtDirTemp
       } else if (
         (bc[idir + AMREX_SPACEDIM] == amrex::BCType::ext_dir) and
         (iv[idir] > domhi[idir])) {
+
+        amrex::Real x[AMREX_SPACEDIM];
+        pelelm_bc_face_x(iv, idir, -1, geom, m_map_eval, x);
 
         // Get the state on the first cell in the domain
         auto iv_in = iv_3d;
@@ -563,13 +634,18 @@ struct PeleLMCCFillExtDirnE
   ProbParm const* lprobparm;
   pele::physics::PMF::PmfData::DataContainer const* lpmfdata;
   const int m_nAux;
+  MeshMapEvaluator m_map_eval{};
 
   AMREX_GPU_HOST
   constexpr PeleLMCCFillExtDirnE(
     ProbParm const* a_prob_parm,
     pele::physics::PMF::PmfData::DataContainer const* a_pmf_data,
-    int a_nAux)
-    : lprobparm(a_prob_parm), lpmfdata(a_pmf_data), m_nAux(a_nAux)
+    int a_nAux,
+    MeshMapEvaluator a_map_eval = MeshMapEvaluator{})
+    : lprobparm(a_prob_parm),
+      lpmfdata(a_pmf_data),
+      m_nAux(a_nAux),
+      m_map_eval(a_map_eval)
   {
   }
 
@@ -589,12 +665,6 @@ struct PeleLMCCFillExtDirnE
     // Get geometry data
     const int* domlo = geom.Domain().loVect();
     const int* domhi = geom.Domain().hiVect();
-    const amrex::Real* prob_lo = geom.ProbLo();
-    const amrex::Real* dx = geom.CellSize();
-    const amrex::Real x[AMREX_SPACEDIM] = {AMREX_D_DECL(
-      prob_lo[0] + (iv[0] + 0.5_rt) * dx[0],
-      prob_lo[1] + (iv[1] + 0.5_rt) * dx[1],
-      prob_lo[2] + (iv[2] + 0.5_rt) * dx[2])};
 
     // Get a 3D version of iv to access first cell in domain
     auto iv_3d = amrex::IntVectND<3>(0);
@@ -609,6 +679,9 @@ struct PeleLMCCFillExtDirnE
     for (int idir = 0; idir < AMREX_SPACEDIM; ++idir) {
       // Low
       if ((bc[idir] == amrex::BCType::ext_dir) and (iv[idir] < domlo[idir])) {
+
+        amrex::Real x[AMREX_SPACEDIM];
+        pelelm_bc_face_x(iv, idir, 1, geom, m_map_eval, x);
 
         // Get the state on the first cell in the domain
         auto iv_in = iv_3d;
@@ -625,6 +698,9 @@ struct PeleLMCCFillExtDirnE
       } else if (
         (bc[idir + AMREX_SPACEDIM] == amrex::BCType::ext_dir) and
         (iv[idir] > domhi[idir])) {
+
+        amrex::Real x[AMREX_SPACEDIM];
+        pelelm_bc_face_x(iv, idir, -1, geom, m_map_eval, x);
 
         // Get the state on the first cell in the domain
         auto iv_in = iv_3d;
@@ -650,13 +726,18 @@ struct PeleLMCCFillExtDirPhiV
   ProbParm const* lprobparm;
   pele::physics::PMF::PmfData::DataContainer const* lpmfdata;
   const int m_nAux;
+  MeshMapEvaluator m_map_eval{};
 
   AMREX_GPU_HOST
   constexpr PeleLMCCFillExtDirPhiV(
     ProbParm const* a_prob_parm,
     pele::physics::PMF::PmfData::DataContainer const* a_pmf_data,
-    int a_nAux)
-    : lprobparm(a_prob_parm), lpmfdata(a_pmf_data), m_nAux(a_nAux)
+    int a_nAux,
+    MeshMapEvaluator a_map_eval = MeshMapEvaluator{})
+    : lprobparm(a_prob_parm),
+      lpmfdata(a_pmf_data),
+      m_nAux(a_nAux),
+      m_map_eval(a_map_eval)
   {
   }
 
@@ -676,12 +757,6 @@ struct PeleLMCCFillExtDirPhiV
     // Get geometry data
     const int* domlo = geom.Domain().loVect();
     const int* domhi = geom.Domain().hiVect();
-    const amrex::Real* prob_lo = geom.ProbLo();
-    const amrex::Real* dx = geom.CellSize();
-    const amrex::Real x[AMREX_SPACEDIM] = {AMREX_D_DECL(
-      prob_lo[0] + (iv[0] + 0.5_rt) * dx[0],
-      prob_lo[1] + (iv[1] + 0.5_rt) * dx[1],
-      prob_lo[2] + (iv[2] + 0.5_rt) * dx[2])};
 
     // Get a 3D version of iv to access first cell in domain
     auto iv_3d = amrex::IntVectND<3>(0);
@@ -696,6 +771,9 @@ struct PeleLMCCFillExtDirPhiV
     for (int idir = 0; idir < AMREX_SPACEDIM; ++idir) {
       // Low
       if ((bc[idir] == amrex::BCType::ext_dir) and (iv[idir] < domlo[idir])) {
+
+        amrex::Real x[AMREX_SPACEDIM];
+        pelelm_bc_face_x(iv, idir, 1, geom, m_map_eval, x);
 
         // Get the state on the first cell in the domain
         auto iv_in = iv_3d;
@@ -712,6 +790,9 @@ struct PeleLMCCFillExtDirPhiV
       } else if (
         (bc[idir + AMREX_SPACEDIM] == amrex::BCType::ext_dir) and
         (iv[idir] > domhi[idir])) {
+
+        amrex::Real x[AMREX_SPACEDIM];
+        pelelm_bc_face_x(iv, idir, -1, geom, m_map_eval, x);
 
         // Get the state on the first cell in the domain
         auto iv_in = iv_3d;

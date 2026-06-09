@@ -424,6 +424,7 @@ PeleLM::MakeNewLevelFromCoarse(
   if (m_mesh_map) {
     m_mesh_map->define(lev, ba, dm, *m_factory[lev], m_nGrowState);
     m_mesh_map->create_map(lev, geom[lev]);
+    m_map_eval = m_mesh_map->make_evaluator();
   }
 }
 
@@ -546,6 +547,7 @@ PeleLM::RemakeLevel(
   if (m_mesh_map) {
     m_mesh_map->define(lev, ba, dm, *m_factory[lev], m_nGrowState);
     m_mesh_map->create_map(lev, geom[lev]);
+    m_map_eval = m_mesh_map->make_evaluator();
   }
 }
 

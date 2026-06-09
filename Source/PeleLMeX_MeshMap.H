@@ -14,6 +14,8 @@
 #include <AMReX_SPACE.H>
 #include <AMReX_Vector.H>
 
+#include <PeleLMeX_MeshMapEvaluator.H>
+
 /**
  * \brief Abstract mesh-mapping base class.
  *
@@ -105,6 +107,23 @@ public:
    */
   virtual void fill_nodal_displacement(
     int lev, const amrex::Geometry& geom, amrex::MultiFab& disp_nd) const;
+
+  /**
+   * \brief Return a device-callable evaluator capable of producing the
+   *        physical-space coordinate of any cell centre or face from
+   *        its integer index plus the corresponding GeometryData.
+   *
+   * The base implementation returns the identity (\c Kind::Identity);
+   * each concrete map populates a richer payload.  Held by value by
+   * the PeleLM driver and captured by value into device lambdas, this
+   * is the recommended way for user \c initdata_mapped /
+   * \c bcnormal code to obtain physical positions in a mapping-aware
+   * but mapping-agnostic fashion.
+   */
+  [[nodiscard]] virtual MeshMapEvaluator make_evaluator() const
+  {
+    return MeshMapEvaluator{};
+  }
 
   /** \return the number of active levels currently allocated. */
   [[nodiscard]] int num_levels() const

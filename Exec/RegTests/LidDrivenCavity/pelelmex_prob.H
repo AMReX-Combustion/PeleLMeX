@@ -22,6 +22,38 @@ struct MyProbParm : public ProbParmDefault
 
 struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
 {
+  // Demonstration of the mapping-aware initdata signature.  This
+  // problem only needs `state = 0` regardless of position, so the
+  // mapping is not actually consulted here -- but defining this
+  // method exercises the `has_initdata_mapped_v<>` dispatch in
+  // PeleLM::initLevelData and confirms that user code can use
+  // `mmap.x_phys_cc(...)` to obtain physical-space coordinates when
+  // it needs them.  The local `(void) ... ` reads ensure the compiler
+  // doesn't optimise the calls away.
+  AMREX_GPU_DEVICE
+  AMREX_FORCE_INLINE
+  static void initdata_mapped(
+    int i,
+    int j,
+    int k,
+    int /*is_incompressible*/,
+    amrex::Array4<amrex::Real> const& state,
+    amrex::Array4<amrex::Real> const& /*aux*/,
+    amrex::GeometryData const& geomdata,
+    MeshMapEvaluator const& mmap,
+    MyProbParm const& /*prob_parm*/,
+    pele::physics::PMF::PmfData::DataContainer const* /*pmf_data*/)
+  {
+    // Physical cell-centre position; under TanhStretchMap (beta=2,2)
+    // this is the curvilinear coordinate, not the uniform xi-space one.
+    const amrex::Real x = mmap.x_phys_cc(0, i, geomdata);
+    const amrex::Real y = mmap.x_phys_cc(1, j, geomdata);
+    amrex::ignore_unused(x, y);
+    AMREX_D_TERM(state(i, j, k, VELX) = amrex::Real(0.0);
+                 , state(i, j, k, VELY) = amrex::Real(0.0);
+                 , state(i, j, k, VELZ) = amrex::Real(0.0));
+  }
+
   AMREX_GPU_DEVICE
   AMREX_FORCE_INLINE
   static void initdata(

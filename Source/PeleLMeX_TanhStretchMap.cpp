@@ -148,6 +148,18 @@ TanhStretchMap::create_map(int lev, const amrex::Geometry& geom)
   amrex::Gpu::streamSynchronize();
 }
 
+MeshMapEvaluator
+TanhStretchMap::make_evaluator() const
+{
+  MeshMapEvaluator e;
+  e.m_kind = MeshMapEvaluator::Kind::TanhStretch;
+  for (int d = 0; d < AMREX_SPACEDIM; ++d) {
+    e.m_p[d] = m_beta[d];
+    e.m_q[d] = -1;
+  }
+  return e;
+}
+
 void
 TanhStretchMap::fill_nodal_displacement(
   int lev, const amrex::Geometry& geom, amrex::MultiFab& disp_nd) const

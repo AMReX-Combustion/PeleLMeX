@@ -36,6 +36,18 @@ ConstantMap::create_map(int lev, const amrex::Geometry& /*geom*/)
   amrex::Gpu::streamSynchronize();
 }
 
+MeshMapEvaluator
+ConstantMap::make_evaluator() const
+{
+  MeshMapEvaluator e;
+  e.m_kind = MeshMapEvaluator::Kind::Constant;
+  for (int d = 0; d < AMREX_SPACEDIM; ++d) {
+    e.m_p[d] = m_fac[d];
+    e.m_q[d] = -1;
+  }
+  return e;
+}
+
 void
 ConstantMap::fill_cc(int lev)
 {

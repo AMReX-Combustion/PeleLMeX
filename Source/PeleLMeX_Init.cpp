@@ -133,6 +133,11 @@ PeleLM::MakeNewLevelFromScratch(
     m_mesh_map->define(
       lev, grids[lev], dmap[lev], *m_factory[lev], m_nGrowState);
     m_mesh_map->create_map(lev, geom[lev]);
+    // Refresh the cached device-callable evaluator so user
+    // initdata_mapped / bcnormal code sees the active mapping.
+    // (Idempotent across levels: the evaluator parameters do not
+    // depend on the level.)
+    m_map_eval = m_mesh_map->make_evaluator();
   }
 
 #ifdef AMREX_USE_EB
@@ -397,14 +402,24 @@ PeleLM::initLevelData(const int lev)
   auto const& aux_ma =
     (m_nAux > 0) ? ldata_p->auxiliaries.arrays() : dummy_mf.arrays();
 
+  // Capture the cached mesh-mapping evaluator by value so user code in
+  // ProblemSpecificFunctions::initdata_mapped (if provided) can query
+  // physical-space coordinates via e.g. `mmap.x_phys_cc(0, i, geomdata)`.
+  // For unmapped runs `mmap` is Kind::Identity and the helpers return
+  // the unmapped xi-space coordinate.  Existing problem setups that
+  // only define the legacy `initdata` get dispatched there inside
+  // call_initdata (a templated wrapper in
+  // PeleLMeX_ProblemSpecificFunctions.H); their lambda capture of
+  // `mmap` is free (a few bytes, no MultiFab references).
+  const MeshMapEvaluator mmap = m_map_eval;
   amrex::ParallelFor(
     ldata_p->state,
-    [state_ma, aux_ma, geomdata, lprobparm, lpmfdata,
+    [state_ma, aux_ma, geomdata, lprobparm, lpmfdata, mmap,
      is_incomp =
        m_incompressible] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
-      ProblemSpecificFunctions::initdata(
+      call_initdata<ProblemSpecificFunctions>(
         i, j, k, is_incomp, state_ma[box_no], aux_ma[box_no], geomdata,
-        *lprobparm, lpmfdata);
+        mmap, *lprobparm, lpmfdata);
     });
   amrex::Gpu::streamSynchronize();
 
