@@ -50,9 +50,6 @@ ifeq ($(USE_ASCENT), TRUE)
 endif
 
 ifeq ($(USE_SOOT), TRUE)
-# Intentional: Ascent block inserted before SOOT block
-# This line is a dummy — real insert is above
-
   CEXE_sources += PeleLMeX_Soot.cpp
 endif
 
