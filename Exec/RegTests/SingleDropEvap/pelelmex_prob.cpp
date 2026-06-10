@@ -92,16 +92,19 @@ PeleLM::readProbParm()
 
   // Read mesh-mapping scaling factors for spray IC
   {
-    amrex::ParmParse ppcm("ConstantMap");
-    amrex::Vector<amrex::Real> fac(AMREX_SPACEDIM, 1.0);
-    ppcm.queryarr("scaling_factor", fac, 0, AMREX_SPACEDIM);
-    prob_parm->fac_x = fac[0];
-#if AMREX_SPACEDIM >= 2
-    prob_parm->fac_y = fac[1];
-#endif
-#if AMREX_SPACEDIM >= 3
-    prob_parm->fac_z = fac[2];
-#endif
+    amrex::ParmParse ppg("geometry");
+	std::string mesh_map = "ConstantMap";
+	if (ppg.countval("mesh_mapping")) {
+		ppg.get("mesh_mapping",mesh_map);
+		AMREX_ALWAYS_ASSERT_WITH_MESSAGE(mesh_map == "ConstantMap",
+										 "Sprays can only be mapped with ConstantMap");
+		amrex::ParmParse ppcm("ConstantMap");
+		amrex::Vector<amrex::Real> fac(AMREX_SPACEDIM, 1.0);
+		ppcm.queryarr("scaling_factor", fac, 0, AMREX_SPACEDIM);
+		AMREX_D_TERM(prob_parm->fac_x = fac[0];,
+					 prob_parm->fac_y = fac[1];,
+					 prob_parm->fac_z = fac[2];);
+	  }
   }
 }
 

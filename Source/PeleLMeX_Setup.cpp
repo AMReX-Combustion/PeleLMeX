@@ -304,11 +304,6 @@ PeleLM::readParameters()
         "mesh_mapping is not supported with the plasma solver "
         "(PELE_USE_PLASMA).");
 #endif
-#ifdef PELE_USE_SPRAY
-      amrex::Abort(
-        "mesh_mapping is not supported with Lagrangian sprays "
-        "(PELE_USE_SPRAY).");
-#endif
       if (geom[0].IsRZ()) {
         amrex::Abort(
           "mesh_mapping is not supported with RZ geometry "
