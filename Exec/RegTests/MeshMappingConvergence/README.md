@@ -101,7 +101,7 @@ of this harness):
 | lowmach (g ON)     | bit-identical | 0.974               | 0.975               | 2–3 % deviation, grows ~×2/step from buoyancy feedback |
 | lowmach_nograv     | bit-identical | 1.048               | 1.048               | ~5 % deviation, **plateaus**; no amplification |
 
-For the stretch sweep, even with hypre installled, cases with beta>4 will
+For the stretch sweep, even with hypre installed, cases with beta>4 will
 fail in one of the projection steps.  Leading up to this failure in beta
 one should observe dramatically increasing numbers of solver iterations,
 particularly for the mac.  Larger runs at the smaller beta values will be
