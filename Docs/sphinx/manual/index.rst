@@ -31,6 +31,7 @@ point your web browser at the file ``${PELE_HOME}/Docs/build/html/index.html``.
    :caption: Usage:
 
    LMeXControls.rst
+   InSituViz.rst
    Troubleshooting.rst
 
 .. toctree::
