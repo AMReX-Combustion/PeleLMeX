@@ -384,14 +384,13 @@ PeleLM::constructPlotMF(
 #endif
 #ifdef PELE_USE_SOOT
       amrex::MultiFab::Copy(
-        a_mf_plt[lev], m_leveldata_new[lev]->state, FIRSTSOOT, cnt,
-        NUMSOOTVAR, 0);
+        a_mf_plt[lev], m_leveldata_new[lev]->state, FIRSTSOOT, cnt, NUMSOOTVAR,
+        0);
       cnt += NUMSOOTVAR;
 #endif
 #ifdef PELE_USE_RADIATION
       if (do_rad_solve) {
-        amrex::MultiFab::Copy(
-          a_mf_plt[lev], rad_model->G()[lev], 0, cnt, 1, 0);
+        amrex::MultiFab::Copy(a_mf_plt[lev], rad_model->G()[lev], 0, cnt, 1, 0);
         cnt += 1;
         amrex::MultiFab::Copy(
           a_mf_plt[lev], rad_model->kappa()[lev], 0, cnt, 1, 0);
@@ -477,16 +476,16 @@ PeleLM::constructPlotMF(
       cnt += AMREX_SPACEDIM;
       for (int spf = 0; spf < SPRAY_FUEL_NUM; ++spf) {
         amrex::MultiFab::Copy(
-          a_mf_plt[lev], *m_spraysource[lev], scomps.specSrcIndx + spf,
-          cnt++, 1, 0);
+          a_mf_plt[lev], *m_spraysource[lev], scomps.specSrcIndx + spf, cnt++,
+          1, 0);
       }
     }
 #endif
 #ifdef PELE_USE_PLASMA
     if (m_do_extraEFdiags) {
       amrex::MultiFab::Copy(
-        a_mf_plt[lev], *m_ionsFluxes[lev], 0, cnt,
-        m_ionsFluxes[lev]->nComp(), 0);
+        a_mf_plt[lev], *m_ionsFluxes[lev], 0, cnt, m_ionsFluxes[lev]->nComp(),
+        0);
       cnt += m_ionsFluxes[lev]->nComp();
     }
 #endif
@@ -539,7 +538,8 @@ PeleLM::constructPlotMF(
   }
 
   // Sanity check: ncomp and name list must stay in sync.
-  // Mirrors PeleC's constructPlotMF AMREX_ASSERT(n_data_items == plt_var_names.size()).
+  // Mirrors PeleC's constructPlotMF AMREX_ASSERT(n_data_items ==
+  // plt_var_names.size()).
   AMREX_ASSERT(ncomp == static_cast<int>(a_plt_VarsName.size()));
 }
 void
