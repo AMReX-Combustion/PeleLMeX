@@ -72,9 +72,9 @@ struct PeleLMCCFillExtDirState
     pele::physics::PMF::PmfData::DataContainer const* a_pmf_data,
     int a_nAux,
     int do_turbInflow,
-    MeshMapEvaluator a_map_eval = MeshMapEvaluator{},
     int do_inletFromPlane,
-    int inlet_plane_dir)
+    int inlet_plane_dir,
+    MeshMapEvaluator a_map_eval = MeshMapEvaluator{})
     : lprobparm(a_prob_parm),
       lpmfdata(a_pmf_data),
       m_nAux(a_nAux),
