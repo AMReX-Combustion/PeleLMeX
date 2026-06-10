@@ -76,6 +76,15 @@ struct MeshMapEvaluator
   }
 
   /**
+   * \brief Physical size of domain along axis \p idir.
+   */
+  AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE amrex::Real
+  domain_size_phys(int idir, amrex::GeometryData const& gd) const noexcept
+  {
+    return x_phys_from_xi(idir, gd.ProbHi()[idir], gd) - x_phys_from_xi(idir, gd.ProbLo()[idir], gd); 
+  }
+
+  /**
    * \brief Physical coordinate of the face between cells \p idx-1 and
    *        \p idx along axis \p idir.
    *

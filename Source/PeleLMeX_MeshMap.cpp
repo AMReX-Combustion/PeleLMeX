@@ -74,7 +74,7 @@ MeshMap::define(
 std::unique_ptr<MeshMap>
 MeshMap::create(const std::string& name)
 {
-  if (name == "ConstantMap") {
+  if (name == "" || name == "ConstantMap") {
     return std::make_unique<ConstantMap>();
   }
   if (name == "ExpStretchMap") {

@@ -56,7 +56,7 @@ PeleLM::Setup()
   // physically isotropic grid (or the user has intentionally chosen
   // anisotropic physical spacing).
   {
-    std::string mesh_mapping_name;
+    std::string mesh_mapping_name = "";
     amrex::ParmParse ppg("geometry");
     const bool mesh_mapping_on =
       static_cast<bool>(ppg.query("mesh_mapping", mesh_mapping_name));
@@ -288,8 +288,13 @@ PeleLM::readParameters()
   {
     amrex::ParmParse ppg("geometry");
     std::string mesh_mapping_name;
-    if (ppg.query("mesh_mapping", mesh_mapping_name) != 0) {
-      m_mesh_mapping = true;
+	m_mesh_mapping = true;
+    if (ppg.query("mesh_mapping", mesh_mapping_name) == 0) {
+	  // Create a default mapping
+      m_mesh_map = MeshMap::create("");
+
+	} else {
+      m_mesh_map = MeshMap::create(mesh_mapping_name);
 
       // --- Compatibility guards -----------------------------------------
       // These match amr-wind PR #545's stated limitations.  Relaxing any

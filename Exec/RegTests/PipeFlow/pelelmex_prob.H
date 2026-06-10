@@ -66,11 +66,10 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
       , const amrex::Real z = mmap.x_phys_cc(2, k, geomdata););
 
     AMREX_D_TERM(
-      const amrex::Real Lx = (prob_hi[0] - prob_lo[0]) * prob_parm.fac_x;
-      , const amrex::Real Ly = (prob_hi[1] - prob_lo[1]) * prob_parm.fac_y;
-      , const amrex::Real Lz = (prob_hi[2] - prob_lo[2]) * prob_parm.fac_z);
+		const amrex::Real Lx = mmap.domain_size_phys(0, geomdata);
+		, const amrex::Real Ly = mmap.domain_size_phys(1, geomdata);
+		, const amrex::Real Lz = mmap.domain_size_phys(2, geomdata););
 
-    auto eos = pele::physics::PhysicsType::eos();
     constexpr amrex::Real Pi = 3.14159265358979323846264338327950288;
 
     amrex::Real massfrac[NUM_SPECIES] = {0.0};
@@ -169,6 +168,7 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
       return;
     }
 
+    auto eos = pele::physics::PhysicsType::eos();
     state(i, j, k, TEMP) = prob_parm.T_mean;
 
     amrex::Real P_cgs = prob_parm.P_mean * 10.0;

@@ -2118,6 +2118,9 @@ PeleLM::initMixtureFraction()
   amrex::Real atwCHON[4] = {0.0};
   pele::physics::eos::atomic_weightsCHON<pele::physics::PhysicsType::eos_type>(
     atwCHON);
+  if (atwCHON[0]*atwCHON[1]*atwCHON[2]*atwCHON[3] == 0) {
+	return; // then nothing useful here and also avoid divide by zero below here
+  }
   Beta_mix[0] = (atwCHON[0] != 0.0) ? 2.0 / atwCHON[0] : 0.0;
   Beta_mix[1] = (atwCHON[1] != 0.0) ? 1.0 / (2.0 * atwCHON[1]) : 0.0;
   Beta_mix[2] = (atwCHON[2] != 0.0) ? -1.0 / atwCHON[2] : 0.0;
