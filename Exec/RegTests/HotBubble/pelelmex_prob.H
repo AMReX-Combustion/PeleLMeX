@@ -45,7 +45,6 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
   {
     const amrex::Real* prob_lo = geomdata.ProbLo();
     const amrex::Real* prob_hi = geomdata.ProbHi();
-    const amrex::Real* dx = geomdata.CellSize();
 
     // Convert AMReX indices to *physical* coordinates using the mesh-
     // mapping factors; for the default fac = 1 this is identical to
