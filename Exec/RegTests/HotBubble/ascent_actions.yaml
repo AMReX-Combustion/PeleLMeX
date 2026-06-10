@@ -1,0 +1,17 @@
+-
+  action: "add_scenes"
+  scenes:
+    scene1:
+      image_prefix: "hotbubble_temp_%05d"
+      plots:
+        plt1:
+          type: "pseudocolor"
+          field: "temp"
+    scene2:
+      image_prefix: "hotbubble_mesh_%05d"
+      plots:
+        plt1:
+          type: "pseudocolor"
+          field: "temp"
+        plt2:
+          type: "mesh"

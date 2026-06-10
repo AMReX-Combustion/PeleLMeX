@@ -320,3 +320,129 @@ on the simulation results since the computational time is minimal:
 * Switch to a different advection scheme (see the :doc:`LMeXControls` page for a list of available schemes). What is the effect on the interface wrinkling and smearing ?
 
 * If your computational resources allows, build the 3D version of the case and compare the 2D-RZ and 3D results.
+
+.. _sec:TUTO_HB::Ascent:
+
+In-situ visualization with Ascent
+----------------------------------
+
+`PeleLMeX` supports in-situ visualization via `Ascent
+<https://ascent.readthedocs.io>`_, an open-source many-core capable
+lightweight in-situ visualization and analysis library developed as part of the
+`Alpine <https://alpine-dav.github.io/ascent/>`_ project. Ascent uses `Conduit
+<https://llnl-conduit.readthedocs.io>`_ to describe and pass simulation data,
+and the `Viskores <https://github.com/Viskores/viskores>`_ library for
+rendering on both CPU and GPU. Since the solver state is passed directly to
+Ascent without writing to disk, in-situ rendering eliminates the I/O bottleneck
+of traditional post-hoc workflows and is well-suited to large-scale GPU runs.
+
+.. note::
+    Ascent and Conduit must be built and installed before enabling in-situ
+    visualization. Refer to the `Ascent build documentation
+    <https://ascent.readthedocs.io/en/latest/BuildingAscent.html>`_ and the
+    `Conduit build documentation
+    <https://llnl-conduit.readthedocs.io/en/latest/building.html>`_ for
+    instructions. The ``build_ascent.sh`` script provided in the Ascent
+    repository (``scripts/build_ascent/build_ascent.sh``) builds both Ascent
+    and Conduit together and is the recommended approach.
+
+Building with Ascent
+^^^^^^^^^^^^^^^^^^^^^
+
+Ascent support is enabled at compile time by passing the following flags to
+the GNUmake build system (the ``HotBubble`` GNUmakefile is unchanged): ::
+
+    make -j8 USE_CUDA=TRUE CUDA_ARCH=89         \
+             USE_ASCENT=TRUE                    \
+             ASCENT_DIR=/path/to/ascent/install \
+             USE_CONDUIT=TRUE                   \
+             CONDUIT_DIR=/path/to/conduit/install
+
+Replace ``/path/to/ascent/install`` and ``/path/to/conduit/install`` with the
+paths to your Ascent and Conduit installations. ``CUDA_ARCH`` should match your
+GPU's compute capability (e.g., ``89`` for NVIDIA RTX 40-series, ``80`` for
+A100). Omit the ``USE_CUDA`` flags to build a CPU-only Ascent-enabled
+executable.
+
+Runtime activation
+^^^^^^^^^^^^^^^^^^^
+
+Ascent is activated at runtime by adding the following to the input file (or
+passing on the command line): ::
+
+    ascent.plot_int = 10    # call Ascent every 10 time steps
+
+When ``ascent.plot_int`` is not set or is negative, Ascent is disabled and
+there is no runtime overhead.
+
+Ascent reads a YAML actions file named ``ascent_actions.yaml`` from the run
+directory automatically. This file describes what to render. A reference file
+is provided in the ``HotBubble`` case directory: ::
+
+    Exec/RegTests/HotBubble/ascent_actions.yaml
+
+The reference file defines two scenes rendered simultaneously at each in-situ
+call with no additional solver cost: ::
+
+    -
+      action: "add_scenes"
+      scenes:
+        scene1:
+          image_prefix: "hotbubble_temp_%05d"
+          plots:
+            plt1:
+              type: "pseudocolor"
+              field: "temp"
+        scene2:
+          image_prefix: "hotbubble_mesh_%05d"
+          plots:
+            plt1:
+              type: "pseudocolor"
+              field: "temp"
+            plt2:
+              type: "mesh"
+
+``scene1`` renders the temperature field as a pseudocolor image.
+``scene2`` renders the same temperature field with the AMR mesh overlaid,
+clearly showing the block-structured refinement levels that `PeleLMeX`
+automatically generates around the bubble interface.
+
+
+.. figure:: images/tutorials/HB_Ascent_combined.png
+   :name: HB_Ascent_combined
+   :align: center
+   :figwidth: 95%
+
+   : Temperature field (left) and temperature with AMR mesh overlay (right) at step 200.
+
+
+Ascent automatically selects the best available rendering backend — CUDA
+when available, otherwise OpenMP — based on how it was compiled. No
+additional configuration is required.
+
+Published fields
+^^^^^^^^^^^^^^^^^
+
+The following fields from the PeleLMeX state vector are published to Ascent
+at each in-situ call and are available for rendering in ``ascent_actions.yaml``:
+
+* ``x_velocity``, ``y_velocity`` (``z_velocity`` in 3D)
+* ``density``
+* ``rho.Y(<species>)`` for each species in the mechanism (e.g. ``rho.Y(N2)``)
+* ``rhoh``
+* ``temp``
+* ``RhoRT``
+
+Example run
+^^^^^^^^^^^^
+
+To run the ``HotBubble`` case with in-situ rendering every 50 steps: ::
+
+    mpirun -n 1 ./PeleLMeX2d.gnu.MPI.CUDA.ex input.2d-regt \
+        amr.max_step=400 amr.plot_int=-1 amr.check_int=-1   \
+        ascent.plot_int=50
+
+
+For more information on available Ascent actions (contours, volume rendering,
+Cinema databases, triggers, etc.), see the `Ascent actions documentation
+<https://ascent.readthedocs.io/en/latest/Actions/Actions.html>`_.
