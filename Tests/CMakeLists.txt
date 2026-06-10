@@ -49,6 +49,26 @@ macro(setup_test)
     endif()
     # Make working directory for test
     file(MAKE_DIRECTORY ${CURRENT_TEST_BINARY_DIR})
+    # Stage case data not covered by the .dat/.py glob below — typically
+    # subdirectories (ref_files), files with other extensions, etc.
+    # Symlink from the case source folder into the per-test binary dir,
+    # copying as a fallback if the platform refuses the symlink.
+    foreach(_extra IN LISTS ATR_EXTRA_FILES)
+      set(_src "${CURRENT_TEST_SOURCE_DIR}/${_extra}")
+      set(_dst "${CURRENT_TEST_BINARY_DIR}/${_extra}")
+      if(NOT EXISTS "${_src}")
+        message(FATAL_ERROR
+          "add_test_r(${TEST_NAME}): EXTRA_FILES entry '${_extra}' "
+          "not found at '${_src}'.")
+      endif()
+      file(REMOVE_RECURSE "${_dst}")
+      get_filename_component(_dst_dir "${_dst}" DIRECTORY)
+      file(MAKE_DIRECTORY "${_dst_dir}")
+      file(CREATE_LINK "${_src}" "${_dst}" SYMBOLIC RESULT _link_rc)
+      if(NOT IS_SYMLINK "${_dst}")
+        file(COPY "${_src}" DESTINATION "${_dst_dir}")
+      endif()
+    endforeach()
     # Gather all files in source directory for test
     file(GLOB TEST_FILES "${CURRENT_TEST_SOURCE_DIR}/*.dat" "${CURRENT_TEST_SOURCE_DIR}/*.py")
     # Copy files to test working directory
@@ -90,10 +110,45 @@ endmacro(setup_test)
 
 # Standard regression test
 function(add_test_r TEST_NAME TEST_EXE_DIR)
+    cmake_parse_arguments(ATR "" "RESTART_STEP" "EXTRA_FILES" ${ARGN})
+
     setup_test()
     set(RUNTIME_OPTIONS "amr.max_step=10 ${RUNTIME_OPTIONS}")
-    add_test(${TEST_NAME} bash -c "set -o pipefail && ${MPI_COMMANDS} ${CURRENT_TEST_EXE} ${MPIEXEC_POSTFLAGS} ${CURRENT_TEST_BINARY_DIR}/${TEST_NAME}.inp ${RUNTIME_OPTIONS} 2>&1 | tee ${TEST_NAME}.log ${SAVE_GOLDS_COMMAND} ${FCOMPARE_COMMAND}")
-    set_tests_properties(${TEST_NAME} PROPERTIES TIMEOUT 18000 PROCESSORS ${PELE_NP} WORKING_DIRECTORY "${CURRENT_TEST_BINARY_DIR}/" LABELS "regression" ATTACHED_FILES "${CURRENT_TEST_BINARY_DIR}/${TEST_NAME}.log")
+
+    if(DEFINED ATR_RESTART_STEP)
+        # Two-phase restart variant:
+        #   phase 1 runs RESTART_STEP steps and writes a checkpoint;
+        #   phase 2 restarts from that checkpoint and runs through step 10,
+        #   with fcompare applied to plt00010 from the restarted run.
+        # Zero-pad RESTART_STEP to AMReX's 5-digit chk format (chkNNNNN).
+        set(_padded "0000${ATR_RESTART_STEP}")
+        string(LENGTH "${_padded}" _len)
+        math(EXPR _start "${_len} - 5")
+        string(SUBSTRING "${_padded}" ${_start} 5 _step_padded)
+
+        set(P1_OPTS "amr.max_step=${ATR_RESTART_STEP} amr.check_int=${ATR_RESTART_STEP} amr.plot_int=-1 amr.check_file=chk")
+        set(P2_OPTS "amr.restart=chk${_step_padded} amr.max_step=10 amr.check_int=-1")
+
+        add_test(${TEST_NAME} bash -c "set -o pipefail \
+&& ${MPI_COMMANDS} ${CURRENT_TEST_EXE} ${MPIEXEC_POSTFLAGS} ${CURRENT_TEST_BINARY_DIR}/${TEST_NAME}.inp ${RUNTIME_OPTIONS} ${P1_OPTS} 2>&1 | tee ${TEST_NAME}.phase1.log \
+&& ${MPI_COMMANDS} ${CURRENT_TEST_EXE} ${MPIEXEC_POSTFLAGS} ${CURRENT_TEST_BINARY_DIR}/${TEST_NAME}.inp ${RUNTIME_OPTIONS} ${P2_OPTS} 2>&1 | tee ${TEST_NAME}.phase2.log ${SAVE_GOLDS_COMMAND} ${FCOMPARE_COMMAND}")
+
+        set_tests_properties(${TEST_NAME} PROPERTIES
+            TIMEOUT 18000
+            PROCESSORS ${PELE_NP}
+            WORKING_DIRECTORY "${CURRENT_TEST_BINARY_DIR}/"
+            LABELS "regression"
+            ATTACHED_FILES "${CURRENT_TEST_BINARY_DIR}/${TEST_NAME}.phase1.log;${CURRENT_TEST_BINARY_DIR}/${TEST_NAME}.phase2.log")
+    else()
+        add_test(${TEST_NAME} bash -c "set -o pipefail && ${MPI_COMMANDS} ${CURRENT_TEST_EXE} ${MPIEXEC_POSTFLAGS} ${CURRENT_TEST_BINARY_DIR}/${TEST_NAME}.inp ${RUNTIME_OPTIONS} 2>&1 | tee ${TEST_NAME}.log ${SAVE_GOLDS_COMMAND} ${FCOMPARE_COMMAND}")
+
+        set_tests_properties(${TEST_NAME} PROPERTIES
+            TIMEOUT 18000
+            PROCESSORS ${PELE_NP}
+            WORKING_DIRECTORY "${CURRENT_TEST_BINARY_DIR}/"
+            LABELS "regression"
+            ATTACHED_FILES "${CURRENT_TEST_BINARY_DIR}/${TEST_NAME}.log")
+    endif()
 endfunction(add_test_r)
 
 # Regression test with mass conservation verification
@@ -236,7 +291,7 @@ if(NOT PELE_ENABLE_EB)
     add_test_r(soot-rad-${PELE_DIM}d SootRadTest)
   endif()
   if(PELE_ENABLE_PARTICLES)
-    add_test_r(single-drop-evap-gcm-test SingleDropEvap)
+    add_test_r(single-drop-evap-gcm-test SingleDropEvap EXTRA_FILES ref_files)
   endif()
   if(PELE_DIM EQUAL 2)
     add_test_r(tripleflame-${PELE_DIM}d TripleFlame)
@@ -252,6 +307,13 @@ else()
     add_test_rt(composition-test-${PELE_DIM}d EB_ODEQty)
     add_test_r(eb_bfs EB_BackwardStepFlame)
     add_test_r(eb_bfs_pp EB_BackwardStepFlame)
+    # Recycling-plane inflow capability (PeleLM::fillFromRecyclingPlane)
+    add_test_r(eb_bfs_recycle_off     EB_BackwardStepFlame)
+    add_test_r(eb_bfs_recycle_basic   EB_BackwardStepFlame)
+    add_test_r(eb_bfs_recycle_warmup  EB_BackwardStepFlame)
+    add_test_r(eb_bfs_recycle_window  EB_BackwardStepFlame)
+    add_test_r(eb_bfs_recycle_amr     EB_BackwardStepFlame)
+    add_test_r(eb_bfs_recycle_restart EB_BackwardStepFlame RESTART_STEP 5)
   endif()
   add_test_r(eb-odeqty-${PELE_DIM}d EB_ODEQty)
 endif()

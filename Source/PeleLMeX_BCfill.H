@@ -63,6 +63,8 @@ struct PeleLMCCFillExtDirState
   const int m_nAux;
   int m_do_turbInflow = 0;
   MeshMapEvaluator m_map_eval{}; // defaults to Identity (no mesh mapping)
+  int m_do_inlet_from_plane = 0;
+  int m_inlet_from_plane_dir = -1;
 
   AMREX_GPU_HOST
   constexpr PeleLMCCFillExtDirState(
@@ -70,12 +72,16 @@ struct PeleLMCCFillExtDirState
     pele::physics::PMF::PmfData::DataContainer const* a_pmf_data,
     int a_nAux,
     int do_turbInflow,
-    MeshMapEvaluator a_map_eval = MeshMapEvaluator{})
+    MeshMapEvaluator a_map_eval = MeshMapEvaluator{},
+    int do_inletFromPlane,
+    int inlet_plane_dir)
     : lprobparm(a_prob_parm),
       lpmfdata(a_pmf_data),
       m_nAux(a_nAux),
       m_do_turbInflow(do_turbInflow),
-      m_map_eval(a_map_eval)
+      m_map_eval(a_map_eval),
+      m_do_inlet_from_plane(do_inletFromPlane),
+      m_inlet_from_plane_dir(inlet_plane_dir)
   {
   }
 
@@ -120,14 +126,18 @@ struct PeleLMCCFillExtDirState
           iv_in[idir] = iv_in[idir] + 1;
           const auto s_in = state.cellData(iv_in[0], iv_in[1], iv_in[2]);
 
-          // If using TurbInflow, pass in the turbulent data. User can overwrite
-          // if needed
-          if (m_do_turbInflow != 0) {
-            if (n >= VELX && n < DENSITY) {
+          // If using TurbInflow or inlet_from_plane, pass in the sampled data.
+          // User can overwrite or increment, as needed
+          if (n >= VELX && n < DENSITY) {
+            if (
+              m_do_turbInflow != 0 || ((m_do_inlet_from_plane != 0) &&
+                                       (idir == m_inlet_from_plane_dir))) {
               if (!isnan(
                     state(iv, VELX + n))) { // During fillcoarsepatch, get here
                                             // with nan. TODO: find a better fix
                 s_ext[VELX + n] = state(iv, VELX + n);
+              } else {
+                s_ext[VELX + n] = 0;
               }
             }
           }
@@ -160,14 +170,18 @@ struct PeleLMCCFillExtDirState
           iv_in[idir] = iv_in[idir] - 1;
           const auto s_in = state.cellData(iv_in[0], iv_in[1], iv_in[2]);
 
-          // If using TurbInflow, pass in the turbulent data. User can overwrite
-          // if needed
-          if (m_do_turbInflow != 0) {
-            if (n >= VELX && n < DENSITY) {
+          // If using TurbInflow or inlet_from_plane, pass in the sampled data.
+          // User can overwrite or increment, as needed
+          if (n >= VELX && n < DENSITY) {
+            if (
+              m_do_turbInflow != 0 || ((m_do_inlet_from_plane != 0) &&
+                                       (idir == m_inlet_from_plane_dir))) {
               if (!isnan(
                     state(iv, VELX + n))) { // During fillcoarsepatch, get here
                                             // with nan. TODO: find a better fix
                 s_ext[VELX + n] = state(iv, VELX + n);
+              } else {
+                s_ext[VELX + n] = 0;
               }
             }
           }

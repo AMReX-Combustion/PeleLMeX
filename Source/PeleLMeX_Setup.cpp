@@ -348,6 +348,31 @@ PeleLM::readParameters()
       << " Simulation performed with the closed chamber algorithm \n";
   }
 
+  // -----------------------------------------
+  // Recycling-plane inflow
+  // -----------------------------------------
+  pp.query("use_inlet_from_plane", m_use_inlet_from_plane);
+  pp.query("inlet_plane_dir", m_inlet_plane_dir);
+  pp.query("inlet_plane_position", m_inlet_plane_position);
+  pp.query("inlet_plane_avg_window", m_inlet_plane_avg_window);
+  pp.query("inlet_plane_warmup_steps", m_inlet_plane_warmup_steps);
+  if (m_use_inlet_from_plane != 0) {
+    AMREX_ALWAYS_ASSERT_WITH_MESSAGE(
+      m_inlet_plane_dir >= 0 && m_inlet_plane_dir < AMREX_SPACEDIM,
+      "peleLM.inlet_plane_dir must be set to a valid direction "
+      "when peleLM.use_inlet_from_plane is enabled");
+    AMREX_ALWAYS_ASSERT_WITH_MESSAGE(
+      m_inlet_plane_position >= geom[0].ProbLo()[m_inlet_plane_dir] &&
+        m_inlet_plane_position <= geom[0].ProbHi()[m_inlet_plane_dir],
+      "peleLM.inlet_plane_position must lie within the problem domain "
+      "bounds in peleLM.inlet_plane_dir when "
+      "peleLM.use_inlet_from_plane is enabled");
+    AMREX_ALWAYS_ASSERT_WITH_MESSAGE(
+      m_inlet_plane_warmup_steps >= 0,
+      "peleLM.inlet_plane_warmup_steps must be non-negative when "
+      "peleLM.use_inlet_from_plane is enabled");
+  }
+
 #ifdef PELE_USE_PLASMA
   amrex::ParmParse ppef("ef");
 

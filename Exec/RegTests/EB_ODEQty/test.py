@@ -4,6 +4,22 @@ import numpy as np
 import pandas as pd
 import unittest
 
+def read_last_dataset(path, **read_csv_kwargs):
+    """Read only the most-recently-appended block from a header-repeating CSV.
+
+    The file is assumed to have the same column-header line at the start
+    of every appended block. This finds the last occurrence of that line
+    and returns a DataFrame of just the rows after it, with the header
+    taken from that line. Extra kwargs are forwarded to pandas.read_csv.
+    """
+    with open(path) as f:
+        header = f.readline().rstrip('\n')
+        last_header_lineno = 0  # 0 = the very first header at the top
+        for lineno, line in enumerate(f, start=1):
+            if line.rstrip('\n') == header:
+                last_header_lineno = lineno
+    return pd.read_csv(path, skiprows=last_header_lineno, **read_csv_kwargs)
+
 class CompTestCase(unittest.TestCase):
     """Test composition of species with external sources"""
 
@@ -18,7 +34,7 @@ class CompTestCase(unittest.TestCase):
         file_name = os.path.join(file_dir, "temporals/tempExtremas")
         col_names = ["time", "max_density", "max_rho.Y(AR)", "max_rho.Y(N2)", "max_rho.Y(CO2)"]
         var_names = ["AR", "N2", "CO2"]
-        data = pd.read_csv(file_name, usecols=col_names, delimiter=',')
+        data = read_last_dataset(file_name, usecols=col_names, delimiter=',')
         print("Raw data:\n", data)
 
         # Ensure numeric types for all data columns

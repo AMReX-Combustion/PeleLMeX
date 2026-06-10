@@ -60,10 +60,7 @@ public:
   // Accessors (useful for drivers / diagnostic code that wants to
   // replay the mapping formula, e.g. when writing mapping-aware
   // initial conditions).
-  [[nodiscard]] amrex::Real beta(int dir) const noexcept
-  {
-    return m_beta[dir];
-  }
+  [[nodiscard]] amrex::Real beta(int dir) const noexcept { return m_beta[dir]; }
 
 private:
   amrex::Real m_beta[AMREX_SPACEDIM] = {AMREX_D_DECL(0.0, 0.0, 0.0)};

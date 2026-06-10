@@ -418,8 +418,8 @@ PeleLM::initLevelData(const int lev)
      is_incomp =
        m_incompressible] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
       call_initdata<ProblemSpecificFunctions>(
-        i, j, k, is_incomp, state_ma[box_no], aux_ma[box_no], geomdata,
-        mmap, *lprobparm, lpmfdata);
+        i, j, k, is_incomp, state_ma[box_no], aux_ma[box_no], geomdata, mmap,
+        *lprobparm, lpmfdata);
     });
   amrex::Gpu::streamSynchronize();
 

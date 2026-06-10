@@ -772,6 +772,31 @@ PeleLM::WriteHeader(const std::string& name, const bool is_checkpoint) const
     for (amrex::Real typical_value : typical_values) {
       HeaderFile << typical_value << "\n";
     }
+
+    // Optional recycling-plane block. When inlet-from-plane is enabled and
+    // recycling_active, emit the recycling block, including per-level status.
+    // "RecyclingPlanePresent: 0" means the feature was enabled but no recycling
+    // samples were available for that level yet; older checkpoints without
+    // the marker remain readable because the restart code treats the absence
+    // of the marker as "inactive".
+    const bool recycling_active =
+      (m_use_inlet_from_plane != 0) && m_inlet_recycling.initialized &&
+      static_cast<int>(m_inlet_recycling.mean_src.size()) >= finest_level + 1;
+    if ((m_use_inlet_from_plane != 0) && recycling_active) {
+      HeaderFile << "RecyclingPlane: " << "\n";
+      HeaderFile << (recycling_active ? m_inlet_recycling.n_samples : 0)
+                 << "\n";
+      for (int lev = 0; lev <= finest_level; ++lev) {
+        const bool planePresent =
+          recycling_active && (m_inlet_recycling.mean_src[lev] != nullptr);
+        HeaderFile << "RecyclingPlanePresent: " << (planePresent ? 1 : 0)
+                   << "\n";
+        if (planePresent) {
+          m_inlet_recycling.mean_src[lev]->boxArray().writeOn(HeaderFile);
+          HeaderFile << "\n";
+        }
+      }
+    }
   }
 }
 
@@ -841,6 +866,17 @@ PeleLM::WriteCheckPointFile()
           amrex::MultiFabFileFullPrefix(
             lev, checkpointname, level_prefix, "I_R"));
       }
+    }
+
+    // Per-level recycling-plane running mean (only when active and seeded).
+    if (
+      (m_use_inlet_from_plane != 0) && m_inlet_recycling.initialized &&
+      lev < static_cast<int>(m_inlet_recycling.mean_src.size()) &&
+      m_inlet_recycling.mean_src[lev]) {
+      amrex::VisMF::Write(
+        *m_inlet_recycling.mean_src[lev],
+        amrex::MultiFabFileFullPrefix(
+          lev, checkpointname, level_prefix, "recycle_mean"));
     }
   }
 #ifdef PELE_USE_SPRAY
@@ -979,6 +1015,39 @@ PeleLM::ReadCheckPointFile()
     GotoNextLine(is);
   }
 
+  // Optional recycling-plane block. Pre-existing checkpoints don't have this
+  // marker; we leave the state un-restored (the running mean will reseed
+  // from the next sample), however we must be careful to safely rewind the
+  // stream if the marker is not found
+  bool have_recycling_chk = false;
+  int chk_recycling_n_samples = 0;
+  amrex::Vector<amrex::BoxArray> chk_recycling_ba;
+  {
+    std::streampos pos = is.tellg();
+    std::string marker;
+    if ((is >> marker) && marker == "RecyclingPlane:") {
+      GotoNextLine(is);
+      is >> chk_recycling_n_samples;
+      GotoNextLine(is);
+      chk_recycling_ba.resize(finest_level + 1);
+      for (int lev = 0; lev <= finest_level; ++lev) {
+        std::string level_marker;
+        int level_present;
+        is >> level_marker >> level_present;
+        GotoNextLine(is);
+        AMREX_ASSERT(level_marker == "RecyclingPlanePresent:");
+        if (level_present != 0) {
+          chk_recycling_ba[lev].readFrom(is);
+          GotoNextLine(is);
+        }
+      }
+      have_recycling_chk = true;
+    } else {
+      is.clear();    // Clear EOF flags if they were set
+      is.seekg(pos); // Only rewind if RecyclingPlane data NOT found
+    }
+  }
+
   /***************************************************************************
    * Load fluid data                                                         *
    ***************************************************************************/
@@ -1063,6 +1132,55 @@ PeleLM::ReadCheckPointFile()
 #endif
     }
   }
+
+  // Restore the recycling-plane running mean if both the checkpoint had it
+  // and recycling is enabled in this run. We deliberately ParallelCopy from a
+  // temporary MultiFab (built with the on-disk BoxArray) into the rebuilt
+  // slab (which uses the current run's maxGridSize), so a maxGridSize change
+  // between the original run and the restart is handled transparently.
+  if (have_recycling_chk && (m_use_inlet_from_plane != 0)) {
+    buildRecyclingPlaneStorage();
+    for (int lev = 0; lev <= finest_level; ++lev) {
+      if (
+        lev < static_cast<int>(chk_recycling_ba.size()) &&
+        (!chk_recycling_ba[lev].empty()) &&
+        lev < static_cast<int>(m_inlet_recycling.mean_src.size()) &&
+        m_inlet_recycling.mean_src[lev]) {
+        amrex::DistributionMapping chk_dm{
+          chk_recycling_ba[lev], amrex::ParallelDescriptor::NProcs()};
+        amrex::MultiFab chk_mean(
+          chk_recycling_ba[lev], chk_dm, AMREX_SPACEDIM, 0);
+        amrex::VisMF::Read(
+          chk_mean, amrex::MultiFabFileFullPrefix(
+                      lev, m_restart_chkfile, level_prefix, "recycle_mean"));
+        m_inlet_recycling.mean_src[lev]->ParallelCopy(
+          chk_mean, 0, 0, AMREX_SPACEDIM);
+      }
+    }
+    m_inlet_recycling.initialized = true;
+    m_inlet_recycling.n_samples = chk_recycling_n_samples;
+    if (m_inlet_recycling.n_samples <= m_inlet_plane_warmup_steps) {
+      amrex::Print()
+        << "WARNING: Current setting for inlet_plane_warmup_steps is greater "
+        << "than or equal to checkpointed n_samples. Injected fluctuations "
+        << "will remain disabled until additional snapshots increase "
+        << "n_samples beyond the warmup threshold.\n";
+    }
+    // Storage was just rebuilt from current-run geometry; the regrid hooks
+    // may set this back to 1 later, which is fine.
+    m_recycling_needs_rebuild = false;
+  } else if (have_recycling_chk && (m_use_inlet_from_plane == 0)) {
+    amrex::Print()
+      << "WARNING: Restart checkpoint contains RecyclingPlane data, but "
+      << "peleLM.use_inlet_from_plane = 0 in this run. Ignoring checkpointed "
+      << "recycling-plane running mean.\n";
+  } else if ((!have_recycling_chk) && (m_use_inlet_from_plane != 0)) {
+    amrex::Print()
+      << "WARNING: peleLM.use_inlet_from_plane != 0 in this run, but the "
+      << "restart checkpoint does not contain RecyclingPlane data. "
+      << "Recycling-plane running mean will not be restored from checkpoint.\n";
+  }
+
   if (m_verbose != 0) {
     amrex::Print() << "Restart complete \n";
   }

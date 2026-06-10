@@ -46,7 +46,7 @@ This case setup also supports single droplet evaporation validation for spray mo
 to manifold based chemistry models. These models replace the EOS and Transport property models from
 PelePhysics with tabulated (or neural network) reduced-order representations. These models require additional
 files containing the tabulated data and associated metadata, which are generated with the separate [CMLM
-repository](https://github.com/NREL/cmlm). For example purposes, we include the necessary files to run the
+repository](https://github.com/NatLabRockies/cmlm). For example purposes, we include the necessary files to run the
 `WongLin` case (`spray_wonglin.ctb` and `manifold_metadata_wonglin.text`). To run the sample case, which uses
 PeleMP liquid properties with Antoine coefficients, first compile with `USE_MANIFOLD=TRUE`, `Manifold_Dim=1`,
 `SPRAY_FUEL_NUM=1` and `SPRAY_GCM=FALSE`. Then run:
@@ -56,7 +56,7 @@ mpirun -np 4 ./<PeleLMeX_EXE> single-drop-evap-mp-manifold.inp
 
 The `Validate.py` script can also be used to run any of the cases with manifold-based chemistry. This requires an installed version of CMLM (including dependencies), which can be obtained within this directory using:
 ~~~
-git clone git@github.com:NREL/cmlm.git
+git clone git@github.com:NatLabRockies/cmlm.git
 pip install -e cmlm
 ~~~
 Then run `Validate.py` with the option `--use_manifold` (or the shorthand `-m`) and the appropriate `--cmlm_path` if downloaded elsewhere. For example: 

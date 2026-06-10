@@ -1,0 +1,97 @@
+#---------------------- DOMAIN DEFINITION ------------------------
+geometry.is_periodic = 0 0
+geometry.coord_sys   = 0
+geometry.prob_lo     = -0.01   -0.01
+geometry.prob_hi     =  0.07    0.01
+
+#---------------------- BC FLAGS ---------------------------------
+peleLM.lo_bc = Inflow  NoSlipWallAdiab
+peleLM.hi_bc = Outflow NoSlipWallAdiab
+
+#---------------------- AMR CONTROL ------------------------------
+amr.n_cell          = 128 32
+amr.v               = 1
+amr.max_level       = 0
+amr.n_error_buf     = 2 2 2 2
+amr.grid_eff        = 0.7
+amr.blocking_factor = 16
+amr.max_grid_size   = 64
+
+#---------------------- Problem ----------------------------------
+prob.T_mean = 298.0
+prob.P_mean = 101325.0
+prob.T_hot  = 1800
+prob.T_wall = 300
+prob.meanFlowMag = 10.0
+prob.Y_fuel = 0.0445269
+prob.Y_oxid = 0.2226345
+mac_proj.atol = 5e-11
+mac_proj.rtol = 5e-11
+mac_proj.verbose = 0
+
+#---------------------- PeleLM CONTROL ---------------------------
+peleLM.v = 1
+peleLM.use_wbar = 1
+peleLM.sdc_iterMax = 2
+peleLM.num_init_iter = 3
+peleLM.floor_species = 0
+peleLM.initDataPlt_patch_flow_variables = false
+
+# Warmup larger than max_step: the snapshot/mean-update path runs every
+# step, but the fluctuation injection is gated off until n_samples >
+# warmup_steps. With max_step=10, injection never activates, so the state
+# at plt00010 should agree bitwise with the recycling-off baseline.
+peleLM.use_inlet_from_plane    = 1
+peleLM.inlet_plane_dir         = 0
+peleLM.inlet_plane_position    = 0.03
+peleLM.inlet_plane_warmup_steps = 15
+
+#---------------------- Time Stepping CONTROL --------------------
+amr.max_step = 10
+amr.stop_time = 0.1
+amr.cfl = 0.4
+amr.dt_shrink = 0.001
+amr.dt_change_max = 1.1
+
+#---------------------- IO CONTROL -------------------------------
+amr.plot_int = -1
+amr.check_int = -1
+amr.derive_plot_vars = avg_pressure mag_vort
+
+#---------------------- Derived CONTROLS -------------------------
+peleLM.fuel_name = CH4
+peleLM.mixtureFraction.format = Cantera
+peleLM.mixtureFraction.type   = mass
+peleLM.mixtureFraction.oxidTank = O2:0.233 N2:0.767
+peleLM.mixtureFraction.fuelTank = CH4:1.0
+peleLM.progressVariable.format = Cantera
+peleLM.progressVariable.weights = CO:1.0 CO2:1.0
+peleLM.progressVariable.coldState = CO:0.0 CO2:0.0
+peleLM.progressVariable.hotState = CO:0.000002 CO2:0.0666
+
+#---------------------- Reactor CONTROL --------------------------
+peleLM.chem_integrator = "ReactorCvode"
+peleLM.use_typ_vals_chem = 1
+ode.rtol = 1.0e-6
+ode.atol = 1.0e-5
+ode.clean_init_massfrac = 0
+cvode.solve_type = denseAJ_direct
+cvode.max_order  = 4
+
+#---------------------- EB SETUP ---------------------------------
+eb2.geom_type = box
+eb2.box_lo =    -0.01   -0.01
+eb2.box_hi =     0.01     0.0
+eb2.box_has_fluid_inside = 0
+eb2.small_volfrac   = 1.0e-4
+peleLM.isothermal_EB = 1
+
+#---------------------- Linear solver CONTROL --------------------
+nodal_proj.verbose = 0
+mac_proj.verbose = 0
+
+#---------------------- Refinement CONTROL------------------------
+amr.refinement_indicators = gradT
+amr.gradT.max_level     = 3
+amr.gradT.adjacent_difference_greater = 100
+amr.gradT.field_name    = temp

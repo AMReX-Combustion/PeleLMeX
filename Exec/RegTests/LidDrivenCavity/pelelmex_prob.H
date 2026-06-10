@@ -98,9 +98,9 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
     // type in PeleLMeX is the long-term fix; that would let
     // AMReX-Hydro's tangential-velocity extrapolation force both
     // predictor states to the wall velocity.
-    AMREX_D_TERM(s_ext[VELX] = amrex::Real(0.0);,
-                 s_ext[VELY] = amrex::Real(0.0);,
-                 s_ext[VELZ] = amrex::Real(0.0));
+    AMREX_D_TERM(
+      s_ext[VELX] = amrex::Real(0.0);, s_ext[VELY] = amrex::Real(0.0);
+      , s_ext[VELZ] = amrex::Real(0.0));
     amrex::ignore_unused(x);
     if (idir == 1 && sgn == -1) {
       s_ext[VELX] = prob_parm.U_lid;

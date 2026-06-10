@@ -51,7 +51,7 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
     amrex::Array4<amrex::Real> const& state,
     amrex::Array4<amrex::Real> const& /*aux*/,
     amrex::GeometryData const& geomdata,
-	MeshMapEvaluator const& mmap,
+    MeshMapEvaluator const& mmap,
     MyProbParm const& prob_parm,
     pele::physics::PMF::PmfData::DataContainer const* /*pmf_data*/)
   {
@@ -61,9 +61,9 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
 
     // Convert AMReX indices to *physical* coordinates
     AMREX_D_TERM(
-				 const amrex::Real x = mmap.x_phys_cc(0, i, geomdata);,
-				 const amrex::Real y = mmap.x_phys_cc(1, j, geomdata);,
-				 const amrex::Real z = mmap.x_phys_cc(2, k, geomdata););
+      const amrex::Real x = mmap.x_phys_cc(0, i, geomdata);
+      , const amrex::Real y = mmap.x_phys_cc(1, j, geomdata);
+      , const amrex::Real z = mmap.x_phys_cc(2, k, geomdata););
 
     AMREX_D_TERM(
       const amrex::Real Lx = (prob_hi[0] - prob_lo[0]) * prob_parm.fac_x;

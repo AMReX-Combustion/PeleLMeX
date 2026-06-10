@@ -1219,6 +1219,20 @@ public:
     const int lev,
     const amrex::Real a_time);
 
+  void fillFromRecyclingPlane(amrex::MultiFab& a_vel, int vel_comp, int lev);
+
+  // (Re)build per-level thin-slab storage for the recycling plane.
+  void buildRecyclingPlaneStorage();
+  // Sample state at the recycling plane, update running mean and store the
+  // current fluctuation. Should be called once per coarse step after the new
+  // velocity is available.
+  void updateRecyclingPlaneSnapshot();
+  // Cell-centered index of the recycling plane on level `lev`.
+  int computeRecyclingSrcIndex(int lev) const;
+  // If dt>=m_inlet_plane_avg_window, the injected fluctions will be
+  // approximately zero, warn user every step this happens
+  bool m_warned_clipped_recycle_avg_window_this_step;
+
   // Average down operations
   void averageDownState(const PeleLM::TimeStamp a_time);
   void averageDownScalars(const PeleLM::TimeStamp a_time);
@@ -1800,6 +1814,7 @@ public:
   amrex::Vector<amrex::BCRec> fetchBCRecArray(const int scomp, const int ncomp);
   amrex::Vector<amrex::BCRec>
   fetchBCRecAuxArray(const int scomp, const int ncomp);
+  amrex::Vector<amrex::BCRec> fetchBCRecDummyArray(const int ncomp);
   amrex::Vector<int> fetchAdvTypeArray(const int scomp, const int ncomp);
   amrex::Vector<int> fetchDiffTypeArray(const int scomp, const int ncomp);
   amrex::Vector<int> fetchAdvTypeAuxArray(const int scomp, const int ncomp);
@@ -1853,6 +1868,44 @@ public:
   amrex::BCRec m_bcrec_divu;
   amrex::Vector<amrex::BCRec> m_bcrec_force;
   amrex::Vector<amrex::BCRec> m_bcrec_aux;
+  amrex::BCRec m_bcrec_dummy;
+
+  // Recycling-plane inflow controls (see fillFromRecyclingPlane).
+  // Recycling injects a zero-mean fluctuation onto the inflow ghost cells:
+  //   u_inlet(t) = u_inlet_target_mean + [u_src(t) - <u_src>]
+  // The standard ext_dir BC continues to set u_inlet_target_mean; this
+  // machinery only supplies the bracketed fluctuation.
+  int m_use_inlet_from_plane = 0;
+  int m_inlet_plane_dir = -1;
+  amrex::Real m_inlet_plane_position = 0.0;
+  // Time-averaging window (in simulation time units) for the running source-
+  // plane mean. <=0 falls back to a cumulative average.
+  amrex::Real m_inlet_plane_avg_window = -1.0;
+  // Number of recycling-plane samples to accumulate before injecting any
+  // fluctuation (lets the running mean settle).
+  int m_inlet_plane_warmup_steps = 0;
+  // Set to 1 whenever per-level thin-slab storage needs to be rebuilt
+  // (initialization, regrid). Consumed by updateRecyclingPlaneSnapshot.
+  bool m_recycling_needs_rebuild = true;
+
+  // Per-level thin-slab storage for the recycling plane: one cell thick along
+  // m_inlet_plane_dir, spanning the full transverse cross-section at the
+  // source-plane index for that level's resolution.
+  struct RecyclingPlaneData
+  {
+    amrex::Vector<std::unique_ptr<amrex::MultiFab>> u_src;     // current
+    amrex::Vector<std::unique_ptr<amrex::MultiFab>> mean_src;  // running mean
+    amrex::Vector<std::unique_ptr<amrex::MultiFab>> fluct_src; // u_src - mean
+#ifdef AMREX_USE_EB
+    // Per-cell mask on the slab: 1 = regular or cut (sampled into the mean
+    // and fluctuation), 0 = EB-covered (excluded). Always rebuilt with the
+    // slab storage; not persisted in checkpoints.
+    amrex::Vector<std::unique_ptr<amrex::iMultiFab>> mask;
+#endif
+    int n_samples = 0;
+    bool initialized = false;
+  };
+  RecyclingPlaneData m_inlet_recycling;
 
   // Advection/Diffusion types
   amrex::Vector<int>

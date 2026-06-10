@@ -96,6 +96,9 @@ PeleLM::Advance(const int is_initIter)
     }
   }
 
+  // Reset fluctuation warnings each time dt could change
+  m_warned_clipped_recycle_avg_window_this_step = false;
+
   // fillpatch the t^{n} data
   averageDownState(AmrOldTime);
   fillPatchState(AmrOldTime);
@@ -257,6 +260,13 @@ PeleLM::Advance(const int is_initIter)
   // Deal with ambient pressure
   if ((m_closed_chamber != 0) && (is_initIter == 0)) {
     m_pOld = m_pNew;
+  }
+
+  // Snapshot the recycling-plane velocity and update the running mean.
+  // Skipped during initial-iteration passes so the mean accumulates only
+  // over real timesteps.
+  if (is_initIter == 0) {
+    updateRecyclingPlaneSnapshot();
   }
 
   //----------------------------------------------------------------

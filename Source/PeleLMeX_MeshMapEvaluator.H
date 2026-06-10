@@ -66,13 +66,12 @@ struct MeshMapEvaluator
    * \brief Physical coordinate of the cell centre with integer index
    *        \p idx along axis \p idir.
    */
-  AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE
-  amrex::Real x_phys_cc(int idir, int idx,
-                        amrex::GeometryData const& gd) const noexcept
+  AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE amrex::Real
+  x_phys_cc(int idir, int idx, amrex::GeometryData const& gd) const noexcept
   {
-    const amrex::Real xi = gd.ProbLo()[idir]
-                         + (static_cast<amrex::Real>(idx) + amrex::Real(0.5))
-                           * gd.CellSize()[idir];
+    const amrex::Real xi =
+      gd.ProbLo()[idir] +
+      (static_cast<amrex::Real>(idx) + amrex::Real(0.5)) * gd.CellSize()[idir];
     return x_phys_from_xi(idir, xi, gd);
   }
 
@@ -83,13 +82,11 @@ struct MeshMapEvaluator
    * \p idx is the nodal index (face position), so face 0 sits at
    * \c prob_lo and face N at \c prob_hi.
    */
-  AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE
-  amrex::Real x_phys_face(int idir, int idx,
-                          amrex::GeometryData const& gd) const noexcept
+  AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE amrex::Real
+  x_phys_face(int idir, int idx, amrex::GeometryData const& gd) const noexcept
   {
-    const amrex::Real xi = gd.ProbLo()[idir]
-                         + static_cast<amrex::Real>(idx)
-                           * gd.CellSize()[idir];
+    const amrex::Real xi =
+      gd.ProbLo()[idir] + static_cast<amrex::Real>(idx) * gd.CellSize()[idir];
     return x_phys_from_xi(idir, xi, gd);
   }
 
@@ -97,56 +94,56 @@ struct MeshMapEvaluator
    * \brief Lower-level helper: apply the mapping to an arbitrary
    *        \f$\xi\f$-space coordinate along axis \p idir.
    */
-  AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE
-  amrex::Real x_phys_from_xi(int idir, amrex::Real xi,
-                             amrex::GeometryData const& gd) const noexcept
+  AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE amrex::Real x_phys_from_xi(
+    int idir, amrex::Real xi, amrex::GeometryData const& gd) const noexcept
   {
     switch (m_kind) {
-      case Kind::Identity:
+    case Kind::Identity:
+      return xi;
+
+    case Kind::Constant: {
+      // Linear: X = plo + fac * (xi - plo).
+      const amrex::Real plo = gd.ProbLo()[idir];
+      return plo + m_p[idir] * (xi - plo);
+    }
+
+    case Kind::ExpStretch: {
+      const amrex::Real beta = m_p[idir];
+      if (std::abs(beta) < BETA_EPS) {
         return xi;
-
-      case Kind::Constant: {
-        // Linear: X = plo + fac * (xi - plo).
-        const amrex::Real plo = gd.ProbLo()[idir];
-        return plo + m_p[idir] * (xi - plo);
       }
-
-      case Kind::ExpStretch: {
-        const amrex::Real beta = m_p[idir];
-        if (std::abs(beta) < BETA_EPS) {
-          return xi;
-        }
-        const amrex::Real plo = gd.ProbLo()[idir];
-        const amrex::Real L = gd.ProbHi()[idir] - plo;
-        amrex::Real eta = (xi - plo) / L;
-        // wall_end == 1 (wall at hi): mirror eta about 0.5 first,
-        // apply the lo-wall formula, then mirror the result back.
-        if (m_q[idir] == 1) {
-          eta = amrex::Real(1.0) - eta;
-        }
-        const amrex::Real num = std::exp(beta * eta) - amrex::Real(1.0);
-        const amrex::Real den = std::exp(beta) - amrex::Real(1.0);
-        amrex::Real off = num / den;
-        if (m_q[idir] == 1) {
-          off = amrex::Real(1.0) - off;
-        }
-        return plo + L * off;
+      const amrex::Real plo = gd.ProbLo()[idir];
+      const amrex::Real L = gd.ProbHi()[idir] - plo;
+      amrex::Real eta = (xi - plo) / L;
+      // wall_end == 1 (wall at hi): mirror eta about 0.5 first,
+      // apply the lo-wall formula, then mirror the result back.
+      if (m_q[idir] == 1) {
+        eta = amrex::Real(1.0) - eta;
       }
-
-      case Kind::TanhStretch: {
-        const amrex::Real beta = m_p[idir];
-        if (std::abs(beta) < BETA_EPS) {
-          return xi;
-        }
-        const amrex::Real plo = gd.ProbLo()[idir];
-        const amrex::Real L = gd.ProbHi()[idir] - plo;
-        const amrex::Real eta = (xi - plo) / L;
-        const amrex::Real off = amrex::Real(0.5)
-          * (amrex::Real(1.0)
-             + std::tanh(beta * (amrex::Real(2.0) * eta - amrex::Real(1.0)))
-                 / std::tanh(beta));
-        return plo + L * off;
+      const amrex::Real num = std::exp(beta * eta) - amrex::Real(1.0);
+      const amrex::Real den = std::exp(beta) - amrex::Real(1.0);
+      amrex::Real off = num / den;
+      if (m_q[idir] == 1) {
+        off = amrex::Real(1.0) - off;
       }
+      return plo + L * off;
+    }
+
+    case Kind::TanhStretch: {
+      const amrex::Real beta = m_p[idir];
+      if (std::abs(beta) < BETA_EPS) {
+        return xi;
+      }
+      const amrex::Real plo = gd.ProbLo()[idir];
+      const amrex::Real L = gd.ProbHi()[idir] - plo;
+      const amrex::Real eta = (xi - plo) / L;
+      const amrex::Real off =
+        amrex::Real(0.5) *
+        (amrex::Real(1.0) +
+         std::tanh(beta * (amrex::Real(2.0) * eta - amrex::Real(1.0))) /
+           std::tanh(beta));
+      return plo + L * off;
+    }
     }
     // Unreachable; silences compiler warnings on some toolchains.
     return xi;

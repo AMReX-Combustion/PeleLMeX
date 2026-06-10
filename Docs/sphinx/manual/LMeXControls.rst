@@ -340,6 +340,58 @@ Turbulent Forcing and Velocity Plotfile
    For ff_factor, nmodes, forcing_epsilon, spectrum_type and moderate_zero_modes, it is best to leave
    these as defaults unless you are confident on the consiquences.
 
+Recycling-plane inflow
+----------------------
+
+`PeleLMeX` can synthesize a time-varying inflow by sampling velocities from an
+interior cross-section ("source plane") and feeding the resulting fluctuations
+back onto the inflow ghost cells. The injection is a zero-mean perturbation
+added on top of the standard ``ext_dir`` inflow profile, i.e.
+
+.. math::
+
+   \mathbf{u}_{\text{inlet}}(t) = \mathbf{u}_{\text{target}}(t) +
+   \bigl[\mathbf{u}_{\text{src}}(t) - \langle \mathbf{u}_{\text{src}} \rangle\bigr]
+
+where :math:`\mathbf{u}_{\text{target}}` is the prescribed inflow profile from
+``bcnormal`` and :math:`\langle \cdot \rangle` denotes a running average over
+samples taken at every timestep. The mean-flow profile must still be set by
+the user through the standard ``Inflow`` boundary condition; this feature only
+supplies the bracketed fluctuation. The running mean is preserved in
+checkpoints and restored across restarts.
+
+::
+
+    #-----------------------Recycling-plane inflow-----------------------
+    peleLM.use_inlet_from_plane     = 0       # [OPT, DEF=0] Master switch (0 disables)
+    peleLM.inlet_plane_dir          = -1      # [REQ if active] Sampling axis: 0=x, 1=y, 2=z
+    peleLM.inlet_plane_position     = 0.0     # [REQ if active] Physical coordinate of the source plane along inlet_plane_dir
+    peleLM.inlet_plane_avg_window   = -1.0    # [OPT, DEF=-1.0] Time-window (s) for the running mean (EMA);
+                                              #                 <=0 falls back to a cumulative 1/N average.
+    peleLM.inlet_plane_warmup_steps = 0       # [OPT, DEF=0] Number of samples to accumulate before any
+                                              #              fluctuation is injected (lets the running mean settle)
+
+The source plane is one cell thick along ``inlet_plane_dir`` and spans the full
+transverse cross-section at ``inlet_plane_position``. Storage is allocated
+per AMR level and rebuilt automatically on regrid; previously-accumulated
+running means are carried across rebuilds via a parallel-copy. EB-covered cells
+on the source plane are excluded from the running mean and produce a zero
+fluctuation contribution; the inflow face must therefore be ``Inflow``-typed
+on every velocity component (the implementation aborts if the components
+disagree).
+
+.. note::
+   For best results, place the source plane far enough downstream of any
+   geometric feature that the recycled signal is broadband rather than
+   dominated by a single coherent shedding mode. A loop delay
+   :math:`(x_{\text{plane}} - x_{\text{inlet}})/U_{\text{bulk}}` close to
+   one flow-through time is a reasonable starting point; placing the plane
+   too close to the inlet (delay :math:`\ll \tau`) produces near-laminar
+   recycled signal and effectively disables the feature, while placing it
+   in a region of strong coherent shedding can produce self-resonant
+   oscillations in the integrated flow statistics. The
+   ``Exec/RegTests/EB_BFS_Recycling`` case demonstrates the trade-offs.
+
 Chemistry integrator
 --------------------
 

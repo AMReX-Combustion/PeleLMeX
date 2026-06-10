@@ -3,6 +3,22 @@ import numpy.testing as npt
 import pandas as pd
 import unittest
 
+def read_last_dataset(path, **read_csv_kwargs):
+    """Read only the most-recently-appended block from a header-repeating CSV.
+
+    The file is assumed to have the same column-header line at the start
+    of every appended block. This finds the last occurrence of that line
+    and returns a DataFrame of just the rows after it, with the header
+    taken from that line. Extra kwargs are forwarded to pandas.read_csv.
+    """
+    with open(path) as f:
+        header = f.readline().rstrip('\n')
+        last_header_lineno = 0  # 0 = the very first header at the top
+        for lineno, line in enumerate(f, start=1):
+            if line.rstrip('\n') == header:
+                last_header_lineno = lineno
+    return pd.read_csv(path, skiprows=last_header_lineno, **read_csv_kwargs)
+
 class SpeciesBalTestCase(unittest.TestCase):
     """Test species balance with isothermal walls and soret"""
 
@@ -12,7 +28,7 @@ class SpeciesBalTestCase(unittest.TestCase):
         # Load the data
         fdir = os.path.abspath(".")
         fname = os.path.join(fdir, "temporals/tempSpecies")
-        df = pd.read_csv(fname)
+        df = read_last_dataset(fname)
         print(df)
         for col in df.columns:
             if col.startswith('rhoYnew'):

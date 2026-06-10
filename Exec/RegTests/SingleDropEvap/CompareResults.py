@@ -16,6 +16,7 @@ Test cases:
 | Daif       | heptane/decane       |                                          |
 | Runge      | heptane, decane, mix | Plots RungeHep, RungeDec and RungeMix    |
 | RungeJP8   | POSF10264            | Plots JP8 case only                      |
+| Burger     | POSF10325             | Plots Burger1Bar, Burger10Bar, Burger50Bar|
 | ---------- | -------------------- | ---------------------------------------- |
 """
 
@@ -23,7 +24,7 @@ parser = argparse.ArgumentParser(
     description="Quantitatively compare results for given case to experimental data"
 )
 
-cases = ["WongLin", "Nomura", "Daif", "Runge", "RungeJP8"]
+cases = ["WongLin", "Nomura", "Daif", "Runge", "RungeJP8", "Burger"]
 parser.add_argument(
     "--case_name",
     "-c",
@@ -69,11 +70,23 @@ def find_case_dirs(case_name):
             )
         )
 
+    # If case_name.lower() == "burger", sort available pressure cases
+    if case_name.lower() == "burger":
+        # Sort to ensure consistent order (1bar < 10bar < 50bar) for available cases
+        sub_case_order = {"1bar": 0, "10bar": 1, "50bar": 2}
+        matching_dirs.sort(
+            key=lambda x: min(
+                (order for sub, order in sub_case_order.items() if sub in x.lower()),
+                default=999,
+            )
+        )
+
     return matching_dirs
 
 
 def setup(case_name):
     matching_dirs = find_case_dirs(case_name)
+    FILE_PATH = os.path.dirname(os.path.abspath(__file__))
     cases = []
     leg_lab = []
     leg_col = []
@@ -84,7 +97,7 @@ def setup(case_name):
             leg_lab.append("PeleGCM")
             cases.append(SpecifyCase(name, "gcm"))
             leg_col.append("tab:blue")
-            cases[k].case_path = d
+            cases[k].case_path = os.path.join(FILE_PATH, d)
             if "_manifold" in d.lower():
                 line_sty.append(":")
                 leg_lab[k] += " + Manifold"
@@ -108,7 +121,7 @@ def setup(case_name):
                 leg_lab[k] += ": Clasius-Clapeyron"
             else:
                 raise ValueError(f"Unknown Psat model in directory name: {d}")
-            cases[k].case_path = d
+            cases[k].case_path = os.path.join(FILE_PATH, d)
         else:
             raise ValueError(f"Unknown liquid properties model in directory name: {d}")
 
@@ -133,6 +146,23 @@ def setup(case_name):
                 line_sty[k] = "--"
             else:
                 leg_lab[k] += " Many-to-One"
+        # Specifics for Burger pressure sub-cases
+        elif "burger" in name.lower():
+            if ":" not in leg_lab[k]:
+                leg_lab[k] += ":"
+            if "hychem" in d.lower():
+                line_sty[k] = ":"
+            #else:
+                #leg_lab[k] += " GC-to-HyChem"
+            if "50bar" in name.lower():
+                leg_lab[k] += " 50 bar"
+                leg_col[k] = "tab:red"
+            elif "10bar" in name.lower():
+                leg_lab[k] += " 10 bar"
+                leg_col[k] = "tab:orange"
+            elif "1bar" in name.lower():
+                leg_lab[k] += " 1 bar"
+                leg_col[k] = "tab:blue"
     return cases, leg_lab, leg_col, line_sty
 
 
@@ -175,8 +205,8 @@ ylabels = [cases[0].ylabel if hasattr(cases[0], "ylabel") else "$d/d_0$"]
 if numplots == 2:
     ylabels.append("$T$ [K]")
 
-# Use wider figure for JP8 case to accommodate legend
-figwidth = 9.5 if case_name.lower() == "rungejp8" else 6.4
+# Use wider figure for JP8 and Burger cases to accommodate legend/layout
+figwidth = 9.5 if case_name.lower() in ["rungejp8", "burger"] else 6.4
 fig, axs = (
     plt.subplots(1, numplots, figsize=(numplots * figwidth, 4.8), constrained_layout=True)
     if numplots > 1
@@ -184,8 +214,16 @@ fig, axs = (
 )
 
 # Plot simulation lines first
+burger_pele_ymax = None
 for k, case in enumerate(cases):
     refdvals, reftvals, pele_vals = case_info(case)
+    if case_name.lower() == "burger":
+        case_pele_ymax = np.nanmax(pele_vals[:, 1])
+        burger_pele_ymax = (
+            case_pele_ymax
+            if burger_pele_ymax is None
+            else max(burger_pele_ymax, case_pele_ymax)
+        )
     # Diameter plot
     i = 0
     axs[i].plot(
@@ -300,8 +338,70 @@ if case_name.lower() == "runge":
                 tval = [uncrt[j, 0], uncrt[j, 0]]
                 uline = [uncrt[j, 2], uncrt[j, 3]]
                 axs[i].plot(tval, uline, "k-", linewidth=round(line_w / 2))
+elif case_name.lower() == "burger":
+    # Diameter reference for each pressure variant
+    burger_ref_xmax = None
+    for k, case in enumerate(cases):
+        refdvals, _, _ = case_info(case)
+        i = 0
+        if refdvals is not None:
+            case_ref_xmax = np.nanmax(refdvals[:, 0])
+            burger_ref_xmax = (
+                case_ref_xmax
+                if burger_ref_xmax is None
+                else max(burger_ref_xmax, case_ref_xmax)
+            )
+            axs[i].scatter(
+                refdvals[:, 0],
+                refdvals[:, 1],
+                marker="o",
+                s=marker_s,
+                facecolor="none",
+                edgecolor=leg_col[k],
+                label=None,
+                linewidth=round(line_w / 2),
+            )
+            # Plot uncertainty if available
+            if refdvals.shape[1] == 4:
+                uncrt = refdvals[~np.isnan(refdvals).any(axis=1)]
+                axs[i].scatter(
+                    uncrt[:, 0],
+                    uncrt[:, 2],
+                    marker="_",
+                    color=leg_col[k],
+                    label=None,
+                    linewidth=round(line_w / 2),
+                )
+                axs[i].scatter(
+                    uncrt[:, 0],
+                    uncrt[:, 3],
+                    marker="_",
+                    color=leg_col[k],
+                    label=None,
+                    linewidth=round(line_w / 2),
+                )
+                for j in range(len(uncrt)):
+                    tval = [uncrt[j, 0], uncrt[j, 0]]
+                    uline = [uncrt[j, 2], uncrt[j, 3]]
+                    axs[i].plot(tval, uline, color=leg_col[k], linewidth=round(line_w / 2))
+    if burger_ref_xmax is not None:
+        xmin, _ = axs[i].get_xlim()
+        axs[i].set_xlim(xmin, 1.05 * burger_ref_xmax)
+    if burger_pele_ymax is not None:
+        axs[i].set_ylim(0.0, 1.05 * burger_pele_ymax)
+    # Add legend entry for Burger et al. with black marker (no data points)
+    axs[i].scatter(
+        [],
+        [],
+        marker="o",
+        s=marker_s,
+        facecolor="none",
+        edgecolor="black",
+        label="Burger et al.",
+        linewidth=round(line_w / 2),
+    )
 else:
-    # Non-Runge cases: reference data only for first case
+    # Non-Runge/Non-Burger cases: reference data only for first case
     refdvals, reftvals, _ = case_info(cases[0])
     i = 0
     if refdvals is not None:
@@ -374,8 +474,8 @@ else:
 
 # Single legend from axs[0]
 handles, labels = axs[0].get_legend_handles_labels()
-if case_name.lower() == "rungejp8":
-    # Place legend outside for JP8 case
+if case_name.lower() in ["rungejp8", "burger"]:
+    # Place legend outside for JP8 and Burger cases
     axs[-1].legend(handles, labels, fontsize=font_s-2, loc="center left", bbox_to_anchor=(1, 0.5))
 else:
     # Place legend inside for other cases

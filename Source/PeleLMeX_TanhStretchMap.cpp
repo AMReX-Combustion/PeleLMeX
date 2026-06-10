@@ -92,11 +92,12 @@ TanhStretchMap::create_map(int lev, const amrex::Geometry& geom)
       m_fac_cc[lev], m_fac_cc[lev].nGrowVect(),
       [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
         auto f = fac_ma[box_no];
-        AMREX_D_TERM(const Real fx = fac_at(0, i, Real(0.5));,
-                     const Real fy = fac_at(1, j, Real(0.5));,
-                     const Real fz = fac_at(2, k, Real(0.5)););
-        AMREX_D_TERM(f(i, j, k, 0) = fx;, f(i, j, k, 1) = fy;,
-                     f(i, j, k, 2) = fz;);
+        AMREX_D_TERM(
+          const Real fx = fac_at(0, i, Real(0.5));
+          , const Real fy = fac_at(1, j, Real(0.5));
+          , const Real fz = fac_at(2, k, Real(0.5)););
+        AMREX_D_TERM(f(i, j, k, 0) = fx;, f(i, j, k, 1) = fy;
+                     , f(i, j, k, 2) = fz;);
         det_ma[box_no](i, j, k) = AMREX_D_TERM(fx, *fy, *fz);
       });
   }
@@ -109,11 +110,12 @@ TanhStretchMap::create_map(int lev, const amrex::Geometry& geom)
       m_fac_nd[lev], m_fac_nd[lev].nGrowVect(),
       [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
         auto f = fac_ma[box_no];
-        AMREX_D_TERM(const Real fx = fac_at(0, i, Real(0.0));,
-                     const Real fy = fac_at(1, j, Real(0.0));,
-                     const Real fz = fac_at(2, k, Real(0.0)););
-        AMREX_D_TERM(f(i, j, k, 0) = fx;, f(i, j, k, 1) = fy;,
-                     f(i, j, k, 2) = fz;);
+        AMREX_D_TERM(
+          const Real fx = fac_at(0, i, Real(0.0));
+          , const Real fy = fac_at(1, j, Real(0.0));
+          , const Real fz = fac_at(2, k, Real(0.0)););
+        AMREX_D_TERM(f(i, j, k, 0) = fx;, f(i, j, k, 1) = fy;
+                     , f(i, j, k, 2) = fz;);
         det_ma[box_no](i, j, k) = AMREX_D_TERM(fx, *fy, *fz);
       });
   }
@@ -136,11 +138,12 @@ TanhStretchMap::create_map(int lev, const amrex::Geometry& geom)
 #if (AMREX_SPACEDIM == 3)
         const Real off_z = (dface_cap == 2) ? Real(0.0) : Real(0.5);
 #endif
-        AMREX_D_TERM(const Real fx = fac_at(0, i, off_x);,
-                     const Real fy = fac_at(1, j, off_y);,
-                     const Real fz = fac_at(2, k, off_z););
-        AMREX_D_TERM(f(i, j, k, 0) = fx;, f(i, j, k, 1) = fy;,
-                     f(i, j, k, 2) = fz;);
+        AMREX_D_TERM(
+          const Real fx = fac_at(0, i, off_x);
+          , const Real fy = fac_at(1, j, off_y);
+          , const Real fz = fac_at(2, k, off_z););
+        AMREX_D_TERM(f(i, j, k, 0) = fx;, f(i, j, k, 1) = fy;
+                     , f(i, j, k, 2) = fz;);
         det_ma[box_no](i, j, k) = AMREX_D_TERM(fx, *fy, *fz);
       });
   }
@@ -191,9 +194,9 @@ TanhStretchMap::fill_nodal_displacement(
     disp_nd, amrex::IntVect(0),
     [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
       auto d = disp_ma[box_no];
-      AMREX_D_TERM(d(i, j, k, 0) = disp_at(0, i);,
-                   d(i, j, k, 1) = disp_at(1, j);,
-                   d(i, j, k, 2) = disp_at(2, k););
+      AMREX_D_TERM(d(i, j, k, 0) = disp_at(0, i);
+                   , d(i, j, k, 1) = disp_at(1, j);
+                   , d(i, j, k, 2) = disp_at(2, k););
     });
   amrex::Gpu::streamSynchronize();
 }

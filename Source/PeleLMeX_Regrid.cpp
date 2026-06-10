@@ -426,6 +426,9 @@ PeleLM::MakeNewLevelFromCoarse(
     m_mesh_map->create_map(lev, geom[lev]);
     m_map_eval = m_mesh_map->make_evaluator();
   }
+  // Recycling-plane storage spans whatever set of AMR levels currently exists
+  // and must be rebuilt whenever that changes.
+  m_recycling_needs_rebuild = true;
 }
 
 void
@@ -549,6 +552,9 @@ PeleLM::RemakeLevel(
     m_mesh_map->create_map(lev, geom[lev]);
     m_map_eval = m_mesh_map->make_evaluator();
   }
+  // Recycling-plane storage spans whatever set of AMR levels currently exists
+  // and must be rebuilt whenever that changes.
+  m_recycling_needs_rebuild = true;
 }
 
 void
@@ -586,6 +592,8 @@ PeleLM::ClearLevel(const int lev)
   if (m_mesh_map) {
     m_mesh_map->clear_level(lev);
   }
+  // Recycling-plane storage covers all current levels; flag for rebuild.
+  m_recycling_needs_rebuild = true;
 }
 
 void
