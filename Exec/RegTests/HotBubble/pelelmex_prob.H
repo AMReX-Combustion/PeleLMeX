@@ -31,7 +31,7 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
 {
   AMREX_GPU_DEVICE
   AMREX_FORCE_INLINE
-  static void initdata(
+  static void initdata_mapped(
     int i,
     int j,
     int k,
@@ -39,6 +39,7 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
     amrex::Array4<amrex::Real> const& state,
     amrex::Array4<amrex::Real> const& /*aux*/,
     amrex::GeometryData const& geomdata,
+    MeshMapEvaluator const& mmap,
     MyProbParm const& prob_parm,
     pele::physics::PMF::PmfData::DataContainer const* /*pmf_data*/)
   {
@@ -49,11 +50,9 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
     // Convert AMReX indices to *physical* coordinates using the mesh-
     // mapping factors; for the default fac = 1 this is identical to
     // the standard AMReX-coordinate IC.
-    AMREX_D_TERM(
-      const amrex::Real x = prob_lo[0] + (i + 0.5) * dx[0] * prob_parm.fac_x;
-      , const amrex::Real y = prob_lo[1] + (j + 0.5) * dx[1] * prob_parm.fac_y;
-      ,
-      const amrex::Real z = prob_lo[2] + (k + 0.5) * dx[2] * prob_parm.fac_z;);
+    AMREX_D_TERM(const amrex::Real x = mmap.x_phys_cc(0, i, geomdata);,
+                 const amrex::Real y = mmap.x_phys_cc(1, j, geomdata);,
+                 const amrex::Real z = mmap.x_phys_cc(2, k, geomdata););
 
     AMREX_D_TERM(
       const amrex::Real Lx = (prob_hi[0] - prob_lo[0]) * prob_parm.fac_x;
