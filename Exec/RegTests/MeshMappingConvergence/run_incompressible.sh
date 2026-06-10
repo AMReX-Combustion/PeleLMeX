@@ -17,6 +17,11 @@
 #
 # Fixed physical time; same number of cells per direction; same physical
 # dx in each direction across configs.
+#
+# Note: If compile settings other gnu += OMP were used to build the
+# executables to be run, pass a full path as BIN=... in the call to this 
+# script.  Also note, a number of other settings can be modified, including
+# NS, MAX_STEP, STOP_TIME, RESULTS_DIR, etc
 
 set -euo pipefail
 

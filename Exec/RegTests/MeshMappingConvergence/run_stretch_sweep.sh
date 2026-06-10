@@ -19,6 +19,12 @@
 # matching PipeFlow's no-slip walls.  Physical domain and n_cell per
 # direction are identical across runs -- only the spatial distribution
 # of cells along y changes.
+#
+# Note: If compile settings other gnu += OMP were used to build the
+# executables to be run, pass a full path as BIN=... in the call to this 
+# script.  Also note, a number of other settings can be modified, including
+# NS, MAX_STEP, STOP_TIME, RESULTS_DIR, etc
+
 
 set -euo pipefail
 

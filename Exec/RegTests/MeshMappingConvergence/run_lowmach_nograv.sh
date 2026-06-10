@@ -14,6 +14,12 @@
 # BC: periodic in x, symmetry lo / outflow hi in y (inherited from
 # input.2d-regt).  With gravity = 0 and a Gaussian T bump centred in
 # the domain, early-time dynamics are near-symmetric about x = 0.008.
+#
+# Note: If compile settings other gnu += OMP were used to build the
+# executables to be run, pass a full path as BIN=... in the call to this 
+# script.  Also note, a number of other settings can be modified, including
+# NS, MAX_STEP, STOP_TIME, RESULTS_DIR, etc
+
 
 set -euo pipefail
 
