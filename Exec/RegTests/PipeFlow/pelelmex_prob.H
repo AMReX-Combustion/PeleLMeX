@@ -66,9 +66,9 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
       , const amrex::Real z = mmap.x_phys_cc(2, k, geomdata););
 
     AMREX_D_TERM(
-		const amrex::Real Lx = mmap.domain_size_phys(0, geomdata);
-		, const amrex::Real Ly = mmap.domain_size_phys(1, geomdata);
-		, const amrex::Real Lz = mmap.domain_size_phys(2, geomdata););
+      const amrex::Real Lx = mmap.domain_size_phys(0, geomdata);
+      , const amrex::Real Ly = mmap.domain_size_phys(1, geomdata);
+      , const amrex::Real Lz = mmap.domain_size_phys(2, geomdata););
 
     constexpr amrex::Real Pi = 3.14159265358979323846264338327950288;
 

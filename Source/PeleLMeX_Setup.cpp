@@ -288,12 +288,12 @@ PeleLM::readParameters()
   {
     amrex::ParmParse ppg("geometry");
     std::string mesh_mapping_name;
-	m_mesh_mapping = true;
+    m_mesh_mapping = true;
     if (ppg.query("mesh_mapping", mesh_mapping_name) == 0) {
-	  // Create a default mapping
+      // Create a default mapping
       m_mesh_map = MeshMap::create("");
 
-	} else {
+    } else {
       m_mesh_map = MeshMap::create(mesh_mapping_name);
 
       // --- Compatibility guards -----------------------------------------
