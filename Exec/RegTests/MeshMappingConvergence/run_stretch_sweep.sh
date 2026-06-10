@@ -56,12 +56,12 @@ INP="${PIPEFLOW_DIR}/input.3d-Poiseuille"
 : "${MAC_RTOL:=1e-8}"
 : "${NODAL_MAXITER:=5000}"
 : "${NODAL_RTOL:=1e-8}"
-: "${USE_MLHYPRE:=0}"             # 1: use BoomerAMG for MAC projection via
+: "${USE_MLHYPRE:=1}"             # 1: use BoomerAMG for MAC projection via
                                   # HypreMLABecLap (bypasses MLMG).  Requires
                                   # the executable to have been built with
                                   # USE_HYPRE=TRUE.  At 0, the stock MLMG-
                                   # with-bicgstab-bottom path is used.
-: "${NODAL_BOTTOM:=bicgcg}"        # bicg, bicgcg, cg, cgbicg, smoother,
+: "${NODAL_BOTTOM:=hypre}"        # bicg, bicgcg, cg, cgbicg, smoother,
                                   # or hypre (only valid if USE_HYPRE=TRUE
                                   # at build time).  Affects the nodal
                                   # projector's MLMG bottom solver only.
@@ -107,11 +107,19 @@ run_case() {
       mac_proj.verbose=1 \
       mac_proj.maxiter="$MAC_MAXITER" \
       mac_proj.rtol="$MAC_RTOL" \
-      mac_proj.use_mlhypre="$USE_MLHYPRE" \
       nodal_proj.verbose=1 \
-      nodal_proj.maxiter="$NODAL_MAXITER" \
-      nodal_proj.rtol="$NODAL_RTOL" \
-      nodal_proj.bottom_solver="$NODAL_BOTTOM" \
+	  mac_proj.bottom_solver         = hypre \
+      mac_proj.hypre_namespace       = mac_proj.hypre \
+      mac_proj.hypre.hypre_solver    = GMRES \
+      mac_proj.hypre.hypre_preconditioner = BoomerAMG \
+      mac_proj.hypre.bamg_coarsen_type    = 9 \
+      mac_proj.hypre.bamg_interp_type     = 4 \
+      mac_proj.hypre.bamg_relax_type      = 7 \
+      mac_proj.use_mlhypre = 1 \
+      nodal_proj.bottom_solver = hypre \
+      nodal_proj.maxiter       = 20000 \
+      nodal_proj.rtol          = 1.0e-7 \
+      nodal_proj.verbose       = 1 \
       > run.log 2>&1 || true        # keep going even if a run aborts
   cd "$HERE"
   echo "   ... done"
