@@ -20,103 +20,56 @@ The PeleLMeX Ascent integration publishes exactly the same fields as
 ``WritePlotFile()``, controlled at runtime by the same input file flags.
 Any field visible in a plotfile is also available for in-situ rendering.
 
+.. note::
+   Ascent and Conduit must be built and installed before enabling in-situ
+   visualization. Refer to the `Ascent build documentation
+   <https://ascent.readthedocs.io/en/latest/BuildingAscent.html>`_ and the
+   `Conduit build documentation
+   <https://llnl-conduit.readthedocs.io/en/latest/building.html>`_ for
+   instructions. The ``build_ascent.sh`` script provided in the Ascent
+   repository (``scripts/build_ascent/build_ascent.sh``) builds both Ascent
+   and Conduit together and is the recommended approach.
+
 .. _sec:insitu::build:
 
-Building the full stack
------------------------
+Building with Ascent
+--------------------
 
-Ascent in-situ visualization requires that Ascent, Conduit, and PeleLMeX are
-all built against the same MPI installation and, for GPU rendering, the same
-CUDA toolkit. Building any component against a different MPI will cause ABI
-mismatches at runtime. The recommended approach is to build the entire stack in
-order: MPI first, then Ascent+Conduit via ``build_ascent.sh``, then PeleLMeX.
+Ascent support is enabled at compile time by passing the following flags to
+the GNUmake build system. AMReX's GNUmake locates MPI via the compiler
+wrappers in ``PATH``, so ensure your MPI installation's ``bin/`` directory
+is in ``PATH`` before running ``make``: ::
 
-Step 1 — MPI
-^^^^^^^^^^^^
+    make -j8 USE_CUDA=TRUE CUDA_ARCH=89         \
+             USE_ASCENT=TRUE                    \
+             ASCENT_DIR=/path/to/ascent/install \
+             USE_CONDUIT=TRUE                   \
+             CONDUIT_DIR=/path/to/conduit/install
 
-Build or install an MPI implementation. OpenMPI, MPICH, MVAPICH, Intel MPI, and
-Cray MPI are all supported; Ascent uses the standard MPI-2 API and is not tied
-to any specific implementation. Record the install prefix — it is needed for
-every subsequent step. ::
+Replace ``/path/to/ascent/install`` and ``/path/to/conduit/install`` with the
+paths to your Ascent and Conduit installations. ``CUDA_ARCH`` should match your
+GPU's compute capability (e.g., ``89`` for NVIDIA RTX 40-series, ``80`` for
+A100). Omit the ``USE_CUDA`` flags to build a CPU-only Ascent-enabled
+executable.
 
-    # Example: OpenMPI built from source
-    export OMPI_PREFIX=/path/to/ompi/install
-    export PATH=$OMPI_PREFIX/bin:$PATH
-    export LD_LIBRARY_PATH=$OMPI_PREFIX/lib:$LD_LIBRARY_PATH
+These flags can be combined with any other physics flags (``USE_SOOT``,
+``USE_RADIATION``, ``USE_PARTICLES``, ``USE_PLASMA``). The Ascent integration
+automatically publishes the additional fields for each compiled physics module
+when the corresponding runtime flags are active.
 
-Step 2 — Ascent and Conduit
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. warning::
+   Ascent, Conduit, and PeleLMeX must all be built against the **same MPI
+   installation**. Building any component against a different MPI will cause
+   ABI mismatches and runtime failures when ``libascent_mpi.so`` or
+   ``libconduit_mpi.so`` are loaded. Verify before building: ::
 
-Use the ``build_ascent.sh`` script provided in the Ascent repository
-(``scripts/build_ascent/build_ascent.sh``). This script builds Conduit as an
-internal dependency, guaranteeing version compatibility. The flags below cover
-a full GPU+MPI+Python build suitable for use with PeleLMeX, PeleC, PyFR, and
-nekRS. Adjust ``CUDA_ARCH`` and ``CUDA_ARCH_VTKM`` to match your GPU. ::
+       which mpicc        # must point to your chosen MPI installation
+       mpicc --version    # confirm the version matches across all components
 
-    env \
-      enable_cuda=ON \
-      CUDA_ARCH=89 \
-      CUDA_ARCH_VTKM=ada \
-      enable_mpi=ON \
-      enable_mpicc=ON \
-      enable_python=ON \
-      enable_openmp=ON \
-      enable_fortran=OFF \
-      enable_tests=OFF \
-      build_shared_libs=ON \
-      prefix=/path/to/ascent/tpls \
-      CC=gcc \
-      CXX=g++ \
-      MPICC=$OMPI_PREFIX/bin/mpicc \
-      MPICXX=$OMPI_PREFIX/bin/mpicxx \
-      MPIFC=$OMPI_PREFIX/bin/mpifort \
-      ./scripts/build_ascent/build_ascent.sh
-
-This produces symlinks at ``/path/to/ascent/tpls/install/ascent-checkout`` and
-``/path/to/ascent/tpls/install/conduit-v*``. For CPU-only builds, set
-``enable_cuda=OFF`` and remove the ``CUDA_ARCH*`` variables.
-
-.. note::
-   The following APT packages are required before running ``build_ascent.sh``
-   on Ubuntu, or the build will fail at the Conduit or Viskores stage: ::
-
-       sudo apt install -y \
-           libglew-dev libegl1-mesa-dev libgl1-mesa-dev \
-           python3-dev python3-numpy cython3
-
-Step 3 — PeleLMeX
-^^^^^^^^^^^^^^^^^^
-
-Pass the Ascent and Conduit install paths to the GNUmake build. AMReX's GNUmake
-system locates MPI via the compiler wrappers in ``PATH`` — ensure
-``$OMPI_PREFIX/bin`` (or equivalent) is in your ``PATH`` before running
-``make``, as set in Step 1. Combine with any physics flags appropriate for your
-simulation: ::
-
-    make -j8 \
-        USE_MPI=TRUE \
-        USE_CUDA=TRUE CUDA_ARCH=89 \
-        USE_ASCENT=TRUE \
-            ASCENT_DIR=/path/to/ascent/tpls/install/ascent-checkout \
-        USE_CONDUIT=TRUE \
-            CONDUIT_DIR=/path/to/ascent/tpls/install/conduit-v0.9.5
-
-These flags can be combined with any physics flags (``USE_SOOT``,
-``USE_RADIATION``, ``USE_PARTICLES``, ``USE_PLASMA``, ``USE_EB``). The Ascent
-integration automatically publishes the additional fields for each compiled
-physics module when the corresponding runtime flags are active.
-
-For CPU-only builds, omit ``USE_CUDA=TRUE`` and ``CUDA_ARCH``.
-
-.. note::
-   ``LD_LIBRARY_PATH`` must include the Ascent, Conduit, and MPI library
-   directories at runtime, or the executable will fail to load shared
-   libraries. It is strongly recommended to set these in a persistent
-   environment script: ::
-
-       export ASCENT_DIR=/path/to/ascent/tpls/install/ascent-checkout
-       export CONDUIT_DIR=/path/to/ascent/tpls/install/conduit-v0.9.5
-       export LD_LIBRARY_PATH=$ASCENT_DIR/lib:$CONDUIT_DIR/lib:$LD_LIBRARY_PATH
+   The MPI implementation itself does not matter — OpenMPI, MPICH, MVAPICH,
+   Intel MPI, and Cray MPI are all supported — but the same installation must
+   be used throughout. The ``LD_LIBRARY_PATH`` must also include the MPI, Ascent,
+   and Conduit library directories at runtime.
 
 .. _sec:insitu::runtime:
 
@@ -469,13 +422,7 @@ Pseudocolor temperature with AMR mesh overlay
     -
       action: "add_scenes"
       scenes:
-        scene1:
-          image_prefix: "temp_%05d"
-          plots:
-            plt1:
-              type: "pseudocolor"
-              field: "temp"
-        scene2:
+        s1:
           image_prefix: "temp_mesh_%05d"
           plots:
             plt1:

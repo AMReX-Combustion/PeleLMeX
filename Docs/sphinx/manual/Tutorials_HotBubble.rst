@@ -339,7 +339,30 @@ To run the ``HotBubble`` case with in-situ rendering every 50 steps: ::
         ascent.plot_int=50
 
 A reference ``ascent_actions.yaml`` rendering temperature and the AMR mesh
-overlay is provided in ``Exec/RegTests/HotBubble/ascent_actions.yaml``.
+overlay is provided in ``Exec/RegTests/HotBubble/ascent_actions.yaml``: ::
+
+    -
+      action: "add_scenes"
+      scenes:
+        scene1:
+          image_prefix: "hotbubble_temp_%05d"
+          plots:
+            plt1:
+              type: "pseudocolor"
+              field: "temp"
+        scene2:
+          image_prefix: "hotbubble_mesh_%05d"
+          plots:
+            plt1:
+              type: "pseudocolor"
+              field: "temp"
+            plt2:
+              type: "mesh"
+
+``scene1`` renders the temperature field as a pseudocolor image.
+``scene2`` renders the same temperature field with the AMR mesh overlaid.
+Both scenes are rendered simultaneously at each in-situ call with no
+additional solver cost — the mesh is published once and consumed by all scenes.
 
 .. figure:: images/tutorials/HB_Ascent_combined.png
    :name: HB_Ascent_combined
