@@ -56,7 +56,7 @@ PeleLM::Setup()
   // physically isotropic grid (or the user has intentionally chosen
   // anisotropic physical spacing).
   {
-    std::string mesh_mapping_name = "";
+    std::string mesh_mapping_name;
     amrex::ParmParse ppg("geometry");
     const bool mesh_mapping_on =
       static_cast<bool>(ppg.query("mesh_mapping", mesh_mapping_name));
