@@ -94,7 +94,7 @@ PeleLM::readProbParm()
   {
     amrex::ParmParse ppg("geometry");
     std::string mesh_map = "ConstantMap";
-    if (ppg.countval("mesh_mapping")) {
+    if (ppg.countval("mesh_mapping") > 0) {
       ppg.get("mesh_mapping", mesh_map);
       AMREX_ALWAYS_ASSERT_WITH_MESSAGE(
         mesh_map == "ConstantMap",
