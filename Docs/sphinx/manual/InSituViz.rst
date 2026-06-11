@@ -99,8 +99,12 @@ Ascent reads two YAML files from the run directory automatically:
   is to override the rendering backend: ::
 
     runtime:
-      viskores:
+      vtkm:
         backend: openmp    # valid values: cuda, openmp, serial, kokkos
+ 
+  .. note::
+     The key is ``vtkm`` in Ascent 0.9.x. The develop branch uses ``viskores``
+     following the library rebranding.
 
   When ``ascent_options.yaml`` is absent or no backend is specified, Ascent
   selects the highest-performance backend available in your build, using the
