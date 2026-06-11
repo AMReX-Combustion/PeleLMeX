@@ -58,8 +58,8 @@ automatically publishes the additional fields for each compiled physics module
 when the corresponding runtime flags are active.
 
 .. warning::
-   Ascent, Conduit, and PeleLMeX must all be built against the **same MPI
-   installation**. Building any component against a different MPI will cause
+   Ascent, Conduit, and PeleLMeX must all be built against the same MPI
+   installation. Building any component against a different MPI will cause
    ABI mismatches and runtime failures when ``libascent_mpi.so`` or
    ``libconduit_mpi.so`` are loaded. Note that OpenMPI and MPICH-family
    implementations (MPICH, MVAPICH, Intel MPI, Cray MPI) have incompatible
@@ -69,7 +69,7 @@ when the corresponding runtime flags are active.
        mpicc --version    # confirm the version matches across all components
 
    For GPU builds, Ascent, Conduit, and PeleLMeX must also be compiled with
-   the **same ``CUDA_ARCH``**. Viskores device kernels are compiled for a
+   the same ``CUDA_ARCH``. Viskores device kernels are compiled for a
    specific ``sm_XX`` target and will fail to load on a GPU that does not
    support that architecture. Verify: ::
 
@@ -433,10 +433,10 @@ Pseudocolor temperature with AMR mesh overlay
         s1:
           image_prefix: "temp_mesh_%05d"
           plots:
-            plt1:
+            p1:
               type: "pseudocolor"
               field: "temp"
-            plt2:
+            p2:
               type: "mesh"
 
 Multiple fields in a single run
