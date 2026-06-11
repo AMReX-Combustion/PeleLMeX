@@ -61,15 +61,23 @@ when the corresponding runtime flags are active.
    Ascent, Conduit, and PeleLMeX must all be built against the **same MPI
    installation**. Building any component against a different MPI will cause
    ABI mismatches and runtime failures when ``libascent_mpi.so`` or
-   ``libconduit_mpi.so`` are loaded. Verify before building: ::
+   ``libconduit_mpi.so`` are loaded. Note that OpenMPI and MPICH-family
+   implementations (MPICH, MVAPICH, Intel MPI, Cray MPI) have incompatible
+   ABIs and cannot be mixed. Verify before building: ::
 
        which mpicc        # must point to your chosen MPI installation
        mpicc --version    # confirm the version matches across all components
 
-   The MPI implementation itself does not matter — OpenMPI, MPICH, MVAPICH,
-   Intel MPI, and Cray MPI are all supported — but the same installation must
-   be used throughout. The ``LD_LIBRARY_PATH`` must also include the MPI, Ascent,
-   and Conduit library directories at runtime.
+   For GPU builds, Ascent, Conduit, and PeleLMeX must also be compiled with
+   the **same ``CUDA_ARCH``**. Viskores device kernels are compiled for a
+   specific ``sm_XX`` target and will fail to load on a GPU that does not
+   support that architecture. Verify: ::
+
+       nvcc --version     # confirm toolkit version
+       nvidia-smi         # confirm driver version and GPU compute capability
+
+   The ``LD_LIBRARY_PATH`` must also include the MPI, Ascent, and Conduit
+   library directories at runtime.
 
 .. _sec:insitu::runtime:
 
