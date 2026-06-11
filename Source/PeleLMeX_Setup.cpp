@@ -282,19 +282,11 @@ PeleLM::readParameters()
   // -----------------------------------------
   // Mesh mapping (optional)
   // -----------------------------------------
-  // Activate via e.g.  geometry.mesh_mapping = ConstantMap
-  // Additional per-map parameters live under the map's own ParmParse
-  // group (e.g. ConstantMap.scaling_factor = 1.0 2.0 1.0).
+  // Activate via e.g.  geometry.mesh_mapping
   {
     amrex::ParmParse ppg("geometry");
     std::string mesh_mapping_name;
-    m_mesh_mapping = true;
-    if (ppg.query("mesh_mapping", mesh_mapping_name) == 0) {
-      // Create a default mapping
-      m_mesh_map = MeshMap::create("");
-
-    } else {
-      m_mesh_map = MeshMap::create(mesh_mapping_name);
+    if (ppg.query("mesh_mapping", mesh_mapping_name) != 0) {
 
       // --- Compatibility guards -----------------------------------------
       // These match amr-wind PR #545's stated limitations.  Relaxing any

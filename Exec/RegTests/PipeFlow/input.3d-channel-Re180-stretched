@@ -133,8 +133,8 @@ peleLM.plot_mesh_mapping = 1
 
 # Diagnostics
 amrex.fpe_trap_invalid  = 0
-amrex.fpe_trap_zero     = 1
-amrex.fpe_trap_overflow = 1
+amrex.fpe_trap_zero     = 0
+amrex.fpe_trap_overflow = 0
 
 # =====================================================================
 # Notes for scaling up to match docs L0 resolution:
