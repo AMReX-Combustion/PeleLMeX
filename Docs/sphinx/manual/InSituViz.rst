@@ -134,7 +134,7 @@ string name in the yaml ``field:`` key.
 Base state
 ^^^^^^^^^^
 
-Always published. Species fields are controlled by ``amr.plot_speciesState``.
+Always published. Species fields require ``amr.plot_speciesState = 1`` (default: ``0``).
 
 .. list-table::
    :widths: 35 15 50
@@ -152,7 +152,7 @@ Always published. Species fields are controlled by ``amr.plot_speciesState``.
    * - ``rho.Y(<species>)``
      - NUM_SPECIES
      - Species partial densities :math:`\rho Y_k`. Published when
-       ``amr.plot_speciesState = 1`` (default). Set to ``0`` to suppress.
+       ``amr.plot_speciesState = 1`` (default: ``0``). Set to ``1`` to include.
    * - ``rhoh``
      - 1
      - Mixture enthalpy :math:`\rho h`

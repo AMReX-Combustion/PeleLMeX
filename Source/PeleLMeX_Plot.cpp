@@ -142,8 +142,11 @@ PeleLM::constructPlotMF(
 
   // State
   if (m_incompressible != 0) {
-    // Velocity + pressure gradients
-    ncomp = 2 * AMREX_SPACEDIM;
+    // Velocity only, plus pressure gradients if requested
+    ncomp = AMREX_SPACEDIM;
+    if (m_plot_grad_p != 0) {
+      ncomp += AMREX_SPACEDIM;
+    }
   } else {
     // State + pressure gradients
     if (m_plot_grad_p != 0) {
@@ -303,7 +306,7 @@ PeleLM::constructPlotMF(
     }
   }
 #ifdef PELE_USE_SPRAY
-  if (SprayParticleContainer::NumDeriveVars() > 0) {
+  if (do_spray_particles && SprayParticleContainer::NumDeriveVars() > 0) {
     // We need virtual particles for the lower levels
     setupVirtualParticles(0);
     for (const auto& spray_derive_name :
@@ -449,7 +452,7 @@ PeleLM::constructPlotMF(
       cnt += mf->nComp();
     }
 #ifdef PELE_USE_SPRAY
-    if (SprayParticleContainer::NumDeriveVars() > 0) {
+    if (do_spray_particles && SprayParticleContainer::NumDeriveVars() > 0) {
       const int num_spray_derive = SprayParticleContainer::NumDeriveVars();
       a_mf_plt[lev].setVal(0., cnt, num_spray_derive);
       SprayPC->computeDerivedVars(a_mf_plt[lev], lev, cnt);
