@@ -355,7 +355,7 @@ directly from the new-time thermodynamic variables. We project the new-time velo
     L^{{\rm N}\rightarrow{\rm N}}\phi = D^{{\rm CC}\rightarrow{\rm N}}\left(U^{n+1,*}
     + \frac{\Delta t}{\rho^{n+1/2}}G^{{\rm N}\rightarrow{\rm CC}}\pi^{n-1/2}\right) - \widehat S^{n+1}
 
-for nodal values of :math:`\phi`.  The linear operator here, :math:`L^{{\rm N}\rightarrow{\rm N}}`, oeprates on nodal data and computes
+for nodal values of :math:`\phi`.  The linear operator here, :math:`L^{{\rm N}\rightarrow{\rm N}}`, operates on nodal data and computes
 the standard bilinear finite-element approximation to :math:`\nabla\cdot(1/\rho^{n+1/2})\nabla`.
 Also, :math:`D^{{\rm CC}\rightarrow{\rm N}}` is a discrete second-order operator that approximates the divergence at nodes from cell-centered data
 and :math:`G^{{\rm N}\rightarrow{\rm CC}}` approximates a cell-centered gradient from nodal data. Nodal
@@ -429,7 +429,7 @@ Mesh Mapping
 ^^^^^^^^^^^^
 The AMReX framework inherently assumes spatially constant grid spacing in each coordinate direction. Localized isotropic refinement
 is available via the dynamic placement of logically rectangular patches of mesh, typically refined by a factor of 2 or 4.
-`PeleLMeX` exapands the ability for local refinement by supporting a limited form of coordinate-aligned mapped meshes,
+`PeleLMeX` expands the ability for local refinement by supporting a limited form of coordinate-aligned mapped meshes,
 which can be used to concentrate grid refinement along specific boundaries, for example, to aid in capturing anisotropic physical
 processes, such as turbulent boundary layers along physical walls.  The mesh mapping can then be combined with AMR to dramatically
 enhance and locally focus computational resources where needed in certain types of problems.
@@ -446,7 +446,7 @@ A vector :math:`U` in uniform mesh coordinates can be transformed to one express
 its components by the transformation matrix, :math:`T`, i.e., :math:`{\bar U} = T U`. The divergence of :math:`U`, computed with
 uniform coordinate components, :math:`(\chi,\eta,\xi)`, and with differences in uniform space can be converted to the physical
 divergence of the physical vector, :math:`\nabla \cdot U = \frac{1}{J} {{\tilde \nabla} \cdot {\bar U}}`. Similarly, all vectors
-and differential operators used in `PeleLMeX` can be written in terms of uniform-grid operators and subsquent mesh transformations.
+and differential operators used in `PeleLMeX` can be written in terms of uniform-grid operators and subsequent mesh transformations.
 
 .. figure:: images/model/vort_1000_33.png
    :align: center

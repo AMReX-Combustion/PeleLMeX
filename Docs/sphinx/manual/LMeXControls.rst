@@ -332,7 +332,7 @@ Mesh Mapping
     ExpStretchMap.direction    = 0 # Can be 0,1,2
     ExpStretchMap.wall         = lo # Can be lo, hi
     ExpStretchMap.beta         = 1 # Must be non-negative
-    ConstantMap.scaling_factor = 2.0 2.0 2.0 # one value per AMREX_SPACEDIM axix
+    ConstantMap.scaling_factor = 2.0 2.0 2.0 # one value per AMREX_SPACEDIM axis
 
 .. note::
    Three mesh maps are provided with `PeleLMeX.  If `mesh_mapping` is not specified, no mapping will be applied. Each map has associated
