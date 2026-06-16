@@ -319,6 +319,26 @@ Transport coefficients and LES
    at isothermal embedded boundaries (so use caution for isothermal EBs with Soret diffusion active).
 
 
+.. _ssec:meshMappingParameters:
+
+Mesh Mapping
+---------------------------------------
+
+::
+
+    #-----------------------Mesh Mapping -----------------------
+    geometry.mesh_mapping      = TanhStretchMap [OPT, DEF=unused] Can be ConstantMap, ExpStretchMap, TanhStretchMap
+    TanhStretchMap.beta        = 2.0 2.0   # one value per AMREX_SPACEDIM axis
+    ExpStretchMap.direction    = 0 # Can be 0,1,2
+    ExpStretchMap.wall         = lo # Can be lo, hi
+    ExpStretchMap.beta         = 1 # Must be non-negative
+    ConstantMap.scaling_factor = 2.0 2.0 2.0 # one value per AMREX_SPACEDIM axix
+
+.. note::
+   Three mesh maps are provided with `PeleLMeX.  If `mesh_mapping` is not specified, no mapping will be applied. Each map has associated
+   parameters shown above.
+   
+
 Turbulent Forcing and Velocity Plotfile
 ---------------------------------------
 

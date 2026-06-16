@@ -12,7 +12,8 @@ The documentation pages appearing here are distributed with the code in the ``Do
 automatically with certain pushes to the `PeleLMeX` GibHub repository. A local version can also be built as follows ::
 
     cd ${PELE_HOME}/Docs
-    make html
+    cmake -S . -B build
+    cmake --build build
 
 where ``PELE_HOME`` is the location of your clone of the `PeleLMeX` repository.  To view the local pages,
 point your web browser at the file ``${PELE_HOME}/Docs/build/html/index.html``.
