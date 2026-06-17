@@ -314,6 +314,7 @@ PeleLM::readParameters()
       }
 
       m_mesh_map = MeshMap::create(mesh_mapping_name);
+      m_mesh_mapping = true;
       amrex::Print() << " Mesh mapping enabled: " << mesh_mapping_name << "\n";
     }
   }
