@@ -43,6 +43,12 @@ CEXE_sources += PeleLMeX_FlowController.cpp
 CEXE_sources += PeleLMeX_DeriveUserDefined.cpp
 CEXE_sources += PeleLMeX_BPatch.cpp
 
+ifeq ($(USE_ASCENT), TRUE)
+  CEXE_sources += PeleLMeX_Ascent.cpp
+  CEXE_sources += PeleLMeX_InSituViz.cpp
+  CEXE_headers += PeleLMeX_Ascent.H
+endif
+
 ifeq ($(USE_SOOT), TRUE)
   CEXE_sources += PeleLMeX_Soot.cpp
 endif

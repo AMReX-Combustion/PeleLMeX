@@ -11,6 +11,12 @@
 #include "PeleLMeX_FlowControllerData.H"
 #include "PeleLMeX_BPatch.H"
 
+#ifdef AMREX_USE_ASCENT
+#include <AMReX_Conduit_Blueprint.H>
+#include <ascent.hpp>
+#include "PeleLMeX_Ascent.H"
+#endif
+
 #ifdef PELE_USE_PLASMA
 #include "PrecondOp.H"
 #endif
@@ -74,6 +80,10 @@ public:
 
   // Simulation function
   void Evolve();
+
+#ifdef AMREX_USE_ASCENT
+  void doInSituViz();
+#endif
 
   // Unit Test function
   void Evaluate();
@@ -2026,6 +2036,10 @@ public:
   int m_plotHeatRelease = 0;
   int m_plotStateSpec = 0;
   int m_plot_int = 0;
+
+#ifdef AMREX_USE_ASCENT
+  pele::PeleLMeXAscent m_ascent;
+#endif
   bool m_plot_overwrite = false;
   bool m_plot_init_state = false;
   int m_plot_zeroEBcovered = 1;
