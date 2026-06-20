@@ -1019,6 +1019,9 @@ public:
   //-----------------------------------------------------------------------------
   // I/O
   void WritePlotFile();
+  void constructPlotMF(
+    amrex::Vector<amrex::MultiFab>& a_mf_plt,
+    amrex::Vector<std::string>& a_plt_VarsName);
   bool writePlotNow() const;
   bool checkMessage(const std::string& a_action) const;
   void WriteCheckPointFile();

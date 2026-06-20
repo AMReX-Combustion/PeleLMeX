@@ -281,6 +281,9 @@ PeleLM::initData()
     if (m_plot_int > 0 || m_plot_per_approx > 0. || m_plot_per_exact > 0.) {
       WritePlotFile();
     }
+#ifdef AMREX_USE_ASCENT
+    doInSituViz();
+#endif
     if (m_check_int > 0 || m_check_per > 0.) {
       WriteCheckPointFile();
     }
@@ -335,6 +338,9 @@ PeleLM::initData()
       if (m_plot_int > 0) {
         WritePlotFile();
       }
+#ifdef AMREX_USE_ASCENT
+      doInSituViz();
+#endif
     }
 #endif
 
