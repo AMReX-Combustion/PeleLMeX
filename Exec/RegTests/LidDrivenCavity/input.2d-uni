@@ -18,7 +18,7 @@ geometry.prob_hi     = 1.0 1.0 1.0
 peleLM.lo_bc = NoSlipWallAdiab NoSlipWallAdiab
 peleLM.hi_bc = NoSlipWallAdiab Inflow
 
-amr.n_cell          = 64 64
+amr.n_cell          = 256 256
 amr.v               = 1
 amr.max_level       = 0
 amr.blocking_factor = 16
@@ -42,12 +42,12 @@ amr.cfl       = 0.7
 amr.dt_shrink = 0.1
 amr.init_dt   = 1.0e-4
 amr.max_dt    = 5.0e-3
-amr.max_step  = 5000      # ~12 convective times at dt ~ 2.5e-3; raise
+amr.max_step  = 500000    # ~12 convective times at dt ~ 2.5e-3; raise
                           # if you want to take the run all the way to
                           # the Ghia-tabulated steady state (typically
                           # 30-50 convective times for Re = 100)
-amr.stop_time = 100.0
-amr.plot_int  = 500
+amr.stop_time = 50.0
+amr.plot_int  = 5000
 amr.plot_file = plt_
 amr.check_int = -1
 amr.derive_plot_vars = mag_vort

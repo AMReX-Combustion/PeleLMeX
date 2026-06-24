@@ -138,6 +138,7 @@ PeleLM::MakeNewLevelFromScratch(
     // (Idempotent across levels: the evaluator parameters do not
     // depend on the level.)
     m_map_eval = m_mesh_map->make_evaluator();
+    rebuildMappedInterps();
   }
 
 #ifdef AMREX_USE_EB
