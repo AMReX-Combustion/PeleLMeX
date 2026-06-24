@@ -340,16 +340,29 @@ void
 PeleLM::averageDownState(const TimeStamp a_time)
 {
   const int nCompState = (m_incompressible != 0) ? AMREX_SPACEDIM : NVAR;
-  for (int lev = finest_level; lev > 0; --lev) {
-    auto* ldataFine_p = getLevelDataPtr(lev, a_time);
-    auto* ldataCrse_p = getLevelDataPtr(lev - 1, a_time);
+
+  // Velocity components need the Xi-space-conservative restriction;
+  // delegate to averageDownVelocity (which is mapping-aware).  Scalar
+  // components (compressible runs) still use legacy arithmetic; their
+  // mass-conservative transform differs from velocity and is TODO.
+  averageDownVelocity(a_time);
+
+  // Remaining components AFTER velocity, if any (compressible runs).
+  const int nc_rest = nCompState - AMREX_SPACEDIM;
+  if (nc_rest > 0) {
+    for (int lev = finest_level; lev > 0; --lev) {
+      auto* ldataFine_p = getLevelDataPtr(lev, a_time);
+      auto* ldataCrse_p = getLevelDataPtr(lev - 1, a_time);
 #ifdef AMREX_USE_EB
-    EB_average_down(
-      ldataFine_p->state, ldataCrse_p->state, 0, nCompState, refRatio(lev - 1));
+      EB_average_down(
+        ldataFine_p->state, ldataCrse_p->state, AMREX_SPACEDIM, nc_rest,
+        refRatio(lev - 1));
 #else
-    average_down(
-      ldataFine_p->state, ldataCrse_p->state, 0, nCompState, refRatio(lev - 1));
+      average_down(
+        ldataFine_p->state, ldataCrse_p->state, AMREX_SPACEDIM, nc_rest,
+        refRatio(lev - 1));
 #endif
+    }
   }
 }
 
@@ -414,20 +427,111 @@ PeleLM::averageDown(
 }
 
 void
+PeleLM::rebuildMappedInterps()
+{
+  // Long-lived interp objects (one per C/F pair) so AMReX's
+  // FabArrayBase::TheFPinfo cache, which holds a raw pointer to the
+  // interp's BoxConverter, sees a stable address across all the
+  // fillpatch calls between regrid events.
+  if (!m_mesh_mapping || (m_mesh_map == nullptr)) {
+    m_mapped_interps.clear();
+    return;
+  }
+  const int n_pairs = amrex::max<int>(0, finest_level);
+  m_mapped_interps.clear();
+  m_mapped_interps.resize(n_pairs);
+  for (int c = 0; c < n_pairs; ++c) {
+    m_mapped_interps[c] = std::make_unique<MeshMappedCellConsInterp>(
+      &m_mesh_map->detJ_cc(c), &m_mesh_map->fac_cc(c),
+      &m_mesh_map->detJ_cc(c + 1), &m_mesh_map->fac_cc(c + 1));
+  }
+}
+
+void
 PeleLM::averageDownVelocity(const TimeStamp a_time)
 {
   for (int lev = finest_level; lev > 0; --lev) {
     auto* ldataFine_p = getLevelDataPtr(lev, a_time);
     auto* ldataCrse_p = getLevelDataPtr(lev - 1, a_time);
+
+    if (m_mesh_mapping) {
+      // Mass-conservative restriction under mesh mapping: convert v
+      // to Xi-space (u_xi_i = v_i * detJ / fac_i), arithmetic-average
+      // (which IS volume-conservative in the uniform Xi mesh),
+      // convert back to physical space on the coarse level.  Required
+      // to preserve discrete div-free across the C/F boundary.
+      const int nc = AMREX_SPACEDIM;
+      amrex::MultiFab uxi_fine(
+        ldataFine_p->state.boxArray(), ldataFine_p->state.DistributionMap(), nc,
+        0, amrex::MFInfo(), ldataFine_p->state.Factory());
+      amrex::MultiFab::Copy(uxi_fine, ldataFine_p->state, VELX, 0, nc, 0);
+      {
+        auto const& fac_ma = m_mesh_map->fac_cc(lev).const_arrays();
+        auto const& detJ_ma = m_mesh_map->detJ_cc(lev).const_arrays();
+        auto const& uxi_ma = uxi_fine.arrays();
+        amrex::ParallelFor(
+          uxi_fine, amrex::IntVect(0), nc,
+          [=] AMREX_GPU_DEVICE(
+            int box_no, int i, int j, int k, int n) noexcept {
+            uxi_ma[box_no](i, j, k, n) *=
+              detJ_ma[box_no](i, j, k) / fac_ma[box_no](i, j, k, n);
+          });
+        amrex::Gpu::streamSynchronize();
+      }
+
+      amrex::MultiFab uxi_crse(
+        ldataCrse_p->state.boxArray(), ldataCrse_p->state.DistributionMap(), nc,
+        0, amrex::MFInfo(), ldataCrse_p->state.Factory());
+      // Stage coarse v in Xi-space so average_down overwrites only the
+      // covered region; non-covered cells keep their pre-existing value.
+      amrex::MultiFab::Copy(uxi_crse, ldataCrse_p->state, VELX, 0, nc, 0);
+      {
+        auto const& fac_ma = m_mesh_map->fac_cc(lev - 1).const_arrays();
+        auto const& detJ_ma = m_mesh_map->detJ_cc(lev - 1).const_arrays();
+        auto const& uxi_ma = uxi_crse.arrays();
+        amrex::ParallelFor(
+          uxi_crse, amrex::IntVect(0), nc,
+          [=] AMREX_GPU_DEVICE(
+            int box_no, int i, int j, int k, int n) noexcept {
+            uxi_ma[box_no](i, j, k, n) *=
+              detJ_ma[box_no](i, j, k) / fac_ma[box_no](i, j, k, n);
+          });
+        amrex::Gpu::streamSynchronize();
+      }
+
 #ifdef AMREX_USE_EB
-    EB_average_down(
-      ldataFine_p->state, ldataCrse_p->state, VELX, AMREX_SPACEDIM,
-      refRatio(lev - 1));
+      amrex::EB_average_down(uxi_fine, uxi_crse, 0, nc, refRatio(lev - 1));
 #else
-    average_down(
-      ldataFine_p->state, ldataCrse_p->state, VELX, AMREX_SPACEDIM,
-      refRatio(lev - 1));
+      amrex::average_down(uxi_fine, uxi_crse, 0, nc, refRatio(lev - 1));
 #endif
+
+      // Convert coarse u_xi back to physical-space v.
+      {
+        auto const& fac_ma = m_mesh_map->fac_cc(lev - 1).const_arrays();
+        auto const& detJ_ma = m_mesh_map->detJ_cc(lev - 1).const_arrays();
+        auto const& uxi_ma = uxi_crse.const_arrays();
+        auto const& state_ma = ldataCrse_p->state.arrays();
+        amrex::ParallelFor(
+          uxi_crse, amrex::IntVect(0), nc,
+          [=] AMREX_GPU_DEVICE(
+            int box_no, int i, int j, int k, int n) noexcept {
+            state_ma[box_no](i, j, k, VELX + n) = uxi_ma[box_no](i, j, k, n) *
+                                                  fac_ma[box_no](i, j, k, n) /
+                                                  detJ_ma[box_no](i, j, k);
+          });
+        amrex::Gpu::streamSynchronize();
+      }
+    } else {
+#ifdef AMREX_USE_EB
+      EB_average_down(
+        ldataFine_p->state, ldataCrse_p->state, VELX, AMREX_SPACEDIM,
+        refRatio(lev - 1));
+#else
+      average_down(
+        ldataFine_p->state, ldataCrse_p->state, VELX, AMREX_SPACEDIM,
+        refRatio(lev - 1));
+#endif
+    }
   }
 }
 

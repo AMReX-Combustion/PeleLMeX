@@ -6,12 +6,6 @@
 # Square domain [0,1] x [0,1].  Lid (y = 1) moves with u = U_lid = 1.
 # All other three walls are no-slip.  Steady-state solution sought.
 # Re = U_lid * L / nu = 1 * 1 / 0.01 = 100.
-#
-# Mesh: 64 x 64 base level.  TanhStretchMap with beta_x = beta_y = 2
-# clusters cells at all four walls (max/min cell-size ratio per axis
-# = cosh^2(2) = 14.15).  At the walls the spacing is roughly
-#   dy_wall ~ (1/64) * 0.147 = 0.0023
-# vs uniform spacing 0.0156, and dy_center ~ 0.0156 * 2.075 = 0.0324.
 # ---------------------------------------------------------------------
 
 geometry.is_periodic = 0 0 0
@@ -24,15 +18,11 @@ geometry.prob_hi     = 1.0 1.0 1.0
 peleLM.lo_bc = NoSlipWallAdiab NoSlipWallAdiab
 peleLM.hi_bc = NoSlipWallAdiab Inflow
 
-amr.n_cell          = 64 64
+amr.n_cell          = 256 256
 amr.v               = 1
 amr.max_level       = 0
 amr.blocking_factor = 16
 amr.max_grid_size   = 64
-
-# Mesh mapping ---------------------------------------------------------
-geometry.mesh_mapping = TanhStretchMap
-TanhStretchMap.beta   = 2.0 2.0   # one value per AMREX_SPACEDIM axis
 
 # Problem --------------------------------------------------------------
 prob.U_lid = 1.0
@@ -62,27 +52,11 @@ amr.plot_file = plt_
 amr.check_int = -1
 amr.derive_plot_vars = mag_vort
 
-# Linear solvers -------------------------------------------------------
-# At beta = 2 the MAC operator's anisotropy (cosh^2(2) = 14.15) is
-# already enough to stall the default MLMG path -- the residual grows
-# instead of converging when the cavity's corner-singularity divergence
-# couples through stretched cells.  Use HypreMLABecLap (BoomerAMG) for
-# MAC and hypre as the nodal MLMG bottom solver.  Requires PeleLMeX
-# built with USE_HYPRE = TRUE (see GNUmakefile).
-#
-# To run without hypre, drop TanhStretchMap.beta to 1.0 1.0 (cosh^2(1)
-# = 2.38, well within the default MLMG sweet spot) and delete these
-# four lines.
-mac_proj.use_mlhypre     = 1
-nodal_proj.bottom_solver = hypre
 nodal_proj.maxiter       = 10000
 nodal_proj.rtol          = 1.0e-7
 
 nodal_proj.verbose = 1
 mac_proj.verbose   = 1
-
-# Mesh-mapping plotfile metadata
-peleLM.plot_mesh_mapping = 1
 
 # Diagnostics
 amrex.fpe_trap_invalid  = 0

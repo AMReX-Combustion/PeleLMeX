@@ -113,7 +113,7 @@ and observe that if the initial conditions satisfy the constraint, an evolution 
 
 The constraint here takes the form of a condition on the divergence of the flow.  Note that the actual expressions to use here will depend upon the equation of state and the chosen models for evaluating the transport fluxes.
 
-For the standard ideal gas EOS, 
+For the standard ideal gas EOS,
 
 .. math::
 
@@ -127,22 +127,22 @@ The corresponding divergence constraint on velocity in this case becomes:
     \nabla \cdot \boldsymbol{u} &= \frac{1}{\rho c_p T} \Big(-\nabla \cdot \boldsymbol{Q} + S_{\text{ext},\rho h} - h S_{\text{ext},\rho}\Big) \\
     &\;\;\;\; +  \sum_m \bigg( \frac{W}{\rho W_m} -  \frac{h_m}{\rho c_p T}\bigg)\bigg( - \nabla \cdot \boldsymbol{\mathcal{F}}_m + \rho \dot \omega_m + S_{\text{ext},\rho Y_m} - Y_m S_{\text{ext},\rho}\bigg) + \frac{1}{\rho} S_{\text{ext},\rho}\equiv S .
 
-However, it can be shown that 
+However, it can be shown that
 
 .. math::
 
     \sum_m \frac{W}{\rho W_m} Y_m S_{\text{ext},\rho} = \frac{1}{\rho}S_{\text{ext},\rho}
 
-and 
+and
 
 .. math::
     \sum_m h_m Y_m S_{\text{ext},\rho} = h S_{\text{ext},\rho}.
 
-Thus, the terms containing :math:`S_{\text{ext},\rho}` cancel and the divergence constraint for the standard ideal gas EOS simplifies to: 
+Thus, the terms containing :math:`S_{\text{ext},\rho}` cancel and the divergence constraint for the standard ideal gas EOS simplifies to:
 
 .. math::
 
-    \nabla \cdot \boldsymbol{u} = \frac{1}{\rho c_p T} \Big(-\nabla \cdot \boldsymbol{Q} + S_{\text{ext},\rho h} \Big) 
+    \nabla \cdot \boldsymbol{u} = \frac{1}{\rho c_p T} \Big(-\nabla \cdot \boldsymbol{Q} + S_{\text{ext},\rho h} \Big)
     +  \sum_m \bigg( \frac{W}{\rho W_m} -  \frac{h_m}{\rho c_p T}\bigg)\bigg( - \nabla \cdot \boldsymbol{\mathcal{F}}_m + \rho \dot \omega_m + S_{\text{ext},\rho Y_m} \bigg) \equiv S .
 
 In addition to the flow equations, `PeleLMeX` can also solve for a set of quantities that are neither advected nor diffused, satisfying:
@@ -454,7 +454,7 @@ and differential operators used in `PeleLMeX` can be written in terms of uniform
 
    `PeleLMeX` solution computed using `TanhStretchMap` in a 2D example, `LidDrivenCavity` with Re=1000. Here, the stretching
    factor, :math:`\beta=3` in both directions, concentrating mesh cells along all 4 boundaries.
- 
+
 Several mesh mapping functions are provided with `PeleLMeX` currently, including `ConstantMap`, `ExpStretchMap` and `TanhStretchMap`.
 `ConstantMap` provides a simple, piecewise-constant stretching in each coordinate direction.  `ExpStretchMap` allows for an
 exponential stretching in a single direction to concentrate cells toward one boundary. `TanhStretchMap` allows concentration of

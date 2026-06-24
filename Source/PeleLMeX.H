@@ -11,6 +11,7 @@
 #include "PeleLMeX_FlowControllerData.H"
 #include "PeleLMeX_BPatch.H"
 #include "PeleLMeX_MeshMap.H"
+#include "PeleLMeX_MeshMappedCellConsInterp.H"
 
 #ifdef AMREX_USE_ASCENT
 #include <AMReX_Conduit_Blueprint.H>
@@ -2339,6 +2340,21 @@ public:
   // Disable via `peleLM.plot_mesh_mapping = 0` to always write the
   // standard Xi-space plotfile format.
   int m_plot_mesh_mapping{1};
+
+  // Mesh-mapping-aware velocity interpolators, one per coarse/fine
+  // level pair (m_mapped_interps[c] does level c -> c+1).  Built in
+  // rebuildMappedInterps() from the level-lifecycle hooks; lifetime
+  // must outlive a single fillpatch call because TheFPinfo caches a
+  // raw pointer to the interp.  m_fp_crse_level is set by the
+  // fillpatch helpers immediately before / reset after each call so
+  // getInterpolator() returns the right entry; other fillpatch sites
+  // (gp, divu, etc.) leave it at -1 and use the legacy interpolator.
+  mutable int m_fp_crse_level{-1};
+  amrex::Vector<std::unique_ptr<MeshMappedCellConsInterp>> m_mapped_interps;
+
+  //! Rebuild m_mapped_interps after a level lifecycle event.  No-op
+  //! when mesh mapping is disabled.
+  void rebuildMappedInterps();
 
   //! Access the MeshMap instance (nullptr if mesh mapping is disabled).
   MeshMap* meshMap() noexcept { return m_mesh_map.get(); }
