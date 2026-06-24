@@ -425,7 +425,10 @@ PeleLM::MakeNewLevelFromCoarse(
     m_mesh_map->define(lev, ba, dm, *m_factory[lev], m_nGrowState);
     m_mesh_map->create_map(lev, geom[lev]);
     m_map_eval = m_mesh_map->make_evaluator();
+<<<<<<< HEAD
     rebuildMappedInterps();
+=======
+>>>>>>> development
   }
   // Recycling-plane storage spans whatever set of AMR levels currently exists
   // and must be rebuilt whenever that changes.
@@ -552,7 +555,10 @@ PeleLM::RemakeLevel(
     m_mesh_map->define(lev, ba, dm, *m_factory[lev], m_nGrowState);
     m_mesh_map->create_map(lev, geom[lev]);
     m_map_eval = m_mesh_map->make_evaluator();
+<<<<<<< HEAD
     rebuildMappedInterps();
+=======
+>>>>>>> development
   }
   // Recycling-plane storage spans whatever set of AMR levels currently exists
   // and must be rebuilt whenever that changes.
@@ -593,7 +599,10 @@ PeleLM::ClearLevel(const int lev)
   // Mesh mapping metric fields (if enabled; otherwise no-op)
   if (m_mesh_map) {
     m_mesh_map->clear_level(lev);
+<<<<<<< HEAD
     m_mapped_interps.clear();
+=======
+>>>>>>> development
   }
   // Recycling-plane storage covers all current levels; flag for rebuild.
   m_recycling_needs_rebuild = true;

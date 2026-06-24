@@ -2341,6 +2341,7 @@ public:
   // standard Xi-space plotfile format.
   int m_plot_mesh_mapping{1};
 
+<<<<<<< HEAD
   // Mesh-mapping-aware velocity interpolators, one per coarse/fine
   // level pair (m_mapped_interps[c] does level c -> c+1).  Built in
   // rebuildMappedInterps() from the level-lifecycle hooks; lifetime
@@ -2356,6 +2357,8 @@ public:
   //! when mesh mapping is disabled.
   void rebuildMappedInterps();
 
+=======
+>>>>>>> development
   //! Access the MeshMap instance (nullptr if mesh mapping is disabled).
   MeshMap* meshMap() noexcept { return m_mesh_map.get(); }
   [[nodiscard]] const MeshMap* meshMap() const noexcept
