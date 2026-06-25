@@ -296,6 +296,12 @@ if(NOT PELE_ENABLE_EB)
   if(PELE_DIM EQUAL 2)
     add_test_r(tripleflame-${PELE_DIM}d TripleFlame)
     add_test_rt(isothermal-soret IsothermalSoretChannel)
+    # Mesh-mapping + AMR regression on a stretched (TanhStretchMap) grid.
+    # Requires the optional Hypre solver: the MAC projection bottom solve
+    # uses mac_proj.use_mlhypre = 1, so only register when Hypre is built.
+    if(PELE_ENABLE_HYPRE)
+      add_test_r(lid-driven-cavity-mapped-amr-2d LidDrivenCavity)
+    endif()
   endif()
   if(PELE_DIM EQUAL 3)
     add_test_r(hit-decay-${PELE_DIM}d HIT)

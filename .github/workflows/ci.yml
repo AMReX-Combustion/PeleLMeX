@@ -322,6 +322,101 @@ jobs:
       #    ctest -LE no-ci -VV --output-on-failure; \
       #    if [ $? -ne 0 ]; then exit 1; fi
 
+  CPU-Hypre-MeshMapping:
+    name: CPU-Hypre-MeshMapping
+    needs: Formatting
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Clone
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+      - name: Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Setup
+        run: |
+          echo "NPROCS=$(nproc)" >> $GITHUB_ENV
+          echo "CCACHE_COMPRESS=1" >> $GITHUB_ENV
+          echo "CCACHE_COMPRESSLEVEL=10" >> $GITHUB_ENV
+          echo "CCACHE_LOGFILE=${{github.workspace}}/ccache.log.txt" >> $GITHUB_ENV
+          echo "CCACHE_MAXSIZE=250M" >> $GITHUB_ENV
+          ${{github.workspace}}/Submodules/PelePhysics/Submodules/amrex/.github/workflows/dependencies/ubuntu_free_disk_space.sh
+      - name: Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libopenmpi-dev openmpi-bin
+      - name: Install Ccache
+        run: |
+          wget https://github.com/ccache/ccache/releases/download/v4.8/ccache-4.8-linux-x86_64.tar.xz
+          tar xvf ccache-4.8-linux-x86_64.tar.xz
+          sudo cp -f ccache-4.8-linux-x86_64/ccache /usr/local/bin/
+      - name: Set Up Ccache
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/ccache
+          key: ccache-${{github.workflow}}-${{github.job}}-git-${{github.sha}}
+          restore-keys: |
+               ccache-${{github.workflow}}-${{github.job}}-git-
+      - name: Build Hypre
+        # Build the optional Hypre solver from a pinned source release,
+        # mirroring AMReX's own Hypre regression workflow
+        # (Submodules/PelePhysics/Submodules/amrex/.github/workflows/hypre.yml).
+        # 2.32.0 matches the version referenced in the case input header.
+        run: |
+          wget -q https://github.com/hypre-space/hypre/archive/refs/tags/v2.32.0.tar.gz
+          tar xfz v2.32.0.tar.gz
+          cd hypre-2.32.0/src
+          ./configure --with-cxxstandard=20
+          make -j $(nproc)
+          make install
+          echo "HYPRE_ROOT=${PWD}/hypre" >> $GITHUB_ENV
+      - name: Configure
+        run: |
+          mkdir -p ${{runner.workspace}}/golds
+          cmake -B${{runner.workspace}}/build-hypre-meshmapping \
+          -DCMAKE_INSTALL_PREFIX:PATH=${{runner.workspace}}/install-hypre-meshmapping \
+          -DCMAKE_BUILD_TYPE:STRING=Release \
+          -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
+          -DPELE_DIM:STRING=2 \
+          -DPELE_ENABLE_MPI:BOOL=ON \
+          -DMPIEXEC_PREFLAGS:STRING=--oversubscribe \
+          -DPELE_ENABLE_EB:BOOL=OFF \
+          -DPELE_ENABLE_HYPRE:BOOL=ON \
+          -DHYPRE_ROOT:PATH=${HYPRE_ROOT} \
+          -DPELE_ENABLE_FCOMPARE_FOR_TESTS:BOOL=OFF \
+          -DPELE_SAVE_GOLDS:BOOL=ON \
+          -DPELE_SAVED_GOLDS_DIRECTORY:PATH=${{runner.workspace}}/golds \
+          -DCMAKE_CXX_COMPILER_LAUNCHER:STRING=ccache \
+          ${{github.workspace}}
+      - name: Build
+        run: |
+          ccache -z
+          cmake --build ${{runner.workspace}}/build-hypre-meshmapping \
+            --parallel ${{env.NPROCS}} 2>&1 | tee -a ${{runner.workspace}}/build-output.txt; \
+          if [ ${PIPESTATUS[0]} -ne 0 ]; then exit 1; fi
+      - name: Ccache Report
+        run: |
+          ccache -s
+          du -hs ~/.cache/ccache
+      - name: Test
+        # The add_test_r harness forces amr.max_step=10, so this runs 10
+        # steps and (PELE_SAVE_GOLDS=ON) writes the golden plt00010 under
+        # the golds directory.  To regenerate the 100-step reference
+        # locally, run the executable directly on the input file (see the
+        # header of lid-driven-cavity-mapped-amr-2d.inp).
+        run: |
+          cd ${{runner.workspace}}/build-hypre-meshmapping
+          ctest -R lid-driven-cavity-mapped-amr-2d -VV --output-on-failure
+      - name: Upload golds
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: golds-lid-driven-cavity-mapped-amr-2d
+          path: ${{runner.workspace}}/golds
+          if-no-files-found: warn
+
   GPU-Nvidia:
     name: GPU-CUDA
     needs: [Formatting, CPU-GNUmake]
