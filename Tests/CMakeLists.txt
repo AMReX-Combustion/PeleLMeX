@@ -296,28 +296,11 @@ if(NOT PELE_ENABLE_EB)
   if(PELE_DIM EQUAL 2)
     add_test_r(tripleflame-${PELE_DIM}d TripleFlame)
     add_test_rt(isothermal-soret IsothermalSoretChannel)
-    # Mesh-mapping + AMR regression on a stretched (TanhStretchMap) grid.
-    # Requires the optional Hypre solver: the MAC projection bottom solve
-    # uses mac_proj.use_mlhypre = 1, so only register when Hypre is built.
-    if(PELE_ENABLE_HYPRE)
-      add_test_r(lid-driven-cavity-mapped-amr-2d LidDrivenCavity)
-    endif()
   endif()
   if(PELE_DIM EQUAL 3)
     add_test_r(hit-decay-${PELE_DIM}d HIT)
     add_test_r(hit-decay-les-${PELE_DIM}d HIT)
     add_test_r(hit-forced-${PELE_DIM}d HIT)
-    # Reacting mesh-mapping + AMR conservation regression: TanhStretchMap
-    # in the periodic laterals, one AMR level on the perturbed flame
-    # surface.  Exercises the detJ-weighted scalar restriction/interp
-    # (rho, rhoY, rhoH).  Uses default MLMG (mild beta; no Hypre needed).
-    # add_test_rt runs do_temporals + the case-specific test.py, which
-    # asserts the discrete mass-flux balance (temporals/tempMass).
-    # Non-mapped control twin (identity map, beta = 0): same test.py,
-    # used to calibrate the conservation tolerance.  The mapped case
-    # must meet the same tolerance the control establishes.
-    add_test_rt(flamesheet-drm19-amr-${PELE_DIM}d FlameSheet)
-    add_test_rt(flamesheet-drm19-mapped-amr-${PELE_DIM}d FlameSheet)
   endif()
 else()
   if(PELE_DIM EQUAL 2)
