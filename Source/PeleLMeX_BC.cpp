@@ -89,17 +89,17 @@ constexpr int soot_bc[] = {
 amrex::InterpBase*
 PeleLM::
   getInterpolator( // NOLINT(readability-convert-member-functions-to-static)
-    const int a_method) const
+    const int a_method,
+    const int a_crse_level) const
 {
-  // Mesh-mapping-aware path: caller (a fillpatch helper) sets
-  // m_fp_crse_level to opt in; only velocity-style AMREX_SPACEDIM
-  // fillpatches qualify (compressible mixed-component state falls
-  // through to legacy).
+  // Mesh-mapping-aware path: whole-state fillpatch helpers pass the
+  // coarse level of the pair (a_crse_level) to opt in; other callers
+  // leave it at the default -1 and get the legacy interpolator.
   if (
-    a_method == 1 && m_mesh_mapping && m_fp_crse_level >= 0 &&
-    m_fp_crse_level < static_cast<int>(m_mapped_interps.size()) &&
-    m_mapped_interps[m_fp_crse_level]) {
-    return m_mapped_interps[m_fp_crse_level].get();
+    a_method == 1 && m_mesh_mapping && a_crse_level >= 0 &&
+    a_crse_level < static_cast<int>(m_mapped_interps.size()) &&
+    m_mapped_interps[a_crse_level]) {
+    return m_mapped_interps[a_crse_level].get();
   }
 
   amrex::InterpBase* mapper = nullptr;
@@ -511,19 +511,11 @@ PeleLM::fillpatch_state(
       {m_t_old[lev], m_t_new[lev]}, 0, 0, nCompState, geom[lev], bndry_func, 0);
   } else {
 
-    // Enable mapped interpolator only for velocity-only state
-    // (incompressible).  Compressible NVAR state mixes velocity with
-    // scalars that require different weighting; falls through to legacy.
-    const bool use_mapped_interp =
-      m_mesh_mapping && nCompState == AMREX_SPACEDIM &&
-      (lev - 1) < static_cast<int>(m_mapped_interps.size()) &&
-      m_mapped_interps[lev - 1];
-    if (use_mapped_interp) {
-      m_fp_crse_level = lev - 1;
-    }
-
-    // Interpolator
-    auto* mapper = getInterpolator();
+    // Whole-state fill: request the mapping-aware interpolator for the
+    // lev-1 -> lev pair (its per-component weights serve both
+    // incompressible and compressible state).  getInterpolator falls back
+    // to the legacy interpolator when mesh mapping is off or unavailable.
+    auto* mapper = getInterpolator(1, lev - 1);
 
     amrex::PhysBCFunct<
       amrex::GpuBndryFuncFab<PeleLMCCFillExtDirState<ProblemSpecificFunctions>>>
@@ -549,11 +541,6 @@ PeleLM::fillpatch_state(
       {m_t_old[lev], m_t_new[lev]}, 0, 0, nCompState, geom[lev - 1], geom[lev],
       crse_bndry_func, 0, fine_bndry_func, 0, refRatio(lev - 1), mapper,
       fetchBCRecArray(0, nCompState), 0);
-
-    // Reset marker; the interpolator object lives on in m_mapped_interps.
-    if (use_mapped_interp) {
-      m_fp_crse_level = -1;
-    }
   }
 
   a_state.EnforcePeriodicity(geom[lev].periodicity());
@@ -1028,18 +1015,12 @@ PeleLM::fillcoarsepatch_state(
     fillFromRecyclingPlane(a_state, 0, lev);
   }
 
-  // Mesh-mapping interpolator (velocity-only incompressible path).
-  const bool use_mapped_interp =
-    m_mesh_mapping && nCompState == AMREX_SPACEDIM &&
-    m_regrid_interp_method == 1 &&
-    (lev - 1) < static_cast<int>(m_mapped_interps.size()) &&
-    m_mapped_interps[lev - 1];
-  if (use_mapped_interp) {
-    m_fp_crse_level = lev - 1;
-  }
-
-  // Interpolator
-  auto* mapper = getInterpolator(m_regrid_interp_method);
+  // Whole-state coarse->fine fill: request the mapping-aware interpolator
+  // for the lev-1 -> lev pair (engages only with cell-conservative regrid
+  // interp, which it wraps; else getInterpolator returns the legacy one).
+  // Derived TEMP/RHORT are restored by the EOS recompute in
+  // MakeNewLevelFromCoarse / RemakeLevel.
+  auto* mapper = getInterpolator(m_regrid_interp_method, lev - 1);
 
   amrex::PhysBCFunct<
     amrex::GpuBndryFuncFab<PeleLMCCFillExtDirState<ProblemSpecificFunctions>>>
@@ -1062,10 +1043,6 @@ PeleLM::fillcoarsepatch_state(
     0, nCompState, geom[lev - 1], geom[lev], crse_bndry_func, 0,
     fine_bndry_func, 0, refRatio(lev - 1), mapper,
     fetchBCRecArray(0, nCompState), 0);
-
-  if (use_mapped_interp) {
-    m_fp_crse_level = -1;
-  }
 }
 
 // Fill the auxiliaries

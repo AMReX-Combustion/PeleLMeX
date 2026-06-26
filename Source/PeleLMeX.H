@@ -1086,7 +1086,8 @@ public:
 
   //-----------------------------------------------------------------------------
   // BOUNDARY CONDITIONS / FILLPATCH
-  amrex::InterpBase* getInterpolator(const int a_method = 1) const;
+  amrex::InterpBase*
+  getInterpolator(const int a_method = 1, const int a_crse_level = -1) const;
 
   // Interpolation method for regrid (default to cell cons interp)
   int m_regrid_interp_method = 1;
@@ -1248,6 +1249,11 @@ public:
   void averageDownState(const PeleLM::TimeStamp a_time);
   void averageDownScalars(const PeleLM::TimeStamp a_time);
   void averageDownVelocity(const PeleLM::TimeStamp a_time);
+  //! detJ-weighted (volume-conservative) restriction of the conserved
+  //! density block [DENSITY..RHOH] (rho, rhoY, rhoH) under mesh mapping.
+  //! Derived TEMP/RHORT are not touched; recompute via setTemperature /
+  //! setThermoPress afterward.
+  void averageDownConservedDensities(const PeleLM::TimeStamp a_time);
   void averageDownAux(const PeleLM::TimeStamp a_time);
   void averageDown(
     const PeleLM::TimeStamp a_time, const int state_comp, const int ncomp);
@@ -1422,6 +1428,12 @@ public:
 
   amrex::Real
   MFSum(const amrex::Vector<const amrex::MultiFab*>& a_MF, const int comp);
+  //! Physical-domain volume integral of a cell-centered field.  Same as
+  //! MFSum without mesh mapping; with it, detJ-weights each cell to give
+  //! the true physical integral (e.g. mass = integral of rho), so the
+  //! balance telescopes to the Xi-space boundary fluxes in addMassFluxes.
+  amrex::Real MFSumMapped(
+    const amrex::Vector<const amrex::MultiFab*>& a_MF, const int comp);
   static amrex::Real MFmax(
     const amrex::MultiFab* a_MF,
     const amrex::iMultiFab& a_mask,
@@ -2341,19 +2353,14 @@ public:
   // standard Xi-space plotfile format.
   int m_plot_mesh_mapping{1};
 
-  // Mesh-mapping-aware velocity interpolators, one per coarse/fine
-  // level pair (m_mapped_interps[c] does level c -> c+1).  Built in
-  // rebuildMappedInterps() from the level-lifecycle hooks; lifetime
-  // must outlive a single fillpatch call because TheFPinfo caches a
-  // raw pointer to the interp.  m_fp_crse_level is set by the
-  // fillpatch helpers immediately before / reset after each call so
-  // getInterpolator() returns the right entry; other fillpatch sites
-  // (gp, divu, etc.) leave it at -1 and use the legacy interpolator.
-  mutable int m_fp_crse_level{-1};
+  // Mapping-aware state interpolators, one per coarse/fine pair
+  // (m_mapped_interps[c] does level c -> c+1), rebuilt on level-lifecycle
+  // events.  Whole-state fillpatch helpers select one by passing the
+  // coarse level to getInterpolator(); other sites use the legacy interp.
   amrex::Vector<std::unique_ptr<MeshMappedCellConsInterp>> m_mapped_interps;
 
-  //! Rebuild m_mapped_interps after a level lifecycle event.  No-op
-  //! when mesh mapping is disabled.
+  //! Rebuild m_mapped_interps after a level lifecycle event (no-op if
+  //! mesh mapping is disabled).
   void rebuildMappedInterps();
 
   //! Access the MeshMap instance (nullptr if mesh mapping is disabled).

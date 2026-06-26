@@ -4,10 +4,7 @@
 #
 # AMR SMOKE TEST for the mesh-mapping branch.  Identical numerics to
 # input.2d (the Re = 100 single-level baseline) but with one level of
-# AMR refinement enabled.  The purpose is empirical: identify which
-# parts of the mesh-mapping implementation break (or surprise us)
-# under composite multi-level MLMG with stretched cells, BEFORE we
-# write any new code to fix them.
+# AMR refinement enabled.
 #
 # Refinement strategy (deterministic, fixed-region):
 #   - Box refinement covers the upper quarter of the cavity

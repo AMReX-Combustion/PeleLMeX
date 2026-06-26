@@ -307,6 +307,17 @@ if(NOT PELE_ENABLE_EB)
     add_test_r(hit-decay-${PELE_DIM}d HIT)
     add_test_r(hit-decay-les-${PELE_DIM}d HIT)
     add_test_r(hit-forced-${PELE_DIM}d HIT)
+    # Reacting mesh-mapping + AMR conservation regression: TanhStretchMap
+    # in the periodic laterals, one AMR level on the perturbed flame
+    # surface.  Exercises the detJ-weighted scalar restriction/interp
+    # (rho, rhoY, rhoH).  Uses default MLMG (mild beta; no Hypre needed).
+    # add_test_rt runs do_temporals + the case-specific test.py, which
+    # asserts the discrete mass-flux balance (temporals/tempMass).
+    # Non-mapped control twin (identity map, beta = 0): same test.py,
+    # used to calibrate the conservation tolerance.  The mapped case
+    # must meet the same tolerance the control establishes.
+    add_test_rt(flamesheet-drm19-amr-${PELE_DIM}d FlameSheet)
+    add_test_rt(flamesheet-drm19-mapped-amr-${PELE_DIM}d FlameSheet)
   endif()
 else()
   if(PELE_DIM EQUAL 2)

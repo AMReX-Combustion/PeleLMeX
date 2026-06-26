@@ -5,22 +5,25 @@
 #include <AMReX_MultiFab.H>
 
 /**
- * \brief Volume-conservative cell-centered velocity interpolator for
- *        the mesh-mapping path.
+ * \brief Volume-conservative cell-centered state interpolator for the
+ *        mesh-mapping path.
  *
- * Wraps \c amrex::mf_cell_cons_interp by pre-weighting the coarse
- * velocity into Xi-space (\f$u^{xi}_i = v^{phys}_i \cdot \mathrm{detJ}
- * /\mathrm{fac}_i\f$), running the standard cell-conservative linear
- * interp on that representation (which is volume-conservative since
- * Xi-space cells are uniform), and un-weighting on the fine side.
+ * Wraps \c amrex::mf_cell_cons_interp: stage the coarse data in Xi-space
+ * (v*w), run the standard cell-cons interp (volume-conservative on the
+ * uniform Xi mesh), then un-weight the fine side (v_xi/w).  Per-component
+ * weight w: velocity [vel_start, vel_start+vel_ncomp) -> detJ/fac_i;
+ * conserved densities [dens_start, dens_end] (rho, rhoY, rhoH) -> detJ;
+ * everything else (TEMP, RHORT, ...) -> 1.
  *
- * Assumes the data is per-direction velocity with exactly
- * \c AMREX_SPACEDIM components.  Used by \c PeleLM::getInterpolator()
- * in place of \c amrex::mf_cell_cons_interp when mesh mapping is
- * active.  Lifetime managed by \c PeleLM via the \c m_mapped_interps
- * vector (rebuilt on every level lifecycle event) -- AMReX's
- * \c FabArrayBase::TheFPinfo cache holds a raw pointer to the
- * interpolator and requires it to outlive a single fillpatch call.
+ * Assumes the fillpatch starts at state component 0 (ccomp == fcomp == 0),
+ * as PeleLM::fillpatch_state / fillcoarsepatch_state invoke it.  Components
+ * left at identity weight (TEMP, RHORT) are reconciled by the EOS recompute
+ * after prolongation in the regrid path.
+ *
+ * Used by PeleLM::getInterpolator() when mesh mapping is active.  Lifetime
+ * is managed via PeleLM's m_mapped_interps (rebuilt on level-lifecycle
+ * events) because AMReX's FabArrayBase::TheFPinfo cache holds a raw pointer
+ * that must outlive a fillpatch call.
  */
 class MeshMappedCellConsInterp final : public amrex::MFInterpolater
 {
@@ -29,11 +32,19 @@ public:
     amrex::MultiFab const* a_detJ_crse,
     amrex::MultiFab const* a_fac_crse,
     amrex::MultiFab const* a_detJ_fine,
-    amrex::MultiFab const* a_fac_fine)
+    amrex::MultiFab const* a_fac_fine,
+    int a_vel_start,
+    int a_vel_ncomp,
+    int a_dens_start,
+    int a_dens_end)
     : m_detJ_crse(a_detJ_crse),
       m_fac_crse(a_fac_crse),
       m_detJ_fine(a_detJ_fine),
-      m_fac_fine(a_fac_fine)
+      m_fac_fine(a_fac_fine),
+      m_vel_start(a_vel_start),
+      m_vel_ncomp(a_vel_ncomp),
+      m_dens_start(a_dens_start),
+      m_dens_end(a_dens_end)
   {
   }
 
@@ -68,6 +79,13 @@ private:
   amrex::MultiFab const* m_fac_crse{nullptr};
   amrex::MultiFab const* m_detJ_fine{nullptr};
   amrex::MultiFab const* m_fac_fine{nullptr};
+
+  // Component layout for the per-component weight (see class doc); set
+  // by PeleLM from VELX, AMREX_SPACEDIM, DENSITY, RHOH.
+  int m_vel_start{0};
+  int m_vel_ncomp{0};
+  int m_dens_start{-1};
+  int m_dens_end{-2}; // empty range by default (dens_end < dens_start)
 };
 
 #endif // PELELMEX_MESH_MAPPED_CELL_CONS_INTERP_H

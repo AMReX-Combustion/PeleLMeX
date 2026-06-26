@@ -210,13 +210,9 @@ PeleLM::initialProjection()
 #endif
   }
 
-  // In R-Z, AMReX-Hydro do an average down of r*vel; under mesh
-  // mapping, the projector operates on the Xi-space velocity
-  // (vel*detJ/fac) and we unscale it back to physical space per-level
-  // above.  In both cases the coarse-level velocity in the region
-  // covered by fine grids is stale after the per-level unscale, and
-  // must be synced from the fine level to keep div(U) consistent
-  // across the C/F boundary on the next step.
+  // R-Z (r*vel) and mesh mapping both leave the coarse velocity stale
+  // under fine grids after the per-level unscale; sync it down from the
+  // fine level to keep div(U) consistent across the C/F boundary.
   if (Geom(0).IsRZ() || m_mesh_mapping) {
     averageDownVelocity(AmrNewTime);
   }
@@ -701,12 +697,9 @@ PeleLM::velocityProjection(
     }
   }
 
-  // In R-Z, AMReX-Hydro do an average down of r*vel; under mesh
-  // mapping, the projector operates on the Xi-space velocity and we
-  // unscale per-level above.  In both cases the coarse-level velocity
-  // in the region covered by fine grids is stale after the unscale and
-  // must be synced from the fine level for cross-level consistency on
-  // the next step.
+  // R-Z (r*vel) and mesh mapping both leave the coarse velocity stale
+  // under fine grids after the per-level unscale; sync it down from the
+  // fine level for cross-level consistency on the next step.
 #if AMREX_SPACEDIM == 2
   if (Geom(0).IsRZ() || m_mesh_mapping) {
     averageDownVelocity(AmrNewTime);
@@ -873,16 +866,10 @@ PeleLM::doNodalProject(
     }
   }
 
-  // Average down grad P from fine to coarse.
-  //
-  // Note (mesh mapping): gp is stored as dphi/dxi (Xi-space gradient),
-  // directly from the nodal projector's getGradPhi() which under
-  // m_use_mapped returns the gradient in computational coordinates.
-  // For cell-centered Xi-space data with a uniform Xi-mesh,
-  // amrex::average_down (volume-weighted arithmetic) is ALREADY the
-  // mass-conservative restriction.  An attempt to add an additional
-  // Xi-space transform here mistakenly double-weights gp and produces
-  // worse drift than the legacy arithmetic average.
+  // Average down grad P from fine to coarse.  Under mesh mapping gp is
+  // the Xi-space gradient (dphi/dxi), so plain average_down on the uniform
+  // Xi mesh is already mass-conservative; an extra Xi-space transform here
+  // would double-weight gp and worsen the drift.
   for (int lev = finest_level - 1; lev >= 0; --lev) {
     auto* ldataFine_p = getLevelDataPtr(lev + 1, AmrNewTime);
     auto* ldataCrse_p = getLevelDataPtr(lev, AmrNewTime);

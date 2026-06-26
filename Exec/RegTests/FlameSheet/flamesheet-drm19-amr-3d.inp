@@ -1,0 +1,88 @@
+# =====================================================================
+# 3D premixed FlameSheet (drm19) + AMR, IDENTITY mesh map (control).
+# Non-mapped baseline for the mesh-mapping conservation regression.
+# =====================================================================
+#
+# This is the calibration / control twin of
+# flamesheet-drm19-mapped-amr-3d.inp.  It is byte-for-byte identical
+# EXCEPT TanhStretchMap.beta = 0 0 0 (an identity map: detJ = 1,
+# fac = 1, zero displacement), i.e. the mesh is NOT stretched.  It runs
+# the very same diagnostic path (MFSumMapped with detJ = 1, the
+# mapping-aware fillpatch/average-down with unit weights) and the same
+# test.py mass-flux-balance check.
+#
+# Use it to:
+#   * confirm the test.py + mass-balance workflow operates correctly,
+#     and
+#   * read off the achievable conservation residual with NO stretching,
+#     i.e. the pure discretization / linear-solver floor.  The tolerance
+#     in test.py should be set from THIS run; the genuinely mapped twin
+#     (beta = 1 1 0) must then meet the same tolerance -- that is the
+#     statement that the mapping does not degrade conservation.
+# ---------------------------------------------------------------------
+
+#----------------------DOMAIN DEFINITION------------------------
+geometry.is_periodic = 1 1 0
+geometry.coord_sys   = 0
+geometry.prob_lo     = 0.0 0.0 0.0
+geometry.prob_hi     = 0.008 0.008 0.032
+
+peleLM.lo_bc = Interior Interior Inflow
+peleLM.hi_bc = Interior Interior Outflow
+
+#-------------------------AMR CONTROL----------------------------
+amr.n_cell          = 16 16 64
+amr.v               = 1
+amr.max_level       = 1
+amr.ref_ratio       = 2 2 2 2
+amr.regrid_int      = 5
+amr.n_error_buf     = 1 1 2 2
+amr.grid_eff        = 0.7
+amr.blocking_factor = 8
+amr.max_grid_size   = 64
+
+#----------------------- Mesh mapping (IDENTITY) ---------------
+# beta = 0 => identity map in every direction (no stretching).
+geometry.mesh_mapping = TanhStretchMap
+TanhStretchMap.beta   = 0.0 0.0 0.0
+peleLM.plot_mesh_mapping = 1
+
+#----------------------- Refinement ----------------------------
+amr.refinement_indicators = yH
+amr.yH.max_level     = 1
+amr.yH.value_greater = 1.0e-6
+amr.yH.field_name    = Y(H)
+
+#--------------------------- Problem ---------------------------
+prob.P_mean     = 101325.0
+prob.standoff   = -.023
+prob.pertmag    = 0.00045
+prob.pertlength = 0.016
+pmf.datafile    = "drm19_pmf.dat"
+
+#-------------------------PeleLM CONTROL------------------------
+peleLM.v               = 1
+peleLM.incompressible  = 0
+peleLM.use_wbar        = 1
+peleLM.sdc_iterMax     = 2
+peleLM.floor_species   = 0
+peleLM.divu_dt_method  = 2
+
+peleLM.do_temporals     = 1
+peleLM.do_mass_balance  = 1
+peleLM.temporal_int     = 1
+
+amr.plot_int    = 100
+amr.max_step    = 10
+amr.dt_shrink   = 0.0001
+amr.stop_time   = 0.001
+amr.cfl         = 0.5
+amr.derive_plot_vars = avg_pressure mag_vort mass_fractions
+
+# --------------- INPUTS TO CHEMISTRY REACTOR ---------------
+peleLM.chem_integrator = "ReactorCvode"
+peleLM.use_typ_vals_chem = 1
+ode.rtol = 1.0e-6
+ode.atol = 1.0e-5
+cvode.solve_type = GMRES
+cvode.max_order  = 4
