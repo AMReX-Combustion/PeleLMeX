@@ -140,6 +140,11 @@ jobs:
           fi
       - name: Dependencies
         run: |
+          if [ "${RUNNER_OS}" != "macOS" ]; then
+            sudo apt-get update
+          else
+            brew update
+          fi
           # Install MPI
           ${{matrix.install_deps}}
           # Install Python packages
