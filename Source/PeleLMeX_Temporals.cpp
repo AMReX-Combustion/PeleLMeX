@@ -8,7 +8,7 @@ amrex::Real
 PeleLM::MFSumMapped(
   const amrex::Vector<const amrex::MultiFab*>& a_MF, const int comp)
 {
-  if ((m_mesh_mapping == 0) || (m_mesh_map == nullptr)) {
+  if ((!m_mesh_mapping) || (m_mesh_map == nullptr)) {
     return MFSum(a_MF, comp);
   }
   // detJ-weight each level so MFSum (which applies the uniform Xi cell

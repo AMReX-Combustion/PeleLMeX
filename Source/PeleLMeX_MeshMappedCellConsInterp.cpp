@@ -80,7 +80,7 @@ MeshMappedCellConsInterp::interp(
   // mf_cell_cons_interp on v_xi IS volume-conservative since Xi-space
   // cells are uniform.
   amrex::MultiFab crse_w(
-    crsemf.boxArray(), crsemf.DistributionMap(), ncomp, /*nghost=*/0,
+    crsemf.boxArray(), crsemf.DistributionMap(), ncomp, /*ngrow=*/0,
     amrex::MFInfo(), crsemf.Factory());
   {
     auto const& v_arr = crsemf.const_arrays();
