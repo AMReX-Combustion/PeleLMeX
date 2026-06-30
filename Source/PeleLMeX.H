@@ -1984,6 +1984,10 @@ public:
   amrex::Vector<amrex::Real> m_ctrl_time_pts;
   amrex::Vector<amrex::Real> m_ctrl_velo_pts;
   amrex::Vector<amrex::Real> m_ctrl_cntl_pts;
+  // Time-integrated controlled inlet velocity (physical convected distance).
+  // Used to march through the turbulent-inflow data consistently with the
+  // controller. Reconstructed from AC history on restart.
+  amrex::Real m_turb_conv_dist{0.0};
 
   // PMF parameters
   pele::physics::PeleParams<pele::physics::PMF::PmfData::DataContainer>
