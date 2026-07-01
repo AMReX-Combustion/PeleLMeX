@@ -1222,6 +1222,18 @@ PeleLM::fillTurbInflow(
     amrex::Gpu::copy(
       amrex::Gpu::deviceToHost, probparmDD, probparmDD + 1, probparmDH);
 
+    // When active control drives the inlet velocity, march through the turb
+    // data using the time-integrated controlled velocity (convected distance)
+    // instead of turb_conv_vel * time. This keeps the marcher consistent with
+    // the time-varying mean inflow and avoids the position jumps that would
+    // arise from rescaling turb_conv_vel against absolute time.
+    if (m_ctrl_active != 0) {
+      const amrex::Real dtl = a_time - m_ctrl_tBase;
+      const amrex::Real conv_dist =
+        m_turb_conv_dist + m_ctrl_V_in * dtl + 0.5 * m_ctrl_dV * dtl * dtl;
+      turb_inflow.set_convected_distance(conv_dist);
+    }
+
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
 #endif

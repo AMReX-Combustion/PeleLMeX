@@ -184,6 +184,12 @@ PeleLM::activeControl(const int is_restart)
   m_ctrl_V_in_old = m_ctrl_V_in;
   if (m_dt > 0.0) {
     m_ctrl_V_in += m_dt * m_ctrl_dV;
+    // Accumulate the convected distance (integral of V_in dt) for consistent
+    // turbulent-inflow marching. Only on forward steps; on restart the value
+    // is reconstructed from AC history in loadActiveControlHistory().
+    if (is_restart == 0) {
+      m_turb_conv_dist += 0.5 * (m_ctrl_V_in_old + m_ctrl_V_in) * m_dt;
+    }
   }
 
   amrex::Real slocal = 0.5 * (m_ctrl_V_in_old + m_ctrl_V_in) -
@@ -431,11 +437,29 @@ PeleLM::loadActiveControlHistory()
     }
     std::fstream ACfile(m_ctrl_AChistory.c_str(), std::fstream::in);
     if (ACfile.is_open()) {
+      // Reconstruct the convected distance (integral of V_in dt) up to the
+      // restart step by trapezoidal quadrature of the (time, V_in) columns, so
+      // turbulent-inflow marching resumes smoothly. Assumes the history is
+      // contiguous up to m_nstep; since the turbfile is periodic in the
+      // convection direction, a small offset would be harmless anyway.
+      m_turb_conv_dist = 0.0;
+      bool have_prev = false;
+      amrex::Real prev_time = 0.0;
+      amrex::Real prev_vel = 0.0;
       while (ACfile.good()) {
         int step_io;
         amrex::Real time_io, vel_io, slocal_io, dV_io, s_est_io, coft_old_io;
         ACfile >> step_io >> time_io >> vel_io >> slocal_io >> dV_io >>
           s_est_io >> coft_old_io;
+        if (step_io <= m_nstep) {
+          if (have_prev && (time_io >= prev_time)) {
+            m_turb_conv_dist +=
+              0.5 * (prev_vel + vel_io) * (time_io - prev_time);
+          }
+          prev_time = time_io;
+          prev_vel = vel_io;
+          have_prev = true;
+        }
         if (
           ((m_nstep - step_io) >= 0) &&
           ((m_nstep - step_io) <=
