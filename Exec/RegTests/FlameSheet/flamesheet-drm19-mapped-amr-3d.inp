@@ -1,0 +1,117 @@
+# =====================================================================
+# 3D premixed FlameSheet (drm19) + TanhStretchMap + AMR
+# Reacting mesh-mapping CONSERVATION regression case.
+# =====================================================================
+#
+# Purpose: exercise the mapping-aware conservative coarse/fine machinery
+# on a *reacting, variable-density* state (the incompressible cavity /
+# channel cases only cover velocity).  Specifically this stresses:
+#   - averageDownConservedDensities (detJ-weighted restriction of
+#     rho, rhoY, rhoH), and
+#   - the volume-weighted scalar branch of MeshMappedCellConsInterp
+#     (coarse->fine prolongation on regrid),
+# with the derived state (TEMP, RHORT) restored by setTemperature /
+# setThermoPress.
+#
+# Design rationale (per intended use as a correctness check):
+#   * Stretch in X and Y only (TanhStretchMap.beta = b b 0).  X/Y are
+#     periodic so the stretching buys no physical resolution, but it
+#     makes the lateral cell volumes (detJ = fac_x*fac_y) non-uniform
+#     across the refined patch -- which is exactly what the detJ
+#     weighting must get right.  The symmetric tanh map matches cell
+#     sizes at the two periodic ends, so periodicity stays well-posed.
+#   * NO stretch in Z (beta_z = 0 => identity).  The flame sits at a
+#     vertical (Z) offset from the inflow base; stretching Z would tend
+#     to place the coarse/fine boundary in the smooth burned/unburned
+#     plateaus where there are no scalar gradients, and would not test
+#     the conservative transfer.  Leaving Z uniform keeps the C/F
+#     boundary cutting through the steep reaction-zone gradients.
+#   * One level of AMR placed on the perturbed flame surface via the
+#     Y(H) reaction-zone indicator, so the C/F boundary tracks the
+#     sinusoidally perturbed flame -- i.e. it straddles the strongest
+#     rho/rhoY/rhoH gradients in the domain.
+#
+# How to read the result (open domain => total mass is NOT constant,
+# so test_masscons.py does NOT apply):
+#   peleLM.do_mass_balance writes temporals/tempMass with columns
+#     step  time  mass  dmdt  massFluxBal  balance
+#   The discrete conservation residual is the 'balance' column
+#   (dmdt - massFluxBal); for a conservative scheme it should stay at
+#   the round-off / linear-solver-tolerance level.  A 'balance' that
+#   grows with the C/F exchange (regrid / average-down steps) indicates
+#   a mapping conservation bug.
+#
+# CI: the add_test_r harness forces amr.max_step=10 and compares
+# plt00010 against the self-referential golds.
+# ---------------------------------------------------------------------
+
+#----------------------DOMAIN DEFINITION------------------------
+geometry.is_periodic = 1 1 0              # x,y periodic; z inflow/outflow
+geometry.coord_sys   = 0                  # 0 => cart
+geometry.prob_lo     = 0.0 0.0 0.0
+geometry.prob_hi     = 0.008 0.008 0.032
+
+# Interior, Inflow, Outflow, Symmetry, SlipWallAdiab, NoSlipWallAdiab, ...
+peleLM.lo_bc = Interior Interior Inflow
+peleLM.hi_bc = Interior Interior Outflow
+
+#-------------------------AMR CONTROL----------------------------
+amr.n_cell          = 16 16 64
+amr.v               = 1
+amr.max_level       = 1
+amr.ref_ratio       = 2 2 2 2
+amr.regrid_int      = 5
+amr.n_error_buf     = 1 1 2 2
+amr.grid_eff        = 0.7
+amr.blocking_factor = 8
+amr.max_grid_size   = 64
+
+#----------------------- Mesh mapping --------------------------
+# Stretch the periodic laterals only; leave Z uniform (see header).
+geometry.mesh_mapping = TanhStretchMap
+TanhStretchMap.beta   = 1.0 1.0 0.0
+peleLM.plot_mesh_mapping = 1
+
+#----------------------- Refinement ----------------------------
+# Place level 1 on the perturbed flame surface via the reaction-zone
+# radical Y(H); the C/F boundary then cuts through the steep
+# rho/rhoY/rhoH gradients.
+amr.refinement_indicators = yH
+amr.yH.max_level     = 1
+amr.yH.value_greater = 1.0e-6
+amr.yH.field_name    = Y(H)
+
+#--------------------------- Problem ---------------------------
+prob.P_mean     = 101325.0
+prob.standoff   = -.023
+prob.pertmag    = 0.00045
+prob.pertlength = 0.016
+pmf.datafile    = "drm19_pmf.dat"
+
+#-------------------------PeleLM CONTROL------------------------
+peleLM.v               = 1
+peleLM.incompressible  = 0
+peleLM.use_wbar        = 1
+peleLM.sdc_iterMax     = 2
+peleLM.floor_species   = 0
+peleLM.divu_dt_method  = 2
+
+# Emit the discrete mass-conservation diagnostic (temporals/tempMass).
+peleLM.do_temporals     = 1
+peleLM.do_mass_balance  = 1
+peleLM.temporal_int     = 1
+
+amr.plot_int    = 100
+amr.max_step    = 10
+amr.dt_shrink   = 0.0001
+amr.stop_time   = 0.001
+amr.cfl         = 0.5
+amr.derive_plot_vars = avg_pressure mag_vort mass_fractions
+
+# --------------- INPUTS TO CHEMISTRY REACTOR ---------------
+peleLM.chem_integrator = "ReactorCvode"
+peleLM.use_typ_vals_chem = 1
+ode.rtol = 1.0e-6
+ode.atol = 1.0e-5
+cvode.solve_type = GMRES
+cvode.max_order  = 4

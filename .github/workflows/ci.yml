@@ -98,7 +98,9 @@ jobs:
             reference_comparison: ON
           - os: ubuntu-24.04
             #Note mpich on ubuntu-24.04 does not run mpiexec correctly so we are using openmpi
-            install_deps: sudo apt-get install -y libopenmpi-dev openmpi-bin
+            install_deps:
+              sudo apt-get update
+              sudo apt-get install -y libopenmpi-dev openmpi-bin
             comp: gnu
             procs: $(nproc)
             ccache_cache: ~/.cache/ccache
@@ -138,11 +140,18 @@ jobs:
           if [ "${RUNNER_OS}" != "macOS" ]; then
             ${{github.workspace}}/Submodules/PelePhysics/Submodules/amrex/.github/workflows/dependencies/ubuntu_free_disk_space.sh
           fi
-      - name: Dependencies
+      - name: Dependencies (Ubuntu)
+        if: runner.os == 'Linux'
         run: |
-          # Install MPI
-          ${{matrix.install_deps}}
-          # Install Python packages
+          sudo apt-get update
+          sudo apt-get install -y libopenmpi-dev openmpi-bin
+          python -m pip install --upgrade pip
+          pip install pynose numpy pandas
+
+      - name: Dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install open-mpi automake ccache
           python -m pip install --upgrade pip
           pip install pynose numpy pandas
       - name: Install Ccache

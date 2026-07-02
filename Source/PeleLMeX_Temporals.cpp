@@ -4,6 +4,28 @@
 
 using namespace amrex::literals;
 
+amrex::Real
+PeleLM::MFSumMapped(
+  const amrex::Vector<const amrex::MultiFab*>& a_MF, const int comp)
+{
+  if ((!m_mesh_mapping) || (m_mesh_map == nullptr)) {
+    return MFSum(a_MF, comp);
+  }
+  // detJ-weight each level so MFSum (which applies the uniform Xi cell
+  // volume and EB vfrac) returns the physical integral sum(field*detJ*..).
+  // That is the quantity that telescopes against the Xi-space boundary
+  // fluxes in addMassFluxes (d/dt integral == net flux to round-off).
+  amrex::Vector<amrex::MultiFab> wgt(finest_level + 1);
+  amrex::Vector<const amrex::MultiFab*> wgt_p(finest_level + 1);
+  for (int lev = 0; lev <= finest_level; ++lev) {
+    wgt[lev].define(grids[lev], dmap[lev], 1, 0, amrex::MFInfo(), Factory(lev));
+    amrex::MultiFab::Copy(wgt[lev], *a_MF[lev], comp, 0, 1, 0);
+    amrex::MultiFab::Multiply(wgt[lev], m_mesh_map->detJ_cc(lev), 0, 0, 1, 0);
+    wgt_p[lev] = &wgt[lev];
+  }
+  return MFSum(wgt_p, 0);
+}
+
 void
 PeleLM::initTemporals(const PeleLM::TimeStamp a_time)
 {
@@ -13,14 +35,14 @@ PeleLM::initTemporals(const PeleLM::TimeStamp a_time)
 
   // Reset mass fluxes integrals on domain boundaries
   if ((m_do_massBalance != 0) && (m_incompressible == 0)) {
-    m_massOld = MFSum(GetVecOfConstPtrs(getDensityVect(a_time)), 0);
+    m_massOld = MFSumMapped(GetVecOfConstPtrs(getDensityVect(a_time)), 0);
     for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
       m_domainMassFlux[2 * idim] = 0.0;
       m_domainMassFlux[2 * idim + 1] = 0.0;
     }
   }
   if ((m_do_energyBalance != 0) && (m_incompressible == 0)) {
-    m_RhoHOld = MFSum(GetVecOfConstPtrs(getRhoHVect(a_time)), 0);
+    m_RhoHOld = MFSumMapped(GetVecOfConstPtrs(getRhoHVect(a_time)), 0);
     for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
       m_domainRhoHFlux[2 * idim] = 0.0;
       m_domainRhoHFlux[2 * idim + 1] = 0.0;
@@ -29,7 +51,7 @@ PeleLM::initTemporals(const PeleLM::TimeStamp a_time)
 
   if ((m_do_speciesBalance != 0) && (m_incompressible == 0)) {
     for (int n = 0; n < NUM_SPECIES; ++n) {
-      m_RhoYOld[n] = MFSum(GetVecOfConstPtrs(getSpeciesVect(a_time)), n);
+      m_RhoYOld[n] = MFSumMapped(GetVecOfConstPtrs(getSpeciesVect(a_time)), n);
       for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
         m_domainRhoYFlux[2 * n * AMREX_SPACEDIM + 2 * idim] = 0.0;
         m_domainRhoYFlux[1 + 2 * n * AMREX_SPACEDIM + 2 * idim] = 0.0;
@@ -42,7 +64,7 @@ void
 PeleLM::massBalance()
 {
   // Compute the mass balance on the computational domain
-  m_massNew = MFSum(GetVecOfConstPtrs(getDensityVect(AmrNewTime)), 0);
+  m_massNew = MFSumMapped(GetVecOfConstPtrs(getDensityVect(AmrNewTime)), 0);
   amrex::Real dmdt = (m_massNew - m_massOld) / m_dt;
   amrex::Real massFluxBalance = AMREX_D_TERM(
     m_domainMassFlux[0] + m_domainMassFlux[1],
@@ -89,8 +111,10 @@ PeleLM::speciesBalance()
   amrex::Array<amrex::Real, NUM_SPECIES> massYFluxBalance;
   amrex::Array<amrex::Real, NUM_SPECIES> rhoYdots;
   for (int n = 0; n < NUM_SPECIES; ++n) {
-    m_RhoYNew[n] = MFSum(GetVecOfConstPtrs(getSpeciesVect(AmrNewTime)), n);
-    rhoYdots[n] = MFSum(GetVecOfConstPtrs(getIRVect()), n);
+    m_RhoYNew[n] =
+      MFSumMapped(GetVecOfConstPtrs(getSpeciesVect(AmrNewTime)), n);
+    // Reaction source is a volumetric integral too -> detJ-weighted.
+    rhoYdots[n] = MFSumMapped(GetVecOfConstPtrs(getIRVect()), n);
     dmYdt[n] = (m_RhoYNew[n] - m_RhoYOld[n]) / m_dt;
     massYFluxBalance[n] = AMREX_D_TERM(
       m_domainRhoYFlux[2 * n * AMREX_SPACEDIM] +
@@ -322,7 +346,7 @@ void
 PeleLM::rhoHBalance()
 {
   // Compute the enthalpy balance on the computational domain (rho*h)
-  m_RhoHNew = MFSum(GetVecOfConstPtrs(getRhoHVect(AmrNewTime)), 0);
+  m_RhoHNew = MFSumMapped(GetVecOfConstPtrs(getRhoHVect(AmrNewTime)), 0);
   amrex::Real dRhoHdt = (m_RhoHNew - m_RhoHOld) / m_dt;
   amrex::Real rhoHFluxBalance = AMREX_D_TERM(
     m_domainRhoHFlux[0] + m_domainRhoHFlux[1],

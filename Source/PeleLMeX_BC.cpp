@@ -89,8 +89,19 @@ constexpr int soot_bc[] = {
 amrex::InterpBase*
 PeleLM::
   getInterpolator( // NOLINT(readability-convert-member-functions-to-static)
-    const int a_method) const
+    const int a_method,
+    const int a_crse_level) const
 {
+  // Mesh-mapping-aware path: whole-state fillpatch helpers pass the
+  // coarse level of the pair (a_crse_level) to opt in; other callers
+  // leave it at the default -1 and get the legacy interpolator.
+  if (
+    a_method == 1 && m_mesh_mapping && a_crse_level >= 0 &&
+    a_crse_level < static_cast<int>(m_mapped_interps.size()) &&
+    m_mapped_interps[a_crse_level]) {
+    return m_mapped_interps[a_crse_level].get();
+  }
+
   amrex::InterpBase* mapper = nullptr;
 
   switch (a_method) {
@@ -500,8 +511,11 @@ PeleLM::fillpatch_state(
       {m_t_old[lev], m_t_new[lev]}, 0, 0, nCompState, geom[lev], bndry_func, 0);
   } else {
 
-    // Interpolator
-    auto* mapper = getInterpolator();
+    // Whole-state fill: request the mapping-aware interpolator for the
+    // lev-1 -> lev pair (its per-component weights serve both
+    // incompressible and compressible state).  getInterpolator falls back
+    // to the legacy interpolator when mesh mapping is off or unavailable.
+    auto* mapper = getInterpolator(1, lev - 1);
 
     amrex::PhysBCFunct<
       amrex::GpuBndryFuncFab<PeleLMCCFillExtDirState<ProblemSpecificFunctions>>>
@@ -1001,8 +1015,12 @@ PeleLM::fillcoarsepatch_state(
     fillFromRecyclingPlane(a_state, 0, lev);
   }
 
-  // Interpolator
-  auto* mapper = getInterpolator(m_regrid_interp_method);
+  // Whole-state coarse->fine fill: request the mapping-aware interpolator
+  // for the lev-1 -> lev pair (engages only with cell-conservative regrid
+  // interp, which it wraps; else getInterpolator returns the legacy one).
+  // Derived TEMP/RHORT are restored by the EOS recompute in
+  // MakeNewLevelFromCoarse / RemakeLevel.
+  auto* mapper = getInterpolator(m_regrid_interp_method, lev - 1);
 
   amrex::PhysBCFunct<
     amrex::GpuBndryFuncFab<PeleLMCCFillExtDirState<ProblemSpecificFunctions>>>
@@ -1221,6 +1239,18 @@ PeleLM::fillTurbInflow(
     // Copy problem parameter structs to host
     amrex::Gpu::copy(
       amrex::Gpu::deviceToHost, probparmDD, probparmDD + 1, probparmDH);
+
+    // When active control drives the inlet velocity, march through the turb
+    // data using the time-integrated controlled velocity (convected distance)
+    // instead of turb_conv_vel * time. This keeps the marcher consistent with
+    // the time-varying mean inflow and avoids the position jumps that would
+    // arise from rescaling turb_conv_vel against absolute time.
+    if (m_ctrl_active != 0) {
+      const amrex::Real dtl = a_time - m_ctrl_tBase;
+      const amrex::Real conv_dist =
+        m_turb_conv_dist + m_ctrl_V_in * dtl + 0.5 * m_ctrl_dV * dtl * dtl;
+      turb_inflow.set_convected_distance(conv_dist);
+    }
 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (amrex::Gpu::notInLaunchRegion())

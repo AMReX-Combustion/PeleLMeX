@@ -1,0 +1,115 @@
+# =====================================================================
+# 2D lid-driven cavity, Re = 100, TanhStretchMap (beta = 2 2) + AMR
+# CI regression case for the mesh-mapping + AMR capability.
+# =====================================================================
+#
+# This is the regression-test input for the mesh-mapping/AMR path.
+# It exercises the volume-conservative coarse/fine machinery
+# (MeshMappedCellConsInterp, mapping-aware averageDownVelocity) on a
+# stretched (TanhStretchMap) grid with one level of AMR, and requires
+# the optional Hypre linear solver (mac_proj.use_mlhypre = 1).
+#
+# Two run modes:
+#   * CI smoke/regression: the CTest harness (add_test_r) forces
+#       amr.max_step=10 amr.plot_int=10 amr.plot_file=plt
+#     so the comparison plotfile is plt00010.  The test passes if the
+#     run completes 10 steps and (when golds are configured) fcompare
+#     matches the reference plt00010.
+#   * Manual gold generation (100 steps): run the executable directly
+#     on this input (the settings below run 100 steps, writing plt00100)
+#     with the build configured for -DPELE_SAVE_GOLDS=ON, e.g.
+#       ./PeleLMeX-LidDrivenCavity lid-driven-cavity-mapped-amr-2d.inp
+#     100 steps stays safely below the step ~654 Hypre BoomerAMG NaN
+#     documented under "Linear solvers" below.
+# ---------------------------------------------------------------------
+
+geometry.is_periodic = 0 0 0
+geometry.coord_sys   = 0
+geometry.prob_lo     = 0.0 0.0 0.0
+geometry.prob_hi     = 1.0 1.0 1.0
+
+peleLM.lo_bc = NoSlipWallAdiab NoSlipWallAdiab
+peleLM.hi_bc = NoSlipWallAdiab Inflow
+
+#----------------------- AMR controls --------------------------
+amr.n_cell          = 64 64
+amr.v               = 1
+amr.max_level       = 1               # one level of refinement
+amr.ref_ratio       = 2 2             # 2:1 in each direction
+amr.blocking_factor = 8
+amr.max_grid_size   = 64
+amr.n_error_buf     = 2 2
+amr.grid_eff        = 0.7
+amr.regrid_int      = 5               # regrid every 5 steps
+
+#----------------------- Refinement criteria --------------------
+# 1. Fixed-box refinement in the upper quarter [0,1] x [0.75,1],
+#    straddling the two upper corner singularities and the lid layer.
+# 2. Vorticity-magnitude indicator as a safety net.
+amr.refinement_indicators = upperBox magvort
+
+amr.upperBox.max_level   = 1
+amr.upperBox.in_box_lo   = 0.0  0.75
+amr.upperBox.in_box_hi   = 1.0  1.0
+
+amr.magvort.max_level     = 1
+amr.magvort.value_greater = 50.0
+amr.magvort.field_name    = mag_vort
+
+#----------------------- Mesh mapping --------------------------
+geometry.mesh_mapping = TanhStretchMap
+TanhStretchMap.beta   = 2.0 2.0
+
+#----------------------- Problem -------------------------------
+prob.U_lid = 1.0
+
+#----------------------- PeleLM controls -----------------------
+peleLM.v              = 2
+peleLM.incompressible = 1
+peleLM.rho            = 1.0
+peleLM.mu             = 0.01           # Re = 100
+peleLM.gradP0         = 0.0 0.0 0.0
+peleLM.gravity        = 0.0 0.0 0.0
+
+#----------------------- Time stepping -------------------------
+amr.cfl       = 0.7
+amr.dt_shrink = 0.1
+amr.init_dt   = 1.0e-4
+amr.max_dt    = 5.0e-3
+amr.max_step  = 100                    # manual gold mode; CI overrides to 10
+amr.stop_time = 50.0
+amr.plot_int  = 100                    # manual gold mode; CI overrides to 10
+amr.plot_file = plt
+amr.check_int = -1
+amr.derive_plot_vars = mag_vort
+
+#----------------------- Linear solvers ------------------------
+# At beta = 2 the MAC operator's anisotropy (cosh^2(2) = 14.15)
+# requires BoomerAMG to handle the corner-singularity coupling; the
+# MAC bottom path uses HypreMLABecLap (use_mlhypre = 1) and therefore
+# REQUIRES a Hypre-enabled build (-DPELE_ENABLE_HYPRE=ON).
+#
+# For the NODAL projection, Hypre as the bottom solver triggers a
+# non-deterministic NaN inside Hypre BoomerAMG after several hundred
+# steps in the AMR + mesh-mapping configuration (observed at step
+# ~654 with Hypre 2.32.0 on macOS arm64).  The MLMG iteration matrix
+# and rhs are essentially constant across steps for the incompressible
+# cavity, so this is most likely a Hypre-internal issue, not a
+# PeleLMeX correctness problem (bicgstab runs thousands of steps past
+# 654 with the same operator and rhs).  Use bicgstab here until the
+# Hypre issue is fixed upstream.
+mac_proj.use_mlhypre     = 1
+nodal_proj.bottom_solver = bicgstab
+nodal_proj.maxiter       = 10000
+nodal_proj.rtol          = 1.0e-7
+
+nodal_proj.verbose = 1
+mac_proj.verbose   = 1
+
+#----------------------- Plotfile metadata ---------------------
+peleLM.plot_mesh_mapping = 1
+
+#----------------------- Diagnostics ---------------------------
+amrex.fpe_trap_invalid  = 0
+amrex.fpe_trap_zero     = 0
+amrex.fpe_trap_overflow = 0

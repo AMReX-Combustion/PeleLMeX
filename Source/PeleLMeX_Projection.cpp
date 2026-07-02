@@ -210,10 +210,10 @@ PeleLM::initialProjection()
 #endif
   }
 
-  // In R-Z, AMReX-Hydro do an average down of r*vel.
-  // Now that we have unscaled vel, need to do average down again
-  // to have consistent vel across levels
-  if (Geom(0).IsRZ()) {
+  // R-Z (r*vel) and mesh mapping both leave the coarse velocity stale
+  // under fine grids after the per-level unscale; sync it down from the
+  // fine level to keep div(U) consistent across the C/F boundary.
+  if (Geom(0).IsRZ() || m_mesh_mapping) {
     averageDownVelocity(AmrNewTime);
   }
 
@@ -697,11 +697,15 @@ PeleLM::velocityProjection(
     }
   }
 
+  // R-Z (r*vel) and mesh mapping both leave the coarse velocity stale
+  // under fine grids after the per-level unscale; sync it down from the
+  // fine level for cross-level consistency on the next step.
 #if AMREX_SPACEDIM == 2
-  // In R-Z, AMReX-Hydro do an average down of r*vel.
-  // Now that we have unscaled vel, need to do average down again
-  // to have consistent vel across levels
-  if (Geom(0).IsRZ()) {
+  if (Geom(0).IsRZ() || m_mesh_mapping) {
+    averageDownVelocity(AmrNewTime);
+  }
+#else
+  if (m_mesh_mapping) {
     averageDownVelocity(AmrNewTime);
   }
 #endif
@@ -862,7 +866,10 @@ PeleLM::doNodalProject(
     }
   }
 
-  // Average down grad P
+  // Average down grad P from fine to coarse.  Under mesh mapping gp is
+  // the Xi-space gradient (dphi/dxi), so plain average_down on the uniform
+  // Xi mesh is already mass-conservative; an extra Xi-space transform here
+  // would double-weight gp and worsen the drift.
   for (int lev = finest_level - 1; lev >= 0; --lev) {
     auto* ldataFine_p = getLevelDataPtr(lev + 1, AmrNewTime);
     auto* ldataCrse_p = getLevelDataPtr(lev, AmrNewTime);

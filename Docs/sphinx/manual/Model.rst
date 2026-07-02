@@ -113,7 +113,7 @@ and observe that if the initial conditions satisfy the constraint, an evolution 
 
 The constraint here takes the form of a condition on the divergence of the flow.  Note that the actual expressions to use here will depend upon the equation of state and the chosen models for evaluating the transport fluxes.
 
-For the standard ideal gas EOS, 
+For the standard ideal gas EOS,
 
 .. math::
 
@@ -127,22 +127,22 @@ The corresponding divergence constraint on velocity in this case becomes:
     \nabla \cdot \boldsymbol{u} &= \frac{1}{\rho c_p T} \Big(-\nabla \cdot \boldsymbol{Q} + S_{\text{ext},\rho h} - h S_{\text{ext},\rho}\Big) \\
     &\;\;\;\; +  \sum_m \bigg( \frac{W}{\rho W_m} -  \frac{h_m}{\rho c_p T}\bigg)\bigg( - \nabla \cdot \boldsymbol{\mathcal{F}}_m + \rho \dot \omega_m + S_{\text{ext},\rho Y_m} - Y_m S_{\text{ext},\rho}\bigg) + \frac{1}{\rho} S_{\text{ext},\rho}\equiv S .
 
-However, it can be shown that 
+However, it can be shown that
 
 .. math::
 
     \sum_m \frac{W}{\rho W_m} Y_m S_{\text{ext},\rho} = \frac{1}{\rho}S_{\text{ext},\rho}
 
-and 
+and
 
 .. math::
     \sum_m h_m Y_m S_{\text{ext},\rho} = h S_{\text{ext},\rho}.
 
-Thus, the terms containing :math:`S_{\text{ext},\rho}` cancel and the divergence constraint for the standard ideal gas EOS simplifies to: 
+Thus, the terms containing :math:`S_{\text{ext},\rho}` cancel and the divergence constraint for the standard ideal gas EOS simplifies to:
 
 .. math::
 
-    \nabla \cdot \boldsymbol{u} = \frac{1}{\rho c_p T} \Big(-\nabla \cdot \boldsymbol{Q} + S_{\text{ext},\rho h} \Big) 
+    \nabla \cdot \boldsymbol{u} = \frac{1}{\rho c_p T} \Big(-\nabla \cdot \boldsymbol{Q} + S_{\text{ext},\rho h} \Big)
     +  \sum_m \bigg( \frac{W}{\rho W_m} -  \frac{h_m}{\rho c_p T}\bigg)\bigg( - \nabla \cdot \boldsymbol{\mathcal{F}}_m + \rho \dot \omega_m + S_{\text{ext},\rho Y_m} \bigg) \equiv S .
 
 In addition to the flow equations, `PeleLMeX` can also solve for a set of quantities that are neither advected nor diffused, satisfying:
@@ -454,7 +454,7 @@ and differential operators used in `PeleLMeX` can be written in terms of uniform
 
    `PeleLMeX` solution computed using `TanhStretchMap` in a 2D example, `LidDrivenCavity` with Re=1000. Here, the stretching
    factor, :math:`\beta=3` in both directions, concentrating mesh cells along all 4 boundaries.
- 
+
 Several mesh mapping functions are provided with `PeleLMeX` currently, including `ConstantMap`, `ExpStretchMap` and `TanhStretchMap`.
 `ConstantMap` provides a simple, piecewise-constant stretching in each coordinate direction.  `ExpStretchMap` allows for an
 exponential stretching in a single direction to concentrate cells toward one boundary. `TanhStretchMap` allows concentration of
@@ -467,6 +467,69 @@ computed solution with the mappings applied.  The above image was created using 
 `Warp By Vector` from the list of available Filters.  Any analysis carried out with solutions computed with this mesh mappings
 will need to incorporate the mappings as appropriate.  Also note that this capability is currently incompatible with the turbulent
 inflow tools.
+
+**Setting initial and boundary conditions.** Because the AMReX index space corresponds to the *uniform* :math:`(\chi,\eta,\xi)`
+coordinates, the physical location of a cell is **not** its uniform-space position --- it is recovered by applying the map. A problem
+whose initial state depends on the physical coordinate must therefore use the mapping-aware ``initdata_mapped`` signature, which receives
+a device-callable ``MeshMapEvaluator`` that returns the physical coordinate of any cell or face from its integer index:
+
+.. code-block:: cpp
+
+    static void initdata_mapped(
+      int i, int j, int k, int is_incompressible,
+      amrex::Array4<amrex::Real> const& state,
+      amrex::Array4<amrex::Real> const& aux,
+      amrex::GeometryData const& geomdata,
+      MeshMapEvaluator const& mmap,
+      ProbParm const& prob_parm,
+      pele::physics::PMF::PmfData::DataContainer const* pmf_data)
+    {
+      // Physical cell-centre coordinates (curvilinear, NOT the xi-space ones):
+      const amrex::Real x = mmap.x_phys_cc(0, i, geomdata);
+      const amrex::Real y = mmap.x_phys_cc(1, j, geomdata);
+      const amrex::Real z = mmap.x_phys_cc(2, k, geomdata);
+      // ... initialize state(i,j,k,*) using the physical (x,y,z) ...
+    }
+
+When a problem defines ``initdata_mapped`` it is selected automatically (via the ``has_initdata_mapped_v<>`` dispatch in
+``PeleLM::initLevelData``); otherwise the standard ``initdata`` is used, which remains appropriate for position-independent initial
+states. Inflow values supplied through ``bcnormal`` likewise receive the physical coordinate. Worked examples appear in the
+``LidDrivenCavity``, ``PipeFlow``, ``HotBubble`` and ``SingleDropEvap`` cases under the `RegTests` folder.
+
+.. warning::
+
+   The cell-centered state, and the AMReX plotfiles written under mesh mapping, live on the *uniform* :math:`(\chi,\eta,\xi)` grid ---
+   not the physical grid. **Any code that uses spatial coordinates --- initial conditions, boundary conditions, in-situ diagnostics, and
+   especially external post-processing or analysis --- must first map the uniform index location to its physical coordinate, and must
+   transform vector and differential-operator quantities accordingly.** Treating the stored data as though it lived on a uniform physical
+   mesh yields incorrect distances, gradients, fluxes, and integrals wherever the mesh is stretched. Plotfiles render in
+   :math:`(\chi,\eta,\xi)`-space unless warped by the nodal-displacement field that `PeleLMeX` writes when
+   ``peleLM.plot_mesh_mapping = 1`` (for example via ParaView's `Warp By Vector`); `amrvis` and `yt` cannot display the mapped solution.
+
+**Transforming vectors and operators.** Let :math:`f_i` denote the local per-direction stretch factor (the diagonal entries of
+:math:`T`: :math:`f_x = x_\chi`, :math:`f_y = y_\eta`, :math:`f_z = z_\xi`) and :math:`J = f_x f_y f_z` the cell-volume Jacobian. Both are
+maintained internally by the solver (:math:`J` is the ``detJ`` metric, :math:`f_i` the ``fac`` metric). The physical spacing in
+direction :math:`i` is :math:`f_i` times the uniform spacing, so a derivative formed from uniform-space differences is converted to a
+physical derivative by dividing by the corresponding factor, and the physical divergence of a physical vector
+:math:`\bar{\boldsymbol{u}} = T \boldsymbol{u}` follows from the uniform-space divergence:
+
+.. math::
+
+   \frac{\partial \phi}{\partial x_i} = \frac{1}{f_i}\,\frac{\partial \phi}{\partial \xi_i},
+   \qquad
+   \nabla \cdot \boldsymbol{u} = \frac{1}{J}\, \tilde{\nabla} \cdot \bar{\boldsymbol{u}},
+
+where :math:`\xi_i \in (\chi,\eta,\xi)` and :math:`\tilde{\nabla}` denotes differences taken in the uniform space. As a concrete
+analysis example, the out-of-plane vorticity computed from the (physical) velocity components :math:`(u,v)` is
+
+.. math::
+
+   \omega_z = \frac{\partial v}{\partial x} - \frac{\partial u}{\partial y}
+            = \frac{1}{f_x}\frac{\partial v}{\partial \chi} - \frac{1}{f_y}\frac{\partial u}{\partial \eta},
+
+i.e. each uniform-space difference must be divided by the stretch factor for its direction. A naive uniform-grid post-processor that
+omits the :math:`1/f_i` weights will over- or under-estimate every gradient in the stretched regions, by exactly the local factor
+:math:`f_i`.
 
 
 Large Eddy Simulation

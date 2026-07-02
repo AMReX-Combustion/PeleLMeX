@@ -12,6 +12,7 @@ CEXE_headers += PeleLMeX_MeshMap.H
 CEXE_headers += PeleLMeX_ConstantMap.H
 CEXE_headers += PeleLMeX_ExpStretchMap.H
 CEXE_headers += PeleLMeX_TanhStretchMap.H
+CEXE_headers += PeleLMeX_MeshMappedCellConsInterp.H
 
 ## Sources
 CEXE_sources += main.cpp
@@ -50,6 +51,7 @@ CEXE_sources += PeleLMeX_MeshMap.cpp
 CEXE_sources += PeleLMeX_ConstantMap.cpp
 CEXE_sources += PeleLMeX_ExpStretchMap.cpp
 CEXE_sources += PeleLMeX_TanhStretchMap.cpp
+CEXE_sources += PeleLMeX_MeshMappedCellConsInterp.cpp
 
 ifeq ($(USE_ASCENT), TRUE)
   CEXE_sources += PeleLMeX_Ascent.cpp

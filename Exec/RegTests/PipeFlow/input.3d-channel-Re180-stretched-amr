@@ -1,0 +1,133 @@
+# =====================================================================
+# Re_tau = 180 half-channel, ExpStretchMap (beta = 4) + one AMR level
+# =====================================================================
+#
+# AMR SMOKE TEST companion to input.3d-channel-Re180-stretched.
+# Numerics identical to the single-level baseline except for
+# adding one level of AMR refinement targeting the buffer / log-layer
+# transition.
+#
+# Refinement strategy (deterministic, fixed-box):
+#   - One box covering 0 <= y <= 0.0035 (lower 70% of the half-channel
+#     in physical-coordinate terms, but evaluated in Xi-space here).
+#     This includes the entire viscous and buffer sublayers and
+#     extends into the log layer.  The Xi-coordinate box bound is
+#     conservative because ExpStretchMap is monotonic: cells in the
+#     Xi-space box [0, 0.0035] all map to physical y < 0.005, and the
+#     wall (y_phys = 0.005) is at the upper bound.
+#
+# Box bounds rationale:
+#   prob_lo_y = 0.0, prob_hi_y = 0.005.  In Xi-space the box
+#   [0, 0.0035] covers Xi/L = 0..0.7, which under
+#   ExpStretchMap(beta=4, wall_end=hi) maps to physical
+#     y_phys / L = (e^(beta*xi_n) - 1) / (e^beta - 1)
+#                = (e^2.8 - 1) / (e^4 - 1)
+#                = 15.4 / 53.6 ~ 0.288
+#   so the box covers y_phys in roughly [0, 0.00144], i.e. the
+#   viscous sublayer plus most of the buffer layer.
+#
+#   This is intentionally conservative: refining the near-wall
+#   region tests composite-MLMG behaviour where the metric is
+#   sharply varying (fac at wall ~ 0.075, fac at box top ~ 0.4),
+#   which is the hardest case for the linear solver.
+#
+# What to look for when running:
+#   (1) Header should report "Mesh mapping enabled: ExpStretchMap".
+#   (2) Verbose solver output: composite nodal_proj should converge
+#       at rtol 1e-7 within maxiter.  If it does not, the
+#       AMReX MLNodeLaplacian anisotropic-sigma handling at C/F is
+#       the most likely suspect; this is the upstream issue flagged
+#       in STRETCHED_AMR_ADDENDUM.md s4 Phase 2.
+#   (3) Mac projection: with use_mlhypre = 1 we expect O(50-100)
+#       iterations per solve at the established beta = 4 single-level
+#       rate.  AMR may push this; watch for non-monotone residual
+#       behaviour.
+#   (4) Periodicity: x and z stay periodic; the refinement box runs
+#       all the way across in those directions, so the C/F boundary
+#       is exclusively a y = const plane.  Mass through the C/F
+#       interface in the y-direction is exactly the diagnostic
+#       quantity for the mass-aware interpolator (Phase 1).
+#   (5) y+ profile from postprocess_channel.py: should match the
+#       single-level reference within statistical scatter.  A
+#       systematic offset across y_box (the box upper bound)
+#       indicates conservation error at the C/F interface.
+# ---------------------------------------------------------------------
+
+#----------------------DOMAIN DEFINITION------------------------
+geometry.is_periodic = 1 0 1
+geometry.coord_sys   = 0
+geometry.prob_lo     = 0.0     0.0    -0.0078
+geometry.prob_hi     = 0.0312  0.005   0.0078
+
+peleLM.lo_bc = Interior Symmetry         Interior
+peleLM.hi_bc = Interior NoSlipWallAdiab  Interior
+
+#-------------------------AMR CONTROL----------------------------
+amr.n_cell          = 96 32 48
+amr.v               = 1
+amr.max_level       = 1               # one level of AMR
+amr.ref_ratio       = 2 2 2
+amr.blocking_factor = 8
+amr.max_grid_size   = 64
+amr.n_error_buf     = 2 2
+amr.grid_eff        = 0.7
+amr.regrid_int      = 5
+
+#----------------------- Refinement criteria --------------------
+# Fixed-box refinement near the wall (Xi-space coordinates; see
+# header for the physical-space interpretation under ExpStretchMap).
+amr.refinement_indicators = nearWall
+
+amr.nearWall.max_level = 1
+amr.nearWall.in_box_lo = 0.0     0.0     -0.0078
+amr.nearWall.in_box_hi = 0.0312  0.0035   0.0078
+
+#------------------------ MESH MAPPING ---------------------------
+geometry.mesh_mapping        = ExpStretchMap
+ExpStretchMap.direction      = 1
+ExpStretchMap.wall_end       = hi
+ExpStretchMap.beta           = 4.0
+
+#--------------------------- Problem -----------------------------
+prob.T_mean              = 750.0
+prob.P_mean              = 102325.0
+prob.problem_type        = 2
+prob.meanFlowMag         = 0.0
+prob.perturbMag          = 5.0
+prob.channelFullHeight   = 0.01
+
+#-------------------------PeleLM CONTROL--------------------------
+peleLM.v              = 2
+peleLM.incompressible = 1
+peleLM.rho            = 0.4688
+peleLM.mu             = 3.57816e-5
+peleLM.gradP0         = -709.79 0.0 0.0
+
+#-------------------------- TIME ---------------------------------
+amr.cfl       = 0.7
+amr.max_step  = 200
+amr.stop_time = 0.05
+
+amr.plot_int   = 50
+amr.plot_file  = plt_amr_
+amr.check_int  = -1
+amr.derive_plot_vars = avg_pressure mag_vort
+
+#-------------- LINEAR SOLVERS (BoomerAMG for MAC) ---------------
+# Same wiring as the single-level case.  See
+# input.3d-channel-Re180-stretched for full context on which hypre
+# path works against the currently-vendored AMReX.
+mac_proj.use_mlhypre     = 1
+nodal_proj.bottom_solver = bicgstab
+nodal_proj.maxiter       = 20000
+nodal_proj.rtol          = 1.0e-7
+nodal_proj.verbose       = 1
+mac_proj.verbose         = 1
+
+#----------------------- Plotfile metadata ---------------------
+peleLM.plot_mesh_mapping = 1
+
+#----------------------- Diagnostics ---------------------------
+amrex.fpe_trap_invalid  = 0
+amrex.fpe_trap_zero     = 0
+amrex.fpe_trap_overflow = 0

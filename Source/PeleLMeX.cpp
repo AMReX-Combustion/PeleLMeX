@@ -340,16 +340,59 @@ void
 PeleLM::averageDownState(const TimeStamp a_time)
 {
   const int nCompState = (m_incompressible != 0) ? AMREX_SPACEDIM : NVAR;
-  for (int lev = finest_level; lev > 0; --lev) {
-    auto* ldataFine_p = getLevelDataPtr(lev, a_time);
-    auto* ldataCrse_p = getLevelDataPtr(lev - 1, a_time);
+
+  // Velocity components need the Xi-space-conservative restriction;
+  // delegate to averageDownVelocity (which is mapping-aware).
+  averageDownVelocity(a_time);
+
+  // Remaining components AFTER velocity, if any (compressible runs).
+  const int nc_rest = nCompState - AMREX_SPACEDIM;
+  if (nc_rest > 0) {
+    if (m_mesh_mapping) {
+      // detJ-weighted restriction of [DENSITY..RHOH]; components after
+      // RHOH (TEMP, RHORT, aux) use arithmetic and the derived ones are
+      // overwritten by the EOS recompute below.
+      averageDownConservedDensities(a_time);
+
+      const int nc_after = NVAR - (RHOH + 1);
+      if (nc_after > 0) {
+        for (int lev = finest_level; lev > 0; --lev) {
+          auto* ldataFine_p = getLevelDataPtr(lev, a_time);
+          auto* ldataCrse_p = getLevelDataPtr(lev - 1, a_time);
 #ifdef AMREX_USE_EB
-    EB_average_down(
-      ldataFine_p->state, ldataCrse_p->state, 0, nCompState, refRatio(lev - 1));
+          EB_average_down(
+            ldataFine_p->state, ldataCrse_p->state, RHOH + 1, nc_after,
+            refRatio(lev - 1));
 #else
-    average_down(
-      ldataFine_p->state, ldataCrse_p->state, 0, nCompState, refRatio(lev - 1));
+          average_down(
+            ldataFine_p->state, ldataCrse_p->state, RHOH + 1, nc_after,
+            refRatio(lev - 1));
 #endif
+        }
+      }
+
+      // Recompute TEMP/RHORT from the restricted densities via the EOS.
+      // Done only on the mesh-mapping path here; applying this
+      // (more thermodynamically consistent) treatment to the non-mapped
+      // path too is a deferred enhancement -- see the tracking GitHub
+      // issue -- since it would shift existing results and add cost.
+      setTemperature(a_time);
+      setThermoPress(a_time);
+    } else {
+      for (int lev = finest_level; lev > 0; --lev) {
+        auto* ldataFine_p = getLevelDataPtr(lev, a_time);
+        auto* ldataCrse_p = getLevelDataPtr(lev - 1, a_time);
+#ifdef AMREX_USE_EB
+        EB_average_down(
+          ldataFine_p->state, ldataCrse_p->state, AMREX_SPACEDIM, nc_rest,
+          refRatio(lev - 1));
+#else
+        average_down(
+          ldataFine_p->state, ldataCrse_p->state, AMREX_SPACEDIM, nc_rest,
+          refRatio(lev - 1));
+#endif
+      }
+    }
   }
 }
 
@@ -361,6 +404,39 @@ PeleLM::averageDownScalars(const TimeStamp a_time)
 #else
   constexpr int nScal = NUM_SPECIES + 3;
 #endif
+
+  if (m_mesh_mapping) {
+    // detJ-weighted restriction of [DENSITY..RHOH]; the rest of the
+    // nScal block (TEMP, RHORT/plasma extras) uses arithmetic, with the
+    // derived state restored by the EOS recompute below.
+    averageDownConservedDensities(a_time);
+
+    const int nc_dens = RHOH - DENSITY + 1; // rho + NUM_SPECIES rhoY + rhoH
+    const int nc_after = nScal - nc_dens;
+    if (nc_after > 0) {
+      for (int lev = finest_level; lev > 0; --lev) {
+        auto* ldataFine_p = getLevelDataPtr(lev, a_time);
+        auto* ldataCrse_p = getLevelDataPtr(lev - 1, a_time);
+#ifdef AMREX_USE_EB
+        EB_average_down(
+          ldataFine_p->state, ldataCrse_p->state, DENSITY + nc_dens, nc_after,
+          refRatio(lev - 1));
+#else
+        average_down(
+          ldataFine_p->state, ldataCrse_p->state, DENSITY + nc_dens, nc_after,
+          refRatio(lev - 1));
+#endif
+      }
+    }
+
+    // Recompute TEMP/RHORT from the restricted densities via the EOS
+    // (mesh-mapping path only; see averageDownState for the note on the
+    // deferred generalization to the non-mapped path).
+    setTemperature(a_time);
+    setThermoPress(a_time);
+    return;
+  }
+
   for (int lev = finest_level; lev > 0; --lev) {
     auto* ldataFine_p = getLevelDataPtr(lev, a_time);
     auto* ldataCrse_p = getLevelDataPtr(lev - 1, a_time);
@@ -414,20 +490,199 @@ PeleLM::averageDown(
 }
 
 void
+PeleLM::rebuildMappedInterps()
+{
+  // Long-lived interp objects (one per C/F pair) so the address stays
+  // stable: AMReX's TheFPinfo cache holds a raw pointer to the interp
+  // across all fillpatch calls between regrids.
+  if (!m_mesh_mapping || (m_mesh_map == nullptr)) {
+    m_mapped_interps.clear();
+    return;
+  }
+  // Size from the MeshMap's defined metric levels, NOT finest_level:
+  // during regrid AmrCore updates finest_level only after the
+  // MakeNewLevel*/RemakeLevel calls, so finest_level is stale here and a
+  // pair would be missed for a newly added top level.
+  const int n_pairs = amrex::max<int>(0, m_mesh_map->num_levels() - 1);
+  m_mapped_interps.clear();
+  m_mapped_interps.resize(n_pairs);
+  // Component layout for the interpolator's weights (see its class doc).
+  // Incompressible state has only velocity, so leave the density range empty.
+  const int dens_start = (m_incompressible != 0) ? -1 : DENSITY;
+  const int dens_end = (m_incompressible != 0) ? -2 : RHOH;
+  for (int c = 0; c < n_pairs; ++c) {
+    // Only build a pair whose two levels both have defined metrics;
+    // clear_level() empties a level's MultiFabs without shrinking the
+    // vector, so num_levels() can include cleared (coarsened-away) levels.
+    if (m_mesh_map->detJ_cc(c).empty() || m_mesh_map->detJ_cc(c + 1).empty()) {
+      continue; // leave entry null -> getInterpolator falls back to legacy
+    }
+    m_mapped_interps[c] = std::make_unique<MeshMappedCellConsInterp>(
+      &m_mesh_map->detJ_cc(c), &m_mesh_map->fac_cc(c),
+      &m_mesh_map->detJ_cc(c + 1), &m_mesh_map->fac_cc(c + 1), VELX,
+      AMREX_SPACEDIM, dens_start, dens_end);
+  }
+}
+
+void
 PeleLM::averageDownVelocity(const TimeStamp a_time)
 {
   for (int lev = finest_level; lev > 0; --lev) {
     auto* ldataFine_p = getLevelDataPtr(lev, a_time);
     auto* ldataCrse_p = getLevelDataPtr(lev - 1, a_time);
+
+    if (m_mesh_mapping) {
+      // Mass-conservative restriction under mesh mapping: convert v
+      // to Xi-space (u_xi_i = v_i * detJ / fac_i), arithmetic-average
+      // (which IS volume-conservative in the uniform Xi mesh),
+      // convert back to physical space on the coarse level.  Required
+      // to preserve discrete div-free across the C/F boundary.
+      // No divide guard needed (unlike MeshMappedCellConsInterp, which
+      // operates on seeded temporaries): detJ/fac are the MeshMap metrics,
+      // strictly positive by construction and defined on every valid cell.
+      const int nc = AMREX_SPACEDIM;
+      amrex::MultiFab uxi_fine(
+        ldataFine_p->state.boxArray(), ldataFine_p->state.DistributionMap(), nc,
+        0, amrex::MFInfo(), ldataFine_p->state.Factory());
+      amrex::MultiFab::Copy(uxi_fine, ldataFine_p->state, VELX, 0, nc, 0);
+      {
+        auto const& fac_ma = m_mesh_map->fac_cc(lev).const_arrays();
+        auto const& detJ_ma = m_mesh_map->detJ_cc(lev).const_arrays();
+        auto const& uxi_ma = uxi_fine.arrays();
+        amrex::ParallelFor(
+          uxi_fine, amrex::IntVect(0), nc,
+          [=] AMREX_GPU_DEVICE(
+            int box_no, int i, int j, int k, int n) noexcept {
+            uxi_ma[box_no](i, j, k, n) *=
+              detJ_ma[box_no](i, j, k) / fac_ma[box_no](i, j, k, n);
+          });
+        amrex::Gpu::streamSynchronize();
+      }
+
+      amrex::MultiFab uxi_crse(
+        ldataCrse_p->state.boxArray(), ldataCrse_p->state.DistributionMap(), nc,
+        0, amrex::MFInfo(), ldataCrse_p->state.Factory());
+      // Stage coarse v in Xi-space so average_down overwrites only the
+      // covered region; non-covered cells keep their pre-existing value.
+      amrex::MultiFab::Copy(uxi_crse, ldataCrse_p->state, VELX, 0, nc, 0);
+      {
+        auto const& fac_ma = m_mesh_map->fac_cc(lev - 1).const_arrays();
+        auto const& detJ_ma = m_mesh_map->detJ_cc(lev - 1).const_arrays();
+        auto const& uxi_ma = uxi_crse.arrays();
+        amrex::ParallelFor(
+          uxi_crse, amrex::IntVect(0), nc,
+          [=] AMREX_GPU_DEVICE(
+            int box_no, int i, int j, int k, int n) noexcept {
+            uxi_ma[box_no](i, j, k, n) *=
+              detJ_ma[box_no](i, j, k) / fac_ma[box_no](i, j, k, n);
+          });
+        amrex::Gpu::streamSynchronize();
+      }
+
 #ifdef AMREX_USE_EB
-    EB_average_down(
-      ldataFine_p->state, ldataCrse_p->state, VELX, AMREX_SPACEDIM,
-      refRatio(lev - 1));
+      amrex::EB_average_down(uxi_fine, uxi_crse, 0, nc, refRatio(lev - 1));
 #else
-    average_down(
-      ldataFine_p->state, ldataCrse_p->state, VELX, AMREX_SPACEDIM,
-      refRatio(lev - 1));
+      amrex::average_down(uxi_fine, uxi_crse, 0, nc, refRatio(lev - 1));
 #endif
+
+      // Convert coarse u_xi back to physical-space v.
+      {
+        auto const& fac_ma = m_mesh_map->fac_cc(lev - 1).const_arrays();
+        auto const& detJ_ma = m_mesh_map->detJ_cc(lev - 1).const_arrays();
+        auto const& uxi_ma = uxi_crse.const_arrays();
+        auto const& state_ma = ldataCrse_p->state.arrays();
+        amrex::ParallelFor(
+          uxi_crse, amrex::IntVect(0), nc,
+          [=] AMREX_GPU_DEVICE(
+            int box_no, int i, int j, int k, int n) noexcept {
+            state_ma[box_no](i, j, k, VELX + n) = uxi_ma[box_no](i, j, k, n) *
+                                                  fac_ma[box_no](i, j, k, n) /
+                                                  detJ_ma[box_no](i, j, k);
+          });
+        amrex::Gpu::streamSynchronize();
+      }
+    } else {
+#ifdef AMREX_USE_EB
+      EB_average_down(
+        ldataFine_p->state, ldataCrse_p->state, VELX, AMREX_SPACEDIM,
+        refRatio(lev - 1));
+#else
+      average_down(
+        ldataFine_p->state, ldataCrse_p->state, VELX, AMREX_SPACEDIM,
+        refRatio(lev - 1));
+#endif
+    }
+  }
+}
+
+void
+PeleLM::averageDownConservedDensities(const TimeStamp a_time)
+{
+  // Volume-conservative restriction of [DENSITY..RHOH] = {rho, rhoY, rhoH}:
+  // stage in Xi-space (d_xi = d*detJ), average_down (volume-conservative on
+  // the uniform Xi mesh), convert back on the coarse level.  Like
+  // averageDownVelocity but with the cell-volume weight detJ only (these are
+  // scalar densities, not a flux).  Linear and identical per component, so
+  // rho = sum(rhoY) is preserved; TEMP/RHORT are recomputed by the caller.
+  // The detJ division needs no guard: detJ is the MeshMap metric, strictly
+  // positive by construction and defined on every valid cell visited.
+  AMREX_ASSERT(m_mesh_mapping && (m_mesh_map != nullptr));
+  const int nc = RHOH - DENSITY + 1; // rho + NUM_SPECIES rhoY + rhoH
+  for (int lev = finest_level; lev > 0; --lev) {
+    auto* ldataFine_p = getLevelDataPtr(lev, a_time);
+    auto* ldataCrse_p = getLevelDataPtr(lev - 1, a_time);
+
+    amrex::MultiFab dxi_fine(
+      ldataFine_p->state.boxArray(), ldataFine_p->state.DistributionMap(), nc,
+      0, amrex::MFInfo(), ldataFine_p->state.Factory());
+    amrex::MultiFab::Copy(dxi_fine, ldataFine_p->state, DENSITY, 0, nc, 0);
+    {
+      auto const& detJ_ma = m_mesh_map->detJ_cc(lev).const_arrays();
+      auto const& dxi_ma = dxi_fine.arrays();
+      amrex::ParallelFor(
+        dxi_fine, amrex::IntVect(0), nc,
+        [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k, int n) noexcept {
+          dxi_ma[box_no](i, j, k, n) *= detJ_ma[box_no](i, j, k);
+        });
+      amrex::Gpu::streamSynchronize();
+    }
+
+    amrex::MultiFab dxi_crse(
+      ldataCrse_p->state.boxArray(), ldataCrse_p->state.DistributionMap(), nc,
+      0, amrex::MFInfo(), ldataCrse_p->state.Factory());
+    // Stage coarse in Xi-space so average_down overwrites only the covered
+    // region; non-covered cells round-trip on the un-weight below.
+    amrex::MultiFab::Copy(dxi_crse, ldataCrse_p->state, DENSITY, 0, nc, 0);
+    {
+      auto const& detJ_ma = m_mesh_map->detJ_cc(lev - 1).const_arrays();
+      auto const& dxi_ma = dxi_crse.arrays();
+      amrex::ParallelFor(
+        dxi_crse, amrex::IntVect(0), nc,
+        [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k, int n) noexcept {
+          dxi_ma[box_no](i, j, k, n) *= detJ_ma[box_no](i, j, k);
+        });
+      amrex::Gpu::streamSynchronize();
+    }
+
+#ifdef AMREX_USE_EB
+    amrex::EB_average_down(dxi_fine, dxi_crse, 0, nc, refRatio(lev - 1));
+#else
+    amrex::average_down(dxi_fine, dxi_crse, 0, nc, refRatio(lev - 1));
+#endif
+
+    // Convert coarse d_xi back to physical-space density.
+    {
+      auto const& detJ_ma = m_mesh_map->detJ_cc(lev - 1).const_arrays();
+      auto const& dxi_ma = dxi_crse.const_arrays();
+      auto const& state_ma = ldataCrse_p->state.arrays();
+      amrex::ParallelFor(
+        dxi_crse, amrex::IntVect(0), nc,
+        [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k, int n) noexcept {
+          state_ma[box_no](i, j, k, DENSITY + n) =
+            dxi_ma[box_no](i, j, k, n) / detJ_ma[box_no](i, j, k);
+        });
+      amrex::Gpu::streamSynchronize();
+    }
   }
 }
 
