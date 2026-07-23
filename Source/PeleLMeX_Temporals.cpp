@@ -725,6 +725,15 @@ PeleLM::writeTemporals()
   // Combustion
   amrex::Real fuelConsumptionInt = 0.0;
   amrex::Real heatReleaseRateInt = 0.0;
+
+#ifdef USE_MANIFOLD_EOS
+  if (!(m_chem_integrator == "ReactorNull")) {
+    for (int lev = 0; lev <= finest_level; ++lev) {
+      getHeatRelease(lev, kinEnergy[lev].get()); // Reuse kinEnergy container
+    }
+    heatReleaseRateInt = MFSum(GetVecOfConstPtrs(kinEnergy), 0);
+  }
+#else
   if (fuelID >= 0 && !(m_chem_integrator == "ReactorNull")) {
     fuelConsumptionInt = MFSum(GetVecOfConstPtrs(getIRVect()), fuelID);
     for (int lev = 0; lev <= finest_level; ++lev) {
@@ -732,6 +741,7 @@ PeleLM::writeTemporals()
     }
     heatReleaseRateInt = MFSum(GetVecOfConstPtrs(kinEnergy), 0);
   }
+#endif
 
   tmpStateFile << m_nstep << "," << m_cur_time << "," << m_dt // Time
                << "," << kinenergy_int                        // Kinetic energy
