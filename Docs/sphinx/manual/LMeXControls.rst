@@ -703,9 +703,12 @@ to activate `temporal` diagnostics performing these reductions at given interval
 
 The `do_temporal` flag will trigger the creation of a `temporals` folder in your run directory and the following entries
 will be appended to an ASCII `temporals/tempState` file: step, time, dt, kin. energy integral, enstrophy integral, mean pressure
-, fuel consumption rate integral, heat release rate integral. Additionally, if the `do_temporal` flag is activated, one can
-turn on state extremas (stored in `temporals/tempExtremas` as min/max for each state entry), mass balance (stored in
-`temporals/tempMass`) computing the total mass, dMdt and advective mass fluxes across the domain boundaries as well as the error in
+, fuel consumption rate integral, heat release rate integral. Please note that for simulations using finite-rate chemistry, the 
+heat-release rate integral is computed from the species reaction rates and enthalpies (:math:`-\sum_n h_n \dot\omega_n`). For the 
+manifold EOS, it is instead obtained by integrating the tabulated `HRR` variable looked up from the manifold table, which therefore 
+requires the table to include an `HRR` column (volumetric heat release rate, in the table's units). If the table has no `HRR` column 
+the reported integral is zero. Additionally, if the `do_temporal` flag is activated, one can turn on state extremas 
+(stored in `temporals/tempExtremas` as min/max for each state entry), mass balance (stored in `temporals/tempMass`) computing the total mass, dMdt and advective mass fluxes across the domain boundaries as well as the error in
 the balance (dMdt - sum of fluxes), and species balance (stored in `temporals/tempSpec`) computing each species total mass, dM_Ydt,
 advective \& diffusive fluxes across the domain boundaries, consumption rate integral and the error (dMdt - sum of fluxes - reaction).
 Users can also monitor species advective fluxes through specific regions of the domain boundaries (called as boundary patches).
