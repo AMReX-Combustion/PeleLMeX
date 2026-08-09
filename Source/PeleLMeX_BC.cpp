@@ -1378,6 +1378,51 @@ extendDM(
 }
 
 void
+PeleLM::interpRecyclingSlabFromCoarse(
+  amrex::MultiFab& a_fine, const amrex::MultiFab& a_crse, int lev)
+{
+  AMREX_ASSERT(lev > 0);
+
+  ProbParm const* lprobparm = prob_parm_d;
+  auto const* lpmfdata = pmf_data.device_parm();
+  // All-int_dir dummy BCRecs disable boundary handling: the slab lies in the
+  // domain interior, so PhysBCFunct calls on the temporaries are no-ops in
+  // practice. The time argument is likewise informational only.
+  auto velBCRec = fetchBCRecDummyArray(AMREX_SPACEDIM);
+
+  // Use piecewise-constant interpolation: the source slab is one cell
+  // thick along planeDir, so any stencil-based interpolator (e.g.,
+  // cell-conservative linear) would read garbage from the slab's
+  // planeDir ghost cells. PCInterp has no transverse stencil and is
+  // adequate for injecting a fluctuation field across a refinement
+  // boundary.
+  // NOTE: Declared as InterpBase* (not auto* / MFPCInterp*) so AMReX's
+  // FillPatchInterp dispatches through its runtime dynamic_cast path
+  // and picks the MultiFab-based interpolator entry point.
+  amrex::InterpBase* mapper = &amrex::mf_pc_interp;
+  amrex::PhysBCFunct<
+    amrex::GpuBndryFuncFab<PeleLMCCFillExtDirState<ProblemSpecificFunctions>>>
+    crse_bndry_func(
+      geom[lev - 1], velBCRec,
+      PeleLMCCFillExtDirState<ProblemSpecificFunctions>{
+        lprobparm, lpmfdata, m_nAux,
+        static_cast<int>(turb_inflow.is_initialized()), m_use_inlet_from_plane,
+        m_inlet_plane_dir});
+  amrex::PhysBCFunct<
+    amrex::GpuBndryFuncFab<PeleLMCCFillExtDirState<ProblemSpecificFunctions>>>
+    fine_bndry_func(
+      geom[lev], velBCRec,
+      PeleLMCCFillExtDirState<ProblemSpecificFunctions>{
+        lprobparm, lpmfdata, m_nAux,
+        static_cast<int>(turb_inflow.is_initialized()), m_use_inlet_from_plane,
+        m_inlet_plane_dir});
+  amrex::InterpFromCoarseLevel(
+    a_fine, amrex::IntVect(0), m_cur_time, a_crse, 0, 0, AMREX_SPACEDIM,
+    geom[lev - 1], geom[lev], crse_bndry_func, 0, fine_bndry_func, 0,
+    refRatio(lev - 1), mapper, velBCRec, 0);
+}
+
+void
 PeleLM::buildRecyclingPlaneStorage()
 {
   if (m_use_inlet_from_plane == 0) {
@@ -1387,12 +1432,12 @@ PeleLM::buildRecyclingPlaneStorage()
   const int planeDir = m_inlet_plane_dir;
   const int nlevels = finest_level + 1;
 
-  // The slab BoxArray at each level depends only on the (fixed) domain,
-  // maxGridSize, and srcIndex, so it is invariant across regrids. The level's
-  // grids and the DistributionMapping may change, but the running mean is a
-  // physical-space quantity and can be carried through with a ParallelCopy.
-  // Stash the existing means before reallocating so we can re-deposit them
-  // into the new MultiFabs.
+  // The slab's union at each level always spans the full transverse
+  // cross-section at srcIndex, but the individual boxes and the
+  // DistributionMapping follow the level's grids and therefore change across
+  // regrids. The running mean is a physical-space quantity and can be carried
+  // through with a ParallelCopy. Stash the existing means before reallocating
+  // so we can re-deposit them into the new MultiFabs.
   auto saved_mean = std::move(m_inlet_recycling.mean_src);
   const bool saved_initialized = m_inlet_recycling.initialized;
   const int saved_n_samples = m_inlet_recycling.n_samples;
@@ -1517,8 +1562,21 @@ PeleLM::buildRecyclingPlaneStorage()
       saved_mean[lev]) {
       m_inlet_recycling.mean_src[lev]->ParallelCopy(
         *saved_mean[lev], 0, 0, AMREX_SPACEDIM);
+    } else if (
+      saved_initialized && lev > 0 &&
+      m_inlet_recycling.mean_src[lev - 1] != nullptr) {
+      // This level is new since the last (re)build: seed its running mean by
+      // interpolating the coarser level's mean (already deposited by this
+      // ascending loop). Seeding with zero while `initialized` stays true
+      // would make the next fluctuation on this level fluct = u - 0, i.e.
+      // the full velocity, and the inlet would receive roughly twice the
+      // mean flow until the running mean recovers.
+      interpRecyclingSlabFromCoarse(
+        *m_inlet_recycling.mean_src[lev], *m_inlet_recycling.mean_src[lev - 1],
+        lev);
     } else {
-      // Either we never had a mean, or this level didn't exist before.
+      // Either we never had a mean, or there is no coarser level to seed
+      // this level from.
       m_inlet_recycling.mean_src[lev]->setVal(0.0);
     }
   }
@@ -1552,16 +1610,6 @@ PeleLM::updateRecyclingPlaneSnapshot()
   AMREX_ASSERT(
     static_cast<int>(m_inlet_recycling.u_src.size()) == finest_level + 1);
 
-  ProbParm const* lprobparm = prob_parm_d;
-  auto const* lpmfdata = pmf_data.device_parm();
-  // Sample plane will have all-int_dir dummy BCRecs to disable boundary
-  // handling
-  auto velBCRec = fetchBCRecDummyArray(AMREX_SPACEDIM);
-  // The time used by InterpFromCoarseLevel is mostly informational here
-  // (the slab is in the interior, so PhysBCFunct calls on its temporaries
-  // are no-ops in practice); pass the new time for consistency.
-  const amrex::Real a_time = m_cur_time;
-
   for (int lev = 0; lev <= finest_level; ++lev) {
     if (m_inlet_recycling.u_src[lev] == nullptr) {
       continue;
@@ -1581,36 +1629,7 @@ PeleLM::updateRecyclingPlaneSnapshot()
       const auto* coarse_u_src = m_inlet_recycling.u_src[lev - 1].get();
 
       if (coarse_u_src != nullptr) {
-        // Use piecewise-constant interpolation: the source slab is one cell
-        // thick along planeDir, so any stencil-based interpolator (e.g.,
-        // cell-conservative linear) would read garbage from the slab's
-        // planeDir ghost cells. PCInterp has no transverse stencil and is
-        // adequate for injecting a fluctuation field across a refinement
-        // boundary.
-        // NOTE: Declared as InterpBase* (not auto* / MFPCInterp*) so AMReX's
-        // FillPatchInterp dispatches through its runtime dynamic_cast path
-        // and picks the MultiFab-based interpolator entry point.
-        amrex::InterpBase* mapper = &amrex::mf_pc_interp;
-        amrex::PhysBCFunct<amrex::GpuBndryFuncFab<
-          PeleLMCCFillExtDirState<ProblemSpecificFunctions>>>
-          crse_bndry_func(
-            geom[lev - 1], velBCRec,
-            PeleLMCCFillExtDirState<ProblemSpecificFunctions>{
-              lprobparm, lpmfdata, m_nAux,
-              static_cast<int>(turb_inflow.is_initialized()),
-              m_use_inlet_from_plane, m_inlet_plane_dir});
-        amrex::PhysBCFunct<amrex::GpuBndryFuncFab<
-          PeleLMCCFillExtDirState<ProblemSpecificFunctions>>>
-          fine_bndry_func(
-            geom[lev], velBCRec,
-            PeleLMCCFillExtDirState<ProblemSpecificFunctions>{
-              lprobparm, lpmfdata, m_nAux,
-              static_cast<int>(turb_inflow.is_initialized()),
-              m_use_inlet_from_plane, m_inlet_plane_dir});
-        amrex::InterpFromCoarseLevel(
-          u_src, amrex::IntVect(0), a_time, *coarse_u_src, 0, 0, AMREX_SPACEDIM,
-          geom[lev - 1], geom[lev], crse_bndry_func, 0, fine_bndry_func, 0,
-          refRatio(lev - 1), mapper, velBCRec, 0);
+        interpRecyclingSlabFromCoarse(u_src, *coarse_u_src, lev);
       }
     }
     // Same-level data overrides the coarse-interpolated baseline anywhere

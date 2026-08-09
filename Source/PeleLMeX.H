@@ -1241,6 +1241,11 @@ public:
   void updateRecyclingPlaneSnapshot();
   // Cell-centered index of the recycling plane on level `lev`.
   int computeRecyclingSrcIndex(int lev) const;
+  // Piecewise-constant interpolation of a coarser-level recycling slab onto
+  // this level's slab layout (used for both the velocity snapshot and for
+  // seeding the running mean on newly created levels).
+  void interpRecyclingSlabFromCoarse(
+    amrex::MultiFab& a_fine, const amrex::MultiFab& a_crse, int lev);
   // If dt>=m_inlet_plane_avg_window, the injected fluctions will be
   // approximately zero, warn user every step this happens
   bool m_warned_clipped_recycle_avg_window_this_step;
