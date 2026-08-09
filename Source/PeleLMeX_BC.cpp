@@ -1638,8 +1638,10 @@ PeleLM::updateRecyclingPlaneSnapshot()
   }
 
   // Update the running mean and store the current fluctuation.
-  // NOTE: m_inlet_recycling.n_samples is NOT incremented so that we avoid
-  // inecting fluctuations computed against a single sample mean.
+  // NOTE: m_inlet_recycling.n_samples counts the snapshots accumulated into
+  // the running mean; the warmup gate in fillFromRecyclingPlane compares
+  // against it so that fluctuations computed from too few samples are not
+  // injected.
 
   if (!m_inlet_recycling.initialized) {
     // Seed: <u> = u_0; fluctuation defined as zero on the seeding sample.
@@ -1650,6 +1652,7 @@ PeleLM::updateRecyclingPlaneSnapshot()
       m_inlet_recycling.fluct_src[lev]->setVal(0.0);
     }
     m_inlet_recycling.initialized = true;
+    m_inlet_recycling.n_samples = 1;
     return;
   }
 
@@ -1666,7 +1669,9 @@ PeleLM::updateRecyclingPlaneSnapshot()
            "sample and the fluctuation will be approximately zero.\n";
     }
   } else {
-    alpha = 1.0 / amrex::max<amrex::Real>(1.0, m_inlet_recycling.n_samples);
+    // Cumulative average: the mean currently holds n_samples snapshots, so
+    // the incoming sample enters with weight 1/(n_samples + 1).
+    alpha = 1.0 / static_cast<amrex::Real>(m_inlet_recycling.n_samples + 1);
   }
   const amrex::Real one_minus_alpha = 1.0 - alpha;
 
@@ -1682,6 +1687,7 @@ PeleLM::updateRecyclingPlaneSnapshot()
     amrex::MultiFab::LinComb(
       mean, one_minus_alpha, mean, 0, alpha, u_src, 0, 0, AMREX_SPACEDIM, 0);
   }
+  ++m_inlet_recycling.n_samples;
 }
 
 void
