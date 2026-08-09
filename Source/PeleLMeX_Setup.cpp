@@ -369,6 +369,34 @@ PeleLM::readParameters()
       m_inlet_plane_warmup_steps >= 0,
       "peleLM.inlet_plane_warmup_steps must be non-negative when "
       "peleLM.use_inlet_from_plane is enabled");
+
+    std::string recycling_mode = "fluctuations";
+    pp.query("recycling_mode", recycling_mode);
+    if (recycling_mode == "fluctuations") {
+      m_recycling_mode = RecyclingMode::Fluctuations;
+    } else if (recycling_mode == "full") {
+      m_recycling_mode = RecyclingMode::Full;
+    } else {
+      amrex::Abort(
+        "peleLM.recycling_mode must be 'fluctuations' or 'full', got '" +
+        recycling_mode + "'");
+    }
+    if (m_recycling_mode == RecyclingMode::Full) {
+      // These controls belong to the running-mean machinery and have no
+      // effect in full mode.
+      if (m_inlet_plane_warmup_steps > 0) {
+        amrex::Print()
+          << "WARNING: peleLM.inlet_plane_warmup_steps is ignored when "
+             "peleLM.recycling_mode = full; injection begins with the "
+             "first snapshot.\n";
+      }
+      if (m_inlet_plane_avg_window > 0.0) {
+        amrex::Print()
+          << "WARNING: peleLM.inlet_plane_avg_window is ignored when "
+             "peleLM.recycling_mode = full; no running mean is "
+             "maintained.\n";
+      }
+    }
   }
 
 #ifdef PELE_USE_PLASMA

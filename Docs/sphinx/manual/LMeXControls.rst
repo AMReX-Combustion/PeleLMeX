@@ -380,16 +380,32 @@ the user through the standard ``Inflow`` boundary condition; this feature only
 supplies the bracketed fluctuation. The running mean is preserved in
 checkpoints and restored across restarts.
 
+Alternatively, ``peleLM.recycling_mode = full`` injects the entire sampled
+velocity, :math:`\mathbf{u}_{\text{inlet}}(t) = \mathbf{u}_{\text{src}}(t)`,
+with no running mean maintained. The recycled velocity is enforced by the
+boundary-fill machinery itself: whatever ``bcnormal`` writes to the velocity
+components on the recycling face is ignored in this mode, so existing
+problem setups (including ones that add a mean profile to the velocity)
+run unmodified; ``bcnormal`` still controls the thermodynamic state. Full
+mode carries no restart state (the injection buffer reseeds from the first
+snapshot after initialization or restart, taken before the first boundary
+fill), and the ``inlet_plane_avg_window`` / ``inlet_plane_warmup_steps``
+controls are ignored.
+
 ::
 
     #-----------------------Recycling-plane inflow-----------------------
     peleLM.use_inlet_from_plane     = 0       # [OPT, DEF=0] Master switch (0 disables)
     peleLM.inlet_plane_dir          = -1      # [REQ if active] Sampling axis: 0=x, 1=y, 2=z
     peleLM.inlet_plane_position     = 0.0     # [REQ if active] Physical coordinate of the source plane along inlet_plane_dir
+    peleLM.recycling_mode           = fluctuations # [OPT, DEF=fluctuations] 'fluctuations' injects u - <u> on top of the
+                                              #                 bcnormal profile; 'full' injects the sampled velocity itself
     peleLM.inlet_plane_avg_window   = -1.0    # [OPT, DEF=-1.0] Time-window (s) for the running mean (EMA);
                                               #                 <=0 falls back to a cumulative 1/N average.
+                                              #                 Fluctuations mode only.
     peleLM.inlet_plane_warmup_steps = 0       # [OPT, DEF=0] Number of samples to accumulate before any
-                                              #              fluctuation is injected (lets the running mean settle)
+                                              #              fluctuation is injected (lets the running mean settle).
+                                              #              Fluctuations mode only.
 
 The source plane is one cell thick along ``inlet_plane_dir`` and spans the full
 transverse cross-section at ``inlet_plane_position``. Storage is allocated

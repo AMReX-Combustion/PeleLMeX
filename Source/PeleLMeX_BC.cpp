@@ -443,6 +443,8 @@ PeleLM::fillpatch_state(
 {
   ProbParm const* lprobparm = prob_parm_d;
   auto const* lpmfdata = pmf_data.device_parm();
+  const int recycFull =
+    static_cast<int>(m_recycling_mode == RecyclingMode::Full);
 
   const int nCompState = (m_incompressible) != 0 ? AMREX_SPACEDIM : NVAR;
 
@@ -504,7 +506,7 @@ PeleLM::fillpatch_state(
         PeleLMCCFillExtDirState<ProblemSpecificFunctions>{
           lprobparm, lpmfdata, m_nAux,
           static_cast<int>(turb_inflow.is_initialized()),
-          m_use_inlet_from_plane, m_inlet_plane_dir, m_map_eval});
+          m_use_inlet_from_plane, m_inlet_plane_dir, recycFull, m_map_eval});
     FillPatchSingleLevel(
       a_state, amrex::IntVect(nGhost), a_time,
       {&(m_leveldata_old[lev]->state), &(m_leveldata_new[lev]->state)},
@@ -524,7 +526,7 @@ PeleLM::fillpatch_state(
         PeleLMCCFillExtDirState<ProblemSpecificFunctions>{
           lprobparm, lpmfdata, m_nAux,
           static_cast<int>(turb_inflow.is_initialized()),
-          m_use_inlet_from_plane, m_inlet_plane_dir, m_map_eval});
+          m_use_inlet_from_plane, m_inlet_plane_dir, recycFull, m_map_eval});
     amrex::PhysBCFunct<
       amrex::GpuBndryFuncFab<PeleLMCCFillExtDirState<ProblemSpecificFunctions>>>
       fine_bndry_func(
@@ -532,7 +534,7 @@ PeleLM::fillpatch_state(
         PeleLMCCFillExtDirState<ProblemSpecificFunctions>{
           lprobparm, lpmfdata, m_nAux,
           static_cast<int>(turb_inflow.is_initialized()),
-          m_use_inlet_from_plane, m_inlet_plane_dir, m_map_eval});
+          m_use_inlet_from_plane, m_inlet_plane_dir, recycFull, m_map_eval});
     FillPatchTwoLevels(
       a_state, amrex::IntVect(nGhost), a_time,
       {&(m_leveldata_old[lev - 1]->state), &(m_leveldata_new[lev - 1]->state)},
@@ -1006,6 +1008,8 @@ PeleLM::fillcoarsepatch_state(
   AMREX_ASSERT(lev > 0);
   ProbParm const* lprobparm = prob_parm_d;
   auto const* lpmfdata = pmf_data.device_parm();
+  const int recycFull =
+    static_cast<int>(m_recycling_mode == RecyclingMode::Full);
 
   const int nCompState = (m_incompressible) != 0 ? AMREX_SPACEDIM : NVAR;
 
@@ -1029,7 +1033,7 @@ PeleLM::fillcoarsepatch_state(
       PeleLMCCFillExtDirState<ProblemSpecificFunctions>{
         lprobparm, lpmfdata, m_nAux,
         static_cast<int>(turb_inflow.is_initialized()), m_use_inlet_from_plane,
-        m_inlet_plane_dir, m_map_eval});
+        m_inlet_plane_dir, recycFull, m_map_eval});
   amrex::PhysBCFunct<
     amrex::GpuBndryFuncFab<PeleLMCCFillExtDirState<ProblemSpecificFunctions>>>
     fine_bndry_func(
@@ -1037,7 +1041,7 @@ PeleLM::fillcoarsepatch_state(
       PeleLMCCFillExtDirState<ProblemSpecificFunctions>{
         lprobparm, lpmfdata, m_nAux,
         static_cast<int>(turb_inflow.is_initialized()), m_use_inlet_from_plane,
-        m_inlet_plane_dir, m_map_eval});
+        m_inlet_plane_dir, recycFull, m_map_eval});
   InterpFromCoarseLevel(
     a_state, amrex::IntVect(nGhost), a_time, m_leveldata_new[lev - 1]->state, 0,
     0, nCompState, geom[lev - 1], geom[lev], crse_bndry_func, 0,
@@ -1207,6 +1211,8 @@ PeleLM::setInflowBoundaryVel(
 
   ProbParm const* lprobparm = prob_parm_d;
   auto const* lpmfdata = pmf_data.device_parm();
+  const int recycFull =
+    static_cast<int>(m_recycling_mode == RecyclingMode::Full);
   amrex::PhysBCFunct<
     amrex::GpuBndryFuncFab<PeleLMCCFillExtDirState<ProblemSpecificFunctions>>>
     bndry_func(
@@ -1214,7 +1220,7 @@ PeleLM::setInflowBoundaryVel(
       PeleLMCCFillExtDirState<ProblemSpecificFunctions>{
         lprobparm, lpmfdata, m_nAux,
         static_cast<int>(turb_inflow.is_initialized()), m_use_inlet_from_plane,
-        m_inlet_plane_dir, m_map_eval});
+        m_inlet_plane_dir, recycFull, m_map_eval});
 
   bndry_func(a_vel, 0, AMREX_SPACEDIM, a_vel.nGrowVect(), time, 0);
 
@@ -1385,6 +1391,8 @@ PeleLM::interpRecyclingSlabFromCoarse(
 
   ProbParm const* lprobparm = prob_parm_d;
   auto const* lpmfdata = pmf_data.device_parm();
+  const int recycFull =
+    static_cast<int>(m_recycling_mode == RecyclingMode::Full);
   // All-int_dir dummy BCRecs disable boundary handling: the slab lies in the
   // domain interior, so PhysBCFunct calls on the temporaries are no-ops in
   // practice. The time argument is likewise informational only.
@@ -1407,7 +1415,7 @@ PeleLM::interpRecyclingSlabFromCoarse(
       PeleLMCCFillExtDirState<ProblemSpecificFunctions>{
         lprobparm, lpmfdata, m_nAux,
         static_cast<int>(turb_inflow.is_initialized()), m_use_inlet_from_plane,
-        m_inlet_plane_dir});
+        m_inlet_plane_dir, recycFull});
   amrex::PhysBCFunct<
     amrex::GpuBndryFuncFab<PeleLMCCFillExtDirState<ProblemSpecificFunctions>>>
     fine_bndry_func(
@@ -1415,7 +1423,7 @@ PeleLM::interpRecyclingSlabFromCoarse(
       PeleLMCCFillExtDirState<ProblemSpecificFunctions>{
         lprobparm, lpmfdata, m_nAux,
         static_cast<int>(turb_inflow.is_initialized()), m_use_inlet_from_plane,
-        m_inlet_plane_dir});
+        m_inlet_plane_dir, recycFull});
   amrex::InterpFromCoarseLevel(
     a_fine, amrex::IntVect(0), m_cur_time, a_crse, 0, 0, AMREX_SPACEDIM,
     geom[lev - 1], geom[lev], crse_bndry_func, 0, fine_bndry_func, 0,
@@ -1665,6 +1673,27 @@ PeleLM::updateRecyclingPlaneSnapshot()
 #endif
   }
 
+  if (m_recycling_mode == RecyclingMode::Full) {
+    // Full-velocity injection: the sampled velocity itself is the boundary
+    // data; no running mean is maintained. fluct_src doubles as the
+    // injection buffer consumed by fillFromRecyclingPlane.
+    for (int lev = 0; lev <= finest_level; ++lev) {
+      if (m_inlet_recycling.u_src[lev] == nullptr) {
+        continue;
+      }
+      amrex::MultiFab::Copy(
+        *m_inlet_recycling.fluct_src[lev], *m_inlet_recycling.u_src[lev], 0, 0,
+        AMREX_SPACEDIM, 0);
+    }
+    if (!m_inlet_recycling.initialized) {
+      m_inlet_recycling.initialized = true;
+      m_inlet_recycling.n_samples = 1;
+    } else {
+      ++m_inlet_recycling.n_samples;
+    }
+    return;
+  }
+
   // Update the running mean and store the current fluctuation.
   // NOTE: m_inlet_recycling.n_samples counts the snapshots accumulated into
   // the running mean; the warmup gate in fillFromRecyclingPlane compares
@@ -1799,9 +1828,13 @@ PeleLM::fillFromRecyclingPlane(amrex::MultiFab& a_vel, int vel_comp, int lev)
   }
 
   // Don't inject anything until the running mean has had a chance to settle.
+  // The warmup gate applies only to fluctuations mode: a full-velocity
+  // sample is valid from the first snapshot, so full mode injects as soon
+  // as the buffer is seeded.
   if (
     !m_inlet_recycling.initialized ||
-    m_inlet_recycling.n_samples <= m_inlet_plane_warmup_steps) {
+    (m_recycling_mode == RecyclingMode::Fluctuations &&
+     m_inlet_recycling.n_samples <= m_inlet_plane_warmup_steps)) {
     set_zero_in_bndry = true;
   }
 

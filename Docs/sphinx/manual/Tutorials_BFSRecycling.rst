@@ -181,6 +181,15 @@ flow is slowly evolving.
    different velocity components are not supported and will abort the
    simulation.
 
+.. note::
+   Setting ``peleLM.recycling_mode = full`` injects the entire sampled
+   velocity instead of a fluctuation about the running mean. Velocity
+   writes from ``bcnormal`` are ignored on the recycling face in that mode
+   (the boundary fill preserves the sampled velocity), so this tutorial's
+   ``s_ext[VELX] += prob_parm.meanFlowMag`` line is harmless and the
+   problem setup needs no modification. The warmup and averaging-window
+   controls have no effect in full mode.
+
 Numerical parameters
 ^^^^^^^^^^^^^^^^^^^^
 

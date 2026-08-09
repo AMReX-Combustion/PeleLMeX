@@ -65,6 +65,10 @@ struct PeleLMCCFillExtDirState
   MeshMapEvaluator m_map_eval{}; // defaults to Identity (no mesh mapping)
   int m_do_inlet_from_plane = 0;
   int m_inlet_from_plane_dir = -1;
+  // When != 0 (peleLM.recycling_mode = full), the pre-loaded ghost value on
+  // the recycling face is the complete inflow velocity and is preserved
+  // against whatever bcnormal writes to the velocity components there.
+  int m_recycling_full = 0;
 
   AMREX_GPU_HOST
   constexpr PeleLMCCFillExtDirState(
@@ -74,6 +78,7 @@ struct PeleLMCCFillExtDirState
     int do_turbInflow,
     int do_inletFromPlane,
     int inlet_plane_dir,
+    int recycling_full,
     MeshMapEvaluator a_map_eval = MeshMapEvaluator{})
     : lprobparm(a_prob_parm),
       lpmfdata(a_pmf_data),
@@ -81,7 +86,8 @@ struct PeleLMCCFillExtDirState
       m_do_turbInflow(do_turbInflow),
       m_map_eval(a_map_eval),
       m_do_inlet_from_plane(do_inletFromPlane),
-      m_inlet_from_plane_dir(inlet_plane_dir)
+      m_inlet_from_plane_dir(inlet_plane_dir),
+      m_recycling_full(recycling_full)
   {
   }
 
@@ -127,7 +133,10 @@ struct PeleLMCCFillExtDirState
           const auto s_in = state.cellData(iv_in[0], iv_in[1], iv_in[2]);
 
           // If using TurbInflow or inlet_from_plane, pass in the sampled data.
-          // User can overwrite or increment, as needed
+          // User can overwrite or increment, as needed. In full recycling
+          // mode the pre-loaded value is the complete inflow velocity and is
+          // kept regardless of what bcnormal does to it.
+          bool keep_recycled = false;
           if (n >= VELX && n < DENSITY) {
             if (
               m_do_turbInflow != 0 || ((m_do_inlet_from_plane != 0) &&
@@ -136,6 +145,9 @@ struct PeleLMCCFillExtDirState
                     state(iv, VELX + n))) { // During fillcoarsepatch, get here
                                             // with nan. TODO: find a better fix
                 s_ext[VELX + n] = state(iv, VELX + n);
+                keep_recycled = (m_recycling_full != 0) &&
+                                (m_do_inlet_from_plane != 0) &&
+                                (idir == m_inlet_from_plane_dir);
               } else {
                 s_ext[VELX + n] = 0;
               }
@@ -145,7 +157,9 @@ struct PeleLMCCFillExtDirState
           // /Exec
           T::bcnormal(
             x, s_in, s_ext, idir, 1, time, geom, *lprobparm, lpmfdata);
-          state(iv, n) = s_ext[n];
+          if (!keep_recycled) {
+            state(iv, n) = s_ext[n];
+          }
         }
       }
 
@@ -171,7 +185,10 @@ struct PeleLMCCFillExtDirState
           const auto s_in = state.cellData(iv_in[0], iv_in[1], iv_in[2]);
 
           // If using TurbInflow or inlet_from_plane, pass in the sampled data.
-          // User can overwrite or increment, as needed
+          // User can overwrite or increment, as needed. In full recycling
+          // mode the pre-loaded value is the complete inflow velocity and is
+          // kept regardless of what bcnormal does to it.
+          bool keep_recycled = false;
           if (n >= VELX && n < DENSITY) {
             if (
               m_do_turbInflow != 0 || ((m_do_inlet_from_plane != 0) &&
@@ -180,6 +197,9 @@ struct PeleLMCCFillExtDirState
                     state(iv, VELX + n))) { // During fillcoarsepatch, get here
                                             // with nan. TODO: find a better fix
                 s_ext[VELX + n] = state(iv, VELX + n);
+                keep_recycled = (m_recycling_full != 0) &&
+                                (m_do_inlet_from_plane != 0) &&
+                                (idir == m_inlet_from_plane_dir);
               } else {
                 s_ext[VELX + n] = 0;
               }
@@ -189,7 +209,9 @@ struct PeleLMCCFillExtDirState
           // /Exec
           T::bcnormal(
             x, s_in, s_ext, idir, -1, time, geom, *lprobparm, lpmfdata);
-          state(iv, n) = s_ext[n];
+          if (!keep_recycled) {
+            state(iv, n) = s_ext[n];
+          }
         }
       }
     }

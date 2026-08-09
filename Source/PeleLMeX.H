@@ -1899,18 +1899,29 @@ public:
   amrex::BCRec m_bcrec_dummy;
 
   // Recycling-plane inflow controls (see fillFromRecyclingPlane).
-  // Recycling injects a zero-mean fluctuation onto the inflow ghost cells:
+  // In the default 'fluctuations' mode, recycling injects a zero-mean
+  // fluctuation onto the inflow ghost cells:
   //   u_inlet(t) = u_inlet_target_mean + [u_src(t) - <u_src>]
   // The standard ext_dir BC continues to set u_inlet_target_mean; this
   // machinery only supplies the bracketed fluctuation.
+  // In 'full' mode, the entire sampled velocity is injected instead:
+  //   u_inlet(t) = u_src(t)
+  // No running mean is maintained. The boundary fill preserves the sampled
+  // velocity on the recycling face (velocity writes from bcnormal are
+  // ignored there; see PeleLMCCFillExtDirState), so problem setups run
+  // unmodified in either mode.
+  enum class RecyclingMode { Fluctuations, Full };
+  RecyclingMode m_recycling_mode = RecyclingMode::Fluctuations;
   int m_use_inlet_from_plane = 0;
   int m_inlet_plane_dir = -1;
   amrex::Real m_inlet_plane_position = 0.0;
   // Time-averaging window (in simulation time units) for the running source-
-  // plane mean. <=0 falls back to a cumulative average.
+  // plane mean. <=0 falls back to a cumulative average. Fluctuations mode
+  // only.
   amrex::Real m_inlet_plane_avg_window = -1.0;
   // Number of recycling-plane samples to accumulate before injecting any
-  // fluctuation (lets the running mean settle).
+  // fluctuation (lets the running mean settle). Fluctuations mode only: a
+  // full-velocity sample is valid from the first snapshot.
   int m_inlet_plane_warmup_steps = 0;
   // Set to 1 whenever per-level thin-slab storage needs to be rebuilt
   // (initialization, regrid). Consumed by updateRecyclingPlaneSnapshot.
@@ -1921,9 +1932,11 @@ public:
   // source-plane index for that level's resolution.
   struct RecyclingPlaneData
   {
-    amrex::Vector<std::unique_ptr<amrex::MultiFab>> u_src;     // current
-    amrex::Vector<std::unique_ptr<amrex::MultiFab>> mean_src;  // running mean
-    amrex::Vector<std::unique_ptr<amrex::MultiFab>> fluct_src; // u_src - mean
+    amrex::Vector<std::unique_ptr<amrex::MultiFab>> u_src;    // current
+    amrex::Vector<std::unique_ptr<amrex::MultiFab>> mean_src; // running mean
+    // Injection buffer consumed by fillFromRecyclingPlane:
+    // u_src - mean_src (fluctuations mode) or u_src (full mode).
+    amrex::Vector<std::unique_ptr<amrex::MultiFab>> fluct_src;
 #ifdef AMREX_USE_EB
     // Per-cell mask on the slab: 1 = regular or cut (sampled into the mean
     // and fluctuation), 0 = EB-covered (excluded). Always rebuilt with the
