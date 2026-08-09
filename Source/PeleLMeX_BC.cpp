@@ -1437,7 +1437,9 @@ PeleLM::buildRecyclingPlaneStorage()
       slab_pmap.push_back(level_pmap[isect.first]);
     }
 
-    if (slab_pmap.empty()) {
+    if (slab_pmap.empty() && lev == 0) {
+      // Level 0 grids cover the domain, so this can only trip on a
+      // degenerate setup; keep the guard for safety.
       amrex::Print()
         << "WARNING: inlet recycling source slab does not intersect any grids "
         << "on level " << lev << ". Skipping slab storage allocation for slab "
@@ -1445,10 +1447,17 @@ PeleLM::buildRecyclingPlaneStorage()
       continue;
     }
     amrex::BoxArray slab_ba(slab_bl);
-    amrex::DistributionMapping slab_dm(slab_pmap);
+    amrex::DistributionMapping slab_dm;
+    if (!slab_pmap.empty()) {
+      slab_dm = amrex::DistributionMapping(slab_pmap);
+    }
 
-    // Add add boxes fillable from next coarser level - check if even lev-1 is
-    // not big enough
+    // Add boxes fillable from next coarser level - check if even lev-1 is
+    // not big enough. When this level's grids do not touch the plane at all,
+    // the entire slab is carried as coarse-interpolated data: the level may
+    // still own part of the inlet face (e.g. refinement around the inlet with
+    // the sampling plane downstream at coarser resolution), and
+    // fillFromRecyclingPlane needs a populated fluct_src to inject there.
     if (lev > 0) {
       amrex::BoxList unfilled_bl = amrex::complementIn(slab, slab_bl);
       if (unfilled_bl.isNotEmpty()) {
@@ -1646,6 +1655,9 @@ PeleLM::updateRecyclingPlaneSnapshot()
   if (!m_inlet_recycling.initialized) {
     // Seed: <u> = u_0; fluctuation defined as zero on the seeding sample.
     for (int lev = 0; lev <= finest_level; ++lev) {
+      if (m_inlet_recycling.u_src[lev] == nullptr) {
+        continue;
+      }
       amrex::MultiFab::Copy(
         *m_inlet_recycling.mean_src[lev], *m_inlet_recycling.u_src[lev], 0, 0,
         AMREX_SPACEDIM, 0);
@@ -1676,6 +1688,9 @@ PeleLM::updateRecyclingPlaneSnapshot()
   const amrex::Real one_minus_alpha = 1.0 - alpha;
 
   for (int lev = 0; lev <= finest_level; ++lev) {
+    if (m_inlet_recycling.u_src[lev] == nullptr) {
+      continue;
+    }
     auto& mean = *m_inlet_recycling.mean_src[lev];
     auto& u_src = *m_inlet_recycling.u_src[lev];
     auto& fluct = *m_inlet_recycling.fluct_src[lev];
