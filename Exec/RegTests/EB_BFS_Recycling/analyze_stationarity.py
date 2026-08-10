@@ -33,10 +33,19 @@ WINDOW_TAU = 4.0     # 4 flow-through averaging window
 def read_tempstate(path: Path):
     with path.open() as f:
         rows = list(csv.DictReader(f))
+    # A restarted run re-appends the CSV header line mid-file; skip those
+    # rows. Restarts can also duplicate iterations already in the file
+    # (e.g. restarting from a checkpoint earlier than the last row written
+    # by the previous run); keep the last occurrence of each iteration.
+    by_iter = {}
+    for r in rows:
+        if r["iter"] == "iter":
+            continue
+        by_iter[int(r["iter"])] = r
     return [
-        (int(r["iter"]), float(r["time"]), float(r["dt"]), float(r["kinEnergy"]),
+        (i, float(r["time"]), float(r["dt"]), float(r["kinEnergy"]),
          float(r["enstrophy"]))
-        for r in rows
+        for i, r in sorted(by_iter.items())
     ]
 
 
