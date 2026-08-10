@@ -1,3 +1,5 @@
+<img width="236" height="300" alt="RD100_2026_Winner_Logo" src="https://github.com/user-attachments/assets/e70b1412-ca42-4ca3-9436-acdea37ef722" />
+
 # PeleLMeX
 
 [![AMReX Badge](https://img.shields.io/static/v1?label=%22powered%20by%22&message=%22AMReX%22&color=%22blue%22)](https://amrex-codes.github.io/amrex/)
