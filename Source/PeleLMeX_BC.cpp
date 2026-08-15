@@ -2,6 +2,8 @@
 #include <PeleLMeX_BCfill.H>
 #include <AMReX_FillPatchUtil.H>
 #include <AMReX_REAL.H>
+#include <AMReX_Reduce.H>
+#include <cmath>
 #include <memory>
 #include <queue>
 #ifdef AMREX_USE_EB
@@ -1450,6 +1452,10 @@ PeleLM::buildRecyclingPlaneStorage()
   const bool saved_initialized = m_inlet_recycling.initialized;
   const int saved_n_samples = m_inlet_recycling.n_samples;
 
+  // The flux-control inlet mask lives on the level-0 slab layout; rebuild
+  // it lazily against the new layout.
+  m_recycling_inlet_mask.reset();
+
   m_inlet_recycling.u_src.clear();
   m_inlet_recycling.fluct_src.clear();
   m_inlet_recycling.mean_src.clear();
@@ -1685,6 +1691,9 @@ PeleLM::updateRecyclingPlaneSnapshot()
         *m_inlet_recycling.fluct_src[lev], *m_inlet_recycling.u_src[lev], 0, 0,
         AMREX_SPACEDIM, 0);
     }
+    if (m_inlet_plane_flux_control != 0) {
+      applyRecyclingFluxControl();
+    }
     if (!m_inlet_recycling.initialized) {
       m_inlet_recycling.initialized = true;
       m_inlet_recycling.n_samples = 1;
@@ -1751,6 +1760,294 @@ PeleLM::updateRecyclingPlaneSnapshot()
       mean, one_minus_alpha, mean, 0, alpha, u_src, 0, 0, AMREX_SPACEDIM, 0);
   }
   ++m_inlet_recycling.n_samples;
+}
+
+amrex::Real
+PeleLM::slabVolumeFlux(
+  const amrex::MultiFab& a_slab,
+  int a_comp,
+  const amrex::iMultiFab* a_mask,
+  const amrex::IntVect& a_mask_shift)
+{
+  // Cell face area transverse to the plane direction at level 0. Under mesh
+  // mapping this is the unmapped area, but the controller only ever uses
+  // RATIOS of integrals computed with identical weights, so a metric factor
+  // common to target and sample cancels.
+  const auto dx = geom[0].CellSizeArray();
+  amrex::Real dA = 1.0;
+  for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
+    if (idim != m_inlet_plane_dir) {
+      dA *= dx[idim];
+    }
+  }
+
+  amrex::ReduceOps<amrex::ReduceOpSum> reduce_op;
+  amrex::ReduceData<amrex::Real> reduce_data(reduce_op);
+  using ReduceTuple = typename decltype(reduce_data)::Type;
+
+  // a_slab's BoxArray is the (possibly shifted) level-0 slab BoxArray with
+  // the slab's DistributionMapping, and so is the mask's, so MFIter indices
+  // correspond 1:1 between the two.
+  for (amrex::MFIter mfi(a_slab); mfi.isValid(); ++mfi) {
+    const amrex::Box& bx = mfi.validbox();
+    auto const& u_arr = a_slab.const_array(mfi, a_comp);
+    const bool have_mask = (a_mask != nullptr);
+    auto const& mask_arr = have_mask ? a_mask->const_array(mfi)
+                                     : amrex::Array4<const int>{};
+    const int s0 = a_mask_shift[0];
+    const int s1 = (AMREX_SPACEDIM > 1) ? a_mask_shift[1] : 0;
+    const int s2 = (AMREX_SPACEDIM > 2) ? a_mask_shift[2] : 0;
+    reduce_op.eval(
+      bx, reduce_data,
+      [=] AMREX_GPU_DEVICE(int i, int j, int k) -> ReduceTuple {
+        amrex::Real m = 1.0;
+        if (have_mask) {
+          m = static_cast<amrex::Real>(mask_arr(i - s0, j - s1, k - s2));
+        }
+        return {m * u_arr(i, j, k)};
+      });
+  }
+
+  amrex::Real sum = amrex::get<0>(reduce_data.value(reduce_op));
+  amrex::ParallelDescriptor::ReduceRealSum(sum);
+  return sum * dA;
+}
+
+amrex::Real
+PeleLM::computeRecyclingTargetFlow(amrex::Orientation::Side a_side)
+{
+  const int planeDir = m_inlet_plane_dir;
+  const amrex::Box& domain = geom[0].Domain();
+
+  // Fill one ghost layer of a level-0 velocity MultiFab from bcnormal alone:
+  // the recycling preload and synthetic-turbulence injection are disabled in
+  // the fill functor, so the ghost cells receive the problem's target mean
+  // inflow profile (a bcnormal that increments a preloaded value increments
+  // zero here, which is the same thing).
+  amrex::MultiFab vel(grids[0], dmap[0], AMREX_SPACEDIM, 1);
+  vel.setVal(0.0);
+
+  // Keep only ext_dir faces; everything else is bogus so the fill functor
+  // leaves it alone (same construction as setInflowBoundaryVel).
+  auto realVelBCRec = fetchBCRecArray(VELX, AMREX_SPACEDIM);
+  amrex::Vector<amrex::BCRec> dummyVelBCRec(AMREX_SPACEDIM);
+  for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
+    for (int idim2 = 0; idim2 < AMREX_SPACEDIM; ++idim2) {
+      dummyVelBCRec[idim].setLo(
+        idim2, (realVelBCRec[idim].lo(idim2) == amrex::BCType::ext_dir)
+                 ? amrex::BCType::ext_dir
+                 : amrex::BCType::bogus);
+      dummyVelBCRec[idim].setHi(
+        idim2, (realVelBCRec[idim].hi(idim2) == amrex::BCType::ext_dir)
+                 ? amrex::BCType::ext_dir
+                 : amrex::BCType::bogus);
+    }
+  }
+
+  ProbParm const* lprobparm = prob_parm_d;
+  auto const* lpmfdata = pmf_data.device_parm();
+  amrex::PhysBCFunct<
+    amrex::GpuBndryFuncFab<PeleLMCCFillExtDirState<ProblemSpecificFunctions>>>
+    bndry_func(
+      geom[0], dummyVelBCRec,
+      PeleLMCCFillExtDirState<ProblemSpecificFunctions>{
+        lprobparm, lpmfdata, m_nAux, /*do_turbInflow=*/0,
+        /*do_inletFromPlane=*/0, m_inlet_plane_dir, /*recycling_full=*/0,
+        m_map_eval});
+  bndry_func(vel, 0, AMREX_SPACEDIM, vel.nGrowVect(), m_cur_time, 0);
+
+  // Copy the innermost ghost layer onto the slab layout and integrate over
+  // the inlet-face fluid footprint, i.e. exactly the cross-section (and the
+  // same quadrature) that the recycled sample is injected into.
+  const int ghostIdx = (a_side == amrex::Orientation::low)
+                         ? domain.smallEnd(planeDir) - 1
+                         : domain.bigEnd(planeDir) + 1;
+  const amrex::MultiFab& slab0 = *m_inlet_recycling.fluct_src[0];
+  const int srcIndex = computeRecyclingSrcIndex(0);
+  const amrex::IntVect shift_iv =
+    amrex::BASISV(planeDir) * (ghostIdx - srcIndex);
+  amrex::BoxArray shifted_ba(slab0.boxArray());
+  shifted_ba.shift(shift_iv);
+  amrex::MultiFab bc_slab(
+    shifted_ba, slab0.DistributionMap(), AMREX_SPACEDIM, 0);
+  bc_slab.ParallelCopy(vel, 0, 0, AMREX_SPACEDIM, 1, 0);
+
+  const amrex::IntVect mask_shift =
+    amrex::BASISV(planeDir) * (ghostIdx - m_recycling_inlet_mask_index);
+  return slabVolumeFlux(
+    bc_slab, planeDir, m_recycling_inlet_mask.get(), mask_shift);
+}
+
+void
+PeleLM::applyRecyclingFluxControl()
+{
+  // Bulk mass-flux controller for full-mode recycling. The recycled inflow
+  // is a feedback loop that carries no memory of the intended flow rate;
+  // any net div(u) between the inlet and the recycle plane (wall heat
+  // transfer, heat release) biases the loop and the bulk flow drifts until
+  // the inlet reverses. Rescale the injection buffer's normal component so
+  // the injected volumetric flow matches the bcnormal inflow target.
+  //
+  // The correction is multiplicative on the normal component only: it
+  // preserves no-slip at walls and the sampled profile shape, and leaves
+  // the transverse fluctuations untouched.
+  const int planeDir = m_inlet_plane_dir;
+
+  if (m_inlet_recycling.fluct_src.empty() || !m_inlet_recycling.fluct_src[0]) {
+    return;
+  }
+
+  // Which side(s) of planeDir carry an ext_dir (inflow) velocity BC. Same
+  // convention as fillFromRecyclingPlane: all velocity components on a face
+  // must agree on ext_dir.
+  auto velBCRec = fetchBCRecArray(VELX, AMREX_SPACEDIM);
+  auto faceIsExtDir = [&](amrex::Orientation::Side side) {
+    int n_extdir = 0;
+    for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
+      const int bc = (side == amrex::Orientation::low)
+                       ? velBCRec[idim].lo()[planeDir]
+                       : velBCRec[idim].hi()[planeDir];
+      if (bc == amrex::BCType::ext_dir) {
+        ++n_extdir;
+      }
+    }
+    return n_extdir == AMREX_SPACEDIM;
+  };
+  const bool is_lo = faceIsExtDir(amrex::Orientation::low);
+  const bool is_hi = faceIsExtDir(amrex::Orientation::high);
+  if (is_lo && is_hi) {
+    if (!m_warned_recycling_flux_both_sides) {
+      m_warned_recycling_flux_both_sides = true;
+      amrex::Print()
+        << "WARNING: recycling flux control is disabled because both faces "
+           "in inlet_plane_dir are inflow; a single bulk correction cannot "
+           "serve two opposed inlets fed from one sampling plane.\n";
+    }
+    return;
+  }
+  if (!is_lo && !is_hi) {
+    return;
+  }
+
+  // Lazily build the inlet-face fluid footprint on the slab layout: the
+  // 0/1 mask of the first interior cell layer at the inflow face. Both
+  // flux integrals are restricted to it, so the controller anchors the
+  // flow that is actually injected even when the sampling plane sits in a
+  // wider cross-section (e.g. past an expansion) and so that bcnormal
+  // values behind an embedded boundary never contaminate the target.
+  const amrex::Box& domain0 = geom[0].Domain();
+  const int inletIdx =
+    is_lo ? domain0.smallEnd(planeDir) : domain0.bigEnd(planeDir);
+  if (!m_recycling_inlet_mask) {
+    m_recycling_inlet_mask_index = inletIdx;
+    const amrex::MultiFab& slab0 = *m_inlet_recycling.fluct_src[0];
+    const int srcIndex0 = computeRecyclingSrcIndex(0);
+    amrex::BoxArray inlet_ba(slab0.boxArray());
+    inlet_ba.shift(amrex::BASISV(planeDir) * (inletIdx - srcIndex0));
+    m_recycling_inlet_mask = std::make_unique<amrex::iMultiFab>(
+      inlet_ba, slab0.DistributionMap(), 1, 0);
+#ifdef AMREX_USE_EB
+    auto inlet_eb_factory = amrex::makeEBFabFactory(
+      geom[0], inlet_ba, slab0.DistributionMap(), {AMREX_D_DECL(0, 0, 0)},
+      amrex::EBSupport::basic);
+    const auto& inlet_flags = inlet_eb_factory->getMultiEBCellFlagFab();
+    auto& inlet_mask = *m_recycling_inlet_mask;
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
+#endif
+    for (amrex::MFIter mfi(inlet_mask, amrex::TilingIfNotGPU()); mfi.isValid();
+         ++mfi) {
+      const amrex::Box& bx = mfi.tilebox();
+      const auto& flagarr = inlet_flags.const_array(mfi);
+      auto const& mask_arr = inlet_mask.array(mfi);
+      amrex::ParallelFor(
+        bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          mask_arr(i, j, k) = flagarr(i, j, k).isCovered() ? 0 : 1;
+        });
+    }
+#else
+    m_recycling_inlet_mask->setVal(1);
+#endif
+    const amrex::Long n_fluid = m_recycling_inlet_mask->sum(0);
+    amrex::Print() << " Recycling flux control: inlet fluid footprint = "
+                   << n_fluid << " of "
+                   << m_recycling_inlet_mask->boxArray().numPts()
+                   << " face cells\n";
+  }
+
+  // Lazily capture the target flow. Signed along +planeDir, so target and
+  // sample share a sign for either inflow side and gamma is positive for a
+  // healthy through-flow. Assumes a statistically steady bcnormal inflow.
+  if (std::isnan(m_inlet_plane_target_flow)) {
+    m_inlet_plane_target_flow = computeRecyclingTargetFlow(
+      is_lo ? amrex::Orientation::low : amrex::Orientation::high);
+    amrex::Print() << " Recycling flux control: target inlet flow rate = "
+                   << m_inlet_plane_target_flow << " (measured from bcnormal)"
+                   << "\n";
+  }
+  const amrex::Real q_target = m_inlet_plane_target_flow;
+  if (std::abs(q_target) < std::numeric_limits<amrex::Real>::min()) {
+    if (!m_warned_recycling_flux_disabled) {
+      m_warned_recycling_flux_disabled = true;
+      amrex::Print()
+        << "WARNING: recycling flux control is disabled because the target "
+           "inlet flow rate is zero; set "
+           "peleLM.inlet_plane_target_flow_rate or provide a bcnormal with "
+           "a net through-flow.\n";
+    }
+    return;
+  }
+
+  // The level-0 slab always spans the full transverse cross-section;
+  // restricted to the inlet footprint this is the through-flow of the part
+  // of the sample about to be injected. (EB-covered cells at the sampling
+  // plane were zeroed when the snapshot was taken.)
+  const int srcIndex0 = computeRecyclingSrcIndex(0);
+  const amrex::Real q_sample = slabVolumeFlux(
+    *m_inlet_recycling.u_src[0], planeDir, m_recycling_inlet_mask.get(),
+    amrex::BASISV(planeDir) * (srcIndex0 - m_recycling_inlet_mask_index));
+
+  // A sample flux that collapsed or reversed cannot be rescaled into a
+  // meaningful inflow; by the time this trips the run is unsalvageable, so
+  // fail loudly rather than inject garbage. (A fresh start needs an initial
+  // condition that carries the target through-flow past the sampling plane;
+  // full mode has always required that to bootstrap.)
+  if (q_sample * q_target <= 0.0 || std::abs(q_sample) < 0.05 * std::abs(q_target)) {
+    amrex::Print() << "Recycling flux control: sampled plane flow rate = "
+                   << q_sample << ", target = " << q_target << "\n";
+    amrex::Abort(
+      "applyRecyclingFluxControl: the through-flow at the recycling plane "
+      "collapsed or reversed (less than 5% of the target inlet flow, or "
+      "opposite sign). The recycled inflow can no longer be rescaled to "
+      "the target flow rate.");
+  }
+
+  amrex::Real gamma = q_target / q_sample;
+  constexpr amrex::Real gamma_min = 0.5;
+  constexpr amrex::Real gamma_max = 2.0;
+  if (gamma < gamma_min || gamma > gamma_max) {
+    const amrex::Real gamma_clipped =
+      amrex::min(gamma_max, amrex::max(gamma_min, gamma));
+    amrex::Print() << "WARNING: recycling flux control factor " << gamma
+                   << " clipped to " << gamma_clipped
+                   << "; the sampled plane flow is far from the target "
+                      "inlet flow.\n";
+    gamma = gamma_clipped;
+  }
+
+  for (int lev = 0; lev <= finest_level; ++lev) {
+    if (m_inlet_recycling.fluct_src[lev] == nullptr) {
+      continue;
+    }
+    m_inlet_recycling.fluct_src[lev]->mult(gamma, planeDir, 1, 0);
+  }
+  m_recycling_last_gamma = gamma;
+
+  if (m_verbose > 2) {
+    amrex::Print() << "   Recycling flux control: plane flow = " << q_sample
+                   << ", target = " << q_target << ", gamma = " << gamma
+                   << "\n";
+  }
 }
 
 void

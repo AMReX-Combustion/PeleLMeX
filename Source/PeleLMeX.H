@@ -2,6 +2,8 @@
 #define PeleLMeX_H
 
 // PeleLMeX includes
+#include <limits>
+
 #include "PeleLMeX_UserKeys.H"
 #include "PeleLMeX_Index.H"
 #include "PeleLMeX_Derive.H"
@@ -1233,6 +1235,25 @@ public:
 
   void fillFromRecyclingPlane(amrex::MultiFab& a_vel, int vel_comp, int lev);
 
+  // Full-mode mass-flux control: rescale the injection buffer's normal
+  // velocity so the injected volumetric flow matches the bcnormal target.
+  // Called from updateRecyclingPlaneSnapshot after the buffer is populated.
+  void applyRecyclingFluxControl();
+  // Volumetric flow of the bcnormal inflow profile through the inlet face
+  // on the given side of m_inlet_plane_dir, integrated over the inlet-face
+  // fluid footprint (recycling preload and synthetic turbulence disabled,
+  // so this is the problem's target mean inflow).
+  amrex::Real computeRecyclingTargetFlow(amrex::Orientation::Side a_side);
+  // Area-weighted integral of component a_comp over a (possibly shifted)
+  // copy of the level-0 recycling slab, restricted to a_mask (0/1; may be
+  // null). a_mask_shift maps a_slab's cell indices onto the mask's:
+  // mask_iv = slab_iv - a_mask_shift.
+  amrex::Real slabVolumeFlux(
+    const amrex::MultiFab& a_slab,
+    int a_comp,
+    const amrex::iMultiFab* a_mask,
+    const amrex::IntVect& a_mask_shift);
+
   // (Re)build per-level thin-slab storage for the recycling plane.
   void buildRecyclingPlaneStorage();
   // Sample state at the recycling plane, update running mean and store the
@@ -1905,16 +1926,52 @@ public:
   // The standard ext_dir BC continues to set u_inlet_target_mean; this
   // machinery only supplies the bracketed fluctuation.
   // In 'full' mode, the entire sampled velocity is injected instead:
-  //   u_inlet(t) = u_src(t)
+  //   u_inlet(t) = gamma(t) * u_src(t)
   // No running mean is maintained. The boundary fill preserves the sampled
   // velocity on the recycling face (velocity writes from bcnormal are
   // ignored there; see PeleLMCCFillExtDirState), so problem setups run
   // unmodified in either mode.
+  //
+  // gamma is the full-mode mass-flux controller (applyRecyclingFluxControl):
+  // the normal component of the injected sample is rescaled every snapshot
+  // so the injected volumetric flow matches the bcnormal inflow target.
+  // Without it the inlet flow rate is a pure feedback loop with no anchor:
+  // in the low-Mach setting any net heat loss (or gain) between the inlet
+  // and the recycle plane makes div(u) != 0 in between, so the plane
+  // returns a strictly smaller (larger) volume flux than the inlet
+  // received, and the recycled bulk flow drifts monotonically until the
+  // inlet back-flows. An adiabatic constant-area duct is merely neutrally
+  // stable; the controller turns both cases into a hard anchor.
+  // Controlled by peleLM.inlet_plane_flux_control (default on in full
+  // mode); target measured from bcnormal at first use or overridden with
+  // peleLM.inlet_plane_target_flow_rate.
   enum class RecyclingMode { Fluctuations, Full };
   RecyclingMode m_recycling_mode = RecyclingMode::Fluctuations;
   int m_use_inlet_from_plane = 0;
   int m_inlet_plane_dir = -1;
   amrex::Real m_inlet_plane_position = 0.0;
+  // Full-mode mass-flux control (see applyRecyclingFluxControl).
+  int m_inlet_plane_flux_control = 1;
+  // Target volumetric flow through the inlet cross-section (EB-masked,
+  // signed along +inlet_plane_dir). NaN = measure from bcnormal on first
+  // use; an input value overrides the measurement.
+  amrex::Real m_inlet_plane_target_flow =
+    std::numeric_limits<amrex::Real>::quiet_NaN();
+  // Most recent flux-control factor (diagnostics).
+  amrex::Real m_recycling_last_gamma = 1.0;
+  // One-shot warning latches for flux control.
+  bool m_warned_recycling_flux_both_sides = false;
+  bool m_warned_recycling_flux_disabled = false;
+  // Fluid footprint (1) vs EB-covered (0) of the first interior cell layer
+  // at the inflow face, on the level-0 slab layout shifted to that layer.
+  // This is the cross-section the recycled sample is actually injected
+  // into, and both flux-control integrals are restricted to it (the plane
+  // and the inlet need not share a cross-section, e.g. a sampling plane
+  // past an expansion). Built lazily by applyRecyclingFluxControl and
+  // invalidated whenever the slab storage is rebuilt.
+  std::unique_ptr<amrex::iMultiFab> m_recycling_inlet_mask;
+  // planeDir cell index of the layer the inlet mask lives on.
+  int m_recycling_inlet_mask_index = 0;
   // Time-averaging window (in simulation time units) for the running source-
   // plane mean. <=0 falls back to a cumulative average. Fluctuations mode
   // only.

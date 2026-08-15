@@ -190,6 +190,21 @@ flow is slowly evolving.
    problem setup needs no modification. The warmup and averaging-window
    controls have no effect in full mode.
 
+.. warning::
+   Full mode relies on its mass-flux control (on by default;
+   ``peleLM.inlet_plane_flux_control``) whenever the duct between the inlet
+   and the sampling plane exchanges heat with the flow — e.g. an
+   isothermal step wall colder than the incoming gas. Wall heat loss makes
+   the sampled volume flux systematically smaller than the inlet's
+   (:math:`\nabla \cdot \mathbf{u} < 0` under cooling at low Mach), and an
+   uncontrolled full-mode loop re-injects that deficit every pass: the
+   bulk flow decays monotonically and the inlet eventually reverses. The
+   controller rescales each injected sample to the ``bcnormal`` target
+   flow rate, which restores a well-posed configuration (developed duct
+   turbulence in the momentum field, with the inlet thermodynamic state
+   re-imposed at the boundary as a thermal entry condition). See
+   :doc:`LMeXControls` for details.
+
 Numerical parameters
 ^^^^^^^^^^^^^^^^^^^^
 
