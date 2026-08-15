@@ -1885,12 +1885,19 @@ PeleLM::applyRecyclingFluxControl()
   // is a feedback loop that carries no memory of the intended flow rate;
   // any net div(u) between the inlet and the recycle plane (wall heat
   // transfer, heat release) biases the loop and the bulk flow drifts until
-  // the inlet reverses. Rescale the injection buffer's normal component so
-  // the injected volumetric flow matches the bcnormal inflow target.
+  // the inlet reverses. Rescale the injection buffer so the injected
+  // volumetric flow matches the bcnormal inflow target.
   //
-  // The correction is multiplicative on the normal component only: it
-  // preserves no-slip at walls and the sampled profile shape, and leaves
-  // the transverse fluctuations untouched.
+  // The correction is multiplicative and applied to ALL velocity
+  // components: the sampled fluctuation field is (to low-Mach accuracy)
+  // solenoidal, with continuity coupling the normal and tangential
+  // components mode by mode, so a uniform scaling preserves that structure
+  // (div(gamma*u) = gamma*div(u)) and the injected turbulence passes
+  // through the inlet-adjacent projection intact. Scaling the normal
+  // component alone would leave an irrotational residual that the
+  // projection removes by distorting both components near the inlet.
+  // No-slip at walls is preserved (gamma*0 = 0), and the relative
+  // turbulence intensity u'/U of the sample is carried through unchanged.
   const int planeDir = m_inlet_plane_dir;
 
   if (m_inlet_recycling.fluct_src.empty() || !m_inlet_recycling.fluct_src[0]) {
@@ -2039,7 +2046,7 @@ PeleLM::applyRecyclingFluxControl()
     if (m_inlet_recycling.fluct_src[lev] == nullptr) {
       continue;
     }
-    m_inlet_recycling.fluct_src[lev]->mult(gamma, planeDir, 1, 0);
+    m_inlet_recycling.fluct_src[lev]->mult(gamma, 0, AMREX_SPACEDIM, 0);
   }
   m_recycling_last_gamma = gamma;
 

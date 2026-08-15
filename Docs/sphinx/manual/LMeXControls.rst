@@ -409,8 +409,14 @@ and the sampled :math:`Q_{\text{src}}` are EB-masked volumetric flow rates
 through the same cross-section. :math:`Q_0` is measured once from the
 ``bcnormal`` inflow profile (or set explicitly via
 ``peleLM.inlet_plane_target_flow_rate``). The rescaling is multiplicative
-on the normal component only, preserving no-slip walls, the sampled
-profile shape, and the transverse fluctuations. :math:`\gamma` is clipped
+and applied to all velocity components: the sampled fluctuation field is
+solenoidal to low-Mach accuracy, with continuity coupling the normal and
+tangential components mode by mode, so the uniform scaling preserves that
+structure and the injected turbulence passes through the inlet-adjacent
+projection intact (a normal-only scaling would leave an irrotational
+residual for the projection to remove, distorting the tangential
+fluctuations). No-slip walls, the sampled profile shape, and the sample's
+relative turbulence intensity are all preserved. :math:`\gamma` is clipped
 to :math:`[0.5, 2]` (with a warning), and the run aborts if the sampled
 through-flow collapses below 5% of the target or reverses, since a
 collapsed sample can no longer be rescaled into a meaningful inflow.

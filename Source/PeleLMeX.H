@@ -1933,8 +1933,9 @@ public:
   // unmodified in either mode.
   //
   // gamma is the full-mode mass-flux controller (applyRecyclingFluxControl):
-  // the normal component of the injected sample is rescaled every snapshot
-  // so the injected volumetric flow matches the bcnormal inflow target.
+  // every snapshot the injected sample is rescaled (all velocity
+  // components, preserving the sample's solenoidal structure) so the
+  // injected volumetric flow matches the bcnormal inflow target.
   // Without it the inlet flow rate is a pure feedback loop with no anchor:
   // in the low-Mach setting any net heat loss (or gain) between the inlet
   // and the recycle plane makes div(u) != 0 in between, so the plane
