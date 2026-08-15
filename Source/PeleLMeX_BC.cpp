@@ -1792,8 +1792,8 @@ PeleLM::slabVolumeFlux(
     const amrex::Box& bx = mfi.validbox();
     auto const& u_arr = a_slab.const_array(mfi, a_comp);
     const bool have_mask = (a_mask != nullptr);
-    auto const& mask_arr = have_mask ? a_mask->const_array(mfi)
-                                     : amrex::Array4<const int>{};
+    auto const& mask_arr =
+      have_mask ? a_mask->const_array(mfi) : amrex::Array4<const int>{};
     const int s0 = a_mask_shift[0];
     const int s1 = (AMREX_SPACEDIM > 1) ? a_mask_shift[1] : 0;
     const int s2 = (AMREX_SPACEDIM > 2) ? a_mask_shift[2] : 0;
@@ -2019,7 +2019,9 @@ PeleLM::applyRecyclingFluxControl()
   // fail loudly rather than inject garbage. (A fresh start needs an initial
   // condition that carries the target through-flow past the sampling plane;
   // full mode has always required that to bootstrap.)
-  if (q_sample * q_target <= 0.0 || std::abs(q_sample) < 0.05 * std::abs(q_target)) {
+  if (
+    q_sample * q_target <= 0.0 ||
+    std::abs(q_sample) < 0.05 * std::abs(q_target)) {
     amrex::Print() << "Recycling flux control: sampled plane flow rate = "
                    << q_sample << ", target = " << q_target << "\n";
     amrex::Abort(
