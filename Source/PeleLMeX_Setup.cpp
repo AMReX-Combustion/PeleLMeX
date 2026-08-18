@@ -369,6 +369,64 @@ PeleLM::readParameters()
       m_inlet_plane_warmup_steps >= 0,
       "peleLM.inlet_plane_warmup_steps must be non-negative when "
       "peleLM.use_inlet_from_plane is enabled");
+
+    std::string recycling_mode = "fluctuations";
+    pp.query("recycling_mode", recycling_mode);
+    if (recycling_mode == "fluctuations") {
+      m_recycling_mode = RecyclingMode::Fluctuations;
+    } else if (recycling_mode == "full") {
+      m_recycling_mode = RecyclingMode::Full;
+    } else {
+      amrex::Abort(
+        "peleLM.recycling_mode must be 'fluctuations' or 'full', got '" +
+        recycling_mode + "'");
+    }
+    pp.query("inlet_plane_flux_control", m_inlet_plane_flux_control);
+    {
+      amrex::Real target_flow = 0.0;
+      if (pp.query("inlet_plane_target_flow_rate", target_flow) != 0) {
+        m_inlet_plane_target_flow = target_flow;
+      }
+    }
+    if (
+      m_recycling_mode == RecyclingMode::Fluctuations &&
+      (pp.contains("inlet_plane_flux_control") ||
+       pp.contains("inlet_plane_target_flow_rate"))) {
+      amrex::Print()
+        << "WARNING: peleLM.inlet_plane_flux_control and "
+           "peleLM.inlet_plane_target_flow_rate are ignored when "
+           "peleLM.recycling_mode = fluctuations; the mean inflow is "
+           "anchored by bcnormal in that mode.\n";
+    }
+    if (m_recycling_mode == RecyclingMode::Full) {
+      if (m_inlet_plane_flux_control != 0) {
+        amrex::Print()
+          << " Recycling in full mode with mass-flux control: the injected "
+             "sample is rescaled to the target inlet flow rate every "
+             "step.\n";
+      } else {
+        amrex::Print()
+          << "WARNING: peleLM.inlet_plane_flux_control = 0: full-mode "
+             "recycling has no anchor on the inlet flow rate. Any net heat "
+             "transfer between the inlet and the recycling plane will "
+             "drive a monotonic drift of the bulk flow (see the recycling "
+             "docs); use this only for adiabatic constant-area ducts.\n";
+      }
+      // These controls belong to the running-mean machinery and have no
+      // effect in full mode.
+      if (m_inlet_plane_warmup_steps > 0) {
+        amrex::Print()
+          << "WARNING: peleLM.inlet_plane_warmup_steps is ignored when "
+             "peleLM.recycling_mode = full; injection begins with the "
+             "first snapshot.\n";
+      }
+      if (m_inlet_plane_avg_window > 0.0) {
+        amrex::Print()
+          << "WARNING: peleLM.inlet_plane_avg_window is ignored when "
+             "peleLM.recycling_mode = full; no running mean is "
+             "maintained.\n";
+      }
+    }
   }
 
 #ifdef PELE_USE_PLASMA

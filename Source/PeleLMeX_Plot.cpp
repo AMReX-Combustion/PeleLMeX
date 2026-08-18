@@ -779,8 +779,13 @@ PeleLM::WriteHeader(const std::string& name, const bool is_checkpoint) const
     // samples were available for that level yet; older checkpoints without
     // the marker remain readable because the restart code treats the absence
     // of the marker as "inactive".
+    // Only fluctuations mode carries restart state (the running mean); in
+    // full mode the injection buffer reseeds from the first post-restart
+    // snapshot and nothing needs to be checkpointed.
     const bool recycling_active =
-      (m_use_inlet_from_plane != 0) && m_inlet_recycling.initialized &&
+      (m_use_inlet_from_plane != 0) &&
+      (m_recycling_mode == RecyclingMode::Fluctuations) &&
+      m_inlet_recycling.initialized &&
       static_cast<int>(m_inlet_recycling.mean_src.size()) >= finest_level + 1;
     if ((m_use_inlet_from_plane != 0) && recycling_active) {
       HeaderFile << "RecyclingPlane: " << "\n";
@@ -868,9 +873,12 @@ PeleLM::WriteCheckPointFile()
       }
     }
 
-    // Per-level recycling-plane running mean (only when active and seeded).
+    // Per-level recycling-plane running mean (only when active and seeded;
+    // fluctuations mode only, matching the header block in WriteHeader).
     if (
-      (m_use_inlet_from_plane != 0) && m_inlet_recycling.initialized &&
+      (m_use_inlet_from_plane != 0) &&
+      (m_recycling_mode == RecyclingMode::Fluctuations) &&
+      m_inlet_recycling.initialized &&
       lev < static_cast<int>(m_inlet_recycling.mean_src.size()) &&
       m_inlet_recycling.mean_src[lev]) {
       amrex::VisMF::Write(
@@ -1138,7 +1146,10 @@ PeleLM::ReadCheckPointFile()
   // temporary MultiFab (built with the on-disk BoxArray) into the rebuilt
   // slab (which uses the current run's maxGridSize), so a maxGridSize change
   // between the original run and the restart is handled transparently.
-  if (have_recycling_chk && (m_use_inlet_from_plane != 0)) {
+  const bool recycling_fluct_active =
+    (m_use_inlet_from_plane != 0) &&
+    (m_recycling_mode == RecyclingMode::Fluctuations);
+  if (have_recycling_chk && recycling_fluct_active) {
     buildRecyclingPlaneStorage();
     for (int lev = 0; lev <= finest_level; ++lev) {
       if (
@@ -1174,7 +1185,14 @@ PeleLM::ReadCheckPointFile()
       << "WARNING: Restart checkpoint contains RecyclingPlane data, but "
       << "peleLM.use_inlet_from_plane = 0 in this run. Ignoring checkpointed "
       << "recycling-plane running mean.\n";
-  } else if ((!have_recycling_chk) && (m_use_inlet_from_plane != 0)) {
+  } else if (have_recycling_chk) {
+    // use_inlet_from_plane != 0 but recycling_mode = full: the mean belongs
+    // to fluctuations mode and full mode needs no restored state (the
+    // injection buffer reseeds from the first post-restart snapshot).
+    amrex::Print()
+      << "WARNING: peleLM.recycling_mode = full; ignoring the checkpointed "
+      << "recycling-plane running mean.\n";
+  } else if ((!have_recycling_chk) && recycling_fluct_active) {
     amrex::Print()
       << "WARNING: peleLM.use_inlet_from_plane != 0 in this run, but the "
       << "restart checkpoint does not contain RecyclingPlane data. "
