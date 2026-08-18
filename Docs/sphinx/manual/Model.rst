@@ -29,7 +29,7 @@ In a nutshell, `PeleLMeX` features include:
 * Physics & numerics :
    * Finite volume, block-structured AMR approach
    * 2D-Cartesian, 2D-Axisymmetric and 3D support
-   * Combustion (transport, kinetics, thermodynamics) models based on Cantera and EGLib through `PelePhysics <https://github.com/AMReX-Combustion/PelePhysics>`_
+   * Combustion (transport, kinetics, thermodynamics) models based on Cantera and EGLib through `PelePhysics <https://github.com/Pele-Suite/PelePhysics>`_
    * Complex geometries using Embedded Boundaries (EB)
    * Optional grid-aligned mesh mapping; several specific mappings provided
    * Second-order projection methodology for enforcing the low Mach number constraint
@@ -37,7 +37,7 @@ In a nutshell, `PeleLMeX` features include:
    * Several second-order Godunov integration schemes for advection
    * Temporally implicit viscosity, species mass diffusion, thermal conductivity, chemical kinetics
    * Closed chamber algorithm enables time-varying background pressure changes
-   * Lagrangian spray description and Hybrid Method of Moments Soot modeling using `PelePhysics <https://github.com/AMReX-Combustion/PelePhysics>`_ (formerly these were part of `PeleMP <https://github.com/AMReX-Combustion/PeleMP>`_).
+   * Lagrangian spray description and Hybrid Method of Moments Soot modeling using `PelePhysics <https://github.com/Pele-Suite/PelePhysics>`_ (formerly these were part of `PeleMP <https://github.com/Pele-Suite/PeleMP>`_).
 
 Mathematical background
 -----------------------
