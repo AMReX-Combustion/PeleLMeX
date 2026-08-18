@@ -9,13 +9,21 @@
 # the mesh itself is still smooth; the cost is anisotropy, cosh^2(2.4) =
 # 30.9 in the MAC/nodal operators.
 #
-# EXPECT TO NEED HYPRE.  LidDrivenCavity documents the default MLMG path
-# stalling by cosh^2 = 14.15, though it blames the cavity's corner
-# singularity coupling through stretched cells -- this case is periodic
-# in x with slip walls in y and has no corner singularity, so plain MLMG
-# may well cope.  Try it without the hypre block below first; if the MAC
-# or nodal residual stops falling, uncomment it and rebuild with
-# USE_HYPRE = TRUE.
+# REQUIRES HYPRE.  Measured, not guessed: on the default AMReX MLMG path
+# this configuration fails immediately.  With the hypre block at the
+# bottom of this file it runs, and the rollup looks right.
+#
+# Worth recording, because it rules out the explanation offered in
+# LidDrivenCavity/input.2d, which attributes the beta = 2 MLMG stall there
+# to the cavity's corner-singularity divergence coupling through stretched
+# cells.  This case is periodic in x with slip walls in y and has no
+# corner singularity at all, and it still fails -- so operator anisotropy
+# alone (cosh^2(2.4) = 30.9 here) is sufficient to break MLMG.  Expect any
+# strongly stretched case to need a hypre bottom solver whatever its
+# geometry.
+#
+# Build with USE_HYPRE = TRUE.  The PeriodicCases GNUmakefile ships FALSE
+# because no other input in this directory needs it.
 #
 # Why this case: InteriorStretchMap refines an interior point and
 # coarsens away from it in both directions, so it wants a problem whose
@@ -44,10 +52,11 @@
 #   0.6, 1.0 (here)  |  0.485 mm   |      6          | 1.29 |  2.38
 #   1.6, 2.4 (beta2) |  0.154 mm   |     18          | 4.05 | 30.88
 #
-# The gain at the fine point is exactly the normalisation N = G(beta),
-# so a HYPRE-free configuration (cosh^2 ~ 2.4) buys about 1.3x.  See
-# input.2d_ShearLayer_beta2 for the version that actually shows the map
-# off; it likely needs hypre.
+# The gain at the fine point is exactly the normalisation N = G(beta), so
+# a configuration inside the default MLMG range (cosh^2 ~ 2.4) buys about
+# 1.3x.  See input.2d_ShearLayer_beta2 for the version that actually shows
+# the map off -- it reaches 4.05x but *requires* hypre: plain MLMG fails
+# immediately there.
 #
 # Setting InteriorStretchMap.beta_lo/beta_hi to 0 0 makes this an exact
 # identity map (detJ = 1, fac = 1) and must reproduce the same run with
@@ -123,7 +132,8 @@ amr.plot_file = plt_shear_b2_
 amr.check_int = -1
 amr.derive_plot_vars = avg_pressure mag_vort
 
-# Uncomment if the projections stall (requires USE_HYPRE = TRUE):
+# Required at this stretching -- see the note at the top of this file.
+# Needs an executable built with USE_HYPRE = TRUE.
 mac_proj.use_mlhypre     = 1
 nodal_proj.bottom_solver = hypre
 nodal_proj.maxiter       = 10000

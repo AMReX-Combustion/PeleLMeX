@@ -65,8 +65,22 @@ Two inputs are provided, both at `64 x 128` (`dy_uniform = 0.625 mm`),
 The resolution gain at the fine point is exactly the normalisation
 `N = G(beta)` — `1.41x` at `beta = 1`, `3.91x` at `beta = 2`, `17x` at
 `beta = 3`.  Staying inside the default MLMG comfort zone
-(`cosh^2 ~ 2.4`) therefore caps the gain near `1.3x`; the `beta2` input
-is the one that shows the map off, and may need `USE_HYPRE = TRUE`.
+(`cosh^2 ~ 2.4`) therefore caps the gain near `1.3x`.
+
+`input.2d_ShearLayer_beta2` is the one that shows the map off, and it
+**requires** an executable built with `USE_HYPRE = TRUE`: on the default
+AMReX MLMG path it fails immediately.  With `mac_proj.use_mlhypre = 1`
+and `nodal_proj.bottom_solver = hypre` it runs and the rollup is clean.
+
+That measurement is worth keeping, because it contradicts the
+explanation in `LidDrivenCavity/input.2d`, which blames that case's
+`beta = 2` MLMG stall on the cavity's corner-singularity divergence
+coupling through stretched cells.  This case is periodic in x with slip
+walls in y and has no corner singularity, and MLMG still fails — so
+operator anisotropy on its own is enough.  Treat a hypre bottom solver
+as a requirement for any strongly stretched mesh, independent of
+geometry.  Where the boundary lies between `cosh^2 = 2.38` (assumed
+fine, untested here) and `cosh^2 = 30.9` (fails) has not been mapped.
 
 Setting both betas to `0 0` gives an exact identity map (`detJ = 1`,
 `fac = 1`) and must reproduce the run with `geometry.mesh_mapping`
