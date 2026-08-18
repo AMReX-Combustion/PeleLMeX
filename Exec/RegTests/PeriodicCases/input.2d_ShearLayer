@@ -31,10 +31,15 @@
 #   1.6, 2.4 (beta2) |  0.154 mm   |     18          | 4.05 | 30.88
 #
 # The gain at the fine point is exactly the normalisation N = G(beta), so
-# a configuration inside the default MLMG range (cosh^2 ~ 2.4) buys about
-# 1.3x.  See input.2d_ShearLayer_beta2 for the version that actually shows
-# the map off -- it reaches 4.05x but *requires* hypre: plain MLMG fails
-# immediately there.
+# this configuration (cosh^2 = 2.38) buys about 1.3x.  Confirmed to run on
+# the default AMReX MLMG path -- no hypre, and the stock PeriodicCases
+# GNUmakefile (USE_HYPRE = FALSE) is enough.
+#
+# See input.2d_ShearLayer_beta2 for the version that actually shows the map
+# off: it reaches 4.05x but *requires* hypre, because plain MLMG fails
+# immediately at cosh^2(2.4) = 30.9.  So somewhere between 2.4 and 31 the
+# default projections give out; this pair brackets it but does not locate
+# it.
 #
 # Setting InteriorStretchMap.beta_lo/beta_hi to 0 0 makes this an exact
 # identity map (detJ = 1, fac = 1) and must reproduce the same run with

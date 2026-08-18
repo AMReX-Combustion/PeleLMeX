@@ -79,8 +79,9 @@ coupling through stretched cells.  This case is periodic in x with slip
 walls in y and has no corner singularity, and MLMG still fails — so
 operator anisotropy on its own is enough.  Treat a hypre bottom solver
 as a requirement for any strongly stretched mesh, independent of
-geometry.  Where the boundary lies between `cosh^2 = 2.38` (assumed
-fine, untested here) and `cosh^2 = 30.9` (fails) has not been mapped.
+geometry.  Both inputs here have been run: `cosh^2 = 2.38` works on the
+default MLMG path and `cosh^2 = 30.9` fails immediately on it, so the
+threshold is bracketed between them but not located.
 
 Setting both betas to `0 0` gives an exact identity map (`detJ = 1`,
 `fac = 1`) and must reproduce the run with `geometry.mesh_mapping`
