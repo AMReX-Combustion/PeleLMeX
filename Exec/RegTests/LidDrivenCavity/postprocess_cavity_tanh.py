@@ -36,7 +36,7 @@ Usage
 
 ::
 
-    python3 postprocess_cavity.py path/to/plt_NNNNN \\
+    python3 postprocess_cavity_tanh.py path/to/plt_NNNNN \\
         --Re 100 --map tanh --beta 2.0 2.0 \\
         --output ./cavity_Re100_profiles
 
@@ -126,6 +126,22 @@ GHIA_V_HORIZ = {
 
 # --------------------------------------------------------------------
 # Mesh-mapping helpers (tanh two-sided stretch)
+#
+# NOTE: this is a *Python re-implementation* of TanhStretchMap's
+# offset formula (Source/Mesh/PeleLMeX_MeshMapEvaluator.H,
+# MeshMapEvaluator::tanh_offset_norm).  It is the one copy of a mapping
+# formula that lives outside that header, it is not compiled, and
+# nothing checks the two against each other -- hence the `_tanh` suffix
+# on this file's name: point it only at TanhStretchMap runs.  Used with
+# any other map (ExpStretchMap, InteriorStretchMap, ...) it silently
+# mis-locates every cell.
+#
+# The map-agnostic alternative, if this script ever needs to grow:
+# runs with `peleLM.plot_mesh_mapping = 1` already carry the exact
+# per-node displacement x_phys - x_xi in the plotfile as the nodal
+# MultiFab `Nu_nd` (components nu_x/nu_y/nu_z).  Reading that instead
+# of re-deriving the formula works for every map, present and future,
+# and cannot drift.
 # --------------------------------------------------------------------
 
 BETA_EPS = 1.0e-8
