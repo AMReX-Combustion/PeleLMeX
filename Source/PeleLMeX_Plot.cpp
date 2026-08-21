@@ -1365,7 +1365,8 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
     if (did_coarsen_base) {
       skip_plt_fill = true;
     } else {
-      source_plt_level = a_lev - m_level_shift; // Read from corresponding plotfile level
+      source_plt_level =
+        a_lev - m_level_shift; // Read from corresponding plotfile level
       if (m_verbose > 0) {
         amrex::Print() << "  Level " << a_lev
                        << ": Reading from plotfile level " << source_plt_level
@@ -1620,9 +1621,9 @@ PeleLM::coarsenLevelFromPlt(
   amrex::BoxArray fineBA = amrex::refine(grids[a_lev], coarsen_ratio);
   amrex::DistributionMapping fineDM(fineBA);
   amrex::MultiFab fineData(fineBA, fineDM, NVAR, 0);
-  
-  // Initialize all components to avoid propagating garbage in uninitialized fields
-  // (e.g., RHORT, plasma/soot fields) when averaging down
+
+  // Initialize all components to avoid propagating garbage in uninitialized
+  // fields (e.g., RHORT, plasma/soot fields) when averaging down
   fineData.setVal(0.0);
 
   // Fill fine data from plotfile level 0 using standard fillPatchFromPlt
