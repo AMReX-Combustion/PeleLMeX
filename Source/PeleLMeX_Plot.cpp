@@ -1620,6 +1620,10 @@ PeleLM::coarsenLevelFromPlt(
   amrex::BoxArray fineBA = amrex::refine(grids[a_lev], coarsen_ratio);
   amrex::DistributionMapping fineDM(fineBA);
   amrex::MultiFab fineData(fineBA, fineDM, NVAR, 0);
+  
+  // Initialize all components to avoid propagating garbage in uninitialized fields
+  // (e.g., RHORT, plasma/soot fields) when averaging down
+  fineData.setVal(0.0);
 
   // Fill fine data from plotfile level 0 using standard fillPatchFromPlt
   // This bypasses the coarsening restriction in PltFileManager
