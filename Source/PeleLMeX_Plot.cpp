@@ -1246,66 +1246,38 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
   // Track whether we coarsened the base level (for skip_plt_fill logic later)
   bool did_coarsen_base = false;
 
-  // Handle multi-level coarsening with peleLM.initDataPlt_coarsen
+  // Handle 2x coarsening with peleLM.initDataPlt_coarsen
   if (m_initDataPlt_coarsen) {
-    // Compute level shift once at level 0
     if (a_lev == 0) {
       m_level_shift = computeLevelShift(pltData);
 
       if (m_level_shift > 0) {
+        amrex::Print() << "  peleLM.initDataPlt_coarsen: Coarsening active\n";
         amrex::Print()
-          << "  peleLM.initDataPlt_coarsen: Level mapping active (shift="
-          << m_level_shift << ")\n";
-        amrex::Print() << "  Plotfile level K will become new level K+"
-                       << m_level_shift << "\n";
+          << "  Plotfile level K will become new level K+1\n";
 
         // Verify we have enough plotfile levels
-        int max_plt_lev = pltData.getNlev() - 1;
-        int max_new_lev = finest_level;
-        int min_required_plt_lev = max_new_lev - m_level_shift;
-
-        if (min_required_plt_lev > max_plt_lev) {
+        if (finest_level - 1 > pltData.getNlev() - 1) {
           amrex::Abort(
-            "peleLM.initDataPlt_coarsen: Insufficient plotfile levels. "
-            "Need plotfile level " +
-            std::to_string(min_required_plt_lev) + " but plotfile only has " +
-            std::to_string(max_plt_lev) + " levels.");
+            "peleLM.initDataPlt_coarsen: Insufficient plotfile levels.");
         }
       }
     }
 
-    // Determine source plotfile level for current AMR level
-    int source_plt_level = a_lev - m_level_shift;
-
     // Coarsen from plotfile level 0 to new coarser level 0
-    // Must check this first, since a_lev==0 gives source_plt_level < 0
     if (a_lev == 0 && m_level_shift > 0) {
-      amrex::IntVect coarsen_ratio = amrex::IntVect(AMREX_D_DECL(
-        1 << m_level_shift, 1 << m_level_shift, 1 << m_level_shift));
-
-      // coarsenLevelFromPlt fills ldata_p->state directly
-      coarsenLevelFromPlt(a_lev, pltData, coarsen_ratio);
+      coarsenLevelFromPlt(a_lev, pltData, amrex::IntVect(AMREX_D_DECL(2, 2, 2)));
       did_coarsen_base = true;
     }
-    // Intermediate levels (a_lev < m_level_shift, but not level 0)
-    // These levels don't have corresponding plotfile data, so interpolate
-    // from coarser level
-    else if (source_plt_level < 0) {
+    // Intermediate levels don't have corresponding plotfile data - interpolate
+    else if (a_lev > 0 && a_lev < m_level_shift) {
       if (m_verbose > 0) {
         amrex::Print() << "  Level " << a_lev
-                       << " (intermediate): Interpolating from level "
-                       << (a_lev - 1) << "\n";
-        amrex::Print()
-          << "  (Will be refined by regridding based on tagging criteria)\n";
+                       << ": Interpolating from level " << (a_lev - 1) << "\n";
       }
 
-      // Get level data
       auto* ldata_p = getLevelDataPtr(a_lev, AmrNewTime);
-
-      // Interpolate all state components from level a_lev-1
-      // Use fillcoarsepatch which does conservative interpolation
       fillcoarsepatch_state(a_lev, m_cur_time, ldata_p->state, 0);
-
       return;
     }
   }
@@ -1385,26 +1357,18 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
   // Get level data
   auto* ldata_p = getLevelDataPtr(a_lev, AmrNewTime);
 
-  // Determine if we need to fill from plotfile or if already filled by
-  // coarsening
+  // Determine if we need to fill from plotfile
   bool skip_plt_fill = false;
-  int source_plt_level = a_lev; // Default: no level shift
+  int source_plt_level = a_lev;
 
   if (m_initDataPlt_coarsen && m_level_shift > 0) {
-    // Coarser level 0 was already handled - data was filled by
-    // coarsenLevelFromPlt
     if (did_coarsen_base) {
       skip_plt_fill = true;
-      if (m_verbose > 0) {
-        amrex::Print() << "  Skipping fillPatchFromPlt (already coarsened)\n";
-      }
     } else {
-      source_plt_level = a_lev - m_level_shift;
-      // Direct mapping with level shift
-      if (source_plt_level >= 0 && m_verbose > 0) {
-        amrex::Print() << "  Level " << a_lev
-                       << ": Reading from plotfile level " << source_plt_level
-                       << "\n";
+      source_plt_level = a_lev - 1; // Read from previous plotfile level
+      if (m_verbose > 0) {
+        amrex::Print() << "  Level " << a_lev << ": Reading from plotfile level "
+                       << source_plt_level << "\n";
       }
     }
   }
@@ -1599,93 +1563,28 @@ int
 PeleLM::computeLevelShift(
   pele::physics::pltfilemanager::PltFileManager& pltData)
 {
-  // Compute coarsening ratio between plotfile level 0 and new level 0
   amrex::IntVect plt_domain_size = pltData.getGeom(0).Domain().size();
   amrex::IntVect new_domain_size = geom[0].Domain().size();
 
-  // Check if domains are identical (no coarsening)
+  // No coarsening if domains match
   if (plt_domain_size == new_domain_size) {
     return 0;
   }
 
-  // Compute ratio in each direction
-  amrex::IntVect ratio = plt_domain_size / new_domain_size;
-
-  // Validate ratio is isotropic
-  for (int idim = 1; idim < AMREX_SPACEDIM; ++idim) {
-    if (ratio[idim] != ratio[0]) {
-      std::string ratio_str = "(";
-      for (int d = 0; d < AMREX_SPACEDIM; ++d) {
-        ratio_str += std::to_string(ratio[d]);
-        if (d < AMREX_SPACEDIM - 1)
-          ratio_str += ", ";
-      }
-      ratio_str += ")";
-      amrex::Abort(
-        "peleLM.initDataPlt_coarsen: Coarsening ratio must be the same in all "
-        "directions. Found ratio: " +
-        ratio_str);
-    }
-  }
-
-  int coarsen_factor = ratio[0];
-
-  // Check if new domain is actually coarser (ratio > 1)
-  if (coarsen_factor < 1) {
+  // Validate 2x coarsening in all directions
+  if (plt_domain_size != new_domain_size * 2) {
     amrex::Abort(
-      "peleLM.initDataPlt_coarsen: New level 0 domain is finer than plotfile "
-      "level 0. This feature only supports coarsening, not refinement.");
-  }
-
-  // Validate it's a power of 2 and within supported range (2, 4, 8)
-  int level_shift = 0;
-  if (coarsen_factor == 1) {
-    level_shift = 0;
-  } else if (coarsen_factor == 2) {
-    level_shift = 1;
-  } else if (coarsen_factor == 4) {
-    level_shift = 2;
-  } else if (coarsen_factor == 8) {
-    level_shift = 3;
-  } else {
-    amrex::Abort(
-      "peleLM.initDataPlt_coarsen: Coarsening ratio must be 2, 4, or 8. "
-      "Found: " +
-      std::to_string(coarsen_factor));
-  }
-
-  // Validate exact divisibility
-  amrex::IntVect remainder =
-    plt_domain_size - (new_domain_size * coarsen_factor);
-  if (remainder != amrex::IntVect::TheZeroVector()) {
-    std::string plt_str = "(";
-    std::string new_str = "(";
-    for (int d = 0; d < AMREX_SPACEDIM; ++d) {
-      plt_str += std::to_string(plt_domain_size[d]);
-      new_str += std::to_string(new_domain_size[d]);
-      if (d < AMREX_SPACEDIM - 1) {
-        plt_str += ", ";
-        new_str += ", ";
-      }
-    }
-    plt_str += ")";
-    new_str += ")";
-    amrex::Abort(
-      "peleLM.initDataPlt_coarsen: Plotfile domain size must be exactly "
-      "divisible by new domain size. Plotfile: " +
-      plt_str + ", New: " + new_str +
-      ", Ratio: " + std::to_string(coarsen_factor));
+      "peleLM.initDataPlt_coarsen: Only 2x coarsening is supported. "
+      "Plotfile domain must be exactly 2x larger in each direction.");
   }
 
   if (m_verbose > 0) {
-    amrex::Print() << "  peleLM.initDataPlt_coarsen: Detected "
-                   << coarsen_factor
-                   << "x coarsening (level_shift=" << level_shift << ")\n";
-    amrex::Print() << "  Plotfile level 0 domain: " << plt_domain_size << "\n";
-    amrex::Print() << "  New level 0 domain: " << new_domain_size << "\n";
+    amrex::Print() << "  peleLM.initDataPlt_coarsen: 2x coarsening detected\n";
+    amrex::Print() << "  Plotfile level 0: " << plt_domain_size << "\n";
+    amrex::Print() << "  New level 0: " << new_domain_size << "\n";
   }
 
-  return level_shift;
+  return 1; // level_shift = 1 for 2x coarsening
 }
 
 void
