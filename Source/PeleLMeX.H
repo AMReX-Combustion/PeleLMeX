@@ -331,6 +331,26 @@ public:
   void initLevelDataFromPlt(const int a_lev, const std::string& a_dataPltFile);
 
   /**
+   * \brief Compute level shift for multi-level mapping
+   * when coarsening from plotfile. Returns log2(coarsening_ratio).
+   * \param pltData reference to PltFileManager
+   * \return level shift (0 if no coarsening, 1 for 2x, 2 for 4x, etc.)
+   */
+  int computeLevelShift(
+    pele::physics::pltfilemanager::PltFileManager& pltData);
+
+  /**
+   * \brief Coarsen level data from plotfile using conservative averaging
+   * \param a_lev target level index
+   * \param pltData reference to PltFileManager  
+   * \param coarsen_ratio refinement ratio for coarsening
+   */
+  void coarsenLevelFromPlt(
+    const int a_lev,
+    pele::physics::pltfilemanager::PltFileManager& pltData,
+    const amrex::IntVect& coarsen_ratio);
+
+  /**
    * \brief Adds the velocity level data to state
    * data using the velocities from a pltfile
    * \param a_velPltFile path to PeleLMeX plot file
@@ -2150,6 +2170,8 @@ public:
   bool m_write_hdf5_pltfile = false;
   bool m_do_patch_flow_variables = false;
   amrex::Vector<std::string> m_initDataPlt_specname_map = {};
+  bool m_intDataPlt_coarsen = false;
+  int m_level_shift = 0;
 
   //-----------------------------------------------------------------------------
   // ALGORITHM
