@@ -1246,15 +1246,15 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
   // Track whether we coarsened the base level (for skip_plt_fill logic later)
   bool did_coarsen_base = false;
   
-  // Handle multi-level coarsening with peleLM.intDataPlt_coarsen
-  if (m_intDataPlt_coarsen) {
+  // Handle multi-level coarsening with peleLM.initDataPlt_coarsen
+  if (m_initDataPlt_coarsen) {
     // Compute level shift once at level 0
     if (a_lev == 0) {
       m_level_shift = computeLevelShift(pltData);
       
       if (m_level_shift > 0) {
         amrex::Print() 
-          << "  peleLM.intDataPlt_coarsen: Level mapping active (shift=" 
+          << "  peleLM.initDataPlt_coarsen: Level mapping active (shift=" 
           << m_level_shift << ")\n";
         amrex::Print() 
           << "  Plotfile level K will become new level K+" 
@@ -1267,7 +1267,7 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
         
         if (min_required_plt_lev > max_plt_lev) {
           amrex::Abort(
-            "peleLM.intDataPlt_coarsen: Insufficient plotfile levels. "
+            "peleLM.initDataPlt_coarsen: Insufficient plotfile levels. "
             "Need plotfile level " + std::to_string(min_required_plt_lev) +
             " but plotfile only has " + std::to_string(max_plt_lev) + " levels.");
         }
@@ -1391,7 +1391,7 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
   bool skip_plt_fill = false;
   int source_plt_level = a_lev; // Default: no level shift
   
-  if (m_intDataPlt_coarsen && m_level_shift > 0) {
+  if (m_initDataPlt_coarsen && m_level_shift > 0) {
     // Coarser level 0 was already handled - data was filled by coarsenLevelFromPlt
     if (did_coarsen_base) {
       skip_plt_fill = true;
@@ -1614,7 +1614,7 @@ PeleLM::computeLevelShift(
       }
       ratio_str += ")";
       amrex::Abort(
-        "peleLM.intDataPlt_coarsen: Coarsening ratio must be the same in all "
+        "peleLM.initDataPlt_coarsen: Coarsening ratio must be the same in all "
         "directions. Found ratio: " + ratio_str);
     }
   }
@@ -1624,7 +1624,7 @@ PeleLM::computeLevelShift(
   // Check if new domain is actually coarser (ratio > 1)
   if (coarsen_factor < 1) {
     amrex::Abort(
-      "peleLM.intDataPlt_coarsen: New level 0 domain is finer than plotfile "
+      "peleLM.initDataPlt_coarsen: New level 0 domain is finer than plotfile "
       "level 0. This feature only supports coarsening, not refinement.");
   }
   
@@ -1640,7 +1640,7 @@ PeleLM::computeLevelShift(
     level_shift = 3;
   } else {
     amrex::Abort(
-      "peleLM.intDataPlt_coarsen: Coarsening ratio must be 2, 4, or 8. Found: " +
+      "peleLM.initDataPlt_coarsen: Coarsening ratio must be 2, 4, or 8. Found: " +
       std::to_string(coarsen_factor));
   }
   
@@ -1660,14 +1660,14 @@ PeleLM::computeLevelShift(
     plt_str += ")";
     new_str += ")";
     amrex::Abort(
-      "peleLM.intDataPlt_coarsen: Plotfile domain size must be exactly "
+      "peleLM.initDataPlt_coarsen: Plotfile domain size must be exactly "
       "divisible by new domain size. Plotfile: " + plt_str +
       ", New: " + new_str +
       ", Ratio: " + std::to_string(coarsen_factor));
   }
   
   if (m_verbose > 0) {
-    amrex::Print() << "  peleLM.intDataPlt_coarsen: Detected " << coarsen_factor
+    amrex::Print() << "  peleLM.initDataPlt_coarsen: Detected " << coarsen_factor
                    << "x coarsening (level_shift=" << level_shift << ")\n";
     amrex::Print() << "  Plotfile level 0 domain: " << plt_domain_size << "\n";
     amrex::Print() << "  New level 0 domain: " << new_domain_size << "\n";
@@ -1692,14 +1692,14 @@ PeleLM::coarsenLevelFromPlt(
 #ifdef AMREX_USE_EB
   if (!EBFactory(a_lev).isAllRegular()) {
     amrex::Abort(
-      "peleLM.intDataPlt_coarsen: EB geometry not supported. "
+      "peleLM.initDataPlt_coarsen: EB geometry not supported. "
       "This feature currently only works for non-EB cases.");
   }
 #endif
   
   if (m_mesh_mapping) {
     amrex::Abort(
-      "peleLM.intDataPlt_coarsen: Mesh mapping not supported. "
+      "peleLM.initDataPlt_coarsen: Mesh mapping not supported. "
       "This feature currently only works without mesh mapping.");
   }
   

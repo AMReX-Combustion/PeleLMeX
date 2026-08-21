@@ -2170,7 +2170,7 @@ public:
   bool m_write_hdf5_pltfile = false;
   bool m_do_patch_flow_variables = false;
   amrex::Vector<std::string> m_initDataPlt_specname_map = {};
-  bool m_intDataPlt_coarsen = false;
+  bool m_initDataPlt_coarsen = false;
   int m_level_shift = 0;
 
   //-----------------------------------------------------------------------------

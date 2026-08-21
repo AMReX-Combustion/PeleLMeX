@@ -29,7 +29,7 @@ amr.cfl = -1
 #
 #amr.plot_file = pltCoarse
 #amr.initDataPlt = plt00500             # Plotfile to restart from
-#peleLM.intDataPlt_coarsen = 1          # Enable multi-level coarsening
+#peleLM.initDataPlt_coarsen = 1          # Enable multi-level coarsening
 #peleLM.initDataPlt_reset_time = 0 
 #
 ##-------------------------AMR CONTROL----------------------------
