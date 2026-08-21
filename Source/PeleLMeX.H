@@ -336,13 +336,12 @@ public:
    * \param pltData reference to PltFileManager
    * \return level shift (0 if no coarsening, 1 for 2x, 2 for 4x, etc.)
    */
-  int computeLevelShift(
-    pele::physics::pltfilemanager::PltFileManager& pltData);
+  int computeLevelShift(pele::physics::pltfilemanager::PltFileManager& pltData);
 
   /**
    * \brief Coarsen level data from plotfile using conservative averaging
    * \param a_lev target level index
-   * \param pltData reference to PltFileManager  
+   * \param pltData reference to PltFileManager
    * \param coarsen_ratio refinement ratio for coarsening
    */
   void coarsenLevelFromPlt(
