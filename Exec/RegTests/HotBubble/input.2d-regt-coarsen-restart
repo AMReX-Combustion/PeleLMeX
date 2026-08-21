@@ -1,3 +1,8 @@
+# Test restarting from a plt file with a coarser base mesh
+# This uses a wider domain than the original input.2d-regt and a fixed dt
+# 1. Run this input file using minor tweaks to input.2d-regt to generate plt00500
+# 2. Uncomment the lines below to restart from plt00500 with a coarser base mesh
+
 FILE = input.2d-regt
 
 # Larger domain than the original to allow for a coarser base mesh later
@@ -22,11 +27,14 @@ amr.stop_time = 0.15
 amr.fixed_dt = 0.0002
 amr.cfl = -1
 
-## Uncomment to restart from plt with 2x coarser base mesh
-## Original plt has 64x64 base with amr.max_level = 3 
-## New base is 32x32 with amr.max_level = 4
-## With level shift, plotfile L0 becomes new L1, plt L1->new L2, plt L2->new L3
-#
+# ------------------------------------------------------------------
+# TEST RESTART FROM PLOTFILE WITH COARSER BASE MESH
+# ------------------------------------------------------------------
+# Uncomment lines below to restart from plt with 2x coarser base mesh
+# Original plt has 64x64 base with amr.max_level = 3 
+# New base is 32x32 with amr.max_level = 4
+# plt file L0 becomes new L1, plt L1->new L2, plt L2->new L3
+
 #amr.plot_file = pltCoarse
 #amr.initDataPlt = plt00500             # Plotfile to restart from
 #peleLM.initDataPlt_coarsen = 1          # Enable multi-level coarsening
