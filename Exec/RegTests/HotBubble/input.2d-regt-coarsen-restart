@@ -24,7 +24,7 @@ amr.cfl = -1
 
 ## Uncomment to restart from plt with 2x coarser base mesh
 ## Original plt has 64x64 base with amr.max_level = 3 
-## New base is 32x32 with amr.max_level =4
+## New base is 32x32 with amr.max_level = 4
 ## With level shift, plotfile L0 becomes new L1, plt L1->new L2, plt L2->new L3
 #
 #amr.plot_file = pltCoarse

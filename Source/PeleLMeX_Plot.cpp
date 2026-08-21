@@ -1242,47 +1242,49 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
   }
   auto& pltData = *pltDataPtr;
   amrex::Vector<std::string> plt_vars = pltData.getVariableList();
-
+  
   // Track whether we coarsened the base level (for skip_plt_fill logic later)
   bool did_coarsen_base = false;
-
+  
   // Handle multi-level coarsening with peleLM.initDataPlt_coarsen
   if (m_initDataPlt_coarsen) {
     // Compute level shift once at level 0
     if (a_lev == 0) {
       m_level_shift = computeLevelShift(pltData);
-
+      
       if (m_level_shift > 0) {
-        amrex::Print()
-          << "  peleLM.initDataPlt_coarsen: Level mapping active (shift="
+        amrex::Print() 
+          << "  peleLM.initDataPlt_coarsen: Level mapping active (shift=" 
           << m_level_shift << ")\n";
-        amrex::Print() << "  Plotfile level K will become new level K+"
-                       << m_level_shift << "\n";
-
+        amrex::Print() 
+          << "  Plotfile level K will become new level K+" 
+          << m_level_shift << "\n";
+        
         // Verify we have enough plotfile levels
         int max_plt_lev = pltData.getNlev() - 1;
         int max_new_lev = finest_level;
         int min_required_plt_lev = max_new_lev - m_level_shift;
-
+        
         if (min_required_plt_lev > max_plt_lev) {
           amrex::Abort(
             "peleLM.initDataPlt_coarsen: Insufficient plotfile levels. "
-            "Need plotfile level " +
-            std::to_string(min_required_plt_lev) + " but plotfile only has " +
-            std::to_string(max_plt_lev) + " levels.");
+            "Need plotfile level " + std::to_string(min_required_plt_lev) +
+            " but plotfile only has " + std::to_string(max_plt_lev) + " levels.");
         }
       }
     }
-
+    
     // Determine source plotfile level for current AMR level
     int source_plt_level = a_lev - m_level_shift;
-
+    
     // Coarsen from plotfile level 0 to new coarser level 0
     // Must check this first, since a_lev==0 gives source_plt_level < 0
     if (a_lev == 0 && m_level_shift > 0) {
-      amrex::IntVect coarsen_ratio = amrex::IntVect(AMREX_D_DECL(
-        1 << m_level_shift, 1 << m_level_shift, 1 << m_level_shift));
-
+      amrex::IntVect coarsen_ratio = 
+        amrex::IntVect(AMREX_D_DECL(1 << m_level_shift, 
+                                     1 << m_level_shift, 
+                                     1 << m_level_shift));
+      
       // coarsenLevelFromPlt fills ldata_p->state directly
       coarsenLevelFromPlt(a_lev, pltData, coarsen_ratio);
       did_coarsen_base = true;
@@ -1292,16 +1294,16 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
     // from coarser level
     else if (source_plt_level < 0) {
       if (m_verbose > 0) {
-        amrex::Print() << "  Level " << a_lev
-                       << " (intermediate): Interpolating from level "
-                       << (a_lev - 1) << "\n";
-        amrex::Print()
+        amrex::Print() 
+          << "  Level " << a_lev << " (intermediate): Interpolating from level " 
+          << (a_lev - 1) << "\n";
+        amrex::Print() 
           << "  (Will be refined by regridding based on tagging criteria)\n";
       }
-
+      
       // Get level data
       auto* ldata_p = getLevelDataPtr(a_lev, AmrNewTime);
-
+      
       // Interpolate all state components from level a_lev-1
       // Use fillcoarsepatch which does conservative interpolation
       fillcoarsepatch_state(a_lev, m_cur_time, ldata_p->state, 0);
@@ -1309,7 +1311,7 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
       return;
     }
   }
-
+  
   if (m_do_reset_time == 0) {
     m_cur_time = pltData.getTime();
     m_nstep = pltData.getNsteps();
@@ -1385,14 +1387,12 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
   // Get level data
   auto* ldata_p = getLevelDataPtr(a_lev, AmrNewTime);
 
-  // Determine if we need to fill from plotfile or if already filled by
-  // coarsening
+  // Determine if we need to fill from plotfile or if already filled by coarsening
   bool skip_plt_fill = false;
   int source_plt_level = a_lev; // Default: no level shift
-
+  
   if (m_initDataPlt_coarsen && m_level_shift > 0) {
-    // Coarser level 0 was already handled - data was filled by
-    // coarsenLevelFromPlt
+    // Coarser level 0 was already handled - data was filled by coarsenLevelFromPlt
     if (did_coarsen_base) {
       skip_plt_fill = true;
       if (m_verbose > 0) {
@@ -1402,9 +1402,9 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
       source_plt_level = a_lev - m_level_shift;
       // Direct mapping with level shift
       if (source_plt_level >= 0 && m_verbose > 0) {
-        amrex::Print() << "  Level " << a_lev
-                       << ": Reading from plotfile level " << source_plt_level
-                       << "\n";
+        amrex::Print() 
+          << "  Level " << a_lev << ": Reading from plotfile level " 
+          << source_plt_level << "\n";
       }
     }
   }
@@ -1415,122 +1415,115 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
       source_plt_level, geom[a_lev], idV, VELX, AMREX_SPACEDIM, ldata_p->state);
 
     // Temperature
-    pltData.fillPatchFromPlt(
-      source_plt_level, geom[a_lev], idT, TEMP, 1, ldata_p->state);
+    pltData.fillPatchFromPlt(source_plt_level, geom[a_lev], idT, TEMP, 1, ldata_p->state);
 
     // Species
     // Hold the species in temporary MF before copying to level data
     // in case the number of species differs.
     amrex::MultiFab speciesPlt(grids[a_lev], dmap[a_lev], nSpecPlt, 0);
-    pltData.fillPatchFromPlt(
-      source_plt_level, geom[a_lev], idY, 0, nSpecPlt, speciesPlt);
-    for (int i = 0; i < NUM_SPECIES; ++i) {
-      std::string specName = "Y(" + spec_names[i] + ")";
-      std::string specString = specName;
-      if (!m_initDataPlt_specname_map.empty()) {
-        specString = m_initDataPlt_specname_map[i];
+    pltData.fillPatchFromPlt(source_plt_level, geom[a_lev], idY, 0, nSpecPlt, speciesPlt);
+  for (int i = 0; i < NUM_SPECIES; ++i) {
+    std::string specName = "Y(" + spec_names[i] + ")";
+    std::string specString = specName;
+    if (!m_initDataPlt_specname_map.empty()) {
+      specString = m_initDataPlt_specname_map[i];
+    }
+    int foundSpec = 0;
+    for (int iplt = 0; iplt < nSpecPlt; ++iplt) {
+      if (specString == plt_vars[idY + iplt]) {
+        amrex::MultiFab::Copy(
+          ldata_p->state, speciesPlt, iplt, FIRSTSPEC + i, 1, 0);
+        foundSpec = 1;
+        if (m_verbose > 0) {
+          amrex::Print() << "Loading species " << specName
+                         << " from plotfile species " << specString << "\n";
+        }
       }
-      int foundSpec = 0;
-      for (int iplt = 0; iplt < nSpecPlt; ++iplt) {
-        if (specString == plt_vars[idY + iplt]) {
-          amrex::MultiFab::Copy(
-            ldata_p->state, speciesPlt, iplt, FIRSTSPEC + i, 1, 0);
+    }
+    if (foundSpec == 0) {
+      for (int iplt = 0; iplt < plt_vars.size(); ++iplt) {
+        if (specString == plt_vars[iplt]) {
           foundSpec = 1;
           if (m_verbose > 0) {
             amrex::Print() << "Loading species " << specName
-                           << " from plotfile species " << specString << "\n";
+                           << " from plotfile entry " << specString << "\n";
           }
-        }
-      }
-      if (foundSpec == 0) {
-        for (int iplt = 0; iplt < plt_vars.size(); ++iplt) {
-          if (specString == plt_vars[iplt]) {
-            foundSpec = 1;
-            if (m_verbose > 0) {
-              amrex::Print() << "Loading species " << specName
-                             << " from plotfile entry " << specString << "\n";
-            }
-            pltData.fillPatchFromPlt(
-              source_plt_level, geom[a_lev], iplt, FIRSTSPEC + i, 1,
-              ldata_p->state);
-          }
-        }
-      }
-      if (foundSpec == 0) {
-        ldata_p->state.setVal(0.0, FIRSTSPEC + i, 1);
-        if (m_verbose > 0) {
-          amrex::Print() << "For species " << specName << " entry "
-                         << specString
-                         << " not found in plot file, setting to 0\n";
+          pltData.fillPatchFromPlt(
+            source_plt_level, geom[a_lev], iplt, FIRSTSPEC + i, 1, ldata_p->state);
         }
       }
     }
+    if (foundSpec == 0) {
+      ldata_p->state.setVal(0.0, FIRSTSPEC + i, 1);
+      if (m_verbose > 0) {
+        amrex::Print() << "For species " << specName << " entry " << specString
+                       << " not found in plot file, setting to 0\n";
+      }
+    }
+  }
 
-    // Converting units when pltfile is coming from PeleC solution
-    if (pltfileSource == "C") {
-      amrex::Print() << " Converting CGS to MKS units... \n";
-      auto const& state_ma = ldata_p->state.arrays();
-      amrex::ParallelFor(
-        ldata_p->state, amrex::IntVect(0), AMREX_SPACEDIM,
-        [state_ma] AMREX_GPU_DEVICE(
-          int box_no, int i, int j, int k, int n) noexcept {
-          amrex::Array4<amrex::Real> vel(state_ma[box_no], VELX);
-          vel(i, j, k, n) *= 0.01;
-        });
-      amrex::Gpu::streamSynchronize();
-    }
+  // Converting units when pltfile is coming from PeleC solution
+  if (pltfileSource == "C") {
+    amrex::Print() << " Converting CGS to MKS units... \n";
+    auto const& state_ma = ldata_p->state.arrays();
+    amrex::ParallelFor(
+      ldata_p->state, amrex::IntVect(0), AMREX_SPACEDIM,
+      [state_ma] AMREX_GPU_DEVICE(
+        int box_no, int i, int j, int k, int n) noexcept {
+        amrex::Array4<amrex::Real> vel(state_ma[box_no], VELX);
+        vel(i, j, k, n) *= 0.01;
+      });
+    amrex::Gpu::streamSynchronize();
+  }
 
 #ifdef PELE_USE_PLASMA
     // nE
-    pltData.fillPatchFromPlt(
-      source_plt_level, geom[a_lev], inE, NE, 1, ldata_p->state);
+    pltData.fillPatchFromPlt(source_plt_level, geom[a_lev], inE, NE, 1, ldata_p->state);
     // phiV
-    pltData.fillPatchFromPlt(
-      source_plt_level, geom[a_lev], iPhiV, PHIV, 1, ldata_p->state);
+    pltData.fillPatchFromPlt(source_plt_level, geom[a_lev], iPhiV, PHIV, 1, ldata_p->state);
 #endif
 #ifdef PELE_USE_SOOT
     if (do_soot_solve) {
       if (inSoot >= 0) {
         pltData.fillPatchFromPlt(
-          source_plt_level, geom[a_lev], inSoot, FIRSTSOOT, NUMSOOTVAR,
-          ldata_p->state);
-        if (pltfileSource == "C") {
-          SootConst sc;
-          amrex::Real* momV = sc.MomOrderV.data();
-          amrex::Real* momS = sc.MomOrderS.data();
-          auto const& state_ma = ldata_p->state.arrays();
-          amrex::Real soot_exp[NUM_SOOT_MOMENTS] = {0.0};
-          for (int n = 0; n < NUM_SOOT_MOMENTS; ++n) {
-            soot_exp[n] = 3. - (3. * momV[n] + 2. * momS[n]);
-          }
-          amrex::ParallelFor(
-            ldata_p->state, [state_ma, soot_exp] AMREX_GPU_DEVICE(
-                              int box_no, int i, int j, int k) noexcept {
-              amrex::Array4<amrex::Real> soot(state_ma[box_no], FIRSTSOOT);
-              for (int n = 0; n < NUM_SOOT_MOMENTS; ++n) {
-                soot(i, j, k, n) *= std::pow(100., soot_exp[n]);
-              }
-              soot(i, j, k, NUMSOOTVAR - 1) *= 1.E6;
-            });
-          amrex::Gpu::streamSynchronize();
-        }
-      } else {
-        SootData* const sd = soot_model->getSootData();
-        amrex::Real moments[NUM_SOOT_MOMENTS + 1];
-        sd->initialSmallMomVals(moments);
+          source_plt_level, geom[a_lev], inSoot, FIRSTSOOT, NUMSOOTVAR, ldata_p->state);
+      if (pltfileSource == "C") {
+        SootConst sc;
+        amrex::Real* momV = sc.MomOrderV.data();
+        amrex::Real* momS = sc.MomOrderS.data();
         auto const& state_ma = ldata_p->state.arrays();
+        amrex::Real soot_exp[NUM_SOOT_MOMENTS] = {0.0};
+        for (int n = 0; n < NUM_SOOT_MOMENTS; ++n) {
+          soot_exp[n] = 3. - (3. * momV[n] + 2. * momS[n]);
+        }
         amrex::ParallelFor(
-          ldata_p->state, amrex::IntVect(0), NUM_SOOT_MOMENTS + 1,
-          [state_ma, moments] AMREX_GPU_DEVICE(
-            int box_no, int i, int j, int k, int n) noexcept {
+          ldata_p->state, [state_ma, soot_exp] AMREX_GPU_DEVICE(
+                            int box_no, int i, int j, int k) noexcept {
             amrex::Array4<amrex::Real> soot(state_ma[box_no], FIRSTSOOT);
-            soot(i, j, k, n) = moments[n];
+            for (int n = 0; n < NUM_SOOT_MOMENTS; ++n) {
+              soot(i, j, k, n) *= std::pow(100., soot_exp[n]);
+            }
+            soot(i, j, k, NUMSOOTVAR - 1) *= 1.E6;
           });
+        amrex::Gpu::streamSynchronize();
       }
+    } else {
+      SootData* const sd = soot_model->getSootData();
+      amrex::Real moments[NUM_SOOT_MOMENTS + 1];
+      sd->initialSmallMomVals(moments);
+      auto const& state_ma = ldata_p->state.arrays();
+      amrex::ParallelFor(
+        ldata_p->state, amrex::IntVect(0), NUM_SOOT_MOMENTS + 1,
+        [state_ma, moments] AMREX_GPU_DEVICE(
+          int box_no, int i, int j, int k, int n) noexcept {
+          amrex::Array4<amrex::Real> soot(state_ma[box_no], FIRSTSOOT);
+          soot(i, j, k, n) = moments[n];
+        });
     }
+  }
 #endif
   } // end if (!skip_plt_fill)
-
+  
   // Pressure and pressure gradients to zero
   ldata_p->press.setVal(0.0);
   ldata_p->gp.setVal(0.0);
@@ -1602,41 +1595,39 @@ PeleLM::computeLevelShift(
   // Compute coarsening ratio between plotfile level 0 and new level 0
   amrex::IntVect plt_domain_size = pltData.getGeom(0).Domain().size();
   amrex::IntVect new_domain_size = geom[0].Domain().size();
-
+  
   // Check if domains are identical (no coarsening)
   if (plt_domain_size == new_domain_size) {
     return 0;
   }
-
+  
   // Compute ratio in each direction
   amrex::IntVect ratio = plt_domain_size / new_domain_size;
-
+  
   // Validate ratio is isotropic
   for (int idim = 1; idim < AMREX_SPACEDIM; ++idim) {
     if (ratio[idim] != ratio[0]) {
       std::string ratio_str = "(";
       for (int d = 0; d < AMREX_SPACEDIM; ++d) {
         ratio_str += std::to_string(ratio[d]);
-        if (d < AMREX_SPACEDIM - 1)
-          ratio_str += ", ";
+        if (d < AMREX_SPACEDIM - 1) ratio_str += ", ";
       }
       ratio_str += ")";
       amrex::Abort(
         "peleLM.initDataPlt_coarsen: Coarsening ratio must be the same in all "
-        "directions. Found ratio: " +
-        ratio_str);
+        "directions. Found ratio: " + ratio_str);
     }
   }
-
+  
   int coarsen_factor = ratio[0];
-
+  
   // Check if new domain is actually coarser (ratio > 1)
   if (coarsen_factor < 1) {
     amrex::Abort(
       "peleLM.initDataPlt_coarsen: New level 0 domain is finer than plotfile "
       "level 0. This feature only supports coarsening, not refinement.");
   }
-
+  
   // Validate it's a power of 2 and within supported range (2, 4, 8)
   int level_shift = 0;
   if (coarsen_factor == 1) {
@@ -1649,14 +1640,12 @@ PeleLM::computeLevelShift(
     level_shift = 3;
   } else {
     amrex::Abort(
-      "peleLM.initDataPlt_coarsen: Coarsening ratio must be 2, 4, or 8. "
-      "Found: " +
+      "peleLM.initDataPlt_coarsen: Coarsening ratio must be 2, 4, or 8. Found: " +
       std::to_string(coarsen_factor));
   }
-
+  
   // Validate exact divisibility
-  amrex::IntVect remainder =
-    plt_domain_size - (new_domain_size * coarsen_factor);
+  amrex::IntVect remainder = plt_domain_size - (new_domain_size * coarsen_factor);
   if (remainder != amrex::IntVect::TheZeroVector()) {
     std::string plt_str = "(";
     std::string new_str = "(";
@@ -1672,19 +1661,18 @@ PeleLM::computeLevelShift(
     new_str += ")";
     amrex::Abort(
       "peleLM.initDataPlt_coarsen: Plotfile domain size must be exactly "
-      "divisible by new domain size. Plotfile: " +
-      plt_str + ", New: " + new_str +
+      "divisible by new domain size. Plotfile: " + plt_str +
+      ", New: " + new_str +
       ", Ratio: " + std::to_string(coarsen_factor));
   }
-
+  
   if (m_verbose > 0) {
-    amrex::Print() << "  peleLM.initDataPlt_coarsen: Detected "
-                   << coarsen_factor
+    amrex::Print() << "  peleLM.initDataPlt_coarsen: Detected " << coarsen_factor
                    << "x coarsening (level_shift=" << level_shift << ")\n";
     amrex::Print() << "  Plotfile level 0 domain: " << plt_domain_size << "\n";
     amrex::Print() << "  New level 0 domain: " << new_domain_size << "\n";
   }
-
+  
   return level_shift;
 }
 
@@ -1695,13 +1683,12 @@ PeleLM::coarsenLevelFromPlt(
   const amrex::IntVect& coarsen_ratio)
 {
   BL_PROFILE("PeleLMeX::coarsenLevelFromPlt()");
-
+  
   if (m_verbose > 0) {
-    amrex::Print() << "  Coarsening level " << a_lev
-                   << " from plotfile level 0 "
+    amrex::Print() << "  Coarsening level " << a_lev << " from plotfile level 0 "
                    << "with ratio " << coarsen_ratio << "\n";
   }
-
+  
 #ifdef AMREX_USE_EB
   if (!EBFactory(a_lev).isAllRegular()) {
     amrex::Abort(
@@ -1709,25 +1696,25 @@ PeleLM::coarsenLevelFromPlt(
       "This feature currently only works for non-EB cases.");
   }
 #endif
-
+  
   if (m_mesh_mapping) {
     amrex::Abort(
       "peleLM.initDataPlt_coarsen: Mesh mapping not supported. "
       "This feature currently only works without mesh mapping.");
   }
-
+  
   // Create temporary fine MultiFab matching plotfile level 0 resolution
   amrex::BoxArray fineBA = amrex::refine(grids[a_lev], coarsen_ratio);
   amrex::DistributionMapping fineDM(fineBA);
   amrex::MultiFab fineData(fineBA, fineDM, NVAR, 0);
-
+  
   // Fill fine data from plotfile level 0 using standard fillPatchFromPlt
   // This bypasses the coarsening restriction in PltFileManager
   amrex::Vector<std::string> spec_names;
   pele::physics::eos::speciesNames<pele::physics::PhysicsType::eos_type>(
     spec_names, &(eos_parms.host_parm()));
   amrex::Vector<std::string> plt_vars = pltData.getVariableList();
-
+  
   // Find required variable indices in plotfile
   int idT = -1, idV = -1, idY = -1;
   for (int i = 0; i < plt_vars.size(); ++i) {
@@ -1744,21 +1731,20 @@ PeleLM::coarsenLevelFromPlt(
       idY = i;
     }
   }
-
+  
   if (idT < 0 || idV < 0 || idY < 0) {
-    amrex::Abort(
-      "coarsenLevelFromPlt: Could not find required variables in plotfile");
+    amrex::Abort("coarsenLevelFromPlt: Could not find required variables in plotfile");
   }
-
+  
   // Create fine geometry for interpolation
   amrex::Geometry fineGeom = amrex::refine(geom[a_lev], coarsen_ratio);
-
+  
   // Fill velocity
   pltData.fillPatchFromPlt(0, fineGeom, idV, VELX, AMREX_SPACEDIM, fineData);
-
-  // Fill temperature
+  
+  // Fill temperature  
   pltData.fillPatchFromPlt(0, fineGeom, idT, TEMP, 1, fineData);
-
+  
   // Fill species
   int nSpecPlt = 0;
   for (int i = 0; i < plt_vars.size(); ++i) {
@@ -1766,10 +1752,10 @@ PeleLM::coarsenLevelFromPlt(
       nSpecPlt++;
     }
   }
-
+  
   amrex::MultiFab fineSpecies(fineBA, fineDM, nSpecPlt, 0);
   pltData.fillPatchFromPlt(0, fineGeom, idY, 0, nSpecPlt, fineSpecies);
-
+  
   // Map species to current mechanism
   for (int i = 0; i < NUM_SPECIES; ++i) {
     std::string specName = "Y(" + spec_names[i] + ")";
@@ -1777,7 +1763,7 @@ PeleLM::coarsenLevelFromPlt(
     if (!m_initDataPlt_specname_map.empty()) {
       specString = m_initDataPlt_specname_map[i];
     }
-
+    
     int foundSpec = 0;
     for (int iplt = 0; iplt < nSpecPlt; ++iplt) {
       if (specString == plt_vars[idY + iplt]) {
@@ -1786,7 +1772,7 @@ PeleLM::coarsenLevelFromPlt(
         break;
       }
     }
-
+    
     if (foundSpec == 0) {
       // Try searching full variable list
       for (int iplt = 0; iplt < plt_vars.size(); ++iplt) {
@@ -1799,26 +1785,25 @@ PeleLM::coarsenLevelFromPlt(
         }
       }
     }
-
+    
     if (foundSpec == 0) {
       fineData.setVal(0.0, FIRSTSPEC + i, 1, 0);
       if (m_verbose > 0) {
-        amrex::Print() << "  Species " << specName
-                       << " not found, setting to 0\n";
+        amrex::Print() << "  Species " << specName << " not found, setting to 0\n";
       }
     }
   }
-
+  
   // Get level data pointer
   auto* ldata_p = getLevelDataPtr(a_lev, AmrNewTime);
-
+  
   // Apply conservative averaging to coarsen data
   // Average down all state components
-  amrex::average_down(fineData, ldata_p->state, 0, NVAR, coarsen_ratio);
-
+  amrex::average_down(
+    fineData, ldata_p->state, 0, NVAR, coarsen_ratio);
+  
   if (m_verbose > 1) {
-    amrex::Print() << "  Conservative coarsening complete for level " << a_lev
-                   << "\n";
+    amrex::Print() << "  Conservative coarsening complete for level " << a_lev << "\n";
   }
 }
 
