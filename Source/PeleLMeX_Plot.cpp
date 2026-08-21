@@ -1253,8 +1253,7 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
 
       if (m_level_shift > 0) {
         amrex::Print() << "  peleLM.initDataPlt_coarsen: Coarsening active\n";
-        amrex::Print()
-          << "  Plotfile level K will become new level K+1\n";
+        amrex::Print() << "  Plotfile level K will become new level K+1\n";
 
         // Verify we have enough plotfile levels
         if (finest_level - 1 > pltData.getNlev() - 1) {
@@ -1266,14 +1265,15 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
 
     // Coarsen from plotfile level 0 to new coarser level 0
     if (a_lev == 0 && m_level_shift > 0) {
-      coarsenLevelFromPlt(a_lev, pltData, amrex::IntVect(AMREX_D_DECL(2, 2, 2)));
+      coarsenLevelFromPlt(
+        a_lev, pltData, amrex::IntVect(AMREX_D_DECL(2, 2, 2)));
       did_coarsen_base = true;
     }
     // Intermediate levels don't have corresponding plotfile data - interpolate
     else if (a_lev > 0 && a_lev < m_level_shift) {
       if (m_verbose > 0) {
-        amrex::Print() << "  Level " << a_lev
-                       << ": Interpolating from level " << (a_lev - 1) << "\n";
+        amrex::Print() << "  Level " << a_lev << ": Interpolating from level "
+                       << (a_lev - 1) << "\n";
       }
 
       auto* ldata_p = getLevelDataPtr(a_lev, AmrNewTime);
@@ -1367,8 +1367,9 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
     } else {
       source_plt_level = a_lev - 1; // Read from previous plotfile level
       if (m_verbose > 0) {
-        amrex::Print() << "  Level " << a_lev << ": Reading from plotfile level "
-                       << source_plt_level << "\n";
+        amrex::Print() << "  Level " << a_lev
+                       << ": Reading from plotfile level " << source_plt_level
+                       << "\n";
       }
     }
   }
