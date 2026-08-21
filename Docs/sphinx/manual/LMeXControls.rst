@@ -133,7 +133,8 @@ IO parameters
     peleLM.initDataPlt_reset_time = 1      # [OPT, DEF=1] Resets time and nsteps to 0 after restarting from a plot file. (Warning: plot file will be rewritten if not renamed and argument value = 0)
     peleLM.initDataPlt_coarsen = 0         # [OPT, DEF=0] Enable restarting from plotfile with 2x coarser base mesh (non-EB only). Uses multi-level mapping.
     peleLM.initDataPlt_specname_map = spec1 spec2 # [OPT, DEF=""] If specified, lookup these entries instead of species names when populating species from the init plot file (length must match NUM_SPECIES)
-    peleLM.initDataPlt_patch_flow_variables = false # [OPT, DEF=false] Enable user-defined flow variable patching after reading a plot solution file    amr.regrid_on_restart = 1              # [OPT, DEF="0"] Trigger a regrid after the data from checkpoint are loaded
+    peleLM.initDataPlt_patch_flow_variables = false # [OPT, DEF=false] Enable user-defined flow variable patching after reading a plot solution file
+    amr.regrid_on_restart = 1              # [OPT, DEF="0"] Trigger a regrid after the data from checkpoint are loaded
     amr.n_files          = 64              # [OPT, DEF="min(256,NProcs)"] Number of files to write per level
 
 Refinement controls

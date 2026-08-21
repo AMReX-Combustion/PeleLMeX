@@ -331,10 +331,10 @@ public:
   void initLevelDataFromPlt(const int a_lev, const std::string& a_dataPltFile);
 
   /**
-   * \brief Compute level shift for multi-level mapping
-   * when coarsening from plotfile. Returns log2(coarsening_ratio).
+   * \brief Compute level shift for multi-level mapping when coarsening from a
+   * plotfile. Currently only supports 2x coarsening and returns 1 when enabled.
    * \param pltData reference to PltFileManager
-   * \return level shift (0 if no coarsening, 1 for 2x, 2 for 4x, etc.)
+   * \return level shift (0 if no coarsening, 1 for 2x)
    */
   int computeLevelShift(pele::physics::pltfilemanager::PltFileManager& pltData);
 

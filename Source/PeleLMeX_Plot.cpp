@@ -1365,7 +1365,7 @@ PeleLM::initLevelDataFromPlt(int a_lev, const std::string& a_dataPltFile)
     if (did_coarsen_base) {
       skip_plt_fill = true;
     } else {
-      source_plt_level = a_lev - 1; // Read from previous plotfile level
+      source_plt_level = a_lev - m_level_shift; // Read from corresponding plotfile level
       if (m_verbose > 0) {
         amrex::Print() << "  Level " << a_lev
                        << ": Reading from plotfile level " << source_plt_level
