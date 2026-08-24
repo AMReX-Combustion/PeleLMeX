@@ -209,7 +209,6 @@ public:
    */
   static std::unique_ptr<MeshMap> create(const std::string& name);
 
-protected:
   /**
    * \brief Fill \c fac and \c detJ at every storage location on level
    *        \p lev from a single per-axis stretch-factor callable.
@@ -247,6 +246,8 @@ protected:
     const amrex::Geometry& geom,
     amrex::MultiFab& disp_nd,
     XPhysAt const& x_phys_at) const;
+
+protected:
 
   amrex::Vector<amrex::MultiFab> m_fac_cc;
   amrex::Vector<amrex::MultiFab> m_detJ_cc;
