@@ -248,7 +248,6 @@ public:
     XPhysAt const& x_phys_at) const;
 
 protected:
-
   amrex::Vector<amrex::MultiFab> m_fac_cc;
   amrex::Vector<amrex::MultiFab> m_detJ_cc;
 
