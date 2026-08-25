@@ -41,7 +41,7 @@ amr.cfl = -1
 #peleLM.initDataPlt_reset_time = 0 
 #
 ##-------------------------AMR CONTROL----------------------------
-#amr.n_cell          = 32 32 16        # Level 0 number of cells (2x coarser than original)
+#amr.n_cell          = 32 32           # Level 0 number of cells (2x coarser than original)
 #amr.max_level       = 4               # Increased from 3 to handle level shift           
 #amr.stop_time       = 0.15
 #
