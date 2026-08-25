@@ -140,7 +140,8 @@ InteriorStretchMap::InteriorStretchMap()
                    << "), x_c = " << center(d) << ", Xi_c = " << centerXi(d)
                    << " (s_c = " << m_s_c[d] << ")\n";
     if (ncell[d] > 0) {
-      amrex::Print() << "                          cells " << int(n_lo + 0.5)
+      amrex::Print() << "                          cells "
+                     << static_cast<int>(std::lround(n_lo))
                      << " below / " << static_cast<int>(std::lround(n_hi))
                      << " above x_c"
                      << ", dx_min = " << m_Lxi[d] / (n * m_N[d])
