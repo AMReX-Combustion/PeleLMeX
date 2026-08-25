@@ -1636,9 +1636,9 @@ PeleLM::coarsenLevelFromPlt(
   // Find required variable indices in plotfile
   int idT = -1, idV = -1, idY = -1;
   for (int i = 0; i < plt_vars.size(); ++i) {
-    if (pltfileSource == "LM" && plt_vars[i] == "temp") {
-      idT = i;
-    } else if (pltfileSource == "C" && plt_vars[i] == "Temp") {
+    if (
+      (pltfileSource == "LM" && plt_vars[i] == "temp") ||
+      (pltfileSource == "C" && plt_vars[i] == "Temp")) {
       idT = i;
     }
     if (plt_vars[i] == "x_velocity") {
@@ -1666,8 +1666,8 @@ PeleLM::coarsenLevelFromPlt(
 
   // Fill species
   int nSpecPlt = 0;
-  for (int i = 0; i < plt_vars.size(); ++i) {
-    if (plt_vars[i].substr(0, 2) == "Y(") {
+  for (const auto& var : plt_vars) {
+    if (var.substr(0, 2) == "Y(") {
       nSpecPlt++;
     }
   }
