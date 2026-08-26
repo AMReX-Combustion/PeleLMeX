@@ -54,9 +54,9 @@
 #
 # The gain at the fine point is exactly the normalisation N = G(beta), so
 # a configuration inside the default MLMG range (cosh^2 ~ 2.4) buys about
-# 1.3x.  See input.2d_ShearLayer_beta2 for the version that actually shows
-# the map off -- it reaches 4.05x but *requires* hypre: plain MLMG fails
-# immediately there.
+# 1.3x.  See input.2d_ShearLayer for the mild (MLMG-compatible) variant; this
+# strong-clustering input reaches 4.05x but *requires* hypre: plain MLMG fails
+# immediately here.
 #
 # Setting InteriorStretchMap.beta_lo/beta_hi to 0 0 makes this an exact
 # identity map (detJ = 1, fac = 1) and must reproduce the same run with
