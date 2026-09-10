@@ -1129,14 +1129,12 @@ PeleLM::reportTurbInflowResolution()
       const bool is_low = (iside == 0);
       const auto side =
         is_low ? amrex::Orientation::low : amrex::Orientation::high;
-      const int bctype =
-        is_low ? velBCRec[0].lo()[dir] : velBCRec[0].hi()[dir];
+      const int bctype = is_low ? velBCRec[0].lo()[dir] : velBCRec[0].hi()[dir];
       if (bctype != amrex::BCType::ext_dir) {
         continue;
       }
       amrex::Real file_dx[2] = {0.0, 0.0};
-      if (!turb_inflow.file_transverse_dx(
-            dir, side, file_dx[0], file_dx[1])) {
+      if (!turb_inflow.file_transverse_dx(dir, side, file_dx[0], file_dx[1])) {
         continue;
       }
 
