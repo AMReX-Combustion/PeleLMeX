@@ -7,11 +7,18 @@
 # wrong shifts the turbulence pattern in x, most visibly near the domain
 # centre where the mapping displaces cell centres the furthest.
 #
+# x is bounded by slip walls rather than periodic: a tanh map clusters cells
+# at both ends of the axis, which is the physically meaningful configuration
+# for walls and an inconsistent one for a periodic seam (the metric has a
+# kink there, and the mapped nodal projection does not converge against it).
+#
 # Single level and a short run: this is a smoke/behaviour case, not a
-# convergence test.
+# convergence test.  For a quantitative check of the physical-position
+# sampling see input.3d_ConstantMap / input.3d_ConstantMap_ref and
+# compare_inflow_plane.py.
 
 #----------------------DOMAIN DEFINITION------------------------
-geometry.is_periodic = 1 1 0              # For each dir, 0: non-perio, 1: periodic
+geometry.is_periodic = 0 1 0              # x: slip walls (see header), y periodic
 geometry.coord_sys   = 0                  # 0 => cart, 1 => RZ
 geometry.prob_lo     = 0.0 0.0 0.0        # x_lo y_lo (z_lo)
 geometry.prob_hi     = 0.01 0.01 0.01     # x_hi y_hi (z_hi)
@@ -23,14 +30,13 @@ TanhStretchMap.beta   = 2.0 0.0 0.0       # stretch x only; y and z uniform
 # >>>>>>>>>>>>>  BC FLAGS <<<<<<<<<<<<<<<<
 # Interior, Inflow, Outflow, Symmetry,
 # SlipWallAdiab, NoSlipWallAdiab, SlipWallIsotherm, NoSlipWallIsotherm
-peleLM.lo_bc = Interior Interior Inflow
-peleLM.hi_bc = Interior Interior Outflow
+peleLM.lo_bc = SlipWallAdiab Interior Inflow
+peleLM.hi_bc = SlipWallAdiab Interior Outflow
 
 #-------------------------AMR CONTROL----------------------------
 amr.n_cell          = 32 32 32          # Level 0 number of cells in each direction
 amr.v               = 1                 # AMR verbose
 amr.max_level       = 0                 # single level
-amr.regrid_int      = 2                 # how often to regrid
 amr.blocking_factor = 8                 # block factor in grid generation
 amr.max_grid_size   = 16                # max box size
 
