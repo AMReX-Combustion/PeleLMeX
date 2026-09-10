@@ -397,8 +397,8 @@ struct MeshMapEvaluator
       // Newton on f(s) = offset_norm(s) - target, f' = fac(s) > 0, with a
       // bisection safeguard on the bracket [lo, hi] that always contains
       // the root because offset_norm is strictly increasing.
-      amrex::Real lo = amrex::Real(0.0);
-      amrex::Real hi = amrex::Real(1.0);
+      auto lo = amrex::Real(0.0);
+      auto hi = amrex::Real(1.0);
       amrex::Real s = target;
       for (int it = 0; it < 50; ++it) {
         const amrex::Real f =
@@ -413,7 +413,7 @@ struct MeshMapEvaluator
         }
         const amrex::Real fp = interior_fac(beta_lo, beta_hi, s_c, s);
         amrex::Real s_new = s - f / fp;
-        if (!(s_new > lo && s_new < hi)) {
+        if (s_new <= lo || s_new >= hi) {
           s_new = amrex::Real(0.5) * (lo + hi);
         }
         const amrex::Real ds = std::abs(s_new - s);
