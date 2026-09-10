@@ -2,6 +2,7 @@
 #define PELELMEX_MESHMAP_EVALUATOR_H
 
 #include <AMReX.H>
+#include <AMReX_Algorithm.H>
 #include <AMReX_BLassert.H>
 #include <AMReX_Geometry.H>
 #include <AMReX_GpuQualifiers.H>
@@ -310,6 +311,127 @@ struct MeshMapEvaluator
   }
 
   /**
+   * \brief Physical width of the cell with integer index \p idx along
+   *        axis \p idir.
+   *
+   * Exact for every supported map (it differences the two bounding face
+   * positions rather than assuming a local stretch factor).  Reduces to
+   * \c gd.CellSize()[idir] for \c Kind::Identity.
+   */
+  AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE amrex::Real
+  dx_phys_cc(int idir, int idx, amrex::GeometryData const& gd) const noexcept
+  {
+    return x_phys_face(idir, idx + 1, gd) - x_phys_face(idir, idx, gd);
+  }
+
+  /**
+   * \brief Inverse of \c x_phys_from_xi: the \f$\xi\f$-space coordinate
+   *        whose image under the mapping is \p x_phys, along axis \p idir.
+   *
+   * Constant, ExpStretch and TanhStretch invert in closed form (\c log and
+   * \c atanh).  InteriorStretch does not -- its offset involves
+   * \f$\eta + \sinh(2\beta\eta)/(2\beta)\f$ -- so it is inverted by a
+   * safeguarded Newton iteration on the monotone forward map, whose
+   * derivative is exactly \c interior_fac.  Use it to turn a physical
+   * position supplied in the inputs (a sampling-plane location, a probe
+   * position) into the coordinate that indexes the AMReX grid.
+   *
+   * \p x_phys is clamped to the physical image of \c [ProbLo, ProbHi]
+   * along \p idir, which keeps the \c log / \c atanh arguments in range;
+   * positions outside the domain are not meaningful for the callers this
+   * serves.  Callers that need a periodic image (e.g. a tiled inflow
+   * lookup) must wrap \p x_phys into the domain before calling.
+   */
+  AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE amrex::Real xi_from_x_phys(
+    int idir, amrex::Real x_phys, amrex::GeometryData const& gd) const noexcept
+  {
+    const amrex::Real plo = gd.ProbLo()[idir];
+    const amrex::Real L = gd.ProbHi()[idir] - plo;
+    switch (m_kind) {
+    case Kind::Identity:
+      return x_phys;
+
+    case Kind::Constant:
+      return plo + (x_phys - plo) / m_p[idir];
+
+    case Kind::ExpStretch: {
+      const amrex::Real beta = m_p[idir];
+      if (std::abs(beta) < BETA_EPS) {
+        return x_phys;
+      }
+      amrex::Real off = clamp01((x_phys - plo) / L);
+      if (m_q[idir] == 1) {
+        off = amrex::Real(1.0) - off;
+      }
+      const amrex::Real den = std::exp(beta) - amrex::Real(1.0);
+      amrex::Real eta = std::log(off * den + amrex::Real(1.0)) / beta;
+      if (m_q[idir] == 1) {
+        eta = amrex::Real(1.0) - eta;
+      }
+      return plo + L * eta;
+    }
+
+    case Kind::TanhStretch: {
+      const amrex::Real beta = m_p[idir];
+      if (std::abs(beta) < BETA_EPS) {
+        return x_phys;
+      }
+      const amrex::Real off = clamp01((x_phys - plo) / L);
+      // off in [0,1] puts the argument in [-tanh(beta), tanh(beta)], which
+      // is strictly inside atanh's domain for any finite beta.
+      const amrex::Real arg =
+        (amrex::Real(2.0) * off - amrex::Real(1.0)) * std::tanh(beta);
+      const amrex::Real eta =
+        amrex::Real(0.5) * (amrex::Real(1.0) + std::atanh(arg) / beta);
+      return plo + L * eta;
+    }
+
+    case Kind::InteriorStretch: {
+      const amrex::Real beta_lo = m_p[idir];
+      const amrex::Real beta_hi = m_p2[idir];
+      const amrex::Real s_c = m_p3[idir];
+      if (std::abs(beta_lo) < BETA_EPS && std::abs(beta_hi) < BETA_EPS) {
+        return x_phys;
+      }
+      const amrex::Real target = clamp01((x_phys - plo) / L);
+      // Newton on f(s) = offset_norm(s) - target, f' = fac(s) > 0, with a
+      // bisection safeguard on the bracket [lo, hi] that always contains
+      // the root because offset_norm is strictly increasing.
+      amrex::Real lo = amrex::Real(0.0);
+      amrex::Real hi = amrex::Real(1.0);
+      amrex::Real s = target;
+      for (int it = 0; it < 50; ++it) {
+        const amrex::Real f =
+          interior_offset_norm(beta_lo, beta_hi, s_c, s) - target;
+        if (std::abs(f) < amrex::Real(1.0e-15)) {
+          break;
+        }
+        if (f > amrex::Real(0.0)) {
+          hi = s;
+        } else {
+          lo = s;
+        }
+        const amrex::Real fp = interior_fac(beta_lo, beta_hi, s_c, s);
+        amrex::Real s_new = s - f / fp;
+        if (!(s_new > lo && s_new < hi)) {
+          s_new = amrex::Real(0.5) * (lo + hi);
+        }
+        const amrex::Real ds = std::abs(s_new - s);
+        s = s_new;
+        if (ds < amrex::Real(1.0e-13)) {
+          break;
+        }
+      }
+      return plo + L * s;
+    }
+    }
+    AMREX_ALWAYS_ASSERT_WITH_MESSAGE(
+      false, "MeshMapEvaluator::xi_from_x_phys: unhandled Kind -- a mesh map "
+             "was added without a case in this switch");
+    return std::numeric_limits<amrex::Real>::quiet_NaN();
+  }
+
+  /**
    * \brief Lower-level helper: apply the mapping to an arbitrary
    *        \f$\xi\f$-space coordinate along axis \p idir.
    */
@@ -368,6 +490,14 @@ struct MeshMapEvaluator
       false, "MeshMapEvaluator::x_phys_from_xi: unhandled Kind -- a mesh map "
              "was added without a case in this switch");
     return std::numeric_limits<amrex::Real>::quiet_NaN();
+  }
+
+  /// Clamp a normalized coordinate into [0,1].  Public on purpose: device
+  /// code may need it and GPU builds have tripped over private statics.
+  AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE static amrex::Real
+  clamp01(amrex::Real v) noexcept
+  {
+    return amrex::min(amrex::Real(1.0), amrex::max(amrex::Real(0.0), v));
   }
 };
 
