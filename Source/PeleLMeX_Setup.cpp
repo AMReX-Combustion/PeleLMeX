@@ -1068,13 +1068,26 @@ PeleLM::checkSetupParams()
       "physical coordinates (PELEPHYSICS_TURBINFLOW_HAS_COORD_ADDTURB).\n"
       "Update Submodules/PelePhysics, or drop geometry.mesh_mapping.");
 #endif
-    // The file format carries no coordinate information, so the data itself
-    // is uniformly spaced regardless of the grid it is injected onto.
-    // Turbulence *generated on* a stretched mesh is not yet supported.
+    // A turbulence file is uniform in *some* coordinate: physical position
+    // for synthetic or uniform-precursor data, but the precursor's Xi
+    // coordinate for planes extracted from a mesh-mapped run (DiagFramePlane
+    // and the plotfile writer both emit the Xi geometry).  The sampling path
+    // used here assumes the former.  A PelePhysics that understands the HDR
+    // MESHMAP_V1 trailer refuses the latter at TurbInflow::init(); an older
+    // one cannot tell them apart, so say so.
+#ifdef PELEPHYSICS_TURBINFLOW_HAS_MESHMAP_HDR
     amrex::Print()
-      << " NOTE: turbinflow data is always uniformly spaced; only the "
-         "target grid may be\n       stretched. Turbulence generated ON a "
-         "stretched mesh is not yet supported.\n";
+      << " NOTE: turbinflow data without a MESHMAP_V1 trailer is taken to be "
+         "uniform in physical\n       position; only the target grid is "
+         "stretched.  Files extracted from a mesh-mapped\n       precursor "
+         "are refused until the sampling path can invert their map.\n";
+#else
+    amrex::Print()
+      << " WARNING: turbinflow data is assumed uniform in physical position. "
+         "This PelePhysics cannot\n          detect a file extracted from a "
+         "mesh-mapped precursor (uniform in that run's Xi\n          "
+         "coordinate); injecting one here would be silently wrong.\n";
+#endif
   }
 
   if (m_mesh_mapping && (m_use_inlet_from_plane != 0) && (verbose != 0)) {

@@ -360,10 +360,16 @@ Mesh Mapping
    aborts at setup if the two are combined without it, rather than silently
    sampling the file at :math:`\xi` positions.
 
-   The turbulence *file* is always uniformly spaced -- its header carries only
-   a point count and a domain size per direction -- so only the target grid may
-   be stretched. Turbulence generated **on** a stretched mesh cannot be
-   represented in the format and is not supported. At ``peleLM.v > 0`` a
+   The turbulence *file* is uniformly spaced in *some* coordinate -- its
+   header carries only a point count and a domain size per direction. Synthetic
+   data and planes from a uniform-mesh precursor are uniform in physical
+   position, which is what the sampling path assumes, so only the target grid
+   may be stretched. Planes extracted from a precursor that itself ran with
+   ``mesh_mapping`` are uniform in that run's :math:`\xi` coordinate instead;
+   the `PelePhysics` reader recognises such files by an optional ``MESHMAP_V1``
+   trailer in the ``HDR`` and refuses them until the sampling path can invert
+   the file's map. Do not inject planes from a mapped precursor before that
+   lands. At ``peleLM.v > 0`` a
    resolution check prints, per inflow face, the range of the grid's physical
    spacing against the file's spacing; a ratio well above one means the file
    cannot fill the scales the stretched grid resolves near its clustering, and
