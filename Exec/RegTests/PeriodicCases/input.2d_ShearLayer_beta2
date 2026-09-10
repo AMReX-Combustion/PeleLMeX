@@ -1,0 +1,144 @@
+# =====================================================================
+# Temporally-developing planar mixing layer -- strong-clustering variant.
+# =====================================================================
+#
+# Same problem as input.2d_ShearLayer but with beta_lo/beta_hi = 1.6/2.4
+# on y: 18 cells across the initial vorticity thickness instead of the
+# 4.5 a uniform mesh gives at the same cell count, i.e. a 4.05x gain at
+# the layer.  Worst neighbour-to-neighbour cell-size ratio is 1.10, so
+# the mesh itself is still smooth; the cost is anisotropy, cosh^2(2.4) =
+# 30.9 in the MAC/nodal operators.
+#
+# REQUIRES HYPRE.  Measured, not guessed: on the default AMReX MLMG path
+# this configuration fails immediately.  With the hypre block at the
+# bottom of this file it runs, and the rollup looks right.
+#
+# Worth recording, because it rules out the explanation offered in
+# LidDrivenCavity/input.2d, which attributes the beta = 2 MLMG stall there
+# to the cavity's corner-singularity divergence coupling through stretched
+# cells.  This case is periodic in x with slip walls in y and has no
+# corner singularity at all, and it still fails -- so operator anisotropy
+# alone (cosh^2(2.4) = 30.9 here) is sufficient to break MLMG.  Expect any
+# strongly stretched case to need a hypre bottom solver whatever its
+# geometry.
+#
+# Build with USE_HYPRE = TRUE.  The PeriodicCases GNUmakefile ships FALSE
+# because no other input in this directory needs it.
+#
+# Why this case: InteriorStretchMap refines an interior point and
+# coarsens away from it in both directions, so it wants a problem whose
+# only interesting feature is in the interior and whose boundaries need
+# no resolution.  A temporal mixing layer is exactly that: periodic in
+# x, slip walls in y placed far from the action, and a single tanh shear
+# layer at y = prob.shear_y0.
+#
+# Note the stretched axis is the NON-periodic one on purpose.  On a
+# periodic axis this map has a metric jump at the wrap point unless
+# beta_lo == beta_hi (fac(0) = cosh^2(beta_lo)/N vs
+# fac(1) = cosh^2(beta_hi)/N), and a C1 kink there even when they are
+# equal -- which defeats the whole point of the cosh^2 construction.
+# Keep x uniform (beta = 0) and stretch y only.
+#
+#   base profile   u(y) = Uc + (dU/2) tanh(2 (y - y0) / dw)
+#   KH seed        divergence-free, from a streamfunction, max|v'| = 2% dU
+#   dw = 2.8 mm    => lambda_KH ~ 7 dw = 19.6 mm, so nwave = 2 fits Lx = 40 mm
+#   Re_dw = dU dw / nu = 1 * 0.0028 / 5.6e-6 = 500
+#
+# Mesh (64 x 128, dy_uniform = 0.625 mm):
+#
+#   beta_lo, beta_hi | dy at layer | cells across dw | gain | cosh^2
+#   -----------------|-------------|-----------------|------|-------
+#   0, 0  (uniform)  |  0.625 mm   |      4.5        | 1.00 |  1.00
+#   0.6, 1.0 (here)  |  0.485 mm   |      6          | 1.29 |  2.38
+#   1.6, 2.4 (beta2) |  0.154 mm   |     18          | 4.05 | 30.88
+#
+# The gain at the fine point is exactly the normalisation N = G(beta), so
+# a configuration inside the default MLMG range (cosh^2 ~ 2.4) buys about
+# 1.3x.  See input.2d_ShearLayer for the mild (MLMG-compatible) variant; this
+# strong-clustering input reaches 4.05x but *requires* hypre: plain MLMG fails
+# immediately here.
+#
+# Setting InteriorStretchMap.beta_lo/beta_hi to 0 0 makes this an exact
+# identity map (detJ = 1, fac = 1) and must reproduce the same run with
+# geometry.mesh_mapping omitted -- a cheap regression check.
+# ---------------------------------------------------------------------
+
+#----------------------DOMAIN DEFINITION------------------------
+geometry.is_periodic = 1 0                # periodic in x, walls in y
+geometry.coord_sys   = 0                  # 0 => cart, 1 => RZ
+geometry.prob_lo     = 0.0   -0.03  0.0   # x_lo y_lo (z_lo)
+geometry.prob_hi     = 0.04   0.05  1.0   # x_hi y_hi (z_hi)
+
+# >>>>>>>>>>>>>  BC FLAGS <<<<<<<<<<<<<<<<
+# Interior, Inflow, Outflow, Symmetry,
+# SlipWallAdiab, NoSlipWallAdiab, SlipWallIsotherm, NoSlipWallIsotherm
+# Slip (not no-slip) walls: they are only there to close the domain, and
+# must not grow boundary layers of their own -- the mesh is deliberately
+# coarse out there.
+peleLM.lo_bc = Interior SlipWallAdiab
+peleLM.hi_bc = Interior SlipWallAdiab
+
+#--------------------- MESH MAPPING -----------------------------
+# Layer at y = 0, so p = (0 - (-0.03)) / 0.08 = 0.375: more domain above
+# the layer than below it.  beta_hi > beta_lo puts the faster coarsening
+# on the longer side, which is where there is room for it.
+geometry.mesh_mapping          = InteriorStretchMap
+InteriorStretchMap.beta_lo     = 0.0 1.6    # x uniform; y coarsens to y_lo
+InteriorStretchMap.beta_hi     = 0.0 2.4    # x uniform; y coarsens to y_hi
+InteriorStretchMap.center      = 0.0 0.0    # physical coords; x value unused
+                                            # (both betas 0 on that axis)
+# Startup will report s_c, Xi_c, dy_min and the neighbour growth ratio,
+# and warn if either side of the layer ends up starved of cells.
+peleLM.plot_mesh_mapping = 1
+
+#-------------------------AMR CONTROL----------------------------
+amr.n_cell          = 64 128            # dx = dy = 0.625 mm unstretched
+amr.v               = 1
+amr.max_level       = 0                 # mesh mapping is single-level
+amr.blocking_factor = 16
+amr.max_grid_size   = 64
+
+#--------------------------- Problem -------------------------------
+prob.T_mean      = 298.0
+prob.P_mean      = 101325.0
+prob.type        = ShearLayer
+prob.shear_y0    = 0.0        # layer position (physical y)
+prob.shear_dw    = 0.0028     # vorticity thickness
+prob.shear_dU    = 1.0        # velocity difference across the layer
+prob.shear_Uc    = 0.0        # mean velocity: 0 keeps the layer stationary
+prob.shear_pert  = 0.02       # max|v'| / dU
+prob.shear_nwave = 2          # KH wavelengths across Lx
+
+#------------  INPUTS TO CONSTANT TRANSPORT -----------------
+transport.const_viscosity        = 0.0
+transport.const_bulk_viscosity   = 0.0
+transport.const_conductivity     = 0.0
+transport.const_diffusivity      = 0.0
+
+#-------------------------PeleLM CONTROL----------------------------
+peleLM.v              = 1
+peleLM.incompressible = 1
+peleLM.rho            = 1.0
+peleLM.mu             = 5.6e-6          # Re_dw = dU*dw/nu = 500
+
+amr.cfl       = 0.5
+amr.dt_shrink = 0.1
+amr.max_step  = 50000
+amr.stop_time = 0.1        # ~36 dw/dU.  Rollup saturates around
+                           # t ~ 0.06-0.08 s (growth rate ~ 0.19 dU/dw
+                           # from a 2% seed); vortex pairing needs longer.
+amr.plot_int  = 200
+amr.plot_file = plt_shear_b2_
+amr.check_int = -1
+amr.derive_plot_vars = avg_pressure mag_vort
+
+# Required at this stretching -- see the note at the top of this file.
+# Needs an executable built with USE_HYPRE = TRUE.
+mac_proj.use_mlhypre     = 1
+nodal_proj.bottom_solver = hypre
+nodal_proj.maxiter       = 10000
+nodal_proj.rtol          = 1.0e-7
+nodal_proj.verbose = 1
+mac_proj.verbose   = 1
+
+#amrex.fpe_trap_invalid = 1

@@ -17,6 +17,7 @@ function(build_pele_exe pele_exe_name pele_physics_lib_name)
 
   target_include_directories(${pele_exe_name} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
   target_include_directories(${pele_exe_name} PRIVATE ${SRC_DIR})
+  target_include_directories(${pele_exe_name} PRIVATE ${SRC_DIR}/Mesh)
   target_include_directories(${pele_exe_name} PRIVATE ${CMAKE_BINARY_DIR})
 
   target_sources(${pele_exe_name}
@@ -54,16 +55,18 @@ function(build_pele_exe pele_exe_name pele_physics_lib_name)
        ${SRC_DIR}/PeleLMeX_Tagging.cpp
        ${SRC_DIR}/PeleLMeX_BPatch.H
        ${SRC_DIR}/PeleLMeX_BPatch.cpp
-       ${SRC_DIR}/PeleLMeX_MeshMap.H
-       ${SRC_DIR}/PeleLMeX_MeshMap.cpp
-       ${SRC_DIR}/PeleLMeX_ConstantMap.H
-       ${SRC_DIR}/PeleLMeX_ConstantMap.cpp
-       ${SRC_DIR}/PeleLMeX_ExpStretchMap.H
-       ${SRC_DIR}/PeleLMeX_ExpStretchMap.cpp
-       ${SRC_DIR}/PeleLMeX_TanhStretchMap.H
-       ${SRC_DIR}/PeleLMeX_TanhStretchMap.cpp
-       ${SRC_DIR}/PeleLMeX_MeshMappedCellConsInterp.H
-       ${SRC_DIR}/PeleLMeX_MeshMappedCellConsInterp.cpp
+       ${SRC_DIR}/Mesh/PeleLMeX_MeshMap.H
+       ${SRC_DIR}/Mesh/PeleLMeX_MeshMap.cpp
+       ${SRC_DIR}/Mesh/PeleLMeX_ConstantMap.H
+       ${SRC_DIR}/Mesh/PeleLMeX_ConstantMap.cpp
+       ${SRC_DIR}/Mesh/PeleLMeX_ExpStretchMap.H
+       ${SRC_DIR}/Mesh/PeleLMeX_ExpStretchMap.cpp
+       ${SRC_DIR}/Mesh/PeleLMeX_TanhStretchMap.H
+       ${SRC_DIR}/Mesh/PeleLMeX_TanhStretchMap.cpp
+       ${SRC_DIR}/Mesh/PeleLMeX_InteriorStretchMap.H
+       ${SRC_DIR}/Mesh/PeleLMeX_InteriorStretchMap.cpp
+       ${SRC_DIR}/Mesh/PeleLMeX_MeshMappedCellConsInterp.H
+       ${SRC_DIR}/Mesh/PeleLMeX_MeshMappedCellConsInterp.cpp
        ${SRC_DIR}/PeleLMeX_Temporals.cpp
        ${SRC_DIR}/PeleLMeX_Timestep.cpp
        ${SRC_DIR}/PeleLMeX_TransportProp.cpp

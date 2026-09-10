@@ -3,6 +3,9 @@ DIM = 2
 COMP = gnu
 PRECISION = DOUBLE
 USE_EB = FALSE
+# input.2d_ShearLayer_beta2 needs this TRUE: at cosh^2(2.4) = 30.9 the
+# default AMReX MLMG projections fail immediately.  Every other input in
+# this directory runs fine with it FALSE.
 USE_HYPRE = FALSE
 
 # Profiling
