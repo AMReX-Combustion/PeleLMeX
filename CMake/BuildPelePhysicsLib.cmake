@@ -32,6 +32,7 @@ function(build_pele_physics_lib pele_physics_lib_name)
         ${PELE_PHYSICS_UTILITY_DIR}/TurbForcing/MersenneTwister.H
     )
     target_include_directories(${pele_physics_lib_name} PUBLIC ${PELE_PHYSICS_UTILITY_DIR}/TurbInflow)
+    target_include_directories(${pele_physics_lib_name} PUBLIC ${PELE_PHYSICS_UTILITY_DIR}/MeshMap)
     target_include_directories(${pele_physics_lib_name} PUBLIC ${PELE_PHYSICS_UTILITY_DIR}/TurbForcing)
 
     target_sources(${pele_physics_lib_name}
