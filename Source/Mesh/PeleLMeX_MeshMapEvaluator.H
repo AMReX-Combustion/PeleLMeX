@@ -447,7 +447,7 @@ struct MeshMapEvaluator
       return (std::abs(beta) < BETA_EPS)
                ? x_phys
                : plo + L * exp_offset_inv(
-                            clamp01((x_phys - plo) / L), beta, m_q[idir]);
+                             clamp01((x_phys - plo) / L), beta, m_q[idir]);
     }
 
     case Kind::TanhStretch: {
@@ -463,8 +463,8 @@ struct MeshMapEvaluator
       return (std::abs(beta_lo) < BETA_EPS && std::abs(beta_hi) < BETA_EPS)
                ? x_phys
                : plo + L * interior_offset_inv(
-                            beta_lo, beta_hi, m_p3[idir],
-                            clamp01((x_phys - plo) / L));
+                             beta_lo, beta_hi, m_p3[idir],
+                             clamp01((x_phys - plo) / L));
     }
     }
     AMREX_ALWAYS_ASSERT_WITH_MESSAGE(
