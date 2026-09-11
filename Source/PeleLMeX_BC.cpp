@@ -1230,6 +1230,46 @@ PeleLM::setInflowBoundaryVel(
 }
 
 void
+PeleLM::addTurbInflowToBox(
+  const amrex::Box& a_bx,
+  amrex::FArrayBox& a_data,
+  const int lev,
+  const int dir,
+  const amrex::Orientation::Side& a_side,
+  const amrex::Real a_time)
+{
+#ifdef PELEPHYSICS_TURBINFLOW_HAS_COORD_ADDTURB
+  if (m_mesh_mapping) {
+    // The turbulence file is indexed by PHYSICAL position, whereas
+    // geom[lev] describes the uniform Xi-space grid.  Hand the injection
+    // face's physical cell-centre coordinates to TurbInflow explicitly.
+    //
+    // a_bx comes from adjCell{Lo,Hi}(Domain, dir, .) intersected with a
+    // grown tilebox, so its transverse extents never leave the domain and
+    // the mapping is only ever evaluated inside [ProbLo, ProbHi].
+    int tdir1 = 0;
+    int tdir2 = 0;
+    pele::physics::turbinflow::TurbInflow::transverseDirs(dir, tdir1, tdir2);
+    const auto gd = geom[lev].data();
+
+    amrex::Vector<amrex::Real> x_phys(a_bx.length(tdir1));
+    amrex::Vector<amrex::Real> y_phys(a_bx.length(tdir2));
+    for (int i = 0; i < static_cast<int>(x_phys.size()); ++i) {
+      x_phys[i] = m_map_eval.x_phys_cc(tdir1, a_bx.smallEnd(tdir1) + i, gd);
+    }
+    for (int j = 0; j < static_cast<int>(y_phys.size()); ++j) {
+      y_phys[j] = m_map_eval.x_phys_cc(tdir2, a_bx.smallEnd(tdir2) + j, gd);
+    }
+
+    turb_inflow.add_turb(
+      a_bx, a_data, 0, geom[lev].Domain(), x_phys, y_phys, a_time, dir, a_side);
+    return;
+  }
+#endif
+  turb_inflow.add_turb(a_bx, a_data, 0, geom[lev], a_time, dir, a_side);
+}
+
+void
 PeleLM::fillTurbInflow(
   amrex::MultiFab& a_vel,
   const int vel_comp,
@@ -1288,9 +1328,8 @@ PeleLM::fillTurbInflow(
           data.setVal<amrex::RunOn::Device>(
             0.0, bndryBoxLO_ghost, vel_comp, AMREX_SPACEDIM);
 
-          turb_inflow.add_turb(
-            bndryBoxLO, data, 0, geom[lev], a_time, dir,
-            amrex::Orientation::low);
+          addTurbInflowToBox(
+            bndryBoxLO, data, lev, dir, amrex::Orientation::low, a_time);
         }
 
         auto bndryBoxHI =
@@ -1311,9 +1350,8 @@ PeleLM::fillTurbInflow(
           data.setVal<amrex::RunOn::Device>(
             0.0, bndryBoxHI_ghost, vel_comp, AMREX_SPACEDIM);
 
-          turb_inflow.add_turb(
-            bndryBoxHI, data, 0, geom[lev], a_time, dir,
-            amrex::Orientation::high);
+          addTurbInflowToBox(
+            bndryBoxHI, data, lev, dir, amrex::Orientation::high, a_time);
         }
       }
     }
@@ -1328,10 +1366,14 @@ int
 PeleLM::computeRecyclingSrcIndex(int lev) const
 {
   const int dir = m_inlet_plane_dir;
+  // peleLM.inlet_plane_position is a PHYSICAL coordinate.  Under mesh
+  // mapping the AMReX grid is the uniform Xi grid, so invert the mapping
+  // before converting to an index; with no mapping active the inverse is
+  // the identity and this reduces to the original expression.
+  const amrex::Real xi_position =
+    m_map_eval.xi_from_x_phys(dir, m_inlet_plane_position, geom[lev].data());
   auto srcIndex = static_cast<int>(std::lround(
-    (m_inlet_plane_position - geom[lev].ProbLo()[dir]) /
-      geom[lev].CellSize()[dir] -
-    0.5));
+    (xi_position - geom[lev].ProbLo()[dir]) / geom[lev].CellSize()[dir] - 0.5));
   const auto& dom = geom[lev].Domain();
   AMREX_ALWAYS_ASSERT_WITH_MESSAGE(
     srcIndex >= dom.smallEnd(dir) && srcIndex <= dom.bigEnd(dir),

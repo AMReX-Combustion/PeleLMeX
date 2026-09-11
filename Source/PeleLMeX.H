@@ -1252,6 +1252,24 @@ public:
     const int lev,
     const amrex::Real a_time);
 
+  // Inject synthetic turbulence into one inflow-adjacent ghost box. Wraps
+  // the PelePhysics call so that the mesh-mapping case, which must supply
+  // the injection face's physical cell-centre coordinates rather than let
+  // TurbInflow derive them from the (Xi-space) Geometry, is handled in one
+  // place.
+  void addTurbInflowToBox(
+    const amrex::Box& a_bx,
+    amrex::FArrayBox& a_data,
+    const int lev,
+    const int dir,
+    const amrex::Orientation::Side& a_side,
+    const amrex::Real a_time);
+
+  // Report the ratio of the level-0 grid's physical spacing on each inflow
+  // face to the turbulence file's transverse spacing. Informational only;
+  // called from checkSetupParams().
+  void reportTurbInflowResolution();
+
   void fillFromRecyclingPlane(amrex::MultiFab& a_vel, int vel_comp, int lev);
 
   // Full-mode mass-flux control: rescale the injection buffer's normal

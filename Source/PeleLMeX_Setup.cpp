@@ -1,3 +1,4 @@
+#include <limits>
 #include <string>
 #include <AMReX_ParmParse.H>
 #include <AMReX_buildInfo.H>
@@ -315,6 +316,11 @@ PeleLM::readParameters()
 
       m_mesh_map = MeshMap::create(mesh_mapping_name);
       m_mesh_mapping = true;
+      // Populate the coordinate evaluator now, rather than waiting for the
+      // Init/Regrid paths: parameter validation further down this function
+      // needs to convert between physical and Xi positions.  Init and
+      // Regrid refresh it from the same source.
+      m_map_eval = m_mesh_map->make_evaluator();
       amrex::Print() << " Mesh mapping enabled: " << mesh_mapping_name << "\n";
     }
   }
@@ -359,12 +365,21 @@ PeleLM::readParameters()
       m_inlet_plane_dir >= 0 && m_inlet_plane_dir < AMREX_SPACEDIM,
       "peleLM.inlet_plane_dir must be set to a valid direction "
       "when peleLM.use_inlet_from_plane is enabled");
-    AMREX_ALWAYS_ASSERT_WITH_MESSAGE(
-      m_inlet_plane_position >= geom[0].ProbLo()[m_inlet_plane_dir] &&
-        m_inlet_plane_position <= geom[0].ProbHi()[m_inlet_plane_dir],
-      "peleLM.inlet_plane_position must lie within the problem domain "
-      "bounds in peleLM.inlet_plane_dir when "
-      "peleLM.use_inlet_from_plane is enabled");
+    // inlet_plane_position is a physical coordinate.  Under mesh mapping the
+    // physical domain bounds are the images of the Xi bounds, which for
+    // ConstantMap differ from them; compare against those.
+    {
+      const auto gd = geom[0].data();
+      const amrex::Real phys_lo = m_map_eval.x_phys_from_xi(
+        m_inlet_plane_dir, geom[0].ProbLo()[m_inlet_plane_dir], gd);
+      const amrex::Real phys_hi = m_map_eval.x_phys_from_xi(
+        m_inlet_plane_dir, geom[0].ProbHi()[m_inlet_plane_dir], gd);
+      AMREX_ALWAYS_ASSERT_WITH_MESSAGE(
+        m_inlet_plane_position >= phys_lo && m_inlet_plane_position <= phys_hi,
+        "peleLM.inlet_plane_position must lie within the physical problem "
+        "domain bounds in peleLM.inlet_plane_dir when "
+        "peleLM.use_inlet_from_plane is enabled");
+    }
     AMREX_ALWAYS_ASSERT_WITH_MESSAGE(
       m_inlet_plane_warmup_steps >= 0,
       "peleLM.inlet_plane_warmup_steps must be non-negative when "
@@ -1036,6 +1051,119 @@ PeleLM::checkSetupParams()
     }
 #endif
   }
+
+  // ---------------------------------------------------------------------
+  // Mesh mapping x inflow data
+  // ---------------------------------------------------------------------
+  // A turbulence file is indexed by PHYSICAL position, while the AMReX grid
+  // a mesh-mapped run carries is the uniform Xi grid.  Sampling the file
+  // therefore needs the PelePhysics add_turb() overload that accepts
+  // physical coordinates; without it the inflow is silently sampled at Xi
+  // coordinates and the injected turbulence is wrong.
+  if (m_mesh_mapping && turb_inflow.is_initialized()) {
+#ifndef PELEPHYSICS_TURBINFLOW_HAS_COORD_ADDTURB
+    amrex::Abort(
+      "geometry.mesh_mapping combined with turbinflow requires a "
+      "PelePhysics that provides TurbInflow::add_turb() with explicit "
+      "physical coordinates (PELEPHYSICS_TURBINFLOW_HAS_COORD_ADDTURB).\n"
+      "Update Submodules/PelePhysics, or drop geometry.mesh_mapping.");
+#endif
+    // A turbulence file is uniform in *some* coordinate: physical position
+    // for synthetic or uniform-precursor data, but the precursor's Xi
+    // coordinate for planes extracted from a mesh-mapped run (DiagFramePlane
+    // and the plotfile writer both emit the Xi geometry).  The sampling path
+    // used here assumes the former.  A PelePhysics that understands the HDR
+    // MESHMAP_V1 trailer refuses the latter at TurbInflow::init(); an older
+    // one cannot tell them apart, so say so.
+#ifdef PELEPHYSICS_TURBINFLOW_HAS_MESHMAP_HDR
+    amrex::Print()
+      << " NOTE: turbinflow data without a MESHMAP_V1 trailer is taken to be "
+         "uniform in physical\n       position; only the target grid is "
+         "stretched.  Files extracted from a mesh-mapped\n       precursor "
+         "are refused until the sampling path can invert their map.\n";
+#else
+    amrex::Print()
+      << " WARNING: turbinflow data is assumed uniform in physical position. "
+         "This PelePhysics cannot\n          detect a file extracted from a "
+         "mesh-mapped precursor (uniform in that run's Xi\n          "
+         "coordinate); injecting one here would be silently wrong.\n";
+#endif
+  }
+
+  if (m_mesh_mapping && (m_use_inlet_from_plane != 0) && (verbose != 0)) {
+    const int dir = m_inlet_plane_dir;
+    amrex::Print() << " Recycling source plane: physical position "
+                   << m_inlet_plane_position << " -> Xi position "
+                   << m_map_eval.xi_from_x_phys(
+                        dir, m_inlet_plane_position, geom[0].data())
+                   << " (level-0 index " << computeRecyclingSrcIndex(0)
+                   << ")\n";
+  }
+
+  if (turb_inflow.is_initialized() && (verbose != 0)) {
+    reportTurbInflowResolution();
+  }
+}
+
+void
+PeleLM::reportTurbInflowResolution()
+{
+#ifndef PELEPHYSICS_TURBINFLOW_HAS_COORD_ADDTURB
+  // The accessors this needs (file_transverse_dx, transverseDirs) arrived
+  // with the coordinate-based add_turb overload; without them there is
+  // nothing to report.
+  return;
+#else
+  // Compare the turbulence file's transverse spacing against the level-0
+  // grid's physical spacing on each inflow face.  The ratio is the physical
+  // constraint on injecting a uniformly-spaced file: substantially above one
+  // and the file cannot fill the scales the grid resolves; substantially
+  // below one and the injected field is aliased onto the grid.  Neither is
+  // an error, so this only reports.
+  const auto gd = geom[0].data();
+  const amrex::Box& dom = geom[0].Domain();
+  auto velBCRec = fetchBCRecArray(VELX, AMREX_SPACEDIM);
+
+  for (int dir = 0; dir < AMREX_SPACEDIM; ++dir) {
+    for (int iside = 0; iside < 2; ++iside) {
+      const bool is_low = (iside == 0);
+      const auto side =
+        is_low ? amrex::Orientation::low : amrex::Orientation::high;
+      const int bctype = is_low ? velBCRec[0].lo()[dir] : velBCRec[0].hi()[dir];
+      if (bctype != amrex::BCType::ext_dir) {
+        continue;
+      }
+      amrex::Real file_dx[2] = {0.0, 0.0};
+      if (!turb_inflow.file_transverse_dx(dir, side, file_dx[0], file_dx[1])) {
+        continue;
+      }
+
+      int tdir1 = 0;
+      int tdir2 = 0;
+      pele::physics::turbinflow::TurbInflow::transverseDirs(dir, tdir1, tdir2);
+      const int tdir[2] = {tdir1, tdir2};
+
+      amrex::Print() << " turbInflow resolution check, face (dir " << dir
+                     << ", " << (is_low ? "low" : "high") << "):\n";
+      for (int t = 0; t < 2; ++t) {
+        if (file_dx[t] <= 0.0) {
+          continue;
+        }
+        amrex::Real dmin = std::numeric_limits<amrex::Real>::max();
+        amrex::Real dmax = 0.0;
+        for (int i = dom.smallEnd(tdir[t]); i <= dom.bigEnd(tdir[t]); ++i) {
+          const amrex::Real d = m_map_eval.dx_phys_cc(tdir[t], i, gd);
+          dmin = std::min(dmin, d);
+          dmax = std::max(dmax, d);
+        }
+        amrex::Print() << "   dir " << tdir[t] << ": grid dx in [" << dmin
+                       << ", " << dmax << "], file dx " << file_dx[t]
+                       << " -> dx_grid/dx_file in [" << dmin / file_dx[t]
+                       << ", " << dmax / file_dx[t] << "]\n";
+      }
+    }
+  }
+#endif
 }
 
 void

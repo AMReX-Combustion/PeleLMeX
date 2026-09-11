@@ -1,0 +1,92 @@
+# Turbulent inflow on a ConstantMap mesh: equivalence test.
+#
+# The Xi domain is 0.01 m wide in x and ConstantMap doubles it, so the
+# physical mesh is identical, cell for cell, to input.3d_ConstantMap_ref
+# (an unmapped run on a 0.02 m wide domain with the same n_cell).  The two
+# runs must therefore inject the same turbulence at the same physical
+# positions, and detJ/fac_z = 2 on the inflow face exercises the metric
+# scaling of the inflow boundary values in the nodal projection.
+#
+# Both cases dump the first interior cell layer above the inflow face every
+# step; compare them with
+#
+#   compare_inflow_plane.py planeCMref_000001 planeCM_000001 \
+#       --map constant --beta 2 --require 0.99
+#
+# which scores the mapped plane against the reference at physical x (must
+# correlate to ~1) and, for contrast, against the reference at Xi (the
+# pre-fix sampling; correlates poorly).  Compare an early step: the two
+# runs are not identical discretisations (metric factor vs anisotropic
+# computational cell), and the interior solutions drift apart by a few
+# percent per step, which is a separate question from where the inflow
+# is sampled.
+
+#----------------------DOMAIN DEFINITION------------------------
+geometry.is_periodic = 1 1 0              # For each dir, 0: non-perio, 1: periodic
+geometry.coord_sys   = 0                  # 0 => cart, 1 => RZ
+geometry.prob_lo     = 0.0 0.0 0.0        # x_lo y_lo (z_lo), Xi space
+geometry.prob_hi     = 0.01 0.01 0.01     # x_hi y_hi (z_hi), Xi space
+
+#-----------------------Mesh Mapping ---------------------------
+geometry.mesh_mapping      = ConstantMap
+ConstantMap.scaling_factor = 2.0 1.0 1.0  # physical x spans 0.02 m
+
+# >>>>>>>>>>>>>  BC FLAGS <<<<<<<<<<<<<<<<
+# Interior, Inflow, Outflow, Symmetry,
+# SlipWallAdiab, NoSlipWallAdiab, SlipWallIsotherm, NoSlipWallIsotherm
+peleLM.lo_bc = Interior Interior Inflow
+peleLM.hi_bc = Interior Interior Outflow
+
+#-------------------------AMR CONTROL----------------------------
+amr.n_cell          = 32 32 32          # Level 0 number of cells in each direction
+amr.v               = 1                 # AMR verbose
+amr.max_level       = 0                 # single level
+amr.blocking_factor = 8                 # block factor in grid generation
+amr.max_grid_size   = 16                # max box size
+
+#--------------------------- Problem -------------------------------
+prob.T_mean = 298.0
+prob.P_mean = 101325.0
+prob.flowDir = 2
+prob.flowMag = 5
+
+# The HIT file spans 2*pi in its own units; scale it over the 0.02 m
+# physical width (2*pi/0.02) and centre it in physical coordinates.
+turbinflows = lowZ
+turbinflow.lowZ.turb_file      = TurbFileHIT/TurbTEST
+turbinflow.lowZ.dir            = 2
+turbinflow.lowZ.side           = low
+turbinflow.lowZ.turb_scale_loc = 314.159
+turbinflow.lowZ.turb_scale_vel = 0.5
+turbinflow.lowZ.turb_center    = 0.01 0.005
+turbinflow.lowZ.turb_conv_vel  = 5.
+turbinflow.lowZ.turb_nplane    = 32
+turbinflow.lowZ.verbose        = 1
+
+#-------------------------PeleLM CONTROL----------------------------
+peleLM.v = 1
+peleLM.incompressible = 0
+peleLM.sdc_iterMax = 1
+peleLM.floor_species = 0
+peleLM.num_divu_iter = 1
+peleLM.num_init_iter = 1
+
+# Slice through the first interior cell layer above the inflow face, every
+# step.  Linear interpolation with center at the cell centre puts unit
+# weight on that layer (the Quadratic option samples one cell low).
+peleLM.diagnostics = inflowPlane
+peleLM.inflowPlane.type          = DiagFramePlane
+peleLM.inflowPlane.file          = planeCM_
+peleLM.inflowPlane.normal        = 2
+peleLM.inflowPlane.center        = 1.5625e-4
+peleLM.inflowPlane.interpolation = Linear
+peleLM.inflowPlane.int           = 1
+peleLM.inflowPlane.field_names   = x_velocity y_velocity z_velocity
+
+amr.plot_int = -1
+amr.check_int = -1
+amr.max_step = 2
+amr.fixed_dt = 2.e-5
+amr.derive_plot_vars = avg_pressure mag_vort mass_fractions
+
+fabarray.mfiter_tile_size = 1024 1024 1024

@@ -338,7 +338,43 @@ Mesh Mapping
 .. note::
    Three mesh maps are provided with `PeleLMeX.  If `mesh_mapping` is not specified, no mapping will be applied. Each map has associated
    parameters shown above.
-   
+
+.. note::
+   **Physical vs. computational coordinates.** With a mapping active, the AMReX
+   grid is the uniform computational (:math:`\xi`) grid and the physical grid is
+   its image under the map. Inputs that name a *position* are physical
+   coordinates and are converted internally: ``peleLM.inlet_plane_position``
+   (the recycling source plane) is inverted through the map before being turned
+   into an index, and its bounds check is against the physical domain extent,
+   which for ``ConstantMap`` differs from ``geometry.prob_lo`` /
+   ``geometry.prob_hi``. Diagnostics inherited from `PelePhysics`, notably
+   ``DiagFramePlane``, are the exception: their ``center`` is located on the
+   AMReX grid and is therefore a :math:`\xi` coordinate.
+
+.. note::
+   **Turbulent inflow.** ``turbinflow`` may be combined with ``mesh_mapping``:
+   the injection face's physical cell-centre positions are handed to
+   `PelePhysics` explicitly, so the turbulence file is sampled at the right
+   place on a stretched grid. This requires a `PelePhysics` new enough to
+   provide the coordinate-based ``TurbInflow::add_turb()`` overload; PeleLMeX
+   aborts at setup if the two are combined without it, rather than silently
+   sampling the file at :math:`\xi` positions.
+
+   The turbulence *file* is uniformly spaced in *some* coordinate -- its
+   header carries only a point count and a domain size per direction. Synthetic
+   data and planes from a uniform-mesh precursor are uniform in physical
+   position, which is what the sampling path assumes, so only the target grid
+   may be stretched. Planes extracted from a precursor that itself ran with
+   ``mesh_mapping`` are uniform in that run's :math:`\xi` coordinate instead;
+   the `PelePhysics` reader recognises such files by an optional ``MESHMAP_V1``
+   trailer in the ``HDR`` and refuses them until the sampling path can invert
+   the file's map. Do not inject planes from a mapped precursor before that
+   lands. At ``peleLM.v > 0`` a
+   resolution check prints, per inflow face, the range of the grid's physical
+   spacing against the file's spacing; a ratio well above one means the file
+   cannot fill the scales the stretched grid resolves near its clustering, and
+   well below one means the injected field is aliased.
+
 
 Turbulent Forcing and Velocity Plotfile
 ---------------------------------------
