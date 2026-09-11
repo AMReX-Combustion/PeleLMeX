@@ -134,6 +134,26 @@ struct MeshMapEvaluator
     return (wall_end == 1) ? (amrex::Real(1.0) - off) : off;
   }
 
+  /**
+   * \brief Inverse of \c exp_offset_norm: the Xi-space fraction \f$s\f$ at
+   *        which the physical fraction \p off is reached.
+   *
+   * Closed form (\c log).  \p off must lie in [0,1]; callers clamp.
+   */
+  AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE static amrex::Real
+  exp_offset_inv(amrex::Real off, amrex::Real beta, int wall_end) noexcept
+  {
+    if (std::abs(beta) < BETA_EPS) {
+      return off;
+    }
+    if (wall_end == 1) {
+      off = amrex::Real(1.0) - off;
+    }
+    const amrex::Real den = std::exp(beta) - amrex::Real(1.0);
+    const amrex::Real eta = std::log(off * den + amrex::Real(1.0)) / beta;
+    return (wall_end == 1) ? (amrex::Real(1.0) - eta) : eta;
+  }
+
   // ---- TanhStretchMap primitives (two-sided, clusters at both ends) ----
 
   /**
@@ -166,6 +186,25 @@ struct MeshMapEvaluator
            (amrex::Real(1.0) +
             std::tanh(beta * (amrex::Real(2.0) * s - amrex::Real(1.0))) /
               std::tanh(beta));
+  }
+
+  /**
+   * \brief Inverse of \c tanh_offset_norm: the Xi-space fraction \f$s\f$ at
+   *        which the physical fraction \p off is reached.
+   *
+   * Closed form (\c atanh).  \p off in [0,1] puts the argument in
+   * [-tanh(beta), tanh(beta)], strictly inside atanh's domain for any finite
+   * beta; callers clamp.
+   */
+  AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE static amrex::Real
+  tanh_offset_inv(amrex::Real off, amrex::Real beta) noexcept
+  {
+    if (std::abs(beta) < BETA_EPS) {
+      return off;
+    }
+    const amrex::Real arg =
+      (amrex::Real(2.0) * off - amrex::Real(1.0)) * std::tanh(beta);
+    return amrex::Real(0.5) * (amrex::Real(1.0) + std::atanh(arg) / beta);
   }
 
   // ---- InteriorStretchMap primitives -----------------------------------
@@ -273,6 +312,55 @@ struct MeshMapEvaluator
   }
 
   /**
+   * \brief Inverse of \c interior_offset_norm: the Xi-space fraction
+   *        \f$s\f$ at which the physical fraction \p target is reached.
+   *
+   * No closed form (the offset involves
+   * \f$\eta + \sinh(2\beta\eta)/(2\beta)\f$), so this is a Newton iteration
+   * on f(s) = offset_norm(s) - target, whose derivative f' = fac(s) > 0, with
+   * a bisection safeguard on the bracket [lo, hi] that always contains the
+   * root because offset_norm is strictly increasing.  \p target must lie in
+   * [0,1]; callers clamp.
+   */
+  AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE static amrex::Real
+  interior_offset_inv(
+    amrex::Real beta_lo,
+    amrex::Real beta_hi,
+    amrex::Real s_c,
+    amrex::Real target) noexcept
+  {
+    if (std::abs(beta_lo) < BETA_EPS && std::abs(beta_hi) < BETA_EPS) {
+      return target;
+    }
+    auto lo = amrex::Real(0.0);
+    auto hi = amrex::Real(1.0);
+    amrex::Real s = target;
+    for (int it = 0; it < 50; ++it) {
+      const amrex::Real f =
+        interior_offset_norm(beta_lo, beta_hi, s_c, s) - target;
+      if (std::abs(f) < amrex::Real(1.0e-15)) {
+        break;
+      }
+      if (f > amrex::Real(0.0)) {
+        hi = s;
+      } else {
+        lo = s;
+      }
+      const amrex::Real fp = interior_fac(beta_lo, beta_hi, s_c, s);
+      amrex::Real s_new = s - f / fp;
+      if (s_new <= lo || s_new >= hi) {
+        s_new = amrex::Real(0.5) * (lo + hi);
+      }
+      const amrex::Real ds = std::abs(s_new - s);
+      s = s_new;
+      if (ds < amrex::Real(1.0e-13)) {
+        break;
+      }
+    }
+    return s;
+  }
+
+  /**
    * \brief Physical coordinate of the cell centre with integer index
    *        \p idx along axis \p idir.
    */
@@ -329,10 +417,10 @@ struct MeshMapEvaluator
    *        whose image under the mapping is \p x_phys, along axis \p idir.
    *
    * Constant, ExpStretch and TanhStretch invert in closed form (\c log and
-   * \c atanh).  InteriorStretch does not -- its offset involves
-   * \f$\eta + \sinh(2\beta\eta)/(2\beta)\f$ -- so it is inverted by a
-   * safeguarded Newton iteration on the monotone forward map, whose
-   * derivative is exactly \c interior_fac.  Use it to turn a physical
+   * \c atanh, see \c exp_offset_inv / \c tanh_offset_inv).  InteriorStretch
+   * does not, so \c interior_offset_inv runs a safeguarded Newton iteration
+   * on the monotone forward map, whose derivative is exactly
+   * \c interior_fac.  Use it to turn a physical
    * position supplied in the inputs (a sampling-plane location, a probe
    * position) into the coordinate that indexes the AMReX grid.
    *
@@ -356,73 +444,27 @@ struct MeshMapEvaluator
 
     case Kind::ExpStretch: {
       const amrex::Real beta = m_p[idir];
-      if (std::abs(beta) < BETA_EPS) {
-        return x_phys;
-      }
-      amrex::Real off = clamp01((x_phys - plo) / L);
-      if (m_q[idir] == 1) {
-        off = amrex::Real(1.0) - off;
-      }
-      const amrex::Real den = std::exp(beta) - amrex::Real(1.0);
-      amrex::Real eta = std::log(off * den + amrex::Real(1.0)) / beta;
-      if (m_q[idir] == 1) {
-        eta = amrex::Real(1.0) - eta;
-      }
-      return plo + L * eta;
+      return (std::abs(beta) < BETA_EPS)
+               ? x_phys
+               : plo + L * exp_offset_inv(
+                            clamp01((x_phys - plo) / L), beta, m_q[idir]);
     }
 
     case Kind::TanhStretch: {
       const amrex::Real beta = m_p[idir];
-      if (std::abs(beta) < BETA_EPS) {
-        return x_phys;
-      }
-      const amrex::Real off = clamp01((x_phys - plo) / L);
-      // off in [0,1] puts the argument in [-tanh(beta), tanh(beta)], which
-      // is strictly inside atanh's domain for any finite beta.
-      const amrex::Real arg =
-        (amrex::Real(2.0) * off - amrex::Real(1.0)) * std::tanh(beta);
-      const amrex::Real eta =
-        amrex::Real(0.5) * (amrex::Real(1.0) + std::atanh(arg) / beta);
-      return plo + L * eta;
+      return (std::abs(beta) < BETA_EPS)
+               ? x_phys
+               : plo + L * tanh_offset_inv(clamp01((x_phys - plo) / L), beta);
     }
 
     case Kind::InteriorStretch: {
       const amrex::Real beta_lo = m_p[idir];
       const amrex::Real beta_hi = m_p2[idir];
-      const amrex::Real s_c = m_p3[idir];
-      if (std::abs(beta_lo) < BETA_EPS && std::abs(beta_hi) < BETA_EPS) {
-        return x_phys;
-      }
-      const amrex::Real target = clamp01((x_phys - plo) / L);
-      // Newton on f(s) = offset_norm(s) - target, f' = fac(s) > 0, with a
-      // bisection safeguard on the bracket [lo, hi] that always contains
-      // the root because offset_norm is strictly increasing.
-      auto lo = amrex::Real(0.0);
-      auto hi = amrex::Real(1.0);
-      amrex::Real s = target;
-      for (int it = 0; it < 50; ++it) {
-        const amrex::Real f =
-          interior_offset_norm(beta_lo, beta_hi, s_c, s) - target;
-        if (std::abs(f) < amrex::Real(1.0e-15)) {
-          break;
-        }
-        if (f > amrex::Real(0.0)) {
-          hi = s;
-        } else {
-          lo = s;
-        }
-        const amrex::Real fp = interior_fac(beta_lo, beta_hi, s_c, s);
-        amrex::Real s_new = s - f / fp;
-        if (s_new <= lo || s_new >= hi) {
-          s_new = amrex::Real(0.5) * (lo + hi);
-        }
-        const amrex::Real ds = std::abs(s_new - s);
-        s = s_new;
-        if (ds < amrex::Real(1.0e-13)) {
-          break;
-        }
-      }
-      return plo + L * s;
+      return (std::abs(beta_lo) < BETA_EPS && std::abs(beta_hi) < BETA_EPS)
+               ? x_phys
+               : plo + L * interior_offset_inv(
+                            beta_lo, beta_hi, m_p3[idir],
+                            clamp01((x_phys - plo) / L));
     }
     }
     AMREX_ALWAYS_ASSERT_WITH_MESSAGE(
