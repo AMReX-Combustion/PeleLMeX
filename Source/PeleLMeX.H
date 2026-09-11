@@ -1268,6 +1268,7 @@ public:
   // Report the ratio of the level-0 grid's physical spacing on each inflow
   // face to the turbulence file's transverse spacing. Informational only;
   // called from checkSetupParams().
+  void reportTurbInflowMaps();
   void reportTurbInflowResolution();
 
   void fillFromRecyclingPlane(amrex::MultiFab& a_vel, int vel_comp, int lev);

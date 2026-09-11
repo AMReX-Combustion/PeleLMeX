@@ -1055,11 +1055,14 @@ PeleLM::checkSetupParams()
   // ---------------------------------------------------------------------
   // Mesh mapping x inflow data
   // ---------------------------------------------------------------------
-  // A turbulence file is indexed by PHYSICAL position, while the AMReX grid
-  // a mesh-mapped run carries is the uniform Xi grid.  Sampling the file
-  // therefore needs the PelePhysics add_turb() overload that accepts
-  // physical coordinates; without it the inflow is silently sampled at Xi
-  // coordinates and the injected turbulence is wrong.
+  // A turbulence file is uniform in *some* coordinate: physical position
+  // for synthetic or uniform-precursor data, the precursor's Xi coordinate
+  // for planes extracted from a mesh-mapped run.  Either way the file is
+  // sampled by the physical position of each target cell, which on a
+  // mesh-mapped grid is not ProbLo + (i+0.5)*dx: that needs the PelePhysics
+  // add_turb() overload taking explicit coordinates, and sampling a
+  // Xi-uniform file additionally needs a PelePhysics that inverts the
+  // file's map.
   if (m_mesh_mapping && turb_inflow.is_initialized()) {
 #ifndef PELEPHYSICS_TURBINFLOW_HAS_COORD_ADDTURB
     amrex::Abort(
@@ -1068,26 +1071,9 @@ PeleLM::checkSetupParams()
       "physical coordinates (PELEPHYSICS_TURBINFLOW_HAS_COORD_ADDTURB).\n"
       "Update Submodules/PelePhysics, or drop geometry.mesh_mapping.");
 #endif
-    // A turbulence file is uniform in *some* coordinate: physical position
-    // for synthetic or uniform-precursor data, but the precursor's Xi
-    // coordinate for planes extracted from a mesh-mapped run (DiagFramePlane
-    // and the plotfile writer both emit the Xi geometry).  The sampling path
-    // used here assumes the former.  A PelePhysics that understands the HDR
-    // MESHMAP_V1 trailer refuses the latter at TurbInflow::init(); an older
-    // one cannot tell them apart, so say so.
-#ifdef PELEPHYSICS_TURBINFLOW_HAS_MESHMAP_HDR
-    amrex::Print()
-      << " NOTE: turbinflow data without a MESHMAP_V1 trailer is taken to be "
-         "uniform in physical\n       position; only the target grid is "
-         "stretched.  Files extracted from a mesh-mapped\n       precursor "
-         "are refused until the sampling path can invert their map.\n";
-#else
-    amrex::Print()
-      << " WARNING: turbinflow data is assumed uniform in physical position. "
-         "This PelePhysics cannot\n          detect a file extracted from a "
-         "mesh-mapped precursor (uniform in that run's Xi\n          "
-         "coordinate); injecting one here would be silently wrong.\n";
-#endif
+  }
+  if (turb_inflow.is_initialized() && (verbose != 0)) {
+    reportTurbInflowMaps();
   }
 
   if (m_mesh_mapping && (m_use_inlet_from_plane != 0) && (verbose != 0)) {
@@ -1103,6 +1089,110 @@ PeleLM::checkSetupParams()
   if (turb_inflow.is_initialized() && (verbose != 0)) {
     reportTurbInflowResolution();
   }
+}
+
+void
+PeleLM::reportTurbInflowMaps()
+{
+#ifndef PELEPHYSICS_TURBINFLOW_SAMPLES_MESHMAP
+  // Older PelePhysics: files without a MESHMAP trailer are taken to be
+  // uniform in physical position; a reader that knows the trailer refuses
+  // files that carry one, an older one cannot tell them apart.
+  if (m_mesh_mapping) {
+#ifdef PELEPHYSICS_TURBINFLOW_HAS_MESHMAP_HDR
+    amrex::Print()
+      << " NOTE: turbinflow data without a MESHMAP trailer is taken to be "
+         "uniform in physical\n       position; only the target grid is "
+         "stretched.  Files extracted from a mesh-mapped\n       precursor "
+         "are refused by this PelePhysics.\n";
+#else
+    amrex::Print()
+      << " WARNING: turbinflow data is assumed uniform in physical position. "
+         "This PelePhysics cannot\n          detect a file extracted from a "
+         "mesh-mapped precursor (uniform in that run's Xi\n          "
+         "coordinate); injecting one here would be silently wrong.\n";
+#endif
+  }
+#else
+  // For every inflow face fed by a turbulence file, say which coordinate
+  // the file is uniform in and how it relates to this run's mesh: a file
+  // whose map and Xi grid coincide with ours is injected by exact index
+  // (the same-grid guarantee, now also for mapped meshes); anything else
+  // is interpolated -- in physical position for a physically-uniform file,
+  // in the file's Xi for a mapped one.
+  const auto gd = geom[0].data();
+  const amrex::Box& dom = geom[0].Domain();
+  auto velBCRec = fetchBCRecArray(VELX, AMREX_SPACEDIM);
+  for (int dir = 0; dir < AMREX_SPACEDIM; ++dir) {
+    for (int iside = 0; iside < 2; ++iside) {
+      const bool is_low = (iside == 0);
+      const auto side =
+        is_low ? amrex::Orientation::low : amrex::Orientation::high;
+      const int bctype = is_low ? velBCRec[0].lo()[dir] : velBCRec[0].hi()[dir];
+      if (bctype != amrex::BCType::ext_dir) {
+        continue;
+      }
+      MeshMapEvaluator fmap;
+      amrex::Real xi_lo[2] = {0.0, 0.0};
+      amrex::Real xi_hi[2] = {0.0, 0.0};
+      const int has = turb_inflow.file_map(dir, side, fmap, xi_lo, xi_hi);
+      if (has < 0) {
+        continue;
+      }
+      amrex::Print() << " turbInflow on face (dir " << dir << ", "
+                     << (is_low ? "low" : "high") << "): ";
+      if (has == 0) {
+        amrex::Print() << "file is uniform in physical position; sampled at "
+                          "the physical positions of this "
+                       << (m_mesh_mapping ? "mapped" : "uniform") << " mesh\n";
+        continue;
+      }
+      int tdir1 = 0;
+      int tdir2 = 0;
+      pele::physics::turbinflow::TurbInflow::transverseDirs(dir, tdir1, tdir2);
+      const int tdir[2] = {tdir1, tdir2};
+      // Same map on the two transverse axes (file slots 0/1 against our
+      // axes tdir1/tdir2) and the same Xi extent means the file's Xi grid
+      // is a uniform grid on our own transverse domain; with equal cell
+      // counts every target cell centre is a file cell centre.
+      bool same = (fmap.m_kind == m_map_eval.m_kind);
+      for (int t = 0; t < 2 && same; ++t) {
+        const int d = tdir[t];
+        same = (fmap.m_p[t] == m_map_eval.m_p[d]) &&
+               (fmap.m_p2[t] == m_map_eval.m_p2[d]) &&
+               (fmap.m_p3[t] == m_map_eval.m_p3[d]) &&
+               (fmap.m_q[t] == m_map_eval.m_q[d]) &&
+               (xi_lo[t] == gd.ProbLo()[d]) && (xi_hi[t] == gd.ProbHi()[d]);
+      }
+      amrex::Print() << "file is uniform in its precursor's Xi (map kind "
+                     << static_cast<int>(fmap.m_kind) << "); ";
+      if (same) {
+        amrex::Print() << "map and Xi extent match this mesh -> ";
+        amrex::Real dmin[2];
+        amrex::Real dmax[2];
+        bool same_cells =
+          turb_inflow.file_transverse_dx_range(dir, side, dmin, dmax);
+        // Same map and extent: the smallest physical cell is a monotone
+        // function of the cell count, so equal minima mean equal counts.
+        for (int t = 0; t < 2 && same_cells; ++t) {
+          const int d = tdir[t];
+          amrex::Real gmin = std::numeric_limits<amrex::Real>::max();
+          for (int i = dom.smallEnd(d); i <= dom.bigEnd(d); ++i) {
+            gmin = std::min(gmin, m_map_eval.dx_phys_cc(d, i, gd));
+          }
+          same_cells = std::abs(dmin[t] - gmin) <= 1.0e-10 * gmin;
+        }
+        amrex::Print()
+          << (same_cells ? "exact index injection\n"
+                         : "interpolation in Xi (different cell count)\n");
+      } else {
+        amrex::Print() << (m_mesh_mapping ? "this mesh's map differs"
+                                          : "this mesh is uniform")
+                       << " -> interpolation in the file's Xi\n";
+      }
+    }
+  }
+#endif
 }
 
 void
@@ -1137,6 +1227,17 @@ PeleLM::reportTurbInflowResolution()
       if (!turb_inflow.file_transverse_dx(dir, side, file_dx[0], file_dx[1])) {
         continue;
       }
+#ifdef PELEPHYSICS_TURBINFLOW_SAMPLES_MESHMAP
+      // A mesh-mapped file's physical spacing varies across the plane; the
+      // ratio is then bounded by the two spacing ranges rather than by a
+      // single file value.
+      amrex::Real file_dmin[2] = {0.0, 0.0};
+      amrex::Real file_dmax[2] = {0.0, 0.0};
+      turb_inflow.file_transverse_dx_range(dir, side, file_dmin, file_dmax);
+#else
+      const amrex::Real* file_dmin = file_dx;
+      const amrex::Real* file_dmax = file_dx;
+#endif
 
       int tdir1 = 0;
       int tdir2 = 0;
@@ -1157,9 +1258,26 @@ PeleLM::reportTurbInflowResolution()
           dmax = std::max(dmax, d);
         }
         amrex::Print() << "   dir " << tdir[t] << ": grid dx in [" << dmin
-                       << ", " << dmax << "], file dx " << file_dx[t]
-                       << " -> dx_grid/dx_file in [" << dmin / file_dx[t]
-                       << ", " << dmax / file_dx[t] << "]\n";
+                       << ", " << dmax << "], file dx ";
+        if (file_dmin[t] == file_dmax[t]) {
+          amrex::Print() << file_dx[t] << " -> dx_grid/dx_file in ["
+                         << dmin / file_dx[t] << ", " << dmax / file_dx[t]
+                         << "]\n";
+        } else if (
+          std::abs(file_dmin[t] - dmin) <= 1.0e-10 * dmin &&
+          std::abs(file_dmax[t] - dmax) <= 1.0e-10 * dmax) {
+          // Same stretched grid on both sides: the pointwise ratio is one
+          // everywhere, which the min/max bound below would hide.
+          amrex::Print() << "in [" << file_dmin[t] << ", " << file_dmax[t]
+                         << "] -> same spacing range as the grid, "
+                            "dx_grid/dx_file = 1 pointwise\n";
+        } else {
+          amrex::Print() << "in [" << file_dmin[t] << ", " << file_dmax[t]
+                         << "] (mean " << file_dx[t]
+                         << ") -> dx_grid/dx_file bounded by ["
+                         << dmin / file_dmax[t] << ", " << dmax / file_dmin[t]
+                         << "]\n";
+        }
       }
     }
   }
