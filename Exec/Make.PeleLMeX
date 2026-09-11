@@ -143,6 +143,7 @@ PPdirs := Source/Utility/PMF Source/Utility/TurbInflow Source/Utility/PltFileMan
 PPdirs += Source/Utility/Diagnostics Source/Utility/BlackBoxFunction
 PPdirs += Source/Utility/TurbForcing
 PPdirs += Source/Utility/Utilities
+PPdirs += Source/Utility/MeshMap
 PPdirs += Source Source/Reactions Source/Eos Source/Transport
 
 ifeq ($(USE_CUSTOM_CHEMISTRY), TRUE)

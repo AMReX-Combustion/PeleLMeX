@@ -361,20 +361,25 @@ Mesh Mapping
    sampling the file at :math:`\xi` positions.
 
    The turbulence *file* is uniformly spaced in *some* coordinate -- its
-   header carries only a point count and a domain size per direction. Synthetic
-   data and planes from a uniform-mesh precursor are uniform in physical
-   position, which is what the sampling path assumes, so only the target grid
-   may be stretched. Planes extracted from a precursor that itself ran with
+   header carries only a point count and a domain size per direction.
+   Synthetic data and planes from a uniform-mesh precursor are uniform in
+   physical position. Planes extracted from a precursor that itself ran with
    ``mesh_mapping`` are uniform in that run's :math:`\xi` coordinate instead;
-   the `PelePhysics` reader recognises such files by an optional ``MESHMAP_V1``
-   trailer in the ``HDR`` and refuses them until the sampling path can invert
-   the file's map. Do not inject planes from a mapped precursor before that
-   lands. At ``peleLM.v > 0`` a
-   resolution check prints, per inflow face, the range of the grid's physical
-   spacing against the file's spacing; a ratio well above one means the file
-   cannot fill the scales the stretched grid resolves near its clustering, and
-   well below one means the injected field is aliased.
-
+   the `PelePhysics` ``TurbInflowGenerator`` tags such files with a
+   ``MESHMAP`` trailer in the ``HDR`` when its input carries the precursor's
+   ``geometry.mesh_mapping`` block (copy those lines verbatim), and the reader
+   then inverts the file's map for every target cell and interpolates in the
+   file's :math:`\xi`. Either kind of file can be injected on either kind of
+   target grid; when the file's map and :math:`\xi` grid coincide with the
+   target's, the file is reproduced exactly. For a mapped file
+   ``turb_center`` may be omitted (the file sits where the precursor had it).
+   At ``peleLM.v > 0`` PeleLMeX prints, per inflow face, which coordinate the
+   file is uniform in and whether it is injected by exact index or by
+   interpolation, followed by a resolution check comparing the grid's
+   physical spacing range against the file's; a ratio well above one means
+   the file cannot fill the scales the stretched grid resolves near its
+   clustering, and well below one means the injected field is aliased.
+   See ``Exec/RegTests/TurbInflow`` for the round-trip and cross-map cases.
 
 Turbulent Forcing and Velocity Plotfile
 ---------------------------------------
