@@ -1,0 +1,79 @@
+# Cross-map injection: a file from a tanh-mapped precursor onto a uniform mesh.
+#
+# Same as input.3d_TanhStretch_rt but without the mesh mapping: the target
+# cell centres are uniform in physical x, the file (TurbTanhRT) is uniform in
+# the precursor's Xi.  TurbInflow inverts the file's map for every target
+# position and interpolates linearly in Xi, so the ghost dump must equal the
+# source plane interpolated the same way at the physical cell centres -- and
+# must differ from the source read at the same Xi (the sampling error this
+# guards against):
+#
+#   check_inflow_roundtrip.py ghostTanh_000002 ghostXM_000002 \
+#       --source-map tanh --beta 2.0 --tol 1e-10
+#----------------------DOMAIN DEFINITION------------------------
+geometry.is_periodic = 0 1 0              # x: slip walls (see header), y periodic
+geometry.coord_sys   = 0                  # 0 => cart, 1 => RZ
+geometry.prob_lo     = 0.0 0.0 0.0        # x_lo y_lo (z_lo)
+geometry.prob_hi     = 0.01 0.01 0.01     # x_hi y_hi (z_hi)
+
+#-----------------------Mesh Mapping ---------------------------
+# none: uniform target; the inflow file is from a tanh-mapped precursor
+
+# >>>>>>>>>>>>>  BC FLAGS <<<<<<<<<<<<<<<<
+# Interior, Inflow, Outflow, Symmetry,
+# SlipWallAdiab, NoSlipWallAdiab, SlipWallIsotherm, NoSlipWallIsotherm
+peleLM.lo_bc = SlipWallAdiab Interior Inflow
+peleLM.hi_bc = SlipWallAdiab Interior Outflow
+
+#-------------------------AMR CONTROL----------------------------
+amr.n_cell          = 32 32 32          # Level 0 number of cells in each direction
+amr.v               = 1                 # AMR verbose
+amr.max_level       = 0                 # single level
+amr.blocking_factor = 8                 # block factor in grid generation
+amr.max_grid_size   = 16                # max box size
+
+#--------------------------- Problem -------------------------------
+prob.T_mean = 298.0
+prob.P_mean = 101325.0
+prob.flowDir = 2
+prob.flowMag = 5
+
+turbinflows = lowZ
+turbinflow.lowZ.turb_file          = TurbTanhRT
+turbinflow.lowZ.dir                = 2
+turbinflow.lowZ.side               = low
+turbinflow.lowZ.turb_scale_loc     = 1.0
+turbinflow.lowZ.turb_scale_vel     = 1.0
+turbinflow.lowZ.turb_nplane        = 5
+turbinflow.lowZ.interp_type        = linear
+turbinflow.lowZ.extrap_nonperiodic = 1
+turbinflow.lowZ.verbose            = 1
+
+#-------------------------PeleLM CONTROL----------------------------
+peleLM.v = 1
+peleLM.incompressible = 0
+peleLM.sdc_iterMax = 1
+peleLM.floor_species = 0
+peleLM.num_divu_iter = 1
+peleLM.num_init_iter = 1
+
+# Inflow ghost layer, every step, as flat 3D plotfiles the generator reads.
+peleLM.diagnostics = ghostPlane
+peleLM.ghostPlane.type                   = DiagFramePlane
+peleLM.ghostPlane.file                   = ghostXM_
+peleLM.ghostPlane.normal                 = 2
+peleLM.ghostPlane.center                 = -1.0
+peleLM.ghostPlane.dump_ghost_if_OOB      = 1
+peleLM.ghostPlane.dump_flat_3D_plotfile  = 1
+peleLM.ghostPlane.interpolation          = Linear
+peleLM.ghostPlane.int                    = 1
+peleLM.ghostPlane.field_names            = x_velocity y_velocity z_velocity
+
+# Fixed dt so that the plane times are reproduced exactly by the consumer.
+amr.plot_int = -1
+amr.check_int = -1
+amr.max_step = 2
+amr.fixed_dt = 2.e-5
+amr.derive_plot_vars = avg_pressure mag_vort mass_fractions
+
+fabarray.mfiter_tile_size = 1024 1024 1024
