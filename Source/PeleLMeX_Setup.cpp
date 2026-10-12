@@ -348,6 +348,8 @@ PeleLM::readParameters()
   // enable overwriting
   m_closed_chamber = (isOpenDomain) != 0 ? 0 : 1;
   pp.query("closed_chamber", m_closed_chamber);
+  pp.query("debug_check_compatibility", m_debug_check_compatibility);
+  pp.query("debug_compatibility_tol", m_debug_compatibility_tol);
   if ((verbose != 0) && (m_closed_chamber != 0)) {
     amrex::Print()
       << " Simulation performed with the closed chamber algorithm \n";
@@ -2039,6 +2041,9 @@ PeleLM::resizeArray()
 
   // External sources
   m_extSource.resize(max_level + 1);
+
+  // Physical cell volumes (MFSum weights)
+  m_cellVol.resize(max_level + 1);
 
   // Factory
   m_factory.resize(max_level + 1);

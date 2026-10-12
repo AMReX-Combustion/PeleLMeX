@@ -390,6 +390,16 @@ PeleLM::macProject(
     macproj->updateBeta(GetVecOfArrOfConstPtrs(rho_inv));
   }
 
+  // Closed chamber: the RHS handed to the projector must balance the
+  // boundary flux of the (Xi-space) face velocity, or the all-Neumann
+  // MAC system is unsolvable.  The MacProjector forms div(umac) - rhs.
+  if ((has_divu != 0) && (m_closed_chamber != 0) && (m_incompressible == 0)) {
+    checkProjectionCompatibility(
+      "MAC projection",
+      m_mesh_mapping ? divu_for_proj : GetVecOfConstPtrs(a_divu),
+      domainFaceFluxXi(GetArrOfConstPtrs(advData->umac[0])), -1.0);
+  }
+
   // set MAC velocity and projection RHS
   macproj->getLinOp().setMaxOrder(m_mac_max_order);
   macproj->setUMAC(GetVecOfArrOfPtrs(advData->umac));
