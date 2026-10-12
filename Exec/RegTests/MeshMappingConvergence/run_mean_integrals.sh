@@ -36,12 +36,10 @@ PIPE_DIR="$PROJECT_ROOT/Exec/RegTests/PipeFlow"
 BUBBLE_DIR="$PROJECT_ROOT/Exec/RegTests/HotBubble"
 
 pick_bin() {
+  # Any compiler/parallel flavour (gnu, llvm, MPI, OMP, ...); the newest
+  # executable wins when several are present.  Override with BIN3D/BIN2D.
   local dir="$1" dim="$2"
-  for cand in "PeleLMeX${dim}d.gnu.ex" "PeleLMeX${dim}d.gnu.MPI.ex" \
-              "PeleLMeX${dim}d.llvm.MPI.ex" "PeleLMeX${dim}d.gnu.OMP.ex"; do
-    if [[ -x "$dir/$cand" ]]; then echo "$dir/$cand"; return; fi
-  done
-  echo ""
+  ls -t "$dir"/PeleLMeX"${dim}"d.*.ex 2>/dev/null | head -n 1
 }
 : "${BIN3D:=$(pick_bin "$PIPE_DIR" 3)}"
 : "${BIN2D:=$(pick_bin "$BUBBLE_DIR" 2)}"
