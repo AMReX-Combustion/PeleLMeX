@@ -397,7 +397,7 @@ PeleLM::macProject(
     checkProjectionCompatibility(
       "MAC projection",
       m_mesh_mapping ? divu_for_proj : GetVecOfConstPtrs(a_divu),
-      domainFaceFluxXi(GetArrOfConstPtrs(advData->umac[0])), -1.0);
+      domainFaceFlux(GetVecOfArrOfConstPtrs(advData->umac)), -1.0, false);
   }
 
   // set MAC velocity and projection RHS

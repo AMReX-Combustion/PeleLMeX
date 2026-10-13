@@ -36,12 +36,28 @@ RE_COMPAT = re.compile(r"\.\.\. (\S+ projection) compatibility: .* = (\S+) \(")
 ok = True
 
 
+ABORT_MARKERS = ("SIGABRT", "amrex::Abort", "MLMG failed", "SIGSEGV", "SIGFPE")
+
+
 def log(tag):
+    """Return the run log, or None if it is missing or the run did not finish.
+
+    A run that printed its first-step value and then crashed must not pass,
+    so a log carrying an abort marker (or a FAILED stamp from the driver)
+    counts as missing and fails the check.
+    """
+    global ok
     p = results / tag / "run.log"
     if not p.exists():
         print(f"MISSING {p}")
         return None
-    return p.read_text()
+    text = p.read_text()
+    if (results / tag / "FAILED").exists() or any(
+            m in text for m in ABORT_MARKERS):
+        print(f"ABORTED {p}")
+        ok = False
+        return None
+    return text
 
 
 def first(rx, text, grp=1):
@@ -62,9 +78,12 @@ def verdict(name, val, ref, tol):
           f"{'OK' if good else 'FAIL'}")
 
 
+suites_seen = 0
+
 # ------------------------------------------------------------- channel
 pf = results / "channel.params"
 if pf.exists():
+    suites_seen += 1
     prm = dict(kv.split("=") for kv in pf.read_text().split()[1:])
     mu, U, Ly = (float(prm[k]) for k in ("mu", "U", "Ly"))
     exact = -16.0 * mu * U / Ly**2
@@ -86,8 +105,10 @@ if pf.exists():
               f"{'OK' if good else 'FAIL'}")
 
 # ------------------------------------------------------------- chamber
-lu, lt = log("chamber_uniform"), log("chamber_tanh")
-if lu is not None or lt is not None:
+have_chamber = any((results / t).exists() for t in ("chamber_uniform", "chamber_tanh"))
+if have_chamber:
+    suites_seen += 1
+    lu, lt = log("chamber_uniform"), log("chamber_tanh")
     print("chamber: closed-chamber dp0/dt and projection compatibility")
     du = first(RE_DP0, lu, 3) if lu else None
     dt = first(RE_DP0, lt, 3) if lt else None
@@ -108,9 +129,11 @@ if lu is not None or lt is not None:
             ok &= good
             print(f"  {tag:8s} {who:22s} max residual {rel:.3e}  "
                   f"{'OK' if good else 'FAIL'}")
-        if "incompatible" in text:
-            print(f"  {tag}: run aborted on the compatibility gate  FAIL")
-            ok = False
+
+if suites_seen == 0:
+    print(f"no regression output found under {results} (neither channel nor "
+          "chamber ran)  FAIL")
+    ok = False
 
 print("ALL OK" if ok else "FAILURES")
 sys.exit(0 if ok else 1)

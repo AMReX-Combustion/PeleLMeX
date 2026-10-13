@@ -178,9 +178,9 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
         mmap.x_phys_face(1, 0, geomdata) + 0.5 * Ly; // physical mid-plane
       const amrex::Real yhat = 2.0 * (y - y_mid) / Ly;
       const amrex::Real yhat2 = yhat * yhat;
-      AMREX_D_TERM(
-        state(i, j, k, VELX) = prob_parm.meanFlowMag * (1.0 - yhat2 * yhat2);
-        , state(i, j, k, VELY) = 0.0;, state(i, j, k, VELZ) = 0.0);
+      AMREX_D_TERM(state(i, j, k, VELX) =
+                     prob_parm.meanFlowMag * (1.0 - yhat2 * yhat2);
+                   , state(i, j, k, VELY) = 0.0;, state(i, j, k, VELZ) = 0.0);
     }
 
     if (!(is_incompressible == 0)) {

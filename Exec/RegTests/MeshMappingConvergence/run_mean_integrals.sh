@@ -48,15 +48,26 @@ pick_bin() {
 : "${MPIRUN:=}"   # e.g. "mpiexec -n 2" for an MPI build
 
 mkdir -p "$RESULTS_DIR"
+NFAIL=0
+NRUN=0
 
 run_case() {
   local bin="$1" inp="$2" tag="$3"; shift 3
   local outdir="$RESULTS_DIR/$tag"
   mkdir -p "$outdir"
   echo "=== [$(date +%T)] $tag"
-  ( cd "$outdir" && $MPIRUN "$bin" "$inp" "$@" \
+  NRUN=$((NRUN + 1))
+  # Keep going after a failed run so the other cases still produce logs,
+  # but remember it: the script exits non-zero and the checker refuses a
+  # log that ends in an abort, so a run that printed its first-step value
+  # and then crashed cannot pass.
+  if ! ( cd "$outdir" && $MPIRUN "$bin" "$inp" "$@" \
       amrex.fpe_trap_invalid=0 amrex.fpe_trap_zero=0 amrex.fpe_trap_overflow=0 \
-      > run.log 2>&1 ) || { echo "   ... FAILED, see $outdir/run.log"; }
+      > run.log 2>&1 ); then
+    echo "   ... FAILED, see $outdir/run.log"
+    NFAIL=$((NFAIL + 1))
+    touch "$outdir/FAILED"
+  fi
 }
 
 # ---------------------------------------------------------------- channel
@@ -112,5 +123,10 @@ else
   echo "WARNING: no HotBubble 2D executable found in $BUBBLE_DIR; skipping chamber"
 fi
 
-echo "=== done.  Results in $RESULTS_DIR"
+echo "=== done.  $NRUN runs, $NFAIL failed.  Results in $RESULTS_DIR"
 echo "    python3 $HERE/check_mean_integrals.py $RESULTS_DIR"
+if [[ "$NRUN" -eq 0 ]]; then
+  echo "ERROR: no executable found, nothing was run"
+  exit 1
+fi
+[[ "$NFAIL" -eq 0 ]]

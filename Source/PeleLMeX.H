@@ -1099,7 +1099,14 @@ public:
     const amrex::Geometry& a_geom);
   void addRhoHFluxes(
     const amrex::Array<const amrex::MultiFab*, AMREX_SPACEDIM>& a_fluxes,
-    const amrex::Geometry& a_geom);
+    const amrex::Geometry& a_geom,
+    const amrex::Real& a_factor = 1.0,
+    const int a_nComp = 1);
+#ifdef AMREX_USE_EB
+  void addRhoHFluxesEB(
+    const amrex::Vector<amrex::MultiFab*>& a_EBfluxes,
+    const amrex::Real& a_factor = 1.0);
+#endif
   void addRhoYFluxes(
     const amrex::Array<const amrex::MultiFab*, AMREX_SPACEDIM>& a_fluxes,
     const amrex::Geometry& a_geom,
@@ -1509,26 +1516,31 @@ public:
   //! and periodic-channel means it feeds are physical-volume means.
   amrex::Real
   MFSum(const amrex::Vector<const amrex::MultiFab*>& a_MF, const int comp);
-  //! Closed-chamber projection compatibility check.  \p a_rhs_xi is the
-  //! cell-centered RHS as handed to the projector (uniform Xi space, i.e.
-  //! already detJ-scaled under mesh mapping), summed with the uniform Xi
-  //! cell volume over uncovered cells.  \p a_bdry_flux is the discrete
-  //! net outward boundary flux of the projected velocity in the same
-  //! space; \p a_rhs_sign is +1 if the solver forms div(U) + rhs, -1 for
-  //! div(U) - rhs.  Prints the residual at verbose >= 2 and aborts above
+  //! Closed-chamber projection compatibility check.  \p a_rhs is the
+  //! cell-centered RHS as handed to the projector (under mesh mapping
+  //! already detJ-scaled), integrated over uncovered cells against the
+  //! measure the projector uses: the geometry cell volume (x EB vfrac), or
+  //! the Cartesian dx product when the RHS was pre-multiplied by r for the
+  //! nodal projector (\p a_rhs_is_rz_scaled).  \p a_bdry_flux is the
+  //! discrete net outward boundary flux of the projected velocity in the
+  //! same space; \p a_rhs_sign is +1 if the solver forms div(U) + rhs, -1
+  //! for div(U) - rhs.  Prints the residual at verbose >= 2 and aborts above
   //! peleLM.debug_compatibility_tol when peleLM.debug_check_compatibility
   //! is set.  Only called in closed-chamber mode.
   void checkProjectionCompatibility(
     const std::string& a_who,
-    const amrex::Vector<const amrex::MultiFab*>& a_rhs_xi,
+    const amrex::Vector<const amrex::MultiFab*>& a_rhs,
     const amrex::Real a_bdry_flux,
-    const amrex::Real a_rhs_sign);
+    const amrex::Real a_rhs_sign,
+    const bool a_rhs_is_rz_scaled);
   //! True if any non-periodic domain face is an inflow or outflow.
   [[nodiscard]] bool domainHasOpenFace() const;
-  //! Net outward flux of a level-0 face velocity through the domain
-  //! boundary, with the uniform (Xi) face areas.
-  amrex::Real domainFaceFluxXi(
-    const amrex::Array<const amrex::MultiFab*, AMREX_SPACEDIM>& a_umac);
+  //! Composite net outward flux of a face velocity through the domain
+  //! boundary with the geometry face areas (x EB area fractions), skipping
+  //! coarse faces under a finer level.
+  amrex::Real domainFaceFlux(
+    const amrex::Vector<amrex::Array<const amrex::MultiFab*, AMREX_SPACEDIM>>&
+      a_umac);
   //! (Re)build the cached physical cell volume on level \p lev.  Called
   //! wherever the level's factory and mesh-mapping metrics are (re)defined.
   void defineCellVolume(
@@ -2433,12 +2445,14 @@ public:
   amrex::Array<amrex::Real, NUM_SPECIES> m_RhoYNew;
   amrex::Array<amrex::Real, 2 * AMREX_SPACEDIM> m_domainMassFlux;
   amrex::Array<amrex::Real, 2 * AMREX_SPACEDIM> m_domainRhoHFlux;
+  amrex::Real m_domainRhoHFluxEB = 0.0;
   amrex::Array<amrex::Real, 2 * AMREX_SPACEDIM * NUM_SPECIES> m_domainRhoYFlux;
   amrex::Array<amrex::Real, 2 * AMREX_SPACEDIM> m_domainUmacFlux;
 
   std::ofstream tmpStateFile;
   std::ofstream tmpExtremasFile;
   std::ofstream tmpMassFile;
+  std::ofstream tmpEnergyFile;
   std::ofstream tmpSpecFile;
   std::ofstream tmppatchmfrFile;
 

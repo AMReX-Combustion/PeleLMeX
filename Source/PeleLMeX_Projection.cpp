@@ -152,7 +152,8 @@ PeleLM::initialProjection()
   // available here, so the check is skipped.
   if ((m_closed_chamber != 0) && !rhs_cc.empty() && !domainHasOpenFace()) {
     checkProjectionCompatibility(
-      "initial projection", GetVecOfConstPtrs(rhs_cc), 0.0, 1.0);
+      "initial projection", GetVecOfConstPtrs(rhs_cc), 0.0, 1.0,
+      geom[0].IsRZ());
   }
 
   doNodalProject(
@@ -648,7 +649,8 @@ PeleLM::velocityProjection(
   // available here, so the check is skipped.
   if ((m_closed_chamber != 0) && !rhs_cc.empty() && !domainHasOpenFace()) {
     checkProjectionCompatibility(
-      "velocity projection", GetVecOfConstPtrs(rhs_cc), 0.0, 1.0);
+      "velocity projection", GetVecOfConstPtrs(rhs_cc), 0.0, 1.0,
+      geom[0].IsRZ());
   }
 
   doNodalProject(
