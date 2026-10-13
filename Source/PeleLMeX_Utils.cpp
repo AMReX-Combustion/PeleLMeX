@@ -1597,7 +1597,7 @@ PeleLM::domainFaceFlux(
         amrex::TypeList<amrex::ReduceOpSum>{}, amrex::TypeList<amrex::Real>{},
         *a_umac[lev][idim], amrex::IntVect(0),
         [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept
-        -> amrex::GpuTuple<amrex::Real> {
+          -> amrex::GpuTuple<amrex::Real> {
           const int idx = (idim == 0) ? i : ((idim == 1) ? j : k);
           amrex::Real sgn = 0.0; // outward normal is -e_idim at lo
           amrex::IntVect cell(AMREX_D_DECL(i, j, k));
@@ -1644,8 +1644,9 @@ PeleLM::checkProjectionCompatibility(
   // cells.  For a closed chamber the RHS has had the mean S removed; the
   // mean must be the physical-volume (detJ-weighted) one or this fails by
   // O(1) on a stretched mesh.
-  if ((m_closed_chamber == 0) ||
-      ((m_verbose < 2) && (m_debug_check_compatibility == 0))) {
+  if (
+    (m_closed_chamber == 0) ||
+    ((m_verbose < 2) && (m_debug_check_compatibility == 0))) {
     return;
   }
   amrex::Real sum_rhs = 0.0;
@@ -1671,7 +1672,7 @@ PeleLM::checkProjectionCompatibility(
         amrex::TypeList<amrex::Real, amrex::Real>{}, *a_rhs[lev],
         amrex::IntVect(0),
         [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept
-        -> amrex::GpuTuple<amrex::Real, amrex::Real> {
+          -> amrex::GpuTuple<amrex::Real, amrex::Real> {
           const amrex::Real v = rma[box_no](i, j, k) * vma[box_no](i, j, k) *
                                 static_cast<amrex::Real>(mma[box_no](i, j, k));
           return {v, std::abs(v)};
@@ -1682,7 +1683,7 @@ PeleLM::checkProjectionCompatibility(
         amrex::TypeList<amrex::Real, amrex::Real>{}, *a_rhs[lev],
         amrex::IntVect(0),
         [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept
-        -> amrex::GpuTuple<amrex::Real, amrex::Real> {
+          -> amrex::GpuTuple<amrex::Real, amrex::Real> {
           const amrex::Real v = rma[box_no](i, j, k) * vma[box_no](i, j, k);
           return {v, std::abs(v)};
         });
