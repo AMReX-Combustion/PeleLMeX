@@ -1704,7 +1704,8 @@ PeleLM::checkProjectionCompatibility(
   }
   // Written as !(rel <= tol) so a NaN residual (comparisons with NaN are
   // false, and the regression runs with FPE traps off) also trips the gate.
-  if ((m_debug_check_compatibility != 0) && !(rel <= m_debug_compatibility_tol)) {
+  if (
+    (m_debug_check_compatibility != 0) && !(rel <= m_debug_compatibility_tol)) {
     std::ostringstream msg;
     msg << a_who << ": closed-chamber projection RHS is incompatible (relative "
         << "residual " << std::scientific << rel

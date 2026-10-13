@@ -394,8 +394,7 @@ PeleLM::macProject(
   // boundary flux of the (Xi-space) face velocity, or the all-Neumann
   // MAC system is unsolvable.  The MacProjector forms div(umac) - rhs.
   if (
-    (has_divu != 0) && (m_incompressible == 0) &&
-    compatibilityCheckEnabled()) {
+    (has_divu != 0) && (m_incompressible == 0) && compatibilityCheckEnabled()) {
     checkProjectionCompatibility(
       "MAC projection",
       m_mesh_mapping ? divu_for_proj : GetVecOfConstPtrs(a_divu),
