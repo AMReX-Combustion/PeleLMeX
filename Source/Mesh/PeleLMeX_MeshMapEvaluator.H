@@ -54,7 +54,13 @@ x_phys_cc_periodic(
  * Without mapping (\p mapped false) returns \p inv_dx_uniform unchanged,
  * so unmapped stencils stay bit-identical to the historical ones; with it,
  * (a_{i+1} - a_{i-1}) * 0.5 * result is the second-order physical derivative
- * on the stretched grid.  Used by the gradient derives (vorticity,
+ * on the stretched grid.  The neighbour positions come from
+ * x_phys_cc_periodic, so at a periodic seam the spacing is the physical
+ * distance to the periodic image (what the metric ghost cells hold), not
+ * the map continued past the domain end; in non-periodic directions the
+ * continued map is used, consistent with the fill-patched ghost state the
+ * stencil reads there.  Positions are analytic evaluations of the map, so
+ * any index is admissible.  Used by the gradient derives (vorticity,
  * Q-criterion, enstrophy) and the divU time-step estimate.
  */
 AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE amrex::Real
@@ -69,8 +75,8 @@ mapped_inv_dx(
   if (!mapped) {
     return inv_dx_uniform;
   }
-  return amrex::Real(2.0) / (mmap.x_phys_cc(idir, idx + 1, gd) -
-                             mmap.x_phys_cc(idir, idx - 1, gd));
+  return amrex::Real(2.0) / (x_phys_cc_periodic(mmap, idir, idx + 1, gd) -
+                             x_phys_cc_periodic(mmap, idir, idx - 1, gd));
 }
 
 #endif // PELELMEX_MESHMAP_EVALUATOR_H

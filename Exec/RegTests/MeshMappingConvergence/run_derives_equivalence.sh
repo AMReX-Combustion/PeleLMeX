@@ -19,7 +19,7 @@ set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PIPE_DIR="$HERE/../PipeFlow"
-: "${BIN3D:=$(ls -t "$PIPE_DIR"/PeleLMeX3d.*.ex 2>/dev/null | head -n 1)}"
+: "${BIN3D:=$(ls -t "$PIPE_DIR"/PeleLMeX3d.*.ex 2>/dev/null | head -n 1 || true)}"
 : "${RESULTS_DIR:=${HERE}/results/derives}"
 : "${MPIRUN:=}"
 INP="$PIPE_DIR/input.3d-Poiseuille"

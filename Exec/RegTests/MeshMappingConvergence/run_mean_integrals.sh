@@ -39,7 +39,7 @@ pick_bin() {
   # Any compiler/parallel flavour (gnu, llvm, MPI, OMP, ...); the newest
   # executable wins when several are present.  Override with BIN3D/BIN2D.
   local dir="$1" dim="$2"
-  ls -t "$dir"/PeleLMeX"${dim}"d.*.ex 2>/dev/null | head -n 1
+  ls -t "$dir"/PeleLMeX"${dim}"d.*.ex 2>/dev/null | head -n 1 || true
 }
 : "${BIN3D:=$(pick_bin "$PIPE_DIR" 3)}"
 : "${BIN2D:=$(pick_bin "$BUBBLE_DIR" 2)}"
