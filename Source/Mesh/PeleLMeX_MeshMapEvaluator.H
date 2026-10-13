@@ -46,4 +46,31 @@ x_phys_cc_periodic(
   return mmap.x_phys_cc(idir, idx, gd);
 }
 
+/**
+ * \brief Inverse physical spacing for a centred difference at cell \p idx
+ *        along \p idir: 2 / (x_{idx+1} - x_{idx-1}), i.e. the factor that
+ *        turns a Xi-index central difference into a physical derivative.
+ *
+ * Without mapping (\p mapped false) returns \p inv_dx_uniform unchanged,
+ * so unmapped stencils stay bit-identical to the historical ones; with it,
+ * (a_{i+1} - a_{i-1}) * 0.5 * result is the second-order physical derivative
+ * on the stretched grid.  Used by the gradient derives (vorticity,
+ * Q-criterion, enstrophy) and the divU time-step estimate.
+ */
+AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE amrex::Real
+mapped_inv_dx(
+  int idir,
+  int idx,
+  bool mapped,
+  amrex::Real inv_dx_uniform,
+  MeshMapEvaluator const& mmap,
+  amrex::GeometryData const& gd) noexcept
+{
+  if (!mapped) {
+    return inv_dx_uniform;
+  }
+  return amrex::Real(2.0) / (mmap.x_phys_cc(idir, idx + 1, gd) -
+                             mmap.x_phys_cc(idir, idx - 1, gd));
+}
+
 #endif // PELELMEX_MESHMAP_EVALUATOR_H

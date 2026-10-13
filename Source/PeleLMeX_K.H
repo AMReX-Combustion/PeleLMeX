@@ -3,6 +3,7 @@
 
 #include <mechanism.H>
 #include <PelePhysics.H>
+#include <PeleLMeX_MeshMapEvaluator.H>
 
 namespace m2c = pele::physics::utilities::mks2cgs;
 namespace c2m = pele::physics::utilities::cgs2mks;
@@ -1074,7 +1075,10 @@ est_divu_dt_2(
   const int k,
   const amrex::Real dtfactor,
   const amrex::Real rhomin,
-  amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const& dxinv,
+  amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const& dxinv_uniform,
+  const bool mapped,
+  MeshMapEvaluator const& mmap,
+  amrex::GeometryData const& gd,
   amrex::Array4<const amrex::Real> const& rho,
   amrex::Array4<const amrex::Real> const& vel,
   amrex::Array4<const amrex::Real> const& divu) noexcept
@@ -1082,6 +1086,12 @@ est_divu_dt_2(
   amrex::Real dtcell = 1.0e20;
   amrex::Real denom = 0.0;
   const bool rho_is_okay = (rho(i, j, k) > rhomin);
+
+  // Physical inverse spacing at this cell (uniform value when unmapped).
+  const amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> dxinv = {AMREX_D_DECL(
+    mapped_inv_dx(0, i, mapped, dxinv_uniform[0], mmap, gd),
+    mapped_inv_dx(1, j, mapped, dxinv_uniform[1], mmap, gd),
+    mapped_inv_dx(2, k, mapped, dxinv_uniform[2], mmap, gd))};
 
   denom =
     rho(i, j, k) * divu(i, j, k) +
@@ -1107,7 +1117,10 @@ check_divu_dt(
   const int check_type,
   const amrex::Real dtfactor,
   const amrex::Real rhomin,
-  amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const& dxinv,
+  amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const& dxinv_uniform,
+  const bool mapped,
+  MeshMapEvaluator const& mmap,
+  amrex::GeometryData const& gd,
   amrex::Array4<const amrex::Real> const& rho,
   amrex::Array4<const amrex::Real> const& vel,
   amrex::Array4<const amrex::Real> const& divu,
@@ -1116,6 +1129,10 @@ check_divu_dt(
   amrex::Real dtcell = 1.0e12;
   amrex::Real denom = 0.0;
   const bool rho_is_okay = (rho(i, j, k) > rhomin);
+  const amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> dxinv = {AMREX_D_DECL(
+    mapped_inv_dx(0, i, mapped, dxinv_uniform[0], mmap, gd),
+    mapped_inv_dx(1, j, mapped, dxinv_uniform[1], mmap, gd),
+    mapped_inv_dx(2, k, mapped, dxinv_uniform[2], mmap, gd))};
 
   if (check_type == 1) { // Check based on divU
     if (divu(i, j, k) > 0.0) {
