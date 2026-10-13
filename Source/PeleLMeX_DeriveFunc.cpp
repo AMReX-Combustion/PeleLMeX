@@ -714,7 +714,7 @@ pelelmex_dervort(
 //
 void
 pelelmex_dercoord(
-  PeleLM* /*a_pelelm*/,
+  PeleLM* a_pelelm,
   const amrex::Box& bx,
   amrex::FArrayBox& derfab,
   int dcomp,
@@ -739,6 +739,9 @@ pelelmex_dercoord(
 
   auto const& coord_arr = derfab.array(dcomp);
   const auto geomdata = geom.data();
+  // Physical cell-centre positions: identity without mesh mapping, the
+  // map's image of the Xi cell centre with it.
+  const MeshMapEvaluator mmap = a_pelelm->meshMapEvaluator();
 
 #ifdef AMREX_USE_EB
   AMREX_ASSERT(statefab.box().contains(bx));
@@ -779,14 +782,11 @@ pelelmex_dercoord(
 #endif
   {
     amrex::ParallelFor(
-      bx, [coord_arr, geomdata] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-        AMREX_D_TERM(coord_arr(i, j, k, 0) =
-                       geomdata.ProbLo(0) + (i + 0.5) * geomdata.CellSize(0);
-                     , coord_arr(i, j, k, 1) =
-                         geomdata.ProbLo(1) + (j + 0.5) * geomdata.CellSize(1);
-                     ,
-                     coord_arr(i, j, k, 2) =
-                       geomdata.ProbLo(2) + (k + 0.5) * geomdata.CellSize(2););
+      bx, [coord_arr, geomdata,
+           mmap] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        AMREX_D_TERM(coord_arr(i, j, k, 0) = mmap.x_phys_cc(0, i, geomdata);
+                     , coord_arr(i, j, k, 1) = mmap.x_phys_cc(1, j, geomdata);
+                     , coord_arr(i, j, k, 2) = mmap.x_phys_cc(2, k, geomdata););
       });
   }
 }

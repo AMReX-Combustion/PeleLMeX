@@ -183,8 +183,11 @@ PeleLM::addSpark(const TimeStamp a_timestamp)
       auto const dx = geom[lev].CellSizeArray();
       amrex::IntVect spark_idx;
       for (int d = 0; d < AMREX_SPACEDIM; ++d) {
-        spark_idx[d] =
-          static_cast<int>((m_spark_location[n][d] - probLo[d]) / dx[d]);
+        // The spark location is physical; under mesh mapping map it back
+        // to Xi before indexing the uniform grid.
+        const amrex::Real xi = m_map_eval.xi_from_x_phys(
+          d, m_spark_location[n][d], geom[lev].data());
+        spark_idx[d] = static_cast<int>(std::floor((xi - probLo[d]) / dx[d]));
       }
       const amrex::Box domainBox = geom[lev].Domain();
       // just a check

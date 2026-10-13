@@ -652,7 +652,8 @@ PeleLM::addRhoYFluxesPatch(
   }
 
   const auto dx = a_geom.CellSizeArray();
-  auto prob_lo = a_geom.ProbLoArray();
+  const MeshMapEvaluator mmap = m_map_eval;
+  const amrex::GeometryData gd = a_geom.data();
   amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> area;
 
 #if (AMREX_SPACEDIM == 1)
@@ -691,9 +692,9 @@ PeleLM::addRhoYFluxesPatch(
           amrex::TypeList<amrex::ReduceOpSum, amrex::ReduceOpSum>{},
           amrex::TypeList<amrex::Real, amrex::Real>{}, *a_fluxes[idim],
           amrex::IntVect(0),
-          [fma, bpdevice, faceDomain, idim, prob_lo, dx, m,
-           area] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept
-            -> amrex::GpuTuple<amrex::Real, amrex::Real> {
+          [fma, bpdevice, faceDomain, idim, m, area, mmap, gd] AMREX_GPU_DEVICE(
+            int box_no, int i, int j,
+            int k) noexcept -> amrex::GpuTuple<amrex::Real, amrex::Real> {
             amrex::Array4<const amrex::Real> const& flux = fma[box_no];
             int idx =
               (bpdevice->m_boundary_dir == 0
@@ -703,16 +704,18 @@ PeleLM::addRhoYFluxesPatch(
               (bpdevice->m_boundary_lo_hi == 0 ? faceDomain.smallEnd(idim)
                                                : faceDomain.bigEnd(idim));
 
+            // Physical cell-centre position and width (identity map when
+            // mesh mapping is off); the patch geometry is physical.
             amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> point_coordinates{
               AMREX_D_DECL(
-                prob_lo[0] + (i + 0.5_rt) * dx[0],
-                prob_lo[1] + (j + 0.5_rt) * dx[1],
-                prob_lo[2] + (k + 0.5_rt) * dx[2])};
+                mmap.x_phys_cc(0, i, gd), mmap.x_phys_cc(1, j, gd),
+                mmap.x_phys_cc(2, k, gd))};
+            const amrex::Real dx_phys = mmap.dx_phys_cc(0, i, gd);
 
             amrex::Real sum_species_flux = 0.0;
             amrex::Real dummy = 0.0;
             const bool ifinside =
-              bpdevice->CheckifPointInside(point_coordinates, dx[0]);
+              bpdevice->CheckifPointInside(point_coordinates, dx_phys);
 
             if (idx == idx_lo_hi and ifinside) {
               int species_idx = bpdevice->speciesIndex[m];

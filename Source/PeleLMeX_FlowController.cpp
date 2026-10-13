@@ -333,6 +333,7 @@ PeleLM::getActiveControlLowT(amrex::Real& a_coft)
     // Get t^{n+1} data pointer
     auto* ldata_p = getLevelDataPtr(lev, AmrNewTime);
     const auto geomdata = Geom(lev).data();
+    const MeshMapEvaluator mmap = m_map_eval;
 
     // local FC data
     int AC_FlameDir = m_ctrl_flameDir;
@@ -343,14 +344,12 @@ PeleLM::getActiveControlLowT(amrex::Real& a_coft)
     if (lev != finest_level) {
       lowT = amrex::ReduceMin(
         ldata_p->state, *m_coveredMask[lev], 0,
-        [geomdata, AC_Tcross, AC_FlameDir] AMREX_GPU_HOST_DEVICE(
+        [geomdata, AC_Tcross, AC_FlameDir, mmap] AMREX_GPU_HOST_DEVICE(
           amrex::Box const& bx, amrex::Array4<amrex::Real const> const& T_arr,
           amrex::Array4<int const> const& covered_arr) -> amrex::Real {
           const auto lo = amrex::lbound(bx);
           const auto hi = amrex::ubound(bx);
           amrex::Real tmp_pos = 1.e37;
-          const amrex::Real* prob_lo = geomdata.ProbLo();
-          const amrex::Real* dx = geomdata.CellSize();
           for (int k = lo.z; k <= hi.z; ++k) {
             for (int j = lo.y; j <= hi.y; ++j) {
               for (int i = lo.x; i <= hi.x; ++i) {
@@ -361,17 +360,19 @@ PeleLM::getActiveControlLowT(amrex::Real& a_coft)
                   int idx[3] = {i, j, k};
                   idx[AC_FlameDir] -= 1;
                   if (T_arr(idx[0], idx[1], idx[2], TEMP) < AC_Tcross) {
-                    amrex::Real coor[3] = {0.0};
-                    AMREX_D_TERM(
-                      coor[0] = prob_lo[0] + (i + 0.5) * dx[0];
-                      , coor[1] = prob_lo[1] + (j + 0.5) * dx[1];
-                      , coor[2] = prob_lo[2] + (k + 0.5) * dx[2];);
-                    amrex::Real slope = ((T_arr(i, j, k, TEMP)) -
-                                         T_arr(idx[0], idx[1], idx[2], TEMP)) /
-                                        dx[AC_FlameDir];
-                    lcl_pos =
-                      coor[AC_FlameDir] - dx[AC_FlameDir] +
-                      (AC_Tcross - T_arr(idx[0], idx[1], idx[2], TEMP)) / slope;
+                    // Linear interpolation of the T_cross crossing between
+                    // the physical centres of this cell and its upstream
+                    // neighbour (identity map without mesh mapping).
+                    const int ic[3] = {i, j, k};
+                    const amrex::Real x_hi =
+                      mmap.x_phys_cc(AC_FlameDir, ic[AC_FlameDir], geomdata);
+                    const amrex::Real x_lo =
+                      mmap.x_phys_cc(AC_FlameDir, idx[AC_FlameDir], geomdata);
+                    const amrex::Real T_lo =
+                      T_arr(idx[0], idx[1], idx[2], TEMP);
+                    const amrex::Real slope =
+                      (T_arr(i, j, k, TEMP) - T_lo) / (x_hi - x_lo);
+                    lcl_pos = x_lo + (AC_Tcross - T_lo) / slope;
                   }
                 }
                 tmp_pos = amrex::min<amrex::Real>(tmp_pos, lcl_pos);
@@ -383,14 +384,12 @@ PeleLM::getActiveControlLowT(amrex::Real& a_coft)
     } else {
       lowT = amrex::ReduceMin(
         ldata_p->state, 0,
-        [geomdata, AC_Tcross, AC_FlameDir] AMREX_GPU_HOST_DEVICE(
+        [geomdata, AC_Tcross, AC_FlameDir, mmap] AMREX_GPU_HOST_DEVICE(
           amrex::Box const& bx,
           amrex::Array4<amrex::Real const> const& T_arr) -> amrex::Real {
           const auto lo = amrex::lbound(bx);
           const auto hi = amrex::ubound(bx);
           amrex::Real tmp_pos = 1.e37;
-          const amrex::Real* prob_lo = geomdata.ProbLo();
-          const amrex::Real* dx = geomdata.CellSize();
           for (int k = lo.z; k <= hi.z; ++k) {
             for (int j = lo.y; j <= hi.y; ++j) {
               for (int i = lo.x; i <= hi.x; ++i) {
@@ -399,17 +398,19 @@ PeleLM::getActiveControlLowT(amrex::Real& a_coft)
                   int idx[3] = {i, j, k};
                   idx[AC_FlameDir] -= 1;
                   if (T_arr(idx[0], idx[1], idx[2], TEMP) < AC_Tcross) {
-                    amrex::Real coor[3] = {0.0};
-                    AMREX_D_TERM(
-                      coor[0] = prob_lo[0] + (i + 0.5) * dx[0];
-                      , coor[1] = prob_lo[1] + (j + 0.5) * dx[1];
-                      , coor[2] = prob_lo[2] + (k + 0.5) * dx[2];);
-                    amrex::Real slope = ((T_arr(i, j, k, TEMP)) -
-                                         T_arr(idx[0], idx[1], idx[2], TEMP)) /
-                                        dx[AC_FlameDir];
-                    lcl_pos =
-                      coor[AC_FlameDir] - dx[AC_FlameDir] +
-                      (AC_Tcross - T_arr(idx[0], idx[1], idx[2], TEMP)) / slope;
+                    // Linear interpolation of the T_cross crossing between
+                    // the physical centres of this cell and its upstream
+                    // neighbour (identity map without mesh mapping).
+                    const int ic[3] = {i, j, k};
+                    const amrex::Real x_hi =
+                      mmap.x_phys_cc(AC_FlameDir, ic[AC_FlameDir], geomdata);
+                    const amrex::Real x_lo =
+                      mmap.x_phys_cc(AC_FlameDir, idx[AC_FlameDir], geomdata);
+                    const amrex::Real T_lo =
+                      T_arr(idx[0], idx[1], idx[2], TEMP);
+                    const amrex::Real slope =
+                      (T_arr(i, j, k, TEMP) - T_lo) / (x_hi - x_lo);
+                    lcl_pos = x_lo + (AC_Tcross - T_lo) / slope;
                   }
                 }
                 tmp_pos = amrex::min<amrex::Real>(tmp_pos, lcl_pos);
