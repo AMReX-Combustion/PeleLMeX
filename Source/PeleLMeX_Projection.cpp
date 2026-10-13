@@ -146,6 +146,16 @@ PeleLM::initialProjection()
     }
   }
 
+  // Closed chamber, sealed box: the NodalProjector forms div(U) + rhs_cc,
+  // so sum(rhs_cc) over the domain must vanish (no boundary flux).  With
+  // inflow faces the boundary term of the nodal divergence is not
+  // available here, so the check is skipped.
+  if (compatibilityCheckEnabled() && !rhs_cc.empty() && !domainHasOpenFace()) {
+    checkProjectionCompatibility(
+      "initial projection", GetVecOfConstPtrs(rhs_cc), 0.0, 1.0,
+      geom[0].IsRZ());
+  }
+
   doNodalProject(
     GetVecOfPtrs(vel), GetVecOfPtrs(sigma), GetVecOfPtrs(rhs_cc), {},
     incremental, dummy_dt);
@@ -631,6 +641,16 @@ PeleLM::velocityProjection(
           rhs_cc[lev], m_mesh_map->detJ_cc(lev), 0, 0, 1, rhs_cc[lev].nGrow());
       }
     }
+  }
+
+  // Closed chamber, sealed box: the NodalProjector forms div(U) + rhs_cc,
+  // so sum(rhs_cc) over the domain must vanish (no boundary flux).  With
+  // inflow faces the boundary term of the nodal divergence is not
+  // available here, so the check is skipped.
+  if (compatibilityCheckEnabled() && !rhs_cc.empty() && !domainHasOpenFace()) {
+    checkProjectionCompatibility(
+      "velocity projection", GetVecOfConstPtrs(rhs_cc), 0.0, 1.0,
+      geom[0].IsRZ());
   }
 
   doNodalProject(

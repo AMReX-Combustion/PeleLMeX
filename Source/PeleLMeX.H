@@ -1508,14 +1508,54 @@ public:
     const int startcomp,
     const int ncomp);
 
+  //! Physical-domain volume integral of component \p comp of a composite
+  //! cell-centered field, excluding fine-covered and EB-covered cells.
+  //! Weights each cell by m_cellVol (physical volume: Xi cell volume times
+  //! detJ under mesh mapping, times vfrac under EB), so the result is the
+  //! true physical integral (mass = integral of rho) and the closed-chamber
+  //! and periodic-channel means it feeds are physical-volume means.
   amrex::Real
   MFSum(const amrex::Vector<const amrex::MultiFab*>& a_MF, const int comp);
-  //! Physical-domain volume integral of a cell-centered field.  Same as
-  //! MFSum without mesh mapping; with it, detJ-weights each cell to give
-  //! the true physical integral (e.g. mass = integral of rho), so the
-  //! balance telescopes to the Xi-space boundary fluxes in addMassFluxes.
-  amrex::Real MFSumMapped(
-    const amrex::Vector<const amrex::MultiFab*>& a_MF, const int comp);
+  //! Closed-chamber projection compatibility check.  \p a_rhs is the
+  //! cell-centered RHS as handed to the projector (under mesh mapping
+  //! already detJ-scaled), integrated over uncovered cells against the
+  //! measure the projector uses: the geometry cell volume (x EB vfrac), or
+  //! the Cartesian dx product when the RHS was pre-multiplied by r for the
+  //! nodal projector (\p a_rhs_is_rz_scaled).  \p a_bdry_flux is the
+  //! discrete net outward boundary flux of the projected velocity in the
+  //! same space; \p a_rhs_sign is +1 if the solver forms div(U) + rhs, -1
+  //! for div(U) - rhs.  Prints the residual at verbose >= 2 and aborts above
+  //! peleLM.debug_compatibility_tol when peleLM.debug_check_compatibility
+  //! is set.  Only called in closed-chamber mode.
+  void checkProjectionCompatibility(
+    const std::string& a_who,
+    const amrex::Vector<const amrex::MultiFab*>& a_rhs,
+    const amrex::Real a_bdry_flux,
+    const amrex::Real a_rhs_sign,
+    const bool a_rhs_is_rz_scaled);
+  //! True when the closed-chamber compatibility diagnostic is active
+  //! (verbose >= 2 or peleLM.debug_check_compatibility); callers use it to
+  //! skip the boundary-flux and RHS reductions in production runs.
+  [[nodiscard]] bool compatibilityCheckEnabled() const noexcept
+  {
+    return (m_closed_chamber != 0) &&
+           ((m_verbose >= 2) || (m_debug_check_compatibility != 0));
+  }
+  //! True if any non-periodic domain face is an inflow or outflow.
+  [[nodiscard]] bool domainHasOpenFace() const;
+  //! Composite net outward flux of a face velocity through the domain
+  //! boundary with the geometry face areas (x EB area fractions), skipping
+  //! coarse faces under a finer level.
+  amrex::Real domainFaceFlux(
+    const amrex::Vector<amrex::Array<const amrex::MultiFab*, AMREX_SPACEDIM>>&
+      a_umac);
+  //! (Re)build the cached physical cell volume on level \p lev.  Called
+  //! wherever the level's factory and mesh-mapping metrics are (re)defined.
+  void defineCellVolume(
+    const int lev,
+    const amrex::BoxArray& ba,
+    const amrex::DistributionMapping& dm,
+    const amrex::FabFactory<amrex::FArrayBox>& factory);
   static amrex::Real MFmax(
     const amrex::MultiFab* a_MF,
     const amrex::iMultiFab& a_mask,
@@ -1977,6 +2017,10 @@ public:
   amrex::Vector<std::unique_ptr<amrex::iMultiFab>> m_coveredMask;
   int m_resetCoveredMask{0};
 
+  // Physical cell volume per level (Xi volume x detJ x vfrac); the weight
+  // used by MFSum.  Rebuilt by defineCellVolume whenever a level is made.
+  amrex::Vector<amrex::MultiFab> m_cellVol;
+
   // Chemistry BA & DM
   amrex::Vector<std::unique_ptr<amrex::BoxArray>> m_baChem;
   amrex::Vector<std::unique_ptr<amrex::DistributionMapping>> m_dmapChem;
@@ -2378,6 +2422,9 @@ public:
   amrex::Real m_dp0dt = 0.0;
   amrex::Real m_uncoveredVol = -1.0;
   int m_closed_chamber = 0;
+  // Projection compatibility diagnostic (closed chamber only)
+  int m_debug_check_compatibility = 0;
+  amrex::Real m_debug_compatibility_tol = 1.0e-8;
 
   // Godunov is default
   std::string m_predict_advection_key = "Godunov_PLM";
