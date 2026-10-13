@@ -710,7 +710,10 @@ PeleLM::addRhoYFluxesPatch(
               AMREX_D_DECL(
                 mmap.x_phys_cc(0, i, gd), mmap.x_phys_cc(1, j, gd),
                 mmap.x_phys_cc(2, k, gd))};
-            const amrex::Real dx_phys = mmap.dx_phys_cc(0, i, gd);
+            const amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> dx_phys{
+              AMREX_D_DECL(
+                mmap.dx_phys_cc(0, i, gd), mmap.dx_phys_cc(1, j, gd),
+                mmap.dx_phys_cc(2, k, gd))};
 
             amrex::Real sum_species_flux = 0.0;
             amrex::Real dummy = 0.0;
