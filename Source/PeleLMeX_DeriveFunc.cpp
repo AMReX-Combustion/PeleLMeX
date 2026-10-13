@@ -337,9 +337,10 @@ pelelmex_dermgvort(
   int /*level*/)
 
 {
-  AMREX_D_TERM(const amrex::Real idx0 = geom.InvCellSize(0);
-               , const amrex::Real idy0 = geom.InvCellSize(1);
-               , const amrex::Real idz0 = geom.InvCellSize(2););
+  AMREX_D_TERM(
+    const amrex::Real idx0 = geom.InvCellSize(0);
+    , const amrex::Real idy0 = geom.InvCellSize(1);
+    , const amrex::Real idz0 = geom.InvCellSize(2););
   // Under mesh mapping the state lives on the uniform Xi grid; a central
   // difference becomes a physical derivative with 2/(x_{i+1}-x_{i-1}).
   const bool mapped = a_pelelm->hasMeshMapping();
@@ -530,9 +531,10 @@ pelelmex_dervort(
   AMREX_ASSERT(derfab.box().contains(bx));
   AMREX_ASSERT(statefab.box().contains(bx));
   AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
-  AMREX_D_TERM(const amrex::Real idx0 = geom.InvCellSize(0);
-               , const amrex::Real idy0 = geom.InvCellSize(1);
-               , const amrex::Real idz0 = geom.InvCellSize(2););
+  AMREX_D_TERM(
+    const amrex::Real idx0 = geom.InvCellSize(0);
+    , const amrex::Real idy0 = geom.InvCellSize(1);
+    , const amrex::Real idz0 = geom.InvCellSize(2););
   // Under mesh mapping the state lives on the uniform Xi grid; a central
   // difference becomes a physical derivative with 2/(x_{i+1}-x_{i-1}).
   const bool mapped = a_pelelm->hasMeshMapping();
@@ -831,9 +833,10 @@ pelelmex_derQcrit(
 
 {
 #if AMREX_SPACEDIM == 3
-  AMREX_D_TERM(const amrex::Real idx0 = geom.InvCellSize(0);
-               , const amrex::Real idy0 = geom.InvCellSize(1);
-               , const amrex::Real idz0 = geom.InvCellSize(2););
+  AMREX_D_TERM(
+    const amrex::Real idx0 = geom.InvCellSize(0);
+    , const amrex::Real idy0 = geom.InvCellSize(1);
+    , const amrex::Real idz0 = geom.InvCellSize(2););
   // Under mesh mapping the state lives on the uniform Xi grid; a central
   // difference becomes a physical derivative with 2/(x_{i+1}-x_{i-1}).
   const bool mapped = a_pelelm->hasMeshMapping();
@@ -1134,9 +1137,10 @@ pelelmex_derenstrophy(
   int /*level*/)
 
 {
-  AMREX_D_TERM(const amrex::Real idx0 = geom.InvCellSize(0);
-               , const amrex::Real idy0 = geom.InvCellSize(1);
-               , const amrex::Real idz0 = geom.InvCellSize(2););
+  AMREX_D_TERM(
+    const amrex::Real idx0 = geom.InvCellSize(0);
+    , const amrex::Real idy0 = geom.InvCellSize(1);
+    , const amrex::Real idz0 = geom.InvCellSize(2););
   // Under mesh mapping the state lives on the uniform Xi grid; a central
   // difference becomes a physical derivative with 2/(x_{i+1}-x_{i-1}).
   const bool mapped = a_pelelm->hasMeshMapping();
