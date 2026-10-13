@@ -211,6 +211,11 @@ PeleLM::Setup()
   taggingSetup();
 
 #ifdef PELE_USE_SPRAY
+  if (m_mesh_mapping) {
+    amrex::Abort(
+      "Spray particles are not supported with geometry.mesh_mapping: the "
+      "particle positions and CFL assume a uniform physical grid.");
+  }
   SpraySetup();
 #endif
 #ifdef PELE_USE_SOOT
@@ -633,6 +638,12 @@ PeleLM::readParameters()
     }
     m_do_les = true;
     m_les_verbose = m_verbose;
+    if (m_mesh_mapping) {
+      amrex::Abort(
+        "peleLM.les_model is not supported with geometry.mesh_mapping: the "
+        "filter width is formed from the uniform Xi cell volume and the "
+        "velocity-gradient operator has not been mapped.");
+    }
     pp.query("plot_les", m_plot_les);
     pp.query("les_v", m_les_verbose);
     pp.query("les_c_chi", m_les_c_chi);
@@ -996,6 +1007,11 @@ PeleLM::readParameters()
 #ifdef PELE_USE_RADIATION
   do_rad_solve = false;
   pp.query("do_rad_solve", do_rad_solve);
+  if (do_rad_solve && m_mesh_mapping) {
+    amrex::Abort(
+      "Radiation (do_rad_solve) is not supported with geometry.mesh_mapping: "
+      "the optical path lengths assume a uniform physical grid.");
+  }
   if ((m_verbose != 0) && do_rad_solve) {
     amrex::Print() << "Simulation performed with radiation modeling \n";
   }
