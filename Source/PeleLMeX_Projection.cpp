@@ -150,7 +150,7 @@ PeleLM::initialProjection()
   // so sum(rhs_cc) over the domain must vanish (no boundary flux).  With
   // inflow faces the boundary term of the nodal divergence is not
   // available here, so the check is skipped.
-  if ((m_closed_chamber != 0) && !rhs_cc.empty() && !domainHasOpenFace()) {
+  if (compatibilityCheckEnabled() && !rhs_cc.empty() && !domainHasOpenFace()) {
     checkProjectionCompatibility(
       "initial projection", GetVecOfConstPtrs(rhs_cc), 0.0, 1.0,
       geom[0].IsRZ());
@@ -647,7 +647,7 @@ PeleLM::velocityProjection(
   // so sum(rhs_cc) over the domain must vanish (no boundary flux).  With
   // inflow faces the boundary term of the nodal divergence is not
   // available here, so the check is skipped.
-  if ((m_closed_chamber != 0) && !rhs_cc.empty() && !domainHasOpenFace()) {
+  if (compatibilityCheckEnabled() && !rhs_cc.empty() && !domainHasOpenFace()) {
     checkProjectionCompatibility(
       "velocity projection", GetVecOfConstPtrs(rhs_cc), 0.0, 1.0,
       geom[0].IsRZ());

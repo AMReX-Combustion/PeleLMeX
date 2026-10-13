@@ -1644,9 +1644,7 @@ PeleLM::checkProjectionCompatibility(
   // cells.  For a closed chamber the RHS has had the mean S removed; the
   // mean must be the physical-volume (detJ-weighted) one or this fails by
   // O(1) on a stretched mesh.
-  if (
-    (m_closed_chamber == 0) ||
-    ((m_verbose < 2) && (m_debug_check_compatibility == 0))) {
+  if (!compatibilityCheckEnabled()) {
     return;
   }
   amrex::Real sum_rhs = 0.0;
@@ -1704,7 +1702,9 @@ PeleLM::checkProjectionCompatibility(
                    << rel << " (F_bdry = " << a_bdry_flux
                    << ", sum(rhs) = " << sum_rhs << ")\n";
   }
-  if ((m_debug_check_compatibility != 0) && (rel > m_debug_compatibility_tol)) {
+  // Written as !(rel <= tol) so a NaN residual (comparisons with NaN are
+  // false, and the regression runs with FPE traps off) also trips the gate.
+  if ((m_debug_check_compatibility != 0) && !(rel <= m_debug_compatibility_tol)) {
     std::ostringstream msg;
     msg << a_who << ": closed-chamber projection RHS is incompatible (relative "
         << "residual " << std::scientific << rel

@@ -55,6 +55,7 @@ run_case() {
   local bin="$1" inp="$2" tag="$3"; shift 3
   local outdir="$RESULTS_DIR/$tag"
   mkdir -p "$outdir"
+  rm -f "$outdir/FAILED" "$outdir/run.log"
   echo "=== [$(date +%T)] $tag"
   NRUN=$((NRUN + 1))
   # Keep going after a failed run so the other cases still produce logs,

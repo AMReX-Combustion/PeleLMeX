@@ -32,6 +32,10 @@ TOL_COMPAT = 1.0e-9    # relative compatibility residual
 RE_GP0 = re.compile(r"Adding background pressure gradient in dir 0: (\S+)")
 RE_DP0 = re.compile(r"Closed chamber pOld: (\S+), pNew: (\S+), dp0dt: (\S+)")
 RE_COMPAT = re.compile(r"\.\.\. (\S+ projection) compatibility: .* = (\S+) \(")
+# Every sealed-box run must report all three; a silently skipped diagnostic
+# is itself a failure.
+REQUIRED_PROJECTIONS = {"MAC projection", "initial projection",
+                        "velocity projection"}
 
 ok = True
 
@@ -121,8 +125,11 @@ if have_chamber:
         for m in RE_COMPAT.finditer(text):
             who, rel = m.group(1), float(m.group(2))
             worst[who] = max(worst.get(who, 0.0), rel)
-        if not worst:
-            print(f"  {tag}: no compatibility lines found (peleLM.v >= 2?)  FAIL")
+        missing = REQUIRED_PROJECTIONS - set(worst)
+        if missing:
+            print(f"  {tag}: no compatibility line for "
+                  f"{', '.join(sorted(missing))} (peleLM.v >= 2? diagnostic "
+                  "skipped?)  FAIL")
             ok = False
         for who, rel in sorted(worst.items()):
             good = rel <= TOL_COMPAT

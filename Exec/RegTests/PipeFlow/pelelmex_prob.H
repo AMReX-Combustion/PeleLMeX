@@ -173,7 +173,7 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
       // exact mean is -16 mu U / Ly^2.  A parabolic profile would NOT
       // expose this (u'' is then constant), which is why this profile
       // exists.  Used by Exec/RegTests/MeshMappingConvergence/
-      // run_channel_gp0.sh.
+      // run_mean_integrals.sh.
       const amrex::Real y_mid =
         mmap.x_phys_face(1, 0, geomdata) + 0.5 * Ly; // physical mid-plane
       const amrex::Real yhat = 2.0 * (y - y_mid) / Ly;

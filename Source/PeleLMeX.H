@@ -1533,6 +1533,14 @@ public:
     const amrex::Real a_bdry_flux,
     const amrex::Real a_rhs_sign,
     const bool a_rhs_is_rz_scaled);
+  //! True when the closed-chamber compatibility diagnostic is active
+  //! (verbose >= 2 or peleLM.debug_check_compatibility); callers use it to
+  //! skip the boundary-flux and RHS reductions in production runs.
+  [[nodiscard]] bool compatibilityCheckEnabled() const noexcept
+  {
+    return (m_closed_chamber != 0) &&
+           ((m_verbose >= 2) || (m_debug_check_compatibility != 0));
+  }
   //! True if any non-periodic domain face is an inflow or outflow.
   [[nodiscard]] bool domainHasOpenFace() const;
   //! Composite net outward flux of a face velocity through the domain
