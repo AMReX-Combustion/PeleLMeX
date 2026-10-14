@@ -337,9 +337,10 @@ pelelmex_dermgvort(
   int /*level*/)
 
 {
-  AMREX_D_TERM(const amrex::Real idx0 = geom.InvCellSize(0);
-               , const amrex::Real idy0 = geom.InvCellSize(1);
-               , const amrex::Real idz0 = geom.InvCellSize(2););
+  AMREX_D_TERM(
+    const amrex::Real idx0 = geom.InvCellSize(0);
+    , const amrex::Real idy0 = geom.InvCellSize(1);
+    , const amrex::Real idz0 = geom.InvCellSize(2););
   // Physical derivatives under mesh mapping (identity otherwise).
   const MeshMapEvaluator mmap = a_pelelm->meshMapEvaluator();
   const amrex::GeometryData gd = geom.data();
@@ -528,9 +529,10 @@ pelelmex_dervort(
   AMREX_ASSERT(derfab.box().contains(bx));
   AMREX_ASSERT(statefab.box().contains(bx));
   AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
-  AMREX_D_TERM(const amrex::Real idx0 = geom.InvCellSize(0);
-               , const amrex::Real idy0 = geom.InvCellSize(1);
-               , const amrex::Real idz0 = geom.InvCellSize(2););
+  AMREX_D_TERM(
+    const amrex::Real idx0 = geom.InvCellSize(0);
+    , const amrex::Real idy0 = geom.InvCellSize(1);
+    , const amrex::Real idz0 = geom.InvCellSize(2););
   // Physical derivatives under mesh mapping (identity otherwise).
   const MeshMapEvaluator mmap = a_pelelm->meshMapEvaluator();
   const amrex::GeometryData gd = geom.data();
@@ -825,9 +827,10 @@ pelelmex_derQcrit(
 
 {
 #if AMREX_SPACEDIM == 3
-  AMREX_D_TERM(const amrex::Real idx0 = geom.InvCellSize(0);
-               , const amrex::Real idy0 = geom.InvCellSize(1);
-               , const amrex::Real idz0 = geom.InvCellSize(2););
+  AMREX_D_TERM(
+    const amrex::Real idx0 = geom.InvCellSize(0);
+    , const amrex::Real idy0 = geom.InvCellSize(1);
+    , const amrex::Real idz0 = geom.InvCellSize(2););
   // Physical derivatives under mesh mapping (identity otherwise).
   const MeshMapEvaluator mmap = a_pelelm->meshMapEvaluator();
   const amrex::GeometryData gd = geom.data();
@@ -1126,9 +1129,10 @@ pelelmex_derenstrophy(
   int /*level*/)
 
 {
-  AMREX_D_TERM(const amrex::Real idx0 = geom.InvCellSize(0);
-               , const amrex::Real idy0 = geom.InvCellSize(1);
-               , const amrex::Real idz0 = geom.InvCellSize(2););
+  AMREX_D_TERM(
+    const amrex::Real idx0 = geom.InvCellSize(0);
+    , const amrex::Real idy0 = geom.InvCellSize(1);
+    , const amrex::Real idz0 = geom.InvCellSize(2););
   // Physical derivatives under mesh mapping (identity otherwise).
   const MeshMapEvaluator mmap = a_pelelm->meshMapEvaluator();
   const amrex::GeometryData gd = geom.data();

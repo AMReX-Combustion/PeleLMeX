@@ -79,14 +79,14 @@ mapped_inv_dx(
 
 /// mapped_inv_dx in every direction at cell (i,j,k).
 AMREX_GPU_HOST_DEVICE
-  AMREX_FORCE_INLINE amrex::GpuArray<amrex::Real, AMREX_SPACEDIM>
-  mapped_inv_dx_array(
-    int i,
-    int j,
-    int k,
-    amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const& inv_dx_uniform,
-    MeshMapEvaluator const& mmap,
-    amrex::GeometryData const& gd) noexcept
+AMREX_FORCE_INLINE amrex::GpuArray<amrex::Real, AMREX_SPACEDIM>
+mapped_inv_dx_array(
+  int i,
+  int j,
+  int k,
+  amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const& inv_dx_uniform,
+  MeshMapEvaluator const& mmap,
+  amrex::GeometryData const& gd) noexcept
 {
   amrex::ignore_unused(j, k);
   return {AMREX_D_DECL(

@@ -1586,7 +1586,7 @@ PeleLM::domainFaceFlux(
         amrex::TypeList<amrex::ReduceOpSum>{}, amrex::TypeList<amrex::Real>{},
         *a_umac[lev][idim], amrex::IntVect(0),
         [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept
-        -> amrex::GpuTuple<amrex::Real> {
+          -> amrex::GpuTuple<amrex::Real> {
           const int idx = (idim == 0) ? i : ((idim == 1) ? j : k);
           amrex::Real sgn = 0.0; // outward normal is -e_idim at lo
           amrex::IntVect cell(AMREX_D_DECL(i, j, k));
@@ -1649,7 +1649,7 @@ PeleLM::checkProjectionCompatibility(
       amrex::TypeList<amrex::Real, amrex::Real>{}, *a_rhs[lev],
       amrex::IntVect(0),
       [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept
-      -> amrex::GpuTuple<amrex::Real, amrex::Real> {
+        -> amrex::GpuTuple<amrex::Real, amrex::Real> {
         amrex::Real v = rma[box_no](i, j, k) * vma[box_no](i, j, k);
         if (has_mask) {
           v *= static_cast<amrex::Real>(mma[box_no](i, j, k));
