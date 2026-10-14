@@ -98,11 +98,11 @@ PeleLM::initActiveControl()
           "Using activeControl based on fuel mass requires peleLM.fuelName !");
       }
 
-      // Compute some active control parameters
+      // Physical transverse area (the fuel-mass integral is physical).
       amrex::Real area_tot = 1.0;
       for (int idim{0}; idim < AMREX_SPACEDIM; ++idim) {
         if (idim != m_ctrl_flameDir) {
-          area_tot *= (Geom(0).ProbHi(idim) - Geom(0).ProbLo(idim));
+          area_tot *= m_map_eval.domain_size_phys(idim, Geom(0).data());
         }
       }
 
