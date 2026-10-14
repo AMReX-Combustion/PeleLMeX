@@ -211,11 +211,6 @@ PeleLM::Setup()
   taggingSetup();
 
 #ifdef PELE_USE_SPRAY
-  if (m_mesh_mapping) {
-    amrex::Abort(
-      "Spray particles are not supported with geometry.mesh_mapping: the "
-      "particle positions and CFL assume a uniform physical grid.");
-  }
   SpraySetup();
 #endif
 #ifdef PELE_USE_SOOT
@@ -995,6 +990,12 @@ PeleLM::readParameters()
 
 #ifdef PELE_USE_SPRAY
   SprayReadParameters();
+  if (do_spray_particles && m_mesh_mapping) {
+    amrex::Abort(
+      "Spray particles are not supported with geometry.mesh_mapping: the "
+      "particle positions and CFL assume a uniform physical grid.  Set "
+      "peleLM.do_spray_particles = 0 or drop the mapping.");
+  }
 #endif
 #ifdef PELE_USE_SOOT
   do_soot_solve = true;

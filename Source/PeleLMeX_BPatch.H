@@ -82,10 +82,11 @@ public:
       if (m_patchtype_num == 0) {
         inside = true;
       } else if (m_patchtype_num == 1) {
-        amrex::Real patch_line_radius_touse = m_patch_circle_radius + dxt / 2.0;
-        amrex::Real rad = sqrt(
-          (xp - m_patch_circle_center[0]) * (xp - m_patch_circle_center[0]) +
-          (yp - m_patch_circle_center[1]) * (yp - m_patch_circle_center[1]));
+        const amrex::Real patch_line_radius_touse =
+          m_patch_line_radius + dxt / 2.0;
+        const amrex::Real rad = sqrt(
+          (xp - m_patch_line_center[0]) * (xp - m_patch_line_center[0]) +
+          (yp - m_patch_line_center[1]) * (yp - m_patch_line_center[1]));
         if (rad <= patch_line_radius_touse) {
           inside = true;
         }
