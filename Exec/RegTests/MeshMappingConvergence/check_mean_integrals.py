@@ -26,7 +26,7 @@ results = Path(sys.argv[1] if len(sys.argv) > 1 else "results/mean_integrals")
 # by ~100%, so 10% separates fixed from broken with margin, and the N=64
 # stretched run must have a smaller error than the N=32 one.
 TOL_CHANNEL = 1.0e-1   # relative to exact
-TOL_DP0DT = 2.0e-2     # relative, uniform vs tanh
+TOL_DP0DT = 1.0e-3     # relative, uniform vs tanh (observed 8e-5 at N=32)
 TOL_COMPAT = 1.0e-9    # relative compatibility residual
 
 RE_GP0 = re.compile(r"Adding background pressure gradient in dir 0: (\S+)")
@@ -101,11 +101,13 @@ if pf.exists():
     verdict("tanh     N32 vs exact -16 mu U/Ly^2", gt, exact, TOL_CHANNEL)
     verdict("tanh     N64 vs exact -16 mu U/Ly^2", g64, exact, TOL_CHANNEL)
     if None not in (gt, g64):
+        # First-order wall-gradient truncation: halving h should at least
+        # noticeably reduce the error (observed ratio 0.49).
         e32 = abs(gt - exact)
         e64 = abs(g64 - exact)
-        good = e64 < e32
+        good = e64 < 0.75 * e32
         ok &= good
-        print(f"  {'tanh error N64 < N32 (converging)':38s} {e64:.3e} < {e32:.3e}  "
+        print(f"  {'tanh error N64 < 0.75 x N32':38s} {e64:.3e} vs {e32:.3e}  "
               f"{'OK' if good else 'FAIL'}")
 
 # ------------------------------------------------------------- chamber

@@ -183,8 +183,7 @@ PeleLM::addSpark(const TimeStamp a_timestamp)
       auto const dx = geom[lev].CellSizeArray();
       amrex::IntVect spark_idx;
       for (int d = 0; d < AMREX_SPACEDIM; ++d) {
-        // The spark location is physical; under mesh mapping map it back
-        // to Xi before indexing the uniform grid.
+        // Spark location is physical: index it through Xi.
         const amrex::Real xi = m_map_eval.xi_from_x_phys(
           d, m_spark_location[n][d], geom[lev].data());
         spark_idx[d] = static_cast<int>(std::floor((xi - probLo[d]) / dx[d]));
@@ -203,22 +202,19 @@ PeleLM::addSpark(const TimeStamp a_timestamp)
       auto const& statema =
         getLevelDataPtr(lev, a_timestamp)->state.const_arrays();
       auto const& extma = m_extSource[lev]->arrays();
-      const bool mapped = m_mesh_mapping;
       const MeshMapEvaluator mmap = m_map_eval;
       const amrex::GeometryData gd = geom[lev].data();
       amrex::ParallelFor(
         *m_extSource[lev],
-        [statema, extma, leosparm, dx, spark_idx, mapped, mmap, gd,
+        [statema, extma, leosparm, dx, spark_idx, mmap, gd,
          spark_duration = m_spark_duration[n], spark_temp = m_spark_temp[n],
          spark_radius = m_spark_radius
            [n]] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
           auto eos = pele::physics::PhysicsType::eos(leosparm);
-          // Distance from the centre of the cell holding the spark.  Under
-          // mesh mapping it is the physical distance between the two cell
-          // centres (spark_radius is in metres); otherwise the historical
-          // index-space form, which is the same quantity on a uniform grid.
+          // Physical distance from the centre of the spark cell; the
+          // index-space form is kept bit-identical without mapping.
           amrex::Real dist_to_center = 0.0;
-          if (mapped) {
+          if (!is_identity_map(mmap)) {
             const int ic[3] = {i, j, k};
             amrex::Real d2 = 0.0;
             for (int d = 0; d < AMREX_SPACEDIM; ++d) {

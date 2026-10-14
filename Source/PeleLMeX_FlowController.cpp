@@ -325,6 +325,37 @@ PeleLM::activeControl(const int is_restart)
   }
 }
 
+namespace {
+// Physical position of the T_cross crossing between cell (i,j,k) and its
+// upstream neighbour along flame_dir, or 1e37 if there is none there.
+AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE amrex::Real
+ac_crossing_position(
+  int i,
+  int j,
+  int k,
+  amrex::Array4<amrex::Real const> const& T_arr,
+  int flame_dir,
+  amrex::Real T_cross,
+  MeshMapEvaluator const& mmap,
+  amrex::GeometryData const& gd) noexcept
+{
+  if (T_arr(i, j, k, TEMP) <= T_cross) {
+    return 1.e37;
+  }
+  int idx[3] = {i, j, k};
+  idx[flame_dir] -= 1;
+  const amrex::Real T_lo = T_arr(idx[0], idx[1], idx[2], TEMP);
+  if (T_lo >= T_cross) {
+    return 1.e37;
+  }
+  const int ic[3] = {i, j, k};
+  const amrex::Real x_hi = mmap.x_phys_cc(flame_dir, ic[flame_dir], gd);
+  const amrex::Real x_lo = mmap.x_phys_cc(flame_dir, idx[flame_dir], gd);
+  const amrex::Real slope = (T_arr(i, j, k, TEMP) - T_lo) / (x_hi - x_lo);
+  return x_lo + (T_cross - T_lo) / slope;
+}
+} // namespace
+
 void
 PeleLM::getActiveControlLowT(amrex::Real& a_coft)
 {
@@ -353,29 +384,12 @@ PeleLM::getActiveControlLowT(amrex::Real& a_coft)
           for (int k = lo.z; k <= hi.z; ++k) {
             for (int j = lo.y; j <= hi.y; ++j) {
               for (int i = lo.x; i <= hi.x; ++i) {
-                amrex::Real lcl_pos = 1.e37;
-                if (
-                  T_arr(i, j, k, TEMP) > AC_Tcross &&
-                  covered_arr(i, j, k) > 0) {
-                  int idx[3] = {i, j, k};
-                  idx[AC_FlameDir] -= 1;
-                  if (T_arr(idx[0], idx[1], idx[2], TEMP) < AC_Tcross) {
-                    // Linear interpolation of the T_cross crossing between
-                    // the physical centres of this cell and its upstream
-                    // neighbour (identity map without mesh mapping).
-                    const int ic[3] = {i, j, k};
-                    const amrex::Real x_hi =
-                      mmap.x_phys_cc(AC_FlameDir, ic[AC_FlameDir], geomdata);
-                    const amrex::Real x_lo =
-                      mmap.x_phys_cc(AC_FlameDir, idx[AC_FlameDir], geomdata);
-                    const amrex::Real T_lo =
-                      T_arr(idx[0], idx[1], idx[2], TEMP);
-                    const amrex::Real slope =
-                      (T_arr(i, j, k, TEMP) - T_lo) / (x_hi - x_lo);
-                    lcl_pos = x_lo + (AC_Tcross - T_lo) / slope;
-                  }
+                if (covered_arr(i, j, k) > 0) {
+                  tmp_pos = amrex::min<amrex::Real>(
+                    tmp_pos,
+                    ac_crossing_position(
+                      i, j, k, T_arr, AC_FlameDir, AC_Tcross, mmap, geomdata));
                 }
-                tmp_pos = amrex::min<amrex::Real>(tmp_pos, lcl_pos);
               }
             }
           }
@@ -393,27 +407,10 @@ PeleLM::getActiveControlLowT(amrex::Real& a_coft)
           for (int k = lo.z; k <= hi.z; ++k) {
             for (int j = lo.y; j <= hi.y; ++j) {
               for (int i = lo.x; i <= hi.x; ++i) {
-                amrex::Real lcl_pos = 1.e37;
-                if (T_arr(i, j, k, TEMP) > AC_Tcross) {
-                  int idx[3] = {i, j, k};
-                  idx[AC_FlameDir] -= 1;
-                  if (T_arr(idx[0], idx[1], idx[2], TEMP) < AC_Tcross) {
-                    // Linear interpolation of the T_cross crossing between
-                    // the physical centres of this cell and its upstream
-                    // neighbour (identity map without mesh mapping).
-                    const int ic[3] = {i, j, k};
-                    const amrex::Real x_hi =
-                      mmap.x_phys_cc(AC_FlameDir, ic[AC_FlameDir], geomdata);
-                    const amrex::Real x_lo =
-                      mmap.x_phys_cc(AC_FlameDir, idx[AC_FlameDir], geomdata);
-                    const amrex::Real T_lo =
-                      T_arr(idx[0], idx[1], idx[2], TEMP);
-                    const amrex::Real slope =
-                      (T_arr(i, j, k, TEMP) - T_lo) / (x_hi - x_lo);
-                    lcl_pos = x_lo + (AC_Tcross - T_lo) / slope;
-                  }
-                }
-                tmp_pos = amrex::min<amrex::Real>(tmp_pos, lcl_pos);
+                tmp_pos = amrex::min<amrex::Real>(
+                  tmp_pos,
+                  ac_crossing_position(
+                    i, j, k, T_arr, AC_FlameDir, AC_Tcross, mmap, geomdata));
               }
             }
           }

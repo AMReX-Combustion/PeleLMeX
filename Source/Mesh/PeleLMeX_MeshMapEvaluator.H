@@ -46,37 +46,53 @@ x_phys_cc_periodic(
   return mmap.x_phys_cc(idir, idx, gd);
 }
 
+/// True for the identity evaluator (no mesh mapping active).
+AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE bool
+is_identity_map(MeshMapEvaluator const& mmap) noexcept
+{
+  return mmap.m_kind == MeshMapEvaluator::Kind::Identity;
+}
+
 /**
  * \brief Inverse physical spacing for a centred difference at cell \p idx
- *        along \p idir: 2 / (x_{idx+1} - x_{idx-1}), i.e. the factor that
- *        turns a Xi-index central difference into a physical derivative.
+ *        along \p idir: 2 / (x_{idx+1} - x_{idx-1}), so that
+ *        (a_{i+1} - a_{i-1}) * 0.5 * result is the physical derivative.
  *
- * Without mapping (\p mapped false) returns \p inv_dx_uniform unchanged,
- * so unmapped stencils stay bit-identical to the historical ones; with it,
- * (a_{i+1} - a_{i-1}) * 0.5 * result is the second-order physical derivative
- * on the stretched grid.  The neighbour positions come from
- * x_phys_cc_periodic, so at a periodic seam the spacing is the physical
- * distance to the periodic image (what the metric ghost cells hold), not
- * the map continued past the domain end; in non-periodic directions the
- * continued map is used, consistent with the fill-patched ghost state the
- * stencil reads there.  Positions are analytic evaluations of the map, so
- * any index is admissible.  Used by the gradient derives (vorticity,
- * Q-criterion, enstrophy) and the divU time-step estimate.
+ * Returns \p inv_dx_uniform for the identity map, keeping unmapped stencils
+ * bit-identical.  Neighbour positions come from x_phys_cc_periodic, so the
+ * spacing across a periodic seam is the distance to the periodic image.
  */
 AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE amrex::Real
 mapped_inv_dx(
   int idir,
   int idx,
-  bool mapped,
   amrex::Real inv_dx_uniform,
   MeshMapEvaluator const& mmap,
   amrex::GeometryData const& gd) noexcept
 {
-  if (!mapped) {
+  if (is_identity_map(mmap)) {
     return inv_dx_uniform;
   }
   return amrex::Real(2.0) / (x_phys_cc_periodic(mmap, idir, idx + 1, gd) -
                              x_phys_cc_periodic(mmap, idir, idx - 1, gd));
+}
+
+/// mapped_inv_dx in every direction at cell (i,j,k).
+AMREX_GPU_HOST_DEVICE
+  AMREX_FORCE_INLINE amrex::GpuArray<amrex::Real, AMREX_SPACEDIM>
+  mapped_inv_dx_array(
+    int i,
+    int j,
+    int k,
+    amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const& inv_dx_uniform,
+    MeshMapEvaluator const& mmap,
+    amrex::GeometryData const& gd) noexcept
+{
+  amrex::ignore_unused(j, k);
+  return {AMREX_D_DECL(
+    mapped_inv_dx(0, i, inv_dx_uniform[0], mmap, gd),
+    mapped_inv_dx(1, j, inv_dx_uniform[1], mmap, gd),
+    mapped_inv_dx(2, k, inv_dx_uniform[2], mmap, gd))};
 }
 
 #endif // PELELMEX_MESHMAP_EVALUATOR_H
