@@ -146,15 +146,7 @@ PeleLM::initialProjection()
     }
   }
 
-  // Closed chamber, sealed box: the NodalProjector forms div(U) + rhs_cc,
-  // so sum(rhs_cc) over the domain must vanish (no boundary flux).  With
-  // inflow faces the boundary term of the nodal divergence is not
-  // available here, so the check is skipped.
-  if (compatibilityCheckEnabled() && !rhs_cc.empty() && !domainHasOpenFace()) {
-    checkProjectionCompatibility(
-      "initial projection", GetVecOfConstPtrs(rhs_cc), 0.0, 1.0,
-      geom[0].IsRZ());
-  }
+  checkNodalCompatibility("initial projection", GetVecOfConstPtrs(rhs_cc));
 
   doNodalProject(
     GetVecOfPtrs(vel), GetVecOfPtrs(sigma), GetVecOfPtrs(rhs_cc), {},
@@ -643,15 +635,7 @@ PeleLM::velocityProjection(
     }
   }
 
-  // Closed chamber, sealed box: the NodalProjector forms div(U) + rhs_cc,
-  // so sum(rhs_cc) over the domain must vanish (no boundary flux).  With
-  // inflow faces the boundary term of the nodal divergence is not
-  // available here, so the check is skipped.
-  if (compatibilityCheckEnabled() && !rhs_cc.empty() && !domainHasOpenFace()) {
-    checkProjectionCompatibility(
-      "velocity projection", GetVecOfConstPtrs(rhs_cc), 0.0, 1.0,
-      geom[0].IsRZ());
-  }
+  checkNodalCompatibility("velocity projection", GetVecOfConstPtrs(rhs_cc));
 
   doNodalProject(
     GetVecOfPtrs(vel), GetVecOfPtrs(sigma), GetVecOfPtrs(rhs_cc), {},
@@ -744,6 +728,19 @@ PeleLM::velocityProjection(
     averageDownVelocity(AmrNewTime);
   }
 #endif
+}
+
+void
+PeleLM::checkNodalCompatibility(
+  const std::string& a_who, const amrex::Vector<const amrex::MultiFab*>& a_rhs)
+{
+  // Sealed box only: the NodalProjector forms div(U) + rhs_cc, and with no
+  // inflow/outflow face the boundary term is zero so sum(rhs_cc) must
+  // vanish.  With open faces the nodal boundary term is not reconstructed
+  // here and the check is skipped.
+  if (compatibilityCheckEnabled() && !a_rhs.empty() && !domainHasOpenFace()) {
+    checkProjectionCompatibility(a_who, a_rhs, 0.0, 1.0, geom[0].IsRZ());
+  }
 }
 
 void

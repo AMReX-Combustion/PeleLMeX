@@ -965,11 +965,8 @@ PeleLM::resetCoveredMask()
     // Switch off trigger
     m_resetCoveredMask = 0;
 
-    // The grid hierarchy changed: the uncovered volume must follow it.
-    // Under mesh mapping the composite sum of detJ depends on which level
-    // each cell lives on (fac is sampled at that level's cell centres), and
-    // with EB the covered fraction differs by level, so a once-only value
-    // goes stale after any regrid.
+    // The uncovered volume depends on the hierarchy (detJ sampled per
+    // level under mapping, vfrac per level under EB): recompute it.
     m_uncoveredVol = -1.0;
 
   } else {
@@ -1505,10 +1502,7 @@ PeleLM::defineCellVolume(
   const amrex::DistributionMapping& dm,
   const amrex::FabFactory<amrex::FArrayBox>& factory)
 {
-  // Physical volume of each cell: the geometry volume (uniform Xi cell, or
-  // the 2D-RZ volume), times detJ under mesh mapping, times the EB volume
-  // fraction.  Built once per level definition so MFSum is a single fused
-  // reduction with no per-call temporaries.
+  // Geometry volume (Xi cell, or RZ) x detJ (mapping) x vfrac (EB).
   AMREX_ASSERT(lev >= 0 && lev < m_cellVol.size());
   m_cellVol[lev].define(ba, dm, 1, 0, amrex::MFInfo(), factory);
   geom[lev].GetVolume(m_cellVol[lev]);
@@ -1549,14 +1543,10 @@ PeleLM::domainFaceFlux(
   const amrex::Vector<amrex::Array<const amrex::MultiFab*, AMREX_SPACEDIM>>&
     a_umac)
 {
-  // Net outward flux of a composite face velocity through the domain
-  // boundary, with the geometry's face areas (uniform Xi areas, or the
-  // RZ areas) and, under EB, the face area fractions.  Composite: a
-  // level-l boundary face is skipped when the cell it bounds is covered by
-  // level l+1 (same mask as MFSum), so an un-averaged coarse umac under a
-  // refined boundary patch is not double counted.  Under mesh mapping the
-  // face velocity handed to the MAC projector is already (J/fac) u, so
-  // this IS the discrete boundary term of the projector's divergence.
+  // Geometry face areas (x EB area fractions); a coarse boundary face
+  // whose cell is covered by the finer level is skipped (MFSum's mask).
+  // Under mapping umac is already (J/fac) u, i.e. the projector's own
+  // boundary term.
   amrex::Real net = 0.0;
   for (int lev = 0; lev <= finest_level; ++lev) {
     const bool has_mask = (lev != finest_level);
@@ -1567,8 +1557,7 @@ PeleLM::domainFaceFlux(
       amrex::MultiFab area;
       geom[lev].GetFaceArea(area, grids[lev], dmap[lev], idim, 0);
 #ifdef AMREX_USE_EB
-      // Fold the EB face area fraction in: cut boxes carry one, regular
-      // boxes are left at the full area, covered boxes get zero.
+      // EB area fraction: cut boxes carry one, covered boxes get zero.
       {
         auto const& ebfact = EBFactory(lev);
         auto const& areafrac = ebfact.getAreaFrac();
@@ -1630,20 +1619,10 @@ PeleLM::checkProjectionCompatibility(
   const amrex::Real a_rhs_sign,
   const bool a_rhs_is_rz_scaled)
 {
-  // The projector solves  div(beta grad phi) = div(U) + sign . rhs  on the
-  // uniform Xi mesh, so with all-Neumann/periodic BCs it is solvable only
-  // if  F_bdry(U) + sign . sum_cells(rhs . dV) = 0,  dV being the measure
-  // the projector integrates against:
-  //   - the geometry cell volume (uniform Xi volume, or the RZ volume for
-  //     the MAC projector, whose RHS is the physical divU), times the EB
-  //     volume fraction;
-  //   - the Cartesian dx product when the RHS was already multiplied by r
-  //     by scaleProj_RZ (nodal projections: a_rhs_is_rz_scaled).
-  // NOT MFSum, which now carries detJ: under mapping the RHS is J-scaled
-  // and the Xi volume is the right measure.  Composite over uncovered
-  // cells.  For a closed chamber the RHS has had the mean S removed; the
-  // mean must be the physical-volume (detJ-weighted) one or this fails by
-  // O(1) on a stretched mesh.
+  // Solvability of  div(beta grad phi) = div(U) + sign . rhs  with
+  // all-Neumann/periodic BCs:  F_bdry(U) + sign . sum(rhs dV) = 0.  dV is
+  // the projector's measure (see the header), NOT m_cellVol, which carries
+  // detJ: under mapping the RHS is already J-scaled.
   if (!compatibilityCheckEnabled()) {
     return;
   }
@@ -1662,30 +1641,21 @@ PeleLM::checkProjectionCompatibility(
 #endif
     auto const& rma = a_rhs[lev]->const_arrays();
     auto const& vma = dv.const_arrays();
-    amrex::GpuTuple<amrex::Real, amrex::Real> r;
-    if (lev != finest_level) {
-      auto const& mma = m_coveredMask[lev]->const_arrays();
-      r = amrex::ParReduce(
-        amrex::TypeList<amrex::ReduceOpSum, amrex::ReduceOpSum>{},
-        amrex::TypeList<amrex::Real, amrex::Real>{}, *a_rhs[lev],
-        amrex::IntVect(0),
-        [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept
-          -> amrex::GpuTuple<amrex::Real, amrex::Real> {
-          const amrex::Real v = rma[box_no](i, j, k) * vma[box_no](i, j, k) *
-                                static_cast<amrex::Real>(mma[box_no](i, j, k));
-          return {v, std::abs(v)};
-        });
-    } else {
-      r = amrex::ParReduce(
-        amrex::TypeList<amrex::ReduceOpSum, amrex::ReduceOpSum>{},
-        amrex::TypeList<amrex::Real, amrex::Real>{}, *a_rhs[lev],
-        amrex::IntVect(0),
-        [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept
-          -> amrex::GpuTuple<amrex::Real, amrex::Real> {
-          const amrex::Real v = rma[box_no](i, j, k) * vma[box_no](i, j, k);
-          return {v, std::abs(v)};
-        });
-    }
+    const bool has_mask = (lev != finest_level);
+    auto const& mma = has_mask ? m_coveredMask[lev]->const_arrays()
+                               : amrex::MultiArray4<int const>{};
+    const auto r = amrex::ParReduce(
+      amrex::TypeList<amrex::ReduceOpSum, amrex::ReduceOpSum>{},
+      amrex::TypeList<amrex::Real, amrex::Real>{}, *a_rhs[lev],
+      amrex::IntVect(0),
+      [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept
+        -> amrex::GpuTuple<amrex::Real, amrex::Real> {
+        amrex::Real v = rma[box_no](i, j, k) * vma[box_no](i, j, k);
+        if (has_mask) {
+          v *= static_cast<amrex::Real>(mma[box_no](i, j, k));
+        }
+        return {v, std::abs(v)};
+      });
     sum_rhs += amrex::get<0>(r);
     sum_abs += amrex::get<1>(r);
   }
@@ -1698,12 +1668,11 @@ PeleLM::checkProjectionCompatibility(
   const amrex::Real rel = std::abs(resid) / scale;
   if (m_verbose >= 2) {
     amrex::Print() << "   ... " << a_who
-                   << " compatibility: |F_bdry + sign.sum(rhs)| / sum|rhs| = "
+                   << " compatibility: |F_bdry + sign.sum(rhs)| / scale = "
                    << rel << " (F_bdry = " << a_bdry_flux
                    << ", sum(rhs) = " << sum_rhs << ")\n";
   }
-  // Written as !(rel <= tol) so a NaN residual (comparisons with NaN are
-  // false, and the regression runs with FPE traps off) also trips the gate.
+  // !(rel <= tol) so that a NaN residual also trips the gate.
   if (
     (m_debug_check_compatibility != 0) && !(rel <= m_debug_compatibility_tol)) {
     std::ostringstream msg;
@@ -1719,9 +1688,8 @@ amrex::Real
 PeleLM::MFSum(const amrex::Vector<const amrex::MultiFab*>& a_mf, const int comp)
 {
   BL_PROFILE("PeleLMeX::MFSum()");
-  // Physical-volume integral of the composite field, not including the
-  // fine-covered and EB-covered cells.  m_cellVol already carries the
-  // mesh-mapping detJ and the EB volume fraction (see defineCellVolume).
+  // Physical-volume integral over uncovered cells; m_cellVol carries detJ
+  // and the EB volume fraction (see defineCellVolume).
 
   amrex::Real volwgtsum = 0.0;
 
