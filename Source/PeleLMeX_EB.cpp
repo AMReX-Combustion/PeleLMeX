@@ -542,9 +542,9 @@ PeleLM::getEBState(
     const auto& ebbc = ebfact.getBndryCent().const_array(a_mfi);
     const auto& ebnorm = ebfact.getBndryNormal().const_array(a_mfi);
     amrex::ParallelFor(
-      bx, [flag, ebscal_arr, state, ebnorm, ncomp, EBfiller, first_comp,
-           geomdata, time,
-           ebbc] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+      bx,
+      [flag, ebscal_arr, state, ebnorm, ncomp, EBfiller, first_comp, geomdata,
+       time, ebbc] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
         // Regular/covered cells -> 0.0
         if (flag(i, j, k).isCovered() || flag(i, j, k).isRegular()) {
           for (int n = 0; n < ncomp; ++n) {
@@ -673,9 +673,8 @@ PeleLM::getEBDiff(
         EBTypfiller{lprobparm, ProblemSpecificFunctions{}};
       const auto& ebbc = bndryCentroid.const_array(mfi);
       amrex::ParallelFor(
-        bx,
-        [flag, ebdiff, diff_cc, EBTypfiller, geomdata, lprobparm,
-         ebbc] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        bx, [flag, ebdiff, diff_cc, EBTypfiller, geomdata, lprobparm,
+             ebbc] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           // Regular/covered cells -> 0.0
           if (flag(i, j, k).isCovered() || flag(i, j, k).isRegular()) {
             ebdiff(i, j, k) = 0.0;
