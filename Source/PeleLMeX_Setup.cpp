@@ -1,4 +1,6 @@
+#include <limits>
 #include <string>
+#include <AMReX_Algorithm.H>
 #include <AMReX_ParmParse.H>
 #include <AMReX_buildInfo.H>
 #include <PeleLMeX.H>
@@ -315,6 +317,11 @@ PeleLM::readParameters()
 
       m_mesh_map = MeshMap::create(mesh_mapping_name);
       m_mesh_mapping = true;
+      // Populate the coordinate evaluator now, rather than waiting for the
+      // Init/Regrid paths: parameter validation further down this function
+      // needs to convert between physical and Xi positions.  Init and
+      // Regrid refresh it from the same source.
+      m_map_eval = m_mesh_map->make_evaluator();
       amrex::Print() << " Mesh mapping enabled: " << mesh_mapping_name << "\n";
     }
   }
@@ -341,6 +348,8 @@ PeleLM::readParameters()
   // enable overwriting
   m_closed_chamber = (isOpenDomain) != 0 ? 0 : 1;
   pp.query("closed_chamber", m_closed_chamber);
+  pp.query("debug_check_compatibility", m_debug_check_compatibility);
+  pp.query("debug_compatibility_tol", m_debug_compatibility_tol);
   if ((verbose != 0) && (m_closed_chamber != 0)) {
     amrex::Print()
       << " Simulation performed with the closed chamber algorithm \n";
@@ -359,16 +368,83 @@ PeleLM::readParameters()
       m_inlet_plane_dir >= 0 && m_inlet_plane_dir < AMREX_SPACEDIM,
       "peleLM.inlet_plane_dir must be set to a valid direction "
       "when peleLM.use_inlet_from_plane is enabled");
-    AMREX_ALWAYS_ASSERT_WITH_MESSAGE(
-      m_inlet_plane_position >= geom[0].ProbLo()[m_inlet_plane_dir] &&
-        m_inlet_plane_position <= geom[0].ProbHi()[m_inlet_plane_dir],
-      "peleLM.inlet_plane_position must lie within the problem domain "
-      "bounds in peleLM.inlet_plane_dir when "
-      "peleLM.use_inlet_from_plane is enabled");
+    // inlet_plane_position is a physical coordinate.  Under mesh mapping the
+    // physical domain bounds are the images of the Xi bounds, which for
+    // ConstantMap differ from them; compare against those.
+    {
+      const auto gd = geom[0].data();
+      const amrex::Real phys_lo = m_map_eval.x_phys_from_xi(
+        m_inlet_plane_dir, geom[0].ProbLo()[m_inlet_plane_dir], gd);
+      const amrex::Real phys_hi = m_map_eval.x_phys_from_xi(
+        m_inlet_plane_dir, geom[0].ProbHi()[m_inlet_plane_dir], gd);
+      AMREX_ALWAYS_ASSERT_WITH_MESSAGE(
+        m_inlet_plane_position >= phys_lo && m_inlet_plane_position <= phys_hi,
+        "peleLM.inlet_plane_position must lie within the physical problem "
+        "domain bounds in peleLM.inlet_plane_dir when "
+        "peleLM.use_inlet_from_plane is enabled");
+    }
     AMREX_ALWAYS_ASSERT_WITH_MESSAGE(
       m_inlet_plane_warmup_steps >= 0,
       "peleLM.inlet_plane_warmup_steps must be non-negative when "
       "peleLM.use_inlet_from_plane is enabled");
+
+    std::string recycling_mode = "fluctuations";
+    pp.query("recycling_mode", recycling_mode);
+    if (recycling_mode == "fluctuations") {
+      m_recycling_mode = RecyclingMode::Fluctuations;
+    } else if (recycling_mode == "full") {
+      m_recycling_mode = RecyclingMode::Full;
+    } else {
+      amrex::Abort(
+        "peleLM.recycling_mode must be 'fluctuations' or 'full', got '" +
+        recycling_mode + "'");
+    }
+    pp.query("inlet_plane_flux_control", m_inlet_plane_flux_control);
+    {
+      amrex::Real target_flow = 0.0;
+      if (pp.query("inlet_plane_target_flow_rate", target_flow) != 0) {
+        m_inlet_plane_target_flow = target_flow;
+      }
+    }
+    if (
+      m_recycling_mode == RecyclingMode::Fluctuations &&
+      (pp.contains("inlet_plane_flux_control") ||
+       pp.contains("inlet_plane_target_flow_rate"))) {
+      amrex::Print()
+        << "WARNING: peleLM.inlet_plane_flux_control and "
+           "peleLM.inlet_plane_target_flow_rate are ignored when "
+           "peleLM.recycling_mode = fluctuations; the mean inflow is "
+           "anchored by bcnormal in that mode.\n";
+    }
+    if (m_recycling_mode == RecyclingMode::Full) {
+      if (m_inlet_plane_flux_control != 0) {
+        amrex::Print()
+          << " Recycling in full mode with mass-flux control: the injected "
+             "sample is rescaled to the target inlet flow rate every "
+             "step.\n";
+      } else {
+        amrex::Print()
+          << "WARNING: peleLM.inlet_plane_flux_control = 0: full-mode "
+             "recycling has no anchor on the inlet flow rate. Any net heat "
+             "transfer between the inlet and the recycling plane will "
+             "drive a monotonic drift of the bulk flow (see the recycling "
+             "docs); use this only for adiabatic constant-area ducts.\n";
+      }
+      // These controls belong to the running-mean machinery and have no
+      // effect in full mode.
+      if (m_inlet_plane_warmup_steps > 0) {
+        amrex::Print()
+          << "WARNING: peleLM.inlet_plane_warmup_steps is ignored when "
+             "peleLM.recycling_mode = full; injection begins with the "
+             "first snapshot.\n";
+      }
+      if (m_inlet_plane_avg_window > 0.0) {
+        amrex::Print()
+          << "WARNING: peleLM.inlet_plane_avg_window is ignored when "
+             "peleLM.recycling_mode = full; no running mean is "
+             "maintained.\n";
+      }
+    }
   }
 
 #ifdef PELE_USE_PLASMA
@@ -557,6 +633,12 @@ PeleLM::readParameters()
     }
     m_do_les = true;
     m_les_verbose = m_verbose;
+    if (m_mesh_mapping) {
+      amrex::Abort(
+        "peleLM.les_model is not supported with geometry.mesh_mapping: the "
+        "filter width is formed from the uniform Xi cell volume and the "
+        "velocity-gradient operator has not been mapped.");
+    }
     pp.query("plot_les", m_plot_les);
     pp.query("les_v", m_les_verbose);
     pp.query("les_c_chi", m_les_c_chi);
@@ -650,6 +732,7 @@ PeleLM::readParameters()
       "If specifying a species name map, length must equal number of species");
   }
   pp.query("initDataPlt_reset_time", m_do_reset_time);
+  pp.query("initDataPlt_coarsen", m_initDataPlt_coarsen);
 
   // -----------------------------------------
   // advance
@@ -801,6 +884,7 @@ PeleLM::readParameters()
     m_temporal_dir = m_base_output_pref + m_temporal_dir;
     pp.query("do_extremas", m_do_extremas);
     pp.query("do_mass_balance", m_do_massBalance);
+    pp.query("do_energy_balance", m_do_energyBalance);
     pp.query("do_species_balance", m_do_speciesBalance);
     pp.query("do_patch_mfr", m_do_patch_mfr);
   }
@@ -906,6 +990,12 @@ PeleLM::readParameters()
 
 #ifdef PELE_USE_SPRAY
   SprayReadParameters();
+  if (do_spray_particles && m_mesh_mapping) {
+    amrex::Abort(
+      "Spray particles are not supported with geometry.mesh_mapping: the "
+      "particle positions and CFL assume a uniform physical grid.  Set "
+      "peleLM.do_spray_particles = 0 or drop the mapping.");
+  }
 #endif
 #ifdef PELE_USE_SOOT
   do_soot_solve = true;
@@ -918,6 +1008,11 @@ PeleLM::readParameters()
 #ifdef PELE_USE_RADIATION
   do_rad_solve = false;
   pp.query("do_rad_solve", do_rad_solve);
+  if (do_rad_solve && m_mesh_mapping) {
+    amrex::Abort(
+      "Radiation (do_rad_solve) is not supported with geometry.mesh_mapping: "
+      "the optical path lengths assume a uniform physical grid.");
+  }
   if ((m_verbose != 0) && do_rad_solve) {
     amrex::Print() << "Simulation performed with radiation modeling \n";
   }
@@ -977,6 +1072,242 @@ PeleLM::checkSetupParams()
     }
 #endif
   }
+
+  // ---------------------------------------------------------------------
+  // Mesh mapping x inflow data
+  // ---------------------------------------------------------------------
+  // A turbulence file is uniform in *some* coordinate: physical position
+  // for synthetic or uniform-precursor data, the precursor's Xi coordinate
+  // for planes extracted from a mesh-mapped run.  Either way the file is
+  // sampled by the physical position of each target cell, which on a
+  // mesh-mapped grid is not ProbLo + (i+0.5)*dx: that needs the PelePhysics
+  // add_turb() overload taking explicit coordinates, and sampling a
+  // Xi-uniform file additionally needs a PelePhysics that inverts the
+  // file's map.
+  if (m_mesh_mapping && turb_inflow.is_initialized()) {
+#ifndef PELEPHYSICS_TURBINFLOW_HAS_COORD_ADDTURB
+    amrex::Abort(
+      "geometry.mesh_mapping combined with turbinflow requires a "
+      "PelePhysics that provides TurbInflow::add_turb() with explicit "
+      "physical coordinates (PELEPHYSICS_TURBINFLOW_HAS_COORD_ADDTURB).\n"
+      "Update Submodules/PelePhysics, or drop geometry.mesh_mapping.");
+#endif
+  }
+  if (turb_inflow.is_initialized() && (verbose != 0)) {
+    reportTurbInflowMaps();
+  }
+
+  if (m_mesh_mapping && (m_use_inlet_from_plane != 0) && (verbose != 0)) {
+    const int dir = m_inlet_plane_dir;
+    amrex::Print() << " Recycling source plane: physical position "
+                   << m_inlet_plane_position << " -> Xi position "
+                   << m_map_eval.xi_from_x_phys(
+                        dir, m_inlet_plane_position, geom[0].data())
+                   << " (level-0 index " << computeRecyclingSrcIndex(0)
+                   << ")\n";
+  }
+
+  if (turb_inflow.is_initialized() && (verbose != 0)) {
+    reportTurbInflowResolution();
+  }
+}
+
+void
+PeleLM::reportTurbInflowMaps()
+{
+#ifndef PELEPHYSICS_TURBINFLOW_SAMPLES_MESHMAP
+  // Older PelePhysics: files without a MESHMAP trailer are taken to be
+  // uniform in physical position; a reader that knows the trailer refuses
+  // files that carry one, an older one cannot tell them apart.
+  if (m_mesh_mapping) {
+#ifdef PELEPHYSICS_TURBINFLOW_HAS_MESHMAP_HDR
+    amrex::Print()
+      << " NOTE: turbinflow data without a MESHMAP trailer is taken to be "
+         "uniform in physical\n       position; only the target grid is "
+         "stretched.  Files extracted from a mesh-mapped\n       precursor "
+         "are refused by this PelePhysics.\n";
+#else
+    amrex::Print()
+      << " WARNING: turbinflow data is assumed uniform in physical position. "
+         "This PelePhysics cannot\n          detect a file extracted from a "
+         "mesh-mapped precursor (uniform in that run's Xi\n          "
+         "coordinate); injecting one here would be silently wrong.\n";
+#endif
+  }
+#else
+  // For every inflow face fed by a turbulence file, say which coordinate
+  // the file is uniform in and how it relates to this run's mesh: a file
+  // whose map and Xi grid coincide with ours is injected by exact index
+  // (the same-grid guarantee, now also for mapped meshes); anything else
+  // is interpolated -- in physical position for a physically-uniform file,
+  // in the file's Xi for a mapped one.
+  const auto gd = geom[0].data();
+  const amrex::Box& dom = geom[0].Domain();
+  auto velBCRec = fetchBCRecArray(VELX, AMREX_SPACEDIM);
+  for (int dir = 0; dir < AMREX_SPACEDIM; ++dir) {
+    for (int iside = 0; iside < 2; ++iside) {
+      const bool is_low = (iside == 0);
+      const auto side =
+        is_low ? amrex::Orientation::low : amrex::Orientation::high;
+      const int bctype = is_low ? velBCRec[0].lo()[dir] : velBCRec[0].hi()[dir];
+      if (bctype != amrex::BCType::ext_dir) {
+        continue;
+      }
+      MeshMapEvaluator fmap;
+      amrex::Real xi_lo[2] = {0.0, 0.0};
+      amrex::Real xi_hi[2] = {0.0, 0.0};
+      const int has = turb_inflow.file_map(dir, side, fmap, xi_lo, xi_hi);
+      if (has < 0) {
+        continue;
+      }
+      amrex::Print() << " turbInflow on face (dir " << dir << ", "
+                     << (is_low ? "low" : "high") << "): ";
+      if (has == 0) {
+        amrex::Print() << "file is uniform in physical position; sampled at "
+                          "the physical positions of this "
+                       << (m_mesh_mapping ? "mapped" : "uniform") << " mesh\n";
+        continue;
+      }
+      int tdir1 = 0;
+      int tdir2 = 0;
+      pele::physics::turbinflow::TurbInflow::transverseDirs(dir, tdir1, tdir2);
+      const int tdir[2] = {tdir1, tdir2};
+      // Same map on the two transverse axes (file slots 0/1 against our
+      // axes tdir1/tdir2) and the same Xi extent means the file's Xi grid
+      // is a uniform grid on our own transverse domain; with equal cell
+      // counts every target cell centre is a file cell centre.
+      // The file's parameters went through a text trailer, so compare
+      // them to ours up to a few ULPs rather than exactly.
+      auto near = [](amrex::Real a, amrex::Real b) {
+        return amrex::almostEqual(a, b, 8);
+      };
+      bool same = (fmap.m_kind == m_map_eval.m_kind);
+      for (int t = 0; t < 2 && same; ++t) {
+        const int d = tdir[t];
+        same = near(fmap.m_p[t], m_map_eval.m_p[d]) &&
+               near(fmap.m_p2[t], m_map_eval.m_p2[d]) &&
+               near(fmap.m_p3[t], m_map_eval.m_p3[d]) &&
+               (fmap.m_q[t] == m_map_eval.m_q[d]) &&
+               near(xi_lo[t], gd.ProbLo()[d]) && near(xi_hi[t], gd.ProbHi()[d]);
+      }
+      amrex::Print() << "file is uniform in its precursor's Xi (map kind "
+                     << static_cast<int>(fmap.m_kind) << "); ";
+      if (same) {
+        amrex::Print() << "map and Xi extent match this mesh -> ";
+        amrex::Real dmin[2];
+        amrex::Real dmax[2];
+        bool same_cells =
+          turb_inflow.file_transverse_dx_range(dir, side, dmin, dmax);
+        // Same map and extent: the smallest physical cell is a monotone
+        // function of the cell count, so equal minima mean equal counts.
+        for (int t = 0; t < 2 && same_cells; ++t) {
+          const int d = tdir[t];
+          amrex::Real gmin = std::numeric_limits<amrex::Real>::max();
+          for (int i = dom.smallEnd(d); i <= dom.bigEnd(d); ++i) {
+            gmin = std::min(gmin, m_map_eval.dx_phys_cc(d, i, gd));
+          }
+          same_cells = std::abs(dmin[t] - gmin) <= 1.0e-10 * gmin;
+        }
+        amrex::Print()
+          << (same_cells ? "exact index injection\n"
+                         : "interpolation in Xi (different cell count)\n");
+      } else {
+        amrex::Print() << (m_mesh_mapping ? "this mesh's map differs"
+                                          : "this mesh is uniform")
+                       << " -> interpolation in the file's Xi\n";
+      }
+    }
+  }
+#endif
+}
+
+void
+PeleLM::reportTurbInflowResolution()
+{
+#ifndef PELEPHYSICS_TURBINFLOW_HAS_COORD_ADDTURB
+  // The accessors this needs (file_transverse_dx, transverseDirs) arrived
+  // with the coordinate-based add_turb overload; without them there is
+  // nothing to report.
+  return;
+#else
+  // Compare the turbulence file's transverse spacing against the level-0
+  // grid's physical spacing on each inflow face.  The ratio is the physical
+  // constraint on injecting a uniformly-spaced file: substantially above one
+  // and the file cannot fill the scales the grid resolves; substantially
+  // below one and the injected field is aliased onto the grid.  Neither is
+  // an error, so this only reports.
+  const auto gd = geom[0].data();
+  const amrex::Box& dom = geom[0].Domain();
+  auto velBCRec = fetchBCRecArray(VELX, AMREX_SPACEDIM);
+
+  for (int dir = 0; dir < AMREX_SPACEDIM; ++dir) {
+    for (int iside = 0; iside < 2; ++iside) {
+      const bool is_low = (iside == 0);
+      const auto side =
+        is_low ? amrex::Orientation::low : amrex::Orientation::high;
+      const int bctype = is_low ? velBCRec[0].lo()[dir] : velBCRec[0].hi()[dir];
+      if (bctype != amrex::BCType::ext_dir) {
+        continue;
+      }
+      amrex::Real file_dx[2] = {0.0, 0.0};
+      if (!turb_inflow.file_transverse_dx(dir, side, file_dx[0], file_dx[1])) {
+        continue;
+      }
+#ifdef PELEPHYSICS_TURBINFLOW_SAMPLES_MESHMAP
+      // A mesh-mapped file's physical spacing varies across the plane; the
+      // ratio is then bounded by the two spacing ranges rather than by a
+      // single file value.
+      amrex::Real file_dmin[2] = {0.0, 0.0};
+      amrex::Real file_dmax[2] = {0.0, 0.0};
+      turb_inflow.file_transverse_dx_range(dir, side, file_dmin, file_dmax);
+#else
+      const amrex::Real* file_dmin = file_dx;
+      const amrex::Real* file_dmax = file_dx;
+#endif
+
+      int tdir1 = 0;
+      int tdir2 = 0;
+      pele::physics::turbinflow::TurbInflow::transverseDirs(dir, tdir1, tdir2);
+      const int tdir[2] = {tdir1, tdir2};
+
+      amrex::Print() << " turbInflow resolution check, face (dir " << dir
+                     << ", " << (is_low ? "low" : "high") << "):\n";
+      for (int t = 0; t < 2; ++t) {
+        if (file_dx[t] <= 0.0) {
+          continue;
+        }
+        amrex::Real dmin = std::numeric_limits<amrex::Real>::max();
+        amrex::Real dmax = 0.0;
+        for (int i = dom.smallEnd(tdir[t]); i <= dom.bigEnd(tdir[t]); ++i) {
+          const amrex::Real d = m_map_eval.dx_phys_cc(tdir[t], i, gd);
+          dmin = std::min(dmin, d);
+          dmax = std::max(dmax, d);
+        }
+        amrex::Print() << "   dir " << tdir[t] << ": grid dx in [" << dmin
+                       << ", " << dmax << "], file dx ";
+        if (amrex::almostEqual(file_dmin[t], file_dmax[t])) {
+          amrex::Print() << file_dx[t] << " -> dx_grid/dx_file in ["
+                         << dmin / file_dx[t] << ", " << dmax / file_dx[t]
+                         << "]\n";
+        } else if (
+          std::abs(file_dmin[t] - dmin) <= 1.0e-10 * dmin &&
+          std::abs(file_dmax[t] - dmax) <= 1.0e-10 * dmax) {
+          // Same stretched grid on both sides: the pointwise ratio is one
+          // everywhere, which the min/max bound below would hide.
+          amrex::Print() << "in [" << file_dmin[t] << ", " << file_dmax[t]
+                         << "] -> same spacing range as the grid, "
+                            "dx_grid/dx_file = 1 pointwise\n";
+        } else {
+          amrex::Print() << "in [" << file_dmin[t] << ", " << file_dmax[t]
+                         << "] (mean " << file_dx[t]
+                         << ") -> dx_grid/dx_file bounded by ["
+                         << dmin / file_dmax[t] << ", " << dmax / file_dmin[t]
+                         << "]\n";
+        }
+      }
+    }
+  }
+#endif
 }
 
 void
@@ -1728,6 +2059,9 @@ PeleLM::resizeArray()
 
   // External sources
   m_extSource.resize(max_level + 1);
+
+  // Physical cell volumes (MFSum weights)
+  m_cellVol.resize(max_level + 1);
 
   // Factory
   m_factory.resize(max_level + 1);

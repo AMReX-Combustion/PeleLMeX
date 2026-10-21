@@ -99,6 +99,15 @@ PeleLM::Advance(const int is_initIter)
   // Reset fluctuation warnings each time dt could change
   m_warned_clipped_recycle_avg_window_this_step = false;
 
+  // Full-mode recycling needs a valid slab before the first BC fill of the
+  // step; on fresh start or restart, seed it from the current state (the
+  // full-velocity sample requires no history, unlike the running mean).
+  if (
+    m_use_inlet_from_plane != 0 && m_recycling_mode == RecyclingMode::Full &&
+    !m_inlet_recycling.initialized) {
+    updateRecyclingPlaneSnapshot();
+  }
+
   // fillpatch the t^{n} data
   averageDownState(AmrOldTime);
   fillPatchState(AmrOldTime);

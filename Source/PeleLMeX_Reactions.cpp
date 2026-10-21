@@ -482,12 +482,36 @@ void
 PeleLM::getHeatRelease(const int a_lev, amrex::MultiFab* a_HR)
 {
   auto* ldataNew_p = getLevelDataPtr(a_lev, AmrNewTime);
-  auto* ldataR_p = getLevelDataReactPtr(a_lev);
 
   auto const* leosparm = eos_parms.device_parm();
-  auto const& react_ma = ldataR_p->I_R.const_arrays();
   auto const& state_n_ma = ldataNew_p->state.const_arrays();
+
+#ifdef USE_MANIFOLD_EOS
+
+  auto const& HRR_ma = a_HR->arrays();
+  auto table_idx = get_var_index(
+    "HRR", &eos_parms.host_only_parm().manfunc_par->host_parm(), false);
+  const int hrr_idx = table_idx;
+
+  amrex::ParallelFor(
+    *a_HR, [state_n_ma, leosparm, HRR_ma, hrr_idx] AMREX_GPU_DEVICE(
+             int box_no, int i, int j, int k) noexcept {
+      auto eos = pele::physics::PhysicsType::eos(leosparm);
+      amrex::Real rho, rhoinv,
+        mani_vars_prim[NUM_SPECIES]; // not the conserved (\rho.Y) but just Y
+      amrex::Array4<amrex::Real const> mani_var_cons(
+        state_n_ma[box_no], FIRSTSPEC);
+      eos.RY2RRinvY(
+        mani_var_cons.cellData(i, j, k), rho, rhoinv, mani_vars_prim);
+      amrex::Real mani_hrr = 0.0; // Get the manifold hrr
+      if (hrr_idx >= 0)
+        eos.Y2GenericManifoldData(mani_vars_prim, &hrr_idx, &mani_hrr, 1);
+      HRR_ma[box_no](i, j, k) = mani_hrr;
+    });
+#else
   amrex::MultiFab Enth(grids[a_lev], dmap[a_lev], NUM_SPECIES, 0);
+  auto* ldataR_p = getLevelDataReactPtr(a_lev);
+  auto const& react_ma = ldataR_p->I_R.const_arrays();
   auto const& enth_ma = Enth.arrays();
   auto const& HRR_ma = a_HR->arrays();
   amrex::ParallelFor(
@@ -501,5 +525,7 @@ PeleLM::getHeatRelease(const int a_lev, amrex::MultiFab* a_HR)
           enth_ma[box_no](i, j, k, n) * react_ma[box_no](i, j, k, n);
       }
     });
+#endif
+
   amrex::Gpu::streamSynchronize();
 }

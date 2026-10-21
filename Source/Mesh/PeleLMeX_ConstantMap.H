@@ -38,9 +38,10 @@ public:
 
   [[nodiscard]] MeshMapEvaluator make_evaluator() const override;
 
-  void fill_cc(int lev);
-  void fill_nd(int lev);
-  void fill_fc(int lev);
+  void fill_nodal_displacement(
+    int lev,
+    const amrex::Geometry& geom,
+    amrex::MultiFab& disp_nd) const override;
 
 private:
   amrex::Vector<amrex::Real> m_fac{AMREX_D_DECL(1.0, 1.0, 1.0)};

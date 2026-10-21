@@ -3,6 +3,9 @@ function(build_pele_physics_lib pele_physics_lib_name)
     add_library(${pele_physics_lib_name} OBJECT)
 
     target_compile_definitions(${pele_physics_lib_name} PUBLIC PELE_USE_CMAKE)
+    if(PELE_CVODE_FORCE_YCORDER)
+      target_compile_definitions(${pele_physics_lib_name} PUBLIC PELE_CVODE_FORCE_YCORDER)
+    endif()
 
     set(PELE_PHYSICS_SRC_DIR "${CMAKE_SOURCE_DIR}/Submodules/PelePhysics")
     set(PELE_PHYSICS_TRANSPORT_DIR "${PELE_PHYSICS_SRC_DIR}/Source/Transport")
@@ -32,6 +35,7 @@ function(build_pele_physics_lib pele_physics_lib_name)
         ${PELE_PHYSICS_UTILITY_DIR}/TurbForcing/MersenneTwister.H
     )
     target_include_directories(${pele_physics_lib_name} PUBLIC ${PELE_PHYSICS_UTILITY_DIR}/TurbInflow)
+    target_include_directories(${pele_physics_lib_name} PUBLIC ${PELE_PHYSICS_UTILITY_DIR}/MeshMap)
     target_include_directories(${pele_physics_lib_name} PUBLIC ${PELE_PHYSICS_UTILITY_DIR}/TurbForcing)
 
     target_sources(${pele_physics_lib_name}

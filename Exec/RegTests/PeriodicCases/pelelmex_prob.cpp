@@ -74,9 +74,22 @@ PeleLM::readProbParm() // NOLINT(readability-make-member-function-const)
         << " Unknown prob.gaussian_type ! Should be Spec or Temp \n";
       amrex::Abort();
     }
+  } else if (type == "ShearLayer") {
+    PeleLM::prob_parm->probType = 4;
+    pp.query("shear_y0", PeleLM::prob_parm->shear_y0);
+    pp.query("shear_dw", PeleLM::prob_parm->shear_dw);
+    pp.query("shear_dU", PeleLM::prob_parm->shear_dU);
+    pp.query("shear_Uc", PeleLM::prob_parm->shear_Uc);
+    pp.query("shear_pert", PeleLM::prob_parm->shear_pert);
+    pp.query("shear_nwave", PeleLM::prob_parm->shear_nwave);
+    pp.query("shear_ampY", PeleLM::prob_parm->shear_ampY);
+    if (PeleLM::prob_parm->shear_dw <= 0.0) {
+      amrex::Abort("prob.shear_dw (vorticity thickness) must be positive");
+    }
   } else {
     amrex::Print() << " Unknown prob.type ! Should be ConvectedVortex, "
-                      "ConvectedGaussian or DiffusedGaussian \n";
+                      "ConvectedGaussian, ConvectedTanH, DiffusedGaussian "
+                      "or ShearLayer \n";
     amrex::Abort();
   }
 

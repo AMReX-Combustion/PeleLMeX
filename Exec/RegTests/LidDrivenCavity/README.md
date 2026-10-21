@@ -63,7 +63,13 @@ and `v(x, y=0.5)` on the cavity centerlines at Re = 100, 400, 1000,
 3200, 5000, 7500, and 10000.
 
 Centerline profiles can be extracted from a plotfile with `yt` using
-the provided script `postprocess_cavity.py`
+the provided script `postprocess_cavity_tanh.py`.  The `_tanh`
+suffix is load-bearing: that script re-implements
+`TanhStretchMap`'s offset formula in Python to locate cells, so it
+is only valid for `TanhStretchMap` runs.  For any other map, either
+read the exact node displacements out of the plotfile's `Nu_nd`
+nodal MultiFab (`nu_x`/`nu_y`/`nu_z`, written whenever
+`peleLM.plot_mesh_mapping = 1`) or add the corresponding formula.
 
 ## Convergence study
 

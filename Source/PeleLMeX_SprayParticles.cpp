@@ -365,6 +365,9 @@ PeleLM::SprayPostRegrid()
       dm_spray[lev] = dmap[lev];
       prev_state[lev] = -1;
       prev_source[lev] = -1;
+      // Repoint the container's ParGDB to the newly made grids
+      SprayPC->SetParticleBoxArray(lev, grids[lev]);
+      SprayPC->SetParticleDistributionMap(lev, dmap[lev]);
     }
     SprayPC->Redistribute();
   }

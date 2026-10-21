@@ -3,6 +3,7 @@
 #include <PeleLMeX_K.H>
 #include <hydro_utils.H>
 #include <memory>
+#include <sstream>
 #ifdef PELE_USE_PLASMA
 #include <PeleLMeX_EF_Constants.H>
 #endif
@@ -964,6 +965,10 @@ PeleLM::resetCoveredMask()
     // Switch off trigger
     m_resetCoveredMask = 0;
 
+    // The uncovered volume depends on the hierarchy (detJ sampled per
+    // level under mapping, vfrac per level under EB): recompute it.
+    m_uncoveredVol = -1.0;
+
   } else {
     // Just load balance the chem. distribution map
     if (m_doLoadBalance != 0) {
@@ -1490,63 +1495,212 @@ PeleLM::fetchDiffTypeAuxArray(int scomp, int ncomp)
   return types;
 }
 
+void
+PeleLM::defineCellVolume(
+  const int lev,
+  const amrex::BoxArray& ba,
+  const amrex::DistributionMapping& dm,
+  const amrex::FabFactory<amrex::FArrayBox>& factory)
+{
+  // Geometry volume (Xi cell, or RZ) x detJ (mapping) x vfrac (EB).
+  AMREX_ASSERT(lev >= 0 && lev < m_cellVol.size());
+  m_cellVol[lev].define(ba, dm, 1, 0, amrex::MFInfo(), factory);
+  geom[lev].GetVolume(m_cellVol[lev]);
+  if (m_mesh_mapping) {
+    AMREX_ALWAYS_ASSERT_WITH_MESSAGE(
+      (m_mesh_map != nullptr) && !m_mesh_map->detJ_cc(lev).empty(),
+      "defineCellVolume: mesh-mapping metrics must be defined on this "
+      "level before the cell volume is built");
+    amrex::MultiFab::Multiply(
+      m_cellVol[lev], m_mesh_map->detJ_cc(lev), 0, 0, 1, 0);
+  }
+#ifdef AMREX_USE_EB
+  auto const& ebfact = dynamic_cast<amrex::EBFArrayBoxFactory const&>(factory);
+  amrex::MultiFab::Multiply(m_cellVol[lev], ebfact.getVolFrac(), 0, 0, 1, 0);
+#endif
+}
+
+bool
+PeleLM::domainHasOpenFace() const
+{
+  for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
+    if (geom[0].isPeriodic(idim)) {
+      continue;
+    }
+    for (const int bc : {m_phys_bc.lo(idim), m_phys_bc.hi(idim)}) {
+      if (
+        bc == BoundaryCondition::BCInflow ||
+        bc == BoundaryCondition::BCOutflow) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+amrex::Real
+PeleLM::domainFaceFlux(
+  const amrex::Vector<amrex::Array<const amrex::MultiFab*, AMREX_SPACEDIM>>&
+    a_umac)
+{
+  // Geometry face areas (x EB area fractions); a coarse boundary face
+  // whose cell is covered by the finer level is skipped (MFSum's mask).
+  // Under mapping umac is already (J/fac) u, i.e. the projector's own
+  // boundary term.
+  amrex::Real net = 0.0;
+  for (int lev = 0; lev <= finest_level; ++lev) {
+    const bool has_mask = (lev != finest_level);
+    for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
+      if (geom[lev].isPeriodic(idim)) {
+        continue;
+      }
+      amrex::MultiFab area;
+      geom[lev].GetFaceArea(area, grids[lev], dmap[lev], idim, 0);
+#ifdef AMREX_USE_EB
+      // EB area fraction: cut boxes carry one, covered boxes get zero.
+      {
+        auto const& ebfact = EBFactory(lev);
+        auto const& areafrac = ebfact.getAreaFrac();
+        auto const& flags = ebfact.getMultiEBCellFlagFab();
+        for (amrex::MFIter mfi(area); mfi.isValid(); ++mfi) {
+          if (areafrac[idim]->ok(mfi)) {
+            area[mfi].mult<amrex::RunOn::Device>(
+              (*areafrac[idim])[mfi], 0, 0, 1);
+          } else if (
+            flags[mfi].getType(mfi.validbox()) == amrex::FabType::covered) {
+            area[mfi].setVal<amrex::RunOn::Device>(0.0);
+          }
+        }
+        amrex::Gpu::streamSynchronize();
+      }
+#endif
+      const amrex::Box faceDomain = amrex::convert(
+        geom[lev].Domain(), amrex::IntVect::TheDimensionVector(idim));
+      const int lo = faceDomain.smallEnd(idim);
+      const int hi = faceDomain.bigEnd(idim);
+      auto const& fma = a_umac[lev][idim]->const_arrays();
+      auto const& ama = area.const_arrays();
+      auto const& mma = has_mask ? m_coveredMask[lev]->const_arrays()
+                                 : amrex::MultiArray4<int const>{};
+      const amrex::Real s = amrex::ParReduce(
+        amrex::TypeList<amrex::ReduceOpSum>{}, amrex::TypeList<amrex::Real>{},
+        *a_umac[lev][idim], amrex::IntVect(0),
+        [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept
+          -> amrex::GpuTuple<amrex::Real> {
+          const int idx = (idim == 0) ? i : ((idim == 1) ? j : k);
+          amrex::Real sgn = 0.0; // outward normal is -e_idim at lo
+          amrex::IntVect cell(AMREX_D_DECL(i, j, k));
+          if (idx == lo) {
+            sgn = -1.0;
+          } else if (idx == hi) {
+            sgn = 1.0;
+            cell[idim] -= 1; // the cell this high face bounds
+          } else {
+            return {0.0};
+          }
+          amrex::Real w = ama[box_no](i, j, k);
+          if (has_mask) {
+            w *= static_cast<amrex::Real>(mma[box_no](cell));
+          }
+          return {sgn * w * fma[box_no](i, j, k)};
+        });
+      net += s;
+    }
+  }
+  amrex::ParallelDescriptor::ReduceRealSum(net);
+  return net;
+}
+
+void
+PeleLM::checkProjectionCompatibility(
+  const std::string& a_who,
+  const amrex::Vector<const amrex::MultiFab*>& a_rhs,
+  const amrex::Real a_bdry_flux,
+  const amrex::Real a_rhs_sign,
+  const bool a_rhs_is_rz_scaled)
+{
+  // Solvability of  div(beta grad phi) = div(U) + sign . rhs  with
+  // all-Neumann/periodic BCs:  F_bdry(U) + sign . sum(rhs dV) = 0.  dV is
+  // the projector's measure (see the header), NOT m_cellVol, which carries
+  // detJ: under mapping the RHS is already J-scaled.
+  if (!compatibilityCheckEnabled()) {
+    return;
+  }
+  amrex::Real sum_rhs = 0.0;
+  amrex::Real sum_abs = 0.0;
+  for (int lev = 0; lev <= finest_level; ++lev) {
+    amrex::MultiFab dv(grids[lev], dmap[lev], 1, 0);
+    if (a_rhs_is_rz_scaled) {
+      const amrex::Real* dx = geom[lev].CellSize();
+      dv.setVal(AMREX_D_TERM(dx[0], *dx[1], *dx[2]));
+    } else {
+      geom[lev].GetVolume(dv);
+    }
+#ifdef AMREX_USE_EB
+    amrex::MultiFab::Multiply(dv, EBFactory(lev).getVolFrac(), 0, 0, 1, 0);
+#endif
+    auto const& rma = a_rhs[lev]->const_arrays();
+    auto const& vma = dv.const_arrays();
+    const bool has_mask = (lev != finest_level);
+    auto const& mma = has_mask ? m_coveredMask[lev]->const_arrays()
+                               : amrex::MultiArray4<int const>{};
+    const auto r = amrex::ParReduce(
+      amrex::TypeList<amrex::ReduceOpSum, amrex::ReduceOpSum>{},
+      amrex::TypeList<amrex::Real, amrex::Real>{}, *a_rhs[lev],
+      amrex::IntVect(0),
+      [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept
+        -> amrex::GpuTuple<amrex::Real, amrex::Real> {
+        amrex::Real v = rma[box_no](i, j, k) * vma[box_no](i, j, k);
+        if (has_mask) {
+          v *= static_cast<amrex::Real>(mma[box_no](i, j, k));
+        }
+        return {v, std::abs(v)};
+      });
+    sum_rhs += amrex::get<0>(r);
+    sum_abs += amrex::get<1>(r);
+  }
+  amrex::ParallelDescriptor::ReduceRealSum(sum_rhs);
+  amrex::ParallelDescriptor::ReduceRealSum(sum_abs);
+
+  const amrex::Real resid = a_bdry_flux + a_rhs_sign * sum_rhs;
+  const amrex::Real scale =
+    amrex::max(sum_abs, std::abs(a_bdry_flux), amrex::Real(1.0e-300));
+  const amrex::Real rel = std::abs(resid) / scale;
+  if (m_verbose >= 2) {
+    amrex::Print() << "   ... " << a_who
+                   << " compatibility: |F_bdry + sign.sum(rhs)| / scale = "
+                   << rel << " (F_bdry = " << a_bdry_flux
+                   << ", sum(rhs) = " << sum_rhs << ")\n";
+  }
+  // !(rel <= tol) so that a NaN residual also trips the gate.
+  if (
+    (m_debug_check_compatibility != 0) && !(rel <= m_debug_compatibility_tol)) {
+    std::ostringstream msg;
+    msg << a_who << ": closed-chamber projection RHS is incompatible (relative "
+        << "residual " << std::scientific << rel
+        << " > peleLM.debug_compatibility_tol = " << m_debug_compatibility_tol
+        << ")";
+    amrex::Abort(msg.str());
+  }
+}
+
 amrex::Real
 PeleLM::MFSum(const amrex::Vector<const amrex::MultiFab*>& a_mf, const int comp)
 {
   BL_PROFILE("PeleLMeX::MFSum()");
-  // Get the integral of the MF, not including the fine-covered and
-  // EB-covered cells
+  // Physical-volume integral over uncovered cells; m_cellVol carries detJ
+  // and the EB volume fraction (see defineCellVolume).
 
   amrex::Real volwgtsum = 0.0;
 
   for (int lev = 0; lev <= finest_level; ++lev) {
-#ifdef AMREX_USE_EB
-    // For EB, use constant vol
-    const amrex::Real* dx = geom[lev].CellSize();
-    amrex::Real vol = AMREX_D_TERM(dx[0], *dx[1], *dx[2]);
-
-    // Use amrex::ReduceSum
-    auto const& ebfact =
-      dynamic_cast<amrex::EBFArrayBoxFactory const&>(Factory(lev));
-    auto const& vfrac = ebfact.getVolFrac();
+    AMREX_ASSERT(!m_cellVol[lev].empty());
+    AMREX_ASSERT(m_cellVol[lev].boxArray() == a_mf[lev]->boxArray());
 
     amrex::Real sm = 0.0;
     if (lev != finest_level) {
       sm = amrex::ReduceSum(
-        *a_mf[lev], vfrac, *m_coveredMask[lev], 0,
-        [vol, comp] AMREX_GPU_HOST_DEVICE(
-          amrex::Box const& bx, amrex::Array4<amrex::Real const> const& mf_arr,
-          amrex::Array4<amrex::Real const> const& vf_arr,
-          amrex::Array4<int const> const& covered_arr) -> amrex::Real {
-          amrex::Real sum = 0.0;
-          AMREX_LOOP_3D(bx, i, j, k, {
-            sum += mf_arr(i, j, k, comp) * vf_arr(i, j, k) * vol *
-                   static_cast<amrex::Real>(covered_arr(i, j, k));
-          });
-          return sum;
-        });
-    } else {
-      sm = amrex::ReduceSum(
-        *a_mf[lev], vfrac, 0,
-        [vol, comp] AMREX_GPU_HOST_DEVICE(
-          amrex::Box const& bx, amrex::Array4<amrex::Real const> const& mf_arr,
-          amrex::Array4<amrex::Real const> const& vf_arr) -> amrex::Real {
-          amrex::Real sum = 0.0;
-          AMREX_LOOP_3D(bx, i, j, k, {
-            sum += mf_arr(i, j, k, comp) * vf_arr(i, j, k) * vol;
-          });
-          return sum;
-        });
-    }
-#else
-    // Get the geometry volume to account for 2D-RZ
-    amrex::MultiFab volume(grids[lev], dmap[lev], 1, 0);
-    geom[lev].GetVolume(volume);
-
-    amrex::Real sm = 0.0;
-    if (lev != finest_level) {
-      sm = amrex::ReduceSum(
-        *a_mf[lev], volume, *m_coveredMask[lev], 0,
+        *a_mf[lev], m_cellVol[lev], *m_coveredMask[lev], 0,
         [comp] AMREX_GPU_HOST_DEVICE(
           amrex::Box const& bx, amrex::Array4<amrex::Real const> const& mf_arr,
           amrex::Array4<amrex::Real const> const& vol_arr,
@@ -1560,7 +1714,7 @@ PeleLM::MFSum(const amrex::Vector<const amrex::MultiFab*>& a_mf, const int comp)
         });
     } else {
       sm = amrex::ReduceSum(
-        *a_mf[lev], volume, 0,
+        *a_mf[lev], m_cellVol[lev], 0,
         [comp] AMREX_GPU_HOST_DEVICE(
           amrex::Box const& bx, amrex::Array4<amrex::Real const> const& mf_arr,
           amrex::Array4<amrex::Real const> const& vol_arr) -> amrex::Real {
@@ -1570,7 +1724,6 @@ PeleLM::MFSum(const amrex::Vector<const amrex::MultiFab*>& a_mf, const int comp)
           return sum;
         });
     }
-#endif
 
     volwgtsum += sm;
   } // lev

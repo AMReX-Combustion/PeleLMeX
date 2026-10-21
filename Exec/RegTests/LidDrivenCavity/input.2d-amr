@@ -28,7 +28,7 @@
 #       increase is expected; a runaway count means composite-MLMG
 #       restriction across the C/F boundary is misbehaving under
 #       anisotropic sigma / beta.
-#   (3) Visual inspection: plot the y = 0.75 line in postprocess_cavity
+#   (3) Visual inspection: plot the y = 0.75 line in postprocess_cavity_tanh
 #       on the AMR plotfile.  The velocity profile should be smooth
 #       across the C/F interface.  Visible kink ==> the mass-aware
 #       coarse-fine interpolator (Phase 1) is needed.

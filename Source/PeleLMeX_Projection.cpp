@@ -125,8 +125,13 @@ PeleLM::initialProjection()
       auto const& fac_ma = m_mesh_map->fac_cc(lev).const_arrays();
       auto const& detJ_ma = m_mesh_map->detJ_cc(lev).const_arrays();
       auto const& vel_ma = vel[lev]->arrays();
+      // Ghost cells included: setInflowBoundaryVel() has just written the
+      // inflow Dirichlet values there in physical units, and the nodal
+      // projector reads them as the boundary velocity.  Leaving them
+      // unscaled makes the projection enforce u_phys = u_in * fac_n / J
+      // at the inlet instead of u_in.
       amrex::ParallelFor(
-        *vel[lev], amrex::IntVect(0), AMREX_SPACEDIM,
+        *vel[lev], vel[lev]->nGrowVect(), AMREX_SPACEDIM,
         [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k, int n) noexcept {
           vel_ma[box_no](i, j, k, n) *=
             detJ_ma[box_no](i, j, k) / fac_ma[box_no](i, j, k, n);
@@ -140,6 +145,8 @@ PeleLM::initialProjection()
       }
     }
   }
+
+  checkNodalCompatibility("initial projection", GetVecOfConstPtrs(rhs_cc));
 
   doNodalProject(
     GetVecOfPtrs(vel), GetVecOfPtrs(sigma), GetVecOfPtrs(rhs_cc), {},
@@ -181,7 +188,7 @@ PeleLM::initialProjection()
       auto const& detJ_ma = m_mesh_map->detJ_cc(lev).const_arrays();
       auto const& vel_ma = vel[lev]->arrays();
       amrex::ParallelFor(
-        *vel[lev], amrex::IntVect(0), AMREX_SPACEDIM,
+        *vel[lev], vel[lev]->nGrowVect(), AMREX_SPACEDIM,
         [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k, int n) noexcept {
           vel_ma[box_no](i, j, k, n) *=
             fac_ma[box_no](i, j, k, n) / detJ_ma[box_no](i, j, k);
@@ -323,8 +330,13 @@ PeleLM::initialPressProjection()
       auto const& fac_ma = m_mesh_map->fac_cc(lev).const_arrays();
       auto const& detJ_ma = m_mesh_map->detJ_cc(lev).const_arrays();
       auto const& vel_ma = vel[lev].arrays();
+      // Ghost cells included: setInflowBoundaryVel() has just written the
+      // inflow Dirichlet values there in physical units, and the nodal
+      // projector reads them as the boundary velocity.  Leaving them
+      // unscaled makes the projection enforce u_phys = u_in * fac_n / J
+      // at the inlet instead of u_in.
       amrex::ParallelFor(
-        vel[lev], amrex::IntVect(0), AMREX_SPACEDIM,
+        vel[lev], vel[lev].nGrowVect(), AMREX_SPACEDIM,
         [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k, int n) noexcept {
           vel_ma[box_no](i, j, k, n) *=
             detJ_ma[box_no](i, j, k) / fac_ma[box_no](i, j, k, n);
@@ -601,8 +613,13 @@ PeleLM::velocityProjection(
       auto const& fac_ma = m_mesh_map->fac_cc(lev).const_arrays();
       auto const& detJ_ma = m_mesh_map->detJ_cc(lev).const_arrays();
       auto const& vel_ma = vel[lev]->arrays();
+      // Ghost cells included: setInflowBoundaryVel() has just written the
+      // inflow Dirichlet values there in physical units, and the nodal
+      // projector reads them as the boundary velocity.  Leaving them
+      // unscaled makes the projection enforce u_phys = u_in * fac_n / J
+      // at the inlet instead of u_in.
       amrex::ParallelFor(
-        *vel[lev], amrex::IntVect(0), AMREX_SPACEDIM,
+        *vel[lev], vel[lev]->nGrowVect(), AMREX_SPACEDIM,
         [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k, int n) noexcept {
           vel_ma[box_no](i, j, k, n) *=
             detJ_ma[box_no](i, j, k) / fac_ma[box_no](i, j, k, n);
@@ -617,6 +634,8 @@ PeleLM::velocityProjection(
       }
     }
   }
+
+  checkNodalCompatibility("velocity projection", GetVecOfConstPtrs(rhs_cc));
 
   doNodalProject(
     GetVecOfPtrs(vel), GetVecOfPtrs(sigma), GetVecOfPtrs(rhs_cc), {},
@@ -668,7 +687,7 @@ PeleLM::velocityProjection(
       auto const& detJ_ma = m_mesh_map->detJ_cc(lev).const_arrays();
       auto const& vel_ma = vel[lev]->arrays();
       amrex::ParallelFor(
-        *vel[lev], amrex::IntVect(0), AMREX_SPACEDIM,
+        *vel[lev], vel[lev]->nGrowVect(), AMREX_SPACEDIM,
         [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k, int n) noexcept {
           vel_ma[box_no](i, j, k, n) *=
             fac_ma[box_no](i, j, k, n) / detJ_ma[box_no](i, j, k);
@@ -709,6 +728,19 @@ PeleLM::velocityProjection(
     averageDownVelocity(AmrNewTime);
   }
 #endif
+}
+
+void
+PeleLM::checkNodalCompatibility(
+  const std::string& a_who, const amrex::Vector<const amrex::MultiFab*>& a_rhs)
+{
+  // Sealed box only: the NodalProjector forms div(U) + rhs_cc, and with no
+  // inflow/outflow face the boundary term is zero so sum(rhs_cc) must
+  // vanish.  With open faces the nodal boundary term is not reconstructed
+  // here and the check is skipped.
+  if (compatibilityCheckEnabled() && !a_rhs.empty() && !domainHasOpenFace()) {
+    checkProjectionCompatibility(a_who, a_rhs, 0.0, 1.0, geom[0].IsRZ());
+  }
 }
 
 void

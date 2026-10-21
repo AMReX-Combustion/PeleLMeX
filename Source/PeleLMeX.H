@@ -2,6 +2,8 @@
 #define PeleLMeX_H
 
 // PeleLMeX includes
+#include <limits>
+
 #include "PeleLMeX_UserKeys.H"
 #include "PeleLMeX_Index.H"
 #include "PeleLMeX_Derive.H"
@@ -327,6 +329,25 @@ public:
    * \param a_pltFile path to PeleLMeX plot file
    */
   void initLevelDataFromPlt(const int a_lev, const std::string& a_dataPltFile);
+
+  /**
+   * \brief Compute level shift for multi-level mapping when coarsening from a
+   * plotfile. Currently only supports 2x coarsening and returns 1 when enabled.
+   * \param pltData reference to PltFileManager
+   * \return level shift (0 if no coarsening, 1 for 2x)
+   */
+  int computeLevelShift(pele::physics::pltfilemanager::PltFileManager& pltData);
+
+  /**
+   * \brief Coarsen level data from plotfile using conservative averaging
+   * \param a_lev target level index
+   * \param pltData reference to PltFileManager
+   * \param coarsen_ratio refinement ratio for coarsening
+   */
+  void coarsenLevelFromPlt(
+    const int a_lev,
+    pele::physics::pltfilemanager::PltFileManager& pltData,
+    const amrex::IntVect& coarsen_ratio);
 
   /**
    * \brief Adds the velocity level data to state
@@ -734,6 +755,17 @@ public:
    * divTau by 1/rho \param scale prefactor of divTau, used to weight by num.
    * scheme property (e.g. 0.5 for Crank Nicholson)
    */
+  //! Under mesh mapping, divide a Xi-space flux divergence by J so that it
+  //! is in physical units (no-op without mapping).
+  void unscaleMappedDivergence(
+    const amrex::Vector<amrex::MultiFab*>& a_div, int a_comp, int a_ncomp);
+
+  //! Under mesh mapping, scale face diffusivities by J/fac_i^2 so that a
+  //! hand-assembled beta . grad_Xi flux is a Xi-space flux (no-op without
+  //! mapping).
+  void scaleFaceDiffusivityMapped(
+    int a_lev, amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& a_beta_ec);
+
   void computeDivTau(
     const PeleLM::TimeStamp a_time,
     const amrex::Vector<amrex::MultiFab*>& a_divtau,
@@ -1067,7 +1099,14 @@ public:
     const amrex::Geometry& a_geom);
   void addRhoHFluxes(
     const amrex::Array<const amrex::MultiFab*, AMREX_SPACEDIM>& a_fluxes,
-    const amrex::Geometry& a_geom);
+    const amrex::Geometry& a_geom,
+    const amrex::Real& a_factor = 1.0,
+    const int a_nComp = 1);
+#ifdef AMREX_USE_EB
+  void addRhoHFluxesEB(
+    const amrex::Vector<amrex::MultiFab*>& a_EBfluxes,
+    const amrex::Real& a_factor = 1.0);
+#endif
   void addRhoYFluxes(
     const amrex::Array<const amrex::MultiFab*, AMREX_SPACEDIM>& a_fluxes,
     const amrex::Geometry& a_geom,
@@ -1231,7 +1270,45 @@ public:
     const int lev,
     const amrex::Real a_time);
 
+  // Inject synthetic turbulence into one inflow-adjacent ghost box. Wraps
+  // the PelePhysics call so that the mesh-mapping case, which must supply
+  // the injection face's physical cell-centre coordinates rather than let
+  // TurbInflow derive them from the (Xi-space) Geometry, is handled in one
+  // place.
+  void addTurbInflowToBox(
+    const amrex::Box& a_bx,
+    amrex::FArrayBox& a_data,
+    const int lev,
+    const int dir,
+    const amrex::Orientation::Side& a_side,
+    const amrex::Real a_time);
+
+  // Report the ratio of the level-0 grid's physical spacing on each inflow
+  // face to the turbulence file's transverse spacing. Informational only;
+  // called from checkSetupParams().
+  void reportTurbInflowMaps();
+  void reportTurbInflowResolution();
+
   void fillFromRecyclingPlane(amrex::MultiFab& a_vel, int vel_comp, int lev);
+
+  // Full-mode mass-flux control: rescale the injection buffer's normal
+  // velocity so the injected volumetric flow matches the bcnormal target.
+  // Called from updateRecyclingPlaneSnapshot after the buffer is populated.
+  void applyRecyclingFluxControl();
+  // Volumetric flow of the bcnormal inflow profile through the inlet face
+  // on the given side of m_inlet_plane_dir, integrated over the inlet-face
+  // fluid footprint (recycling preload and synthetic turbulence disabled,
+  // so this is the problem's target mean inflow).
+  amrex::Real computeRecyclingTargetFlow(amrex::Orientation::Side a_side);
+  // Area-weighted integral of component a_comp over a (possibly shifted)
+  // copy of the level-0 recycling slab, restricted to a_mask (0/1; may be
+  // null). a_mask_shift maps a_slab's cell indices onto the mask's:
+  // mask_iv = slab_iv - a_mask_shift.
+  amrex::Real slabVolumeFlux(
+    const amrex::MultiFab& a_slab,
+    int a_comp,
+    const amrex::iMultiFab* a_mask,
+    const amrex::IntVect& a_mask_shift);
 
   // (Re)build per-level thin-slab storage for the recycling plane.
   void buildRecyclingPlaneStorage();
@@ -1241,6 +1318,11 @@ public:
   void updateRecyclingPlaneSnapshot();
   // Cell-centered index of the recycling plane on level `lev`.
   int computeRecyclingSrcIndex(int lev) const;
+  // Piecewise-constant interpolation of a coarser-level recycling slab onto
+  // this level's slab layout (used for both the velocity snapshot and for
+  // seeding the running mean on newly created levels).
+  void interpRecyclingSlabFromCoarse(
+    amrex::MultiFab& a_fine, const amrex::MultiFab& a_crse, int lev);
   // If dt>=m_inlet_plane_avg_window, the injected fluctions will be
   // approximately zero, warn user every step this happens
   bool m_warned_clipped_recycle_avg_window_this_step;
@@ -1426,14 +1508,45 @@ public:
     const int startcomp,
     const int ncomp);
 
+  //! Physical-volume integral of component \p comp of a composite
+  //! cell-centered field over uncovered cells (weight m_cellVol).
   amrex::Real
   MFSum(const amrex::Vector<const amrex::MultiFab*>& a_MF, const int comp);
-  //! Physical-domain volume integral of a cell-centered field.  Same as
-  //! MFSum without mesh mapping; with it, detJ-weights each cell to give
-  //! the true physical integral (e.g. mass = integral of rho), so the
-  //! balance telescopes to the Xi-space boundary fluxes in addMassFluxes.
-  amrex::Real MFSumMapped(
-    const amrex::Vector<const amrex::MultiFab*>& a_MF, const int comp);
+  //! Closed-chamber projection compatibility: with all-Neumann/periodic
+  //! BCs the projector needs F_bdry(U) + sign*sum(rhs dV) = 0, dV being
+  //! the measure it integrates against (geometry volume x EB vfrac, or the
+  //! Cartesian dx product when the RHS already carries r from
+  //! scaleProj_RZ).  Prints at verbose >= 2; aborts above
+  //! peleLM.debug_compatibility_tol with peleLM.debug_check_compatibility.
+  void checkProjectionCompatibility(
+    const std::string& a_who,
+    const amrex::Vector<const amrex::MultiFab*>& a_rhs,
+    const amrex::Real a_bdry_flux,
+    const amrex::Real a_rhs_sign,
+    const bool a_rhs_is_rz_scaled);
+  //! The nodal-projection form of the check (sealed domains only).
+  void checkNodalCompatibility(
+    const std::string& a_who,
+    const amrex::Vector<const amrex::MultiFab*>& a_rhs);
+  //! Diagnostic active: closed chamber and (verbose >= 2 or debug flag).
+  [[nodiscard]] bool compatibilityCheckEnabled() const noexcept
+  {
+    return (m_closed_chamber != 0) &&
+           ((m_verbose >= 2) || (m_debug_check_compatibility != 0));
+  }
+  //! True if any non-periodic domain face is an inflow or outflow.
+  [[nodiscard]] bool domainHasOpenFace() const;
+  //! Composite net outward boundary flux of a face velocity (geometry face
+  //! areas x EB area fractions; coarse faces under a finer level skipped).
+  amrex::Real domainFaceFlux(
+    const amrex::Vector<amrex::Array<const amrex::MultiFab*, AMREX_SPACEDIM>>&
+      a_umac);
+  //! (Re)build m_cellVol on level \p lev (after its metrics are defined).
+  void defineCellVolume(
+    const int lev,
+    const amrex::BoxArray& ba,
+    const amrex::DistributionMapping& dm,
+    const amrex::FabFactory<amrex::FArrayBox>& factory);
   static amrex::Real MFmax(
     const amrex::MultiFab* a_MF,
     const amrex::iMultiFab& a_mask,
@@ -1620,6 +1733,30 @@ public:
 
   void computeVelocityAdvTerm(const std::unique_ptr<AdvanceAdvData>& advData);
   void updateVelocity(const std::unique_ptr<AdvanceAdvData>& advData);
+
+  /**
+   * \brief Face velocities for the Godunov extrapolation on level a_lev.
+   * Without mesh mapping this is advData->umac[a_lev]. Under mesh mapping
+   * umac holds J.u~ after the MAC projection (see macProject); the
+   * extrapolation in Xi needs the Xi-velocity u~ = umac / J_fc, which is
+   * built in a_scratch and returned instead.
+   */
+  amrex::Array<const amrex::MultiFab*, AMREX_SPACEDIM> getExtrapUmac(
+    int a_lev,
+    const std::unique_ptr<AdvanceAdvData>& advData,
+    amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& a_scratch);
+
+  /**
+   * \brief Under mesh mapping, multiply advective fluxes computed with the
+   * Xi-velocity u~ by J_fc so that their Xi divergence is J.(physical
+   * divergence), consistent with the J.divU used in advFluxDivergence.
+   * No-op without mapping.
+   */
+  void scaleMappedAdvFluxes(
+    int a_lev,
+    amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& a_fluxes,
+    int a_comp,
+    int a_ncomp);
 
   void getScalarAdvForce(
     const std::unique_ptr<AdvanceAdvData>& advData,
@@ -1871,6 +2008,9 @@ public:
   amrex::Vector<std::unique_ptr<amrex::iMultiFab>> m_coveredMask;
   int m_resetCoveredMask{0};
 
+  // Physical cell volume per level (geometry volume x detJ x vfrac)
+  amrex::Vector<amrex::MultiFab> m_cellVol;
+
   // Chemistry BA & DM
   amrex::Vector<std::unique_ptr<amrex::BoxArray>> m_baChem;
   amrex::Vector<std::unique_ptr<amrex::DistributionMapping>> m_dmapChem;
@@ -1894,18 +2034,66 @@ public:
   amrex::BCRec m_bcrec_dummy;
 
   // Recycling-plane inflow controls (see fillFromRecyclingPlane).
-  // Recycling injects a zero-mean fluctuation onto the inflow ghost cells:
+  // In the default 'fluctuations' mode, recycling injects a zero-mean
+  // fluctuation onto the inflow ghost cells:
   //   u_inlet(t) = u_inlet_target_mean + [u_src(t) - <u_src>]
   // The standard ext_dir BC continues to set u_inlet_target_mean; this
   // machinery only supplies the bracketed fluctuation.
+  // In 'full' mode, the entire sampled velocity is injected instead:
+  //   u_inlet(t) = gamma(t) * u_src(t)
+  // No running mean is maintained. The boundary fill preserves the sampled
+  // velocity on the recycling face (velocity writes from bcnormal are
+  // ignored there; see PeleLMCCFillExtDirState), so problem setups run
+  // unmodified in either mode.
+  //
+  // gamma is the full-mode mass-flux controller (applyRecyclingFluxControl):
+  // every snapshot the injected sample is rescaled (all velocity
+  // components, preserving the sample's solenoidal structure) so the
+  // injected volumetric flow matches the bcnormal inflow target.
+  // Without it the inlet flow rate is a pure feedback loop with no anchor:
+  // in the low-Mach setting any net heat loss (or gain) between the inlet
+  // and the recycle plane makes div(u) != 0 in between, so the plane
+  // returns a strictly smaller (larger) volume flux than the inlet
+  // received, and the recycled bulk flow drifts monotonically until the
+  // inlet back-flows. An adiabatic constant-area duct is merely neutrally
+  // stable; the controller turns both cases into a hard anchor.
+  // Controlled by peleLM.inlet_plane_flux_control (default on in full
+  // mode); target measured from bcnormal at first use or overridden with
+  // peleLM.inlet_plane_target_flow_rate.
+  enum class RecyclingMode { Fluctuations, Full };
+  RecyclingMode m_recycling_mode = RecyclingMode::Fluctuations;
   int m_use_inlet_from_plane = 0;
   int m_inlet_plane_dir = -1;
   amrex::Real m_inlet_plane_position = 0.0;
+  // Full-mode mass-flux control (see applyRecyclingFluxControl).
+  int m_inlet_plane_flux_control = 1;
+  // Target volumetric flow through the inlet cross-section (EB-masked,
+  // signed along +inlet_plane_dir). NaN = measure from bcnormal on first
+  // use; an input value overrides the measurement.
+  amrex::Real m_inlet_plane_target_flow =
+    std::numeric_limits<amrex::Real>::quiet_NaN();
+  // Most recent flux-control factor (diagnostics).
+  amrex::Real m_recycling_last_gamma = 1.0;
+  // One-shot warning latches for flux control.
+  bool m_warned_recycling_flux_both_sides = false;
+  bool m_warned_recycling_flux_disabled = false;
+  // Fluid footprint (1) vs EB-covered (0) of the first interior cell layer
+  // at the inflow face, on the level-0 slab layout shifted to that layer.
+  // This is the cross-section the recycled sample is actually injected
+  // into, and both flux-control integrals are restricted to it (the plane
+  // and the inlet need not share a cross-section, e.g. a sampling plane
+  // past an expansion). Built lazily by applyRecyclingFluxControl and
+  // invalidated whenever the slab storage is rebuilt.
+  std::unique_ptr<amrex::iMultiFab> m_recycling_inlet_mask;
+  // planeDir cell index of the layer the inlet mask lives on.
+  int m_recycling_inlet_mask_index = 0;
   // Time-averaging window (in simulation time units) for the running source-
-  // plane mean. <=0 falls back to a cumulative average.
+  // plane mean. <=0 falls back to a cumulative average. Fluctuations mode
+  // only.
   amrex::Real m_inlet_plane_avg_window = -1.0;
   // Number of recycling-plane samples to accumulate before injecting any
-  // fluctuation (lets the running mean settle).
+  // fluctuation (lets the running mean settle). Fluctuations mode only: a
+  // full-velocity sample is valid from the first snapshot.
   int m_inlet_plane_warmup_steps = 0;
   // Set to 1 whenever per-level thin-slab storage needs to be rebuilt
   // (initialization, regrid). Consumed by updateRecyclingPlaneSnapshot.
@@ -1916,9 +2104,11 @@ public:
   // source-plane index for that level's resolution.
   struct RecyclingPlaneData
   {
-    amrex::Vector<std::unique_ptr<amrex::MultiFab>> u_src;     // current
-    amrex::Vector<std::unique_ptr<amrex::MultiFab>> mean_src;  // running mean
-    amrex::Vector<std::unique_ptr<amrex::MultiFab>> fluct_src; // u_src - mean
+    amrex::Vector<std::unique_ptr<amrex::MultiFab>> u_src;    // current
+    amrex::Vector<std::unique_ptr<amrex::MultiFab>> mean_src; // running mean
+    // Injection buffer consumed by fillFromRecyclingPlane:
+    // u_src - mean_src (fluctuations mode) or u_src (full mode).
+    amrex::Vector<std::unique_ptr<amrex::MultiFab>> fluct_src;
 #ifdef AMREX_USE_EB
     // Per-cell mask on the slab: 1 = regular or cut (sampled into the mean
     // and fluctuation), 0 = EB-covered (excluded). Always rebuilt with the
@@ -2074,6 +2264,8 @@ public:
   bool m_write_hdf5_pltfile = false;
   bool m_do_patch_flow_variables = false;
   amrex::Vector<std::string> m_initDataPlt_specname_map = {};
+  bool m_initDataPlt_coarsen = false;
+  int m_level_shift = 0;
 
   //-----------------------------------------------------------------------------
   // ALGORITHM
@@ -2220,6 +2412,9 @@ public:
   amrex::Real m_dp0dt = 0.0;
   amrex::Real m_uncoveredVol = -1.0;
   int m_closed_chamber = 0;
+  // Projection compatibility diagnostic (closed chamber only)
+  int m_debug_check_compatibility = 0;
+  amrex::Real m_debug_compatibility_tol = 1.0e-8;
 
   // Godunov is default
   std::string m_predict_advection_key = "Godunov_PLM";
@@ -2248,12 +2443,14 @@ public:
   amrex::Array<amrex::Real, NUM_SPECIES> m_RhoYNew;
   amrex::Array<amrex::Real, 2 * AMREX_SPACEDIM> m_domainMassFlux;
   amrex::Array<amrex::Real, 2 * AMREX_SPACEDIM> m_domainRhoHFlux;
+  amrex::Real m_domainRhoHFluxEB = 0.0;
   amrex::Array<amrex::Real, 2 * AMREX_SPACEDIM * NUM_SPECIES> m_domainRhoYFlux;
   amrex::Array<amrex::Real, 2 * AMREX_SPACEDIM> m_domainUmacFlux;
 
   std::ofstream tmpStateFile;
   std::ofstream tmpExtremasFile;
   std::ofstream tmpMassFile;
+  std::ofstream tmpEnergyFile;
   std::ofstream tmpSpecFile;
   std::ofstream tmppatchmfrFile;
 

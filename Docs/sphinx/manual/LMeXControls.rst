@@ -46,7 +46,7 @@ should check which face is being set when applying the inflow boundary condition
 varying turbulent fluctuations using the ``TurbInflow`` utility from
 PelePhysics. See the ``Exec/RegTests/TurbInflow`` test for an example of how
 to use this capability and the
-`PelePhysics  documentation <https://amrex-combustion.github.io/PelePhysics/Utility.html#turbulent-inflows>`_
+`PelePhysics  documentation <https://pele-suite.github.io/PelePhysics/Utility.html#turbulent-inflows>`_
 for the relevant input file flags.
 
 Grid/AMR parameters
@@ -130,7 +130,8 @@ IO parameters
 
     amr.restart          = chk00100        # [OPT, DEF=""] Checkpoint from which to restart the simulation
     amr.initDataPlt      = plt01000        # [OPT, DEF=""] Provide a plotfile from which to extract initial data
-    peleLM.initDataPlt_reset_time = 1               # [OPT, DEF=1] Resets time and nsteps to 0 after restarting from a plot file. (Warning: plot file will be rewritten if not renamed and argument value = 0)
+    peleLM.initDataPlt_reset_time = 1      # [OPT, DEF=1] Resets time and nsteps to 0 after restarting from a plot file. (Warning: plot file will be rewritten if not renamed and argument value = 0)
+    peleLM.initDataPlt_coarsen = 0         # [OPT, DEF=0] Enable restarting from plotfile with 2x coarser base mesh (non-EB only). Uses multi-level mapping.
     peleLM.initDataPlt_specname_map = spec1 spec2 # [OPT, DEF=""] If specified, lookup these entries instead of species names when populating species from the init plot file (length must match NUM_SPECIES)
     peleLM.initDataPlt_patch_flow_variables = false # [OPT, DEF=false] Enable user-defined flow variable patching after reading a plot solution file
     amr.regrid_on_restart = 1              # [OPT, DEF="0"] Trigger a regrid after the data from checkpoint are loaded
@@ -337,7 +338,51 @@ Mesh Mapping
 .. note::
    Three mesh maps are provided with `PeleLMeX.  If `mesh_mapping` is not specified, no mapping will be applied. Each map has associated
    parameters shown above.
-   
+
+.. note::
+   **Physical vs. computational coordinates.** With a mapping active, the AMReX
+   grid is the uniform computational (:math:`\xi`) grid and the physical grid is
+   its image under the map. Inputs that name a *position* are physical
+   coordinates and are converted internally: ``peleLM.inlet_plane_position``
+   (the recycling source plane) is inverted through the map before being turned
+   into an index, and its bounds check is against the physical domain extent,
+   which for ``ConstantMap`` differs from ``geometry.prob_lo`` /
+   ``geometry.prob_hi``. Diagnostics inherited from `PelePhysics`, notably
+   ``DiagFramePlane``, are the exception: their ``center`` is located on the
+   AMReX grid and is therefore a :math:`\xi` coordinate by default; set
+   ``peleLM.<diag>.center_is_physical = 1`` to give a physical position
+   instead (the diagnostic reads ``geometry.mesh_mapping`` and prints the
+   :math:`\xi` it resolved to).
+
+.. note::
+   **Turbulent inflow.** ``turbinflow`` may be combined with ``mesh_mapping``:
+   the injection face's physical cell-centre positions are handed to
+   `PelePhysics` explicitly, so the turbulence file is sampled at the right
+   place on a stretched grid. This requires a `PelePhysics` new enough to
+   provide the coordinate-based ``TurbInflow::add_turb()`` overload; PeleLMeX
+   aborts at setup if the two are combined without it, rather than silently
+   sampling the file at :math:`\xi` positions.
+
+   The turbulence *file* is uniformly spaced in *some* coordinate -- its
+   header carries only a point count and a domain size per direction.
+   Synthetic data and planes from a uniform-mesh precursor are uniform in
+   physical position. Planes extracted from a precursor that itself ran with
+   ``mesh_mapping`` are uniform in that run's :math:`\xi` coordinate instead;
+   the `PelePhysics` ``TurbInflowGenerator`` tags such files with a
+   ``MESHMAP`` trailer in the ``HDR`` when its input carries the precursor's
+   ``geometry.mesh_mapping`` block (copy those lines verbatim), and the reader
+   then inverts the file's map for every target cell and interpolates in the
+   file's :math:`\xi`. Either kind of file can be injected on either kind of
+   target grid; when the file's map and :math:`\xi` grid coincide with the
+   target's, the file is reproduced exactly. For a mapped file
+   ``turb_center`` may be omitted (the file sits where the precursor had it).
+   At ``peleLM.v > 0`` PeleLMeX prints, per inflow face, which coordinate the
+   file is uniform in and whether it is injected by exact index or by
+   interpolation, followed by a resolution check comparing the grid's
+   physical spacing range against the file's; a ratio well above one means
+   the file cannot fill the scales the stretched grid resolves near its
+   clustering, and well below one means the injected field is aliased.
+   See ``Exec/RegTests/TurbInflow`` for the round-trip and cross-map cases.
 
 Turbulent Forcing and Velocity Plotfile
 ---------------------------------------
@@ -380,16 +425,67 @@ the user through the standard ``Inflow`` boundary condition; this feature only
 supplies the bracketed fluctuation. The running mean is preserved in
 checkpoints and restored across restarts.
 
+Alternatively, ``peleLM.recycling_mode = full`` injects the entire sampled
+velocity, :math:`\mathbf{u}_{\text{inlet}}(t) = \gamma(t)\,
+\mathbf{u}_{\text{src}}(t)`, with no running mean maintained. The recycled
+velocity is enforced by the boundary-fill machinery itself: whatever
+``bcnormal`` writes to the velocity components on the recycling face is
+ignored in this mode, so existing problem setups (including ones that add a
+mean profile to the velocity) run unmodified; ``bcnormal`` still controls
+the thermodynamic state. Full mode carries no restart state (the injection
+buffer reseeds from the first snapshot after initialization or restart,
+taken before the first boundary fill), and the ``inlet_plane_avg_window`` /
+``inlet_plane_warmup_steps`` controls are ignored.
+
+The factor :math:`\gamma(t)` above is the full-mode **mass-flux control**
+(on by default). Because full mode feeds the sampled velocity straight back
+to the inlet, the bulk flow rate is a closed feedback loop that carries no
+memory of the intended inflow: it is only neutrally stable in an adiabatic
+constant-area duct, and any net heat transfer between the inlet and the
+source plane biases it. In the low-Mach setting, wall heat loss makes
+:math:`\nabla \cdot \mathbf{u} < 0` in the duct, so the plane always
+returns a smaller volume flux than the inlet received (mass flux, not
+volume flux, is what convection conserves) and the recycled bulk flow
+decays monotonically until the inlet reverses — cooled walls collapse
+within a few tens of flow-through times. The controller closes the loop:
+every snapshot, the sample's normal velocity component is rescaled by
+:math:`\gamma = Q_0 / Q_{\text{src}}`, where both the target :math:`Q_0`
+and the sampled :math:`Q_{\text{src}}` are EB-masked volumetric flow rates
+through the same cross-section. :math:`Q_0` is measured once from the
+``bcnormal`` inflow profile (or set explicitly via
+``peleLM.inlet_plane_target_flow_rate``). The rescaling is multiplicative
+and applied to all velocity components: the sampled fluctuation field is
+solenoidal to low-Mach accuracy, with continuity coupling the normal and
+tangential components mode by mode, so the uniform scaling preserves that
+structure and the injected turbulence passes through the inlet-adjacent
+projection intact (a normal-only scaling would leave an irrotational
+residual for the projection to remove, distorting the tangential
+fluctuations). No-slip walls, the sampled profile shape, and the sample's
+relative turbulence intensity are all preserved. :math:`\gamma` is clipped
+to :math:`[0.5, 2]` (with a warning), and the run aborts if the sampled
+through-flow collapses below 5% of the target or reverses, since a
+collapsed sample can no longer be rescaled into a meaningful inflow.
+
 ::
 
     #-----------------------Recycling-plane inflow-----------------------
     peleLM.use_inlet_from_plane     = 0       # [OPT, DEF=0] Master switch (0 disables)
     peleLM.inlet_plane_dir          = -1      # [REQ if active] Sampling axis: 0=x, 1=y, 2=z
     peleLM.inlet_plane_position     = 0.0     # [REQ if active] Physical coordinate of the source plane along inlet_plane_dir
+    peleLM.recycling_mode           = fluctuations # [OPT, DEF=fluctuations] 'fluctuations' injects u - <u> on top of the
+                                              #                 bcnormal profile; 'full' injects the sampled velocity itself
     peleLM.inlet_plane_avg_window   = -1.0    # [OPT, DEF=-1.0] Time-window (s) for the running mean (EMA);
                                               #                 <=0 falls back to a cumulative 1/N average.
+                                              #                 Fluctuations mode only.
     peleLM.inlet_plane_warmup_steps = 0       # [OPT, DEF=0] Number of samples to accumulate before any
-                                              #              fluctuation is injected (lets the running mean settle)
+                                              #              fluctuation is injected (lets the running mean settle).
+                                              #              Fluctuations mode only.
+    peleLM.inlet_plane_flux_control = 1       # [OPT, DEF=1] Full mode only: rescale the injected sample to the
+                                              #              target inlet flow rate every step. Disable (0) only for
+                                              #              adiabatic constant-area ducts, and at your own risk.
+    peleLM.inlet_plane_target_flow_rate = ""  # [OPT] Full mode only: target volumetric flow rate (m^3/s, EB-masked,
+                                              #       signed along +inlet_plane_dir). Default: measured from the
+                                              #       bcnormal inflow profile on first use.
 
 The source plane is one cell thick along ``inlet_plane_dir`` and spans the full
 transverse cross-section at ``inlet_plane_position``. Storage is allocated
@@ -427,7 +523,7 @@ Chemistry integrator
     cvode.max_order  = 4                        # [OPT, DEF=2] Maximum order of the BDF method in CVODE
     cvode.max_substeps = 10000                  # [OPT, DEF=10000] Maximum number of substeps for the linear solver in CVODE
 
-Note that the last five parameters belong to the Reactor class of PelePhysics but are specified here for completeness. In particular, CVODE is the adequate choice of integrator to tackle PeleLMeX large time step sizes. Several linear solvers are available depending on whether or not GPU are employed: on CPU, `dense_direct` is a finite-difference direct solver, `denseAJ_direct` is an analytical-jacobian direct solver (preferred choice), `sparse_direct` is an analytical-jacobian sparse direct solver based on the KLU library and `GMRES` is a matrix-free iterative solver; on GPU `GMRES` is a matrix-free iterative solver (available on all the platforms), `sparse_direct` is a batched block-sparse direct solve based on NVIDIA's cuSparse (only with CUDA), `magma_direct` is a batched block-dense direct solve based on the MAGMA library (available with CUDA and HIP. Different `cvode.solve_type` should be tried before increasing the `cvode.max_substeps`.
+Note that the last five parameters belong to the Reactor class of PelePhysics but are specified here for completeness. In particular, CVODE is the adequate choice of integrator to tackle PeleLMeX large time step sizes. Several linear solvers are available depending on whether or not GPU are employed: on CPU, `dense_direct` is a finite-difference direct solver, `denseAJ_direct` is an analytical-jacobian direct solver (preferred choice), `sparse_direct` is an analytical-jacobian sparse direct solver based on the KLU library and `GMRES` is a matrix-free iterative solver; on GPU `GMRES` is a matrix-free iterative solver (available on all the platforms), `sparse_direct` is a batched sparse direct solve based on NVIDIA's cuSolverSp (only with CUDA), `magma_direct` is a batched dense direct solve based on the MAGMA library (available with CUDA and HIP). On GPU, CVODE uses by default a data layout (CYOrder) that only supports `GMRES`; build with `PELE_CVODE_FORCE_YCORDER=TRUE` (GNU make) or `-DPELE_CVODE_FORCE_YCORDER=ON` (CMake) to enable `sparse_direct`, `precGMRES` and `fixed_point` (`PELE_USE_MAGMA=TRUE` does this automatically). On GPU, `GMRES` is usually the fastest choice for small mechanisms such as drm19, while a direct solve (`sparse_direct` or `magma_direct`) can be several times faster for larger ones such as the 53-species n-dodecane mechanism. Different `cvode.solve_type` should be tried before increasing the `cvode.max_substeps`.
 
 .. note::
    The default chemistry integrator is 'ReactorNull' which do not include the chemical source terms.
@@ -661,6 +757,7 @@ to activate `temporal` diagnostics performing these reductions at given interval
     peleLM.temporal_int = 10                    # [OPT, DEF=5] Temporal freq.
     peleLM.do_extremas = 1                      # [OPT, DEF=0] Trigger extremas, if temporals activated
     peleLM.do_mass_balance = 1                  # [OPT, DEF=0] Compute mass balance, if temporals activated
+    peleLM.do_energy_balance = 1                # [OPT, DEF=0] Compute enthalpy (rho*h) balance, if temporals activated
     peleLM.do_species_balance = 1               # [OPT, DEF=0] Compute species mass balance, if temporals activated
     peleLM.do_patch_mfr=1                       # [OPT, DEF=0] Activate patch based species flux diagbostics
     peleLM.bpatch.patchnames= <patch_name1 patch_name2 ..> # List of patchnames
@@ -703,10 +800,15 @@ to activate `temporal` diagnostics performing these reductions at given interval
 
 The `do_temporal` flag will trigger the creation of a `temporals` folder in your run directory and the following entries
 will be appended to an ASCII `temporals/tempState` file: step, time, dt, kin. energy integral, enstrophy integral, mean pressure
-, fuel consumption rate integral, heat release rate integral. Additionally, if the `do_temporal` flag is activated, one can
-turn on state extremas (stored in `temporals/tempExtremas` as min/max for each state entry), mass balance (stored in
-`temporals/tempMass`) computing the total mass, dMdt and advective mass fluxes across the domain boundaries as well as the error in
-the balance (dMdt - sum of fluxes), and species balance (stored in `temporals/tempSpec`) computing each species total mass, dM_Ydt,
+, fuel consumption rate integral, heat release rate integral. Please note that for simulations using finite-rate chemistry, the 
+heat-release rate integral is computed from the species reaction rates and enthalpies (:math:`-\sum_n h_n \dot\omega_n`). For the 
+manifold EOS, it is instead obtained by integrating the tabulated `HRR` variable looked up from the manifold table, which therefore 
+requires the table to include an `HRR` column (volumetric heat release rate, in the table's units). If the table has no `HRR` column 
+the reported integral is zero. Additionally, if the `do_temporal` flag is activated, one can turn on state extremas 
+(stored in `temporals/tempExtremas` as min/max for each state entry), mass balance (stored in `temporals/tempMass`) computing the total mass, dMdt and advective mass fluxes across the domain boundaries as well as the error in
+the balance (dMdt - sum of fluxes), energy balance (stored in `temporals/tempEnergy`) computing the total enthalpy :math:`\int \rho h`,
+its time derivative, the net advective \& diffusive (Fourier and differential diffusion) enthalpy fluxes across the domain boundaries
+and isothermal EB surfaces, and the error in the balance (d(rho h)/dt - sum of fluxes), and species balance (stored in `temporals/tempSpec`) computing each species total mass, dM_Ydt,
 advective \& diffusive fluxes across the domain boundaries, consumption rate integral and the error (dMdt - sum of fluxes - reaction).
 Users can also monitor species advective fluxes through specific regions of the domain boundaries (called as boundary patches).
 Patches can be defined on the low or high sides of non-embedded boundaries through the use of pre-defined shapes such as `circle`,
@@ -753,7 +855,7 @@ by specifying a set of filters, defining a range of interest for a variable. Not
 fine-covered regions are masked. An arbitrary number of these diagnostics may be specified in a list by setting
 ``peleLM.diagnostics`` in the input file and then specifying the diagnostic type and relevant inputs for each
 diagnostic listed. See the
-`PelePhysics Diagnostics documentation <https://amrex-combustion.github.io/PelePhysics/Utility.html#diagnostics>`_ for full
+`PelePhysics Diagnostics documentation <https://pele-suite.github.io/PelePhysics/Utility.html#diagnostics>`_ for full
 details on the options that must be specified for each diagnostic type.
 
 ::

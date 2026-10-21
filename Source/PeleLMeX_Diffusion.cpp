@@ -134,6 +134,21 @@ PeleLM::computeDifferentialDiffusionTerms(
   if ((flux_tracking_factor != 0.0) && (m_do_speciesBalance != 0)) {
     addRhoYFluxes(GetArrOfConstPtrs(fluxes[0]), geom[0], flux_tracking_factor);
   }
+  // Same for the energy balance: Fourier and differential diffusion
+  // enthalpy fluxes, components NUM_SPECIES and NUM_SPECIES+1. Skipped for
+  // the Manifold EOS, where enthalpy is not diffused: the corrector term is
+  // never added there so the predictor terms would bias the balance.
+  if (
+    (flux_tracking_factor != 0.0) && (m_do_energyBalance != 0) &&
+    (pele::physics::PhysicsType::eos_type::identifier() != "Manifold")) {
+    addRhoHFluxes(
+      GetArrOfConstPtrs(fluxes[0]), geom[0], flux_tracking_factor, 2);
+#ifdef AMREX_USE_EB
+    if (m_isothermalEB != 0) {
+      addRhoHFluxesEB(GetVecOfPtrs(EBfluxes), flux_tracking_factor);
+    }
+#endif
+  }
 
   //----------------------------------------------------------------
   // Compute divergence/fill a_viscTerm
@@ -279,6 +294,55 @@ PeleLM::computeDifferentialDiffusionTerms(
       }
     }
   }
+}
+
+void
+PeleLM::unscaleMappedDivergence(
+  const amrex::Vector<amrex::MultiFab*>& a_div,
+  const int a_comp,
+  const int a_ncomp)
+{
+  // Under mesh mapping a flux divergence formed in Xi-space from Xi-space
+  // fluxes (bcoeff carries J/fac^2) is J . (physical divergence); divide
+  // by J to return to physical units.  No-op without mapping.
+  if (!m_mesh_mapping) {
+    return;
+  }
+  for (int lev = 0; lev <= finest_level; ++lev) {
+    for (int n = 0; n < a_ncomp; ++n) {
+      amrex::MultiFab::Divide(
+        *a_div[lev], m_mesh_map->detJ_cc(lev), 0, a_comp + n, 1, 0);
+    }
+  }
+}
+
+void
+PeleLM::scaleFaceDiffusivityMapped(
+  const int a_lev, amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>& a_beta_ec)
+{
+  // Under mesh mapping the diffusion operators carry (J/fac_i^2) . beta on
+  // face i, so that beta . d(phi)/dXi is the Xi-space flux (J/fac_i) . F
+  // whose Xi-divergence is J . (physical divergence).  Correction fluxes
+  // assembled by hand from a face diffusivity and a Xi-gradient must carry
+  // the same factor to be consistent with them.  No-op without mapping.
+  if (!m_mesh_mapping) {
+    return;
+  }
+  for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
+    const auto& fac_ma = m_mesh_map->fac_fc(a_lev, idim).const_arrays();
+    const auto& detJ_ma = m_mesh_map->detJ_fc(a_lev, idim).const_arrays();
+    const auto& b_ma = a_beta_ec[idim].arrays();
+    const int nc = idim;
+    const int ncomp = a_beta_ec[idim].nComp();
+    amrex::ParallelFor(
+      a_beta_ec[idim], amrex::IntVect(0), ncomp,
+      [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k, int n) noexcept {
+        const amrex::Real f = fac_ma[box_no](i, j, k, nc);
+        const amrex::Real dJ = detJ_ma[box_no](i, j, k);
+        b_ma[box_no](i, j, k, n) *= dJ / (f * f);
+      });
+  }
+  amrex::Gpu::streamSynchronize();
 }
 
 template <typename EOSType>
@@ -815,6 +879,9 @@ PeleLM::addWbarTerm(
     constexpr int addTurbContrib = 0;
     amrex::Array<amrex::MultiFab, AMREX_SPACEDIM> beta_ec = getDiffusivity(
       lev, 0, NUM_SPECIES, doZeroVisc, bcRecSpec, *a_beta[lev], addTurbContrib);
+    // gradWbar below is a Xi-gradient: make the Wbar flux a Xi-space flux
+    // like the species fluxes it is added to.
+    scaleFaceDiffusivityMapped(lev, beta_ec);
 
     const amrex::Box& domain = geom[lev].Domain();
     const bool use_harmonic_avg = m_harm_avg_cen2edge != 0;
@@ -944,6 +1011,9 @@ PeleLM::addSoretTerm(
     constexpr int doZeroVisc = 1;
     amrex::Array<amrex::MultiFab, AMREX_SPACEDIM> beta_ec = getDiffusivity(
       lev, NUM_SPECIES + 2, NUM_SPECIES, doZeroVisc, bcRecSpec, *a_beta[lev]);
+    // gradT below is a Xi-gradient: make the Soret flux a Xi-space flux like
+    // the species fluxes it is added to.
+    scaleFaceDiffusivityMapped(lev, beta_ec);
 
     const amrex::Box& domain = geom[lev].Domain();
     const bool use_harmonic_avg = m_harm_avg_cen2edge != 0;
@@ -1381,6 +1451,7 @@ PeleLM::differentialDiffusionUpdate(
   fluxDivergence(
     GetVecOfPtrs(diffData->Dhat), 0, GetVecOfArrOfPtrs(fluxes), 0, NUM_SPECIES,
     1, -1.0);
+  unscaleMappedDivergence(GetVecOfPtrs(diffData->Dhat), 0, NUM_SPECIES);
 
   // Repeat for auxiliaries
   if (m_nAux > 0) {
@@ -1389,6 +1460,7 @@ PeleLM::differentialDiffusionUpdate(
     fluxDivergence(
       GetVecOfPtrs(diffData->Dhat_aux), 0, GetVecOfArrOfPtrs(fluxes_aux), 0,
       m_nAux, 1, -1.0);
+    unscaleMappedDivergence(GetVecOfPtrs(diffData->Dhat_aux), 0, m_nAux);
   }
 
   // Update species
@@ -1562,6 +1634,7 @@ PeleLM::differentialDiffusionUpdate(
         GetVecOfPtrs(diffData->Dhat), NUM_SPECIES, GetVecOfArrOfPtrs(fluxes),
         NUM_SPECIES, 2, 1, -1.0);
     }
+    unscaleMappedDivergence(GetVecOfPtrs(diffData->Dhat), NUM_SPECIES, 2);
 
     //------------------------------------------------------------------------
     // Recompute RhoH (before deltaT iters: we've updated species at the new
@@ -1688,6 +1761,19 @@ PeleLM::differentialDiffusionUpdate(
           amrex::Print() << "deltaT_iters not converged !\n";
         }
       }
+    }
+
+    // If doing energy balance, compute face domain integrals of the
+    // converged Fourier and differential diffusion enthalpy fluxes
+    // (components NUM_SPECIES and NUM_SPECIES+1) using level 0 since
+    // we've averaged down the fluxes already
+    if (m_sdcIter == m_nSDCmax && (m_do_energyBalance != 0)) {
+      addRhoHFluxes(GetArrOfConstPtrs(fluxes[0]), geom[0], 1.0, 2);
+#ifdef AMREX_USE_EB
+      if (m_isothermalEB != 0) {
+        addRhoHFluxesEB(GetVecOfPtrs(EBfluxes));
+      }
+#endif
     }
   }
   //------------------------------------------------------------------------
@@ -1836,6 +1922,7 @@ PeleLM::deltaTIter_update(
       GetVecOfPtrs(diffData->Dhat), NUM_SPECIES, a_fluxes, NUM_SPECIES, 2, 1,
       -1.0);
   }
+  unscaleMappedDivergence(GetVecOfPtrs(diffData->Dhat), NUM_SPECIES, 2);
 
   //------------------------------------------------------------------------
   // Recompute RhoH

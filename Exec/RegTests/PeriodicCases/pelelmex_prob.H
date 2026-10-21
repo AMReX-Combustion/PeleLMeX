@@ -26,28 +26,51 @@ struct MyProbParm : public ProbParmDefault
   int gauss_type = 0;
   amrex::Real gaussTime = 0.001;
   amrex::Real gaussDiff = 0.000001;
+
+  // ShearLayer: temporally-developing planar mixing layer.  Periodic in x,
+  // bounded in y by slip walls placed far from the layer, so the only
+  // feature in the domain is the interior shear layer at y = shear_y0 --
+  // which is what InteriorStretchMap is for.
+  amrex::Real shear_y0 = 0.0;    // physical y of the layer
+  amrex::Real shear_dw = 0.004;  // vorticity thickness (du/dy|max = dU/dw)
+  amrex::Real shear_dU = 1.0;    // velocity difference across the layer
+  amrex::Real shear_Uc = 0.0;    // mean (convective) velocity
+  amrex::Real shear_pert = 0.02; // max|v'| as a fraction of dU
+  int shear_nwave = 1;           // KH wavelengths across the periodic x extent
+  amrex::Real shear_ampY = 0.0;  // optional scalar step amplitude (low-Mach)
 };
 
 struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
 {
+  // Every problem type here uses a y coordinate, so this case has always
+  // been 2D/3D only.  Say so, rather than reading prob_lo[1] out of bounds.
+  static_assert(
+    AMREX_SPACEDIM >= 2, "PeriodicCases requires AMREX_SPACEDIM >= 2");
+
+  /**
+   * \brief Set the state at (i,j,k) from the *physical* coordinates of the
+   *        cell centre.
+   *
+   * Shared by initdata() and initdata_mapped() so the two entry points
+   * cannot disagree: the only difference between them is how (x, y) and the
+   * physical x-extent Lx are obtained.  On an unmapped run the mapped path
+   * reduces to the uniform-grid formulas exactly (the evaluator falls back
+   * to Kind::Identity), so this refactor is bit-neutral there.
+   */
   AMREX_GPU_DEVICE
   AMREX_FORCE_INLINE
-  static void initdata(
+  static void set_state(
     int i,
     int j,
     int k,
     int is_incompressible,
     amrex::Array4<amrex::Real> const& state,
-    amrex::Array4<amrex::Real> const& /*aux*/,
-    amrex::GeometryData const& geomdata,
-    MyProbParm const& prob_parm,
-    pele::physics::PMF::PmfData::DataContainer const* /*pmf_data*/)
+    amrex::Real x,
+    amrex::Real y,
+    amrex::Real Lx,
+    MyProbParm const& prob_parm)
   {
-    const amrex::Real* prob_lo = geomdata.ProbLo();
-    const amrex::Real* dx = geomdata.CellSize();
-    AMREX_D_TERM(
-      const amrex::Real x = prob_lo[0] + (i + 0.5) * dx[0];
-      , const amrex::Real y = prob_lo[1] + (j + 0.5) * dx[1];, );
+    amrex::ignore_unused(x, y, Lx);
     auto eos = pele::physics::PhysicsType::eos();
     constexpr amrex::Real Pi = 3.14159265358979323846264338327950288;
 
@@ -257,6 +280,47 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
       } else {
         amrex::Abort("Unknown gauss_type: should be either Temp or Spec");
       }
+    } else if (prob_parm.probType == 4) { // ShearLayer
+
+      // Base profile, with dw the vorticity thickness so that
+      // du/dy|max = dU/dw at y = y0:
+      //   u(y) = Uc + (dU/2) tanh(2 (y - y0) / dw)
+      const amrex::Real dy = y - prob_parm.shear_y0;
+      const amrex::Real th = std::tanh(2.0 * dy / prob_parm.shear_dw);
+      amrex::Real u_shear = prob_parm.shear_Uc + 0.5 * prob_parm.shear_dU * th;
+      amrex::Real v_shear = 0.0;
+
+      // Kelvin-Helmholtz seed derived from a streamfunction, so the
+      // perturbation is analytically divergence-free:
+      //   psi' = A sin(kx x) exp(-(dy/dw)^2),  kx = 2 pi n / Lx
+      //   u'   = -d psi'/dy,   v' = +d psi'/dx
+      // A is scaled so that max|v'| = shear_pert * dU.
+      if (prob_parm.shear_pert > 0.0 && prob_parm.shear_nwave > 0) {
+        const amrex::Real kx =
+          2.0 * Pi * static_cast<amrex::Real>(prob_parm.shear_nwave) / Lx;
+        const amrex::Real amp = prob_parm.shear_pert * prob_parm.shear_dU / kx;
+        const amrex::Real dw2 = prob_parm.shear_dw * prob_parm.shear_dw;
+        const amrex::Real env = std::exp(-dy * dy / dw2);
+        u_shear += amp * std::sin(kx * x) * (2.0 * dy / dw2) * env;
+        v_shear += amp * kx * std::cos(kx * x) * env;
+      }
+
+      AMREX_D_TERM(state(i, j, k, VELX) = u_shear;
+                   , state(i, j, k, VELY) = v_shear;
+                   , state(i, j, k, VELZ) = 0.0);
+
+      if (is_incompressible != 0) {
+        return;
+      }
+
+      // Low-Mach: tag the two streams with a scalar step on the same profile
+      // so the mixing is visible in a passive-ish scalar as well as in
+      // vorticity.
+      state(i, j, k, TEMP) = prob_parm.T_mean;
+      if (prob_parm.shear_ampY != 0.0) {
+        massfrac[sp1_ID] *= 1.0 + prob_parm.shear_ampY * 0.5 * (1.0 + th);
+        massfrac[sp2_ID] = 1.0 - massfrac[sp1_ID];
+      }
     }
 
     amrex::Real P_cgs = prob_parm.P_mean * 10.0;
@@ -275,6 +339,60 @@ struct MyProblemSpecificFunctions : public DefaultProblemSpecificFunctions
     for (int n = 0; n < NUM_SPECIES; n++) {
       state(i, j, k, FIRSTSPEC + n) = massfrac[n] * state(i, j, k, DENSITY);
     }
+  }
+
+  /// Legacy entry point: uniform-grid cell-centre coordinates.
+  AMREX_GPU_DEVICE
+  AMREX_FORCE_INLINE
+  static void initdata(
+    int i,
+    int j,
+    int k,
+    int is_incompressible,
+    amrex::Array4<amrex::Real> const& state,
+    amrex::Array4<amrex::Real> const& /*aux*/,
+    amrex::GeometryData const& geomdata,
+    MyProbParm const& prob_parm,
+    pele::physics::PMF::PmfData::DataContainer const* /*pmf_data*/)
+  {
+    const amrex::Real* prob_lo = geomdata.ProbLo();
+    const amrex::Real* prob_hi = geomdata.ProbHi();
+    const amrex::Real* dx = geomdata.CellSize();
+    const amrex::Real x = prob_lo[0] + (i + 0.5) * dx[0];
+    const amrex::Real y = prob_lo[1] + (j + 0.5) * dx[1];
+    set_state(
+      i, j, k, is_incompressible, state, x, y, prob_hi[0] - prob_lo[0],
+      prob_parm);
+  }
+
+  /**
+   * \brief Mapping-aware entry point (preferred by the driver when present).
+   *
+   * Evaluates the IC at the *physical* cell-centre position, which is what
+   * makes the stretched-mesh runs meaningful: under InteriorStretchMap the
+   * uniform-grid formula would place the shear layer at the wrong y.  Lx is
+   * taken from the evaluator too, so the KH seed keeps an integer number of
+   * wavelengths in the physical domain.
+   */
+  AMREX_GPU_DEVICE
+  AMREX_FORCE_INLINE
+  static void initdata_mapped(
+    int i,
+    int j,
+    int k,
+    int is_incompressible,
+    amrex::Array4<amrex::Real> const& state,
+    amrex::Array4<amrex::Real> const& /*aux*/,
+    amrex::GeometryData const& geomdata,
+    MeshMapEvaluator const& mmap,
+    MyProbParm const& prob_parm,
+    pele::physics::PMF::PmfData::DataContainer const* /*pmf_data*/)
+  {
+    const amrex::Real x = mmap.x_phys_cc(0, i, geomdata);
+    const amrex::Real y = mmap.x_phys_cc(1, j, geomdata);
+    set_state(
+      i, j, k, is_incompressible, state, x, y,
+      mmap.domain_size_phys(0, geomdata), prob_parm);
   }
 
   // Only used in non-periodic inflow cases

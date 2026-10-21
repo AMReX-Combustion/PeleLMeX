@@ -140,6 +140,7 @@ PeleLM::MakeNewLevelFromScratch(
     m_map_eval = m_mesh_map->make_evaluator();
     rebuildMappedInterps();
   }
+  defineCellVolume(lev, grids[lev], dmap[lev], *m_factory[lev]);
 
 #ifdef AMREX_USE_EB
   if (lev == 0 && (m_signDistNeeded != 0)) {
@@ -274,6 +275,17 @@ PeleLM::initData()
     }
 
     //----------------------------------------------------------------
+    // Full-mode recycling injects the sampled velocity itself, so the slab
+    // can (and should) be seeded from the initial solution before the init
+    // projections and iterations consume inflow BCs. Fluctuations mode
+    // seeds at the end of the first step once a mean can accumulate.
+    if (
+      m_use_inlet_from_plane != 0 && m_recycling_mode == RecyclingMode::Full &&
+      !m_inlet_recycling.initialized) {
+      updateRecyclingPlaneSnapshot();
+    }
+
+    //----------------------------------------------------------------
     // Project initial solution
     projectInitSolution();
 
@@ -372,6 +384,15 @@ PeleLM::initData()
     m_resetCoveredMask = 1;
     resetCoveredMask();
     updateDiagnostics();
+
+    // Full-mode recycling carries no checkpointed state; seed the slab
+    // from the restored solution so the first step's BC fills see the
+    // recycled velocity (see the matching call in the fresh-start path).
+    if (
+      m_use_inlet_from_plane != 0 && m_recycling_mode == RecyclingMode::Full &&
+      !m_inlet_recycling.initialized) {
+      updateRecyclingPlaneSnapshot();
+    }
 
     // Active control
     constexpr int is_restart = 1;

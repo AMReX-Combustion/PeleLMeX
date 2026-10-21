@@ -44,7 +44,7 @@ endif
 #---------------
 # PeleLM sources
 #---------------
-LMdirs := Source
+LMdirs := Source Source/Mesh
 ifeq ($(USE_PLASMA),TRUE)
    DEFINES += -DPELE_USE_PLASMA
    LMdirs += Source/Plasma Source/Plasma/GMRES Source/Plasma/LinOps
@@ -143,12 +143,15 @@ PPdirs := Source/Utility/PMF Source/Utility/TurbInflow Source/Utility/PltFileMan
 PPdirs += Source/Utility/Diagnostics Source/Utility/BlackBoxFunction
 PPdirs += Source/Utility/TurbForcing
 PPdirs += Source/Utility/Utilities
+PPdirs += Source/Utility/MeshMap
 PPdirs += Source Source/Reactions Source/Eos Source/Transport
 
 ifeq ($(USE_CUSTOM_CHEMISTRY), TRUE)
+  PELE_MECH_DIR := $(Chemistry_Model)
   Bpack += $(Chemistry_Model)/Make.package
   Blocs += $(Chemistry_Model)
 else
+  PELE_MECH_DIR := $(PELE_PHYSICS_HOME)/Mechanisms/$(Chemistry_Model)
   PPdirs += Mechanisms/$(Chemistry_Model)
 endif
 
@@ -217,6 +220,13 @@ CEXE_sources += AMReX_buildInfo.cpp
 CEXE_headers += $(AMREX_HOME)/Tools/C_scripts/AMReX_buildInfo.H
 INCLUDE_LOCATIONS +=  $(AMREX_HOME)/Tools/C_scripts
 
+PELE_CASE_GIT_DIR  ?= $(shell git -C "$(CURDIR)" rev-parse --show-toplevel 2>/dev/null)
+
+PELE_BUILDINFO_MODULES += Chemistry_Model=$(Chemistry_Model)
+ifeq ($(Eos_Model),Manifold)
+  PELE_BUILDINFO_MODULES += Manifold_Dim=$(Manifold_Dim) Manifold_Type=$(Manifold_Type)
+endif
+
 #---------------
 # Build
 #---------------
@@ -224,7 +234,11 @@ AMReX_buildInfo.cpp:
 	$(AMREX_HOME)/Tools/C_scripts/makebuildinfo_C.py \
       --amrex_home "$(AMREX_HOME)" \
       --COMP "$(COMP)" --COMP_VERSION "$(COMP_VERSION)" \
-      --GIT "$(PELE_HOME) $(AMREX_HOME) $(PELE_PHYSICS_HOME) $(AMREX_HYDRO_HOME) $(SUNDIALS_HOME)"
+      --CXX_comp_name "$(CXX)" \
+      --CXX_flags "$(strip $(CXXFLAGS) $(EXTRACXXFLAGS) $(CPPFLAGS))" \
+      --MODULES "$(strip $(PELE_BUILDINFO_MODULES)) Mechanism_cksum=$$(cat $(PELE_MECH_DIR)/mechanism.H $(PELE_MECH_DIR)/mechanism.cpp 2>/dev/null | cksum | cut -d' ' -f1)" \
+      --build_git_name "Case" --build_git_dir "$(PELE_CASE_GIT_DIR)" \
+      --GIT "$(PELE_HOME) $(AMREX_HOME) $(PELE_PHYSICS_HOME) $(AMREX_HYDRO_HOME) $(SUNDIALS_HOME) $(PELE_MECH_DIR)"
 
 #---------------
 # Rules

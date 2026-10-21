@@ -14,7 +14,7 @@ setup and control of `PeleLMeX` in later sections.
 Overview of `PeleLMeX`
 ----------------------
 
-`PeleLMeX` is the non-subcycling version of `PeleLM <https://amrex-combustion.github.io/PeleLM/>`_ a parallel,
+`PeleLMeX` is the non-subcycling version of `PeleLM <https://pele-suite.github.io/PeleLM/>`_ a parallel,
 adaptive mesh refinement (AMR) code that solves the reacting Navier-Stokes equations in the low Mach number regime.
 `PeleLM` is officially deprecated now with support that is not guaranteed to be current.
 
@@ -29,7 +29,7 @@ In a nutshell, `PeleLMeX` features include:
 * Physics & numerics :
    * Finite volume, block-structured AMR approach
    * 2D-Cartesian, 2D-Axisymmetric and 3D support
-   * Combustion (transport, kinetics, thermodynamics) models based on Cantera and EGLib through `PelePhysics <https://github.com/AMReX-Combustion/PelePhysics>`_
+   * Combustion (transport, kinetics, thermodynamics) models based on Cantera and EGLib through `PelePhysics <https://github.com/Pele-Suite/PelePhysics>`_
    * Complex geometries using Embedded Boundaries (EB)
    * Optional grid-aligned mesh mapping; several specific mappings provided
    * Second-order projection methodology for enforcing the low Mach number constraint
@@ -37,7 +37,7 @@ In a nutshell, `PeleLMeX` features include:
    * Several second-order Godunov integration schemes for advection
    * Temporally implicit viscosity, species mass diffusion, thermal conductivity, chemical kinetics
    * Closed chamber algorithm enables time-varying background pressure changes
-   * Lagrangian spray description and Hybrid Method of Moments Soot modeling using `PelePhysics <https://github.com/AMReX-Combustion/PelePhysics>`_ (formerly these were part of `PeleMP <https://github.com/AMReX-Combustion/PeleMP>`_).
+   * Lagrangian spray description and Hybrid Method of Moments Soot modeling using `PelePhysics <https://github.com/Pele-Suite/PelePhysics>`_ (formerly these were part of `PeleMP <https://github.com/AMReX-Combustion/PeleMP>`_).
 
 Mathematical background
 -----------------------
@@ -262,7 +262,7 @@ field at :math:`t^{n+1/2}` that discretely satisfies the constraint. This field 
 used for computing the time-explicit advective fluxes for :math:`U`, :math:`\rho h`, and :math:`\rho Y_m`.
 
 
-**Step 2**: (*Advance thermodynamic variables*) Integrate :math:`(\rho Y_m,\rho h)` over the full time step using a spectral deferred correction (SDC) approach, the details of which can be found in `PeleLM documentation <https://amrex-combustion.github.io/PeleLM/manual/html/Model.html#sdc-preliminaries>`_. An even more detailed version of the algorithm is available in Nonaka *et al.*, 2018.
+**Step 2**: (*Advance thermodynamic variables*) Integrate :math:`(\rho Y_m,\rho h)` over the full time step using a spectral deferred correction (SDC) approach, the details of which can be found in `PeleLM documentation <https://pele-suite.github.io/PeleLM/manual/html/Model.html#sdc-preliminaries>`_. An even more detailed version of the algorithm is available in Nonaka *et al.*, 2018.
 
 * We begin by computing the diffusion terms :math:`D^n` at :math:`t^n` that will be needed throughout the SDC iterations. Specifically, we evaluate the transport coefficients :math:`(\lambda,C_p,\mathcal D_m,h_m)^n` from :math:`(Y_m,T)^n` at cell centers and averaged to faces. The provisional diffusion fluxes, :math:`\widetilde{\boldsymbol{\cal F}}_m^n`, are computed with these averaged transport coefficients and state gradients computed with differences across each face.  These fluxes are conservatively corrected (i.e., adjusted to sum to zero by adding a mass-weighted "correction velocity") to obtain :math:`{\boldsymbol{\cal F}}_m^n` such that :math:`\sum {\boldsymbol{\cal F}}_m^n = 0`. Finally, we copy the transport coefficients, diffusion fluxes and the thermodynamic state from :math:`t^n` as starting values for :math:`t^{n+1,(k=0)}`, and initialize the reaction terms, :math:`I_R` from the values used in the previous step.
 
@@ -461,12 +461,14 @@ exponential stretching in a single direction to concentrate cells toward one bou
 cells along both the low and high sides of each dimension independently. Allowable parameters to control this feature are described
 in :ref:`the controls section <ssec:meshMappingParameters>`. Examples that employ these transformations appear in
 the `RegTests` folder, including `LidDrivenCavity` and `PipeFlow`.  Note that stretching beyond a :math:`\beta` factor of
-above about 3-4 begins to degrade the converence of the discrete operators in `PeleLMeX`, and :math:`\beta > 2` requires that
+above about 3-4 begins to degrade the convergence of the discrete operators in `PeleLMeX`, and :math:`\beta > 2` requires that
 the numerical linear solvers be changed from AMReX's default of MLMG to Hypre.  Note that `amrvis` and `yt` are unable to display
 computed solution with the mappings applied.  The above image was created using ParaView, after loading the plotfile and choosing
 `Warp By Vector` from the list of available Filters.  Any analysis carried out with solutions computed with this mesh mappings
-will need to incorporate the mappings as appropriate.  Also note that this capability is currently incompatible with the turbulent
-inflow tools.
+will need to incorporate the mappings as appropriate.  Turbulent inflow works with the mappings: inflow files are sampled at
+the physical positions of the mapped cells, files generated on a mapped mesh carry their map and are inverted on injection, and
+the `DiagFramePlane` diagnostic accepts a physical `center` (see :ref:`the controls section <ssec:meshMappingParameters>` and
+the `TurbInflow` regression tests).
 
 **Setting initial and boundary conditions.** Because the AMReX index space corresponds to the *uniform* :math:`(\chi,\eta,\xi)`
 coordinates, the physical location of a cell is **not** its uniform-space position --- it is recovered by applying the map. A problem
@@ -495,6 +497,13 @@ When a problem defines ``initdata_mapped`` it is selected automatically (via the
 ``PeleLM::initLevelData``); otherwise the standard ``initdata`` is used, which remains appropriate for position-independent initial
 states. Inflow values supplied through ``bcnormal`` likewise receive the physical coordinate. Worked examples appear in the
 ``LidDrivenCavity``, ``PipeFlow``, ``HotBubble`` and ``SingleDropEvap`` cases under the `RegTests` folder.
+
+**Mappings across periodic directions.** A map may be used along a periodic axis. The metric ghost cells across the periodic
+boundary are the periodic images of the interior metric (not the map continued past the domain end), so the seam is treated
+exactly like an interior location. What the seam looks like depends on the map: a two-sided map such as `TanhStretchMap`
+clusters cells symmetrically on both sides of it, as `InteriorStretchMap` does around its centre; a one-sided map such as
+`ExpStretchMap` leaves a jump in cell size at the seam of :math:`\mathrm{fac}_{hi}/\mathrm{fac}_{lo}` (:math:`e^\beta`), which is
+consistent but first-order accurate there, and `PeleLMeX` prints a warning with the factor at startup.
 
 .. warning::
 
@@ -530,6 +539,15 @@ analysis example, the out-of-plane vorticity computed from the (physical) veloci
 i.e. each uniform-space difference must be divided by the stretch factor for its direction. A naive uniform-grid post-processor that
 omits the :math:`1/f_i` weights will over- or under-estimate every gradient in the stretched regions, by exactly the local factor
 :math:`f_i`.
+
+**What the solver already handles.** Inside `PeleLMeX` the mapping is applied consistently: the projections, advection and
+diffusion operate in uniform space with the metric terms above; domain integrals (``MFSum``, which feeds the closed-chamber
+mean of :math:`\nabla\cdot u`, the periodic-channel background pressure gradient, active control and the temporal balances) weight
+each cell by its physical volume :math:`J\,\Delta\chi\Delta\eta\Delta\xi`; the gradient-based derived fields (``mag_vort``,
+``vorticity``, ``Qcrit``, ``enstrophy``), the ``x``/``y``/``z`` coordinate derives, the divU time-step estimate, spark locations,
+active-control flame positions and boundary-patch membership are all evaluated in physical coordinates. Mesh mapping is
+currently **not** supported together with embedded boundaries, RZ geometry, the plasma solver, spray particles, radiation or
+the LES models; the code aborts at startup for these combinations.
 
 
 Large Eddy Simulation
